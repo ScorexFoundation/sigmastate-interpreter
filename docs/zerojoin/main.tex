@@ -399,8 +399,19 @@ The following section will extend the free system to a paid system.
 Ergo's primary token is known as {\em Erg}, which is the base currency used in \mixname. This token is also used to pay transaction fee and storage rent~\cite{chepurnoy2018systematic}. An Ergo transaction conserves primary tokens (they can neither be created nor destroyed) and any box must have a positive quantity of primary tokens. 
 Each box can optionally have {\em secondary tokens} which are uniquely identified by an id. Unlike primary tokens, an Ergo transaction can destroy secondary tokens. Additionally, each transaction can also create (i.e., {\em issue}) at most one new token in arbitrary quantity, whose id is the globally unique id of the first box in the transaction. 
 
-In this approach, we will still use a Fee-Emission box (as in Section~\ref{donation}) to pay the fee in primary tokens. However, we will also use secondary tokens issued by the creator of the Fee-Emission box, which we call {\em mixing tokens} (identified by \texttt{tokenId}). The Fee-Emission box can only be used by burning some mixing tokens, i.e., by destroying a fixed amount of mixing tokens. 
+In this approach, we will still use a Fee-Emission box (as in Section~\ref{donation}) to pay the fee in primary tokens. However, we will also use secondary tokens issued by the creator of the Fee-Emission box, which we call {\em mixing tokens} (identified by \texttt{tokenId}). The Fee-Emission box can only be used by destroying one mixing token.
 
+\subsubsection{Approximate Fairness}
+
+We use the approximate fairness strategy described in~\cite{advtutorial}. As a high level the idea is as follows.
+Each mix transaction consumes one mixing token, which must be supplied by the inputs. Thus, there must be at least one mixing token among the inputs. Additionally, to keep the outputs indistinguishable, each must have the same number of tokens. The approximate fairness strategy says that Bob must supply half the token, and is allowed to supply have less tokens than Alice as long as Both started with the same amount of tokens and Bob lost tokens in sequential mixes.  
+
+The approximate-fairness strategy works only if two conditions are satisfied. The first is that mixing tokens are confined within the system by restricting their transfer to only those boxes that participate in a remix. 
+The second is to ensure that tokens always enter the system in a fixed quantity, and that too in one of the two \mixname boxes. 
+
+\subsection{Token Confinement}
+
+In this section we enforce the first requirement of approximate fairness, that of confining the tokens within the system. 
 Recall that the Half-Mix box's script refers to the Full-Mix box's script via the constant \texttt{fullMixScriptHash}. Our approach additionally requires the Full-Mix box's script to refer back to the Half-Mix's box script. We do this by storing the hash of the Half-Mix box script in one of the registers of the Full-Mix box. Let \texttt{delta} be an alias for this register that stores an array of bytes. All the scripts are accordingly modified to take this into account. 
 
 \subsubsection{Fee-Emission Box}
@@ -426,40 +437,37 @@ def noToken(b:Box) = b.tokens(tokenId) == 0
 val nextAlice = isHalf(OUTPUTS(0)) && INPUTS(0).id == id
 val nextBob = isHalf(INPUTS(0)) && INPUTS(1).id == id
 val destroyToken = OUTPUTS.forall(noToken)
-val nextAliceLogic = OUTPUTS(0).tokens(tokenId) == 
-                     INPUTS(0).tokens(tokenId) - 1
-((nextAlice && nextAliceLogic) || nextBob || destroyToken) && 
-(... earlier condition)
+val aliceLogic = OUTPUTS(0).tokens(tokenId) == 
+                 INPUTS(0).tokens(tokenId) - 1
+
+((nextAlice && aliceLogic) || nextBob || destroyToken) 
+&& (... earlier condition)
 \end{Verbatim}
 
-The above enforces the usage of mixing tokens when spending the Full-Mix box to create a Half-Mix box (via the predicate \texttt{nextAliceLogic}). The usage of mixing tokens when spending the Full-Mix box in a mix transaction is enforced in the Half-Mix box (via the predicate \texttt{bobLogic}). In the remaining cases the mixing tokens must be destroyed.  
+The above enforces the usage of mixing tokens when spending the Full-Mix box to create a Half-Mix box (via the predicate \texttt{aliceLogic}). The usage of mixing tokens when spending the Full-Mix box in a mix transaction is enforced in the Half-Mix box (via the predicate \texttt{bobLogic}). In the remaining cases the mixing tokens must be destroyed.  
 
 \subsubsection{Half-Mix Box}
 Next the contract of the Half-Mix box (\texttt{halfMixScript}) is also modified:
 \begin{Verbatim}[frame=single]
 // contract for Half-Mix box
-val in0 = INPUTS(0).tokens(tokenId)
-val in1 = INPUTS(1).tokens(tokenId)
+val alice = INPUTS(0).tokens(tokenId)
+val bob = INPUTS(1).tokens(tokenId)
 val out0 = OUTPUTS(0).tokens(tokenId)
 val out1 = OUTPUTS(1).tokens(tokenId)
-val bobLogic = in1 > 0 && out0 == out1 && 
-               in0 + in1 == out0 + out1 + 1 
-OUTPUTS(0).delta == hash(script) &&
-OUTPUTS(1).delta == hash(script) && bobLogic && 
-(... earlier condition)
+val bobLogic = (alice + bob == out0 + out1 + 1 && bob > 0) 
+  
+OUTPUTS(0).delta == hash(script) && out0 == out1 &&
+OUTPUTS(1).delta == hash(script) && bobLogic
+&& (... earlier condition)
 \end{Verbatim}
 
-The above contract assumes that the boxes already have some quantity of mixing tokens and enforces how these must be used. Each mix transaction is assumed to consume one such token, and to maintain privacy, the token balance must be equally distributed between the two outputs. The contract follows the {\em approximate-fairness} strategy where Alice requires Bob to contribute at least one mixing token~\cite{advtutorial}. It is possible to use {\em perfect fairness} via the condition \texttt{in0 == in1} within \texttt{bobLogic}. 
+The above contract assumes that the boxes already have some quantity of mixing tokens and enforces how these must be used. Each mix transaction is assumed to consume one such token, and to maintain privacy, the token balance must be equally distributed between the two outputs. The contract follows the {\em approximate-fairness} strategy where Alice requires Bob to contribute at least one mixing token~\cite{advtutorial}. It is possible to use {\em perfect fairness} by adding the condition \texttt{alice == bob}. 
 
 Taken together, the contracts of the three boxes (Fee-Emission, Full-Mix and Half-Mix) {\em confine} the mixing tokens to the system, which comprises of sequential rounds of \mixname. Thus, any tokens already present in the system will stay within the system. 
 
-\subsection{Obtaining Mixing Tokens}
+\subsection{Token Entry}
 
-While the earlier section focused on restricting how the mixing tokens are transferred after they are already in the system, this section will focus on defining how the tokens enter the system. 
-
-The approximate-fairness strategy gives optimal results under two conditions. The first is to confine the mixing tokens within the system by restricting their transfer to only those boxes that participate in a remix, as we did above. 
-The second is to ensure that tokens always enter the system in a fixed quantity, and that too in one of the two \mixname boxes. 
-This is done using a {\em Token-Emission box}, which we describe next. 
+While the earlier section focused on restricting how the mixing tokens are transferred after they are already in the system, this section will focus on defining how the tokens enter the system. This is done using a {\em Token-Emission box}, which we describe next. 
 
 \subsubsection{Token-Emission Box}
 
@@ -499,7 +507,18 @@ def isCopy(b:Box) = b.script == script &&
 (... remaining code same)
 \end{Verbatim}
 
-Multiple Token-Emission boxes should be created to handle several users. 
+In order to allow several people to buy tokens in the same block and to avoid collisions when multiple people try to spend the same token-emission box, there must be several token-emission boxes. 
+
+Because of the condition \texttt{bob > 0} in the Half-Mix box, it is necessary to have at least one token to spend Alice's box. However, it is possible that no tokens are available, making Alice's box unspendable. In order to handle this, we need to ensure that mixing tokens are always available. One way would be to have each token-emission box store a large number of tokens, much more than what can be purchased with all the available Ergs. We would also like the token issuer to be able to withdraw any Ergs deposited by token buyers. To achieve this, the token-emission box is modified:
+
+\begin{Verbatim}[frame=single]
+// contract for Token-Emission box
+(existing condition) || (issuerPubKey && INPUTS.size == 1 && 
+ OUTPUTS(0).script == script && OUTPUTS(0).value > minErgs &&
+ OUTPUTS(0).tokens(tokenId) == tokens(tokenId))
+\end{Verbatim}
+
+It is necessary to keep a certain amount of Ergs, \texttt{minErgs} inside each Token-Emission box, otherwise the box may be destroyed when miners collect storage rent. This value should be large enough to ensure sustenance for several years. Before storing any funds in a Half-Mix box, it must be ascertained that there are a large number of mixing tokens stored in at least one token-emission box. 
 \ignore{
 \textbf{First Spender Pays Fee:} Another enhancement, primarily in perfect fairness, is to benefit the party that is willing to wait longer. We then require that the fee for the mix transaction be paid by the first party that spends an output. We can identify the first spender as follows. 
 
@@ -512,87 +531,6 @@ Firstly, the protocol is modified to require that each mix transaction to genera
 It can be checked that the current spender is the second spender if and only if there is an input with two quantities of token $x$. The script also ensures that the first spender must create a new box with two tokens that can only be used by the second spender.
 }
 
-\ignore{
-
-Assume for now that fee is paid in {\em mixing tokens}, which are secondary tokens\footnote{Every transaction may generate any quantity of at most one secondary token, whose ID is the box-ID of the first input. For other secondary tokens, the sum of quantities in outputs must be less than or equal to the sum of quantities in inputs.} issued by a 3rd party. We will later convert the protocol to use primary tokens. Creation of a mixed output consumes one mixing token. A mix transaction (which has two such outputs) consumes exactly two mixing tokens and, to maintain privacy, the balance tokens must be equally distributed between the two outputs. Below are some strategies to ensure fairness in fee payment. 
-
-\begin{enumerate}
-	\item \textbf{Perfect Fairness:} 
- Alice's Half-Mix box contains $i$ mixing tokens and she requires each output box to contain $i-1$ mixing tokens. Thus, Alice can mix her coin $i$ times. 
- 
- This optimal fee strategy, however, has two drawbacks. Firstly, it has weakened privacy because it restricts the coins that can be mixed. Secondly, it impacts usability because there may not be boxes with the desired number of tokens. 
- 
- The approximate fairness strategy, discussed next, has better privacy and usability at the cost of reduced fairness.
- 
- \item \textbf{Approximate Fairness:} Alice relaxes her condition by requiring that Bob contribute at least one token in the mix. %In the worst case, Alice will have to start with $2^i$ tokens to mix $i$ times. 
- However, 
-she also requires Bob to have {\em initially} started with exactly, say, 1000 tokens in his first mix. Thus, if Bob is contributing, say, 1 token in the current mix, then Alice wants to ensure that he actually got there `the hard way', by starting out with 1000 tokens and losing them in sequential mixes. 
-%, rather than just by starting out with 1. 
-This can be done as follows:
-
-Firstly, the token issuer must restrict the entry of tokens by issuing them only in batches of 1000 in a box protected by the script below,
-which requires that the tokens can be transferred (as a whole) only if the transaction is either a mix transaction or creates a Half-Mix box: 
-\begin{verbatim}
-val halfBox = {(b:Box) => blake2b256(b.propositionBytes) == halfMixScriptHash}
-val sameTokenHalfBox = {(b:Box) => halfBox(b) && b.tokens(0) == tokens(0)}
-carol && (halfBox(INPUTS(0) || sameTokenHalfBox(OUTPUTS(0))) // carol is buyer
-\end{verbatim}
-
-The value \texttt{halfMixScriptHash} is a hash of \texttt{halfMixScript} with the additional code: 
-\begin{verbatim}
-OUTPUTS.forall({(o:Box) => o.R6[Coll[Byte]].get == blake2b256(propositionBytes)}
-\end{verbatim}
-This ensures that $R_6$ of each output 
-contains its hash. The code of \texttt{fullMixScript} is modified:
-
-\begin{verbatim}
-val halfMixScriptHash = R6[Coll[Byte]].get
-val halfBox = {(b:Box) => blake2b256(b.propositionBytes) == halfMixScriptHash}
-val sameTokenHalfBox = {(b:Box) => halfBox(b) && b.tokens(0) == tokens(0)}
-val noToken = {(token:(Coll[Byte], Long)) => token._1 != tokens(0)._1}
-val noTokenBox = {(b:Box) => b.tokens.forall(noToken)}
-val noTokenTx = OUTPUTS.forall(noTokenBox)
-(halfBox(INPUTS(0)) || sameTokenHalfBox(OUTPUTS(0)) || noTokenTx) && ...
-\end{verbatim}
-
-\item \textbf{First Spender Pays Fee:} Another enhancement, primarily in perfect fairness, is to benefit the party that is willing to wait longer. We then require that the fee for the mix transaction be paid by the first party that spends an output. We can identify the first spender as follows. 
-
-Firstly, the protocol is modified to require that each mix transaction to generate exactly 4 quantities of a new secondary token (with id $x$, determined as the id of the first input -- the Half-Mix box) distributed equally among 4 outputs. Two of these outputs are the standard mix outputs $O_0, O_1$ with the additional spending condition that one output must contain some non-zero quantity of token $x$. The other two outputs, $O_2, O_3$, have the following identical spending conditions:
-\begin{enumerate}
-	\item The sum of quantities of token $x$ in the inputs and outputs is 3 and 2 respectively.
-	\item One output contains 2 quantities of token $x$ protected by the same script as this box. 
-\end{enumerate}
-
-It can be checked that the current spender is the second spender if and only if there is an input with two quantities of token $x$. The script also ensures that the first spender must create a new box with two tokens that can only be used by the second spender.
-\end{enumerate}
-
-\section{\mixname Implementation}
-
-Users will pay the fee in {\em mixing tokens}, which are secondary tokens issued by some entity, say Eve that need not be trusted. Eve's only purpose is to facilitate the protocol, and possibly make some profit in doing so. More specifically, her only role is to issue mixing tokens based on some rules. Since it is not easy to convince miners to accept fee in mixing tokens, we will use the idea of {\em Fee-Emission box} as described at~\cite{forum-post-fee-box}. The idea is to use mixing tokens as an accounting mechanism and exchange them for primary tokens to pay fee at the time of transaction creation. Eve may offer a lower buying rate (compared to the selling rate) for the tokens to make some profit, or she may buy them at a higher rate to encourage more people to use \mixname.
-
-The complete implementation of \mixname requires the following types of boxes.
-\begin{enumerate}
-    \item \textbf{Token Seller Box:} This box contains mixing tokens issued by Eve. Tokens in this box can be purchased by participants for use in the protocol. The only restriction is that the tokens are purchased in batches of 1000 and stored in a {\em token buyer box}. 
-    
-    \item \textbf{Token Buyer Box:} This box is used to temporarily store tokens after purchasing from the token seller box. Tokens inside this box can only be spent if the spending transaction outputs a half mix box (in which case the entire tokens are transferred), or if the first input of transaction is a half mix box (in which case the rules encoded in the half mix box will apply). Additionally, there can only be one buyer box in a transaction. 
-    
-    \item \textbf{Half Mix Box:} This contains logic for spending the mixing tokens using approximate fairness. The amount of this box is hard coded to some fixed value, say 10 Ergs. 
-    The box can only be spend if the output box contains exactly equal number of tokens, after removing two tokens from the inputs to cover fee. In particular:
-    \begin{enumerate}
-        \item It must be the first input box in the transaction. 
-        \item The total number of mixing tokens of all inputs must be at least 2 more than what is in this box.
-        \item It should output two full mix boxes as specified by protocol in indices 0 and 1. 
-        \item Each full mix box must have (total - 2)/2 tokens rounded down. This ensures that each full mix box is spendable.
-    \end{enumerate}
-    
-    \item \textbf{Full Mix Box:} This contains logic for preserving tokens if they are kept within the mixing pool. The value of primary tokens is hard-coded to the same as that of a half-mix box. Additionally, for any transaction spending a full mix box, if one of the following is not true than all mixing tokens are destroyed. 
-    \begin{enumerate}
-        \item The first input is a half mix box
-        \item The first output is a half mix box and has one token less than the current box. 
-    \end{enumerate}
-    \item \textbf{Fee-Emission Box:} This box is used to exchange mixing tokens with fee in primary tokens. It has the logic that the output can contain one fee paying box with value a fixed multiple of the amount of mixing tokens destroyed in a transaction. The balance fee is stored in another Fee-Emission box. 
-\end{enumerate}
-}
 \bibliographystyle{unsrt}
 \bibliography{main}
 \appendix
