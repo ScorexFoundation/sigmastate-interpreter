@@ -1,5 +1,6 @@
 package special
 
+import scala.language.implicitConversions
 import scalan.RType
 import scala.reflect.{ClassTag, classTag}
 

@@ -1,7 +1,7 @@
 package scalan
 
 import java.lang.reflect.{InvocationTargetException, Method}
-
+import scala.language.{implicitConversions, higherKinds}
 import scala.annotation.implicitNotFound
 import scala.collection.immutable.ListMap
 import scala.reflect.runtime.universe._

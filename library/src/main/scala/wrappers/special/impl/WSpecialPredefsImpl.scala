@@ -1,5 +1,6 @@
 package wrappers.special
 
+import scala.language.{existentials,implicitConversions}
 import scalan._
 import impl._
 import special.wrappers.WrappersModule
