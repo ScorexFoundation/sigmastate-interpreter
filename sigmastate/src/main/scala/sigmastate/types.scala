@@ -1811,7 +1811,9 @@ case object SContext extends SProduct with SPredefType with SMonoType {
   val selfBoxIndexMethod = property("selfBoxIndex", SInt, 8, "")
     .withInfo(// TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/603
               // when fixed, remove this .withInfo and it will appear in the spec.tex after regeneration
-      """Zero based index in \lst{inputs} of \lst{selfBox}. $-1$ if self box is not in the INPUTS collection.""")
+      PropertyCall,
+      """Zero based index in \lst{inputs} of \lst{selfBox}. $-1$ if self box is not in the INPUTS collection.""",
+      Nil, false)
 
   val lastBlockUtxoRootHashMethod = property("LastBlockUtxoRootHash", SAvlTree, 9, LastBlockUtxoRootHash,
     "Authenticated dynamic dictionary digest representing Utxo state before current state.")

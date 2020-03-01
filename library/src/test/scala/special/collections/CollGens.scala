@@ -1,5 +1,6 @@
 package special.collections
 
+import scala.language.{existentials,implicitConversions}
 import scala.collection.mutable.ArrayBuffer
 import org.scalacheck.util.Buildable
 

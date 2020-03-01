@@ -3,6 +3,7 @@ package scalan.staged
 import java.lang.reflect.Method
 import java.util
 
+import scala.language.existentials
 import scalan.{Nullable, DelayInvokeException, Lazy, Scalan, AVHashMap}
 import debox.{Buffer => DBuffer}
 import spire.syntax.all.cfor

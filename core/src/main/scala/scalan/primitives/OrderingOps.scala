@@ -1,6 +1,7 @@
 package scalan.primitives
 
 import scalan.{Base, Scalan, ExactOrdering}
+import scala.language.implicitConversions
 
 trait OrderingOps extends Base { self: Scalan =>
   implicit def repOrderingToOrderingOps[T](x: Ref[T])(implicit n: ExactOrdering[T]) = new OrderingOpsCls(x)
