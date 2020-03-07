@@ -417,7 +417,7 @@ The second is to ensure that tokens always enter the system in a fixed quantity,
 \subsection{Token Confinement}
 
 In this section we enforce the first requirement of approximate fairness, that of confining the tokens within the system. 
-Recall that the Half-Mix box's script refers to the Full-Mix box's script via the constant \texttt{fullMixScriptHash}. Our approach additionally requires the Full-Mix box's script to refer back to the Half-Mix's box script. We do this by storing the hash of the Half-Mix box script in one of the registers of the Full-Mix box. Let \texttt{delta} be an alias for this register that stores an array of bytes. The scripts are also modified. 
+Recall that the Half-Mix box's script refers to the Full-Mix box's script via the constant \texttt{fullMixScriptHash}. Our approach additionally requires the Full-Mix box's script to refer back to the Half-Mix's box script. We do this by storing the hash of the Half-Mix box script in one of the registers of the Full-Mix box. Let \texttt{delta} be an alias for this register that stores an array of bytes. Thee scripts are also modified. 
 
 \subsubsection{Fee-Emission Box}
 Modify the \texttt{isFull} method of the Fee-Emission box contract of Section~\ref{donation}: 
@@ -554,8 +554,10 @@ val destroyToken = OUTPUTS.forall(noToken)
 
 The above modification allows Alice to spend the Half-Mix box using her secret but she must destroy all mixing tokens in doing so. 
 
+One consequence of the above contracts is that the second input of a mix transaction must be a Full-Mix box (as opposed to any type of box).
+That Full-Mix box can either be the output of a mix transaction (a real Full-Mix box) or the output of a token purchase transaction (a fake Full-Mix box). 
 
-Figure~\ref{fig:mixingtokens} gives an example flow of the protocol with the above contracts in place. Note that for simplicity we do not show fee in the transactions and implicitly assume that the an additional output is the fee. 
+Figure~\ref{fig:mixingtokens} gives an example flow with the above contracts in place. Note that for simplicity we do not show fee in the transactions and implicitly assume that the an additional output is the fee. 
 
 \begin{figure}[h]
 	\centering
