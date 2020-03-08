@@ -345,17 +345,31 @@ In particular, using \algname, we can obtain an equivalent (or sufficiently clos
 \label{fee}
 
 %\paragraph{Fixed Value Coins:} 
-Similar to ZeroCoin and the canonical variant of CoinJoin in Figure~\ref{fig:coinjoin}, each Half-Mix and Full-Mix box in \algname must hold the same fixed value (the number of primary tokens), which is carried over to the next stage. This implies zero-fee transactions because any fee must either be paid from the Full/Half-mix boxes (which breaks the fixed value requirement) or from a non-\algname box (which breaks privacy). Zero-fee transactions are fine in theory but not realistic due to the possibility of spam attacks. Thus, any practical implementation of \algname must somehow handle fee. 
+Similar to ZeroCoin and CoinJoin (Figure~\ref{fig:coinjoin}), each Half-Mix and Full-Mix box in \algname must hold the same fixed value, which is carried over to the next stage. This implies zero-fee transactions because any fee must either be paid from the Full/Half-mix boxes (which breaks the fixed value requirement) or from a non-\algname box (which breaks privacy). Zero-fee transactions are fine in theory but not in practice. %Thus, any practical implementation of \algname must somehow handle fee. 
 
-While \algname is a generic protocol, there are many approaches for handling fee. Here we describe how to handle fee on the Ergo platform. To differentiate the generic protocol (\algname) from the underlying implementation using Ergo, we give the name \textbf{\mixname} to any of the various fee implementations discussed in this section that are largely specific to Ergo. In order to segregate cases where fee is an issue, we classify \algname transactions into the following types:
+Here we describe how to handle fee on the Ergo blockchain. To differentiate the generic protocol (\algname) from the underlying implementation using Ergo, we give the name {\em \mixname} to any of the various extensions in this section that are largely specific to Ergo. 
+
+We can classify \algname transactions into the following types:
 
 \begin{enumerate}
-    \item \textbf{Alice entry:} When someone plays the role of Alice to create a Half-Mix box (i.e., add a coin to the H-pool). The inputs of the transaction are one or more non-\mixname boxes ({\em external} boxes) and the output is one Half-Mix box. 
+    \item \textbf{Alice entry:} When someone plays the role of Alice to create a Half-Mix box (i.e., add a coin to the H-pool). The inputs to the transaction are one or more non-\mixname boxes ({\em external} boxes) and the output is one Half-Mix box. 
     \item \textbf{Bob entry:} When someone plays the role of Bob to spend a Half-Mix box (i.e., remove a coin from the H-pool). The other inputs of the transaction are one or more non-\mixname boxes and the outputs are two Full-Mix boxes. 
     \item \textbf{Alice or Bob exit:} When someone plays the role of Alice or Bob to spend a Full-Mix box and send the funds to a non-\mixname box (i.e., withdraw from the system). 
     \item \textbf{Alice or Bob reentry as Alice:} When someone plays the role of Alice or Bob to spend a Full-Mix box and create a Half-Mix box (i.e., send the coin back to the H-pool). The input is a Full-Mix box and the output is a Half-Mix box of the same amount.
     \item \textbf{Alice or Bob reentry as Bob:} When someone plays the role of Alice or Bob to spend a Full-Mix box along with another Half-Mix box and create two new Full-Mix boxes. The input is a Half-Mix box and a Full-Mix box and the outputs are two new Full-Mix boxes.
 \end{enumerate}
+
+These are depicted in Figure~\ref{fig:ergomixflow}.
+
+\begin{figure}[h]
+	\centering
+	\begin{subfigure}{0.7\textwidth}
+		\centering
+		\includegraphics[width=\linewidth]{ErgoMixFlow.jpg}
+	\end{subfigure}
+	\caption{\algname Flow}
+\label{fig:ergomixflow}
+\end{figure}
 
 Clearly, for both Alice and Bob entries, fee is not an issue because both parties can fund the fee component of the transaction from a known source, since these transactions are not meant to hide any information. Similarly for case 3, when exiting the system, part of the amount in the Full-Mix box can be used to pay fee. The only time we need to hide the source of fee is when we spend a Full-Mix box and want to reenter as either Alice or Bob. 
 
@@ -525,43 +539,28 @@ def isCopy(b:Box) = b.script == script &&
 \end{Verbatim}
 }
 
-In order to allow several people to buy tokens in the same block and to avoid collisions when multiple people try to spend the same token-emission box, there must be several token-emission boxes. 
-
-Because of the condition \texttt{bob > 0} in the Half-Mix box, it is necessary to have at least one token to spend Alice's box. However, it is possible that no tokens are available, making Alice's box unspendable. In order to handle this, we need to ensure that mixing tokens are always available. One way would be to have each token-emission box store a large number of tokens, much more than what can be purchased with all the available Ergs. We would also like the token issuer to be able to withdraw any Ergs deposited by token buyers. To achieve this, the token-emission box is modified:
+We also want the token issuer to be able to withdraw any Ergs deposited by token buyers. To achieve this, the token-emission box is again modified:
 
 {\small
 \begin{Verbatim}[frame=single]
 // Contract #9: contract for Token-Emission box
-(existing condition) || (issuerPubKey && INPUTS.size == 1 && 
+(... earlier condition from Contract #8) || 
+(issuerPubKey && INPUTS.size == 1 && 
  OUTPUTS(0).script == script && OUTPUTS(0).value > minErgs &&
  OUTPUTS(0).tokens(tokenId) == tokens(tokenId))
 \end{Verbatim}
 }
-It is necessary to keep a certain amount of Ergs, \texttt{minErgs} inside each Token-Emission box, otherwise the box may be destroyed when miners collect storage rent. This value should be large enough to ensure sustenance for several years. Before storing any funds in a Half-Mix box, it must be ascertained that there are a large number of mixing tokens stored in at least one token-emission box. 
+It is necessary to keep a certain amount of Ergs, \texttt{minErgs} inside each Token-Emission box, otherwise the box may be destroyed when miners collect storage rent. This value should be large enough to ensure sustenance for several years. 
+In order to allow several people to buy tokens in the same block and to avoid collisions when multiple people try to spend the same token-emission box, there must be several token-emission boxes. 
 
-An alternate way to ensure that Alice's Half-Mix box does not get stuck due to non-availability of tokens would be to allow Alice to spend the box using her secret. This requires modifying the Half-Mix box as follows:
+\subsubsection{Analysis}
 
-{\small
-\begin{Verbatim}[frame=single]
-// Contract #10: contract for Half-Mix box
-def noToken(b:Box) = b.tokens(tokenId) == 0
-val destroyToken = OUTPUTS.forall(noToken)
-
-(proveDlog(alpha) && INPUTS.size == 1 && destroyToken) || 
-(... earlier condition from Contract #6)
-\end{Verbatim}
-}
-
-The above modification allows Alice to spend the Half-Mix box using her secret but she must destroy all mixing tokens in doing so. 
-
-One consequence of the above contracts is that the second input of a mix transaction must be a Full-Mix box (as opposed to any type of box).
-That Full-Mix box can either be the output of a mix transaction (a real Full-Mix box) or the output of a token purchase transaction (a fake Full-Mix box). 
-
-Figure~\ref{fig:mixingtokens} gives an example flow with the above contracts in place. Note that for simplicity we do not show fee in the transactions and implicitly assume that the an additional output is the fee. 
-
+Because of the condition \texttt{bob > 0} in the Half-Mix box, a mix requires Bob to supply at least one mixing token, and since these tokens can only be stored in Full and Half-Mix boxes, the second input of a mix transaction must be a Full-Mix box (as opposed to any type of box).
+That Full-Mix box can either be the output of a mix transaction (a real Full-Mix box) or the output of a token purchase transaction (a fake Full-Mix box).
+Figure~\ref{fig:mixingtokens} gives an example flow with the above contracts in place.
 \begin{figure}[h]
 	\centering
-	\begin{subfigure}{1.0\textwidth}
+	\begin{subfigure}{0.9\textwidth}
 		\centering
 		\includegraphics[width=\linewidth]{MixingTokens.jpg}
 	\end{subfigure}
@@ -569,13 +568,35 @@ Figure~\ref{fig:mixingtokens} gives an example flow with the above contracts in 
 \label{fig:mixingtokens}
 \end{figure}
 
+To avoid clutter, we skipped the fee output in the above flow. However, each transaction is implicitly assumed to have an additional box for paying fee, which is the last output. Comparing this with Figure~\ref{fig:ergomixflow}, a mix transaction is always a reentry as Bob and both Alice and Bob's entry is through a token purchase transaction. 
+
+Another consequence of the condition \texttt{bob > 0} is that at least one token must exist in order to spend Alice's box. In the case that mixing tokens become unavailable, Alice's box is rendered unspendable. In order to handle this, we need to ensure that mixing tokens are always available. One way would be to have each token-emission box store a large number of tokens, much more than what can be purchased with all the available Ergs. Before storing any funds in a Half-Mix box, it must be ascertained that there are a large number of mixing tokens stored in at least one token-emission box. 
+
+An alternate way to ensure that Alice's Half-Mix box does not get stuck due to non-availability of tokens would be to allow Alice to spend the box using her secret. This requires modifying the Half-Mix box as follows:
+
+{\small
+\begin{Verbatim}[frame=single]
+// Contract #10: contract for Half-Mix box
+def noToken(b:Box) = b.tokens(tokenId) == 0
+
+(proveDlog(alpha) && INPUTS.size == 1 && OUTPUTS.forall(noToken)) || 
+(... earlier condition from Contract #6)
+\end{Verbatim}
+}
+
+The above modification allows Alice to spend the Half-Mix box using her secret but she must destroy all mixing tokens in doing so. 
 \subsubsection{Further Enhancements}
 
-The above approach requires mixing tokens to be equally distributed among the two Full-Mix boxes. Below we consider some enhancements to this basic model. One approach is to benefit the party willing to wait longer.  
 
-\textbf{First Spender Pays Fee:} At the simplest level, we can require the party that spends their Full-Mix box first should (retroactively) pay the fee for the mix transaction that created the box. This can be achieved as follows. Each mix transaction consumes two tokens. One is destroyed and the other is stored in a {\em refund box} that can be claimed by the second spender. We can identify the second spender as follows. 
+The approximate fairness approach requires each party to contribute half a mixing token in a mix transaction and the balance tokens are equally distributed among the parties, even if one supplied more. 
 
-Firstly, the protocol is modified to require that each mix transaction to generate exactly 4 quantities of a new secondary token (with id $x$, determined as the id of the first input -- the Half-Mix box) distributed equally among 4 outputs. Two of these outputs are the standard Full-Mix output boxes $O_0, O_1$ with the additional spending condition that one output in the spending transaction must contain some non-zero quantity of token $x$. The other two outputs, $O_2, O_3$, have the following identical spending conditions:
+% Below we consider some enhancements to this. For brevity, we skip the \langname code and only give the high level approach. 
+
+In the {\em First-Spender-Pays-Fee} approach, the idea is to benefit the party willing to wait longer and the party that spends their Full-Mix box first (retroactively) pays the fee for the mix transaction. This can be achieved as follows. Each mix transaction consumes two tokens. One is destroyed and the other is stored in a {\em refund box} that can be claimed by the second spender. We can identify the second spender as follows. 
+
+\textbf{Identifying the second-spender:} Identifying if a given transaction is by the second spender is equivalent to determining if the other box is already spent. In a stateless language such as \langname, there is no direct way to determine if some other box is already spent. However, there are indirect ways and we describe one of them below. For brevity, we skip the \langname code and only give the high level approach. 
+
+The protocol is modified to require each mix transaction to generate exactly 4 quantities of a new secondary token (with id $x$, determined as the id of the first input -- the Half-Mix box) distributed equally among 4 outputs. Two of these outputs are the standard Full-Mix output boxes $O_0, O_1$ with the additional spending condition that at least one output in the spending transaction must contain some non-zero quantity of token $x$. The other two outputs, $O_2, O_3$, have the following identical spending conditions:
 \begin{enumerate}
 	\item The sum of quantities of token $x$ in the inputs and outputs is 3 and 2 respectively.
 	\item One output contains 2 quantities of token $x$ protected by the same script as this box. 
