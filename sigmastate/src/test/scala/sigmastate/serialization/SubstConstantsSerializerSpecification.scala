@@ -10,7 +10,7 @@ class SubstConstantsSerializerSpecification extends SerializationSpecification {
     forAll(numExprTreeNodeGen) { prop =>
       val tree = EQ(prop, IntConstant(1)).toSigmaProp.treeWithSegregation
       val bytes = DefaultSerializer.serializeErgoTree(tree)
-      val newVals = ConcreteCollection(Vector[IntValue](1), SInt)
+      val newVals = ConcreteCollection(Array[IntValue](1), SInt)
       val expr = SubstConstants(bytes, IntArrayConstant(Array(0)), newVals)
       roundTripTest(expr)
     }

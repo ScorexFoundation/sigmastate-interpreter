@@ -103,6 +103,8 @@ object Helpers {
       case Success(value) => Right(value)
       case Failure(t) => Left(t)
     }
+    def mapOrThrow[B](f: A => B): B = source.fold(t => throw t, f)
+    def getOrThrow: A = source.fold(t => throw t, identity)
   }
 
   implicit class DecoderResultOps[A](val source: Decoder.Result[A]) extends AnyVal {

@@ -81,7 +81,7 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
           pubkeyB),
         SigmaAnd(
           AND(
-            ConcreteCollection(Vector(
+            ConcreteCollection(Array(
               LT(SizeOf(ValUse(1, SCollection(SByte))), IntConstant(33)),
               EQ(CalcBlake2b256(ValUse(1, SCollection(SByte))), hx)),
               SBoolean)

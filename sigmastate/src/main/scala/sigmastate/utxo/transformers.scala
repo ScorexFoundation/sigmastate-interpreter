@@ -118,8 +118,8 @@ object Fold extends ValueCompanion {
   def concat[T <: SType](input: Value[SCollection[SCollection[T]]])(implicit tT: T): Fold[SCollection[T], T] = {
     val tColl = SCollection(tT)
     Fold[SCollection[T], T](input,
-      ConcreteCollection()(tT).asValue[T],
-      FuncValue(Vector((1, tColl), (2, tColl)), Append(ValUse(1, tColl), ValUse(2, tColl)))
+      ConcreteCollection(Array[Value[T]](), tT).asValue[T],
+      FuncValue(Array((1, tColl), (2, tColl)), Append(ValUse(1, tColl), ValUse(2, tColl)))
     )
   }
 }

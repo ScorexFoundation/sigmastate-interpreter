@@ -8,8 +8,6 @@ name := "sigma-state"
 
 lazy val scala212 = "2.12.10"
 lazy val scala211 = "2.11.12"
-crossScalaVersions := Seq(scala212, scala211)
-scalaVersion := scala212
 
 javacOptions ++=
     "-source" :: "1.7" ::
@@ -20,6 +18,8 @@ lazy val allConfigDependency = "compile->compile;test->test"
 
 lazy val commonSettings = Seq(
   organization := "org.scorexfoundation",
+  crossScalaVersions := Seq(scala212, scala211),
+  scalaVersion := scala212,
   resolvers += Resolver.sonatypeRepo("public"),
   licenses := Seq("CC0" -> url("https://creativecommons.org/publicdomain/zero/1.0/legalcode")),
   homepage := Some(url("https://github.com/ScorexFoundation/sigmastate-interpreter")),
@@ -291,6 +291,7 @@ lazy val aggregateCompile = ScopeFilter(
 
 lazy val rootSettings = Seq(
   sources in Compile := sources.all(aggregateCompile).value.flatten,
+  sourceDirectories in Compile := sourceDirectories.all(aggregateCompile).value.flatten,
   libraryDependencies := libraryDependencies.all(aggregateCompile).value.flatten,
   mappings in (Compile, packageSrc) ++= (mappings in(Compile, packageSrc)).all(aggregateCompile).value.flatten,
   mappings in (Test, packageBin) ++= (mappings in(Test, packageBin)).all(aggregateCompile).value.flatten,
@@ -298,7 +299,7 @@ lazy val rootSettings = Seq(
 )
 
 def runErgoTask(task: String, sigmastateVersion: String, log: Logger): Unit = {
-  val ergoBranch = "sigma-core-opt"
+  val ergoBranch = "master"
   val sbtEnvVars = Seq("BUILD_ENV" -> "test", "SIGMASTATE_VERSION" -> sigmastateVersion)
   
   log.info(s"Testing current build in Ergo (branch $ergoBranch):")
@@ -352,7 +353,7 @@ commands += Command.command("ergoItTest") { state =>
 }
 
 def runSpamTestTask(task: String, sigmastateVersion: String, log: Logger): Unit = {
-  val spamBranch = "master"
+  val spamBranch = "revert-23-revert-22-serialize-opt"
   val envVars = Seq("SIGMASTATE_VERSION" -> sigmastateVersion,
     "SPECIAL_VERSION" -> specialVersion,
     // SSH_SPAM_REPO_KEY should be set (see Jenkins Credentials Binding Plugin)
