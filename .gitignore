@@ -38,3 +38,9 @@ ergo-tests/
 
 # spam test's checkout location
 spam-tests/
+
+# metals, bloop, vscode
+.bloop/
+.metals/
+.vscode/
+project/metals.sbt
