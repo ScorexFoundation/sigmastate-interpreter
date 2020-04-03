@@ -246,11 +246,11 @@ case class ErgoAddressEncoder(networkPrefix: NetworkPrefix) {
   object IsPay2SHAddress {
     def unapply(exp: SigmaPropValue): Option[Coll[Byte]] = exp match {
       case SigmaAnd(Seq(
-      BoolToSigmaProp(
-      EQ(
-      Slice(_: CalcHash, ConstantNode(0, SInt), ConstantNode(24, SInt)),
-      ByteArrayConstant(scriptHash))),
-      DeserializeContext(Pay2SHAddress.scriptId, SSigmaProp))) => Some(scriptHash)
+            BoolToSigmaProp(
+              EQ(
+                Slice(_: CalcHash, ConstantNode(0, SInt), ConstantNode(24, SInt)),
+                ByteArrayConstant(scriptHash))),
+            DeserializeContext(Pay2SHAddress.scriptId, SSigmaProp))) => Some(scriptHash)
       case _ => None
     }
   }
