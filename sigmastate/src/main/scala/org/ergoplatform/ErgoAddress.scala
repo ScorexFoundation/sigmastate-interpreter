@@ -4,11 +4,11 @@ import java.util
 
 import com.google.common.primitives.Ints
 import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
-import scorex.crypto.hash.{Digest32, Blake2b256}
+import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util.encode.Base58
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.basics.DLogProtocol.{ProveDlogProp, ProveDlog}
+import sigmastate.basics.DLogProtocol.{ProveDlog, ProveDlogProp}
 import sigmastate.lang.exceptions.SigmaException
 import sigmastate.serialization._
 import sigmastate.utxo.{DeserializeContext, Slice}
@@ -47,14 +47,14 @@ import scala.util.Try
   * Address examples for testnet:
   *
   * 3   - P2PK (3WvsT2Gm4EpsM9Pg18PdY6XyhNNMqXDsvJTbbf6ihLvAmSb7u5RN)
-  * 8   - P2SH (8UmyuJuQ3FS9ts7j72fn3fKChXSGzbL9WC, 8LnSX95GAWdbDZWJZQ73Uth4uE8HqN3emJ)
-  * ?   - P2S (imdaM2NzX, z4hAmfvfSnQJPChMWzfBzJjpB8ei2HoLCZ2RHTaNArMNHFirdJTc7E)
+  * 8   - P2SH (rbcrmKEYduUvADj9Ts3dSVSG27h54pgrq5fPuwB)
+  * ?   - P2S (Ms7smJwLGbUAjuWQ)
   *
   * for mainnet:
   *
   * 9  - P2PK (9fRAWhdxEsTcdb8PhGNrZfwqa65zfkuYHAMmkQLcic1gdLSV5vA)
-  * 2  - P2SH (25qGdVWg2yyYho8uC1pLtc7KxFn4nEEAwD, 23NL9a8ngN28ovtLiKLgHexcdTKBbUMLhH)
-  * ?  - P2S (7bwdkU5V8, BxKBaHkvrTvLZrDcZjcsxsF7aSsrN73ijeFZXtbj4CXZHHcvBtqSxQ)
+  * 2  - P2SH (8UApt8czfFVuTgQmMwtsRBZ4nfWquNiSwCWUjMg)
+  * ?  - P2S (4MQyML64GnzMxZgm, BxKBaHkvrTvLZrDcZjcsxsF7aSsrN73ijeFZXtbj4CXZHHcvBtqSxQ)
   *
   *
   * Prefix byte = network type + address type
@@ -226,12 +226,15 @@ case class ErgoAddressEncoder(networkPrefix: NetworkPrefix) {
           val p = GroupElementSerializer.parse(r)
           new P2PKAddress(ProveDlog(p), contentBytes)
         case Pay2SHAddress.addressTypePrefix =>
+          if (contentBytes.length != 24) { //192-bits hash used
+            throw new Exception(s"Improper content in P2SH script: $addrStr")
+          }
           new Pay2SHAddress(contentBytes)
         case Pay2SAddress.addressTypePrefix =>
           val tree = ErgoTreeSerializer.DefaultSerializer.deserializeErgoTree(contentBytes)
           new Pay2SAddress(tree, contentBytes)
         case _ =>
-          throw new Exception("Unsupported address type: " + addressType)
+          throw new Exception(s"Unsupported address type: $addressType")
       }
     }
   }
