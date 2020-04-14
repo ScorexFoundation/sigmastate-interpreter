@@ -954,7 +954,9 @@ object Values {
       _complexity
     }
 
-    /** Serialized tree with constant placeholders */
+    /** Serialized proposition expression of SigmaProp type with 
+      * ConstantPlaceholder nodes instead of Constant nodes 
+      */
     lazy val template: Array[Byte] = {
       val r = SigmaSerializer.startReader(bytes)
       DefaultSerializer.deserializeHeaderWithTreeBytes(r)._4
