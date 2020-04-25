@@ -1,25 +1,4 @@
 
-\subsubsection{\lst{SOption.isEmpty} method (Code 36.1)}
-\label{sec:type:SOption:isEmpty}
-\noindent
-\begin{tabularx}{\textwidth}{| l | X |}
-   \hline
-   \bf{Description} &  \\
-  
-  \hline
-  \bf{Parameters} &
-      \(\begin{array}{l l l}
-         \lst{arg0} & \lst{: Option[T]} & \text{// } \\
-      \end{array}\) \\
-       
-  \hline
-  \bf{Result} & \lst{Boolean} \\
-  \hline
-  
-\end{tabularx}
-
-
-
 \subsubsection{\lst{SOption.isDefined} method (Code 36.2)}
 \label{sec:type:SOption:isDefined}
 \noindent
@@ -94,59 +73,6 @@ return the result of evaluating \lst{default}.
 
 
 
-\subsubsection{\lst{SOption.fold} method (Code 36.5)}
-\label{sec:type:SOption:fold}
-\noindent
-\begin{tabularx}{\textwidth}{| l | X |}
-   \hline
-   \bf{Description} & Returns the result of applying \lst{f} to this option's
-  value if the option is nonempty.  Otherwise, evaluates
-  expression \lst{ifEmpty}.
-  This is equivalent to \lst{option map f getOrElse ifEmpty}.
-         \\
-  
-  \hline
-  \bf{Parameters} &
-      \(\begin{array}{l l l}
-         \lst{ifEmpty} & \lst{: R} & \text{// the expression to evaluate if empty} \\
-\lst{f} & \lst{: (T) => R} & \text{// the function to apply if nonempty} \\
-      \end{array}\) \\
-       
-  \hline
-  \bf{Result} & \lst{R} \\
-  \hline
-  
-  \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
-  \hline
-       
-\end{tabularx}
-
-
-
-\subsubsection{\lst{SOption.toColl} method (Code 36.6)}
-\label{sec:type:SOption:toColl}
-\noindent
-\begin{tabularx}{\textwidth}{| l | X |}
-   \hline
-   \bf{Description} & Convert this Option to a collection with zero or one element. \\
-  
-  \hline
-  \bf{Parameters} &
-      \(\begin{array}{l l l}
-         
-      \end{array}\) \\
-       
-  \hline
-  \bf{Result} & \lst{Coll[T]} \\
-  \hline
-  
-  \bf{Serialized as} & \hyperref[sec:serialization:operation:PropertyCall]{\lst{PropertyCall}} \\
-  \hline
-       
-\end{tabularx}
-
-
-
 \subsubsection{\lst{SOption.map} method (Code 36.7)}
 \label{sec:type:SOption:map}
 \noindent
@@ -191,35 +117,6 @@ return the result of evaluating \lst{default}.
        
   \hline
   \bf{Result} & \lst{Option[T]} \\
-  \hline
-  
-  \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
-  \hline
-       
-\end{tabularx}
-
-
-
-\subsubsection{\lst{SOption.flatMap} method (Code 36.9)}
-\label{sec:type:SOption:flatMap}
-\noindent
-\begin{tabularx}{\textwidth}{| l | X |}
-   \hline
-   \bf{Description} & Returns the result of applying \lst{f} to this option's value if
-   this option is nonempty.
-   Returns \lst{None} if this option is empty.
-   Slightly different from \lst{map} in that \lst{f} is expected to
-   return an option (which could be \lst{one}).
-         \\
-  
-  \hline
-  \bf{Parameters} &
-      \(\begin{array}{l l l}
-         \lst{f} & \lst{: (T) => Option[R]} & \text{// the function to apply} \\
-      \end{array}\) \\
-       
-  \hline
-  \bf{Result} & \lst{Option[R]} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\

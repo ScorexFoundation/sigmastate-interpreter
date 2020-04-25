@@ -236,12 +236,12 @@ require special rewriting rule. See section [Rewrite Rules](#RewriteRules)
 
 Given an environment `envVals` and ErgoTree `tree` a Costed Graph can be obtained as 
 [reified lambda](https://github.com/scalan/scalan.github.io/blob/master/idioms.md#Idiom4) of type 
-`Rep[Context => Costed[T#WrappedType]]`
+`Ref[Context => Costed[T#WrappedType]]`
 This transformation is implemented as shown in the following `buildCostedGraph` method, which can
 be found in `RuntimeCosting.scala` file.
 ```scala
-def buildCostedGraph[T <: SType](envVals: Map[Any, SValue], tree: Value[T]): Rep[Context => Costed[T#WrappedType]] = 
-  fun { ctx: Rep[Context] =>        // here ctx represents data context
+def buildCostedGraph[T <: SType](envVals: Map[Any, SValue], tree: Value[T]): Ref[Context => Costed[T#WrappedType]] = 
+  fun { ctx: Ref[Context] =>        // here ctx represents data context
     val ctxC = RCCostedContext(ctx) // data context is wrapped into Costed value container 
     val env = envVals.mapValues(v => evalNode(ctxC, Map(), v)) // do costing of environment
     val res = evalNode(ctxC, env, tree)  // traverse tree recursively applying costing rules 
@@ -259,9 +259,9 @@ In order to build costed graph, the algorithm have to recursively traverse ErgoT
 For each node of ErgoTree, separate _costing rule_ is applied using `evalNode` method 
 whose structure is show below. 
 ```scala
-type RCosted[A] = Rep[Costed[A]]
+type RCosted[A] = Ref[Costed[A]]
 type CostingEnv = Map[Any, RCosted[_]]
-def evalNode[T <: SType](ctx: Rep[CostedContext], env: CostingEnv, node: Value[T]): RCosted[T#WrappedType] = {
+def evalNode[T <: SType](ctx: Ref[CostedContext], env: CostingEnv, node: Value[T]): RCosted[T#WrappedType] = {
   def eval[T <: SType](node: Value[T]) = evalNode(ctx, env, node)
   object In { def unapply(v: SValue): Nullable[RCosted[Any]] = Nullable(evalNode(ctx, env, v)) }
   ...
@@ -275,15 +275,15 @@ def evalNode[T <: SType](ctx: Rep[CostedContext], env: CostingEnv, node: Value[T
 Here `In` is a helper extractor which recursively apply `evalNode` for each argument so that variables 
 `arg1,...,argK` represent results of costing of the corresponding subtree. 
 The right hand side of each rule (`rhs1,...rhsN`) contains operations with 
-[Rep types](https://github.com/scalan/scalan.github.io/blob/master/idioms.md#Idiom3), the effect of their 
+[Ref types](https://github.com/scalan/scalan.github.io/blob/master/idioms.md#Idiom3), the effect of their 
 execution is creation of new graph nodes which become part of resulting costed graph.
 
 Following is an example of a simple costing rule to introduce basic concepts 
 (it can be found in RuntimeCosting.scala file).
 ```scala
   case sigmastate.MultiplyGroup(In(_l), In(_r)) =>
-    val l = asRep[Costed[WECPoint]](_l)   // type cast to an expected Rep type
-    val r = asRep[Costed[WECPoint]](_r)
+    val l = asRep[Costed[GroupElement]](_l)   // type cast to an expected Ref type
+    val r = asRep[Costed[GroupElement]](_r)
     val value = l.value.add(r.value)            // value sub-rule
     val cost = l.cost + r.cost + costOf(node)   // cost sub-rule
     val size = CryptoConstants.groupSize.toLong // size sub-rule
@@ -312,7 +312,7 @@ explicit by using `eval` helper and also employ other idioms of staged evaluatio
     val xs = asRep[CostedColl[Any]](eval(input)) // recursively build subgraph for input argument
     implicit val eAny = xs.elem.asInstanceOf[CostedElem[Coll[Any],_]].eVal.eA
     assert(eIn == eAny, s"Types should be equal: but $eIn != $eAny")
-    val mapperC = fun { x: Rep[Costed[Any]] => // x argument is already costed
+    val mapperC = fun { x: Ref[Costed[Any]] => // x argument is already costed
       evalNode(ctx, env + (id -> x), mapper)   // associate id in the tree with x node of the graph
     }
     val res = xs.mapCosted(mapperC)    // call costed method of costed collection
@@ -320,7 +320,7 @@ explicit by using `eval` helper and also employ other idioms of staged evaluatio
 ```
 Observe that this rule basically translates mapping operation over collection into invocation of
 the method `mapCosted` on costed collection value `xs` with appropriately prepared argument `mapperC`.
-Because `xs` has [Rep type](https://github.com/scalan/scalan.github.io/blob/master/idioms.md#Idiom3)
+Because `xs` has [Ref type](https://github.com/scalan/scalan.github.io/blob/master/idioms.md#Idiom3)
 this invocation has an effect of adding new `MethodCall(xs, "mapCosted", Seq(mapperC))` node to the graph.
 This new node is immediately catched by the rewriting rule (see [Rewrite Rules](#RewriteRules) section) which further transforms it into final 
 nodes of resulting costed graph. Such separation makes the whole algorithm more modular. 
@@ -334,11 +334,11 @@ operations of the Costed Graph from cost and data size computing operations.
 
 After building a Costed Graph
 ```scala
-val graphC: Rep[Context => SType#WrappedValue] = buildCostedGraph(env, tree)
+val graphC: Ref[Context => SType#WrappedValue] = buildCostedGraph(env, tree)
 ```
 we can perform _splitting_ by using the function `split` to obtain `calcF` and `costF` functions
 ```scala
-val Pair(calcF: Rep[Context => SType#WrappedValue], costF: Rep[Context => Int]) = split(graphC)
+val Pair(calcF: Ref[Context => SType#WrappedValue], costF: Ref[Context => Int]) = split(graphC)
 ```
 Both `calcF` and `costF` take `Context` as its argument and both represented as 
 [reified lambdas](https://github.com/scalan/scalan.github.io/blob/master/idioms.md#Idiom4) of
@@ -346,9 +346,9 @@ Scalan/Special IR.
 
 This _splitting_ function is generic and defined as shown below 
 ```scala
-  def split[T,R](f: Rep[T => Costed[R]]): Rep[(T => R, T => Int)] = {
-    val calc = fun { x: Rep[T] => val y = f(x); val res = y.value; res }
-    val cost = fun { x: Rep[T] => f(x).cost }
+  def split[T,R](f: Ref[T => Costed[R]]): Ref[(T => R, T => Int)] = {
+    val calc = fun { x: Ref[T] => val y = f(x); val res = y.value; res }
+    val cost = fun { x: Ref[T] => f(x).cost }
     Pair(calc, cost)
   }
 ```
@@ -412,7 +412,7 @@ The following rule uses auto-generated extractor `mapCosted` which recognizes in
 `CostedColl.mapCosted` (Remember, this method was used in costing rule for `MapCollection` tree node).
 
 ```scala
-override def rewriteDef[T](d: Def[T]): Rep[_] = {
+override def rewriteDef[T](d: Def[T]): Ref[_] = {
   val CCM = CostedCollMethods
   d match {
   case CCM.mapCosted(xs: RCostedColl[a], _f: RCostedFunc[_, b]) =>
@@ -426,7 +426,7 @@ override def rewriteDef[T](d: Def[T]): Rep[_] = {
 
     val costs = mCostF.mDom match {
       case PairMarking(markA,_) if markA.isEmpty =>
-        val slicedCostF = fun { in: Rep[(Int, Long)] => costF(Pair(variable[a], in)) }
+        val slicedCostF = fun { in: Ref[(Int, Long)] => costF(Pair(variable[a], in)) }
         xs.costs.zip(xs.sizes).map(slicedCostF)
       case _ =>
         xs.values.zip(xs.costs.zip(xs.sizes)).map(costF)

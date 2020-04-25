@@ -274,7 +274,7 @@ As before, the values of \texttt{deadline}, \texttt{minToRaise}, and the two pub
 \label{sec:extension}
 A context can also contain typed variables that can be retrieved by numerical id using the operator \texttt{getVar}. These variables are supplied by the prover specifically for a given input box (via a \texttt{ContextExtension}) together with the proof for that box. The id can be any one-byte value (from -128 to 127) and is scoped for each box separately (so variable with id 17 for one input box in a transaction is not the same as variable with id 17 for another input box in the same transaction).
 
-Such context enxtensions can be useful, for example, for requiring a spending transaction to produce hash preimages (the BLAKE2b-256 and SHA-256 hash functions can invoked in \langname, using keywords \texttt{blake2b256} and \texttt{sha256}). For example,
+Such context enxtensions can be useful, for example, for requiring a spending transaction to produce hash preimages (the BLAKE2b-256 and SHA-256 hash functions can be invoked in \langname, using keywords \texttt{blake2b256} and \texttt{sha256}). For example,
 \begin{verbatim}
        pkA && blake2b256(getVar[Coll[Byte]](1).get) ==  hashOutput
 \end{verbatim}
