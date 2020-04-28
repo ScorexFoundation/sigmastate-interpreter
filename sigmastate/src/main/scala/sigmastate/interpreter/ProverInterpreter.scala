@@ -147,7 +147,7 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
       // If the node is a leaf, mark it "real'' if the witness for it is available
       // or a hint shows the secret is known to external party participated in multi-signing;
       // else mark it "simulated"
-      val real = hintsBag.otherImages.contains(su.proposition) || secrets.exists {
+      val real = hintsBag.otherSecretsImages.contains(su.proposition) || secrets.exists {
         case in: DLogProverInput => in.publicImage == su.proposition
         case _ => false
       }
@@ -156,7 +156,7 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
       // If the node is a leaf, mark it "real'' if the witness for it is available
       // or a hint shows the secret is known to external party participated in multi-signing;
       // else mark it "simulated"
-      val secretKnown = hintsBag.otherImages.contains(dhu.proposition) || secrets.exists {
+      val secretKnown = hintsBag.otherSecretsImages.contains(dhu.proposition) || secrets.exists {
         case in: DiffieHellmanTupleProverInput => in.publicImage == dhu.proposition
         case _ => false
       }

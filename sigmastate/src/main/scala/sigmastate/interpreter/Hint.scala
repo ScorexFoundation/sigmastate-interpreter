@@ -8,9 +8,9 @@ import sigmastate.basics.FirstProverMessage
 import sigmastate.basics.VerifierMessage.Challenge
 
 /**
-  * A hint for prover, which helps prover to resolve a script. For example, if the script is "pk1 && pk2", and the
-  * prover knows only a secret for the public key pk1, the prover fails on proving without a hint. But if the prover
-  * knows that pk2 is known to another party, the prover may prove the statement.
+  * A hint for a prover which helps the prover to prove a statement. For example, if the statement is "pk1 && pk2",
+  * and the prover knows only a secret for the public key pk1, the prover fails on proving without a hint. But if the
+  * prover knows that pk2 is known to another party, the prover may prove the statement (with an empty proof for "pk2").
   */
 trait Hint
 
@@ -22,7 +22,7 @@ trait OtherSecret extends Hint {
 }
 
 /**
-  * A hint which is contains a proof-of-knowledge for a secret associated with its public image "image".
+  * A hint which contains a proof-of-knowledge for a secret associated with its public image "image".
   */
 case class OtherSecretProven(override val image: SigmaBoolean,
                              challenge: Challenge,
@@ -60,11 +60,15 @@ case class OtherCommitment(override val image: SigmaBoolean, commitment: FirstPr
   */
 case class HintsBag(hints: Seq[Hint]) {
 
-  lazy val predefinedCommitments: Seq[OtherCommitment] = hints.filter(_.isInstanceOf[OtherCommitment]).map(_.asInstanceOf[OtherCommitment])
+  lazy val otherCommitments: Seq[OtherCommitment] = hints.filter(_.isInstanceOf[OtherCommitment]).map(_.asInstanceOf[OtherCommitment])
 
   lazy val otherSecrets: Seq[OtherSecret] = hints.filter(_.isInstanceOf[OtherSecret]).map(_.asInstanceOf[OtherSecret])
 
-  lazy val otherImages = otherSecrets.map(_.image)
+  lazy val otherSecretsImages = otherSecrets.map(_.image)
+
+  lazy val commitments = hints.filter(_.isInstanceOf[CommitmentHint]).map(_.asInstanceOf[CommitmentHint])
+  lazy val proofs = hints.filter(_.isInstanceOf[OtherSecretProven]).map(_.asInstanceOf[OtherSecretProven])
+
 
   def addHint(hint: Hint): HintsBag = HintsBag(hint +: hints)
 
@@ -72,12 +76,9 @@ case class HintsBag(hints: Seq[Hint]) {
 
   def ++(other: HintsBag): HintsBag = HintsBag(other.hints ++ hints)
 
-  lazy val commitments = hints.filter(_.isInstanceOf[CommitmentHint]).map(_.asInstanceOf[CommitmentHint])
-  lazy val proofs = hints.filter(_.isInstanceOf[OtherSecretProven]).map(_.asInstanceOf[OtherSecretProven])
-
-  override def toString: String = s"Hints(${hints.mkString("\n")})"
+  override def toString: String = s"HintsBag(${hints.mkString("\n")})"
 }
 
 object HintsBag {
-  val empty = HintsBag(Seq())
+  val empty = HintsBag(Seq.empty)
 }
