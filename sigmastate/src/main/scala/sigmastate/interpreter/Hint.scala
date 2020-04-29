@@ -41,7 +41,7 @@ trait CommitmentHint extends Hint {
   * A hint which a commitment to randomness associated with a public image of a secret, as well as randomness itself.
   * Please note that this randomness should be kept in secret by the prover.
   *
-  * @param image - image of a secret
+  * @param image      - image of a secret
   * @param randomness - randomness
   * @param commitment - commitment to randomness used while proving knowledge of the secret
   */
@@ -49,26 +49,28 @@ case class OwnCommitment(override val image: SigmaBoolean, randomness: BigIntege
 
 /**
   * A hint which contains a commitment to randomness associated with a public image of a secret.
-  * @param image - image of a secret
+  *
+  * @param image      - image of a secret
   * @param commitment - commitment to randomness used while proving knowledge of the secret
   */
 case class OtherCommitment(override val image: SigmaBoolean, commitment: FirstProverMessage) extends OtherSecret with CommitmentHint
 
 /**
   * Collection of hints to be used by a prover
+  *
   * @param hints - hints stored in the bag
   */
 case class HintsBag(hints: Seq[Hint]) {
 
-  lazy val otherCommitments: Seq[OtherCommitment] = hints.filter(_.isInstanceOf[OtherCommitment]).map(_.asInstanceOf[OtherCommitment])
+  lazy val otherCommitments: Seq[OtherCommitment] = hints.collect { case oc: OtherCommitment => oc }
 
-  lazy val otherSecrets: Seq[OtherSecret] = hints.filter(_.isInstanceOf[OtherSecret]).map(_.asInstanceOf[OtherSecret])
+  lazy val otherSecrets: Seq[OtherSecret] = hints.collect { case os: OtherSecret => os }
 
-  lazy val otherSecretsImages = otherSecrets.map(_.image)
+  lazy val otherSecretsImages: Seq[SigmaBoolean] = otherSecrets.map(_.image)
 
-  lazy val commitments = hints.filter(_.isInstanceOf[CommitmentHint]).map(_.asInstanceOf[CommitmentHint])
-  lazy val proofs = hints.filter(_.isInstanceOf[OtherSecretProven]).map(_.asInstanceOf[OtherSecretProven])
+  lazy val commitments: Seq[CommitmentHint] = hints.collect { case ch: CommitmentHint => ch }
 
+  lazy val proofs: Seq[OtherSecretProven] = hints.collect { case osp: OtherSecretProven => osp }
 
   def addHint(hint: Hint): HintsBag = HintsBag(hint +: hints)
 
