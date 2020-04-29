@@ -115,4 +115,16 @@ class EvaluationTest extends BaseCtxTests
       ctx,
       true)
   }
+
+  test("i1095") {
+    // reproducing https://github.com/ergoplatform/ergo/issues/1095
+    val ctx = newErgoContext(height = 1, boxToSpend)
+
+    reduce(emptyEnv, "lam4",
+      """{
+        |  val t = {(t: Box) => true}
+        |  true && OUTPUTS.exists(t)
+        | }""".stripMargin, ctx, true)
+  }
+
 }
