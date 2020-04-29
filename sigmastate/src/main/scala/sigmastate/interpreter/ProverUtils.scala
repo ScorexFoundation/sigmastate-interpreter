@@ -4,15 +4,18 @@ import sigmastate.{ProofTree, SigSerializer, UncheckedConjecture, UncheckedLeaf,
 import sigmastate.Values.{ErgoTree, SigmaBoolean}
 import sigmastate.basics.VerifierMessage.Challenge
 
+
 trait ProverUtils extends Interpreter {
 
   /**
     * A method which is extracting partial proofs of secret knowledge for particular secrets with their
-    * respective public images given. Useful for multisigs.
+    * respective public images given. Useful for distributed signature applications.
     *
-    * @param context - context used to reduce the proposition
-    * @param exp - proposition to reduce
-    * @param proof - proof for reduced proposition
+    * See DistributedSigSpecification for examples of usage.
+    *
+    * @param context      - context used to reduce the proposition
+    * @param exp          - proposition to reduce
+    * @param proof        - proof for reduced proposition
     * @param knownSecrets - public keys of known secrets
     * @return - bag of OtherSecretProven and OtherCommitment hints
     */
@@ -31,12 +34,12 @@ trait ProverUtils extends Interpreter {
     def traverseNode(tree: ProofTree, propositions: Seq[SigmaBoolean], hintsBag: HintsBag): HintsBag = {
       tree match {
         case leaf: UncheckedLeaf[_] =>
-          if(propositions.contains(leaf.proposition)){
+          if (propositions.contains(leaf.proposition)) {
             val h = OtherSecretProven(leaf.proposition, Challenge @@ leaf.challenge, leaf)
             hintsBag.addHint(h).addHint(OtherCommitment(leaf.proposition, leaf.commitmentOpt.get))
           } else hintsBag
         case inner: UncheckedConjecture =>
-          inner.children.foldLeft(hintsBag){case (hb, c) => traverseNode(c, propositions, hb)}
+          inner.children.foldLeft(hintsBag) { case (hb, c) => traverseNode(c, propositions, hb) }
       }
     }
 

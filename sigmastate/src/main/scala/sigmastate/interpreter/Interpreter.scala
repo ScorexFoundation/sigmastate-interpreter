@@ -99,7 +99,7 @@ trait Interpreter extends ScorexLogging {
 
   def checkCost(context: CTX, exp: Value[SType], costF: Ref[((Int, IR.Size[IR.Context])) => Int]): Int = {
     import IR.Size._
-    import IR.Context._;
+    import IR.Context._
     val costingCtx = context.toSigmaContext(IR, isCost = true)
     val maxCost = context.costLimit
     val costFun = IR.compile[(Int, SSize[SContext]), Int, (Int, Size[Context]), Int](IR.getDataEnv, costF, Some(maxCost))
@@ -199,7 +199,7 @@ trait Interpreter extends ScorexLogging {
     *                   then exception if thrown and packed in Try.
     *                   If left component is false, then:
     *                    1) script executed to false or
-    *                    2) the given proof faild to validate resulting SigmaProp conditions.
+    *                    2) the given proof failed to validate resulting SigmaProp conditions.
     * @see `reduceToCrypto`
     */
   def verify(env: ScriptEnv, tree: ErgoTree,

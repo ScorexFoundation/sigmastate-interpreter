@@ -107,11 +107,9 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
     val tried = reduceToCrypto(ctxUpdInitCost, env, propTree)
     val (reducedProp, cost) = tried.getOrThrow
 
-    def errorReducedToFalse = error("Script reduced to false")
-
     val proofTree = reducedProp match {
       case TrueProp => NoProof
-      case FalseProp => errorReducedToFalse
+      case FalseProp => error("Script reduced to false")
       case sigmaTree =>
         val unprovenTree = convertToUnproven(sigmaTree)
         prove(unprovenTree, message, hintsBag)
@@ -127,6 +125,7 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
     * necessary number of witnesses (for example, more than one child of an OR).
     * This will be corrected in the next step.
     * In a bottom-up traversal of the tree, do the following for each node:
+    *
     */
   def markReal(hintsBag: HintsBag): Strategy = everywherebu(rule[UnprovenTree] {
     case and: CAndUnproven =>
