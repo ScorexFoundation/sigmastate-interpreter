@@ -14,6 +14,17 @@ import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 class EvaluationTest extends BaseCtxTests
     with LangTests with ExampleContracts with ErgoScriptTestkit {
 
+  test("i1095") {
+    // reproducing https://github.com/ergoplatform/ergo/issues/1095
+    val ctx = newErgoContext(height = 1, boxToSpend)
+
+    reduce(emptyEnv, "lam4",
+      """{
+        |  val t = {(t: Box) => true}
+        |  true && OUTPUTS.exists(t)
+        | }""".stripMargin, ctx, true)
+  }
+
   test("constants") {
     val ctx = newErgoContext(height = 1, boxToSpend)
     reduce(emptyEnv, "one", "1", ctx,  1)
@@ -114,17 +125,6 @@ class EvaluationTest extends BaseCtxTests
       EQ(SubstConstants(inputBytes, positions, newVals), expectedBytes),
       ctx,
       true)
-  }
-
-  test("i1095") {
-    // reproducing https://github.com/ergoplatform/ergo/issues/1095
-    val ctx = newErgoContext(height = 1, boxToSpend)
-
-    reduce(emptyEnv, "lam4",
-      """{
-        |  val t = {(t: Box) => true}
-        |  true && OUTPUTS.exists(t)
-        | }""".stripMargin, ctx, true)
   }
 
 }
