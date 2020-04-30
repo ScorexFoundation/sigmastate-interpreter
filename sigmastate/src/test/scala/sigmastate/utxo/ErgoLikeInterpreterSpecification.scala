@@ -18,6 +18,7 @@ import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeConte
 import sigmastate.lang.Terms._
 import sigmastate.lang.exceptions.InterpreterException
 import sigmastate.serialization.{SerializationSpecification, ValueSerializer}
+import sigmastate.utils.Helpers._
 
 class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
   with SerializationSpecification {
@@ -362,8 +363,8 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
       spendingTransaction,
       self = s1)
 
-    val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage).fold(t => throw t, x => x)
-    verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, ctx, pr, fakeMessage).fold(t => throw t, x => x)._1 shouldBe true
+    val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage).getOrThrow
+    verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, ctx, pr, fakeMessage).getOrThrow._1 shouldBe true
 
 
     //make sure that wrong case couldn't be proved
@@ -465,8 +466,8 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
       spendingTransaction,
       self = s)
 
-    val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove_prop"), prop, ctx, fakeMessage).fold(t => throw t, x => x)
-    verifier.verify(emptyEnv + (ScriptNameProp -> "verify_prop"), prop, ctx, pr, fakeMessage).fold(t => throw t, x => x)._1 shouldBe true
+    val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove_prop"), prop, ctx, fakeMessage).getOrThrow
+    verifier.verify(emptyEnv + (ScriptNameProp -> "verify_prop"), prop, ctx, pr, fakeMessage).getOrThrow._1 shouldBe true
 
     val wrongCtx = ErgoLikeContextTesting(
       currentHeight = 50,
@@ -477,7 +478,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
       self = s)
 
     prover.prove(prop, wrongCtx, fakeMessage).isFailure shouldBe true
-    verifier.verify(prop, wrongCtx, pr, fakeMessage).fold(t => throw t, x => x)._1 shouldBe false
+    verifier.verify(prop, wrongCtx, pr, fakeMessage).getOrThrow._1 shouldBe false
 
     val prop2 = compile(env,
       """{
@@ -489,7 +490,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
     prover.prove(emptyEnv + (ScriptNameProp -> "prove_prop2"), prop2, ctx, fakeMessage).isFailure shouldBe true
     verifier
       .verify(emptyEnv + (ScriptNameProp -> "verify_prop2"), prop2, ctx, pr, fakeMessage)
-      .fold(t => throw t, x => x)._1 shouldBe false
+      .getOrThrow._1 shouldBe false
   }
 
   /**
@@ -646,7 +647,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
       self = box)
 
     an[RuntimeException] should be thrownBy
-      prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage).fold(t => throw t, x => x)
+      prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage).getOrThrow
   }
 
   property("DeserializeContext value(script) type mismatch") {

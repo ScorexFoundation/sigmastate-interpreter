@@ -28,12 +28,21 @@ object DataJsonEncoder {
     val encodedData = encodeData(v, tpe)
     Json.obj(
       "type" -> Json.fromString(encodedType),
-      "value" -> encodedData,
+      "value" -> encodedData
     )
   }
 
-  private def encodeBytes: Encoder[Array[Byte]] = (bytes: Array[Byte]) => {
+  private def encodeBytes: Encoder[Array[Byte]] = Encoder.instance((bytes: Array[Byte]) => {
     ErgoAlgos.encode(bytes).asJson
+  })
+
+  def encodeAnyValue(v: AnyValue): Json = {
+    val encodedType = Evaluation.rtypeToSType(v.tVal)
+    val encodedData = encodeData[SType](v.value.asInstanceOf[SType#WrappedType], encodedType)
+    Json.obj(
+      "type" -> Json.fromString(encodedType.toTermString),
+      "value" -> encodedData
+    )
   }
 
   private def encodeData[T <: SType](v: T#WrappedType, tpe: T): Json = tpe match {
@@ -252,5 +261,12 @@ object DataJsonEncoder {
   def decode(json: Json): (SType#WrappedType) = {
     val (data, _) = decodeWithTpe(json)
     data
+  }
+
+  def decodeAnyValue(json: Json): (AnyValue) = {
+    val tpe = SigmaParser.parseType(json.hcursor.downField("type").focus.get.asString.get)
+    val value = json.hcursor.downField("value").focus.get
+    val data = decodeData(value, tpe)
+    TestValue(data, Evaluation.stypeToRType(tpe).asInstanceOf[RType[Any]])
   }
 }

@@ -298,7 +298,7 @@ object CostTable {
     ("DecodePoint", "(Coll[Byte]) => GroupElement", decodePointCost),
 
     ("SOption$.map", "(Option[T],(T) => R) => Option[R]", OptionOp),
-    ("SOption$.filter", "(Option[T],(T) => Boolean) => Option[T]", OptionOp),
+    ("SOption$.filter", "(Option[T],(T) => Boolean) => Option[T]", OptionOp)
   ))
 
   def fromSeq(items: Seq[(String, String, Int)]): CostTable = {

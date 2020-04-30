@@ -1,6 +1,6 @@
 package sigmastate.utils
 
-import scorex.util.serialization.{VLQByteStringWriter, VLQByteBufferWriter, Writer}
+import scorex.util.serialization.{VLQByteBufferWriter, Writer}
 import scorex.util.serialization.Writer.Aux
 import sigmastate.{ArgInfo, SType}
 import sigmastate.Values.{Value, SValue}
@@ -100,7 +100,6 @@ class SigmaByteWriter(val w: Writer,
 
   // TODO refactor: move to Writer
   @inline def toBytes: Array[Byte] = w match {
-    case wr: VLQByteStringWriter => wr.result().asByteBuffer.array()
     case wr: VLQByteBufferWriter => wr.toBytes
   }
 
@@ -120,11 +119,10 @@ class SigmaByteWriter(val w: Writer,
     xs.foreach(putValue(_))
     this
   }
-  @inline def putValues[T <: SType](xs: Seq[Value[T]], info: DataInfo[Seq[SValue]]): this.type = {
-    putUInt(xs.length, ArgInfo("\\#items", "number of items in the collection"))
+  @inline def putValues[T <: SType](xs: Seq[Value[T]], info: DataInfo[Seq[SValue]], itemInfo: DataInfo[SValue]): this.type = {
+    putUInt(xs.length, valuesLengthInfo)
     foreach("\\#items", xs) { x =>
-      val itemFmt = info.format.asInstanceOf[SeqFmt[SValue]].fmt
-      putValue(x, DataInfo(ArgInfo(info.info.name+"_i", s"i-th item in the ${info.info.description}"), itemFmt))
+      putValue(x, itemInfo)
     }
     this
   }
@@ -246,6 +244,13 @@ object SigmaByteWriter {
 
   def bitsInfo(name: String, desc: String = ""): DataInfo[Bits] = DataInfo(ArgInfo(name, desc), BitsFmt)
   def maxBitsInfo(name: String, maxBits: Int, desc: String = ""): DataInfo[Bits] = DataInfo(ArgInfo(name, desc), MaxBitsFmt(maxBits))
+
+  val valuesLengthInfo: DataInfo[Vlq[U[Int]]] = ArgInfo("\\#items", "number of items in the collection")
+
+  def valuesItemInfo(info: DataInfo[Seq[SValue]]): DataInfo[SValue] = {
+    val itemFmt = info.format.asInstanceOf[SeqFmt[SValue]].fmt
+    DataInfo(ArgInfo(info.info.name+"_i", s"i-th item in the ${info.info.description}"), itemFmt)
+  }
 
   implicit def argInfoToDataInfo[T](arg: ArgInfo)(implicit fmt: FormatDescriptor[T]): DataInfo[T] = DataInfo(arg, fmt)
 

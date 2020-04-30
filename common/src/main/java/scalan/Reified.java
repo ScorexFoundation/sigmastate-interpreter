@@ -12,7 +12,7 @@ import java.lang.annotation.Target;
 * The need for reified type arguments come from ClassTag[T], RType[T] context bounds or
 * implicit parameters in the source code.
 */
-@Target({ElementType.TYPE, ElementType.TYPE_PARAMETER})
+@Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Reified {
     String value() default "";

@@ -84,8 +84,13 @@ class ErgoTreeSerializer {
     w.put(ergoTree.header)
     if (ergoTree.isConstantSegregation) {
       val constantSerializer = ConstantSerializer(DeserializationSigmaBuilder)
-      w.putUInt(ergoTree.constants.length)
-      ergoTree.constants.foreach(c => constantSerializer.serialize(c, w))
+      val constants = ergoTree.constants
+      val nConstants = constants.length
+      w.putUInt(nConstants)
+      cfor(0)(_ < nConstants, _ + 1) { i =>
+        val c = constants(i)
+        constantSerializer.serialize(c, w)
+      }
     }
   }
 
@@ -102,7 +107,7 @@ class ErgoTreeSerializer {
     * structure after deserialization. */
   def serializeErgoTree(ergoTree: ErgoTree): Array[Byte] = {
     val res = ergoTree.root match {
-      case Left(UnparsedErgoTree(bytes, error)) => bytes.array
+      case Left(UnparsedErgoTree(bytes, _)) => bytes.array
       case _ =>
         val bytes = serializeWithoutSize(ergoTree)
         if (ergoTree.hasSize) {

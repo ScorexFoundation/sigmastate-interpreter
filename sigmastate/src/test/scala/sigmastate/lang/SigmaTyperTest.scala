@@ -670,7 +670,7 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     val script2 = script(pk2)
     val inputBytes = ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(script1.treeWithSegregation)
     val positions = IntArrayConstant(Array[Int](2))
-    val newVals = ConcreteCollection(Vector[SigmaPropValue](SigmaPropConstant(pk2)), SSigmaProp)
+    val newVals = ConcreteCollection(Array[SigmaPropValue](SigmaPropConstant(pk2)), SSigmaProp)
 
     val expectedBytes = ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(script2.treeWithSegregation)
 
@@ -678,7 +678,7 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
       "scriptBytes" -> Colls.fromArray(inputBytes),
       "positions" -> positions,
       "newVals" -> newVals,
-      "expectedBytes" -> Colls.fromArray(expectedBytes),
+      "expectedBytes" -> Colls.fromArray(expectedBytes)
     )
     typecheck(customEnv, "substConstants(scriptBytes, positions, newVals)") shouldBe SByteArray
   }

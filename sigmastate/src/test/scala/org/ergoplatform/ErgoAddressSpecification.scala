@@ -12,14 +12,21 @@ import sigmastate.serialization.ValueSerializer
 import sigmastate.serialization.generators.ObjectGenerators
 import org.ergoplatform.ErgoScriptPredef._
 import org.ergoplatform.validation.ValidationSpecification
-import sigmastate.Values.ErgoTree
+import sigmastate.{AvlTreeData, SType}
+import sigmastate.Values.{EvaluatedValue, SigmaPropConstant, ByteArrayConstant, IntConstant, ErgoTree}
+import sigmastate.eval.IRContext
+import sigmastate.helpers._
+import sigmastate.interpreter.{ContextExtension, Interpreter}
+import sigmastate.interpreter.Interpreter.{ScriptNameProp, ScriptEnv}
+import sigmastate.lang.Terms.ValueOps
+import sigmastate.utils.Helpers._
 
 class ErgoAddressSpecification extends PropSpec
   with ObjectGenerators
   with PropertyChecks
   with Matchers
   with TryValues
-  with ValidationSpecification {
+  with SigmaTestingCommons {
   private implicit val ergoAddressEncoder: ErgoAddressEncoder =
     new ErgoAddressEncoder(TestnetNetworkPrefix)
 
@@ -87,4 +94,32 @@ class ErgoAddressSpecification extends PropSpec
     }
   }
 
+  def testPay2SHAddress(address: Pay2SHAddress, scriptBytes: Array[Byte])(implicit IR: IRContext) = {
+    val scriptId = 1.toByte
+    val boxToSpend = ErgoBox(10, address.script, creationHeight = 5)
+    val ctx = ErgoLikeContextTesting.dummy(boxToSpend)
+        .withExtension(ContextExtension(Seq(
+          scriptId -> ByteArrayConstant(scriptBytes)  // provide script bytes in context variable
+        ).toMap))
+
+    val env: ScriptEnv = Map()
+    val prover = new ErgoLikeTestProvingInterpreter()
+    val pr = prover.prove(env + (ScriptNameProp -> s"prove"), address.script, ctx, fakeMessage).getOrThrow
+
+    val verifier = new ErgoLikeTestInterpreter
+    verifier.verify(env + (ScriptNameProp -> s"verify_ext"), address.script, ctx, pr.proof, fakeMessage).getOrThrow._1 shouldBe true
+  }
+
+  property("spending a box protected by P2SH contract") {
+    implicit lazy val IR = new TestingIRContext
+
+    val script = "{ 1 < 2 }"
+    val prop = compile(Map.empty, script).asBoolValue.toSigmaProp
+    val scriptBytes = ValueSerializer.serialize(prop)
+
+    testPay2SHAddress(Pay2SHAddress(prop), scriptBytes)
+
+    val tree = ErgoTree.fromProposition(prop)
+    testPay2SHAddress(Pay2SHAddress(tree), scriptBytes)
+  }
 }

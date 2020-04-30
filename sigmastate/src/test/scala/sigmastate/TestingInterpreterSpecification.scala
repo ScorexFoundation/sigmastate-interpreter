@@ -12,6 +12,7 @@ import scorex.util.encode.Base58
 import sigmastate.helpers.{ErgoLikeContextTesting, ErgoLikeTestInterpreter, ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.serialization.ValueSerializer
 import TrivialProp._
+import sigmastate.utils.Helpers._
 
 import scala.util.Random
 
@@ -279,16 +280,16 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
     val proof = NoProof
     val env = testingContext(99)
 
-    verifier.verify(prop1, env, proof, challenge).map(_._1).fold(t => throw t, identity) shouldBe true
+    verifier.verify(prop1, env, proof, challenge).map(_._1).getOrThrow shouldBe true
 
     val prop2 = OR(TrueLeaf, FalseLeaf).toSigmaProp
-    verifier.verify(prop2, env, proof, challenge).map(_._1).fold(t => throw t, identity) shouldBe true
+    verifier.verify(prop2, env, proof, challenge).map(_._1).getOrThrow shouldBe true
 
     val prop3 = AND(TrueLeaf, TrueLeaf).toSigmaProp
-    verifier.verify(prop3, env, proof, challenge).map(_._1).fold(t => throw t, identity) shouldBe true
+    verifier.verify(prop3, env, proof, challenge).map(_._1).getOrThrow shouldBe true
 
     val prop4 = GT(Height, IntConstant(90)).toSigmaProp
-    verifier.verify(prop4, env, proof, challenge).map(_._1).fold(t => throw t, identity) shouldBe true
+    verifier.verify(prop4, env, proof, challenge).map(_._1).getOrThrow shouldBe true
   }
 
   property("Evaluation - no real proving - false case") {
@@ -298,16 +299,16 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
     val proof = NoProof
     val env = testingContext(99)
 
-    verifier.verify(prop1, env, proof, challenge).map(_._1).fold(t => throw t, identity) shouldBe false
+    verifier.verify(prop1, env, proof, challenge).map(_._1).getOrThrow shouldBe false
 
     val prop2 = OR(FalseLeaf, FalseLeaf).toSigmaProp
-    verifier.verify(prop2, env, proof, challenge).map(_._1).fold(t => throw t, identity) shouldBe false
+    verifier.verify(prop2, env, proof, challenge).map(_._1).getOrThrow shouldBe false
 
     val prop3 = AND(FalseLeaf, TrueLeaf).toSigmaProp
-    verifier.verify(prop3, env, proof, challenge).map(_._1).fold(t => throw t, identity) shouldBe false
+    verifier.verify(prop3, env, proof, challenge).map(_._1).getOrThrow shouldBe false
 
     val prop4 = GT(Height, IntConstant(100)).toSigmaProp
-    verifier.verify(prop4, env, proof, challenge).map(_._1).fold(t => throw t, identity) shouldBe false
+    verifier.verify(prop4, env, proof, challenge).map(_._1).getOrThrow shouldBe false
   }
 
   property("Evaluation - hash function") {

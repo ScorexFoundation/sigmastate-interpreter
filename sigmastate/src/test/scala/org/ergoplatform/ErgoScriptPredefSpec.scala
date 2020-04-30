@@ -18,6 +18,7 @@ import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo.{ByIndex, CostTable, ExtractCreationInfo, SelectField}
 import scalan.util.BenchmarkUtil._
 import ErgoScriptPredef._
+import sigmastate.utils.Helpers._
 
 import scala.util.Try
 
@@ -67,7 +68,7 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
 
     def R4Prop(ableToProve: Boolean): CollectionConstant[SByte.type] = if (ableToProve) {
       val pks = (DLogProverInput.random() +: prover.dlogSecrets.take(2)).map(s => SigmaPropConstant(s.publicImage))
-      ByteArrayConstant(ValueSerializer.serialize(AtLeast(IntConstant(2), pks)))
+      ByteArrayConstant(ValueSerializer.serialize(AtLeast(IntConstant(2), pks.toArray)))
     } else {
       val pk = (new ContextEnrichingTestProvingInterpreter).dlogSecrets.head.publicImage
       ByteArrayConstant(ValueSerializer.serialize(SigmaPropConstant(pk)))
@@ -145,11 +146,11 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
     // should not be able to collect before minerRewardDelay
     val prove = prover.prove(emptyEnv + (ScriptNameProp -> "rewardOutputScript_prove"), prop, ctx, fakeMessage).get
     verifier.verify(emptyEnv + (ScriptNameProp -> "rewardOutputScript_verify"), prop, prevBlockCtx, prove, fakeMessage)
-      .fold(t => throw t, x => x) should matchPattern { case (false,_) => }
+      .getOrThrow should matchPattern { case (false,_) => }
 
     // should be able to collect after minerRewardDelay
-    val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage).get
-    verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, ctx, pr, fakeMessage).get._1 shouldBe true
+    val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage).getOrThrow
+    verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, ctx, pr, fakeMessage).getOrThrow._1 shouldBe true
   }
 
   property("create transaction collecting the emission box") {
@@ -224,8 +225,8 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
         spendingTransaction,
         self = inputBoxes.head).withCostLimit(CostTable.ScriptLimit * 10)
 
-      val pr = prover.prove(emptyEnv + (ScriptNameProp -> "tokenThresholdScript_prove"), prop, ctx, fakeMessage).fold(t => throw t, x => x)
-      verifier.verify(emptyEnv + (ScriptNameProp -> "tokenThresholdScript_verify"), prop, ctx, pr, fakeMessage).get._1 shouldBe true
+      val pr = prover.prove(emptyEnv + (ScriptNameProp -> "tokenThresholdScript_prove"), prop, ctx, fakeMessage).getOrThrow
+      verifier.verify(emptyEnv + (ScriptNameProp -> "tokenThresholdScript_verify"), prop, ctx, pr, fakeMessage).getOrThrow._1 shouldBe true
     }
 
 
@@ -256,7 +257,7 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
         ErgoBox(20, prop, 0, Seq((wrongId, 1)), Map()),
         ErgoBox(20, prop, 0, Seq((tokenId, tokenAmount / 2 + 1), (wrongId2, 1)), Map())
       )
-      check(inputs3).fold(t => throw t, identity)
+      check(inputs3).getOrThrow
 
       // A transaction which contains input with no tokens
       val inputs4 = IndexedSeq(
@@ -300,8 +301,8 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
       boxesToSpend = inputBoxes,
       spendingTransaction,
       self = inputBoxes.head)
-    val pr = prover.prove(emptyEnv + (ScriptNameProp -> "checkRewardTx_prove"), prop, ctx, fakeMessage).fold(t => throw t, identity)
-    verifier.verify(emptyEnv + (ScriptNameProp -> "checkRewardTx_verify"), prop, ctx, pr, fakeMessage).fold(t => throw t, identity)._1 shouldBe true
+    val pr = prover.prove(emptyEnv + (ScriptNameProp -> "checkRewardTx_prove"), prop, ctx, fakeMessage).getOrThrow
+    verifier.verify(emptyEnv + (ScriptNameProp -> "checkRewardTx_verify"), prop, ctx, pr, fakeMessage).getOrThrow._1 shouldBe true
     spendingTransaction
   }
 

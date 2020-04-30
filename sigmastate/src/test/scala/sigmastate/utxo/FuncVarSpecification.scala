@@ -23,7 +23,7 @@ class FuncVarSpecification extends SigmaTestingCommons {
 //    val prover = new ContextEnrichingTestProvingInterpreter()
 //        .withContextExtender(scriptId, Constant(CFunc[Int, Int](ctx, code).asWrappedType, SFunc(SInt, SInt)))
 //    val prop = compileWithCosting(emptyEnv, s"{ val f = getVar[Int => Int](1).get; f(10) > 0 }").asBoolValue.asSigmaProp
-//    val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage).fold(t => throw t, identity)
+//    val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage).getOrThrow
 //
   }
 }

@@ -16,11 +16,12 @@ import sigmastate.eval.Extensions._
 import sigmastate.eval.{CGroupElement, CPreHeader, WrapperOf, _}
 import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigmastate.lang.exceptions.SigmaException
-import sigmastate.serialization.{ErgoTreeSerializer, ValueSerializer}
+import sigmastate.serialization.{DataJsonEncoder, ErgoTreeSerializer, ValueSerializer}
 import sigmastate.{AvlTreeData, AvlTreeFlags, SType}
 import special.collection.Coll
-import special.sigma.{Header, PreHeader}
+import special.sigma.{AnyValue, Header, PreHeader}
 import scala.util.Try
+import sigmastate.utils.Helpers._
 
 trait JsonCodecs {
 
@@ -36,67 +37,73 @@ trait JsonCodecs {
     Either.catchNonFatal(throwsBlock).leftMap(e => DecodingFailure(e.toString, cursor.history))
   }
 
-  private def bytesDecoder[T](transform: Array[Byte] => T): Decoder[T] = { implicit cursor =>
+  private def bytesDecoder[T](transform: Array[Byte] => T): Decoder[T] = Decoder.instance({ implicit cursor =>
     for {
       str <- cursor.as[String]
       bytes <- fromTry(ErgoAlgos.decode(str))
     } yield transform(bytes)
-  }
+  })
 
-  implicit val sigmaBigIntEncoder: Encoder[special.sigma.BigInt] = { bigInt =>
+  implicit val anyValueEncoder: Encoder[AnyValue] = Encoder.instance({ anyval => DataJsonEncoder.encodeAnyValue(anyval) })
+
+  implicit val anyValueDecoder: Decoder[AnyValue] = Decoder.instance({ implicit cursor =>
+    fromTry(Try.apply(DataJsonEncoder.decodeAnyValue(cursor.value)))
+  })
+
+  implicit val sigmaBigIntEncoder: Encoder[special.sigma.BigInt] = Encoder.instance({ bigInt =>
     JsonNumber.fromDecimalStringUnsafe(bigInt.asInstanceOf[WrapperOf[BigInteger]].wrappedValue.toString).asJson
-  }
+  })
 
-  implicit val sigmaBigIntDecoder: Decoder[special.sigma.BigInt] = { implicit cursor =>
+  implicit val sigmaBigIntDecoder: Decoder[special.sigma.BigInt] = Decoder.instance({ implicit cursor =>
     for {
       jsonNumber <- cursor.as[JsonNumber]
       bigInt <- fromOption(jsonNumber.toBigInt)
     } yield CBigInt(bigInt.bigInteger)
-  }
+  })
 
-  implicit val arrayBytesEncoder: Encoder[Array[Byte]] = ErgoAlgos.encode(_).asJson
+  implicit val arrayBytesEncoder: Encoder[Array[Byte]] = Encoder.instance(ErgoAlgos.encode(_).asJson)
   implicit val arrayBytesDecoder: Decoder[Array[Byte]] = bytesDecoder(x => x)
 
-  implicit val collBytesEncoder: Encoder[Coll[Byte]] = ErgoAlgos.encode(_).asJson
+  implicit val collBytesEncoder: Encoder[Coll[Byte]] = Encoder.instance(ErgoAlgos.encode(_).asJson)
   implicit val collBytesDecoder: Decoder[Coll[Byte]] = bytesDecoder(Colls.fromArray(_))
 
-  implicit val adKeyEncoder: Encoder[ADKey] = _.array.asJson
+  implicit val adKeyEncoder: Encoder[ADKey] = Encoder.instance(_.array.asJson)
   implicit val adKeyDecoder: Decoder[ADKey] = bytesDecoder(ADKey @@ _)
 
-  implicit val adDigestEncoder: Encoder[ADDigest] = _.array.asJson
+  implicit val adDigestEncoder: Encoder[ADDigest] = Encoder.instance(_.array.asJson)
   implicit val adDigestDecoder: Decoder[ADDigest] = bytesDecoder(ADDigest @@ _)
 
-  implicit val digest32Encoder: Encoder[Digest32] = _.array.asJson
+  implicit val digest32Encoder: Encoder[Digest32] = Encoder.instance(_.array.asJson)
   implicit val digest32Decoder: Decoder[Digest32] = bytesDecoder(Digest32 @@ _)
 
-  implicit val assetEncoder: Encoder[(TokenId, Long)] = { asset =>
+  implicit val assetEncoder: Encoder[(TokenId, Long)] = Encoder.instance({ asset =>
     Json.obj(
       "tokenId" -> asset._1.asJson,
       "amount" -> asset._2.asJson
     )
-  }
+  })
 
-  implicit val assetDecoder: Decoder[(TokenId, Long)] = { cursor =>
+  implicit val assetDecoder: Decoder[(TokenId, Long)] = Decoder.instance({ cursor =>
     for {
       tokenId <- cursor.downField("tokenId").as[TokenId]
       amount <- cursor.downField("amount").as[Long]
     } yield (tokenId, amount)
-  }
+  })
 
-  implicit val modifierIdEncoder: Encoder[ModifierId] = _.asInstanceOf[String].asJson
-  implicit val modifierIdDecoder: Decoder[ModifierId] = ModifierId @@ _.as[String]
+  implicit val modifierIdEncoder: Encoder[ModifierId] = Encoder.instance(_.asInstanceOf[String].asJson)
+  implicit val modifierIdDecoder: Decoder[ModifierId] = Decoder.instance(ModifierId @@ _.as[String])
 
-  implicit val registerIdEncoder: KeyEncoder[NonMandatoryRegisterId] = { regId =>
+  implicit val registerIdEncoder: KeyEncoder[NonMandatoryRegisterId] = KeyEncoder.instance({ regId =>
     s"R${regId.number}"
-  }
+  })
 
-  implicit val registerIdDecoder: KeyDecoder[NonMandatoryRegisterId] = { key =>
+  implicit val registerIdDecoder: KeyDecoder[NonMandatoryRegisterId] = KeyDecoder.instance({ key =>
     ErgoBox.registerByName.get(key).collect {
       case nonMandatoryId: NonMandatoryRegisterId => nonMandatoryId
     }
-  }
+  })
 
-  implicit val headerEncoder: Encoder[Header] = { h: Header =>
+  implicit val headerEncoder: Encoder[Header] = Encoder.instance({ h: Header =>
     Map(
       "id" -> h.id.asJson,
       "version" -> h.version.asJson,
@@ -114,9 +121,9 @@ trait JsonCodecs {
       "powDistance" -> h.powDistance.asJson,
       "votes" -> h.votes.asJson
     ).asJson
-  }
+  })
 
-  implicit val headerDecoder: Decoder[Header] = { cursor =>
+  implicit val headerDecoder: Decoder[Header] = Decoder.instance({ cursor =>
     for {
       id <- cursor.downField("id").as[Coll[Byte]]
       version <- cursor.downField("version").as[Byte]
@@ -135,9 +142,9 @@ trait JsonCodecs {
       votes <- cursor.downField("votes").as[Coll[Byte]]
     } yield new CHeader(id, version, parentId, adProofsRoot, stateRoot, transactionsRoot, timestamp, nBits,
       height, extensionRoot, SigmaDsl.decodePoint(minerPk), SigmaDsl.decodePoint(powOnetimePk), powNonce, powDistance, votes)
-  }
+  })
 
-  implicit val preHeaderEncoder: Encoder[PreHeader] = { v: PreHeader =>
+  implicit val preHeaderEncoder: Encoder[PreHeader] = Encoder.instance({ v: PreHeader =>
     Map(
       "version" -> v.version.asJson,
       "parentId" -> v.parentId.asJson,
@@ -147,9 +154,9 @@ trait JsonCodecs {
       "minerPk" -> v.minerPk.getEncoded.asJson,
       "votes" -> v.votes.asJson
     ).asJson
-  }
+  })
 
-  implicit val preHeaderDecoder: Decoder[PreHeader] = { cursor =>
+  implicit val preHeaderDecoder: Decoder[PreHeader] = Decoder.instance({ cursor =>
     for {
       version <- cursor.downField("version").as[Byte]
       parentId <- cursor.downField("parentId").as[Coll[Byte]]
@@ -159,130 +166,130 @@ trait JsonCodecs {
       minerPk <- cursor.downField("minerPk").as[Coll[Byte]]
       votes <- cursor.downField("votes").as[Coll[Byte]]
     } yield CPreHeader(version, parentId, timestamp, nBits, height, SigmaDsl.decodePoint(minerPk), votes)
-  }
+  })
 
-  implicit val evaluatedValueEncoder: Encoder[EvaluatedValue[_ <: SType]] = { value =>
+  implicit val evaluatedValueEncoder: Encoder[EvaluatedValue[_ <: SType]] = Encoder.instance({ value =>
     ValueSerializer.serialize(value).asJson
-  }
+  })
 
   implicit val evaluatedValueDecoder: Decoder[EvaluatedValue[_ <: SType]] = {
     decodeEvaluatedValue(_.asInstanceOf[EvaluatedValue[SType]])
   }
 
-  def decodeEvaluatedValue[T](transform: EvaluatedValue[SType] => T): Decoder[T] = { implicit cursor: ACursor =>
+  def decodeEvaluatedValue[T](transform: EvaluatedValue[SType] => T): Decoder[T] = Decoder.instance({ implicit cursor: ACursor =>
     cursor.as[Array[Byte]] flatMap { bytes =>
       fromThrows(transform(ValueSerializer.deserialize(bytes).asInstanceOf[EvaluatedValue[SType]]))
     }
-  }
+  })
 
-  implicit val dataInputEncoder: Encoder[DataInput] = { input =>
+  implicit val dataInputEncoder: Encoder[DataInput] = Encoder.instance({ input =>
     Json.obj(
-      "boxId" -> input.boxId.asJson,
+      "boxId" -> input.boxId.asJson
     )
-  }
+  })
 
-  implicit val dataInputDecoder: Decoder[DataInput] = { cursor =>
+  implicit val dataInputDecoder: Decoder[DataInput] = Decoder.instance({ cursor =>
     for {
       boxId <- cursor.downField("boxId").as[ADKey]
     } yield DataInput(boxId)
-  }
+  })
 
-  implicit val inputEncoder: Encoder[Input] = { input =>
+  implicit val inputEncoder: Encoder[Input] = Encoder.instance({ input =>
     Json.obj(
       "boxId" -> input.boxId.asJson,
       "spendingProof" -> input.spendingProof.asJson
     )
-  }
+  })
 
 
-  implicit val inputDecoder: Decoder[Input] = { cursor =>
+  implicit val inputDecoder: Decoder[Input] = Decoder.instance({ cursor =>
     for {
       boxId <- cursor.downField("boxId").as[ADKey]
       proof <- cursor.downField("spendingProof").as[ProverResult]
     } yield Input(boxId, proof)
-  }
+  })
 
-  implicit val unsignedInputEncoder: Encoder[UnsignedInput] = { input =>
+  implicit val unsignedInputEncoder: Encoder[UnsignedInput] = Encoder.instance({ input =>
     Json.obj(
       "boxId" -> input.boxId.asJson,
       "extension" -> input.extension.asJson
     )
-  }
+  })
 
-  implicit val unsignedInputDecoder: Decoder[UnsignedInput] = { cursor =>
+  implicit val unsignedInputDecoder: Decoder[UnsignedInput] = Decoder.instance({ cursor =>
     for {
       boxId <- cursor.downField("boxId").as[ADKey]
       extension <- cursor.downField("extension").as[ContextExtension]
     } yield new UnsignedInput(boxId, extension)
-  }
+  })
 
-  implicit val contextExtensionEncoder: Encoder[ContextExtension] = { extension =>
+  implicit val contextExtensionEncoder: Encoder[ContextExtension] = Encoder.instance({ extension =>
     extension.values.map { case (key, value) =>
       key -> evaluatedValueEncoder(value)
     }.asJson
-  }
+  })
 
-  implicit val contextExtensionDecoder: Decoder[ContextExtension] = { cursor =>
+  implicit val contextExtensionDecoder: Decoder[ContextExtension] = Decoder.instance({ cursor =>
     for {
       values <- cursor.as[Map[Byte, EvaluatedValue[SType]]]
     } yield ContextExtension(values)
-  }
+  })
 
-  implicit val proverResultEncoder: Encoder[ProverResult] = { v =>
+  implicit val proverResultEncoder: Encoder[ProverResult] = Encoder.instance({ v =>
     Json.obj(
       "proofBytes" -> v.proof.asJson,
       "extension" -> v.extension.asJson
     )
-  }
+  })
 
-  implicit val proverResultDecoder: Decoder[ProverResult] = { cursor =>
+  implicit val proverResultDecoder: Decoder[ProverResult] = Decoder.instance({ cursor =>
     for {
       proofBytes <- cursor.downField("proofBytes").as[Array[Byte]]
       extMap <- cursor.downField("extension").as[Map[Byte, EvaluatedValue[SType]]]
     } yield ProverResult(proofBytes, ContextExtension(extMap))
-  }
+  })
 
 
-  implicit val avlTreeDataEncoder: Encoder[AvlTreeData] = { v =>
+  implicit val avlTreeDataEncoder: Encoder[AvlTreeData] = Encoder.instance({ v =>
     Json.obj(
       "digest" -> v.digest.asJson,
       "treeFlags" -> v.treeFlags.serializeToByte.asJson,
       "keyLength" -> v.keyLength.asJson,
       "valueLength" -> v.valueLengthOpt.asJson
     )
-  }
+  })
 
-  implicit val avlTreeDataDecoder: Decoder[AvlTreeData] = { cursor =>
+  implicit val avlTreeDataDecoder: Decoder[AvlTreeData] = Decoder.instance({ cursor =>
     for {
       digest <- cursor.downField("digest").as[ADDigest]
       treeFlagsByte <- cursor.downField("treeFlags").as[Byte]
       keyLength <- cursor.downField("keyLength").as[Int]
       valueLength <- cursor.downField("valueLength").as[Option[Int]]
     } yield new AvlTreeData(digest, AvlTreeFlags(treeFlagsByte), keyLength, valueLength)
-  }
+  })
 
-  implicit val ergoTreeEncoder: Encoder[ErgoTree] = { value =>
+  implicit val ergoTreeEncoder: Encoder[ErgoTree] = Encoder.instance({ value =>
     ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(value).asJson
-  }
+  })
 
-  def decodeErgoTree[T](transform: ErgoTree => T): Decoder[T] = { implicit cursor: ACursor =>
+  def decodeErgoTree[T](transform: ErgoTree => T): Decoder[T] = Decoder.instance({ implicit cursor: ACursor =>
     cursor.as[Array[Byte]] flatMap { bytes =>
       fromThrows(transform(ErgoTreeSerializer.DefaultSerializer.deserializeErgoTree(bytes)))
     }
-  }
+  })
 
   implicit val ergoTreeDecoder: Decoder[ErgoTree] = {
     decodeErgoTree(_.asInstanceOf[ErgoTree])
   }
 
-  implicit def registersEncoder[T <: EvaluatedValue[_ <: SType]]: Encoder[Map[NonMandatoryRegisterId, T]] = { m =>
+  implicit def registersEncoder[T <: EvaluatedValue[_ <: SType]]: Encoder[Map[NonMandatoryRegisterId, T]] = Encoder.instance({ m =>
     Json.obj(
       m.toSeq
         .sortBy(_._1.number)
         .map { case (k, v) => registerIdEncoder(k) -> evaluatedValueEncoder(v) }: _*)
-  }
+  })
 
-  implicit val ergoBoxEncoder: Encoder[ErgoBox] = { box =>
+  implicit val ergoBoxEncoder: Encoder[ErgoBox] = Encoder.instance({ box =>
     Json.obj(
       "boxId" -> box.id.asJson,
       "value" -> box.value.asJson,
@@ -293,9 +300,9 @@ trait JsonCodecs {
       "transactionId" -> box.transactionId.asJson,
       "index" -> box.index.asJson
     )
-  }
+  })
 
-  implicit val ergoBoxDecoder: Decoder[ErgoBox] = { cursor =>
+  implicit val ergoBoxDecoder: Decoder[ErgoBox] = Decoder.instance({ cursor =>
     for {
       value <- cursor.downField("value").as[Long]
       ergoTreeBytes <- cursor.downField("ergoTree").as[Array[Byte]]
@@ -313,33 +320,33 @@ trait JsonCodecs {
       index = index,
       creationHeight = creationHeight
     )
-  }
+  })
 
-  implicit val ergoLikeTransactionEncoder: Encoder[ErgoLikeTransaction] = { tx =>
+  implicit val ergoLikeTransactionEncoder: Encoder[ErgoLikeTransaction] = Encoder.instance({ tx =>
     Json.obj(
       "id" -> tx.id.asJson,
       "inputs" -> tx.inputs.asJson,
       "dataInputs" -> tx.dataInputs.asJson,
       "outputs" -> tx.outputs.asJson
     )
-  }
+  })
 
-  implicit val unsignedErgoLikeTransactionEncoder: Encoder[UnsignedErgoLikeTransaction] = { tx =>
+  implicit val unsignedErgoLikeTransactionEncoder: Encoder[UnsignedErgoLikeTransaction] = Encoder.instance({ tx =>
     Json.obj(
       "id" -> tx.id.asJson,
       "inputs" -> tx.inputs.asJson,
       "dataInputs" -> tx.dataInputs.asJson,
       "outputs" -> tx.outputs.asJson
     )
-  }
+  })
 
-  implicit def ergoLikeTransactionTemplateEncoder[T <: UnsignedInput]: Encoder[ErgoLikeTransactionTemplate[T]] = {
+  implicit def ergoLikeTransactionTemplateEncoder[T <: UnsignedInput]: Encoder[ErgoLikeTransactionTemplate[T]] = Encoder.instance({
     case transaction: ErgoLikeTransaction => ergoLikeTransactionEncoder(transaction)
     case transaction: UnsignedErgoLikeTransaction => unsignedErgoLikeTransactionEncoder(transaction)
     case t => throw new SigmaException(s"Don't know how to encode transaction $t")
-  }
+  })
 
-  implicit val transactionOutputsDecoder: Decoder[(ErgoBoxCandidate, Option[BoxId])] = { cursor =>
+  implicit val transactionOutputsDecoder: Decoder[(ErgoBoxCandidate, Option[BoxId])] = Decoder.instance({ cursor =>
     for {
       maybeId <- cursor.downField("boxId").as[Option[BoxId]]
       value <- cursor.downField("value").as[Long]
@@ -348,40 +355,40 @@ trait JsonCodecs {
       assets <- cursor.downField("assets").as[Seq[(ErgoBox.TokenId, Long)]] // TODO optimize: encode directly into Coll avoiding allocation of Tuple2 for each element
       registers <- cursor.downField("additionalRegisters").as[Map[NonMandatoryRegisterId, EvaluatedValue[SType]]]
     } yield (new ErgoBoxCandidate(value, ergoTree, creationHeight, assets.toColl, registers), maybeId)
-  }
+  })
 
-  implicit val ergoLikeTransactionDecoder: Decoder[ErgoLikeTransaction] = { implicit cursor =>
+  implicit val ergoLikeTransactionDecoder: Decoder[ErgoLikeTransaction] = Decoder.instance({ implicit cursor =>
     for {
       inputs <- cursor.downField("inputs").as[IndexedSeq[Input]]
       dataInputs <- cursor.downField("dataInputs").as[IndexedSeq[DataInput]]
       outputsWithIndex <- cursor.downField("outputs").as[IndexedSeq[(ErgoBoxCandidate, Option[BoxId])]]
     } yield new ErgoLikeTransaction(inputs, dataInputs, outputsWithIndex.map(_._1))
-  }
+  })
 
-  implicit val unsignedErgoLikeTransactionDecoder: Decoder[UnsignedErgoLikeTransaction] = { implicit cursor =>
+  implicit val unsignedErgoLikeTransactionDecoder: Decoder[UnsignedErgoLikeTransaction] = Decoder.instance({ implicit cursor =>
     for {
       inputs <- cursor.downField("inputs").as[IndexedSeq[UnsignedInput]]
       dataInputs <- cursor.downField("dataInputs").as[IndexedSeq[DataInput]]
       outputsWithIndex <- cursor.downField("outputs").as[IndexedSeq[(ErgoBoxCandidate, Option[BoxId])]]
     } yield new UnsignedErgoLikeTransaction(inputs, dataInputs, outputsWithIndex.map(_._1))
-  }
+  })
 
   implicit val ergoLikeTransactionTemplateDecoder: Decoder[ErgoLikeTransactionTemplate[_ <: UnsignedInput]] = {
     ergoLikeTransactionDecoder.asInstanceOf[Decoder[ErgoLikeTransactionTemplate[_ <: UnsignedInput]]] or
     unsignedErgoLikeTransactionDecoder.asInstanceOf[Decoder[ErgoLikeTransactionTemplate[_ <: UnsignedInput]]]
   }
 
-  implicit val sigmaValidationSettingsEncoder: Encoder[SigmaValidationSettings] = { v =>
+  implicit val sigmaValidationSettingsEncoder: Encoder[SigmaValidationSettings] = Encoder.instance({ v =>
     SigmaValidationSettingsSerializer.toBytes(v).asJson
-  }
+  })
 
-  implicit val sigmaValidationSettingsDecoder: Decoder[SigmaValidationSettings] = { implicit cursor: ACursor =>
+  implicit val sigmaValidationSettingsDecoder: Decoder[SigmaValidationSettings] = Decoder.instance({ implicit cursor: ACursor =>
     cursor.as[Array[Byte]] flatMap { bytes =>
       fromThrows(SigmaValidationSettingsSerializer.fromBytes(bytes))
     }
-  }
+  })
 
-  implicit val ergoLikeContextEncoder: Encoder[ErgoLikeContext] = { ctx =>
+  implicit val ergoLikeContextEncoder: Encoder[ErgoLikeContext] = Encoder.instance({ ctx =>
     Json.obj(
       "lastBlockUtxoRoot" -> ctx.lastBlockUtxoRoot.asJson,
       "headers" -> ctx.headers.toArray.toSeq.asJson,
@@ -395,9 +402,9 @@ trait JsonCodecs {
       "costLimit" -> ctx.costLimit.asJson,
       "initCost" -> ctx.initCost.asJson
     )
-  }
+  })
 
-  implicit val ergoLikeContextDecoder: Decoder[ErgoLikeContext] = { cursor =>
+  implicit val ergoLikeContextDecoder: Decoder[ErgoLikeContext] = Decoder.instance({ cursor =>
     for {
       lastBlockUtxoRoot <- cursor.downField("lastBlockUtxoRoot").as[AvlTreeData]
       headers <- cursor.downField("headers").as[Seq[Header]]
@@ -412,5 +419,5 @@ trait JsonCodecs {
       initCost <- cursor.downField("initCost").as[Long]
     } yield new ErgoLikeContext(lastBlockUtxoRoot, Colls.fromArray(headers.toArray), preHeader,
       dataBoxes, boxesToSpend, spendingTransaction, selfIndex, extension, validationSettings, costLimit, initCost)
-  }
+  })
 }

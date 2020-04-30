@@ -9,7 +9,7 @@ import sigmastate.{AvlTreeData, AvlTreeFlags, GE, Values}
 import sigmastate.Values.{ErgoTree, LongConstant}
 import sigmastate.eval._
 import sigmastate.helpers.{BlockchainState, ErgoLikeContextTesting, ErgoLikeTestProvingInterpreter, ErgoTransactionValidator, SigmaTestingCommons}
-
+import sigmastate.utils.Helpers._
 import scala.collection.mutable
 import scala.util.{Random, Try}
 import scorex.util._
@@ -32,7 +32,7 @@ trait BlockchainSimulationTestingCommons extends SigmaTestingCommons {
     case _ =>
       val block = generateBlock(state, miner, currentLevel, propOpt, extension)
       val updStateTry = state.applyBlock(block)
-      updStateTry.fold(t => throw t, identity)
+      updStateTry.getOrThrow
       checkState(updStateTry.get, miner, currentLevel + 1, limit, propOpt, extension)
   }
 

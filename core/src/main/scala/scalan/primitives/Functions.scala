@@ -1,12 +1,16 @@
 package scalan.primitives
 
 import java.util
+
 import scalan.staged.ProgramGraphs
 import scalan.util.GraphUtil
 import scalan.{Lazy, Base, Nullable, Scalan}
 import debox.{Buffer => DBuffer}
+
 import scala.language.implicitConversions
 import spire.syntax.all.cfor
+
+import scala.collection.Seq
 
 trait Functions extends Base with ProgramGraphs { self: Scalan =>
 
@@ -102,9 +106,9 @@ trait Functions extends Base with ProgramGraphs { self: Scalan =>
     def productArity: Int = 2
 
     // AstGraph implementation
-    val boundVars = Array(x)
+    val boundVars: Seq[Sym] = Array[Sym](x)
     val boundVarId = x.node._nodeId
-    val roots = Array(y)
+    val roots: Seq[Sym] = Array(y)
 
     override lazy val rootIds: DBuffer[Int] = super.rootIds
 

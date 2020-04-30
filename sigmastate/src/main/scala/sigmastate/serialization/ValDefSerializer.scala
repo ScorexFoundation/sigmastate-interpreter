@@ -14,10 +14,15 @@ case class ValDefSerializer(override val opDesc: ValueCompanion) extends ValueSe
     w.putUInt(obj.id)
     optional("type arguments") {
       if (opCode == FunDefCode) {
+        val args = obj.tpeArgs
+        val len = args.length
         require(!obj.isValDef, s"expected FunDef, got $obj")
-        require(obj.tpeArgs.nonEmpty, s"expected FunDef with type args, got $obj")
-        w.put(obj.tpeArgs.length.toByteExact)
-        obj.tpeArgs.foreach(w.putType(_))
+        require(len > 0, s"expected FunDef with type args, got $obj")
+        w.put(len.toByteExact)
+        cfor(0)(_ < len, _ + 1) { i =>
+          val arg = args(i)
+          w.putType(arg)
+        }
       }
     }
     w.putValue(obj.rhs)

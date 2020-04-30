@@ -38,14 +38,14 @@ class ConcreteCollectionSerializerSpecification extends TableSerializationSpecif
 
   property("ConcreteCollection: Serializer round trip with different types seq") {
     forAll { (i: IntConstant, ti: TaggedInt) =>
-      val seq = Random.shuffle(IndexedSeq(i.asIntValue, ti.asIntValue))
-      roundTripTest(ConcreteCollection(seq))
+      val seq = Random.shuffle(Seq(i.asIntValue, ti.asIntValue)).toArray
+      roundTripTest(ConcreteCollection.fromSeq(seq))
     }
   }
 
   override def objects = Table(
     ("object", "bytes"),
-    (ConcreteCollection(TrueLeaf, FalseLeaf, TrueLeaf),
+    (ConcreteCollection.fromItems(TrueLeaf, FalseLeaf, TrueLeaf),
       Array[Byte](OpCodes.ConcreteCollectionBooleanConstantCode, 3, 5)) // bits: 00000101
   )
 

@@ -915,10 +915,10 @@ object SOption extends STypeCompanion {
     FoldMethod,
     */
     MapMethod,
-    FilterMethod,
+    FilterMethod
   )
   def apply[T <: SType](implicit elemType: T, ov: Overload1): SOption[T] = SOption(elemType)
-  def unapply[T <: SType](tOpt: SOption[T]): Option[T] = Some(tOpt.elemType)
+//  def unapply[T <: SType](tOpt: SOption[T]): Option[T] = Some(tOpt.elemType)
 }
 
 trait SCollection[T <: SType] extends SProduct with SGenericType {
@@ -1168,7 +1168,7 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
     LastIndexOfMethod,
     FindMethod,
     */
-    ZipMethod,
+    ZipMethod
     /* TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
     DistinctMethod,
     StartsWithMethod,
@@ -1248,7 +1248,7 @@ case class STuple(items: IndexedSeq[SType]) extends SCollection[SAny.type] {
     Constant[STuple](v, this).asValue[this.type]
 
   val typeParams = Nil
-  val tparamSubst = Map.empty
+  val tparamSubst: Map[STypeVar, SType] = Map.empty
 
   override def toTermString = s"(${items.map(_.toTermString).mkString(",")})"
   override def toString = s"(${items.mkString(",")})"

@@ -1,7 +1,6 @@
 package special.sigma.config
 
 import special.library.config.SpecialLibraryConfig
-import scalan.Liftable
 import scalan.meta.ScalanAst.WrapperConf
 import scalan.meta.{LibraryConfig, ConfMap, TargetModuleConf, SourceModuleConf}
 

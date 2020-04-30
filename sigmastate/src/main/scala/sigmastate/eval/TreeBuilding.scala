@@ -138,7 +138,7 @@ trait TreeBuilding extends RuntimeCosting { IR: IRContext =>
         rhs
       case Def(Apply(fSym, xSym, _)) =>
         val Seq(f, x) = Seq(fSym, xSym).map(recurse)
-        builder.mkApply(f, IndexedSeq(x))
+        builder.mkApply(f, Array(x))
       case Def(th @ ThunkDef(root, _)) =>
         val block = processAstGraph(ctx, mainG, env, th, defId, constantsProcessing)
         block
@@ -177,7 +177,7 @@ trait TreeBuilding extends RuntimeCosting { IR: IRContext =>
       case CBM.fromItems(_, colSyms, elemT) =>
         val elemTpe = elemToSType(elemT)
         val col = colSyms.map(recurse(_).asValue[elemTpe.type])
-        mkConcreteCollection[elemTpe.type](col.toIndexedSeq, elemTpe)
+        mkConcreteCollection[elemTpe.type](col.toArray[Value[elemTpe.type]], elemTpe)
       case CBM.xor(_, colSym1, colSym2) =>
         mkXor(recurse(colSym1), recurse(colSym2))
 

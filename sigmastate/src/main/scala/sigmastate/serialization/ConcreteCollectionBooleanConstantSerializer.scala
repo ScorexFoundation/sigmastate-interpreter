@@ -9,15 +9,21 @@ import spire.syntax.all.cfor
 case class ConcreteCollectionBooleanConstantSerializer(cons: (IndexedSeq[Value[SBoolean.type]], SBoolean.type) => Value[SCollection[SBoolean.type]])
   extends ValueSerializer[ConcreteCollection[SBoolean.type]] {
   override def opDesc = ConcreteCollectionBooleanConstant
+  val numBitsInfo: DataInfo[Vlq[U[Short]]] = ArgInfo("numBits", "number of items in a collection of Boolean values")
+  val bitsInfo: DataInfo[Bits] = maxBitsInfo("bits", 0x1FFF, "Boolean values encoded as as bits (right most byte is zero-padded on the right)")
 
   override def serialize(cc: ConcreteCollection[SBoolean.type], w: SigmaByteWriter): Unit = {
-    w.putUShort(cc.items.size, ArgInfo("numBits", "number of items in a collection of Boolean values"))
-    w.putBits(
-      cc.items.map {
+    val items = cc.items
+    val len = items.length
+    w.putUShort(len, numBitsInfo)
+    val bits = new Array[Boolean](len)
+    cfor(0)(_ < len, _ + 1) { i =>
+      bits(i) = items(i) match {
         case v: BooleanConstant => v.value
         case v => error(s"Expected collection of BooleanConstant values, got: $v")
-      }.toArray,
-      maxBitsInfo("bits", 0x1FFF, "Boolean values encoded as as bits (right most byte is zero-padded on the right)"))
+      }
+    }
+    w.putBits(bits, bitsInfo)
   }
 
   /** @hotspot don't beautify this code */

@@ -81,7 +81,7 @@ trait CollGens { testSuite =>
                   getCollPairGenFinal(collGen, collGen),
                   getCollPairGenLeft(lg, collGen),
                   getCollPairGenRight(collGen, rg),
-                  getCollPairGenBoth(lg, rg),
+                  getCollPairGenBoth(lg, rg)
                 )
                 return gen
               }

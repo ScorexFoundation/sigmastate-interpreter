@@ -8,6 +8,7 @@ import scala.reflect.ClassTag
 class CollectionUtilTests extends BaseTests {
   import scalan.util.CollectionUtil._
   import java.lang.{Byte => JByte, Integer}
+
   test("concatArrays") {
     val xs = Array[Byte](1,2,3)
     val ys = Array[Byte](4,5,6)
@@ -64,14 +65,14 @@ class CollectionUtilTests extends BaseTests {
     val xs = Seq(1, 2, 3)
 
     {
-      val (ints, strings, plus1s) = xs.mapUnzip(x => (x, x.toString, x + 1))
+      val (ints, strings, plus1s) = xs.mapUnzip((x: Int) => (x, x.toString, x + 1))
       ints shouldBe Seq(1, 2, 3)
       strings shouldBe Seq("1", "2", "3")
       plus1s shouldBe Seq(2, 3, 4)
     }
     
     {
-      val (ints, strings) = xs.mapUnzip(x => (x, x.toString))
+      val (ints, strings) = xs.mapUnzip((x: Int) => (x, x.toString))
       ints shouldBe Seq(1, 2, 3)
       strings shouldBe Seq("1", "2", "3")
     }
@@ -221,4 +222,5 @@ class CollectionUtilTests extends BaseTests {
     unboxedArray(Seq[Any](Option.empty[Boolean])).isInstanceOf[Array[Any]] shouldBe true
     unboxedArray(Seq[Seq[Any]](Seq())).isInstanceOf[Array[Seq[Any]]] shouldBe true
   }
+
 }

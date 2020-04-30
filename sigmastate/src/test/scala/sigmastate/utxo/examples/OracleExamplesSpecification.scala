@@ -19,7 +19,7 @@ import org.ergoplatform.dsl.{ContractSpec, SigmaContractSyntax, StdContracts, Te
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.utxo._
 import special.sigma.Context
-
+import sigmastate.utils.Helpers._
 
 class OracleExamplesSpecification extends SigmaTestingCommons { suite =>
   implicit lazy val IR: TestingIRContext = new TestingIRContext
@@ -183,14 +183,14 @@ class OracleExamplesSpecification extends SigmaTestingCommons { suite =>
     val alice = aliceTemplate
       .withContextExtender(22: Byte, BoxConstant(oracleBox))
       .withContextExtender(23: Byte, ByteArrayConstant(proof))
-    val prA = alice.prove(emptyEnv + (ScriptNameProp -> "alice_prove"), propAlice, ctx, fakeMessage).fold(t => throw t, x => x)
+    val prA = alice.prove(emptyEnv + (ScriptNameProp -> "alice_prove"), propAlice, ctx, fakeMessage).getOrThrow
 
-    val prB = bob.prove(emptyEnv + (ScriptNameProp -> "bob_prove"), propBob, ctx, fakeMessage).fold(t => throw t, x => x)
+    val prB = bob.prove(emptyEnv + (ScriptNameProp -> "bob_prove"), propBob, ctx, fakeMessage).getOrThrow
 
     val ctxv = ctx.withExtension(prA.extension)
-    verifier.verify(emptyEnv + (ScriptNameProp -> "alice_verify"), propAlice, ctxv, prA, fakeMessage).get._1 shouldBe true
+    verifier.verify(emptyEnv + (ScriptNameProp -> "alice_verify"), propAlice, ctxv, prA, fakeMessage).getOrThrow._1 shouldBe true
 
-    verifier.verify(emptyEnv + (ScriptNameProp -> "bob_verify"), propBob, ctx, prB, fakeMessage).get._1 shouldBe true
+    verifier.verify(emptyEnv + (ScriptNameProp -> "bob_verify"), propBob, ctx, prB, fakeMessage).getOrThrow._1 shouldBe true
 
     //todo: check timing conditions - write tests for height  < 40 and >= 60
   }

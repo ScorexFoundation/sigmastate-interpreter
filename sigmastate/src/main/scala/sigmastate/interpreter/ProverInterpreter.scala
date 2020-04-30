@@ -16,7 +16,7 @@ import sigmastate.basics.{DiffieHellmanTupleInteractiveProver, DiffieHellmanTupl
 import sigmastate.lang.exceptions.CostLimitException
 import sigmastate.serialization.SigmaSerializer
 import sigmastate.utils.{Helpers, SigmaByteReader, SigmaByteWriter}
-
+import Helpers._
 import scala.util.Try
 
 /**
@@ -138,7 +138,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
     val prop = propositionFromErgoTree(tree, ctxUpdInitCost)
     val (propTree, _) = applyDeserializeContext(ctxUpdInitCost, prop)
     val tried = reduceToCrypto(ctxUpdInitCost, env, propTree)
-    val (reducedProp, cost) = tried.fold(t => throw t, identity)
+    val (reducedProp, cost) = tried.getOrThrow
 
     def errorReducedToFalse = error("Script reduced to false")
 

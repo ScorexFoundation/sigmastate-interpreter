@@ -19,6 +19,7 @@ import sigmastate.utxo.DeserializeContext
 import sigmastate.{SType, _}
 import org.ergoplatform.validation.ValidationRules._
 import scalan.util.BenchmarkUtil
+import sigmastate.utils.Helpers._
 
 import scala.util.Try
 
@@ -33,10 +34,19 @@ trait Interpreter extends ScorexLogging {
   val IR: IRContext
   import IR._
 
-  def deserializeMeasured(context: CTX, scriptBytes: Array[Byte]) = {
+  /** Deserializes given script bytes using ValueSerializer (i.e. assuming expression tree format).
+    * It also measures tree complexity adding to the total estimated cost of script execution.
+    * The new returned context contains increased `initCost` and should be used for further processing.
+    *
+    * The method SHOULD be called only inside trySoftForkable scope, to make deserialization soft-forkable.
+    *
+    * NOTE: While ErgoTree is always of type SigmaProp, ValueSerializer can serialize expression of any type.
+    * So it cannot be replaced with ErgoTreeSerializer here.
+    */
+  def deserializeMeasured(context: CTX, scriptBytes: Array[Byte]): (CTX, Value[SType]) = {
     val r = SigmaSerializer.startReader(scriptBytes)
     r.complexity = 0
-    val script = ValueSerializer.deserialize(r)
+    val script = ValueSerializer.deserialize(r)  // Why ValueSerializer? read NOTE above
     val scriptComplexity = r.complexity
 
     val currCost = JMath.addExact(context.initCost, scriptComplexity)
@@ -142,8 +152,7 @@ trait Interpreter extends ScorexLogging {
       CheckCostFunc(IR)(asRep[Any => Int](costF))
 
       val costingCtx = context.toSigmaContext(IR, isCost = true)
-      val estimatedCost = IR.checkCostWithContext(costingCtx, exp, costF, maxCost, initCost)
-              .fold(t => throw t, identity)
+      val estimatedCost = IR.checkCostWithContext(costingCtx, exp, costF, maxCost, initCost).getOrThrow
 
       IR.onEstimatedCost(env, exp, costingRes, costingCtx, estimatedCost)
 
@@ -214,7 +223,7 @@ trait Interpreter extends ScorexLogging {
 
       // here we assume that when `propTree` is TrueProp then `reduceToCrypto` always succeeds
       // and the rest of the verification is also trivial
-      val (cProp, cost) = reduceToCrypto(context2, env, propTree).fold(t => throw t, identity)
+      val (cProp, cost) = reduceToCrypto(context2, env, propTree).getOrThrow
 
       val checkingResult = cProp match {
         case TrivialProp.TrueProp => true

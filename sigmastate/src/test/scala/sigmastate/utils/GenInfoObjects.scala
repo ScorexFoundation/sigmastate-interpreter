@@ -3,6 +3,7 @@ package sigmastate.utils
 import sigmastate.SMethod
 import scalan.util.PrintExtensions._
 import scala.util.Try
+import Helpers._
 
 /** Generate as a console output all InfoObject objects.
   * Those provide stable identifiers to access metadata information.
@@ -42,7 +43,7 @@ object GenInfoObjects extends SpecGen {
             |  object ${opName}Info extends InfoObject {
             |    private val method = SMethod.fromIds(${typeId}, ${m.methodId})
             |    ${args.rep(sep = "\n    ")}
-            |    val argInfos: Seq[ArgInfo] = Seq(${info.args.rep(a => s"${a.name}Arg")})
+            |    val argInfos: Seq[ArgInfo] = Array(${info.args.rep(a => s"${a.name}Arg")})
             |  }
            """.stripMargin
         case Left(f) =>
@@ -58,7 +59,7 @@ object GenInfoObjects extends SpecGen {
             |  object ${opName}Info extends InfoObject {
             |    private val func = predefinedOps.${ if (isSpecialFunc) "specialFuncs" else "funcs" }("${f.name}")
             |    ${args.rep(sep = "\n    ")}
-            |    val argInfos: Seq[ArgInfo] = Seq(${info.args.rep(a => s"${a.name}Arg")})
+            |    val argInfos: Seq[ArgInfo] = Array(${info.args.rep(a => s"${a.name}Arg")})
             |  }
            """.stripMargin
       }

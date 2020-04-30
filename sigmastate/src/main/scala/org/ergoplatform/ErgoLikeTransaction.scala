@@ -121,7 +121,10 @@ object ErgoLikeTransactionSerializer extends SigmaSerializer[ErgoLikeTransaction
     for (input <- tx.dataInputs) {
       w.putBytes(input.boxId)
     }
-    // serialize distinct ids of tokens in transaction outputs
+    // Serialize distinct ids of tokens in transaction outputs.
+    // This optimization is crucial to allow up to MaxTokens (== 255) in a box.
+    // Without it total size of all token ids 255 * 32 = 8160,
+    // way beyond MaxBoxSize (== 4K)
     val tokenIds = tx.outputCandidates.toColl
       .flatMap(box => box.additionalTokens.map(t => t._1))
 

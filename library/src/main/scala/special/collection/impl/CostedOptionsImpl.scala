@@ -1,19 +1,13 @@
 package special.collection
 
 import scalan._
-import scala.reflect.runtime.universe._
-import scala.reflect._
 import scala.collection.mutable.WrappedArray
 
 package impl {
 // Abs -----------------------------------
 trait CostedOptionsDefs extends scalan.Scalan with CostedOptions {
   self: Library =>
-import CCostedBuilder._
-import CostedBuilder._
 import CostedOption._
-import Size._
-import SizeOption._
 import WOption._
 import CCostedOption._
 

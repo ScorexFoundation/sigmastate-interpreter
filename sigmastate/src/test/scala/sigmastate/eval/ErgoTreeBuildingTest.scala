@@ -17,7 +17,7 @@ import sigmastate.utxo._
 class ErgoTreeBuildingTest extends BaseCtxTests
     with LangTests with ExampleContracts with ErgoScriptTestkit {
 
-  implicit override lazy val IR = new TestContext with IRContext with CompiletimeCosting {
+  implicit override lazy val IR: TestContext with IRContext = new TestContext with IRContext with CompiletimeCosting {
     beginPass(noConstPropagationPass)
   }
 
@@ -64,10 +64,10 @@ class ErgoTreeBuildingTest extends BaseCtxTests
   }
 
   test("context data") {
-    import IR.builder._
-    build(emptyEnv, "height1", "HEIGHT + 1L", mkPlus(Height, LongConstant(1)))
-    build(emptyEnv, "size", "INPUTS.size + OUTPUTS.size", mkPlus(SizeOf(Inputs), SizeOf(Outputs)))
-    build(emptyEnv, "value", "SELF.value + 1L", mkPlus(ExtractAmount(Self), LongConstant(1)))
+    val b = IR.builder
+    build(emptyEnv, "height1", "HEIGHT + 1L", b.mkPlus(Height, LongConstant(1)))
+    build(emptyEnv, "size", "INPUTS.size + OUTPUTS.size", b.mkPlus(SizeOf(Inputs), SizeOf(Outputs)))
+    build(emptyEnv, "value", "SELF.value + 1L", b.mkPlus(ExtractAmount(Self), LongConstant(1)))
   }
 
   test("simple lambdas") {

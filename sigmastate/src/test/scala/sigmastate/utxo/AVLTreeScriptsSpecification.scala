@@ -358,7 +358,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons { suite =>
     val treeData = SigmaDsl.avlTree(new AvlTreeData(digest, AvlTreeFlags.ReadOnly, 32, None))
 
     val env = Map("proofId" -> proofId.toLong,
-                  "keys" -> ConcreteCollection(genKey("3"), genKey("4"), genKey("5")))
+                  "keys" -> ConcreteCollection.fromItems(genKey("3"), genKey("4"), genKey("5")))
     val prop = compile(env,
       """{
         |  val tree = SELF.R4[AvlTree].get

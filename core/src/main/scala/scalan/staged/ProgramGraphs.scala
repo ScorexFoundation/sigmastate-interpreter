@@ -35,7 +35,7 @@ trait ProgramGraphs extends AstGraphs { self: Scalan =>
     override lazy val scheduleIds = {
       val neighbours: DFunc[Int, DBuffer[Int]] = filterNode match {
         case Nullable(pred) =>
-          { (id: Int) =>
+          new DFunc[Int, DBuffer[Int]] { def apply(id: Int) = {
             val deps = getSym(id).node.deps
             val len = deps.length
             val res = DBuffer.ofSize[Int](len)
@@ -45,9 +45,9 @@ trait ProgramGraphs extends AstGraphs { self: Scalan =>
                 res += sym.node.nodeId
             }
             res
-          }
+          }}
         case _ =>
-          { (id: Int) =>
+          new DFunc[Int, DBuffer[Int]] { def apply(id: Int) = {
             val deps = getSym(id).node.deps
             val len = deps.length
             val res = DBuffer.ofSize[Int](len)
@@ -57,7 +57,7 @@ trait ProgramGraphs extends AstGraphs { self: Scalan =>
                 res += sym.node.nodeId
             }
             res
-          }
+          }}
       }
       val sch = GraphUtil.depthFirstOrderFrom(rootIds, neighbours)
       sch

@@ -19,6 +19,7 @@ import sigmastate.lang.exceptions.{DeserializeCallDepthExceeded, InputSizeLimitE
 import sigmastate.serialization.OpCodes._
 import sigmastate.utils.SigmaByteReader
 import sigmastate.utxo.SizeOf
+import sigmastate.utils.Helpers._
 
 import scala.collection.mutable
 
@@ -87,7 +88,7 @@ class DeserializationResilience extends SerializationSpecification with SigmaTes
 
     // guard should not be tripped up by a huge collection
     val goodBytes = SigmaSerializer.startWriter()
-      .putValue(AND(List.tabulate(SigmaSerializer.MaxTreeDepth + 1)(_ => booleanExprGen.sample.get)))
+      .putValue(AND(Array.tabulate(SigmaSerializer.MaxTreeDepth + 1)(_ => booleanExprGen.sample.get)))
       .toBytes
     ValueSerializer.deserialize(goodBytes, 0)
     // test other API endpoints
@@ -268,7 +269,7 @@ class DeserializationResilience extends SerializationSpecification with SigmaTes
         verifier.verify(emptyEnv + (ScriptNameProp -> "verify"),
           ErgoTree(ErgoTree.DefaultHeader, IndexedSeq(), recursiveScript), ctx, pr, fakeMessage)
       }
-      res.fold(t => throw t, identity)
+      res.getOrThrow
     }, {
       case e: NoSuchElementException =>
         // this is expected because of deserialization is forced when ErgoTree.complexity is accessed in verify

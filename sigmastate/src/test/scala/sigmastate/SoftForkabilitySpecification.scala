@@ -16,6 +16,7 @@ import sigmastate.serialization.OpCodes.{OpCodeExtra, LastConstantCode, OpCode}
 import sigmastate.serialization._
 import sigmastate.utxo.{DeserializeContext, SelectField}
 import special.sigma.SigmaTestingData
+import sigmastate.utils.Helpers._
 
 class SoftForkabilitySpecification extends SigmaTestingData {
 
@@ -54,7 +55,7 @@ class SoftForkabilitySpecification extends SigmaTestingData {
     val env = Map(ScriptNameProp -> (name + "_verify"))
     val ctx = createContext(blockHeight, tx, vs)
     val prop = tx.outputs(0).ergoTree
-    verifier.verify(env, prop, ctx, proof, fakeMessage).map(_._1).fold(t => throw t, identity) shouldBe true
+    verifier.verify(env, prop, ctx, proof, fakeMessage).map(_._1).getOrThrow shouldBe true
   }
 
   def proveAndVerifyTx(name: String, tx: ErgoLikeTransaction, vs: SigmaValidationSettings) = {

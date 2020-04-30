@@ -8,6 +8,8 @@ import spire.syntax.all.cfor
 import scala.reflect.runtime.universe._
 import scalan.util.{Covariant, GraphUtil}
 
+import scala.collection.Seq
+
 trait Thunks extends Functions with GraphVizExport { self: Scalan =>
 
   type Th[+T] = Ref[Thunk[T]]
@@ -109,11 +111,11 @@ trait Thunks extends Functions with GraphVizExport { self: Scalan =>
     def productArity: Int = 1
 
     override def boundVars = Nil
-    override lazy val freeVars = if (schedule.isEmpty) Array(root) else super.freeVars
+    override lazy val freeVars: Seq[Sym] = if (schedule.isEmpty) Array(root) else super.freeVars
 
     override protected def getDeps: Array[Sym] = freeVars.toArray
 
-    val roots = Array(root)
+    val roots: Seq[Sym] = Array(root)
     override lazy val rootIds: DBuffer[Int] = super.rootIds
     override def isIdentity: Boolean = false
   }
@@ -139,7 +141,7 @@ trait Thunks extends Functions with GraphVizExport { self: Scalan =>
     def scheduleForResult(root: Ref[Any]): DBuffer[Int] = {
       val sch = GraphUtil.depthFirstOrderFrom(
         DBuffer(root.node.nodeId),
-        { id: Int =>
+        new DFunc[Int, DBuffer[Int]] { def apply(id: Int) = {
           val deps = getSym(id).node.deps
           val res = DBuffer.ofSize[Int](deps.length)
           cfor(0)(_ < deps.length, _ + 1) { i =>
@@ -149,7 +151,7 @@ trait Thunks extends Functions with GraphVizExport { self: Scalan =>
               res += id
           }
           res
-        }
+        }}
       )
       sch
     }
