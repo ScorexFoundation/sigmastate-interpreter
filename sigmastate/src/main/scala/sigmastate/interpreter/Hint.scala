@@ -62,8 +62,6 @@ case class OtherCommitment(override val image: SigmaBoolean, commitment: FirstPr
   */
 case class HintsBag(hints: Seq[Hint]) {
 
-  lazy val otherCommitments: Seq[OtherCommitment] = hints.collect { case oc: OtherCommitment => oc }
-
   lazy val otherSecrets: Seq[OtherSecret] = hints.collect { case os: OtherSecret => os }
 
   lazy val otherSecretsImages: Seq[SigmaBoolean] = otherSecrets.map(_.image)
