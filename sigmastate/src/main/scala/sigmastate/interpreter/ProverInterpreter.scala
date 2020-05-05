@@ -206,11 +206,10 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
         // We'll mark the first k real ones real
         val newChildren = t.children.foldLeft((Seq[UnprovenTree](), 0)) { case ((children, countOfReal), child) =>
           val kid = child.asInstanceOf[UnprovenTree]
-          val (newKid, newCountOfReal) = kid.real match {
-            case false => (kid, countOfReal)
-            case true => ( {
-              if (countOfReal >= t.k) kid.withSimulated(true) else kid
-            }, countOfReal + 1)
+          val (newKid, newCountOfReal) = if (kid.real) {
+            ( { if (countOfReal >= t.k) kid.withSimulated(true) else kid }, countOfReal + 1)
+          } else {
+            (kid, countOfReal)
           }
           (children :+ newKid, newCountOfReal)
         }._1
