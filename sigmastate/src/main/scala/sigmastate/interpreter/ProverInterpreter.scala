@@ -137,11 +137,11 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
       val simulated = or.children.forall(_.asInstanceOf[UnprovenTree].simulated)
       or.copy(simulated = simulated)
     case t: CThresholdUnproven =>
-      // If the node is TRESHOLD(k), mark it "real" if at least k of its children are marked real; else mark it "simulated"
-      val c = t.children.foldLeft(0) { (count, child) =>
+      // If the node is THRESHOLD(k), mark it "real" if at least k of its children are marked real; else mark it "simulated"
+      val realCnt = t.children.foldLeft(0) { (count, child) =>
         count + (if (child.asInstanceOf[UnprovenTree].simulated) 0 else 1)
       }
-      t.copy(simulated = c < t.k)
+      t.copy(simulated = realCnt < t.k)
     case su: UnprovenSchnorr =>
       // If the node is a leaf, mark it "real'' if the witness for it is available
       // or a hint shows the secret is known to external party participated in multi-signing;
@@ -442,7 +442,7 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
 
       val z = privKeyOpt match {
         case Some(privKey) =>
-          hintsBag.hints.filter(_.isInstanceOf[OwnCommitment]).map(_.asInstanceOf[OwnCommitment])
+          hintsBag.hints.collect{ case ownCommitment: OwnCommitment => ownCommitment }
             .find(_.image == su.proposition).map { oc =>
             DLogInteractiveProver.secondMessage(
               privKey.asInstanceOf[DLogProverInput],
@@ -476,7 +476,7 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
 
       val z = privKeyOpt match {
         case Some(privKey) =>
-          hintsBag.hints.filter(_.isInstanceOf[OwnCommitment]).map(_.asInstanceOf[OwnCommitment])
+          hintsBag.hints.collect{ case ownCommitment: OwnCommitment => ownCommitment }
             .find(_.image == dhu.proposition).map { oc =>
             DiffieHellmanTupleInteractiveProver.secondMessage(
               privKey.asInstanceOf[DiffieHellmanTupleProverInput],
