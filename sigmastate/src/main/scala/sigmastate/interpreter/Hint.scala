@@ -74,7 +74,7 @@ case class HintsBag(hints: Seq[Hint]) {
 
   def addHint(hint: Hint): HintsBag = HintsBag(hint +: hints)
 
-  def addHints(newHints: Seq[Hint]): HintsBag = HintsBag(newHints ++ hints)
+  def addHints(newHints: Hint*): HintsBag = HintsBag(newHints ++ hints)
 
   def ++(other: HintsBag): HintsBag = HintsBag(other.hints ++ hints)
 

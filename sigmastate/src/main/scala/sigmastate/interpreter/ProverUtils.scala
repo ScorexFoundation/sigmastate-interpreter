@@ -33,13 +33,14 @@ trait ProverUtils extends Interpreter {
 
     def traverseNode(tree: ProofTree, propositions: Seq[SigmaBoolean], hintsBag: HintsBag): HintsBag = {
       tree match {
-        case leaf: UncheckedLeaf[_] =>
-          if (propositions.contains(leaf.proposition)) {
-            val h = OtherSecretProven(leaf.proposition, Challenge @@ leaf.challenge, leaf)
-            hintsBag.addHint(h).addHint(OtherCommitment(leaf.proposition, leaf.commitmentOpt.get))
-          } else hintsBag
         case inner: UncheckedConjecture =>
           inner.children.foldLeft(hintsBag) { case (hb, c) => traverseNode(c, propositions, hb) }
+        case leaf: UncheckedLeaf[_] =>
+          if (propositions.contains(leaf.proposition)) {
+            val cmtHint = OtherCommitment(leaf.proposition, leaf.commitmentOpt.get)
+            val secretHint = OtherSecretProven(leaf.proposition, Challenge @@ leaf.challenge, leaf)
+            hintsBag.addHints(cmtHint, secretHint)
+          } else hintsBag
       }
     }
 

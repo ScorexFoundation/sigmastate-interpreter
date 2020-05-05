@@ -278,6 +278,8 @@ class DistributedSigSpecification extends SigmaTestingCommons {
                 .bagForMultisig(ctx, prop, proofAlice.proof, Seq(pubkeyAlice, pubkeyBob, pubkeyCarol, pubkeyEmma))
                 .addHint(OwnCommitment(pubkeyDave, rDave, aDave))
 
+
+    println("proofs: " + bagD.proofs.size)
     println("osis: " + bagD.otherSecretsImages.size)
 
     val proofDave = proverD.prove(prop, ctx, fakeMessage, bagD).get
