@@ -33,7 +33,8 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
 
   /**
     * The comments in this section are taken from the algorithm for the
-    * Sigma-protocol prover as described in the white paper
+    * Sigma-protocol prover as described in the ErgoScript white-paper
+    * https://ergoplatform.org/docs/ErgoScript.pdf , Appendix A
     *
     */
   // todo: if we are concerned about timing attacks against the prover, we should make sure that this code
@@ -60,7 +61,10 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
     val step6 = simulateAndCommit(hintsBag)(step3).get.asInstanceOf[UnprovenTree]
 
     // Prover Steps 7: convert the relevant information in the tree (namely, tree structure, node types,
-    // the statements being proven and commitments at the leaves) to a string
+    // the statements being proven and commitments at the leaves) to a bitstring.
+    // This bitstring corresponding to a proposition to prove is needed for Strong Fiat-Shamir transformation.
+    // See [BPW12] paper on Strong vs Weak Fiat-Shamir,
+    // (https://link.springer.com/content/pdf/10.1007/978-3-642-34961-4_38.pdf)
     val propBytes = FiatShamirTree.toBytes(step6)
 
     // Prover Step 8: compute the challenge for the root of the tree as the Fiat-Shamir hash of propBytes
@@ -142,24 +146,16 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
         count + (if (child.asInstanceOf[UnprovenTree].simulated) 0 else 1)
       }
       t.copy(simulated = realCnt < t.k)
-    case su: UnprovenSchnorr =>
+    // UnprovenSchnorr | UnprovenDiffieHellmanTuple case
+    case ul: UnprovenLeaf =>
       // If the node is a leaf, mark it "real'' if the witness for it is available
       // or a hint shows the secret is known to external party participated in multi-signing;
       // else mark it "simulated"
-      val real = hintsBag.otherSecretsImages.contains(su.proposition) || secrets.exists {
-        case in: DLogProverInput => in.publicImage == su.proposition
+      val real = hintsBag.realImages.contains(ul.proposition) || secrets.exists {
+        case in: SigmaProtocolPrivateInput[_, _] => in.publicImage == ul.proposition
         case _ => false
       }
-      su.copy(simulated = !real)
-    case dhu: UnprovenDiffieHellmanTuple =>
-      // If the node is a leaf, mark it "real'' if the witness for it is available
-      // or a hint shows the secret is known to external party participated in multi-signing;
-      // else mark it "simulated"
-      val secretKnown = hintsBag.otherSecretsImages.contains(dhu.proposition) || secrets.exists {
-        case in: DiffieHellmanTupleProverInput => in.publicImage == dhu.proposition
-        case _ => false
-      }
-      dhu.copy(simulated = !secretKnown)
+      ul.withSimulated(!real)
     case t =>
       error(s"Don't know how to markReal($t)")
   })
@@ -328,8 +324,8 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
       // or simulate it (if the node is simulated)
 
       // Step 6 (real leaf -- compute the commitment a or take it from the hints bag)
-      hintsBag.commitments.find(_.image == su.proposition).map { proof =>
-        su.copy(commitmentOpt = Some(proof.commitment.asInstanceOf[FirstDLogProverMessage]))
+      hintsBag.commitments.find(_.image == su.proposition).map { cmtHint =>
+        su.copy(commitmentOpt = Some(cmtHint.commitment.asInstanceOf[FirstDLogProverMessage]))
       }.getOrElse {
         if (su.simulated) {
           // Step 5 (simulated leaf -- complete the simulation)
@@ -366,7 +362,7 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
     case a: Any => error(s"Don't know how to challengeSimulated($a)")
   })
 
-  def extractChallenge(pt: ProofTree): Option[Array[Byte]] = pt match {
+  private def extractChallenge(pt: ProofTree): Option[Array[Byte]] = pt match {
     case upt: UnprovenTree => upt.challengeOpt
     case sn: UncheckedSchnorr => Some(sn.challenge)
     case dh: UncheckedDiffieHellmanTuple => Some(dh.challenge)
@@ -455,7 +451,7 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
           }
 
         case None =>
-          hintsBag.proofs.find(_.image == su.proposition).map { proof =>
+          hintsBag.realProofs.find(_.image == su.proposition).map { proof =>
             val provenSchnorr = proof.uncheckedTree.asInstanceOf[UncheckedSchnorr]
             provenSchnorr.secondMessage
           }.getOrElse {
@@ -489,7 +485,7 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
           }
 
         case None =>
-          hintsBag.proofs.find(_.image == dhu.proposition).map { proof =>
+          hintsBag.realProofs.find(_.image == dhu.proposition).map { proof =>
             val provenSchnorr = proof.uncheckedTree.asInstanceOf[UncheckedDiffieHellmanTuple]
             provenSchnorr.secondMessage
           }.getOrElse {
@@ -501,7 +497,7 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
 
     // if the simulated node is proven by someone else, take it from hints bag
     case su: UnprovenLeaf if su.simulated =>
-      hintsBag.proofs.find(_.image == su.proposition).map { proof =>
+      hintsBag.simulatedProofs.find(_.image == su.proposition).map { proof =>
         proof.uncheckedTree
       }.getOrElse(su)
 

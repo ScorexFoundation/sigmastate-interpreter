@@ -15,18 +15,28 @@ import sigmastate.basics.VerifierMessage.Challenge
 trait Hint
 
 /**
-  * A hint which is indicating that a secret associated with its public image "image" is known by some other party.
+  * A hint which is indicating that a secret associated with its public image "image" is already proven.
   */
-trait OtherSecret extends Hint {
+trait SecretProven extends Hint {
   val image: SigmaBoolean
+  val challenge: Challenge
+  val uncheckedTree: UncheckedTree
 }
 
 /**
   * A hint which contains a proof-of-knowledge for a secret associated with its public image "image".
   */
-case class OtherSecretProven(override val image: SigmaBoolean,
-                             challenge: Challenge,
-                             uncheckedTree: UncheckedTree) extends OtherSecret
+case class RealSecretProven(image: SigmaBoolean,
+                            challenge: Challenge,
+                            uncheckedTree: UncheckedTree) extends SecretProven
+
+/**
+  * A hint which contains a proof-of-knowledge for a secret associated with its public image "image".
+  */
+case class SimulatedSecretProven(image: SigmaBoolean,
+                                 challenge: Challenge,
+                                 uncheckedTree: UncheckedTree) extends SecretProven
+
 
 /**
   * A family of hints which are about a correspondence between a public image of a secret image and prover's commitment
@@ -53,7 +63,16 @@ case class OwnCommitment(override val image: SigmaBoolean, randomness: BigIntege
   * @param image      - image of a secret
   * @param commitment - commitment to randomness used while proving knowledge of the secret
   */
-case class OtherCommitment(override val image: SigmaBoolean, commitment: FirstProverMessage) extends OtherSecret with CommitmentHint
+case class RealCommitment(override val image: SigmaBoolean, commitment: FirstProverMessage) extends CommitmentHint
+
+/**
+  * A hint which contains a commitment to randomness associated with a public image of a secret.
+  *
+  * @param image      - image of a secret
+  * @param commitment - commitment to randomness used while proving knowledge of the secret
+  */
+case class SimulatedCommitment(override val image: SigmaBoolean, commitment: FirstProverMessage) extends CommitmentHint
+
 
 /**
   * Collection of hints to be used by a prover
@@ -62,13 +81,16 @@ case class OtherCommitment(override val image: SigmaBoolean, commitment: FirstPr
   */
 case class HintsBag(hints: Seq[Hint]) {
 
-  lazy val otherSecrets: Seq[OtherSecret] = hints.collect { case os: OtherSecret => os }
-
-  lazy val otherSecretsImages: Seq[SigmaBoolean] = otherSecrets.map(_.image)
-
   lazy val commitments: Seq[CommitmentHint] = hints.collect { case ch: CommitmentHint => ch }
 
-  lazy val proofs: Seq[OtherSecretProven] = hints.collect { case osp: OtherSecretProven => osp }
+  lazy val realProofs: Seq[RealSecretProven] = hints.collect { case osp: RealSecretProven => osp }
+  lazy val simulatedProofs: Seq[SimulatedSecretProven] = hints.collect { case osp: SimulatedSecretProven => osp }
+
+  lazy val proofs: Seq[SecretProven] = realProofs ++ simulatedProofs
+
+  lazy val realCommitments: Seq[RealCommitment] = hints.collect { case osp: RealCommitment => osp }
+
+  lazy val realImages: Seq[SigmaBoolean] = realProofs.map(_.image) ++ realCommitments.map(_.image)
 
   def addHint(hint: Hint): HintsBag = HintsBag(hint +: hints)
 
@@ -77,8 +99,11 @@ case class HintsBag(hints: Seq[Hint]) {
   def ++(other: HintsBag): HintsBag = HintsBag(other.hints ++ hints)
 
   override def toString: String = s"HintsBag(${hints.mkString("\n")})"
+
 }
 
 object HintsBag {
+
   val empty = HintsBag(Seq.empty)
+
 }

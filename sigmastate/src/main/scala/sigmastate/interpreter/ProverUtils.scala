@@ -16,13 +16,15 @@ trait ProverUtils extends Interpreter {
     * @param context      - context used to reduce the proposition
     * @param exp          - proposition to reduce
     * @param proof        - proof for reduced proposition
-    * @param knownSecrets - public keys of known secrets
+    * @param realSecretsToExtract - public keys of secrets with real proofs
+    * @param simulatedSecretsToExtract - public keys of secrets with simulated proofs
     * @return - bag of OtherSecretProven and OtherCommitment hints
     */
   def bagForMultisig(context: CTX,
                      exp: ErgoTree,
                      proof: Array[Byte],
-                     knownSecrets: Seq[SigmaBoolean]): HintsBag = {
+                     realSecretsToExtract: Seq[SigmaBoolean],
+                     simulatedSecretsToExtract: Seq[SigmaBoolean] = Seq.empty): HintsBag = {
 
     val prop = propositionFromErgoTree(exp, context)
     val (propTree, _) = applyDeserializeContext(context, prop)
@@ -31,20 +33,36 @@ trait ProverUtils extends Interpreter {
     val ut = SigSerializer.parseAndComputeChallenges(reducedTree, proof)
     val proofTree = computeCommitments(ut).get.asInstanceOf[UncheckedSigmaTree]
 
-    def traverseNode(tree: ProofTree, propositions: Seq[SigmaBoolean], hintsBag: HintsBag): HintsBag = {
+    def traverseNode(tree: ProofTree,
+                     realPropositions: Seq[SigmaBoolean],
+                     simulatedPropositions: Seq[SigmaBoolean],
+                     hintsBag: HintsBag): HintsBag = {
       tree match {
         case inner: UncheckedConjecture =>
-          inner.children.foldLeft(hintsBag) { case (hb, c) => traverseNode(c, propositions, hb) }
+          inner.children.foldLeft(hintsBag) { case (hb, c) =>
+            traverseNode(c, realPropositions, simulatedPropositions, hb)
+          }
         case leaf: UncheckedLeaf[_] =>
-          if (propositions.contains(leaf.proposition)) {
-            val cmtHint = OtherCommitment(leaf.proposition, leaf.commitmentOpt.get)
-            val secretHint = OtherSecretProven(leaf.proposition, Challenge @@ leaf.challenge, leaf)
-            hintsBag.addHints(cmtHint, secretHint)
+          val realFound = realPropositions.contains(leaf.proposition)
+          val simulatedFound = simulatedPropositions.contains(leaf.proposition)
+          if (realFound || simulatedFound) {
+            val hints = if(realFound) {
+              Seq(
+                RealSecretProven(leaf.proposition, Challenge @@ leaf.challenge, leaf),
+                RealCommitment(leaf.proposition, leaf.commitmentOpt.get)
+              )
+            } else {
+              Seq(
+                SimulatedSecretProven(leaf.proposition, Challenge @@ leaf.challenge, leaf),
+                SimulatedCommitment(leaf.proposition, leaf.commitmentOpt.get)
+              )
+            }
+            hintsBag.addHints(hints :_*)
           } else hintsBag
       }
     }
 
-    traverseNode(proofTree, knownSecrets, HintsBag.empty)
+    traverseNode(proofTree, realSecretsToExtract, simulatedSecretsToExtract, HintsBag.empty)
   }
 
 }
