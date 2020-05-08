@@ -48,13 +48,13 @@ trait ProverUtils extends Interpreter {
           if (realFound || simulatedFound) {
             val hints = if(realFound) {
               Seq(
-                RealSecretProven(leaf.proposition, Challenge @@ leaf.challenge, leaf),
-                RealCommitment(leaf.proposition, leaf.commitmentOpt.get)
+                RealCommitment(leaf.proposition, leaf.commitmentOpt.get),
+                RealSecretProof(leaf.proposition, Challenge @@ leaf.challenge, leaf)
               )
             } else {
               Seq(
-                SimulatedSecretProven(leaf.proposition, Challenge @@ leaf.challenge, leaf),
-                SimulatedCommitment(leaf.proposition, leaf.commitmentOpt.get)
+                SimulatedCommitment(leaf.proposition, leaf.commitmentOpt.get),
+                SimulatedSecretProof(leaf.proposition, Challenge @@ leaf.challenge, leaf)
               )
             }
             hintsBag.addHints(hints :_*)

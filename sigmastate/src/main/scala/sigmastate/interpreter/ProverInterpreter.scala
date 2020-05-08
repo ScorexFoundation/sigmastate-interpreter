@@ -437,8 +437,7 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
 
       val z = privKeyOpt match {
         case Some(privKey) =>
-          hintsBag.hints.collect{ case ownCommitment: OwnCommitment => ownCommitment }
-            .find(_.image == su.proposition).map { oc =>
+          hintsBag.ownCommitments.find(_.image == su.proposition).map { oc =>
             DLogInteractiveProver.secondMessage(
               privKey.asInstanceOf[DLogProverInput],
               oc.randomness,
@@ -471,8 +470,7 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
 
       val z = privKeyOpt match {
         case Some(privKey) =>
-          hintsBag.hints.collect{ case ownCommitment: OwnCommitment => ownCommitment }
-            .find(_.image == dhu.proposition).map { oc =>
+          hintsBag.ownCommitments.find(_.image == dhu.proposition).map { oc =>
             DiffieHellmanTupleInteractiveProver.secondMessage(
               privKey.asInstanceOf[DiffieHellmanTupleProverInput],
               oc.randomness,

@@ -26,16 +26,16 @@ trait SecretProven extends Hint {
 /**
   * A hint which contains a proof-of-knowledge for a secret associated with its public image "image".
   */
-case class RealSecretProven(image: SigmaBoolean,
-                            challenge: Challenge,
-                            uncheckedTree: UncheckedTree) extends SecretProven
+case class RealSecretProof(image: SigmaBoolean,
+                           challenge: Challenge,
+                           uncheckedTree: UncheckedTree) extends SecretProven
 
 /**
   * A hint which contains a proof-of-knowledge for a secret associated with its public image "image".
   */
-case class SimulatedSecretProven(image: SigmaBoolean,
-                                 challenge: Challenge,
-                                 uncheckedTree: UncheckedTree) extends SecretProven
+case class SimulatedSecretProof(image: SigmaBoolean,
+                                challenge: Challenge,
+                                uncheckedTree: UncheckedTree) extends SecretProven
 
 
 /**
@@ -81,14 +81,14 @@ case class SimulatedCommitment(override val image: SigmaBoolean, commitment: Fir
   */
 case class HintsBag(hints: Seq[Hint]) {
 
-  lazy val commitments: Seq[CommitmentHint] = hints.collect { case ch: CommitmentHint => ch }
-
-  lazy val realProofs: Seq[RealSecretProven] = hints.collect { case osp: RealSecretProven => osp }
-  lazy val simulatedProofs: Seq[SimulatedSecretProven] = hints.collect { case osp: SimulatedSecretProven => osp }
+  lazy val realProofs: Seq[RealSecretProof] = hints.collect { case osp: RealSecretProof => osp }
+  lazy val simulatedProofs: Seq[SimulatedSecretProof] = hints.collect { case osp: SimulatedSecretProof => osp }
 
   lazy val proofs: Seq[SecretProven] = realProofs ++ simulatedProofs
 
-  lazy val realCommitments: Seq[RealCommitment] = hints.collect { case osp: RealCommitment => osp }
+  lazy val commitments: Seq[CommitmentHint] = hints.collect { case ch: CommitmentHint => ch }
+  lazy val realCommitments: Seq[RealCommitment] = hints.collect { case rc: RealCommitment => rc }
+  lazy val ownCommitments: Seq[OwnCommitment] = hints.collect { case oc: OwnCommitment => oc }
 
   lazy val realImages: Seq[SigmaBoolean] = realProofs.map(_.image) ++ realCommitments.map(_.image)
 
