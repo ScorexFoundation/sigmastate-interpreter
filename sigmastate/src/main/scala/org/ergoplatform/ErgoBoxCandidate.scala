@@ -5,7 +5,7 @@ import java.util
 import org.ergoplatform.ErgoBox._
 import org.ergoplatform.settings.ErgoAlgos
 import scorex.crypto.hash.Digest32
-import scorex.util.ModifierId
+import scorex.util.{bytesToId, idToBytes, ModifierId}
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.SType.AnyOps
@@ -39,7 +39,8 @@ class ErgoBoxCandidate(val value: Long,
                        val ergoTree: ErgoTree,
                        val creationHeight: Int,
                        val additionalTokens: Coll[(TokenId, Long)] = Colls.emptyColl,
-                       val additionalRegisters: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]] = Map()) {
+                       val additionalRegisters: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]] = Map()) 
+                       extends ErgoBoxAssets {
 
   def proposition: BoolValue = ergoTree.toProposition(ergoTree.isConstantSegregation).asBoolValue
 
@@ -77,6 +78,12 @@ class ErgoBoxCandidate(val value: Long,
   override def toString: Idn = s"ErgoBoxCandidate($value, $ergoTree," +
     s"tokens: (${additionalTokens.map(t => ErgoAlgos.encode(t._1) + ":" + t._2).toArray.mkString(", ")}), " +
     s"$additionalRegisters, creationHeight: $creationHeight)"
+
+  lazy val tokens: Map[ModifierId, Long] = 
+    additionalTokens
+      .toArray
+      .map(t => bytesToId(t._1) -> t._2)
+      .toMap
 }
 
 object ErgoBoxCandidate {
