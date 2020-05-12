@@ -100,6 +100,14 @@ object Values {
         sys.error("_sourceContext can be set only once")
       }
 
+    /** Defines an evaluation semantics of this tree node (aka Value or expression) in the given data environment.
+      * Should be implemented by all the ErgoTree nodes (aka operations).
+      * Thus, the ErgoTree interpreter implementation consists of combined implementations of this method.
+      *
+      * @param  E   Evaluator which defines evaluation context, cost accumulator, settings etc.
+      * @param  env immutable map, which binds variables (given by ids) to the values
+      * @return the data value which is the result of evaluation
+      */
     protected def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = sys.error(s"Should be overriden in ${this.getClass}: $this")
 
     @inline final def evalTo[T](E: ErgoTreeEvaluator, env: DataEnv): T = {
@@ -108,8 +116,6 @@ object Values {
       if (E.settings.isMeasureOperationTime) E.profiler.onAfterNode(this)
       v.asInstanceOf[T]
     }
-
-    def opCost: Int = Value.costOf(opName, opType)
   }
 
   object Value {
@@ -203,8 +209,11 @@ object Values {
         costOf("Downcast", Downcast.BigIntOpType)
       case c @ Constant(p: SigmaProp, tpe) =>
         costOfSigmaTree(p)
+      case _: OptionGet[_] => SigmaDsl.CostModel.SelectField
+      case _: GetVar[_] => SigmaDsl.CostModel.GetVar
+
       case _ =>
-        v.opCost
+        Value.costOf(v.opName, v.opType)
     }
 
   }

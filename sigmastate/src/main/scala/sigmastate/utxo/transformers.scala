@@ -398,7 +398,6 @@ case class GetVar[V <: SType](varId: Byte, override val tpe: SOption[V]) extends
     E.addCostOf(this)
     E.evalContext.context.getVar(varId)(t)
   }
-  override def opCost: Int = SigmaDsl.CostModel.GetVar
 }
 object GetVar extends ValueCompanion {
   override def opCode: OpCode = OpCodes.GetVarCode
@@ -417,7 +416,6 @@ case class OptionGet[V <: SType](input: Value[SOption[V]]) extends Transformer[S
       case _ => sys.error(s"None.get error while evaluating $this")
     }
   }
-  override def opCost: Int = SigmaDsl.CostModel.SelectField
 }
 object OptionGet extends SimpleTransformerCompanion {
   override def opCode: OpCode = OpCodes.OptionGetCode
