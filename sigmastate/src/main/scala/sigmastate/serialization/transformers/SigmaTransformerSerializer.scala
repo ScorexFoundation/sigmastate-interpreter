@@ -1,8 +1,8 @@
 package sigmastate.serialization.transformers
 
 import scalan.util.Extensions.LongOps
-import sigmastate.{SigmaTransformer, SigmaTransformerCompanion}
-import sigmastate.Values.{ValueCompanion, SigmaPropValue}
+import sigmastate.{SigmaTransformerCompanion, SigmaTransformer}
+import sigmastate.Values.{SigmaPropValue, SValue}
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utils.SigmaByteWriter.{DataInfo, valuesItemInfo}
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}

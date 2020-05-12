@@ -107,6 +107,7 @@ lazy val testSettings = Seq(
   baseDirectory in Test := file("."),
   publishArtifact in Test := true,
   publishArtifact in(Test, packageSrc) := true,
+  publishArtifact in(Compile, packageDoc) := false,
   publishArtifact in(Test, packageDoc) := false,
   test in assembly := {})
 

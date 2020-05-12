@@ -528,7 +528,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
             MethodCall(
               ValUse(1, SLongArray),
               PatchMethod.withConcreteTypes(Map(tIV -> SLong)),
-              Vector(IntConstant(0), ConcreteCollection(LongConstant(3)), IntConstant(1)),
+              Vector(IntConstant(0), ConcreteCollection.fromItems(LongConstant(3)), IntConstant(1)),
               Map()).asCollection[SType],
             IntConstant(0)
           ),
@@ -563,7 +563,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
             MethodCall(
               ValUse(1, SLongArray),
               UpdateManyMethod.withConcreteTypes(Map(tIV -> SLong)),
-              Vector(ConcreteCollection(IntConstant(0)), ConcreteCollection(LongConstant(3))),
+              Vector(ConcreteCollection.fromItems(IntConstant(0)), ConcreteCollection.fromItems(LongConstant(3))),
               Map()).asCollection[SType],
             IntConstant(0)
           ),
