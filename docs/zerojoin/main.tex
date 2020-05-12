@@ -92,10 +92,9 @@
 \begin{abstract}
 
 We present \algname, a practical privacy-enhancing protocol for blockchain transactions. \algname can be considered a combination of ZeroCoin and CoinJoin. It borrows ideas from both but attempts to overcome some of their drawbacks.
-% two other privacy enhancing protocols. 
-Like ZeroCoin, our protocol also uses zero-knowledge proofs and a pool of
+Like ZeroCoin, our protocol uses zero-knowledge proofs and a pool of
 participants. However, unlike ZeroCoin, our proofs are very efficient, and our pool size is not monotonously increasing.
-Thus, our protocol overcomes the two major drawbacks of ZeroCoin. Our approach can also be considered a non-interactive variant of CoinJoin, where the interaction is replaced by a public transaction on the blockchain. The security if \algname is based on the hardness of the Decision Diffie-Hellman (DDH) problem. 
+Thus, our protocol overcomes the two major drawbacks of ZeroCoin. Our approach can also be considered a non-interactive variant of CoinJoin, where the interaction is replaced by a public transaction on the blockchain. The security of \algname is based on the Decision Diffie-Hellman (DDH) assumption. 
 We also present \mixname, a practical implementation of \algname on top of Ergo, a smart contract platform based on Sigma protocols. While \algname contains the key ideas, it leaves open the practical issue of handling fees. The key contribution of \mixname is a novel approach to handle fee in \algname. 
 
 \end{abstract}
@@ -111,17 +110,16 @@ In this work, we describe \algname, another privacy enhancing protocol based on 
 
 \section{Background}
 
-
 Bitcoin~\cite{Nak08}, ZeroCoin~\cite{zerocoin}, Z-Cash~\cite{zcash} and Ergo~\cite{ergo} are based on the idea of ``coins'' which are short-lived immutable data structures, often called UTXOs (short for {unspent transaction outputs}). \algname also uses UTXOs. 
 
 \subsection{UTXO Blockchains}
-In UTXO-based blockchains, every node maintains an in-memory database of all current UTXOs, called the {\em UTXO-set}. A transaction consumes (destroys) some UTXOs and creates new ones. When a node receives a block, it updates its UTXO-set based on the transactions in that block. A UTXO is a single-use object, and in the simplest contains a public key. The box can be spent using the corresponding key. Spending a box essentially involves executing any embedded code inside it and removing it from the UTXO-set. UTXOs can be likened to physical coins, which get passed around between people and one person may hold multiple coins at any time (one private key can control multiple unspent UTXOs). 
-The alternative to UTXOs is the {\em account}-based model of Ethereum~\cite{wood2014ethereum}. Unlike UTXOs, accounts are long-lived and mutable. Each private controls exactly one account, which can be likened to real-world bank accounts. While a UTXO must be completely spent (i.e., its balance cannot be changed), an account at the bare minimum allows changing the balance. Most privacy techniques including CoinJoin and ZeroCoin are designed for UTXOs and cannot be easily adapted for accounts. Our protocol also works in the UTXO model only. %and leaks information if used in the account-based model.
+In UTXO-based blockchains, every node maintains an in-memory database of all current UTXOs, called the {\em UTXO-set}. A transaction consumes (destroys) some UTXOs and creates new ones. When a node receives a block, it updates its UTXO-set based on the transactions in that block. A UTXO is a single-use object, and its simplest form contains a public key (in which case, the UTXO can be ``spent'' using the corresponding private key). Spending a UTXO essentially involves executing any embedded code inside it and removing it from the UTXO-set. UTXOs can be likened to physical coins, which get passed around between people and one person may hold multiple coins at any time (one private key can control multiple unspent UTXOs). 
+The alternative to UTXOs is the {\em account}-based model of Ethereum~\cite{wood2014ethereum}. Unlike UTXOs, accounts are long-lived and mutable. Each private key controls exactly one account, which can be likened to real-world bank accounts. While a UTXO must be completely spent (i.e., its balance cannot be changed), an account at the bare minimum allows changing the balance. Most privacy techniques including CoinJoin and ZeroCoin are designed for UTXOs and cannot be easily adapted for accounts. Our protocol also works in the UTXO model only. %and leaks information if used in the account-based model.
 
 \subsection{Guard Scripts}
-In the UTXO model, a box is protected by a {\em guard script}, a computer program encoding a {\em proposition}. The proposition defines the set of conditions that must be satisfied when spending the box. The spender supplies a {\em proof} of satisfying the proposition. For example, the proposition may require that the entire transaction's bytes (sans the proof section) must be signed under some public key. The proof is then the signature on the transaction's bytes generated using the corresponding private key. In fact, this is the most common scenario in all UTXO systems. 
+A UTXO is protected by a {\em guard script}, a computer program encoding a {\em proposition}. The proposition defines the set of conditions that must be satisfied when spending the UTXO. The spender supplies a {\em proof} of satisfying the proposition. For example, the proposition may require that the entire transaction's bytes (sans the proof section) must be signed under some public key. The proof is then the signature on the transaction's bytes generated using the corresponding private key. In fact, this is the most common scenario in all UTXO systems. 
 The guard script can encode arbitrarily complex conditions as long as they can be encoded in the underlying language. 
-Guard scripts are also called smart contracts. 
+Guard scripts are also called smart contracts. A {\em box} is another name for a UTXO in Ergo~\cite{ergo} and we will use these two terms interchangebly.
 
 \subsection{Execution Context}
 \label{context}
@@ -129,7 +127,7 @@ Guard scripts are also called smart contracts.
 In UTXO blockchains, a block contains a compact section called the {\em header}, which is
 enough to verify the block solution and check integrity of other sections (such as block transactions). 
 The execution context (or simply the context) is the information available to a smart contract during execution. 
-To encode \algname in smart contracts (rather than within the protocol), the underlying scripting language must support  a sufficiently rich context and allow us to express predicates on that context.
+To encode \algname in smart contracts (rather than within the protocol), the underlying scripting language must support  a sufficiently rich context.
 
 We can classify the context based on what part of the block a smart contract can access. At the bare minimum, the first level, the smart contract should have access to the contents of the UTXO it guards (i.e., its monetary value and any other data stored in it). At the second level, the smart contract may additionally have access to the entire spending transaction, that is, all its inputs and outputs. At the third level, the smart contract may have access to block header data in addition to the data at the second level. For example, in \langname (which operates at this level), the last ten block headers and part of the next block header that is known in advance are also available in the execution context. Finally, at the fourth level, the execution context may contain the entire block with all sibling transactions. Note that since the execution context must fit into random-access memory of commodity hardware, accessing the full blockchain is not a realistic scenario. The following
  table summarizes possible execution context components.
