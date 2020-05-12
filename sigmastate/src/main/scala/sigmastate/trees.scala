@@ -19,10 +19,10 @@ import debox.{Map => DMap}
 import scalan.ExactIntegral._
 import scalan.ExactNumeric._
 import scalan.ExactOrdering._
+import scalan.util.Extensions._
 import sigmastate.ArithOp.OperationImpl
-import sigmastate.Values.Value.costOf
 import sigmastate.eval.NumericOps.{BigIntIsExactOrdering, BigIntIsExactIntegral, BigIntIsExactNumeric}
-import sigmastate.eval.{Colls, SigmaDsl}
+import sigmastate.eval.{Colls, SigmaDsl, Sized}
 import special.collection.Coll
 import special.sigma.{SigmaProp, GroupElement}
 import spire.syntax.all._
@@ -943,12 +943,15 @@ case class EQ[S <: SType](override val left: Value[S], override val right: Value
   extends SimpleRelation[S] {
   override def companion = EQ
   protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
-    val l = left.evalTo[Any](E, env)
-    val r = right.evalTo[Any](E, env)
+    val l = left.evalTo[S#WrappedType](E, env)
+    val r = right.evalTo[S#WrappedType](E, env)
     left.tpe.asInstanceOf[SType] match {
       case SBigInt => E.addCostOf("EQ", SBigInt.RelationOpType)
       case t if t.isConstantSize => E.addCostOf(this)
-      case _ => ???
+      case _ =>
+        val lds = Sized.dataSizeOf[S](l, left.tpe)
+        val rds = Sized.dataSizeOf[S](r, right.tpe)
+        E.addPerKbCostOf(this, (lds + rds).toIntExact)
     }
     l == r
   }

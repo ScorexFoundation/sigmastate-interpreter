@@ -38,8 +38,40 @@ trait SizedLowPriority {
 
 object Sized extends SizedLowPriority {
   def apply[T](implicit sz: Sized[T]): Sized[T] = sz
+
+  /** Creates a size descriptor for a given data instance provided T is Sized.
+    * @param  x  data instance
+    * @tparam T  Sized data type
+    */
   def sizeOf[T: Sized](x: T): Size[T] = Sized[T].size(x)
-  def instance[T](f: T => Size[T]) = new Sized[T] {
+
+  /** Computes data size in bytes of the given Sized data value.
+    * @param  x  Sized data value
+    */
+  def dataSizeOf[T: Sized](x: T): Long = sizeOf[T](x).dataSize
+
+  /** Computes data size in bytes of the given data value which type is described by RType.
+    *
+    * @param  x  data value
+    * @param  ty RType descriptor of type T
+    */
+  def dataSizeOf[T](x: T, ty: RType[T]): Long = {
+    val sized = typeToSized(ty)
+    dataSizeOf[T](x)(sized)
+  }
+
+  /** Computes data size in bytes of the given data value which type is described by SType.
+    *
+    * @param  x     data value
+    * @param  stype SType descriptor of type T
+    */
+  def dataSizeOf[T <: SType](x: T#WrappedType, stype: T): Long = {
+    val sized = stypeToSized(stype)
+    dataSizeOf[T#WrappedType](x)(sized)
+  }
+
+  /** Helper constructor to support Scala 2.11. */
+  def instance[T](f: T => Size[T]): Sized[T] = new Sized[T] {
     override def size(x: T): Size[T] = f(x)
   }
 
@@ -62,6 +94,11 @@ object Sized extends SizedLowPriority {
   implicit val GroupElementIsSized: Sized[GroupElement] = Sized.instance((_: GroupElement) => SizeGroupElement)
   implicit val SigmaPropIsSized: Sized[SigmaProp] = Sized.instance((_: SigmaProp) => SizeSigmaProp)
   implicit val AvlTreeIsSized: Sized[AvlTree] = Sized.instance((_: AvlTree) => SizeAvlTree)
+
+  def stypeToSized[T <: SType](t: T): Sized[T#WrappedType] = {
+    val rtype = Evaluation.stypeToRType(t)
+    typeToSized[T#WrappedType](rtype)
+  }
 
   def typeToSized[T](t: RType[T]): Sized[T] = (t match {
     case BooleanType => BooleanIsSized
