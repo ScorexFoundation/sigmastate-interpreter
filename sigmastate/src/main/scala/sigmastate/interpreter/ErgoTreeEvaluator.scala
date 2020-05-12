@@ -9,18 +9,57 @@ import sigmastate.interpreter.Interpreter.ReductionResult
 import sigmastate.lang.exceptions.CostLimitException
 import special.sigma.Context
 
-case class EvalSettings(isMeasureOperationTime: Boolean)
+/** Configuration parameters of the evaluation run. */
+case class EvalSettings(
+  /** Used by [[ErgoTreeEvaluator.profiler]] to measure operations timings. */
+  isMeasureOperationTime: Boolean,
+  /** Used by [[ErgoTreeEvaluator]] to conditionally perform debug mode operations. */
+  isDebug: Boolean = false)
 
-class EvalContext(
-  val context: Context,
-  val constants: Seq[Constant[SType]])
+/** Used as a wrapper around Sigma [[Context]] to be used in [[ErgoTreeEvaluator]].
+  */
+class EvalContext(val context: Context)
 
+/** Implements a Simple Fast direct-style interpreter of ErgoTrees.
+  *
+  * ### Motivation
+  * [[ErgoTree]] is a simple declarative intermediate representation for Ergo contracts. It is
+  * designed to be compact in serialized form and directly executable, i.e. no additional
+  * transformation is necessary before it can be efficiently executed.
+  *
+  * This class implements a big-step recursive interpreter that works directly with
+  * ErgoTree HOAS. Because of this the evaluator is very simple and follows denotational
+  * semantics of ErgoTree (see https://ergoplatform.org/docs/ErgoTree.pdf). Or, the other
+  * way around, this implementation of ErgoTreeEvaluator is purely functional with
+  * immutable data structures and can be used as definition of ErgoTree's semantics.
+  *
+  * ### Implementation
+  * ErgoTreeEvaluator takes ErgoTree directly as it is deserialized as part of a
+  * transaction. No additional transformation is performed.
+  * ErgoTree is interpreted directly and all the intermediate data is stored in the
+  * runtime types.
+  * The runtime types are such types as [[special.collection.Coll]],
+  * [[special.sigma.SigmaProp]], [[special.sigma.AvlTree]], [[BigInt]], etc.
+  * It also use immutable Map to keep current [[DataEnv]] of computed [[ValDef]]s, as
+  * result only addition is used from the map, and deletion is essentially a garbage
+  * collection.
+  *
+  * ### Performance
+  * Since this interpreter directly works with SigmaDsl types (Coll, BigInt, SigmaProp
+  * etc), it turns out to be very fast. Since it also does JIT style costing instead of
+  * AOT style, it is 5-6x faster then existing implementation.
+  */
 class ErgoTreeEvaluator(
+  /** Represents data context for ErgoTree evaluation */
   val evalContext: EvalContext,
+  /** Accumulates computation costs. */
   val coster: CostAccumulator,
+  /** Preforms operations profiling and time measurments (if enabled in settings). */
   val profiler: Profiler,
+  /** Settings to be used during evaluation. */
   val settings: EvalSettings)
 {
+  /** */
   def eval(env: DataEnv, exp: SValue): Any = {
     exp.evalTo[Any](this, env)
   }
@@ -70,7 +109,7 @@ object ErgoTreeEvaluator {
     val costAccumulator = new CostAccumulator(0, Some(context.costLimit))
     val sigmaContext = context.toSigmaContext(isCost = false)
 
-    val ctx = new EvalContext(sigmaContext, Array.empty[Constant[SType]])
+    val ctx = new EvalContext(sigmaContext)
     val evaluator = new ErgoTreeEvaluator(ctx, costAccumulator, DefaultProfiler, evalSettings)
     val res = evaluator.eval(Map(), exp)
     val cost = costAccumulator.totalCost
