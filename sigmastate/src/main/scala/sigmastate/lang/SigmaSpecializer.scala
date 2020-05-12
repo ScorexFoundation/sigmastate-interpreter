@@ -50,7 +50,7 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
 
     // Rule: numeric.to* casts
     case Select(obj, method, Some(tRes: SNumericType))
-      if obj.tpe.isNumType && obj.asNumValue.tpe.isCastMethod(method) =>
+      if obj.tpe.isNumType && SNumericType.isCastMethod(method) =>
       val numValue = obj.asNumValue
       if (numValue.tpe == tRes)
         Some(numValue)

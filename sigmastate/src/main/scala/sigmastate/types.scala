@@ -2,17 +2,15 @@ package sigmastate
 
 import java.lang.reflect.Method
 import java.math.BigInteger
-import java.util
 
 import org.ergoplatform._
 import org.ergoplatform.validation._
 import scalan.RType
 import scalan.RType.GeneralType
 import sigmastate.SType.{TypeCode, AnyOps}
-import sigmastate.interpreter.{CryptoConstants, ErgoTreeEvaluator}
+import sigmastate.interpreter.{CryptoConstants}
 import sigmastate.utils.Overloading.Overload1
 import scalan.util.Extensions._
-import sigmastate.SBigInt.MaxSizeInBytes
 import sigmastate.Values._
 import sigmastate.lang.Terms._
 import sigmastate.lang.{SigmaBuilder, SigmaTyper}
@@ -25,7 +23,7 @@ import sigmastate.eval.RuntimeCosting
 
 import scala.language.implicitConversions
 import scala.reflect.{ClassTag, classTag}
-import sigmastate.SMethod.{MethodCallIrBuilder, InvokeDescBuilder, javaMethodOf}
+import sigmastate.SMethod.{MethodCallIrBuilder, javaMethodOf, InvokeDescBuilder}
 import sigmastate.utxo.ByIndex
 import sigmastate.utxo.ExtractCreationInfo
 import sigmastate.utxo._
@@ -33,7 +31,6 @@ import special.sigma.{Header, Box, SigmaProp, AvlTree, SigmaDslBuilder, PreHeade
 import sigmastate.lang.SigmaTyper.STypeSubst
 import sigmastate.eval.Evaluation.stypeToRType
 import sigmastate.eval._
-import sigmastate.lang.exceptions.SerializerException
 
 /** Base type for all AST nodes of sigma lang. */
 trait SigmaNode extends Product
@@ -235,6 +232,9 @@ trait STypeCompanion {
     }
   }
 
+  /** Type parameters of the generic type like Coll. */
+  def typeParams: Seq[STypeParam]
+
   /** List of methods defined for instances of this type. */
   def methods: Seq[SMethod]
 
@@ -342,11 +342,16 @@ case class Coster(selector: RuntimeCosting => RuntimeCosting#CostingHandler[_]) 
   * @param description argument description. */
 case class ArgInfo(name: String, description: String)
 
-/** Meta information which can be attached to SMethod.
+/** Meta information which can be attached to SMethod. Used in spec generators.
   * @param description  human readable description of the method
-  * @param args         one item for each argument */
-case class OperationInfo(opDesc: Option[ValueCompanion], description: String, args: Seq[ArgInfo]) {
+  * @param args         one item for each argument
+  * @param isEnabled    true if operation can be used in ErgoTree
+  */
+case class OperationInfo(opDesc: Option[ValueCompanion], description: String, args: Seq[ArgInfo], isEnabled: Boolean = true) {
+  /** Returns true if this operation is front-end only and doesn't exist in ErgoTree. */
   def isFrontendOnly: Boolean = opDesc.isEmpty
+  /** Returns true if this operation is available for usage in ErgoTree. */
+  def isAvailableInErgoTree: Boolean = !isFrontendOnly && isEnabled
   def opTypeName: String = opDesc.map(_.typeName).getOrElse("(FRONTEND ONLY)")
 }
 
@@ -421,6 +426,13 @@ case class SMethod(
   }
   def withInfo(opDesc: ValueCompanion, desc: String, args: ArgInfo*): SMethod = {
     this.copy(docInfo = Some(OperationInfo(opDesc, desc, ArgInfo("this", "this instance") +: args.toSeq)))
+  }
+  def withInfo(opDesc: ValueCompanion, desc: String, args: Seq[ArgInfo], isEnabled: Boolean): SMethod = {
+    this.copy(docInfo =
+      Some(OperationInfo(
+        Some(opDesc), desc,
+        ArgInfo("this", "this instance") +: args.toSeq,
+        isEnabled)))
   }
   def withInfo(desc: String, args: ArgInfo*): SMethod = {
     this.copy(docInfo = Some(OperationInfo(None, desc, ArgInfo("this", "this instance") +: args.toSeq)))
@@ -520,7 +532,6 @@ trait SNumericType extends SProduct {
       m => m.copy(stype = SigmaTyper.applySubst(m.stype, Map(tNum -> this)).asFunc)
     }
   }
-  def isCastMethod (name: String): Boolean = castMethods.contains(name)
 
   def upcast(i: AnyVal): WrappedType
   def downcast(i: AnyVal): WrappedType
@@ -528,6 +539,9 @@ trait SNumericType extends SProduct {
   /** Returns a type which is larger. */
   @inline def max(that: SNumericType): SNumericType =
     if (this.typeIndex > that.typeIndex) this else that
+
+  /** Returns true if this numeric type is larger than that. */
+  @inline def >(that: SNumericType): Boolean = this.typeIndex > that.typeIndex
 
   /** Number of bytes to store values of this type. */
   @inline private def typeIndex: Int = allNumericTypes.indexOf(this)
@@ -537,6 +551,7 @@ trait SNumericType extends SProduct {
 object SNumericType extends STypeCompanion {
   final val allNumericTypes = Array(SByte, SShort, SInt, SLong, SBigInt)
   def typeId: TypeCode = 106: Byte
+  override def typeParams: Seq[STypeParam] = Nil
 
   /** Since this object is not used in SMethod instances. */
   override def reprClass: Class[_] = sys.error(s"Shouldn't be called.")
@@ -572,13 +587,25 @@ object SNumericType extends STypeCompanion {
     ToShortMethod,  // see Downcast
     ToIntMethod,  // see Downcast
     ToLongMethod,  // see Downcast
-    ToBigIntMethod,  // see Downcast
-    ToBytesMethod,
-    ToBitsMethod
+    ToBigIntMethod  // see Downcast
+// TODO soft-fork: uncomment when implemented
+//    ToBytesMethod,
+//    ToBitsMethod
   )
   val castMethods: Array[String] =
     Array(ToByteMethod, ToShortMethod, ToIntMethod, ToLongMethod, ToBigIntMethod)
       .map(_.name)
+
+  /** Checks the given name is numeric type cast method (like toByte, toInt, etc.).*/
+  def isCastMethod(name: String): Boolean = castMethods.contains(name)
+
+  /** Convert the given method to a cast operation from fromTpe to resTpe. */
+  def getNumericCast(fromTpe: SType, methodName: String, resTpe: SType): Option[NumericCastCompanion] = (fromTpe, resTpe) match {
+    case (from: SNumericType, to: SNumericType) if isCastMethod(methodName) =>
+      val op = if (to > from) Upcast else Downcast
+      Some(op)
+    case _ => None  // the method in not numeric type cast
+  }
 }
 
 trait SLogical extends SType {
@@ -588,15 +615,17 @@ trait SLogical extends SType {
   * @see `SGenericType`
   */
 trait SMonoType extends SType with STypeCompanion {
-  protected def property(name: String, tpeRes: SType, id: Byte): SMethod =
-    SMethod(this, name, SFunc(this, tpeRes), id)
-      .withIRInfo(MethodCallIrBuilder)
-      .withInfo(PropertyCall, "")
+  override def typeParams: Seq[STypeParam] = Nil
 
-  protected def property(name: String, tpeRes: SType, id: Byte, valueCompanion: ValueCompanion): SMethod =
+  protected def property(name: String, tpeRes: SType, id: Byte, desc: String): SMethod =
     SMethod(this, name, SFunc(this, tpeRes), id)
       .withIRInfo(MethodCallIrBuilder)
-      .withInfo(valueCompanion, "")
+      .withInfo(PropertyCall, desc)
+
+  protected def property(name: String, tpeRes: SType, id: Byte, valueCompanion: ValueCompanion, desc: String): SMethod =
+    SMethod(this, name, SFunc(this, tpeRes), id)
+      .withIRInfo(MethodCallIrBuilder)
+      .withInfo(valueCompanion, desc)
 }
 
 case object SBoolean extends SPrimType with SEmbeddable with SLogical with SProduct with SMonoType {
@@ -760,13 +789,16 @@ case object SBigInt extends SPrimType with SEmbeddable with SNumericType with SM
   val MultModQMethod = SMethod(this, "multModQ", SFunc(IndexedSeq(this, SBigInt), SBigInt), 4)
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(MethodCall, "Multiply this number with \\lst{other} by module Q.", ArgInfo("other", "Number to multiply with this."))
-  protected override def getMethods() = super.getMethods() ++ Seq(
-//    ModQMethod,
-//    PlusModQMethod,
-//    MinusModQMethod,
-    // TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
-    // MultModQMethod,
-  )
+  protected override def getMethods() = {
+    val numericMethod = super.getMethods().filter(m => m.name == SNumericType.ToBigIntMethod.name || !SNumericType.isCastMethod(m.name))
+    numericMethod ++ Seq(
+      // TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
+      //    ModQMethod,
+      //    PlusModQMethod,
+      //    MinusModQMethod,
+      //    MultModQMethod,
+    )
+  }
 }
 
 /** NOTE: this descriptor both type and type companion */
@@ -884,7 +916,7 @@ case class SOption[ElemType <: SType](elemType: ElemType) extends SProduct with 
   override def toString = s"Option[$elemType]"
   override def toTermString: String = s"Option[${elemType.toTermString}]"
 
-  val typeParams: Seq[STypeParam] = Seq(STypeParam(tT))
+  val typeParams: Seq[STypeParam] = SOption.typeParams
   def tparamSubst: Map[STypeVar, SType] = Map(tT -> elemType)
 }
 
@@ -894,7 +926,13 @@ object SOption extends STypeCompanion {
   val OptionCollectionTypeConstrId = 4
   val OptionCollectionTypeCode: TypeCode = ((SPrimType.MaxPrimTypeCode + 1) * OptionCollectionTypeConstrId).toByte
 
+  val tT = STypeVar("T")
+  val tR = STypeVar("R")
+  val ThisType = SOption(tT)
+
   override def typeId = OptionTypeCode
+  override val typeParams: Seq[STypeParam] = Array(STypeParam(tT))
+
   override def coster: Option[CosterFactory] = Some(Coster(_.OptionCoster))
   override val reprClass: Class[_] = classOf[Option[_]]
 
@@ -927,10 +965,6 @@ object SOption extends STypeCompanion {
   val GetOrElse = "getOrElse"
   val Fold = "fold"
 
-  val tT = STypeVar("T")
-  val tR = STypeVar("R")
-  val ThisType = SOption(tT)
-
   val IsDefinedMethod = SMethod(this, IsDefined, SFunc(ThisType, SBoolean), 2)
       .withInfo(OptionIsDefined,
         "Returns \\lst{true} if the option is an instance of \\lst{Some}, \\lst{false} otherwise.")
@@ -942,7 +976,7 @@ object SOption extends STypeCompanion {
   lazy val GetOrElseMethod = SMethod(this, GetOrElse, SFunc(IndexedSeq(ThisType, tT), tT, Seq(tT)), 4)
       .withInfo(OptionGetOrElse,
         """Returns the option's value if the option is nonempty, otherwise
-         |return the result of evaluating \lst{default}.
+         |returns \lst{default}.
         """.stripMargin, ArgInfo("default", "the default value"))
 
   val FoldMethod      = SMethod(this, Fold, SFunc(IndexedSeq(ThisType, tR, SFunc(tT, tR)), tR, Seq(tT, tR)), 5)
@@ -1003,7 +1037,7 @@ case class SCollectionType[T <: SType](elemType: T) extends SCollection[T] {
     implicit val sT = Sized.typeToSized(Evaluation.stypeToRType(elemType))
     Sized.sizeOf(coll).dataSize
   }
-  def typeParams: Seq[STypeParam] = SCollectionType.typeParams
+  def typeParams: Seq[STypeParam] = SCollection.typeParams
   def tparamSubst: Map[STypeVar, SType] = Map(tIV -> elemType)
   protected override def getMethods() = super.getMethods() ++ SCollection.methods
   override def toString = s"Coll[$elemType]"
@@ -1015,7 +1049,6 @@ object SCollectionType {
   val CollectionTypeCode: TypeCode = ((SPrimType.MaxPrimTypeCode + 1) * CollectionTypeConstrId).toByte
   val NestedCollectionTypeConstrId = 2
   val NestedCollectionTypeCode: TypeCode = ((SPrimType.MaxPrimTypeCode + 1) * NestedCollectionTypeConstrId).toByte
-  val typeParams = Seq(STypeParam(tIV.name))
 }
 
 object SCollection extends STypeCompanion with MethodByNameUnapply {
@@ -1025,6 +1058,8 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
 
   val tIV = STypeVar("IV")
   val paramIV = STypeParam(tIV)
+  override val typeParams = Seq(paramIV)
+
   val tOV = STypeVar("OV")
   val paramOV = STypeParam(tOV)
   val tK = STypeVar("K")
@@ -1145,20 +1180,50 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
   val PatchMethod = SMethod(this, "patch",
     SFunc(IndexedSeq(ThisType, SInt, ThisType, SInt), ThisType, Seq(paramIV)), 19)
       .withIRInfo(MethodCallIrBuilder)
-      .withInfo(MethodCall, "")
+      .withInfo(MethodCall,
+        """Produces a new collection where a slice of elements in this collection is replaced
+         |by another collection. Returns a new collection consisting of all elements of this
+         |collection except that \lst{replaced} elements starting from \lst{from} are
+         |replaced by \lst{patch}.""".stripMargin,
+        ArgInfo("from", "the index of the first replaced element"),
+        ArgInfo("patch", "the replacement sequence"),
+        ArgInfo("replaced", "the number of elements to drop in the original collection")
+      )
 
   val UpdatedMethod = SMethod(this, "updated",
     SFunc(IndexedSeq(ThisType, SInt, tIV), ThisType, Seq(paramIV)), 20)
       .withIRInfo(MethodCallIrBuilder, javaMethodOf[Coll[_], Int, Any]("updated"))
-      .withInfo(MethodCall, "")
+      .withInfo(MethodCall,
+        """A copy of this collection with one single replaced element.
+          |Returns a new collection which is a copy of this collection with the element
+          |at position \lst{index} replaced by \lst{elem}.
+          |Throws IndexOutOfBoundsException if \lst{index} does not satisfy \lst{0 <= index < length}.
+          |""".stripMargin,
+        ArgInfo("index", "the position of the replacement"),
+        ArgInfo("elem", "the replacing element")
+      )
 
   val UpdateManyMethod = SMethod(this, "updateMany",
     SFunc(IndexedSeq(ThisType, SCollection(SInt), ThisType), ThisType, Seq(paramIV)), 21)
-      .withIRInfo(MethodCallIrBuilder).withInfo(MethodCall, "")
+      .withIRInfo(MethodCallIrBuilder).withInfo(MethodCall,
+        "Returns a copy of this collection where elements at \\lst{indexes} are replaced with \\lst{values}.",
+        ArgInfo("indexes", "the positions of the replacement"),
+        ArgInfo("values", "the values to be put in the corresponding position")
+      )
 
   val UnionSetsMethod = SMethod(this, "unionSets",
     SFunc(IndexedSeq(ThisType, ThisType), ThisType, Seq(paramIV)), 22)
-      .withIRInfo(MethodCallIrBuilder).withInfo(MethodCall, "")
+      .withIRInfo(MethodCallIrBuilder).withInfo(MethodCall,
+        """Produces a new collection which contains all distinct elements of this
+         |collection and also all elements of a given collection that are not in this
+         |collection. This is order preserving operation considering only first
+         |occurrences of each distinct elements.
+         |Any collection \lst{xs} can be transformed to a sequence with distinct elements
+         |by using \lst{xs.unionSet(Coll())}.
+         |NOTE: Use append if you don't need set semantics.
+         |""".stripMargin,
+        ArgInfo("that", "the collection to add")
+      )
 
   val DiffMethod = SMethod(this, "diff",
     SFunc(IndexedSeq(ThisType, ThisType), ThisType, Seq(paramIV)), 23)
@@ -1174,7 +1239,15 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
   val IndexOfMethod = SMethod(this, "indexOf",
     SFunc(IndexedSeq(ThisType, tIV, SInt), SInt, Seq(paramIV)), 26)
       .withIRInfo(MethodCallIrBuilder, javaMethodOf[Coll[_], Any, Int]("indexOf"))
-      .withInfo(MethodCall, "")
+      .withInfo(MethodCall,
+        """Finds index of first occurrence of some value in this collection after or
+         |at some start index.
+         |Returns an index \lst{>= from} of the first element of this collection that
+         |is equal (as determined by \lst{==}) to \lst{elem}, or \lst{-1}, if none exists.
+         |""".stripMargin,
+        ArgInfo("elem", "the element value to search for"),
+        ArgInfo("from", "the start index")
+      )
 
   val LastIndexOfMethod = SMethod(this, "lastIndexOf",
     SFunc(IndexedSeq(ThisType, tIV, SInt), SInt, Seq(paramIV)), 27)
@@ -1187,11 +1260,17 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
 
   val ZipMethod = SMethod(this, "zip",
     SFunc(IndexedSeq(ThisType, tOVColl), SCollection(STuple(tIV, tOV)), Seq(tIV, tOV)), 29)
-      .withIRInfo(MethodCallIrBuilder).withInfo(MethodCall, "")
+      .withIRInfo(MethodCallIrBuilder).withInfo(MethodCall,
+        """For this collection $(x_0, \dots, x_N)$ and other collection $(y_0, \dots, y_M)$
+         |produces a collection $((x_0, y_0), \dots, (x_K, y_K))$ where $K = min(N, M)$.
+         |""".stripMargin,
+        ArgInfo("ys", "other collection")
+      )
 
   val DistinctMethod = SMethod(this, "distinct",
     SFunc(IndexedSeq(ThisType), ThisType, Seq(tIV)), 30)
       .withIRInfo(MethodCallIrBuilder).withInfo(PropertyCall, "")
+
 
   val StartsWithMethod = SMethod(this, "startsWith",
     SFunc(IndexedSeq(ThisType, ThisType, SInt), SBoolean, Seq(paramIV)), 31)
@@ -1341,7 +1420,7 @@ object STuple extends STypeCompanion {
   val TupleTypeCode = ((SPrimType.MaxPrimTypeCode + 1) * 8).toByte
 
   def typeId = TupleTypeCode
-
+  override val typeParams = Nil
   override val reprClass: Class[_] = classOf[Product2[_,_]]
 
   lazy val colMethods = {
@@ -1424,7 +1503,7 @@ case class STypeVar(name: String) extends SType {
 }
 object STypeVar {
   val TypeCode: TypeCode = 103: Byte
-  implicit def liftString(n: String): STypeVar = STypeVar(n)
+  implicit def stringToTypeVar(n: String): STypeVar = STypeVar(n)
 }
 
 case object SBox extends SProduct with SPredefType with SMonoType {
@@ -1446,7 +1525,7 @@ case object SBox extends SProduct with SPredefType with SMonoType {
       i match {
         case r: MandatoryRegisterId =>
           SMethod(this, s"R${i.asIndex}", SFunc(IndexedSeq(SBox), SOption(tT), Seq(STypeParam(tT))), (idOfs + i.asIndex + 1).toByte)
-              .withInfo(ExtractRegisterAs, r.purpose)
+              .withInfo(ExtractRegisterAs, r.purpose, Nil, false)
         case _ =>
           SMethod(this, s"R${i.asIndex}", SFunc(IndexedSeq(SBox), SOption(tT), Seq(STypeParam(tT))), (idOfs + i.asIndex + 1).toByte)
               .withInfo(ExtractRegisterAs, "Non-mandatory register")
@@ -1465,9 +1544,9 @@ case object SBox extends SProduct with SPredefType with SMonoType {
   lazy val creationInfoMethod = SMethod(this, CreationInfo, ExtractCreationInfo.OpType, 6)
       .withInfo(ExtractCreationInfo,
         """ If \lst{tx} is a transaction which generated this box, then \lst{creationInfo._1}
-         | is a height of the tx's block. The \lst{creationInfo._2} is a serialized transaction
-         | identifier followed by box index in the transaction outputs.
-        """.stripMargin ) // see ExtractCreationInfo
+         | is a height of the tx's block. The \lst{creationInfo._2} is a serialized bytes of the transaction
+         | identifier followed by the serialized bytes of the box index in the transaction outputs.
+        """.stripMargin)
 
   lazy val getRegMethod = SMethod(this, "getReg", SFunc(IndexedSeq(SBox, SInt), SOption(tT), Seq(STypeParam(tT))), 7)
       .withInfo(ExtractRegisterAs,
@@ -1475,25 +1554,30 @@ case object SBox extends SProduct with SPredefType with SMonoType {
          | Type param \lst{T} expected type of the register.
          | Returns \lst{Some(value)} if the register is defined and has given type and \lst{None} otherwise
         """.stripMargin,
-        ArgInfo("regId", "zero-based identifier of the register."))
+        Array(ArgInfo("regId", "zero-based identifier of the register.")),
+        false)
 
   lazy val tokensMethod = SMethod(this, "tokens", SFunc(SBox, ErgoBox.STokensRegType), 8)
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(PropertyCall, "Secondary tokens")
 
   // should be lazy to solve recursive initialization
-  protected override def getMethods() = super.getMethods() ++ Vector(
+  protected override def getMethods() = super.getMethods() ++ Array(
     SMethod(this, Value, SFunc(SBox, SLong), 1)
-        .withInfo(ExtractAmount, "Mandatory: Monetary value, in Ergo tokens (NanoErg unit of measure)"), // see ExtractAmount
+        .withInfo(ExtractAmount, "Monetary value in NanoERGs stored in this box."),
     SMethod(this, PropositionBytes, SFunc(SBox, SByteArray), 2)
-        .withInfo(ExtractScriptBytes, "Serialized bytes of guarding script, which should be evaluated to true in order to\n" +
-            " open this box. (aka spend it in a transaction)"), // see ExtractScriptBytes
+        .withInfo(ExtractScriptBytes,
+          "Serialized bytes of the guarding script which should be evaluated to true in order to\n" +
+          " open this box (spend it in a transaction)."),
     SMethod(this, Bytes, SFunc(SBox, SByteArray), 3)
-        .withInfo(ExtractBytes, "Serialized bytes of this box's content, including proposition bytes."), // see ExtractBytes
+        .withInfo(ExtractBytes,
+          "Serialized bytes of this box's content, including proposition bytes."),
     SMethod(this, BytesWithoutRef, SFunc(SBox, SByteArray), 4)
-        .withInfo(ExtractBytesWithNoRef, "Serialized bytes of this box's content, excluding transactionId and index of output."), // see ExtractBytesWithNoRef
+        .withInfo(ExtractBytesWithNoRef,
+          "Serialized bytes of this box's content, excluding transactionId and index of output."),
     SMethod(this, Id, SFunc(SBox, SByteArray), 5)
-        .withInfo(ExtractId, "Blake2b256 hash of this box's content, basically equals to \\lst{blake2b256(bytes)}"), // see ExtractId
+        .withInfo(ExtractId,
+          "Blake2b256 hash of this box's content, basically equals to \\lst{blake2b256(bytes)}"),
     creationInfoMethod,
     getRegMethod,
     tokensMethod
@@ -1529,152 +1613,140 @@ case object SAvlTree extends SProduct with SPredefType with SMonoType {
          | \lst{isUpdateAllowed == (enabledOperations & 0x02) != 0}\newline
          | \lst{isRemoveAllowed == (enabledOperations & 0x04) != 0}
         """.stripMargin)
+
   val keyLengthMethod         = SMethod(this, "keyLength", SFunc(this, SInt),               3)
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(PropertyCall,
-    """
-     |
-        """.stripMargin)
+        """All the elements under the tree have the same given length of the keys.""".stripMargin)
+
   val valueLengthOptMethod    = SMethod(this, "valueLengthOpt", SFunc(this, SIntOption),    4)
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(PropertyCall,
-        """
-         |
-        """.stripMargin)
+        """If non-empty, all the values under the tree are of the same given length.""".stripMargin)
+
   val isInsertAllowedMethod   = SMethod(this, "isInsertAllowed", SFunc(this, SBoolean),     5)
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(PropertyCall,
-        """
-         |
-        """.stripMargin)
+        """Checks if Insert operation is allowed for this tree instance.""".stripMargin)
+
   val isUpdateAllowedMethod   = SMethod(this, "isUpdateAllowed", SFunc(this, SBoolean),     6)
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(PropertyCall,
-        """
-         |
-        """.stripMargin)
+        """Checks if Update operation is allowed for this tree instance.""".stripMargin)
+
   val isRemoveAllowedMethod   = SMethod(this, "isRemoveAllowed", SFunc(this, SBoolean),     7)
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(PropertyCall,
-        """
-         |
-        """.stripMargin)
+        """Checks if Remove operation is allowed for this tree instance.""".stripMargin)
 
   val updateOperationsMethod  = SMethod(this, "updateOperations",
     SFunc(IndexedSeq(SAvlTree, SByte), SAvlTree),                 8)
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(MethodCall,
-        """
-         |
-        """.stripMargin)
+        """ Enable/disable operations of this tree producing a new tree.
+          | Since \lst{AvlTree} is immutable, \lst{this} tree instance remains unchanged.
+          | Returns a copy of this AvlTree instance where \lst{this.enabledOperations} replaced by \lst{newOperations}.
+        """.stripMargin,
+        ArgInfo("newOperations", "a new flags which specify available operations on a new tree")
+      )
 
   val containsMethod          = SMethod(this, "contains",
     SFunc(IndexedSeq(SAvlTree, SByteArray, SByteArray), SBoolean),             9)
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(MethodCall,
-        """
-         |   /** Checks if an entry with key `key` exists in this tree using proof `proof`.
-         |    * Throws exception if proof is incorrect
-         |
-         |    * @note CAUTION! Does not support multiple keys check, use [[getMany]] instead.
-         |    * Return `true` if a leaf with the key `key` exists
-         |    * Return `false` if leaf with provided key does not exist.
-         |    * @param key    a key of an element of this authenticated dictionary.
-         |    * @param proof
-         |    */
-         |
-        """.stripMargin)
+        """ Checks if an entry with key \lst{key} exists in this tree using proof \lst{proof}.
+          |
+          | NOTE, does not support multiple keys check, use \lst{getMany} instead.
+          | Returns \lst{true} if a leaf with the key \lst{key} exists.
+          | Returns \lst{false} if leaf with provided key does not exist.
+        """.stripMargin,
+        ArgInfo("key", "a key of an element of this authenticated dictionary"),
+        ArgInfo("proof", "proof that they tree with \\lst{this.digest} contains the given key")
+      )
 
   val getMethod               = SMethod(this, "get",
     SFunc(IndexedSeq(SAvlTree, SByteArray, SByteArray), SByteArrayOption),     10)
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(MethodCall,
-        """
-         |  /** Perform a lookup of key `key` in this tree using proof `proof`.
-         |    * Throws exception if proof is incorrect
-         |    *
-         |    * @note CAUTION! Does not support multiple keys check, use [[getMany]] instead.
-         |    * Return Some(bytes) of leaf with key `key` if it exists
-         |    * Return None if leaf with provided key does not exist.
-         |    * @param key    a key of an element of this authenticated dictionary.
-         |    * @param proof
-         |    */
-         |
-        """.stripMargin)
+        """ Perform a lookup of key \lst{key} in this tree using \lst{proof}.
+          | Throws exception if proof is incorrect.
+          |
+          | NOTE, does not support multiple keys check, use \lst{getMany} instead.
+          | Return \lst{Some(bytes)} of leaf with key \lst{key} if it exists
+          | Return \lst{None} if leaf with provided key does not exist.
+        """.stripMargin,
+        ArgInfo("key", "a key of an element of this authenticated dictionary"),
+        ArgInfo("proof", "proof that they tree with \\lst{this.digest} contains the given key")
+      )
 
   val getManyMethod           = SMethod(this, "getMany",
     SFunc(IndexedSeq(SAvlTree, SByteArray2, SByteArray), TCollOptionCollByte), 11)
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(MethodCall,
-        """
-         |  /** Perform a lookup of many keys `keys` in this tree using proof `proof`.
-         |    *
-         |    * @note CAUTION! Keys must be ordered the same way they were in lookup before proof was generated.
-         |    * For each key return Some(bytes) of leaf if it exists and None if is doesn't.
-         |    * @param keys    keys of elements of this authenticated dictionary.
-         |    * @param proof
-         |    */
-         |
-        """.stripMargin)
+        """ Perform a lookup of many keys \lst{keys} in this tree using proof \lst{proof}.
+          |
+          | NOTE, keys must be ordered the same way they were in lookup before proof was generated.
+          | For each key return \lst{Some(bytes)} of leaf if it exists and \lst{None} if is doesn't.
+        """.stripMargin,
+        ArgInfo("keys", "keys of elements of this authenticated dictionary"),
+        ArgInfo("proof", "proof that they tree with \\lst{this.digest} contains the given key")
+      )
 
   val insertMethod            = SMethod(this, "insert",
     SFunc(IndexedSeq(SAvlTree, CollKeyValue, SByteArray), SAvlTreeOption),     12)
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(MethodCall,
-        """
-         |  /** Perform insertions of key-value entries into this tree using proof `proof`.
-         |    * Throws exception if proof is incorrect
-         |    *
-         |    * @note CAUTION! Pairs must be ordered the same way they were in insert ops before proof was generated.
-         |    * Return Some(newTree) if successful
-         |    * Return None if operations were not performed.
-         |    * @param operations   collection of key-value pairs to insert in this authenticated dictionary.
-         |    * @param proof
-         |    */
-         |
-        """.stripMargin)
+        """ Perform insertions of key-value entries into this authenticated dictionary
+          | using proof \lst{proof}.
+          | Throws exception if proof is incorrect.
+          |
+          | NOTE, pairs must be ordered the same way they were in insert ops before proof was generated.
+          | Returns \lst{Some(newTree)} if successful.
+          | Returns \lst{None} if operations were not performed.
+        """.stripMargin,
+        ArgInfo("operations", "a collection of key-value pairs inserted in this dictionary"),
+        ArgInfo("proof", "a proof that the key-value pairs were inserted")
+      )
 
   val updateMethod            = SMethod(this, "update",
     SFunc(IndexedSeq(SAvlTree, CollKeyValue, SByteArray), SAvlTreeOption),     13)
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(MethodCall,
-        """
-         |  /** Perform updates of key-value entries into this tree using proof `proof`.
-         |    * Throws exception if proof is incorrect
-         |    *
-         |    * @note CAUTION! Pairs must be ordered the same way they were in update ops before proof was generated.
-         |    * Return Some(newTree) if successful
-         |    * Return None if operations were not performed.
-         |    * @param operations   collection of key-value pairs to update in this authenticated dictionary.
-         |    * @param proof
-         |    */
-         |
-        """.stripMargin)
+        """ Perform updates of key-value entries into this authenticated dictionary using proof \lst{proof}.
+          | Throws exception if proof is incorrect.
+          |
+          | Note, pairs must be ordered the same way they were in update ops before proof was generated.
+          | Returns \lst{Some(newTree)} if successful.
+          | Returns \lst{None} if operations were not performed.
+        """.stripMargin,
+        ArgInfo("operations", "a collection of key-value pairs updated in this dictionary"),
+        ArgInfo("proof", "a proof that the key-value pairs were updated")
+      )
 
   val removeMethod            = SMethod(this, "remove",
     SFunc(IndexedSeq(SAvlTree, SByteArray2, SByteArray), SAvlTreeOption),      14)
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(MethodCall,
-        """
-         |  /** Perform removal of entries into this tree using proof `proof`.
-         |    * Throws exception if proof is incorrect
-         |    * Return Some(newTree) if successful
-         |    * Return None if operations were not performed.
-         |    *
-         |    * @note CAUTION! Keys must be ordered the same way they were in remove ops before proof was generated.
-         |    * @param operations   collection of keys to remove from this authenticated dictionary.
-         |    * @param proof
-         |    */
-         |
-        """.stripMargin)
+        """ Perform removal of entries into this authenticated dictionary using \lst{proof}.
+          | Throws exception if the proof is incorrect.
+          | Returns \lst{Some(newTree)} if successful.
+          | Returns \lst{None} if operations were not performed.
+          | NOTE, keys must be ordered the same way they were in remove ops before proof was generated.
+        """.stripMargin,
+        ArgInfo("operations", "a collection of key-value pairs removed from this dictionary"),
+        ArgInfo("proof", "a proof that the key-value pairs were removed")
+      )
 
   val updateDigestMethod  = SMethod(this, "updateDigest",
     SFunc(IndexedSeq(SAvlTree, SByteArray), SAvlTree),                       15)
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(MethodCall,
-        """
-         |
-        """.stripMargin)
+        """ Replace digest of this tree producing a new tree.
+          | Since AvlTree is immutable, this tree instance remains unchanged.
+          | Returns a copy of this AvlTree instance where \lst{this.digest} replaced by \lst{newDigest}.
+        """.stripMargin,
+        ArgInfo("newDigest", "a new digest")
+      )
 
   protected override def getMethods(): Seq[SMethod] = super.getMethods() ++ Seq(
     digestMethod,
@@ -1713,18 +1785,48 @@ case object SContext extends SProduct with SPredefType with SMonoType {
   override def isConstantSize = false
 
   val tT = STypeVar("T")
-  val dataInputsMethod = property("dataInputs", SBoxArray, 1)
-  val headersMethod    = property("headers", SHeaderArray, 2)
-  val preHeaderMethod  = property("preHeader", SPreHeader, 3)
-  val inputsMethod     = property("INPUTS", SBoxArray, 4, Inputs)
-  val outputsMethod    = property("OUTPUTS", SBoxArray, 5, Outputs)
-  val heightMethod     = property("HEIGHT", SInt, 6, Height)
-  val selfMethod       = property("SELF", SBox, 7, Self)
-  val selfBoxIndexMethod = property("selfBoxIndex", SInt, 8)
-  val lastBlockUtxoRootHashMethod = property("LastBlockUtxoRootHash", SAvlTree, 9, LastBlockUtxoRootHash)
-  val minerPubKeyMethod = property("minerPubKey", SByteArray, 10, MinerPubkey)
+
+  val dataInputsMethod = property("dataInputs", SBoxArray, 1,
+    "A collection of inputs of the current transaction that will not be spent.")
+
+  val headersMethod    = property("headers", SHeaderArray, 2,
+    "A fixed number of last block headers in descending order (first header is the newest one)")
+
+  val preHeaderMethod  = property("preHeader", SPreHeader, 3,
+    "Only header fields that can be predicted by a miner when the spending transaction is added to a new block candidate.")
+
+  val inputsMethod     = property("INPUTS", SBoxArray, 4, Inputs,
+    """A collection of inputs of the current transaction,
+      |where the \lst{SELF} box is one of the inputs.""".stripMargin)
+
+  val outputsMethod    = property("OUTPUTS", SBoxArray, 5, Outputs,
+    "A collection of outputs of the current transaction.")
+
+  val heightMethod     = property("HEIGHT", SInt, 6, Height,
+    "Height (block number) of the block which is currently being validated.")
+
+  val selfMethod       = property("SELF", SBox, 7, Self,
+    "Box whose proposition is being currently executing")
+
+  val selfBoxIndexMethod = property("selfBoxIndex", SInt, 8, "")
+    .withInfo(// TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/603
+              // when fixed, remove this .withInfo and it will appear in the spec.tex after regeneration
+      PropertyCall,
+      """Zero based index in \lst{inputs} of \lst{selfBox}. $-1$ if self box is not in the INPUTS collection.""",
+      Nil, false)
+
+  val lastBlockUtxoRootHashMethod = property("LastBlockUtxoRootHash", SAvlTree, 9, LastBlockUtxoRootHash,
+    "Authenticated dynamic dictionary digest representing Utxo state before current state.")
+
+  val minerPubKeyMethod = property("minerPubKey", SByteArray, 10, MinerPubkey,
+    """Encoded bytes of public key of the miner who created the block.
+      |Equals to \lst{preHeader.minerPk.getEncoded}""".stripMargin)
+
   val getVarMethod = SMethod(this, "getVar", SFunc(IndexedSeq(SContext, SByte), SOption(tT), Seq(STypeParam(tT))), 11)
-    .withInfo(GetVar, "Get context variable with given \\lst{varId} and type.",
+    .withInfo(GetVar,
+      """Get context variable with given \lst{varId} and type.
+       |Example: \lst{getVar[Coll[Byte]](10).get} extract a collection of bytes
+       |from the variable with varId = 10.""".stripMargin,
       ArgInfo("varId", "\\lst{Byte} identifier of context variable"))
 
   protected override def getMethods() = super.getMethods() ++ Seq(
@@ -1761,21 +1863,37 @@ case object SHeader extends SProduct with SPredefType with SMonoType {
   }
   override def isConstantSize = true
 
-  val idMethod               = property("id", SByteArray, 1)
-  val versionMethod          = property("version",  SByte,      2)
-  val parentIdMethod         = property("parentId", SByteArray, 3)
-  val ADProofsRootMethod     = property("ADProofsRoot", SByteArray, 4)
-  val stateRootMethod        = property("stateRoot", SAvlTree, 5)
-  val transactionsRootMethod = property("transactionsRoot", SByteArray, 6)
-  val timestampMethod        = property("timestamp", SLong, 7)
-  val nBitsMethod            = property("nBits", SLong, 8)
-  val heightMethod           = property("height", SInt, 9)
-  val extensionRootMethod    = property("extensionRoot", SByteArray, 10)
-  val minerPkMethod          = property("minerPk", SGroupElement, 11)
-  val powOnetimePkMethod     = property("powOnetimePk", SGroupElement, 12)
-  val powNonceMethod         = property("powNonce", SByteArray, 13)
-  val powDistanceMethod      = property("powDistance", SBigInt, 14)
-  val votesMethod            = property("votes", SByteArray, 15)
+  val idMethod               = property("id", SByteArray, 1,
+    "Bytes representation of ModifierId of this Header")
+  val versionMethod          = property("version",  SByte,      2,
+    "Block version, to be increased on every soft and hard-fork.")
+  val parentIdMethod         = property("parentId", SByteArray, 3,
+    "Bytes representation of ModifierId of the parent block")
+  val ADProofsRootMethod     = property("ADProofsRoot", SByteArray, 4,
+    "Hash of ADProofs for transactions in a block")
+  val stateRootMethod        = property("stateRoot", SAvlTree, 5,
+    "AvlTree of a state after block application")
+  val transactionsRootMethod = property("transactionsRoot", SByteArray, 6,
+    "Root hash (for a Merkle tree) of transactions in a block.")
+  val timestampMethod        = property("timestamp", SLong, 7,
+    "Block timestamp (in milliseconds since beginning of Unix Epoch)")
+  val nBitsMethod            = property("nBits", SLong, 8,
+    "Current difficulty in a compressed view. NOTE: actually it is unsigned Int.")
+  val heightMethod           = property("height", SInt, 9,
+    "Block height")
+  val extensionRootMethod    = property("extensionRoot", SByteArray, 10,
+    "Root hash of extension section")
+  val minerPkMethod          = property("minerPk", SGroupElement, 11,
+    "Miner public key. Should be used to collect block rewards. Part of Autolykos solution.")
+  val powOnetimePkMethod     = property("powOnetimePk", SGroupElement, 12,
+    "One-time public key. Prevents revealing of miners secret.")
+  val powNonceMethod         = property("powNonce", SByteArray, 13,
+    "The nonce value generated during mining.")
+  val powDistanceMethod      = property("powDistance", SBigInt, 14,
+    """Distance between pseudo-random number, corresponding to nonce \lst{powNonce} and a secret,
+      |corresponding to \lst{minerPk}. The lower \lst{powDistance} is, the harder it was to find this solution.""".stripMargin)
+  val votesMethod            = property("votes", SByteArray, 15,
+    "A collection of votes set up by the block miner.")
 
   protected override def getMethods() = super.getMethods() ++ Seq(
     idMethod, versionMethod, parentIdMethod, ADProofsRootMethod, stateRootMethod, transactionsRootMethod,
@@ -1805,13 +1923,26 @@ case object SPreHeader extends SProduct with SPredefType with SMonoType {
   }
   override def isConstantSize = true
 
-  val versionMethod          = property("version",  SByte,      1)
-  val parentIdMethod         = property("parentId", SByteArray, 2)
-  val timestampMethod        = property("timestamp", SLong, 3)
-  val nBitsMethod            = property("nBits", SLong, 4)
-  val heightMethod           = property("height", SInt, 5)
-  val minerPkMethod          = property("minerPk", SGroupElement, 6)
-  val votesMethod            = property("votes", SByteArray, 7)
+  val versionMethod          = property("version",  SByte,      1,
+    "Block version, to be increased on every soft and hard-fork.")
+
+  val parentIdMethod         = property("parentId", SByteArray, 2,
+    "Id of parent block")
+
+  val timestampMethod        = property("timestamp", SLong, 3,
+    "Block timestamp (in milliseconds since beginning of Unix Epoch)")
+
+  val nBitsMethod            = property("nBits", SLong, 4,
+    "Current difficulty in a compressed view. NOTE: actually it is unsigned Int.")
+
+  val heightMethod           = property("height", SInt, 5,
+    "Block height")
+
+  val minerPkMethod          = property("minerPk", SGroupElement, 6,
+    "Miner public key. Should be used to collect block rewards.")
+
+  val votesMethod            = property("votes", SByteArray, 7,
+    "A collection of votes set up by the block miner.")
 
   protected override def getMethods() = super.getMethods() ++ Seq(
     versionMethod, parentIdMethod, timestampMethod, nBitsMethod, heightMethod, minerPkMethod, votesMethod
@@ -1850,7 +1981,11 @@ case object SGlobal extends SProduct with SPredefType with SMonoType {
   val tT = STypeVar("T")
   lazy val groupGeneratorMethod = SMethod(this, "groupGenerator", SFunc(this, SGroupElement), 1)
     .withIRInfo({ case (builder, obj, method, args, tparamSubst) => GroupGenerator })
-    .withInfo(GroupGenerator, "")
+    .withInfo(GroupGenerator,
+      """The generator $g$ of the group is an element of the group such that,
+        |when written multiplicatively, every element of the group is a power of $g$.
+        |Returns the generator of the SecP256K1 group.""".stripMargin)
+
   lazy val xorMethod = SMethod(this, "xor", SFunc(IndexedSeq(this, SByteArray, SByteArray), SByteArray), 2)
     .withIRInfo({
         case (_, _, _, Seq(l, r), _) => Xor(l.asByteArray, r.asByteArray)

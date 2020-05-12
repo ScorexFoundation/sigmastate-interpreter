@@ -533,7 +533,7 @@ trait ObjectGenerators extends TypeGenerators with ValidationSpecification with 
       arbBigIntConstant.arbitrary,
       Gen.delay(numExprTreeNodeGen))
 
-  def comparisonExprTreeNodeGen: Gen[Value[SBoolean.type]] = for {
+  def comparisonNumericNodeGen: Gen[Value[SBoolean.type]] = for {
     left <- numExprTreeNodeGen
     right <- numExprTreeNodeGen
     node <- Gen.oneOf(
@@ -545,6 +545,21 @@ trait ObjectGenerators extends TypeGenerators with ValidationSpecification with 
       mkGT(left, right)
     )
   } yield node
+
+  def comparisonBooleanNodeGen: Gen[Value[SBoolean.type]] = for {
+    left <- booleanConstGen
+    right <- booleanConstGen
+    node <- Gen.oneOf(
+      EQ(left, right),
+      NEQ(left, right),
+      LE(left, right),
+      GE(left, right),
+      LT(left, right),
+      GT(left, right)
+    )
+  } yield node
+
+  def comparisonExprTreeNodeGen: Gen[Value[SBoolean.type]] = comparisonNumericNodeGen //Gen.oneOf(comparisonNumericNodeGen, comparisonBooleanNodeGen)
 
   val downcastGen: Gen[Downcast[SNumericType, SNumericType]] = for {
     numVal <- Gen.oneOf(numExprTreeNodeGen, shortConstGen, intConstGen, longConstGen)

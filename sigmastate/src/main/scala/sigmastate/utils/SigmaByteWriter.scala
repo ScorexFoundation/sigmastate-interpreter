@@ -3,7 +3,7 @@ package sigmastate.utils
 import scorex.util.serialization.{VLQByteBufferWriter, Writer}
 import scorex.util.serialization.Writer.Aux
 import sigmastate.{ArgInfo, SType}
-import sigmastate.Values.{Value, SValue}
+import sigmastate.Values.{Value, SValue, ValDef}
 import sigmastate.serialization.{TypeSerializer, ValueSerializer, ConstantStore}
 
 class SigmaByteWriter(val w: Writer,
@@ -161,6 +161,10 @@ object SigmaByteWriter {
   implicit case object ValueFmt extends FormatDescriptor[SValue] {
     override def size: String = "[1, *]"
     override def toString: String = "Expr"
+  }
+  implicit case object ValDefFmt extends FormatDescriptor[ValDef] {
+    override def size: String = "[1, *]"
+    override def toString: String = "ValDef"
   }
   implicit case object TypeFmt extends FormatDescriptor[SType] {
     override def size: String = "[1, *]"

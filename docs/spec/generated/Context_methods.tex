@@ -4,16 +4,10 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & A collection of inputs of the current transaction that will not be spent. \\
+   \hline
+   \bf{Signature} & \lst{def dataInputs}: \lst{Coll[Box]} \\
   
-  \hline
-  \bf{Parameters} &
-      \(\begin{array}{l l l}
-         
-      \end{array}\) \\
-       
-  \hline
-  \bf{Result} & \lst{Coll[Box]} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:PropertyCall]{\lst{PropertyCall}} \\
@@ -28,16 +22,10 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & A fixed number of last block headers in descending order (first header is the newest one) \\
+   \hline
+   \bf{Signature} & \lst{def headers}: \lst{Coll[Header]} \\
   
-  \hline
-  \bf{Parameters} &
-      \(\begin{array}{l l l}
-         
-      \end{array}\) \\
-       
-  \hline
-  \bf{Result} & \lst{Coll[Header]} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:PropertyCall]{\lst{PropertyCall}} \\
@@ -52,16 +40,10 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & Only header fields that can be predicted by a miner when the spending transaction is added to a new block candidate. \\
+   \hline
+   \bf{Signature} & \lst{def preHeader}: \lst{PreHeader} \\
   
-  \hline
-  \bf{Parameters} &
-      \(\begin{array}{l l l}
-         
-      \end{array}\) \\
-       
-  \hline
-  \bf{Result} & \lst{PreHeader} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:PropertyCall]{\lst{PropertyCall}} \\
@@ -76,16 +58,11 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & A collection of inputs of the current transaction,
+where the \lst{SELF} box is one of the inputs. \\
+   \hline
+   \bf{Signature} & \lst{def INPUTS}: \lst{Coll[Box]} \\
   
-  \hline
-  \bf{Parameters} &
-      \(\begin{array}{l l l}
-         
-      \end{array}\) \\
-       
-  \hline
-  \bf{Result} & \lst{Coll[Box]} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:Inputs]{\lst{Inputs}} \\
@@ -100,16 +77,10 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & A collection of outputs of the current transaction. \\
+   \hline
+   \bf{Signature} & \lst{def OUTPUTS}: \lst{Coll[Box]} \\
   
-  \hline
-  \bf{Parameters} &
-      \(\begin{array}{l l l}
-         
-      \end{array}\) \\
-       
-  \hline
-  \bf{Result} & \lst{Coll[Box]} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:Outputs]{\lst{Outputs}} \\
@@ -124,16 +95,10 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & Height (block number) of the block which is currently being validated. \\
+   \hline
+   \bf{Signature} & \lst{def HEIGHT}: \lst{Int} \\
   
-  \hline
-  \bf{Parameters} &
-      \(\begin{array}{l l l}
-         
-      \end{array}\) \\
-       
-  \hline
-  \bf{Result} & \lst{Int} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:Height]{\lst{Height}} \\
@@ -148,43 +113,13 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & Box whose proposition is being currently executing \\
+   \hline
+   \bf{Signature} & \lst{def SELF}: \lst{Box} \\
   
-  \hline
-  \bf{Parameters} &
-      \(\begin{array}{l l l}
-         
-      \end{array}\) \\
-       
-  \hline
-  \bf{Result} & \lst{Box} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:Self]{\lst{Self}} \\
-  \hline
-       
-\end{tabularx}
-
-
-
-\subsubsection{\lst{Context.selfBoxIndex} method (Code 101.8)}
-\label{sec:type:Context:selfBoxIndex}
-\noindent
-\begin{tabularx}{\textwidth}{| l | X |}
-   \hline
-   \bf{Description} &  \\
-  
-  \hline
-  \bf{Parameters} &
-      \(\begin{array}{l l l}
-         
-      \end{array}\) \\
-       
-  \hline
-  \bf{Result} & \lst{Int} \\
-  \hline
-  
-  \bf{Serialized as} & \hyperref[sec:serialization:operation:PropertyCall]{\lst{PropertyCall}} \\
   \hline
        
 \end{tabularx}
@@ -196,16 +131,10 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & Authenticated dynamic dictionary digest representing Utxo state before current state. \\
+   \hline
+   \bf{Signature} & \lst{def LastBlockUtxoRootHash}: \lst{AvlTree} \\
   
-  \hline
-  \bf{Parameters} &
-      \(\begin{array}{l l l}
-         
-      \end{array}\) \\
-       
-  \hline
-  \bf{Result} & \lst{AvlTree} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:LastBlockUtxoRootHash]{\lst{LastBlockUtxoRootHash}} \\
@@ -220,16 +149,11 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & Encoded bytes of public key of the miner who created the block.
+Equals to \lst{preHeader.minerPk.getEncoded} \\
+   \hline
+   \bf{Signature} & \lst{def minerPubKey}: \lst{Coll[Byte]} \\
   
-  \hline
-  \bf{Parameters} &
-      \(\begin{array}{l l l}
-         
-      \end{array}\) \\
-       
-  \hline
-  \bf{Result} & \lst{Coll[Byte]} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:MinerPubkey]{\lst{MinerPubkey}} \\
@@ -244,16 +168,18 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} & Get context variable with given \lst{varId} and type. \\
+   \bf{Description} & Get context variable with given \lst{varId} and type.
+Example: \lst{getVar[Coll[Byte]](10).get} extract a collection of bytes
+from the variable with varId = 10. \\
+   \hline
+   \bf{Signature} & \lst{def getVar}$[$\lst{T}$]$(\lst{varId}$:$~\lst{Byte}): \lst{Option[T]} \\
   
   \hline
   \bf{Parameters} &
-      \(\begin{array}{l l l}
-         \lst{varId} & \lst{: Byte} & \text{// \lst{Byte} identifier of context variable} \\
+      \(\begin{array}{l l}
+         \lst{varId} & \text{\lst{Byte} identifier of context variable} \\
       \end{array}\) \\
        
-  \hline
-  \bf{Result} & \lst{Option[T]} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:GetVar]{\lst{GetVar}} \\

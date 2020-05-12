@@ -1,5 +1,6 @@
 package scalan
 
+import scala.language.implicitConversions
 import special.collection._
 import special.wrappers.{WrappersSpecModule, WrappersModule}
 import scalan.util.{MemoizedFunc}

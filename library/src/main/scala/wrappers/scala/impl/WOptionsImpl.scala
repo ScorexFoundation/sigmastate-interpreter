@@ -1,5 +1,6 @@
 package wrappers.scala
 
+import scala.language.{existentials,implicitConversions}
 import scalan._
 import special.wrappers.WrappersModule
 import special.wrappers.OptionWrapSpec

@@ -5,15 +5,9 @@
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
    \bf{Description} & Get an encoding of the point value. \\
+   \hline
+   \bf{Signature} & \lst{def getEncoded}: \lst{Coll[Byte]} \\
   
-  \hline
-  \bf{Parameters} &
-      \(\begin{array}{l l l}
-         
-      \end{array}\) \\
-       
-  \hline
-  \bf{Result} & \lst{Coll[Byte]} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:PropertyCall]{\lst{PropertyCall}} \\
@@ -29,15 +23,15 @@
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
    \bf{Description} & Exponentiate this \lst{GroupElement} to the given number. Returns this to the power of k \\
+   \hline
+   \bf{Signature} & \lst{def exp}(\lst{k}$:$~\lst{BigInt}): \lst{GroupElement} \\
   
   \hline
   \bf{Parameters} &
-      \(\begin{array}{l l l}
-         \lst{k} & \lst{: BigInt} & \text{// The power} \\
+      \(\begin{array}{l l}
+         \lst{k} & \text{The power} \\
       \end{array}\) \\
        
-  \hline
-  \bf{Result} & \lst{GroupElement} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:Exponentiate]{\lst{Exponentiate}} \\
@@ -53,15 +47,15 @@
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
    \bf{Description} & Group operation. \\
+   \hline
+   \bf{Signature} & \lst{def multiply}(\lst{other}$:$~\lst{GroupElement}): \lst{GroupElement} \\
   
   \hline
   \bf{Parameters} &
-      \(\begin{array}{l l l}
-         \lst{other} & \lst{: GroupElement} & \text{// other element of the group} \\
+      \(\begin{array}{l l}
+         \lst{other} & \text{other element of the group} \\
       \end{array}\) \\
        
-  \hline
-  \bf{Result} & \lst{GroupElement} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:MultiplyGroup]{\lst{MultiplyGroup}} \\
@@ -77,15 +71,9 @@
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
    \bf{Description} & Inverse element of the group. \\
+   \hline
+   \bf{Signature} & \lst{def negate}: \lst{GroupElement} \\
   
-  \hline
-  \bf{Parameters} &
-      \(\begin{array}{l l l}
-         
-      \end{array}\) \\
-       
-  \hline
-  \bf{Result} & \lst{GroupElement} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:PropertyCall]{\lst{PropertyCall}} \\

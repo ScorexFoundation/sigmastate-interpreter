@@ -211,8 +211,8 @@ object ValidationRules {
       with SoftForkWhenCodeAdded {
     final def apply[T](typeCode: Byte, cond: Boolean): Unit = {
       checkRule()
-      val ucode = toUByte(typeCode)
       if (!cond) {
+        val ucode = toUByte(typeCode)
         throwValidationException(
           new SerializerException(s"Type with code $ucode doesn't support methods."),
           Array(typeCode))

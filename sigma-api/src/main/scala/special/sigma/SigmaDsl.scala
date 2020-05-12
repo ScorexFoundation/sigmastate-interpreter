@@ -265,7 +265,7 @@ trait Box {
   /** Blake2b256 hash of this box's content, basically equals to `blake2b256(bytes)` */
   def id: Coll[Byte]
 
-  /** Mandatory: Monetary value, in Ergo tokens (NanoErg unit of measure)*/
+  /** Monetary value in NanoERGs stored in this box. */
   def value: Long
 
   /** Serialized bytes of guarding script, which should be evaluated to true in order to
@@ -395,7 +395,7 @@ trait AvlTree {
     * Return `true` if a leaf with the key `key` exists
     * Return `false` if leaf with provided key does not exist.
     * @param key    a key of an element of this authenticated dictionary.
-    * @param proof
+    * @param proof  proof that they tree with `this.digest` contains the given key
     */
   def contains(key: Coll[Byte], proof: Coll[Byte]): Boolean
 
@@ -406,7 +406,7 @@ trait AvlTree {
     * Return Some(bytes) of leaf with key `key` if it exists
     * Return None if leaf with provided key does not exist.
     * @param key    a key of an element of this authenticated dictionary.
-    * @param proof
+    * @param proof  proof that they tree with `this.digest` contains the given key
     */
   def get(key: Coll[Byte], proof: Coll[Byte]): Option[Coll[Byte]]
 
@@ -415,7 +415,7 @@ trait AvlTree {
     * @note CAUTION! Keys must be ordered the same way they were in lookup before proof was generated.
     * For each key return Some(bytes) of leaf if it exists and None if is doesn't.
     * @param keys    keys of elements of this authenticated dictionary.
-    * @param proof
+    * @param proof   proof that they tree with `this.digest` contains the given key
     */
   def getMany(keys: Coll[Coll[Byte]], proof: Coll[Byte]): Coll[Option[Coll[Byte]]]
 
@@ -425,8 +425,8 @@ trait AvlTree {
     * @note CAUTION! Pairs must be ordered the same way they were in insert ops before proof was generated.
     * Return Some(newTree) if successful
     * Return None if operations were not performed.
-    * @param operations   collection of key-value pairs to insert in this authenticated dictionary.
-    * @param proof
+    * @param operations collection of key-value pairs to insert in this authenticated dictionary.
+    * @param proof      a proof that the key-value pairs were inserted
     */
   def insert(operations: Coll[(Coll[Byte], Coll[Byte])], proof: Coll[Byte]): Option[AvlTree]
 
@@ -436,8 +436,8 @@ trait AvlTree {
     * @note CAUTION! Pairs must be ordered the same way they were in update ops before proof was generated.
     * Return Some(newTree) if successful
     * Return None if operations were not performed.
-    * @param operations   collection of key-value pairs to update in this authenticated dictionary.
-    * @param proof
+    * @param operations collection of key-value pairs to update in this authenticated dictionary.
+    * @param proof      a proof that the key-value pairs were updated
     */
   def update(operations: Coll[(Coll[Byte], Coll[Byte])], proof: Coll[Byte]): Option[AvlTree]
 
@@ -447,8 +447,8 @@ trait AvlTree {
     * Return None if operations were not performed.
     *
     * @note CAUTION! Keys must be ordered the same way they were in remove ops before proof was generated.
-    * @param operations   collection of keys to remove from this authenticated dictionary.
-    * @param proof
+    * @param operations collection of keys to remove from this authenticated dictionary.
+    * @param proof      a proof that the key-value pairs were removed
     */
   def remove(operations: Coll[Coll[Byte]], proof: Coll[Byte]): Option[AvlTree]
 }
@@ -458,7 +458,7 @@ trait AvlTree {
   */
 @scalan.Liftable
 trait PreHeader { // Testnet2
-  /** Block version, to be increased on every soft and hardfork. */
+  /** Block version, to be increased on every soft and hard-fork. */
   def version: Byte
 
   /** Id of parent block */
@@ -477,6 +477,7 @@ trait PreHeader { // Testnet2
   /** Miner public key. Should be used to collect block rewards. */
   def minerPk: GroupElement
 
+  /** A collection of votes set up by the block miner. */
   def votes: Coll[Byte]
 }
 
@@ -488,7 +489,7 @@ trait Header {
   /** Bytes representation of ModifierId of this Header */
   def id: Coll[Byte]
 
-  /** Block version, to be increased on every soft and hardfork. */
+  /** Block version, to be increased on every soft and hard-fork. */
   def version: Byte
 
   /** Bytes representation of ModifierId of the parent block */
@@ -497,7 +498,7 @@ trait Header {
   /** Hash of ADProofs for transactions in a block */
   def ADProofsRoot: Coll[Byte] // Digest32. Can we build AvlTree out of it?
 
-  /** AvlTree) of a state after block application */
+  /** AvlTree of a state after block application */
   def stateRoot: AvlTree
 
   /** Root hash (for a Merkle tree) of transactions in a block. */
@@ -530,6 +531,7 @@ trait Header {
     * corresponding to `minerPk`. The lower `powDistance` is, the harder it was to find this solution. */
   def powDistance: BigInt
 
+  /** A collection of votes set up by the block miner. */
   def votes: Coll[Byte] //3 bytes
 }
 
@@ -565,12 +567,20 @@ trait Context {
     */
   def headers: Coll[Header]
 
-  /**
+  /** Only header fields that can be predicted by a miner when the spending transaction is
+    * added to a new block candidate.
     * @since 2.0
     */
   def preHeader: PreHeader
 
+  /** Encoded bytes of public key of the miner who created the block.
+    * Equals to `preHeader.minerPk.getEncoded` */
   def minerPubKey: Coll[Byte]
+
+  /** Get context variable with given `varId`` and type. Example:
+    * `getVar[Coll[Byte]](10).get` extract a collection of bytes from the variable
+    * with varId = 10.
+    */
   def getVar[T](id: Byte)(implicit cT: RType[T]): Option[T]
   def vars: Coll[AnyValue]
 }
@@ -676,6 +686,7 @@ trait SigmaDslBuilder {
   /** Construct a new authenticated dictionary with given parameters and tree root digest. */
   def avlTree(operationFlags: Byte, digest: Coll[Byte], keyLength: Int, valueLengthOpt: Option[Int]): AvlTree
 
+  /** Byte-wise XOR of two collections of bytes. */
   def xor(l: Coll[Byte], r: Coll[Byte]): Coll[Byte]
 }
 

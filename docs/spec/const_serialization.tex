@@ -1,0 +1,25 @@
+\subsection{Constant Serialization}
+\label{sec:ser:const}
+
+\lst{Constant} format is simple and self sufficient to represent any data value.
+Serialized bytes of the \lst{Constant} format contain both the type bytes and the data
+bytes, thus it can be stored or wire transfered and then later unambiguously
+interpreted. The format is shown in Figure~\ref{fig:ser:const}
+
+\begin{figure}[h] \footnotesize
+\caption{Constant serialization format}\vspace{-7pt}
+\label{fig:ser:const}
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+    $type$  & \lst{Type} & $[1..\MaxTypeSize]$ & type of the data instance (see~\ref{sec:ser:type}) \\
+    \hline
+    $value$  & \lst{Data} & $[1..\MaxDataSize]$ & serialized data instance (see~\ref{sec:ser:data}) \\
+    \hline
+\end{tabularx}\)
+\end{figure}
+
+In order to parse the \lst{Constant} format first use type serializer form
+section~\ref{sec:ser:type} and read the type. Then use the parsed type as an argument
+of data serializer given in section~\ref{sec:ser:data}.

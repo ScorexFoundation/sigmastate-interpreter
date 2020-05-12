@@ -4,25 +4,30 @@ import sigmastate._
 import sigmastate.eval.Evaluation._
 import sigmastate.eval.{Zero, Sized}
 import scalan.util.Extensions.ByteOps
-import scalan.util.CollectionUtil
+import scalan.util.{CollectionUtil, FileUtil}
 import scalan.util.PrintExtensions._
 import sigmastate.Values.{FalseLeaf, Constant, TrueLeaf, BlockValue, ConstantPlaceholder, Tuple, ValDef, FunDef, ValUse, ValueCompanion, TaggedVariable, ConcreteCollection, ConcreteCollectionBooleanConstant}
 import sigmastate.lang.SigmaPredef.{PredefinedFuncRegistry, PredefinedFunc}
 import sigmastate.lang.StdSigmaBuilder
-import sigmastate.lang.Terms.{MethodCall, PropertyCall}
+import sigmastate.lang.Terms.{PropertyCall, MethodCall}
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.{ValueSerializer, OpCodes}
 import sigmastate.utxo.{SigmaPropIsProven, SelectField}
 
 object SpecGenUtils {
   val types = SType.allPredefTypes.diff(Seq(SString))
-  val companions: Seq[STypeCompanion] = types.collect { case tc: STypeCompanion => tc }
-  val typesWithMethods = companions ++ Seq(SCollection, SOption)
+  val typeCompanions: Seq[STypeCompanion] = types.collect { case tc: STypeCompanion => tc }
+  val typesWithMethods = typeCompanions ++ Seq(SCollection, SOption)
 }
 
 trait SpecGen {
   import SpecGenUtils._
   val tT = STypeVar("T")
+
+  def saveFile(fileName: String, text: String) = {
+    val fPrimOps = FileUtil.file(fileName)
+    FileUtil.write(fPrimOps, text)
+  }
 
   case class OpInfo(
       opDesc: ValueCompanion,
@@ -62,7 +67,9 @@ trait SpecGen {
       .filterNot { f => f.docInfo.opDesc.exists(noFuncs.contains) }.toSeq
   val specialFuncs: Seq[PredefinedFunc] = predefFuncRegistry.specialFuncs.values.toSeq
 
-  def collectOpsTable() = {
+  type OpsTableRow = (ValueCompanion, Option[SMethod], Option[PredefinedFunc])
+
+  def collectOpsTable(): Seq[OpsTableRow] = {
     val ops = collectSerializableOperations().filterNot { case (_, opDesc) => noFuncs.contains(opDesc) }
     val methods = collectMethods()
     val funcs = predefFuncs ++ specialFuncs
@@ -86,16 +93,24 @@ trait SpecGen {
     rowsWithInfo
   }
 
+  def filterOutDisabled(ops: Seq[OpsTableRow]): Seq[OpsTableRow] = {
+    ops.filterNot {
+      case (_, Some(m), _) => m.docInfo.exists(!_.isEnabled)
+      case (_, _, Some(f)) => !f.docInfo.isEnabled
+      case _ => false
+    }
+  }
+
   def getOpInfo(opDesc: ValueCompanion, optM: Option[SMethod], optF: Option[PredefinedFunc]): OpInfo = {
     (optM, optF) match {
-      case (Some(m), _) =>
-        val description = m.docInfo.map(i => i.description).opt()
-        val args = m.docInfo.map(i => i.args).getOrElse(Seq())
-        OpInfo(opDesc, description, args, Right(m))
       case (_, Some(f)) =>
         val description = f.docInfo.description
         val args = f.docInfo.args
         OpInfo(opDesc, description, args, Left(f))
+      case (Some(m), _) =>
+        val description = m.docInfo.map(i => i.description).opt()
+        val args = m.docInfo.map(i => i.args).getOrElse(Seq())
+        OpInfo(opDesc, description, args, Right(m))
       case p => sys.error(s"Unexpected $opDesc with $p")
     }
   }
@@ -135,36 +150,49 @@ trait SpecGen {
     table
   }
   
-  def methodSubsection(typeName: String, m: SMethod) = {
+  def methodSubsection(tc: STypeCompanion, m: SMethod) = {
+    val typeName = tc.typeName
     val argTypes = m.stype.tDom
-    val resTpe = m.stype.tRange.toTermString
+    val resTpe = m.stype.tRange
+    val resTpeStr = resTpe.toTermString
     val types = argTypes.map(_.toTermString)
     val argInfos = m.docInfo.fold(
       Range(0, types.length).map(i => ArgInfo("arg" + i, "")))(info => info.args.toIndexedSeq)
 
+    val castOpt = tc match {
+      case n: sigmastate.SNumericType => SNumericType.getNumericCast(n, m.name, resTpe)
+      case _ => None
+    }
     val serializedAs = m.docInfo.flatMap(_.opDesc).opt { d =>
-      val opName = d.typeName
+      val opName = castOpt.getOrElse(d).typeName
       val opCode = d.opCode.toUByte
       s"""
         |  \\bf{Serialized as} & \\hyperref[sec:serialization:operation:$opName]{\\lst{$opName}} \\\\
         |  \\hline
        """.stripMargin
     }
+
+    val tpeParams = m.stype.tpeParams.filterNot(tc.typeParams.contains).opt(ps => s"$$[$$${ps.map(p => s"\\lst{$p}").rep()}$$]$$")
+    val sigArgs = argInfos.zip(types).drop(1).opt(args => s"(${args.map { case (info, ty) => s"""\\lst{${info.name}}$$:$$~\\lst{$ty}""" }.rep()})")
+    val sig = s"""\\lst{def ${m.name}}$tpeParams$sigArgs: \\lst{$resTpeStr}"""
+
     subsectionTempl(
       opName = s"$typeName.${m.name}",
       opCode = s"${m.objType.typeId}.${m.methodId}",
       label  = s"sec:type:$typeName:${m.name}",
       desc = m.docInfo.opt(i => i.description + i.isFrontendOnly.opt(" (FRONTEND ONLY)")),
+      signature = if (sig.length > 100) "\\footnotesize " + sig else sig,
       types = types,
       argInfos = argInfos,
-      resTpe = resTpe,
+      resTpe = resTpeStr,
       serializedAs = serializedAs
       )
   }
 
   def funcSubsection(f: PredefinedFunc) = {
     val argTypes = f.declaration.tpe.tDom
-    val resTpe = f.declaration.tpe.tRange.toTermString
+    val resTpe = f.declaration.tpe.tRange
+    val resTpeStr = resTpe.toTermString
     val types = argTypes.map(_.toTermString)
     val argInfos = f.docInfo.args
     val opDesc = f.docInfo.opDesc
@@ -175,28 +203,34 @@ trait SpecGen {
         |  \\hline
        """.stripMargin
     }
+
+    val tpeParams = f.declaration.tpe.tpeParams.opt(ps => s"$$[$$${ps.map(p => s"\\lst{$p}").rep()}$$]$$")
+    val sigArgs = argInfos.zip(types).opt(args => s"(${args.map { case (info, ty) => s"""\\lst{${info.name}}$$:$$~\\lst{$ty}""" }.rep()})")
+    val sig = s"""\\lst{def ${toTexName(f.name)}}$tpeParams$sigArgs: \\lst{$resTpeStr}"""
+
     subsectionTempl(
       opName = toTexName(f.name),
       opCode = opDesc.map(_.opCode.toUByte.toString).getOrElse("NA"),
       label  = s"sec:appendix:primops:${f.docInfo.opTypeName}",
       desc = f.docInfo.description + f.docInfo.isFrontendOnly.opt(" (FRONTEND ONLY)"),
+      signature = if (sig.length > 100) "\\footnotesize " + sig else sig,
       types = types,
       argInfos = argInfos,
-      resTpe = resTpe,
+      resTpe = resTpeStr,
       serializedAs = serializedAs
     )
   }
 
-  def subsectionTempl(opName: String, opCode: String, label: String, desc: String, types: Seq[String], argInfos: Seq[ArgInfo], resTpe: String, serializedAs: String) = {
-    val params = types.opt { ts =>
-      val args = argInfos.zip(ts).filter { case (a, _) => a.name != "this" }
+  def subsectionTempl(opName: String, opCode: String, label: String, desc: String, signature: String, types: Seq[String], argInfos: Seq[ArgInfo], resTpe: String, serializedAs: String) = {
+
+    val params = argInfos.zip(types).filter { case (a, _) => a.name != "this" }.opt { args =>
       s"""
         |  \\hline
         |  \\bf{Parameters} &
-        |      \\(\\begin{array}{l l l}
+        |      \\(\\begin{array}{l l}
         |         ${args.rep({ case (info, t) =>
-        s"\\lst{${info.name}} & \\lst{: $t} & \\text{// ${info.description}} \\\\"
-      }, "\n")}
+                    s"\\lst{${info.name}} & \\text{${info.description}} \\\\"
+                  }, "\n")}
         |      \\end{array}\\) \\\\
        """.stripMargin
     }
@@ -207,9 +241,9 @@ trait SpecGen {
       |\\begin{tabularx}{\\textwidth}{| l | X |}
       |   \\hline
       |   \\bf{Description} & $desc \\\\
+      |   \\hline
+      |   \\bf{Signature} & $signature \\\\
       |  $params
-      |  \\hline
-      |  \\bf{Result} & \\lst{${resTpe}} \\\\
       |  \\hline
       |  $serializedAs
       |\\end{tabularx}
@@ -217,8 +251,9 @@ trait SpecGen {
   }
 
   def printMethods(tc: STypeCompanion) = {
-    val methodSubsections = for { m <- tc.methods.sortBy(_.methodId) } yield {
-      methodSubsection(tc.typeName, m)
+    val nonFrontEndMethods = tc.methods.filter(m => m.docInfo.exists(_.isAvailableInErgoTree))
+    val methodSubsections = for { m <- nonFrontEndMethods.sortBy(_.methodId)} yield {
+      methodSubsection(tc, m)
     }
     val res = methodSubsections.mkString("\n\n")
     res

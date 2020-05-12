@@ -177,6 +177,13 @@ Compare equality of \lst{left} and \lst{right} arguments See~\hyperref[sec:appen
     \hline
         \multicolumn{4}{l}{\lst{match}~$ (left, right) $} \\
          
+    \multicolumn{4}{l}{~~\lst{with}~$(Constant(l, Boolean), Constant(r, Boolean))$ } \\
+    \hline
+            ~~~~ $ opCode $ & \lst{Byte} & 1 & always contains OpCode 133 \\
+    \hline
+          ~~~~ $ (l,r) $ & \lst{Bits} & 1 & two higher bits in a byte \\
+    \hline
+      
     \multicolumn{4}{l}{~~\lst{otherwise} } \\
     \hline
             ~~~~ $ left $ & \lst{Expr} & [1, *] & left operand \\
@@ -199,6 +206,13 @@ Compare inequality of \lst{left} and \lst{right} arguments See~\hyperref[sec:app
     \hline
         \multicolumn{4}{l}{\lst{match}~$ (left, right) $} \\
          
+    \multicolumn{4}{l}{~~\lst{with}~$(Constant(l, Boolean), Constant(r, Boolean))$ } \\
+    \hline
+            ~~~~ $ opCode $ & \lst{Byte} & 1 & always contains OpCode 133 \\
+    \hline
+          ~~~~ $ (l,r) $ & \lst{Bits} & 1 & two higher bits in a byte \\
+    \hline
+      
     \multicolumn{4}{l}{~~\lst{otherwise} } \\
     \hline
             ~~~~ $ left $ & \lst{Expr} & [1, *] & left operand \\
@@ -321,7 +335,7 @@ Returns a sum of two numeric operands See~\hyperref[sec:appendix:primops:Plus]{\
 \subsubsection{\lst{Xor} operation (OpCode 155)}
 \label{sec:serialization:operation:Xor}
 
-Byte-wise XOR of two collections of bytes See~\hyperref[sec:appendix:primops:Xor]{\lst{binary_|}}
+Byte-wise XOR of two collections of bytes. Example: \lst{xs | ys}. See~\hyperref[sec:type:SigmaDslBuilder:xor]{\lst{SigmaDslBuilder.xor}}
 
 \noindent
 \(\begin{tabularx}{\textwidth}{| l | l | l | X |}
@@ -632,7 +646,7 @@ Selects an interval of elements.  The returned collection is made up
 \subsubsection{\lst{ExtractAmount} operation (OpCode 193)}
 \label{sec:serialization:operation:ExtractAmount}
 
-Mandatory: Monetary value, in Ergo tokens (NanoErg unit of measure) See~\hyperref[sec:type:Box:value]{\lst{Box.value}}
+Monetary value in NanoERGs stored in this box. See~\hyperref[sec:type:Box:value]{\lst{Box.value}}
 
 \noindent
 \(\begin{tabularx}{\textwidth}{| l | l | l | X |}
@@ -648,8 +662,8 @@ Mandatory: Monetary value, in Ergo tokens (NanoErg unit of measure) See~\hyperre
 \subsubsection{\lst{ExtractScriptBytes} operation (OpCode 194)}
 \label{sec:serialization:operation:ExtractScriptBytes}
 
-Serialized bytes of guarding script, which should be evaluated to true in order to
- open this box. (aka spend it in a transaction) See~\hyperref[sec:type:Box:propositionBytes]{\lst{Box.propositionBytes}}
+Serialized bytes of the guarding script which should be evaluated to true in order to
+ open this box (spend it in a transaction). See~\hyperref[sec:type:Box:propositionBytes]{\lst{Box.propositionBytes}}
 
 \noindent
 \(\begin{tabularx}{\textwidth}{| l | l | l | X |}
@@ -737,8 +751,8 @@ Blake2b256 hash of this box's content, basically equals to \lst{blake2b256(bytes
 \label{sec:serialization:operation:ExtractCreationInfo}
 
  If \lst{tx} is a transaction which generated this box, then \lst{creationInfo._1}
- is a height of the tx's block. The \lst{creationInfo._2} is a serialized transaction
- identifier followed by box index in the transaction outputs.
+ is a height of the tx's block. The \lst{creationInfo._2} is a serialized bytes of the transaction
+ identifier followed by the serialized bytes of the box index in the transaction outputs.
          See~\hyperref[sec:type:Box:creationInfo]{\lst{Box.creationInfo}}
 
 \noindent
@@ -963,7 +977,7 @@ Extracts SELF register as \lst{Coll[Byte]}, deserializes it to script
     \hline
           \multicolumn{4}{l}{\lst{for}~$i=1$~\lst{to}~$numItems$} \\
     \hline
-             ~~ $ item_i $ & \lst{Expr} & [1, *] & block's item in i-th position \\
+             ~~ $ item_i $ & \lst{ValDef} & [1, *] & block's definition in i-th position \\
     \hline
           \multicolumn{4}{l}{\lst{end for}} \\\hline
      $ result $ & \lst{Expr} & [1, *] & result expression of the block \\
@@ -1068,7 +1082,7 @@ Apply the function to the arguments.  See~\hyperref[sec:appendix:primops:Apply]{
 \subsubsection{\lst{GetVar} operation (OpCode 227)}
 \label{sec:serialization:operation:GetVar}
 
-Get context variable with given \lst{varId} and type. See~\hyperref[sec:appendix:primops:GetVar]{\lst{getVar}}
+Get context variable with given \lst{varId} and type. See~\hyperref[sec:type:Context:getVar]{\lst{Context.getVar}}
 
 \noindent
 \(\begin{tabularx}{\textwidth}{| l | l | l | X |}
@@ -1103,7 +1117,7 @@ Returns the option's value. The option must be nonempty. Throws exception if the
 \label{sec:serialization:operation:OptionGetOrElse}
 
 Returns the option's value if the option is nonempty, otherwise
-return the result of evaluating \lst{default}.
+returns \lst{default}.
          See~\hyperref[sec:type:SOption:getOrElse]{\lst{SOption.getOrElse}}
 
 \noindent
@@ -1187,6 +1201,13 @@ Logical OR of two operands See~\hyperref[sec:appendix:primops:BinOr]{\lst{||}}
     \hline
         \multicolumn{4}{l}{\lst{match}~$ (left, right) $} \\
          
+    \multicolumn{4}{l}{~~\lst{with}~$(Constant(l, Boolean), Constant(r, Boolean))$ } \\
+    \hline
+            ~~~~ $ opCode $ & \lst{Byte} & 1 & always contains OpCode 133 \\
+    \hline
+          ~~~~ $ (l,r) $ & \lst{Bits} & 1 & two higher bits in a byte \\
+    \hline
+      
     \multicolumn{4}{l}{~~\lst{otherwise} } \\
     \hline
             ~~~~ $ left $ & \lst{Expr} & [1, *] & left operand \\
@@ -1327,9 +1348,9 @@ Transforms serialized bytes of ErgoTree with segregated constants by replacing c
     \hline
          $ scriptBytes $ & \lst{Expr} & [1, *] & serialized ErgoTree with ConstantSegregationFlag set to 1. \\
     \hline
-           $ positions $ & \lst{Expr} & [1, *] & zero based indexes in ErgoTree.constants array which should be replaced with new values \\
+           $ positions $ & \lst{Expr} & [1, *] & 0-based indexes in ErgoTree.constants \\
     \hline
-           $ newValues $ & \lst{Expr} & [1, *] & new values to be injected into the corresponding positions in ErgoTree.constants array \\
+           $ newValues $ & \lst{Expr} & [1, *] & values to be put into the corresponding positions \\
     \hline
       
 \end{tabularx}\)

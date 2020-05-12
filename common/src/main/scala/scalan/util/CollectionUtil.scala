@@ -1,5 +1,6 @@
 package scalan.util
 
+import scala.language.higherKinds
 import java.util
 import java.util.Objects
 import java.util.function.BiConsumer

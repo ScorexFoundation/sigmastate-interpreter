@@ -1,0 +1,87 @@
+\subsection{\ASDag~serialization}
+\label{sec:ser:ergotree}
+
+The \langname propostions stored in UTXO boxes are represented in the reference
+implementation using \lst{ErgoTree} class. The class is serialized using the \lst{ErgoTree}
+serialization format  shown in Figure~\ref{fig:ser:ergotree}. 
+
+\begin{figure}[h] \footnotesize
+\caption{\ASDag serialization format}\vspace{-7pt}
+\label{fig:ser:ergotree}
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
+  \hline
+  \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+  \hline
+  $ header $ & \lst{VLQ(UInt)} & [1, *] & the first bytes of serialized byte array which
+  determines interpretation of the rest of the array \\
+  \hline
+  \multicolumn{4}{l}{\lst{if} $header[3] = 1$ \lst{then}} \\
+  \hline
+  ~~$size$ & \lst{VLQ(UInt)} & [1, *] & size of the constants and root, i.e. the number of bytes after $header$ and $size$ \\
+  \hline
+  \multicolumn{4}{l}{\lst{end for}} \\
+  \hline
+  $numConstants$ & \lst{VLQ(UInt)} & [1, *] & size of $constants$ array \\
+  \hline
+  \multicolumn{4}{l}{\lst{for}~$i=0$~\lst{to}~$numConstants-1$} \\
+  \hline
+      ~~ $ const_i $ & \lst{Const} & [1, *] & constant in i-th position \\
+  \hline
+  \multicolumn{4}{l}{\lst{end for}} \\
+  \hline
+  $ root $ & \lst{Expr} & [1, *] & 
+    If $header[4] = 1$, the $root$ tree may contain ConstantPlaceholder
+    nodes instead of Constant nodes (and may by only some of them, not all).
+    Otherwise (i.e. if $header[4] = 0$) the root cannot contain placeholders (exception
+    should be thrown). It is possible to have both constants and placeholders in the
+    tree, but for every placeholder there should be a constant in $constants$ array of
+    ErgoTree instance. \\
+  \hline
+\end{tabularx}\)
+\end{figure}
+
+Serialized instances of \lst{ErgoTree} class are self sufficient and can be stored and
+passed around. \lst{ErgoTree} format defines top-level serialization format of
+\langname scripts. The interpretation of the byte array depend on the first $header$
+bytes, which uses VLQ encoding up to 30 bits. Currently we define meaning for only
+first byte, which may be extended in future versions. The meaning of the bits is shown
+in Figure~\ref{fig:ergotree:header}.
+
+\begin{figure}[h] \footnotesize
+\caption{\ASDag $header$ bits}\vspace{-7pt}
+\label{fig:ergotree:header}
+\(\begin{tabularx}{\textwidth}{| l | l | X |}
+    \hline
+    \bf{Bits} & \bf{Default} & \bf{Description} \\
+    \hline
+    Bits 0-2 & 0 & language version (current version == 0) \\
+    \hline
+    Bit 3 & 0 & $= 1$ if size of the whole tree is serialized after the header byte \\
+    \hline
+    Bit 4 & 0 & $= 1$ if constant segregation is used for this ErgoTree \\
+    \hline
+    Bit 5 & 0 & $= 1$ - reserved for context dependent costing (should be = 0) \\
+    \hline
+    Bit 6 & 0 & reserved for GZIP compression (should be 0) \\
+    \hline
+    Bit 7 & 0 & $= 1$ if the header contains more than 1 byte (should be 0) \\
+    \hline
+\end{tabularx}\)
+\end{figure}
+
+Currently we don't specify interpretation for the second and other bytes of
+the header. We reserve the possibility to extend header by using Bit 7 == 1
+and chain additional bytes as in VLQ. Once the new bytes are required, a new
+version of the language should be created and implemented via
+soft-forkability. That new language will give an interpretation for the new
+bytes.
+
+The default behavior of ErgoTreeSerializer is to preserve original structure
+of \ASDag and check consistency. In case of any inconsistency the
+serializer throws exception.
+
+If constant segregation Bit4 is set to 1 then $constants$ collection contains
+the constants for which there may be \lst{ConstantPlaceholder} nodes in the
+tree. Nowever, if the constant segregation bit is 0, then $constants$
+collection should be empty and any placeholder in the tree will lead to
+exception.

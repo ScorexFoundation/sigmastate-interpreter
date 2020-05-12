@@ -441,10 +441,7 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
       case arr: Array[_] => s"Array(${trim(arr).mkString(",")})"
       case col: special.collection.Coll[_] => s"Coll(${trim(col.toArray).mkString(",")})"
       case p: SGroupElement => p.showToString
-      case ProveDlog(GroupElementConstant(g)) => s"ProveDlog(${g.showToString})"
-      case ProveDHTuple(
-              GroupElementConstant(g), GroupElementConstant(h), GroupElementConstant(u), GroupElementConstant(v)) =>
-        s"ProveDHT(${g.showToString},${h.showToString},${u.showToString},${v.showToString})"
+      case sb: SigmaBoolean => sb.showToString
       case _ => x.toString
     }
     sym match {

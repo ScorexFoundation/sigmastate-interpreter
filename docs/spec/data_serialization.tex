@@ -1,0 +1,228 @@
+\subsection{Data Serialization}
+\label{sec:ser:data}
+
+In \langname all runtime data values have an associated type also available
+at runtime (this is called \emph{type reification}\cite{Reification}).
+However serialization format separates data values from its type descriptors. 
+This allows to save space when for example a collection of items is serialized.
+
+It is done is such a way that the contents of a typed data structure can be fully
+described by a type tree. For example having a typed data object \lst{d: (Int,
+Coll[Byte], Boolean)} we can tell, by examining the structure of the type, that \lst{d}
+is a tuple with 3 items, the first item contain 32-bit integer, the second - collection
+of bytes, and the third - logical true/false value.
+
+To serialize/deserialize typed data we need to know its \emph{type descriptor} (type
+tree). The data serialization procedure is recursive over a type tree and the
+corresponding sub-components of the data object. For primitive types (the leaves of the
+type tree) the format is fixed. The data values of \langname types are serialized
+according to the predefined recursive function shown in Figure~\ref{fig:ser:data} which
+uses the notation from Table~\ref{table:ser:notation}.
+
+\begin{figure}[H] \footnotesize
+\caption{Data serialization format}\vspace{-7pt}
+\label{fig:ser:data}
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+    \hline
+    \multicolumn{4}{l}{\lst{def serializeData(}$t, v$\lst{)}} \\
+    \multicolumn{4}{l}{~~\lst{match} $(t, v)$ } \\
+
+    \multicolumn{4}{l}{~~~~\lst{with} $(Unit, v \in \Denot{Unit})$~~~// nothing serialized } \\
+    \multicolumn{4}{l}{~~~~\lst{with} $(Boolean, v \in \Denot{Boolean})$} \\
+    \hline
+    $~~~~~~v$ & \lst{Byte} & 1 & 0 if $v = false$ or 1 otherwise \\
+
+    \hline
+    \multicolumn{4}{l}{~~~~\lst{with} $(Byte, v \in \Denot{Byte})$} \\
+    \hline
+    $~~~~~~v$  & \lst{Byte} & 1 &  in a single byte \\
+
+    \hline
+    \multicolumn{4}{l}{~~~~\lst{with} $(N, v \in \Denot{N}), N \in {Short, Int, Long}$} \\
+    \hline
+    $~~~~~~v$  & \lst{VLQ(ZigZag($$N$$))} & [1..3] & 
+      16,32,64-bit signed integer encoded using \hyperref[sec:zigzag-encoding]{ZigZag} 
+      and then \hyperref[sec:vlq-encoding]{VLQ} \\
+
+    \hline
+    \multicolumn{4}{l}{~~~~\lst{with} $(BigInt, v \in \Denot{BigInt})$} \\
+    \multicolumn{4}{l}{~~~~~~$bytes = v$\lst{.toByteArray} } \\
+    \hline
+    $~~~~~~numBytes$  & \lst{VLQ(UInt)} &  & number of bytes in $bytes$ array \\
+    \hline
+    $~~~~~~bytes$  & \lst{Bytes} &  & serialized $bytes$ array \\
+
+    \hline
+    \multicolumn{4}{l}{~~~~\lst{with} $(GroupElement, v \in \Denot{GroupElement})$} \\
+    \hline
+    ~~~~~~$v$  & \lst{GroupElement} &  & serialization of GroupElement data. See~\ref{sec:ser:data:groupelement} \\
+
+    \hline
+    \multicolumn{4}{l}{~~~~\lst{with} $(SigmaProp, v \in \Denot{SigmaProp})$} \\
+    \hline
+    ~~~~~~$v$  & \lst{SigmaProp} &  & serialization of SigmaProp data. See~\ref{sec:ser:data:sigmaprop} \\
+
+    \hline
+    \multicolumn{4}{l}{~~~~\lst{with} $(Box, v \in \Denot{Box})$} \\
+    \hline
+    ~~~~~~$v$  & \lst{Box} &  & serialization of Box data. See~\ref{sec:ser:data:box} \\
+
+    \hline
+    \multicolumn{4}{l}{~~~~\lst{with} $(AvlTree, v \in \Denot{AvlTree})$} \\
+    \hline
+    ~~~~~~$v$  & \lst{AvlTree} &  & serialization of AvlTree data. See~\ref{sec:ser:data:avltree} \\
+
+    \hline
+    \multicolumn{4}{l}{~~~~\lst{with} $(Coll[T], v \in \Denot{Coll[T]})$} \\
+    \hline
+    $~~~~~~len$  & \lst{VLQ(UShort)} & [1..3] & length of the collection \\
+    \hline
+    \multicolumn{4}{l}{~~~~~~\lst{match} $(T, v)$ } \\
+
+    \multicolumn{4}{l}{~~~~~~~~\lst{with} $(Boolean, v \in \Denot{Coll[Boolean]})$} \\
+    \hline
+    $~~~~~~~~~~v$  & \lst{Bits} & [1..1024] & boolean values packed in bits \\
+    \hline
+
+    \multicolumn{4}{l}{~~~~~~~~\lst{with} $(Byte, v \in \Denot{Coll[Byte]})$} \\
+    \hline
+    $~~~~~~~~~~v$  & \lst{Bytes} & $[1..len]$ & items of the collection  \\
+    \hline
+    \multicolumn{4}{l}{~~~~~~~~\lst{otherwise} } \\
+    \multicolumn{4}{l}{~~~~~~~~~~\lst{for}~$i=1$~\lst{to}~$len$~\lst{do}~\lst{serializeData(}$T, v_i$\lst{) end for}} \\
+    \multicolumn{4}{l}{~~~~~~\lst{end match}} \\
+    \multicolumn{4}{l}{~~\lst{end match}} \\
+    \multicolumn{4}{l}{\lst{end serializeData}} \\
+    \hline
+    \hline
+\end{tabularx}\)
+\end{figure}
+
+\subsubsection{GroupElement serialization}
+\label{sec:ser:data:groupelement}
+
+A value of the \lst{GroupElement} type is represented in reference implementation using
+\lst{SecP256K1Point} class of the \lst{org.bouncycastle.math.ec.custom.sec} package and
+serialized into ASN.1 encoding. During deserialization the different encodings are
+taken into account including point compression for $F_p$ (see X9.62 sec. 4.2.1 pg. 17).
+
+\begin{figure}[H] \footnotesize
+\caption{GroupElement serialization format}\vspace{-7pt}
+\label{fig:ser:data:groupelement}
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+    \multicolumn{4}{l}{\lst{def serialize(}$ge$\lst{)}} \\
+    \multicolumn{4}{l}{~~\lst{if} $ge.isInfinity$ \lst{then}} \\
+    \hline
+    ~~~~$bytes$  & \lst{rep(}$0, 33$\lst{)} & $ 33 $ & all bytes = 0 \\ 
+    \hline
+    \multicolumn{4}{l}{~~\lst{else}} \\
+    \hline
+    ~~~~$bytes$  & Bytes & $33$ & where $bytes(0) \neq 0$, see \lst{sigmastate.serialization.GroupElementSerializer} \\ 
+    \hline
+    \multicolumn{4}{l}{~~\lst{end if}} \\
+    \multicolumn{4}{l}{\lst{end def}} \\
+    \hline
+    \hline
+\end{tabularx}\)
+\end{figure}
+
+\subsubsection{SigmaProp serialization}
+\label{sec:ser:data:sigmaprop}
+
+In reference implementation values of \lst{SigmaProp} type are serialized using 
+\lst{SigmaBoolean.serializer}
+
+\begin{figure}[H] \footnotesize
+\caption{SigmaProp serialization format}\vspace{-7pt}
+\label{fig:ser:data:sigmaprop}
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+    \multicolumn{4}{l}{\lst{def serializeSigma(}$sp: SigmaTree$\lst{)}} \\
+    \hline
+    ~~$sp.opCode$  & \lst{Byte} & $1$ & opcode of SigmaTree node\\
+    \hline
+    \multicolumn{4}{l}{~~\lst{match} $sp$} \\
+    \multicolumn{4}{l}{~~~~\lst{with} $dl: ProveDlog$} \\
+        \hline
+        ~~~~~~$dl.value$  & \lst{GroupElement} & $33$ & see \ref{sec:ser:data:groupelement} \\
+        \hline
+    \multicolumn{4}{l}{~~~~\lst{with} $dht: ProveDHTuple$} \\
+        \hline
+        ~~~~~~$dht.gv$  & \lst{GroupElement} & $33$ & see \ref{sec:ser:data:groupelement} \\
+        \hline
+        ~~~~~~$dht.hv$  & \lst{GroupElement} & $33$ &  \\
+        \hline
+        ~~~~~~$dht.uv$  & \lst{GroupElement} & $33$ &  \\    
+        \hline
+        ~~~~~~$dht.vv$  & \lst{GroupElement} & $33$ &  \\
+        \hline
+    \multicolumn{4}{l}{~~~~\lst{with} $and: CAND$} \\
+        \hline
+        ~~~~~~$nChildren$  & \lst{VLQ(UShort)} & $1..3$ & number of children \\
+        \hline
+        \multicolumn{4}{l}{~~~~~~\lst{for}~$i=1$~\lst{to}~$nChildren$~\lst{do}~\lst{serializeSigma(}$and.$\lst{children(}$i$\lst{)) end for}} \\
+    \multicolumn{4}{l}{~~~~\lst{with} $or: COR$} \\
+        \hline
+        ~~~~~~$nChildren$  & \lst{VLQ(UShort)} & $1..3$ & number of children \\
+        \hline
+        \multicolumn{4}{l}{~~~~~~\lst{for}~$i=1$~\lst{to}~$nChildren$~\lst{do}~\lst{serializeSigma(}$or.$\lst{children(}$i$\lst{)) end for}} \\
+    \multicolumn{4}{l}{~~~~\lst{with} $th: CTHRESHOLD$} \\
+        \hline
+        ~~~~~~$th.k$       & \lst{VLQ(UShort)} & $1..3$ & $k$ out of $n$ \\
+        \hline
+        ~~~~~~$nChildren$  & \lst{VLQ(UShort)} & $1..3$ & number of children \\
+        \hline
+        \multicolumn{4}{l}{~~~~~~\lst{for}~$i=1$~\lst{to}~$nChildren$~\lst{do}~\lst{serializeSigma(}$th.$\lst{children(}$i$\lst{)) end for}} \\
+    \multicolumn{4}{l}{~~~~\lst{with} $\_: TrivialProp$ \lst{// besides opCode no additional bytes}} \\
+    \multicolumn{4}{l}{~~\lst{end match}} \\
+    \multicolumn{4}{l}{\lst{end def}} \\
+    \hline
+    \hline
+\end{tabularx}\)
+\end{figure}
+
+\subsubsection{AvlTree serialization}
+\label{sec:ser:data:avltree}
+
+In reference implementation values of \lst{AvlTree} type are serialized using 
+\lst{AvlTreeData.serializer}.
+
+\begin{figure}[H] \footnotesize
+\caption{AvlTree serialization format}\vspace{-7pt}
+\label{fig:ser:data:avltree}
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+    $digest$  & \lst{Bytes} & $DigestSize$ & authenticated tree digest: root hash along with tree height \\    
+    \hline
+    $treeFlags$  & \lst{UByte} & $1$ & 
+        allowed modifications of the tree. 
+        The operation is allowed when bit is set to 1. 
+        bit0 - insert, bit1 - update, bit2 - remove \\
+    \hline
+    $keyLength$  & \lst{VLQ(UInt)} & $[1..5]$ & the length of each key in the tree \\    
+    \hline
+    \multicolumn{4}{l}{\lst{optional}~$valueLength$} \\
+    \hline
+    ~~$tag$ & \lst{Byte} & 1 & 0 - no value; 1 - has value \\
+    \hline
+    \multicolumn{4}{l}{~~\lst{when}~$tag == 1$} \\
+    \hline
+    ~~~~ $valueLength$ & \lst{VLQ(UInt)} & [1, *] & the length of all the values in the tree \\
+    \hline
+    \multicolumn{4}{l}{\lst{end optional}} \\
+    \hline
+    \hline
+\end{tabularx}\)
+\end{figure}
+
+

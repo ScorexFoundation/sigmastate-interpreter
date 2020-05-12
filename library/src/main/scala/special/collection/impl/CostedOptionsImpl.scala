@@ -1,5 +1,6 @@
 package special.collection
 
+import scala.language.{existentials,implicitConversions}
 import scalan._
 import scala.collection.mutable.WrappedArray
 

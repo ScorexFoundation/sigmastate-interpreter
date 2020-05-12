@@ -2,6 +2,7 @@ package scalan
 
 import scala.reflect.ClassTag
 import scala.annotation.implicitNotFound
+import scala.language.implicitConversions
 
 /** Base type for all runtime type descriptors. */
 @implicitNotFound(msg = "No Elem available for ${A}.")

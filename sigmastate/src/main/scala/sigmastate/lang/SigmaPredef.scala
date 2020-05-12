@@ -300,13 +300,13 @@ object SigmaPredef {
         { case (_, Seq(flags, digest, keyLength, valueLength)) =>
           mkCreateAvlTree(flags.asByteValue, digest.asByteArray, keyLength.asIntValue, valueLength.asOption[SInt.type])
         }),
-      OperationInfo(CreateAvlTree,
+      OperationInfo(Some(CreateAvlTree),
         "Construct a new authenticated dictionary with given parameters and tree root digest.",
         Seq(
           ArgInfo("operationFlags", "flags of available operations"),
           ArgInfo("digest", "hash of merkle tree root"),
           ArgInfo("keyLength", "length of dictionary keys in bytes"),
-          ArgInfo("valueLengthOpt", "optional width of dictionary values in bytes")))
+          ArgInfo("valueLengthOpt", "optional width of dictionary values in bytes")), false)
     )
 
     val SubstConstantsFunc = PredefinedFunc("substConstants",
@@ -332,8 +332,8 @@ object SigmaPredef {
          | Returns original scriptBytes array where only specified constants are replaced and all other bytes remain exactly the same.
         """.stripMargin, Seq(
         ArgInfo("scriptBytes", "serialized ErgoTree with ConstantSegregationFlag set to 1."),
-        ArgInfo("positions", "zero based indexes in ErgoTree.constants array which should be replaced with new values"),
-        ArgInfo("newValues", "new values to be injected into the corresponding positions in ErgoTree.constants array")))
+        ArgInfo("positions", "0-based indexes in ErgoTree.constants"),
+        ArgInfo("newValues", "values to be put into the corresponding positions")))
     )
 
     val ExecuteFromVarFunc = PredefinedFunc("executeFromVar",
@@ -408,11 +408,11 @@ object SigmaPredef {
         OperationInfo(opDesc, desc, args)
       )
     }
-    def binaryOp(symbolName: String, opDesc: ValueCompanion, desc: String, args: Seq[ArgInfo]) = {
+    def binaryOp(symbolName: String, opDesc: ValueCompanion, desc: String, args: Seq[ArgInfo], isEnabled: Boolean = true) = {
       PredefinedFunc(symbolName,
         Lambda(Seq(STypeParam(tT)), Vector("left" -> tT, "right" -> tT), tT, None),
         PredefFuncInfo(undefined),
-        OperationInfo(opDesc, desc, args)
+        OperationInfo(Some(opDesc), desc, args, isEnabled)
       )
     }
     def logicalOp(symbolName: String, opDesc: ValueCompanion, desc: String, args: Seq[ArgInfo]) = {
@@ -458,23 +458,23 @@ object SigmaPredef {
         Seq(ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))),
 
       binaryOp("bit_|", BitOp.BitOr, "Bitwise OR of two numeric operands.",
-        Seq(ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))),
+        Seq(ArgInfo("left", "left operand"), ArgInfo("right", "right operand")), false),
       binaryOp("bit_&", BitOp.BitAnd, "Bitwise AND of two numeric operands.",
-        Seq(ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))),
+        Seq(ArgInfo("left", "left operand"), ArgInfo("right", "right operand")), false),
       binaryOp("bit_^", BitOp.BitXor, "Bitwise XOR of two numeric operands.",
-        Seq(ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))),
+        Seq(ArgInfo("left", "left operand"), ArgInfo("right", "right operand")), false),
 
       binaryOp("bit_>>", BitOp.BitShiftRight, "Right shift of bits.",
-        Seq(ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))),
+        Seq(ArgInfo("left", "left operand"), ArgInfo("right", "right operand")), false),
       binaryOp("bit_<<", BitOp.BitShiftLeft, "Left shift of bits.",
-        Seq(ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))),
+        Seq(ArgInfo("left", "left operand"), ArgInfo("right", "right operand")), false),
       binaryOp("bit_>>>", BitOp.BitShiftRightZeroed, "Right shift of bits.",
-        Seq(ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))),
+        Seq(ArgInfo("left", "left operand"), ArgInfo("right", "right operand")), false),
 
       PredefinedFunc("binary_|",
         Lambda(Vector("left" -> SByteArray, "right" -> SByteArray), SByteArray, None),
         PredefFuncInfo(undefined),
-        OperationInfo(Xor, "Byte-wise XOR of two collections of bytes",
+        OperationInfo(Xor, "Byte-wise XOR of two collections of bytes. Example: \\lst{xs | ys}.",
           Seq(ArgInfo("left", "left operand"), ArgInfo("right", "right operand")))
       ),
 
@@ -504,9 +504,9 @@ object SigmaPredef {
       PredefinedFunc("unary_~",
         Lambda(Seq(STypeParam(tT)), Vector("input" -> tT), tT, None),
         PredefFuncInfo(undefined),
-        OperationInfo(BitInversion,
+        OperationInfo(Some(BitInversion),
           "Invert every bit of the numeric value.",
-          Seq(ArgInfo("input", "value of numeric type")))
+          Seq(ArgInfo("input", "value of numeric type")), false)
       )
     ).map(f => f.name -> f).toMap
 
@@ -526,11 +526,11 @@ object SigmaPredef {
       PredefinedFunc("treeLookup",
         Lambda(Vector("tree" -> SAvlTree, "key" -> SByteArray, "proof" -> SByteArray), SOption(SByteArray), None),
         PredefFuncInfo(undefined),
-        OperationInfo(TreeLookup,
+        OperationInfo(Some(TreeLookup),
           "",
           Seq(ArgInfo("tree", "tree to lookup the key"),
           ArgInfo("key", "a key of an item in the \\lst{tree} to lookup"),
-          ArgInfo("proof", "proof to perform verification of the operation")))
+          ArgInfo("proof", "proof to perform verification of the operation")), false)
       ),
       PredefinedFunc("if",
         Lambda(Seq(STypeParam(tT)), Vector("condition" -> SBoolean, "trueBranch" -> tT, "falseBranch" -> tT), tT, None),
@@ -544,32 +544,32 @@ object SigmaPredef {
       PredefinedFunc("upcast",
         Lambda(Seq(STypeParam(tT), STypeParam(tR)), Vector("input" -> tT), tR, None),
         PredefFuncInfo(undefined),
-        OperationInfo(Upcast,
+        OperationInfo(Some(Upcast),
           "Cast this numeric value to a bigger type (e.g. Int to Long)",
           Seq(ArgInfo("input", "value to cast")))
       ),
       PredefinedFunc("downcast",
         Lambda(Seq(STypeParam(tT), STypeParam(tR)), Vector("input" -> tT), tR, None),
         PredefFuncInfo(undefined),
-        OperationInfo(Downcast,
+        OperationInfo(Some(Downcast),
           "Cast this numeric value to a smaller type (e.g. Long to Int). Throws exception if overflow.",
           Seq(ArgInfo("input", "value to cast")))
       ),
       PredefinedFunc("apply",
         Lambda(Seq(STypeParam(tT), STypeParam(tR)), Vector("func" -> SFunc(tT, tR), "args" -> tT), tR, None),
         PredefFuncInfo(undefined),
-        OperationInfo(Apply,
+        OperationInfo(Some(Apply),
           "Apply the function to the arguments. ",
           Seq(ArgInfo("func", "function which is applied"),
             ArgInfo("args", "list of arguments")))
-      ),
-      PredefinedFunc("placeholder",
-        Lambda(Seq(STypeParam(tT)), Vector("id" -> SInt), tT, None),
-        PredefFuncInfo(undefined),
-        OperationInfo(ConstantPlaceholder,
-          "Create special ErgoTree node which can be replaced by constant with given id.",
-          Seq(ArgInfo("index", "index of the constant in ErgoTree header")))
       )
+//      PredefinedFunc("placeholder",
+//        Lambda(Seq(STypeParam(tT)), Vector("id" -> SInt), tT, None),
+//        PredefFuncInfo(undefined),
+//        OperationInfo(ConstantPlaceholder,
+//          "Create special ErgoTree node which can be replaced by constant with given id.",
+//          Seq(ArgInfo("index", "index of the constant in ErgoTree header")))
+//      )
     ).map(f => f.name -> f).toMap
 
     private val funcNameToIrBuilderMap: Map[String, PredefinedFunc] =

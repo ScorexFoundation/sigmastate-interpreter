@@ -1,5 +1,7 @@
 package scalan
 
+import scala.language.implicitConversions
+
 /** Non-thread safe (but efficient on single thread) immutable lazy value with reset.
   * The `block` may execute potentially many times, but only once before each reset. */
 final class MutableLazy[A] private (block: => A) {

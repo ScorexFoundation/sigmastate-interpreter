@@ -948,7 +948,7 @@ case class EQ[S <: SType](override val left: Value[S], override val right: Value
     left.tpe.asInstanceOf[SType] match {
       case SBigInt => E.addCostOf("EQ", SBigInt.RelationOpType)
       case t if t.isConstantSize => E.addCostOf(this)
-      case _ => ???
+      case _ => // TODO jit costing
     }
     l == r
   }

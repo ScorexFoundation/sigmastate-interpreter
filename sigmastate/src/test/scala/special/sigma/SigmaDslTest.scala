@@ -195,18 +195,33 @@ class SigmaDslTest extends PropSpec
   }
 
   property("BigInt methods equivalence") {
-    val toByte = checkEq(func[(Byte, BigInt),Boolean]("{ (x: (Byte, BigInt)) => x._2.toByte == x._1 }")) { x =>
-      x._2.toByte == x._1
-    }
-    val toShort = checkEq(func[(Short, BigInt),Boolean]("{ (x: (Short, BigInt)) => x._2.toShort == x._1 }")) { x =>
-      x._2.toShort == x._1
-    }
-    val toInt = checkEq(func[(Int, BigInt),Boolean]("{ (x: (Int, BigInt)) => x._2.toInt == x._1 }")) { x =>
-      x._2.toInt == x._1
-    }
-    val toLong = checkEq(func[(Long, BigInt),Boolean]("{ (x: (Long, BigInt)) => x._2.toLong == x._1 }")) { x =>
-      x._2.toLong == x._1
-    }
+
+//TODO soft-fork: uncomment when implemented
+//    val toByte = checkEq(func[(Byte, BigInt),Boolean]("{ (x: (Byte, BigInt)) => x._2.toByte == x._1 }")) { x =>
+//      x._2.toByte == x._1
+//    }
+//    val toShort = checkEq(func[(Short, BigInt),Boolean]("{ (x: (Short, BigInt)) => x._2.toShort == x._1 }")) { x =>
+//      x._2.toShort == x._1
+//    }
+//    val toInt = checkEq(func[(Int, BigInt),Boolean]("{ (x: (Int, BigInt)) => x._2.toInt == x._1 }")) { x =>
+//      x._2.toInt == x._1
+//    }
+//    val toLong = checkEq(func[(Long, BigInt),Boolean]("{ (x: (Long, BigInt)) => x._2.toLong == x._1 }")) { x =>
+//      x._2.toLong == x._1
+//    }
+//    forAll { x: Byte =>
+//      toByte((x, x.toBigInt))
+//    }
+//    forAll { x: Short =>
+//      toShort((x, x.toBigInt))
+//    }
+//    forAll { x: Int =>
+//      toInt((x, x.toBigInt))
+//    }
+//    forAll { x: Long =>
+//      toLong((x, BigInt(x).bigInteger))
+//    }
+
     val toBigInt = checkEq(func[(BigInt, BigInt),Boolean]("{ (x: (BigInt, BigInt)) => x._2.toBigInt == x._1 }")) { x =>
       x._2 == x._1
     }
@@ -216,20 +231,7 @@ class SigmaDslTest extends PropSpec
     lazy val toAbs = checkEq(func[BigInt,BigInt]("{ (x: BigInt) => x.toAbs }"))(x => x.toAbs)
     lazy val compareTo = checkEq(func[(BigInt, BigInt), Int]("{ (x: (BigInt, BigInt)) => x._1.compareTo(x._2) }"))(x => x._1.compareTo(x._2))
 
-    /*
-    forAll { x: Byte =>
-      toByte((x, x.toBigInt))
-    }
-    forAll { x: Short =>
-      toShort((x, x.toBigInt))
-    }
-    forAll { x: Int =>
-      toInt((x, x.toBigInt))
-    }
-    forAll { x: Long =>
-      toLong((x, BigInt(x).bigInteger))
-    }
-    */
+
     forAll { x: BigInt =>
       Seq(toBigInt).foreach(_((x, x)))
       //TODO soft-fork: toBytes, toBits, toAbs

@@ -20,6 +20,7 @@ lazy val commonSettings = Seq(
   organization := "org.scorexfoundation",
   crossScalaVersions := Seq(scala212, scala211),
   scalaVersion := scala212,
+  scalacOptions := Seq("-feature"),
   resolvers += Resolver.sonatypeRepo("public"),
   licenses := Seq("CC0" -> url("https://creativecommons.org/publicdomain/zero/1.0/legalcode")),
   homepage := Some(url("https://github.com/ScorexFoundation/sigmastate-interpreter")),
@@ -353,7 +354,7 @@ commands += Command.command("ergoItTest") { state =>
 }
 
 def runSpamTestTask(task: String, sigmastateVersion: String, log: Logger): Unit = {
-  val spamBranch = "revert-23-revert-22-serialize-opt"
+  val spamBranch = "new-spec"
   val envVars = Seq("SIGMASTATE_VERSION" -> sigmastateVersion,
     "SPECIAL_VERSION" -> specialVersion,
     // SSH_SPAM_REPO_KEY should be set (see Jenkins Credentials Binding Plugin)
