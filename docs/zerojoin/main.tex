@@ -316,16 +316,16 @@ Since Bob knows $y$, he can spend the box using the right part of the statement.
 For privacy, the only difference between $O_b$ and $O_{1-b}$ is that $(g, \alpha, u, \beta)$ is a valid Diffie-Hellman tuple for $O_b$, while for $O_{1-b}$, the tuple is $(g, \beta, u, \alpha)$. Assuming that the Decision Diffie-Hellman (DDH) problem in $G$ is hard, it can be shown that no one apart from Alice or Bob has the ability to distinguish the boxes.
 Thus, the boxes are indistinguishable before they are spent. To see that they remain so after being spent, observe that the protocol provides {\em spender indistinguishability} because each box is spent using a $\Sigma$-OR-proof that is zero-knowledge~\cite{Dam10}. 
 
-\paragraph{Comparing with CoinJoin:} Referring to Section~\ref{coinjoin}, both CoinJoin and \algname use the technique of spending two boxes to create two indistinguishable boxes that provide the privacy. However, CoinJoin requires the owners of the two input boxes to perform an off-chain interaction over a private channel. In \algname, this interaction is replaced by a public transaction on the blockchain. While this adds one more transaction, it does not require interaction between the parties, that too over a private channel. This makes \algname far more usable compared to CoinJoin. Note that \algname transactions are detectable, while CoinJoin transactions are indistinguishable from ordinary transactions. 
+\paragraph{Comparing with CoinJoin:} Referring to Section~\ref{coinjoin}, both CoinJoin and \algname use the technique of spending two boxes to create two indistinguishable boxes that provide the privacy. However, CoinJoin requires the owners of the two input boxes to perform an off-chain interaction over a private channel. In \algname, this interaction is replaced by a public transaction on the blockchain. While this adds one more transaction, it does not require interaction between the parties over a private channel. This makes \algname far more usable compared to CoinJoin. Note that \algname transactions are detectable, while CoinJoin transactions are indistinguishable from ordinary transactions.
 
 \paragraph{Comparing with ZeroCoin:} Referring to Section~\ref{zerocoin}, both ZeroCoin and \algname use a pool of boxes (the H-pool in \algname and the U-pool in ZeroCoin). Additionally, both use zero-knowledge proofs to spend boxes from the pool in a way that hides the links between the outputs and the inputs, thereby providing the privacy. 
-The difference is that the privacy in \algname is achieved in stages, two boxes at a time, while in ZeroCash it is achieved in one stage. Secondly, the degree of privacy in ZeroCoin depends on the size of the U-pool, while that in \algname depends on the number of stages. Thirdly, the U-pool in ZeroCoin increases monotonously in size, since objects are only added to it and never removed. The size of H-pool in \algname varies according to how many unspent Half-Mix boxes are present at any given time. Finally, the proof in ZeroCoin are quite large compared to those in \algname. The last two capture the main drawbacks of ZeroCoin that \algname addresses. 
+The difference is that the privacy in \algname is achieved in stages, two boxes at a time, while in ZeroCoin it is achieved in one stage. Secondly, the degree of privacy in ZeroCoin depends on the size of the U-pool, while that in \algname depends on the number of stages. Thirdly, the U-pool in ZeroCoin increases monotonously in size, since objects are only added to it and never removed. The size of H-pool in \algname varies according to how many unspent Half-Mix boxes are present at any given time. Finally, the proof in ZeroCoin are quite large compared to those in \algname. The last two capture the main drawbacks of ZeroCoin that \algname addresses.
 In particular, using \algname, we can obtain an equivalent (or sufficiently close) degree of privacy as from ZeroCoin without having to maintain the ever-increasing pools and with much shorter proofs. 
 
 \paragraph{Offchain Pool:} The H-Pool can be kept entirely offchain, so that Alice's Half-Mix box need not be present on the blockchain till the time Bob decides to spend it. Alice sends her unbroadcasted transaction directly to Bob who will broadcast both transactions at some later time. 
 
 
-\paragraph{Future enhancements:} Compared to CoinJoin, \algname requires an additional box -- the Half-Mix box -- as can be seen by by comparing Figures~\ref{fig:coinjoin} and~\ref{fig:mixname}. One way to eliminate the extra box would be to have the mix step output two indistinguishable Half-Mix boxes that can be used again in the mix step (or spent elsewhere). We could do this inefficiently by accumulating the statements and making the proof size proportional to the number of mixes. It is an open question if this can be done with constant proof size.
+\paragraph{Future enhancements:} Compared to CoinJoin, \algname requires an additional box -- the Half-Mix box -- as can be seen by by comparing Figures~\ref{fig:coinjoin} and~\ref{fig:mixname}. One way to eliminate the extra box would be to have the mix step output two indistinguishable Half-Mix boxes that can be used again in the mix step (or spent elsewhere). We could do this inefficiently by accumulating the statements and making the proof size proportional to the number of mixes. It is an open question if this can be done with a sublinear proof size.
 
 \section{\mixname: \algname with Fee}
 \label{fee}
@@ -366,13 +366,13 @@ In this approach, fee is paid by a {\em sponsor} when spending a Full-Mix box fo
 We use a variation of {\em Fee-Emission boxes} presented in~\cite{Fee-Emission}. 
 
 \subsubsection{Fee-Emission Box}
-The sponsor creates several Fee-Emission boxes to pay fee for spending full-mix boxes in the two reentry cases above. A Fee-Emission box can be spent under the following conditions:
+A sponsor creates several Fee-Emission boxes to pay fee for spending full-mix boxes in the two reentry cases above. A Fee-Emission box can be spent under the following conditions:
 
 \begin{enumerate}
     \item There is exactly one Fee-Emission box as input.
     \item There is exactly one Full-Mix box as input.
     \item Either exactly one input or exactly one output is a Half-Mix box.
-    \item The balance fee is stored in a new Fee-Emission box.
+    \item The updated balance is stored in a new Fee-Emission box.
 \end{enumerate}
 
 This is encoded in \langname as follows:
@@ -404,15 +404,15 @@ The following section will extend the free system to a paid system.
 
 \subsection{Mixing Tokens}
 
-Ergo's primary token is known as {\em Erg}, which is the base currency used in \mixname. This token is also used to pay transaction fee and storage rent~\cite{chepurnoy2018systematic}. An Ergo transaction conserves primary tokens (they can neither be created nor destroyed) and any box must have a positive quantity of primary tokens. 
+Ergo's primary token is known as {\em Erg}, which is the base currency used in \mixname. This token is also used to pay for transaction fees and storage rent~\cite{chepurnoy2018systematic}. An Ergo transaction conserves primary tokens (they can neither be created nor destroyed) and any box must have a positive quantity of primary tokens.
 Each box can optionally have {\em secondary tokens} which are uniquely identified by an id. Unlike primary tokens, an Ergo transaction can destroy secondary tokens. Additionally, each transaction can also create (i.e., {\em issue}) at most one new token in arbitrary quantity, whose id is the globally unique id of the first box in the transaction. 
 
 In this approach, we will still use a Fee-Emission box (as in Section~\ref{donation}) to pay the fee in primary tokens. However, we will also use secondary tokens issued by the creator of the Fee-Emission box, which we call {\em mixing tokens} (identified by \texttt{tokenId}). The Fee-Emission box can only be used by destroying one mixing token.
 
 \subsubsection{Approximate Fairness}
 
-We use the approximate fairness strategy described in~\cite{advtutorial}. As a high level the idea is as follows.
-Each mix transaction consumes one mixing token, which must be supplied by the inputs. Thus, there must be at least one mixing token among the inputs. Additionally, to keep the outputs indistinguishable, each must have the same number of tokens. The approximate fairness strategy says that Bob must supply half the token, and is allowed to supply have less tokens than Alice as long as Both started with the same amount of tokens and Bob lost tokens in sequential mixes.  
+We use the approximate fairness strategy described in~\cite{advtutorial}. At a high level the idea is as follows.
+Each mix transaction consumes one mixing token, which must be supplied by the inputs. Thus, there must be at least one mixing token among the inputs. Additionally, to keep the outputs indistinguishable, each must have the same number of tokens. The approximate fairness strategy says that Bob must supply half the token, and is allowed to supply less tokens than Alice as long as both started with the same amount of tokens and Bob lost tokens in sequential mixes.
 
 The approximate-fairness strategy works only if two conditions are satisfied. The first is that mixing tokens are confined within the system by restricting their transfer to only those boxes that participate in a remix. 
 The second is to ensure that tokens always enter the system in a fixed quantity, and that too in one of the two \mixname boxes. 
@@ -420,10 +420,10 @@ The second is to ensure that tokens always enter the system in a fixed quantity,
 \subsection{Token Confinement}
 
 In this section we enforce the first requirement of approximate fairness, that of confining the tokens within the system. 
-Recall that the Half-Mix box's script refers to the Full-Mix box's script via the constant \texttt{fullMixScriptHash}. Our approach additionally requires the Full-Mix box's script to refer back to the Half-Mix's box script. We do this by storing the hash of the Half-Mix box script in one of the registers of the Full-Mix box. Let \texttt{delta} be an alias for this register that stores an array of bytes. Thee scripts are also modified. 
+Recall that the Half-Mix box's script refers to the Full-Mix box's script via the constant \texttt{fullMixScriptHash}. Our approach additionally requires the Full-Mix box's script to refer back to the Half-Mix's box script. We do this by storing the hash of the Half-Mix box script in one of the registers of the Full-Mix box. Let \texttt{delta} be an alias for this register that stores an array of bytes. The scripts are also modified.
 
 \subsubsection{Fee-Emission Box}
-Modify the \texttt{isFull} method of the Fee-Emission box contract of Section~\ref{donation}: 
+We modify \texttt{isFull} method of the Fee-Emission box contract of Section~\ref{donation} as:
 
 {\small
 \begin{Verbatim}[frame=single]
@@ -463,7 +463,7 @@ The script enforces the transfer of mixing tokens when spending the Full-Mix box
 % The usage of mixing tokens when spending the Full-Mix box in a mix transaction is enforced in the Half-Mix box. In the remaining cases the mixing tokens must be destroyed.  
 
 \subsubsection{Half-Mix Box}
-Next the contract of the Half-Mix box (\texttt{halfMixScript}) is also modified:
+Next, the Half-Mix box (\texttt{halfMixScript}) contract is also modified:
 {\small
 \begin{Verbatim}[frame=single]
 // Contract #6: contract for Half-Mix box
@@ -564,7 +564,7 @@ def noToken(b:Box) = b.tokens(tokenId) == 0
 
 The above modification allows Alice to spend the Half-Mix box using her secret but she must destroy all mixing tokens in doing so. 
 
-Figure~\ref{fig:mixingtokens} gives an example flow with the above contracts in place.To avoid clutter, we skipped the fee output in the above flow. However, each transaction is implicitly assumed to have an additional box for paying fee. 
+Figure~\ref{fig:mixingtokens} gives an example flow with the above contracts in place. To avoid clutter, we skipped the fee output in the above flow. However, each transaction is implicitly assumed to have an additional box for paying fee.
 
 \begin{figure}[h]
 	\centering
@@ -598,6 +598,12 @@ The protocol is modified to require each mix transaction to generate exactly 4 q
 \end{enumerate}
 
 It can be checked that the current spender is the second spender if and only if there is an input with two quantities of token $x$. The script also ensures that the first spender must create a new box with two tokens that can only be used by the second spender.
+
+\section*{Acknowledgements}
+
+We would like to thank anonymous developer \em{anon92048} for developing an implementation of the mixer, and also Jason Davies
+for finding and reporting a vulnerability in both the paper and initial implementation. Vulnerability description made by Jason Devies
+can be found in \cite{ergomix-vuln}.
 
 % \section{Conclusion}
 % [...]
