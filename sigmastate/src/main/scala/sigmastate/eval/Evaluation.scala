@@ -1,15 +1,12 @@
 package sigmastate.eval
 
-import java.lang.Math
 import java.math.BigInteger
 
 import org.bouncycastle.math.ec.ECPoint
 import org.ergoplatform._
 import org.ergoplatform.validation.ValidationRules.{CheckLoopLevelInCostFunction, CheckCostFuncOperation}
 import sigmastate._
-import sigmastate.Values.{Value, GroupElementConstant, SigmaBoolean, Constant}
-import sigmastate.lang.Terms.OperationId
-import sigmastate.utxo.CostTableStat
+import sigmastate.Values.{Value, SigmaBoolean, Constant}
 
 import scala.reflect.ClassTag
 import scala.util.Try
@@ -441,10 +438,9 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
       case arr: Array[_] => s"Array(${trim(arr).mkString(",")})"
       case col: special.collection.Coll[_] => s"Coll(${trim(col.toArray).mkString(",")})"
       case p: SGroupElement => p.showToString
-      case ProveDlog(GroupElementConstant(g)) => s"ProveDlog(${g.showToString})"
-      case ProveDHTuple(
-              GroupElementConstant(g), GroupElementConstant(h), GroupElementConstant(u), GroupElementConstant(v)) =>
-        s"ProveDHT(${g.showToString},${h.showToString},${u.showToString},${v.showToString})"
+      case ProveDlog(g) => s"ProveDlog(${showECPoint(g)})"
+      case ProveDHTuple(g, h, u, v) =>
+        s"ProveDHT(${showECPoint(g)},${showECPoint(h)},${showECPoint(u)},${showECPoint(v)})"
       case _ => x.toString
     }
     sym match {
@@ -466,7 +462,7 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
 
   def msgCostLimitError(cost: Long, limit: Long) = s"Estimated execution cost $cost exceeds the limit $limit"
 
-  /** Incapsulate simple monotonic (add only) counter with reset. */
+  /** Encapsulate simple monotonic (add only) counter with reset. */
   class CostCounter(val initialCost: Int) {
     private var _currentCost: Int = initialCost
 

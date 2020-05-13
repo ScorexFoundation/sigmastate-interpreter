@@ -1,7 +1,7 @@
 package sigmastate.interpreter
 
 import org.ergoplatform.ErgoLikeContext
-import sigmastate.{SType, SFunc}
+import sigmastate.SFunc
 import sigmastate.Values._
 import sigmastate.eval.Profiler
 import sigmastate.interpreter.ErgoTreeEvaluator.DataEnv
@@ -93,9 +93,19 @@ object ErgoTreeEvaluator {
   /** Immutable data environment used to assign data values to graph nodes. */
   type DataEnv = Map[Int, Any]
 
+  /** A profiler which is used by default if [[EvalSettings.isMeasureOperationTime]] is enabled. */
   val DefaultProfiler = new Profiler
-  val DefaultEvalSettings = EvalSettings(false)
 
+  /** Default global [[EvalSettings]] instance. */
+  val DefaultEvalSettings = EvalSettings(isMeasureOperationTime = false)
+
+  /** Evaluate the given [[ErgoTree] in the given Ergo context using the given settings.
+    *
+    * @param context      [[ErgoLikeContext]] used for script execution
+    * @param ergoTree     script represented as [[ErgoTree]]
+    * @param evalSettings evaluation settings
+    * @return a sigma protocol proposition (as [[SigmaBoolean]]) and JIT cost estimation.
+    */
   def eval(context: ErgoLikeContext, ergoTree: ErgoTree, evalSettings: EvalSettings): ReductionResult = {
     val (res, cost) = eval(context, ergoTree.toProposition(false), evalSettings)
     val sb = res match {
@@ -122,7 +132,7 @@ object ErgoTreeEvaluator {
 
 }
 
-/** Incapsulate simple monotonic (add only) counter with reset. */
+/** Encapsulate simple monotonic (add only) counter with reset. */
 class CostCounter(val initialCost: Int) {
   private var _currentCost: Int = initialCost
 

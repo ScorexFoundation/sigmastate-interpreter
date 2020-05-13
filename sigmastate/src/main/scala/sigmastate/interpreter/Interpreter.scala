@@ -35,7 +35,17 @@ trait Interpreter extends ScorexLogging {
   val IR: IRContext
   import IR._
 
+  /** Evaluation settings used by [[ErgoTreeEvaluator]] */
   val evalSettings: EvalSettings = ErgoTreeEvaluator.DefaultEvalSettings
+
+  /** Specifies which cost to use as result of evaluation.
+    * Used only in tests when evalSettings.isDebug == true.
+    * The meaning of values:
+    * - when Some(true) return AOT based cost
+    * - when Some(false) return AOT based cost
+    * - when None return AOT cost (but in addition compare jit and aot costs e.g. (jitCost -
+    * treeComplexity) / 2 <= aotCost)
+    */
   val returnAOTCost: Option[Boolean] = None
 
   /** Deserializes given script bytes using ValueSerializer (i.e. assuming expression tree format).
@@ -134,13 +144,15 @@ trait Interpreter extends ScorexLogging {
   /** This method is used in both prover and verifier to compute SigmaProp value.
     * As the first step the cost of computing the `exp` expression in the given context is estimated.
     * If cost is above limit
-    *   then exception is returned and `exp` is not executed
-    *   else `exp` is computed in the given context and the resulting SigmaBoolean returned.
+    * then exception is returned and `exp` is not executed
+    * else `exp` is computed in the given context and the resulting SigmaBoolean returned.
     *
-    * @param context   the context in which `exp` should be executed
-    * @param env       environment of system variables used by the interpreter internally
-    * @param exp       expression to be executed in the given `context`
-    * @return          result of script reduction
+    * @param context        the context in which `exp` should be executed
+    * @param env            environment of system variables used by the interpreter internally
+    * @param exp            expression to be executed in the given `context`
+    * @param treeComplexity amount of cost added to context.initCost as result of
+    *                       applyDeserializeContext
+    * @return result of script reduction
     * @see `ReductionResult`
     */
   def reduceToCrypto(context: CTX, env: ScriptEnv, exp: Value[SType], treeComplexity: Int): Try[ReductionResult] = Try {
@@ -169,38 +181,44 @@ trait Interpreter extends ScorexLogging {
         val res = calcResult(calcCtx, calcF)
         (res, estimatedCost)
       }
-      // new JIT costing with direct ErgoTree execution
-      val (resNew, costNew) = {
-        val (res, cost) = ErgoTreeEvaluator.eval(context.asInstanceOf[ErgoLikeContext], exp, evalSettings) match {
-          case (p: special.sigma.SigmaProp, c) => (p, c)
-          case (b: Boolean, c) => (SigmaDsl.sigmaProp(b), c)
-          case (res, _) => sys.error(s"Invalid result type of $res: expected Boolean or SigmaProp when evaluating $exp")
+
+      val resCost = if (evalSettings.isDebug) {
+        // exercise the new JIT costing with direct ErgoTree execution
+        val (resNew, costNew) = {
+          val (res, cost) = ErgoTreeEvaluator.eval(context.asInstanceOf[ErgoLikeContext], exp, evalSettings) match {
+            case (p: special.sigma.SigmaProp, c) => (p, c)
+            case (b: Boolean, c) => (SigmaDsl.sigmaProp(b), c)
+            case (res, _) => sys.error(s"Invalid result type of $res: expected Boolean or SigmaProp when evaluating $exp")
+          }
+          val scaledCost = JMath.multiplyExact(cost, CostTable.costFactorIncrease) / CostTable.costFactorDecrease
+          val totalCost = JMath.addExact(initCost.toInt, scaledCost)
+          (res, totalCost)
         }
-        val scaledCost = JMath.multiplyExact(cost, CostTable.costFactorIncrease) / CostTable.costFactorDecrease
-        val totalCost = JMath.addExact(initCost.toInt, scaledCost)
-        (res, totalCost)
-      }
-      assert(resNew == res, s"The new Evaluator result differ from the old: $resNew != $res")
+        assert(resNew == res, s"The new Evaluator result differ from the old: $resNew != $res")
 
-      def costErr = s"The JIT cost differ from the AOT: $costNew != $cost"
+        def costErr = s"The JIT cost differ from the AOT: $costNew != $cost"
 
-      val resCost = returnAOTCost match {
-        case Some(true) => // AOT costing requested
-          if (costNew != cost) println(s"WARNING: $costErr")
-          cost
-        case Some(false) => // JIT costing requested
-          if (costNew != cost) println(s"WARNING: $costErr")
-          costNew
-        case None => // nothing special was requested
-          assert((costNew - treeComplexity) / 2 <= cost, s"The JIT cost is larger than the AOT: $costNew > $cost")
-          cost
-      }
+        val resCost = returnAOTCost match {
+          case Some(true) => // AOT costing requested
+            if (costNew != cost) println(s"WARNING: $costErr")
+            cost
+          case Some(false) => // JIT costing requested
+            if (costNew != cost) println(s"WARNING: $costErr")
+            costNew
+          case None => // nothing special was requested
+            assert((costNew - treeComplexity) / 2 <= cost, s"The JIT cost is larger than the AOT: $costNew > $cost")
+            cost
+        }
+        resCost
+      } else cost
 
       SigmaDsl.toSigmaBoolean(res) -> resCost.toLong
-//      SigmaDsl.toSigmaBoolean(resNew) -> costNew.toLong
     }
   }
 
+  /** Transforms ErgoTree into Value by replacing placeholders with constants and then
+   * delegates to the main implementation method.
+   */
   def reduceToCrypto(context: CTX, tree: ErgoTree): Try[ReductionResult] =
     reduceToCrypto(context, Interpreter.emptyEnv, tree.toProposition(tree.isConstantSegregation), tree.complexity)
 
