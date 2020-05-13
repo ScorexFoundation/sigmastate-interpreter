@@ -288,6 +288,7 @@ OUTPUTS(0).alpha == alpha && OUTPUTS(1).alpha == alpha &&
 OUTPUTS(0).value == value && OUTPUTS(1).value == value &&
 hash(OUTPUTS(0).script) == fullMixScriptHash &&  
 hash(OUTPUTS(1).script) == fullMixScriptHash &&
+beta != gamma && 
 (proveDHTuple(g, alpha, OUTPUTS(0).beta, OUTPUTS(0).gamma) || 
  proveDHTuple(g, alpha, OUTPUTS(0).gamma, OUTPUTS(0).beta))
 \end{Verbatim}
