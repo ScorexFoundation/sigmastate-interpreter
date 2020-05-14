@@ -311,7 +311,7 @@ $$\texttt{proveDHTuple}(g, g^{y}, g^x, g^{xy}) \lor \texttt{proveDlog}(g^{xy}).$
 The above statement can be proved by anyone who knows at least one of $x$ or $xy$. 
 Thus, Alice can spend this because only she knows $x$. 
 
-For soundness, Alice requires that no one else should be able to spend $O_b$, her Full-Mix box. Observe that the only way someone else could spend this box is by knowing $xy$, because that they don't know $x$. Assume there is an algorithm that takes as input $g^x$ and somehow outputs $(g^y, g^{xy}, xy)$ for some $y$. Then Alice can use this to immediately compute $y$, contradicting the fact that the discrete log problem in $G$ is hard. Thus, no one must know $xy$ and thereby, only Alice has the ability to spend $O_b$.
+For soundness, Alice requires that no one else should be able to spend $O_b$, her Full-Mix box. Observe that the only way someone else could spend this box is by knowing $xy$, because they don't know $x$. Assume there is an algorithm that takes as input $g^x$ and somehow outputs $(g^y, g^{xy}, xy)$ for some $y \neq 0$. Then Alice can use this to immediately compute $y$, contradicting the fact that the discrete log problem in $G$ is hard. Thus, no one must know $xy$ and thereby, only Alice has the ability to spend $O_b$.
 
 From Bob's point of view, the spending condition of $O_{1-b}$ reduces to 
 $$\texttt{proveDHTuple}(g, g^{xy}, g^x, g^{y}) \lor \texttt{proveDlog}(g^{y}).$$
