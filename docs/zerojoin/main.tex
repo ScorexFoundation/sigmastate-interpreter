@@ -424,7 +424,7 @@ The second is to ensure that tokens always enter the system in a fixed quantity,
 \subsection{Token Confinement}
 
 In this section we enforce the first requirement of approximate fairness, that of confining the tokens within the system. 
-Recall that the Half-Mix box's script refers to the Full-Mix box's script via the constant \texttt{fullMixScriptHash}. Our approach additionally requires the Full-Mix box's script to refer back to the Half-Mix's box script. We do this by storing the hash of the Half-Mix box script in one of the registers of the Full-Mix box. Let \texttt{delta} be an alias for this register that stores an array of bytes. The scripts are also modified.
+Recall that the Half-Mix box's script refers to the Full-Mix box's script via the constant \texttt{fullMixScriptHash}. Our approach additionally requires the Full-Mix box's script to refer back to the Half-Mix box's script. We do this by storing the hash of the Half-Mix script in one of the registers of the Full-Mix box. Let \texttt{delta} be an alias for this register that stores an array of bytes. The scripts are also modified.
 
 \subsubsection{Fee-Emission Box}
 We modify \texttt{isFull} method of the Fee-Emission box contract of Section~\ref{donation} as:
