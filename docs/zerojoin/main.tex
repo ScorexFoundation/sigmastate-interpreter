@@ -147,10 +147,8 @@ We can classify the context based on what part of the block a smart contract can
 \subsection{CoinJoin} 
 \label{coinjoin}
 CoinJoin~\cite{coinjoin} is a privacy enhancing protocol where multiple parties provide inputs and create outputs in a single transaction computed interactively such that the original inputs and outputs are unlinked. The optimal use of CoinJoin is when two inputs of equal value are joined to generate two outputs of equal value, and the process is repeated, as depicted in Figure~\ref{fig:coinjoin}. 
-% The example uses Erg (the primitive token of Ergo~\cite{ergo}) as its base currency.
-In this model, each CoinJoin transaction has exactly two inputs (the boxes at the tail of the arrows) and two outputs (the boxes at the head of the arrows). Creating such a transaction requires a private off-chain interaction between the two parties supplying the inputs, which is denoted by the dashed line. We will ignore fee for now and revisit this issue in Section~\ref{fee}.
 
-\begin{figure}
+\begin{figure}[h]
 	\centering
 	\begin{subfigure}{.6\textwidth}
 		\centering
@@ -159,6 +157,8 @@ In this model, each CoinJoin transaction has exactly two inputs (the boxes at th
 	\caption{Canonical Multi-stage CoinJoin}
 	\label{fig:coinjoin}
 \end{figure}
+
+In this model, each CoinJoin transaction has exactly two inputs (the boxes at the tail of the arrows) and two outputs (the boxes at the head of the arrows). Creating such a transaction requires a private off-chain interaction between the two parties supplying the inputs, which is denoted by the dashed line. We will ignore fee for now and revisit this issue in Section~\ref{fee}.
 
 The key idea of CoinJoin is that the two output boxes are {\em indistinguishable} in the following sense. 
 \begin{enumerate}
@@ -173,14 +173,8 @@ CoinJoin requires two parties to interactively sign a transaction off-chain and 
 \label{zerocoin} 
 
 ZeroCoin is a privacy enhancing protocol depicted in Figure~\ref{fig:zerocoin}. 
-The protocol uses a mixing pool (called the {\em unspent-box pool}, or simply the U-pool), to which an ordinary coin is added as a commitment $c$ to secrets $(r, s)$. The coin is later spent such that the link to $c$ is not publicly visible. The value $c$ must be permanently stored in the U-pool, since the spending transaction cannot reveal it. Instead, it reveals the secret $s$ (the {\em serial number}) along with a zero-knowledge proof that $s$ was used in a commitment from the pool. To prevent double spending, the serial number is also stored in another space called the {\em spent-box pool} (the S-pool). A coin can be spent from the U-pool only if the corresponding serial number does not exist in the S-pool. 
 
-One consequence of this is that both the U-pool (the set of commitments) and the S-pool (the set of spent serial numbers) must be maintained in memory for verifying every transaction. 
-Another consequence is that the sizes of the these two sets increase monotonously. 
-This is the main drawback of ZeroCoin (also ZCash~\cite{zcash}), which \algname tries to address. 
-In \algname, once a box is spent, no information about it is kept in memory, and in particular no data sets of monotonously increasing sizes are maintained. 
-
-\begin{figure}
+\begin{figure}[h]
 	\centering
 	\begin{subfigure}{.8\textwidth}
 		\centering
@@ -190,22 +184,31 @@ In \algname, once a box is spent, no information about it is kept in memory, and
 	\label{fig:zerocoin}
 \end{figure}
 
+The protocol uses a mixing pool (called the {\em unspent-box pool}, or simply the U-pool), to which an ordinary coin is added as a commitment $c$ to secrets $(r, s)$. The coin is later spent such that the link to $c$ is not publicly visible. The value $c$ must be permanently stored in the U-pool, since the spending transaction cannot reveal it. Instead, it reveals the secret $s$ (the {\em serial number}) along with a zero-knowledge proof that $s$ was used in a commitment from the pool. To prevent double spending, the serial number is also stored in another space called the {\em spent-box pool} (the S-pool). A coin can be spent from the U-pool only if the corresponding serial number does not exist in the S-pool. 
+
+One consequence of this is that both the U-pool (the set of commitments) and the S-pool (the set of spent serial numbers) must be maintained in memory for verifying every transaction. 
+Another consequence is that the sizes of the these two sets increase monotonously. 
+This is the main drawback of ZeroCoin (also ZCash~\cite{zcash}), which \algname tries to address. 
+In \algname, once a box is spent, no information about it is kept in memory, and in particular no data sets of monotonously increasing sizes are maintained. 
+
 Considering the addition of a coin to the mix as a deposit and removal as a withdraw, the in-memory storage in \algname is proportional to the number of deposits minus the number of withdraws, while that in ZeroCash is proportional to the number of deposits plus the number of withdraws.  
 
+\subsection{$\Sigma$-Protocols} 
 
-\subsection{Primitives} 
+\algname uses two-party interactions called $\Sigma$-protocols defined over a cyclic multiplicative group $G$ of prime order $q$ such that the decision Diffie-Hellman (DDH) problem in $G$ is hard. Specifically, is uses two such protocols. The first, denoted \texttt{proveDlog($u$)}, is a {\em proof of knowledge of Discrete Logarithm} of some group element $u$ with respect to a fixed generator $g$. That is, the prover proves knowledge of $x$ such that $u = g^x$ by using Schnorr signatures~\cite{Sch91}. See Appendix~\ref{intro:sigma} for an overview of the protocol. 
 
-\algname is based on two-party interactions called $\Sigma$-protocols, which are briefly described in Appendix~\ref{intro:sigma}. 
-Specifically, we need two types of $\Sigma$-protocols described below. Let $G$ be a multiplicative group of prime order $q$ where the decision Diffie-Hellman (DDH) problem is hard. The first protocol, denoted \texttt{proveDlog($u$)}, is a {\em proof of knowledge of Discrete Logarithm} of some group element $u$ with respect to some fixed generator $g$. That is, the prover proves knowledge of $x$ such that $u = g^x$ by using Schnorr signatures~\cite{Sch91}. % as discussed above.
 The second primitive, denoted \texttt{proveDHTuple($g, h, u, v$)}, is a {\em proof of knowledge of Diffie-Hellman Tuple}, where the prover proves knowledge of $x$ such that $u = g^x$ {\em and} $v = h^x$ for a arbitrary generators $g$ and $h$. This is essentially two instances of the first protocol running in parallel as follows.
 
 \begin{enumerate}
-	\item The prover picks $r \stackrel{R}{\leftarrow} \mathbb{Z}_q$, computes $(t_0, t_1) = ({g}^r, {h}^r)$ and sends $(t_0, t_1)$ to the verifier.
+	\item The prover picks $r \stackrel{R}{\leftarrow} \mathbb{Z}_q$ and computes $(t_0, t_1) = ({g}^r, {h}^r)$. It sends $(t_0, t_1)$ to the verifier.
 	\item The verifier picks $c \stackrel{R}{\leftarrow} \mathbb{Z}_q$ and sends $c$ to prover.
-	\item The prover sends $z = r + cx$ to the verifier, who accepts if ${g}^z = {t_0}\cdot {u}^c$ and $h^z=t_1\cdot v^c$.
+	\item The prover sends $z = r + cx$ to the verifier. 
+	\item The verifier accepts iff ${g}^z = {t_0}\cdot {u}^c$ and $h^z=t_1\cdot v^c$.
 \end{enumerate}
 
-We use the non-interactive variant of the above protocol obtained via the Fiat-Shamir transform, where $c = H(t_0 \Vert t_1\Vert m)$ for some message $m$ to be signed.  Observe that \texttt{proveDHTuple} requires 4 exponentiations for verification, while \texttt{proveDlog} requires 2. \langname supports both the protocols, and thus has all the primitives needed to implement \algname.
+We use the non-interactive variant of the above protocol obtained via the Fiat-Shamir transform, where $c = H(t_0 \Vert t_1\Vert m)$ for some message $m$ to be signed.  Observe that \texttt{proveDHTuple} requires 4 exponentiations for verification, while \texttt{proveDlog} requires 2. 
+
+\langname supports both the protocols, and thus has all the primitives needed to implement \algname.
 
 \section{\algname Protocol}
 
@@ -251,10 +254,41 @@ Let $g$ be some generator of $G$ that is fixed beforehand. Each box is assumed t
 		%		If the DDH problem in $G$ is hard, then given $(g, g^x)$ the distributions $({g}^{y}, {g}^{xy})$ and 
 		%		$({g}^{xy}, {g}^{y})$ are computationally indistinguishable. In other words, without knowledge of $x$ or $y$, one cannot guess $b$ with probability better than $1/2$.
 		\item $O_b, O_{1-b}$ are protected by the script: $$\texttt{proveDHTuple}(g, \alpha, u, \beta)\lor \texttt{proveDlog}(\beta)$$
+		such that the box must be spent using a $\Sigma$-$\ornode$ proof (see Appendix~\ref{sigma-or}).
 	\end{enumerate}
 \end{enumerate}
 After the mix, Alice and Bob can spent their respective boxes using their secrets. 
 Alice can identify her box as the one with $\beta = \alpha^x$. 
+
+\subsection{Analysis}
+
+For correctness, Alice requires that she is always able to spend the coin. That is, Bob should not be able to spend $A$ in a manner that makes the resulting output(s) unspendable by Alice.
+
+Let $x$ be the Alice's secret corresponding to her box $A$. First note that due to the clause 
+\texttt{proveDHTuple($g, u, c, d$) || proveDHTuple($g, u, d, c$)}, Bob has no choice but to create two outputs $O_0, O_1$ such that the registers $(\alpha, \beta)$ of $O_b$ and $O_{1-b}$ contain $(g^y, g^{xy})$ and $(g^{xy}, g^y)$ respectively for some integer $y$ and bit $b$. This implies that that $O_b$'s spending condition reduces to:
+$$\texttt{proveDHTuple}(g, g^{y}, g^x, g^{xy}) \lor \texttt{proveDlog}(g^{xy}).$$ 
+The above statement can be proved by anyone who knows at least one of $x$ or $xy$. 
+Thus, Alice can spend this because only she knows $x$. 
+
+For soundness, Alice requires that no one else should be able to spend $O_b$, her Full-Mix box. Observe that the only way someone else could spend this box is by knowing $xy$, because they don't know $x$. Assume there is an algorithm that takes as input $g^x$ and somehow outputs $(g^y, g^{xy}, xy)$ for some $y \neq 0$. Then Alice can use this to immediately compute $y$, contradicting the fact that the discrete log problem in $G$ is hard. Thus, no one must know $xy$ and thereby, only Alice has the ability to spend $O_b$.
+
+From Bob's point of view, the spending condition of $O_{1-b}$ reduces to 
+$$\texttt{proveDHTuple}(g, g^{xy}, g^x, g^{y}) \lor \texttt{proveDlog}(g^{y}).$$
+Since Bob knows $y$, he can spend the box using the right part of the statement. Finally, if someone apart from Bob spends $O_{1-b}$ then they must have used the left part of the statement because using the right part would required knowledge of $y$. However, using the left part is not possible because $(g, g^{xy}, g^x, g^{y})$ is not a valid DH Tuple. Hence, assuming that the original Schnorr proof is sound, no one else apart from Bob can spend $O_{1-b}$.
+
+For privacy, the only difference between $O_b$ and $O_{1-b}$ is that $(g, \alpha, u, \beta)$ is a valid Diffie-Hellman tuple for $O_b$, while for $O_{1-b}$, the tuple is $(g, \beta, u, \alpha)$. Assuming that the Decision Diffie-Hellman (DDH) problem in $G$ is hard, no one apart from Alice or Bob has the ability to distinguish the boxes.
+Thus, the boxes are indistinguishable before they are spent. To see that they remain so after being spent, observe that the protocol provides {\em spender indistinguishability} because each box is spent using a $\Sigma$-OR-proof that is zero-knowledge~\cite{Dam10}. 
+
+\paragraph{Comparing with CoinJoin:} Referring to Section~\ref{coinjoin}, both CoinJoin and \algname use the technique of spending two boxes to create two indistinguishable boxes that provide the privacy. However, CoinJoin requires the owners of the two input boxes to perform an off-chain interaction over a private channel. In \algname, this interaction is replaced by a public transaction on the blockchain. While this adds one more transaction, it does not require interaction between the parties over a private channel. This makes \algname far more usable compared to CoinJoin. Note that \algname transactions are detectable, while CoinJoin transactions are indistinguishable from ordinary transactions.
+
+\paragraph{Comparing with ZeroCoin:} Referring to Section~\ref{zerocoin}, both ZeroCoin and \algname use a pool (the H-pool in \algname and the U-pool in ZeroCoin). Additionally, both use zero-knowledge proofs to spend boxes from the pool in a way that hides the links between the outputs and the inputs, thereby providing the privacy. 
+The difference is that the privacy in \algname is achieved in stages, two boxes at a time, while in ZeroCoin it is achieved in one stage. Secondly, the degree of privacy in ZeroCoin depends on the size of the U-pool, while that in \algname depends on the number of stages. Thirdly, the U-pool in ZeroCoin increases monotonously in size, since boxes are only added to it and never removed. The size of H-pool in \algname varies according to how many unspent Half-Mix boxes are present at any given time. Finally, the proof in ZeroCoin are quite large compared to those in \algname. The last two capture the main drawbacks of ZeroCoin that \algname addresses.
+In particular, using \algname, we can obtain an equivalent (or sufficiently close) degree of privacy as from ZeroCoin without having to maintain the ever-increasing pools and with much shorter proofs. 
+
+\paragraph{Offchain Pool:} The H-Pool can be kept entirely offchain, so that Alice's Half-Mix box need not be present on the blockchain till the time Bob decides to spend it. Alice sends her unbroadcasted transaction directly to Bob who will broadcast both transactions at some later time. 
+
+
+\paragraph{Future enhancements:} Compared to CoinJoin, \algname requires an additional box -- the Half-Mix box -- as can be seen by by comparing Figures~\ref{fig:coinjoin} and~\ref{fig:mixname}. One way to eliminate the extra box would be to have the mix step output two indistinguishable Half-Mix boxes that can be used again in the mix step (or spent elsewhere). We could do this inefficiently by accumulating the statements and making the proof size proportional to the number of mixes. It is an open question if this can be done with a sublinear proof size.
 
 \subsection{Implementing \algname In \langname}
 \label{impl}
@@ -301,35 +335,6 @@ Note that in \langname, \texttt{OUTPUTS(0)} is the first output of the spending 
 
 Alice's Half-Mix box $A$ is protected by \texttt{halfMixScript} given above. Alice must store $u$ in register \texttt{alpha} of that box.
 
-
-\subsection{Analysis}
-
-For correctness, Alice requires that she is always able to spend the coin. That is, Bob should not be able to spend $A$ in a manner that makes the resulting output(s) unspendable by Alice.
-Let $x$ be the Alice's secret corresponding to her box $A$. First note that due to the clause 
-\texttt{proveDHTuple(g, u, c, d) || proveDHTuple(g, u, d, c)}, Bob has no choice but to create two outputs $O_0, O_1$ such that the registers $(\alpha, \beta)$ of $O_b$ and $O_{1-b}$ contain $(g^y, g^{xy})$ and $(g^{xy}, g^y)$ respectively for some integer $y$ and bit $b$. This implies that that $O_b$'s spending condition reduces to:
-$$\texttt{proveDHTuple}(g, g^{y}, g^x, g^{xy}) \lor \texttt{proveDlog}(g^{xy}).$$ 
-The above statement can be proved by anyone who knows at least one of $x$ or $xy$. 
-Thus, Alice can spend this because only she knows $x$. 
-
-For soundness, Alice requires that no one else should be able to spend $O_b$, her Full-Mix box. Observe that the only way someone else could spend this box is by knowing $xy$, because they don't know $x$. Assume there is an algorithm that takes as input $g^x$ and somehow outputs $(g^y, g^{xy}, xy)$ for some $y \neq 0$. Then Alice can use this to immediately compute $y$, contradicting the fact that the discrete log problem in $G$ is hard. Thus, no one must know $xy$ and thereby, only Alice has the ability to spend $O_b$.
-
-From Bob's point of view, the spending condition of $O_{1-b}$ reduces to 
-$$\texttt{proveDHTuple}(g, g^{xy}, g^x, g^{y}) \lor \texttt{proveDlog}(g^{y}).$$
-Since Bob knows $y$, he can spend the box using the right part of the statement. Finally, if someone apart from Bob spends $O_{1-b}$ then they must have used the left part of the statement because using the right part would required knowledge of $y$. However, using the left part is not possible because $(g, g^{xy}, g^x, g^{y})$ is not a valid DH Tuple. Hence, assuming that the original Schnorr proof is sound, no one else apart from Bob can spend $O_{1-b}$.
-
-For privacy, the only difference between $O_b$ and $O_{1-b}$ is that $(g, \alpha, u, \beta)$ is a valid Diffie-Hellman tuple for $O_b$, while for $O_{1-b}$, the tuple is $(g, \beta, u, \alpha)$. Assuming that the Decision Diffie-Hellman (DDH) problem in $G$ is hard, it can be shown that no one apart from Alice or Bob has the ability to distinguish the boxes.
-Thus, the boxes are indistinguishable before they are spent. To see that they remain so after being spent, observe that the protocol provides {\em spender indistinguishability} because each box is spent using a $\Sigma$-OR-proof that is zero-knowledge~\cite{Dam10}. 
-
-\paragraph{Comparing with CoinJoin:} Referring to Section~\ref{coinjoin}, both CoinJoin and \algname use the technique of spending two boxes to create two indistinguishable boxes that provide the privacy. However, CoinJoin requires the owners of the two input boxes to perform an off-chain interaction over a private channel. In \algname, this interaction is replaced by a public transaction on the blockchain. While this adds one more transaction, it does not require interaction between the parties over a private channel. This makes \algname far more usable compared to CoinJoin. Note that \algname transactions are detectable, while CoinJoin transactions are indistinguishable from ordinary transactions.
-
-\paragraph{Comparing with ZeroCoin:} Referring to Section~\ref{zerocoin}, both ZeroCoin and \algname use a pool of boxes (the H-pool in \algname and the U-pool in ZeroCoin). Additionally, both use zero-knowledge proofs to spend boxes from the pool in a way that hides the links between the outputs and the inputs, thereby providing the privacy. 
-The difference is that the privacy in \algname is achieved in stages, two boxes at a time, while in ZeroCoin it is achieved in one stage. Secondly, the degree of privacy in ZeroCoin depends on the size of the U-pool, while that in \algname depends on the number of stages. Thirdly, the U-pool in ZeroCoin increases monotonously in size, since objects are only added to it and never removed. The size of H-pool in \algname varies according to how many unspent Half-Mix boxes are present at any given time. Finally, the proof in ZeroCoin are quite large compared to those in \algname. The last two capture the main drawbacks of ZeroCoin that \algname addresses.
-In particular, using \algname, we can obtain an equivalent (or sufficiently close) degree of privacy as from ZeroCoin without having to maintain the ever-increasing pools and with much shorter proofs. 
-
-\paragraph{Offchain Pool:} The H-Pool can be kept entirely offchain, so that Alice's Half-Mix box need not be present on the blockchain till the time Bob decides to spend it. Alice sends her unbroadcasted transaction directly to Bob who will broadcast both transactions at some later time. 
-
-
-\paragraph{Future enhancements:} Compared to CoinJoin, \algname requires an additional box -- the Half-Mix box -- as can be seen by by comparing Figures~\ref{fig:coinjoin} and~\ref{fig:mixname}. One way to eliminate the extra box would be to have the mix step output two indistinguishable Half-Mix boxes that can be used again in the mix step (or spent elsewhere). We could do this inefficiently by accumulating the statements and making the proof size proportional to the number of mixes. It is an open question if this can be done with a sublinear proof size.
 
 \section{\mixname: \algname with Fee}
 \label{fee}
@@ -408,10 +413,10 @@ The following section will extend the free system to a paid system.
 
 \subsection{Mixing Tokens}
 
-Ergo's primary token is known as {\em Erg}, which is the base currency used in \mixname. This token is also used to pay for transaction fees and storage rent~\cite{chepurnoy2018systematic}. An Ergo transaction conserves primary tokens (they can neither be created nor destroyed) and any box must have a positive quantity of primary tokens.
-Each box can optionally have {\em secondary tokens} which are uniquely identified by an id. Unlike primary tokens, an Ergo transaction can destroy secondary tokens. Additionally, each transaction can also create (i.e., {\em issue}) at most one new token in arbitrary quantity, whose id is the globally unique id of the first box in the transaction. 
+Ergo's primary token is known as {\em Erg}, which is necessary to pay for transaction fees and storage rent~\cite{chepurnoy2018systematic}. An Ergo transaction conserves primary tokens (they can neither be created nor destroyed) and any box must have a positive quantity of primary tokens.
+Each box can optionally have {\em secondary tokens} which are uniquely identified by an id. Unlike primary tokens, an Ergo transaction can destroy secondary tokens. Additionally, each transaction can also create (i.e., {\em issue}) at most one new token in arbitrary quantity, whose id is the globally unique id of the first input box box of that transaction. 
 
-In this approach, we will still use a Fee-Emission box (as in Section~\ref{donation}) to pay the fee in primary tokens. However, we will also use secondary tokens issued by the creator of the Fee-Emission box, which we call {\em mixing tokens} (identified by \texttt{tokenId}). The Fee-Emission box can only be used by destroying one mixing token.
+In this approach, we will still use a Fee-Emission box (as in Section~\ref{donation}) to pay the fee in Ergs. However, we will also use secondary tokens issued by the creator of the Fee-Emission box, which we call {\em mixing tokens} (identified by \texttt{tokenId}). The Fee-Emission box can only be used by destroying a mixing token.
 
 \subsubsection{Approximate Fairness}
 
@@ -635,9 +640,9 @@ Any protocol that has the above 3-move structure (Alice $\stackrel{t}{\rightarro
 For any $\Sigma$-protocol with messages $(t, c, z)$, we can apply the Fiat-Shamir transform~\cite{fiatshamir} to convert it into a non-interactive one by replacing the role of Bob in Step 2 by any hash function $H$ and computing $c$ = $H(t)$. The resulting protocol with messages $(t, H(t), z)$ can be performed by Alice alone. Intuitively, since $t$ fixes $c$, Bob cannot ``rewind'' Alice and get two different responses for the same $r$. Additionally, Alice cannot know $c$ in advance before deciding $t$ if $H$ behaves like a random oracle. We call such a non-interactive proof a {\em $\Sigma$-proof}~\cite{Cra96}. Conceptually, $\Sigma$-proofs are generalizations of digital signatures~\cite{CL06}.
 
 \subsection{Composing $\Sigma$-Protocols}
-
+\label{sigma-or}
 Any two $\Sigma$-protocols of propositions $\tau_0, \tau_1$ with messages $(t_0, c_0, z_0), (t_1, c_1, z_1)$ respectively can be combined into a $\Sigma$-protocol of $\tau_0 \land \tau_1$ with messages $(t, c, z) = (t_0\Vert t_1,c_0\Vert c_1, c_0\Vert c_1)$. We call such a construction an $\andnode$ operator on the protocols. 
-More interestingly, as shown in \cite{CDS94},the two protocols can also be used to construct a $\Sigma$-protocol for $\tau_0\lor \tau_1$, where Alice proves knowledge of the witness of one proposition, without revealing which. Let $b\in \{0, 1\}$ be the bit such that Alice knows the witness for $\tau_b$ but not for $\tau_{1-b}$. Alice will run the correct protocol for $\tau_b$ and a simulation for $\tau_{1-b}$. First she generates a random challenge $c_{1-b}$. She then generates $(t_{1-b}, z_{1-b})$ by using the simulator on $c_{1-b}$. She also generates $t_b$ by following the protocol correctly. The pair $(t_0, t_1)$ is sent to Bob, who responds with a challenge $c$. Alice then computes $c_b = c\oplus c_{1-b}$. She computes $z_b$ using $(t_b, c_b)$. Her response to Bob is $((z_0, c_0), (z_1, c_1))$, who accepts if: (1) $c = c_0 \oplus c_1$ and (2) $(t_0, c_0, z_0), (t_1, c_1, z_1)$ are both accepting conversations for $\tau_0, \tau_1$ respectively. We call such a construction an $\ornode$ operator. 
+More interestingly, as shown in \cite{CDS94},the two protocols can also be used to construct a $\Sigma$-protocol for $\tau_0\lor \tau_1$, where Alice proves knowledge of the witness of one proposition, without revealing which. Let $b\in \{0, 1\}$ be the bit such that Alice knows the witness for $\tau_b$ but not for $\tau_{1-b}$. Alice will run the correct protocol for $\tau_b$ and a simulation for $\tau_{1-b}$. First she generates a random challenge $c_{1-b}$. She then generates $(t_{1-b}, z_{1-b})$ by using the simulator on $c_{1-b}$. She also generates $t_b$ by following the protocol correctly. The pair $(t_0, t_1)$ is sent to Bob, who responds with a challenge $c$. Alice then computes $c_b = c\oplus c_{1-b}$. She computes $z_b$ using $(t_b, c_b)$. Her response to Bob is $((z_0, c_0), (z_1, c_1))$, who accepts if: (1) $c = c_0 \oplus c_1$ and (2) $(t_0, c_0, z_0), (t_1, c_1, z_1)$ are both accepting conversations for $\tau_0, \tau_1$ respectively. We call such a construction a $\ornode$ operator. 
 
 Clearly, both the $\andnode$ and $\ornode$ operators also result in $\Sigma$-protocols that can be further combined or made non-interactive via the Fiat-Shamir transform. Crucially, the proof for $\ornode$ does not reveal which of the relevant values the prover knows. For example, in \langname a ring signature by public keys $u_1, u_2$ can be specified as an $\ornode$ of $\Sigma$-protocols for proving knowledge of discrete logarithms of $u_1$ or $u_n$. The proof can be constructed with the knowledge of just one such discrete logarithm, and does not reveal which one was used in its construction. This is a crucial property used in \algname.
 \langname, the programming language of Ergo gives the ability to build sophisticated $\Sigma$-protocols using the connectives $\andnode$, $\ornode$. This allows us to implement \algname on top of Ergo using smart contracts. 
