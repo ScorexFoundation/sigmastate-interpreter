@@ -14,7 +14,9 @@ case class EvalSettings(
   /** Used by [[ErgoTreeEvaluator.profiler]] to measure operations timings. */
   isMeasureOperationTime: Boolean,
   /** Used by [[ErgoTreeEvaluator]] to conditionally perform debug mode operations. */
-  isDebug: Boolean = false)
+  isDebug: Boolean = false,
+  /** Used by [[ErgoTreeEvaluator]] to conditionally emit log messages. */
+  isLogEnabled: Boolean = false)
 
 /** Used as a wrapper around Sigma [[Context]] to be used in [[ErgoTreeEvaluator]].
   */
@@ -67,25 +69,29 @@ class ErgoTreeEvaluator(
   def addCostOf(opName: String, opType: SFunc) = {
     val cost = Value.costOf(opName, opType)
     coster.add(cost)
-//    println(s"CostOf($opName, $opType) -> $cost") // comment before commit and push
+    if (settings.isLogEnabled)
+      println(s"CostOf($opName, $opType) -> $cost")
   }
 
   def addCostOf(node: SValue) = {
     val cost = Value.costOf(node)
     coster.add(cost)
-//    println(s"CostOf(${node.opName}) -> $cost") // comment before commit and push
+    if (settings.isLogEnabled)
+      println(s"CostOf(${node.opName}) -> $cost")
   }
 
   def addPerItemCostOf(node: SValue, arrLen: Int) = {
     val cost = Value.perItemCostOf(node, arrLen)
     coster.add(cost)
-//    println(s"PerItemCostOf(${node.opName}) -> $cost") // comment before commit and push
+    if (settings.isLogEnabled)
+      println(s"PerItemCostOf(${node.opName}) -> $cost")
   }
 
   def addPerKbCostOf(node: SValue, dataSize: Int) = {
     val cost = Value.perKbCostOf(node, dataSize)
     coster.add(cost)
-//    println(s"PerKbCostOf(${node.opName}) -> $cost") // comment before commit and push
+    if (settings.isLogEnabled)
+      println(s"PerKbCostOf(${node.opName}) -> $cost")
   }
 }
 
@@ -137,7 +143,6 @@ class CostCounter(val initialCost: Int) {
   private var _currentCost: Int = initialCost
 
   @inline def += (n: Int) = {
-    // println(s"${_currentCost} + $n")
     this._currentCost = java.lang.Math.addExact(this._currentCost, n)
   }
   @inline def currentCost: Int = _currentCost
@@ -190,8 +195,6 @@ class CostAccumulator(initialCost: Int, costLimit: Option[Long]) {
       // the cost we accumulated so far
       val accumulatedCost = currentScope.currentCost
       if (accumulatedCost > limit) {
-        //          if (cost < limit)
-        //            println(s"FAIL FAST in loop: $accumulatedCost > $limit")
         throw new CostLimitException(
           accumulatedCost, ErgoTreeEvaluator.msgCostLimitError(accumulatedCost, limit), None)
       }
