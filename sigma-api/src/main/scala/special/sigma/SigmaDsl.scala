@@ -308,6 +308,7 @@ trait Box {
     * <pre class="stHighlight">
     *   val tagOpt = SELF.R5[Int]
     *   val res = if (tagOpt.isDefined) {
+    *     val tag = tagOpt.get
     *     if (tag == 1) {
     *       val x = SELF.R4[Int].get
     *       // compute res using value x is of type Int
