@@ -47,14 +47,14 @@ class EvalContext(val context: Context)
   * ### Performance
   * Since this interpreter directly works with SigmaDsl types (Coll, BigInt, SigmaProp
   * etc), it turns out to be very fast. Since it also does JIT style costing instead of
-  * AOT style, it is 5-6x faster then existing implementation.
+  * AOT style, it is 5-6x faster than existing implementation.
   */
 class ErgoTreeEvaluator(
   /** Represents data context for ErgoTree evaluation */
   val evalContext: EvalContext,
   /** Accumulates computation costs. */
   val coster: CostAccumulator,
-  /** Preforms operations profiling and time measurments (if enabled in settings). */
+  /** Performs operations profiling and time measurements (if enabled in settings). */
   val profiler: Profiler,
   /** Settings to be used during evaluation. */
   val settings: EvalSettings)
@@ -99,7 +99,7 @@ object ErgoTreeEvaluator {
   /** Default global [[EvalSettings]] instance. */
   val DefaultEvalSettings = EvalSettings(isMeasureOperationTime = false)
 
-  /** Evaluate the given [[ErgoTree] in the given Ergo context using the given settings.
+  /** Evaluate the given [[ErgoTree]] in the given Ergo context using the given settings.
     *
     * @param context      [[ErgoLikeContext]] used for script execution
     * @param ergoTree     script represented as [[ErgoTree]]
