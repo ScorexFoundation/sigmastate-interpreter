@@ -367,6 +367,10 @@ class DistributedSigSpecification extends SigmaTestingCommons {
 
     val validProofH = proverH.prove(prop, ctx, fakeMessage, bag.addHint(secretCmtH)).get
     verifier.verify(prop, ctx, validProofH, fakeMessage).get._1 shouldBe true
+
+    validProofA.proof.sameElements(validProofB.proof) shouldBe true
+    validProofB.proof.sameElements(validProofG.proof) shouldBe true
+    validProofG.proof.sameElements(validProofH.proof) shouldBe true
   }
 
   property("distributed THRESHOLD - (1-out-of-2) and (1-out-of-2) - DLOG and DH") {
