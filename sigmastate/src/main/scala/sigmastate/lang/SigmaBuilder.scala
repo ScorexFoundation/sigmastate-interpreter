@@ -154,14 +154,12 @@ trait SigmaBuilder {
   def mkConcreteCollection[T <: SType](items: Seq[Value[T]],
                                        elementType: T): Value[SCollection[T]]
 
-  def mkTaggedVariable[T <: SType](varId: Byte, tpe: T): TaggedVariable[T]
-
   def mkSomeValue[T <: SType](x: Value[T]): Value[SOption[T]]
   def mkNoneValue[T <: SType](elemType: T): Value[SOption[T]]
 
   def mkBlock(bindings: Seq[Val], result: Value[SType]): Value[SType]
   def mkBlockValue(items: IndexedSeq[BlockItem], result: Value[SType]): Value[SType]
-  def mkValUse(valId: Int, tpe: SType): Value[SType]
+  def mkValUse[T <: SType](valId: Int, tpe: T): ValUse[T]
   def mkZKProofBlock(body: Value[SSigmaProp.type]): Value[SBoolean.type]
   def mkVal(name: String, givenType: SType, body: Value[SType]): Val
   def mkSelect(obj: Value[SType], field: String, resType: Option[SType] = None): Value[SType]
@@ -508,9 +506,6 @@ class StdSigmaBuilder extends SigmaBuilder {
                                                 elementType: T): Value[SCollection[T]] =
     ConcreteCollection(items, elementType).withSrcCtx(currentSrcCtx.value)
 
-  override def mkTaggedVariable[T <: SType](varId: Byte, tpe: T): TaggedVariable[T] =
-    TaggedVariableNode(varId, tpe).withSrcCtx(currentSrcCtx.value).asInstanceOf[TaggedVariable[T]]
-
   override def mkSomeValue[T <: SType](x: Value[T]): Value[SOption[T]] =
     SomeValue(x).withSrcCtx(currentSrcCtx.value)
   override def mkNoneValue[T <: SType](elemType: T): Value[SOption[T]] =
@@ -522,8 +517,8 @@ class StdSigmaBuilder extends SigmaBuilder {
   override def mkBlockValue(items: IndexedSeq[BlockItem], result: Value[SType]): Value[SType] =
     BlockValue(items, result).withSrcCtx(currentSrcCtx.value)
 
-  override def mkValUse(valId: Int, tpe: SType): Value[SType] =
-    ValUse(valId, tpe).withSrcCtx(currentSrcCtx.value)
+  override def mkValUse[T <: SType](valId: Int, tpe: T): ValUse[T] =
+    ValUse(valId, tpe).withSrcCtx(currentSrcCtx.value).asInstanceOf[ValUse[T]]
 
   override def mkZKProofBlock(body: Value[SSigmaProp.type]): BoolValue =
     ZKProofBlock(body).withSrcCtx(currentSrcCtx.value)

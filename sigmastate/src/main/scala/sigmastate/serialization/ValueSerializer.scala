@@ -90,7 +90,6 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     LogicalTransformerSerializer(AND, mkAND),
     LogicalTransformerSerializer(OR, mkOR),
     LogicalTransformerSerializer(XorOf, mkXorOf),
-    TaggedVariableSerializer(mkTaggedVariable),
     GetVarSerializer(mkGetVar),
     MapCollectionSerializer(mkMapCollection),
     BooleanTransformerSerializer[SType](Exists, mkExists),

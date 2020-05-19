@@ -21,12 +21,6 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
 
   private implicit val predefFuncRegistry: PredefinedFuncRegistry = new PredefinedFuncRegistry(builder)
 
-  /** Create name -> TaggedXXX(tag) pair to be used in environment. */
-  def mkTagged(name: String, tpe: SType, tag: Byte): TaggedVariable[SType] = {
-    val tagged = mkTaggedVariable(tag, tpe)
-    tagged
-  }
-
   /** Rewriting of AST with respect to environment to resolve all references
     * to let bound and lambda bound names. */
   private def eval(env: Map[String, SValue], e: SValue): SValue = rewrite(reduce(strategy[SValue]({

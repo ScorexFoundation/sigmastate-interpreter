@@ -982,7 +982,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
   import sigmastate._
 
   protected def isOperationNode(v: SValue): Boolean = v match {
-    case _: Block | _: BlockValue | _: TaggedVariableNode[_] | _: ValNode | _: ValDef | _: ValUse[_] | _: FuncValue => false
+    case _: Block | _: BlockValue | _: ValNode | _: ValDef | _: ValUse[_] | _: FuncValue => false
     case _ => true
   }
 
@@ -1177,9 +1177,6 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
     }
 
     val res: Ref[Any] = node match {
-      case TaggedVariableNode(id, _) =>
-        env.getOrElse(id, !!!(s"TaggedVariable $id not found in environment $env"))
-
       case c @ Constant(v, tpe) => v match {
         case p: SSigmaProp =>
           assert(tpe == SSigmaProp)
