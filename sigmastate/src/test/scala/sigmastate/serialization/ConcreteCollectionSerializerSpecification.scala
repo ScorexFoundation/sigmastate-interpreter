@@ -39,7 +39,7 @@ class ConcreteCollectionSerializerSpecification extends TableSerializationSpecif
   property("ConcreteCollection: Serializer round trip with different types seq") {
     forAll { (i: IntConstant, ti: TaggedInt) =>
       val seq = Random.shuffle(Seq(i.asIntValue, ti.asIntValue)).toArray
-      roundTripTest(ConcreteCollection.fromSeq(seq))
+      roundTripTest(ConcreteCollection.fromSeq(seq), enrichedReader(ti))
     }
   }
 

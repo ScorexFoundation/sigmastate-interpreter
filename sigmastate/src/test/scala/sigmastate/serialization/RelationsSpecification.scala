@@ -40,7 +40,8 @@ class RelationsSpecification extends TableSerializationSpecification {
 
   property("TreeLookup: Serializer round trip") {
     forAll { im: TreeLookup =>
-      roundTripTest(im)
+      val vu = im.tree.asInstanceOf[ValUse[SAvlTree.type]]
+      roundTripTest(im, enrichedReader(vu))
     }
   }
 

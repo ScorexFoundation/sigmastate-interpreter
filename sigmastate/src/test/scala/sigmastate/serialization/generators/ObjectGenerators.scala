@@ -2,7 +2,6 @@ package sigmastate.serialization.generators
 
 import org.ergoplatform.ErgoBox._
 import org.ergoplatform.SigmaConstants.MaxPropositionBytes
-import org.ergoplatform.ErgoScriptPredef.{FalseProp, TrueProp}
 import org.ergoplatform.validation._
 import org.ergoplatform._
 import org.scalacheck.Arbitrary.{arbAnyVal, arbBool, arbByte, arbInt, arbLong, arbOption, arbShort, arbString, arbUnit, arbitrary}
@@ -12,14 +11,14 @@ import scorex.crypto.authds.{ADDigest, ADKey}
 import scorex.crypto.hash.Digest32
 import scorex.util.encode.{Base58, Base64}
 import scorex.util.{ModifierId, bytesToId}
-import sigmastate.Values.{AvlTreeConstant, BigIntConstant, BlockValue, BoxConstant, ByteConstant, CollectionConstant, ConstantPlaceholder, ErgoTree, EvaluatedValue, FalseLeaf, FuncValue, GetVarInt, GroupElementConstant, IntConstant, LongConstant, ShortConstant, SigmaBoolean, SigmaPropConstant, SigmaPropValue, StringConstant, TaggedAvlTree, TaggedBox, TaggedInt, TaggedLong, TaggedVariable, TrueLeaf, Tuple, ValDef, ValUse, Value}
+import sigmastate.Values._
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
 import sigmastate.eval.Extensions._
 import sigmastate.eval.{CostingBox, SigmaDsl, _}
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.interpreter.{ContextExtension, CryptoConstants, ProverResult}
-import sigmastate.lang.TransformingSigmaBuilder.{mkAppend, mkAtLeast, mkBoolToSigmaProp, mkByteArrayToBigInt, mkByteArrayToLong, mkCollectionConstant, mkConstant, mkDeserializeContext, mkDeserializeRegister, mkDivide, mkDowncast, mkEQ, mkExists, mkExtractAmount, mkExtractBytes, mkExtractBytesWithNoRef, mkExtractCreationInfo, mkExtractId, mkExtractScriptBytes, mkFilter, mkFold, mkForAll, mkGE, mkGT, mkLE, mkLT, mkMapCollection, mkMax, mkMin, mkMinus, mkModulo, mkMultiply, mkNEQ, mkPlus, mkSigmaAnd, mkSigmaOr, mkSizeOf, mkSlice, mkTaggedVariable, mkTuple}
+import sigmastate.lang.TransformingSigmaBuilder._
 import sigmastate._
 import sigmastate.utxo.{Append, ByIndex, DeserializeContext, DeserializeRegister, Exists, ExtractAmount, ExtractBytes, ExtractBytesWithNoRef, ExtractCreationInfo, ExtractId, ExtractRegisterAs, ExtractScriptBytes, Filter, Fold, ForAll, GetVar, MapCollection, OptionGet, OptionGetOrElse, OptionIsDefined, SizeOf, Slice, Transformer}
 import special.collection.Coll
@@ -68,7 +67,7 @@ trait ObjectGenerators extends TypeGenerators with ValidationSpecification with 
   implicit lazy val arbTaggedInt: Arbitrary[TaggedInt] = Arbitrary(taggedVar[SInt.type])
   implicit lazy val arbTaggedLong: Arbitrary[TaggedLong] = Arbitrary(taggedVar[SLong.type])
   implicit lazy val arbTaggedBox: Arbitrary[TaggedBox] = Arbitrary(taggedVar[SBox.type])
-  implicit lazy val arbTaggedAvlTree: Arbitrary[TaggedAvlTree] = Arbitrary(taggedAvlTreeGen)
+  implicit lazy val arbTaggedAvlTree: Arbitrary[TaggedAvlTree] = Arbitrary(taggedVar[SAvlTree.type])
   implicit lazy val arbProveDlog: Arbitrary[ProveDlog] = Arbitrary(proveDlogGen)
   implicit lazy val arbProveDHT: Arbitrary[ProveDHTuple] = Arbitrary(proveDHTGen)
   implicit lazy val arbRegisterIdentifier: Arbitrary[RegisterId] = Arbitrary(registerIdentifierGen)
@@ -122,10 +121,10 @@ trait ObjectGenerators extends TypeGenerators with ValidationSpecification with 
     p <- groupElementGen
   } yield mkConstant[SGroupElement.type](p, SGroupElement)
 
-  def taggedVar[T <: SType](implicit aT: Arbitrary[T]): Gen[TaggedVariable[T]] = for {
+  def taggedVar[T <: SType](implicit aT: Arbitrary[T]): Gen[ValUse[T]] = for {
     t <- aT.arbitrary
-    id <- arbByte.arbitrary
-  } yield mkTaggedVariable(id, t)
+    id <- Gen.choose(0, Int.MaxValue)
+  } yield mkValUse(id, t)
 
 
   val proveDlogGen: Gen[ProveDlog] = for {v <- groupElementGen} yield ProveDlog(v)
@@ -159,13 +158,9 @@ trait ObjectGenerators extends TypeGenerators with ValidationSpecification with 
   )
 
   val sigmaPropGen: Gen[SigmaProp] = sigmaBooleanGen.map(SigmaDsl.SigmaProp)
-  val sigmaPropValueGen: Gen[SigmaPropValue] =
-    Gen.oneOf(proveDlogGen.map(SigmaPropConstant(_)), proveDHTGen.map(SigmaPropConstant(_)))
+  val sigmaPropValueGen: Gen[SigmaPropValue] = sigmaPropGen.map(SigmaPropConstant(_))
 
   val registerIdentifierGen: Gen[RegisterId] = Gen.oneOf(R0, R1, R2, R3, R4, R5, R6, R7, R8, R9)
-
-  val taggedAvlTreeGen: Gen[TaggedAvlTree] =
-    arbByte.arbitrary.map { v => TaggedAvlTree(v).asInstanceOf[TaggedAvlTree] }
 
   val evaluatedValueGen: Gen[EvaluatedValue[SType]] =
     Gen.oneOf(booleanConstGen.asInstanceOf[Gen[EvaluatedValue[SType]]], byteArrayConstGen, longConstGen)
@@ -447,23 +442,29 @@ trait ObjectGenerators extends TypeGenerators with ValidationSpecification with 
   } yield mkSizeOf(input).asInstanceOf[SizeOf[SInt.type]]
 
   val extractAmountGen: Gen[ExtractAmount] =
-    arbTaggedBox.arbitrary.map { b => mkExtractAmount(b).asInstanceOf[ExtractAmount] }
+    arbBoxConstant.arbitrary.map { b => mkExtractAmount(b).asInstanceOf[ExtractAmount] }
+
   val extractScriptBytesGen: Gen[ExtractScriptBytes] =
-    arbTaggedBox.arbitrary.map { b => mkExtractScriptBytes(b).asInstanceOf[ExtractScriptBytes] }
+    arbBoxConstant.arbitrary.map { b => mkExtractScriptBytes(b).asInstanceOf[ExtractScriptBytes] }
+
   val extractBytesGen: Gen[ExtractBytes] =
-    arbTaggedBox.arbitrary.map { b => mkExtractBytes(b).asInstanceOf[ExtractBytes] }
+    arbBoxConstant.arbitrary.map { b => mkExtractBytes(b).asInstanceOf[ExtractBytes] }
+
   val extractBytesWithNoRefGen: Gen[ExtractBytesWithNoRef] =
-    arbTaggedBox.arbitrary.map { b =>
+    arbBoxConstant.arbitrary.map { b =>
       mkExtractBytesWithNoRef(b).asInstanceOf[ExtractBytesWithNoRef]
     }
+
   val extractIdGen: Gen[ExtractId] =
-    arbTaggedBox.arbitrary.map { b => mkExtractId(b).asInstanceOf[ExtractId] }
+    arbBoxConstant.arbitrary.map { b => mkExtractId(b).asInstanceOf[ExtractId] }
+
   val extractRegisterAsGen: Gen[ExtractRegisterAs[SInt.type]] = for {
-    input <- arbTaggedBox.arbitrary
+    input <- arbBoxConstant.arbitrary
     r <- arbRegisterIdentifier.arbitrary
   } yield ExtractRegisterAs(input, r)(SInt)
+
   val extractCreationInfoGen: Gen[ExtractCreationInfo] =
-    arbTaggedBox.arbitrary.map { b => mkExtractCreationInfo(b).asInstanceOf[ExtractCreationInfo] }
+    arbBoxConstant.arbitrary.map { b => mkExtractCreationInfo(b).asInstanceOf[ExtractCreationInfo] }
 
   val deserializeContextGen: Gen[DeserializeContext[SBoolean.type]] =
     Arbitrary.arbitrary[Byte].map(b =>

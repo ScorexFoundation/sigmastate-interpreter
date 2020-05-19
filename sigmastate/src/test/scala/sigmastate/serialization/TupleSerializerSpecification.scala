@@ -6,7 +6,7 @@ class TupleSerializerSpecification extends TableSerializationSpecification {
 
   property("Tuple: Serializer round trip ") {
     forAll(tupleGen(1, 10)) { tuple: Tuple =>
-      roundTripTest(tuple)
+      roundTripTest(tuple, enrichedReaderForTuple(tuple))
     }
   }
 

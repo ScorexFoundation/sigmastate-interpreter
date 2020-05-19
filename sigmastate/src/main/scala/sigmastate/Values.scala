@@ -380,9 +380,6 @@ object Values {
   type TaggedAvlTree = ValUse[SAvlTree.type]
   type TaggedByteArray = ValUse[SCollection[SByte.type]]
 
-  def TaggedBox(id: Byte): Value[SBox.type] = mkValUse(id, SBox)
-  def TaggedAvlTree(id: Byte): Value[SAvlTree.type] = mkValUse(id, SAvlTree)
-
   trait EvaluatedCollection[T <: SType, C <: SCollection[T]] extends EvaluatedValue[C] {
     def elementType: T
   }

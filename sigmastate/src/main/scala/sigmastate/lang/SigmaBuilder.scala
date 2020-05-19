@@ -5,7 +5,7 @@ import java.math.BigInteger
 import org.ergoplatform.ErgoBox
 import org.ergoplatform.ErgoBox.RegisterId
 import sigmastate.SCollection.{SByteArray, SIntArray}
-import sigmastate.Values.{BlockItem, BlockValue, BoolValue, ConcreteCollection, Constant, ConstantNode, ConstantPlaceholder, FalseLeaf, FuncValue, GroupElementValue, NoneValue, SValue, SigmaBoolean, SigmaPropValue, SomeValue, StringConstant, TaggedVariable, TaggedVariableNode, TrueLeaf, Tuple, ValUse, Value, _}
+import sigmastate.Values.{BlockItem, BlockValue, BoolValue, ConcreteCollection, Constant, ConstantNode, ConstantPlaceholder, FalseLeaf, FuncValue, GroupElementValue, NoneValue, SValue, SigmaBoolean, SigmaPropValue, SomeValue, StringConstant, TrueLeaf, Tuple, ValUse, Value, _}
 import sigmastate._
 import sigmastate.lang.Constraints.{TypeConstraint2, onlyNumeric2, sameType2}
 import sigmastate.lang.Terms._

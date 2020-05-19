@@ -6,7 +6,7 @@ import sigmastate.eval.{Zero, Sized}
 import scalan.util.Extensions.ByteOps
 import scalan.util.CollectionUtil
 import scalan.util.PrintExtensions._
-import sigmastate.Values.{FalseLeaf, Constant, TrueLeaf, BlockValue, ConstantPlaceholder, Tuple, ValDef, FunDef, ValUse, ValueCompanion, TaggedVariable, ConcreteCollection, ConcreteCollectionBooleanConstant}
+import sigmastate.Values._
 import sigmastate.lang.SigmaPredef.{PredefinedFuncRegistry, PredefinedFunc}
 import sigmastate.lang.StdSigmaBuilder
 import sigmastate.lang.Terms.{MethodCall, PropertyCall}
@@ -254,7 +254,7 @@ object GenPrimOpsApp extends SpecGen {
     val methods = collectMethods()
     val ops = collectSerializableOperations()
     val noOps = Set(
-      TaggedVariable, ValUse, ConstantPlaceholder, TrueLeaf, FalseLeaf,
+      ValUse, ConstantPlaceholder, TrueLeaf, FalseLeaf,
       ConcreteCollection, ConcreteCollectionBooleanConstant, Tuple, SelectField, SigmaPropIsProven, ValDef, FunDef, BlockValue
     )
 

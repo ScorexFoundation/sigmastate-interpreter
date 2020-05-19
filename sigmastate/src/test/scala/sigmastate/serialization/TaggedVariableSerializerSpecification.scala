@@ -1,24 +1,28 @@
 package sigmastate.serialization
 
 import sigmastate.Values._
-import OpCodes._
 import sigmastate.SBox
+import sigmastate.lang.DefaultSigmaBuilder.mkValUse
 
 class TaggedVariableSerializerSpecification extends SerializationSpecification {
 
   property("TaggedVariable: TaggedInt serializer round trip") {
     forAll { ti: TaggedInt =>
-      roundTripTest(ti)
+      roundTripTest(ti, enrichedReader(ti))
     }
   }
 
   property("TaggedVariable: TaggedBox serializer round trip") {
     forAll { tb: TaggedBox =>
-      roundTripTest(tb)
+      roundTripTest(tb, enrichedReader(tb))
     }
   }
 
   property("TaggedVariable deserialize from predefined bytes") {
-    predefinedBytesTest(TaggedBox(10), Array(TaggedVariableCode, 10, SBox.typeCode))
+    val vu = mkValUse(10, SBox)
+    predefinedBytesTest(
+      v = vu,
+      bytes = Array(ValUse.opCode, 10),
+      getReader = enrichedReader(vu))
   }
 }
