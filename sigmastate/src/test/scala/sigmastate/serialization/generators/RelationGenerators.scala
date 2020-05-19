@@ -8,7 +8,7 @@ trait RelationGenerators {
   this: ObjectGenerators with ConcreteCollectionGenerators =>
 
   val treeLookupGen: Gen[TreeLookup] = for {
-    t <- arbTaggedAvlTree.arbitrary
+    t <- arbValUseAvlTree.arbitrary
     b1 <- arbByteArrayConstant.arbitrary
     b2 <- arbByteArrayConstant.arbitrary
   } yield TreeLookup(t, b1, b2)

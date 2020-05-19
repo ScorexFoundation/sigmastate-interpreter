@@ -1,17 +1,13 @@
 package sigmastate.eval
 
-import org.bouncycastle.math.ec.ECPoint
-import org.ergoplatform.{Height, Inputs, Outputs, Self}
+import org.ergoplatform.{Height, Outputs, Self, Inputs}
 import sigmastate._
-import sigmastate.lang.Terms.ValueOps
-import sigmastate.Values.{BlockValue, FalseLeaf, FuncValue, GroupElementConstant, IntConstant, LongConstant, SigmaPropConstant, TaggedVariable, TrueLeaf, ValDef, ValUse}
+import sigmastate.Values.{LongConstant, FuncValue, BlockValue, SigmaPropConstant, IntConstant, ValDef, ValUse}
 import sigmastate.helpers.ContextEnrichingTestProvingInterpreter
-import sigmastate.serialization.OpCodes._
 import sigmastate.interpreter.Interpreter._
 import scalan.BaseCtxTests
-import sigmastate.basics.DLogProtocol
 import sigmastate.lang.LangTests
-import sigmastate.lang.Terms.Apply
+import sigmastate.lang.Terms.{ValueOps, Apply}
 import sigmastate.utxo._
 
 class ErgoTreeBuildingTest extends BaseCtxTests

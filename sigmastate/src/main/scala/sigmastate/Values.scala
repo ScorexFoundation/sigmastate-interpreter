@@ -368,17 +368,13 @@ object Values {
     override def tpe = SBigInt
   }
 
-  type TaggedBoolean = ValUse[SBoolean.type]
-  type TaggedByte = ValUse[SByte.type]
-  type TaggedShort = ValUse[SShort.type]
-  type TaggedInt = ValUse[SInt.type]
-  type TaggedLong = ValUse[SLong.type]
-  type TaggedBigInt = ValUse[SBigInt.type]
-  type TaggedBox = ValUse[SBox.type]
-  type TaggedGroupElement = ValUse[SGroupElement.type]
-  type TaggedSigmaProp = ValUse[SSigmaProp.type]
-  type TaggedAvlTree = ValUse[SAvlTree.type]
-  type TaggedByteArray = ValUse[SCollection[SByte.type]]
+  type ValUseInt = ValUse[SInt.type]
+  type ValUseLong = ValUse[SLong.type]
+  type ValUseBox = ValUse[SBox.type]
+  type ValUseGroupElement = ValUse[SGroupElement.type]
+  type ValUseSigmaProp = ValUse[SSigmaProp.type]
+  type ValUseAvlTree = ValUse[SAvlTree.type]
+  type ValUseByteArray = ValUse[SCollection[SByte.type]]
 
   trait EvaluatedCollection[T <: SType, C <: SCollection[T]] extends EvaluatedValue[C] {
     def elementType: T

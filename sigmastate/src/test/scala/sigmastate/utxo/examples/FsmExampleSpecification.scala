@@ -109,19 +109,6 @@ class FsmExampleSpecification extends SigmaTestingCommons {
 
     val finalStateCheck = EQ(ExtractRegisterAs[SByte.type](Self, currentStateRegister).get, ByteConstant(state3Id))
 
-    /*
-    val finalScriptCorrect = OptionIsDefined(
-      TreeLookup(
-        OptionGet(ExtractRegisterAs[SAvlTree.type](Self, fsmDescRegister)),
-        Append(
-          ConcreteCollection[SByte.type](
-            OptionGet(ExtractRegisterAs[SByte.type](Self, currentStateRegister)),
-            ByteConstant(leaveFsmStateId)),
-          CalcBlake2b256(TaggedByteArray(scriptVarId))
-        ),
-        TaggedByteArray(transitionProofId))
-    )*/
-
     val finalScriptCorrect = TrueLeaf
 
 

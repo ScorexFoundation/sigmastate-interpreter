@@ -68,8 +68,7 @@ object OpCodes extends ValueCodes {
   val Undefined: OpCode = OpCode @@ 0.toByte
 
   // variables
-  val TaggedVariableCode: OpCode = newOpCode(1)
-  val ValUseCode: OpCode = newOpCode(2)
+  val ValUseCode: OpCode = newOpCode(2)  // code 1 was used by TaggedVariable (now it is free)
   val ConstantPlaceholderCode: OpCode = newOpCode(3)
   val SubstConstantsCode: OpCode = newOpCode(4) // reserved 5 - 9 (5)
 

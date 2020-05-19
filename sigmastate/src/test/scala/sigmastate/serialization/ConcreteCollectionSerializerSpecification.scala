@@ -1,6 +1,6 @@
 package sigmastate.serialization
 
-import sigmastate.Values.{FalseLeaf, Constant, TrueLeaf, IntConstant, TaggedInt, ConcreteCollection}
+import sigmastate.Values.{FalseLeaf, Constant, TrueLeaf, IntConstant, ValUseInt, ConcreteCollection}
 import sigmastate._
 import sigmastate.eval.Evaluation
 import sigmastate.lang.Terms._
@@ -37,7 +37,7 @@ class ConcreteCollectionSerializerSpecification extends TableSerializationSpecif
   }
 
   property("ConcreteCollection: Serializer round trip with different types seq") {
-    forAll { (i: IntConstant, ti: TaggedInt) =>
+    forAll { (i: IntConstant, ti: ValUseInt) =>
       val seq = Random.shuffle(Seq(i.asIntValue, ti.asIntValue)).toArray
       roundTripTest(ConcreteCollection.fromSeq(seq), enrichedReader(ti))
     }

@@ -64,10 +64,10 @@ trait ObjectGenerators extends TypeGenerators with ValidationSpecification with 
   implicit lazy val arbBoxConstant: Arbitrary[BoxConstant] = Arbitrary(boxConstantGen)
   implicit lazy val arbAvlTreeConstant: Arbitrary[AvlTreeConstant] = Arbitrary(avlTreeConstantGen)
   implicit lazy val arbBigIntConstant: Arbitrary[BigIntConstant] = Arbitrary(bigIntConstGen)
-  implicit lazy val arbTaggedInt: Arbitrary[TaggedInt] = Arbitrary(taggedVar[SInt.type])
-  implicit lazy val arbTaggedLong: Arbitrary[TaggedLong] = Arbitrary(taggedVar[SLong.type])
-  implicit lazy val arbTaggedBox: Arbitrary[TaggedBox] = Arbitrary(taggedVar[SBox.type])
-  implicit lazy val arbTaggedAvlTree: Arbitrary[TaggedAvlTree] = Arbitrary(taggedVar[SAvlTree.type])
+  implicit lazy val arbValUseInt: Arbitrary[ValUseInt] = Arbitrary(valUse[SInt.type])
+  implicit lazy val arbValUseLong: Arbitrary[ValUseLong] = Arbitrary(valUse[SLong.type])
+  implicit lazy val arbValUseBox: Arbitrary[ValUseBox] = Arbitrary(valUse[SBox.type])
+  implicit lazy val arbValUseAvlTree: Arbitrary[ValUseAvlTree] = Arbitrary(valUse[SAvlTree.type])
   implicit lazy val arbProveDlog: Arbitrary[ProveDlog] = Arbitrary(proveDlogGen)
   implicit lazy val arbProveDHT: Arbitrary[ProveDHTuple] = Arbitrary(proveDHTGen)
   implicit lazy val arbRegisterIdentifier: Arbitrary[RegisterId] = Arbitrary(registerIdentifierGen)
@@ -121,7 +121,7 @@ trait ObjectGenerators extends TypeGenerators with ValidationSpecification with 
     p <- groupElementGen
   } yield mkConstant[SGroupElement.type](p, SGroupElement)
 
-  def taggedVar[T <: SType](implicit aT: Arbitrary[T]): Gen[ValUse[T]] = for {
+  def valUse[T <: SType](implicit aT: Arbitrary[T]): Gen[ValUse[T]] = for {
     t <- aT.arbitrary
     id <- Gen.choose(0, Int.MaxValue)
   } yield mkValUse(id, t)
@@ -282,10 +282,10 @@ trait ObjectGenerators extends TypeGenerators with ValidationSpecification with 
       booleanConstGen,
       bigIntConstGen,
       groupElementConstGen,
-      taggedVar[SInt.type],
-      taggedVar[SLong.type],
-      taggedVar[SBox.type],
-      taggedVar(Arbitrary(sTupleGen(2, 10)))
+      valUse[SInt.type],
+      valUse[SLong.type],
+      valUse[SBox.type],
+      valUse(Arbitrary(sTupleGen(2, 10)))
     ))
   } yield mkTuple(values).asInstanceOf[Tuple]
 

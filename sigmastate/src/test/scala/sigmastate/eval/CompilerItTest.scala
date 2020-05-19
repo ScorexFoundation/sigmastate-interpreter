@@ -1,41 +1,26 @@
 package sigmastate.eval
 
-import java.math.BigInteger
-
-import org.bouncycastle.math.ec.ECPoint
 import org.ergoplatform._
-import sigmastate.SCollection.SByteArray
 import sigmastate._
-import sigmastate.Values.{BigIntArrayConstant, BigIntConstant, ByteArrayConstant, FalseLeaf, GroupElementConstant, IntConstant, LongConstant, SigmaBoolean, SigmaPropConstant, TrueLeaf, ValUse}
+import sigmastate.Values.{BigIntConstant, SigmaPropConstant, ByteArrayConstant, IntConstant, BigIntArrayConstant, ValUse}
 import sigmastate.helpers.ContextEnrichingTestProvingInterpreter
-import sigmastate.interpreter.{ContextExtension, CryptoConstants}
-import sigmastate.lang.DefaultSigmaBuilder.mkTaggedVariable
 import sigmastate.lang.LangTests
 import sigmastate.utxo._
-import special.collection.{Coll => VColl}
-import special.sigma.{TestValue => VTestValue}
 import scalan.BaseCtxTests
 import scalan.util.BenchmarkUtil._
-import sigmastate.basics.DLogProtocol
 import special.sigma._
 
 class CompilerItTest extends BaseCtxTests
     with LangTests with ExampleContracts with ErgoScriptTestkit {
   import IR._
   import builder._
-  import WOption._
   import CollBuilder._
-  import SigmaDslBuilder._
   import Context._
   import Coll._
   import SigmaProp._
-  import CostedColl._
-  import CCostedColl._
   import BigInt._
-  import GroupElement._
   import sigmastate.serialization.OpCodes._
   import Liftables._
-  import SType.AnyOps
 
 
   def intConstCase = {
@@ -121,7 +106,6 @@ class CompilerItTest extends BaseCtxTests
   }
 
   def bigIntArray_Map_Case = {
-    import SCollection._
     val res = bigIntegerArr1.map(n => n.add(n1)).toArray
     Case(env, "bigIntArray_Map",
       "bigIntArr1.map { (i: BigInt) => i + n1 }", ergoCtx,
@@ -152,7 +136,6 @@ class CompilerItTest extends BaseCtxTests
   }
 
   def bigIntArray_Slice_Case = {
-    import SCollection._
     Case(env, "bigIntArray_Slice_Case",
       "bigIntArr1.slice(0,1)", ergoCtx,
       calc = null,
@@ -180,7 +163,6 @@ class CompilerItTest extends BaseCtxTests
 //  }
 
   def register_BigIntArr_Case = {
-    import SCollection._
     Case(env, "register_BigIntArr_Case",
       "SELF.R4[Coll[BigInt]].get", ergoCtx,
       calc = null,
@@ -204,7 +186,6 @@ class CompilerItTest extends BaseCtxTests
   }
 
   def register_BigIntArr_Map_Case = {
-    import SCollection._
     Case(env, "register_BigIntArr_Map_Case",
       "SELF.R4[Coll[BigInt]].get.map { (i: BigInt) => i + n1 }", ergoCtx,
       calc = null,
@@ -218,7 +199,6 @@ class CompilerItTest extends BaseCtxTests
   }
 
   def register_BigIntArr_Slice_Case = {
-    import SCollection._
     Case(env, "register_BinIntArr_Slice_Case",
       "SELF.R4[Coll[BigInt]].get.slice(0,1)", ergoCtx,
       calc = null,
@@ -232,7 +212,6 @@ class CompilerItTest extends BaseCtxTests
   }
 
   def crowdFunding_Case = {
-    import SCollection._
     import SigmaDslBuilder._
     import Box._
     import Values._

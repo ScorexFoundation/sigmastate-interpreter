@@ -4,21 +4,21 @@ import sigmastate.Values._
 import sigmastate.SBox
 import sigmastate.lang.DefaultSigmaBuilder.mkValUse
 
-class TaggedVariableSerializerSpecification extends SerializationSpecification {
+class ValUseSerializerSpecification extends SerializationSpecification {
 
-  property("TaggedVariable: TaggedInt serializer round trip") {
-    forAll { ti: TaggedInt =>
+  property("ValUse: ValUseInt serializer round trip") {
+    forAll { ti: ValUseInt =>
       roundTripTest(ti, enrichedReader(ti))
     }
   }
 
-  property("TaggedVariable: TaggedBox serializer round trip") {
-    forAll { tb: TaggedBox =>
+  property("ValUse: ValUseBox serializer round trip") {
+    forAll { tb: ValUseBox =>
       roundTripTest(tb, enrichedReader(tb))
     }
   }
 
-  property("TaggedVariable deserialize from predefined bytes") {
+  property("ValUse deserialize from predefined bytes") {
     val vu = mkValUse(10, SBox)
     predefinedBytesTest(
       v = vu,
