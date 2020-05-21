@@ -832,7 +832,62 @@ def longToByteArray(input: Long): Coll[Byte]
 def decodePoint(bytes: Coll[Byte]): GroupElement 
 
 
-/** Returns value of the given type from the context by its tag.*/
+/** Extracts Context variable by id and type.
+  * ErgoScript is typed, so accessing a the variables is an operation which involves
+  * some expected type given in brackets. Thus `getVar[Int](id)` expression should
+  * evaluate to a valid value of the `Option[Int]` type.
+  *
+  * For example `val x = getVar[Int](10)` expects the variable, if it is present, to have
+  * type `Int`. At runtime the corresponding type descriptor is passed as `cT`
+  * parameter.
+  *
+  * There are three cases:
+  * 1) If the variable doesn't exist.
+  *   Then `val x = getVar[Int](id)` succeeds and returns the None value, which conforms to
+  *   any value of type `Option[T]` for any T. (In the example above T is equal to
+  *   `Int`). Calling `x.get` fails when x is equal to None, but `x.isDefined`
+  *   succeeds and returns `false`.
+  * 2) If the variable contains a value `v` of type `Int`.
+  *   Then `val x = getVar[Int](id)` succeeds and returns `Some(v)`, which is a valid value
+  *   of type `Option[Int]`. In this case, calling `x.get` succeeds and returns the
+  *   value `v` of type `Int`. Calling `x.isDefined` returns `true`.
+  * 3) If the variable contains a value `v` of type T other then `Int`.
+  *   Then `val x = getVar[Int](id)` fails, because there is no way to return a valid value
+  *   of type `Option[Int]`. The value of variable is present, so returning it as None
+  *   would break the typed semantics of variables collection.
+  *
+  * In some use cases one variable may have values of different types. To access such
+  * variable an additional variable can be used as a tag.
+  *
+  * <pre class="stHighlight">
+  *   val tagOpt = getVar[Int](id)
+  *   val res = if (tagOpt.isDefined) {
+  *     val tag = tagOpt.get
+  *     if (tag == 1) {
+  *       val x = getVar[Int](id2).get
+  *       // compute res using value x is of type Int
+  *     } else if (tag == 2) {
+  *       val x = getVar[GroupElement](id2).get
+  *       // compute res using value x is of type GroupElement
+  *     } else if (tag == 3) {
+  *       val x = getVar[ Array[Byte] ](id2).get
+  *       // compute res using value x of type Array[Byte]
+  *     } else {
+  *       // compute `res` when `tag` is not 1, 2 or 3
+  *     }
+  *   }
+  *   else {
+  *     // compute value of res when the variable is not present
+  *   }
+  * </pre>
+  *
+  * @param id zero-based identifier of the variable.
+  * @tparam T expected type of the variable.
+  * @return Some(value) if the variable is defined in the context AND has the given type.
+  *         None otherwise
+  * @throws special.sigma.InvalidType exception when the type of the variable value is
+  *                                   different from cT.
+  */
 def getVar[T](tag: Int): Option[T]
 
 /** Construct a new SigmaProp value representing public key of Diffie Hellman signature protocol. 
