@@ -7,19 +7,39 @@ import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.ValueSerializer.getSerializer
 import scalan.util.Extensions.ByteOps
-import scala.collection.mutable
 import debox.{Map => DMap}
 
-class OpStat(val node: SValue, val outerStart: Long, var innerTime: Long, val outerEnd: Long)
-
+/** A simple profiler to measure average execution times of ErgoTree operations. */
 class Profiler {
+
+  // NOTE: this class is mutable so better to keep it private
+  private class OpStat(
+    /** The node on the evaluation stack. */
+    val node: SValue,
+    /** The time then this node evaluation was started. */
+    val outerStart: Long,
+    /** The accumulated time of evaluating all the sub-nodes */
+    var innerTime: Long,
+    /** The time then this nodes evaluation finished */
+    val outerEnd: Long
+  )
+
+  /** If every recursive evaluation of every Value is marked with
+    * [[onBeforeNode()]]/[[onAfterNode()]], then this stack corresponds to the stack of
+    * recursive invocations of the evaluator. */
   private var opStack: List[OpStat] = Nil
 
+  /** Called from evaluator (like [[sigmastate.interpreter.ErgoTreeEvaluator]])
+    * immediately before the evaluator start recursive evaluation of the given node.
+    */
   def onBeforeNode(node: SValue) = {
     val t = System.nanoTime()
     opStack = new OpStat(node, t, 0, t) :: opStack
   }
 
+  /** Called from evaluator (like [[sigmastate.interpreter.ErgoTreeEvaluator]])
+    * immediately after the evaluator finishes recursive evaluation of the given node.
+    */
   def onAfterNode(node: SValue) = {
     val t = System.nanoTime()
 
@@ -34,11 +54,12 @@ class Profiler {
       val parent = opStack.head
       parent.innerTime += opFullTime
     } else {
-      // top level
-      //        println(s"Top time: $opFullTime")
+      // we are on top level, do nothing
     }
 
     val opSelfTime = opFullTime - op.innerTime
+
+    // update timing stats
     node match {
       case mc: Terms.MethodCall =>
         val m = mc.method
@@ -56,13 +77,15 @@ class Profiler {
       var sum: Long
   )
 
+
   /** Timings of op codes. For performance debox implementation of Map is used. */
   private val opStat = DMap[OpCode, StatItem]()
 
   /** Timings of method calls */
   private val mcStat = DMap[(Byte, Byte), StatItem]()
 
-  @inline final def addOpTime(op: OpCode, time: Long) = {
+  /** Update time mesurement stats for a given operation. */
+  @inline private final def addOpTime(op: OpCode, time: Long) = {
     val item = opStat.getOrElse(op, null)
     if (item != null) {
       item.count += 1
@@ -72,7 +95,8 @@ class Profiler {
     }
   }
 
-  def addMcTime(typeId: Byte, methodId: Byte, time: Long) = {
+  /** Update time mesurement stats for a given method. */
+  @inline private final def addMcTime(typeId: Byte, methodId: Byte, time: Long) = {
     val key = (typeId, methodId)
     val item = mcStat.getOrElse(key, null)
     if (item != null) {
@@ -83,9 +107,9 @@ class Profiler {
     }
   }
 
-  /** Prints the complexity table
-    * */
-  def complexityTableString: String = {
+  /** Prints the operation timing table using collected information.
+    */
+  def opStatTableString: String = {
     val opCodeLines = opStat.mapToArray { case (opCode, item) =>
       val avgTime = item.sum / item.count
       val time = avgTime / 1000
@@ -102,13 +126,7 @@ class Profiler {
       (s"$typeName.${m.name}", typeId, methodId, time, item.count.toString)
     }.toList.sortBy(r => (r._2,r._3))(Ordering[(Byte,Byte)].reverse)
 
-    //    val lines = (("Op", "OpCode", "Avg Time,us", "Count") :: opCodeLines ::: mcLines)
-    //      .map { case (opName, opCode, time, count) =>
-    //        s"${opName.padTo(30, ' ')}\t${opCode.padTo(7, ' ')}\t${time.padTo(9, ' ')}\t${count}"
-    //      }
-    //      .mkString("\n")
-
-    val rows = (opCodeLines)
+    val rows = opCodeLines
         .map { case (opName, opCode, time, count) =>
           val key = s"$opName.opCode".padTo(30, ' ')
           s"$key -> $time,  // count = $count "
@@ -122,7 +140,6 @@ class Profiler {
         }
         .mkString("\n")
 
-    //    val total = opStat.values.foldLeft(0L) { (acc, item) => acc + item.sum }
     s"""
       |-----------
       |$rows
