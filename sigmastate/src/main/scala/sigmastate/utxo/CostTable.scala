@@ -84,6 +84,10 @@ object CostTable {
   val comparisonPerKbCost = 10
 
   val logicCost = 10
+
+  /** Initial cost of starting OR/AND/XorOf operation which doesn't depend on the number
+    * of elements in the arguments collection. The cost of each operation is `logicCost`.
+    */
   val logicBaseCost = 0  // TODO soft-fork: increase it to 20
 
   val sigmaAndCost = 10
