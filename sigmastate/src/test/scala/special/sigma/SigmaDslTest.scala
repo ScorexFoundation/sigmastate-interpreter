@@ -310,6 +310,7 @@ class SigmaDslTest extends PropSpec
     // eq({ (x: GroupElement) => x.isIdentity })("{ (x: GroupElement) => x.isIdentity }")
   )
 
+// TODO: uncomment when implemented
 //  val testGroupElementExp = TestGroup[(GroupElement, BigInt)] { eq =>
 //    eq({ (x: (GroupElement, BigInt)) => x._1.exp(x._2) })("{ (x: (GroupElement, BigInt)) => x._1.exp(x._2) }")
 //  }
@@ -363,14 +364,7 @@ class SigmaDslTest extends PropSpec
       }
     }
     
-    println(ErgoTreeEvaluator.DefaultProfiler.complexityTableString)
-    //    testGroupElementExp((ge, n))
-//    testGEMultiply((ge, g2))
-//
-//    forAll { x: BigInt =>
-//      testGroupGenerator(x)
-//    }
-
+    println(ErgoTreeEvaluator.DefaultProfiler.opStatTableString)
   }
 
   property("AvlTree properties equivalence") {
@@ -919,7 +913,7 @@ class SigmaDslTest extends PropSpec
     eq({ (x: Option[Long]) => x.getOrElse(1L) })("{ (x: Option[Long]) => x.getOrElse(1L) }")
     eq({ (x: Option[Long]) => x.filter({ (v: Long) => v == 1} ) })("{ (x: Option[Long]) => x.filter({ (v: Long) => v == 1 }) }")
     eq({ (x: Option[Long]) => x.map( (v: Long) => v + 1 ) })("{ (x: Option[Long]) => x.map({ (v: Long) => v + 1 }) }")
-    println(ErgoTreeEvaluator.DefaultProfiler.complexityTableString)
+    println(ErgoTreeEvaluator.DefaultProfiler.opStatTableString)
   }
 
   // TODO soft-fork: implement Option.fold
@@ -1097,6 +1091,6 @@ class SigmaDslTest extends PropSpec
       "{ (x: Boolean) => (!(!x && (1 / 0 == 1)) || (1 / 0 == 0)) && (!(!x && (1 / 0 == 1)) || (1 / 0 == 1)) }"))
        { (x: Boolean) => (!(!x && (1 / 0 == 1)) || (1 / 0 == 0)) && (!(!x && (1 / 0 == 1)) || (1 / 0 == 1)) }(true)
 
-    println(ErgoTreeEvaluator.DefaultProfiler.complexityTableString)
+    println(ErgoTreeEvaluator.DefaultProfiler.opStatTableString)
   }
 }

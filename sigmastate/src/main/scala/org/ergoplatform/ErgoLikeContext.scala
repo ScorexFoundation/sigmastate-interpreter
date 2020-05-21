@@ -118,18 +118,19 @@ class ErgoLikeContext(val lastBlockUtxoRoot: AvlTreeData,
       lastBlockUtxoRoot, headers, preHeader,
       dataBoxes, boxesToSpend, newSpendingTransaction, selfIndex, extension, validationSettings, costLimit, initCost)
 
+  /** Converts the map into collection which is required in script evaluation. */
+  def contextVars(m: Map[Byte, AnyValue]): Coll[AnyValue] = {
+    val maxKey = if (m.keys.isEmpty) 0 else m.keys.max
+    // TODO minor fix: when m is empty, the collection can also be empty
+    val res = new Array[AnyValue](maxKey + 1)
+    for ((id, v) <- m) {
+      res(id) = v
+    }
+    SigmaDsl.Colls.fromArray(res)
+  }
 
   override def toSigmaContext(isCost: Boolean, extensions: Map[Byte, AnyValue] = Map()): sigma.Context = {
     import Evaluation._
-
-    def contextVars(m: Map[Byte, AnyValue]): Coll[AnyValue] = {
-      val maxKey = if (m.keys.isEmpty) 0 else m.keys.max
-      val res = new Array[AnyValue](maxKey + 1)
-      for ((id, v) <- m) {
-        res(id) = v
-      }
-      SigmaDsl.Colls.fromArray(res)
-    }
 
     val dataInputs = this.dataBoxes.toArray.map(_.toTestBox(isCost)).toColl
     val inputs = boxesToSpend.toArray.map(_.toTestBox(isCost)).toColl
@@ -146,8 +147,9 @@ class ErgoLikeContext(val lastBlockUtxoRoot: AvlTreeData,
     }
     val vars = contextVars(varMap ++ extensions)
     val avlTree = CAvlTree(lastBlockUtxoRoot)
+    val selfBox = boxesToSpend(selfIndex).toTestBox(isCost)
     CostingDataContext(
-      dataInputs, headers, preHeader, inputs, outputs, preHeader.height, boxesToSpend(selfIndex).toTestBox(isCost), avlTree,
+      dataInputs, headers, preHeader, inputs, outputs, preHeader.height, selfBox, avlTree,
       preHeader.minerPk.getEncoded, vars, isCost)
   }
 
