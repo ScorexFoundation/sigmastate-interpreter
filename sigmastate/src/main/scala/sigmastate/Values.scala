@@ -6,16 +6,12 @@ import java.util.Objects
 
 import org.bitbucket.inkytonik.kiama.relation.Tree
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{strategy, everywherebu}
-import org.ergoplatform.ErgoLikeContext
 import org.ergoplatform.validation.ValidationException
 import scalan.{Nullable, RType}
-import scorex.crypto.authds.{ADDigest, SerializedAdProof}
-import scorex.crypto.authds.avltree.batch.BatchAVLVerifier
-import scorex.crypto.hash.{Digest32, Blake2b256}
 import scalan.util.CollectionUtil._
 import sigmastate.SCollection.{SIntArray, SByteArray}
 import sigmastate.interpreter.CryptoConstants.EcPointType
-import sigmastate.interpreter.{CryptoConstants, ErgoTreeEvaluator, EvalContext}
+import sigmastate.interpreter.{CryptoConstants, ErgoTreeEvaluator}
 import sigmastate.serialization.{OpCodes, ConstantStore, _}
 import sigmastate.serialization.OpCodes._
 import sigmastate.TrivialProp.{FalseProp, TrueProp}
@@ -333,6 +329,11 @@ object Values {
   case class ConstantPlaceholder[S <: SType](id: Int, override val tpe: S) extends Value[S] {
     def opType = SFunc(SInt, tpe)
     override def companion: ValueCompanion = ConstantPlaceholder
+    override protected def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+      val c = E.constants(id)
+      E.addCostOf(c)
+      c.value
+    }
   }
   object ConstantPlaceholder extends ValueCompanion {
     override def opCode: OpCode = ConstantPlaceholderCode

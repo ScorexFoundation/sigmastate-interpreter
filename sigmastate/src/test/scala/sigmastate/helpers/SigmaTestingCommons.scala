@@ -2,11 +2,9 @@ package sigmastate.helpers
 
 import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
 import org.ergoplatform.ErgoBox.NonMandatoryRegisterId
-import org.ergoplatform.SigmaConstants.ScriptCostLimit
-import org.ergoplatform.ErgoLikeContext.Height
 import org.ergoplatform.ErgoScriptPredef.TrueProp
 import org.ergoplatform._
-import org.ergoplatform.validation.{ValidationSpecification, ValidationRules, SigmaValidationSettings}
+import org.ergoplatform.validation.ValidationSpecification
 import org.scalacheck.Arbitrary.arbByte
 import org.scalacheck.Gen
 import org.scalatest.prop.{PropertyChecks, GeneratorDrivenPropertyChecks}
@@ -16,15 +14,13 @@ import scorex.crypto.hash.{Digest32, Blake2b256}
 import sigma.types.IsPrimView
 import sigmastate.Values.{Constant, EvaluatedValue, SValue, Value, ErgoTree, GroupElementConstant}
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, ScriptEnv}
-import sigmastate.interpreter.{CryptoConstants, ErgoTreeEvaluator, Interpreter, EvalSettings, ContextExtension, EvalContext}
+import sigmastate.interpreter.{EvalSettings, CryptoConstants, ErgoTreeEvaluator, Interpreter}
 import sigmastate.lang.{TransformingSigmaBuilder, SigmaCompiler}
-import sigmastate.serialization.{ValueSerializer, SigmaSerializer, GroupElementSerializer}
-import sigmastate.{SGroupElement, AvlTreeData, SType}
+import sigmastate.serialization.{ValueSerializer, SigmaSerializer}
+import sigmastate.{SGroupElement, SType}
 import sigmastate.eval.{CompiletimeCosting, IRContext, Evaluation, _}
 import sigmastate.interpreter.CryptoConstants.EcPointType
-import special.collection.Coll
 import special.sigma
-import special.sigma.{Box, PreHeader, Header}
 
 import scala.annotation.tailrec
 import scala.language.implicitConversions
@@ -199,7 +195,7 @@ trait SigmaTestingCommons extends PropSpec
       val ctx = context
         .withBindings(1.toByte -> Constant[SType](x.asInstanceOf[SType#WrappedType], tpeA))
         .withBindings(bindings: _*)
-      val (res, _) = ErgoTreeEvaluator.eval(ctx.asInstanceOf[ErgoLikeContext], tree, evalSettings)
+      val (res, _) = ErgoTreeEvaluator.eval(ctx.asInstanceOf[ErgoLikeContext], ErgoTree.EmptyConstants, tree, evalSettings)
       res.asInstanceOf[B]
     }
   }

@@ -396,7 +396,7 @@ case class GetVar[V <: SType](varId: Byte, override val tpe: SOption[V]) extends
   protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val t = Evaluation.stypeToRType(tpe.elemType)
     E.addCostOf(this)
-    E.evalContext.context.getVar(varId)(t)
+    E.context.getVar(varId)(t)
   }
 }
 object GetVar extends ValueCompanion {

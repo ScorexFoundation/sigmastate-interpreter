@@ -32,8 +32,4 @@ class ErgoLikeInterpreter(implicit val IR: IRContext) extends Interpreter {
       case _ => super.substDeserialize(context, updateContext, node)
     }
 
-  def reduceToCrypto2(context: CTX, env: ScriptEnv, exp: SigmaPropValue): Try[ReductionResult] = Try {
-    ErgoTreeEvaluator.eval(context, ErgoTree.withoutSegregation(exp), ErgoTreeEvaluator.DefaultEvalSettings)
-  }
-
 }

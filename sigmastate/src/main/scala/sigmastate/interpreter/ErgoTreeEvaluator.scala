@@ -1,7 +1,7 @@
 package sigmastate.interpreter
 
 import org.ergoplatform.ErgoLikeContext
-import sigmastate.SFunc
+import sigmastate.{SFunc, SType}
 import sigmastate.Values._
 import sigmastate.eval.Profiler
 import sigmastate.interpreter.ErgoTreeEvaluator.DataEnv
@@ -17,10 +17,6 @@ case class EvalSettings(
   isDebug: Boolean = false,
   /** Used by [[ErgoTreeEvaluator]] to conditionally emit log messages. */
   isLogEnabled: Boolean = false)
-
-/** Used as a wrapper around Sigma [[Context]] to be used in [[ErgoTreeEvaluator]].
-  */
-class EvalContext(val context: Context)
 
 /** Implements a Simple Fast direct-style interpreter of ErgoTrees.
   *
@@ -50,18 +46,22 @@ class EvalContext(val context: Context)
   * Since this interpreter directly works with SigmaDsl types (Coll, BigInt, SigmaProp
   * etc), it turns out to be very fast. Since it also does JIT style costing instead of
   * AOT style, it is 5-6x faster than existing implementation.
+  *
+  * @param context   Represents blockchain data context for ErgoTree evaluation
+  * @param constants Segregated constants from ErgoTree, to lookup them from
+  *                  [[ConstantPlaceholder]] evaluation.
+  * @param coster    Accumulates computation costs.
+  * @param profiler  Performs operations profiling and time measurements (if enabled in settings).
+  * @param settings  Settings to be used during evaluation.
   */
 class ErgoTreeEvaluator(
-  /** Represents data context for ErgoTree evaluation */
-  val evalContext: EvalContext,
-  /** Accumulates computation costs. */
+  val context: Context,
+  val constants: Seq[Constant[SType]],
   val coster: CostAccumulator,
-  /** Performs operations profiling and time measurements (if enabled in settings). */
   val profiler: Profiler,
-  /** Settings to be used during evaluation. */
   val settings: EvalSettings)
 {
-  /** */
+  /** Evaluates the given expression in the given data environment. */
   def eval(env: DataEnv, exp: SValue): Any = {
     exp.evalTo[Any](this, env)
   }
@@ -106,14 +106,15 @@ object ErgoTreeEvaluator {
   val DefaultEvalSettings = EvalSettings(isMeasureOperationTime = false)
 
   /** Evaluate the given [[ErgoTree]] in the given Ergo context using the given settings.
+    * The given ErgoTree is evaluated as-is and is not changed during evaluation.
     *
     * @param context      [[ErgoLikeContext]] used for script execution
     * @param ergoTree     script represented as [[ErgoTree]]
     * @param evalSettings evaluation settings
-    * @return a sigma protocol proposition (as [[SigmaBoolean]]) and JIT cost estimation.
+    * @return a sigma protocol proposition (as [[SigmaBoolean]]) and accumulated JIT cost estimation.
     */
   def eval(context: ErgoLikeContext, ergoTree: ErgoTree, evalSettings: EvalSettings): ReductionResult = {
-    val (res, cost) = eval(context, ergoTree.toProposition(false), evalSettings)
+    val (res, cost) = eval(context, ergoTree.constants, ergoTree.toProposition(replaceConstants = false), evalSettings)
     val sb = res match {
       case sb: SigmaBoolean => sb
       case _ => error(s"Expected SigmaBoolean but was: $res")
@@ -121,12 +122,21 @@ object ErgoTreeEvaluator {
     (sb, cost)
   }
 
-  def eval(context: ErgoLikeContext, exp: SValue, evalSettings: EvalSettings): (Any, Int) = {
+  /** Evaluate the given expression in the given Ergo context using the given settings.
+    * The given Value is evaluated as-is and is not changed during evaluation.
+    *
+    * @param context      [[ErgoLikeContext]] used for script execution
+    * @param constants    collection of segregated constants which can be refered by
+    *                     [[ConstantPlaceholder]]s in `exp`
+    * @param exp          ErgoTree expression represented as [[Value]]
+    * @param evalSettings evaluation settings
+    * @return 1) the result of evaluating `exp` in a given context and 2) an accumulated JIT cost estimation.
+    */
+  def eval(context: ErgoLikeContext, constants: Seq[Constant[SType]], exp: SValue, evalSettings: EvalSettings): (Any, Int) = {
     val costAccumulator = new CostAccumulator(0, Some(context.costLimit))
     val sigmaContext = context.toSigmaContext(isCost = false)
 
-    val ctx = new EvalContext(sigmaContext)
-    val evaluator = new ErgoTreeEvaluator(ctx, costAccumulator, DefaultProfiler, evalSettings)
+    val evaluator = new ErgoTreeEvaluator(sigmaContext, constants, costAccumulator, DefaultProfiler, evalSettings)
     val res = evaluator.eval(Map(), exp)
     val cost = costAccumulator.totalCost
     (res, cost)

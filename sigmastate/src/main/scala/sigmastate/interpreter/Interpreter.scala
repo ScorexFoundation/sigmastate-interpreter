@@ -185,7 +185,8 @@ trait Interpreter extends ScorexLogging {
       val resCost = if (evalSettings.isDebug) {
         // exercise the new JIT costing with direct ErgoTree execution
         val (resNew, costNew) = {
-          val (res, cost) = ErgoTreeEvaluator.eval(context.asInstanceOf[ErgoLikeContext], exp, evalSettings) match {
+          val ctx = context.asInstanceOf[ErgoLikeContext]
+          val (res, cost) = ErgoTreeEvaluator.eval(ctx, ErgoTree.EmptyConstants, exp, evalSettings) match {
             case (p: special.sigma.SigmaProp, c) => (p, c)
             case (b: Boolean, c) => (SigmaDsl.sigmaProp(b), c)
             case (res, _) => sys.error(s"Invalid result type of $res: expected Boolean or SigmaProp when evaluating $exp")
@@ -346,7 +347,8 @@ trait Interpreter extends ScorexLogging {
       // and the rest of the verification is also trivial
       // new JIT costing with direct ErgoTree execution
       val (cProp, cost) = {
-        val (res, cost) = ErgoTreeEvaluator.eval(context2.asInstanceOf[ErgoLikeContext], propTree, evalSettings) match {
+        val ctx = context2.asInstanceOf[ErgoLikeContext]
+        val (res, cost) = ErgoTreeEvaluator.eval(ctx, ErgoTree.EmptyConstants, propTree, evalSettings) match {
           case (p: special.sigma.SigmaProp, c) => (p, c)
           case (b: Boolean, c) => (SigmaDsl.sigmaProp(b), c)
           case (res, _) => sys.error(s"Invalid result type of $res: expected Boolean or SigmaProp when evaluating $propTree")
