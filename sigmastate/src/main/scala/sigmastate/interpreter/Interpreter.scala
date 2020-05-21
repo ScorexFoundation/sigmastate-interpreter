@@ -42,7 +42,7 @@ trait Interpreter extends ScorexLogging {
     * Used only in tests when evalSettings.isDebug == true.
     * The meaning of values:
     * - when Some(true) return AOT based cost
-    * - when Some(false) return AOT based cost
+    * - when Some(false) return JIT based cost
     * - when None return AOT cost (but in addition compare jit and aot costs e.g. (jitCost -
     * treeComplexity) / 2 <= aotCost)
     */

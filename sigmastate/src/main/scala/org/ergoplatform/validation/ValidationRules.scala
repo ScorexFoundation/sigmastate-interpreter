@@ -350,6 +350,18 @@ object ValidationRules {
     map
   })
 
+  /** Executes the given `block` catching [[ValidationException]] and checking possible
+    * soft-fork condition in the context of the given [[SigmaValidationSettings]].
+    * If soft-fork condition is recognized the `whenSoftFork` is executed and its result
+    * is returned.
+    *
+    * @param whenSoftFork executed when soft-fork condition is detected
+    * @param block        block of code, which may throw [[ValidationException]]
+    * @param vs           set of [[SigmaValidationSettings]] which can be used to recognize soft-fork conditions.
+    * @return result of `block` if no ValidationException was thrown, or the result of
+    * `whenSoftFork` if soft-fork condition is detected.
+    * @throws ValidationException if soft-fork condition is not recognized by the given `vs`
+    */
   def trySoftForkable[T](whenSoftFork: => T)(block: => T)(implicit vs: SigmaValidationSettings): T = {
     try block
     catch {
