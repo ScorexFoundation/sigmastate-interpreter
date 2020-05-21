@@ -366,11 +366,13 @@ class Option[A] {
   def isDefined: Boolean;
   
   /** Returns the option's value if the option is nonempty, otherwise
-   * return the result of evaluating `default`.
-   *
-   * @param default  the default expression, which is evaluated only if option is None.
-   */
-  def getOrElse[B](default: => B): B
+    * return the result of evaluating `default`.
+    * NOTE: the `default` is evaluated even if the option contains the value
+    * i.e. not lazily.
+    *
+    * @param default  the default expression.
+    */
+  def getOrElse[B](default: B): B
   
   /** Returns the option's value.
    *  @note The option must be nonempty.

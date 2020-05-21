@@ -16,11 +16,24 @@ import sigmastate.lang.exceptions.InterpreterException
 import special.collection.Coll
 import special.sigma.{Box, SigmaProp}
 
+// TODO refactor: remove this trait as it doesn't have semantic meaning
 
+/** Every operation is a transformer of some kind.
+  * This trait is used merely to simplify implementation and avoid copy-paste.
+  */
 trait Transformer[IV <: SType, OV <: SType] extends NotReadyValue[OV] {
   val input: Value[IV]
 }
 
+/** Builds a new collection by applying a function to all elements of this collection.
+  *
+  * @param input  the collection to be mapped
+  * @param mapper the function to apply to each element.
+  * @tparam IV     the element type of the input collection.
+  * @tparam OV     the element type of the returned collection.
+  * @return       a new collection of type `Coll[OV]` resulting from applying the given function
+  *                `mapper` to each element of this collection and collecting the results.
+  */
 case class MapCollection[IV <: SType, OV <: SType](
                                                     input: Value[SCollection[IV]],
                                                     mapper: Value[SFunc])
@@ -39,6 +52,9 @@ object MapCollection extends ValueCompanion {
   override def opCode: OpCode = OpCodes.MapCollectionCode
 }
 
+/** Puts the elements of other collection `col2` after the elements of `input` collection
+  * (concatenation of two collections).
+  */
 case class Append[IV <: SType](input: Value[SCollection[IV]], col2: Value[SCollection[IV]])
   extends Transformer[SCollection[IV], SCollection[IV]] {
   override def companion = Append
@@ -54,6 +70,14 @@ object Append extends ValueCompanion {
   override def opCode: OpCode = OpCodes.AppendCode
 }
 
+/** Selects an interval of elements.  The returned collection is made up
+  *  of all elements `x` which satisfy the invariant:
+  *  {{{
+  *    from <= indexOf(x) < until
+  *  }}}
+  *  @param from   the lowest index to include from this collection.
+  *  @param until  the lowest index to EXCLUDE from this collection.
+  */
 case class Slice[IV <: SType](input: Value[SCollection[IV]], from: Value[SInt.type], until: Value[SInt.type])
   extends Transformer[SCollection[IV], SCollection[IV]] {
   override def companion = Slice
@@ -73,6 +97,13 @@ object Slice extends ValueCompanion {
   override def opCode: OpCode = OpCodes.SliceCode
 }
 
+/** Selects all elements of `input` collection which satisfy the condition.
+  *
+  * @param input     the collection to be filtered
+  * @param condition the predicate used to test elements.
+  * @return a new collection consisting of all elements of this collection that satisfy
+  *         the given `condition`. The order of the elements is preserved.
+  */
 case class Filter[IV <: SType](input: Value[SCollection[IV]],
                                condition: Value[SFunc])
   extends Transformer[SCollection[IV], SCollection[IV]] {
@@ -89,6 +120,7 @@ object Filter extends ValueCompanion {
   override def opCode: OpCode = OpCodes.FilterCode
 }
 
+/** Transforms a collection of values to a boolean (see [[Exists]], [[ForAll]]). */
 trait BooleanTransformer[IV <: SType] extends Transformer[SCollection[IV], SBoolean.type] {
   override val input: Value[SCollection[IV]]
   val condition: Value[SFunc]
@@ -98,6 +130,13 @@ trait BooleanTransformerCompanion extends ValueCompanion {
   def argInfos: Seq[ArgInfo]
 }
 
+/** Tests whether a predicate holds for at least one element of this collection.
+  *
+  * @param input     the collection to be tested
+  * @param condition the predicate used to test elements.
+  * @return `true` if the given `condition` is satisfied by at least one element of this
+  *         collection, otherwise `false`
+  */
 case class Exists[IV <: SType](override val input: Value[SCollection[IV]],
                                override val condition: Value[SFunc])
   extends BooleanTransformer[IV] {
@@ -114,6 +153,13 @@ object Exists extends BooleanTransformerCompanion {
   override def argInfos: Seq[ArgInfo] = ExistsInfo.argInfos
 }
 
+/** Tests whether a predicate holds for all elements of this collection.
+  *
+  * @param input     the collection to be tested
+  * @param condition the predicate used to test elements.
+  * @return `true` if this collection is empty or the given `condition`
+  *         holds for all elements of this collection, otherwise `false`.
+  */
 case class ForAll[IV <: SType](override val input: Value[SCollection[IV]],
                                override val condition: Value[SFunc])
   extends BooleanTransformer[IV] {
@@ -130,6 +176,21 @@ object ForAll extends BooleanTransformerCompanion {
   override def argInfos: Seq[ArgInfo] = ForAllInfo.argInfos
 }
 
+/** Applies a binary function to a start value and all elements of this collection,
+  * going left to right.
+  *
+  *  @param   input the collection to iterate
+  *  @param   zero  the start value.
+  *  @param   foldOp the binary function.
+  *  @tparam  OV the result type of the binary operator.
+  *  @return  the result of inserting `foldOp` between consecutive elements of this collection,
+  *           going left to right with the start value `zero` on the left:
+  *           {{{
+  *             foldOp(...foldOp(zero, x_1), x_2, ..., x_n)
+  *           }}}
+  *           where `x_1, ..., x_n` are the elements of this collection.
+  *           Returns `zero` if this collection is empty.
+  */
 case class Fold[IV <: SType, OV <: SType](input: Value[SCollection[IV]],
                                           zero: Value[OV],
                                           foldOp: Value[SFunc])
@@ -165,6 +226,15 @@ object Fold extends ValueCompanion {
   }
 }
 
+/** The element of the collection or default value.
+  * If an index is out of bounds (`i < 0 || i >= length`) then `default` value is returned.
+  *
+  * @param  input the zero-based indexed collection
+  * @param  index the index of the requested element (zero-based)
+  * @tparam V the type of elements
+  * @return the element at the given index or `default` value if index is out or bounds
+  * @throws ArrayIndexOutOfBoundsException if `index < 0` or `length <= index`
+  */
 case class ByIndex[V <: SType](input: Value[SCollection[V]],
                                index: Value[SInt.type],
                                default: Option[Value[V]] = None)
@@ -183,13 +253,14 @@ case class ByIndex[V <: SType](input: Value[SCollection[V]],
         inputV.apply(indexV)
     }
   }
-
 }
 object ByIndex extends ValueCompanion {
   override def opCode: OpCode = OpCodes.ByIndexCode
 }
 
-/** Select tuple field by its 1-based index. E.g. input._1 is transformed to SelectField(input, 1) */
+/** Select tuple field by its 1-based index. E.g. input._1 is transformed to
+  * SelectField(input, 1)
+  */
 case class SelectField(input: Value[STuple], fieldIndex: Byte)
   extends Transformer[STuple, SType] with NotReadyValue[SType] {
   override def companion = SelectField
@@ -238,6 +309,8 @@ object SigmaPropBytes extends ValueCompanion {
 trait SimpleTransformerCompanion extends ValueCompanion {
   def argInfos: Seq[ArgInfo]
 }
+
+/** The length of the collection (aka size). */
 case class SizeOf[V <: SType](input: Value[SCollection[V]])
   extends Transformer[SCollection[V], SInt.type] with NotReadyValueInt {
   override def companion = SizeOf
@@ -256,6 +329,7 @@ object SizeOf extends SimpleTransformerCompanion {
 sealed trait Extract[V <: SType] extends Transformer[SBox.type, V] {
 }
 
+/** Extracts the monetary value, in Ergo tokens (NanoErg unit of measure) from input Box. */
 case class ExtractAmount(input: Value[SBox.type]) extends Extract[SLong.type] with NotReadyValueLong {
   override def companion = ExtractAmount
   override val opType = SFunc(SBox, SLong)
@@ -269,6 +343,10 @@ object ExtractAmount extends SimpleTransformerCompanion {
   override def argInfos: Seq[ArgInfo] = ExtractAmountInfo.argInfos
 }
 
+/** Extract serialized bytes of guarding script.
+  * As a reminder, the script should be evaluated to true in order to
+  * open this box. (aka spend it in a transaction).
+  */
 case class ExtractScriptBytes(input: Value[SBox.type]) extends Extract[SByteArray] with NotReadyValueByteArray {
   override def companion = ExtractScriptBytes
   override val opType = SFunc(SBox, SByteArray)
@@ -282,6 +360,7 @@ object ExtractScriptBytes extends SimpleTransformerCompanion {
   override def argInfos: Seq[ArgInfo] = ExtractScriptBytesInfo.argInfos
 }
 
+/** Extracts serialized bytes of this box's content, including proposition bytes. */
 case class ExtractBytes(input: Value[SBox.type]) extends Extract[SByteArray] with NotReadyValueByteArray {
   override def companion = ExtractBytes
   override val opType = SFunc(SBox, SByteArray)
@@ -295,6 +374,7 @@ object ExtractBytes extends SimpleTransformerCompanion {
   override def argInfos: Seq[ArgInfo] = ExtractBytesInfo.argInfos
 }
 
+/** Extracts serialized bytes of this box's content, excluding transactionId and index of output. */
 case class ExtractBytesWithNoRef(input: Value[SBox.type]) extends Extract[SByteArray] with NotReadyValueByteArray {
   override def companion = ExtractBytesWithNoRef
   override val opType = SFunc(SBox, SByteArray)
@@ -308,6 +388,7 @@ object ExtractBytesWithNoRef extends SimpleTransformerCompanion {
   override def argInfos: Seq[ArgInfo] = ExtractBytesWithNoRefInfo.argInfos
 }
 
+/** Extracts Blake2b256 hash of this box's content, basically equals to `blake2b256(bytes)` */
 case class ExtractId(input: Value[SBox.type]) extends Extract[SByteArray] with NotReadyValueByteArray {
   override def companion = ExtractId
   override val opType = SFunc(SBox, SByteArray)
@@ -321,6 +402,7 @@ object ExtractId extends SimpleTransformerCompanion {
   override def argInfos: Seq[ArgInfo] = ExtractIdInfo.argInfos
 }
 
+/** See [[Box.getReg()]]*/
 case class ExtractRegisterAs[V <: SType]( input: Value[SBox.type],
                                           registerId: RegisterId,
                                           override val tpe: SOption[V])
@@ -390,6 +472,7 @@ object DeserializeRegister extends ValueCompanion {
   override def opCode: OpCode = OpCodes.DeserializeRegisterCode
 }
 
+/** See [[special.sigma.Context.getVar()]] for detailed description. */
 case class GetVar[V <: SType](varId: Byte, override val tpe: SOption[V]) extends NotReadyValue[SOption[V]] {
   override def companion = GetVar
   override val opType = SFunc(Vector(SContext, SByte), tpe)
@@ -404,6 +487,11 @@ object GetVar extends ValueCompanion {
   def apply[V <: SType](varId: Byte, innerTpe: V): GetVar[V] = GetVar[V](varId, SOption(innerTpe))
 }
 
+/** Returns the option's value.
+  *
+  *  @note The option must be nonempty.
+  *  @throws java.util.NoSuchElementException if the option is empty.
+  */
 case class OptionGet[V <: SType](input: Value[SOption[V]]) extends Transformer[SOption[V], V] {
   override def companion = OptionGet
   override val opType = SFunc(input.tpe, tpe)
@@ -411,10 +499,7 @@ case class OptionGet[V <: SType](input: Value[SOption[V]]) extends Transformer[S
   override def toString: String = s"$input.get"
   protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     E.addCostOf(this)
-    input.evalTo[Option[V#WrappedType]](E, env) match {
-      case Some(x) => x
-      case _ => sys.error(s"None.get error while evaluating $this")
-    }
+    input.evalTo[Option[V#WrappedType]](E, env).get
   }
 }
 object OptionGet extends SimpleTransformerCompanion {
@@ -422,6 +507,13 @@ object OptionGet extends SimpleTransformerCompanion {
   override def argInfos: Seq[ArgInfo] = OptionGetInfo.argInfos
 }
 
+/** Returns the option's value if the option is nonempty, otherwise
+  * return the result of evaluating `default`.
+  * NOTE: the `default` is evaluated even if the option contains the value
+  * i.e. not lazily.
+  *
+  *  @param default  the default expression.
+  */
 case class OptionGetOrElse[V <: SType](input: Value[SOption[V]], default: Value[V])
   extends Transformer[SOption[V], V] {
   override def companion = OptionGetOrElse
@@ -437,6 +529,7 @@ object OptionGetOrElse extends ValueCompanion {
   override def opCode: OpCode = OpCodes.OptionGetOrElseCode
 }
 
+/** Returns false if the option is None, true otherwise. */
 case class OptionIsDefined[V <: SType](input: Value[SOption[V]])
   extends Transformer[SOption[V], SBoolean.type] {
   override def companion = OptionIsDefined

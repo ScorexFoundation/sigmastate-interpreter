@@ -61,17 +61,6 @@ trait Coll[@specialized A] {
     */
   def isDefinedAt(idx: Int): Boolean
 
-  /** The elements at given indexes.
-    *  Indices start at `0` so that `xs.apply(0)` is the first element of collection `xs`.
-    *  Note the indexing syntax `xs(i)` is a shorthand for `xs.apply(i)`.
-    *
-    *  @param  indexes   the indexes of the elements to extract from this collection
-    *  @return       the elements at the given indexes
-    *  @throws       ArrayIndexOutOfBoundsException if `i < 0` or `length <= i`
-    *                                               for any `i` in `indexes`
-    */
-//  def applyMany(indexes: Coll[Int]): Coll[A]
-
   /** The element of the collection or default value.
     * If an index is out of bounds (`i < 0 || i >= length`) then `default` value is returned.
     * @param   i   the index
@@ -125,7 +114,7 @@ trait Coll[@specialized A] {
     *           {{{
     *             op(...op(z, x_1), x_2, ..., x_n)
     *           }}}
-    *           where `x,,1,,, ..., x,,n,,` are the elements of this collection.
+    *           where `x_1, ..., x_n` are the elements of this collection.
     *           Returns `z` if this collection is empty.
     */
   def foldLeft[B](zero: B, op: ((B, A)) => B): B
