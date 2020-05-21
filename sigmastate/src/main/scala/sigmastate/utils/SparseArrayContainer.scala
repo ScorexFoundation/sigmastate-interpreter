@@ -1,7 +1,7 @@
 package sigmastate.utils
 
 import sigmastate.SType
-import sigmastate.Values.{Value, ValueCompanion}
+import sigmastate.Values.Value
 import sigmastate.serialization.ValueSerializer
 
 import scala.reflect.ClassTag
