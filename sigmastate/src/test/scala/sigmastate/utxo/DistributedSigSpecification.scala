@@ -41,7 +41,7 @@ class DistributedSigSpecification extends SigmaTestingCommons {
     val env = Map("pubkeyA" -> pubkeyAlice, "pubkeyB" -> pubkeyBob)
     val prop: Values.Value[SSigmaProp.type] = compile(env, """pubkeyA && pubkeyB""").asSigmaProp
 
-    val (rBob, aBob) = DLogInteractiveProver.firstMessage(pubkeyBob)
+    val (rBob, aBob) = DLogInteractiveProver.firstMessage()
 
     val dlBKnown: Hint = RealCommitment(pubkeyBob, aBob)
     val bag = HintsBag(Seq(dlBKnown))
@@ -76,8 +76,8 @@ class DistributedSigSpecification extends SigmaTestingCommons {
     val env = Map("pubkeyA" -> pubkeyAlice, "pubkeyB" -> pubkeyBob, "pubkeyC" -> pubkeyCarol)
     val prop: Values.Value[SSigmaProp.type] = compile(env, """pubkeyA && pubkeyB && pubkeyC""").asSigmaProp
 
-    val (rBob, aBob) = DLogInteractiveProver.firstMessage(pubkeyBob)
-    val (rCarol, aCarol) = DLogInteractiveProver.firstMessage(pubkeyBob)
+    val (rBob, aBob) = DLogInteractiveProver.firstMessage()
+    val (rCarol, aCarol) = DLogInteractiveProver.firstMessage()
 
     val dlBKnown: Hint = RealCommitment(pubkeyBob, aBob)
     val dlCKnown: Hint = RealCommitment(pubkeyCarol, aCarol)
@@ -134,7 +134,7 @@ class DistributedSigSpecification extends SigmaTestingCommons {
     val env = Map("pubkeyA" -> pubkeyAlice, "pubkeyB" -> pubkeyBob, "pubkeyC" -> pubkeyCarol)
     val prop = compile(env, """atLeast(2, Coll(pubkeyA, pubkeyB, pubkeyC))""").asSigmaProp
 
-    val (rBob, aBob) = DLogInteractiveProver.firstMessage(pubkeyBob)
+    val (rBob, aBob) = DLogInteractiveProver.firstMessage()
     val dlBKnown: Hint = RealCommitment(pubkeyBob, aBob)
 
     val bagA = HintsBag(Seq(dlBKnown))
@@ -171,10 +171,10 @@ class DistributedSigSpecification extends SigmaTestingCommons {
     val prop = compile(env, """atLeast(3, Coll(pubkeyA, pubkeyB, pubkeyC, pubkeyD))""").asSigmaProp
 
     //Alice, Bob and Carol are signing
-    val (rBob, aBob) = DLogInteractiveProver.firstMessage(pubkeyBob)
+    val (rBob, aBob) = DLogInteractiveProver.firstMessage()
     val dlBKnown: Hint = RealCommitment(pubkeyBob, aBob)
 
-    val (rCarol, aCarol) = DLogInteractiveProver.firstMessage(pubkeyCarol)
+    val (rCarol, aCarol) = DLogInteractiveProver.firstMessage()
     val dlCKnown: Hint = RealCommitment(pubkeyCarol, aCarol)
 
     val bagA = HintsBag(Seq(dlBKnown, dlCKnown))
@@ -265,7 +265,7 @@ class DistributedSigSpecification extends SigmaTestingCommons {
     val prop = compile(env, """atLeast(2, Coll(pubkeyA, pubkeyB, pubkeyC, pubkeyD, pubkeyE))""").asSigmaProp
 
     //Alice and Dave are signing
-    val (rDave, aDave) = DLogInteractiveProver.firstMessage(pubkeyDave)
+    val (rDave, aDave) = DLogInteractiveProver.firstMessage()
     val dlDKnown: Hint = RealCommitment(pubkeyDave, aDave)
 
     val bagA = HintsBag(Seq(dlDKnown))
@@ -393,7 +393,7 @@ class DistributedSigSpecification extends SigmaTestingCommons {
     //Alice and Dave are signing
 
     //first, commitments are needed from real signers
-    val (rAlice, aAlice) =  DLogInteractiveProver.firstMessage(pubkeyAlice)
+    val (rAlice, aAlice) =  DLogInteractiveProver.firstMessage()
     val dlAKnown: Hint = RealCommitment(pubkeyAlice, aAlice)
     val secretCmtA = OwnCommitment(pubkeyAlice, rAlice, aAlice)
 

@@ -8,7 +8,6 @@ import sigmastate.basics.DLogProtocol.{DLogInteractiveProver, DLogProverInput, F
 import sigmastate.basics.VerifierMessage.Challenge
 import scorex.crypto.hash.Blake2b256
 import sigmastate._
-import sigmastate.lang.Terms._
 import sigmastate.helpers.ContextEnrichingTestProvingInterpreter
 import sigmastate.interpreter.{CryptoConstants, Interpreter}
 import sigmastate.utils.Helpers
@@ -35,7 +34,7 @@ class CrowdFundingKernelContract(
       assert(su.challengeOpt.isDefined)
       DLogInteractiveProver.simulate(su.proposition,su.challengeOpt.get).asInstanceOf[UnprovenTree]
     } else {
-      val (r, commitment) = DLogInteractiveProver.firstMessage(pubKey)
+      val (r, commitment) = DLogInteractiveProver.firstMessage()
       UnprovenSchnorr(pubKey, Some(commitment), Some(r), None, simulated = false)
     }
 

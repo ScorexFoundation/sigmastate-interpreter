@@ -89,7 +89,7 @@ object DLogProtocol {
       assert(privateInputOpt.isDefined, "Secret is not known")
       assert(rOpt.isEmpty, "Already generated r")
 
-      val (r, fm) = DLogInteractiveProver.firstMessage(publicInput)
+      val (r, fm) = DLogInteractiveProver.firstMessage()
       rOpt = Some(r)
       fm
     }
@@ -116,7 +116,7 @@ object DLogProtocol {
   object DLogInteractiveProver {
     import CryptoConstants.secureRandom
 
-    def firstMessage(publicInput: ProveDlog): (BigInteger, FirstDLogProverMessage) = {
+    def firstMessage(): (BigInteger, FirstDLogProverMessage) = {
       import CryptoConstants.dlogGroup
 
       val qMinusOne = dlogGroup.order.subtract(BigInteger.ONE)

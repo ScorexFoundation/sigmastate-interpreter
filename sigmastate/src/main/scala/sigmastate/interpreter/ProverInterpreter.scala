@@ -334,7 +334,7 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
           UncheckedSchnorr(su.proposition, Some(fm), su.challengeOpt.get, sm)
         } else {
           // Step 6 -- compute the commitment
-          val (r, commitment) = DLogInteractiveProver.firstMessage(su.proposition)
+          val (r, commitment) = DLogInteractiveProver.firstMessage()
           su.copy(commitmentOpt = Some(commitment), randomnessOpt = Some(r))
         }
       }
