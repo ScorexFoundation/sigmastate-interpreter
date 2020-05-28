@@ -106,7 +106,7 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
 
     val ctxUpdInitCost = context.withInitCost(initCost).asInstanceOf[CTX]
 
-    val prop = propositionFromErgoTree(exp, ctxUpdInitCost)
+    val prop = propositionFromErgoTree(exp, ctxUpdInitCost.validationSettings)
     val (propTree, _) = applyDeserializeContext(ctxUpdInitCost, prop)
     val tried = reduceToCrypto(ctxUpdInitCost, env, propTree)
     val (reducedProp, cost) = tried.getOrThrow

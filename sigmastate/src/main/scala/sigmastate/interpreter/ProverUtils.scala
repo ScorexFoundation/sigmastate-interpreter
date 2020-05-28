@@ -26,7 +26,7 @@ trait ProverUtils extends Interpreter {
                      realSecretsToExtract: Seq[SigmaBoolean],
                      simulatedSecretsToExtract: Seq[SigmaBoolean] = Seq.empty): HintsBag = {
 
-    val prop = propositionFromErgoTree(exp, context)
+    val prop = propositionFromErgoTree(exp, context.validationSettings)
     val (propTree, _) = applyDeserializeContext(context, prop)
     val reducedTree = reduceToCrypto(context, propTree).get._1
 

@@ -3,18 +3,19 @@ package sigmastate.interpreter
 import java.util
 import java.lang.{Math => JMath}
 
-import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{strategy, rule, everywherebu}
+import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, rule, strategy}
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
-import sigmastate.basics.DLogProtocol.{FirstDLogProverMessage, DLogInteractiveProver}
+import org.ergoplatform.validation.SigmaValidationSettings
+import sigmastate.basics.DLogProtocol.{DLogInteractiveProver, FirstDLogProverMessage}
 import scorex.util.ScorexLogging
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate.eval.{IRContext, Sized}
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.basics._
-import sigmastate.interpreter.Interpreter.{VerificationResult, ScriptEnv}
-import sigmastate.lang.exceptions.{InterpreterException, CostLimitException}
-import sigmastate.serialization.{ValueSerializer, SigmaSerializer}
+import sigmastate.interpreter.Interpreter.{ScriptEnv, VerificationResult}
+import sigmastate.lang.exceptions.{CostLimitException, InterpreterException}
+import sigmastate.serialization.{SigmaSerializer, ValueSerializer}
 import sigmastate.utxo.DeserializeContext
 import sigmastate.{SType, _}
 import org.ergoplatform.validation.ValidationRules._
@@ -170,11 +171,11 @@ trait Interpreter extends ScorexLogging {
 
   /** Extracts proposition for ErgoTree handing soft-fork condition.
     * @note soft-fork handler */
-  def propositionFromErgoTree(tree: ErgoTree, ctx: CTX): SigmaPropValue = {
+  def propositionFromErgoTree(tree: ErgoTree, validationSettings: SigmaValidationSettings): SigmaPropValue = {
     val prop = tree.root match {
       case Right(_) =>
         tree.toProposition(tree.isConstantSegregation)
-      case Left(UnparsedErgoTree(_, error)) if ctx.validationSettings.isSoftFork(error) =>
+      case Left(UnparsedErgoTree(_, error)) if validationSettings.isSoftFork(error) =>
         TrueSigmaProp
       case Left(UnparsedErgoTree(_, error)) =>
         throw new InterpreterException(
@@ -214,9 +215,9 @@ trait Interpreter extends ScorexLogging {
         throw new CostLimitException(initCost, msgCostLimitError(initCost, context.costLimit), None)
 
       val context1 = context.withInitCost(initCost).asInstanceOf[CTX]
-      val prop = propositionFromErgoTree(tree, context1)
+      implicit val vs: SigmaValidationSettings = context1.validationSettings
 
-      implicit val vs = context1.validationSettings
+      val prop = propositionFromErgoTree(tree, vs)
       val (propTree, context2) = trySoftForkable[(BoolValue, CTX)](whenSoftFork = (TrueLeaf, context1)) {
         applyDeserializeContext(context1, prop)
       }
