@@ -105,7 +105,7 @@ We also present \mixname, a practical implementation of \algname on top of Ergo,
 \section{Introduction}
 \label{intro}
 
-Privacy enhancing techniques in blockchains generally fall into two categories. The first is hiding the amounts being transferred, such as in Confidential Transactions (CT)~\cite{ct}. The second is obscuring the input-output relationships such as in ZeroCoin~\cite{zerocoin}, CoinJoin~\cite{coinjoin}. Some solutions such as MimbleWimble (MW)~\cite{mw} and Z-Cash~\cite{zcash,zcash1} combine both approaches.
+Privacy enhancing techniques in blockchains generally fall into two categories. The first is hiding the amounts being transferred, such as in Confidential Transactions~\cite{ct}. The second is obscuring the input-output relationships such as in ZeroCoin~\cite{zerocoin}, CoinJoin~\cite{coinjoin}. Some solutions such as MimbleWimble~\cite{mw} and Zcash~\cite{zcash,zcash1} combine both approaches.
 %In fact, MW can be thought of as a combination of CT and OWAS.
 
 In this work, we describe \algname, another privacy enhancing protocol based on the latter approach of obscuring the input-output relationships, while keeping the amounts public. This allows us to avoid expensive range proofs necessary for the first approach. Our protocol is motivated from ZeroCoin and CoinJoin in order to overcome some of their limitations, and can be thought of as a combination of the two.
@@ -113,7 +113,7 @@ In this work, we describe \algname, another privacy enhancing protocol based on 
 
 \section{Background}
 
-Bitcoin~\cite{Nak08}, ZeroCoin~\cite{zerocoin}, Z-Cash~\cite{zcash} and Ergo~\cite{ergo} are based on the idea of ``coins'' which are short-lived immutable data structures, often called UTXOs (short for {unspent transaction outputs}). \algname also uses UTXOs. 
+Bitcoin~\cite{Nak08}, ZeroCoin~\cite{zerocoin}, Zcash~\cite{zcash} and Ergo~\cite{ergo} are based on the idea of ``coins'' which are short-lived immutable data structures, often called UTXOs (short for {unspent transaction outputs}). \algname also uses UTXOs. 
 
 \subsection{UTXO Blockchains}
 In UTXO-based blockchains, every node maintains an in-memory database of all current UTXOs, called the {\em UTXO-set}. A transaction consumes (destroys) some UTXOs and creates new ones. When a node receives a block, it updates its UTXO-set based on the transactions in that block. A UTXO is a single-use object, and its simplest form contains a public key (in which case, the UTXO can be ``spent'' using the corresponding private key). Spending a UTXO essentially involves executing any embedded code inside it and removing it from the UTXO-set. UTXOs can be likened to physical coins, which get passed around between people and one person may hold multiple coins at any time (one private key can control multiple unspent UTXOs). 
