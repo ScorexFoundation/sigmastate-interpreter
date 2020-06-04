@@ -96,7 +96,7 @@ IOHK Research \\\email{\{alex.chepurnoy\}@iohk.io}}
 
 We present \algname, a practical privacy-enhancing protocol for blockchain transactions. \algname can be considered a combination of ZeroCoin and CoinJoin. It borrows ideas from both but attempts to overcome some of their drawbacks.
 Like ZeroCoin, our protocol uses zero-knowledge proofs and a pool of
-participants. However, unlike ZeroCoin, our proofs are very efficient, and our pool size is not monotonously increasing.
+participants. However, unlike ZeroCoin, our proofs are very efficient, and our pool size is not monotonically increasing.
 Thus, our protocol overcomes the two major drawbacks of ZeroCoin. Our approach can also be considered a non-interactive variant of CoinJoin, where the interaction is replaced by a public transaction on the blockchain. The security of \algname is based on the Decision Diffie-Hellman (DDH) assumption. 
 We also present \mixname, a practical implementation of \algname on top of Ergo, a smart contract platform based on Sigma protocols. While \algname contains the key ideas, it leaves open the practical issue of handling fees. The key contribution of \mixname is a novel approach to handle fee in \algname. 
 
@@ -122,7 +122,7 @@ The alternative to UTXOs is the {\em account}-based model of Ethereum~\cite{wood
 \subsection{Guard Scripts}
 A UTXO is protected by a {\em guard script}, a computer program encoding a {\em proposition}. The proposition defines the set of conditions that must be satisfied when spending the UTXO. The spender supplies a {\em proof} of satisfying the proposition. For example, the proposition may require that the entire transaction's bytes (sans the proof section) must be signed under some public key. The proof is then the signature on the transaction's bytes generated using the corresponding private key. In fact, this is the most common scenario in all UTXO systems. 
 The guard script can encode arbitrarily complex conditions as long as they can be encoded in the underlying language. 
-Guard scripts are also called smart contracts. A {\em box} is another name for a UTXO in Ergo~\cite{ergo} and we will use these two terms interchangebly.
+Guard scripts are also called smart contracts. A {\em box} is another name for a UTXO in Ergo~\cite{ergo} and we will use these two terms interchangeably.
 
 \subsection{Execution Context}
 \label{context}
@@ -187,9 +187,9 @@ ZeroCoin is a privacy enhancing protocol depicted in Figure~\ref{fig:zerocoin}.
 The protocol uses a mixing pool (called the {\em unspent-box pool}, or simply the U-pool), to which an ordinary coin is added as a commitment $c$ to secrets $(r, s)$. The coin is later spent such that the link to $c$ is not publicly visible. The value $c$ must be permanently stored in the U-pool, since the spending transaction cannot reveal it. Instead, it reveals the secret $s$ (the {\em serial number}) along with a zero-knowledge proof that $s$ was used in a commitment from the pool. To prevent double spending, the serial number is also stored in another space called the {\em spent-box pool} (the S-pool). A coin can be spent from the U-pool only if the corresponding serial number does not exist in the S-pool. 
 
 One consequence of this is that both the U-pool (the set of commitments) and the S-pool (the set of spent serial numbers) must be maintained in memory for verifying every transaction. 
-Another consequence is that the sizes of the these two sets increase monotonously. 
+Another consequence is that the sizes of the these two sets increase monotonically. 
 This is the main drawback of ZeroCoin (also ZCash~\cite{zcash}), which \algname tries to address. 
-In \algname, once a box is spent, no information about it is kept in memory, and in particular no data sets of monotonously increasing sizes are maintained. 
+In \algname, once a box is spent, no information about it is kept in memory, and in particular no data sets of monotonically increasing sizes are maintained. 
 
 Considering the addition of a coin to the mix as a deposit and removal as a withdraw, the in-memory storage in \algname is proportional to the number of deposits minus the number of withdraws, while that in ZeroCash is proportional to the number of deposits plus the number of withdraws.  
 
@@ -282,7 +282,7 @@ Thus, the boxes are indistinguishable before they are spent. To see that they re
 \paragraph{Comparing with CoinJoin:} Referring to Section~\ref{coinjoin}, both CoinJoin and \algname use the technique of spending two boxes to create two indistinguishable boxes that provide the privacy. However, CoinJoin requires the owners of the two input boxes to perform an off-chain interaction over a private channel. In \algname, this interaction is replaced by a public transaction on the blockchain. While this adds one more transaction, it does not require interaction between the parties over a private channel. This makes \algname far more usable compared to CoinJoin. Note that \algname transactions are detectable, while CoinJoin transactions are indistinguishable from ordinary transactions.
 
 \paragraph{Comparing with ZeroCoin:} Referring to Section~\ref{zerocoin}, both ZeroCoin and \algname use a pool (the H-pool in \algname and the U-pool in ZeroCoin). Additionally, both use zero-knowledge proofs to spend boxes from the pool in a way that hides the links between the outputs and the inputs, thereby providing the privacy. 
-The difference is that the privacy in \algname is achieved in stages, two boxes at a time, while in ZeroCoin it is achieved in one stage. Secondly, the degree of privacy in ZeroCoin depends on the size of the U-pool, while that in \algname depends on the number of stages. Thirdly, the U-pool in ZeroCoin increases monotonously in size, since boxes are only added to it and never removed. The size of H-pool in \algname varies according to how many unspent Half-Mix boxes are present at any given time. Finally, the proof in ZeroCoin are quite large compared to those in \algname. The last two capture the main drawbacks of ZeroCoin that \algname addresses.
+The difference is that the privacy in \algname is achieved in stages, two boxes at a time, while in ZeroCoin it is achieved in one stage. Secondly, the degree of privacy in ZeroCoin depends on the size of the U-pool, while that in \algname depends on the number of stages. Thirdly, the U-pool in ZeroCoin increases monotonically in size, since boxes are only added to it and never removed. The size of H-pool in \algname varies according to how many unspent Half-Mix boxes are present at any given time. Finally, the proof in ZeroCoin are quite large compared to those in \algname. The last two capture the main drawbacks of ZeroCoin that \algname addresses.
 In particular, using \algname, we can obtain an equivalent (or sufficiently close) degree of privacy as from ZeroCoin without having to maintain the ever-increasing pools and with much shorter proofs. 
 
 \paragraph{Offchain Pool:} The H-Pool can be kept entirely offchain, so that Alice's Half-Mix box need not be present on the blockchain till the time Bob decides to spend it. Alice sends her unbroadcasted transaction directly to Bob who will broadcast both transactions at some later time. 
