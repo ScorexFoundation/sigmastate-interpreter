@@ -242,23 +242,6 @@ object Values {
   trait ContextVariable[S <: SType] extends NotReadyValue[S] {
   }
 
-  /** Reference a context variable by id. */
-  trait TaggedVariable[T <: SType] extends ContextVariable[T] {
-    val varId: Byte
-  }
-
-  case class TaggedVariableNode[T <: SType](varId: Byte, override val tpe: T)
-    extends TaggedVariable[T] {
-    override def companion = TaggedVariable
-    def opType: SFunc = Value.notSupportedError(this, "opType")
-  }
-
-  object TaggedVariable extends ValueCompanion {
-    override def opCode: OpCode = TaggedVariableCode
-    def apply[T <: SType](varId: Byte, tpe: T): TaggedVariable[T] =
-      TaggedVariableNode(varId, tpe)
-  }
-
   case class UnitConstant() extends EvaluatedValue[SUnit.type] {
     override def tpe = SUnit
     val value = ()
@@ -385,20 +368,13 @@ object Values {
     override def tpe = SBigInt
   }
 
-  type TaggedBoolean = TaggedVariable[SBoolean.type]
-  type TaggedByte = TaggedVariable[SByte.type]
-  type TaggedShort = TaggedVariable[SShort.type]
-  type TaggedInt = TaggedVariable[SInt.type]
-  type TaggedLong = TaggedVariable[SLong.type]
-  type TaggedBigInt = TaggedVariable[SBigInt.type]
-  type TaggedBox = TaggedVariable[SBox.type]
-  type TaggedGroupElement = TaggedVariable[SGroupElement.type]
-  type TaggedSigmaProp = TaggedVariable[SSigmaProp.type]
-  type TaggedAvlTree = TaggedVariable[SAvlTree.type]
-  type TaggedByteArray = TaggedVariable[SCollection[SByte.type]]
-
-  def TaggedBox(id: Byte): Value[SBox.type] = mkTaggedVariable(id, SBox)
-  def TaggedAvlTree(id: Byte): Value[SAvlTree.type] = mkTaggedVariable(id, SAvlTree)
+  type ValUseInt = ValUse[SInt.type]
+  type ValUseLong = ValUse[SLong.type]
+  type ValUseBox = ValUse[SBox.type]
+  type ValUseGroupElement = ValUse[SGroupElement.type]
+  type ValUseSigmaProp = ValUse[SSigmaProp.type]
+  type ValUseAvlTree = ValUse[SAvlTree.type]
+  type ValUseByteArray = ValUse[SCollection[SByte.type]]
 
   trait EvaluatedCollection[T <: SType, C <: SCollection[T]] extends EvaluatedValue[C] {
     def elementType: T
@@ -757,7 +733,7 @@ object Values {
     def isValDef: Boolean
   }
 
-  /** IR node for let-bound expressions `let x = rhs` which is ValDef, or `let f[T] = rhs` which is FunDef.
+  /** IR node for val-bound expressions `val x = rhs` which is ValDef, or `def f[T] = rhs` which is FunDef.
     * These nodes are used to represent ErgoTrees after common sub-expression elimination.
     * This representation is more compact in serialized form.
     * @param id unique identifier of the variable in the current scope. */
@@ -783,7 +759,7 @@ object Values {
     }
   }
 
-  /** Special node which represents a reference to ValDef in was introduced as result of CSE. */
+  /** Special node which represents a reference to ValDef. */
   case class ValUse[T <: SType](valId: Int, tpe: T) extends NotReadyValue[T] {
     override def companion = ValUse
     /** This is not used as operation, but rather to form a program structure */

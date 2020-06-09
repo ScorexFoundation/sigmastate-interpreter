@@ -2,11 +2,9 @@ package sigmastate.helpers
 
 import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
 import org.ergoplatform.ErgoBox.NonMandatoryRegisterId
-import org.ergoplatform.SigmaConstants.ScriptCostLimit
-import org.ergoplatform.ErgoLikeContext.Height
 import org.ergoplatform.ErgoScriptPredef.TrueProp
 import org.ergoplatform._
-import org.ergoplatform.validation.{SigmaValidationSettings, ValidationRules, ValidationSpecification}
+import org.ergoplatform.validation.ValidationSpecification
 import org.scalacheck.Arbitrary.arbByte
 import org.scalacheck.Gen
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
@@ -16,19 +14,16 @@ import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigma.types.IsPrimView
 import sigmastate.Values.{Constant, ErgoTree, EvaluatedValue, GroupElementConstant, SValue, Value}
 import sigmastate.interpreter.Interpreter.{ScriptEnv, ScriptNameProp}
-import sigmastate.interpreter.{ContextExtension, CryptoConstants, Interpreter}
+import sigmastate.interpreter.{CryptoConstants, Interpreter}
 import sigmastate.lang.{SigmaCompiler, TransformingSigmaBuilder}
-import sigmastate.serialization.{GroupElementSerializer, SigmaSerializer, ValueSerializer}
-import sigmastate.{AvlTreeData, SGroupElement, SType}
+import sigmastate.serialization.{SigmaSerializer, ValueSerializer}
+import sigmastate.{SGroupElement, SType}
 import sigmastate.eval.{CompiletimeCosting, Evaluation, IRContext, _}
 import sigmastate.interpreter.CryptoConstants.EcPointType
-import special.collection.Coll
 import special.sigma
-import special.sigma.{Box, Header, PreHeader}
 
 import scala.annotation.tailrec
 import scala.language.implicitConversions
-import scala.util.Try
 
 trait SigmaTestingCommons extends PropSpec
   with PropertyChecks
