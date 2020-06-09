@@ -163,7 +163,7 @@ The main structure in \langname is a \emph{box}, which is roughly like a UTXO of
 %The set of predicates is richer than in Bitcoin, but still lean in order to allow for efficient processing even by light clients. Like in Bitcoin, we allow the use of current height of the blockchain; unlike Bitcoin, we also allow the use of information contained in the spending transaction, such as inputs it is trying to spend and outputs it is trying to create. This feature enables self-replication and sophisticated (even Turing-complete) long-term script behaviour, as described in examples below.
 
 
-The following sections present smart contracts using \langname. More details of \langname are available in the tutorial~\cite{tutorial} and the code for the below examples is available on GitHub~\cite{langrepo}. 
+The following sections present smart contracts using \langname. More details of \langname are available in the white paper~\cite{whitepaper} and the code for the below examples is available on GitHub~\cite{langrepo}. 
 \section{Basic Examples: Enhanced Spending Contracts}
 
 The examples below use P2SH address and highlight some limitations of Bitcoin. 
@@ -186,40 +186,6 @@ Any funds deposited to this address can only be spent if the spending transactio
 
 Observe that if the transaction is not mined before height $i$ then the transaction becomes invalid. When paying at a coffee shop, for example, Alice can set $i$ close to the height $h$ at the time of broadcast, for instance, $i = h + 10$. 
 Alice can still send non-timed payments by making $i$ very large. Since the context variables are part of the message in constructing the zero-knowledge proof, a miner cannot change it (to make this transaction valid). 
-
-\subsection{Revenue Sharing Contracts}
-
-Assume that Alice, Bob and Carol agree to share revenue in the ratios of 50\%, 30\% and 20\% respectively. Let \texttt{alice}, \texttt{bob} and \texttt{carol} be their public keys. The following describes how to create an address that automatically enforces this for any coins sent to it. First define a collection: 
-\begin{verbatim}
-val spenders = Coll((alice, 50), (bob, 30), (carol, 20))
-\end{verbatim}
-
-Let \texttt{feePropBytesHash} to be the hash of the script for a box that pays transaction fees and let \texttt{fee} be the specified fee. 
-% There may be advantages of storing the public keys in a register rather than hardwiring them to address
-The revenue sharing address is the P2SH address of the following script: 
-
-\begin{verbatim}
-val feeBox = OUTPUTS(0)             // assume that first output pays fee
-val validFeeBox = blake2b256(feeBox.propositionBytes) == feePropBytesHash
-val amt = SELF.value - fee          // balance remaining after deducting fee
-val ratios = spenders.map({(e:(Coll[Byte], Int)) => e._2})
-val total = ratios.fold(0, {(l:Int, r:Int) => l + r})
-val validOuts = spenders.map({(e:(Coll[Byte], Int)) =>
-  val pubKeyHash = e._1             // hash of a public key
-  val ratio = e._2                  // ratio of funds to be paid to public key
-  val share = amt / total * total   // actual amount based on ratio
-  OUTPUTS.exists({(b:Box) => 
-    b.value == share && blake2b256(b.propositionBytes) == pubKeyHash
-  })
-})
-validOuts.fold(true, {(l:Boolean, r:Boolean) => l && r}) && validFeeBox
-\end{verbatim}
-
-Any funds sent to this address can only be spent in a transaction that creats boxes paying to Alice, Bob and Carol in the ratios defined above (after deducting transaction fee).
-
-%\subsection{Automated Salary Contracts}
-%further improvements. Can we reduce offchain data size, do multiple mixes offchain?
-
 
 \subsection{Reversible Addresses}
 
@@ -317,6 +283,50 @@ Spending from this address is done in periods of 24 hours or more such that the 
 %	\item For two keys the amount is 10\% or 1000 Ergs (whichever is higher).
 %	\item If all three two keys are spending then there are no restrictions. 
 %\end{enumerate}
+\ignore{
+\subsection{Revenue Sharing Contracts}
+
+Assume that Alice, Bob and Carol agree to share revenue with a 50\%, 30\% and 20\% ratio respectively. The following describes a contract that automatically enforces this for any coins sent to it. Let \texttt{outputScriptHash} be the hash of the following script:
+		
+%First create a script and compute its hash:
+% There may be advantages of storing the public keys in a register rather than hardwiring them to address
+%First add the public keys \texttt{alice}, \texttt{bob}  and \texttt{carol} of type \texttt{proveDlog} into the environment \texttt{env}. First create a script. 
+
+%First create an outputScript = 
+
+\begin{verbatim}
+val spenders = SELF.R4[Coll[(SigmaProp, Int)]].get
+val index = getVar[Int](1).get // index of current spender 
+val pubKey:SigmaProp = spenders(index)._1 // pub key of current spender
+val ratio:Int = spenders(index)._2 // ratio of current spender
+val total = spenders.fold(0, {(accum:Int, s:(SigmaProp, Int)) => accum + s._2})
+val balance = SELF.value - SELF.value / total * ratio
+val remainingSpenders = spenders.filter({(s:(SigmaProp, Int)) => s._1 != pubKey})
+val outSpenders = OUTPUTS(0).R4[Coll[(SigmaProp, Int)]].get
+val validOut = OUTPUTS(0).propositionBytes == SELF.propositionBytes &&
+               OUTPUTS(0).value >= balance && remainingSpenders == outSpenders
+pubKey && (outSpenders.size == 0 || validOut)
+\end{verbatim}
+
+The revenue sharing contract is encoded in the P2SH address of the following script: 
+\begin{verbatim}
+val spenders = Coll((alice, 50), (bob, 30), (carol, 20))
+val index = getVar[Int](1).get // index of current spender 
+val pubKey:SigmaProp = spenders(index)._1 // pub key of current spender
+val ratio:Int = spenders(index)._2 // ratio of current spender
+val balance = SELF.value - SELF.value / 100 * ratio  // Assume total is 100
+val remainingSpenders = spenders.filter({(s:(SigmaProp, Int)) => s._1 != pubKey})
+val outSpenders = OUTPUTS(0).R4[Coll[(SigmaProp, Int)]].get
+val validOut = OUTPUTS(0).propositionBytes == outputScriptHash &&
+               OUTPUTS(0).value >= balance && remainingSpenders == outSpenders
+pubKey && validOut
+\end{verbatim}
+
+For any funds sent to this address, each party can spend only its share and must create another box with the balance amount that enforces the same condition for the remaining spenders.
+
+%\subsection{Automated Salary Contracts}
+%further improvements. Can we reduce offchain data size, do multiple mixes offchain?
+}
 
 \section{Two-party Protocols}
 
@@ -432,74 +442,66 @@ Figure~\ref{fig:mixname} explains the protocol.
 \end{enumerate}
 We use the non-interactive variant, where $c = H(t_0 \Vert t_1\Vert m)$. We call this \texttt{proveDHTuple}$(g, h, u, v)$. Observe that this protocol requires 4 exponentiations for verification, while \texttt{proveDlog} requires 2.
 
-We also need a variant of \texttt{proveDlog} denoted as \texttt{proveDlogH}$(h, v)$ (not yet present in \langname), that takes in 2 parameters and proves knowledge of $x$ such that $v = h^x$ for arbitrary generator $h$. Currently, this can be done as \texttt{proveDlogH}$(h, v) = $ \texttt{proveDHTuple}$(h, h, v, v)$. A client can verify such tuples in 2 exponentiations.
- 
 \subsubsection{The Basic Protocol}
 Without loss of generality, Alice will pool and Bob will mix. 
-% In practice, each coin must go through multiple stages of mix, with the choice of going via pool randomly decided after each mix.
-Let $g$ be the generator of \texttt{proveDlog}.
+Let $g$ be the generator of \texttt{proveDlog}. Each box also has two registers $\alpha, \beta$ for storing group elements. 
+
 \begin{enumerate}
 	\item \textbf{Pool:} To add a coin to the H-pool, Alice picks random $x\in \mathbb{Z}_q$ and creates an output box $A$ containing $u = g^x$ protected by the script given below. She waits for Bob to join, who will do so by spending $A$ in a transaction satisfying following conditions: 
 	
 	\begin{enumerate}
-		%		\item It has two outputs $O_0, O_1$ containing tuples $(h, w_0)$, $(h, w_1)$ respectively for $w_0, w_1\in G$. 
-		\item It has two outputs $O_0, O_1$ containing pairs $(c, d_0)$, $(c, d_1)$ respectively for $d_0, d_1\in G$. 
-		\item One of $(g, u, c, d_0), (g, u, c, d_1)$ is of the form $(g, g^x, g^y, g^{xy})$, a valid Diffie-Hellman tuple. This is encoded as $\texttt{proveDHTuple}(g, u, c, d_0)\lor \texttt{proveDHTuple}(g, u, c, d_1)$.
+		\item It has two outputs $O_0, O_1$ whose registers $(\alpha, \beta)$ contain pairs $(c, d)$, $(d, c)$ respectively for some $c, d\in G$. 
+		\item One of $(g, u, c, d), (g, u, d, c)$ is of the form $(g, g^x, g^y, g^{xy})$, a valid Diffie-Hellman tuple. This is encoded as $\texttt{proveDHTuple}(g, u, c, d)\lor \texttt{proveDHTuple}(g, u, d, c)$.
 		\item Apart from the above, the boxes $O_0, O_1$ are otherwise identical. That is, they have the same value as that of $A$ and are protected the script $\tau_\textsf{A} \lor \tau_\textsf{B}$ given in the Mix step below.
 	\end{enumerate}
 	
 	
-	\item \textbf{Mix:} Bob picks secrets $(b, y, z) \in \mathbb{Z}_2\times \mathbb{Z}_q\times\mathbb{Z}_q$ and spends $A$ with one of his own box to create two output boxes $O_0, O_1$ of equal value such that $O_b$ is spendable by Alice alone and $O_{1-b}$ by Bob alone. 
-	The boxes have registers $c, d$ containing elements from $G$ as follows: 
+	\item \textbf{Mix:} Bob picks secrets $(b, y) \in \mathbb{Z}_2\times \mathbb{Z}_q$ and spends $A$ with one or more of his own boxes to create two output boxes $O_0, O_1$ of equal value such that $O_b$ is spendable by Alice alone and $O_{1-b}$ by Bob alone. This is done as follows. 
 	\begin{enumerate}
-		\item %Let $(h, v) = ({g}^{y}, {u}^{y})$.  
-		Registers $(c, d)$ of $O_b$ and $O_{1-b}$ are set to $(g^y, u^y)$ and $(g^y, g^z)$ respectively. 
-		%		If the DDH problem in $G$ is hard, then given $(g, g^x)$ the distributions $({g}^{y}, {g}^{xy})$ and 
-		%		$({g}^{xy}, {g}^{y})$ are computationally indistinguishable. In other words, without knowledge of $x$ or $y$, one cannot guess $b$ with probability better than $1/2$.
+		\item   
+		Registers $(\alpha, \beta)$ of $O_b$ and $O_{1-b}$ are set to $(g^y, u^y)$ and $(u^y, g^y)$ respectively. 
 		\item Each box is protected by the proposition $\tau_\textsf{A} \lor \tau_\textsf{B}$, where $\tau_\textsf{A}$ and $\tau_\textsf{B}$ are as follows: 
 		
-		$\tau_\textsf{A} = $ ``Prove knowledge of $x$ such that ${d} = {c}^{x}$ via $\texttt{proveDlogH}(c, d)$.''
+		$\tau_\textsf{A} = $ ``Prove knowledge of $x$ such that ${u} = {g}^{x}$ and $\beta = \alpha^x$ via $\texttt{proveDHTuple}(g, \alpha, u, \beta)$.''
 		
-		$\tau_{\textsf{B}} = $ ``Prove knowledge of $y$ such that $d = {g}^{y}$ via $\texttt{proveDlog}(d)$.''
+		$\tau_{\textsf{B}} = $ ``Prove knowledge of $y$ such that $\beta = {g}^{y}$ via $\texttt{proveDlog}(\beta)$.''
 		
 	\end{enumerate}
 	
-	%	\item \textbf{Spend:} Alice and Bob spent their respective boxes using their secrets, possibly sending funds back to the pool or mix stages. Bob already knows which coin belongs to him. For each output, Alice will parse the data as $(g, h, u, v)$ and select the one with $v = h^x$. 
 \end{enumerate}
 After the mix, Alice and Bob can spent their respective boxes using their secrets. 
-Alice can identify her box as the one with $d = c^x$. 
+Alice can identify her box as the one with $\beta = \alpha^x$. 
 
 %\subsubsection{Implementing \mixname In \langname}
 \paragraph{\langname Code:} First compute \texttt{fullMixScriptHash}, the hash of the following script:
 \begin{verbatim}
-val c = SELF.R4[GroupElement].get 
-val d = SELF.R5[GroupElement].get 
-def proveDlogH(h:GroupElement, v:GroupElement) = proveDHTuple(h, h, v, v)
-proveDlog(d) || proveDlogH(c, d)
+val alpha = SELF.R4[GroupElement].get 
+val beta = SELF.R5[GroupElement].get 
+proveDlog(beta) || proveDHTuple(g, alpha, u, beta)
 \end{verbatim}
 
 Next create a script, \texttt{halfMixScript}, having the following code:
 \begin{verbatim}
-val u = SELF.R4[GroupElement].get
-val c = OUTPUT(0).R4[GroupElement].get 
-val d0 = OUTPUT(0).R5[GroupElement].get 
-val d1 = OUTPUT(1).R5[GroupElement].get 
-val bob = c == OUTPUT(1).R4[GroupElement].get && 
-          (proveDHTuple(g, u, c, d0) || proveDHTuple(g, u, c, d1))
-val alice = proveDlog(u)    // so Alice can spend if no one joins for a long time
-val fullMixBox = {(b:Box) => blake2b256(b.propositionBytes) == fullMixScriptHash}
-val fullMixTx = OUTPUT(0).value == SELF.value && OUTPUT(1).value == SELF.value && 
-fullMixBox(OUTPUT(0)) && fullMixBox(OUTPUT(1))
+val alpha = OUTPUT(0).R4[GroupElement].get 
+val beta = OUTPUT(0).R5[GroupElement].get 
+val alpha1 = OUTPUT(1).R4[GroupElement].get 
+val beta1 = OUTPUT(1).R5[GroupElement].get 
 
-fullMixTx && (bob || alice)
+def fullMixBox(b:Box) = blake2b256(b.propositionBytes) == fullMixScriptHash && 
+                        b.value == SELF.value
+
+fullMixBox(OUTPUT(0)) && fullMixBox(OUTPUT(1)) && 
+alpha == beta1 && beta == alpha1 &&  
+(proveDHTuple(g, u, alpha, beta) || proveDHTuple(g, u, beta, alpha))
 \end{verbatim}
 
-Alice's Half-Mix box is protected by \texttt{halfMixScript} given above, which Bob can spend using the condition \texttt{bob}. In case no one spends her box for a long time, she can do so herself using the condition \texttt{alice}, as long as she spends it in a mix transaction.  
+Alice's Half-Mix box is protected by \texttt{halfMixScript} given above, which Bob can spend using the condition \texttt{bob}. In case no one spends her box for a long time, she can do so herself by playing the role of Bob.  
 
 \subsubsection{Analysis Of The Protocol}
-\paragraph{Security:} Observe that registers $(c, d)$ of $O_b$ and $O_{1-b}$ contain $(g^y, g^{xy})$ and $(g^y, g^z)$ respectively, implying that $O_b$'s  spending condition reduces to $\texttt{proveDlog}(g^{xy}) \lor \texttt{proveDlogH}(g^y, g^{xy})$ and $O_{1-b}$'s reduces to $\texttt{proveDlog}(g^z) \lor \texttt{proveDlogH}(g^{y}, g^z)$. Thus, while Alice can spend $O_b$ using \texttt{proveDlogH} with her secret $x$, she cannot satisfy the spending condition of $O_{1-b}$. Similarly, Bob can only spend $O_{1-b}$ using \texttt{proveDlog} with his secret $y$. Bob must generate $O_0, O_1$ this way because he must prove that one of the outputs contains a valid DH tuple.
+\paragraph{Security:} Observe that registers $(\alpha, \beta)$ of $O_b$ and $O_{1-b}$ contain $(g^y, g^{xy})$ and $(g^{xy}, g^y)$ respectively, implying that $O_b$'s  spending condition reduces to 
+$\texttt{proveDlog}(g^{xy}) \lor \texttt{proveDHTuple}(g, g^y, g^x, g^{xy})$ and $O_{1-b}$'s reduces to $\texttt{proveDlog}(g^y) \lor \texttt{proveDHTuple}(g, g^{xy}, g^x, g^y)$. Thus, while Alice can spend $O_b$ using \texttt{proveDHTuple} with her secret $x$, she cannot satisfy the spending condition of $O_{1-b}$. Similarly, Bob can only spend $O_{1-b}$ using \texttt{proveDlog} with his secret $y$. Bob must generate $O_0, O_1$ this way because he must prove that one of the outputs contains a valid DH tuple.
 
-For privacy, observe that any two identical boxes protected by \texttt{halfMixScript} have {\em spender indistinguisbility} because each one is spent using a $\Sigma$-OR-proof that is zero-knowledge~\cite{Dam10}. Also, any algorithm that can distinghish the two boxes can be directly used to solve the {\em Decision Diffie Hellman} (DDH) problem. Thus, the boxes are indistingushable if the DDH problem is hard.
+For privacy, observe that any two identical boxes protected by \texttt{halfMixScript} have {\em spender indistinguishability} because each one is spent using a $\Sigma$-OR-proof that is zero-knowledge~\cite{Dam10}. It can be shown that an algorithm that can distinguish the two boxes can be used to solve the {\em Decision Diffie Hellman} (DDH) problem. Thus, the boxes are indistinguishable if the DDH problem is hard.
 
 \paragraph{Comparing with CoinJoin:} CoinJoin~\cite{coinjoin} is a privacy enhancing protocol, where multiple parties provide inputs and create outputs in a single transaction computed interactively such that the original inputs and outputs are unlinked. The optimal use of CoinJoin is when two inputs of equal value are joined to generate two outputs of equal value, and the process is repeated, as depicted in Figure~\ref{fig:coinjoin}. 
 This requires two parties to interactively sign a transaction offchain and this interactive nature is the primary drawback of CoinJoin, which \mixname aims to overcome. 
@@ -596,16 +598,9 @@ Then it the second spender if and only if there is an input with two quantities 
 The mix step will create an additional box with two tokens spendable by the second spender.
 \end{enumerate}
 
-%Instead of paying fee in tokens, a miner ca accumulate the fee and pay directly in Ergs at the end. This 
- 
-% \textbf{Fee Accumulation:} Starting with a fixed number of tokens restricts the number of mixes. To allow arbitrary number of mixes, we suggest a {\em fee accumulation} strategy, where the fee is accumulated rather than paid upfront. 
-%For instance, fee for the mix transaction can be paid when spending the mixed outputs. 	
-% The fee keeps accumulating as long as the coin is circulated within the system (i.e., sent back to the H-pool or used in another mix operation) and is paid when the coin exits the system.
-
-%\section{Finite-State Machine}
 \section{Conclusion}
 
-This article described smart contracts written in \langname. The examples build upon concepts from the \langname tutorial~\cite{tutorial}. More advanced contracts will be discussed in another tutorial.
+This article described smart contracts written in \langname. The examples build upon concepts from the \langname white-paper~\cite{whitepaper}. More advanced contracts will be discussed in another tutorial.
 
 \bibliographystyle{unsrt}
 \bibliography{sigmastate_protocols}
