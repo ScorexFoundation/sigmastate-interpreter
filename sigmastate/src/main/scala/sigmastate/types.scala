@@ -532,7 +532,7 @@ trait SNumericType extends SProduct {
   /** Number of bytes to store values of this type. */
   @inline private def typeIndex: Int = allNumericTypes.indexOf(this)
 
-  override def toString: Idn = this.getClass.getSimpleName
+  override def toString: String = this.getClass.getSimpleName
 }
 object SNumericType extends STypeCompanion {
   final val allNumericTypes = Array(SByte, SShort, SInt, SLong, SBigInt)

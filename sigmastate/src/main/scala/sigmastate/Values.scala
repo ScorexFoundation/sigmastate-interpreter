@@ -38,16 +38,16 @@ import special.sigma.{AnyValue, AvlTree, PreHeader, Header, _}
 import sigmastate.lang.{Terms, SourceContext}
 import special.collection.Coll
 import sigmastate.SType.AnyOps
-import sigmastate.Values.Value.costOf
 
 import scala.collection.mutable
 
 object Values {
 
-  type SigmaTree = Tree[SigmaNode, SValue]
   type SValue = Value[SType]
-  type Idn = String
 
+  /** Base class for all ErgoTree expression nodes.
+    * @see [[sigmastate.Values.ErgoTree]]
+    */
   abstract class Value[+S <: SType] extends SigmaNode {
     /** The companion node descriptor with opCode, cost and other metadata. */
     def companion: ValueCompanion
@@ -99,6 +99,7 @@ object Values {
     /** Defines an evaluation semantics of this tree node (aka Value or expression) in the given data environment.
       * Should be implemented by all the ErgoTree nodes (aka operations).
       * Thus, the ErgoTree interpreter implementation consists of combined implementations of this method.
+      * NOTE, this method shouldn't be called directly, instead use `evalTo` method.
       *
       * @param  E   Evaluator which defines evaluation context, cost accumulator, settings etc.
       * @param  env immutable map, which binds variables (given by ids) to the values
@@ -106,6 +107,14 @@ object Values {
       */
     protected def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = sys.error(s"Should be overriden in ${this.getClass}: $this")
 
+    /** Evaluates this node to the value of the given expected type.
+      * This method should called from all `eval` implementations.
+      *
+      * @tparam T expected type of the resulting value
+      * @param  E   Evaluator which defines evaluation context, cost accumulator, settings etc.
+      * @param  env immutable map, which binds variables (given by ids) to the values
+      * @return the data value which is the result of evaluation
+      */
     @inline final def evalTo[T](E: ErgoTreeEvaluator, env: DataEnv): T = {
       if (E.settings.isMeasureOperationTime) E.profiler.onBeforeNode(this)
       val v = eval(E, env)
@@ -219,7 +228,7 @@ object Values {
     /** Unique id of the node class used in serialization of ErgoTree. */
     def opCode: OpCode
 
-    override def toString: Idn = s"${this.getClass.getSimpleName}(${opCode.toUByte})"
+    override def toString: String = s"${this.getClass.getSimpleName}(${opCode.toUByte})"
 
     def typeName: String = this.getClass.getSimpleName.replace("$", "")
 

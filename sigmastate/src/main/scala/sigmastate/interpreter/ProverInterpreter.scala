@@ -34,7 +34,7 @@ class ProverResult(val proof: Array[Byte], val extension: ContextExtension) {
     case _ => false
   }
 
-  override def toString: Idn = s"ProverResult(${ErgoAlgos.encode(proof)},$extension)"
+  override def toString: String = s"ProverResult(${ErgoAlgos.encode(proof)},$extension)"
 }
 
 object ProverResult {

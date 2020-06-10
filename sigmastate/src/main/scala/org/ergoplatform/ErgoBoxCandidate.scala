@@ -75,7 +75,7 @@ class ErgoBoxCandidate(val value: Long,
   override def hashCode(): Int =
     ScalaRunTime._hashCode((value, ergoTree, additionalTokens, additionalRegisters, creationHeight))
 
-  override def toString: Idn = s"ErgoBoxCandidate($value, $ergoTree," +
+  override def toString: String = s"ErgoBoxCandidate($value, $ergoTree," +
     s"tokens: (${additionalTokens.map(t => ErgoAlgos.encode(t._1) + ":" + t._2).toArray.mkString(", ")}), " +
     s"$additionalRegisters, creationHeight: $creationHeight)"
 
