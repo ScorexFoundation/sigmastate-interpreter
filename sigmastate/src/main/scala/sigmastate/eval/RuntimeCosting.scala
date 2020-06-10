@@ -1809,7 +1809,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
         RCCostedColl(values, costs, sizes, cost)
 
       case SubstConstants(InCollByte(bytes), InCollInt(positions), InCollAny(newValues)) =>
-        val values = sigmaDslBuilder.substConstants(bytes.values, positions.values, newValues.values)(AnyElement)
+        val values = sigmaDslBuilder.substConstants(bytes.values, positions.values, newValues.values)
         val len = bytes.size.dataSize + newValues.size.dataSize
         val cost = opCost(values, Array(bytes.cost, positions.cost, newValues.cost), perKbCostOf(node, len))
         mkCostedColl(values, len.toInt, cost)

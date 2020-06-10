@@ -180,7 +180,7 @@ package special.sigma {
       def proveDHTuple(g: Ref[GroupElement], h: Ref[GroupElement], u: Ref[GroupElement], v: Ref[GroupElement]): Ref[SigmaProp] = this.builder.proveDHTuple(g, h, u, v);
       def groupGenerator: Ref[GroupElement] = this.builder.groupGenerator;
       def decodePoint(encoded: Ref[Coll[Byte]]): Ref[GroupElement] = this.builder.decodePoint(encoded);
-      @Reified(value = "T") def substConstants[T](scriptBytes: Ref[Coll[Byte]], positions: Ref[Coll[Int]], newValues: Ref[Coll[T]])(implicit cT: Elem[T]): Ref[Coll[Byte]] = this.builder.substConstants[T](scriptBytes, positions, newValues)
+      @Reified(value = "T") def substConstants[T](scriptBytes: Ref[Coll[Byte]], positions: Ref[Coll[Int]], newValues: Ref[Coll[T]]): Ref[Coll[Byte]] = this.builder.substConstants[T](scriptBytes, positions, newValues)
     };
     @Liftable @WithMethodCallRecognizers trait SigmaDslBuilder extends Def[SigmaDslBuilder] {
       def Colls: Ref[CollBuilder];
@@ -204,7 +204,7 @@ package special.sigma {
       def proveDlog(g: Ref[GroupElement]): Ref[SigmaProp];
       def proveDHTuple(g: Ref[GroupElement], h: Ref[GroupElement], u: Ref[GroupElement], v: Ref[GroupElement]): Ref[SigmaProp];
       def groupGenerator: Ref[GroupElement];
-      @Reified(value = "T") def substConstants[T](scriptBytes: Ref[Coll[Byte]], positions: Ref[Coll[Int]], newValues: Ref[Coll[T]])(implicit cT: Elem[T]): Ref[Coll[Byte]];
+      @Reified(value = "T") def substConstants[T](scriptBytes: Ref[Coll[Byte]], positions: Ref[Coll[Int]], newValues: Ref[Coll[T]]): Ref[Coll[Byte]];
       def decodePoint(encoded: Ref[Coll[Byte]]): Ref[GroupElement];
       def avlTree(operationFlags: Ref[Byte], digest: Ref[Coll[Byte]], keyLength: Ref[Int], valueLengthOpt: Ref[WOption[Int]]): Ref[AvlTree];
       def xor(l: Ref[Coll[Byte]], r: Ref[Coll[Byte]]): Ref[Coll[Byte]]

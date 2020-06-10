@@ -676,8 +676,7 @@ trait SigmaContract {
   @Reified("T")
   def substConstants[T](scriptBytes: Coll[Byte],
       positions: Coll[Int],
-      newValues: Coll[T])
-      (implicit cT: RType[T]): Coll[Byte] = this.builder.substConstants(scriptBytes, positions, newValues)
+      newValues: Coll[T]): Coll[Byte] = this.builder.substConstants(scriptBytes, positions, newValues)
 }
 
 @scalan.Liftable
