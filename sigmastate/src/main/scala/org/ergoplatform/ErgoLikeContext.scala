@@ -201,8 +201,10 @@ case object MinerPubkey extends NotReadyValueByteArray with ValueCompanion {
   override def opCode: OpCode = OpCodes.MinerPubkeyCode
   def opType = SFunc(SContext, SCollection.SByteArray)
   override def companion = this
-  protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any =
+  protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     E.context.minerPubKey
+    // TODO JITC
+  }
 }
 
 /** When interpreted evaluates to a IntConstant built from Context.currentHeight */
@@ -210,8 +212,10 @@ case object Height extends NotReadyValueInt with ValueCompanion {
   override def companion = this
   override def opCode: OpCode = OpCodes.HeightCode
   def opType = SFunc(SContext, SInt)
-  protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any =
+  protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     E.context.HEIGHT
+    // TODO JITC
+  }
 }
 
 /** When interpreted evaluates to a collection of BoxConstant built from Context.boxesToSpend */
@@ -220,8 +224,10 @@ case object Inputs extends LazyCollection[SBox.type] with ValueCompanion {
   override def opCode: OpCode = OpCodes.InputsCode
   val tpe = SCollection(SBox)
   def opType = SFunc(SContext, tpe)
-  protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any =
+  protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     E.context.INPUTS
+    // TODO JITC
+  }
 }
 
 /** When interpreted evaluates to a collection of BoxConstant built from Context.spendingTransaction.outputs */
@@ -230,8 +236,10 @@ case object Outputs extends LazyCollection[SBox.type] with ValueCompanion {
   override def opCode: OpCode = OpCodes.OutputsCode
   val tpe = SCollection(SBox)
   def opType = SFunc(SContext, tpe)
-  protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any =
+  protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     E.context.OUTPUTS
+    // TODO JITC
+  }
 }
 
 /** When interpreted evaluates to a AvlTreeConstant built from Context.lastBlockUtxoRoot */
@@ -239,8 +247,10 @@ case object LastBlockUtxoRootHash extends NotReadyValueAvlTree with ValueCompani
   override def companion = this
   override def opCode: OpCode = OpCodes.LastBlockUtxoRootHashCode
   def opType = SFunc(SContext, tpe)
-  protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any =
+  protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     E.context.LastBlockUtxoRootHash
+    // TODO JITC
+  }
 }
 
 
@@ -249,8 +259,10 @@ case object Self extends NotReadyValueBox with ValueCompanion {
   override def companion = this
   override def opCode: OpCode = OpCodes.SelfCode
   def opType = SFunc(SContext, SBox)
-  protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any =
+  protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     E.context.SELF
+    // TODO JITC
+  }
 }
 
 case object Context extends NotReadyValue[SContext.type] with ValueCompanion {
@@ -258,8 +270,10 @@ case object Context extends NotReadyValue[SContext.type] with ValueCompanion {
   override def opCode: OpCode = OpCodes.ContextCode
   override def tpe: SContext.type = SContext
   override def opType: SFunc = SFunc(SUnit, SContext)
-  protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any =
+  protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     E.context
+    // TODO JITC
+  }
 }
 
 case object Global extends NotReadyValue[SGlobal.type] with ValueCompanion {
@@ -267,5 +281,8 @@ case object Global extends NotReadyValue[SGlobal.type] with ValueCompanion {
   override def opCode: OpCode = OpCodes.GlobalCode
   override def tpe: SGlobal.type = SGlobal
   override def opType: SFunc = SFunc(SUnit, SGlobal)
-  protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = CostingSigmaDslBuilder
+  protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    CostingSigmaDslBuilder
+    // TODO JITC
+  }
 }
