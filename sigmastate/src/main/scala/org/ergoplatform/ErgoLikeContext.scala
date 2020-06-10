@@ -120,9 +120,12 @@ class ErgoLikeContext(val lastBlockUtxoRoot: AvlTreeData,
 
   /** Converts the map into collection which is required in script evaluation. */
   def contextVars(m: Map[Byte, AnyValue]): Coll[AnyValue] = {
+    // TODO HF: implement support of var ids in a range 128 .. 255
+    // current implementation doesn't support this
+    // when id > 127 it is negative and will lead to getVar returning None (see CostingDataContext.getVar)
+    // TODO HF: create unit test that checks the HF activation semantics of this method
     val maxKey = if (m.keys.isEmpty) 0 else m.keys.max
-    // TODO minor fix: when m is empty, the collection can also be empty
-    val res = new Array[AnyValue](maxKey + 1)
+    val res = new Array[AnyValue](maxKey + 1)  // context vars are zero based (currently up to 127 due to the above)
     for ((id, v) <- m) {
       res(id) = v
     }
