@@ -95,11 +95,13 @@ object Sized extends SizedLowPriority {
   implicit val SigmaPropIsSized: Sized[SigmaProp] = Sized.instance((_: SigmaProp) => SizeSigmaProp)
   implicit val AvlTreeIsSized: Sized[AvlTree] = Sized.instance((_: AvlTree) => SizeAvlTree)
 
+  /** Constructs a new [[Sized]] instance for a given [[SType]] type descriptor. */
   def stypeToSized[T <: SType](t: T): Sized[T#WrappedType] = {
     val rtype = Evaluation.stypeToRType(t)
     typeToSized[T#WrappedType](rtype)
   }
 
+  /** Constructs a new [[Sized]] instance for a given [[RType]] type descriptor. */
   def typeToSized[T](t: RType[T]): Sized[T] = (t match {
     case BooleanType => BooleanIsSized
     case ByteType => ByteIsSized

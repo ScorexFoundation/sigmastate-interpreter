@@ -597,7 +597,8 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
                                  newValues: Coll[T]): Coll[Byte] = {
     val typedNewVals = newValues.toArray.map(v => TransformingSigmaBuilder.liftAny(v) match {
       case Nullable(v) => v
-      case _ => sys.error(s"Cannot evaluate substConstants($scriptBytes, $positions, $newValues): cannot lift value $v")
+      case _ => // TODO coverage
+        sys.error(s"Cannot evaluate substConstants($scriptBytes, $positions, $newValues): cannot lift value $v")
     })
     val res = SubstConstants.eval(scriptBytes.toArray, positions.toArray, typedNewVals)
     Colls.fromArray(res)

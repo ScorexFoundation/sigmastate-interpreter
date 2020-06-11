@@ -620,8 +620,10 @@ object Values {
     override def tpe = SGroupElement
     override val value = SigmaDsl.GroupElement(CryptoConstants.dlogGroup.generator)
     override def companion = this
-    protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any =
+    protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
       SigmaDsl.groupGenerator
+      // TODO JITC
+    }
   }
 
 
@@ -751,12 +753,14 @@ object Values {
     override def companion = Tuple
     override def elementType = SAny
     lazy val tpe = STuple(items.map(_.tpe))
-    lazy val value = {
+    lazy val value = { // TODO coverage
       val xs = items.cast[EvaluatedValue[SAny.type]].map(_.value)
       Colls.fromArray(xs.toArray(SAny.classTag.asInstanceOf[ClassTag[SAny.WrappedType]]))(RType.AnyType)
     }
     protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
-      if (items.length < 2) error(s"Invalid tuple $this")
+      if (items.length < 2)
+        error(s"Invalid tuple $this")
+
       if (items.length == 2) {
         val x = items(0).evalTo[Any](E, env)
         val y = items(1).evalTo[Any](E, env)
@@ -764,6 +768,8 @@ object Values {
       }
       else
         items.map(_.evalTo[Any](E, env)) // general case
+
+      // TODO JITC
     }
   }
 
@@ -812,7 +818,7 @@ object Values {
     val tpe = SCollection[V](elementType)
     implicit lazy val tElement: RType[V#WrappedType] = Evaluation.stypeToRType(elementType)
 
-    lazy val value = {
+    lazy val value = {  // TODO coverage
       val xs = items.cast[EvaluatedValue[V]].map(_.value)
       Colls.fromArray(xs.toArray(elementType.classTag.asInstanceOf[ClassTag[V#WrappedType]]))
     }
@@ -923,6 +929,7 @@ object Values {
 
     protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
       env.getOrElse(valId, error(s"cannot resolve $this"))
+      // TODO JITC
     }
   }
   object ValUse extends ValueCompanion {
@@ -950,6 +957,7 @@ object Values {
         curEnv += (vd.id -> v)
       }
       result.evalTo[Any](E, curEnv)
+      // TODO JITC
     }
   }
   object BlockValue extends ValueCompanion {
@@ -967,6 +975,7 @@ object Values {
 
     protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
       if (args.length == 0) {
+        // TODO coverage
         () => {
           body.evalTo[Any](E, env)
         }
@@ -978,11 +987,13 @@ object Values {
         }
       }
       else {
+        // TODO coverage
         (vArgs: Seq[Any]) => {
           val env1 = env ++ args.zip(vArgs).map { case ((id, _), v) => id -> v }
           body.evalTo[Any](E, env1)
         }
       }
+      // TODO JITC
     }
   }
   object FuncValue extends ValueCompanion {

@@ -127,6 +127,7 @@ case class BoolToSigmaProp(value: BoolValue) extends SigmaPropValue {
   def tpe = SSigmaProp
   val opType = SFunc(SBoolean, SSigmaProp)
   protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    // TODO JITC
     val v = value.evalTo[Boolean](E, env)
     SigmaDsl.sigmaProp(v)
   }
@@ -142,6 +143,7 @@ case class CreateProveDlog(value: Value[SGroupElement.type]) extends SigmaPropVa
   override def tpe = SSigmaProp
   override def opType = SFunc(SGroupElement, SSigmaProp)
   protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    // TODO JITC
     val v = value.evalTo[GroupElement](E, env)
     SigmaDsl.proveDlog(v)
   }
@@ -175,6 +177,7 @@ case class CreateProveDHTuple(gv: Value[SGroupElement.type],
   override def tpe = SSigmaProp
   override def opType = SFunc(IndexedSeq(SGroupElement, SGroupElement, SGroupElement, SGroupElement), SSigmaProp)
   protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    // TODO JITC
     val g = gv.evalTo[GroupElement](E, env)
     val h = hv.evalTo[GroupElement](E, env)
     val u = uv.evalTo[GroupElement](E, env)
@@ -192,6 +195,7 @@ trait SigmaTransformer[IV <: SigmaPropValue, OV <: SigmaPropValue] extends Sigma
 trait SigmaTransformerCompanion extends ValueCompanion {
   def argInfos: Seq[ArgInfo]
 }
+
 /**
   * AND conjunction for sigma propositions
   */
@@ -205,7 +209,7 @@ case class SigmaAnd(items: Seq[SigmaPropValue]) extends SigmaTransformer[SigmaPr
     cfor(0)(_ < len, _ + 1) { i =>
       is(i) = items(i).evalTo[SigmaProp](E, env)
     }
-    E.addPerItemCostOf(this, items.length - 1)
+    E.addPerItemCostOf(this, len - 1)
     SigmaDsl.allZK(Colls.fromArray(is))
   }
 }
@@ -228,7 +232,7 @@ case class SigmaOr(items: Seq[SigmaPropValue]) extends SigmaTransformer[SigmaPro
     cfor(0)(_ < len, _ + 1) { i =>
       is(i) = items(i).evalTo[SigmaProp](E, env)
     }
-    E.addPerItemCostOf(this, items.length - 1)
+    E.addPerItemCostOf(this, len - 1)
     SigmaDsl.anyZK(Colls.fromArray(is))
   }
 }
@@ -249,12 +253,13 @@ case class OR(input: Value[SCollection[SBoolean.type]])
   override val opType = SFunc(SCollection.SBooleanArray, SBoolean)
   protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val inputV = input.evalTo[Coll[Boolean]](E, env)
-    if (inputV.isEmpty) false
+    val res = if (inputV.isEmpty) false
     else {
       E.addPerItemCostOf(this, inputV.length - 1)
-      E.addCostOf(this)
       SigmaDsl.anyOf(inputV)
     }
+    E.addCostOf(this)
+    res
   }
 }
 
@@ -303,12 +308,13 @@ case class AND(input: Value[SCollection[SBoolean.type]])
   override val opType = SFunc(SCollection.SBooleanArray, SBoolean)
   protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val inputV = input.evalTo[Coll[Boolean]](E, env)
-    if (inputV.isEmpty) true
+    val res = if (inputV.isEmpty) true
     else {
       E.addPerItemCostOf(this, inputV.length - 1)
-      E.addCostOf(this)
       SigmaDsl.allOf(inputV)
     }
+    E.addCostOf(this)
+    res
   }
 }
 
@@ -421,6 +427,7 @@ case class Upcast[T <: SNumericType, R <: SNumericType](input: Value[T], tpe: R)
 
   protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val inputV = input.evalTo[AnyVal](E, env)
+    // TODO JITC
     tpe.upcast(inputV)
   }
 }
@@ -446,6 +453,7 @@ case class Downcast[T <: SNumericType, R <: SNumericType](input: Value[T], tpe: 
   override val opType = SFunc(Vector(tT), tR)
   protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val inputV = input.evalTo[AnyVal](E, env)
+    // TODO JITC
     tpe.downcast(inputV)
   }
 }
@@ -467,6 +475,7 @@ case class LongToByteArray(input: Value[SLong.type])
   override val opType = SFunc(SLong, SByteArray)
   protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val inputV = input.evalTo[Long](E, env)
+    // TODO JITC
     SigmaDsl.longToByteArray(inputV)
   }
 }
@@ -484,6 +493,7 @@ case class ByteArrayToLong(input: Value[SByteArray])
   override val opType = SFunc(SByteArray, SLong)
   protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val inputV = input.evalTo[Coll[Byte]](E, env)
+    // TODO JITC
     SigmaDsl.byteArrayToLong(inputV)
   }
 }
@@ -501,6 +511,7 @@ case class ByteArrayToBigInt(input: Value[SByteArray])
   override val opType = SFunc(SByteArray, SBigInt)
   protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val inputV = input.evalTo[Coll[Byte]](E, env)
+    // TODO JITC
     SigmaDsl.byteArrayToBigInt(inputV)
   }
 }
@@ -518,6 +529,7 @@ case class DecodePoint(input: Value[SByteArray])
   override val opType = SFunc(SByteArray, SGroupElement)
   protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val inputV = input.evalTo[Coll[Byte]](E, env)
+    // TODO JITC
     SigmaDsl.decodePoint(inputV)
   }
 }
@@ -590,6 +602,7 @@ case class SubstConstants[T <: SType](scriptBytes: Value[SByteArray], positions:
     val scriptBytesV = scriptBytes.evalTo[Coll[Byte]](E, env)
     val positionsV = positions.evalTo[Coll[Int]](E, env)
     val newValuesV = newValues.evalTo[Coll[T]](E, env)
+    // TODO JITC
     SigmaDsl.substConstants(scriptBytesV, positionsV, newValuesV)
   }
 }
@@ -715,6 +728,7 @@ case class Negation[T <: SNumericType](input: Value[T]) extends OneArgumentOpera
   protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val inputV = input.evalTo[AnyVal](E, env)
     val n = ArithOp.numerics(input.tpe.typeCode).n
+    // TODO JITC
     n.negate(inputV)
   }
 }
@@ -815,6 +829,7 @@ case class Xor(override val left: Value[SByteArray],
   protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val lV = left.evalTo[Coll[Byte]](E, env)
     val rV = right.evalTo[Coll[Byte]](E, env)
+    // TODO JITC
     Colls.xor(lV, rV)
   }
 }
@@ -832,6 +847,7 @@ case class Exponentiate(override val left: Value[SGroupElement.type],
   protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val leftV = left.evalTo[GroupElement](E, env)
     val rightV = right.evalTo[special.sigma.BigInt](E, env)
+    // TODO JITC
     leftV.exp(rightV)
   }
 }
@@ -848,6 +864,7 @@ case class MultiplyGroup(override val left: Value[SGroupElement.type],
   protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val leftV = left.evalTo[GroupElement](E, env)
     val rightV = right.evalTo[GroupElement](E, env)
+    // TODO JITC
     leftV.multiply(rightV)
   }
 }
@@ -968,6 +985,7 @@ case class NEQ[S <: SType](override val left: Value[S], override val right: Valu
   extends SimpleRelation[S] {
   override def companion = NEQ
   protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    // TODO JITC
     left.evalTo[Any](E, env) != right.evalTo[Any](E, env)
   }
 }
@@ -1018,6 +1036,7 @@ case class BinXor(override val left: BoolValue, override val right: BoolValue)
   protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val leftV = left.evalTo[Boolean](E, env)
     val rightV = right.evalTo[Boolean](E, env)
+    // TODO JITC
     leftV ^ rightV
   }
 }
@@ -1078,6 +1097,7 @@ case class If[T <: SType](condition: Value[SBoolean.type], trueBranch: Value[T],
   override lazy val third = falseBranch
   protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val c = condition.evalTo[Boolean](E, env)
+    // TODO JITC
     if (c) trueBranch.evalTo[T#WrappedType](E, env)
     else   falseBranch.evalTo[T#WrappedType](E, env)
   }
@@ -1093,6 +1113,7 @@ case class LogicalNot(input: Value[SBoolean.type]) extends NotReadyValueBoolean 
   override val opType = SFunc(Vector(SBoolean), SBoolean)
   protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val inputV = input.evalTo[Boolean](E, env)
+    // TODO JITC
     !inputV
   }
 }

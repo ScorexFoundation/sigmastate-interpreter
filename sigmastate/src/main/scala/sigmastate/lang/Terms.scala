@@ -120,6 +120,7 @@ object Terms {
 
     protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
       if (args.isEmpty) {
+        // TODO coverage
         val fV = func.evalTo[() => Any](E, env)
         fV()
       }
@@ -129,10 +130,12 @@ object Terms {
         fV(argV)
       }
       else {
+        // TODO coverage
         val f = func.evalTo[Seq[Any] => Any](E, env)
         val argsV = args.map(a => a.evalTo[Any](E, env))
         f(argsV)
       }
+      // TODO JITC
     }
   }
   object Apply extends ValueCompanion {
@@ -170,15 +173,15 @@ object Terms {
     * The SMethod instances in STypeCompanions may have type STypeIdent in methods types,
     * but valid ErgoTree should have SMethod instances specialized for specific types of
     * obj and args using `specializeFor`.
-    * This means, if we save typeId, mathodId, and we save all the arguments,
+    * This means, if we save typeId, methodId, and we save all the arguments,
     * we can restore the specialized SMethod instance.
     * This work by induction, if we assume all arguments are monomorphic,
     * then we can make MethodCall monomorphic.
     * Thus, all ErgoTree instances are monomorphic by construction.
     *
-    * @param obj object on which method will be invoked
-    * @param method method to be invoked
-    * @param args arguments passed to the method on invocation
+    * @param obj       object on which method will be invoked
+    * @param method    method to be invoked
+    * @param args      arguments passed to the method on invocation
     * @param typeSubst a map of concrete type for each generic type parameter
     */
   case class MethodCall(obj: Value[SType],
@@ -195,7 +198,7 @@ object Terms {
     /** @hotspot don't beautify this code */
     protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
       val objV = obj.evalTo[Any](E, env)
-      val argsBuf = mutable.ArrayBuilder.make[Any]()
+      val argsBuf = mutable.ArrayBuilder.make[Any]() // TODO optimize: avoid using resizable buffer
       val len = args.length
       cfor(0)(_ < len, _ + 1) { i =>
         val arg = args(i)
@@ -205,6 +208,7 @@ object Terms {
       val extra = method.extraDescriptors
       if (extra.nonEmpty) argsBuf ++= extra
       method.invoke(objV, argsBuf.result())
+      // TODO JITC
     }
   }
   object MethodCall extends ValueCompanion {

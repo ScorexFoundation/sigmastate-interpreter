@@ -91,6 +91,7 @@ trait Interpreter extends ScorexLogging {
     case _ => None
   }
 
+  // TODO rollback HF changes
   def toValidScriptType(exp: SValue): SigmaPropValue = exp match {
     case v: Value[SBoolean.type]@unchecked if v.tpe == SBoolean => v.toSigmaProp
     case p: SValue if p.tpe == SSigmaProp => p.asSigmaProp
@@ -141,6 +142,7 @@ trait Interpreter extends ScorexLogging {
     res
   }
 
+  // TODO rollback HF changes and create a new reduceToCryptoJITC
   /** This method is used in both prover and verifier to compute SigmaProp value.
     * As the first step the cost of computing the `exp` expression in the given context is estimated.
     * If cost is above limit

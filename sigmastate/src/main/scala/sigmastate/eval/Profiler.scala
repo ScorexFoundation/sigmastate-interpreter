@@ -82,9 +82,9 @@ class Profiler {
   private val opStat = DMap[OpCode, StatItem]()
 
   /** Timings of method calls */
-  private val mcStat = DMap[(Byte, Byte), StatItem]()
+  private val mcStat = DMap[(Byte, Byte), StatItem]()  // TODO JITC, TODO optimize: pack (Byte, Byte) into Short
 
-  /** Update time mesurement stats for a given operation. */
+  /** Update time measurement stats for a given operation. */
   @inline private final def addOpTime(op: OpCode, time: Long) = {
     val item = opStat.getOrElse(op, null)
     if (item != null) {
@@ -95,7 +95,7 @@ class Profiler {
     }
   }
 
-  /** Update time mesurement stats for a given method. */
+  /** Update time measurement stats for a given method. */
   @inline private final def addMcTime(typeId: Byte, methodId: Byte, time: Long) = {
     val key = (typeId, methodId)
     val item = mcStat.getOrElse(key, null)
