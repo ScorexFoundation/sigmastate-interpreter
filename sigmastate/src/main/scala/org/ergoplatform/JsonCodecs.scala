@@ -90,8 +90,8 @@ trait JsonCodecs {
     } yield (tokenId, amount)
   })
 
-  implicit val modifierIdEncoder: Encoder[ModifierId] = Encoder.instance(_.asInstanceOf[String].asJson)
-  implicit val modifierIdDecoder: Decoder[ModifierId] = Decoder.instance(ModifierId @@ _.as[String])
+  implicit val modifierIdEncoder: Encoder[ModifierId] = Encoder.instance(_.toString.asJson)
+  implicit val modifierIdDecoder: Decoder[ModifierId] = Decoder.instance({cursor => for { id <- cursor.as[String] } yield ModifierId(id)})
 
   implicit val registerIdEncoder: KeyEncoder[NonMandatoryRegisterId] = KeyEncoder.instance({ regId =>
     s"R${regId.number}"
