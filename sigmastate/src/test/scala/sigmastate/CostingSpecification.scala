@@ -3,20 +3,20 @@ package sigmastate
 import org.ergoplatform.SigmaConstants.ScriptCostLimit
 import org.ergoplatform.ErgoScriptPredef.TrueProp
 import org.ergoplatform.validation.ValidationRules
-import org.ergoplatform.{ErgoBox, ErgoLikeContext, ErgoLikeTransaction}
+import org.ergoplatform.{ErgoLikeContext, ErgoLikeTransaction, ErgoBox}
 import scorex.crypto.authds.avltree.batch.Lookup
 import scorex.crypto.authds.{ADDigest, ADKey}
 import scorex.crypto.hash.Blake2b256
-import sigmastate.Values.{AvlTreeConstant, BigIntConstant, BooleanConstant, ByteArrayConstant, ConstantPlaceholder, ErgoTree, IntConstant, TrueLeaf}
+import sigmastate.Values.{TrueLeaf, BigIntConstant, AvlTreeConstant, ConstantPlaceholder, ByteArrayConstant, IntConstant, ErgoTree, BooleanConstant}
 import sigmastate.eval.Extensions._
 import sigmastate.eval.Sized._
 import sigmastate.eval._
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter}
 import sigmastate.interpreter.ContextExtension
-import sigmastate.interpreter.Interpreter.{ScriptEnv, ScriptNameProp, emptyEnv}
-import sigmastate.utxo.CostTable
+import sigmastate.interpreter.Interpreter.{ScriptNameProp, ScriptEnv, emptyEnv}
+import sigmastate.utxo.{CostTable, JitCostTable}
 import sigmastate.utxo.CostTable._
-import special.sigma.{AvlTree, SigmaTestingData}
+import special.sigma.{SigmaTestingData, AvlTree}
 
 class CostingSpecification extends SigmaTestingData {
   implicit lazy val IR = new TestingIRContext {
@@ -91,11 +91,16 @@ class CostingSpecification extends SigmaTestingData {
 
   def cost(returnJitCost: Option[Boolean], script: String, expCost: Int): Unit = {
     val ergoTree = compiler.compile(env, script)
-    val I = returnJitCost match {
-      case Some(_) => interpreter.withJitCost(returnJitCost)
-      case _ => interpreter
+    val res = returnJitCost match {
+      case Some(true) =>
+        val I = interpreter.withJitCost(returnJitCost)
+        I.reduceToCryptoJITC(context, env, ergoTree, 0).get._2
+      case Some(false) =>
+        val I = interpreter.withJitCost(returnJitCost)
+        I.reduceToCrypto(context, env, ergoTree).get._2
+      case _ =>
+        interpreter.reduceToCrypto(context, env, ergoTree).get._2
     }
-    val res = I.reduceToCrypto(context, env, ergoTree, 0).get._2
     if (printCosts)
       println(script + s" --> ${returnJitCost.fold("")(jit => if (jit) "JIT" else "AOT")} cost $res")
     res shouldBe ((expCost * CostTable.costFactorIncrease / CostTable.costFactorDecrease) + CostTable.interpreterInitCost).toLong
@@ -149,15 +154,15 @@ class CostingSpecification extends SigmaTestingData {
 
     cost("{ val cond = getVar[Boolean](2).get; allOf(Coll(cond, true, cond)) }",
       ContextVarAccess + logicCost * 2 + constCost,
-      ContextVarAccess + collToColl + logicCost * 2 + logicBaseCost + constCost)
+      ContextVarAccess + collToColl + logicCost * 2 + JitCostTable.logicBaseCost + constCost)
 
     cost("{ val cond = getVar[Boolean](2).get; anyOf(Coll(cond, true, cond)) }",
       ContextVarAccess + logicCost * 2 + constCost,
-      ContextVarAccess + collToColl + logicCost * 2 + logicBaseCost + constCost)
+      ContextVarAccess + collToColl + logicCost * 2 + JitCostTable.logicBaseCost + constCost)
 
     cost("{ val cond = getVar[Boolean](2).get; xorOf(Coll(cond, true, cond)) }",
       ContextVarAccess + logicCost * 2 + constCost,
-      ContextVarAccess + collToColl + logicCost * 2 + logicBaseCost + constCost)
+      ContextVarAccess + collToColl + logicCost * 2 + JitCostTable.logicBaseCost + constCost)
   }
 
   property("atLeast costs") {

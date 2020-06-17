@@ -137,10 +137,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
 
     val prop = propositionFromErgoTree(tree, ctxUpdInitCost)
     val (propTree, context) = applyDeserializeContext(ctxUpdInitCost, prop)
-
-    // TODO rollback HF changes
-    val tried = reduceToCrypto(context, env, propTree, (context.initCost - ctx.initCost).toInt)
-
+    val tried = reduceToCrypto(context, env, propTree)
     val (reducedProp, cost) = tried.getOrThrow
 
     def errorReducedToFalse = error("Script reduced to false")

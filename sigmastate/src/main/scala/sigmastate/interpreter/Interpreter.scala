@@ -91,8 +91,14 @@ trait Interpreter extends ScorexLogging {
     case _ => None
   }
 
-  // TODO rollback HF changes
-  def toValidScriptType(exp: SValue): SigmaPropValue = exp match {
+  def toValidScriptType(exp: SValue): BoolValue = exp match {
+    case v: Value[SBoolean.type]@unchecked if v.tpe == SBoolean => v
+    case p: SValue if p.tpe == SSigmaProp => p.asSigmaProp.isProven
+    case x => throw new Error(s"Context-dependent pre-processing should produce tree of type Boolean or SigmaProp but was $x")
+  }
+
+  // TODO after HF: merge with old version (`toValidScriptType`)
+  def toValidScriptTypeJITC(exp: SValue): SigmaPropValue = exp match {
     case v: Value[SBoolean.type]@unchecked if v.tpe == SBoolean => v.toSigmaProp
     case p: SValue if p.tpe == SSigmaProp => p.asSigmaProp
     case x => throw new Error(s"Context-dependent pre-processing should produce tree of type Boolean or SigmaProp but was $x")
@@ -102,13 +108,24 @@ trait Interpreter extends ScorexLogging {
 
   /** Substitute Deserialize* nodes with deserialized subtrees
     * We can estimate cost of the tree evaluation only after this step.*/
-  def applyDeserializeContext(context: CTX, exp: Value[SType]): (SigmaPropValue, CTX) = {
+  def applyDeserializeContext(context: CTX, exp: Value[SType]): (BoolValue, CTX) = {
     val currContext = new MutableCell(context)
     val substRule = strategy[Value[_ <: SType]] { case x =>
       substDeserialize(currContext.value, { ctx: CTX => currContext.value = ctx }, x)
     }
     val Some(substTree: SValue) = everywherebu(substRule)(exp)
     val res = toValidScriptType(substTree)
+    (res, currContext.value)
+  }
+
+  // TODO after HF: merge with old version (`applyDeserializeContext`)
+  def applyDeserializeContextJITC(context: CTX, exp: Value[SType]): (SigmaPropValue, CTX) = {
+    val currContext = new MutableCell(context)
+    val substRule = strategy[Value[_ <: SType]] { case x =>
+      substDeserialize(currContext.value, { ctx: CTX => currContext.value = ctx }, x)
+    }
+    val Some(substTree: SValue) = everywherebu(substRule)(exp)
+    val res = toValidScriptTypeJITC(substTree)
     (res, currContext.value)
   }
 
@@ -142,7 +159,48 @@ trait Interpreter extends ScorexLogging {
     res
   }
 
-  // TODO rollback HF changes and create a new reduceToCryptoJITC
+  /** This method is used in both prover and verifier to compute SigmaProp value.
+    * As the first step the cost of computing the `exp` expression in the given context is estimated.
+    * If cost is above limit
+    * then exception is returned and `exp` is not executed
+    * else `exp` is computed in the given context and the resulting SigmaBoolean returned.
+    *
+    * @param context        the context in which `exp` should be executed
+    * @param env            environment of system variables used by the interpreter internally
+    * @param exp            expression to be executed in the given `context`
+    * @return result of script reduction
+    * @see `ReductionResult`
+    */
+  def reduceToCrypto(context: CTX, env: ScriptEnv, exp: Value[SType]): Try[ReductionResult] = Try {
+    import IR._
+    implicit val vs = context.validationSettings
+    val maxCost = context.costLimit
+    val initCost = context.initCost
+    trySoftForkable[ReductionResult](whenSoftFork = TrivialProp.TrueProp -> 0) {
+      val costingRes = doCostingEx(env, exp, true)
+      val costF = costingRes.costF
+      IR.onCostingResult(env, exp, costingRes)
+
+      CheckCostFunc(IR)(asRep[Any => Int](costF))
+
+      val costingCtx = context.toSigmaContext(isCost = true)
+      val estimatedCost = IR.checkCostWithContext(costingCtx, exp, costF, maxCost, initCost).getOrThrow
+
+      IR.onEstimatedCost(env, exp, costingRes, costingCtx, estimatedCost)
+
+      // check calc
+      val calcF = costingRes.calcF
+      CheckCalcFunc(IR)(calcF)
+      val calcCtx = context.toSigmaContext(isCost = false)
+      val res = calcResult(calcCtx, calcF)
+      SigmaDsl.toSigmaBoolean(res) -> estimatedCost
+    }
+  }
+
+  /** Reduces `exp` to SigmaProp under the default (empty) environment. */
+  def reduceToCrypto(context: CTX, exp: Value[SType]): Try[ReductionResult] =
+    reduceToCrypto(context, Interpreter.emptyEnv, exp)
+
   /** This method is used in both prover and verifier to compute SigmaProp value.
     * As the first step the cost of computing the `exp` expression in the given context is estimated.
     * If cost is above limit
@@ -157,7 +215,7 @@ trait Interpreter extends ScorexLogging {
     * @return result of script reduction
     * @see `ReductionResult`
     */
-  def reduceToCrypto(context: CTX, env: ScriptEnv, exp: Value[SType], treeComplexity: Int): Try[ReductionResult] = Try {
+  def reduceToCryptoJITC(context: CTX, env: ScriptEnv, exp: Value[SType], treeComplexity: Int): Try[ReductionResult] = Try {
     import IR._
     implicit val vs = context.validationSettings
     val maxCost = context.costLimit
@@ -219,11 +277,12 @@ trait Interpreter extends ScorexLogging {
     }
   }
 
+
   /** Transforms ErgoTree into Value by replacing placeholders with constants and then
    * delegates to the main implementation method.
    */
-  def reduceToCrypto(context: CTX, tree: ErgoTree): Try[ReductionResult] =
-    reduceToCrypto(context, Interpreter.emptyEnv, tree.toProposition(tree.isConstantSegregation), tree.complexity)
+  def reduceToCryptoJITC(context: CTX, tree: ErgoTree): Try[ReductionResult] =
+    reduceToCryptoJITC(context, Interpreter.emptyEnv, tree.toProposition(tree.isConstantSegregation), tree.complexity)
 
   /** Extracts proposition for ErgoTree handing soft-fork condition.
     * @note soft-fork handler */
@@ -274,13 +333,13 @@ trait Interpreter extends ScorexLogging {
       val prop = propositionFromErgoTree(tree, context1)
 
       implicit val vs = context1.validationSettings
-      val (propTree, context2) = trySoftForkable[(SigmaPropValue, CTX)](whenSoftFork = (TrueLeaf, context1)) {
+      val (propTree, context2) = trySoftForkable[(BoolValue, CTX)](whenSoftFork = (TrueLeaf, context1)) {
         applyDeserializeContext(context1, prop)
       }
 
       // here we assume that when `propTree` is TrueProp then `reduceToCrypto` always succeeds
       // and the rest of the verification is also trivial
-      val (cProp, cost) = reduceToCrypto(context2, env, propTree, (context2.initCost - context.initCost).toInt).getOrThrow
+      val (cProp, cost) = reduceToCrypto(context2, env, propTree).getOrThrow
 
       val checkingResult = cProp match {
         case TrivialProp.TrueProp => true
@@ -342,7 +401,7 @@ trait Interpreter extends ScorexLogging {
 
       implicit val vs = context1.validationSettings
       val (propTree, context2) = trySoftForkable[(SigmaPropValue, CTX)](whenSoftFork = (TrueLeaf, context1)) {
-        applyDeserializeContext(context1, prop)
+        applyDeserializeContextJITC(context1, prop)
       }
 
       // here we assume that when `propTree` is TrueProp then `reduceToCrypto` always succeeds
