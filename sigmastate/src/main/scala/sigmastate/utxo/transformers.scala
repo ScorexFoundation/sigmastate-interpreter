@@ -45,6 +45,7 @@ case class MapCollection[IV <: SType, OV <: SType](
     val inputV = input.evalTo[Coll[Any]](E, env)
     val mapperV = mapper.evalTo[Any => Any](E, env)
     val tResItem = Evaluation.stypeToRType(mapper.tpe.tRange).asInstanceOf[RType[Any]]
+    // TODO JITC
     inputV.map(mapperV)(tResItem)
   }
 }
@@ -63,6 +64,7 @@ case class Append[IV <: SType](input: Value[SCollection[IV]], col2: Value[SColle
   protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val inputV = input.evalTo[Coll[IV#WrappedType]](E, env)
     val col2V = col2.evalTo[Coll[IV#WrappedType]](E, env)
+    // TODO JITC
     inputV.append(col2V)
   }
 }
@@ -90,6 +92,7 @@ case class Slice[IV <: SType](input: Value[SCollection[IV]], from: Value[SInt.ty
     val inputV = input.evalTo[Coll[Any]](E, env)
     val fromV = from.evalTo[Int](E, env)
     val untilV = until.evalTo[Int](E, env)
+    // TODO JITC
     inputV.slice(fromV, untilV)
   }
 }
@@ -113,6 +116,7 @@ case class Filter[IV <: SType](input: Value[SCollection[IV]],
   protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val inputV = input.evalTo[Coll[Any]](E, env)
     val conditionV = condition.evalTo[Any => Boolean](E, env)
+    // TODO JITC
     inputV.filter(conditionV)
   }
 }
@@ -145,6 +149,7 @@ case class Exists[IV <: SType](override val input: Value[SCollection[IV]],
   protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val inputV = input.evalTo[Coll[Any]](E, env)
     val conditionV = condition.evalTo[Any => Boolean](E, env)
+    // TODO JITC
     inputV.exists(conditionV)
   }
 }
@@ -168,6 +173,7 @@ case class ForAll[IV <: SType](override val input: Value[SCollection[IV]],
   protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val inputV = input.evalTo[Coll[Any]](E, env)
     val conditionV = condition.evalTo[Any => Boolean](E, env)
+    // TODO JITC
     inputV.forall(conditionV)
   }
 }
@@ -202,6 +208,7 @@ case class Fold[IV <: SType, OV <: SType](input: Value[SCollection[IV]],
     val inputV = input.evalTo[Coll[IV#WrappedType]](E, env)
     val zeroV = zero.evalTo[OV#WrappedType](E, env)
     val foldOpV = foldOp.evalTo[((OV#WrappedType, IV#WrappedType)) => OV#WrappedType](E, env)
+    // TODO JITC
     inputV.foldLeft(zeroV, foldOpV)
   }
 }
@@ -245,6 +252,7 @@ case class ByIndex[V <: SType](input: Value[SCollection[V]],
   protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val inputV = input.evalTo[Coll[V#WrappedType]](E, env)
     val indexV = index.evalTo[Int](E, env)
+    // TODO JITC
     default match {
       case Some(d) =>
         val dV = d.evalTo[V#WrappedType](E, env)
@@ -269,6 +277,7 @@ case class SelectField(input: Value[STuple], fieldIndex: Byte)
 
   protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val inputV = input.evalTo[Any](E, env)
+    // TODO JITC
     inputV match {
       case p: Tuple2[_,_] =>
         if (fieldIndex == 1) p._1
@@ -300,6 +309,7 @@ case class SigmaPropBytes(input: Value[SSigmaProp.type])
   override val opType = SFunc(input.tpe, tpe)
   protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val inputV = input.evalTo[SigmaProp](E, env)
+    // TODO JITC
     inputV.propBytes
   }
 }
@@ -335,6 +345,7 @@ case class ExtractAmount(input: Value[SBox.type]) extends Extract[SLong.type] wi
   override val opType = SFunc(SBox, SLong)
   protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val inputV = input.evalTo[Box](E, env)
+    // TODO JITC
     inputV.value
   }
 }
@@ -352,6 +363,7 @@ case class ExtractScriptBytes(input: Value[SBox.type]) extends Extract[SByteArra
   override val opType = SFunc(SBox, SByteArray)
   protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val inputV = input.evalTo[Box](E, env)
+    // TODO JITC
     inputV.propositionBytes
   }
 }
@@ -366,6 +378,7 @@ case class ExtractBytes(input: Value[SBox.type]) extends Extract[SByteArray] wit
   override val opType = SFunc(SBox, SByteArray)
   protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val inputV = input.evalTo[Box](E, env)
+    // TODO JITC
     inputV.bytes
   }
 }
@@ -380,6 +393,7 @@ case class ExtractBytesWithNoRef(input: Value[SBox.type]) extends Extract[SByteA
   override val opType = SFunc(SBox, SByteArray)
   protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val inputV = input.evalTo[Box](E, env)
+    // TODO JITC
     inputV.bytesWithoutRef
   }
 }
@@ -394,6 +408,7 @@ case class ExtractId(input: Value[SBox.type]) extends Extract[SByteArray] with N
   override val opType = SFunc(SBox, SByteArray)
   protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val inputV = input.evalTo[Box](E, env)
+    // TODO JITC
     inputV.id
   }
 }
@@ -412,6 +427,7 @@ case class ExtractRegisterAs[V <: SType]( input: Value[SBox.type],
   lazy val tV = Evaluation.stypeToRType(tpe.elemType)
   protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val inputV = input.evalTo[Box](E, env)
+    // TODO JITC
     inputV.getReg(registerId.number)(tV)
   }
 }
@@ -433,6 +449,7 @@ case class ExtractCreationInfo(input: Value[SBox.type]) extends Extract[STuple] 
   override def opType = OpType
   protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val inputV = input.evalTo[Box](E, env)
+    // TODO JITC
     inputV.creationInfo
   }
 }
@@ -522,6 +539,7 @@ case class OptionGetOrElse[V <: SType](input: Value[SOption[V]], default: Value[
   protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val inputV = input.evalTo[Option[V#WrappedType]](E, env)
     val dV = default.evalTo[V#WrappedType](E, env)  // TODO soft-fork: execute lazily
+    // TODO JITC
     inputV.getOrElse(dV)
   }
 }
@@ -537,6 +555,7 @@ case class OptionIsDefined[V <: SType](input: Value[SOption[V]])
   override def tpe= SBoolean
   protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val inputV = input.evalTo[Option[V#WrappedType]](E, env)
+    // TODO JITC
     inputV.isDefined
   }
 }
