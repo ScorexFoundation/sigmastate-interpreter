@@ -421,8 +421,7 @@ class CostingSpecification extends SigmaTestingData {
     val pr = interpreter.prove(tree, context, fakeMessage).get
     val expressionCost =
       constCost +
-      // TODO soft-fork: logicCost + // SigmaPropIsProven  cost is commented after applyDeserializeContext signature is fixed
-      // see https://github.com/ScorexFoundation/sigmastate-interpreter/blob/cf0e323727a559ac9cf4092a961a73bfc5a47ff7/sigmastate/src/main/scala/sigmastate/interpreter/Interpreter.scala#L91
+      logicCost + // SigmaPropIsProven
       logicCost // BoolToSigmaProp
 
     val expectedCost = (expressionCost * CostTable.costFactorIncrease / CostTable.costFactorDecrease) +

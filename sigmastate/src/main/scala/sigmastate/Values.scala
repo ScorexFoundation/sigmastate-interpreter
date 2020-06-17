@@ -147,11 +147,11 @@ object Values {
     def notSupportedError(v: SValue, opName: String) =
       throw new IllegalArgumentException(s"Method $opName is not supported for node $v")
 
-    import sigmastate.utxo.CostTable
+    import sigmastate.utxo.JitCostTable
 
     def costOf(opName: String, opType: SFunc): Int = {
       val operId = OperationId(opName, opType)
-      val cost = CostTable.DefaultCosts(operId)
+      val cost = JitCostTable.DefaultCosts(operId)
       cost
     }
 
@@ -170,7 +170,7 @@ object Values {
     def perKbCostOf(opName: String, opType: SFunc, dataSize: Int): Int = {
       val opNamePerKb = s"${opName}_per_kb"
       val operId = OperationId(opNamePerKb, opType)
-      val cost = CostTable.DefaultCosts(operId)
+      val cost = JitCostTable.DefaultCosts(operId)
       val numKbs = dataSize / 1024 + 1
       numKbs * cost
     }
@@ -200,7 +200,7 @@ object Values {
       case CAND(children) => Colls.fromArray(children.toArray).map(costOfSigmaTree(_)).sum(SigmaDsl.Monoids.intPlusMonoid)
       case COR(children)  => Colls.fromArray(children.toArray).map(costOfSigmaTree(_)).sum(SigmaDsl.Monoids.intPlusMonoid)
       case CTHRESHOLD(_, children)  => Colls.fromArray(children.toArray).map(costOfSigmaTree(_)).sum(SigmaDsl.Monoids.intPlusMonoid)
-      case _ => CostTable.MinimalCost
+      case _ => JitCostTable.MinimalCost
     }
 
     def costOf(v: SValue): Int = v match {

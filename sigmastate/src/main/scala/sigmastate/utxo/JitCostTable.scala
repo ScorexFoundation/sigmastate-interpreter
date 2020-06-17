@@ -5,7 +5,7 @@ import sigmastate.{Downcast, Upcast}
 import sigmastate.lang.SigmaParser
 import sigmastate.lang.Terms.OperationId
 
-case class CostTable(operCosts: Map[OperationId, Int]) extends (OperationId => Int) {
+case class JitCostTable(operCosts: Map[OperationId, Int]) extends (OperationId => Int) {
   @inline private def cleanOperId(operId: OperationId): OperationId = {
     if (operId.opType.tpeParams.isEmpty) operId
     else operId.copy(opType = operId.opType.copy(tpeParams = Nil))
@@ -26,7 +26,7 @@ case class CostTable(operCosts: Map[OperationId, Int]) extends (OperationId => I
   }
 }
 
-object CostTable {
+object JitCostTable {
   type ExpressionCost = Int
 
   val MinimalCost = 10
@@ -78,6 +78,11 @@ object CostTable {
   val comparisonPerKbCost = 10
 
   val logicCost = 10
+
+  /** Initial cost of starting OR/AND/XorOf operation which doesn't depend on the number
+    * of elements in the arguments collection. The cost of each operation is `logicCost`.
+    */
+  val logicBaseCost = 0  // TODO soft-fork: increase it to 20
 
   val sigmaAndCost = 10
   val sigmaOrCost = 40
@@ -164,13 +169,15 @@ object CostTable {
     ("BinAnd", "(Boolean, Boolean) => Boolean", logicCost),
     ("BinOr", "(Boolean, Boolean) => Boolean", logicCost),
     ("BinXor", "(Boolean, Boolean) => Boolean", logicCost),
-    ("AND", "(Coll[Boolean]) => Boolean", logicCost),
+    ("OR", "(Coll[Boolean]) => Boolean", logicBaseCost),
     ("OR_per_item", "(Coll[Boolean]) => Boolean", logicCost),
+    ("AND", "(Coll[Boolean]) => Boolean", logicBaseCost),
     ("AND_per_item", "(Coll[Boolean]) => Boolean", logicCost),
     ("AtLeast", "(Int, Coll[Boolean]) => Boolean", logicCost),
     ("CalcBlake2b256_per_kb", "(Coll[Byte]) => Coll[Byte]", hashPerKb),
     ("CalcSha256_per_kb", "(Coll[Byte]) => Coll[Byte]", hashPerKb),
     ("Xor_per_kb", "(Coll[Byte],Coll[Byte]) => Coll[Byte]", hashPerKb / 2),
+    ("XorOf", "(Coll[Boolean]) => Boolean", logicBaseCost),
     ("XorOf_per_item", "(Coll[Boolean]) => Boolean", logicCost),
     ("LogicalNot", "(Boolean) => Boolean", logicCost),
 
