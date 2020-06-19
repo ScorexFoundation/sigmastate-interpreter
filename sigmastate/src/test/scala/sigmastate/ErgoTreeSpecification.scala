@@ -70,7 +70,7 @@ class ErgoTreeSpecification extends SigmaTestingData {
       // this should be preserved in 3.x and fixed in 4.0
       (SNumericType.typeId,  Seq(
         MInfo(methodId = 1, SGlobal.groupGeneratorMethod),
-        MInfo(2, SGlobal.xorMethod),
+        MInfo(2, SGlobal.xorMethod)
       ), true)
     },
 
@@ -98,7 +98,7 @@ class ErgoTreeSpecification extends SigmaTestingData {
     { import SSigmaProp._
       (SSigmaProp.typeId,  Seq(
         MInfo(1, PropBytesMethod),
-        MInfo(2, IsProvenMethod),  // TODO HF: this method must be removed
+        MInfo(2, IsProvenMethod)  // TODO HF: this method must be removed
       ), true)
     },
     { import SBox._
