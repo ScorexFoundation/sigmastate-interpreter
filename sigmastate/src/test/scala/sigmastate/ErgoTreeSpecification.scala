@@ -11,7 +11,7 @@ class ErgoTreeSpecification extends SigmaTestingData {
   val typeCodes = Table(
     ("constant", "expectedValue"),
     (SPrimType.LastPrimTypeCode, 8),
-    (SPrimType.MaxPrimTypeCode, 11),
+    (SPrimType.MaxPrimTypeCode, 11)
   )
   
   property("Expected values of constants") {
