@@ -3,29 +3,35 @@ package sigmastate.eval
 import java.math.BigInteger
 import java.util
 
+import com.google.common.primitives.Longs
+import org.bouncycastle.crypto.ec.CustomNamedCurves
 import org.bouncycastle.math.ec.ECPoint
+import org.bouncycastle.math.ec.custom.sec.SecP256K1Point
 import org.ergoplatform.{ErgoBox, SigmaConstants}
 import org.ergoplatform.validation.ValidationRules
 import scorex.crypto.authds.avltree.batch._
-import scorex.crypto.authds.{ADDigest, ADKey, ADValue, SerializedAdProof}
+import scorex.crypto.authds.{ADDigest, ADKey, SerializedAdProof, ADValue}
 import sigmastate.SCollection.SByteArray
 import sigmastate.{TrivialProp, _}
-import sigmastate.Values.{Constant, ConstantNode, ErgoTree, EvaluatedValue, SValue, SigmaBoolean, Value}
+import sigmastate.Values.{Constant, EvaluatedValue, SValue, ConstantNode, Value, ErgoTree, SigmaBoolean}
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.interpreter.{CryptoConstants, Interpreter}
-import special.collection.{CCostedBuilder, CSizeOption, Coll, CollType, CostedBuilder, Size, SizeColl, SizeOption}
+import special.collection.{Size, MonoidBuilderInst, CSizeOption, CollOverArrayBuilder, SizeColl, CCostedBuilder, CollType, CollBuilder, SizeOption, MonoidBuilder, CostedBuilder, Coll}
 import special.sigma.{Box, _}
+import special.sigma.Extensions._
 import sigmastate.eval.Extensions._
+import scalan.util.Extensions.BigIntegerOps
 import spire.syntax.all.cfor
 
-import scala.util.{Failure, Success}
-import scalan.RType
-import scorex.crypto.hash.{Blake2b256, Digest32, Sha256}
+import scala.util.{Success, Failure}
+import scalan.{RType, NeverInline, Reified, Internal}
+import scorex.crypto.hash.{Digest32, Sha256, Blake2b256}
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
 import sigmastate.lang.Terms.OperationId
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
-import sigmastate.serialization.{GroupElementSerializer, SigmaSerializer}
+import sigmastate.serialization.{SigmaSerializer, GroupElementSerializer}
+import special.SpecialPredef
 import special.Types.TupleType
 
 import scala.reflect.ClassTag
@@ -34,15 +40,68 @@ trait WrapperOf[T] {
   def wrappedValue: T
 }
 
-case class CBigInt(override val wrappedValue: BigInteger) extends TestBigInt(wrappedValue) with WrapperOf[BigInteger] {
-  override val dsl = CostingSigmaDslBuilder
+case class CBigInt(override val wrappedValue: BigInteger) extends BigInt with WrapperOf[BigInteger] {
+  override def value: BigInteger = wrappedValue
+  override def toByte : Byte  = wrappedValue.byteValueExact()
+  override def toShort: Short = wrappedValue.shortValueExact()
+  override def toInt  : Int   = wrappedValue.intValueExact()
+  override def toLong : Long  = wrappedValue.longValueExact()
+
+  override def toBytes: Coll[Byte] = CostingSigmaDslBuilder.Colls.fromArray(wrappedValue.toByteArray)
+
+  override def toBits: Coll[Boolean] = ???
+
+  override def toAbs: BigInt = CostingSigmaDslBuilder.BigInt(wrappedValue.abs())
+
+  override def compareTo(that: BigInt): Int = wrappedValue.compareTo(that.value)
+
+  override def modQ: BigInt = ???
+
+  override def plusModQ(other: BigInt): BigInt = ???
+
+  override def minusModQ(other: BigInt): BigInt = ???
+
+  override def multModQ(other: BigInt): BigInt = ???
+
+  override def inverseModQ: BigInt = ???
+
+  override def signum: Int = wrappedValue.signum()
+
+  override def add(that: BigInt): BigInt = CostingSigmaDslBuilder.BigInt(wrappedValue.add(that.value).to256BitValueExact)
+
+  override def subtract(that: BigInt): BigInt = CostingSigmaDslBuilder.BigInt(wrappedValue.subtract(that.value).to256BitValueExact)
+
+  override def multiply(that: BigInt): BigInt = CostingSigmaDslBuilder.BigInt(wrappedValue.multiply(that.value).to256BitValueExact)
+
+  override def divide(that: BigInt): BigInt = CostingSigmaDslBuilder.BigInt(wrappedValue.divide(that.value))
+
+  override def mod(m: BigInt): BigInt = CostingSigmaDslBuilder.BigInt(wrappedValue.mod(m.value))
+
+  override def remainder(that: BigInt): BigInt = CostingSigmaDslBuilder.BigInt(wrappedValue.remainder(that.value))
+
+  override def min(that: BigInt): BigInt = CostingSigmaDslBuilder.BigInt(wrappedValue.min(that.value))
+
+  override def max(that: BigInt): BigInt = CostingSigmaDslBuilder.BigInt(wrappedValue.max(that.value))
+
+  override def negate(): BigInt = CostingSigmaDslBuilder.BigInt(wrappedValue.negate().to256BitValueExact)
+
 }
 
-case class CGroupElement(override val wrappedValue: EcPointType) extends TestGroupElement(wrappedValue) with WrapperOf[ECPoint] {
-  override val dsl = CostingSigmaDslBuilder
+case class CGroupElement(override val wrappedValue: EcPointType) extends GroupElement with WrapperOf[ECPoint] {
+  override def value: ECPoint = wrappedValue
+  override def toString: String = s"GroupElement(${showECPoint(wrappedValue)})"
 
-  override def getEncoded: Coll[Byte] = dsl.Colls.fromArray(GroupElementSerializer.toBytes(wrappedValue))
+  override def isInfinity: Boolean = wrappedValue.isInfinity
 
+  override def exp(k: BigInt): GroupElement = CostingSigmaDslBuilder.GroupElement(wrappedValue.multiply(k.value))
+
+  override def multiply(that: GroupElement): GroupElement = that match {
+    case that: CGroupElement => CostingSigmaDslBuilder.GroupElement(wrappedValue.add(that.wrappedValue))
+  }
+
+  override def negate: GroupElement = CostingSigmaDslBuilder.GroupElement(wrappedValue.negate())
+
+  override def getEncoded: Coll[Byte] = CostingSigmaDslBuilder.Colls.fromArray(GroupElementSerializer.toBytes(wrappedValue))
 }
 
 case class CSigmaProp(sigmaTree: SigmaBoolean) extends SigmaProp with WrapperOf[SigmaBoolean] {
@@ -467,8 +526,35 @@ class CCostModel extends CostModel {
   def PubKeySize: Long = CryptoConstants.EncodedGroupElementLength
 }
 
-class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
+class CostingSigmaDslBuilder extends SigmaDslBuilder { dsl =>
   implicit val validationSettings = ValidationRules.currentSettings
+
+  override def Colls: CollBuilder = new CollOverArrayBuilder
+  override def Monoids: MonoidBuilder = new MonoidBuilderInst
+  override def verifyZK(proof: => SigmaProp): Boolean = proof.isValid
+
+  override def allOf(conditions: Coll[Boolean]): Boolean = conditions.forall(c => c)
+  override def anyOf(conditions: Coll[Boolean]): Boolean = conditions.exists(c => c)
+
+  // TODO HF: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/640
+  override def xorOf(conditions: Coll[Boolean]): Boolean = conditions.toArray.distinct.length == 2
+
+  override def PubKey(base64String: String): SigmaProp = ???
+
+  override def byteArrayToBigInt(bytes: Coll[Byte]): BigInt = {
+    val bi = new BigInteger(bytes.toArray).to256BitValueExact
+    this.BigInt(bi)
+  }
+
+  override def longToByteArray(l: Long): Coll[Byte] = Colls.fromArray(Longs.toByteArray(l))
+  override def byteArrayToLong(bytes: Coll[Byte]): Long = Longs.fromByteArray(bytes.toArray)
+
+  /** Extract `org.bouncycastle.math.ec.ECPoint` from DSL's `GroupElement` type. */
+  def toECPoint(ge: GroupElement): ECPoint = ge match {
+    case ge: CGroupElement => ge.wrappedValue
+  }
+
+  override def xor(l: Coll[Byte], r: Coll[Byte]): Coll[Byte] = Colls.xor(l, r)
 
   override val Costing: CostedBuilder = new CCostedBuilder {
 
@@ -504,7 +590,10 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
 
   override def BigInt(n: BigInteger): BigInt = new CBigInt(n)
 
-  override def GroupElement(p: ECPoint): GroupElement = p match {
+  override def toBigInteger(n: BigInt): BigInteger = n.asInstanceOf[CBigInt].wrappedValue
+
+  /** Creates [[special.sigma.GroupElement]] from the given [[org.bouncycastle.math.ec.ECPoint]]. */
+  def GroupElement(p: ECPoint): GroupElement = p match {
     case ept: EcPointType => CGroupElement(ept)
     case m => sys.error(s"Point of type ${m.getClass} is not supported")
   }
@@ -536,7 +625,7 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
     cfor(0)(_ < len, _ + 1) { i =>
       res(i) = props(i) match {
         case csp: CSigmaProp => csp.sigmaTree
-        case m: MockSigma => TrivialProp(m.isValid) //needed for tests, e.g. "atLeast" test
+//        case m: MockSigma => TrivialProp(m.isValid) //needed for tests, e.g. "atLeast" test
       }
     }
     res

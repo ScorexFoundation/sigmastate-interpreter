@@ -34,7 +34,7 @@ trait CostModel {
 @WithMethodCallRecognizers
 trait BigInt {
   @Internal
-  private[sigma] def value: BigInteger
+  def value: BigInteger
   /** Convert this BigInt value to Byte.
     * @throws ArithmeticException if overflow happens.
     */
@@ -64,7 +64,7 @@ trait BigInt {
 
   /** Returns a big-endian representation of this BigInt in a collection of Booleans.
     * Each boolean corresponds to one bit of the representation.
-    * @since 2.0
+    * @since 4.0
     */
   def toBits: Coll[Boolean]
 
@@ -198,7 +198,7 @@ trait BigInt {
 @WithMethodCallRecognizers
 trait GroupElement {
   @Internal
-  private[sigma] def value: ECPoint
+  def value: ECPoint
 
   def isInfinity: Boolean
 
@@ -697,8 +697,19 @@ trait SigmaDslBuilder {
   def blake2b256(bytes: Coll[Byte]): Coll[Byte]
   def sha256(bytes: Coll[Byte]): Coll[Byte]
 
+  /** Convert big-endian bytes representation (Coll[Byte]) to BigInt value.
+    * @param bytes collection of bytes in big-endian format
+    */
   def byteArrayToBigInt(bytes: Coll[Byte]): BigInt
+
+  /** Converts Long value to big-endian bytes representation.
+    * @param l input value to convert
+    */
   def longToByteArray(l: Long): Coll[Byte]
+
+  /** Convert big-endian bytes representation (Coll[Byte]) to Long value.
+    * @param bytes collection of bytes in big-endian format
+    */
   def byteArrayToLong(bytes: Coll[Byte]): Long
 
   def proveDlog(g: GroupElement): SigmaProp

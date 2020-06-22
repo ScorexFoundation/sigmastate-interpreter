@@ -1,12 +1,11 @@
 package special.sigma
 
-import special.wrappers.WrappersTests
 import special.collection._
+
 import scala.language.reflectiveCalls
-import scalan.{SigmaLibrary, BaseCtxTests, BaseLiftableTests}
+import scalan.{BaseLiftableTests, BaseCtxTests}
 import sigmastate.eval.Extensions._
 import sigmastate.eval.{IRContext, ErgoScriptTestkit}
-import sigmastate.helpers.SigmaTestingCommons
 
 class SigmaDslStaginTests extends BaseCtxTests with ErgoScriptTestkit with BaseLiftableTests {
   class Ctx extends TestContext with IRContext with LiftableTestKit {
@@ -33,8 +32,8 @@ class SigmaDslStaginTests extends BaseCtxTests with ErgoScriptTestkit with BaseL
     val ctx: SContext = newContext(10, boxA1)
       .withInputs(boxA2)
       .withVariables(Map(1 -> toAnyValue(30), 2 -> toAnyValue(40)))
-    val p1: SSigmaProp = new special.sigma.MockSigma(true)
-    val p2: SSigmaProp = new special.sigma.MockSigma(false)
+    val p1: SSigmaProp = dsl.sigmaProp(true)
+    val p2: SSigmaProp = dsl.sigmaProp(false)
 
     cake.check(dsl,  { env: EnvRep[RSigmaDslBuilder] =>
       for { dsl <- env; arg <- lifted(true) } yield dsl.sigmaProp(arg) }, dsl.sigmaProp(true))
