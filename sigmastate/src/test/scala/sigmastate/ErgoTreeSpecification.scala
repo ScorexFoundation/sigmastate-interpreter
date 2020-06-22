@@ -53,6 +53,11 @@ class ErgoTreeSpecification extends SigmaTestingData {
     }
   }
 
+  /** Expected parameters of resolved method (see `methods` table below).
+    *
+    * @param isResolvableFromIds if true, them SMethod.fromIds must resolve, otherwise
+    *                            ValidationException must be thrown
+    */
   case class MInfo(methodId: Byte, method: SMethod, isResolvableFromIds: Boolean = true)
 
   // NOTE, the type code constants are checked above
