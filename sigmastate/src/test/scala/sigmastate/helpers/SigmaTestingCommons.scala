@@ -200,7 +200,7 @@ trait SigmaTestingCommons extends PropSpec
     }
   }
 
-  def assertExceptionThrown(fun: => Any, assertion: Throwable => Boolean): Unit = {
+  def assertExceptionThrown(fun: => Any, assertion: Throwable => Boolean, clue: => String = ""): Unit = {
     try {
       fun
       fail("exception is expected")
@@ -208,7 +208,11 @@ trait SigmaTestingCommons extends PropSpec
     catch {
       case e: Throwable =>
         if (!assertion(e))
-          fail(s"exception check failed on $e (root cause: ${rootCause(e)}) \n trace:\n${e.getStackTrace.mkString("\n")}}")
+          fail(
+            s"""exception check failed on $e (root cause: ${rootCause(e)})
+              |clue: $clue
+              |trace:
+              |${e.getStackTrace.mkString("\n")}}""".stripMargin)
     }
   }
 
