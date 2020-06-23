@@ -5,6 +5,7 @@ import java.math.BigInteger
 import org.ergoplatform.ErgoScriptPredef.TrueProp
 import org.ergoplatform.dsl.{SigmaContractSyntax, TestContractSpec}
 import org.ergoplatform._
+import org.scalacheck.Gen
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{PropSpec, Matchers}
 import scalan.RType
@@ -22,7 +23,7 @@ import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.utxo.ComplexityTableStat
 import special.collection.{Coll, Builder}
 
-import scala.util.{Success, Try, Failure}
+import scala.util.{Success, Failure, Try}
 
 
 /** This suite tests every method of every SigmaDsl type to be equivalent to
@@ -61,29 +62,6 @@ class SigmaDslTest extends PropSpec
     val r1 = f(x, y); val r2 = g(x, y)
     assert(r1.getClass == r2.getClass)
     assert(r1 == r2)
-  }
-
-  def getRandomIndex(size: Int): Int = {
-    val r = scala.util.Random
-    if (size > 1) r.nextInt(size) else 0
-  }
-
-  def makeSlicePair(size: Int): (Int, Int) = {
-    val r = scala.util.Random
-    val rBorder = getRandomIndex(size)
-    val lBorder = getRandomIndex(rBorder)
-    (lBorder, rBorder)
-  }
-
-  // TODO: make more effective
-  def generateIndexColl(maxSize: Int): Coll[Int] = {
-    var ret: Coll[Int] = Colls.emptyColl
-    var index = getRandomIndex(maxSize)
-    while (index > 0) {
-      ret = ret.append(Colls.fromArray(Array(index)))
-      index = getRandomIndex(index)
-    }
-    ret
   }
 
   case class EqualityChecker[T: RType](obj: T) {
@@ -692,15 +670,25 @@ class SigmaDslTest extends PropSpec
   }
 
   property("Coll updateMany method equivalnce") {
-    val eq = checkEq(func[(Coll[Int], (Coll[Int], Coll[Int])),Coll[Int]]("{ (x: (Coll[Int], (Coll[Int], Coll[Int]))) => x._1.updateMany(x._2._1, x._2._2) }")){ x =>
-      x._1.updateMany(x._2._1, x._2._2)
-    }
-    forAll { x: (Array[Int], Int) =>
-      val size = x._1.size
-      whenever (size > 1) {
-        val fromColl = Builder.DefaultCollBuilder.fromArray(x._1)
-        val indexColl = generateIndexColl(size)
-        eq(fromColl, (indexColl, fromColl.reverse.slice(0, indexColl.size)))
+    val eq = checkEq(func[(Coll[Int], (Coll[Int], Coll[Int])),Coll[Int]](
+      "{ (x: (Coll[Int], (Coll[Int], Coll[Int]))) => x._1.updateMany(x._2._1, x._2._2) }"))
+      { x => x._1.updateMany(x._2._1, x._2._2) }
+
+    val dataGen = for {
+      arr <- arrayGen[Int];
+      len <- Gen.choose(0, arr.length)
+      indices <- Gen.containerOfN[Array, Int](len, Gen.choose(0, arr.length - 1))
+      } yield (arr, indices)
+
+    forAll(dataGen) { data =>
+      val arr = data._1
+      val indices = data._2
+      whenever (arr.length > 1) {
+        val xs = Colls.fromArray(arr)
+        val is = Colls.fromArray(indices)
+        val vs = is.reverse
+        val input = (xs, (is, vs))
+        eq(input)
       }
     }
   }
