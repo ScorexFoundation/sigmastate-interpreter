@@ -6,6 +6,7 @@ import org.ergoplatform.ErgoScriptPredef.TrueProp
 import org.ergoplatform.dsl.{SigmaContractSyntax, TestContractSpec}
 import org.ergoplatform._
 import org.scalacheck.Gen
+import org.scalatest.exceptions.TestFailedException
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{PropSpec, Matchers}
 import scalan.RType
@@ -43,17 +44,19 @@ class SigmaDslTest extends PropSpec
     override val okMeasureOperationTime: Boolean = true
   }
 
-  def checkEq[A,B](f: A => B)(g: A => B): A => Unit = { x: A =>
+  def checkEq[A,B](f: A => B)(g: A => B): A => Try[B] = { x: A =>
     val b1 = Try(f(x)); val b2 = Try(g(x))
     (b1, b2) match {
-      case (Success(b1), Success(b2)) =>
+      case (res @ Success(b1), Success(b2)) =>
         assert(b1 == b2)
-      case (Failure(t1), Failure(t2)) =>
+        res
+      case (res @ Failure(t1), Failure(t2)) =>
         val c1 = rootCause(t1).getClass
         val c2 = rootCause(t2).getClass
         c1 shouldBe c2
+        res
       case _ =>
-        assert(false)
+        sys.error(s"Should succeed with the same value or fail with the same exception but was: $b1 and $b2")
     }
 
   }
@@ -64,16 +67,67 @@ class SigmaDslTest extends PropSpec
     assert(r1 == r2)
   }
 
+  def getArrayIndex(len: Int): Int = {
+    val index = Gen.choose(0, len - 1)
+    index.sample.get
+  }
+
   case class EqualityChecker[T: RType](obj: T) {
     def apply[R: RType](dslFunc: T => R)(script: String) =
       checkEq(func[T, R](script))(dslFunc)(obj)
   }
 
-  ignore("Boolean methods equivalence") {
-    lazy val toByte = checkEq(func[Boolean,Byte]("{ (x: Boolean) => x.toByte }"))((x: Boolean) => x.toByte)
-    forAll { x: Boolean =>
-      //TODO soft-fork: for new operation below
-      Seq(toByte).foreach(_(x))
+  trait ChangeType
+  case object UnchangedFeature extends ChangeType
+  case object AddedFeature extends ChangeType
+
+  case class FeatureTest[A, B](changeType: ChangeType, scalaFunc: A => B, oldImpl: () => A => B, newImpl: () => A => B) {
+    def checkSuccess(input: A, expectedResult: B): Unit = {
+      changeType match {
+        case UnchangedFeature =>
+           // check both implementations with Scala semantic
+           val oldRes = checkEq(scalaFunc)(oldImpl())(input)
+           oldRes.get shouldBe expectedResult
+
+           if (!(newImpl eq oldImpl)) {
+             val newRes = checkEq(scalaFunc)(newImpl())(input)
+             newRes.get shouldBe expectedResult
+           }
+
+        case AddedFeature =>
+          Try(oldImpl()(input)).isFailure shouldBe true
+          if (!(newImpl eq oldImpl)) {
+            val newRes = checkEq(scalaFunc)(newImpl())(input)
+            newRes.get shouldBe expectedResult
+          }
+      }
+    }
+  }
+
+  object FeatureTest {
+    def unchanged[A: RType,B: RType](scalaFunc: A => B)(script: String)(implicit IR: IRContext): FeatureTest[A,B] = {
+      val oldImpl = () => func[A,B](script)
+      val newImpl = oldImpl  // TODO HF: use actual new implementation here
+      FeatureTest(UnchangedFeature, scalaFunc, oldImpl, newImpl)
+    }
+
+    def newFeature[A: RType,B: RType](scalaFunc: A => B)(script: String)(implicit IR: IRContext): FeatureTest[A,B] = {
+      val oldImpl = () => func[A,B](script)
+      val newImpl = oldImpl  // TODO HF: use actual new implementation here
+      FeatureTest(AddedFeature, scalaFunc, oldImpl, newImpl)
+    }
+  }
+
+  property("Boolean methods equivalence") {
+    val feature = FeatureTest.newFeature((x: Boolean) => x.toByte)("{ (x: Boolean) => x.toByte }")
+
+    val data = Table(("input", "res"),
+      (true, 1.toByte),
+      (false, 0.toByte)
+    )
+
+    forAll(data) { (x, res) =>
+      feature.checkSuccess(x, res)
     }
   }
 
@@ -401,7 +455,7 @@ class SigmaDslTest extends PropSpec
     }
     forAll { x: Array[Byte] =>
       whenever(x.length <= SigmaConstants.MaxBigIntSizeInBytes.value) {
-        eq(Builder.DefaultCollBuilder.fromArray(x))
+        eq(Colls.fromArray(x))
       }
     }
   }
@@ -412,7 +466,7 @@ class SigmaDslTest extends PropSpec
     }
     forAll { x: Array[Byte] =>
       whenever(x.length >= 8) {
-        eq(Builder.DefaultCollBuilder.fromArray(x))
+        eq(Colls.fromArray(x))
       }
     }
   }
@@ -551,7 +605,7 @@ class SigmaDslTest extends PropSpec
       xorOf(x)
     }
     forAll { x: Array[Boolean] =>
-      eq(Builder.DefaultCollBuilder.fromArray(x))
+      eq(Colls.fromArray(x))
     }
   }
 
@@ -619,7 +673,7 @@ class SigmaDslTest extends PropSpec
         "{ (x: (Coll[Byte], Coll[Byte])) => xor(x._1, x._2) }"))
         { x => Global.xor(x._1, x._2) }
       forAll(bytesGen, bytesGen) { (l, r) =>
-        eq(Builder.DefaultCollBuilder.fromArray(l), Builder.DefaultCollBuilder.fromArray(r))
+        eq(Colls.fromArray(l), Colls.fromArray(r))
       }
     }
   }
@@ -641,17 +695,24 @@ class SigmaDslTest extends PropSpec
       x.size
     }
     forAll { x: Array[Int] =>
-      eq(Builder.DefaultCollBuilder.fromArray(x))
+      eq(Colls.fromArray(x))
     }
   }
+
+  val arrayWithRangeGen = for {
+    arr <- arrayGen[Int];
+    l <- Gen.choose(0, arr.length - 1);
+    r <- Gen.choose(l, arr.length - 1) } yield (arr, (l, r))
 
   property("Coll patch method equivalnce") {
     val eq = checkEq(func[(Coll[Int], (Int, Int)),Coll[Int]]("{ (x: (Coll[Int], (Int, Int))) => x._1.patch(x._2._1, x._1, x._2._2) }")){ x =>
       x._1.patch(x._2._1, x._1, x._2._2)
     }
-    forAll { x: Array[Int] =>
-      whenever (x.size > 1) {
-        eq(Builder.DefaultCollBuilder.fromArray(x), makeSlicePair(x.size))
+    forAll(arrayWithRangeGen) { data =>
+      val arr = data._1
+      val range = data._2
+      whenever (arr.length > 1) {
+        eq(Colls.fromArray(arr), range)
       }
     }
   }
@@ -663,8 +724,8 @@ class SigmaDslTest extends PropSpec
     forAll { x: (Array[Int], Int) =>
       val size = x._1.size
       whenever (size > 1) {
-        val index = getRandomIndex(size)
-        eq(Builder.DefaultCollBuilder.fromArray(x._1), (index, x._2))
+        val index = getArrayIndex(size)
+        eq(Colls.fromArray(x._1), (index, x._2))
       }
     }
   }
@@ -699,7 +760,7 @@ class SigmaDslTest extends PropSpec
       x.find(v => v > 0)
     }
     forAll { x: Array[Int] =>
-      eq(Builder.DefaultCollBuilder.fromArray(x))
+      eq(Colls.fromArray(x))
     }
   }
 
@@ -709,7 +770,7 @@ class SigmaDslTest extends PropSpec
       if (x.size > 2) x.slice(0, x.size - 2) else Colls.emptyColl
     }
     forAll { x: Array[Boolean] =>
-      eq(Builder.DefaultCollBuilder.fromArray(x))
+      eq(Colls.fromArray(x))
     }
   }
 
@@ -719,7 +780,7 @@ class SigmaDslTest extends PropSpec
       x.diff(x)
     }
     forAll { x: Array[Int] =>
-      eq(Builder.DefaultCollBuilder.fromArray(x))
+      eq(Colls.fromArray(x))
     }
   }
 
@@ -733,8 +794,8 @@ class SigmaDslTest extends PropSpec
       x._1.indexOf(x._2, 0)
     }
     forAll { x: (Array[Byte], Short, Byte) =>
-      eq(Builder.DefaultCollBuilder.fromArray(x._1), x._2)
-      eqIndexOf(Builder.DefaultCollBuilder.fromArray(x._1), x._3)
+      eq(Colls.fromArray(x._1), x._2)
+      eqIndexOf(Colls.fromArray(x._1), x._3)
     }
   }
 
@@ -744,7 +805,7 @@ class SigmaDslTest extends PropSpec
       x._1.indexOf(x._2._1, x._2._2)
     }
     forAll { x: (Array[Int], Int) =>
-      eqIndexOf(Builder.DefaultCollBuilder.fromArray(x._1), (getRandomIndex(x._1.size), x._2))
+      eqIndexOf(Colls.fromArray(x._1), (getArrayIndex(x._1.size), x._2))
     }
   }
 
@@ -755,7 +816,7 @@ class SigmaDslTest extends PropSpec
     }
     forAll { x: Array[Int] =>
       whenever (0 < x.size) {
-        eqApply(Builder.DefaultCollBuilder.fromArray(x), getRandomIndex(x.size))
+        eqApply(Colls.fromArray(x), getArrayIndex(x.size))
       }
     }
   }
@@ -766,7 +827,7 @@ class SigmaDslTest extends PropSpec
       x._1.getOrElse(x._2._1, x._2._2)
     }
     forAll { x: (Array[Int], (Int, Int)) =>
-      eqGetOrElse(Builder.DefaultCollBuilder.fromArray(x._1), x._2)
+      eqGetOrElse(Colls.fromArray(x._1), x._2)
     }
   }
 
@@ -788,7 +849,7 @@ class SigmaDslTest extends PropSpec
       x.map(v => v + 1)
     }
     forAll { x: Array[Int] =>
-      eq(Builder.DefaultCollBuilder.fromArray(x.filter(_ < Int.MaxValue)))
+      eq(Colls.fromArray(x.filter(_ < Int.MaxValue)))
     }
   }
 
@@ -797,14 +858,16 @@ class SigmaDslTest extends PropSpec
     { x =>
       x._1.slice(x._2._1, x._2._2)
     }
-    forAll { x: Array[Int] =>
-      val size = x.size
-      whenever (size > 0) {
-        eq(Builder.DefaultCollBuilder.fromArray(x), makeSlicePair(size))
+    forAll(arrayWithRangeGen) { data =>
+      val arr = data._1
+      val range = data._2
+      whenever (arr.length > 0) {
+        val input = (Colls.fromArray(arr), range)
+        eq(input)
       }
     }
     val arr = Array[Int](1, 2, 3, 4, 5)
-    eq(Builder.DefaultCollBuilder.fromArray(arr), (0, 2))
+    eq(Colls.fromArray(arr), (0, 2))
   }
 
   property("Coll append method equivalence") {
@@ -819,10 +882,13 @@ class SigmaDslTest extends PropSpec
       val toAppend: Coll[Int] = x._1
       sliced.append(toAppend)
     }
-    forAll { x: Array[Int] =>
-      val size = x.size
-      whenever (size > 0) {
-        eq(Builder.DefaultCollBuilder.fromArray(x), makeSlicePair(size))
+
+    forAll(arrayWithRangeGen) { data =>
+      val arr = data._1
+      val range = data._2
+      whenever (arr.length > 0) {
+        val input = (Colls.fromArray(arr), range)
+        eq(input)
       }
     }
   }
@@ -864,7 +930,7 @@ class SigmaDslTest extends PropSpec
       sha256(x)
     }
     forAll { x: Array[Byte] =>
-      Seq(eqBlake2b256, eqSha256).foreach(_(Builder.DefaultCollBuilder.fromArray(x)))
+      Seq(eqBlake2b256, eqSha256).foreach(_(Colls.fromArray(x)))
     }
   }
 
@@ -884,7 +950,7 @@ class SigmaDslTest extends PropSpec
       atLeast(x.size - 1, x)
     }
     forAll(arrayGen[SigmaProp].suchThat(_.length > 2)) { x: Array[SigmaProp] =>
-      eq(Builder.DefaultCollBuilder.fromArray(x))
+      eq(Colls.fromArray(x))
     }
   }
 
@@ -921,7 +987,7 @@ class SigmaDslTest extends PropSpec
       allZK(x)
     }
     forAll(arrayGen[SigmaProp].suchThat(_.length > 2)) { x: Array[SigmaProp] =>
-      eq(Builder.DefaultCollBuilder.fromArray(x))
+      eq(Colls.fromArray(x))
     }
   }
 
@@ -931,7 +997,7 @@ class SigmaDslTest extends PropSpec
       anyZK(x)
     }
     forAll(arrayGen[SigmaProp].suchThat(_.length > 2)) { x: Array[SigmaProp] =>
-      eq(Builder.DefaultCollBuilder.fromArray(x))
+      eq(Colls.fromArray(x))
     }
   }
 
@@ -940,7 +1006,7 @@ class SigmaDslTest extends PropSpec
       allOf(x)
     }
     forAll(arrayGen[Boolean].suchThat(_.length > 2)) { x: Array[Boolean] =>
-      eq(Builder.DefaultCollBuilder.fromArray(x))
+      eq(Colls.fromArray(x))
     }
   }
 
@@ -949,7 +1015,7 @@ class SigmaDslTest extends PropSpec
       anyOf(x)
     }
     forAll(arrayGen[Boolean].suchThat(_.length > 2)) { x: Array[Boolean] =>
-      eq(Builder.DefaultCollBuilder.fromArray(x))
+      eq(Colls.fromArray(x))
     }
   }
 
