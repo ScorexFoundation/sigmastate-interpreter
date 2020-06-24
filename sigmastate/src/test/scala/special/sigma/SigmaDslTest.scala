@@ -178,21 +178,19 @@ class SigmaDslTest extends PropSpec
   }
   import FeatureTest._
 
-  val currentVersion = new DynamicVariable[Int](3)
-
-  val versions: Seq[Int] = Array(3, 4)
-
-  protected override def property(testName: String, testTags: Tag*)(testFun: => Any /* Assertion */)(implicit pos: source.Position): Unit = {
-    super.property(testName, testTags:_*) {
-
-      for (version <- versions) {
-        currentVersion.withValue(version) {
-          val a = testFun
-        }
-      }
-
-    }
-  }
+//  val targetVersion = new DynamicVariable[Int](3)
+//
+//  val versions: Seq[Int] = Array(3, 4)
+//
+//  protected override def property(testName: String, testTags: Tag*)(testFun: => Any /* Assertion */)(implicit pos: source.Position): Unit = {
+//    super.property(testName, testTags:_*) {
+//      for (version <- versions) {
+//        targetVersion.withValue(version) {
+//          val a = testFun
+//        }
+//      }
+//    }
+//  }
 
   property("Boolean methods equivalence") {
     val feature = newFeature((x: Boolean) => x.toByte, "{ (x: Boolean) => x.toByte }")
