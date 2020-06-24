@@ -7,8 +7,9 @@ import org.ergoplatform.dsl.{SigmaContractSyntax, TestContractSpec}
 import org.ergoplatform._
 import org.scalacheck.Gen
 import org.scalatest.prop.PropertyChecks
-import org.scalatest.{PropSpec, Matchers}
-import scalan.{RType}
+import org.scalatest.{PropSpec, Matchers, Tag}
+import scalan.RType
+import org.scalactic.source
 import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.hash.{Digest32, Blake2b256}
@@ -21,12 +22,10 @@ import sigmastate.eval.Extensions._
 import sigmastate.eval._
 import sigmastate.helpers.SigmaPPrint
 import sigmastate.interpreter.Interpreter.ScriptEnv
-import sigmastate.lang.SourceContext
-import sigmastate.lang.Terms.Apply
-import sigmastate.utxo.{GetVar, OptionGet, ComplexityTableStat}
-import special.collection.{Coll, Builder}
+import sigmastate.utxo.ComplexityTableStat
+import special.collection.Coll
 
-import scala.util.{Success, Failure, Try, DynamicVariable}
+import scala.util.{DynamicVariable, Success, Failure, Try}
 
 
 /** This suite tests every method of every SigmaDsl type to be equivalent to
@@ -176,19 +175,19 @@ class SigmaDslTest extends PropSpec
   }
   import FeatureTest._
 
-//  val targetVersion = new DynamicVariable[Int](3)
-//
-//  val versions: Seq[Int] = Array(3, 4)
-//
-//  protected override def property(testName: String, testTags: Tag*)(testFun: => Any /* Assertion */)(implicit pos: source.Position): Unit = {
-//    super.property(testName, testTags:_*) {
-//      for (version <- versions) {
-//        targetVersion.withValue(version) {
-//          val a = testFun
-//        }
-//      }
-//    }
-//  }
+  val targetVersion = new DynamicVariable[Int](4)
+
+  val versions: Seq[Int] = Array(4)
+
+  protected override def property(testName: String, testTags: Tag*)(testFun: => Any /* Assertion */)(implicit pos: source.Position): Unit = {
+    super.property(testName, testTags:_*) {
+      for (version <- versions) {
+        targetVersion.withValue(version) {
+          val a = testFun
+        }
+      }
+    }
+  }
 
   property("Boolean methods equivalence") {
     val feature = newFeature((x: Boolean) => x.toByte, "{ (x: Boolean) => x.toByte }")
