@@ -6,11 +6,9 @@ import org.ergoplatform.ErgoScriptPredef.TrueProp
 import org.ergoplatform.dsl.{SigmaContractSyntax, TestContractSpec}
 import org.ergoplatform._
 import org.scalacheck.Gen
-import org.scalactic.source
-import org.scalatest.exceptions.TestFailedException
 import org.scalatest.prop.PropertyChecks
-import org.scalatest.{PropSpec, Matchers, Tag}
-import scalan.{RType, Nullable}
+import org.scalatest.{PropSpec, Matchers}
+import scalan.{RType}
 import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.hash.{Digest32, Blake2b256}
@@ -783,7 +781,7 @@ class SigmaDslTest extends PropSpec
     eq({ (x: Coll[Box]) => x.exists({ (b: Box) => b.value > 1 }) })("{ (x: Coll[Box]) => x.exists({(b: Box) => b.value > 1 }) }")
   }
 
-  property("Coll size method equivalnce") {
+  property("Coll size method equivalence") {
     val eq = checkEq(func[Coll[Int],Int]("{ (x: Coll[Int]) => x.size }")){ x =>
       x.size
     }
@@ -797,7 +795,7 @@ class SigmaDslTest extends PropSpec
     l <- Gen.choose(0, arr.length - 1);
     r <- Gen.choose(l, arr.length - 1) } yield (arr, (l, r))
 
-  property("Coll patch method equivalnce") {
+  property("Coll patch method equivalence") {
     val eq = checkEq(func[(Coll[Int], (Int, Int)),Coll[Int]]("{ (x: (Coll[Int], (Int, Int))) => x._1.patch(x._2._1, x._1, x._2._2) }")){ x =>
       x._1.patch(x._2._1, x._1, x._2._2)
     }
@@ -810,7 +808,7 @@ class SigmaDslTest extends PropSpec
     }
   }
 
-  property("Coll updated method equivalnce") {
+  property("Coll updated method equivalence") {
     val eq = checkEq(func[(Coll[Int], (Int, Int)),Coll[Int]]("{ (x: (Coll[Int], (Int, Int))) => x._1.updated(x._2._1, x._2._2) }")){ x =>
       x._1.updated(x._2._1, x._2._2)
     }
@@ -823,7 +821,7 @@ class SigmaDslTest extends PropSpec
     }
   }
 
-  property("Coll updateMany method equivalnce") {
+  property("Coll updateMany method equivalence") {
     val eq = checkEq(func[(Coll[Int], (Coll[Int], Coll[Int])),Coll[Int]](
       "{ (x: (Coll[Int], (Coll[Int], Coll[Int]))) => x._1.updateMany(x._2._1, x._2._2) }"))
       { x => x._1.updateMany(x._2._1, x._2._2) }
@@ -848,7 +846,7 @@ class SigmaDslTest extends PropSpec
   }
 
   // TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
-  ignore("Coll find method equivalnce") {
+  ignore("Coll find method equivalence") {
     val eq = checkEq(func[Coll[Int],Option[Int]]("{ (x: Coll[Int]) => x.find({(v: Int) => v > 0})}")){ x =>
       x.find(v => v > 0)
     }
@@ -858,7 +856,7 @@ class SigmaDslTest extends PropSpec
   }
 
   // https://github.com/ScorexFoundation/sigmastate-interpreter/issues/418
-  ignore("Coll bitwise methods equivalnce") {
+  ignore("Coll bitwise methods equivalence") {
     val eq = checkEq(func[Coll[Boolean],Coll[Boolean]]("{ (x: Coll[Boolean]) => x >> 2 }")){ x =>
       if (x.size > 2) x.slice(0, x.size - 2) else Colls.emptyColl
     }
@@ -868,7 +866,7 @@ class SigmaDslTest extends PropSpec
   }
 
   // TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
-  ignore("Coll diff methods equivalnce") {
+  ignore("Coll diff methods equivalence") {
     val eq = checkEq(func[Coll[Int],Coll[Int]]("{ (x: Coll[Int]) => x.diff(x) }")){ x =>
       x.diff(x)
     }
@@ -892,7 +890,7 @@ class SigmaDslTest extends PropSpec
     }
   }
 
-  property("Coll indexOf method equivalnce") {
+  property("Coll indexOf method equivalence") {
     val eqIndexOf = checkEq(func[(Coll[Int], (Int, Int)),Int]("{ (x: (Coll[Int], (Int, Int))) => x._1.indexOf(x._2._1, x._2._2) }"))
     { x =>
       x._1.indexOf(x._2._1, x._2._2)
@@ -902,7 +900,7 @@ class SigmaDslTest extends PropSpec
     }
   }
 
-  property("Coll apply method equivalnce") {
+  property("Coll apply method equivalence") {
     val eqApply = checkEq(func[(Coll[Int], Int),Int]("{ (x: (Coll[Int], Int)) => x._1(x._2) }"))
     { x =>
       x._1(x._2)
@@ -914,7 +912,7 @@ class SigmaDslTest extends PropSpec
     }
   }
 
-  property("Coll getOrElse method equivalnce") {
+  property("Coll getOrElse method equivalence") {
     val eqGetOrElse = checkEq(func[(Coll[Int], (Int, Int)),Int]("{ (x: (Coll[Int], (Int, Int))) => x._1.getOrElse(x._2._1, x._2._2) }"))
     { x =>
       x._1.getOrElse(x._2._1, x._2._2)
@@ -936,7 +934,7 @@ class SigmaDslTest extends PropSpec
     eq2((-1, 1))
   }
 
-  property("Coll map method equivalnce") {
+  property("Coll map method equivalence") {
     val eq = checkEq(func[Coll[Int],Coll[Int]]("{ (x: Coll[Int]) => x.map({ (v: Int) => v + 1 }) }"))
     { x =>
       x.map(v => v + 1)
@@ -946,7 +944,7 @@ class SigmaDslTest extends PropSpec
     }
   }
 
-  property("Coll slice method equivalnce") {
+  property("Coll slice method equivalence") {
     val eq = checkEq(func[(Coll[Int], (Int, Int)),Coll[Int]]("{ (x: (Coll[Int], (Int, Int))) => x._1.slice(x._2._1, x._2._2) }"))
     { x =>
       x._1.slice(x._2._1, x._2._2)
