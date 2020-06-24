@@ -222,7 +222,6 @@ class ErgoTreeSpecification extends SigmaTestingData {
         MInfo(8, FilterMethod)
       ), true)
     }
-  //    (SNumericType.typeId, Seq.empty[(Int, SMethod)], true)
   )
 
   property("MethodCall Codes") {
@@ -240,13 +239,12 @@ class ErgoTreeSpecification extends SigmaTestingData {
 
               resolvedMethod.objType.typeId shouldBe typeId
               resolvedMethod.name shouldBe expectedMethod.method.name
-//              assert(resolvedMethod.irInfo.irBuilder.isDefined, s"irBuilder is not defined for $resolvedMethod")
               resolvedMethod.irInfo shouldBe expectedMethod.method.irInfo
             } else {
               // declared, but not supported
               assertExceptionThrown(
                 SMethod.fromIds(typeId, expectedMethod.methodId),
-                { case ve: ValidationException => true
+                { case _: ValidationException => true
                   case _ => false },
                 s"MethodCall shouldn't resolve for typeId = $typeId and $expectedMethod"
               )
