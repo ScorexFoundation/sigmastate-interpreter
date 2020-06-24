@@ -96,6 +96,7 @@ val testingDependencies = Seq(
   "org.scalatest" %% "scalatest" % "3.0.5" % "test",
   "org.scalactic" %% "scalactic" % "3.0.+" % "test",
   "org.scalacheck" %% "scalacheck" % "1.14.+" % "test",
+  "com.lihaoyi" %% "pprint" % "0.5.9" % "test",
   "com.storm-enroute" %% "scalameter" % "0.8.2" % Test,
   "junit" % "junit" % "4.12" % "test",
   "com.novocode" % "junit-interface" % "0.11" % "test"

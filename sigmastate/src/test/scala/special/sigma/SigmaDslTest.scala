@@ -6,10 +6,11 @@ import org.ergoplatform.ErgoScriptPredef.TrueProp
 import org.ergoplatform.dsl.{SigmaContractSyntax, TestContractSpec}
 import org.ergoplatform._
 import org.scalacheck.Gen
+import org.scalactic.source
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.prop.PropertyChecks
-import org.scalatest.{PropSpec, Matchers}
-import scalan.RType
+import org.scalatest.{PropSpec, Matchers, Tag}
+import scalan.{RType, Nullable}
 import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.hash.{Digest32, Blake2b256}
@@ -20,11 +21,14 @@ import sigmastate._
 import sigmastate.Values._
 import sigmastate.eval.Extensions._
 import sigmastate.eval._
+import sigmastate.helpers.SigmaPPrint
 import sigmastate.interpreter.Interpreter.ScriptEnv
-import sigmastate.utxo.ComplexityTableStat
+import sigmastate.lang.SourceContext
+import sigmastate.lang.Terms.Apply
+import sigmastate.utxo.{GetVar, OptionGet, ComplexityTableStat}
 import special.collection.{Coll, Builder}
 
-import scala.util.{Success, Failure, Try}
+import scala.util.{Success, Failure, Try, DynamicVariable}
 
 
 /** This suite tests every method of every SigmaDsl type to be equivalent to
@@ -81,8 +85,58 @@ class SigmaDslTest extends PropSpec
   case object UnchangedFeature extends ChangeType
   case object AddedFeature extends ChangeType
 
-  case class FeatureTest[A, B](changeType: ChangeType, scalaFunc: A => B, oldImpl: () => A => B, newImpl: () => A => B) {
-    def checkSuccess(input: A, expectedResult: B): Unit = {
+  case class FeatureTest[A, B](
+    changeType: ChangeType,
+    scalaFunc: A => B,
+    expectedExpr: Option[SValue],
+    oldImpl: () => CompiledFunc[A, B],
+    newImpl: () => CompiledFunc[A, B]
+    ) {
+
+    def printSuggestion(cf: CompiledFunc[_,_]): Unit = {
+      print(s"No expectedExpr for ")
+      SigmaPPrint.pprintln(cf.script)
+      print("Use ")
+      SigmaPPrint.pprintln(cf.expr)
+      println()
+    }
+
+    def checkExpectedExprIn(cf: CompiledFunc[_,_]): Unit = {
+      expectedExpr match {
+        case Some(e) =>
+          cf.expr shouldBe e
+        case None =>
+          printSuggestion(cf)
+      }
+    }
+
+    def checkEquality(input: A): Unit = changeType match {
+      case UnchangedFeature =>
+        // check both implementations with Scala semantic
+        val oldF = oldImpl()
+        checkExpectedExprIn(oldF)
+        val oldRes = checkEq(scalaFunc)(oldF)(input)
+        oldRes.isSuccess shouldBe true
+
+        if (!(newImpl eq oldImpl)) {
+          val newF = newImpl()
+          checkExpectedExprIn(newF)
+          val newRes = checkEq(scalaFunc)(newF)(input)
+          newRes.isSuccess shouldBe true
+        }
+
+      case AddedFeature =>
+        Try(oldImpl()(input)).isFailure shouldBe true
+        if (!(newImpl eq oldImpl)) {
+          val newF = newImpl()
+          checkExpectedExprIn(newF)
+          val newRes = checkEq(scalaFunc)(newF)(input)
+          newRes.isSuccess shouldBe true
+        }
+    }
+
+
+    def checkExpected(input: A, expectedResult: B): Unit = {
       changeType match {
         case UnchangedFeature =>
            // check both implementations with Scala semantic
@@ -102,24 +156,46 @@ class SigmaDslTest extends PropSpec
           }
       }
     }
+
   }
 
   object FeatureTest {
-    def unchanged[A: RType,B: RType](scalaFunc: A => B)(script: String)(implicit IR: IRContext): FeatureTest[A,B] = {
-      val oldImpl = () => func[A,B](script)
-      val newImpl = oldImpl  // TODO HF: use actual new implementation here
-      FeatureTest(UnchangedFeature, scalaFunc, oldImpl, newImpl)
+    def unchanged[A: RType, B: RType]
+        (scalaFunc: A => B, script: String, expectedExpr: SValue = null)
+        (implicit IR: IRContext): FeatureTest[A, B] = {
+      val oldImpl = () => func[A, B](script)
+      val newImpl = oldImpl // TODO HF: use actual new implementation here
+      FeatureTest(UnchangedFeature, scalaFunc, Option(expectedExpr), oldImpl, newImpl)
     }
 
-    def newFeature[A: RType,B: RType](scalaFunc: A => B)(script: String)(implicit IR: IRContext): FeatureTest[A,B] = {
-      val oldImpl = () => func[A,B](script)
-      val newImpl = oldImpl  // TODO HF: use actual new implementation here
-      FeatureTest(AddedFeature, scalaFunc, oldImpl, newImpl)
+    def newFeature[A: RType, B: RType]
+        (scalaFunc: A => B, script: String, expectedExpr: SValue = null)
+        (implicit IR: IRContext): FeatureTest[A, B] = {
+      val oldImpl = () => func[A, B](script)
+      val newImpl = oldImpl // TODO HF: use actual new implementation here
+      FeatureTest(AddedFeature, scalaFunc, Option(expectedExpr), oldImpl, newImpl)
+    }
+  }
+  import FeatureTest._
+
+  val currentVersion = new DynamicVariable[Int](3)
+
+  val versions: Seq[Int] = Array(3, 4)
+
+  protected override def property(testName: String, testTags: Tag*)(testFun: => Any /* Assertion */)(implicit pos: source.Position): Unit = {
+    super.property(testName, testTags:_*) {
+
+      for (version <- versions) {
+        currentVersion.withValue(version) {
+          val a = testFun
+        }
+      }
+
     }
   }
 
   property("Boolean methods equivalence") {
-    val feature = FeatureTest.newFeature((x: Boolean) => x.toByte)("{ (x: Boolean) => x.toByte }")
+    val feature = newFeature((x: Boolean) => x.toByte, "{ (x: Boolean) => x.toByte }")
 
     val data = Table(("input", "res"),
       (true, 1.toByte),
@@ -127,27 +203,46 @@ class SigmaDslTest extends PropSpec
     )
 
     forAll(data) { (x, res) =>
-      feature.checkSuccess(x, res)
+      feature.checkExpected(x, res)
     }
   }
 
   property("Byte methods equivalence") {
-    val toByte = checkEq(func[Byte, Byte]("{ (x: Byte) => x.toByte }"))(x => x.toByte)
-    val toShort = checkEq(func[Byte,Short]("{ (x: Byte) => x.toShort }"))(x => x.toShort)
-    val toInt = checkEq(func[Byte,Int]("{ (x: Byte) => x.toInt }"))(x => x.toInt)
-    val toLong = checkEq(func[Byte,Long]("{ (x: Byte) => x.toLong }"))(x => x.toLong)
-    val toBigInt = checkEq(func[Byte,BigInt]("{ (x: Byte) => x.toBigInt }"))(x => x.toBigInt)
+    val toByte = unchanged(
+      (x: Byte) => x.toByte, "{ (x: Byte) => x.toByte }",
+      FuncValue(Vector((1, SByte)), ValUse(1, SByte)))
 
-    //TODO soft-fork: for new 4 operations below
-    lazy val toBytes = checkEq(func[Byte,Coll[Byte]]("{ (x: Byte) => x.toBytes }"))(x => x.toBytes)
-    lazy val toBits = checkEq(func[Byte,Coll[Boolean]]("{ (x: Byte) => x.toBits }"))(x => x.toBits)
-    lazy val toAbs = checkEq(func[Byte,Byte]("{ (x: Byte) => x.toAbs }"))(x => x.toAbs)
-    lazy val compareTo = checkEq(func[(Byte, Byte), Int]("{ (x: (Byte, Byte)) => x._1.compareTo(x._2) }"))({ (x: (Byte, Byte)) => x._1.compareTo(x._2) })
+    val toShort = unchanged(
+      (x: Byte) => x.toShort, "{ (x: Byte) => x.toShort }",
+      FuncValue(Vector((1, SByte)), Upcast(ValUse(1, SByte), SShort)))
+
+    val toInt = unchanged(
+      (x: Byte) => x.toInt, "{ (x: Byte) => x.toInt }",
+      FuncValue(Vector((1, SByte)), Upcast(ValUse(1, SByte), SInt)))
+
+    val toLong = unchanged(
+      (x: Byte) => x.toLong, "{ (x: Byte) => x.toLong }",
+      FuncValue(Vector((1, SByte)), Upcast(ValUse(1, SByte), SLong)))
+
+    val toBigInt = unchanged(
+      (x: Byte) => x.toBigInt, "{ (x: Byte) => x.toBigInt }",
+      FuncValue(Vector((1, SByte)), Upcast(ValUse(1, SByte), SBigInt)))
+
+    lazy val toBytes = newFeature((x: Byte) => x.toBytes, "{ (x: Byte) => x.toBytes }")
+    lazy val toBits = newFeature((x: Byte) => x.toBits, "{ (x: Byte) => x.toBits }")
+    lazy val toAbs = newFeature((x: Byte) => x.toAbs, "{ (x: Byte) => x.toAbs }")
+    lazy val compareTo = newFeature(
+      (x: (Byte, Byte)) => x._1.compareTo(x._2),
+      "{ (x: (Byte, Byte)) => x._1.compareTo(x._2) }")
 
     forAll { x: Byte =>
-      Seq(toByte, toShort, toInt, toLong, toBigInt).foreach(_(x))
+      Seq(toByte, toShort, toInt, toLong, toBigInt, toBytes, toBits, toAbs).foreach(f => f.checkEquality(x))
     }
-    println(ComplexityTableStat.complexityTableString)
+
+    forAll { (x: Byte, y: Byte) =>
+      compareTo.checkEquality((x, y))
+    }
+
   }
 
   property("Int methods equivalence") {
