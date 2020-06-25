@@ -775,12 +775,13 @@ case object SSigmaProp extends SProduct with SPrimType with SEmbeddable with SLo
   override def isConstantSize = true
   val PropBytes = "propBytes"
   val IsProven = "isProven"
+  val PropBytesMethod = SMethod(this, PropBytes, SFunc(this, SByteArray), 1)
+      .withInfo(SigmaPropBytes, "Serialized bytes of this sigma proposition taken as ErgoTree.")
+  val IsProvenMethod = SMethod(this, IsProven, SFunc(this, SBoolean), 2)
+      .withInfo(// available only at frontend of ErgoScript
+        "Verify that sigma proposition is proven.")
   protected override def getMethods() = super.getMethods() ++ Seq(
-    SMethod(this, PropBytes, SFunc(this, SByteArray), 1)
-        .withInfo(SigmaPropBytes, "Serialized bytes of this sigma proposition taken as ErgoTree."),
-    SMethod(this, IsProven, SFunc(this, SBoolean), 2)
-        .withInfo(// available only at frontend of ErgoScript
-          "Verify that sigma proposition is proven.")
+    PropBytesMethod, IsProvenMethod
   )
 }
 
@@ -1387,6 +1388,26 @@ case object SBox extends SProduct with SPredefType with SMonoType {
   val GetReg = "getReg"
 
   // should be lazy, otherwise lead to initialization error
+  lazy val ValueMethod = SMethod(this, Value, SFunc(SBox, SLong), 1)
+      .withInfo(ExtractAmount,
+        "Mandatory: Monetary value, in Ergo tokens (NanoErg unit of measure)")
+
+  lazy val PropositionBytesMethod = SMethod(this, PropositionBytes, SFunc(SBox, SByteArray), 2)
+      .withInfo(ExtractScriptBytes,
+        "Serialized bytes of guarding script, which should be evaluated to true in order to\n" +
+        " open this box. (aka spend it in a transaction)")
+
+  lazy val BytesMethod = SMethod(this, Bytes, SFunc(SBox, SByteArray), 3)
+      .withInfo(ExtractBytes, "Serialized bytes of this box's content, including proposition bytes.")
+
+  lazy val BytesWithoutRefMethod = SMethod(this, BytesWithoutRef, SFunc(SBox, SByteArray), 4)
+      .withInfo(ExtractBytesWithNoRef,
+        "Serialized bytes of this box's content, excluding transactionId and index of output.")
+
+  lazy val IdMethod = SMethod(this, Id, SFunc(SBox, SByteArray), 5)
+      .withInfo(ExtractId,
+        "Blake2b256 hash of this box's content, basically equals to \\lst{blake2b256(bytes)}")
+
   lazy val creationInfoMethod = SMethod(this, CreationInfo, ExtractCreationInfo.OpType, 6)
       .withInfo(ExtractCreationInfo,
         """ If \lst{tx} is a transaction which generated this box, then \lst{creationInfo._1}
@@ -1406,23 +1427,19 @@ case object SBox extends SProduct with SPredefType with SMonoType {
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(PropertyCall, "Secondary tokens")
 
+
   // should be lazy to solve recursive initialization
   protected override def getMethods() = super.getMethods() ++ Vector(
-    SMethod(this, Value, SFunc(SBox, SLong), 1)
-        .withInfo(ExtractAmount, "Mandatory: Monetary value, in Ergo tokens (NanoErg unit of measure)"), // see ExtractAmount
-    SMethod(this, PropositionBytes, SFunc(SBox, SByteArray), 2)
-        .withInfo(ExtractScriptBytes, "Serialized bytes of guarding script, which should be evaluated to true in order to\n" +
-            " open this box. (aka spend it in a transaction)"), // see ExtractScriptBytes
-    SMethod(this, Bytes, SFunc(SBox, SByteArray), 3)
-        .withInfo(ExtractBytes, "Serialized bytes of this box's content, including proposition bytes."), // see ExtractBytes
-    SMethod(this, BytesWithoutRef, SFunc(SBox, SByteArray), 4)
-        .withInfo(ExtractBytesWithNoRef, "Serialized bytes of this box's content, excluding transactionId and index of output."), // see ExtractBytesWithNoRef
-    SMethod(this, Id, SFunc(SBox, SByteArray), 5)
-        .withInfo(ExtractId, "Blake2b256 hash of this box's content, basically equals to \\lst{blake2b256(bytes)}"), // see ExtractId
+    ValueMethod, // see ExtractAmount
+    PropositionBytesMethod, // see ExtractScriptBytes
+    BytesMethod, // see ExtractBytes
+    BytesWithoutRefMethod, // see ExtractBytesWithNoRef
+    IdMethod, // see ExtractId
     creationInfoMethod,
     getRegMethod,
     tokensMethod
   ) ++ registers(8)
+
   override val coster = Some(Coster(_.BoxCoster))
 }
 

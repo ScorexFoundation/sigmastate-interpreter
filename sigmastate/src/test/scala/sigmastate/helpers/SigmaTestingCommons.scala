@@ -2,33 +2,28 @@ package sigmastate.helpers
 
 import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
 import org.ergoplatform.ErgoBox.NonMandatoryRegisterId
-import org.ergoplatform.SigmaConstants.ScriptCostLimit
-import org.ergoplatform.ErgoLikeContext.Height
 import org.ergoplatform.ErgoScriptPredef.TrueProp
 import org.ergoplatform._
-import org.ergoplatform.validation.{SigmaValidationSettings, ValidationRules, ValidationSpecification}
+import org.ergoplatform.validation.{ValidationSpecification}
 import org.scalacheck.Arbitrary.arbByte
 import org.scalacheck.Gen
-import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
-import org.scalatest.{Assertion, Matchers, PropSpec}
-import scalan.{RType, TestContexts, TestUtils}
-import scorex.crypto.hash.{Blake2b256, Digest32}
+import org.scalatest.prop.{PropertyChecks, GeneratorDrivenPropertyChecks}
+import org.scalatest.{PropSpec, Assertion, Matchers}
+import scalan.{TestUtils, TestContexts, RType}
+import scorex.crypto.hash.{Digest32, Blake2b256}
 import sigma.types.IsPrimView
-import sigmastate.Values.{Constant, ErgoTree, EvaluatedValue, GroupElementConstant, SValue, Value}
-import sigmastate.interpreter.Interpreter.{ScriptEnv, ScriptNameProp}
-import sigmastate.interpreter.{ContextExtension, CryptoConstants, Interpreter}
-import sigmastate.lang.{SigmaCompiler, TransformingSigmaBuilder}
-import sigmastate.serialization.{GroupElementSerializer, SigmaSerializer, ValueSerializer}
-import sigmastate.{AvlTreeData, SGroupElement, SType}
-import sigmastate.eval.{CompiletimeCosting, Evaluation, IRContext, _}
+import sigmastate.Values.{Constant, EvaluatedValue, SValue, Value, ErgoTree, GroupElementConstant}
+import sigmastate.interpreter.Interpreter.{ScriptNameProp, ScriptEnv}
+import sigmastate.interpreter.{CryptoConstants, Interpreter}
+import sigmastate.lang.{TransformingSigmaBuilder, SigmaCompiler, Terms}
+import sigmastate.serialization.{ValueSerializer, SigmaSerializer}
+import sigmastate.{SGroupElement, SType}
+import sigmastate.eval.{CompiletimeCosting, IRContext, Evaluation, _}
 import sigmastate.interpreter.CryptoConstants.EcPointType
-import special.collection.Coll
 import special.sigma
-import special.sigma.{Box, Header, PreHeader}
 
 import scala.annotation.tailrec
 import scala.language.implicitConversions
-import scala.util.Try
 
 trait SigmaTestingCommons extends PropSpec
   with PropertyChecks
@@ -136,7 +131,15 @@ trait SigmaTestingCommons extends PropSpec
     }
   }
 
-  def func[A: RType, B: RType](func: String, bindings: (Byte, EvaluatedValue[_ <: SType])*)(implicit IR: IRContext): A => B = {
+  case class CompiledFunc[A,B]
+    (script: String, bindings: Seq[(Byte, EvaluatedValue[_ <: SType])], expr: SValue, func: A => B)
+    (implicit val tA: RType[A], val tB: RType[B]) extends Function1[A, B] {
+    override def apply(x: A): B = func(x)
+  }
+
+  def func[A: RType, B: RType]
+      (funcScript: String, bindings: (Byte, EvaluatedValue[_ <: SType])*)
+      (implicit IR: IRContext): CompiledFunc[A, B] = {
     import IR._
     import IR.Context._;
     val tA = RType[A]
@@ -145,7 +148,7 @@ trait SigmaTestingCommons extends PropSpec
     val tpeB = Evaluation.rtypeToSType(tB)
     val code =
       s"""{
-         |  val func = $func
+         |  val func = $funcScript
          |  val res = func(getVar[${tA.name}](1).get)
          |  res
          |}
@@ -159,7 +162,7 @@ trait SigmaTestingCommons extends PropSpec
     val lB = Liftables.asLiftable[Any, Any](calcF.elem.eRange.liftable)
     val valueFun = IR.compile[SContext, Any, IR.Context, Any](IR.getDataEnv, calcF)(lA, lB)
 
-    (in: A) => {
+    val f = (in: A) => {
       implicit val cA = tA.classTag
       val x = fromPrimView(in)
       val context =
@@ -169,9 +172,11 @@ trait SigmaTestingCommons extends PropSpec
       val (res, _) = valueFun(calcCtx)
       res.asInstanceOf[B]
     }
+    val Terms.Apply(funcVal, _) = tree.asInstanceOf[SValue]
+    CompiledFunc(funcScript, bindings.toSeq, funcVal, f)
   }
 
-  def assertExceptionThrown(fun: => Any, assertion: Throwable => Boolean): Unit = {
+  def assertExceptionThrown(fun: => Any, assertion: Throwable => Boolean, clue: => String = ""): Unit = {
     try {
       fun
       fail("exception is expected")
@@ -179,7 +184,11 @@ trait SigmaTestingCommons extends PropSpec
     catch {
       case e: Throwable =>
         if (!assertion(e))
-          fail(s"exception check failed on $e (root cause: ${rootCause(e)}) \n trace:\n${e.getStackTrace.mkString("\n")}}")
+          fail(
+            s"""exception check failed on $e (root cause: ${rootCause(e)})
+              |clue: $clue
+              |trace:
+              |${e.getStackTrace.mkString("\n")}}""".stripMargin)
     }
   }
 
