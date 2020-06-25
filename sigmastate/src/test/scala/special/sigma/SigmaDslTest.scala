@@ -413,6 +413,8 @@ class SigmaDslTest extends PropSpec
     {
       val eq = EqualityChecker((ge, g2))
       eq({ (x: (GroupElement, GroupElement)) => x._1.multiply(x._2) })("{ (x: (GroupElement, GroupElement)) => x._1.multiply(x._2) }")
+      // TODO HF: add test when `multiply` is represented as MethodCall
+      // it should fail in 3.x
     }
 
     {
@@ -651,14 +653,18 @@ class SigmaDslTest extends PropSpec
     eq({ (x: Context) => x.dataInputs(0).id })("{ (x: Context) => x.dataInputs(0).id }")
     eq({ (x: Context) => x.preHeader })("{ (x: Context) => x.preHeader }")
     eq({ (x: Context) => x.headers })("{ (x: Context) => x.headers }")
+
     eq({ (x: Context) => x.OUTPUTS })("{ (x: Context) => x.OUTPUTS }")
+
     eq({ (x: Context) => x.INPUTS })("{ (x: Context) => x.INPUTS }")
     eq({ (x: Context) => x.HEIGHT })("{ (x: Context) => x.HEIGHT }")
     eq({ (x: Context) => x.SELF })("{ (x: Context) => x.SELF }")
     eq({ (x: Context) => x.INPUTS.map { (b: Box) => b.value } })("{ (x: Context) => x.INPUTS.map { (b: Box) => b.value } }")
+
     eq({ (x: Context) => x.selfBoxIndex })("{ (x: Context) => x.selfBoxIndex }")
     eq({ (x: Context) => x.LastBlockUtxoRootHash.isUpdateAllowed })("{ (x: Context) => x.LastBlockUtxoRootHash.isUpdateAllowed }")
     eq({ (x: Context) => x.minerPubKey })("{ (x: Context) => x.minerPubKey }")
+
     eq({ (x: Context) =>
       x.INPUTS.map { (b: Box) => (b.value, b.value) }
     })(
