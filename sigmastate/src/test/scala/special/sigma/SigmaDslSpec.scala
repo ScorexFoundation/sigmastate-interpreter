@@ -8,7 +8,7 @@ import org.ergoplatform._
 import org.scalacheck.Gen
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{PropSpec, Matchers, Tag}
-import scalan.RType
+import scalan.{RType, ExactNumeric}
 import org.scalactic.source
 import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.authds.{ADKey, ADValue}
@@ -31,164 +31,7 @@ import scala.util.{DynamicVariable, Success, Failure, Try}
 
 /** This suite tests every method of every SigmaDsl type to be equivalent to
   * the evaluation of the corresponding ErgoScript operation */
-class SigmaDslTest extends PropSpec
-  with PropertyChecks
-  with Matchers
-  with SigmaTestingData with SigmaContractSyntax
-  with SigmaTypeGens { suite =>
-
-  lazy val spec = TestContractSpec(suite)(new TestingIRContext)
-
-  override def contractEnv: ScriptEnv = Map()
-
-  implicit lazy val IR = new TestingIRContext {
-    override val okPrintEvaluatedEntries: Boolean = false
-    override val okMeasureOperationTime: Boolean = true
-  }
-
-  def checkEq[A,B](f: A => B)(g: A => B): A => Try[B] = { x: A =>
-    val b1 = Try(f(x)); val b2 = Try(g(x))
-    (b1, b2) match {
-      case (res @ Success(b1), Success(b2)) =>
-        assert(b1 == b2)
-        res
-      case (res @ Failure(t1), Failure(t2)) =>
-        val c1 = rootCause(t1).getClass
-        val c2 = rootCause(t2).getClass
-        c1 shouldBe c2
-        res
-      case _ =>
-        sys.error(s"Should succeed with the same value or fail with the same exception but was: $b1 and $b2")
-    }
-
-  }
-
-  def checkEq2[A,B,R](f: (A, B) => R)(g: (A, B) => R): (A,B) => Unit = { (x: A, y: B) =>
-    val r1 = f(x, y); val r2 = g(x, y)
-    assert(r1.getClass == r2.getClass)
-    assert(r1 == r2)
-  }
-
-  def getArrayIndex(len: Int): Int = {
-    val index = Gen.choose(0, len - 1)
-    index.sample.get
-  }
-
-  case class EqualityChecker[T: RType](obj: T) {
-    def apply[R: RType](dslFunc: T => R)(script: String) =
-      checkEq(func[T, R](script))(dslFunc)(obj)
-  }
-
-  trait ChangeType
-  case object UnchangedFeature extends ChangeType
-  case object AddedFeature extends ChangeType
-
-  case class FeatureTest[A, B](
-    changeType: ChangeType,
-    scalaFunc: A => B,
-    expectedExpr: Option[SValue],
-    oldImpl: () => CompiledFunc[A, B],
-    newImpl: () => CompiledFunc[A, B]
-    ) {
-
-    def printSuggestion(cf: CompiledFunc[_,_]): Unit = {
-      print(s"No expectedExpr for ")
-      SigmaPPrint.pprintln(cf.script)
-      print("Use ")
-      SigmaPPrint.pprintln(cf.expr)
-      println()
-    }
-
-    def checkExpectedExprIn(cf: CompiledFunc[_,_]): Unit = {
-      expectedExpr match {
-        case Some(e) =>
-          cf.expr shouldBe e
-        case None =>
-          printSuggestion(cf)
-      }
-    }
-
-    def checkEquality(input: A): Unit = changeType match {
-      case UnchangedFeature =>
-        // check both implementations with Scala semantic
-        val oldF = oldImpl()
-        checkExpectedExprIn(oldF)
-        val oldRes = checkEq(scalaFunc)(oldF)(input)
-        oldRes.isSuccess shouldBe true
-
-        if (!(newImpl eq oldImpl)) {
-          val newF = newImpl()
-          checkExpectedExprIn(newF)
-          val newRes = checkEq(scalaFunc)(newF)(input)
-          newRes.isSuccess shouldBe true
-        }
-
-      case AddedFeature =>
-        Try(oldImpl()(input)).isFailure shouldBe true
-        if (!(newImpl eq oldImpl)) {
-          val newF = newImpl()
-          checkExpectedExprIn(newF)
-          val newRes = checkEq(scalaFunc)(newF)(input)
-          newRes.isSuccess shouldBe true
-        }
-    }
-
-
-    def checkExpected(input: A, expectedResult: B): Unit = {
-      changeType match {
-        case UnchangedFeature =>
-           // check both implementations with Scala semantic
-           val oldRes = checkEq(scalaFunc)(oldImpl())(input)
-           oldRes.get shouldBe expectedResult
-
-           if (!(newImpl eq oldImpl)) {
-             val newRes = checkEq(scalaFunc)(newImpl())(input)
-             newRes.get shouldBe expectedResult
-           }
-
-        case AddedFeature =>
-          Try(oldImpl()(input)).isFailure shouldBe true
-          if (!(newImpl eq oldImpl)) {
-            val newRes = checkEq(scalaFunc)(newImpl())(input)
-            newRes.get shouldBe expectedResult
-          }
-      }
-    }
-
-  }
-
-  object FeatureTest {
-    def unchanged[A: RType, B: RType]
-        (scalaFunc: A => B, script: String, expectedExpr: SValue = null)
-        (implicit IR: IRContext): FeatureTest[A, B] = {
-      val oldImpl = () => func[A, B](script)
-      val newImpl = oldImpl // TODO HF: use actual new implementation here
-      FeatureTest(UnchangedFeature, scalaFunc, Option(expectedExpr), oldImpl, newImpl)
-    }
-
-    def newFeature[A: RType, B: RType]
-        (scalaFunc: A => B, script: String, expectedExpr: SValue = null)
-        (implicit IR: IRContext): FeatureTest[A, B] = {
-      val oldImpl = () => func[A, B](script)
-      val newImpl = oldImpl // TODO HF: use actual new implementation here
-      FeatureTest(AddedFeature, scalaFunc, Option(expectedExpr), oldImpl, newImpl)
-    }
-  }
-  import FeatureTest._
-
-  val targetVersion = new DynamicVariable[Int](4)
-
-  val versions: Seq[Int] = Array(4)
-
-  protected override def property(testName: String, testTags: Tag*)(testFun: => Any /* Assertion */)(implicit pos: source.Position): Unit = {
-    super.property(testName, testTags:_*) {
-      for (version <- versions) {
-        targetVersion.withValue(version) {
-          val a = testFun
-        }
-      }
-    }
-  }
+class SigmaDslSpec extends SigmaDslTesting { suite =>
 
   property("Boolean methods equivalence") {
     val feature = newFeature((x: Boolean) => x.toByte, "{ (x: Boolean) => x.toByte }")
@@ -204,23 +47,23 @@ class SigmaDslTest extends PropSpec
   }
 
   property("Byte methods equivalence") {
-    val toByte = unchanged(
+    val toByte = sameFeature(
       (x: Byte) => x.toByte, "{ (x: Byte) => x.toByte }",
       FuncValue(Vector((1, SByte)), ValUse(1, SByte)))
 
-    val toShort = unchanged(
+    val toShort = sameFeature(
       (x: Byte) => x.toShort, "{ (x: Byte) => x.toShort }",
       FuncValue(Vector((1, SByte)), Upcast(ValUse(1, SByte), SShort)))
 
-    val toInt = unchanged(
+    val toInt = sameFeature(
       (x: Byte) => x.toInt, "{ (x: Byte) => x.toInt }",
       FuncValue(Vector((1, SByte)), Upcast(ValUse(1, SByte), SInt)))
 
-    val toLong = unchanged(
+    val toLong = sameFeature(
       (x: Byte) => x.toLong, "{ (x: Byte) => x.toLong }",
       FuncValue(Vector((1, SByte)), Upcast(ValUse(1, SByte), SLong)))
 
-    val toBigInt = unchanged(
+    val toBigInt = sameFeature(
       (x: Byte) => x.toBigInt, "{ (x: Byte) => x.toBigInt }",
       FuncValue(Vector((1, SByte)), Upcast(ValUse(1, SByte), SBigInt)))
 
@@ -242,24 +85,92 @@ class SigmaDslTest extends PropSpec
   }
 
   property("Int methods equivalence") {
-    val toByte = checkEq(func[Int,Byte]("{ (x: Int) => x.toByte }"))(x => x.toByte)
-    val toShort = checkEq(func[Int,Short]("{ (x: Int) => x.toShort }"))(x => x.toShort)
-    val toInt = checkEq(func[Int,Int]("{ (x: Int) => x.toInt }"))(x => x.toInt)
-    val toLong = checkEq(func[Int,Long]("{ (x: Int) => x.toLong }"))(x => x.toLong)
-    val toBigInt = checkEq(func[Int,BigInt]("{ (x: Int) => x.toBigInt }"))(x => x.toBigInt)
-    lazy val toBytes = checkEq(func[Int,Coll[Byte]]("{ (x: Int) => x.toBytes }"))(x => x.toBytes)
-    lazy val toBits = checkEq(func[Int,Coll[Boolean]]("{ (x: Int) => x.toBits }"))(x => x.toBits)
-    lazy val toAbs = checkEq(func[Int,Int]("{ (x: Int) => x.toAbs }"))(x => x.toAbs)
-    lazy val compareTo = checkEq(func[(Int, Int), Int]("{ (x: (Int, Int)) => x._1.compareTo(x._2) }"))(x => x._1.compareTo(x._2))
+    val toByte = sameFeature((x: Int) => x.toByteExact,
+      "{ (x: Int) => x.toByte }",
+      FuncValue(Vector((1, SInt)), Downcast(ValUse(1, SInt), SByte)))
+    val toShort = sameFeature((x: Int) => x.toShortExact,
+      "{ (x: Int) => x.toShort }",
+      FuncValue(Vector((1, SInt)), Downcast(ValUse(1, SInt), SShort)))
+    val toInt = sameFeature((x: Int) => x.toInt,
+      "{ (x: Int) => x.toInt }",
+      FuncValue(Vector((1, SInt)), ValUse(1, SInt)))
+    val toLong = sameFeature((x: Int) => x.toLong,
+      "{ (x: Int) => x.toLong }",
+      FuncValue(Vector((1, SInt)), Upcast(ValUse(1, SInt), SLong)))
+    val toBigInt = sameFeature((x: Int) => x.toBigInt,
+      "{ (x: Int) => x.toBigInt }",
+      FuncValue(Vector((1, SInt)), Upcast(ValUse(1, SInt), SBigInt)))
+    lazy val toBytes = newFeature((x: Int) => x.toBytes, "{ (x: Int) => x.toBytes }")
+    lazy val toBits = newFeature((x: Int) => x.toBits, "{ (x: Int) => x.toBits }")
+    lazy val toAbs = newFeature((x: Int) => x.toAbs, "{ (x: Int) => x.toAbs }")
+    lazy val compareTo = newFeature((x: (Int, Int)) => x._1.compareTo(x._2),
+      "{ (x: (Int, Int)) => x._1.compareTo(x._2) }")
 
-    forAll { x: Byte => toByte(x.toInt) }
-    forAll { x: Short => toShort(x.toInt) }
+    val n = ExactNumeric.IntIsExactNumeric
+    lazy val arithOps = sameFeature(
+      { (x: (Int, Int)) =>
+        val a = x._1; val b = x._2
+        val plus = n.plus(a, b)
+        val minus = n.minus(a, b)
+        val mul = n.times(a, b)
+        val div = a / b
+        val mod = a % b
+        (plus, (minus, (mul, (div, mod))))
+      },
+      """{ (x: (Int, Int)) =>
+        |  val a = x._1; val b = x._2
+        |  val plus = a + b
+        |  val minus = a - b
+        |  val mul = a * b
+        |  val div = a / b
+        |  val mod = a % b
+        |  (plus, (minus, (mul, (div, mod))))
+        |}""".stripMargin,
+        FuncValue(
+          Vector((1, STuple(Vector(SInt, SInt)))),
+          BlockValue(
+            Vector(
+              ValDef(
+                3,
+                List(),
+                SelectField.typed[IntValue](ValUse(1, STuple(Vector(SInt, SInt))), 1.toByte)
+              ),
+              ValDef(
+                4,
+                List(),
+                SelectField.typed[IntValue](ValUse(1, STuple(Vector(SInt, SInt))), 2.toByte)
+              )
+            ),
+            Tuple(
+              Vector(
+                ArithOp(ValUse(3, SInt), ValUse(4, SInt), OpCode @@ (-102.toByte)),
+                Tuple(
+                  Vector(
+                    ArithOp(ValUse(3, SInt), ValUse(4, SInt), OpCode @@ (-103.toByte)),
+                    Tuple(
+                      Vector(
+                        ArithOp(ValUse(3, SInt), ValUse(4, SInt), OpCode @@ (-100.toByte)),
+                        Tuple(
+                          Vector(
+                            ArithOp(ValUse(3, SInt), ValUse(4, SInt), OpCode @@ (-99.toByte)),
+                            ArithOp(ValUse(3, SInt), ValUse(4, SInt), OpCode @@ (-98.toByte))
+                          )
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          )
+        ))
+
     forAll { x: Int =>
-      Seq(toInt, toLong, toBigInt).foreach(_(x))
-      //TODO soft-fork: toBytes, toBits, toAbs
+      Seq(toByte, toShort, toInt, toLong, toBigInt, toBytes, toBits, toAbs).foreach(_.checkEquality(x))
     }
     forAll { x: (Int, Int) =>
-      //TODO soft-fork: compareTo(x)
+      arithOps.checkEquality(x)
+      compareTo.checkEquality(x)
     }
   }
 
@@ -1036,14 +947,14 @@ class SigmaDslTest extends PropSpec
   }
 
   property("sigmaProp equivalence") {
-    lazy val eq = unchanged((x: Boolean) => sigmaProp(x),
+    lazy val eq = sameFeature((x: Boolean) => sigmaProp(x),
      "{ (x: Boolean) => sigmaProp(x) }",
       FuncValue(Vector((1, SBoolean)), BoolToSigmaProp(ValUse(1, SBoolean))))
     forAll { x: Boolean => eq.checkEquality(x) }
   }
 
   property("atLeast equivalence") {
-    lazy val eq = unchanged((x: Coll[SigmaProp]) => atLeast(x.size - 1, x),
+    lazy val eq = sameFeature((x: Coll[SigmaProp]) => atLeast(x.size - 1, x),
       "{ (x: Coll[SigmaProp]) => atLeast(x.size - 1, x) }",
       FuncValue(
         Vector((1, SCollectionType(SSigmaProp))),
@@ -1058,7 +969,7 @@ class SigmaDslTest extends PropSpec
   }
 
   property("&& sigma equivalence") {
-    lazy val SigmaAnd1 = unchanged(
+    lazy val SigmaAnd1 = sameFeature(
       (x: (SigmaProp, SigmaProp)) => x._1 && x._2,
       "{ (x:(SigmaProp, SigmaProp)) => x._1 && x._2 }",
       FuncValue(
@@ -1070,7 +981,7 @@ class SigmaDslTest extends PropSpec
           )
         )
       ))
-    lazy val SigmaAnd2 = unchanged(
+    lazy val SigmaAnd2 = sameFeature(
       (x: (SigmaProp, Boolean)) => x._1 && sigmaProp(x._2),
       "{ (x:(SigmaProp, Boolean)) => x._1 && sigmaProp(x._2) }",
       FuncValue(
@@ -1094,7 +1005,7 @@ class SigmaDslTest extends PropSpec
   }
 
   property("|| sigma equivalence") {
-    lazy val SigmaOr1 = unchanged(
+    lazy val SigmaOr1 = sameFeature(
       (x: (SigmaProp, SigmaProp)) => x._1 || x._2,
       "{ (x:(SigmaProp, SigmaProp)) => x._1 || x._2 }",
       FuncValue(
@@ -1106,7 +1017,7 @@ class SigmaDslTest extends PropSpec
           )
         )
       ))
-    lazy val SigmaOr2 = unchanged(
+    lazy val SigmaOr2 = sameFeature(
       (x: (SigmaProp, Boolean)) => x._1 || sigmaProp(x._2),
       "{ (x:(SigmaProp, Boolean)) => x._1 || sigmaProp(x._2) }",
       FuncValue(
