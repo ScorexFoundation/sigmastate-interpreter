@@ -22,8 +22,9 @@ import sigmastate.eval.Extensions._
 import sigmastate.eval._
 import sigmastate.helpers.SigmaPPrint
 import sigmastate.interpreter.Interpreter.ScriptEnv
-import sigmastate.utxo.ComplexityTableStat
+import sigmastate.utxo.{ComplexityTableStat, SizeOf, SelectField}
 import special.collection.Coll
+import sigmastate.serialization.OpCodes.OpCode
 
 import scala.util.{DynamicVariable, Success, Failure, Try}
 
@@ -1035,36 +1036,96 @@ class SigmaDslTest extends PropSpec
   }
 
   property("sigmaProp equivalence") {
-    lazy val eq = checkEq(func[Boolean, SigmaProp]("{ (x: Boolean) => sigmaProp(x) }")){ (x: Boolean) =>
-      sigmaProp(x)
-    }
-    forAll { x: Boolean => eq(x) }
+    lazy val eq = unchanged((x: Boolean) => sigmaProp(x),
+     "{ (x: Boolean) => sigmaProp(x) }",
+      FuncValue(Vector((1, SBoolean)), BoolToSigmaProp(ValUse(1, SBoolean))))
+    forAll { x: Boolean => eq.checkEquality(x) }
   }
 
   property("atLeast equivalence") {
-    lazy val eq = checkEq(func[Coll[SigmaProp], SigmaProp]("{ (x: Coll[SigmaProp]) => atLeast(x.size - 1, x) }")){ (x: Coll[SigmaProp]) =>
-      atLeast(x.size - 1, x)
-    }
+    lazy val eq = unchanged((x: Coll[SigmaProp]) => atLeast(x.size - 1, x),
+      "{ (x: Coll[SigmaProp]) => atLeast(x.size - 1, x) }",
+      FuncValue(
+        Vector((1, SCollectionType(SSigmaProp))),
+        AtLeast(
+          ArithOp(SizeOf(ValUse(1, SCollectionType(SSigmaProp))), IntConstant(1), OpCode @@ (-103.toByte)),
+          ValUse(1, SCollectionType(SSigmaProp))
+        )
+      ))
     forAll(arrayGen[SigmaProp].suchThat(_.length > 2)) { x: Array[SigmaProp] =>
-      eq(Colls.fromArray(x))
+      eq.checkEquality(Colls.fromArray(x))
     }
   }
 
   property("&& sigma equivalence") {
-    lazy val eq = checkEq(func[(SigmaProp, SigmaProp), SigmaProp]("{ (x:(SigmaProp, SigmaProp)) => x._1 && x._2 }")){ (x:(SigmaProp, SigmaProp)) =>
-      x._1 && x._2
-    }
+    lazy val SigmaAnd1 = unchanged(
+      (x: (SigmaProp, SigmaProp)) => x._1 && x._2,
+      "{ (x:(SigmaProp, SigmaProp)) => x._1 && x._2 }",
+      FuncValue(
+        Vector((1, STuple(Vector(SSigmaProp, SSigmaProp)))),
+        SigmaAnd(
+          Seq(
+            SelectField.typed[SigmaPropValue](ValUse(1, STuple(Vector(SSigmaProp, SSigmaProp))), 1.toByte),
+            SelectField.typed[SigmaPropValue](ValUse(1, STuple(Vector(SSigmaProp, SSigmaProp))), 2.toByte)
+          )
+        )
+      ))
+    lazy val SigmaAnd2 = unchanged(
+      (x: (SigmaProp, Boolean)) => x._1 && sigmaProp(x._2),
+      "{ (x:(SigmaProp, Boolean)) => x._1 && sigmaProp(x._2) }",
+      FuncValue(
+        Vector((1, STuple(Vector(SSigmaProp, SBoolean)))),
+        SigmaAnd(
+          Seq(
+            SelectField.typed[SigmaPropValue](ValUse(1, STuple(Vector(SSigmaProp, SBoolean))), 1.toByte),
+            BoolToSigmaProp(
+              SelectField.typed[BoolValue](ValUse(1, STuple(Vector(SSigmaProp, SBoolean))), 2.toByte)
+            )
+          )
+        )
+      ))
+
     forAll { x: (SigmaProp, SigmaProp) =>
-      eq(x)
+      SigmaAnd1.checkEquality(x)
+    }
+    forAll { x: (SigmaProp, Boolean) =>
+      SigmaAnd2.checkEquality(x)
     }
   }
 
   property("|| sigma equivalence") {
-    lazy val eq = checkEq(func[(SigmaProp, SigmaProp), SigmaProp]("{ (x:(SigmaProp, SigmaProp)) => x._1 || x._2 }")){ (x:(SigmaProp, SigmaProp)) =>
-      x._1 || x._2
-    }
+    lazy val SigmaOr1 = unchanged(
+      (x: (SigmaProp, SigmaProp)) => x._1 || x._2,
+      "{ (x:(SigmaProp, SigmaProp)) => x._1 || x._2 }",
+      FuncValue(
+        Vector((1, STuple(Vector(SSigmaProp, SSigmaProp)))),
+        SigmaOr(
+          Seq(
+            SelectField.typed[SigmaPropValue](ValUse(1, STuple(Vector(SSigmaProp, SSigmaProp))), 1.toByte),
+            SelectField.typed[SigmaPropValue](ValUse(1, STuple(Vector(SSigmaProp, SSigmaProp))), 2.toByte)
+          )
+        )
+      ))
+    lazy val SigmaOr2 = unchanged(
+      (x: (SigmaProp, Boolean)) => x._1 || sigmaProp(x._2),
+      "{ (x:(SigmaProp, Boolean)) => x._1 || sigmaProp(x._2) }",
+      FuncValue(
+        Vector((1, STuple(Vector(SSigmaProp, SBoolean)))),
+        SigmaOr(
+          Seq(
+            SelectField.typed[SigmaPropValue](ValUse(1, STuple(Vector(SSigmaProp, SBoolean))), 1.toByte),
+            BoolToSigmaProp(
+              SelectField.typed[BoolValue](ValUse(1, STuple(Vector(SSigmaProp, SBoolean))), 2.toByte)
+            )
+          )
+        )
+      ))
+
     forAll { x: (SigmaProp, SigmaProp) =>
-      eq(x)
+      SigmaOr1.checkEquality(x)
+    }
+    forAll { x: (SigmaProp, Boolean) =>
+      SigmaOr2.checkEquality(x)
     }
   }
 
