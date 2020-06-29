@@ -71,18 +71,31 @@ class SigmaDslTesting extends PropSpec
       checkEq(func[T, R](script))(dslFunc)(obj)
   }
 
-  trait ChangeType
-  case object UnchangedFeature extends ChangeType
-  case object AddedFeature extends ChangeType
+  /** Type of the language feature to be tested. */
+  sealed trait FeatureType
+  case object ExistingFeature extends FeatureType
+  case object AddedFeature extends FeatureType
+  case object ChangedFeature extends FeatureType
 
-  case class FeatureTest[A, B](
-                                  changeType: ChangeType,
-                                  scalaFunc: A => B,
-                                  expectedExpr: Option[SValue],
-                                  oldImpl: () => CompiledFunc[A, B],
-                                  newImpl: () => CompiledFunc[A, B]
+  /** Test case descriptor of the language feature.
+    *
+    * @param featureType   type of the language feature
+    * @param scalaFunc    feature semantic given by scala code
+    * @param expectedExpr expression which represents the test case code
+    * @param oldImpl      function that executes the feature using v3 interpreter implementation
+    * @param newImpl      function that executes the feature using v4 interpreter implementation
+    */
+  case class FeatureTest[A, B](featureType: FeatureType,
+                               scalaFunc: A => B,
+                               expectedExpr: Option[SValue],
+                               oldImpl: () => CompiledFunc[A, B],
+                               newImpl: () => CompiledFunc[A, B],
+                               printExpectedExpr: Boolean = true
                               ) {
+    def printExpectedExprOff = copy(printExpectedExpr = false)
 
+    /** Called to print test case expression (when it is not given).
+      * Can be used to create regression test cases. */
     def printSuggestion(cf: CompiledFunc[_,_]): Unit = {
       print(s"No expectedExpr for ")
       SigmaPPrint.pprintln(cf.script)
@@ -91,21 +104,29 @@ class SigmaDslTesting extends PropSpec
       println()
     }
 
+    /** Checks the result of the front-end compiler against expectedExpr.
+      * Used to catch regression errors in front-end compiler.
+      */
     def checkExpectedExprIn(cf: CompiledFunc[_,_]): Boolean = {
       expectedExpr match {
         case Some(e) =>
           cf.expr shouldBe e
-        case None =>
+        case None if printExpectedExpr =>
           printSuggestion(cf)
       }
       true
     }
 
-    lazy val oldF = oldImpl().ensuring(checkExpectedExprIn(_))
-    lazy val newF = newImpl().ensuring(checkExpectedExprIn(_))
+    /** v3 implementation*/
+    lazy val oldF: CompiledFunc[A, B] = oldImpl().ensuring(checkExpectedExprIn(_))
 
-    def checkEquality(input: A): Unit = changeType match {
-      case UnchangedFeature =>
+    /** v4 implementation*/
+    lazy val newF: CompiledFunc[A, B] = newImpl().ensuring(checkExpectedExprIn(_))
+
+    /** Depending on the featureType compares the old and new implementations against
+      * semantic function (scalaFunc) on the given input. */
+    def checkEquality(input: A): Unit = featureType match {
+      case ExistingFeature =>
         // check both implementations with Scala semantic
         checkEq(scalaFunc)(oldF)(input)
 
@@ -120,10 +141,12 @@ class SigmaDslTesting extends PropSpec
         }
     }
 
-
+    /** Depending on the featureType compares the old and new implementations against
+      * semantic function (scalaFunc) on the given input, also checking the given expected result.
+      */
     def checkExpected(input: A, expectedResult: B): Unit = {
-      changeType match {
-        case UnchangedFeature =>
+      featureType match {
+        case ExistingFeature =>
           // check both implementations with Scala semantic
           val oldRes = checkEq(scalaFunc)(oldF)(input)
           oldRes.get shouldBe expectedResult
@@ -144,14 +167,20 @@ class SigmaDslTesting extends PropSpec
 
   }
 
-  def sameFeature[A: RType, B: RType]
+  /** Describes existing language feature which should be equally supported in both v3 and
+    * v4 of the language.
+    */
+  def existingFeature[A: RType, B: RType]
       (scalaFunc: A => B, script: String, expectedExpr: SValue = null)
       (implicit IR: IRContext): FeatureTest[A, B] = {
     val oldImpl = () => func[A, B](script)
     val newImpl = oldImpl // TODO HF: use actual new implementation here
-    FeatureTest(UnchangedFeature, scalaFunc, Option(expectedExpr), oldImpl, newImpl)
+    FeatureTest(ExistingFeature, scalaFunc, Option(expectedExpr), oldImpl, newImpl)
   }
 
+  /** Describes a new language feature which must NOT be supported in v3 and
+    * must BE supported in v4 of the language.
+    */
   def newFeature[A: RType, B: RType]
       (scalaFunc: A => B, script: String, expectedExpr: SValue = null)
       (implicit IR: IRContext): FeatureTest[A, B] = {
