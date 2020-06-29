@@ -281,6 +281,10 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
     }
   }
 
+  ///=====================================================
+  ///              Byte type operations
+  ///-----------------------------------------------------
+
   property("Byte methods equivalence") {
     val toByte = existingFeature(
       (x: Byte) => x.toByte, "{ (x: Byte) => x.toByte }",
@@ -369,15 +373,113 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
       )
     )
 
+    lazy val bitOr = newFeature(
+      { (x: (Byte, Byte)) => (x._1 | x._2).toByteExact },
+      "{ (x: (Byte, Byte)) => (x._1 | x._2).toByteExact }")
+
+    lazy val bitAnd = newFeature(
+      { (x: (Byte, Byte)) => (x._1 & x._2).toByteExact },
+      "{ (x: (Byte, Byte)) => (x._1 & x._2).toByteExact }")
+
     forAll { x: Byte =>
       Seq(toByte, toShort, toInt, toLong, toBigInt, toBytes, toBits, toAbs).foreach(f => f.checkEquality(x))
     }
 
     forAll { x: (Byte, Byte) =>
-      compareTo.checkEquality(x)
-      arithOps.checkEquality(x)
+      Seq(compareTo, arithOps, bitOr, bitAnd).foreach(_.checkEquality(x))
     }
 
+  }
+
+  property("Short methods equivalence") {
+    val toByte = existingFeature((x: Short) => x.toByteExact,
+      "{ (x: Short) => x.toByte }",
+      FuncValue(Vector((1, SShort)), Downcast(ValUse(1, SShort), SByte)))
+    val toShort = existingFeature((x: Short) => x.toShort,
+      "{ (x: Short) => x.toShort }",
+      FuncValue(Vector((1, SShort)), ValUse(1, SShort)))
+    val toInt = existingFeature((x: Short) => x.toInt,
+      "{ (x: Short) => x.toInt }",
+      FuncValue(Vector((1, SShort)), Upcast(ValUse(1, SShort), SInt)))
+    val toLong = existingFeature((x: Short) => x.toLong,
+      "{ (x: Short) => x.toLong }",
+      FuncValue(Vector((1, SShort)), Upcast(ValUse(1, SShort), SLong)))
+    val toBigInt = existingFeature((x: Short) => x.toBigInt,
+      "{ (x: Short) => x.toBigInt }",
+      FuncValue(Vector((1, SShort)), Upcast(ValUse(1, SShort), SBigInt)))
+
+    lazy val toBytes = newFeature((x: Short) => x.toBytes, "{ (x: Short) => x.toBytes }")
+    lazy val toBits = newFeature((x: Short) => x.toBits, "{ (x: Short) => x.toBits }")
+    lazy val toAbs = newFeature((x: Short) => if (x >= 0.toShort) x else (-x).toShort,
+      "{ (x: Short) => x.toAbs }")
+    lazy val compareTo = newFeature((x: (Short, Short)) => x._1.compareTo(x._2),
+      "{ (x: (Short, Short)) => x._1.compareTo(x._2) }")
+
+    val n = ExactNumeric.ShortIsExactNumeric
+    lazy val arithOps = existingFeature(
+      { (x: (Short, Short)) =>
+        val a = x._1; val b = x._2
+        val plus = n.plus(a, b)
+        val minus = n.minus(a, b)
+        val mul = n.times(a, b)
+        val div = (a / b).toShortExact
+        val mod = (a % b).toShortExact
+        (plus, (minus, (mul, (div, mod))))
+      },
+      """{ (x: (Short, Short)) =>
+       |  val a = x._1; val b = x._2
+       |  val plus = a + b
+       |  val minus = a - b
+       |  val mul = a * b
+       |  val div = a / b
+       |  val mod = a % b
+       |  (plus, (minus, (mul, (div, mod))))
+       |}""".stripMargin,
+      FuncValue(
+        Vector((1, STuple(Vector(SShort, SShort)))),
+        BlockValue(
+          Vector(
+            ValDef(
+              3,
+              List(),
+              SelectField.typed[ShortValue](ValUse(1, STuple(Vector(SShort, SShort))), 1.toByte)
+            ),
+            ValDef(
+              4,
+              List(),
+              SelectField.typed[ShortValue](ValUse(1, STuple(Vector(SShort, SShort))), 2.toByte)
+            )
+          ),
+          Tuple(
+            Vector(
+              ArithOp(ValUse(3, SShort), ValUse(4, SShort), OpCode @@ (-102.toByte)),
+              Tuple(
+                Vector(
+                  ArithOp(ValUse(3, SShort), ValUse(4, SShort), OpCode @@ (-103.toByte)),
+                  Tuple(
+                    Vector(
+                      ArithOp(ValUse(3, SShort), ValUse(4, SShort), OpCode @@ (-100.toByte)),
+                      Tuple(
+                        Vector(
+                          ArithOp(ValUse(3, SShort), ValUse(4, SShort), OpCode @@ (-99.toByte)),
+                          ArithOp(ValUse(3, SShort), ValUse(4, SShort), OpCode @@ (-98.toByte))
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          )
+        )
+      )
+    )
+    forAll { x: Short =>
+      Seq(toByte, toShort, toInt, toLong, toBigInt, toBytes, toBits, toAbs).foreach(_.checkEquality(x))
+    }
+    forAll { x: (Short, Short) =>
+      Seq(compareTo, arithOps).foreach(_.checkEquality(x))
+    }
   }
 
   property("Int methods equivalence") {
@@ -467,28 +569,6 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
     forAll { x: (Int, Int) =>
       compareTo.checkEquality(x)
       arithOps.checkEquality(x)
-    }
-  }
-
-  property("Short methods equivalence") {
-    val toByte = checkEq(func[Short,Byte]("{ (x: Short) => x.toByte }"))(x => x.toByte)
-    val toShort = checkEq(func[Short,Short]("{ (x: Short) => x.toShort }"))(x => x.toShort)
-    val toInt = checkEq(func[Short,Int]("{ (x: Short) => x.toInt }"))(x => x.toInt)
-    val toLong = checkEq(func[Short,Long]("{ (x: Short) => x.toLong }"))(x => x.toLong)
-    val toBigInt = checkEq(func[Short,BigInt]("{ (x: Short) => x.toBigInt }"))(x => x.toBigInt)
-    lazy val toBytes = checkEq(func[Short,Coll[Byte]]("{ (x: Short) => x.toBytes }"))(x => x.toBytes)
-    lazy val toBits = checkEq(func[Short,Coll[Boolean]]("{ (x: Short) => x.toBits }"))(x => x.toBits)
-    // TODO: Implement Short.toAbs
-    lazy val toAbs = checkEq(func[Short,Short]("{ (x: Short) => x.toAbs }"))((x: Short) => if (x >= 0.toShort) x else (-x).toShort)
-    lazy val compareTo = checkEq(func[(Short, Short), Int]("{ (x: (Short, Short)) => x._1.compareTo(x._2) }"))(x => x._1.compareTo(x._2))
-
-    forAll { x: Byte => toByte(x.toShort) }
-    forAll { x: Short =>
-      Seq(toShort, toInt, toLong, toBigInt).foreach(_(x))
-      //TODO soft-fork: toBytes, toBits, toAbs
-    }
-    forAll { x: (Short, Short) =>
-      //TODO soft-fork: compareTo(x)
     }
   }
 
