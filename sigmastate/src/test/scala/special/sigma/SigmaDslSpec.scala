@@ -410,7 +410,7 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
 
     lazy val toBytes = newFeature((x: Short) => x.toBytes, "{ (x: Short) => x.toBytes }")
     lazy val toBits = newFeature((x: Short) => x.toBits, "{ (x: Short) => x.toBits }")
-    lazy val toAbs = newFeature((x: Short) => if (x >= 0.toShort) x else (-x).toShort,
+    lazy val toAbs = newFeature((x: Short) => x.toAbs,
       "{ (x: Short) => x.toAbs }")
     lazy val compareTo = newFeature((x: (Short, Short)) => x._1.compareTo(x._2),
       "{ (x: (Short, Short)) => x._1.compareTo(x._2) }")
@@ -474,11 +474,20 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
         )
       )
     )
+
+    lazy val bitOr = newFeature(
+    { (x: (Short, Short)) => (x._1 | x._2).toShortExact },
+    "{ (x: (Short, Short)) => x._1 | x._2 }")
+
+    lazy val bitAnd = newFeature(
+    { (x: (Short, Short)) => (x._1 & x._2).toShortExact },
+    "{ (x: (Short, Short)) => x._1 & x._2 }")
+
     forAll { x: Short =>
       Seq(toByte, toShort, toInt, toLong, toBigInt, toBytes, toBits, toAbs).foreach(_.checkEquality(x))
     }
     forAll { x: (Short, Short) =>
-      Seq(compareTo, arithOps).foreach(_.checkEquality(x))
+      Seq(compareTo, arithOps, bitOr, bitAnd).foreach(_.checkEquality(x))
     }
   }
 
@@ -563,40 +572,119 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
           )
         ))
 
+    lazy val bitOr = newFeature(
+    { (x: (Int, Int)) => x._1 | x._2 },
+    "{ (x: (Int, Int)) => x._1 | x._2 }")
+
+    lazy val bitAnd = newFeature(
+    { (x: (Int, Int)) => x._1 & x._2 },
+    "{ (x: (Int, Int)) => x._1 & x._2 }")
+
     forAll { x: Int =>
       Seq(toByte, toShort, toInt, toLong, toBigInt, toBytes, toBits, toAbs).foreach(_.checkEquality(x))
     }
     forAll { x: (Int, Int) =>
-      compareTo.checkEquality(x)
-      arithOps.checkEquality(x)
+      Seq(compareTo, arithOps, bitOr, bitAnd).foreach(_.checkEquality(x))
     }
   }
 
   property("Long methods equivalence") {
-    val toByte = checkEq(func[Long,Byte]("{ (x: Long) => x.toByte }"))(x => x.toByte)
-    val toShort = checkEq(func[Long,Short]("{ (x: Long) => x.toShort }"))(x => x.toShort)
-    val toInt = checkEq(func[Long,Int]("{ (x: Long) => x.toInt }"))(x => x.toInt)
-    val toLong = checkEq(func[Long,Long]("{ (x: Long) => x.toLong }"))(x => x.toLong)
-    val toBigInt = checkEq(func[Long,BigInt]("{ (x: Long) => x.toBigInt }"))(x => BigInt(x).bigInteger)
-    /*
-    lazy val toBytes = checkEq(func[Long,Coll[Byte]]("{ (x: Long) => x.toBytes }"))(x => x.toBytes)
-    lazy val toBits = checkEq(func[Long,Coll[Boolean]]("{ (x: Long) => x.toBits }"))(x => x.toBits)
-    lazy val toAbs = checkEq(func[Long,Long]("{ (x: Long) => x.toAbs }"))(x => x.toAbs)
-    */
-    lazy val compareTo = checkEq(func[(Long, Long), Int]("{ (x: (Long, Long)) => x._1.compareTo(x._2) }"))(x => x._1.compareTo(x._2))
+    val toByte = existingFeature((x: Long) => x.toByteExact,
+      "{ (x: Long) => x.toByte }",
+      FuncValue(Vector((1, SLong)), Downcast(ValUse(1, SLong), SByte)))
+    val toShort = existingFeature((x: Long) => x.toShortExact,
+      "{ (x: Long) => x.toShort }",
+      FuncValue(Vector((1, SLong)), Downcast(ValUse(1, SLong), SShort)))
+    val toInt = existingFeature((x: Long) => x.toIntExact,
+      "{ (x: Long) => x.toInt }",
+      FuncValue(Vector((1, SLong)), Downcast(ValUse(1, SLong), SInt)))
+    val toLong = existingFeature((x: Long) => x.toLong,
+      "{ (x: Long) => x.toLong }",
+      FuncValue(Vector((1, SLong)), ValUse(1, SLong)))
+    val toBigInt = existingFeature((x: Long) => x.toBigInt,
+      "{ (x: Long) => x.toBigInt }",
+      FuncValue(Vector((1, SLong)), Upcast(ValUse(1, SLong), SBigInt)))
+    lazy val toBytes = newFeature((x: Long) => x.toBytes, "{ (x: Long) => x.toBytes }")
+    lazy val toBits = newFeature((x: Long) => x.toBits, "{ (x: Long) => x.toBits }")
+    lazy val toAbs = newFeature((x: Long) => x.toAbs, "{ (x: Long) => x.toAbs }")
+    lazy val compareTo = newFeature((x: (Long, Long)) => x._1.compareTo(x._2),
+      "{ (x: (Long, Long)) => x._1.compareTo(x._2) }")
 
-    forAll { x: Byte => toByte(x.toLong) }
-    forAll { x: Short => toShort(x.toLong) }
-    forAll { x: Int => toInt(x.toLong) }
+    val n = ExactNumeric.LongIsExactNumeric
+    lazy val arithOps = existingFeature(
+    { (x: (Long, Long)) =>
+      val a = x._1; val b = x._2
+      val plus = n.plus(a, b)
+      val minus = n.minus(a, b)
+      val mul = n.times(a, b)
+      val div = a / b
+      val mod = a % b
+      (plus, (minus, (mul, (div, mod))))
+    },
+    """{ (x: (Long, Long)) =>
+     |  val a = x._1; val b = x._2
+     |  val plus = a + b
+     |  val minus = a - b
+     |  val mul = a * b
+     |  val div = a / b
+     |  val mod = a % b
+     |  (plus, (minus, (mul, (div, mod))))
+     |}""".stripMargin,
+    FuncValue(
+      Vector((1, STuple(Vector(SLong, SLong)))),
+      BlockValue(
+        Vector(
+          ValDef(
+            3,
+            List(),
+            SelectField.typed[LongValue](ValUse(1, STuple(Vector(SLong, SLong))), 1.toByte)
+          ),
+          ValDef(
+            4,
+            List(),
+            SelectField.typed[LongValue](ValUse(1, STuple(Vector(SLong, SLong))), 2.toByte)
+          )
+        ),
+        Tuple(
+          Vector(
+            ArithOp(ValUse(3, SLong), ValUse(4, SLong), OpCode @@ (-102.toByte)),
+            Tuple(
+              Vector(
+                ArithOp(ValUse(3, SLong), ValUse(4, SLong), OpCode @@ (-103.toByte)),
+                Tuple(
+                  Vector(
+                    ArithOp(ValUse(3, SLong), ValUse(4, SLong), OpCode @@ (-100.toByte)),
+                    Tuple(
+                      Vector(
+                        ArithOp(ValUse(3, SLong), ValUse(4, SLong), OpCode @@ (-99.toByte)),
+                        ArithOp(ValUse(3, SLong), ValUse(4, SLong), OpCode @@ (-98.toByte))
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          )
+        )
+      )
+    ))
+
+    lazy val bitOr = newFeature(
+    { (x: (Long, Long)) => x._1 | x._2 },
+    "{ (x: (Long, Long)) => x._1 | x._2 }")
+
+    lazy val bitAnd = newFeature(
+    { (x: (Long, Long)) => x._1 & x._2 },
+    "{ (x: (Long, Long)) => x._1 & x._2 }")
 
     forAll { x: Long =>
-      Seq(toLong, toBigInt).foreach(_(x))
-      //TODO soft-fork: toBytes, toBits, toAbs
+      Seq(toByte, toShort, toInt, toLong, toBigInt, toBytes, toBits, toAbs).foreach(_.checkEquality(x))
     }
     forAll { x: (Long, Long) =>
-      //TODO soft-fork: compareTo(x)
+      Seq(compareTo, arithOps, bitOr, bitAnd).foreach(_.checkEquality(x))
     }
   }
+
   property("BigInt methods equivalence") {
     val toByte = checkEq(func[(Byte, BigInt),Boolean]("{ (x: (Byte, BigInt)) => x._2.toByte == x._1 }")) { x =>
       x._2.toByte == x._1

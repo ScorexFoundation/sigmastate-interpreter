@@ -48,11 +48,6 @@ object Extensions {
       * @since 2.0
       */
     def toAbs: Byte = if (b < 0) (-b).toByte else b
-
-    /** Compares this numeric with that numeric for order. Returns a negative integer, zero, or a positive integer as the
-      * `this` is less than, equal to, or greater than `that`.
-      */
-    def compare(that: Byte): Byte = if (b < that) -1.toByte else if (b == that) 0.toByte else 1.toByte
   }
 
   implicit class ShortOps(val x: Short) extends AnyVal {
@@ -82,6 +77,11 @@ object Extensions {
         throw new ArithmeticException("Short overflow")
       r.toShort
     }
+
+    /** Absolute value of this numeric value.
+      * @since 2.0
+      */
+    def toAbs: Short = if (x < 0) (-x).toShort else x
   }
 
   implicit class IntOps(val x: Int) extends AnyVal {
@@ -101,11 +101,6 @@ object Extensions {
       * @since 2.0
       */
     def toAbs: Int = if (x < 0) -x else x
-
-    /** Compares this numeric with that numeric for order. Returns a negative integer, zero, or a positive integer as the
-      * `this` is less than, equal to, or greater than `that`.
-      */
-    def compare(that: Int): Int = if (x < that) -1 else if (x == that) 0 else 1
   }
 
   implicit class LongOps(val x: Long) extends AnyVal {
@@ -126,6 +121,11 @@ object Extensions {
         throw new ArithmeticException("Int overflow")
       x.toInt
     }
+
+    /** Absolute value of this numeric value.
+      * @since 2.0
+      */
+    def toAbs: Long = if (x < 0) -x else x
   }
 
   implicit class BigIntegerOps(val x: BigInteger) extends AnyVal {

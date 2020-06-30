@@ -24,6 +24,11 @@ object Extensions {
     @inline def toBigInt: BigInt = CostingSigmaDslBuilder.BigInt(BigInteger.valueOf(x.toLong))
   }
 
+  implicit class LongExt(val x: Long) extends AnyVal {
+    /** Convert this value to BigInt. */
+    @inline def toBigInt: BigInt = CostingSigmaDslBuilder.BigInt(BigInteger.valueOf(x))
+  }
+
   implicit class ArrayOps[T: RType](arr: Array[T]) {
     @inline def toColl: Coll[T] = Colls.fromArray(arr)
   }
