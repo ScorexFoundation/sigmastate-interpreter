@@ -686,83 +686,105 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   }
 
   property("BigInt methods equivalence") {
-    val toByte = checkEq(func[(Byte, BigInt),Boolean]("{ (x: (Byte, BigInt)) => x._2.toByte == x._1 }")) { x =>
-      x._2.toByte == x._1
-    }
-    val toShort = checkEq(func[(Short, BigInt),Boolean]("{ (x: (Short, BigInt)) => x._2.toShort == x._1 }")) { x =>
-      x._2.toShort == x._1
-    }
-    val toInt = checkEq(func[(Int, BigInt),Boolean]("{ (x: (Int, BigInt)) => x._2.toInt == x._1 }")) { x =>
-      x._2.toInt == x._1
-    }
-    val toLong = checkEq(func[(Long, BigInt),Boolean]("{ (x: (Long, BigInt)) => x._2.toLong == x._1 }")) { x =>
-      x._2.toLong == x._1
-    }
-    val toBigInt = checkEq(func[(BigInt, BigInt),Boolean]("{ (x: (BigInt, BigInt)) => x._2.toBigInt == x._1 }")) { x =>
-      x._2 == x._1
-    }
+    val toByte = newFeature((x: BigInt) => x.toByte,
+      "{ (x: BigInt) => x.toByte }",
+      FuncValue(Vector((1, SBigInt)), Downcast(ValUse(1, SBigInt), SByte)))
 
-    lazy val toBytes = checkEq(func[BigInt,Coll[Byte]]("{ (x: BigInt) => x.toBytes }"))(x => x.toBytes)
-    lazy val toBits = checkEq(func[BigInt,Coll[Boolean]]("{ (x: BigInt) => x.toBits }"))(x => x.toBits)
-    lazy val toAbs = checkEq(func[BigInt,BigInt]("{ (x: BigInt) => x.toAbs }"))(x => x.toAbs)
-    lazy val compareTo = checkEq(func[(BigInt, BigInt), Int]("{ (x: (BigInt, BigInt)) => x._1.compareTo(x._2) }"))(x => x._1.compareTo(x._2))
+    val toShort = newFeature((x: BigInt) => x.toShort,
+      "{ (x: BigInt) => x.toShort }",
+      FuncValue(Vector((1, SBigInt)), Downcast(ValUse(1, SBigInt), SShort)))
 
-    /*
-    forAll { x: Byte =>
-      toByte((x, x.toBigInt))
-    }
-    forAll { x: Short =>
-      toShort((x, x.toBigInt))
-    }
-    forAll { x: Int =>
-      toInt((x, x.toBigInt))
-    }
-    forAll { x: Long =>
-      toLong((x, BigInt(x).bigInteger))
-    }
-    */
+    val toInt = newFeature((x: BigInt) => x.toInt,
+      "{ (x: BigInt) => x.toInt }",
+      FuncValue(Vector((1, SBigInt)), Downcast(ValUse(1, SBigInt), SInt)))
+
+    val toLong = newFeature((x: BigInt) => x.toLong,
+      "{ (x: BigInt) => x.toLong }",
+      FuncValue(Vector((1, SBigInt)), Downcast(ValUse(1, SBigInt), SLong)))
+
+    val toBigInt = existingFeature((x: BigInt) => x,
+      "{ (x: BigInt) => x.toBigInt }",
+      FuncValue(Vector((1, SBigInt)), ValUse(1, SBigInt)))
+
+    lazy val toBytes = newFeature((x: BigInt) => x.toBytes, "{ (x: BigInt) => x.toBytes }")
+    lazy val toBits = newFeature((x: BigInt) => x.toBits, "{ (x: BigInt) => x.toBits }")
+    lazy val toAbs = newFeature((x: BigInt) => x.toAbs, "{ (x: BigInt) => x.toAbs }")
+    lazy val compareTo = newFeature((x: (BigInt, BigInt)) => x._1.compareTo(x._2),
+      "{ (x: (BigInt, BigInt)) => x._1.compareTo(x._2) }")
+
+    val n = NumericOps.BigIntIsExactNumeric
+    lazy val arithOps = existingFeature(
+      { (x: (BigInt, BigInt)) =>
+        val a = x._1; val b = x._2
+        val plus = n.plus(a, b)
+        val minus = n.minus(a, b)
+        val mul = n.times(a, b)
+        val div = a / b
+        val mod = a % b
+        (plus, (minus, (mul, (div, mod))))
+      },
+      """{ (x: (BigInt, BigInt)) =>
+       |  val a = x._1; val b = x._2
+       |  val plus = a + b
+       |  val minus = a - b
+       |  val mul = a * b
+       |  val div = a / b
+       |  val mod = a % b
+       |  (plus, (minus, (mul, (div, mod))))
+       |}""".stripMargin,
+      FuncValue(
+        Vector((1, STuple(Vector(SBigInt, SBigInt)))),
+        BlockValue(
+          Vector(
+            ValDef(
+              3,
+              List(),
+              SelectField.typed[BigIntValue](ValUse(1, STuple(Vector(SBigInt, SBigInt))), 1.toByte)
+            ),
+            ValDef(
+              4,
+              List(),
+              SelectField.typed[BigIntValue](ValUse(1, STuple(Vector(SBigInt, SBigInt))), 2.toByte)
+            )
+          ),
+          Tuple(
+            Vector(
+              ArithOp(ValUse(3, SBigInt), ValUse(4, SBigInt), OpCode @@ (-102.toByte)),
+              Tuple(
+                Vector(
+                  ArithOp(ValUse(3, SBigInt), ValUse(4, SBigInt), OpCode @@ (-103.toByte)),
+                  Tuple(
+                    Vector(
+                      ArithOp(ValUse(3, SBigInt), ValUse(4, SBigInt), OpCode @@ (-100.toByte)),
+                      Tuple(
+                        Vector(
+                          ArithOp(ValUse(3, SBigInt), ValUse(4, SBigInt), OpCode @@ (-99.toByte)),
+                          ArithOp(ValUse(3, SBigInt), ValUse(4, SBigInt), OpCode @@ (-98.toByte))
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          )
+        )
+      )
+    )
+
+    lazy val bitOr = newFeature(
+    { (x: (BigInt, BigInt)) => x._1 | x._2 },
+    "{ (x: (BigInt, BigInt)) => x._1 | x._2 }")
+
+    lazy val bitAnd = newFeature(
+    { (x: (BigInt, BigInt)) => x._1 & x._2 },
+    "{ (x: (BigInt, BigInt)) => x._1 & x._2 }")
+
     forAll { x: BigInt =>
-      Seq(toBigInt).foreach(_((x, x)))
-      //TODO soft-fork: toBytes, toBits, toAbs
+      Seq(toByte, toShort, toInt, toLong, toBigInt, toBytes, toBits, toAbs).foreach(_.checkEquality(x))
     }
     forAll { x: (BigInt, BigInt) =>
-      //TODO soft-fork: compareTo(x)
-    }
-  }
-
-  property("BigInt plus equivalence") {
-    forAll { v: (BigInt, BigInt) =>
-      checkEq(func[(BigInt, BigInt),BigInt]( "{ (x: (BigInt, BigInt)) => x._1 + x._2 }")){ x => x._1 + x._2 }(v)
-    }
-  }
-
-  property("BigInt minus equivalence") {
-    forAll { v: (BigInt, BigInt) =>
-      checkEq(func[(BigInt, BigInt),BigInt]( "{ (x: (BigInt, BigInt)) => x._1 - x._2 }")){ x => x._1 - x._2 }(v)
-    }
-  }
-
-  property("BigInt multiply equivalence") {
-    forAll { v: (BigInt, BigInt) =>
-      checkEq(func[(BigInt, BigInt),BigInt]( "{ (x: (BigInt, BigInt)) => x._1 * x._2 }")){ x => x._1 * x._2 }(v)
-    }
-  }
-
-  property("BigInt divide equivalence") {
-    forAll { v: (BigInt, BigInt) =>
-      whenever(v._2.compareTo(0.toBigInt) > 0) {
-        checkEq(func[(BigInt, BigInt), BigInt]("{ (x: (BigInt, BigInt)) => x._1 / x._2 }")) { x => x._1 / x._2 }(v)
-      }
-    }
-  }
-
-  property("BigInt mod equivalence") {
-    forAll { v: (BigInt, BigInt) =>
-      whenever(v._2.compareTo(0.toBigInt) > 0) {
-        checkEq(func[(BigInt, BigInt), BigInt]("{ (x: (BigInt, BigInt)) => x._1 % x._2 }")) { x =>
-          x._1 % x._2
-        }(v)
-      }
+      Seq(compareTo, arithOps, bitOr, bitAnd).foreach(_.checkEquality(x))
     }
   }
 
