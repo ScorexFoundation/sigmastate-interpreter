@@ -190,6 +190,26 @@ trait BigInt {
     * @return { @code -this}
     */
   def negate(): BigInt
+
+  /** Returns a BigInteger whose value is `(this & that)`.  (This
+    * method returns a negative BigInteger if and only if `this` and `that` are
+    * both negative.)
+    *
+    * @param that value to be AND'ed with this BigInteger.
+    * @return `this & that`
+    */
+  def and(that: BigInt): BigInt
+  @Internal def &(that: BigInt): BigInt = and(that)
+
+  /** Returns a BigInteger whose value is `(this | that)`.  (This
+    * method returns a negative BigInteger if and only if either `this` or `that`` is
+    * negative.)
+    *
+    * @param that value to be OR'ed with this BigInteger.
+    * @return `this | that`
+    */
+  def or(that: BigInt): BigInt
+  @Internal def |(that: BigInt): BigInt = or(that)
 }
 
 /** Base class for points on elliptic curves.

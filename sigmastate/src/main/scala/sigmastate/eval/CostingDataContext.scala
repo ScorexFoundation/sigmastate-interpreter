@@ -48,6 +48,7 @@ case class CGroupElement(override val wrappedValue: EcPointType) extends TestGro
 case class CSigmaProp(sigmaTree: SigmaBoolean) extends SigmaProp with WrapperOf[SigmaBoolean] {
   override def wrappedValue: SigmaBoolean = sigmaTree
 
+  // TODO refactor: remove this (it shouldn't be used in interpreter)
   override def isValid: Boolean = sigmaTree match {
     case p: TrivialProp => p.condition
     case _ => sys.error(s"Method CostingSigmaProp.isValid is not defined for $sigmaTree")
@@ -66,6 +67,7 @@ case class CSigmaProp(sigmaTree: SigmaBoolean) extends SigmaProp with WrapperOf[
       CSigmaProp(CAND.normalized(Array(sigmaTree, other.sigmaTree)))
   }
 
+  // TODO refactor: remove this (it shouldn't be used in interpreter)
   override def &&(other: Boolean): SigmaProp =
     CSigmaProp(CAND.normalized(Array(sigmaTree, TrivialProp(other))))
 
@@ -74,6 +76,7 @@ case class CSigmaProp(sigmaTree: SigmaBoolean) extends SigmaProp with WrapperOf[
       CSigmaProp(COR.normalized(Array(sigmaTree, other.sigmaTree)))
   }
 
+  // TODO refactor: remove this (it shouldn't be used in interpreter)
   override def ||(other: Boolean): SigmaProp =
     CSigmaProp(COR.normalized(Array(sigmaTree, TrivialProp(other))))
 

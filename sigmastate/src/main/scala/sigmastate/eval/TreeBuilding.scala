@@ -380,6 +380,9 @@ trait TreeBuilding extends RuntimeCosting { IR: IRContext =>
       case GM.exp(In(obj), In(arg)) =>
         mkExponentiate(obj.asGroupElement, arg.asBigInt)
 
+      case GM.multiply(In(obj), In(arg)) =>
+        mkMultiplyGroup(obj.asGroupElement, arg.asGroupElement)
+
       // Fallback MethodCall rule: should be the last in this list of cases
       case Def(MethodCall(objSym, m, argSyms, _)) =>
         val obj = recurse[SType](objSym)
