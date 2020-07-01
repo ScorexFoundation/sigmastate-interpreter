@@ -8,13 +8,14 @@ import org.ergoplatform._
 import org.scalacheck.Gen
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{PropSpec, Matchers, Tag}
-import scalan.{RType, ExactNumeric}
+import scalan.{ExactNumeric, RType}
 import org.scalactic.source
 import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.hash.{Digest32, Blake2b256}
 import scalan.util.Extensions._
 import sigma.util.Extensions._
+import sigmastate.SCollection.SByteArray
 import sigmastate.Values.IntConstant
 import sigmastate._
 import sigmastate.Values._
@@ -22,6 +23,7 @@ import sigmastate.eval.Extensions._
 import sigmastate.eval._
 import sigmastate.helpers.SigmaPPrint
 import sigmastate.interpreter.Interpreter.ScriptEnv
+import sigmastate.lang.Terms.MethodCall
 import sigmastate.utxo.{ComplexityTableStat, SizeOf, SelectField}
 import special.collection.Coll
 import sigmastate.serialization.OpCodes.OpCode
@@ -788,40 +790,84 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
     }
   }
 
-  property("GroupElement operations equivalence") {
-    val ge = SigmaDsl.groupGenerator
-    val n = SigmaDsl.BigInt(BigInteger.TEN)
-    val g2 = ge.exp(n)
+  property("GroupElement methods equivalence") {
+    val getEncoded = existingFeature((x: GroupElement) => x.getEncoded,
+      "{ (x: GroupElement) => x.getEncoded }",
+      FuncValue(
+        Vector((1, SGroupElement)),
+        MethodCall(ValUse(1, SGroupElement), SGroupElement.getMethodByName("getEncoded"), Vector(), Map())
+      ))
 
-    {
-      val eq = EqualityChecker(ge)
-      eq({ (x: GroupElement) => x.getEncoded })("{ (x: GroupElement) => x.getEncoded }")
-      eq({ (x: GroupElement) => decodePoint(x.getEncoded) == x })("{ (x: GroupElement) => decodePoint(x.getEncoded) == x }")
-      eq({ (x: GroupElement) => x.negate })("{ (x: GroupElement) => x.negate }")
+    val decode = existingFeature({ (x: GroupElement) => decodePoint(x.getEncoded) == x },
+      "{ (x: GroupElement) => decodePoint(x.getEncoded) == x }",
+      FuncValue(
+        Vector((1, SGroupElement)),
+        EQ(
+          DecodePoint(
+            MethodCall.typed[Value[SCollection[SByte.type]]](
+              ValUse(1, SGroupElement),
+              SGroupElement.getMethodByName("getEncoded"),
+              Vector(),
+              Map()
+            )
+          ),
+          ValUse(1, SGroupElement)
+        )
+      ))
 
-      //TODO soft-fork: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
-      // eq({ (x: GroupElement) => x.isIdentity })("{ (x: GroupElement) => x.isIdentity }")
+    val negate = existingFeature({ (x: GroupElement) => x.negate },
+      "{ (x: GroupElement) => x.negate }",
+      FuncValue(
+        Vector((1, SGroupElement)),
+        MethodCall(ValUse(1, SGroupElement), SGroupElement.getMethodByName("negate"), Vector(), Map())
+      ))
+
+    //TODO soft-fork: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
+    // val isIdentity = existingFeature({ (x: GroupElement) => x.isIdentity },
+    //   "{ (x: GroupElement) => x.isIdentity }")
+
+    forAll { x: GroupElement =>
+      Seq(getEncoded, decode, negate/*, isIdentity*/).foreach(_.checkEquality(x))
     }
 
-    {
-      val eq = EqualityChecker((ge, n))
-      eq({ (x: (GroupElement, BigInt)) => x._1.exp(x._2) })("{ (x: (GroupElement, BigInt)) => x._1.exp(x._2) }")
+    val exp = existingFeature({ (x: (GroupElement, BigInt)) => x._1.exp(x._2) },
+      "{ (x: (GroupElement, BigInt)) => x._1.exp(x._2) }",
+      FuncValue(
+        Vector((1, STuple(Vector(SGroupElement, SBigInt)))),
+        Exponentiate(
+          SelectField.typed[Value[SGroupElement.type]](
+            ValUse(1, STuple(Vector(SGroupElement, SBigInt))),
+            1.toByte
+          ),
+          SelectField.typed[Value[SBigInt.type]](
+            ValUse(1, STuple(Vector(SGroupElement, SBigInt))),
+            2.toByte
+          )
+        )
+      ))
+
+    forAll { x: (GroupElement, BigInt) =>
+      exp.checkEquality(x)
     }
 
-    {
-      val eq = EqualityChecker((ge, g2))
-      eq({ (x: (GroupElement, GroupElement)) => x._1.multiply(x._2) })("{ (x: (GroupElement, GroupElement)) => x._1.multiply(x._2) }")
-      // TODO HF: add test when `multiply` is represented as MethodCall
-      // it should fail in 3.x
-    }
+    val multiply = existingFeature({ (x: (GroupElement, GroupElement)) => x._1.multiply(x._2) },
+      "{ (x: (GroupElement, GroupElement)) => x._1.multiply(x._2) }",
+      FuncValue(
+        Vector((1, STuple(Vector(SGroupElement, SGroupElement)))),
+        MultiplyGroup(
+          SelectField.typed[Value[SGroupElement.type]](
+            ValUse(1, STuple(Vector(SGroupElement, SGroupElement))),
+            1.toByte
+          ),
+          SelectField.typed[Value[SGroupElement.type]](
+            ValUse(1, STuple(Vector(SGroupElement, SGroupElement))),
+            2.toByte
+          )
+        )
+      ))
 
-    {
-      val eq = checkEq(func[BigInt, GroupElement]("{ (x: BigInt) => groupGenerator.exp(x) }")) { x =>
-        groupGenerator.exp(x)
-      }
-      forAll { x: BigInt =>
-        eq(x)
-      }
+    forAll { x: (GroupElement, GroupElement) =>
+      multiply.checkEquality(x)
     }
   }
 

@@ -173,6 +173,13 @@ object Terms {
   }
   object MethodCall extends ValueCompanion {
     override def opCode: OpCode = OpCodes.MethodCallCode
+    def typed[T <: SValue](obj: Value[SType],
+                           method: SMethod,
+                           args: IndexedSeq[Value[SType]],
+                           typeSubst: Map[STypeVar, SType]): T = {
+      MethodCall(obj, method, args, typeSubst).asInstanceOf[T]
+    }
+
   }
   object PropertyCall extends ValueCompanion {
     override def opCode: OpCode = OpCodes.PropertyCallCode

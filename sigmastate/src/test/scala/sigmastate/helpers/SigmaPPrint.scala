@@ -3,8 +3,9 @@ package sigmastate.helpers
 import scala.collection.mutable
 import pprint.{Tree, PPrinter}
 import sigmastate.Values.ConstantNode
+import sigmastate.lang.Terms.MethodCall
 import sigmastate.utxo.SelectField
-import sigmastate.{STypeCompanion, SPredefType, ArithOp, SType}
+import sigmastate.{STypeCompanion, STuple, ArithOp, SType, SCollectionType, SPredefType}
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -21,6 +22,23 @@ object SigmaPPrint extends PPrinter {
     if (name == "Boolean") "Bool" else name
   }
 
+  def typeName(tpe: SType): String = tpe match {
+    case _: SPredefType =>
+      val name = tpe.getClass.getSimpleName.replace("$", "")
+      s"$name.type" // SByte.type, SInt.type, etc
+    case ct: SCollectionType[_] =>
+      s"SCollection[${typeName(ct.elemType)}]"
+    case _: STuple =>
+      "STuple"
+    case _ =>
+      sys.error(s"Cannot get typeName($tpe)")
+  }
+
+  def valueType(tpe: SType): String = {
+    val tn = typeName(tpe)
+    s"Value[$tn]"
+  }
+
   override val additionalHandlers: PartialFunction[Any, Tree] = {
     case t: STypeCompanion if t.isInstanceOf[SType] => Tree.Literal(s"S${t.typeName}")
     case v: Byte => Tree.Literal(s"$v.toByte")
@@ -30,15 +48,23 @@ object SigmaPPrint extends PPrinter {
       Tree.Apply("Seq", treeifyMany(buf))
     case sf: SelectField =>
       val resTpe = sf.input.tpe.items(sf.fieldIndex - 1)
-      val name = tpeName(resTpe)
-      val resTpeName = name + "Value"
+      val resTpeName = valueType(resTpe)
       Tree.Apply(s"SelectField.typed[$resTpeName]", treeifyMany(Array(sf.input, sf.fieldIndex)))
     case c: ConstantNode[_] if c.tpe.isInstanceOf[SPredefType] =>
       Tree.Apply(tpeName(c.tpe) + "Constant", treeifyMany(Seq(c.value)))
     case ArithOp(l, r, code) =>
       val args = treeifyMany(Seq(l, r)).toSeq :+ Tree.Apply("OpCode @@ ", treeifyMany(Seq(code)))
       Tree.Apply("ArithOp", args.iterator)
-
+    case mc @ MethodCall(obj, method, args, typeSubst) =>
+      val objType = treeify(method.objType).asInstanceOf[Tree.Literal].body
+      val getMethod = s"$objType.getMethodByName"
+      val objT = treeify(obj)
+      val methodT = Tree.Apply(getMethod, Seq(treeify(method.name)).iterator)
+      val argsT = treeify(args)
+      val substT = treeify(typeSubst)
+      val resTpe = mc.tpe
+      val resTpeName = valueType(resTpe)
+      Tree.Apply(s"MethodCall.typed[$resTpeName]", Seq(objT, methodT, argsT, substT).iterator)
   }
 }
 
