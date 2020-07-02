@@ -5,7 +5,7 @@ import pprint.{Tree, PPrinter}
 import sigmastate.Values.ConstantNode
 import sigmastate.lang.Terms.MethodCall
 import sigmastate.utxo.SelectField
-import sigmastate.{STypeCompanion, STuple, ArithOp, SType, SCollectionType, SPredefType}
+import sigmastate.{STypeCompanion, STuple, ArithOp, SOption, SType, SCollectionType, SPredefType}
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -28,6 +28,8 @@ object SigmaPPrint extends PPrinter {
       s"$name.type" // SByte.type, SInt.type, etc
     case ct: SCollectionType[_] =>
       s"SCollection[${typeName(ct.elemType)}]"
+    case ot: SOption[_] =>
+      s"SOption[${typeName(ot.elemType)}]"
     case _: STuple =>
       "STuple"
     case _ =>

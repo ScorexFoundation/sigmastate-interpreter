@@ -872,26 +872,56 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   }
 
   property("AvlTree properties equivalence") {
-    val doDigest = checkEq(func[AvlTree, Coll[Byte]]("{ (t: AvlTree) => t.digest }")) { (t: AvlTree) => t.digest }
-    val doEnabledOps = checkEq(func[AvlTree, Byte](
-      "{ (t: AvlTree) => t.enabledOperations }")) { (t: AvlTree) => t.enabledOperations }
-    val doKeyLength = checkEq(func[AvlTree, Int]("{ (t: AvlTree) => t.keyLength }")) { (t: AvlTree) => t.keyLength }
-    val doValueLength = checkEq(func[AvlTree, Option[Int]]("{ (t: AvlTree) => t.valueLengthOpt }")) { (t: AvlTree) => t.valueLengthOpt }
-    val insertAllowed = checkEq(func[AvlTree, Boolean]("{ (t: AvlTree) => t.isInsertAllowed }")) { (t: AvlTree) => t.isInsertAllowed }
-    val updateAllowed = checkEq(func[AvlTree, Boolean]("{ (t: AvlTree) => t.isUpdateAllowed }")) { (t: AvlTree) => t.isUpdateAllowed }
-    val removeAllowed = checkEq(func[AvlTree, Boolean]("{ (t: AvlTree) => t.isRemoveAllowed }")) { (t: AvlTree) => t.isRemoveAllowed }
+    def expectedExprFor(propName: String) = {
+      FuncValue(
+        Vector((1, SAvlTree)),
+        MethodCall(
+          ValUse(1, SAvlTree),
+          SAvlTree.getMethodByName(propName),
+          Vector(),
+          Map()
+        )
+      )
+    }
+    val digest = existingFeature((t: AvlTree) => t.digest,
+      "{ (t: AvlTree) => t.digest }",
+      expectedExprFor("digest"))
+
+    val enabledOperations = existingFeature((t: AvlTree) => t.enabledOperations,
+      "{ (t: AvlTree) => t.enabledOperations }",
+      expectedExprFor("enabledOperations"))
+
+    val keyLength = existingFeature((t: AvlTree) => t.keyLength,
+      "{ (t: AvlTree) => t.keyLength }",
+      expectedExprFor("keyLength"))
+
+    val valueLengthOpt = existingFeature((t: AvlTree) => t.valueLengthOpt,
+      "{ (t: AvlTree) => t.valueLengthOpt }",
+      expectedExprFor("valueLengthOpt"))
+
+    val isInsertAllowed = existingFeature((t: AvlTree) => t.isInsertAllowed,
+      "{ (t: AvlTree) => t.isInsertAllowed }",
+      expectedExprFor("isInsertAllowed"))
+
+    val isUpdateAllowed = existingFeature((t: AvlTree) => t.isUpdateAllowed,
+      "{ (t: AvlTree) => t.isUpdateAllowed }",
+      expectedExprFor("isUpdateAllowed"))
+
+    val isRemoveAllowed = existingFeature((t: AvlTree) => t.isRemoveAllowed,
+      "{ (t: AvlTree) => t.isRemoveAllowed }",
+      expectedExprFor("isRemoveAllowed"))
 
     val newTree = sampleAvlTree.updateOperations(1.toByte)
     val trees = Array(sampleAvlTree, newTree)
 
     for (tree <- trees) {
-      doDigest(tree)
-      doEnabledOps(tree)
-      doKeyLength(tree)
-      doValueLength(tree)
-      insertAllowed(tree)
-      updateAllowed(tree)
-      removeAllowed(tree)
+      Seq(digest,
+        enabledOperations,
+        keyLength,
+        valueLengthOpt,
+        isInsertAllowed,
+        isUpdateAllowed,
+        isRemoveAllowed).foreach(_.checkEquality(tree))
     }
   }
 

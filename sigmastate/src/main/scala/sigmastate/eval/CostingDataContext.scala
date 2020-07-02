@@ -89,11 +89,9 @@ case class CAvlTree(treeData: AvlTreeData) extends AvlTree with WrapperOf[AvlTre
 
   override def wrappedValue: AvlTreeData = treeData
 
-  def startingDigest: Coll[Byte] = Colls.fromArray(treeData.digest)
+  override def keyLength: Int = treeData.keyLength
 
-  def keyLength: Int = treeData.keyLength
-
-  def enabledOperations = treeData.treeFlags.serializeToByte
+  override def enabledOperations = treeData.treeFlags.serializeToByte
 
   override def isInsertAllowed: Boolean = treeData.treeFlags.insertAllowed
 
@@ -106,7 +104,7 @@ case class CAvlTree(treeData: AvlTreeData) extends AvlTree with WrapperOf[AvlTre
     this.copy(treeData = td)
   }
 
-  def valueLengthOpt: Option[Int] = treeData.valueLengthOpt
+  override def valueLengthOpt: Option[Int] = treeData.valueLengthOpt
 
   def cost: Int = 1
 
@@ -114,7 +112,7 @@ case class CAvlTree(treeData: AvlTreeData) extends AvlTree with WrapperOf[AvlTre
 
   override def digest: Coll[Byte] = Colls.fromArray(treeData.digest)
 
-  def updateDigest(newDigest: Coll[Byte]): AvlTree = {
+  override def updateDigest(newDigest: Coll[Byte]): AvlTree = {
     val td = treeData.copy(digest = ADDigest @@ newDigest.toArray)
     this.copy(treeData = td)
   }
@@ -131,11 +129,11 @@ case class CAvlTree(treeData: AvlTreeData) extends AvlTree with WrapperOf[AvlTre
     val keyBytes = key.toArray
     val bv = createVerifier(proof)
     bv.performOneOperation(Lookup(ADKey @@ keyBytes)) match {
-      case Failure(_) => false
       case Success(r) => r match {
         case Some(_) => true
         case _ => false
       }
+      case Failure(_) => false
     }
   }
 
@@ -143,11 +141,11 @@ case class CAvlTree(treeData: AvlTreeData) extends AvlTree with WrapperOf[AvlTre
     val keyBytes = key.toArray
     val bv = createVerifier(proof)
     bv.performOneOperation(Lookup(ADKey @@ keyBytes)) match {
-      case Failure(_) => Interpreter.error(s"Tree proof is incorrect $treeData")
       case Success(r) => r match {
         case Some(v) => Some(Colls.fromArray(v))
         case _ => None
       }
+      case Failure(_) => Interpreter.error(s"Tree proof is incorrect $treeData")
     }
   }
 
@@ -155,11 +153,11 @@ case class CAvlTree(treeData: AvlTreeData) extends AvlTree with WrapperOf[AvlTre
     val bv = createVerifier(proof)
     keys.map { key =>
       bv.performOneOperation(Lookup(ADKey @@ key.toArray)) match {
-        case Failure(_) => Interpreter.error(s"Tree proof is incorrect $treeData")
         case Success(r) => r match {
           case Some(v) => Some(Colls.fromArray(v))
           case _ => None
         }
+        case Failure(_) => Interpreter.error(s"Tree proof is incorrect $treeData")
       }
     }
   }
