@@ -926,38 +926,221 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   }
 
   property("AvlTree.{contains, get, getMany, updateDigest, updateOperations} equivalence") {
-    val doContains = checkEq(
-      func[(AvlTree, (Coll[Byte], Coll[Byte])), Boolean](
-      "{ (t: (AvlTree, (Coll[Byte], Coll[Byte]))) => t._1.contains(t._2._1, t._2._2) }"))
-         { (t: (AvlTree, (Coll[Byte], Coll[Byte]))) => t._1.contains(t._2._1, t._2._2) }
-    val doGet = checkEq(
-      func[(AvlTree, (Coll[Byte], Coll[Byte])), Option[Coll[Byte]]](
-      "{ (t: (AvlTree, (Coll[Byte], Coll[Byte]))) => t._1.get(t._2._1, t._2._2) }"))
-         { (t: (AvlTree, (Coll[Byte], Coll[Byte]))) => t._1.get(t._2._1, t._2._2) }
-    val doGetMany = checkEq(
-      func[(AvlTree, (Coll[Coll[Byte]], Coll[Byte])), Coll[Option[Coll[Byte]]]](
-      "{ (t: (AvlTree, (Coll[Coll[Byte]], Coll[Byte]))) => t._1.getMany(t._2._1, t._2._2) }"))
-         { (t: (AvlTree, (Coll[Coll[Byte]], Coll[Byte]))) => t._1.getMany(t._2._1, t._2._2) }
-    val doUpdateDigest = checkEq(
-      func[(AvlTree, Coll[Byte]), AvlTree](
-        "{ (t: (AvlTree, Coll[Byte])) => t._1.updateDigest(t._2) }"))
-    { (t: (AvlTree, Coll[Byte])) => t._1.updateDigest(t._2) }
-    val doUpdateOperations = checkEq(
-      func[(AvlTree, Byte), AvlTree](
-        "{ (t: (AvlTree, Byte)) => t._1.updateOperations(t._2) }"))
-    { (t: (AvlTree, Byte)) => t._1.updateOperations(t._2) }
+    val contains = existingFeature(
+      (t: (AvlTree, (Coll[Byte], Coll[Byte]))) => t._1.contains(t._2._1, t._2._2),
+      "{ (t: (AvlTree, (Coll[Byte], Coll[Byte]))) => t._1.contains(t._2._1, t._2._2) }",
+      FuncValue(
+        Vector(
+          (1, STuple(Vector(SAvlTree, STuple(Vector(SCollectionType(SByte), SCollectionType(SByte))))))
+        ),
+        BlockValue(
+          Vector(
+            ValDef(
+              3,
+              List(),
+              SelectField.typed[Value[STuple]](
+                ValUse(
+                  1,
+                  STuple(Vector(SAvlTree, STuple(Vector(SCollectionType(SByte), SCollectionType(SByte)))))
+                ),
+                2.toByte
+              )
+            )
+          ),
+          MethodCall.typed[Value[SBoolean.type]](
+            SelectField.typed[Value[SAvlTree.type]](
+              ValUse(
+                1,
+                STuple(Vector(SAvlTree, STuple(Vector(SCollectionType(SByte), SCollectionType(SByte)))))
+              ),
+              1.toByte
+            ),
+            SAvlTree.getMethodByName("contains"),
+            Vector(
+              SelectField.typed[Value[SCollection[SByte.type]]](
+                ValUse(3, STuple(Vector(SCollectionType(SByte), SCollectionType(SByte)))),
+                1.toByte
+              ),
+              SelectField.typed[Value[SCollection[SByte.type]]](
+                ValUse(3, STuple(Vector(SCollectionType(SByte), SCollectionType(SByte)))),
+                2.toByte
+              )
+            ),
+            Map()
+          )
+        )
+      ))
 
-    val (key, _, avlProver) = sampleAvlProver
-    avlProver.performOneOperation(Lookup(ADKey @@ key.toArray))
-    val digest = avlProver.digest.toColl
-    val proof = avlProver.generateProof().toColl
-    val tree = SigmaDsl.avlTree(AvlTreeFlags.ReadOnly.serializeToByte, digest, 32, None)
-    doContains((tree, (key, proof)))
-    doGet((tree, (key, proof)))
-    val keys = Colls.fromItems(key)
-    doGetMany((tree, (keys, proof)))
-    doUpdateDigest(tree, digest)
-    doUpdateOperations(tree, 1.toByte)
+    val get = existingFeature((t: (AvlTree, (Coll[Byte], Coll[Byte]))) => t._1.get(t._2._1, t._2._2),
+      "{ (t: (AvlTree, (Coll[Byte], Coll[Byte]))) => t._1.get(t._2._1, t._2._2) }",
+      FuncValue(
+        Vector(
+          (1, STuple(Vector(SAvlTree, STuple(Vector(SCollectionType(SByte), SCollectionType(SByte))))))
+        ),
+        BlockValue(
+          Vector(
+            ValDef(
+              3,
+              List(),
+              SelectField.typed[Value[STuple]](
+                ValUse(
+                  1,
+                  STuple(Vector(SAvlTree, STuple(Vector(SCollectionType(SByte), SCollectionType(SByte)))))
+                ),
+                2.toByte
+              )
+            )
+          ),
+          MethodCall.typed[Value[SOption[SCollection[SByte.type]]]](
+            SelectField.typed[Value[SAvlTree.type]](
+              ValUse(
+                1,
+                STuple(Vector(SAvlTree, STuple(Vector(SCollectionType(SByte), SCollectionType(SByte)))))
+              ),
+              1.toByte
+            ),
+            SAvlTree.getMethodByName("get"),
+            Vector(
+              SelectField.typed[Value[SCollection[SByte.type]]](
+                ValUse(3, STuple(Vector(SCollectionType(SByte), SCollectionType(SByte)))),
+                1.toByte
+              ),
+              SelectField.typed[Value[SCollection[SByte.type]]](
+                ValUse(3, STuple(Vector(SCollectionType(SByte), SCollectionType(SByte)))),
+                2.toByte
+              )
+            ),
+            Map()
+          )
+        )
+      ))
+
+    val getMany = existingFeature(
+      (t: (AvlTree, (Coll[Coll[Byte]], Coll[Byte]))) => t._1.getMany(t._2._1, t._2._2),
+      "{ (t: (AvlTree, (Coll[Coll[Byte]], Coll[Byte]))) => t._1.getMany(t._2._1, t._2._2) }",
+      FuncValue(
+        Vector(
+          (
+              1,
+              STuple(
+                Vector(
+                  SAvlTree,
+                  STuple(Vector(SCollectionType(SCollectionType(SByte)), SCollectionType(SByte)))
+                )
+              )
+          )
+        ),
+        BlockValue(
+          Vector(
+            ValDef(
+              3,
+              List(),
+              SelectField.typed[Value[STuple]](
+                ValUse(
+                  1,
+                  STuple(
+                    Vector(
+                      SAvlTree,
+                      STuple(Vector(SCollectionType(SCollectionType(SByte)), SCollectionType(SByte)))
+                    )
+                  )
+                ),
+                2.toByte
+              )
+            )
+          ),
+          MethodCall.typed[Value[SCollection[SOption[SCollection[SByte.type]]]]](
+            SelectField.typed[Value[SAvlTree.type]](
+              ValUse(
+                1,
+                STuple(
+                  Vector(
+                    SAvlTree,
+                    STuple(Vector(SCollectionType(SCollectionType(SByte)), SCollectionType(SByte)))
+                  )
+                )
+              ),
+              1.toByte
+            ),
+            SAvlTree.getMethodByName("getMany"),
+            Vector(
+              SelectField.typed[Value[SCollection[SCollection[SByte.type]]]](
+                ValUse(3, STuple(Vector(SCollectionType(SCollectionType(SByte)), SCollectionType(SByte)))),
+                1.toByte
+              ),
+              SelectField.typed[Value[SCollection[SByte.type]]](
+                ValUse(3, STuple(Vector(SCollectionType(SCollectionType(SByte)), SCollectionType(SByte)))),
+                2.toByte
+              )
+            ),
+            Map()
+          )
+        )
+      )
+    )
+
+    val updateDigest = existingFeature((t: (AvlTree, Coll[Byte])) => t._1.updateDigest(t._2),
+      "{ (t: (AvlTree, Coll[Byte])) => t._1.updateDigest(t._2) }",
+      FuncValue(
+        Vector((1, STuple(Vector(SAvlTree, SCollectionType(SByte))))),
+        MethodCall.typed[Value[SAvlTree.type]](
+          SelectField.typed[Value[SAvlTree.type]](
+            ValUse(1, STuple(Vector(SAvlTree, SCollectionType(SByte)))),
+            1.toByte
+          ),
+          SAvlTree.getMethodByName("updateDigest"),
+          Vector(
+            SelectField.typed[Value[SCollection[SByte.type]]](
+              ValUse(1, STuple(Vector(SAvlTree, SCollectionType(SByte)))),
+              2.toByte
+            )
+          ),
+          Map()
+        )
+      ))
+
+    val updateOperations = existingFeature((t: (AvlTree, Byte)) => t._1.updateOperations(t._2),
+      "{ (t: (AvlTree, Byte)) => t._1.updateOperations(t._2) }",
+      FuncValue(
+        Vector((1, STuple(Vector(SAvlTree, SByte)))),
+        MethodCall.typed[Value[SAvlTree.type]](
+          SelectField.typed[Value[SAvlTree.type]](ValUse(1, STuple(Vector(SAvlTree, SByte))), 1.toByte),
+          SAvlTree.getMethodByName("updateOperations"),
+          Vector(
+            SelectField.typed[Value[SByte.type]](ValUse(1, STuple(Vector(SAvlTree, SByte))), 2.toByte)
+          ),
+          Map()
+        )
+      ))
+
+    val (key, value, avlProver) = sampleAvlProver
+    val otherKey = key.map(x => (-x).toByte) // any other different from key
+
+    val table = Table(("key", "contains", "valueOpt"), (key, true, Some(value)), (otherKey, false, None))
+    forAll(table) { (key, res, valueOpt) =>
+      avlProver.performOneOperation(Lookup(ADKey @@ key.toArray))
+      val digest = avlProver.digest.toColl
+      val proof = avlProver.generateProof().toColl
+      val tree = SigmaDsl.avlTree(AvlTreeFlags.ReadOnly.serializeToByte, digest, 32, None)
+
+      // positive test
+      contains.checkExpected((tree, (key, proof)), res)
+      get.checkExpected((tree, (key, proof)), valueOpt)
+
+
+      val keys = Colls.fromItems(key)
+      val expRes = Colls.fromItems(valueOpt)
+      getMany.checkExpected((tree, (keys, proof)), expRes)
+
+      updateDigest.checkEquality((tree, digest))
+      updateOperations.checkEquality((tree, 1.toByte))
+
+      // negative test
+      val otherProof = proof.map(x => (-x).toByte) // any other different from proof
+      contains.checkEquality((tree, (key, otherProof)))
+      get.checkEquality((tree, (key, otherProof)))
+      getMany.checkEquality((tree, (keys, proof)))
+    }
   }
 
   property("AvlTree.{insert, update, remove} equivalence") {

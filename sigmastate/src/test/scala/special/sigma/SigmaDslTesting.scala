@@ -98,9 +98,9 @@ class SigmaDslTesting extends PropSpec
       * Can be used to create regression test cases. */
     def printSuggestion(cf: CompiledFunc[_,_]): Unit = {
       print(s"No expectedExpr for ")
-      SigmaPPrint.pprintln(cf.script)
+      SigmaPPrint.pprintln(cf.script, height = 150)
       print("Use ")
-      SigmaPPrint.pprintln(cf.expr)
+      SigmaPPrint.pprintln(cf.expr, height = 150)
       println()
     }
 

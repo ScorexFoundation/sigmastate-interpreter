@@ -10,9 +10,10 @@ import org.scalacheck.{Arbitrary, Gen}
 import sigmastate.helpers.SigmaTestingCommons
 import sigmastate.eval._
 import sigmastate.eval.Extensions._
-import org.ergoplatform.{DataInput, ErgoBox, ErgoLikeContext, ErgoLikeTransaction}
-import scorex.crypto.hash.{Blake2b256, Digest32}
+import org.ergoplatform.{ErgoLikeContext, DataInput, ErgoLikeTransaction, ErgoBox}
+import scorex.crypto.hash.{Digest32, Blake2b256}
 import scorex.crypto.authds.{ADKey, ADValue}
+import special.collection.Coll
 
 trait SigmaTestingData extends SigmaTestingCommons with SigmaTypeGens {
   val bytesGen: Gen[Array[Byte]] = containerOfN[Array, Byte](100, Arbitrary.arbByte.arbitrary)
@@ -24,6 +25,10 @@ trait SigmaTestingData extends SigmaTestingCommons with SigmaTypeGens {
   protected def sampleAvlProver = {
     val key = keyCollGen.sample.get
     val value = bytesCollGen.sample.get
+    getAvlProver(key, value)
+  }
+
+  def getAvlProver(key: Coll[Byte], value: Coll[Byte]) = {
     val (_, avlProver) = createAvlTree(AvlTreeFlags.AllOperationsAllowed, ADKey @@ key.toArray -> ADValue @@ value.toArray)
     (key, value, avlProver)
   }
