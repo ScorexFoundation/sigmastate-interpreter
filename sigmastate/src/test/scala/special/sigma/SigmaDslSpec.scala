@@ -1132,14 +1132,15 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
       val expRes = Colls.fromItems(valueOpt)
       getMany.checkExpected((tree, (keys, proof)), expRes)
 
-      updateDigest.checkEquality((tree, digest))
-      updateOperations.checkEquality((tree, 1.toByte))
+      updateDigest.checkEquality((tree, digest)).get.digest shouldBe digest
+      val newOps = 1.toByte
+      updateOperations.checkEquality((tree, newOps)).get.enabledOperations shouldBe newOps
 
       // negative test
       val otherProof = proof.map(x => (-x).toByte) // any other different from proof
       contains.checkEquality((tree, (key, otherProof)))
       get.checkEquality((tree, (key, otherProof)))
-      getMany.checkEquality((tree, (keys, proof)))
+      getMany.checkEquality((tree, (keys, otherProof)))
     }
   }
 

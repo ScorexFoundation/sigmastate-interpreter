@@ -125,20 +125,24 @@ class SigmaDslTesting extends PropSpec
 
     /** Depending on the featureType compares the old and new implementations against
       * semantic function (scalaFunc) on the given input. */
-    def checkEquality(input: A): Unit = featureType match {
+    def checkEquality(input: A): Try[B] = featureType match {
       case ExistingFeature =>
         // check both implementations with Scala semantic
-        checkEq(scalaFunc)(oldF)(input)
+        val oldRes = checkEq(scalaFunc)(oldF)(input)
 
         if (!(newImpl eq oldImpl)) {
-          checkEq(scalaFunc)(newF)(input)
+          val newRes = checkEq(scalaFunc)(newF)(input)
+          newRes shouldBe oldRes
         }
-
+        oldRes
       case AddedFeature =>
-        Try(oldF(input)).isFailure shouldBe true
+        val oldRes = Try(oldF(input))
+        oldRes.isFailure shouldBe true
         if (!(newImpl eq oldImpl)) {
-          checkEq(scalaFunc)(newF)(input)
+          val newRes = checkEq(scalaFunc)(newF)(input)
+          newRes shouldBe oldRes
         }
+        oldRes
     }
 
     /** Depending on the featureType compares the old and new implementations against
