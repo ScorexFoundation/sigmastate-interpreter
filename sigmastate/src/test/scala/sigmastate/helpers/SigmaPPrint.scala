@@ -2,10 +2,11 @@ package sigmastate.helpers
 
 import scala.collection.mutable
 import pprint.{Tree, PPrinter}
+import sigmastate.SCollection._
 import sigmastate.Values.ConstantNode
 import sigmastate.lang.Terms.MethodCall
 import sigmastate.utxo.SelectField
-import sigmastate.{STypeCompanion, STuple, ArithOp, SOption, SType, SCollectionType, SPredefType}
+import sigmastate.{SByte, STypeCompanion, STuple, ArithOp, SOption, SType, SCollectionType, SPredefType, SCollection}
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -41,7 +42,12 @@ object SigmaPPrint extends PPrinter {
     s"Value[$tn]"
   }
 
-  override val additionalHandlers: PartialFunction[Any, Tree] = {
+  val typeHandlers: PartialFunction[Any, Tree] = {
+    case SByteArray => Tree.Literal("SByteArray")
+    case SByteArray2 => Tree.Literal("SByteArray2")
+  }
+
+  override val additionalHandlers: PartialFunction[Any, Tree] = typeHandlers.orElse {
     case t: STypeCompanion if t.isInstanceOf[SType] => Tree.Literal(s"S${t.typeName}")
     case v: Byte => Tree.Literal(s"$v.toByte")
     case wa: mutable.WrappedArray[_] =>

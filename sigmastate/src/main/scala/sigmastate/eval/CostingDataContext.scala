@@ -162,12 +162,12 @@ case class CAvlTree(treeData: AvlTreeData) extends AvlTree with WrapperOf[AvlTre
     }
   }
 
-  override def insert(operations: Coll[(Coll[Byte], Coll[Byte])], proof: Coll[Byte]): Option[AvlTree] = {
+  override def insert(entries: Coll[(Coll[Byte], Coll[Byte])], proof: Coll[Byte]): Option[AvlTree] = {
     if (!isInsertAllowed) {
       None
     } else {
       val bv = createVerifier(proof)
-      operations.forall { case (key, value) =>
+      entries.forall { case (key, value) =>
         val insertRes = bv.performOneOperation(Insert(ADKey @@ key.toArray, ADValue @@ value.toArray))
         if (insertRes.isFailure) {
           Interpreter.error(s"Incorrect insert for $treeData (key: $key, value: $value, digest: $digest): ${insertRes.failed.get}}")

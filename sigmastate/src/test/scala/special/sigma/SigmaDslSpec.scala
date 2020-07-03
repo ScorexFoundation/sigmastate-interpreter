@@ -15,7 +15,7 @@ import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.hash.{Digest32, Blake2b256}
 import scalan.util.Extensions._
 import sigma.util.Extensions._
-import sigmastate.SCollection.SByteArray
+import sigmastate.SCollection._
 import sigmastate.Values.IntConstant
 import sigmastate._
 import sigmastate.Values._
@@ -1144,33 +1144,232 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
     }
   }
 
+  type BatchProver = BatchAVLProver[Digest32, Blake2b256.type]
+
+  def performInsert(avlProver: BatchProver, key: Coll[Byte], value: Coll[Byte]) = {
+    avlProver.performOneOperation(Insert(ADKey @@ key.toArray, ADValue @@ value.toArray))
+    val insertProof = avlProver.generateProof().toColl
+    insertProof
+  }
+
+  def createTree(digest: Coll[Byte], insertAllowed: Boolean = false, updateAllowed: Boolean = false, removeAllowed: Boolean = false) = {
+    val flags = AvlTreeFlags(insertAllowed, updateAllowed, removeAllowed).serializeToByte
+    val tree = SigmaDsl.avlTree(flags, digest, 32, None)
+    tree
+  }
+
   property("AvlTree.{insert, update, remove} equivalence") {
     type KV = (Coll[Byte], Coll[Byte])
-    val doInsert = checkEq(
-      func[(AvlTree, (Coll[KV], Coll[Byte])), Option[AvlTree]](
-      "{ (t: (AvlTree, (Coll[(Coll[Byte], Coll[Byte])], Coll[Byte]))) => t._1.insert(t._2._1, t._2._2) }"))
-         { (t: (AvlTree, (Coll[KV], Coll[Byte]))) => t._1.insert(t._2._1, t._2._2) }
-    val doUpdate = checkEq(
-      func[(AvlTree, (Coll[KV], Coll[Byte])), Option[AvlTree]](
-        "{ (t: (AvlTree, (Coll[(Coll[Byte], Coll[Byte])], Coll[Byte]))) => t._1.update(t._2._1, t._2._2) }"))
-        { (t: (AvlTree, (Coll[KV], Coll[Byte]))) => t._1.update(t._2._1, t._2._2) }
-    val doRemove = checkEq(
-      func[(AvlTree, (Coll[Coll[Byte]], Coll[Byte])), Option[AvlTree]](
-      "{ (t: (AvlTree, (Coll[Coll[Byte]], Coll[Byte]))) => t._1.remove(t._2._1, t._2._2) }"))
-         { (t: (AvlTree, (Coll[Coll[Byte]], Coll[Byte]))) => t._1.remove(t._2._1, t._2._2) }
+
+    val insert = existingFeature((t: (AvlTree, (Coll[KV], Coll[Byte]))) => t._1.insert(t._2._1, t._2._2),
+      "{ (t: (AvlTree, (Coll[(Coll[Byte], Coll[Byte])], Coll[Byte]))) => t._1.insert(t._2._1, t._2._2) }",
+      FuncValue(
+        Vector(
+          (
+              1,
+              STuple(
+                Vector(
+                  SAvlTree,
+                  STuple(Vector(SCollectionType(STuple(Vector(SByteArray, SByteArray))), SByteArray))
+                )
+              )
+              )
+        ),
+        BlockValue(
+          Vector(
+            ValDef(
+              3,
+              List(),
+              SelectField.typed[Value[STuple]](
+                ValUse(
+                  1,
+                  STuple(
+                    Vector(
+                      SAvlTree,
+                      STuple(Vector(SCollectionType(STuple(Vector(SByteArray, SByteArray))), SByteArray))
+                    )
+                  )
+                ),
+                2.toByte
+              )
+            )
+          ),
+          MethodCall.typed[Value[SOption[SAvlTree.type]]](
+            SelectField.typed[Value[SAvlTree.type]](
+              ValUse(
+                1,
+                STuple(
+                  Vector(
+                    SAvlTree,
+                    STuple(Vector(SCollectionType(STuple(Vector(SByteArray, SByteArray))), SByteArray))
+                  )
+                )
+              ),
+              1.toByte
+            ),
+            SAvlTree.getMethodByName("insert"),
+            Vector(
+              SelectField.typed[Value[SCollection[STuple]]](
+                ValUse(
+                  3,
+                  STuple(Vector(SCollectionType(STuple(Vector(SByteArray, SByteArray))), SByteArray))
+                ),
+                1.toByte
+              ),
+              SelectField.typed[Value[SCollection[SByte.type]]](
+                ValUse(
+                  3,
+                  STuple(Vector(SCollectionType(STuple(Vector(SByteArray, SByteArray))), SByteArray))
+                ),
+                2.toByte
+              )
+            ),
+            Map()
+          )
+        )
+      ))
+
+    val update = existingFeature((t: (AvlTree, (Coll[KV], Coll[Byte]))) => t._1.update(t._2._1, t._2._2),
+      "{ (t: (AvlTree, (Coll[(Coll[Byte], Coll[Byte])], Coll[Byte]))) => t._1.update(t._2._1, t._2._2) }",
+      FuncValue(
+        Vector(
+          (
+              1,
+              STuple(
+                Vector(
+                  SAvlTree,
+                  STuple(Vector(SCollectionType(STuple(Vector(SByteArray, SByteArray))), SByteArray))
+                )
+              )
+              )
+        ),
+        BlockValue(
+          Vector(
+            ValDef(
+              3,
+              List(),
+              SelectField.typed[Value[STuple]](
+                ValUse(
+                  1,
+                  STuple(
+                    Vector(
+                      SAvlTree,
+                      STuple(Vector(SCollectionType(STuple(Vector(SByteArray, SByteArray))), SByteArray))
+                    )
+                  )
+                ),
+                2.toByte
+              )
+            )
+          ),
+          MethodCall.typed[Value[SOption[SAvlTree.type]]](
+            SelectField.typed[Value[SAvlTree.type]](
+              ValUse(
+                1,
+                STuple(
+                  Vector(
+                    SAvlTree,
+                    STuple(Vector(SCollectionType(STuple(Vector(SByteArray, SByteArray))), SByteArray))
+                  )
+                )
+              ),
+              1.toByte
+            ),
+            SAvlTree.getMethodByName("update"),
+            Vector(
+              SelectField.typed[Value[SCollection[STuple]]](
+                ValUse(
+                  3,
+                  STuple(Vector(SCollectionType(STuple(Vector(SByteArray, SByteArray))), SByteArray))
+                ),
+                1.toByte
+              ),
+              SelectField.typed[Value[SCollection[SByte.type]]](
+                ValUse(
+                  3,
+                  STuple(Vector(SCollectionType(STuple(Vector(SByteArray, SByteArray))), SByteArray))
+                ),
+                2.toByte
+              )
+            ),
+            Map()
+          )
+        )
+      ))
+
+    val remove = existingFeature((t: (AvlTree, (Coll[Coll[Byte]], Coll[Byte]))) => t._1.remove(t._2._1, t._2._2),
+      "{ (t: (AvlTree, (Coll[Coll[Byte]], Coll[Byte]))) => t._1.remove(t._2._1, t._2._2) }",
+      FuncValue(
+        Vector((1, STuple(Vector(SAvlTree, STuple(Vector(SByteArray2, SByteArray)))))),
+        BlockValue(
+          Vector(
+            ValDef(
+              3,
+              List(),
+              SelectField.typed[Value[STuple]](
+                ValUse(1, STuple(Vector(SAvlTree, STuple(Vector(SByteArray2, SByteArray))))),
+                2.toByte
+              )
+            )
+          ),
+          MethodCall.typed[Value[SOption[SAvlTree.type]]](
+            SelectField.typed[Value[SAvlTree.type]](
+              ValUse(1, STuple(Vector(SAvlTree, STuple(Vector(SByteArray2, SByteArray))))),
+              1.toByte
+            ),
+            SAvlTree.getMethodByName("remove"),
+            Vector(
+              SelectField.typed[Value[SCollection[SCollection[SByte.type]]]](
+                ValUse(3, STuple(Vector(SByteArray2, SByteArray))),
+                1.toByte
+              ),
+              SelectField.typed[Value[SCollection[SByte.type]]](
+                ValUse(3, STuple(Vector(SByteArray2, SByteArray))),
+                2.toByte
+              )
+            ),
+            Map()
+          )
+        )
+      ))
 
     val avlProver = new BatchAVLProver[Digest32, Blake2b256.type](keyLength = 32, None)
     val key = Array.fill(32)(1.toByte).toColl
 
-    {
+    forAll(keyCollGen, bytesCollGen) { (key, value) =>
+      val avlProver = new BatchAVLProver[Digest32, Blake2b256.type](keyLength = 32, None)
+      val otherKey = key.map(x => (-x).toByte) // any other different from key
       val preInsertDigest = avlProver.digest.toColl
-      val value = bytesCollGen.sample.get
-      avlProver.performOneOperation(Insert(ADKey @@ key.toArray, ADValue @@ value.toArray))
-      val insertProof = avlProver.generateProof().toColl
-      val preInsertTree = SigmaDsl.avlTree(AvlTreeFlags(true, false, false).serializeToByte, preInsertDigest, 32, None)
-      val insertKvs = Colls.fromItems((key -> value))
-      doInsert((preInsertTree, (insertKvs, insertProof)))
+      val insertProof = performInsert(avlProver, key, value)
+      val kvs = Colls.fromItems((key -> value))
+
+      { // positive
+        val preInsertTree = createTree(preInsertDigest, insertAllowed = true)
+        val res = insert.checkEquality((preInsertTree, (kvs, insertProof)))
+        res.get.isDefined shouldBe true
+      }
+
+      { // negative: readonly tree
+        val readonlyTree = createTree(preInsertDigest)
+        val res = insert.checkEquality((readonlyTree, (kvs, insertProof)))
+        res.get.isDefined shouldBe false
+      }
+
+      { // negative: invalid key
+        val tree = createTree(preInsertDigest, insertAllowed = true)
+        val invalidKvs = Colls.fromItems((otherKey -> value))
+        val res = insert.checkEquality((tree, (invalidKvs, insertProof)))
+        res.isFailure shouldBe false // TODO HF: should it really be true? (looks like a bug)
+      }
+
+      { // negative: invalid proof
+        val tree = createTree(preInsertDigest, insertAllowed = true)
+        val invalidProof = insertProof.map(x => (-x).toByte) // any other different from proof
+        val res = insert.checkEquality((tree, (kvs, invalidProof)))
+        res.isFailure shouldBe true
+      }
     }
+
 
     {
       val preUpdateDigest = avlProver.digest.toColl
@@ -1179,7 +1378,7 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
       val updateProof = avlProver.generateProof().toColl
       val preUpdateTree = SigmaDsl.avlTree(AvlTreeFlags(false, true, false).serializeToByte, preUpdateDigest, 32, None)
       val updateKvs = Colls.fromItems((key -> newValue))
-      doUpdate((preUpdateTree, (updateKvs, updateProof)))
+      update.checkEquality((preUpdateTree, (updateKvs, updateProof)))
     }
 
     {
@@ -1188,7 +1387,7 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
       val removeProof = avlProver.generateProof().toColl
       val preRemoveTree = SigmaDsl.avlTree(AvlTreeFlags(false, false, true).serializeToByte, preRemoveDigest, 32, None)
       val removeKeys = Colls.fromItems(key)
-      doRemove((preRemoveTree, (removeKeys, removeProof)))
+      remove.checkEquality((preRemoveTree, (removeKeys, removeProof)))
     }
   }
 
