@@ -22,19 +22,21 @@ trait SigmaTestingData extends SigmaTestingCommons with SigmaTypeGens {
   val keyCollGen = bytesCollGen.map(_.slice(0, 32))
   import org.ergoplatform.dsl.AvlTreeHelpers._
 
+  def createAvlTreeAndProver(entries: (Coll[Byte], Coll[Byte])*) = {
+    val kvs = entries.map { case (k,v) => ADKey @@ k.toArray -> ADValue @@ v.toArray}
+    val res = createAvlTree(AvlTreeFlags.AllOperationsAllowed, kvs:_*)
+    res
+  }
+
   protected def sampleAvlProver = {
     val key = keyCollGen.sample.get
     val value = bytesCollGen.sample.get
-    getAvlProver(key, value)
-  }
-
-  def getAvlProver(key: Coll[Byte], value: Coll[Byte]) = {
-    val (_, avlProver) = createAvlTree(AvlTreeFlags.AllOperationsAllowed, ADKey @@ key.toArray -> ADValue @@ value.toArray)
-    (key, value, avlProver)
+    val (tree, prover) = createAvlTreeAndProver(key -> value)
+    (key, value, tree, prover)
   }
 
   protected def sampleAvlTree: AvlTree = {
-    val (key, _, avlProver) = sampleAvlProver
+    val (_, _, _, avlProver) = sampleAvlProver
     val digest = avlProver.digest.toColl
     val tree = SigmaDsl.avlTree(AvlTreeFlags.ReadOnly.serializeToByte, digest, 32, None)
     tree
