@@ -30,7 +30,7 @@ object ContextExtension {
     }
 
     override def parse(r: SigmaByteReader): ContextExtension = {
-      val extSize = r.getByte()
+      val extSize = r.getUByte()
       val ext = (0 until extSize)
         .map(_ => (r.getByte(), r.getValue().asInstanceOf[EvaluatedValue[_ <: SType]]))
         .toMap[Byte, EvaluatedValue[_ <: SType]]

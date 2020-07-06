@@ -198,7 +198,7 @@ trait ObjectGenerators extends TypeGenerators with ValidationSpecification with 
   val unsignedShortGen: Gen[Short] = Gen.chooseNum(0, Short.MaxValue).map(_.toShort)
 
   val contextExtensionGen: Gen[ContextExtension] = for {
-    values <- Gen.sequence(contextExtensionValuesGen(0, 3))
+    values <- Gen.sequence(contextExtensionValuesGen(0, 5))
   } yield ContextExtension(values.asScala.toMap)
 
   val serializedProverResultGen: Gen[ProverResult] = for {

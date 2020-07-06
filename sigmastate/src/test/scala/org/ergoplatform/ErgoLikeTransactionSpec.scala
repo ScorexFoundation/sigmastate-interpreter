@@ -2,11 +2,11 @@ package org.ergoplatform
 
 import org.ergoplatform.ErgoBox.TokenId
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
-import org.scalatest.{Matchers, PropSpec}
+import org.scalatest.{PropSpec, Matchers}
 import scorex.util.Random
-import sigmastate.Values.ByteArrayConstant
+import sigmastate.Values.{ByteArrayConstant, IntConstant}
 import sigmastate.helpers.SigmaTestingCommons
-import sigmastate.interpreter.{ContextExtension, ProverResult}
+import sigmastate.interpreter.{ProverResult, ContextExtension}
 import sigmastate.serialization.SigmaSerializer
 import sigmastate.serialization.generators.ObjectGenerators
 import sigmastate.eval._
@@ -161,4 +161,15 @@ class ErgoLikeTransactionSpec extends PropSpec
     }
   }
 
+  property("context extension serialization") {
+    forAll { tx: ErgoLikeTransaction =>
+      val ce = ContextExtension((Byte.MinValue to (Byte.MaxValue - 1)).map(i => i.toByte -> IntConstant(4)).toMap)
+      val wrongInput = Input(tx.inputs.head.boxId, ProverResult(Array.emptyByteArray, ce))
+      val ins = IndexedSeq(wrongInput) ++ tx.inputs.tail
+      val tx2 = tx.clone(inputs = ins)
+      val bs = ErgoLikeTransactionSerializer.toBytes(tx2)
+      val restored = ErgoLikeTransactionSerializer.fromBytes(bs)
+      restored.inputs.head.extension.values.size shouldBe tx2.inputs.head.extension.values.size
+    }
+  }
 }
