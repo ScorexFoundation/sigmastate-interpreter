@@ -1544,31 +1544,64 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   }
 
   property("Advanced Box test") {
-    val avlProver = new BatchAVLProver[Digest32, Blake2b256.type](keyLength = 32, None)
-    avlProver.generateProof()
+    val (tree, _) = createAvlTreeAndProver()
 
-    val digest = avlProver.digest
-    val treeData = SigmaDsl.avlTree(new AvlTreeData(digest, AvlTreeFlags.ReadOnly, 32, None))
-    val box = ctx.dataInputs(0)
-
-    val s = ErgoBox(20, TrueProp, 0, Seq(),Map(
+    val box = ErgoBox(20, TrueProp, 0, Seq(),Map(
       ErgoBox.nonMandatoryRegisters(0) -> ByteConstant(1.toByte),
       ErgoBox.nonMandatoryRegisters(1) -> ShortConstant(1024.toShort),
       ErgoBox.nonMandatoryRegisters(2) -> IntConstant(1024 * 1024),
       ErgoBox.nonMandatoryRegisters(3) -> LongConstant(1024.toLong),
       ErgoBox.nonMandatoryRegisters(4) -> BigIntConstant(222L),
-      ErgoBox.nonMandatoryRegisters(5) -> AvlTreeConstant(treeData)
+      ErgoBox.nonMandatoryRegisters(5) -> AvlTreeConstant(tree)
     ))
-    lazy val byteCheck = checkEq(func[Box,Byte]("{ (x: Box) => x.R4[Byte].get }"))((x: Box) => x.R4[Byte].get)
-    lazy val shortCheck = checkEq(func[Box,Short]("{ (x: Box) => x.R5[Short].get }"))((x: Box) => x.R5[Short].get)
-    lazy val intCheck = checkEq(func[Box,Int]("{ (x: Box) => x.R6[Int].get }"))((x: Box) => x.R6[Int].get)
-    lazy val longCheck = checkEq(func[Box,Long]("{ (x: Box) => x.R7[Long].get }"))((x: Box) => x.R7[Long].get)
-    lazy val BigIntCheck = checkEq(func[Box,BigInt]("{ (x: Box) => x.R8[BigInt].get }"))((x: Box) => x.R8[BigInt].get)
-    byteCheck(s)
-    shortCheck(s)
-    intCheck(s)
-    longCheck(s)
-    BigIntCheck(s)
+
+    lazy val byteReg = existingFeature((x: Box) => x.R4[Byte].get,
+      "{ (x: Box) => x.R4[Byte].get }",
+      FuncValue(
+        Vector((1, SBox)),
+        OptionGet(ExtractRegisterAs(ValUse(1, SBox), ErgoBox.R4, SOption(SByte)))
+      ))
+
+    lazy val shortReg = existingFeature((x: Box) => x.R5[Short].get,
+      "{ (x: Box) => x.R5[Short].get }",
+      FuncValue(
+        Vector((1, SBox)),
+        OptionGet(ExtractRegisterAs(ValUse(1, SBox), ErgoBox.R5, SOption(SShort)))
+      ))
+    lazy val intReg = existingFeature((x: Box) => x.R6[Int].get,
+      "{ (x: Box) => x.R6[Int].get }",
+      FuncValue(
+        Vector((1, SBox)),
+        OptionGet(ExtractRegisterAs(ValUse(1, SBox), ErgoBox.R6, SOption(SInt)))
+      ))
+
+    lazy val longReg = existingFeature((x: Box) => x.R7[Long].get,
+      "{ (x: Box) => x.R7[Long].get }",
+      FuncValue(
+        Vector((1, SBox)),
+        OptionGet(ExtractRegisterAs(ValUse(1, SBox), ErgoBox.R7, SOption(SLong)))
+      ))
+
+    lazy val bigIntReg = existingFeature((x: Box) => x.R8[BigInt].get,
+      "{ (x: Box) => x.R8[BigInt].get }",
+      FuncValue(
+        Vector((1, SBox)),
+        OptionGet(ExtractRegisterAs(ValUse(1, SBox), ErgoBox.R8, SOption(SBigInt)))
+      ))
+
+    lazy val avlTreeReg = existingFeature((x: Box) => x.R9[AvlTree].get,
+      "{ (x: Box) => x.R9[AvlTree].get }",
+      FuncValue(
+        Vector((1, SBox)),
+        OptionGet(ExtractRegisterAs(ValUse(1, SBox), ErgoBox.R9, SOption(SAvlTree)))
+      ))
+
+    Seq(
+      byteReg,
+      shortReg,
+      intReg,
+      longReg,
+      bigIntReg, avlTreeReg).foreach(_.checkEquality(box))
   }
 
   property("PreHeader properties equivalence") {

@@ -1,5 +1,7 @@
 package sigmastate.helpers
 
+import org.ergoplatform.ErgoBox.RegisterId
+
 import scala.collection.mutable
 import pprint.{Tree, PPrinter}
 import sigmastate.SCollection._
@@ -54,6 +56,8 @@ object SigmaPPrint extends PPrinter {
       Tree.Apply("Array", treeifyMany(wa))
     case buf: ArrayBuffer[_] =>
       Tree.Apply("Seq", treeifyMany(buf))
+    case r: RegisterId =>
+      Tree.Literal(s"ErgoBox.R${r.number}")
     case sf: SelectField =>
       val resTpe = sf.input.tpe.items(sf.fieldIndex - 1)
       val resTpeName = valueType(resTpe)
