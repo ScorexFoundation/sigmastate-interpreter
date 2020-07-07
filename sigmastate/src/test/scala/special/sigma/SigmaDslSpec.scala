@@ -1266,7 +1266,7 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
       { // negative: invalid key
         val tree = createTree(preInsertDigest, insertAllowed = true)
         val invalidKey = key.map(x => (-x).toByte) // any other different from key
-        val invalidKvs = Colls.fromItems((invalidKey -> value))
+        val invalidKvs = Colls.fromItems((invalidKey -> value)) // NOTE, insertProof is based on `key`
         val res = insert.checkEquality((tree, (invalidKvs, insertProof)))
         res.get.isDefined shouldBe true // TODO HF: should it really be true? (looks like a bug)
       }
@@ -1351,7 +1351,6 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
 
     forAll(keyCollGen, bytesCollGen) { (key, value) =>
       val (_, avlProver) = createAvlTreeAndProver(key -> value)
-      val otherKey = key.map(x => (-x).toByte) // any other different from key
       val preUpdateDigest = avlProver.digest.toColl
       val newValue = bytesCollGen.sample.get
       val updateProof = performUpdate(avlProver, key, newValue)
@@ -1377,7 +1376,8 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
 
       { // negative: invalid key
         val tree = createTree(preUpdateDigest, updateAllowed = true)
-        val invalidKvs = Colls.fromItems((otherKey -> newValue))
+        val invalidKey = key.map(x => (-x).toByte) // any other different from key
+        val invalidKvs = Colls.fromItems((invalidKey -> newValue))
         update.checkExpected((tree, (invalidKvs, updateProof)), None)
       }
 
@@ -1435,36 +1435,34 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
       ))
 
     forAll(keyCollGen, bytesCollGen) { (key, value) =>
-      val avlProver = new BatchAVLProver[Digest32, Blake2b256.type](keyLength = 32, None)
-      val otherKey = key.map(x => (-x).toByte) // any other different from key
+      val (_, avlProver) = createAvlTreeAndProver(key -> value)
       val preRemoveDigest = avlProver.digest.toColl
       val removeProof = performRemove(avlProver, key)
+      val endDigest = avlProver.digest.toColl
       val keys = Colls.fromItems(key)
 
       { // positive
         val preRemoveTree = createTree(preRemoveDigest, removeAllowed = true)
-        val res = remove.checkEquality((preRemoveTree, (keys, removeProof)))
-        res.get.isDefined shouldBe false // TODO HF: should it really be `false`? (looks like a bug and it should be true)
+        val endTree = preRemoveTree.updateDigest(endDigest)
+        remove.checkExpected((preRemoveTree, (keys, removeProof)), Some(endTree))
       }
 
       { // negative: readonly tree
         val readonlyTree = createTree(preRemoveDigest)
-        val res = remove.checkEquality((readonlyTree, (keys, removeProof)))
-        res.get.isDefined shouldBe false
+        remove.checkExpected((readonlyTree, (keys, removeProof)), None)
       }
 
       { // negative: invalid key
         val tree = createTree(preRemoveDigest, removeAllowed = true)
-        val invalidKeys = Colls.fromItems(otherKey)
-        val res = remove.checkEquality((tree, (invalidKeys, removeProof)))
-        res.isFailure shouldBe false // TODO HF: should it really be `false`? (looks like a bug and it should be true)
+        val invalidKey = key.map(x => (-x).toByte) // any other different from `key`
+        val invalidKeys = Colls.fromItems(invalidKey)
+        remove.checkExpected((tree, (invalidKeys, removeProof)), None)
       }
 
       { // negative: invalid proof
         val tree = createTree(preRemoveDigest, removeAllowed = true)
-        val invalidProof = removeProof.map(x => (-x).toByte) // any other different from proof
-        val res = remove.checkEquality((tree, (keys, invalidProof)))
-        res.isFailure shouldBe false // TODO HF: should it really be `false`? (looks like a bug and it should be true)
+        val invalidProof = removeProof.map(x => (-x).toByte) // any other different from `removeProof`
+        remove.checkExpected((tree, (keys, invalidProof)), None)
       }
     }
   }
