@@ -24,7 +24,7 @@ import sigmastate.eval._
 import sigmastate.helpers.SigmaPPrint
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.Terms.MethodCall
-import sigmastate.utxo.{ComplexityTableStat, SizeOf, SelectField}
+import sigmastate.utxo._
 import special.collection.Coll
 import sigmastate.serialization.OpCodes.OpCode
 
@@ -282,10 +282,6 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
       features.foreach(_.checkEquality(x))
     }
   }
-
-  ///=====================================================
-  ///              Byte type operations
-  ///-----------------------------------------------------
 
   property("Byte methods equivalence") {
     val toByte = existingFeature(
@@ -1475,23 +1471,21 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   }
 
   property("byteArrayToBigInt equivalence") {
-    val eq = checkEq(func[Coll[Byte], BigInt]("{ (x: Coll[Byte]) => byteArrayToBigInt(x) }")){ x =>
-      byteArrayToBigInt(x)
-    }
-    forAll { x: Array[Byte] =>
-      whenever(x.length <= SigmaConstants.MaxBigIntSizeInBytes.value) {
-        eq(Colls.fromArray(x))
-      }
+    val eq = existingFeature((x: Coll[Byte]) => SigmaDsl.byteArrayToBigInt(x),
+      "{ (x: Coll[Byte]) => byteArrayToBigInt(x) }",
+      FuncValue(Vector((1, SByteArray)), ByteArrayToBigInt(ValUse(1, SByteArray))))
+    forAll(collOfN[Byte](SigmaConstants.MaxBigIntSizeInBytes.value.toInt)) { x: Coll[Byte] =>
+      eq.checkEquality(x)
     }
   }
 
   property("byteArrayToLong equivalence") {
-    val eq = checkEq(func[Coll[Byte],Long]("{ (x: Coll[Byte]) => byteArrayToLong(x) }")){ x =>
-      byteArrayToLong(x)
-    }
+    val eq = existingFeature((x: Coll[Byte]) => SigmaDsl.byteArrayToLong(x),
+      "{ (x: Coll[Byte]) => byteArrayToLong(x) }",
+      FuncValue(Vector((1, SByteArray)), ByteArrayToLong(ValUse(1, SByteArray))))
     forAll { x: Array[Byte] =>
       whenever(x.length >= 8) {
-        eq(Colls.fromArray(x))
+        eq.checkEquality(Colls.fromArray(x))
       }
     }
   }
@@ -1509,14 +1503,44 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
 
   property("Box properties equivalence") {
     val box = ctx.dataInputs(0)
-    val eq = EqualityChecker(box)
-    eq({ (x: Box) => x.id })("{ (x: Box) => x.id }")
-    eq({ (x: Box) => x.value })("{ (x: Box) => x.value }")
-    eq({ (x: Box) => x.propositionBytes })("{ (x: Box) => x.propositionBytes }")
-    eq({ (x: Box) => x.bytes })("{ (x: Box) => x.bytes }")
-    eq({ (x: Box) => x.bytesWithoutRef })("{ (x: Box) => x.bytesWithoutRef }")
-    eq({ (x: Box) => x.creationInfo })("{ (x: Box) => x.creationInfo }")
-    eq({ (x: Box) => x.tokens })("{ (x: Box) => x.tokens }")
+    val id = existingFeature({ (x: Box) => x.id },
+      "{ (x: Box) => x.id }",
+      FuncValue(Vector((1, SBox)), ExtractId(ValUse(1, SBox))))
+
+    val value = existingFeature({ (x: Box) => x.value },
+      "{ (x: Box) => x.value }",
+      FuncValue(Vector((1, SBox)), ExtractAmount(ValUse(1, SBox))))
+
+    val propositionBytes = existingFeature({ (x: Box) => x.propositionBytes },
+      "{ (x: Box) => x.propositionBytes }",
+      FuncValue(Vector((1, SBox)), ExtractScriptBytes(ValUse(1, SBox))))
+
+    val bytes = existingFeature({ (x: Box) => x.bytes },
+      "{ (x: Box) => x.bytes }",
+      FuncValue(Vector((1, SBox)), ExtractBytes(ValUse(1, SBox))))
+
+    val bytesWithoutRef = existingFeature({ (x: Box) => x.bytesWithoutRef },
+      "{ (x: Box) => x.bytesWithoutRef }",
+      FuncValue(Vector((1, SBox)), ExtractBytesWithNoRef(ValUse(1, SBox))))
+
+    val creationInfo = existingFeature({ (x: Box) => x.creationInfo },
+      "{ (x: Box) => x.creationInfo }",
+      FuncValue(Vector((1, SBox)), ExtractCreationInfo(ValUse(1, SBox))))
+
+    val tokens = existingFeature({ (x: Box) => x.tokens },
+      "{ (x: Box) => x.tokens }",
+      FuncValue(
+        Vector((1, SBox)),
+        MethodCall.typed[Value[SCollection[STuple]]](
+          ValUse(1, SBox),
+          SBox.getMethodByName("tokens"),
+          Vector(),
+          Map()
+        )
+      ))
+
+    Seq(id, value, propositionBytes, bytes, bytesWithoutRef, creationInfo, tokens)
+        .foreach(_.checkEquality(box))
   }
 
   property("Advanced Box test") {

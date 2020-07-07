@@ -11,15 +11,23 @@ import sigmastate.helpers.SigmaTestingCommons
 import sigmastate.eval._
 import sigmastate.eval.Extensions._
 import org.ergoplatform.{ErgoLikeContext, DataInput, ErgoLikeTransaction, ErgoBox}
+import org.scalacheck.util.Buildable
+import scalan.RType
 import scorex.crypto.hash.{Digest32, Blake2b256}
 import scorex.crypto.authds.{ADKey, ADValue}
 import special.collection.Coll
 
 trait SigmaTestingData extends SigmaTestingCommons with SigmaTypeGens {
+  def collOfN[T: RType: Arbitrary](n: Int)(implicit b: Buildable[T, Array[T]]): Gen[Coll[T]] = {
+    implicit val g: Gen[T] = Arbitrary.arbitrary[T]
+    containerOfN[Array, T](n, g).map(Colls.fromArray(_))
+  }
+
   val bytesGen: Gen[Array[Byte]] = containerOfN[Array, Byte](100, Arbitrary.arbByte.arbitrary)
   val bytesCollGen = bytesGen.map(Colls.fromArray(_))
   implicit val arbBytes = Arbitrary(bytesCollGen)
-  val keyCollGen = bytesCollGen.map(_.slice(0, 32))
+  val keyCollGen = collOfN[Byte](32)
+
   import org.ergoplatform.dsl.AvlTreeHelpers._
 
   def createAvlTreeAndProver(entries: (Coll[Byte], Coll[Byte])*) = {
