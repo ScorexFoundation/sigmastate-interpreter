@@ -265,12 +265,13 @@ Alice can identify her box as the one with $\beta = \alpha^x$.
 For correctness, Alice requires that she is always able to spend the coin. That is, Bob should not be able to spend $A$ in a manner that makes the resulting output(s) unspendable by Alice.
 
 Let $x$ be the Alice's secret corresponding to her box $A$. First note that due to the clause 
-\texttt{proveDHTuple($g, u, c, d$) || proveDHTuple($g, u, d, c$)}, Bob has no choice but to create two outputs $O_0, O_1$ such that the registers $(\alpha, \beta)$ of $O_b$ and $O_{1-b}$ contain $(g^y, g^{xy})$ and $(g^{xy}, g^y)$ respectively for some integer $y$ and bit $b$. This implies that that $O_b$'s spending condition reduces to:
+\texttt{proveDHTuple($g, u, c, d$) || proveDHTuple($g, u, d, c$)}, Bob has no choice but to create two outputs $O_0, O_1$ such that the registers $(\alpha, \beta)$ of $O_b$ and $O_{1-b}$ contain $(g^y, g^{xy})$ and $(g^{xy}, g^y)$ respectively for some integer $y$ and bit $b$. Then the spending condition of Alice's Full-Mix box, $O_b$, reduces to:
 $$\texttt{proveDHTuple}(g, g^{y}, g^x, g^{xy}) \lor \texttt{proveDlog}(g^{xy}).$$ 
-The above statement can be proved by anyone who knows at least one of $x$ or $xy$. 
-Thus, Alice can spend this because only she knows $x$. 
 
-For soundness, Alice requires that no one else should be able to spend $O_b$, her Full-Mix box. Observe that the only way someone else could spend this box is by knowing $xy$, because they don't know $x$. Assume there is an algorithm that takes as input $g^x$ and somehow outputs $(g^y, g^{xy}, xy)$ for some $y \neq 0$. Then Alice can use this to immediately compute $y$, contradicting the fact that the discrete log problem in $G$ is hard. Thus, no one must know $xy$ and thereby, only Alice has the ability to spend $O_b$.
+The above statement can be proven by anyone who knows at least one of $x$ or $xy$. 
+Thus, Alice can spend this because she knows $x$. 
+
+For Alice's soundness, no one else apart from her should have the ability to spend $O_b$. Assume that there exists such a spender. Since only Alice knows $x$ and the only other way to spend the box is via $\texttt{proveDlog}(xy)$, that other spender must know $xy$. Such a spender cannot know $y$ and so cannot spend $O_{1-b}$. We can model this spender as a black-box taking as input $(g, g^x)$ and outputting $(g^y, xy)$ for some $y\neq 0$. We posit that making such a black-box is a hard problem.
 
 From Bob's point of view, the spending condition of $O_{1-b}$ reduces to 
 $$\texttt{proveDHTuple}(g, g^{xy}, g^x, g^{y}) \lor \texttt{proveDlog}(g^{y}).$$
