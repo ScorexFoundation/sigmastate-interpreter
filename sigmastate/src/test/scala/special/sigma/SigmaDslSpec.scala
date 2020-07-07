@@ -1468,10 +1468,10 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   }
 
   property("longToByteArray equivalence") {
-    val eq = checkEq(func[Long, Coll[Byte]]("{ (x: Long) => longToByteArray(x) }")){ x =>
-      longToByteArray(x)
-    }
-    forAll { x: Long => eq(x) }
+    val feature = existingFeature((x: Long) => SigmaDsl.longToByteArray(x),
+      "{ (x: Long) => longToByteArray(x) }",
+      FuncValue(Vector((1, SLong)), LongToByteArray(ValUse(1, SLong))))
+    forAll { x: Long => feature.checkEquality(x) }
   }
 
   property("byteArrayToBigInt equivalence") {

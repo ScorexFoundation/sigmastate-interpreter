@@ -173,6 +173,12 @@ class SigmaDslTesting extends PropSpec
 
   /** Describes existing language feature which should be equally supported in both v3 and
     * v4 of the language.
+    *
+    * @param scalaFunc    semantic function which defines expected behavior of the given script
+    * @param script       the script to be tested against semantic function
+    * @param expectedExpr expected ErgoTree expression which corresponds to the given script
+    * @return feature test descriptor object which can be used to execute this test case in
+    *         various ways
     */
   def existingFeature[A: RType, B: RType]
       (scalaFunc: A => B, script: String, expectedExpr: SValue = null)
@@ -182,8 +188,14 @@ class SigmaDslTesting extends PropSpec
     FeatureTest(ExistingFeature, scalaFunc, Option(expectedExpr), oldImpl, newImpl)
   }
 
-  /** Describes a new language feature which must NOT be supported in v3 and
+  /** Describes a NEW language feature which must NOT be supported in v3 and
     * must BE supported in v4 of the language.
+    *
+    * @param scalaFunc    semantic function which defines expected behavior of the given script
+    * @param script       the script to be tested against semantic function
+    * @param expectedExpr expected ErgoTree expression which corresponds to the given script
+    * @return feature test descriptor object which can be used to execute this test case in
+    *         various ways
     */
   def newFeature[A: RType, B: RType]
       (scalaFunc: A => B, script: String, expectedExpr: SValue = null)
