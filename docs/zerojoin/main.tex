@@ -271,7 +271,7 @@ $$\texttt{proveDHTuple}(g, g^{y}, g^x, g^{xy}) \lor \texttt{proveDlog}(g^{xy}).$
 The above statement can be proven by anyone who knows at least one of $x$ or $xy$. 
 Thus, Alice can spend this because she knows $x$. 
 
-For Alice's soundness, no one else apart from her should have the ability to spend $O_b$. Assume that there exists such a spender. Since only Alice knows $x$ and the only other way to spend the box is via $\texttt{proveDlog}(xy)$, that other spender must know $xy$. Such a spender cannot know $y$ and so cannot spend $O_{1-b}$. We can model this spender as a black-box taking as input $(g, g^x)$ and outputting $(g^y, xy)$ for some $y\neq 0$. We posit that making such a black-box is a hard problem.
+For Alice's soundness, no one else apart from her should have the ability to spend $O_b$. Assume that there exists such a spender. Since only Alice knows $x$ and the only other way to spend the box is via $\texttt{proveDlog}(g^{xy})$, that other spender must know $xy$. Such a spender cannot know $y$ and so cannot spend $O_{1-b}$. We can model this spender as a black-box taking as input $(g, g^x)$ and outputting $(g^y, xy)$ for some $y\neq 0$. We posit that making such a black-box is a hard problem.
 
 From Bob's point of view, the spending condition of $O_{1-b}$ reduces to 
 $$\texttt{proveDHTuple}(g, g^{xy}, g^x, g^{y}) \lor \texttt{proveDlog}(g^{y}).$$
