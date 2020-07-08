@@ -1604,36 +1604,51 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
       bigIntReg, avlTreeReg).foreach(_.checkEquality(box))
   }
 
+  def existingPropTest[A: RType, B: RType](propName: String, scalaFunc: A => B) = {
+    val tA = RType[A]
+    val typeName = tA.name
+    val stypeA = Evaluation.rtypeToSType(tA)
+    val typeCompanion = stypeA.asInstanceOf[STypeCompanion]
+    existingFeature(scalaFunc,
+      s"{ (x: $typeName) => x.$propName }",
+      FuncValue(Vector((1, stypeA)),
+        MethodCall(ValUse(1, stypeA), typeCompanion.getMethodByName(propName), Vector(), Map() )
+      ))
+  }
+
   property("PreHeader properties equivalence") {
     val h = ctx.preHeader
-    val eq = EqualityChecker(h)
-    eq({ (x: PreHeader) => x.version })("{ (x: PreHeader) => x.version }")
-    eq({ (x: PreHeader) => x.parentId })("{ (x: PreHeader) => x.parentId }")
-    eq({ (x: PreHeader) => x.timestamp })("{ (x: PreHeader) => x.timestamp }")
-    eq({ (x: PreHeader) => x.nBits })("{ (x: PreHeader) => x.nBits }")
-    eq({ (x: PreHeader) => x.height })("{ (x: PreHeader) => x.height }")
-    eq({ (x: PreHeader) => x.minerPk })("{ (x: PreHeader) => x.minerPk }")
-    eq({ (x: PreHeader) => x.votes })("{ (x: PreHeader) => x.votes }")
+    val version = existingPropTest("version", { (x: PreHeader) => x.version })
+    val parentId = existingPropTest("parentId", { (x: PreHeader) => x.parentId })
+    val timestamp = existingPropTest("timestamp", { (x: PreHeader) => x.timestamp })
+    val nBits = existingPropTest("nBits", { (x: PreHeader) => x.nBits })
+    val height = existingPropTest("height", { (x: PreHeader) => x.height })
+    val minerPk = existingPropTest("minerPk", { (x: PreHeader) => x.minerPk })
+    val votes = existingPropTest("votes", { (x: PreHeader) => x.votes })
+    Seq(version, parentId, timestamp, nBits, height, minerPk, votes).foreach(_.checkEquality(h))
   }
 
   property("Header properties equivalence") {
     val h = ctx.headers(0)
-    val eq = EqualityChecker(h)
-    eq({ (x: Header) => x.id })("{ (x: Header) => x.id }")
-    eq({ (x: Header) => x.version })("{ (x: Header) => x.version }")
-    eq({ (x: Header) => x.parentId })("{ (x: Header) => x.parentId }")
-    eq({ (x: Header) => x.ADProofsRoot})("{ (x: Header) => x.ADProofsRoot}")
-    eq({ (x: Header) => x.stateRoot })("{ (x: Header) => x.stateRoot }")
-    eq({ (x: Header) => x.transactionsRoot })("{ (x: Header) => x.transactionsRoot }")
-    eq({ (x: Header) => x.timestamp })("{ (x: Header) => x.timestamp }")
-    eq({ (x: Header) => x.nBits })("{ (x: Header) => x.nBits }")
-    eq({ (x: Header) => x.height })("{ (x: Header) => x.height }")
-    eq({ (x: Header) => x.extensionRoot })("{ (x: Header) => x.extensionRoot }")
-    eq({ (x: Header) => x.minerPk })("{ (x: Header) => x.minerPk }")
-    eq({ (x: Header) => x.powOnetimePk })("{ (x: Header) => x.powOnetimePk }")
-    eq({ (x: Header) => x.powNonce })("{ (x: Header) => x.powNonce }")
-    eq({ (x: Header) => x.powDistance })("{ (x: Header) => x.powDistance }")
-    eq({ (x: Header) => x.votes })("{ (x: Header) => x.votes }")
+    val id = existingPropTest("id", { (x: Header) => x.id })
+    val version = existingPropTest("version", { (x: Header) => x.version })
+    val parentId = existingPropTest("parentId", { (x: Header) => x.parentId })
+    val ASDProofsRoot = existingPropTest("ADProofsRoot", { (x: Header) => x.ADProofsRoot})
+    val stateRoot = existingPropTest("stateRoot", { (x: Header) => x.stateRoot })
+    val transactionsRoot = existingPropTest("transactionsRoot", { (x: Header) => x.transactionsRoot })
+    val timestamp = existingPropTest("timestamp", { (x: Header) => x.timestamp })
+    val nBits = existingPropTest("nBits", { (x: Header) => x.nBits })
+    val height = existingPropTest("height", { (x: Header) => x.height })
+    val extensionRoot = existingPropTest("extensionRoot", { (x: Header) => x.extensionRoot })
+    val minerPk = existingPropTest("minerPk", { (x: Header) => x.minerPk })
+    val powOnetimePk = existingPropTest("powOnetimePk", { (x: Header) => x.powOnetimePk })
+    val powNonce = existingPropTest("powNonce", { (x: Header) => x.powNonce })
+    val powDistance = existingPropTest("powDistance", { (x: Header) => x.powDistance })
+    val votes = existingPropTest("votes", { (x: Header) => x.votes })
+
+    Seq(id, version, parentId, ASDProofsRoot, stateRoot, transactionsRoot,
+      timestamp, nBits, height, extensionRoot, minerPk, powOnetimePk,
+      powNonce, powDistance, votes).foreach(_.checkEquality(h))
   }
 
   property("Context properties equivalence") {
