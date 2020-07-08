@@ -5,7 +5,7 @@ import org.ergoplatform.ErgoBox.RegisterId
 import scala.collection.mutable
 import pprint.{Tree, PPrinter}
 import sigmastate.SCollection._
-import sigmastate.Values.ConstantNode
+import sigmastate.Values.{ConstantNode, ValueCompanion}
 import sigmastate.lang.Terms.MethodCall
 import sigmastate.utxo.SelectField
 import sigmastate.{SByte, STypeCompanion, STuple, ArithOp, SOption, SType, SCollectionType, SPredefType, SCollection}
@@ -50,8 +50,12 @@ object SigmaPPrint extends PPrinter {
   }
 
   override val additionalHandlers: PartialFunction[Any, Tree] = typeHandlers.orElse {
-    case t: STypeCompanion if t.isInstanceOf[SType] => Tree.Literal(s"S${t.typeName}")
-    case v: Byte => Tree.Literal(s"$v.toByte")
+    case t: STypeCompanion if t.isInstanceOf[SType] =>
+      Tree.Literal(s"S${t.typeName}")
+    case c: ValueCompanion =>
+      Tree.Literal(c.typeName)
+    case v: Byte =>
+      Tree.Literal(s"$v.toByte")
     case wa: mutable.WrappedArray[_] =>
       Tree.Apply("Array", treeifyMany(wa))
     case buf: ArrayBuffer[_] =>
