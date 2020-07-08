@@ -1653,52 +1653,155 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
 
   property("Context properties equivalence") {
     val eq = EqualityChecker(ctx)
-    eq({ (x: Context) => x.dataInputs })("{ (x: Context) => x.dataInputs }")
-    eq({ (x: Context) => x.dataInputs(0) })("{ (x: Context) => x.dataInputs(0) }")
-    eq({ (x: Context) => x.dataInputs(0).id })("{ (x: Context) => x.dataInputs(0).id }")
-    eq({ (x: Context) => x.preHeader })("{ (x: Context) => x.preHeader }")
-    eq({ (x: Context) => x.headers })("{ (x: Context) => x.headers }")
+    val dataInputs = existingPropTest("dataInputs", { (x: Context) => x.dataInputs })
 
-    eq({ (x: Context) => x.OUTPUTS })("{ (x: Context) => x.OUTPUTS }")
+    val dataInputs0 = existingFeature({ (x: Context) => x.dataInputs(0) },
+      "{ (x: Context) => x.dataInputs(0) }",
+      FuncValue(
+        Vector((1, SContext)),
+        ByIndex(
+          MethodCall.typed[Value[SCollection[SBox.type]]](
+            ValUse(1, SContext),
+            SContext.getMethodByName("dataInputs"),
+            Vector(),
+            Map()
+          ),
+          IntConstant(0),
+          None
+        )
+      ))
 
-    eq({ (x: Context) => x.INPUTS })("{ (x: Context) => x.INPUTS }")
-    eq({ (x: Context) => x.HEIGHT })("{ (x: Context) => x.HEIGHT }")
-    eq({ (x: Context) => x.SELF })("{ (x: Context) => x.SELF }")
-    eq({ (x: Context) => x.INPUTS.map { (b: Box) => b.value } })("{ (x: Context) => x.INPUTS.map { (b: Box) => b.value } }")
+    val dataInputs0id = existingFeature({ (x: Context) => x.dataInputs(0).id },
+      "{ (x: Context) => x.dataInputs(0).id }",
+      FuncValue(
+        Vector((1, SContext)),
+        ExtractId(
+          ByIndex(
+            MethodCall.typed[Value[SCollection[SBox.type]]](
+              ValUse(1, SContext),
+              SContext.getMethodByName("dataInputs"),
+              Vector(),
+              Map()
+            ),
+            IntConstant(0),
+            None
+          )
+        )
+      ))
 
-    eq({ (x: Context) => x.selfBoxIndex })("{ (x: Context) => x.selfBoxIndex }")
-    eq({ (x: Context) => x.LastBlockUtxoRootHash.isUpdateAllowed })("{ (x: Context) => x.LastBlockUtxoRootHash.isUpdateAllowed }")
-    eq({ (x: Context) => x.minerPubKey })("{ (x: Context) => x.minerPubKey }")
+    val preHeader = existingPropTest("preHeader", { (x: Context) => x.preHeader })
+    val headers = existingPropTest("headers", { (x: Context) => x.headers })
 
-    eq({ (x: Context) =>
-      x.INPUTS.map { (b: Box) => (b.value, b.value) }
-    })(
+    val outputs = existingFeature({ (x: Context) => x.OUTPUTS },
+      "{ (x: Context) => x.OUTPUTS }", FuncValue(Vector((1, SContext)), Outputs))
+    val inputs = existingFeature({ (x: Context) => x.INPUTS },
+      "{ (x: Context) => x.INPUTS }", FuncValue(Vector((1, SContext)), Inputs))
+    val height = existingFeature({ (x: Context) => x.HEIGHT },
+      "{ (x: Context) => x.HEIGHT }", FuncValue(Vector((1, SContext)), Height))
+    val self = existingFeature({ (x: Context) => x.SELF },
+      "{ (x: Context) => x.SELF }", FuncValue(Vector((1, SContext)), Self))
+    val inputsMap =  existingFeature(
+      { (x: Context) => x.INPUTS.map { (b: Box) => b.value } },
+      "{ (x: Context) => x.INPUTS.map { (b: Box) => b.value } }",
+      FuncValue(
+        Vector((1, SContext)),
+        MapCollection(Inputs, FuncValue(Vector((3, SBox)), ExtractAmount(ValUse(3, SBox))))
+      ))
+
+    val inputsMap2 = existingFeature(
+      { (x: Context) => x.INPUTS.map { (b: Box) => (b.value, b.value) } },
       """{ (x: Context) =>
        |  x.INPUTS.map { (b: Box) => (b.value, b.value) }
-       |}""".stripMargin
-    )
+       |}""".stripMargin,
+      FuncValue(
+        Vector((1, SContext)),
+        MapCollection(
+          Inputs,
+          FuncValue(
+            Vector((3, SBox)),
+            BlockValue(
+              Vector(ValDef(5, List(), ExtractAmount(ValUse(3, SBox)))),
+              Tuple(Vector(ValUse(5, SLong), ValUse(5, SLong)))
+            )
+          )
+        )
+      ))
 
-    eq({ (x: Context) =>
-      x.INPUTS.map { (b: Box) =>
-        val pk = b.R4[Int].get
-        val value = longToByteArray(b.value)
-        (pk, value)
-      }
-    })(
-    """{ (x: Context) =>
-     |  x.INPUTS.map { (b: Box) =>
-     |    val pk = b.R4[Int].get
-     |    val value = longToByteArray(b.value)
-     |    (pk, value)
-     |  }
-     |}""".stripMargin)
-  }
 
-  property("getVar equivalence") {
-    val eq = checkEq(func[Int,Int]("{ (x: Int) => getVar[Int](2).get }", 2.toByte -> IntConstant(10))) { x =>
-      10
-    }
-    eq(1)
+    val inputsMap3 = existingFeature(
+      { (x: Context) =>
+        x.INPUTS.map { (b: Box) =>
+          val pk = b.R4[Int].get
+          val value = longToByteArray(b.value)
+          (pk, value)
+        }
+      },
+      """{ (x: Context) =>
+       |  x.INPUTS.map { (b: Box) =>
+       |    val pk = b.R4[Int].get
+       |    val value = longToByteArray(b.value)
+       |    (pk, value)
+       |  }
+       |}""".stripMargin,
+      FuncValue(
+        Vector((1, SContext)),
+        MapCollection(
+          Inputs,
+          FuncValue(
+            Vector((3, SBox)),
+            Tuple(
+              Vector(
+                OptionGet(ExtractRegisterAs(ValUse(3, SBox), ErgoBox.R4, SOption(SInt))),
+                LongToByteArray(ExtractAmount(ValUse(3, SBox)))
+              )
+            )
+          )
+        )
+      ))
+
+    val selfBoxIndex = existingFeature({ (x: Context) => x.selfBoxIndex },
+      "{ (x: Context) => x.selfBoxIndex }",
+      FuncValue(
+        Vector((1, SContext)),
+        MethodCall.typed[Value[SInt.type]](
+          ValUse(1, SContext),
+          SContext.getMethodByName("selfBoxIndex"),
+          Vector(),
+          Map()
+        )
+      ))
+    ctx.selfBoxIndex shouldBe -1 // TODO HF: see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/603
+
+    val rootHash = existingPropTest("LastBlockUtxoRootHash", { (x: Context) => x.LastBlockUtxoRootHash })
+
+    val rootHashFlag = existingFeature(
+      { (x: Context) => x.LastBlockUtxoRootHash.isUpdateAllowed },
+      "{ (x: Context) => x.LastBlockUtxoRootHash.isUpdateAllowed }",
+      FuncValue(
+        Vector((1, SContext)),
+        MethodCall.typed[Value[SBoolean.type]](
+          MethodCall.typed[Value[SAvlTree.type]](
+            ValUse(1, SContext),
+            SContext.getMethodByName("LastBlockUtxoRootHash"),
+            Vector(),
+            Map()
+          ),
+          SAvlTree.getMethodByName("isUpdateAllowed"),
+          Vector(),
+          Map()
+        )
+      ))
+
+    val minerPubKey = existingPropTest("minerPubKey", { (x: Context) => x.minerPubKey })
+
+    val getVar = existingFeature((x: Context) => x.getVar[Int](2).get,
+    "{ (x: Context) => getVar[Int](2).get }",
+      FuncValue(Vector((1, SContext)), OptionGet(GetVar(2.toByte, SOption(SInt)))))
+
+    Seq(
+      dataInputs, dataInputs0, dataInputs0id, preHeader, headers,
+      outputs, inputs, height, self, inputsMap, inputsMap2, inputsMap3, selfBoxIndex,
+      rootHash, rootHashFlag, minerPubKey, getVar).foreach(_.checkEquality(ctx))
   }
 
   property("xorOf equivalence") {

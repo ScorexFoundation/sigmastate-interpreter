@@ -110,7 +110,7 @@ trait SigmaTestingData extends SigmaTestingCommons with SigmaTypeGens {
     boxesToSpend = IndexedSeq(inBox),
     spendingTransaction = new ErgoLikeTransaction(IndexedSeq(), IndexedSeq(DataInput(dataBox.id)), IndexedSeq(outBox)),
     selfIndex = 0, headers = headers, preHeader = preHeader, dataBoxes = IndexedSeq(dataBox),
-    extension = ContextExtension.empty,
+    extension = ContextExtension(Map(2.toByte -> IntConstant(10))),
     validationSettings = ValidationRules.currentSettings,
     costLimit = ScriptCostLimit.value, initCost = 0L)
 }
