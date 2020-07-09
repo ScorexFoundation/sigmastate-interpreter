@@ -51,6 +51,8 @@ object SigmaPPrint extends PPrinter {
   }
 
   override val additionalHandlers: PartialFunction[Any, Tree] = typeHandlers.orElse {
+    case sigmastate.SGlobal =>
+      Tree.Literal(s"SGlobal")
     case t: STypeCompanion if t.isInstanceOf[SType] =>
       Tree.Literal(s"S${t.typeName}")
     case c: ValueCompanion =>

@@ -31,6 +31,7 @@ class SigmaPPrintSpec extends PropSpec
       SigmaPPrint(x).plainText shouldBe expected
     }
 
+    test(SGlobal, "SGlobal")
     test(SCollectionType(SByte), "SByteArray")
     test(SCollectionType(SCollectionType(SByte)), "SByteArray2")
     test(SCollectionType(SBoolean), "SBooleanArray")

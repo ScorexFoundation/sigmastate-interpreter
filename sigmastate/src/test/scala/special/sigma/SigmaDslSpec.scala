@@ -1502,7 +1502,6 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   lazy val ctx = ergoCtx.toSigmaContext(IR, false)
 
   property("Box properties equivalence") {
-    val box = ctx.dataInputs(0)
     val id = existingFeature({ (x: Box) => x.id },
       "{ (x: Box) => x.id }",
       FuncValue(Vector((1, SBox)), ExtractId(ValUse(1, SBox))))
@@ -1539,14 +1538,20 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
         )
       ))
 
-    Seq(id, value, propositionBytes, bytes, bytesWithoutRef, creationInfo, tokens)
-        .foreach(_.checkEquality(box))
+    // TODO HF: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/416
+    val getReg = newFeature((x: Box) => x.getReg[Int](1).get,
+      "{ (x: Box) => x.getReg[Int](1).get }")
+
+    forAll { box: Box =>
+      Seq(id, value, propositionBytes, bytes, bytesWithoutRef, creationInfo, tokens, getReg)
+          .foreach(_.checkEquality(box))
+    }
   }
 
   property("Advanced Box test") {
     val (tree, _) = createAvlTreeAndProver()
 
-    val box = ErgoBox(20, TrueProp, 0, Seq(),Map(
+    val box = ErgoBox(20, TrueProp, 0, Seq(), Map(
       ErgoBox.nonMandatoryRegisters(0) -> ByteConstant(1.toByte),
       ErgoBox.nonMandatoryRegisters(1) -> ShortConstant(1024.toShort),
       ErgoBox.nonMandatoryRegisters(2) -> IntConstant(1024 * 1024),
@@ -1847,34 +1852,73 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
     forAll { x: BigInt => negBigInt.checkEquality(x) }
   }
 
-  // TODO: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/416
-  ignore("Box.getReg equivalence") {
-//    val eq = checkEq(func[Box, Int]("{ (x: Box) => x.getReg[Int](1).get }")) { x => x.getReg(1).get }
-//    forAll { x: Box => eq(x) }
-  }
-
   property("global functions equivalence") {
-    val n = SigmaDsl.BigInt(BigInteger.TEN)
-    val Global = SigmaDsl
 
-    {
-      val eq = EqualityChecker(1)
-      eq({ (x: Int) => groupGenerator })("{ (x: Int) => groupGenerator }")
-      eq({ (x: Int) => Global.groupGenerator })("{ (x: Int) => Global.groupGenerator }")
+    val groupGenerator = existingFeature({ (x: Int) => SigmaDsl.groupGenerator },
+      "{ (x: Int) => groupGenerator }",
+      FuncValue(
+        Vector((1, SInt)),
+        MethodCall.typed[Value[SGroupElement.type]](
+          Global,
+          SGlobal.getMethodByName("groupGenerator"),
+          Vector(),
+          Map()
+        )
+      ))
+
+    val groupGenerator2 = existingFeature({ (x: Int) => SigmaDsl.groupGenerator },
+      "{ (x: Int) => Global.groupGenerator }",
+      FuncValue(
+        Vector((1, SInt)),
+        MethodCall.typed[Value[SGroupElement.type]](
+          Global,
+          SGlobal.getMethodByName("groupGenerator"),
+          Vector(),
+          Map()
+        )
+      ))
+
+    forAll { dummyValue: Int =>
+      Seq(groupGenerator, groupGenerator2).foreach(_.checkEquality(dummyValue))
     }
 
-    {
-      val eq = EqualityChecker(n)
-      eq({ (n: BigInt) => groupGenerator.exp(n) })("{ (n: BigInt) => groupGenerator.exp(n) }")
+
+    val exp = existingFeature({ (n: BigInt) => SigmaDsl.groupGenerator.exp(n) },
+      "{ (n: BigInt) => groupGenerator.exp(n) }",
+      FuncValue(
+        Vector((1, SBigInt)),
+        Exponentiate(
+          MethodCall.typed[Value[SGroupElement.type]](
+            Global,
+            SGlobal.getMethodByName("groupGenerator"),
+            Vector(),
+            Map()
+          ),
+          ValUse(1, SBigInt)
+        )
+      ))
+
+    forAll { n: BigInt =>
+      exp.checkEquality(n)
     }
 
-    {
-      val eq = checkEq(func[(Coll[Byte], Coll[Byte]), Coll[Byte]](
-        "{ (x: (Coll[Byte], Coll[Byte])) => xor(x._1, x._2) }"))
-        { x => Global.xor(x._1, x._2) }
-      forAll(bytesGen, bytesGen) { (l, r) =>
-        eq(Colls.fromArray(l), Colls.fromArray(r))
-      }
+    val xor = existingFeature((x: (Coll[Byte], Coll[Byte])) => SigmaDsl.xor(x._1, x._2),
+      "{ (x: (Coll[Byte], Coll[Byte])) => xor(x._1, x._2) }",
+      FuncValue(
+        Vector((1, STuple(Vector(SByteArray, SByteArray)))),
+        Xor(
+          SelectField.typed[Value[SCollection[SByte.type]]](
+            ValUse(1, STuple(Vector(SByteArray, SByteArray))),
+            1.toByte
+          ),
+          SelectField.typed[Value[SCollection[SByte.type]]](
+            ValUse(1, STuple(Vector(SByteArray, SByteArray))),
+            2.toByte
+          )
+        )
+      ))
+    forAll { x: (Coll[Byte], Coll[Byte]) =>
+      xor.checkEquality(x)
     }
   }
 
