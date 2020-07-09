@@ -47,6 +47,7 @@ object SigmaPPrint extends PPrinter {
   val typeHandlers: PartialFunction[Any, Tree] = {
     case SByteArray => Tree.Literal("SByteArray")
     case SByteArray2 => Tree.Literal("SByteArray2")
+    case SBooleanArray => Tree.Literal("SBooleanArray")
   }
 
   override val additionalHandlers: PartialFunction[Any, Tree] = typeHandlers.orElse {

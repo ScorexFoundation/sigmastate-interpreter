@@ -7,7 +7,7 @@ import sigmastate.Values._
 import sigmastate.lang.Terms.MethodCall
 import sigmastate.serialization.OpCodes
 import sigmastate.utxo.SelectField
-import sigmastate.{SByte, SInt, STuple, ArithOp, SOption, SType, SBox, SCollection, SContext}
+import sigmastate._
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -31,6 +31,9 @@ class SigmaPPrintSpec extends PropSpec
       SigmaPPrint(x).plainText shouldBe expected
     }
 
+    test(SCollectionType(SByte), "SByteArray")
+    test(SCollectionType(SCollectionType(SByte)), "SByteArray2")
+    test(SCollectionType(SBoolean), "SBooleanArray")
     test(SInt, "SInt")
     test(Outputs, "Outputs")
     test(10.toByte, "10.toByte")

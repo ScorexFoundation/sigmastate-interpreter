@@ -1805,36 +1805,46 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   }
 
   property("xorOf equivalence") {
-    val eq = checkEq(func[Coll[Boolean], Boolean]("{ (x: Coll[Boolean]) => xorOf(x) }")) { x =>
-      xorOf(x)
-    }
+    val xor = existingFeature((x: Coll[Boolean]) => SigmaDsl.xorOf(x),
+      "{ (x: Coll[Boolean]) => xorOf(x) }",
+      FuncValue(Vector((1, SBooleanArray)), XorOf(ValUse(1, SBooleanArray))))
     forAll { x: Array[Boolean] =>
-      eq(Colls.fromArray(x))
+      xor.checkEquality(Colls.fromArray(x))
     }
   }
 
   property("LogicalNot equivalence") {
-    // TODO make a prefix method
-    val eq = checkEq(func[Boolean, Boolean]("{ (x: Boolean) => !x }")) { x => !x }
-    forAll { x: Boolean => eq(x) }
+    val not = existingFeature((x: Boolean) => !x,
+      "{ (x: Boolean) => !x }",
+      FuncValue(Vector((1, SBoolean)), LogicalNot(ValUse(1, SBoolean))))
+    forAll { x: Boolean => not.checkEquality(x) }
   }
 
-  property("Negation equivalence") {
-    // TODO make a prefix method
-    val negByte = checkEq(func[Byte, Byte]("{ (x: Byte) => -x }")) { (x: Byte) => (-x).toByte }
-    forAll { x: Byte => negByte(x) }
-    val negShort = checkEq(func[Short, Short]("{ (x: Short) => -x }")) { (x: Short) => (-x).toShort }
-    forAll { x: Short => negShort(x) }
-    val negInt = checkEq(func[Int, Int]("{ (x: Int) => -x }")) { (x: Int) => -x }
-    forAll { x: Int => negInt(x) }
-    val negLong = checkEq(func[Long, Long]("{ (x: Long) => -x }")) { (x: Long) => -x }
-    forAll { x: Long => negLong(x) }
-  }
+  property("Numeric Negation equivalence") {
+    val negByte = existingFeature((x: Byte) => (-x).toByte,
+      "{ (x: Byte) => -x }",
+      FuncValue(Vector((1, SByte)), Negation(ValUse(1, SByte))))
+    forAll { x: Byte => negByte.checkEquality(x) }
 
-  property("special.sigma.BigInt Negation equivalence") {
-    // TODO make negate() into a prefix method
-    val negBigInteger = checkEq(func[BigInt, BigInt]("{ (x: BigInt) => -x }")) { (x: BigInt) => x.negate() }
-    forAll { x: BigInt => negBigInteger(x) }
+    val negShort = existingFeature((x: Short) => (-x).toShort,
+      "{ (x: Short) => -x }",
+      FuncValue(Vector((1, SShort)), Negation(ValUse(1, SShort))))
+    forAll { x: Short => negShort.checkEquality(x) }
+
+    val negInt = existingFeature((x: Int) => -x,
+      "{ (x: Int) => -x }",
+      FuncValue(Vector((1, SInt)), Negation(ValUse(1, SInt))))
+    forAll { x: Int => negInt.checkEquality(x) }
+
+    val negLong = existingFeature((x: Long) => -x,
+      "{ (x: Long) => -x }",
+      FuncValue(Vector((1, SLong)), Negation(ValUse(1, SLong))))
+    forAll { x: Long => negLong.checkEquality(x) }
+
+    val negBigInt = existingFeature((x: BigInt) => x.negate(),
+      "{ (x: BigInt) => -x }",
+      FuncValue(Vector((1, SBigInt)), Negation(ValUse(1, SBigInt))))
+    forAll { x: BigInt => negBigInt.checkEquality(x) }
   }
 
   // TODO: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/416
