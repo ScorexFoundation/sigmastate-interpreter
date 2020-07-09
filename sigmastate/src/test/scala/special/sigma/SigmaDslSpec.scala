@@ -1922,16 +1922,85 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
     }
   }
 
-  property("Coll methods equivalence") {
-    val coll = ctx.OUTPUTS
-    val eq = EqualityChecker(coll)
-    eq({ (x: Coll[Box]) => x.filter({ (b: Box) => b.value > 1 }) })("{ (x: Coll[Box]) => x.filter({(b: Box) => b.value > 1 }) }")
-    eq({ (x: Coll[Box]) => x.flatMap({ (b: Box) => b.propositionBytes }) })("{ (x: Coll[Box]) => x.flatMap({(b: Box) => b.propositionBytes }) }")
-    eq({ (x: Coll[Box]) => x.zip(x) })("{ (x: Coll[Box]) => x.zip(x) }")
-    eq({ (x: Coll[Box]) => x.size })("{ (x: Coll[Box]) => x.size }")
-    eq({ (x: Coll[Box]) => x.indices })("{ (x: Coll[Box]) => x.indices }")
-    eq({ (x: Coll[Box]) => x.forall({ (b: Box) => b.value > 1 }) })("{ (x: Coll[Box]) => x.forall({(b: Box) => b.value > 1 }) }")
-    eq({ (x: Coll[Box]) => x.exists({ (b: Box) => b.value > 1 }) })("{ (x: Coll[Box]) => x.exists({(b: Box) => b.value > 1 }) }")
+  property("Coll[Box] methods equivalence") {
+
+    val filter = existingFeature({ (x: Coll[Box]) => x.filter({ (b: Box) => b.value > 1 }) },
+      "{ (x: Coll[Box]) => x.filter({(b: Box) => b.value > 1 }) }",
+      FuncValue(
+        Vector((1, SCollectionType(SBox))),
+        Filter(
+          ValUse(1, SCollectionType(SBox)),
+          FuncValue(Vector((3, SBox)), GT(ExtractAmount(ValUse(3, SBox)), LongConstant(1L)))
+        )
+      ))
+
+    val flatMap = existingFeature({ (x: Coll[Box]) => x.flatMap({ (b: Box) => b.propositionBytes }) },
+      "{ (x: Coll[Box]) => x.flatMap({(b: Box) => b.propositionBytes }) }",
+      FuncValue(
+        Vector((1, SCollectionType(SBox))),
+        MethodCall.typed[Value[SCollection[SByte.type]]](
+          ValUse(1, SCollectionType(SBox)),
+          SCollection.getMethodByName("flatMap").withConcreteTypes(
+            Map(STypeVar("IV") -> SBox, STypeVar("OV") -> SByte)
+          ),
+          Vector(FuncValue(Vector((3, SBox)), ExtractScriptBytes(ValUse(3, SBox)))),
+          Map()
+        )
+      ))
+
+    val zip = existingFeature({ (x: Coll[Box]) => x.zip(x) },
+      "{ (x: Coll[Box]) => x.zip(x) }",
+      FuncValue(
+        Vector((1, SCollectionType(SBox))),
+        MethodCall.typed[Value[SCollection[STuple]]](
+          ValUse(1, SCollectionType(SBox)),
+          SCollection.getMethodByName("zip").withConcreteTypes(
+            Map(STypeVar("IV") -> SBox, STypeVar("OV") -> SBox)
+          ),
+          Vector(ValUse(1, SCollectionType(SBox))),
+          Map()
+        )
+      ))
+
+    val size = existingFeature({ (x: Coll[Box]) => x.size },
+      "{ (x: Coll[Box]) => x.size }",
+      FuncValue(Vector((1, SCollectionType(SBox))), SizeOf(ValUse(1, SCollectionType(SBox)))))
+
+    val indices = existingFeature({ (x: Coll[Box]) => x.indices },
+      "{ (x: Coll[Box]) => x.indices }",
+      FuncValue(
+        Vector((1, SCollectionType(SBox))),
+        MethodCall.typed[Value[SCollection[SInt.type]]](
+          ValUse(1, SCollectionType(SBox)),
+          SCollection.getMethodByName("indices").withConcreteTypes(Map(STypeVar("IV") -> SBox)),
+          Vector(),
+          Map()
+        )
+      ))
+
+    val forall = existingFeature({ (x: Coll[Box]) => x.forall({ (b: Box) => b.value > 1 }) },
+      "{ (x: Coll[Box]) => x.forall({(b: Box) => b.value > 1 }) }",
+      FuncValue(
+        Vector((1, SCollectionType(SBox))),
+        ForAll(
+          ValUse(1, SCollectionType(SBox)),
+          FuncValue(Vector((3, SBox)), GT(ExtractAmount(ValUse(3, SBox)), LongConstant(1L)))
+        )
+      ))
+
+    val exists = existingFeature({ (x: Coll[Box]) => x.exists({ (b: Box) => b.value > 1 }) },
+      "{ (x: Coll[Box]) => x.exists({(b: Box) => b.value > 1 }) }",
+      FuncValue(
+        Vector((1, SCollectionType(SBox))),
+        Exists(
+          ValUse(1, SCollectionType(SBox)),
+          FuncValue(Vector((3, SBox)), GT(ExtractAmount(ValUse(3, SBox)), LongConstant(1L)))
+        )
+      ))
+      
+    forAll(collOfN[Box](10)) { boxes: Coll[Box] =>
+      Seq(filter, flatMap, zip, size, indices, forall, exists).foreach(_.checkEquality(boxes))
+    }
   }
 
   property("Coll size method equivalence") {

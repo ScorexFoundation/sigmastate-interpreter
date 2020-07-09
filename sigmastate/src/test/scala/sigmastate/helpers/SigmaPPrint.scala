@@ -5,7 +5,8 @@ import org.ergoplatform.ErgoBox.RegisterId
 import scala.collection.mutable
 import pprint.{Tree, PPrinter}
 import sigmastate.SCollection._
-import sigmastate.Values.{ConstantNode, ValueCompanion}
+import sigmastate.Values.{ValueCompanion, ConstantNode}
+import sigmastate.lang.SigmaTyper
 import sigmastate.lang.Terms.MethodCall
 import sigmastate.utxo.SelectField
 import sigmastate.{SByte, STypeCompanion, STuple, ArithOp, SOption, SType, SCollectionType, SPredefType, SCollection}
@@ -53,6 +54,8 @@ object SigmaPPrint extends PPrinter {
   override val additionalHandlers: PartialFunction[Any, Tree] = typeHandlers.orElse {
     case sigmastate.SGlobal =>
       Tree.Literal(s"SGlobal")
+    case sigmastate.SCollection =>
+      Tree.Literal(s"SCollection")
     case t: STypeCompanion if t.isInstanceOf[SType] =>
       Tree.Literal(s"S${t.typeName}")
     case c: ValueCompanion =>
@@ -75,10 +78,18 @@ object SigmaPPrint extends PPrinter {
       val args = treeifyMany(Seq(l, r)).toSeq :+ Tree.Apply("OpCode @@ ", treeifyMany(Seq(code)))
       Tree.Apply("ArithOp", args.iterator)
     case mc @ MethodCall(obj, method, args, typeSubst) =>
-      val objType = treeify(method.objType).asInstanceOf[Tree.Literal].body
-      val getMethod = s"$objType.getMethodByName"
+      val objType = apply(method.objType).plainText
+      val methodTemplate = method.objType.getMethodByName(method.name)
+      val methodT = SigmaTyper.unifyTypeLists(methodTemplate.stype.tDom, obj.tpe +: args.map(_.tpe)) match {
+        case Some(subst) if subst.nonEmpty =>
+          val getMethod = s"""$objType.getMethodByName("${method.name}").withConcreteTypes"""
+          Tree.Apply(getMethod, treeifyMany(Seq(subst)))
+        case _ =>
+          val getMethod = s"$objType.getMethodByName"
+          Tree.Apply(getMethod, Seq(treeify(method.name)).iterator)
+      }
+
       val objT = treeify(obj)
-      val methodT = Tree.Apply(getMethod, Seq(treeify(method.name)).iterator)
       val argsT = treeify(args)
       val substT = treeify(typeSubst)
       val resTpe = mc.tpe

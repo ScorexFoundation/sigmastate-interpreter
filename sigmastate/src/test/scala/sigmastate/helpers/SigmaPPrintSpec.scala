@@ -32,6 +32,7 @@ class SigmaPPrintSpec extends PropSpec
     }
 
     test(SGlobal, "SGlobal")
+    test(SCollection, "SCollection")
     test(SCollectionType(SByte), "SByteArray")
     test(SCollectionType(SCollectionType(SByte)), "SByteArray2")
     test(SCollectionType(SBoolean), "SBooleanArray")
@@ -59,6 +60,22 @@ class SigmaPPrintSpec extends PropSpec
       """MethodCall.typed[Value[SCollection[SBox.type]]](
         |  ValUse(1, SContext),
         |  SContext.getMethodByName("dataInputs"),
+        |  Vector(),
+        |  Map()
+        |)""".stripMargin)
+
+    test(SCollection.tIV, """STypeVar("IV")""")
+    test(Map(SCollection.tIV -> SInt), """Map(STypeVar("IV") -> SInt)""")
+    test(
+      MethodCall.typed[Value[SCollection[SInt.type]]](
+        ValUse(1, SCollectionType(SBox)),
+        SCollection.IndicesMethod.withConcreteTypes(Map(SCollection.tIV -> SBox)),
+        Vector(),
+        Map()
+      ),
+      """MethodCall.typed[Value[SCollection[SInt.type]]](
+        |  ValUse(1, SCollectionType(SBox)),
+        |  SCollection.getMethodByName("indices").withConcreteTypes(Map(STypeVar("IV") -> SBox)),
         |  Vector(),
         |  Map()
         |)""".stripMargin)
