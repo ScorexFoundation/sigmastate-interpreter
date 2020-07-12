@@ -24,10 +24,9 @@ trait SigmaTestingData extends SigmaTestingCommons with SigmaTypeGens {
   }
 
   val bytesGen: Gen[Array[Byte]] = containerOfN[Array, Byte](100, Arbitrary.arbByte.arbitrary)
-  val intsGen: Gen[Array[Int]] = containerOfN[Array, Int](100, Arbitrary.arbInt.arbitrary)
 
   val bytesCollGen = bytesGen.map(Colls.fromArray(_))
-  val intsCollGen = intsGen.map(Colls.fromArray(_))
+  val intsCollGen = arrayGen[Int].map(Colls.fromArray(_))
 
   implicit val arbBytes = Arbitrary(bytesCollGen)
   implicit val arbInts = Arbitrary(intsCollGen)

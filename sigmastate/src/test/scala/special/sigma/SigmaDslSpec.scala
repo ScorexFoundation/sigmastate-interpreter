@@ -2247,25 +2247,23 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
     }
   }
 
-  property("Coll indexOf method equivalence") {
-    val eqIndexOf = checkEq(func[(Coll[Int], (Int, Int)),Int]("{ (x: (Coll[Int], (Int, Int))) => x._1.indexOf(x._2._1, x._2._2) }"))
-    { x =>
-      x._1.indexOf(x._2._1, x._2._2)
-    }
-    forAll { x: (Array[Int], Int) =>
-      eqIndexOf(Colls.fromArray(x._1), (getArrayIndex(x._1.size), x._2))
-    }
-  }
-
   property("Coll apply method equivalence") {
-    val eqApply = checkEq(func[(Coll[Int], Int),Int]("{ (x: (Coll[Int], Int)) => x._1(x._2) }"))
-    { x =>
-      x._1(x._2)
-    }
-    forAll { x: Array[Int] =>
-      whenever (0 < x.size) {
-        eqApply(Colls.fromArray(x), getArrayIndex(x.size))
-      }
+    val apply = existingFeature((x: (Coll[Int], Int)) => x._1(x._2),
+      "{ (x: (Coll[Int], Int)) => x._1(x._2) }",
+      FuncValue(
+        Vector((1, SPair(SCollectionType(SInt), SInt))),
+        ByIndex(
+          SelectField.typed[Value[SCollection[SInt.type]]](
+            ValUse(1, SPair(SCollectionType(SInt), SInt)),
+            1.toByte
+          ),
+          SelectField.typed[Value[SInt.type]](ValUse(1, SPair(SCollectionType(SInt), SInt)), 2.toByte),
+          None
+        )
+      ))
+
+    forAll { (x: Coll[Int], i: Int) =>
+      apply.checkEquality((x, i))
     }
   }
 
