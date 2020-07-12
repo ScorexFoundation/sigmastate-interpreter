@@ -2064,38 +2064,99 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   }
 
   property("Coll updated method equivalence") {
-    val eq = checkEq(func[(Coll[Int], (Int, Int)),Coll[Int]]("{ (x: (Coll[Int], (Int, Int))) => x._1.updated(x._2._1, x._2._2) }")){ x =>
-      x._1.updated(x._2._1, x._2._2)
-    }
+    val updated = existingFeature(
+      (x: (Coll[Int], (Int, Int))) => x._1.updated(x._2._1, x._2._2),
+      "{ (x: (Coll[Int], (Int, Int))) => x._1.updated(x._2._1, x._2._2) }",
+      FuncValue(
+        Vector((1, SPair(SCollectionType(SInt), SPair(SInt, SInt)))),
+        BlockValue(
+          Vector(
+            ValDef(
+              3,
+              List(),
+              SelectField.typed[Value[STuple]](
+                ValUse(1, SPair(SCollectionType(SInt), SPair(SInt, SInt))),
+                2.toByte
+              )
+            )
+          ),
+          MethodCall.typed[Value[SCollection[SInt.type]]](
+            SelectField.typed[Value[SCollection[SInt.type]]](
+              ValUse(1, SPair(SCollectionType(SInt), SPair(SInt, SInt))),
+              1.toByte
+            ),
+            SCollection.getMethodByName("updated").withConcreteTypes(Map(STypeVar("IV") -> SInt)),
+            Vector(
+              SelectField.typed[Value[SInt.type]](ValUse(3, SPair(SInt, SInt)), 1.toByte),
+              SelectField.typed[Value[SInt.type]](ValUse(3, SPair(SInt, SInt)), 2.toByte)
+            ),
+            Map()
+          )
+        )
+      ))
     forAll { x: (Array[Int], Int) =>
       val size = x._1.size
       whenever (size > 1) {
         val index = getArrayIndex(size)
-        eq(Colls.fromArray(x._1), (index, x._2))
+        updated.checkEquality(Colls.fromArray(x._1), (index, x._2))
       }
     }
   }
 
   property("Coll updateMany method equivalence") {
-    val eq = checkEq(func[(Coll[Int], (Coll[Int], Coll[Int])),Coll[Int]](
-      "{ (x: (Coll[Int], (Coll[Int], Coll[Int]))) => x._1.updateMany(x._2._1, x._2._2) }"))
-      { x => x._1.updateMany(x._2._1, x._2._2) }
+    val updateMany = existingFeature(
+      (x: (Coll[Int], (Coll[Int], Coll[Int]))) => x._1.updateMany(x._2._1, x._2._2),
+      "{ (x: (Coll[Int], (Coll[Int], Coll[Int]))) => x._1.updateMany(x._2._1, x._2._2) }",
+      FuncValue(
+        Vector((1, SPair(SCollectionType(SInt), SPair(SCollectionType(SInt), SCollectionType(SInt))))),
+        BlockValue(
+          Vector(
+            ValDef(
+              3,
+              List(),
+              SelectField.typed[Value[STuple]](
+                ValUse(
+                  1,
+                  SPair(SCollectionType(SInt), SPair(SCollectionType(SInt), SCollectionType(SInt)))
+                ),
+                2.toByte
+              )
+            )
+          ),
+          MethodCall.typed[Value[SCollection[SInt.type]]](
+            SelectField.typed[Value[SCollection[SInt.type]]](
+              ValUse(1, SPair(SCollectionType(SInt), SPair(SCollectionType(SInt), SCollectionType(SInt)))),
+              1.toByte
+            ),
+            SCollection.getMethodByName("updateMany").withConcreteTypes(Map(STypeVar("IV") -> SInt)),
+            Vector(
+              SelectField.typed[Value[SCollection[SInt.type]]](
+                ValUse(3, SPair(SCollectionType(SInt), SCollectionType(SInt))),
+                1.toByte
+              ),
+              SelectField.typed[Value[SCollection[SInt.type]]](
+                ValUse(3, SPair(SCollectionType(SInt), SCollectionType(SInt))),
+                2.toByte
+              )
+            ),
+            Map()
+          )
+        )
+      ))
 
     val dataGen = for {
       arr <- arrayGen[Int];
       len <- Gen.choose(0, arr.length)
       indices <- Gen.containerOfN[Array, Int](len, Gen.choose(0, arr.length - 1))
-      } yield (arr, indices)
+      } yield (Colls.fromArray(arr), Colls.fromArray(indices))
 
     forAll(dataGen) { data =>
-      val arr = data._1
+      val coll = data._1
       val indices = data._2
-      whenever (arr.length > 1) {
-        val xs = Colls.fromArray(arr)
-        val is = Colls.fromArray(indices)
-        val vs = is.reverse
-        val input = (xs, (is, vs))
-        eq(input)
+      whenever (coll.length > 1) {
+        val vs = indices.reverse
+        val input = (coll, (indices, vs))
+        updateMany.checkEquality(input)
       }
     }
   }
