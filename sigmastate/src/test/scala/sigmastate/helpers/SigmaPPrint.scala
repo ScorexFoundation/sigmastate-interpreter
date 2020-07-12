@@ -9,7 +9,7 @@ import sigmastate.Values.{ValueCompanion, ConstantNode}
 import sigmastate.lang.SigmaTyper
 import sigmastate.lang.Terms.MethodCall
 import sigmastate.utxo.SelectField
-import sigmastate.{SByte, STypeCompanion, STuple, ArithOp, SOption, SType, SCollectionType, SPredefType, SCollection}
+import sigmastate.{SByte, SPair, STypeCompanion, STuple, ArithOp, SOption, SType, SCollectionType, SPredefType, SCollection}
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -49,6 +49,7 @@ object SigmaPPrint extends PPrinter {
     case SByteArray => Tree.Literal("SByteArray")
     case SByteArray2 => Tree.Literal("SByteArray2")
     case SBooleanArray => Tree.Literal("SBooleanArray")
+    case SPair(l, r) => Tree.Apply("SPair", treeifyMany(Array(l, r)))
   }
 
   override val additionalHandlers: PartialFunction[Any, Tree] = typeHandlers.orElse {

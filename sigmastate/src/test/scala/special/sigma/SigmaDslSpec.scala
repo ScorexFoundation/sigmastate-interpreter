@@ -2003,29 +2003,62 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
     }
   }
 
-  property("Coll size method equivalence") {
-    val eq = checkEq(func[Coll[Int],Int]("{ (x: Coll[Int]) => x.size }")){ x =>
-      x.size
-    }
-    forAll { x: Array[Int] =>
-      eq(Colls.fromArray(x))
-    }
-  }
-
   val arrayWithRangeGen = for {
     arr <- arrayGen[Int];
     l <- Gen.choose(0, arr.length - 1);
     r <- Gen.choose(l, arr.length - 1) } yield (arr, (l, r))
 
   property("Coll patch method equivalence") {
-    val eq = checkEq(func[(Coll[Int], (Int, Int)),Coll[Int]]("{ (x: (Coll[Int], (Int, Int))) => x._1.patch(x._2._1, x._1, x._2._2) }")){ x =>
-      x._1.patch(x._2._1, x._1, x._2._2)
-    }
+    val patch = existingFeature(
+      { (x: (Coll[Int], (Int, Int))) =>
+        val coll = x._1
+        val l = x._2._1; val r = x._2._2
+        coll.patch(l, coll, r)
+      },
+      """{ (x: (Coll[Int], (Int, Int))) =>
+        |  val coll = x._1
+        |  val l = x._2._1; val r = x._2._2
+        |  coll.patch(l, coll, r)
+        |}""".stripMargin,
+      FuncValue(
+        Vector((1, SPair(SCollectionType(SInt), SPair(SInt, SInt)))),
+        BlockValue(
+          Vector(
+            ValDef(
+              3,
+              List(),
+              SelectField.typed[Value[SCollection[SInt.type]]](
+                ValUse(1, SPair(SCollectionType(SInt), SPair(SInt, SInt))),
+                1.toByte
+              )
+            ),
+            ValDef(
+              4,
+              List(),
+              SelectField.typed[Value[STuple]](
+                ValUse(1, SPair(SCollectionType(SInt), SPair(SInt, SInt))),
+                2.toByte
+              )
+            )
+          ),
+          MethodCall.typed[Value[SCollection[SInt.type]]](
+            ValUse(3, SCollectionType(SInt)),
+            SCollection.getMethodByName("patch").withConcreteTypes(Map(STypeVar("IV") -> SInt)),
+            Vector(
+              SelectField.typed[Value[SInt.type]](ValUse(4, SPair(SInt, SInt)), 1.toByte),
+              ValUse(3, SCollectionType(SInt)),
+              SelectField.typed[Value[SInt.type]](ValUse(4, SPair(SInt, SInt)), 2.toByte)
+            ),
+            Map()
+          )
+        )
+      ))
+
     forAll(arrayWithRangeGen) { data =>
       val arr = data._1
       val range = data._2
       whenever (arr.length > 1) {
-        eq(Colls.fromArray(arr), range)
+        patch.checkEquality(Colls.fromArray(arr), range)
       }
     }
   }

@@ -36,6 +36,7 @@ class SigmaPPrintSpec extends PropSpec
     test(SCollectionType(SByte), "SByteArray")
     test(SCollectionType(SCollectionType(SByte)), "SByteArray2")
     test(SCollectionType(SBoolean), "SBooleanArray")
+    test(STuple(Vector(SBoolean, SInt)), "SPair(SBoolean, SInt)")
     test(SInt, "SInt")
     test(Outputs, "Outputs")
     test(10.toByte, "10.toByte")
@@ -46,7 +47,7 @@ class SigmaPPrintSpec extends PropSpec
     test(ErgoBox.R9, "ErgoBox.R9")
     test(
       SelectField.typed[Value[SByte.type]](ValUse(1, STuple(Vector(SByte, SByte))), 1.toByte),
-      "SelectField.typed[Value[SByte.type]](ValUse(1, STuple(Vector(SByte, SByte))), 1.toByte)"
+      "SelectField.typed[Value[SByte.type]](ValUse(1, SPair(SByte, SByte)), 1.toByte)"
     )
     test(IntConstant(10), "IntConstant(10)")
     test(ArithOp(IntConstant(1), IntConstant(1), OpCodes.PlusCode), "ArithOp(IntConstant(1), IntConstant(1), OpCode @@ (-102.toByte))")

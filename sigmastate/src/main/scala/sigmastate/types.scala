@@ -5,7 +5,7 @@ import java.util
 
 import org.ergoplatform._
 import org.ergoplatform.validation._
-import scalan.RType
+import scalan.{RType, Nullable}
 import scalan.RType.GeneralType
 import sigmastate.SType.{TypeCode, AnyOps}
 import sigmastate.interpreter.CryptoConstants
@@ -1292,6 +1292,14 @@ object STuple extends STypeCompanion {
         throw new IllegalArgumentException(
           s"Tuple component '_${i+1}' is not defined: valid range (1 .. $MaxTupleLength)", e)
     }
+}
+
+object SPair {
+  def apply(l: SType, r: SType) = STuple(Vector(l, r))
+  def unapply(t: STuple): Nullable[(SType, SType)] = t match {
+    case STuple(IndexedSeq(l, r)) => Nullable((l, r))
+    case _ => Nullable.None
+  }
 }
 
 case class SFunc(tDom: IndexedSeq[SType],  tRange: SType, tpeParams: Seq[STypeParam] = Nil)
