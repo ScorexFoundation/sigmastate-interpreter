@@ -2161,33 +2161,33 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
     }
   }
 
-  // TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
-  ignore("Coll find method equivalence") {
-    val eq = checkEq(func[Coll[Int],Option[Int]]("{ (x: Coll[Int]) => x.find({(v: Int) => v > 0})}")){ x =>
-      x.find(v => v > 0)
-    }
-    forAll { x: Array[Int] =>
-      eq(Colls.fromArray(x))
+  // TODO HF: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
+  property("Coll find method equivalence") {
+    val find = newFeature((x: Coll[Int]) => x.find({ (v: Int) => v > 0 }),
+      "{ (x: Coll[Int]) => x.find({ (v: Int) => v > 0} ) }")
+    forAll { x: Coll[Int] =>
+      find.checkEquality(x)
     }
   }
 
-  // https://github.com/ScorexFoundation/sigmastate-interpreter/issues/418
-  ignore("Coll bitwise methods equivalence") {
-    val eq = checkEq(func[Coll[Boolean],Coll[Boolean]]("{ (x: Coll[Boolean]) => x >> 2 }")){ x =>
-      if (x.size > 2) x.slice(0, x.size - 2) else Colls.emptyColl
-    }
+  // TODO HF: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/418
+  property("Coll bitwise methods equivalence") {
+    val shiftRight = newFeature(
+      { (x: Coll[Boolean]) =>
+        if (x.size > 2) x.slice(0, x.size - 2) else Colls.emptyColl[Boolean]
+      },
+      "{ (x: Coll[Boolean]) => x >> 2 }")
     forAll { x: Array[Boolean] =>
-      eq(Colls.fromArray(x))
+      shiftRight.checkEquality(Colls.fromArray(x))
     }
   }
 
-  // TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
-  ignore("Coll diff methods equivalence") {
-    val eq = checkEq(func[Coll[Int],Coll[Int]]("{ (x: Coll[Int]) => x.diff(x) }")){ x =>
-      x.diff(x)
-    }
-    forAll { x: Array[Int] =>
-      eq(Colls.fromArray(x))
+  // TODO HF: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
+  property("Coll diff methods equivalence") {
+    val diff = newFeature((x: (Coll[Int], Coll[Int])) => x._1.diff(x._2),
+      "{ (x: (Coll[Int], Coll[Int])) => x._1.diff(x._2) }")
+    forAll { (x: Coll[Int], y: Coll[Int]) =>
+      diff.checkEquality((x, y))
     }
   }
 
@@ -2312,11 +2312,13 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
     eq({ (x: Option[Long]) => x.map( (v: Long) => v + 1 ) })("{ (x: Option[Long]) => x.map({ (v: Long) => v + 1 }) }")
   }
 
-  // TODO implement Option.fold
-  ignore("Option fold method") {
-    val opt: Option[Long] = ctx.dataInputs(0).R0[Long]
-    val eq = EqualityChecker(opt)
-    eq({ (x: Option[Long]) => x.fold(5.toLong)( (v: Long) => v + 1 ) })("{ (x: Option[Long]) => x.fold(5, { (v: Long) => v + 1 }) }")
+  // TODO HF: implement Option.fold
+  property("Option fold method") {
+    val fold = newFeature({ (x: Option[Long]) => x.fold(5.toLong)( (v: Long) => v + 1 ) },
+      "{ (x: Option[Long]) => x.fold(5, { (v: Long) => v + 1 }) }")
+    forAll { x: Option[Long] =>
+      fold.checkEquality(x)
+    }
   }
 
   property("Option fold workaround method") {
