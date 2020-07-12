@@ -110,7 +110,10 @@ class SigmaDslTesting extends PropSpec
     def checkExpectedExprIn(cf: CompiledFunc[_,_]): Boolean = {
       expectedExpr match {
         case Some(e) =>
-          cf.expr shouldBe e
+          if (cf.expr != e) {
+            printSuggestion(cf)
+            cf.expr shouldBe e
+          }
         case None if printExpectedExpr =>
           printSuggestion(cf)
       }
@@ -118,10 +121,24 @@ class SigmaDslTesting extends PropSpec
     }
 
     /** v3 implementation*/
-    lazy val oldF: CompiledFunc[A, B] = oldImpl().ensuring(checkExpectedExprIn(_))
+    private var _oldF: CompiledFunc[A, B] = null
+    def oldF: CompiledFunc[A, B] = {
+      if (_oldF == null) {
+        _oldF = oldImpl()
+        checkExpectedExprIn(_oldF)
+      }
+      _oldF
+    }
 
     /** v4 implementation*/
-    lazy val newF: CompiledFunc[A, B] = newImpl().ensuring(checkExpectedExprIn(_))
+    private var _newF: CompiledFunc[A, B] = null
+    def newF: CompiledFunc[A, B] = {
+      if (_newF == null) {
+        _newF = newImpl()
+        checkExpectedExprIn(_newF)
+      }
+      _newF
+    }
 
     /** Depending on the featureType compares the old and new implementations against
       * semantic function (scalaFunc) on the given input. */

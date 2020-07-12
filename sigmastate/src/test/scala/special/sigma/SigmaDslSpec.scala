@@ -35,6 +35,8 @@ import scala.util.{DynamicVariable, Success, Failure, Try}
   * the evaluation of the corresponding ErgoScript operation */
 class SigmaDslSpec extends SigmaDslTesting { suite =>
 
+  override implicit val generatorDrivenConfig = PropertyCheckConfiguration(minSuccessful = 30)
+
   ///=====================================================
   ///              Boolean type operations
   ///-----------------------------------------------------
@@ -2192,17 +2194,56 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   }
 
   property("Coll fold method equivalence") {
-    val eq = checkEq(func[(Coll[Byte], Int),Int]("{ (x: (Coll[Byte], Int)) => x._1.fold(x._2, { (i1: Int, i2: Byte) => i1 + i2 }) }"))
-    { x =>
-      x._1.foldLeft(x._2, { i: (Int, Byte) => i._1 + i._2 })
-    }
-    val eqIndexOf = checkEq(func[(Coll[Byte], Byte),Int]("{ (x: (Coll[Byte], Byte)) => x._1.indexOf(x._2, 0) }"))
-    { x =>
-      x._1.indexOf(x._2, 0)
-    }
-    forAll { x: (Array[Byte], Short, Byte) =>
-      eq(Colls.fromArray(x._1), x._2)
-      eqIndexOf(Colls.fromArray(x._1), x._3)
+    val fold = existingFeature(
+      { (x: (Coll[Byte], Int)) => x._1.foldLeft(x._2, { i: (Int, Byte) => i._1 + i._2 }) },
+      "{ (x: (Coll[Byte], Int)) => x._1.fold(x._2, { (i1: Int, i2: Byte) => i1 + i2 }) }",
+      FuncValue(
+        Vector((1, SPair(SByteArray, SInt))),
+        Fold(
+          SelectField.typed[Value[SCollection[SByte.type]]](ValUse(1, SPair(SByteArray, SInt)), 1.toByte),
+          SelectField.typed[Value[SInt.type]](ValUse(1, SPair(SByteArray, SInt)), 2.toByte),
+          FuncValue(
+            Vector((3, SPair(SInt, SByte))),
+            ArithOp(
+              SelectField.typed[Value[SInt.type]](ValUse(3, SPair(SInt, SByte)), 1.toByte),
+              Upcast(SelectField.typed[Value[SByte.type]](ValUse(3, SPair(SInt, SByte)), 2.toByte), SInt),
+              OpCode @@ (-102.toByte)
+            )
+          )
+        )
+      ))
+
+    val indexOf = existingFeature(
+      { (x: (Coll[Byte], (Byte, Int))) => x._1.indexOf(x._2._1, x._2._2) },
+      "{ (x: (Coll[Byte], (Byte, Int))) => x._1.indexOf(x._2._1, x._2._2) }",
+      FuncValue(
+        Vector((1, SPair(SByteArray, SPair(SByte, SInt)))),
+        BlockValue(
+          Vector(
+            ValDef(
+              3,
+              List(),
+              SelectField.typed[Value[STuple]](ValUse(1, SPair(SByteArray, SPair(SByte, SInt))), 2.toByte)
+            )
+          ),
+          MethodCall.typed[Value[SInt.type]](
+            SelectField.typed[Value[SCollection[SByte.type]]](
+              ValUse(1, SPair(SByteArray, SPair(SByte, SInt))),
+              1.toByte
+            ),
+            SCollection.getMethodByName("indexOf").withConcreteTypes(Map(STypeVar("IV") -> SByte)),
+            Vector(
+              SelectField.typed[Value[SByte.type]](ValUse(3, SPair(SByte, SInt)), 1.toByte),
+              SelectField.typed[Value[SInt.type]](ValUse(3, SPair(SByte, SInt)), 2.toByte)
+            ),
+            Map()
+          )
+        )
+      ))
+
+    forAll { (coll: Coll[Byte], start: Short, value: Byte, from: Int) =>
+      fold.checkEquality((coll, start))
+      indexOf.checkEquality((coll, (value, from)))
     }
   }
 
