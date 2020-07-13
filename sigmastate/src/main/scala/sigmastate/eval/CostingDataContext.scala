@@ -121,7 +121,10 @@ case class CAvlTree(treeData: AvlTreeData) extends AvlTree with WrapperOf[AvlTre
     val adProof = SerializedAdProof @@ proof.toArray
     val bv = new BatchAVLVerifier[Digest32, Blake2b256.type](
       treeData.digest, adProof,
-      treeData.keyLength, treeData.valueLengthOpt)
+      treeData.keyLength, treeData.valueLengthOpt) {
+      /** Override default logging which outputs stack trace to the console. */
+      override protected def logError(t: Throwable): Unit = {}
+    }
     bv
   }
 

@@ -78,7 +78,7 @@ version in ThisBuild := {
 git.gitUncommittedChanges in ThisBuild := true
 
 val bouncycastleBcprov = "org.bouncycastle" % "bcprov-jdk15on" % "1.64"
-val scrypto            = "org.scorexfoundation" %% "scrypto" % "2.1.7"
+val scrypto            = "org.scorexfoundation" %% "scrypto" % "logging-4c6b9e86-SNAPSHOT"
 val scorexUtil         = "org.scorexfoundation" %% "scorex-util" % "0.1.6"
 val macroCompat        = "org.typelevel" %% "macro-compat" % "1.1.1"
 val paradise           = "org.scalamacros" %% "paradise" % "2.1.0" cross CrossVersion.full
