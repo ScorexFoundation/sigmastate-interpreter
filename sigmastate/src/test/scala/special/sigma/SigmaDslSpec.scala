@@ -2328,12 +2328,11 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   }
 
   property("Coll map method equivalence") {
-    val eq = checkEq(func[Coll[Int],Coll[Int]]("{ (x: Coll[Int]) => x.map({ (v: Int) => v + 1 }) }"))
-    { x =>
-      x.map(v => v + 1)
-    }
-    forAll { x: Array[Int] =>
-      eq(Colls.fromArray(x.filter(_ < Int.MaxValue)))
+    val n = ExactNumeric.IntIsExactNumeric
+    val map = existingFeature((x: Coll[Int]) => x.map({ (v: Int) => n.plus(v, 1) }),
+      "{ (x: Coll[Int]) => x.map({ (v: Int) => v + 1 }) }")
+    forAll { x: Coll[Int] =>
+      map.checkEquality(x)
     }
   }
 
