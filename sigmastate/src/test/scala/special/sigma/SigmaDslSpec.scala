@@ -2309,10 +2309,22 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   }
 
   property("Tuple apply method equivalence") {
-    val eq1 = checkEq(func[(Int, Int),Int]("{ (x: (Int, Int)) => x(0) }")) { x => -1 }
-    val eq2 = checkEq(func[(Int, Int),Int]("{ (x: (Int, Int)) => x(1) }")) { x => 1 }
-    eq1((-1, 1))
-    eq2((-1, 1))
+    val apply1 = existingFeature((x: (Int, Int)) => x._1,
+      "{ (x: (Int, Int)) => x(0) }",
+      FuncValue(
+        Vector((1, SPair(SInt, SInt))),
+        SelectField.typed[Value[SInt.type]](ValUse(1, SPair(SInt, SInt)), 1.toByte)
+      ))
+    val apply2 = existingFeature((x: (Int, Int)) => x._2,
+      "{ (x: (Int, Int)) => x(1) }",
+      FuncValue(
+        Vector((1, SPair(SInt, SInt))),
+        SelectField.typed[Value[SInt.type]](ValUse(1, SPair(SInt, SInt)), 2.toByte)
+      ))
+    forAll { x: (Int, Int) =>
+      apply1.checkExpected(x, x._1)
+      apply2.checkExpected(x, x._2)
+    }
   }
 
   property("Coll map method equivalence") {
