@@ -2300,8 +2300,12 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   }
 
   property("Tuple size method equivalence") {
-    val eq = checkEq(func[(Int, Int),Int]("{ (x: (Int, Int)) => x.size }")) { x => 2 }
-    eq((-1, 1))
+    val size = existingFeature((x: (Int, Int)) => 2,
+      "{ (x: (Int, Int)) => x.size }",
+      FuncValue(Vector((1, SPair(SInt, SInt))), IntConstant(2)))
+    forAll { x: (Int, Int) =>
+      size.checkExpected(x, 2)
+    }
   }
 
   property("Tuple apply method equivalence") {
