@@ -2268,12 +2268,34 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   }
 
   property("Coll getOrElse method equivalence") {
-    val eqGetOrElse = checkEq(func[(Coll[Int], (Int, Int)),Int]("{ (x: (Coll[Int], (Int, Int))) => x._1.getOrElse(x._2._1, x._2._2) }"))
-    { x =>
-      x._1.getOrElse(x._2._1, x._2._2)
-    }
-    forAll { x: (Array[Int], (Int, Int)) =>
-      eqGetOrElse(Colls.fromArray(x._1), x._2)
+    val getOrElse = existingFeature((x: (Coll[Int], (Int, Int))) => x._1.getOrElse(x._2._1, x._2._2),
+      "{ (x: (Coll[Int], (Int, Int))) => x._1.getOrElse(x._2._1, x._2._2) }",
+      FuncValue(
+        Vector((1, SPair(SCollectionType(SInt), SPair(SInt, SInt)))),
+        BlockValue(
+          Vector(
+            ValDef(
+              3,
+              List(),
+              SelectField.typed[Value[STuple]](
+                ValUse(1, SPair(SCollectionType(SInt), SPair(SInt, SInt))),
+                2.toByte
+              )
+            )
+          ),
+          ByIndex(
+            SelectField.typed[Value[SCollection[SInt.type]]](
+              ValUse(1, SPair(SCollectionType(SInt), SPair(SInt, SInt))),
+              1.toByte
+            ),
+            SelectField.typed[Value[SInt.type]](ValUse(3, SPair(SInt, SInt)), 1.toByte),
+            Some(SelectField.typed[Value[SInt.type]](ValUse(3, SPair(SInt, SInt)), 2.toByte))
+          )
+        )
+      ))
+
+    forAll { x: (Coll[Int], (Int, Int)) =>
+      getOrElse.checkEquality(x._1, x._2)
     }
   }
 
