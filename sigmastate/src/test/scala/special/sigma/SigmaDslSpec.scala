@@ -2666,13 +2666,29 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   }
 
   property("proveDlog equivalence") {
-    val eq = EqualityChecker(SigmaDsl.groupGenerator)
-    eq({ (x: GroupElement) => proveDlog(x) })("{ (x: GroupElement) => proveDlog(x) }")
+    val proveDlog = existingFeature({ (x: GroupElement) => SigmaDsl.proveDlog(x) },
+      "{ (x: GroupElement) => proveDlog(x) }",
+      FuncValue(Vector((1, SGroupElement)), CreateProveDlog(ValUse(1, SGroupElement))))
+    forAll { x: GroupElement =>
+      proveDlog.checkEquality(x)
+    }
   }
 
   property("proveDHTuple equivalence") {
-    val eq = EqualityChecker(SigmaDsl.groupGenerator)
-    eq({ (x: GroupElement) => proveDHTuple(x, x, x, x) })("{ (x: GroupElement) => proveDHTuple(x, x, x, x) }")
+    val proveDHTuple = existingFeature({ (x: GroupElement) => SigmaDsl.proveDHTuple(x, x, x, x) },
+      "{ (x: GroupElement) => proveDHTuple(x, x, x, x) }",
+      FuncValue(
+        Vector((1, SGroupElement)),
+        CreateProveDHTuple(
+          ValUse(1, SGroupElement),
+          ValUse(1, SGroupElement),
+          ValUse(1, SGroupElement),
+          ValUse(1, SGroupElement)
+        )
+      ))
+    forAll { x: GroupElement =>
+      proveDHTuple.checkEquality(x)
+    }
   }
 
 }
