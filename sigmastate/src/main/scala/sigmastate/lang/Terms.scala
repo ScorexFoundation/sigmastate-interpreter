@@ -105,6 +105,7 @@ object Terms {
     def apply(name: String): Ident = Ident(name, NoType)
   }
 
+  // TODO HF: move to sigmastate.Values
   case class Apply(func: Value[SType], args: IndexedSeq[Value[SType]]) extends Value[SType] {
     override def companion = Apply
     override lazy val tpe: SType = func.tpe match {

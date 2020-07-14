@@ -2532,7 +2532,7 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   }
 
   property("atLeast equivalence") {
-    lazy val eq = existingFeature((x: Coll[SigmaProp]) => atLeast(x.size - 1, x),
+    lazy val atLeast = existingFeature((x: Coll[SigmaProp]) => SigmaDsl.atLeast(x.size - 1, x),
       "{ (x: Coll[SigmaProp]) => atLeast(x.size - 1, x) }",
       FuncValue(
         Vector((1, SCollectionType(SSigmaProp))),
@@ -2541,8 +2541,8 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
           ValUse(1, SCollectionType(SSigmaProp))
         )
       ))
-    forAll(arrayGen[SigmaProp].suchThat(_.length > 2)) { x: Array[SigmaProp] =>
-      eq.checkEquality(Colls.fromArray(x))
+    forAll(collGen[SigmaProp]) { x: Coll[SigmaProp] =>
+      atLeast.checkEquality(x)
     }
   }
 
@@ -2551,11 +2551,11 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
       (x: (SigmaProp, SigmaProp)) => x._1 && x._2,
       "{ (x:(SigmaProp, SigmaProp)) => x._1 && x._2 }",
       FuncValue(
-        Vector((1, STuple(Vector(SSigmaProp, SSigmaProp)))),
+        Vector((1, SPair(SSigmaProp, SSigmaProp))),
         SigmaAnd(
           Seq(
-            SelectField.typed[SigmaPropValue](ValUse(1, STuple(Vector(SSigmaProp, SSigmaProp))), 1.toByte),
-            SelectField.typed[SigmaPropValue](ValUse(1, STuple(Vector(SSigmaProp, SSigmaProp))), 2.toByte)
+            SelectField.typed[Value[SSigmaProp.type]](ValUse(1, SPair(SSigmaProp, SSigmaProp)), 1.toByte),
+            SelectField.typed[Value[SSigmaProp.type]](ValUse(1, SPair(SSigmaProp, SSigmaProp)), 2.toByte)
           )
         )
       ))
@@ -2563,12 +2563,12 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
       (x: (SigmaProp, Boolean)) => x._1 && sigmaProp(x._2),
       "{ (x:(SigmaProp, Boolean)) => x._1 && sigmaProp(x._2) }",
       FuncValue(
-        Vector((1, STuple(Vector(SSigmaProp, SBoolean)))),
+        Vector((1, SPair(SSigmaProp, SBoolean))),
         SigmaAnd(
           Seq(
-            SelectField.typed[SigmaPropValue](ValUse(1, STuple(Vector(SSigmaProp, SBoolean))), 1.toByte),
+            SelectField.typed[Value[SSigmaProp.type]](ValUse(1, SPair(SSigmaProp, SBoolean)), 1.toByte),
             BoolToSigmaProp(
-              SelectField.typed[BoolValue](ValUse(1, STuple(Vector(SSigmaProp, SBoolean))), 2.toByte)
+              SelectField.typed[Value[SBoolean.type]](ValUse(1, SPair(SSigmaProp, SBoolean)), 2.toByte)
             )
           )
         )
@@ -2587,11 +2587,11 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
       (x: (SigmaProp, SigmaProp)) => x._1 || x._2,
       "{ (x:(SigmaProp, SigmaProp)) => x._1 || x._2 }",
       FuncValue(
-        Vector((1, STuple(Vector(SSigmaProp, SSigmaProp)))),
+        Vector((1, SPair(SSigmaProp, SSigmaProp))),
         SigmaOr(
           Seq(
-            SelectField.typed[SigmaPropValue](ValUse(1, STuple(Vector(SSigmaProp, SSigmaProp))), 1.toByte),
-            SelectField.typed[SigmaPropValue](ValUse(1, STuple(Vector(SSigmaProp, SSigmaProp))), 2.toByte)
+            SelectField.typed[SigmaPropValue](ValUse(1, SPair(SSigmaProp, SSigmaProp)), 1.toByte),
+            SelectField.typed[SigmaPropValue](ValUse(1, SPair(SSigmaProp, SSigmaProp)), 2.toByte)
           )
         )
       ))
@@ -2599,12 +2599,12 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
       (x: (SigmaProp, Boolean)) => x._1 || sigmaProp(x._2),
       "{ (x:(SigmaProp, Boolean)) => x._1 || sigmaProp(x._2) }",
       FuncValue(
-        Vector((1, STuple(Vector(SSigmaProp, SBoolean)))),
+        Vector((1, SPair(SSigmaProp, SBoolean))),
         SigmaOr(
           Seq(
-            SelectField.typed[SigmaPropValue](ValUse(1, STuple(Vector(SSigmaProp, SBoolean))), 1.toByte),
+            SelectField.typed[SigmaPropValue](ValUse(1, SPair(SSigmaProp, SBoolean)), 1.toByte),
             BoolToSigmaProp(
-              SelectField.typed[BoolValue](ValUse(1, STuple(Vector(SSigmaProp, SBoolean))), 2.toByte)
+              SelectField.typed[BoolValue](ValUse(1, SPair(SSigmaProp, SBoolean)), 2.toByte)
             )
           )
         )
@@ -2619,49 +2619,49 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   }
 
   property("SigmaProp.propBytes equivalence") {
-    lazy val eq = checkEq(func[SigmaProp, Coll[Byte]]("{ (x: SigmaProp) => x.propBytes }")){ (x: SigmaProp) =>
-      x.propBytes
-    }
+    lazy val propBytes = existingFeature((x: SigmaProp) => x.propBytes,
+      "{ (x: SigmaProp) => x.propBytes }",
+      FuncValue(Vector((1, SSigmaProp)), SigmaPropBytes(ValUse(1, SSigmaProp))))
     forAll { x: SigmaProp =>
-      eq(x)
+      propBytes.checkEquality(x)
     }
   }
 
-  // TODO: implement allZK func https://github.com/ScorexFoundation/sigmastate-interpreter/issues/543
-  ignore("allZK equivalence") {
-    lazy val eq = checkEq(func[Coll[SigmaProp], SigmaProp]("{ (x: Coll[SigmaProp]) => allZK(x) }")){ (x: Coll[SigmaProp]) =>
-      allZK(x)
-    }
-    forAll(arrayGen[SigmaProp].suchThat(_.length > 2)) { x: Array[SigmaProp] =>
-      eq(Colls.fromArray(x))
+  // TODO HF: implement allZK func https://github.com/ScorexFoundation/sigmastate-interpreter/issues/543
+  property("allZK equivalence") {
+    lazy val allZK = newFeature((x: Coll[SigmaProp]) => SigmaDsl.allZK(x),
+      "{ (x: Coll[SigmaProp]) => allZK(x) }")
+    forAll { x: Coll[SigmaProp] =>
+      allZK.checkEquality(x)
     }
   }
 
-  // TODO: implement anyZK func https://github.com/ScorexFoundation/sigmastate-interpreter/issues/543
-  ignore("anyZK equivalence") {
-    lazy val eq = checkEq(func[Coll[SigmaProp], SigmaProp]("{ (x: Coll[SigmaProp]) => anyZK(x) }")){ (x: Coll[SigmaProp]) =>
-      anyZK(x)
-    }
-    forAll(arrayGen[SigmaProp].suchThat(_.length > 2)) { x: Array[SigmaProp] =>
-      eq(Colls.fromArray(x))
+  // TODO HF: implement anyZK func https://github.com/ScorexFoundation/sigmastate-interpreter/issues/543
+  property("anyZK equivalence") {
+    lazy val anyZK = newFeature((x: Coll[SigmaProp]) => SigmaDsl.anyZK(x),
+      "{ (x: Coll[SigmaProp]) => anyZK(x) }")
+    forAll { x: Coll[SigmaProp] =>
+      anyZK.checkEquality(x)
     }
   }
 
   property("allOf equivalence") {
-    lazy val eq = checkEq(func[Coll[Boolean], Boolean]("{ (x: Coll[Boolean]) => allOf(x) }")){ (x: Coll[Boolean]) =>
-      allOf(x)
-    }
-    forAll(arrayGen[Boolean].suchThat(_.length > 2)) { x: Array[Boolean] =>
-      eq(Colls.fromArray(x))
+    lazy val allOf = existingFeature((x: Coll[Boolean]) => SigmaDsl.allOf(x),
+      "{ (x: Coll[Boolean]) => allOf(x) }",
+      FuncValue(Vector((1, SBooleanArray)), AND(ValUse(1, SBooleanArray))))
+
+    forAll { x: Coll[Boolean] =>
+      allOf.checkEquality(x)
     }
   }
 
   property("anyOf equivalence") {
-    lazy val eq = checkEq(func[Coll[Boolean], Boolean]("{ (x: Coll[Boolean]) => anyOf(x) }")){ (x: Coll[Boolean]) =>
-      anyOf(x)
-    }
-    forAll(arrayGen[Boolean].suchThat(_.length > 2)) { x: Array[Boolean] =>
-      eq(Colls.fromArray(x))
+    lazy val anyOf = existingFeature((x: Coll[Boolean]) => SigmaDsl.anyOf(x),
+      "{ (x: Coll[Boolean]) => anyOf(x) }",
+      FuncValue(Vector((1, SBooleanArray)), OR(ValUse(1, SBooleanArray))))
+
+    forAll { x: Coll[Boolean] =>
+      anyOf.checkEquality(x)
     }
   }
 
