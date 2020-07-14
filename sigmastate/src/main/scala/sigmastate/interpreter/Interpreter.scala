@@ -171,7 +171,7 @@ trait Interpreter extends ScorexLogging {
   /** Extracts proposition for ErgoTree handing soft-fork condition.
     * @note soft-fork handler */
   def propositionFromErgoTree(tree: ErgoTree, ctx: CTX): SigmaPropValue = {
-    val prop = tree.root match {
+    val prop = tree.template match {
       case Right(_) =>
         tree.toProposition(tree.isConstantSegregation)
       case Left(UnparsedErgoTree(_, error)) if ctx.validationSettings.isSoftFork(error) =>
