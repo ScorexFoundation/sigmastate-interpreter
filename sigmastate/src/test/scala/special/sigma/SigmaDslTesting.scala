@@ -75,7 +75,6 @@ class SigmaDslTesting extends PropSpec
   sealed trait FeatureType
   case object ExistingFeature extends FeatureType
   case object AddedFeature extends FeatureType
-  case object ChangedFeature extends FeatureType
 
   /** Test case descriptor of the language feature.
     *

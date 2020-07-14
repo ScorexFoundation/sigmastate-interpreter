@@ -2005,8 +2005,8 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
     }
   }
 
-  val arrayWithRangeGen = for {
-    arr <- arrayGen[Int];
+  val collWithRangeGen = for {
+    arr <- collGen[Int];
     l <- Gen.choose(0, arr.length - 1);
     r <- Gen.choose(l, arr.length - 1) } yield (arr, (l, r))
 
@@ -2056,11 +2056,11 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
         )
       ))
 
-    forAll(arrayWithRangeGen) { data =>
+    forAll(collWithRangeGen) { data =>
       val arr = data._1
       val range = data._2
       whenever (arr.length > 1) {
-        patch.checkEquality(Colls.fromArray(arr), range)
+        patch.checkEquality(arr, range)
       }
     }
   }
@@ -2337,20 +2337,34 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   }
 
   property("Coll slice method equivalence") {
-    val eq = checkEq(func[(Coll[Int], (Int, Int)),Coll[Int]]("{ (x: (Coll[Int], (Int, Int))) => x._1.slice(x._2._1, x._2._2) }"))
-    { x =>
-      x._1.slice(x._2._1, x._2._2)
+    val slice = existingFeature((x: (Coll[Int], (Int, Int))) => x._1.slice(x._2._1, x._2._2),
+      "{ (x: (Coll[Int], (Int, Int))) => x._1.slice(x._2._1, x._2._2) }",
+      FuncValue(
+        Vector((1, SPair(SCollectionType(SInt), SPair(SInt, SInt)))),
+        BlockValue(
+          Vector(
+            ValDef(
+              3,
+              List(),
+              SelectField.typed[Value[STuple]](
+                ValUse(1, SPair(SCollectionType(SInt), SPair(SInt, SInt))),
+                2.toByte
+              )
+            )
+          ),
+          Slice(
+            SelectField.typed[Value[SCollection[SInt.type]]](
+              ValUse(1, SPair(SCollectionType(SInt), SPair(SInt, SInt))),
+              1.toByte
+            ),
+            SelectField.typed[Value[SInt.type]](ValUse(3, SPair(SInt, SInt)), 1.toByte),
+            SelectField.typed[Value[SInt.type]](ValUse(3, SPair(SInt, SInt)), 2.toByte)
+          )
+        )
+      ))
+    forAll(collWithRangeGen) { x =>
+      slice.checkEquality(x)
     }
-    forAll(arrayWithRangeGen) { data =>
-      val arr = data._1
-      val range = data._2
-      whenever (arr.length > 0) {
-        val input = (Colls.fromArray(arr), range)
-        eq(input)
-      }
-    }
-    val arr = Array[Int](1, 2, 3, 4, 5)
-    eq(Colls.fromArray(arr), (0, 2))
   }
 
   property("Coll append method equivalence") {
@@ -2360,17 +2374,17 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
         |val toAppend: Coll[Int] = x._1
         |sliced.append(toAppend)
         |}""".stripMargin))
-    { x =>
+    { (x: (Coll[Int], (Int, Int))) =>
       val sliced: Coll[Int] = x._1.slice(x._2._1, x._2._2)
       val toAppend: Coll[Int] = x._1
       sliced.append(toAppend)
     }
 
-    forAll(arrayWithRangeGen) { data =>
+    forAll(collWithRangeGen) { data =>
       val arr = data._1
       val range = data._2
       whenever (arr.length > 0) {
-        val input = (Colls.fromArray(arr), range)
+        val input = (arr, range)
         eq(input)
       }
     }
