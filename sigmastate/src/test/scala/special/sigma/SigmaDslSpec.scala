@@ -6,7 +6,7 @@ import org.ergoplatform.ErgoScriptPredef.TrueProp
 import org.ergoplatform.dsl.{SigmaContractSyntax, TestContractSpec}
 import org.ergoplatform._
 import org.scalacheck.Gen
-import org.scalatest.prop.PropertyChecks
+import org.scalatest.prop.{PropertyChecks,TableFor2}
 import org.scalatest.{PropSpec, Matchers, Tag}
 import scalan.{ExactNumeric, RType}
 import org.scalactic.source
@@ -38,25 +38,34 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
 
   override implicit val generatorDrivenConfig = PropertyCheckConfiguration(minSuccessful = 30)
 
+  def testCases[A,B](cases: Seq[(A, Try[B])], f: FeatureTest[A,B]): Unit = {
+    val table = Table(("x", "y"), cases:_*)
+    forAll(table) { (x: A, expectedRes: Try[B]) =>
+      val res = f.checkEquality(x, printTestCases = false)
+
+      // TODO HF: remove this if once newImpl is implemented
+      if (f.featureType == ExistingFeature)
+        res shouldBe expectedRes
+    }
+  }
+
   ///=====================================================
   ///              Boolean type operations
   ///-----------------------------------------------------
 
   property("Boolean methods equivalence") {
-    val feature = newFeature((x: Boolean) => x.toByte, "{ (x: Boolean) => x.toByte }")
+    val toByte = newFeature((x: Boolean) => x.toByte, "{ (x: Boolean) => x.toByte }")
 
-    val data = Table(("input", "res"),
-      (true, 1.toByte),
-      (false, 0.toByte)
+    val cases = Seq(
+      (true, Success(1.toByte)),
+      (false, Success(0.toByte))
     )
 
-    forAll(data) { (x, res) =>
-      feature.checkExpected(x, res)
-    }
+    testCases(cases, toByte)
   }
 
   property("BinXor(logical XOR) equivalence") {
-    val eq = existingFeature((x: (Boolean, Boolean)) => x._1 ^ x._2,
+    val binXor = existingFeature((x: (Boolean, Boolean)) => x._1 ^ x._2,
       "{ (x: (Boolean, Boolean)) => x._1 ^ x._2 }",
       FuncValue(
         Vector((1, STuple(Vector(SBoolean, SBoolean)))),
@@ -65,11 +74,17 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
           SelectField.typed[BoolValue](ValUse(1, STuple(Vector(SBoolean, SBoolean))), 2.toByte)
         )
       ))
-    forAll { x: (Boolean, Boolean) => eq.checkEquality(x) }
+    val cases = Seq(
+      ((true, true), Try(false)),
+      ((true, false), Try(true)),
+      ((false, false), Try(false)),
+      ((false, true), Try(true))
+    )
+    testCases(cases, binXor)
   }
 
   property("BinXor(logical XOR) test") {
-    val eq = existingFeature((x: (Int, Boolean)) => (x._1 == 0) ^ x._2,
+    val xor = existingFeature((x: (Int, Boolean)) => (x._1 == 0) ^ x._2,
       "{ (x: (Int, Boolean)) => (x._1 == 0) ^ x._2 }",
       FuncValue(
         Vector((1, STuple(Vector(SInt, SBoolean)))),
@@ -81,7 +96,15 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
           SelectField.typed[BoolValue](ValUse(1, STuple(Vector(SInt, SBoolean))), 2.toByte)
         )
       ))
-    forAll { x: (Int, Boolean) => eq.checkEquality(x) }
+    val cases = Seq(
+      ((1095564593, true), Success(true)),
+      ((-901834021, true), Success(true)),
+      ((595045530, false), Success(false)),
+      ((-1157998227, false), Success(false)),
+      ((0, true), Success(false)),
+      ((0, false), Success(true)),
+    )
+    testCases(cases, xor)
   }
 
   property("&& boolean equivalence") {
@@ -2061,7 +2084,7 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
       val arr = data._1
       val range = data._2
       whenever (arr.length > 1) {
-        patch.checkEquality(arr, range)
+        patch.checkEquality(data)
       }
     }
   }
@@ -2101,7 +2124,7 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
       val size = x._1.size
       whenever (size > 1) {
         val index = getArrayIndex(size)
-        updated.checkEquality(Colls.fromArray(x._1), (index, x._2))
+        updated.checkEquality((Colls.fromArray(x._1), (index, x._2)))
       }
     }
   }
@@ -2296,7 +2319,7 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
       ))
 
     forAll { x: (Coll[Int], (Int, Int)) =>
-      getOrElse.checkEquality(x._1, x._2)
+      getOrElse.checkEquality(x)
     }
   }
 
