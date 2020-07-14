@@ -2411,22 +2411,62 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
         )
       ))
 
-
     forAll(collWithRangeGen) { x =>
       append.checkEquality(x)
     }
   }
 
   property("Option methods equivalence") {
-    val opt: Option[Long] = ctx.dataInputs(0).R0[Long]
-    val eq = EqualityChecker(opt)
-    eq({ (x: Option[Long]) => x.get })("{ (x: Option[Long]) => x.get }")
-    // TODO implement Option.isEmpty
-    //  eq({ (x: Option[Long]) => x.isEmpty })("{ (x: Option[Long]) => x.isEmpty }")
-    eq({ (x: Option[Long]) => x.isDefined })("{ (x: Option[Long]) => x.isDefined }")
-    eq({ (x: Option[Long]) => x.getOrElse(1L) })("{ (x: Option[Long]) => x.getOrElse(1L) }")
-    eq({ (x: Option[Long]) => x.filter({ (v: Long) => v == 1} ) })("{ (x: Option[Long]) => x.filter({ (v: Long) => v == 1 }) }")
-    eq({ (x: Option[Long]) => x.map( (v: Long) => v + 1 ) })("{ (x: Option[Long]) => x.map({ (v: Long) => v + 1 }) }")
+    val get = existingFeature({ (x: Option[Long]) => x.get },
+      "{ (x: Option[Long]) => x.get }",
+      FuncValue(Vector((1, SOption(SLong))), OptionGet(ValUse(1, SOption(SLong)))))
+
+    val isDefined = existingFeature({ (x: Option[Long]) => x.isDefined },
+      "{ (x: Option[Long]) => x.isDefined }",
+      FuncValue(Vector((1, SOption(SLong))), OptionIsDefined(ValUse(1, SOption(SLong)))))
+
+    val getOrElse = existingFeature({ (x: Option[Long]) => x.getOrElse(1L) },
+      "{ (x: Option[Long]) => x.getOrElse(1L) }",
+      FuncValue(Vector((1, SOption(SLong))), OptionGetOrElse(ValUse(1, SOption(SLong)), LongConstant(1L))))
+
+    val filter = existingFeature({ (x: Option[Long]) => x.filter({ (v: Long) => v == 1} ) },
+      "{ (x: Option[Long]) => x.filter({ (v: Long) => v == 1 }) }",
+      FuncValue(
+        Vector((1, SOption(SLong))),
+        MethodCall.typed[Value[SOption[SLong.type]]](
+          ValUse(1, SOption(SLong)),
+          SOption.getMethodByName("filter").withConcreteTypes(Map(STypeVar("T") -> SLong)),
+          Vector(FuncValue(Vector((3, SLong)), EQ(ValUse(3, SLong), LongConstant(1L)))),
+          Map()
+        )
+      ))
+
+    val n = ExactNumeric.LongIsExactNumeric
+    val map = existingFeature({ (x: Option[Long]) => x.map( (v: Long) => n.plus(v, 1) ) },
+      "{ (x: Option[Long]) => x.map({ (v: Long) => v + 1 }) }",
+      FuncValue(
+        Vector((1, SOption(SLong))),
+        MethodCall.typed[Value[SOption[SLong.type]]](
+          ValUse(1, SOption(SLong)),
+          SOption.getMethodByName("map").withConcreteTypes(
+            Map(STypeVar("T") -> SLong, STypeVar("R") -> SLong)
+          ),
+          Vector(
+            FuncValue(
+              Vector((3, SLong)),
+              ArithOp(ValUse(3, SLong), LongConstant(1L), OpCode @@ (-102.toByte))
+            )
+          ),
+          Map()
+        )
+      ))
+
+    val isEmpty = newFeature({ (x: Option[Long]) => x.isEmpty },
+      "{ (x: Option[Long]) => x.isEmpty }")
+
+    forAll { x: Option[Long] =>
+      Seq(get, isDefined, getOrElse, filter, map, isEmpty).foreach(_.checkEquality(x))
+    }
   }
 
   // TODO HF: implement Option.fold

@@ -57,6 +57,8 @@ object SigmaPPrint extends PPrinter {
       Tree.Literal(s"SGlobal")
     case sigmastate.SCollection =>
       Tree.Literal(s"SCollection")
+    case sigmastate.SOption =>
+      Tree.Literal(s"SOption")
     case t: STypeCompanion if t.isInstanceOf[SType] =>
       Tree.Literal(s"S${t.typeName}")
     case c: ValueCompanion =>
