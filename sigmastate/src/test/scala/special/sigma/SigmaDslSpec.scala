@@ -2368,25 +2368,52 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   }
 
   property("Coll append method equivalence") {
-    val eq = checkEq(func[(Coll[Int], (Int, Int)),Coll[Int]](
+    val append = existingFeature(
+      { (x: (Coll[Int], (Int, Int))) =>
+        val sliced: Coll[Int] = x._1.slice(x._2._1, x._2._2)
+        val toAppend: Coll[Int] = x._1
+        sliced.append(toAppend)
+      },
       """{ (x: (Coll[Int], (Int, Int))) =>
         |val sliced: Coll[Int] = x._1.slice(x._2._1, x._2._2)
         |val toAppend: Coll[Int] = x._1
         |sliced.append(toAppend)
-        |}""".stripMargin))
-    { (x: (Coll[Int], (Int, Int))) =>
-      val sliced: Coll[Int] = x._1.slice(x._2._1, x._2._2)
-      val toAppend: Coll[Int] = x._1
-      sliced.append(toAppend)
-    }
+        |}""".stripMargin,
+      FuncValue(
+        Vector((1, SPair(SCollectionType(SInt), SPair(SInt, SInt)))),
+        BlockValue(
+          Vector(
+            ValDef(
+              3,
+              List(),
+              SelectField.typed[Value[SCollection[SInt.type]]](
+                ValUse(1, SPair(SCollectionType(SInt), SPair(SInt, SInt))),
+                1.toByte
+              )
+            ),
+            ValDef(
+              4,
+              List(),
+              SelectField.typed[Value[STuple]](
+                ValUse(1, SPair(SCollectionType(SInt), SPair(SInt, SInt))),
+                2.toByte
+              )
+            )
+          ),
+          Append(
+            Slice(
+              ValUse(3, SCollectionType(SInt)),
+              SelectField.typed[Value[SInt.type]](ValUse(4, SPair(SInt, SInt)), 1.toByte),
+              SelectField.typed[Value[SInt.type]](ValUse(4, SPair(SInt, SInt)), 2.toByte)
+            ),
+            ValUse(3, SCollectionType(SInt))
+          )
+        )
+      ))
 
-    forAll(collWithRangeGen) { data =>
-      val arr = data._1
-      val range = data._2
-      whenever (arr.length > 0) {
-        val input = (arr, range)
-        eq(input)
-      }
+
+    forAll(collWithRangeGen) { x =>
+      append.checkEquality(x)
     }
   }
 
