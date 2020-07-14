@@ -2507,14 +2507,16 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   }
 
   property("blake2b256, sha256 equivalence") {
-    val eqBlake2b256 = checkEq(func[Coll[Byte], Coll[Byte]]("{ (x: Coll[Byte]) => blake2b256(x) }")){ x =>
-      blake2b256(x)
-    }
-    val eqSha256 = checkEq(func[Coll[Byte], Coll[Byte]]("{ (x: Coll[Byte]) => sha256(x) }")){ x =>
-      sha256(x)
-    }
-    forAll { x: Array[Byte] =>
-      Seq(eqBlake2b256, eqSha256).foreach(_(Colls.fromArray(x)))
+    val blake2b256 = existingFeature((x: Coll[Byte]) => SigmaDsl.blake2b256(x),
+      "{ (x: Coll[Byte]) => blake2b256(x) }",
+      FuncValue(Vector((1, SByteArray)), CalcBlake2b256(ValUse(1, SByteArray))))
+
+    val sha256 = existingFeature((x: Coll[Byte]) => SigmaDsl.sha256(x),
+      "{ (x: Coll[Byte]) => sha256(x) }",
+      FuncValue(Vector((1, SByteArray)), CalcSha256(ValUse(1, SByteArray))))
+
+    forAll { x: Coll[Byte] =>
+      Seq(blake2b256, sha256).foreach(_.checkEquality(x))
     }
   }
 
