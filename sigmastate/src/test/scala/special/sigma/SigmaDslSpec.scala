@@ -19,6 +19,7 @@ import sigmastate.SCollection._
 import sigmastate.Values.IntConstant
 import sigmastate._
 import sigmastate.Values._
+import sigmastate.lang.Terms.Apply
 import sigmastate.eval.Extensions._
 import sigmastate.eval._
 import sigmastate.helpers.SigmaPPrint
@@ -2471,7 +2472,8 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
 
   // TODO HF: implement Option.fold
   property("Option fold method") {
-    val fold = newFeature({ (x: Option[Long]) => x.fold(5.toLong)( (v: Long) => v + 1 ) },
+    val n = ExactNumeric.LongIsExactNumeric
+    val fold = newFeature({ (x: Option[Long]) => x.fold(5.toLong)( (v: Long) => n.plus(v, 1) ) },
       "{ (x: Option[Long]) => x.fold(5, { (v: Long) => v + 1 }) }")
     forAll { x: Option[Long] =>
       fold.checkEquality(x)
@@ -2479,13 +2481,29 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   }
 
   property("Option fold workaround method") {
-    val opt: Option[Long] = ctx.dataInputs(0).R0[Long]
-    val eq = EqualityChecker(opt)
-    eq({ (x: Option[Long]) => x.fold(5.toLong)( (v: Long) => v + 1 ) })(
+    val n = ExactNumeric.LongIsExactNumeric
+    val foldWorkaround = existingFeature({ (x: Option[Long]) => x.fold(5.toLong)( (v: Long) => n.plus(v, 1) ) },
       """{(x: Option[Long]) =>
         |  def f(opt: Long): Long = opt + 1
         |  if (x.isDefined) f(x.get) else 5L
-        |}""".stripMargin)
+        |}""".stripMargin,
+      FuncValue(
+        Vector((1, SOption(SLong))),
+        If(
+          OptionIsDefined(ValUse(1, SOption(SLong))),
+          Apply(
+            FuncValue(
+              Vector((3, SLong)),
+              ArithOp(ValUse(3, SLong), LongConstant(1L), OpCode @@ (-102.toByte))
+            ),
+            Array(OptionGet(ValUse(1, SOption(SLong))))
+          ),
+          LongConstant(5L)
+        )
+      ))
+    forAll { x: Option[Long] =>
+      foldWorkaround.checkEquality(x)
+    }
   }
 
   property("blake2b256, sha256 equivalence") {
