@@ -31,12 +31,18 @@ class SigmaPPrintSpec extends PropSpec
       SigmaPPrint(x).plainText shouldBe expected
     }
 
-    test(SGlobal, "SGlobal")
-    test(SCollection, "SCollection")
+    // type handlers
     test(SCollectionType(SByte), "SByteArray")
     test(SCollectionType(SCollectionType(SByte)), "SByteArray2")
     test(SCollectionType(SBoolean), "SBooleanArray")
     test(STuple(Vector(SBoolean, SInt)), "SPair(SBoolean, SInt)")
+
+    // exception handlers
+    test(new ArithmeticException("msg"), "new ArithmeticException(\"msg\")")
+
+    // additionalHandlers
+    test(SGlobal, "SGlobal")
+    test(SCollection, "SCollection")
     test(SInt, "SInt")
     test(Outputs, "Outputs")
     test(10.toByte, "10.toByte")

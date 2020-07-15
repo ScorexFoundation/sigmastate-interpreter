@@ -5,7 +5,7 @@ import java.math.BigInteger
 import org.ergoplatform.ErgoScriptPredef.TrueProp
 import org.ergoplatform.dsl.{SigmaContractSyntax, TestContractSpec}
 import org.ergoplatform._
-import org.scalacheck.Gen
+import org.scalacheck.{Gen, Arbitrary}
 import org.scalatest.prop.{PropertyChecks,TableFor2}
 import org.scalatest.{PropSpec, Matchers, Tag}
 import scalan.{ExactNumeric, RType}
@@ -44,8 +44,20 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
       val res = f.checkEquality(x, printTestCases = false)
 
       // TODO HF: remove this if once newImpl is implemented
-      if (f.featureType == ExistingFeature)
-        res shouldBe expectedRes
+      if (f.featureType == ExistingFeature) {
+        (res, expectedRes) match {
+          case (Failure(exception), Failure(expectedException)) =>
+            exception.getClass shouldBe expectedException.getClass
+          case _ =>
+            res shouldBe expectedRes
+        }
+      }
+    }
+  }
+
+  def test[A: Arbitrary,B](f: FeatureTest[A,B]): Unit = {
+    forAll { (x: A) =>
+      f.checkEquality(x)
     }
   }
 
@@ -117,7 +129,13 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
           SelectField.typed[BoolValue](ValUse(1, STuple(Vector(SBoolean, SBoolean))), 2.toByte)
         )
       ))
-    forAll { x: (Boolean, Boolean) => eq.checkEquality(x) }
+    val cases = Seq(
+      ((false, true), Success(false)),
+      ((false, false), Success(false)),
+      ((true, true), Success(true)),
+      ((true, false), Success(false))
+    )
+    testCases(cases, eq)
   }
 
   property("|| boolean equivalence") {
@@ -130,11 +148,21 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
           SelectField.typed[BoolValue](ValUse(1, STuple(Vector(SBoolean, SBoolean))), 2.toByte)
         )
       ))
-    forAll { x: (Boolean, Boolean) => eq.checkEquality(x) }
+    val cases = Seq(
+      ((true, false), Success(true)),
+      ((true, true), Success(true)),
+      ((false, false), Success(false)),
+      ((false, true), Success(true))
+    )
+    testCases(cases, eq)
   }
 
   property("lazy || and && boolean equivalence") {
-    val features = Seq(
+    testCases(
+      Seq(
+        (true, Success(true)),
+        (false, Failure(new ArithmeticException("/ by zero")))
+      ),
       existingFeature((x: Boolean) => x || (1 / 0 == 1),
         "{ (x: Boolean) => x || (1 / 0 == 1) }",
         FuncValue(
@@ -143,8 +171,13 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
             ValUse(1, SBoolean),
             EQ(ArithOp(IntConstant(1), IntConstant(0), OpCode @@ (-99.toByte)), IntConstant(1))
           )
-        )),
+        )))
 
+    testCases(
+      Seq(
+        (true, Failure(new ArithmeticException("/ by zero"))),
+        (false, Success(false))
+      ),
       existingFeature((x: Boolean) => x && (1 / 0 == 1),
         "{ (x: Boolean) => x && (1 / 0 == 1) }",
         FuncValue(
@@ -153,10 +186,13 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
             ValUse(1, SBoolean),
             EQ(ArithOp(IntConstant(1), IntConstant(0), OpCode @@ (-99.toByte)), IntConstant(1))
           )
-        )),
+        )))
 
-      // nested
-
+    testCases(
+      Seq(
+        (false, Success(false)),
+        (true, Success(true))
+      ),
       existingFeature((x: Boolean) => x && (x || (1 / 0 == 1)),
         "{ (x: Boolean) => x && (x || (1 / 0 == 1)) }",
         FuncValue(
@@ -168,8 +204,13 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
               EQ(ArithOp(IntConstant(1), IntConstant(0), OpCode @@ (-99.toByte)), IntConstant(1))
             )
           )
-        )),
+        )))
 
+    testCases(
+      Seq(
+        (false, Success(false)),
+        (true, Success(true))
+      ),
       existingFeature((x: Boolean) => x && (x && (x || (1 / 0 == 1))),
         "{ (x: Boolean) => x && (x && (x || (1 / 0 == 1))) }",
         FuncValue(
@@ -184,8 +225,13 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
               )
             )
           )
-        )),
+        )))
 
+    testCases(
+      Seq(
+        (false, Success(false)),
+        (true, Success(true))
+      ),
       existingFeature((x: Boolean) => x && (x && (x && (x || (1 / 0 == 1)))),
         "{ (x: Boolean) => x && (x && (x && (x || (1 / 0 == 1)))) }",
         FuncValue(
@@ -203,8 +249,13 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
               )
             )
           )
-        )),
+        )))
 
+    testCases(
+      Seq(
+        (false, Failure(new ArithmeticException("/ by zero"))),
+        (true, Success(true))
+      ),
       existingFeature((x: Boolean) => !(!x && (1 / 0 == 1)) && (x || (1 / 0 == 1)),
         "{ (x: Boolean) => !(!x && (1 / 0 == 1)) && (x || (1 / 0 == 1)) }",
         FuncValue(
@@ -221,8 +272,13 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
               EQ(ArithOp(IntConstant(1), IntConstant(0), OpCode @@ (-99.toByte)), IntConstant(1))
             )
           )
-        )),
+        )))
 
+    testCases(
+      Seq(
+        (true, Success(true)),
+        (false, Failure(new ArithmeticException("/ by zero")))
+      ),
       existingFeature((x: Boolean) => (x || (1 / 0 == 1)) && x,
         "{ (x: Boolean) => (x || (1 / 0 == 1)) && x }",
         FuncValue(
@@ -234,8 +290,13 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
             ),
             ValUse(1, SBoolean)
           )
-        )),
+        )))
 
+    testCases(
+      Seq(
+        (true, Success(true)),
+        (false, Failure(new ArithmeticException("/ by zero")))
+      ),
       existingFeature((x: Boolean) => (x || (1 / 0 == 1)) && (x || (1 / 0 == 1)),
         "{ (x: Boolean) => (x || (1 / 0 == 1)) && (x || (1 / 0 == 1)) }",
         FuncValue(
@@ -250,8 +311,13 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
               EQ(ArithOp(IntConstant(1), IntConstant(0), OpCode @@ (-99.toByte)), IntConstant(1))
             )
           )
-        )),
+        )))
 
+    testCases(
+      Seq(
+        (true, Success(true)),
+        (false, Failure(new ArithmeticException("/ by zero")))
+      ),
       existingFeature(
         (x: Boolean) => (!(!x && (1 / 0 == 1)) || (1 / 0 == 0)) && (x || (1 / 0 == 1)),
         "{ (x: Boolean) => (!(!x && (1 / 0 == 1)) || (1 / 0 == 0)) && (x || (1 / 0 == 1)) }",
@@ -272,8 +338,13 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
               EQ(ArithOp(IntConstant(1), IntConstant(0), OpCode @@ (-99.toByte)), IntConstant(1))
             )
           )
-        )),
+        )))
 
+    testCases(
+      Seq(
+        (false, Failure(new ArithmeticException("/ by zero"))),
+        (true, Success(true))
+      ),
       existingFeature(
         (x: Boolean) => (!(!x && (1 / 0 == 1)) || (1 / 0 == 0)) && (!(!x && (1 / 0 == 1)) || (1 / 0 == 1)),
         "{ (x: Boolean) => (!(!x && (1 / 0 == 1)) || (1 / 0 == 0)) && (!(!x && (1 / 0 == 1)) || (1 / 0 == 1)) }",
@@ -302,11 +373,7 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
               )
             )
           )
-        ))
-    )
-    forAll { x: Boolean =>
-      features.foreach(_.checkEquality(x))
-    }
+        )))
   }
 
   property("Byte methods equivalence") {

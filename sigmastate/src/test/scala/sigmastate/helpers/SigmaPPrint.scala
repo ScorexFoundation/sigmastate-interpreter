@@ -46,13 +46,25 @@ object SigmaPPrint extends PPrinter {
   }
 
   val typeHandlers: PartialFunction[Any, Tree] = {
-    case SByteArray => Tree.Literal("SByteArray")
-    case SByteArray2 => Tree.Literal("SByteArray2")
-    case SBooleanArray => Tree.Literal("SBooleanArray")
-    case SPair(l, r) => Tree.Apply("SPair", treeifyMany(Array(l, r)))
+    case SByteArray =>
+      Tree.Literal("SByteArray")
+    case SByteArray2 =>
+      Tree.Literal("SByteArray2")
+    case SBooleanArray =>
+      Tree.Literal("SBooleanArray")
+    case SPair(l, r) =>
+      Tree.Apply("SPair", treeifyMany(Array(l, r)))
   }
 
-  override val additionalHandlers: PartialFunction[Any, Tree] = typeHandlers.orElse {
+  val exceptionHandlers: PartialFunction[Any, Tree] = {
+    case ex: ArithmeticException =>
+      Tree.Apply("new ArithmeticException", treeifyMany(Seq(ex.getMessage)))
+  }
+
+  override val additionalHandlers: PartialFunction[Any, Tree] =
+    typeHandlers
+     .orElse(exceptionHandlers)
+     .orElse {
     case sigmastate.SGlobal =>
       Tree.Literal(s"SGlobal")
     case sigmastate.SCollection =>

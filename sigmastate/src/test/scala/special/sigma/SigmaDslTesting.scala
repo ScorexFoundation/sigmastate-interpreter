@@ -85,6 +85,7 @@ class SigmaDslTesting extends PropSpec
     * @param newImpl      function that executes the feature using v4 interpreter implementation
     */
   case class FeatureTest[A, B](featureType: FeatureType,
+                               script: String,
                                scalaFunc: A => B,
                                expectedExpr: Option[SValue],
                                oldImpl: () => CompiledFunc[A, B],
@@ -153,7 +154,7 @@ class SigmaDslTesting extends PropSpec
           newRes shouldBe oldRes
         }
         if (printTestCases)
-          println(s"(${SigmaPPrint(input)}, ${SigmaPPrint(oldRes)}),")
+          println(s"(${SigmaPPrint(input)}, ${SigmaPPrint(oldRes)}), // $script")
         oldRes
       case AddedFeature =>
         val oldRes = Try(oldF(input))
@@ -205,7 +206,7 @@ class SigmaDslTesting extends PropSpec
       (implicit IR: IRContext): FeatureTest[A, B] = {
     val oldImpl = () => func[A, B](script)
     val newImpl = oldImpl // TODO HF: use actual new implementation here
-    FeatureTest(ExistingFeature, scalaFunc, Option(expectedExpr), oldImpl, newImpl)
+    FeatureTest(ExistingFeature, script, scalaFunc, Option(expectedExpr), oldImpl, newImpl)
   }
 
   /** Describes a NEW language feature which must NOT be supported in v3 and
@@ -222,7 +223,7 @@ class SigmaDslTesting extends PropSpec
       (implicit IR: IRContext): FeatureTest[A, B] = {
     val oldImpl = () => func[A, B](script)
     val newImpl = oldImpl // TODO HF: use actual new implementation here
-    FeatureTest(AddedFeature, scalaFunc, Option(expectedExpr), oldImpl, newImpl)
+    FeatureTest(AddedFeature, script, scalaFunc, Option(expectedExpr), oldImpl, newImpl)
   }
 
   val targetVersion = new DynamicVariable[Int](4)
