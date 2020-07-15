@@ -114,7 +114,7 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
       ((595045530, false), Success(false)),
       ((-1157998227, false), Success(false)),
       ((0, true), Success(false)),
-      ((0, false), Success(true)),
+      ((0, false), Success(true))
     )
     testCases(cases, xor)
   }
@@ -377,25 +377,65 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   }
 
   property("Byte methods equivalence") {
-    val toByte = existingFeature(
-      (x: Byte) => x.toByte, "{ (x: Byte) => x.toByte }",
-      FuncValue(Vector((1, SByte)), ValUse(1, SByte)))
+    testCases(
+      Seq(
+        (0.toByte, Success(0.toByte)),
+        (1.toByte, Success(1.toByte)),
+        (55.toByte, Success(55.toByte)),
+        (Byte.MaxValue, Success(Byte.MaxValue)),
+        (-1.toByte, Success(-1.toByte)),
+        (-65.toByte, Success(-65.toByte)),
+        (Byte.MinValue, Success(Byte.MinValue))
+      ),
+      existingFeature(
+        (x: Byte) => x.toByte, "{ (x: Byte) => x.toByte }",
+        FuncValue(Vector((1, SByte)), ValUse(1, SByte))))
 
-    val toShort = existingFeature(
-      (x: Byte) => x.toShort, "{ (x: Byte) => x.toShort }",
-      FuncValue(Vector((1, SByte)), Upcast(ValUse(1, SByte), SShort)))
+    testCases(
+      Seq(
+        (0.toByte, Success(0.toShort)),
+        (1.toByte, Success(1.toShort)),
+        (55.toByte, Success(55.toShort)),
+        (Byte.MaxValue, Success(Byte.MaxValue.toShort)),
+        (-1.toByte, Success(-1.toShort)),
+        (-65.toByte, Success(-65.toShort)),
+        (Byte.MinValue, Success(Byte.MinValue.toShort))
+      ),
+      existingFeature(
+        (x: Byte) => x.toShort, "{ (x: Byte) => x.toShort }",
+        FuncValue(Vector((1, SByte)), Upcast(ValUse(1, SByte), SShort))))
 
-    val toInt = existingFeature(
-      (x: Byte) => x.toInt, "{ (x: Byte) => x.toInt }",
-      FuncValue(Vector((1, SByte)), Upcast(ValUse(1, SByte), SInt)))
+    testCases(
+      Seq(
+        (0.toByte, Success(0)),
+        (1.toByte, Success(1)),
+        (55.toByte, Success(55)),
+        (Byte.MaxValue, Success(Byte.MaxValue.toInt)),
+        (-1.toByte, Success(-1)),
+        (-65.toByte, Success(-65)),
+        (Byte.MinValue, Success(Byte.MinValue.toInt))
+      ),
+      existingFeature(
+        (x: Byte) => x.toInt, "{ (x: Byte) => x.toInt }",
+        FuncValue(Vector((1, SByte)), Upcast(ValUse(1, SByte), SInt))))
 
-    val toLong = existingFeature(
-      (x: Byte) => x.toLong, "{ (x: Byte) => x.toLong }",
-      FuncValue(Vector((1, SByte)), Upcast(ValUse(1, SByte), SLong)))
+    testCases(
+      Seq(
+        (0.toByte, Success(0L)),
+        (1.toByte, Success(1L)),
+        (55.toByte, Success(55L)),
+        (Byte.MaxValue, Success(Byte.MaxValue.toLong)),
+        (-1.toByte, Success(-1L)),
+        (-65.toByte, Success(-65L)),
+        (Byte.MinValue, Success(Byte.MinValue.toLong))
+      ),
+      existingFeature(
+        (x: Byte) => x.toLong, "{ (x: Byte) => x.toLong }",
+        FuncValue(Vector((1, SByte)), Upcast(ValUse(1, SByte), SLong))))
 
-    val toBigInt = existingFeature(
+    test(existingFeature(
       (x: Byte) => x.toBigInt, "{ (x: Byte) => x.toBigInt }",
-      FuncValue(Vector((1, SByte)), Upcast(ValUse(1, SByte), SBigInt)))
+      FuncValue(Vector((1, SByte)), Upcast(ValUse(1, SByte), SBigInt))))
 
     lazy val toBytes = newFeature((x: Byte) => x.toBytes, "{ (x: Byte) => x.toBytes }")
     lazy val toBits = newFeature((x: Byte) => x.toBits, "{ (x: Byte) => x.toBits }")
@@ -473,7 +513,7 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
       "{ (x: (Byte, Byte)) => (x._1 & x._2).toByteExact }")
 
     forAll { x: Byte =>
-      Seq(toByte, toShort, toInt, toLong, toBigInt, toBytes, toBits, toAbs).foreach(f => f.checkEquality(x))
+      Seq(toBytes, toBits, toAbs).foreach(f => f.checkEquality(x))
     }
 
     forAll { x: (Byte, Byte) =>

@@ -77,6 +77,8 @@ object SigmaPPrint extends PPrinter {
       Tree.Literal(c.typeName)
     case v: Byte =>
       Tree.Literal(s"$v.toByte")
+    case v: Short =>
+      Tree.Literal(s"$v.toShort")
     case wa: mutable.WrappedArray[_] =>
       Tree.Apply("Array", treeifyMany(wa))
     case buf: ArrayBuffer[_] =>

@@ -47,6 +47,7 @@ class SigmaPPrintSpec extends PropSpec
     test(Outputs, "Outputs")
     test(10.toByte, "10.toByte")
     test(255.toByte, "-1.toByte")
+    test(10.toShort, "10.toShort")
     test(Array(10): Seq[Int], "Array(10)")
     test({val buf = ArrayBuffer.empty[Int]; buf += (10); buf}, "Seq(10)")
     test(ErgoBox.R0, "ErgoBox.R0")
