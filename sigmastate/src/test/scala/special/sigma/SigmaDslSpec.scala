@@ -38,9 +38,9 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
 
   override implicit val generatorDrivenConfig = PropertyCheckConfiguration(minSuccessful = 30)
 
-  val PrintTestCases: Boolean = false
+  val PrintTestCasesDefault: Boolean = false
 
-  def testCases[A: Ordering,B](cases: Seq[(A, Try[B])], f: FeatureTest[A,B], printTestCases: Boolean = PrintTestCases): Unit = {
+  def testCases[A: Ordering,B](cases: Seq[(A, Try[B])], f: FeatureTest[A,B], printTestCases: Boolean = PrintTestCasesDefault): Unit = {
     val table = Table(("x", "y"), cases.sortBy(_._1):_*)
     forAll(table) { (x: A, expectedRes: Try[B]) =>
       val res = f.checkEquality(x, printTestCases)
@@ -57,9 +57,9 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
     }
   }
 
-  def test[A: Arbitrary,B](f: FeatureTest[A,B]): Unit = {
+  def test[A: Arbitrary,B](f: FeatureTest[A,B], printTestCases: Boolean = PrintTestCasesDefault): Unit = {
     forAll { (x: A) =>
-      f.checkEquality(x)
+      f.checkEquality(x, printTestCases)
     }
   }
 
@@ -540,7 +540,7 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
             )
           )
         )
-      ), true)
+      ))
   }
 
   property("Byte methods equivalence (new features)") {

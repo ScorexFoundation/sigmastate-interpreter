@@ -76,6 +76,8 @@ class SigmaDslTesting extends PropSpec
   case object ExistingFeature extends FeatureType
   case object AddedFeature extends FeatureType
 
+  val LogInputOutputDefault: Boolean = false
+
   /** Test case descriptor of the language feature.
     *
     * @param featureType   type of the language feature
@@ -90,7 +92,8 @@ class SigmaDslTesting extends PropSpec
                                expectedExpr: Option[SValue],
                                oldImpl: () => CompiledFunc[A, B],
                                newImpl: () => CompiledFunc[A, B],
-                               printExpectedExpr: Boolean = true
+                               printExpectedExpr: Boolean = true,
+                               logInputOutput: Boolean = LogInputOutputDefault
                               ) {
     def printExpectedExprOff = copy(printExpectedExpr = false)
 
@@ -144,7 +147,7 @@ class SigmaDslTesting extends PropSpec
       * semantic function (scalaFunc) on the given input.
       * @param input  data which is used to execute feature
       * @return result of feature execution */
-    def checkEquality(input: A, printTestCases: Boolean = true): Try[B] = featureType match {
+    def checkEquality(input: A, logInputOutput: Boolean = false): Try[B] = featureType match {
       case ExistingFeature =>
         // check both implementations with Scala semantic
         val oldRes = checkEq(scalaFunc)(oldF)(input)
@@ -153,7 +156,7 @@ class SigmaDslTesting extends PropSpec
           val newRes = checkEq(scalaFunc)(newF)(input)
           newRes shouldBe oldRes
         }
-        if (printTestCases)
+        if (this.logInputOutput || logInputOutput)
           println(s"(${SigmaPPrint(input)}, ${SigmaPPrint(oldRes)}), // $script")
         oldRes
       case AddedFeature =>
