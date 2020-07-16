@@ -38,10 +38,12 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
 
   override implicit val generatorDrivenConfig = PropertyCheckConfiguration(minSuccessful = 30)
 
-  def testCases[A,B](cases: Seq[(A, Try[B])], f: FeatureTest[A,B]): Unit = {
-    val table = Table(("x", "y"), cases:_*)
+  val PrintTestCases: Boolean = false
+
+  def testCases[A: Ordering,B](cases: Seq[(A, Try[B])], f: FeatureTest[A,B], printTestCases: Boolean = PrintTestCases): Unit = {
+    val table = Table(("x", "y"), cases.sortBy(_._1):_*)
     forAll(table) { (x: A, expectedRes: Try[B]) =>
-      val res = f.checkEquality(x, printTestCases = false)
+      val res = f.checkEquality(x, printTestCases)
 
       // TODO HF: remove this if once newImpl is implemented
       if (f.featureType == ExistingFeature) {
@@ -433,65 +435,102 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
         (x: Byte) => x.toLong, "{ (x: Byte) => x.toLong }",
         FuncValue(Vector((1, SByte)), Upcast(ValUse(1, SByte), SLong))))
 
-    test(existingFeature(
-      (x: Byte) => x.toBigInt, "{ (x: Byte) => x.toBigInt }",
-      FuncValue(Vector((1, SByte)), Upcast(ValUse(1, SByte), SBigInt))))
-
-    lazy val toBytes = newFeature((x: Byte) => x.toBytes, "{ (x: Byte) => x.toBytes }")
-    lazy val toBits = newFeature((x: Byte) => x.toBits, "{ (x: Byte) => x.toBits }")
-    lazy val toAbs = newFeature((x: Byte) => x.toAbs, "{ (x: Byte) => x.toAbs }")
-    lazy val compareTo = newFeature(
-      (x: (Byte, Byte)) => x._1.compareTo(x._2),
-      "{ (x: (Byte, Byte)) => x._1.compareTo(x._2) }")
+    testCases(
+      Seq(
+        (0.toByte, Success(CBigInt(new BigInteger("0", 16)))),
+        (1.toByte, Success(CBigInt(new BigInteger("1", 16)))),
+        (-1.toByte, Success(CBigInt(new BigInteger("-1", 16)))),
+        (127.toByte, Success(CBigInt(new BigInteger("7f", 16)))),
+        (-128.toByte, Success(CBigInt(new BigInteger("-80", 16)))),
+        (90.toByte, Success(CBigInt(new BigInteger("5a", 16)))),
+        (-53.toByte, Success(CBigInt(new BigInteger("-35", 16))))
+      ),
+      existingFeature(
+        (x: Byte) => x.toBigInt, "{ (x: Byte) => x.toBigInt }",
+        FuncValue(Vector((1, SByte)), Upcast(ValUse(1, SByte), SBigInt))))
 
     val n = ExactNumeric.ByteIsExactNumeric
-    lazy val arithOps = existingFeature(
-      { (x: (Byte, Byte)) =>
-        val a = x._1; val b = x._2
-        val plus = n.plus(a, b)
-        val minus = n.minus(a, b)
-        val mul = n.times(a, b)
-        val div = (a / b).toByteExact
-        val mod = (a % b).toByteExact
-        (plus, (minus, (mul, (div, mod))))
-      },
-      """{ (x: (Byte, Byte)) =>
-       |  val a = x._1; val b = x._2
-       |  val plus = a + b
-       |  val minus = a - b
-       |  val mul = a * b
-       |  val div = a / b
-       |  val mod = a % b
-       |  (plus, (minus, (mul, (div, mod))))
-       |}""".stripMargin,
-      FuncValue(
-        Vector((1, STuple(Vector(SByte, SByte)))),
-        BlockValue(
-          Vector(
-            ValDef(
-              3,
-              List(),
-              SelectField.typed[ByteValue](ValUse(1, STuple(Vector(SByte, SByte))), 1.toByte)
-            ),
-            ValDef(
-              4,
-              List(),
-              SelectField.typed[ByteValue](ValUse(1, STuple(Vector(SByte, SByte))), 2.toByte)
-            )
-          ),
-          Tuple(
+    testCases(
+      Seq(
+        ((-128.toByte, -128.toByte), Failure(new ArithmeticException("Byte overflow"))),
+        ((-128.toByte, 0.toByte), Failure(new ArithmeticException("/ by zero"))),
+        ((-128.toByte, 17.toByte), Failure(new ArithmeticException("Byte overflow"))),
+        ((-128.toByte, 127.toByte), Failure(new ArithmeticException("Byte overflow"))),
+        ((-120.toByte, 82.toByte), Failure(new ArithmeticException("Byte overflow"))),
+        ((-103.toByte, 1.toByte), Success((-102.toByte, (-104.toByte, (-103.toByte, (-103.toByte, 0.toByte)))))),
+        ((-90.toByte, 37.toByte), Failure(new ArithmeticException("Byte overflow"))),
+        ((-78.toByte, -111.toByte), Failure(new ArithmeticException("Byte overflow"))),
+        ((-71.toByte, -44.toByte), Failure(new ArithmeticException("Byte overflow"))),
+        ((-53.toByte, 0.toByte), Failure(new ArithmeticException("/ by zero"))),
+        ((-34.toByte, 8.toByte), Failure(new ArithmeticException("Byte overflow"))),
+        ((-24.toByte, 127.toByte), Failure(new ArithmeticException("Byte overflow"))),
+        ((-1.toByte, -1.toByte), Success((-2.toByte, (0.toByte, (1.toByte, (1.toByte, 0.toByte)))))),
+        ((-1.toByte, 23.toByte), Success((22.toByte, (-24.toByte, (-23.toByte, (0.toByte, -1.toByte)))))),
+        ((0.toByte, -128.toByte), Failure(new ArithmeticException("Byte overflow"))),
+        ((0.toByte, -23.toByte), Success((-23.toByte, (23.toByte, (0.toByte, (0.toByte, 0.toByte)))))),
+        ((0.toByte, -1.toByte), Success((-1.toByte, (1.toByte, (0.toByte, (0.toByte, 0.toByte)))))),
+        ((0.toByte, 0.toByte), Failure(new ArithmeticException("/ by zero"))),
+        ((0.toByte, 1.toByte), Success((1.toByte, (-1.toByte, (0.toByte, (0.toByte, 0.toByte)))))),
+        ((0.toByte, 60.toByte), Success((60.toByte, (-60.toByte, (0.toByte, (0.toByte, 0.toByte)))))),
+        ((0.toByte, 127.toByte), Success((127.toByte, (-127.toByte, (0.toByte, (0.toByte, 0.toByte)))))),
+        ((1.toByte, -1.toByte), Success((0.toByte, (2.toByte, (-1.toByte, (-1.toByte, 0.toByte)))))),
+        ((1.toByte, 0.toByte), Failure(new ArithmeticException("/ by zero"))),
+        ((1.toByte, 26.toByte), Success((27.toByte, (-25.toByte, (26.toByte, (0.toByte, 1.toByte)))))),
+        ((7.toByte, -32.toByte), Failure(new ArithmeticException("Byte overflow"))),
+        ((33.toByte, 1.toByte), Success((34.toByte, (32.toByte, (33.toByte, (33.toByte, 0.toByte)))))),
+        ((90.toByte, 0.toByte), Failure(new ArithmeticException("/ by zero"))),
+        ((127.toByte, -128.toByte), Failure(new ArithmeticException("Byte overflow"))),
+        ((127.toByte, -47.toByte), Failure(new ArithmeticException("Byte overflow"))),
+        ((127.toByte, 127.toByte), Failure(new ArithmeticException("Byte overflow")))
+      ),
+      existingFeature(
+        { (x: (Byte, Byte)) =>
+          val a = x._1; val b = x._2
+          val plus = n.plus(a, b)
+          val minus = n.minus(a, b)
+          val mul = n.times(a, b)
+          val div = (a / b).toByteExact
+          val mod = (a % b).toByteExact
+          (plus, (minus, (mul, (div, mod))))
+        },
+        """{ (x: (Byte, Byte)) =>
+         |  val a = x._1; val b = x._2
+         |  val plus = a + b
+         |  val minus = a - b
+         |  val mul = a * b
+         |  val div = a / b
+         |  val mod = a % b
+         |  (plus, (minus, (mul, (div, mod))))
+         |}""".stripMargin,
+        FuncValue(
+          Vector((1, STuple(Vector(SByte, SByte)))),
+          BlockValue(
             Vector(
-              ArithOp(ValUse(3, SByte), ValUse(4, SByte), OpCode @@ (-102.toByte)),
-              Tuple(
-                Vector(
-                  ArithOp(ValUse(3, SByte), ValUse(4, SByte), OpCode @@ (-103.toByte)),
-                  Tuple(
-                    Vector(
-                      ArithOp(ValUse(3, SByte), ValUse(4, SByte), OpCode @@ (-100.toByte)),
-                      Tuple(
-                        Vector(
-                          ArithOp(ValUse(3, SByte), ValUse(4, SByte), OpCode @@ (-99.toByte)),
-                          ArithOp(ValUse(3, SByte), ValUse(4, SByte), OpCode @@ (-98.toByte))
+              ValDef(
+                3,
+                List(),
+                SelectField.typed[ByteValue](ValUse(1, STuple(Vector(SByte, SByte))), 1.toByte)
+              ),
+              ValDef(
+                4,
+                List(),
+                SelectField.typed[ByteValue](ValUse(1, STuple(Vector(SByte, SByte))), 2.toByte)
+              )
+            ),
+            Tuple(
+              Vector(
+                ArithOp(ValUse(3, SByte), ValUse(4, SByte), OpCode @@ (-102.toByte)),
+                Tuple(
+                  Vector(
+                    ArithOp(ValUse(3, SByte), ValUse(4, SByte), OpCode @@ (-103.toByte)),
+                    Tuple(
+                      Vector(
+                        ArithOp(ValUse(3, SByte), ValUse(4, SByte), OpCode @@ (-100.toByte)),
+                        Tuple(
+                          Vector(
+                            ArithOp(ValUse(3, SByte), ValUse(4, SByte), OpCode @@ (-99.toByte)),
+                            ArithOp(ValUse(3, SByte), ValUse(4, SByte), OpCode @@ (-98.toByte))
+                          )
                         )
                       )
                     )
@@ -501,25 +540,32 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
             )
           )
         )
-      )
-    )
+      ), true)
+  }
+
+  property("Byte methods equivalence (new features)") {
+    lazy val toBytes = newFeature((x: Byte) => x.toBytes, "{ (x: Byte) => x.toBytes }")
+    lazy val toBits = newFeature((x: Byte) => x.toBits, "{ (x: Byte) => x.toBits }")
+    lazy val toAbs = newFeature((x: Byte) => x.toAbs, "{ (x: Byte) => x.toAbs }")
+    lazy val compareTo = newFeature(
+      (x: (Byte, Byte)) => x._1.compareTo(x._2),
+      "{ (x: (Byte, Byte)) => x._1.compareTo(x._2) }")
 
     lazy val bitOr = newFeature(
-      { (x: (Byte, Byte)) => (x._1 | x._2).toByteExact },
-      "{ (x: (Byte, Byte)) => (x._1 | x._2).toByteExact }")
+    { (x: (Byte, Byte)) => (x._1 | x._2).toByteExact },
+    "{ (x: (Byte, Byte)) => (x._1 | x._2).toByteExact }")
 
     lazy val bitAnd = newFeature(
-      { (x: (Byte, Byte)) => (x._1 & x._2).toByteExact },
-      "{ (x: (Byte, Byte)) => (x._1 & x._2).toByteExact }")
+    { (x: (Byte, Byte)) => (x._1 & x._2).toByteExact },
+    "{ (x: (Byte, Byte)) => (x._1 & x._2).toByteExact }")
 
     forAll { x: Byte =>
       Seq(toBytes, toBits, toAbs).foreach(f => f.checkEquality(x))
     }
 
     forAll { x: (Byte, Byte) =>
-      Seq(compareTo, arithOps, bitOr, bitAnd).foreach(_.checkEquality(x))
+      Seq(compareTo, bitOr, bitAnd).foreach(_.checkEquality(x))
     }
-
   }
 
   property("Short methods equivalence") {

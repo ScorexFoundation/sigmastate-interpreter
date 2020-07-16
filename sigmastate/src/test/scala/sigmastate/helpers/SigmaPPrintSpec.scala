@@ -1,5 +1,7 @@
 package sigmastate.helpers
 
+import java.math.BigInteger
+
 import org.ergoplatform.{Outputs, ErgoBox}
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{PropSpec, Matchers}
@@ -40,16 +42,26 @@ class SigmaPPrintSpec extends PropSpec
     // exception handlers
     test(new ArithmeticException("msg"), "new ArithmeticException(\"msg\")")
 
-    // additionalHandlers
-    test(SGlobal, "SGlobal")
-    test(SCollection, "SCollection")
-    test(SInt, "SInt")
-    test(Outputs, "Outputs")
+    // data handlers
     test(10.toByte, "10.toByte")
     test(255.toByte, "-1.toByte")
     test(10.toShort, "10.toShort")
+
+    test(new BigInteger("a", 16), """new BigInteger("a", 16)""")
+
+    val negative = new BigInteger("-a", 16)
+    negative.toString(10) shouldBe "-10"
+    test(negative, """new BigInteger("-a", 16)""")
+
     test(Array(10): Seq[Int], "Array(10)")
     test({val buf = ArrayBuffer.empty[Int]; buf += (10); buf}, "Seq(10)")
+
+    // additionalHandlers
+    test(SGlobal, "SGlobal")
+    test(SCollection, "SCollection")
+    test(SOption, "SOption")
+    test(SInt, "SInt")
+    test(Outputs, "Outputs")
     test(ErgoBox.R0, "ErgoBox.R0")
     test(ErgoBox.R9, "ErgoBox.R9")
     test(

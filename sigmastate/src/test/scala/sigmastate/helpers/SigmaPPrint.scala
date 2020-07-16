@@ -1,5 +1,7 @@
 package sigmastate.helpers
 
+import java.math.BigInteger
+
 import org.ergoplatform.ErgoBox.RegisterId
 
 import scala.collection.mutable
@@ -17,8 +19,12 @@ import scala.collection.mutable.ArrayBuffer
   * into a valid Scala code (can be cut-and-pasted).*/
 object SigmaPPrint extends PPrinter {
 
-  def treeifyMany(xs: Seq[Any]): Iterator[Tree] = {
+  def treeifySeq(xs: Seq[Any]): Iterator[Tree] = {
     xs.iterator.map(treeify)
+  }
+
+  def treeifyMany(head: Any, tail: Any*): Iterator[Tree] = {
+    treeifySeq(head +: tail)
   }
 
   def tpeName(tpe: SType): String = {
@@ -53,17 +59,31 @@ object SigmaPPrint extends PPrinter {
     case SBooleanArray =>
       Tree.Literal("SBooleanArray")
     case SPair(l, r) =>
-      Tree.Apply("SPair", treeifyMany(Array(l, r)))
+      Tree.Apply("SPair", treeifySeq(Array(l, r)))
   }
 
   val exceptionHandlers: PartialFunction[Any, Tree] = {
     case ex: ArithmeticException =>
-      Tree.Apply("new ArithmeticException", treeifyMany(Seq(ex.getMessage)))
+      Tree.Apply("new ArithmeticException", treeifySeq(Seq(ex.getMessage)))
+  }
+
+  val dataHandlers: PartialFunction[Any, Tree] = {
+    case v: Byte =>
+      Tree.Literal(s"$v.toByte")
+    case v: Short =>
+      Tree.Literal(s"$v.toShort")
+    case v: BigInteger =>
+      Tree.Apply("new BigInteger", treeifyMany(v.toString(16), 16))
+    case wa: mutable.WrappedArray[_] =>
+      Tree.Apply("Array", treeifySeq(wa))
+    case buf: ArrayBuffer[_] =>
+      Tree.Apply("Seq", treeifySeq(buf))
   }
 
   override val additionalHandlers: PartialFunction[Any, Tree] =
     typeHandlers
      .orElse(exceptionHandlers)
+     .orElse(dataHandlers)
      .orElse {
     case sigmastate.SGlobal =>
       Tree.Literal(s"SGlobal")
@@ -75,24 +95,16 @@ object SigmaPPrint extends PPrinter {
       Tree.Literal(s"S${t.typeName}")
     case c: ValueCompanion =>
       Tree.Literal(c.typeName)
-    case v: Byte =>
-      Tree.Literal(s"$v.toByte")
-    case v: Short =>
-      Tree.Literal(s"$v.toShort")
-    case wa: mutable.WrappedArray[_] =>
-      Tree.Apply("Array", treeifyMany(wa))
-    case buf: ArrayBuffer[_] =>
-      Tree.Apply("Seq", treeifyMany(buf))
     case r: RegisterId =>
       Tree.Literal(s"ErgoBox.R${r.number}")
     case sf: SelectField =>
       val resTpe = sf.input.tpe.items(sf.fieldIndex - 1)
       val resTpeName = valueType(resTpe)
-      Tree.Apply(s"SelectField.typed[$resTpeName]", treeifyMany(Array(sf.input, sf.fieldIndex)))
+      Tree.Apply(s"SelectField.typed[$resTpeName]", treeifySeq(Array(sf.input, sf.fieldIndex)))
     case c: ConstantNode[_] if c.tpe.isInstanceOf[SPredefType] =>
-      Tree.Apply(tpeName(c.tpe) + "Constant", treeifyMany(Seq(c.value)))
+      Tree.Apply(tpeName(c.tpe) + "Constant", treeifySeq(Seq(c.value)))
     case ArithOp(l, r, code) =>
-      val args = treeifyMany(Seq(l, r)).toSeq :+ Tree.Apply("OpCode @@ ", treeifyMany(Seq(code)))
+      val args = treeifySeq(Seq(l, r)).toSeq :+ Tree.Apply("OpCode @@ ", treeifySeq(Seq(code)))
       Tree.Apply("ArithOp", args.iterator)
     case mc @ MethodCall(obj, method, args, typeSubst) =>
       val objType = apply(method.objType).plainText
@@ -100,7 +112,7 @@ object SigmaPPrint extends PPrinter {
       val methodT = SigmaTyper.unifyTypeLists(methodTemplate.stype.tDom, obj.tpe +: args.map(_.tpe)) match {
         case Some(subst) if subst.nonEmpty =>
           val getMethod = s"""$objType.getMethodByName("${method.name}").withConcreteTypes"""
-          Tree.Apply(getMethod, treeifyMany(Seq(subst)))
+          Tree.Apply(getMethod, treeifySeq(Seq(subst)))
         case _ =>
           val getMethod = s"$objType.getMethodByName"
           Tree.Apply(getMethod, Seq(treeify(method.name)).iterator)
