@@ -28,7 +28,7 @@ import sigmastate.lang.Terms.MethodCall
 import sigmastate.utxo._
 import special.collection.Coll
 import sigmastate.serialization.OpCodes.OpCode
-
+import scala.reflect.ClassTag
 import scala.util.{DynamicVariable, Success, Failure, Try}
 
 
@@ -57,8 +57,14 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
     }
   }
 
-  def test[A: Arbitrary,B](f: FeatureTest[A,B], printTestCases: Boolean = PrintTestCasesDefault): Unit = {
+  def test[A: Arbitrary: Ordering: ClassTag, B](f: FeatureTest[A,B], printTestCases: Boolean = PrintTestCasesDefault): Unit = {
+    // first generate all test inputs
+    val inputs = scala.collection.mutable.ArrayBuilder.make[A]()
     forAll { (x: A) =>
+      inputs += x
+    }
+    // then tests them in the sorted order, this will output a nice log of test cases
+    inputs.result().sorted.foreach { x =>
       f.checkEquality(x, printTestCases)
     }
   }
@@ -569,77 +575,156 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   }
 
   property("Short methods equivalence") {
-    val toByte = existingFeature((x: Short) => x.toByteExact,
-      "{ (x: Short) => x.toByte }",
-      FuncValue(Vector((1, SShort)), Downcast(ValUse(1, SShort), SByte)))
-    val toShort = existingFeature((x: Short) => x.toShort,
-      "{ (x: Short) => x.toShort }",
-      FuncValue(Vector((1, SShort)), ValUse(1, SShort)))
-    val toInt = existingFeature((x: Short) => x.toInt,
-      "{ (x: Short) => x.toInt }",
-      FuncValue(Vector((1, SShort)), Upcast(ValUse(1, SShort), SInt)))
-    val toLong = existingFeature((x: Short) => x.toLong,
-      "{ (x: Short) => x.toLong }",
-      FuncValue(Vector((1, SShort)), Upcast(ValUse(1, SShort), SLong)))
-    val toBigInt = existingFeature((x: Short) => x.toBigInt,
-      "{ (x: Short) => x.toBigInt }",
-      FuncValue(Vector((1, SShort)), Upcast(ValUse(1, SShort), SBigInt)))
+    testCases(
+      Seq(
+        (Short.MinValue, Failure(new ArithmeticException("Byte overflow"))),
+        (-21626.toShort, Failure(new ArithmeticException("Byte overflow"))),
+        (Byte.MinValue.toShort, Success(Byte.MinValue)),
+        (-1.toShort, Success(-1.toByte)),
+        (0.toShort, Success(0.toByte)),
+        (1.toShort, Success(1.toByte)),
+        (Byte.MaxValue.toShort, Success(Byte.MaxValue)),
+        (11768.toShort, Failure(new ArithmeticException("Byte overflow"))),
+        (Short.MaxValue, Failure(new ArithmeticException("Byte overflow")))
+      ),
+      existingFeature((x: Short) => x.toByteExact,
+        "{ (x: Short) => x.toByte }",
+        FuncValue(Vector((1, SShort)), Downcast(ValUse(1, SShort), SByte))))
 
-    lazy val toBytes = newFeature((x: Short) => x.toBytes, "{ (x: Short) => x.toBytes }")
-    lazy val toBits = newFeature((x: Short) => x.toBits, "{ (x: Short) => x.toBits }")
-    lazy val toAbs = newFeature((x: Short) => x.toAbs,
-      "{ (x: Short) => x.toAbs }")
-    lazy val compareTo = newFeature((x: (Short, Short)) => x._1.compareTo(x._2),
-      "{ (x: (Short, Short)) => x._1.compareTo(x._2) }")
+    testCases(
+      Seq(
+        (-32768.toShort, Success(-32768.toShort)),
+        (-27798.toShort, Success(-27798.toShort)),
+        (-1.toShort, Success(-1.toShort)),
+        (0.toShort, Success(0.toShort)),
+        (1.toShort, Success(1.toShort)),
+        (27929.toShort, Success(27929.toShort)),
+        (32767.toShort, Success(32767.toShort))
+      ),
+      existingFeature((x: Short) => x.toShort,
+        "{ (x: Short) => x.toShort }",
+        FuncValue(Vector((1, SShort)), ValUse(1, SShort))))
+
+    testCases(
+      Seq(
+        (-32768.toShort, Success(-32768)),
+        (-21064.toShort, Success(-21064)),
+        (-1.toShort, Success(-1)),
+        (0.toShort, Success(0)),
+        (1.toShort, Success(1)),
+        (18388.toShort, Success(18388)),
+        (32767.toShort, Success(32767))
+      ),
+      existingFeature((x: Short) => x.toInt,
+        "{ (x: Short) => x.toInt }",
+        FuncValue(Vector((1, SShort)), Upcast(ValUse(1, SShort), SInt))))
+
+    testCases(
+      Seq(
+        (-32768.toShort, Success(-32768L)),
+        (-23408.toShort, Success(-23408L)),
+        (-1.toShort, Success(-1L)),
+        (0.toShort, Success(0L)),
+        (1.toShort, Success(1L)),
+        (23318.toShort, Success(23318L)),
+        (32767.toShort, Success(32767L))
+      ),
+      existingFeature((x: Short) => x.toLong,
+        "{ (x: Short) => x.toLong }",
+        FuncValue(Vector((1, SShort)), Upcast(ValUse(1, SShort), SLong))))
+        
+    testCases(
+      Seq(
+        (-32768.toShort, Success(CBigInt(new BigInteger("-8000", 16)))),
+        (-26248.toShort, Success(CBigInt(new BigInteger("-6688", 16)))),
+        (-1.toShort, Success(CBigInt(new BigInteger("-1", 16)))),
+        (0.toShort, Success(CBigInt(new BigInteger("0", 16)))),
+        (1.toShort, Success(CBigInt(new BigInteger("1", 16)))),
+        (22845.toShort, Success(CBigInt(new BigInteger("593d", 16)))),
+        (32767.toShort, Success(CBigInt(new BigInteger("7fff", 16))))
+      ),
+      existingFeature((x: Short) => x.toBigInt,
+        "{ (x: Short) => x.toBigInt }",
+        FuncValue(Vector((1, SShort)), Upcast(ValUse(1, SShort), SBigInt))))
 
     val n = ExactNumeric.ShortIsExactNumeric
-    lazy val arithOps = existingFeature(
-      { (x: (Short, Short)) =>
-        val a = x._1; val b = x._2
-        val plus = n.plus(a, b)
-        val minus = n.minus(a, b)
-        val mul = n.times(a, b)
-        val div = (a / b).toShortExact
-        val mod = (a % b).toShortExact
-        (plus, (minus, (mul, (div, mod))))
-      },
-      """{ (x: (Short, Short)) =>
-       |  val a = x._1; val b = x._2
-       |  val plus = a + b
-       |  val minus = a - b
-       |  val mul = a * b
-       |  val div = a / b
-       |  val mod = a % b
-       |  (plus, (minus, (mul, (div, mod))))
-       |}""".stripMargin,
-      FuncValue(
-        Vector((1, STuple(Vector(SShort, SShort)))),
-        BlockValue(
-          Vector(
-            ValDef(
-              3,
-              List(),
-              SelectField.typed[ShortValue](ValUse(1, STuple(Vector(SShort, SShort))), 1.toByte)
-            ),
-            ValDef(
-              4,
-              List(),
-              SelectField.typed[ShortValue](ValUse(1, STuple(Vector(SShort, SShort))), 2.toByte)
-            )
-          ),
-          Tuple(
+    testCases(
+      Seq(
+        ((-32768.toShort, 1.toShort), Failure(new ArithmeticException("Short overflow"))),
+        ((-32768.toShort, 4006.toShort), Failure(new ArithmeticException("Short overflow"))),
+        ((-21384.toShort, 0.toShort), Failure(new ArithmeticException("/ by zero"))),
+        ((-19027.toShort, 6073.toShort), Failure(new ArithmeticException("Short overflow"))),
+        ((-16800.toShort, 32767.toShort), Failure(new ArithmeticException("Short overflow"))),
+        ((-1.toShort, -30005.toShort), Success((-30006.toShort, (30004.toShort, (30005.toShort, (0.toShort, -1.toShort)))))),
+        ((-1.toShort, 0.toShort), Failure(new ArithmeticException("/ by zero"))),
+        ((0.toShort, -1.toShort), Success((-1.toShort, (1.toShort, (0.toShort, (0.toShort, 0.toShort)))))),
+        ((0.toShort, 0.toShort), Failure(new ArithmeticException("/ by zero"))),
+        ((0.toShort, 1.toShort), Success((1.toShort, (-1.toShort, (0.toShort, (0.toShort, 0.toShort)))))),
+        ((0.toShort, 25105.toShort), Success((25105.toShort, (-25105.toShort, (0.toShort, (0.toShort, 0.toShort)))))),
+        ((1.toShort, -32768.toShort), Failure(new ArithmeticException("Short overflow"))),
+        ((1.toShort, -1.toShort), Success((0.toShort, (2.toShort, (-1.toShort, (-1.toShort, 0.toShort)))))),
+        ((1.toShort, 0.toShort), Failure(new ArithmeticException("/ by zero"))),
+        ((605.toShort, 7698.toShort), Failure(new ArithmeticException("Short overflow"))),
+        ((5094.toShort, -32768.toShort), Failure(new ArithmeticException("Short overflow"))),
+        ((5350.toShort, -1.toShort), Success((5349.toShort, (5351.toShort, (-5350.toShort, (-5350.toShort, 0.toShort)))))),
+        ((8115.toShort, -32768.toShort), Failure(new ArithmeticException("Short overflow"))),
+        ((14217.toShort, 32767.toShort), Failure(new ArithmeticException("Short overflow"))),
+        ((16223.toShort, -11686.toShort), Failure(new ArithmeticException("Short overflow"))),
+        ((16989.toShort, 1.toShort), Success((16990.toShort, (16988.toShort, (16989.toShort, (16989.toShort, 0.toShort)))))),
+        ((20397.toShort, -4450.toShort), Failure(new ArithmeticException("Short overflow"))),
+        ((20488.toShort, 1.toShort), Success((20489.toShort, (20487.toShort, (20488.toShort, (20488.toShort, 0.toShort)))))),
+        ((32767.toShort, -32768.toShort), Failure(new ArithmeticException("Short overflow"))),
+        ((32767.toShort, -13423.toShort), Failure(new ArithmeticException("Short overflow"))),
+        ((32767.toShort, 32767.toShort), Failure(new ArithmeticException("Short overflow")))
+      ),
+      existingFeature(
+        { (x: (Short, Short)) =>
+          val a = x._1; val b = x._2
+          val plus = n.plus(a, b)
+          val minus = n.minus(a, b)
+          val mul = n.times(a, b)
+          val div = (a / b).toShortExact
+          val mod = (a % b).toShortExact
+          (plus, (minus, (mul, (div, mod))))
+        },
+        """{ (x: (Short, Short)) =>
+         |  val a = x._1; val b = x._2
+         |  val plus = a + b
+         |  val minus = a - b
+         |  val mul = a * b
+         |  val div = a / b
+         |  val mod = a % b
+         |  (plus, (minus, (mul, (div, mod))))
+         |}""".stripMargin,
+        FuncValue(
+          Vector((1, STuple(Vector(SShort, SShort)))),
+          BlockValue(
             Vector(
-              ArithOp(ValUse(3, SShort), ValUse(4, SShort), OpCode @@ (-102.toByte)),
-              Tuple(
-                Vector(
-                  ArithOp(ValUse(3, SShort), ValUse(4, SShort), OpCode @@ (-103.toByte)),
-                  Tuple(
-                    Vector(
-                      ArithOp(ValUse(3, SShort), ValUse(4, SShort), OpCode @@ (-100.toByte)),
-                      Tuple(
-                        Vector(
-                          ArithOp(ValUse(3, SShort), ValUse(4, SShort), OpCode @@ (-99.toByte)),
-                          ArithOp(ValUse(3, SShort), ValUse(4, SShort), OpCode @@ (-98.toByte))
+              ValDef(
+                3,
+                List(),
+                SelectField.typed[ShortValue](ValUse(1, STuple(Vector(SShort, SShort))), 1.toByte)
+              ),
+              ValDef(
+                4,
+                List(),
+                SelectField.typed[ShortValue](ValUse(1, STuple(Vector(SShort, SShort))), 2.toByte)
+              )
+            ),
+            Tuple(
+              Vector(
+                ArithOp(ValUse(3, SShort), ValUse(4, SShort), OpCode @@ (-102.toByte)),
+                Tuple(
+                  Vector(
+                    ArithOp(ValUse(3, SShort), ValUse(4, SShort), OpCode @@ (-103.toByte)),
+                    Tuple(
+                      Vector(
+                        ArithOp(ValUse(3, SShort), ValUse(4, SShort), OpCode @@ (-100.toByte)),
+                        Tuple(
+                          Vector(
+                            ArithOp(ValUse(3, SShort), ValUse(4, SShort), OpCode @@ (-99.toByte)),
+                            ArithOp(ValUse(3, SShort), ValUse(4, SShort), OpCode @@ (-98.toByte))
+                          )
                         )
                       )
                     )
@@ -649,8 +734,16 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
             )
           )
         )
-      )
-    )
+      ))
+  }
+
+  property("Short methods equivalence (new features)") {
+    lazy val toBytes = newFeature((x: Short) => x.toBytes, "{ (x: Short) => x.toBytes }")
+    lazy val toBits = newFeature((x: Short) => x.toBits, "{ (x: Short) => x.toBits }")
+    lazy val toAbs = newFeature((x: Short) => x.toAbs, "{ (x: Short) => x.toAbs }")
+
+    lazy val compareTo = newFeature((x: (Short, Short)) => x._1.compareTo(x._2),
+      "{ (x: (Short, Short)) => x._1.compareTo(x._2) }")
 
     lazy val bitOr = newFeature(
     { (x: (Short, Short)) => (x._1 | x._2).toShortExact },
@@ -661,10 +754,10 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
     "{ (x: (Short, Short)) => x._1 & x._2 }")
 
     forAll { x: Short =>
-      Seq(toByte, toShort, toInt, toLong, toBigInt, toBytes, toBits, toAbs).foreach(_.checkEquality(x))
+      Seq(toBytes, toBits, toAbs).foreach(_.checkEquality(x))
     }
     forAll { x: (Short, Short) =>
-      Seq(compareTo, arithOps, bitOr, bitAnd).foreach(_.checkEquality(x))
+      Seq(compareTo, bitOr, bitAnd).foreach(_.checkEquality(x))
     }
   }
 
