@@ -762,29 +762,108 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   }
 
   property("Int methods equivalence") {
-    val toByte = existingFeature((x: Int) => x.toByteExact,
-      "{ (x: Int) => x.toByte }",
-      FuncValue(Vector((1, SInt)), Downcast(ValUse(1, SInt), SByte)))
-    val toShort = existingFeature((x: Int) => x.toShortExact,
-      "{ (x: Int) => x.toShort }",
-      FuncValue(Vector((1, SInt)), Downcast(ValUse(1, SInt), SShort)))
-    val toInt = existingFeature((x: Int) => x.toInt,
-      "{ (x: Int) => x.toInt }",
-      FuncValue(Vector((1, SInt)), ValUse(1, SInt)))
-    val toLong = existingFeature((x: Int) => x.toLong,
-      "{ (x: Int) => x.toLong }",
-      FuncValue(Vector((1, SInt)), Upcast(ValUse(1, SInt), SLong)))
-    val toBigInt = existingFeature((x: Int) => x.toBigInt,
-      "{ (x: Int) => x.toBigInt }",
-      FuncValue(Vector((1, SInt)), Upcast(ValUse(1, SInt), SBigInt)))
-    lazy val toBytes = newFeature((x: Int) => x.toBytes, "{ (x: Int) => x.toBytes }")
-    lazy val toBits = newFeature((x: Int) => x.toBits, "{ (x: Int) => x.toBits }")
-    lazy val toAbs = newFeature((x: Int) => x.toAbs, "{ (x: Int) => x.toAbs }")
-    lazy val compareTo = newFeature((x: (Int, Int)) => x._1.compareTo(x._2),
-      "{ (x: (Int, Int)) => x._1.compareTo(x._2) }")
+    testCases(
+      Seq(
+        (Int.MinValue, Failure(new ArithmeticException("Byte overflow"))),
+        (-2014394379, Failure(new ArithmeticException("Byte overflow"))),
+        (Byte.MinValue.toInt, Success(Byte.MinValue)),
+        (-1, Success(-1.toByte)),
+        (0, Success(0.toByte)),
+        (1, Success(1.toByte)),
+        (Byte.MaxValue.toInt, Success(Byte.MaxValue)),
+        (181686429, Failure(new ArithmeticException("Byte overflow"))),
+        (Int.MaxValue, Failure(new ArithmeticException("Byte overflow")))
+      ),
+      existingFeature((x: Int) => x.toByteExact,
+        "{ (x: Int) => x.toByte }",
+        FuncValue(Vector((1, SInt)), Downcast(ValUse(1, SInt), SByte))))
+
+    testCases(
+      Seq(
+        (Int.MinValue, Failure(new ArithmeticException("Short overflow"))),
+        (Short.MinValue - 1, Failure(new ArithmeticException("Short overflow"))),
+        (Short.MinValue.toInt, Success(Short.MinValue)),
+        (-1, Success(-1.toShort)),
+        (0, Success(0.toShort)),
+        (1, Success(1.toShort)),
+        (Short.MaxValue.toInt, Success(Short.MaxValue)),
+        (Short.MaxValue + 1, Failure(new ArithmeticException("Short overflow"))),
+        (Int.MaxValue, Failure(new ArithmeticException("Short overflow")))
+      ),
+      existingFeature((x: Int) => x.toShortExact,
+        "{ (x: Int) => x.toShort }",
+        FuncValue(Vector((1, SInt)), Downcast(ValUse(1, SInt), SShort))))
+
+    testCases(
+      Seq(
+        (Int.MinValue, Success(Int.MinValue)),
+        (-1, Success(-1)),
+        (0, Success(0)),
+        (1, Success(1)),
+        (Int.MaxValue, Success(Int.MaxValue))
+      ),
+      existingFeature((x: Int) => x.toInt,
+        "{ (x: Int) => x.toInt }",
+        FuncValue(Vector((1, SInt)), ValUse(1, SInt))))
+
+    testCases(
+      Seq(
+        (Int.MinValue, Success(Int.MinValue.toLong)),
+        (-1, Success(-1L)),
+        (0, Success(0L)),
+        (1, Success(1L)),
+        (Int.MaxValue, Success(Int.MaxValue.toLong))
+      ),
+      existingFeature((x: Int) => x.toLong,
+        "{ (x: Int) => x.toLong }",
+        FuncValue(Vector((1, SInt)), Upcast(ValUse(1, SInt), SLong))))
+
+    testCases(
+      Seq(
+        (Int.MinValue, Success(CBigInt(new BigInteger("-80000000", 16)))),
+        (-1937187314, Success(CBigInt(new BigInteger("-737721f2", 16)))),
+        (-1, Success(CBigInt(new BigInteger("-1", 16)))),
+        (0, Success(CBigInt(new BigInteger("0", 16)))),
+        (1, Success(CBigInt(new BigInteger("1", 16)))),
+        (1542171288, Success(CBigInt(new BigInteger("5bebaa98", 16)))),
+        (Int.MaxValue, Success(CBigInt(new BigInteger("7fffffff", 16))))
+      ),
+      existingFeature((x: Int) => x.toBigInt,
+        "{ (x: Int) => x.toBigInt }",
+        FuncValue(Vector((1, SInt)), Upcast(ValUse(1, SInt), SBigInt))))
 
     val n = ExactNumeric.IntIsExactNumeric
-    lazy val arithOps = existingFeature(
+    testCases(
+    Seq(
+      ((Int.MinValue, 449583993), Failure(new ArithmeticException("integer overflow"))),
+      ((-1589633733, 2147483647), Failure(new ArithmeticException("integer overflow"))),
+      ((-1585471506, -1), Success((-1585471507, (-1585471505, (1585471506, (1585471506, 0)))))),
+      ((-1569005179, 1230236634), Failure(new ArithmeticException("integer overflow"))),
+      ((-1493733356, -1319619597), Failure(new ArithmeticException("integer overflow"))),
+      ((-1100263120, -880052091), Failure(new ArithmeticException("integer overflow"))),
+      ((-1055955857, 309147303), Failure(new ArithmeticException("integer overflow"))),
+      ((-569807371, 0), Failure(new ArithmeticException("/ by zero"))),
+      ((-522264843, 2147483647), Failure(new ArithmeticException("integer overflow"))),
+      ((-109552389, 0), Failure(new ArithmeticException("/ by zero"))),
+      ((-1, -2147483648), Failure(new ArithmeticException("integer overflow"))),
+      ((-1, -1), Success((-2, (0, (1, (1, 0)))))),
+      ((-1, 0), Failure(new ArithmeticException("/ by zero"))),
+      ((0, -2147483648), Failure(new ArithmeticException("integer overflow"))),
+      ((1, -1525049432), Success((-1525049431, (1525049433, (-1525049432, (0, 1)))))),
+      ((1, 0), Failure(new ArithmeticException("/ by zero"))),
+      ((1, 805353746), Success((805353747, (-805353745, (805353746, (0, 1)))))),
+      ((1, 2147483647), Failure(new ArithmeticException("integer overflow"))),
+      ((475797978, 0), Failure(new ArithmeticException("/ by zero"))),
+      ((782343922, -1448560539), Failure(new ArithmeticException("integer overflow"))),
+      ((928769361, 542647292), Failure(new ArithmeticException("integer overflow"))),
+      ((1568062151, 0), Failure(new ArithmeticException("/ by zero"))),
+      ((1698252401, -1), Success((1698252400, (1698252402, (-1698252401, (-1698252401, 0)))))),
+      ((1949795740, -1575667037), Failure(new ArithmeticException("integer overflow"))),
+      ((Int.MaxValue, -1), Failure(new ArithmeticException("integer overflow"))),
+      ((Int.MaxValue, 1), Failure(new ArithmeticException("integer overflow"))),
+      ((Int.MaxValue, 1738276576), Failure(new ArithmeticException("integer overflow")))
+    ),
+    existingFeature(
       { (x: (Int, Int)) =>
         val a = x._1; val b = x._2
         val plus = n.plus(a, b)
@@ -840,7 +919,15 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
               )
             )
           )
-        ))
+        )))
+  }
+
+  property("Int methods equivalence (new features)") {
+    lazy val toBytes = newFeature((x: Int) => x.toBytes, "{ (x: Int) => x.toBytes }")
+    lazy val toBits = newFeature((x: Int) => x.toBits, "{ (x: Int) => x.toBits }")
+    lazy val toAbs = newFeature((x: Int) => x.toAbs, "{ (x: Int) => x.toAbs }")
+    lazy val compareTo = newFeature((x: (Int, Int)) => x._1.compareTo(x._2),
+      "{ (x: (Int, Int)) => x._1.compareTo(x._2) }")
 
     lazy val bitOr = newFeature(
     { (x: (Int, Int)) => x._1 | x._2 },
@@ -851,10 +938,10 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
     "{ (x: (Int, Int)) => x._1 & x._2 }")
 
     forAll { x: Int =>
-      Seq(toByte, toShort, toInt, toLong, toBigInt, toBytes, toBits, toAbs).foreach(_.checkEquality(x))
+      Seq(toBytes, toBits, toAbs).foreach(_.checkEquality(x))
     }
     forAll { x: (Int, Int) =>
-      Seq(compareTo, arithOps, bitOr, bitAnd).foreach(_.checkEquality(x))
+      Seq(compareTo, bitOr, bitAnd).foreach(_.checkEquality(x))
     }
   }
 
