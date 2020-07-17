@@ -50,6 +50,7 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
         (res, expectedRes) match {
           case (Failure(exception), Failure(expectedException)) =>
             exception.getClass shouldBe expectedException.getClass
+            exception.getMessage shouldBe expectedException.getMessage
           case _ =>
             res shouldBe expectedRes
         }
@@ -1133,34 +1134,87 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   }
 
   property("BigInt methods equivalence") {
-    val toByte = newFeature((x: BigInt) => x.toByte,
-      "{ (x: BigInt) => x.toByte }",
-      FuncValue(Vector((1, SBigInt)), Downcast(ValUse(1, SBigInt), SByte)))
-
-    val toShort = newFeature((x: BigInt) => x.toShort,
-      "{ (x: BigInt) => x.toShort }",
-      FuncValue(Vector((1, SBigInt)), Downcast(ValUse(1, SBigInt), SShort)))
-
-    val toInt = newFeature((x: BigInt) => x.toInt,
-      "{ (x: BigInt) => x.toInt }",
-      FuncValue(Vector((1, SBigInt)), Downcast(ValUse(1, SBigInt), SInt)))
-
-    val toLong = newFeature((x: BigInt) => x.toLong,
-      "{ (x: BigInt) => x.toLong }",
-      FuncValue(Vector((1, SBigInt)), Downcast(ValUse(1, SBigInt), SLong)))
-
-    val toBigInt = existingFeature((x: BigInt) => x,
-      "{ (x: BigInt) => x.toBigInt }",
-      FuncValue(Vector((1, SBigInt)), ValUse(1, SBigInt)))
-
-    lazy val toBytes = newFeature((x: BigInt) => x.toBytes, "{ (x: BigInt) => x.toBytes }")
-    lazy val toBits = newFeature((x: BigInt) => x.toBits, "{ (x: BigInt) => x.toBits }")
-    lazy val toAbs = newFeature((x: BigInt) => x.toAbs, "{ (x: BigInt) => x.toAbs }")
-    lazy val compareTo = newFeature((x: (BigInt, BigInt)) => x._1.compareTo(x._2),
-      "{ (x: (BigInt, BigInt)) => x._1.compareTo(x._2) }")
+    import OrderingOps._
+    testCases(
+      Seq(
+        (CBigInt(new BigInteger("-85102d7f884ca0e8f56193b46133acaf7e4681e1757d03f191ae4f445c8e0", 16)), Success(
+          CBigInt(new BigInteger("-85102d7f884ca0e8f56193b46133acaf7e4681e1757d03f191ae4f445c8e0", 16))
+        )),
+        (CBigInt(new BigInteger("-8000000000000000", 16)), Success(CBigInt(new BigInteger("-8000000000000000", 16)))),
+        (CBigInt(new BigInteger("-1", 16)), Success(CBigInt(new BigInteger("-1", 16)))),
+        (CBigInt(new BigInteger("0", 16)), Success(CBigInt(new BigInteger("0", 16)))),
+        (CBigInt(new BigInteger("1", 16)), Success(CBigInt(new BigInteger("1", 16)))),
+        (CBigInt(new BigInteger("7fffffffffffffff", 16)), Success(CBigInt(new BigInteger("7fffffffffffffff", 16)))),
+        (CBigInt(new BigInteger("bdd56c22eb3eace8bc4e1c38c65dfdb2e4ffdcf421ae78c36b93b9ff37dc0", 16)), Success(
+          CBigInt(new BigInteger("bdd56c22eb3eace8bc4e1c38c65dfdb2e4ffdcf421ae78c36b93b9ff37dc0", 16))
+        ))
+      ),
+      existingFeature((x: BigInt) => x,
+        "{ (x: BigInt) => x.toBigInt }",
+        FuncValue(Vector((1, SBigInt)), ValUse(1, SBigInt))))
 
     val n = NumericOps.BigIntIsExactNumeric
-    lazy val arithOps = existingFeature(
+    testCases(
+    Seq(
+      ((CBigInt(new BigInteger("-8683d1cd99d5fcf0e6eff6295c285c36526190e13dbde008c49e5ae6fddc1c", 16)),
+        CBigInt(new BigInteger("-2ef55db3f245feddacf0182e299dd", 16))),
+          Failure(new ArithmeticException("BigInteger out of 256 bit range"))),
+
+      ((CBigInt(new BigInteger("-68e1136872f98fb0245ec5aa4bef46e16273e860746c892", 16)),
+        CBigInt(new BigInteger("-352aaa769b41a327", 16))),
+          Failure(new ArithmeticException("BigInteger: modulus not positive"))),
+
+      ((CBigInt(new BigInteger("-39fc00ebf09080cbd8408dd38c4b7490bea533447047140", 16)),
+        CBigInt(new BigInteger("31de9e96177dbd39", 16))),
+          Success((
+            CBigInt(new BigInteger("-39fc00ebf09080cbd8408dd38c4b748da0bb49e2f86b407", 16)),
+              (CBigInt(new BigInteger("-39fc00ebf09080cbd8408dd38c4b7493dc8f1ca5e822e79", 16)),
+                (CBigInt(new BigInteger("-b4ba8a17d328dac74ef014d7be35597a1259f8b16f0ff1c9820dea23d97740", 16)),
+                    (CBigInt(new BigInteger("-129a8045376e104f0d3771b6c2c128fc", 16)),
+                     CBigInt(new BigInteger("12fe89836fc97815", 16)))))) )),
+
+      ((CBigInt(new BigInteger("-8000000000000000", 16)), CBigInt(new BigInteger("8000000000000000", 16))),
+          Success((
+            CBigInt(new BigInteger("0", 16)),
+              (CBigInt(new BigInteger("-10000000000000000", 16)),
+                (CBigInt(new BigInteger("-40000000000000000000000000000000", 16)),
+                    (CBigInt(new BigInteger("-1", 16)), CBigInt(new BigInteger("0", 16)))))) )),
+
+      ((CBigInt(new BigInteger("-47dede8d3e4804bb", 16)), CBigInt(new BigInteger("-388828eb6dfce683", 16))),
+          Failure(new ArithmeticException("BigInteger: modulus not positive"))),
+
+      ((CBigInt(new BigInteger("-4fde491150ea00d", 16)), CBigInt(new BigInteger("-80000001", 16))),
+          Failure(new ArithmeticException("BigInteger: modulus not positive"))),
+
+      ((CBigInt(new BigInteger("-80000001", 16)), CBigInt(new BigInteger("-80000001", 16))),
+          Failure(new ArithmeticException("BigInteger: modulus not positive"))),
+
+      ((CBigInt(new BigInteger("0", 16)), CBigInt(new BigInteger("-8000000000000000", 16))),
+          Failure(new ArithmeticException("BigInteger: modulus not positive"))),
+          
+      ((CBigInt(new BigInteger("0", 16)), CBigInt(new BigInteger("0", 16))),
+          Failure(new ArithmeticException("BigInteger divide by zero"))),
+
+      ((CBigInt(new BigInteger("1", 16)),
+          CBigInt(new BigInteger("-86063f66e06d6d535c95862cd506309a95d10102422fee", 16))),
+          Failure(new ArithmeticException("BigInteger: modulus not positive"))),
+
+      ((CBigInt(new BigInteger("80000000", 16)), CBigInt(new BigInteger("4e592ce5b544b8f7a91f97ec9ea2f2c3660111360297a4", 16))),
+          Success((
+            CBigInt(new BigInteger("4e592ce5b544b8f7a91f97ec9ea2f2c3660111b60297a4", 16)),
+              (CBigInt(new BigInteger("-4e592ce5b544b8f7a91f97ec9ea2f2c3660110b60297a4", 16)),
+                (CBigInt(new BigInteger("272c9672daa25c7bd48fcbf64f517961b300889b014bd200000000", 16)),
+                    (CBigInt(new BigInteger("0", 16)), CBigInt(new BigInteger("80000000", 16)))))) )),
+
+      ((CBigInt(new BigInteger("3d31398dc4783303", 16)),
+        CBigInt(new BigInteger("-37b381db4e6e927e202a2a421d5a09ca", 16))),
+          Failure(new ArithmeticException("BigInteger: modulus not positive"))),
+
+      ((CBigInt(new BigInteger("5524814a26357cb71488b6fb26af2d3", 16)),
+        CBigInt(new BigInteger("c413b7d975a9972427f46996299fe57cfe79479ac954a7", 16))),
+          Failure(new ArithmeticException("BigInteger out of 256 bit range")))
+    ),
+    existingFeature(
       { (x: (BigInt, BigInt)) =>
         val a = x._1; val b = x._2
         val plus = n.plus(a, b)
@@ -1217,21 +1271,44 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
           )
         )
       )
-    )
+    ), true)
+  }
 
-    lazy val bitOr = newFeature(
-    { (x: (BigInt, BigInt)) => x._1 | x._2 },
+  property("BigInt methods equivalence (new features)") {
+    val toByte = newFeature((x: BigInt) => x.toByte,
+      "{ (x: BigInt) => x.toByte }",
+      FuncValue(Vector((1, SBigInt)), Downcast(ValUse(1, SBigInt), SByte)))
+
+    val toShort = newFeature((x: BigInt) => x.toShort,
+      "{ (x: BigInt) => x.toShort }",
+      FuncValue(Vector((1, SBigInt)), Downcast(ValUse(1, SBigInt), SShort)))
+
+    val toInt = newFeature((x: BigInt) => x.toInt,
+      "{ (x: BigInt) => x.toInt }",
+      FuncValue(Vector((1, SBigInt)), Downcast(ValUse(1, SBigInt), SInt)))
+
+    val toLong = newFeature((x: BigInt) => x.toLong,
+      "{ (x: BigInt) => x.toLong }",
+      FuncValue(Vector((1, SBigInt)), Downcast(ValUse(1, SBigInt), SLong)))
+
+    lazy val toBytes = newFeature((x: BigInt) => x.toBytes, "{ (x: BigInt) => x.toBytes }")
+    lazy val toBits = newFeature((x: BigInt) => x.toBits, "{ (x: BigInt) => x.toBits }")
+    lazy val toAbs = newFeature((x: BigInt) => x.toAbs, "{ (x: BigInt) => x.toAbs }")
+
+    lazy val compareTo = newFeature((x: (BigInt, BigInt)) => x._1.compareTo(x._2),
+      "{ (x: (BigInt, BigInt)) => x._1.compareTo(x._2) }")
+
+    lazy val bitOr = newFeature({ (x: (BigInt, BigInt)) => x._1 | x._2 },
     "{ (x: (BigInt, BigInt)) => x._1 | x._2 }")
 
-    lazy val bitAnd = newFeature(
-    { (x: (BigInt, BigInt)) => x._1 & x._2 },
+    lazy val bitAnd = newFeature({ (x: (BigInt, BigInt)) => x._1 & x._2 },
     "{ (x: (BigInt, BigInt)) => x._1 & x._2 }")
 
     forAll { x: BigInt =>
-      Seq(toByte, toShort, toInt, toLong, toBigInt, toBytes, toBits, toAbs).foreach(_.checkEquality(x))
+      Seq(toByte, toShort, toInt, toLong, toBytes, toBits, toAbs).foreach(_.checkEquality(x))
     }
     forAll { x: (BigInt, BigInt) =>
-      Seq(compareTo, arithOps, bitOr, bitAnd).foreach(_.checkEquality(x))
+      Seq(compareTo, bitOr, bitAnd).foreach(_.checkEquality(x))
     }
   }
 
