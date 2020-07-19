@@ -113,7 +113,7 @@ CoinJoin~\cite{coinjoin} is a privacy enhancing protocol where multiple parties 
 
 \begin{figure}[h]
 	\centering
-	\begin{subfigure}{.6\textwidth}
+	\begin{subfigure}{.575\textwidth}
 		\centering
 		\includegraphics[width=\linewidth]{CoinJoin.jpg}
 	\end{subfigure}%
@@ -138,7 +138,7 @@ CoinJoin requires two parties to interactively sign a transaction off-chain and 
 
 \begin{figure}[h]
 	\centering
-	\begin{subfigure}{.75\textwidth}
+	\begin{subfigure}{.7\textwidth}
 		\centering
 		\includegraphics[width=\linewidth]{Zerocoin.jpg}
 	\end{subfigure}
@@ -235,18 +235,25 @@ Since Bob knows $y$, he can spend the box using the right part of the statement.
 
 For privacy, the only difference between $O_b$ and $O_{1-b}$ is that registers $(\alpha,\beta)$ are of the form $(g^y, g^{xy})$ and $(g^{xy}, g^y)$ respectively. Assuming that the Decision Diffie-Hellman (DDH) problem in $G$ is hard, no outsider has the ability to distinguish the boxes before they are spent. Since each box is spent using a $\Sigma$-OR-proof that is zero-knowledge~\cite{Dam10}, this applies even after they are spent. 
 
-\paragraph{Comparing with CoinJoin and \zerocoin:} Both CoinJoin and \algname use two indistinguishable outputs that provide the privacy (see Section~\ref{coinjoin}). However, each CoinJoin transaction requires an off-chain interaction over a private channel. In \algname, this interaction is replaced by a public transaction on the blockchain. Note that CoinJoin supports {\em covert} mode, where the use is concealed.
+\paragraph{Comparing with CoinJoin and \zerocoin:} Both CoinJoin and \algname use two indistinguishable outputs that provide the privacy (see Section~\ref{coinjoin}). However, each CoinJoin transaction requires an off-chain interaction over a private channel. In \algname, this interaction is replaced by a public transaction on the blockchain. 
 
-Both \zerocoin and \algname add boxes to a pool and later spend those via zero-knowledge proofs (see Section~\ref{zerocoin}). 
-The difference is that the degree of privacy in \zerocoin depends on the size of the pool, while that in \algname depends on the number of stages. Thirdly, \zerocoin's pool increases monotonically in size, while that of \algname does not. Finally, \zerocoin's proofs are larger than \algname's. 
-The following table summarizes the three protocols.
+%Note that CoinJoin supports {\em covert} mode, where the use is concealed.
 
-\begin{tabular}{|l|l|l|l|l|l|}\hline
-                & Monotonic pool& Proof size & Off-chain   & Covert      & Example                      \\\hline
-CoinJoin        & no            & small      & yes 		   & yes         & JoinMarket~\cite{joinmarket} \\
-\zerocoin       & yes           & large      & no 		   & No          & Zcoin~\cite{zcoin}    \\
-\algname        & no            & small      & no 		   & No          & ErgoMixer~\cite{ergomixer}   \\\hline
-\end{tabular}
+Both \zerocoin and \algname add boxes to a pool and later spend them via zero-knowledge proofs (see Section~\ref{zerocoin}). 
+The difference is that the privacy in \zerocoin depends on the size of the pool, while that in \algname depends on the number of rounds. Thirdly, \zerocoin's pool increases monotonically in size, while that of \algname does not. Finally, the proofs in \zerocoin are much larger compared to \algname because they rely on generic NP reductions, while \algname's proofs are based on Schnorr identification. 
+
+QuisQuis~\cite{quisquis}, another privacy enhancing protocol, is conceptually similar to \algname 
+and does not have a monotonically increasing pool. 
+However, the underlying zero-knowledge proofs are very different. In particular, the proofs in QuisQuis are much larger because they also use generic NP reductions. 
+
+%The following table summarizes the three protocols.
+
+%\begin{tabular}{|l|l|l|l|l|l|}\hline
+%                & Monotonic pool& Proof size & Off-chain   & Covert      & Example                      \\\hline
+%CoinJoin        & no            & small      & yes 		   & yes         & JoinMarket~\cite{joinmarket} \\
+%\zerocoin       & yes           & large      & no 		   & No          & Zcoin~\cite{zcoin}    \\
+%\algname        & no            & small      & no 		   & No          & ErgoMixer~\cite{ergomixer}   \\\hline
+%\end{tabular}
 
 \subsection{Implementing \algname In \langname}
 \label{impl}
@@ -305,7 +312,7 @@ We classify \algname transactions into the following:
     \item \textbf{Alice or Bob reentry as Bob:} When someone plays the role of Alice or Bob to spend a Full-Mix box along with another Half-Mix box and create two new Full-Mix boxes. The input is a Half-Mix box and a Full-Mix box and the outputs are two new Full-Mix boxes.
 \end{enumerate}
 
-Clearly, for both Alice and Bob entries, fee is not an issue because both parties can fund the fee component of the transaction from a known source, since these transactions are not meant to hide any information. Similarly for case 3, when exiting the system, part of the amount in the Full-Mix box can be used to pay fee. The only time we need to hide the source of fee is when we spend a Full-Mix box and want to reenter as either Alice or Bob. 
+Clearly, for both Alice and Bob entries, fee is not an issue because both parties can fund the fee component of the transaction from a known source. Similarly for case 3, when exiting the system, part of the amount in the Full-Mix box can be used to pay fee. The only time we need to hide the source of fee is when we spend a Full-Mix box and want to reenter as either Alice or Bob. 
 
 \subsection{An Altruistic Approach}
 \label{donation}
@@ -516,6 +523,28 @@ Figure~\ref{fig:mixingtokens} gives an example flow with the above contracts in 
 A mix transaction is always a reentry as Bob and both Alice and Bob's entry is through a token purchase transaction. 
 
 The predicate \texttt{alice > 0} also requires that the Half-Mix box have at least one token, implying that the only way to create the Half-Mix box would be in a token purchase transaction or transaction for reentry as Alice. In particular, it is impossible to create a Half-Mix box in an other manner.
+
+\section{Conclusion}
+
+We presented \algname, a privacy enhancing protocol for UTXO blockchains. \algname is designed to address the 
+key problems with \zerocoin~\cite{zerocoin} and CoinJoin~\cite{coinjoin} protocols, namely the need for a monotonically increasing pool in \zerocoin and the need for off-chain interaction in CoinJoin. A monotonically increasing pool makes the protocol unusable in the long term because this pool has to be kept in memory to verify transactions. Many privacy oriented protocols including \zerocoin and Monero~\cite{monero} suffer from this problem. On the other hand, CoinJoin, which does not have this weakness, has the problem of off-chain interaction, which again reduces its usability. \algname aims to address this by creating a combined protocol that solves both these problems. QuisQuis~\cite{quisquis} is another protocol based ideas similar to \zerocoin. However, it uses proofs similar to that of \zerocoin, and therefore, has much larger proofs compared to \algname. The following table summarizes the various protocols. Note that unlike the other protocols, CoinJoin supports a covert mode, where it is not possible to identify if the protocol is in use. 
+
+~\\
+\begin{tabular}{|l|l|l|l|l|l|}\hline
+                & Monotonic pool& Proof size & Off-chain   & Covert mode & Example                      \\\hline
+CoinJoin~
+\cite{coinjoin} & no            & small      & yes 		   & yes         & JoinMarket~\cite{joinmarket} \\
+\zerocoin~
+\cite{zerocoin} & yes           & large      & no 		   & no          & Zcoin~\cite{zcoin}           \\
+Monero          & yes           & small      & no          & no          & Monero~\cite{monero}         \\  
+QuisQuis~
+\cite{quisquis} & no            & large      & no          & no          &                              \\
+\algname        & no            & small      & no 		   & no          & ErgoMixer~\cite{ergomixer}   \\\hline
+\end{tabular}
+~\\
+
+An interesting problem in CoinJoin-type protocols such as QuisQuis and \algname is the problem of fee. Since the protocol requires multiple rounds where a box's value is preserved across rounds. If the fee must be paid from an external source then privacy is broken. Thus, any fee must come from the boxes being mixed. However, then the value cannot be preserved.
+Our solution to the fee problem is \mixname, an implementation of \algname on the Ergo blockchain. \mixname uses certain properties of Ergo (specifically its tokens) to develop a novel method to handle fee in such protocols. 
 
 \bibliographystyle{unsrt}
 \bibliography{main}
