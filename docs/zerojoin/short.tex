@@ -243,10 +243,10 @@ The difference is that the degree of privacy in \zerocoin depends on the size of
 The following table summarizes the three protocols.
 
 \begin{tabular}{|l|l|l|l|l|l|}\hline
-                        & Monotonic     & Proofs     & Off-chain   & Covert & Example                      \\\hline
-CoinJoin                & no            & small      & yes 		   & yes    & JoinMarket~\cite{joinmarket} \\
-\zerocoin               & yes           & large      & no 		   & No     & Zcoin~\cite{zcoin}    \\
-\algname (this work)    & no            & small      & no 		   & No     & ErgoMixer~\cite{ergomixer}   \\\hline
+                & Monotonic pool& Proof size & Off-chain   & Covert      & Example                      \\\hline
+CoinJoin        & no            & small      & yes 		   & yes         & JoinMarket~\cite{joinmarket} \\
+\zerocoin       & yes           & large      & no 		   & No          & Zcoin~\cite{zcoin}    \\
+\algname        & no            & small      & no 		   & No          & ErgoMixer~\cite{ergomixer}   \\\hline
 \end{tabular}
 
 \subsection{Implementing \algname In \langname}
