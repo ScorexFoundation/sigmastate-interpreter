@@ -526,25 +526,26 @@ The predicate \texttt{alice > 0} also requires that the Half-Mix box have at lea
 
 \section{Conclusion}
 
-We presented \algname, a privacy enhancing protocol for UTXO blockchains. \algname is designed to address the 
-key problems with \zerocoin~\cite{zerocoin} and CoinJoin~\cite{coinjoin} protocols, namely the need for a monotonically increasing pool in \zerocoin and the need for off-chain interaction in CoinJoin. A monotonically increasing pool makes the protocol unusable in the long term because this pool has to be kept in memory to verify transactions. Many privacy oriented protocols including \zerocoin and Monero~\cite{monero} suffer from this problem. On the other hand, CoinJoin, which does not have this weakness, has the problem of off-chain interaction, which again reduces its usability. \algname aims to address this by creating a combined protocol that solves both these problems. QuisQuis~\cite{quisquis} is another protocol based ideas similar to \zerocoin. However, it uses proofs similar to that of \zerocoin, and therefore, has much larger proofs compared to \algname. The following table summarizes the various protocols. Note that unlike the other protocols, CoinJoin supports a covert mode, where it is not possible to identify if the protocol is in use. 
+We presented \algname, a privacy enhancing protocol for UTXO blockchains. The protocol is designed to address two 
+key problems with \zerocoin~\cite{zerocoin} and CoinJoin~\cite{coinjoin} protocols, namely the need for a monotonically increasing pool in \zerocoin and the need for off-chain interaction in CoinJoin. A monotonically increasing pool makes the protocol unusable in the long term because this pool has to be kept in memory to verify transactions. Many privacy oriented protocols including \zerocoin and Monero~\cite{monero} suffer from this problem. On the other hand, CoinJoin, which does not have this weakness, has the problem of off-chain interaction, which again reduces its usability. \algname aims to address this by creating a combined protocol that solves both these problems. QuisQuis~\cite{quisquis} is another protocol similar to \algname. However, its proofs use NP reductions and are much larger than \algname's. The following table summarizes the various protocols. Note that unlike the other protocols, CoinJoin supports a covert mode, where it is not possible to identify if the protocol is in use. 
 
-~\\
+\begin{center}
 \begin{tabular}{|l|l|l|l|l|l|}\hline
-                & Monotonic pool& Proof size & Off-chain   & Covert mode & Example                      \\\hline
+                & Monotonic     & Proof      & Interaction & Covert mode & Example                      \\
+                & pool needed   & size       & needed      & possible    & Implementation               \\\hline
 CoinJoin~
 \cite{coinjoin} & no            & small      & yes 		   & yes         & JoinMarket~\cite{joinmarket} \\
 \zerocoin~
 \cite{zerocoin} & yes           & large      & no 		   & no          & Zcoin~\cite{zcoin}           \\
-Monero          & yes           & small      & no          & no          & Monero~\cite{monero}         \\  
+Monero          & yes           & large      & no          & no          & Monero~\cite{monero}         \\  
 QuisQuis~
 \cite{quisquis} & no            & large      & no          & no          &                              \\
-\algname        & no            & small      & no 		   & no          & ErgoMixer~\cite{ergomixer}   \\\hline
+\textbf{\algname}& no           & small      & no 		   & no          & ErgoMixer~\cite{ergomixer}   \\\hline
 \end{tabular}
-~\\
+\end{center}
 
-An interesting problem in CoinJoin-type protocols such as QuisQuis and \algname is the problem of fee. Since the protocol requires multiple rounds where a box's value is preserved across rounds. If the fee must be paid from an external source then privacy is broken. Thus, any fee must come from the boxes being mixed. However, then the value cannot be preserved.
-Our solution to the fee problem is \mixname, an implementation of \algname on the Ergo blockchain. \mixname uses certain properties of Ergo (specifically its tokens) to develop a novel method to handle fee in such protocols. 
+An interesting problem in CoinJoin-type protocols such as QuisQuis and \algname is the problem of fee. Since the protocol requires multiple rounds where a box's value is preserved across rounds. If the fee is paid from an external source then privacy is broken. Thus, any fee must come from the boxes being mixed. However, then the value cannot be preserved.
+Our solution to the fee problem is \mixname, an implementation of \algname on the Ergo blockchain. \mixname uses {\em mixing tokens}, a Ergo-specific approach to handle fee. 
 
 \bibliographystyle{unsrt}
 \bibliography{main}
