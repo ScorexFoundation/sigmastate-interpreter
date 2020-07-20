@@ -1329,6 +1329,7 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
     val ge1 = "03358d53f01276211f92d0aefbd278805121d4ff6eb534b777af1ee8abae5b2056"
     val ge2 = "02dba7b94b111f3894e2f9120b577da595ec7d58d488485adf73bf4e153af63575"
     val ge3 = "0290449814f5671172dd696a61b8aa49aaa4c87013f56165e27d49944e98bc414d"
+
     testCases(
       Seq(
         (SigmaDsl.decodePoint(ge1), Success(SigmaDsl.decodeBytes(ge1))),
@@ -1390,45 +1391,59 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
     // val isIdentity = existingFeature({ (x: GroupElement) => x.isIdentity },
     //   "{ (x: GroupElement) => x.isIdentity }")
 
-    val exp = existingFeature({ (x: (GroupElement, BigInt)) => x._1.exp(x._2) },
-      "{ (x: (GroupElement, BigInt)) => x._1.exp(x._2) }",
-      FuncValue(
-        Vector((1, STuple(Vector(SGroupElement, SBigInt)))),
-        Exponentiate(
-          SelectField.typed[Value[SGroupElement.type]](
-            ValUse(1, STuple(Vector(SGroupElement, SBigInt))),
-            1.toByte
-          ),
-          SelectField.typed[Value[SBigInt.type]](
-            ValUse(1, STuple(Vector(SGroupElement, SBigInt))),
-            2.toByte
+    testCases(
+      Seq(
+        ((SigmaDsl.decodePoint(ge1), CBigInt(new BigInteger("-25c80b560dd7844e2efd10f80f7ee57d", 16))),
+            Success(SigmaDsl.decodePoint("023a850181b7b73f92a5bbfa0bfc78f5bbb6ff00645ddde501037017e1a2251e2e"))),
+        ((SigmaDsl.decodePoint(ge2), CBigInt(new BigInteger("2488741265082fb02b09f992be3dd8d60d2bbe80d9e2630", 16))),
+            Success(SigmaDsl.decodePoint("032045b928fb7774a4cd9ef5fa8209f4e493cd4cc5bd536b52746a53871bf73431"))),
+        ((SigmaDsl.decodePoint(ge3), CBigInt(new BigInteger("-33e8fbdb13d2982e92583445e1fdcb5901a178a7aa1e100", 16))),
+            Success(SigmaDsl.decodePoint("036128efaf14d8ac2812a662f6494dc617b87986a3dc6b4a59440048a7ac7d2729"))),
+        ((SigmaDsl.decodePoint(ge3), CBigInt(new BigInteger("1", 16))),
+            Success(SigmaDsl.decodePoint(ge3)))
+      ),
+      existingFeature({ (x: (GroupElement, BigInt)) => x._1.exp(x._2) },
+        "{ (x: (GroupElement, BigInt)) => x._1.exp(x._2) }",
+        FuncValue(
+          Vector((1, STuple(Vector(SGroupElement, SBigInt)))),
+          Exponentiate(
+            SelectField.typed[Value[SGroupElement.type]](
+              ValUse(1, STuple(Vector(SGroupElement, SBigInt))),
+              1.toByte
+            ),
+            SelectField.typed[Value[SBigInt.type]](
+              ValUse(1, STuple(Vector(SGroupElement, SBigInt))),
+              2.toByte
+            )
           )
-        )
-      ))
+        )))
 
-    forAll { x: (GroupElement, BigInt) =>
-      exp.checkEquality(x)
-    }
-
-    val multiply = existingFeature({ (x: (GroupElement, GroupElement)) => x._1.multiply(x._2) },
-      "{ (x: (GroupElement, GroupElement)) => x._1.multiply(x._2) }",
-      FuncValue(
-        Vector((1, STuple(Vector(SGroupElement, SGroupElement)))),
-        MultiplyGroup(
-          SelectField.typed[Value[SGroupElement.type]](
-            ValUse(1, STuple(Vector(SGroupElement, SGroupElement))),
-            1.toByte
-          ),
-          SelectField.typed[Value[SGroupElement.type]](
-            ValUse(1, STuple(Vector(SGroupElement, SGroupElement))),
-            2.toByte
+    testCases(
+      Seq(
+        ((SigmaDsl.decodePoint(ge1), SigmaDsl.decodePoint("03e132ca090614bd6c9f811e91f6daae61f16968a1e6c694ed65aacd1b1092320e")),
+            Success(SigmaDsl.decodePoint("02bc48937b4a66f249a32dfb4d2efd0743dc88d46d770b8c5d39fd03325ba211df"))),
+        ((SigmaDsl.decodePoint(ge2), SigmaDsl.decodePoint("03e132ca090614bd6c9f811e91f6daae61f16968a1e6c694ed65aacd1b1092320e")),
+            Success(SigmaDsl.decodePoint("0359c3bb2ac4ea4dbd7b1e09d7b11198141a3263834fb84a88039629ec1e9311d1"))),
+        ((SigmaDsl.decodePoint(ge3), SigmaDsl.decodePoint("03e132ca090614bd6c9f811e91f6daae61f16968a1e6c694ed65aacd1b1092320e")),
+            Success(SigmaDsl.decodePoint("02eca42e28548d3fb9fa77cdd0c983066c3ad141ebb086b5044ce46b9ba9b5a714"))),
+        ((SigmaDsl.decodePoint(ge3), SigmaDsl.groupIdentity),
+            Success(SigmaDsl.decodePoint(ge3)))
+      ),
+      existingFeature({ (x: (GroupElement, GroupElement)) => x._1.multiply(x._2) },
+        "{ (x: (GroupElement, GroupElement)) => x._1.multiply(x._2) }",
+        FuncValue(
+          Vector((1, STuple(Vector(SGroupElement, SGroupElement)))),
+          MultiplyGroup(
+            SelectField.typed[Value[SGroupElement.type]](
+              ValUse(1, STuple(Vector(SGroupElement, SGroupElement))),
+              1.toByte
+            ),
+            SelectField.typed[Value[SGroupElement.type]](
+              ValUse(1, STuple(Vector(SGroupElement, SGroupElement))),
+              2.toByte
+            )
           )
-        )
-      ))
-
-    forAll { x: (GroupElement, GroupElement) =>
-      multiply.checkEquality(x)
-    }
+        )))
   }
 
   property("AvlTree properties equivalence") {
