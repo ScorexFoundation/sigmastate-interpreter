@@ -22,6 +22,18 @@ object OrderingOps extends LowPriorityOrderingImplicits {
     def compare(x: BigInt, y: BigInt) = x.compareTo(y)
   }
   implicit object BigInt extends BigIntOrdering
+
+  trait GroupElementOrdering extends Ordering[GroupElement] {
+    /** Compares this ECPoint string representation with `that` ECPoint string for order.
+      * @returns a negative integer, zero, or a positive integer as the
+      * this` is less than, equal to, or greater than `that`.
+      */
+    def compare(x: GroupElement, y: GroupElement) = {
+      SigmaDsl.toECPoint(x).toString.compareTo(SigmaDsl.toECPoint(y).toString)
+    }
+  }
+  implicit object GroupElement extends GroupElementOrdering
+
 }
 
 object NumericOps {

@@ -4,28 +4,29 @@ import java.math.BigInteger
 import java.util
 
 import org.bouncycastle.math.ec.ECPoint
+import org.ergoplatform.settings.ErgoAlgos
 import org.ergoplatform.{ErgoBox, SigmaConstants}
 import org.ergoplatform.validation.ValidationRules
 import scorex.crypto.authds.avltree.batch._
-import scorex.crypto.authds.{ADDigest, ADKey, ADValue, SerializedAdProof}
+import scorex.crypto.authds.{ADDigest, ADKey, SerializedAdProof, ADValue}
 import sigmastate.SCollection.SByteArray
 import sigmastate.{TrivialProp, _}
-import sigmastate.Values.{Constant, ConstantNode, ErgoTree, EvaluatedValue, SValue, SigmaBoolean, Value}
+import sigmastate.Values.{Constant, EvaluatedValue, SValue, ConstantNode, Value, ErgoTree, SigmaBoolean}
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.interpreter.{CryptoConstants, Interpreter}
-import special.collection.{CCostedBuilder, CSizeOption, Coll, CollType, CostedBuilder, Size, SizeColl, SizeOption}
+import special.collection.{Size, CSizeOption, SizeColl, CCostedBuilder, CollType, SizeOption, CostedBuilder, Coll}
 import special.sigma.{Box, _}
 import sigmastate.eval.Extensions._
 import spire.syntax.all.cfor
 
-import scala.util.{Failure, Success}
+import scala.util.{Success, Failure, Try}
 import scalan.RType
-import scorex.crypto.hash.{Blake2b256, Digest32, Sha256}
+import scorex.crypto.hash.{Digest32, Sha256, Blake2b256}
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
 import sigmastate.lang.Terms.OperationId
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
-import sigmastate.serialization.{GroupElementSerializer, SigmaSerializer}
+import sigmastate.serialization.{SigmaSerializer, GroupElementSerializer}
 import special.Types.TupleType
 
 import scala.reflect.ClassTag
@@ -595,6 +596,10 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
     this.GroupElement(CryptoConstants.dlogGroup.generator)
   }
 
+  def groupIdentity: GroupElement = {
+    this.GroupElement(CryptoConstants.dlogGroup.identity)
+  }
+
   override def substConstants[T](scriptBytes: Coll[Byte],
                                  positions: Coll[Int],
                                  newValues: Coll[T])
@@ -609,6 +614,17 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
     val p = GroupElementSerializer.parse(r)
     this.GroupElement(p)
   }
+
+  def decodePoint(base16String: String): GroupElement = {
+    val bytes = ErgoAlgos.decodeUnsafe(base16String)
+    decodePoint(Colls.fromArray(bytes))
+  }
+
+  def decodeBytes(base16String: String): Coll[Byte] = {
+    val bytes = ErgoAlgos.decodeUnsafe(base16String)
+    Colls.fromArray(bytes)
+  }
+
 }
 
 object CostingSigmaDslBuilder extends CostingSigmaDslBuilder

@@ -2,16 +2,23 @@ package sigmastate.helpers
 
 import java.math.BigInteger
 
+import org.bouncycastle.math.ec.ECPoint
 import org.ergoplatform.ErgoBox.RegisterId
+import org.ergoplatform.settings.ErgoAlgos
 
 import scala.collection.mutable
 import pprint.{Tree, PPrinter}
+import scalan.RType
 import sigmastate.SCollection._
 import sigmastate.Values.{ValueCompanion, ConstantNode}
+import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.lang.SigmaTyper
 import sigmastate.lang.Terms.MethodCall
+import sigmastate.serialization.GroupElementSerializer
 import sigmastate.utxo.SelectField
 import sigmastate.{SByte, SPair, STypeCompanion, STuple, ArithOp, SOption, SType, SCollectionType, SPredefType, SCollection}
+import special.collection.Coll
+import special.sigma.GroupElement
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -78,6 +85,12 @@ object SigmaPPrint extends PPrinter {
       Tree.Apply("Array", treeifySeq(wa))
     case buf: ArrayBuffer[_] =>
       Tree.Apply("Seq", treeifySeq(buf))
+    case ge: GroupElement =>
+      val hexString = ErgoAlgos.encode(ge.getEncoded)
+      Tree.Apply("SigmaDsl.decodePoint", treeifyMany(hexString))
+    case coll: Coll[Byte] if coll.tItem == RType.ByteType =>
+      val hexString = ErgoAlgos.encode(coll)
+      Tree.Apply("SigmaDsl.decodeBytes", treeifyMany(hexString))
   }
 
   override val additionalHandlers: PartialFunction[Any, Tree] =

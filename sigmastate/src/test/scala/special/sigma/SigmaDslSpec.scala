@@ -39,20 +39,32 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   override implicit val generatorDrivenConfig = PropertyCheckConfiguration(minSuccessful = 30)
 
   val PrintTestCasesDefault: Boolean = false
+  val FailOnTestVectorsDefault: Boolean = true
 
-  def testCases[A: Ordering,B](cases: Seq[(A, Try[B])], f: FeatureTest[A,B], printTestCases: Boolean = PrintTestCasesDefault): Unit = {
-    val table = Table(("x", "y"), cases.sortBy(_._1):_*)
+  def testCases[A: Ordering, B](cases: Seq[(A, Try[B])],
+                                f: FeatureTest[A, B],
+                                printTestCases: Boolean = PrintTestCasesDefault,
+                                failOnTestVectors: Boolean = FailOnTestVectorsDefault): Unit = {
+    val table = Table(("x", "y"), cases:_*)
     forAll(table) { (x: A, expectedRes: Try[B]) =>
       val res = f.checkEquality(x, printTestCases)
 
-      // TODO HF: remove this if once newImpl is implemented
+      // TODO HF: remove this `if` once newImpl is implemented
       if (f.featureType == ExistingFeature) {
         (res, expectedRes) match {
           case (Failure(exception), Failure(expectedException)) =>
             exception.getClass shouldBe expectedException.getClass
             exception.getMessage shouldBe expectedException.getMessage
           case _ =>
-            res shouldBe expectedRes
+            if (failOnTestVectors) {
+              assertResult(expectedRes, s"Actual: ${SigmaPPrint(res).plainText}")(res)
+            }
+            else {
+              if (expectedRes != res) {
+                print("Actual: ")
+                SigmaPPrint.pprintln(res)
+              }
+            }
         }
       }
     }
@@ -981,7 +993,7 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
 
     testCases(
       Seq(
-        (Long.MinValue, Failure(new ArithmeticException("Short overflow"))),
+        (Long.MinValue, Failure(new ArithmeticException("Int overflow"))),
         (Int.MinValue.toLong - 1, Failure(new ArithmeticException("Int overflow"))),
         (Int.MinValue.toLong, Success(Int.MinValue)),
         (-1L, Success(-1.toInt)),
@@ -1313,44 +1325,70 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   }
 
   property("GroupElement methods equivalence") {
-    val getEncoded = existingFeature((x: GroupElement) => x.getEncoded,
-      "{ (x: GroupElement) => x.getEncoded }",
-      FuncValue(
-        Vector((1, SGroupElement)),
-        MethodCall(ValUse(1, SGroupElement), SGroupElement.getMethodByName("getEncoded"), Vector(), Map())
-      ))
+    import OrderingOps._
+    val ge1 = "03358d53f01276211f92d0aefbd278805121d4ff6eb534b777af1ee8abae5b2056"
+    val ge2 = "02dba7b94b111f3894e2f9120b577da595ec7d58d488485adf73bf4e153af63575"
+    val ge3 = "0290449814f5671172dd696a61b8aa49aaa4c87013f56165e27d49944e98bc414d"
+    testCases(
+      Seq(
+        (SigmaDsl.decodePoint(ge1), Success(SigmaDsl.decodeBytes(ge1))),
+        (SigmaDsl.decodePoint(ge2), Success(SigmaDsl.decodeBytes(ge2))),
+        (SigmaDsl.decodePoint(ge3), Success(SigmaDsl.decodeBytes(ge3))),
+        (SigmaDsl.groupGenerator,
+          Success(SigmaDsl.decodeBytes("0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798"))),
+        (SigmaDsl.groupIdentity,
+          Success(SigmaDsl.decodeBytes("000000000000000000000000000000000000000000000000000000000000000000")))
+      ),
+      existingFeature((x: GroupElement) => x.getEncoded,
+        "{ (x: GroupElement) => x.getEncoded }",
+        FuncValue(
+          Vector((1, SGroupElement)),
+          MethodCall(ValUse(1, SGroupElement), SGroupElement.getMethodByName("getEncoded"), Vector(), Map())
+        )))
 
-    val decode = existingFeature({ (x: GroupElement) => decodePoint(x.getEncoded) == x },
-      "{ (x: GroupElement) => decodePoint(x.getEncoded) == x }",
-      FuncValue(
-        Vector((1, SGroupElement)),
-        EQ(
-          DecodePoint(
-            MethodCall.typed[Value[SCollection[SByte.type]]](
-              ValUse(1, SGroupElement),
-              SGroupElement.getMethodByName("getEncoded"),
-              Vector(),
-              Map()
-            )
-          ),
-          ValUse(1, SGroupElement)
-        )
-      ))
+    testCases(
+      Seq(
+        (SigmaDsl.decodePoint(ge1), Success(true)),
+        (SigmaDsl.decodePoint(ge2), Success(true)),
+        (SigmaDsl.decodePoint(ge3), Success(true)),
+        (SigmaDsl.groupGenerator, Success(true)),
+        (SigmaDsl.groupIdentity, Success(true))
+      ),
+      existingFeature({ (x: GroupElement) => decodePoint(x.getEncoded) == x },
+        "{ (x: GroupElement) => decodePoint(x.getEncoded) == x }",
+        FuncValue(
+          Vector((1, SGroupElement)),
+          EQ(
+            DecodePoint(
+              MethodCall.typed[Value[SCollection[SByte.type]]](
+                ValUse(1, SGroupElement),
+                SGroupElement.getMethodByName("getEncoded"),
+                Vector(),
+                Map()
+              )
+            ),
+            ValUse(1, SGroupElement)
+          )
+        )))
 
-    val negate = existingFeature({ (x: GroupElement) => x.negate },
-      "{ (x: GroupElement) => x.negate }",
-      FuncValue(
-        Vector((1, SGroupElement)),
-        MethodCall(ValUse(1, SGroupElement), SGroupElement.getMethodByName("negate"), Vector(), Map())
-      ))
+    testCases(
+      Seq(
+        (SigmaDsl.decodePoint(ge1), Success(SigmaDsl.decodePoint("02358d53f01276211f92d0aefbd278805121d4ff6eb534b777af1ee8abae5b2056"))),
+        (SigmaDsl.decodePoint(ge2), Success(SigmaDsl.decodePoint("03dba7b94b111f3894e2f9120b577da595ec7d58d488485adf73bf4e153af63575"))),
+        (SigmaDsl.decodePoint(ge3), Success(SigmaDsl.decodePoint("0390449814f5671172dd696a61b8aa49aaa4c87013f56165e27d49944e98bc414d"))),
+        (SigmaDsl.groupGenerator, Success(SigmaDsl.decodePoint("0379be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798"))),
+        (SigmaDsl.groupIdentity, Success(SigmaDsl.decodePoint("000000000000000000000000000000000000000000000000000000000000000000")))
+      ),
+      existingFeature({ (x: GroupElement) => x.negate },
+        "{ (x: GroupElement) => x.negate }",
+        FuncValue(
+          Vector((1, SGroupElement)),
+          MethodCall(ValUse(1, SGroupElement), SGroupElement.getMethodByName("negate"), Vector(), Map())
+        )))
 
-    //TODO soft-fork: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
+    //TODO HF: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
     // val isIdentity = existingFeature({ (x: GroupElement) => x.isIdentity },
     //   "{ (x: GroupElement) => x.isIdentity }")
-
-    forAll { x: GroupElement =>
-      Seq(getEncoded, decode, negate/*, isIdentity*/).foreach(_.checkEquality(x))
-    }
 
     val exp = existingFeature({ (x: (GroupElement, BigInt)) => x._1.exp(x._2) },
       "{ (x: (GroupElement, BigInt)) => x._1.exp(x._2) }",
