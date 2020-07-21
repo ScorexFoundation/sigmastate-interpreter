@@ -34,6 +34,17 @@ object OrderingOps extends LowPriorityOrderingImplicits {
   }
   implicit object GroupElement extends GroupElementOrdering
 
+  trait AvlTreeOrdering extends Ordering[AvlTree] {
+    /** Compares this ECPoint string representation with `that` ECPoint string for order.
+      * @returns a negative integer, zero, or a positive integer as the
+      * this` is less than, equal to, or greater than `that`.
+      */
+    def compare(x: AvlTree, y: AvlTree) = {
+      x.toString.compareTo(y.toString)
+    }
+  }
+  implicit object AvlTree extends AvlTreeOrdering
+
 }
 
 object NumericOps {

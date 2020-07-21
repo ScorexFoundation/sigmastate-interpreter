@@ -9,6 +9,7 @@ import org.ergoplatform.settings.ErgoAlgos
 import scala.collection.mutable
 import pprint.{Tree, PPrinter}
 import scalan.RType
+import scorex.crypto.authds.ADDigest
 import sigmastate.SCollection._
 import sigmastate.Values.{ValueCompanion, ConstantNode}
 import sigmastate.interpreter.CryptoConstants.EcPointType
@@ -16,18 +17,22 @@ import sigmastate.lang.SigmaTyper
 import sigmastate.lang.Terms.MethodCall
 import sigmastate.serialization.GroupElementSerializer
 import sigmastate.utxo.SelectField
-import sigmastate.{SByte, SPair, STypeCompanion, STuple, ArithOp, SOption, SType, SCollectionType, SPredefType, SCollection}
+import sigmastate.{SByte, SPair, STypeCompanion, STuple, ArithOp, SOption, SType, AvlTreeData, SCollectionType, AvlTreeFlags, SPredefType, SCollection}
 import special.collection.Coll
 import special.sigma.GroupElement
 
 import scala.collection.mutable.ArrayBuffer
+import scala.reflect.ClassTag
 
 /** Pretty-printer customized to print [[sigmastate.Values.Value]] instances
   * into a valid Scala code (can be cut-and-pasted).*/
 object SigmaPPrint extends PPrinter {
 
   def treeifySeq(xs: Seq[Any]): Iterator[Tree] = {
-    xs.iterator.map(treeify)
+    xs.iterator.map(_ match {
+      case t: Tree => t
+      case x => treeify(x)
+    })
   }
 
   def treeifyMany(head: Any, tail: Any*): Iterator[Tree] = {
@@ -74,23 +79,49 @@ object SigmaPPrint extends PPrinter {
       Tree.Apply("new ArithmeticException", treeifySeq(Seq(ex.getMessage)))
   }
 
+  def treeifyByteArray(bytes: Array[Byte]): Tree = {
+    val hexString = ErgoAlgos.encode(bytes)
+    Tree.Apply("ErgoAlgos.decodeUnsafe", treeifyMany(hexString))
+  }
+
   val dataHandlers: PartialFunction[Any, Tree] = {
     case v: Byte =>
       Tree.Literal(s"$v.toByte")
+
     case v: Short =>
       Tree.Literal(s"$v.toShort")
+
     case v: BigInteger =>
       Tree.Apply("new BigInteger", treeifyMany(v.toString(16), 16))
+
+    case wa: mutable.WrappedArray[Byte @unchecked] if wa.elemTag == ClassTag.Byte =>
+      treeifyByteArray(wa.array)
+
     case wa: mutable.WrappedArray[_] =>
       Tree.Apply("Array", treeifySeq(wa))
+
+    case arr: Array[Byte @unchecked] if arr.elemTag == ClassTag.Byte =>
+      treeifyByteArray(arr)
+
+    case arr: Array[_] =>
+      Tree.Apply("Array", treeifySeq(arr))
+
     case buf: ArrayBuffer[_] =>
       Tree.Apply("Seq", treeifySeq(buf))
+
     case ge: GroupElement =>
       val hexString = ErgoAlgos.encode(ge.getEncoded)
       Tree.Apply("SigmaDsl.decodePoint", treeifyMany(hexString))
-    case coll: Coll[Byte] if coll.tItem == RType.ByteType =>
+
+    case coll: Coll[Byte @unchecked] if coll.tItem == RType.ByteType =>
       val hexString = ErgoAlgos.encode(coll)
       Tree.Apply("SigmaDsl.decodeBytes", treeifyMany(hexString))
+    case t: AvlTreeData =>
+      Tree.Apply("AvlTreeData", treeifyMany(
+        Tree.Apply("ADDigest @@ ", treeifyMany(t.digest)),
+        t.treeFlags,
+        t.keyLength,
+        t.valueLengthOpt))
   }
 
   override val additionalHandlers: PartialFunction[Any, Tree] =

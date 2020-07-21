@@ -5,13 +5,14 @@ import java.math.BigInteger
 import org.ergoplatform.ErgoScriptPredef.TrueProp
 import org.ergoplatform.dsl.{SigmaContractSyntax, TestContractSpec}
 import org.ergoplatform._
-import org.scalacheck.{Gen, Arbitrary}
-import org.scalatest.prop.{PropertyChecks,TableFor2}
+import org.ergoplatform.settings.ErgoAlgos
+import org.scalacheck.{Arbitrary, Gen}
+import org.scalatest.prop.{PropertyChecks, TableFor2}
 import org.scalatest.{PropSpec, Matchers, Tag}
 import scalan.{ExactNumeric, RType}
 import org.scalactic.source
 import scorex.crypto.authds.avltree.batch._
-import scorex.crypto.authds.{ADKey, ADValue}
+import scorex.crypto.authds.{ADKey, ADValue, ADDigest}
 import scorex.crypto.hash.{Digest32, Blake2b256}
 import scalan.util.Extensions._
 import sigma.util.Extensions._
@@ -28,6 +29,7 @@ import sigmastate.lang.Terms.MethodCall
 import sigmastate.utxo._
 import special.collection.Coll
 import sigmastate.serialization.OpCodes.OpCode
+
 import scala.reflect.ClassTag
 import scala.util.{DynamicVariable, Success, Failure, Try}
 
@@ -41,7 +43,7 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   val PrintTestCasesDefault: Boolean = false
   val FailOnTestVectorsDefault: Boolean = true
 
-  def testCases[A: Ordering, B](cases: Seq[(A, Try[B])],
+  def testCases[A: Ordering: Arbitrary: ClassTag, B](cases: Seq[(A, Try[B])],
                                 f: FeatureTest[A, B],
                                 printTestCases: Boolean = PrintTestCasesDefault,
                                 failOnTestVectors: Boolean = FailOnTestVectorsDefault): Unit = {
@@ -68,6 +70,7 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
         }
       }
     }
+    test(f, printTestCases)
   }
 
   def test[A: Arbitrary: Ordering: ClassTag, B](f: FeatureTest[A,B], printTestCases: Boolean = PrintTestCasesDefault): Unit = {
@@ -1447,6 +1450,7 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   }
 
   property("AvlTree properties equivalence") {
+    import OrderingOps._
     def expectedExprFor(propName: String) = {
       FuncValue(
         Vector((1, SAvlTree)),
@@ -1458,46 +1462,100 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
         )
       )
     }
-    val digest = existingFeature((t: AvlTree) => t.digest,
-      "{ (t: AvlTree) => t.digest }",
-      expectedExprFor("digest"))
+    val t1 = CAvlTree(
+      AvlTreeData(
+        ADDigest @@ ErgoAlgos.decodeUnsafe("000183807f66b301530120ff7fc6bd6601ff01ff7f7d2bedbbffff00187fe89094"),
+        AvlTreeFlags(false, true, true),
+        1,
+        Some(1)
+      )
+    )
+    val t2 = CAvlTree(
+      AvlTreeData(
+        ADDigest @@ ErgoAlgos.decodeUnsafe("ff000d937f80ffd731ed802d24358001ff8080ff71007f00ad37e0a7ae43fff95b"),
+        AvlTreeFlags(false, false, false),
+        32,
+        Some(64)
+      )
+    )
+    val t3 = CAvlTree(
+      AvlTreeData(
+        ADDigest @@ ErgoAlgos.decodeUnsafe("3100d2e101ff01fc047c7f6f00ff80129df69a5090012f01ffca99f5bfff0c8036"),
+        AvlTreeFlags(true, false, false),
+        128,
+        None
+      )
+    )
 
-    val enabledOperations = existingFeature((t: AvlTree) => t.enabledOperations,
-      "{ (t: AvlTree) => t.enabledOperations }",
-      expectedExprFor("enabledOperations"))
+    testCases(
+      Seq(
+        (t1, Success(SigmaDsl.decodeBytes("000183807f66b301530120ff7fc6bd6601ff01ff7f7d2bedbbffff00187fe89094"))),
+        (t2, Success(SigmaDsl.decodeBytes("ff000d937f80ffd731ed802d24358001ff8080ff71007f00ad37e0a7ae43fff95b"))),
+        (t3, Success(SigmaDsl.decodeBytes("3100d2e101ff01fc047c7f6f00ff80129df69a5090012f01ffca99f5bfff0c8036")))
+      ),
+      existingFeature((t: AvlTree) => t.digest,
+        "{ (t: AvlTree) => t.digest }",
+        expectedExprFor("digest")))
 
-    val keyLength = existingFeature((t: AvlTree) => t.keyLength,
-      "{ (t: AvlTree) => t.keyLength }",
-      expectedExprFor("keyLength"))
+    testCases(
+      Seq(
+        (t1, Success(6.toByte)),
+        (t2, Success(0.toByte)),
+        (t3, Success(1.toByte))
+      ),
+      existingFeature((t: AvlTree) => t.enabledOperations,
+        "{ (t: AvlTree) => t.enabledOperations }",
+        expectedExprFor("enabledOperations")))
 
-    val valueLengthOpt = existingFeature((t: AvlTree) => t.valueLengthOpt,
-      "{ (t: AvlTree) => t.valueLengthOpt }",
-      expectedExprFor("valueLengthOpt"))
+    testCases(
+      Seq(
+        (t1, Success(1)),
+        (t2, Success(32)),
+        (t3, Success(128))
+      ),
+      existingFeature((t: AvlTree) => t.keyLength,
+        "{ (t: AvlTree) => t.keyLength }",
+        expectedExprFor("keyLength")))
 
-    val isInsertAllowed = existingFeature((t: AvlTree) => t.isInsertAllowed,
-      "{ (t: AvlTree) => t.isInsertAllowed }",
-      expectedExprFor("isInsertAllowed"))
+    testCases(
+      Seq(
+        (t1, Success(Some(1))),
+        (t2, Success(Some(64))),
+        (t3, Success(None))
+      ),
+      existingFeature((t: AvlTree) => t.valueLengthOpt,
+        "{ (t: AvlTree) => t.valueLengthOpt }",
+        expectedExprFor("valueLengthOpt")))
 
-    val isUpdateAllowed = existingFeature((t: AvlTree) => t.isUpdateAllowed,
-      "{ (t: AvlTree) => t.isUpdateAllowed }",
-      expectedExprFor("isUpdateAllowed"))
+    testCases(
+      Seq(
+        (t1, Success(false)),
+        (t2, Success(false)),
+        (t3, Success(true))
+      ),
+      existingFeature((t: AvlTree) => t.isInsertAllowed,
+        "{ (t: AvlTree) => t.isInsertAllowed }",
+        expectedExprFor("isInsertAllowed")))
 
-    val isRemoveAllowed = existingFeature((t: AvlTree) => t.isRemoveAllowed,
-      "{ (t: AvlTree) => t.isRemoveAllowed }",
-      expectedExprFor("isRemoveAllowed"))
+    testCases(
+      Seq(
+        (t1, Success(true)),
+        (t2, Success(false)),
+        (t3, Success(false))
+      ),
+      existingFeature((t: AvlTree) => t.isUpdateAllowed,
+        "{ (t: AvlTree) => t.isUpdateAllowed }",
+        expectedExprFor("isUpdateAllowed")))
 
-    val newTree = sampleAvlTree.updateOperations(1.toByte)
-    val trees = Array(sampleAvlTree, newTree)
-
-    for (tree <- trees) {
-      Seq(digest,
-        enabledOperations,
-        keyLength,
-        valueLengthOpt,
-        isInsertAllowed,
-        isUpdateAllowed,
-        isRemoveAllowed).foreach(_.checkEquality(tree))
-    }
+    testCases(
+      Seq(
+        (t1, Success(true)),
+        (t2, Success(false)),
+        (t3, Success(false))
+      ),
+      existingFeature((t: AvlTree) => t.isRemoveAllowed,
+        "{ (t: AvlTree) => t.isRemoveAllowed }",
+        expectedExprFor("isRemoveAllowed")))
   }
 
   property("AvlTree.{contains, get, getMany, updateDigest, updateOperations} equivalence") {
