@@ -2138,14 +2138,21 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   }
 
   property("byteArrayToLong equivalence") {
-    val eq = existingFeature((x: Coll[Byte]) => SigmaDsl.byteArrayToLong(x),
-      "{ (x: Coll[Byte]) => byteArrayToLong(x) }",
-      FuncValue(Vector((1, SByteArray)), ByteArrayToLong(ValUse(1, SByteArray))))
-    forAll { x: Array[Byte] =>
-      whenever(x.length >= 8) {
-        eq.checkEquality(Colls.fromArray(x))
-      }
-    }
+    testCases(
+      Seq(
+        (SigmaDsl.decodeBytes(""), Failure(new IllegalArgumentException("array too small: 0 < 8"))),
+        (SigmaDsl.decodeBytes("81"), Failure(new IllegalArgumentException("array too small: 1 < 8"))),
+        (SigmaDsl.decodeBytes("812d7f00ff807f"), Failure(new IllegalArgumentException("array too small: 7 < 8"))),
+        (SigmaDsl.decodeBytes("812d7f00ff807f7f"), Success(-9138508426601529473L)),
+        (SigmaDsl.decodeBytes("ffffffffffffffff"), Success(-1L)),
+        (SigmaDsl.decodeBytes("0000000000000000"), Success(0L)),
+        (SigmaDsl.decodeBytes("0000000000000001"), Success(1L)),
+        (SigmaDsl.decodeBytes("712d7f00ff807f7f"), Success(8155314142501175167L)),
+        (SigmaDsl.decodeBytes("812d7f00ff807f7f0101018050757f0580ac009680f2ffc1"), Success(-9138508426601529473L))
+      ),
+      existingFeature((x: Coll[Byte]) => SigmaDsl.byteArrayToLong(x),
+        "{ (x: Coll[Byte]) => byteArrayToLong(x) }",
+        FuncValue(Vector((1, SByteArray)), ByteArrayToLong(ValUse(1, SByteArray)))))
   }
 
   // TODO soft-fork: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/427
