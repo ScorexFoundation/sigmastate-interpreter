@@ -15,12 +15,12 @@ object OrderingOps {
   trait BigIntegerOrdering extends Ordering[BigInteger] {
     def compare(x: BigInteger, y: BigInteger) = x.compareTo(y)
   }
-  implicit object BigInteger extends BigIntegerOrdering
+  implicit object BigIntegerOrdering extends BigIntegerOrdering
 
   trait BigIntOrdering extends Ordering[BigInt] {
     def compare(x: BigInt, y: BigInt) = x.compareTo(y)
   }
-  implicit object BigInt extends BigIntOrdering
+  implicit object BigIntOrdering extends BigIntOrdering
 
   trait GroupElementOrdering extends Ordering[GroupElement] {
     /** Compares `x: ECPoint` string representation with `y: ECPoint` string for order.
@@ -31,7 +31,7 @@ object OrderingOps {
       SigmaDsl.toECPoint(x).toString.compareTo(SigmaDsl.toECPoint(y).toString)
     }
   }
-  implicit object GroupElement extends GroupElementOrdering
+  implicit object GroupElementOrdering extends GroupElementOrdering
 
   trait AvlTreeOrdering extends Ordering[AvlTree] {
     /** Compares this `x: AvlTree` string representation with `y: AvlTree` string for order.
@@ -42,7 +42,7 @@ object OrderingOps {
       x.toString.compareTo(y.toString)
     }
   }
-  implicit object AvlTree extends AvlTreeOrdering
+  implicit object AvlTreeOrdering extends AvlTreeOrdering
 
   class CollOrdering[T: Ordering] extends Ordering[Coll[T]] {
     implicit val O = implicitly[Ordering[Iterable[T]]]
@@ -56,6 +56,17 @@ object OrderingOps {
     }
   }
   implicit def collOrdering[T: Ordering]: Ordering[Coll[T]] = new CollOrdering[T]
+
+  trait BoxOrdering extends Ordering[Box] {
+    /** Compares this `x: Box` string representation with `y: Box` string for order.
+      * @returns a negative integer, zero, or a positive integer as the
+      * `x` is less than, equal to, or greater than `y`.
+      */
+    def compare(x: Box, y: Box) = {
+      x.toString.compareTo(y.toString)
+    }
+  }
+  implicit object BoxOrdering extends BoxOrdering
 }
 
 object NumericOps {
