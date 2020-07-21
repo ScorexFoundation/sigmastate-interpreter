@@ -23,7 +23,10 @@ trait SigmaTestingData extends SigmaTestingCommons with SigmaTypeGens {
     containerOfN[Array, T](n, g).map(Colls.fromArray(_))
   }
 
-  val bytesGen: Gen[Array[Byte]] = containerOfN[Array, Byte](100, Arbitrary.arbByte.arbitrary)
+  val bytesGen: Gen[Array[Byte]] = for {
+    len <- Gen.choose(0, 100)
+    arr <- containerOfN[Array, Byte](len, Arbitrary.arbByte.arbitrary)
+  } yield arr
 
   val bytesCollGen = bytesGen.map(Colls.fromArray(_))
   val intsCollGen = arrayGen[Int].map(Colls.fromArray(_))

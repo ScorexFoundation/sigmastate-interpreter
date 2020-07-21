@@ -32,7 +32,7 @@ import sigmastate.serialization.OpCodes.OpCode
 
 import scala.reflect.ClassTag
 import scala.util.{DynamicVariable, Success, Failure, Try}
-
+import OrderingOps._
 
 /** This suite tests every method of every SigmaDsl type to be equivalent to
   * the evaluation of the corresponding ErgoScript operation */
@@ -1149,7 +1149,6 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   }
 
   property("BigInt methods equivalence") {
-    import OrderingOps._
     testCases(
       Seq(
         (CBigInt(new BigInteger("-85102d7f884ca0e8f56193b46133acaf7e4681e1757d03f191ae4f445c8e0", 16)), Success(
@@ -1328,7 +1327,6 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   }
 
   property("GroupElement methods equivalence") {
-    import OrderingOps._
     val ge1 = "03358d53f01276211f92d0aefbd278805121d4ff6eb534b777af1ee8abae5b2056"
     val ge2 = "02dba7b94b111f3894e2f9120b577da595ec7d58d488485adf73bf4e153af63575"
     val ge3 = "0290449814f5671172dd696a61b8aa49aaa4c87013f56165e27d49944e98bc414d"
@@ -1450,7 +1448,6 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   }
 
   property("AvlTree properties equivalence") {
-    import OrderingOps._
     def expectedExprFor(propName: String) = {
       FuncValue(
         Vector((1, SAvlTree)),
@@ -2117,12 +2114,27 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   }
 
   property("byteArrayToBigInt equivalence") {
-    val eq = existingFeature((x: Coll[Byte]) => SigmaDsl.byteArrayToBigInt(x),
-      "{ (x: Coll[Byte]) => byteArrayToBigInt(x) }",
-      FuncValue(Vector((1, SByteArray)), ByteArrayToBigInt(ValUse(1, SByteArray))))
-    forAll(collOfN[Byte](SigmaConstants.MaxBigIntSizeInBytes.value.toInt)) { x: Coll[Byte] =>
-      eq.checkEquality(x)
-    }
+    testCases(
+      Seq(
+        (SigmaDsl.decodeBytes(""),
+            Failure(new NumberFormatException("Zero length BigInteger"))),
+        (SigmaDsl.decodeBytes("00"),
+            Success(CBigInt(new BigInteger("0", 16)))),
+        (SigmaDsl.decodeBytes("01"),
+            Success(CBigInt(new BigInteger("1", 16)))),
+        (SigmaDsl.decodeBytes("ff"),
+            Success(CBigInt(new BigInteger("-1", 16)))),
+        (SigmaDsl.decodeBytes("80d6c201"),
+            Success(CBigInt(new BigInteger("-7f293dff", 16)))),
+        (SigmaDsl.decodeBytes("70d6c201"),
+            Success(CBigInt(new BigInteger("70d6c201", 16)))),
+        (SigmaDsl.decodeBytes(
+          "80e0ff7f02807fff72807f0a00ff7fb7c57f75c11ba2802970fd250052807fc37f6480ffff007fff18eeba44"
+        ), Failure(new ArithmeticException("BigInteger out of 256 bit range")))
+      ),
+      existingFeature((x: Coll[Byte]) => SigmaDsl.byteArrayToBigInt(x),
+        "{ (x: Coll[Byte]) => byteArrayToBigInt(x) }",
+        FuncValue(Vector((1, SByteArray)), ByteArrayToBigInt(ValUse(1, SByteArray)))))
   }
 
   property("byteArrayToLong equivalence") {

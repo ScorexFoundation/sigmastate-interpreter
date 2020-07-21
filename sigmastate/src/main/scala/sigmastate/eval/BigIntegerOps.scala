@@ -4,13 +4,12 @@ import java.math.BigInteger
 
 import scalan.{ExactNumeric, ExactIntegral, ExactOrderingImpl}
 
-import scala.math.{LowPriorityOrderingImplicits, Integral, Ordering}
+import scala.math.{Integral, Ordering}
 import special.sigma._
-import scalan.util.Extensions._
 import sigmastate.eval.Extensions._
-import sigmastate.eval.NumericOps.BigIntIsExactNumeric.n
+import special.collection.Coll
 
-object OrderingOps extends LowPriorityOrderingImplicits {
+object OrderingOps {
   def apply[T](implicit ord: Ordering[T]) = ord
 
   trait BigIntegerOrdering extends Ordering[BigInteger] {
@@ -24,9 +23,9 @@ object OrderingOps extends LowPriorityOrderingImplicits {
   implicit object BigInt extends BigIntOrdering
 
   trait GroupElementOrdering extends Ordering[GroupElement] {
-    /** Compares this ECPoint string representation with `that` ECPoint string for order.
+    /** Compares `x: ECPoint` string representation with `y: ECPoint` string for order.
       * @returns a negative integer, zero, or a positive integer as the
-      * this` is less than, equal to, or greater than `that`.
+      * `x` is less than, equal to, or greater than `y`.
       */
     def compare(x: GroupElement, y: GroupElement) = {
       SigmaDsl.toECPoint(x).toString.compareTo(SigmaDsl.toECPoint(y).toString)
@@ -35,9 +34,9 @@ object OrderingOps extends LowPriorityOrderingImplicits {
   implicit object GroupElement extends GroupElementOrdering
 
   trait AvlTreeOrdering extends Ordering[AvlTree] {
-    /** Compares this ECPoint string representation with `that` ECPoint string for order.
+    /** Compares this `x: AvlTree` string representation with `y: AvlTree` string for order.
       * @returns a negative integer, zero, or a positive integer as the
-      * this` is less than, equal to, or greater than `that`.
+      * `x` is less than, equal to, or greater than `y`.
       */
     def compare(x: AvlTree, y: AvlTree) = {
       x.toString.compareTo(y.toString)
@@ -45,6 +44,18 @@ object OrderingOps extends LowPriorityOrderingImplicits {
   }
   implicit object AvlTree extends AvlTreeOrdering
 
+  class CollOrdering[T: Ordering] extends Ordering[Coll[T]] {
+    implicit val O = implicitly[Ordering[Iterable[T]]]
+
+    /** Compares this `x: Coll` with `y: Coll` using Ordering for underlying Array.
+      * @returns a negative integer, zero, or a positive integer as the
+      * `x` is less than, equal to, or greater than `y`.
+      */
+    def compare(x: Coll[T], y: Coll[T]) = {
+      O.compare(x.toArray, y.toArray)
+    }
+  }
+  implicit def collOrdering[T: Ordering]: Ordering[Coll[T]] = new CollOrdering[T]
 }
 
 object NumericOps {
