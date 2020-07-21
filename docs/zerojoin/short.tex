@@ -96,16 +96,16 @@ Thus, our protocol overcomes the two major drawbacks of \zerocoin. Our approach 
 \section{Introduction}
 \label{intro}
 
-Privacy enhancing techniques in blockchains generally fall into two categories. The first is hiding the amounts being transferred, such as in Confidential Transactions~\cite{ct}. The second is obscuring the input-output relationships such as in \zerocoin~\cite{zerocoin}, Monero~\cite{monero}, CoinJoin~\cite{coinjoin} and Composite Signatures~\cite{composite}. Some solutions such as MimbleWimble~\cite{mw} and Zcash~\cite{zcash,zcash1} combine both approaches.
+Privacy enhancing techniques in blockchains generally fall into two categories. The first is hiding the amounts being transferred, such as in Confidential Transactions~\cite{ct}. The second is obscuring the input-output relationships such as in \zerocoin~\cite{zerocoin}, Monero~\cite{monero}, CoinJoin~\cite{coinjoin}, QuisQuis~\cite{quisquis} and Composite Signatures~\cite{composite}. Some solutions such as MimbleWimble~\cite{mw} and Zcash~\cite{zcash,zcash1} combine both.
 %In fact, MW can be thought of as a combination of CT and OWAS.
 
-In this work, we describe \algname, another privacy enhancing protocol based on the latter approach. This allows us to avoid expensive range proofs necessary for the first approach. Our protocol is motivated from \zerocoin and CoinJoin in order to overcome some of their limitations.
+In this work, we describe \algname, yet another privacy enhancing protocol based on the latter approach of obscuring input-output relationships. This allows us to avoid expensive range proofs necessary for the first approach. Our protocol is motivated from \zerocoin and CoinJoin to overcome some of their limitations.
 
 
 \section{Background}
 
 Blockchain platforms such as Bitcoin~\cite{Nak08}, \zerocoin~\cite{zerocoin}, Zcash~\cite{zcash} and Ergo~\cite{ergo} use short-lived immutable data structures called ``coins'' or UTXOs (short for {unspent transaction outputs}). In such blockchains, every node maintains an in-memory database of all current UTXOs, called the {\em UTXO-set}. A transaction consumes (destroys) some UTXOs and creates new ones. When a node receives a block, it updates its UTXO-set based on the transactions in that block. A UTXO is a single-use object, and its simplest form contains a public key (in which case, the UTXO can be ``spent'' using the corresponding private key). Spending a UTXO essentially involves executing any embedded code inside it and removing it from the UTXO-set. 
-The alternative to UTXOs is the {\em account}-based model of Ethereum~\cite{wood2014ethereum}. Unlike UTXOs, accounts are long-lived and mutable. While a UTXO must be completely spent (i.e., its balance cannot be changed), an account at the bare minimum allows changing the balance. Most privacy techniques including CoinJoin and \zerocoin are designed for UTXOs and cannot be easily adapted for accounts. Our protocol also works in the UTXO model only. 
+The alternative to UTXOs is the {\em account}-based model of Ethereum~\cite{wood2014ethereum} or NXT~\cite{nxt}. Unlike UTXOs, accounts are mutable. While a UTXO must be completely spent (i.e., its balance cannot be changed), an account at the bare minimum allows changing the balance. Most privacy techniques including CoinJoin and \zerocoin are designed for UTXOs and cannot be easily adapted for accounts. Our protocol also works in the UTXO model only. 
 
 \subsection{CoinJoin} 
 \label{coinjoin}
@@ -129,7 +129,7 @@ The key idea of CoinJoin is that the two output boxes are {\em indistinguishable
 \end{enumerate}
 
 Thus, each CoinJoin transaction provides 50\% unlinkability. The output box can be used as input to further CoinJoin transactions and the process repeated to increase the unlinkability to any desired level. We will use the same concept in \algname. 
-CoinJoin requires two parties to interactively sign a transaction off-chain and this interactive nature is the primary drawback of CoinJoin, which \algname aims to overcome. 
+CoinJoin requires off-chain interaction and this interactive nature is the primary drawback of CoinJoin, which \algname aims to overcome. 
 
 \subsection{\zerocoin}
 \label{zerocoin} 
@@ -146,7 +146,8 @@ CoinJoin requires two parties to interactively sign a transaction off-chain and 
 	\label{fig:zerocoin}
 \end{figure}
 
-The protocol uses a mixing pool (called the {\em unspent-box pool}, or simply the U-pool), to which an ordinary coin is added as a commitment $c$ to secrets $(r, s)$. The coin is later spent such that the link to $c$ is not publicly visible. The value $c$ must be permanently stored in the U-pool, since the spending transaction cannot reveal it. Instead, it reveals the secret $s$ (the {\em serial number}) along with a zero-knowledge proof that $s$ was used in a commitment from the pool. To prevent double spending, the serial number is also stored in another space called the {\em spent-box pool} (the S-pool). A coin can be spent from the U-pool only if the corresponding serial number does not exist in the S-pool. 
+The protocol uses a pool of coins called the {\em unspent-box pool} (U-pool), to which an ordinary coin is added as a commitment $c$ to secret $s$ using randomness $r$. The coin is later spent from this pool such that the link to $c$ is not publicly visible. The value $c$ must be permanently stored in the U-pool, since the spending transaction cannot reveal it. Instead, it reveals the secret $s$ (also called the {\em serial number}) along with a zero-knowledge proof that $s$ was used in a some commitment in the U-pool. The commitment scheme is such that revealing $s$ does not leak any information about $r$. Thus, the randomness $r$ remains secret. 
+To prevent double spending, the serial number is also stored in another data structure called the {\em spent-box pool} (S-pool). A coin can be spent from the U-pool only if the corresponding serial number does not exist in the S-pool. 
 
 One consequence of this is that both the U-pool (the set of commitments) and the S-pool (the set of spent serial numbers) must be maintained in memory for verifying every transaction. 
 Another consequence is that the sizes of the these two sets increase monotonically. 
@@ -157,7 +158,7 @@ Considering the addition of a coin to the mix as a deposit and removal as a with
 
 \subsection{$\Sigma$-Protocols} 
 
-\algname uses two-party interactions called $\Sigma$-protocols defined over a cyclic multiplicative group $G$ of prime order $q$ such that the decision Diffie-Hellman (DDH) problem in $G$ is hard. Specifically, is uses two such protocols. The first, denoted \texttt{proveDlog($u$)}, is a {\em proof of knowledge of Discrete Logarithm} of some group element $u$ with respect to a fixed generator $g$. That is, the prover proves knowledge of $x$ such that $u = g^x$ by using Schnorr signatures~\cite{Sch91}. 
+\algname uses two-party interactions called $\Sigma$-protocols defined over a cyclic multiplicative group $G$ of prime order $q$ such that the decision Diffie-Hellman (DDH) problem in $G$ is hard. Specifically, it uses two such protocols. The first, denoted \texttt{proveDlog($u$)}, is a {\em proof of knowledge of Discrete Logarithm} of some group element $u$ with respect to a fixed generator $g$. That is, the prover proves knowledge of $x$ such that $u = g^x$ by using Schnorr signatures~\cite{Sch91}. 
 
 The second primitive, denoted \texttt{proveDHTuple($g, h, u, v$)}, is a {\em proof of knowledge of Diffie-Hellman Tuple}, where the prover proves knowledge of $x$ such that $u = g^x$ {\em and} $v = h^x$ for a arbitrary generators $g$ and $h$. This is essentially two instances of the first protocol running in parallel as follows.
 
@@ -168,7 +169,7 @@ The second primitive, denoted \texttt{proveDHTuple($g, h, u, v$)}, is a {\em pro
 	\item The verifier accepts iff ${g}^z = {t_0}\cdot {u}^c$ and $h^z=t_1\cdot v^c$.
 \end{enumerate}
 
-We use the non-interactive variant of the above protocol obtained via the Fiat-Shamir transform, where $c = H(t_0 \Vert t_1\Vert m)$ for some message $m$ to be signed. 
+We use the non-interactive variant of the above protocol obtained via the Fiat-Shamir transform~\cite{fiatshamir}, where $c = H(t_0 \Vert t_1\Vert m)$ for some message $m$. 
 
 \section{\algname Protocol}
 
