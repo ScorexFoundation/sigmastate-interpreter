@@ -157,7 +157,7 @@ class SigmaDslTesting extends PropSpec
           newRes shouldBe oldRes
         }
         if (logInputOutput)
-          println(s"(${SigmaPPrint(input)}, ${SigmaPPrint(oldRes)}),${if (logScript) " // " + script else ""}")
+          println(s"(${SigmaPPrint(input, height = 150)}, ${SigmaPPrint(oldRes, height = 150)}),${if (logScript) " // " + script else ""}")
         oldRes
       case AddedFeature =>
         val oldRes = Try(oldF(input))

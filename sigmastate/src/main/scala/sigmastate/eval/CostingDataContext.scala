@@ -615,16 +615,6 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
     this.GroupElement(p)
   }
 
-  def decodePoint(base16String: String): GroupElement = {
-    val bytes = ErgoAlgos.decodeUnsafe(base16String)
-    decodePoint(Colls.fromArray(bytes))
-  }
-
-  def decodeBytes(base16String: String): Coll[Byte] = {
-    val bytes = ErgoAlgos.decodeUnsafe(base16String)
-    Colls.fromArray(bytes)
-  }
-
 }
 
 object CostingSigmaDslBuilder extends CostingSigmaDslBuilder

@@ -3,6 +3,11 @@ package sigmastate.utils
 import java.util
 
 import io.circe.Decoder
+import org.ergoplatform.settings.ErgoAlgos
+import sigmastate.eval.{Colls, SigmaDsl}
+import sigmastate.interpreter.CryptoConstants.EcPointType
+import special.collection.Coll
+import special.sigma.GroupElement
 
 import scala.reflect.ClassTag
 import scala.util.{Failure, Try, Either, Success, Right}
@@ -128,6 +133,20 @@ object Helpers {
     }
   }
 
+  def decodeGroupElement(hexString: String): GroupElement = {
+    val bytes = ErgoAlgos.decodeUnsafe(hexString)
+    SigmaDsl.decodePoint(Colls.fromArray(bytes))
+  }
+
+  def decodeECPoint(hexString: String): EcPointType = {
+    val ge = decodeGroupElement(hexString)
+    SigmaDsl.toECPoint(ge).asInstanceOf[EcPointType]
+  }
+
+  def decodeBytes(base16String: String): Coll[Byte] = {
+    val bytes = ErgoAlgos.decodeUnsafe(base16String)
+    Colls.fromArray(bytes)
+  }
 }
 
 object Overloading {

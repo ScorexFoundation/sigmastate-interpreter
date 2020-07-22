@@ -12,13 +12,14 @@ import org.scalatest.{PropSpec, Matchers, Tag}
 import scalan.{ExactNumeric, RType}
 import org.scalactic.source
 import scorex.crypto.authds.avltree.batch._
-import scorex.crypto.authds.{ADKey, ADValue, ADDigest}
+import scorex.crypto.authds.{ADDigest, ADKey, ADValue}
 import scorex.crypto.hash.{Digest32, Blake2b256}
 import scalan.util.Extensions._
 import sigma.util.Extensions._
 import sigmastate.SCollection._
 import sigmastate.Values.IntConstant
 import sigmastate._
+import sigmastate.basics.DLogProtocol._
 import sigmastate.Values._
 import sigmastate.lang.Terms.Apply
 import sigmastate.eval.Extensions._
@@ -29,10 +30,12 @@ import sigmastate.lang.Terms.MethodCall
 import sigmastate.utxo._
 import special.collection.Coll
 import sigmastate.serialization.OpCodes.OpCode
+import sigmastate.utils.Helpers
 
 import scala.reflect.ClassTag
 import scala.util.{DynamicVariable, Success, Failure, Try}
 import OrderingOps._
+import scorex.util.ModifierId
 
 /** This suite tests every method of every SigmaDsl type to be equivalent to
   * the evaluation of the corresponding ErgoScript operation */
@@ -59,12 +62,12 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
             exception.getMessage shouldBe expectedException.getMessage
           case _ =>
             if (failOnTestVectors) {
-              assertResult(expectedRes, s"Actual: ${SigmaPPrint(res).plainText}")(res)
+              assertResult(expectedRes, s"Actual: ${SigmaPPrint(res, height = 150).plainText}")(res)
             }
             else {
               if (expectedRes != res) {
                 print("Actual: ")
-                SigmaPPrint.pprintln(res)
+                SigmaPPrint.pprintln(res, height = 150)
               }
             }
         }
@@ -1333,13 +1336,13 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
 
     testCases(
       Seq(
-        (SigmaDsl.decodePoint(ge1), Success(SigmaDsl.decodeBytes(ge1))),
-        (SigmaDsl.decodePoint(ge2), Success(SigmaDsl.decodeBytes(ge2))),
-        (SigmaDsl.decodePoint(ge3), Success(SigmaDsl.decodeBytes(ge3))),
+        (Helpers.decodeGroupElement(ge1), Success(Helpers.decodeBytes(ge1))),
+        (Helpers.decodeGroupElement(ge2), Success(Helpers.decodeBytes(ge2))),
+        (Helpers.decodeGroupElement(ge3), Success(Helpers.decodeBytes(ge3))),
         (SigmaDsl.groupGenerator,
-          Success(SigmaDsl.decodeBytes("0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798"))),
+          Success(Helpers.decodeBytes("0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798"))),
         (SigmaDsl.groupIdentity,
-          Success(SigmaDsl.decodeBytes("000000000000000000000000000000000000000000000000000000000000000000")))
+          Success(Helpers.decodeBytes("000000000000000000000000000000000000000000000000000000000000000000")))
       ),
       existingFeature((x: GroupElement) => x.getEncoded,
         "{ (x: GroupElement) => x.getEncoded }",
@@ -1350,9 +1353,9 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
 
     testCases(
       Seq(
-        (SigmaDsl.decodePoint(ge1), Success(true)),
-        (SigmaDsl.decodePoint(ge2), Success(true)),
-        (SigmaDsl.decodePoint(ge3), Success(true)),
+        (Helpers.decodeGroupElement(ge1), Success(true)),
+        (Helpers.decodeGroupElement(ge2), Success(true)),
+        (Helpers.decodeGroupElement(ge3), Success(true)),
         (SigmaDsl.groupGenerator, Success(true)),
         (SigmaDsl.groupIdentity, Success(true))
       ),
@@ -1375,11 +1378,11 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
 
     testCases(
       Seq(
-        (SigmaDsl.decodePoint(ge1), Success(SigmaDsl.decodePoint("02358d53f01276211f92d0aefbd278805121d4ff6eb534b777af1ee8abae5b2056"))),
-        (SigmaDsl.decodePoint(ge2), Success(SigmaDsl.decodePoint("03dba7b94b111f3894e2f9120b577da595ec7d58d488485adf73bf4e153af63575"))),
-        (SigmaDsl.decodePoint(ge3), Success(SigmaDsl.decodePoint("0390449814f5671172dd696a61b8aa49aaa4c87013f56165e27d49944e98bc414d"))),
-        (SigmaDsl.groupGenerator, Success(SigmaDsl.decodePoint("0379be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798"))),
-        (SigmaDsl.groupIdentity, Success(SigmaDsl.decodePoint("000000000000000000000000000000000000000000000000000000000000000000")))
+        (Helpers.decodeGroupElement(ge1), Success(Helpers.decodeGroupElement("02358d53f01276211f92d0aefbd278805121d4ff6eb534b777af1ee8abae5b2056"))),
+        (Helpers.decodeGroupElement(ge2), Success(Helpers.decodeGroupElement("03dba7b94b111f3894e2f9120b577da595ec7d58d488485adf73bf4e153af63575"))),
+        (Helpers.decodeGroupElement(ge3), Success(Helpers.decodeGroupElement("0390449814f5671172dd696a61b8aa49aaa4c87013f56165e27d49944e98bc414d"))),
+        (SigmaDsl.groupGenerator, Success(Helpers.decodeGroupElement("0379be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798"))),
+        (SigmaDsl.groupIdentity, Success(Helpers.decodeGroupElement("000000000000000000000000000000000000000000000000000000000000000000")))
       ),
       existingFeature({ (x: GroupElement) => x.negate },
         "{ (x: GroupElement) => x.negate }",
@@ -1394,14 +1397,14 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
 
     testCases(
       Seq(
-        ((SigmaDsl.decodePoint(ge1), CBigInt(new BigInteger("-25c80b560dd7844e2efd10f80f7ee57d", 16))),
-            Success(SigmaDsl.decodePoint("023a850181b7b73f92a5bbfa0bfc78f5bbb6ff00645ddde501037017e1a2251e2e"))),
-        ((SigmaDsl.decodePoint(ge2), CBigInt(new BigInteger("2488741265082fb02b09f992be3dd8d60d2bbe80d9e2630", 16))),
-            Success(SigmaDsl.decodePoint("032045b928fb7774a4cd9ef5fa8209f4e493cd4cc5bd536b52746a53871bf73431"))),
-        ((SigmaDsl.decodePoint(ge3), CBigInt(new BigInteger("-33e8fbdb13d2982e92583445e1fdcb5901a178a7aa1e100", 16))),
-            Success(SigmaDsl.decodePoint("036128efaf14d8ac2812a662f6494dc617b87986a3dc6b4a59440048a7ac7d2729"))),
-        ((SigmaDsl.decodePoint(ge3), CBigInt(new BigInteger("1", 16))),
-            Success(SigmaDsl.decodePoint(ge3)))
+        ((Helpers.decodeGroupElement(ge1), CBigInt(new BigInteger("-25c80b560dd7844e2efd10f80f7ee57d", 16))),
+            Success(Helpers.decodeGroupElement("023a850181b7b73f92a5bbfa0bfc78f5bbb6ff00645ddde501037017e1a2251e2e"))),
+        ((Helpers.decodeGroupElement(ge2), CBigInt(new BigInteger("2488741265082fb02b09f992be3dd8d60d2bbe80d9e2630", 16))),
+            Success(Helpers.decodeGroupElement("032045b928fb7774a4cd9ef5fa8209f4e493cd4cc5bd536b52746a53871bf73431"))),
+        ((Helpers.decodeGroupElement(ge3), CBigInt(new BigInteger("-33e8fbdb13d2982e92583445e1fdcb5901a178a7aa1e100", 16))),
+            Success(Helpers.decodeGroupElement("036128efaf14d8ac2812a662f6494dc617b87986a3dc6b4a59440048a7ac7d2729"))),
+        ((Helpers.decodeGroupElement(ge3), CBigInt(new BigInteger("1", 16))),
+            Success(Helpers.decodeGroupElement(ge3)))
       ),
       existingFeature({ (x: (GroupElement, BigInt)) => x._1.exp(x._2) },
         "{ (x: (GroupElement, BigInt)) => x._1.exp(x._2) }",
@@ -1421,14 +1424,14 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
 
     testCases(
       Seq(
-        ((SigmaDsl.decodePoint(ge1), SigmaDsl.decodePoint("03e132ca090614bd6c9f811e91f6daae61f16968a1e6c694ed65aacd1b1092320e")),
-            Success(SigmaDsl.decodePoint("02bc48937b4a66f249a32dfb4d2efd0743dc88d46d770b8c5d39fd03325ba211df"))),
-        ((SigmaDsl.decodePoint(ge2), SigmaDsl.decodePoint("03e132ca090614bd6c9f811e91f6daae61f16968a1e6c694ed65aacd1b1092320e")),
-            Success(SigmaDsl.decodePoint("0359c3bb2ac4ea4dbd7b1e09d7b11198141a3263834fb84a88039629ec1e9311d1"))),
-        ((SigmaDsl.decodePoint(ge3), SigmaDsl.decodePoint("03e132ca090614bd6c9f811e91f6daae61f16968a1e6c694ed65aacd1b1092320e")),
-            Success(SigmaDsl.decodePoint("02eca42e28548d3fb9fa77cdd0c983066c3ad141ebb086b5044ce46b9ba9b5a714"))),
-        ((SigmaDsl.decodePoint(ge3), SigmaDsl.groupIdentity),
-            Success(SigmaDsl.decodePoint(ge3)))
+        ((Helpers.decodeGroupElement(ge1), Helpers.decodeGroupElement("03e132ca090614bd6c9f811e91f6daae61f16968a1e6c694ed65aacd1b1092320e")),
+            Success(Helpers.decodeGroupElement("02bc48937b4a66f249a32dfb4d2efd0743dc88d46d770b8c5d39fd03325ba211df"))),
+        ((Helpers.decodeGroupElement(ge2), Helpers.decodeGroupElement("03e132ca090614bd6c9f811e91f6daae61f16968a1e6c694ed65aacd1b1092320e")),
+            Success(Helpers.decodeGroupElement("0359c3bb2ac4ea4dbd7b1e09d7b11198141a3263834fb84a88039629ec1e9311d1"))),
+        ((Helpers.decodeGroupElement(ge3), Helpers.decodeGroupElement("03e132ca090614bd6c9f811e91f6daae61f16968a1e6c694ed65aacd1b1092320e")),
+            Success(Helpers.decodeGroupElement("02eca42e28548d3fb9fa77cdd0c983066c3ad141ebb086b5044ce46b9ba9b5a714"))),
+        ((Helpers.decodeGroupElement(ge3), SigmaDsl.groupIdentity),
+            Success(Helpers.decodeGroupElement(ge3)))
       ),
       existingFeature({ (x: (GroupElement, GroupElement)) => x._1.multiply(x._2) },
         "{ (x: (GroupElement, GroupElement)) => x._1.multiply(x._2) }",
@@ -1486,9 +1489,9 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
 
     testCases(
       Seq(
-        (t1, Success(SigmaDsl.decodeBytes("000183807f66b301530120ff7fc6bd6601ff01ff7f7d2bedbbffff00187fe89094"))),
-        (t2, Success(SigmaDsl.decodeBytes("ff000d937f80ffd731ed802d24358001ff8080ff71007f00ad37e0a7ae43fff95b"))),
-        (t3, Success(SigmaDsl.decodeBytes("3100d2e101ff01fc047c7f6f00ff80129df69a5090012f01ffca99f5bfff0c8036")))
+        (t1, Success(Helpers.decodeBytes("000183807f66b301530120ff7fc6bd6601ff01ff7f7d2bedbbffff00187fe89094"))),
+        (t2, Success(Helpers.decodeBytes("ff000d937f80ffd731ed802d24358001ff8080ff71007f00ad37e0a7ae43fff95b"))),
+        (t3, Success(Helpers.decodeBytes("3100d2e101ff01fc047c7f6f00ff80129df69a5090012f01ffca99f5bfff0c8036")))
       ),
       existingFeature((t: AvlTree) => t.digest,
         "{ (t: AvlTree) => t.digest }",
@@ -2100,13 +2103,13 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   property("longToByteArray equivalence") {
     testCases(
       Seq(
-        (-9223372036854775808L, Success(SigmaDsl.decodeBytes("8000000000000000"))),
-        (-1148502660425090565L, Success(SigmaDsl.decodeBytes("f00fb2ea55c579fb"))),
-        (-1L, Success(SigmaDsl.decodeBytes("ffffffffffffffff"))),
-        (0L, Success(SigmaDsl.decodeBytes("0000000000000000"))),
-        (1L, Success(SigmaDsl.decodeBytes("0000000000000001"))),
-        (238790047448232028L, Success(SigmaDsl.decodeBytes("03505a48720cf05c"))),
-        (9223372036854775807L, Success(SigmaDsl.decodeBytes("7fffffffffffffff")))
+        (-9223372036854775808L, Success(Helpers.decodeBytes("8000000000000000"))),
+        (-1148502660425090565L, Success(Helpers.decodeBytes("f00fb2ea55c579fb"))),
+        (-1L, Success(Helpers.decodeBytes("ffffffffffffffff"))),
+        (0L, Success(Helpers.decodeBytes("0000000000000000"))),
+        (1L, Success(Helpers.decodeBytes("0000000000000001"))),
+        (238790047448232028L, Success(Helpers.decodeBytes("03505a48720cf05c"))),
+        (9223372036854775807L, Success(Helpers.decodeBytes("7fffffffffffffff")))
       ),
       existingFeature((x: Long) => SigmaDsl.longToByteArray(x),
         "{ (x: Long) => longToByteArray(x) }",
@@ -2116,19 +2119,19 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   property("byteArrayToBigInt equivalence") {
     testCases(
       Seq(
-        (SigmaDsl.decodeBytes(""),
+        (Helpers.decodeBytes(""),
             Failure(new NumberFormatException("Zero length BigInteger"))),
-        (SigmaDsl.decodeBytes("00"),
+        (Helpers.decodeBytes("00"),
             Success(CBigInt(new BigInteger("0", 16)))),
-        (SigmaDsl.decodeBytes("01"),
+        (Helpers.decodeBytes("01"),
             Success(CBigInt(new BigInteger("1", 16)))),
-        (SigmaDsl.decodeBytes("ff"),
+        (Helpers.decodeBytes("ff"),
             Success(CBigInt(new BigInteger("-1", 16)))),
-        (SigmaDsl.decodeBytes("80d6c201"),
+        (Helpers.decodeBytes("80d6c201"),
             Success(CBigInt(new BigInteger("-7f293dff", 16)))),
-        (SigmaDsl.decodeBytes("70d6c201"),
+        (Helpers.decodeBytes("70d6c201"),
             Success(CBigInt(new BigInteger("70d6c201", 16)))),
-        (SigmaDsl.decodeBytes(
+        (Helpers.decodeBytes(
           "80e0ff7f02807fff72807f0a00ff7fb7c57f75c11ba2802970fd250052807fc37f6480ffff007fff18eeba44"
         ), Failure(new ArithmeticException("BigInteger out of 256 bit range")))
       ),
@@ -2140,15 +2143,15 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   property("byteArrayToLong equivalence") {
     testCases(
       Seq(
-        (SigmaDsl.decodeBytes(""), Failure(new IllegalArgumentException("array too small: 0 < 8"))),
-        (SigmaDsl.decodeBytes("81"), Failure(new IllegalArgumentException("array too small: 1 < 8"))),
-        (SigmaDsl.decodeBytes("812d7f00ff807f"), Failure(new IllegalArgumentException("array too small: 7 < 8"))),
-        (SigmaDsl.decodeBytes("812d7f00ff807f7f"), Success(-9138508426601529473L)),
-        (SigmaDsl.decodeBytes("ffffffffffffffff"), Success(-1L)),
-        (SigmaDsl.decodeBytes("0000000000000000"), Success(0L)),
-        (SigmaDsl.decodeBytes("0000000000000001"), Success(1L)),
-        (SigmaDsl.decodeBytes("712d7f00ff807f7f"), Success(8155314142501175167L)),
-        (SigmaDsl.decodeBytes("812d7f00ff807f7f0101018050757f0580ac009680f2ffc1"), Success(-9138508426601529473L))
+        (Helpers.decodeBytes(""), Failure(new IllegalArgumentException("array too small: 0 < 8"))),
+        (Helpers.decodeBytes("81"), Failure(new IllegalArgumentException("array too small: 1 < 8"))),
+        (Helpers.decodeBytes("812d7f00ff807f"), Failure(new IllegalArgumentException("array too small: 7 < 8"))),
+        (Helpers.decodeBytes("812d7f00ff807f7f"), Success(-9138508426601529473L)),
+        (Helpers.decodeBytes("ffffffffffffffff"), Success(-1L)),
+        (Helpers.decodeBytes("0000000000000000"), Success(0L)),
+        (Helpers.decodeBytes("0000000000000001"), Success(1L)),
+        (Helpers.decodeBytes("712d7f00ff807f7f"), Success(8155314142501175167L)),
+        (Helpers.decodeBytes("812d7f00ff807f7f0101018050757f0580ac009680f2ffc1"), Success(-9138508426601529473L))
       ),
       existingFeature((x: Coll[Byte]) => SigmaDsl.byteArrayToLong(x),
         "{ (x: Coll[Byte]) => byteArrayToLong(x) }",
@@ -2167,31 +2170,112 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   lazy val ctx = ergoCtx.toSigmaContext(IR, false)
 
   property("Box properties equivalence") {
-    val id = existingFeature({ (x: Box) => x.id },
-      "{ (x: Box) => x.id }",
-      FuncValue(Vector((1, SBox)), ExtractId(ValUse(1, SBox))))
+    val b1 = CostingBox(
+      false,
+      new ErgoBox(
+        9223372036854775807L,
+        new ErgoTree(
+          16.toByte,
+          Array(
+            SigmaPropConstant(
+              CSigmaProp(
+                ProveDlog(
+                  Helpers.decodeECPoint(
+                    "0297c44a12f4eb99a85d298fa3ba829b5b42b9f63798c980ece801cc663cc5fc9e"
+                  )
+                )
+              )
+            )
+          ),
+          Right(ConstantPlaceholder(0, SSigmaProp)),
+        ),
+        Coll(
+          (Digest32 @@ (ErgoAlgos.decodeUnsafe("6e789ab7b2fffff12280a6cd01557f6fb22b7f80ff7aff8e1f7f15973d7f0001")),
+              10000000L),
+          (Digest32 @@ (ErgoAlgos.decodeUnsafe("a3ff007f00057600808001ff8f8000019000ffdb806fff7cc0b6015eb37fa600")),
+              500L)
+        ),
+        Map(
+          ErgoBox.R5 -> ByteArrayConstant(Helpers.decodeBytes("7fc87f7f01ff")),
+          ErgoBox.R4 -> FalseLeaf
+        ),
+        ModifierId @@ ("218301ae8000018008637f0021fb9e00018055486f0b514121016a00ff718080"),
+        22588.toShort,
+        677407
+      )
+    )
 
-    val value = existingFeature({ (x: Box) => x.value },
+    val b2 = CostingBox(
+      false,
+      new ErgoBox(
+        -9223372036854775808L,
+        new ErgoTree(
+          0.toByte,
+          Vector(),//Array[Constant[SType]](),
+          Right(
+            BoolToSigmaProp(
+              AND(
+                ConcreteCollection(
+                  Array(
+                    FalseLeaf,
+                    XorOf(
+                      ConcreteCollection(Array(EQ(IntConstant(1), IntConstant(1)), FalseLeaf), SBoolean)
+                    )
+                  ),
+                  SBoolean
+                )
+              )
+            )
+          )
+        ),
+        Coll(/*([B@7a8fa663,500),([B@5ce33a58,10000000)*/),
+        Map(
+          ErgoBox.R5 -> ByteArrayConstant(
+            Helpers.decodeBytes(
+              "297000800b80f1d56c809a8c6affbed864b87f007f6f007f00ac00018c01c4fdff011088807f0100657f00f9ab0101ff6d65"
+            )
+          ),
+          ErgoBox.R4 -> TrueLeaf,
+          ErgoBox.R7 -> LongConstant(9223372036854775807L),
+          ErgoBox.R6 -> LongConstant(2115927197107005906L)
+        ),
+        ModifierId @@ ("003bd5c630803cfff6c1ff7f7fb980ff136afc011f8080b8b04ad4dbda2d7f4e"),
+        1.toShort,
+        1000000
+      )
+    )
+
+
+    testCases(
+      Seq(
+        (b1, Success(Helpers.decodeBytes("5ee78f30ae4e770e44900a46854e9fecb6b12e8112556ef1cd19aef633b4421e"))),
+        (b2, Success(Helpers.decodeBytes("e6a757dd437d6ff834c425172a1d958200c3d3a03e04d14d986867800bdeb897")))
+      ),
+      existingFeature({ (x: Box) => x.id },
+        "{ (x: Box) => x.id }",
+        FuncValue(Vector((1, SBox)), ExtractId(ValUse(1, SBox)))))
+
+    test(existingFeature({ (x: Box) => x.value },
       "{ (x: Box) => x.value }",
-      FuncValue(Vector((1, SBox)), ExtractAmount(ValUse(1, SBox))))
+      FuncValue(Vector((1, SBox)), ExtractAmount(ValUse(1, SBox)))))
 
-    val propositionBytes = existingFeature({ (x: Box) => x.propositionBytes },
+    test(existingFeature({ (x: Box) => x.propositionBytes },
       "{ (x: Box) => x.propositionBytes }",
-      FuncValue(Vector((1, SBox)), ExtractScriptBytes(ValUse(1, SBox))))
+      FuncValue(Vector((1, SBox)), ExtractScriptBytes(ValUse(1, SBox)))))
 
-    val bytes = existingFeature({ (x: Box) => x.bytes },
+    test(existingFeature({ (x: Box) => x.bytes },
       "{ (x: Box) => x.bytes }",
-      FuncValue(Vector((1, SBox)), ExtractBytes(ValUse(1, SBox))))
+      FuncValue(Vector((1, SBox)), ExtractBytes(ValUse(1, SBox)))))
 
-    val bytesWithoutRef = existingFeature({ (x: Box) => x.bytesWithoutRef },
+    test(existingFeature({ (x: Box) => x.bytesWithoutRef },
       "{ (x: Box) => x.bytesWithoutRef }",
-      FuncValue(Vector((1, SBox)), ExtractBytesWithNoRef(ValUse(1, SBox))))
+      FuncValue(Vector((1, SBox)), ExtractBytesWithNoRef(ValUse(1, SBox)))))
 
-    val creationInfo = existingFeature({ (x: Box) => x.creationInfo },
+    test(existingFeature({ (x: Box) => x.creationInfo },
       "{ (x: Box) => x.creationInfo }",
-      FuncValue(Vector((1, SBox)), ExtractCreationInfo(ValUse(1, SBox))))
+      FuncValue(Vector((1, SBox)), ExtractCreationInfo(ValUse(1, SBox)))))
 
-    val tokens = existingFeature({ (x: Box) => x.tokens },
+    test(existingFeature({ (x: Box) => x.tokens },
       "{ (x: Box) => x.tokens }",
       FuncValue(
         Vector((1, SBox)),
@@ -2201,15 +2285,17 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
           Vector(),
           Map()
         )
-      ))
+      )))
 
+  }
+
+  property("Box properties equivalence (new features)") {
     // TODO HF: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/416
     val getReg = newFeature((x: Box) => x.getReg[Int](1).get,
       "{ (x: Box) => x.getReg[Int](1).get }")
 
     forAll { box: Box =>
-      Seq(id, value, propositionBytes, bytes, bytesWithoutRef, creationInfo, tokens, getReg)
-          .foreach(_.checkEquality(box))
+      Seq(getReg).foreach(_.checkEquality(box))
     }
   }
 
