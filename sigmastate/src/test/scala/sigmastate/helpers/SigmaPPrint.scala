@@ -120,6 +120,10 @@ object SigmaPPrint extends PPrinter {
       val hexString = ErgoAlgos.encode(coll)
       Tree.Apply("Helpers.decodeBytes", treeifyMany(hexString))
 
+    case coll: Coll[_] =>
+      val elemTpe = coll.tItem.name
+      Tree.Apply(s"Coll[$elemTpe]", treeifySeq(coll.toArray))
+
     case t: AvlTreeData =>
       Tree.Apply("AvlTreeData", treeifyMany(
         Tree.Apply("ADDigest @@ ", treeifyMany(t.digest)),

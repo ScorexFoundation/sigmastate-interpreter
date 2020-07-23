@@ -2208,10 +2208,10 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
     val b2 = CostingBox(
       false,
       new ErgoBox(
-        -9223372036854775808L,
+        12345L,
         new ErgoTree(
           0.toByte,
-          Vector(),//Array[Constant[SType]](),
+          Vector(),
           Right(
             BoolToSigmaProp(
               AND(
@@ -2228,7 +2228,7 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
             )
           )
         ),
-        Coll(/*([B@7a8fa663,500),([B@5ce33a58,10000000)*/),
+        Coll(),
         Map(
           ErgoBox.R5 -> ByteArrayConstant(
             Helpers.decodeBytes(
@@ -2245,47 +2245,98 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
       )
     )
 
-
     testCases(
       Seq(
         (b1, Success(Helpers.decodeBytes("5ee78f30ae4e770e44900a46854e9fecb6b12e8112556ef1cd19aef633b4421e"))),
-        (b2, Success(Helpers.decodeBytes("e6a757dd437d6ff834c425172a1d958200c3d3a03e04d14d986867800bdeb897")))
+        (b2, Success(Helpers.decodeBytes("3a0089be265460e29ca47d26e5b55a6f3e3ffaf5b4aed941410a2437913848ad")))
       ),
       existingFeature({ (x: Box) => x.id },
         "{ (x: Box) => x.id }",
         FuncValue(Vector((1, SBox)), ExtractId(ValUse(1, SBox)))))
 
-    test(existingFeature({ (x: Box) => x.value },
-      "{ (x: Box) => x.value }",
-      FuncValue(Vector((1, SBox)), ExtractAmount(ValUse(1, SBox)))))
+    testCases(
+      Seq(
+        (b1, Success(9223372036854775807L)),
+        (b2, Success(12345L))
+      ),
+      existingFeature({ (x: Box) => x.value },
+        "{ (x: Box) => x.value }",
+        FuncValue(Vector((1, SBox)), ExtractAmount(ValUse(1, SBox)))))
 
-    test(existingFeature({ (x: Box) => x.propositionBytes },
-      "{ (x: Box) => x.propositionBytes }",
-      FuncValue(Vector((1, SBox)), ExtractScriptBytes(ValUse(1, SBox)))))
+    testCases(
+      Seq(
+        (b1, Success(Helpers.decodeBytes(
+          "100108cd0297c44a12f4eb99a85d298fa3ba829b5b42b9f63798c980ece801cc663cc5fc9e7300"
+        ))),
+        (b2, Success(Helpers.decodeBytes("00d1968302010100ff83020193040204020100")))
+      ),
+      existingFeature({ (x: Box) => x.propositionBytes },
+        "{ (x: Box) => x.propositionBytes }",
+        FuncValue(Vector((1, SBox)), ExtractScriptBytes(ValUse(1, SBox)))))
 
-    test(existingFeature({ (x: Box) => x.bytes },
-      "{ (x: Box) => x.bytes }",
-      FuncValue(Vector((1, SBox)), ExtractBytes(ValUse(1, SBox)))))
+    testCases(
+      Seq(
+        (b1, Success(Helpers.decodeBytes(
+          "ffffffffffffffff7f100108cd0297c44a12f4eb99a85d298fa3ba829b5b42b9f63798c980ece801cc663cc5fc9e73009fac29026e789ab7b2fffff12280a6cd01557f6fb22b7f80ff7aff8e1f7f15973d7f000180ade204a3ff007f00057600808001ff8f8000019000ffdb806fff7cc0b6015eb37fa600f4030201000e067fc87f7f01ff218301ae8000018008637f0021fb9e00018055486f0b514121016a00ff718080bcb001"
+        ))),
+        (b2, Success(Helpers.decodeBytes(
+          "b96000d1968302010100ff83020193040204020100c0843d000401010e32297000800b80f1d56c809a8c6affbed864b87f007f6f007f00ac00018c01c4fdff011088807f0100657f00f9ab0101ff6d6505a4a7b5a2e7a4a4dd3a05feffffffffffffffff01003bd5c630803cfff6c1ff7f7fb980ff136afc011f8080b8b04ad4dbda2d7f4e01"
+        )))
+      ),
+      existingFeature({ (x: Box) => x.bytes },
+        "{ (x: Box) => x.bytes }",
+        FuncValue(Vector((1, SBox)), ExtractBytes(ValUse(1, SBox)))))
 
-    test(existingFeature({ (x: Box) => x.bytesWithoutRef },
-      "{ (x: Box) => x.bytesWithoutRef }",
-      FuncValue(Vector((1, SBox)), ExtractBytesWithNoRef(ValUse(1, SBox)))))
+    testCases(
+      Seq(
+        (b1, Success(Helpers.decodeBytes(
+          "ffffffffffffffff7f100108cd0297c44a12f4eb99a85d298fa3ba829b5b42b9f63798c980ece801cc663cc5fc9e73009fac29026e789ab7b2fffff12280a6cd01557f6fb22b7f80ff7aff8e1f7f15973d7f000180ade204a3ff007f00057600808001ff8f8000019000ffdb806fff7cc0b6015eb37fa600f4030201000e067fc87f7f01ff"
+        ))),
+        (b2, Success(Helpers.decodeBytes(
+          "b96000d1968302010100ff83020193040204020100c0843d000401010e32297000800b80f1d56c809a8c6affbed864b87f007f6f007f00ac00018c01c4fdff011088807f0100657f00f9ab0101ff6d6505a4a7b5a2e7a4a4dd3a05feffffffffffffffff01"
+        )))
+      ),
+      existingFeature({ (x: Box) => x.bytesWithoutRef },
+        "{ (x: Box) => x.bytesWithoutRef }",
+        FuncValue(Vector((1, SBox)), ExtractBytesWithNoRef(ValUse(1, SBox)))))
 
-    test(existingFeature({ (x: Box) => x.creationInfo },
-      "{ (x: Box) => x.creationInfo }",
-      FuncValue(Vector((1, SBox)), ExtractCreationInfo(ValUse(1, SBox)))))
+    testCases(
+      Seq(
+        (b1, Success((
+            677407,
+            Helpers.decodeBytes("218301ae8000018008637f0021fb9e00018055486f0b514121016a00ff718080583c")
+            ))),
+        (b2, Success((
+            1000000,
+            Helpers.decodeBytes("003bd5c630803cfff6c1ff7f7fb980ff136afc011f8080b8b04ad4dbda2d7f4e0001")
+            )))
+      ),
+      existingFeature({ (x: Box) => x.creationInfo },
+        "{ (x: Box) => x.creationInfo }",
+        FuncValue(Vector((1, SBox)), ExtractCreationInfo(ValUse(1, SBox)))))
 
-    test(existingFeature({ (x: Box) => x.tokens },
-      "{ (x: Box) => x.tokens }",
-      FuncValue(
-        Vector((1, SBox)),
-        MethodCall.typed[Value[SCollection[STuple]]](
-          ValUse(1, SBox),
-          SBox.getMethodByName("tokens"),
-          Vector(),
-          Map()
-        )
-      )))
+    // TODO HF: fix collections equality and remove map(identity)
+    //  (PairOfColl should be equal CollOverArray)
+    testCases(
+      Seq(
+        (b1, Success(Coll[(Coll[Byte], Long)](
+            (Helpers.decodeBytes("6e789ab7b2fffff12280a6cd01557f6fb22b7f80ff7aff8e1f7f15973d7f0001"), 10000000L),
+            (Helpers.decodeBytes("a3ff007f00057600808001ff8f8000019000ffdb806fff7cc0b6015eb37fa600"), 500L)
+          ).map(identity))
+        ),
+        (b2, Success(Coll[(Coll[Byte], Long)]().map(identity)))
+      ),
+      existingFeature({ (x: Box) => x.tokens },
+        "{ (x: Box) => x.tokens }",
+        FuncValue(
+          Vector((1, SBox)),
+          MethodCall.typed[Value[SCollection[STuple]]](
+            ValUse(1, SBox),
+            SBox.getMethodByName("tokens"),
+            Vector(),
+            Map()
+          )
+        )))
 
   }
 

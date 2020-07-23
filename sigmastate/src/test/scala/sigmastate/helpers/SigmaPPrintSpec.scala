@@ -90,7 +90,11 @@ class SigmaPPrintSpec extends SigmaDslTesting {
         Vector(IntArrayConstant(Array(10, 20))),
         Right(BoolToSigmaProp(TrueLeaf))
       ),
-      """new ErgoTree(16.toByte, Vector(IntArrayConstant(Coll(10,20))), Right(BoolToSigmaProp(TrueLeaf)))""".stripMargin)
+      """new ErgoTree(
+        |  16.toByte,
+        |  Vector(IntArrayConstant(Coll[Int](10, 20))),
+        |  Right(BoolToSigmaProp(TrueLeaf))
+        |)""".stripMargin)
     test(
       CostingBox(
         false,
