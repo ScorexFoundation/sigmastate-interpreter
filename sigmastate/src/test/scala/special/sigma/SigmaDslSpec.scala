@@ -2187,7 +2187,7 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
               )
             )
           ),
-          Right(ConstantPlaceholder(0, SSigmaProp)),
+          Right(ConstantPlaceholder(0, SSigmaProp))
         ),
         Coll(
           (Digest32 @@ (ErgoAlgos.decodeUnsafe("6e789ab7b2fffff12280a6cd01557f6fb22b7f80ff7aff8e1f7f15973d7f0001")),
