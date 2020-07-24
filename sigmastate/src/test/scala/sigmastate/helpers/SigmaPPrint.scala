@@ -74,7 +74,7 @@ object SigmaPPrint extends PPrinter {
   }
 
   val exceptionHandlers: PartialFunction[Any, Tree] = {
-    case ex: RuntimeException =>
+    case ex: Exception =>
       Tree.Apply(s"new ${ex.getClass.getSimpleName}", treeifySeq(Seq(ex.getMessage)))
   }
 

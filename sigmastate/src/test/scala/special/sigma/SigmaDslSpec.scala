@@ -2353,62 +2353,95 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   property("Advanced Box test") {
     val (tree, _) = createAvlTreeAndProver()
 
-    val box = ErgoBox(20, TrueProp, 0, Seq(), Map(
-      ErgoBox.nonMandatoryRegisters(0) -> ByteConstant(1.toByte),
-      ErgoBox.nonMandatoryRegisters(1) -> ShortConstant(1024.toShort),
-      ErgoBox.nonMandatoryRegisters(2) -> IntConstant(1024 * 1024),
-      ErgoBox.nonMandatoryRegisters(3) -> LongConstant(1024.toLong),
-      ErgoBox.nonMandatoryRegisters(4) -> BigIntConstant(222L),
-      ErgoBox.nonMandatoryRegisters(5) -> AvlTreeConstant(tree)
-    ))
+    val box1 = SigmaDsl.Box(ErgoBox(20, TrueProp, 0, Seq(), Map(
+      ErgoBox.R4 -> ByteConstant(1.toByte),
+      ErgoBox.R5 -> ShortConstant(1024.toShort),
+      ErgoBox.R6 -> IntConstant(1024 * 1024),
+      ErgoBox.R7 -> LongConstant(1024.toLong),
+      ErgoBox.R8 -> BigIntConstant(222L),
+      ErgoBox.R9 -> AvlTreeConstant(tree)
+    )))
 
-    lazy val byteReg = existingFeature((x: Box) => x.R4[Byte].get,
-      "{ (x: Box) => x.R4[Byte].get }",
-      FuncValue(
-        Vector((1, SBox)),
-        OptionGet(ExtractRegisterAs(ValUse(1, SBox), ErgoBox.R4, SOption(SByte)))
-      ))
+    val box2 = SigmaDsl.Box(ErgoBox(20, TrueProp, 0, Seq(), Map(
+      ErgoBox.R4 -> ByteArrayConstant(Coll(1.toByte))
+    )))
 
-    lazy val shortReg = existingFeature((x: Box) => x.R5[Short].get,
-      "{ (x: Box) => x.R5[Short].get }",
-      FuncValue(
-        Vector((1, SBox)),
-        OptionGet(ExtractRegisterAs(ValUse(1, SBox), ErgoBox.R5, SOption(SShort)))
-      ))
-    lazy val intReg = existingFeature((x: Box) => x.R6[Int].get,
-      "{ (x: Box) => x.R6[Int].get }",
-      FuncValue(
-        Vector((1, SBox)),
-        OptionGet(ExtractRegisterAs(ValUse(1, SBox), ErgoBox.R6, SOption(SInt)))
-      ))
+    testCases(
+      Seq(
+        (box1, Success(1.toByte)),
+        (box2, Failure(new InvalidType("Cannot getReg[Byte](4): invalid type of value Value(Coll(1)) at id=4")))
+      ),
+      existingFeature((x: Box) => x.R4[Byte].get,
+        "{ (x: Box) => x.R4[Byte].get }",
+        FuncValue(
+          Vector((1, SBox)),
+          OptionGet(ExtractRegisterAs(ValUse(1, SBox), ErgoBox.R4, SOption(SByte)))
+        )))
 
-    lazy val longReg = existingFeature((x: Box) => x.R7[Long].get,
-      "{ (x: Box) => x.R7[Long].get }",
-      FuncValue(
-        Vector((1, SBox)),
-        OptionGet(ExtractRegisterAs(ValUse(1, SBox), ErgoBox.R7, SOption(SLong)))
-      ))
+    testCases(
+      Seq(
+        (box1, Success(1024.toShort)),
+        (box2, Failure(new NoSuchElementException("None.get")))
+      ),
+      existingFeature((x: Box) => x.R5[Short].get,
+        "{ (x: Box) => x.R5[Short].get }",
+        FuncValue(
+          Vector((1, SBox)),
+          OptionGet(ExtractRegisterAs(ValUse(1, SBox), ErgoBox.R5, SOption(SShort)))
+        )))
 
-    lazy val bigIntReg = existingFeature((x: Box) => x.R8[BigInt].get,
-      "{ (x: Box) => x.R8[BigInt].get }",
-      FuncValue(
-        Vector((1, SBox)),
-        OptionGet(ExtractRegisterAs(ValUse(1, SBox), ErgoBox.R8, SOption(SBigInt)))
-      ))
+    testCases(
+      Seq(
+        (box1, Success(1024 * 1024))
+      ),
+      existingFeature((x: Box) => x.R6[Int].get,
+        "{ (x: Box) => x.R6[Int].get }",
+        FuncValue(
+          Vector((1, SBox)),
+          OptionGet(ExtractRegisterAs(ValUse(1, SBox), ErgoBox.R6, SOption(SInt)))
+        )))
 
-    lazy val avlTreeReg = existingFeature((x: Box) => x.R9[AvlTree].get,
-      "{ (x: Box) => x.R9[AvlTree].get }",
-      FuncValue(
-        Vector((1, SBox)),
-        OptionGet(ExtractRegisterAs(ValUse(1, SBox), ErgoBox.R9, SOption(SAvlTree)))
-      ))
+    testCases(
+      Seq(
+        (box1, Success(1024.toLong))
+      ),
+      existingFeature((x: Box) => x.R7[Long].get,
+        "{ (x: Box) => x.R7[Long].get }",
+        FuncValue(
+          Vector((1, SBox)),
+          OptionGet(ExtractRegisterAs(ValUse(1, SBox), ErgoBox.R7, SOption(SLong)))
+        )))
 
-    Seq(
-      byteReg,
-      shortReg,
-      intReg,
-      longReg,
-      bigIntReg, avlTreeReg).foreach(_.checkEquality(box))
+    testCases(
+      Seq(
+        (box1, Success(CBigInt(BigInteger.valueOf(222L))))
+      ),
+      existingFeature((x: Box) => x.R8[BigInt].get,
+        "{ (x: Box) => x.R8[BigInt].get }",
+        FuncValue(
+          Vector((1, SBox)),
+          OptionGet(ExtractRegisterAs(ValUse(1, SBox), ErgoBox.R8, SOption(SBigInt)))
+        )))
+
+    testCases(
+      Seq(
+        (box1, Success(CAvlTree(
+          AvlTreeData(
+            ADDigest @@ (
+                ErgoAlgos.decodeUnsafe("4ec61f485b98eb87153f7c57db4f5ecd75556fddbc403b41acf8441fde8e160900")
+                ),
+            AvlTreeFlags(true, true, true),
+            32,
+            None
+          )
+        )))
+      ),
+      existingFeature((x: Box) => x.R9[AvlTree].get,
+        "{ (x: Box) => x.R9[AvlTree].get }",
+        FuncValue(
+          Vector((1, SBox)),
+          OptionGet(ExtractRegisterAs(ValUse(1, SBox), ErgoBox.R9, SOption(SAvlTree)))
+        )))
   }
 
   def existingPropTest[A: RType, B: RType](propName: String, scalaFunc: A => B) = {
