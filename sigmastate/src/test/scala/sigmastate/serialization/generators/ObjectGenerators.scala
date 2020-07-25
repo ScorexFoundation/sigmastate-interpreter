@@ -661,12 +661,6 @@ trait ObjectGenerators extends TypeGenerators with ValidationSpecification with 
       ErgoTree.withoutSegregation))
   } yield treeBuilder(prop)
 
-  val headerGen: Gen[Header] = for {
-    stateRoot <- avlTreeGen
-    parentId <- modifierIdBytesGen
-    header <- headerGen(stateRoot, parentId)
-  } yield header
-
   def headerGen(stateRoot: AvlTree, parentId: Coll[Byte]): Gen[Header] = for {
     id <- modifierIdBytesGen
     version <- arbByte.arbitrary
@@ -684,6 +678,14 @@ trait ObjectGenerators extends TypeGenerators with ValidationSpecification with 
   } yield CHeader(id, version, parentId, adProofsRoot, stateRoot, transactionRoot, timestamp, nBits,
     height, extensionRoot, minerPk, powOnetimePk, powNonce, powDistance, votes)
 
+  val headerGen: Gen[Header] = for {
+    stateRoot <- avlTreeGen
+    parentId <- modifierIdBytesGen
+    header <- headerGen(stateRoot, parentId)
+  } yield header
+
+  implicit val arbHeader = Arbitrary(headerGen)
+
   def headersGen(stateRoot: AvlTree): Gen[Seq[Header]] = for {
     size <- Gen.chooseNum(0, 10)
   } yield if (size == 0) Seq() else
@@ -691,11 +693,6 @@ trait ObjectGenerators extends TypeGenerators with ValidationSpecification with 
     .foldLeft(List[Header](headerGen(stateRoot, modifierIdBytesGen.sample.get).sample.get)) { (h, _) =>
       h :+ headerGen(stateRoot, h.last.id).sample.get
     }.reverse
-
-  val preHeaderGen: Gen[PreHeader] = for {
-    parentId <- modifierIdBytesGen
-    preHeader <- preHeaderGen(parentId)
-  } yield preHeader
 
   def preHeaderGen(parentId: Coll[Byte]): Gen[PreHeader] = for {
     version <- arbByte.arbitrary
@@ -705,6 +702,13 @@ trait ObjectGenerators extends TypeGenerators with ValidationSpecification with 
     minerPk <- groupElementGen
     votes <- minerVotesGen
   } yield CPreHeader(version, parentId, timestamp, nBits, height, minerPk, votes)
+
+  val preHeaderGen: Gen[PreHeader] = for {
+    parentId <- modifierIdBytesGen
+    preHeader <- preHeaderGen(parentId)
+  } yield preHeader
+
+  implicit val arbPreHeader = Arbitrary(preHeaderGen)
 
   val ergoLikeTransactionGen: Gen[ErgoLikeTransaction] = for {
     inputBoxesIds <- Gen.nonEmptyListOf(boxIdGen)

@@ -2457,15 +2457,43 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   }
 
   property("PreHeader properties equivalence") {
-    val h = ctx.preHeader
-    val version = existingPropTest("version", { (x: PreHeader) => x.version })
-    val parentId = existingPropTest("parentId", { (x: PreHeader) => x.parentId })
-    val timestamp = existingPropTest("timestamp", { (x: PreHeader) => x.timestamp })
-    val nBits = existingPropTest("nBits", { (x: PreHeader) => x.nBits })
-    val height = existingPropTest("height", { (x: PreHeader) => x.height })
-    val minerPk = existingPropTest("minerPk", { (x: PreHeader) => x.minerPk })
-    val votes = existingPropTest("votes", { (x: PreHeader) => x.votes })
-    Seq(version, parentId, timestamp, nBits, height, minerPk, votes).foreach(_.checkEquality(h))
+    val h1 = CPreHeader(
+      0.toByte,
+      Helpers.decodeBytes("7fff7fdd6f62018bae0001006d9ca888ff7f56ff8006573700a167f17f2c9f40"),
+      6306290372572472443L,
+      -3683306095029417063L,
+      1,
+      Helpers.decodeGroupElement("026930cb9972e01534918a6f6d6b8e35bc398f57140d13eb3623ea31fbd069939b"),
+      Helpers.decodeBytes("ff8087")
+    )
+    
+    testCases(
+      Seq((h1, Success(0.toByte))),
+      existingPropTest("version", { (x: PreHeader) => x.version }))
+
+    testCases(
+      Seq((h1, Success(Helpers.decodeBytes("7fff7fdd6f62018bae0001006d9ca888ff7f56ff8006573700a167f17f2c9f40")))),
+      existingPropTest("parentId", { (x: PreHeader) => x.parentId }))
+
+    testCases(
+      Seq((h1, Success(6306290372572472443L))),
+      existingPropTest("timestamp", { (x: PreHeader) => x.timestamp }))
+
+    testCases(
+      Seq((h1, Success(-3683306095029417063L))),
+      existingPropTest("nBits", { (x: PreHeader) => x.nBits }))
+
+    testCases(
+      Seq((h1, Success(1))),
+      existingPropTest("height", { (x: PreHeader) => x.height }))
+
+    testCases(
+      Seq((h1, Success(Helpers.decodeGroupElement("026930cb9972e01534918a6f6d6b8e35bc398f57140d13eb3623ea31fbd069939b")))),
+      existingPropTest("minerPk", { (x: PreHeader) => x.minerPk }))
+
+    testCases(
+      Seq((h1, Success(Helpers.decodeBytes("ff8087")))),
+      existingPropTest("votes", { (x: PreHeader) => x.votes }))
   }
 
   property("Header properties equivalence") {

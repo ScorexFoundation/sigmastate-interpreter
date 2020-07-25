@@ -67,6 +67,28 @@ object OrderingOps {
     }
   }
   implicit object BoxOrdering extends BoxOrdering
+
+  trait PreHeaderOrdering extends Ordering[PreHeader] {
+    /** Compares this `x: PreHeader` with `y: PreHeader` using block height.
+      * @returns a negative integer, zero, or a positive integer as the
+      * `x` is less than, equal to, or greater than `y`.
+      */
+    def compare(x: PreHeader, y: PreHeader) = {
+      Ordering.Int.compare(x.height, y.height)
+    }
+  }
+  implicit object PreHeaderOrdering extends PreHeaderOrdering
+
+  trait HeaderOrdering extends Ordering[Header] {
+    /** Compares this `x: Header` with `y: Header` using block height.
+      * @returns a negative integer, zero, or a positive integer as the
+      * `x` is less than, equal to, or greater than `y`.
+      */
+    def compare(x: Header, y: Header) = {
+      Ordering.Int.compare(x.height, y.height)
+    }
+  }
+  implicit object HeaderOrdering extends HeaderOrdering
 }
 
 object NumericOps {
