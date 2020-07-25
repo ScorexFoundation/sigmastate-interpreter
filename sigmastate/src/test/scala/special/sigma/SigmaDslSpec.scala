@@ -2497,26 +2497,91 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   }
 
   property("Header properties equivalence") {
-    val h = ctx.headers(0)
-    val id = existingPropTest("id", { (x: Header) => x.id })
-    val version = existingPropTest("version", { (x: Header) => x.version })
-    val parentId = existingPropTest("parentId", { (x: Header) => x.parentId })
-    val ASDProofsRoot = existingPropTest("ADProofsRoot", { (x: Header) => x.ADProofsRoot})
-    val stateRoot = existingPropTest("stateRoot", { (x: Header) => x.stateRoot })
-    val transactionsRoot = existingPropTest("transactionsRoot", { (x: Header) => x.transactionsRoot })
-    val timestamp = existingPropTest("timestamp", { (x: Header) => x.timestamp })
-    val nBits = existingPropTest("nBits", { (x: Header) => x.nBits })
-    val height = existingPropTest("height", { (x: Header) => x.height })
-    val extensionRoot = existingPropTest("extensionRoot", { (x: Header) => x.extensionRoot })
-    val minerPk = existingPropTest("minerPk", { (x: Header) => x.minerPk })
-    val powOnetimePk = existingPropTest("powOnetimePk", { (x: Header) => x.powOnetimePk })
-    val powNonce = existingPropTest("powNonce", { (x: Header) => x.powNonce })
-    val powDistance = existingPropTest("powDistance", { (x: Header) => x.powDistance })
-    val votes = existingPropTest("votes", { (x: Header) => x.votes })
+    val treeData = AvlTreeData(
+      ADDigest @@ (
+          ErgoAlgos.decodeUnsafe("010180017f7f7b7f720c00007f7f7f0f01e857a626f37f1483d06af8077a008080")
+          ),
+      AvlTreeFlags(false, true, false),
+      728138553,
+      Some(2147483647)
+    )
+    val h1 = CHeader(
+      Helpers.decodeBytes("957f008001808080ffe4ffffc8f3802401df40006aa05e017fa8d3f6004c804a"),
+      0.toByte,
+      Helpers.decodeBytes("0180dd805b0000ff5400b997fd7f0b9b00de00fb03c47e37806a8186b94f07ff"),
+      Helpers.decodeBytes("01f07f60d100ffb970c3007f60ff7f24d4070bb8fffa7fca7f34c10001ffe39d"),
+      CAvlTree(treeData),
+      Helpers.decodeBytes("804101ff01000080a3ffbd006ac080098df132a7017f00649311ec0e00000100"),
+      1L,
+      -1L,
+      1,
+      Helpers.decodeBytes("e57f80885601b8ff348e01808000bcfc767f2dd37f0d01015030ec018080bc62"),
+      Helpers.decodeGroupElement("039bdbfa0b49cc6bef58297a85feff45f7bbeb500a9d2283004c74fcedd4bd2904"),
+      Helpers.decodeGroupElement("0361299207fa392231e23666f6945ae3e867b978e021d8d702872bde454e9abe9c"),
+      Helpers.decodeBytes("7f4f09012a807f01"),
+      CBigInt(new BigInteger("-e24990c47e15ed4d0178c44f1790cc72155d516c43c3e8684e75db3800a288", 16)),
+      Helpers.decodeBytes("7f0180")
+    )
 
-    Seq(id, version, parentId, ASDProofsRoot, stateRoot, transactionsRoot,
-      timestamp, nBits, height, extensionRoot, minerPk, powOnetimePk,
-      powNonce, powDistance, votes).foreach(_.checkEquality(h))
+    testCases(
+      Seq((h1, Success(Helpers.decodeBytes("957f008001808080ffe4ffffc8f3802401df40006aa05e017fa8d3f6004c804a")))),
+      existingPropTest("id", { (x: Header) => x.id }))
+
+    testCases(
+      Seq((h1, Success(0.toByte))),
+      existingPropTest("version", { (x: Header) => x.version }))
+
+    testCases(
+      Seq((h1, Success(Helpers.decodeBytes("0180dd805b0000ff5400b997fd7f0b9b00de00fb03c47e37806a8186b94f07ff")))),
+      existingPropTest("parentId", { (x: Header) => x.parentId }))
+
+    testCases(
+      Seq((h1, Success(Helpers.decodeBytes("01f07f60d100ffb970c3007f60ff7f24d4070bb8fffa7fca7f34c10001ffe39d")))),
+      existingPropTest("ADProofsRoot", { (x: Header) => x.ADProofsRoot}))
+
+    testCases(
+      Seq((h1, Success(CAvlTree(treeData)))),
+      existingPropTest("stateRoot", { (x: Header) => x.stateRoot }))
+
+    testCases(
+      Seq((h1, Success(Helpers.decodeBytes("804101ff01000080a3ffbd006ac080098df132a7017f00649311ec0e00000100")))),
+      existingPropTest("transactionsRoot", { (x: Header) => x.transactionsRoot }))
+
+    testCases(
+      Seq((h1, Success(1L))),
+      existingPropTest("timestamp", { (x: Header) => x.timestamp }))
+
+    testCases(
+      Seq((h1, Success(-1L))),
+      existingPropTest("nBits", { (x: Header) => x.nBits }))
+
+    testCases(
+      Seq((h1, Success(1))),
+      existingPropTest("height", { (x: Header) => x.height }))
+
+    testCases(
+      Seq((h1, Success(Helpers.decodeBytes("e57f80885601b8ff348e01808000bcfc767f2dd37f0d01015030ec018080bc62")))),
+      existingPropTest("extensionRoot", { (x: Header) => x.extensionRoot }))
+
+    testCases(
+      Seq((h1, Success(Helpers.decodeGroupElement("039bdbfa0b49cc6bef58297a85feff45f7bbeb500a9d2283004c74fcedd4bd2904")))),
+      existingPropTest("minerPk", { (x: Header) => x.minerPk }))
+
+    testCases(
+      Seq((h1, Success(Helpers.decodeGroupElement("0361299207fa392231e23666f6945ae3e867b978e021d8d702872bde454e9abe9c")))),
+      existingPropTest("powOnetimePk", { (x: Header) => x.powOnetimePk }))
+
+    testCases(
+      Seq((h1, Success(Helpers.decodeBytes("7f4f09012a807f01")))),
+      existingPropTest("powNonce", { (x: Header) => x.powNonce }))
+
+    testCases(
+      Seq((h1, Success(CBigInt(new BigInteger("-e24990c47e15ed4d0178c44f1790cc72155d516c43c3e8684e75db3800a288", 16))))),
+      existingPropTest("powDistance", { (x: Header) => x.powDistance }))
+
+    testCases(
+      Seq((h1, Success(Helpers.decodeBytes("7f0180")))),
+      existingPropTest("votes", { (x: Header) => x.votes }))
   }
 
   property("Context properties equivalence") {
