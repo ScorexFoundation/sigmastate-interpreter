@@ -9,6 +9,7 @@ import org.ergoplatform.settings.ErgoAlgos
 import scala.collection.mutable
 import pprint.{Tree, PPrinter}
 import scalan.RType
+import scalan.RType.PrimitiveType
 import sigmastate.SCollection._
 import sigmastate.Values.{ValueCompanion, ConstantNode, ErgoTree}
 import sigmastate.interpreter.CryptoConstants.EcPointType
@@ -71,6 +72,8 @@ object SigmaPPrint extends PPrinter {
       Tree.Literal("SBooleanArray")
     case SPair(l, r) =>
       Tree.Apply("SPair", treeifySeq(Array(l, r)))
+    case t: PrimitiveType[_] =>
+      Tree.Literal(s"RType.${t.name}Type")
   }
 
   val exceptionHandlers: PartialFunction[Any, Tree] = {

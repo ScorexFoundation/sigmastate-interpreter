@@ -2,7 +2,7 @@ package special.sigma
 
 import org.scalatest.prop.PropertyChecks
 import sigmastate.interpreter.Interpreter.ScriptEnv
-import org.scalacheck.Gen
+import org.scalacheck.{Gen, Arbitrary}
 import org.scalactic.source
 import org.scalatest.{PropSpec, Matchers, Tag}
 
@@ -157,7 +157,7 @@ class SigmaDslTesting extends PropSpec
           newRes shouldBe oldRes
         }
         if (logInputOutput)
-          println(s"(${SigmaPPrint(input, height = 150)}, ${SigmaPPrint(oldRes, height = 150)}),${if (logScript) " // " + script else ""}")
+          println(s"(${SigmaPPrint(input, height = 550, width = 150)}, ${SigmaPPrint(oldRes, height = 550, width = 150)}),${if (logScript) " // " + script else ""}")
         oldRes
       case AddedFeature =>
         val oldRes = Try(oldF(input))
@@ -243,4 +243,6 @@ class SigmaDslTesting extends PropSpec
     }
   }
 
+  val contextGen: Gen[Context] = ergoLikeContextGen.map(c => c.toSigmaContext(IR, false))
+  implicit val arbContext = Arbitrary(contextGen)
 }

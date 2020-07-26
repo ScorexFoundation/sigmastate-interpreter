@@ -89,6 +89,19 @@ object OrderingOps {
     }
   }
   implicit object HeaderOrdering extends HeaderOrdering
+
+  trait ContextOrdering extends Ordering[Context] {
+    val O = Ordering[(Int, Coll[Byte])]
+
+    /** Compares this `x: Context` with `y: Context` using block height and SELF.id.
+      * @returns a negative integer, zero, or a positive integer as the
+      * `x` is less than, equal to, or greater than `y`.
+      */
+    def compare(x: Context, y: Context) = {
+      O.compare((x.HEIGHT, x.SELF.id), (y.HEIGHT, y.SELF.id))
+    }
+  }
+  implicit object ContextOrdering extends ContextOrdering
 }
 
 object NumericOps {

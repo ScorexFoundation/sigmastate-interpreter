@@ -28,7 +28,7 @@ import sigmastate.helpers.SigmaPPrint
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.Terms.MethodCall
 import sigmastate.utxo._
-import special.collection.Coll
+import special.collection._
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.utils.Helpers
 
@@ -36,6 +36,7 @@ import scala.reflect.ClassTag
 import scala.util.{DynamicVariable, Success, Failure, Try}
 import OrderingOps._
 import scorex.util.ModifierId
+import sigmastate.basics.{ProveDHTuple, DLogProtocol}
 
 /** This suite tests every method of every SigmaDsl type to be equivalent to
   * the evaluation of the corresponding ErgoScript operation */
@@ -46,10 +47,15 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   val PrintTestCasesDefault: Boolean = false
   val FailOnTestVectorsDefault: Boolean = true
 
-  def testCases[A: Ordering: Arbitrary: ClassTag, B](cases: Seq[(A, Try[B])],
-                                f: FeatureTest[A, B],
-                                printTestCases: Boolean = PrintTestCasesDefault,
-                                failOnTestVectors: Boolean = FailOnTestVectorsDefault): Unit = {
+  /** NOTE, is some cases (such as Context) sample generation is time consuming, so it
+   * makes sense to factor it out. */
+  def testCases[A: Ordering : Arbitrary : ClassTag, B]
+      (cases: Seq[(A, Try[B])],
+       f: FeatureTest[A, B],
+       printTestCases: Boolean = PrintTestCasesDefault,
+       failOnTestVectors: Boolean = FailOnTestVectorsDefault,
+       preGeneratedSamples: Option[Seq[A]] = None): Unit = {
+
     val table = Table(("x", "y"), cases:_*)
     forAll(table) { (x: A, expectedRes: Try[B]) =>
       val res = f.checkEquality(x, printTestCases)
@@ -73,17 +79,29 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
         }
       }
     }
-    test(f, printTestCases)
+    test(f, printTestCases, preGeneratedSamples)
   }
 
-  def test[A: Arbitrary: Ordering: ClassTag, B](f: FeatureTest[A,B], printTestCases: Boolean = PrintTestCasesDefault): Unit = {
-    // first generate all test inputs
+  def genSamples[A: Arbitrary: Ordering: ClassTag](config: PropertyCheckConfigParam): Seq[A] = {
     val inputs = scala.collection.mutable.ArrayBuilder.make[A]()
-    forAll { (x: A) =>
+    forAll(config) { (x: A) =>
       inputs += x
     }
+    inputs.result().sorted
+  }
+
+  def test[A: Arbitrary : Ordering : ClassTag, B]
+      (f: FeatureTest[A, B],
+       printTestCases: Boolean = PrintTestCasesDefault,
+       preGeneratedSamples: Option[Seq[A]] = None): Unit = {
+
+    // first generate all test inputs
+    val samples = preGeneratedSamples.getOrElse(
+      genSamples[A](MinSuccessful(generatorDrivenConfig.minSuccessful))
+    )
+
     // then tests them in the sorted order, this will output a nice log of test cases
-    inputs.result().sorted.foreach { x =>
+    samples.foreach { x =>
       f.checkEquality(x, printTestCases)
     }
   }
@@ -2585,129 +2603,328 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   }
 
   property("Context properties equivalence") {
-    val eq = EqualityChecker(ctx)
-    val dataInputs = existingPropTest("dataInputs", { (x: Context) => x.dataInputs })
+    val samples = genSamples[Context](MinSuccessful(5))
 
-    val dataInputs0 = existingFeature({ (x: Context) => x.dataInputs(0) },
-      "{ (x: Context) => x.dataInputs(0) }",
-      FuncValue(
-        Vector((1, SContext)),
-        ByIndex(
-          MethodCall.typed[Value[SCollection[SBox.type]]](
-            ValUse(1, SContext),
-            SContext.getMethodByName("dataInputs"),
-            Vector(),
-            Map()
-          ),
-          IntConstant(0),
-          None
-        )
-      ))
-
-    val dataInputs0id = existingFeature({ (x: Context) => x.dataInputs(0).id },
-      "{ (x: Context) => x.dataInputs(0).id }",
-      FuncValue(
-        Vector((1, SContext)),
-        ExtractId(
-          ByIndex(
-            MethodCall.typed[Value[SCollection[SBox.type]]](
-              ValUse(1, SContext),
-              SContext.getMethodByName("dataInputs"),
-              Vector(),
-              Map()
-            ),
-            IntConstant(0),
-            None
-          )
-        )
-      ))
-
-    val preHeader = existingPropTest("preHeader", { (x: Context) => x.preHeader })
-    val headers = existingPropTest("headers", { (x: Context) => x.headers })
-
-    val outputs = existingFeature({ (x: Context) => x.OUTPUTS },
-      "{ (x: Context) => x.OUTPUTS }", FuncValue(Vector((1, SContext)), Outputs))
-    val inputs = existingFeature({ (x: Context) => x.INPUTS },
-      "{ (x: Context) => x.INPUTS }", FuncValue(Vector((1, SContext)), Inputs))
-    val height = existingFeature({ (x: Context) => x.HEIGHT },
-      "{ (x: Context) => x.HEIGHT }", FuncValue(Vector((1, SContext)), Height))
-    val self = existingFeature({ (x: Context) => x.SELF },
-      "{ (x: Context) => x.SELF }", FuncValue(Vector((1, SContext)), Self))
-    val inputsMap =  existingFeature(
-      { (x: Context) => x.INPUTS.map { (b: Box) => b.value } },
-      "{ (x: Context) => x.INPUTS.map { (b: Box) => b.value } }",
-      FuncValue(
-        Vector((1, SContext)),
-        MapCollection(Inputs, FuncValue(Vector((3, SBox)), ExtractAmount(ValUse(3, SBox))))
-      ))
-
-    val inputsMap2 = existingFeature(
-      { (x: Context) => x.INPUTS.map { (b: Box) => (b.value, b.value) } },
-      """{ (x: Context) =>
-       |  x.INPUTS.map { (b: Box) => (b.value, b.value) }
-       |}""".stripMargin,
-      FuncValue(
-        Vector((1, SContext)),
-        MapCollection(
-          Inputs,
-          FuncValue(
-            Vector((3, SBox)),
-            BlockValue(
-              Vector(ValDef(5, List(), ExtractAmount(ValUse(3, SBox)))),
-              Tuple(Vector(ValUse(5, SLong), ValUse(5, SLong)))
-            )
-          )
-        )
-      ))
-
-
-    val inputsMap3 = existingFeature(
-      { (x: Context) =>
-        x.INPUTS.map { (b: Box) =>
-          val pk = b.R4[Int].get
-          val value = longToByteArray(b.value)
-          (pk, value)
-        }
-      },
-      """{ (x: Context) =>
-       |  x.INPUTS.map { (b: Box) =>
-       |    val pk = b.R4[Int].get
-       |    val value = longToByteArray(b.value)
-       |    (pk, value)
-       |  }
-       |}""".stripMargin,
-      FuncValue(
-        Vector((1, SContext)),
-        MapCollection(
-          Inputs,
-          FuncValue(
-            Vector((3, SBox)),
-            Tuple(
-              Vector(
-                OptionGet(ExtractRegisterAs(ValUse(3, SBox), ErgoBox.R4, SOption(SInt))),
-                LongToByteArray(ExtractAmount(ValUse(3, SBox)))
+    val input = CostingBox(
+      false,
+      new ErgoBox(
+        80946L,
+        new ErgoTree(
+          16.toByte,
+          Vector(
+            SigmaPropConstant(
+              CSigmaProp(
+                ProveDHTuple(
+                  Helpers.decodeECPoint("03c046fccb95549910767d0543f5e8ce41d66ae6a8720a46f4049cac3b3d26dafb"),
+                  Helpers.decodeECPoint("023479c9c3b86a0d3c8be3db0a2d186788e9af1db76d55f3dad127d15185d83d03"),
+                  Helpers.decodeECPoint("03d7898641cb6653585a8e1dabfa7f665e61e0498963e329e6e3744bd764db2d72"),
+                  Helpers.decodeECPoint("037ae057d89ec0b46ff8e9ff4c37e85c12acddb611c3f636421bef1542c11b0441")
+                )
               )
             )
+          ),
+          Right(ConstantPlaceholder(0, SSigmaProp))
+        ),
+        Coll(),
+        Map(
+          ErgoBox.R4 -> ByteArrayConstant(Helpers.decodeBytes("34")),
+          ErgoBox.R5 -> TrueLeaf,
+        ),
+        ModifierId @@ ("0000bfe96a7c0001e7a5ee00aafb80ff057fbe7f8c6680e33a3dc18001820100"),
+        1.toShort,
+        5
+      )
+    )
+
+    val dataBox = CostingBox(
+      false,
+      new ErgoBox(
+        -1L,
+        new ErgoTree(
+          0.toByte,
+          Vector(),
+          Right(SigmaPropConstant(CSigmaProp(ProveDlog(Helpers.decodeECPoint("02af645874c3b53465a5e9d820eb207d6001258c3b708f0d31d7c2e342833dce64")))))
+        ),
+        Coll((Digest32 @@ (ErgoAlgos.decodeUnsafe("8f0000ff009e7fff012427ff7fffcc35dfe680017f004ef3be1280e57fc40101")), 500L)),
+        Map(
+          ErgoBox.R9 -> LongConstant(-6985752043373238161L),
+          ErgoBox.R4 -> LongConstant(-7374898275229807247L),
+          ErgoBox.R6 -> ByteArrayConstant(Helpers.decodeBytes("00")),
+          ErgoBox.R5 -> LongConstant(-135729055492651903L),
+          ErgoBox.R8 -> TrueLeaf,
+          ErgoBox.R7 -> ByteArrayConstant(
+            Helpers.decodeBytes(
+              "5a017f1f9d2e01ff004f007f807f21b87f899e3380014900010c0101da80e9809d2a85ff010125cc017f74ed8c7f96b55efffadf7f7fffa700012e8085a915007f7f0001ffd5013e0180d58bb300c5b77f231e7f1c01013d807afd387f80287f80a51900"
+            )
+          )
+        ),
+        ModifierId @@ ("ff3f4e00d400ff00ffae3680927f782affc0004b9f0092ca98010080f60100c1"),
+        9495.toShort,
+        1000000
+      )
+    )
+
+    val header = CHeader(
+      Helpers.decodeBytes("1c597f88969600d2fffffdc47f00d8ffc555a9e85001000001c505ff80ff8f7f"),
+      0.toByte,
+      Helpers.decodeBytes("7a7fe5347f09017818010062000001807f86808000ff7f66ffb07f7ad27f3362"),
+      Helpers.decodeBytes("c1d70ad9b1ffc1fb9a715fff19807f2401017fcd8b73db017f1cff77727fff08"),
+      CAvlTree(
+        AvlTreeData(
+          ADDigest @@ (ErgoAlgos.decodeUnsafe("54d23dd080006bdb56800100356080935a80ffb77e90b800057f00661601807f17")),
+          AvlTreeFlags(true, true, false),
+          2147483647,
+          None
+        )
+      ),
+      Helpers.decodeBytes("5e7f1164ccd0990080c501fc0e0181cb387fc17f00ff00c7d5ff767f91ff5e68"),
+      -7421721754642387858L,
+      -4826493284887861030L,
+      10,
+      Helpers.decodeBytes("e580c88001ff6fc89c5501017f80e001ff0101fe48c153ff7f00666b80d780ab"),
+      Helpers.decodeGroupElement("03e7f2875298fddd933c2e0a38968fe85bdeeb70dd8b389559a1d36e2ff1b58fc5"),
+      Helpers.decodeGroupElement("034e2d3b5f9e409e3ae8a2e768340760362ca33764eda5855f7a43487f14883300"),
+      Helpers.decodeBytes("974651c9efff7f00"),
+      CBigInt(new BigInteger("478e827dfa1e4b57", 16)),
+      Helpers.decodeBytes("01ff13")
+    )
+
+    val ctx = CostingDataContext(
+      _dataInputs = Coll[Box](dataBox),
+      headers = Coll[Header](header),
+      preHeader = CPreHeader(
+        0.toByte,
+        Helpers.decodeBytes("1c597f88969600d2fffffdc47f00d8ffc555a9e85001000001c505ff80ff8f7f"),
+        -755484979487531112L,
+        9223372036854775807L,
+        11,
+        Helpers.decodeGroupElement("0227a58e9b2537103338c237c52c1213bf44bdb344fa07d9df8ab826cca26ca08f"),
+        Helpers.decodeBytes("007f00")
+      ),
+      inputs = Coll[Box](input),
+      outputs = Coll[Box](
+        CostingBox(
+          false,
+          new ErgoBox(
+            1000000L,
+            new ErgoTree(
+              16.toByte,
+              Vector(
+                SigmaPropConstant(
+                  CSigmaProp(
+                    COR(
+                      List(
+                        ProveDHTuple(
+                          Helpers.decodeECPoint("021b4c0f54304b9c427d5c87846dd56a2fa361cd34a6cb8a2090aef043c9383198"),
+                          Helpers.decodeECPoint("026826a4a9d0ec937c24d72da381ee6b5e74e49fb79a6a23a03fe0aa2cab3448ba"),
+                          Helpers.decodeECPoint("02535153378ce30df1b31137680748de728f8512d29dfeeb1f331ac6a787cd00d8"),
+                          Helpers.decodeECPoint("03d00d0174cdffd7ce3b77ef45ef9573c18fb76929fb3340f7ceea8d0be9bf5c4a")
+                        ),
+                        ProveDlog(Helpers.decodeECPoint("02c702d83f83a5ec9674e17e5eb3ab3ae579768c945590f0fb10c1c4a388353c7c")),
+                        ProveDHTuple(
+                          Helpers.decodeECPoint("03bef02fb10347eef473730711ec313b2f013322e6dad32515bd172249420f25e5"),
+                          Helpers.decodeECPoint("0365160972ed72d232f0cb5fa7909ac1647eb122942b421493def6a6051005d141"),
+                          Helpers.decodeECPoint("035060119f4b47ccf12c4502657e9ee38dba92fc6b6b1807b75d5cdc1986754751"),
+                          Helpers.decodeECPoint("02db7a6c1b51847ce5b1ba8e8c89b4ea5e68c5667f430e8bbe075ff4ea2877233a")
+                        )
+                      )
+                    )
+                  )
+                )
+              ),
+              Right(ConstantPlaceholder(0, SSigmaProp))
+            ),
+            Coll((Digest32 @@ (ErgoAlgos.decodeUnsafe("6f070152007f00005a00893ea1e98045ffa28f72da01ff7f01ff2d48eb793fd6")), 20000L)),
+            Map(ErgoBox.R5 -> LongConstant(1L), ErgoBox.R4 -> LongConstant(5008366408131208436L)),
+            ModifierId @@ ("26485d14a94ef18ec36227a838b98e11e910087be4c7e634f51391e4ea4d16ff"),
+            0.toShort,
+            11
+          )
+        ),
+        CostingBox(
+          false,
+          new ErgoBox(
+            2769336982721999022L,
+            new ErgoTree(
+              0.toByte,
+              Vector(),
+              Right(SigmaPropConstant(CSigmaProp(ProveDlog(Helpers.decodeECPoint("02d13e1a8c31f32194761adc1cdcbaa746b3e049e682bba9308d8ee84576172991")))))
+            ),
+            Coll((Digest32 @@ (ErgoAlgos.decodeUnsafe("6f070152007f00005a00893ea1e98045ffa28f72da01ff7f01ff2d48eb793fd6")), 500L)),
+            Map(),
+            ModifierId @@ ("26485d14a94ef18ec36227a838b98e11e910087be4c7e634f51391e4ea4d16ff"),
+            1.toShort,
+            0
           )
         )
-      ))
-
-    val selfBoxIndex = existingFeature({ (x: Context) => x.selfBoxIndex },
-      "{ (x: Context) => x.selfBoxIndex }",
-      FuncValue(
-        Vector((1, SContext)),
-        MethodCall.typed[Value[SInt.type]](
-          ValUse(1, SContext),
-          SContext.getMethodByName("selfBoxIndex"),
-          Vector(),
-          Map()
+      ),
+      height = 11,
+      selfBox = input.copy(),  // TODO HF: in 3.x implementation selfBox is never the same instance as input (see toSigmaContext)
+      lastBlockUtxoRootHash = CAvlTree(
+        AvlTreeData(
+          ADDigest @@ (ErgoAlgos.decodeUnsafe("54d23dd080006bdb56800100356080935a80ffb77e90b800057f00661601807f17")),
+          AvlTreeFlags(true, true, true),
+          1211925457,
+          None
         )
-      ))
-    ctx.selfBoxIndex shouldBe -1 // TODO HF: see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/603
+      ),
+      _minerPubKey = Helpers.decodeBytes("0227a58e9b2537103338c237c52c1213bf44bdb344fa07d9df8ab826cca26ca08f"),
+      vars = Coll[AnyValue](null, TestValue(Helpers.decodeBytes("00"), CollType(RType.ByteType)), TestValue(true, RType.BooleanType)),
+      false
+    )
 
-    val rootHash = existingPropTest("LastBlockUtxoRootHash", { (x: Context) => x.LastBlockUtxoRootHash })
+    test(
+      existingPropTest("dataInputs", { (x: Context) => x.dataInputs }), true,
+      preGeneratedSamples = Some(samples))
 
-    val rootHashFlag = existingFeature(
+    testCases(
+      Seq(
+        (ctx, Success(dataBox)),
+        (ctx.copy(_dataInputs = Coll()), Failure(new ArrayIndexOutOfBoundsException("0")))
+      ),
+      existingFeature({ (x: Context) => x.dataInputs(0) },
+        "{ (x: Context) => x.dataInputs(0) }",
+        FuncValue(
+                   Vector((1, SContext)),
+                   ByIndex(
+                   MethodCall.typed[Value[SCollection[SBox.type]]](
+                   ValUse(1, SContext),
+                   SContext.getMethodByName("dataInputs"),
+                   Vector(),
+                   Map()
+                   ),
+                   IntConstant(0),
+                   None
+                   )
+                   )), preGeneratedSamples = Some(samples))
+
+    testCases(
+      Seq(
+        (ctx, Success(Helpers.decodeBytes("7da4b55971f19a78d007638464580f91a020ab468c0dbe608deb1f619e245bc3"))),
+      ),
+      existingFeature({ (x: Context) => x.dataInputs(0).id },
+        "{ (x: Context) => x.dataInputs(0).id }",
+        FuncValue(
+                   Vector((1, SContext)),
+                   ExtractId(
+                   ByIndex(
+                   MethodCall.typed[Value[SCollection[SBox.type]]](
+                   ValUse(1, SContext),
+                   SContext.getMethodByName("dataInputs"),
+                   Vector(),
+                   Map()
+                   ),
+                   IntConstant(0),
+                   None
+                   )
+                   )
+                   )), preGeneratedSamples = Some(samples))
+
+    test(existingPropTest("preHeader", { (x: Context) => x.preHeader }), preGeneratedSamples = Some(samples))
+
+    test(existingPropTest("headers", { (x: Context) => x.headers }), preGeneratedSamples = Some(samples))
+
+    test(existingFeature({ (x: Context) => x.OUTPUTS },
+      "{ (x: Context) => x.OUTPUTS }", FuncValue(Vector((1, SContext)), Outputs)), preGeneratedSamples = Some(samples))
+
+    test(existingFeature({ (x: Context) => x.INPUTS },
+      "{ (x: Context) => x.INPUTS }", FuncValue(Vector((1, SContext)), Inputs)), preGeneratedSamples = Some(samples))
+
+    test(existingFeature({ (x: Context) => x.HEIGHT },
+      "{ (x: Context) => x.HEIGHT }", FuncValue(Vector((1, SContext)), Height)), preGeneratedSamples = Some(samples))
+
+    test(existingFeature({ (x: Context) => x.SELF },
+      "{ (x: Context) => x.SELF }", FuncValue(Vector((1, SContext)), Self)), preGeneratedSamples = Some(samples))
+
+    testCases(
+      Seq((ctx, Success(Coll[Long](80946L)))),
+      existingFeature(
+        { (x: Context) => x.INPUTS.map { (b: Box) => b.value } },
+        "{ (x: Context) => x.INPUTS.map { (b: Box) => b.value } }",
+        FuncValue(
+          Vector((1, SContext)),
+          MapCollection(Inputs, FuncValue(Vector((3, SBox)), ExtractAmount(ValUse(3, SBox))))
+        )), preGeneratedSamples = Some(samples))
+
+    testCases(
+      Seq((ctx, Success(Coll((80946L, 80946L))))),
+      existingFeature(
+        { (x: Context) => x.INPUTS.map { (b: Box) => (b.value, b.value) } },
+        """{ (x: Context) =>
+         |  x.INPUTS.map { (b: Box) => (b.value, b.value) }
+         |}""".stripMargin,
+        FuncValue(
+                   Vector((1, SContext)),
+                   MapCollection(
+                   Inputs,
+                   FuncValue(
+                   Vector((3, SBox)),
+                   BlockValue(
+                   Vector(ValDef(5, List(), ExtractAmount(ValUse(3, SBox)))),
+                   Tuple(Vector(ValUse(5, SLong), ValUse(5, SLong)))
+                   )
+                   )
+                   )
+                   )), preGeneratedSamples = Some(samples))
+
+
+    testCases(
+      Seq((ctx, Failure(new InvalidType("Cannot getReg[Int](4): invalid type of value Value(Coll(52)) at id=4")))),
+      existingFeature(
+        { (x: Context) =>
+          x.INPUTS.map { (b: Box) =>
+            val pk = b.R4[Int].get
+            val value = longToByteArray(b.value)
+            (pk, value)
+          }
+        },
+        """{ (x: Context) =>
+         |  x.INPUTS.map { (b: Box) =>
+         |    val pk = b.R4[Int].get
+         |    val value = longToByteArray(b.value)
+         |    (pk, value)
+         |  }
+         |}""".stripMargin,
+        FuncValue(
+                   Vector((1, SContext)),
+                   MapCollection(
+                   Inputs,
+                   FuncValue(
+                   Vector((3, SBox)),
+                   Tuple(
+                   Vector(
+                   OptionGet(ExtractRegisterAs(ValUse(3, SBox), ErgoBox.R4, SOption(SInt))),
+                   LongToByteArray(ExtractAmount(ValUse(3, SBox)))
+                   )
+                   )
+                   )
+                   )
+                   )), preGeneratedSamples = Some(samples))
+
+    testCases(
+      Seq((ctx, Success(-1))),
+      existingFeature({ (x: Context) => x.selfBoxIndex },
+        "{ (x: Context) => x.selfBoxIndex }",
+        FuncValue(
+                   Vector((1, SContext)),
+                   MethodCall.typed[Value[SInt.type]](
+                   ValUse(1, SContext),
+                   SContext.getMethodByName("selfBoxIndex"),
+                   Vector(),
+                   Map()
+                   )
+                   )), preGeneratedSamples = Some(samples))
+
+    // TODO HF: see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/603
+    samples.foreach { c =>
+      ctx.selfBoxIndex shouldBe -1
+    }
+
+    test(
+      existingPropTest("LastBlockUtxoRootHash", { (x: Context) => x.LastBlockUtxoRootHash }),
+      preGeneratedSamples = Some(samples))
+
+    test(existingFeature(
       { (x: Context) => x.LastBlockUtxoRootHash.isUpdateAllowed },
       "{ (x: Context) => x.LastBlockUtxoRootHash.isUpdateAllowed }",
       FuncValue(
@@ -2723,18 +2940,22 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
           Vector(),
           Map()
         )
-      ))
+      )), preGeneratedSamples = Some(samples))
 
-    val minerPubKey = existingPropTest("minerPubKey", { (x: Context) => x.minerPubKey })
+    test(existingPropTest("minerPubKey", { (x: Context) => x.minerPubKey }), preGeneratedSamples = Some(samples))
 
-    val getVar = existingFeature((x: Context) => x.getVar[Int](2).get,
-    "{ (x: Context) => getVar[Int](2).get }",
-      FuncValue(Vector((1, SContext)), OptionGet(GetVar(2.toByte, SOption(SInt)))))
+    testCases(
+      Seq((ctx, Failure(new InvalidType("Cannot getVar[Int](2): invalid type of value Value(true) at id=2")))),
+      existingFeature((x: Context) => x.getVar[Int](2).get,
+      "{ (x: Context) => getVar[Int](2).get }",
+        FuncValue(Vector((1, SContext)), OptionGet(GetVar(2.toByte, SOption(SInt))))), preGeneratedSamples = Some(samples))
 
-    Seq(
-      dataInputs, dataInputs0, dataInputs0id, preHeader, headers,
-      outputs, inputs, height, self, inputsMap, inputsMap2, inputsMap3, selfBoxIndex,
-      rootHash, rootHashFlag, minerPubKey, getVar).foreach(_.checkEquality(ctx))
+    testCases(
+      Seq((ctx, Success(true))),
+      existingFeature((x: Context) => x.getVar[Boolean](2).get,
+      "{ (x: Context) => getVar[Boolean](2).get }",
+        FuncValue(Vector((1, SContext)), OptionGet(GetVar(2.toByte, SOption(SBoolean))))), preGeneratedSamples = Some(samples))
+
   }
 
   property("xorOf equivalence") {

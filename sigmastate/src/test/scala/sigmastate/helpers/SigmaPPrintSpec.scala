@@ -4,6 +4,7 @@ import java.math.BigInteger
 
 import org.ergoplatform.settings.ErgoAlgos
 import org.ergoplatform.{Outputs, ErgoBox}
+import scalan.RType
 import scorex.crypto.authds.ADDigest
 import scorex.crypto.hash.Digest32
 import scorex.util.ModifierId
@@ -14,6 +15,7 @@ import sigmastate.utxo.SelectField
 import sigmastate._
 import sigmastate.eval._
 import sigmastate.utils.Helpers
+import special.collection.CollType
 import special.sigma.SigmaDslTesting
 
 import scala.collection.mutable.ArrayBuffer
@@ -42,6 +44,9 @@ class SigmaPPrintSpec extends SigmaDslTesting {
     test(SCollectionType(SCollectionType(SByte)), "SByteArray2")
     test(SCollectionType(SBoolean), "SBooleanArray")
     test(STuple(Vector(SBoolean, SInt)), "SPair(SBoolean, SInt)")
+
+    test(RType.BooleanType, "RType.BooleanType")
+    test(CollType(RType.ByteType), "CollType(RType.ByteType)")
 
     // exception handlers
     test(new ArithmeticException("msg"), "new ArithmeticException(\"msg\")")
