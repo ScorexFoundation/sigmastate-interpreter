@@ -65,7 +65,6 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
         (res, expectedRes) match {
           case (Failure(exception), Failure(expectedException)) =>
             exception.getClass shouldBe expectedException.getClass
-            exception.getMessage shouldBe expectedException.getMessage
           case _ =>
             if (failOnTestVectors) {
               assertResult(expectedRes, s"Actual: ${SigmaPPrint(res, height = 150).plainText}")(res)
@@ -2774,7 +2773,7 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
     )
 
     test(
-      existingPropTest("dataInputs", { (x: Context) => x.dataInputs }), true,
+      existingPropTest("dataInputs", { (x: Context) => x.dataInputs }),
       preGeneratedSamples = Some(samples))
 
     testCases(
