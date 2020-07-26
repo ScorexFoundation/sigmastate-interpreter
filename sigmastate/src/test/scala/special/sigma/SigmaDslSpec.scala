@@ -2628,7 +2628,7 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
         Coll(),
         Map(
           ErgoBox.R4 -> ByteArrayConstant(Helpers.decodeBytes("34")),
-          ErgoBox.R5 -> TrueLeaf,
+          ErgoBox.R5 -> TrueLeaf
         ),
         ModifierId @@ ("0000bfe96a7c0001e7a5ee00aafb80ff057fbe7f8c6680e33a3dc18001820100"),
         1.toShort,
