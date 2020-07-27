@@ -3,14 +3,12 @@ package special.sigma
 import java.math.BigInteger
 
 import org.ergoplatform.ErgoScriptPredef.TrueProp
-import org.ergoplatform.dsl.{SigmaContractSyntax, TestContractSpec}
 import org.ergoplatform._
 import org.ergoplatform.settings.ErgoAlgos
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.prop.{PropertyChecks, TableFor2}
 import org.scalatest.{PropSpec, Matchers, Tag}
 import scalan.{ExactNumeric, RType}
-import org.scalactic.source
 import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.authds.{ADDigest, ADKey, ADValue}
 import scorex.crypto.hash.{Digest32, Blake2b256}
@@ -24,8 +22,6 @@ import sigmastate.Values._
 import sigmastate.lang.Terms.Apply
 import sigmastate.eval.Extensions._
 import sigmastate.eval._
-import sigmastate.helpers.SigmaPPrint
-import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.Terms.MethodCall
 import sigmastate.utxo._
 import special.collection._
@@ -37,6 +33,7 @@ import scala.util.{DynamicVariable, Success, Failure, Try}
 import OrderingOps._
 import scorex.util.ModifierId
 import sigmastate.basics.{ProveDHTuple, DLogProtocol}
+import sigmastate.helpers.SigmaPPrint
 
 /** This suite tests every method of every SigmaDsl type to be equivalent to
   * the evaluation of the corresponding ErgoScript operation */
@@ -668,7 +665,7 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
       existingFeature((x: Short) => x.toLong,
         "{ (x: Short) => x.toLong }",
         FuncValue(Vector((1, SShort)), Upcast(ValUse(1, SShort), SLong))))
-        
+
     testCases(
       Seq(
         (-32768.toShort, Success(CBigInt(new BigInteger("-8000", 16)))),
@@ -1225,7 +1222,7 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
 
       ((CBigInt(new BigInteger("0", 16)), CBigInt(new BigInteger("-8000000000000000", 16))),
           Failure(new ArithmeticException("BigInteger: modulus not positive"))),
-          
+
       ((CBigInt(new BigInteger("0", 16)), CBigInt(new BigInteger("0", 16))),
           Failure(new ArithmeticException("BigInteger divide by zero"))),
 
@@ -2483,7 +2480,7 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
       Helpers.decodeGroupElement("026930cb9972e01534918a6f6d6b8e35bc398f57140d13eb3623ea31fbd069939b"),
       Helpers.decodeBytes("ff8087")
     )
-    
+
     testCases(
       Seq((h1, Success(0.toByte))),
       existingPropTest("version", { (x: PreHeader) => x.version }))
@@ -3152,8 +3149,8 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   }
 
   val collWithRangeGen = for {
-    arr <- collGen[Int];
-    l <- Gen.choose(0, arr.length - 1);
+    arr <- collGen[Int]
+    l <- Gen.choose(0, arr.length - 1)
     r <- Gen.choose(l, arr.length - 1) } yield (arr, (l, r))
 
   property("Coll patch method equivalence") {
@@ -3203,11 +3200,7 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
       ))
 
     forAll(collWithRangeGen) { data =>
-      val arr = data._1
-      val range = data._2
-      whenever (arr.length > 1) {
-        patch.checkEquality(data)
-      }
+      patch.checkEquality(data)
     }
   }
 

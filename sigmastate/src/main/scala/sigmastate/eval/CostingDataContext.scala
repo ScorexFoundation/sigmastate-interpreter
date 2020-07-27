@@ -15,11 +15,11 @@ import sigmastate.Values.{Constant, EvaluatedValue, SValue, ConstantNode, Value,
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.interpreter.{CryptoConstants, Interpreter}
 import special.collection.{Size, CSizeOption, SizeColl, CCostedBuilder, CollType, SizeOption, CostedBuilder, Coll}
-import special.sigma.{Box, _}
+import special.sigma._
 import sigmastate.eval.Extensions._
 import spire.syntax.all.cfor
 
-import scala.util.{Success, Failure, Try}
+import scala.util.{Success, Failure}
 import scalan.RType
 import scorex.crypto.hash.{Digest32, Sha256, Blake2b256}
 import sigmastate.basics.DLogProtocol.ProveDlog
@@ -31,14 +31,22 @@ import special.Types.TupleType
 
 import scala.reflect.ClassTag
 
+/** Interface implmented by wrappers to provide access to the underlying wrapped value. */
 trait WrapperOf[T] {
+  /** The data value wrapped by this wrapper. */
   def wrappedValue: T
 }
 
+/** A default implementation of [[BigInt]] interface.
+  * @see [[BigInt]] for detailed descriptions
+  */
 case class CBigInt(override val wrappedValue: BigInteger) extends TestBigInt(wrappedValue) with WrapperOf[BigInteger] {
   override val dsl = CostingSigmaDslBuilder
 }
 
+/** A default implementation of [[GroupElement]] interface.
+  * @see [[GroupElement]] for detailed descriptions
+  */
 case class CGroupElement(override val wrappedValue: EcPointType) extends TestGroupElement(wrappedValue) with WrapperOf[ECPoint] {
   override val dsl = CostingSigmaDslBuilder
 
@@ -46,6 +54,9 @@ case class CGroupElement(override val wrappedValue: EcPointType) extends TestGro
 
 }
 
+/** A default implementation of [[SigmaProp]] interface.
+  * @see [[SigmaProp]] for detailed descriptions
+  */
 case class CSigmaProp(sigmaTree: SigmaBoolean) extends SigmaProp with WrapperOf[SigmaBoolean] {
   override def wrappedValue: SigmaBoolean = sigmaTree
 
@@ -84,6 +95,9 @@ case class CSigmaProp(sigmaTree: SigmaBoolean) extends SigmaProp with WrapperOf[
   override def toString: String = s"SigmaProp(${wrappedValue.showToString})"
 }
 
+/** A default implementation of [[AvlTree]] interface.
+  * @see [[AvlTree]] for detailed descriptions
+  */
 case class CAvlTree(treeData: AvlTreeData) extends AvlTree with WrapperOf[AvlTreeData] {
   val builder = CostingSigmaDslBuilder
   val Colls = builder.Colls
@@ -106,10 +120,6 @@ case class CAvlTree(treeData: AvlTreeData) extends AvlTree with WrapperOf[AvlTre
   }
 
   override def valueLengthOpt: Option[Int] = treeData.valueLengthOpt
-
-  def cost: Int = 1
-
-  def dataSize: Long = SAvlTree.dataSize(treeData.asInstanceOf[SType#WrappedType])
 
   override def digest: Coll[Byte] = Colls.fromArray(treeData.digest)
 
@@ -251,6 +261,9 @@ class EvalSizeBuilder extends CSizeBuilder {
   }
 }
 
+/** A default implementation of [[Box]] interface.
+  * @see [[Box]] for detailed descriptions
+  */
 case class CostingBox(isCost: Boolean, val ebox: ErgoBox) extends Box with WrapperOf[ErgoBox] {
   val builder = CostingSigmaDslBuilder
 
@@ -406,6 +419,9 @@ object CFunc {
   val maxCost = 1000
 }
 
+/** A default implementation of [[PreHeader]] interface.
+  * @see [[PreHeader]] for detailed descriptions
+  */
 case class CPreHeader(
                        version: Byte,
                        parentId: Coll[Byte],
@@ -416,6 +432,9 @@ case class CPreHeader(
                        votes: Coll[Byte]
                      ) extends PreHeader {}
 
+/** A default implementation of [[Header]] interface.
+  * @see [[Header]] for detailed descriptions
+  */
 case class CHeader(
                     id: Coll[Byte],
                     version: Byte,
@@ -440,6 +459,9 @@ object CHeader {
   val NonceSize: Int = SigmaConstants.AutolykosPowSolutionNonceArraySize.value
 }
 
+/** A default implementation of [[CostModel]] interface.
+  * @see [[CostModel]] for detailed descriptions
+  */
 class CCostModel extends CostModel {
   private def costOf(opName: String, opType: SFunc): Int = {
     val operId = OperationId(opName, opType)
@@ -472,6 +494,10 @@ class CCostModel extends CostModel {
   def PubKeySize: Long = CryptoConstants.EncodedGroupElementLength
 }
 
+
+/** A default implementation of [[SigmaDslBuilder]] interface.
+  * @see [[SigmaDslBuilder]] for detailed descriptions
+  */
 class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
   implicit val validationSettings = ValidationRules.currentSettings
 
@@ -619,6 +645,9 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
 
 object CostingSigmaDslBuilder extends CostingSigmaDslBuilder
 
+/** A default implementation of [[Context]] interface.
+  * @see [[Context]] for detailed descriptions
+  */
 case class CostingDataContext(
                                _dataInputs: Coll[Box],
                                override val headers: Coll[Header],
