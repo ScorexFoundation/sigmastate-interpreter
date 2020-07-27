@@ -29,7 +29,7 @@ class CostingSpecification extends SigmaTestingData {
 
   val printCosts = true
 
-  val (key1, _, avlProver) = sampleAvlProver
+  val (key1, _, _, avlProver) = sampleAvlProver
   val keys = Colls.fromItems(key1)
   val key2 = keyCollGen.sample.get
   avlProver.performOneOperation(Lookup(ADKey @@ key1.toArray))

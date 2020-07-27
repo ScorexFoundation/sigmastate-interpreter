@@ -171,7 +171,7 @@ trait BigInt {
   /**
     * Returns the minimum of this BigInteger and {@code val}.
     *
-    * @param  val value with which the minimum is to be computed.
+    * @param  that value with which the minimum is to be computed.
     * @return the BigInteger whose value is the lesser of this BigInteger and
     *         { @code val}.  If they are equal, either may be returned.
     */
@@ -180,7 +180,7 @@ trait BigInt {
   /**
     * Returns the maximum of this BigInteger and {@code val}.
     *
-    * @param  val value with which the maximum is to be computed.
+    * @param  that value with which the maximum is to be computed.
     * @return the BigInteger whose value is the greater of this and
     *         { @code val}.  If they are equal, either may be returned.
     */
@@ -277,6 +277,9 @@ trait AnyValue {
   def tVal: RType[Any]
 }
 
+/** Runtime representation of Ergo boxes used during execution of ErgoTree operations.
+  * @see [[org.ergoplatform.ErgoBox]]
+  */
 @scalan.Liftable
 @WithMethodCallRecognizers
 trait Box {
@@ -410,6 +413,8 @@ trait Box {
   *
   * Please note that standard hash function from `scorex.crypto.hash` is used, and height is stored along with root hash of
   * the tree, thus `digest` size is always CryptoConstants.hashLength + 1 bytes.
+  *
+  * This interface is used as runtime representation of the AvlTree type of ErgoTree.
   */
 @scalan.Liftable
 trait AvlTree {
@@ -601,7 +606,9 @@ trait Header {
   def votes: Coll[Byte] //3 bytes
 }
 
-/** Represents data available in Sigma language using `CONTEXT` global variable*/
+/** Runtime representation of Context ErgoTree type.
+  * Represents data available in Sigma language using `CONTEXT` global variable.
+  */
 @scalan.Liftable
 @WithMethodCallRecognizers
 trait Context {
@@ -690,6 +697,7 @@ trait SigmaContract {
       (implicit cT: RType[T]): Coll[Byte] = this.builder.substConstants(scriptBytes, positions, newValues)
 }
 
+/** Runtime representation of Global ErgoTree type. */
 @scalan.Liftable
 @WithMethodCallRecognizers
 trait SigmaDslBuilder {

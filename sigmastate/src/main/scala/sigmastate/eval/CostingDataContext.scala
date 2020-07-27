@@ -7,37 +7,45 @@ import org.bouncycastle.math.ec.ECPoint
 import org.ergoplatform.{ErgoBox, SigmaConstants}
 import org.ergoplatform.validation.ValidationRules
 import scorex.crypto.authds.avltree.batch._
-import scorex.crypto.authds.{ADDigest, ADKey, ADValue, SerializedAdProof}
+import scorex.crypto.authds.{ADDigest, ADKey, SerializedAdProof, ADValue}
 import sigmastate.SCollection.SByteArray
 import sigmastate.{TrivialProp, _}
-import sigmastate.Values.{Constant, ConstantNode, ErgoTree, EvaluatedValue, SValue, SigmaBoolean, Value}
+import sigmastate.Values.{Constant, EvaluatedValue, SValue, ConstantNode, Value, ErgoTree, SigmaBoolean}
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.interpreter.{CryptoConstants, Interpreter}
-import special.collection.{CCostedBuilder, CSizeOption, Coll, CollType, CostedBuilder, Size, SizeColl, SizeOption}
-import special.sigma.{Box, _}
+import special.collection.{Size, CSizeOption, SizeColl, CCostedBuilder, CollType, SizeOption, CostedBuilder, Coll}
+import special.sigma._
 import sigmastate.eval.Extensions._
 import spire.syntax.all.cfor
 
-import scala.util.{Failure, Success}
+import scala.util.{Success, Failure}
 import scalan.RType
-import scorex.crypto.hash.{Blake2b256, Digest32, Sha256}
+import scorex.crypto.hash.{Digest32, Sha256, Blake2b256}
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
 import sigmastate.lang.Terms.OperationId
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
-import sigmastate.serialization.{GroupElementSerializer, SigmaSerializer}
+import sigmastate.serialization.{SigmaSerializer, GroupElementSerializer}
 import special.Types.TupleType
 
 import scala.reflect.ClassTag
 
+/** Interface implmented by wrappers to provide access to the underlying wrapped value. */
 trait WrapperOf[T] {
+  /** The data value wrapped by this wrapper. */
   def wrappedValue: T
 }
 
+/** A default implementation of [[BigInt]] interface.
+  * @see [[BigInt]] for detailed descriptions
+  */
 case class CBigInt(override val wrappedValue: BigInteger) extends TestBigInt(wrappedValue) with WrapperOf[BigInteger] {
   override val dsl = CostingSigmaDslBuilder
 }
 
+/** A default implementation of [[GroupElement]] interface.
+  * @see [[GroupElement]] for detailed descriptions
+  */
 case class CGroupElement(override val wrappedValue: EcPointType) extends TestGroupElement(wrappedValue) with WrapperOf[ECPoint] {
   override val dsl = CostingSigmaDslBuilder
 
@@ -45,6 +53,9 @@ case class CGroupElement(override val wrappedValue: EcPointType) extends TestGro
 
 }
 
+/** A default implementation of [[SigmaProp]] interface.
+  * @see [[SigmaProp]] for detailed descriptions
+  */
 case class CSigmaProp(sigmaTree: SigmaBoolean) extends SigmaProp with WrapperOf[SigmaBoolean] {
   override def wrappedValue: SigmaBoolean = sigmaTree
 
@@ -83,17 +94,18 @@ case class CSigmaProp(sigmaTree: SigmaBoolean) extends SigmaProp with WrapperOf[
   override def toString: String = s"SigmaProp(${wrappedValue.showToString})"
 }
 
+/** A default implementation of [[AvlTree]] interface.
+  * @see [[AvlTree]] for detailed descriptions
+  */
 case class CAvlTree(treeData: AvlTreeData) extends AvlTree with WrapperOf[AvlTreeData] {
   val builder = CostingSigmaDslBuilder
   val Colls = builder.Colls
 
   override def wrappedValue: AvlTreeData = treeData
 
-  def startingDigest: Coll[Byte] = Colls.fromArray(treeData.digest)
+  override def keyLength: Int = treeData.keyLength
 
-  def keyLength: Int = treeData.keyLength
-
-  def enabledOperations = treeData.treeFlags.serializeToByte
+  override def enabledOperations = treeData.treeFlags.serializeToByte
 
   override def isInsertAllowed: Boolean = treeData.treeFlags.insertAllowed
 
@@ -106,15 +118,11 @@ case class CAvlTree(treeData: AvlTreeData) extends AvlTree with WrapperOf[AvlTre
     this.copy(treeData = td)
   }
 
-  def valueLengthOpt: Option[Int] = treeData.valueLengthOpt
-
-  def cost: Int = 1
-
-  def dataSize: Long = SAvlTree.dataSize(treeData.asInstanceOf[SType#WrappedType])
+  override def valueLengthOpt: Option[Int] = treeData.valueLengthOpt
 
   override def digest: Coll[Byte] = Colls.fromArray(treeData.digest)
 
-  def updateDigest(newDigest: Coll[Byte]): AvlTree = {
+  override def updateDigest(newDigest: Coll[Byte]): AvlTree = {
     val td = treeData.copy(digest = ADDigest @@ newDigest.toArray)
     this.copy(treeData = td)
   }
@@ -123,7 +131,10 @@ case class CAvlTree(treeData: AvlTreeData) extends AvlTree with WrapperOf[AvlTre
     val adProof = SerializedAdProof @@ proof.toArray
     val bv = new BatchAVLVerifier[Digest32, Blake2b256.type](
       treeData.digest, adProof,
-      treeData.keyLength, treeData.valueLengthOpt)
+      treeData.keyLength, treeData.valueLengthOpt) {
+      /** Override default logging which outputs stack trace to the console. */
+      override protected def logError(t: Throwable): Unit = {}
+    }
     bv
   }
 
@@ -131,11 +142,11 @@ case class CAvlTree(treeData: AvlTreeData) extends AvlTree with WrapperOf[AvlTre
     val keyBytes = key.toArray
     val bv = createVerifier(proof)
     bv.performOneOperation(Lookup(ADKey @@ keyBytes)) match {
-      case Failure(_) => false
       case Success(r) => r match {
         case Some(_) => true
         case _ => false
       }
+      case Failure(_) => false
     }
   }
 
@@ -143,11 +154,11 @@ case class CAvlTree(treeData: AvlTreeData) extends AvlTree with WrapperOf[AvlTre
     val keyBytes = key.toArray
     val bv = createVerifier(proof)
     bv.performOneOperation(Lookup(ADKey @@ keyBytes)) match {
-      case Failure(_) => Interpreter.error(s"Tree proof is incorrect $treeData")
       case Success(r) => r match {
         case Some(v) => Some(Colls.fromArray(v))
         case _ => None
       }
+      case Failure(_) => Interpreter.error(s"Tree proof is incorrect $treeData")
     }
   }
 
@@ -155,21 +166,21 @@ case class CAvlTree(treeData: AvlTreeData) extends AvlTree with WrapperOf[AvlTre
     val bv = createVerifier(proof)
     keys.map { key =>
       bv.performOneOperation(Lookup(ADKey @@ key.toArray)) match {
-        case Failure(_) => Interpreter.error(s"Tree proof is incorrect $treeData")
         case Success(r) => r match {
           case Some(v) => Some(Colls.fromArray(v))
           case _ => None
         }
+        case Failure(_) => Interpreter.error(s"Tree proof is incorrect $treeData")
       }
     }
   }
 
-  override def insert(operations: Coll[(Coll[Byte], Coll[Byte])], proof: Coll[Byte]): Option[AvlTree] = {
+  override def insert(entries: Coll[(Coll[Byte], Coll[Byte])], proof: Coll[Byte]): Option[AvlTree] = {
     if (!isInsertAllowed) {
       None
     } else {
       val bv = createVerifier(proof)
-      operations.forall { case (key, value) =>
+      entries.forall { case (key, value) =>
         val insertRes = bv.performOneOperation(Insert(ADKey @@ key.toArray, ADValue @@ value.toArray))
         if (insertRes.isFailure) {
           Interpreter.error(s"Incorrect insert for $treeData (key: $key, value: $value, digest: $digest): ${insertRes.failed.get}}")
@@ -249,6 +260,9 @@ class EvalSizeBuilder extends CSizeBuilder {
   }
 }
 
+/** A default implementation of [[Box]] interface.
+  * @see [[Box]] for detailed descriptions
+  */
 case class CostingBox(isCost: Boolean, val ebox: ErgoBox) extends Box with WrapperOf[ErgoBox] {
   val builder = CostingSigmaDslBuilder
 
@@ -404,6 +418,9 @@ object CFunc {
   val maxCost = 1000
 }
 
+/** A default implementation of [[PreHeader]] interface.
+  * @see [[PreHeader]] for detailed descriptions
+  */
 case class CPreHeader(
                        version: Byte,
                        parentId: Coll[Byte],
@@ -414,6 +431,9 @@ case class CPreHeader(
                        votes: Coll[Byte]
                      ) extends PreHeader {}
 
+/** A default implementation of [[Header]] interface.
+  * @see [[Header]] for detailed descriptions
+  */
 case class CHeader(
                     id: Coll[Byte],
                     version: Byte,
@@ -438,6 +458,9 @@ object CHeader {
   val NonceSize: Int = SigmaConstants.AutolykosPowSolutionNonceArraySize.value
 }
 
+/** A default implementation of [[CostModel]] interface.
+  * @see [[CostModel]] for detailed descriptions
+  */
 class CCostModel extends CostModel {
   private def costOf(opName: String, opType: SFunc): Int = {
     val operId = OperationId(opName, opType)
@@ -470,6 +493,10 @@ class CCostModel extends CostModel {
   def PubKeySize: Long = CryptoConstants.EncodedGroupElementLength
 }
 
+
+/** A default implementation of [[SigmaDslBuilder]] interface.
+  * @see [[SigmaDslBuilder]] for detailed descriptions
+  */
 class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
   implicit val validationSettings = ValidationRules.currentSettings
 
@@ -612,6 +639,9 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
 
 object CostingSigmaDslBuilder extends CostingSigmaDslBuilder
 
+/** A default implementation of [[Context]] interface.
+  * @see [[Context]] for detailed descriptions
+  */
 case class CostingDataContext(
                                _dataInputs: Coll[Box],
                                override val headers: Coll[Header],
