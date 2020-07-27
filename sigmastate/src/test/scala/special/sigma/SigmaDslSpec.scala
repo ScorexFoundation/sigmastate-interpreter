@@ -3,13 +3,9 @@ package special.sigma
 import java.math.BigInteger
 
 import org.ergoplatform.ErgoScriptPredef.TrueProp
-import org.ergoplatform.dsl.{SigmaContractSyntax, TestContractSpec}
 import org.ergoplatform._
 import org.scalacheck.{Gen, Arbitrary}
-import org.scalatest.prop.{PropertyChecks,TableFor2}
-import org.scalatest.{PropSpec, Matchers, Tag}
 import scalan.{ExactNumeric, RType}
-import org.scalactic.source
 import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.hash.{Digest32, Blake2b256}
@@ -22,14 +18,12 @@ import sigmastate.Values._
 import sigmastate.lang.Terms.Apply
 import sigmastate.eval.Extensions._
 import sigmastate.eval._
-import sigmastate.helpers.SigmaPPrint
-import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.Terms.MethodCall
 import sigmastate.utxo._
 import special.collection.Coll
 import sigmastate.serialization.OpCodes.OpCode
 
-import scala.util.{DynamicVariable, Success, Failure, Try}
+import scala.util.{Success, Failure, Try}
 
 
 /** This suite tests every method of every SigmaDsl type to be equivalent to
@@ -2183,8 +2177,8 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   }
 
   val collWithRangeGen = for {
-    arr <- collGen[Int];
-    l <- Gen.choose(0, arr.length - 1);
+    arr <- collGen[Int]
+    l <- Gen.choose(0, arr.length - 1)
     r <- Gen.choose(l, arr.length - 1) } yield (arr, (l, r))
 
   property("Coll patch method equivalence") {
@@ -2234,11 +2228,7 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
       ))
 
     forAll(collWithRangeGen) { data =>
-      val arr = data._1
-      val range = data._2
-      whenever (arr.length > 1) {
-        patch.checkEquality(data)
-      }
+      patch.checkEquality(data)
     }
   }
 

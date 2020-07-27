@@ -1294,6 +1294,7 @@ object STuple extends STypeCompanion {
     }
 }
 
+/** Helper constuctor/extractor for tuples of two types. */
 object SPair {
   def apply(l: SType, r: SType) = STuple(Vector(l, r))
   def unapply(t: STuple): Nullable[(SType, SType)] = t match {
