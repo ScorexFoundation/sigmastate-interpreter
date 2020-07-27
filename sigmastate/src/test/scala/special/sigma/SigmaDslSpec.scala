@@ -2799,7 +2799,7 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
 
     testCases(
       Seq(
-        (ctx, Success(Helpers.decodeBytes("7da4b55971f19a78d007638464580f91a020ab468c0dbe608deb1f619e245bc3"))),
+        (ctx, Success(Helpers.decodeBytes("7da4b55971f19a78d007638464580f91a020ab468c0dbe608deb1f619e245bc3")))
       ),
       existingFeature({ (x: Context) => x.dataInputs(0).id },
         "{ (x: Context) => x.dataInputs(0).id }",
@@ -2953,8 +2953,8 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
       Seq((ctx, Success(true))),
       existingFeature((x: Context) => x.getVar[Boolean](2).get,
       "{ (x: Context) => getVar[Boolean](2).get }",
-        FuncValue(Vector((1, SContext)), OptionGet(GetVar(2.toByte, SOption(SBoolean))))), preGeneratedSamples = Some(samples))
-
+        FuncValue(Vector((1, SContext)), OptionGet(GetVar(2.toByte, SOption(SBoolean))))),
+        preGeneratedSamples = Some(samples))
   }
 
   property("xorOf equivalence") {
