@@ -2993,30 +2993,81 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   }
 
   property("Numeric Negation equivalence") {
-    val negByte = existingFeature((x: Byte) => (-x).toByte,
-      "{ (x: Byte) => -x }",
-      FuncValue(Vector((1, SByte)), Negation(ValUse(1, SByte))))
-    forAll { x: Byte => negByte.checkEquality(x) }
+    testCases(
+      Seq(
+        (Byte.MinValue, Success(Byte.MinValue)), // !!!
+        (-40.toByte, Success(40.toByte)),
+        (-1.toByte, Success(1.toByte)),
+        (0.toByte, Success(0.toByte)),
+        (1.toByte, Success(-1.toByte)),
+        (45.toByte, Success(-45.toByte)),
+        (127.toByte, Success(-127.toByte))),
+      existingFeature((x: Byte) => (-x).toByte,
+        "{ (x: Byte) => -x }",
+        FuncValue(Vector((1, SByte)), Negation(ValUse(1, SByte)))))
 
-    val negShort = existingFeature((x: Short) => (-x).toShort,
-      "{ (x: Short) => -x }",
-      FuncValue(Vector((1, SShort)), Negation(ValUse(1, SShort))))
-    forAll { x: Short => negShort.checkEquality(x) }
+    testCases(
+      Seq(
+        (Short.MinValue, Success(Short.MinValue)), // special case!
+        ((Short.MinValue + 1).toShort, Success(32767.toShort)),
+        (-1528.toShort, Success(1528.toShort)),
+        (-1.toShort, Success(1.toShort)),
+        (0.toShort, Success(0.toShort)),
+        (1.toShort, Success(-1.toShort)),
+        (7586.toShort, Success(-7586.toShort)),
+        (Short.MaxValue, Success(-32767.toShort))),
+      existingFeature((x: Short) => (-x).toShort,
+        "{ (x: Short) => -x }",
+        FuncValue(Vector((1, SShort)), Negation(ValUse(1, SShort)))))
 
-    val negInt = existingFeature((x: Int) => -x,
-      "{ (x: Int) => -x }",
-      FuncValue(Vector((1, SInt)), Negation(ValUse(1, SInt))))
-    forAll { x: Int => negInt.checkEquality(x) }
+    testCases(
+      Seq(
+        (Int.MinValue, Success(Int.MinValue)),  // special case!
+        (Int.MinValue + 1, Success(2147483647)),
+        (-63509744, Success(63509744)),
+        (-1, Success(1)),
+        (0, Success(0)),
+        (1, Success(-1)),
+        (677062351, Success(-677062351)),
+        (Int.MaxValue, Success(-2147483647))),
+      existingFeature((x: Int) => -x,
+        "{ (x: Int) => -x }",
+        FuncValue(Vector((1, SInt)), Negation(ValUse(1, SInt)))))
 
-    val negLong = existingFeature((x: Long) => -x,
-      "{ (x: Long) => -x }",
-      FuncValue(Vector((1, SLong)), Negation(ValUse(1, SLong))))
-    forAll { x: Long => negLong.checkEquality(x) }
+    testCases(
+      Seq(
+        (Long.MinValue, Success(Long.MinValue)),   // special case!
+        (Long.MinValue + 1, Success(9223372036854775807L)),
+        (-957264171003115006L, Success(957264171003115006L)),
+        (-1L, Success(1L)),
+        (0L, Success(0L)),
+        (1L, Success(-1L)),
+        (340835904095777627L, Success(-340835904095777627L)),
+        (9223372036854775807L, Success(-9223372036854775807L))),
+      existingFeature((x: Long) => -x,
+        "{ (x: Long) => -x }",
+        FuncValue(Vector((1, SLong)), Negation(ValUse(1, SLong)))))
 
-    val negBigInt = existingFeature((x: BigInt) => x.negate(),
-      "{ (x: BigInt) => -x }",
-      FuncValue(Vector((1, SBigInt)), Negation(ValUse(1, SBigInt))))
-    forAll { x: BigInt => negBigInt.checkEquality(x) }
+    testCases(
+      Seq(
+        (CBigInt(new BigInteger("-1655a05845a6ad363ac88ea21e88b97e436a1f02c548537e12e2d9667bf0680", 16)), Success(CBigInt(new BigInteger("1655a05845a6ad363ac88ea21e88b97e436a1f02c548537e12e2d9667bf0680", 16)))),
+        (CBigInt(new BigInteger("-1b24ba8badba8abf347cce054d9b9f14f229321507245b8", 16)), Success(CBigInt(new BigInteger("1b24ba8badba8abf347cce054d9b9f14f229321507245b8", 16)))),
+        (CBigInt(new BigInteger("-1ec9cca2c346cb72a1e65481eaa0627d", 16)), Success(CBigInt(new BigInteger("1ec9cca2c346cb72a1e65481eaa0627d", 16)))),
+        (CBigInt(new BigInteger("-8000000000000001", 16)), Success(CBigInt(new BigInteger("8000000000000001", 16)))),
+        (CBigInt(new BigInteger("-8000000000000000", 16)), Success(CBigInt(new BigInteger("8000000000000000", 16)))),
+        (CBigInt(new BigInteger("-48afe3e059821cd6", 16)), Success(CBigInt(new BigInteger("48afe3e059821cd6", 16)))),
+        (CBigInt(new BigInteger("-80000001", 16)), Success(CBigInt(new BigInteger("80000001", 16)))),
+        (CBigInt(new BigInteger("-80000000", 16)), Success(CBigInt(new BigInteger("80000000", 16)))),
+        (CBigInt(new BigInteger("-1", 16)), Success(CBigInt(new BigInteger("1", 16)))),
+        (CBigInt(new BigInteger("0", 16)), Success(CBigInt(new BigInteger("0", 16)))),
+        (CBigInt(new BigInteger("1", 16)), Success(CBigInt(new BigInteger("-1", 16)))),
+        (CBigInt(new BigInteger("7fffffff", 16)), Success(CBigInt(new BigInteger("-7fffffff", 16)))),
+        (CBigInt(new BigInteger("80000000", 16)), Success(CBigInt(new BigInteger("-80000000", 16)))),
+        (CBigInt(new BigInteger("90e8c3b6e8df65c", 16)), Success(CBigInt(new BigInteger("-90e8c3b6e8df65c", 16)))),
+        (CBigInt(new BigInteger("36aa93288257dcca141d0c01c5cef14c9d1c0f8507872e3fdd839a759636c78", 16)), Success(CBigInt(new BigInteger("-36aa93288257dcca141d0c01c5cef14c9d1c0f8507872e3fdd839a759636c78", 16))))),
+      existingFeature((x: BigInt) => x.negate(),
+        "{ (x: BigInt) => -x }",
+        FuncValue(Vector((1, SBigInt)), Negation(ValUse(1, SBigInt)))))
   }
 
   property("global functions equivalence") {
