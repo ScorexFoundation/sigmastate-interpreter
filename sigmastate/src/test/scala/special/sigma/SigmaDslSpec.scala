@@ -2955,12 +2955,31 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   }
 
   property("xorOf equivalence") {
-    val xor = existingFeature((x: Coll[Boolean]) => SigmaDsl.xorOf(x),
-      "{ (x: Coll[Boolean]) => xorOf(x) }",
-      FuncValue(Vector((1, SBooleanArray)), XorOf(ValUse(1, SBooleanArray))))
-    forAll { x: Array[Boolean] =>
-      xor.checkEquality(Colls.fromArray(x))
-    }
+    // TODO HF: see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/640
+    testCases(
+      Seq(
+        (Coll[Boolean](false), Success(false)),
+        (Coll[Boolean](true), Success(false)),
+        (Coll[Boolean](false, false), Success(false)),
+        (Coll[Boolean](false, true), Success(true)),
+        (Coll[Boolean](true, false), Success(true)),
+        (Coll[Boolean](true, true), Success(false)),
+        (Coll[Boolean](false, false, false), Success(false)),
+        (Coll[Boolean](false, false, true), Success(true)),
+        (Coll[Boolean](false, true, false), Success(true)),
+        (Coll[Boolean](false, true, true), Success(true)),
+        (Coll[Boolean](true, false, false), Success(true)),
+        (Coll[Boolean](true, false, true), Success(true)),
+        (Coll[Boolean](true, true, false), Success(true)),
+        (Coll[Boolean](true, true, true), Success(false)),
+        (Coll[Boolean](false, false, false, false), Success(false)),
+        (Coll[Boolean](false, false, false, true), Success(true)),
+        (Coll[Boolean](false, false, true, false), Success(true)),
+        (Coll[Boolean](false, false, true, true), Success(true))
+      ),
+      existingFeature((x: Coll[Boolean]) => SigmaDsl.xorOf(x),
+        "{ (x: Coll[Boolean]) => xorOf(x) }",
+        FuncValue(Vector((1, SBooleanArray)), XorOf(ValUse(1, SBooleanArray)))))
   }
 
   property("LogicalNot equivalence") {
