@@ -2983,10 +2983,13 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   }
 
   property("LogicalNot equivalence") {
-    val not = existingFeature((x: Boolean) => !x,
-      "{ (x: Boolean) => !x }",
-      FuncValue(Vector((1, SBoolean)), LogicalNot(ValUse(1, SBoolean))))
-    forAll { x: Boolean => not.checkEquality(x) }
+    testCases(
+      Seq(
+        (true, Success(false)),
+        (false, Success(true))),
+      existingFeature((x: Boolean) => !x,
+        "{ (x: Boolean) => !x }",
+        FuncValue(Vector((1, SBoolean)), LogicalNot(ValUse(1, SBoolean)))), true)
   }
 
   property("Numeric Negation equivalence") {
