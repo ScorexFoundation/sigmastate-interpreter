@@ -210,7 +210,10 @@ class CollOverArray[@specialized A](val toArray: Array[A])(implicit tA: RType[A]
 class CollOverArrayBuilder extends CollBuilder {
   override def Monoids: MonoidBuilder = new MonoidBuilderInst
 
-  @inline def pairColl[@specialized A, @specialized B](as: Coll[A], bs: Coll[B]): PairColl[A, B] = new PairOfCols(as, bs)
+  @inline def pairColl[@specialized A, @specialized B](as: Coll[A], bs: Coll[B]): PairColl[A, B] = {
+    // TODO HF: use minimal length and slice longer collection
+    new PairOfCols(as, bs)
+  }
 
   @Internal
   override def fromMap[K: RType, V: RType](m: Map[K, V]): Coll[(K, V)] = {

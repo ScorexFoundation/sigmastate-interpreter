@@ -3072,72 +3072,95 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
 
   property("global functions equivalence") {
 
-    val groupGenerator = existingFeature({ (x: Int) => SigmaDsl.groupGenerator },
-      "{ (x: Int) => groupGenerator }",
-      FuncValue(
-        Vector((1, SInt)),
-        MethodCall.typed[Value[SGroupElement.type]](
-          Global,
-          SGlobal.getMethodByName("groupGenerator"),
-          Vector(),
-          Map()
-        )
-      ))
-
-    val groupGenerator2 = existingFeature({ (x: Int) => SigmaDsl.groupGenerator },
-      "{ (x: Int) => Global.groupGenerator }",
-      FuncValue(
-        Vector((1, SInt)),
-        MethodCall.typed[Value[SGroupElement.type]](
-          Global,
-          SGlobal.getMethodByName("groupGenerator"),
-          Vector(),
-          Map()
-        )
-      ))
-
-    forAll { dummyValue: Int =>
-      Seq(groupGenerator, groupGenerator2).foreach(_.checkEquality(dummyValue))
-    }
-
-
-    val exp = existingFeature({ (n: BigInt) => SigmaDsl.groupGenerator.exp(n) },
-      "{ (n: BigInt) => groupGenerator.exp(n) }",
-      FuncValue(
-        Vector((1, SBigInt)),
-        Exponentiate(
+    testCases(
+      Seq(
+        (-1, Success(Helpers.decodeGroupElement("0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798"))),
+        (1, Success(Helpers.decodeGroupElement("0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798")))),
+      existingFeature({ (x: Int) => SigmaDsl.groupGenerator },
+        "{ (x: Int) => groupGenerator }",
+        FuncValue(
+          Vector((1, SInt)),
           MethodCall.typed[Value[SGroupElement.type]](
             Global,
             SGlobal.getMethodByName("groupGenerator"),
             Vector(),
             Map()
-          ),
-          ValUse(1, SBigInt)
-        )
-      ))
-
-    forAll { n: BigInt =>
-      exp.checkEquality(n)
-    }
-
-    val xor = existingFeature((x: (Coll[Byte], Coll[Byte])) => SigmaDsl.xor(x._1, x._2),
-      "{ (x: (Coll[Byte], Coll[Byte])) => xor(x._1, x._2) }",
-      FuncValue(
-        Vector((1, STuple(Vector(SByteArray, SByteArray)))),
-        Xor(
-          SelectField.typed[Value[SCollection[SByte.type]]](
-            ValUse(1, STuple(Vector(SByteArray, SByteArray))),
-            1.toByte
-          ),
-          SelectField.typed[Value[SCollection[SByte.type]]](
-            ValUse(1, STuple(Vector(SByteArray, SByteArray))),
-            2.toByte
           )
-        )
-      ))
-    forAll { x: (Coll[Byte], Coll[Byte]) =>
-      xor.checkEquality(x)
-    }
+        )))
+
+    testCases(
+      Seq(
+        (-1, Success(Helpers.decodeGroupElement("0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798"))),
+        (1, Success(Helpers.decodeGroupElement("0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798")))),
+      existingFeature({ (x: Int) => SigmaDsl.groupGenerator },
+        "{ (x: Int) => Global.groupGenerator }",
+        FuncValue(
+          Vector((1, SInt)),
+          MethodCall.typed[Value[SGroupElement.type]](
+            Global,
+            SGlobal.getMethodByName("groupGenerator"),
+            Vector(),
+            Map()
+          )
+        )))
+
+    testCases(
+      Seq(
+        (CBigInt(new BigInteger("-e5c1a54694c85d644fa30a6fc5f3aa209ed304d57f72683a0ebf21038b6a9d", 16)), Success(Helpers.decodeGroupElement("023395bcba3d7cf21d73c50f8af79d09a8c404c15ce9d04f067d672823bae91a54"))),
+        (CBigInt(new BigInteger("-bc2d08f935259e0eebf272c66c6e1dbd484c6706390215", 16)), Success(Helpers.decodeGroupElement("02ddcf4c48105faf3c16f7399b5dbedd82ab0bb50ae292d8f88f49a3f86e78974e"))),
+        (CBigInt(new BigInteger("-35cbe9a7a652e5fe85f735ee9909fdd8", 16)), Success(Helpers.decodeGroupElement("03b110ec9c7a8c20ed873818e976a0e96e5a17be979d3422d59b362de2a3ae043e"))),
+        (CBigInt(new BigInteger("-3f05ffca6bd4b15c", 16)), Success(Helpers.decodeGroupElement("02acf2657d0714cef8d65ae15c362faa09c0934c0bce872a23398e564c090b85c8"))),
+        (CBigInt(new BigInteger("-80000001", 16)), Success(Helpers.decodeGroupElement("0391b418fd1778356ce947a5cbb46539fd29842aea168486fae91fc5317177a575"))),
+        (CBigInt(new BigInteger("-80000000", 16)), Success(Helpers.decodeGroupElement("025318f9b1a2697010c5ac235e9af475a8c7e5419f33d47b18d33feeb329eb99a4"))),
+        (CBigInt(new BigInteger("-1", 16)), Success(Helpers.decodeGroupElement("0379be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798"))),
+        (CBigInt(new BigInteger("0", 16)), Success(Helpers.decodeGroupElement("000000000000000000000000000000000000000000000000000000000000000000"))),
+        (CBigInt(new BigInteger("1", 16)), Success(Helpers.decodeGroupElement("0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798"))),
+        (CBigInt(new BigInteger("80000000", 16)), Success(Helpers.decodeGroupElement("035318f9b1a2697010c5ac235e9af475a8c7e5419f33d47b18d33feeb329eb99a4"))),
+        (CBigInt(new BigInteger("1251b7fcd8a01e95", 16)), Success(Helpers.decodeGroupElement("030fde7238b8dddfafab8f5481dc17b880505d6bacbe3cdf2ce975afdcadf66354"))),
+        (CBigInt(new BigInteger("12f6bd76d8fe1d035bdb14bf2f696e52", 16)), Success(Helpers.decodeGroupElement("028f2ccf13669461cb3cfbea281e2db08fbb67b38493a1628855203d3f69b82763"))),
+        (CBigInt(new BigInteger("102bb404f5e36bdba004fdefa34df8cfa02e7912f3caf79", 16)), Success(Helpers.decodeGroupElement("03ce82f431d115d45ad555084f8b2861ce5c4561d154e931e9f778594896e46a25")))),
+      existingFeature({ (n: BigInt) => SigmaDsl.groupGenerator.exp(n) },
+        "{ (n: BigInt) => groupGenerator.exp(n) }",
+        FuncValue(
+          Vector((1, SBigInt)),
+          Exponentiate(
+            MethodCall.typed[Value[SGroupElement.type]](
+              Global,
+              SGlobal.getMethodByName("groupGenerator"),
+              Vector(),
+              Map()
+            ),
+            ValUse(1, SBigInt)
+          )
+        )))
+
+    // TODO HF: fix semantics when the left collection is longer
+    testCases(
+      Seq(
+        ((Helpers.decodeBytes(""), Helpers.decodeBytes("")), Success(Helpers.decodeBytes(""))),
+        ((Helpers.decodeBytes("01"), Helpers.decodeBytes("01")), Success(Helpers.decodeBytes("00"))),
+        ((Helpers.decodeBytes("0100"), Helpers.decodeBytes("0101")), Success(Helpers.decodeBytes("0001"))),
+        ((Helpers.decodeBytes("01"), Helpers.decodeBytes("0101")), Success(Helpers.decodeBytes("00"))),
+        ((Helpers.decodeBytes("0100"), Helpers.decodeBytes("01")), Failure(new ArrayIndexOutOfBoundsException("1"))),
+        ((Helpers.decodeBytes("800136fe89afff802acea67128a0ff007fffe3498c8001806080012b"),
+          Helpers.decodeBytes("648018010a5d5800f5b400a580e7b4809b0cd273ff1230bfa800017f7fdb002749b3ac2b86ff")),
+            Success(Helpers.decodeBytes("e4812eff83f2a780df7aa6d4a8474b80e4f3313a7392313fc8800054")))
+      ),
+      existingFeature((x: (Coll[Byte], Coll[Byte])) => SigmaDsl.xor(x._1, x._2),
+        "{ (x: (Coll[Byte], Coll[Byte])) => xor(x._1, x._2) }",
+        FuncValue(
+          Vector((1, STuple(Vector(SByteArray, SByteArray)))),
+          Xor(
+            SelectField.typed[Value[SCollection[SByte.type]]](
+              ValUse(1, STuple(Vector(SByteArray, SByteArray))),
+              1.toByte
+            ),
+            SelectField.typed[Value[SCollection[SByte.type]]](
+              ValUse(1, STuple(Vector(SByteArray, SByteArray))),
+              2.toByte
+            )
+          )
+        )))
   }
 
   property("Coll[Box] methods equivalence") {
