@@ -44,8 +44,11 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   val PrintTestCasesDefault: Boolean = false
   val FailOnTestVectorsDefault: Boolean = true
 
-  /** NOTE, is some cases (such as Context) sample generation is time consuming, so it
-   * makes sense to factor it out. */
+  /** Test the given test cases with expected results (aka test vectors).
+    * NOTE, is some cases (such as Context, Box, etc) sample generation is time consuming, so it
+    * makes sense to factor it out.
+    * @param preGeneratedSamples  optional pre-generated samples to reduce execution time
+    */
   def testCases[A: Ordering : Arbitrary : ClassTag, B]
       (cases: Seq[(A, Try[B])],
        f: FeatureTest[A, B],
@@ -75,9 +78,28 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
         }
       }
     }
-    test(f, printTestCases, preGeneratedSamples)
+    preGeneratedSamples match {
+      case Some(samples) =>
+        test(samples, f, printTestCases)
+      case None =>
+        test(f, printTestCases)
+    }
   }
 
+  /** Generate samples in sorted order.
+    * @param gen  generator to be used for sample generation
+    * @param config generation configuration
+    * @return array-backed ordered sequence of samples
+    */
+  def genSamples[A: Ordering: ClassTag](gen: Gen[A], config: PropertyCheckConfigParam): Seq[A] = {
+    implicit val arb = Arbitrary(gen)
+    genSamples[A](config)
+  }
+
+  /** Generate samples in sorted order.
+    * @param config generation configuration
+    * @return array-backed ordered sequence of samples
+    */
   def genSamples[A: Arbitrary: Ordering: ClassTag](config: PropertyCheckConfigParam): Seq[A] = {
     val inputs = scala.collection.mutable.ArrayBuilder.make[A]()
     forAll(config) { (x: A) =>
@@ -86,20 +108,28 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
     inputs.result().sorted
   }
 
-  def test[A: Arbitrary : Ordering : ClassTag, B]
-      (f: FeatureTest[A, B],
-       printTestCases: Boolean = PrintTestCasesDefault,
-       preGeneratedSamples: Option[Seq[A]] = None): Unit = {
-
-    // first generate all test inputs
-    val samples = preGeneratedSamples.getOrElse(
-      genSamples[A](MinSuccessful(generatorDrivenConfig.minSuccessful))
-    )
+  def test[A: Ordering : ClassTag, B]
+      (samples: Seq[A],
+       f: FeatureTest[A, B],
+       printTestCases: Boolean): Unit = {
 
     // then tests them in the sorted order, this will output a nice log of test cases
     samples.foreach { x =>
       f.checkEquality(x, printTestCases)
     }
+  }
+
+  def test[A: Ordering : ClassTag, B](samples: Seq[A], f: FeatureTest[A, B]): Unit = {
+    test(samples, f, PrintTestCasesDefault)
+  }
+
+  def test[A: Arbitrary : Ordering : ClassTag, B]
+      (f: FeatureTest[A, B],
+       printTestCases: Boolean = PrintTestCasesDefault): Unit = {
+    // first generate all test inputs
+    val samples = genSamples[A](MinSuccessful(generatorDrivenConfig.minSuccessful))
+    // then test them
+    test(samples, f, printTestCases)
   }
 
   ///=====================================================
@@ -2769,9 +2799,7 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
       false
     )
 
-    test(
-      existingPropTest("dataInputs", { (x: Context) => x.dataInputs }),
-      preGeneratedSamples = Some(samples))
+    test(samples, existingPropTest("dataInputs", { (x: Context) => x.dataInputs }))
 
     testCases(
       Seq(
@@ -2792,7 +2820,8 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
                    IntConstant(0),
                    None
                    )
-                   )), preGeneratedSamples = Some(samples))
+                   )),
+      preGeneratedSamples = Some(samples))
 
     testCases(
       Seq(
@@ -2814,23 +2843,24 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
                    None
                    )
                    )
-                   )), preGeneratedSamples = Some(samples))
+                   )),
+      preGeneratedSamples = Some(samples))
 
-    test(existingPropTest("preHeader", { (x: Context) => x.preHeader }), preGeneratedSamples = Some(samples))
+    test(samples, existingPropTest("preHeader", { (x: Context) => x.preHeader }))
 
-    test(existingPropTest("headers", { (x: Context) => x.headers }), preGeneratedSamples = Some(samples))
+    test(samples, existingPropTest("headers", { (x: Context) => x.headers }))
 
-    test(existingFeature({ (x: Context) => x.OUTPUTS },
-      "{ (x: Context) => x.OUTPUTS }", FuncValue(Vector((1, SContext)), Outputs)), preGeneratedSamples = Some(samples))
+    test(samples, existingFeature({ (x: Context) => x.OUTPUTS },
+      "{ (x: Context) => x.OUTPUTS }", FuncValue(Vector((1, SContext)), Outputs)))
 
-    test(existingFeature({ (x: Context) => x.INPUTS },
-      "{ (x: Context) => x.INPUTS }", FuncValue(Vector((1, SContext)), Inputs)), preGeneratedSamples = Some(samples))
+    test(samples, existingFeature({ (x: Context) => x.INPUTS },
+      "{ (x: Context) => x.INPUTS }", FuncValue(Vector((1, SContext)), Inputs)))
 
-    test(existingFeature({ (x: Context) => x.HEIGHT },
-      "{ (x: Context) => x.HEIGHT }", FuncValue(Vector((1, SContext)), Height)), preGeneratedSamples = Some(samples))
+    test(samples, existingFeature({ (x: Context) => x.HEIGHT },
+      "{ (x: Context) => x.HEIGHT }", FuncValue(Vector((1, SContext)), Height)))
 
-    test(existingFeature({ (x: Context) => x.SELF },
-      "{ (x: Context) => x.SELF }", FuncValue(Vector((1, SContext)), Self)), preGeneratedSamples = Some(samples))
+    test(samples, existingFeature({ (x: Context) => x.SELF },
+      "{ (x: Context) => x.SELF }", FuncValue(Vector((1, SContext)), Self)))
 
     testCases(
       Seq((ctx, Success(Coll[Long](80946L)))),
@@ -2840,7 +2870,8 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
         FuncValue(
           Vector((1, SContext)),
           MapCollection(Inputs, FuncValue(Vector((3, SBox)), ExtractAmount(ValUse(3, SBox))))
-        )), preGeneratedSamples = Some(samples))
+        )),
+      preGeneratedSamples = Some(samples))
 
     testCases(
       Seq((ctx, Success(Coll((80946L, 80946L))))),
@@ -2861,7 +2892,8 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
                    )
                    )
                    )
-                   )), preGeneratedSamples = Some(samples))
+                   )),
+      preGeneratedSamples = Some(samples))
 
 
     testCases(
@@ -2895,7 +2927,8 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
                    )
                    )
                    )
-                   )), preGeneratedSamples = Some(samples))
+                   )),
+      preGeneratedSamples = Some(samples))
 
     testCases(
       Seq((ctx, Success(-1))),
@@ -2909,18 +2942,18 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
                    Vector(),
                    Map()
                    )
-                   )), preGeneratedSamples = Some(samples))
+                   )),
+      preGeneratedSamples = Some(samples))
 
     // TODO HF: see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/603
     samples.foreach { c =>
       ctx.selfBoxIndex shouldBe -1
     }
 
-    test(
-      existingPropTest("LastBlockUtxoRootHash", { (x: Context) => x.LastBlockUtxoRootHash }),
-      preGeneratedSamples = Some(samples))
+    test(samples,
+      existingPropTest("LastBlockUtxoRootHash", { (x: Context) => x.LastBlockUtxoRootHash }))
 
-    test(existingFeature(
+    test(samples, existingFeature(
       { (x: Context) => x.LastBlockUtxoRootHash.isUpdateAllowed },
       "{ (x: Context) => x.LastBlockUtxoRootHash.isUpdateAllowed }",
       FuncValue(
@@ -2936,22 +2969,23 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
           Vector(),
           Map()
         )
-      )), preGeneratedSamples = Some(samples))
+      )))
 
-    test(existingPropTest("minerPubKey", { (x: Context) => x.minerPubKey }), preGeneratedSamples = Some(samples))
+    test(samples, existingPropTest("minerPubKey", { (x: Context) => x.minerPubKey }))
 
     testCases(
       Seq((ctx, Failure(new InvalidType("Cannot getVar[Int](2): invalid type of value Value(true) at id=2")))),
       existingFeature((x: Context) => x.getVar[Int](2).get,
       "{ (x: Context) => getVar[Int](2).get }",
-        FuncValue(Vector((1, SContext)), OptionGet(GetVar(2.toByte, SOption(SInt))))), preGeneratedSamples = Some(samples))
+        FuncValue(Vector((1, SContext)), OptionGet(GetVar(2.toByte, SOption(SInt))))),
+      preGeneratedSamples = Some(samples))
 
     testCases(
       Seq((ctx, Success(true))),
       existingFeature((x: Context) => x.getVar[Boolean](2).get,
       "{ (x: Context) => getVar[Boolean](2).get }",
         FuncValue(Vector((1, SContext)), OptionGet(GetVar(2.toByte, SOption(SBoolean))))),
-        preGeneratedSamples = Some(samples))
+      preGeneratedSamples = Some(samples))
   }
 
   property("xorOf equivalence") {
@@ -3164,84 +3198,186 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   }
 
   property("Coll[Box] methods equivalence") {
-
-    val filter = existingFeature({ (x: Coll[Box]) => x.filter({ (b: Box) => b.value > 1 }) },
-      "{ (x: Coll[Box]) => x.filter({(b: Box) => b.value > 1 }) }",
-      FuncValue(
-        Vector((1, SCollectionType(SBox))),
-        Filter(
-          ValUse(1, SCollectionType(SBox)),
-          FuncValue(Vector((3, SBox)), GT(ExtractAmount(ValUse(3, SBox)), LongConstant(1L)))
-        )
-      ))
-
-    val flatMap = existingFeature({ (x: Coll[Box]) => x.flatMap({ (b: Box) => b.propositionBytes }) },
-      "{ (x: Coll[Box]) => x.flatMap({(b: Box) => b.propositionBytes }) }",
-      FuncValue(
-        Vector((1, SCollectionType(SBox))),
-        MethodCall.typed[Value[SCollection[SByte.type]]](
-          ValUse(1, SCollectionType(SBox)),
-          SCollection.getMethodByName("flatMap").withConcreteTypes(
-            Map(STypeVar("IV") -> SBox, STypeVar("OV") -> SByte)
-          ),
-          Vector(FuncValue(Vector((3, SBox)), ExtractScriptBytes(ValUse(3, SBox)))),
-          Map()
-        )
-      ))
-
-    val zip = existingFeature({ (x: Coll[Box]) => x.zip(x) },
-      "{ (x: Coll[Box]) => x.zip(x) }",
-      FuncValue(
-        Vector((1, SCollectionType(SBox))),
-        MethodCall.typed[Value[SCollection[STuple]]](
-          ValUse(1, SCollectionType(SBox)),
-          SCollection.getMethodByName("zip").withConcreteTypes(
-            Map(STypeVar("IV") -> SBox, STypeVar("OV") -> SBox)
-          ),
-          Vector(ValUse(1, SCollectionType(SBox))),
-          Map()
-        )
-      ))
-
-    val size = existingFeature({ (x: Coll[Box]) => x.size },
-      "{ (x: Coll[Box]) => x.size }",
-      FuncValue(Vector((1, SCollectionType(SBox))), SizeOf(ValUse(1, SCollectionType(SBox)))))
-
-    val indices = existingFeature({ (x: Coll[Box]) => x.indices },
-      "{ (x: Coll[Box]) => x.indices }",
-      FuncValue(
-        Vector((1, SCollectionType(SBox))),
-        MethodCall.typed[Value[SCollection[SInt.type]]](
-          ValUse(1, SCollectionType(SBox)),
-          SCollection.getMethodByName("indices").withConcreteTypes(Map(STypeVar("IV") -> SBox)),
+    val samples = genSamples[Coll[Box]](collOfN[Box](5), MinSuccessful(20))
+    val b1 = CostingBox(
+      false,
+      new ErgoBox(
+        1L,
+        new ErgoTree(
+          0.toByte,
           Vector(),
-          Map()
-        )
-      ))
+          Right(
+            SigmaPropConstant(
+              CSigmaProp(
+                ProveDHTuple(
+                  Helpers.decodeECPoint("02c1a9311ecf1e76c787ba4b1c0e10157b4f6d1e4db3ef0d84f411c99f2d4d2c5b"),
+                  Helpers.decodeECPoint("027d1bd9a437e73726ceddecc162e5c85f79aee4798505bc826b8ad1813148e419"),
+                  Helpers.decodeECPoint("0257cff6d06fe15d1004596eeb97a7f67755188501e36adc49bd807fe65e9d8281"),
+                  Helpers.decodeECPoint("033c6021cff6ba5fdfc4f1742486030d2ebbffd9c9c09e488792f3102b2dcdabd5")
+                )
+              )
+            )
+          )
+        ),
+        Coll(),
+        Map(
+          ErgoBox.R4 -> ByteArrayConstant(
+            Helpers.decodeBytes(
+              "7200004cccdac3008001bc80ffc7ff9633bca3e501801380ff007900019d7f0001a8c9dfff5600d964011617ca00583f989c7f80007fee7f99b07f7f870067dc315180828080307fbdf400"
+            )
+          ),
+          ErgoBox.R7 -> LongConstant(0L),
+          ErgoBox.R6 -> FalseLeaf,
+          ErgoBox.R5 -> ByteArrayConstant(Helpers.decodeBytes("7f"))
+        ),
+        ModifierId @@ ("7dffff48ab0000c101a2eac9ff17017f6180aa7fc6f2178000800179499380a5"),
+        21591.toShort,
+        638768
+      )
+    )
+    val b2 = CostingBox(
+      false,
+      new ErgoBox(
+        1000000000L,
+        new ErgoTree(
+          0.toByte,
+          Vector(),
+          Right(BoolToSigmaProp(OR(ConcreteCollection(Array(FalseLeaf, AND(ConcreteCollection(Array(FalseLeaf, FalseLeaf), SBoolean))), SBoolean))))
+        ),
+        Coll(),
+        Map(),
+        ModifierId @@ ("008677ffff7ff36dff00f68031140400007689ff014c9201ce8000a9ffe6ceff"),
+        32767.toShort,
+        32827
+      )
+    )
 
-    val forall = existingFeature({ (x: Coll[Box]) => x.forall({ (b: Box) => b.value > 1 }) },
-      "{ (x: Coll[Box]) => x.forall({(b: Box) => b.value > 1 }) }",
-      FuncValue(
-        Vector((1, SCollectionType(SBox))),
-        ForAll(
-          ValUse(1, SCollectionType(SBox)),
-          FuncValue(Vector((3, SBox)), GT(ExtractAmount(ValUse(3, SBox)), LongConstant(1L)))
-        )
-      ))
+    testCases(
+      Seq(
+        (Coll[Box](), Success(Coll[Box]())),
+        (Coll[Box](b1), Success(Coll[Box]())),
+        (Coll[Box](b1, b2), Success(Coll[Box](b2)))
+      ),
+      existingFeature({ (x: Coll[Box]) => x.filter({ (b: Box) => b.value > 1 }) },
+        "{ (x: Coll[Box]) => x.filter({(b: Box) => b.value > 1 }) }",
+        FuncValue(
+          Vector((1, SCollectionType(SBox))),
+          Filter(
+            ValUse(1, SCollectionType(SBox)),
+            FuncValue(Vector((3, SBox)), GT(ExtractAmount(ValUse(3, SBox)), LongConstant(1L)))
+          )
+        )),
+      preGeneratedSamples = Some(samples))
 
-    val exists = existingFeature({ (x: Coll[Box]) => x.exists({ (b: Box) => b.value > 1 }) },
-      "{ (x: Coll[Box]) => x.exists({(b: Box) => b.value > 1 }) }",
-      FuncValue(
-        Vector((1, SCollectionType(SBox))),
-        Exists(
-          ValUse(1, SCollectionType(SBox)),
-          FuncValue(Vector((3, SBox)), GT(ExtractAmount(ValUse(3, SBox)), LongConstant(1L)))
-        )
-      ))
-      
-    forAll(collOfN[Box](10)) { boxes: Coll[Box] =>
-      Seq(filter, flatMap, zip, size, indices, forall, exists).foreach(_.checkEquality(boxes))
-    }
+    testCases(
+      Seq(
+        (Coll[Box](), Success(Coll[Byte]())),
+        (Coll[Box](b1), Success(Helpers.decodeBytes(
+          "0008ce02c1a9311ecf1e76c787ba4b1c0e10157b4f6d1e4db3ef0d84f411c99f2d4d2c5b027d1bd9a437e73726ceddecc162e5c85f79aee4798505bc826b8ad1813148e4190257cff6d06fe15d1004596eeb97a7f67755188501e36adc49bd807fe65e9d8281033c6021cff6ba5fdfc4f1742486030d2ebbffd9c9c09e488792f3102b2dcdabd5"
+        ))),
+        (Coll[Box](b1, b2), Success(Helpers.decodeBytes(
+          "0008ce02c1a9311ecf1e76c787ba4b1c0e10157b4f6d1e4db3ef0d84f411c99f2d4d2c5b027d1bd9a437e73726ceddecc162e5c85f79aee4798505bc826b8ad1813148e4190257cff6d06fe15d1004596eeb97a7f67755188501e36adc49bd807fe65e9d8281033c6021cff6ba5fdfc4f1742486030d2ebbffd9c9c09e488792f3102b2dcdabd500d197830201010096850200"
+        )))
+      ),
+      existingFeature({ (x: Coll[Box]) => x.flatMap({ (b: Box) => b.propositionBytes }) },
+        "{ (x: Coll[Box]) => x.flatMap({(b: Box) => b.propositionBytes }) }",
+        FuncValue(
+          Vector((1, SCollectionType(SBox))),
+          MethodCall.typed[Value[SCollection[SByte.type]]](
+            ValUse(1, SCollectionType(SBox)),
+            SCollection.getMethodByName("flatMap").withConcreteTypes(
+              Map(STypeVar("IV") -> SBox, STypeVar("OV") -> SByte)
+            ),
+            Vector(FuncValue(Vector((3, SBox)), ExtractScriptBytes(ValUse(3, SBox)))),
+            Map()
+          )
+        )),
+      preGeneratedSamples = Some(samples))
+
+    testCases(
+      Seq(
+        (Coll[Box](), Success(Coll[(Box, Box)]())),
+        (Coll[Box](b1), Success(Coll[(Box, Box)]((b1, b1)))),
+        (Coll[Box](b1, b2), Success(Coll[(Box, Box)]((b1, b1), (b2, b2))))
+      ),
+      existingFeature({ (x: Coll[Box]) => x.zip(x) },
+        "{ (x: Coll[Box]) => x.zip(x) }",
+        FuncValue(
+          Vector((1, SCollectionType(SBox))),
+          MethodCall.typed[Value[SCollection[STuple]]](
+            ValUse(1, SCollectionType(SBox)),
+            SCollection.getMethodByName("zip").withConcreteTypes(
+              Map(STypeVar("IV") -> SBox, STypeVar("OV") -> SBox)
+            ),
+            Vector(ValUse(1, SCollectionType(SBox))),
+            Map()
+          )
+        )),
+      preGeneratedSamples = Some(samples))
+
+    testCases(
+      Seq(
+        (Coll[Box](), Success(0)),
+        (Coll[Box](b1), Success(1)),
+        (Coll[Box](b1, b2), Success(2))
+      ),
+      existingFeature({ (x: Coll[Box]) => x.size },
+        "{ (x: Coll[Box]) => x.size }",
+        FuncValue(Vector((1, SCollectionType(SBox))), SizeOf(ValUse(1, SCollectionType(SBox))))),
+      preGeneratedSamples = Some(samples))
+
+    testCases(
+      Seq(
+        (Coll[Box](), Success(Coll[Int]())),
+        (Coll[Box](b1), Success(Coll[Int](0))),
+        (Coll[Box](b1, b2), Success(Coll[Int](0, 1)))
+      ),
+      existingFeature({ (x: Coll[Box]) => x.indices },
+        "{ (x: Coll[Box]) => x.indices }",
+        FuncValue(
+          Vector((1, SCollectionType(SBox))),
+          MethodCall.typed[Value[SCollection[SInt.type]]](
+            ValUse(1, SCollectionType(SBox)),
+            SCollection.getMethodByName("indices").withConcreteTypes(Map(STypeVar("IV") -> SBox)),
+            Vector(),
+            Map()
+          )
+        )),
+      preGeneratedSamples = Some(samples))
+
+    testCases(
+      Seq(
+        (Coll[Box](), Success(true)),
+        (Coll[Box](b1), Success(false)),
+        (Coll[Box](b1, b2), Success(false))
+      ),
+      existingFeature({ (x: Coll[Box]) => x.forall({ (b: Box) => b.value > 1 }) },
+        "{ (x: Coll[Box]) => x.forall({(b: Box) => b.value > 1 }) }",
+        FuncValue(
+          Vector((1, SCollectionType(SBox))),
+          ForAll(
+            ValUse(1, SCollectionType(SBox)),
+            FuncValue(Vector((3, SBox)), GT(ExtractAmount(ValUse(3, SBox)), LongConstant(1L)))
+          )
+        )),
+      preGeneratedSamples = Some(samples))
+
+    testCases(
+      Seq(
+        (Coll[Box](), Success(false)),
+        (Coll[Box](b1), Success(false)),
+        (Coll[Box](b1, b2), Success(true))
+      ),
+      existingFeature({ (x: Coll[Box]) => x.exists({ (b: Box) => b.value > 1 }) },
+        "{ (x: Coll[Box]) => x.exists({(b: Box) => b.value > 1 }) }",
+        FuncValue(
+          Vector((1, SCollectionType(SBox))),
+          Exists(
+            ValUse(1, SCollectionType(SBox)),
+            FuncValue(Vector((3, SBox)), GT(ExtractAmount(ValUse(3, SBox)), LongConstant(1L)))
+          )
+        )),
+      preGeneratedSamples = Some(samples))
   }
 
   val collWithRangeGen = for {

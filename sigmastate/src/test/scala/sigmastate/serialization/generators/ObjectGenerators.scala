@@ -4,7 +4,7 @@ import org.ergoplatform.ErgoBox._
 import org.ergoplatform.SigmaConstants.MaxPropositionBytes
 import org.ergoplatform.validation._
 import org.ergoplatform._
-import org.scalacheck.Arbitrary.{arbOption, arbAnyVal, arbShort, arbitrary, arbUnit, arbString, arbInt, arbLong, arbBool, arbByte}
+import org.scalacheck.Arbitrary._
 import org.scalacheck.Gen.{choose, frequency}
 import org.scalacheck.util.Buildable
 import org.scalacheck.{Arbitrary, Gen}
@@ -13,16 +13,16 @@ import scorex.crypto.authds.{ADDigest, ADKey}
 import scorex.crypto.hash.Digest32
 import scorex.util.encode.{Base64, Base58}
 import scorex.util.{bytesToId, ModifierId}
-import sigmastate.Values.{ShortConstant, LongConstant, StringConstant, BoxConstant, FuncValue, FalseLeaf, EvaluatedValue, TrueLeaf, TaggedAvlTree, TaggedLong, BigIntConstant, BlockValue, AvlTreeConstant, GetVarInt, SigmaPropConstant, CollectionConstant, ConstantPlaceholder, Value, SigmaPropValue, Tuple, IntConstant, ErgoTree, SigmaBoolean, TaggedBox, ByteConstant, TaggedInt, ValDef, GroupElementConstant, ValUse, TaggedVariable}
+import sigmastate.Values._
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
 import sigmastate.eval.Extensions._
 import sigmastate.eval.{CostingBox, SigmaDsl, _}
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.interpreter.{ProverResult, ContextExtension, CryptoConstants}
-import sigmastate.lang.TransformingSigmaBuilder.{mkModulo, mkExtractCreationInfo, mkExtractScriptBytes, mkFilter, mkPlus, mkTaggedVariable, mkSlice, mkFold, mkAtLeast, mkExtractBytesWithNoRef, mkExists, mkByteArrayToBigInt, mkForAll, mkDivide, mkSigmaOr, mkSigmaAnd, mkGT, mkGE, mkMapCollection, mkDeserializeRegister, mkExtractBytes, mkBoolToSigmaProp, mkNEQ, mkExtractAmount, mkMultiply, mkByteArrayToLong, mkConstant, mkExtractId, mkTuple, mkMax, mkLT, mkLE, mkDowncast, mkSizeOf, mkCollectionConstant, mkMin, mkDeserializeContext, mkEQ, mkAppend, mkMinus}
+import sigmastate.lang.TransformingSigmaBuilder._
 import sigmastate._
-import sigmastate.utxo.{ExtractBytesWithNoRef, OptionGet, ExtractRegisterAs, Append, ExtractScriptBytes, ExtractCreationInfo, GetVar, ExtractId, MapCollection, ExtractAmount, ForAll, ByIndex, OptionGetOrElse, OptionIsDefined, DeserializeContext, Exists, DeserializeRegister, Transformer, Fold, Slice, SizeOf, Filter, ExtractBytes}
+import sigmastate.utxo._
 import special.collection.Coll
 import special.sigma._
 
