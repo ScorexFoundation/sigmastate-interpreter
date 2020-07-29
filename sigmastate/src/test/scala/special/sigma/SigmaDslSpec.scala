@@ -3386,54 +3386,68 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
     r <- Gen.choose(l, arr.length - 1) } yield (arr, (l, r))
 
   property("Coll patch method equivalence") {
-    val patch = existingFeature(
-      { (x: (Coll[Int], (Int, Int))) =>
-        val coll = x._1
-        val l = x._2._1; val r = x._2._2
-        coll.patch(l, coll, r)
-      },
-      """{ (x: (Coll[Int], (Int, Int))) =>
-        |  val coll = x._1
-        |  val l = x._2._1; val r = x._2._2
-        |  coll.patch(l, coll, r)
-        |}""".stripMargin,
-      FuncValue(
-        Vector((1, SPair(SCollectionType(SInt), SPair(SInt, SInt)))),
-        BlockValue(
-          Vector(
-            ValDef(
-              3,
-              List(),
-              SelectField.typed[Value[SCollection[SInt.type]]](
-                ValUse(1, SPair(SCollectionType(SInt), SPair(SInt, SInt))),
-                1.toByte
-              )
-            ),
-            ValDef(
-              4,
-              List(),
-              SelectField.typed[Value[STuple]](
-                ValUse(1, SPair(SCollectionType(SInt), SPair(SInt, SInt))),
-                2.toByte
-              )
-            )
-          ),
-          MethodCall.typed[Value[SCollection[SInt.type]]](
-            ValUse(3, SCollectionType(SInt)),
-            SCollection.getMethodByName("patch").withConcreteTypes(Map(STypeVar("IV") -> SInt)),
+    val samples = genSamples(collWithRangeGen, MinSuccessful(50))
+    testCases(
+      Seq(
+       ((Coll[Int](), (0, 0)), Success(Coll[Int]())),
+       ((Coll[Int](1), (0, 0)), Success(Coll[Int](1, 1))),
+       ((Coll[Int](1), (0, 1)), Success(Coll[Int](1))),
+       ((Coll[Int](1, 2), (0, 0)), Success(Coll[Int](1, 2, 1, 2))),
+       ((Coll[Int](1, 2), (1, 0)), Success(Coll[Int](1, 1, 2, 2))),
+       ((Coll[Int](1, 2), (0, 2)), Success(Coll[Int](1, 2))),
+       ((Coll[Int](1, 2), (0, 3)), Success(Coll[Int](1, 2))),
+       ((Coll[Int](1, 2), (1, 2)), Success(Coll[Int](1, 1, 2))),
+       ((Coll[Int](1, 2), (2, 0)), Success(Coll[Int](1, 2, 1, 2))),
+       ((Coll[Int](1, 2), (3, 0)), Success(Coll[Int](1, 2, 1, 2))),
+       ((Coll[Int](1, 2), (3, 1)), Success(Coll[Int](1, 2, 1, 2))),
+       ((Coll[Int](1, 2), (-1, 1)), Success(Coll[Int](1, 2, 2))),
+       ),
+      existingFeature(
+        { (x: (Coll[Int], (Int, Int))) =>
+          val coll = x._1
+          val l = x._2._1; val r = x._2._2
+          coll.patch(l, coll, r)
+        },
+        """{ (x: (Coll[Int], (Int, Int))) =>
+          |  val coll = x._1
+          |  val l = x._2._1; val r = x._2._2
+          |  coll.patch(l, coll, r)
+          |}""".stripMargin,
+        FuncValue(
+          Vector((1, SPair(SCollectionType(SInt), SPair(SInt, SInt)))),
+          BlockValue(
             Vector(
-              SelectField.typed[Value[SInt.type]](ValUse(4, SPair(SInt, SInt)), 1.toByte),
-              ValUse(3, SCollectionType(SInt)),
-              SelectField.typed[Value[SInt.type]](ValUse(4, SPair(SInt, SInt)), 2.toByte)
+              ValDef(
+                3,
+                List(),
+                SelectField.typed[Value[SCollection[SInt.type]]](
+                  ValUse(1, SPair(SCollectionType(SInt), SPair(SInt, SInt))),
+                  1.toByte
+                )
+              ),
+              ValDef(
+                4,
+                List(),
+                SelectField.typed[Value[STuple]](
+                  ValUse(1, SPair(SCollectionType(SInt), SPair(SInt, SInt))),
+                  2.toByte
+                )
+              )
             ),
-            Map()
+            MethodCall.typed[Value[SCollection[SInt.type]]](
+              ValUse(3, SCollectionType(SInt)),
+              SCollection.getMethodByName("patch").withConcreteTypes(Map(STypeVar("IV") -> SInt)),
+              Vector(
+                SelectField.typed[Value[SInt.type]](ValUse(4, SPair(SInt, SInt)), 1.toByte),
+                ValUse(3, SCollectionType(SInt)),
+                SelectField.typed[Value[SInt.type]](ValUse(4, SPair(SInt, SInt)), 2.toByte)
+              ),
+              Map()
+            )
           )
-        )
-      ))
+        )),
+      preGeneratedSamples = Some(samples))
 
-    forAll(collWithRangeGen) { data =>
-      patch.checkEquality(data)
-    }
   }
 
   property("Coll updated method equivalence") {
