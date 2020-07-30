@@ -3389,19 +3389,19 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
     val samples = genSamples(collWithRangeGen, MinSuccessful(50))
     testCases(
       Seq(
-       ((Coll[Int](), (0, 0)), Success(Coll[Int]())),
-       ((Coll[Int](1), (0, 0)), Success(Coll[Int](1, 1))),
-       ((Coll[Int](1), (0, 1)), Success(Coll[Int](1))),
-       ((Coll[Int](1, 2), (0, 0)), Success(Coll[Int](1, 2, 1, 2))),
-       ((Coll[Int](1, 2), (1, 0)), Success(Coll[Int](1, 1, 2, 2))),
-       ((Coll[Int](1, 2), (0, 2)), Success(Coll[Int](1, 2))),
-       ((Coll[Int](1, 2), (0, 3)), Success(Coll[Int](1, 2))),
-       ((Coll[Int](1, 2), (1, 2)), Success(Coll[Int](1, 1, 2))),
-       ((Coll[Int](1, 2), (2, 0)), Success(Coll[Int](1, 2, 1, 2))),
-       ((Coll[Int](1, 2), (3, 0)), Success(Coll[Int](1, 2, 1, 2))),
-       ((Coll[Int](1, 2), (3, 1)), Success(Coll[Int](1, 2, 1, 2))),
-       ((Coll[Int](1, 2), (-1, 1)), Success(Coll[Int](1, 2, 2))),
-       ),
+        ((Coll[Int](), (0, 0)), Success(Coll[Int]())),
+        ((Coll[Int](1), (0, 0)), Success(Coll[Int](1, 1))),
+        ((Coll[Int](1), (0, 1)), Success(Coll[Int](1))),
+        ((Coll[Int](1, 2), (0, 0)), Success(Coll[Int](1, 2, 1, 2))),
+        ((Coll[Int](1, 2), (1, 0)), Success(Coll[Int](1, 1, 2, 2))),
+        ((Coll[Int](1, 2), (0, 2)), Success(Coll[Int](1, 2))),
+        ((Coll[Int](1, 2), (0, 3)), Success(Coll[Int](1, 2))),
+        ((Coll[Int](1, 2), (1, 2)), Success(Coll[Int](1, 1, 2))),
+        ((Coll[Int](1, 2), (2, 0)), Success(Coll[Int](1, 2, 1, 2))),
+        ((Coll[Int](1, 2), (3, 0)), Success(Coll[Int](1, 2, 1, 2))),
+        ((Coll[Int](1, 2), (3, 1)), Success(Coll[Int](1, 2, 1, 2))),
+        ((Coll[Int](1, 2), (-1, 1)), Success(Coll[Int](1, 2, 2)))
+      ),
       existingFeature(
         { (x: (Coll[Int], (Int, Int))) =>
           val coll = x._1
@@ -3451,43 +3451,47 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   }
 
   property("Coll updated method equivalence") {
-    val updated = existingFeature(
-      (x: (Coll[Int], (Int, Int))) => x._1.updated(x._2._1, x._2._2),
-      "{ (x: (Coll[Int], (Int, Int))) => x._1.updated(x._2._1, x._2._2) }",
-      FuncValue(
-        Vector((1, SPair(SCollectionType(SInt), SPair(SInt, SInt)))),
-        BlockValue(
-          Vector(
-            ValDef(
-              3,
-              List(),
-              SelectField.typed[Value[STuple]](
-                ValUse(1, SPair(SCollectionType(SInt), SPair(SInt, SInt))),
-                2.toByte
-              )
-            )
-          ),
-          MethodCall.typed[Value[SCollection[SInt.type]]](
-            SelectField.typed[Value[SCollection[SInt.type]]](
-              ValUse(1, SPair(SCollectionType(SInt), SPair(SInt, SInt))),
-              1.toByte
-            ),
-            SCollection.getMethodByName("updated").withConcreteTypes(Map(STypeVar("IV") -> SInt)),
+    testCases(
+      Seq(
+        ((Coll[Int](), (0, 0)), Failure(new IndexOutOfBoundsException("0"))),
+        ((Coll[Int](1), (0, 0)), Success(Coll[Int](0))),
+        ((Coll[Int](1, 2), (0, 0)), Success(Coll[Int](0, 2))),
+        ((Coll[Int](1, 2), (1, 0)), Success(Coll[Int](1, 0))),
+        ((Coll[Int](1, 2, 3), (2, 0)), Success(Coll[Int](1, 2, 0))),
+        ((Coll[Int](1, 2), (2, 0)), Failure(new IndexOutOfBoundsException("2"))),
+        ((Coll[Int](1, 2), (3, 0)), Failure(new IndexOutOfBoundsException("3"))),
+        ((Coll[Int](1, 2), (-1, 0)), Failure(new IndexOutOfBoundsException("-1")))
+      ),
+      existingFeature(
+        (x: (Coll[Int], (Int, Int))) => x._1.updated(x._2._1, x._2._2),
+        "{ (x: (Coll[Int], (Int, Int))) => x._1.updated(x._2._1, x._2._2) }",
+        FuncValue(
+          Vector((1, SPair(SCollectionType(SInt), SPair(SInt, SInt)))),
+          BlockValue(
             Vector(
-              SelectField.typed[Value[SInt.type]](ValUse(3, SPair(SInt, SInt)), 1.toByte),
-              SelectField.typed[Value[SInt.type]](ValUse(3, SPair(SInt, SInt)), 2.toByte)
+              ValDef(
+                3,
+                List(),
+                SelectField.typed[Value[STuple]](
+                  ValUse(1, SPair(SCollectionType(SInt), SPair(SInt, SInt))),
+                  2.toByte
+                )
+              )
             ),
-            Map()
+            MethodCall.typed[Value[SCollection[SInt.type]]](
+              SelectField.typed[Value[SCollection[SInt.type]]](
+                ValUse(1, SPair(SCollectionType(SInt), SPair(SInt, SInt))),
+                1.toByte
+              ),
+              SCollection.getMethodByName("updated").withConcreteTypes(Map(STypeVar("IV") -> SInt)),
+              Vector(
+                SelectField.typed[Value[SInt.type]](ValUse(3, SPair(SInt, SInt)), 1.toByte),
+                SelectField.typed[Value[SInt.type]](ValUse(3, SPair(SInt, SInt)), 2.toByte)
+              ),
+              Map()
+            )
           )
-        )
-      ))
-    forAll { x: (Array[Int], Int) =>
-      val size = x._1.size
-      whenever (size > 1) {
-        val index = getArrayIndex(size)
-        updated.checkEquality((Colls.fromArray(x._1), (index, x._2)))
-      }
-    }
+        )))
   }
 
   property("Coll updateMany method equivalence") {
