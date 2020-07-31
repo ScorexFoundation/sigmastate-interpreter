@@ -3495,6 +3495,9 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
         )))
   }
 
+  /** Generate indices for an array of a given length.
+    * @return unordered array of indices with possible repeated elements
+    */
   def genIndices(arrLength: Int): Gen[Array[Int]] = for {
     nIndexes <- Gen.choose(0, arrLength)
     indices <- Gen.containerOfN[Array, Int](nIndexes, Gen.choose(0, arrLength - 1))
@@ -3602,25 +3605,40 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   }
 
   property("Coll fold method equivalence") {
-    val fold = existingFeature(
-      { (x: (Coll[Byte], Int)) => x._1.foldLeft(x._2, { i: (Int, Byte) => i._1 + i._2 }) },
-      "{ (x: (Coll[Byte], Int)) => x._1.fold(x._2, { (i1: Int, i2: Byte) => i1 + i2 }) }",
-      FuncValue(
-        Vector((1, SPair(SByteArray, SInt))),
-        Fold(
-          SelectField.typed[Value[SCollection[SByte.type]]](ValUse(1, SPair(SByteArray, SInt)), 1.toByte),
-          SelectField.typed[Value[SInt.type]](ValUse(1, SPair(SByteArray, SInt)), 2.toByte),
-          FuncValue(
-            Vector((3, SPair(SInt, SByte))),
-            ArithOp(
-              SelectField.typed[Value[SInt.type]](ValUse(3, SPair(SInt, SByte)), 1.toByte),
-              Upcast(SelectField.typed[Value[SByte.type]](ValUse(3, SPair(SInt, SByte)), 2.toByte), SInt),
-              OpCode @@ (-102.toByte)
+    val n = ExactNumeric.IntIsExactNumeric
+    testCases(
+      Seq(
+        ((Coll[Byte](),  0), Success(0)),
+        ((Coll[Byte](),  Int.MaxValue), Success(Int.MaxValue)),
+        ((Coll[Byte](1),  Int.MaxValue - 1), Success(Int.MaxValue)),
+        ((Coll[Byte](1),  Int.MaxValue), Failure(new ArithmeticException("integer overflow"))),
+        ((Coll[Byte](-1),  Int.MinValue + 1), Success(Int.MinValue)),
+        ((Coll[Byte](-1),  Int.MinValue), Failure(new ArithmeticException("integer overflow"))),
+        ((Coll[Byte](1, 2), 0), Success(3)),
+        ((Coll[Byte](1, -1), 0), Success(0)),
+        ((Coll[Byte](1, -1, 1), 0), Success(1)),
+      ),
+      existingFeature(
+        { (x: (Coll[Byte], Int)) => x._1.foldLeft(x._2, { i: (Int, Byte) => n.plus(i._1, i._2) }) },
+        "{ (x: (Coll[Byte], Int)) => x._1.fold(x._2, { (i1: Int, i2: Byte) => i1 + i2 }) }",
+        FuncValue(
+          Vector((1, SPair(SByteArray, SInt))),
+          Fold(
+            SelectField.typed[Value[SCollection[SByte.type]]](ValUse(1, SPair(SByteArray, SInt)), 1.toByte),
+            SelectField.typed[Value[SInt.type]](ValUse(1, SPair(SByteArray, SInt)), 2.toByte),
+            FuncValue(
+              Vector((3, SPair(SInt, SByte))),
+              ArithOp(
+                SelectField.typed[Value[SInt.type]](ValUse(3, SPair(SInt, SByte)), 1.toByte),
+                Upcast(SelectField.typed[Value[SByte.type]](ValUse(3, SPair(SInt, SByte)), 2.toByte), SInt),
+                OpCode @@ (-102.toByte)
+              )
             )
           )
-        )
-      ))
+        )))
+  }
 
+  property("Coll indexOf method equivalence") {
     val indexOf = existingFeature(
       { (x: (Coll[Byte], (Byte, Int))) => x._1.indexOf(x._2._1, x._2._2) },
       "{ (x: (Coll[Byte], (Byte, Int))) => x._1.indexOf(x._2._1, x._2._2) }",
@@ -3650,7 +3668,6 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
       ))
 
     forAll { (coll: Coll[Byte], start: Short, value: Byte, from: Int) =>
-      fold.checkEquality((coll, start))
       indexOf.checkEquality((coll, (value, from)))
     }
   }
