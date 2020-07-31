@@ -3607,6 +3607,7 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   property("Coll fold method equivalence") {
     val n = ExactNumeric.IntIsExactNumeric
     testCases(
+      // (coll, initState)
       Seq(
         ((Coll[Byte](),  0), Success(0)),
         ((Coll[Byte](),  Int.MaxValue), Success(Int.MaxValue)),
@@ -3616,7 +3617,7 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
         ((Coll[Byte](-1),  Int.MinValue), Failure(new ArithmeticException("integer overflow"))),
         ((Coll[Byte](1, 2), 0), Success(3)),
         ((Coll[Byte](1, -1), 0), Success(0)),
-        ((Coll[Byte](1, -1, 1), 0), Success(1)),
+        ((Coll[Byte](1, -1, 1), 0), Success(1))
       ),
       existingFeature(
         { (x: (Coll[Byte], Int)) => x._1.foldLeft(x._2, { i: (Int, Byte) => n.plus(i._1, i._2) }) },
@@ -3639,37 +3640,55 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   }
 
   property("Coll indexOf method equivalence") {
-    val indexOf = existingFeature(
-      { (x: (Coll[Byte], (Byte, Int))) => x._1.indexOf(x._2._1, x._2._2) },
-      "{ (x: (Coll[Byte], (Byte, Int))) => x._1.indexOf(x._2._1, x._2._2) }",
-      FuncValue(
-        Vector((1, SPair(SByteArray, SPair(SByte, SInt)))),
-        BlockValue(
-          Vector(
-            ValDef(
-              3,
-              List(),
-              SelectField.typed[Value[STuple]](ValUse(1, SPair(SByteArray, SPair(SByte, SInt))), 2.toByte)
-            )
-          ),
-          MethodCall.typed[Value[SInt.type]](
-            SelectField.typed[Value[SCollection[SByte.type]]](
-              ValUse(1, SPair(SByteArray, SPair(SByte, SInt))),
-              1.toByte
-            ),
-            SCollection.getMethodByName("indexOf").withConcreteTypes(Map(STypeVar("IV") -> SByte)),
+    testCases(
+      // (coll, (elem: Byte, from: Int))
+      Seq(
+        ((Coll[Byte](),  (0.toByte, 0)), Success(-1)),
+        ((Coll[Byte](),  (0.toByte, -1)), Success(-1)),
+        ((Coll[Byte](),  (0.toByte, 1)), Success(-1)),
+        ((Coll[Byte](1),  (0.toByte, 0)), Success(-1)),
+        ((Coll[Byte](1),  (1.toByte, 0)), Success(0)),
+        ((Coll[Byte](1),  (1.toByte, 1)), Success(-1)),
+        ((Coll[Byte](1, 1),  (0.toByte, -1)), Success(-1)),
+        ((Coll[Byte](1, 1),  (0.toByte, 0)), Success(-1)),
+        ((Coll[Byte](1, 1),  (1.toByte, -1)), Success(0)),
+        ((Coll[Byte](1, 1),  (1.toByte, 0)), Success(0)),
+        ((Coll[Byte](1, 1),  (1.toByte, 1)), Success(1)),
+        ((Coll[Byte](1, 1),  (1.toByte, 2)), Success(-1)),
+        ((Coll[Byte](1, 1),  (1.toByte, 3)), Success(-1)),
+        ((Coll[Byte](1, 2, 3),  (3.toByte, 0)), Success(2)),
+        ((Coll[Byte](1, 2, 3),  (3.toByte, 1)), Success(2)),
+        ((Coll[Byte](1, 2, 3),  (3.toByte, 2)), Success(2)),
+        ((Coll[Byte](1, 2, 3),  (3.toByte, 3)), Success(-1)),
+        ((Helpers.decodeBytes("8085623fb7cd6b7f01801f00800100"), (0.toByte, -1)), Success(11))
+      ),
+      existingFeature(
+        { (x: (Coll[Byte], (Byte, Int))) => x._1.indexOf(x._2._1, x._2._2) },
+        "{ (x: (Coll[Byte], (Byte, Int))) => x._1.indexOf(x._2._1, x._2._2) }",
+        FuncValue(
+          Vector((1, SPair(SByteArray, SPair(SByte, SInt)))),
+          BlockValue(
             Vector(
-              SelectField.typed[Value[SByte.type]](ValUse(3, SPair(SByte, SInt)), 1.toByte),
-              SelectField.typed[Value[SInt.type]](ValUse(3, SPair(SByte, SInt)), 2.toByte)
+              ValDef(
+                3,
+                List(),
+                SelectField.typed[Value[STuple]](ValUse(1, SPair(SByteArray, SPair(SByte, SInt))), 2.toByte)
+              )
             ),
-            Map()
+            MethodCall.typed[Value[SInt.type]](
+              SelectField.typed[Value[SCollection[SByte.type]]](
+                ValUse(1, SPair(SByteArray, SPair(SByte, SInt))),
+                1.toByte
+              ),
+              SCollection.getMethodByName("indexOf").withConcreteTypes(Map(STypeVar("IV") -> SByte)),
+              Vector(
+                SelectField.typed[Value[SByte.type]](ValUse(3, SPair(SByte, SInt)), 1.toByte),
+                SelectField.typed[Value[SInt.type]](ValUse(3, SPair(SByte, SInt)), 2.toByte)
+              ),
+              Map()
+            )
           )
-        )
-      ))
-
-    forAll { (coll: Coll[Byte], start: Short, value: Byte, from: Int) =>
-      indexOf.checkEquality((coll, (value, from)))
-    }
+        )))
   }
 
   property("Coll apply method equivalence") {
