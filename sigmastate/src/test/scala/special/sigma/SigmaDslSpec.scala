@@ -3452,6 +3452,7 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
 
   property("Coll updated method equivalence") {
     testCases(
+      // (coll, (index, elem))
       Seq(
         ((Coll[Int](), (0, 0)), Failure(new IndexOutOfBoundsException("0"))),
         ((Coll[Int](1), (0, 0)), Success(Coll[Int](0))),
@@ -3494,62 +3495,80 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
         )))
   }
 
+  def genIndices(arrLength: Int): Gen[Array[Int]] = for {
+    nIndexes <- Gen.choose(0, arrLength)
+    indices <- Gen.containerOfN[Array, Int](nIndexes, Gen.choose(0, arrLength - 1))
+  } yield indices
+
   property("Coll updateMany method equivalence") {
-    val updateMany = existingFeature(
-      (x: (Coll[Int], (Coll[Int], Coll[Int]))) => x._1.updateMany(x._2._1, x._2._2),
-      "{ (x: (Coll[Int], (Coll[Int], Coll[Int]))) => x._1.updateMany(x._2._1, x._2._2) }",
-      FuncValue(
-        Vector((1, SPair(SCollectionType(SInt), SPair(SCollectionType(SInt), SCollectionType(SInt))))),
-        BlockValue(
-          Vector(
-            ValDef(
-              3,
-              List(),
-              SelectField.typed[Value[STuple]](
-                ValUse(
-                  1,
-                  SPair(SCollectionType(SInt), SPair(SCollectionType(SInt), SCollectionType(SInt)))
-                ),
-                2.toByte
-              )
-            )
-          ),
-          MethodCall.typed[Value[SCollection[SInt.type]]](
-            SelectField.typed[Value[SCollection[SInt.type]]](
-              ValUse(1, SPair(SCollectionType(SInt), SPair(SCollectionType(SInt), SCollectionType(SInt)))),
-              1.toByte
-            ),
-            SCollection.getMethodByName("updateMany").withConcreteTypes(Map(STypeVar("IV") -> SInt)),
+    val samples = genSamples(
+      for {
+        coll <- collGen[Int]
+        is <- genIndices(coll.length)
+        vs <- collOfN[Int](is.length)
+      } yield (coll, (is.toColl, vs)),
+      MinSuccessful(20))
+
+    testCases(
+      // (coll, (indexes, values))
+      Seq(
+        ((Coll[Int](), (Coll(0), Coll(0))), Failure(new IndexOutOfBoundsException("0"))),
+        ((Coll[Int](), (Coll(0, 1), Coll(0, 0))), Failure(new IndexOutOfBoundsException("0"))),
+        ((Coll[Int](), (Coll(0, 1), Coll(0))), Failure(new IllegalArgumentException("requirement failed: Collections should have same length but was 2 and 1:\n xs=Coll(0,1);\n ys=Coll(0)"))),
+        ((Coll[Int](1), (Coll(0), Coll(0))), Success(Coll[Int](0))),
+        ((Coll[Int](1), (Coll(0, 1), Coll(0, 0))), Failure(new IndexOutOfBoundsException("1"))),
+        ((Coll[Int](1, 2), (Coll(0), Coll(0))), Success(Coll[Int](0, 2))),
+        ((Coll[Int](1, 2), (Coll(0, 1), Coll(0, 0))), Success(Coll[Int](0, 0))),
+        ((Coll[Int](1, 2), (Coll(0, 1, 2), Coll(0, 0, 0))), Failure(new IndexOutOfBoundsException("2"))),
+        ((Coll[Int](1, 2), (Coll(1), Coll(0))), Success(Coll[Int](1, 0))),
+        ((Coll[Int](1, 2, 3), (Coll(2), Coll(0))), Success(Coll[Int](1, 2, 0))),
+        ((Coll[Int](1, 2), (Coll(2), Coll(0))), Failure(new IndexOutOfBoundsException("2"))),
+        ((Coll[Int](1, 2), (Coll(3), Coll(0))), Failure(new IndexOutOfBoundsException("3"))),
+        ((Coll[Int](1, 2), (Coll(-1), Coll(0))), Failure(new IndexOutOfBoundsException("-1"))),
+        ((Coll[Int](10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140),
+           (Coll[Int](12, 12, 4, 11, 1, 8, 0, 1), Coll[Int](-10, -20, -30, -40, -50, -60, -70, -80))),
+            Success(Coll[Int](-70, -80, 30, 40, -30, 60, 70, 80, -60, 100, 110, -40, -20, 140)))
+      ),
+      existingFeature(
+        (x: (Coll[Int], (Coll[Int], Coll[Int]))) => x._1.updateMany(x._2._1, x._2._2),
+        "{ (x: (Coll[Int], (Coll[Int], Coll[Int]))) => x._1.updateMany(x._2._1, x._2._2) }",
+        FuncValue(
+          Vector((1, SPair(SCollectionType(SInt), SPair(SCollectionType(SInt), SCollectionType(SInt))))),
+          BlockValue(
             Vector(
+              ValDef(
+                3,
+                List(),
+                SelectField.typed[Value[STuple]](
+                  ValUse(
+                    1,
+                    SPair(SCollectionType(SInt), SPair(SCollectionType(SInt), SCollectionType(SInt)))
+                  ),
+                  2.toByte
+                )
+              )
+            ),
+            MethodCall.typed[Value[SCollection[SInt.type]]](
               SelectField.typed[Value[SCollection[SInt.type]]](
-                ValUse(3, SPair(SCollectionType(SInt), SCollectionType(SInt))),
+                ValUse(1, SPair(SCollectionType(SInt), SPair(SCollectionType(SInt), SCollectionType(SInt)))),
                 1.toByte
               ),
-              SelectField.typed[Value[SCollection[SInt.type]]](
-                ValUse(3, SPair(SCollectionType(SInt), SCollectionType(SInt))),
-                2.toByte
-              )
-            ),
-            Map()
+              SCollection.getMethodByName("updateMany").withConcreteTypes(Map(STypeVar("IV") -> SInt)),
+              Vector(
+                SelectField.typed[Value[SCollection[SInt.type]]](
+                  ValUse(3, SPair(SCollectionType(SInt), SCollectionType(SInt))),
+                  1.toByte
+                ),
+                SelectField.typed[Value[SCollection[SInt.type]]](
+                  ValUse(3, SPair(SCollectionType(SInt), SCollectionType(SInt))),
+                  2.toByte
+                )
+              ),
+              Map()
+            )
           )
-        )
-      ))
-
-    val dataGen = for {
-      arr <- arrayGen[Int];
-      len <- Gen.choose(0, arr.length)
-      indices <- Gen.containerOfN[Array, Int](len, Gen.choose(0, arr.length - 1))
-      } yield (Colls.fromArray(arr), Colls.fromArray(indices))
-
-    forAll(dataGen) { data =>
-      val coll = data._1
-      val indices = data._2
-      whenever (coll.length > 1) {
-        val vs = indices.reverse
-        val input = (coll, (indices, vs))
-        updateMany.checkEquality(input)
-      }
-    }
+        )),
+      preGeneratedSamples = Some(samples))
   }
 
   // TODO HF: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
