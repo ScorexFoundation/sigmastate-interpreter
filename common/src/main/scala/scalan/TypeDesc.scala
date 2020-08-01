@@ -4,7 +4,7 @@ import scala.reflect.ClassTag
 import scala.annotation.implicitNotFound
 
 /** Base type for all runtime type descriptors. */
-@implicitNotFound(msg = "No Elem available for ${A}.")
+@implicitNotFound(msg = "No RType available for ${A}.")
 abstract class RType[A] {
   /** Class tag suitable for construct instances of Array[A]. */
   def classTag: ClassTag[A]

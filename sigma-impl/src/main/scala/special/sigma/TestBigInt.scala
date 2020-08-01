@@ -49,4 +49,8 @@ abstract class TestBigInt(private[sigma] val value: BigInteger) extends BigInt {
   override def max(that: BigInt): BigInt = dsl.BigInt(value.max(that.value))
 
   override def negate(): BigInt = dsl.BigInt(value.negate().to256BitValueExact)
+
+  override def and(that: BigInt): BigInt = dsl.BigInt(value.and(that.value))
+
+  override def or(that: BigInt): BigInt = dsl.BigInt(value.or(that.value))
 }

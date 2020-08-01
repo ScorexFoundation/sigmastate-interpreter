@@ -2,10 +2,8 @@ package special.sigma
 
 import java.math.BigInteger
 
-import org.bouncycastle.math.ec.custom.sec.SecP256K1Point
 import org.bouncycastle.math.ec.ECPoint
 
-import scala.reflect.ClassTag
 import special.collection._
 import scalan._
 
@@ -173,7 +171,7 @@ trait BigInt {
   /**
     * Returns the minimum of this BigInteger and {@code val}.
     *
-    * @param  val value with which the minimum is to be computed.
+    * @param  that value with which the minimum is to be computed.
     * @return the BigInteger whose value is the lesser of this BigInteger and
     *         { @code val}.  If they are equal, either may be returned.
     */
@@ -182,7 +180,7 @@ trait BigInt {
   /**
     * Returns the maximum of this BigInteger and {@code val}.
     *
-    * @param  val value with which the maximum is to be computed.
+    * @param  that value with which the maximum is to be computed.
     * @return the BigInteger whose value is the greater of this and
     *         { @code val}.  If they are equal, either may be returned.
     */
@@ -192,6 +190,26 @@ trait BigInt {
     * @return { @code -this}
     */
   def negate(): BigInt
+
+  /** Returns a BigInteger whose value is `(this & that)`.  (This
+    * method returns a negative BigInteger if and only if `this` and `that` are
+    * both negative.)
+    *
+    * @param that value to be AND'ed with this BigInteger.
+    * @return `this & that`
+    */
+  def and(that: BigInt): BigInt
+  @Internal def &(that: BigInt): BigInt = and(that)
+
+  /** Returns a BigInteger whose value is `(this | that)`.  (This
+    * method returns a negative BigInteger if and only if either `this` or `that`` is
+    * negative.)
+    *
+    * @param that value to be OR'ed with this BigInteger.
+    * @return `this | that`
+    */
+  def or(that: BigInt): BigInt
+  @Internal def |(that: BigInt): BigInt = or(that)
 }
 
 /** Base class for points on elliptic curves.
@@ -259,6 +277,9 @@ trait AnyValue {
   def tVal: RType[Any]
 }
 
+/** Runtime representation of Ergo boxes used during execution of ErgoTree operations.
+  * @see [[org.ergoplatform.ErgoBox]]
+  */
 @scalan.Liftable
 @WithMethodCallRecognizers
 trait Box {
@@ -281,10 +302,60 @@ trait Box {
   def registers: Coll[AnyValue]
 
   /** Extracts register by id and type.
-    * @param regId zero-based identifier of the register.
+    * ErgoScript is typed, so accessing a register is an operation which involves some
+    * expected type given in brackets. Thus `SELF.R4[Int]` expression should evaluate to a
+    * valid value of the `Option[Int]` type.
+    *
+    * For example `val x = SELF.R4[Int]` expects the
+    * register, if it is present, to have type `Int`. At runtime the corresponding type
+    * descriptor is passed as `cT` parameter.
+    *
+    * There are three cases:
+    * 1) If the register doesn't exist.
+    *   Then `val x = SELF.R4[Int]` succeeds and returns the None value, which conforms to
+    *   any value of type `Option[T]` for any T. (In the example above T is equal to
+    *   `Int`). Calling `x.get` fails when x is equal to None, but `x.isDefined`
+    *   succeeds and returns `false`.
+    * 2) If the register contains a value `v` of type `Int`.
+    *   Then `val x = SELF.R4[Int]` succeeds and returns `Some(v)`, which is a valid value
+    *   of type `Option[Int]`. In this case, calling `x.get` succeeds and returns the
+    *   value `v` of type `Int`. Calling `x.isDefined` returns `true`.
+    * 3) If the register contains a value `v` of type T other then `Int`.
+    *   Then `val x = SELF.R4[Int]` fails, because there is no way to return a valid value
+    *   of type `Option[Int]`. The value of register is present, so returning it as None
+    *   would break the typed semantics of registers collection.
+    *
+    * In some use cases one register may have values of different types. To access such
+    * register an additional register can be used as a tag.
+    *
+    * <pre class="stHighlight">
+    *   val tagOpt = SELF.R5[Int]
+    *   val res = if (tagOpt.isDefined) {
+    *     val tag = tagOpt.get
+    *     if (tag == 1) {
+    *       val x = SELF.R4[Int].get
+    *       // compute res using value x is of type Int
+    *     } else if (tag == 2) {
+    *       val x = SELF.R4[GroupElement].get
+    *       // compute res using value x is of type GroupElement
+    *     } else if (tag == 3) {
+    *       val x = SELF.R4[ Array[Byte] ].get
+    *       // compute res using value x of type Array[Byte]
+    *     } else {
+    *       // compute `res` when `tag` is not 1, 2 or 3
+    *     }
+    *   }
+    *   else {
+    *     // compute value of res when register is not present
+    *   }
+    * </pre>
+    *
+    * @param i zero-based identifier of the register.
     * @tparam T expected type of the register.
-    * @return Some(value) if the register is defined and has given type.
+    * @return Some(value) if the register is defined AND has the given type.
     *         None otherwise
+    * @throws special.sigma.InvalidType exception when the type of the register value is
+    *                                   different from cT.
     * @since 2.0
     */
   def getReg[@Reified T](i: Int)(implicit cT: RType[T]): Option[T]
@@ -342,6 +413,8 @@ trait Box {
   *
   * Please note that standard hash function from `scorex.crypto.hash` is used, and height is stored along with root hash of
   * the tree, thus `digest` size is always CryptoConstants.hashLength + 1 bytes.
+  *
+  * This interface is used as runtime representation of the AvlTree type of ErgoTree.
   */
 @scalan.Liftable
 trait AvlTree {
@@ -533,7 +606,9 @@ trait Header {
   def votes: Coll[Byte] //3 bytes
 }
 
-/** Represents data available in Sigma language using `CONTEXT` global variable*/
+/** Runtime representation of Context ErgoTree type.
+  * Represents data available in Sigma language using `CONTEXT` global variable.
+  */
 @scalan.Liftable
 @WithMethodCallRecognizers
 trait Context {
@@ -622,6 +697,7 @@ trait SigmaContract {
       (implicit cT: RType[T]): Coll[Byte] = this.builder.substConstants(scriptBytes, positions, newValues)
 }
 
+/** Runtime representation of Global ErgoTree type. */
 @scalan.Liftable
 @WithMethodCallRecognizers
 trait SigmaDslBuilder {
