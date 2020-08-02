@@ -40,6 +40,7 @@ import sigmastate.helpers.SigmaPPrint
 class SigmaDslSpec extends SigmaDslTesting { suite =>
 
   override implicit val generatorDrivenConfig = PropertyCheckConfiguration(minSuccessful = 30)
+  val DefaultMinSuccess = MinSuccessful(generatorDrivenConfig.minSuccessful)
 
   val PrintTestCasesDefault: Boolean = false
   val FailOnTestVectorsDefault: Boolean = true
@@ -3749,35 +3750,38 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
               Some(SelectField.typed[Value[SInt.type]](ValUse(3, SPair(SInt, SInt)), 2.toByte))
             )
           )
-        )), true)
+        )))
   }
 
   property("Tuple size method equivalence") {
-    val size = existingFeature((x: (Int, Int)) => 2,
-      "{ (x: (Int, Int)) => x.size }",
-      FuncValue(Vector((1, SPair(SInt, SInt))), IntConstant(2)))
-    forAll { x: (Int, Int) =>
-      size.checkExpected(x, 2)
-    }
+    testCases(
+      Seq(
+        ((0, 0), Success(2)),
+        ((1, 2), Success(2))
+      ),
+      existingFeature((x: (Int, Int)) => 2,
+        "{ (x: (Int, Int)) => x.size }",
+        FuncValue(Vector((1, SPair(SInt, SInt))), IntConstant(2))), true)
   }
 
   property("Tuple apply method equivalence") {
-    val apply1 = existingFeature((x: (Int, Int)) => x._1,
-      "{ (x: (Int, Int)) => x(0) }",
-      FuncValue(
-        Vector((1, SPair(SInt, SInt))),
-        SelectField.typed[Value[SInt.type]](ValUse(1, SPair(SInt, SInt)), 1.toByte)
-      ))
-    val apply2 = existingFeature((x: (Int, Int)) => x._2,
-      "{ (x: (Int, Int)) => x(1) }",
-      FuncValue(
-        Vector((1, SPair(SInt, SInt))),
-        SelectField.typed[Value[SInt.type]](ValUse(1, SPair(SInt, SInt)), 2.toByte)
-      ))
-    forAll { x: (Int, Int) =>
-      apply1.checkExpected(x, x._1)
-      apply2.checkExpected(x, x._2)
-    }
+    val samples = genSamples[(Int, Int)](DefaultMinSuccess)
+    testCases(
+      Seq(((1, 2), Success(1))),
+      existingFeature((x: (Int, Int)) => x._1,
+        "{ (x: (Int, Int)) => x(0) }",
+        FuncValue(
+          Vector((1, SPair(SInt, SInt))),
+          SelectField.typed[Value[SInt.type]](ValUse(1, SPair(SInt, SInt)), 1.toByte)
+        )), preGeneratedSamples = Some(samples))
+    testCases(
+      Seq(((1, 2), Success(2))),
+      existingFeature((x: (Int, Int)) => x._2,
+        "{ (x: (Int, Int)) => x(1) }",
+        FuncValue(
+          Vector((1, SPair(SInt, SInt))),
+          SelectField.typed[Value[SInt.type]](ValUse(1, SPair(SInt, SInt)), 2.toByte)
+        )))
   }
 
   property("Coll map method equivalence") {
