@@ -3963,28 +3963,31 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
 
   property("Option fold workaround method") {
     val n = ExactNumeric.LongIsExactNumeric
-    val foldWorkaround = existingFeature({ (x: Option[Long]) => x.fold(5.toLong)( (v: Long) => n.plus(v, 1) ) },
-      """{(x: Option[Long]) =>
-        |  def f(opt: Long): Long = opt + 1
-        |  if (x.isDefined) f(x.get) else 5L
-        |}""".stripMargin,
-      FuncValue(
-        Vector((1, SOption(SLong))),
-        If(
-          OptionIsDefined(ValUse(1, SOption(SLong))),
-          Apply(
-            FuncValue(
-              Vector((3, SLong)),
-              ArithOp(ValUse(3, SLong), LongConstant(1L), OpCode @@ (-102.toByte))
+    testCases(
+      Seq(
+        (None -> Success(5L)),
+        (Some(0L) -> Success(1L)),
+        (Some(Long.MaxValue) -> Failure(new ArithmeticException("long overflow")))
+      ),
+      existingFeature({ (x: Option[Long]) => x.fold(5.toLong)( (v: Long) => n.plus(v, 1) ) },
+        """{(x: Option[Long]) =>
+          |  def f(opt: Long): Long = opt + 1
+          |  if (x.isDefined) f(x.get) else 5L
+          |}""".stripMargin,
+        FuncValue(
+          Vector((1, SOption(SLong))),
+          If(
+            OptionIsDefined(ValUse(1, SOption(SLong))),
+            Apply(
+              FuncValue(
+                Vector((3, SLong)),
+                ArithOp(ValUse(3, SLong), LongConstant(1L), OpCode @@ (-102.toByte))
+              ),
+              Array(OptionGet(ValUse(1, SOption(SLong))))
             ),
-            Array(OptionGet(ValUse(1, SOption(SLong))))
-          ),
-          LongConstant(5L)
-        )
-      ))
-    forAll { x: Option[Long] =>
-      foldWorkaround.checkEquality(x)
-    }
+            LongConstant(5L)
+          )
+        )))
   }
 
   property("blake2b256, sha256 equivalence") {
