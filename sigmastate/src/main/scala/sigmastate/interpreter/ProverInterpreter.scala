@@ -440,7 +440,7 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
           hintsBag.ownCommitments.find(_.image == su.proposition).map { oc =>
             DLogInteractiveProver.secondMessage(
               privKey.asInstanceOf[DLogProverInput],
-              oc.randomness,
+              oc.secretRandomness,
               su.challengeOpt.get)
           }.getOrElse {
             DLogInteractiveProver.secondMessage(
@@ -473,7 +473,7 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
           hintsBag.ownCommitments.find(_.image == dhu.proposition).map { oc =>
             DiffieHellmanTupleInteractiveProver.secondMessage(
               privKey.asInstanceOf[DiffieHellmanTupleProverInput],
-              oc.randomness,
+              oc.secretRandomness,
               dhu.challengeOpt.get)
           }.getOrElse {
             DiffieHellmanTupleInteractiveProver.secondMessage(
@@ -535,7 +535,8 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
       CThresholdUncheckedNode(t.challengeOpt.get, t.children.map(convertToUnchecked), t.k, t.polynomialOpt)
     case s: UncheckedSchnorr => s
     case d: UncheckedDiffieHellmanTuple => d
-    case a: Any => ???
+    case a: Any =>
+      error(s"Cannot convertToUnproven($a)")
   }
 
 }

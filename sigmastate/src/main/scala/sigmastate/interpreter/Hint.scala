@@ -18,9 +18,21 @@ trait Hint
   * A hint which is indicating that a secret associated with its public image "image" is already proven.
   */
 trait SecretProven extends Hint {
-  val image: SigmaBoolean
-  val challenge: Challenge
-  val uncheckedTree: UncheckedTree
+
+  /**
+    * Public image of a secret which is proven
+    */
+  def image: SigmaBoolean
+
+  /**
+    * Challenge used for a proof
+    */
+  def challenge: Challenge
+
+  /**
+    * Proof in a tree form
+    */
+  def uncheckedTree: UncheckedTree
 }
 
 /**
@@ -43,8 +55,8 @@ case class SimulatedSecretProof(image: SigmaBoolean,
   * to randomness ("a" in a sigma protocol).
   */
 trait CommitmentHint extends Hint {
-  val image: SigmaBoolean
-  val commitment: FirstProverMessage
+  def image: SigmaBoolean
+  def commitment: FirstProverMessage
 }
 
 /**
@@ -52,10 +64,12 @@ trait CommitmentHint extends Hint {
   * Please note that this randomness should be kept in secret by the prover.
   *
   * @param image      - image of a secret
-  * @param randomness - randomness
+  * @param secretRandomness - randomness
   * @param commitment - commitment to randomness used while proving knowledge of the secret
   */
-case class OwnCommitment(override val image: SigmaBoolean, randomness: BigInteger, commitment: FirstProverMessage) extends CommitmentHint
+case class OwnCommitment(override val image: SigmaBoolean,
+                         secretRandomness: BigInteger,
+                         commitment: FirstProverMessage) extends CommitmentHint
 
 /**
   * A hint which contains a commitment to randomness associated with a public image of a secret.
