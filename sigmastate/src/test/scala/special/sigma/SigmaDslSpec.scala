@@ -3711,35 +3711,45 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   }
 
   property("Coll getOrElse method equivalence") {
-    val getOrElse = existingFeature((x: (Coll[Int], (Int, Int))) => x._1.getOrElse(x._2._1, x._2._2),
-      "{ (x: (Coll[Int], (Int, Int))) => x._1.getOrElse(x._2._1, x._2._2) }",
-      FuncValue(
-        Vector((1, SPair(SCollectionType(SInt), SPair(SInt, SInt)))),
-        BlockValue(
-          Vector(
-            ValDef(
-              3,
-              List(),
-              SelectField.typed[Value[STuple]](
-                ValUse(1, SPair(SCollectionType(SInt), SPair(SInt, SInt))),
-                2.toByte
+    val default = 10
+    testCases(
+      // (coll, (index, default))
+      Seq(
+        ((Coll[Int](), (0, default)), Success(default)),
+        ((Coll[Int](), (-1, default)), Success(default)),
+        ((Coll[Int](1), (0, default)), Success(1)),
+        ((Coll[Int](1), (1, default)), Success(default)),
+        ((Coll[Int](1), (-1, default)), Success(default)),
+        ((Coll[Int](1, 2), (0, default)), Success(1)),
+        ((Coll[Int](1, 2), (1, default)), Success(2)),
+        ((Coll[Int](1, 2), (2, default)), Success(default)),
+        ((Coll[Int](1, 2), (-1, default)), Success(default))
+      ),
+      existingFeature((x: (Coll[Int], (Int, Int))) => x._1.getOrElse(x._2._1, x._2._2),
+        "{ (x: (Coll[Int], (Int, Int))) => x._1.getOrElse(x._2._1, x._2._2) }",
+        FuncValue(
+          Vector((1, SPair(SCollectionType(SInt), SPair(SInt, SInt)))),
+          BlockValue(
+            Vector(
+              ValDef(
+                3,
+                List(),
+                SelectField.typed[Value[STuple]](
+                  ValUse(1, SPair(SCollectionType(SInt), SPair(SInt, SInt))),
+                  2.toByte
+                )
               )
-            )
-          ),
-          ByIndex(
-            SelectField.typed[Value[SCollection[SInt.type]]](
-              ValUse(1, SPair(SCollectionType(SInt), SPair(SInt, SInt))),
-              1.toByte
             ),
-            SelectField.typed[Value[SInt.type]](ValUse(3, SPair(SInt, SInt)), 1.toByte),
-            Some(SelectField.typed[Value[SInt.type]](ValUse(3, SPair(SInt, SInt)), 2.toByte))
+            ByIndex(
+              SelectField.typed[Value[SCollection[SInt.type]]](
+                ValUse(1, SPair(SCollectionType(SInt), SPair(SInt, SInt))),
+                1.toByte
+              ),
+              SelectField.typed[Value[SInt.type]](ValUse(3, SPair(SInt, SInt)), 1.toByte),
+              Some(SelectField.typed[Value[SInt.type]](ValUse(3, SPair(SInt, SInt)), 2.toByte))
+            )
           )
-        )
-      ))
-
-    forAll { x: (Coll[Int], (Int, Int)) =>
-      getOrElse.checkEquality(x)
-    }
+        )), true)
   }
 
   property("Tuple size method equivalence") {
