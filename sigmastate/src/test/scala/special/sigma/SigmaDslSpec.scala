@@ -4017,9 +4017,13 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   }
 
   property("sigmaProp equivalence") {
-    test(existingFeature((x: Boolean) => sigmaProp(x),
-     "{ (x: Boolean) => sigmaProp(x) }",
-      FuncValue(Vector((1, SBoolean)), BoolToSigmaProp(ValUse(1, SBoolean)))))
+    testCases(
+      Seq(
+        (false, Success(CSigmaProp((false)))),
+        (true, Success(CSigmaProp((true))))),
+      existingFeature((x: Boolean) => sigmaProp(x),
+       "{ (x: Boolean) => sigmaProp(x) }",
+        FuncValue(Vector((1, SBoolean)), BoolToSigmaProp(ValUse(1, SBoolean)))))
   }
 
   property("atLeast equivalence") {
