@@ -3991,17 +3991,25 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   }
 
   property("blake2b256, sha256 equivalence") {
-    val blake2b256 = existingFeature((x: Coll[Byte]) => SigmaDsl.blake2b256(x),
-      "{ (x: Coll[Byte]) => blake2b256(x) }",
-      FuncValue(Vector((1, SByteArray)), CalcBlake2b256(ValUse(1, SByteArray))))
+    testCases(
+      Seq(
+        Coll[Byte]() -> Success(Helpers.decodeBytes("0e5751c026e543b2e8ab2eb06099daa1d1e5df47778f7787faab45cdf12fe3a8")),
+        Helpers.decodeBytes("e0ff0105ffffac31010017ff33") ->
+          Success(Helpers.decodeBytes("33707eed9aab64874ff2daa6d6a378f61e7da36398fb36c194c7562c9ff846b5"))
+      ),
+      existingFeature((x: Coll[Byte]) => SigmaDsl.blake2b256(x),
+        "{ (x: Coll[Byte]) => blake2b256(x) }",
+        FuncValue(Vector((1, SByteArray)), CalcBlake2b256(ValUse(1, SByteArray)))))
 
-    val sha256 = existingFeature((x: Coll[Byte]) => SigmaDsl.sha256(x),
-      "{ (x: Coll[Byte]) => sha256(x) }",
-      FuncValue(Vector((1, SByteArray)), CalcSha256(ValUse(1, SByteArray))))
-
-    forAll { x: Coll[Byte] =>
-      Seq(blake2b256, sha256).foreach(_.checkEquality(x))
-    }
+    testCases(
+      Seq(
+        Coll[Byte]() -> Success(Helpers.decodeBytes("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855")),
+        Helpers.decodeBytes("e0ff0105ffffac31010017ff33") ->
+          Success(Helpers.decodeBytes("367d0ec2cdc14aac29d5beb60c2bfc86d5a44a246308659af61c1b85fa2ca2cc"))
+      ),
+      existingFeature((x: Coll[Byte]) => SigmaDsl.sha256(x),
+        "{ (x: Coll[Byte]) => sha256(x) }",
+        FuncValue(Vector((1, SByteArray)), CalcSha256(ValUse(1, SByteArray)))))
   }
 
   property("print") {
@@ -4009,10 +4017,9 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   }
 
   property("sigmaProp equivalence") {
-    lazy val eq = existingFeature((x: Boolean) => sigmaProp(x),
+    test(existingFeature((x: Boolean) => sigmaProp(x),
      "{ (x: Boolean) => sigmaProp(x) }",
-      FuncValue(Vector((1, SBoolean)), BoolToSigmaProp(ValUse(1, SBoolean))))
-    forAll { x: Boolean => eq.checkEquality(x) }
+      FuncValue(Vector((1, SBoolean)), BoolToSigmaProp(ValUse(1, SBoolean)))))
   }
 
   property("atLeast equivalence") {
