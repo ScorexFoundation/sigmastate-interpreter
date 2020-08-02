@@ -66,6 +66,15 @@ class SigmaDslTesting extends PropSpec
     index.sample.get
   }
 
+  /** Generate indices for an array of a given length.
+    * @return unordered array of indices with possible repeated elements
+    */
+  def genIndices(arrLength: Int): Gen[Array[Int]] = for {
+    nIndexes <- Gen.choose(0, arrLength)
+    indices <- Gen.containerOfN[Array, Int](nIndexes, Gen.choose(0, arrLength - 1))
+  } yield indices
+
+
   case class EqualityChecker[T: RType](obj: T) {
     def apply[R: RType](dslFunc: T => R)(script: String) =
       checkEq(func[T, R](script))(dslFunc)(obj)

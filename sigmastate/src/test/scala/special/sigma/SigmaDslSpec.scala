@@ -71,7 +71,7 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
             }
             else {
               if (expectedRes != res) {
-                print("Actual: ")
+                print("\nSuggested Expected Result: ")
                 SigmaPPrint.pprintln(res, height = 150)
               }
             }
@@ -3495,14 +3495,6 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
         )))
   }
 
-  /** Generate indices for an array of a given length.
-    * @return unordered array of indices with possible repeated elements
-    */
-  def genIndices(arrLength: Int): Gen[Array[Int]] = for {
-    nIndexes <- Gen.choose(0, arrLength)
-    indices <- Gen.containerOfN[Array, Int](nIndexes, Gen.choose(0, arrLength - 1))
-  } yield indices
-
   property("Coll updateMany method equivalence") {
     val samples = genSamples(
       for {
@@ -3692,23 +3684,30 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   }
 
   property("Coll apply method equivalence") {
-    val apply = existingFeature((x: (Coll[Int], Int)) => x._1(x._2),
-      "{ (x: (Coll[Int], Int)) => x._1(x._2) }",
-      FuncValue(
-        Vector((1, SPair(SCollectionType(SInt), SInt))),
-        ByIndex(
-          SelectField.typed[Value[SCollection[SInt.type]]](
-            ValUse(1, SPair(SCollectionType(SInt), SInt)),
-            1.toByte
-          ),
-          SelectField.typed[Value[SInt.type]](ValUse(1, SPair(SCollectionType(SInt), SInt)), 2.toByte),
-          None
-        )
-      ))
-
-    forAll { (x: Coll[Int], i: Int) =>
-      apply.checkEquality((x, i))
-    }
+    testCases(
+      Seq(
+        ((Coll[Int](), 0), Failure(new ArrayIndexOutOfBoundsException("0"))),
+        ((Coll[Int](), -1), Failure(new ArrayIndexOutOfBoundsException("-1"))),
+        ((Coll[Int](1), 0), Success(1)),
+        ((Coll[Int](1), 1), Failure(new ArrayIndexOutOfBoundsException("1"))),
+        ((Coll[Int](1), -1), Failure(new ArrayIndexOutOfBoundsException("-1"))),
+        ((Coll[Int](1, 2), 1), Success(2)),
+        ((Coll[Int](1, 2), 1), Success(2)),
+        ((Coll[Int](1, 2), 2), Failure(new ArrayIndexOutOfBoundsException("2")))
+      ),
+      existingFeature((x: (Coll[Int], Int)) => x._1(x._2),
+        "{ (x: (Coll[Int], Int)) => x._1(x._2) }",
+        FuncValue(
+          Vector((1, SPair(SCollectionType(SInt), SInt))),
+          ByIndex(
+            SelectField.typed[Value[SCollection[SInt.type]]](
+              ValUse(1, SPair(SCollectionType(SInt), SInt)),
+              1.toByte
+            ),
+            SelectField.typed[Value[SInt.type]](ValUse(1, SPair(SCollectionType(SInt), SInt)), 2.toByte),
+            None
+          )
+        )))
   }
 
   property("Coll getOrElse method equivalence") {
