@@ -3820,7 +3820,7 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
         ((Coll[Int](1, 2), (1, 1)), Success(Coll[Int]())),
         ((Coll[Int](1, 2), (1, 0)), Success(Coll[Int]())),
         ((Coll[Int](1, 2), (1, 2)), Success(Coll[Int](2))),
-        ((Coll[Int](1, 2, 3, 4), (1, 3)), Success(Coll[Int](2, 3))),
+        ((Coll[Int](1, 2, 3, 4), (1, 3)), Success(Coll[Int](2, 3)))
       ),
       existingFeature((x: (Coll[Int], (Int, Int))) => x._1.slice(x._2._1, x._2._2),
         "{ (x: (Coll[Int], (Int, Int))) => x._1.slice(x._2._1, x._2._2) }",
@@ -3851,52 +3851,32 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   }
 
   property("Coll append method equivalence") {
-    val append = existingFeature(
-      { (x: (Coll[Int], (Int, Int))) =>
-        val sliced: Coll[Int] = x._1.slice(x._2._1, x._2._2)
-        val toAppend: Coll[Int] = x._1
-        sliced.append(toAppend)
-      },
-      """{ (x: (Coll[Int], (Int, Int))) =>
-        |val sliced: Coll[Int] = x._1.slice(x._2._1, x._2._2)
-        |val toAppend: Coll[Int] = x._1
-        |sliced.append(toAppend)
-        |}""".stripMargin,
-      FuncValue(
-        Vector((1, SPair(SCollectionType(SInt), SPair(SInt, SInt)))),
-        BlockValue(
-          Vector(
-            ValDef(
-              3,
-              List(),
-              SelectField.typed[Value[SCollection[SInt.type]]](
-                ValUse(1, SPair(SCollectionType(SInt), SPair(SInt, SInt))),
-                1.toByte
-              )
-            ),
-            ValDef(
-              4,
-              List(),
-              SelectField.typed[Value[STuple]](
-                ValUse(1, SPair(SCollectionType(SInt), SPair(SInt, SInt))),
-                2.toByte
-              )
-            )
-          ),
+    testCases(
+      Seq(
+        (Coll[Int](), Coll[Int]()) -> Success(Coll[Int]()),
+        (Coll[Int](), Coll[Int](1)) -> Success(Coll[Int](1)),
+        (Coll[Int](1), Coll[Int]()) -> Success(Coll[Int](1)),
+        (Coll[Int](1), Coll[Int](2)) -> Success(Coll[Int](1, 2)),
+        (Coll[Int](1), Coll[Int](2, 3)) -> Success(Coll[Int](1, 2, 3)),
+        (Coll[Int](1, 2), Coll[Int](3)) -> Success(Coll[Int](1, 2, 3)),
+        (Coll[Int](1, 2), Coll[Int](3, 4)) -> Success(Coll[Int](1, 2, 3, 4))
+      ),
+      existingFeature(
+        { (x: (Coll[Int], Coll[Int])) => x._1.append(x._2) },
+        "{ (x: (Coll[Int], Coll[Int])) => x._1.append(x._2) }",
+        FuncValue(
+          Vector((1, SPair(SCollectionType(SInt), SCollectionType(SInt)))),
           Append(
-            Slice(
-              ValUse(3, SCollectionType(SInt)),
-              SelectField.typed[Value[SInt.type]](ValUse(4, SPair(SInt, SInt)), 1.toByte),
-              SelectField.typed[Value[SInt.type]](ValUse(4, SPair(SInt, SInt)), 2.toByte)
+            SelectField.typed[Value[SCollection[SInt.type]]](
+              ValUse(1, SPair(SCollectionType(SInt), SCollectionType(SInt))),
+              1.toByte
             ),
-            ValUse(3, SCollectionType(SInt))
+            SelectField.typed[Value[SCollection[SInt.type]]](
+              ValUse(1, SPair(SCollectionType(SInt), SCollectionType(SInt))),
+              2.toByte
+            )
           )
-        )
-      ))
-
-    forAll(collWithRangeGen) { x =>
-      append.checkEquality(x)
-    }
+        )))
   }
 
   property("Option methods equivalence") {
