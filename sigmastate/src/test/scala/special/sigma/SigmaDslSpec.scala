@@ -3880,65 +3880,84 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   }
 
   property("Option methods equivalence") {
-    val get = existingFeature({ (x: Option[Long]) => x.get },
-      "{ (x: Option[Long]) => x.get }",
-      FuncValue(Vector((1, SOption(SLong))), OptionGet(ValUse(1, SOption(SLong)))))
+    testCases(
+      Seq(
+        (None -> Failure(new NoSuchElementException("None.get"))),
+        (Some(10L) -> Success(10L))),
+      existingFeature({ (x: Option[Long]) => x.get },
+        "{ (x: Option[Long]) => x.get }",
+        FuncValue(Vector((1, SOption(SLong))), OptionGet(ValUse(1, SOption(SLong))))))
 
-    val isDefined = existingFeature({ (x: Option[Long]) => x.isDefined },
-      "{ (x: Option[Long]) => x.isDefined }",
-      FuncValue(Vector((1, SOption(SLong))), OptionIsDefined(ValUse(1, SOption(SLong)))))
+    testCases(
+      Seq(
+        (None -> Success(false)),
+        (Some(10L) -> Success(true))),
+      existingFeature({ (x: Option[Long]) => x.isDefined },
+        "{ (x: Option[Long]) => x.isDefined }",
+        FuncValue(Vector((1, SOption(SLong))), OptionIsDefined(ValUse(1, SOption(SLong))))))
 
-    val getOrElse = existingFeature({ (x: Option[Long]) => x.getOrElse(1L) },
-      "{ (x: Option[Long]) => x.getOrElse(1L) }",
-      FuncValue(Vector((1, SOption(SLong))), OptionGetOrElse(ValUse(1, SOption(SLong)), LongConstant(1L))))
+    testCases(
+      Seq(
+        (None -> Success(1L)),
+        (Some(10L) -> Success(10L))),
+      existingFeature({ (x: Option[Long]) => x.getOrElse(1L) },
+        "{ (x: Option[Long]) => x.getOrElse(1L) }",
+        FuncValue(Vector((1, SOption(SLong))), OptionGetOrElse(ValUse(1, SOption(SLong)), LongConstant(1L)))))
 
-    val filter = existingFeature({ (x: Option[Long]) => x.filter({ (v: Long) => v == 1} ) },
-      "{ (x: Option[Long]) => x.filter({ (v: Long) => v == 1 }) }",
-      FuncValue(
-        Vector((1, SOption(SLong))),
-        MethodCall.typed[Value[SOption[SLong.type]]](
-          ValUse(1, SOption(SLong)),
-          SOption.getMethodByName("filter").withConcreteTypes(Map(STypeVar("T") -> SLong)),
-          Vector(FuncValue(Vector((3, SLong)), EQ(ValUse(3, SLong), LongConstant(1L)))),
-          Map()
-        )
-      ))
+    testCases(
+      Seq(
+        (None -> Success(None)),
+        (Some(10L) -> Success(None)),
+        (Some(1L) -> Success(Some(1L)))),
+      existingFeature({ (x: Option[Long]) => x.filter({ (v: Long) => v == 1} ) },
+        "{ (x: Option[Long]) => x.filter({ (v: Long) => v == 1 }) }",
+        FuncValue(
+          Vector((1, SOption(SLong))),
+          MethodCall.typed[Value[SOption[SLong.type]]](
+            ValUse(1, SOption(SLong)),
+            SOption.getMethodByName("filter").withConcreteTypes(Map(STypeVar("T") -> SLong)),
+            Vector(FuncValue(Vector((3, SLong)), EQ(ValUse(3, SLong), LongConstant(1L)))),
+            Map()
+          )
+        )))
 
     val n = ExactNumeric.LongIsExactNumeric
-    val map = existingFeature({ (x: Option[Long]) => x.map( (v: Long) => n.plus(v, 1) ) },
-      "{ (x: Option[Long]) => x.map({ (v: Long) => v + 1 }) }",
-      FuncValue(
-        Vector((1, SOption(SLong))),
-        MethodCall.typed[Value[SOption[SLong.type]]](
-          ValUse(1, SOption(SLong)),
-          SOption.getMethodByName("map").withConcreteTypes(
-            Map(STypeVar("T") -> SLong, STypeVar("R") -> SLong)
-          ),
-          Vector(
-            FuncValue(
-              Vector((3, SLong)),
-              ArithOp(ValUse(3, SLong), LongConstant(1L), OpCode @@ (-102.toByte))
-            )
-          ),
-          Map()
-        )
-      ))
-
-    val isEmpty = newFeature({ (x: Option[Long]) => x.isEmpty },
-      "{ (x: Option[Long]) => x.isEmpty }")
-
-    forAll { x: Option[Long] =>
-      Seq(get, isDefined, getOrElse, filter, map, isEmpty).foreach(_.checkEquality(x))
-    }
+    testCases(
+      Seq(
+        (None -> Success(None)),
+        (Some(10L) -> Success(Some(11L))),
+        (Some(Long.MaxValue) -> Failure(new ArithmeticException("long overflow")))),
+      existingFeature({ (x: Option[Long]) => x.map( (v: Long) => n.plus(v, 1) ) },
+        "{ (x: Option[Long]) => x.map({ (v: Long) => v + 1 }) }",
+        FuncValue(
+          Vector((1, SOption(SLong))),
+          MethodCall.typed[Value[SOption[SLong.type]]](
+            ValUse(1, SOption(SLong)),
+            SOption.getMethodByName("map").withConcreteTypes(
+              Map(STypeVar("T") -> SLong, STypeVar("R") -> SLong)
+            ),
+            Vector(
+              FuncValue(
+                Vector((3, SLong)),
+                ArithOp(ValUse(3, SLong), LongConstant(1L), OpCode @@ (-102.toByte))
+              )
+            ),
+            Map()
+          )
+        )))
   }
 
   // TODO HF: implement Option.fold
-  property("Option fold method") {
+  property("Option new methods") {
+    val isEmpty = newFeature({ (x: Option[Long]) => x.isEmpty },
+    "{ (x: Option[Long]) => x.isEmpty }")
+
     val n = ExactNumeric.LongIsExactNumeric
     val fold = newFeature({ (x: Option[Long]) => x.fold(5.toLong)( (v: Long) => n.plus(v, 1) ) },
       "{ (x: Option[Long]) => x.fold(5, { (v: Long) => v + 1 }) }")
+
     forAll { x: Option[Long] =>
-      fold.checkEquality(x)
+      Seq(isEmpty, fold).map(_.checkEquality(x))
     }
   }
 
