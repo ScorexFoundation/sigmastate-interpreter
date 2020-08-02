@@ -3786,11 +3786,22 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
 
   property("Coll map method equivalence") {
     val n = ExactNumeric.IntIsExactNumeric
-    val map = existingFeature((x: Coll[Int]) => x.map({ (v: Int) => n.plus(v, 1) }),
-      "{ (x: Coll[Int]) => x.map({ (v: Int) => v + 1 }) }")
-    forAll { x: Coll[Int] =>
-      map.checkEquality(x)
-    }
+    testCases(
+      Seq(
+        (Coll[Int](), Success(Coll[Int]())),
+        (Coll[Int](1), Success(Coll[Int](2))),
+        (Coll[Int](1, 2), Success(Coll[Int](2, 3))),
+        (Coll[Int](1, 2, Int.MaxValue), Failure(new ArithmeticException("integer overflow")))
+      ),
+      existingFeature((x: Coll[Int]) => x.map({ (v: Int) => n.plus(v, 1) }),
+        "{ (x: Coll[Int]) => x.map({ (v: Int) => v + 1 }) }",
+        FuncValue(
+          Vector((1, SCollectionType(SInt))),
+          MapCollection(
+            ValUse(1, SCollectionType(SInt)),
+            FuncValue(Vector((3, SInt)), ArithOp(ValUse(3, SInt), IntConstant(1), OpCode @@ (-102.toByte)))
+          )
+        )), true)
   }
 
   property("Coll slice method equivalence") {
