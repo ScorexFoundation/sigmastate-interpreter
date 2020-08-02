@@ -3761,7 +3761,7 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
       ),
       existingFeature((x: (Int, Int)) => 2,
         "{ (x: (Int, Int)) => x.size }",
-        FuncValue(Vector((1, SPair(SInt, SInt))), IntConstant(2))), true)
+        FuncValue(Vector((1, SPair(SInt, SInt))), IntConstant(2))))
   }
 
   property("Tuple apply method equivalence") {
@@ -3773,7 +3773,8 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
         FuncValue(
           Vector((1, SPair(SInt, SInt))),
           SelectField.typed[Value[SInt.type]](ValUse(1, SPair(SInt, SInt)), 1.toByte)
-        )), preGeneratedSamples = Some(samples))
+        )),
+      preGeneratedSamples = Some(samples))
     testCases(
       Seq(((1, 2), Success(2))),
       existingFeature((x: (Int, Int)) => x._2,
@@ -3781,7 +3782,8 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
         FuncValue(
           Vector((1, SPair(SInt, SInt))),
           SelectField.typed[Value[SInt.type]](ValUse(1, SPair(SInt, SInt)), 2.toByte)
-        )))
+        )),
+      preGeneratedSamples = Some(samples))
   }
 
   property("Coll map method equivalence") {
@@ -3801,38 +3803,51 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
             ValUse(1, SCollectionType(SInt)),
             FuncValue(Vector((3, SInt)), ArithOp(ValUse(3, SInt), IntConstant(1), OpCode @@ (-102.toByte)))
           )
-        )), true)
+        )))
   }
 
   property("Coll slice method equivalence") {
-    val slice = existingFeature((x: (Coll[Int], (Int, Int))) => x._1.slice(x._2._1, x._2._2),
-      "{ (x: (Coll[Int], (Int, Int))) => x._1.slice(x._2._1, x._2._2) }",
-      FuncValue(
-        Vector((1, SPair(SCollectionType(SInt), SPair(SInt, SInt)))),
-        BlockValue(
-          Vector(
-            ValDef(
-              3,
-              List(),
-              SelectField.typed[Value[STuple]](
-                ValUse(1, SPair(SCollectionType(SInt), SPair(SInt, SInt))),
-                2.toByte
+    val samples = genSamples(collWithRangeGen, DefaultMinSuccess)
+    testCases(
+      // (coll, (from, until))
+      Seq(
+        ((Coll[Int](), (-1, 0)), Success(Coll[Int]())),
+        ((Coll[Int](), (0, 0)), Success(Coll[Int]())),
+        ((Coll[Int](1), (0, 0)), Success(Coll[Int]())),
+        ((Coll[Int](1), (0, -1)), Success(Coll[Int]())),
+        ((Coll[Int](1), (1, 1)), Success(Coll[Int]())),
+        ((Coll[Int](1), (-1, 1)), Success(Coll[Int](1))),
+        ((Coll[Int](1, 2), (1, 1)), Success(Coll[Int]())),
+        ((Coll[Int](1, 2), (1, 0)), Success(Coll[Int]())),
+        ((Coll[Int](1, 2), (1, 2)), Success(Coll[Int](2))),
+        ((Coll[Int](1, 2, 3, 4), (1, 3)), Success(Coll[Int](2, 3))),
+      ),
+      existingFeature((x: (Coll[Int], (Int, Int))) => x._1.slice(x._2._1, x._2._2),
+        "{ (x: (Coll[Int], (Int, Int))) => x._1.slice(x._2._1, x._2._2) }",
+        FuncValue(
+          Vector((1, SPair(SCollectionType(SInt), SPair(SInt, SInt)))),
+          BlockValue(
+            Vector(
+              ValDef(
+                3,
+                List(),
+                SelectField.typed[Value[STuple]](
+                  ValUse(1, SPair(SCollectionType(SInt), SPair(SInt, SInt))),
+                  2.toByte
+                )
               )
-            )
-          ),
-          Slice(
-            SelectField.typed[Value[SCollection[SInt.type]]](
-              ValUse(1, SPair(SCollectionType(SInt), SPair(SInt, SInt))),
-              1.toByte
             ),
-            SelectField.typed[Value[SInt.type]](ValUse(3, SPair(SInt, SInt)), 1.toByte),
-            SelectField.typed[Value[SInt.type]](ValUse(3, SPair(SInt, SInt)), 2.toByte)
+            Slice(
+              SelectField.typed[Value[SCollection[SInt.type]]](
+                ValUse(1, SPair(SCollectionType(SInt), SPair(SInt, SInt))),
+                1.toByte
+              ),
+              SelectField.typed[Value[SInt.type]](ValUse(3, SPair(SInt, SInt)), 1.toByte),
+              SelectField.typed[Value[SInt.type]](ValUse(3, SPair(SInt, SInt)), 2.toByte)
+            )
           )
-        )
-      ))
-    forAll(collWithRangeGen) { x =>
-      slice.checkEquality(x)
-    }
+        )),
+      preGeneratedSamples = Some(samples))
   }
 
   property("Coll append method equivalence") {
