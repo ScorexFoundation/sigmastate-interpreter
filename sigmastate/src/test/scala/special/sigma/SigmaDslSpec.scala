@@ -4236,23 +4236,43 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   }
 
   property("allOf equivalence") {
-    lazy val allOf = existingFeature((x: Coll[Boolean]) => SigmaDsl.allOf(x),
-      "{ (x: Coll[Boolean]) => allOf(x) }",
-      FuncValue(Vector((1, SBooleanArray)), AND(ValUse(1, SBooleanArray))))
-
-    forAll { x: Coll[Boolean] =>
-      allOf.checkEquality(x)
-    }
+    testCases(
+      Seq(
+        (Coll[Boolean]() -> Success(true)),
+        (Coll[Boolean](true) -> Success(true)),
+        (Coll[Boolean](false) -> Success(false)),
+        (Coll[Boolean](false, false) -> Success(false)),
+        (Coll[Boolean](false, true) -> Success(false)),
+        (Coll[Boolean](true, false) -> Success(false)),
+        (Coll[Boolean](true, true) -> Success(true)),
+        (Coll[Boolean](true, false, false) -> Success(false)),
+        (Coll[Boolean](true, false, true) -> Success(false)),
+        (Coll[Boolean](true, true, false) -> Success(false)),
+        (Coll[Boolean](true, true, true) -> Success(true))
+      ),
+      existingFeature((x: Coll[Boolean]) => SigmaDsl.allOf(x),
+        "{ (x: Coll[Boolean]) => allOf(x) }",
+        FuncValue(Vector((1, SBooleanArray)), AND(ValUse(1, SBooleanArray)))))
   }
 
   property("anyOf equivalence") {
-    lazy val anyOf = existingFeature((x: Coll[Boolean]) => SigmaDsl.anyOf(x),
-      "{ (x: Coll[Boolean]) => anyOf(x) }",
-      FuncValue(Vector((1, SBooleanArray)), OR(ValUse(1, SBooleanArray))))
-
-    forAll { x: Coll[Boolean] =>
-      anyOf.checkEquality(x)
-    }
+    testCases(
+      Seq(
+        (Coll[Boolean]() -> Success(false)),
+        (Coll[Boolean](true) -> Success(true)),
+        (Coll[Boolean](false) -> Success(false)),
+        (Coll[Boolean](false, false) -> Success(false)),
+        (Coll[Boolean](false, true) -> Success(true)),
+        (Coll[Boolean](true, false) -> Success(true)),
+        (Coll[Boolean](true, true) -> Success(true)),
+        (Coll[Boolean](true, false, false) -> Success(true)),
+        (Coll[Boolean](true, false, true) -> Success(true)),
+        (Coll[Boolean](true, true, false) -> Success(true)),
+        (Coll[Boolean](true, true, true) -> Success(true))
+      ),
+      existingFeature((x: Coll[Boolean]) => SigmaDsl.anyOf(x),
+        "{ (x: Coll[Boolean]) => anyOf(x) }",
+        FuncValue(Vector((1, SBooleanArray)), OR(ValUse(1, SBooleanArray)))))
   }
 
   property("proveDlog equivalence") {
