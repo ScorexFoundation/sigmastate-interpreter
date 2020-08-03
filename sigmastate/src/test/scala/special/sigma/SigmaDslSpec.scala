@@ -4019,26 +4019,63 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   property("sigmaProp equivalence") {
     testCases(
       Seq(
-        (false, Success(CSigmaProp((false)))),
-        (true, Success(CSigmaProp((true))))),
+        (false, Success(CSigmaProp(TrivialProp.FalseProp))),
+        (true, Success(CSigmaProp(TrivialProp.TrueProp)))),
       existingFeature((x: Boolean) => sigmaProp(x),
        "{ (x: Boolean) => sigmaProp(x) }",
         FuncValue(Vector((1, SBoolean)), BoolToSigmaProp(ValUse(1, SBoolean)))))
   }
 
   property("atLeast equivalence") {
-    lazy val atLeast = existingFeature((x: Coll[SigmaProp]) => SigmaDsl.atLeast(x.size - 1, x),
-      "{ (x: Coll[SigmaProp]) => atLeast(x.size - 1, x) }",
-      FuncValue(
-        Vector((1, SCollectionType(SSigmaProp))),
-        AtLeast(
-          ArithOp(SizeOf(ValUse(1, SCollectionType(SSigmaProp))), IntConstant(1), OpCode @@ (-103.toByte)),
-          ValUse(1, SCollectionType(SSigmaProp))
+    testCases(
+      Seq(
+        Coll[SigmaProp](
+          CSigmaProp(
+            ProveDHTuple(
+              Helpers.decodeECPoint("028cf1686a3275e54441c68d789151bdec40d34d62188bbadce170d96d4ce399b0"),
+              Helpers.decodeECPoint("03e53afbe18efff6586f5b8bda1c3262aac65ede384f12b4a56ecb74e16d73efc5"),
+              Helpers.decodeECPoint("02614b14a8c6c6b4b7ce017d72fbca7f9218b72c16bdd88f170ffb300b106b9014"),
+              Helpers.decodeECPoint("034cc5572276adfa3e283a3f1b0f0028afaadeaa362618c5ec43262d8cefe7f004")
+            )
+          )) -> Success(CSigmaProp(TrivialProp.TrueProp)),
+        Coll[SigmaProp](
+          CSigmaProp(
+            ProveDHTuple(
+              Helpers.decodeECPoint("028cf1686a3275e54441c68d789151bdec40d34d62188bbadce170d96d4ce399b0"),
+              Helpers.decodeECPoint("03e53afbe18efff6586f5b8bda1c3262aac65ede384f12b4a56ecb74e16d73efc5"),
+              Helpers.decodeECPoint("02614b14a8c6c6b4b7ce017d72fbca7f9218b72c16bdd88f170ffb300b106b9014"),
+              Helpers.decodeECPoint("034cc5572276adfa3e283a3f1b0f0028afaadeaa362618c5ec43262d8cefe7f004")
+            )
+          ),
+          CSigmaProp(ProveDlog(Helpers.decodeECPoint("03f7eacae7476a9ef082513a6a70ed6b208aafad0ade5f614ac6cfa2176edd0d69"))),
+          CSigmaProp(ProveDlog(Helpers.decodeECPoint("023bddd50b917388cd2c4f478f3ea9281bf03a252ee1fefe9c79f800afaa8d86ad")))
+        ) -> Success(
+          CSigmaProp(
+            CTHRESHOLD(
+              2,
+              Array(
+                ProveDHTuple(
+                  Helpers.decodeECPoint("028cf1686a3275e54441c68d789151bdec40d34d62188bbadce170d96d4ce399b0"),
+                  Helpers.decodeECPoint("03e53afbe18efff6586f5b8bda1c3262aac65ede384f12b4a56ecb74e16d73efc5"),
+                  Helpers.decodeECPoint("02614b14a8c6c6b4b7ce017d72fbca7f9218b72c16bdd88f170ffb300b106b9014"),
+                  Helpers.decodeECPoint("034cc5572276adfa3e283a3f1b0f0028afaadeaa362618c5ec43262d8cefe7f004")
+                ),
+                ProveDlog(Helpers.decodeECPoint("03f7eacae7476a9ef082513a6a70ed6b208aafad0ade5f614ac6cfa2176edd0d69")),
+                ProveDlog(Helpers.decodeECPoint("023bddd50b917388cd2c4f478f3ea9281bf03a252ee1fefe9c79f800afaa8d86ad"))
+              )
+            )
+          )
         )
-      ))
-    forAll(collGen[SigmaProp]) { x: Coll[SigmaProp] =>
-      atLeast.checkEquality(x)
-    }
+      ),
+      existingFeature((x: Coll[SigmaProp]) => SigmaDsl.atLeast(x.size - 1, x),
+        "{ (x: Coll[SigmaProp]) => atLeast(x.size - 1, x) }",
+        FuncValue(
+          Vector((1, SCollectionType(SSigmaProp))),
+          AtLeast(
+            ArithOp(SizeOf(ValUse(1, SCollectionType(SSigmaProp))), IntConstant(1), OpCode @@ (-103.toByte)),
+            ValUse(1, SCollectionType(SSigmaProp))
+          )
+        )), true)
   }
 
   property("&& sigma equivalence") {

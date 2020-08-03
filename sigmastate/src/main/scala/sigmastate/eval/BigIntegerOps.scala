@@ -102,6 +102,17 @@ object OrderingOps {
     }
   }
   implicit object ContextOrdering extends ContextOrdering
+
+  trait SigmaPropOrdering extends Ordering[SigmaProp] {
+    /** Compares this `x: Context` with `y: Context` using block height and SELF.id.
+      * @returns a negative integer, zero, or a positive integer as the
+      * `x` is less than, equal to, or greater than `y`.
+      */
+    def compare(x: SigmaProp, y: SigmaProp) = {
+      x.toString.compareTo(y.toString)
+    }
+  }
+  implicit object SigmaPropOrdering extends SigmaPropOrdering
 }
 
 object NumericOps {
