@@ -44,9 +44,9 @@ class DistributedSigSpecification extends SigmaTestingCommons {
     val (rBob, aBob) = DLogInteractiveProver.firstMessage()
 
     val dlBKnown: Hint = RealCommitment(pubkeyBob, aBob)
-    val bag = HintsBag(Seq(dlBKnown))
+    val bagA = HintsBag(Seq(dlBKnown))
 
-    val proofAlice = proverA.prove(prop, ctx, fakeMessage, bag).get
+    val proofAlice = proverA.prove(prop, ctx, fakeMessage, bagA).get
 
     val bagB = proverB.bagForMultisig(ctx, prop, proofAlice.proof, Seq(pubkeyAlice))
       .addHint(OwnCommitment(pubkeyBob, rBob, aBob))
@@ -81,9 +81,9 @@ class DistributedSigSpecification extends SigmaTestingCommons {
 
     val dlBKnown: Hint = RealCommitment(pubkeyBob, aBob)
     val dlCKnown: Hint = RealCommitment(pubkeyCarol, aCarol)
-    val bag = HintsBag(Seq(dlBKnown, dlCKnown))
+    val bagA = HintsBag(Seq(dlBKnown, dlCKnown))
 
-    val proofAlice = proverA.prove(prop, ctx, fakeMessage, bag).get
+    val proofAlice = proverA.prove(prop, ctx, fakeMessage, bagA).get
 
     val bagC = proverB.bagForMultisig(ctx, prop, proofAlice.proof, Seq(pubkeyAlice))
       .addHint(OwnCommitment(pubkeyCarol, rCarol, aCarol))
