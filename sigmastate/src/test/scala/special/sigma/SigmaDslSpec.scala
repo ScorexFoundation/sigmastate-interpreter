@@ -4207,12 +4207,14 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   }
 
   property("SigmaProp.propBytes equivalence") {
-    lazy val propBytes = existingFeature((x: SigmaProp) => x.propBytes,
-      "{ (x: SigmaProp) => x.propBytes }",
-      FuncValue(Vector((1, SSigmaProp)), SigmaPropBytes(ValUse(1, SSigmaProp))))
-    forAll { x: SigmaProp =>
-      propBytes.checkEquality(x)
-    }
+    testCases(
+      Seq(
+        CSigmaProp(ProveDlog(Helpers.decodeECPoint("039d0b1e46c21540d033143440d2fb7dd5d650cf89981c99ee53c6e0374d2b1b6f"))) ->
+          Success(Helpers.decodeBytes("0008cd039d0b1e46c21540d033143440d2fb7dd5d650cf89981c99ee53c6e0374d2b1b6f"))
+      ),
+      existingFeature((x: SigmaProp) => x.propBytes,
+        "{ (x: SigmaProp) => x.propBytes }",
+        FuncValue(Vector((1, SSigmaProp)), SigmaPropBytes(ValUse(1, SSigmaProp)))))
   }
 
   // TODO HF: implement allZK func https://github.com/ScorexFoundation/sigmastate-interpreter/issues/543
