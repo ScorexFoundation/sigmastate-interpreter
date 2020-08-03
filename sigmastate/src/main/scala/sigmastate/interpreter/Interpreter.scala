@@ -88,7 +88,8 @@ trait Interpreter extends ScorexLogging {
 
   /** Extracts proposition for ErgoTree handing soft-fork condition.
     * @note soft-fork handler */
-  def propositionFromErgoTree(tree: ErgoTree, validationSettings: SigmaValidationSettings): SigmaPropValue = {
+  def propositionFromErgoTree(tree: ErgoTree, context: CTX): SigmaPropValue = {
+    val validationSettings = context.validationSettings
     val prop = tree.root match {
       case Right(_) =>
         tree.toProposition(tree.isConstantSegregation)
@@ -204,7 +205,7 @@ trait Interpreter extends ScorexLogging {
                     context: CTX,
                     env: ScriptEnv): (SigmaBoolean, Long) = {
     implicit val vs: SigmaValidationSettings = context.validationSettings
-    val prop = propositionFromErgoTree(exp, vs)
+    val prop = propositionFromErgoTree(exp, context)
     val (propTree, context2) = trySoftForkable[(BoolValue, CTX)](whenSoftFork = (TrueLeaf, context)) {
       applyDeserializeContext(context, prop)
     }
