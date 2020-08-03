@@ -4143,39 +4143,67 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   }
 
   property("|| sigma equivalence") {
-    lazy val SigmaOr1 = existingFeature(
-      (x: (SigmaProp, SigmaProp)) => x._1 || x._2,
-      "{ (x:(SigmaProp, SigmaProp)) => x._1 || x._2 }",
-      FuncValue(
-        Vector((1, SPair(SSigmaProp, SSigmaProp))),
-        SigmaOr(
-          Seq(
-            SelectField.typed[SigmaPropValue](ValUse(1, SPair(SSigmaProp, SSigmaProp)), 1.toByte),
-            SelectField.typed[SigmaPropValue](ValUse(1, SPair(SSigmaProp, SSigmaProp)), 2.toByte)
-          )
-        )
-      ))
-    lazy val SigmaOr2 = existingFeature(
-      (x: (SigmaProp, Boolean)) => x._1 || sigmaProp(x._2),
-      "{ (x:(SigmaProp, Boolean)) => x._1 || sigmaProp(x._2) }",
-      FuncValue(
-        Vector((1, SPair(SSigmaProp, SBoolean))),
-        SigmaOr(
-          Seq(
-            SelectField.typed[SigmaPropValue](ValUse(1, SPair(SSigmaProp, SBoolean)), 1.toByte),
-            BoolToSigmaProp(
-              SelectField.typed[BoolValue](ValUse(1, SPair(SSigmaProp, SBoolean)), 2.toByte)
+    testCases(
+      Seq(
+        (CSigmaProp(ProveDlog(Helpers.decodeECPoint("02ea9bf6da7f512386c6ca509d40f8c5e7e0ffb3eea5dc3c398443ea17f4510798"))),
+            CSigmaProp(ProveDlog(Helpers.decodeECPoint("03a426a66fc1af2792b35d9583904c3fb877b49ae5cea45b7a2aa105ffa4c68606")))) ->
+            Success(
+              CSigmaProp(
+                COR(
+                  Seq(
+                    ProveDlog(Helpers.decodeECPoint("02ea9bf6da7f512386c6ca509d40f8c5e7e0ffb3eea5dc3c398443ea17f4510798")),
+                    ProveDlog(Helpers.decodeECPoint("03a426a66fc1af2792b35d9583904c3fb877b49ae5cea45b7a2aa105ffa4c68606"))
+                  )
+                )
+              )
+            ),
+        (CSigmaProp(TrivialProp.FalseProp),
+            CSigmaProp(ProveDlog(Helpers.decodeECPoint("03a426a66fc1af2792b35d9583904c3fb877b49ae5cea45b7a2aa105ffa4c68606")))) ->
+            Success(CSigmaProp(ProveDlog(Helpers.decodeECPoint("03a426a66fc1af2792b35d9583904c3fb877b49ae5cea45b7a2aa105ffa4c68606")))),
+        (CSigmaProp(TrivialProp.TrueProp),
+            CSigmaProp(ProveDlog(Helpers.decodeECPoint("03a426a66fc1af2792b35d9583904c3fb877b49ae5cea45b7a2aa105ffa4c68606")))) ->
+            Success(CSigmaProp(TrivialProp.TrueProp)),
+        (CSigmaProp(ProveDlog(Helpers.decodeECPoint("03a426a66fc1af2792b35d9583904c3fb877b49ae5cea45b7a2aa105ffa4c68606"))),
+            CSigmaProp(TrivialProp.FalseProp)) ->
+            Success(CSigmaProp(ProveDlog(Helpers.decodeECPoint("03a426a66fc1af2792b35d9583904c3fb877b49ae5cea45b7a2aa105ffa4c68606")))),
+        (CSigmaProp(ProveDlog(Helpers.decodeECPoint("03a426a66fc1af2792b35d9583904c3fb877b49ae5cea45b7a2aa105ffa4c68606"))),
+            CSigmaProp(TrivialProp.TrueProp)) ->
+            Success(CSigmaProp(TrivialProp.TrueProp))
+      ),
+      existingFeature(
+        (x: (SigmaProp, SigmaProp)) => x._1 || x._2,
+        "{ (x:(SigmaProp, SigmaProp)) => x._1 || x._2 }",
+        FuncValue(
+          Vector((1, SPair(SSigmaProp, SSigmaProp))),
+          SigmaOr(
+            Seq(
+              SelectField.typed[SigmaPropValue](ValUse(1, SPair(SSigmaProp, SSigmaProp)), 1.toByte),
+              SelectField.typed[SigmaPropValue](ValUse(1, SPair(SSigmaProp, SSigmaProp)), 2.toByte)
             )
           )
-        )
-      ))
+        )))
 
-    forAll { x: (SigmaProp, SigmaProp) =>
-      SigmaOr1.checkEquality(x)
-    }
-    forAll { x: (SigmaProp, Boolean) =>
-      SigmaOr2.checkEquality(x)
-    }
+    testCases(
+      Seq(
+        (CSigmaProp(ProveDlog(Helpers.decodeECPoint("03a426a66fc1af2792b35d9583904c3fb877b49ae5cea45b7a2aa105ffa4c68606"))), false) ->
+            Success(CSigmaProp(ProveDlog(Helpers.decodeECPoint("03a426a66fc1af2792b35d9583904c3fb877b49ae5cea45b7a2aa105ffa4c68606")))),
+        (CSigmaProp(ProveDlog(Helpers.decodeECPoint("03a426a66fc1af2792b35d9583904c3fb877b49ae5cea45b7a2aa105ffa4c68606"))), true) ->
+            Success(CSigmaProp(TrivialProp.TrueProp))
+      ),
+      existingFeature(
+        (x: (SigmaProp, Boolean)) => x._1 || sigmaProp(x._2),
+        "{ (x:(SigmaProp, Boolean)) => x._1 || sigmaProp(x._2) }",
+        FuncValue(
+          Vector((1, SPair(SSigmaProp, SBoolean))),
+          SigmaOr(
+            Seq(
+              SelectField.typed[SigmaPropValue](ValUse(1, SPair(SSigmaProp, SBoolean)), 1.toByte),
+              BoolToSigmaProp(
+                SelectField.typed[BoolValue](ValUse(1, SPair(SSigmaProp, SBoolean)), 2.toByte)
+              )
+            )
+          )
+        )))
   }
 
   property("SigmaProp.propBytes equivalence") {
