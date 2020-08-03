@@ -5,7 +5,6 @@ import java.math.BigInteger
 import org.bouncycastle.util.BigIntegers
 import sigmastate.Values.Value.PropositionCode
 import sigmastate._
-import sigmastate.basics.DLogProtocol.DLogSigmaProtocol
 import sigmastate.basics.VerifierMessage.Challenge
 import sigmastate.eval.SigmaDsl
 import sigmastate.interpreter.CryptoConstants.EcPointType
@@ -27,6 +26,7 @@ case class DiffieHellmanTupleProverInput(w: BigInteger, commonInput: ProveDHTupl
 }
 
 object DiffieHellmanTupleProverInput {
+
   import sigmastate.interpreter.CryptoConstants.dlogGroup
 
   def random(): DiffieHellmanTupleProverInput = {
@@ -54,7 +54,7 @@ case class FirstDiffieHellmanTupleProverMessage(a: CryptoConstants.EcPointType, 
 }
 
 //z = r + ew mod q
-case class SecondDiffieHellmanTupleProverMessage(z: BigInteger) extends SecondProverMessage{
+case class SecondDiffieHellmanTupleProverMessage(z: BigInteger) extends SecondProverMessage {
 
   override type SP = DiffieHellmanTupleProtocol
 
@@ -62,7 +62,7 @@ case class SecondDiffieHellmanTupleProverMessage(z: BigInteger) extends SecondPr
 }
 
 /** Construct a new SigmaProp value representing public key of Diffie Hellman signature protocol.
-  * Common input: (g,h,u,v)*/
+  * Common input: (g,h,u,v) */
 case class ProveDHTuple(gv: EcPointType, hv: EcPointType, uv: EcPointType, vv: EcPointType)
   extends SigmaProtocolCommonInput[DiffieHellmanTupleProtocol]
     with SigmaProofOfKnowledgeLeaf[DiffieHellmanTupleProtocol, DiffieHellmanTupleProverInput] {
@@ -121,6 +121,7 @@ class DiffieHellmanTupleInteractiveProver(override val publicInput: ProveDHTuple
 }
 
 object DiffieHellmanTupleInteractiveProver {
+
   import sigmastate.interpreter.CryptoConstants.dlogGroup
 
   def firstMessage(publicInput: ProveDHTuple): (BigInteger, FirstDiffieHellmanTupleProverMessage) = {
@@ -142,7 +143,7 @@ object DiffieHellmanTupleInteractiveProver {
   }
 
   def simulate(publicInput: ProveDHTuple, challenge: Challenge):
-    (FirstDiffieHellmanTupleProverMessage, SecondDiffieHellmanTupleProverMessage) = {
+  (FirstDiffieHellmanTupleProverMessage, SecondDiffieHellmanTupleProverMessage) = {
 
     val qMinusOne = dlogGroup.order.subtract(BigInteger.ONE)
 

@@ -13,10 +13,10 @@ trait ProverUtils extends Interpreter {
     *
     * See DistributedSigSpecification for examples of usage.
     *
-    * @param context      - context used to reduce the proposition
-    * @param exp          - proposition to reduce
-    * @param proof        - proof for reduced proposition
-    * @param realSecretsToExtract - public keys of secrets with real proofs
+    * @param context                   - context used to reduce the proposition
+    * @param exp                       - proposition to reduce
+    * @param proof                     - proof for reduced proposition
+    * @param realSecretsToExtract      - public keys of secrets with real proofs
     * @param simulatedSecretsToExtract - public keys of secrets with simulated proofs
     * @return - bag of OtherSecretProven and OtherCommitment hints
     */
@@ -46,7 +46,7 @@ trait ProverUtils extends Interpreter {
           val realFound = realPropositions.contains(leaf.proposition)
           val simulatedFound = simulatedPropositions.contains(leaf.proposition)
           if (realFound || simulatedFound) {
-            val hints = if(realFound) {
+            val hints = if (realFound) {
               Seq(
                 RealCommitment(leaf.proposition, leaf.commitmentOpt.get),
                 RealSecretProof(leaf.proposition, Challenge @@ leaf.challenge, leaf)
@@ -57,7 +57,7 @@ trait ProverUtils extends Interpreter {
                 SimulatedSecretProof(leaf.proposition, Challenge @@ leaf.challenge, leaf)
               )
             }
-            hintsBag.addHints(hints :_*)
+            hintsBag.addHints(hints: _*)
           } else hintsBag
       }
     }
