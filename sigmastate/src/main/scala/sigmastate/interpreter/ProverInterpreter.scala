@@ -14,7 +14,6 @@ import sigmastate.basics.VerifierMessage.Challenge
 import sigmastate.basics.{DiffieHellmanTupleInteractiveProver, DiffieHellmanTupleProverInput, FirstDiffieHellmanTupleProverMessage, ProveDHTuple, SecondDiffieHellmanTupleProverMessage, SigmaProtocolPrivateInput}
 import sigmastate.lang.exceptions.CostLimitException
 import sigmastate.utils.Helpers
-import Helpers._
 
 import scala.util.Try
 
@@ -106,10 +105,7 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
 
     val ctxUpdInitCost = context.withInitCost(initCost).asInstanceOf[CTX]
 
-    val prop = propositionFromErgoTree(exp, ctxUpdInitCost.validationSettings)
-    val (propTree, _) = applyDeserializeContext(ctxUpdInitCost, prop)
-    val tried = reduceToCrypto(ctxUpdInitCost, env, propTree)
-    val (reducedProp, cost) = tried.getOrThrow
+    val (reducedProp, cost) = fullReduction(exp, ctxUpdInitCost, env)
 
     val proofTree = reducedProp match {
       case TrueProp => NoProof
