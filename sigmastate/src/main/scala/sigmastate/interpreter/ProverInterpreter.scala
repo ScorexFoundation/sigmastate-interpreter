@@ -138,20 +138,20 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
       or.copy(simulated = simulated)
     case t: CThresholdUnproven =>
       // If the node is THRESHOLD(k), mark it "real" if at least k of its children are marked real; else mark it "simulated"
-      val realCnt = t.children.foldLeft(0) { (count, child) =>
+      val realCount = t.children.foldLeft(0) { (count, child) =>
         count + (if (child.asInstanceOf[UnprovenTree].simulated) 0 else 1)
       }
-      t.copy(simulated = realCnt < t.k)
+      t.copy(simulated = realCount < t.k)
     // UnprovenSchnorr | UnprovenDiffieHellmanTuple case
     case ul: UnprovenLeaf =>
-      // If the node is a leaf, mark it "real'' if the witness for it is available
-      // or a hint shows the secret is known to external party participated in multi-signing;
+      // If the node is a leaf, mark it "real'' if either the witness for it is available or a hint shows the secret
+      // is known to an external participant in multi-signing;
       // else mark it "simulated"
-      val real = hintsBag.realImages.contains(ul.proposition) || secrets.exists {
+      val isReal = hintsBag.realImages.contains(ul.proposition) || secrets.exists {
         case in: SigmaProtocolPrivateInput[_, _] => in.publicImage == ul.proposition
         case _ => false
       }
-      ul.withSimulated(!real)
+      ul.withSimulated(!isReal)
     case t =>
       error(s"Don't know how to markReal($t)")
   })
@@ -316,8 +316,8 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
     */
 
     case su: UnprovenSchnorr =>
-      //Steps 5 & 6: pull out commitment from the hints bag, otherwise, compute the commitment(if the node is real),
-      // or simulate it (if the node is simulated)
+      // Steps 5 & 6: first try pulling out commitment from the hints bag. If it exists proceed with it,
+      // otherwise, compute the commitment (if the node is real) or simulate it (if the node is simulated)
 
       // Step 6 (real leaf -- compute the commitment a or take it from the hints bag)
       hintsBag.commitments.find(_.image == su.proposition).map { cmtHint =>
@@ -340,8 +340,8 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
        // or simulate it (if the node is simulated)
 
         // Step 6 (real leaf -- compute the commitment a or take it from the hints bag)
-        hintsBag.commitments.find(_.image == dhu.proposition).map { proof =>
-          dhu.copy(commitmentOpt = Some(proof.commitment.asInstanceOf[FirstDiffieHellmanTupleProverMessage]))
+        hintsBag.commitments.find(_.image == dhu.proposition).map { cmtHint =>
+          dhu.copy(commitmentOpt = Some(cmtHint.commitment.asInstanceOf[FirstDiffieHellmanTupleProverMessage]))
         }.getOrElse {
           if (dhu.simulated) {
             // Step 5 (simulated leaf -- complete the simulation)
@@ -432,15 +432,15 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
         .find(_.asInstanceOf[DLogProverInput].publicImage == su.proposition)
 
       val z = privKeyOpt match {
-        case Some(privKey) =>
+        case Some(privKey: DLogProverInput) =>
           hintsBag.ownCommitments.find(_.image == su.proposition).map { oc =>
             DLogInteractiveProver.secondMessage(
-              privKey.asInstanceOf[DLogProverInput],
+              privKey,
               oc.secretRandomness,
               su.challengeOpt.get)
           }.getOrElse {
             DLogInteractiveProver.secondMessage(
-              privKey.asInstanceOf[DLogProverInput],
+              privKey,
               su.randomnessOpt.get,
               su.challengeOpt.get)
           }

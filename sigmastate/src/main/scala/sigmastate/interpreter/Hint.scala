@@ -36,14 +36,16 @@ abstract class SecretProven extends Hint {
 }
 
 /**
-  * A hint which contains a proof-of-knowledge for a secret associated with its public image "image".
+  * A hint which contains a proof-of-knowledge for a secret associated with its public image "image",
+  * with also the mark that the proof is real.
   */
 case class RealSecretProof(image: SigmaBoolean,
                            challenge: Challenge,
                            uncheckedTree: UncheckedTree) extends SecretProven
 
 /**
-  * A hint which contains a proof-of-knowledge for a secret associated with its public image "image".
+  * A hint which contains a proof-of-knowledge for a secret associated with its public image "image",
+  * with also the mark that the proof is real.
   */
 case class SimulatedSecretProof(image: SigmaBoolean,
                                 challenge: Challenge,
