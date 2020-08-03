@@ -4276,12 +4276,14 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   }
 
   property("proveDlog equivalence") {
-    val proveDlog = existingFeature({ (x: GroupElement) => SigmaDsl.proveDlog(x) },
-      "{ (x: GroupElement) => proveDlog(x) }",
-      FuncValue(Vector((1, SGroupElement)), CreateProveDlog(ValUse(1, SGroupElement))))
-    forAll { x: GroupElement =>
-      proveDlog.checkEquality(x)
-    }
+    testCases(
+      Seq(
+        (Helpers.decodeGroupElement("02288f0e55610c3355c89ed6c5de43cf20da145b8c54f03a29f481e540d94e9a69") ->
+          Success(CSigmaProp(ProveDlog(Helpers.decodeECPoint("02288f0e55610c3355c89ed6c5de43cf20da145b8c54f03a29f481e540d94e9a69")))))
+      ),
+      existingFeature({ (x: GroupElement) => SigmaDsl.proveDlog(x) },
+        "{ (x: GroupElement) => proveDlog(x) }",
+        FuncValue(Vector((1, SGroupElement)), CreateProveDlog(ValUse(1, SGroupElement)))))
   }
 
   property("proveDHTuple equivalence") {
