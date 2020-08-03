@@ -58,7 +58,6 @@ case class SecondDiffieHellmanTupleProverMessage(z: BigInteger) extends SecondPr
 
   override type SP = DiffieHellmanTupleProtocol
 
-  override def bytes: Array[PropositionCode] = ???
 }
 
 /** Construct a new SigmaProp value representing public key of Diffie Hellman signature protocol.

@@ -23,7 +23,6 @@ import scala.concurrent.Future
 
 
 trait TranscriptMessage {
-  def bytes: Array[Byte]
 }
 
 /** The message sent by a prover to its associated verifier as part of a sigma protocol interaction. */
@@ -41,6 +40,8 @@ object VerifierMessage {
 /** First message from the prover (message `a` of `SigmaProtocol`)*/
 trait FirstProverMessage extends ProverMessage {
   type SP <: SigmaProtocol[SP]
+
+  def bytes: Array[Byte]
 }
 
 /** Second message from the prover (message `z` of `SigmaProtocol`)*/

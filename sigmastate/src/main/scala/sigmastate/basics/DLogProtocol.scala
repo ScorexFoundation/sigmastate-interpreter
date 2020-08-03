@@ -77,7 +77,6 @@ object DLogProtocol {
 
   case class SecondDLogProverMessage(z: BigInt) extends SecondProverMessage {
     override type SP = DLogSigmaProtocol
-    override def bytes: Array[Byte] = z.toByteArray
   }
 
   class DLogInteractiveProver(override val publicInput: ProveDlog, override val privateInputOpt: Option[DLogProverInput])
