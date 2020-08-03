@@ -17,7 +17,7 @@ trait Hint
 /**
   * A hint which is indicating that a secret associated with its public image "image" is already proven.
   */
-trait SecretProven extends Hint {
+abstract class SecretProven extends Hint {
 
   /**
     * Public image of a secret which is proven
@@ -54,7 +54,7 @@ case class SimulatedSecretProof(image: SigmaBoolean,
   * A family of hints which are about a correspondence between a public image of a secret image and prover's commitment
   * to randomness ("a" in a sigma protocol).
   */
-trait CommitmentHint extends Hint {
+abstract class CommitmentHint extends Hint {
   def image: SigmaBoolean
   def commitment: FirstProverMessage
 }
