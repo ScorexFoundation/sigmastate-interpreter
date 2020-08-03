@@ -4287,20 +4287,30 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   }
 
   property("proveDHTuple equivalence") {
-    val proveDHTuple = existingFeature({ (x: GroupElement) => SigmaDsl.proveDHTuple(x, x, x, x) },
-      "{ (x: GroupElement) => proveDHTuple(x, x, x, x) }",
-      FuncValue(
-        Vector((1, SGroupElement)),
-        CreateProveDHTuple(
-          ValUse(1, SGroupElement),
-          ValUse(1, SGroupElement),
-          ValUse(1, SGroupElement),
-          ValUse(1, SGroupElement)
-        )
-      ))
-    forAll { x: GroupElement =>
-      proveDHTuple.checkEquality(x)
-    }
+    testCases(
+      Seq(
+        (Helpers.decodeGroupElement("039c15221a318d27c186eba84fa8d986c1f63bbd9f8060380c9bfc2ef455d8346a") -> Success(
+          CSigmaProp(
+            ProveDHTuple(
+              Helpers.decodeECPoint("039c15221a318d27c186eba84fa8d986c1f63bbd9f8060380c9bfc2ef455d8346a"),
+              Helpers.decodeECPoint("039c15221a318d27c186eba84fa8d986c1f63bbd9f8060380c9bfc2ef455d8346a"),
+              Helpers.decodeECPoint("039c15221a318d27c186eba84fa8d986c1f63bbd9f8060380c9bfc2ef455d8346a"),
+              Helpers.decodeECPoint("039c15221a318d27c186eba84fa8d986c1f63bbd9f8060380c9bfc2ef455d8346a")
+            )
+          )
+        ))
+      ),
+      existingFeature({ (x: GroupElement) => SigmaDsl.proveDHTuple(x, x, x, x) },
+        "{ (x: GroupElement) => proveDHTuple(x, x, x, x) }",
+        FuncValue(
+          Vector((1, SGroupElement)),
+          CreateProveDHTuple(
+            ValUse(1, SGroupElement),
+            ValUse(1, SGroupElement),
+            ValUse(1, SGroupElement),
+            ValUse(1, SGroupElement)
+          )
+        )))
   }
 
 }
