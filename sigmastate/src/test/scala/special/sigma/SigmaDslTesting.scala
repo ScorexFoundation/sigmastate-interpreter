@@ -67,7 +67,7 @@ class SigmaDslTesting extends PropSpec
   }
 
   /** Generate indices for an array of a given length.
-    * @return unordered array of indices with possible repeated elements
+    * @return unordered array of indices with possibly repeated elements
     */
   def genIndices(arrLength: Int): Gen[Array[Int]] = for {
     nIndexes <- Gen.choose(0, arrLength)
