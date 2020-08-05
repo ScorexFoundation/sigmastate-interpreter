@@ -78,26 +78,26 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
     convertToUnchecked(step9)
   }
 
-  def prove(exp: ErgoTree,
+  def prove(ergoTree: ErgoTree,
             context: CTX,
             message: Array[Byte],
             hintsBag: HintsBag): Try[CostedProverResult] =
-    prove(emptyEnv, exp, context, message, hintsBag)
+    prove(emptyEnv, ergoTree, context, message, hintsBag)
 
-  def prove(exp: ErgoTree,
+  def prove(ergoTree: ErgoTree,
             context: CTX,
             message: Array[Byte]): Try[CostedProverResult] =
-    prove(emptyEnv, exp, context, message, HintsBag.empty)
+    prove(emptyEnv, ergoTree, context, message, HintsBag.empty)
 
 
   def prove(env: ScriptEnv,
-            exp: ErgoTree,
+            ergoTree: ErgoTree,
             context: CTX,
             message: Array[Byte],
             hintsBag: HintsBag = HintsBag.empty): Try[CostedProverResult] = Try {
     import TrivialProp._
 
-    val initCost = exp.complexity + context.initCost
+    val initCost = ergoTree.complexity + context.initCost
     val remainingLimit = context.costLimit - initCost
     if (remainingLimit <= 0)
       throw new CostLimitException(initCost,
@@ -105,7 +105,7 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
 
     val ctxUpdInitCost = context.withInitCost(initCost).asInstanceOf[CTX]
 
-    val (reducedProp, cost) = fullReduction(exp, ctxUpdInitCost, env)
+    val (reducedProp, cost) = fullReduction(ergoTree, ctxUpdInitCost, env)
 
     val proofTree = reducedProp match {
       case TrueProp => NoProof

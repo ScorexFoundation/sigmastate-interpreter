@@ -43,8 +43,8 @@ class DistributedSigSpecification extends SigmaTestingCommons {
 
     val (rBob, aBob) = DLogInteractiveProver.firstMessage()
 
-    val dlBKnown: Hint = RealCommitment(pubkeyBob, aBob)
-    val bagA = HintsBag(Seq(dlBKnown))
+    val hintFromBob: Hint = RealCommitment(pubkeyBob, aBob)
+    val bagA = HintsBag(Seq(hintFromBob))
 
     val proofAlice = proverA.prove(prop, ctx, fakeMessage, bagA).get
 
@@ -394,7 +394,6 @@ class DistributedSigSpecification extends SigmaTestingCommons {
 
     //first, commitments are needed from real signers
     val (rAlice, aAlice) =  DLogInteractiveProver.firstMessage()
-    val dlAKnown: Hint = RealCommitment(pubkeyAlice, aAlice)
     val secretCmtA = OwnCommitment(pubkeyAlice, rAlice, aAlice)
 
     val (rDave, aDave) = DiffieHellmanTupleInteractiveProver.firstMessage(pubkeyDave)

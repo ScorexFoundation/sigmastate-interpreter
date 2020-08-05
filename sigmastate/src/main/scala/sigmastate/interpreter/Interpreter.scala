@@ -88,11 +88,11 @@ trait Interpreter extends ScorexLogging {
 
   /** Extracts proposition for ErgoTree handing soft-fork condition.
     * @note soft-fork handler */
-  def propositionFromErgoTree(tree: ErgoTree, context: CTX): SigmaPropValue = {
+  def propositionFromErgoTree(ergoTree: ErgoTree, context: CTX): SigmaPropValue = {
     val validationSettings = context.validationSettings
-    val prop = tree.root match {
+    val prop = ergoTree.root match {
       case Right(_) =>
-        tree.toProposition(tree.isConstantSegregation)
+        ergoTree.toProposition(ergoTree.isConstantSegregation)
       case Left(UnparsedErgoTree(_, error)) if validationSettings.isSoftFork(error) =>
         TrueSigmaProp
       case Left(UnparsedErgoTree(_, error)) =>
@@ -196,16 +196,16 @@ trait Interpreter extends ScorexLogging {
     * 3) estimate cost and reduce the AST to a SigmaBoolean instance (so sigma-tree or trivial boolean value)
     *
     *
-    * @param exp - input ErgoTree expression to reduce
+    * @param ergoTree - input ErgoTree expression to reduce
     * @param context - context used in reduction
     * @param env - script environment
     * @return sigma boolean and the updated cost counter after reduction
     */
-  def fullReduction(exp: ErgoTree,
+  def fullReduction(ergoTree: ErgoTree,
                     context: CTX,
                     env: ScriptEnv): (SigmaBoolean, Long) = {
     implicit val vs: SigmaValidationSettings = context.validationSettings
-    val prop = propositionFromErgoTree(exp, context)
+    val prop = propositionFromErgoTree(ergoTree, context)
     val (propTree, context2) = trySoftForkable[(BoolValue, CTX)](whenSoftFork = (TrueLeaf, context)) {
       applyDeserializeContext(context, prop)
     }
@@ -221,7 +221,7 @@ trait Interpreter extends ScorexLogging {
     * Step 3: Verify that the proof is presented to satisfy SigmaProp conditions.
     *
     * @param env       environment of system variables used by the interpreter internally
-    * @param exp       ErgoTree expression to execute in the given context and verify its result
+    * @param ergoTree       ErgoTree expression to execute in the given context and verify its result
     * @param context   the context in which `exp` should be executed
     * @param proof     The proof of knowledge of the secrets which is expected by the resulting SigmaProp
     * @param message   message bytes, which are used in verification of the proof
@@ -235,20 +235,20 @@ trait Interpreter extends ScorexLogging {
     * @see `reduceToCrypto`
     */
   def verify(env: ScriptEnv,
-             exp: ErgoTree,
+             ergoTree: ErgoTree,
              context: CTX,
              proof: Array[Byte],
              message: Array[Byte]): Try[VerificationResult] = {
     val (res, t) = BenchmarkUtil.measureTime(Try {
 
-      val initCost = JMath.addExact(exp.complexity.toLong, context.initCost)
+      val initCost = JMath.addExact(ergoTree.complexity.toLong, context.initCost)
       val remainingLimit = context.costLimit - initCost
       if (remainingLimit <= 0)
         throw new CostLimitException(initCost, msgCostLimitError(initCost, context.costLimit), None)
 
       val contextWithCost = context.withInitCost(initCost).asInstanceOf[CTX]
 
-      val (cProp, cost) = fullReduction(exp, contextWithCost, env)
+      val (cProp, cost) = fullReduction(ergoTree, contextWithCost, env)
 
       val checkingResult = cProp match {
         case TrivialProp.TrueProp => true
@@ -310,29 +310,29 @@ trait Interpreter extends ScorexLogging {
     case _ => ???
   })
 
-  def verify(exp: ErgoTree,
+  def verify(ergoTree: ErgoTree,
              context: CTX,
              proverResult: ProverResult,
              message: Array[Byte]): Try[VerificationResult] = {
     val ctxv = context.withExtension(proverResult.extension).asInstanceOf[CTX]
-    verify(Interpreter.emptyEnv, exp, ctxv, proverResult.proof, message)
+    verify(Interpreter.emptyEnv, ergoTree, ctxv, proverResult.proof, message)
   }
 
   def verify(env: ScriptEnv,
-             exp: ErgoTree,
+             ergoTree: ErgoTree,
              context: CTX,
              proverResult: ProverResult,
              message: Array[Byte]): Try[VerificationResult] = {
     val ctxv = context.withExtension(proverResult.extension).asInstanceOf[CTX]
-    verify(env, exp, ctxv, proverResult.proof, message)
+    verify(env, ergoTree, ctxv, proverResult.proof, message)
   }
 
 
-  def verify(exp: ErgoTree,
+  def verify(ergoTree: ErgoTree,
              context: CTX,
              proof: ProofT,
              message: Array[Byte]): Try[VerificationResult] = {
-    verify(Interpreter.emptyEnv, exp, context, SigSerializer.toBytes(proof), message)
+    verify(Interpreter.emptyEnv, ergoTree, context, SigSerializer.toBytes(proof), message)
   }
 
 }
