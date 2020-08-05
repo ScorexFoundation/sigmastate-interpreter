@@ -1,12 +1,73 @@
 package sigmastate
 
-import org.ergoplatform.validation.ValidationException
+import org.ergoplatform.settings.ErgoAlgos
+import org.ergoplatform.validation.{ValidationException, ValidationRules}
+import scalan.Nullable
+import sigmastate.Values.{UnparsedErgoTree, FuncValue, BlockValue, ConstantPlaceholder, TaggedVariableNode, IntConstant, ErgoTree, ValDef, ValUse}
+import sigmastate.lang.SourceContext
 import special.sigma.SigmaTestingData
+import sigmastate.lang.Terms._
 
 /** Regression tests with ErgoTree related test vectors.
   * This test vectors verify various constants which are consensus critical and should not change.
   */
 class ErgoTreeSpecification extends SigmaTestingData {
+
+  property("Value.sourceContext") {
+    val srcCtx = SourceContext.fromParserIndex(0, "")
+    val value = IntConstant(10)
+    value.sourceContext shouldBe Nullable.None
+
+    value.withSrcCtx(Nullable(srcCtx))
+    value.sourceContext shouldBe Nullable(srcCtx)
+
+    assertExceptionThrown(
+      value.withSrcCtx(Nullable(srcCtx)),
+      t => t.isInstanceOf[RuntimeException] && t.getMessage.contains("can be set only once"))
+  }
+
+  property("Value.opType") {
+    Seq(
+      Block(Seq(), null),
+      ValNode("x", SInt, null),
+      ApplyTypes(null, Seq()),
+      TaggedVariableNode(1, SByte),
+      ValDef(1, null),
+      ValUse(1, SInt),
+      BlockValue(IndexedSeq(), null)
+      ).foreach { node =>
+      assertExceptionThrown(node.opType, t => t.getMessage.contains("is not supported for node"))
+    }
+    FuncValue(Vector((1, SInt)), ValUse(1, SInt)).opType shouldBe
+      SFunc(Vector(), SFunc(SInt, SInt))
+  }
+
+  property("ErgoTree.toProposition") {
+    val t1 = new ErgoTree(
+      16.toByte,
+      Array(IntConstant(1)),
+      Right(BoolToSigmaProp(EQ(ConstantPlaceholder(0, SInt), IntConstant(1))))
+    )
+
+    val t = new ErgoTree(
+      16.toByte,
+      Array(IntConstant(1)),
+      Left(UnparsedErgoTree(t1.bytes, ValidationException("", ValidationRules.CheckTypeCode, Seq())))
+    )
+    assertExceptionThrown(
+      t.toProposition(true),
+      t => t.isInstanceOf[ValidationException]
+    )
+  }
+
+  property("ErgoTree.template") {
+    val t = new ErgoTree(
+      16.toByte,
+      Array(IntConstant(1)),
+      Right(BoolToSigmaProp(EQ(ConstantPlaceholder(0, SInt), IntConstant(1))))
+    )
+    t.template shouldBe ErgoAlgos.decodeUnsafe("d19373000402")
+  }
 
   val typeCodes = Table(
     ("constant", "expectedValue"),

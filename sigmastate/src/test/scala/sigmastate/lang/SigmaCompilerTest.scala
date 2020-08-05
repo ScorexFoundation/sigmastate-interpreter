@@ -81,6 +81,8 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ObjectGe
       Downcast(ByIndex(ConcreteCollection(Array(IntConstant(1)),SInt),IntConstant(0),None), SByte)
     comp(env, "allOf(Coll(c1, c2))") shouldBe AND(ConcreteCollection.fromSeq(Array(TrueLeaf, FalseLeaf)))
     comp(env, "getVar[Byte](10).get") shouldBe GetVarByte(10).get
+    comp(env, "getVar[Short](10).get") shouldBe GetVarShort(10).get
+    comp(env, "getVar[Long](10).get") shouldBe GetVarLong(10).get
     comp(env, "getVar[Coll[Byte]](10).get") shouldBe GetVarByteArray(10).get
   }
 
