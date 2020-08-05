@@ -2,16 +2,19 @@ package special.sigma
 
 import org.scalatest.prop.PropertyChecks
 import sigmastate.interpreter.Interpreter.ScriptEnv
-import org.scalacheck.{Gen, Arbitrary}
-import org.scalactic.source
-import org.scalatest.{PropSpec, Matchers, Tag}
+import org.scalacheck.{Arbitrary, Gen}
+import org.scalatest.{PropSpec, Matchers}
 
-import scala.util.{DynamicVariable, Success, Failure, Try}
+import scala.util.{Success, Failure, Try}
 import sigmastate.Values.SValue
 import scalan.RType
 import org.ergoplatform.dsl.{SigmaContractSyntax, TestContractSpec}
-import sigmastate.eval.IRContext
+import sigmastate.eval.{IRContext, SigmaDsl}
 import sigmastate.helpers.SigmaPPrint
+import special.collection.Coll
+
+import scala.math.Ordering
+import scala.reflect.ClassTag
 
 class SigmaDslTesting extends PropSpec
     with PropertyChecks
@@ -238,20 +241,192 @@ class SigmaDslTesting extends PropSpec
     FeatureTest(AddedFeature, script, scalaFunc, Option(expectedExpr), oldImpl, newImpl)
   }
 
-  val targetVersion = new DynamicVariable[Int](4)
+  val contextGen: Gen[Context] = ergoLikeContextGen.map(c => c.toSigmaContext(IR, false))
+  implicit val arbContext = Arbitrary(contextGen)
 
-  val versions: Seq[Int] = Array(4)
+  /** NOTE, this should be `def` to allow overriding of generatorDrivenConfig in derived Spec classes. */
+  def DefaultMinSuccessful: MinSuccessful = MinSuccessful(generatorDrivenConfig.minSuccessful)
 
-  protected override def property(testName: String, testTags: Tag*)(testFun: => Any /* Assertion */)(implicit pos: source.Position): Unit = {
-    super.property(testName, testTags:_*) {
-      for (version <- versions) {
-        targetVersion.withValue(version) {
-          val a = testFun
+  val PrintTestCasesDefault: Boolean = false
+  val FailOnTestVectorsDefault: Boolean = true
+
+  /** Test the given test cases with expected results (aka test vectors).
+    * NOTE, is some cases (such as Context, Box, etc) sample generation is time consuming, so it
+    * makes sense to factor it out.
+    * @param preGeneratedSamples  optional pre-generated samples to reduce execution time
+    */
+  def testCases[A: Ordering : Arbitrary : ClassTag, B]
+      (cases: Seq[(A, Try[B])],
+       f: FeatureTest[A, B],
+       printTestCases: Boolean = PrintTestCasesDefault,
+       failOnTestVectors: Boolean = FailOnTestVectorsDefault,
+       preGeneratedSamples: Option[Seq[A]] = None): Unit = {
+
+    val table = Table(("x", "y"), cases:_*)
+    forAll(table) { (x: A, expectedRes: Try[B]) =>
+      val res = f.checkEquality(x, printTestCases)
+
+      // TODO HF: remove this `if` once newImpl is implemented
+      if (f.featureType == ExistingFeature) {
+        (res, expectedRes) match {
+          case (Failure(exception), Failure(expectedException)) =>
+            exception.getClass shouldBe expectedException.getClass
+          case _ =>
+            if (failOnTestVectors) {
+              assertResult(expectedRes, s"Actual: ${SigmaPPrint(res, height = 150).plainText}")(res)
+            }
+            else {
+              if (expectedRes != res) {
+                print("\nSuggested Expected Result: ")
+                SigmaPPrint.pprintln(res, height = 150)
+              }
+            }
         }
       }
     }
+    preGeneratedSamples match {
+      case Some(samples) =>
+        test(samples, f, printTestCases)
+      case None =>
+        test(f, printTestCases)
+    }
   }
 
-  val contextGen: Gen[Context] = ergoLikeContextGen.map(c => c.toSigmaContext(IR, false))
-  implicit val arbContext = Arbitrary(contextGen)
+  /** Generate samples in sorted order.
+    * @param gen  generator to be used for sample generation
+    * @param config generation configuration
+    * @return array-backed ordered sequence of samples
+    */
+  def genSamples[A: Ordering: ClassTag](gen: Gen[A], config: PropertyCheckConfigParam): Seq[A] = {
+    implicit val arb = Arbitrary(gen)
+    genSamples[A](config)
+  }
+
+  /** Generate samples in sorted order.
+    * @param config generation configuration
+    * @return array-backed ordered sequence of samples
+    */
+  def genSamples[A: Arbitrary: Ordering: ClassTag](config: PropertyCheckConfigParam): Seq[A] = {
+    val inputs = scala.collection.mutable.ArrayBuilder.make[A]()
+    forAll(config) { (x: A) =>
+      inputs += x
+    }
+    inputs.result().sorted
+  }
+
+  def test[A: Ordering : ClassTag, B]
+      (samples: Seq[A],
+       f: FeatureTest[A, B],
+       printTestCases: Boolean): Unit = {
+
+    // then tests them in the sorted order, this will output a nice log of test cases
+    samples.foreach { x =>
+      f.checkEquality(x, printTestCases)
+    }
+  }
+
+  def test[A: Ordering : ClassTag, B](samples: Seq[A], f: FeatureTest[A, B]): Unit = {
+    test(samples, f, PrintTestCasesDefault)
+  }
+
+  def test[A: Arbitrary : Ordering : ClassTag, B]
+      (f: FeatureTest[A, B],
+       printTestCases: Boolean = PrintTestCasesDefault): Unit = {
+    // first generate all test inputs
+    val samples = genSamples[A](DefaultMinSuccessful)
+    // then test them
+    test(samples, f, printTestCases)
+  }
+
+  trait GroupElementOrdering extends Ordering[GroupElement] {
+    /** Compares `x: ECPoint` string representation with `y: ECPoint` string for order.
+      * @returns a negative integer, zero, or a positive integer as the
+      * `x` is less than, equal to, or greater than `y`.
+      */
+    def compare(x: GroupElement, y: GroupElement) = {
+      SigmaDsl.toECPoint(x).toString.compareTo(SigmaDsl.toECPoint(y).toString)
+    }
+  }
+  implicit object GroupElementOrdering extends GroupElementOrdering
+
+  trait AvlTreeOrdering extends Ordering[AvlTree] {
+    /** Compares this `x: AvlTree` string representation with `y: AvlTree` string for order.
+      * @returns a negative integer, zero, or a positive integer as the
+      * `x` is less than, equal to, or greater than `y`.
+      */
+    def compare(x: AvlTree, y: AvlTree) = {
+      x.toString.compareTo(y.toString)
+    }
+  }
+  implicit object AvlTreeOrdering extends AvlTreeOrdering
+
+  class CollOrdering[T: Ordering] extends Ordering[Coll[T]] {
+    implicit val O = implicitly[Ordering[Iterable[T]]]
+
+    /** Compares this `x: Coll` with `y: Coll` using Ordering for underlying Array.
+      * @returns a negative integer, zero, or a positive integer as the
+      * `x` is less than, equal to, or greater than `y`.
+      */
+    def compare(x: Coll[T], y: Coll[T]) = {
+      O.compare(x.toArray, y.toArray)
+    }
+  }
+  implicit def collOrdering[T: Ordering]: Ordering[Coll[T]] = new CollOrdering[T]
+
+  trait BoxOrdering extends Ordering[Box] {
+    /** Compares this `x: Box` string representation with `y: Box` string for order.
+      * @returns a negative integer, zero, or a positive integer as the
+      * `x` is less than, equal to, or greater than `y`.
+      */
+    def compare(x: Box, y: Box) = {
+      x.toString.compareTo(y.toString)
+    }
+  }
+  implicit object BoxOrdering extends BoxOrdering
+
+  trait PreHeaderOrdering extends Ordering[PreHeader] {
+    /** Compares this `x: PreHeader` with `y: PreHeader` using block height.
+      * @returns a negative integer, zero, or a positive integer as the
+      * `x` is less than, equal to, or greater than `y`.
+      */
+    def compare(x: PreHeader, y: PreHeader) = {
+      Ordering.Int.compare(x.height, y.height)
+    }
+  }
+  implicit object PreHeaderOrdering extends PreHeaderOrdering
+
+  trait HeaderOrdering extends Ordering[Header] {
+    /** Compares this `x: Header` with `y: Header` using block height.
+      * @returns a negative integer, zero, or a positive integer as the
+      * `x` is less than, equal to, or greater than `y`.
+      */
+    def compare(x: Header, y: Header) = {
+      Ordering.Int.compare(x.height, y.height)
+    }
+  }
+  implicit object HeaderOrdering extends HeaderOrdering
+
+  trait ContextOrdering extends Ordering[Context] {
+    val O = Ordering[(Int, Coll[Byte])]
+
+    /** Compares this `x: Context` with `y: Context` using block height and SELF.id.
+      * @returns a negative integer, zero, or a positive integer as the
+      * `x` is less than, equal to, or greater than `y`.
+      */
+    def compare(x: Context, y: Context) = {
+      O.compare((x.HEIGHT, x.SELF.id), (y.HEIGHT, y.SELF.id))
+    }
+  }
+  implicit object ContextOrdering extends ContextOrdering
+
+  trait SigmaPropOrdering extends Ordering[SigmaProp] {
+    /** Compares this `x: SigmaProp` with `y: SigmaProp` using string representation.
+      * @returns a negative integer, zero, or a positive integer as the
+      * `x` is less than, equal to, or greater than `y`.
+      */
+    def compare(x: SigmaProp, y: SigmaProp) = {
+      x.toString.compareTo(y.toString)
+    }
+  }
+  implicit object SigmaPropOrdering extends SigmaPropOrdering
 }
