@@ -28,23 +28,26 @@ import scala.reflect.ClassTag
   * into a valid Scala code (can be cut-and-pasted).*/
 object SigmaPPrint extends PPrinter {
 
-  def treeifySeq(xs: Seq[Any]): Iterator[Tree] = {
+  /** Apply [[treeify]] for each element of the given sequence producing the iterator of resulting trees. */
+  protected def treeifySeq(xs: Seq[Any]): Iterator[Tree] = {
     xs.iterator.map(_ match {
       case t: Tree => t
       case x => treeify(x)
     })
   }
 
-  def treeifyMany(head: Any, tail: Any*): Iterator[Tree] = {
+  /** Helper overload to call [[treeifySeq]]. */
+  protected def treeifyMany(head: Any, tail: Any*): Iterator[Tree] = {
     treeifySeq(head +: tail)
   }
 
-  def tpeName(tpe: SType): String = {
+  private def tpeName(tpe: SType): String = {
     val name = tpe.toTermString
     if (name == "Boolean") "Bool" else name
   }
 
-  def typeName(tpe: SType): String = tpe match {
+  /** Valid Scala type for the given SType. */
+  private[helpers] def typeName(tpe: SType): String = tpe match {
     case _: SPredefType =>
       val name = tpe.getClass.getSimpleName.replace("$", "")
       s"$name.type" // SByte.type, SInt.type, etc
@@ -58,12 +61,13 @@ object SigmaPPrint extends PPrinter {
       sys.error(s"Cannot get typeName($tpe)")
   }
 
-  def valueType(tpe: SType): String = {
+  /** Valid Scala type of the Value with the given underlying SType. */
+  private def valueType(tpe: SType): String = {
     val tn = typeName(tpe)
     s"Value[$tn]"
   }
 
-  val typeHandlers: PartialFunction[Any, Tree] = {
+  private val typeHandlers: PartialFunction[Any, Tree] = {
     case SByteArray =>
       Tree.Literal("SByteArray")
     case SByteArray2 =>
@@ -76,17 +80,18 @@ object SigmaPPrint extends PPrinter {
       Tree.Literal(s"RType.${t.name}Type")
   }
 
-  val exceptionHandlers: PartialFunction[Any, Tree] = {
+  private val exceptionHandlers: PartialFunction[Any, Tree] = {
     case ex: Exception =>
       Tree.Apply(s"new ${ex.getClass.getSimpleName}", treeifySeq(Seq(ex.getMessage)))
   }
 
-  def treeifyByteArray(bytes: Array[Byte]): Tree = {
+  /** Generated Scala code which creates the given byte array from a hex string literal. */
+  private def treeifyByteArray(bytes: Array[Byte]): Tree = {
     val hexString = ErgoAlgos.encode(bytes)
     Tree.Apply("ErgoAlgos.decodeUnsafe", treeifyMany(hexString))
   }
 
-  val dataHandlers: PartialFunction[Any, Tree] = {
+  private val dataHandlers: PartialFunction[Any, Tree] = {
     case v: Byte =>
       Tree.Literal(s"$v.toByte")
 

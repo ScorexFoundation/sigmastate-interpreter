@@ -270,10 +270,13 @@ trait SigmaProp {
   @OverloadId("or_bool")  def ||(other: Boolean): SigmaProp
 }
 
+/** Represents any value paired with type descriptor. */
 @scalan.Liftable
 @WithMethodCallRecognizers
 trait AnyValue {
+  /** The data value wrapped by this instance. */
   def value: Any
+  /** The type descriptor of the `value` instance. */
   def tVal: RType[Any]
 }
 

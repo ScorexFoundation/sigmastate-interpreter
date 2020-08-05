@@ -3,9 +3,12 @@ package special.sigma
 import scalan.OverloadHack.Overloaded1
 import scalan.RType
 
+// TODO refactor: move to sigmastate package and rename to CAnyValue
+
+/** Default implementation of AnyValue interface. */
 case class TestValue[A](value: A, tVal: RType[Any]) extends AnyValue {
   def tA: RType[A] = tVal.asInstanceOf[RType[A]]
-  override def toString = s"Value($value)"
+  override def toString = s"TestValue($value)"
 }
 
 object TestValue {

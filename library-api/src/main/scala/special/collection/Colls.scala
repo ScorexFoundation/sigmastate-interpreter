@@ -367,6 +367,12 @@ trait Coll[@specialized A] {
     */
   def reverse: Coll[A]
 
+  /** Checks if this collection is a replication of the given value a given number of times.
+    *
+    * @param len   how many times the `value` is replicated
+    * @param value the replicated value
+    * @return true if this collection is element-wise equal to a collection of replicated values.
+    */
   @Internal
   private[collection] def isReplArray(len: Int, value: A): Boolean
 
@@ -427,9 +433,26 @@ trait ReplColl[@specialized A] extends Coll[A] {
 @scalan.Liftable
 @WithMethodCallRecognizers
 trait CollBuilder {
+  /** Monoid builder associated with this collections builder.
+    * It should be used to create monoids which are required by some of the Coll methods.
+    */
   def Monoids: MonoidBuilder
+
+  /** Constructs a new collection of pairs out of the pair of collections by zipping them.
+    * The resulting collection is semantically equivalent to `as.zip(bs)`.
+    * @param as collection of first items
+    * @param bs collection of second items
+    * @return an instance of [[PairColl]] interface with represents the resulting collection of pairs.
+    */
   def pairColl[@specialized A, @specialized B](as: Coll[A], bs: Coll[B]): PairColl[A,B]
 
+  /** Constructs a new collection of pairs out of the pair of arrays by wrapping them in collections
+    * and delegating to [[pairColl]] method.
+    * The resulting collection is semantically equivalent to as.zip(bs).
+    * @param as collection of first items
+    * @param bs collection of second items
+    * @return an instance of [[PairColl]] interface with represents the resulting collection of pairs.
+    */
   @Internal
   def pairCollFromArrays[A: RType, B: RType](as: Array[A], bs: Array[B]): PairColl[A,B] =
     pairColl(fromArray(as), fromArray(bs))
@@ -471,6 +494,16 @@ trait CollBuilder {
   @Internal
   def makeView[@specialized A, @specialized B: RType](source: Coll[A], f: A => B): Coll[B]
 
+  /** Create a new view using pre-calculated results of `f`.
+    *
+    * @param source          the collection the view is based on.
+    * @param f               view function, which transforms each pre-image element to the
+    *                        corresponding `image` element of the resulting collection
+    * @param calculated      array of flags marking which element where pre-calculated
+    * @param calculatedItems pre-calculated images to be used in the resulting collection
+    *                        so that `calculated.length == calculatedItems.length`
+    * @return collection of images of `f`
+    */
   @Internal
   def makePartialView[@specialized A, @specialized B: RType](source: Coll[A], f: A => B, calculated: Array[Boolean], calculatedItems: Array[B]): Coll[B]
 
@@ -492,11 +525,10 @@ trait CollBuilder {
       (left: Coll[(K, L)], right: Coll[(K, R)])
       (l: ((K,L)) => O, r: ((K,R)) => O, inner: ((K,(L,R))) => O): Coll[(K,O)]
 
-  /** Flattens a two-dimensional array by concatenating all its rows
-    *  into a single array.
+  /** Flattens a two-dimensional collection by concatenating all its rows
+    * into a single collection.
     *
-    *  @tparam U        Type of row elements.
-    *  @param asTrav    A function that converts elements of this array to rows - arrays of type `U`.
+    *  @tparam A        Type of row elements.
     *  @return          An array obtained by concatenating rows of this array.
     */
   def flattenColl[A:RType](coll: Coll[Coll[A]]): Coll[A]

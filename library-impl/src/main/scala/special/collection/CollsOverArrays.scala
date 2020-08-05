@@ -184,7 +184,7 @@ class CollOverArray[@specialized A](val toArray: Array[A])(implicit tA: RType[A]
   }
 
   @Internal
-  def isReplArray(len: Int, value: A): Boolean = {
+  override def isReplArray(len: Int, value: A): Boolean = {
     length == len && {
       if (tItem.classTag.runtimeClass.isPrimitive) {
         isAllPrimValue(value)
@@ -210,8 +210,12 @@ class CollOverArray[@specialized A](val toArray: Array[A])(implicit tA: RType[A]
 class CollOverArrayBuilder extends CollBuilder {
   override def Monoids: MonoidBuilder = new MonoidBuilderInst
 
-  @inline def pairColl[@specialized A, @specialized B](as: Coll[A], bs: Coll[B]): PairColl[A, B] = {
+  @inline override def pairColl[@specialized A, @specialized B](as: Coll[A], bs: Coll[B]): PairColl[A, B] = {
     // TODO HF: use minimal length and slice longer collection
+    // The current implementation doesn't check the case when `as` and `bs` have different lengths.
+    // in which case the implementation of `PairOfCols` has inconsistent semantics of `map`, `exists` etc methods.
+    // To fix the problem, the longer collection have to be truncated (which is consistent
+    // with how zip is implemented for Arrays)
     new PairOfCols(as, bs)
   }
 
@@ -236,7 +240,7 @@ class CollOverArrayBuilder extends CollBuilder {
 
   @NeverInline
   @Reified("T")
-  def fromItems[T](items: T*)(implicit cT: RType[T]): Coll[T] = cT match {
+  override def fromItems[T](items: T*)(implicit cT: RType[T]): Coll[T] = cT match {
     case pt: PairType[a,b] =>
       val tA = pt.tFst
       val tB = pt.tSnd
@@ -246,7 +250,7 @@ class CollOverArrayBuilder extends CollBuilder {
   }
 
   @NeverInline
-  def fromArray[@specialized T: RType](arr: Array[T]): Coll[T] = RType[T] match {
+  override def fromArray[@specialized T: RType](arr: Array[T]): Coll[T] = RType[T] match {
     case pt: PairType[a,b] =>
       val tA = pt.tFst
       val tB = pt.tSnd
@@ -256,7 +260,7 @@ class CollOverArrayBuilder extends CollBuilder {
   }
 
   @NeverInline
-  def replicate[@specialized T: RType](n: Int, v: T): Coll[T] = RType[T] match {
+  override def replicate[@specialized T: RType](n: Int, v: T): Coll[T] = RType[T] match {
     case pt: PairType[a,b] =>
       val tA = pt.tFst
       val tB = pt.tSnd
@@ -267,15 +271,15 @@ class CollOverArrayBuilder extends CollBuilder {
   }
 
   @NeverInline
-  def makeView[@specialized A, @specialized B: RType](source: Coll[A], f: A => B): Coll[B] = new CViewColl(source, f)
+  override def makeView[@specialized A, @specialized B: RType](source: Coll[A], f: A => B): Coll[B] = new CViewColl(source, f)
 
   @NeverInline
-  def makePartialView[@specialized A, @specialized B: RType](source: Coll[A], f: A => B, calculated: Array[Boolean], calculatedItems: Array[B]): Coll[B] = {
+  override def makePartialView[@specialized A, @specialized B: RType](source: Coll[A], f: A => B, calculated: Array[Boolean], calculatedItems: Array[B]): Coll[B] = {
     new CViewColl(source, f).fromPartialCalculation(calculated, calculatedItems)
   }
 
   @NeverInline
-  def unzip[@specialized A, @specialized B](xs: Coll[(A,B)]): (Coll[A], Coll[B]) = xs match {
+  override def unzip[@specialized A, @specialized B](xs: Coll[(A,B)]): (Coll[A], Coll[B]) = xs match {
     case pa: PairColl[_,_] => (pa.ls, pa.rs)
     case _ =>
       val limit = xs.length
@@ -292,7 +296,7 @@ class CollOverArrayBuilder extends CollBuilder {
   }
 
   @NeverInline
-  def xor(left: Coll[Byte], right: Coll[Byte]): Coll[Byte] = left.zip(right).map { case (l, r) => (l ^ r).toByte }
+  override def xor(left: Coll[Byte], right: Coll[Byte]): Coll[Byte] = left.zip(right).map { case (l, r) => (l ^ r).toByte }
 
   @NeverInline
   override def emptyColl[T](implicit cT: RType[T]): Coll[T] = cT match {
