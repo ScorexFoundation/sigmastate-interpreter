@@ -622,6 +622,9 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
     this.GroupElement(CryptoConstants.dlogGroup.generator)
   }
 
+  /**
+    * @return the identity of the Dlog group used in ErgoTree
+    */
   def groupIdentity: GroupElement = {
     this.GroupElement(CryptoConstants.dlogGroup.identity)
   }

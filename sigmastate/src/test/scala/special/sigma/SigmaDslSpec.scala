@@ -35,103 +35,13 @@ import scorex.util.ModifierId
 import sigmastate.basics.{ProveDHTuple, DLogProtocol}
 import sigmastate.helpers.SigmaPPrint
 
+import scala.math.Ordering
+
 /** This suite tests every method of every SigmaDsl type to be equivalent to
   * the evaluation of the corresponding ErgoScript operation */
 class SigmaDslSpec extends SigmaDslTesting { suite =>
 
   override implicit val generatorDrivenConfig = PropertyCheckConfiguration(minSuccessful = 30)
-  val DefaultMinSuccess = MinSuccessful(generatorDrivenConfig.minSuccessful)
-
-  val PrintTestCasesDefault: Boolean = false
-  val FailOnTestVectorsDefault: Boolean = true
-
-  /** Test the given test cases with expected results (aka test vectors).
-    * NOTE, is some cases (such as Context, Box, etc) sample generation is time consuming, so it
-    * makes sense to factor it out.
-    * @param preGeneratedSamples  optional pre-generated samples to reduce execution time
-    */
-  def testCases[A: Ordering : Arbitrary : ClassTag, B]
-      (cases: Seq[(A, Try[B])],
-       f: FeatureTest[A, B],
-       printTestCases: Boolean = PrintTestCasesDefault,
-       failOnTestVectors: Boolean = FailOnTestVectorsDefault,
-       preGeneratedSamples: Option[Seq[A]] = None): Unit = {
-
-    val table = Table(("x", "y"), cases:_*)
-    forAll(table) { (x: A, expectedRes: Try[B]) =>
-      val res = f.checkEquality(x, printTestCases)
-
-      // TODO HF: remove this `if` once newImpl is implemented
-      if (f.featureType == ExistingFeature) {
-        (res, expectedRes) match {
-          case (Failure(exception), Failure(expectedException)) =>
-            exception.getClass shouldBe expectedException.getClass
-          case _ =>
-            if (failOnTestVectors) {
-              assertResult(expectedRes, s"Actual: ${SigmaPPrint(res, height = 150).plainText}")(res)
-            }
-            else {
-              if (expectedRes != res) {
-                print("\nSuggested Expected Result: ")
-                SigmaPPrint.pprintln(res, height = 150)
-              }
-            }
-        }
-      }
-    }
-    preGeneratedSamples match {
-      case Some(samples) =>
-        test(samples, f, printTestCases)
-      case None =>
-        test(f, printTestCases)
-    }
-  }
-
-  /** Generate samples in sorted order.
-    * @param gen  generator to be used for sample generation
-    * @param config generation configuration
-    * @return array-backed ordered sequence of samples
-    */
-  def genSamples[A: Ordering: ClassTag](gen: Gen[A], config: PropertyCheckConfigParam): Seq[A] = {
-    implicit val arb = Arbitrary(gen)
-    genSamples[A](config)
-  }
-
-  /** Generate samples in sorted order.
-    * @param config generation configuration
-    * @return array-backed ordered sequence of samples
-    */
-  def genSamples[A: Arbitrary: Ordering: ClassTag](config: PropertyCheckConfigParam): Seq[A] = {
-    val inputs = scala.collection.mutable.ArrayBuilder.make[A]()
-    forAll(config) { (x: A) =>
-      inputs += x
-    }
-    inputs.result().sorted
-  }
-
-  def test[A: Ordering : ClassTag, B]
-      (samples: Seq[A],
-       f: FeatureTest[A, B],
-       printTestCases: Boolean): Unit = {
-
-    // then tests them in the sorted order, this will output a nice log of test cases
-    samples.foreach { x =>
-      f.checkEquality(x, printTestCases)
-    }
-  }
-
-  def test[A: Ordering : ClassTag, B](samples: Seq[A], f: FeatureTest[A, B]): Unit = {
-    test(samples, f, PrintTestCasesDefault)
-  }
-
-  def test[A: Arbitrary : Ordering : ClassTag, B]
-      (f: FeatureTest[A, B],
-       printTestCases: Boolean = PrintTestCasesDefault): Unit = {
-    // first generate all test inputs
-    val samples = genSamples[A](MinSuccessful(generatorDrivenConfig.minSuccessful))
-    // then test them
-    test(samples, f, printTestCases)
-  }
 
   ///=====================================================
   ///              Boolean type operations
@@ -3765,7 +3675,7 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   }
 
   property("Tuple apply method equivalence") {
-    val samples = genSamples[(Int, Int)](DefaultMinSuccess)
+    val samples = genSamples[(Int, Int)](DefaultMinSuccessful)
     testCases(
       Seq(((1, 2), Success(1))),
       existingFeature((x: (Int, Int)) => x._1,
@@ -3807,7 +3717,7 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   }
 
   property("Coll slice method equivalence") {
-    val samples = genSamples(collWithRangeGen, DefaultMinSuccess)
+    val samples = genSamples(collWithRangeGen, DefaultMinSuccessful)
     testCases(
       // (coll, (from, until))
       Seq(
