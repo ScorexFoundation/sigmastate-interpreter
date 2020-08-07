@@ -484,7 +484,7 @@ object Values {
 
   object BoolArrayConstant {
     def apply(value: Coll[Boolean]): CollectionConstant[SBoolean.type] = CollectionConstant[SBoolean.type](value, SBoolean)
-    def apply(value: Array[Boolean]): CollectionConstant[SBoolean.type] = CollectionConstant[SBoolean.type](value.toColl, SBoolean)
+    def apply(value: Array[Boolean]): CollectionConstant[SBoolean.type] = apply(value.toColl)
     def unapply(node: SValue): Option[Coll[Boolean]] = node match {
       case coll: CollectionConstant[SBoolean.type] @unchecked => coll match {
         case CollectionConstant(arr, SBoolean) => Some(arr)
@@ -548,9 +548,6 @@ object Values {
   }
 
   object SigmaBoolean {
-    val PropBytes = "propBytes"
-    val IsValid = "isValid"
-
     /** @hotspot don't beautify this code */
     object serializer extends SigmaSerializer[SigmaBoolean, SigmaBoolean] {
       val dhtSerializer = ProveDHTupleSerializer(ProveDHTuple.apply)
@@ -649,6 +646,8 @@ object Values {
   trait OptionValue[T <: SType] extends Value[SOption[T]] {
   }
 
+  // TODO HF: SomeValue and NoneValue are not used in ErgoTree and can be
+  //  either removed or implemented in v4.x
   case class SomeValue[T <: SType](x: Value[T]) extends OptionValue[T] {
     override def companion = SomeValue
     val tpe = SOption(x.tpe)
@@ -685,6 +684,7 @@ object Values {
 
     val tpe = SCollection[V](elementType)
 
+    // TODO refactor: this method is not used and can be removed
     lazy val value = {
       val xs = items.cast[EvaluatedValue[V]].map(_.value)
       val tElement = Evaluation.stypeToRType(elementType)
@@ -732,8 +732,6 @@ object Values {
   implicit class SigmaBooleanOps(val sb: SigmaBoolean) extends AnyVal {
     def toSigmaProp: SigmaPropValue = SigmaPropConstant(sb)
     def isProven: Value[SBoolean.type] = SigmaPropIsProven(SigmaPropConstant(sb))
-    def propBytes: Value[SByteArray] = SigmaPropBytes(SigmaPropConstant(sb))
-    def toAnyValue: AnyValue = eval.Extensions.toAnyValue(sb)(SType.SigmaBooleanRType)
     def showToString: String = sb match {
       case ProveDlog(v) =>
         s"ProveDlog(${showECPoint(v)})"
@@ -932,7 +930,7 @@ object Values {
     @inline final def isConstantSegregation: Boolean = ErgoTree.isConstantSegregation(header)
     @inline final def hasSize: Boolean = ErgoTree.hasSize(header)
 
-    private var _bytes: Array[Byte] = propositionBytes
+    private[sigmastate] var _bytes: Array[Byte] = propositionBytes
 
     /** Serialized bytes of this tree. */
     final def bytes: Array[Byte] = {
@@ -981,7 +979,7 @@ object Values {
         throw error
     }
 
-    /** Override equality to exclude `complexity`. */
+    /** The default equality of case class is overridden to exclude `complexity`. */
     override def canEqual(that: Any): Boolean = that.isInstanceOf[ErgoTree]
 
     override def hashCode(): Int = header * 31 + Objects.hash(constants, root)

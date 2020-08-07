@@ -3,10 +3,11 @@ package sigmastate
 import org.ergoplatform.settings.ErgoAlgos
 import org.ergoplatform.validation.{ValidationException, ValidationRules}
 import scalan.Nullable
-import sigmastate.Values.{UnparsedErgoTree, FuncValue, BlockValue, ConstantPlaceholder, TaggedVariableNode, IntConstant, ErgoTree, ValDef, ValUse}
+import sigmastate.Values._
 import sigmastate.lang.SourceContext
 import special.sigma.SigmaTestingData
 import sigmastate.lang.Terms._
+import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 
 /** Regression tests with ErgoTree related test vectors.
   * This test vectors verify various constants which are consensus critical and should not change.
@@ -67,6 +68,40 @@ class ErgoTreeSpecification extends SigmaTestingData {
       Right(BoolToSigmaProp(EQ(ConstantPlaceholder(0, SInt), IntConstant(1))))
     )
     t.template shouldBe ErgoAlgos.decodeUnsafe("d19373000402")
+  }
+
+  property("ErgoTree.bytes") {
+    val t = new ErgoTree(
+      16.toByte,
+      Array(IntConstant(1)),
+      Right(BoolToSigmaProp(EQ(ConstantPlaceholder(0, SInt), IntConstant(1))))
+    )
+    val expectedBytes = DefaultSerializer.serializeErgoTree(t)
+    t._bytes shouldBe expectedBytes
+  }
+
+  property("ErgoTree equality") {
+    val t1 = new ErgoTree(
+      16.toByte,
+      Array(IntConstant(1)),
+      Right(BoolToSigmaProp(EQ(ConstantPlaceholder(0, SInt), IntConstant(1))))
+    )
+    val t2 = new ErgoTree(16.toByte, Array(IntConstant(1)), Right(TrueSigmaProp))
+    val t3 = new ErgoTree(16.toByte, Array(IntConstant(1)), Right(TrueSigmaProp))
+    val t4 = new ErgoTree(16.toByte, Vector(), Right(TrueSigmaProp))
+    val t5 = new ErgoTree(ErgoTree.DefaultHeader, Vector(), Right(TrueSigmaProp))
+    assert(t1 != t2)
+    assert(t2 == t3)
+    assert(t3 != t4)
+    assert(t4 != t5)
+    assert(t5 != t1)
+  }
+
+  property("ConstantNode equality") {
+    assert(IntConstant(10) == IntConstant(10))
+    assert(ShortConstant(10) == ShortConstant(10))
+    assert(IntConstant(10) != IntConstant(11))
+    assert(IntConstant(10) != ShortConstant(10))
   }
 
   val typeCodes = Table(

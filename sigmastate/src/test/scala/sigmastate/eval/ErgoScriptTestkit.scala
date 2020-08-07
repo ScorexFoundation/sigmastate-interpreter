@@ -65,11 +65,6 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests
   lazy val projectProver = new ContextEnrichingTestProvingInterpreter
   lazy val backerPubKey = backerProver.dlogSecrets.head.publicImage
   lazy val projectPubKey = projectProver.dlogSecrets.head.publicImage
-  lazy val ctxVars = contextVars(Map(
-    backerPubKeyId -> backerPubKey.toAnyValue,
-    projectPubKeyId -> projectPubKey.toAnyValue,
-    3.toByte -> toAnyValue(bigIntegerArr1)
-  )).toArray
 
   val boxToSpend = ErgoBox(10, ErgoScriptPredef.TrueProp, 0,
     additionalRegisters = Map(ErgoBox.R4 -> BigIntArrayConstant(bigIntegerArr1)))
