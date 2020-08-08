@@ -646,6 +646,7 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
 
 }
 
+/** Default singleton instance of Global object, which implements global ErgoTree functions. */
 object CostingSigmaDslBuilder extends CostingSigmaDslBuilder
 
 /** A default implementation of [[Context]] interface.
