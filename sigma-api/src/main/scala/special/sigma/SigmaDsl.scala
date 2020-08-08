@@ -700,7 +700,16 @@ trait SigmaContract {
       (implicit cT: RType[T]): Coll[Byte] = this.builder.substConstants(scriptBytes, positions, newValues)
 }
 
-/** Runtime representation of Global ErgoTree type. */
+/** Runtime representation of SGlobal ErgoTree type.
+  * The only instance of SGlobal type can be referenced as `Global` variable in ErgoScript.
+  * It is represented as [[org.ergoplatform.Global]] node of ErgoTree, which evaluates to
+  * the default singleton instance of this interface.
+  *
+  * CostingSigmaDslBuilder object serves as the default singleton instance of Global
+  * object, which implements global ErgoTree functions.
+  *
+  * @see SGlobal.WrappedType, CostingSigmaDslBuilder
+  */
 @scalan.Liftable
 @WithMethodCallRecognizers
 trait SigmaDslBuilder {
