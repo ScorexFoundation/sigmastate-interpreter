@@ -2,37 +2,52 @@ package sigmastate.helpers
 
 import java.math.BigInteger
 
+import org.ergoplatform.ErgoBox
 import org.ergoplatform.ErgoBox.RegisterId
+import org.ergoplatform.settings.ErgoAlgos
 
 import scala.collection.mutable
 import pprint.{Tree, PPrinter}
+import scalan.RType
+import scalan.RType.PrimitiveType
 import sigmastate.SCollection._
-import sigmastate.Values.{ValueCompanion, ConstantNode}
+import sigmastate.Values.{ValueCompanion, ConstantNode, ErgoTree}
+import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.lang.SigmaTyper
 import sigmastate.lang.Terms.MethodCall
+import sigmastate.serialization.GroupElementSerializer
 import sigmastate.utxo.SelectField
-import sigmastate.{SByte, SPair, STypeCompanion, STuple, ArithOp, SOption, SType, SCollectionType, SPredefType, SCollection}
+import sigmastate._
+import special.collection.Coll
+import special.sigma.GroupElement
 
 import scala.collection.mutable.ArrayBuffer
+import scala.reflect.ClassTag
 
 /** Pretty-printer customized to print [[sigmastate.Values.Value]] instances
   * into a valid Scala code (can be cut-and-pasted).*/
 object SigmaPPrint extends PPrinter {
 
-  def treeifySeq(xs: Seq[Any]): Iterator[Tree] = {
-    xs.iterator.map(treeify)
+  /** Apply [[treeify]] for each element of the given sequence producing the iterator of resulting trees. */
+  protected def treeifySeq(xs: Seq[Any]): Iterator[Tree] = {
+    xs.iterator.map(_ match {
+      case t: Tree => t
+      case x => treeify(x)
+    })
   }
 
-  def treeifyMany(head: Any, tail: Any*): Iterator[Tree] = {
+  /** Helper overload to call [[treeifySeq]]. */
+  protected def treeifyMany(head: Any, tail: Any*): Iterator[Tree] = {
     treeifySeq(head +: tail)
   }
 
-  def tpeName(tpe: SType): String = {
+  private def tpeName(tpe: SType): String = {
     val name = tpe.toTermString
     if (name == "Boolean") "Bool" else name
   }
 
-  def typeName(tpe: SType): String = tpe match {
+  /** Valid Scala type for the given SType. */
+  private[helpers] def typeName(tpe: SType): String = tpe match {
     case _: SPredefType =>
       val name = tpe.getClass.getSimpleName.replace("$", "")
       s"$name.type" // SByte.type, SInt.type, etc
@@ -46,12 +61,13 @@ object SigmaPPrint extends PPrinter {
       sys.error(s"Cannot get typeName($tpe)")
   }
 
-  def valueType(tpe: SType): String = {
+  /** Valid Scala type of the Value with the given underlying SType. */
+  private def valueType(tpe: SType): String = {
     val tn = typeName(tpe)
     s"Value[$tn]"
   }
 
-  val typeHandlers: PartialFunction[Any, Tree] = {
+  private val typeHandlers: PartialFunction[Any, Tree] = {
     case SByteArray =>
       Tree.Literal("SByteArray")
     case SByteArray2 =>
@@ -60,24 +76,91 @@ object SigmaPPrint extends PPrinter {
       Tree.Literal("SBooleanArray")
     case SPair(l, r) =>
       Tree.Apply("SPair", treeifySeq(Array(l, r)))
+    case t: PrimitiveType[_] =>
+      Tree.Literal(s"RType.${t.name}Type")
   }
 
-  val exceptionHandlers: PartialFunction[Any, Tree] = {
-    case ex: ArithmeticException =>
-      Tree.Apply("new ArithmeticException", treeifySeq(Seq(ex.getMessage)))
+  private val exceptionHandlers: PartialFunction[Any, Tree] = {
+    case ex: Exception =>
+      Tree.Apply(s"new ${ex.getClass.getSimpleName}", treeifySeq(Seq(ex.getMessage)))
   }
 
-  val dataHandlers: PartialFunction[Any, Tree] = {
+  /** Generated Scala code which creates the given byte array from a hex string literal. */
+  private def treeifyByteArray(bytes: Array[Byte]): Tree = {
+    val hexString = ErgoAlgos.encode(bytes)
+    Tree.Apply("ErgoAlgos.decodeUnsafe", treeifyMany(hexString))
+  }
+
+  private val dataHandlers: PartialFunction[Any, Tree] = {
     case v: Byte =>
       Tree.Literal(s"$v.toByte")
+
     case v: Short =>
       Tree.Literal(s"$v.toShort")
+
     case v: BigInteger =>
       Tree.Apply("new BigInteger", treeifyMany(v.toString(16), 16))
+
+    case wa: mutable.WrappedArray[Byte @unchecked] if wa.elemTag == ClassTag.Byte =>
+      treeifyByteArray(wa.array)
+
     case wa: mutable.WrappedArray[_] =>
       Tree.Apply("Array", treeifySeq(wa))
+
+    case arr: Array[Byte @unchecked] if arr.elemTag == ClassTag.Byte =>
+      treeifyByteArray(arr)
+
+    case arr: Array[_] =>
+      Tree.Apply("Array", treeifySeq(arr))
+
     case buf: ArrayBuffer[_] =>
       Tree.Apply("Seq", treeifySeq(buf))
+
+    case ecp: EcPointType =>
+      val hexString = ErgoAlgos.encode(GroupElementSerializer.toBytes(ecp))
+      Tree.Apply("Helpers.decodeECPoint", treeifyMany(hexString))
+
+    case ge: GroupElement =>
+      val hexString = ErgoAlgos.encode(ge.getEncoded)
+      Tree.Apply("Helpers.decodeGroupElement", treeifyMany(hexString))
+
+    case coll: Coll[Byte @unchecked] if coll.tItem == RType.ByteType =>
+      val hexString = ErgoAlgos.encode(coll)
+      Tree.Apply("Helpers.decodeBytes", treeifyMany(hexString))
+
+    case coll: Coll[_] =>
+      val elemTpe = coll.tItem.name
+      Tree.Apply(s"Coll[$elemTpe]", treeifySeq(coll.toArray))
+
+    case t: AvlTreeData =>
+      Tree.Apply("AvlTreeData", treeifyMany(
+        Tree.Apply("ADDigest @@ ", treeifyMany(t.digest)),
+        t.treeFlags,
+        t.keyLength,
+        t.valueLengthOpt))
+
+    case t: ErgoTree =>
+      Tree.Apply("new ErgoTree", treeifyMany(
+        t.header,
+        Tree.Apply("Vector", t.constants.map(treeify).iterator),
+        t.root
+      ))
+
+    case b: ErgoBox =>
+      val tokens = Tree.Apply("Coll",
+        b.additionalTokens.toArray.map { case (id, v) =>
+          val idTree = Tree.Apply("Digest32 @@ ", treeifyMany(id))
+          Tree.Apply("", treeifyMany(idTree, v))
+        }.iterator)
+      Tree.Apply("new ErgoBox", treeifyMany(
+        b.value,
+        b.ergoTree,
+        tokens,
+        b.additionalRegisters,
+        Tree.Apply("ModifierId @@ ", treeifyMany(b.transactionId)),
+        b.index,
+        b.creationHeight
+      ))
   }
 
   override val additionalHandlers: PartialFunction[Any, Tree] =
@@ -101,8 +184,13 @@ object SigmaPPrint extends PPrinter {
       val resTpe = sf.input.tpe.items(sf.fieldIndex - 1)
       val resTpeName = valueType(resTpe)
       Tree.Apply(s"SelectField.typed[$resTpeName]", treeifySeq(Array(sf.input, sf.fieldIndex)))
+
+    case ConstantNode(v, SCollectionType(elemType)) if elemType.isInstanceOf[SPredefType] =>
+      Tree.Apply(tpeName(elemType) + "ArrayConstant", treeifySeq(Seq(v)))
+
     case c: ConstantNode[_] if c.tpe.isInstanceOf[SPredefType] =>
       Tree.Apply(tpeName(c.tpe) + "Constant", treeifySeq(Seq(c.value)))
+
     case ArithOp(l, r, code) =>
       val args = treeifySeq(Seq(l, r)).toSeq :+ Tree.Apply("OpCode @@ ", treeifySeq(Seq(code)))
       Tree.Apply("ArithOp", args.iterator)

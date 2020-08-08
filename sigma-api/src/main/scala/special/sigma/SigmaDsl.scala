@@ -270,10 +270,13 @@ trait SigmaProp {
   @OverloadId("or_bool")  def ||(other: Boolean): SigmaProp
 }
 
+/** Represents any value paired with type descriptor. */
 @scalan.Liftable
 @WithMethodCallRecognizers
 trait AnyValue {
+  /** The data value wrapped by this instance. */
   def value: Any
+  /** The type descriptor of the `value` instance. */
   def tVal: RType[Any]
 }
 
@@ -697,7 +700,16 @@ trait SigmaContract {
       (implicit cT: RType[T]): Coll[Byte] = this.builder.substConstants(scriptBytes, positions, newValues)
 }
 
-/** Runtime representation of Global ErgoTree type. */
+/** Runtime representation of SGlobal ErgoTree type.
+  * The only instance of SGlobal type can be referenced as `Global` variable in ErgoScript.
+  * It is represented as [[org.ergoplatform.Global]] node of ErgoTree, which evaluates to
+  * the default singleton instance of this interface.
+  *
+  * CostingSigmaDslBuilder object serves as the default singleton instance of Global
+  * object, which implements global ErgoTree functions.
+  *
+  * @see SGlobal.WrappedType, CostingSigmaDslBuilder
+  */
 @scalan.Liftable
 @WithMethodCallRecognizers
 trait SigmaDslBuilder {

@@ -30,7 +30,7 @@ trait TypeGenerators {
     Gen.oneOf[SPredefType](SBoolean, SByte, SShort, SInt, SLong, SBigInt, SGroupElement, SSigmaProp, SUnit, SBox, SAvlTree)
   implicit val arbPredefType = Arbitrary(predefTypeGen)
 
-  implicit def getToArbitrary[T: Gen]: Arbitrary[T] = Arbitrary(implicitly[Gen[T]])
+  implicit def genToArbitrary[T: Gen]: Arbitrary[T] = Arbitrary(implicitly[Gen[T]])
 
   def sTupleGen(min: Int, max: Int): Gen[STuple] = for {
     length <- Gen.chooseNum(min, max)

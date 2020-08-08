@@ -4,6 +4,7 @@ import java.math.BigInteger
 import java.util
 
 import org.bouncycastle.math.ec.ECPoint
+import org.ergoplatform.settings.ErgoAlgos
 import org.ergoplatform.{ErgoBox, SigmaConstants}
 import org.ergoplatform.validation.ValidationRules
 import scorex.crypto.authds.avltree.batch._
@@ -621,6 +622,13 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
     this.GroupElement(CryptoConstants.dlogGroup.generator)
   }
 
+  /**
+    * @return the identity of the Dlog group used in ErgoTree
+    */
+  def groupIdentity: GroupElement = {
+    this.GroupElement(CryptoConstants.dlogGroup.identity)
+  }
+
   override def substConstants[T](scriptBytes: Coll[Byte],
                                  positions: Coll[Int],
                                  newValues: Coll[T])
@@ -635,8 +643,10 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
     val p = GroupElementSerializer.parse(r)
     this.GroupElement(p)
   }
+
 }
 
+/** Default singleton instance of Global object, which implements global ErgoTree functions. */
 object CostingSigmaDslBuilder extends CostingSigmaDslBuilder
 
 /** A default implementation of [[Context]] interface.
