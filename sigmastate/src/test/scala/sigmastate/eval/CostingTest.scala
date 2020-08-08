@@ -33,31 +33,6 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
   import SigmaDslBuilder._; import WOption._
   import Liftables._
   
-  ignore("SType.dataSize") {
-    def check(tpe: SType, v: Any, exp: Long) =
-      tpe.dataSize(v.asWrappedType) shouldBe exp
-
-    check(SBoolean, true, 1)
-    check(SByte, 1.toByte, 1)
-    check(SShort, 1.toShort, 2)
-    check(SInt, 1, 4)
-    check(SLong, 1, 8)
-    check(SString, "abc", 3)
-    check(SBigInt, BigInteger.ZERO, SBigInt.MaxSizeInBytes)
-    check(SBigInt, BigInteger.ONE, SBigInt.MaxSizeInBytes)
-    check(SBigInt, BigInteger.valueOf(Long.MaxValue), SBigInt.MaxSizeInBytes)
-    check(SBigInt, { val i = BigInteger.valueOf(Long.MaxValue); i.multiply(i) }, SBigInt.MaxSizeInBytes)
-    val g = CryptoConstants.dlogGroup.generator
-    check(SGroupElement, g, CryptoConstants.groupSize)
-    check(SSigmaProp, DLogProtocol.ProveDlog(g), CryptoConstants.groupSize + 1)
-    check(sigmastate.SOption(SInt), Some(10), 1 + 4)
-    def checkColl(elemTpe: SType, arr: Array[Any], exp: Long) =
-      check(sigmastate.SCollection(SInt), arr, exp)
-    checkColl(SInt, Array(10,20), 2 + 2L * 4)
-    checkColl(SInt, Array(), 2)
-    checkColl(SBigInt, Array(BigInteger.ZERO, BigInteger.valueOf(Long.MaxValue)), 2 + 0 + 8)
-    check(STuple(SInt, STuple(SInt, SInt)), Array(10, Array[Any](20, 30)), 2 + 4 + (2 + 4 + 4))
-  }
 
   ignore("constants") {
 //    check("int", "1", _ => 1, _ => constCost[Int], _ => sizeOf(1))

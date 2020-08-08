@@ -62,7 +62,7 @@ sealed trait SType extends SigmaNode {
   val typeCode: SType.TypeCode
 
   /** Approximate size of the given value in bytes. It is actual size only for primitive types.*/
-  def dataSize(v: SType#WrappedType): Long = sys.error(s"Don't know how to compute dataCost($v) with T = $this")
+  def dataSize(v: SType#WrappedType): Long
 
   def isEmbeddable: Boolean = false
 
@@ -429,6 +429,8 @@ case object NoType extends SType {
   type WrappedType = Nothing
   override val typeCode = 0: Byte
   override def isConstantSize = true
+  override def dataSize(v: SType#WrappedType): Long =
+    sys.error(s"$this.dataSize($v) is not defined")
 }
 
 /** Base trait for all pre-defined types which are not necessary primitive (e.g. Box, AvlTree).
@@ -790,6 +792,8 @@ case object SAny extends SPrimType {
   override type WrappedType = Any
   override val typeCode: TypeCode = 97: Byte
   override def isConstantSize = false
+  override def dataSize(v: SType#WrappedType): Long =
+    sys.error(s"$this.dataSize($v) is not defined")
 }
 
 /** The type with single inhabitant value `()` */
@@ -1344,6 +1348,8 @@ case class STypeApply(name: String, args: IndexedSeq[SType] = IndexedSeq()) exte
   override type WrappedType = Any
   override val typeCode = STypeApply.TypeCode
   override def isConstantSize = false
+  override def dataSize(v: SType#WrappedType): Long =
+    sys.error(s"$this.dataSize($v) is not defined")
 }
 object STypeApply {
   val TypeCode = 94: Byte
@@ -1357,6 +1363,8 @@ case class STypeVar(name: String) extends SType {
   override def isConstantSize = false
   override def toString = name
   override def toTermString: String = name
+  override def dataSize(v: SType#WrappedType): Long =
+    sys.error(s"$this.dataSize($v) is not defined")
 }
 object STypeVar {
   val TypeCode: TypeCode = 103: Byte
