@@ -439,7 +439,7 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ObjectGe
         Map())
   }
 
-  // TODO soft-fork: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
+  // TODO HF: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
   ignore("SCollection.find") {
     comp("OUTPUTS.find({ (out: Box) => out.value >= 1L })") shouldBe
       mkMethodCall(Outputs,
