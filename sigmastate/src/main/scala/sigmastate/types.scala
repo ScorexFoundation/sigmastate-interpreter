@@ -1586,7 +1586,7 @@ case object SContext extends SProduct with SPredefType with SMonoType {
 
   /** Approximate data size of the given context without ContextExtension. */
   override def dataSize(v: SType#WrappedType): Long = {
-    sys.error(s"Should not be used, use SizeContext and Sized typeclass instead")
+    sys.error(s"$this.dataSize($v) is not defined")
   }
   override def isConstantSize = false
 
@@ -1712,7 +1712,7 @@ case object SGlobal extends SProduct with SPredefType with SMonoType {
   override def typeId = typeCode
   /** Approximate data size of the given context without ContextExtension. */
   override def dataSize(v: SType#WrappedType): Long = {
-    sys.error(s"Should not be used, use SizeContext and Sized typeclass instead")
+    sys.error(s"$this.dataSize($v) is not defined")
   }
   override def isConstantSize = true  // only fixed amount of global information is allowed
 

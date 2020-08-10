@@ -147,6 +147,17 @@ class ErgoTreeSpecification extends SigmaTestingData {
         t.typeCode should be <= SPrimType.LastPrimTypeCode
       }
     }
+    forAll(Table(("type", "isConstantSize"),
+      (NoType, true),
+      (SString, false),
+      (SAny, false),
+      (SUnit, true),
+      (SFunc(SInt, SAny), false),
+      (STypeApply("T"), false),
+      (STypeVar("T"), false)
+    )) { (t, isConst) =>
+      t.isConstantSize shouldBe isConst
+    }
   }
 
   /** Expected parameters of resolved method (see `methods` table below).
