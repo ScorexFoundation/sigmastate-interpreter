@@ -359,6 +359,9 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   }
 
   property("Byte methods equivalence") {
+    SByte.upcast(0.toByte) shouldBe 0.toByte  // boundary test case
+    SByte.downcast(0.toByte) shouldBe 0.toByte  // boundary test case
+
     testCases(
       Seq(
         (0.toByte, Success(0.toByte)),
@@ -549,6 +552,9 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   }
 
   property("Short methods equivalence") {
+    SShort.upcast(0.toShort) shouldBe 0.toShort  // boundary test case
+    SShort.downcast(0.toShort) shouldBe 0.toShort  // boundary test case
+
     testCases(
       Seq(
         (Short.MinValue, Failure(new ArithmeticException("Byte overflow"))),
@@ -736,6 +742,9 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   }
 
   property("Int methods equivalence") {
+    SInt.upcast(0) shouldBe 0  // boundary test case
+    SInt.downcast(0) shouldBe 0  // boundary test case
+
     testCases(
       Seq(
         (Int.MinValue, Failure(new ArithmeticException("Byte overflow"))),
@@ -920,6 +929,9 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   }
 
   property("Long methods equivalence") {
+    SLong.upcast(0L) shouldBe 0L  // boundary test case
+    SLong.downcast(0L) shouldBe 0L  // boundary test case
+
     testCases(
       Seq(
         (Long.MinValue, Failure(new ArithmeticException("Byte overflow"))),
@@ -1247,6 +1259,22 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   }
 
   property("BigInt methods equivalence (new features)") {
+    // TODO HF: the behavior of `upcast` for BigInt is different from all other Numeric types
+    // The `Upcast(bigInt, SBigInt)` node is never produced by ErgoScript compiler, but is still valid ErgoTree.
+    // It makes sense to fix this inconsistency as part of HF
+    assertExceptionThrown(
+      SBigInt.upcast(CBigInt(new BigInteger("0", 16)).asInstanceOf[AnyVal]),
+      _.getMessage.contains("Cannot upcast value")
+    )
+
+    // TODO HF: the behavior of `downcast` for BigInt is different from all other Numeric types
+    // The `Downcast(bigInt, SBigInt)` node is never produced by ErgoScript compiler, but is still valid ErgoTree.
+    // It makes sense to fix this inconsistency as part of HF
+    assertExceptionThrown(
+      SBigInt.downcast(CBigInt(new BigInteger("0", 16)).asInstanceOf[AnyVal]),
+      _.getMessage.contains("Cannot downcast value")
+    )
+
     val toByte = newFeature((x: BigInt) => x.toByte,
       "{ (x: BigInt) => x.toByte }",
       FuncValue(Vector((1, SBigInt)), Downcast(ValUse(1, SBigInt), SByte)))
