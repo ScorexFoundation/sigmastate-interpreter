@@ -1,12 +1,12 @@
 package sigmastate.utxo.examples
 
-import org.ergoplatform.{ErgoBox, ErgoLikeContext, ErgoLikeTransaction, ErgoScriptPredef}
+import org.ergoplatform.{ErgoLikeContext, ErgoLikeTransaction, ErgoBox, ErgoScriptPredef}
 import org.scalatest.Assertion
 import org.scalatest.TryValues._
 import sigmastate.basics.DLogProtocol.ProveDlog
 import scorex.crypto.hash.Blake2b256
-import sigmastate.Values.{ByteArrayConstant, SigmaPropValue, Value}
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaTestingCommons}
+import sigmastate.Values.{ByteArrayConstant, Value, SigmaPropValue, BooleanConstant}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, SigmaTestingCommons, ErgoLikeTestInterpreter}
 import sigmastate.lang.Terms._
 import sigmastate.{AvlTreeData, SBoolean}
 
@@ -143,10 +143,10 @@ class CoopExampleSpecification extends SigmaTestingCommons {
       "pubkeyC" -> pubkeyC,
       "pubkeyD" -> pubkeyD,
       "businessKey" -> businessKey,
-      "pubkeyTool1" -> SBoolean.mkConstant(false),
-      "pubkeyTool2" -> SBoolean.mkConstant(false),
-      "pubkeyTool3" -> SBoolean.mkConstant(false),
-      "pubkeyTool4" -> SBoolean.mkConstant(false),
+      "pubkeyTool1" -> BooleanConstant(false),
+      "pubkeyTool2" -> BooleanConstant(false),
+      "pubkeyTool3" -> BooleanConstant(false),
+      "pubkeyTool4" -> BooleanConstant(false),
       "pubkeyConstr1" -> constructionRing(0),
       "pubkeyConstr2" -> constructionRing(1),
       "pubkeyConstr3" -> constructionRing(2)
@@ -236,13 +236,13 @@ class CoopExampleSpecification extends SigmaTestingCommons {
       "pubkeyC" -> pubkeyC,
       "pubkeyD" -> pubkeyD,
       "businessKey" -> businessKey,
-      "pubkeyTool1" -> SBoolean.mkConstant(false),
-      "pubkeyTool2" -> SBoolean.mkConstant(false),
-      "pubkeyTool3" -> SBoolean.mkConstant(false),
-      "pubkeyTool4" -> SBoolean.mkConstant(false),
+      "pubkeyTool1" -> BooleanConstant(false),
+      "pubkeyTool2" -> BooleanConstant(false),
+      "pubkeyTool3" -> BooleanConstant(false),
+      "pubkeyTool4" -> BooleanConstant(false),
       "pubkeyConstr1" -> constructionRing(0),
       "pubkeyConstr2" -> constructionRing(1),
-      "pubkeyConstr3" -> SBoolean.mkConstant(false)
+      "pubkeyConstr3" -> BooleanConstant(false)
     )
 
     val spendingProp4 = compile(spendingEnv3,

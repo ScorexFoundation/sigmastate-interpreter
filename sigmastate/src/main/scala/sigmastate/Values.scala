@@ -332,6 +332,7 @@ object Values {
   }
 
   object GroupElementConstant {
+    def apply(value: EcPointType): Constant[SGroupElement.type] = apply(SigmaDsl.GroupElement(value))
     def apply(value: GroupElement): Constant[SGroupElement.type] = Constant[SGroupElement.type](value, SGroupElement)
     def unapply(v: SValue): Option[GroupElement] = v match {
       case Constant(value: GroupElement, SGroupElement) => Some(value)

@@ -54,16 +54,4 @@ class TypesSpecificatio extends SigmaTestingData {
     assertExceptionThrown(check(STypeVar("T"), null, 0), _.getMessage.contains("is not defined"))
   }
 
-  property("SType.mkConstant (not defined)") {
-    val msg = "SType.mkConstant is not defined"
-    assertExceptionThrown({
-      val tpe = NoType.asInstanceOf[SType]
-      tpe.mkConstant(null.asInstanceOf[tpe.WrappedType])
-    }, { t =>
-        t.getMessage.contains(msg)
-    })
-    assertExceptionThrown(SAny.mkConstant(null), _.getMessage.contains(msg))
-    assertExceptionThrown(STypeApply("T").mkConstant(null), _.getMessage.contains(msg))
-    assertExceptionThrown(STypeVar("T").mkConstant(null), _.getMessage.contains(msg))
-  }
 }

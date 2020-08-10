@@ -7,7 +7,7 @@ import org.ergoplatform._
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.hash.{Digest32, Blake2b256}
-import sigmastate.Values.{AvlTreeConstant, IntArrayConstant, CollectionConstant, ByteArrayConstant, SigmaPropValue}
+import sigmastate.Values.{AvlTreeConstant, IntArrayConstant, CollectionConstant, ByteArrayConstant, SigmaPropValue, GroupElementConstant}
 import sigmastate._
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.helpers.ErgoLikeContextTesting
@@ -462,7 +462,7 @@ class IcoExample extends SigmaTestingCommons { suite =>
     val funderBoxCount = 2000
     val funderProps = (1 to funderBoxCount).map { _ =>
       val keyPoint = CryptoConstants.dlogGroup.createRandomElement()
-      val prop = CreateProveDlog(SGroupElement.mkConstant(keyPoint)).asSigmaProp
+      val prop = CreateProveDlog(GroupElementConstant(keyPoint)).asSigmaProp
       val propBytes = DefaultSerializer.serializeErgoTree(prop)
       propBytes -> Longs.toByteArray(Random.nextInt(Int.MaxValue).toLong)
     }
