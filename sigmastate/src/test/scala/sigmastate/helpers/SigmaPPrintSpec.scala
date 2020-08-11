@@ -2,20 +2,25 @@ package sigmastate.helpers
 
 import java.math.BigInteger
 
+import org.ergoplatform.settings.ErgoAlgos
 import org.ergoplatform.{Outputs, ErgoBox}
-import org.scalatest.prop.PropertyChecks
-import org.scalatest.{PropSpec, Matchers}
+import scalan.RType
+import scorex.crypto.authds.ADDigest
+import scorex.crypto.hash.Digest32
+import scorex.util.ModifierId
 import sigmastate.Values._
 import sigmastate.lang.Terms.MethodCall
 import sigmastate.serialization.OpCodes
 import sigmastate.utxo.SelectField
 import sigmastate._
+import sigmastate.eval._
+import sigmastate.utils.Helpers
+import special.collection.CollType
+import special.sigma.SigmaDslTesting
 
 import scala.collection.mutable.ArrayBuffer
 
-class SigmaPPrintSpec extends PropSpec
-    with PropertyChecks
-    with Matchers {
+class SigmaPPrintSpec extends SigmaDslTesting {
 
 
   property("typeName") {
@@ -30,7 +35,8 @@ class SigmaPPrintSpec extends PropSpec
 
   property("Special cases") {
     def test(x: Any, expected: String) = {
-      SigmaPPrint(x).plainText shouldBe expected
+      val res = SigmaPPrint(x).plainText
+      res shouldBe expected
     }
 
     // type handlers
@@ -38,6 +44,9 @@ class SigmaPPrintSpec extends PropSpec
     test(SCollectionType(SCollectionType(SByte)), "SByteArray2")
     test(SCollectionType(SBoolean), "SBooleanArray")
     test(STuple(Vector(SBoolean, SInt)), "SPair(SBoolean, SInt)")
+
+    test(RType.BooleanType, "RType.BooleanType")
+    test(CollType(RType.ByteType), "CollType(RType.ByteType)")
 
     // exception handlers
     test(new ArithmeticException("msg"), "new ArithmeticException(\"msg\")")
@@ -53,9 +62,79 @@ class SigmaPPrintSpec extends PropSpec
     negative.toString(10) shouldBe "-10"
     test(negative, """new BigInteger("-a", 16)""")
 
+    test(ErgoAlgos.decodeUnsafe("00ffaa"), "ErgoAlgos.decodeUnsafe(\"00ffaa\")")
+    test(ErgoAlgos.decodeUnsafe("00ffaa"): Seq[Byte], "ErgoAlgos.decodeUnsafe(\"00ffaa\")")
+    
+    test(Array(10), "Array(10)")
     test(Array(10): Seq[Int], "Array(10)")
     test({val buf = ArrayBuffer.empty[Int]; buf += (10); buf}, "Seq(10)")
+    test(Helpers.decodeBytes("00ff"), "Helpers.decodeBytes(\"00ff\")")
+    val ge1 = "03358d53f01276211f92d0aefbd278805121d4ff6eb534b777af1ee8abae5b2056"
 
+    test(Helpers.decodeGroupElement(ge1), s"""Helpers.decodeGroupElement("${ge1}")""")
+    test(Helpers.decodeECPoint(ge1), s"""Helpers.decodeECPoint("${ge1}")""")
+
+    val t1 = AvlTreeData(
+      ADDigest @@ ErgoAlgos.decodeUnsafe("000183807f66b301530120ff7fc6bd6601ff01ff7f7d2bedbbffff00187fe89094"),
+      AvlTreeFlags(false, true, true),
+      1,
+      Some(1)
+    )
+    test(t1,
+      """AvlTreeData(
+        |  ADDigest @@ (
+        |    ErgoAlgos.decodeUnsafe("000183807f66b301530120ff7fc6bd6601ff01ff7f7d2bedbbffff00187fe89094")
+        |  ),
+        |  AvlTreeFlags(false, true, true),
+        |  1,
+        |  Some(1)
+        |)""".stripMargin)
+    test(
+      new ErgoTree(
+        16.toByte,
+        Vector(IntArrayConstant(Array(10, 20))),
+        Right(BoolToSigmaProp(TrueLeaf))
+      ),
+      """new ErgoTree(
+        |  16.toByte,
+        |  Vector(IntArrayConstant(Coll[Int](10, 20))),
+        |  Right(BoolToSigmaProp(TrueLeaf))
+        |)""".stripMargin)
+    test(
+      CostingBox(
+        false,
+        new ErgoBox(
+            9223372036854775807L,
+          new ErgoTree(0.toByte, Vector(), Right(BoolToSigmaProp(FalseLeaf))),
+          Coll(
+            (Digest32 @@ (ErgoAlgos.decodeUnsafe("6e789ab7b2fffff12280a6cd01557f6fb22b7f80ff7aff8e1f7f15973d7f0001")), 10000000L)
+          ),
+          Map(),
+          ModifierId @@ ("bc80ffc00100d60101ffd3d3ab7f73800aff80487fff7fffbb010080ff7f0837"),
+          0.toShort,
+            1000000
+        )
+      ),
+      """CostingBox(
+        |  false,
+        |  new ErgoBox(
+        |    9223372036854775807L,
+        |    new ErgoTree(0.toByte, Vector(), Right(BoolToSigmaProp(FalseLeaf))),
+        |    Coll(
+        |      (
+        |        Digest32 @@ (
+        |          ErgoAlgos.decodeUnsafe("6e789ab7b2fffff12280a6cd01557f6fb22b7f80ff7aff8e1f7f15973d7f0001")
+        |        ),
+        |        10000000L
+        |      )
+        |    ),
+        |    Map(),
+        |    ModifierId @@ ("bc80ffc00100d60101ffd3d3ab7f73800aff80487fff7fffbb010080ff7f0837"),
+        |    0.toShort,
+        |    1000000
+        |  )
+        |)""".stripMargin
+    )
     // additionalHandlers
     test(SGlobal, "SGlobal")
     test(SCollection, "SCollection")

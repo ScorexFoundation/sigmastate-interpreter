@@ -68,7 +68,7 @@ class SigSerializerSpecification extends SigmaTestingCommons with ObjectGenerato
   }
 
   property("SigSerializer round trip") {
-    forAll { sb: SigmaBoolean =>
+    forAll(configParams = MinSuccessful(100)) { sb: SigmaBoolean =>
       val expr = sb.toSigmaProp
       val challenge = Array.fill(32)(Random.nextInt(100).toByte)
 
