@@ -78,7 +78,7 @@ version in ThisBuild := {
 git.gitUncommittedChanges in ThisBuild := true
 
 val bouncycastleBcprov = "org.bouncycastle" % "bcprov-jdk15on" % "1.64"
-val scrypto            = "org.scorexfoundation" %% "scrypto" % "2.1.7"
+val scrypto            = "org.scorexfoundation" %% "scrypto" % "2.1.9"
 val scorexUtil         = "org.scorexfoundation" %% "scorex-util" % "0.1.6"
 val macroCompat        = "org.typelevel" %% "macro-compat" % "1.1.1"
 val paradise           = "org.scalamacros" %% "paradise" % "2.1.0" cross CrossVersion.full
@@ -96,6 +96,7 @@ val testingDependencies = Seq(
   "org.scalatest" %% "scalatest" % "3.0.5" % "test",
   "org.scalactic" %% "scalactic" % "3.0.+" % "test",
   "org.scalacheck" %% "scalacheck" % "1.14.+" % "test",
+  "com.lihaoyi" %% "pprint" % "0.5.4" % "test",  // the last version with Scala 2.11 support
   "com.storm-enroute" %% "scalameter" % "0.8.2" % Test,
   "junit" % "junit" % "4.12" % "test",
   "com.novocode" % "junit-interface" % "0.11" % "test"

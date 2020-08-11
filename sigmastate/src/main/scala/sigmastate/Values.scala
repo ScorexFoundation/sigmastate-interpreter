@@ -597,7 +597,7 @@ object Values {
           case FalseProp.opCode => FalseProp
           case TrueProp.opCode  => TrueProp
           case ProveDlogCode => dlogSerializer.parse(r)
-          case ProveDHTupleCode => dhtSerializer.parse(r)
+          case ProveDiffieHellmanTupleCode => dhtSerializer.parse(r)
           case AndCode =>
             val n = r.getUShort()
             val children = new Array[SigmaBoolean](n)
@@ -952,6 +952,14 @@ object Values {
         _complexity = DefaultSerializer.deserializeErgoTree(bytes).complexity
       }
       _complexity
+    }
+
+    /** Serialized proposition expression of SigmaProp type with 
+      * ConstantPlaceholder nodes instead of Constant nodes 
+      */
+    lazy val template: Array[Byte] = {
+      val r = SigmaSerializer.startReader(bytes)
+      DefaultSerializer.deserializeHeaderWithTreeBytes(r)._4
     }
 
     /** Get proposition expression from this contract.

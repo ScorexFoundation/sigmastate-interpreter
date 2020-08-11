@@ -155,7 +155,7 @@ object OpCodes extends ValueCodes {
   val CalcBlake2b256Code         : OpCode = newOpCode(91)
   val CalcSha256Code             : OpCode = newOpCode(92)
   val ProveDlogCode              : OpCode = newOpCode(93)
-  val ProveDHTupleCode           : OpCode = newOpCode(94)
+  val ProveDiffieHellmanTupleCode: OpCode = newOpCode(94)
   val SigmaPropIsProvenCode      : OpCode = newOpCode(95)
   val SigmaPropBytesCode         : OpCode = newOpCode(96)
   val BoolToSigmaPropCode        : OpCode = newOpCode(97)

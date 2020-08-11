@@ -76,7 +76,7 @@ case class CTHRESHOLD(k: Int, sigmaBooleans: Seq[SigmaBoolean]) extends SigmaBoo
   override val opCode: OpCode = OpCodes.AtLeastCode
 }
 
-trait SigmaProofOfKnowledgeTree[SP <: SigmaProtocol[SP], S <: SigmaProtocolPrivateInput[SP, _]]
+trait SigmaProofOfKnowledgeLeaf[SP <: SigmaProtocol[SP], S <: SigmaProtocolPrivateInput[SP, _]]
   extends SigmaBoolean with SigmaProtocolCommonInput[SP]
 
 /** Represents boolean values (true/false) in SigmaBoolean tree.
@@ -154,7 +154,7 @@ case class CreateProveDHTuple(gv: Value[SGroupElement.type],
   override def opType = SFunc(IndexedSeq(SGroupElement, SGroupElement, SGroupElement, SGroupElement), SSigmaProp)
 }
 object CreateProveDHTuple extends ValueCompanion {
-  override def opCode: OpCode = OpCodes.ProveDHTupleCode
+  override def opCode: OpCode = OpCodes.ProveDiffieHellmanTupleCode
 }
 
 trait SigmaTransformer[IV <: SigmaPropValue, OV <: SigmaPropValue] extends SigmaPropValue {
@@ -174,7 +174,7 @@ case class SigmaAnd(items: Seq[SigmaPropValue]) extends SigmaTransformer[SigmaPr
 object SigmaAnd extends SigmaTransformerCompanion {
   override def opCode: OpCode = OpCodes.SigmaAndCode
   override def argInfos: Seq[ArgInfo] = SigmaAndInfo.argInfos
-  def apply(head: SigmaPropValue, tail: SigmaPropValue*): SigmaAnd = SigmaAnd(head +: tail)
+  def apply(first: SigmaPropValue, second: SigmaPropValue, tail: SigmaPropValue*): SigmaAnd = SigmaAnd(Array(first, second) ++ tail)
 }
 
 /**

@@ -3,7 +3,7 @@ package sigmastate.helpers
 import sigmastate.SType
 import sigmastate.Values.{ErgoTree, EvaluatedValue}
 import sigmastate.interpreter.Interpreter.ScriptEnv
-import sigmastate.interpreter.{ContextExtension, CostedProverResult, ProverInterpreter}
+import sigmastate.interpreter.{ContextExtension, CostedProverResult, HintsBag, ProverInterpreter}
 
 import scala.util.Try
 
@@ -24,7 +24,7 @@ trait ContextEnrichingProverInterpreter extends ProverInterpreter {
   /**
     * Replace context.extension to knownExtensions and prove script in different context.
     */
-  override def prove(env: ScriptEnv, exp: ErgoTree, context: CTX, message: Array[Byte]): Try[CostedProverResult] = {
+  override def prove(env: ScriptEnv, exp: ErgoTree, context: CTX, message: Array[Byte], hintsBag: HintsBag): Try[CostedProverResult] = {
     val enrichedContext = context.withExtension(knownExtensions).asInstanceOf[CTX]
     super.prove(env, exp, enrichedContext, message)
   }

@@ -77,7 +77,7 @@ This paper describes \langname, a powerful and protocol-friendly scripting langu
 \section{Introduction}
 \subsection{Background}
 
-Since its early days, Bitcoin~\cite{Nak08} has allowed more than simple money transfers between two public keys: its Bitcoin Script scripting language has allowed participants to specify conditions for how money could be spent. A program written in Bitcoin Script is attached to every transaction output (i.e., amount received); this program protects the transaction by determining how the transaction output can be used as an input to (i.e., spent in) a future transaction. The simplest condition is specified by a program that contains the recipient's public key and states that the money can be spent by creating a signature that verifies under this key.  However, more general conditions are allowed by more sophisticated programs. 
+Since its early days, Bitcoin~\cite{Nak08} has allowed more than simple money transfers between two public keys: its Bitcoin Script scripting language has allowed participants to specify conditions for how money could be spent. A program written in Bitcoin Script is attached to every transaction output (i.e., amount received); this program protects the transaction by determining how the transaction output can be used as an input to (i.e., spent in) a future transaction. The simplest condition is specified by a program that contains the recipient's public key and states that the money can be spent by creating a signature that verifies under this key.  However, more general conditions are allowed by more sophisticated programs.
 
 The Bitcoin Script language is a primitive stack-based language without loops~\cite{bscript}. To spend an output protected by a program, a spending transaction must provide a program in the same language, and the concatenation of the two programs must evaluate to \emph{true}. The creator of the spending transaction can be viewed as a prover (for example, proving knowledge of the secret key by producing a signature), where the statement that needs to be proven is specified by the output that is being spent. Transaction validity is verified by evaluating programs. Bounded validation time is ensured by the absence of loops in the programming language and a maximum program size of 10 kilobytes. Even so, some denial-of-service attacks exploiting script validation time have appeared \cite{bitcoindos, fivehrs, ethattacks}. On the other hand, the deliberate simplicity of the programming language limits the kinds of contracts that can be created on the Bitcoin platform.
 
@@ -105,7 +105,7 @@ In fact, Schnorr signature scheme~\cite{Sch91} (whose more recent version is pop
 
 
 \langname also provides the ability to build more sophisticated $\Sigma$-protocols by using connectives $\andnode$, $\ornode$, and $\tnode$ (also known as $k$-out-of-$n$).
-Crucially, the proof for an $\ornode$ and a $\tnode$ connective does not reveal which of the relevant values the prover knows: for example, in \langname a ring signature by public keys $h_1, \dots, h_n$ can be specified as an $\ornode$ of $\Sigma$-protocols for proving knowledge of discrete logarithms of $h_1, \dots, h_n$. The proof can be constructed with the knowledge of just one such discrete logarithm, and does not reveal which one was used in its construction. 
+Crucially, the proof for an $\ornode$ and a $\tnode$ connective does not reveal which of the relevant values the prover knows: for example, in \langname a ring signature by public keys $h_1, \dots, h_n$ can be specified as an $\ornode$ of $\Sigma$-protocols for proving knowledge of discrete logarithms of $h_1, \dots, h_n$. The proof can be constructed with the knowledge of just one such discrete logarithm, and does not reveal which one was used in its construction.
 
 Our implementation of these protocols is in Scala \cite{scala} and Java \cite{java}. The implementation was informed by SCAPI \cite{scapi}, but does not use SCAPI code. We use Bouncy Castle \cite{bouncycastle} for big integer and elliptic curve operations; the implementation of arithmetic in fields of characteristic 2 (for $\tnode$ connectives) is our own.
 
@@ -126,7 +126,7 @@ logical and comparison operations as well as operations on group elements and au
 
 \section{\langname Language Description}
 
-The language syntax is a subset of Scala with the same meaning, and therefore many of the constructs are easy to read for those familiar with Scala. 
+The language syntax is a subset of Scala with the same meaning, and therefore many of the constructs are easy to read for those familiar with Scala.
 
 Before we describe the language, let us fix some terminology. A \emph{box} (often called a ``coin'' in other literature) contains some amount (\emph{value}, measured in Ergo tokens) and is protected by a \emph{script} (boxes also contain additional information, such as other tokens; this information is described in detail in Section \ref{sec:box-registers}). A \emph{transaction} spends the value of boxes that are its \emph{inputs} (which are outputs of some earlier transaction) and produces boxes that are its \emph{outputs}. In a given transaction, the sum of the values of the inputs must equal the sum of the values of the outputs (as we describe below, the scripting language is rich enough to allow for payment transactions fees and for minting of new coins without violating this rule).
 
@@ -159,7 +159,7 @@ Naturally, this approach can be extended to more than two keys. If Carol's publi
 \begin{verbatim}
         pkA || pkB || pkC
 \end{verbatim}
-	
+
 For syntactic convenience, multiple keys can be placed into a collection, and \texttt{anyOf} operator can be used instead of \texttt{||}, as follows:
 \begin{verbatim}
         anyOf (Coll (pkA, pkB, pkC))
@@ -183,7 +183,7 @@ A valid proof (contained in the spending transaction) will not reveal which of t
 
 Operators \texttt{allOf} and \texttt{anyOf} are actually special cases of the operator \texttt{atLeast(bound, collection)}, which requires the prover to know secrets for $\texttt{bound}$ elements of the \texttt{collection} (just in like in \texttt{anyOf}, which secrets the prover used will not be revealed by the proof). \texttt{allOf(collection)} is the same as \texttt{atLeast(collection.size, collection)} and $\texttt{anyOf(collection)}$ is the same as \texttt{atLeast(1, collection)}.
 
-For example, here is a script stating that the box can be spent by any 3 out of the following 6 possibilities: Alice, Bob, Charlie, David and Edie, Fran and George, Helen and Irene:
+For example, here is a script stating that the box can be spent by any 3 out of the following 6 possibilities: Alice, Bob, Charlie, David and Edie, Frank and George, Helen and Irene:
 \begin{verbatim}
         atLeast(3, Coll (pkA, pkB, pkC, pkD && pkE, pkF && pkG, pkH && pkI))
 \end{verbatim}
@@ -204,7 +204,7 @@ In general, script evaluation reduces the script to a $\Sigma$-statement by firs
 We emphasize that this evaluation is not the same as the usual left-to-right
 lazy evaluation of logical expressions, because expressions involving
 $\Sigma$-statements are not treated the same way as usual boolean
-expressions: they are evaluated last and in zero-knowledge. 
+expressions: they are evaluated last and in zero-knowledge.
 
 In fact, $\texttt{pkA}$ is not of type \texttt{Boolean}. It is a constant of
 type \texttt{SigmaProp} with the concrete value
@@ -232,10 +232,10 @@ Access to this information allows us, for example, to create an output box that 
 
 Note that the script does not prevent the \texttt{friend} box from being spent on its own, in which case the output box protected by the script above will become not spendable.
 
-We can be more permissive and allow for other inputs in addition to the friend box. To do so, we will examine the input collection using the \texttt{exists} operator, which applies a boolean function to each collection element until it finds one that satisfies the function or finds that none exists. To define a function, we use lambda syntax; the argument type (in this case \texttt{Box}) is specified with a colon after the argument name \texttt{inputBox}. We name the function using the \texttt{val} keyword.
+We can be more permissive and allow for other inputs in addition to the friend box. To do so, we will examine the input collection using the \texttt{exists} operator, which applies a boolean function to each collection element until it finds one that satisfies the function or finds that none exists. To define a function, we use lambda syntax; the argument type (in this case \texttt{Box}) is specified with a colon after the argument name \texttt{inputBox}. We name the function using the \texttt{def} keyword.
 \begin{verbatim}
         {
-                def isFriend(inputBox: Box) = inputBox.id == friend.id 
+                def isFriend(inputBox: Box) = inputBox.id == friend.id
                 INPUTS.exists (isFriend)
         }
 \end{verbatim}
@@ -248,7 +248,7 @@ It can also be written in one statement, as follows:
 
 
 \paragraph{Example: crowdfunding}
-Access to the context allows us to create a script for the following crowdfunding situation: a project backer (with key  \texttt{backerPubKey}) wishes to give money to a project (with key \texttt{projectPubKey}), but only if the project raises enough money (at least \texttt{minToRaise}) from other sources by a deadline (expressed in terms of \texttt{HEIGHT}). 
+Access to the context allows us to create a script for the following crowdfunding situation: a project backer (with key  \texttt{backerPubKey}) wishes to give money to a project (with key \texttt{projectPubKey}), but only if the project raises enough money (at least \texttt{minToRaise}) from other sources by a deadline (expressed in terms of \texttt{HEIGHT}).
 
 To give money to the project, the backer will create an output box protected by the following script. The script contains two conditions: one for the case the deadline has passed (enabling the backer to get the money back) and one for the case it succeeded (enabling the project to spend the money if the amount is at least \texttt{minToRaise} before the deadline).  In order to ensure enough money has been raised, the script will search the output collection for a box with a sufficient value going to the \texttt{projectPubKey}. To check where the value of the output box is going, the script will read the script protecting the output box and compare it to the script \texttt{"projectPubKey"} (that is the simple script described in Section~\ref{sec:sigma-statements}); bytes of this script can be obtained by \texttt{projectPubKey.propBytes}.
 
@@ -256,25 +256,25 @@ To give money to the project, the backer will create an output box protected by 
         {
                 val fundraisingFailure = HEIGHT >= deadline && backerPubKey
                 val enoughRaised = {(outBox: Box) =>
-                        outBox.value >= minToRaise && 
+                        outBox.value >= minToRaise &&
                         outBox.propositionBytes == projectPubKey.propBytes
                 }
                 val fundraisingSuccess = HEIGHT < deadline &&
-                         projectPubKey &&  
+                         projectPubKey &&
                          OUTPUTS.exists(enoughRaised)
-                 
+
                 fundraisingFailure || fundraisingSuccess
         }
 \end{verbatim}
 
-As before, the values of \texttt{deadline}, \texttt{minToRaise}, and the two public keys are defined by the environment map and hardwired into the script at compile time. 
+As before, the values of \texttt{deadline}, \texttt{minToRaise}, and the two public keys are defined by the environment map and hardwired into the script at compile time.
 
 
 \subsection{Context Extension and Hashing}
 \label{sec:extension}
 A context can also contain typed variables that can be retrieved by numerical id using the operator \texttt{getVar}. These variables are supplied by the prover specifically for a given input box (via a \texttt{ContextExtension}) together with the proof for that box. The id can be any one-byte value (from -128 to 127) and is scoped for each box separately (so variable with id 17 for one input box in a transaction is not the same as variable with id 17 for another input box in the same transaction).
 
-Such context enxtensions can be useful, for example, for requiring a spending transaction to produce hash preimages (the BLAKE2b-256 and SHA-256 hash functions can be invoked in \langname, using keywords \texttt{blake2b256} and \texttt{sha256}). For example,
+Such context extensions can be useful, for example, for requiring a spending transaction to produce hash preimages (the BLAKE2b-256 and SHA-256 hash functions can be invoked in \langname, using keywords \texttt{blake2b256} and \texttt{sha256}). For example,
 \begin{verbatim}
        pkA && blake2b256(getVar[Coll[Byte]](1).get) ==  hashOutput
 \end{verbatim}
@@ -294,7 +294,7 @@ Bob can receive the value of this box only upon presentation of a hash preimage 
 
 From this output, Bob learns \texttt{hx}. He creates a transaction in Alice's blockchain with an output box protected by the following script:
 \begin{verbatim}
-        val x = getVar[Coll[Byte]](1).get 
+        val x = getVar[Coll[Byte]](1).get
         anyOf( Coll(
                 HEIGHT > deadlineAlice && pkB,
                 allOf( Coll(
@@ -309,27 +309,27 @@ If Alice is satisfied with the amount Bob is giving her, she claims the value of
 
 Bob is protected, because in order for Alice to claim the value of this box, she must present a hash preimage of \texttt{hx} as a context extension in the transaction that uses this box as input. But once she does, Bob also learns this hash preimage, and is able to claim the value of the box that Alice placed into his blockchain. Note that Bob needs to choose \texttt{deadlineAlice} early enough to make sure that he is able to learn the preimage of \texttt{hx} from the transaction in Alice's block chain, and create a transaction in his blockchain, all before \texttt{deadlineBob} that Alice chose. Note also that \texttt{HEIGHT} in the two scripts is with respect to two different blockchains, which may be growing at a different rate. Bob also needs to make sure that he can use Alice's \texttt{x} as a context extension; to make sure Alice cannot cheat by making this \texttt{x} so long that it will not be allowed as a context extension in his blockchain, he uses the constraint \texttt{x.size < 33}.
 
-The same approach can be used to trade different assets on the same blockchain, in case of multiasset blockchains. However, for transactions on a single blockchain, an alternative approach is also possible. We describe it below.
+The same approach can be used to trade different assets on the same blockchain, in case of multi-assets blockchains. However, for transactions on a single blockchain, an alternative approach is also possible. We describe it below.
 
 \subsection{Box Registers and Additional Tokens}
 \label{sec:box-registers}
-Together with its value and protecting script, a box can contain up to 10 numbered registers, \texttt{R0} through \texttt{R9}. The first four of these have fixed meaning, as follows. For a box \texttt{b}, \texttt{b.R0} is the same as \texttt{b.value} and \texttt{b.R1} is the same as \texttt{b.propositionBytes}. 
+Together with its value and protecting script, a box can contain up to 10 numbered registers, \texttt{R0} through \texttt{R9}. The first four of these have fixed meaning, as follows. For a box \texttt{b}, \texttt{b.R0} is the same as \texttt{b.value} and \texttt{b.R1} is the same as \texttt{b.propositionBytes}.
 
 
-The third register, \texttt{b.R2}, is for specifying additional, secondary tokens contained in the box (the primary token amount is specified in \texttt{b.value}). \texttt{b.R2} contains a collection of pairs, the first element of each pair specifying the token id (as a collection of 32 bytes) and the second element specifying the amount (as a long value). The maximum number of tokens in a box is set to 4. For every token id, the sum of amounts in inputs boxes be no less than the sum of amounts in output boxes. There is one exception to this rule for the creation of new tokens. When a new token type gets created in a transaction, its id is equal to the id of the input box 0. Thus, the exception for the creation of new tokens is that if the token id in some output box is equal to the id of input box 0, then an arbitrary amount of this token can be output. Because each box has a unique id (see Section~\ref{sec:context}, this exception can be applied exactly once per token type. A newly created token can be emitted in a time-controlled fashion---see Section~\ref{sec:self-replicating}.
+The third register, \texttt{b.R2}, is for specifying additional, secondary tokens contained in the box (the primary token amount is specified in \texttt{b.value}). \texttt{b.R2} contains a collection of pairs, the first element of each pair specifying the token id (as a collection of 32 bytes) and the second element specifying the amount (as a long value). The maximum number of tokens in a box is set to 4. For every token id, the sum of amounts in inputs boxes must be no less than the sum of amounts in output boxes. There is one exception to this rule for the creation of new tokens. When a new token type gets created in a transaction, its id is equal to the id of the input box 0. Thus, the exception for the creation of new tokens is that if the token id in some output box is equal to the id of input box 0, then an arbitrary amount of this token can be output. Because each box has a unique id (see Section~\ref{sec:context}, this exception can be applied exactly once per token type. A newly created token can be emitted in a time-controlled fashion---see Section~\ref{sec:self-replicating}.
 
 The fourth register, \texttt{b.R3}, contains a pair of integer and 34-byte collection~(its type then is $(Int, Coll[Byte])$). The collection specifies the 32-byte unique transaction id where this box appears as an output followed by a 2-byte sequence number of this box in the \texttt{OUTPUTS} collection of that transaction. This ensures that each box has unique \texttt{R3} and therefore a unique \texttt{id} as long as there are no hash collisions (because the \texttt{id} of the box is computed by hashing its content, including \texttt{R3}).
 The first element of the pair contains creation height provided by user created the box. This height could only be less or equal than real inclusion height~
-(a transaction could not be included into the blockchain if it contains an output with creation height being no more than current blockchain height).
+(a transaction could not be included into the blockchain if it contains an output with creation height being no greater than current blockchain height).
 
-The remaining six registers can be used arbitrarily. 
+The remaining six registers can be used arbitrarily.
 
 To access a register, the type of the register needs to be specified in brackets following the register number (for example, \texttt{b.R4[Int]}). Note that \texttt{b.R4[T]} is of type \texttt{Option[T]}; \texttt{b.R4[T].isDefined} indicates whether it actually contains a value of type \texttt{T}, and \texttt{b.R4[T].get} obtains this value.
 
-In addition to registers, scripts can access two serialized versions of the box: \texttt{b.bytes} is a serialization of the entire box including all its registers, and \texttt{b.byteWithNoRef}, which the same but without the transation identifier and the output index~(so that a box can be viewed independently of where it appeared.
+In addition to registers, scripts can access two serialized versions of the box: \texttt{b.bytes} is a serialization of the entire box including all its registers, and \texttt{b.bytesWithNoRef}, which the same but without the transaction identifier and the output index~(so that a box can be viewed independently of where it appeared.
 
 \paragraph{Example: atomic exchange on a single block chain}
-These box registers provide additional capabilities to \langname. Consider, for example, Alice and Bob who want to exchange tokens: they agree that  Alice will give Bob 60 tokens of type \texttt{token1} (this type is mapped an actual token id in the environment map) in exchange for 100 Ergo tokens. Alice could create an output box with value 100 and protect it with following script:
+These box registers provide additional capabilities to \langname. Consider, for example, Alice and Bob who want to exchange tokens: they agree that  Alice will give Bob 60 tokens of type \texttt{token1} (this type is mapped to an actual token id in the environment map) in exchange for 100 Ergo tokens. Alice could create an output box with value 100 and protect it with the following script:
 
 \begin{verbatim}
   (HEIGHT > deadline && pkA) || {
@@ -344,12 +344,12 @@ These box registers provide additional capabilities to \langname. Consider, for 
 \end{verbatim}
 
 
-This script ensures that the box can be spent only in a transaction that produces an output with 60 tokens of type token1 and gives them to Alice (Alice can reclaim the box after the deadline). 
-Moreover, the last condition (\texttt{OUTPUTS(0).R4[Col[Byte]].get == SELF.id}) ensures that if Alice has multiple such boxes outstanding at a given time, each will produce a separate output that identifies the corresponding input. This condition prevents the following attack: if Alice has two such boxes outstanding but the last condition is not present, then they can be both used in a single transaction that contains just one output with 60 tokens of type ``token1" --- the script of each input box will be individually satisfied, but Alice will get less only half of what owed to her.
+This script ensures that the box can be spent only in a transaction that produces an output with 60 tokens of type \texttt{token1} and gives them to Alice (Alice can reclaim the box after the deadline).
+Moreover, the last condition (\texttt{OUTPUTS(0).R4[Col[Byte]].get == SELF.id}) ensures that if Alice has multiple such boxes outstanding at a given time, each will produce a separate output that identifies the corresponding input. This condition prevents the following attack: if Alice has two such boxes outstanding but the last condition is not present, then they can be both used in a single transaction that contains just one output with 60 tokens of type \texttt{token1} --- the script of each input box will be individually satisfied, but Alice will get less only half of what owed to her.
 
 Bob, similarly, could create an output box with value about 0 and 60 tokens of type \texttt{token1} and protect it by the following script:
 \begin{verbatim}
-        (HEIGHT > deadline && pkB) || 
+        (HEIGHT > deadline && pkB) ||
         allOf( Coll(
                 OUTPUTS(1).value >= 100L,
                 OUTPUTS(1).propositionBytes == pkB.propBytes,
@@ -365,13 +365,13 @@ Access to box registers allow us to create self-replicating boxes, because a scr
 \paragraph{Example: time-controlled coin emission}
 In this example, we will create a self-replicating box that emits new coins at each time step in order to add to the total amount of currency available. This box appears as an output in the genesis block (at height 0) of the blockchain; all "new" coins come from this box or its descendants, thus maintaining the invariant that for every transaction after the genesis block, the combined value of all inputs  is equal to the combined value of all outputs.
 
-The value of this box initially is equal to the total amount of currency that will eventually be available. This value will go down by a prespecified amount each time this box is transacted. Because in each transaction, the sum of input values must equal the sum of output values, when the value of this box goes down, the difference must be claimed by someone. The box is set up to allow to the difference to go anyone---presumably, it will be claimed by the miner who created the block that contains the transaction. This box will store, in \texttt{R4}, the height at which it was created. Using this information, it will be able to determine how much value to emit. The box will be set to emit 
+The value of this box initially is equal to the total amount of currency that will eventually be available. This value will go down by a prespecified amount each time this box is transacted. Because in each transaction, the sum of input values must equal the sum of output values, when the value of this box goes down, the difference must be claimed by someone. The box is set up to allow the difference to go to anyone---presumably, it will be claimed by the miner who created the block that contains the transaction. This box will store, in \texttt{R4}, the height at which it was created. Using this information, it will be able to determine how much value to emit. The box will be set to emit
 a fixed amount specified by \texttt{fixedRate} per block until \texttt{HEIGHT} reaches \texttt{fixedRatePeriod}, and a linearly decreasing amount thereafter. The script will verify that the output box has the same script as itself, and that the new height stored in \texttt{R4} and the new value are correctly computed (and that the height has increased, so that a miner cannot emit more than once per block). The following script accomplishes this goal:
 \begin{verbatim}
       {
               val epoch = 1 + ((HEIGHT - fixedRatePeriod) / epochLength)
               val out = OUTPUTS(0)
-              val coinsToIssue = if(HEIGHT < fixedRatePeriod) fixedRate 
+              val coinsToIssue = if(HEIGHT < fixedRatePeriod) fixedRate
                                  else fixedRate - (oneEpochReduction * epoch)
               val correctCoinsConsumed = coinsToIssue == (SELF.value - out.value)
               val sameScriptRule = SELF.propositionBytes == out.propositionBytes
@@ -379,8 +379,8 @@ a fixed amount specified by \texttt{fixedRate} per block until \texttt{HEIGHT} r
               val heightCorrect = out.R4[Int].get == HEIGHT
               val lastCoins = SELF.value <= oneEpochReduction
               allOf(Coll(
-                      heightCorrect, 
-                      heightIncreased, 
+                      heightCorrect,
+                      heightIncreased,
                       sameScriptRule,
                       correctCoinsConsumed))
               || (heightIncreased && lastCoins)
@@ -544,18 +544,18 @@ $Constant$ tree nodes.
 \subsection{Background}
 
 
-In this section, we explain in detail how the $\Sigma$-protocol proving and verifying is implemented. Consider the tree after the evaluation process, as described in Section~\ref{sec:impl}, reduces it to only $\Sigma$-protocol nodes. Then the leaves of the tree are atomic $\Sigma$-protocols, and non-leaves are of one of three types: $\andnode$ (corresponding to \texttt{\&\&} or \texttt{allOf} in \langname), $\ornode$ (corresponding to \texttt{||} or \texttt{anyOf} in \langname), or $\tnode(k)$ (corresponding to \texttt{atLeast} in \langname). 
+In this section, we explain in detail how the $\Sigma$-protocol proving and verifying is implemented. Consider the tree after the evaluation process, as described in Section~\ref{sec:impl}, reduces it to only $\Sigma$-protocol nodes. Then the leaves of the tree are atomic $\Sigma$-protocols, and non-leaves are of one of three types: $\andnode$ (corresponding to \texttt{\&\&} or \texttt{allOf} in \langname), $\ornode$ (corresponding to \texttt{||} or \texttt{anyOf} in \langname), or $\tnode(k)$ (corresponding to \texttt{atLeast} in \langname).
 
 The meaning of the proof corresponding to $\tnode(k)$ is ``the prover knows witnesses for at least $k$ children of this node''. Semantically, $\andnode$ and $\ornode$ are simply special cases of $\tnode$: the meaning  of the proof corresponding $\andnode$ (respectively, $\ornode)$ is ``the prover knows witnesses for all children (respectively, at least one child) of this node''. However, $\andnode$ and $\ornode$ are implemented differently from $\tnode$ for efficiency.
 
-For the purposes of this description, it does not matter what specific atomic $\Sigma$-protocols are used at the leaves. They can be, for example, \texttt{proveDlog(x)} for proving knowledge of the discrete logarithm $w$ of $x=g^w$, or \texttt{proveDHtuple(g1, g2, u1, u2)} for proving that $(g_1, g_2, u_1, u_2)$ form a Diffie-Hellman tuple, i.e., $\exists w \mbox{\ such\  that\ } u_1 = g_1^w \, \wedge \, u_2 = h_2^w$. In general, we will assume the prover has some secret $w$ and wants to prove some property of it. 
+For the purposes of this description, it does not matter what specific atomic $\Sigma$-protocols are used at the leaves. They can be, for example, \texttt{proveDlog(x)} for proving knowledge of the discrete logarithm $w$ of $x=g^w$, or \texttt{proveDHtuple(g1, g2, u1, u2)} for proving that $(g_1, g_2, u_1, u_2)$ form a Diffie-Hellman tuple, i.e., $\exists w \mbox{\ such\  that\ } u_1 = g_1^w \, \wedge \, u_2 = h_2^w$. In general, we will assume the prover has some secret $w$ and wants to prove some property of it.
 
-A $\Sigma$-protocol consist of three messages: 
+A $\Sigma$-protocol consist of three messages:
 
 \begin{itemize}
 \item a \emph{commitment} $a$ sent from the Prover to the Verifier (computed using the witness $w$ and some freshly generated secret randomness $r$ by the Prover's first step algorithm);
 \item a uniformly random \emph{challenge} $e$ sent from the Verifier to the Prover;
-\item and a \emph{response} $z$ sent from the Prover to the Verifier (computed using the randomness $r$, the challenge $e$, and the witness $w$ by the Prover's second step algorithm). 
+\item and a \emph{response} $z$ sent from the Prover to the Verifier (computed using the randomness $r$, the challenge $e$, and the witness $w$ by the Prover's second step algorithm).
 \end{itemize}
 The verifier then checks that the triple $(a, e, z)$ satisfies some formula and, if so, accepts the proof.
 
@@ -563,9 +563,9 @@ In order to make an atomic $\Sigma$-protocol non-interactive using the so-called
 
 $\Sigma$-protocols have the property of \emph{special honest-verifier zero-knowledge}. For the purposes of this description, it means that given a random $e$, it is possible to compute $a$ and $z$ without knowing the secret witness $w$ that is normally needed by the prover. This computation is called ``simulation''. Moreover, the triple $(a, e, z)$  computed via simulation is distributed identically to the triple $(a, e, z)$ that results form a $\Sigma$ protocol that is run by the honest prover (who knows the secret witness $w$) and verifier (who generates a uniform $e$). The trick that makes simulation possible is that the response $z$ is chosen by the simulator before commitment $a$, in contrast to the prover, who is forced to choose $a$ before $z$.
 
-$\Sigma$-protocols used in this work must also satisfy a property of \emph{special soundness}, which means that given two triples $(a_1, e_1, z_1)$ and $(a_2, e_2, z_2)$ that are both accepted by the verifier, and $a_1=a_2$ while $e_1\neq e_2$, it is possible to compute the Prover's secret witness $w$ in polynomial time and thus directly verify that the statement claimed by the Prover is true.   Note that this computation is never performed, because the Prover will never actually answer two different challenges $e_1\neq e_2$ for the same commitment $a_1=a_2$. 
+$\Sigma$-protocols used in this work must also satisfy a property of \emph{special soundness}, which means that given two triples $(a_1, e_1, z_1)$ and $(a_2, e_2, z_2)$ that are both accepted by the verifier, and $a_1=a_2$ while $e_1\neq e_2$, it is possible to compute the Prover's secret witness $w$ in polynomial time and thus directly verify that the statement claimed by the Prover is true.   Note that this computation is never performed, because the Prover will never actually answer two different challenges $e_1\neq e_2$ for the same commitment $a_1=a_2$.
 
-In order for composition of $\Sigma$-protocols using $\andnode$, $\ornode$, and $\tnode$ to work, the challenge $e$ in all protocols must be a binary string of the same length, which we will call $t$.  (This implies that if the Verifier performs arithmetic modulo $q$ on $e$, then $2^t<q$; else it would be trivial to have $e_1\neq e_2$ by letting $e_2=e_1+q$, and the same $z$ would work for both $e_1$ and $e_2$, violating the special soundness property mentioned above, because such $a, e_1, z$ can be computed without knowledge of the witness $w$ by using the simulator.)  Note that $t$ is the \emph{soundness parameter}: the probability that a malicious Prover can fool the Verifier in a single attempt is $2^{-t}$. 
+In order for composition of $\Sigma$-protocols using $\andnode$, $\ornode$, and $\tnode$ to work, the challenge $e$ in all protocols must be a binary string of the same length, which we will call $t$.  (This implies that if the Verifier performs arithmetic modulo $q$ on $e$, then $2^t<q$; else it would be trivial to have $e_1\neq e_2$ by letting $e_2=e_1+q$, and the same $z$ would work for both $e_1$ and $e_2$, violating the special soundness property mentioned above, because such $a, e_1, z$ can be computed without knowledge of the witness $w$ by using the simulator.)  Note that $t$ is the \emph{soundness parameter}: the probability that a malicious Prover can fool the Verifier in a single attempt is $2^{-t}$.
 
  For ease of description, we will also impose the following limitation on the $\Sigma$ protocols: in the interactive version, the verification code must proceed by computing $a'$ from $z$ and $e$, and then checking if $a'=a$. That means that in the noninteractive version, the Prover needs to transmit only $z$ and $e$ (omitting $a$) to the Verifier, who will compute $a'$ from $z$ and $e$ and then check that $e$ was computed correctly as a function of $a'$. If the hashing is second-preimage-resistant, an incorrect $a'$ will lead to a mismatch of $e$, which will be detected by the Verifier. This limitation is satisfied by most common $\Sigma$-protocols; it is not essential and can be removed by having the Prover additionally send $a$.
 
@@ -576,7 +576,7 @@ Our description uses two kinds of tree traversal: bottom-up (also known as post-
 \subsection{Proving}
 \label{sec:proving}
 
-The Prover will know secret witnesses $w$ for some of the leaves; for such leaves, it will choose whether to produce real or simulated proofs according to the algorithm described in this section. The Prover will simulate proofs for all other leaves. 
+The Prover will know secret witnesses $w$ for some of the leaves; for such leaves, it will choose whether to produce real or simulated proofs according to the algorithm described in this section. The Prover will simulate proofs for all other leaves.
 
 \paragraph{Multiple provers} There may be situations when the secret witnesses $w$ at the leaves are distributed among several different provers, who will have to cooperate but will not have to reveal the secrets to each other; in this case, we assume there is a main prover carrying out the steps below, and we explain what the other provers need to do in order for the main prover to construct the proof. We caution that the proofs will not be zero-knowledge to the other provers nor to an adversary who can observe the communication between the provers---even just the existence of communication will reveal which parts of the tree are real and which are simulated. Moreover, if the main prover is malicious, it may be able to attack the other provers --- see Step \ref{step:response} below. More sophisticated multi-party computation protocols to address this problem are available, but are outside the scope of this paper.
 
@@ -598,9 +598,9 @@ The prover first has to decide which nodes will have real proofs (for which witn
             \item If the node is $\andnode$, mark it ``real'' if all of its children are marked real; else mark it ``simulated''
             \item If the node is $\tnode(k)$, mark it ``real'' if at least $k$ of its children are marked real; else mark it ``simulated''
         \end{itemize}
-    
+
     \item If the root of the tree is marked ``simulated'' then the prover does not have enough witnesses to perform the proof. Abort.
-    
+
     \item This step will change some ``real'' nodes to ``simulated'' to make sure each node has the right number of simulated children.
           In a top-down traversal of the tree, do the following for each node:
         \begin{itemize}
@@ -630,9 +630,9 @@ Now the prover will compute protocol values for every node, as follows:
             \item If the node is $\andnode$,  then all of its children get $e_0$ as the challenge
             \item If the node is $\ornode$, then each of its children except one gets a fresh uniformly random challenge in $\{0,1\}^t$. The remaining child gets a challenge computed as an XOR of the challenges of all the other children and $e_0$.
             \item If the node is $\tnode(k)$, assume it has $n$ children numbered from $1$ to $n$. There are two possible algorithms. The first algorithm is faster than the second. However, it is also faster than the algorithm for a ``real'' $\tnode$ node; therefore, if a timing attack on the prover is a possibility, then it should not be used, because the timing attack may be able to distinguish a ``real'' $\tnode$ node from a ``simulated'' one.
-            \begin{enumerate} 
+            \begin{enumerate}
             	\item The faster algorithm is as follows. Pick  $n-k$ fresh uniformly random values $q_1, \dots, q_{n-k}$ from $\{0,1\}^t$ and let
-	         $q_0=e_0$. Viewing $1, 2, \dots, n$ and $q_0, \dots, q_{n-k}$ as elements of $\GF(2^t)$, 
+	         $q_0=e_0$. Viewing $1, 2, \dots, n$ and $q_0, \dots, q_{n-k}$ as elements of $\GF(2^t)$,
 	         evaluate the polynomial $Q(x) = \sum {q_i x^i}$ over $\GF(2^t)$ at points $1, 2, \dots, n$
 	         to get challenges for child $1, 2, \dots, n$, respectively.
 	         \item The algorithm with better resistance to timing attacks is as follows. Pick $n-k$ fresh uniformly random values $e_1, \dots, e_{n-k}$
@@ -641,33 +641,33 @@ Now the prover will compute protocol values for every node, as follows:
 	          lowest-degree polynomial $Q(x)=\sum_{i=0}^{n-k} a_i x^i $ over $\GF(2^t)$ that is equal to $e_j$ at $j$ for each $j$ from
 	          $0$ to $n-k$ (this polynomial will have $n-k+1$ coefficients, and the lowest coefficient will be $e_0$). Set the challenge at child
 	          $j$ for $n-k<j\le n$ to equal $Q(j)$.
- 	   \end{enumerate} 
+ 	   \end{enumerate}
         \end{itemize}
     \end{itemize}
-    
+
     \item For every leaf marked ``simulated'', use the simulator of the $\Sigma$-protocol for that leaf to compute the commitment $a$ and the response $z$, given the challenge $e$ that is already stored in the leaf.
-    
+
     \item \label{step:realcom} For every leaf marked ``real'', use the first prover step of the $\Sigma$-protocol for that leaf to compute the necessary randomness $r$ and the commitment $a$. In case of multiple provers responsible for different leaves, each prover individually computes the randomness $r$ for that leaf; the provers send their commitments $a$ to the main prover (note that the existence of this communication, if observed the adversary, will reveal to the adversary which leaves are real).
-    
+
     \item \label{step:fs}  Convert the tree to a string $s$ for input to the Fiat-Shamir hash function. The conversion should be such that the tree can be unambiguously parsed and restored given the string. For each non-leaf node, the string should contain its type ($\andnode$, $\ornode$, or $\tnode(k)$). For each leaf node, the string should contain the $\Sigma$-protocol statement being proven and the commitment. The string should not contain information on whether a node is marked ``real'' or ``simulated'', and should not contain challenges, responses, or the real/simulated flag for any node.
-    
-    \item Compute the challenge for the root of the tree as the Fiat-Shamir hash of $s$ (and, if applicable,  the associated data, such as the message being signed). 
-    
+
+    \item Compute the challenge for the root of the tree as the Fiat-Shamir hash of $s$ (and, if applicable,  the associated data, such as the message being signed).
+
     \item \label{step:response} Perform a top-down traversal of only the portion of the tree marked ``real'' in order to compute the challenge $e$ for every node marked ``real'' below the root and, additionally, the response $z$ for every leaf marked ``real'' (note that nodes marked ``simulated'' have all their descendants marked ``simulated'' and all the challenges for these descendants already computed, so there is no need to recurse down ``simulated'' nodes, unless timing attacks are a concern). For every node, do the following:
-    
+
     \begin{itemize}
         \item If the node is a non-leaf marked ``real'' whose challenge is $e_0$, proceed as follows:
-    
+
         \begin{itemize}
             \item If the node is $\andnode$, let each of its children have the challenge $e_0$
             \item If the node is $\ornode$, it has only one child marked ``real''. Let this child have the challenge equal to the XOR of the challenges of all the other children and $e_0$
             \item If the node is $\tnode(k)$, number its children from $1$ to $n$. Let $i_1, \dots, i_{n-k}$ be the indices of the children marked ``simulated'' and $e_1, \dots,  e_{n-k}$ be their corresponding challenges. Let $i_0 = 0$. Viewing $0, 1, 2, \dots, n$ and $e_0, \dots, e_{n-k}$ as elements of $\GF(2^t)$, find (via polynomial interpolation) the lowest-degree polynomial $Q(x)=\sum_{i=0}^{n-k} a_i x^i $ over $\GF(2^t)$ that is equal to $e_j$ at $i_j$ for each $j$ from $0$ to $n-k$ (this polynomial will have $n-k+1$ coefficients, and the lowest coefficient will be $e_0$). For child number $i$ of the node, if the child is marked ``real'', compute its challenge as $Q(i)$ (if the child is marked ``simulated", its challenge is already $Q(i)$, by construction of $Q$).
         \end{itemize}
-    
+
         \item If the node is a leaf marked ``real'', compute its response $z$ according to the second prover step of the $\Sigma$-protocol given the randomness $r$ used for the commitment $a$, the challenge $e$, and witness $w$. In case of multiple provers, the main prover will send the relevant challenges to other provers, who will respond with the relevant $z$. It is crucial for security that the provers do not respond to more than one challenge $e$ for a given commitment $a$. Again, like in Step \ref{step:realcom}, the mere existence of this communication reveals which leaves are real and which are simulated. Moreover, if the main prover chooses the challenge $e$ maliciously for another prover, the zero-knowledge property of the other prover's secret is not preserved (although, for most $\Sigma$-protocols, no useful information about the other prover's secret will be revealed for any, even maliciously chosen, $e$; but a malicious choice of $e$ may make side-channel attacks easier).
-        
+
     \end{itemize}
-    
+
     \item Output the proof consisting of the following information:
     \begin{itemize}
         \item The challenge of the root node
@@ -688,15 +688,15 @@ Note that, unlike the prover, the verifier has no way of knowing which nodes are
 The pseudocode below details the verifier's steps.
 
 \begin{enumerate}
-\item Read the root challenge from in the proof. 
+\item Read the root challenge from in the proof.
 
-\item In a top-down traversal of the tree, obtain the challenges for the children of every non-leaf node by reading them from the proof or computing them, as follows. Let $e_0$ be the challenge in the node. 
+\item In a top-down traversal of the tree, obtain the challenges for the children of every non-leaf node by reading them from the proof or computing them, as follows. Let $e_0$ be the challenge in the node.
         \begin{itemize}
             \item If the node is $\andnode$,  then all of its children get $e_0$ as the challenge
             \item If the node is $\ornode$, then each of its children except rightmost reads its challenge from the proof. The rightmost child gets a challenge computed as an XOR of the challenges of all the other children and $e_0$.
-            \item If the node is $\tnode(k)$, let the number of its children be $n$. Assume the children are numbered from $1$ to $n$. Let $q_0=e_0$ and read the values $q_1, \dots, q_{n-k}$ from the proof. Viewing $1, 2, \dots, n$ and $q_0, \dots, q_{n-k}$ as elements of $\GF(2^t)$, evaluate the polynomial $Q(x) = \sum {q_i x^i}$ over $\GF(2^t)$ at points $1, 2, \dots, n$ to get challenges for child $1, 2, \dots, n$, respectively. 
+            \item If the node is $\tnode(k)$, let the number of its children be $n$. Assume the children are numbered from $1$ to $n$. Let $q_0=e_0$ and read the values $q_1, \dots, q_{n-k}$ from the proof. Viewing $1, 2, \dots, n$ and $q_0, \dots, q_{n-k}$ as elements of $\GF(2^t)$, evaluate the polynomial $Q(x) = \sum {q_i x^i}$ over $\GF(2^t)$ at points $1, 2, \dots, n$ to get challenges for child $1, 2, \dots, n$, respectively.
         \end{itemize}
-        
+
  \item For every leaf node, read the response $z$ provided in the proof.
 
 \item For every leaf node, compute the commitment $a$ from the challenge $e$ and response $z$, per the verifier algorithm of the leaf's $\Sigma$-protocol. If the verifier algorithm of the $\Sigma$-protocol for any of the leaves rejects, then reject the entire proof.
@@ -740,11 +740,11 @@ By parsing a statement, interpreter first builds a tree from a formula. For the 
 If the tree is well-formed according to the typing rules, and also has complexity no more than an allowed limit, interpreter is going to rewrite it, in potentially many steps. For every step, the interpreter tries, going from bottom to top of the tree, to replace nodes which are ready to be transformed~(operands are in place, and the transformation itself is known). The next step is about the same transformations in the same bottom-top order to be done. The process finishes in one of the following cases:
 
 \begin{itemize}
-    \item{abort: } happens if transformation process by its complexity exceeds an upper bound. The complexity estimation works as follows. The interpreter remembers initial cumulative complexity $C_0$, and for each replacement in the tree it calculates cumulative complexity of a subtree to be inserted instead of a subtree to be removed $\Delta C$, and adds $\Delta C$ to current cumulative complexity $C$, where $C = C_0$ initially.  
-    \item{success: } we finish with this status if during last step there are no any transformations done.  
-\end{itemize} 
+    \item{abort: } happens if transformation process by its complexity exceeds an upper bound. The complexity estimation works as follows. The interpreter remembers initial cumulative complexity $C_0$, and for each replacement in the tree it calculates cumulative complexity of a subtree to be inserted instead of a subtree to be removed $\Delta C$, and adds $\Delta C$ to current cumulative complexity $C$, where $C = C_0$ initially.
+    \item{success: } we finish with this status if during last step there are no any transformations done.
+\end{itemize}
 
-If the transformations are finishing with abortion, the result is considered as $false$ (we recall that the interpreter is giving a single boolean result finally, whether an output could be spent or not). Otherwise, if the tree could not be transformed anymore the interpreter is looking into it. If the tree is about just a single node which contains boolean constant value~($true$ or $false$), the value is the result of the interpretation. If the tree contains statements not provable via $\Sigma$-protocols, the interpreter finishes with $false$. Otherwise, if the tree contains only statements provable via $\Sigma$-protocols, the interpreter is continuing to work, and here execution is different for the prover and the verifier. The prover is generating a proof for the statement by using its secrets, as described in Section~\ref{sec:proving}, and the verifier checks the statement against the proof~(provided in a spending transaction), as described in Section~\ref{sec:verifying}. The verifier outputs $true$ if the proof is valid for the statement, $false$ otherwise. We are skipping for now the question how Fiat-Shamir transformation works in our setting, and how a message, which is used in a non-interactive protocol is formed; details are given further in Appendix~\ref{apx:tx-format}. 
+If the transformations are finishing with abortion, the result is considered as $false$ (we recall that the interpreter is giving a single boolean result finally, whether an output could be spent or not). Otherwise, if the tree could not be transformed anymore the interpreter is looking into it. If the tree is about just a single node which contains boolean constant value~($true$ or $false$), the value is the result of the interpretation. If the tree contains statements not provable via $\Sigma$-protocols, the interpreter finishes with $false$. Otherwise, if the tree contains only statements provable via $\Sigma$-protocols, the interpreter is continuing to work, and here execution is different for the prover and the verifier. The prover is generating a proof for the statement by using its secrets, as described in Section~\ref{sec:proving}, and the verifier checks the statement against the proof~(provided in a spending transaction), as described in Section~\ref{sec:verifying}. The verifier outputs $true$ if the proof is valid for the statement, $false$ otherwise. We are skipping for now the question how Fiat-Shamir transformation works in our setting, and how a message, which is used in a non-interactive protocol is formed; details are given further in Appendix~\ref{apx:tx-format}.
 
 
 
@@ -754,28 +754,28 @@ If the transformations are finishing with abortion, the result is considered as 
 
 A trusted weather station is publishing temperature data on blockchain. Alice and Bob are making a contract based on the data:
 they have locked coins in such way that if output from the station shows that temperature announced by the oracle is > 15 degrees, money are going to Alice, otherwise to Bob.
-    
+
 We consider that for validating transaction only limited number of last headers and the spending transaction should be enough, in addition to outputs being spent by the transaction. Thus there is no need for knowledge of an arbitrary output. To show the coin of the weather service in the spending transaction, outputs from Alice and Bob are referencing to the coin by using Merkle proofs against UTXO set root hash of the latest known block.
-    
+
 A tricky moment is how Alice and Bob can be sure that a coin is indeed created by the service, having just the coin (and also service's public key x = $g^w$, where service's secret w is not known.
-    
+
 For that, we consider that the service creates a coin with registers of following semantics (R0 and R1 are standard):
-    
+
 R1 - coin amount
 R2 - protecting script, which is the pubkey of the service, $x = g^w$
 R3 - temperature data, number
 R4 - $a = g^r$, where r is secret random nonce
 R5 - $z = r + ew mod q$
 R6 - timestamp
-    
+
 Then Alice and Bob are requiring from the coin that the following equation holds: $g^z = a * x^e$, where $e = hash(R3 ++ R6)$
-    
+
 Thus Alice, for example, is created a coin with the following statement (we skip timeouts for simplicity):
 "the coin is spendable by presenting a proof of Alice's private key knowledge if against UTXO set root hash for
 the last known block there is a coin along with a Merkle proof, for which following requirements hold:
 $R2 = dlog(x) /\ g^(R5) = R4 * x^(hash(R3 ++ R6)) /\ (R3) > 15$. Similarly, the coin is spendable by a proof of
 knowledge of the Bob's private key if all the same conditions are met but $(R3) <= 15$.".
-    
+
 The Bob can create a box with the same guarding conditions. However, if Alice's box is already in the state, then Bob can stick to it by using the trick from the "along with a brother" test.
 
 \section{Open Questions}

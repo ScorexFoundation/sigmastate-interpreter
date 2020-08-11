@@ -4,24 +4,23 @@ import java.math.BigInteger
 
 import scalan.{ExactNumeric, ExactIntegral, ExactOrderingImpl}
 
-import scala.math.{LowPriorityOrderingImplicits, Integral, Ordering}
+import scala.math.{Integral, Ordering}
 import special.sigma._
-import scalan.util.Extensions._
 import sigmastate.eval.Extensions._
-import sigmastate.eval.NumericOps.BigIntIsExactNumeric.n
+import special.collection.Coll
 
-object OrderingOps extends LowPriorityOrderingImplicits {
+object OrderingOps {
   def apply[T](implicit ord: Ordering[T]) = ord
 
   trait BigIntegerOrdering extends Ordering[BigInteger] {
     def compare(x: BigInteger, y: BigInteger) = x.compareTo(y)
   }
-  implicit object BigInteger extends BigIntegerOrdering
+  implicit object BigIntegerOrdering extends BigIntegerOrdering
 
   trait BigIntOrdering extends Ordering[BigInt] {
     def compare(x: BigInt, y: BigInt) = x.compareTo(y)
   }
-  implicit object BigInt extends BigIntOrdering
+  implicit object BigIntOrdering extends BigIntOrdering
 }
 
 object NumericOps {

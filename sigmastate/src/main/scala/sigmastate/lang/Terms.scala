@@ -105,6 +105,7 @@ object Terms {
     def apply(name: String): Ident = Ident(name, NoType)
   }
 
+  // TODO HF: move to sigmastate.Values
   case class Apply(func: Value[SType], args: IndexedSeq[Value[SType]]) extends Value[SType] {
     override def companion = Apply
     override lazy val tpe: SType = func.tpe match {
@@ -173,6 +174,17 @@ object Terms {
   }
   object MethodCall extends ValueCompanion {
     override def opCode: OpCode = OpCodes.MethodCallCode
+
+    /** Helper constructor which allows to cast the resulting node to the specified
+      * [[sigmastate.Values.Value]] type `T`.
+      * @see [[sigmastate.lang.Terms.MethodCall]]
+      */
+    def typed[T <: SValue](obj: Value[SType],
+                           method: SMethod,
+                           args: IndexedSeq[Value[SType]],
+                           typeSubst: Map[STypeVar, SType]): T = {
+      MethodCall(obj, method, args, typeSubst).asInstanceOf[T]
+    }
   }
   object PropertyCall extends ValueCompanion {
     override def opCode: OpCode = OpCodes.PropertyCallCode

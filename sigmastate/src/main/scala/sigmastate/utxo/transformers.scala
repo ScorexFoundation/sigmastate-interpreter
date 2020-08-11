@@ -145,6 +145,9 @@ case class SelectField(input: Value[STuple], fieldIndex: Byte)
 }
 object SelectField extends ValueCompanion {
   override def opCode: OpCode = OpCodes.SelectFieldCode
+  def typed[T <: SValue](input: Value[STuple], fieldIndex: Byte): T = {
+    SelectField(input, fieldIndex).asInstanceOf[T]
+  }
 }
 
 /** Represents execution of Sigma protocol that validates the given input SigmaProp. */

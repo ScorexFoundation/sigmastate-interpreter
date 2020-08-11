@@ -3,18 +3,19 @@ package sigmastate.interpreter
 import java.util
 import java.lang.{Math => JMath}
 
-import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{strategy, rule, everywherebu}
+import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, rule, strategy}
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
-import sigmastate.basics.DLogProtocol.{FirstDLogProverMessage, DLogInteractiveProver}
+import org.ergoplatform.validation.SigmaValidationSettings
+import sigmastate.basics.DLogProtocol.{DLogInteractiveProver, FirstDLogProverMessage}
 import scorex.util.ScorexLogging
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate.eval.{IRContext, Sized}
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.basics._
-import sigmastate.interpreter.Interpreter.{VerificationResult, ScriptEnv}
-import sigmastate.lang.exceptions.{InterpreterException, CostLimitException}
-import sigmastate.serialization.{ValueSerializer, SigmaSerializer}
+import sigmastate.interpreter.Interpreter.{ScriptEnv, VerificationResult}
+import sigmastate.lang.exceptions.{CostLimitException, InterpreterException}
+import sigmastate.serialization.{SigmaSerializer, ValueSerializer}
 import sigmastate.utxo.DeserializeContext
 import sigmastate.{SType, _}
 import org.ergoplatform.validation.ValidationRules._
@@ -85,6 +86,22 @@ trait Interpreter extends ScorexLogging {
 
   class MutableCell[T](var value: T)
 
+  /** Extracts proposition for ErgoTree handing soft-fork condition.
+    * @note soft-fork handler */
+  def propositionFromErgoTree(ergoTree: ErgoTree, context: CTX): SigmaPropValue = {
+    val validationSettings = context.validationSettings
+    val prop = ergoTree.root match {
+      case Right(_) =>
+        ergoTree.toProposition(ergoTree.isConstantSegregation)
+      case Left(UnparsedErgoTree(_, error)) if validationSettings.isSoftFork(error) =>
+        TrueSigmaProp
+      case Left(UnparsedErgoTree(_, error)) =>
+        throw new InterpreterException(
+          "Script has not been recognized due to ValidationException, and it cannot be accepted as soft-fork.", None, Some(error))
+    }
+    prop
+  }
+
   /** Substitute Deserialize* nodes with deserialized subtrees
     * We can estimate cost of the tree evaluation only after this step.*/
   def applyDeserializeContext(context: CTX, exp: Value[SType]): (BoolValue, CTX) = {
@@ -99,7 +116,7 @@ trait Interpreter extends ScorexLogging {
 
   def checkCost(context: CTX, exp: Value[SType], costF: Ref[((Int, IR.Size[IR.Context])) => Int]): Int = {
     import IR.Size._
-    import IR.Context._;
+    import IR.Context._
     val costingCtx = context.toSigmaContext(IR, isCost = true)
     val maxCost = context.costLimit
     val costFun = IR.compile[(Int, SSize[SContext]), Int, (Int, Size[Context]), Int](IR.getDataEnv, costF, Some(maxCost))
@@ -127,7 +144,7 @@ trait Interpreter extends ScorexLogging {
     res
   }
 
-  /** This method is used in both prover and verifier to compute SigmaProp value.
+  /** This method is used in both prover and verifier to compute SigmaBoolean value.
     * As the first step the cost of computing the `exp` expression in the given context is estimated.
     * If cost is above limit
     *   then exception is returned and `exp` is not executed
@@ -168,19 +185,34 @@ trait Interpreter extends ScorexLogging {
   def reduceToCrypto(context: CTX, exp: Value[SType]): Try[ReductionResult] =
     reduceToCrypto(context, Interpreter.emptyEnv, exp)
 
-  /** Extracts proposition for ErgoTree handing soft-fork condition.
-    * @note soft-fork handler */
-  def propositionFromErgoTree(tree: ErgoTree, ctx: CTX): SigmaPropValue = {
-    val prop = tree.root match {
-      case Right(_) =>
-        tree.toProposition(tree.isConstantSegregation)
-      case Left(UnparsedErgoTree(_, error)) if ctx.validationSettings.isSoftFork(error) =>
-        TrueSigmaProp
-      case Left(UnparsedErgoTree(_, error)) =>
-        throw new InterpreterException(
-          "Script has not been recognized due to ValidationException, and it cannot be accepted as soft-fork.", None, Some(error))
+
+  /**
+    * Full reduction of initial expression given in the ErgoTree form to a SigmaBoolean value
+    * (which encodes whether a sigma-protocol proposition or a boolean value, so true or false).
+    *
+    * Works as follows:
+    * 1) parse ErgoTree instance into a typed AST
+    * 2) go bottom-up the tree to replace DeserializeContext nodes only
+    * 3) estimate cost and reduce the AST to a SigmaBoolean instance (so sigma-tree or trivial boolean value)
+    *
+    *
+    * @param ergoTree - input ErgoTree expression to reduce
+    * @param context - context used in reduction
+    * @param env - script environment
+    * @return sigma boolean and the updated cost counter after reduction
+    */
+  def fullReduction(ergoTree: ErgoTree,
+                    context: CTX,
+                    env: ScriptEnv): (SigmaBoolean, Long) = {
+    implicit val vs: SigmaValidationSettings = context.validationSettings
+    val prop = propositionFromErgoTree(ergoTree, context)
+    val (propTree, context2) = trySoftForkable[(BoolValue, CTX)](whenSoftFork = (TrueLeaf, context)) {
+      applyDeserializeContext(context, prop)
     }
-    prop
+
+    // here we assume that when `propTree` is TrueProp then `reduceToCrypto` always succeeds
+    // and the rest of the verification is also trivial
+    reduceToCrypto(context2, env, propTree).getOrThrow
   }
 
   /** Executes the script in a given context.
@@ -189,41 +221,34 @@ trait Interpreter extends ScorexLogging {
     * Step 3: Verify that the proof is presented to satisfy SigmaProp conditions.
     *
     * @param env       environment of system variables used by the interpreter internally
-    * @param tree      ErgoTree to execute in the given context and verify its result
+    * @param ergoTree       ErgoTree expression to execute in the given context and verify its result
     * @param context   the context in which `exp` should be executed
     * @param proof     The proof of knowledge of the secrets which is expected by the resulting SigmaProp
     * @param message   message bytes, which are used in verification of the proof
     *
     * @return          verification result or Exception.
-    *                   If if the estimated cost of execution of the `tree` exceeds the limit (given in `context`),
+    *                   If if the estimated cost of execution of the `exp` exceeds the limit (given in `context`),
     *                   then exception if thrown and packed in Try.
     *                   If left component is false, then:
     *                    1) script executed to false or
-    *                    2) the given proof faild to validate resulting SigmaProp conditions.
+    *                    2) the given proof failed to validate resulting SigmaProp conditions.
     * @see `reduceToCrypto`
     */
-  def verify(env: ScriptEnv, tree: ErgoTree,
+  def verify(env: ScriptEnv,
+             ergoTree: ErgoTree,
              context: CTX,
              proof: Array[Byte],
              message: Array[Byte]): Try[VerificationResult] = {
     val (res, t) = BenchmarkUtil.measureTime(Try {
 
-      val initCost = JMath.addExact(tree.complexity.toLong, context.initCost)
+      val initCost = JMath.addExact(ergoTree.complexity.toLong, context.initCost)
       val remainingLimit = context.costLimit - initCost
       if (remainingLimit <= 0)
         throw new CostLimitException(initCost, msgCostLimitError(initCost, context.costLimit), None)
 
-      val context1 = context.withInitCost(initCost).asInstanceOf[CTX]
-      val prop = propositionFromErgoTree(tree, context1)
+      val contextWithCost = context.withInitCost(initCost).asInstanceOf[CTX]
 
-      implicit val vs = context1.validationSettings
-      val (propTree, context2) = trySoftForkable[(BoolValue, CTX)](whenSoftFork = (TrueLeaf, context1)) {
-        applyDeserializeContext(context1, prop)
-      }
-
-      // here we assume that when `propTree` is TrueProp then `reduceToCrypto` always succeeds
-      // and the rest of the verification is also trivial
-      val (cProp, cost) = reduceToCrypto(context2, env, propTree).getOrThrow
+      val (cProp, cost) = fullReduction(ergoTree, contextWithCost, env)
 
       val checkingResult = cProp match {
         case TrivialProp.TrueProp => true
@@ -285,29 +310,29 @@ trait Interpreter extends ScorexLogging {
     case _ => ???
   })
 
-  def verify(exp: ErgoTree,
+  def verify(ergoTree: ErgoTree,
              context: CTX,
              proverResult: ProverResult,
              message: Array[Byte]): Try[VerificationResult] = {
     val ctxv = context.withExtension(proverResult.extension).asInstanceOf[CTX]
-    verify(Interpreter.emptyEnv, exp, ctxv, proverResult.proof, message)
+    verify(Interpreter.emptyEnv, ergoTree, ctxv, proverResult.proof, message)
   }
 
   def verify(env: ScriptEnv,
-             exp: ErgoTree,
+             ergoTree: ErgoTree,
              context: CTX,
              proverResult: ProverResult,
              message: Array[Byte]): Try[VerificationResult] = {
     val ctxv = context.withExtension(proverResult.extension).asInstanceOf[CTX]
-    verify(env, exp, ctxv, proverResult.proof, message)
+    verify(env, ergoTree, ctxv, proverResult.proof, message)
   }
 
 
-  def verify(exp: ErgoTree,
+  def verify(ergoTree: ErgoTree,
              context: CTX,
              proof: ProofT,
              message: Array[Byte]): Try[VerificationResult] = {
-    verify(Interpreter.emptyEnv, exp, context, SigSerializer.toBytes(proof), message)
+    verify(Interpreter.emptyEnv, ergoTree, context, SigSerializer.toBytes(proof), message)
   }
 
 }
