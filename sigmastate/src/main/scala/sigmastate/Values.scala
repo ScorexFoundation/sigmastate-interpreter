@@ -595,7 +595,7 @@ object Values {
           case FalseProp.opCode => FalseProp
           case TrueProp.opCode  => TrueProp
           case ProveDlogCode => dlogSerializer.parse(r)
-          case ProveDHTupleCode => dhtSerializer.parse(r)
+          case ProveDiffieHellmanTupleCode => dhtSerializer.parse(r)
           case AndCode =>
             val n = r.getUShort()
             val children = new Array[SigmaBoolean](n)

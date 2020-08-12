@@ -21,7 +21,7 @@ object SigSerializer {
     def traverseNode(node: UncheckedSigmaTree,
                      acc: Array[Byte],
                      writeChallenge: Boolean = true): Array[Byte] = {
-      val parentChal = (if (writeChallenge) node.challenge else Array.emptyByteArray)
+      val parentChal = if (writeChallenge) node.challenge else Array.emptyByteArray
       node match {
         case dl: UncheckedSchnorr =>
           acc ++

@@ -5,6 +5,7 @@ import java.math.BigInteger
 import org.bouncycastle.util.BigIntegers
 import sigmastate.Values._
 import Value.PropositionCode
+import scorex.util.encode.Base16
 import sigmastate._
 import sigmastate.eval._
 import sigmastate.basics.VerifierMessage.Challenge
@@ -23,7 +24,8 @@ object DLogProtocol {
 
   /** Construct a new SigmaBoolean value representing public key of discrete logarithm signature protocol. */
   case class ProveDlog(value: EcPointType)
-    extends SigmaProofOfKnowledgeTree[DLogSigmaProtocol, DLogProverInput] {
+    extends SigmaProofOfKnowledgeLeaf[DLogSigmaProtocol, DLogProverInput] {
+
     override val opCode: OpCode = OpCodes.ProveDlogCode
     lazy val h: EcPointType = value
     lazy val pkBytes: Array[Byte] = GroupElementSerializer.toBytes(h)
@@ -64,14 +66,17 @@ object DLogProtocol {
     }
   }
 
-  case class FirstDLogProverMessage(ecData: EcPointType) extends FirstProverMessage[DLogSigmaProtocol] {
+  case class FirstDLogProverMessage(ecData: EcPointType) extends FirstProverMessage {
+    override type SP = DLogSigmaProtocol
     override def bytes: Array[Byte] = {
       GroupElementSerializer.toBytes(ecData)
     }
+
+    override def toString: Idn = s"FirstDLogProverMessage(${Base16.encode(bytes)})"
   }
 
-  case class SecondDLogProverMessage(z: BigInt) extends SecondProverMessage[DLogSigmaProtocol] {
-    override def bytes: Array[Byte] = z.toByteArray
+  case class SecondDLogProverMessage(z: BigInt) extends SecondProverMessage {
+    override type SP = DLogSigmaProtocol
   }
 
   class DLogInteractiveProver(override val publicInput: ProveDlog, override val privateInputOpt: Option[DLogProverInput])
@@ -83,7 +88,7 @@ object DLogProtocol {
       assert(privateInputOpt.isDefined, "Secret is not known")
       assert(rOpt.isEmpty, "Already generated r")
 
-      val (r, fm) = DLogInteractiveProver.firstMessage(publicInput)
+      val (r, fm) = DLogInteractiveProver.firstMessage()
       rOpt = Some(r)
       fm
     }
@@ -110,7 +115,7 @@ object DLogProtocol {
   object DLogInteractiveProver {
     import CryptoConstants.secureRandom
 
-    def firstMessage(publicInput: ProveDlog): (BigInteger, FirstDLogProverMessage) = {
+    def firstMessage(): (BigInteger, FirstDLogProverMessage) = {
       import CryptoConstants.dlogGroup
 
       val qMinusOne = dlogGroup.order.subtract(BigInteger.ONE)
@@ -164,7 +169,7 @@ object DLogProtocol {
 
       dlogGroup.multiplyGroupElements(
         dlogGroup.exponentiate(g, secondMessage.z.underlying()),
-        dlogGroup.getInverse(dlogGroup.exponentiate(h, new BigInteger(1, challenge))))
+        dlogGroup.inverseOf(dlogGroup.exponentiate(h, new BigInteger(1, challenge))))
     }
   }
 
