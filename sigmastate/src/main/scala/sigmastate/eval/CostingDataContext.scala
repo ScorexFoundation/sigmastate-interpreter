@@ -4,7 +4,6 @@ import java.math.BigInteger
 import java.util
 
 import org.bouncycastle.math.ec.ECPoint
-import org.ergoplatform.settings.ErgoAlgos
 import org.ergoplatform.{ErgoBox, SigmaConstants}
 import org.ergoplatform.validation.ValidationRules
 import scorex.crypto.authds.avltree.batch._
@@ -277,7 +276,7 @@ case class CostingBox(isCost: Boolean, val ebox: ErgoBox) extends Box with Wrapp
   override def wrappedValue: ErgoBox = ebox
 
   override def getReg[T](i: Int)(implicit tT: RType[T]): Option[T] =
-    if (isCost) {
+    if (isCost) {  // TODO refactor: remove isCost branch
       val optV =
         if (i < 0 || i >= registers.length) None
         else {
@@ -339,8 +338,6 @@ case class CostingBox(isCost: Boolean, val ebox: ErgoBox) extends Box with Wrapp
 object CostingBox {
 
   import Evaluation._
-
-  def colBytes(b: Array[Byte])(implicit IR: Evaluation): Coll[Byte] = IR.sigmaDslBuilderValue.Colls.fromArray(b)
 
   def regs(ebox: ErgoBox, isCost: Boolean): Coll[AnyValue] = {
     val res = new Array[AnyValue](ErgoBox.maxRegisters)

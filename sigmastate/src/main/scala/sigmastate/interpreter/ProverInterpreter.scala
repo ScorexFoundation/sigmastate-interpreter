@@ -445,7 +445,7 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
               su.challengeOpt.get)
           }
 
-        case None =>
+        case _ =>
           hintsBag.realProofs.find(_.image == su.proposition).map { proof =>
             val provenSchnorr = proof.uncheckedTree.asInstanceOf[UncheckedSchnorr]
             provenSchnorr.secondMessage
