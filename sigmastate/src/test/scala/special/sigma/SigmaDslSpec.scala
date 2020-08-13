@@ -4003,7 +4003,9 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
               )
             )
           )
-        )
+        ),
+        Colls.replicate[SigmaProp](AtLeast.MaxChildrenCount + 1, CSigmaProp(TrivialProp.TrueProp)) ->
+          Failure(new IllegalArgumentException("Expected input elements count should not exceed 255, actual: 256"))
       ),
       existingFeature((x: Coll[SigmaProp]) => SigmaDsl.atLeast(x.size - 1, x),
         "{ (x: Coll[SigmaProp]) => atLeast(x.size - 1, x) }",
@@ -4247,6 +4249,53 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
             ValUse(1, SGroupElement),
             ValUse(1, SGroupElement),
             ValUse(1, SGroupElement)
+          )
+        )))
+  }
+
+  property("substConstants equivalence") {
+    // tree without constant segregation
+    val t1 = ErgoTree(ErgoTree.DefaultHeader, Vector(), TrueSigmaProp)
+    // tree with constant segregation, but without constants
+    val t2 = ErgoTree(ErgoTree.ConstantSegregationHeader, Vector(), TrueSigmaProp)
+    // tree with one segregated constant
+    val t3 = ErgoTree(ErgoTree.ConstantSegregationHeader, Vector(TrueSigmaProp), ConstantPlaceholder(0, SSigmaProp))
+    // tree with one segregated constant of different type
+    val t4 = ErgoTree(
+      ErgoTree.ConstantSegregationHeader,
+      Vector(IntConstant(10)),
+      BoolToSigmaProp(EQ(ConstantPlaceholder(0, SInt), IntConstant(20))))
+    testCases(
+      Seq(
+        (Helpers.decodeBytes(""), 0) -> Failure(new java.nio.BufferUnderflowException()),
+
+        // TODO HF: fix for trees without segregation flag
+        // NOTE: constants count is serialized erroneously in the following 2 cases
+        (Coll(t1.bytes:_*), 0) -> Success(Helpers.decodeBytes("000008d3")),
+        (Helpers.decodeBytes("000008d3"), 0) -> Success(Helpers.decodeBytes("00000008d3")),
+        // tree with segregation flag, empty constants array
+        (Coll(t2.bytes:_*), 0) -> Success(Helpers.decodeBytes("100008d3")),
+        (Helpers.decodeBytes("100008d3"), 0) -> Success(Helpers.decodeBytes("100008d3")),
+        // tree with one segregated constant
+        (Coll(t3.bytes:_*), 0) -> Success(Helpers.decodeBytes("100108d27300")),
+        (Helpers.decodeBytes("100108d37300"), 0) -> Success(Helpers.decodeBytes("100108d27300")),
+        (Coll(t3.bytes:_*), 1) -> Success(Helpers.decodeBytes("100108d37300")),
+        (Coll(t4.bytes:_*), 0) -> Failure(new AssertionError("assertion failed: expected new constant to have the same SInt$ tpe, got SSigmaProp"))
+      ),
+      existingFeature(
+        { (x: (Coll[Byte], Int)) =>
+          SigmaDsl.substConstants(x._1, Coll[Int](x._2), Coll[Any](SigmaDsl.sigmaProp(false))(RType.AnyType))(RType.AnyType)
+        },
+        "{ (x: (Coll[Byte], Int)) => substConstants[Any](x._1, Coll[Int](x._2), Coll[Any](sigmaProp(false))) }",
+        FuncValue(
+          Vector((1, SPair(SByteArray, SInt))),
+          SubstConstants(
+            SelectField.typed[Value[SCollection[SByte.type]]](ValUse(1, SPair(SByteArray, SInt)), 1.toByte),
+            ConcreteCollection(
+              Array(SelectField.typed[Value[SInt.type]](ValUse(1, SPair(SByteArray, SInt)), 2.toByte)),
+              SInt
+            ),
+            ConcreteCollection(Array(BoolToSigmaProp(FalseLeaf)), SSigmaProp)
           )
         )))
   }

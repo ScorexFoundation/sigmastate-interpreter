@@ -83,6 +83,8 @@ object SigmaPPrint extends PPrinter {
   private val exceptionHandlers: PartialFunction[Any, Tree] = {
     case ex: Exception =>
       Tree.Apply(s"new ${ex.getClass.getSimpleName}", treeifySeq(Seq(ex.getMessage)))
+    case ex: Error =>
+      Tree.Apply(s"new ${ex.getClass.getSimpleName}", treeifySeq(Seq(ex.getMessage)))
   }
 
   /** Generated Scala code which creates the given byte array from a hex string literal. */
@@ -187,6 +189,12 @@ object SigmaPPrint extends PPrinter {
 
     case ConstantNode(v, SCollectionType(elemType)) if elemType.isInstanceOf[SPredefType] =>
       Tree.Apply(tpeName(elemType) + "ArrayConstant", treeifySeq(Seq(v)))
+
+    case ConstantNode(true, SBoolean) =>
+      Tree.Literal("TrueLeaf")
+
+    case ConstantNode(false, SBoolean) =>
+      Tree.Literal("FalseLeaf")
 
     case c: ConstantNode[_] if c.tpe.isInstanceOf[SPredefType] =>
       Tree.Apply(tpeName(c.tpe) + "Constant", treeifySeq(Seq(c.value)))

@@ -661,6 +661,7 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
             In(input: special.collection.Coll[Byte]@unchecked),
             In(positions: special.collection.Coll[Int]@unchecked),
             In(newVals: special.collection.Coll[Any]@unchecked), _) =>
+            // TODO refactor: call sigmaDslBuilderValue.substConstants
             val typedNewVals = newVals.toArray.map(v => builder.liftAny(v) match {
               case Nullable(v) => v
               case _ => sys.error(s"Cannot evaluate substConstants($input, $positions, $newVals): cannot lift value $v")

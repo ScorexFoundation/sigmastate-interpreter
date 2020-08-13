@@ -147,6 +147,8 @@ class SigmaPPrintSpec extends SigmaDslTesting {
       SelectField.typed[Value[SByte.type]](ValUse(1, STuple(Vector(SByte, SByte))), 1.toByte),
       "SelectField.typed[Value[SByte.type]](ValUse(1, SPair(SByte, SByte)), 1.toByte)"
     )
+    test(TrueLeaf, "TrueLeaf")
+    test(FalseLeaf, "FalseLeaf")
     test(IntConstant(10), "IntConstant(10)")
     test(ArithOp(IntConstant(1), IntConstant(1), OpCodes.PlusCode), "ArithOp(IntConstant(1), IntConstant(1), OpCode @@ (-102.toByte))")
     test(
