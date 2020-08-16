@@ -2737,6 +2737,8 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
       vars = Coll[AnyValue](null, TestValue(Helpers.decodeBytes("00"), CollType(RType.ByteType)), TestValue(true, RType.BooleanType)),
       false
     )
+    val ctx2 = ctx.copy(vars = Coll[AnyValue](null, null, null))
+    val ctx3 = ctx.copy(vars = Coll[AnyValue]())
 
     test(samples, existingPropTest("dataInputs", { (x: Context) => x.dataInputs }))
 
@@ -2911,6 +2913,17 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
       )))
 
     test(samples, existingPropTest("minerPubKey", { (x: Context) => x.minerPubKey }))
+
+    testCases(
+      Seq(
+        ctx -> Success(Some(true)),
+        ctx2 -> Success(None),
+        ctx3 -> Success(None)
+      ),
+      existingFeature((x: Context) => x.getVar[Boolean](2),
+      "{ (x: Context) => getVar[Boolean](2) }",
+        FuncValue(Vector((1, SContext)), GetVar(2.toByte, SOption(SBoolean)))),
+      preGeneratedSamples = Some(samples))
 
     testCases(
       Seq((ctx, Failure(new InvalidType("Cannot getVar[Int](2): invalid type of value Value(true) at id=2")))),
