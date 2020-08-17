@@ -235,7 +235,7 @@ trait CostingRules extends SigmaLibrary { IR: IRContext =>
     costedBuilder.mkSizeColl(sizes)
   }
 
-  def mkSizeColl[T](len: Ref[Int], sItem: RSize[T]): Ref[Size[Coll[T]]] = {
+  def mkSizeColl[T](len: Ref[Int], sItem: RSize[T]): Ref[Size[Coll[T]]] = { // TODO remove not used
     val sizes = colBuilder.replicate(len, sItem)
     costedBuilder.mkSizeColl(sizes)
   }
@@ -443,12 +443,6 @@ trait CostingRules extends SigmaLibrary { IR: IRContext =>
 
     def minerPubKey: RCostedColl[Byte] =
       knownLengthCollPropertyAccess(_.minerPubKey, EncodedGroupElementInfo)
-
-    def getVar[T](id: RCosted[Byte])(implicit tT: Ref[WRType[T]]): RCostedOption[T] = { ???
-//      defaultOptionPropertyAccess(_.getVar(id.value)(tT.eA), asSizeContext(_).reg)
-//      val opt = ctx.getVar(id)(cT)
-//      dsl.costOption(opt, dsl.CostModel.GetVar)
-    }
 
     def selfBoxIndex: RCosted[Int] = constantSizePropertyAccess(_.selfBoxIndex)
 

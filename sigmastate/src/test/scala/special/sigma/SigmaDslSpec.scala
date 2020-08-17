@@ -1,5 +1,6 @@
 package special.sigma
 
+import java.lang.reflect.InvocationTargetException
 import java.math.BigInteger
 
 import org.ergoplatform.ErgoScriptPredef.TrueProp
@@ -3336,6 +3337,61 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
     arr <- collGen[Int]
     l <- Gen.choose(0, arr.length - 1)
     r <- Gen.choose(l, arr.length - 1) } yield (arr, (l, r))
+
+  property("Coll flatMap method equivalence") {
+    testCases(
+      Seq(
+        Coll[GroupElement]() -> Success(Coll[Byte]()),
+        Coll[GroupElement](
+          Helpers.decodeGroupElement("02d65904820f8330218cf7318b3810d0c9ab9df86f1ee6100882683f23c0aee587"),
+          Helpers.decodeGroupElement("0390e9daa9916f30d0bc61a8e381c6005edfb7938aee5bb4fc9e8a759c7748ffaa")) ->
+            Success(Helpers.decodeBytes(
+              "02d65904820f8330218cf7318b3810d0c9ab9df86f1ee6100882683f23c0aee5870390e9daa9916f30d0bc61a8e381c6005edfb7938aee5bb4fc9e8a759c7748ffaa"
+            )),
+        Coll[GroupElement](
+          Helpers.decodeGroupElement("02d65904820f8330218cf7318b3810d0c9ab9df86f1ee6100882683f23c0aee587"),
+          Helpers.decodeGroupElement("0390e9daa9916f30d0bc61a8e381c6005edfb7938aee5bb4fc9e8a759c7748ffaa"),
+          Helpers.decodeGroupElement("03bd839b969b02d218fd1192f2c80cbda9c6ce9c7ddb765f31b748f4666203df85")) ->
+            Success(Helpers.decodeBytes(
+              "02d65904820f8330218cf7318b3810d0c9ab9df86f1ee6100882683f23c0aee5870390e9daa9916f30d0bc61a8e381c6005edfb7938aee5bb4fc9e8a759c7748ffaa03bd839b969b02d218fd1192f2c80cbda9c6ce9c7ddb765f31b748f4666203df85"
+            ))
+      ),
+      existingFeature(
+        { (x: Coll[GroupElement]) => x.flatMap({ (b: GroupElement) => b.getEncoded }) },
+        "{ (x: Coll[GroupElement]) => x.flatMap({ (b: GroupElement) => b.getEncoded }) }",
+        FuncValue(
+          Vector((1, SCollectionType(SGroupElement))),
+          MethodCall.typed[Value[SCollection[SByte.type]]](
+            ValUse(1, SCollectionType(SGroupElement)),
+            SCollection.getMethodByName("flatMap").withConcreteTypes(
+              Map(STypeVar("IV") -> SGroupElement, STypeVar("OV") -> SByte)
+            ),
+            Vector(
+              FuncValue(
+                Vector((3, SGroupElement)),
+                MethodCall.typed[Value[SCollection[SByte.type]]](
+                  ValUse(3, SGroupElement),
+                  SGroupElement.getMethodByName("getEncoded"),
+                  Vector(),
+                  Map()
+                )
+              )
+            ),
+            Map()
+          )
+        )))
+
+    val f = existingFeature(
+      { (x: Coll[GroupElement]) => x.flatMap({ (b: GroupElement) => b.getEncoded.append(b.getEncoded) }) },
+      "{ (x: Coll[GroupElement]) => x.flatMap({ (b: GroupElement) => b.getEncoded.append(b.getEncoded) }) }" )
+    assertExceptionThrown(
+      f.oldF,
+      t => t match {
+        case e: InvocationTargetException =>
+          e.getTargetException.getMessage.contains("Unsupported lambda in flatMap")
+      }
+    )
+  }
 
   property("Coll patch method equivalence") {
     val samples = genSamples(collWithRangeGen, MinSuccessful(50))
