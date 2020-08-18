@@ -205,17 +205,7 @@ trait TreeBuilding extends RuntimeCosting { IR: IRContext =>
         mkPlusModQ(l.asBigInt, r.asBigInt)
       case BIM.minusModQ(In(l), In(r)) =>
         mkMinusModQ(l.asBigInt, r.asBigInt)
-      case Def(ApplyBinOp(IsArithOp(opCode), xSym, ySym)) =>
-        val Seq(x, y) = Seq(xSym, ySym).map(recurse)
-        mkArith(x.asNumValue, y.asNumValue, opCode)
-      case Def(ApplyBinOp(IsRelationOp(mkNode), xSym, ySym)) =>
-        val Seq(x, y) = Seq(xSym, ySym).map(recurse)
-        mkNode(x, y)
-      case Def(ApplyBinOpLazy(IsLogicalBinOp(mkNode), xSym, ySym)) =>
-        val Seq(x, y) = Seq(xSym, ySym).map(recurse)
-        mkNode(x, y)
-      case Def(ApplyUnOp(IsLogicalUnOp(mkNode), xSym)) =>
-        mkNode(recurse(xSym))
+
       case Def(ApplyUnOp(IsNumericUnOp(mkNode), xSym)) =>
         mkNode(recurse(xSym))
 
@@ -293,9 +283,9 @@ trait TreeBuilding extends RuntimeCosting { IR: IRContext =>
       case OM.isDefined(In(optionSym)) =>
         mkOptionIsDefined(optionSym.asValue[SOption[SType]])
 
-      case SigmaM.and_bool_&&(In(prop), In(cond)) =>
+      case SigmaM.and_bool_&&(In(prop), In(cond)) => // TODO remove or cover never executed
         SigmaAnd(Seq(prop.asSigmaProp, mkBoolToSigmaProp(cond.asBoolValue)))
-      case SigmaM.or_bool_||(In(prop), In(cond)) =>
+      case SigmaM.or_bool_||(In(prop), In(cond)) => // TODO remove or cover never executed
         SigmaOr(Seq(prop.asSigmaProp, mkBoolToSigmaProp(cond.asBoolValue)))
       case SigmaM.and_sigma_&&(In(p1), In(p2)) =>
         SigmaAnd(Seq(p1.asSigmaProp, p2.asSigmaProp))
@@ -344,7 +334,7 @@ trait TreeBuilding extends RuntimeCosting { IR: IRContext =>
           case _ =>
             mkCreateProveDHTuple(g.asGroupElement, h.asGroupElement, u.asGroupElement, v.asGroupElement)
         }
-      case SDBM.sigmaProp(_, In(cond)) =>
+      case SDBM.sigmaProp(_, In(cond)) => // TODO remove or cover never executed
         mkBoolToSigmaProp(cond.asBoolValue)
       case SDBM.byteArrayToBigInt(_, colSym) =>
         mkByteArrayToBigInt(recurse(colSym))
