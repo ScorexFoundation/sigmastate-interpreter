@@ -98,7 +98,7 @@ trait IRContext extends Evaluation with TreeBuilding {
   }
 
   def checkCostEx(ctx: SContext, exp: Value[SType],
-                costF: Ref[((Int, Size[Context])) => Int], maxCost: Long): Int = {
+                costF: Ref[((Int, Size[Context])) => Int], maxCost: Long): Int = {  // TODO remove not used
     val costFun = compile[(Int, SSize[SContext]), Int, (Int, Size[Context]), Int](getDataEnv, costF, Some(maxCost))
     val (_, estimatedCost) = costFun((0, Sized.sizeOf(ctx)))
     if (estimatedCost > maxCost) {

@@ -202,7 +202,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
       costOf(s"Const", Constant[SType](SType.DummyValue, tpe).opType)
   }
 
-  def constCost[T: Elem]: Ref[Int] = {
+  def constCost[T: Elem]: Ref[Int] = {  // TODO remove never executed
     val tpe = elemToSType(element[T])
     constCost(tpe)
   }
@@ -396,7 +396,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
   implicit def extendCostedCollElem[A](elem: Elem[CostedColl[A]]): CostedCollElem[A, CostedColl[A]] =
     elem.asInstanceOf[CostedCollElem[A, CostedColl[A]]]
 
-  def splitCostedFunc2[A,B](f: RFuncCosted[A,B]): (Ref[A=>B], Ref[((Int, Size[A])) => Int]) = {
+  def splitCostedFunc2[A,B](f: RFuncCosted[A,B]): (Ref[A=>B], Ref[((Int, Size[A])) => Int]) = { // TODO remove not used
     implicit val eA = f.elem.eDom.eVal
     val calcF = f.sliceCalc
     val costF = f.sliceCost
@@ -779,9 +779,6 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
   private val _colBuilder: LazyRep[CollBuilder] = MutableLazy(variable[CollBuilder])
   @inline def colBuilder: Ref[CollBuilder] = _colBuilder.value
 
-//  private val _sizeBuilder: LazyRep[SizeBuilder] = MutableLazy(RCSizeBuilder())
-//  @inline def sizeBuilder: Ref[SizeBuilder] = _sizeBuilder.value
-
   private val _costedBuilder: LazyRep[CostedBuilder] = MutableLazy(RCCostedBuilder())
   @inline def costedBuilder: Ref[CostedBuilder] = _costedBuilder.value
 
@@ -846,7 +843,6 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
     case SAvlTree => avlTreeElement
     case SSigmaProp => sigmaPropElement
     case STuple(Seq(a, b)) => pairElement(stypeToElem(a), stypeToElem(b))
-//    case STuple(items) => tupleStructElement(items.map(stypeToElem(_)):_*)
     case c: SCollectionType[a] => collElement(stypeToElem(c.elemType))
     case o: SOption[a] => wOptionElement(stypeToElem(o.elemType))
     case SFunc(Seq(tpeArg), tpeRange, Nil) => funcElement(stypeToElem(tpeArg), stypeToElem(tpeRange))
@@ -871,9 +867,6 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
     case _: HeaderElem[_] => SHeader
     case _: PreHeaderElem[_] => SPreHeader
     case _: SigmaPropElem[_] => SSigmaProp
-//    case se: StructElem[_] =>
-//      assert(se.fieldNames.zipWithIndex.forall { case (n,i) => n == s"_${i+1}" })
-//      STuple(se.fieldElems.map(elemToSType(_)).toIndexedSeq)
     case ce: CollElem[_, _] => SCollection(elemToSType(ce.eItem))
     case fe: FuncElem[_, _] => SFunc(elemToSType(fe.eDom), elemToSType(fe.eRange))
     case pe: PairElem[_, _] => STuple(elemToSType(pe.eFst), elemToSType(pe.eSnd))
@@ -981,7 +974,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
 
   import sigmastate._
 
-  protected def isOperationNode(v: SValue): Boolean = v match {
+  protected def isOperationNode(v: SValue): Boolean = v match {  // TODO remove not used
     case _: Block | _: BlockValue | _: TaggedVariableNode[_] | _: ValNode | _: ValDef | _: ValUse[_] | _: FuncValue => false
     case _ => true
   }
@@ -1017,11 +1010,11 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
       implicit val tA = ct.tItem
       implicit val sizedA = Sized.typeToSized(tA)
       liftConst(Sized.sizeOf(x.asInstanceOf[special.collection.Coll[a]]))
-    case ct: OptionType[a] =>
+    case ct: OptionType[a] =>  // TODO coverage: ensure executed
       implicit val tA = ct.tA
       implicit val sizedA = Sized.typeToSized(tA)
       liftConst(Sized.sizeOf(x.asInstanceOf[Option[a]]))
-    case ct: PairType[a, b] =>
+    case ct: PairType[a, b] => // TODO coverage: ensure executed
       implicit val tA = ct.tFst
       implicit val tB = ct.tSnd
       implicit val sizedA = Sized.typeToSized(tA)
@@ -1177,7 +1170,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
     }
 
     val res: Ref[Any] = node match {
-      case TaggedVariableNode(id, _) =>
+      case TaggedVariableNode(id, _) => // TODO remove never executed
         env.getOrElse(id, !!!(s"TaggedVariable $id not found in environment $env"))
 
       case c @ Constant(v, tpe) => v match {
