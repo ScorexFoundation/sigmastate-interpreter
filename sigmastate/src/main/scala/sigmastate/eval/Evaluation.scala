@@ -402,7 +402,7 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
     }
   }
 
-  object IsTupleFN {
+  object IsTupleFN {  // TODO remove not used
     def unapply(fn: String): Nullable[Byte] = {
       if (fn.startsWith("_")) Nullable[Byte](fn.substring(1).toByte)
       else Nullable.None.asInstanceOf[Nullable[Byte]]
@@ -433,7 +433,7 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
     env
   }
 
-  case class EvaluatedEntry(env: DataEnv, sym: Sym, value: AnyRef)
+  case class EvaluatedEntry(env: DataEnv, sym: Sym, value: AnyRef) // TODO remove not used
 
   protected def printEnvEntry(sym: Sym, value: AnyRef) = {
     def trim[A](arr: Array[A]) = arr.take(arr.length min 100)
@@ -475,7 +475,7 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
       this._currentCost = java.lang.Math.addExact(this._currentCost, n)
     }
     @inline def currentCost: Int = _currentCost
-    @inline def resetCost() = { _currentCost = initialCost }
+    @inline def resetCost() = { _currentCost = initialCost }  // TODO remove not used
   }
 
   /** Implements finite state machine with stack of graph blocks (scopes),
@@ -783,28 +783,20 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
 
           case ThunkForce(In(t: ThunkData[Any])) =>
             out(t())
-          case SDBM.sigmaProp(_, In(isValid: Boolean)) =>
+          case SDBM.sigmaProp(_, In(isValid: Boolean)) =>  // TODO remove never executed case
             val res = CSigmaProp(sigmastate.TrivialProp(isValid))
             out(res)
-          case SDBM.proveDlog(_, In(g: EcPointType)) =>
+          case SDBM.proveDlog(_, In(g: EcPointType)) =>   // TODO remove never executed case
             val res = CSigmaProp(DLogProtocol.ProveDlog(g))
             out(res)
-          case SDBM.proveDHTuple(_, In(g: EcPointType), In(h: EcPointType), In(u: EcPointType), In(v: EcPointType)) =>
+          case SDBM.proveDHTuple(_, In(g: EcPointType), In(h: EcPointType), In(u: EcPointType), In(v: EcPointType)) => // TODO remove never executed case
             val res = CSigmaProp(ProveDHTuple(g, h, u, v))
             out(res)
           case SDBM.avlTree(_, In(flags: Byte),
                            In(digest: SColl[Byte]@unchecked), In(keyLength: Int),
-                           In(valueLengthOpt: Option[Int]@unchecked)) =>
+                           In(valueLengthOpt: Option[Int]@unchecked)) =>  // TODO remove never executed case
             val res = sigmaDslBuilderValue.avlTree(flags, digest, keyLength, valueLengthOpt)
             out(res)
-
-//          case CReplCollCtor(valueSym @ In(value), In(len: Int)) =>
-//            val res = sigmaDslBuilderValue.Colls.replicate(len, value)(asType[Any](valueSym.elem.sourceType))
-//            out(res)
-//
-//          case PairOfColsCtor(In(ls: SColl[a]@unchecked), In(rs: SColl[b]@unchecked)) =>
-//            val res = sigmaDslBuilderValue.Colls.pairColl(ls, rs)
-//            out(res)
 
           case CSizePrimCtor(In(dataSize: Long), tVal) =>
             val res = new special.collection.CSizePrim(dataSize, tVal.eA.sourceType)
@@ -818,15 +810,6 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
           case CSizeOptionCtor(In(optSize: Option[SSize[_]] @unchecked)) =>
             val res = new special.collection.CSizeOption(optSize)
             out(res)
-//          case CSizeAnyValueCtor(tVal, In(valueSize: SSize[Any] @unchecked)) =>
-//            val res = new special.sigma.CSizeAnyValue(tVal.eA.sourceType.asInstanceOf[RType[Any]], valueSize)
-//            out(res)
-//          case CSizeBoxCtor(
-//                 In(propBytes: SSize[SColl[Byte]]@unchecked), In(bytes: SSize[SColl[Byte]]@unchecked),
-//                 In(bytesWithoutRef: SSize[SColl[Byte]]@unchecked), In(regs: SSize[SColl[Option[SAnyValue]]]@unchecked),
-//                 In(tokens: SSize[SColl[(SColl[Byte], Long)]]@unchecked)) =>
-//            val res = new EvalSizeBox(propBytes, bytes, bytesWithoutRef, regs, tokens)
-//            out(res)
 
           case costOp: CostOf =>
             out(costOp.eval)
@@ -838,8 +821,6 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
           case SizeOf(sym @ In(data)) =>
             val tpe = elemToSType(sym.elem)
             val size = tpe match {
-//              case SAvlTree =>
-//                data.asInstanceOf[special.sigma.AvlTree].dataSize
               case _ => data match {
                 case w: WrapperOf[_] =>
                   tpe.dataSize(w.wrappedValue.asWrappedType)
