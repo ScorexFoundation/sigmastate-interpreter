@@ -65,18 +65,6 @@ object SigmaSerializer {
 
 trait SigmaSerializer[TFamily, T <: TFamily] extends Serializer[TFamily, T, SigmaByteReader, SigmaByteWriter] {
 
-  def serializeWithGenericWriter(obj: T, w: Writer): Unit = {
-    serialize(obj, new SigmaByteWriter(w, None))
-  }
-
-  def parseWithGenericReader(r: Reader)(implicit vs: SigmaValidationSettings): TFamily = {
-    val sigmaByteReader = new SigmaByteReader(r,
-      new ConstantStore(),
-      resolvePlaceholdersToConstants = false,
-      maxTreeDepth = SigmaSerializer.MaxTreeDepth)
-    parse(sigmaByteReader)
-  }
-
   def error(msg: String) = throw new SerializerException(msg, None)
 
   final def toBytes(obj: T): Array[Byte] = {
