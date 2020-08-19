@@ -571,6 +571,7 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
         if (accumulatedCost > limit) {
 //          if (cost < limit)
 //            println(s"FAIL FAST in loop: $accumulatedCost > $limit")
+          // TODO cover with tests
           throw new CostLimitException(accumulatedCost, msgCostLimitError(accumulatedCost, limit), None)
         }
       }

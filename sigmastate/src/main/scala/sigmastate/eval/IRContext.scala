@@ -92,13 +92,15 @@ trait IRContext extends Evaluation with TreeBuilding {
     val costFun = compile[SSize[SContext], Int, Size[Context], Int](getDataEnv, costF, Some(maxCost))
     val (_, estimatedCost) = costFun(Sized.sizeOf(ctx))
     if (estimatedCost > maxCost) {
+      // TODO cover with tests
       throw new CostLimitException(estimatedCost, s"Estimated execution cost $estimatedCost exceeds the limit $maxCost in $exp")
     }
     estimatedCost
   }
 
+  // TODO remove not used
   def checkCostEx(ctx: SContext, exp: Value[SType],
-                costF: Ref[((Int, Size[Context])) => Int], maxCost: Long): Int = {  // TODO remove not used
+                costF: Ref[((Int, Size[Context])) => Int], maxCost: Long): Int = {
     val costFun = compile[(Int, SSize[SContext]), Int, (Int, Size[Context]), Int](getDataEnv, costF, Some(maxCost))
     val (_, estimatedCost) = costFun((0, Sized.sizeOf(ctx)))
     if (estimatedCost > maxCost) {
@@ -139,6 +141,7 @@ trait IRContext extends Evaluation with TreeBuilding {
     val scaledCost = JMath.multiplyExact(estimatedCost.toLong, CostTable.costFactorIncrease.toLong) / CostTable.costFactorDecrease
     val totalCost = JMath.addExact(initCost, scaledCost)
     if (totalCost > maxCost) {
+      // TODO cover with tests
       throw new CostLimitException(totalCost, msgCostLimitError(totalCost, maxCost), None)
     }
     totalCost.toInt

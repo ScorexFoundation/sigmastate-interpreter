@@ -101,7 +101,7 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
     val remainingLimit = context.costLimit - initCost
     if (remainingLimit <= 0)
       throw new CostLimitException(initCost,
-        s"Estimated execution cost $initCost exceeds the limit ${context.costLimit}", None) // TODO cover with tests
+        s"Estimated execution cost $initCost exceeds the limit ${context.costLimit}", None)
 
     val ctxUpdInitCost = context.withInitCost(initCost).asInstanceOf[CTX]
 
