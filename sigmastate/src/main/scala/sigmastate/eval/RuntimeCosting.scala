@@ -7,29 +7,22 @@ import scalan.util.CollectionUtil.TraversableOps
 import org.ergoplatform._
 import sigmastate._
 import sigmastate.Values._
-import sigmastate.interpreter.CryptoConstants
 import sigmastate.lang.Terms._
 import sigmastate.lang.exceptions.CosterException
 import sigmastate.serialization.OpCodes
-import sigmastate.utxo.CostTable.Cost
 import sigmastate.utxo._
 import scalan.compilation.GraphVizConfig
 import SType._
-import org.ergoplatform.SigmaConstants._
 import scalan.RType._
-import scorex.crypto.hash.{Sha256, Blake2b256}
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.{Terms, SourceContext}
-import sigma.types.PrimViewType
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import special.collection.CollType
-import special.Types._
-import special.sigma.{GroupElementRType, AvlTreeRType, BigIntegerRType, BoxRType, ECPointRType, BigIntRType, SigmaPropRType}
+import special.sigma.{GroupElementRType, AvlTreeRType, BoxRType, BigIntRType, SigmaPropRType}
 import special.sigma.Extensions._
 import org.ergoplatform.validation.ValidationRules._
-import scalan.util.ReflectionUtil
 import scalan.ExactIntegral._
 import scalan.ExactNumeric._
 import scalan.ExactOrdering.{ShortIsExactOrdering, ByteIsExactOrdering, IntIsExactOrdering, LongIsExactOrdering}
@@ -810,8 +803,6 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
         .foreach(_.reset())
     _contextDependantNodes = debox.Set.ofSize[Int](InitDependantNodes)
   }
-
-  import Cost._
 
   def removeIsProven[T,R](f: Ref[T] => Ref[Any]): Ref[T] => Ref[Any] = { x: Ref[T] =>
     val y = f(x);
