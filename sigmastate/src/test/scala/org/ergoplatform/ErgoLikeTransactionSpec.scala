@@ -104,6 +104,16 @@ class ErgoLikeTransactionSpec extends PropSpec
         val itx8 = new ErgoLikeTransaction(headInput8 +: tailInputs, di, txIn.outputCandidates)
         (itx8.messageToSign sameElements initialMessage) shouldBe true
 
+        // ProverResult equality checks
+        val copiedResult = new ProverResult(newProof7.proof, newProof7.extension)
+        assertResult(true)(copiedResult == newProof7)
+        assertResult(true, "hash codes")(copiedResult.hashCode() == newProof7.hashCode())
+        assertResult(true, "different types")(newProof7 != headInput7)
+        assertResult(true, "different extensions")(newProof8 != newProof7)
+        val tmpResult = new ProverResult(Array[Byte](), newProof7.extension)
+        assertResult(true, "different proofs")(tmpResult != newProof7)
+        assertResult(true)(newProof8.hashCode() != newProof7.hashCode() || newProof8 != newProof7)
+
         /**
           * Check data inputs modifications
           */

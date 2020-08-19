@@ -101,7 +101,7 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
     val remainingLimit = context.costLimit - initCost
     if (remainingLimit <= 0)
       throw new CostLimitException(initCost,
-        s"Estimated execution cost $initCost exceeds the limit ${context.costLimit}", None)
+        s"Estimated execution cost $initCost exceeds the limit ${context.costLimit}", None) // TODO cover with tests
 
     val ctxUpdInitCost = context.withInitCost(initCost).asInstanceOf[CTX]
 
@@ -149,7 +149,6 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
       // else mark it "simulated"
       val isReal = hintsBag.realImages.contains(ul.proposition) || secrets.exists {
         case in: SigmaProtocolPrivateInput[_, _] => in.publicImage == ul.proposition
-        case _ => false
       }
       ul.withSimulated(!isReal)
     case t =>
