@@ -19,7 +19,7 @@ class TestSigmaDslBuilder extends SigmaDslBuilder {
   def Monoids: MonoidBuilder = new MonoidBuilderInst
   def Costing: CostedBuilder = new CCostedBuilder
   @NeverInline
-  def CostModel: CostModel = new TestCostModel
+  def CostModel: CostModel = ???
 
   @NeverInline
   def verifyZK(proof: => SigmaProp): Boolean = proof.isValid
