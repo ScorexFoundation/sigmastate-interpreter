@@ -42,7 +42,7 @@ class ErgoBoxCandidate(val value: Long,
                        val additionalRegisters: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]] = Map()) 
                        extends ErgoBoxAssets {
 
-  def proposition: BoolValue = ergoTree.toProposition(ergoTree.isConstantSegregation).asBoolValue
+  def proposition: SigmaPropValue = ergoTree.toProposition(ergoTree.isConstantSegregation)
 
   lazy val propositionBytes: Array[Byte] = ergoTree.bytes
 
