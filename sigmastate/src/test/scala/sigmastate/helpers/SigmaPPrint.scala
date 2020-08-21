@@ -134,6 +134,9 @@ object SigmaPPrint extends PPrinter {
       val elemTpe = coll.tItem.name
       Tree.Apply(s"Coll[$elemTpe]", treeifySeq(coll.toArray))
 
+    case tp: TrivialProp =>
+      Tree.Literal(s"TrivialProp.${if (tp.condition) "True" else "False"}Prop")
+
     case t: AvlTreeData =>
       Tree.Apply("AvlTreeData", treeifyMany(
         Tree.Apply("ADDigest @@ ", treeifyMany(t.digest)),
@@ -202,6 +205,7 @@ object SigmaPPrint extends PPrinter {
     case ArithOp(l, r, code) =>
       val args = treeifySeq(Seq(l, r)).toSeq :+ Tree.Apply("OpCode @@ ", treeifySeq(Seq(code)))
       Tree.Apply("ArithOp", args.iterator)
+
     case mc @ MethodCall(obj, method, args, typeSubst) =>
       val objType = apply(method.objType).plainText
       val methodTemplate = method.objType.getMethodByName(method.name)

@@ -72,14 +72,16 @@ class ErgoBoxCandidate(val value: Long,
     }
   }
 
-  override def hashCode(): Int =
+  // TODO HF: fix hashCode, it should be consisten with [[equals]] and use [[bytesWithNoRef]]
+  override def hashCode(): Int = {
     ScalaRunTime._hashCode((value, ergoTree, additionalTokens, additionalRegisters, creationHeight))
+  }
 
   override def toString: Idn = s"ErgoBoxCandidate($value, $ergoTree," +
     s"tokens: (${additionalTokens.map(t => ErgoAlgos.encode(t._1) + ":" + t._2).toArray.mkString(", ")}), " +
     s"$additionalRegisters, creationHeight: $creationHeight)"
 
-  lazy val tokens: Map[ModifierId, Long] = 
+  lazy val tokens: Map[ModifierId, Long] =
     additionalTokens
       .toArray
       .map(t => bytesToId(t._1) -> t._2)
