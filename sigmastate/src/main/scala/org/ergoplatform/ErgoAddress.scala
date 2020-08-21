@@ -195,8 +195,6 @@ case class ErgoAddressEncoder(networkPrefix: NetworkPrefix) {
 
   implicit private val ergoAddressEncoder: ErgoAddressEncoder = this
 
-  val ChecksumLength = 4
-
   def toString(address: ErgoAddress): String = {
     val withNetworkByte = (networkPrefix + address.addressTypePrefix).toByte +: address.contentBytes
 
@@ -272,6 +270,7 @@ object ErgoAddressEncoder {
   type NetworkPrefix = Byte
   val MainnetNetworkPrefix: NetworkPrefix = 0.toByte
   val TestnetNetworkPrefix: NetworkPrefix = 16.toByte
+  val ChecksumLength = 4
 
   def hash256(input: Array[Byte]): Digest32 = Blake2b256(input)
 
