@@ -15,6 +15,7 @@ import sigmastate.serialization.OpCodes.{OpCode, OpCodeExtra}
 import sigmastate.serialization.TypeSerializer.embeddableIdToType
 import sigmastate.serialization.{OpCodes, ValueSerializer}
 import sigmastate.utxo.DeserializeContext
+import sigmastate.utils.Helpers._  // required for Scala 2.11
 import scala.collection.mutable
 
 /** Base class for different validation rules registered in ValidationRules.currentSettings.
