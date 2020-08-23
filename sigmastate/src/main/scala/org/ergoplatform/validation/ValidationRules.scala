@@ -15,7 +15,6 @@ import sigmastate.serialization.OpCodes.{OpCode, OpCodeExtra}
 import sigmastate.serialization.TypeSerializer.embeddableIdToType
 import sigmastate.serialization.{OpCodes, ValueSerializer}
 import sigmastate.utxo.DeserializeContext
-import sigmastate.utils.Helpers._
 import scala.collection.mutable
 
 /** Base class for different validation rules registered in ValidationRules.currentSettings.
@@ -37,8 +36,10 @@ case class ValidationRule(
     */
   @inline protected final def checkRule(): Unit = {
     if (!_checked) {
-      if (ValidationRules.currentSettings.getStatus(this.id).isEmpty)
+      if (ValidationRules.currentSettings.getStatus(this.id).isEmpty) {
+        // TODO consensus: cover with tests
         throw new SigmaException(s"ValidationRule $this not found in validation settings")
+      }
       _checked = true  // prevent this check on every call (only first call is checked)
     }
     // upon successful return we know the rule is registered with EnabledRule status
@@ -121,10 +122,12 @@ object ValidationRules {
     "Check the index expression for accessing collection element is supported.") {
     final def apply[Ctx <: IRContext, T](ctx: Ctx)(coll: Value[SCollection[_]], i: IntValue, iSym: ctx.Ref[Int]): Unit = {
       checkRule()
-      if (!ctx.isSupportedIndexExpression(iSym))
+      if (!ctx.isSupportedIndexExpression(iSym)) {
+        // TODO consensus: cover with tests
         throwValidationException(
           new SigmaException(s"Unsupported index expression $i when accessing collection $coll", i.sourceContext.toOption),
           Array(coll, i))
+      }
     }
   }
 
@@ -145,6 +148,7 @@ object ValidationRules {
       checkRule()
       val verification = ctx.verifyIsProven(calcF)
       if (!verification.isSuccess) {
+        // TODO consensus: cover with tests
         throwValidationException(verification.toEither.left.get, Array(calcF))
       }
     }
@@ -159,6 +163,7 @@ object ValidationRules {
         case _ => false
       }
       if (!condition) {
+        // TODO consensus: cover with tests
         throwValidationException(new SigmaException(s"Invalid tuple type $e"), Array[ctx.Elem[_]](e))
       }
     }
@@ -312,6 +317,7 @@ object ValidationRules {
       checkRule()
       val max = MaxLoopLevelInCostFunction.value
       if (level > max) {
+        // TODO consensus: cover with tests
         throwValidationException(
           new CosterException(s"The loop level $level exceeds maximum $max", None),
           Array(level))

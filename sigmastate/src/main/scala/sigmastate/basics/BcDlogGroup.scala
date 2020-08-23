@@ -133,6 +133,7 @@ abstract class BcDlogGroup[ElemType <: ECPoint](val x9params: X9ECParameters) ex
     k
   }
 
+  // TODO remove: it is not used
   /**
     * This function returns the k least significant bytes of the number x
     *
@@ -146,6 +147,7 @@ abstract class BcDlogGroup[ElemType <: ECPoint](val x9params: X9ECParameters) ex
     x.mod(modulo).toByteArray
   }
 
+  // TODO remove: it is not used
   def checkMembershipAndCreate(x: BigInteger, y: BigInteger): Try[ElemType] = Try {
     val valid = checkCurveMembership(x, y)
     // checks validity
@@ -172,6 +174,7 @@ abstract class BcDlogGroup[ElemType <: ECPoint](val x9params: X9ECParameters) ex
     * @param y - Y coordinate
     * @return
     */
+  // TODO remove: it is not used
   def createPoint(x: BigInteger, y: BigInteger): ElemType = curve.createPoint(x, y).asInstanceOf[ElemType]
 
 
@@ -412,11 +415,5 @@ abstract class BcDlogGroup[ElemType <: ECPoint](val x9params: X9ECParameters) ex
     else 9
   }
 }
-
-object SecP384R1 extends BcDlogGroup[SecP384R1Point](CustomNamedCurves.getByName("secp384r1"))
-
-object SecP521R1 extends BcDlogGroup[SecP521R1Point](CustomNamedCurves.getByName("secp521r1"))
-
-object Curve25519 extends BcDlogGroup[Curve25519Point](CustomNamedCurves.getByName("curve25519"))
 
 object SecP256K1 extends BcDlogGroup[SecP256K1Point](CustomNamedCurves.getByName("secp256k1"))
