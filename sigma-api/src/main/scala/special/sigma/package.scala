@@ -6,15 +6,7 @@ import org.bouncycastle.math.ec.ECPoint
 import scalan.RType
 import scalan.RType.GeneralType
 
-import scala.reflect.{ClassTag, classTag}
-
-package sigma {
-
-  case class ArgType(override val name: String) extends RType[Any] {
-    override def classTag: ClassTag[Any] = ClassTag.Any
-    override def isConstantSize: Boolean = false  // pessimistic but safe default
-  }
-}
+import scala.reflect.classTag
 
 package object sigma {
 
@@ -64,5 +56,4 @@ package object sigma {
   implicit val SizeContextRType: RType[SizeContext] = RType.fromClassTag(classTag[SizeContext])
   implicit val SizeBuilderRType: RType[SizeBuilder] = RType.fromClassTag(classTag[SizeBuilder])
 
-  def argRType(name: String): RType[Any] = ArgType(name)
 }
