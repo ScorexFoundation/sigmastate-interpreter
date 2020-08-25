@@ -151,6 +151,7 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
         case in: SigmaProtocolPrivateInput[_, _] => in.publicImage == ul.proposition
         case _ => false
       }
+      println("leaf: " + ul.proposition + " real: " + isReal)
       ul.withSimulated(!isReal)
     case t =>
       error(s"Don't know how to markReal($t)")
