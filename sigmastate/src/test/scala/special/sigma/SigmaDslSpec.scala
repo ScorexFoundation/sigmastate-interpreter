@@ -1749,13 +1749,21 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
       val expRes = Colls.fromItems(valueOpt)
       getMany.checkExpected((tree, (keys, proof)), expRes)
 
-      updateDigest.checkEquality((tree, digest)).get.digest shouldBe digest
+      {
+        val (res, _) = updateDigest.checkEquality((tree, digest)).get
+        res.digest shouldBe digest
+      }
+
       val newOps = 1.toByte
-      updateOperations.checkEquality((tree, newOps)).get.enabledOperations shouldBe newOps
+
+      {
+        val (res,_) = updateOperations.checkEquality((tree, newOps)).get
+        res.enabledOperations shouldBe newOps
+      }
 
       { // negative tests: invalid proof
         val invalidProof = proof.map(x => (-x).toByte) // any other different from proof
-        val resContains = contains.checkEquality((tree, (key, invalidProof)))
+        val resContains = contains.checkEquality((tree, (key, invalidProof))).map(_._1)
         resContains shouldBe Success(false)
         val resGet = get.checkEquality((tree, (key, invalidProof)))
         resGet.isFailure shouldBe true
@@ -1870,22 +1878,22 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
 
       { // positive
         val preInsertTree = createTree(preInsertDigest, insertAllowed = true)
-        val res = insert.checkEquality((preInsertTree, (kvs, insertProof)))
-        res.get.isDefined shouldBe true
+        val (res, _) = insert.checkEquality((preInsertTree, (kvs, insertProof))).get
+        res.isDefined shouldBe true
       }
 
       { // negative: readonly tree
         val readonlyTree = createTree(preInsertDigest)
-        val res = insert.checkEquality((readonlyTree, (kvs, insertProof)))
-        res.get.isDefined shouldBe false
+        val (res, _) = insert.checkEquality((readonlyTree, (kvs, insertProof))).get
+        res.isDefined shouldBe false
       }
 
       { // negative: invalid key
         val tree = createTree(preInsertDigest, insertAllowed = true)
         val invalidKey = key.map(x => (-x).toByte) // any other different from key
         val invalidKvs = Colls.fromItems((invalidKey -> value)) // NOTE, insertProof is based on `key`
-        val res = insert.checkEquality((tree, (invalidKvs, insertProof)))
-        res.get.isDefined shouldBe true // TODO HF: should it really be true? (looks like a bug)
+        val (res, _) = insert.checkEquality((tree, (invalidKvs, insertProof))).get
+        res.isDefined shouldBe true // TODO HF: should it really be true? (looks like a bug)
       }
 
       { // negative: invalid proof
@@ -2002,8 +2010,8 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
         val tree = createTree(preUpdateDigest, updateAllowed = true)
         val invalidValue = newValue.map(x => (-x).toByte)
         val invalidKvs = Colls.fromItems((key -> invalidValue))
-        val res = update.checkEquality((tree, (invalidKvs, updateProof)))
-        res.get.isDefined shouldBe true  // TODO HF: should it really be true? (looks like a bug)
+        val (res, _) = update.checkEquality((tree, (invalidKvs, updateProof))).get
+        res.isDefined shouldBe true  // TODO HF: should it really be true? (looks like a bug)
       }
 
       { // negative: invalid proof
@@ -3972,11 +3980,11 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
     val n = ExactNumeric.LongIsExactNumeric
     testCases(
       Seq(
-        (None -> Success(5L)),
+        (None -> Failure(new NoSuchElementException("None.get"))),
         (Some(0L) -> Success(1L)),
         (Some(Long.MaxValue) -> Failure(new ArithmeticException("long overflow")))
       ),
-      existingFeature({ (x: Option[Long]) => x.fold(5.toLong)( (v: Long) => n.plus(v, 1) ) },
+      existingFeature({ (x: Option[Long]) => x.fold(throw new NoSuchElementException("None.get"))( (v: Long) => n.plus(v, 1) ) },
         """{(x: Option[Long]) =>
           |  def f(opt: Long): Long = opt + 1
           |  if (x.isDefined) f(x.get) else 5L

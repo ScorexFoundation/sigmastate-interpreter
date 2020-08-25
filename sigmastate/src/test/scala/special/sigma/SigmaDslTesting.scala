@@ -31,13 +31,13 @@ class SigmaDslTesting extends PropSpec
     override val okMeasureOperationTime: Boolean = true
   }
 
-  def checkEq[A,B](f: A => B)(g: A => B): A => Try[B] = { x: A =>
-    val b1 = Try(f(x)); val b2 = Try(g(x))
+  def checkEq[A,B](scalaFunc: A => B)(g: A => (B, Int)): A => Try[(B, Int)] = { x: A =>
+    val b1 = Try(scalaFunc(x)); val b2 = Try(g(x))
     (b1, b2) match {
-      case (res @ Success(b1), Success(b2)) =>
+      case (Success(b1), res @ Success((b2, _))) =>
         assert(b1 == b2)
         res
-      case (res @ Failure(t1), Failure(t2)) =>
+      case (Failure(t1), res @ Failure(t2)) =>
         val c1 = rootCause(t1).getClass
         val c2 = rootCause(t2).getClass
         c1 shouldBe c2
@@ -77,11 +77,6 @@ class SigmaDslTesting extends PropSpec
     indices <- Gen.containerOfN[Array, Int](nIndexes, Gen.choose(0, arrLength - 1))
   } yield indices
 
-
-  case class EqualityChecker[T: RType](obj: T) {
-    def apply[R: RType](dslFunc: T => R)(script: String) =
-      checkEq(func[T, R](script))(dslFunc)(obj)
-  }
 
   /** Type of the language feature to be tested. */
   sealed trait FeatureType
@@ -159,7 +154,7 @@ class SigmaDslTesting extends PropSpec
       * semantic function (scalaFunc) on the given input.
       * @param input  data which is used to execute feature
       * @return result of feature execution */
-    def checkEquality(input: A, logInputOutput: Boolean = false): Try[B] = featureType match {
+    def checkEquality(input: A, logInputOutput: Boolean = false): Try[(B, Int)] = featureType match {
       case ExistingFeature =>
         // check both implementations with Scala semantic
         val oldRes = checkEq(scalaFunc)(oldF)(input)
@@ -188,19 +183,19 @@ class SigmaDslTesting extends PropSpec
       featureType match {
         case ExistingFeature =>
           // check both implementations with Scala semantic
-          val oldRes = checkEq(scalaFunc)(oldF)(input)
-          oldRes.get shouldBe expectedResult
+          val (oldRes, _) = checkEq(scalaFunc)(oldF)(input).get
+          oldRes shouldBe expectedResult
 
           if (!(newImpl eq oldImpl)) {
-            val newRes = checkEq(scalaFunc)(newF)(input)
-            newRes.get shouldBe expectedResult
+            val (newRes, _) = checkEq(scalaFunc)(newF)(input).get
+            newRes shouldBe expectedResult
           }
 
         case AddedFeature =>
           Try(oldF(input)).isFailure shouldBe true
           if (!(newImpl eq oldImpl)) {
-            val newRes = checkEq(scalaFunc)(newF)(input)
-            newRes.get shouldBe expectedResult
+            val (newRes, _) = checkEq(scalaFunc)(newF)(input).get
+            newRes shouldBe expectedResult
           }
       }
     }
@@ -264,13 +259,13 @@ class SigmaDslTesting extends PropSpec
 
     val table = Table(("x", "y"), cases:_*)
     forAll(table) { (x: A, expectedRes: Try[B]) =>
-      val res = f.checkEquality(x, printTestCases)
+      val res = f.checkEquality(x, printTestCases).map(_._1)
 
       // TODO HF: remove this `if` once newImpl is implemented
       if (f.featureType == ExistingFeature) {
         (res, expectedRes) match {
           case (Failure(exception), Failure(expectedException)) =>
-            exception.getClass shouldBe expectedException.getClass
+            rootCause(exception).getClass shouldBe expectedException.getClass
           case _ =>
             if (failOnTestVectors) {
               assertResult(expectedRes, s"Actual: ${SigmaPPrint(res, height = 150).plainText}")(res)

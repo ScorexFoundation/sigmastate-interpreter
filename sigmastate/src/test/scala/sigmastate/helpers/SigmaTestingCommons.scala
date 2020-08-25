@@ -3,6 +3,7 @@ package sigmastate.helpers
 import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
 import org.ergoplatform.ErgoBox.NonMandatoryRegisterId
 import org.ergoplatform.ErgoScriptPredef.TrueProp
+import org.ergoplatform.SigmaConstants.ScriptCostLimit
 import org.ergoplatform._
 import org.ergoplatform.validation.ValidationRules.{CheckCostFunc, CheckCalcFunc}
 import org.ergoplatform.validation.ValidationSpecification
@@ -21,6 +22,7 @@ import sigmastate.serialization.{ValueSerializer, SigmaSerializer}
 import sigmastate.{SGroupElement, SType}
 import sigmastate.eval.{CompiletimeCosting, IRContext, Evaluation, _}
 import sigmastate.interpreter.CryptoConstants.EcPointType
+import sigmastate.utils.Helpers._
 import special.sigma
 
 import scala.annotation.tailrec
@@ -133,9 +135,9 @@ trait SigmaTestingCommons extends PropSpec
   }
 
   case class CompiledFunc[A,B]
-    (script: String, bindings: Seq[(Byte, EvaluatedValue[_ <: SType])], expr: SValue, func: A => B)
-    (implicit val tA: RType[A], val tB: RType[B]) extends Function1[A, B] {
-    override def apply(x: A): B = func(x)
+    (script: String, bindings: Seq[(Byte, EvaluatedValue[_ <: SType])], expr: SValue, func: A => (B, Int))
+    (implicit val tA: RType[A], val tB: RType[B]) extends Function1[A, (B, Int)] {
+    override def apply(x: A): (B, Int) = func(x)
   }
 
   /** The same operations are executed as part of Interpreter.verify() */
@@ -188,7 +190,7 @@ trait SigmaTestingCommons extends PropSpec
     }
 
     // The following is done as part of Interpreter.verify()
-    val valueFun = {
+    val (costF, valueFun) = {
       val costingRes = getCostingResult(env, compiledTree)
       val calcF = costingRes.calcF
       val tree = IR.buildTree(calcF)
@@ -198,13 +200,14 @@ trait SigmaTestingCommons extends PropSpec
 
       val lA = Liftables.asLiftable[SContext, IR.Context](calcF.elem.eDom.liftable)
       val lB = Liftables.asLiftable[Any, Any](calcF.elem.eRange.liftable)
-      IR.compile[SContext, Any, IR.Context, Any](IR.getDataEnv, calcF)(lA, lB)
+      val vf = IR.compile[SContext, Any, IR.Context, Any](IR.getDataEnv, calcF)(lA, lB)
+      (costingRes.costF, vf)
     }
 
     val f = (in: A) => {
       implicit val cA = tA.classTag
       val x = fromPrimView(in)
-      val sigmaCtx = in match {
+      val (costingCtx, sigmaCtx) = in match {
         case ctx: CostingDataContext =>
           // the context is passed as function argument (this is for testing only)
           // This is to overcome non-functional semantics of context operations
@@ -224,15 +227,23 @@ trait SigmaTestingCommons extends PropSpec
           } else {
             ctx.vars.updated(1, ctxVar)
           }
-          ctx.copy(vars = newVars)
+          val calcCtx = ctx.copy(vars = newVars)
+          val costCtx = calcCtx.copy(isCost = true)
+          (costCtx, calcCtx)
         case _ =>
           val ergoCtx = ErgoLikeContextTesting.dummy(createBox(0, TrueProp))
               .withBindings(1.toByte -> Constant[SType](x.asInstanceOf[SType#WrappedType], tpeA))
               .withBindings(bindings: _*)
-          ergoCtx.toSigmaContext(IR, isCost = false)
+          val calcCtx = ergoCtx.toSigmaContext(IR, isCost = false).asInstanceOf[CostingDataContext]
+          val costCtx = calcCtx.copy(isCost = true)
+          (costCtx, calcCtx)
       }
+
+      val estimatedCost = IR.checkCostWithContext(costingCtx, costF, ScriptCostLimit.value, 0L).getOrThrow
+      println(s"Estimated Cost: $estimatedCost")
+
       val (res, _) = valueFun(sigmaCtx)
-      res.asInstanceOf[B]
+      (res.asInstanceOf[B], estimatedCost)
     }
     val Terms.Apply(funcVal, _) = compiledTree.asInstanceOf[SValue]
     CompiledFunc(funcScript, bindings.toSeq, funcVal, f)

@@ -127,7 +127,7 @@ trait IRContext extends Evaluation with TreeBuilding {
     * And taking into account the cleaning of the garbage and cutting the blockchain history,
     * the old scripts at some point will die out of the blockchain.
     */
-  def checkCostWithContext(ctx: SContext, exp: Value[SType],
+  def checkCostWithContext(ctx: SContext,
                 costF: Ref[((Context, (Int, Size[Context]))) => Int], maxCost: Long, initCost: Long): Try[Int] = Try {
     val costFun = compile[(SContext, (Int, SSize[SContext])), Int, (Context, (Int, Size[Context])), Int](
                     getDataEnv, costF, Some(maxCost))
