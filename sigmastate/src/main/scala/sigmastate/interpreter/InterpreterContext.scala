@@ -53,10 +53,10 @@ trait InterpreterContext {
   def withInitCost(newCost: Long): InterpreterContext
 
   /** Creates a new instance with extension updated with given value. */
-  def withExtension(newExtension: ContextExtension): InterpreterContext
+  def withExtension(newExtension: ContextExtension): this.type
 
   /** Creates a new instance with given bindings added to extension. */
-  def withBindings(bindings: (Byte, EvaluatedValue[_ <: SType])*): InterpreterContext = {
+  def withBindings(bindings: (Byte, EvaluatedValue[_ <: SType])*): this.type = {
     val ext = extension.add(bindings: _*)
     withExtension(ext)
   }

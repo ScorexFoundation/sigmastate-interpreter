@@ -1,16 +1,25 @@
 package special.sigma
 
+import org.ergoplatform.{ErgoAddressEncoder, ErgoLikeContext, ErgoLikeInterpreter, ErgoBox, ErgoScriptPredef}
 import org.scalatest.prop.PropertyChecks
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.{PropSpec, Matchers}
 
 import scala.util.{Success, Failure, Try}
-import sigmastate.Values.SValue
+import sigmastate.Values.{ErgoTree, Constant, SValue}
 import scalan.RType
+import scalan.util.Extensions._
 import org.ergoplatform.dsl.{SigmaContractSyntax, TestContractSpec}
-import sigmastate.eval.{IRContext, SigmaDsl}
-import sigmastate.helpers.SigmaPPrint
+import org.scalatest.exceptions.TestFailedException
+import sigmastate.SType
+import sigmastate.basics.DLogProtocol.{ProveDlog, DLogProverInput}
+import sigmastate.basics.{SigmaProtocol, SigmaProtocolPrivateInput, SigmaProtocolCommonInput}
+import sigmastate.eval.{IRContext, CompiletimeIRContext, Evaluation, SigmaDsl}
+import sigmastate.utils.Helpers._
+import sigmastate.lang.Terms.ValueOps
+import sigmastate.helpers.{ErgoLikeContextTesting, SigmaPPrint}
+import sigmastate.interpreter.{ProverInterpreter, Interpreter}
 import special.collection.Coll
 
 import scala.math.Ordering
@@ -26,7 +35,7 @@ class SigmaDslTesting extends PropSpec
 
   override def contractEnv: ScriptEnv = Map()
 
-  implicit def IR = new TestingIRContext {
+  def createIR() = new TestingIRContext {
     override val okPrintEvaluatedEntries: Boolean = false
     override val okMeasureOperationTime: Boolean = true
   }
@@ -77,6 +86,19 @@ class SigmaDslTesting extends PropSpec
     indices <- Gen.containerOfN[Array, Int](nIndexes, Gen.choose(0, arrLength - 1))
   } yield indices
 
+  class FeatureProvingInterpreter extends ErgoLikeInterpreter()(new CompiletimeIRContext) with ProverInterpreter {
+    override type CTX = ErgoLikeContext
+
+    val secrets: Seq[SigmaProtocolPrivateInput[_ <: SigmaProtocol[_], _ <: SigmaProtocolCommonInput[_]]] = {
+//      val dlogs: IndexedSeq[DLogProverInput] = ???
+//      dlogs
+      Seq()
+    }
+
+    val pubKeys: Seq[ProveDlog] = secrets
+        .filter { case _: DLogProverInput => true case _ => false}
+        .map(_.asInstanceOf[DLogProverInput].publicImage)
+  }
 
   /** Type of the language feature to be tested. */
   sealed trait FeatureType
@@ -200,6 +222,59 @@ class SigmaDslTesting extends PropSpec
       }
     }
 
+    def checkVerify(input: A, expectedRes: B, expectedCost: Int): Unit = {
+      val tpeA = Evaluation.rtypeToSType(oldF.tA)
+      val tpeB = Evaluation.rtypeToSType(oldF.tB)
+      val code =
+        s"""{
+          |  val func = ${oldF.script}
+          |  val res1 = func(getVar[${oldF.tA.name}](1).get)
+          |  val res2 = SELF.R4[${oldF.tB.name}].get
+          |  sigmaProp(res1 == res2)
+          |}
+      """.stripMargin
+      val env = Interpreter.emptyEnv
+
+      // The following ops are performed by applications (i.e. via Ergo Appkit)
+      val compiledTree = {
+        val IR = new CompiletimeIRContext
+        val prop = ErgoScriptPredef.compileWithCosting(
+          env, code, ErgoAddressEncoder.MainnetNetworkPrefix)(IR).asSigmaProp
+        ErgoTree.fromProposition(prop)
+      }
+
+      val ergoCtx = ErgoLikeContextTesting.dummy(
+        createBox(0, compiledTree,
+          additionalRegisters = Map(
+            ErgoBox.R4 -> Constant[SType](expectedRes.asInstanceOf[SType#WrappedType], tpeB)
+          )
+        )).withBindings(
+          1.toByte -> Constant[SType](input.asInstanceOf[SType#WrappedType], tpeA)
+        )
+
+      implicit val IR = createIR()
+      val prover = new FeatureProvingInterpreter()
+
+      val pr = prover.prove(compiledTree, ergoCtx, fakeMessage).getOrThrow
+
+      val verifier = new ErgoLikeInterpreter() { type CTX = ErgoLikeContext }
+
+      val verificationCtx = ergoCtx.withExtension(pr.extension)
+
+      val vres = verifier.verify(compiledTree, verificationCtx, pr, fakeMessage)
+      vres match {
+        case Success((ok, cost)) =>
+          ok shouldBe true
+          assertResult(expectedCost, s"Actual verify() cost $cost != expected $expectedCost")(cost.toIntExact)
+
+        case Failure(t) => throw t
+      }
+    }
+  }
+  object FeatureTest {
+    /** Cost of the feature verify script.
+      * @see checkVerify() */
+    val VerifyScriptCost = 6317
   }
 
   /** Describes existing language feature which should be equally supported in both v3 and
@@ -236,7 +311,7 @@ class SigmaDslTesting extends PropSpec
     FeatureTest(AddedFeature, script, scalaFunc, Option(expectedExpr), oldImpl, newImpl)
   }
 
-  val contextGen: Gen[Context] = ergoLikeContextGen.map(c => c.toSigmaContext(IR, false))
+  val contextGen: Gen[Context] = ergoLikeContextGen.map(c => c.toSigmaContext(createIR(), false))
   implicit val arbContext = Arbitrary(contextGen)
 
   /** NOTE, this should be `def` to allow overriding of generatorDrivenConfig in derived Spec classes. */
@@ -262,21 +337,71 @@ class SigmaDslTesting extends PropSpec
       val res = f.checkEquality(x, printTestCases).map(_._1)
 
       // TODO HF: remove this `if` once newImpl is implemented
-      if (f.featureType == ExistingFeature) {
-        (res, expectedRes) match {
-          case (Failure(exception), Failure(expectedException)) =>
-            rootCause(exception).getClass shouldBe expectedException.getClass
-          case _ =>
-            if (failOnTestVectors) {
-              assertResult(expectedRes, s"Actual: ${SigmaPPrint(res, height = 150).plainText}")(res)
-            }
-            else {
-              if (expectedRes != res) {
-                print("\nSuggested Expected Result: ")
-                SigmaPPrint.pprintln(res, height = 150)
+      f.featureType match {
+        case ExistingFeature =>
+          (res, expectedRes) match {
+            case (Failure(exception), Failure(expectedException)) =>
+              rootCause(exception).getClass shouldBe expectedException.getClass
+            case _ =>
+              if (failOnTestVectors) {
+                assertResult(expectedRes, s"Actual: ${SigmaPPrint(res, height = 150).plainText}")(res)
               }
-            }
-        }
+              else {
+                if (expectedRes != res) {
+                  print("\nSuggested Expected Result: ")
+                  SigmaPPrint.pprintln(res, height = 150)
+                }
+              }
+          }
+        case AddedFeature =>
+          res.isFailure shouldBe true
+          Try(f.scalaFunc(x)) shouldBe expectedRes
+      }
+    }
+    preGeneratedSamples match {
+      case Some(samples) =>
+        test(samples, f, printTestCases)
+      case None =>
+        test(f, printTestCases)
+    }
+  }
+
+  def testCases2[A: Ordering : Arbitrary : ClassTag, B]
+      (cases: Seq[(A, Try[(B, Int)])],
+       f: FeatureTest[A, B],
+       printTestCases: Boolean = PrintTestCasesDefault,
+       failOnTestVectors: Boolean = FailOnTestVectorsDefault,
+       preGeneratedSamples: Option[Seq[A]] = None): Unit = {
+
+    val table = Table(("x", "y"), cases:_*)
+    forAll(table) { (x: A, expectedRes: Try[(B, Int)]) =>
+      val funcRes = f.checkEquality(x, printTestCases)
+
+      // TODO HF: remove this `if` once newImpl is implemented
+      f.featureType match {
+        case ExistingFeature =>
+          (funcRes.map(_._1), expectedRes.map(_._1)) match {
+            case (Failure(exception), Failure(expectedException)) =>
+              rootCause(exception).getClass shouldBe expectedException.getClass
+            case (res, expectedRes) =>
+              if (failOnTestVectors) {
+                assertResult(expectedRes, s"Actual Result: ${SigmaPPrint(res, height = 150).plainText}")(res)
+              }
+              else {
+                if (expectedRes != res) {
+                  print("\nSuggested Expected Result: ")
+                  SigmaPPrint.pprintln(res, height = 150)
+                }
+              }
+          }
+          (funcRes, expectedRes) match {
+            case (Success((y, _)), Success((_, expectedCost))) =>
+              f.checkVerify(x, y, expectedCost)
+            case _ =>
+          }
+        case AddedFeature =>
+          funcRes.isFailure shouldBe true
+          Try(f.scalaFunc(x)) shouldBe expectedRes
       }
     }
     preGeneratedSamples match {

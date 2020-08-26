@@ -165,9 +165,7 @@ trait SigmaTestingCommons extends PropSpec
     import IR._
     import IR.Context._;
     val tA = RType[A]
-    val tB = RType[B]
     val tpeA = Evaluation.rtypeToSType(tA)
-    val tpeB = Evaluation.rtypeToSType(tB)
     val code =
       s"""{
          |  val func = $funcScript
@@ -240,7 +238,7 @@ trait SigmaTestingCommons extends PropSpec
       }
 
       val estimatedCost = IR.checkCostWithContext(costingCtx, costF, ScriptCostLimit.value, 0L).getOrThrow
-      println(s"Estimated Cost: $estimatedCost")
+//      println(s"Estimated Cost: $estimatedCost")
 
       val (res, _) = valueFun(sigmaCtx)
       (res.asInstanceOf[B], estimatedCost)

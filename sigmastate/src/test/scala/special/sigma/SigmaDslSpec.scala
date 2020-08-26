@@ -44,6 +44,8 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
 
   override implicit val generatorDrivenConfig = PropertyCheckConfiguration(minSuccessful = 30)
 
+  implicit def IR = createIR()
+  
   ///=====================================================
   ///              Boolean type operations
   ///-----------------------------------------------------
@@ -70,12 +72,12 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
         )
       ))
     val cases = Seq(
-      ((true, true), Try(false)),
-      ((true, false), Try(true)),
-      ((false, false), Try(false)),
-      ((false, true), Try(true))
+      ((true, true), Try(false -> 4585)),
+      ((true, false), Try(true -> 4585)),
+      ((false, false), Try(false -> 4585)),
+      ((false, true), Try(true -> 4585))
     )
-    testCases(cases, binXor)
+    testCases2(cases, binXor)
   }
 
   property("BinXor(logical XOR) test") {
@@ -92,14 +94,14 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
         )
       ))
     val cases = Seq(
-      ((1095564593, true), Success(true)),
-      ((-901834021, true), Success(true)),
-      ((595045530, false), Success(false)),
-      ((-1157998227, false), Success(false)),
-      ((0, true), Success(false)),
-      ((0, false), Success(true))
+      ((1095564593, true), Success(true -> 4932)),
+      ((-901834021, true), Success(true -> 4932)),
+      ((595045530, false), Success(false -> 4932)),
+      ((-1157998227, false), Success(false -> 4932)),
+      ((0, true), Success(false -> 4932)),
+      ((0, false), Success(true -> 4932))
     )
-    testCases(cases, xor)
+    testCases2(cases, xor)
   }
 
   property("&& boolean equivalence") {
@@ -113,12 +115,12 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
         )
       ))
     val cases = Seq(
-      ((false, true), Success(false)),
-      ((false, false), Success(false)),
-      ((true, true), Success(true)),
-      ((true, false), Success(false))
+      ((false, true), Success(false -> 6308)),
+      ((false, false), Success(false -> 6308)),
+      ((true, true), Success(true -> 6308)),
+      ((true, false), Success(false -> 6308))
     )
-    testCases(cases, eq)
+    testCases2(cases, eq)
   }
 
   property("|| boolean equivalence") {
@@ -132,18 +134,18 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
         )
       ))
     val cases = Seq(
-      ((true, false), Success(true)),
-      ((true, true), Success(true)),
-      ((false, false), Success(false)),
-      ((false, true), Success(true))
+      ((true, false), Success(true -> 6308)),
+      ((true, true), Success(true -> 6308)),
+      ((false, false), Success(false -> 6308)),
+      ((false, true), Success(true -> 6308))
     )
-    testCases(cases, eq)
+    testCases2(cases, eq)
   }
 
   property("lazy || and && boolean equivalence") {
-    testCases(
+    testCases2(
       Seq(
-        (true, Success(true)),
+        (true, Success(true -> 6534)),
         (false, Failure(new ArithmeticException("/ by zero")))
       ),
       existingFeature((x: Boolean) => x || (1 / 0 == 1),
