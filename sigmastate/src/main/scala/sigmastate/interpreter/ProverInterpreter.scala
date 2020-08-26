@@ -11,7 +11,7 @@ import sigmastate.Values._
 import sigmastate._
 import sigmastate.basics.DLogProtocol._
 import sigmastate.basics.VerifierMessage.Challenge
-import sigmastate.basics.{DiffieHellmanTupleInteractiveProver, DiffieHellmanTupleProverInput, FirstDiffieHellmanTupleProverMessage, ProveDHTuple, SecondDiffieHellmanTupleProverMessage, SigmaProtocolPrivateInput}
+import sigmastate.basics._
 import sigmastate.lang.exceptions.CostLimitException
 import sigmastate.utils.Helpers
 
@@ -151,7 +151,7 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
         case in: SigmaProtocolPrivateInput[_, _] => in.publicImage == ul.proposition
         case _ => false
       }
-      println("leaf: " + ul.proposition + " real: " + isReal)
+      // println("leaf: " + ul.proposition + " real: " + isReal)
       ul.withSimulated(!isReal)
     case t =>
       error(s"Don't know how to markReal($t)")
@@ -220,128 +220,157 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
     * Prover Step 6: For every leaf marked "real", use the first prover step of the Sigma-protocol for that leaf to
     * compute the commitment a.
     */
-  def simulateAndCommit(hintsBag: HintsBag): Strategy = everywheretd(rule[ProofTree] {
-    // Step 4 part 1: If the node is marked "real", then each of its simulated children gets a fresh uniformly
-    // random challenge in {0,1}^t.
-    case and: CAndUnproven if and.real => and // A real AND node has no simulated children
+  def simulateAndCommit(hintsBag: HintsBag): Strategy = {
 
-    //real OR or Threshold case
-    case uc: UnprovenConjecture if uc.real =>
-      val newChildren = uc.children.cast[UnprovenTree].map(c =>
-        if (c.real) {
-          c
-        } else {
-          // take challenge from previously done proof stored in the hints bag,
-          // or generate random challenge for simulated child
-          val newChallenge = hintsBag.proofs.find(_.image == c.proposition).map(_.challenge).getOrElse(
-            Challenge @@ secureRandomBytes(CryptoFunctions.soundnessBytes)
-          )
-          c.withChallenge(newChallenge)
-        }
-      )
-      uc match {
-        case or: COrUnproven => or.copy(children = newChildren)
-        case t: CThresholdUnproven => t.copy(children = newChildren)
-        case _ => ???
+    val providedCommitments = hintsBag.commitments.toBuffer
+
+    val providedProofs = hintsBag.realProofs.toBuffer
+
+    def pullCommitment(image: SigmaBoolean): Option[CommitmentHint] = {
+      val idx = providedCommitments.indexWhere(_.image == image)
+      if (idx >= 0) {
+        val cmt = providedCommitments(idx)
+        providedCommitments.remove(idx)
+        Some(cmt)
+      } else {
+        None
       }
+    }
 
-    // Step 4 part 2: If the node is marked "simulated", let e_0 be the challenge computed for it.
-    // All of its children are simulated, and thus we compute challenges for all
-    // of them, as follows:
-    case and: CAndUnproven if and.simulated =>
-      // If the node is AND, then all of its children get e_0 as the challenge
-      assert(and.challengeOpt.isDefined)
-      val challenge = and.challengeOpt.get
-      val newChildren = and.children.cast[UnprovenTree].map(_.withChallenge(challenge))
-      and.copy(children = newChildren)
+    def pullProof(image: SigmaBoolean): Option[RealSecretProof] = {
+      val idx = providedProofs.indexWhere(_.image == image)
+      if (idx >= 0) {
+        val cmt = providedProofs(idx)
+        providedProofs.remove(idx)
+        Some(cmt)
+      } else {
+        None
+      }
+    }
 
-    case or: COrUnproven if or.simulated =>
-      // If the node is OR, then each of its children except one gets a fresh uniformly random
-      // challenge in {0,1}^t. The remaining child gets a challenge computed as an XOR of the challenges of all
-      // the other children and e_0.
-      assert(or.challengeOpt.isDefined)
-      val unprovenChildren = or.children.cast[UnprovenTree]
-      val t = unprovenChildren.tail.map(_.withChallenge(Challenge @@ secureRandomBytes(CryptoFunctions.soundnessBytes)))
-      val toXor: Seq[Array[Byte]] = or.challengeOpt.get +: t.map(_.challengeOpt.get)
-      val xoredChallenge = Challenge @@ Helpers.xor(toXor: _*)
-      val h = unprovenChildren.head.withChallenge(xoredChallenge)
-      or.copy(children = h +: t)
 
-    case t: CThresholdUnproven if t.simulated =>
-      // The faster algorithm is as follows. Pick n-k fresh uniformly random values
-      // q_1, ..., q_{n-k} from {0,1}^t and let q_0=e_0.
-      // Viewing 1, 2, ..., n and q_0, ..., q_{n-k} as elements of GF(2^t),
-      // evaluate the polynomial Q(x) = sum {q_i x^i} over GF(2^t) at points 1, 2, ..., n
-      // to get challenges for child 1, 2, ..., n, respectively.
+    everywheretd(rule[ProofTree] {
+      // Step 4 part 1: If the node is marked "real", then each of its simulated children gets a fresh uniformly
+      // random challenge in {0,1}^t.
+      case and: CAndUnproven if and.real => and // A real AND node has no simulated children
+
+      //real OR or Threshold case
+      case uc: UnprovenConjecture if uc.real =>
+        val newChildren = uc.children.cast[UnprovenTree].map(c =>
+          if (c.real) {
+            c
+          } else {
+            // take challenge from previously done proof stored in the hints bag,
+            // or generate random challenge for simulated child
+            val newChallenge = pullProof(c.proposition).map(_.challenge).getOrElse(
+              Challenge @@ secureRandomBytes(CryptoFunctions.soundnessBytes)
+            )
+            c.withChallenge(newChallenge)
+          }
+        )
+        uc match {
+          case or: COrUnproven => or.copy(children = newChildren)
+          case t: CThresholdUnproven => t.copy(children = newChildren)
+          case _ => ???
+        }
+
+      // Step 4 part 2: If the node is marked "simulated", let e_0 be the challenge computed for it.
+      // All of its children are simulated, and thus we compute challenges for all
+      // of them, as follows:
+      case and: CAndUnproven if and.simulated =>
+        // If the node is AND, then all of its children get e_0 as the challenge
+        assert(and.challengeOpt.isDefined)
+        val challenge = and.challengeOpt.get
+        val newChildren = and.children.cast[UnprovenTree].map(_.withChallenge(challenge))
+        and.copy(children = newChildren)
+
+      case or: COrUnproven if or.simulated =>
+        // If the node is OR, then each of its children except one gets a fresh uniformly random
+        // challenge in {0,1}^t. The remaining child gets a challenge computed as an XOR of the challenges of all
+        // the other children and e_0.
+        assert(or.challengeOpt.isDefined)
+        val unprovenChildren = or.children.cast[UnprovenTree]
+        val t = unprovenChildren.tail.map(_.withChallenge(Challenge @@ secureRandomBytes(CryptoFunctions.soundnessBytes)))
+        val toXor: Seq[Array[Byte]] = or.challengeOpt.get +: t.map(_.challengeOpt.get)
+        val xoredChallenge = Challenge @@ Helpers.xor(toXor: _*)
+        val h = unprovenChildren.head.withChallenge(xoredChallenge)
+        or.copy(children = h +: t)
+
+      case t: CThresholdUnproven if t.simulated =>
+        // The faster algorithm is as follows. Pick n-k fresh uniformly random values
+        // q_1, ..., q_{n-k} from {0,1}^t and let q_0=e_0.
+        // Viewing 1, 2, ..., n and q_0, ..., q_{n-k} as elements of GF(2^t),
+        // evaluate the polynomial Q(x) = sum {q_i x^i} over GF(2^t) at points 1, 2, ..., n
+        // to get challenges for child 1, 2, ..., n, respectively.
+        assert(t.challengeOpt.isDefined)
+        val n = t.children.length
+        val unprovenChildren = t.children.cast[UnprovenTree]
+        val q = GF2_192_Poly.fromByteArray(t.challengeOpt.get, secureRandomBytes(CryptoFunctions.soundnessBytes * (n - t.k)))
+
+        val newChildren = unprovenChildren.foldLeft((Seq[UnprovenTree](), 1)) {
+          case ((childSeq, childIndex), child) =>
+            (childSeq :+ child.withChallenge(Challenge @@ q.evaluate(childIndex.toByte).toByteArray), childIndex + 1)
+        }._1
+        t.withPolynomial(q).copy(children = newChildren)
+
+      // The algorithm with better resistance to timing attacks is as follows.
+      // Pick n-k fresh uniformly random values e_1, ..., e_{n-k}
+      // as challenges for the children number 1, ..., n-k.
+      // Let i_0 = 0. Viewing 0, 1, 2, ..., n and e_0, ..., e_{n-k} as elements of GF(2^t),
+      // find (via polynomial interpolation) the
+      // lowest-degree polynomial Q(x)=sum_{i=0}^{n-k} a_i x^i  over GF(2^t) that is equal to e_j at j for each j
+      // from 0 to n-k (this polynomial will have n-k+1 coefficients, and the lowest coefficient will be e_0).
+      // Set the challenge at child j for n-k<j<= n to equal Q(j).
+
+      /* **** Uncomment this and comment out the above algorithm if you want better resistance to timing attacks
       assert(t.challengeOpt.isDefined)
       val n = t.children.length
       val unprovenChildren = t.children.cast[UnprovenTree]
-      val q = GF2_192_Poly.fromByteArray(t.challengeOpt.get, secureRandomBytes(CryptoFunctions.soundnessBytes * (n - t.k)))
+      val childrenWithRandomChallenges = unprovenChildren.slice(0, n-t.k).map(_.withChallenge(Challenge @@ secureRandomBytes(CryptoFunctions.soundnessBytes)))
+      val (points, values, _) = childrenWithRandomChallenges.foldLeft(((Array[Byte](), Array[GF2_192](),1))) {
+        case ((p, v, count), child) =>
+          val (newPoints, newValues) =
+            if (count <= n - t.k) {
+              (p :+ count.toByte, v :+ new GF2_192(child.challengeOpt.get))
+            }
+            else (p, v)
+          (newPoints, newValues, count + 1)
+      }
+      val q = GF2_192_Poly.interpolate(points, values, new GF2_192(t.challengeOpt.get))
 
-      val newChildren = unprovenChildren.foldLeft((Seq[UnprovenTree](), 1)) {
+      val newChildren = unprovenChildren.slice(n-t.k, n).foldLeft((childrenWithRandomChallenges, n-t.k+1)) {
         case ((childSeq, childIndex), child) =>
           (childSeq :+ child.withChallenge(Challenge @@ q.evaluate(childIndex.toByte).toByteArray), childIndex + 1)
       }._1
-      t.withPolynomial(q).copy(children = newChildren)
+      t.withPolynomial(q).copy(children=newChildren)
+      */
 
-    // The algorithm with better resistance to timing attacks is as follows.
-    // Pick n-k fresh uniformly random values e_1, ..., e_{n-k}
-    // as challenges for the children number 1, ..., n-k.
-    // Let i_0 = 0. Viewing 0, 1, 2, ..., n and e_0, ..., e_{n-k} as elements of GF(2^t),
-    // find (via polynomial interpolation) the
-    // lowest-degree polynomial Q(x)=sum_{i=0}^{n-k} a_i x^i  over GF(2^t) that is equal to e_j at j for each j
-    // from 0 to n-k (this polynomial will have n-k+1 coefficients, and the lowest coefficient will be e_0).
-    // Set the challenge at child j for n-k<j<= n to equal Q(j).
-
-    /* **** Uncomment this and comment out the above algorithm if you want better resistance to timing attacks
-    assert(t.challengeOpt.isDefined)
-    val n = t.children.length
-    val unprovenChildren = t.children.cast[UnprovenTree]
-    val childrenWithRandomChallenges = unprovenChildren.slice(0, n-t.k).map(_.withChallenge(Challenge @@ secureRandomBytes(CryptoFunctions.soundnessBytes)))
-    val (points, values, _) = childrenWithRandomChallenges.foldLeft(((Array[Byte](), Array[GF2_192](),1))) {
-      case ((p, v, count), child) =>
-        val (newPoints, newValues) =
-          if (count <= n - t.k) {
-            (p :+ count.toByte, v :+ new GF2_192(child.challengeOpt.get))
-          }
-          else (p, v)
-        (newPoints, newValues, count + 1)
-    }
-    val q = GF2_192_Poly.interpolate(points, values, new GF2_192(t.challengeOpt.get))
-
-    val newChildren = unprovenChildren.slice(n-t.k, n).foldLeft((childrenWithRandomChallenges, n-t.k+1)) {
-      case ((childSeq, childIndex), child) =>
-        (childSeq :+ child.withChallenge(Challenge @@ q.evaluate(childIndex.toByte).toByteArray), childIndex + 1)
-    }._1
-    t.withPolynomial(q).copy(children=newChildren)
-    */
-
-    case su: UnprovenSchnorr =>
-      // Steps 5 & 6: first try pulling out commitment from the hints bag. If it exists proceed with it,
-      // otherwise, compute the commitment (if the node is real) or simulate it (if the node is simulated)
-
-      // Step 6 (real leaf -- compute the commitment a or take it from the hints bag)
-      hintsBag.commitments.find(_.image == su.proposition).map { cmtHint =>
-        su.copy(commitmentOpt = Some(cmtHint.commitment.asInstanceOf[FirstDLogProverMessage]))
-      }.getOrElse {
-        if (su.simulated) {
-          // Step 5 (simulated leaf -- complete the simulation)
-          assert(su.challengeOpt.isDefined)
-          val (fm, sm) = DLogInteractiveProver.simulate(su.proposition, su.challengeOpt.get)
-          UncheckedSchnorr(su.proposition, Some(fm), su.challengeOpt.get, sm)
-        } else {
-          // Step 6 -- compute the commitment
-          val (r, commitment) = DLogInteractiveProver.firstMessage()
-          su.copy(commitmentOpt = Some(commitment), randomnessOpt = Some(r))
-        }
-      }
-
-    case dhu: UnprovenDiffieHellmanTuple =>
-       //Steps 5 & 6: pull out commitment from the hints bag, otherwise, compute the commitment(if the node is real),
-       // or simulate it (if the node is simulated)
+      case su: UnprovenSchnorr =>
+        // Steps 5 & 6: first try pulling out commitment from the hints bag. If it exists proceed with it,
+        // otherwise, compute the commitment (if the node is real) or simulate it (if the node is simulated)
 
         // Step 6 (real leaf -- compute the commitment a or take it from the hints bag)
-        hintsBag.commitments.find(_.image == dhu.proposition).map { cmtHint =>
+        pullCommitment(su.proposition).map { cmtHint =>
+          su.copy(commitmentOpt = Some(cmtHint.commitment.asInstanceOf[FirstDLogProverMessage]))
+        }.getOrElse {
+          if (su.simulated) {
+            // Step 5 (simulated leaf -- complete the simulation)
+            assert(su.challengeOpt.isDefined)
+            val (fm, sm) = DLogInteractiveProver.simulate(su.proposition, su.challengeOpt.get)
+            UncheckedSchnorr(su.proposition, Some(fm), su.challengeOpt.get, sm)
+          } else {
+            // Step 6 -- compute the commitment
+            val (r, commitment) = DLogInteractiveProver.firstMessage()
+            su.copy(commitmentOpt = Some(commitment), randomnessOpt = Some(r))
+          }
+        }
+
+      case dhu: UnprovenDiffieHellmanTuple =>
+        //Steps 5 & 6: pull out commitment from the hints bag, otherwise, compute the commitment(if the node is real),
+        // or simulate it (if the node is simulated)
+
+        // Step 6 (real leaf -- compute the commitment a or take it from the hints bag)
+        pullCommitment(dhu.proposition).map { cmtHint =>
           dhu.copy(commitmentOpt = Some(cmtHint.commitment.asInstanceOf[FirstDiffieHellmanTupleProverMessage]))
         }.getOrElse {
           if (dhu.simulated) {
@@ -356,8 +385,9 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
           }
         }
 
-    case a: Any => error(s"Don't know how to challengeSimulated($a)")
-  })
+      case a: Any => error(s"Don't know how to challengeSimulated($a)")
+    })
+  }
 
   private def extractChallenge(pt: ProofTree): Option[Array[Byte]] = pt match {
     case upt: UnprovenTree => upt.challengeOpt
@@ -371,139 +401,168 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
     * the challenge e for every node marked "real" below the root and, additionally, the response z for every leaf
     * marked "real"
     */
-  def proving(hintsBag: HintsBag): Strategy = everywheretd(rule[ProofTree] {
-    // If the node is a non-leaf marked real whose challenge is e_0, proceed as follows:
-    case and: CAndUnproven if and.real =>
-      assert(and.challengeOpt.isDefined)
-      // If the node is AND, let each of its children have the challenge e_0
-      val andChallenge = and.challengeOpt.get
-      and.copy(children = and.children.map(_.asInstanceOf[UnprovenTree].withChallenge(andChallenge)))
+  def proving(hintsBag: HintsBag): Strategy = {
 
-    case or: COrUnproven if or.real =>
-      // If the node is OR, it has only one child marked "real".
-      // Let this child have the challenge equal to the XOR of the challenges of all the other children and e_0
-      assert(or.challengeOpt.isDefined)
-      val rootChallenge = or.challengeOpt.get
-      val challenge = Challenge @@ Helpers.xor(rootChallenge +: or.children.flatMap(extractChallenge): _*)
+    val providedOwnCommitments = hintsBag.ownCommitments.toBuffer
 
-      or.copy(children = or.children.map {
-        case r: UnprovenTree if r.real => r.withChallenge(challenge)
-        case p: ProofTree => p
-      })
+    val providedProofs = hintsBag.realProofs.toBuffer
 
-    case t: CThresholdUnproven if t.real =>
-      // If the node is THRESHOLD(k), number its children from 1 to no. Let i_1,..., i_{n-k}
-      // be the indices of the children marked `"simulated" and e_1, ...,  e_{n-k} be their corresponding challenges.
-      // Let i_0 = 0. Viewing 0, 1, 2, ..., n and e_0, ..., e_{n-k} as elements of GF(2^t),
-      // find (via polynomial interpolation) the lowest-degree polynomial
-      // Q(x)=sum_{i=0}^{n-k} a_i x^i  over GF(2^t) that is equal to e_j at i_j for each f from 0 to n-k
-      // (this polynomial will have n-k+1 coefficients, and the lowest coefficient will be e_0). For child number
-      // i of the node, if the child is marked "real", compute its challenge as Q(i) (if the child is marked
-      // "simulated", its challenge is already Q(i), by construction of Q).
-      assert(t.challengeOpt.isDefined)
-      val (points, values, _) = t.children.foldLeft(Array[Byte](), Array[GF2_192](), 1) {
-        case ((p, v, count), child) =>
-          val (newPoints, newValues) = {
-            // This is the easiest way to find out whether a child is simulated -- just to check if it alread
-            // has a challenge. Other ways are more of a pain because the children can be of different types
-            val challengeOpt = extractChallenge(child)
-            if (challengeOpt.isEmpty) (p, v)
-            else (p :+ count.toByte, v :+ new GF2_192(challengeOpt.get))
-
-          }
-          (newPoints, newValues, count + 1)
+    def pullOwnCommitment(image: SigmaBoolean): Option[OwnCommitment] = {
+      val idx = providedOwnCommitments.indexWhere(_.image == image)
+      if (idx >= 0) {
+        val cmt = providedOwnCommitments(idx)
+        providedOwnCommitments.remove(idx)
+        Some(cmt)
+      } else {
+        None
       }
-      val q = GF2_192_Poly.interpolate(points, values, new GF2_192(t.challengeOpt.get))
-      val newChildren = t.children.foldLeft(Seq[ProofTree](), 1) {
-        case ((s, count), child) =>
-          val newChild = child match {
-            case r: UnprovenTree if r.real => r.withChallenge(Challenge @@ q.evaluate(count.toByte).toByteArray())
-            case p: ProofTree => p
-          }
-          (s :+ newChild, count + 1)
-      }._1
-      t.withPolynomial(q).copy(children = newChildren)
+    }
 
-    // If the node is a leaf marked "real", compute its response according to the second prover step
-    // of the Sigma-protocol given the commitment, challenge, and witness, or pull response from the hints bag
-    case su: UnprovenSchnorr if su.real =>
-      assert(su.challengeOpt.isDefined, s"Real UnprovenSchnorr $su should have challenge defined")
-      val privKeyOpt = secrets
-        .filter(_.isInstanceOf[DLogProverInput])
-        .find(_.asInstanceOf[DLogProverInput].publicImage == su.proposition)
-
-      val z = privKeyOpt match {
-        case Some(privKey: DLogProverInput) =>
-          hintsBag.ownCommitments.find(_.image == su.proposition).map { oc =>
-            DLogInteractiveProver.secondMessage(
-              privKey,
-              oc.secretRandomness,
-              su.challengeOpt.get)
-          }.getOrElse {
-            DLogInteractiveProver.secondMessage(
-              privKey,
-              su.randomnessOpt.get,
-              su.challengeOpt.get)
-          }
-
-        case None =>
-          hintsBag.realProofs.find(_.image == su.proposition).map { proof =>
-            val provenSchnorr = proof.uncheckedTree.asInstanceOf[UncheckedSchnorr]
-            provenSchnorr.secondMessage
-          }.getOrElse {
-            val bs = secureRandomBytes(32)
-            SecondDLogProverMessage(new BigInteger(1, bs).mod(CryptoConstants.groupOrder))
-          }
+    def pullProof(image: SigmaBoolean): Option[RealSecretProof] = {
+      val idx = providedProofs.indexWhere(_.image == image)
+      if (idx >= 0) {
+        val cmt = providedProofs(idx)
+        providedProofs.remove(idx)
+        Some(cmt)
+      } else {
+        None
       }
-      UncheckedSchnorr(su.proposition, None, su.challengeOpt.get, z)
+    }
 
-    // If the node is a leaf marked "real", compute its response according to the second prover step
-    // of the Sigma-protocol given the commitment, challenge, and witness, or pull response from the hints bag
-    case dhu: UnprovenDiffieHellmanTuple if dhu.real =>
-      assert(dhu.challengeOpt.isDefined, s"Real UnprovenDiffieHellmanTuple $dhu should have challenge defined")
-      val privKeyOpt = secrets
-        .filter(_.isInstanceOf[DiffieHellmanTupleProverInput])
-        .find(_.asInstanceOf[DiffieHellmanTupleProverInput].publicImage == dhu.proposition)
+    everywheretd(rule[ProofTree] {
+      // If the node is a non-leaf marked real whose challenge is e_0, proceed as follows:
+      case and: CAndUnproven if and.real =>
+        assert(and.challengeOpt.isDefined)
+        // If the node is AND, let each of its children have the challenge e_0
+        val andChallenge = and.challengeOpt.get
+        and.copy(children = and.children.map(_.asInstanceOf[UnprovenTree].withChallenge(andChallenge)))
 
-      val z = privKeyOpt match {
-        case Some(privKey) =>
-          hintsBag.ownCommitments.find(_.image == dhu.proposition).map { oc =>
-            DiffieHellmanTupleInteractiveProver.secondMessage(
-              privKey.asInstanceOf[DiffieHellmanTupleProverInput],
-              oc.secretRandomness,
-              dhu.challengeOpt.get)
-          }.getOrElse {
-            DiffieHellmanTupleInteractiveProver.secondMessage(
-              privKey.asInstanceOf[DiffieHellmanTupleProverInput],
-              dhu.randomnessOpt.get,
-              dhu.challengeOpt.get)
-          }
+      case or: COrUnproven if or.real =>
+        // If the node is OR, it has only one child marked "real".
+        // Let this child have the challenge equal to the XOR of the challenges of all the other children and e_0
+        assert(or.challengeOpt.isDefined)
+        val rootChallenge = or.challengeOpt.get
+        val challenge = Challenge @@ Helpers.xor(rootChallenge +: or.children.flatMap(extractChallenge): _*)
 
-        case None =>
-          hintsBag.realProofs.find(_.image == dhu.proposition).map { proof =>
-            val provenSchnorr = proof.uncheckedTree.asInstanceOf[UncheckedDiffieHellmanTuple]
-            provenSchnorr.secondMessage
-          }.getOrElse {
-            val bs = secureRandomBytes(32)
-            SecondDiffieHellmanTupleProverMessage(new BigInteger(1, bs).mod(CryptoConstants.groupOrder))
-          }
-      }
-      UncheckedDiffieHellmanTuple(dhu.proposition, None, dhu.challengeOpt.get, z)
+        or.copy(children = or.children.map {
+          case r: UnprovenTree if r.real => r.withChallenge(challenge)
+          case p: ProofTree => p
+        })
 
-    // if the simulated node is proven by someone else, take it from hints bag
-    case su: UnprovenLeaf if su.simulated =>
-      hintsBag.simulatedProofs.find(_.image == su.proposition).map { proof =>
-        proof.uncheckedTree
-      }.getOrElse(su)
+      case t: CThresholdUnproven if t.real =>
+        // If the node is THRESHOLD(k), number its children from 1 to no. Let i_1,..., i_{n-k}
+        // be the indices of the children marked `"simulated" and e_1, ...,  e_{n-k} be their corresponding challenges.
+        // Let i_0 = 0. Viewing 0, 1, 2, ..., n and e_0, ..., e_{n-k} as elements of GF(2^t),
+        // find (via polynomial interpolation) the lowest-degree polynomial
+        // Q(x)=sum_{i=0}^{n-k} a_i x^i  over GF(2^t) that is equal to e_j at i_j for each f from 0 to n-k
+        // (this polynomial will have n-k+1 coefficients, and the lowest coefficient will be e_0). For child number
+        // i of the node, if the child is marked "real", compute its challenge as Q(i) (if the child is marked
+        // "simulated", its challenge is already Q(i), by construction of Q).
+        assert(t.challengeOpt.isDefined)
+        val (points, values, _) = t.children.foldLeft(Array[Byte](), Array[GF2_192](), 1) {
+          case ((p, v, count), child) =>
+            val (newPoints, newValues) = {
+              // This is the easiest way to find out whether a child is simulated -- just to check if it alread
+              // has a challenge. Other ways are more of a pain because the children can be of different types
+              val challengeOpt = extractChallenge(child)
+              if (challengeOpt.isEmpty) (p, v)
+              else (p :+ count.toByte, v :+ new GF2_192(challengeOpt.get))
 
-    case sn: UncheckedSchnorr => sn
+            }
+            (newPoints, newValues, count + 1)
+        }
+        val q = GF2_192_Poly.interpolate(points, values, new GF2_192(t.challengeOpt.get))
+        val newChildren = t.children.foldLeft(Seq[ProofTree](), 1) {
+          case ((s, count), child) =>
+            val newChild = child match {
+              case r: UnprovenTree if r.real => r.withChallenge(Challenge @@ q.evaluate(count.toByte).toByteArray())
+              case p: ProofTree => p
+            }
+            (s :+ newChild, count + 1)
+        }._1
+        t.withPolynomial(q).copy(children = newChildren)
 
-    case dh: UncheckedDiffieHellmanTuple => dh
+      // If the node is a leaf marked "real", compute its response according to the second prover step
+      // of the Sigma-protocol given the commitment, challenge, and witness, or pull response from the hints bag
+      case su: UnprovenSchnorr if su.real =>
+        assert(su.challengeOpt.isDefined, s"Real UnprovenSchnorr $su should have challenge defined")
+        val privKeyOpt = secrets
+          .filter(_.isInstanceOf[DLogProverInput])
+          .find(_.asInstanceOf[DLogProverInput].publicImage == su.proposition)
 
-    case ut: UnprovenTree => ut
+        val z = privKeyOpt match {
+          case Some(privKey: DLogProverInput) =>
+            pullOwnCommitment(su.proposition).map { oc =>
+              DLogInteractiveProver.secondMessage(
+                privKey,
+                oc.secretRandomness,
+                su.challengeOpt.get)
+            }.getOrElse {
+              DLogInteractiveProver.secondMessage(
+                privKey,
+                su.randomnessOpt.get,
+                su.challengeOpt.get)
+            }
 
-    case a: Any => log.warn("Wrong input in prove(): ", a); ???
-  })
+          case None =>
+            pullProof(su.proposition).map { proof =>
+              val provenSchnorr = proof.uncheckedTree.asInstanceOf[UncheckedSchnorr]
+              provenSchnorr.secondMessage
+            }.getOrElse {
+              val bs = secureRandomBytes(32)
+              SecondDLogProverMessage(new BigInteger(1, bs).mod(CryptoConstants.groupOrder))
+            }
+        }
+        UncheckedSchnorr(su.proposition, None, su.challengeOpt.get, z)
+
+      // If the node is a leaf marked "real", compute its response according to the second prover step
+      // of the Sigma-protocol given the commitment, challenge, and witness, or pull response from the hints bag
+      case dhu: UnprovenDiffieHellmanTuple if dhu.real =>
+        assert(dhu.challengeOpt.isDefined, s"Real UnprovenDiffieHellmanTuple $dhu should have challenge defined")
+        val privKeyOpt = secrets
+          .filter(_.isInstanceOf[DiffieHellmanTupleProverInput])
+          .find(_.asInstanceOf[DiffieHellmanTupleProverInput].publicImage == dhu.proposition)
+
+        val z = privKeyOpt match {
+          case Some(privKey) =>
+            pullOwnCommitment(dhu.proposition).map { oc =>
+              DiffieHellmanTupleInteractiveProver.secondMessage(
+                privKey.asInstanceOf[DiffieHellmanTupleProverInput],
+                oc.secretRandomness,
+                dhu.challengeOpt.get)
+            }.getOrElse {
+              DiffieHellmanTupleInteractiveProver.secondMessage(
+                privKey.asInstanceOf[DiffieHellmanTupleProverInput],
+                dhu.randomnessOpt.get,
+                dhu.challengeOpt.get)
+            }
+
+          case None =>
+            pullProof(dhu.proposition).map { proof =>
+              val provenSchnorr = proof.uncheckedTree.asInstanceOf[UncheckedDiffieHellmanTuple]
+              provenSchnorr.secondMessage
+            }.getOrElse {
+              val bs = secureRandomBytes(32)
+              SecondDiffieHellmanTupleProverMessage(new BigInteger(1, bs).mod(CryptoConstants.groupOrder))
+            }
+        }
+        UncheckedDiffieHellmanTuple(dhu.proposition, None, dhu.challengeOpt.get, z)
+
+      // if the simulated node is proven by someone else, take it from hints bag
+      case su: UnprovenLeaf if su.simulated =>
+        hintsBag.simulatedProofs.find(_.image == su.proposition).map { proof =>
+          proof.uncheckedTree
+        }.getOrElse(su)
+
+      case sn: UncheckedSchnorr => sn
+
+      case dh: UncheckedDiffieHellmanTuple => dh
+
+      case ut: UnprovenTree => ut
+
+      case a: Any => log.warn("Wrong input in prove(): ", a); ???
+    })
+  }
 
 
   //converts SigmaTree => UnprovenTree
