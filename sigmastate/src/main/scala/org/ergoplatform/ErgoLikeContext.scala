@@ -107,10 +107,10 @@ class ErgoLikeContext(val lastBlockUtxoRoot: AvlTreeData,
       lastBlockUtxoRoot, headers, preHeader,
       dataBoxes, boxesToSpend, spendingTransaction, selfIndex, extension, newVs, costLimit, initCost)
 
-  override def withExtension(newExtension: ContextExtension): ErgoLikeContext =
+  override def withExtension(newExtension: ContextExtension) =
     new ErgoLikeContext(
       lastBlockUtxoRoot, headers, preHeader,
-      dataBoxes, boxesToSpend, spendingTransaction, selfIndex, newExtension, validationSettings, costLimit, initCost)
+      dataBoxes, boxesToSpend, spendingTransaction, selfIndex, newExtension, validationSettings, costLimit, initCost).asInstanceOf[this.type]
 
   def withTransaction(newSpendingTransaction: ErgoLikeTransactionTemplate[_ <: UnsignedInput]): ErgoLikeContext =
     new ErgoLikeContext(
