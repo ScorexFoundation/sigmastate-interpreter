@@ -402,7 +402,8 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
     }
   }
 
-  object IsTupleFN {  // TODO remove not used
+  // TODO remove as part of refactoring: it is not used
+  object IsTupleFN {
     def unapply(fn: String): Nullable[Byte] = {
       if (fn.startsWith("_")) Nullable[Byte](fn.substring(1).toByte)
       else Nullable.None.asInstanceOf[Nullable[Byte]]
@@ -433,7 +434,8 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
     env
   }
 
-  case class EvaluatedEntry(env: DataEnv, sym: Sym, value: AnyRef) // TODO remove not used
+  // TODO remove as part of refactoring: it is not used
+  case class EvaluatedEntry(env: DataEnv, sym: Sym, value: AnyRef)
 
   protected def printEnvEntry(sym: Sym, value: AnyRef) = {
     def trim[A](arr: Array[A]) = arr.take(arr.length min 100)
@@ -475,7 +477,9 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
       this._currentCost = java.lang.Math.addExact(this._currentCost, n)
     }
     @inline def currentCost: Int = _currentCost
-    @inline def resetCost() = { _currentCost = initialCost }  // TODO remove not used
+
+    // TODO remove as part of refactoring: it is not used
+    @inline def resetCost() = { _currentCost = initialCost }
   }
 
   /** Implements finite state machine with stack of graph blocks (scopes),
@@ -784,18 +788,18 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
 
           case ThunkForce(In(t: ThunkData[Any])) =>
             out(t())
-          case SDBM.sigmaProp(_, In(isValid: Boolean)) =>  // TODO remove never executed case
+          case SDBM.sigmaProp(_, In(isValid: Boolean)) =>  // TODO remove as part of refactoring: never executed case
             val res = CSigmaProp(sigmastate.TrivialProp(isValid))
             out(res)
-          case SDBM.proveDlog(_, In(g: EcPointType)) =>   // TODO remove never executed case
+          case SDBM.proveDlog(_, In(g: EcPointType)) =>   // TODO remove as part of refactoring: never executed case
             val res = CSigmaProp(DLogProtocol.ProveDlog(g))
             out(res)
-          case SDBM.proveDHTuple(_, In(g: EcPointType), In(h: EcPointType), In(u: EcPointType), In(v: EcPointType)) => // TODO remove never executed case
+          case SDBM.proveDHTuple(_, In(g: EcPointType), In(h: EcPointType), In(u: EcPointType), In(v: EcPointType)) => // TODO remove as part of refactoring: never executed case
             val res = CSigmaProp(ProveDHTuple(g, h, u, v))
             out(res)
           case SDBM.avlTree(_, In(flags: Byte),
                            In(digest: SColl[Byte]@unchecked), In(keyLength: Int),
-                           In(valueLengthOpt: Option[Int]@unchecked)) =>  // TODO remove never executed case
+                           In(valueLengthOpt: Option[Int]@unchecked)) =>  // TODO remove as part of refactoring: never executed case
             val res = sigmaDslBuilderValue.avlTree(flags, digest, keyLength, valueLengthOpt)
             out(res)
 

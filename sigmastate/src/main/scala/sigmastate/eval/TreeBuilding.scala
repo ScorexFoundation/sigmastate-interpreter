@@ -283,9 +283,9 @@ trait TreeBuilding extends RuntimeCosting { IR: IRContext =>
       case OM.isDefined(In(optionSym)) =>
         mkOptionIsDefined(optionSym.asValue[SOption[SType]])
 
-      case SigmaM.and_bool_&&(In(prop), In(cond)) => // TODO remove or cover never executed
+      case SigmaM.and_bool_&&(In(prop), In(cond)) => // TODO remove or cover by tests: it is never executed
         SigmaAnd(Seq(prop.asSigmaProp, mkBoolToSigmaProp(cond.asBoolValue)))
-      case SigmaM.or_bool_||(In(prop), In(cond)) => // TODO remove or cover never executed
+      case SigmaM.or_bool_||(In(prop), In(cond)) => // TODO remove or cover by tests: it is never executed
         SigmaOr(Seq(prop.asSigmaProp, mkBoolToSigmaProp(cond.asBoolValue)))
       case SigmaM.and_sigma_&&(In(p1), In(p2)) =>
         SigmaAnd(Seq(p1.asSigmaProp, p2.asSigmaProp))
@@ -334,7 +334,7 @@ trait TreeBuilding extends RuntimeCosting { IR: IRContext =>
           case _ =>
             mkCreateProveDHTuple(g.asGroupElement, h.asGroupElement, u.asGroupElement, v.asGroupElement)
         }
-      case SDBM.sigmaProp(_, In(cond)) => // TODO remove or cover never executed
+      case SDBM.sigmaProp(_, In(cond)) => // TODO remove or cover by tests: it is never executed
         mkBoolToSigmaProp(cond.asBoolValue)
       case SDBM.byteArrayToBigInt(_, colSym) =>
         mkByteArrayToBigInt(recurse(colSym))

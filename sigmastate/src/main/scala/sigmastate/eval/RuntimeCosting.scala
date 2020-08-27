@@ -195,7 +195,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
       costOf(s"Const", Constant[SType](SType.DummyValue, tpe).opType)
   }
 
-  def constCost[T: Elem]: Ref[Int] = {  // TODO remove never executed
+  def constCost[T: Elem]: Ref[Int] = {  // TODO remove as part of refactoring: never executed
     val tpe = elemToSType(element[T])
     constCost(tpe)
   }
@@ -389,7 +389,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
   implicit def extendCostedCollElem[A](elem: Elem[CostedColl[A]]): CostedCollElem[A, CostedColl[A]] =
     elem.asInstanceOf[CostedCollElem[A, CostedColl[A]]]
 
-  def splitCostedFunc2[A,B](f: RFuncCosted[A,B]): (Ref[A=>B], Ref[((Int, Size[A])) => Int]) = { // TODO remove not used
+  def splitCostedFunc2[A,B](f: RFuncCosted[A,B]): (Ref[A=>B], Ref[((Int, Size[A])) => Int]) = { // TODO remove as part of refactoring: it is not used
     implicit val eA = f.elem.eDom.eVal
     val calcF = f.sliceCalc
     val costF = f.sliceCost
@@ -965,7 +965,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
 
   import sigmastate._
 
-  protected def isOperationNode(v: SValue): Boolean = v match {  // TODO remove not used
+  protected def isOperationNode(v: SValue): Boolean = v match {  // TODO remove as part of refactoring: it is not used
     case _: Block | _: BlockValue | _: TaggedVariableNode[_] | _: ValNode | _: ValDef | _: ValUse[_] | _: FuncValue => false
     case _ => true
   }
@@ -1161,7 +1161,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
     }
 
     val res: Ref[Any] = node match {
-      case TaggedVariableNode(id, _) => // TODO remove never executed
+      case TaggedVariableNode(id, _) => // TODO remove as part of refactoring: never executed
         env.getOrElse(id, !!!(s"TaggedVariable $id not found in environment $env"))
 
       case c @ Constant(v, tpe) => v match {

@@ -235,7 +235,8 @@ trait CostingRules extends SigmaLibrary { IR: IRContext =>
     costedBuilder.mkSizeColl(sizes)
   }
 
-  def mkSizeColl[T](len: Ref[Int], sItem: RSize[T]): Ref[Size[Coll[T]]] = { // TODO remove not used
+  // TODO remove as part of refactoring: it is not used
+  def mkSizeColl[T](len: Ref[Int], sItem: RSize[T]): Ref[Size[Coll[T]]] = {
     val sizes = colBuilder.replicate(len, sItem)
     costedBuilder.mkSizeColl(sizes)
   }

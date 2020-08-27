@@ -98,7 +98,7 @@ trait IRContext extends Evaluation with TreeBuilding {
     estimatedCost
   }
 
-  // TODO remove not used
+  // TODO remove as part of refactoring: it is not used
   def checkCostEx(ctx: SContext, exp: Value[SType],
                 costF: Ref[((Int, Size[Context])) => Int], maxCost: Long): Int = {
     val costFun = compile[(Int, SSize[SContext]), Int, (Int, Size[Context]), Int](getDataEnv, costF, Some(maxCost))

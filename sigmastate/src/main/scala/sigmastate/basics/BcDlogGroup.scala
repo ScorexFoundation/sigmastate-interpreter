@@ -133,7 +133,7 @@ abstract class BcDlogGroup[ElemType <: ECPoint](val x9params: X9ECParameters) ex
     k
   }
 
-  // TODO remove: it is not used
+  // TODO remove as part of refactoring: it is not used
   /**
     * This function returns the k least significant bytes of the number x
     *
@@ -147,7 +147,7 @@ abstract class BcDlogGroup[ElemType <: ECPoint](val x9params: X9ECParameters) ex
     x.mod(modulo).toByteArray
   }
 
-  // TODO remove: it is not used
+  // TODO remove as part of refactoring: it is not used
   def checkMembershipAndCreate(x: BigInteger, y: BigInteger): Try[ElemType] = Try {
     val valid = checkCurveMembership(x, y)
     // checks validity
@@ -174,7 +174,7 @@ abstract class BcDlogGroup[ElemType <: ECPoint](val x9params: X9ECParameters) ex
     * @param y - Y coordinate
     * @return
     */
-  // TODO remove: it is not used
+  // TODO remove as part of refactoring: it is not used
   def createPoint(x: BigInteger, y: BigInteger): ElemType = curve.createPoint(x, y).asInstanceOf[ElemType]
 
 
