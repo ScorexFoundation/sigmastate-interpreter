@@ -30,6 +30,11 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
 
   val secrets: Seq[SigmaProtocolPrivateInput[_, _]]
 
+  lazy val publicKeys = secrets.map(_.publicImage.asInstanceOf[SigmaBoolean])
+
+  def generateCommitments(ergoTree: ErgoTree, ctx: CTX): HintsBag = generateCommitmentsFor(ergoTree, ctx, publicKeys)
+  def generateCommitments(sigmaTree: SigmaBoolean): HintsBag = generateCommitmentsFor(sigmaTree, publicKeys)
+
   /**
     * The comments in this section are taken from the algorithm for the
     * Sigma-protocol prover as described in the ErgoScript white-paper
@@ -151,11 +156,21 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
         case in: SigmaProtocolPrivateInput[_, _] => in.publicImage == ul.proposition
         case _ => false
       }
-      // println("leaf: " + ul.proposition + " real: " + isReal)
       ul.withSimulated(!isReal)
     case t =>
       error(s"Don't know how to markReal($t)")
   })
+
+  def setPositions(uc: UnprovenConjecture): UnprovenConjecture = {
+    val updChildren = uc.children.zipWithIndex.map { case (pt, idx) =>
+        pt.asInstanceOf[UnprovenTree].withPosition(uc.position + "-" + idx.toString)
+    }
+    uc match {
+      case and: CAndUnproven => and.copy(children = updChildren)
+      case or: COrUnproven => or.copy(children = updChildren)
+      case threshold: CThresholdUnproven => threshold.copy(children = updChildren)
+    }
+  }
 
   /**
     * Prover Step 3: This step will change some "real" nodes to "simulated" to make sure each node has
@@ -165,11 +180,16 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
   val polishSimulated: Strategy = everywheretd(rule[UnprovenTree] {
     case and: CAndUnproven =>
       // If the node is marked "simulated", mark all of its children "simulated"
-      if (and.simulated) and.copy(children = and.children.map(_.asInstanceOf[UnprovenTree].withSimulated(true)))
-      else and
+      val a = if (and.simulated) {
+        and.copy(children = and.children.map(_.asInstanceOf[UnprovenTree].withSimulated(true)))
+      } else {
+        and
+      }
+      setPositions(a)
+
     case or: COrUnproven =>
       // If the node is marked "simulated", mark all of its children "simulated"
-      if (or.simulated) {
+      val o = if (or.simulated) {
         or.copy(children = or.children.map(_.asInstanceOf[UnprovenTree].withSimulated(true)))
       } else {
         // If the node is OR marked "real",  mark all but one of its children "simulated"
@@ -187,10 +207,12 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
         }._1
         or.copy(children = newChildren)
       }
+      setPositions(o)
     case t: CThresholdUnproven =>
       // If the node is marked "simulated", mark all of its children "simulated"
-      if (t.simulated) t.copy(children = t.children.map(_.asInstanceOf[UnprovenTree].withSimulated(true)))
-      else {
+      val th = if (t.simulated) {
+        t.copy(children = t.children.map(_.asInstanceOf[UnprovenTree].withSimulated(true)))
+      } else {
         // If the node is THRESHOLD(k) marked "real", mark all but k of its children "simulated"
         // (the node is guaranteed, by the previous step, to have at least k "real" children).
         // Which particular ones are left "real" is not important for security;
@@ -208,6 +230,7 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
         }._1
         t.copy(children = newChildren)
       }
+      setPositions(th)
     case su: UnprovenSchnorr => su
     case dhu: UnprovenDiffieHellmanTuple => dhu
     case _ => ???
@@ -221,34 +244,6 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
     * compute the commitment a.
     */
   def simulateAndCommit(hintsBag: HintsBag): Strategy = {
-
-    val providedCommitments = hintsBag.commitments.toBuffer
-
-    val providedProofs = hintsBag.realProofs.toBuffer
-
-    def pullCommitment(image: SigmaBoolean): Option[CommitmentHint] = {
-      val idx = providedCommitments.indexWhere(_.image == image)
-      if (idx >= 0) {
-        val cmt = providedCommitments(idx)
-        providedCommitments.remove(idx)
-        Some(cmt)
-      } else {
-        None
-      }
-    }
-
-    def pullProof(image: SigmaBoolean): Option[RealSecretProof] = {
-      val idx = providedProofs.indexWhere(_.image == image)
-      if (idx >= 0) {
-        val cmt = providedProofs(idx)
-        providedProofs.remove(idx)
-        Some(cmt)
-      } else {
-        None
-      }
-    }
-
-
     everywheretd(rule[ProofTree] {
       // Step 4 part 1: If the node is marked "real", then each of its simulated children gets a fresh uniformly
       // random challenge in {0,1}^t.
@@ -262,7 +257,7 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
           } else {
             // take challenge from previously done proof stored in the hints bag,
             // or generate random challenge for simulated child
-            val newChallenge = pullProof(c.proposition).map(_.challenge).getOrElse(
+            val newChallenge = hintsBag.proofs.find(_.position == c.position).map(_.challenge).getOrElse(
               Challenge @@ secureRandomBytes(CryptoFunctions.soundnessBytes)
             )
             c.withChallenge(newChallenge)
@@ -350,7 +345,7 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
         // otherwise, compute the commitment (if the node is real) or simulate it (if the node is simulated)
 
         // Step 6 (real leaf -- compute the commitment a or take it from the hints bag)
-        pullCommitment(su.proposition).map { cmtHint =>
+        hintsBag.commitments.find(_.position == su.position).map { cmtHint =>
           su.copy(commitmentOpt = Some(cmtHint.commitment.asInstanceOf[FirstDLogProverMessage]))
         }.getOrElse {
           if (su.simulated) {
@@ -370,7 +365,7 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
         // or simulate it (if the node is simulated)
 
         // Step 6 (real leaf -- compute the commitment a or take it from the hints bag)
-        pullCommitment(dhu.proposition).map { cmtHint =>
+        hintsBag.commitments.find(_.position == dhu.position).map { cmtHint =>
           dhu.copy(commitmentOpt = Some(cmtHint.commitment.asInstanceOf[FirstDiffieHellmanTupleProverMessage]))
         }.getOrElse {
           if (dhu.simulated) {
@@ -402,33 +397,6 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
     * marked "real"
     */
   def proving(hintsBag: HintsBag): Strategy = {
-
-    val providedOwnCommitments = hintsBag.ownCommitments.toBuffer
-
-    val providedProofs = hintsBag.realProofs.toBuffer
-
-    def pullOwnCommitment(image: SigmaBoolean): Option[OwnCommitment] = {
-      val idx = providedOwnCommitments.indexWhere(_.image == image)
-      if (idx >= 0) {
-        val cmt = providedOwnCommitments(idx)
-        providedOwnCommitments.remove(idx)
-        Some(cmt)
-      } else {
-        None
-      }
-    }
-
-    def pullProof(image: SigmaBoolean): Option[RealSecretProof] = {
-      val idx = providedProofs.indexWhere(_.image == image)
-      if (idx >= 0) {
-        val cmt = providedProofs(idx)
-        providedProofs.remove(idx)
-        Some(cmt)
-      } else {
-        None
-      }
-    }
-
     everywheretd(rule[ProofTree] {
       // If the node is a non-leaf marked real whose challenge is e_0, proceed as follows:
       case and: CAndUnproven if and.real =>
@@ -492,7 +460,7 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
 
         val z = privKeyOpt match {
           case Some(privKey: DLogProverInput) =>
-            pullOwnCommitment(su.proposition).map { oc =>
+            hintsBag.ownCommitments.find(_.position == su.position).map { oc =>
               DLogInteractiveProver.secondMessage(
                 privKey,
                 oc.secretRandomness,
@@ -505,7 +473,7 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
             }
 
           case None =>
-            pullProof(su.proposition).map { proof =>
+            hintsBag.realProofs.find(_.position == su.position).map { proof =>
               val provenSchnorr = proof.uncheckedTree.asInstanceOf[UncheckedSchnorr]
               provenSchnorr.secondMessage
             }.getOrElse {
@@ -525,7 +493,7 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
 
         val z = privKeyOpt match {
           case Some(privKey) =>
-            pullOwnCommitment(dhu.proposition).map { oc =>
+            hintsBag.ownCommitments.find(_.position == dhu.position).map { oc =>
               DiffieHellmanTupleInteractiveProver.secondMessage(
                 privKey.asInstanceOf[DiffieHellmanTupleProverInput],
                 oc.secretRandomness,
@@ -538,7 +506,7 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
             }
 
           case None =>
-            pullProof(dhu.proposition).map { proof =>
+            hintsBag.realProofs.find(_.position == dhu.position).map { proof =>
               val provenSchnorr = proof.uncheckedTree.asInstanceOf[UncheckedDiffieHellmanTuple]
               provenSchnorr.secondMessage
             }.getOrElse {

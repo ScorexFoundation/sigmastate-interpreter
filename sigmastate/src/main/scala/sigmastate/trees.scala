@@ -16,13 +16,23 @@ import sigmastate.utxo.{Transformer, SimpleTransformerCompanion}
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
+
+trait SigmaConjecture extends SigmaBoolean {
+  val children: Seq[SigmaBoolean]
+}
+
+trait SigmaProofOfKnowledgeLeaf[SP <: SigmaProtocol[SP], S <: SigmaProtocolPrivateInput[SP, _]]
+  extends SigmaBoolean with SigmaProtocolCommonInput[SP]
+
+
 /**
   * AND conjunction for sigma propositions
   */
-case class CAND(sigmaBooleans: Seq[SigmaBoolean]) extends SigmaBoolean {
+case class CAND(override val children: Seq[SigmaBoolean]) extends SigmaConjecture {
   /** The same code is used for AND operation, but they belong to different type hierarchies. */
   override val opCode: OpCode = OpCodes.AndCode
 }
+
 object CAND {
   import TrivialProp._
   def normalized(items: Seq[SigmaBoolean]): SigmaBoolean = {
@@ -44,10 +54,11 @@ object CAND {
 /**
   * OR disjunction for sigma propositions
   */
-case class COR(sigmaBooleans: Seq[SigmaBoolean]) extends SigmaBoolean {
+case class COR(children: Seq[SigmaBoolean]) extends SigmaConjecture {
   /** The same code is also used for OR operation, but they belong to different type hierarchies. */
   override val opCode: OpCode = OpCodes.OrCode
 }
+
 object COR {
   import TrivialProp._
   def normalized(items: Seq[SigmaBoolean]): SigmaBoolean = {
@@ -69,15 +80,13 @@ object COR {
 /**
   * THRESHOLD connector for sigma propositions
   */
-case class CTHRESHOLD(k: Int, sigmaBooleans: Seq[SigmaBoolean]) extends SigmaBoolean {
+case class CTHRESHOLD(k: Int, children: Seq[SigmaBoolean]) extends SigmaConjecture {
   // Our polynomial arithmetic can take only byte inputs
-  require(k >= 0 && k <= sigmaBooleans.length && sigmaBooleans.length <= 255)
+  require(k >= 0 && k <= children.length && children.length <= 255)
 
   override val opCode: OpCode = OpCodes.AtLeastCode
 }
 
-trait SigmaProofOfKnowledgeLeaf[SP <: SigmaProtocol[SP], S <: SigmaProtocolPrivateInput[SP, _]]
-  extends SigmaBoolean with SigmaProtocolCommonInput[SP]
 
 /** Represents boolean values (true/false) in SigmaBoolean tree.
   * Participates in evaluation of CAND, COR, THRESHOLD connectives over SigmaBoolean values.
@@ -86,6 +95,7 @@ abstract class TrivialProp(val condition: Boolean) extends SigmaBoolean with Pro
   override def _1: Boolean = condition
   override def canEqual(that: Any): Boolean = that != null && that.isInstanceOf[TrivialProp]
 }
+
 object TrivialProp {
   // NOTE: the corresponding unapply is missing because any implementation (even using Nullable)
   // will lead to Boolean boxing, which we want to avoid
@@ -113,6 +123,7 @@ case class BoolToSigmaProp(value: BoolValue) extends SigmaPropValue {
   def tpe = SSigmaProp
   val opType = SFunc(SBoolean, SSigmaProp)
 }
+
 object BoolToSigmaProp extends ValueCompanion {
   override def opCode: OpCode = OpCodes.BoolToSigmaPropCode
 }
@@ -124,6 +135,7 @@ case class CreateProveDlog(value: Value[SGroupElement.type]) extends SigmaPropVa
   override def tpe = SSigmaProp
   override def opType = SFunc(SGroupElement, SSigmaProp)
 }
+
 object CreateProveDlog extends ValueCompanion {
   override def opCode: OpCode = OpCodes.ProveDlogCode
 }
@@ -137,6 +149,7 @@ case class CreateAvlTree(operationFlags: ByteValue,
   override def tpe = SAvlTree
   override def opType = CreateAvlTree.opType
 }
+
 object CreateAvlTree extends ValueCompanion {
   override def opCode: OpCode = OpCodes.AvlTreeCode
   val opType = SFunc(IndexedSeq(SByte, SByteArray, SInt, SIntOption), SAvlTree)
@@ -153,6 +166,7 @@ case class CreateProveDHTuple(gv: Value[SGroupElement.type],
   override def tpe = SSigmaProp
   override def opType = SFunc(IndexedSeq(SGroupElement, SGroupElement, SGroupElement, SGroupElement), SSigmaProp)
 }
+
 object CreateProveDHTuple extends ValueCompanion {
   override def opCode: OpCode = OpCodes.ProveDiffieHellmanTupleCode
 }
@@ -160,6 +174,7 @@ object CreateProveDHTuple extends ValueCompanion {
 trait SigmaTransformer[IV <: SigmaPropValue, OV <: SigmaPropValue] extends SigmaPropValue {
   val items: Seq[IV]
 }
+
 trait SigmaTransformerCompanion extends ValueCompanion {
   def argInfos: Seq[ArgInfo]
 }
@@ -171,6 +186,7 @@ case class SigmaAnd(items: Seq[SigmaPropValue]) extends SigmaTransformer[SigmaPr
   def tpe = SSigmaProp
   val opType = SFunc(SCollection.SSigmaPropArray, SSigmaProp)
 }
+
 object SigmaAnd extends SigmaTransformerCompanion {
   override def opCode: OpCode = OpCodes.SigmaAndCode
   override def argInfos: Seq[ArgInfo] = SigmaAndInfo.argInfos

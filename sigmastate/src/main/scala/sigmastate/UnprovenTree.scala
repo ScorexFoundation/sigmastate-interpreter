@@ -37,6 +37,9 @@ trait ProofTreeConjecture extends ProofTree {
 
 
 sealed trait UnprovenTree extends ProofTree {
+
+  val position: String
+
   val proposition: SigmaBoolean
 
   val simulated: Boolean
@@ -48,35 +51,42 @@ sealed trait UnprovenTree extends ProofTree {
   def withChallenge(challenge: Challenge): UnprovenTree
 
   def withSimulated(newSimulated: Boolean): UnprovenTree
+
+  def withPosition(updatedPosition: String): UnprovenTree
 }
 
 sealed trait UnprovenLeaf extends UnprovenTree with ProofTreeLeaf
 
-sealed trait UnprovenConjecture extends UnprovenTree with ProofTreeConjecture {
-}
+sealed trait UnprovenConjecture extends UnprovenTree with ProofTreeConjecture
 
 case class CAndUnproven(override val proposition: CAND,
                         override val challengeOpt: Option[Challenge] = None,
                         override val simulated: Boolean,
-                        children: Seq[ProofTree]) extends UnprovenConjecture {
+                        children: Seq[ProofTree],
+                        override val position: String = "0") extends UnprovenConjecture {
 
   override val conjectureType = ConjectureType.AndConjecture
 
   override def withChallenge(challenge: Challenge) = this.copy(challengeOpt = Some(challenge))
 
   override def withSimulated(newSimulated: Boolean) = this.copy(simulated = newSimulated)
+
+  override def withPosition(updatedPosition: String): UnprovenTree = this.copy(position = updatedPosition)
 }
 
 case class COrUnproven(override val proposition: COR,
                        override val challengeOpt: Option[Challenge] = None,
                        override val simulated: Boolean,
-                       children: Seq[ProofTree]) extends UnprovenConjecture {
+                       children: Seq[ProofTree],
+                       override val position: String = "0") extends UnprovenConjecture {
 
   override val conjectureType = ConjectureType.OrConjecture
 
   override def withChallenge(challenge: Challenge) = this.copy(challengeOpt = Some(challenge))
 
   override def withSimulated(newSimulated: Boolean) = this.copy(simulated = newSimulated)
+
+  override def withPosition(updatedPosition: String): UnprovenTree = this.copy(position = updatedPosition)
 }
 
 case class CThresholdUnproven(override val proposition: CTHRESHOLD,
@@ -84,7 +94,8 @@ case class CThresholdUnproven(override val proposition: CTHRESHOLD,
                        override val simulated: Boolean,
                        k: Integer,
                        children: Seq[ProofTree],
-                       polynomialOpt: Option[GF2_192_Poly]) extends UnprovenConjecture {
+                       polynomialOpt: Option[GF2_192_Poly],
+                       override val position: String = "0") extends UnprovenConjecture {
 
   require(k >= 0 && k <= children.length, "Wrong k value")
   require(children.size <= 255) // Our polynomial arithmetic can take only byte inputs
@@ -95,6 +106,8 @@ case class CThresholdUnproven(override val proposition: CTHRESHOLD,
 
   override def withSimulated(newSimulated: Boolean) = this.copy(simulated = newSimulated)
 
+  override def withPosition(updatedPosition: String) = this.copy(position = updatedPosition)
+
   def withPolynomial(newPolynomial: GF2_192_Poly) = this.copy(polynomialOpt = Some(newPolynomial))
 }
 
@@ -103,22 +116,27 @@ case class UnprovenSchnorr(override val proposition: ProveDlog,
                            override val commitmentOpt: Option[FirstDLogProverMessage],
                            randomnessOpt: Option[BigInteger],
                            override val challengeOpt: Option[Challenge] = None,
-                           override val simulated: Boolean) extends UnprovenLeaf {
+                           override val simulated: Boolean,
+                           override val position: String = "0") extends UnprovenLeaf {
 
   override def withChallenge(challenge: Challenge) = this.copy(challengeOpt = Some(challenge))
 
   override def withSimulated(newSimulated: Boolean) = this.copy(simulated = newSimulated)
+
+  override def withPosition(updatedPosition: String) = this.copy(position = updatedPosition)
 }
 
 case class UnprovenDiffieHellmanTuple(override val proposition: ProveDHTuple,
                                       override val commitmentOpt: Option[FirstDiffieHellmanTupleProverMessage],
                                       randomnessOpt: Option[BigInteger],
                                       override val challengeOpt: Option[Challenge] = None,
-                                      override val simulated: Boolean
-                                     ) extends UnprovenLeaf {
+                                      override val simulated: Boolean,
+                                      override val position: String = "0") extends UnprovenLeaf {
   override def withChallenge(challenge: Challenge) = this.copy(challengeOpt = Some(challenge))
 
   override def withSimulated(newSimulated: Boolean) = this.copy(simulated = newSimulated)
+
+  override def withPosition(updatedPosition: String) = this.copy(position = updatedPosition)
 }
 
 
