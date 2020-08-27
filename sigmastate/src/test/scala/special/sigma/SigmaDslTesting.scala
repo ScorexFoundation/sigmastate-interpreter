@@ -250,7 +250,7 @@ class SigmaDslTesting extends PropSpec
           )
         )).withBindings(
           1.toByte -> Constant[SType](input.asInstanceOf[SType#WrappedType], tpeA)
-        )
+        ).asInstanceOf[ErgoLikeContext]
 
       implicit val IR = createIR()
       val prover = new FeatureProvingInterpreter()
