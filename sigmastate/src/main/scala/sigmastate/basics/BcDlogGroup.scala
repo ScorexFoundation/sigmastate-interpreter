@@ -133,28 +133,6 @@ abstract class BcDlogGroup[ElemType <: ECPoint](val x9params: X9ECParameters) ex
     k
   }
 
-  // TODO remove as part of refactoring: it is not used
-  /**
-    * This function returns the k least significant bytes of the number x
-    *
-    * @param x
-    * @param k
-    * @return k least significant bits of x
-    */
-  def getKLeastSignBytes(x: BigInteger, k: Int): Array[Byte] = { //To retrieve the k least significant bits of a number x we do:
-    //lsb = x mod (2^8k)
-    val modulo = BigInteger.valueOf(2).pow(8 * k)
-    x.mod(modulo).toByteArray
-  }
-
-  // TODO remove as part of refactoring: it is not used
-  def checkMembershipAndCreate(x: BigInteger, y: BigInteger): Try[ElemType] = Try {
-    val valid = checkCurveMembership(x, y)
-    // checks validity
-    if (!valid) throw new IllegalArgumentException("x, y values are not a point on this curve")
-    curve.validatePoint(x, y).asInstanceOf[ElemType]
-  }
-
   /**
     *
     * @return the order of this Dlog group
@@ -166,17 +144,6 @@ abstract class BcDlogGroup[ElemType <: ECPoint](val x9params: X9ECParameters) ex
     * @return the identity of this Dlog group
     */
   override lazy val identity: ElemType = curve.getInfinity.asInstanceOf[ElemType]
-
-
-  /**
-    * Create point from its affine coordinates
-    * @param x - X coordinate
-    * @param y - Y coordinate
-    * @return
-    */
-  // TODO remove as part of refactoring: it is not used
-  def createPoint(x: BigInteger, y: BigInteger): ElemType = curve.createPoint(x, y).asInstanceOf[ElemType]
-
 
   /**
     * Calculates the inverse of the given GroupElement.
