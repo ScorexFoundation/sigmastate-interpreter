@@ -42,15 +42,30 @@ class ErgoBoxCandidate(val value: Long,
                        val additionalRegisters: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]] = Map()) 
                        extends ErgoBoxAssets {
 
+  /** Transformes this tree to proposition, substituting the constants if necessary.
+    * @see [[SigmaPropValue]]
+    */
   def proposition: SigmaPropValue = ergoTree.toProposition(ergoTree.isConstantSegregation)
 
+  /** Returns the serialized bytes of the guaring [[ErgoTree]]. */
   lazy val propositionBytes: Array[Byte] = ergoTree.bytes
 
+  /** Serialized bytes of this Box without transaction reference data (transactionId and boxIndex). */
   lazy val bytesWithNoRef: Array[Byte] = ErgoBoxCandidate.serializer.toBytes(this)
 
+  /** Creates a new [[ErgoBox]] based on this candidate using the given transaction reference data.
+    *
+    * @param txId id of transaction which created the box
+    * @param boxIndex  index of the box in the transaction's OUTPUTS
+    */
   def toBox(txId: ModifierId, boxIndex: Short) =
     new ErgoBox(value, ergoTree, additionalTokens, additionalRegisters, txId, boxIndex, creationHeight)
 
+  /** Extracts register by id.
+    *
+    * @param identifier id of the register to return.
+    * @return Some(value) if the register is present, None otherwise
+    */
   def get(identifier: RegisterId): Option[Value[SType]] = {
     identifier match {
       case ValueRegId => Some(LongConstant(value))
@@ -81,6 +96,7 @@ class ErgoBoxCandidate(val value: Long,
     s"tokens: (${additionalTokens.map(t => ErgoAlgos.encode(t._1) + ":" + t._2).toArray.mkString(", ")}), " +
     s"$additionalRegisters, creationHeight: $creationHeight)"
 
+  /** Additional tokens stored in the box. */
   lazy val tokens: Map[ModifierId, Long] =
     additionalTokens
       .toArray
@@ -89,20 +105,31 @@ class ErgoBoxCandidate(val value: Long,
 }
 
 object ErgoBoxCandidate {
+  /** Default value of Reference Register (R3) returned by ErgoBoxCandidate. */
   val UndefinedBoxRef: Coll[Byte] = Array.fill(34)(0: Byte).toColl
 
   /** @hotspot don't beautify the code */
   object serializer extends SigmaSerializer[ErgoBoxCandidate, ErgoBoxCandidate] {
 
-    def serializeBodyWithIndexedDigests(obj: ErgoBoxCandidate,
+    /** Helper method for [[ErgoBoxCandidate]] serialization.
+      * If `tokensInTx` is defined, then token ids are not serialized, instead they are
+      * looked up in this collection and the corresponding index is serialized.
+      * This saves at least (32 - 4) bytes for each token. The ids themselves are
+      * serialized elsewhere, e.g. as part of transaction.
+      *
+      * @param box        candidate box to be serialized
+      * @param tokensInTx optional collection of token ids that should be replaced by indexes.
+      * @param w          writer of serialized bytes
+      */
+    def serializeBodyWithIndexedDigests(box: ErgoBoxCandidate,
                                         tokensInTx: Option[Coll[TokenId]],
                                         w: SigmaByteWriter): Unit = {
-      w.putULong(obj.value)
-      w.putBytes(DefaultSerializer.serializeErgoTree(obj.ergoTree))
-      w.putUInt(obj.creationHeight)
-      w.putUByte(obj.additionalTokens.size)
+      w.putULong(box.value)
+      w.putBytes(DefaultSerializer.serializeErgoTree(box.ergoTree))
+      w.putUInt(box.creationHeight)
+      w.putUByte(box.additionalTokens.size)
 
-      val unzipped = Colls.unzip(obj.additionalTokens)
+      val unzipped = Colls.unzip(box.additionalTokens)
       val ids = unzipped._1
       val amounts = unzipped._2
       val limit = ids.length
@@ -118,8 +145,8 @@ object ErgoBoxCandidate {
         }
         w.putULong(amount)
       }
-      
-      val nRegs = obj.additionalRegisters.keys.size
+
+      val nRegs = box.additionalRegisters.keys.size
       if (nRegs + ErgoBox.startingNonMandatoryIndex > 255)
         sys.error(s"The number of non-mandatory indexes $nRegs exceeds ${255 - ErgoBox.startingNonMandatoryIndex} limit.")
       w.putUByte(nRegs)
@@ -129,7 +156,7 @@ object ErgoBoxCandidate {
       val endReg = ErgoBox.startingNonMandatoryIndex + nRegs - 1
       cfor(startReg: Int)(_ <= endReg, _ + 1) { regId =>
         val reg = ErgoBox.findRegisterByIndex(regId.toByte).get
-        obj.get(reg) match {
+        box.get(reg) match {
           case Some(v) =>
             w.putValue(v)
           case None =>
@@ -143,6 +170,9 @@ object ErgoBoxCandidate {
       serializeBodyWithIndexedDigests(obj, None, w)
     }
 
+    /** Helper method to parse [[ErgoBoxCandidate]] previously serialized by
+      * [[serializeBodyWithIndexedDigests()]].
+      */
     def parseBodyWithIndexedDigests(digestsInTx: Option[Coll[TokenId]], r: SigmaByteReader): ErgoBoxCandidate = {
       val previousPositionLimit = r.positionLimit
       r.positionLimit = r.position + ErgoBox.MaxBoxSize

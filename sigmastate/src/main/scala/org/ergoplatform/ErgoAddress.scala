@@ -140,7 +140,7 @@ class Pay2SHAddress(val scriptHash: Array[Byte])(implicit val encoder: ErgoAddre
 
   import Pay2SHAddress._
 
-  /** The proposition which checks that `contextVar(1)` has original script
+  /** The proposition which checks that `contextVar(scriptId)` has original script
     * (whose hash equals to this [[scriptHash]]) which evaluates to true.
     *
     * Assumes the context variable is accessed as `getVar[Coll[Byte]](1).get`
@@ -186,7 +186,7 @@ object Pay2SHAddress {
 
   /** Create Pay-to-script-hash address with the given underlying script (ErgoTree).
     *
-    * The tree is first transformed to proposition, substituting constants is necessary
+    * The tree is first transformed to proposition, substituting the constants if necessary
     * and then the other constructor is called.
     *
     * @param  script  ErgoTree representation of guarding script
