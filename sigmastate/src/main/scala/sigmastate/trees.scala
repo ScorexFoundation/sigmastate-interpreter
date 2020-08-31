@@ -17,10 +17,16 @@ import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
 
+/**
+  * Basic trait for inner nodes of crypto-trees, so AND/OR/THRESHOLD sigma-protocol connectives
+  */
 trait SigmaConjecture extends SigmaBoolean {
   val children: Seq[SigmaBoolean]
 }
 
+/**
+  * Basic trait for leafs of crypto-trees, such as ProveDlog and ProveDiffieHellman instances
+  */
 trait SigmaProofOfKnowledgeLeaf[SP <: SigmaProtocol[SP], S <: SigmaProtocolPrivateInput[SP, _]]
   extends SigmaBoolean with SigmaProtocolCommonInput[SP]
 
@@ -95,7 +101,6 @@ abstract class TrivialProp(val condition: Boolean) extends SigmaBoolean with Pro
   override def _1: Boolean = condition
   override def canEqual(that: Any): Boolean = that != null && that.isInstanceOf[TrivialProp]
 }
-
 object TrivialProp {
   // NOTE: the corresponding unapply is missing because any implementation (even using Nullable)
   // will lead to Boolean boxing, which we want to avoid
@@ -123,7 +128,6 @@ case class BoolToSigmaProp(value: BoolValue) extends SigmaPropValue {
   def tpe = SSigmaProp
   val opType = SFunc(SBoolean, SSigmaProp)
 }
-
 object BoolToSigmaProp extends ValueCompanion {
   override def opCode: OpCode = OpCodes.BoolToSigmaPropCode
 }
@@ -135,7 +139,6 @@ case class CreateProveDlog(value: Value[SGroupElement.type]) extends SigmaPropVa
   override def tpe = SSigmaProp
   override def opType = SFunc(SGroupElement, SSigmaProp)
 }
-
 object CreateProveDlog extends ValueCompanion {
   override def opCode: OpCode = OpCodes.ProveDlogCode
 }
@@ -149,7 +152,6 @@ case class CreateAvlTree(operationFlags: ByteValue,
   override def tpe = SAvlTree
   override def opType = CreateAvlTree.opType
 }
-
 object CreateAvlTree extends ValueCompanion {
   override def opCode: OpCode = OpCodes.AvlTreeCode
   val opType = SFunc(IndexedSeq(SByte, SByteArray, SInt, SIntOption), SAvlTree)
@@ -166,7 +168,6 @@ case class CreateProveDHTuple(gv: Value[SGroupElement.type],
   override def tpe = SSigmaProp
   override def opType = SFunc(IndexedSeq(SGroupElement, SGroupElement, SGroupElement, SGroupElement), SSigmaProp)
 }
-
 object CreateProveDHTuple extends ValueCompanion {
   override def opCode: OpCode = OpCodes.ProveDiffieHellmanTupleCode
 }
@@ -174,7 +175,6 @@ object CreateProveDHTuple extends ValueCompanion {
 trait SigmaTransformer[IV <: SigmaPropValue, OV <: SigmaPropValue] extends SigmaPropValue {
   val items: Seq[IV]
 }
-
 trait SigmaTransformerCompanion extends ValueCompanion {
   def argInfos: Seq[ArgInfo]
 }
@@ -186,7 +186,6 @@ case class SigmaAnd(items: Seq[SigmaPropValue]) extends SigmaTransformer[SigmaPr
   def tpe = SSigmaProp
   val opType = SFunc(SCollection.SSigmaPropArray, SSigmaProp)
 }
-
 object SigmaAnd extends SigmaTransformerCompanion {
   override def opCode: OpCode = OpCodes.SigmaAndCode
   override def argInfos: Seq[ArgInfo] = SigmaAndInfo.argInfos

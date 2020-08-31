@@ -473,6 +473,7 @@ class DistributedSigSpecification extends SigmaTestingCommons {
       .addHints(dlAKnown, dlEKnown).addHints(dlBKnown :_*)
       .addHints(secretCmtB :_*)
 
+    // Bob is generating a valid signature
     val validProofB = proverB.prove(prop, ctx, fakeMessage, bag).get
     verifier.verify(prop, ctx, validProofB, fakeMessage).get._1 shouldBe true
   }

@@ -9,6 +9,11 @@ import sigmastate.basics.VerifierMessage.Challenge
 
 trait ProverUtils extends Interpreter {
 
+  /**
+    * Generate commitments for a given ergoTree (mixed-tree) and public keys.
+    *
+    * First, the given tree is to be reduced to crypto-tree (sigma-tree) by using context provided.
+    */
   def generateCommitmentsFor(ergoTree: ErgoTree,
                              context: CTX,
                              generateFor: Seq[SigmaBoolean]): HintsBag = {
@@ -16,7 +21,16 @@ trait ProverUtils extends Interpreter {
     generateCommitmentsFor(reducedTree, generateFor)
   }
 
-  def generateCommitmentsFor(sigmaExpression: SigmaBoolean,
+  /**
+    * A method which is is generating commitments for all the public keys provided.
+    *
+    * Currently only ProveDlog and ProveDiffieHellman are supported.
+    *
+    * @param sigmaTree - crypto-tree
+    * @param generateFor - public keys
+    * @return
+    */
+  def generateCommitmentsFor(sigmaTree: SigmaBoolean,
                              generateFor: Seq[SigmaBoolean]): HintsBag = {
 
     def traverseNode(sb: SigmaBoolean,
@@ -44,7 +58,7 @@ trait ProverUtils extends Interpreter {
       }
     }
 
-    traverseNode(sigmaExpression, HintsBag.empty, position = "0")
+    traverseNode(sigmaTree, HintsBag.empty, position = Hint.CryptoTreePrefix)
   }
 
   /**
@@ -101,7 +115,7 @@ trait ProverUtils extends Interpreter {
       }
     }
 
-    traverseNode(proofTree, realSecretsToExtract, simulatedSecretsToExtract, HintsBag.empty, position = "0")
+    traverseNode(proofTree, realSecretsToExtract, simulatedSecretsToExtract, HintsBag.empty, Hint.CryptoTreePrefix)
   }
 
 }

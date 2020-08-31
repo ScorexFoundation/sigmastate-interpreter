@@ -6,11 +6,9 @@ import com.google.common.primitives.Shorts
 import gf2t.GF2_192_Poly
 import sigmastate.basics.DLogProtocol.{FirstDLogProverMessage, ProveDlog}
 import sigmastate.basics.VerifierMessage.Challenge
-import sigmastate.Values.{SigmaBoolean, SigmaPropConstant}
-import sigmastate.basics.{FirstDiffieHellmanTupleProverMessage, FirstProverMessage, ProveDHTuple, SigmaProtocol}
-import sigmastate.serialization.ErgoTreeSerializer
 import sigmastate.Values.{ErgoTree, SigmaBoolean, SigmaPropConstant}
 import sigmastate.basics.{FirstDiffieHellmanTupleProverMessage, FirstProverMessage, ProveDHTuple}
+import sigmastate.interpreter.Hint
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 
 import scala.language.existentials
@@ -35,17 +33,32 @@ trait ProofTreeConjecture extends ProofTree {
   val children: Seq[ProofTree]
 }
 
-
+/**
+  * A node of a sigma-tree used by the prover
+  */
 sealed trait UnprovenTree extends ProofTree {
 
+  /**
+    * Positon of the node in the tree, see comments for `position` field in
+    * `sigmastate.interpreter.Hint`
+    */
   val position: String
 
+  /**
+    * Node's sigma-protocol statement to be proven.
+    */
   val proposition: SigmaBoolean
 
+  /**
+    * Whether the node represents simulated sigma-protocol
+    */
   val simulated: Boolean
 
   def real: Boolean = !simulated
 
+  /**
+    * Challenge used by the prover.
+    */
   val challengeOpt: Option[Array[Byte]]
 
   def withChallenge(challenge: Challenge): UnprovenTree
@@ -63,7 +76,7 @@ case class CAndUnproven(override val proposition: CAND,
                         override val challengeOpt: Option[Challenge] = None,
                         override val simulated: Boolean,
                         children: Seq[ProofTree],
-                        override val position: String = "0") extends UnprovenConjecture {
+                        override val position: String = Hint.CryptoTreePrefix) extends UnprovenConjecture {
 
   override val conjectureType = ConjectureType.AndConjecture
 
@@ -78,7 +91,7 @@ case class COrUnproven(override val proposition: COR,
                        override val challengeOpt: Option[Challenge] = None,
                        override val simulated: Boolean,
                        children: Seq[ProofTree],
-                       override val position: String = "0") extends UnprovenConjecture {
+                       override val position: String = Hint.CryptoTreePrefix) extends UnprovenConjecture {
 
   override val conjectureType = ConjectureType.OrConjecture
 
@@ -95,7 +108,7 @@ case class CThresholdUnproven(override val proposition: CTHRESHOLD,
                        k: Integer,
                        children: Seq[ProofTree],
                        polynomialOpt: Option[GF2_192_Poly],
-                       override val position: String = "0") extends UnprovenConjecture {
+                       override val position: String = Hint.CryptoTreePrefix) extends UnprovenConjecture {
 
   require(k >= 0 && k <= children.length, "Wrong k value")
   require(children.size <= 255) // Our polynomial arithmetic can take only byte inputs
