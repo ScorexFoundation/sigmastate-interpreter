@@ -79,6 +79,7 @@ class SigSerializerSpecification extends SigmaTestingCommons with ObjectGenerato
         boxesToSpend = IndexedSeq(fakeSelf),
         spendingTransaction = ErgoLikeTransactionTesting.dummy,
         self = fakeSelf)
+        .withCostLimit(Long.MaxValue) // To avoid occasional cost limit exceptions which are irrelevant here
 
       try {
         // get sigma conjectures out of transformers
