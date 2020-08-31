@@ -110,7 +110,6 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
             message: Array[Byte]): Try[CostedProverResult] =
     prove(emptyEnv, ergoTree, context, message, HintsBag.empty)
 
-
   def prove(env: ScriptEnv,
             ergoTree: ErgoTree,
             context: CTX,
@@ -576,6 +575,23 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
     case d: UncheckedDiffieHellmanTuple => d
     case a: Any =>
       error(s"Cannot convertToUnproven($a)")
+  }
+
+  /**
+    *
+    * Sign arbitrary message under a key representing a statement provable via a sigma-protocol.
+    *
+    * @param sigmaTree - public key
+    * @param message - message to sign
+    * @param hintsBag - additional hints for a signer (useful for distributed signing)
+    * @return - signature or error
+    */
+  def signMessage(sigmaTree: SigmaBoolean,
+                  message: Array[Byte],
+                  hintsBag: HintsBag): Try[Array[Byte]] = Try {
+    val unprovenTree = convertToUnproven(sigmaTree)
+    val proofTree = prove(unprovenTree, message, hintsBag)
+    SigSerializer.toBytes(proofTree)
   }
 
 }
