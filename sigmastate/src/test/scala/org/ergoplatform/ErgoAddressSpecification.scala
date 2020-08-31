@@ -85,15 +85,18 @@ class ErgoAddressSpecification extends SigmaDslTesting with TryValues {
     assertResult(true)(p2pk != p2s && p2s != p2pk)
 
     val parsed_p2s = ergoAddressEncoder.fromProposition(p2s.script).success.value
+    assertResult(false)(parsed_p2s eq p2s)
     assertResult(true)(parsed_p2s == p2s && p2s == parsed_p2s)
     parsed_p2s.hashCode() shouldBe p2s.hashCode()
 
     val parsed_p2sh = ergoAddressEncoder.fromProposition(p2sh.script).success.value
+    assertResult(false)(parsed_p2sh eq p2sh)
     assertResult(true)(parsed_p2sh == p2sh && p2sh == parsed_p2sh)
     parsed_p2sh.hashCode() shouldBe p2sh.hashCode()
 
     val parsed_p2pk = ergoAddressEncoder.fromProposition(p2pk.script).success.value
-    parsed_p2pk shouldBe p2pk
+    assertResult(false)(parsed_p2pk eq p2pk)
+    assertResult(true)(parsed_p2pk == p2pk && p2pk == parsed_p2pk)
     parsed_p2pk.hashCode() shouldBe p2pk.hashCode()
 
     val tree = ErgoTree.fromProposition(pk)

@@ -23,7 +23,7 @@ class ErgoLikeInterpreter(implicit val IR: IRContext) extends Interpreter {
                 sys.error(s"Failed deserialization of $d: expected deserialized value to have type ${d.tpe}; got ${outVal.tpe}")
               else
                 Some(outVal)
-            case _ => None // TODO cover consensus with tests
+            case _ => None // TODO HF: this case is not possible so can be safely removed as part of HF
           }
         }.orElse(d.default)
       case _ => super.substDeserialize(context, updateContext, node)

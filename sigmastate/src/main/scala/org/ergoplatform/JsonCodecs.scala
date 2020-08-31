@@ -47,7 +47,7 @@ trait JsonCodecs {
   implicit val anyValueEncoder: Encoder[AnyValue] = Encoder.instance({ anyval => DataJsonEncoder.encodeAnyValue(anyval) })
 
   implicit val anyValueDecoder: Decoder[AnyValue] = Decoder.instance({ implicit cursor =>
-    fromTry(Try.apply(DataJsonEncoder.decodeAnyValue(cursor.value))) // TODO cover with tests
+    fromTry(Try.apply(DataJsonEncoder.decodeAnyValue(cursor.value)))
   })
 
   implicit val sigmaBigIntEncoder: Encoder[special.sigma.BigInt] = Encoder.instance({ bigInt =>
@@ -225,7 +225,7 @@ trait JsonCodecs {
 
   implicit val contextExtensionEncoder: Encoder[ContextExtension] = Encoder.instance({ extension =>
     extension.values.map { case (key, value) =>
-      key -> evaluatedValueEncoder(value) // TODO cover with tests
+      key -> evaluatedValueEncoder(value)
     }.asJson
   })
 

@@ -272,12 +272,12 @@ case class CostingBox(isCost: Boolean, val ebox: ErgoBox) extends Box with Wrapp
   lazy val bytes: Coll[Byte] = Colls.fromArray(ebox.bytes)
   lazy val bytesWithoutRef: Coll[Byte] = Colls.fromArray(ebox.bytesWithNoRef)
   lazy val propositionBytes: Coll[Byte] = Colls.fromArray(ebox.propositionBytes)
-  lazy val registers: Coll[AnyValue] = regs(ebox, isCost)
+  lazy val registers: Coll[AnyValue] = regs(ebox)
 
   override def wrappedValue: ErgoBox = ebox
 
   override def getReg[T](i: Int)(implicit tT: RType[T]): Option[T] =
-    if (isCost) {  // TODO refactor: remove isCost branch
+    if (isCost) {  // TODO refactor: remove isCost branch (it was added before Sizes and now is never executed)
       val optV =
         if (i < 0 || i >= registers.length) None
         else {
@@ -340,7 +340,7 @@ object CostingBox {
 
   import Evaluation._
 
-  def regs(ebox: ErgoBox, isCost: Boolean): Coll[AnyValue] = {
+  def regs(ebox: ErgoBox): Coll[AnyValue] = {
     val res = new Array[AnyValue](ErgoBox.maxRegisters)
 
     def checkNotYetDefined(id: Int, newValue: SValue) =

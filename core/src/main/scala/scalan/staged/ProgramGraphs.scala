@@ -41,7 +41,7 @@ trait ProgramGraphs extends AstGraphs { self: Scalan =>
             val res = DBuffer.ofSize[Int](len)
             cfor(0)(_ < len, _ + 1) { i =>
               val sym = deps(i)
-              if (pred(sym) && !sym.isVar)  // TODO remove isVar condition here and below
+              if (pred(sym) && !sym.isVar)  // TODO optimize: remove isVar condition here and below
                 res += sym.node.nodeId
             }
             res

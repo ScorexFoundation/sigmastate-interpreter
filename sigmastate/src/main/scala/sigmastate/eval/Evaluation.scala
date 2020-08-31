@@ -1,6 +1,5 @@
 package sigmastate.eval
 
-import java.lang.Math
 import java.math.BigInteger
 
 import org.bouncycastle.math.ec.ECPoint
@@ -8,18 +7,15 @@ import org.ergoplatform._
 import org.ergoplatform.validation.ValidationRules.{CheckLoopLevelInCostFunction, CheckCostFuncOperation}
 import sigmastate._
 import sigmastate.Values.{Value, GroupElementConstant, SigmaBoolean, Constant}
-import sigmastate.lang.Terms.OperationId
-import sigmastate.utxo.CostTableStat
 
 import scala.reflect.ClassTag
 import scala.util.Try
 import sigmastate.SType._
-import sigmastate.interpreter.CryptoConstants.EcPointType
 import scalan.{Nullable, RType}
 import scalan.RType._
 import sigma.types.PrimViewType
 import sigmastate.basics.DLogProtocol.ProveDlog
-import sigmastate.basics.{ProveDHTuple, DLogProtocol}
+import sigmastate.basics.{ProveDHTuple}
 import special.sigma.Extensions._
 import sigmastate.lang.exceptions.CostLimitException
 import sigmastate.serialization.OpCodes
@@ -402,13 +398,6 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
     }
   }
 
-  object IsTupleFN {  // TODO remove not used
-    def unapply(fn: String): Nullable[Byte] = {
-      if (fn.startsWith("_")) Nullable[Byte](fn.substring(1).toByte)
-      else Nullable.None.asInstanceOf[Nullable[Byte]]
-    }
-  }
-
   import sigmastate._
   import special.sigma.{Context => SigmaContext}
 
@@ -432,8 +421,6 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
     )
     env
   }
-
-  case class EvaluatedEntry(env: DataEnv, sym: Sym, value: AnyRef) // TODO remove not used
 
   protected def printEnvEntry(sym: Sym, value: AnyRef) = {
     def trim[A](arr: Array[A]) = arr.take(arr.length min 100)
@@ -475,7 +462,6 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
       this._currentCost = java.lang.Math.addExact(this._currentCost, n)
     }
     @inline def currentCost: Int = _currentCost
-    @inline def resetCost() = { _currentCost = initialCost }  // TODO remove not used
   }
 
   /** Implements finite state machine with stack of graph blocks (scopes),
@@ -784,20 +770,6 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
 
           case ThunkForce(In(t: ThunkData[Any])) =>
             out(t())
-          case SDBM.sigmaProp(_, In(isValid: Boolean)) =>  // TODO remove never executed case
-            val res = CSigmaProp(sigmastate.TrivialProp(isValid))
-            out(res)
-          case SDBM.proveDlog(_, In(g: EcPointType)) =>   // TODO remove never executed case
-            val res = CSigmaProp(DLogProtocol.ProveDlog(g))
-            out(res)
-          case SDBM.proveDHTuple(_, In(g: EcPointType), In(h: EcPointType), In(u: EcPointType), In(v: EcPointType)) => // TODO remove never executed case
-            val res = CSigmaProp(ProveDHTuple(g, h, u, v))
-            out(res)
-          case SDBM.avlTree(_, In(flags: Byte),
-                           In(digest: SColl[Byte]@unchecked), In(keyLength: Int),
-                           In(valueLengthOpt: Option[Int]@unchecked)) =>  // TODO remove never executed case
-            val res = sigmaDslBuilderValue.avlTree(flags, digest, keyLength, valueLengthOpt)
-            out(res)
 
           case CSizePrimCtor(In(dataSize: Long), tVal) =>
             val res = new special.collection.CSizePrim(dataSize, tVal.eA.sourceType)

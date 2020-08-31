@@ -8,6 +8,9 @@ import scalan.RType.GeneralType
 
 import scala.reflect.classTag
 
+/** The following implicit values are used as type descriptors of all the predefined Sigma types.
+  * @see [[RType]] class
+  */
 package object sigma {
 
   implicit val BigIntRType: RType[BigInt] = new GeneralType(classTag[BigInt]) {
@@ -26,8 +29,6 @@ package object sigma {
   implicit val BoxRType:       RType[Box]       = GeneralType(classTag[Box])
   implicit val ContextRType:   RType[Context]   = GeneralType(classTag[Context])
 
-  // these are not wrapper types since they are used directly in ErgoTree values (e.g. Constants)
-  // and no conversion is necessary
   implicit val HeaderRType: RType[Header] = new GeneralType(classTag[Header]) {
     override def isConstantSize: Boolean = true
   }

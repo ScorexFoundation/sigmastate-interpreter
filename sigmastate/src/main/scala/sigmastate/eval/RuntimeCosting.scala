@@ -195,7 +195,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
       costOf(s"Const", Constant[SType](SType.DummyValue, tpe).opType)
   }
 
-  def constCost[T: Elem]: Ref[Int] = {  // TODO remove never executed
+  def constCost[T: Elem]: Ref[Int] = {
     val tpe = elemToSType(element[T])
     constCost(tpe)
   }
@@ -389,12 +389,6 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
   implicit def extendCostedCollElem[A](elem: Elem[CostedColl[A]]): CostedCollElem[A, CostedColl[A]] =
     elem.asInstanceOf[CostedCollElem[A, CostedColl[A]]]
 
-  def splitCostedFunc2[A,B](f: RFuncCosted[A,B]): (Ref[A=>B], Ref[((Int, Size[A])) => Int]) = { // TODO remove not used
-    implicit val eA = f.elem.eDom.eVal
-    val calcF = f.sliceCalc
-    val costF = f.sliceCost
-    (calcF, costF)
-  }
   def splitCostedFunc2[A, B](f: RFuncCosted[A,B], okRemoveIsValid: Boolean): (Ref[A=>Any], Ref[((Int, Size[A])) => Int]) = {
     implicit val eA = f.elem.eDom.eVal
     val calcF = f.sliceCalc(okRemoveIsValid)
@@ -965,11 +959,6 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
 
   import sigmastate._
 
-  protected def isOperationNode(v: SValue): Boolean = v match {  // TODO remove not used
-    case _: Block | _: BlockValue | _: TaggedVariableNode[_] | _: ValNode | _: ValDef | _: ValUse[_] | _: FuncValue => false
-    case _ => true
-  }
-
   protected def onTreeNodeCosted[T <: SType](
         ctx: RCosted[Context], env: CostingEnv,
         node: Value[T], costed: RCosted[T#WrappedType]): Unit = {
@@ -1001,11 +990,11 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
       implicit val tA = ct.tItem
       implicit val sizedA = Sized.typeToSized(tA)
       liftConst(Sized.sizeOf(x.asInstanceOf[special.collection.Coll[a]]))
-    case ct: OptionType[a] =>  // TODO coverage: ensure executed
+    case ct: OptionType[a] =>  // TODO cover with tests
       implicit val tA = ct.tA
       implicit val sizedA = Sized.typeToSized(tA)
       liftConst(Sized.sizeOf(x.asInstanceOf[Option[a]]))
-    case ct: PairType[a, b] => // TODO coverage: ensure executed
+    case ct: PairType[a, b] => // TODO cover with tests
       implicit val tA = ct.tFst
       implicit val tB = ct.tSnd
       implicit val sizedA = Sized.typeToSized(tA)
@@ -1161,9 +1150,6 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
     }
 
     val res: Ref[Any] = node match {
-      case TaggedVariableNode(id, _) => // TODO remove never executed
-        env.getOrElse(id, !!!(s"TaggedVariable $id not found in environment $env"))
-
       case c @ Constant(v, tpe) => v match {
         case p: SSigmaProp =>
           assert(tpe == SSigmaProp)

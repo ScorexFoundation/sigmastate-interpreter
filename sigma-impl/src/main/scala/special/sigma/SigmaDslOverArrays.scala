@@ -13,6 +13,7 @@ import special.SpecialPredef
 import special.collection._
 import scalan.util.Extensions.BigIntegerOps
 
+// TODO remove as part of refactoring. This class is not necessary and can be removed
 class TestSigmaDslBuilder extends SigmaDslBuilder {
   // manual fix
   def Colls: CollBuilder = new CollOverArrayBuilder

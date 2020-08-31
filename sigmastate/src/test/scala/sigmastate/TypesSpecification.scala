@@ -16,7 +16,7 @@ import sigmastate.eval.SigmaDsl
 import special.collection.Coll
 import special.sigma.BigInt
 
-class TypesSpecificatio extends SigmaTestingData {
+class TypesSpecification extends SigmaTestingData {
 
   def Coll[T](items: T*)(implicit cT: RType[T]) = SigmaDsl.Colls.fromItems(items:_*)
 

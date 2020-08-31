@@ -42,7 +42,7 @@ import scala.runtime.ScalaRunTime
   * @param additionalTokens    - secondary tokens the box contains
   * @param additionalRegisters - additional registers the box can carry over
   * @param transactionId       - id of transaction which created the box
-  * @param index               - number of box (from 0 to total number of boxes the transaction with transactionId created - 1)
+  * @param index               - index of the box (from 0 to total number of boxes the transaction with transactionId created - 1)
   * @param creationHeight      - height when a transaction containing the box was created.
   *                            This height is declared by user and should not exceed height of the block,
   *                            containing the transaction with this box.
@@ -60,6 +60,7 @@ class ErgoBox(
 
   import ErgoBox._
 
+  /** Blake2b256 hash of the serialized `bytes`. */
   lazy val id: BoxId = ADKey @@ Blake2b256.hash(bytes)
 
   override def get(identifier: RegisterId): Option[Value[SType]] = {
@@ -71,6 +72,9 @@ class ErgoBox(
     }
   }
 
+  /** Serialized content of this box.
+    * @see [[ErgoBox.sigmaSerializer]]
+    */
   lazy val bytes: Array[Byte] = ErgoBox.sigmaSerializer.toBytes(this)
 
   override def equals(arg: Any): Boolean = arg match {
@@ -82,6 +86,9 @@ class ErgoBox(
   override def hashCode(): Int =
     ScalaRunTime._hashCode((value, ergoTree, additionalTokens, additionalRegisters, index, creationHeight))
 
+  /** Convert this box to [[ErgoBoxCandidate]] by forgetting transaction reference data
+   * (transactionId, index).
+   */
   def toCandidate: ErgoBoxCandidate =
     new ErgoBoxCandidate(value, ergoTree, creationHeight, additionalTokens, additionalRegisters)
 
@@ -93,6 +100,7 @@ class ErgoBox(
 object ErgoBox {
   type BoxId = ADKey
   object BoxId {
+    /** Size in bytes of the box identifier. */
     val size: Short = 32
   }
 
