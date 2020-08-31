@@ -72,10 +72,10 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
         )
       ))
     val cases = Seq(
-      ((true, true), Try(false -> 4585)),
-      ((true, false), Try(true -> 4585)),
-      ((false, false), Try(false -> 4585)),
-      ((false, true), Try(true -> 4585))
+      ((true, true), Try(false -> 36518)),
+      ((true, false), Try(true -> 36518)),
+      ((false, false), Try(false -> 36518)),
+      ((false, true), Try(true -> 36518))
     )
     testCases2(cases, binXor)
   }

@@ -7,12 +7,12 @@ import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.{PropSpec, Matchers}
 
 import scala.util.{Success, Failure, Try}
-import sigmastate.Values.{ErgoTree, Constant, SValue}
+import sigmastate.Values.{Constant, SValue, ByteArrayConstant, IntConstant, ErgoTree}
 import scalan.RType
 import scalan.util.Extensions._
 import org.ergoplatform.dsl.{SigmaContractSyntax, TestContractSpec}
 import org.scalatest.exceptions.TestFailedException
-import sigmastate.SType
+import sigmastate.{SigmaOr, SSigmaProp, SType}
 import sigmastate.basics.DLogProtocol.{ProveDlog, DLogProverInput}
 import sigmastate.basics.{SigmaProtocol, SigmaProtocolPrivateInput, SigmaProtocolCommonInput}
 import sigmastate.eval.{IRContext, CompiletimeIRContext, Evaluation, SigmaDsl}
@@ -20,6 +20,8 @@ import sigmastate.utils.Helpers._
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.helpers.{ErgoLikeContextTesting, SigmaPPrint}
 import sigmastate.interpreter.{ProverInterpreter, Interpreter}
+import sigmastate.serialization.ValueSerializer
+import sigmastate.utxo.{DeserializeRegister, DeserializeContext}
 import special.collection.Coll
 
 import scala.math.Ordering
@@ -89,14 +91,19 @@ class SigmaDslTesting extends PropSpec
   class FeatureProvingInterpreter extends ErgoLikeInterpreter()(new CompiletimeIRContext) with ProverInterpreter {
     override type CTX = ErgoLikeContext
 
+    def decodeSecretInput(decimalStr: String) = DLogProverInput(BigInt(decimalStr).bigInteger)
+
+    val sk1 = decodeSecretInput("416167686186183758173232992934554728075978573242452195968805863126437865059")
+    val sk2 = decodeSecretInput("34648336872573478681093104997365775365807654884817677358848426648354905397359")
+    val sk3 = decodeSecretInput("50415569076448343263191022044468203756975150511337537963383000142821297891310")
+
     val secrets: Seq[SigmaProtocolPrivateInput[_ <: SigmaProtocol[_], _ <: SigmaProtocolCommonInput[_]]] = {
-//      val dlogs: IndexedSeq[DLogProverInput] = ???
-//      dlogs
-      Seq()
+      val dlogs: IndexedSeq[DLogProverInput] = Vector(sk1, sk2, sk3)
+      dlogs
     }
 
     val pubKeys: Seq[ProveDlog] = secrets
-        .filter { case _: DLogProverInput => true case _ => false}
+        .filter { case _: DLogProverInput => true case _ => false }
         .map(_.asInstanceOf[DLogProverInput].publicImage)
   }
 
@@ -225,37 +232,60 @@ class SigmaDslTesting extends PropSpec
     def checkVerify(input: A, expectedRes: B, expectedCost: Int): Unit = {
       val tpeA = Evaluation.rtypeToSType(oldF.tA)
       val tpeB = Evaluation.rtypeToSType(oldF.tB)
-      val code =
-        s"""{
-          |  val func = ${oldF.script}
-          |  val res1 = func(getVar[${oldF.tA.name}](1).get)
-          |  val res2 = SELF.R4[${oldF.tB.name}].get
-          |  sigmaProp(res1 == res2)
-          |}
-      """.stripMargin
-      val env = Interpreter.emptyEnv
 
-      // The following ops are performed by applications (i.e. via Ergo Appkit)
+      val prover = new FeatureProvingInterpreter()
+
+      // Create synthetic ErgoTree which uses all main capabilities of evaluation machinery.
+      // 1) first-class functions (lambdas); 2) Context variables; 3) Registers; 4) Equality
+      // for all types; 5) Embedding of boolean to SigmaProp; 6) Sigma propositions (&&, ||, AtLeast)
+      // 7) Deserialization from SELF and Context
+      // Every language Feature is tested as part of this wrapper script.
+      // Inclusion of all the features influences the expected cost estimation values
       val compiledTree = {
+        val code =
+          s"""{
+            |  val func = ${oldF.script}
+            |  val res1 = func(getVar[${oldF.tA.name}](1).get)
+            |  val res2 = SELF.R4[${oldF.tB.name}].get
+            |  sigmaProp(res1 == res2) && pkAlice
+            |}
+          """.stripMargin
+
         val IR = new CompiletimeIRContext
+        val pkAlice = prover.pubKeys(0).toSigmaProp
+        val env = Map("pkAlice" -> pkAlice)
+
+        // Compile script the same way it is performed by applications (i.e. via Ergo Appkit)
         val prop = ErgoScriptPredef.compileWithCosting(
           env, code, ErgoAddressEncoder.MainnetNetworkPrefix)(IR).asSigmaProp
-        ErgoTree.fromProposition(prop)
+
+        // Add additional oparations which are not yet implemented in ErgoScript compiler
+        val multisig = sigmastate.AtLeast(
+          IntConstant(2),
+          Seq(
+            pkAlice,
+            DeserializeRegister(ErgoBox.R5, SSigmaProp),  // deserialize pkBob
+            DeserializeContext(2, SSigmaProp)))           // deserialize pkCarol
+        ErgoTree.fromProposition(sigmastate.SigmaOr(prop, multisig))
       }
+
+      val pkBobBytes = ValueSerializer.serialize(prover.pubKeys(1).toSigmaProp)
+      val pkCarolBytes = ValueSerializer.serialize(prover.pubKeys(2).toSigmaProp)
 
       val ergoCtx = ErgoLikeContextTesting.dummy(
         createBox(0, compiledTree,
           additionalRegisters = Map(
-            ErgoBox.R4 -> Constant[SType](expectedRes.asInstanceOf[SType#WrappedType], tpeB)
+            ErgoBox.R4 -> Constant[SType](expectedRes.asInstanceOf[SType#WrappedType], tpeB),
+            ErgoBox.R5 -> ByteArrayConstant(pkBobBytes)
           )
         )).withBindings(
-          1.toByte -> Constant[SType](input.asInstanceOf[SType#WrappedType], tpeA)
+          1.toByte -> Constant[SType](input.asInstanceOf[SType#WrappedType], tpeA),
+          2.toByte -> ByteArrayConstant(pkCarolBytes)
         ).asInstanceOf[ErgoLikeContext]
 
-      implicit val IR = createIR()
-      val prover = new FeatureProvingInterpreter()
-
       val pr = prover.prove(compiledTree, ergoCtx, fakeMessage).getOrThrow
+
+      implicit val IR = createIR()
 
       val verifier = new ErgoLikeInterpreter() { type CTX = ErgoLikeContext }
 
