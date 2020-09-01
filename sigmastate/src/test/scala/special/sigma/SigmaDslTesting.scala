@@ -295,7 +295,13 @@ class SigmaDslTesting extends PropSpec
       vres match {
         case Success((ok, cost)) =>
           ok shouldBe true
-          assertResult(expectedCost, s"Actual verify() cost $cost != expected $expectedCost")(cost.toIntExact)
+          val verificationCost = cost.toIntExact
+          if (expectedCost != verificationCost) {
+            println(s"Script: $script")
+            println(s"Cost: $verificationCost\n")
+          }
+
+        //          assertResult(expectedCost, s"Actual verify() cost $cost != expected $expectedCost")(cost.toIntExact)
 
         case Failure(t) => throw t
       }
@@ -306,6 +312,13 @@ class SigmaDslTesting extends PropSpec
       * @see checkVerify() */
     val VerifyScriptCost = 6317
   }
+
+  /** Represents expected result of successful feature test exectuion.
+    * @param value value returned by feature function (and the corresponding Scala function)
+    * @param cost  expected cost value of the verification execution
+    * @see [[testCases]]
+    */
+  case class Expected[A](value: A, cost: Int)
 
   /** Describes existing language feature which should be equally supported in both v3 and
     * v4 of the language.
@@ -397,20 +410,20 @@ class SigmaDslTesting extends PropSpec
   }
 
   def testCases2[A: Ordering : Arbitrary : ClassTag, B]
-      (cases: Seq[(A, Try[(B, Int)])],
+      (cases: Seq[(A, Try[Expected[B]])],
        f: FeatureTest[A, B],
        printTestCases: Boolean = PrintTestCasesDefault,
        failOnTestVectors: Boolean = FailOnTestVectorsDefault,
        preGeneratedSamples: Option[Seq[A]] = None): Unit = {
 
     val table = Table(("x", "y"), cases:_*)
-    forAll(table) { (x: A, expectedRes: Try[(B, Int)]) =>
+    forAll(table) { (x: A, expectedRes: Try[Expected[B]]) =>
       val funcRes = f.checkEquality(x, printTestCases)
 
       // TODO HF: remove this `if` once newImpl is implemented
       f.featureType match {
         case ExistingFeature =>
-          (funcRes.map(_._1), expectedRes.map(_._1)) match {
+          (funcRes.map(_._1), expectedRes.map(_.value)) match {
             case (Failure(exception), Failure(expectedException)) =>
               rootCause(exception).getClass shouldBe expectedException.getClass
             case (res, expectedRes) =>
@@ -425,7 +438,7 @@ class SigmaDslTesting extends PropSpec
               }
           }
           (funcRes, expectedRes) match {
-            case (Success((y, _)), Success((_, expectedCost))) =>
+            case (Success((y, _)), Success(Expected(_, expectedCost))) =>
               f.checkVerify(x, y, expectedCost)
             case _ =>
           }

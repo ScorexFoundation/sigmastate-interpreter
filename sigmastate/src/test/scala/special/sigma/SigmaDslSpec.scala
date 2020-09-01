@@ -45,7 +45,7 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   override implicit val generatorDrivenConfig = PropertyCheckConfiguration(minSuccessful = 30)
 
   implicit def IR = createIR()
-  
+
   ///=====================================================
   ///              Boolean type operations
   ///-----------------------------------------------------
@@ -72,10 +72,10 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
         )
       ))
     val cases = Seq(
-      ((true, true), Try(false -> 36518)),
-      ((true, false), Try(true -> 36518)),
-      ((false, false), Try(false -> 36518)),
-      ((false, true), Try(true -> 36518))
+      (true, true) -> Success(Expected(false, 36518)),
+      (true, false) -> Success(Expected(true, 36518)),
+      (false, false) -> Success(Expected(false, 36518)),
+      (false, true) -> Success(Expected(true, 36518))
     )
     testCases2(cases, binXor)
   }
@@ -94,12 +94,12 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
         )
       ))
     val cases = Seq(
-      ((1095564593, true), Success(true -> 4932)),
-      ((-901834021, true), Success(true -> 4932)),
-      ((595045530, false), Success(false -> 4932)),
-      ((-1157998227, false), Success(false -> 4932)),
-      ((0, true), Success(false -> 4932)),
-      ((0, false), Success(true -> 4932))
+      (1095564593, true) -> Success(Expected(true, 36865)),
+      (-901834021, true) -> Success(Expected(true, 36865)),
+      (595045530, false) -> Success(Expected(false, 36865)),
+      (-1157998227, false) -> Success(Expected(false, 36865)),
+      (0, true) -> Success(Expected(false, 36865)),
+      (0, false) -> Success(Expected(true, 36865))
     )
     testCases2(cases, xor)
   }
@@ -115,10 +115,10 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
         )
       ))
     val cases = Seq(
-      ((false, true), Success(false -> 6308)),
-      ((false, false), Success(false -> 6308)),
-      ((true, true), Success(true -> 6308)),
-      ((true, false), Success(false -> 6308))
+      (false, true) -> Success(Expected(false, 38241)),
+      (false, false) -> Success(Expected(false, 38241)),
+      (true, true) -> Success(Expected(true, 38241)),
+      (true, false) -> Success(Expected(false, 38241))
     )
     testCases2(cases, eq)
   }
@@ -134,10 +134,10 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
         )
       ))
     val cases = Seq(
-      ((true, false), Success(true -> 6308)),
-      ((true, true), Success(true -> 6308)),
-      ((false, false), Success(false -> 6308)),
-      ((false, true), Success(true -> 6308))
+      (true, false) -> Success(Expected(true, 38241)),
+      (true, true) -> Success(Expected(true, 38241)),
+      (false, false) -> Success(Expected(false, 38241)),
+      (false, true) -> Success(Expected(true, 38241))
     )
     testCases2(cases, eq)
   }
@@ -145,7 +145,7 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   property("lazy || and && boolean equivalence") {
     testCases2(
       Seq(
-        (true, Success(true -> 6534)),
+        (true, Success(Expected(true, 38467))),
         (false, Failure(new ArithmeticException("/ by zero")))
       ),
       existingFeature((x: Boolean) => x || (1 / 0 == 1),
@@ -158,10 +158,10 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
           )
         )))
 
-    testCases(
+    testCases2(
       Seq(
         (true, Failure(new ArithmeticException("/ by zero"))),
-        (false, Success(false))
+        (false, Success(Expected(false, 38467)))
       ),
       existingFeature((x: Boolean) => x && (1 / 0 == 1),
         "{ (x: Boolean) => x && (1 / 0 == 1) }",
@@ -173,10 +173,10 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
           )
         )))
 
-    testCases(
+    testCases2(
       Seq(
-        (false, Success(false)),
-        (true, Success(true))
+        (false, Success(Expected(false, 40480))),
+        (true, Success(Expected(true, 40480)))
       ),
       existingFeature((x: Boolean) => x && (x || (1 / 0 == 1)),
         "{ (x: Boolean) => x && (x || (1 / 0 == 1)) }",
@@ -191,10 +191,10 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
           )
         )))
 
-    testCases(
+    testCases2(
       Seq(
-        (false, Success(false)),
-        (true, Success(true))
+        (false, Success(Expected(false, 42493))),
+        (true, Success(Expected(true, 42493)))
       ),
       existingFeature((x: Boolean) => x && (x && (x || (1 / 0 == 1))),
         "{ (x: Boolean) => x && (x && (x || (1 / 0 == 1))) }",
@@ -212,10 +212,10 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
           )
         )))
 
-    testCases(
+    testCases2(
       Seq(
-        (false, Success(false)),
-        (true, Success(true))
+        (false, Success(Expected(false, 44506))),
+        (true, Success(Expected(true, 44506)))
       ),
       existingFeature((x: Boolean) => x && (x && (x && (x || (1 / 0 == 1)))),
         "{ (x: Boolean) => x && (x && (x && (x || (1 / 0 == 1)))) }",
@@ -236,10 +236,10 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
           )
         )))
 
-    testCases(
+    testCases2(
       Seq(
         (false, Failure(new ArithmeticException("/ by zero"))),
-        (true, Success(true))
+        (true, Success(Expected(true, 43281)))
       ),
       existingFeature((x: Boolean) => !(!x && (1 / 0 == 1)) && (x || (1 / 0 == 1)),
         "{ (x: Boolean) => !(!x && (1 / 0 == 1)) && (x || (1 / 0 == 1)) }",
@@ -259,9 +259,9 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
           )
         )))
 
-    testCases(
+    testCases2(
       Seq(
-        (true, Success(true)),
+        (true, Success(Expected(true, 40480))),
         (false, Failure(new ArithmeticException("/ by zero")))
       ),
       existingFeature((x: Boolean) => (x || (1 / 0 == 1)) && x,
@@ -277,9 +277,9 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
           )
         )))
 
-    testCases(
+    testCases2(
       Seq(
-        (true, Success(true)),
+        (true, Success(Expected(true, 43149))),
         (false, Failure(new ArithmeticException("/ by zero")))
       ),
       existingFeature((x: Boolean) => (x || (1 / 0 == 1)) && (x || (1 / 0 == 1)),
@@ -298,9 +298,9 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
           )
         )))
 
-    testCases(
+    testCases2(
       Seq(
-        (true, Success(true)),
+        (true, Success(Expected(true, 45950))),
         (false, Failure(new ArithmeticException("/ by zero")))
       ),
       existingFeature(
@@ -325,10 +325,10 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
           )
         )))
 
-    testCases(
+    testCases2(
       Seq(
         (false, Failure(new ArithmeticException("/ by zero"))),
-        (true, Success(true))
+        (true, Success(Expected(true, 48862)))
       ),
       existingFeature(
         (x: Boolean) => (!(!x && (1 / 0 == 1)) || (1 / 0 == 0)) && (!(!x && (1 / 0 == 1)) || (1 / 0 == 1)),
@@ -365,110 +365,128 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
     SByte.upcast(0.toByte) shouldBe 0.toByte  // boundary test case
     SByte.downcast(0.toByte) shouldBe 0.toByte  // boundary test case
 
-    testCases(
-      Seq(
-        (0.toByte, Success(0.toByte)),
-        (1.toByte, Success(1.toByte)),
-        (55.toByte, Success(55.toByte)),
-        (Byte.MaxValue, Success(Byte.MaxValue)),
-        (-1.toByte, Success(-1.toByte)),
-        (-65.toByte, Success(-65.toByte)),
-        (Byte.MinValue, Success(Byte.MinValue))
-      ),
+    testCases2(
+      {
+        def expect(v: Byte) = Success(Expected(v, 35798))
+        Seq(
+          (0.toByte, expect(0.toByte)),
+          (1.toByte, expect(1.toByte)),
+          (55.toByte, expect(55.toByte)),
+          (Byte.MaxValue, expect(Byte.MaxValue)),
+          (-1.toByte, expect(-1.toByte)),
+          (-65.toByte, expect(-65.toByte)),
+          (Byte.MinValue, expect(Byte.MinValue))
+        )
+      },
       existingFeature(
         (x: Byte) => x.toByte, "{ (x: Byte) => x.toByte }",
         FuncValue(Vector((1, SByte)), ValUse(1, SByte))))
 
-    testCases(
-      Seq(
-        (0.toByte, Success(0.toShort)),
-        (1.toByte, Success(1.toShort)),
-        (55.toByte, Success(55.toShort)),
-        (Byte.MaxValue, Success(Byte.MaxValue.toShort)),
-        (-1.toByte, Success(-1.toShort)),
-        (-65.toByte, Success(-65.toShort)),
-        (Byte.MinValue, Success(Byte.MinValue.toShort))
-      ),
+    testCases2(
+      {
+        def expected(v: Short) = Success(Expected(v, 35902))
+        Seq(
+          (0.toByte, expected(0.toShort)),
+          (1.toByte, expected(1.toShort)),
+          (55.toByte, expected(55.toShort)),
+          (Byte.MaxValue, expected(Byte.MaxValue.toShort)),
+          (-1.toByte, expected(-1.toShort)),
+          (-65.toByte, expected(-65.toShort)),
+          (Byte.MinValue, expected(Byte.MinValue.toShort))
+        )
+      },
       existingFeature(
         (x: Byte) => x.toShort, "{ (x: Byte) => x.toShort }",
         FuncValue(Vector((1, SByte)), Upcast(ValUse(1, SByte), SShort))))
 
-    testCases(
-      Seq(
-        (0.toByte, Success(0)),
-        (1.toByte, Success(1)),
-        (55.toByte, Success(55)),
-        (Byte.MaxValue, Success(Byte.MaxValue.toInt)),
-        (-1.toByte, Success(-1)),
-        (-65.toByte, Success(-65)),
-        (Byte.MinValue, Success(Byte.MinValue.toInt))
-      ),
+    testCases2(
+      {
+        def expected(v: Int) = Success(Expected(v, 35902))
+        Seq(
+          (0.toByte, expected(0)),
+          (1.toByte, expected(1)),
+          (55.toByte, expected(55)),
+          (Byte.MaxValue, expected(Byte.MaxValue.toInt)),
+          (-1.toByte, expected(-1)),
+          (-65.toByte, expected(-65)),
+          (Byte.MinValue, expected(Byte.MinValue.toInt))
+        )
+      },
       existingFeature(
         (x: Byte) => x.toInt, "{ (x: Byte) => x.toInt }",
         FuncValue(Vector((1, SByte)), Upcast(ValUse(1, SByte), SInt))))
 
-    testCases(
-      Seq(
-        (0.toByte, Success(0L)),
-        (1.toByte, Success(1L)),
-        (55.toByte, Success(55L)),
-        (Byte.MaxValue, Success(Byte.MaxValue.toLong)),
-        (-1.toByte, Success(-1L)),
-        (-65.toByte, Success(-65L)),
-        (Byte.MinValue, Success(Byte.MinValue.toLong))
-      ),
+    testCases2(
+      {
+        def expected(v: Long) = Success(Expected(v, 35902))
+        Seq(
+          (0.toByte, expected(0L)),
+          (1.toByte, expected(1L)),
+          (55.toByte, expected(55L)),
+          (Byte.MaxValue, expected(Byte.MaxValue.toLong)),
+          (-1.toByte, expected(-1L)),
+          (-65.toByte, expected(-65L)),
+          (Byte.MinValue, expected(Byte.MinValue.toLong))
+        )
+      },
       existingFeature(
         (x: Byte) => x.toLong, "{ (x: Byte) => x.toLong }",
         FuncValue(Vector((1, SByte)), Upcast(ValUse(1, SByte), SLong))))
 
-    testCases(
-      Seq(
-        (0.toByte, Success(CBigInt(new BigInteger("0", 16)))),
-        (1.toByte, Success(CBigInt(new BigInteger("1", 16)))),
-        (-1.toByte, Success(CBigInt(new BigInteger("-1", 16)))),
-        (127.toByte, Success(CBigInt(new BigInteger("7f", 16)))),
-        (-128.toByte, Success(CBigInt(new BigInteger("-80", 16)))),
-        (90.toByte, Success(CBigInt(new BigInteger("5a", 16)))),
-        (-53.toByte, Success(CBigInt(new BigInteger("-35", 16))))
-      ),
+    testCases2(
+      {
+        def expected(v: BigInt) = Success(Expected(v, 35932))
+        Seq(
+          (0.toByte, expected(CBigInt(new BigInteger("0", 16)))),
+          (1.toByte, expected(CBigInt(new BigInteger("1", 16)))),
+          (-1.toByte, expected(CBigInt(new BigInteger("-1", 16)))),
+          (127.toByte, expected(CBigInt(new BigInteger("7f", 16)))),
+          (-128.toByte, expected(CBigInt(new BigInteger("-80", 16)))),
+          (90.toByte, expected(CBigInt(new BigInteger("5a", 16)))),
+          (-53.toByte, expected(CBigInt(new BigInteger("-35", 16))))
+        )
+      },
       existingFeature(
         (x: Byte) => x.toBigInt, "{ (x: Byte) => x.toBigInt }",
         FuncValue(Vector((1, SByte)), Upcast(ValUse(1, SByte), SBigInt))))
 
     val n = ExactNumeric.ByteIsExactNumeric
-    testCases(
-      Seq(
-        ((-128.toByte, -128.toByte), Failure(new ArithmeticException("Byte overflow"))),
-        ((-128.toByte, 0.toByte), Failure(new ArithmeticException("/ by zero"))),
-        ((-128.toByte, 17.toByte), Failure(new ArithmeticException("Byte overflow"))),
-        ((-128.toByte, 127.toByte), Failure(new ArithmeticException("Byte overflow"))),
-        ((-120.toByte, 82.toByte), Failure(new ArithmeticException("Byte overflow"))),
-        ((-103.toByte, 1.toByte), Success((-102.toByte, (-104.toByte, (-103.toByte, (-103.toByte, 0.toByte)))))),
-        ((-90.toByte, 37.toByte), Failure(new ArithmeticException("Byte overflow"))),
-        ((-78.toByte, -111.toByte), Failure(new ArithmeticException("Byte overflow"))),
-        ((-71.toByte, -44.toByte), Failure(new ArithmeticException("Byte overflow"))),
-        ((-53.toByte, 0.toByte), Failure(new ArithmeticException("/ by zero"))),
-        ((-34.toByte, 8.toByte), Failure(new ArithmeticException("Byte overflow"))),
-        ((-24.toByte, 127.toByte), Failure(new ArithmeticException("Byte overflow"))),
-        ((-1.toByte, -1.toByte), Success((-2.toByte, (0.toByte, (1.toByte, (1.toByte, 0.toByte)))))),
-        ((-1.toByte, 23.toByte), Success((22.toByte, (-24.toByte, (-23.toByte, (0.toByte, -1.toByte)))))),
-        ((0.toByte, -128.toByte), Failure(new ArithmeticException("Byte overflow"))),
-        ((0.toByte, -23.toByte), Success((-23.toByte, (23.toByte, (0.toByte, (0.toByte, 0.toByte)))))),
-        ((0.toByte, -1.toByte), Success((-1.toByte, (1.toByte, (0.toByte, (0.toByte, 0.toByte)))))),
-        ((0.toByte, 0.toByte), Failure(new ArithmeticException("/ by zero"))),
-        ((0.toByte, 1.toByte), Success((1.toByte, (-1.toByte, (0.toByte, (0.toByte, 0.toByte)))))),
-        ((0.toByte, 60.toByte), Success((60.toByte, (-60.toByte, (0.toByte, (0.toByte, 0.toByte)))))),
-        ((0.toByte, 127.toByte), Success((127.toByte, (-127.toByte, (0.toByte, (0.toByte, 0.toByte)))))),
-        ((1.toByte, -1.toByte), Success((0.toByte, (2.toByte, (-1.toByte, (-1.toByte, 0.toByte)))))),
-        ((1.toByte, 0.toByte), Failure(new ArithmeticException("/ by zero"))),
-        ((1.toByte, 26.toByte), Success((27.toByte, (-25.toByte, (26.toByte, (0.toByte, 1.toByte)))))),
-        ((7.toByte, -32.toByte), Failure(new ArithmeticException("Byte overflow"))),
-        ((33.toByte, 1.toByte), Success((34.toByte, (32.toByte, (33.toByte, (33.toByte, 0.toByte)))))),
-        ((90.toByte, 0.toByte), Failure(new ArithmeticException("/ by zero"))),
-        ((127.toByte, -128.toByte), Failure(new ArithmeticException("Byte overflow"))),
-        ((127.toByte, -47.toByte), Failure(new ArithmeticException("Byte overflow"))),
-        ((127.toByte, 127.toByte), Failure(new ArithmeticException("Byte overflow")))
-      ),
+    testCases2(
+      {
+        def success[T](v: (T, (T, (T, (T, T))))) = Success(Expected(v, 39654))
+        Seq(
+          ((-128.toByte, -128.toByte), Failure(new ArithmeticException("Byte overflow"))),
+          ((-128.toByte, 0.toByte), Failure(new ArithmeticException("/ by zero"))),
+          ((-128.toByte, 17.toByte), Failure(new ArithmeticException("Byte overflow"))),
+          ((-128.toByte, 127.toByte), Failure(new ArithmeticException("Byte overflow"))),
+          ((-120.toByte, 82.toByte), Failure(new ArithmeticException("Byte overflow"))),
+          ((-103.toByte, 1.toByte), success((-102.toByte, (-104.toByte, (-103.toByte, (-103.toByte, 0.toByte)))))),
+          ((-90.toByte, 37.toByte), Failure(new ArithmeticException("Byte overflow"))),
+          ((-78.toByte, -111.toByte), Failure(new ArithmeticException("Byte overflow"))),
+          ((-71.toByte, -44.toByte), Failure(new ArithmeticException("Byte overflow"))),
+          ((-53.toByte, 0.toByte), Failure(new ArithmeticException("/ by zero"))),
+          ((-34.toByte, 8.toByte), Failure(new ArithmeticException("Byte overflow"))),
+          ((-24.toByte, 127.toByte), Failure(new ArithmeticException("Byte overflow"))),
+          ((-1.toByte, -1.toByte), success((-2.toByte, (0.toByte, (1.toByte, (1.toByte, 0.toByte)))))),
+          ((-1.toByte, 23.toByte), success((22.toByte, (-24.toByte, (-23.toByte, (0.toByte, -1.toByte)))))),
+          ((0.toByte, -128.toByte), Failure(new ArithmeticException("Byte overflow"))),
+          ((0.toByte, -23.toByte), success((-23.toByte, (23.toByte, (0.toByte, (0.toByte, 0.toByte)))))),
+          ((0.toByte, -1.toByte), success((-1.toByte, (1.toByte, (0.toByte, (0.toByte, 0.toByte)))))),
+          ((0.toByte, 0.toByte), Failure(new ArithmeticException("/ by zero"))),
+          ((0.toByte, 1.toByte), success((1.toByte, (-1.toByte, (0.toByte, (0.toByte, 0.toByte)))))),
+          ((0.toByte, 60.toByte), success((60.toByte, (-60.toByte, (0.toByte, (0.toByte, 0.toByte)))))),
+          ((0.toByte, 127.toByte), success((127.toByte, (-127.toByte, (0.toByte, (0.toByte, 0.toByte)))))),
+          ((1.toByte, -1.toByte), success((0.toByte, (2.toByte, (-1.toByte, (-1.toByte, 0.toByte)))))),
+          ((1.toByte, 0.toByte), Failure(new ArithmeticException("/ by zero"))),
+          ((1.toByte, 26.toByte), success((27.toByte, (-25.toByte, (26.toByte, (0.toByte, 1.toByte)))))),
+          ((7.toByte, -32.toByte), Failure(new ArithmeticException("Byte overflow"))),
+          ((33.toByte, 1.toByte), success((34.toByte, (32.toByte, (33.toByte, (33.toByte, 0.toByte)))))),
+          ((90.toByte, 0.toByte), Failure(new ArithmeticException("/ by zero"))),
+          ((127.toByte, -128.toByte), Failure(new ArithmeticException("Byte overflow"))),
+          ((127.toByte, -47.toByte), Failure(new ArithmeticException("Byte overflow"))),
+          ((127.toByte, 127.toByte), Failure(new ArithmeticException("Byte overflow")))
+        )
+      },
       existingFeature(
         { (x: (Byte, Byte)) =>
           val a = x._1; val b = x._2
@@ -558,108 +576,126 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
     SShort.upcast(0.toShort) shouldBe 0.toShort  // boundary test case
     SShort.downcast(0.toShort) shouldBe 0.toShort  // boundary test case
 
-    testCases(
-      Seq(
-        (Short.MinValue, Failure(new ArithmeticException("Byte overflow"))),
-        (-21626.toShort, Failure(new ArithmeticException("Byte overflow"))),
-        (Byte.MinValue.toShort, Success(Byte.MinValue)),
-        (-1.toShort, Success(-1.toByte)),
-        (0.toShort, Success(0.toByte)),
-        (1.toShort, Success(1.toByte)),
-        (Byte.MaxValue.toShort, Success(Byte.MaxValue)),
-        (11768.toShort, Failure(new ArithmeticException("Byte overflow"))),
-        (Short.MaxValue, Failure(new ArithmeticException("Byte overflow")))
-      ),
+    testCases2(
+      {
+        def success[T](v: T) = Success(Expected(v, 35976))
+        Seq(
+          (Short.MinValue, Failure(new ArithmeticException("Byte overflow"))),
+          (-21626.toShort, Failure(new ArithmeticException("Byte overflow"))),
+          (Byte.MinValue.toShort, success(Byte.MinValue)),
+          (-1.toShort, success(-1.toByte)),
+          (0.toShort, success(0.toByte)),
+          (1.toShort, success(1.toByte)),
+          (Byte.MaxValue.toShort, success(Byte.MaxValue)),
+          (11768.toShort, Failure(new ArithmeticException("Byte overflow"))),
+          (Short.MaxValue, Failure(new ArithmeticException("Byte overflow")))
+        )
+      },
       existingFeature((x: Short) => x.toByteExact,
         "{ (x: Short) => x.toByte }",
         FuncValue(Vector((1, SShort)), Downcast(ValUse(1, SShort), SByte))))
 
-    testCases(
-      Seq(
-        (-32768.toShort, Success(-32768.toShort)),
-        (-27798.toShort, Success(-27798.toShort)),
-        (-1.toShort, Success(-1.toShort)),
-        (0.toShort, Success(0.toShort)),
-        (1.toShort, Success(1.toShort)),
-        (27929.toShort, Success(27929.toShort)),
-        (32767.toShort, Success(32767.toShort))
-      ),
+    testCases2(
+      {
+        def success[T](v: T) = Success(Expected(v, 35798))
+        Seq(
+          (-32768.toShort, success(-32768.toShort)),
+          (-27798.toShort, success(-27798.toShort)),
+          (-1.toShort, success(-1.toShort)),
+          (0.toShort, success(0.toShort)),
+          (1.toShort, success(1.toShort)),
+          (27929.toShort, success(27929.toShort)),
+          (32767.toShort, success(32767.toShort))
+        )
+      },
       existingFeature((x: Short) => x.toShort,
         "{ (x: Short) => x.toShort }",
         FuncValue(Vector((1, SShort)), ValUse(1, SShort))))
 
-    testCases(
-      Seq(
-        (-32768.toShort, Success(-32768)),
-        (-21064.toShort, Success(-21064)),
-        (-1.toShort, Success(-1)),
-        (0.toShort, Success(0)),
-        (1.toShort, Success(1)),
-        (18388.toShort, Success(18388)),
-        (32767.toShort, Success(32767))
-      ),
+    testCases2(
+      {
+        def success[T](v: T) = Success(Expected(v, 35902))
+        Seq(
+          (-32768.toShort, success(-32768)),
+          (-21064.toShort, success(-21064)),
+          (-1.toShort, success(-1)),
+          (0.toShort, success(0)),
+          (1.toShort, success(1)),
+          (18388.toShort, success(18388)),
+          (32767.toShort, success(32767))
+        )
+      },
       existingFeature((x: Short) => x.toInt,
         "{ (x: Short) => x.toInt }",
         FuncValue(Vector((1, SShort)), Upcast(ValUse(1, SShort), SInt))))
 
-    testCases(
-      Seq(
-        (-32768.toShort, Success(-32768L)),
-        (-23408.toShort, Success(-23408L)),
-        (-1.toShort, Success(-1L)),
-        (0.toShort, Success(0L)),
-        (1.toShort, Success(1L)),
-        (23318.toShort, Success(23318L)),
-        (32767.toShort, Success(32767L))
-      ),
+    testCases2(
+      {
+        def success[T](v: T) = Success(Expected(v, 35902))
+        Seq(
+          (-32768.toShort, success(-32768L)),
+          (-23408.toShort, success(-23408L)),
+          (-1.toShort, success(-1L)),
+          (0.toShort, success(0L)),
+          (1.toShort, success(1L)),
+          (23318.toShort, success(23318L)),
+          (32767.toShort, success(32767L))
+        )
+      },
       existingFeature((x: Short) => x.toLong,
         "{ (x: Short) => x.toLong }",
         FuncValue(Vector((1, SShort)), Upcast(ValUse(1, SShort), SLong))))
 
-    testCases(
-      Seq(
-        (-32768.toShort, Success(CBigInt(new BigInteger("-8000", 16)))),
-        (-26248.toShort, Success(CBigInt(new BigInteger("-6688", 16)))),
-        (-1.toShort, Success(CBigInt(new BigInteger("-1", 16)))),
-        (0.toShort, Success(CBigInt(new BigInteger("0", 16)))),
-        (1.toShort, Success(CBigInt(new BigInteger("1", 16)))),
-        (22845.toShort, Success(CBigInt(new BigInteger("593d", 16)))),
-        (32767.toShort, Success(CBigInt(new BigInteger("7fff", 16))))
-      ),
+    testCases2(
+      {
+        def success(v: BigInt) = Success(Expected(v, 35932))
+        Seq(
+          (-32768.toShort, success(CBigInt(new BigInteger("-8000", 16)))),
+          (-26248.toShort, success(CBigInt(new BigInteger("-6688", 16)))),
+          (-1.toShort, success(CBigInt(new BigInteger("-1", 16)))),
+          (0.toShort, success(CBigInt(new BigInteger("0", 16)))),
+          (1.toShort, success(CBigInt(new BigInteger("1", 16)))),
+          (22845.toShort, success(CBigInt(new BigInteger("593d", 16)))),
+          (32767.toShort, success(CBigInt(new BigInteger("7fff", 16))))
+        )
+      },
       existingFeature((x: Short) => x.toBigInt,
         "{ (x: Short) => x.toBigInt }",
         FuncValue(Vector((1, SShort)), Upcast(ValUse(1, SShort), SBigInt))))
 
     val n = ExactNumeric.ShortIsExactNumeric
-    testCases(
-      Seq(
-        ((-32768.toShort, 1.toShort), Failure(new ArithmeticException("Short overflow"))),
-        ((-32768.toShort, 4006.toShort), Failure(new ArithmeticException("Short overflow"))),
-        ((-21384.toShort, 0.toShort), Failure(new ArithmeticException("/ by zero"))),
-        ((-19027.toShort, 6073.toShort), Failure(new ArithmeticException("Short overflow"))),
-        ((-16800.toShort, 32767.toShort), Failure(new ArithmeticException("Short overflow"))),
-        ((-1.toShort, -30005.toShort), Success((-30006.toShort, (30004.toShort, (30005.toShort, (0.toShort, -1.toShort)))))),
-        ((-1.toShort, 0.toShort), Failure(new ArithmeticException("/ by zero"))),
-        ((0.toShort, -1.toShort), Success((-1.toShort, (1.toShort, (0.toShort, (0.toShort, 0.toShort)))))),
-        ((0.toShort, 0.toShort), Failure(new ArithmeticException("/ by zero"))),
-        ((0.toShort, 1.toShort), Success((1.toShort, (-1.toShort, (0.toShort, (0.toShort, 0.toShort)))))),
-        ((0.toShort, 25105.toShort), Success((25105.toShort, (-25105.toShort, (0.toShort, (0.toShort, 0.toShort)))))),
-        ((1.toShort, -32768.toShort), Failure(new ArithmeticException("Short overflow"))),
-        ((1.toShort, -1.toShort), Success((0.toShort, (2.toShort, (-1.toShort, (-1.toShort, 0.toShort)))))),
-        ((1.toShort, 0.toShort), Failure(new ArithmeticException("/ by zero"))),
-        ((605.toShort, 7698.toShort), Failure(new ArithmeticException("Short overflow"))),
-        ((5094.toShort, -32768.toShort), Failure(new ArithmeticException("Short overflow"))),
-        ((5350.toShort, -1.toShort), Success((5349.toShort, (5351.toShort, (-5350.toShort, (-5350.toShort, 0.toShort)))))),
-        ((8115.toShort, -32768.toShort), Failure(new ArithmeticException("Short overflow"))),
-        ((14217.toShort, 32767.toShort), Failure(new ArithmeticException("Short overflow"))),
-        ((16223.toShort, -11686.toShort), Failure(new ArithmeticException("Short overflow"))),
-        ((16989.toShort, 1.toShort), Success((16990.toShort, (16988.toShort, (16989.toShort, (16989.toShort, 0.toShort)))))),
-        ((20397.toShort, -4450.toShort), Failure(new ArithmeticException("Short overflow"))),
-        ((20488.toShort, 1.toShort), Success((20489.toShort, (20487.toShort, (20488.toShort, (20488.toShort, 0.toShort)))))),
-        ((32767.toShort, -32768.toShort), Failure(new ArithmeticException("Short overflow"))),
-        ((32767.toShort, -13423.toShort), Failure(new ArithmeticException("Short overflow"))),
-        ((32767.toShort, 32767.toShort), Failure(new ArithmeticException("Short overflow")))
-      ),
+    testCases2(
+      {
+        def success[T](v: T) = Success(Expected(v, 39654))
+        Seq(
+          ((-32768.toShort, 1.toShort), Failure(new ArithmeticException("Short overflow"))),
+          ((-32768.toShort, 4006.toShort), Failure(new ArithmeticException("Short overflow"))),
+          ((-21384.toShort, 0.toShort), Failure(new ArithmeticException("/ by zero"))),
+          ((-19027.toShort, 6073.toShort), Failure(new ArithmeticException("Short overflow"))),
+          ((-16800.toShort, 32767.toShort), Failure(new ArithmeticException("Short overflow"))),
+          ((-1.toShort, -30005.toShort), success((-30006.toShort, (30004.toShort, (30005.toShort, (0.toShort, -1.toShort)))))),
+          ((-1.toShort, 0.toShort), Failure(new ArithmeticException("/ by zero"))),
+          ((0.toShort, -1.toShort), success((-1.toShort, (1.toShort, (0.toShort, (0.toShort, 0.toShort)))))),
+          ((0.toShort, 0.toShort), Failure(new ArithmeticException("/ by zero"))),
+          ((0.toShort, 1.toShort), success((1.toShort, (-1.toShort, (0.toShort, (0.toShort, 0.toShort)))))),
+          ((0.toShort, 25105.toShort), success((25105.toShort, (-25105.toShort, (0.toShort, (0.toShort, 0.toShort)))))),
+          ((1.toShort, -32768.toShort), Failure(new ArithmeticException("Short overflow"))),
+          ((1.toShort, -1.toShort), success((0.toShort, (2.toShort, (-1.toShort, (-1.toShort, 0.toShort)))))),
+          ((1.toShort, 0.toShort), Failure(new ArithmeticException("/ by zero"))),
+          ((605.toShort, 7698.toShort), Failure(new ArithmeticException("Short overflow"))),
+          ((5094.toShort, -32768.toShort), Failure(new ArithmeticException("Short overflow"))),
+          ((5350.toShort, -1.toShort), success((5349.toShort, (5351.toShort, (-5350.toShort, (-5350.toShort, 0.toShort)))))),
+          ((8115.toShort, -32768.toShort), Failure(new ArithmeticException("Short overflow"))),
+          ((14217.toShort, 32767.toShort), Failure(new ArithmeticException("Short overflow"))),
+          ((16223.toShort, -11686.toShort), Failure(new ArithmeticException("Short overflow"))),
+          ((16989.toShort, 1.toShort), success((16990.toShort, (16988.toShort, (16989.toShort, (16989.toShort, 0.toShort)))))),
+          ((20397.toShort, -4450.toShort), Failure(new ArithmeticException("Short overflow"))),
+          ((20488.toShort, 1.toShort), success((20489.toShort, (20487.toShort, (20488.toShort, (20488.toShort, 0.toShort)))))),
+          ((32767.toShort, -32768.toShort), Failure(new ArithmeticException("Short overflow"))),
+          ((32767.toShort, -13423.toShort), Failure(new ArithmeticException("Short overflow"))),
+          ((32767.toShort, 32767.toShort), Failure(new ArithmeticException("Short overflow")))
+        )
+      },
       existingFeature(
         { (x: (Short, Short)) =>
           val a = x._1; val b = x._2
