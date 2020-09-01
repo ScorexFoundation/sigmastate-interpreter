@@ -4,8 +4,7 @@ import java.math.BigInteger
 
 import org.bouncycastle.asn1.x9.X9ECParameters
 import org.bouncycastle.crypto.ec.CustomNamedCurves
-import org.bouncycastle.math.ec.custom.djb.Curve25519Point
-import org.bouncycastle.math.ec.custom.sec.{SecP256K1Point, SecP384R1Point, SecP521R1Point}
+import org.bouncycastle.math.ec.custom.sec.SecP256K1Point
 import org.bouncycastle.math.ec.ECPoint
 import org.bouncycastle.util.BigIntegers
 import spire.syntax.all.cfor

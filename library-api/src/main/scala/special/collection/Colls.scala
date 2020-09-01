@@ -430,6 +430,9 @@ trait ReplColl[@specialized A] extends Coll[A] {
   def append(other: Coll[A]): Coll[A]
 }
 
+/** Interface to access global collection methods.
+  * See default implementation in CollOverArrayBuilder.
+  */
 @scalan.Liftable
 @WithMethodCallRecognizers
 trait CollBuilder {

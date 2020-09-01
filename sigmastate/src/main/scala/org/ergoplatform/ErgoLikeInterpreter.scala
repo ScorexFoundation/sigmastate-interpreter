@@ -23,7 +23,13 @@ class ErgoLikeInterpreter(implicit val IR: IRContext) extends Interpreter {
                 sys.error(s"Failed deserialization of $d: expected deserialized value to have type ${d.tpe}; got ${outVal.tpe}")
               else
                 Some(outVal)
-            case _ => None // TODO HF: this case is not possible so can be safely removed as part of HF
+            case _ =>
+              // TODO HF: this case is not possible because `ErgoBox.get`
+              //  returns lookups values from `additionalRegisters` Map with values
+              //  of type EvaluatedValue, which are always Constant nodes in practice.
+              //  Also, this branch is never executed so can be safely removed
+              //  (better as part of as part of HF)
+              None
           }
         }.orElse(d.default)
       case _ => super.substDeserialize(context, updateContext, node)

@@ -538,6 +538,7 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
     case m => sys.error(s"Point of type ${m.getClass} is not supported")
   }
 
+  /** Wraps the given sigma proposition into SigmaDsl value of type SigmaProp. */
   def SigmaProp(sigmaTree: SigmaBoolean): SigmaProp = new CSigmaProp(sigmaTree)
 
   /** Extract `sigmastate.Values.SigmaBoolean` from DSL's `SigmaProp` type. */
@@ -551,11 +552,18 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
     CAvlTree(treeData)
   }
 
+  /** Wraps the given tree data into SigmaDsl value of type [[AvlTree]]. */
   def avlTree(treeData: AvlTreeData): AvlTree = {
     CAvlTree(treeData)
   }
 
+  /** Wraps the given [[ErgoBox]] into SigmaDsl value of type [[Box]].
+    * @param ebox  the value to be wrapped
+    * @see [[sigmastate.SBox]], [[special.sigma.Box]]
+    */
   def Box(ebox: ErgoBox): Box = CostingBox(false, ebox)
+
+  /** Extracts [[ErgoBox]] from the given [[Box]] instance. This is inverse to the Box method. */
   def toErgoBox(b: Box): ErgoBox = b.asInstanceOf[CostingBox].ebox
 
   /** @hotspot don't beautify this code */
@@ -667,24 +675,24 @@ case class CostingDataContext(
                                vars: Coll[AnyValue],
                                var isCost: Boolean)
   extends Context {
-  @inline def builder: SigmaDslBuilder = CostingSigmaDslBuilder
+  @inline override def builder: SigmaDslBuilder = CostingSigmaDslBuilder
 
-  @inline def HEIGHT: Int = height
+  @inline override def HEIGHT: Int = height
 
-  @inline def SELF: Box = selfBox
+  @inline override def SELF: Box = selfBox
 
-  @inline def dataInputs: Coll[Box] = _dataInputs
+  @inline override def dataInputs: Coll[Box] = _dataInputs
 
-  @inline def INPUTS = inputs
+  @inline override def INPUTS = inputs
 
-  @inline def OUTPUTS = outputs
+  @inline override def OUTPUTS = outputs
 
-  @inline def LastBlockUtxoRootHash = lastBlockUtxoRootHash
+  @inline override def LastBlockUtxoRootHash = lastBlockUtxoRootHash
 
-  @inline def minerPubKey = _minerPubKey
+  @inline override def minerPubKey = _minerPubKey
 
 
-  def findSelfBoxIndex: Int = {
+  private def findSelfBoxIndex: Int = {
     var i = 0
     while (i < inputs.length) {
       if (inputs(i) eq selfBox) return i
