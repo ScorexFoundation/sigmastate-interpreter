@@ -26,7 +26,7 @@ class SigmaDslTesting extends PropSpec
 
   override def contractEnv: ScriptEnv = Map()
 
-  implicit lazy val IR = new TestingIRContext {
+  implicit def IR = new TestingIRContext {
     override val okPrintEvaluatedEntries: Boolean = false
     override val okMeasureOperationTime: Boolean = true
   }

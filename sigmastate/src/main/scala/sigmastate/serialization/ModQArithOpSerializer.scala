@@ -6,6 +6,7 @@ import sigmastate.utils.SigmaByteWriter.DataInfo
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate.{ModQArithOpCompanion, SType, ModQArithOp}
 
+// TODO HF: make sure it is covered with tests
 case class ModQArithOpSerializer(override val opDesc: ModQArithOpCompanion, cons: (BigIntValue, BigIntValue) => BigIntValue)
   extends ValueSerializer[ModQArithOp] {
   val leftInfo: DataInfo[SValue] = opDesc.argInfos(0)

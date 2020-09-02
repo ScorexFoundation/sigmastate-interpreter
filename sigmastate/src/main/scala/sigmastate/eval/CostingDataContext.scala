@@ -4,7 +4,6 @@ import java.math.BigInteger
 import java.util
 
 import org.bouncycastle.math.ec.ECPoint
-import org.ergoplatform.settings.ErgoAlgos
 import org.ergoplatform.{ErgoBox, SigmaConstants}
 import org.ergoplatform.validation.ValidationRules
 import scorex.crypto.authds.avltree.batch._
@@ -20,11 +19,12 @@ import sigmastate.eval.Extensions._
 import spire.syntax.all.cfor
 
 import scala.util.{Success, Failure}
-import scalan.RType
+import scalan.{Nullable, RType}
 import scorex.crypto.hash.{Digest32, Sha256, Blake2b256}
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
 import sigmastate.lang.Terms.OperationId
+import sigmastate.lang.TransformingSigmaBuilder
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.serialization.{SigmaSerializer, GroupElementSerializer}
 import special.Types.TupleType
@@ -272,12 +272,12 @@ case class CostingBox(isCost: Boolean, val ebox: ErgoBox) extends Box with Wrapp
   lazy val bytes: Coll[Byte] = Colls.fromArray(ebox.bytes)
   lazy val bytesWithoutRef: Coll[Byte] = Colls.fromArray(ebox.bytesWithNoRef)
   lazy val propositionBytes: Coll[Byte] = Colls.fromArray(ebox.propositionBytes)
-  lazy val registers: Coll[AnyValue] = regs(ebox, isCost)
+  lazy val registers: Coll[AnyValue] = regs(ebox)
 
   override def wrappedValue: ErgoBox = ebox
 
   override def getReg[T](i: Int)(implicit tT: RType[T]): Option[T] =
-    if (isCost) {
+    if (isCost) {  // TODO refactor: remove isCost branch (it was added before Sizes and now is never executed)
       val optV =
         if (i < 0 || i >= registers.length) None
         else {
@@ -340,9 +340,7 @@ object CostingBox {
 
   import Evaluation._
 
-  def colBytes(b: Array[Byte])(implicit IR: Evaluation): Coll[Byte] = IR.sigmaDslBuilderValue.Colls.fromArray(b)
-
-  def regs(ebox: ErgoBox, isCost: Boolean): Coll[AnyValue] = {
+  def regs(ebox: ErgoBox): Coll[AnyValue] = {
     val res = new Array[AnyValue](ErgoBox.maxRegisters)
 
     def checkNotYetDefined(id: Int, newValue: SValue) =
@@ -540,6 +538,7 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
     case m => sys.error(s"Point of type ${m.getClass} is not supported")
   }
 
+  /** Wraps the given sigma proposition into SigmaDsl value of type SigmaProp. */
   def SigmaProp(sigmaTree: SigmaBoolean): SigmaProp = new CSigmaProp(sigmaTree)
 
   /** Extract `sigmastate.Values.SigmaBoolean` from DSL's `SigmaProp` type. */
@@ -553,11 +552,18 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
     CAvlTree(treeData)
   }
 
+  /** Wraps the given tree data into SigmaDsl value of type [[AvlTree]]. */
   def avlTree(treeData: AvlTreeData): AvlTree = {
     CAvlTree(treeData)
   }
 
+  /** Wraps the given [[ErgoBox]] into SigmaDsl value of type [[Box]].
+    * @param ebox  the value to be wrapped
+    * @see [[sigmastate.SBox]], [[special.sigma.Box]]
+    */
   def Box(ebox: ErgoBox): Box = CostingBox(false, ebox)
+
+  /** Extracts [[ErgoBox]] from the given [[Box]] instance. This is inverse to the Box method. */
   def toErgoBox(b: Box): ErgoBox = b.asInstanceOf[CostingBox].ebox
 
   /** @hotspot don't beautify this code */
@@ -633,8 +639,12 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
                                  positions: Coll[Int],
                                  newValues: Coll[T])
                                 (implicit cT: RType[T]): Coll[Byte] = {
-    val typedNewVals = newValues.toArray.map(_.asInstanceOf[Value[SType]])
-    val res = SubstConstants.eval(scriptBytes.toArray, positions.toArray, typedNewVals)
+    val typedNewVals = newValues.toArray.map(v => TransformingSigmaBuilder.liftAny(v) match {
+      case Nullable(v) => v
+      case _ => sys.error(s"Cannot evaluate substConstants($scriptBytes, $positions, $newValues): cannot lift value $v")
+    })
+
+    val res = SubstConstants.eval(scriptBytes.toArray, positions.toArray, typedNewVals)(validationSettings)
     Colls.fromArray(res)
   }
 
@@ -665,24 +675,24 @@ case class CostingDataContext(
                                vars: Coll[AnyValue],
                                var isCost: Boolean)
   extends Context {
-  @inline def builder: SigmaDslBuilder = CostingSigmaDslBuilder
+  @inline override def builder: SigmaDslBuilder = CostingSigmaDslBuilder
 
-  @inline def HEIGHT: Int = height
+  @inline override def HEIGHT: Int = height
 
-  @inline def SELF: Box = selfBox
+  @inline override def SELF: Box = selfBox
 
-  @inline def dataInputs: Coll[Box] = _dataInputs
+  @inline override def dataInputs: Coll[Box] = _dataInputs
 
-  @inline def INPUTS = inputs
+  @inline override def INPUTS = inputs
 
-  @inline def OUTPUTS = outputs
+  @inline override def OUTPUTS = outputs
 
-  @inline def LastBlockUtxoRootHash = lastBlockUtxoRootHash
+  @inline override def LastBlockUtxoRootHash = lastBlockUtxoRootHash
 
-  @inline def minerPubKey = _minerPubKey
+  @inline override def minerPubKey = _minerPubKey
 
 
-  def findSelfBoxIndex: Int = {
+  private def findSelfBoxIndex: Int = {
     var i = 0
     while (i < inputs.length) {
       if (inputs(i) eq selfBox) return i

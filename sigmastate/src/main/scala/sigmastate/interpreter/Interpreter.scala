@@ -53,7 +53,7 @@ trait Interpreter extends ScorexLogging {
     val currCost = JMath.addExact(context.initCost, scriptComplexity)
     val remainingLimit = context.costLimit - currCost
     if (remainingLimit <= 0)
-      throw new CostLimitException(currCost, msgCostLimitError(currCost, context.costLimit), None)
+      throw new CostLimitException(currCost, msgCostLimitError(currCost, context.costLimit), None) // TODO cover with tests
 
     val ctx1 = context.withInitCost(currCost).asInstanceOf[CTX]
     (ctx1, script)
@@ -71,17 +71,18 @@ trait Interpreter extends ScorexLogging {
 
             CheckDeserializedScriptType(d, script)
             Some(script)
-          case _ => None
+          case _ => None // TODO cover with tests
         }
       else
-        None
+        None // TODO cover with tests
     case _ => None
   }
 
   def toValidScriptType(exp: SValue): BoolValue = exp match {
     case v: Value[SBoolean.type]@unchecked if v.tpe == SBoolean => v
     case p: SValue if p.tpe == SSigmaProp => p.asSigmaProp.isProven
-    case x => throw new Error(s"Context-dependent pre-processing should produce tree of type Boolean or SigmaProp but was $x")
+    case x => // TODO cover with tests
+      throw new Error(s"Context-dependent pre-processing should produce tree of type Boolean or SigmaProp but was $x")
   }
 
   class MutableCell[T](var value: T)
@@ -95,7 +96,7 @@ trait Interpreter extends ScorexLogging {
         ergoTree.toProposition(ergoTree.isConstantSegregation)
       case Left(UnparsedErgoTree(_, error)) if validationSettings.isSoftFork(error) =>
         TrueSigmaProp
-      case Left(UnparsedErgoTree(_, error)) =>
+      case Left(UnparsedErgoTree(_, error)) => // TODO cover with tests
         throw new InterpreterException(
           "Script has not been recognized due to ValidationException, and it cannot be accepted as soft-fork.", None, Some(error))
     }
@@ -112,19 +113,6 @@ trait Interpreter extends ScorexLogging {
     val Some(substTree: SValue) = everywherebu(substRule)(exp)
     val res = toValidScriptType(substTree)
     (res, currContext.value)
-  }
-
-  def checkCost(context: CTX, exp: Value[SType], costF: Ref[((Int, IR.Size[IR.Context])) => Int]): Int = {
-    import IR.Size._
-    import IR.Context._
-    val costingCtx = context.toSigmaContext(IR, isCost = true)
-    val maxCost = context.costLimit
-    val costFun = IR.compile[(Int, SSize[SContext]), Int, (Int, Size[Context]), Int](IR.getDataEnv, costF, Some(maxCost))
-    val (_, estimatedCost) = costFun((0, Sized.sizeOf(costingCtx)))
-    if (estimatedCost > maxCost) {
-      throw new CostLimitException(estimatedCost, s"Estimated execution cost $estimatedCost exceeds the limit $maxCost in $exp")
-    }
-    estimatedCost
   }
 
   def calcResult(context: special.sigma.Context, calcF: Ref[IR.Context => Any]): special.sigma.SigmaProp = {
@@ -244,7 +232,7 @@ trait Interpreter extends ScorexLogging {
       val initCost = JMath.addExact(ergoTree.complexity.toLong, context.initCost)
       val remainingLimit = context.costLimit - initCost
       if (remainingLimit <= 0)
-        throw new CostLimitException(initCost, msgCostLimitError(initCost, context.costLimit), None)
+        throw new CostLimitException(initCost, msgCostLimitError(initCost, context.costLimit), None) // TODO cover with tests
 
       val contextWithCost = context.withInitCost(initCost).asInstanceOf[CTX]
 

@@ -1,10 +1,12 @@
 package sigmastate.serialization
 
-import sigmastate.Values.{ErgoTree, IntConstant, SigmaPropValue}
+import java.math.BigInteger
+
+import sigmastate.Values.{ShortConstant, LongConstant, BigIntConstant, SigmaPropValue, IntConstant, ErgoTree, ByteConstant}
 import sigmastate._
-import sigmastate.eval.IRContext
+import sigmastate.eval.{IRContext, CBigInt}
 import sigmastate.helpers.SigmaTestingCommons
-import sigmastate.lang.exceptions.{InputSizeLimitExceeded, SerializerException}
+import sigmastate.lang.exceptions.{SerializerException, InputSizeLimitExceeded}
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 
 class ErgoTreeSerializerSpecification extends SerializationSpecification
@@ -27,16 +29,23 @@ class ErgoTreeSerializerSpecification extends SerializationSpecification
   }
 
   property("(de)serialization round trip using treeBytes()") {
-    val tree = EQ(Plus(10, 20), IntConstant(30)).toSigmaProp
-    val ergoTree = extractConstants(tree)
-    val bytes = DefaultSerializer.serializeErgoTree(ergoTree)
-    val (_, _, deserializedConstants, treeBytes) = DefaultSerializer
-      .deserializeHeaderWithTreeBytes(SigmaSerializer.startReader(bytes))
-    deserializedConstants shouldEqual ergoTree.constants
-    val r = SigmaSerializer.startReader(treeBytes, new ConstantStore(deserializedConstants),
-      resolvePlaceholdersToConstants = true)
-    val deserializedTree = ValueSerializer.deserialize(r)
-    deserializedTree shouldEqual tree
+    val trees = Seq(
+      EQ(Plus(10.toByte, 20.toByte), ByteConstant(30)).toSigmaProp,
+      EQ(Plus(10.toShort, 20.toShort), ShortConstant(30)).toSigmaProp,
+      EQ(Plus(10, 20), IntConstant(30)).toSigmaProp,
+      EQ(Plus(CBigInt(BigInteger.valueOf(10L)), BigIntConstant(20L)), BigIntConstant(30L)).toSigmaProp
+    )
+    trees.foreach { tree =>
+      val ergoTree = extractConstants(tree)
+      val bytes = DefaultSerializer.serializeErgoTree(ergoTree)
+      val (_, _, deserializedConstants, treeBytes) = DefaultSerializer
+        .deserializeHeaderWithTreeBytes(SigmaSerializer.startReader(bytes))
+      deserializedConstants shouldEqual ergoTree.constants
+      val r = SigmaSerializer.startReader(treeBytes, new ConstantStore(deserializedConstants),
+        resolvePlaceholdersToConstants = true)
+      val deserializedTree = ValueSerializer.deserialize(r)
+      deserializedTree shouldEqual tree
+    }
   }
 
   property("Constant extraction via compiler pass: (de)serialization round trip") {

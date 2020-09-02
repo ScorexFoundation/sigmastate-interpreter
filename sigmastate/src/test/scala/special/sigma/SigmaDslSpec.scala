@@ -1,5 +1,6 @@
 package special.sigma
 
+import java.lang.reflect.InvocationTargetException
 import java.math.BigInteger
 
 import org.ergoplatform.ErgoScriptPredef.TrueProp
@@ -359,6 +360,9 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   }
 
   property("Byte methods equivalence") {
+    SByte.upcast(0.toByte) shouldBe 0.toByte  // boundary test case
+    SByte.downcast(0.toByte) shouldBe 0.toByte  // boundary test case
+
     testCases(
       Seq(
         (0.toByte, Success(0.toByte)),
@@ -549,6 +553,9 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   }
 
   property("Short methods equivalence") {
+    SShort.upcast(0.toShort) shouldBe 0.toShort  // boundary test case
+    SShort.downcast(0.toShort) shouldBe 0.toShort  // boundary test case
+
     testCases(
       Seq(
         (Short.MinValue, Failure(new ArithmeticException("Byte overflow"))),
@@ -736,6 +743,9 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   }
 
   property("Int methods equivalence") {
+    SInt.upcast(0) shouldBe 0  // boundary test case
+    SInt.downcast(0) shouldBe 0  // boundary test case
+
     testCases(
       Seq(
         (Int.MinValue, Failure(new ArithmeticException("Byte overflow"))),
@@ -920,6 +930,9 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   }
 
   property("Long methods equivalence") {
+    SLong.upcast(0L) shouldBe 0L  // boundary test case
+    SLong.downcast(0L) shouldBe 0L  // boundary test case
+
     testCases(
       Seq(
         (Long.MinValue, Failure(new ArithmeticException("Byte overflow"))),
@@ -1247,6 +1260,22 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   }
 
   property("BigInt methods equivalence (new features)") {
+    // TODO HF: the behavior of `upcast` for BigInt is different from all other Numeric types
+    // The `Upcast(bigInt, SBigInt)` node is never produced by ErgoScript compiler, but is still valid ErgoTree.
+    // It makes sense to fix this inconsistency as part of HF
+    assertExceptionThrown(
+      SBigInt.upcast(CBigInt(new BigInteger("0", 16)).asInstanceOf[AnyVal]),
+      _.getMessage.contains("Cannot upcast value")
+    )
+
+    // TODO HF: the behavior of `downcast` for BigInt is different from all other Numeric types
+    // The `Downcast(bigInt, SBigInt)` node is never produced by ErgoScript compiler, but is still valid ErgoTree.
+    // It makes sense to fix this inconsistency as part of HF
+    assertExceptionThrown(
+      SBigInt.downcast(CBigInt(new BigInteger("0", 16)).asInstanceOf[AnyVal]),
+      _.getMessage.contains("Cannot downcast value")
+    )
+
     val toByte = newFeature((x: BigInt) => x.toByte,
       "{ (x: BigInt) => x.toByte }",
       FuncValue(Vector((1, SBigInt)), Downcast(ValUse(1, SBigInt), SByte)))
@@ -2709,6 +2738,8 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
       vars = Coll[AnyValue](null, TestValue(Helpers.decodeBytes("00"), CollType(RType.ByteType)), TestValue(true, RType.BooleanType)),
       false
     )
+    val ctx2 = ctx.copy(vars = Coll[AnyValue](null, null, null))
+    val ctx3 = ctx.copy(vars = Coll[AnyValue]())
 
     test(samples, existingPropTest("dataInputs", { (x: Context) => x.dataInputs }))
 
@@ -2883,6 +2914,17 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
       )))
 
     test(samples, existingPropTest("minerPubKey", { (x: Context) => x.minerPubKey }))
+
+    testCases(
+      Seq(
+        ctx -> Success(Some(true)),
+        ctx2 -> Success(None),
+        ctx3 -> Success(None)
+      ),
+      existingFeature((x: Context) => x.getVar[Boolean](2),
+      "{ (x: Context) => getVar[Boolean](2) }",
+        FuncValue(Vector((1, SContext)), GetVar(2.toByte, SOption(SBoolean)))),
+      preGeneratedSamples = Some(samples))
 
     testCases(
       Seq((ctx, Failure(new InvalidType("Cannot getVar[Int](2): invalid type of value Value(true) at id=2")))),
@@ -3295,6 +3337,61 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
     arr <- collGen[Int]
     l <- Gen.choose(0, arr.length - 1)
     r <- Gen.choose(l, arr.length - 1) } yield (arr, (l, r))
+
+  property("Coll flatMap method equivalence") {
+    testCases(
+      Seq(
+        Coll[GroupElement]() -> Success(Coll[Byte]()),
+        Coll[GroupElement](
+          Helpers.decodeGroupElement("02d65904820f8330218cf7318b3810d0c9ab9df86f1ee6100882683f23c0aee587"),
+          Helpers.decodeGroupElement("0390e9daa9916f30d0bc61a8e381c6005edfb7938aee5bb4fc9e8a759c7748ffaa")) ->
+            Success(Helpers.decodeBytes(
+              "02d65904820f8330218cf7318b3810d0c9ab9df86f1ee6100882683f23c0aee5870390e9daa9916f30d0bc61a8e381c6005edfb7938aee5bb4fc9e8a759c7748ffaa"
+            )),
+        Coll[GroupElement](
+          Helpers.decodeGroupElement("02d65904820f8330218cf7318b3810d0c9ab9df86f1ee6100882683f23c0aee587"),
+          Helpers.decodeGroupElement("0390e9daa9916f30d0bc61a8e381c6005edfb7938aee5bb4fc9e8a759c7748ffaa"),
+          Helpers.decodeGroupElement("03bd839b969b02d218fd1192f2c80cbda9c6ce9c7ddb765f31b748f4666203df85")) ->
+            Success(Helpers.decodeBytes(
+              "02d65904820f8330218cf7318b3810d0c9ab9df86f1ee6100882683f23c0aee5870390e9daa9916f30d0bc61a8e381c6005edfb7938aee5bb4fc9e8a759c7748ffaa03bd839b969b02d218fd1192f2c80cbda9c6ce9c7ddb765f31b748f4666203df85"
+            ))
+      ),
+      existingFeature(
+        { (x: Coll[GroupElement]) => x.flatMap({ (b: GroupElement) => b.getEncoded }) },
+        "{ (x: Coll[GroupElement]) => x.flatMap({ (b: GroupElement) => b.getEncoded }) }",
+        FuncValue(
+          Vector((1, SCollectionType(SGroupElement))),
+          MethodCall.typed[Value[SCollection[SByte.type]]](
+            ValUse(1, SCollectionType(SGroupElement)),
+            SCollection.getMethodByName("flatMap").withConcreteTypes(
+              Map(STypeVar("IV") -> SGroupElement, STypeVar("OV") -> SByte)
+            ),
+            Vector(
+              FuncValue(
+                Vector((3, SGroupElement)),
+                MethodCall.typed[Value[SCollection[SByte.type]]](
+                  ValUse(3, SGroupElement),
+                  SGroupElement.getMethodByName("getEncoded"),
+                  Vector(),
+                  Map()
+                )
+              )
+            ),
+            Map()
+          )
+        )))
+
+    val f = existingFeature(
+      { (x: Coll[GroupElement]) => x.flatMap({ (b: GroupElement) => b.getEncoded.append(b.getEncoded) }) },
+      "{ (x: Coll[GroupElement]) => x.flatMap({ (b: GroupElement) => b.getEncoded.append(b.getEncoded) }) }" )
+    assertExceptionThrown(
+      f.oldF,
+      t => t match {
+        case e: InvocationTargetException =>
+          e.getTargetException.getMessage.contains("Unsupported lambda in flatMap")
+      }
+    )
+  }
 
   property("Coll patch method equivalence") {
     val samples = genSamples(collWithRangeGen, MinSuccessful(50))
@@ -3975,7 +4072,9 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
               )
             )
           )
-        )
+        ),
+        Colls.replicate[SigmaProp](AtLeast.MaxChildrenCount + 1, CSigmaProp(TrivialProp.TrueProp)) ->
+          Failure(new IllegalArgumentException("Expected input elements count should not exceed 255, actual: 256"))
       ),
       existingFeature((x: Coll[SigmaProp]) => SigmaDsl.atLeast(x.size - 1, x),
         "{ (x: Coll[SigmaProp]) => atLeast(x.size - 1, x) }",
@@ -4219,6 +4318,53 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
             ValUse(1, SGroupElement),
             ValUse(1, SGroupElement),
             ValUse(1, SGroupElement)
+          )
+        )))
+  }
+
+  property("substConstants equivalence") {
+    // tree without constant segregation
+    val t1 = ErgoTree(ErgoTree.DefaultHeader, Vector(), TrueSigmaProp)
+    // tree with constant segregation, but without constants
+    val t2 = ErgoTree(ErgoTree.ConstantSegregationHeader, Vector(), TrueSigmaProp)
+    // tree with one segregated constant
+    val t3 = ErgoTree(ErgoTree.ConstantSegregationHeader, Vector(TrueSigmaProp), ConstantPlaceholder(0, SSigmaProp))
+    // tree with one segregated constant of different type
+    val t4 = ErgoTree(
+      ErgoTree.ConstantSegregationHeader,
+      Vector(IntConstant(10)),
+      BoolToSigmaProp(EQ(ConstantPlaceholder(0, SInt), IntConstant(20))))
+    testCases(
+      Seq(
+        (Helpers.decodeBytes(""), 0) -> Failure(new java.nio.BufferUnderflowException()),
+
+        // TODO HF: fix for trees without segregation flag
+        // NOTE: constants count is serialized erroneously in the following 2 cases
+        (Coll(t1.bytes:_*), 0) -> Success(Helpers.decodeBytes("000008d3")),
+        (Helpers.decodeBytes("000008d3"), 0) -> Success(Helpers.decodeBytes("00000008d3")),
+        // tree with segregation flag, empty constants array
+        (Coll(t2.bytes:_*), 0) -> Success(Helpers.decodeBytes("100008d3")),
+        (Helpers.decodeBytes("100008d3"), 0) -> Success(Helpers.decodeBytes("100008d3")),
+        // tree with one segregated constant
+        (Coll(t3.bytes:_*), 0) -> Success(Helpers.decodeBytes("100108d27300")),
+        (Helpers.decodeBytes("100108d37300"), 0) -> Success(Helpers.decodeBytes("100108d27300")),
+        (Coll(t3.bytes:_*), 1) -> Success(Helpers.decodeBytes("100108d37300")),
+        (Coll(t4.bytes:_*), 0) -> Failure(new AssertionError("assertion failed: expected new constant to have the same SInt$ tpe, got SSigmaProp"))
+      ),
+      existingFeature(
+        { (x: (Coll[Byte], Int)) =>
+          SigmaDsl.substConstants(x._1, Coll[Int](x._2), Coll[Any](SigmaDsl.sigmaProp(false))(RType.AnyType))(RType.AnyType)
+        },
+        "{ (x: (Coll[Byte], Int)) => substConstants[Any](x._1, Coll[Int](x._2), Coll[Any](sigmaProp(false))) }",
+        FuncValue(
+          Vector((1, SPair(SByteArray, SInt))),
+          SubstConstants(
+            SelectField.typed[Value[SCollection[SByte.type]]](ValUse(1, SPair(SByteArray, SInt)), 1.toByte),
+            ConcreteCollection(
+              Array(SelectField.typed[Value[SInt.type]](ValUse(1, SPair(SByteArray, SInt)), 2.toByte)),
+              SInt
+            ),
+            ConcreteCollection(Array(BoolToSigmaProp(FalseLeaf)), SSigmaProp)
           )
         )))
   }

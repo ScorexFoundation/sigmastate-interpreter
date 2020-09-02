@@ -4,7 +4,7 @@ import org.scalatest.prop.PropertyChecks
 import org.scalatest.{Matchers, PropSpec}
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.lang.exceptions.{ArithException, ConstraintFailed}
+import sigmastate.lang.exceptions.ConstraintFailed
 import sigmastate.serialization.OpCodes
 
 class SigmaBuilderTest extends PropSpec with PropertyChecks with Matchers with LangTests {
