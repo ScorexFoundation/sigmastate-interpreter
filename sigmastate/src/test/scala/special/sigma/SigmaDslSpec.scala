@@ -784,18 +784,21 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
     SInt.upcast(0) shouldBe 0  // boundary test case
     SInt.downcast(0) shouldBe 0  // boundary test case
 
-    testCases(
-      Seq(
-        (Int.MinValue, Failure(new ArithmeticException("Byte overflow"))),
-        (-2014394379, Failure(new ArithmeticException("Byte overflow"))),
-        (Byte.MinValue.toInt, Success(Byte.MinValue)),
-        (-1, Success(-1.toByte)),
-        (0, Success(0.toByte)),
-        (1, Success(1.toByte)),
-        (Byte.MaxValue.toInt, Success(Byte.MaxValue)),
-        (181686429, Failure(new ArithmeticException("Byte overflow"))),
-        (Int.MaxValue, Failure(new ArithmeticException("Byte overflow")))
-      ),
+    testCases2(
+      {
+        def success[T](v: T) = Success(Expected(v, 35976))
+        Seq(
+          (Int.MinValue, Failure(new ArithmeticException("Byte overflow"))),
+          (-2014394379, Failure(new ArithmeticException("Byte overflow"))),
+          (Byte.MinValue.toInt, success(Byte.MinValue)),
+          (-1, success(-1.toByte)),
+          (0, success(0.toByte)),
+          (1, success(1.toByte)),
+          (Byte.MaxValue.toInt, success(Byte.MaxValue)),
+          (181686429, Failure(new ArithmeticException("Byte overflow"))),
+          (Int.MaxValue, Failure(new ArithmeticException("Byte overflow")))
+        )
+      },
       existingFeature((x: Int) => x.toByteExact,
         "{ (x: Int) => x.toByte }",
         FuncValue(Vector((1, SInt)), Downcast(ValUse(1, SInt), SByte))))
