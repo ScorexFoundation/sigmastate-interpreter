@@ -40,7 +40,7 @@ import scala.math.Ordering
 
 /** This suite tests every method of every SigmaDsl type to be equivalent to
   * the evaluation of the corresponding ErgoScript operation */
-class SigmaDslSpec extends SigmaDslTesting { suite =>
+class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
   override implicit val generatorDrivenConfig = PropertyCheckConfiguration(minSuccessful = 30)
 
@@ -803,91 +803,106 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
         "{ (x: Int) => x.toByte }",
         FuncValue(Vector((1, SInt)), Downcast(ValUse(1, SInt), SByte))))
 
-    testCases(
-      Seq(
-        (Int.MinValue, Failure(new ArithmeticException("Short overflow"))),
-        (Short.MinValue - 1, Failure(new ArithmeticException("Short overflow"))),
-        (Short.MinValue.toInt, Success(Short.MinValue)),
-        (-1, Success(-1.toShort)),
-        (0, Success(0.toShort)),
-        (1, Success(1.toShort)),
-        (Short.MaxValue.toInt, Success(Short.MaxValue)),
-        (Short.MaxValue + 1, Failure(new ArithmeticException("Short overflow"))),
-        (Int.MaxValue, Failure(new ArithmeticException("Short overflow")))
-      ),
+    testCases2(
+      {
+        def success[T](v: T) = Success(Expected(v, 35976))
+        Seq(
+          (Int.MinValue, Failure(new ArithmeticException("Short overflow"))),
+          (Short.MinValue - 1, Failure(new ArithmeticException("Short overflow"))),
+          (Short.MinValue.toInt, success(Short.MinValue)),
+          (-1, success(-1.toShort)),
+          (0, success(0.toShort)),
+          (1, success(1.toShort)),
+          (Short.MaxValue.toInt, success(Short.MaxValue)),
+          (Short.MaxValue + 1, Failure(new ArithmeticException("Short overflow"))),
+          (Int.MaxValue, Failure(new ArithmeticException("Short overflow")))
+        )
+      },
       existingFeature((x: Int) => x.toShortExact,
         "{ (x: Int) => x.toShort }",
         FuncValue(Vector((1, SInt)), Downcast(ValUse(1, SInt), SShort))))
 
-    testCases(
-      Seq(
-        (Int.MinValue, Success(Int.MinValue)),
-        (-1, Success(-1)),
-        (0, Success(0)),
-        (1, Success(1)),
-        (Int.MaxValue, Success(Int.MaxValue))
-      ),
+    testCases2(
+      {
+        def success[T](v: T) = Success(Expected(v, 35798))
+        Seq(
+          (Int.MinValue, success(Int.MinValue)),
+          (-1, success(-1)),
+          (0, success(0)),
+          (1, success(1)),
+          (Int.MaxValue, success(Int.MaxValue))
+        )
+      },
       existingFeature((x: Int) => x.toInt,
         "{ (x: Int) => x.toInt }",
         FuncValue(Vector((1, SInt)), ValUse(1, SInt))))
 
-    testCases(
-      Seq(
-        (Int.MinValue, Success(Int.MinValue.toLong)),
-        (-1, Success(-1L)),
-        (0, Success(0L)),
-        (1, Success(1L)),
-        (Int.MaxValue, Success(Int.MaxValue.toLong))
-      ),
+    testCases2(
+      {
+        def success[T](v: T) = Success(Expected(v, 35902))
+        Seq(
+          (Int.MinValue, success(Int.MinValue.toLong)),
+          (-1, success(-1L)),
+          (0, success(0L)),
+          (1, success(1L)),
+          (Int.MaxValue, success(Int.MaxValue.toLong))
+        )
+      },
       existingFeature((x: Int) => x.toLong,
         "{ (x: Int) => x.toLong }",
         FuncValue(Vector((1, SInt)), Upcast(ValUse(1, SInt), SLong))))
 
-    testCases(
-      Seq(
-        (Int.MinValue, Success(CBigInt(new BigInteger("-80000000", 16)))),
-        (-1937187314, Success(CBigInt(new BigInteger("-737721f2", 16)))),
-        (-1, Success(CBigInt(new BigInteger("-1", 16)))),
-        (0, Success(CBigInt(new BigInteger("0", 16)))),
-        (1, Success(CBigInt(new BigInteger("1", 16)))),
-        (1542171288, Success(CBigInt(new BigInteger("5bebaa98", 16)))),
-        (Int.MaxValue, Success(CBigInt(new BigInteger("7fffffff", 16))))
-      ),
+    testCases2(
+      {
+        def success(v: BigInt) = Success(Expected(v, 35932))
+        Seq(
+          (Int.MinValue, success(CBigInt(new BigInteger("-80000000", 16)))),
+          (-1937187314, success(CBigInt(new BigInteger("-737721f2", 16)))),
+          (-1, success(CBigInt(new BigInteger("-1", 16)))),
+          (0, success(CBigInt(new BigInteger("0", 16)))),
+          (1, success(CBigInt(new BigInteger("1", 16)))),
+          (1542171288, success(CBigInt(new BigInteger("5bebaa98", 16)))),
+          (Int.MaxValue, success(CBigInt(new BigInteger("7fffffff", 16))))
+        )
+      },
       existingFeature((x: Int) => x.toBigInt,
         "{ (x: Int) => x.toBigInt }",
         FuncValue(Vector((1, SInt)), Upcast(ValUse(1, SInt), SBigInt))))
 
     val n = ExactNumeric.IntIsExactNumeric
-    testCases(
-    Seq(
-      ((Int.MinValue, 449583993), Failure(new ArithmeticException("integer overflow"))),
-      ((-1589633733, 2147483647), Failure(new ArithmeticException("integer overflow"))),
-      ((-1585471506, -1), Success((-1585471507, (-1585471505, (1585471506, (1585471506, 0)))))),
-      ((-1569005179, 1230236634), Failure(new ArithmeticException("integer overflow"))),
-      ((-1493733356, -1319619597), Failure(new ArithmeticException("integer overflow"))),
-      ((-1100263120, -880052091), Failure(new ArithmeticException("integer overflow"))),
-      ((-1055955857, 309147303), Failure(new ArithmeticException("integer overflow"))),
-      ((-569807371, 0), Failure(new ArithmeticException("/ by zero"))),
-      ((-522264843, 2147483647), Failure(new ArithmeticException("integer overflow"))),
-      ((-109552389, 0), Failure(new ArithmeticException("/ by zero"))),
-      ((-1, -2147483648), Failure(new ArithmeticException("integer overflow"))),
-      ((-1, -1), Success((-2, (0, (1, (1, 0)))))),
-      ((-1, 0), Failure(new ArithmeticException("/ by zero"))),
-      ((0, -2147483648), Failure(new ArithmeticException("integer overflow"))),
-      ((1, -1525049432), Success((-1525049431, (1525049433, (-1525049432, (0, 1)))))),
-      ((1, 0), Failure(new ArithmeticException("/ by zero"))),
-      ((1, 805353746), Success((805353747, (-805353745, (805353746, (0, 1)))))),
-      ((1, 2147483647), Failure(new ArithmeticException("integer overflow"))),
-      ((475797978, 0), Failure(new ArithmeticException("/ by zero"))),
-      ((782343922, -1448560539), Failure(new ArithmeticException("integer overflow"))),
-      ((928769361, 542647292), Failure(new ArithmeticException("integer overflow"))),
-      ((1568062151, 0), Failure(new ArithmeticException("/ by zero"))),
-      ((1698252401, -1), Success((1698252400, (1698252402, (-1698252401, (-1698252401, 0)))))),
-      ((1949795740, -1575667037), Failure(new ArithmeticException("integer overflow"))),
-      ((Int.MaxValue, -1), Failure(new ArithmeticException("integer overflow"))),
-      ((Int.MaxValue, 1), Failure(new ArithmeticException("integer overflow"))),
-      ((Int.MaxValue, 1738276576), Failure(new ArithmeticException("integer overflow")))
-    ),
+    testCases2(
+    {
+      def success[T](v: T) = Success(Expected(v, 39654))
+      Seq(
+        ((Int.MinValue, 449583993), Failure(new ArithmeticException("integer overflow"))),
+        ((-1589633733, 2147483647), Failure(new ArithmeticException("integer overflow"))),
+        ((-1585471506, -1), success((-1585471507, (-1585471505, (1585471506, (1585471506, 0)))))),
+        ((-1569005179, 1230236634), Failure(new ArithmeticException("integer overflow"))),
+        ((-1493733356, -1319619597), Failure(new ArithmeticException("integer overflow"))),
+        ((-1100263120, -880052091), Failure(new ArithmeticException("integer overflow"))),
+        ((-1055955857, 309147303), Failure(new ArithmeticException("integer overflow"))),
+        ((-569807371, 0), Failure(new ArithmeticException("/ by zero"))),
+        ((-522264843, 2147483647), Failure(new ArithmeticException("integer overflow"))),
+        ((-109552389, 0), Failure(new ArithmeticException("/ by zero"))),
+        ((-1, -2147483648), Failure(new ArithmeticException("integer overflow"))),
+        ((-1, -1), success((-2, (0, (1, (1, 0)))))),
+        ((-1, 0), Failure(new ArithmeticException("/ by zero"))),
+        ((0, -2147483648), Failure(new ArithmeticException("integer overflow"))),
+        ((1, -1525049432), success((-1525049431, (1525049433, (-1525049432, (0, 1)))))),
+        ((1, 0), Failure(new ArithmeticException("/ by zero"))),
+        ((1, 805353746), success((805353747, (-805353745, (805353746, (0, 1)))))),
+        ((1, 2147483647), Failure(new ArithmeticException("integer overflow"))),
+        ((475797978, 0), Failure(new ArithmeticException("/ by zero"))),
+        ((782343922, -1448560539), Failure(new ArithmeticException("integer overflow"))),
+        ((928769361, 542647292), Failure(new ArithmeticException("integer overflow"))),
+        ((1568062151, 0), Failure(new ArithmeticException("/ by zero"))),
+        ((1698252401, -1), success((1698252400, (1698252402, (-1698252401, (-1698252401, 0)))))),
+        ((1949795740, -1575667037), Failure(new ArithmeticException("integer overflow"))),
+        ((Int.MaxValue, -1), Failure(new ArithmeticException("integer overflow"))),
+        ((Int.MaxValue, 1), Failure(new ArithmeticException("integer overflow"))),
+        ((Int.MaxValue, 1738276576), Failure(new ArithmeticException("integer overflow")))
+      )
+    },
     existingFeature(
       { (x: (Int, Int)) =>
         val a = x._1; val b = x._2
@@ -974,109 +989,127 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
     SLong.upcast(0L) shouldBe 0L  // boundary test case
     SLong.downcast(0L) shouldBe 0L  // boundary test case
 
-    testCases(
-      Seq(
-        (Long.MinValue, Failure(new ArithmeticException("Byte overflow"))),
-        (Byte.MinValue.toLong - 1, Failure(new ArithmeticException("Byte overflow"))),
-        (Byte.MinValue.toLong, Success(Byte.MinValue)),
-        (-1L, Success(-1.toByte)),
-        (0L, Success(0.toByte)),
-        (1L, Success(1.toByte)),
-        (Byte.MaxValue.toLong, Success(Byte.MaxValue)),
-        (Byte.MaxValue.toLong + 1, Failure(new ArithmeticException("Byte overflow"))),
-        (Long.MinValue, Failure(new ArithmeticException("Byte overflow")))
-      ),
+    testCases2(
+      {
+        def success[T](v: T) = Success(Expected(v, 35976))
+        Seq(
+          (Long.MinValue, Failure(new ArithmeticException("Byte overflow"))),
+          (Byte.MinValue.toLong - 1, Failure(new ArithmeticException("Byte overflow"))),
+          (Byte.MinValue.toLong, success(Byte.MinValue)),
+          (-1L, success(-1.toByte)),
+          (0L, success(0.toByte)),
+          (1L, success(1.toByte)),
+          (Byte.MaxValue.toLong, success(Byte.MaxValue)),
+          (Byte.MaxValue.toLong + 1, Failure(new ArithmeticException("Byte overflow"))),
+          (Long.MinValue, Failure(new ArithmeticException("Byte overflow")))
+        )
+      },
       existingFeature((x: Long) => x.toByteExact,
         "{ (x: Long) => x.toByte }",
         FuncValue(Vector((1, SLong)), Downcast(ValUse(1, SLong), SByte))))
 
-    testCases(
-      Seq(
-        (Long.MinValue, Failure(new ArithmeticException("Short overflow"))),
-        (Short.MinValue.toLong - 1, Failure(new ArithmeticException("Short overflow"))),
-        (Short.MinValue.toLong, Success(Short.MinValue)),
-        (-1L, Success(-1.toShort)),
-        (0L, Success(0.toShort)),
-        (1L, Success(1.toShort)),
-        (Short.MaxValue.toLong, Success(Short.MaxValue)),
-        (Short.MaxValue.toLong + 1, Failure(new ArithmeticException("Short overflow"))),
-        (Long.MinValue, Failure(new ArithmeticException("Short overflow")))
-      ),
+    testCases2(
+      {
+        def success[T](v: T) = Success(Expected(v, 35976))
+        Seq(
+          (Long.MinValue, Failure(new ArithmeticException("Short overflow"))),
+          (Short.MinValue.toLong - 1, Failure(new ArithmeticException("Short overflow"))),
+          (Short.MinValue.toLong, success(Short.MinValue)),
+          (-1L, success(-1.toShort)),
+          (0L, success(0.toShort)),
+          (1L, success(1.toShort)),
+          (Short.MaxValue.toLong, success(Short.MaxValue)),
+          (Short.MaxValue.toLong + 1, Failure(new ArithmeticException("Short overflow"))),
+          (Long.MinValue, Failure(new ArithmeticException("Short overflow")))
+        )
+      },
       existingFeature((x: Long) => x.toShortExact,
         "{ (x: Long) => x.toShort }",
         FuncValue(Vector((1, SLong)), Downcast(ValUse(1, SLong), SShort))))
 
-    testCases(
-      Seq(
-        (Long.MinValue, Failure(new ArithmeticException("Int overflow"))),
-        (Int.MinValue.toLong - 1, Failure(new ArithmeticException("Int overflow"))),
-        (Int.MinValue.toLong, Success(Int.MinValue)),
-        (-1L, Success(-1.toInt)),
-        (0L, Success(0.toInt)),
-        (1L, Success(1.toInt)),
-        (Int.MaxValue.toLong, Success(Int.MaxValue)),
-        (Int.MaxValue.toLong + 1, Failure(new ArithmeticException("Int overflow"))),
-        (Long.MinValue, Failure(new ArithmeticException("Int overflow")))
-      ),
+    testCases2(
+      {
+        def success[T](v: T) = Success(Expected(v, 35976))
+        Seq(
+          (Long.MinValue, Failure(new ArithmeticException("Int overflow"))),
+          (Int.MinValue.toLong - 1, Failure(new ArithmeticException("Int overflow"))),
+          (Int.MinValue.toLong, success(Int.MinValue)),
+          (-1L, success(-1.toInt)),
+          (0L, success(0.toInt)),
+          (1L, success(1.toInt)),
+          (Int.MaxValue.toLong, success(Int.MaxValue)),
+          (Int.MaxValue.toLong + 1, Failure(new ArithmeticException("Int overflow"))),
+          (Long.MinValue, Failure(new ArithmeticException("Int overflow")))
+        )
+      },
       existingFeature((x: Long) => x.toIntExact,
         "{ (x: Long) => x.toInt }",
         FuncValue(Vector((1, SLong)), Downcast(ValUse(1, SLong), SInt))))
 
-    testCases(
-      Seq(
-        (Long.MinValue, Success(Long.MinValue)),
-        (-1L, Success(-1L)),
-        (0L, Success(0L)),
-        (1L, Success(1L)),
-        (Long.MaxValue, Success(Long.MaxValue))
-      ),
+    testCases2(
+      {
+        def success[T](v: T) = Success(Expected(v, 35798))
+        Seq(
+          (Long.MinValue, success(Long.MinValue)),
+          (-1L, success(-1L)),
+          (0L, success(0L)),
+          (1L, success(1L)),
+          (Long.MaxValue, success(Long.MaxValue))
+        )
+      },
       existingFeature((x: Long) => x.toLong,
         "{ (x: Long) => x.toLong }",
         FuncValue(Vector((1, SLong)), ValUse(1, SLong))))
 
-    testCases(
-      Seq(
-        (Long.MinValue, Success(CBigInt(new BigInteger("-8000000000000000", 16)))),
-        (-1074651039980347209L, Success(CBigInt(new BigInteger("-ee9ed6d57885f49", 16)))),
-        (-1L, Success(CBigInt(new BigInteger("-1", 16)))),
-        (0L, Success(CBigInt(new BigInteger("0", 16)))),
-        (1L, Success(CBigInt(new BigInteger("1", 16)))),
-        (1542942726564696512L, Success(CBigInt(new BigInteger("1569a23c25a951c0", 16)))),
-        (Long.MaxValue, Success(CBigInt(new BigInteger("7fffffffffffffff", 16))))
-      ),
+    testCases2(
+      {
+        def success(v: BigInt) = Success(Expected(v, 35932))
+        Seq(
+          (Long.MinValue, success(CBigInt(new BigInteger("-8000000000000000", 16)))),
+          (-1074651039980347209L, success(CBigInt(new BigInteger("-ee9ed6d57885f49", 16)))),
+          (-1L, success(CBigInt(new BigInteger("-1", 16)))),
+          (0L, success(CBigInt(new BigInteger("0", 16)))),
+          (1L, success(CBigInt(new BigInteger("1", 16)))),
+          (1542942726564696512L, success(CBigInt(new BigInteger("1569a23c25a951c0", 16)))),
+          (Long.MaxValue, success(CBigInt(new BigInteger("7fffffffffffffff", 16))))
+        )
+      },
       existingFeature((x: Long) => x.toBigInt,
         "{ (x: Long) => x.toBigInt }",
         FuncValue(Vector((1, SLong)), Upcast(ValUse(1, SLong), SBigInt))))
 
     val n = ExactNumeric.LongIsExactNumeric
-    testCases(
-    Seq(
-      ((Long.MinValue, -4677100190307931395L), Failure(new ArithmeticException("long overflow"))),
-      ((Long.MinValue, -1L), Failure(new ArithmeticException("long overflow"))),
-      ((Long.MinValue, 1L), Failure(new ArithmeticException("long overflow"))),
-      ((-9223372036854775808L, 0L), Failure(new ArithmeticException("/ by zero"))),
-      ((-5828066432064138816L, 9105034716270510411L), Failure(new ArithmeticException("long overflow"))),
-      ((-4564956247298949325L, -1L), Success(
-        (-4564956247298949326L, (-4564956247298949324L, (4564956247298949325L, (4564956247298949325L, 0L))))
-      )),
-      ((-1499553565058783253L, -3237683216870282569L), Failure(new ArithmeticException("long overflow"))),
-      ((-1368457031689886112L, 9223372036854775807L), Failure(new ArithmeticException("long overflow"))),
-      ((-1L, -4354407074688367443L), Success((-4354407074688367444L, (4354407074688367442L, (4354407074688367443L, (0L, -1L)))))),
-      ((-1L, -1L), Success((-2L, (0L, (1L, (1L, 0L)))))),
-      ((-1L, 5665019549505434695L), Success((5665019549505434694L, (-5665019549505434696L, (-5665019549505434695L, (0L, -1L)))))),
-      ((0L, -1L), Success((-1L, (1L, (0L, (0L, 0L)))))),
-      ((0L, 0L), Failure(new ArithmeticException("/ by zero"))),
-      ((0L, 2112386634269044172L), Success((2112386634269044172L, (-2112386634269044172L, (0L, (0L, 0L)))))),
-      ((2254604056782701370L, -5878231674026236574L), Failure(new ArithmeticException("long overflow"))),
-      ((2903872550238813643L, 1L), Success(
-        (2903872550238813644L, (2903872550238813642L, (2903872550238813643L, (2903872550238813643L, 0L))))
-      )),
-      ((5091129735284641762L, -427673944382373638L), Failure(new ArithmeticException("long overflow"))),
-      ((6029085020194630780L, 2261786144956037939L), Failure(new ArithmeticException("long overflow"))),
-      ((8126382074515995418L, -4746652047588907829L), Failure(new ArithmeticException("long overflow"))),
-      ((Long.MaxValue, 1L), Failure(new ArithmeticException("long overflow"))),
-      ((Long.MaxValue, -1L), Failure(new ArithmeticException("long overflow")))
-    ),
+    testCases2(
+    {
+      def success[T](v: T) = Success(Expected(v, 39654))
+      Seq(
+        ((Long.MinValue, -4677100190307931395L), Failure(new ArithmeticException("long overflow"))),
+        ((Long.MinValue, -1L), Failure(new ArithmeticException("long overflow"))),
+        ((Long.MinValue, 1L), Failure(new ArithmeticException("long overflow"))),
+        ((-9223372036854775808L, 0L), Failure(new ArithmeticException("/ by zero"))),
+        ((-5828066432064138816L, 9105034716270510411L), Failure(new ArithmeticException("long overflow"))),
+        ((-4564956247298949325L, -1L), success(
+          (-4564956247298949326L, (-4564956247298949324L, (4564956247298949325L, (4564956247298949325L, 0L))))
+        )),
+        ((-1499553565058783253L, -3237683216870282569L), Failure(new ArithmeticException("long overflow"))),
+        ((-1368457031689886112L, 9223372036854775807L), Failure(new ArithmeticException("long overflow"))),
+        ((-1L, -4354407074688367443L), success((-4354407074688367444L, (4354407074688367442L, (4354407074688367443L, (0L, -1L)))))),
+        ((-1L, -1L), success((-2L, (0L, (1L, (1L, 0L)))))),
+        ((-1L, 5665019549505434695L), success((5665019549505434694L, (-5665019549505434696L, (-5665019549505434695L, (0L, -1L)))))),
+        ((0L, -1L), success((-1L, (1L, (0L, (0L, 0L)))))),
+        ((0L, 0L), Failure(new ArithmeticException("/ by zero"))),
+        ((0L, 2112386634269044172L), success((2112386634269044172L, (-2112386634269044172L, (0L, (0L, 0L)))))),
+        ((2254604056782701370L, -5878231674026236574L), Failure(new ArithmeticException("long overflow"))),
+        ((2903872550238813643L, 1L), success(
+          (2903872550238813644L, (2903872550238813642L, (2903872550238813643L, (2903872550238813643L, 0L))))
+        )),
+        ((5091129735284641762L, -427673944382373638L), Failure(new ArithmeticException("long overflow"))),
+        ((6029085020194630780L, 2261786144956037939L), Failure(new ArithmeticException("long overflow"))),
+        ((8126382074515995418L, -4746652047588907829L), Failure(new ArithmeticException("long overflow"))),
+        ((Long.MaxValue, 1L), Failure(new ArithmeticException("long overflow"))),
+        ((Long.MaxValue, -1L), Failure(new ArithmeticException("long overflow")))
+      )
+    },
     existingFeature(
       { (x: (Long, Long)) =>
         val a = x._1; val b = x._2
@@ -1161,85 +1194,91 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
   }
 
   property("BigInt methods equivalence") {
-    testCases(
-      Seq(
-        (CBigInt(new BigInteger("-85102d7f884ca0e8f56193b46133acaf7e4681e1757d03f191ae4f445c8e0", 16)), Success(
-          CBigInt(new BigInteger("-85102d7f884ca0e8f56193b46133acaf7e4681e1757d03f191ae4f445c8e0", 16))
-        )),
-        (CBigInt(new BigInteger("-8000000000000000", 16)), Success(CBigInt(new BigInteger("-8000000000000000", 16)))),
-        (CBigInt(new BigInteger("-1", 16)), Success(CBigInt(new BigInteger("-1", 16)))),
-        (CBigInt(new BigInteger("0", 16)), Success(CBigInt(new BigInteger("0", 16)))),
-        (CBigInt(new BigInteger("1", 16)), Success(CBigInt(new BigInteger("1", 16)))),
-        (CBigInt(new BigInteger("7fffffffffffffff", 16)), Success(CBigInt(new BigInteger("7fffffffffffffff", 16)))),
-        (CBigInt(new BigInteger("bdd56c22eb3eace8bc4e1c38c65dfdb2e4ffdcf421ae78c36b93b9ff37dc0", 16)), Success(
-          CBigInt(new BigInteger("bdd56c22eb3eace8bc4e1c38c65dfdb2e4ffdcf421ae78c36b93b9ff37dc0", 16))
-        ))
-      ),
+    testCases2(
+      {
+        def success(v: BigInt) = Success(Expected(v, 35798))
+        Seq(
+          (CBigInt(new BigInteger("-85102d7f884ca0e8f56193b46133acaf7e4681e1757d03f191ae4f445c8e0", 16)), success(
+            CBigInt(new BigInteger("-85102d7f884ca0e8f56193b46133acaf7e4681e1757d03f191ae4f445c8e0", 16))
+          )),
+          (CBigInt(new BigInteger("-8000000000000000", 16)), success(CBigInt(new BigInteger("-8000000000000000", 16)))),
+          (CBigInt(new BigInteger("-1", 16)), success(CBigInt(new BigInteger("-1", 16)))),
+          (CBigInt(new BigInteger("0", 16)), success(CBigInt(new BigInteger("0", 16)))),
+          (CBigInt(new BigInteger("1", 16)), success(CBigInt(new BigInteger("1", 16)))),
+          (CBigInt(new BigInteger("7fffffffffffffff", 16)), success(CBigInt(new BigInteger("7fffffffffffffff", 16)))),
+          (CBigInt(new BigInteger("bdd56c22eb3eace8bc4e1c38c65dfdb2e4ffdcf421ae78c36b93b9ff37dc0", 16)), success(
+            CBigInt(new BigInteger("bdd56c22eb3eace8bc4e1c38c65dfdb2e4ffdcf421ae78c36b93b9ff37dc0", 16))
+          ))
+        )
+      },
       existingFeature((x: BigInt) => x,
         "{ (x: BigInt) => x.toBigInt }",
         FuncValue(Vector((1, SBigInt)), ValUse(1, SBigInt))))
 
     val n = NumericOps.BigIntIsExactNumeric
-    testCases(
-    Seq(
-      ((CBigInt(new BigInteger("-8683d1cd99d5fcf0e6eff6295c285c36526190e13dbde008c49e5ae6fddc1c", 16)),
-        CBigInt(new BigInteger("-2ef55db3f245feddacf0182e299dd", 16))),
-          Failure(new ArithmeticException("BigInteger out of 256 bit range"))),
+    testCases2(
+    {
+      def success(v: (BigInt, (BigInt, (BigInt, (BigInt, BigInt))))) = Success(Expected(v, 39774))
+      Seq(
+        ((CBigInt(new BigInteger("-8683d1cd99d5fcf0e6eff6295c285c36526190e13dbde008c49e5ae6fddc1c", 16)),
+            CBigInt(new BigInteger("-2ef55db3f245feddacf0182e299dd", 16))),
+            Failure(new ArithmeticException("BigInteger out of 256 bit range"))),
 
-      ((CBigInt(new BigInteger("-68e1136872f98fb0245ec5aa4bef46e16273e860746c892", 16)),
-        CBigInt(new BigInteger("-352aaa769b41a327", 16))),
-          Failure(new ArithmeticException("BigInteger: modulus not positive"))),
+        ((CBigInt(new BigInteger("-68e1136872f98fb0245ec5aa4bef46e16273e860746c892", 16)),
+            CBigInt(new BigInteger("-352aaa769b41a327", 16))),
+            Failure(new ArithmeticException("BigInteger: modulus not positive"))),
 
-      ((CBigInt(new BigInteger("-39fc00ebf09080cbd8408dd38c4b7490bea533447047140", 16)),
-        CBigInt(new BigInteger("31de9e96177dbd39", 16))),
-          Success((
-            CBigInt(new BigInteger("-39fc00ebf09080cbd8408dd38c4b748da0bb49e2f86b407", 16)),
-              (CBigInt(new BigInteger("-39fc00ebf09080cbd8408dd38c4b7493dc8f1ca5e822e79", 16)),
-                (CBigInt(new BigInteger("-b4ba8a17d328dac74ef014d7be35597a1259f8b16f0ff1c9820dea23d97740", 16)),
-                    (CBigInt(new BigInteger("-129a8045376e104f0d3771b6c2c128fc", 16)),
-                     CBigInt(new BigInteger("12fe89836fc97815", 16)))))) )),
+        ((CBigInt(new BigInteger("-39fc00ebf09080cbd8408dd38c4b7490bea533447047140", 16)),
+            CBigInt(new BigInteger("31de9e96177dbd39", 16))),
+            success((
+                CBigInt(new BigInteger("-39fc00ebf09080cbd8408dd38c4b748da0bb49e2f86b407", 16)),
+                (CBigInt(new BigInteger("-39fc00ebf09080cbd8408dd38c4b7493dc8f1ca5e822e79", 16)),
+                    (CBigInt(new BigInteger("-b4ba8a17d328dac74ef014d7be35597a1259f8b16f0ff1c9820dea23d97740", 16)),
+                        (CBigInt(new BigInteger("-129a8045376e104f0d3771b6c2c128fc", 16)),
+                            CBigInt(new BigInteger("12fe89836fc97815", 16)))))) )),
 
-      ((CBigInt(new BigInteger("-8000000000000000", 16)), CBigInt(new BigInteger("8000000000000000", 16))),
-          Success((
-            CBigInt(new BigInteger("0", 16)),
-              (CBigInt(new BigInteger("-10000000000000000", 16)),
-                (CBigInt(new BigInteger("-40000000000000000000000000000000", 16)),
-                    (CBigInt(new BigInteger("-1", 16)), CBigInt(new BigInteger("0", 16)))))) )),
+        ((CBigInt(new BigInteger("-8000000000000000", 16)), CBigInt(new BigInteger("8000000000000000", 16))),
+            success((
+                CBigInt(new BigInteger("0", 16)),
+                (CBigInt(new BigInteger("-10000000000000000", 16)),
+                    (CBigInt(new BigInteger("-40000000000000000000000000000000", 16)),
+                        (CBigInt(new BigInteger("-1", 16)), CBigInt(new BigInteger("0", 16)))))) )),
 
-      ((CBigInt(new BigInteger("-47dede8d3e4804bb", 16)), CBigInt(new BigInteger("-388828eb6dfce683", 16))),
-          Failure(new ArithmeticException("BigInteger: modulus not positive"))),
+        ((CBigInt(new BigInteger("-47dede8d3e4804bb", 16)), CBigInt(new BigInteger("-388828eb6dfce683", 16))),
+            Failure(new ArithmeticException("BigInteger: modulus not positive"))),
 
-      ((CBigInt(new BigInteger("-4fde491150ea00d", 16)), CBigInt(new BigInteger("-80000001", 16))),
-          Failure(new ArithmeticException("BigInteger: modulus not positive"))),
+        ((CBigInt(new BigInteger("-4fde491150ea00d", 16)), CBigInt(new BigInteger("-80000001", 16))),
+            Failure(new ArithmeticException("BigInteger: modulus not positive"))),
 
-      ((CBigInt(new BigInteger("-80000001", 16)), CBigInt(new BigInteger("-80000001", 16))),
-          Failure(new ArithmeticException("BigInteger: modulus not positive"))),
+        ((CBigInt(new BigInteger("-80000001", 16)), CBigInt(new BigInteger("-80000001", 16))),
+            Failure(new ArithmeticException("BigInteger: modulus not positive"))),
 
-      ((CBigInt(new BigInteger("0", 16)), CBigInt(new BigInteger("-8000000000000000", 16))),
-          Failure(new ArithmeticException("BigInteger: modulus not positive"))),
+        ((CBigInt(new BigInteger("0", 16)), CBigInt(new BigInteger("-8000000000000000", 16))),
+            Failure(new ArithmeticException("BigInteger: modulus not positive"))),
 
-      ((CBigInt(new BigInteger("0", 16)), CBigInt(new BigInteger("0", 16))),
-          Failure(new ArithmeticException("BigInteger divide by zero"))),
+        ((CBigInt(new BigInteger("0", 16)), CBigInt(new BigInteger("0", 16))),
+            Failure(new ArithmeticException("BigInteger divide by zero"))),
 
-      ((CBigInt(new BigInteger("1", 16)),
-          CBigInt(new BigInteger("-86063f66e06d6d535c95862cd506309a95d10102422fee", 16))),
-          Failure(new ArithmeticException("BigInteger: modulus not positive"))),
+        ((CBigInt(new BigInteger("1", 16)),
+            CBigInt(new BigInteger("-86063f66e06d6d535c95862cd506309a95d10102422fee", 16))),
+            Failure(new ArithmeticException("BigInteger: modulus not positive"))),
 
-      ((CBigInt(new BigInteger("80000000", 16)), CBigInt(new BigInteger("4e592ce5b544b8f7a91f97ec9ea2f2c3660111360297a4", 16))),
-          Success((
-            CBigInt(new BigInteger("4e592ce5b544b8f7a91f97ec9ea2f2c3660111b60297a4", 16)),
-              (CBigInt(new BigInteger("-4e592ce5b544b8f7a91f97ec9ea2f2c3660110b60297a4", 16)),
-                (CBigInt(new BigInteger("272c9672daa25c7bd48fcbf64f517961b300889b014bd200000000", 16)),
-                    (CBigInt(new BigInteger("0", 16)), CBigInt(new BigInteger("80000000", 16)))))) )),
+        ((CBigInt(new BigInteger("80000000", 16)), CBigInt(new BigInteger("4e592ce5b544b8f7a91f97ec9ea2f2c3660111360297a4", 16))),
+            success((
+                CBigInt(new BigInteger("4e592ce5b544b8f7a91f97ec9ea2f2c3660111b60297a4", 16)),
+                (CBigInt(new BigInteger("-4e592ce5b544b8f7a91f97ec9ea2f2c3660110b60297a4", 16)),
+                    (CBigInt(new BigInteger("272c9672daa25c7bd48fcbf64f517961b300889b014bd200000000", 16)),
+                        (CBigInt(new BigInteger("0", 16)), CBigInt(new BigInteger("80000000", 16)))))) )),
 
-      ((CBigInt(new BigInteger("3d31398dc4783303", 16)),
-        CBigInt(new BigInteger("-37b381db4e6e927e202a2a421d5a09ca", 16))),
-          Failure(new ArithmeticException("BigInteger: modulus not positive"))),
+        ((CBigInt(new BigInteger("3d31398dc4783303", 16)),
+            CBigInt(new BigInteger("-37b381db4e6e927e202a2a421d5a09ca", 16))),
+            Failure(new ArithmeticException("BigInteger: modulus not positive"))),
 
-      ((CBigInt(new BigInteger("5524814a26357cb71488b6fb26af2d3", 16)),
-        CBigInt(new BigInteger("c413b7d975a9972427f46996299fe57cfe79479ac954a7", 16))),
-          Failure(new ArithmeticException("BigInteger out of 256 bit range")))
-    ),
+        ((CBigInt(new BigInteger("5524814a26357cb71488b6fb26af2d3", 16)),
+            CBigInt(new BigInteger("c413b7d975a9972427f46996299fe57cfe79479ac954a7", 16))),
+            Failure(new ArithmeticException("BigInteger out of 256 bit range")))
+      )
+    },
     existingFeature(
       { (x: (BigInt, BigInt)) =>
         val a = x._1; val b = x._2
@@ -1297,7 +1336,7 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
           )
         )
       )
-    ), true)
+    ))
   }
 
   property("BigInt methods equivalence (new features)") {
@@ -1359,16 +1398,19 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
     val ge2 = "02dba7b94b111f3894e2f9120b577da595ec7d58d488485adf73bf4e153af63575"
     val ge3 = "0290449814f5671172dd696a61b8aa49aaa4c87013f56165e27d49944e98bc414d"
 
-    testCases(
-      Seq(
-        (Helpers.decodeGroupElement(ge1), Success(Helpers.decodeBytes(ge1))),
-        (Helpers.decodeGroupElement(ge2), Success(Helpers.decodeBytes(ge2))),
-        (Helpers.decodeGroupElement(ge3), Success(Helpers.decodeBytes(ge3))),
-        (SigmaDsl.groupGenerator,
-          Success(Helpers.decodeBytes("0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798"))),
-        (SigmaDsl.groupIdentity,
-          Success(Helpers.decodeBytes("000000000000000000000000000000000000000000000000000000000000000000")))
-      ),
+    testCases2(
+      {
+        def success[T](v: T) = Success(Expected(v, 37905))
+        Seq(
+          (Helpers.decodeGroupElement(ge1), success(Helpers.decodeBytes(ge1))),
+          (Helpers.decodeGroupElement(ge2), success(Helpers.decodeBytes(ge2))),
+          (Helpers.decodeGroupElement(ge3), success(Helpers.decodeBytes(ge3))),
+          (SigmaDsl.groupGenerator,
+              success(Helpers.decodeBytes("0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798"))),
+          (SigmaDsl.groupIdentity,
+              success(Helpers.decodeBytes("000000000000000000000000000000000000000000000000000000000000000000")))
+        )
+      },
       existingFeature((x: GroupElement) => x.getEncoded,
         "{ (x: GroupElement) => x.getEncoded }",
         FuncValue(
@@ -1376,14 +1418,17 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
           MethodCall(ValUse(1, SGroupElement), SGroupElement.getMethodByName("getEncoded"), Vector(), Map())
         )))
 
-    testCases(
-      Seq(
-        (Helpers.decodeGroupElement(ge1), Success(true)),
-        (Helpers.decodeGroupElement(ge2), Success(true)),
-        (Helpers.decodeGroupElement(ge3), Success(true)),
-        (SigmaDsl.groupGenerator, Success(true)),
-        (SigmaDsl.groupIdentity, Success(true))
-      ),
+    testCases2(
+      {
+        def success[T](v: T) = Success(Expected(v, 38340))
+        Seq(
+          (Helpers.decodeGroupElement(ge1), success(true)),
+          (Helpers.decodeGroupElement(ge2), success(true)),
+          (Helpers.decodeGroupElement(ge3), success(true)),
+          (SigmaDsl.groupGenerator, success(true)),
+          (SigmaDsl.groupIdentity, success(true))
+        )
+      },
       existingFeature({ (x: GroupElement) => decodePoint(x.getEncoded) == x },
         "{ (x: GroupElement) => decodePoint(x.getEncoded) == x }",
         FuncValue(
@@ -1401,14 +1446,17 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
           )
         )))
 
-    testCases(
-      Seq(
-        (Helpers.decodeGroupElement(ge1), Success(Helpers.decodeGroupElement("02358d53f01276211f92d0aefbd278805121d4ff6eb534b777af1ee8abae5b2056"))),
-        (Helpers.decodeGroupElement(ge2), Success(Helpers.decodeGroupElement("03dba7b94b111f3894e2f9120b577da595ec7d58d488485adf73bf4e153af63575"))),
-        (Helpers.decodeGroupElement(ge3), Success(Helpers.decodeGroupElement("0390449814f5671172dd696a61b8aa49aaa4c87013f56165e27d49944e98bc414d"))),
-        (SigmaDsl.groupGenerator, Success(Helpers.decodeGroupElement("0379be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798"))),
-        (SigmaDsl.groupIdentity, Success(Helpers.decodeGroupElement("000000000000000000000000000000000000000000000000000000000000000000")))
-      ),
+    testCases2(
+      {
+        def success[T](v: T) = Success(Expected(v, 36292))
+        Seq(
+          (Helpers.decodeGroupElement(ge1), success(Helpers.decodeGroupElement("02358d53f01276211f92d0aefbd278805121d4ff6eb534b777af1ee8abae5b2056"))),
+          (Helpers.decodeGroupElement(ge2), success(Helpers.decodeGroupElement("03dba7b94b111f3894e2f9120b577da595ec7d58d488485adf73bf4e153af63575"))),
+          (Helpers.decodeGroupElement(ge3), success(Helpers.decodeGroupElement("0390449814f5671172dd696a61b8aa49aaa4c87013f56165e27d49944e98bc414d"))),
+          (SigmaDsl.groupGenerator, success(Helpers.decodeGroupElement("0379be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798"))),
+          (SigmaDsl.groupIdentity, success(Helpers.decodeGroupElement("000000000000000000000000000000000000000000000000000000000000000000")))
+        )
+      },
       existingFeature({ (x: GroupElement) => x.negate },
         "{ (x: GroupElement) => x.negate }",
         FuncValue(
@@ -1420,17 +1468,20 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
     // val isIdentity = existingFeature({ (x: GroupElement) => x.isIdentity },
     //   "{ (x: GroupElement) => x.isIdentity }")
 
-    testCases(
-      Seq(
-        ((Helpers.decodeGroupElement(ge1), CBigInt(new BigInteger("-25c80b560dd7844e2efd10f80f7ee57d", 16))),
-            Success(Helpers.decodeGroupElement("023a850181b7b73f92a5bbfa0bfc78f5bbb6ff00645ddde501037017e1a2251e2e"))),
-        ((Helpers.decodeGroupElement(ge2), CBigInt(new BigInteger("2488741265082fb02b09f992be3dd8d60d2bbe80d9e2630", 16))),
-            Success(Helpers.decodeGroupElement("032045b928fb7774a4cd9ef5fa8209f4e493cd4cc5bd536b52746a53871bf73431"))),
-        ((Helpers.decodeGroupElement(ge3), CBigInt(new BigInteger("-33e8fbdb13d2982e92583445e1fdcb5901a178a7aa1e100", 16))),
-            Success(Helpers.decodeGroupElement("036128efaf14d8ac2812a662f6494dc617b87986a3dc6b4a59440048a7ac7d2729"))),
-        ((Helpers.decodeGroupElement(ge3), CBigInt(new BigInteger("1", 16))),
-            Success(Helpers.decodeGroupElement(ge3)))
-      ),
+    testCases2(
+      {
+        def success[T](v: T) = Success(Expected(v, 41484))
+        Seq(
+          ((Helpers.decodeGroupElement(ge1), CBigInt(new BigInteger("-25c80b560dd7844e2efd10f80f7ee57d", 16))),
+              success(Helpers.decodeGroupElement("023a850181b7b73f92a5bbfa0bfc78f5bbb6ff00645ddde501037017e1a2251e2e"))),
+          ((Helpers.decodeGroupElement(ge2), CBigInt(new BigInteger("2488741265082fb02b09f992be3dd8d60d2bbe80d9e2630", 16))),
+              success(Helpers.decodeGroupElement("032045b928fb7774a4cd9ef5fa8209f4e493cd4cc5bd536b52746a53871bf73431"))),
+          ((Helpers.decodeGroupElement(ge3), CBigInt(new BigInteger("-33e8fbdb13d2982e92583445e1fdcb5901a178a7aa1e100", 16))),
+              success(Helpers.decodeGroupElement("036128efaf14d8ac2812a662f6494dc617b87986a3dc6b4a59440048a7ac7d2729"))),
+          ((Helpers.decodeGroupElement(ge3), CBigInt(new BigInteger("1", 16))),
+              success(Helpers.decodeGroupElement(ge3)))
+        )
+      },
       existingFeature({ (x: (GroupElement, BigInt)) => x._1.exp(x._2) },
         "{ (x: (GroupElement, BigInt)) => x._1.exp(x._2) }",
         FuncValue(
@@ -1447,17 +1498,20 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
           )
         )))
 
-    testCases(
-      Seq(
-        ((Helpers.decodeGroupElement(ge1), Helpers.decodeGroupElement("03e132ca090614bd6c9f811e91f6daae61f16968a1e6c694ed65aacd1b1092320e")),
-            Success(Helpers.decodeGroupElement("02bc48937b4a66f249a32dfb4d2efd0743dc88d46d770b8c5d39fd03325ba211df"))),
-        ((Helpers.decodeGroupElement(ge2), Helpers.decodeGroupElement("03e132ca090614bd6c9f811e91f6daae61f16968a1e6c694ed65aacd1b1092320e")),
-            Success(Helpers.decodeGroupElement("0359c3bb2ac4ea4dbd7b1e09d7b11198141a3263834fb84a88039629ec1e9311d1"))),
-        ((Helpers.decodeGroupElement(ge3), Helpers.decodeGroupElement("03e132ca090614bd6c9f811e91f6daae61f16968a1e6c694ed65aacd1b1092320e")),
-            Success(Helpers.decodeGroupElement("02eca42e28548d3fb9fa77cdd0c983066c3ad141ebb086b5044ce46b9ba9b5a714"))),
-        ((Helpers.decodeGroupElement(ge3), SigmaDsl.groupIdentity),
-            Success(Helpers.decodeGroupElement(ge3)))
-      ),
+    testCases2(
+      {
+        def success[T](v: T) = Success(Expected(v, 36457))
+        Seq(
+          ((Helpers.decodeGroupElement(ge1), Helpers.decodeGroupElement("03e132ca090614bd6c9f811e91f6daae61f16968a1e6c694ed65aacd1b1092320e")),
+              success(Helpers.decodeGroupElement("02bc48937b4a66f249a32dfb4d2efd0743dc88d46d770b8c5d39fd03325ba211df"))),
+          ((Helpers.decodeGroupElement(ge2), Helpers.decodeGroupElement("03e132ca090614bd6c9f811e91f6daae61f16968a1e6c694ed65aacd1b1092320e")),
+              success(Helpers.decodeGroupElement("0359c3bb2ac4ea4dbd7b1e09d7b11198141a3263834fb84a88039629ec1e9311d1"))),
+          ((Helpers.decodeGroupElement(ge3), Helpers.decodeGroupElement("03e132ca090614bd6c9f811e91f6daae61f16968a1e6c694ed65aacd1b1092320e")),
+              success(Helpers.decodeGroupElement("02eca42e28548d3fb9fa77cdd0c983066c3ad141ebb086b5044ce46b9ba9b5a714"))),
+          ((Helpers.decodeGroupElement(ge3), SigmaDsl.groupIdentity),
+              success(Helpers.decodeGroupElement(ge3)))
+        )
+      },
       existingFeature({ (x: (GroupElement, GroupElement)) => x._1.multiply(x._2) },
         "{ (x: (GroupElement, GroupElement)) => x._1.multiply(x._2) }",
         FuncValue(
@@ -1512,72 +1566,93 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
       )
     )
 
-    testCases(
-      Seq(
-        (t1, Success(Helpers.decodeBytes("000183807f66b301530120ff7fc6bd6601ff01ff7f7d2bedbbffff00187fe89094"))),
-        (t2, Success(Helpers.decodeBytes("ff000d937f80ffd731ed802d24358001ff8080ff71007f00ad37e0a7ae43fff95b"))),
-        (t3, Success(Helpers.decodeBytes("3100d2e101ff01fc047c7f6f00ff80129df69a5090012f01ffca99f5bfff0c8036")))
-      ),
+    testCases2(
+      {
+        def success[T](v: T) = Success(Expected(v, 36182))
+        Seq(
+          (t1, success(Helpers.decodeBytes("000183807f66b301530120ff7fc6bd6601ff01ff7f7d2bedbbffff00187fe89094"))),
+          (t2, success(Helpers.decodeBytes("ff000d937f80ffd731ed802d24358001ff8080ff71007f00ad37e0a7ae43fff95b"))),
+          (t3, success(Helpers.decodeBytes("3100d2e101ff01fc047c7f6f00ff80129df69a5090012f01ffca99f5bfff0c8036")))
+        )
+      },
       existingFeature((t: AvlTree) => t.digest,
         "{ (t: AvlTree) => t.digest }",
         expectedExprFor("digest")))
 
-    testCases(
-      Seq(
-        (t1, Success(6.toByte)),
-        (t2, Success(0.toByte)),
-        (t3, Success(1.toByte))
-      ),
+    testCases2(
+      {
+        def success[T](v: T) = Success(Expected(v, 36260))
+        Seq(
+          (t1, success(6.toByte)),
+          (t2, success(0.toByte)),
+          (t3, success(1.toByte))
+        )
+      },
       existingFeature((t: AvlTree) => t.enabledOperations,
         "{ (t: AvlTree) => t.enabledOperations }",
         expectedExprFor("enabledOperations")))
 
-    testCases(
-      Seq(
-        (t1, Success(1)),
-        (t2, Success(32)),
-        (t3, Success(128))
-      ),
+    testCases2(
+      {
+        def success[T](v: T) = Success(Expected(v, 36136))
+        Seq(
+          (t1, success(1)),
+          (t2, success(32)),
+          (t3, success(128))
+        )
+      },
       existingFeature((t: AvlTree) => t.keyLength,
         "{ (t: AvlTree) => t.keyLength }",
         expectedExprFor("keyLength")))
 
-    testCases(
-      Seq(
-        (t1, Success(Some(1))),
-        (t2, Success(Some(64))),
-        (t3, Success(None))
-      ),
+    testCases2(
+      {
+        def success[T](v: T) = Success(Expected(v, 37151))
+        Seq(
+          (t1, success(Some(1))),
+          (t2, success(Some(64))),
+          (t3, success(None))
+        )
+      },
       existingFeature((t: AvlTree) => t.valueLengthOpt,
         "{ (t: AvlTree) => t.valueLengthOpt }",
         expectedExprFor("valueLengthOpt")))
 
-    testCases(
-      Seq(
-        (t1, Success(false)),
-        (t2, Success(false)),
-        (t3, Success(true))
-      ),
+    testCases2(
+      {
+        def success[T](v: T) = Success(Expected(v, 36479))
+        Seq(
+          (t1, success(false)),
+          (t2, success(false)),
+          (t3, success(true))
+        )
+      },
       existingFeature((t: AvlTree) => t.isInsertAllowed,
         "{ (t: AvlTree) => t.isInsertAllowed }",
         expectedExprFor("isInsertAllowed")))
 
-    testCases(
-      Seq(
-        (t1, Success(true)),
-        (t2, Success(false)),
-        (t3, Success(false))
-      ),
+    testCases2(
+      {
+        def success[T](v: T) = Success(Expected(v, 36096))
+        Seq(
+          (t1, success(true)),
+          (t2, success(false)),
+          (t3, success(false))
+        )
+      },
       existingFeature((t: AvlTree) => t.isUpdateAllowed,
         "{ (t: AvlTree) => t.isUpdateAllowed }",
         expectedExprFor("isUpdateAllowed")))
 
-    testCases(
-      Seq(
-        (t1, Success(true)),
-        (t2, Success(false)),
-        (t3, Success(false))
-      ),
+    testCases2(
+      {
+        def success[T](v: T) = Success(Expected(v, 36502))
+        Seq(
+          (t1, success(true)),
+          (t2, success(false)),
+          (t3, success(false))
+        )
+      },
       existingFeature((t: AvlTree) => t.isRemoveAllowed,
         "{ (t: AvlTree) => t.isRemoveAllowed }",
         expectedExprFor("isRemoveAllowed")))
@@ -1782,17 +1857,29 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
       val tree = SigmaDsl.avlTree(AvlTreeFlags.ReadOnly.serializeToByte, digest, 32, None)
 
       // positive test
-      contains.checkExpected((tree, (key, proof)), okContains)
-      get.checkExpected((tree, (key, proof)), valueOpt)
+      {
+        val input = (tree, (key, proof))
+        contains.checkExpected(input, okContains)
+        get.checkExpected(input, valueOpt)
 
+        contains.checkVerify(input, expectedRes = okContains, expectedCost = 37850)
+        get.checkVerify(input, expectedRes = valueOpt, expectedCost = 38372)
+      }
 
       val keys = Colls.fromItems(key)
       val expRes = Colls.fromItems(valueOpt)
-      getMany.checkExpected((tree, (keys, proof)), expRes)
+      
+      {
+        val input = (tree, (keys, proof))
+        getMany.checkExpected(input, expRes)
+        getMany.checkVerify(input, expectedRes = expRes, expectedCost = 38991)
+      }
 
       {
-        val (res, _) = updateDigest.checkEquality((tree, digest)).get
+        val input = (tree, digest)
+        val (res, _) = updateDigest.checkEquality(input).get
         res.digest shouldBe digest
+        updateDigest.checkVerify(input, expectedRes = res, expectedCost = 36341)
       }
 
       val newOps = 1.toByte

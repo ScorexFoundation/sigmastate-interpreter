@@ -98,11 +98,14 @@ class SigmaDslTesting extends PropSpec
     val sk3 = decodeSecretInput("50415569076448343263191022044468203756975150511337537963383000142821297891310")
 
     val secrets: Seq[SigmaProtocolPrivateInput[_ <: SigmaProtocol[_], _ <: SigmaProtocolCommonInput[_]]] = {
-      val dlogs: IndexedSeq[DLogProverInput] = Vector(sk1, sk2, sk3)
+      // Note, not all secrets are used, which is required by checkVerify
+      // This is to make AtLeast to be unproved and thus the verify is successfull
+      // because of the other condition in SigmaOr (see checkVerify)
+      val dlogs: IndexedSeq[DLogProverInput] = Vector(sk1)
       dlogs
     }
 
-    val pubKeys: Seq[ProveDlog] = secrets
+    val pubKeys: Seq[ProveDlog] = Vector(sk1, sk2, sk3)
         .filter { case _: DLogProverInput => true case _ => false }
         .map(_.asInstanceOf[DLogProverInput].publicImage)
   }
@@ -318,7 +321,7 @@ class SigmaDslTesting extends PropSpec
     * @param cost  expected cost value of the verification execution
     * @see [[testCases]]
     */
-  case class Expected[A](value: A, cost: Int)
+  case class Expected[+A](value: A, cost: Int)
 
   /** Describes existing language feature which should be equally supported in both v3 and
     * v4 of the language.
