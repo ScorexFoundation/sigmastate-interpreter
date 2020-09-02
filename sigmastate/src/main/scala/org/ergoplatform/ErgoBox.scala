@@ -82,7 +82,7 @@ class ErgoBox(
     case _ => false
   }
 
-  // TODO HF: fix hashCode, it should be consistent with [[equals]] and should be based on [[id]]
+  // TODO refactor: fix hashCode, it should be consistent with [[equals]] and should be based on [[id]]
   override def hashCode(): Int =
     ScalaRunTime._hashCode((value, ergoTree, additionalTokens, additionalRegisters, index, creationHeight))
 

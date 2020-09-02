@@ -152,7 +152,10 @@ class Pay2SHAddress(val scriptHash: Array[Byte])(implicit val encoder: ErgoAddre
     *
     * NOTE: The ErgoTree is created without segregation of the constants.
     *
-    * @see ErgoLikeInterpreterSpecification."P2SH - 160 bits" test
+    * NOTE: that P2SH address is using 192-bits hash, unlike the "P2SH - 160 bits" example
+    * (and well-known P2SH addresses in Bitcoin)
+    *
+    * @see ErgoLikeInterpreterSpecification the "P2SH - 160 bits" test
     */
   override val script = {
     val hashEquals = EQ(

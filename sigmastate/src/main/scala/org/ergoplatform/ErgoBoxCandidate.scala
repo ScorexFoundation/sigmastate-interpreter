@@ -42,12 +42,13 @@ class ErgoBoxCandidate(val value: Long,
                        val additionalRegisters: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]] = Map()) 
                        extends ErgoBoxAssets {
 
-  /** Transformes this tree to proposition, substituting the constants if necessary.
+  /** Transforms this tree to a proposition, substituting the constants if the constant
+    * segregation flag is set.
     * @see [[SigmaPropValue]]
     */
   def proposition: SigmaPropValue = ergoTree.toProposition(ergoTree.isConstantSegregation)
 
-  /** Returns the serialized bytes of the guaring [[ErgoTree]]. */
+  /** Returns the serialized bytes of the guarding [[ErgoTree]]. */
   lazy val propositionBytes: Array[Byte] = ergoTree.bytes
 
   /** Serialized bytes of this Box without transaction reference data (transactionId and boxIndex). */
@@ -105,7 +106,12 @@ class ErgoBoxCandidate(val value: Long,
 }
 
 object ErgoBoxCandidate {
-  /** Default value of Reference Register (R3) returned by ErgoBoxCandidate. */
+  /** Default value of encoded (txId, boxIndex) pair encoded as Coll[Byte]
+    * and returned as part of Reference Register (R3) of ErgoBoxCandidate.
+    *
+    * In contrast [[ErgoBox]] extends [[ErgoBoxCandidate]] by adding `transactionId` and
+    * `index` properties which are returned as part of R3.
+    */
   val UndefinedBoxRef: Coll[Byte] = Array.fill(34)(0: Byte).toColl
 
   /** @hotspot don't beautify the code */
