@@ -241,7 +241,7 @@ class ErgoTreeSerializer {
     val (header, _, constants, treeBytes) = deserializeHeaderWithTreeBytes(r)
     val w = SigmaSerializer.startWriter()
     w.put(header)
-    w.putUInt(constants.length)
+    w.putUInt(constants.length) // TODO HF: this should not be serialized when segregation is off
     val constantSerializer = ConstantSerializer(DeserializationSigmaBuilder)
 
     constants.zipWithIndex.foreach {
@@ -254,6 +254,7 @@ class ErgoTreeSerializer {
         val newConsts = constantStore.getAll
         assert(newConsts.length == 1)
         val newConst = newConsts.head
+        // TODO HF: replace assert with require
         assert(c.tpe == newConst.tpe, s"expected new constant to have the same ${c.tpe} tpe, got ${newConst.tpe}")
         constantSerializer.serialize(newConst, w)
       case (c, _) =>

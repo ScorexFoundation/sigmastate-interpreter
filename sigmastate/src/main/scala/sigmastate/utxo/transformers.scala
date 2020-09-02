@@ -6,11 +6,9 @@ import sigmastate.lang.Terms._
 import sigmastate._
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.OpCodes
-import sigmastate.utxo.CostTable.Cost
-import org.ergoplatform.ErgoBox.{R3, RegisterId}
+import org.ergoplatform.ErgoBox.RegisterId
 import sigmastate.Operations._
-import sigmastate.lang.exceptions.{OptionUnwrapNone, InterpreterException}
-import special.sigma.InvalidType
+import sigmastate.lang.exceptions.InterpreterException
 
 
 trait Transformer[IV <: SType, OV <: SType] extends NotReadyValue[OV] {
@@ -22,7 +20,6 @@ case class MapCollection[IV <: SType, OV <: SType](
                                                     mapper: Value[SFunc])
   extends Transformer[SCollection[IV], SCollection[OV]] {
   override def companion = MapCollection
-  implicit def tOV = mapper.asValue[OV].tpe
   override val tpe = SCollection[OV](mapper.tpe.tRange.asInstanceOf[OV])
   override val opType = SCollection.MapMethod.stype.asFunc
 }
@@ -114,14 +111,6 @@ object Fold extends ValueCompanion {
           SelectField(ValUse(varId, STuple(tT, tT)), 1).asNumValue,
           SelectField(ValUse(varId, STuple(tT, tT)), 2).asNumValue))
     )
-
-  def concat[T <: SType](input: Value[SCollection[SCollection[T]]])(implicit tT: T): Fold[SCollection[T], T] = {
-    val tColl = SCollection(tT)
-    Fold[SCollection[T], T](input,
-      ConcreteCollection(Array[Value[T]](), tT).asValue[T],
-      FuncValue(Array((1, tColl), (2, tColl)), Append(ValUse(1, tColl), ValUse(2, tColl)))
-    )
-  }
 }
 
 case class ByIndex[V <: SType](input: Value[SCollection[V]],

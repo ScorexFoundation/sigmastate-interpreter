@@ -149,17 +149,3 @@ trait SigmaProtocolTranscript[SP <: SigmaProtocol[SP], CI <: SigmaProtocolCommon
   def accepted: Boolean
 }
 
-trait SigmaProtocolMsg
-
-object SigmaProtocolFunctions {
-
-  case class FirstMessage(s: SigmaProtocolMsg)
-
-  case class RandomChallenge(challenge: Challenge)
-
-  case class SecondMessage(s: SigmaProtocolMsg)
-
-  case object StartInteraction
-
-  case class Transcript(a: SigmaProtocolMsg, e: Challenge, z: SigmaProtocolMsg, accepted: Boolean)
-}

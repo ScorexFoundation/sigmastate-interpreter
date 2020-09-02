@@ -82,4 +82,14 @@ case class CThresholdUncheckedNode(override val challenge: Challenge,
   require(k >= 0 && k <= children.length)
 
   override val conjectureType = ConjectureType.ThresholdConjecture
+
+  override def canEqual(other: Any) = other.isInstanceOf[CThresholdUncheckedNode]
+  override def equals(other: Any) = (this eq other.asInstanceOf[AnyRef]) || (other match {
+    case other: CThresholdUncheckedNode =>
+      util.Arrays.equals(challenge, other.challenge) &&
+      children == other.children &&
+      k == other.k &&
+      polynomialOpt == other.polynomialOpt
+    case _ => false
+  })
 }

@@ -80,12 +80,18 @@ class SigSerializerSpecification extends SigmaTestingCommons with ObjectGenerato
         spendingTransaction = ErgoLikeTransactionTesting.dummy,
         self = fakeSelf)
 
-      // get sigma conjectures out of transformers
-      val prop = prover.reduceToCrypto(ctx, expr).get._1
+      try {
+        // get sigma conjectures out of transformers
+        val prop = prover.reduceToCrypto(ctx, expr).get._1
 
-      val proof = prover.prove(expr, ctx, challenge).get.proof
-      val proofTree = SigSerializer.parseAndComputeChallenges(prop, proof)
-      roundTrip(proofTree, prop)
+        val proof = prover.prove(expr, ctx, challenge).get.proof
+        val proofTree = SigSerializer.parseAndComputeChallenges(prop, proof)
+        roundTrip(proofTree, prop)
+      } catch {
+        case t: Throwable =>
+          t.printStackTrace()
+          throw t
+      }
     }
   }
 

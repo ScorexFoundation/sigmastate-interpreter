@@ -3,7 +3,12 @@ package scalan
 import scala.reflect.ClassTag
 import scala.annotation.implicitNotFound
 
-/** Base type for all runtime type descriptors. */
+/** Base type for all runtime type descriptors. Sigma uses type descriptors to
+  * represent structure of the data values. Data values of registers and context
+  * variables come equipped with type descriptors in order to check the actual type
+  * is the same as the type expected by the script.
+  * @see [[getReg]], [[getVar]]
+  */
 @implicitNotFound(msg = "No RType available for ${A}.")
 abstract class RType[A] {
   /** Class tag suitable for construct instances of Array[A]. */
