@@ -54,9 +54,6 @@ class TestSigmaDslBuilder extends SigmaDslBuilder {
   def sha256(bytes: Coll[Byte]): Coll[Byte] = Colls.fromArray(Sha256.hash(bytes.toArray))
 
   @NeverInline
-  def PubKey(base64String: String): SigmaProp = ???
-
-  @NeverInline
   def byteArrayToBigInt(bytes: Coll[Byte]): BigInt = {
     val bi = new BigInteger(bytes.toArray).to256BitValueExact
     this.BigInt(bi)

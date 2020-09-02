@@ -3151,7 +3151,7 @@ object SigmaContract extends EntityObject("SigmaContract") {
     override protected def collectMethods: Map[java.lang.reflect.Method, MethodDesc] = {
       super.collectMethods ++
         Elem.declaredMethods(classOf[SigmaContract], classOf[SSigmaContract], Set(
-        "builder", "Collection", "verifyZK", "atLeast", "allOf", "allZK", "anyOf", "anyZK", "xorOf", "PubKey", "sigmaProp", "blake2b256", "sha256", "byteArrayToBigInt", "longToByteArray", "byteArrayToLong", "proveDlog", "proveDHTuple", "groupGenerator", "decodePoint", "substConstants"
+        "builder", "Collection", "verifyZK", "atLeast", "allOf", "allZK", "anyOf", "anyZK", "xorOf", "sigmaProp", "blake2b256", "sha256", "byteArrayToBigInt", "longToByteArray", "byteArrayToLong", "proveDlog", "proveDHTuple", "groupGenerator", "decodePoint", "substConstants"
         ))
     }
   }
@@ -3266,13 +3266,6 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
         SigmaDslBuilderClass.getMethod("xorOf", classOf[Sym]),
         Array[AnyRef](conditions),
         true, false, element[Boolean]))
-    }
-
-    override def PubKey(base64String: Ref[String]): Ref[SigmaProp] = {
-      asRep[SigmaProp](mkMethodCall(self,
-        SigmaDslBuilderClass.getMethod("PubKey", classOf[Sym]),
-        Array[AnyRef](base64String),
-        true, false, element[SigmaProp]))
     }
 
     override def sigmaProp(b: Ref[Boolean]): Ref[SigmaProp] = {
@@ -3468,13 +3461,6 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
         true, true, element[Boolean]))
     }
 
-    def PubKey(base64String: Ref[String]): Ref[SigmaProp] = {
-      asRep[SigmaProp](mkMethodCall(source,
-        SigmaDslBuilderClass.getMethod("PubKey", classOf[Sym]),
-        Array[AnyRef](base64String),
-        true, true, element[SigmaProp]))
-    }
-
     def sigmaProp(b: Ref[Boolean]): Ref[SigmaProp] = {
       asRep[SigmaProp](mkMethodCall(source,
         SigmaDslBuilderClass.getMethod("sigmaProp", classOf[Sym]),
@@ -3583,7 +3569,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
     override protected def collectMethods: Map[java.lang.reflect.Method, MethodDesc] = {
       super.collectMethods ++
         Elem.declaredMethods(classOf[SigmaDslBuilder], classOf[SSigmaDslBuilder], Set(
-        "Colls", "Monoids", "Costing", "CostModel", "verifyZK", "atLeast", "allOf", "allZK", "anyOf", "anyZK", "xorOf", "PubKey", "sigmaProp", "blake2b256", "sha256", "byteArrayToBigInt", "longToByteArray", "byteArrayToLong", "proveDlog", "proveDHTuple", "groupGenerator", "substConstants", "decodePoint", "avlTree", "xor"
+        "Colls", "Monoids", "Costing", "CostModel", "verifyZK", "atLeast", "allOf", "allZK", "anyOf", "anyZK", "xorOf", "sigmaProp", "blake2b256", "sha256", "byteArrayToBigInt", "longToByteArray", "byteArrayToLong", "proveDlog", "proveDHTuple", "groupGenerator", "substConstants", "decodePoint", "avlTree", "xor"
         ))
     }
   }
@@ -3713,16 +3699,6 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
         case _ => Nullable.None
       }
       def unapply(exp: Sym): Nullable[(Ref[SigmaDslBuilder], Ref[Coll[Boolean]])] = unapply(exp.node)
-    }
-
-    object PubKey {
-      def unapply(d: Def[_]): Nullable[(Ref[SigmaDslBuilder], Ref[String])] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "PubKey" && receiver.elem.isInstanceOf[SigmaDslBuilderElem[_]] =>
-          val res = (receiver, args(0))
-          Nullable(res).asInstanceOf[Nullable[(Ref[SigmaDslBuilder], Ref[String])]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Ref[SigmaDslBuilder], Ref[String])] = unapply(exp.node)
     }
 
     object sigmaProp {
