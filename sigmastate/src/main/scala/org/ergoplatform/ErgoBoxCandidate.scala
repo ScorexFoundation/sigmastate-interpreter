@@ -88,7 +88,9 @@ class ErgoBoxCandidate(val value: Long,
     }
   }
 
-  // TODO HF: fix hashCode, it should be consisten with [[equals]] and use [[bytesWithNoRef]]
+  // TODO refactor: fix hashCode, it should be consistent with [[equals]] and use [[bytesWithNoRef]]
+  //  Since all five properties are also serialized as part of bytesWithNoRef, then this
+  //  hashCode is safe, but less efficient and simple than it can be.
   override def hashCode(): Int = {
     ScalaRunTime._hashCode((value, ergoTree, additionalTokens, additionalRegisters, creationHeight))
   }
