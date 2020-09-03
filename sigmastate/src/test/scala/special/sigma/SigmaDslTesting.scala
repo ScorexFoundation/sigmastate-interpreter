@@ -299,12 +299,14 @@ class SigmaDslTesting extends PropSpec
         case Success((ok, cost)) =>
           ok shouldBe true
           val verificationCost = cost.toIntExact
-          if (expectedCost != verificationCost) {
-            println(s"Script: $script")
-            println(s"Cost: $verificationCost\n")
-          }
-
-        //          assertResult(expectedCost, s"Actual verify() cost $cost != expected $expectedCost")(cost.toIntExact)
+// NOTE: you can uncomment this line and comment the assertion in order to
+// simplify adding new test vectors for cost estimation
+//          if (expectedCost != verificationCost) {
+//            println(s"Script: $script")
+//            println(s"Cost: $verificationCost\n")
+//          }
+          assertResult(expectedCost,
+            s"Actual verify() cost $cost != expected $expectedCost")(verificationCost)
 
         case Failure(t) => throw t
       }
