@@ -182,7 +182,7 @@ class ErgoAddressSpecification extends SigmaDslTesting with TryValues {
 
   def testPay2SHAddress(address: Pay2SHAddress, scriptBytes: Array[Byte])(implicit IR: IRContext) = {
     val scriptId = 1.toByte
-    val boxToSpend = ErgoBox(10, address.script, creationHeight = 5)
+    val boxToSpend = ErgoBox.create(10, address.script, creationHeight = 5)
     val ctx = ErgoLikeContextTesting.dummy(boxToSpend)
         .withExtension(ContextExtension(Seq(
           scriptId -> ByteArrayConstant(scriptBytes)  // provide script bytes in context variable

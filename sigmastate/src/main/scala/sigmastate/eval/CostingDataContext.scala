@@ -4,7 +4,7 @@ import java.math.BigInteger
 import java.util
 
 import org.bouncycastle.math.ec.ECPoint
-import org.ergoplatform.{ErgoBox, SigmaConstants}
+import org.ergoplatform.{ErgoBox, SigmaConstants, ErgoLikeContext}
 import org.ergoplatform.validation.ValidationRules
 import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.authds.{ADDigest, ADKey, SerializedAdProof, ADValue}
@@ -737,5 +737,9 @@ case class CostingDataContext(
         }
       } else None
     }
+  }
+
+  def toErgoContext: ErgoLikeContext = {
+    ???
   }
 }

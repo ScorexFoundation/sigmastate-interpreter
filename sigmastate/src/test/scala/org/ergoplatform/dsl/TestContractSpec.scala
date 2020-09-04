@@ -119,7 +119,7 @@ case class TestContractSpec(testSuite: SigmaTestingCommons)(implicit val IR: IRC
 
     private[dsl] lazy val ergoBox: ErgoBox = {
       val tokens = _tokens.map { t => (Digest32 @@ t.id.toArray, t.value) }
-      ErgoBox(value, propSpec.ergoTree, tx.block.height, tokens, _regs)
+      ErgoBox.create(value, propSpec.ergoTree, tx.block.height, tokens, _regs)
     }
     def id = ergoBox.id
   }

@@ -57,7 +57,7 @@ trait ContractsTestkit {
 
   val AliceId = Array[Byte](1) // 0x0001
   def newAliceBox(id: Byte, value: Long): Box = {
-    val ergoBox = ErgoBox(value, TrivialProp.TrueProp.toSigmaProp, 0, Seq(), Map())
+    val ergoBox = ErgoBox.create(value, TrivialProp.TrueProp.toSigmaProp, 0, Seq(), Map())
     new CostingBox(false, ergoBox)
   }
 

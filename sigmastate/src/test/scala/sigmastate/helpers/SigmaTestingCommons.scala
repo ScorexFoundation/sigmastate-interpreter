@@ -66,12 +66,12 @@ trait SigmaTestingCommons extends PropSpec
                 proposition: ErgoTree,
                 additionalTokens: Seq[(Digest32, Long)] = Seq(),
                 additionalRegisters: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]] = Map())
-  = ErgoBox(value, proposition, 0, additionalTokens, additionalRegisters)
+  = ErgoBox.create(value, proposition, 0, additionalTokens, additionalRegisters)
 
   def createBox(value: Long,
                 proposition: ErgoTree,
                 creationHeight: Int)
-  = ErgoBox(value, proposition, creationHeight, Seq(), Map(), ErgoBox.allZerosModifierId)
+  = ErgoBox.create(value, proposition, creationHeight, Seq(), Map(), ErgoBox.allZerosModifierId)
 
   /**
     * Create fake transaction with provided outputCandidates, but without inputs and data inputs.

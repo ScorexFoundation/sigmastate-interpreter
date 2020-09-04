@@ -147,7 +147,7 @@ object BlockchainSimulationTestingCommons extends SigmaTestingCommons {
     val initBlock = FullBlock(
       (0 until 10).map { i =>
         val txId = Blake2b256.hash(i.toString.getBytes ++ scala.util.Random.nextString(12).getBytes).toModifierId
-        val boxes = (1 to 50).map(_ => ErgoBox(10, Values.TrueLeaf.toSigmaProp, i, Seq(), Map(), txId))
+        val boxes = (1 to 50).map(_ => ErgoBox.create(10, Values.TrueLeaf.toSigmaProp, i, Seq(), Map(), txId))
         createTransaction(boxes)
       },
       ErgoLikeContextTesting.dummyPubkey

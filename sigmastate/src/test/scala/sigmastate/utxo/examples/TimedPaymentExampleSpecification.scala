@@ -45,7 +45,7 @@ class TimedPaymentExampleSpecification extends SigmaTestingCommons {
     // In the example, we don't create the transaction; we just create a box below
 
 
-    val depositOutput = ErgoBox(depositAmount, address.script, depositHeight)
+    val depositOutput = ErgoBox.create(depositAmount, address.script, depositHeight)
 
     // Now Alice wants to give Bob (coffee shop owner) some amount from the wallet in a "timed" way.
 
@@ -53,7 +53,7 @@ class TimedPaymentExampleSpecification extends SigmaTestingCommons {
     val withdrawHeight = 100
     val confDeadline = 110
 
-    val timedWithdrawOutput = ErgoBox(withdrawAmount, bobPubKey, withdrawHeight)
+    val timedWithdrawOutput = ErgoBox.create(withdrawAmount, bobPubKey, withdrawHeight)
 
     //normally this transaction would be invalid, but we're not checking it in this test
     val withdrawTx = createTransaction(IndexedSeq(timedWithdrawOutput))

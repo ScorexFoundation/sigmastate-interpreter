@@ -73,8 +73,8 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     val prop = compile(Map(), code).asBoolValue.toSigmaProp
 
     expectedComp.foreach(prop shouldBe _)
-    val ctx = context(boxesToSpendValues.map(ErgoBox(_, pubkey, 0)),
-      outputBoxValues.map(ErgoBox(_, pubkey, 0)))
+    val ctx = context(boxesToSpendValues.map(ErgoBox.create(_, pubkey, 0)),
+      outputBoxValues.map(ErgoBox.create(_, pubkey, 0)))
     (prover, verifier, prop, ctx)
   }
 
@@ -92,8 +92,8 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     ).toSigmaProp
     prop shouldBe expProp
 
-    val newBox1 = ErgoBox(16, pubkey, 0)
-    val newBox2 = ErgoBox(15, pubkey, 0)
+    val newBox1 = ErgoBox.create(16, pubkey, 0)
+    val newBox2 = ErgoBox.create(15, pubkey, 0)
     val newBoxes = IndexedSeq(newBox1, newBox2)
 
     val spendingTransaction = createTransaction(newBoxes)
@@ -124,8 +124,8 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
       ).toSigmaProp
     prop shouldBe propTree
 
-    val newBox1 = ErgoBox(10, pubkey, 0)
-    val newBox2 = ErgoBox(10, pubkey, 0)
+    val newBox1 = ErgoBox.create(10, pubkey, 0)
+    val newBox2 = ErgoBox.create(10, pubkey, 0)
     val newBoxes = IndexedSeq(newBox1, newBox2)
 
     val spendingTransaction = createTransaction(newBoxes)
@@ -154,8 +154,8 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
       ).toSigmaProp
     prop shouldBe propTree
 
-    val newBox1 = ErgoBox(10, pubkey, 0)
-    val newBox2 = ErgoBox(11, pubkey, 0)
+    val newBox1 = ErgoBox.create(10, pubkey, 0)
+    val newBox2 = ErgoBox.create(11, pubkey, 0)
     val newBoxes = IndexedSeq(newBox1, newBox2)
 
     val spendingTransaction = createTransaction(newBoxes)
@@ -192,13 +192,13 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     ).toSigmaProp
     prop shouldBe propTree
 
-    val newBox1 = ErgoBox(10, pubkey, 0, Seq(), Map(reg1 -> LongConstant(3)))
-    val newBox2 = ErgoBox(10, pubkey, 0, Seq(), Map(reg1 -> LongConstant(6)))
+    val newBox1 = ErgoBox.create(10, pubkey, 0, Seq(), Map(reg1 -> LongConstant(3)))
+    val newBox2 = ErgoBox.create(10, pubkey, 0, Seq(), Map(reg1 -> LongConstant(6)))
     val newBoxes = IndexedSeq(newBox1, newBox2)
 
     val spendingTransaction = createTransaction(newBoxes)
 
-    val s = ErgoBox(20, TrueProp, 0, Seq(), Map(reg1 -> LongConstant(5)))
+    val s = ErgoBox.create(20, TrueProp, 0, Seq(), Map(reg1 -> LongConstant(5)))
 
     val ctx = ErgoLikeContextTesting(
       currentHeight = 50,
@@ -235,13 +235,13 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
 
     prop shouldBe propTree
 
-    val newBox1 = ErgoBox(10, pubkey, 0)
-    val newBox2 = ErgoBox(10, pubkey, 0, Seq(), Map(reg1 -> LongConstant(6)))
+    val newBox1 = ErgoBox.create(10, pubkey, 0)
+    val newBox2 = ErgoBox.create(10, pubkey, 0, Seq(), Map(reg1 -> LongConstant(6)))
     val newBoxes = IndexedSeq(newBox1, newBox2)
 
     val spendingTransaction = createTransaction(newBoxes)
 
-    val s = ErgoBox(20, TrueProp, 0, Seq(), Map(reg1 -> LongConstant(5)))
+    val s = ErgoBox.create(20, TrueProp, 0, Seq(), Map(reg1 -> LongConstant(5)))
 
     val ctx = ErgoLikeContextTesting(
       currentHeight = 50,
@@ -266,13 +266,13 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     val propTree = SigmaAnd(pubkey, BoolToSigmaProp(EQ(SizeOf(Outputs), Plus(SizeOf(Inputs), IntConstant(1)))))
     prop shouldBe propTree
 
-    val newBox1 = ErgoBox(11, pubkey, 0)
-    val newBox2 = ErgoBox(10, pubkey, 0)
+    val newBox1 = ErgoBox.create(11, pubkey, 0)
+    val newBox2 = ErgoBox.create(10, pubkey, 0)
     val newBoxes = IndexedSeq(newBox1, newBox2)
 
     val spendingTransaction = createTransaction(newBoxes)
 
-    val s = ErgoBox(21, pubkey, 0)
+    val s = ErgoBox.create(21, pubkey, 0)
 
     val ctx = ErgoLikeContextTesting(
       currentHeight = 50,

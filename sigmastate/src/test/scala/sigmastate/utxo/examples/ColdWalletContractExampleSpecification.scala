@@ -72,7 +72,7 @@ class ColdWalletContractExampleSpecification extends SigmaTestingCommons {
     val depositHeight = 50
     val min = depositAmount - depositAmount * percent/100 // should be 99000 (99k)
 
-    val depositOutput = ErgoBox(depositAmount, address.script, depositHeight, Nil,
+    val depositOutput = ErgoBox.create(depositAmount, address.script, depositHeight, Nil,
       Map(
         R4 -> IntConstant(depositHeight), // can keep any value in R4 initially
         R5 -> LongConstant(min) // keeping it below min will make UTXO unspendable
@@ -89,7 +89,7 @@ class ColdWalletContractExampleSpecification extends SigmaTestingCommons {
     // Both Alice ane Bob withdraw
     val withdrawAmountFull = depositAmount // full amount is withdrawn
 
-    val withdrawOutputAliceAndBob = ErgoBox(withdrawAmountFull, carolPubKey, firstWithdrawHeight)
+    val withdrawOutputAliceAndBob = ErgoBox.create(withdrawAmountFull, carolPubKey, firstWithdrawHeight)
 
     val withdrawTxAliceAndBob = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(withdrawOutputAliceAndBob))
 
@@ -112,13 +112,13 @@ class ColdWalletContractExampleSpecification extends SigmaTestingCommons {
     val firstWithdrawAmount = depositAmount * percent / 100     // less than or eqaul to percent (1000)
     val firstChangeAmount = depositAmount - firstWithdrawAmount // 99000
 
-    val firstChangeOutput = ErgoBox(firstChangeAmount, address.script, firstWithdrawHeight, Nil,
+    val firstChangeOutput = ErgoBox.create(firstChangeAmount, address.script, firstWithdrawHeight, Nil,
       Map(
         R4 -> IntConstant(depositHeight), // newStart (= old start) = 50
         R5 -> LongConstant(min) // newMin (= old min) = 99000
       )
     )
-    val firstWithdrawOutput = ErgoBox(firstWithdrawAmount, carolPubKey, firstWithdrawHeight)
+    val firstWithdrawOutput = ErgoBox.create(firstWithdrawAmount, carolPubKey, firstWithdrawHeight)
 
     //normally this transaction would be invalid, but we're not checking it in this test
     val firstWithdrawTx = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(firstChangeOutput, firstWithdrawOutput))
@@ -141,13 +141,13 @@ class ColdWalletContractExampleSpecification extends SigmaTestingCommons {
     // invalid (amount greater than allowed)
     val withdrawAmountInvalid = depositAmount * percent / 100 + 1 // more than percent
     val changeAmountInvalid = depositAmount - withdrawAmountInvalid
-    val changeOutputInvalid = ErgoBox(changeAmountInvalid, address.script, firstWithdrawHeight, Nil,
+    val changeOutputInvalid = ErgoBox.create(changeAmountInvalid, address.script, firstWithdrawHeight, Nil,
       Map(
         R4 -> IntConstant(depositHeight), // newStart (= old start)
         R5 -> LongConstant(min) // newMin (= old min)
       )
     )
-    val withdrawOutputInvalid = ErgoBox(withdrawAmountInvalid, carolPubKey, firstWithdrawHeight)
+    val withdrawOutputInvalid = ErgoBox.create(withdrawAmountInvalid, carolPubKey, firstWithdrawHeight)
 
     // normally this transaction would be invalid, but we're not checking it in this test
     val withdrawTxInvalid = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(changeOutputInvalid, withdrawOutputInvalid))
@@ -175,13 +175,13 @@ class ColdWalletContractExampleSpecification extends SigmaTestingCommons {
     val secondChangeAmount = firstChangeAmount - secondWithdrawAmount
     val secondMin = firstChangeAmount - firstChangeAmount * percent/100
 
-    val secondChangeOutput = ErgoBox(secondChangeAmount, address.script, secondWithdrawHeight, Nil,
+    val secondChangeOutput = ErgoBox.create(secondChangeAmount, address.script, secondWithdrawHeight, Nil,
       Map(
         R4 -> IntConstant(secondWithdrawHeight), // newStart
         R5 -> LongConstant(secondMin) // newMin
       )
     )
-    val secondWithdrawOutput = ErgoBox(secondWithdrawAmount, carolPubKey, secondWithdrawHeight)
+    val secondWithdrawOutput = ErgoBox.create(secondWithdrawAmount, carolPubKey, secondWithdrawHeight)
 
     //normally this transaction would be invalid, but we're not checking it in this test
     val secondWithdrawTx = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(secondChangeOutput, secondWithdrawOutput))

@@ -66,10 +66,10 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests
   lazy val backerPubKey = backerProver.dlogSecrets.head.publicImage
   lazy val projectPubKey = projectProver.dlogSecrets.head.publicImage
 
-  val boxToSpend = ErgoBox(10, ErgoScriptPredef.TrueProp, 0,
+  val boxToSpend = ErgoBox.create(10, ErgoScriptPredef.TrueProp, 0,
     additionalRegisters = Map(ErgoBox.R4 -> BigIntArrayConstant(bigIntegerArr1)))
-  lazy val tx1Output1 = ErgoBox(minToRaise, projectPubKey, 0)
-  lazy val tx1Output2 = ErgoBox(1, projectPubKey, 0)
+  lazy val tx1Output1 = ErgoBox.create(minToRaise, projectPubKey, 0)
+  lazy val tx1Output2 = ErgoBox.create(1, projectPubKey, 0)
   lazy val tx1 = new ErgoLikeTransaction(IndexedSeq(), IndexedSeq(), IndexedSeq(tx1Output1, tx1Output2))
   lazy val ergoCtx = ErgoLikeContextTesting(
     currentHeight = timeout - 1,

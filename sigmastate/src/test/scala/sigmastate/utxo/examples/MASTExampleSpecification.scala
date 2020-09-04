@@ -45,9 +45,9 @@ class MASTExampleSpecification extends SigmaTestingCommons {
     val prop = AND(scriptIsCorrect, If(EQ(SizeOf(Inputs), 1), EQ(scriptHash, script1Hash), EQ(scriptHash, script2Hash))).toSigmaProp
 
 
-    val input1 = ErgoBox(20, prop, 0)
+    val input1 = ErgoBox.create(20, prop, 0)
     val tx = UnsignedErgoLikeTransaction(IndexedSeq(input1).map(i => new UnsignedInput(i.id)),
-      IndexedSeq(ErgoBox(1, ErgoScriptPredef.TrueProp, 0)))
+      IndexedSeq(ErgoBox.create(1, ErgoScriptPredef.TrueProp, 0)))
     val ctx = ErgoLikeContextTesting(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
@@ -101,13 +101,13 @@ class MASTExampleSpecification extends SigmaTestingCommons {
     val prop = AND(merklePathToScript, scriptIsCorrect).toSigmaProp
 
     val recipientProposition = new ContextEnrichingTestProvingInterpreter().dlogSecrets.head.publicImage
-    val selfBox = ErgoBox(20, ErgoScriptPredef.TrueProp, 0, Seq(), Map(reg1 -> AvlTreeConstant(treeData)))
+    val selfBox = ErgoBox.create(20, ErgoScriptPredef.TrueProp, 0, Seq(), Map(reg1 -> AvlTreeConstant(treeData)))
     val ctx = ErgoLikeContextTesting(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(selfBox),
-      createTransaction(ErgoBox(1, recipientProposition, 0)),
+      createTransaction(ErgoBox.create(1, recipientProposition, 0)),
       self = selfBox)
 
     avlProver.performOneOperation(Lookup(knownSecretTreeKey))

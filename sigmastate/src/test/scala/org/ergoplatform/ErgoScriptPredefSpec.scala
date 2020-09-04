@@ -42,7 +42,7 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
     val prop = EQ(Height, ErgoScriptPredef.boxCreationHeight(ByIndex(Outputs, IntConstant(0)))).toSigmaProp
     val propInlined = EQ(Height, SelectField(ExtractCreationInfo(ByIndex(Outputs, IntConstant(0))), 1).asIntValue).toSigmaProp
     prop shouldBe propInlined
-    val inputBox = ErgoBox(1, prop, nextHeight, Seq(), Map())
+    val inputBox = ErgoBox.create(1, prop, nextHeight, Seq(), Map())
     val inputBoxes = IndexedSeq(inputBox)
     val inputs = inputBoxes.map(b => Input(b.id, emptyProverResult))
     val minerBox = new ErgoBoxCandidate(1, SigmaPropConstant(minerProp), nextHeight)
@@ -102,10 +102,10 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
                       newProp: ErgoTree,
                       inputR4Val: CollectionConstant[SByte.type]): Try[Unit] = Try {
       val outputR4Val: CollectionConstant[SByte.type] = ByteArrayConstant(Random.randomBytes())
-      val inputBoxes = IndexedSeq(ErgoBox(emission.foundersCoinsTotal, prop, 0, Seq(), Map(R4 -> inputR4Val)))
+      val inputBoxes = IndexedSeq(ErgoBox.create(emission.foundersCoinsTotal, prop, 0, Seq(), Map(R4 -> inputR4Val)))
       val inputs = inputBoxes.map(b => Input(b.id, emptyProverResult))
-      val newFoundersBox = ErgoBox(remainingAmount, newProp, 0, Seq(), Map(R4 -> outputR4Val))
-      val collectedBox = ErgoBox(inputBoxes.head.value - remainingAmount, TrueProp, 0)
+      val newFoundersBox = ErgoBox.create(remainingAmount, newProp, 0, Seq(), Map(R4 -> outputR4Val))
+      val collectedBox = ErgoBox.create(inputBoxes.head.value - remainingAmount, TrueProp, 0)
       val spendingTransaction = ErgoLikeTransaction(inputs, IndexedSeq(newFoundersBox, collectedBox))
       val ctx = ErgoLikeContextTesting(
         currentHeight = height,
@@ -124,9 +124,9 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
     val minerPk = prover.dlogSecrets.head.publicImage
     val prop = ErgoScriptPredef.rewardOutputScript(settings.minerRewardDelay, minerPk)
     val verifier = new ErgoLikeTestInterpreter
-    val inputBoxes = IndexedSeq(ErgoBox(20, prop, 0, Seq(), Map()))
+    val inputBoxes = IndexedSeq(ErgoBox.create(20, prop, 0, Seq(), Map()))
     val inputs = inputBoxes.map(b => Input(b.id, emptyProverResult))
-    val spendingTransaction = ErgoLikeTransaction(inputs, IndexedSeq(ErgoBox(inputBoxes.head.value, TrueProp, 0)))
+    val spendingTransaction = ErgoLikeTransaction(inputs, IndexedSeq(ErgoBox.create(inputBoxes.head.value, TrueProp, 0)))
 
     val ctx = ErgoLikeContextTesting(
       currentHeight = inputBoxes.head.creationHeight + settings.minerRewardDelay,
@@ -157,7 +157,7 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
     val prover = new ContextEnrichingTestProvingInterpreter
     val minerPk = prover.dlogSecrets.head.publicImage
     val prop = ErgoScriptPredef.emissionBoxProp(settings)
-    val emissionBox = ErgoBox(emission.coinsTotal, prop, 0, Seq(), Map())
+    val emissionBox = ErgoBox.create(emission.coinsTotal, prop, 0, Seq(), Map())
     val minerProp = ErgoScriptPredef.rewardOutputScript(settings.minerRewardDelay, minerPk)
 
     // collect coins during the fixed rate period
@@ -215,7 +215,7 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
     def check(inputBoxes: IndexedSeq[ErgoBox]): Try[Unit] = Try {
       val inputs = inputBoxes.map(b => Input(b.id, emptyProverResult))
       val amount = inputBoxes.map(_.value).sum
-      val spendingTransaction = ErgoLikeTransaction(inputs, IndexedSeq(ErgoBox(amount, pubkey.toSigmaProp, 0)))
+      val spendingTransaction = ErgoLikeTransaction(inputs, IndexedSeq(ErgoBox.create(amount, pubkey.toSigmaProp, 0)))
 
       val ctx = ErgoLikeContextTesting(
         currentHeight = 50,
@@ -233,37 +233,37 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
     measure(10) { i =>
       // transaction with the only input with enough token should pass
       val inputs0 = IndexedSeq(
-        ErgoBox(20, prop, 0, Seq((wrongId, tokenAmount), (tokenId, tokenAmount), (wrongId2, tokenAmount)), Map())
+        ErgoBox.create(20, prop, 0, Seq((wrongId, tokenAmount), (tokenId, tokenAmount), (wrongId2, tokenAmount)), Map())
       )
       check(inputs0).get shouldBe (())
 
       // transaction with the only input with insufficient token should fail
       val inputs1 = IndexedSeq(
-        ErgoBox(20, prop, 0, Seq((wrongId, tokenAmount), (tokenId, tokenAmount - 1)), Map())
+        ErgoBox.create(20, prop, 0, Seq((wrongId, tokenAmount), (tokenId, tokenAmount - 1)), Map())
       )
       check(inputs1) shouldBe 'failure
 
       // transaction with multiple inputs with insufficient token should fail
       val inputs2 = IndexedSeq(
-        ErgoBox(20, prop, 0, Seq((wrongId, tokenAmount), (tokenId, tokenAmount - 2)), Map()),
-        ErgoBox(20, prop, 0, Seq((wrongId, tokenAmount)), Map()),
-        ErgoBox(20, prop, 0, Seq((tokenId, 1), (wrongId2, tokenAmount)), Map())
+        ErgoBox.create(20, prop, 0, Seq((wrongId, tokenAmount), (tokenId, tokenAmount - 2)), Map()),
+        ErgoBox.create(20, prop, 0, Seq((wrongId, tokenAmount)), Map()),
+        ErgoBox.create(20, prop, 0, Seq((tokenId, 1), (wrongId2, tokenAmount)), Map())
       )
       check(inputs2) shouldBe 'failure
 
       // transaction with multiple inputs with enough token should pass
       val inputs3 = IndexedSeq(
-        ErgoBox(20, prop, 0, Seq((wrongId, 1), (tokenId, tokenAmount / 2)), Map()),
-        ErgoBox(20, prop, 0, Seq((wrongId, 1)), Map()),
-        ErgoBox(20, prop, 0, Seq((tokenId, tokenAmount / 2 + 1), (wrongId2, 1)), Map())
+        ErgoBox.create(20, prop, 0, Seq((wrongId, 1), (tokenId, tokenAmount / 2)), Map()),
+        ErgoBox.create(20, prop, 0, Seq((wrongId, 1)), Map()),
+        ErgoBox.create(20, prop, 0, Seq((tokenId, tokenAmount / 2 + 1), (wrongId2, 1)), Map())
       )
       check(inputs3).getOrThrow
 
       // A transaction which contains input with no tokens
       val inputs4 = IndexedSeq(
-        ErgoBox(20, prop, 0, Seq((wrongId, 1), (tokenId, tokenAmount / 2)), Map()),
-        ErgoBox(20, prop, 0, Seq(), Map()),
-        ErgoBox(20, prop, 0, Seq((tokenId, tokenAmount / 2 + 1), (wrongId2, 1)), Map())
+        ErgoBox.create(20, prop, 0, Seq((wrongId, 1), (tokenId, tokenAmount / 2)), Map()),
+        ErgoBox.create(20, prop, 0, Seq(), Map()),
+        ErgoBox.create(20, prop, 0, Seq((tokenId, tokenAmount / 2 + 1), (wrongId2, 1)), Map())
       )
       check(inputs4) shouldBe 'success
     }

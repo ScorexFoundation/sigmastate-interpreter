@@ -48,7 +48,7 @@ import scala.runtime.ScalaRunTime
   *                            containing the transaction with this box.
   * @hotspot don't beautify the code of this class
   */
-class ErgoBox(
+case class ErgoBox(
          override val value: Long,
          override val ergoTree: ErgoTree,
          override val additionalTokens: Coll[(TokenId, Long)] = Colls.emptyColl[(TokenId, Long)],
@@ -175,7 +175,7 @@ object ErgoBox {
 
   val allZerosModifierId: ModifierId = Array.fill[Byte](32)(0.toByte).toModifierId
 
-  def apply(value: Long,
+  def create(value: Long,
             ergoTree: ErgoTree,
             creationHeight: Int,
             additionalTokens: Seq[(TokenId, Long)] = Nil,

@@ -53,7 +53,7 @@ class DHTupleExampleSpecification extends SigmaTestingCommons {
         |}""".stripMargin
     ).asSigmaProp
 
-    val inBox = ErgoBox(10, script, 50)
+    val inBox = ErgoBox.create(10, script, 50)
 
     // a blockchain node verifying a block containing a spending transaction
     val verifier = new ErgoLikeTestInterpreter
@@ -70,7 +70,7 @@ class DHTupleExampleSpecification extends SigmaTestingCommons {
     val carol = new ContextEnrichingTestProvingInterpreter
     val carolPubKey:ProveDlog = carol.dlogSecrets.head.publicImage
 
-    val outBox = ErgoBox(10, carolPubKey, 70, Nil,
+    val outBox = ErgoBox.create(10, carolPubKey, 70, Nil,
       Map(
         R4 -> g_y,
         R5 -> g_xy

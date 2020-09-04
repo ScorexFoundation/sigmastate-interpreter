@@ -58,8 +58,8 @@ class CostingSpecification extends SigmaTestingData {
       Map(ErgoBox.R4 -> ByteArrayConstant(Array[Byte](1, 2, 3)),
           ErgoBox.R5 -> IntConstant(3),
           ErgoBox.R6 -> AvlTreeConstant(avlTree)))
-  lazy val outBoxA = ErgoBox(10, pkA, 0)
-  lazy val outBoxB = ErgoBox(20, pkB, 0)
+  lazy val outBoxA = ErgoBox.create(10, pkA, 0)
+  lazy val outBoxB = ErgoBox.create(20, pkB, 0)
   lazy val tx = createTransaction(IndexedSeq(dataBox), IndexedSeq(outBoxA, outBoxB))
   lazy val context =
     new ErgoLikeContext(

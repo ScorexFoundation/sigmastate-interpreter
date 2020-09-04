@@ -107,7 +107,7 @@ class TrustlessLETS1 extends SigmaTestingCommons {
     val tokenBoxCreationHeight = 70
     val tokenAmount = 10      // LongConstant(10)
 
-    val tokenBoxOutput = ErgoBox(tokenAmount, tokenScript, tokenBoxCreationHeight)
+    val tokenBoxOutput = ErgoBox.create(tokenAmount, tokenScript, tokenBoxCreationHeight)
 
   }
 
@@ -209,7 +209,7 @@ class TrustlessLETS2 extends SigmaTestingCommons {
     val tokenBoxCreationHeight = 70
     val tokenAmount = 10      // LongConstant(10)
 
-    val tokenBoxOutput = ErgoBox(tokenAmount, tokenScript, tokenBoxCreationHeight)
+    val tokenBoxOutput = ErgoBox.create(tokenAmount, tokenScript, tokenBoxCreationHeight)
 
   }
 
@@ -323,7 +323,7 @@ class TrustlessLETS3 extends SigmaTestingCommons {
     val tokenBoxCreationHeight = 70
     val tokenAmount = 10      // LongConstant(10)
 
-    val tokenBoxOutput = ErgoBox(tokenAmount, tokenScript, tokenBoxCreationHeight)
+    val tokenBoxOutput = ErgoBox.create(tokenAmount, tokenScript, tokenBoxCreationHeight)
 
   }
 
@@ -430,7 +430,7 @@ class TrustlessLETS4 extends SigmaTestingCommons {
     val tokenBoxCreationHeight = 70
     val tokenAmount = 10      // LongConstant(10)
 
-    val tokenBoxOutput = ErgoBox(tokenAmount, tokenScript, tokenBoxCreationHeight)
+    val tokenBoxOutput = ErgoBox.create(tokenAmount, tokenScript, tokenBoxCreationHeight)
 
   }
 

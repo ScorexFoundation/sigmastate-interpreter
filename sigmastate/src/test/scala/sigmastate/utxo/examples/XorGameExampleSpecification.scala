@@ -107,7 +107,7 @@ class XorGameExampleSpecification extends SigmaTestingCommons {
     val halfGameCreationHeight = 70
     val playAmount = 10      // LongConstant(10)
 
-    val halfGameOutput = ErgoBox(playAmount, halfGameScript, halfGameCreationHeight)
+    val halfGameOutput = ErgoBox.create(playAmount, halfGameScript, halfGameCreationHeight)
 
     /////////////////////////////////////////////////////////
     //// above halfGameOutput is a Half-Game "box" created by Alice.
@@ -133,7 +133,7 @@ class XorGameExampleSpecification extends SigmaTestingCommons {
     //
     //   val abortHalfGameOutput = ErgoBox(playAmount, carolPubKey, abortHalfGameHeight) // gives error
 
-    val abortHalfGameOutput = ErgoBox(playAmount, carolPubKey, abortHalfGameHeight, Nil,
+    val abortHalfGameOutput = ErgoBox.create(playAmount, carolPubKey, abortHalfGameHeight, Nil,
       Map(
         R4 -> ByteConstant(0), // dummy data. Has to be given, even though not needed as per halfGameScript
         R5 -> SigmaPropConstant((new ContextEnrichingTestProvingInterpreter).dlogSecrets.head.publicImage), // dummy statement
@@ -169,7 +169,7 @@ class XorGameExampleSpecification extends SigmaTestingCommons {
     val bobDeadline = 120 // height after which it become's Bob's money
     val b:Byte = if (scala.util.Random.nextBoolean) 0x01 else 0x00
 
-    val fullGameOutput = ErgoBox(playAmount*2, fullGameScript, fullGameCreationHeight, Nil,
+    val fullGameOutput = ErgoBox.create(playAmount*2, fullGameScript, fullGameCreationHeight, Nil,
       Map(
         R4 -> ByteConstant(b),
         R5 -> SigmaPropConstant(bobPubKey),
@@ -225,7 +225,7 @@ class XorGameExampleSpecification extends SigmaTestingCommons {
 
     // assume winner is paying to Carol
     // note that playAmount*2 below is not checked. It could be anything.
-    val gameOverOutput = ErgoBox(playAmount*2, carolPubKey, gameOverHeight)
+    val gameOverOutput = ErgoBox.create(playAmount*2, carolPubKey, gameOverHeight)
 
     //normally this transaction would invalid (why?), but we're not checking it in this test
     val gameOverTx = createTransaction(gameOverOutput)
@@ -252,7 +252,7 @@ class XorGameExampleSpecification extends SigmaTestingCommons {
 
     // assume Bob is paying to Carol
     // note that playAmount*2 below is not checked. It could be anything.
-    val defaultWinOutput = ErgoBox(playAmount*2, carolPubKey, defaultWinHeight)
+    val defaultWinOutput = ErgoBox.create(playAmount*2, carolPubKey, defaultWinHeight)
 
     //normally this transaction would invalid (why?), but we're not checking it in this test
     val defaultWinTx = createTransaction(defaultWinOutput)
