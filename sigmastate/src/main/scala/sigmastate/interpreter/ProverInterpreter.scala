@@ -170,7 +170,6 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
       // else mark it "simulated"
       val isReal = hintsBag.realImages.contains(ul.proposition) || secrets.exists {
         case in: SigmaProtocolPrivateInput[_, _] => in.publicImage == ul.proposition
-        case _ => false
       }
       ul.withSimulated(!isReal)
     case t =>
@@ -488,7 +487,7 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
               su.challengeOpt.get)
           }
 
-        case None =>
+        case _ =>
           hintsBag.realProofs.find(_.position == su.position).map { proof =>
             val provenSchnorr = proof.uncheckedTree.asInstanceOf[UncheckedSchnorr]
             provenSchnorr.secondMessage

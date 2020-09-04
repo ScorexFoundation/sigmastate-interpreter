@@ -89,7 +89,7 @@ object TypeSerializer extends ByteBufferSerializer[SType] {
         serialize(t2, w)
     }
     case STuple(items) if items.length < 2 =>
-      sys.error(s"Invalid Tuple type with less than 2 items $items")
+      sys.error(s"Invalid Tuple type with less than 2 items $items") // TODO cover with tests
     case tup: STuple => tup.items.length match {
       case 3 =>
         // Triple of types

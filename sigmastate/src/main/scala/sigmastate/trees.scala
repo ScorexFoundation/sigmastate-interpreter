@@ -143,6 +143,7 @@ object CreateProveDlog extends ValueCompanion {
   override def opCode: OpCode = OpCodes.ProveDlogCode
 }
 
+// TODO refactor: remove not used class
 /** Construct a new authenticated dictionary with given parameters and tree root digest.*/
 case class CreateAvlTree(operationFlags: ByteValue,
     digest: Value[SByteArray],
@@ -241,8 +242,6 @@ object XorOf extends LogicalTransformerCompanion {
 
   def apply(children: Seq[Value[SBoolean.type]]): XorOf =
     XorOf(ConcreteCollection.fromSeq(children))
-
-  def apply(head: Value[SBoolean.type], tail: Value[SBoolean.type]*): XorOf = apply(head +: tail)
 }
 
 /**
@@ -611,6 +610,7 @@ object BitOp {
   }
 }
 
+// TODO HF: implement modular operations
 case class ModQ(input: Value[SBigInt.type])
   extends NotReadyValue[SBigInt.type] {
   override def companion = ModQ

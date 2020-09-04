@@ -129,10 +129,6 @@ object Sized extends SizedLowPriority {
   val SizeBoxBytesWithoutRefsMax = new CSizeColl(
     Colls.replicate(MaxBoxSize.value - SizeOfInputRefBytes, SizeByte))
 
-  private def sizeOfTokens(b: Box): Size[Coll[(Coll[Byte], Long)]] = {
-    new CSizeColl(Colls.replicate(b.tokens.length, SizeToken))
-  }
-
   implicit val boxIsSized: Sized[Box] = Sized.instance((b: Box) => {
     new EvalSizeBox(
       SizePropositionBytesMax,

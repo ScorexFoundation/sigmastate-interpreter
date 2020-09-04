@@ -1,13 +1,12 @@
 package org.ergoplatform.dsl
 
 import special.collection.Coll
-import sigmastate.serialization.OperationSerializer
 import sigmastate.eval.{CAvlTree, CostingSigmaDslBuilder}
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.hash.{Digest32, Blake2b256}
 import sigmastate.{AvlTreeData, AvlTreeFlags}
 import special.sigma.AvlTree
-import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Operation, Insert}
+import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert}
 import CostingSigmaDslBuilder.Colls
 
 object AvlTreeHelpers {
@@ -23,12 +22,6 @@ object AvlTreeHelpers {
     val digest = avlProver.digest
     val treeData = new AvlTreeData(digest, flags, 32, None)
     (CAvlTree(treeData), avlProver)
-  }
-
-  def serializeOperations(avlProver: BatchAVLProver[Digest32, Blake2b256.type], operations: Seq[Operation]): Coll[Byte] = {
-    val serializer = new OperationSerializer(avlProver.keyLength, avlProver.valueLengthOpt)
-    val opsBytes: Array[Byte] = serializer.serializeSeq(operations)
-    Colls.fromArray(opsBytes)
   }
 
   implicit class ADKeyArrayOps(arr: Array[ADKey]) {

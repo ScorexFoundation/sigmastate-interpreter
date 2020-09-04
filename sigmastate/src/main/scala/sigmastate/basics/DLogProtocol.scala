@@ -79,38 +79,6 @@ object DLogProtocol {
     override type SP = DLogSigmaProtocol
   }
 
-  class DLogInteractiveProver(override val publicInput: ProveDlog, override val privateInputOpt: Option[DLogProverInput])
-    extends InteractiveProver[DLogSigmaProtocol, ProveDlog, DLogProverInput] {
-
-    var rOpt: Option[BigInteger] = None
-
-    override def firstMessage: FirstDLogProverMessage = {
-      assert(privateInputOpt.isDefined, "Secret is not known")
-      assert(rOpt.isEmpty, "Already generated r")
-
-      val (r, fm) = DLogInteractiveProver.firstMessage()
-      rOpt = Some(r)
-      fm
-    }
-
-    override def secondMessage(challenge: Challenge): SecondDLogProverMessage = {
-      assert(privateInputOpt.isDefined, "Secret is not known")
-      assert(rOpt.isDefined)
-
-      val rnd = rOpt.get
-
-      val privateInput = privateInputOpt.get
-
-      val sm = DLogInteractiveProver.secondMessage(privateInput, rnd, challenge)
-      rOpt = None
-      sm
-    }
-
-    override def simulate(challenge: Challenge): (FirstDLogProverMessage, SecondDLogProverMessage) = {
-      assert(privateInputOpt.isEmpty, "Secret is known, simulation is probably wrong action")
-      DLogInteractiveProver.simulate(publicInput, challenge)
-    }
-  }
 
   object DLogInteractiveProver {
     import CryptoConstants.secureRandom

@@ -62,6 +62,7 @@ object DataJsonEncoder {
         case tup: STuple =>
           val tArr = tup.items.toArray
           if (tArr.length != 2) {
+            // TODO cover with tests
             throw new SerializerException("Tuples with length not equal to 2 are not supported")
           }
           val rtypeArr = tArr.map(x => Evaluation.stypeToRType(x))
@@ -173,6 +174,7 @@ object DataJsonEncoder {
       case t: STuple =>
         val tArr = t.items.toArray
         if (tArr.length != 2) {
+          // TODO cover with tests
           throw new SerializerException("Tuples with length not equal to 2 are not supported")
         }
         val collSource = mutable.ArrayBuilder.make[Any]()
@@ -223,7 +225,7 @@ object DataJsonEncoder {
     implicit val tItem = (tpe match {
       case tTup: STuple if tTup.items.length == 2 =>
         Evaluation.stypeToRType(tpe)
-      case _: STuple =>
+      case _: STuple => // TODO cover with tests
         throw new SerializerException("Tuples with length not equal to 2 are not supported")
       case _ =>
         Evaluation.stypeToRType(tpe)
@@ -258,12 +260,13 @@ object DataJsonEncoder {
     (data, tpe)
   }
 
-  def decode(json: Json): (SType#WrappedType) = {
+  def decode(json: Json): SType#WrappedType = {
     val (data, _) = decodeWithTpe(json)
     data
   }
 
-  def decodeAnyValue(json: Json): (AnyValue) = {
+  // TODO cover with tests
+  def decodeAnyValue(json: Json): AnyValue = {
     val tpe = SigmaParser.parseType(json.hcursor.downField("type").focus.get.asString.get)
     val value = json.hcursor.downField("value").focus.get
     val data = decodeData(value, tpe)

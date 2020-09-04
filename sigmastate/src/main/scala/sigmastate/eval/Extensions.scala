@@ -3,8 +3,8 @@ package sigmastate.eval
 import java.math.BigInteger
 
 import scalan.RType
-import sigmastate.SType
-import sigmastate.Values.Constant
+import sigmastate.{SCollection, SType, SCollectionType}
+import sigmastate.Values.{Constant, ConstantNode}
 import sigmastate.lang.DefaultSigmaBuilder
 import special.collection.Coll
 import special.sigma._
@@ -43,6 +43,15 @@ object Extensions {
       cfor(0)(_ < limit, _ + 1) { i =>
         f(coll(i))
       }
+    }
+
+    /** Helper type synonym. */
+    type ElemTpe = SType { type WrappedType = T}
+
+    /** Wraps the collection into ConstantNode using collection's element type. */
+    def toConstant: Constant[SCollection[ElemTpe]] = {
+      val elemTpe = Evaluation.rtypeToSType(coll.tItem).asInstanceOf[ElemTpe]
+      ConstantNode[SCollection[ElemTpe]](coll, SCollectionType(elemTpe))
     }
   }
 
