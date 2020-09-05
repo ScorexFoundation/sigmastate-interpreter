@@ -11,17 +11,17 @@ import sigmastate.Values.{Constant, SValue, ByteArrayConstant, IntConstant, Ergo
 import scalan.RType
 import scalan.util.Extensions._
 import org.ergoplatform.dsl.{SigmaContractSyntax, TestContractSpec}
-import org.scalatest.exceptions.TestFailedException
-import sigmastate.{SigmaOr, SSigmaProp, SType}
+import sigmastate.{SSigmaProp, SType, eval}
 import sigmastate.basics.DLogProtocol.{ProveDlog, DLogProverInput}
 import sigmastate.basics.{SigmaProtocol, SigmaProtocolPrivateInput, SigmaProtocolCommonInput}
-import sigmastate.eval.{IRContext, CompiletimeIRContext, Evaluation, SigmaDsl}
+import sigmastate.eval.{CompiletimeIRContext, Evaluation, CostingBox, SigmaDsl, CostingSigmaDslBuilder, IRContext, CostingDataContext}
+import sigmastate.eval.Extensions._
 import sigmastate.utils.Helpers._
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.helpers.{ErgoLikeContextTesting, SigmaPPrint}
-import sigmastate.interpreter.{ProverInterpreter, Interpreter}
+import sigmastate.interpreter.ProverInterpreter
 import sigmastate.serialization.ValueSerializer
-import sigmastate.utxo.{DeserializeRegister, DeserializeContext}
+import sigmastate.utxo.{DeserializeContext, DeserializeRegister}
 import special.collection.Coll
 
 import scala.math.Ordering
@@ -91,7 +91,7 @@ class SigmaDslTesting extends PropSpec
   class FeatureProvingInterpreter extends ErgoLikeInterpreter()(new CompiletimeIRContext) with ProverInterpreter {
     override type CTX = ErgoLikeContext
 
-    def decodeSecretInput(decimalStr: String) = DLogProverInput(BigInt(decimalStr).bigInteger)
+    def decodeSecretInput(decimalStr: String): DLogProverInput = DLogProverInput(BigInt(decimalStr).bigInteger)
 
     val sk1 = decodeSecretInput("416167686186183758173232992934554728075978573242452195968805863126437865059")
     val sk2 = decodeSecretInput("34648336872573478681093104997365775365807654884817677358848426648354905397359")
@@ -275,16 +275,44 @@ class SigmaDslTesting extends PropSpec
       val pkBobBytes = ValueSerializer.serialize(prover.pubKeys(1).toSigmaProp)
       val pkCarolBytes = ValueSerializer.serialize(prover.pubKeys(2).toSigmaProp)
 
-      val ergoCtx = ErgoLikeContextTesting.dummy(
-        createBox(0, compiledTree,
-          additionalRegisters = Map(
-            ErgoBox.R4 -> Constant[SType](expectedRes.asInstanceOf[SType#WrappedType], tpeB),
-            ErgoBox.R5 -> ByteArrayConstant(pkBobBytes)
-          )
-        )).withBindings(
-          1.toByte -> Constant[SType](input.asInstanceOf[SType#WrappedType], tpeA),
-          2.toByte -> ByteArrayConstant(pkCarolBytes)
-        ).asInstanceOf[ErgoLikeContext]
+      val ergoCtx = input match {
+//        case ctx: CostingDataContext =>
+//          // the context is passed as function argument (see func in the script)
+//          // Since Context is singleton, we should use this instance as the basis
+//          // for execution of verify instead of a new dummy context.
+//          val self = ctx.selfBox.asInstanceOf[CostingBox]
+//
+//          // We add ctx as it's own variable with id = 1
+//          val ctxVar = eval.Extensions.toAnyValue[special.sigma.Context](ctx)(special.sigma.ContextRType)
+//          val carolVar = eval.Extensions.toAnyValue[Coll[Byte]](pkCarolBytes.toColl)(RType[Coll[Byte]])
+//
+//          val newVars = if (ctx.vars.length < 3) {
+//            val currVars = ctx.vars.toArray
+//            val buf = new Array[special.sigma.AnyValue](3)
+//            Array.copy(currVars, 0, buf, 0, currVars.length)
+//            buf(1) = ctxVar
+//            buf(2) = carolVar
+//            CostingSigmaDslBuilder.Colls.fromArray(buf)
+//          } else {
+//            ctx.vars
+//              .updated(1, ctxVar)
+//              .updated(2, carolVar)
+//          }
+//
+//          ctx.copy(selfBox = self, vars = newVars).toErgoContext
+
+        case _ =>
+          ErgoLikeContextTesting.dummy(
+            createBox(0, compiledTree,
+              additionalRegisters = Map(
+                ErgoBox.R4 -> Constant[SType](expectedRes.asInstanceOf[SType#WrappedType], tpeB),
+                ErgoBox.R5 -> ByteArrayConstant(pkBobBytes)
+              )
+            )).withBindings(
+              1.toByte -> Constant[SType](input.asInstanceOf[SType#WrappedType], tpeA),
+              2.toByte -> ByteArrayConstant(pkCarolBytes)
+          ).asInstanceOf[ErgoLikeContext]
+      }
 
       val pr = prover.prove(compiledTree, ergoCtx, fakeMessage).getOrThrow
 
@@ -425,7 +453,7 @@ class SigmaDslTesting extends PropSpec
     forAll(table) { (x: A, expectedRes: Try[Expected[B]]) =>
       val funcRes = f.checkEquality(x, printTestCases)
 
-      // TODO HF: remove this `if` once newImpl is implemented
+      // TODO HF: remove this `match` once newImpl is implemented
       f.featureType match {
         case ExistingFeature =>
           (funcRes.map(_._1), expectedRes.map(_.value)) match {
