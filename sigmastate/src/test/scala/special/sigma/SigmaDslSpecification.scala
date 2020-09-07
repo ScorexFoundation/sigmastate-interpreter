@@ -2964,7 +2964,11 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
         )
       ),
       _minerPubKey = Helpers.decodeBytes("0227a58e9b2537103338c237c52c1213bf44bdb344fa07d9df8ab826cca26ca08f"),
-      vars = Coll[AnyValue](null, TestValue(Helpers.decodeBytes("00"), CollType(RType.ByteType)), TestValue(true, RType.BooleanType)),
+      vars = Colls
+        .replicate[AnyValue](10, null) // reserve 10 vars
+        .append(Coll[AnyValue](
+          TestValue(Helpers.decodeBytes("00"), CollType(RType.ByteType)),
+          TestValue(true, RType.BooleanType))),
       false
     )
     val ctx2 = ctx.copy(vars = Coll[AnyValue](null, null, null))
@@ -3019,26 +3023,44 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
         )),
       preGeneratedSamples = Some(samples))
 
-    test(samples, existingPropTest("preHeader", { (x: Context) => x.preHeader }))
+    // NOTE: testCases2 is not used below because PreHeader/Header cannot be put in
+    // registers and context vars
+    testCases(
+      Seq(ctx -> Success(ctx.preHeader)),
+      existingPropTest("preHeader", { (x: Context) => x.preHeader }),
+      preGeneratedSamples = Some(samples))
 
-    test(samples, existingPropTest("headers", { (x: Context) => x.headers }))
+    testCases(
+      Seq(ctx -> Success(ctx.headers)),
+      existingPropTest("headers", { (x: Context) => x.headers }),
+      preGeneratedSamples = Some(samples))
 
-    test(samples, existingFeature({ (x: Context) => x.OUTPUTS },
-      "{ (x: Context) => x.OUTPUTS }", FuncValue(Vector((1, SContext)), Outputs)))
+    // TODO: testCases2 doesn't work because of equality (check the reason)
+    testCases(
+      Seq(ctx -> Success(ctx.OUTPUTS)),
+      existingFeature(
+        { (x: Context) => x.OUTPUTS },
+        "{ (x: Context) => x.OUTPUTS }",
+        FuncValue(Vector((1, SContext)), Outputs)),
+      preGeneratedSamples = Some(samples))
 
+    // NOTE: testCases2 is not supported because SELF modified to pass input
     test(samples, existingFeature({ (x: Context) => x.INPUTS },
       "{ (x: Context) => x.INPUTS }", FuncValue(Vector((1, SContext)), Inputs)))
 
-    test(samples, existingFeature({ (x: Context) => x.HEIGHT },
-      "{ (x: Context) => x.HEIGHT }", FuncValue(Vector((1, SContext)), Height)))
-
     test(samples, existingFeature({ (x: Context) => x.SELF },
-      "{ (x: Context) => x.SELF }", FuncValue(Vector((1, SContext)), Self)))
+    "{ (x: Context) => x.SELF }", FuncValue(Vector((1, SContext)), Self)))
 
-    //    testCases2(
-    //      Seq((ctx, Success(Expected(Coll[Long](80946L), cost = 0)))),
-    testCases(
-      Seq((ctx, Success(Coll[Long](80946L)))),
+    testCases2(
+      Seq(ctx -> Success(Expected(ctx.HEIGHT, cost = 35885))),
+      existingFeature(
+        { (x: Context) => x.HEIGHT },
+        "{ (x: Context) => x.HEIGHT }",
+        FuncValue(Vector((1, SContext)), Height)),
+      preGeneratedSamples = Some(samples))
+
+    testCases2(
+      Seq((ctx, Success(Expected(Coll[Long](80946L), cost = 39152)))),
       existingFeature(
         { (x: Context) => x.INPUTS.map { (b: Box) => b.value } },
         "{ (x: Context) => x.INPUTS.map { (b: Box) => b.value } }",
@@ -3048,30 +3070,27 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
         )),
       preGeneratedSamples = Some(samples))
 
-//    testCases2(
-//      Seq((ctx, Success(Expected(Coll((80946L, 80946L)), cost = 0)))),
-    testCases(
-      Seq((ctx, Success(Coll((80946L, 80946L))))),
+    testCases2(
+      Seq((ctx, Success(Expected(Coll((80946L, 80946L)), cost = 39959)))),
       existingFeature(
         { (x: Context) => x.INPUTS.map { (b: Box) => (b.value, b.value) } },
         """{ (x: Context) =>
          |  x.INPUTS.map { (b: Box) => (b.value, b.value) }
          |}""".stripMargin,
         FuncValue(
-                   Vector((1, SContext)),
-                   MapCollection(
-                   Inputs,
-                   FuncValue(
-                   Vector((3, SBox)),
-                   BlockValue(
-                   Vector(ValDef(5, List(), ExtractAmount(ValUse(3, SBox)))),
-                   Tuple(Vector(ValUse(5, SLong), ValUse(5, SLong)))
-                   )
-                   )
-                   )
-                   )),
+          Vector((1, SContext)),
+          MapCollection(
+            Inputs,
+            FuncValue(
+              Vector((3, SBox)),
+              BlockValue(
+                Vector(ValDef(5, List(), ExtractAmount(ValUse(3, SBox)))),
+                Tuple(Vector(ValUse(5, SLong), ValUse(5, SLong)))
+              )
+            )
+          )
+        )),
       preGeneratedSamples = Some(samples))
-
 
     testCases2(
       Seq((ctx, Failure(new InvalidType("Cannot getReg[Int](4): invalid type of value Value(Coll(52)) at id=4")))),
@@ -3091,37 +3110,35 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
          |  }
          |}""".stripMargin,
         FuncValue(
-                   Vector((1, SContext)),
-                   MapCollection(
-                   Inputs,
-                   FuncValue(
-                   Vector((3, SBox)),
-                   Tuple(
-                   Vector(
-                   OptionGet(ExtractRegisterAs(ValUse(3, SBox), ErgoBox.R4, SOption(SInt))),
-                   LongToByteArray(ExtractAmount(ValUse(3, SBox)))
-                   )
-                   )
-                   )
-                   )
-                   )),
+          Vector((1, SContext)),
+          MapCollection(
+            Inputs,
+            FuncValue(
+              Vector((3, SBox)),
+              Tuple(
+                Vector(
+                  OptionGet(ExtractRegisterAs(ValUse(3, SBox), ErgoBox.R4, SOption(SInt))),
+                  LongToByteArray(ExtractAmount(ValUse(3, SBox)))
+                )
+              )
+            )
+          )
+        )),
       preGeneratedSamples = Some(samples))
 
-//    testCases2(
-//      Seq((ctx, Success(Expected(-1, cost = 0)))),
-    testCases(
-      Seq((ctx, Success(-1))),
+    testCases2(
+      Seq((ctx, Success(Expected(-1, cost = 36318)))),
       existingFeature({ (x: Context) => x.selfBoxIndex },
         "{ (x: Context) => x.selfBoxIndex }",
         FuncValue(
-                   Vector((1, SContext)),
-                   MethodCall.typed[Value[SInt.type]](
-                   ValUse(1, SContext),
-                   SContext.getMethodByName("selfBoxIndex"),
-                   Vector(),
-                   Map()
-                   )
-                   )),
+          Vector((1, SContext)),
+          MethodCall.typed[Value[SInt.type]](
+            ValUse(1, SContext),
+            SContext.getMethodByName("selfBoxIndex"),
+            Vector(),
+            Map()
+          )
+        )),
       preGeneratedSamples = Some(samples))
 
     // TODO HF: see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/603
@@ -3129,29 +3146,39 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
       ctx.selfBoxIndex shouldBe -1
     }
 
-    test(samples,
-      existingPropTest("LastBlockUtxoRootHash", { (x: Context) => x.LastBlockUtxoRootHash }))
+    testCases2(
+      Seq(ctx -> Success(Expected(ctx.LastBlockUtxoRootHash, cost = 35990))),
+      existingPropTest("LastBlockUtxoRootHash", { (x: Context) => x.LastBlockUtxoRootHash }),
+      preGeneratedSamples = Some(samples))
 
-    test(samples, existingFeature(
-      { (x: Context) => x.LastBlockUtxoRootHash.isUpdateAllowed },
-      "{ (x: Context) => x.LastBlockUtxoRootHash.isUpdateAllowed }",
-      FuncValue(
-        Vector((1, SContext)),
-        MethodCall.typed[Value[SBoolean.type]](
-          MethodCall.typed[Value[SAvlTree.type]](
-            ValUse(1, SContext),
-            SContext.getMethodByName("LastBlockUtxoRootHash"),
+    testCases2(
+      Seq(ctx -> Success(Expected(ctx.LastBlockUtxoRootHash.isUpdateAllowed, cost = 36288))),
+      existingFeature(
+        { (x: Context) => x.LastBlockUtxoRootHash.isUpdateAllowed },
+        "{ (x: Context) => x.LastBlockUtxoRootHash.isUpdateAllowed }",
+        FuncValue(
+          Vector((1, SContext)),
+          MethodCall.typed[Value[SBoolean.type]](
+            MethodCall.typed[Value[SAvlTree.type]](
+              ValUse(1, SContext),
+              SContext.getMethodByName("LastBlockUtxoRootHash"),
+              Vector(),
+              Map()
+            ),
+            SAvlTree.getMethodByName("isUpdateAllowed"),
             Vector(),
             Map()
-          ),
-          SAvlTree.getMethodByName("isUpdateAllowed"),
-          Vector(),
-          Map()
-        )
-      )))
+          )
+        )),
+      preGeneratedSamples = Some(samples))
 
-    test(samples, existingPropTest("minerPubKey", { (x: Context) => x.minerPubKey }))
+    testCases2(
+      Seq(ctx -> Success(Expected(ctx.minerPubKey, cost = 36047))),
+      existingPropTest("minerPubKey", { (x: Context) => x.minerPubKey }),
+      preGeneratedSamples = Some(samples))
 
+// TODO HF: implement support of Option[T] in DataSerializer
+//  this will allow passing optional values in registers and also in constants
 //    testCases2(
 //      Seq(
 //        ctx -> Success(Expected(Some(true), cost = 0)),
@@ -3164,25 +3191,23 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
         ctx2 -> Success(None),
         ctx3 -> Success(None)
       ),
-      existingFeature((x: Context) => x.getVar[Boolean](2),
-      "{ (x: Context) => getVar[Boolean](2) }",
-        FuncValue(Vector((1, SContext)), GetVar(2.toByte, SOption(SBoolean)))),
+      existingFeature((x: Context) => x.getVar[Boolean](11),
+      "{ (x: Context) => getVar[Boolean](11) }",
+        FuncValue(Vector((1, SContext)), GetVar(11.toByte, SOption(SBoolean)))),
       preGeneratedSamples = Some(samples))
 
     testCases2(
-      Seq((ctx, Failure(new InvalidType("Cannot getVar[Int](2): invalid type of value Value(true) at id=2")))),
-      existingFeature((x: Context) => x.getVar[Int](2).get,
-      "{ (x: Context) => getVar[Int](2).get }",
-        FuncValue(Vector((1, SContext)), OptionGet(GetVar(2.toByte, SOption(SInt))))),
+      Seq((ctx, Failure(new InvalidType("Cannot getVar[Int](11): invalid type of value Value(true) at id=2")))),
+      existingFeature((x: Context) => x.getVar[Int](11).get,
+      "{ (x: Context) => getVar[Int](11).get }",
+        FuncValue(Vector((1, SContext)), OptionGet(GetVar(11.toByte, SOption(SInt))))),
       preGeneratedSamples = Some(samples))
 
-//    testCases2(
-//      Seq((ctx, Success(Expected(true, cost = 0)))),
-    testCases(
-      Seq((ctx, Success(true))),
-      existingFeature((x: Context) => x.getVar[Boolean](2).get,
-      "{ (x: Context) => getVar[Boolean](2).get }",
-        FuncValue(Vector((1, SContext)), OptionGet(GetVar(2.toByte, SOption(SBoolean))))),
+    testCases2(
+      Seq((ctx, Success(Expected(true, cost = 36750)))),
+      existingFeature((x: Context) => x.getVar[Boolean](11).get,
+      "{ (x: Context) => getVar[Boolean](11).get }",
+        FuncValue(Vector((1, SContext)), OptionGet(GetVar(11.toByte, SOption(SBoolean))))),
       preGeneratedSamples = Some(samples))
   }
 
