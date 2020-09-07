@@ -4,13 +4,13 @@ import java.math.BigInteger
 import java.util
 
 import org.bouncycastle.math.ec.ECPoint
-import org.ergoplatform.{ErgoBox, SigmaConstants, ErgoLikeContext}
+import org.ergoplatform.{ErgoBox, SigmaConstants}
 import org.ergoplatform.validation.ValidationRules
 import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.authds.{ADDigest, ADKey, SerializedAdProof, ADValue}
 import sigmastate.SCollection.SByteArray
 import sigmastate.{TrivialProp, _}
-import sigmastate.Values.{Constant, EvaluatedValue, SValue, ConstantNode, Value, ErgoTree, SigmaBoolean}
+import sigmastate.Values.{Constant, EvaluatedValue, SValue, ConstantNode, ErgoTree, SigmaBoolean}
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.interpreter.{CryptoConstants, Interpreter}
 import special.collection.{Size, CSizeOption, SizeColl, CCostedBuilder, CollType, SizeOption, CostedBuilder, Coll}
@@ -739,7 +739,32 @@ case class CostingDataContext(
     }
   }
 
-  def toErgoContext: ErgoLikeContext = {
-    ???
+  /** Return a new context instance with variables collection updated.
+    * @param bindings  a new binding of the context variables with new values.
+    * @return a new instance (if `bindings` non-empty) with the specified bindings.
+    *         other existing bindings are copied to the new instance
+    */
+  def withUpdatedVars(bindings: (Int, AnyValue)*): CostingDataContext = {
+    if (bindings.isEmpty) return this
+
+    val ids = bindings.map(_._1).toArray
+    val values = bindings.map(_._2).toArray
+    val maxVarId = ids.max  // INV: ids is not empty
+    val requiredNewLength = maxVarId + 1
+
+    val newVars = if (vars.length < requiredNewLength) {
+      // grow vars collection
+      val currVars = vars.toArray
+      val buf = new Array[AnyValue](requiredNewLength)
+      Array.copy(currVars, 0, buf, 0, currVars.length)
+      cfor(0)(_ < ids.length, _ + 1) { i =>
+        buf(ids(i)) = values(i)
+      }
+      buf.toColl
+    } else {
+      vars.updateMany(ids.toColl, values.toColl)
+    }
+
+    this.copy(vars = newVars)
   }
 }

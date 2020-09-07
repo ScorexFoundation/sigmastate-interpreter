@@ -1,25 +1,30 @@
 package special.sigma
 
-import org.ergoplatform.{ErgoAddressEncoder, ErgoLikeContext, ErgoLikeInterpreter, ErgoBox, ErgoScriptPredef}
+import java.util
+
+import org.ergoplatform.{ErgoAddressEncoder, ErgoLikeTransaction, ErgoLikeContext, ErgoLikeInterpreter, Input, ErgoBox, DataInput, ErgoScriptPredef}
 import org.scalatest.prop.PropertyChecks
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.{PropSpec, Matchers}
 
 import scala.util.{Success, Failure, Try}
-import sigmastate.Values.{Constant, SValue, ByteArrayConstant, IntConstant, ErgoTree}
+import sigmastate.Values.{Constant, SValue, ConstantNode, ByteArrayConstant, IntConstant, ErgoTree}
 import scalan.RType
 import scalan.util.Extensions._
 import org.ergoplatform.dsl.{SigmaContractSyntax, TestContractSpec}
-import sigmastate.{SSigmaProp, SType, eval}
+import org.ergoplatform.validation.{ValidationRules, SigmaValidationSettings}
+import sigmastate.{eval, SSigmaProp, SType}
+import SType.AnyOps
+import org.ergoplatform.SigmaConstants.ScriptCostLimit
 import sigmastate.basics.DLogProtocol.{ProveDlog, DLogProverInput}
 import sigmastate.basics.{SigmaProtocol, SigmaProtocolPrivateInput, SigmaProtocolCommonInput}
-import sigmastate.eval.{CompiletimeIRContext, Evaluation, CostingBox, SigmaDsl, CostingSigmaDslBuilder, IRContext, CostingDataContext}
+import sigmastate.eval.{CompiletimeIRContext, Evaluation, CostingBox, SigmaDsl, IRContext, CostingDataContext}
 import sigmastate.eval.Extensions._
 import sigmastate.utils.Helpers._
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.helpers.{ErgoLikeContextTesting, SigmaPPrint}
-import sigmastate.interpreter.ProverInterpreter
+import sigmastate.interpreter.{ProverResult, ContextExtension, ProverInterpreter}
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo.{DeserializeContext, DeserializeRegister}
 import special.collection.Coll
@@ -232,6 +237,43 @@ class SigmaDslTesting extends PropSpec
       }
     }
 
+    /** Creates a new ErgoLikeContext using given [[CostingDataContext]] as template.
+      * Copies most of the data from ctx and the missing data is taken from the args.
+      * This is a helper method to be used in tests only.
+      */
+    def createErgoLikeContext(ctx: CostingDataContext,
+                              validationSettings: SigmaValidationSettings,
+                              costLimit: Long,
+                              initCost: Long
+                         ): ErgoLikeContext = {
+      val treeData = SigmaDsl.toAvlTreeData(ctx.lastBlockUtxoRootHash)
+      val dataBoxes = ctx.dataInputs.toArray.map(SigmaDsl.toErgoBox)
+      val boxesToSpend = ctx.inputs.toArray.map(SigmaDsl.toErgoBox)
+      val txInputs = boxesToSpend.map(b => Input(b.id, ProverResult.empty))
+      val txDataInputs = dataBoxes.map(b => DataInput(b.id))
+      val txOutputCandidates = ctx.outputs.toArray.map(SigmaDsl.toErgoBox)
+      val tx = new ErgoLikeTransaction(
+        txInputs, txDataInputs, txOutputCandidates.toIndexedSeq)
+      val selfIndex = boxesToSpend.indexWhere(b => util.Arrays.equals(b.id, ctx.selfBox.id.toArray))
+
+      val extension = ContextExtension(
+        values = ctx.vars.toArray.zipWithIndex.collect {
+          case (v, i) if v != null =>
+            val tpe = Evaluation.rtypeToSType(v.tVal)
+            i.toByte -> ConstantNode(v.value.asWrappedType, tpe)
+        }.toMap
+      )
+      new ErgoLikeContext(
+        treeData, ctx.headers, ctx.preHeader,
+        dataBoxes, boxesToSpend, tx, selfIndex,
+        extension, validationSettings, costLimit, initCost)
+    }
+
+    /** Executes the default feature verification wrapper script using:
+      * 1) the given input
+      * 2) the given expected intermediate result
+      * 3) the total expected execution cost of the verification
+      */
     def checkVerify(input: A, expectedRes: B, expectedCost: Int): Unit = {
       val tpeA = Evaluation.rtypeToSType(oldF.tA)
       val tpeB = Evaluation.rtypeToSType(oldF.tB)
@@ -274,44 +316,47 @@ class SigmaDslTesting extends PropSpec
 
       val pkBobBytes = ValueSerializer.serialize(prover.pubKeys(1).toSigmaProp)
       val pkCarolBytes = ValueSerializer.serialize(prover.pubKeys(2).toSigmaProp)
+      val newRegisters = Map(
+        ErgoBox.R4 -> Constant[SType](expectedRes.asInstanceOf[SType#WrappedType], tpeB),
+        ErgoBox.R5 -> ByteArrayConstant(pkBobBytes)
+      )
 
       val ergoCtx = input match {
-//        case ctx: CostingDataContext =>
-//          // the context is passed as function argument (see func in the script)
-//          // Since Context is singleton, we should use this instance as the basis
-//          // for execution of verify instead of a new dummy context.
-//          val self = ctx.selfBox.asInstanceOf[CostingBox]
-//
-//          // We add ctx as it's own variable with id = 1
-//          val ctxVar = eval.Extensions.toAnyValue[special.sigma.Context](ctx)(special.sigma.ContextRType)
-//          val carolVar = eval.Extensions.toAnyValue[Coll[Byte]](pkCarolBytes.toColl)(RType[Coll[Byte]])
-//
-//          val newVars = if (ctx.vars.length < 3) {
-//            val currVars = ctx.vars.toArray
-//            val buf = new Array[special.sigma.AnyValue](3)
-//            Array.copy(currVars, 0, buf, 0, currVars.length)
-//            buf(1) = ctxVar
-//            buf(2) = carolVar
-//            CostingSigmaDslBuilder.Colls.fromArray(buf)
-//          } else {
-//            ctx.vars
-//              .updated(1, ctxVar)
-//              .updated(2, carolVar)
-//          }
-//
-//          ctx.copy(selfBox = self, vars = newVars).toErgoContext
+        case ctx: CostingDataContext =>
+          // the context is passed as function argument (see func in the script)
+          // Since Context is singleton, we should use this instance as the basis
+          // for execution of verify instead of a new dummy context.
+          val self = ctx.selfBox.asInstanceOf[CostingBox]
+          val newSelf = self.copy(
+            ebox = self.ebox.withUpdatedRegisters(newRegisters)
+          )
+
+          // We add ctx as it's own variable with id = 1
+          val ctxVar = eval.Extensions.toAnyValue[special.sigma.Context](ctx)(special.sigma.ContextRType)
+          val carolVar = eval.Extensions.toAnyValue[Coll[Byte]](pkCarolBytes.toColl)(RType[Coll[Byte]])
+          val newCtx = ctx
+              .withUpdatedVars(1 -> ctxVar, 2 -> carolVar)
+              .copy(
+                selfBox = newSelf,
+                inputs = {
+                  val selfIndex = ctx.inputs.indexWhere(b => b.id == ctx.selfBox.id, 0)
+                  ctx.inputs.updated(selfIndex, newSelf)
+                })
+
+          createErgoLikeContext(
+            newCtx,
+            ValidationRules.currentSettings,
+            ScriptCostLimit.value,
+            initCost = 0L
+          )
 
         case _ =>
           ErgoLikeContextTesting.dummy(
-            createBox(0, compiledTree,
-              additionalRegisters = Map(
-                ErgoBox.R4 -> Constant[SType](expectedRes.asInstanceOf[SType#WrappedType], tpeB),
-                ErgoBox.R5 -> ByteArrayConstant(pkBobBytes)
-              )
-            )).withBindings(
+            createBox(0, compiledTree, additionalRegisters = newRegisters)
+          ).withBindings(
               1.toByte -> Constant[SType](input.asInstanceOf[SType#WrappedType], tpeA),
               2.toByte -> ByteArrayConstant(pkCarolBytes)
-          ).asInstanceOf[ErgoLikeContext]
+            ).asInstanceOf[ErgoLikeContext]
       }
 
       val pr = prover.prove(compiledTree, ergoCtx, fakeMessage).getOrThrow

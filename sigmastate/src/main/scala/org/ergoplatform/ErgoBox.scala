@@ -1,10 +1,10 @@
 package org.ergoplatform
 
 import com.google.common.primitives.Shorts
-import org.ergoplatform.ErgoBox.{NonMandatoryRegisterId, TokenId}
+import org.ergoplatform.ErgoBox.{TokenId, NonMandatoryRegisterId}
 import org.ergoplatform.settings.ErgoAlgos
 import scorex.crypto.authds.ADKey
-import scorex.crypto.hash.{Blake2b256, Digest32}
+import scorex.crypto.hash.{Digest32, Blake2b256}
 import scorex.util._
 import sigmastate.SCollection.SByteArray
 import sigmastate.SType.AnyOps
@@ -13,7 +13,7 @@ import sigmastate._
 import sigmastate.eval.Extensions._
 import sigmastate.eval._
 import sigmastate.serialization.SigmaSerializer
-import sigmastate.utils.{Helpers, SigmaByteReader, SigmaByteWriter}
+import sigmastate.utils.{SigmaByteReader, SigmaByteWriter, Helpers}
 import sigmastate.utxo.ExtractCreationInfo
 import special.collection._
 
@@ -77,6 +77,13 @@ case class ErgoBox(
     */
   lazy val bytes: Array[Byte] = ErgoBox.sigmaSerializer.toBytes(this)
 
+  /** Creates a new box by updating some of the additional registers with the given new bindings.
+    * @param newBindings a map of the registers to be updated with new values
+    */
+  def withUpdatedRegisters(newBindings: AdditionalRegisters): ErgoBox = {
+    this.copy(additionalRegisters = additionalRegisters ++ newBindings)
+  }
+
   override def equals(arg: Any): Boolean = arg match {
     case x: ErgoBox => java.util.Arrays.equals(id, x.id)
     case _ => false
@@ -126,6 +133,8 @@ object ErgoBox {
 
   abstract class MandatoryRegisterId(override val number: Byte, val purpose: String) extends RegisterId
   abstract class NonMandatoryRegisterId(override val number: Byte) extends RegisterId
+
+  type AdditionalRegisters = Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]]
 
   object R0 extends MandatoryRegisterId(0, "Monetary value, in Ergo tokens")
   object R1 extends MandatoryRegisterId(1, "Guarding script")
