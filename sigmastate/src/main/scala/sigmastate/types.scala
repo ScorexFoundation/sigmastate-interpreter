@@ -126,6 +126,9 @@ object SType {
   /** A mapping of object types supporting MethodCall operations. For each serialized typeId this map contains
     * a companion object which can be used to access the list of corresponding methods.
     * NOTE: in the current implementation only monomorphic methods are supported (without type parameters)*/
+  // TODO HF (h4): should contain all numeric types (including also SNumericType)
+  //  to support method calls like 10.toByte which encoded as MethodCall with typeId = 4, methodId = 1
+  //  see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/667
   val types: Map[Byte, STypeCompanion] = Seq(
     SBoolean, SNumericType, SString, STuple, SGroupElement, SSigmaProp, SContext, SGlobal, SHeader, SPreHeader,
     SAvlTree, SBox, SOption, SCollection, SBigInt
@@ -439,6 +442,8 @@ trait SNumericType extends SProduct {
 }
 object SNumericType extends STypeCompanion {
   final val allNumericTypes = Array(SByte, SShort, SInt, SLong, SBigInt)
+  // TODO HF (4h): this typeId is now shadowed by SGlobal.typeId
+  //  see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/667
   def typeId: TypeCode = 106: Byte
   val tNum = STypeVar("TNum")
 
@@ -1047,7 +1052,7 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
     SFunc(IndexedSeq(ThisType, tIV, SInt), SInt, Seq(paramIV)), 27)
       .withIRInfo(MethodCallIrBuilder).withInfo(MethodCall, "")
 
-  // TODO HF: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
+  // TODO HF (1h): related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
   lazy val FindMethod = SMethod(this, "find",
     SFunc(IndexedSeq(ThisType, tPredicate), SOption(tIV), Seq(paramIV)), 28)
       .withIRInfo(MethodCallIrBuilder).withInfo(MethodCall, "")
@@ -1086,7 +1091,7 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
     FilterMethod,
     AppendMethod,
     ApplyMethod,
-    /* TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
+    /* TODO HF (1h): https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
     BitShiftLeftMethod,
     BitShiftRightMethod,
     BitShiftRightZeroedMethod,
@@ -1096,19 +1101,19 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
     PatchMethod,
     UpdatedMethod,
     UpdateManyMethod,
-    /*TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
+    /*TODO HF (1h): https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
     UnionSetsMethod,
     DiffMethod,
     IntersectMethod,
     PrefixLengthMethod,
     */
     IndexOfMethod,
-    /* TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
+    /* TODO HF (1h): https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
     LastIndexOfMethod,
     FindMethod,
     */
     ZipMethod
-    /* TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
+    /* TODO HF (1h): https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
     DistinctMethod,
     StartsWithMethod,
     EndsWithMethod,

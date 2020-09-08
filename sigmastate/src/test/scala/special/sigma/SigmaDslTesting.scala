@@ -408,7 +408,7 @@ class SigmaDslTesting extends PropSpec
       (scalaFunc: A => B, script: String, expectedExpr: SValue = null)
       (implicit IR: IRContext): FeatureTest[A, B] = {
     val oldImpl = () => func[A, B](script)
-    val newImpl = oldImpl // TODO HF: use actual new implementation here
+    val newImpl = oldImpl // TODO HF (16h): use actual new implementation here
     FeatureTest(ExistingFeature, script, scalaFunc, Option(expectedExpr), oldImpl, newImpl)
   }
 
@@ -425,7 +425,7 @@ class SigmaDslTesting extends PropSpec
       (scalaFunc: A => B, script: String, expectedExpr: SValue = null)
       (implicit IR: IRContext): FeatureTest[A, B] = {
     val oldImpl = () => func[A, B](script)
-    val newImpl = oldImpl // TODO HF: use actual new implementation here
+    val newImpl = oldImpl // TODO HF (16h): use actual new implementation here
     FeatureTest(AddedFeature, script, scalaFunc, Option(expectedExpr), oldImpl, newImpl)
   }
 
@@ -471,7 +471,7 @@ class SigmaDslTesting extends PropSpec
     forAll(table) { (x: A, expectedRes: Try[B]) =>
       val res = f.checkEquality(x, printTestCases).map(_._1)
 
-      // TODO HF: remove this `if` once newImpl is implemented
+      // TODO HF (4h): remove this `if` once newImpl is implemented
       f.featureType match {
         case ExistingFeature =>
           checkResult(res, expectedRes, failOnTestVectors)
@@ -505,7 +505,7 @@ class SigmaDslTesting extends PropSpec
       val funcRes = f.checkEquality(x, printTestCases)
 
       val expectedResValue = expectedRes.map(_.value)
-      // TODO HF: remove this `match` once newImpl is implemented
+      // TODO HF (4h): remove this `match` once newImpl is implemented
       f.featureType match {
         case ExistingFeature =>
           checkResult(funcRes.map(_._1), expectedResValue, failOnTestVectors)

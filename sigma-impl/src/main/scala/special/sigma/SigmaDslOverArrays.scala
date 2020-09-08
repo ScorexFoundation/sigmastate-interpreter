@@ -40,7 +40,7 @@ class TestSigmaDslBuilder extends SigmaDslBuilder {
 
   @NeverInline
   override def xorOf(conditions: Coll[Boolean]): Boolean = {
-    // TODO HF: see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/640
+    // TODO HF (2h): see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/640
     conditions.toArray.distinct.length == 2
   }
 
