@@ -597,7 +597,7 @@ class SigmaDslTesting extends PropSpec
 
   /** Helper implementation for ordering samples. */
   class CollOrdering[T: Ordering] extends Ordering[Coll[T]] {
-    implicit val O: Ordering[Iterable[T]] = implicitly[Ordering[Iterable[T]]]
+    val O = Ordering[Iterable[T]]
 
     /** Compares this `x: Coll` with `y: Coll` using Ordering for underlying Array.
       * @return a negative integer, zero, or a positive integer as the
