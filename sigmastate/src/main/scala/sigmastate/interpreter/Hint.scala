@@ -33,9 +33,6 @@ trait Hint {
     *
     *  Please note that "0" prefix is for a crypto tree. There are several kinds of trees during evaluation.
     *  Initial mixed tree (ergoTree) would have another prefix.
-    *
-    *
-    *
     */
   val position: String
 }

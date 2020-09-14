@@ -21,7 +21,7 @@ import scala.collection.mutable.ArrayBuffer
   * Basic trait for inner nodes of crypto-trees, so AND/OR/THRESHOLD sigma-protocol connectives
   */
 trait SigmaConjecture extends SigmaBoolean {
-  val children: Seq[SigmaBoolean]
+  def children: Seq[SigmaBoolean]
 }
 
 /**

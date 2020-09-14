@@ -24,11 +24,11 @@ trait ProverUtils extends Interpreter {
   /**
     * A method which is is generating commitments for all the public keys provided.
     *
-    * Currently only ProveDlog and ProveDiffieHellman are supported.
+    * Currently only keys in form of ProveDlog and ProveDiffieHellman are supported, not more complex subtrees.
     *
     * @param sigmaTree - crypto-tree
-    * @param generateFor - public keys
-    * @return
+    * @param generateFor - public keys for which commitments should be generated
+    * @return generated commitments (private, containing secret randomness, and public, containing only commitments)
     */
   def generateCommitmentsFor(sigmaTree: SigmaBoolean,
                              generateFor: Seq[SigmaBoolean]): HintsBag = {

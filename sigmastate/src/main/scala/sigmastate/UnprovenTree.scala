@@ -34,7 +34,8 @@ trait ProofTreeConjecture extends ProofTree {
 }
 
 /**
-  * A node of a sigma-tree used by the prover
+  * A node of a sigma-tree used by the prover. See ProverInterpreter comments and the
+  * ErgoScript white-paper https://ergoplatform.org/docs/ErgoScript.pdf , Appendix A, for details
   */
 sealed trait UnprovenTree extends ProofTree {
 
@@ -102,6 +103,10 @@ case class COrUnproven(override val proposition: COR,
   override def withPosition(updatedPosition: String): UnprovenTree = this.copy(position = updatedPosition)
 }
 
+/**
+  * Unproven threshold k-out-n conjecture. k secrets will be proven, (n-k) simulated.
+  * For details on challenge and polynomial used in this case, see [CramerDamgardSchoenmakers94].
+  */
 case class CThresholdUnproven(override val proposition: CTHRESHOLD,
                        override val challengeOpt: Option[Challenge] = None,
                        override val simulated: Boolean,
