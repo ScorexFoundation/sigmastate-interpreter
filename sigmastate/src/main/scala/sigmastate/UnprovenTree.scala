@@ -8,7 +8,6 @@ import sigmastate.basics.DLogProtocol.{FirstDLogProverMessage, ProveDlog}
 import sigmastate.basics.VerifierMessage.Challenge
 import sigmastate.Values.{ErgoTree, SigmaBoolean, SigmaPropConstant}
 import sigmastate.basics.{FirstDiffieHellmanTupleProverMessage, FirstProverMessage, ProveDHTuple}
-import sigmastate.interpreter.Hint
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 
 import scala.language.existentials
@@ -33,6 +32,28 @@ trait ProofTreeConjecture extends ProofTree {
   val children: Seq[ProofTree]
 }
 
+/**
+  * Data type which encodes position of a node in a tree.
+  *
+  * Position is encoded like following (the example provided is for CTHRESHOLD(2, Seq(pk1, pk2, pk3 && pk4)) :
+  *
+  *            0
+  *          / | \
+  *         /  |  \
+  *       0-0 0-1 0-2
+  *               /|
+  *              / |
+  *             /  |
+  *            /   |
+  *          0-2-0 0-2-1
+  *
+  * So a hint associated with pk1 has a position "0-0", pk4 - "0-2-1" .
+  *
+  * Please note that "0" prefix is for a crypto tree. There are several kinds of trees during evaluation.
+  * Initial mixed tree (ergoTree) would have another prefix.
+  *
+  * @param positions - positions from root (inclusive) in top-down order
+  */
 case class NodePosition(positions: Seq[Int]) {
 
   def child(childIdx: Int): NodePosition = NodePosition(positions :+ childIdx)
@@ -59,7 +80,7 @@ object NodePosition {
 sealed trait UnprovenTree extends ProofTree {
 
   /**
-    * Positon of the node in the tree, see comments for `position` field in
+    * Position of the node in the tree, see comments for `position` field in
     * `sigmastate.interpreter.Hint`
     */
   val position: NodePosition

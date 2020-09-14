@@ -35,6 +35,12 @@ class ProverSpecification extends SigmaTestingCommons {
 
     // g^r == a
     SecP256K1.exponentiate(SecP256K1.generator, r) shouldBe a.ecData
+
+    val h2 = prover.generateCommitmentsFor(pk3, Seq(pk))
+    h2.hints.size shouldBe 2
+
+    h2.realCommitments.head.position shouldBe NodePosition(Seq(0,0))
+    h2.ownCommitments.head.position shouldBe NodePosition(Seq(0,0))
   }
 
 }

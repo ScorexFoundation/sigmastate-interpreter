@@ -15,24 +15,8 @@ import sigmastate.basics.VerifierMessage.Challenge
 trait Hint {
 
   /**
-    * A hint is related to a subtree (or a leaf) of a tree.
-    *
-    * Position is encoded like (the example below is for CTHRESHOLD(2, Seq(pk1, pk2, pk3 && pk4)) :
-    *
-    *           0
-    *         / | \
-    *        /  |  \
-    *      0-0 0-1 0-2
-    *              /|
-    *             / |
-    *            /  |
-    *           /   |
-    *         0-2-0 0-2-1
-    *
-    *  So a hint associated with pk1 has a position "0-0", pk4 - "0-2-1" .
-    *
-    *  Please note that "0" prefix is for a crypto tree. There are several kinds of trees during evaluation.
-    *  Initial mixed tree (ergoTree) would have another prefix.
+    * A hint is related to a subtree (or a leaf) of a tree. This field encodes a position in the tree.
+    * See `NodePosition` ScalaDoc for details.
     */
   val position: NodePosition
 }
