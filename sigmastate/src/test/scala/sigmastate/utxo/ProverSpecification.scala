@@ -1,6 +1,6 @@
 package sigmastate.utxo
 
-import sigmastate.{CAND, NodePosition}
+import sigmastate.{CAND, CAndUnproven, NodePosition, UnprovenSchnorr}
 import sigmastate.Values.SigmaBoolean
 import sigmastate.basics.DLogProtocol.FirstDLogProverMessage
 import sigmastate.basics.SecP256K1
@@ -41,6 +41,23 @@ class ProverSpecification extends SigmaTestingCommons {
 
     h2.realCommitments.head.position shouldBe NodePosition(Seq(0,0))
     h2.ownCommitments.head.position shouldBe NodePosition(Seq(0,0))
+  }
+
+  property("setPositions") {
+    val prover = new ErgoLikeTestProvingInterpreter
+    val pk0 = prover.dlogSecrets(0).publicImage
+    val pk1 = prover.dlogSecrets(1).publicImage
+
+    val parentPos = NodePosition(Seq(0,0))
+    val child0 = UnprovenSchnorr(pk0, None, None, None, false, NodePosition(Seq(1)))
+    val child1 = UnprovenSchnorr(pk1, None, None, None, false, NodePosition(Seq(0)))
+
+    val c0 = CAndUnproven(CAND(Seq(pk0, pk1)), None, false, Seq(child0, child1), parentPos)
+    val c1 = prover.setPositions(c0)
+
+    c1.children.head.asInstanceOf[UnprovenSchnorr].position shouldBe NodePosition(Seq(0, 0, 0))
+
+    c1.children(1).asInstanceOf[UnprovenSchnorr].position shouldBe NodePosition(Seq(0, 0, 1))
   }
 
 }
