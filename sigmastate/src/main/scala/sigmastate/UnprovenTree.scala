@@ -33,6 +33,25 @@ trait ProofTreeConjecture extends ProofTree {
   val children: Seq[ProofTree]
 }
 
+case class NodePosition(positions: Seq[Int]) {
+
+  def child(childIdx: Int): NodePosition = NodePosition(positions :+ childIdx)
+
+  override def toString: String = positions.mkString("-")
+}
+
+object NodePosition {
+  /**
+    * Prefix to encode node positions in a crypto tree.
+    */
+  val CryptoTreePrefix = NodePosition(Seq(0))
+
+  /**
+    * Prefix to encode node positions in an ErgoTree instance.
+    */
+  val ErgoTreePrefix = NodePosition(Seq(1))
+}
+
 /**
   * A node of a sigma-tree used by the prover. See ProverInterpreter comments and the
   * ErgoScript white-paper https://ergoplatform.org/docs/ErgoScript.pdf , Appendix A, for details
@@ -43,7 +62,7 @@ sealed trait UnprovenTree extends ProofTree {
     * Positon of the node in the tree, see comments for `position` field in
     * `sigmastate.interpreter.Hint`
     */
-  val position: String
+  val position: NodePosition
 
   /**
     * Node's sigma-protocol statement to be proven.
@@ -66,7 +85,7 @@ sealed trait UnprovenTree extends ProofTree {
 
   def withSimulated(newSimulated: Boolean): UnprovenTree
 
-  def withPosition(updatedPosition: String): UnprovenTree
+  def withPosition(updatedPosition: NodePosition): UnprovenTree
 }
 
 sealed trait UnprovenLeaf extends UnprovenTree with ProofTreeLeaf
@@ -77,7 +96,7 @@ case class CAndUnproven(override val proposition: CAND,
                         override val challengeOpt: Option[Challenge] = None,
                         override val simulated: Boolean,
                         children: Seq[ProofTree],
-                        override val position: String = Hint.CryptoTreePrefix) extends UnprovenConjecture {
+                        override val position: NodePosition = NodePosition.CryptoTreePrefix) extends UnprovenConjecture {
 
   override val conjectureType = ConjectureType.AndConjecture
 
@@ -85,14 +104,14 @@ case class CAndUnproven(override val proposition: CAND,
 
   override def withSimulated(newSimulated: Boolean) = this.copy(simulated = newSimulated)
 
-  override def withPosition(updatedPosition: String): UnprovenTree = this.copy(position = updatedPosition)
+  override def withPosition(updatedPosition: NodePosition): UnprovenTree = this.copy(position = updatedPosition)
 }
 
 case class COrUnproven(override val proposition: COR,
                        override val challengeOpt: Option[Challenge] = None,
                        override val simulated: Boolean,
                        children: Seq[ProofTree],
-                       override val position: String = Hint.CryptoTreePrefix) extends UnprovenConjecture {
+                       override val position: NodePosition = NodePosition.CryptoTreePrefix) extends UnprovenConjecture {
 
   override val conjectureType = ConjectureType.OrConjecture
 
@@ -100,7 +119,7 @@ case class COrUnproven(override val proposition: COR,
 
   override def withSimulated(newSimulated: Boolean) = this.copy(simulated = newSimulated)
 
-  override def withPosition(updatedPosition: String): UnprovenTree = this.copy(position = updatedPosition)
+  override def withPosition(updatedPosition: NodePosition): UnprovenTree = this.copy(position = updatedPosition)
 }
 
 /**
@@ -113,7 +132,7 @@ case class CThresholdUnproven(override val proposition: CTHRESHOLD,
                        k: Integer,
                        children: Seq[ProofTree],
                        polynomialOpt: Option[GF2_192_Poly],
-                       override val position: String = Hint.CryptoTreePrefix) extends UnprovenConjecture {
+                       override val position: NodePosition = NodePosition.CryptoTreePrefix) extends UnprovenConjecture {
 
   require(k >= 0 && k <= children.length, "Wrong k value")
   require(children.size <= 255) // Our polynomial arithmetic can take only byte inputs
@@ -124,7 +143,7 @@ case class CThresholdUnproven(override val proposition: CTHRESHOLD,
 
   override def withSimulated(newSimulated: Boolean) = this.copy(simulated = newSimulated)
 
-  override def withPosition(updatedPosition: String) = this.copy(position = updatedPosition)
+  override def withPosition(updatedPosition: NodePosition) = this.copy(position = updatedPosition)
 
   def withPolynomial(newPolynomial: GF2_192_Poly) = this.copy(polynomialOpt = Some(newPolynomial))
 }
@@ -135,13 +154,13 @@ case class UnprovenSchnorr(override val proposition: ProveDlog,
                            randomnessOpt: Option[BigInteger],
                            override val challengeOpt: Option[Challenge] = None,
                            override val simulated: Boolean,
-                           override val position: String = "0") extends UnprovenLeaf {
+                           override val position: NodePosition = NodePosition.CryptoTreePrefix) extends UnprovenLeaf {
 
   override def withChallenge(challenge: Challenge) = this.copy(challengeOpt = Some(challenge))
 
   override def withSimulated(newSimulated: Boolean) = this.copy(simulated = newSimulated)
 
-  override def withPosition(updatedPosition: String) = this.copy(position = updatedPosition)
+  override def withPosition(updatedPosition: NodePosition) = this.copy(position = updatedPosition)
 }
 
 case class UnprovenDiffieHellmanTuple(override val proposition: ProveDHTuple,
@@ -149,12 +168,12 @@ case class UnprovenDiffieHellmanTuple(override val proposition: ProveDHTuple,
                                       randomnessOpt: Option[BigInteger],
                                       override val challengeOpt: Option[Challenge] = None,
                                       override val simulated: Boolean,
-                                      override val position: String = "0") extends UnprovenLeaf {
+                                      override val position: NodePosition = NodePosition.CryptoTreePrefix) extends UnprovenLeaf {
   override def withChallenge(challenge: Challenge) = this.copy(challengeOpt = Some(challenge))
 
   override def withSimulated(newSimulated: Boolean) = this.copy(simulated = newSimulated)
 
-  override def withPosition(updatedPosition: String) = this.copy(position = updatedPosition)
+  override def withPosition(updatedPosition: NodePosition) = this.copy(position = updatedPosition)
 }
 
 

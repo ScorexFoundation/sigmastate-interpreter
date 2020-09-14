@@ -1,6 +1,6 @@
 package sigmastate.interpreter
 
-import sigmastate.{ProofTree, SigSerializer, SigmaConjecture, SigmaProofOfKnowledgeLeaf, UncheckedConjecture, UncheckedLeaf, UncheckedSigmaTree}
+import sigmastate.{NodePosition, ProofTree, SigSerializer, SigmaConjecture, SigmaProofOfKnowledgeLeaf, UncheckedConjecture, UncheckedLeaf, UncheckedSigmaTree}
 import sigmastate.Values.{ErgoTree, SigmaBoolean}
 import sigmastate.basics.DLogProtocol.{DLogInteractiveProver, ProveDlog}
 import sigmastate.basics.{DiffieHellmanTupleInteractiveProver, ProveDHTuple}
@@ -35,11 +35,11 @@ trait ProverUtils extends Interpreter {
 
     def traverseNode(sb: SigmaBoolean,
                      bag: HintsBag,
-                     position: String): HintsBag = {
+                     position: NodePosition): HintsBag = {
       sb match {
         case sc: SigmaConjecture =>
           sc.children.zipWithIndex.foldLeft(bag) { case (b, (child, idx)) =>
-            traverseNode(child, b, position + "-" + idx)
+            traverseNode(child, b, position.child(idx))
           }
         case leaf: SigmaProofOfKnowledgeLeaf[_, _] =>
           if (generateFor.contains(leaf)) {
@@ -58,7 +58,7 @@ trait ProverUtils extends Interpreter {
       }
     }
 
-    traverseNode(sigmaTree, HintsBag.empty, position = Hint.CryptoTreePrefix)
+    traverseNode(sigmaTree, HintsBag.empty, position = NodePosition.CryptoTreePrefix)
   }
 
   /**
@@ -89,11 +89,11 @@ trait ProverUtils extends Interpreter {
                      realPropositions: Seq[SigmaBoolean],
                      simulatedPropositions: Seq[SigmaBoolean],
                      hintsBag: HintsBag,
-                     position: String): HintsBag = {
+                     position: NodePosition): HintsBag = {
       tree match {
         case inner: UncheckedConjecture =>
           inner.children.zipWithIndex.foldLeft(hintsBag) { case (hb, (c, idx)) =>
-            traverseNode(c, realPropositions, simulatedPropositions, hb, position + "-" + idx)
+            traverseNode(c, realPropositions, simulatedPropositions, hb, position.child(idx))
           }
         case leaf: UncheckedLeaf[_] =>
           val realFound = realPropositions.contains(leaf.proposition)
@@ -115,7 +115,7 @@ trait ProverUtils extends Interpreter {
       }
     }
 
-    traverseNode(proofTree, realSecretsToExtract, simulatedSecretsToExtract, HintsBag.empty, Hint.CryptoTreePrefix)
+    traverseNode(proofTree, realSecretsToExtract, simulatedSecretsToExtract, HintsBag.empty, NodePosition.CryptoTreePrefix)
   }
 
 }
