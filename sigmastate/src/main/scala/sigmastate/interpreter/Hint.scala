@@ -2,7 +2,7 @@ package sigmastate.interpreter
 
 import java.math.BigInteger
 
-import sigmastate.UncheckedTree
+import sigmastate.{NodePosition, UncheckedTree}
 import sigmastate.Values.SigmaBoolean
 import sigmastate.basics.FirstProverMessage
 import sigmastate.basics.VerifierMessage.Challenge
@@ -15,41 +15,10 @@ import sigmastate.basics.VerifierMessage.Challenge
 trait Hint {
 
   /**
-    * A hint is related to a subtree (or a leaf) of a tree.
-    *
-    * Position is encoded like (the example below is for CTHRESHOLD(2, Seq(pk1, pk2, pk3 && pk4)) :
-    *
-    *           0
-    *         / | \
-    *        /  |  \
-    *      0-0 0-1 0-2
-    *              /|
-    *             / |
-    *            /  |
-    *           /   |
-    *         0-2-0 0-2-1
-    *
-    *  So a hint associated with pk1 has a position "0-0", pk4 - "0-2-1" .
-    *
-    *  Please note that "0" prefix is for a crypto tree. There are several kinds of trees during evaluation.
-    *  Initial mixed tree (ergoTree) would have another prefix.
-    *
-    *
-    *
+    * A hint is related to a subtree (or a leaf) of a tree. This field encodes a position in the tree.
+    * See `NodePosition` ScalaDoc for details.
     */
-  val position: String
-}
-
-object Hint {
-  /**
-    * Prefix to encode node positions in a crypto tree.
-    */
-  val CryptoTreePrefix = "0"
-
-  /**
-    * Prefix to encode node positions in an ErgoTree instance.
-    */
-  val ErgoTreePrefix = "1"
+  val position: NodePosition
 }
 
 /**
@@ -80,7 +49,7 @@ abstract class SecretProven extends Hint {
 case class RealSecretProof(image: SigmaBoolean,
                            challenge: Challenge,
                            uncheckedTree: UncheckedTree,
-                           override val position: String) extends SecretProven
+                           override val position: NodePosition) extends SecretProven
 
 /**
   * A hint which contains a proof-of-knowledge for a secret associated with its public image "image",
@@ -89,7 +58,7 @@ case class RealSecretProof(image: SigmaBoolean,
 case class SimulatedSecretProof(image: SigmaBoolean,
                                 challenge: Challenge,
                                 uncheckedTree: UncheckedTree,
-                                override val position: String) extends SecretProven
+                                override val position: NodePosition) extends SecretProven
 
 
 /**
@@ -112,7 +81,7 @@ abstract class CommitmentHint extends Hint {
 case class OwnCommitment(override val image: SigmaBoolean,
                          secretRandomness: BigInteger,
                          commitment: FirstProverMessage,
-                         override val position: String) extends CommitmentHint
+                         override val position: NodePosition) extends CommitmentHint
 
 /**
   * A hint which contains a commitment to randomness associated with a public image of a secret.
@@ -122,7 +91,7 @@ case class OwnCommitment(override val image: SigmaBoolean,
   */
 case class RealCommitment(override val image: SigmaBoolean,
                           commitment: FirstProverMessage,
-                          override val position: String) extends CommitmentHint
+                          override val position: NodePosition) extends CommitmentHint
 
 /**
   * A hint which contains a commitment to randomness associated with a public image of a secret.
@@ -132,7 +101,7 @@ case class RealCommitment(override val image: SigmaBoolean,
   */
 case class SimulatedCommitment(override val image: SigmaBoolean,
                                commitment: FirstProverMessage,
-                               override val position: String) extends CommitmentHint
+                               override val position: NodePosition) extends CommitmentHint
 
 
 /**

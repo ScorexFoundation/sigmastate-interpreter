@@ -1,5 +1,6 @@
 package sigmastate.helpers
 
+import sigmastate.UnprovenConjecture
 import sigmastate.basics.DLogProtocol.DLogProverInput
 import sigmastate.basics.{DiffieHellmanTupleProverInput, SigmaProtocolPrivateInput}
 import sigmastate.eval.IRContext
@@ -20,4 +21,6 @@ class ErgoLikeTestProvingInterpreter(implicit override val IR: IRContext)
   lazy val dhSecrets: Seq[DiffieHellmanTupleProverInput] =
     secrets.filter(_.isInstanceOf[DiffieHellmanTupleProverInput]).asInstanceOf[Seq[DiffieHellmanTupleProverInput]]
 
+  // expose for testing
+  override def setPositions(uc: UnprovenConjecture): UnprovenConjecture = super.setPositions(uc)
 }

@@ -178,9 +178,9 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
   /**
     * Set positions for children of a unproven inner node (conjecture, so AND/OR/THRESHOLD)
     */
-  private def setPositions(uc: UnprovenConjecture): UnprovenConjecture = {
+  protected def setPositions(uc: UnprovenConjecture): UnprovenConjecture = {
     val updChildren = uc.children.zipWithIndex.map { case (pt, idx) =>
-        pt.asInstanceOf[UnprovenTree].withPosition(uc.position + "-" + idx.toString)
+        pt.asInstanceOf[UnprovenTree].withPosition(uc.position.child(idx))
     }
     uc match {
       case and: CAndUnproven => and.copy(children = updChildren)
