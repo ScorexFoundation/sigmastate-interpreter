@@ -28,7 +28,7 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
 
   override type ProofT = UncheckedTree
 
-  val secrets: Seq[SigmaProtocolPrivateInput[_, _]]
+  def secrets: Seq[SigmaProtocolPrivateInput[_, _]]
 
   /**
     * Public keys of prover's secrets. This operation can be costly if there are many

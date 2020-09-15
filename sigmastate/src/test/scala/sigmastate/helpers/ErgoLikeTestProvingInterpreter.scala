@@ -5,7 +5,6 @@ import sigmastate.basics.DLogProtocol.DLogProverInput
 import sigmastate.basics.{DiffieHellmanTupleProverInput, SigmaProtocolPrivateInput}
 import sigmastate.eval.IRContext
 import sigmastate.interpreter.ProverInterpreter
-import sigmastate.utxo.CostTable
 
 class ErgoLikeTestProvingInterpreter(implicit override val IR: IRContext)
   extends ErgoLikeTestInterpreter with ProverInterpreter {
