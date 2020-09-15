@@ -2,7 +2,7 @@ package sigmastate.interpreter
 
 import java.math.BigInteger
 
-import sigmastate.UncheckedTree
+import sigmastate.{NodePosition, UncheckedTree}
 import sigmastate.Values.SigmaBoolean
 import sigmastate.basics.FirstProverMessage
 import sigmastate.basics.VerifierMessage.Challenge
@@ -12,7 +12,14 @@ import sigmastate.basics.VerifierMessage.Challenge
   * and the prover knows only a secret for the public key pk1, the prover fails on proving without a hint. But if the
   * prover knows that pk2 is known to another party, the prover may prove the statement (with an empty proof for "pk2").
   */
-trait Hint
+trait Hint {
+
+  /**
+    * A hint is related to a subtree (or a leaf) of a tree. This field encodes a position in the tree.
+    * See `NodePosition` ScalaDoc for details.
+    */
+  val position: NodePosition
+}
 
 /**
   * A hint which is indicating that a secret associated with its public image "image" is already proven.
@@ -41,7 +48,8 @@ abstract class SecretProven extends Hint {
   */
 case class RealSecretProof(image: SigmaBoolean,
                            challenge: Challenge,
-                           uncheckedTree: UncheckedTree) extends SecretProven
+                           uncheckedTree: UncheckedTree,
+                           override val position: NodePosition) extends SecretProven
 
 /**
   * A hint which contains a proof-of-knowledge for a secret associated with its public image "image",
@@ -49,7 +57,8 @@ case class RealSecretProof(image: SigmaBoolean,
   */
 case class SimulatedSecretProof(image: SigmaBoolean,
                                 challenge: Challenge,
-                                uncheckedTree: UncheckedTree) extends SecretProven
+                                uncheckedTree: UncheckedTree,
+                                override val position: NodePosition) extends SecretProven
 
 
 /**
@@ -71,7 +80,8 @@ abstract class CommitmentHint extends Hint {
   */
 case class OwnCommitment(override val image: SigmaBoolean,
                          secretRandomness: BigInteger,
-                         commitment: FirstProverMessage) extends CommitmentHint
+                         commitment: FirstProverMessage,
+                         override val position: NodePosition) extends CommitmentHint
 
 /**
   * A hint which contains a commitment to randomness associated with a public image of a secret.
@@ -79,7 +89,9 @@ case class OwnCommitment(override val image: SigmaBoolean,
   * @param image      - image of a secret
   * @param commitment - commitment to randomness used while proving knowledge of the secret
   */
-case class RealCommitment(override val image: SigmaBoolean, commitment: FirstProverMessage) extends CommitmentHint
+case class RealCommitment(override val image: SigmaBoolean,
+                          commitment: FirstProverMessage,
+                          override val position: NodePosition) extends CommitmentHint
 
 /**
   * A hint which contains a commitment to randomness associated with a public image of a secret.
@@ -87,7 +99,9 @@ case class RealCommitment(override val image: SigmaBoolean, commitment: FirstPro
   * @param image      - image of a secret
   * @param commitment - commitment to randomness used while proving knowledge of the secret
   */
-case class SimulatedCommitment(override val image: SigmaBoolean, commitment: FirstProverMessage) extends CommitmentHint
+case class SimulatedCommitment(override val image: SigmaBoolean,
+                               commitment: FirstProverMessage,
+                               override val position: NodePosition) extends CommitmentHint
 
 
 /**
