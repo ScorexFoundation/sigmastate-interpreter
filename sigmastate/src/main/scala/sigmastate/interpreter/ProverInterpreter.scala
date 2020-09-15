@@ -31,9 +31,10 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
   val secrets: Seq[SigmaProtocolPrivateInput[_, _]]
 
   /**
-    * Public keys of prover's secrets
+    * Public keys of prover's secrets. This operation can be costly if there are many
+    * secrets the prover knows, consider re-implementation of this field then.
     */
-  lazy val publicKeys: Seq[SigmaBoolean] = secrets.map(_.publicImage.asInstanceOf[SigmaBoolean])
+  def publicKeys: Seq[SigmaBoolean] = secrets.map(_.publicImage.asInstanceOf[SigmaBoolean])
 
   /**
     * Generate commitments for given ergo tree for prover's secrets.
