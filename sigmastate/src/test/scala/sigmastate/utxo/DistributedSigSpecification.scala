@@ -5,6 +5,11 @@ import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestP
 import sigmastate.interpreter._
 import sigmastate.lang.Terms._
 
+/**
+  * Distributed signatures examples.
+  * See EIP-11 for generic signing procedure.
+  * In some simple generic procedure is simplified.
+  */
 class DistributedSigSpecification extends SigmaTestingCommons {
 
   implicit lazy val IR: TestingIRContext = new TestingIRContext
