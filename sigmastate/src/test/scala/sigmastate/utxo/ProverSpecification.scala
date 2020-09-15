@@ -1,9 +1,9 @@
 package sigmastate.utxo
 
-import sigmastate.{CAND, CAndUnproven, NodePosition, UnprovenSchnorr}
+import sigmastate.{CAND, CAndUnproven, COR, COrUnproven, CTHRESHOLD, CThresholdUnproven, NodePosition, UnprovenSchnorr}
 import sigmastate.Values.SigmaBoolean
 import sigmastate.basics.DLogProtocol.FirstDLogProverMessage
-import sigmastate.basics.SecP256K1
+import sigmastate.basics.{FirstDiffieHellmanTupleProverMessage, SecP256K1}
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 
 class ProverSpecification extends SigmaTestingCommons {
@@ -14,8 +14,8 @@ class ProverSpecification extends SigmaTestingCommons {
 
     val prover = new ErgoLikeTestProvingInterpreter
 
-    val pk: SigmaBoolean = prover.publicKeys(0)
-    val pk2: SigmaBoolean = prover.publicKeys(1)
+    val pk: SigmaBoolean = prover.dlogSecrets.head.publicImage
+    val pk2: SigmaBoolean = prover.dhSecrets.head.publicImage
 
     prover.generateCommitmentsFor(pk, Seq(pk2)).hints.isEmpty shouldBe true
 
@@ -41,9 +41,19 @@ class ProverSpecification extends SigmaTestingCommons {
 
     h2.realCommitments.head.position shouldBe NodePosition(Seq(0,0))
     h2.ownCommitments.head.position shouldBe NodePosition(Seq(0,0))
+
+    //DH
+    val h3 = prover.generateCommitmentsFor(pk2, Seq(pk2))
+    h3.hints.nonEmpty shouldBe true
+    h3.realCommitments.head.position shouldBe NodePosition.CryptoTreePrefix
+    h3.ownCommitments.head.position shouldBe NodePosition.CryptoTreePrefix
+
+    h3.realCommitments.head.commitment shouldBe h3.ownCommitments.head.commitment
+
+    h3.realCommitments.head.commitment.isInstanceOf[FirstDiffieHellmanTupleProverMessage] shouldBe true
   }
 
-  property("setPositions") {
+  property("setPositions - and") {
     val prover = new ErgoLikeTestProvingInterpreter
     val pk0 = prover.dlogSecrets(0).publicImage
     val pk1 = prover.dlogSecrets(1).publicImage
@@ -53,6 +63,40 @@ class ProverSpecification extends SigmaTestingCommons {
     val child1 = UnprovenSchnorr(pk1, None, None, None, false, NodePosition(Seq(0)))
 
     val c0 = CAndUnproven(CAND(Seq(pk0, pk1)), None, false, Seq(child0, child1), parentPos)
+    val c1 = prover.setPositions(c0)
+
+    c1.children.head.asInstanceOf[UnprovenSchnorr].position shouldBe NodePosition(Seq(0, 0, 0))
+
+    c1.children(1).asInstanceOf[UnprovenSchnorr].position shouldBe NodePosition(Seq(0, 0, 1))
+  }
+
+  property("setPositions - or") {
+    val prover = new ErgoLikeTestProvingInterpreter
+    val pk0 = prover.dlogSecrets(0).publicImage
+    val pk1 = prover.dlogSecrets(1).publicImage
+
+    val parentPos = NodePosition(Seq(0,0))
+    val child0 = UnprovenSchnorr(pk0, None, None, None, false, NodePosition(Seq(1)))
+    val child1 = UnprovenSchnorr(pk1, None, None, None, false, NodePosition(Seq(0)))
+
+    val c0 = COrUnproven(COR(Seq(pk0, pk1)), None, false, Seq(child0, child1), parentPos)
+    val c1 = prover.setPositions(c0)
+
+    c1.children.head.asInstanceOf[UnprovenSchnorr].position shouldBe NodePosition(Seq(0, 0, 0))
+
+    c1.children(1).asInstanceOf[UnprovenSchnorr].position shouldBe NodePosition(Seq(0, 0, 1))
+  }
+
+  property("setPositions - threshold") {
+    val prover = new ErgoLikeTestProvingInterpreter
+    val pk0 = prover.dlogSecrets(0).publicImage
+    val pk1 = prover.dlogSecrets(1).publicImage
+
+    val parentPos = NodePosition(Seq(0,0))
+    val child0 = UnprovenSchnorr(pk0, None, None, None, false, NodePosition(Seq(1)))
+    val child1 = UnprovenSchnorr(pk1, None, None, None, false, NodePosition(Seq(0)))
+
+    val c0 = CThresholdUnproven(CTHRESHOLD(1, Seq(pk0, pk1)), None, false, 1, Seq(child0, child1), None, parentPos)
     val c1 = prover.setPositions(c0)
 
     c1.children.head.asInstanceOf[UnprovenSchnorr].position shouldBe NodePosition(Seq(0, 0, 0))
