@@ -109,7 +109,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     val pr = prover.prove(prop, ctx, fakeMessage).get
     verifier.verify(prop, ctx, pr, fakeMessage).get._1 shouldBe true
 
-    //TODO coverage: add negative case for `exists`
+    //TODO cover (2h): add negative case for `exists`
   }
 
   property("forall") {

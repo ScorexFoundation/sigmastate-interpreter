@@ -194,14 +194,6 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
         |}""".stripMargin)
   }
 
-// TODO coverage: implement it as negative test
-//  property("Evaluate sigma in lambdas") {
-//    testeval("""{
-//              |  val arr = Array(dk1, dk2)
-//              |  allOf(arr.map(fun (d: Boolean) = d && true))
-//              |}""".stripMargin)
-//  }
-
   property("Evaluate numeric casting ops") {
     def testWithCasting(castSuffix: String): Unit = {
       testEval(s"OUTPUTS.size.toByte.$castSuffix == 0.$castSuffix")

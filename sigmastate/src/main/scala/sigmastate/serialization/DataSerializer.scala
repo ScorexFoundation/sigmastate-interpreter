@@ -69,7 +69,7 @@ object DataSerializer {
       val len = arr.length
       assert(arr.length == t.items.length, s"Type $t doesn't correspond to value $arr")
       if (len > 0xFFFF)
-        sys.error(s"Length of tuple $arr exceeds ${0xFFFF} limit.") // TODO cover with tests
+        sys.error(s"Length of tuple $arr exceeds ${0xFFFF} limit.") // TODO cover with tests (2h)
       var i = 0
       while (i < arr.length) {
         serialize[SType](arr(i), t.items(i), w)
@@ -100,7 +100,7 @@ object DataSerializer {
         val size: Short = r.getUShort().toShort
         // TODO HF (2h): replace with validation rule to enable soft-forkability
         if (size > SBigInt.MaxSizeInBytes) {
-          // TODO cover consensus with tests
+          // TODO cover with tests (2h)
           throw new SerializerException(s"BigInt value doesn't not fit into ${SBigInt.MaxSizeInBytes} bytes: $size")
         }
         val valueBytes = r.getBytes(size)
@@ -138,7 +138,7 @@ object DataSerializer {
       case SBoolean =>
         Colls.fromArray(r.getBits(len)).asInstanceOf[Coll[T#WrappedType]]
       case SByte =>
-        // TODO cover with tests
+        // TODO cover with tests (2h)
         Colls.fromArray(r.getBytes(len)).asInstanceOf[Coll[T#WrappedType]]
       case _ =>
         implicit val tItem = (tpeElem match {

@@ -274,7 +274,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons { suite =>
       .withContextExtender(proofId, ByteArrayConstant(smallLeafTreeProof))
       .withContextExtender(elementId, LongConstant(elements.head))
     smallProver.prove(prop, ctx, fakeMessage).isSuccess shouldBe false
-    // TODO coverage: check that verifier return false for incorrect proofs?
+    // TODO cover (2h): check that verifier return false for incorrect proofs?
   }
 
   property("avl tree - prover provides proof") {

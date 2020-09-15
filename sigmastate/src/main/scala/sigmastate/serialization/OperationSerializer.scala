@@ -64,7 +64,7 @@ class OperationSerializer(keyLength: Int, valueLengthOpt: Option[Int]) extends S
       case Insert(key, value) => serializeKeyValue(4: Byte, key, value)
       case Update(key, value) => serializeKeyValue(5: Byte, key, value)
       case InsertOrUpdate(key, value) => serializeKeyValue(6: Byte, key, value)
-      case _ => w.put(0: Byte) // TODO cover with tests
+      case _ => w.put(0: Byte) // TODO cover with tests (2h): use UnknownModification for instance
     }
   }
 

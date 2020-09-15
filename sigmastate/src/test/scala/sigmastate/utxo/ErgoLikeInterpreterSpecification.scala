@@ -624,7 +624,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
     val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage).get
     verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, ctx, pr, fakeMessage).get._1 shouldBe true
 
-    //TODO coverage: check failing branches
+    // TODO cover (2h): check failing branches
   }
 
   property("DeserializeRegister value type mismatch") {

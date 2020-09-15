@@ -170,9 +170,6 @@ class CostingSpecification extends SigmaTestingData {
     cost("{ SELF.tokens.size > 0 }")(accessBox + extractCost + LengthGTConstCost)
     cost("{ SELF.creationInfo._1 > 0 }")(accessBox + accessRegister + selectField + GTConstCost)
     cost("{ SELF.R5[Int].get > 0 }")(accessBox + RegisterAccess + GTConstCost)
-
-    // TODO coverage: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/416
-    // cost("{ SELF.getReg[Long](0.toByte).get > 0 }")(accessBox + RegisterAccess + GTConstCost)
   }
 
   lazy val OutputsCost = selectField + accessBox * tx.outputs.length
