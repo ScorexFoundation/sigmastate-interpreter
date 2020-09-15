@@ -1,12 +1,15 @@
 package sigmastate.utxo
 
 import sigmastate._
-import sigmastate.basics.DLogProtocol.DLogInteractiveProver
-import sigmastate.basics.DiffieHellmanTupleInteractiveProver
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter._
 import sigmastate.lang.Terms._
 
+/**
+  * Distributed signatures examples.
+  * See EIP-11 for generic signing procedure.
+  * In some simple generic procedure is simplified.
+  */
 class DistributedSigSpecification extends SigmaTestingCommons {
 
   implicit lazy val IR: TestingIRContext = new TestingIRContext
@@ -41,15 +44,13 @@ class DistributedSigSpecification extends SigmaTestingCommons {
     val env = Map("pubkeyA" -> pubkeyAlice, "pubkeyB" -> pubkeyBob)
     val prop: Values.Value[SSigmaProp.type] = compile(env, """pubkeyA && pubkeyB""").asSigmaProp
 
-    val (rBob, aBob) = DLogInteractiveProver.firstMessage()
-
-    val hintFromBob: Hint = RealCommitment(pubkeyBob, aBob)
-    val bagA = HintsBag(Seq(hintFromBob))
+    val hintsFromBob: HintsBag = proverB.generateCommitments(prop.treeWithSegregation, ctx)
+    val bagA = HintsBag(hintsFromBob.realCommitments)
 
     val proofAlice = proverA.prove(prop, ctx, fakeMessage, bagA).get
 
     val bagB = proverB.bagForMultisig(ctx, prop, proofAlice.proof, Seq(pubkeyAlice))
-      .addHint(OwnCommitment(pubkeyBob, rBob, aBob))
+      .addHint(hintsFromBob.ownCommitments.head)
 
     val proofBob = proverB.prove(prop, ctx, fakeMessage, bagB).get
 
@@ -60,9 +61,7 @@ class DistributedSigSpecification extends SigmaTestingCommons {
     verifier.verify(prop, ctx, proofBob, fakeMessage).get._1 shouldBe true
   }
 
-  /**
-    * 3-out-of-3 AND signature
-    */
+  //  3-out-of-3 AND signature
   property("distributed AND (3 out of 3)") {
     val proverA = new ErgoLikeTestProvingInterpreter
     val proverB = new ErgoLikeTestProvingInterpreter
@@ -76,23 +75,23 @@ class DistributedSigSpecification extends SigmaTestingCommons {
     val env = Map("pubkeyA" -> pubkeyAlice, "pubkeyB" -> pubkeyBob, "pubkeyC" -> pubkeyCarol)
     val prop: Values.Value[SSigmaProp.type] = compile(env, """pubkeyA && pubkeyB && pubkeyC""").asSigmaProp
 
-    val (rBob, aBob) = DLogInteractiveProver.firstMessage()
-    val (rCarol, aCarol) = DLogInteractiveProver.firstMessage()
+    val bobHints = proverB.generateCommitments(prop.treeWithSegregation, ctx)
+    val carolHints = proverC.generateCommitments(prop.treeWithSegregation, ctx)
 
-    val dlBKnown: Hint = RealCommitment(pubkeyBob, aBob)
-    val dlCKnown: Hint = RealCommitment(pubkeyCarol, aCarol)
+    val dlBKnown: Hint = bobHints.realCommitments.head
+    val dlCKnown: Hint = carolHints.realCommitments.head
     val bagA = HintsBag(Seq(dlBKnown, dlCKnown))
 
     val proofAlice = proverA.prove(prop, ctx, fakeMessage, bagA).get
 
     val bagC = proverB.bagForMultisig(ctx, prop, proofAlice.proof, Seq(pubkeyAlice))
-      .addHint(OwnCommitment(pubkeyCarol, rCarol, aCarol))
+      .addHint(carolHints.ownCommitments.head)
       .addHint(dlBKnown)
 
     val proofCarol = proverC.prove(prop, ctx, fakeMessage, bagC).get
 
     val bagB = proverB.bagForMultisig(ctx, prop, proofCarol.proof, Seq(pubkeyAlice, pubkeyCarol))
-      .addHint(OwnCommitment(pubkeyBob, rBob, aBob))
+      .addHint(bobHints.ownCommitments.head)
 
     val proofBob = proverB.prove(prop, ctx, fakeMessage, bagB).get
 
@@ -134,14 +133,14 @@ class DistributedSigSpecification extends SigmaTestingCommons {
     val env = Map("pubkeyA" -> pubkeyAlice, "pubkeyB" -> pubkeyBob, "pubkeyC" -> pubkeyCarol)
     val prop = compile(env, """atLeast(2, Coll(pubkeyA, pubkeyB, pubkeyC))""").asSigmaProp
 
-    val (rBob, aBob) = DLogInteractiveProver.firstMessage()
-    val dlBKnown: Hint = RealCommitment(pubkeyBob, aBob)
+    val bobHints = proverB.generateCommitments(prop.treeWithSegregation, ctx)
+    val dlBKnown: Hint = bobHints.realCommitments.head
 
     val bagA = HintsBag(Seq(dlBKnown))
     val proofAlice = proverA.prove(prop, ctx, fakeMessage, bagA).get
 
     val bagB = proverB.bagForMultisig(ctx, prop, proofAlice.proof, Seq(pubkeyAlice), Seq(pubkeyCarol))
-      .addHint(OwnCommitment(pubkeyBob, rBob, aBob))
+      .addHint(bobHints.ownCommitments.head)
 
     val proofBob = proverB.prove(prop, ctx, fakeMessage, bagB).get
 
@@ -170,23 +169,23 @@ class DistributedSigSpecification extends SigmaTestingCommons {
     val env = Map("pubkeyA" -> pubkeyAlice, "pubkeyB" -> pubkeyBob, "pubkeyC" -> pubkeyCarol, "pubkeyD" -> pubkeyDave)
     val prop = compile(env, """atLeast(3, Coll(pubkeyA, pubkeyB, pubkeyC, pubkeyD))""").asSigmaProp
 
-    //Alice, Bob and Carol are signing
-    val (rBob, aBob) = DLogInteractiveProver.firstMessage()
-    val dlBKnown: Hint = RealCommitment(pubkeyBob, aBob)
+    // Alice, Bob and Carol are signing
+    val bobHints = proverB.generateCommitments(prop.treeWithSegregation, ctx)
+    val dlBKnown: Hint = bobHints.realCommitments.head
 
-    val (rCarol, aCarol) = DLogInteractiveProver.firstMessage()
-    val dlCKnown: Hint = RealCommitment(pubkeyCarol, aCarol)
+    val carolHints = proverC.generateCommitments(prop.treeWithSegregation, ctx)
+    val dlCKnown: Hint = carolHints.realCommitments.head
 
     val bagA = HintsBag(Seq(dlBKnown, dlCKnown))
     val proofAlice = proverA.prove(prop, ctx, fakeMessage, bagA).get
 
     val bagC = proverC.bagForMultisig(ctx, prop, proofAlice.proof, Seq(pubkeyAlice), Seq(pubkeyDave)) ++
-      HintsBag(Seq(dlBKnown, OwnCommitment(pubkeyCarol, rCarol, aCarol)))
+      HintsBag(Seq(dlBKnown, carolHints.ownCommitments.head))
     val proofCarol = proverC.prove(prop, ctx, fakeMessage, bagC).get
 
     val bagB = (proverB.bagForMultisig(ctx, prop, proofAlice.proof, Seq(pubkeyAlice), Seq(pubkeyDave)) ++
                 proverB.bagForMultisig(ctx, prop, proofCarol.proof, Seq(pubkeyCarol)))
-                  .addHint(OwnCommitment(pubkeyBob, rBob, aBob))
+                  .addHint(bobHints.ownCommitments.head)
 
     val proofBob = proverB.prove(prop, ctx, fakeMessage, bagB).get
 
@@ -219,27 +218,30 @@ class DistributedSigSpecification extends SigmaTestingCommons {
     val prop = compile(env, """atLeast(3, Coll(pubkeyA, pubkeyB, pubkeyC, pubkeyD))""").asSigmaProp
 
     // Alice, Bob and Carol are signing
-    val (rBob, aBob) = DiffieHellmanTupleInteractiveProver.firstMessage(pubkeyBob)
-    val dlBKnown: Hint = RealCommitment(pubkeyBob, aBob)
+    val bobHints = proverB.generateCommitments(prop.treeWithSegregation, ctx)
+    val dlBKnown: Hint = bobHints.realCommitments.head
 
-    val (rCarol, aCarol) = DiffieHellmanTupleInteractiveProver.firstMessage(pubkeyCarol)
-    val dlCKnown: Hint = RealCommitment(pubkeyCarol, aCarol)
+    val carolHints = proverC.generateCommitments(prop.treeWithSegregation, ctx)
+    val dlCKnown: Hint = carolHints.realCommitments.head
 
     val bagA = HintsBag(Seq(dlBKnown, dlCKnown))
     val proofAlice = proverA.prove(prop, ctx, fakeMessage, bagA).get
 
     val bagC = proverC.bagForMultisig(ctx, prop, proofAlice.proof, Seq(pubkeyAlice), Seq(pubkeyDave)) ++
-      HintsBag(Seq(dlBKnown, OwnCommitment(pubkeyCarol, rCarol, aCarol)))
+      HintsBag(Seq(dlBKnown, carolHints.ownCommitments.head))
     val proofCarol = proverC.prove(prop, ctx, fakeMessage, bagC).get
 
     val bagB = (proverB.bagForMultisig(ctx, prop, proofAlice.proof, Seq(pubkeyAlice), Seq(pubkeyDave)) ++
                 proverB.bagForMultisig(ctx, prop, proofCarol.proof, Seq(pubkeyCarol)))
-                  .addHint(OwnCommitment(pubkeyBob, rBob, aBob))
+                  .addHint(bobHints.ownCommitments.head)
 
     val proofBob = proverB.prove(prop, ctx, fakeMessage, bagB).get
 
     // Proof generated by Alice without getting Bob's part is not correct
     verifier.verify(prop, ctx, proofAlice, fakeMessage).get._1 shouldBe false
+
+    // Proof generated by Alice without getting Bob's part is not correct
+    verifier.verify(prop, ctx, proofCarol, fakeMessage).get._1 shouldBe false
 
     // Compound proof from Bob is correct
     verifier.verify(prop, ctx, proofBob, fakeMessage).get._1 shouldBe true
@@ -265,8 +267,8 @@ class DistributedSigSpecification extends SigmaTestingCommons {
     val prop = compile(env, """atLeast(2, Coll(pubkeyA, pubkeyB, pubkeyC, pubkeyD, pubkeyE))""").asSigmaProp
 
     //Alice and Dave are signing
-    val (rDave, aDave) = DLogInteractiveProver.firstMessage()
-    val dlDKnown: Hint = RealCommitment(pubkeyDave, aDave)
+    val daveHints = proverD.generateCommitments(prop.treeWithSegregation, ctx)
+    val dlDKnown: Hint = daveHints.realCommitments.head
 
     val bagA = HintsBag(Seq(dlDKnown))
     val proofAlice = proverA.prove(prop, ctx, fakeMessage, bagA).get
@@ -276,7 +278,7 @@ class DistributedSigSpecification extends SigmaTestingCommons {
 
     val bagD = proverD
                 .bagForMultisig(ctx, prop, proofAlice.proof, Seq(pubkeyAlice), Seq(pubkeyBob, pubkeyCarol, pubkeyEmma))
-                .addHint(OwnCommitment(pubkeyDave, rDave, aDave))
+                .addHint(daveHints.ownCommitments.head)
 
     val proofDave = proverD.prove(prop, ctx, fakeMessage, bagD).get
     verifier.verify(prop, ctx, proofDave, fakeMessage).get._1 shouldBe true
@@ -309,23 +311,24 @@ class DistributedSigSpecification extends SigmaTestingCommons {
     val script = """atLeast(4, Coll(pubkeyA, pubkeyB, pubkeyC, pubkeyD, pubkeyE, pubkeyF, pubkeyG, pubkeyH))"""
     val prop = compile(env, script).asSigmaProp
 
-    //Alice, Bob, Gerard, and Hannah are signing, others are simulated
+    // Alice, Bob, Gerard, and Hannah are signing, others are simulated
 
-    //first, commitments are needed from real signers
-    val (rAlice, aAlice) = DiffieHellmanTupleInteractiveProver.firstMessage(pubkeyAlice)
-    val dlAKnown: Hint = RealCommitment(pubkeyAlice, aAlice)
-    val secretCmtA = OwnCommitment(pubkeyAlice, rAlice, aAlice)
+    // first, commitments are needed from real signers
 
-    val (rBob, aBob) = DiffieHellmanTupleInteractiveProver.firstMessage(pubkeyBob)
-    val dlBKnown: Hint = RealCommitment(pubkeyBob, aBob)
-    val secretCmtB = OwnCommitment(pubkeyBob, rBob, aBob)
+    val aliceHints = proverA.generateCommitments(prop.treeWithSegregation, ctx)
+    val dlAKnown: Hint = aliceHints.realCommitments.head
+    val secretCmtA: Hint = aliceHints.ownCommitments.head
 
-    val (rGerard, aGerard) = DiffieHellmanTupleInteractiveProver.firstMessage(pubkeyGerard)
-    val dlGKnown: Hint = RealCommitment(pubkeyGerard, aGerard)
-    val secretCmtG = OwnCommitment(pubkeyGerard, rGerard, aGerard)
+    val bobHints = proverB.generateCommitments(prop.treeWithSegregation, ctx)
+    val dlBKnown: Hint = bobHints.realCommitments.head
+    val secretCmtB: Hint = bobHints.ownCommitments.head
 
-    val (rHannah, aHannah) = DiffieHellmanTupleInteractiveProver.firstMessage(pubkeyHannah)
-    val secretCmtH = OwnCommitment(pubkeyHannah, rHannah, aHannah)
+    val gerardHints = proverG.generateCommitments(prop.treeWithSegregation, ctx)
+    val dlGKnown: Hint = gerardHints.realCommitments.head
+    val secretCmtG: Hint = gerardHints.ownCommitments.head
+
+    val hannahHints = proverH.generateCommitments(prop.treeWithSegregation, ctx)
+    val secretCmtH: Hint = hannahHints.ownCommitments.head
 
     val bagH = HintsBag(Seq(dlAKnown, dlBKnown, dlGKnown, secretCmtH))
     val proofHannah = proverH.prove(prop, ctx, fakeMessage, bagH).get
@@ -340,15 +343,15 @@ class DistributedSigSpecification extends SigmaTestingCommons {
                   Seq(pubkeyCarol, pubkeyDave, pubkeyEmma, pubkeyFrank))
 
     //now real proofs can be done in any order
-    val bagB = bag1.addHints(OwnCommitment(pubkeyBob, rBob, aBob), dlAKnown, dlGKnown)
+    val bagB = bag1.addHints(secretCmtB, dlAKnown, dlGKnown)
     val proofBob = proverB.prove(prop, ctx, fakeMessage, bagB).get
     val partialBobProofBag = proverB.bagForMultisig(ctx, prop, proofBob.proof, Seq(pubkeyBob), Seq.empty).realProofs.head
 
-    val bagA = bag1.addHints(OwnCommitment(pubkeyAlice, rAlice, aAlice), dlBKnown, dlGKnown)
+    val bagA = bag1.addHints(secretCmtA, dlBKnown, dlGKnown)
     val proofAlice = proverA.prove(prop, ctx, fakeMessage, bagA).get
     val partialAliceProofBag = proverA.bagForMultisig(ctx, prop, proofAlice.proof, Seq(pubkeyAlice), Seq.empty).realProofs.head
 
-    val bagG = bag1.addHints(OwnCommitment(pubkeyGerard, rGerard, aGerard), dlAKnown, dlBKnown)
+    val bagG = bag1.addHints(secretCmtG, dlAKnown, dlBKnown)
     val proofGerard = proverG.prove(prop, ctx, fakeMessage, bagG).get
     val partialGerardProofBag = proverG.bagForMultisig(ctx, prop, proofGerard.proof, Seq(pubkeyGerard), Seq.empty).realProofs.head
 
@@ -393,15 +396,17 @@ class DistributedSigSpecification extends SigmaTestingCommons {
     //Alice and Dave are signing
 
     //first, commitments are needed from real signers
-    val (rAlice, aAlice) =  DLogInteractiveProver.firstMessage()
-    val secretCmtA = OwnCommitment(pubkeyAlice, rAlice, aAlice)
+    val aliceHints = proverA.generateCommitments(prop.treeWithSegregation, ctx)
+    println(aliceHints)
+    val secretCmtA: Hint = aliceHints.ownCommitments.head
 
-    val (rDave, aDave) = DiffieHellmanTupleInteractiveProver.firstMessage(pubkeyDave)
-    val dlDKnown: Hint = RealCommitment(pubkeyDave, aDave)
-    val secretCmtD = OwnCommitment(pubkeyDave, rDave, aDave)
+    val daveHints = proverD.generateCommitments(prop.treeWithSegregation, ctx)
+    val dlDKnown: Hint = daveHints.realCommitments.head
+    val secretCmtD: Hint = daveHints.ownCommitments.head
 
     val bagA = HintsBag(Seq(secretCmtA, dlDKnown))
     val proofAlice = proverA.prove(prop, ctx, fakeMessage, bagA).get
+
     // Proof generated by Alice only is not correct
     verifier.verify(prop, ctx, proofAlice, fakeMessage).get._1 shouldBe false
 
@@ -410,6 +415,75 @@ class DistributedSigSpecification extends SigmaTestingCommons {
 
     val validProofD = proverD.prove(prop, ctx, fakeMessage, bag.addHint(secretCmtD)).get
     verifier.verify(prop, ctx, validProofD, fakeMessage).get._1 shouldBe true
+  }
+
+  property("distributed THRESHOLD mixed via AND") {
+    // atLeast(3, Coll(proveDlog(pkA), proveDlog(pkB), proveDlog(pkC), proveDlog(pkD), proveDlog(pkE))) && (proveDlog(pkB) || proveDlog(pkF))
+    val proverA = new ErgoLikeTestProvingInterpreter
+    val proverB = new ErgoLikeTestProvingInterpreter
+    val proverC = new ErgoLikeTestProvingInterpreter
+    val proverD = new ErgoLikeTestProvingInterpreter
+    val proverE = new ErgoLikeTestProvingInterpreter
+    val proverF = new ErgoLikeTestProvingInterpreter
+
+    val verifier = new ContextEnrichingTestProvingInterpreter
+
+    val pubkeyAlice = proverA.dlogSecrets.head.publicImage
+    val pubkeyBob = proverB.dlogSecrets.head.publicImage
+    val pubkeyCarol = proverC.dlogSecrets.head.publicImage
+    val pubkeyDave = proverD.dlogSecrets.head.publicImage
+    val pubkeyEmma = proverE.dlogSecrets.head.publicImage
+    val pubkeyFrank = proverF.dlogSecrets.head.publicImage
+
+    val env = Map("pubkeyA" -> pubkeyAlice, "pubkeyB" -> pubkeyBob, "pubkeyC" -> pubkeyCarol,
+                  "pubkeyD" -> pubkeyDave, "pubkeyE" -> pubkeyEmma, "pubkeyF" -> pubkeyFrank)
+    val script =
+      """atLeast(3, Coll(pubkeyA, pubkeyB, pubkeyC, pubkeyD, pubkeyE)) && (pubkeyB || pubkeyF)""".stripMargin
+    val prop = compile(env, script).asSigmaProp
+    // Alice, Bob and Emma are signing
+
+    // first, commitments are needed from real signers
+    val aliceHints = proverA.generateCommitments(prop.treeWithSegregation, ctx)
+    val dlAKnown: Hint = aliceHints.realCommitments.head
+    val secretCmtA: Hint = aliceHints.ownCommitments.head
+
+    val bobHints = proverB.generateCommitments(prop.treeWithSegregation, ctx)
+    val dlBKnown: Seq[Hint] = bobHints.realCommitments
+    val secretCmtB: Seq[Hint] = bobHints.ownCommitments
+
+    val emmaHints = proverE.generateCommitments(prop.treeWithSegregation, ctx)
+    val dlEKnown: Hint = emmaHints.realCommitments.head
+    val secretCmtE: Hint = emmaHints.ownCommitments.head
+
+    val bagA = HintsBag(Seq(secretCmtA,  dlEKnown) ++ dlBKnown)
+    val proofAlice = proverA.prove(prop, ctx, fakeMessage, bagA).get
+
+    // Proof generated by Alice only is not correct
+    verifier.verify(prop, ctx, proofAlice, fakeMessage).get._1 shouldBe false
+
+    val bag0 = proverA
+      .bagForMultisig(ctx, prop, proofAlice.proof,
+        Seq(pubkeyAlice),
+        Seq(pubkeyCarol, pubkeyDave, pubkeyFrank))
+
+    //now real proofs can be done in any order
+    val bagB = bag0.addHints(dlAKnown, dlEKnown).addHints(secretCmtB :_*)
+    val proofBob = proverB.prove(prop, ctx, fakeMessage, bagB).get
+    val partialBobProofBag = proverB.bagForMultisig(ctx, prop, proofBob.proof, Seq(pubkeyBob), Seq.empty).realProofs
+
+    val bagE = bag0.addHints(secretCmtE, dlAKnown).addHints(dlBKnown :_*)
+    val proofEmma = proverE.prove(prop, ctx, fakeMessage, bagE).get
+    val partialEmmaProofBag = proverE.bagForMultisig(ctx, prop, proofEmma.proof, Seq(pubkeyEmma), Seq.empty).realProofs.head
+
+    val bag = bag0
+      .addHints(partialBobProofBag: _*)
+      .addHints(partialEmmaProofBag)
+      .addHints(dlAKnown, dlEKnown).addHints(dlBKnown :_*)
+      .addHints(secretCmtB :_*)
+
+    // Bob is generating a valid signature
+    val validProofB = proverB.prove(prop, ctx, fakeMessage, bag).get
+    verifier.verify(prop, ctx, validProofB, fakeMessage).get._1 shouldBe true
   }
 
 }
