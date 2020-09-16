@@ -1,6 +1,9 @@
 package sigmastate.utxo
 
+import java.math.BigInteger
+
 import com.google.common.primitives.Bytes
+import org.bouncycastle.util.BigIntegers
 import org.ergoplatform.ErgoBox.R4
 import org.ergoplatform._
 import org.ergoplatform.validation.ValidationException
@@ -13,10 +16,11 @@ import sigmastate._
 import sigmastate.eval._
 import sigmastate.interpreter.Interpreter._
 import sigmastate.basics.DLogProtocol.ProveDlog
-import sigmastate.basics.ProveDHTuple
+import sigmastate.basics.{DiffieHellmanTupleProverInput, ProveDHTuple}
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, ErgoLikeTransactionTesting, SigmaTestingCommons}
+import sigmastate.interpreter.CryptoConstants
+import sigmastate.interpreter.CryptoConstants.dlogGroup
 import sigmastate.lang.Terms._
-import sigmastate.lang.exceptions.InterpreterException
 import sigmastate.serialization.{SerializationSpecification, ValueSerializer}
 import sigmastate.utils.Helpers._
 
@@ -69,7 +73,6 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
     compiledProp1 shouldBe prop
     compiledProp2 shouldBe prop
 
-
     val ctx = ErgoLikeContextTesting(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
@@ -83,6 +86,47 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
 
     fakeProver.prove(prop, ctx, fakeMessage).isSuccess shouldBe false
     prover.prove(wrongProp, ctx, fakeMessage).isSuccess shouldBe false
+  }
+
+  property("DH tuple - signing w. proper and improper secrets") {
+    val verifier = new ErgoLikeTestInterpreter
+    val ctx = ErgoLikeContextTesting(
+      currentHeight = 1,
+      lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
+      boxesToSpend = IndexedSeq(fakeSelf),
+      spendingTransaction = ErgoLikeTransactionTesting.dummy,
+      self = fakeSelf)
+
+    //proveDHTuple(g, g^x, g^y, g^xy) should not work for x and only for y
+    val group = CryptoConstants.dlogGroup
+    val g = group.generator
+
+    val qMinusOne = dlogGroup.order.subtract(BigInteger.ONE)
+
+    val x = BigIntegers.createRandomInRange(BigInteger.ZERO, qMinusOne, dlogGroup.secureRandom)
+    val gToX = group.exponentiate(g, x)
+
+    val y = BigIntegers.createRandomInRange(BigInteger.ZERO, qMinusOne, dlogGroup.secureRandom)
+    val gToY = group.exponentiate(g, y)
+    val gToXY = group.exponentiate(gToX, y)
+    group.exponentiate(gToY, x) shouldBe gToXY
+
+    val dht = ProveDHTuple(g, gToX, gToY, gToXY)
+    val dhProp = SigmaPropConstant(dht)
+
+    val xSecret = DiffieHellmanTupleProverInput(x, dht)
+    val proverX = new ContextEnrichingTestProvingInterpreter().withDHSecrets(Seq(xSecret)) //prover holding y
+
+    val dhSecret = DiffieHellmanTupleProverInput(y, dht)
+    val proverY = new ContextEnrichingTestProvingInterpreter().withDHSecrets(Seq(dhSecret)) //prover holding y
+
+    //should not work for x
+    proverX.prove(dhProp, ctx, fakeMessage).get shouldBe false
+
+    //should work for y
+    val proofY = proverY.prove(dhProp, ctx, fakeMessage).get
+    verifier.verify(dhProp, ctx, proofY, fakeMessage).get._1 shouldBe true
   }
 
   property("DH tuple - simulation") {
@@ -203,8 +247,8 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
 
     //after timeout
     val prA2 = proverA.prove(
-        emptyEnv + (ScriptNameProp -> "after_timeout_prove"),
-        mixingRequestProp(pubkeyA, 40), ctx, fakeMessage).get
+      emptyEnv + (ScriptNameProp -> "after_timeout_prove"),
+      mixingRequestProp(pubkeyA, 40), ctx, fakeMessage).get
     verifier.verify(
       emptyEnv + (ScriptNameProp -> "after_timeout_verify1"),
       mixingRequestProp(pubkeyA, 40), ctx, prA2, fakeMessage).get._1 shouldBe true
@@ -680,16 +724,16 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
       // make sure prover fails as well on deserializing context with mismatched type
       an[ValidationException] should be thrownBy prover.prove(prop1, ctx, fakeMessage).get
     }
- }
+  }
 
   property("non-const ProveDHT") {
     import sigmastate.interpreter.CryptoConstants.dlogGroup
     compile(Map("gA" -> dlogGroup.generator),
       "proveDHTuple(gA, OUTPUTS(0).R4[GroupElement].get, gA, gA)"
-    ).asInstanceOf[BlockValue].result shouldBe a [CreateProveDHTuple]
+    ).asInstanceOf[BlockValue].result shouldBe a[CreateProveDHTuple]
   }
 
   property("non-const ProveDlog") {
-    compile(Map(), "proveDlog(OUTPUTS(0).R4[GroupElement].get)" ) shouldBe a [CreateProveDlog]
+    compile(Map(), "proveDlog(OUTPUTS(0).R4[GroupElement].get)") shouldBe a[CreateProveDlog]
   }
 }
