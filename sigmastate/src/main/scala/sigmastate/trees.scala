@@ -549,7 +549,8 @@ object ArithOp {
 }
 
 /** Negation operation on numeric type T. */
-case class Negation[T <: SNumericType](input: Value[T]) extends OneArgumentOperation[T, T] {
+case class Negation[T <: SType](input: Value[T]) extends OneArgumentOperation[T, T] {
+  require(input.tpe.isNumTypeOrNoType, s"invalid type ${input.tpe}")
   override def companion = Negation
   override def tpe: T = input.tpe
 }
@@ -558,7 +559,8 @@ object Negation extends OneArgumentOperationCompanion {
   override def argInfos: Seq[ArgInfo] = NegationInfo.argInfos
 }
 
-case class BitInversion[T <: SNumericType](input: Value[T]) extends OneArgumentOperation[T, T] {
+case class BitInversion[T <: SType](input: Value[T]) extends OneArgumentOperation[T, T] {
+  require(input.tpe.isNumTypeOrNoType, s"invalid type ${input.tpe}")
   override def companion = BitInversion
   override def tpe: T = input.tpe
 }
@@ -567,8 +569,9 @@ object BitInversion extends OneArgumentOperationCompanion {
   override def argInfos: Seq[ArgInfo] = BitInversionInfo.argInfos
 }
 
-case class BitOp[T <: SNumericType](left: Value[T], right: Value[T], override val opCode: OpCode)
+case class BitOp[T <: SType](left: Value[T], right: Value[T], override val opCode: OpCode)
   extends TwoArgumentsOperation[T, T, T] with NotReadyValue[T] {
+  require(left.tpe.isNumTypeOrNoType && right.tpe.isNumTypeOrNoType, s"invalid types left:${left.tpe}, right:${right.tpe}")
   override def companion = BitOp.operations(opCode)
   override def tpe: T = left.tpe
 }

@@ -64,6 +64,11 @@ sealed trait SType extends SigmaNode {
   /** Approximate size of the given value in bytes. It is actual size only for primitive types.*/
   def dataSize(v: SType#WrappedType): Long
 
+  /** Returns true if this type embeddable, i.e. a type that can be combined with type
+    * constructor for optimized encoding. For each embeddable type `T`, and type
+    * constructor `C`, the type `C[T]` can be represented by a single byte.
+    * @see [[sigmastate.serialization.TypeSerializer]]
+    */
   def isEmbeddable: Boolean = false
 
   /** Returns true if dataSize doesn't depend on data value.
@@ -150,7 +155,17 @@ object SType {
         val okRange = f1.tRange.canBeTypedAs(f2.tRange)
         okDom && okRange
     }
+
+    /** Returns true if this type is numeric (Byte, Short, etc.)
+      * @see [[sigmastate.SNumericType]]
+      */
     def isNumType: Boolean = tpe.isInstanceOf[SNumericType]
+
+    /** Returns true if this type is either numeric (Byte, Short, etc.) or is NoType.
+      * @see [[sigmastate.SNumericType]]
+      */
+    def isNumTypeOrNoType: Boolean = isNumType || tpe == NoType
+
     def asNumType: SNumericType = tpe.asInstanceOf[SNumericType]
     def asFunc: SFunc = tpe.asInstanceOf[SFunc]
     def asProduct: SProduct = tpe.asInstanceOf[SProduct]

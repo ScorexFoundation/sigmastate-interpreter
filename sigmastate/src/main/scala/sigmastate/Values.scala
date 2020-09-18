@@ -1018,7 +1018,7 @@ object Values {
 
     def substConstants(root: SValue, constants: IndexedSeq[Constant[SType]]): SValue = {
       val store = new ConstantStore(constants)
-      val substRule = strategy[Value[_ <: SType]] {
+      val substRule = strategy[Any] {
         case ph: ConstantPlaceholder[_] =>
           Some(store.get(ph.id))
         case _ => None

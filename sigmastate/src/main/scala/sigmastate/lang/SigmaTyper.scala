@@ -598,8 +598,8 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
 
     // traverse the tree bottom-up checking that all the nodes have a type
     var untyped: SValue = null
-    rewrite(everywherebu(rule[SValue]{
-      case v =>
+    rewrite(everywherebu(rule[Any]{
+      case v: SValue =>
         if (v.tpe == NoType) untyped = v
         v
     }))(assigned)
@@ -671,7 +671,7 @@ object SigmaTyper {
       val remainingVars = tparams.filterNot { p => subst.contains(p.ident) }
       SFunc(args.map(applySubst(_, subst)), applySubst(res, subst), remainingVars)
     case _ =>
-      val substRule = rule[SType] {
+      val substRule = rule[Any] {
         case id: STypeVar if subst.contains(id) => subst(id)
       }
       rewrite(everywherebu(substRule))(tpe)

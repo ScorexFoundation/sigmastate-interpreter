@@ -272,8 +272,8 @@ object Terms {
       * @return AST where all nodes with missing source context are set to the given srcCtx
       */
     def withPropagatedSrcCtx[T <: SType](srcCtx: Nullable[SourceContext]): Value[T] = {
-      rewrite(everywherebu(rule[SValue] {
-        case node if node != null && node.sourceContext.isEmpty =>
+      rewrite(everywherebu(rule[Any] {
+        case node: SValue if node != null && node.sourceContext.isEmpty =>
           node.withSrcCtx(srcCtx)
       }))(v).asValue[T]
     }
