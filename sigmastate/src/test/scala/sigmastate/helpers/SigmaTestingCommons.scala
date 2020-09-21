@@ -238,7 +238,6 @@ trait SigmaTestingCommons extends PropSpec
       }
 
       val estimatedCost = IR.checkCostWithContext(costingCtx, costF, ScriptCostLimit.value, 0L).getOrThrow
-//      println(s"Estimated Cost: $estimatedCost")
 
       val (res, _) = valueFun(sigmaCtx)
       (res.asInstanceOf[B], estimatedCost)

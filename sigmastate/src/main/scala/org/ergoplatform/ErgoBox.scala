@@ -184,6 +184,7 @@ object ErgoBox {
 
   val allZerosModifierId: ModifierId = Array.fill[Byte](32)(0.toByte).toModifierId
 
+  // TODO refactor: This method is only used in tests thus it can be moved to e.g. SigmaTestingCommons. */
   def create(value: Long,
             ergoTree: ErgoTree,
             creationHeight: Int,
