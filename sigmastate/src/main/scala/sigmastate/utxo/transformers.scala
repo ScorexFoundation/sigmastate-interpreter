@@ -43,7 +43,7 @@ case class Slice[IV <: SType](input: Value[SCollection[IV]], from: Value[SInt.ty
   override val tpe = input.tpe
   override def opType = {
     val tpeColl = SCollection(input.tpe.typeParams.head.ident)
-    SFunc(Vector(tpeColl, SInt, SInt), tpeColl)
+    SFunc(Array(tpeColl, SInt, SInt), tpeColl)
   }
 }
 object Slice extends ValueCompanion {
@@ -168,7 +168,7 @@ case class SizeOf[V <: SType](input: Value[SCollection[V]])
   override def opType = SizeOf.OpType
 }
 object SizeOf extends SimpleTransformerCompanion {
-  val OpType = SFunc(SCollection(SCollection.tIV), SInt)
+  val OpType = SFunc(SCollection(SType.tIV), SInt)
   override def opCode: OpCode = OpCodes.SizeOfCode
   override def argInfos: Seq[ArgInfo] = SizeOfInfo.argInfos
 }

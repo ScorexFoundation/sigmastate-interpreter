@@ -354,8 +354,8 @@ trait NumericCastCompanion extends ValueCompanion {
 object Upcast extends NumericCastCompanion {
   override def opCode: OpCode = OpCodes.UpcastCode
   override def argInfos: Seq[ArgInfo] = UpcastInfo.argInfos
-  val tT = STypeVar("T")
-  val tR = STypeVar("R")
+  def tT = SType.tT
+  def tR = SType.tR
 }
 
 /**
@@ -372,8 +372,8 @@ case class Downcast[T <: SNumericType, R <: SNumericType](input: Value[T], tpe: 
 object Downcast extends NumericCastCompanion {
   override def opCode: OpCode = OpCodes.DowncastCode
   override def argInfos: Seq[ArgInfo] = DowncastInfo.argInfos
-  val tT = STypeVar("T")
-  val tR = STypeVar("R")
+  def tT = SType.tT
+  def tR = SType.tR
 }
 
 /**
@@ -481,14 +481,12 @@ object CalcSha256 extends SimpleTransformerCompanion {
   */
 case class SubstConstants[T <: SType](scriptBytes: Value[SByteArray], positions: Value[SIntArray], newValues: Value[SCollection[T]])
     extends NotReadyValueByteArray {
-  import SubstConstants._
   override def companion = SubstConstants
-  override val opType = SFunc(Vector(SByteArray, SIntArray, SCollection(tT)), SByteArray)
+  override val opType = SFunc(Array(SByteArray, SIntArray, SCollection(SType.tT)), SByteArray)
 }
 
 object SubstConstants extends ValueCompanion {
   override def opCode: OpCode = OpCodes.SubstConstantsCode
-  val tT = STypeVar("T")
 
   def eval(scriptBytes: Array[Byte],
            positions: Array[Int],
@@ -697,8 +695,7 @@ sealed trait Relation[LIV <: SType, RIV <: SType] extends Triple[LIV, RIV, SBool
   with NotReadyValueBoolean
 
 trait SimpleRelation[T <: SType] extends Relation[T, T] {
-  val tT = STypeVar("T")
-  override val opType = SFunc(Vector(tT, tT), SBoolean)
+  override val opType = SFunc(SType.IndexedSeqOfT2, SBoolean)
 }
 
 trait RelationCompanion extends ValueCompanion {
@@ -860,7 +857,7 @@ case class If[T <: SType](condition: Value[SBoolean.type], trueBranch: Value[T],
 object If extends QuadrupleCompanion {
   override def opCode: OpCode = OpCodes.IfCode
   override def argInfos: Seq[ArgInfo] = IfInfo.argInfos
-  val tT = STypeVar("T")
+  def tT = SType.tT
 }
 
 case class LogicalNot(input: Value[SBoolean.type]) extends NotReadyValueBoolean {

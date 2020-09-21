@@ -154,7 +154,7 @@ class ErgoTreeSpecification extends SigmaTestingData {
       (SUnit, true),
       (SFunc(SInt, SAny), false),
       (STypeApply("T"), false),
-      (STypeVar("T"), false)
+      (SType.tT, false)
     )) { (t, isConst) =>
       t.isConstantSize shouldBe isConst
     }

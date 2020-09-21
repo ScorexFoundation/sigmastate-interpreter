@@ -6,12 +6,8 @@ import java.util.Objects
 
 import org.bitbucket.inkytonik.kiama.relation.Tree
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{strategy, everywherebu}
-import org.ergoplatform.ErgoLikeContext
 import org.ergoplatform.validation.ValidationException
 import scalan.{Nullable, RType}
-import scorex.crypto.authds.{ADDigest, SerializedAdProof}
-import scorex.crypto.authds.avltree.batch.BatchAVLVerifier
-import scorex.crypto.hash.{Digest32, Blake2b256}
 import scalan.util.CollectionUtil._
 import sigmastate.SCollection.{SIntArray, SByteArray}
 import sigmastate.interpreter.CryptoConstants.EcPointType
@@ -36,7 +32,7 @@ import sigmastate.lang.DefaultSigmaBuilder._
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.serialization.transformers.ProveDHTupleSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import special.sigma.{AnyValue, AvlTree, PreHeader, Header, _}
+import special.sigma.{AvlTree, PreHeader, Header, _}
 import sigmastate.lang.SourceContext
 import special.collection.Coll
 
@@ -153,7 +149,7 @@ object Values {
           ft.getGenericType
         case _ => tpe
       }
-      SFunc(Vector(), resType)
+      SFunc(mutable.WrappedArray.empty, resType)
     }
   }
 

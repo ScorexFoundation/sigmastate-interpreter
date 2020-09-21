@@ -44,11 +44,7 @@ object SigmaPredef {
     import builder._
 
     /** Type variable used in the signatures of global functions below. */
-    private val tT = STypeVar("T")
-    private val tK = STypeVar("K")
-    private val tL = STypeVar("L")
-    private val tR = STypeVar("R")
-    private val tO = STypeVar("O")
+    import SType.{tT, tR, tK, tL, tO, paramT, paramR}
 
     private val undefined: IrBuilderFunc =
       PartialFunction.empty[(SValue, Seq[SValue]), SValue]
@@ -140,7 +136,7 @@ object SigmaPredef {
     )
 
     val GetVarFunc = PredefinedFunc("getVar",
-      Lambda(Seq(STypeParam(tT)), Vector("varId" -> SByte), SOption(tT), None),
+      Lambda(Seq(paramT), Array("varId" -> SByte), SOption(tT), None),
       PredefFuncInfo(
         { case (Ident(_, SFunc(_, SOption(rtpe), _)), Seq(id: Constant[SNumericType]@unchecked)) =>
           mkGetVar(SByte.downcast(id.value.asInstanceOf[AnyVal]), rtpe)
@@ -164,7 +160,7 @@ object SigmaPredef {
     )
 
     val DeserializeFunc = PredefinedFunc("deserialize",
-      Lambda(Seq(STypeParam(tT)), Vector("str" -> SString), tT, None),
+      Lambda(Seq(paramT), Array("str" -> SString), tT, None),
       PredefFuncInfo(
       { case (Ident(_, SFunc(_, tpe, _)), args) =>
         if (args.length != 1)
@@ -311,8 +307,8 @@ object SigmaPredef {
 
     val SubstConstantsFunc = PredefinedFunc("substConstants",
       Lambda(
-        Seq(STypeParam(tT)),
-        Vector("scriptBytes" -> SByteArray, "positions" -> SIntArray, "newValues" -> SCollection(tT)),
+        Seq(paramT),
+        Array("scriptBytes" -> SByteArray, "positions" -> SIntArray, "newValues" -> SCollection(tT)),
         SByteArray, None
       ),
       PredefFuncInfo(
@@ -338,8 +334,8 @@ object SigmaPredef {
 
     val ExecuteFromVarFunc = PredefinedFunc("executeFromVar",
       Lambda(
-        Seq(STypeParam(tT)),
-        Vector("id" -> SByte),
+        Seq(paramT),
+        Array("id" -> SByte),
         tT, None
       ),
       PredefFuncInfo(undefined),
@@ -356,8 +352,8 @@ object SigmaPredef {
 
     val ExecuteFromSelfRegFunc = PredefinedFunc("executeFromSelfReg",
       Lambda(
-        Seq(STypeParam(tT)),
-        Vector("id" -> SByte, "default" -> SOption(tT)),
+        Seq(paramT),
+        Array("id" -> SByte, "default" -> SOption(tT)),
         tT, None
       ),
       PredefFuncInfo(undefined),
@@ -403,14 +399,14 @@ object SigmaPredef {
 
     def comparisonOp(symbolName: String, opDesc: ValueCompanion, desc: String, args: Seq[ArgInfo]) = {
       PredefinedFunc(symbolName,
-        Lambda(Seq(STypeParam(tT)), Vector("left" -> tT, "right" -> tT), SBoolean, None),
+        Lambda(Seq(paramT), Array("left" -> tT, "right" -> tT), SBoolean, None),
         PredefFuncInfo(undefined),
         OperationInfo(opDesc, desc, args)
       )
     }
     def binaryOp(symbolName: String, opDesc: ValueCompanion, desc: String, args: Seq[ArgInfo]) = {
       PredefinedFunc(symbolName,
-        Lambda(Seq(STypeParam(tT)), Vector("left" -> tT, "right" -> tT), tT, None),
+        Lambda(Seq(paramT), Array("left" -> tT, "right" -> tT), tT, None),
         PredefFuncInfo(undefined),
         OperationInfo(opDesc, desc, args)
       )
@@ -495,14 +491,14 @@ object SigmaPredef {
           Seq(ArgInfo("input", "input \\lst{Boolean} value")))
       ),
       PredefinedFunc("unary_-",
-        Lambda(Seq(STypeParam(tT)), Vector("input" -> tT), tT, None),
+        Lambda(Seq(paramT), Array("input" -> tT), tT, None),
         PredefFuncInfo(undefined),
         OperationInfo(Negation,
           "Negates numeric value \\lst{x} by returning \\lst{-x}.",
           Seq(ArgInfo("input", "value of numeric type")))
       ),
       PredefinedFunc("unary_~",
-        Lambda(Seq(STypeParam(tT)), Vector("input" -> tT), tT, None),
+        Lambda(Seq(paramT), Array("input" -> tT), tT, None),
         PredefFuncInfo(undefined),
         OperationInfo(BitInversion,
           "Invert every bit of the numeric value.",
@@ -517,14 +513,14 @@ object SigmaPredef {
       */
     val specialFuncs: Map[String, PredefinedFunc] = Seq(
       PredefinedFunc("selectField",
-        Lambda(Seq(STypeParam(tT), STypeParam(tR)), Vector("input" -> tT, "fieldIndex" -> SByte), tR, None),
+        Lambda(Array(paramT, paramR), Array("input" -> tT, "fieldIndex" -> SByte), tR, None),
         PredefFuncInfo(undefined),
         OperationInfo(SelectField,
           "Select tuple field by its 1-based index. E.g. \\lst{input._1} is transformed to \\lst{SelectField(input, 1)}",
           Seq(ArgInfo("input", "tuple of items"), ArgInfo("fieldIndex", "index of an item to select")))
       ),
       PredefinedFunc("treeLookup",
-        Lambda(Vector("tree" -> SAvlTree, "key" -> SByteArray, "proof" -> SByteArray), SOption(SByteArray), None),
+        Lambda(Array("tree" -> SAvlTree, "key" -> SByteArray, "proof" -> SByteArray), SOption(SByteArray), None),
         PredefFuncInfo(undefined),
         OperationInfo(TreeLookup,
           "",
@@ -533,7 +529,7 @@ object SigmaPredef {
           ArgInfo("proof", "proof to perform verification of the operation")))
       ),
       PredefinedFunc("if",
-        Lambda(Seq(STypeParam(tT)), Vector("condition" -> SBoolean, "trueBranch" -> tT, "falseBranch" -> tT), tT, None),
+        Lambda(Array(paramT), Array("condition" -> SBoolean, "trueBranch" -> tT, "falseBranch" -> tT), tT, None),
         PredefFuncInfo(undefined),
         OperationInfo(If,
           "Compute condition, if true then compute trueBranch else compute falseBranch",
@@ -542,21 +538,21 @@ object SigmaPredef {
           ArgInfo("falseBranch", "expression to execute when \\lst{condition == false}")))
       ),
       PredefinedFunc("upcast",
-        Lambda(Seq(STypeParam(tT), STypeParam(tR)), Vector("input" -> tT), tR, None),
+        Lambda(Array(paramT, paramR), Array("input" -> tT), tR, None),
         PredefFuncInfo(undefined),
         OperationInfo(Upcast,
           "Cast this numeric value to a bigger type (e.g. Int to Long)",
           Seq(ArgInfo("input", "value to cast")))
       ),
       PredefinedFunc("downcast",
-        Lambda(Seq(STypeParam(tT), STypeParam(tR)), Vector("input" -> tT), tR, None),
+        Lambda(Array(paramT, paramR), Array("input" -> tT), tR, None),
         PredefFuncInfo(undefined),
         OperationInfo(Downcast,
           "Cast this numeric value to a smaller type (e.g. Long to Int). Throws exception if overflow.",
           Seq(ArgInfo("input", "value to cast")))
       ),
       PredefinedFunc("apply",
-        Lambda(Seq(STypeParam(tT), STypeParam(tR)), Vector("func" -> SFunc(tT, tR), "args" -> tT), tR, None),
+        Lambda(Array(paramT, paramR), Array("func" -> SFunc(tT, tR), "args" -> tT), tR, None),
         PredefFuncInfo(undefined),
         OperationInfo(Apply,
           "Apply the function to the arguments. ",
@@ -564,7 +560,7 @@ object SigmaPredef {
             ArgInfo("args", "list of arguments")))
       ),
       PredefinedFunc("placeholder",
-        Lambda(Seq(STypeParam(tT)), Vector("id" -> SInt), tT, None),
+        Lambda(Array(paramT), Array("id" -> SInt), tT, None),
         PredefFuncInfo(undefined),
         OperationInfo(ConstantPlaceholder,
           "Create special ErgoTree node which can be replaced by constant with given id.",

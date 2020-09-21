@@ -25,7 +25,7 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
 
   private implicit val implicitPredefFuncRegistry: PredefinedFuncRegistry = predefFuncRegistry
 
-  private val tT = STypeVar("T") // to be used in typing rules
+  import SType.tT
 
   private val predefinedEnv: Map[String, SType] =
       predefFuncRegistry.funcs.mapValues(f => f.declaration.tpe)
