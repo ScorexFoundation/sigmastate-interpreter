@@ -29,6 +29,7 @@ import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.serialization.{SigmaSerializer, GroupElementSerializer}
 import special.Types.TupleType
 
+import scala.collection.mutable
 import scala.reflect.ClassTag
 
 /** Interface implmented by wrappers to provide access to the underlying wrapped value. */
@@ -461,6 +462,29 @@ object CHeader {
   * @see [[CostModel]] for detailed descriptions
   */
 class CCostModel extends CostModel {
+  import CCostModel._
+
+  def AccessBox: Int = AccessBoxCost
+
+  def AccessAvlTree: Int = AccessAvlTreeCost
+
+  def GetVar: Int = GetVarCost
+
+  def DeserializeVar: Int = DeserializeVarCost
+
+  def GetRegister: Int = GetRegisterCost
+
+  def DeserializeRegister: Int = DeserializeRegisterCost
+
+  def SelectField: Int = SelectFieldCost
+
+  def CollectionConst: Int = CollectionConstCost
+
+  def AccessKiloByteOfData: Int = AccessKiloByteOfDataCost
+
+  def PubKeySize: Long = CryptoConstants.EncodedGroupElementLength
+}
+object CCostModel {
   private def costOf(opName: String, opType: SFunc): Int = {
     val operId = OperationId(opName, opType)
     costOf(operId)
@@ -471,27 +495,35 @@ class CCostModel extends CostModel {
     cost
   }
 
-  def AccessBox: Int = costOf("AccessBox", SFunc(SContext, SBox))
+  // NOTE: lazy vals are necessary to avoid initialization exception
 
-  def AccessAvlTree: Int = costOf("AccessAvlTree", SFunc(SContext, SAvlTree))
+  val AccessBoxOpType: SFunc = SFunc(SContext, SBox)
+  lazy val AccessBoxCost: Int = costOf("AccessBox", AccessBoxOpType)
 
-  def GetVar: Int = costOf("GetVar", SFunc(IndexedSeq(SContext, SByte), SOption(SOption.tT)))
+  val AccessAvlTreeOpType: SFunc = SFunc(SContext, SAvlTree)
+  lazy val AccessAvlTreeCost: Int = costOf("AccessAvlTree", AccessAvlTreeOpType)
 
-  def DeserializeVar: Int = costOf("DeserializeVar", SFunc(IndexedSeq(SContext, SByte), SOption(SOption.tT)))
+  val GetVarOpType: SFunc = SFunc(Array(SContext, SByte), SOption.ThisType)
+  lazy val GetVarCost: Int = costOf("GetVar", GetVarOpType)
 
-  def GetRegister: Int = costOf("GetRegister", SFunc(IndexedSeq(SBox, SByte), SOption(SOption.tT)))
+  val DeserializeVarOpType: SFunc = SFunc(Array(SContext, SByte), SOption.ThisType)
+  lazy val DeserializeVarCost: Int = costOf("DeserializeVar", DeserializeVarOpType)
 
-  def DeserializeRegister: Int = costOf("DeserializeRegister", SFunc(IndexedSeq(SBox, SByte), SOption(SOption.tT)))
+  val GetRegisterOpType: SFunc = SFunc(Array(SBox, SByte), SOption.ThisType)
+  lazy val GetRegisterCost: Int = costOf("GetRegister", GetRegisterOpType)
 
-  def SelectField: Int = costOf("SelectField", SFunc(IndexedSeq(), SUnit))
+  val DeserializeRegisterOpType: SFunc = SFunc(Array(SBox, SByte), SOption.ThisType)
+  lazy val DeserializeRegisterCost: Int = costOf("DeserializeRegister", DeserializeRegisterOpType)
 
-  def CollectionConst: Int = costOf("Const", SFunc(IndexedSeq(), SCollection(STypeVar("IV"))))
+  val SelectFieldOpType: SFunc = SFunc(mutable.WrappedArray.empty, SUnit)
+  lazy val SelectFieldCost: Int = costOf("SelectField", SelectFieldOpType)
 
-  def AccessKiloByteOfData: Int = costOf("AccessKiloByteOfData", SFunc(IndexedSeq(), SUnit))
+  val CollectionConstOpType: SFunc = SFunc(mutable.WrappedArray.empty, SCollection.ThisType)
+  lazy val CollectionConstCost: Int = costOf("Const", CollectionConstOpType)
 
-  def PubKeySize: Long = CryptoConstants.EncodedGroupElementLength
+  val AccessKiloByteOfDataOpType: SFunc = SFunc(mutable.WrappedArray.empty, SUnit)
+  lazy val AccessKiloByteOfDataCost: Int = costOf("AccessKiloByteOfData", AccessKiloByteOfDataOpType)
 }
-
 
 /** A default implementation of [[SigmaDslBuilder]] interface.
   * @see [[SigmaDslBuilder]] for detailed descriptions

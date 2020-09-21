@@ -143,7 +143,7 @@ object SelectField extends ValueCompanion {
 case class SigmaPropIsProven(input: Value[SSigmaProp.type])
   extends Transformer[SSigmaProp.type, SBoolean.type] with NotReadyValueBoolean {
   override def companion = SigmaPropIsProven
-  override def opType = SFunc(input.tpe, SBoolean)
+  override val opType = SFunc(input.tpe, SBoolean)
 }
 object SigmaPropIsProven extends ValueCompanion {
   override def opCode: OpCode = OpCodes.SigmaPropIsProvenCode
@@ -165,9 +165,10 @@ trait SimpleTransformerCompanion extends ValueCompanion {
 case class SizeOf[V <: SType](input: Value[SCollection[V]])
   extends Transformer[SCollection[V], SInt.type] with NotReadyValueInt {
   override def companion = SizeOf
-  override val opType = SFunc(SCollection(SCollection.tIV), SInt)
+  override def opType = SizeOf.OpType
 }
 object SizeOf extends SimpleTransformerCompanion {
+  val OpType = SFunc(SCollection(SCollection.tIV), SInt)
   override def opCode: OpCode = OpCodes.SizeOfCode
   override def argInfos: Seq[ArgInfo] = SizeOfInfo.argInfos
 }
@@ -177,45 +178,50 @@ sealed trait Extract[V <: SType] extends Transformer[SBox.type, V] {
 
 case class ExtractAmount(input: Value[SBox.type]) extends Extract[SLong.type] with NotReadyValueLong {
   override def companion = ExtractAmount
-  override val opType = SFunc(SBox, SLong)
+  override def opType = ExtractAmount.OpType
 }
 object ExtractAmount extends SimpleTransformerCompanion {
+  val OpType = SFunc(SBox, SLong)
   override def opCode: OpCode = OpCodes.ExtractAmountCode
   override def argInfos: Seq[ArgInfo] = ExtractAmountInfo.argInfos
 }
 
 case class ExtractScriptBytes(input: Value[SBox.type]) extends Extract[SByteArray] with NotReadyValueByteArray {
   override def companion = ExtractScriptBytes
-  override val opType = SFunc(SBox, SByteArray)
+  override def opType = ExtractScriptBytes.OpType
 }
 object ExtractScriptBytes extends SimpleTransformerCompanion {
+  val OpType = SFunc(SBox, SByteArray)
   override def opCode: OpCode = OpCodes.ExtractScriptBytesCode
   override def argInfos: Seq[ArgInfo] = ExtractScriptBytesInfo.argInfos
 }
 
 case class ExtractBytes(input: Value[SBox.type]) extends Extract[SByteArray] with NotReadyValueByteArray {
   override def companion = ExtractBytes
-  override val opType = SFunc(SBox, SByteArray)
+  override def opType = ExtractBytes.OpType
 }
 object ExtractBytes extends SimpleTransformerCompanion {
+  val OpType = SFunc(SBox, SByteArray)
   override def opCode: OpCode = OpCodes.ExtractBytesCode
   override def argInfos: Seq[ArgInfo] = ExtractBytesInfo.argInfos
 }
 
 case class ExtractBytesWithNoRef(input: Value[SBox.type]) extends Extract[SByteArray] with NotReadyValueByteArray {
   override def companion = ExtractBytesWithNoRef
-  override val opType = SFunc(SBox, SByteArray)
+  override def opType = ExtractBytesWithNoRef.OpType
 }
 object ExtractBytesWithNoRef extends SimpleTransformerCompanion {
+  val OpType = SFunc(SBox, SByteArray)
   override def opCode: OpCode = OpCodes.ExtractBytesWithNoRefCode
   override def argInfos: Seq[ArgInfo] = ExtractBytesWithNoRefInfo.argInfos
 }
 
 case class ExtractId(input: Value[SBox.type]) extends Extract[SByteArray] with NotReadyValueByteArray {
   override def companion = ExtractId
-  override val opType = SFunc(SBox, SByteArray)
+  override def opType = ExtractId.OpType
 }
 object ExtractId extends SimpleTransformerCompanion {
+  val OpType = SFunc(SBox, SByteArray)
   override def opCode: OpCode = OpCodes.ExtractIdCode
   override def argInfos: Seq[ArgInfo] = ExtractIdInfo.argInfos
 }
@@ -225,7 +231,7 @@ case class ExtractRegisterAs[V <: SType]( input: Value[SBox.type],
                                           override val tpe: SOption[V])
   extends Extract[SOption[V]] with NotReadyValue[SOption[V]] {
   override def companion = ExtractRegisterAs
-  override def opType = SFunc(Vector(SBox, SByte), tpe)
+  override val opType = SFunc(Array(SBox, SByte), tpe)
 }
 object ExtractRegisterAs extends ValueCompanion {
   override def opCode: OpCode = OpCodes.ExtractRegisterAs

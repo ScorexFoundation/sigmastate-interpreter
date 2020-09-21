@@ -110,11 +110,12 @@ object TrivialProp {
   */
 case class BoolToSigmaProp(value: BoolValue) extends SigmaPropValue {
   override def companion = BoolToSigmaProp
-  def tpe = SSigmaProp
-  val opType = SFunc(SBoolean, SSigmaProp)
+  override def tpe = SSigmaProp
+  override def opType = BoolToSigmaProp.OpType
 }
 object BoolToSigmaProp extends ValueCompanion {
   override def opCode: OpCode = OpCodes.BoolToSigmaPropCode
+  val OpType = SFunc(SBoolean, SSigmaProp)
 }
 
 /** ErgoTree operation to create a new SigmaProp value representing public key
@@ -122,10 +123,11 @@ object BoolToSigmaProp extends ValueCompanion {
 case class CreateProveDlog(value: Value[SGroupElement.type]) extends SigmaPropValue {
   override def companion = CreateProveDlog
   override def tpe = SSigmaProp
-  override def opType = SFunc(SGroupElement, SSigmaProp)
+  override def opType = CreateProveDlog.OpType
 }
 object CreateProveDlog extends ValueCompanion {
   override def opCode: OpCode = OpCodes.ProveDlogCode
+  val OpType = SFunc(SGroupElement, SSigmaProp)
 }
 
 // TODO refactor: remove not used class
@@ -169,10 +171,11 @@ trait SigmaTransformerCompanion extends ValueCompanion {
   */
 case class SigmaAnd(items: Seq[SigmaPropValue]) extends SigmaTransformer[SigmaPropValue, SigmaPropValue] {
   override def companion = SigmaAnd
-  def tpe = SSigmaProp
-  val opType = SFunc(SCollection.SSigmaPropArray, SSigmaProp)
+  override def tpe = SSigmaProp
+  override def opType = SigmaAnd.OpType
 }
 object SigmaAnd extends SigmaTransformerCompanion {
+  val OpType = SFunc(SCollection.SSigmaPropArray, SSigmaProp)
   override def opCode: OpCode = OpCodes.SigmaAndCode
   override def argInfos: Seq[ArgInfo] = SigmaAndInfo.argInfos
   def apply(first: SigmaPropValue, second: SigmaPropValue, tail: SigmaPropValue*): SigmaAnd = SigmaAnd(Array(first, second) ++ tail)
@@ -183,16 +186,22 @@ object SigmaAnd extends SigmaTransformerCompanion {
   */
 case class SigmaOr(items: Seq[SigmaPropValue]) extends SigmaTransformer[SigmaPropValue, SigmaPropValue] {
   override def companion = SigmaOr
-  def tpe = SSigmaProp
-  val opType = SFunc(SCollection.SSigmaPropArray, SSigmaProp)
+  override def tpe = SSigmaProp
+  override def opType = SigmaOr.OpType
 }
 
 object SigmaOr extends SigmaTransformerCompanion {
+  val OpType = SFunc(SCollection.SSigmaPropArray, SSigmaProp)
   override def opCode: OpCode = OpCodes.SigmaOrCode
   override def argInfos: Seq[ArgInfo] = SigmaOrInfo.argInfos
   def apply(head: SigmaPropValue, tail: SigmaPropValue*): SigmaOr = SigmaOr(head +: tail)
 }
 
+/** Base trait for companions. */
+trait LogicalTransformerCompanion extends ValueCompanion {
+  def argInfos: Seq[ArgInfo]
+  val OpType: SFunc = SFunc(SCollection.SBooleanArray, SBoolean)
+}
 
 /**
   * OR logical conjunction
@@ -200,7 +209,7 @@ object SigmaOr extends SigmaTransformerCompanion {
 case class OR(input: Value[SCollection[SBoolean.type]])
   extends Transformer[SCollection[SBoolean.type], SBoolean.type] with NotReadyValueBoolean {
   override def companion = OR
-  override val opType = SFunc(SCollection.SBooleanArray, SBoolean)
+  override def opType = OR.OpType
 }
 
 object OR extends LogicalTransformerCompanion {
@@ -218,7 +227,7 @@ object OR extends LogicalTransformerCompanion {
 case class XorOf(input: Value[SCollection[SBoolean.type]])
   extends Transformer[SCollection[SBoolean.type], SBoolean.type] with NotReadyValueBoolean {
   override def companion = XorOf
-  override val opType = SFunc(SCollection.SBooleanArray, SBoolean)
+  override def opType = XorOf.OpType
 }
 
 object XorOf extends LogicalTransformerCompanion {
@@ -236,11 +245,7 @@ case class AND(input: Value[SCollection[SBoolean.type]])
   extends Transformer[SCollection[SBoolean.type], SBoolean.type]
     with NotReadyValueBoolean {
   override def companion = AND
-  override val opType = SFunc(SCollection.SBooleanArray, SBoolean)
-}
-
-trait LogicalTransformerCompanion extends ValueCompanion {
-  def argInfos: Seq[ArgInfo]
+  override def opType = AND.OpType
 }
 
 object AND extends LogicalTransformerCompanion {
@@ -264,18 +269,20 @@ case class AtLeast(bound: Value[SInt.type], input: Value[SCollection[SSigmaProp.
     with NotReadyValue[SSigmaProp.type] {
   override def companion = AtLeast
   override def tpe: SSigmaProp.type = SSigmaProp
-  override def opType: SFunc = SFunc(IndexedSeq(SInt, SCollection.SBooleanArray), SBoolean)
+  override def opType: SFunc = AtLeast.OpType
 
 }
 
 object AtLeast extends ValueCompanion {
   override def opCode: OpCode = AtLeastCode
+  val OpType: SFunc = SFunc(Array(SInt, SCollection.SBooleanArray), SBoolean)
   val MaxChildrenCount: Int = SigmaConstants.MaxChildrenCountForAtLeastOp.value
 
   def apply(bound: Value[SInt.type], children: Seq[SigmaPropValue]): AtLeast =
     AtLeast(bound, ConcreteCollection.fromSeq(children))
 
-  def apply(bound: Value[SInt.type], head: SigmaPropValue, tail: SigmaPropValue*): AtLeast = apply(bound, head +: tail)
+  def apply(bound: Value[SInt.type], head: SigmaPropValue, tail: SigmaPropValue*): AtLeast =
+    apply(bound, head +: tail)
 
   /** @hotspot don't beautify this code */
   def reduce(bound: Int, children: Seq[SigmaBoolean]): SigmaBoolean = {
@@ -375,9 +382,10 @@ object Downcast extends NumericCastCompanion {
 case class LongToByteArray(input: Value[SLong.type])
   extends Transformer[SLong.type, SByteArray] with NotReadyValueByteArray {
   override def companion = LongToByteArray
-  override val opType = SFunc(SLong, SByteArray)
+  override def opType = LongToByteArray.OpType
 }
 object LongToByteArray extends SimpleTransformerCompanion {
+  val OpType = SFunc(SLong, SByteArray)
   override def opCode: OpCode = OpCodes.LongToByteArrayCode
   override def argInfos: Seq[ArgInfo] = LongToByteArrayInfo.argInfos
 }
@@ -388,9 +396,10 @@ object LongToByteArray extends SimpleTransformerCompanion {
 case class ByteArrayToLong(input: Value[SByteArray])
   extends Transformer[SByteArray, SLong.type] with NotReadyValueLong {
   override def companion = ByteArrayToLong
-  override val opType = SFunc(SByteArray, SLong)
+  override def opType = ByteArrayToLong.OpType
 }
 object ByteArrayToLong extends SimpleTransformerCompanion {
+  val OpType = SFunc(SByteArray, SLong)
   override def opCode: OpCode = OpCodes.ByteArrayToLongCode
   override def argInfos: Seq[ArgInfo] = ByteArrayToLongInfo.argInfos
 }
@@ -401,9 +410,10 @@ object ByteArrayToLong extends SimpleTransformerCompanion {
 case class ByteArrayToBigInt(input: Value[SByteArray])
   extends Transformer[SByteArray, SBigInt.type] with NotReadyValueBigInt {
   override def companion = ByteArrayToBigInt
-  override val opType = SFunc(SByteArray, SBigInt)
+  override val opType = ByteArrayToBigInt.OpType
 }
 object ByteArrayToBigInt extends SimpleTransformerCompanion {
+  val OpType = SFunc(SByteArray, SBigInt)
   override def opCode: OpCode = OpCodes.ByteArrayToBigIntCode
   override def argInfos: Seq[ArgInfo] = ByteArrayToBigIntInfo.argInfos
 }
@@ -414,17 +424,20 @@ object ByteArrayToBigInt extends SimpleTransformerCompanion {
 case class DecodePoint(input: Value[SByteArray])
   extends Transformer[SByteArray, SGroupElement.type] with NotReadyValueGroupElement {
   override def companion = DecodePoint
-  override val opType = SFunc(SByteArray, SGroupElement)
+  override def opType = DecodePoint.OpType
 }
 object DecodePoint extends SimpleTransformerCompanion {
+  val OpType = SFunc(SByteArray, SGroupElement)
   override def opCode: OpCode = OpCodes.DecodePointCode
   override def argInfos: Seq[ArgInfo] = DecodePointInfo.argInfos
 }
 
-trait CalcHash extends Transformer[SByteArray, SByteArray] with NotReadyValueByteArray {
-  val input: Value[SByteArray]
-  val hashFn: CryptographicHash32
-  override val opType = SFunc(SByteArray, SByteArray)
+sealed abstract class CalcHash extends Transformer[SByteArray, SByteArray] with NotReadyValueByteArray {
+  def hashFn: CryptographicHash32
+  override def opType = CalcHash.OpType
+}
+object CalcHash {
+  val OpType = SFunc(SByteArray, SByteArray)
 }
 
 /**

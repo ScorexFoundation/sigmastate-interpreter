@@ -194,7 +194,7 @@ object ErgoLikeContext {
 /** When interpreted evaluates to a ByteArrayConstant built from Context.minerPubkey */
 case object MinerPubkey extends NotReadyValueByteArray with ValueCompanion {
   override def opCode: OpCode = OpCodes.MinerPubkeyCode
-  def opType = SFunc(SContext, SCollection.SByteArray)
+  override val opType = SFunc(SContext, SCollection.SByteArray)
   override def companion = this
 }
 
@@ -202,30 +202,30 @@ case object MinerPubkey extends NotReadyValueByteArray with ValueCompanion {
 case object Height extends NotReadyValueInt with ValueCompanion {
   override def companion = this
   override def opCode: OpCode = OpCodes.HeightCode
-  def opType = SFunc(SContext, SInt)
+  override val opType = SFunc(SContext, SInt)
 }
 
 /** When interpreted evaluates to a collection of BoxConstant built from Context.boxesToSpend */
 case object Inputs extends LazyCollection[SBox.type] with ValueCompanion {
   override def companion = this
   override def opCode: OpCode = OpCodes.InputsCode
-  val tpe = SCollection(SBox)
-  def opType = SFunc(SContext, tpe)
+  override def tpe = SCollection.SBoxArray
+  override val opType = SFunc(SContext, tpe)
 }
 
 /** When interpreted evaluates to a collection of BoxConstant built from Context.spendingTransaction.outputs */
 case object Outputs extends LazyCollection[SBox.type] with ValueCompanion {
   override def companion = this
   override def opCode: OpCode = OpCodes.OutputsCode
-  val tpe = SCollection(SBox)
-  def opType = SFunc(SContext, tpe)
+  override def tpe = SCollection.SBoxArray
+  override val opType = SFunc(SContext, tpe)
 }
 
 /** When interpreted evaluates to a AvlTreeConstant built from Context.lastBlockUtxoRoot */
 case object LastBlockUtxoRootHash extends NotReadyValueAvlTree with ValueCompanion {
   override def companion = this
   override def opCode: OpCode = OpCodes.LastBlockUtxoRootHashCode
-  def opType = SFunc(SContext, tpe)
+  override val opType = SFunc(SContext, tpe)
 }
 
 
@@ -233,19 +233,19 @@ case object LastBlockUtxoRootHash extends NotReadyValueAvlTree with ValueCompani
 case object Self extends NotReadyValueBox with ValueCompanion {
   override def companion = this
   override def opCode: OpCode = OpCodes.SelfCode
-  def opType = SFunc(SContext, SBox)
+  override val opType = SFunc(SContext, SBox)
 }
 
 case object Context extends NotReadyValue[SContext.type] with ValueCompanion {
   override def companion = this
   override def opCode: OpCode = OpCodes.ContextCode
   override def tpe: SContext.type = SContext
-  override def opType: SFunc = SFunc(SUnit, SContext)
+  override val opType: SFunc = SFunc(SUnit, SContext)
 }
 
 case object Global extends NotReadyValue[SGlobal.type] with ValueCompanion {
   override def companion = this
   override def opCode: OpCode = OpCodes.GlobalCode
   override def tpe: SGlobal.type = SGlobal
-  override def opType: SFunc = SFunc(SUnit, SGlobal)
+  override val opType: SFunc = SFunc(SUnit, SGlobal)
 }

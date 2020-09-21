@@ -45,10 +45,11 @@ object Terms {
   case class ZKProofBlock(body: SigmaPropValue) extends BoolValue {
     override def companion = ZKProofBlock
     override def tpe = SBoolean
-    override def opType: SFunc = SFunc(SSigmaProp, SBoolean)
+    override def opType: SFunc = ZKProofBlock.OpType
   }
   object ZKProofBlock extends ValueCompanion {
     override def opCode: OpCode = OpCodes.Undefined
+    val OpType = SFunc(SSigmaProp, SBoolean)
   }
 
   trait Val extends Value[SType] {
