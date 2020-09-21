@@ -9,7 +9,7 @@ import sigmastate.helpers.{ErgoLikeTestInterpreter, ErgoLikeTestProvingInterpret
 import sigmastate.interpreter.{ContextExtension, HintsBag, ProverResult}
 
 class SigningSpecification extends SigmaTestingCommons {
-  implicit lazy val IR = new TestingIRContext
+  implicit lazy val IR: TestingIRContext = new TestingIRContext
 
   property("simple signature test vector") {
 
@@ -55,6 +55,9 @@ class SigningSpecification extends SigmaTestingCommons {
       val sig = pi.signMessage(sigmaTree, msg, HintsBag.empty).get
       pi.verifySignature(sigmaTree, msg, sig) shouldBe true
       pi.verifySignature(sigmaTree, (str + "1").getBytes("UTF-8"), sig) shouldBe false
+      pi.verifySignature(sigmaTree, msg, sig :+ (1: Byte)) shouldBe false
+      val wrongTree = pi.publicKeys(1)
+      pi.verifySignature(wrongTree, msg, sig) shouldBe false
     }
   }
 
@@ -66,6 +69,7 @@ class SigningSpecification extends SigmaTestingCommons {
       val sig = pi.signMessage(sigmaTree, msg, HintsBag.empty).get
       pi.verifySignature(sigmaTree, msg, sig) shouldBe true
       pi.verifySignature(sigmaTree, (str + "1").getBytes("UTF-8"), sig) shouldBe false
+      val wrongTree = CAND(Seq(pi.dlogSecrets.head.publicImage, pi.dhSecrets(1).publicImage))
     }
   }
 

@@ -334,11 +334,15 @@ trait Interpreter extends ScorexLogging {
                       message: Array[Byte],
                       signature: Array[Byte]): Boolean = {
     // Perform Verifier Steps 1-3
-    SigSerializer.parseAndComputeChallenges(sigmaTree, signature) match {
-      case NoProof => false
-      case sp: UncheckedSigmaTree =>
-        // Perform Verifier Steps 4-6
-        checkCommitments(sp, message)
+    try {
+      SigSerializer.parseAndComputeChallenges(sigmaTree, signature) match {
+        case NoProof => false
+        case sp: UncheckedSigmaTree =>
+          // Perform Verifier Steps 4-6
+          checkCommitments(sp, message)
+      }
+    } catch {
+      case e: Exception => log.warn("Improper signature: ", e); false
     }
   }
 
