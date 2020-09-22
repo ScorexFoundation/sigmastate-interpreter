@@ -48,7 +48,7 @@ import scala.runtime.ScalaRunTime
   *                            containing the transaction with this box.
   * @hotspot don't beautify the code of this class
   */
-case class ErgoBox(
+class ErgoBox(
          override val value: Long,
          override val ergoTree: ErgoTree,
          override val additionalTokens: Coll[(TokenId, Long)] = Colls.emptyColl[(TokenId, Long)],
@@ -76,13 +76,6 @@ case class ErgoBox(
     * @see [[ErgoBox.sigmaSerializer]]
     */
   lazy val bytes: Array[Byte] = ErgoBox.sigmaSerializer.toBytes(this)
-
-  /** Creates a new box by updating some of the additional registers with the given new bindings.
-    * @param newBindings a map of the registers to be updated with new values
-    */
-  def withUpdatedRegisters(newBindings: AdditionalRegisters): ErgoBox = {
-    this.copy(additionalRegisters = additionalRegisters ++ newBindings)
-  }
 
   override def equals(arg: Any): Boolean = arg match {
     case x: ErgoBox => java.util.Arrays.equals(id, x.id)
@@ -183,19 +176,6 @@ object ErgoBox {
     if (0 <= i && i < maxRegisters) Some(registerByIndex(i)) else None
 
   val allZerosModifierId: ModifierId = Array.fill[Byte](32)(0.toByte).toModifierId
-
-  // TODO refactor: This method is only used in tests thus it can be moved to e.g. SigmaTestingCommons. */
-  def create(value: Long,
-            ergoTree: ErgoTree,
-            creationHeight: Int,
-            additionalTokens: Seq[(TokenId, Long)] = Nil,
-            additionalRegisters: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]] = Map.empty,
-            transactionId: ModifierId = allZerosModifierId,
-            boxIndex: Short = 0): ErgoBox =
-    new ErgoBox(value, ergoTree,
-      Colls.fromArray(additionalTokens.toArray[(TokenId, Long)]),
-      additionalRegisters,
-      transactionId, boxIndex, creationHeight)
 
   object sigmaSerializer extends SigmaSerializer[ErgoBox, ErgoBox] {
 

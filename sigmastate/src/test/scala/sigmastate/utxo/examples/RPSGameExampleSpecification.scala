@@ -2,16 +2,15 @@
 package sigmastate.utxo.examples
 
 import org.ergoplatform.ErgoBox.{R4, R5, R6, R7}
-import org.ergoplatform._
 import scorex.crypto.hash.Blake2b256
 import scorex.utils.Random
-import sigmastate.Values.{ByteArrayConstant, ByteConstant, IntConstant, SigmaBoolean, SigmaPropConstant}
+import sigmastate.Values.{ByteArrayConstant, ByteConstant, IntConstant, SigmaPropConstant}
 import sigmastate._
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter._
 import sigmastate.lang.Terms._
-import sigmastate.utxo._
 
 class RPSGameExampleSpecification extends SigmaTestingCommons {
   implicit lazy val IR = new TestingIRContext
@@ -113,7 +112,7 @@ class RPSGameExampleSpecification extends SigmaTestingCommons {
     val halfGameCreationHeight = 70
     val playAmount = 10      // LongConstant(10)
 
-    val halfGameOutput = ErgoBox.create(playAmount, halfGameScript, halfGameCreationHeight)
+    val halfGameOutput = testBox(playAmount, halfGameScript, halfGameCreationHeight)
 
     /////////////////////////////////////////////////////////
     //// above halfGameOutput is a Half-Game "box" created by Alice.
@@ -134,7 +133,7 @@ class RPSGameExampleSpecification extends SigmaTestingCommons {
     val bobDeadline = 120 // height after which it become's Bob's money
     val b:Byte = (scala.util.Random.nextInt.abs % 3).toByte
 
-    val fullGameOutput0 = ErgoBox.create(playAmount, fullGameScript, fullGameCreationHeight, Nil,
+    val fullGameOutput0 = testBox(playAmount, fullGameScript, fullGameCreationHeight, Nil,
       Map(
         R4 -> ByteConstant(b),
         R5 -> SigmaPropConstant(bobPubKey),
@@ -143,7 +142,7 @@ class RPSGameExampleSpecification extends SigmaTestingCommons {
       )
     )
 
-    val fullGameOutput1 = ErgoBox.create(playAmount, fullGameScript, fullGameCreationHeight, Nil,
+    val fullGameOutput1 = testBox(playAmount, fullGameScript, fullGameCreationHeight, Nil,
       Map(
         R4 -> ByteConstant(b),
         R5 -> SigmaPropConstant(bobPubKey),
@@ -183,7 +182,7 @@ class RPSGameExampleSpecification extends SigmaTestingCommons {
     val carolPubKey:ProveDlog = carol.dlogSecrets.head.publicImage
 
     // note that playAmount below is not checked. It could be anything.
-    val gameOverOutput = ErgoBox.create(playAmount, carolPubKey, gameOverHeight)
+    val gameOverOutput = testBox(playAmount, carolPubKey, gameOverHeight)
 
     // normally this transaction would be invalid, but we're not checking it in this test
     val gameOverTx = createTransaction(gameOverOutput)
@@ -272,7 +271,7 @@ class RPSGameExampleSpecification extends SigmaTestingCommons {
 
     // assume Bob is paying to Carol
     // note that playAmount*2 below is not checked. It could be anything.
-    val defaultWinOutput = ErgoBox.create(playAmount*2, carolPubKey, defaultWinHeight)
+    val defaultWinOutput = testBox(playAmount*2, carolPubKey, defaultWinHeight)
 
     //normally this transaction would invalid (why?), but we're not checking it in this test
     val defaultWinTx = createTransaction(defaultWinOutput)

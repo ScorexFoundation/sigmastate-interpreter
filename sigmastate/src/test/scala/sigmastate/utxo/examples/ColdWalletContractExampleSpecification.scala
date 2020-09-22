@@ -3,6 +3,7 @@ package sigmastate.utxo.examples
 import org.ergoplatform.ErgoBox.{R4, R5}
 import org.ergoplatform._
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.TestingHelpers._
 import sigmastate.AvlTreeData
 import sigmastate.Values.{IntConstant, LongConstant}
 import sigmastate.interpreter.Interpreter.ScriptNameProp
@@ -72,7 +73,7 @@ class ColdWalletContractExampleSpecification extends SigmaTestingCommons {
     val depositHeight = 50
     val min = depositAmount - depositAmount * percent/100 // should be 99000 (99k)
 
-    val depositOutput = ErgoBox.create(depositAmount, address.script, depositHeight, Nil,
+    val depositOutput = testBox(depositAmount, address.script, depositHeight, Nil,
       Map(
         R4 -> IntConstant(depositHeight), // can keep any value in R4 initially
         R5 -> LongConstant(min) // keeping it below min will make UTXO unspendable
@@ -89,7 +90,7 @@ class ColdWalletContractExampleSpecification extends SigmaTestingCommons {
     // Both Alice ane Bob withdraw
     val withdrawAmountFull = depositAmount // full amount is withdrawn
 
-    val withdrawOutputAliceAndBob = ErgoBox.create(withdrawAmountFull, carolPubKey, firstWithdrawHeight)
+    val withdrawOutputAliceAndBob = testBox(withdrawAmountFull, carolPubKey, firstWithdrawHeight)
 
     val withdrawTxAliceAndBob = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(withdrawOutputAliceAndBob))
 
@@ -112,13 +113,13 @@ class ColdWalletContractExampleSpecification extends SigmaTestingCommons {
     val firstWithdrawAmount = depositAmount * percent / 100     // less than or eqaul to percent (1000)
     val firstChangeAmount = depositAmount - firstWithdrawAmount // 99000
 
-    val firstChangeOutput = ErgoBox.create(firstChangeAmount, address.script, firstWithdrawHeight, Nil,
+    val firstChangeOutput = testBox(firstChangeAmount, address.script, firstWithdrawHeight, Nil,
       Map(
         R4 -> IntConstant(depositHeight), // newStart (= old start) = 50
         R5 -> LongConstant(min) // newMin (= old min) = 99000
       )
     )
-    val firstWithdrawOutput = ErgoBox.create(firstWithdrawAmount, carolPubKey, firstWithdrawHeight)
+    val firstWithdrawOutput = testBox(firstWithdrawAmount, carolPubKey, firstWithdrawHeight)
 
     //normally this transaction would be invalid, but we're not checking it in this test
     val firstWithdrawTx = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(firstChangeOutput, firstWithdrawOutput))
@@ -141,13 +142,13 @@ class ColdWalletContractExampleSpecification extends SigmaTestingCommons {
     // invalid (amount greater than allowed)
     val withdrawAmountInvalid = depositAmount * percent / 100 + 1 // more than percent
     val changeAmountInvalid = depositAmount - withdrawAmountInvalid
-    val changeOutputInvalid = ErgoBox.create(changeAmountInvalid, address.script, firstWithdrawHeight, Nil,
+    val changeOutputInvalid = testBox(changeAmountInvalid, address.script, firstWithdrawHeight, Nil,
       Map(
         R4 -> IntConstant(depositHeight), // newStart (= old start)
         R5 -> LongConstant(min) // newMin (= old min)
       )
     )
-    val withdrawOutputInvalid = ErgoBox.create(withdrawAmountInvalid, carolPubKey, firstWithdrawHeight)
+    val withdrawOutputInvalid = testBox(withdrawAmountInvalid, carolPubKey, firstWithdrawHeight)
 
     // normally this transaction would be invalid, but we're not checking it in this test
     val withdrawTxInvalid = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(changeOutputInvalid, withdrawOutputInvalid))
@@ -175,13 +176,13 @@ class ColdWalletContractExampleSpecification extends SigmaTestingCommons {
     val secondChangeAmount = firstChangeAmount - secondWithdrawAmount
     val secondMin = firstChangeAmount - firstChangeAmount * percent/100
 
-    val secondChangeOutput = ErgoBox.create(secondChangeAmount, address.script, secondWithdrawHeight, Nil,
+    val secondChangeOutput = testBox(secondChangeAmount, address.script, secondWithdrawHeight, Nil,
       Map(
         R4 -> IntConstant(secondWithdrawHeight), // newStart
         R5 -> LongConstant(secondMin) // newMin
       )
     )
-    val secondWithdrawOutput = ErgoBox.create(secondWithdrawAmount, carolPubKey, secondWithdrawHeight)
+    val secondWithdrawOutput = testBox(secondWithdrawAmount, carolPubKey, secondWithdrawHeight)
 
     //normally this transaction would be invalid, but we're not checking it in this test
     val secondWithdrawTx = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(secondChangeOutput, secondWithdrawOutput))
