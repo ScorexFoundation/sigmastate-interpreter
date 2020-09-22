@@ -14,12 +14,46 @@
 % https://tex.stackexchange.com/questions/11719/how-do-i-backcolor-in-verbatim
 \usepackage{xcolor}
 \usepackage{alltt}
+
+\usepackage{listings}
+\usepackage{xcolor}
+
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    %basicstyle=\small \ttfamily,
+    basicstyle=\tiny \ttfamily, %\footnotesize, %or \small
+    breakatwhitespace=false,         
+    breaklines=true,
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2
+}
+
+\lstset{style=mystyle}
+
 % Compensate for fbox sep:
 \newcommand\Hi[2][lightgray]{%
 	\hspace*{-\fboxsep}%
 	\colorbox{#1}{#2}%
 	\hspace*{-\fboxsep}%
 }
+
+\renewcommand{\lstlistingname}{Contract}% Listing -> Contract
+\renewcommand{\lstlistlistingname}{List of \lstlistingname s}% List of Listings -> List of Contracts
 
 \ifnum\shownotes=1
 \ifnum\notesinmargins=1
@@ -76,6 +110,7 @@
 
 \newcommand{\GF}{\ensuremath{\mathrm{GF}}}
 
+\AtBeginDocument{\renewcommand*{\thelstlisting}{\arabic{lstlisting}}}
 
 \begin{document}
 
@@ -159,8 +194,13 @@ CoinJoin requires off-chain interaction and this interactive nature is the prima
 \subsection{\zerocoin}
 \label{zerocoin} 
 
-\zerocoin is a privacy enhancing protocol depicted in Figure~\ref{fig:zerocoin}. The protocol uses a pool of coins called the {\em unspent-box pool} (U-pool), to which an ordinary coin is added as a commitment $c$ to secret $s$ using randomness $r$. The coin is later spent from this pool such that the link to $c$ is not publicly visible. The value $c$ must be permanently stored in the U-pool, since the spending transaction cannot reveal it. Instead, it reveals the secret $s$ (also called the {\em serial number}) along with a zero-knowledge proof that $s$ was used in a some commitment in the U-pool. The commitment scheme is such that revealing $s$ does not leak any information about $r$. Thus, the randomness $r$ remains secret. To prevent double spending, the serial number is also stored in another data structure called the {\em spent-box pool} (S-pool). A coin can be spent from the U-pool only if the corresponding serial number does not exist in the S-pool. 
-
+\zerocoin is a privacy enhancing protocol that 
+%depicted in Figure~\ref{fig:zerocoin}. The protocol 
+uses a pool called the {\em unspent pool} (U-pool). A coin is added to this as a public commitment $c = \mathsf{Comm}(s, r)$ of secrets $s, r$ and later removed in a way
+that does not reveal $c$ of the coin being removed. Instead, the removing transaction only reveals secret $s$, the ``serial number'', along with a zero-knowledge proof that one of the $c$'s in the U-pool is of the form $\mathsf{Comm}(s, r)$ for some $r$. Note that $c$ is stored in the U-pool permanently.
+%The commitment scheme is such that revealing $s$ does not leak any information about $r$. Thus, the randomness $r$ remains secret. 
+Additionally, to prevent double spending, the value $s$ is also stored permanently in another pool called the {\em spent pool} (S-pool). A coin can be spent from the U-pool only if the corresponding serial number does not exist in the S-pool. 
+\ignore{
 \begin{figure}[h]
 	\centering
 	\begin{subfigure}{.7\textwidth}
@@ -170,6 +210,7 @@ CoinJoin requires off-chain interaction and this interactive nature is the prima
 	\caption{\zerocoin protocol}
 	\label{fig:zerocoin}
 \end{figure}
+}
 
 One consequence of this is that both the U-pool (the set of commitments) and the S-pool (the set of spent serial numbers) must be maintained in memory for verifying every transaction. 
 Another consequence is that the sizes of the these two sets increase monotonically. 
@@ -200,7 +241,7 @@ As shown in \cite{CDS94}, any two sigma protocols for arbitrary statements $\tau
 $\mathcal{P}$ simulates the proof of $\tau_{1-b}$ to get an accepting transcript $(t_{1-b}, c_{1-b}, z_{1-b})$ and generates $t_b$ properly. $\mathcal{P}$ sends $(t_0, t_1)$ to $\mathcal{V}$. On receiving $c$, $\mathcal{P}$ computes $c_b = c \oplus c_{1-b}$ and then uses $t_b, c_b$ to compute the response $z_b$ properly. Finally $\mathcal{P}$ sends $(z_0, z_1, c_0, c_1)$ to $\mathcal{V}$, who accepts iff both $(t_0, c_0, z_0)$ and $(t_1, c_1, z_1)$ are accepting transcripts and $c = c_0 \oplus c_1$.
 We call such a construction the $\ornode$ operator. 
 
-The second primitive we need is a {\em proof of knowledge of Diffie-Hellman Tuple}, where the prover proves knowledge of $x$ such that $u = g^x$ {\em and} $v = h^x$ for generators $g, h$.
+The second primitive we need is a {\em proof of knowledge of a Diffie-Hellman tuple}, where the prover proves knowledge of $x$ such that $u = g^x$ {\em and} $v = h^x$ for generators $g, h$.
 This is called \texttt{proveDHTuple}($g, h, u, v$) and implemented using two parallel runs of the first protocol:
 
 \begin{enumerate}
@@ -209,7 +250,7 @@ This is called \texttt{proveDHTuple}($g, h, u, v$) and implemented using two par
 	\item $\mathcal{P}$ sends $z = r + cx$ to $\mathcal{V}$ who accepts iff ${g}^z = {t_0}\cdot {u}^c$ and $h^z=t_1\cdot v^c$.
 \end{enumerate}
 
-We can also define \texttt{proveDHTuple}($g, u, h, v$), the {\em dual} of the above, as a sigma protocol where $\mathcal{P}$ proves knowledge of $y$ such that $h = g^y$ and $v = u^y$.
+Swapping $h$ and $u$, we obtain \texttt{proveDHTuple}($g, u, h, v$), where $\mathcal{P}$ proves knowledge of $y$ such that $h = g^y$ and $v = u^y$. This is the {\em dual} of the original protocol.
 
 
 \section{\algname Protocol}
@@ -236,15 +277,11 @@ Privacy comes from the fact that boxes $O_b$ and $O_{1-b}$ are indistinguishable
 \subsection{One \algname Round}
 Each individual \algname round consists of two stages, the {\em pool} followed by the {\em mix} stage. 
 Let $g$ be some generator of $G$ that is fixed beforehand. Each box has optional registers ${\alpha}, {\beta}$ that can store elements of $G$.
-
-We will encode the protocol at the the smart contract layer using a sufficiently advanced language that allows us to specify predicates on the entire transaction. 
-In other words, we require a language that supports context level C2 or higher as defined in~\cite{bypassing}. The smart contract (or the guard script) of a box specifies the conditions under which it can be spent. 
-
 Without loss of generality, Alice will pool and Bob will mix. 
 
 \begin{enumerate}
-	\item \textbf{Pool:} To add a coin to the H-pool, Alice picks a secret $x\in \mathbb{Z}_q$ and creates a box $A$ containing $u = g^x$ and a certain guard script (described below). The box is now considered added to the pool. 
-	\item \textbf{Mix:} Bob picks a box, say $A$, uniformly from the pool. He also picks secrets $(b, y) \in \mathbb{Z}_2\times \mathbb{Z}_q$. He spends $A$ with some of his own boxes to create two output boxes $O_0, O_1$ of equal value such that:
+	\item \textbf{Pool:} To add a coin to the H-pool, Alice picks a secret $x\in \mathbb{Z}_q$ and creates a box $A$ containing $u = g^x$. The box is now considered added to the pool. 
+	\item \textbf{Mix:} Bob picks a box, say $A$, uniformly from the pool. He also picks secrets $(b, y) \in \mathbb{Z}_2\times \mathbb{Z}_q$. He spends $A$ with some of his own boxes to create two output boxes $O_0, O_1$ having the same value as $A$ such that:
 	\begin{enumerate}
 		\item Registers $({\alpha}, {\beta})$ of $O_b$ and $O_{1-b}$ store $(g^y, u^y)$ and $(u^y, g^y)$ respectively. 
 		\item $O_b, O_{1-b}$ are protected by the sigma statement given below:
@@ -257,28 +294,23 @@ Without loss of generality, Alice will pool and Bob will mix.
 $O_b$ and $O_{b-1}$ can be spent by Alice and Bob respectively using their secrets. Alice can identify her box as the one with ${\beta} = {\alpha}^x$. 
 Assuming that the DDH problem is hard, no outsider can guess $b$ with probability better than $\frac{1}{2}$. 
 
-%\textbf{Enforcing Bob's correct behavior:} 
-The above protocol works assuming Bob behaves correctly. 
-We can encode other rules in the protocol or the smart contract of $A$ that enforce Bob to behave correctly most of the time.
-For instance, we can enforce Bob to create two outputs with registers $\alpha, \beta$ swapped and that both outputs have the same value as $A$. However,
-since the DDH problem is hard, we cannot test whether the values in the registers are of the correct form (i.e., one is $g^y$ and other is $u^y$).
+The above protocol works assuming Bob behaves correctly. The protocol can enforce Bob to create two outputs with the same value as $A$ and registers $\alpha, \beta$ swapped.
+However, since the DDH problem is hard, we cannot test whether the values in the registers are of the correct form (i.e., one is $g^y$ and other is $u^y$).
 This is where the dual of \texttt{proveDHTuple} for secret $y$ will come to our rescue. 
-Concretely, the script of $A$ must enforce the following rules for Bob:
-
+Concretely, Bob must adhere to the below rules when spending $A$:
 	\begin{enumerate}
 		\item Bob must create two outputs $O_0, O_1$ with the same value as $A$. 
-		\item Both $O_0, O_1$ must be protected by the script of Eq.~\ref{fullScriptEqn}
+		\item Both $O_0, O_1$ must be protected by the sigma statement of Eq.~\ref{fullScriptEqn}
         \item Let $i_j$ be register $i$ of $O_j$. Then the following must hold: 
             \begin{equation}\label{outputRegs}
     		({\alpha}_0, {\beta}_0) = ( {\beta}_1, {\alpha}_1)
             \end{equation}
-		\item Bob must prove (via the dual) that either $(g, u, {\alpha}_0, {\beta}_0)$ or $(g, u, {\beta}_0, {\alpha}_0)$ is of the form $(g, g^x, g^y, g^{xy})$. In other words, Bob must prove the sigma statement: 
+		\item Bob must prove (via the dual) that one of $\{(g, u, {\alpha}_0, {\beta}_0), (g, u, {\beta}_0, {\alpha}_0)\}$ is of the form $(g, g^x, g^y, g^{xy})$. In other words, Bob must prove the sigma statement: 
     		\begin{equation}\label{bobCondition}
     		\texttt{proveDHTuple}(g, u, {\alpha}_0, {\beta}_0)~\ornode~\texttt{proveDHTuple}(g, u, {\beta}_0, {\alpha}_0)
     		\end{equation}
 		
 	\end{enumerate}
-	
 \subsection{Analysis}
 
 For correctness, Alice requires that no one should be able to spend $A$ in a manner that makes the resulting output(s) unspendable by her.
@@ -289,7 +321,7 @@ $$\texttt{proveDHTuple}(g, g^{y}, g^x, g^{xy}) ~\ornode~ \texttt{proveDlog}(g, g
 The above statement can be proven by anyone who knows at least one of $x$ or $xy$. 
 Thus, Alice can spend this because she knows $x$. 
 
-For Alice's soundness, no one else apart from her should have the ability to spend $O_b$. Assume that there exists such a spender. Since only Alice knows $x$ and the only other way to spend the box is via $\texttt{proveDlog}(g, g^{xy})$, that other spender must know $xy$. Such a spender cannot know $y$ and so cannot spend $O_{1-b}$. We can model this spender as a black-box taking as input $(g, g^x)$ and outputting $(g^y, xy)$ for some $y\neq 0$. Since such a black-box can be used to solve the Computational Diffie-Hellman (CDH) problem in $G$, we can rule out this possibility.
+For Alice's soundness, no one else apart from her should have the ability to spend $O_b$. Assume that there exists such a spender. Since only Alice knows $x$ and the only other way to spend the box is via $\texttt{proveDlog}(g, g^{xy})$, that other spender must know $xy$. Such a spender cannot know $y$ and so cannot spend $O_{1-b}$. We can model this spender as a black-box taking as input $(g, g^x)$ and outputting $(g^y, xy)$ for some $y\neq 0$. Since such a black-box can be used to solve the Computational Diffie-Hellman (CDH) problem in $G$, we can rule this out.
 
 From Bob's point of view, the spending condition of $O_{1-b}$ reduces to 
 $$\texttt{proveDHTuple}(g, g^{xy}, g^x, g^{y}) ~\ornode~ \texttt{proveDlog}(g, g^{y}).$$
@@ -306,12 +338,9 @@ The difference is that the privacy in \zerocoin depends on the size of the pool,
 
 \subsection{Implementing \algname In \langname}
 \label{impl}
-Each round of \algname is a two-stage protocol (pool followed by mix). One way to implement \algname would be to create a specialized blockchain just for this purpose that has the protocol hardwired (as was done, for example, in Zcash~\cite{zcash}). However, this limits the use of the blockchain. 
-
-A more pragmatic way is to encode \algname as a smart contract on top of a general-purpose UTXO blockchain such as Ergo~\cite{ergo} using the concepts from \cite{multistage}, that is, by encoding \algname as a two-stage protocol with the `fingerprint' of the second stage embedded within a smart contract of the first stage.
-In the approach of~\cite{multistage}, Alice's box $A$ encodes the protocol by enforcing the structure of Bob's spending transaction. 
-This is done as follows. 
-
+One way to implement \algname would be to create a specialized privacy oriented blockchain with the protocol hardwired (such as Zcash~\cite{zcash}). 
+A more pragmatic approach is to encode the protocol at the smart contract layer using a language that allows us to specify predicates on the entire transaction (i.e., one operating at context level C2 or higher using the terminology of~\cite{bypassing}). We can then use the approach of ~\cite{multistage} to encode the protocol into the smart contract of $A$, that is, by encoding \algname as a two-stage protocol with the `fingerprint' of the second stage embedded within a the first stage. One platform that supports such features is Ergo~\cite{ergo} and the following sections describe how to implement \algname in \langname, the programming language of Ergo. Note that \langname is a strict subset of the Scala programming language~\cite{odersky2004scala,scalaOdersky}. 
+ 
 For brevity, assume that \texttt{alpha}, \texttt{beta}, \texttt{gamma} are aliases for the registers $\alpha, \beta, \gamma$ of a box that contain elements of $G$. We already saw the first two used earlier. The third is to store $u$. We give some more notation below. 
 \begin{enumerate}
     \item \texttt{script} refers to the guard script (in binary format) of the box.
@@ -321,28 +350,30 @@ For brevity, assume that \texttt{alpha}, \texttt{beta}, \texttt{gamma} are alias
 \end{enumerate}
 
 Let $x$ be Alice's secret and let $u = g^x$. To create the Half-Mix box with $u$, first compile the following script of the second stage to get \texttt{fullMixScript}:
-{\small
-\begin{Verbatim}[frame=single]
-// Contract #1: contract for Full-Mix box (fullMixScript)
+
+\begin{lstlisting}[language=Scala,caption={Full mix script},label=fullMixScript]
 proveDHTuple(g, alpha, gamma, beta) || proveDlog(g, beta)
-\end{Verbatim}
-}
+\end{lstlisting}
+
 Next create a script, \texttt{halfMixScript}, with the following code:
-{\small
-\begin{Verbatim}[frame=single]
-// Contract #2: contract for Half-Mix box (halfMixScript)
-INPUTS(0).id == id &&
-OUTPUTS(0).alpha == OUTPUTS(1).beta && 
-OUTPUTS(0).beta == OUTPUTS(0).alpha && 
-OUTPUTS(0).gamma == gamma && OUTPUTS(1).gamma == gamma &&
-OUTPUTS(0).value == value && OUTPUTS(1).value == value &&
-OUTPUTS(0).script == fullMixScript &&  
-OUTPUTS(1).script == fullMixScript &&
-OUTPUTS(0).alpha != OUTPUTS(0).beta &&      // prevent y = 0
-(proveDHTuple(g, gamma, OUTPUTS(0).alpha, OUTPUTS(0).beta) || 
- proveDHTuple(g, gamma, OUTPUTS(0).beta, OUTPUTS(0).alpha))
-\end{Verbatim}
-}
+\begin{lstlisting}[language=Scala,caption={Half mix script},label=halfMixScript]
+val alpha0 = OUTPUTS(0).alpha
+val alpha1 = OUTPUTS(1).alpha
+val beta0 = OUTPUTS(0).beta
+val beta1 = OUTPUTS(1).beta
+val gamma0 = OUTPUTS(0).gamma
+val gamma1 = OUTPUTS(1).gamma
+val value0 = OUTPUTS(0).value
+val value1 = OUTPUTS(1).value
+val script0 = OUTPUTS(0).script
+val script1 = OUTPUTS(1).script
+
+INPUTS(0).id == id && // this is input #0 (Ref: https://www.ergoforum.org/t/lets-play-with-ergomix/108/7)
+alpha0 == beta1 && beta0 == alpha1 && gamma0 = gamma && gamma1 == gamma && 
+value0 == value && value1 == value && script0 == fullMixScript && script1 == fullMixScript &&
+alpha0 != beta0 && // prevent y = 0 (Ref: https://blog.plutomonkey.com/2020/04/ergomix-vulnerability/)
+(proveDHTuple(g, gamma, alpha0, beta0) || proveDHTuple(g, gamma, beta0, alpha0))
+\end{lstlisting}
 
 Note that \texttt{OUTPUTS(0)} is the first output of the transaction, \texttt{OUTPUTS(1)} is the second output, and so on. Alice's box $A$ is protected by \texttt{halfMixScript}. Alice must store $u$ in register \texttt{gamma} of that box.
 
@@ -382,9 +413,7 @@ We use a variation of {\em Fee-Emission boxes} presented in~\cite{Fee-Emission}.
 
 This is encoded in \langname as follows:
 
-{\small
-\begin{Verbatim}[frame=single]
-// Contract #3: contract for Fee-Emission box
+\begin{lstlisting}[language=Scala,caption={Fee emission script},label=feeEmissionScript]
 def isFull(b:Box) = hash(b.script) == fullMixScriptHash 
 def isHalf(b:Box) = hash(b.script) == halfMixScriptHash
 def isFee(b:Box) = hash(b.script) == feeScriptHash
@@ -397,8 +426,7 @@ val asBob = INPUTS.size == 3 && OUTPUTS.size == 4 &&
             isHalf(INPUTS(0)) && isFull(INPUTS(1)) &&
             isCopy(OUTPUTS(2)) && isFee(OUTPUTS(3))
 asAlice || asBob 
-\end{Verbatim}
-}
+\end{lstlisting}
 
 The condition \texttt{asAlice} encodes the rules of spending a Full-Mix box to emulate Alice for the next mix and create a Half-Mix box. Similarly, the condition \texttt{asBob} has the rules for spending a Full-Mix box as Bob's contribution in a mix. 
 
@@ -426,14 +454,11 @@ Recall that the Half-Mix box's script refers to the Full-Mix box's script via th
 \paragraph{Fee-Emission Box:}
 We modify \texttt{isFull} method of the Fee-Emission box contract:
 
-{\small
-\begin{Verbatim}[frame=single]
-// Contract #4: contract for Fee-Emission box
+\begin{lstlisting}[language=Scala,caption={Fee emission script with confinement},label=feeEmissionScriptWithConfinement]
 def isFull(b:Box) = hash(b.script) == fullMixScriptHash && 
                     b.delta == halfMixScriptHash
 (... remaining code same as Contract #3)                    
-\end{Verbatim}
-}
+\end{lstlisting}
 
 Recall that the rule for spending the Fee-Emission box is to destroy one mixing token. While the above contract does not directly enforce this requirement, it does so indirectly via the Full-Mix and Half-Mix scripts discussed below.
 
@@ -441,9 +466,7 @@ Recall that the rule for spending the Fee-Emission box is to destroy one mixing 
 
 Modify \texttt{fullMixScript}, the contract of a Full-Mix box as well:
 
-{\small
-\begin{Verbatim}[frame=single]
-// Contract #5: contract for Full-Mix box
+\begin{lstlisting}[language=Scala,caption={Full mix script with confinement},label=fullMixScriptWithConfinement]
 def isHalf(b:Box) = hash(b.script) == delta && 
                     b.value == value
 def isFull(b:Box) = b.script == script &&
@@ -458,17 +481,14 @@ val nextAliceLogic = OUTPUTS(0).tokens(tokenId) ==
 
 ((nextAlice && nextAliceLogic) || nextBob || destroyToken) 
 && (... earlier condition from Contract #1)
-\end{Verbatim}
-}
+\end{lstlisting}
 
 The script enforces the transfer of mixing tokens when spending the Full-Mix box to create a Half-Mix box. In particular, the tokens can only be transferred if the transaction either outputs a Half-Mix box (i.e., the spender takes the role of Alice in the next mix step, in which case one mixing token is destroyed) or participates in a mix transaction as Bob and spends a Half-Mix box along with this Full-Mix box (in which case, the transfer of mixing tokens is governed by the contract in the Half-Mix box).
 % The usage of mixing tokens when spending the Full-Mix box in a mix transaction is enforced in the Half-Mix box. In the remaining cases the mixing tokens must be destroyed.  
 
 \paragraph{Half-Mix Box:}
 Next, the Half-Mix contract (\texttt{halfMixScript}) is also modified:
-{\small
-\begin{Verbatim}[frame=single]
-// Contract #6: contract for Half-Mix box
+\begin{lstlisting}[language=Scala,caption={Half mix script with confinement},label=halfMixScriptWithConfinement]
 val alice = INPUTS(0).tokens(tokenId)
 val bob = INPUTS(1).tokens(tokenId)
 val out0 = OUTPUTS(0).tokens(tokenId)
@@ -478,8 +498,7 @@ val tLogic = alice + bob == out0 + out1 + 1 && bob > 0 && alice > 0
 OUTPUTS(0).delta == hash(script) && 
 OUTPUTS(1).delta == hash(script) && out0 == out1 && tLogic &&
 && (... earlier condition from Contract #2)
-\end{Verbatim}
-}
+\end{lstlisting}
 
 The above contract assumes that the boxes already have some quantity of mixing tokens and enforces how these must be used. Each mix transaction is assumed to consume one such token, and to maintain privacy, the token balance must be equally distributed between the two outputs. The contract follows the {\em approximate-fairness} strategy where Alice requires Bob to contribute at least one mixing token~\cite{advtutorial}. For {\em perfect fairness} add the condition \texttt{alice == bob}. 
 
@@ -487,9 +506,7 @@ The above contract assumes that the boxes already have some quantity of mixing t
 
 \paragraph{Token-Emission Box:} A Token-Emission box is used to get mixing tokens for entry into the system as either Alice or Bob. It contains the following contract. 
 
-{\small
-\begin{Verbatim}[frame=single]
-// Contract #7: contract for Token-Emission box
+\begin{lstlisting}[language=Scala,caption={Token emission script},label=tokenEmissionScript]
 def isCopy(b:Box) = b.script == script && b.value == value &&
                     b.tokens(tokenId) == tokens(tokenId) - amt
 def isFull(b:Box) = hash(b.script) == fullMixScriptHash && 
@@ -503,8 +520,8 @@ def isZero(b:Box) = b.tokens(tokenId) == 0
 
 INPUTS(0).id == id && isZero(INPUTS(1)) && INPUTS.size == 2 &&
 isEntry(OUTPUTS(0)) && isCopy(OUTPUTS(1)) && isFee(OUTPUTS(2))
-\end{Verbatim}
-}
+\end{lstlisting}
+
 
 % The Token-Emission box 
 % is the final piece of the puzzle and 
@@ -515,27 +532,22 @@ We can use mixing tokens to verify that a given Full-Mix box was indeed created 
 
 While the above Token-Emission box gives the mixing tokens for free, it is trivial to modify the contract to sell the tokens at some given rate. The only change required is in the \texttt{isCopy} method:
 
-{\small
-\begin{Verbatim}[frame=single]
-// Contract #8: contract for Token-Emission box
+\begin{lstlisting}[language=Scala,caption={Token emission script with sell capability},label=tokenEmissionScriptWithSell]
 def isCopy(b:Box) = b.script == script && 
                     b.value == value + amt * rate &&
                     b.tokens(tokenId) == tokens(tokenId) - amt
 (... remaining code same as Contract #7)
-\end{Verbatim}
-}
+\end{lstlisting}
 
 We also want the token issuer to be able to withdraw any Ergs deposited by token buyers. To achieve this, the token-emission box is again modified:
 
-{\small
-\begin{Verbatim}[frame=single]
-// Contract #9: contract for Token-Emission box
+\begin{lstlisting}[language=Scala,caption={Token emission script with withdraw capability},label=tokenEmissionScriptWithWithdraw]
 (... earlier condition from Contract #8) || 
 (issuerPubKey && INPUTS.size == 1 && 
  OUTPUTS(0).script == script && OUTPUTS(0).value > minErgs &&
  OUTPUTS(0).tokens(tokenId) == tokens(tokenId))
-\end{Verbatim}
-}
+\end{lstlisting}
+
 It is necessary to keep a certain amount of Ergs, \texttt{minErgs} inside each Token-Emission box, otherwise the box may be destroyed when miners collect storage rent. This value should be large enough to ensure sustenance for several years. 
 In order to allow several people to buy tokens in the same block and to avoid collisions when multiple people try to spend the same token-emission box, there must be several token-emission boxes. 
 
@@ -547,15 +559,12 @@ Another consequence of \texttt{bob > 0} is that at least one token must exist in
 
 An alternate way to ensure that Alice's Half-Mix box does not get stuck due to non-availability of tokens would be to allow Alice to spend the box using her secret. This requires modifying the Half-Mix box as follows:
 
-{\small
-\begin{Verbatim}[frame=single]
-// Contract #10: contract for Half-Mix box
+\begin{lstlisting}[language=Scala,caption={Half script with withdraw capability},label=halfMixScriptWithWithdraw]
 def noToken(b:Box) = b.tokens(tokenId) == 0
 
 (proveDlog(g, alpha) && INPUTS.size == 1 && OUTPUTS.forall(noToken)) || 
 (... earlier condition from Contract #6)
-\end{Verbatim}
-}
+\end{lstlisting}
 
 The above modification allows Alice to spend the Half-Mix box using her secret but she must destroy all mixing tokens in doing so. 
 
