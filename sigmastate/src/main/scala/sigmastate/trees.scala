@@ -16,13 +16,29 @@ import sigmastate.utxo.{Transformer, SimpleTransformerCompanion}
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
+
+/**
+  * Basic trait for inner nodes of crypto-trees, so AND/OR/THRESHOLD sigma-protocol connectives
+  */
+trait SigmaConjecture extends SigmaBoolean {
+  def children: Seq[SigmaBoolean]
+}
+
+/**
+  * Basic trait for leafs of crypto-trees, such as ProveDlog and ProveDiffieHellman instances
+  */
+trait SigmaProofOfKnowledgeLeaf[SP <: SigmaProtocol[SP], S <: SigmaProtocolPrivateInput[SP, _]]
+  extends SigmaBoolean with SigmaProtocolCommonInput[SP]
+
+
 /**
   * AND conjunction for sigma propositions
   */
-case class CAND(sigmaBooleans: Seq[SigmaBoolean]) extends SigmaBoolean {
+case class CAND(override val children: Seq[SigmaBoolean]) extends SigmaConjecture {
   /** The same code is used for AND operation, but they belong to different type hierarchies. */
   override val opCode: OpCode = OpCodes.AndCode
 }
+
 object CAND {
   import TrivialProp._
   def normalized(items: Seq[SigmaBoolean]): SigmaBoolean = {
@@ -44,10 +60,11 @@ object CAND {
 /**
   * OR disjunction for sigma propositions
   */
-case class COR(sigmaBooleans: Seq[SigmaBoolean]) extends SigmaBoolean {
+case class COR(children: Seq[SigmaBoolean]) extends SigmaConjecture {
   /** The same code is also used for OR operation, but they belong to different type hierarchies. */
   override val opCode: OpCode = OpCodes.OrCode
 }
+
 object COR {
   import TrivialProp._
   def normalized(items: Seq[SigmaBoolean]): SigmaBoolean = {
@@ -69,15 +86,13 @@ object COR {
 /**
   * THRESHOLD connector for sigma propositions
   */
-case class CTHRESHOLD(k: Int, sigmaBooleans: Seq[SigmaBoolean]) extends SigmaBoolean {
+case class CTHRESHOLD(k: Int, children: Seq[SigmaBoolean]) extends SigmaConjecture {
   // Our polynomial arithmetic can take only byte inputs
-  require(k >= 0 && k <= sigmaBooleans.length && sigmaBooleans.length <= 255)
+  require(k >= 0 && k <= children.length && children.length <= 255)
 
   override val opCode: OpCode = OpCodes.AtLeastCode
 }
 
-trait SigmaProofOfKnowledgeLeaf[SP <: SigmaProtocol[SP], S <: SigmaProtocolPrivateInput[SP, _]]
-  extends SigmaBoolean with SigmaProtocolCommonInput[SP]
 
 /** Represents boolean values (true/false) in SigmaBoolean tree.
   * Participates in evaluation of CAND, COR, THRESHOLD connectives over SigmaBoolean values.

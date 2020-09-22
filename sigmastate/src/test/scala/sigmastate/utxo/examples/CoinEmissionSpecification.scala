@@ -4,6 +4,7 @@ import org.ergoplatform._
 import scorex.util.ScorexLogging
 import sigmastate.Values.IntConstant
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, SigmaTestingCommons}
+import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.ContextExtension
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.lang.Terms._
@@ -135,7 +136,7 @@ block 1600 in 1622 ms, 30000000000 coins remain, defs: 61661
     val minerPubkey = minerImage.pkBytes
     val minerProp = minerImage
 
-    val initialBoxCandidate: ErgoBox = ErgoBox.create(coinsTotal / 4, prop, 0, Seq(), Map(register -> IntConstant(-1)))
+    val initialBoxCandidate: ErgoBox = testBox(coinsTotal / 4, prop, 0, Seq(), Map(register -> IntConstant(-1)))
     val initBlock = FullBlock(IndexedSeq(createTransaction(initialBoxCandidate)), minerPubkey)
     val genesisState = ValidationState.initialState(initBlock)
     val fromState = genesisState.boxesReader.byId(genesisState.boxesReader.allIds.head).get

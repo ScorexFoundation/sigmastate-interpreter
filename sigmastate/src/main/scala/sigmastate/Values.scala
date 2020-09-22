@@ -557,27 +557,27 @@ object Values {
           case dht: ProveDHTuple => dhtSerializer.serialize(dht, w)
           case _: TrivialProp => // besides opCode no additional bytes
           case and: CAND =>
-            val nChildren = and.sigmaBooleans.length
+            val nChildren = and.children.length
             w.putUShort(nChildren)
             cfor(0)(_ < nChildren, _ + 1) { i =>
-              val c = and.sigmaBooleans(i)
+              val c = and.children(i)
               serializer.serialize(c, w)
             }
 
           case or: COR =>
-            val nChildren = or.sigmaBooleans.length
+            val nChildren = or.children.length
             w.putUShort(nChildren)
             cfor(0)(_ < nChildren, _ + 1) { i =>
-              val c = or.sigmaBooleans(i)
+              val c = or.children(i)
               serializer.serialize(c, w)
             }
 
           case th: CTHRESHOLD =>
             w.putUShort(th.k)
-            val nChildren = th.sigmaBooleans.length
+            val nChildren = th.children.length
             w.putUShort(nChildren)
             cfor(0)(_ < nChildren, _ + 1) { i =>
-              val c = th.sigmaBooleans(i)
+              val c = th.children(i)
               serializer.serialize(c, w)
             }
         }

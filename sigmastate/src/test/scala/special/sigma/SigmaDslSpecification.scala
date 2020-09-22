@@ -29,6 +29,7 @@ import special.collection._
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.utils.Helpers
 import sigmastate.utils.Helpers._
+import sigmastate.helpers.TestingHelpers._
 
 import scala.reflect.ClassTag
 import scala.util.{DynamicVariable, Success, Failure, Try}
@@ -2542,7 +2543,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
   property("Advanced Box test") {
     val (tree, _) = createAvlTreeAndProver()
 
-    val box1 = SigmaDsl.Box(ErgoBox.create(20, TrueProp, 0, Seq(), Map(
+    val box1 = SigmaDsl.Box(testBox(20, TrueProp, 0, Seq(), Map(
       ErgoBox.R4 -> ByteConstant(1.toByte),
       ErgoBox.R5 -> ShortConstant(1024.toShort),
       ErgoBox.R6 -> IntConstant(1024 * 1024),
@@ -2551,7 +2552,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
       ErgoBox.R9 -> AvlTreeConstant(tree)
     )))
 
-    val box2 = SigmaDsl.Box(ErgoBox.create(20, TrueProp, 0, Seq(), Map(
+    val box2 = SigmaDsl.Box(testBox(20, TrueProp, 0, Seq(), Map(
       ErgoBox.R4 -> ByteArrayConstant(Coll(1.toByte))
     )))
 
