@@ -42,7 +42,7 @@ object ErgoLikeContextTesting {
             spendingTransaction: ErgoLikeTransactionTemplate[_ <: UnsignedInput],
             self: ErgoBox,
             extension: ContextExtension = ContextExtension.empty,
-            vs: SigmaValidationSettings = ValidationRules.currentSettings) =
+            vs: SigmaValidationSettings = ValidationRules.currentSettings): ErgoLikeContext =
     new ErgoLikeContext(lastBlockUtxoRoot, noHeaders, dummyPreHeader(currentHeight, minerPubkey), noBoxes,
       boxesToSpend, spendingTransaction, boxesToSpend.indexOf(self), extension, vs, ScriptCostLimit.value, 0L)
 
@@ -57,7 +57,7 @@ object ErgoLikeContextTesting {
       dataBoxes, boxesToSpend, spendingTransaction, selfIndex, ContextExtension.empty, ValidationRules.currentSettings, ScriptCostLimit.value, 0L)
 
 
-  def dummy(selfDesc: ErgoBox) = ErgoLikeContextTesting(currentHeight = 0,
+  def dummy(selfDesc: ErgoBox): ErgoLikeContext = ErgoLikeContextTesting(currentHeight = 0,
     lastBlockUtxoRoot = AvlTreeData.dummy, dummyPubkey, boxesToSpend = IndexedSeq(selfDesc),
     spendingTransaction = ErgoLikeTransaction(IndexedSeq(), IndexedSeq()), self = selfDesc)
 

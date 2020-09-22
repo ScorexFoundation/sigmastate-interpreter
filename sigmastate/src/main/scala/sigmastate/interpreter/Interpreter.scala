@@ -157,7 +157,7 @@ trait Interpreter extends ScorexLogging {
       CheckCostFunc(IR)(asRep[Any => Int](costF))
 
       val costingCtx = context.toSigmaContext(IR, isCost = true)
-      val estimatedCost = IR.checkCostWithContext(costingCtx, exp, costF, maxCost, initCost).getOrThrow
+      val estimatedCost = IR.checkCostWithContext(costingCtx, costF, maxCost, initCost).getOrThrow
 
       IR.onEstimatedCost(env, exp, costingRes, costingCtx, estimatedCost)
 

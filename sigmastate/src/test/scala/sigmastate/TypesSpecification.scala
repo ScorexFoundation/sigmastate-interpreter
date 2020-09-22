@@ -15,6 +15,7 @@ import sigmastate.Values.{ShortConstant, LongConstant, BigIntConstant, AvlTreeCo
 import sigmastate.eval.SigmaDsl
 import special.collection.Coll
 import special.sigma.BigInt
+import sigmastate.helpers.TestingHelpers._
 
 class TypesSpecification extends SigmaTestingData {
 
@@ -54,7 +55,7 @@ class TypesSpecification extends SigmaTestingData {
 
     val (tree, _) = createAvlTreeAndProver()
 
-    val box = SigmaDsl.Box(ErgoBox(20, TrueProp, 0,
+    val box = SigmaDsl.Box(testBox(20, TrueProp, 0,
       Seq(
         (Digest32 @@ (ErgoAlgos.decodeUnsafe("6e789ab7b2fffff12280a6cd01557f6fb22b7f80ff7aff8e1f7f15973d7f0001")),
             10000000L)

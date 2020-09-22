@@ -3,6 +3,7 @@ package sigmastate.eval
 import org.ergoplatform.ErgoBox
 import sigmastate.Values.{ConcreteCollection, IntArrayConstant, IntConstant, SigmaPropConstant, SigmaPropValue}
 import sigmastate.helpers.ContextEnrichingTestProvingInterpreter
+import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter._
 import scalan.BaseCtxTests
 import sigmastate.lang.LangTests
@@ -37,7 +38,7 @@ class EvaluationTest extends BaseCtxTests
   test("lazy logical ops") {
     val prover = new ContextEnrichingTestProvingInterpreter
     val pk = prover.dlogSecrets.head.publicImage
-    val self = ErgoBox(1, pk, 0, additionalRegisters = Map(ErgoBox.R4 -> IntConstant(10)))
+    val self = testBox(1, pk, 0, additionalRegisters = Map(ErgoBox.R4 -> IntConstant(10)))
     val ctx = newErgoContext(height = 1, self)
     // guarded register access: existing reg
     reduce(emptyEnv, "lazy1", "SELF.R4[Int].isDefined && SELF.R4[Int].get == 10", ctx, true)

@@ -4,16 +4,15 @@ package sigmastate.utxo.examples
 import java.math.BigInteger
 
 import org.ergoplatform.ErgoBox.{R4, R5}
-import org.ergoplatform.{ErgoBox, ErgoLikeContext, ErgoLikeTransaction}
 import sigmastate.AvlTreeData
 import sigmastate.Values.GroupElementConstant
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.{DiffieHellmanTupleProverInput, ProveDHTuple}
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.interpreter.Interpreter._
 import sigmastate.lang.Terms._
-import sigmastate.eval._
 
 class DHTupleExampleSpecification extends SigmaTestingCommons {
   private implicit lazy val IR = new TestingIRContext
@@ -53,7 +52,7 @@ class DHTupleExampleSpecification extends SigmaTestingCommons {
         |}""".stripMargin
     ).asSigmaProp
 
-    val inBox = ErgoBox(10, script, 50)
+    val inBox = testBox(10, script, 50)
 
     // a blockchain node verifying a block containing a spending transaction
     val verifier = new ErgoLikeTestInterpreter
@@ -70,7 +69,7 @@ class DHTupleExampleSpecification extends SigmaTestingCommons {
     val carol = new ContextEnrichingTestProvingInterpreter
     val carolPubKey:ProveDlog = carol.dlogSecrets.head.publicImage
 
-    val outBox = ErgoBox(10, carolPubKey, 70, Nil,
+    val outBox = testBox(10, carolPubKey, 70, Nil,
       Map(
         R4 -> g_y,
         R5 -> g_xy

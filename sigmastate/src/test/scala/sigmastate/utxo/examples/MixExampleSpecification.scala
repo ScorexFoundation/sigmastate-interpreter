@@ -2,7 +2,6 @@ package sigmastate.utxo.examples
 
 import java.math.BigInteger
 
-import org.ergoplatform.{ErgoBox, ErgoLikeContext}
 import org.ergoplatform.ErgoBox.{R4, R5}
 import scorex.crypto.hash.Blake2b256
 import sigmastate.AvlTreeData
@@ -10,6 +9,7 @@ import sigmastate.Values.GroupElementConstant
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.{DiffieHellmanTupleProverInput, ProveDHTuple}
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.interpreter.Interpreter._
 import sigmastate.lang.Terms._
@@ -100,7 +100,7 @@ class MixExampleSpecification extends SigmaTestingCommons {
     val halfMixCreationHeight = 70
     val mixAmount = 10
 
-    val halfMixOutput = ErgoBox(mixAmount, halfMixScript, halfMixCreationHeight)
+    val halfMixOutput = testBox(mixAmount, halfMixScript, halfMixCreationHeight)
     // above halMixOutput is a Half-Mix box created by Alice.
 
     // a blockchain node verifying a block containing a spending transaction
@@ -138,7 +138,7 @@ class MixExampleSpecification extends SigmaTestingCommons {
     val fullMixCreationHeight = 80
 
     // if randomBit is 0 (i.e., false) below box is spendable by Alice, else by Bob
-    val fullMixOutput0 = ErgoBox(mixAmount, fullMixScript, fullMixCreationHeight, Nil,
+    val fullMixOutput0 = testBox(mixAmount, fullMixScript, fullMixCreationHeight, Nil,
       Map(
         R4 -> c0,
         R5 -> c1
@@ -146,7 +146,7 @@ class MixExampleSpecification extends SigmaTestingCommons {
     )
 
     // if randomBit is 1 (i.e., true) below box is spendable by Alice, else by Bob
-    val fullMixOutput1 = ErgoBox(mixAmount, fullMixScript, fullMixCreationHeight, Nil,
+    val fullMixOutput1 = testBox(mixAmount, fullMixScript, fullMixCreationHeight, Nil,
       Map(
         R4 -> c1,
         R5 -> c0
@@ -184,7 +184,7 @@ class MixExampleSpecification extends SigmaTestingCommons {
     val carolPubKey: ProveDlog = carol.dlogSecrets.head.publicImage
 
     val spendHeight = 90
-    val carolOutput = ErgoBox(mixAmount, carolPubKey, spendHeight)
+    val carolOutput = testBox(mixAmount, carolPubKey, spendHeight)
 
     // normally this transaction would be invalid, but we're not checking it in this test
     val spendingTx = createTransaction(carolOutput)
