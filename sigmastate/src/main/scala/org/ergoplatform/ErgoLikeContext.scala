@@ -240,7 +240,7 @@ case object Context extends NotReadyValue[SContext.type] with ValueCompanion {
   override def companion = this
   override def opCode: OpCode = OpCodes.ContextCode
   override def tpe: SContext.type = SContext
-  override lazy val opType: SFunc = SFunc(SUnit, SContext)
+  override val opType: SFunc = SFunc(SUnit, SContext)
 }
 
 case object Global extends NotReadyValue[SGlobal.type] with ValueCompanion {

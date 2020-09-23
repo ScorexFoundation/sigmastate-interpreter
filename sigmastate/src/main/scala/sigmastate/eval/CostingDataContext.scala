@@ -497,32 +497,32 @@ object CCostModel {
 
   // NOTE: lazy vals are necessary to avoid initialization exception
 
-  val AccessBoxOpType: SFunc = SFunc(SContext, SBox)
-  lazy val AccessBoxCost: Int = costOf("AccessBox", AccessBoxOpType)
+  private val AccessBoxOpType: SFunc = SFunc(SContext, SBox)
+  private lazy val AccessBoxCost: Int = costOf("AccessBox", AccessBoxOpType)
 
-  val AccessAvlTreeOpType: SFunc = SFunc(SContext, SAvlTree)
-  lazy val AccessAvlTreeCost: Int = costOf("AccessAvlTree", AccessAvlTreeOpType)
+  private val AccessAvlTreeOpType: SFunc = SFunc(SContext, SAvlTree)
+  private lazy val AccessAvlTreeCost: Int = costOf("AccessAvlTree", AccessAvlTreeOpType)
 
-  val GetVarOpType: SFunc = SFunc(Array(SContext, SByte), SOption.ThisType)
-  lazy val GetVarCost: Int = costOf("GetVar", GetVarOpType)
+  private val GetVarOpType: SFunc = SFunc(Array(SContext, SByte), SOption.ThisType)
+  private lazy val GetVarCost: Int = costOf("GetVar", GetVarOpType)
 
-  val DeserializeVarOpType: SFunc = SFunc(Array(SContext, SByte), SOption.ThisType)
-  lazy val DeserializeVarCost: Int = costOf("DeserializeVar", DeserializeVarOpType)
+  private val DeserializeVarOpType: SFunc = SFunc(Array(SContext, SByte), SOption.ThisType)
+  private lazy val DeserializeVarCost: Int = costOf("DeserializeVar", DeserializeVarOpType)
 
-  val GetRegisterOpType: SFunc = SFunc(Array(SBox, SByte), SOption.ThisType)
-  lazy val GetRegisterCost: Int = costOf("GetRegister", GetRegisterOpType)
+  private val GetRegisterOpType: SFunc = SFunc(Array(SBox, SByte), SOption.ThisType)
+  private lazy val GetRegisterCost: Int = costOf("GetRegister", GetRegisterOpType)
 
-  val DeserializeRegisterOpType: SFunc = SFunc(Array(SBox, SByte), SOption.ThisType)
-  lazy val DeserializeRegisterCost: Int = costOf("DeserializeRegister", DeserializeRegisterOpType)
+  private val DeserializeRegisterOpType: SFunc = SFunc(Array(SBox, SByte), SOption.ThisType)
+  private lazy val DeserializeRegisterCost: Int = costOf("DeserializeRegister", DeserializeRegisterOpType)
 
-  val SelectFieldOpType: SFunc = SFunc(mutable.WrappedArray.empty, SUnit)
-  lazy val SelectFieldCost: Int = costOf("SelectField", SelectFieldOpType)
+  private val SelectFieldOpType: SFunc = SFunc(mutable.WrappedArray.empty, SUnit)
+  private lazy val SelectFieldCost: Int = costOf("SelectField", SelectFieldOpType)
 
-  val CollectionConstOpType: SFunc = SFunc(mutable.WrappedArray.empty, SCollection.ThisType)
-  lazy val CollectionConstCost: Int = costOf("Const", CollectionConstOpType)
+  private val CollectionConstOpType: SFunc = SFunc(mutable.WrappedArray.empty, SCollection.ThisType)
+  private lazy val CollectionConstCost: Int = costOf("Const", CollectionConstOpType)
 
-  val AccessKiloByteOfDataOpType: SFunc = SFunc(mutable.WrappedArray.empty, SUnit)
-  lazy val AccessKiloByteOfDataCost: Int = costOf("AccessKiloByteOfData", AccessKiloByteOfDataOpType)
+  private val AccessKiloByteOfDataOpType: SFunc = SFunc(mutable.WrappedArray.empty, SUnit)
+  private lazy val AccessKiloByteOfDataCost: Int = costOf("AccessKiloByteOfData", AccessKiloByteOfDataOpType)
 }
 
 /** A default implementation of [[SigmaDslBuilder]] interface.
