@@ -515,7 +515,6 @@ object SubstConstants extends ValueCompanion {
 sealed trait Triple[LIV <: SType, RIV <: SType, OV <: SType] extends NotReadyValue[OV] {
   val left: Value[LIV]
   val right: Value[RIV]
-  override def opType = SFunc(Vector(left.tpe, right.tpe), tpe)
 }
 
 sealed trait OneArgumentOperation[IV <: SType, OV <: SType] extends NotReadyValue[OV] {
@@ -538,6 +537,7 @@ case class ArithOp[T <: SType](left: Value[T], right: Value[T], override val opC
   extends TwoArgumentsOperation[T, T, T] with NotReadyValue[T] {
   override def companion: ValueCompanion = ArithOp.operations(opCode)
   override def tpe: T = left.tpe
+  override val opType = SFunc(Array[SType](left.tpe, right.tpe), tpe)
   override def opName: String = ArithOp.opcodeToArithOpName(opCode)
 
   // TODO refactor: avoid such enumaration, use ArithOp.operations map instead
@@ -600,6 +600,7 @@ case class BitOp[T <: SType](left: Value[T], right: Value[T], override val opCod
   require(left.tpe.isNumTypeOrNoType && right.tpe.isNumTypeOrNoType, s"invalid types left:${left.tpe}, right:${right.tpe}")
   override def companion = BitOp.operations(opCode)
   override def tpe: T = left.tpe
+  override val opType = SFunc(Array[SType](left.tpe, right.tpe), tpe)
 }
 /** NOTE: by-name argument is required for correct initialization order. */
 class BitOpCompanion(val opCode: OpCode, val name: String, _argInfos: => Seq[ArgInfo]) extends TwoArgumentOperationCompanion {
@@ -677,8 +678,10 @@ case class Xor(override val left: Value[SByteArray],
   extends TwoArgumentsOperation[SByteArray, SByteArray, SByteArray]
     with NotReadyValueByteArray {
   override def companion = Xor
+  override def opType = Xor.OpType
 }
 object Xor extends TwoArgumentOperationCompanion {
+  val OpType = SFunc(Array(SByteArray, SByteArray), SByteArray)
   override def opCode: OpCode = XorCode
   override def argInfos: Seq[ArgInfo] = XorInfo.argInfos
 }
@@ -688,8 +691,10 @@ case class Exponentiate(override val left: Value[SGroupElement.type],
   extends TwoArgumentsOperation[SGroupElement.type, SBigInt.type, SGroupElement.type]
     with NotReadyValueGroupElement {
   override def companion = Exponentiate
+  override def opType = Exponentiate.OpType
 }
 object Exponentiate extends TwoArgumentOperationCompanion {
+  val OpType = SFunc(Array(SGroupElement, SBigInt), SGroupElement)
   override def opCode: OpCode = ExponentiateCode
   override def argInfos: Seq[ArgInfo] = ExponentiateInfo.argInfos
 }
@@ -699,8 +704,10 @@ case class MultiplyGroup(override val left: Value[SGroupElement.type],
   extends TwoArgumentsOperation[SGroupElement.type, SGroupElement.type, SGroupElement.type]
     with NotReadyValueGroupElement {
   override def companion = MultiplyGroup
+  override def opType = MultiplyGroup.OpType
 }
 object MultiplyGroup extends TwoArgumentOperationCompanion {
+  val OpType = SFunc(Array(SGroupElement, SGroupElement), SGroupElement)
   override def opCode: OpCode = MultiplyGroupCode
   override def argInfos: Seq[ArgInfo] = MultiplyGroupInfo.argInfos
 }
@@ -710,7 +717,10 @@ sealed trait Relation[LIV <: SType, RIV <: SType] extends Triple[LIV, RIV, SBool
   with NotReadyValueBoolean
 
 trait SimpleRelation[T <: SType] extends Relation[T, T] {
-  override val opType = SFunc(SType.IndexedSeqOfT2, SBoolean)
+  override def opType = SimpleRelation.GenericOpType
+}
+object SimpleRelation {
+  val GenericOpType = SFunc(SType.IndexedSeqOfT2, SBoolean)
 }
 
 trait RelationCompanion extends ValueCompanion {
@@ -790,8 +800,10 @@ object NEQ extends RelationCompanion {
 case class BinOr(override val left: BoolValue, override val right: BoolValue)
   extends Relation[SBoolean.type, SBoolean.type] {
   override def companion = BinOr
+  override def opType = BinOr.OpType
 }
 object BinOr extends RelationCompanion {
+  val OpType = SFunc(Array(SBoolean, SBoolean), SBoolean)
   override def opCode: OpCode = BinOrCode
   override def argInfos: Seq[ArgInfo] = BinOrInfo.argInfos
 }
@@ -803,8 +815,10 @@ object BinOr extends RelationCompanion {
 case class BinAnd(override val left: BoolValue, override val right: BoolValue)
   extends Relation[SBoolean.type, SBoolean.type] {
   override def companion = BinAnd
+  override def opType = BinAnd.OpType
 }
 object BinAnd extends RelationCompanion {
+  val OpType = SFunc(Array(SBoolean, SBoolean), SBoolean)
   override def opCode: OpCode = BinAndCode
   override def argInfos: Seq[ArgInfo] = BinAndInfo.argInfos
 }
@@ -812,8 +826,10 @@ object BinAnd extends RelationCompanion {
 case class BinXor(override val left: BoolValue, override val right: BoolValue)
   extends Relation[SBoolean.type, SBoolean.type] {
   override def companion = BinXor
+  override def opType = BinXor.OpType
 }
 object BinXor extends RelationCompanion {
+  val OpType = SFunc(Array(SBoolean, SBoolean), SBoolean)
   override def opCode: OpCode = BinXorCode
   override def argInfos: Seq[ArgInfo] = BinXorInfo.argInfos
 }
@@ -872,7 +888,7 @@ case class If[T <: SType](condition: Value[SBoolean.type], trueBranch: Value[T],
 object If extends QuadrupleCompanion {
   override def opCode: OpCode = OpCodes.IfCode
   override def argInfos: Seq[ArgInfo] = IfInfo.argInfos
-  def tT = SType.tT
+  val GenericOpType = SFunc(Array(SBoolean, SType.tT, SType.tT), SType.tT)
 }
 
 case class LogicalNot(input: Value[SBoolean.type]) extends NotReadyValueBoolean {
