@@ -28,7 +28,7 @@ trait Entities extends TypeDescs { self: Scalan =>
       case _ => false
     })
 
-    override def hashCode = Objects.hash(getClass, typeArgsDescs)
+    override def hashCode = getClass.hashCode() * 31 + typeArgsDescs.hashCode()
   }
 
   /** Base class for all descriptors of staged traits with one type parameter. */

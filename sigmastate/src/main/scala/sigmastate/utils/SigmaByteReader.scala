@@ -18,7 +18,7 @@ class SigmaByteReader(val r: Reader,
       throw new InputSizeLimitExceeded(s"SigmaByteReader position limit $positionLimit is reached at position $position")
 
 
-  val valDefTypeStore: ValDefTypeStore = new ValDefTypeStore()
+  lazy val valDefTypeStore: ValDefTypeStore = new ValDefTypeStore()
 
 
   override type CH = r.CH
