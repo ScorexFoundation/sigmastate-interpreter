@@ -22,7 +22,7 @@ abstract class RType[A] {
   def isConstantSize: Boolean
 
   /** Creates empty immutable array of this type. */
-  def emptyArray: Array[A] = Array.ofDim[A](0)(classTag)
+  def emptyArray: Array[A] = Array.empty[A](classTag)
 }
 
 object RType {

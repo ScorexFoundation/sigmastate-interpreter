@@ -50,42 +50,42 @@ object SigmaPredef {
       PartialFunction.empty[(SValue, Seq[SValue]), SValue]
 
     val AllOfFunc = PredefinedFunc("allOf",
-      Lambda(IndexedSeq("conditions" -> SCollection(SBoolean)), SBoolean, None),
+      Lambda(Array("conditions" -> SCollection(SBoolean)), SBoolean, None),
       PredefFuncInfo({ case (_, Seq(col: Value[SCollection[SBoolean.type]]@unchecked)) => mkAND(col) }),
       OperationInfo(AND, "Returns true if \\emph{all} the elements in collection are \\lst{true}.",
        Seq(ArgInfo("conditions", "a collection of conditions")))
     )
 
     val AnyOfFunc = PredefinedFunc("anyOf",
-      Lambda(Vector("conditions" -> SCollection(SBoolean)), SBoolean, None),
+      Lambda(Array("conditions" -> SCollection(SBoolean)), SBoolean, None),
       PredefFuncInfo( { case (_, Seq(col: Value[SCollection[SBoolean.type]]@unchecked)) => mkOR(col) }),
       OperationInfo(OR, "Returns true if \\emph{any} the elements in collection are \\lst{true}.",
         Seq(ArgInfo("conditions", "a collection of conditions")))
     )
 
     val XorOfFunc = PredefinedFunc("xorOf",
-      Lambda(Vector("conditions" -> SCollection(SBoolean)), SBoolean, None),
+      Lambda(Array("conditions" -> SCollection(SBoolean)), SBoolean, None),
       PredefFuncInfo({ case (_, Seq(col: Value[SCollection[SBoolean.type]]@unchecked)) => mkXorOf(col) }),
       OperationInfo(XorOf, "Similar to \\lst{allOf}, but performing logical XOR operation between all conditions instead of \\lst{&&}",
         Seq(ArgInfo("conditions", "a collection of conditions")))
     )
 
     val AllZKFunc = PredefinedFunc("allZK",
-      Lambda(IndexedSeq("propositions" -> SCollection(SSigmaProp)), SSigmaProp, None),
+      Lambda(Array("propositions" -> SCollection(SSigmaProp)), SSigmaProp, None),
       PredefFuncInfo(undefined),
       OperationInfo(SigmaAnd, "Returns sigma proposition which is proven when \\emph{all} the elements in collection are proven.",
         Seq(ArgInfo("propositions", "a collection of propositions")))
     )
 
     val AnyZKFunc = PredefinedFunc("anyZK",
-      Lambda(IndexedSeq("propositions" -> SCollection(SSigmaProp)), SSigmaProp, None),
+      Lambda(Array("propositions" -> SCollection(SSigmaProp)), SSigmaProp, None),
       PredefFuncInfo(undefined),
       OperationInfo(SigmaOr, "Returns sigma proposition which is proven when \\emph{any} of the elements in collection is proven.",
         Seq(ArgInfo("propositions", "a collection of propositions")))
     )
 
     val AtLeastFunc = PredefinedFunc("atLeast",
-      Lambda(Vector("k" -> SInt, "conditions" -> SCollection(SSigmaProp)), SSigmaProp, None),
+      Lambda(Array("k" -> SInt, "conditions" -> SCollection(SSigmaProp)), SSigmaProp, None),
       PredefFuncInfo(
         { case (_, Seq(bound: IntValue@unchecked, arr: Value[SCollection[SSigmaProp.type]]@unchecked)) =>
           mkAtLeast(bound, arr)
@@ -102,13 +102,13 @@ object SigmaPredef {
     val OuterJoinFunc = PredefinedFunc(
       "outerJoin",
       Lambda(
-        Seq(STypeParam(tK), STypeParam(tL), STypeParam(tR), STypeParam(tO)),
-        Vector(
+        Array(STypeParam(tK), STypeParam(tL), STypeParam(tR), STypeParam(tO)),
+        Array(
           "left" -> SCollection(STuple(tK, tL)),
           "right" -> SCollection(STuple(tK, tR)),
-          "l" -> SFunc(IndexedSeq(tK, tL), tO),
-          "r" -> SFunc(IndexedSeq(tK, tR), tO),
-          "inner" -> SFunc(IndexedSeq(tK, tL, tR), tO)
+          "l" -> SFunc(Array(tK, tL), tO),
+          "r" -> SFunc(Array(tK, tR), tO),
+          "inner" -> SFunc(Array(tK, tL, tR), tO)
         ),
         SCollection(STuple(tK, tO)), None),
       PredefFuncInfo(undefined),
@@ -117,14 +117,14 @@ object SigmaPredef {
     )
 
     val ZKProofFunc = PredefinedFunc("ZKProof",
-      Lambda(Vector("block" -> SSigmaProp), SBoolean, None),
+      Lambda(Array("block" -> SSigmaProp), SBoolean, None),
       PredefFuncInfo({ case (_, Seq(block: SigmaPropValue@unchecked)) => mkZKProofBlock(block) }),
       OperationInfo(ZKProofBlock, "",
           Seq(ArgInfo("", "")))
     )
 
     val SigmaPropFunc = PredefinedFunc("sigmaProp",
-      Lambda(Vector("condition" -> SBoolean), SSigmaProp, None),
+      Lambda(Array("condition" -> SBoolean), SSigmaProp, None),
       PredefFuncInfo({ case (_, Seq(b: BoolValue@unchecked)) => mkBoolToSigmaProp(b) }),
       OperationInfo(BoolToSigmaProp,
         """Embedding of \lst{Boolean} values to \lst{SigmaProp} values.
@@ -136,7 +136,7 @@ object SigmaPredef {
     )
 
     val GetVarFunc = PredefinedFunc("getVar",
-      Lambda(Seq(paramT), Array("varId" -> SByte), SOption(tT), None),
+      Lambda(Array(paramT), Array("varId" -> SByte), SOption(tT), None),
       PredefFuncInfo(
         { case (Ident(_, SFunc(_, SOption(rtpe), _)), Seq(id: Constant[SNumericType]@unchecked)) =>
           mkGetVar(SByte.downcast(id.value.asInstanceOf[AnyVal]), rtpe)
@@ -147,7 +147,7 @@ object SigmaPredef {
     )
 
     def PKFunc(networkPrefix: NetworkPrefix) = PredefinedFunc("PK",
-      Lambda(Vector("input" -> SString), SSigmaProp, None),
+      Lambda(Array("input" -> SString), SSigmaProp, None),
       PredefFuncInfo(
         { case (_, Seq(arg: EvaluatedValue[SString.type]@unchecked)) =>
           ErgoAddressEncoder(networkPrefix).fromString(arg.value).get match {
@@ -160,7 +160,7 @@ object SigmaPredef {
     )
 
     val DeserializeFunc = PredefinedFunc("deserialize",
-      Lambda(Seq(paramT), Array("str" -> SString), tT, None),
+      Lambda(Array(paramT), Array("str" -> SString), tT, None),
       PredefFuncInfo(
       { case (Ident(_, SFunc(_, tpe, _)), args) =>
         if (args.length != 1)
@@ -181,7 +181,7 @@ object SigmaPredef {
     )
 
     val FromBase58Func = PredefinedFunc("fromBase58",
-      Lambda(Vector("input" -> SString), SByteArray, None),
+      Lambda(Array("input" -> SString), SByteArray, None),
       PredefFuncInfo(
         { case (_, Seq(arg: EvaluatedValue[SString.type]@unchecked)) =>
           ByteArrayConstant(Base58.decode(arg.value).get)
@@ -191,7 +191,7 @@ object SigmaPredef {
     )
 
     val FromBase64Func = PredefinedFunc("fromBase64",
-      Lambda(Vector("input" -> SString), SByteArray, None),
+      Lambda(Array("input" -> SString), SByteArray, None),
       PredefFuncInfo(
         { case (_, Seq(arg: EvaluatedValue[SString.type]@unchecked)) =>
           ByteArrayConstant(Base64.decode(arg.value).get)
@@ -201,7 +201,7 @@ object SigmaPredef {
     )
 
     val Blake2b256Func = PredefinedFunc("blake2b256",
-      Lambda(Vector("input" -> SByteArray), SByteArray, None),
+      Lambda(Array("input" -> SByteArray), SByteArray, None),
       PredefFuncInfo(
         { case (_, Seq(arg: Value[SByteArray]@unchecked)) =>
           mkCalcBlake2b256(arg)
@@ -211,7 +211,7 @@ object SigmaPredef {
     )
 
     val Sha256Func = PredefinedFunc("sha256",
-      Lambda(Vector("input" -> SByteArray), SByteArray, None),
+      Lambda(Array("input" -> SByteArray), SByteArray, None),
       PredefFuncInfo(
         { case (_, Seq(arg: Value[SByteArray]@unchecked)) =>
           mkCalcSha256(arg)
@@ -221,7 +221,7 @@ object SigmaPredef {
     )
 
     val ByteArrayToBigIntFunc = PredefinedFunc("byteArrayToBigInt",
-      Lambda(Vector("input" -> SByteArray), SBigInt, None),
+      Lambda(Array("input" -> SByteArray), SBigInt, None),
       PredefFuncInfo(
         { case (_, Seq(arg: Value[SByteArray]@unchecked)) =>
           mkByteArrayToBigInt(arg)
@@ -232,7 +232,7 @@ object SigmaPredef {
     )
 
     val ByteArrayToLongFunc = PredefinedFunc("byteArrayToLong",
-      Lambda(Vector("input" -> SByteArray), SLong, None),
+      Lambda(Array("input" -> SByteArray), SLong, None),
       PredefFuncInfo(
         { case (_, Seq(arg: Value[SByteArray]@unchecked)) =>
           mkByteArrayToLong(arg)
@@ -242,7 +242,7 @@ object SigmaPredef {
     )
 
     val DecodePointFunc = PredefinedFunc("decodePoint",
-      Lambda(Vector("input" -> SByteArray), SGroupElement, None),
+      Lambda(Array("input" -> SByteArray), SGroupElement, None),
       PredefFuncInfo(
         { case (_, Seq(arg: Value[SByteArray]@unchecked)) =>
           mkDecodePoint(arg)
@@ -253,7 +253,7 @@ object SigmaPredef {
     )
 
     val LongToByteArrayFunc = PredefinedFunc("longToByteArray",
-      Lambda(Vector("input" -> SLong), SByteArray, None),
+      Lambda(Array("input" -> SLong), SByteArray, None),
       PredefFuncInfo(
         { case (_, Seq(arg: Value[SLong.type]@unchecked)) =>
           mkLongToByteArray(arg)
@@ -264,7 +264,7 @@ object SigmaPredef {
     )
 
     val ProveDHTupleFunc = PredefinedFunc("proveDHTuple",
-      Lambda(Vector("g" -> SGroupElement, "h" -> SGroupElement, "u" -> SGroupElement, "v" -> SGroupElement), SSigmaProp, None),
+      Lambda(Array("g" -> SGroupElement, "h" -> SGroupElement, "u" -> SGroupElement, "v" -> SGroupElement), SSigmaProp, None),
       PredefFuncInfo(
         { case (_, Seq(g, h, u, v)) =>
             mkCreateProveDHTuple(g.asGroupElement, h.asGroupElement, u.asGroupElement, v.asGroupElement)
@@ -278,7 +278,7 @@ object SigmaPredef {
     )
 
     val ProveDlogFunc = PredefinedFunc("proveDlog",
-      Lambda(Vector("value" -> SGroupElement), SSigmaProp, None),
+      Lambda(Array("value" -> SGroupElement), SSigmaProp, None),
       PredefFuncInfo(
         { case (_, Seq(arg: Value[SGroupElement.type]@unchecked)) =>
           mkCreateProveDlog(arg)
@@ -291,7 +291,7 @@ object SigmaPredef {
     )
 
     val AvlTreeFunc = PredefinedFunc("avlTree",
-      Lambda(Vector("operationFlags" -> SByte, "digest" -> SByteArray, "keyLength" -> SInt, "valueLengthOpt" -> SIntOption), SAvlTree, None),
+      Lambda(Array("operationFlags" -> SByte, "digest" -> SByteArray, "keyLength" -> SInt, "valueLengthOpt" -> SIntOption), SAvlTree, None),
       PredefFuncInfo(
         { case (_, Seq(flags, digest, keyLength, valueLength)) =>
           mkCreateAvlTree(flags.asByteValue, digest.asByteArray, keyLength.asIntValue, valueLength.asOption[SInt.type])
@@ -413,7 +413,7 @@ object SigmaPredef {
     }
     def logicalOp(symbolName: String, opDesc: ValueCompanion, desc: String, args: Seq[ArgInfo]) = {
       PredefinedFunc(symbolName,
-        Lambda(Vector("left" -> SBoolean, "right" -> SBoolean), SBoolean, None),
+        Lambda(Array("left" -> SBoolean, "right" -> SBoolean), SBoolean, None),
         PredefFuncInfo(undefined),
         OperationInfo(opDesc, desc, args)
       )
@@ -468,30 +468,30 @@ object SigmaPredef {
         Seq(ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))),
 
       PredefinedFunc("binary_|",
-        Lambda(Vector("left" -> SByteArray, "right" -> SByteArray), SByteArray, None),
+        Lambda(Array("left" -> SByteArray, "right" -> SByteArray), SByteArray, None),
         PredefFuncInfo(undefined),
         OperationInfo(Xor, "Byte-wise XOR of two collections of bytes",
-          Seq(ArgInfo("left", "left operand"), ArgInfo("right", "right operand")))
+          Array(ArgInfo("left", "left operand"), ArgInfo("right", "right operand")))
       ),
 
       logicalOp("||", BinOr, "Logical OR of two operands",
-        Seq(ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))),
+        Array(ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))),
       logicalOp("&&", BinAnd, "Logical AND of two operands",
-        Seq(ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))),
+        Array(ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))),
       logicalOp("^", BinXor, "Logical XOR of two operands",
-        Seq(ArgInfo("left", "left operand"), ArgInfo("right", "right operand")))
+        Array(ArgInfo("left", "left operand"), ArgInfo("right", "right operand")))
     ).map(f => f.name -> f).toMap
 
     val unaryFuncs: Map[String, PredefinedFunc] = Seq(
       PredefinedFunc("unary_!",
-        Lambda(Vector("input" -> SBoolean), SBoolean, None),
+        Lambda(Array("input" -> SBoolean), SBoolean, None),
         PredefFuncInfo(undefined),
         OperationInfo(LogicalNot,
           "Logical NOT operation. Returns \\lst{true} if input is \\lst{false} and \\lst{false} if input is \\lst{true}.",
           Seq(ArgInfo("input", "input \\lst{Boolean} value")))
       ),
       PredefinedFunc("unary_-",
-        Lambda(Seq(paramT), Array("input" -> tT), tT, None),
+        Lambda(Array(paramT), Array("input" -> tT), tT, None),
         PredefFuncInfo(undefined),
         OperationInfo(Negation,
           "Negates numeric value \\lst{x} by returning \\lst{-x}.",

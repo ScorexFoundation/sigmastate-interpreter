@@ -500,7 +500,7 @@ object SNumericType extends STypeCompanion {
         |  Each boolean corresponds to one bit.
           """.stripMargin)
 
-  override val methods: Seq[SMethod] = Vector(
+  override val methods: Seq[SMethod] = Array(
     ToByteMethod,  // see Downcast
     ToShortMethod,  // see Downcast
     ToIntMethod,  // see Downcast
@@ -636,7 +636,7 @@ case object SBigInt extends SPrimType with SEmbeddable with SNumericType with SM
   override def typeId = typeCode
 
   /** Type of Relation binary op like GE, LE, etc. */
-  val RelationOpType = SFunc(Vector(SBigInt, SBigInt), SBoolean)
+  val RelationOpType = SFunc(Array(SBigInt, SBigInt), SBoolean)
 
   /** The maximum size of BigInteger value in byte array representation. */
   val MaxSizeInBytes: Long = SigmaConstants.MaxBigIntSizeInBytes.value
@@ -1246,7 +1246,7 @@ object STuple extends STypeCompanion {
 
   def methods: Seq[SMethod] = sys.error(s"Shouldn't be called.")
 
-  def apply(items: SType*): STuple = STuple(items.toIndexedSeq)
+  def apply(items: SType*): STuple = STuple(items.toArray)
   val MaxTupleLength: Int = SigmaConstants.MaxTupleLength.value
   private val componentNames = Array.tabulate(MaxTupleLength){ i => s"_${i + 1}" }
   def componentNameByIndex(i: Int): String =
@@ -1260,7 +1260,7 @@ object STuple extends STypeCompanion {
 
 /** Helper constuctor/extractor for tuples of two types. */
 object SPair {
-  def apply(l: SType, r: SType) = STuple(Vector(l, r))
+  def apply(l: SType, r: SType) = STuple(Array(l, r))
   def unapply(t: STuple): Nullable[(SType, SType)] = t match {
     case STuple(IndexedSeq(l, r)) => Nullable((l, r))
     case _ => Nullable.None
@@ -1405,7 +1405,7 @@ case object SBox extends SProduct with SPredefType with SMonoType {
 
 
   // should be lazy to solve recursive initialization
-  protected override def getMethods() = super.getMethods() ++ Vector(
+  protected override def getMethods() = super.getMethods() ++ Array(
     ValueMethod, // see ExtractAmount
     PropositionBytesMethod, // see ExtractScriptBytes
     BytesMethod, // see ExtractBytes

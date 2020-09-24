@@ -358,13 +358,13 @@ object AtLeast extends ValueCompanion {
   */
 case class Upcast[T <: SNumericType, R <: SNumericType](input: Value[T], tpe: R)
   extends Transformer[T, R] {
-  import Upcast._
   require(input.tpe.isInstanceOf[SNumericType], s"Cannot create Upcast node for non-numeric type ${input.tpe}")
   override def companion = Upcast
-  override val opType = SFunc(Vector(tT), tR)
+  override def opType = Upcast.OpType
 }
 trait NumericCastCompanion extends ValueCompanion {
   def argInfos: Seq[ArgInfo]
+  val OpType = SFunc(Array(SType.tT), SType.tR)
 }
 object Upcast extends NumericCastCompanion {
   override def opCode: OpCode = OpCodes.UpcastCode
@@ -378,10 +378,9 @@ object Upcast extends NumericCastCompanion {
   */
 case class Downcast[T <: SNumericType, R <: SNumericType](input: Value[T], tpe: R)
   extends Transformer[T, R] {
-  import Downcast._
   require(input.tpe.isInstanceOf[SNumericType], s"Cannot create Downcast node for non-numeric type ${input.tpe}")
   override def companion = Downcast
-  override val opType = SFunc(Vector(tT), tR)
+  override def opType = Downcast.OpType
 }
 
 object Downcast extends NumericCastCompanion {
@@ -640,7 +639,7 @@ case class ModQArithOp(left: Value[SBigInt.type], right: Value[SBigInt.type], ov
   extends NotReadyValue[SBigInt.type] {
   override def companion = ModQArithOp.operations(opCode)
   override def tpe: SBigInt.type = SBigInt
-  override def opType: SFunc = SFunc(Vector(left.tpe, right.tpe), tpe)
+  override def opType: SFunc = SFunc(Array(left.tpe, right.tpe), tpe)
 }
 abstract class ModQArithOpCompanion(val opCode: OpCode, val name: String) extends ValueCompanion {
   def argInfos: Seq[ArgInfo]
@@ -843,7 +842,7 @@ sealed trait Quadruple[IV1 <: SType, IV2 <: SType, IV3 <: SType, OV <: SType] ex
   val second: Value[IV2]
   val third: Value[IV3]
 
-  val opType = SFunc(Vector(first.tpe, second.tpe, third.tpe), tpe)
+  val opType = SFunc(Array(first.tpe, second.tpe, third.tpe), tpe)
 }
 
 /**
@@ -893,9 +892,10 @@ object If extends QuadrupleCompanion {
 
 case class LogicalNot(input: Value[SBoolean.type]) extends NotReadyValueBoolean {
   override def companion = LogicalNot
-  override val opType = SFunc(Vector(SBoolean), SBoolean)
+  override def opType = LogicalNot.OpType
 }
 object LogicalNot extends ValueCompanion {
+  val OpType = SFunc(Array(SBoolean), SBoolean)
   override def opCode: OpCode = OpCodes.LogicalNotCode
 }
 

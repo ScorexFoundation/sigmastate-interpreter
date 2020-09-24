@@ -106,7 +106,7 @@ object Fold extends ValueCompanion {
   def sum[T <: SNumericType](input: Value[SCollection[T]], varId: Int)(implicit tT: T) =
     Fold(input,
       Constant(tT.upcast(0.toByte), tT),
-      FuncValue(Vector((varId, STuple(tT, tT))),
+      FuncValue(Array((varId, STuple(tT, tT))),
         Plus(
           SelectField(ValUse(varId, STuple(tT, tT)), 1).asNumValue,
           SelectField(ValUse(varId, STuple(tT, tT)), 2).asNumValue))
@@ -269,7 +269,7 @@ trait Deserialize[V <: SType] extends NotReadyValue[V]
   */
 case class DeserializeContext[V <: SType](id: Byte, tpe: V) extends Deserialize[V] {
   override def companion = DeserializeContext
-  override val opType = SFunc(Vector(SContext, SByte), tpe)
+  override val opType = SFunc(Array(SContext, SByte), tpe)
 }
 object DeserializeContext extends ValueCompanion {
   override def opCode: OpCode = OpCodes.DeserializeContextCode
@@ -280,7 +280,7 @@ object DeserializeContext extends ValueCompanion {
   */
 case class DeserializeRegister[V <: SType](reg: RegisterId, tpe: V, default: Option[Value[V]] = None) extends Deserialize[V] {
   override def companion = DeserializeRegister
-  override val opType = SFunc(Vector(SBox, SByte, SOption(tpe)), tpe)
+  override val opType = SFunc(Array(SBox, SByte, SOption(tpe)), tpe)
 }
 object DeserializeRegister extends ValueCompanion {
   override def opCode: OpCode = OpCodes.DeserializeRegisterCode
@@ -288,7 +288,7 @@ object DeserializeRegister extends ValueCompanion {
 
 case class GetVar[V <: SType](varId: Byte, override val tpe: SOption[V]) extends NotReadyValue[SOption[V]] {
   override def companion = GetVar
-  override val opType = SFunc(Vector(SContext, SByte), tpe)
+  override val opType = SFunc(Array(SContext, SByte), tpe)
 }
 object GetVar extends ValueCompanion {
   override def opCode: OpCode = OpCodes.GetVarCode

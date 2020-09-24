@@ -810,9 +810,9 @@ object Values {
     */
   case class FuncValue(args: IndexedSeq[(Int,SType)], body: Value[SType]) extends NotReadyValue[SFunc] {
     override def companion = FuncValue
-    lazy val tpe: SFunc = SFunc(args.map(_._2), body.tpe)
+    lazy val tpe: SFunc = SFunc(args.toArray.map(_._2), body.tpe)
     /** This is not used as operation, but rather to form a program structure */
-    override def opType: SFunc = SFunc(Vector(), tpe)
+    override def opType: SFunc = SFunc(mutable.WrappedArray.empty, tpe)
   }
   object FuncValue extends ValueCompanion {
     override def opCode: OpCode = FuncValueCode

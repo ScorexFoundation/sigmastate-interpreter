@@ -134,7 +134,7 @@ trait TreeBuilding extends RuntimeCosting { IR: IRContext =>
         val varId = defId + 1       // arguments are treated as ValDefs and occupy id space
         val env1 = env + (x -> (varId, elemToSType(x.elem)))
         val block = processAstGraph(ctx, mainG, env1, lam, varId + 1, constantsProcessing)
-        val rhs = mkFuncValue(Vector((varId, elemToSType(x.elem))), block)
+        val rhs = mkFuncValue(Array((varId, elemToSType(x.elem))), block)
         rhs
       case Def(Apply(fSym, xSym, _)) =>
         val Seq(f, x) = Seq(fSym, xSym).map(recurse)
