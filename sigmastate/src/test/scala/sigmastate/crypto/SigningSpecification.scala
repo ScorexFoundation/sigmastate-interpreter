@@ -69,7 +69,9 @@ class SigningSpecification extends SigmaTestingCommons {
       val sig = pi.signMessage(sigmaTree, msg, HintsBag.empty).get
       pi.verifySignature(sigmaTree, msg, sig) shouldBe true
       pi.verifySignature(sigmaTree, (str + "1").getBytes("UTF-8"), sig) shouldBe false
+      pi.verifySignature(sigmaTree, msg, sig :+ (1: Byte)) shouldBe false
       val wrongTree = CAND(Seq(pi.dlogSecrets.head.publicImage, pi.dhSecrets(1).publicImage))
+      pi.verifySignature(wrongTree, msg, sig) shouldBe false
     }
   }
 
