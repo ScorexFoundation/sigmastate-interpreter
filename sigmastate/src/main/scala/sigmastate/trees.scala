@@ -212,7 +212,7 @@ object SigmaOr extends SigmaTransformerCompanion {
   def apply(head: SigmaPropValue, tail: SigmaPropValue*): SigmaOr = SigmaOr(head +: tail)
 }
 
-/** Base trait for companions. */
+/** Base trait for companions of OR, AND and XorOf nodes. */
 trait LogicalTransformerCompanion extends ValueCompanion {
   def argInfos: Seq[ArgInfo]
   val OpType: SFunc = SFunc(SCollection.SBooleanArray, SBoolean)
