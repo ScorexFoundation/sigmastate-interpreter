@@ -1119,6 +1119,17 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
 
   var ruleStack: List[CostingRuleStat] = Nil
 
+  /** Recursively translates each ErgoTree `node` into the corresponding cost formula.
+    * The cost formula is represented using graph-based IR defined by this IRContext cake.
+    * Each `node: Value[T]` which evaluates to the value of type `T` is transformed
+    * to a value of type `RCosted[A]` which is a synonym of `Ref[Costed[A]]` type.
+    * The translation is performed recursively on a structure of the ErgoTree expression.
+    *
+    * @param ctx  reference to the graph node, which represents costed `CONTEXT` expression.
+    * @param env  environment of costed ValDef nodes (see BlockValue case).
+    * @param node expression to be costed
+    * @return a reference to the graph node of type Costed[T#WrappedType]`
+    */
   protected def evalNode[T <: SType](ctx: RCosted[Context], env: CostingEnv, node: Value[T]): RCosted[T#WrappedType] = {
     import WOption._
     def eval[T <: SType](node: Value[T]): RCosted[T#WrappedType] = evalNode(ctx, env, node)

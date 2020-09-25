@@ -120,7 +120,20 @@ object SType {
   }
   implicit val ErgoLikeContextRType: RType[ErgoLikeContext] = RType.fromClassTag(classTag[ErgoLikeContext])
 
-  /** Named type variables and parameters used in generic types and method signatures. */
+  /** Named type variables and parameters used in generic types and method signatures.
+    * Generic type terms like `(Coll[IV],(IV) => Boolean) => Boolean` are used to represent
+    * method types of `Coll`` and `Option`` types. Each such type is an instance of [[SFunc]].
+    * To represent variables (such as `IV` in the example above) [[STypeVar]] instances
+    * are used.
+    *
+    * Generic types are not supported by ErgoTree serialization format and STypeVars are
+    * used internally and never serialized (there is no serializer for STypeVar).
+    * Thus the usage of type variables is limited.
+    *
+    * All necessary type variables can be declared in advance and reused across all code
+    * base. This allows to avoid allocation of many duplicates and also improve
+    * performance of SType values.
+    */
   val tT = STypeVar("T")
   val tR = STypeVar("R")
   val tK = STypeVar("K")
@@ -135,9 +148,6 @@ object SType {
   val paramR = STypeParam(tR)
   val paramIV = STypeParam(tIV)
   val paramOV = STypeParam(tOV)
-
-//  lazy val SOptionT = SOption(tT)
-//  lazy val SCollT = SCollection(tT)
 
   val IndexedSeqOfT1: IndexedSeq[SType] = Array(SType.tT)
   val IndexedSeqOfT2: IndexedSeq[SType] = Array(SType.tT, SType.tT)

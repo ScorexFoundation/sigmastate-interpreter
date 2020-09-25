@@ -464,11 +464,11 @@ object CHeader {
 class CCostModel extends CostModel {
   import CCostModel._
 
-  def AccessBox: Int = AccessBoxCost
+  override def AccessBox: Int = AccessBoxCost
 
-  def AccessAvlTree: Int = AccessAvlTreeCost
+  override def AccessAvlTree: Int = AccessAvlTreeCost
 
-  def GetVar: Int = GetVarCost
+  override def GetVar: Int = GetVarCost
 
   def DeserializeVar: Int = DeserializeVarCost
 

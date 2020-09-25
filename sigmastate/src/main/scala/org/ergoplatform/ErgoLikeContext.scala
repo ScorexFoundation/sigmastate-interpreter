@@ -236,6 +236,9 @@ case object Self extends NotReadyValueBox with ValueCompanion {
   override val opType = SFunc(SContext, SBox)
 }
 
+/** When interpreted evaluates to the singleton instance of [[special.sigma.Context]].
+  * Corresponds to `CONTEXT` variable in ErgoScript which can be used like `CONTEXT.headers`.
+  */
 case object Context extends NotReadyValue[SContext.type] with ValueCompanion {
   override def companion = this
   override def opCode: OpCode = OpCodes.ContextCode
@@ -243,6 +246,9 @@ case object Context extends NotReadyValue[SContext.type] with ValueCompanion {
   override val opType: SFunc = SFunc(SUnit, SContext)
 }
 
+/** When interpreted evaluates to the singleton instance of [[special.sigma.SigmaDslBuilder]].
+  * Corresponds to `Global` variable in ErgoScript which can be used like `Global.groupGenerator`.
+  */
 case object Global extends NotReadyValue[SGlobal.type] with ValueCompanion {
   override def companion = this
   override def opCode: OpCode = OpCodes.GlobalCode

@@ -1,14 +1,14 @@
 package scalan
 
-import java.util.Objects
-
-import scala.annotation.tailrec
 import scala.language.higherKinds
 import scalan.util.ReflectionUtil.ClassOps
 
+/** A slice in the Scalan cake with base classes for various descriptors. */
 trait Entities extends TypeDescs { self: Scalan =>
 
-  /** Base class for all descriptors of staged traits. */
+  /** Base class for all descriptors of staged traits.
+    * See derived classes in `impl` packages.
+    */
   abstract class EntityElem[A] extends Elem[A] with scala.Equals {
     /** Optional parent type in inheritance hierarchy */
     def parent: Option[Elem[_]] = None
