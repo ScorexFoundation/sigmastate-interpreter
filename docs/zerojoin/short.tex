@@ -126,17 +126,18 @@ IOHK Research \\\email{\{alex.chepurnoy\}@iohk.io}}
 
 \begin{abstract}
 
-We present \algname, a practical privacy-enhancing protocol for blockchain transactions. \algname can be considered a combination of \zerocoin and CoinJoin. 
+We present \algname, a privacy-enhancing protocol for UTXO blockchains. 
+%\algname can be considered a combination of \zerocoin and CoinJoin. 
 Like \zerocoin, our protocol uses zero-knowledge proofs and a pool of
-participants. However, unlike \zerocoin, our proofs are very efficient, and our pool size is not monotonically increasing.
-Thus, our protocol overcomes the two major drawbacks of \zerocoin. Our approach can also be considered a non-interactive variant of CoinJoin, where the interaction is replaced by a public transaction on the blockchain. We also present \mixname, a practical implementation of \algname on top of Ergo, a smart contract platform based on Sigma protocols. While \algname contains the key ideas, it leaves open the practical issue of handling fees. The key contribution of \mixname is a novel approach to handle fee in \algname. 
+participants. However, unlike \zerocoin, our pool size is not monotonically increasing.
+Thus, our protocol overcomes the major drawback of \zerocoin. Our approach can also be considered a non-interactive variant of CoinJoin, where the interaction is replaced by a public transaction on the blockchain. We also present \mixname, a practical implementation of \algname on top of Ergo, a smart contract platform based on Sigma protocols. While \algname contains the key ideas, it leaves open the practical issue of handling fees. The key contribution of \mixname is a novel approach to handle fee in \algname. 
 
 \end{abstract}
 
 \section{Introduction}
 \label{intro}
 
-Privacy enhancing techniques in blockchains generally fall into two categories. The first is hiding the amounts being transferred, such as in Confidential Transactions~\cite{ct}. The second is obscuring the input-output relationships such as in \zerocoin~\cite{zerocoin}, Monero~\cite{monero}, CoinJoin~\cite{coinjoin}, Quisquis~\cite{quisquis} and Composite Signatures (CS)~\cite{composite}. Some solutions such as MimbleWimble (MW)~\cite{mw} and Zcash~\cite{zcash,zcash1} combine both.
+Privacy enhancing techniques in blockchains generally fall into two categories. The first is hiding the amounts being transferred, such as in Confidential Transactions~\cite{ct}. The second is obscuring the input-output relationships such as in \zerocoin~\cite{zerocoin}, Monero~\cite{monero}, CoinJoin~\cite{coinjoin} and Composite Signatures (CS)~\cite{composite}. Some solutions such as MimbleWimble (MW)~\cite{mw} and Zcash~\cite{zcash,zcash1} combine both.
 %In fact, MW can be thought of as a combination of CT and OWAS.
 
 In this work, we describe \algname, yet another privacy enhancing protocol based on the latter approach of obscuring input-output relationships. This allows us to avoid expensive range proofs necessary for the first approach. Our protocol is motivated from \zerocoin and CoinJoin to overcome some of their limitations.
@@ -154,9 +155,9 @@ CoinJoin~
 \zerocoin~                                                     
 \cite{zerocoin} & yes           & yes        & no 	       & no             & Zcoin~\cite{zcoin}           \\
 Monero          & yes           & yes        & no          & no             & Monero~\cite{monero}         \\  
-MW~\cite{mw}    & no            & yes        & no          & yes            & Grin~\cite{grin}             \\  
-CS~
-\cite{composite}& no            & no         & no          & yes            & -- \\  
+%MW~\cite{mw}    & no            & yes        & no          & yes            & Grin~\cite{grin}             \\  
+%CS~
+%\cite{composite}& no            & no         & no          & yes            & -- \\  
 Quisquis~                                                      
 \cite{quisquis} & no            & yes        & no          & no             & --                           \\
 \textbf{\algname}& no           & no         & no 	       & no             & ErgoMixer~\cite{ergomixer}   \\\hline
@@ -227,16 +228,16 @@ Considering the addition of a coin to the mix as a deposit and removal as a with
 \subsection{Quisquis}
 
 One of the protocols closest in design to \algname is Quisquis~\cite{quisquis}, since they both aim to prevent monotonic UTXO sets. 
-At a conceptual level, both have the same structure as the fundamental CoinJoin primitive: a mix transaction consumes two 1-Erg boxes and creates two indistinguishable
-1-Erg boxes. Similar to \algname, Quisquis does this in a non-interactive manner, thereby overcoming the main drawback of CoinJoin. The difference lies in the way 
-the output boxes are created. In particular both protocols have the following basic structure:
+At a conceptual level, both have the same fundamental CoinJoin-type primitive: a mix transaction consumes two 1-Erg boxes and creates two indistinguishable
+1-Erg boxes. Similar to \algname, Quisquis does this in a non-interactive manner, thereby overcoming the main drawback of CoinJoin. 
+%The difference lies in the way the output boxes are created. 
+Both \algname and Quisquis have the following structure:
 \begin{enumerate}
-    \item Alice adds a box $A$ to the pool.
-    \item Bob selects a secret bit $b$ and spends $A$ along with some of his own boxes to generate two identical looking boxes $O_0, O_1$ such that $O_b$ is spendable by Alice and $O_{1-b}$ by Bob. The boxes are indistinguishable to outsiders. 
-    \item After this step $A$ is removed from the pool. Thus, we no longer require a monotonic UTXO set. 
-    \item The protocol enforces Bob to behave correctly ``most'' of the time. That is, it enforces Bob to generate two identical looking boxes. However, it cannot be publicly verified if the boxes were indeed generated correctly. Thus, while the protocol works if Bob is honest, a cheating Bob may create identical looking boxes containing invalid values, thereby rendering both unspendable. 
-    \item The remaining part of the protocol is used to enforce Bob's correct behavior using zero-knowledge proofs that the boxes are indeed created correctly.
-    The difference is that Quisquis uses generic NIZKs, while \algname uses sigma protocols: it only takes 8 exponentiations to verify a \algname mix transaction and the proof size  is in the range of 200 bytes compared to several kilobytes at the minimum. 
+    \item Alice adds a box $A$ to the pool and waits for someone (say Bob) to use it. 
+    \item Bob selects a secret bit $b$ and spends $A$ along with some of his own boxes to create two identical looking boxes $O_0, O_1$ such that $O_b$ is spendable by Alice and $O_{1-b}$ by Bob. The boxes are indistinguishable to outsiders. 
+    \item The protocol enforces Bob to create two identical looking boxes. However, it cannot be publicly verified if the boxes are created correctly. Thus, while the protocol works if Bob is honest, a cheating Bob may create identical looking boxes containing invalid values, thereby rendering both unspendable. 
+    \item The remaining part of the protocol enforces Bob's correct behavior using zero-knowledge proofs that the boxes were indeed created correctly.
+    The difference is that Quisquis uses generic NIZKs, while \algname uses sigma protocols: it only takes 8 exponentiations to verify a \algname mix transaction and the proof size  is around 200 bytes compared to several kilobytes. 
 
 \end{enumerate}
 
@@ -301,8 +302,8 @@ Let $g$ be some generator of $G$ that is fixed beforehand. Each box has optional
 Without loss of generality, Alice will pool and Bob will mix. 
 
 \begin{enumerate}
-	\item \textbf{Pool:} To add a coin to the H-pool, Alice picks a secret $x\in \mathbb{Z}_q$ and creates a box $A$ containing $u = g^x$. The box is now considered added to the pool. 
-	\item \textbf{Mix:} Bob picks a box, say $A$, uniformly from the pool. He also picks secrets $(b, y) \in \mathbb{Z}_2\times \mathbb{Z}_q$. He spends $A$ with some of his own boxes to create two output boxes $O_0, O_1$ having the same value as $A$ such that:
+	\item \textbf{Pool:} To add a coin to the H-pool, Alice picks a secret $x\in \mathbb{Z}$ and creates a box $A$ containing $u = g^x$. The box is now considered added to the pool. 
+	\item \textbf{Mix:} Bob picks secrets $(b, y) \in \mathbb{Z}_2\times \mathbb{Z}$ and a box, say $A$, uniformly from the pool ensuring that $u\neq g^{-1}$. He spends $A$ with some of his own boxes to create two output boxes $O_0, O_1$ having the same value as $A$ such that:
 	\begin{enumerate}
 		\item Registers $({\alpha}, {\beta})$ of $O_b$ and $O_{1-b}$ store $(g^y, u^y)$ and $(u^y, g^y)$ respectively. 
 		\item $O_b, O_{1-b}$ are protected by the sigma statement given below:
@@ -330,7 +331,6 @@ Concretely, Bob must adhere to the below rules when spending $A$:
     		\begin{equation}\label{bobCondition}
     		\texttt{proveDHTuple}(g, u, {\alpha}_0, {\beta}_0)~\ornode~\texttt{proveDHTuple}(g, u, {\beta}_0, {\alpha}_0)
     		\end{equation}
-		
 	\end{enumerate}
 \subsection{Analysis}
 
@@ -607,8 +607,9 @@ The predicate \texttt{alice > 0} also requires that the Half-Mix box have at lea
 
 \section{Conclusion}
 
-\algname is a non-interactive variant of CoinJoin for UTXO-based blockchains. The protocol overcomes two of the main weaknesses of CoinJoin~\cite{coinjoin}, namely the requirement of 
-interaction and the susceptibility to eavesdropping attacks. \algname can also be considered a non-monotonic variant of \zerocoin~\cite{zerocoin}, where instead of mixing with all the coins in a pool at once, we mix in stages, one coin at a time and remove it from the pool after mixing. 
+\algname is a non-interactive variant of CoinJoin~\cite{coinjoin} for UTXO-based blockchains. 
+%The protocol overcomes two of the main weaknesses of CoinJoin~\cite{coinjoin}, namely the requirement of interaction and the susceptibility to eavesdropping attacks. 
+\algname can also be considered a non-monotonic variant of \zerocoin~\cite{zerocoin}, where instead of mixing with all the coins in a pool at once, we mix in stages, one coin at a time and remove it from the pool after mixing. 
 From a design perspective, \algname is most similar to Quisquis~\cite{quisquis}, the difference being in the underlying cryptography. In particular, while Quisquis uses
 generic NIZKs, \algname uses sigma statements, which are an order of magnitude faster and smaller. Note that CoinJoin transactions can be considered ``pool-to-pool'', where
 the outputs of a mix transaction can be directly remixed for the next step. Thus, those outputs can be considered as belonging to the pool. In contrast, a \algname mix output
