@@ -8,7 +8,7 @@ import sigmastate.basics.DiffieHellmanTupleProverInput
 import sigmastate.eval.IRContext
 import sigmastate.utxo.CostTable
 
-class ContextEnrichingTestProvingInterpreter(implicit override val IR: IRContext)
+class ContextEnrichingTestProvingInterpreter(implicit IR: IRContext)
   extends ErgoLikeTestProvingInterpreter with ContextEnrichingProverInterpreter {
 
   override lazy val contextExtenders: Map[Byte, EvaluatedValue[_ <: SType]] = (1 to 10).map { i =>

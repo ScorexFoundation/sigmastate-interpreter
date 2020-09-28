@@ -6,7 +6,7 @@ import sigmastate.basics.{DiffieHellmanTupleProverInput, SigmaProtocolPrivateInp
 import sigmastate.eval.IRContext
 import sigmastate.interpreter.ProverInterpreter
 
-class ErgoLikeTestProvingInterpreter(implicit override val IR: IRContext)
+class ErgoLikeTestProvingInterpreter(implicit IR: IRContext)
   extends ErgoLikeTestInterpreter with ProverInterpreter {
 
   override lazy val secrets: Seq[SigmaProtocolPrivateInput[_, _]] = {

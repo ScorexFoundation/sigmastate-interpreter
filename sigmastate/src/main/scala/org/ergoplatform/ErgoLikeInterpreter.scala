@@ -2,12 +2,11 @@ package org.ergoplatform
 
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
-import sigmastate.eval.IRContext
 import sigmastate.interpreter.Interpreter
 import sigmastate.utxo._
 
 
-class ErgoLikeInterpreter(implicit val IR: IRContext) extends Interpreter {
+abstract class ErgoLikeInterpreter extends Interpreter {
 
   override type CTX <: ErgoLikeContext
 

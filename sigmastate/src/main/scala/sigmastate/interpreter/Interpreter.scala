@@ -32,7 +32,9 @@ trait Interpreter extends ScorexLogging {
 
   type ProofT = UncheckedTree
 
-  val IR: IRContext
+  def createIR(): IRContext
+
+  lazy val IR: IRContext = createIR()
   import IR._
 
   /** Deserializes given script bytes using ValueSerializer (i.e. assuming expression tree format).

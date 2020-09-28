@@ -94,8 +94,10 @@ class SigmaDslTesting extends PropSpec
     indices <- Gen.containerOfN[Array, Int](nIndexes, Gen.choose(0, arrLength - 1))
   } yield indices
 
-  class FeatureProvingInterpreter extends ErgoLikeInterpreter()(new CompiletimeIRContext) with ProverInterpreter {
+  class FeatureProvingInterpreter extends ErgoLikeInterpreter with ProverInterpreter {
     override type CTX = ErgoLikeContext
+
+    override def createIR(): IRContext = new CompiletimeIRContext
 
     def decodeSecretInput(decimalStr: String): DLogProverInput = DLogProverInput(BigInt(decimalStr).bigInteger)
 
@@ -361,7 +363,10 @@ class SigmaDslTesting extends PropSpec
 
       implicit val IR: IRContext = createIR()
 
-      val verifier = new ErgoLikeInterpreter() { type CTX = ErgoLikeContext }
+      val verifier = new ErgoLikeInterpreter() {
+        type CTX = ErgoLikeContext
+        override def createIR(): IRContext = suite.createIR()
+      }
 
       val verificationCtx = ergoCtx.withExtension(pr.extension)
 
