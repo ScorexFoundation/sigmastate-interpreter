@@ -65,5 +65,5 @@ trait InterpreterContext {
   def withValidationSettings(newVs: SigmaValidationSettings): InterpreterContext
 
   /** Creates `special.sigma.Context` instance based on this context. */
-  def toSigmaContext(IR: Evaluation, isCost: Boolean, extensions: Map[Byte, AnyValue] = Map()): sigma.Context
+  def toSigmaContext(isCost: Boolean, extensions: Map[Byte, AnyValue] = Map()): sigma.Context
 }
