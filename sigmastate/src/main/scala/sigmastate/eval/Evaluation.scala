@@ -1,6 +1,5 @@
 package sigmastate.eval
 
-import java.lang.Math
 import java.math.BigInteger
 
 import org.bouncycastle.math.ec.ECPoint
@@ -8,18 +7,15 @@ import org.ergoplatform._
 import org.ergoplatform.validation.ValidationRules.{CheckLoopLevelInCostFunction, CheckCostFuncOperation}
 import sigmastate._
 import sigmastate.Values.{Value, GroupElementConstant, SigmaBoolean, Constant}
-import sigmastate.lang.Terms.OperationId
-import sigmastate.utxo.CostTableStat
 
 import scala.reflect.ClassTag
 import scala.util.Try
 import sigmastate.SType._
-import sigmastate.interpreter.CryptoConstants.EcPointType
 import scalan.{Nullable, RType}
 import scalan.RType._
 import sigma.types.PrimViewType
 import sigmastate.basics.DLogProtocol.ProveDlog
-import sigmastate.basics.{ProveDHTuple, DLogProtocol}
+import sigmastate.basics.{ProveDHTuple}
 import special.sigma.Extensions._
 import sigmastate.lang.exceptions.CostLimitException
 import sigmastate.serialization.OpCodes
@@ -402,13 +398,6 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
     }
   }
 
-  object IsTupleFN {
-    def unapply(fn: String): Nullable[Byte] = {
-      if (fn.startsWith("_")) Nullable[Byte](fn.substring(1).toByte)
-      else Nullable.None.asInstanceOf[Nullable[Byte]]
-    }
-  }
-
   import sigmastate._
   import special.sigma.{Context => SigmaContext}
 
@@ -432,8 +421,6 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
     )
     env
   }
-
-  case class EvaluatedEntry(env: DataEnv, sym: Sym, value: AnyRef)
 
   protected def printEnvEntry(sym: Sym, value: AnyRef) = {
     def trim[A](arr: Array[A]) = arr.take(arr.length min 100)
@@ -475,7 +462,6 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
       this._currentCost = java.lang.Math.addExact(this._currentCost, n)
     }
     @inline def currentCost: Int = _currentCost
-    @inline def resetCost() = { _currentCost = initialCost }
   }
 
   /** Implements finite state machine with stack of graph blocks (scopes),
@@ -571,6 +557,7 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
         if (accumulatedCost > limit) {
 //          if (cost < limit)
 //            println(s"FAIL FAST in loop: $accumulatedCost > $limit")
+          // TODO cover with tests
           throw new CostLimitException(accumulatedCost, msgCostLimitError(accumulatedCost, limit), None)
         }
       }
@@ -661,6 +648,7 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
             In(input: special.collection.Coll[Byte]@unchecked),
             In(positions: special.collection.Coll[Int]@unchecked),
             In(newVals: special.collection.Coll[Any]@unchecked), _) =>
+            // TODO refactor: call sigmaDslBuilderValue.substConstants
             val typedNewVals = newVals.toArray.map(v => builder.liftAny(v) match {
               case Nullable(v) => v
               case _ => sys.error(s"Cannot evaluate substConstants($input, $positions, $newVals): cannot lift value $v")
@@ -782,28 +770,6 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
 
           case ThunkForce(In(t: ThunkData[Any])) =>
             out(t())
-          case SDBM.sigmaProp(_, In(isValid: Boolean)) =>
-            val res = CSigmaProp(sigmastate.TrivialProp(isValid))
-            out(res)
-          case SDBM.proveDlog(_, In(g: EcPointType)) =>
-            val res = CSigmaProp(DLogProtocol.ProveDlog(g))
-            out(res)
-          case SDBM.proveDHTuple(_, In(g: EcPointType), In(h: EcPointType), In(u: EcPointType), In(v: EcPointType)) =>
-            val res = CSigmaProp(ProveDHTuple(g, h, u, v))
-            out(res)
-          case SDBM.avlTree(_, In(flags: Byte),
-                           In(digest: SColl[Byte]@unchecked), In(keyLength: Int),
-                           In(valueLengthOpt: Option[Int]@unchecked)) =>
-            val res = sigmaDslBuilderValue.avlTree(flags, digest, keyLength, valueLengthOpt)
-            out(res)
-
-//          case CReplCollCtor(valueSym @ In(value), In(len: Int)) =>
-//            val res = sigmaDslBuilderValue.Colls.replicate(len, value)(asType[Any](valueSym.elem.sourceType))
-//            out(res)
-//
-//          case PairOfColsCtor(In(ls: SColl[a]@unchecked), In(rs: SColl[b]@unchecked)) =>
-//            val res = sigmaDslBuilderValue.Colls.pairColl(ls, rs)
-//            out(res)
 
           case CSizePrimCtor(In(dataSize: Long), tVal) =>
             val res = new special.collection.CSizePrim(dataSize, tVal.eA.sourceType)
@@ -817,15 +783,6 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
           case CSizeOptionCtor(In(optSize: Option[SSize[_]] @unchecked)) =>
             val res = new special.collection.CSizeOption(optSize)
             out(res)
-//          case CSizeAnyValueCtor(tVal, In(valueSize: SSize[Any] @unchecked)) =>
-//            val res = new special.sigma.CSizeAnyValue(tVal.eA.sourceType.asInstanceOf[RType[Any]], valueSize)
-//            out(res)
-//          case CSizeBoxCtor(
-//                 In(propBytes: SSize[SColl[Byte]]@unchecked), In(bytes: SSize[SColl[Byte]]@unchecked),
-//                 In(bytesWithoutRef: SSize[SColl[Byte]]@unchecked), In(regs: SSize[SColl[Option[SAnyValue]]]@unchecked),
-//                 In(tokens: SSize[SColl[(SColl[Byte], Long)]]@unchecked)) =>
-//            val res = new EvalSizeBox(propBytes, bytes, bytesWithoutRef, regs, tokens)
-//            out(res)
 
           case costOp: CostOf =>
             out(costOp.eval)
@@ -837,8 +794,6 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
           case SizeOf(sym @ In(data)) =>
             val tpe = elemToSType(sym.elem)
             val size = tpe match {
-//              case SAvlTree =>
-//                data.asInstanceOf[special.sigma.AvlTree].dataSize
               case _ => data match {
                 case w: WrapperOf[_] =>
                   tpe.dataSize(w.wrappedValue.asWrappedType)
@@ -958,7 +913,7 @@ object Evaluation {
     case PreHeaderRType => SPreHeader
     case SigmaPropRType => SSigmaProp
     case SigmaBooleanRType => SSigmaProp
-    case tup: TupleType => STuple(tup.items.map(t => rtypeToSType(t)).toIndexedSeq)
+    case tup: TupleType => STuple(tup.items.map(t => rtypeToSType(t)))
     case at: ArrayType[_] => SCollection(rtypeToSType(at.tA))
     case ct: CollType[_] => SCollection(rtypeToSType(ct.tItem))
     case ft: FuncType[_,_] => SFunc(rtypeToSType(ft.tDom), rtypeToSType(ft.tRange))

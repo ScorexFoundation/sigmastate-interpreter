@@ -69,10 +69,23 @@ object SigmaParser extends Exprs with Types with Core {
               mkConstant[SLong.type](-value, SLong)
             case _ => error(s"cannot prefix $arg with op $opName", arg.sourceContext)
           }
+
         case "!" => mkLogicalNot(arg.asBoolValue)
-        case "-" => mkNegation(arg.asNumValue)
-        case "~" => mkBitInversion(arg.asNumValue)
-        case _ => error(s"Unknown prefix operation $opName for $arg", arg.sourceContext)
+
+        case "-" =>
+          if (arg.tpe.isNumTypeOrNoType)
+            mkNegation(arg.asNumValue)
+          else
+            error(s"Numeric argument expected for '$opName' operation: $arg", arg.sourceContext)
+
+        case "~" =>
+          if (arg.tpe.isNumTypeOrNoType)
+            mkBitInversion(arg.asNumValue)
+          else
+            error(s"Numeric argument expected for '$opName' operation: $arg", arg.sourceContext)
+
+        case _ =>
+          error(s"Unknown prefix operation $opName for $arg", arg.sourceContext)
       }
     }
 
@@ -87,12 +100,23 @@ object SigmaParser extends Exprs with Types with Core {
         case ">" => mkGT(l, r)
         case "<=" => mkLE(l, r)
         case "<" => mkLT(l, r)
-        case "-" => mkMinus(l.asValue[SLong.type], r.asValue[SLong.type])
-        case "|" => mkBitOr(l.asNumValue, r.asNumValue)
-        case "&" => mkBitAnd(l.asNumValue, r.asNumValue)
+        case "-" => mkMinus(l.asNumValue, r.asNumValue)
+
+        case "|" =>
+          if (l.tpe.isNumTypeOrNoType && r.tpe.isNumTypeOrNoType)
+            mkBitOr(l.asNumValue, r.asNumValue)
+          else
+            error(s"Numeric arguments expected for '$opName' operation: ($l, $r)", l.sourceContext)
+
+        case "&" =>
+          if (l.tpe.isNumTypeOrNoType && r.tpe.isNumTypeOrNoType)
+            mkBitAnd(l.asNumValue, r.asNumValue)
+          else
+            error(s"Numeric arguments expected for '$opName' operation: ($l, $r)", l.sourceContext)
+
         case _ if parseAsMethods.contains(opName) => mkMethodCallLike(l, opName, IndexedSeq(r))
-        case "/" => mkDivide(l.asValue[SLong.type], r.asValue[SLong.type])
-        case "%" => mkModulo(l.asValue[SLong.type], r.asValue[SLong.type])
+        case "/" => mkDivide(l.asNumValue, r.asNumValue)
+        case "%" => mkModulo(l.asNumValue, r.asNumValue)
         case _ => error(s"Unknown binary operation $opName", l.sourceContext)
       }
     }

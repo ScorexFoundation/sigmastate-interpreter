@@ -6,12 +6,8 @@ import java.util.Objects
 
 import org.bitbucket.inkytonik.kiama.relation.Tree
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{strategy, everywherebu}
-import org.ergoplatform.ErgoLikeContext
 import org.ergoplatform.validation.ValidationException
 import scalan.{Nullable, RType}
-import scorex.crypto.authds.{ADDigest, SerializedAdProof}
-import scorex.crypto.authds.avltree.batch.BatchAVLVerifier
-import scorex.crypto.hash.{Digest32, Blake2b256}
 import scalan.util.CollectionUtil._
 import sigmastate.SCollection.{SIntArray, SByteArray}
 import sigmastate.interpreter.CryptoConstants.EcPointType
@@ -36,7 +32,7 @@ import sigmastate.lang.DefaultSigmaBuilder._
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.serialization.transformers.ProveDHTupleSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import special.sigma.{AnyValue, AvlTree, PreHeader, Header, _}
+import special.sigma.{AvlTree, PreHeader, Header, _}
 import sigmastate.lang.SourceContext
 import special.collection.Coll
 
@@ -153,7 +149,7 @@ object Values {
           ft.getGenericType
         case _ => tpe
       }
-      SFunc(Vector(), resType)
+      SFunc(mutable.WrappedArray.empty, resType)
     }
   }
 
@@ -332,6 +328,7 @@ object Values {
   }
 
   object GroupElementConstant {
+    def apply(value: EcPointType): Constant[SGroupElement.type] = apply(SigmaDsl.GroupElement(value))
     def apply(value: GroupElement): Constant[SGroupElement.type] = Constant[SGroupElement.type](value, SGroupElement)
     def unapply(v: SValue): Option[GroupElement] = v match {
       case Constant(value: GroupElement, SGroupElement) => Some(value)
@@ -484,7 +481,7 @@ object Values {
 
   object BoolArrayConstant {
     def apply(value: Coll[Boolean]): CollectionConstant[SBoolean.type] = CollectionConstant[SBoolean.type](value, SBoolean)
-    def apply(value: Array[Boolean]): CollectionConstant[SBoolean.type] = CollectionConstant[SBoolean.type](value.toColl, SBoolean)
+    def apply(value: Array[Boolean]): CollectionConstant[SBoolean.type] = apply(value.toColl)
     def unapply(node: SValue): Option[Coll[Boolean]] = node match {
       case coll: CollectionConstant[SBoolean.type] @unchecked => coll match {
         case CollectionConstant(arr, SBoolean) => Some(arr)
@@ -548,9 +545,6 @@ object Values {
   }
 
   object SigmaBoolean {
-    val PropBytes = "propBytes"
-    val IsValid = "isValid"
-
     /** @hotspot don't beautify this code */
     object serializer extends SigmaSerializer[SigmaBoolean, SigmaBoolean] {
       val dhtSerializer = ProveDHTupleSerializer(ProveDHTuple.apply)
@@ -563,27 +557,27 @@ object Values {
           case dht: ProveDHTuple => dhtSerializer.serialize(dht, w)
           case _: TrivialProp => // besides opCode no additional bytes
           case and: CAND =>
-            val nChildren = and.sigmaBooleans.length
+            val nChildren = and.children.length
             w.putUShort(nChildren)
             cfor(0)(_ < nChildren, _ + 1) { i =>
-              val c = and.sigmaBooleans(i)
+              val c = and.children(i)
               serializer.serialize(c, w)
             }
 
           case or: COR =>
-            val nChildren = or.sigmaBooleans.length
+            val nChildren = or.children.length
             w.putUShort(nChildren)
             cfor(0)(_ < nChildren, _ + 1) { i =>
-              val c = or.sigmaBooleans(i)
+              val c = or.children(i)
               serializer.serialize(c, w)
             }
 
           case th: CTHRESHOLD =>
             w.putUShort(th.k)
-            val nChildren = th.sigmaBooleans.length
+            val nChildren = th.children.length
             w.putUShort(nChildren)
             cfor(0)(_ < nChildren, _ + 1) { i =>
-              val c = th.sigmaBooleans(i)
+              val c = th.children(i)
               serializer.serialize(c, w)
             }
         }
@@ -649,6 +643,8 @@ object Values {
   trait OptionValue[T <: SType] extends Value[SOption[T]] {
   }
 
+  // TODO HF: SomeValue and NoneValue are not used in ErgoTree and can be
+  //  either removed or implemented in v4.x
   case class SomeValue[T <: SType](x: Value[T]) extends OptionValue[T] {
     override def companion = SomeValue
     val tpe = SOption(x.tpe)
@@ -685,6 +681,7 @@ object Values {
 
     val tpe = SCollection[V](elementType)
 
+    // TODO refactor: this method is not used and can be removed
     lazy val value = {
       val xs = items.cast[EvaluatedValue[V]].map(_.value)
       val tElement = Evaluation.stypeToRType(elementType)
@@ -732,8 +729,6 @@ object Values {
   implicit class SigmaBooleanOps(val sb: SigmaBoolean) extends AnyVal {
     def toSigmaProp: SigmaPropValue = SigmaPropConstant(sb)
     def isProven: Value[SBoolean.type] = SigmaPropIsProven(SigmaPropConstant(sb))
-    def propBytes: Value[SByteArray] = SigmaPropBytes(SigmaPropConstant(sb))
-    def toAnyValue: AnyValue = eval.Extensions.toAnyValue(sb)(SType.SigmaBooleanRType)
     def showToString: String = sb match {
       case ProveDlog(v) =>
         s"ProveDlog(${showECPoint(v)})"
@@ -815,9 +810,9 @@ object Values {
     */
   case class FuncValue(args: IndexedSeq[(Int,SType)], body: Value[SType]) extends NotReadyValue[SFunc] {
     override def companion = FuncValue
-    lazy val tpe: SFunc = SFunc(args.map(_._2), body.tpe)
+    lazy val tpe: SFunc = SFunc(args.toArray.map(_._2), body.tpe)
     /** This is not used as operation, but rather to form a program structure */
-    override def opType: SFunc = SFunc(Vector(), tpe)
+    override def opType: SFunc = SFunc(mutable.WrappedArray.empty, tpe)
   }
   object FuncValue extends ValueCompanion {
     override def opCode: OpCode = FuncValueCode
@@ -932,7 +927,7 @@ object Values {
     @inline final def isConstantSegregation: Boolean = ErgoTree.isConstantSegregation(header)
     @inline final def hasSize: Boolean = ErgoTree.hasSize(header)
 
-    private var _bytes: Array[Byte] = propositionBytes
+    private[sigmastate] var _bytes: Array[Byte] = propositionBytes
 
     /** Serialized bytes of this tree. */
     final def bytes: Array[Byte] = {
@@ -981,7 +976,7 @@ object Values {
         throw error
     }
 
-    /** Override equality to exclude `complexity`. */
+    /** The default equality of case class is overridden to exclude `complexity`. */
     override def canEqual(that: Any): Boolean = that.isInstanceOf[ErgoTree]
 
     override def hashCode(): Int = header * 31 + Objects.hash(constants, root)
@@ -1019,7 +1014,7 @@ object Values {
 
     def substConstants(root: SValue, constants: IndexedSeq[Constant[SType]]): SValue = {
       val store = new ConstantStore(constants)
-      val substRule = strategy[Value[_ <: SType]] {
+      val substRule = strategy[Any] {
         case ph: ConstantPlaceholder[_] =>
           Some(store.get(ph.id))
         case _ => None

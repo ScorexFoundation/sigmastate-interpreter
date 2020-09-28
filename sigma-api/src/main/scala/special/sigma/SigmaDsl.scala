@@ -9,18 +9,34 @@ import scalan._
 
 @scalan.Liftable
 trait CostModel {
+  /** Cost of accessing SELF box and/or each item in INPUTS, OUTPUTS, dataInputs. */
   def AccessBox: Int // costOf("AccessBox: Context => Box")
+
+  // TODO refactor: remove not used
   def AccessAvlTree: Int // costOf("AccessAvlTree: Context => AvlTree")
 
+  /** Cost of accessing context variable (`getVar` operation in ErgoScript). */
   def GetVar: Int // costOf("ContextVar: (Context, Byte) => Option[T]")
+
+  // TODO refactor: remove not used
   def DeserializeVar: Int // costOf("DeserializeVar: (Context, Byte) => Option[T]")
 
+  /** Cost of accessing register in a box (e.g. `R4[Int]` operation in ErgoScript). */
   def GetRegister: Int // costOf("AccessRegister: (Box,Byte) => Option[T]")
+
+  // TODO refactor: remove not used
   def DeserializeRegister: Int // costOf("DeserializeRegister: (Box,Byte) => Option[T]")
 
+  /** Cost of accessing a property of an object like Header or AvlTree. */
   def SelectField: Int // costOf("SelectField")
+
+  // TODO refactor: remove not used
   def CollectionConst: Int // costOf("Const: () => Array[IV]")
+
+  // TODO refactor: remove not used
   def AccessKiloByteOfData: Int // costOf("AccessKiloByteOfData")
+
+  // TODO refactor: remove not used
   /** Size of public key in bytes */
   def PubKeySize: Long
 }
@@ -674,8 +690,6 @@ trait SigmaContract {
 
   def xorOf(conditions: Coll[Boolean]): Boolean = this.builder.xorOf(conditions)
 
-  def PubKey(base64String: String): SigmaProp = this.builder.PubKey(base64String)
-
   def sigmaProp(b: Boolean): SigmaProp = this.builder.sigmaProp(b)
 
   def blake2b256(bytes: Coll[Byte]): Coll[Byte] = this.builder.blake2b256(bytes)
@@ -713,46 +727,113 @@ trait SigmaContract {
 @scalan.Liftable
 @WithMethodCallRecognizers
 trait SigmaDslBuilder {
+
+  /** Access to collection operations. */
   def Colls: CollBuilder
+
+  /** Access to Monoid operations */
   def Monoids: MonoidBuilder
+
+  /** Access to operations used in cost computation. */
   def Costing: CostedBuilder
+
+  /** Access to cost model (aka CostTable) parameters. */
   def CostModel: CostModel
 
-  def verifyZK(cond: => SigmaProp): Boolean
-
-  def atLeast(bound: Int, props: Coll[SigmaProp]): SigmaProp
-
-  def allOf(conditions: Coll[Boolean]): Boolean
-  def allZK(conditions: Coll[SigmaProp]): SigmaProp
-
-  def anyOf(conditions: Coll[Boolean]): Boolean
-  def anyZK(conditions: Coll[SigmaProp]): SigmaProp
-
-  def xorOf(conditions: Coll[Boolean]): Boolean
-
-  def PubKey(base64String: String): SigmaProp
-
-  def sigmaProp(b: Boolean): SigmaProp
-
-  def blake2b256(bytes: Coll[Byte]): Coll[Byte]
-  def sha256(bytes: Coll[Byte]): Coll[Byte]
-
-  def byteArrayToBigInt(bytes: Coll[Byte]): BigInt
-  def longToByteArray(l: Long): Coll[Byte]
-  def byteArrayToLong(bytes: Coll[Byte]): Long
-
-  def proveDlog(g: GroupElement): SigmaProp
-  def proveDHTuple(g: GroupElement, h: GroupElement, u: GroupElement, v: GroupElement): SigmaProp
+  def verifyZK(cond: => SigmaProp): Boolean  // TODO refactor: can be removed after TestSigmaDslBuilder is removed
 
   /**
-    * The generator g of the group is an element of the group such that, when written multiplicatively, every element
-    * of the group is a power of g.
+    * Logical threshold operation.
+    * AtLeast has two inputs: integer `bound`` and a collection of `props` same as in anyZK/allZK.
+    * @param bound  number of props which should be proven in order to satisfy verifier
+    * @param props  a collection of sigma propositions of which at least the `bound` number should be proved.
+    * @return THRESHOLD sigma protocol proposition wrapped in SigmaProp value.
+    */
+  def atLeast(bound: Int, props: Coll[SigmaProp]): SigmaProp
+
+  /** @return true if all the elements in collection are true. */
+  def allOf(conditions: Coll[Boolean]): Boolean
+
+  /** Returns a sigma proposition which is proven when ALL the propositions in the `conditions` are proven.
+    * @param conditions a collection of propositions
+    * @return AND sigma protocol proposition
+    */
+  def allZK(conditions: Coll[SigmaProp]): SigmaProp
+
+  /** Returns true if at least one element in the `conditions` is true, otherwise false. */
+  def anyOf(conditions: Coll[Boolean]): Boolean
+
+  /** Returns a sigma proposition which is proven when at least one of the propositions in the `conditions` is proven.
+    * @param conditions a collection of propositions
+    * @return OR sigma protocol proposition
+    */
+  def anyZK(conditions: Coll[SigmaProp]): SigmaProp
+
+  /** Similar to `allOf`, but performing logical XOR operation between all conditions. */
+  def xorOf(conditions: Coll[Boolean]): Boolean
+
+  /** Creates trivial sigma proposition with the given underlying Boolean value.
+    * @param b boolean value to be wrapped into SigmaProp
+    * @return sigma proposition with can be combined with other SigmaProp values
+    */
+  def sigmaProp(b: Boolean): SigmaProp
+
+  /** Calculate Blake2b256 hash from the input `bytes`. */
+  def blake2b256(bytes: Coll[Byte]): Coll[Byte]
+
+  /** Calculate Sha256 hash from the input `bytes`.*/
+  def sha256(bytes: Coll[Byte]): Coll[Byte]
+
+  /** Convert big-endian `bytes` representation (Coll[Byte]) to the corresponding BigInt value.
+    * @param bytes collection of bytes in big-endian format
+    */
+  def byteArrayToBigInt(bytes: Coll[Byte]): BigInt
+
+  /** Converts Long value `l` to the big-endian bytes representation. */
+  def longToByteArray(l: Long): Coll[Byte]
+
+  /** Convert big-endian `bytes` representation (Coll[Byte]) to the corresponding Long value. */
+  def byteArrayToLong(bytes: Coll[Byte]): Long
+
+  /** Creates a new SigmaProp value representing public key of the discrete logarithm
+    * signature protocol.
+    * @param  g  an element of the elliptic curve group which serves as the public key
+    */
+  def proveDlog(g: GroupElement): SigmaProp
+
+  /** Creates a new SigmaProp value representing sigma proposition of the Diffie Hellman
+    * signature protocol. Common input: (g,h,u,v)
+    */
+  def proveDHTuple(g: GroupElement, h: GroupElement, u: GroupElement, v: GroupElement): SigmaProp
+
+  /** The generator g of the group is an element of the group such that, when written
+    * multiplicative form, every element of the group is a power of g.
     * @return the generator of this Dlog group
     */
   def groupGenerator: GroupElement
 
+  /**
+    * Transforms serialized bytes of ErgoTree with segregated constants by replacing constants
+    * at given positions with new values. This operation allow to use serialized scripts as
+    * pre-defined templates.
+    * The typical usage is "check that output box have proposition equal to given script bytes,
+    * where minerPk (constants(0)) is replaced with currentMinerPk".
+    * Each constant in original scriptBytes have SType serialized before actual data (see ConstantSerializer).
+    * During substitution each value from newValues is checked to be an instance of the corresponding type.
+    * This means, the constants during substitution cannot change their types.
+    *
+    * @param scriptBytes serialized ErgoTree with ConstantSegregationFlag set to 1.
+    * @param positions zero based indexes in ErgoTree.constants array which should be replaced with new values
+    * @param newValues new values to be injected into the corresponding positions in ErgoTree.constants array
+    * @return original scriptBytes array where only specified constants are replaced and all other bytes remain exactly the same
+    */
   @Reified("T")
   def substConstants[T](scriptBytes: Coll[Byte], positions: Coll[Int], newValues: Coll[T])(implicit cT: RType[T]): Coll[Byte]
+
+  /** Decodes the given bytes to the corresponding GroupElement using default serialization.
+    * @param encoded serialized bytes of some GroupElement value
+    * @see GroupElementSerializer
+    */
   def decodePoint(encoded: Coll[Byte]): GroupElement
 
   /** Create DSL big integer from existing `java.math.BigInteger`*/
@@ -764,6 +845,7 @@ trait SigmaDslBuilder {
   /** Construct a new authenticated dictionary with given parameters and tree root digest. */
   def avlTree(operationFlags: Byte, digest: Coll[Byte], keyLength: Int, valueLengthOpt: Option[Int]): AvlTree
 
+  /** Returns a byte-wise XOR of the two collections of bytes. */
   def xor(l: Coll[Byte], r: Coll[Byte]): Coll[Byte]
 }
 

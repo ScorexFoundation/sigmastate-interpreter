@@ -17,9 +17,12 @@ class SigmaByteReader(val r: Reader,
     if (position > positionLimit)
       throw new InputSizeLimitExceeded(s"SigmaByteReader position limit $positionLimit is reached at position $position")
 
-
-  val valDefTypeStore: ValDefTypeStore = new ValDefTypeStore()
-
+  /** The reader should be lightweight to create. In most cases ErgoTrees don't have
+    * ValDef nodes hence the store is not necessary and it's initialization dominates the
+    * reader instantiation time. Hence it's lazy.
+    * @hotspot
+    */
+  lazy val valDefTypeStore: ValDefTypeStore = new ValDefTypeStore()
 
   override type CH = r.CH
 

@@ -4,14 +4,13 @@ import java.math.BigInteger
 import java.util
 
 import org.bouncycastle.math.ec.ECPoint
-import org.ergoplatform.settings.ErgoAlgos
 import org.ergoplatform.{ErgoBox, SigmaConstants}
 import org.ergoplatform.validation.ValidationRules
 import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.authds.{ADDigest, ADKey, SerializedAdProof, ADValue}
 import sigmastate.SCollection.SByteArray
 import sigmastate.{TrivialProp, _}
-import sigmastate.Values.{Constant, EvaluatedValue, SValue, ConstantNode, Value, ErgoTree, SigmaBoolean}
+import sigmastate.Values.{Constant, EvaluatedValue, SValue, ConstantNode, ErgoTree, SigmaBoolean}
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.interpreter.{CryptoConstants, Interpreter}
 import special.collection.{Size, CSizeOption, SizeColl, CCostedBuilder, CollType, SizeOption, CostedBuilder, Coll}
@@ -20,15 +19,17 @@ import sigmastate.eval.Extensions._
 import spire.syntax.all.cfor
 
 import scala.util.{Success, Failure}
-import scalan.RType
+import scalan.{Nullable, RType}
 import scorex.crypto.hash.{Digest32, Sha256, Blake2b256}
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
 import sigmastate.lang.Terms.OperationId
+import sigmastate.lang.TransformingSigmaBuilder
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.serialization.{SigmaSerializer, GroupElementSerializer}
 import special.Types.TupleType
 
+import scala.collection.mutable
 import scala.reflect.ClassTag
 
 /** Interface implmented by wrappers to provide access to the underlying wrapped value. */
@@ -272,12 +273,12 @@ case class CostingBox(isCost: Boolean, val ebox: ErgoBox) extends Box with Wrapp
   lazy val bytes: Coll[Byte] = Colls.fromArray(ebox.bytes)
   lazy val bytesWithoutRef: Coll[Byte] = Colls.fromArray(ebox.bytesWithNoRef)
   lazy val propositionBytes: Coll[Byte] = Colls.fromArray(ebox.propositionBytes)
-  lazy val registers: Coll[AnyValue] = regs(ebox, isCost)
+  lazy val registers: Coll[AnyValue] = regs(ebox)
 
   override def wrappedValue: ErgoBox = ebox
 
   override def getReg[T](i: Int)(implicit tT: RType[T]): Option[T] =
-    if (isCost) {
+    if (isCost) {  // TODO refactor: remove isCost branch (it was added before Sizes and now is never executed)
       val optV =
         if (i < 0 || i >= registers.length) None
         else {
@@ -340,9 +341,7 @@ object CostingBox {
 
   import Evaluation._
 
-  def colBytes(b: Array[Byte])(implicit IR: Evaluation): Coll[Byte] = IR.sigmaDslBuilderValue.Colls.fromArray(b)
-
-  def regs(ebox: ErgoBox, isCost: Boolean): Coll[AnyValue] = {
+  def regs(ebox: ErgoBox): Coll[AnyValue] = {
     val res = new Array[AnyValue](ErgoBox.maxRegisters)
 
     def checkNotYetDefined(id: Int, newValue: SValue) =
@@ -463,6 +462,29 @@ object CHeader {
   * @see [[CostModel]] for detailed descriptions
   */
 class CCostModel extends CostModel {
+  import CCostModel._
+
+  override def AccessBox: Int = AccessBoxCost
+
+  override def AccessAvlTree: Int = AccessAvlTreeCost
+
+  override def GetVar: Int = GetVarCost
+
+  def DeserializeVar: Int = DeserializeVarCost
+
+  def GetRegister: Int = GetRegisterCost
+
+  def DeserializeRegister: Int = DeserializeRegisterCost
+
+  def SelectField: Int = SelectFieldCost
+
+  def CollectionConst: Int = CollectionConstCost
+
+  def AccessKiloByteOfData: Int = AccessKiloByteOfDataCost
+
+  def PubKeySize: Long = CryptoConstants.EncodedGroupElementLength
+}
+object CCostModel {
   private def costOf(opName: String, opType: SFunc): Int = {
     val operId = OperationId(opName, opType)
     costOf(operId)
@@ -473,27 +495,35 @@ class CCostModel extends CostModel {
     cost
   }
 
-  def AccessBox: Int = costOf("AccessBox", SFunc(SContext, SBox))
+  // NOTE: lazy vals are necessary to avoid initialization exception
 
-  def AccessAvlTree: Int = costOf("AccessAvlTree", SFunc(SContext, SAvlTree))
+  private val AccessBoxOpType: SFunc = SFunc(SContext, SBox)
+  private lazy val AccessBoxCost: Int = costOf("AccessBox", AccessBoxOpType)
 
-  def GetVar: Int = costOf("GetVar", SFunc(IndexedSeq(SContext, SByte), SOption(SOption.tT)))
+  private val AccessAvlTreeOpType: SFunc = SFunc(SContext, SAvlTree)
+  private lazy val AccessAvlTreeCost: Int = costOf("AccessAvlTree", AccessAvlTreeOpType)
 
-  def DeserializeVar: Int = costOf("DeserializeVar", SFunc(IndexedSeq(SContext, SByte), SOption(SOption.tT)))
+  private val GetVarOpType: SFunc = SFunc(Array(SContext, SByte), SOption.ThisType)
+  private lazy val GetVarCost: Int = costOf("GetVar", GetVarOpType)
 
-  def GetRegister: Int = costOf("GetRegister", SFunc(IndexedSeq(SBox, SByte), SOption(SOption.tT)))
+  private val DeserializeVarOpType: SFunc = SFunc(Array(SContext, SByte), SOption.ThisType)
+  private lazy val DeserializeVarCost: Int = costOf("DeserializeVar", DeserializeVarOpType)
 
-  def DeserializeRegister: Int = costOf("DeserializeRegister", SFunc(IndexedSeq(SBox, SByte), SOption(SOption.tT)))
+  private val GetRegisterOpType: SFunc = SFunc(Array(SBox, SByte), SOption.ThisType)
+  private lazy val GetRegisterCost: Int = costOf("GetRegister", GetRegisterOpType)
 
-  def SelectField: Int = costOf("SelectField", SFunc(IndexedSeq(), SUnit))
+  private val DeserializeRegisterOpType: SFunc = SFunc(Array(SBox, SByte), SOption.ThisType)
+  private lazy val DeserializeRegisterCost: Int = costOf("DeserializeRegister", DeserializeRegisterOpType)
 
-  def CollectionConst: Int = costOf("Const", SFunc(IndexedSeq(), SCollection(STypeVar("IV"))))
+  private val SelectFieldOpType: SFunc = SFunc(mutable.WrappedArray.empty, SUnit)
+  private lazy val SelectFieldCost: Int = costOf("SelectField", SelectFieldOpType)
 
-  def AccessKiloByteOfData: Int = costOf("AccessKiloByteOfData", SFunc(IndexedSeq(), SUnit))
+  private val CollectionConstOpType: SFunc = SFunc(mutable.WrappedArray.empty, SCollection.ThisType)
+  private lazy val CollectionConstCost: Int = costOf("Const", CollectionConstOpType)
 
-  def PubKeySize: Long = CryptoConstants.EncodedGroupElementLength
+  private val AccessKiloByteOfDataOpType: SFunc = SFunc(mutable.WrappedArray.empty, SUnit)
+  private lazy val AccessKiloByteOfDataCost: Int = costOf("AccessKiloByteOfData", AccessKiloByteOfDataOpType)
 }
-
 
 /** A default implementation of [[SigmaDslBuilder]] interface.
   * @see [[SigmaDslBuilder]] for detailed descriptions
@@ -540,6 +570,7 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
     case m => sys.error(s"Point of type ${m.getClass} is not supported")
   }
 
+  /** Wraps the given sigma proposition into SigmaDsl value of type SigmaProp. */
   def SigmaProp(sigmaTree: SigmaBoolean): SigmaProp = new CSigmaProp(sigmaTree)
 
   /** Extract `sigmastate.Values.SigmaBoolean` from DSL's `SigmaProp` type. */
@@ -553,11 +584,18 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
     CAvlTree(treeData)
   }
 
+  /** Wraps the given tree data into SigmaDsl value of type [[AvlTree]]. */
   def avlTree(treeData: AvlTreeData): AvlTree = {
     CAvlTree(treeData)
   }
 
+  /** Wraps the given [[ErgoBox]] into SigmaDsl value of type [[Box]].
+    * @param ebox  the value to be wrapped
+    * @see [[sigmastate.SBox]], [[special.sigma.Box]]
+    */
   def Box(ebox: ErgoBox): Box = CostingBox(false, ebox)
+
+  /** Extracts [[ErgoBox]] from the given [[Box]] instance. This is inverse to the Box method. */
   def toErgoBox(b: Box): ErgoBox = b.asInstanceOf[CostingBox].ebox
 
   /** @hotspot don't beautify this code */
@@ -633,8 +671,12 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
                                  positions: Coll[Int],
                                  newValues: Coll[T])
                                 (implicit cT: RType[T]): Coll[Byte] = {
-    val typedNewVals = newValues.toArray.map(_.asInstanceOf[Value[SType]])
-    val res = SubstConstants.eval(scriptBytes.toArray, positions.toArray, typedNewVals)
+    val typedNewVals = newValues.toArray.map(v => TransformingSigmaBuilder.liftAny(v) match {
+      case Nullable(v) => v
+      case _ => sys.error(s"Cannot evaluate substConstants($scriptBytes, $positions, $newValues): cannot lift value $v")
+    })
+
+    val res = SubstConstants.eval(scriptBytes.toArray, positions.toArray, typedNewVals)(validationSettings)
     Colls.fromArray(res)
   }
 
@@ -665,24 +707,24 @@ case class CostingDataContext(
                                vars: Coll[AnyValue],
                                var isCost: Boolean)
   extends Context {
-  @inline def builder: SigmaDslBuilder = CostingSigmaDslBuilder
+  @inline override def builder: SigmaDslBuilder = CostingSigmaDslBuilder
 
-  @inline def HEIGHT: Int = height
+  @inline override def HEIGHT: Int = height
 
-  @inline def SELF: Box = selfBox
+  @inline override def SELF: Box = selfBox
 
-  @inline def dataInputs: Coll[Box] = _dataInputs
+  @inline override def dataInputs: Coll[Box] = _dataInputs
 
-  @inline def INPUTS = inputs
+  @inline override def INPUTS = inputs
 
-  @inline def OUTPUTS = outputs
+  @inline override def OUTPUTS = outputs
 
-  @inline def LastBlockUtxoRootHash = lastBlockUtxoRootHash
+  @inline override def LastBlockUtxoRootHash = lastBlockUtxoRootHash
 
-  @inline def minerPubKey = _minerPubKey
+  @inline override def minerPubKey = _minerPubKey
 
 
-  def findSelfBoxIndex: Int = {
+  private def findSelfBoxIndex: Int = {
     var i = 0
     while (i < inputs.length) {
       if (inputs(i) eq selfBox) return i
@@ -727,5 +769,34 @@ case class CostingDataContext(
         }
       } else None
     }
+  }
+
+  /** Return a new context instance with variables collection updated.
+    * @param bindings  a new binding of the context variables with new values.
+    * @return a new instance (if `bindings` non-empty) with the specified bindings.
+    *         other existing bindings are copied to the new instance
+    */
+  def withUpdatedVars(bindings: (Int, AnyValue)*): CostingDataContext = {
+    if (bindings.isEmpty) return this
+
+    val ids = bindings.map(_._1).toArray
+    val values = bindings.map(_._2).toArray
+    val maxVarId = ids.max  // INV: ids is not empty
+    val requiredNewLength = maxVarId + 1
+
+    val newVars = if (vars.length < requiredNewLength) {
+      // grow vars collection
+      val currVars = vars.toArray
+      val buf = new Array[AnyValue](requiredNewLength)
+      Array.copy(currVars, 0, buf, 0, currVars.length)
+      cfor(0)(_ < ids.length, _ + 1) { i =>
+        buf(ids(i)) = values(i)
+      }
+      buf.toColl
+    } else {
+      vars.updateMany(ids.toColl, values.toColl)
+    }
+
+    this.copy(vars = newVars)
   }
 }

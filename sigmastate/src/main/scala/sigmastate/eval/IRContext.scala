@@ -92,16 +92,7 @@ trait IRContext extends Evaluation with TreeBuilding {
     val costFun = compile[SSize[SContext], Int, Size[Context], Int](getDataEnv, costF, Some(maxCost))
     val (_, estimatedCost) = costFun(Sized.sizeOf(ctx))
     if (estimatedCost > maxCost) {
-      throw new CostLimitException(estimatedCost, s"Estimated execution cost $estimatedCost exceeds the limit $maxCost in $exp")
-    }
-    estimatedCost
-  }
-
-  def checkCostEx(ctx: SContext, exp: Value[SType],
-                costF: Ref[((Int, Size[Context])) => Int], maxCost: Long): Int = {
-    val costFun = compile[(Int, SSize[SContext]), Int, (Int, Size[Context]), Int](getDataEnv, costF, Some(maxCost))
-    val (_, estimatedCost) = costFun((0, Sized.sizeOf(ctx)))
-    if (estimatedCost > maxCost) {
+      // TODO cover with tests
       throw new CostLimitException(estimatedCost, s"Estimated execution cost $estimatedCost exceeds the limit $maxCost in $exp")
     }
     estimatedCost
@@ -125,7 +116,7 @@ trait IRContext extends Evaluation with TreeBuilding {
     * And taking into account the cleaning of the garbage and cutting the blockchain history,
     * the old scripts at some point will die out of the blockchain.
     */
-  def checkCostWithContext(ctx: SContext, exp: Value[SType],
+  def checkCostWithContext(ctx: SContext,
                 costF: Ref[((Context, (Int, Size[Context]))) => Int], maxCost: Long, initCost: Long): Try[Int] = Try {
     val costFun = compile[(SContext, (Int, SSize[SContext])), Int, (Context, (Int, Size[Context])), Int](
                     getDataEnv, costF, Some(maxCost))
@@ -139,6 +130,7 @@ trait IRContext extends Evaluation with TreeBuilding {
     val scaledCost = JMath.multiplyExact(estimatedCost.toLong, CostTable.costFactorIncrease.toLong) / CostTable.costFactorDecrease
     val totalCost = JMath.addExact(initCost, scaledCost)
     if (totalCost > maxCost) {
+      // TODO cover with tests
       throw new CostLimitException(totalCost, msgCostLimitError(totalCost, maxCost), None)
     }
     totalCost.toInt

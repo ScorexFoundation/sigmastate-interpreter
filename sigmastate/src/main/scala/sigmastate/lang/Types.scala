@@ -39,7 +39,7 @@ trait Types extends Core {
       case STuple(items) =>
         SFunc(items, r)
       case _ =>
-        SFunc(IndexedSeq(d), r)
+        SFunc(Array(d), r)
     }
   }
   val Type: P[SType] = P( `=>`.? ~~ PostfixType ~ TypeBounds ~ `*`.? )
@@ -101,7 +101,7 @@ trait Types extends Core {
   val SimpleType = {
     // Can't `cut` after the opening paren, because we might be trying to parse `()`
     // or `() => T`! only cut after parsing one type
-    val TupleType = P( "(" ~/ Type.repTC() ~ ")" ).map(items => STuple(items.toIndexedSeq))
+    val TupleType = P( "(" ~/ Type.repTC() ~ ")" ).map(items => STuple(items.toArray))
     val BasicType = P( TupleType | TypeId )
     P( Index ~ BasicType ~ TypeArgs.rep ).map {
       case (_, t: STuple, Seq()) => t

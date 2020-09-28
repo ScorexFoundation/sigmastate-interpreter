@@ -69,7 +69,7 @@ object DataSerializer {
       val len = arr.length
       assert(arr.length == t.items.length, s"Type $t doesn't correspond to value $arr")
       if (len > 0xFFFF)
-        sys.error(s"Length of tuple $arr exceeds ${0xFFFF} limit.")
+        sys.error(s"Length of tuple $arr exceeds ${0xFFFF} limit.") // TODO cover with tests
       var i = 0
       while (i < arr.length) {
         serialize[SType](arr(i), t.items(i), w)
@@ -81,7 +81,7 @@ object DataSerializer {
 
   /** Reads a data value from Reader. The data value bytes is expected to confirm
     * to the type descriptor `tpe`. */
-  def deserialize[T <: SType](tpe: T, r: SigmaByteReader): (T#WrappedType) = {
+  def deserialize[T <: SType](tpe: T, r: SigmaByteReader): T#WrappedType = {
     val depth = r.level
     r.level = depth + 1
     val res = (tpe match {
@@ -97,8 +97,11 @@ object DataSerializer {
         new String(bytes, StandardCharsets.UTF_8)
       case SBigInt =>
         val size: Short = r.getUShort().toShort
-        if (size > SBigInt.MaxSizeInBytes)
+        // TODO HF: replace with validation rule to enable soft-forkability
+        if (size > SBigInt.MaxSizeInBytes) {
+          // TODO cover consensus with tests
           throw new SerializerException(s"BigInt value doesn't not fit into ${SBigInt.MaxSizeInBytes} bytes: $size")
+        }
         val valueBytes = r.getBytes(size)
         SigmaDsl.BigInt(new BigInteger(valueBytes))
       case SGroupElement =>
@@ -134,7 +137,7 @@ object DataSerializer {
       case SBoolean =>
         Colls.fromArray(r.getBits(len)).asInstanceOf[Coll[T#WrappedType]]
       case SByte =>
-        // TODO make covered
+        // TODO cover with tests
         Colls.fromArray(r.getBytes(len)).asInstanceOf[Coll[T#WrappedType]]
       case _ =>
         implicit val tItem = (tpeElem match {

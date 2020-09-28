@@ -58,6 +58,7 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
     bind(env, "g1.exp(n1)") shouldBe
       Apply(Select(GroupElementConstant(g1), "exp"), IndexedSeq(BigIntConstant(n1)))
     bind(env, "g1 * g2") shouldBe MethodCallLike(SigmaDsl.GroupElement(ecp1), "*", IndexedSeq(ecp2))
+    bind(env, "p1 && p2") shouldBe MethodCallLike(SigmaDsl.SigmaProp(p1), "&&", IndexedSeq(SigmaDsl.SigmaProp(p2)))
   }
 
   property("predefined functions") {
@@ -141,6 +142,8 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
         If(EQ(IntConstant(10), IntConstant(11)), IntConstant(2), IntConstant(3)))
   }
 
+  // TODO HF: SomeValue and NoneValue are not used in ErgoTree and can be
+  //  either removed or implemented in v4.x
   property("Option constructors") {
     bind(env, "None") shouldBe NoneValue(NoType)
     bind(env, "Some(None)") shouldBe SomeValue(NoneValue(NoType))

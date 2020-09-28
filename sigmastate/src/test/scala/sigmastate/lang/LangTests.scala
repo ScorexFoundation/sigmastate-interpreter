@@ -1,7 +1,7 @@
 package sigmastate.lang
 
 import sigmastate.lang.Terms.{MethodCallLike, Ident}
-import sigmastate.Values.{LongConstant, SValue, Value, SigmaBoolean, GroupElementConstant, ConcreteCollection}
+import sigmastate.Values.{LongConstant, SValue, Value, SigmaBoolean, ConcreteCollection}
 import sigmastate._
 import java.math.BigInteger
 
@@ -14,9 +14,10 @@ import sigmastate.interpreter.CryptoConstants
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import special.sigma._
 import sigmastate.eval._
+import sigmastate.helpers.NegativeTesting
 import special.collection.Coll
 
-trait LangTests extends Matchers {
+trait LangTests extends Matchers with NegativeTesting {
 
   def BoolIdent(name: String): Value[SBoolean.type] = Ident(name).asValue[SBoolean.type]
   def IntIdent(name: String): Value[SLong.type] = Ident(name).asValue[SLong.type]
@@ -75,8 +76,8 @@ trait LangTests extends Matchers {
 
   def assertSrcCtxForAllNodes(tree: SValue): Unit = {
     import org.bitbucket.inkytonik.kiama.rewriting.Rewriter._
-    rewrite(everywherebu(rule[SValue] {
-      case node =>
+    rewrite(everywherebu(rule[Any] {
+      case node: SValue =>
         withClue(s"Missing sourceContext for $node") { node.sourceContext.isDefined shouldBe true }
         node
     }))(tree)

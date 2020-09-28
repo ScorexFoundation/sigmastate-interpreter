@@ -3,7 +3,12 @@ package scalan
 import scala.reflect.ClassTag
 import scala.annotation.implicitNotFound
 
-/** Base type for all runtime type descriptors. */
+/** Base type for all runtime type descriptors. Sigma uses type descriptors to
+  * represent structure of the data values. Data values of registers and context
+  * variables come equipped with type descriptors in order to check the actual type
+  * is the same as the type expected by the script.
+  * @see [[getReg]], [[getVar]]
+  */
 @implicitNotFound(msg = "No RType available for ${A}.")
 abstract class RType[A] {
   /** Class tag suitable for construct instances of Array[A]. */
@@ -15,6 +20,9 @@ abstract class RType[A] {
   /** Returns true is data size of `x: A` is the same for all `x`.
     * This is useful optimizations of calculating sizes of collections. */
   def isConstantSize: Boolean
+
+  /** Creates empty immutable array of this type. */
+  def emptyArray: Array[A] = Array.empty[A](classTag)
 }
 
 object RType {
@@ -56,7 +64,8 @@ object RType {
   }
 
   /** Descriptor used to represent primitive types. */
-  case class PrimitiveType[A](classTag: ClassTag[A]) extends RType[A] {
+  case class PrimitiveType[A](classTag: ClassTag[A],
+                              override val emptyArray: Array[A]) extends RType[A] {
     override def name: String = classTag.toString()
     /** We assume all primitive types have inhabitants of the same size. */
     override def isConstantSize: Boolean = true
@@ -66,15 +75,15 @@ object RType {
   val AnyRefType   : RType[AnyRef]   = GeneralType[AnyRef]  (ClassTag.AnyRef)
   val NothingType  : RType[Nothing]  = GeneralType[Nothing] (ClassTag.Nothing)
 
-  implicit val BooleanType : RType[Boolean]  = PrimitiveType[Boolean] (ClassTag.Boolean)
-  implicit val ByteType    : RType[Byte]     = PrimitiveType[Byte]    (ClassTag.Byte)
-  implicit val ShortType   : RType[Short]    = PrimitiveType[Short]   (ClassTag.Short)
-  implicit val IntType     : RType[Int]      = PrimitiveType[Int]     (ClassTag.Int)
-  implicit val LongType    : RType[Long]     = PrimitiveType[Long]    (ClassTag.Long)
-  implicit val CharType    : RType[Char]     = PrimitiveType[Char]    (ClassTag.Char)
-  implicit val FloatType   : RType[Float]    = PrimitiveType[Float]   (ClassTag.Float)
-  implicit val DoubleType  : RType[Double]   = PrimitiveType[Double]  (ClassTag.Double)
-  implicit val UnitType    : RType[Unit]     = PrimitiveType[Unit]    (ClassTag.Unit)
+  implicit val BooleanType : RType[Boolean]  = PrimitiveType[Boolean] (ClassTag.Boolean, Array.emptyBooleanArray)
+  implicit val ByteType    : RType[Byte]     = PrimitiveType[Byte]    (ClassTag.Byte, Array.emptyByteArray)
+  implicit val ShortType   : RType[Short]    = PrimitiveType[Short]   (ClassTag.Short, Array.emptyShortArray)
+  implicit val IntType     : RType[Int]      = PrimitiveType[Int]     (ClassTag.Int, Array.emptyIntArray)
+  implicit val LongType    : RType[Long]     = PrimitiveType[Long]    (ClassTag.Long, Array.emptyLongArray)
+  implicit val CharType    : RType[Char]     = PrimitiveType[Char]    (ClassTag.Char, Array.emptyCharArray)
+  implicit val FloatType   : RType[Float]    = PrimitiveType[Float]   (ClassTag.Float, Array.emptyFloatArray)
+  implicit val DoubleType  : RType[Double]   = PrimitiveType[Double]  (ClassTag.Double, Array.emptyDoubleArray)
+  implicit val UnitType    : RType[Unit]     = PrimitiveType[Unit]    (ClassTag.Unit, Array[Unit]()(ClassTag.Unit))
 
   /** Descriptor of the type A narrowed to the single inhabitant `value`. */
   case class SingletonType[A](value: A, classTag: ClassTag[A])() extends RType[A] {

@@ -23,7 +23,14 @@ object SourceContext {
         .map {
           case (((start, _), line), lineIndex) =>
             SourceContext(lineIndex + 1, index - start + 1, line)
-        }.get
+        }.getOrElse {
+          // at least one line in the input
+          // point to the last character of the last line
+          val lastLine = lines.last
+          val iLine = lines.length - 1
+          val iCol = lastLine.length - 1
+          SourceContext(iLine, iCol, lastLine)
+        }
   }
 
   def fromParserFailure(e: Failure[_, String]): SourceContext =
