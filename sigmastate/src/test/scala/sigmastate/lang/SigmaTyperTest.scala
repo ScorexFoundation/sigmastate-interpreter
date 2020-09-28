@@ -14,6 +14,7 @@ import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.SigmaPredef._
 import sigmastate.lang.Terms.Select
 import sigmastate.lang.exceptions.TyperException
+import sigmastate.lang.syntax.ParserException
 import sigmastate.serialization.ErgoTreeSerializer
 import sigmastate.serialization.generators.ObjectGenerators
 import sigmastate.utxo.{Append, ExtractCreationInfo}
@@ -42,16 +43,23 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
 
   def typefail(env: ScriptEnv, x: String, expectedLine: Int, expectedCol: Int): Unit = {
     val builder = TransformingSigmaBuilder
-    val parsed = SigmaParser(x, builder).get.value
-    val predefinedFuncRegistry = new PredefinedFuncRegistry(builder)
-    val binder = new SigmaBinder(env, builder, TestnetNetworkPrefix, predefinedFuncRegistry)
-    val bound = binder.bind(parsed)
-    val typer = new SigmaTyper(builder, predefinedFuncRegistry)
-    val exception = the[TyperException] thrownBy typer.typecheck(bound)
-    withClue(s"Exception: $exception, is missing source context:") { exception.source shouldBe defined }
-    val sourceContext = exception.source.get
-    sourceContext.line shouldBe expectedLine
-    sourceContext.column shouldBe expectedCol
+    assertExceptionThrown({
+      val parsed = SigmaParser(x, builder).get.value
+      val predefinedFuncRegistry = new PredefinedFuncRegistry(builder)
+      val binder = new SigmaBinder(env, builder, TestnetNetworkPrefix, predefinedFuncRegistry)
+      val bound = binder.bind(parsed)
+      val typer = new SigmaTyper(builder, predefinedFuncRegistry)
+      typer.typecheck(bound)
+    }, {
+      case te: TyperException =>
+        withClue(s"Exception: $te, is missing source context:") { te.source shouldBe defined }
+        val sourceContext = te.source.get
+        sourceContext.line shouldBe expectedLine
+        sourceContext.column shouldBe expectedCol
+        true
+      case pe: ParserException => true
+      case t => throw t
+    })
   }
 
   property("simple expressions") {

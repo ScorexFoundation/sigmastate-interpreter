@@ -77,7 +77,7 @@ class TypesSpecification extends SigmaTestingData {
     assertExceptionThrown(check(NoType, null, 0), assertError)
     assertExceptionThrown(check(SAny, null, 0), assertError)
     assertExceptionThrown(check(STypeApply("T"), null, 0), assertError)
-    assertExceptionThrown(check(STypeVar("T"), null, 0), assertError)
+    assertExceptionThrown(check(SType.tT, null, 0), assertError)
     assertExceptionThrown(check(SGlobal, null, 0), assertError)
     assertExceptionThrown(check(SContext, null, 0), assertError)
   }

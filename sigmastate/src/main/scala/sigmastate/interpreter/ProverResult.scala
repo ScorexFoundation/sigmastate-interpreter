@@ -26,7 +26,7 @@ class ProverResult(val proof: Array[Byte], val extension: ContextExtension) {
 }
 
 object ProverResult {
-  val empty: ProverResult = ProverResult(Array[Byte](), ContextExtension.empty)
+  val empty: ProverResult = ProverResult(Array.emptyByteArray, ContextExtension.empty)
 
   def apply(proof: Array[Byte], extension: ContextExtension): ProverResult =
     new ProverResult(proof, extension)
@@ -41,7 +41,10 @@ object ProverResult {
 
     override def parse(r: SigmaByteReader): ProverResult = {
       val sigBytesCount = r.getUShort()
-      val proofBytes = r.getBytes(sigBytesCount)
+      val proofBytes = if (sigBytesCount == 0)
+        Array.emptyByteArray // this allows to avoid hundreds of thousands of allocations
+      else
+        r.getBytes(sigBytesCount)
       val ce = ContextExtension.serializer.parse(r)
       ProverResult(proofBytes, ce)
     }

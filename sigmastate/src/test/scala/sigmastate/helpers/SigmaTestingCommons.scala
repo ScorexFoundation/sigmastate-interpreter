@@ -25,14 +25,13 @@ import sigmastate.utils.Helpers._
 import sigmastate.helpers.TestingHelpers._
 import special.sigma
 
-import scala.annotation.tailrec
 import scala.language.implicitConversions
 
 trait SigmaTestingCommons extends PropSpec
   with PropertyChecks
   with GeneratorDrivenPropertyChecks
-  with Matchers
-  with TestUtils with TestContexts with ValidationSpecification {
+  with Matchers with TestUtils with TestContexts with ValidationSpecification
+  with NegativeTesting {
 
   val fakeSelf: ErgoBox = createBox(0, TrueProp)
 
@@ -219,27 +218,6 @@ trait SigmaTestingCommons extends PropSpec
     val Terms.Apply(funcVal, _) = compiledTree.asInstanceOf[SValue]
     CompiledFunc(funcScript, bindings.toSeq, funcVal, f)
   }
-
-  def assertExceptionThrown(fun: => Any, assertion: Throwable => Boolean, clue: => String = ""): Unit = {
-    try {
-      fun
-      fail("exception is expected")
-    }
-    catch {
-      case e: Throwable =>
-        if (!assertion(e))
-          fail(
-            s"""exception check failed on $e (root cause: ${rootCause(e)})
-              |clue: $clue
-              |trace:
-              |${e.getStackTrace.mkString("\n")}}""".stripMargin)
-    }
-  }
-
-  @tailrec
-  final def rootCause(t: Throwable): Throwable =
-    if (t.getCause == null) t
-    else rootCause(t.getCause)
 
   protected def roundTripTest[T](v: T)(implicit serializer: SigmaSerializer[T, T]): Assertion = {
     // using default sigma reader/writer

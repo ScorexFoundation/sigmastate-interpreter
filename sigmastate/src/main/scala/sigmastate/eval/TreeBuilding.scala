@@ -1,7 +1,7 @@
 package sigmastate.eval
 
 
-import sigmastate.Values.{BlockValue, BoolValue, Constant, ConstantNode, EvaluatedCollection, SValue, SigmaPropConstant, ValDef, ValUse, Value}
+import sigmastate.Values.{BlockValue, BoolValue, Constant, ConstantNode, SValue, SigmaPropConstant, ValDef, ValUse, Value}
 import org.ergoplatform._
 
 import org.ergoplatform.{Height, Inputs, Outputs, Self}
@@ -24,10 +24,8 @@ trait TreeBuilding extends RuntimeCosting { IR: IRContext =>
   import Box._
   import CollBuilder._
   import SigmaDslBuilder._
-  import CCostedBuilder._
   import BigInt._
   import WOption._
-  import AvlTree._
   import GroupElement._
 
   private val ContextM = ContextMethods
@@ -116,7 +114,11 @@ trait TreeBuilding extends RuntimeCosting { IR: IRContext =>
     }
   }
 
-  def buildValue(ctx: Ref[Context],
+  /** Transforms the given graph node into the corresponding ErgoTree node.
+    * It is mutually recursive with processAstGraph, so it's part of the recursive
+    * algorithms required by buildTree method.
+    */
+  private def buildValue(ctx: Ref[Context],
                  mainG: PGraph,
                  env: DefEnv,
                  s: Sym,
@@ -134,7 +136,7 @@ trait TreeBuilding extends RuntimeCosting { IR: IRContext =>
         val varId = defId + 1       // arguments are treated as ValDefs and occupy id space
         val env1 = env + (x -> (varId, elemToSType(x.elem)))
         val block = processAstGraph(ctx, mainG, env1, lam, varId + 1, constantsProcessing)
-        val rhs = mkFuncValue(Vector((varId, elemToSType(x.elem))), block)
+        val rhs = mkFuncValue(Array((varId, elemToSType(x.elem))), block)
         rhs
       case Def(Apply(fSym, xSym, _)) =>
         val Seq(f, x) = Seq(fSym, xSym).map(recurse)
@@ -387,6 +389,10 @@ trait TreeBuilding extends RuntimeCosting { IR: IRContext =>
     }
   }
 
+  /** Transforms the given AstGraph node (Lambda of Thunk) into the corresponding ErgoTree node.
+    * It is mutually recursive with buildValue, so it's part of the recursive
+    * algorithms required by buildTree method.
+    */
   private def processAstGraph(ctx: Ref[Context],
                               mainG: PGraph,
                               env: DefEnv,
@@ -420,6 +426,13 @@ trait TreeBuilding extends RuntimeCosting { IR: IRContext =>
     res
   }
 
+  /** Transforms the given function `f` from graph-based IR to ErgoTree expression.
+    *
+    * @param f                   reference to the graph node representing function from Context.
+    * @param constantsProcessing if Some(store) is specified, then each constant is
+    *                            segregated and a placeholder is inserted in the resulting expression.
+    * @return expression of ErgoTree which corresponds to the function `f`
+    */
   def buildTree[T <: SType](f: Ref[Context => Any],
                             constantsProcessing: Option[ConstantStore] = None): Value[T] = {
     val Def(Lambda(lam,_,_,_)) = f
