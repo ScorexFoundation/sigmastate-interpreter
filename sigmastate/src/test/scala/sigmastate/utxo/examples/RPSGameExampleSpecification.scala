@@ -1,19 +1,22 @@
 
 package sigmastate.utxo.examples
 
-import org.ergoplatform.ErgoBox.{R4, R5, R6, R7}
+import org.ergoplatform.ErgoBox.{R6, R7, R4, R5}
 import scorex.crypto.hash.Blake2b256
 import scorex.utils.Random
-import sigmastate.Values.{ByteArrayConstant, ByteConstant, IntConstant, SigmaPropConstant}
+import sigmastate.Values.{ByteArrayConstant, SigmaPropConstant, ByteConstant, IntConstant}
 import sigmastate._
 import sigmastate.basics.DLogProtocol.ProveDlog
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaTestingCommons}
+import sigmastate.eval.IRContextFactoryImpl
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, SigmaTestingCommons, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter._
 import sigmastate.lang.Terms._
 
 class RPSGameExampleSpecification extends SigmaTestingCommons {
   implicit lazy val IR = new TestingIRContext
+  implicit lazy val irFactory = new IRContextFactoryImpl(IR)
+
   /** RPS game:
 
      Alice creates a RPS game of "playAmount" ergs by creating a Half-game UTXO called the "halfGameOutput" output below.

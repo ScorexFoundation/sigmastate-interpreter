@@ -1,17 +1,19 @@
 package sigmastate.utxo.examples
 
-import org.ergoplatform.{ErgoLikeContext, ErgoLikeTransaction, Height}
+import org.ergoplatform.{ErgoLikeContext, Height, ErgoLikeTransaction}
 import scorex.crypto.hash.Blake2b256
 import scorex.utils.Random
 import sigmastate.Values._
 import sigmastate._
 import interpreter.Interpreter._
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, ErgoLikeTransactionTesting, SigmaTestingCommons}
+import sigmastate.eval.IRContextFactoryImpl
+import sigmastate.helpers.{ErgoLikeTransactionTesting, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaTestingCommons, ContextEnrichingTestProvingInterpreter}
 import sigmastate.lang.Terms._
 import sigmastate.utxo.SizeOf
 
 class AtomicSwapExampleSpecification extends SigmaTestingCommons {
   private implicit lazy val IR: TestingIRContext = new TestingIRContext
+  private implicit lazy val irFactory = new IRContextFactoryImpl(IR)
 
   /**
     * Atomic cross-chain trading example:

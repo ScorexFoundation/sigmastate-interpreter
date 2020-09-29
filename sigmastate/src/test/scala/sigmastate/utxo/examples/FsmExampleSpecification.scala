@@ -19,6 +19,8 @@ import sigmastate.utxo._
 
 class FsmExampleSpecification extends SigmaTestingCommons {
   private implicit lazy val IR: TestingIRContext = new TestingIRContext
+  private implicit lazy val irFactory = new IRContextFactoryImpl(IR)
+
   /**
     * Similarly to the MAST-like example (in the MASTExampleSpecification class), we can do more complex contracts,
     * e.g. ones with cycles. For example, we can do a contract described as a finite state machine.

@@ -2,11 +2,11 @@ package sigmastate.helpers
 
 import sigmastate.UnprovenConjecture
 import sigmastate.basics.DLogProtocol.DLogProverInput
-import sigmastate.basics.{DiffieHellmanTupleProverInput, SigmaProtocolPrivateInput}
-import sigmastate.eval.IRContext
+import sigmastate.basics.{SigmaProtocolPrivateInput, DiffieHellmanTupleProverInput}
+import sigmastate.eval.IRContextFactory
 import sigmastate.interpreter.ProverInterpreter
 
-class ErgoLikeTestProvingInterpreter(implicit IR: IRContext)
+class ErgoLikeTestProvingInterpreter(implicit irFactory: IRContextFactory)
   extends ErgoLikeTestInterpreter with ProverInterpreter {
 
   override lazy val secrets: Seq[SigmaProtocolPrivateInput[_, _]] = {

@@ -7,8 +7,9 @@ import org.ergoplatform.ErgoBox.{R4, R5}
 import sigmastate.AvlTreeData
 import sigmastate.Values.GroupElementConstant
 import sigmastate.basics.DLogProtocol.ProveDlog
-import sigmastate.basics.{DiffieHellmanTupleProverInput, ProveDHTuple}
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaTestingCommons}
+import sigmastate.basics.{ProveDHTuple, DiffieHellmanTupleProverInput}
+import sigmastate.eval.IRContextFactoryImpl
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, SigmaTestingCommons, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.interpreter.Interpreter._
@@ -16,6 +17,8 @@ import sigmastate.lang.Terms._
 
 class DHTupleExampleSpecification extends SigmaTestingCommons {
   private implicit lazy val IR = new TestingIRContext
+  implicit lazy val irFactory = new IRContextFactoryImpl(IR)
+
   /**
     * let Alice's secret be x and Bob's be y
     *

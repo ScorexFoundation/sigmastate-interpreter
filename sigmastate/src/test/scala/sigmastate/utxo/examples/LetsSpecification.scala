@@ -3,11 +3,11 @@ package sigmastate.utxo.examples
 import org.ergoplatform._
 import org.ergoplatform.ErgoBox.{R4, R5}
 import scorex.crypto.authds.{ADKey, ADValue}
-import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup}
-import scorex.crypto.hash.{Blake2b256, Digest32}
+import scorex.crypto.authds.avltree.batch.{Lookup, BatchAVLProver, Insert}
+import scorex.crypto.hash.{Digest32, Blake2b256}
 import sigmastate.{AvlTreeData, AvlTreeFlags, TrivialProp}
-import sigmastate.Values.{AvlTreeConstant, ByteArrayConstant, LongConstant, SigmaPropConstant}
-import sigmastate.eval.{IRContext, SigmaDsl}
+import sigmastate.Values.{ByteArrayConstant, AvlTreeConstant, SigmaPropConstant, LongConstant}
+import sigmastate.eval.{IRContext, SigmaDsl, IRContextFactoryImpl}
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter.ScriptNameProp
@@ -170,6 +170,7 @@ class LetsSpecification extends SigmaTestingCommons {
   suite =>
   // Not mixed with TestContext since it is not possible to call compiler.compile outside tests if mixed
   implicit lazy val IR: IRContext = new TestingIRContext
+  implicit lazy val irFactory = new IRContextFactoryImpl(IR)
 
   lazy val project = new ErgoLikeTestProvingInterpreter()
 

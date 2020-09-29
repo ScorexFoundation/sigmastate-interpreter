@@ -24,6 +24,7 @@ import sigmastate.utils.Helpers._
 
 class OracleExamplesSpecification extends SigmaTestingCommons { suite =>
   implicit lazy val IR: TestingIRContext = new TestingIRContext
+  implicit lazy val irFactory = new IRContextFactoryImpl(IR)
 
   private val reg1 = ErgoBox.nonMandatoryRegisters(0)
   private val reg2 = ErgoBox.nonMandatoryRegisters(1)

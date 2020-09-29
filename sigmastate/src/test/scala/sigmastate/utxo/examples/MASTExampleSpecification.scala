@@ -28,6 +28,7 @@ import scala.util.Random
   */
 class MASTExampleSpecification extends SigmaTestingCommons {
   implicit lazy val IR = new TestingIRContext
+  implicit lazy val irFactory = new IRContextFactoryImpl(IR)
   private val reg1 = ErgoBox.nonMandatoryRegisters.head
 
   /**

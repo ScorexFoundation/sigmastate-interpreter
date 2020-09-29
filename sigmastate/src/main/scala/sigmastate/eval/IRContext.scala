@@ -146,3 +146,10 @@ class RuntimeIRContext extends IRContext {
 class CompiletimeIRContext extends IRContext with CompiletimeCosting {
 }
 
+trait IRContextFactory {
+  def createIRContext: IRContext
+}
+
+class IRContextFactoryImpl(creator: => IRContext) extends IRContextFactory {
+  override def createIRContext: IRContext = creator
+}

@@ -119,7 +119,7 @@ object BlockchainSimulationTestingCommons extends SigmaTestingCommons {
   }
 
 
-  case class ValidationState(state: BlockchainState, boxesReader: InMemoryErgoBoxReader)(implicit IR: IRContext) {
+  case class ValidationState(state: BlockchainState, boxesReader: InMemoryErgoBoxReader)(implicit IR: IRContextFactory) {
     val validator = new ErgoTransactionValidator
 
     def applyBlock(block: FullBlock, maxCost: Int = MaxBlockCost): Try[ValidationState] = Try {
@@ -154,7 +154,7 @@ object BlockchainSimulationTestingCommons extends SigmaTestingCommons {
       ErgoLikeContextTesting.dummyPubkey
     )
 
-    def initialState(block: FullBlock = initBlock)(implicit IR: IRContext): ValidationState = {
+    def initialState(block: FullBlock = initBlock)(implicit IR: IRContextFactory): ValidationState = {
       val keySize = 32
       val prover = new BatchProver(keySize, None)
 

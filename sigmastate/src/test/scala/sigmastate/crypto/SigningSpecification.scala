@@ -3,11 +3,13 @@ package sigmastate.crypto
 import scorex.util.encode.Base16
 import sigmastate.AtLeast
 import sigmastate.basics.DLogProtocol.DLogProverInput
-import sigmastate.helpers.{ErgoLikeTestInterpreter, ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
-import sigmastate.interpreter.{ContextExtension, ProverResult}
+import sigmastate.eval.IRContextFactoryImpl
+import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons, ErgoLikeTestInterpreter}
+import sigmastate.interpreter.{ProverResult, ContextExtension}
 
 class SigningSpecification extends SigmaTestingCommons {
   implicit lazy val IR = new TestingIRContext
+  implicit lazy val irFactory = new IRContextFactoryImpl(IR)
 
   property("simple signature test vector") {
 

@@ -5,10 +5,10 @@ import sigmastate.SType
 import sigmastate.Values._
 import sigmastate.basics.DLogProtocol.DLogProverInput
 import sigmastate.basics.DiffieHellmanTupleProverInput
-import sigmastate.eval.IRContext
+import sigmastate.eval.{IRContextFactory}
 import sigmastate.utxo.CostTable
 
-class ContextEnrichingTestProvingInterpreter(implicit IR: IRContext)
+class ContextEnrichingTestProvingInterpreter(implicit IR: IRContextFactory)
   extends ErgoLikeTestProvingInterpreter with ContextEnrichingProverInterpreter {
 
   override lazy val contextExtenders: Map[Byte, EvaluatedValue[_ <: SType]] = (1 to 10).map { i =>

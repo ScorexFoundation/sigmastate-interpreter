@@ -29,6 +29,7 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
     outputEstimatedCost = false
     outputComputedResults = false
   }
+  implicit lazy val irFactory = new IRContextFactoryImpl(IR)
 
   private val reg1 = ErgoBox.nonMandatoryRegisters.head
 

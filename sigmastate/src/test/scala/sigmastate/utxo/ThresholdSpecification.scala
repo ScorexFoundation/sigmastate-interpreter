@@ -1,10 +1,11 @@
 package sigmastate.utxo
 
 import org.ergoplatform.{ErgoLikeContext, ErgoLikeTransaction}
-import sigmastate.basics.DLogProtocol.{DLogProverInput, ProveDlog}
-import sigmastate.Values.{ConcreteCollection, FalseLeaf, IntConstant, SigmaPropConstant, SigmaPropValue, TrueLeaf}
+import sigmastate.basics.DLogProtocol.{ProveDlog, DLogProverInput}
+import sigmastate.Values.{FalseLeaf, TrueLeaf, SigmaPropConstant, SigmaPropValue, IntConstant, ConcreteCollection}
 import sigmastate._
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, ErgoLikeTransactionTesting, SigmaTestingCommons}
+import sigmastate.eval.IRContextFactoryImpl
+import sigmastate.helpers.{ErgoLikeTransactionTesting, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaTestingCommons, ContextEnrichingTestProvingInterpreter}
 import sigmastate.lang.Terms._
 import sigmastate.lang.exceptions.CosterException
 import sigmastate.utils.Helpers._
@@ -13,6 +14,7 @@ class ThresholdSpecification extends SigmaTestingCommons {
   implicit lazy val IR = new TestingIRContext {
     override val okPrintEvaluatedEntries: Boolean = false
   }
+  implicit lazy val irFactory = new IRContextFactoryImpl(IR)
 
   property("basic threshold compilation/execution") {
     val proverA = new ContextEnrichingTestProvingInterpreter

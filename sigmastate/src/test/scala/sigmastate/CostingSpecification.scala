@@ -24,6 +24,8 @@ class CostingSpecification extends SigmaTestingData {
 //    override val okPrintEvaluatedEntries = true
     substFromCostTable = false
   }
+  implicit lazy val irFactory = new IRContextFactoryImpl(IR)
+
   lazy val interpreter = new ContextEnrichingTestProvingInterpreter
   lazy val pkA = interpreter.dlogSecrets(0).publicImage
   lazy val pkB = interpreter.dlogSecrets(1).publicImage

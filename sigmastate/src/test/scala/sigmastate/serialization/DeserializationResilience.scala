@@ -30,6 +30,7 @@ class DeserializationResilience extends SerializationSpecification with SigmaTes
     saveGraphsInFile = false
     //    override val okPrintEvaluatedEntries = true
   }
+  implicit lazy val irFactory = new IRContextFactoryImpl(IR)
 
   private def reader(bytes: Array[Byte], maxTreeDepth: Int): SigmaByteReader = {
     val buf = ByteBuffer.wrap(bytes)

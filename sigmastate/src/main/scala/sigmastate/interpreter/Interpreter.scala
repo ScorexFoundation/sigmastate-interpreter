@@ -34,7 +34,7 @@ trait Interpreter extends ScorexLogging {
 
   def createIR(): IRContext
 
-  lazy val IR: IRContext = createIR()
+  private lazy val IR: IRContext = createIR()
   import IR._
 
   /** Deserializes given script bytes using ValueSerializer (i.e. assuming expression tree format).

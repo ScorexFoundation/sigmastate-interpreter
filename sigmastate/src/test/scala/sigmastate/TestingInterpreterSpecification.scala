@@ -1,6 +1,6 @@
 package sigmastate
 
-import sigmastate.basics.DLogProtocol.{DLogProverInput, ProveDlog}
+import sigmastate.basics.DLogProtocol.{ProveDlog, DLogProverInput}
 import scorex.crypto.hash.Blake2b256
 import sigmastate.Values._
 import sigmastate.interpreter._
@@ -9,16 +9,18 @@ import Interpreter._
 import sigmastate.lang.Terms._
 import org.ergoplatform._
 import scorex.util.encode.Base58
-import sigmastate.helpers.{ErgoLikeContextTesting, ErgoLikeTestInterpreter, ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ErgoLikeContextTesting, ErgoLikeTestProvingInterpreter, SigmaTestingCommons, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.serialization.ValueSerializer
 import TrivialProp._
+import sigmastate.eval.IRContextFactoryImpl
 import sigmastate.utils.Helpers._
 
 import scala.util.Random
 
 class TestingInterpreterSpecification extends SigmaTestingCommons {
   implicit lazy val IR = new TestingIRContext
+  implicit lazy val irFactory = new IRContextFactoryImpl(IR)
   lazy val prover = new ErgoLikeTestProvingInterpreter()
   lazy val verifier = new ErgoLikeTestInterpreter
 

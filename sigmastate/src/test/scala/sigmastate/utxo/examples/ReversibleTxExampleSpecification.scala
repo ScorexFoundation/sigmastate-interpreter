@@ -3,9 +3,10 @@ package sigmastate.utxo.examples
 import org.ergoplatform.ErgoBox.{R4, R5}
 import org.ergoplatform._
 import scorex.crypto.hash.Blake2b256
-import sigmastate.Values.{IntConstant, SigmaPropConstant}
+import sigmastate.Values.{SigmaPropConstant, IntConstant}
 import sigmastate._
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaTestingCommons}
+import sigmastate.eval.IRContextFactoryImpl
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, SigmaTestingCommons, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter.ScriptNameProp
 import sigmastate.lang.Terms._
@@ -13,6 +14,7 @@ import sigmastate.lang.Terms._
 
 class ReversibleTxExampleSpecification extends SigmaTestingCommons {
   private implicit lazy val IR: TestingIRContext = new TestingIRContext
+  private implicit lazy val irFactory = new IRContextFactoryImpl(IR)
 
   import ErgoAddressEncoder._
 

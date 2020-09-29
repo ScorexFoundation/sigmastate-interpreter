@@ -12,7 +12,7 @@ import sigmastate.serialization.ValueSerializer
 import scorex.util.encode.Base58
 import sigmastate.{SigmaAnd, SType}
 import sigmastate.Values.{UnparsedErgoTree, Constant, ByteArrayConstant, IntConstant, ErgoTree}
-import sigmastate.eval.IRContext
+import sigmastate.eval.{IRContext, IRContextFactory, IRContextFactoryImpl}
 import sigmastate.helpers._
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.ContextExtension
@@ -181,7 +181,7 @@ class ErgoAddressSpecification extends SigmaDslTesting with TryValues {
     }
   }
 
-  def testPay2SHAddress(address: Pay2SHAddress, scriptBytes: Array[Byte])(implicit IR: IRContext) = {
+  def testPay2SHAddress(address: Pay2SHAddress, scriptBytes: Array[Byte])(implicit IR: IRContextFactory) = {
     val scriptId = 1.toByte
     val boxToSpend = testBox(10, address.script, creationHeight = 5)
     val ctx = ErgoLikeContextTesting.dummy(boxToSpend)
@@ -198,7 +198,8 @@ class ErgoAddressSpecification extends SigmaDslTesting with TryValues {
   }
 
   property("spending a box protected by P2SH contract") {
-    implicit lazy val IR = new TestingIRContext
+    implicit val IR = new TestingIRContext
+    implicit lazy val factory = new IRContextFactoryImpl(new TestingIRContext)
 
     val script = "{ 1 < 2 }"
     val prop = compile(Map.empty, script).asBoolValue.toSigmaProp

@@ -5,15 +5,17 @@ import org.scalatest.Assertion
 import org.scalatest.TryValues._
 import sigmastate.basics.DLogProtocol.ProveDlog
 import scorex.crypto.hash.Blake2b256
-import sigmastate.Values.{ByteArrayConstant, SigmaPropValue, BooleanConstant}
+import sigmastate.Values.{ByteArrayConstant, BooleanConstant, SigmaPropValue}
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, SigmaTestingCommons, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.lang.Terms._
 import sigmastate.AvlTreeData
+import sigmastate.eval.IRContextFactoryImpl
 
 class CoopExampleSpecification extends SigmaTestingCommons {
   implicit lazy val IR = new TestingIRContext
-  
+  implicit lazy val irFactory = new IRContextFactoryImpl(IR)
+
   def mkTxFromOutputs(ergoBox: ErgoBox*): ErgoLikeTransaction = {
     createTransaction(ergoBox.toIndexedSeq)
   }

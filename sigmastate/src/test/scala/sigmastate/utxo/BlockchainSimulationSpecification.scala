@@ -27,6 +27,7 @@ import scala.util.Try
 class BlockchainSimulationSpecification extends SigmaTestingCommons {
   import BlockchainSimulationSpecification._
   implicit lazy val IR = new TestingIRContext
+  implicit lazy val irFactory = new IRContextFactoryImpl(IR)
 
   def generateBlock(state: ValidationState, miner: ErgoLikeTestProvingInterpreter, height: Int): Block = {
     val minerPubKey = miner.dlogSecrets.head.publicImage
@@ -185,7 +186,7 @@ object BlockchainSimulationSpecification {
   }
 
 
-  case class ValidationState(state: BlockchainState, boxesReader: InMemoryErgoBoxReader)(implicit IR: IRContext) {
+  case class ValidationState(state: BlockchainState, boxesReader: InMemoryErgoBoxReader)(implicit IR: IRContextFactory) {
     val validator = new ErgoTransactionValidator
     def applyBlock(block: Block, maxCost: Int = MaxBlockCost): Try[ValidationState] = Try {
       val height = state.currentHeight + 1
@@ -219,7 +220,7 @@ object BlockchainSimulationSpecification {
       ErgoLikeContextTesting.dummyPubkey
     )
 
-    def initialState(block: Block = initBlock)(implicit IR: IRContext): ValidationState = {
+    def initialState(block: Block = initBlock)(implicit IR: IRContextFactory): ValidationState = {
       val keySize = 32
       val prover = new BatchProver(keySize, None)
 

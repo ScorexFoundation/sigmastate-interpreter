@@ -10,7 +10,7 @@ import scorex.util.Random
 import sigmastate.Values.{SigmaPropConstant, CollectionConstant, ByteArrayConstant, IntConstant, ErgoTree}
 import sigmastate._
 import sigmastate.basics.DLogProtocol.{ProveDlog, DLogProverInput}
-import sigmastate.helpers.{ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaTestingCommons, ContextEnrichingTestProvingInterpreter}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, SigmaTestingCommons, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.interpreter.{ProverResult, ContextExtension}
@@ -19,6 +19,7 @@ import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo.{CostTable, ExtractCreationInfo, ByIndex, SelectField}
 import scalan.util.BenchmarkUtil._
 import ErgoScriptPredef._
+import sigmastate.eval.IRContextFactoryImpl
 import sigmastate.utils.Helpers._
 
 import scala.util.Try
@@ -27,6 +28,7 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
   private implicit lazy val IR: TestingIRContext = new TestingIRContext {
     override val okPrintEvaluatedEntries: Boolean = false
   }
+  private implicit lazy val irFactory = new IRContextFactoryImpl(IR)
 
   private val emptyProverResult: ProverResult = ProverResult(Array.emptyByteArray, ContextExtension.empty)
   private val settings = MonetarySettings(30 * 2 * 24 * 365, 90 * 24 * 30, 75L * EmissionRules.CoinsInOneErgo,

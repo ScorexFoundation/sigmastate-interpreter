@@ -17,6 +17,7 @@ import sigmastate.eval._
 
 class MixExampleSpecification extends SigmaTestingCommons {
   private implicit lazy val IR: TestingIRContext = new TestingIRContext
+  private implicit lazy val irFactory = new IRContextFactoryImpl(IR)
 
   property("Evaluation - Mix Example") {
     import CryptoConstants.dlogGroup
