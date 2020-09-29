@@ -15,7 +15,7 @@ import sigmastate.lang.Terms._
 
 class XorGameExampleSpecification extends SigmaTestingCommons {
   private implicit lazy val IR: TestingIRContext = new TestingIRContext
-  private implicit lazy val irFactory = new IRContextFactoryImpl(IR)
+  private implicit lazy val irFactory = new IRContextFactoryImpl(new TestingIRContext)
 
   /** XOR game:
 

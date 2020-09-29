@@ -11,10 +11,11 @@ import sigmastate.lang.exceptions.CosterException
 import sigmastate.utils.Helpers._
 
 class ThresholdSpecification extends SigmaTestingCommons {
-  implicit lazy val IR = new TestingIRContext {
+  def createIR = new TestingIRContext {
     override val okPrintEvaluatedEntries: Boolean = false
   }
-  implicit lazy val irFactory = new IRContextFactoryImpl(IR)
+  implicit lazy val IR = createIR
+  implicit lazy val irFactory = new IRContextFactoryImpl(createIR)
 
   property("basic threshold compilation/execution") {
     val proverA = new ContextEnrichingTestProvingInterpreter

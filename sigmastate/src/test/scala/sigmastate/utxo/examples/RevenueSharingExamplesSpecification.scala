@@ -1,10 +1,10 @@
 package sigmastate.utxo.examples
 
-import org.ergoplatform.dsl.{ContractSpec, SigmaContractSyntax, StdContracts, TestContractSpec}
-import sigmastate.eval.Extensions
+import org.ergoplatform.dsl.{SigmaContractSyntax, ContractSpec, TestContractSpec, StdContracts}
+import sigmastate.eval.{Extensions, IRContextFactoryImpl}
 import sigmastate.helpers.SigmaTestingCommons
 import special.collection.Coll
-import special.sigma.{Box, Context}
+import special.sigma.{Context, Box}
 
 class RevenueSharingExamplesSpecification extends SigmaTestingCommons { suite =>
   implicit lazy val IR = new TestingIRContext
@@ -98,7 +98,7 @@ class RevenueSharingExamplesSpecification extends SigmaTestingCommons { suite =>
 
   }
 
-  lazy val spec = TestContractSpec(suite)(new TestingIRContext { saveGraphsInFile = true })
+  lazy val spec = TestContractSpec(suite)(new IRContextFactoryImpl(new TestingIRContext { saveGraphsInFile = true }))
 
   lazy val alice = spec.ProvingParty("Alice")
   lazy val bob = spec.ProvingParty("Bob")

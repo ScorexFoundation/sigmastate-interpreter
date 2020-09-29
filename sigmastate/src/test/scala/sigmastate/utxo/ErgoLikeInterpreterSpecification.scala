@@ -24,7 +24,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
   with SerializationSpecification {
 
   implicit lazy val IR: TestingIRContext = new TestingIRContext
-  implicit lazy val irFactory = new IRContextFactoryImpl(IR)
+  implicit lazy val irFactory = new IRContextFactoryImpl(new TestingIRContext)
   private val reg1 = ErgoBox.nonMandatoryRegisters.head
 
   property("scripts EQ/NEQ") {

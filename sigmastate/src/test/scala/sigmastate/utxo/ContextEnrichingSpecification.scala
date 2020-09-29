@@ -13,8 +13,9 @@ import special.collection.Coll
 
 class ContextEnrichingSpecification extends SigmaTestingCommons {
 
-  implicit lazy val IR: TestingIRContext = new TestingIRContext
-  implicit lazy val irFactory = new IRContextFactoryImpl(IR)
+  def createIR = new TestingIRContext
+  implicit lazy val IR: TestingIRContext = createIR
+  implicit lazy val irFactory = new IRContextFactoryImpl(createIR)
 
   property("context enriching mixed w. crypto") {
     val prover = new ContextEnrichingTestProvingInterpreter

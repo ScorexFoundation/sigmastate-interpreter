@@ -235,8 +235,9 @@ reasonable to have an additional input from the project with the value equal to 
 class IcoExample extends SigmaTestingCommons { suite =>
 
   // Not mixed with TestContext since it is not possible to call commpiler.compile outside tests if mixed
-  implicit lazy val IR: IRContext = new IRContext with CompiletimeCosting
-  implicit lazy val irFactory = new IRContextFactoryImpl(IR)
+  def createIR = new IRContext with CompiletimeCosting
+  implicit lazy val IR: IRContext = createIR
+  implicit lazy val irFactory = new IRContextFactoryImpl(createIR)
 
   lazy val spec = TestContractSpec(suite)
   lazy val project = new ErgoLikeTestProvingInterpreter()

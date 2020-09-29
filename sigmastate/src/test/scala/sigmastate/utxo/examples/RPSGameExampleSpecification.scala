@@ -14,8 +14,9 @@ import sigmastate.interpreter.Interpreter._
 import sigmastate.lang.Terms._
 
 class RPSGameExampleSpecification extends SigmaTestingCommons {
-  implicit lazy val IR = new TestingIRContext
-  implicit lazy val irFactory = new IRContextFactoryImpl(IR)
+  def createIR = new TestingIRContext
+  implicit lazy val IR = createIR
+  implicit lazy val irFactory = new IRContextFactoryImpl(createIR)
 
   /** RPS game:
 

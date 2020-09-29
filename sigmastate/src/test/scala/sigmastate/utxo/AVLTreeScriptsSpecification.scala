@@ -23,10 +23,10 @@ import special.sigma.{AvlTree, Context}
 
 class AVLTreeScriptsSpecification extends SigmaTestingCommons { suite =>
   import org.ergoplatform.dsl.AvlTreeHelpers._
-  lazy val spec = TestContractSpec(suite)(new TestingIRContext)
+  implicit val irFactory = new IRContextFactoryImpl(new TestingIRContext)
+  lazy val spec = TestContractSpec(suite)
   lazy val prover = spec.ProvingParty("Alice")
   private implicit lazy val IR: IRContext = spec.IR
-  private implicit lazy val irFactory = new IRContextFactoryImpl(IR)
 
   private val reg1 = ErgoBox.nonMandatoryRegisters(0)
   private val reg2 = ErgoBox.nonMandatoryRegisters(1)

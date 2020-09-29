@@ -16,7 +16,7 @@ import scala.util.Random
 class BlockchainSimulationSpecification extends BlockchainSimulationTestingCommons {
 
   implicit lazy val IR = new TestingIRContext
-  implicit lazy val irFactory = new IRContextFactoryImpl(IR)
+  implicit lazy val irFactory = new IRContextFactoryImpl(new TestingIRContext)
 
   property("apply one valid block") {
     val state = ValidationState.initialState()

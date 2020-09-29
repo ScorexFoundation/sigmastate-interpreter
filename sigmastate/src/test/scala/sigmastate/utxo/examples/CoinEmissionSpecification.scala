@@ -22,14 +22,15 @@ import sigmastate.eval._
   */
 class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
   // don't use TestingIRContext, this suite also serves the purpose of testing the RuntimeIRContext
-  implicit lazy val IR: TestingIRContext = new TestingIRContext {
+  def createIR = new TestingIRContext {
     // uncomment if you want to log script evaluation
     // override val okPrintEvaluatedEntries = true
     saveGraphsInFile = false
     outputEstimatedCost = false
     outputComputedResults = false
   }
-  implicit lazy val irFactory = new IRContextFactoryImpl(IR)
+  implicit lazy val IR: TestingIRContext = createIR
+  implicit lazy val irFactory = new IRContextFactoryImpl(createIR)
 
   private val reg1 = ErgoBox.nonMandatoryRegisters.head
 

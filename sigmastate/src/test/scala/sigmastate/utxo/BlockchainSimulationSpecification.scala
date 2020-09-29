@@ -26,8 +26,9 @@ import scala.util.Try
 
 class BlockchainSimulationSpecification extends SigmaTestingCommons {
   import BlockchainSimulationSpecification._
-  implicit lazy val IR = new TestingIRContext
-  implicit lazy val irFactory = new IRContextFactoryImpl(IR)
+  def createIR = new TestingIRContext
+  implicit lazy val IR = createIR
+  implicit lazy val irFactory = new IRContextFactoryImpl(createIR)
 
   def generateBlock(state: ValidationState, miner: ErgoLikeTestProvingInterpreter, height: Int): Block = {
     val minerPubKey = miner.dlogSecrets.head.publicImage

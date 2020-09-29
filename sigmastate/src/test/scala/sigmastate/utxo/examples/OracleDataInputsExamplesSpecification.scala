@@ -2,14 +2,17 @@ package sigmastate.utxo.examples
 
 import org.ergoplatform._
 import org.ergoplatform.dsl.ContractSyntax.Token
-import org.ergoplatform.dsl.{ContractSpec, SigmaContractSyntax, StdContracts, TestContractSpec}
+import org.ergoplatform.dsl.{SigmaContractSyntax, ContractSpec, TestContractSpec, StdContracts}
 import scorex.crypto.hash.Blake2b256
+import sigmastate.eval.{IRContextFactoryImpl, IRContext}
 import sigmastate.helpers.SigmaTestingCommons
 import special.collection.Coll
 import special.sigma.Context
 
 class OracleDataInputsExamplesSpecification extends SigmaTestingCommons { suite =>
-  implicit lazy val IR: TestingIRContext = new TestingIRContext
+  implicit val irFactory = new IRContextFactoryImpl(new TestingIRContext)
+  lazy val spec = TestContractSpec(suite)
+  private implicit lazy val IR: IRContext = spec.IR
 
   private val reg1 = ErgoBox.nonMandatoryRegisters(0)
   private val reg2 = ErgoBox.nonMandatoryRegisters(1)
@@ -52,8 +55,6 @@ class OracleDataInputsExamplesSpecification extends SigmaTestingCommons { suite 
 
     lazy val dummySignature  = proposition("dummySignature", _ => pkA, "pkA")
   }
-
-  lazy val spec = TestContractSpec(suite)(new TestingIRContext)
 
   lazy val alice = spec.ProvingParty("Alice")
   lazy val bob = spec.ProvingParty("Bob")

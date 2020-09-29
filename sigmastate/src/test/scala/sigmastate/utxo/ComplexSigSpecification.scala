@@ -11,8 +11,9 @@ import sigmastate.helpers.{ErgoLikeTransactionTesting, ErgoLikeContextTesting, E
 import scala.util.Random
 
 class ComplexSigSpecification extends SigmaTestingCommons {
-  implicit lazy val IR: TestingIRContext = new TestingIRContext
-  implicit lazy val irFactory = new IRContextFactoryImpl(IR)
+  def createIR = new TestingIRContext
+  implicit lazy val IR: TestingIRContext = createIR
+  implicit lazy val irFactory = new IRContextFactoryImpl(createIR)
 
   private def proverGen: Gen[ContextEnrichingTestProvingInterpreter] = for {
     _ <- Gen.const(1)

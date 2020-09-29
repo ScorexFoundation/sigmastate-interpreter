@@ -199,8 +199,6 @@ class ErgoAddressSpecification extends SigmaDslTesting with TryValues {
 
   property("spending a box protected by P2SH contract") {
     implicit val IR = new TestingIRContext
-    implicit lazy val factory = new IRContextFactoryImpl(new TestingIRContext)
-
     val script = "{ 1 < 2 }"
     val prop = compile(Map.empty, script).asBoolValue.toSigmaProp
     val scriptBytes = ValueSerializer.serialize(prop)

@@ -12,14 +12,14 @@ import scala.util.{Success, Failure, Try}
 import sigmastate.Values.{Constant, SValue, ConstantNode, ByteArrayConstant, IntConstant, ErgoTree}
 import scalan.RType
 import scalan.util.Extensions._
-import org.ergoplatform.dsl.{SigmaContractSyntax, TestContractSpec, ContractSpec}
+import org.ergoplatform.dsl.{SigmaContractSyntax, ContractSpec, TestContractSpec}
 import org.ergoplatform.validation.{ValidationRules, SigmaValidationSettings}
 import sigmastate.{eval, SSigmaProp, SType}
 import SType.AnyOps
 import org.ergoplatform.SigmaConstants.ScriptCostLimit
 import sigmastate.basics.DLogProtocol.{ProveDlog, DLogProverInput}
 import sigmastate.basics.{SigmaProtocol, SigmaProtocolPrivateInput, SigmaProtocolCommonInput}
-import sigmastate.eval.{CompiletimeIRContext, Evaluation, CostingBox, SigmaDsl, IRContext, CostingDataContext}
+import sigmastate.eval.{CompiletimeIRContext, Evaluation, IRContextFactory, CostingBox, SigmaDsl, IRContextFactoryImpl, IRContext, CostingDataContext}
 import sigmastate.eval.Extensions._
 import sigmastate.utils.Helpers._
 import sigmastate.lang.Terms.ValueOps
@@ -39,7 +39,8 @@ class SigmaDslTesting extends PropSpec
     with SigmaTestingData with SigmaContractSyntax
     with SigmaTypeGens { suite =>
 
-  lazy val spec: ContractSpec = TestContractSpec(suite)(new TestingIRContext)
+  implicit lazy val irFactory = new IRContextFactoryImpl(new TestingIRContext)
+  lazy val spec: ContractSpec = TestContractSpec(suite)
 
   override def contractEnv: ScriptEnv = Map()
 
@@ -97,7 +98,7 @@ class SigmaDslTesting extends PropSpec
   class FeatureProvingInterpreter extends ErgoLikeInterpreter with ProverInterpreter {
     override type CTX = ErgoLikeContext
 
-    override def createIR(): IRContext = new CompiletimeIRContext
+    override protected val irFactory: IRContextFactory = new IRContextFactoryImpl(new CompiletimeIRContext)
 
     def decodeSecretInput(decimalStr: String): DLogProverInput = DLogProverInput(BigInt(decimalStr).bigInteger)
 
@@ -361,11 +362,9 @@ class SigmaDslTesting extends PropSpec
 
       val pr = prover.prove(compiledTree, ergoCtx, fakeMessage).getOrThrow
 
-      implicit val IR: IRContext = createIR()
-
       val verifier = new ErgoLikeInterpreter() {
         type CTX = ErgoLikeContext
-        override def createIR(): IRContext = suite.createIR()
+        override protected val irFactory: IRContextFactory = new IRContextFactoryImpl(suite.createIR())
       }
 
       val verificationCtx = ergoCtx.withExtension(pr.extension)

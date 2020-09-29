@@ -20,9 +20,9 @@ import special.sigma.SigmaTestingData
 import sigmastate.utils.Helpers._
 
 class SoftForkabilitySpecification extends SigmaTestingData {
-
-  implicit lazy val IR = new TestingIRContext
-  implicit lazy val irFactory = new IRContextFactoryImpl(IR)
+  def createIR = new TestingIRContext
+  implicit lazy val IR = createIR
+  implicit lazy val irFactory = new IRContextFactoryImpl(createIR)
   lazy val prover = new ErgoLikeTestProvingInterpreter()
   lazy val verifier = new ErgoLikeTestInterpreter
   val deadline = 100

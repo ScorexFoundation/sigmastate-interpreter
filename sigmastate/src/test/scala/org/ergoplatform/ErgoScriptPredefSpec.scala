@@ -25,10 +25,11 @@ import sigmastate.utils.Helpers._
 import scala.util.Try
 
 class ErgoScriptPredefSpec extends SigmaTestingCommons {
-  private implicit lazy val IR: TestingIRContext = new TestingIRContext {
+  def createIR = new TestingIRContext {
     override val okPrintEvaluatedEntries: Boolean = false
   }
-  private implicit lazy val irFactory = new IRContextFactoryImpl(IR)
+  private implicit lazy val IR: TestingIRContext = createIR
+  private implicit lazy val irFactory = new IRContextFactoryImpl(createIR)
 
   private val emptyProverResult: ProverResult = ProverResult(Array.emptyByteArray, ContextExtension.empty)
   private val settings = MonetarySettings(30 * 2 * 24 * 365, 90 * 24 * 30, 75L * EmissionRules.CoinsInOneErgo,

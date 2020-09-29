@@ -13,8 +13,9 @@ import sigmastate.AvlTreeData
 import sigmastate.eval.IRContextFactoryImpl
 
 class CoopExampleSpecification extends SigmaTestingCommons {
-  implicit lazy val IR = new TestingIRContext
-  implicit lazy val irFactory = new IRContextFactoryImpl(IR)
+  def createIR = new TestingIRContext
+  implicit lazy val IR = createIR
+  implicit lazy val irFactory = new IRContextFactoryImpl(createIR)
 
   def mkTxFromOutputs(ergoBox: ErgoBox*): ErgoLikeTransaction = {
     createTransaction(ergoBox.toIndexedSeq)

@@ -2,9 +2,11 @@ package sigmastate.utxo.examples
 
 import sigmastate.helpers.SigmaTestingCommons
 import org.ergoplatform.dsl.TestContractSpec
+import sigmastate.eval.IRContextFactoryImpl
 
 class CrowdFundingTests extends SigmaTestingCommons { suite =>
-  lazy val spec = TestContractSpec(suite)(new TestingIRContext)
+  implicit val irFactory = new IRContextFactoryImpl(new TestingIRContext)
+  lazy val spec = TestContractSpec(suite)
   lazy val backer = spec.ProvingParty("Alice")
   lazy val project = spec.ProvingParty("Bob")
 

@@ -1,12 +1,12 @@
 package sigmastate.utxo.examples
 
 import org.ergoplatform.ErgoBox
-import org.ergoplatform.dsl.{ContractSpec, SigmaContractSyntax, StdContracts, TestContractSpec}
+import org.ergoplatform.dsl.{SigmaContractSyntax, ContractSpec, TestContractSpec, StdContracts}
 import scorex.crypto.hash
 import sigmastate.helpers.SigmaTestingCommons
 import special.collection.Coll
-import special.sigma.{Box, Context}
-import sigmastate.eval.Extensions
+import special.sigma.{Context, Box}
+import sigmastate.eval.{Extensions, IRContextFactoryImpl}
 
 class DummyExamplesSpecification extends SigmaTestingCommons { suite =>
   implicit lazy val IR = new TestingIRContext
@@ -72,7 +72,8 @@ class DummyExamplesSpecification extends SigmaTestingCommons { suite =>
       """.stripMargin)
 
   }
-  lazy val spec = TestContractSpec(suite)(new TestingIRContext)
+  implicit val irFactory = new IRContextFactoryImpl(new TestingIRContext)
+  lazy val spec = TestContractSpec(suite)
   lazy val alice = spec.ProvingParty("Alice")
 
   ignore("Dummy contract") {

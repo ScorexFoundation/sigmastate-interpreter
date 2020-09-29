@@ -451,8 +451,6 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
     case _ => error(s"Cannot find value in environment for $s (dataEnv = $dataEnv)")
   }
 
-  def msgCostLimitError(cost: Long, limit: Long) = s"Estimated execution cost $cost exceeds the limit $limit"
-
   /** Incapsulate simple monotonic (add only) counter with reset. */
   class CostCounter(val initialCost: Int) {
     private var _currentCost: Int = initialCost
@@ -558,7 +556,7 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
 //          if (cost < limit)
 //            println(s"FAIL FAST in loop: $accumulatedCost > $limit")
           // TODO cover with tests
-          throw new CostLimitException(accumulatedCost, msgCostLimitError(accumulatedCost, limit), None)
+          throw new CostLimitException(accumulatedCost, Evaluation.msgCostLimitError(accumulatedCost, limit), None)
         }
       }
 
@@ -635,11 +633,22 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
 
           case wc: LiftedConst[_,_] => out(wc.constValue)
 
-          case _: SigmaDslBuilder | _: CollBuilder | _: CostedBuilder |
-               _: WSpecialPredefCompanion |
-               _: IntPlusMonoid | _: LongPlusMonoid |
-               MBM.intPlusMonoid(_) | MBM.longPlusMonoid(_) => // TODO no HF proof
-            out(dataEnv.getOrElse(sym, !!!(s"Cannot resolve companion instance for $sym -> ${sym.node}")))
+          case _: IntPlusMonoid | MBM.intPlusMonoid(_)  =>
+            // always return the same value since monoids are singletons
+            out(monoidBuilderValue.intPlusMonoid)
+
+          case _: LongPlusMonoid | MBM.longPlusMonoid(_) =>
+            // always return the same value since monoids are singletons
+            out(monoidBuilderValue.longPlusMonoid)
+
+          case _: SigmaDslBuilder =>
+            // always return the same value since SigmaDslBuilder is singleton
+            out(sigmaDslBuilderValue)
+
+          case _: CollBuilder | _: CostedBuilder | _: WSpecialPredefCompanion =>
+            out(dataEnv.getOrElse(sym, {
+               !!!(s"Cannot resolve companion instance for $sym -> ${sym.node}")
+            }))
 
           case SigmaM.isValid(In(prop: AnyRef)) =>
             out(prop)
@@ -852,6 +861,8 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
 object Evaluation {
   import special.sigma._
   import special.collection._
+
+  def msgCostLimitError(cost: Long, limit: Long) = s"Estimated execution cost $cost exceeds the limit $limit"
 
   /** Transforms a serializable ErgoTree type descriptor to the corresponding RType descriptor of SigmaDsl,
     * which is used during evaluation.

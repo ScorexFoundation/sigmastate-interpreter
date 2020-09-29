@@ -16,8 +16,9 @@ import sigmastate.interpreter.Interpreter._
 import sigmastate.lang.Terms._
 
 class DHTupleExampleSpecification extends SigmaTestingCommons {
-  private implicit lazy val IR = new TestingIRContext
-  implicit lazy val irFactory = new IRContextFactoryImpl(IR)
+  def createIR = new TestingIRContext
+  private implicit lazy val IR = createIR
+  implicit lazy val irFactory = new IRContextFactoryImpl(createIR)
 
   /**
     * let Alice's secret be x and Bob's be y

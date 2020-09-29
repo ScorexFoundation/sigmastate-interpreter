@@ -10,7 +10,7 @@ import sigmastate.basics.DLogProtocol.{DLogInteractiveProver, FirstDLogProverMes
 import scorex.util.ScorexLogging
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
-import sigmastate.eval.{IRContext, Sized}
+import sigmastate.eval.{DefaultIRContextManager, Evaluation, IRContextFactory, SigmaDsl, Sized, CostingSigmaDslBuilder, IRContext}
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.basics._
 import sigmastate.interpreter.Interpreter.{ScriptEnv, VerificationResult}
@@ -32,10 +32,12 @@ trait Interpreter extends ScorexLogging {
 
   type ProofT = UncheckedTree
 
-  def createIR(): IRContext
+  protected def irFactory: IRContextFactory
 
-  private lazy val IR: IRContext = createIR()
-  import IR._
+  private lazy val irManager = new DefaultIRContextManager(irFactory)
+
+  /** Whether to output the computed cost of the script. */
+  var outputComputedCost: Boolean = false
 
   /** Deserializes given script bytes using ValueSerializer (i.e. assuming expression tree format).
     * It also measures tree complexity adding to the total estimated cost of script execution.
@@ -55,7 +57,7 @@ trait Interpreter extends ScorexLogging {
     val currCost = JMath.addExact(context.initCost, scriptComplexity)
     val remainingLimit = context.costLimit - currCost
     if (remainingLimit <= 0)
-      throw new CostLimitException(currCost, msgCostLimitError(currCost, context.costLimit), None) // TODO cover with tests
+      throw new CostLimitException(currCost, Evaluation.msgCostLimitError(currCost, context.costLimit), None) // TODO cover with tests
 
     val ctx1 = context.withInitCost(currCost).asInstanceOf[CTX]
     (ctx1, script)
@@ -117,17 +119,17 @@ trait Interpreter extends ScorexLogging {
     (res, currContext.value)
   }
 
-  private def calcResult(context: special.sigma.Context, calcF: Ref[IR.Context => Any]): special.sigma.SigmaProp = {
+  private def calcResult(IR: IRContext)(context: special.sigma.Context, calcF: IR.Ref[IR.Context => Any]): special.sigma.SigmaProp = {
     import IR._
     import Context._
     import SigmaProp._
     val res = calcF.elem.eRange.asInstanceOf[Any] match {
       case _: SigmaPropElem[_] =>
-        val valueFun = compile[SContext, SSigmaProp, Context, SigmaProp](getDataEnv, asRep[Context => SigmaProp](calcF))
+        val valueFun = IR.compile[Context.SContext, SSigmaProp, Context, SigmaProp](IR.getDataEnv, IR.asRep[Context => SigmaProp](calcF))(IR.Context.LiftableContext, IR.SigmaProp.LiftableSigmaProp)
         val (sp, _) = valueFun(context)
         sp
       case BooleanElement =>
-        val valueFun = compile[SContext, Boolean, IR.Context, Boolean](IR.getDataEnv, asRep[Context => Boolean](calcF))
+        val valueFun = IR.compile[SContext, Boolean, IR.Context, Boolean](IR.getDataEnv, asRep[Context => Boolean](calcF))(IR.Context.LiftableContext, IR.Liftables.BooleanIsLiftable)
         val (b, _) = valueFun(context)
         sigmaDslBuilderValue.sigmaProp(b)
     }
@@ -147,28 +149,29 @@ trait Interpreter extends ScorexLogging {
     * @see `ReductionResult`
     */
   def reduceToCrypto(context: CTX, env: ScriptEnv, exp: Value[SType]): Try[ReductionResult] = Try {
-    import IR._
-    implicit val vs = context.validationSettings
-    val maxCost = context.costLimit
-    val initCost = context.initCost
-    trySoftForkable[ReductionResult](whenSoftFork = TrivialProp.TrueProp -> 0) {
-      val costingRes = doCostingEx(env, exp, true)
-      val costF = costingRes.costF
-      IR.onCostingResult(env, exp, costingRes)
+    irManager.executeWithIRContext { IR =>
+      implicit val vs = context.validationSettings
+      val maxCost = context.costLimit
+      val initCost = context.initCost
+      trySoftForkable[ReductionResult](whenSoftFork = TrivialProp.TrueProp -> 0) {
+        val costingRes = IR.doCostingEx(env, exp, true)
+        val costF = costingRes.costF
+        IR.onCostingResult(env, exp, costingRes)
 
-      CheckCostFunc(IR)(asRep[Any => Int](costF))
+        CheckCostFunc(IR)(IR.asRep[Any => Int](costF))
 
-      val costingCtx = context.toSigmaContext(isCost = true)
-      val estimatedCost = IR.checkCostWithContext(costingCtx, costF, maxCost, initCost).getOrThrow
+        val costingCtx = context.toSigmaContext(isCost = true)
+        val estimatedCost = IR.checkCostWithContext(costingCtx, costF, maxCost, initCost).getOrThrow
 
-      IR.onEstimatedCost(env, exp, costingRes, costingCtx, estimatedCost)
+        IR.onEstimatedCost(env, exp, costingRes, costingCtx, estimatedCost)
 
-      // check calc
-      val calcF = costingRes.calcF
-      CheckCalcFunc(IR)(calcF)
-      val calcCtx = context.toSigmaContext(isCost = false)
-      val res = calcResult(calcCtx, calcF)
-      SigmaDsl.toSigmaBoolean(res) -> estimatedCost
+        // check calc
+        val calcF = costingRes.calcF
+        CheckCalcFunc(IR)(calcF)
+        val calcCtx = context.toSigmaContext(isCost = false)
+        val res = calcResult(IR)(calcCtx, calcF)
+        SigmaDsl.toSigmaBoolean(res) -> estimatedCost
+      }
     }
   }
 
@@ -234,7 +237,7 @@ trait Interpreter extends ScorexLogging {
       val initCost = JMath.addExact(ergoTree.complexity.toLong, context.initCost)
       val remainingLimit = context.costLimit - initCost
       if (remainingLimit <= 0)
-        throw new CostLimitException(initCost, msgCostLimitError(initCost, context.costLimit), None) // TODO cover with tests
+        throw new CostLimitException(initCost, Evaluation.msgCostLimitError(initCost, context.costLimit), None) // TODO cover with tests
 
       val contextWithCost = context.withInitCost(initCost).asInstanceOf[CTX]
 
@@ -263,7 +266,7 @@ trait Interpreter extends ScorexLogging {
       }
       checkingResult -> cost
     })
-    if (outputComputedResults) {
+    if (outputComputedCost) {
       res.foreach { case (_, cost) =>
         val scaledCost = cost * 1 // this is the scale factor of CostModel with respect to the concrete hardware
         val timeMicro = t * 1000  // time in microseconds

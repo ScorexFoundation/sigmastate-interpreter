@@ -2,23 +2,22 @@ package sigmastate.serialization
 
 import java.util
 
-import org.ergoplatform.{ErgoLikeContext, ErgoLikeTransaction}
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.Assertion
-import sigmastate.Values.{Value, SigmaPropConstant, SigmaBoolean, SigmaPropValue}
+import sigmastate.Values.SigmaBoolean
 import sigmastate._
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
 import sigmastate.eval.IRContextFactoryImpl
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, SigmaTestingCommons, ErgoLikeTransactionTesting}
 import sigmastate.serialization.generators.ObjectGenerators
-import sigmastate.utxo.Transformer
 
 import scala.util.Random
 
 class SigSerializerSpecification extends SigmaTestingCommons with ObjectGenerators {
-  implicit lazy val IR = new TestingIRContext
-  implicit lazy val irFactory = new IRContextFactoryImpl(IR)
+  def createIR = new TestingIRContext
+  implicit lazy val IR = createIR
+  implicit lazy val irFactory = new IRContextFactoryImpl(createIR)
   private lazy implicit val arbExprGen: Arbitrary[SigmaBoolean] = Arbitrary(exprTreeGen)
 
   private lazy val prover = new ContextEnrichingTestProvingInterpreter()

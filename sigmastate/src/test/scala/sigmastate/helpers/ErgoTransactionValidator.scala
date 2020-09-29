@@ -7,9 +7,8 @@ import sigmastate.utxo.CostTable
 
 import scala.util.{Success, Failure}
 
-class ErgoLikeTestInterpreter(implicit irFactory: IRContextFactory) extends ErgoLikeInterpreter {
+class ErgoLikeTestInterpreter(implicit val irFactory: IRContextFactory) extends ErgoLikeInterpreter {
   override type CTX = ErgoLikeContext
-  override def createIR(): IRContext = irFactory.createIRContext
 }
 
 class ErgoTransactionValidator(implicit irFactory: IRContextFactory) {

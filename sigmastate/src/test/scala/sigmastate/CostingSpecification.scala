@@ -20,11 +20,12 @@ import sigmastate.utxo.CostTable._
 import special.sigma.{SigmaTestingData, AvlTree}
 
 class CostingSpecification extends SigmaTestingData {
-  implicit lazy val IR = new TestingIRContext {
-//    override val okPrintEvaluatedEntries = true
+  def createIR = new TestingIRContext {
+    //    override val okPrintEvaluatedEntries = true
     substFromCostTable = false
   }
-  implicit lazy val irFactory = new IRContextFactoryImpl(IR)
+  implicit lazy val IR = createIR
+  implicit lazy val irFactory = new IRContextFactoryImpl(createIR)
 
   lazy val interpreter = new ContextEnrichingTestProvingInterpreter
   lazy val pkA = interpreter.dlogSecrets(0).publicImage

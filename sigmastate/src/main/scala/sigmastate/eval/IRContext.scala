@@ -131,7 +131,7 @@ trait IRContext extends Evaluation with TreeBuilding {
     val totalCost = JMath.addExact(initCost, scaledCost)
     if (totalCost > maxCost) {
       // TODO cover with tests
-      throw new CostLimitException(totalCost, msgCostLimitError(totalCost, maxCost), None)
+      throw new CostLimitException(totalCost, Evaluation.msgCostLimitError(totalCost, maxCost), None)
     }
     totalCost.toInt
   }
@@ -146,10 +146,13 @@ class RuntimeIRContext extends IRContext {
 class CompiletimeIRContext extends IRContext with CompiletimeCosting {
 }
 
+/** Factory to create fresh instances of IRContext. */
 trait IRContextFactory {
+  /** Creates a fresh instance of IRContext. */
   def createIRContext: IRContext
 }
 
+/** Default implementation of [[IRContextFactory]] using the given `creator` thunk. */
 class IRContextFactoryImpl(creator: => IRContext) extends IRContextFactory {
   override def createIRContext: IRContext = creator
 }

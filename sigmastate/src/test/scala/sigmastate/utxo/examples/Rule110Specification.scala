@@ -19,8 +19,9 @@ import sigmastate.utxo.blockchain.BlockchainSimulationTestingCommons._
   *
   */
 class Rule110Specification extends SigmaTestingCommons {
-  implicit lazy val IR = new TestingIRContext
-  implicit lazy val irFactory = new IRContextFactoryImpl(IR)
+  def createIR = new TestingIRContext
+  implicit lazy val IR = createIR
+  implicit lazy val irFactory = new IRContextFactoryImpl(createIR)
   private val reg1 = ErgoBox.nonMandatoryRegisters.head
   private val reg2 = ErgoBox.nonMandatoryRegisters(1)
   private val reg3 = ErgoBox.nonMandatoryRegisters(2)

@@ -13,8 +13,9 @@ import sigmastate.lang.Terms._
   */
 class DistributedSigSpecification extends SigmaTestingCommons {
 
-  implicit lazy val IR: TestingIRContext = new TestingIRContext
-  implicit lazy val irFactory = new IRContextFactoryImpl(IR)
+  def createIR = new TestingIRContext
+  implicit lazy val IR: TestingIRContext = createIR
+  implicit lazy val irFactory = new IRContextFactoryImpl(createIR)
 
   private val ctx = fakeContext
 

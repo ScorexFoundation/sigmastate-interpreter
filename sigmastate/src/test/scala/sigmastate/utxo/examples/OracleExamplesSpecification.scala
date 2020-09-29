@@ -23,8 +23,9 @@ import special.sigma.Context
 import sigmastate.utils.Helpers._
 
 class OracleExamplesSpecification extends SigmaTestingCommons { suite =>
-  implicit lazy val IR: TestingIRContext = new TestingIRContext
-  implicit lazy val irFactory = new IRContextFactoryImpl(IR)
+  def createIR = new TestingIRContext
+  implicit lazy val IR: TestingIRContext = createIR
+  implicit lazy val irFactory = new IRContextFactoryImpl(createIR)
 
   private val reg1 = ErgoBox.nonMandatoryRegisters(0)
   private val reg2 = ErgoBox.nonMandatoryRegisters(1)
@@ -297,7 +298,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons { suite =>
     lazy val aliceSignature  = proposition("aliceSignature", _ => pkA, "pkA")
   }
 
-  lazy val spec = TestContractSpec(suite)(new TestingIRContext)
+  lazy val spec = TestContractSpec(suite)
   lazy val oracle = spec.ProvingParty("Alice")
   lazy val alice = spec.ProvingParty("Alice")
   lazy val bob = spec.ProvingParty("Bob")
