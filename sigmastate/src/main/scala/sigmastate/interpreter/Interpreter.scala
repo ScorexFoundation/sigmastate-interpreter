@@ -10,7 +10,7 @@ import sigmastate.basics.DLogProtocol.{DLogInteractiveProver, FirstDLogProverMes
 import scorex.util.ScorexLogging
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
-import sigmastate.eval.{DefaultIRContextManager, Evaluation, IRContextFactory, SigmaDsl, Sized, CostingSigmaDslBuilder, IRContext}
+import sigmastate.eval.{ResettingIRContextManager, Evaluation, IRContextFactory, SigmaDsl, Sized, CostingSigmaDslBuilder, IRContext}
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.basics._
 import sigmastate.interpreter.Interpreter.{ScriptEnv, VerificationResult}
@@ -34,7 +34,7 @@ trait Interpreter extends ScorexLogging {
 
   protected def irFactory: IRContextFactory
 
-  private lazy val irManager = new DefaultIRContextManager(irFactory)
+  private lazy val irManager = new ResettingIRContextManager(irFactory)
 
   /** Whether to output the computed cost of the script. */
   var outputComputedCost: Boolean = false
