@@ -3,7 +3,7 @@ package sigmastate.utxo.examples
 import org.ergoplatform._
 import scorex.util.ScorexLogging
 import sigmastate.Values.IntConstant
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, SigmaTestingCommons, ErgoTransactionValidator}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.ContextExtension
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
@@ -29,8 +29,8 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
     outputEstimatedCost = false
     outputComputedResults = false
   }
-  implicit lazy val IR: TestingIRContext = createIR
   implicit lazy val irFactory = new IRContextFactoryImpl(createIR)
+  implicit lazy val validator = new ErgoTransactionValidator
 
   private val reg1 = ErgoBox.nonMandatoryRegisters.head
 
@@ -189,9 +189,9 @@ block 1600 in 1622 ms, 30000000000 coins remain, defs: 61661
                  hLimit: Int): Unit = if (height < hLimit) {
       if (height % 100 == 0) {
         val t = System.currentTimeMillis()
-        println(s"block $height in ${t - st} ms, ${emissionBox.value} coins remain, defs: ${IR.defCount}")
+        println(s"block $height in ${t - st} ms, ${emissionBox.value} coins remain")
         st = t
-        IR.resetContext()
+//        IR.resetContext()
       }
       if (height % 1000 == 0) {
         val t = System.currentTimeMillis()

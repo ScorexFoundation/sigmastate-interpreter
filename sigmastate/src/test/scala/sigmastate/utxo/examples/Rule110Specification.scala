@@ -3,10 +3,10 @@ package sigmastate.utxo.examples
 import org.ergoplatform._
 import scorex.crypto.hash.Blake2b256
 import scorex.util._
-import sigmastate.Values.{BooleanConstant, ByteArrayConstant, ByteConstant, FalseLeaf, GetVarByteArray, IntConstant, LongConstant, TrueLeaf, Value}
+import sigmastate.Values.{LongConstant, FalseLeaf, TrueLeaf, GetVarByteArray, Value, ByteArrayConstant, IntConstant, BooleanConstant, ByteConstant}
 import sigmastate._
 import sigmastate.eval._
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ErgoTransactionValidator, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaTestingCommons, ContextEnrichingTestProvingInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.ContextExtension
 import sigmastate.lang.Terms._
@@ -22,6 +22,8 @@ class Rule110Specification extends SigmaTestingCommons {
   def createIR = new TestingIRContext
   implicit lazy val IR = createIR
   implicit lazy val irFactory = new IRContextFactoryImpl(createIR)
+  implicit lazy val validator = new ErgoTransactionValidator
+
   private val reg1 = ErgoBox.nonMandatoryRegisters.head
   private val reg2 = ErgoBox.nonMandatoryRegisters(1)
   private val reg3 = ErgoBox.nonMandatoryRegisters(2)

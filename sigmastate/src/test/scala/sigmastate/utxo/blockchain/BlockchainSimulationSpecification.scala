@@ -2,21 +2,20 @@ package sigmastate.utxo.blockchain
 
 import java.io.{FileWriter, File}
 
-import org.scalacheck.Gen
-import sigmastate.Values.{TrueLeaf, ErgoTree, BooleanConstant, GetVarBoolean}
+import sigmastate.Values.{TrueLeaf, GetVarBoolean}
 import sigmastate.eval.IRContextFactoryImpl
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestProvingInterpreter}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestProvingInterpreter, ErgoTransactionValidator}
 import sigmastate.interpreter.ContextExtension
 import sigmastate.utxo.blockchain.BlockchainSimulationTestingCommons._
 
 import scala.collection.concurrent.TrieMap
-import scala.util.Random
 
 
 class BlockchainSimulationSpecification extends BlockchainSimulationTestingCommons {
 
   implicit lazy val IR = new TestingIRContext
   implicit lazy val irFactory = new IRContextFactoryImpl(new TestingIRContext)
+  implicit lazy val validator = new ErgoTransactionValidator
 
   property("apply one valid block") {
     val state = ValidationState.initialState()

@@ -35,10 +35,14 @@ class ReallocatingIRContextManager(irFactory: IRContextFactory) extends IRContex
 }
 
 /** An implementation of [[sigmastate.eval.IRContextManager]] which uses the given `irFactory`
-  * to create a new IRContext instance once and then on every invocation
-  * [[scalan.Base#resetContext]] before `action` is executed..
+  * to create a new IRContext instance once and then reset it when the given capacity is exceeded.
+  * If capacityOpt == None, the reset happens before EVERY execution.
+  * The reset is done by [[scalan.Base#resetContext]] before `action` is executed.
+  *
+  * @param irFactory   factory to create new IRContext instances
+  * @param capacityOpt Some(maximum) number of the graph nodes in the context or None
   */
-class ResettingIRContextManager(irFactory: IRContextFactory) extends IRContextManager {
+class ResettingIRContextManager(irFactory: IRContextFactory, capacityOpt: Option[Int] = None) extends IRContextManager {
   private val _IR = new DynamicVariable[IRContext](null)
   private val _inProcess = new DynamicVariable(false)
 
@@ -50,8 +54,11 @@ class ResettingIRContextManager(irFactory: IRContextFactory) extends IRContextMa
       _IR.value = newIR
       newIR
     } else {
-      // reset the context every time except the very first execution
-      currIR.resetContext()
+      // reset the context when the capacity is not defined or is exceeded
+      val needReset = capacityOpt.fold(true)(c => currIR.defCount > c)
+      if (needReset) {
+        currIR.resetContext()
+      }
       currIR
     }
 
@@ -62,4 +69,7 @@ class ResettingIRContextManager(irFactory: IRContextFactory) extends IRContextMa
       action(preparedIR)
     }
   }
+}
+object ResettingIRContextManager {
+  val DefaultCapacity = 10000
 }
