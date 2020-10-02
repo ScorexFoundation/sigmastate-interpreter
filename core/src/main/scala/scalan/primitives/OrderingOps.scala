@@ -16,17 +16,31 @@ trait OrderingOps extends Base { self: Scalan =>
     def compare(rhs: Ref[T]): Ref[Int] = OrderingCompare(n).apply(lhs,rhs)
   }
 
-  case class OrderingLT[T](ord: ExactOrdering[T]) extends BinOp[T, Boolean]("<", ord.lt)
+  case class OrderingLT[T](ord: ExactOrdering[T]) extends BinOp[T, Boolean]("<") {
+    override def applySeq(x: T, y: T): Boolean = ord.lt(x, y)
+  }
 
-  case class OrderingLTEQ[T](ord: ExactOrdering[T]) extends BinOp[T, Boolean]("<=", ord.lteq)
+  case class OrderingLTEQ[T](ord: ExactOrdering[T]) extends BinOp[T, Boolean]("<=") {
+    override def applySeq(x: T, y: T): Boolean = ord.lteq(x, y)
+  }
 
-  case class OrderingGT[T](ord: ExactOrdering[T]) extends BinOp[T, Boolean](">", ord.gt)
+  case class OrderingGT[T](ord: ExactOrdering[T]) extends BinOp[T, Boolean](">") {
+    override def applySeq(x: T, y: T): Boolean = ord.gt(x, y)
+  }
 
-  case class OrderingGTEQ[T](ord: ExactOrdering[T]) extends BinOp[T, Boolean](">=", ord.gteq)
+  case class OrderingGTEQ[T](ord: ExactOrdering[T]) extends BinOp[T, Boolean](">=") {
+    override def applySeq(x: T, y: T): Boolean = ord.gteq(x, y)
+  }
 
-  case class OrderingMax[T: Elem](ord: ExactOrdering[T]) extends BinOp[T, T]("max", ord.max)
+  case class OrderingMax[T: Elem](ord: ExactOrdering[T]) extends BinOp[T, T]("max") {
+    override def applySeq(x: T, y: T): T = ord.max(x, y)
+  }
 
-  case class OrderingMin[T: Elem](ord: ExactOrdering[T]) extends BinOp[T, T]("min", ord.min)
+  case class OrderingMin[T: Elem](ord: ExactOrdering[T]) extends BinOp[T, T]("min") {
+    override def applySeq(x: T, y: T): T = ord.min(x, y)
+  }
 
-  case class OrderingCompare[T](ord: ExactOrdering[T]) extends BinOp[T, Int]("compare", ord.compare)
+  case class OrderingCompare[T](ord: ExactOrdering[T]) extends BinOp[T, Int]("compare") {
+    override def applySeq(x: T, y: T): Int = ord.compare(x, y)
+  }
 }

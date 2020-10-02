@@ -92,7 +92,7 @@ abstract class Base { scalan: Scalan =>
         _elements(i + 1) = element
         Def.extractSyms(element, symsBuf)
       }
-      _syms = symsBuf.toArray()
+      _syms = if (symsBuf.length > 0) symsBuf.toArray() else EmptyArrayOfSym
     }
 
     /** References to other nodes in this Def instance.
@@ -815,5 +815,18 @@ abstract class Base { scalan: Scalan =>
     } while (res != currSym)
     res
   }
+
+  val EmptyArrayOfSym = Array.empty[Sym]
+  val EmptySeqOfSym: Seq[Sym] = EmptyArrayOfSym
+  val EmptyDBufferOfSym: DBuffer[Sym] = DBuffer.unsafe(EmptyArrayOfSym)
 }
 
+object Base {
+  val EmptyArrayOfInt = Array.empty[Int]
+  val EmptySeqOfInt: Seq[Int] = EmptyArrayOfInt
+  val EmptyDSetOfInt: debox.Set[Int] = debox.Set.empty
+
+  /** WARNING! Since it is mutable, special care should be taken to not change this buffer.
+    * @hotspot used heavily in scheduling and to avoid allocations*/
+  val EmptyDBufferOfInt: debox.Buffer[Int] = debox.Buffer.unsafe(EmptyArrayOfInt)
+}

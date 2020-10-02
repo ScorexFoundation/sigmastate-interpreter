@@ -120,7 +120,7 @@ trait Functions extends Base with ProgramGraphs { self: Scalan =>
 
     override lazy val  scheduleIds: DBuffer[Int] = {
       val sch = if (isIdentity)
-        DBuffer.ofSize[Int](0)
+        Base.EmptyDBufferOfInt
       else {
         // graph g will contain all Defs reified as part of this Lambda, (due to `filterNode`)
         // BUT not all of them depend on boundVars, thus we need to filter them out
@@ -165,15 +165,6 @@ trait Functions extends Base with ProgramGraphs { self: Scalan =>
     }
 
     override protected def getDeps: Array[Sym] = freeVars.toArray
-
-    def isGlobalLambda: Boolean = {
-      freeVars.forall { x =>
-        x.isConst || {
-          val xIsGlobalLambda = x.isLambda && { val lam = x.node.asInstanceOf[Lambda[_, _]]; lam.isGlobalLambda }
-          xIsGlobalLambda
-        }
-      }
-    }
   }
 
   type LambdaData[A,B] = (Lambda[A,B], Nullable[Ref[A] => Ref[B]], Ref[A], Ref[B])

@@ -37,6 +37,7 @@ import sigmastate.lang.SourceContext
 import special.collection.Coll
 
 import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 
 object Values {
 
@@ -676,8 +677,11 @@ object Values {
 //      NOTE, the assert below should be commented before production release.
 //      Is it there for debuging only, basically to catch call stacks where the fancy types may
 //      occasionally be used.
-//    assert(items.isInstanceOf[mutable.WrappedArray[_]] || items.isInstanceOf[mutable.IndexedSeq[_]],
-//      s"Invalid types of items ${items.getClass}")
+    assert(
+      items.isInstanceOf[mutable.WrappedArray[_]] ||
+      items.isInstanceOf[ArrayBuffer[_]] ||
+      items.isInstanceOf[mutable.ArraySeq[_]],
+      s"Invalid types of items ${items.getClass}")
     private val isBooleanConstants = elementType == SBoolean && items.forall(_.isInstanceOf[Constant[_]])
     override def companion =
       if (isBooleanConstants) ConcreteCollectionBooleanConstant
@@ -818,7 +822,14 @@ object Values {
     */
   case class FuncValue(args: IndexedSeq[(Int,SType)], body: Value[SType]) extends NotReadyValue[SFunc] {
     override def companion = FuncValue
-    lazy val tpe: SFunc = SFunc(args.toArray.map(_._2), body.tpe)
+    lazy val tpe: SFunc = {
+      val nArgs = args.length
+      val argTypes = new Array[SType](nArgs)
+      cfor(0)(_ < nArgs, _ + 1) { i =>
+        argTypes(i) = args(i)._2
+      }
+      SFunc(argTypes, body.tpe)
+    }
     /** This is not used as operation, but rather to form a program structure */
     override def opType: SFunc = SFunc(mutable.WrappedArray.empty, tpe)
   }
