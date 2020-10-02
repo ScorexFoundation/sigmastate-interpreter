@@ -305,7 +305,7 @@ class SigmaDslTesting extends PropSpec
         // Add additional oparations which are not yet implemented in ErgoScript compiler
         val multisig = sigmastate.AtLeast(
           IntConstant(2),
-          Seq(
+          Array(
             pkAlice,
             DeserializeRegister(ErgoBox.R5, SSigmaProp),  // deserialize pkBob
             DeserializeContext(2, SSigmaProp)))           // deserialize pkCarol

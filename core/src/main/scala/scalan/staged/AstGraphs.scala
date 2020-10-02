@@ -1,7 +1,7 @@
 package scalan.staged
 
 import scala.collection._
-import scalan.Scalan
+import scalan.{Scalan, Base}
 import scalan.compilation.GraphVizConfig
 import spire.syntax.all.cfor
 import debox.{Set => DSet, Buffer => DBuffer, Map => DMap}
@@ -70,11 +70,16 @@ trait AstGraphs extends Transforming { self: Scalan =>
           }
         }
       }
-      val res = new Array[Sym](resIds.length)
-      cfor(0)(_ < resIds.length, _ + 1) { i =>
-        res(i) = getSym(resIds(i))
+      val resLength = resIds.length
+      if (resLength == 0)
+        EmptySeqOfSym
+      else {
+        val res = new Array[Sym](resLength)
+        cfor(0)(_ < resLength, _ + 1) { i =>
+          res(i) = getSym(resIds(i))
+        }
+        res
       }
-      res
     }
 
     /** Schedule represents a body of compound definition - topologically ordered
@@ -86,21 +91,31 @@ trait AstGraphs extends Transforming { self: Scalan =>
     /** Sequence of node references forming a schedule.
       * @hotspot don't beautify the code */
     lazy val schedule: Schedule = {
-      val len = scheduleIds.length
-      val res = new Array[Sym](len)
-      cfor(0)(_ < len, _ + 1) { i =>
-        res(i) = getSym(scheduleIds(i))
+      val ids = scheduleIds
+      val len = ids.length
+      if (len == 0) EmptySeqOfSym
+      else {
+        val res = new Array[Sym](len)
+        cfor(0)(_ < len, _ + 1) { i =>
+          res(i) = getSym(ids(i))
+        }
+        res
       }
-      res
     }
 
     /** Set of symbol ids in the schedule. Can be used to quickly recognize
       * symbols belonging to the body of this definition.
       */
     lazy val domain: DSet[Int] = {
-      val res = DSet.ofSize[Int](scheduleIds.length)
-      res ++= scheduleIds.toArray
-      res
+      val ids = scheduleIds
+      val len = ids.length
+      if (len == 0) {
+        Base.EmptyDSetOfInt
+      } else {
+        val res = DSet.ofSize[Int](len)
+        res ++= ids.toArray
+        res
+      }
     }
 
     /** Whether this graph represents identity function. */
@@ -132,7 +147,10 @@ trait AstGraphs extends Transforming { self: Scalan =>
     lazy val flatSchedule: Schedule = {
       val flatBuf = DBuffer.ofSize[Sym](schedule.length)
       buildFlatSchedule(schedule, flatBuf)
-      flatBuf.toArray
+      if (flatBuf.length > 0)
+        flatBuf.toArray
+      else
+        EmptySeqOfSym
     }
 
     /** Build usage information induced by the given schedule.
@@ -180,21 +198,15 @@ trait AstGraphs extends Transforming { self: Scalan =>
 
     def globalUsagesOf(s: Sym): DBuffer[Sym] = allNodes.get(s.node.nodeId) match {
       case Some(node) => node.outSyms
-      case None => DBuffer.empty[Sym]
+      case None => EmptyDBufferOfSym
     }
 
     def hasManyUsagesGlobal(s: Sym): Boolean = globalUsagesOf(s).length > 1
 
-    /** This empty buffer is returned every time the usages are requested for the node
-      * that is not in usageMap.
-      * WARNING! Since it is mutable, special care should be taken to not change this buffer.
-      * @hotspot used havily in scheduling */
-    private val NoUsages = DBuffer.unsafe(new Array[Int](0))
-
     /** @hotspot  for performance we return mutable structure, but it should never be changed. */
     def usagesOf(id: Int): DBuffer[Int] = {
       val node = usageMap.getOrElse(id, null)
-      if (node == null) return NoUsages
+      if (node == null) return Base.EmptyDBufferOfInt
       node.usages
     }
 

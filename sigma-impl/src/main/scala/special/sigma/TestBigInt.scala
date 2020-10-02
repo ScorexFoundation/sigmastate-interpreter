@@ -5,7 +5,7 @@ import java.math.BigInteger
 import scalan.util.Extensions.BigIntegerOps
 
 abstract class TestBigInt(private[sigma] val value: BigInteger) extends BigInt {
-  val dsl: TestSigmaDslBuilder = new TestSigmaDslBuilder
+  def dsl: TestSigmaDslBuilder
 
   override def toByte : Byte  = value.byteValueExact()
   override def toShort: Short = value.shortValueExact()

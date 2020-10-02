@@ -26,31 +26,53 @@ trait NumericOps extends Base { self: Scalan =>
   def numeric[T:ExactNumeric]: ExactNumeric[T] = implicitly[ExactNumeric[T]]
   def integral[T:ExactIntegral]: ExactIntegral[T] = implicitly[ExactIntegral[T]]
 
-  case class NumericPlus[T: Elem](n: ExactNumeric[T]) extends EndoBinOp[T]("+", n.plus)
+  case class NumericPlus[T: Elem](n: ExactNumeric[T]) extends EndoBinOp[T]("+") {
+    override def applySeq(x: T, y: T): T = n.plus(x, y)
+  }
 
-  case class NumericMinus[T: Elem](n: ExactNumeric[T]) extends EndoBinOp[T]("-", n.minus)
+  case class NumericMinus[T: Elem](n: ExactNumeric[T]) extends EndoBinOp[T]("-") {
+    override def applySeq(x: T, y: T): T = n.minus(x, y)
+  }
 
-  case class NumericTimes[T: Elem](n: ExactNumeric[T]) extends EndoBinOp[T]("*", n.times)
+  case class NumericTimes[T: Elem](n: ExactNumeric[T]) extends EndoBinOp[T]("*") {
+    override def applySeq(x: T, y: T): T = n.times(x, y)
+  }
 
-  class DivOp[T: Elem](opName: String, applySeq: (T, T) => T, n: ExactIntegral[T]) extends EndoBinOp[T](opName, applySeq) {
+  abstract class DivOp[T: Elem](opName: String, n: ExactIntegral[T]) extends EndoBinOp[T](opName) {
     override def shouldPropagate(lhs: T, rhs: T) = rhs != n.zero
   }
 
-  case class NumericNegate[T: Elem](n: ExactNumeric[T]) extends UnOp[T, T]("-", n.negate)
+  case class NumericNegate[T: Elem](n: ExactNumeric[T]) extends UnOp[T, T]("-") {
+    override def applySeq(x: T): T = n.negate(x)
+  }
 
-  case class NumericToDouble[T](n: ExactNumeric[T]) extends UnOp[T,Double]("ToDouble", n.toDouble)
+  case class NumericToDouble[T](n: ExactNumeric[T]) extends UnOp[T,Double]("ToDouble") {
+    override def applySeq(x: T): Double = n.toDouble(x)
+  }
 
-  case class NumericToFloat[T](n: ExactNumeric[T]) extends UnOp[T, Float]("ToFloat", n.toFloat)
+  case class NumericToFloat[T](n: ExactNumeric[T]) extends UnOp[T, Float]("ToFloat") {
+    override def applySeq(x: T): Float = n.toFloat(x)
+  }
 
-  case class NumericToInt[T](n: ExactNumeric[T]) extends UnOp[T,Int]("ToInt", n.toInt)
+  case class NumericToInt[T](n: ExactNumeric[T]) extends UnOp[T,Int]("ToInt") {
+    override def applySeq(x: T): Int = n.toInt(x)
+  }
 
-  case class NumericToLong[T](n: ExactNumeric[T]) extends UnOp[T,Long]("ToLong", n.toLong)
+  case class NumericToLong[T](n: ExactNumeric[T]) extends UnOp[T,Long]("ToLong") {
+    override def applySeq(x: T): Long = n.toLong(x)
+  }
 
-  case class Abs[T: Elem](n: ExactNumeric[T]) extends UnOp[T, T]("Abs", n.abs)
+  case class Abs[T: Elem](n: ExactNumeric[T]) extends UnOp[T, T]("Abs") {
+    override def applySeq(x: T): T = n.abs(x)
+  }
 
-  case class IntegralDivide[T](i: ExactIntegral[T])(implicit elem: Elem[T]) extends DivOp[T]("/", i.quot, i)
+  case class IntegralDivide[T](i: ExactIntegral[T])(implicit elem: Elem[T]) extends DivOp[T]("/", i) {
+    override def applySeq(x: T, y: T): T = i.quot(x, y)
+  }
 
-  case class IntegralMod[T](i: ExactIntegral[T])(implicit elem: Elem[T]) extends DivOp[T]("%", i.rem, i)
+  case class IntegralMod[T](i: ExactIntegral[T])(implicit elem: Elem[T]) extends DivOp[T]("%", i) {
+    override def applySeq(x: T, y: T): T = i.rem(x, y)
+  }
 
   @inline final def isZero[T](x: T, n: ExactNumeric[T]) = x == n.zero
   @inline final def isOne[T](x: T, n: ExactNumeric[T]) = x == n.fromInt(1)

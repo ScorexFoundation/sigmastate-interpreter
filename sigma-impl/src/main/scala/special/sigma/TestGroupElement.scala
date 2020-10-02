@@ -4,7 +4,7 @@ import org.bouncycastle.math.ec.ECPoint
 import special.collection.Coll
 
 abstract class TestGroupElement(private[sigma] val value: ECPoint) extends GroupElement {
-  val dsl: TestSigmaDslBuilder = new TestSigmaDslBuilder
+  def dsl: TestSigmaDslBuilder
 
   override def toString: String = s"GroupElement(${Extensions.showECPoint(value)})"
 

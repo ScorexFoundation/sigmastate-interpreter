@@ -157,11 +157,11 @@ case class CreateAvlTree(operationFlags: ByteValue,
     valueLengthOpt: Value[SIntOption]) extends AvlTreeValue {
   override def companion = CreateAvlTree
   override def tpe = SAvlTree
-  override def opType = CreateAvlTree.opType
+  override def opType = CreateAvlTree.OpType
 }
 object CreateAvlTree extends ValueCompanion {
   override def opCode: OpCode = OpCodes.AvlTreeCode
-  val opType = SFunc(IndexedSeq(SByte, SByteArray, SInt, SIntOption), SAvlTree)
+  val OpType = SFunc(Array(SByte, SByteArray, SInt, SIntOption), SAvlTree)
 }
 
 /** ErgoTree operation to create a new SigmaProp value representing public key

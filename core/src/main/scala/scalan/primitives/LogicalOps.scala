@@ -3,15 +3,25 @@ package scalan.primitives
 import scalan.{Base, Scalan}
 
 trait LogicalOps extends Base { self: Scalan =>
-  val And = new EndoBinOp[Boolean]("&&", _ && _)
+  val And = new EndoBinOp[Boolean]("&&") {
+    override def applySeq(x: Boolean, y: Boolean): Boolean = x && y
+  }
 
-  val Or = new EndoBinOp[Boolean]("||", _ || _)
+  val Or = new EndoBinOp[Boolean]("||") {
+    override def applySeq(x: Boolean, y: Boolean): Boolean = x || y
+  }
 
-  val Not = new EndoUnOp[Boolean]("!", !_)
+  val Not = new EndoUnOp[Boolean]("!") {
+    override def applySeq(x: Boolean): Boolean = !x
+  }
 
-  val BinaryXorOp = new EndoBinOp[Boolean]("^", _ ^ _)
+  val BinaryXorOp = new EndoBinOp[Boolean]("^") {
+    override def applySeq(x: Boolean, y: Boolean): Boolean = x ^ y
+  }
 
-  val BooleanToInt = new UnOp[Boolean, Int]("ToInt", if (_) 1 else 0)
+  val BooleanToInt = new UnOp[Boolean, Int]("ToInt") {
+    override def applySeq(x: Boolean): Int = if (x) 1 else 0
+  }
 
   implicit class RepBooleanOps(value: Ref[Boolean]) {
     def &&(y: Ref[Boolean]): Ref[Boolean] = And(value, y)

@@ -4,17 +4,28 @@ import scalan.{Scalan, Base}
 
 trait UnBinOps extends Base { self: Scalan =>
 
-  class UnOp[A, R](val opName: String, val applySeq: A => R)(implicit val eResult: Elem[R]) {
+  abstract class UnOp[A, R](val opName: String)(implicit val eResult: Elem[R]) {
     override def toString = opName
+    /** Called as part of graph interpretation to execute the given unary operation.
+      * @param x operation argument
+      * @return result of applying this operation to x
+      */
+    def applySeq(x: A): R
 
     def apply(arg: Ref[A]) = applyUnOp(this, arg)
 
     def shouldPropagate(arg: A) = true
   }
 
-  class BinOp[A, R](val opName: String, val applySeq: (A, A) => R)(implicit val eResult: Elem[R]) {
+  abstract class BinOp[A, R](val opName: String)(implicit val eResult: Elem[R]) {
     override def toString = opName
 
+    /** Called as part of graph interpretation to execute the given binary operation.
+      * @param x operation argument
+      * @param y operation argument
+      * @return result of applying this operation to (x, y)
+      */
+    def applySeq(x: A, y: A): R
     def apply(lhs: Ref[A], rhs: Ref[A]) = applyBinOp(this, lhs, rhs)
     def applyLazy(lhs: Ref[A], rhs: Ref[Thunk[A]]) = applyBinOpLazy(this, lhs, rhs)
 
