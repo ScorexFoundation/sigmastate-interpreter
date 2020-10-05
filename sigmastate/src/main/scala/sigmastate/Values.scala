@@ -677,11 +677,12 @@ object Values {
 //      NOTE, the assert below should be commented before production release.
 //      Is it there for debuging only, basically to catch call stacks where the fancy types may
 //      occasionally be used.
-    assert(
-      items.isInstanceOf[mutable.WrappedArray[_]] ||
-      items.isInstanceOf[ArrayBuffer[_]] ||
-      items.isInstanceOf[mutable.ArraySeq[_]],
-      s"Invalid types of items ${items.getClass}")
+//    assert(
+//      items.isInstanceOf[mutable.WrappedArray[_]] ||
+//      items.isInstanceOf[ArrayBuffer[_]] ||
+//      items.isInstanceOf[mutable.ArraySeq[_]],
+//      s"Invalid types of items ${items.getClass}")
+
     private val isBooleanConstants = elementType == SBoolean && items.forall(_.isInstanceOf[Constant[_]])
     override def companion =
       if (isBooleanConstants) ConcreteCollectionBooleanConstant
