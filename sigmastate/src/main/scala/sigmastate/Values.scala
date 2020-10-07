@@ -115,6 +115,10 @@ object Values {
     }
     def notSupportedError(v: SValue, opName: String) =
       throw new IllegalArgumentException(s"Method $opName is not supported for node $v")
+
+    /** Immutable values used in many places which allows to avoid allocations. */
+    val EmptyArray = Array.empty[SValue]
+    val EmptySeq: IndexedSeq[SValue] = EmptyArray
   }
 
   trait ValueCompanion extends SigmaNodeCompanion {
