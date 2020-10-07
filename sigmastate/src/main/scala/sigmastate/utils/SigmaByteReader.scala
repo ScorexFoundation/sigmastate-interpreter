@@ -118,9 +118,14 @@ class SigmaByteReader(val r: Reader,
     lvl = v
   }
 
+  /** Read sequence of values from this reader.
+    * It first reads the number of values and then reads each value using `getValue` method.
+    *
+    * @return a sequence of zero of more values read
+    */
   @inline def getValues(): IndexedSeq[SValue] = {
     val size = getUInt().toIntExact
-    if (size == 0) Value.EmptySeq
+    if (size == 0) Value.EmptySeq // quick short-cut when there is nothing to read
     else {
       val xs = new Array[SValue](size)
       cfor(0)(_ < size, _ + 1) { i =>

@@ -12,8 +12,9 @@ import sigmastate.lang.exceptions.InterpreterException
 
 
 class TimedPaymentExampleSpecification extends SigmaTestingCommons {
-  private implicit lazy val IR: TestingIRContext = new TestingIRContext
-  private implicit lazy val irFactory = new IRContextFactoryImpl(IR)
+  def createIR = new TestingIRContext
+  private implicit lazy val IR: TestingIRContext = createIR
+  private implicit lazy val irFactory = new IRContextFactoryImpl(createIR)
 
   import ErgoAddressEncoder._
 

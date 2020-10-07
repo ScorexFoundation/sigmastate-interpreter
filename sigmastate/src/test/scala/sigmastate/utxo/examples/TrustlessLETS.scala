@@ -9,8 +9,9 @@ import sigmastate.interpreter.Interpreter._
 import sigmastate.lang.Terms._
 
 class TrustlessLETS1 extends SigmaTestingCommons {
-  private implicit lazy val IR: TestingIRContext = new TestingIRContext
-  implicit lazy val irFactory = new IRContextFactoryImpl(IR)
+  def createIR = new TestingIRContext
+  private implicit lazy val IR: TestingIRContext = createIR
+  implicit lazy val irFactory = new IRContextFactoryImpl(createIR)
 
   property("Evaluation - LETS1 Example") {
 

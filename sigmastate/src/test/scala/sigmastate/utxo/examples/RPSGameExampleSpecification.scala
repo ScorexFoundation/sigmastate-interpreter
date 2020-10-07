@@ -1,7 +1,7 @@
 
 package sigmastate.utxo.examples
 
-import org.ergoplatform.ErgoBox.{R6, R7, R4, R5}
+import org.ergoplatform.ErgoBox.{R4, R5, R6, R7}
 import scorex.crypto.hash.Blake2b256
 import scorex.utils.Random
 import sigmastate.Values.{ByteArrayConstant, SigmaPropConstant, ByteConstant, IntConstant}

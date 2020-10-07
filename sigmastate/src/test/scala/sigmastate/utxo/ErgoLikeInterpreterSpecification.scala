@@ -23,8 +23,9 @@ import sigmastate.utils.Helpers._
 class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
   with SerializationSpecification {
 
-  implicit lazy val IR: TestingIRContext = new TestingIRContext
-  implicit lazy val irFactory = new IRContextFactoryImpl(new TestingIRContext)
+  def createIR = new TestingIRContext
+  implicit lazy val IR: TestingIRContext = createIR
+  implicit lazy val irFactory = new IRContextFactoryImpl(createIR)
   private val reg1 = ErgoBox.nonMandatoryRegisters.head
 
   property("scripts EQ/NEQ") {

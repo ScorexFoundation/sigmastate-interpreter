@@ -116,8 +116,10 @@ object Values {
     def notSupportedError(v: SValue, opName: String) =
       throw new IllegalArgumentException(s"Method $opName is not supported for node $v")
 
-    /** Immutable values used in many places which allows to avoid allocations. */
+    /** Immutable empty array of values. Can be used to avoid allocation. */
     val EmptyArray = Array.empty[SValue]
+
+    /** Immutable empty Seq of values. Can be used to avoid allocation. */
     val EmptySeq: IndexedSeq[SValue] = EmptyArray
   }
 
@@ -189,10 +191,16 @@ object Values {
   object Constant extends ValueCompanion {
     override def opCode: OpCode = ConstantCode
 
-    /** Immutable empty array to save allocations in many places. */
+    /** Immutable empty array, can be used to save allocations in many places. */
     val EmptyArray = Array.empty[Constant[SType]]
 
+    /** Immutable empty IndexedSeq, can be used to save allocations in many places. */
+    val EmptySeq: IndexedSeq[Constant[SType]] = Array.empty[Constant[SType]]
+
+    /** Helper factory method. */
     def apply[S <: SType](value: S#WrappedType, tpe: S): Constant[S] = ConstantNode(value, tpe)
+
+    /** Recognizer of Constant tree nodes used in patterns. */
     def unapply[S <: SType](v: EvaluatedValue[S]): Option[(S#WrappedType, S)] = v match {
       case ConstantNode(value, tpe) => Some((value, tpe))
       case _ => None
@@ -765,8 +773,11 @@ object Values {
     def isValDef: Boolean
   }
   object BlockItem {
-    /** Immutable empty array to save allocations in many places. */
+    /** Immutable empty array, can be used to save allocations in many places. */
     val EmptyArray = Array.empty[BlockItem]
+
+    /** Immutable IndexedSeq, can be used to save allocations in many places. */
+    val EmptySeq: IndexedSeq[BlockItem] = EmptyArray
   }
 
   /** IR node for let-bound expressions `let x = rhs` which is ValDef, or `let f[T] = rhs` which is FunDef.

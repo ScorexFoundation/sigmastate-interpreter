@@ -151,7 +151,11 @@ object SType {
 
   val IndexedSeqOfT1: IndexedSeq[SType] = Array(SType.tT)
   val IndexedSeqOfT2: IndexedSeq[SType] = Array(SType.tT, SType.tT)
+
+  /** Immutable empty array, can be used to avoid repeated allocations. */
   val EmptyArray = Array.empty[SType]
+
+  /** Immutable empty IndexedSeq, can be used to avoid repeated allocations. */
   val EmptySeq: IndexedSeq[SType] = EmptyArray
 
   /** All pre-defined types should be listed here. Note, NoType is not listed.
@@ -1338,7 +1342,11 @@ case class STypeVar(name: String) extends SType {
 object STypeVar {
   val TypeCode: TypeCode = 103: Byte
   implicit def liftString(n: String): STypeVar = STypeVar(n)
+
+  /** Immutable empty array, can be used to avoid repeated allocations. */
   val EmptyArray = Array.empty[STypeVar]
+
+  /** Immutable empty IndexedSeq, can be used to avoid repeated allocations. */
   val EmptySeq: IndexedSeq[STypeVar] = EmptyArray
 }
 

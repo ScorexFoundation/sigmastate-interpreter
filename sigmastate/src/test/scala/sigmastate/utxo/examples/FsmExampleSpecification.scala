@@ -18,8 +18,9 @@ import sigmastate.utxo._
 
 
 class FsmExampleSpecification extends SigmaTestingCommons {
-  private implicit lazy val IR: TestingIRContext = new TestingIRContext
-  private implicit lazy val irFactory = new IRContextFactoryImpl(IR)
+  def createIR = new TestingIRContext
+  private implicit lazy val IR: TestingIRContext = createIR
+  private implicit lazy val irFactory = new IRContextFactoryImpl(createIR)
 
   /**
     * Similarly to the MAST-like example (in the MASTExampleSpecification class), we can do more complex contracts,

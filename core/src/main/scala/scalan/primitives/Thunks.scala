@@ -10,6 +10,7 @@ import scalan.util.{Covariant, GraphUtil}
 
 import scala.collection.Seq
 
+/** Slice in Scala cake with definitions of Thunk operations. */
 trait Thunks extends Functions with GraphVizExport { self: Scalan =>
 
   type Th[+T] = Ref[Thunk[T]]

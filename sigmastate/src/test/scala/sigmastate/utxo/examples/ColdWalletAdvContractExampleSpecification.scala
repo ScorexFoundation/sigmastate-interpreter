@@ -1,6 +1,6 @@
 package sigmastate.utxo.examples
 
-import org.ergoplatform.ErgoBox.{R6, R4, R5}
+import org.ergoplatform.ErgoBox.{R4, R5, R6}
 import org.ergoplatform._
 import sigmastate.AvlTreeData
 import sigmastate.Values.{LongConstant, IntConstant}

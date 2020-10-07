@@ -166,11 +166,11 @@ import scala.util.Random
  some day this article will be continued!
   */
 
-class LetsSpecification extends SigmaTestingCommons {
-  suite =>
+class LetsSpecification extends SigmaTestingCommons { suite =>
   // Not mixed with TestContext since it is not possible to call compiler.compile outside tests if mixed
-  implicit lazy val IR: IRContext = new TestingIRContext
-  implicit lazy val irFactory = new IRContextFactoryImpl(IR)
+  def createIR = new TestingIRContext
+  implicit lazy val IR: IRContext = createIR
+  implicit lazy val irFactory = new IRContextFactoryImpl(createIR)
 
   lazy val project = new ErgoLikeTestProvingInterpreter()
 

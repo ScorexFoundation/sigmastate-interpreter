@@ -9,7 +9,9 @@ import special.sigma.{Context, Box}
 import sigmastate.eval.{Extensions, IRContextFactoryImpl}
 
 class DummyExamplesSpecification extends SigmaTestingCommons { suite =>
-  implicit lazy val IR = new TestingIRContext
+  def createIR = new TestingIRContext
+  implicit lazy val IR = createIR
+  implicit val irFactory = new IRContextFactoryImpl(createIR)
 
   private val reg1 = ErgoBox.nonMandatoryRegisters(0)
 
@@ -72,7 +74,7 @@ class DummyExamplesSpecification extends SigmaTestingCommons { suite =>
       """.stripMargin)
 
   }
-  implicit val irFactory = new IRContextFactoryImpl(new TestingIRContext)
+
   lazy val spec = TestContractSpec(suite)
   lazy val alice = spec.ProvingParty("Alice")
 

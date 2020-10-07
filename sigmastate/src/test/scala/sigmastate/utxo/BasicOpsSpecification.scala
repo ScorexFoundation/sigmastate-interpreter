@@ -20,10 +20,12 @@ import sigmastate.interpreter.CryptoConstants
 import sigmastate.utils.Helpers._
 
 class BasicOpsSpecification extends SigmaTestingCommons {
-  implicit lazy val IR = new TestingIRContext {
+
+  def createIR = new TestingIRContext {
     override val okPrintEvaluatedEntries: Boolean = false
   }
-  implicit lazy val irFactory = new IRContextFactoryImpl(IR)
+  implicit lazy val IR = createIR
+  implicit lazy val irFactory = new IRContextFactoryImpl(createIR)
 
   private val reg1 = ErgoBox.nonMandatoryRegisters.head
   private val reg2 = ErgoBox.nonMandatoryRegisters.tail.head

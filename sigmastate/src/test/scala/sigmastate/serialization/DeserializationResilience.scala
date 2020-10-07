@@ -25,12 +25,13 @@ import scala.collection.mutable
 
 class DeserializationResilience extends SerializationSpecification with SigmaTestingCommons {
 
-  implicit lazy val IR: TestingIRContext = new TestingIRContext {
+  def createIR = new TestingIRContext {
     //    substFromCostTable = false
     saveGraphsInFile = false
     //    override val okPrintEvaluatedEntries = true
   }
-  implicit lazy val irFactory = new IRContextFactoryImpl(IR)
+  implicit lazy val IR: TestingIRContext = createIR
+  implicit lazy val irFactory = new IRContextFactoryImpl(createIR)
 
   private def reader(bytes: Array[Byte], maxTreeDepth: Int): SigmaByteReader = {
     val buf = ByteBuffer.wrap(bytes)

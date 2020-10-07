@@ -21,10 +21,10 @@ import scala.language.implicitConversions
 
 trait ErgoScriptTestkit extends ContractsTestkit with LangTests
     with ValidationSpecification { self: BaseCtxTests =>
+  def createIR = new TestContext with IRContext with CompiletimeCosting
+  implicit lazy val IR: TestContext with IRContext = createIR
 
-  implicit lazy val IR: TestContext with IRContext =
-    new TestContext with IRContext with CompiletimeCosting
-  implicit lazy val irFactory = new IRContextFactoryImpl(IR)
+  implicit lazy val irFactory = new IRContextFactoryImpl(createIR)
 
   import IR._
   import Liftables._

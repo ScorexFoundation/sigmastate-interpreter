@@ -13,8 +13,9 @@ import scala.collection.concurrent.TrieMap
 
 class BlockchainSimulationSpecification extends BlockchainSimulationTestingCommons {
 
-  implicit lazy val IR = new TestingIRContext
-  implicit lazy val irFactory = new IRContextFactoryImpl(new TestingIRContext)
+  def createIR = new TestingIRContext
+  implicit lazy val IR = createIR
+  implicit lazy val irFactory = new IRContextFactoryImpl(createIR)
   implicit lazy val validator = new ErgoTransactionValidator
 
   property("apply one valid block") {

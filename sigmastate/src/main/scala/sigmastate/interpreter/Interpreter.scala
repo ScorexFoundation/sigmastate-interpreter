@@ -40,7 +40,7 @@ trait Interpreter extends ScorexLogging {
   )
 
   /** Whether to output the computed cost of the script. */
-  var outputComputedCost: Boolean = false
+  var debugOutputComputedCost: Boolean = false
 
   /** Deserializes given script bytes using ValueSerializer (i.e. assuming expression tree format).
     * It also measures tree complexity adding to the total estimated cost of script execution.
@@ -269,7 +269,7 @@ trait Interpreter extends ScorexLogging {
       }
       checkingResult -> cost
     })
-    if (outputComputedCost) {
+    if (debugOutputComputedCost) {
       res.foreach { case (_, cost) =>
         val scaledCost = cost * 1 // this is the scale factor of CostModel with respect to the concrete hardware
         val timeMicro = t * 1000  // time in microseconds

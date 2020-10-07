@@ -5,7 +5,9 @@ import sigmastate.Values._
 import sigmastate.interpreter.Interpreter
 import sigmastate.utxo._
 
-
+/** Base class for interpreters which are used for verification.
+  * This is in contrast to ProverInterpreter which contains `secrets` for proof generation.
+  */
 abstract class ErgoLikeInterpreter extends Interpreter {
 
   override type CTX <: ErgoLikeContext
