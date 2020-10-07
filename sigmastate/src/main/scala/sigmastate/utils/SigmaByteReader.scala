@@ -2,10 +2,11 @@ package sigmastate.utils
 
 import scorex.util.serialization.Reader
 import sigmastate.SType
-import sigmastate.Values.SValue
-import sigmastate.lang.exceptions.{DeserializeCallDepthExceeded, InputSizeLimitExceeded}
+import sigmastate.Values.{SValue, Value}
+import sigmastate.lang.exceptions.{InputSizeLimitExceeded, DeserializeCallDepthExceeded}
 import sigmastate.serialization._
 import scorex.util.Extensions._
+import spire.syntax.all.cfor
 
 class SigmaByteReader(val r: Reader,
                       var constantStore: ConstantStore,
@@ -119,11 +120,14 @@ class SigmaByteReader(val r: Reader,
 
   @inline def getValues(): IndexedSeq[SValue] = {
     val size = getUInt().toIntExact
-    val xs = new Array[SValue](size)
-    for (i <- 0 until size) {
-      xs(i) = getValue()
+    if (size == 0) Value.EmptySeq
+    else {
+      val xs = new Array[SValue](size)
+      cfor(0)(_ < size, _ + 1) { i =>
+        xs(i) = getValue()
+      }
+      xs
     }
-    xs
   }
 
   private var positionLmt: Int = r.position + r.remaining

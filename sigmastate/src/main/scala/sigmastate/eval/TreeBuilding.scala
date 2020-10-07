@@ -254,7 +254,7 @@ trait TreeBuilding extends RuntimeCosting { IR: IRContext =>
           case (mth @ SCollection.ZipMethod, Seq(coll)) =>
             val typeSubst = Map(SCollection.tOV -> coll.asCollection[SType].tpe.elemType)
             typeSubst
-          case (mth, _) => SigmaTyper.emptySubst
+          case (mth, _) => SigmaTyper.EmptySubst
         }
         val specMethod = method.withConcreteTypes(typeSubst + (SCollection.tIV -> colTpe.elemType))
         builder.mkMethodCall(col, specMethod, args.toIndexedSeq, Map())

@@ -151,6 +151,8 @@ object SType {
 
   val IndexedSeqOfT1: IndexedSeq[SType] = Array(SType.tT)
   val IndexedSeqOfT2: IndexedSeq[SType] = Array(SType.tT, SType.tT)
+  val EmptyArray = Array.empty[SType]
+  val EmptySeq: IndexedSeq[SType] = EmptyArray
 
   /** All pre-defined types should be listed here. Note, NoType is not listed.
     * Should be in sync with sigmastate.lang.Types.predefTypes. */
@@ -1336,6 +1338,8 @@ case class STypeVar(name: String) extends SType {
 object STypeVar {
   val TypeCode: TypeCode = 103: Byte
   implicit def liftString(n: String): STypeVar = STypeVar(n)
+  val EmptyArray = Array.empty[STypeVar]
+  val EmptySeq: IndexedSeq[STypeVar] = EmptyArray
 }
 
 case object SBox extends SProduct with SPredefType with SMonoType {
