@@ -1,7 +1,7 @@
 package scalan.staged
 
 import scala.collection._
-import scalan.{Scalan, Base}
+import scalan.{Base, Scalan, emptyDBufferOfInt}
 import scalan.compilation.GraphVizConfig
 import spire.syntax.all.cfor
 import debox.{Set => DSet, Buffer => DBuffer, Map => DMap}
@@ -110,7 +110,7 @@ trait AstGraphs extends Transforming { self: Scalan =>
       val ids = scheduleIds
       val len = ids.length
       if (len == 0) {
-        Base.EmptyDSetOfInt
+        EmptyDSetOfInt
       } else {
         val res = DSet.ofSize[Int](len)
         res ++= ids.toArray
@@ -198,7 +198,7 @@ trait AstGraphs extends Transforming { self: Scalan =>
 
     def globalUsagesOf(s: Sym): DBuffer[Sym] = allNodes.get(s.node.nodeId) match {
       case Some(node) => node.outSyms
-      case None => EmptyDBufferOfSym
+      case None => emptyDBufferOfSym
     }
 
     def hasManyUsagesGlobal(s: Sym): Boolean = globalUsagesOf(s).length > 1
@@ -206,7 +206,7 @@ trait AstGraphs extends Transforming { self: Scalan =>
     /** @hotspot  for performance we return mutable structure, but it should never be changed. */
     def usagesOf(id: Int): DBuffer[Int] = {
       val node = usageMap.getOrElse(id, null)
-      if (node == null) return Base.EmptyDBufferOfInt
+      if (node == null) return emptyDBufferOfInt
       node.usages
     }
 

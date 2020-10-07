@@ -41,6 +41,13 @@ case class CAND(override val children: Seq[SigmaBoolean]) extends SigmaConjectur
 
 object CAND {
   import TrivialProp._
+
+  /** Connects the given sigma propositions into CAND proposition performing
+    * partial evaluation when some of them are trivial propositioins.
+    *
+    * @param items propositions to combine into CAND
+    * @return CAND, TrueProp, FalseProp or even one of the items depending on partial evaluation
+    */
   def normalized(items: Seq[SigmaBoolean]): SigmaBoolean = {
     require(items.nonEmpty)
     val res = new ArrayBuffer[SigmaBoolean]()
@@ -69,6 +76,13 @@ case class COR(children: Seq[SigmaBoolean]) extends SigmaConjecture {
 
 object COR {
   import TrivialProp._
+
+  /** Connects the given sigma propositions into COR proposition performing
+    * partial evaluation when some of them are trivial propositioins.
+    *
+    * @param items propositions to combine into COR
+    * @return COR, TrueProp, FalseProp or even one of the items depending on partial evaluation
+    */
   def normalized(items: Seq[SigmaBoolean]): SigmaBoolean = {
     require(items.nonEmpty)
     val res = new ArrayBuffer[SigmaBoolean]()

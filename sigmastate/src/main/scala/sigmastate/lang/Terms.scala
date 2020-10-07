@@ -109,6 +109,10 @@ object Terms {
   }
 
   // TODO HF: move to sigmastate.Values
+  /** ErgoTree node which represents application of function `func` to the given arguments.
+    * @param func expression which evaluates to a function
+    * @param args arguments of the function application
+    */
   case class Apply(func: Value[SType], args: IndexedSeq[Value[SType]]) extends Value[SType] {
     override def companion = Apply
     override lazy val tpe: SType = func.tpe match {

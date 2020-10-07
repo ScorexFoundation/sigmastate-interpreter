@@ -2,27 +2,34 @@ package scalan.primitives
 
 import scalan.{Base, Scalan}
 
+/** Slice in Scala cake with definitions of logical operations. */
 trait LogicalOps extends Base { self: Scalan =>
+  /** Logical AND binary operation. */
   val And = new EndoBinOp[Boolean]("&&") {
     override def applySeq(x: Boolean, y: Boolean): Boolean = x && y
   }
 
+  /** Logical AND binary operation. */
   val Or = new EndoBinOp[Boolean]("||") {
     override def applySeq(x: Boolean, y: Boolean): Boolean = x || y
   }
 
+  /** Logical NOT unary operation. */
   val Not = new EndoUnOp[Boolean]("!") {
     override def applySeq(x: Boolean): Boolean = !x
   }
 
+  /** Logical XOR binary operation. */
   val BinaryXorOp = new EndoBinOp[Boolean]("^") {
     override def applySeq(x: Boolean, y: Boolean): Boolean = x ^ y
   }
 
+  /** Boolean to Int conversion unary operation. */
   val BooleanToInt = new UnOp[Boolean, Int]("ToInt") {
     override def applySeq(x: Boolean): Int = if (x) 1 else 0
   }
 
+  /** Extension methods over `Ref[Boolean]`. */
   implicit class RepBooleanOps(value: Ref[Boolean]) {
     def &&(y: Ref[Boolean]): Ref[Boolean] = And(value, y)
     def ||(y: Ref[Boolean]): Ref[Boolean] = Or(value, y)
@@ -36,6 +43,7 @@ trait LogicalOps extends Base { self: Scalan =>
   }
 
 
+  /** Helper method which defines rewriting rules with boolean constants. */
   @inline
   final def rewriteBoolConsts(lhs: Sym, rhs: Sym, ifTrue: Sym => Sym, ifFalse: Sym => Sym, ifEqual: Sym => Sym, ifNegated: Sym => Sym): Sym =
     lhs match {

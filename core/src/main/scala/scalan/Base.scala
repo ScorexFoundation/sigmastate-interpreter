@@ -816,17 +816,22 @@ abstract class Base { scalan: Scalan =>
     res
   }
 
+  /** Immutable empty array of symbols, can be used to avoid unnecessary allocations. */
   val EmptyArrayOfSym = Array.empty[Sym]
+
+  /** Immutable empty Seq, can be used to avoid unnecessary allocations. */
   val EmptySeqOfSym: Seq[Sym] = EmptyArrayOfSym
-  def EmptyDBufferOfSym: DBuffer[Sym] = DBuffer.unsafe(EmptyArrayOfSym)
-}
 
-object Base {
-  val EmptyArrayOfInt = Array.empty[Int]
-  val EmptySeqOfInt: Seq[Int] = EmptyArrayOfInt
-  val EmptyDSetOfInt: debox.Set[Int] = debox.Set.empty
+  /** Create a new empty buffer around pre-allocated empty array.
+    * This method is preferred, rather that creating empty debox.Buffer directly
+    * because it allows to avoid allocation of the empty array.
+    */
+  @inline final def emptyDBufferOfSym: DBuffer[Sym] = DBuffer.unsafe(EmptyArrayOfSym)
 
-  /** WARNING! Since it is mutable, special care should be taken to not change this buffer.
-    * @hotspot used heavily in scheduling and to avoid allocations*/
-  def EmptyDBufferOfInt: debox.Buffer[Int] = debox.Buffer.unsafe(EmptyArrayOfInt)
+  /** Used internally in IR and should be used with care since it is mutable.
+    * At the same time, it is used in the hotspot and allows to avoid roughly tens of
+    * thousands of allocations per second.
+    * WARNING: Mutations of this instance can lead to undefined behavior.
+    */
+  protected val EmptyDSetOfInt: debox.Set[Int] = debox.Set.empty
 }

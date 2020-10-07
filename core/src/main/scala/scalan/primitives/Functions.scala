@@ -4,7 +4,7 @@ import java.util
 
 import scalan.staged.ProgramGraphs
 import scalan.util.GraphUtil
-import scalan.{Lazy, Base, Nullable, Scalan}
+import scalan.{Nullable, emptyDBufferOfInt, Base, Lazy, Scalan}
 import debox.{Buffer => DBuffer}
 
 import scala.language.implicitConversions
@@ -120,7 +120,7 @@ trait Functions extends Base with ProgramGraphs { self: Scalan =>
 
     override lazy val  scheduleIds: DBuffer[Int] = {
       val sch = if (isIdentity)
-        Base.EmptyDBufferOfInt
+        emptyDBufferOfInt
       else {
         // graph g will contain all Defs reified as part of this Lambda, (due to `filterNode`)
         // BUT not all of them depend on boundVars, thus we need to filter them out

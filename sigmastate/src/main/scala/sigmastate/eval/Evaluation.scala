@@ -88,10 +88,10 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
     * from OpCodes + OpCodesExtra combined range. (See getOpCodeEx) */
   protected def allowedOpCodesInCosting: HashSet[OpCodeExtra] = Evaluation.AllowedOpCodesInCosting
 
-  def isAllowedOpCodeInCosting(opCode: OpCodeExtra): Boolean = allowedOpCodesInCosting.contains(opCode)
+  /** Checks the given opCode belong to an operation allowed in cost function. */
+  protected def isAllowedOpCodeInCosting(opCode: OpCodeExtra): Boolean = allowedOpCodesInCosting.contains(opCode)
 
-  /** Returns extended op code assigned to the given IR graph node.
-    */
+  /** Returns extended op code assigned to the given IR graph node. */
   def getOpCodeEx(d: Def[_]): OpCodeExtra = d match {
     case _: OpCost => OpCostCode
     case _: PerKbCostOf => PerKbCostOfCode

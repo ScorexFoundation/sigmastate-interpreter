@@ -1837,23 +1837,29 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
       // fallback rule for MethodCall, should be the last case in the list
       case Terms.MethodCall(obj, method, args, typeSubst) if method.objType.coster.isDefined =>
         val objC = eval(obj)
-        val argsC = {
-          val len = args.length
-          val res = new Array[RCosted[SType#WrappedType]](len)
-          cfor(0)(_ < len, _ + 1) { i =>
-            res(i) = eval(args(i))
+        val argsC: Seq[RCosted[SType#WrappedType]] =
+          if (args.isEmpty)
+            EmptySeqOfSym.asInstanceOf[Seq[RCosted[SType#WrappedType]]]
+          else {
+            val len = args.length
+            val res = new Array[RCosted[SType#WrappedType]](len)
+            cfor(0)(_ < len, _ + 1) { i =>
+              res(i) = eval(args(i))
+            }
+            res
           }
-          res
-        }
-        val elems = {
-          val ts = typeSubst.values.toArray
-          val len = ts.length
-          val res = new Array[Sym](len)
-          cfor(0)(_ < len, _ + 1) { i =>
-            res(i) = liftElem(stypeToElem(ts(i)).asInstanceOf[Elem[Any]])
+        val elems: Seq[Sym] =
+          if (typeSubst.isEmpty)
+            EmptySeqOfSym
+          else {
+            val ts = typeSubst.values.toArray
+            val len = ts.length
+            val res = new Array[Sym](len)
+            cfor(0)(_ < len, _ + 1) { i =>
+              res(i) = liftElem(stypeToElem(ts(i)).asInstanceOf[Elem[Any]])
+            }
+            res
           }
-          res
-        }
         method.objType.coster.get(IR)(objC, method, argsC, elems)
 
       case _ =>
