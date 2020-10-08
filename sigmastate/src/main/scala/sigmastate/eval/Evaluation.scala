@@ -25,6 +25,7 @@ import special.Types._
 import scala.collection.immutable.HashSet
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
+import spire.syntax.all.cfor
 
 /** This is a slice in IRContext cake which implements evaluation of graphs.
   */
@@ -886,15 +887,25 @@ object Evaluation {
     case SGroupElement => GroupElementRType
     case SAvlTree => AvlTreeRType
     case SSigmaProp => SigmaPropRType
-    case STuple(Seq(tpeA, tpeB)) =>
+    case tup: STuple if tup.items.length == 2 =>
+      val tpeA = tup.items(0)
+      val tpeB = tup.items(1)
       pairRType(stypeToRType(tpeA), stypeToRType(tpeB))
     case STuple(items) =>
       val types = items.toArray
-      tupleRType(types.map(t => stypeToRType(t).asInstanceOf[SomeType]))
+      val len = types.length
+      val rtypes = new Array[SomeType](len)
+      cfor(0)(_ < len, _ + 1) { i =>
+        rtypes(i) = stypeToRType(types(i)).asInstanceOf[SomeType]
+      }
+      tupleRType(rtypes)
     case c: SCollectionType[a] => collRType(stypeToRType(c.elemType))
     case o: SOption[a] => optionRType(stypeToRType(o.elemType))
-    case SFunc(Seq(tpeArg), tpeRange, Nil) => funcRType(stypeToRType(tpeArg), stypeToRType(tpeRange))
-    case _ => sys.error(s"Don't know how to convert SType $t to RType")
+    case SFunc(args, tpeRange, Nil) if args.length == 1 =>
+      val tpeArg = args(0)
+      funcRType(stypeToRType(tpeArg), stypeToRType(tpeRange))
+    case _ =>
+      sys.error(s"Don't know how to convert SType $t to RType")
   }).asInstanceOf[RType[T#WrappedType]]
 
   /** Transforms RType descriptor of SigmaDsl, which is used during evaluation,

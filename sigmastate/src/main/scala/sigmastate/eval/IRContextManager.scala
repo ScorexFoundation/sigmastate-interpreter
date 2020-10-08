@@ -71,5 +71,5 @@ class ResettingIRContextManager(irFactory: IRContextFactory, capacityOpt: Option
   }
 }
 object ResettingIRContextManager {
-  val DefaultCapacity = 10000
+  val DefaultCapacity = 100000
 }
