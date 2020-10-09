@@ -3,19 +3,19 @@ package sigmastate.interpreter
 import java.util
 import java.lang.{Math => JMath}
 
-import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, rule, strategy}
+import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{strategy, rule, everywherebu}
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
 import org.ergoplatform.validation.SigmaValidationSettings
-import sigmastate.basics.DLogProtocol.{DLogInteractiveProver, FirstDLogProverMessage}
+import sigmastate.basics.DLogProtocol.{FirstDLogProverMessage, DLogInteractiveProver}
 import scorex.util.ScorexLogging
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
-import sigmastate.eval.{ResettingIRContextManager, Evaluation, IRContextFactory, SigmaDsl, Sized, CostingSigmaDslBuilder, IRContext}
+import sigmastate.eval.{ResettingIRContextManager, Evaluation, IRContextFactory, SigmaDsl, Sized, CostingSigmaDslBuilder, IRContextManager, IRContext}
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.basics._
-import sigmastate.interpreter.Interpreter.{ScriptEnv, VerificationResult}
-import sigmastate.lang.exceptions.{CostLimitException, InterpreterException}
-import sigmastate.serialization.{SigmaSerializer, ValueSerializer}
+import sigmastate.interpreter.Interpreter.{VerificationResult, ScriptEnv}
+import sigmastate.lang.exceptions.{InterpreterException, CostLimitException}
+import sigmastate.serialization.{ValueSerializer, SigmaSerializer}
 import sigmastate.utxo.DeserializeContext
 import sigmastate.{SType, _}
 import org.ergoplatform.validation.ValidationRules._
@@ -34,9 +34,21 @@ trait Interpreter extends ScorexLogging {
 
   protected def irFactory: IRContextFactory
 
-  private lazy val irManager = new ResettingIRContextManager(
+  /** Default private instance, created on demand. */
+  private lazy val _defaultIRContextManager = new ResettingIRContextManager(
     irFactory, ResettingIRContextManager.DefaultCapacity
   )
+
+  /** Returns a [[IRContextManager]] which should be used by this interpreter.
+    * This default implementation uses privately created manager instance not shared with
+    * other interpreters.
+    *
+    * Since IRContext is quite heavyweight object, using default manager is the simplest,
+    * but is not the most efficient strategy. For this reason, this method can be
+    * overriden to implement an alternative IRContext management (i.e. different ways of
+    * sharing single manager between many interpreters.
+    */
+  protected def getIRContextManager: IRContextManager = _defaultIRContextManager
 
   /** Whether to output the computed cost of the script. */
   var debugOutputComputedCost: Boolean = false
@@ -65,7 +77,15 @@ trait Interpreter extends ScorexLogging {
     (ctx1, script)
   }
 
-  /** @param updateContext  call back to setup new context (with updated cost limit) to be passed next time */
+  /** Matches the given `node` with DeserializeContext and if successfull, returns a new
+    * expression deserialized from the corresponding context variable.
+    *
+    * @param context       context to lookup for variables
+    * @param updateContext call back to setup new context (with updated cost limit) to be
+    *                      passed next time
+    * @param node          tree node to match
+    * @return Some(deserialized SValue) or None
+    */
   def substDeserialize(context: CTX, updateContext: CTX => Unit, node: SValue): Option[SValue] = node match {
     case d: DeserializeContext[_] =>
       if (context.extension.values.contains(d.id))
@@ -84,6 +104,9 @@ trait Interpreter extends ScorexLogging {
     case _ => None
   }
 
+  /** Helper function with transform the given `exp` to BoolValue if it is possible,
+    * otherwise throws an exception.
+    */
   def toValidScriptType(exp: SValue): BoolValue = exp match {
     case v: Value[SBoolean.type]@unchecked if v.tpe == SBoolean => v
     case p: SValue if p.tpe == SSigmaProp => p.asSigmaProp.isProven
@@ -91,7 +114,11 @@ trait Interpreter extends ScorexLogging {
       throw new Error(s"Context-dependent pre-processing should produce tree of type Boolean or SigmaProp but was $x")
   }
 
-  class MutableCell[T](var value: T)
+  /** Helper class to safely pass mutable value to a closure.
+    * Allows both accessing the value and reassiging it from lambda.
+    * @see applyDeserializeContext
+    */
+  private class MutableCell[T](var value: T)
 
   /** Extracts proposition for ErgoTree handing soft-fork condition.
     * @note soft-fork handler */
@@ -151,7 +178,7 @@ trait Interpreter extends ScorexLogging {
     * @see `ReductionResult`
     */
   def reduceToCrypto(context: CTX, env: ScriptEnv, exp: Value[SType]): Try[ReductionResult] = Try {
-    irManager.executeWithIRContext { IR =>
+    getIRContextManager.executeWithIRContext { IR =>
       implicit val vs = context.validationSettings
       val maxCost = context.costLimit
       val initCost = context.initCost
