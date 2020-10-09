@@ -45,6 +45,20 @@ object ReallocatingIRContextManager {
   * If capacity == UndefinedCapacity, the reset happens before EVERY execution.
   * The reset is done by [[scalan.Base#resetContext]] before `action` is executed.
   *
+  * The created context is stored under [[WeakReference]] placed in
+  * [[InheritableThreadLocal]] by using [[DynamicVariable]].
+  * Each instance of [[ResettingIRContextManager]] is using it's own [[DynamicVariable]].
+  *
+  * Thus, [[IRContext]]s created by different managers are isolated, and in addition
+  * contexts created by the same manager, but on different threads are also isolated and
+  * there is not way to access IRContexts created on other threads.
+  * At the same time, an instance of ResettingIRContextManager can be created on any thread.
+  *
+  * Using [[WeakReference]] allows to reclaim memory allocated on now inactive threads and
+  * by different manager instances. When any such [[WeakReference]] stored in
+  * DynamicVariable is cleared, the given `irFactory` is used to recreate a fresh new
+  * [[IRContext]] instance, which is saved back in the DynamicVariable.
+  *
   * @param irFactory   factory to create new IRContext instances
   * @param capacity    if greater than 0 specifies a maximum number of the graph nodes in the context
   */
