@@ -35,8 +35,7 @@ trait Interpreter extends ScorexLogging {
   protected def irFactory: IRContextFactory
 
   private lazy val irManager = new ResettingIRContextManager(
-    irFactory,
-    Some(ResettingIRContextManager.DefaultCapacity)
+    irFactory, ResettingIRContextManager.DefaultCapacity
   )
 
   /** Whether to output the computed cost of the script. */
