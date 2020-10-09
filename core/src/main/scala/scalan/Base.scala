@@ -9,6 +9,7 @@ import scalan.compilation.GraphVizConfig
 import scalan.util.StringUtil
 import debox.{Buffer => DBuffer}
 import spire.syntax.all.cfor
+import scala.collection.mutable
 
 /**
   * The Base trait houses common AST nodes. It also manages a list of encountered definitions which
@@ -452,22 +453,28 @@ abstract class Base { scalan: Scalan =>
     /** Transform a sequence of nodes into new sequence of nodes. */
     final def apply[A](xs: Seq[Ref[A]]): Seq[Ref[A]] = {
       val len = xs.length
-      val res = new Array[Ref[A]](len)
-      cfor(0)(_ < len, _ + 1) { i =>
-        res(i) = apply(xs(i))
+      if (len == 0) EmptySeqOfSym.asInstanceOf[Seq[Ref[A]]]
+      else {
+        val res = new Array[Ref[A]](len)
+        cfor(0)(_ < len, _ + 1) { i =>
+          res(i) = apply(xs(i))
+        }
+        res
       }
-      res
     }
     /** Apply this transformer to the nodes present in the sequence,
       * and leave non-Ref items unchanged. */
     final def apply(xs: Seq[Any])(implicit o: Overloaded1): Seq[Any] = {
       val len = xs.length
-      val res = new Array[Any](len)
-      cfor(0)(_ < len, _ + 1) { i =>
-        val x = xs(i) match { case s: Ref[_] => apply(s); case s => s }
-        res(i) = x
+      if (len == 0) mutable.WrappedArray.empty
+      else {
+        val res = new Array[Any](len)
+        cfor(0)(_ < len, _ + 1) { i =>
+          val x = xs(i) match { case s: Ref[_] => apply(s); case s => s }
+          res(i) = x
+        }
+        res
       }
-      res
     }
 
     def +[A](key: Sym, value: Sym): Transformer
