@@ -6,6 +6,9 @@ import scala.util.DynamicVariable
 
 /** Provides a capability to execute actions with a IRContext instance. */
 abstract class IRContextManager {
+  /** Returns the [[IRContextFactory]] used by this manager. */
+  def getIRContextFactory: IRContextFactory
+
   /** Executes the given function with the underlying context.
     * @param action function to be executed
     * @return the result returned by the action
@@ -19,6 +22,8 @@ abstract class IRContextManager {
   */
 class ReallocatingIRContextManager(irFactory: IRContextFactory) extends IRContextManager {
   import ReallocatingIRContextManager._
+
+  override def getIRContextFactory: IRContextFactory = irFactory
 
   override def executeWithIRContext[T](action: IRContext => T): T = {
     val newIR = irFactory.createIRContext
@@ -67,6 +72,8 @@ class ResettingIRContextManager(
     capacity: Int = ResettingIRContextManager.UndefinedCapacity
   ) extends IRContextManager {
   import ResettingIRContextManager._
+
+  override def getIRContextFactory: IRContextFactory = irFactory
 
   private val _IR = new DynamicVariable[WeakReference[IRContext]](null)
   private val _inProcess = new DynamicVariable(false)
