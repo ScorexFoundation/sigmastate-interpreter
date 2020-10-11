@@ -471,7 +471,7 @@ class SigmaDslTesting extends PropSpec
        printTestCases: Boolean = PrintTestCasesDefault,
        failOnTestVectors: Boolean = FailOnTestVectorsDefault,
        preGeneratedSamples: Option[Seq[A]] = None): Unit = {
-
+    System.gc() // force GC to avoid occasional OOM exception
     val table = Table(("x", "y"), cases:_*)
     forAll(table) { (x: A, expectedRes: Try[B]) =>
       val res = f.checkEquality(x, printTestCases).map(_._1)
