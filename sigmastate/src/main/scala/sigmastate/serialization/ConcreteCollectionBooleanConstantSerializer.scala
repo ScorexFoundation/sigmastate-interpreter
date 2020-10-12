@@ -30,15 +30,17 @@ case class ConcreteCollectionBooleanConstantSerializer(cons: (IndexedSeq[Value[S
   override def parse(r: SigmaByteReader): Value[SCollection[SBoolean.type]] = {
     val size = r.getUShort()    // READ
     val bits = r.getBits(size)  // READ
-    if (size == 0) {
+    val items: IndexedSeq[Value[SBoolean.type]] = if (size == 0) {
       // reusing pre-allocated immutable instances
-      cons(Value.EmptySeq.asInstanceOf[IndexedSeq[Value[SBoolean.type]]], SBoolean)
+      Value.EmptySeq.asInstanceOf[IndexedSeq[Value[SBoolean.type]]]
     } else {
       val items = new Array[BoolValue](size)
       cfor(0)(_ < size, _ + 1) { i =>
         items(i) = BooleanConstant.fromBoolean(bits(i))
       }
-      cons(items, SBoolean)
+      items
     }
+    cons(items, SBoolean)
   }
+
 }
