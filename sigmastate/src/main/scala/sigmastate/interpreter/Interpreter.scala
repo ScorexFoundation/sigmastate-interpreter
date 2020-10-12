@@ -10,7 +10,7 @@ import sigmastate.basics.DLogProtocol.{DLogInteractiveProver, FirstDLogProverMes
 import scorex.util.ScorexLogging
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
-import sigmastate.eval.{IRContext, Sized}
+import sigmastate.eval.{IRContext, Sized, Evaluation}
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.basics._
 import sigmastate.interpreter.Interpreter.{ScriptEnv, VerificationResult}
@@ -53,7 +53,7 @@ trait Interpreter extends ScorexLogging {
     val currCost = JMath.addExact(context.initCost, scriptComplexity)
     val remainingLimit = context.costLimit - currCost
     if (remainingLimit <= 0)
-      throw new CostLimitException(currCost, msgCostLimitError(currCost, context.costLimit), None) // TODO cover with tests
+      throw new CostLimitException(currCost, Evaluation.msgCostLimitError(currCost, context.costLimit), None) // TODO cover with tests
 
     val ctx1 = context.withInitCost(currCost).asInstanceOf[CTX]
     (ctx1, script)
@@ -232,7 +232,7 @@ trait Interpreter extends ScorexLogging {
       val initCost = JMath.addExact(ergoTree.complexity.toLong, context.initCost)
       val remainingLimit = context.costLimit - initCost
       if (remainingLimit <= 0)
-        throw new CostLimitException(initCost, msgCostLimitError(initCost, context.costLimit), None) // TODO cover with tests
+        throw new CostLimitException(initCost, Evaluation.msgCostLimitError(initCost, context.costLimit), None) // TODO cover with tests
 
       val contextWithCost = context.withInitCost(initCost).asInstanceOf[CTX]
 
