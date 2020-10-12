@@ -183,6 +183,10 @@ object Values {
 
   object Constant extends ValueCompanion {
     override def opCode: OpCode = ConstantCode
+
+    /** Immutable empty array to save allocations in many places. */
+    val EmptyArray = Array.empty[Constant[SType]]
+
     def apply[S <: SType](value: S#WrappedType, tpe: S): Constant[S] = ConstantNode(value, tpe)
     def unapply[S <: SType](v: EvaluatedValue[S]): Option[(S#WrappedType, S)] = v match {
       case ConstantNode(value, tpe) => Some((value, tpe))
@@ -750,6 +754,13 @@ object Values {
     def id: Int
     def rhs: SValue
     def isValDef: Boolean
+  }
+  object BlockItem {
+    /** Immutable empty array to save allocations in many places. */
+    val EmptyArray = Array.empty[BlockItem]
+
+    /** Immutable empty IndexedSeq to save allocations in many places. */
+    val EmptySeq: IndexedSeq[BlockItem] = EmptyArray
   }
 
   /** IR node for let-bound expressions `let x = rhs` which is ValDef, or `let f[T] = rhs` which is FunDef.

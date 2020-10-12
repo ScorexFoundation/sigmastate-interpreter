@@ -213,14 +213,19 @@ class ErgoTreeSerializer {
   private def deserializeConstants(header: Byte, r: SigmaByteReader): Array[Constant[SType]] = {
     val constants = if (ErgoTree.isConstantSegregation(header)) {
       val nConsts = r.getUInt().toInt
-      val res = new Array[Constant[SType]](nConsts)
-      cfor(0)(_ < nConsts, _ + 1) { i =>
-        res(i) = constantSerializer.deserialize(r)
+      if (nConsts > 0) {
+        // @hotspot: allocate new array only if it is not empty
+        val res = new Array[Constant[SType]](nConsts)
+        cfor(0)(_ < nConsts, _ + 1) { i =>
+          res(i) = constantSerializer.deserialize(r)
+        }
+        res
       }
-      res
+      else
+        Constant.EmptyArray
     }
     else
-      Array.empty[Constant[SType]]
+      Constant.EmptyArray
     constants
   }
 

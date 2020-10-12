@@ -1,7 +1,7 @@
 package sigmastate.eval
 
 
-import sigmastate.Values.{BlockValue, BoolValue, Constant, ConstantNode, SValue, SigmaPropConstant, ValDef, ValUse, Value}
+import sigmastate.Values.{BlockItem, BlockValue, BoolValue, Constant, ConstantNode, SValue, SigmaPropConstant, ValDef, ValUse, Value}
 import org.ergoplatform._
 
 import org.ergoplatform.{Height, Inputs, Outputs, Self}
@@ -422,7 +422,7 @@ trait TreeBuilding extends RuntimeCosting { IR: IRContext =>
     }
     val Seq(root) = subG.roots
     val rhs = buildValue(ctx, mainG, curEnv, root, curId, constantsProcessing)
-    val res = if (valdefs.nonEmpty) BlockValue(valdefs.toIndexedSeq, rhs) else rhs
+    val res = if (valdefs.nonEmpty) BlockValue(valdefs.toArray[BlockItem], rhs) else rhs
     res
   }
 
