@@ -6,8 +6,8 @@ import org.ergoplatform.validation._
 import sigmastate.SPrimType.MaxPrimTypeCode
 import sigmastate.Values.ErgoTree.EmptyConstants
 import sigmastate.Values.{UnparsedErgoTree, NotReadyValueInt, ByteArrayConstant, Tuple, IntConstant, ErgoTree, ValueCompanion}
-import sigmastate.eval.Colls
-import sigmastate.helpers.{ErgoLikeContextTesting, ErgoLikeTestInterpreter, ErgoLikeTestProvingInterpreter}
+import sigmastate.eval.{Colls, IRContextFactoryImpl}
+import sigmastate.helpers.{ErgoLikeContextTesting, ErgoLikeTestProvingInterpreter, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.interpreter.{ProverResult, ContextExtension}
@@ -20,8 +20,9 @@ import special.sigma.SigmaTestingData
 import sigmastate.utils.Helpers._
 
 class SoftForkabilitySpecification extends SigmaTestingData {
-
-  implicit lazy val IR = new TestingIRContext
+  def createIR = new TestingIRContext
+  implicit lazy val IR = createIR
+  implicit lazy val irFactory = new IRContextFactoryImpl(createIR)
   lazy val prover = new ErgoLikeTestProvingInterpreter()
   lazy val verifier = new ErgoLikeTestInterpreter
   val deadline = 100

@@ -1,14 +1,17 @@
 package sigmastate
 
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, SigmaTestingCommons, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.lang.Terms._
 import org.scalatest.TryValues._
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import org.ergoplatform.ErgoScriptPredef._
+import sigmastate.eval.IRContextFactoryImpl
 
 class FailingToProveSpec extends SigmaTestingCommons {
   implicit lazy val IR = new TestingIRContext
+  implicit lazy val irFactory = new IRContextFactoryImpl(IR)
+
   /**
     * Both properties should work fine.
     * Currently the problem in first case is that even if we evaluate `withdrawCondition1 == true`

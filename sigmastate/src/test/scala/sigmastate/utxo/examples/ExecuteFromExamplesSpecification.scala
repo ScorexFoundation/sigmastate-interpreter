@@ -1,10 +1,11 @@
 package sigmastate.utxo.examples
 
 import org.ergoplatform._
-import org.ergoplatform.dsl.{ContractSpec, SigmaContractSyntax, StdContracts, TestContractSpec}
+import org.ergoplatform.dsl.{SigmaContractSyntax, ContractSpec, TestContractSpec, StdContracts}
 import sigmastate.helpers.SigmaTestingCommons
 import special.sigma.Context
 import sigmastate.eval.Extensions._
+import sigmastate.eval.IRContextFactoryImpl
 
 class ExecuteFromExamplesSpecification extends SigmaTestingCommons { suite =>
   implicit lazy val IR = new TestingIRContext
@@ -37,7 +38,8 @@ class ExecuteFromExamplesSpecification extends SigmaTestingCommons { suite =>
     lazy val aliceSignature  = proposition("aliceSignature", _ => pkA, "pkA")
   }
 
-  lazy val spec = TestContractSpec(suite)(new TestingIRContext)
+  implicit val irFactory = new IRContextFactoryImpl(new TestingIRContext)
+  lazy val spec = TestContractSpec(suite)
 
   lazy val alice = spec.ProvingParty("Alice")
 

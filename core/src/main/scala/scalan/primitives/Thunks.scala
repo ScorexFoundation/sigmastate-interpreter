@@ -10,6 +10,7 @@ import scalan.util.{Covariant, GraphUtil}
 
 import scala.collection.Seq
 
+/** Slice in Scala cake with definitions of Thunk operations. */
 trait Thunks extends Functions with GraphVizExport { self: Scalan =>
 
   type Th[+T] = Ref[Thunk[T]]
@@ -73,7 +74,7 @@ trait Thunks extends Functions with GraphVizExport { self: Scalan =>
     cachedElemByClass(eItem)(classOf[ThunkElem[T]])
   implicit def extendThunkElement[T](elem: Elem[Thunk[T]]): ThunkElem[T] = elem.asInstanceOf[ThunkElem[T]]
 
-  class ThunkDef[A](val root: Ref[A], _scheduleIds: =>ScheduleIds)
+  class ThunkDef[A](val root: Ref[A], _scheduleIds: => ScheduleIds)
     extends AstGraph with Def[Thunk[A]] {
 
     implicit def eA: Elem[A] = root.elem
@@ -110,12 +111,14 @@ trait Thunks extends Functions with GraphVizExport { self: Scalan =>
     }
     def productArity: Int = 1
 
-    override def boundVars = Nil
-    override lazy val freeVars: Seq[Sym] = if (schedule.isEmpty) Array(root) else super.freeVars
+    override def boundVars = EmptySeqOfSym
+
+    val roots: Seq[Sym] = Array(root)
+
+    override lazy val freeVars: Seq[Sym] = if (schedule.isEmpty) roots else super.freeVars
 
     override protected def getDeps: Array[Sym] = freeVars.toArray
 
-    val roots: Seq[Sym] = Array(root)
     override lazy val rootIds: DBuffer[Int] = super.rootIds
     override def isIdentity: Boolean = false
   }

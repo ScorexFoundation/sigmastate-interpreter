@@ -3,9 +3,13 @@ package scalan.primitives
 import scalan.{Base, Scalan}
 
 trait UniversalOps extends Base { scalan: Scalan =>
-  case class HashCode[A]() extends UnOp[A, Int]("hashCode", _.hashCode)
+  case class HashCode[A]() extends UnOp[A, Int]("hashCode") {
+    override def applySeq(x: A): Int = x.hashCode
+  }
 
-  case class ToString[A]() extends UnOp[A, String]("toString", _.toString)
+  case class ToString[A]() extends UnOp[A, String]("toString") {
+    override def applySeq(x: A): String = x.toString
+  }
 
   /** Represents calculation of size in bytes of the given value.
     * The descriptor value.elem can be used to decompose value into components.

@@ -6,6 +6,7 @@ import scorex.util.Extensions._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import ValueSerializer._
 import sigmastate.utils.SigmaByteWriter.{Vlq, U, DataInfo}
+import spire.syntax.all.cfor
 
 case class BlockValueSerializer(cons: (IndexedSeq[BlockItem], Value[SType]) => Value[SType])
   extends ValueSerializer[BlockValue] {
@@ -24,7 +25,16 @@ case class BlockValueSerializer(cons: (IndexedSeq[BlockItem], Value[SType]) => V
 
   override def parse(r: SigmaByteReader): Value[SType] = {
     val itemsSize = r.getUInt().toIntExact
-    val values = (1 to itemsSize).map(_ => r.getValue().asInstanceOf[BlockItem])
+    val values: IndexedSeq[BlockItem] = if (itemsSize == 0)
+      BlockItem.EmptySeq
+    else {
+      // @hotspot: allocate new array only if it is not empty
+      val buf = new Array[BlockItem](itemsSize)
+      cfor(0)(_ < itemsSize, _ + 1) { i =>
+        buf(i) = r.getValue().asInstanceOf[BlockItem]
+      }
+      buf
+    }
     val result = r.getValue()
     cons(values, result)
   }

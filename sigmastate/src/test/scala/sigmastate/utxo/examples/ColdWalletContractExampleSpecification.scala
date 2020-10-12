@@ -2,16 +2,19 @@ package sigmastate.utxo.examples
 
 import org.ergoplatform.ErgoBox.{R4, R5}
 import org.ergoplatform._
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, SigmaTestingCommons, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.AvlTreeData
-import sigmastate.Values.{IntConstant, LongConstant}
+import sigmastate.Values.{LongConstant, IntConstant}
+import sigmastate.eval.IRContextFactoryImpl
 import sigmastate.interpreter.Interpreter.ScriptNameProp
 import sigmastate.lang.Terms._
 
 
 class ColdWalletContractExampleSpecification extends SigmaTestingCommons {
-  private implicit lazy val IR: TestingIRContext = new TestingIRContext
+  def createIR = new TestingIRContext
+  private implicit lazy val IR: TestingIRContext = createIR
+  private implicit lazy val irFactory = new IRContextFactoryImpl(createIR)
 
   import ErgoAddressEncoder._
   implicit val ergoAddressEncoder: ErgoAddressEncoder = new ErgoAddressEncoder(TestnetNetworkPrefix)

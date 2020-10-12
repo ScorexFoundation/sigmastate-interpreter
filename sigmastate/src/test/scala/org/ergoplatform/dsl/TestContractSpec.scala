@@ -15,13 +15,15 @@ import org.ergoplatform.{ErgoLikeContext, ErgoBox}
 import org.ergoplatform.dsl.ContractSyntax.{Token, TokenId, ErgoScript, Proposition}
 import sigmastate.{AvlTreeData, SType}
 import sigmastate.Values.{ErgoTree, EvaluatedValue}
-import sigmastate.eval.{IRContext, CSigmaProp, Evaluation}
-import sigmastate.helpers.{ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaTestingCommons, ContextEnrichingTestProvingInterpreter}
+import sigmastate.eval.{Evaluation, IRContextFactory, IRContextFactoryImpl, CSigmaProp, IRContext}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, SigmaTestingCommons, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.lang.Terms.ValueOps
 import special.sigma.{AnyValue, TestValue, SigmaProp}
 
-case class TestContractSpec(testSuite: SigmaTestingCommons)(implicit val IR: IRContext) extends ContractSpec {
+case class TestContractSpec(testSuite: SigmaTestingCommons)(implicit val irFactory: IRContextFactory) extends ContractSpec {
+
+  implicit val IR = irFactory.createIRContext
 
   case class TestPropositionSpec(name: String, dslSpec: Proposition, scriptSpec: ErgoScript) extends PropositionSpec {
     lazy val ergoTree: ErgoTree = {
@@ -88,7 +90,7 @@ case class TestContractSpec(testSuite: SigmaTestingCommons)(implicit val IR: IRC
       ctx
     }
     def runDsl(extensions: Map[Byte, AnyValue] = Map()): SigmaProp = {
-      val ctx = toErgoContext.toSigmaContext(IR, false, extensions)
+      val ctx = toErgoContext.toSigmaContext(false, extensions)
       val res = utxoBox.propSpec.dslSpec(ctx)
       res
     }

@@ -9,6 +9,7 @@ import scalan.compilation.GraphVizConfig
 import scalan.util.StringUtil
 import debox.{Buffer => DBuffer}
 import spire.syntax.all.cfor
+import scala.collection.mutable
 
 /**
   * The Base trait houses common AST nodes. It also manages a list of encountered definitions which
@@ -92,7 +93,7 @@ abstract class Base { scalan: Scalan =>
         _elements(i + 1) = element
         Def.extractSyms(element, symsBuf)
       }
-      _syms = symsBuf.toArray()
+      _syms = if (symsBuf.length > 0) symsBuf.toArray() else EmptyArrayOfSym
     }
 
     /** References to other nodes in this Def instance.
@@ -452,22 +453,28 @@ abstract class Base { scalan: Scalan =>
     /** Transform a sequence of nodes into new sequence of nodes. */
     final def apply[A](xs: Seq[Ref[A]]): Seq[Ref[A]] = {
       val len = xs.length
-      val res = new Array[Ref[A]](len)
-      cfor(0)(_ < len, _ + 1) { i =>
-        res(i) = apply(xs(i))
+      if (len == 0) EmptySeqOfSym.asInstanceOf[Seq[Ref[A]]]
+      else {
+        val res = new Array[Ref[A]](len)
+        cfor(0)(_ < len, _ + 1) { i =>
+          res(i) = apply(xs(i))
+        }
+        res
       }
-      res
     }
     /** Apply this transformer to the nodes present in the sequence,
       * and leave non-Ref items unchanged. */
     final def apply(xs: Seq[Any])(implicit o: Overloaded1): Seq[Any] = {
       val len = xs.length
-      val res = new Array[Any](len)
-      cfor(0)(_ < len, _ + 1) { i =>
-        val x = xs(i) match { case s: Ref[_] => apply(s); case s => s }
-        res(i) = x
+      if (len == 0) mutable.WrappedArray.empty
+      else {
+        val res = new Array[Any](len)
+        cfor(0)(_ < len, _ + 1) { i =>
+          val x = xs(i) match { case s: Ref[_] => apply(s); case s => s }
+          res(i) = x
+        }
+        res
       }
-      res
     }
 
     def +[A](key: Sym, value: Sym): Transformer
@@ -815,5 +822,23 @@ abstract class Base { scalan: Scalan =>
     } while (res != currSym)
     res
   }
-}
 
+  /** Immutable empty array of symbols, can be used to avoid unnecessary allocations. */
+  val EmptyArrayOfSym = Array.empty[Sym]
+
+  /** Immutable empty Seq, can be used to avoid unnecessary allocations. */
+  val EmptySeqOfSym: Seq[Sym] = EmptyArrayOfSym
+
+  /** Create a new empty buffer around pre-allocated empty array.
+    * This method is preferred, rather that creating empty debox.Buffer directly
+    * because it allows to avoid allocation of the empty array.
+    */
+  @inline final def emptyDBufferOfSym: DBuffer[Sym] = DBuffer.unsafe(EmptyArrayOfSym)
+
+  /** Used internally in IR and should be used with care since it is mutable.
+    * At the same time, it is used in the hotspot and allows to avoid roughly tens of
+    * thousands of allocations per second.
+    * WARNING: Mutations of this instance can lead to undefined behavior.
+    */
+  protected val EmptyDSetOfInt: debox.Set[Int] = debox.Set.empty
+}

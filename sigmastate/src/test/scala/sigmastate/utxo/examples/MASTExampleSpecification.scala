@@ -27,7 +27,9 @@ import scala.util.Random
   * See more at https://bitcointechtalk.com/what-is-a-bitcoin-merklized-abstract-syntax-tree-mast-33fdf2da5e2f
   */
 class MASTExampleSpecification extends SigmaTestingCommons {
-  implicit lazy val IR = new TestingIRContext
+  def createIR = new TestingIRContext
+  implicit lazy val IR = createIR
+  implicit lazy val irFactory = new IRContextFactoryImpl(createIR)
   private val reg1 = ErgoBox.nonMandatoryRegisters.head
 
   /**

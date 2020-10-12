@@ -4,13 +4,16 @@ import org.ergoplatform.Height
 import org.scalacheck.Gen
 import sigmastate.Values.IntConstant
 import sigmastate._
+import sigmastate.eval.IRContextFactoryImpl
 import sigmastate.lang.Terms._
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, ErgoLikeTransactionTesting, SigmaTestingCommons}
+import sigmastate.helpers.{ErgoLikeTransactionTesting, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaTestingCommons, ContextEnrichingTestProvingInterpreter}
 
 import scala.util.Random
 
 class ComplexSigSpecification extends SigmaTestingCommons {
-  implicit lazy val IR: TestingIRContext = new TestingIRContext
+  def createIR = new TestingIRContext
+  implicit lazy val IR: TestingIRContext = createIR
+  implicit lazy val irFactory = new IRContextFactoryImpl(createIR)
 
   private def proverGen: Gen[ContextEnrichingTestProvingInterpreter] = for {
     _ <- Gen.const(1)

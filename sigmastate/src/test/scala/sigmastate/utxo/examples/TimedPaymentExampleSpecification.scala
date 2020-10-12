@@ -3,6 +3,7 @@ package sigmastate.utxo.examples
 import org.ergoplatform._
 import sigmastate.Values.IntConstant
 import sigmastate._
+import sigmastate.eval.IRContextFactoryImpl
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, SigmaTestingCommons, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter.ScriptNameProp
@@ -11,7 +12,9 @@ import sigmastate.lang.exceptions.InterpreterException
 
 
 class TimedPaymentExampleSpecification extends SigmaTestingCommons {
-  private implicit lazy val IR: TestingIRContext = new TestingIRContext
+  def createIR = new TestingIRContext
+  private implicit lazy val IR: TestingIRContext = createIR
+  private implicit lazy val irFactory = new IRContextFactoryImpl(createIR)
 
   import ErgoAddressEncoder._
 

@@ -61,6 +61,7 @@ object CollectionUtil {
     res.toMap
   }
 
+  // TODO optimize: using cfor and avoiding allocations
   def joinSeqs[O, I, K](outer: GenIterable[O], inner: GenIterable[I])(outKey: O=>K, inKey: I=>K): GenIterable[(O,I)] = {
     val kvs = createMultiMap(inner.map(i => (inKey(i), i)))
     val res = outer.flatMap(o => {

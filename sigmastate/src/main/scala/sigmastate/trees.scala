@@ -15,7 +15,7 @@ import sigmastate.utxo.{Transformer, SimpleTransformerCompanion}
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
-
+import spire.syntax.all.cfor
 
 /**
   * Basic trait for inner nodes of crypto-trees, so AND/OR/THRESHOLD sigma-protocol connectives
@@ -41,10 +41,19 @@ case class CAND(override val children: Seq[SigmaBoolean]) extends SigmaConjectur
 
 object CAND {
   import TrivialProp._
+
+  /** Connects the given sigma propositions into CAND proposition performing
+    * partial evaluation when some of them are trivial propositioins.
+    *
+    * @param items propositions to combine into CAND
+    * @return CAND, TrueProp, FalseProp or even one of the items depending on partial evaluation
+    */
   def normalized(items: Seq[SigmaBoolean]): SigmaBoolean = {
     require(items.nonEmpty)
     val res = new ArrayBuffer[SigmaBoolean]()
-    for (x <- items) {
+    val nItems = items.length
+    cfor(0)(_ < nItems, _ + 1) { i =>
+      val x = items(i)
       x match {
         case FalseProp => return FalseProp
         case TrueProp => // skip
@@ -67,10 +76,19 @@ case class COR(children: Seq[SigmaBoolean]) extends SigmaConjecture {
 
 object COR {
   import TrivialProp._
+
+  /** Connects the given sigma propositions into COR proposition performing
+    * partial evaluation when some of them are trivial propositioins.
+    *
+    * @param items propositions to combine into COR
+    * @return COR, TrueProp, FalseProp or even one of the items depending on partial evaluation
+    */
   def normalized(items: Seq[SigmaBoolean]): SigmaBoolean = {
     require(items.nonEmpty)
     val res = new ArrayBuffer[SigmaBoolean]()
-    for (x <- items) {
+    val nItems = items.length
+    cfor(0)(_ < nItems, _ + 1) { i =>
+      val x = items(i)
       x match {
         case FalseProp => // skip
         case TrueProp => return TrueProp
@@ -153,11 +171,11 @@ case class CreateAvlTree(operationFlags: ByteValue,
     valueLengthOpt: Value[SIntOption]) extends AvlTreeValue {
   override def companion = CreateAvlTree
   override def tpe = SAvlTree
-  override def opType = CreateAvlTree.opType
+  override def opType = CreateAvlTree.OpType
 }
 object CreateAvlTree extends ValueCompanion {
   override def opCode: OpCode = OpCodes.AvlTreeCode
-  val opType = SFunc(IndexedSeq(SByte, SByteArray, SInt, SIntOption), SAvlTree)
+  val OpType = SFunc(Array(SByte, SByteArray, SInt, SIntOption), SAvlTree)
 }
 
 /** ErgoTree operation to create a new SigmaProp value representing public key

@@ -21,9 +21,10 @@ import scala.language.implicitConversions
 
 trait ErgoScriptTestkit extends ContractsTestkit with LangTests
     with ValidationSpecification { self: BaseCtxTests =>
+  def createIR = new TestContext with IRContext with CompiletimeCosting
+  implicit lazy val IR: TestContext with IRContext = createIR
 
-  implicit lazy val IR: TestContext with IRContext =
-    new TestContext with IRContext with CompiletimeCosting
+  implicit lazy val irFactory = new IRContextFactoryImpl(createIR)
 
   import IR._
   import Liftables._
@@ -173,14 +174,14 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests
       }
 
       if (ergoCtx.isDefined) {
-        val calcCtx = ergoCtx.get.toSigmaContext(IR, isCost = false)
+        val calcCtx = ergoCtx.get.toSigmaContext(isCost = false)
         val testContractRes = testContract.map(_(calcCtx))
         testContractRes.foreach { res =>
           checkExpected(res, expectedResult.calc, "Test Contract actual: %s, expected: %s")
         }
 
         // check cost
-        val costCtx = ergoCtx.get.toSigmaContext(IR, isCost = true)
+        val costCtx = ergoCtx.get.toSigmaContext(isCost = true)
         val estimatedCost = IR.checkCost(costCtx, tree, costF, CostTable.ScriptLimit)
 
         // check size

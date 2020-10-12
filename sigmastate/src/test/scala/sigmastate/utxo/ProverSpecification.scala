@@ -1,14 +1,17 @@
 package sigmastate.utxo
 
-import sigmastate.{CAND, CAndUnproven, COR, COrUnproven, CTHRESHOLD, CThresholdUnproven, NodePosition, UnprovenSchnorr}
+import sigmastate.{NodePosition, CTHRESHOLD, COR, COrUnproven, CAndUnproven, UnprovenSchnorr, CAND, CThresholdUnproven}
 import sigmastate.Values.SigmaBoolean
 import sigmastate.basics.DLogProtocol.FirstDLogProverMessage
 import sigmastate.basics.{FirstDiffieHellmanTupleProverMessage, SecP256K1}
+import sigmastate.eval.IRContextFactoryImpl
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 
 class ProverSpecification extends SigmaTestingCommons {
 
-  implicit lazy val IR: TestingIRContext = new TestingIRContext
+  def createIR = new TestingIRContext
+  implicit lazy val IR: TestingIRContext = createIR
+  implicit lazy val irFactory = new IRContextFactoryImpl(createIR)
 
   property("generateCommitments") {
 

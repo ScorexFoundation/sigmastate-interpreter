@@ -1,6 +1,7 @@
 package sigmastate.utxo
 
 import sigmastate._
+import sigmastate.eval.IRContextFactoryImpl
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter._
 import sigmastate.lang.Terms._
@@ -12,7 +13,9 @@ import sigmastate.lang.Terms._
   */
 class DistributedSigSpecification extends SigmaTestingCommons {
 
-  implicit lazy val IR: TestingIRContext = new TestingIRContext
+  def createIR = new TestingIRContext
+  implicit lazy val IR: TestingIRContext = createIR
+  implicit lazy val irFactory = new IRContextFactoryImpl(createIR)
 
   private val ctx = fakeContext
 

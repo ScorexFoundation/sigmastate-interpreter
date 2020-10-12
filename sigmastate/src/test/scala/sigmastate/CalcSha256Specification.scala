@@ -3,11 +3,14 @@ package sigmastate
 import org.ergoplatform.ErgoLikeContext
 import org.scalatest.prop.TableFor2
 import scorex.util.encode.Base16
-import sigmastate.Values.{ByteArrayConstant, CollectionConstant}
+import sigmastate.Values.{CollectionConstant, ByteArrayConstant}
+import sigmastate.eval.IRContextFactoryImpl
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, SigmaTestingCommons}
 
 class CalcSha256Specification extends SigmaTestingCommons {
-  implicit lazy val IR = new TestingIRContext
+  def createIR = new TestingIRContext
+  implicit lazy val IR = createIR
+  implicit lazy val irFactory = new IRContextFactoryImpl(createIR)
 
   def stringToByteConstant(in: String): CollectionConstant[SByte.type] = ByteArrayConstant(in.getBytes("UTF-8"))
   def decodeString(in: String): CollectionConstant[SByte.type] = ByteArrayConstant(Base16.decode(in).get)

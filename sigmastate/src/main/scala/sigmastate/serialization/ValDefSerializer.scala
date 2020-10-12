@@ -39,7 +39,7 @@ case class ValDefSerializer(override val opDesc: ValueCompanion) extends ValueSe
         }
         inputs
       case ValDefCode =>
-        Nil
+        STypeVar.EmptySeq
     }
     val rhs = r.getValue()
     r.valDefTypeStore(id) = rhs.tpe

@@ -205,7 +205,7 @@ trait SigmaTestingCommons extends PropSpec
           val ergoCtx = ErgoLikeContextTesting.dummy(createBox(0, TrueProp))
               .withBindings(1.toByte -> Constant[SType](x.asInstanceOf[SType#WrappedType], tpeA))
               .withBindings(bindings: _*)
-          val calcCtx = ergoCtx.toSigmaContext(IR, isCost = false).asInstanceOf[CostingDataContext]
+          val calcCtx = ergoCtx.toSigmaContext(isCost = false).asInstanceOf[CostingDataContext]
           val costCtx = calcCtx.copy(isCost = true)
           (costCtx, calcCtx)
       }

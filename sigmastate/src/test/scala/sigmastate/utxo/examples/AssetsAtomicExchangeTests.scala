@@ -9,7 +9,7 @@ import scorex.crypto.hash.Blake2b256
 import sigmastate.SCollection.SByteArray
 import sigmastate._
 import sigmastate.Values.{LongConstant, BlockValue, Value, ByteArrayConstant, ErgoTree, ValDef, ValUse}
-import sigmastate.eval.CSigmaProp
+import sigmastate.eval.{CSigmaProp, IRContextFactoryImpl}
 import sigmastate.eval.Extensions._
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.utxo._
@@ -39,7 +39,8 @@ import special.sigma.Extensions._
   * //todo: make an example of multiple orders being matched
   */
 class AssetsAtomicExchangeTests extends SigmaTestingCommons { suite =>
-  lazy val spec = TestContractSpec(suite)(new TestingIRContext)
+  implicit val irFactory = new IRContextFactoryImpl(new TestingIRContext)
+  lazy val spec = TestContractSpec(suite)
   private lazy val tokenId: Coll[Byte] = spec.Coll(Blake2b256("token1"))
   lazy val buyer = spec.ProvingParty("Alice")
   lazy val seller = spec.ProvingParty("Bob")

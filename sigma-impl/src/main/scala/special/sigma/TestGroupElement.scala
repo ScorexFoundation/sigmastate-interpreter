@@ -3,8 +3,9 @@ package special.sigma
 import org.bouncycastle.math.ec.ECPoint
 import special.collection.Coll
 
+// TODO refactor: this class should be removed before v5.0
 abstract class TestGroupElement(private[sigma] val value: ECPoint) extends GroupElement {
-  val dsl: TestSigmaDslBuilder = new TestSigmaDslBuilder
+  def dsl: TestSigmaDslBuilder
 
   override def toString: String = s"GroupElement(${Extensions.showECPoint(value)})"
 

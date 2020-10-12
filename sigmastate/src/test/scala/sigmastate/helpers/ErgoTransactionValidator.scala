@@ -1,17 +1,17 @@
 package sigmastate.helpers
 
 import org.ergoplatform._
-import sigmastate.eval.IRContext
+import sigmastate.eval.{IRContext, IRContextFactory}
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.utxo.CostTable
 
-import scala.util.{Failure, Success}
+import scala.util.{Success, Failure}
 
-class ErgoLikeTestInterpreter(implicit override val IR: IRContext) extends ErgoLikeInterpreter {
+class ErgoLikeTestInterpreter(implicit val irFactory: IRContextFactory) extends ErgoLikeInterpreter {
   override type CTX = ErgoLikeContext
 }
 
-class ErgoTransactionValidator(implicit IR: IRContext) {
+class ErgoTransactionValidator(implicit irFactory: IRContextFactory) {
   val verifier = new ErgoLikeTestInterpreter()
 
   def validate(tx: ErgoLikeTransaction,

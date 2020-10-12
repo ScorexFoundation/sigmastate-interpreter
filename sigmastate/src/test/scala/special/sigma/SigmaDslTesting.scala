@@ -12,14 +12,14 @@ import scala.util.{Success, Failure, Try}
 import sigmastate.Values.{Constant, SValue, ConstantNode, ByteArrayConstant, IntConstant, ErgoTree}
 import scalan.RType
 import scalan.util.Extensions._
-import org.ergoplatform.dsl.{SigmaContractSyntax, TestContractSpec, ContractSpec}
+import org.ergoplatform.dsl.{SigmaContractSyntax, ContractSpec, TestContractSpec}
 import org.ergoplatform.validation.{ValidationRules, SigmaValidationSettings}
 import sigmastate.{eval, SSigmaProp, SType}
 import SType.AnyOps
 import org.ergoplatform.SigmaConstants.ScriptCostLimit
 import sigmastate.basics.DLogProtocol.{ProveDlog, DLogProverInput}
 import sigmastate.basics.{SigmaProtocol, SigmaProtocolPrivateInput, SigmaProtocolCommonInput}
-import sigmastate.eval.{CompiletimeIRContext, Evaluation, CostingBox, SigmaDsl, IRContext, CostingDataContext}
+import sigmastate.eval.{CompiletimeIRContext, Evaluation, IRContextFactory, CostingBox, SigmaDsl, IRContextFactoryImpl, IRContext, CostingDataContext}
 import sigmastate.eval.Extensions._
 import sigmastate.utils.Helpers._
 import sigmastate.lang.Terms.ValueOps
@@ -39,7 +39,8 @@ class SigmaDslTesting extends PropSpec
     with SigmaTestingData with SigmaContractSyntax
     with SigmaTypeGens { suite =>
 
-  lazy val spec: ContractSpec = TestContractSpec(suite)(new TestingIRContext)
+  implicit lazy val irFactory = new IRContextFactoryImpl(new TestingIRContext)
+  lazy val spec: ContractSpec = TestContractSpec(suite)
 
   override def contractEnv: ScriptEnv = Map()
 
@@ -94,8 +95,10 @@ class SigmaDslTesting extends PropSpec
     indices <- Gen.containerOfN[Array, Int](nIndexes, Gen.choose(0, arrLength - 1))
   } yield indices
 
-  class FeatureProvingInterpreter extends ErgoLikeInterpreter()(new CompiletimeIRContext) with ProverInterpreter {
+  class FeatureProvingInterpreter extends ErgoLikeInterpreter with ProverInterpreter {
     override type CTX = ErgoLikeContext
+
+    override protected val irFactory: IRContextFactory = new IRContextFactoryImpl(new CompiletimeIRContext)
 
     def decodeSecretInput(decimalStr: String): DLogProverInput = DLogProverInput(BigInt(decimalStr).bigInteger)
 
@@ -305,7 +308,7 @@ class SigmaDslTesting extends PropSpec
         // Add additional oparations which are not yet implemented in ErgoScript compiler
         val multisig = sigmastate.AtLeast(
           IntConstant(2),
-          Seq(
+          Array(
             pkAlice,
             DeserializeRegister(ErgoBox.R5, SSigmaProp),  // deserialize pkBob
             DeserializeContext(2, SSigmaProp)))           // deserialize pkCarol
@@ -359,9 +362,10 @@ class SigmaDslTesting extends PropSpec
 
       val pr = prover.prove(compiledTree, ergoCtx, fakeMessage).getOrThrow
 
-      implicit val IR: IRContext = createIR()
-
-      val verifier = new ErgoLikeInterpreter() { type CTX = ErgoLikeContext }
+      val verifier = new ErgoLikeInterpreter() {
+        type CTX = ErgoLikeContext
+        override protected val irFactory: IRContextFactory = new IRContextFactoryImpl(suite.createIR())
+      }
 
       val verificationCtx = ergoCtx.withExtension(pr.extension)
 
@@ -430,7 +434,7 @@ class SigmaDslTesting extends PropSpec
     FeatureTest(AddedFeature, script, scalaFunc, Option(expectedExpr), oldImpl, newImpl)
   }
 
-  val contextGen: Gen[Context] = ergoLikeContextGen.map(c => c.toSigmaContext(createIR(), isCost = false))
+  val contextGen: Gen[Context] = ergoLikeContextGen.map(c => c.toSigmaContext(isCost = false))
   implicit val arbContext: Arbitrary[Context] = Arbitrary(contextGen)
 
   /** NOTE, this should be `def` to allow overriding of generatorDrivenConfig in derived Spec classes. */
@@ -467,7 +471,7 @@ class SigmaDslTesting extends PropSpec
        printTestCases: Boolean = PrintTestCasesDefault,
        failOnTestVectors: Boolean = FailOnTestVectorsDefault,
        preGeneratedSamples: Option[Seq[A]] = None): Unit = {
-
+    System.gc() // force GC to avoid occasional OOM exception
     val table = Table(("x", "y"), cases:_*)
     forAll(table) { (x: A, expectedRes: Try[B]) =>
       val res = f.checkEquality(x, printTestCases).map(_._1)

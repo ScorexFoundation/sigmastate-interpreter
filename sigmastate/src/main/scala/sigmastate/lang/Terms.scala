@@ -11,6 +11,8 @@ import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.lang.TransformingSigmaBuilder._
 
 import scala.language.implicitConversions
+import scala.collection.mutable.WrappedArray
+import spire.syntax.all.cfor
 
 object Terms {
 
@@ -99,7 +101,7 @@ object Terms {
     * compilation environment value. */
   case class Ident(name: String, tpe: SType = NoType) extends Value[SType] {
     override def companion = Ident
-    override def opType: SFunc = SFunc(Vector(), tpe)
+    override def opType: SFunc = SFunc(WrappedArray.empty, tpe)
   }
   object Ident extends ValueCompanion {
     override def opCode: OpCode = OpCodes.Undefined
@@ -107,6 +109,10 @@ object Terms {
   }
 
   // TODO HF: move to sigmastate.Values
+  /** ErgoTree node which represents application of function `func` to the given arguments.
+    * @param func expression which evaluates to a function
+    * @param args arguments of the function application
+    */
   case class Apply(func: Value[SType], args: IndexedSeq[Value[SType]]) extends Value[SType] {
     override def companion = Apply
     override lazy val tpe: SType = func.tpe match {
@@ -114,7 +120,15 @@ object Terms {
       case tColl: SCollectionType[_] => tColl.elemType
       case _ => NoType
     }
-    override def opType: SFunc = SFunc(Vector(func.tpe +: args.map(_.tpe):_*), tpe)
+    override lazy val opType: SFunc = {
+      val nArgs = args.length
+      val argTypes = new Array[SType](nArgs + 1)
+      argTypes(0) = func.tpe
+      cfor(0)(_ < nArgs, _ + 1) { i =>
+        argTypes(i + 1) = args(i).tpe
+      }
+      SFunc(argTypes, tpe)
+    }
   }
   object Apply extends ValueCompanion {
     override def opCode: OpCode = OpCodes.FuncApplyCode

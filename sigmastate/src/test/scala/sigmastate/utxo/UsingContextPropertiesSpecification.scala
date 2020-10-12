@@ -1,7 +1,7 @@
 package sigmastate.utxo
 
 import sigmastate.TrivialProp
-import sigmastate.eval.{IRContext, CSigmaProp}
+import sigmastate.eval.{IRContext, CSigmaProp, IRContextFactoryImpl}
 import sigmastate.eval.Extensions._
 import special.sigma.Context
 import sigmastate.helpers.SigmaTestingCommons
@@ -10,7 +10,8 @@ import org.ergoplatform.ErgoBox
 import scorex.crypto.hash.Blake2b256
 
 class UsingContextPropertiesSpecification extends SigmaTestingCommons { suite =>
-  lazy val spec = TestContractSpec(suite)(new TestingIRContext)
+  implicit val irFactory = new IRContextFactoryImpl(new TestingIRContext)
+  lazy val spec = TestContractSpec(suite)
   lazy val prover = spec.ProvingParty("Alice")
   private implicit lazy val IR: IRContext = spec.IR
 

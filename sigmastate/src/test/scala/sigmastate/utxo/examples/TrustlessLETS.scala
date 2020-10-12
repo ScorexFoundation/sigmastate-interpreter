@@ -2,13 +2,17 @@
 package sigmastate.utxo.examples
 
 import scorex.crypto.hash.Blake2b256
+import sigmastate.eval.IRContextFactoryImpl
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter._
 import sigmastate.lang.Terms._
 
 class TrustlessLETS1 extends SigmaTestingCommons {
-  private implicit lazy val IR: TestingIRContext = new TestingIRContext
+  def createIR = new TestingIRContext
+  private implicit lazy val IR: TestingIRContext = createIR
+  implicit lazy val irFactory = new IRContextFactoryImpl(createIR)
+
   property("Evaluation - LETS1 Example") {
 
     val rateTokenID = Blake2b256("rate")
@@ -118,6 +122,8 @@ class TrustlessLETS2 extends SigmaTestingCommons {
   //  Non-refundable ergs
   //  Zero sum
   private implicit lazy val IR: TestingIRContext = new TestingIRContext
+  private implicit lazy val irFactory = new IRContextFactoryImpl(IR)
+
   property("Evaluation - LETS2 Example") {
 
     val rateTokenID = Blake2b256("rate")
@@ -221,6 +227,8 @@ class TrustlessLETS3 extends SigmaTestingCommons {
   //  Positive sum
 
   private implicit lazy val IR: TestingIRContext = new TestingIRContext
+  private implicit lazy val irFactory = new IRContextFactoryImpl(IR)
+
   property("Evaluation - LETS3 Example") {
 
     val rateTokenID = Blake2b256("rate")
@@ -334,6 +342,8 @@ class TrustlessLETS4 extends SigmaTestingCommons {
   //  Non-refundable ergs
   //  Positive sum
   private implicit lazy val IR: TestingIRContext = new TestingIRContext
+  private implicit lazy val irFactory = new IRContextFactoryImpl(IR)
+
   property("Evaluation - LETS4 Example") {
 
     val rateTokenID = Blake2b256("rate")

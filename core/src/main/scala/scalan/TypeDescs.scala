@@ -81,7 +81,7 @@ abstract class TypeDescs extends Base { self: Scalan =>
 //    }
 //  }
 
-  // TODO optimize performance hot spot (45% of invokeUnlifted time)
+  // TODO optimize performance hot spot (45% of invokeUnlifted time), reduce allocation of Some
   final def getSourceValues(dataEnv: DataEnv, forWrapper: Boolean, stagedValues: AnyRef*): Seq[AnyRef] = {
     import OverloadHack._
     val limit = stagedValues.length
@@ -151,7 +151,7 @@ abstract class TypeDescs extends Base { self: Scalan =>
       !!!(s"Cannot get Liftable instance for $this")
 
     final lazy val sourceType: RType[_] = liftable.sourceType
-    protected def collectMethods: Map[Method, MethodDesc] = Map()
+    protected def collectMethods: Map[Method, MethodDesc] = Map() // TODO optimize: all implementations
     protected lazy val methods: Map[Method, MethodDesc] = collectMethods
 
     // TODO benchamrk against the version below it
@@ -244,6 +244,7 @@ abstract class TypeDescs extends Base { self: Scalan =>
         m.getName
     }
 
+    // TODO optimize
     /** Build a mapping between methods of staged class and the corresponding methods of source class.
       * The methods are related using names.
       * The computed mapping can be used to project MethodCalls IR nodes back to the corresponding
