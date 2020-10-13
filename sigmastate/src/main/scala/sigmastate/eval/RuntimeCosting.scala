@@ -1232,7 +1232,11 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
 
       case BlockValue(binds, res) =>
         var curEnv = env
-        for (vd @ ValDef(n, _, b) <- binds) {
+        val len = binds.length
+        cfor(0)(_ < len, _ + 1) { i =>
+          val vd = binds(i).asInstanceOf[ValDef]
+          val n = vd.id
+          val b = vd.rhs
           if (curEnv.contains(n)) error(s"Variable $n already defined ($n = ${curEnv(n)}", vd.sourceContext.toOption)
           val bC = evalNode(ctx, curEnv, b)
           curEnv = curEnv + (n -> bC)
