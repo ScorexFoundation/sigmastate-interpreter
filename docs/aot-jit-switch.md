@@ -21,6 +21,7 @@ Term             | Description
  skip-accept     | skip script evaluation (both costing and verification) and treat it as True proposition (accept spending) 
  skip-reject     | skip script evaluation (both costing and verification) and treat it as False proposition (reject spending) 
  Validation Context | a tuple of (`Block Type`, `SF Status`, `Script Version`)
+ Validation Action | an action taken by a node in the given validation context
  SF Status       | soft-fork status of the block. The status is `active` when enough votes have been collected.
 
 ### Script Validation Rules Summary
@@ -32,7 +33,7 @@ blocks being created by miners as `candidate` and those distributed across netwo
 
 Thus, we have 8 different validation contexts multiplied by 2 node versions
 having in total 16 validation rules as summarized in the following table, which 
-specifies the action a node have to take in the given contexts.
+specifies the _validation action_ a node have to take in the given contexts.
 
 Rule#| SF Status| Block Type| Script Version | Release | Validation Action 
 -----|----------|-----------|----------------|---------|--------
@@ -58,6 +59,11 @@ Rule#| SF Status| Block Type| Script Version | Release | Validation Action
 
 Note the following properties of the validation rules.
 
+0. Please note that block creation is not a part of the Ergo consensus protocol, and
+miners can do whatever they want, in particulare completely custom block assembly. For
+this reason, the rules for `candidate` blocks are _reference implementation_ only, and
+nodes are not required to follow them exactly.
+
 1. Rules 1-4 specify creation of new candidate blocks _before_ soft-fork is activated. 
 They require that the behaviour of v4.0 and v5.0 nodes should be identical.
 
@@ -82,8 +88,8 @@ consistency of validation actions across v4.0 and v5.0 nodes.
 implementations are no longer used in `Validation Action` of v5.0 nodes. The only context
 where v5.0 node needs to use AOT based verification is given by Rule 6, which is to verify 
 a v1 script in a historical mined block before SF is activated. 
-However relying on _Prop 3_ we can replace Rule 6 in a new v5.0.1 release with the
-following _equivalent_ rule
+However relying on [Prop 3](#equivalence-properties-of-validation-actions) we can replace
+Rule 6 in a new v5.0.1 release with the following _equivalent_ rule
 
 Rule#| SF Status | Block Type| Script Version | Release | Validation Action 
 -----|-----------|-----------|----------------|---------|--------
@@ -119,7 +125,7 @@ Similar to rules 3 and 4.
 
 #### Rules 9 and 10
 These rules allow v1 scripts to enter blockchain even after SF is activated (for backward
-compatibility with Apps).
+compatibility with applications).
 Now, after SF is activated, the majority consist of v5.0 nodes and they will do
 `R5.0-JIT-verify(Script v1)` which is equivalent to `R4.0-AOT-verify(Script v1)` due to 
 _Prop3_.
@@ -128,9 +134,9 @@ To understand this pair of rules it is important to remember that a specific ver
 ErgoTree (in this case v1) assumes the fixed semantics of all operations. This however
 doesn't restrict the interpreter implementations and we use this fact
 to switch from `R4.0-AOT-verify` to `R5.0-JIT-verify` relying on their equivalence
-property _Prop 3_.
+property [Prop 3](#equivalence-properties-of-validation-actions).
 
-However, for backward compatibility with Apps we DON'T NEED equivalence of costing, hence 
+However, for backward compatibility with applications we DON'T NEED equivalence of costing, hence 
 exact cost estimation is not necessary. For this reason we have the relaxed condition in 
 _Prop4_, which means that any ScriptV1 admitted by `R4.0-AOT-cost` will also be admitted by
 `R5.0-JIT-cost`. For this reason, the v4.0 based application interacting with v5.0 node
@@ -177,8 +183,13 @@ _Prop 5._ ScriptV2 is rejected before SF is active:
 ### Other Notes
 
 - Since we are going to fix some bugs, the behaviour of v1 and v2 scripts in general not
-required to be precisely equivalent. So while old apps are supported unchanged, new apps
-are encouraged to use new ErgoScript frontend which will compile v2 scripts.
+required to be precisely equivalent.  This is because `R5.0-JIT-verify` supports both v1
+and v2 scripts so that `R5.0-JIT-verify(Script_v1) == R4.0-AOT-verify(Script_v1)` due to
+[Prop 1](#equivalence-properties-of-validation-actions) and `R5.0-JIT-verify(Script_v2)`
+may implement an interpreter for a completely different language. Of cause, we don't want it to be _completely_
+different, in particular to ease migration.
+So while old apps are supported unchanged, new apps are encouraged to use new ErgoScript
+frontend which will compile v2 scripts.
 
 - Also, on v1 and v2, it would be better to avoid changing semantics of existing ops,
 deprecation old and introducing new ones is cleaner
