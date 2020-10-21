@@ -15,6 +15,10 @@ import sigmastate.Values._
 import sigmastate.eval.Evaluation
 import special.sigma.AvlTree
 import SType.AnyOps
+import scorex.util.encode.Base16
+import sigmastate.lang.DeserializationSigmaBuilder
+import sigmastate.lang.exceptions.SerializerException
+import sigmastate.utils.Helpers
 
 class ConstantSerializerSpecification extends TableSerializationSpecification {
 
@@ -112,4 +116,23 @@ class ConstantSerializerSpecification extends TableSerializationSpecification {
   tableRoundTripTest("Specific objects serializer round trip")
   tablePredefinedBytesTest("Specific objects deserialize from predefined bytes")
 
+  property("Element type checked in collection of Boolean") {
+    val builder = DeserializationSigmaBuilder
+    val ser = ConcreteCollectionBooleanConstantSerializer(builder.mkConcreteCollection)
+
+    // successfull case
+    ser.toBytes(ConcreteCollection(Array(TrueLeaf), SBoolean)) shouldBe Base16.decode("0101").get
+
+    assertExceptionThrown( {
+      val coll = ConcreteCollection(
+        Array(TrueLeaf, ByteConstant(0).asInstanceOf[BoolValue]),
+        SBoolean)
+      ser.toBytes(coll)
+    },
+    {
+      case e: SerializerException =>
+        e.getMessage.contains("Expected collection of BooleanConstant values")
+      case _ => false
+    })
+  }
 }
