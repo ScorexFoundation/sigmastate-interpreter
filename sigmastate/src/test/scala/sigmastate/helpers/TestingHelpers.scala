@@ -9,6 +9,8 @@ import org.ergoplatform.ErgoBox.{AdditionalRegisters, allZerosModifierId, TokenI
 import sigmastate.eval.CostingSigmaDslBuilder
 import sigmastate.eval._
 
+import scala.collection.mutable.WrappedArray
+
 // TODO refactor: unification is required between two hierarchies of tests
 //  and as part of it, more methods can be moved to TestingHelpers
 
@@ -18,7 +20,7 @@ object TestingHelpers {
   def testBox(value: Long,
               ergoTree: ErgoTree,
               creationHeight: Int,
-              additionalTokens: Seq[(TokenId, Long)] = Nil,
+              additionalTokens: Seq[(TokenId, Long)] = WrappedArray.empty,
               additionalRegisters: AdditionalRegisters = Map.empty,
               transactionId: ModifierId = allZerosModifierId,
               boxIndex: Short = 0): ErgoBox =
@@ -29,14 +31,14 @@ object TestingHelpers {
 
   def createBox(value: Long,
                 proposition: ErgoTree,
-                additionalTokens: Seq[(Digest32, Long)] = Seq(),
-                additionalRegisters: AdditionalRegisters = Map())
+                additionalTokens: Seq[(Digest32, Long)] = WrappedArray.empty,
+                additionalRegisters: AdditionalRegisters = Map.empty)
   = testBox(value, proposition, 0, additionalTokens, additionalRegisters)
 
   def createBox(value: Long,
                 proposition: ErgoTree,
                 creationHeight: Int)
-  = testBox(value, proposition, creationHeight, Seq(), Map(), ErgoBox.allZerosModifierId)
+  = testBox(value, proposition, creationHeight, WrappedArray.empty, Map.empty, ErgoBox.allZerosModifierId)
 
   /** Copies the given box allowing also to update fields. */
   def copyBox(box: ErgoBox)(
@@ -64,13 +66,13 @@ object TestingHelpers {
     * in our test cases
     */
   def createTransaction(outputCandidates: IndexedSeq[ErgoBoxCandidate]): ErgoLikeTransaction = {
-    new ErgoLikeTransaction(IndexedSeq(), IndexedSeq(), outputCandidates)
+    new ErgoLikeTransaction(WrappedArray.empty, WrappedArray.empty, outputCandidates)
   }
 
-  def createTransaction(box: ErgoBoxCandidate): ErgoLikeTransaction = createTransaction(IndexedSeq(box))
+  def createTransaction(box: ErgoBoxCandidate): ErgoLikeTransaction = createTransaction(Array(box))
 
   def createTransaction(dataInputs: IndexedSeq[ErgoBox],
                         outputCandidates: IndexedSeq[ErgoBoxCandidate]): ErgoLikeTransaction =
-    new ErgoLikeTransaction(IndexedSeq(), dataInputs.map(b => DataInput(b.id)), outputCandidates)
+    new ErgoLikeTransaction(WrappedArray.empty, dataInputs.map(b => DataInput(b.id)), outputCandidates)
 
 }
