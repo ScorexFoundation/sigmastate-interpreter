@@ -24,6 +24,7 @@ import sigmastate.eval.Extensions._
 import sigmastate.utils.Helpers._
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.helpers.{ErgoLikeContextTesting, SigmaPPrint}
+import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.{ProverResult, ContextExtension, ProverInterpreter}
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo.{DeserializeContext, DeserializeRegister}
@@ -325,7 +326,7 @@ class SigmaDslTesting extends PropSpec
           // for execution of verify instead of a new dummy context.
           val self = ctx.selfBox.asInstanceOf[CostingBox]
           val newSelf = self.copy(
-            ebox = self.ebox.withUpdatedRegisters(newRegisters)
+            ebox = updatedRegisters(self.ebox, newRegisters)
           )
 
           // We add ctx as it's own variable with id = 1

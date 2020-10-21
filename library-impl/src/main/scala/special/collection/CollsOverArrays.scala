@@ -305,7 +305,7 @@ class CollOverArrayBuilder extends CollBuilder {
       val rs = emptyColl(pt.tSnd)
       asColl[T](pairColl(ls, rs))
     case _ =>
-      new CollOverArray[T](Array[T]())
+      new CollOverArray[T](cT.emptyArray)
   }
 
   @NeverInline

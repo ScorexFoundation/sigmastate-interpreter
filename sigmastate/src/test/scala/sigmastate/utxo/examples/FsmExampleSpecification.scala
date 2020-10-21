@@ -11,6 +11,7 @@ import sigmastate._
 import sigmastate.eval._
 import sigmastate.lang.Terms._
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo._
@@ -133,11 +134,11 @@ class FsmExampleSpecification extends SigmaTestingCommons {
 
     //creating a box in an initial state
 
-    val fsmBox1 = ErgoBox.create(100, fsmScript, 0, Seq(), Map(fsmDescRegister -> AvlTreeConstant(treeData),
+    val fsmBox1 = testBox(100, fsmScript, 0, Seq(), Map(fsmDescRegister -> AvlTreeConstant(treeData),
       currentStateRegister -> ByteConstant(state1Id)))
 
     //successful transition from state1 to state2
-    val fsmBox2 = ErgoBox.create(100, fsmScript, 0, Seq(), Map(fsmDescRegister -> AvlTreeConstant(treeData),
+    val fsmBox2 = testBox(100, fsmScript, 0, Seq(), Map(fsmDescRegister -> AvlTreeConstant(treeData),
       currentStateRegister -> ByteConstant(state2Id)))
 
     avlProver.performOneOperation(Lookup(ADKey @@ (transition12 ++ script1Hash)))
@@ -181,7 +182,7 @@ class FsmExampleSpecification extends SigmaTestingCommons {
 
     //Box for state3
 
-    val fsmBox3 = ErgoBox.create(100, fsmScript, 0, Seq(), Map(fsmDescRegister -> AvlTreeConstant(treeData),
+    val fsmBox3 = testBox(100, fsmScript, 0, Seq(), Map(fsmDescRegister -> AvlTreeConstant(treeData),
       currentStateRegister -> ByteConstant(state3Id)))
 
     //transition from state1 to state3 is impossible
@@ -235,7 +236,7 @@ class FsmExampleSpecification extends SigmaTestingCommons {
 
     //clearing FSM out of the box in the final state
 
-    val freeBox = ErgoBox.create(100, ErgoScriptPredef.TrueProp, 0)
+    val freeBox = testBox(100, ErgoScriptPredef.TrueProp, 0)
 
     avlProver.performOneOperation(Lookup(ADKey @@ (transition30 ++ script4Hash)))
     val transition30Proof = avlProver.generateProof()

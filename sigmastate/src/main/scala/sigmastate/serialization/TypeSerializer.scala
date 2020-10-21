@@ -6,6 +6,7 @@ import org.ergoplatform.validation.ValidationRules.{CheckPrimitiveTypeCode, Chec
 import sigmastate._
 import sigmastate.lang.exceptions.InvalidTypePrefix
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
+import spire.syntax.all.cfor
 
 /** Serialization of types according to specification in TypeSerialization.md. */
 object TypeSerializer extends ByteBufferSerializer[SType] {
@@ -174,7 +175,10 @@ object TypeSerializer extends ByteBufferSerializer[SType] {
       c match {
         case STuple.TupleTypeCode => {
           val len = r.getUByte()
-          val items = (0 until len).map(_ => deserialize(r, depth + 1))
+          val items = new Array[SType](len)
+          cfor(0)(_ < len, _ + 1) { i =>
+            items(i) = deserialize(r, depth + 1)
+          }
           STuple(items)
         }
         case SAny.typeCode => SAny

@@ -1,12 +1,12 @@
 package special.sigma
 
-import org.ergoplatform.ErgoBox
 import scalan._
 import special.collection.{Coll, CollOverArrayBuilder}
 import scalan.RType
 import sigmastate.{AvlTreeData, TrivialProp}
 import sigmastate.eval._
 import sigmastate.eval.Extensions._
+import sigmastate.helpers.TestingHelpers._
 
 trait ContractsTestkit {
   val R0 = 0.toByte;
@@ -57,7 +57,7 @@ trait ContractsTestkit {
 
   val AliceId = Array[Byte](1) // 0x0001
   def newAliceBox(id: Byte, value: Long): Box = {
-    val ergoBox = ErgoBox.create(value, TrivialProp.TrueProp.toSigmaProp, 0, Seq(), Map())
+    val ergoBox = testBox(value, TrivialProp.TrueProp.toSigmaProp, 0, Seq(), Map())
     new CostingBox(false, ergoBox)
   }
 

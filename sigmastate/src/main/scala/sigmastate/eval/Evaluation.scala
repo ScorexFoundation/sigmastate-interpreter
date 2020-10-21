@@ -912,7 +912,7 @@ object Evaluation {
     case PreHeaderRType => SPreHeader
     case SigmaPropRType => SSigmaProp
     case SigmaBooleanRType => SSigmaProp
-    case tup: TupleType => STuple(tup.items.map(t => rtypeToSType(t)).toIndexedSeq)
+    case tup: TupleType => STuple(tup.items.map(t => rtypeToSType(t)))
     case at: ArrayType[_] => SCollection(rtypeToSType(at.tA))
     case ct: CollType[_] => SCollection(rtypeToSType(ct.tItem))
     case ft: FuncType[_,_] => SFunc(rtypeToSType(ft.tDom), rtypeToSType(ft.tRange))

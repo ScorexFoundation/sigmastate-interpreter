@@ -108,7 +108,7 @@ trait Interpreter extends ScorexLogging {
     * We can estimate cost of the tree evaluation only after this step.*/
   def applyDeserializeContext(context: CTX, exp: Value[SType]): (BoolValue, CTX) = {
     val currContext = new MutableCell(context)
-    val substRule = strategy[Value[_ <: SType]] { case x =>
+    val substRule = strategy[Any] { case x: SValue =>
       substDeserialize(currContext.value, { ctx: CTX => currContext.value = ctx }, x)
     }
     val Some(substTree: SValue) = everywherebu(substRule)(exp)
@@ -286,7 +286,7 @@ trait Interpreter extends ScorexLogging {
     * per the verifier algorithm of the leaf's Sigma-protocol.
     * If the verifier algorithm of the Sigma-protocol for any of the leaves rejects, then reject the entire proof.
     */
-  val computeCommitments: Strategy = everywherebu(rule[UncheckedSigmaTree] {
+  val computeCommitments: Strategy = everywherebu(rule[Any] {
     case c: UncheckedConjecture => c // Do nothing for internal nodes
 
     case sn: UncheckedSchnorr =>
@@ -297,7 +297,7 @@ trait Interpreter extends ScorexLogging {
       val (a, b) = DiffieHellmanTupleInteractiveProver.computeCommitment(dh.proposition, dh.challenge, dh.secondMessage)
       dh.copy(commitmentOpt = Some(FirstDiffieHellmanTupleProverMessage(a, b)))
 
-    case _ => ???
+    case _: UncheckedSigmaTree => ???
   })
 
   def verify(ergoTree: ErgoTree,

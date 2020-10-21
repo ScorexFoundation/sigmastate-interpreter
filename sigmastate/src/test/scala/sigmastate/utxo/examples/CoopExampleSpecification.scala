@@ -7,6 +7,7 @@ import sigmastate.basics.DLogProtocol.ProveDlog
 import scorex.crypto.hash.Blake2b256
 import sigmastate.Values.{ByteArrayConstant, SigmaPropValue, BooleanConstant}
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, SigmaTestingCommons, ErgoLikeTestInterpreter}
+import sigmastate.helpers.TestingHelpers._
 import sigmastate.lang.Terms._
 import sigmastate.AvlTreeData
 
@@ -127,11 +128,11 @@ class CoopExampleSpecification extends SigmaTestingCommons {
        """.stripMargin).asSigmaProp
 
     {
-      val self = ErgoBox.create(totalValue, spendingProp1, 0)
-      val output1 = ErgoBox.create(totalValue / 4, pubkeyA, 0)
-      val output2 = ErgoBox.create(totalValue / 4, pubkeyB, 0)
-      val output3 = ErgoBox.create(totalValue / 4, pubkeyC, 0)
-      val output4 = ErgoBox.create(totalValue / 4, pubkeyD, 0)
+      val self = testBox(totalValue, spendingProp1, 0)
+      val output1 = testBox(totalValue / 4, pubkeyA, 0)
+      val output2 = testBox(totalValue / 4, pubkeyB, 0)
+      val output3 = testBox(totalValue / 4, pubkeyC, 0)
+      val output4 = testBox(totalValue / 4, pubkeyD, 0)
       val tx = mkTxFromOutputs(output1, output2, output3, output4)
       val ctx = mkCtx(5001, tx, self)
       successProofTest(spendingProp1, ctx, coopA, verifier)
@@ -167,11 +168,11 @@ class CoopExampleSpecification extends SigmaTestingCommons {
       * Withdraw successfully
       */
     {
-      val self = ErgoBox.create(totalValue, spendingProp2, 0)
-      val output1 = ErgoBox.create(totalValue / 4, pubkeyA, 0)
-      val output2 = ErgoBox.create(totalValue / 4, pubkeyB, 0)
-      val output3 = ErgoBox.create(totalValue / 4, pubkeyC, 0)
-      val output4 = ErgoBox.create(totalValue / 4, pubkeyD, 0)
+      val self = testBox(totalValue, spendingProp2, 0)
+      val output1 = testBox(totalValue / 4, pubkeyA, 0)
+      val output2 = testBox(totalValue / 4, pubkeyB, 0)
+      val output3 = testBox(totalValue / 4, pubkeyC, 0)
+      val output4 = testBox(totalValue / 4, pubkeyD, 0)
       val tx = mkTxFromOutputs(output1, output2, output3, output4)
       val ctx = mkCtx(5001, tx, self)
       successProofTest(spendingProp2, ctx, coopA, verifier)
@@ -181,9 +182,9 @@ class CoopExampleSpecification extends SigmaTestingCommons {
       * Won't spend more then defined share
       */
     {
-      val self = ErgoBox.create(totalValue, spendingProp2, 0)
-      val output1 = ErgoBox.create(totalValue / 2, pubkeyB, 0)
-      val output2 = ErgoBox.create(totalValue / 2, pubkeyC, 0)
+      val self = testBox(totalValue, spendingProp2, 0)
+      val output1 = testBox(totalValue / 2, pubkeyB, 0)
+      val output2 = testBox(totalValue / 2, pubkeyC, 0)
       val tx = mkTxFromOutputs(output1, output2)
       val ctx = mkCtx(5001, tx, self = self)
       failingProofTest(spendingProp2, ctx, coopA)
@@ -193,11 +194,11 @@ class CoopExampleSpecification extends SigmaTestingCommons {
       * Won't spend before minimal height
       */
     {
-      val self = ErgoBox.create(totalValue, spendingProp2, 0)
-      val output1 = ErgoBox.create(totalValue / 4, pubkeyA, 0)
-      val output2 = ErgoBox.create(totalValue / 4, pubkeyB, 0)
-      val output3 = ErgoBox.create(totalValue / 4, pubkeyC, 0)
-      val output4 = ErgoBox.create(totalValue / 4, pubkeyD, 0)
+      val self = testBox(totalValue, spendingProp2, 0)
+      val output1 = testBox(totalValue / 4, pubkeyA, 0)
+      val output2 = testBox(totalValue / 4, pubkeyB, 0)
+      val output3 = testBox(totalValue / 4, pubkeyC, 0)
+      val output4 = testBox(totalValue / 4, pubkeyD, 0)
       val tx = mkTxFromOutputs(output1, output2, output3, output4)
       val ctx = mkCtx(5000, tx, self)
       failingProofTest(spendingProp2, ctx, coopA)
@@ -220,11 +221,11 @@ class CoopExampleSpecification extends SigmaTestingCommons {
       * Will spend correctly if all the conditions are satisfied
       */
     {
-      val self = ErgoBox.create(totalValue, spendingProp3, 0)
-      val output1 = ErgoBox.create(totalValue / 4, pubkeyA, 0)
-      val output2 = ErgoBox.create(totalValue / 4, pubkeyB, 0)
-      val output3 = ErgoBox.create(totalValue / 4, pubkeyC, 0)
-      val output4 = ErgoBox.create(totalValue / 4, pubkeyD, 0)
+      val self = testBox(totalValue, spendingProp3, 0)
+      val output1 = testBox(totalValue / 4, pubkeyA, 0)
+      val output2 = testBox(totalValue / 4, pubkeyB, 0)
+      val output3 = testBox(totalValue / 4, pubkeyC, 0)
+      val output4 = testBox(totalValue / 4, pubkeyD, 0)
       val tx = mkTxFromOutputs(output1, output2, output3, output4)
       val ctx = mkCtx(5001, tx, self)
       successProofTest(spendingProp2, ctx, coopA, verifier)
@@ -258,11 +259,11 @@ class CoopExampleSpecification extends SigmaTestingCommons {
        """.stripMargin).asSigmaProp
 
     {
-      val self = ErgoBox.create(totalValue, spendingProp4, 0)
-      val output1 = ErgoBox.create(totalValue / 4, pubkeyA, 0)
-      val output2 = ErgoBox.create(totalValue / 4, pubkeyB, 0)
-      val output3 = ErgoBox.create(totalValue / 4, pubkeyC, 0)
-      val output4 = ErgoBox.create(totalValue / 4, pubkeyD, 0)
+      val self = testBox(totalValue, spendingProp4, 0)
+      val output1 = testBox(totalValue / 4, pubkeyA, 0)
+      val output2 = testBox(totalValue / 4, pubkeyB, 0)
+      val output3 = testBox(totalValue / 4, pubkeyC, 0)
+      val output4 = testBox(totalValue / 4, pubkeyD, 0)
       val tx = mkTxFromOutputs(output1, output2, output3, output4)
       val ctx = mkCtx(5001, tx, self)
       successProofTest(spendingProp4, ctx, coopA, verifier)
@@ -271,8 +272,8 @@ class CoopExampleSpecification extends SigmaTestingCommons {
     val spendingProp5 = compile(spendingEnv, "businessKey").asSigmaProp
 
     {
-      val self = ErgoBox.create(totalValue, spendingProp5, 0)
-      val output = ErgoBox.create(totalValue, businessKey, 0)
+      val self = testBox(totalValue, spendingProp5, 0)
+      val output = testBox(totalValue, businessKey, 0)
       val tx = mkTxFromOutputs(output)
       val ctx = mkCtx(1, tx, self)
       failingProofTest(spendingProp5, ctx, coopA)
@@ -311,12 +312,12 @@ class CoopExampleSpecification extends SigmaTestingCommons {
       * Check votingSuccess && properSpending case
       */
     {
-      val self = ErgoBox.create(totalValue + 1L, thresholdProp, 0)
-      val output1 = ErgoBox.create(toolValue, spendingProp1, 0)
-      val output2 = ErgoBox.create(constructionValue, spendingProp3, 0)
-      val output3 = ErgoBox.create(totalValue - toolValue - constructionValue, spendingProp5, 0)
+      val self = testBox(totalValue + 1L, thresholdProp, 0)
+      val output1 = testBox(toolValue, spendingProp1, 0)
+      val output2 = testBox(constructionValue, spendingProp3, 0)
+      val output3 = testBox(totalValue - toolValue - constructionValue, spendingProp5, 0)
       //hack for avoiding None.get exception.
-      val dummy = ErgoBox.create(0L, ErgoScriptPredef.TrueProp, 0)
+      val dummy = testBox(0L, ErgoScriptPredef.TrueProp, 0)
       val tx = mkTxFromOutputs(output1, output2, output3, dummy)
       val ctx = mkCtx(2000, tx, self)
 
@@ -331,11 +332,11 @@ class CoopExampleSpecification extends SigmaTestingCommons {
       * Check withdraw success
       */
     {
-      val self = ErgoBox.create(totalValue + 1L, thresholdProp, 0)
-      val output0 = ErgoBox.create(totalValue / 4, pubkeyA, 0)
-      val output1 = ErgoBox.create(totalValue / 4, pubkeyB, 0)
-      val output2 = ErgoBox.create(totalValue / 4, pubkeyC, 0)
-      val output3 = ErgoBox.create(totalValue / 4, pubkeyD, 0)
+      val self = testBox(totalValue + 1L, thresholdProp, 0)
+      val output0 = testBox(totalValue / 4, pubkeyA, 0)
+      val output1 = testBox(totalValue / 4, pubkeyB, 0)
+      val output2 = testBox(totalValue / 4, pubkeyC, 0)
+      val output3 = testBox(totalValue / 4, pubkeyD, 0)
       val tx = mkTxFromOutputs(output0, output1, output2, output3)
       val ctx = mkCtx(2000, tx, self)
       successProofTest(thresholdProp, ctx, business, verifier)
@@ -345,11 +346,11 @@ class CoopExampleSpecification extends SigmaTestingCommons {
       * Check withdraw failure. Not enough height case.
       */
     {
-      val self = ErgoBox.create(totalValue + 1L, thresholdProp, 0)
-      val output0 = ErgoBox.create(totalValue / 4, pubkeyA, 0)
-      val output1 = ErgoBox.create(totalValue / 4, pubkeyB, 0)
-      val output2 = ErgoBox.create(totalValue / 4, pubkeyC, 0)
-      val output3 = ErgoBox.create(totalValue / 4, pubkeyD, 0)
+      val self = testBox(totalValue + 1L, thresholdProp, 0)
+      val output0 = testBox(totalValue / 4, pubkeyA, 0)
+      val output1 = testBox(totalValue / 4, pubkeyB, 0)
+      val output2 = testBox(totalValue / 4, pubkeyC, 0)
+      val output3 = testBox(totalValue / 4, pubkeyD, 0)
       val tx = mkTxFromOutputs(output0, output1, output2, output3)
       val ctx = mkCtx(1000, tx, self)
       failingProofTest(thresholdProp, ctx, business)
@@ -370,8 +371,8 @@ class CoopExampleSpecification extends SigmaTestingCommons {
       * height not higher, total value is equal
       */
     {
-      val self = ErgoBox.create(totalValue, inputProp, 0)
-      val output = ErgoBox.create(totalValue, thresholdProp, 0)
+      val self = testBox(totalValue, inputProp, 0)
+      val output = testBox(totalValue, thresholdProp, 0)
       val tx = mkTxFromOutputs(output)
       val ctx = mkCtx(1000, tx, self)
       successProofTest(inputProp, ctx, coopA, verifier)
@@ -381,8 +382,8 @@ class CoopExampleSpecification extends SigmaTestingCommons {
       * total value is lower, height is higher
       */
     {
-      val self = ErgoBox.create(totalValue - 1L, inputProp, 0)
-      val output = ErgoBox.create(totalValue - 1L, thresholdProp, 0)
+      val self = testBox(totalValue - 1L, inputProp, 0)
+      val output = testBox(totalValue - 1L, thresholdProp, 0)
       val tx = mkTxFromOutputs(output)
       val ctx = mkCtx(1001, tx, self)
       successProofTest(inputProp, ctx, coopA, verifier)
@@ -392,8 +393,8 @@ class CoopExampleSpecification extends SigmaTestingCommons {
       * negative condition
       */
     {
-      val self = ErgoBox.create(totalValue - 1L, inputProp, 0)
-      val output = ErgoBox.create(totalValue - 1L, thresholdProp, 0)
+      val self = testBox(totalValue - 1L, inputProp, 0)
+      val output = testBox(totalValue - 1L, thresholdProp, 0)
       val tx = mkTxFromOutputs(output)
       val ctx = mkCtx(1000, tx, self)
       failingProofTest(inputProp, ctx, coopA)

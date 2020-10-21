@@ -1,19 +1,20 @@
 package sigmastate.utxo.benchmarks
 
 
-import org.ergoplatform.{ErgoBox, ErgoLikeContext, ErgoLikeTransaction, ErgoScriptPredef}
+import org.ergoplatform.{ErgoLikeContext, ErgoScriptPredef}
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, SigmaTestingCommons}
+import sigmastate.helpers.TestingHelpers._
 import scalan.util.BenchmarkUtil._
 
 class CrowdfundingBenchmark extends SigmaTestingCommons {
   implicit lazy val IR = new TestingIRContext
   def createTestContext(contract: CrowdFundingContract): ErgoLikeContext = {
-    val outputToSpend = ErgoBox.create(10, ErgoScriptPredef.TrueProp, 0)
+    val outputToSpend = testBox(10, ErgoScriptPredef.TrueProp, 0)
     //First case: height < timeout, project is able to claim amount of tokens not less than required threshold
-    val tx1Output1 = ErgoBox.create(contract.minToRaise, contract.projectPubKey, 0)
-    val tx1Output2 = ErgoBox.create(1, contract.projectPubKey, 0)
+    val tx1Output1 = testBox(contract.minToRaise, contract.projectPubKey, 0)
+    val tx1Output2 = testBox(1, contract.projectPubKey, 0)
     //normally this transaction would invalid, but we're not checking it in this test
     val tx = createTransaction(IndexedSeq(tx1Output1, tx1Output2))
     val ctx = ErgoLikeContextTesting(

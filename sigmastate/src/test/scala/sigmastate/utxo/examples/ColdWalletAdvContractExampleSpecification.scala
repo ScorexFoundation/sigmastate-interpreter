@@ -5,6 +5,7 @@ import org.ergoplatform._
 import sigmastate.AvlTreeData
 import sigmastate.Values.{IntConstant, LongConstant}
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter.ScriptNameProp
 import sigmastate.lang.Terms._
 
@@ -96,7 +97,7 @@ class ColdWalletAdvContractExampleSpecification extends SigmaTestingCommons {
     val avbl1Key = depositAmount * percent1Key/100
     val avbl2Key = depositAmount * percent2Key/100
 
-    val depositOutput = ErgoBox.create(depositAmount, address.script, depositHeight, Nil,
+    val depositOutput = testBox(depositAmount, address.script, depositHeight, Nil,
       Map(
         R4 -> IntConstant(depositHeight), // can keep value in R4 initially
         R5 -> LongConstant(avbl1Key), // keeping it below min will make UTXO unspendable
@@ -115,14 +116,14 @@ class ColdWalletAdvContractExampleSpecification extends SigmaTestingCommons {
     val firstWithdrawAmount1Key = depositAmount * percent1Key / 100 // less than or equal to percent
     val firstChangeAmount1Key = depositAmount - firstWithdrawAmount1Key
 
-    val firstChangeOutput1Key = ErgoBox.create(firstChangeAmount1Key, address.script, firstWithdrawHeight, Nil,
+    val firstChangeOutput1Key = testBox(firstChangeAmount1Key, address.script, firstWithdrawHeight, Nil,
       Map(
         R4 -> IntConstant(depositHeight), // newStart (= old start)
         R5 -> LongConstant(avbl1Key - firstWithdrawAmount1Key), // new avbl1Key (= 0)
         R6 -> LongConstant(avbl2Key) // new avbl2Key (= old avbl2Key)
       )
     )
-    val firstWithdrawOutput1Key = ErgoBox.create(firstWithdrawAmount1Key, carolPubKey, firstWithdrawHeight)
+    val firstWithdrawOutput1Key = testBox(firstWithdrawAmount1Key, carolPubKey, firstWithdrawHeight)
 
     //normally this transaction would be invalid, but we're not checking it in this test
     val firstWithdrawTx1Key = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(firstChangeOutput1Key, firstWithdrawOutput1Key))
@@ -151,14 +152,14 @@ class ColdWalletAdvContractExampleSpecification extends SigmaTestingCommons {
     val firstWithdrawAmount2Key = depositAmount * percent2Key / 100 // less than or equal to percent
     val firstChangeAmount2Key = depositAmount - firstWithdrawAmount2Key
 
-    val firstChangeOutput2Key = ErgoBox.create(firstChangeAmount2Key, address.script, firstWithdrawHeight, Nil,
+    val firstChangeOutput2Key = testBox(firstChangeAmount2Key, address.script, firstWithdrawHeight, Nil,
       Map(
         R4 -> IntConstant(depositHeight), // newStart (= old start)
         R5 -> LongConstant(avbl1Key), // new avbl1Key (= 0)
         R6 -> LongConstant(avbl2Key - firstWithdrawAmount2Key) // new avbl2Key (= old avbl2Key)
       )
     )
-    val firstWithdrawOutput2Key = ErgoBox.create(firstWithdrawAmount2Key, carolPubKey, firstWithdrawHeight)
+    val firstWithdrawOutput2Key = testBox(firstWithdrawAmount2Key, carolPubKey, firstWithdrawHeight)
 
     //normally this transaction would be invalid, but we're not checking it in this test
     val firstWithdrawTx2Key = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(firstChangeOutput2Key, firstWithdrawOutput2Key))

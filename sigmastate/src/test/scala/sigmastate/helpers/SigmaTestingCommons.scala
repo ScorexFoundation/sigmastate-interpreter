@@ -1,7 +1,6 @@
 package sigmastate.helpers
 
 import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
-import org.ergoplatform.ErgoBox.NonMandatoryRegisterId
 import org.ergoplatform.ErgoScriptPredef.TrueProp
 import org.ergoplatform.SigmaConstants.ScriptCostLimit
 import org.ergoplatform._
@@ -12,9 +11,9 @@ import org.scalacheck.Gen
 import org.scalatest.prop.{PropertyChecks, GeneratorDrivenPropertyChecks}
 import org.scalatest.{PropSpec, Assertion, Matchers}
 import scalan.{TestUtils, TestContexts, RType}
-import scorex.crypto.hash.{Digest32, Blake2b256}
+import scorex.crypto.hash.Blake2b256
 import sigma.types.IsPrimView
-import sigmastate.Values.{Constant, EvaluatedValue, SValue, Value, ErgoTree, GroupElementConstant}
+import sigmastate.Values.{Constant, EvaluatedValue, SValue, Value, GroupElementConstant}
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, ScriptEnv}
 import sigmastate.interpreter.{CryptoConstants, Interpreter}
 import sigmastate.lang.{Terms, TransformingSigmaBuilder, SigmaCompiler}
@@ -23,15 +22,16 @@ import sigmastate.{SGroupElement, SType}
 import sigmastate.eval.{CompiletimeCosting, IRContext, Evaluation, _}
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.utils.Helpers._
+import sigmastate.helpers.TestingHelpers._
 import special.sigma
 
-import scala.annotation.tailrec
 import scala.language.implicitConversions
 
 trait SigmaTestingCommons extends PropSpec
   with PropertyChecks
   with GeneratorDrivenPropertyChecks
-  with Matchers with TestUtils with TestContexts with ValidationSpecification {
+  with Matchers with TestUtils with TestContexts with ValidationSpecification
+  with NegativeTesting {
 
   val fakeSelf: ErgoBox = createBox(0, TrueProp)
 
@@ -61,33 +61,6 @@ trait SigmaTestingCommons extends PropSpec
     checkSerializationRoundTrip(tree)
     tree
   }
-
-  def createBox(value: Long,
-                proposition: ErgoTree,
-                additionalTokens: Seq[(Digest32, Long)] = Seq(),
-                additionalRegisters: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]] = Map())
-  = ErgoBox.create(value, proposition, 0, additionalTokens, additionalRegisters)
-
-  def createBox(value: Long,
-                proposition: ErgoTree,
-                creationHeight: Int)
-  = ErgoBox.create(value, proposition, creationHeight, Seq(), Map(), ErgoBox.allZerosModifierId)
-
-  /**
-    * Create fake transaction with provided outputCandidates, but without inputs and data inputs.
-    * Normally, this transaction will be invalid as far as it will break rule that sum of
-    * coins in inputs should not be less then sum of coins in outputs, but we're not checking it
-    * in our test cases
-    */
-  def createTransaction(outputCandidates: IndexedSeq[ErgoBoxCandidate]): ErgoLikeTransaction = {
-    new ErgoLikeTransaction(IndexedSeq(), IndexedSeq(), outputCandidates)
-  }
-
-  def createTransaction(box: ErgoBoxCandidate): ErgoLikeTransaction = createTransaction(IndexedSeq(box))
-
-  def createTransaction(dataInputs: IndexedSeq[ErgoBox],
-                        outputCandidates: IndexedSeq[ErgoBoxCandidate]): ErgoLikeTransaction =
-    new ErgoLikeTransaction(IndexedSeq(), dataInputs.map(b => DataInput(b.id)), outputCandidates)
 
   class TestingIRContext extends TestContext with IRContext with CompiletimeCosting {
     override def onCostingResult[T](env: ScriptEnv, tree: SValue, res: RCostingResultEx[T]): Unit = {
@@ -238,7 +211,6 @@ trait SigmaTestingCommons extends PropSpec
       }
 
       val estimatedCost = IR.checkCostWithContext(costingCtx, costF, ScriptCostLimit.value, 0L).getOrThrow
-//      println(s"Estimated Cost: $estimatedCost")
 
       val (res, _) = valueFun(sigmaCtx)
       (res.asInstanceOf[B], estimatedCost)
@@ -246,27 +218,6 @@ trait SigmaTestingCommons extends PropSpec
     val Terms.Apply(funcVal, _) = compiledTree.asInstanceOf[SValue]
     CompiledFunc(funcScript, bindings.toSeq, funcVal, f)
   }
-
-  def assertExceptionThrown(fun: => Any, assertion: Throwable => Boolean, clue: => String = ""): Unit = {
-    try {
-      fun
-      fail("exception is expected")
-    }
-    catch {
-      case e: Throwable =>
-        if (!assertion(e))
-          fail(
-            s"""exception check failed on $e (root cause: ${rootCause(e)})
-              |clue: $clue
-              |trace:
-              |${e.getStackTrace.mkString("\n")}}""".stripMargin)
-    }
-  }
-
-  @tailrec
-  final def rootCause(t: Throwable): Throwable =
-    if (t.getCause == null) t
-    else rootCause(t.getCause)
 
   protected def roundTripTest[T](v: T)(implicit serializer: SigmaSerializer[T, T]): Assertion = {
     // using default sigma reader/writer

@@ -6,12 +6,8 @@ import java.util.Objects
 
 import org.bitbucket.inkytonik.kiama.relation.Tree
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{strategy, everywherebu}
-import org.ergoplatform.ErgoLikeContext
 import org.ergoplatform.validation.ValidationException
 import scalan.{Nullable, RType}
-import scorex.crypto.authds.{ADDigest, SerializedAdProof}
-import scorex.crypto.authds.avltree.batch.BatchAVLVerifier
-import scorex.crypto.hash.{Digest32, Blake2b256}
 import scalan.util.CollectionUtil._
 import sigmastate.SCollection.{SIntArray, SByteArray}
 import sigmastate.interpreter.CryptoConstants.EcPointType
@@ -36,7 +32,7 @@ import sigmastate.lang.DefaultSigmaBuilder._
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.serialization.transformers.ProveDHTupleSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import special.sigma.{AnyValue, AvlTree, PreHeader, Header, _}
+import special.sigma.{AvlTree, PreHeader, Header, _}
 import sigmastate.lang.SourceContext
 import special.collection.Coll
 
@@ -153,7 +149,7 @@ object Values {
           ft.getGenericType
         case _ => tpe
       }
-      SFunc(Vector(), resType)
+      SFunc(mutable.WrappedArray.empty, resType)
     }
   }
 
@@ -814,9 +810,9 @@ object Values {
     */
   case class FuncValue(args: IndexedSeq[(Int,SType)], body: Value[SType]) extends NotReadyValue[SFunc] {
     override def companion = FuncValue
-    lazy val tpe: SFunc = SFunc(args.map(_._2), body.tpe)
+    lazy val tpe: SFunc = SFunc(args.toArray.map(_._2), body.tpe)
     /** This is not used as operation, but rather to form a program structure */
-    override def opType: SFunc = SFunc(Vector(), tpe)
+    override def opType: SFunc = SFunc(mutable.WrappedArray.empty, tpe)
   }
   object FuncValue extends ValueCompanion {
     override def opCode: OpCode = FuncValueCode
@@ -1018,7 +1014,7 @@ object Values {
 
     def substConstants(root: SValue, constants: IndexedSeq[Constant[SType]]): SValue = {
       val store = new ConstantStore(constants)
-      val substRule = strategy[Value[_ <: SType]] {
+      val substRule = strategy[Any] {
         case ph: ConstantPlaceholder[_] =>
           Some(store.get(ph.id))
         case _ => None

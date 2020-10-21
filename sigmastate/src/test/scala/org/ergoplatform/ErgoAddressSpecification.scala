@@ -14,6 +14,7 @@ import sigmastate.{SigmaAnd, SType}
 import sigmastate.Values.{UnparsedErgoTree, Constant, ByteArrayConstant, IntConstant, ErgoTree}
 import sigmastate.eval.IRContext
 import sigmastate.helpers._
+import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.ContextExtension
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, ScriptEnv}
 import sigmastate.lang.Terms.ValueOps
@@ -182,7 +183,7 @@ class ErgoAddressSpecification extends SigmaDslTesting with TryValues {
 
   def testPay2SHAddress(address: Pay2SHAddress, scriptBytes: Array[Byte])(implicit IR: IRContext) = {
     val scriptId = 1.toByte
-    val boxToSpend = ErgoBox.create(10, address.script, creationHeight = 5)
+    val boxToSpend = testBox(10, address.script, creationHeight = 5)
     val ctx = ErgoLikeContextTesting.dummy(boxToSpend)
         .withExtension(ContextExtension(Seq(
           scriptId -> ByteArrayConstant(scriptBytes)  // provide script bytes in context variable
