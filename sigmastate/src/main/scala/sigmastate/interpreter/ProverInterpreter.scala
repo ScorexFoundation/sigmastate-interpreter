@@ -119,15 +119,7 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
             hintsBag: HintsBag = HintsBag.empty): Try[CostedProverResult] = Try {
     import TrivialProp._
 
-    val initCost = ergoTree.complexity + context.initCost
-    val remainingLimit = context.costLimit - initCost
-    if (remainingLimit <= 0)
-      throw new CostLimitException(initCost,
-        s"Estimated execution cost $initCost exceeds the limit ${context.costLimit}", None)
-
-    val ctxUpdInitCost = context.withInitCost(initCost).asInstanceOf[CTX]
-
-    val (reducedProp, cost) = fullReduction(ergoTree, ctxUpdInitCost, env)
+    val (reducedProp, cost) = fullReduction(ergoTree, context, env)
 
     val proofTree = reducedProp match {
       case TrueProp => NoProof
@@ -138,7 +130,7 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
     }
     // Prover Step 10: output the right information into the proof
     val proof = SigSerializer.toBytes(proofTree)
-    CostedProverResult(proof, ctxUpdInitCost.extension, cost)
+    CostedProverResult(proof, context.extension, cost)
   }
 
   /**

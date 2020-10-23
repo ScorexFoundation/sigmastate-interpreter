@@ -212,8 +212,8 @@ class ErgoAddressSpecification extends SigmaDslTesting with TryValues {
     testPay2SHAddress(Pay2SHAddress(tree), scriptBytes)
   }
 
-  property("deserialized script negative cases") {
-    implicit lazy val IR = new TestingIRContext
+  property("negative cases: deserialized script + costing exceptions") {
+   implicit lazy val IR = new TestingIRContext
 
     def testPay2SHAddress(address: Pay2SHAddress, script: (Byte, EvaluatedValue[_ <: SType]), costLimit: Int = ScriptCostLimit.value): CostedProverResult = {
       val boxToSpend = testBox(10, address.script, creationHeight = 5)
@@ -235,10 +235,13 @@ class ErgoAddressSpecification extends SigmaDslTesting with TryValues {
     // when everything is ok
     testPay2SHAddress(addr, script = scriptVarId -> ByteArrayConstant(scriptBytes))
 
-    // choose limit less than addr.script.complexity == 2277 + script complexity == 164
-    val deliberatelySmallLimit = 2300
     // when limit is low
-    assertExceptionThrown(
+    {
+      // choose limit less than total cost:
+      // totalCost(2671) = addr.script.complexity(2277) + prop complexity(164) + scaledCost(230)
+      val deliberatelySmallLimit = 2600
+
+      assertExceptionThrown(
       {
         testPay2SHAddress(addr,
           script = scriptVarId -> ByteArrayConstant(scriptBytes),
@@ -246,9 +249,46 @@ class ErgoAddressSpecification extends SigmaDslTesting with TryValues {
       },
       { t =>
         t.isInstanceOf[CostLimitException] &&
-        t.getMessage.contains(
-          s"Estimated execution cost 2441 exceeds the limit $deliberatelySmallLimit")}
-    )
+            t.getMessage.contains(
+              s"Estimated execution cost 2671 exceeds the limit $deliberatelySmallLimit")}
+      )
+    }
+
+    // when limit is low
+    {
+      // choose limit less than addr.script.complexity == 2277 + script complexity == 164
+      val deliberatelySmallLimit = 2300
+
+      assertExceptionThrown(
+      {
+        testPay2SHAddress(addr,
+          script = scriptVarId -> ByteArrayConstant(scriptBytes),
+          costLimit = deliberatelySmallLimit)
+      },
+      { t =>
+        t.isInstanceOf[CostLimitException] &&
+            t.getMessage.contains(
+              s"Estimated execution cost 2441 exceeds the limit $deliberatelySmallLimit")}
+      )
+    }
+
+    // when limit is even lower than tree complexity
+    {
+      // choose limit less than addr.script.complexity == 2277
+      val deliberatelySmallLimit = 2000
+
+      assertExceptionThrown(
+      {
+        testPay2SHAddress(addr,
+          script = scriptVarId -> ByteArrayConstant(scriptBytes),
+          costLimit = deliberatelySmallLimit)
+      },
+      { t =>
+        t.isInstanceOf[CostLimitException] &&
+            t.getMessage.contains(
+              s"Estimated execution cost 2277 exceeds the limit $deliberatelySmallLimit")}
+      )
+    }
 
     // when script var have invalid type
     assertExceptionThrown(

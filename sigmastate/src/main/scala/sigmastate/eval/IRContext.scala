@@ -129,7 +129,6 @@ trait IRContext extends Evaluation with TreeBuilding {
     val scaledCost = JMath.multiplyExact(estimatedCost.toLong, CostTable.costFactorIncrease.toLong) / CostTable.costFactorDecrease
     val totalCost = JMath.addExact(initCost, scaledCost)
     if (totalCost > maxCost) {
-      // TODO cover with tests (2h)
       throw new CostLimitException(totalCost, msgCostLimitError(totalCost, maxCost), None)
     }
     totalCost.toInt
