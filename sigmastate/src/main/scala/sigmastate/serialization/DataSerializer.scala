@@ -139,7 +139,7 @@ object DataSerializer {
         implicit val tItem = (tpeElem match {
           case tTup: STuple if tTup.items.length == 2 =>
             Evaluation.stypeToRType(tpeElem)
-          case tTup: STuple =>
+          case _: STuple =>
             collRType(RType.AnyType)
           case _ =>
             Evaluation.stypeToRType(tpeElem)

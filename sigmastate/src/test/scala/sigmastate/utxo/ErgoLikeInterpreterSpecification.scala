@@ -613,7 +613,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
 
     val spendingTransaction = createTransaction(output)
 
-    val ctx = ErgoLikeContextTesting(
+    val ctx1 = ErgoLikeContextTesting(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
@@ -621,10 +621,19 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
       spendingTransaction,
       self = input3)
 
-    val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage).get
-    verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, ctx, pr, fakeMessage).get._1 shouldBe true
+    val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx1, fakeMessage).get
+    verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, ctx1, pr, fakeMessage).get._1 shouldBe true
 
-    // TODO cover (2h): check failing branches
+    val ctx2 = ErgoLikeContextTesting(
+      currentHeight = 50,
+      lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
+      boxesToSpend = IndexedSeq(
+        copyBox(input0)(value = 20), // to go through `then` branch of `if` in the script
+        input1, input2, input3),
+      spendingTransaction,
+      self = input3)
+    prover.prove(prop, ctx2, fakeMessage).isFailure shouldBe true
   }
 
   property("DeserializeRegister value type mismatch") {
