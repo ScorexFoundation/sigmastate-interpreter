@@ -99,7 +99,7 @@ trait Interpreter extends ScorexLogging {
         ergoTree.toProposition(ergoTree.isConstantSegregation)
       case Left(UnparsedErgoTree(_, error)) if validationSettings.isSoftFork(error) =>
         TrueSigmaProp
-      case Left(UnparsedErgoTree(_, error)) => // TODO cover with tests (2h)
+      case Left(UnparsedErgoTree(_, error)) =>
         throw new InterpreterException(
           "Script has not been recognized due to ValidationException, and it cannot be accepted as soft-fork.", None, Some(error))
     }
