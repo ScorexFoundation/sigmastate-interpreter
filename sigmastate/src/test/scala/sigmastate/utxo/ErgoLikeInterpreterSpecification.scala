@@ -14,10 +14,11 @@ import sigmastate.eval._
 import sigmastate.interpreter.Interpreter._
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, ErgoLikeTransactionTesting, SigmaTestingCommons}
+import sigmastate.helpers.{ErgoLikeTransactionTesting, ErgoLikeContextTesting, ErgoLikeTestInterpreter, ErgoLikeTestProvingInterpreter, SigmaTestingCommons, ContextEnrichingTestProvingInterpreter}
 import sigmastate.helpers.TestingHelpers._
+import sigmastate.interpreter.{ContextExtension, CostedProverResult}
 import sigmastate.lang.Terms._
-import sigmastate.serialization.{SerializationSpecification, ValueSerializer}
+import sigmastate.serialization.{ValueSerializer, SerializationSpecification}
 import sigmastate.utils.Helpers._
 
 class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
@@ -689,7 +690,25 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
       // make sure prover fails as well on deserializing context with mismatched type
       an[ValidationException] should be thrownBy prover.prove(prop1, ctx, fakeMessage).get
     }
- }
+  }
+
+  property("DeserializeContext can return expression of non-Boolean/SigmaProp type") {
+    def prove(ergoTree: ErgoTree, script: (Byte, EvaluatedValue[_ <: SType])): CostedProverResult = {
+      val boxToSpend = testBox(10, ergoTree, creationHeight = 5)
+      val ctx = ErgoLikeContextTesting.dummy(boxToSpend)
+          .withExtension(
+            ContextExtension(Seq(script).toMap)) // provide script bytes in context variable
+
+      val prover = new ErgoLikeTestProvingInterpreter()
+      prover.prove(ergoTree, ctx, fakeMessage).getOrThrow
+    }
+
+    val script = "{ 1 + 2 }"
+    val scriptProp = compile(Map.empty, script)  // of Int type
+    val scriptBytes = ValueSerializer.serialize(scriptProp)
+    val tree = ErgoTree.fromProposition(EQ(DeserializeContext(1, SInt), IntConstant(3)).toSigmaProp)
+    prove(tree, script = 1.toByte -> ByteArrayConstant(scriptBytes))
+  }
 
   property("non-const ProveDHT") {
     import sigmastate.interpreter.CryptoConstants.dlogGroup

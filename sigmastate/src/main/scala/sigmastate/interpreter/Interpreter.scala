@@ -82,7 +82,9 @@ trait Interpreter extends ScorexLogging {
   def toValidScriptType(exp: SValue): BoolValue = exp match {
     case v: Value[SBoolean.type]@unchecked if v.tpe == SBoolean => v
     case p: SValue if p.tpe == SSigmaProp => p.asSigmaProp.isProven
-    case x => // TODO cover with tests (2h)
+    case x =>
+      // This case is not possible, due to exp is always of Boolean/SigmaProp type.
+      // In case it will ever change, leave it here to throw an explaining message.
       throw new Error(s"Context-dependent pre-processing should produce tree of type Boolean or SigmaProp but was $x")
   }
 
