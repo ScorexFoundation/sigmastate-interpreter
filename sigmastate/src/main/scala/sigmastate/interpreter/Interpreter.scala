@@ -53,7 +53,6 @@ trait Interpreter extends ScorexLogging {
     val currCost = JMath.addExact(context.initCost, scriptComplexity)
     val remainingLimit = context.costLimit - currCost
     if (remainingLimit <= 0) {
-      // TODO cover with tests (2h)
       throw new CostLimitException(currCost, msgCostLimitError(currCost, context.costLimit), None)
     }
     val ctx1 = context.withInitCost(currCost).asInstanceOf[CTX]
@@ -72,10 +71,11 @@ trait Interpreter extends ScorexLogging {
 
             CheckDeserializedScriptType(d, script)
             Some(script)
-          case _ => None // TODO cover with tests (2h)
+          case _ =>
+            None
         }
       else
-        None // TODO cover with tests (2h)
+        None
     case _ => None
   }
 

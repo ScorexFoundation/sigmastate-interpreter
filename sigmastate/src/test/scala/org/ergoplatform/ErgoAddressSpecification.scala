@@ -3,6 +3,7 @@ package org.ergoplatform
 import java.math.BigInteger
 
 import org.ergoplatform.ErgoAddressEncoder.{hash256, MainnetNetworkPrefix, TestnetNetworkPrefix}
+import org.ergoplatform.SigmaConstants.ScriptCostLimit
 import org.ergoplatform.validation.{ValidationException, ValidationRules}
 import org.scalatest.{Assertion, TryValues}
 import sigmastate.basics.DLogProtocol
@@ -11,13 +12,14 @@ import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.serialization.ValueSerializer
 import scorex.util.encode.Base58
 import sigmastate.{SigmaAnd, SType}
-import sigmastate.Values.{UnparsedErgoTree, Constant, ByteArrayConstant, IntConstant, ErgoTree}
+import sigmastate.Values.{UnparsedErgoTree, Constant, EvaluatedValue, ByteArrayConstant, IntConstant, ErgoTree}
 import sigmastate.eval.IRContext
 import sigmastate.helpers._
 import sigmastate.helpers.TestingHelpers._
-import sigmastate.interpreter.ContextExtension
+import sigmastate.interpreter.{ContextExtension, CostedProverResult}
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, ScriptEnv}
 import sigmastate.lang.Terms.ValueOps
+import sigmastate.lang.exceptions.{CosterException, CostLimitException}
 import sigmastate.utils.Helpers._
 import special.sigma.SigmaDslTesting
 
@@ -209,4 +211,61 @@ class ErgoAddressSpecification extends SigmaDslTesting with TryValues {
     val tree = ErgoTree.fromProposition(prop)
     testPay2SHAddress(Pay2SHAddress(tree), scriptBytes)
   }
+
+  property("deserialized script negative cases") {
+    implicit lazy val IR = new TestingIRContext
+
+    def testPay2SHAddress(address: Pay2SHAddress, script: (Byte, EvaluatedValue[_ <: SType]), costLimit: Int = ScriptCostLimit.value): CostedProverResult = {
+      val boxToSpend = testBox(10, address.script, creationHeight = 5)
+      val ctx = copyContext(ErgoLikeContextTesting.dummy(boxToSpend)
+          .withExtension(ContextExtension(Seq(
+            script // provide script bytes in context variable
+          ).toMap)))(costLimit = costLimit)
+
+      val prover = new ErgoLikeTestProvingInterpreter()
+      prover.prove(address.script, ctx, fakeMessage).getOrThrow
+    }
+
+    val scriptVarId = 1.toByte
+    val script = "{ 1 < 2 }"
+    val prop = compile(Map.empty, script).asBoolValue.toSigmaProp
+    val scriptBytes = ValueSerializer.serialize(prop)
+    val addr = Pay2SHAddress(prop)
+
+    // when everything is ok
+    testPay2SHAddress(addr, script = scriptVarId -> ByteArrayConstant(scriptBytes))
+
+    // choose limit less than addr.script.complexity == 2277 + script complexity == 164
+    val deliberatelySmallLimit = 2300
+    // when limit is low
+    assertExceptionThrown(
+      {
+        testPay2SHAddress(addr,
+          script = scriptVarId -> ByteArrayConstant(scriptBytes),
+          costLimit = deliberatelySmallLimit)
+      },
+      { t =>
+        t.isInstanceOf[CostLimitException] &&
+        t.getMessage.contains(
+          s"Estimated execution cost 2441 exceeds the limit $deliberatelySmallLimit")}
+    )
+
+    // when script var have invalid type
+    assertExceptionThrown(
+      testPay2SHAddress(addr, script = scriptVarId -> IntConstant(10)),
+      { t =>
+        t.isInstanceOf[CosterException] &&
+        t.getMessage.contains(s"Don't know how to evalNode(DeserializeContext(")}
+    )
+
+    // when script var have invalid id
+    val invalidId: Byte = 2
+    assertExceptionThrown(
+      testPay2SHAddress(addr, script = invalidId -> IntConstant(10)),
+      { t =>
+        t.isInstanceOf[CosterException] &&
+        t.getMessage.contains(s"Don't know how to evalNode(DeserializeContext(")}
+    )
+  }
+
 }

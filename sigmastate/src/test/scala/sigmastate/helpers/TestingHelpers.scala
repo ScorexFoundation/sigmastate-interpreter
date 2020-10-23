@@ -3,11 +3,15 @@ package sigmastate.helpers
 import scorex.crypto.hash.Digest32
 import special.collection.Coll
 import scorex.util.ModifierId
-import org.ergoplatform.{DataInput, ErgoLikeTransaction, ErgoBox, ErgoBoxCandidate}
+import org.ergoplatform.{ErgoLikeTransactionTemplate, ErgoLikeTransaction, ErgoLikeContext, UnsignedInput, ErgoBox, DataInput, ErgoBoxCandidate}
 import sigmastate.Values.ErgoTree
 import org.ergoplatform.ErgoBox.{AdditionalRegisters, allZerosModifierId, TokenId}
+import org.ergoplatform.validation.SigmaValidationSettings
+import sigmastate.AvlTreeData
 import sigmastate.eval.CostingSigmaDslBuilder
 import sigmastate.eval._
+import sigmastate.interpreter.ContextExtension
+import special.sigma.{Header, PreHeader}
 
 import scala.collection.mutable.WrappedArray
 
@@ -50,6 +54,24 @@ object TestingHelpers {
       index: Short = box.index,
       creationHeight: Int = box.creationHeight): ErgoBox = {
     new ErgoBox(value, ergoTree, additionalTokens, additionalRegisters, transactionId, index, creationHeight)
+  }
+
+  /** Copies the given context allowing also to update fields. */
+  def copyContext(ctx: ErgoLikeContext)(
+      lastBlockUtxoRoot: AvlTreeData = ctx.lastBlockUtxoRoot,
+      headers: Coll[Header] = ctx.headers,
+      preHeader: PreHeader = ctx.preHeader,
+      dataBoxes: IndexedSeq[ErgoBox] = ctx.dataBoxes,
+      boxesToSpend: IndexedSeq[ErgoBox] = ctx.boxesToSpend,
+      spendingTransaction: ErgoLikeTransactionTemplate[_ <: UnsignedInput] = ctx.spendingTransaction,
+      selfIndex: Int = ctx.selfIndex,
+      extension: ContextExtension = ctx.extension,
+      validationSettings: SigmaValidationSettings = ctx.validationSettings,
+      costLimit: Long = ctx.costLimit,
+      initCost: Long = ctx.initCost): ErgoLikeContext = {
+    new ErgoLikeContext(
+      lastBlockUtxoRoot, headers, preHeader, dataBoxes, boxesToSpend,
+      spendingTransaction, selfIndex, extension, validationSettings, costLimit, initCost)
   }
 
   /** Creates a new box by updating some of the additional registers with the given new bindings.
