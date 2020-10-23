@@ -94,7 +94,7 @@ object DataJsonEncoder {
     case tOpt: SOption[a] =>
       val opt = v.asInstanceOf[tOpt.WrappedType]
       if (opt.isDefined) {
-        // same the single value as an array with one item
+        // save the single value as an array with one item
         val valueJson = encodeData(opt.get, tOpt.elemType)
         Json.fromValues(Array(valueJson))
       } else {

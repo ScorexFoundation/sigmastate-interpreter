@@ -555,8 +555,6 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
         val loopCost = if (_loopStack.isEmpty) 0 else _loopStack.head.accumulatedCost
         val accumulatedCost = java.lang.Math.addExact(cost, loopCost)
         if (accumulatedCost > limit) {
-//          if (cost < limit)
-//            println(s"FAIL FAST in loop: $accumulatedCost > $limit")
           throw new CostLimitException(accumulatedCost, msgCostLimitError(accumulatedCost, limit), None)
         }
       }
