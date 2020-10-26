@@ -200,7 +200,7 @@ trait Interpreter extends ScorexLogging {
     val initCost = JMath.addExact(ergoTree.complexity.toLong, context.initCost)
     val remainingLimit = context.costLimit - initCost
     if (remainingLimit <= 0) {
-      throw new CostLimitException(initCost, msgCostLimitError(initCost, context.costLimit), None)
+      throw new CostLimitException(initCost, Evaluation.msgCostLimitError(initCost, context.costLimit), None)
     }
     val contextWithCost = context.withInitCost(initCost).asInstanceOf[CTX]
 
