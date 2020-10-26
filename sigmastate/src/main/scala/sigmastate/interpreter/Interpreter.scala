@@ -195,6 +195,8 @@ trait Interpreter extends ScorexLogging {
   def fullReduction(ergoTree: ErgoTree,
                     context: CTX,
                     env: ScriptEnv): (SigmaBoolean, Long) = {
+    if (context.activatedScriptVersion > Interpreter.MaxSupportedScriptVersion) {
+    }
     implicit val vs: SigmaValidationSettings = context.validationSettings
 
     val initCost = JMath.addExact(ergoTree.complexity.toLong, context.initCost)
@@ -345,6 +347,14 @@ object Interpreter {
   type ScriptEnv = Map[String, Any]
   val emptyEnv: ScriptEnv = Map.empty[String, Any]
   val ScriptNameProp = "ScriptName"
+
+  /** Maximum version of ErgoTree supported by this interpreter release.
+    * See version bits in `ErgoTree.header` for more details.
+    * This value should be increased with each new language update via soft-fork.
+    * For example in version 3.x-4.x this value should be 0, in 5.x increased to 1,
+    * in 6.x set to 2, etc.
+    */
+  val MaxSupportedScriptVersion: Int = 0
 
   def error(msg: String) = throw new InterpreterException(msg)
 
