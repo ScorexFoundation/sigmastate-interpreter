@@ -6,9 +6,7 @@ import java.math.BigInteger
 import org.ergoplatform.ErgoScriptPredef.TrueProp
 import org.ergoplatform._
 import org.ergoplatform.settings.ErgoAlgos
-import org.scalacheck.{Arbitrary, Gen}
-import org.scalatest.prop.{PropertyChecks, TableFor2}
-import org.scalatest.{PropSpec, Matchers, Tag}
+import org.scalacheck.Gen
 import scalan.{ExactNumeric, RType}
 import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.authds.{ADDigest, ADKey, ADValue}
@@ -31,14 +29,11 @@ import sigmastate.utils.Helpers
 import sigmastate.utils.Helpers._
 import sigmastate.helpers.TestingHelpers._
 
-import scala.reflect.ClassTag
-import scala.util.{DynamicVariable, Success, Failure, Try}
+import scala.util.{Success, Failure}
 import OrderingOps._
 import scorex.util.ModifierId
-import sigmastate.basics.{ProveDHTuple, DLogProtocol}
-import sigmastate.helpers.SigmaPPrint
+import sigmastate.basics.ProveDHTuple
 
-import scala.math.Ordering
 
 /** This suite tests every method of every SigmaDsl type to be equivalent to
   * the evaluation of the corresponding ErgoScript operation */
