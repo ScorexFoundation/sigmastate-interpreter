@@ -262,7 +262,7 @@ case class ErgoAddressEncoder(networkPrefix: NetworkPrefix) {
   import ErgoAddressEncoder._
 
   /** This value is be used implicitly in the methods below. */
-  implicit private val ergoAddressEncoder: ErgoAddressEncoder = this
+  implicit private def ergoAddressEncoder: ErgoAddressEncoder = this
 
   /** Converts the given [[ErgoAddress]] to Base58 string. */
   def toString(address: ErgoAddress): String = {

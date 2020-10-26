@@ -305,7 +305,7 @@ class SigmaDslTesting extends PropSpec
         // Add additional oparations which are not yet implemented in ErgoScript compiler
         val multisig = sigmastate.AtLeast(
           IntConstant(2),
-          Seq(
+          Array(
             pkAlice,
             DeserializeRegister(ErgoBox.R5, SSigmaProp),  // deserialize pkBob
             DeserializeContext(2, SSigmaProp)))           // deserialize pkCarol
@@ -430,7 +430,7 @@ class SigmaDslTesting extends PropSpec
     FeatureTest(AddedFeature, script, scalaFunc, Option(expectedExpr), oldImpl, newImpl)
   }
 
-  val contextGen: Gen[Context] = ergoLikeContextGen.map(c => c.toSigmaContext(createIR(), isCost = false))
+  val contextGen: Gen[Context] = ergoLikeContextGen.map(c => c.toSigmaContext(isCost = false))
   implicit val arbContext: Arbitrary[Context] = Arbitrary(contextGen)
 
   /** NOTE, this should be `def` to allow overriding of generatorDrivenConfig in derived Spec classes. */
@@ -467,7 +467,7 @@ class SigmaDslTesting extends PropSpec
        printTestCases: Boolean = PrintTestCasesDefault,
        failOnTestVectors: Boolean = FailOnTestVectorsDefault,
        preGeneratedSamples: Option[Seq[A]] = None): Unit = {
-
+    System.gc() // force GC to avoid occasional OOM exception
     val table = Table(("x", "y"), cases:_*)
     forAll(table) { (x: A, expectedRes: Try[B]) =>
       val res = f.checkEquality(x, printTestCases).map(_._1)
