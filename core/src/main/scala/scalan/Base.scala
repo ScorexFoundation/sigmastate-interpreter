@@ -237,7 +237,7 @@ abstract class Base { scalan: Scalan =>
       override def mirror(t: Transformer): Ref[T] = self
     }
 
-    /** Describes lifting data values of type ST (Source Type) to IR nodes of the correspoding staged type T.
+    /** Describes lifting data values of type ST (Source Type) to IR nodes of the corresponding staged type T.
       * In general T is different type obtained by virtualization procedure from ST.
       * However ST can be the same as T as is the case for Byte, Int, String etc.
       */
