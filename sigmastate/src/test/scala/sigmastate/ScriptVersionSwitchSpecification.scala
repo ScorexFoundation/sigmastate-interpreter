@@ -52,7 +52,7 @@ class ScriptVersionSwitchSpecification extends SigmaDslTesting {
         def success[T](v: T, c: Int) = Success(Expected(v, c))
         Seq(
           (Coll[Box](), success(Coll[Box](), 37297)),
-          (Coll[Box](b1), success(Coll[Box](), 37397)),
+          (Coll[Box](b1), success(Coll[Box](), 37397))
         )
       },
       existingFeature({ (x: Coll[Box]) => x.filter({ (b: Box) => b.value > 1 }) },
@@ -101,7 +101,7 @@ class ScriptVersionSwitchSpecification extends SigmaDslTesting {
     val ctx = copyContext(ErgoLikeContextTesting.dummy(
       createBox(0, ergoTree, additionalRegisters = newRegisters)
     ).withBindings(
-      1.toByte -> Constant[SType](input.asInstanceOf[SType#WrappedType], tpeA),
+      1.toByte -> Constant[SType](input.asInstanceOf[SType#WrappedType], tpeA)
     ).asInstanceOf[ErgoLikeContext])(activatedScriptVersion = activatedScriptVersion)
     val prover = new FeatureProvingInterpreter()
     val pr = prover.prove(ergoTree, ctx, fakeMessage).getOrThrow
