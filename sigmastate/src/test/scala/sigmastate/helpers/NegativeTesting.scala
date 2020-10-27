@@ -14,7 +14,7 @@ trait NegativeTesting extends Matchers {
   def assertExceptionThrown(fun: => Any, assertion: Throwable => Boolean, clue: => String = ""): Unit = {
     try {
       fun
-      fail("exception is expected")
+      fail("exception is expected but hasn't been thrown")
     }
     catch {
       case e: Throwable =>

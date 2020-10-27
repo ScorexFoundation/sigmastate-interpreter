@@ -196,6 +196,10 @@ trait Interpreter extends ScorexLogging {
                     context: CTX,
                     env: ScriptEnv): (SigmaBoolean, Long) = {
     if (context.activatedScriptVersion > Interpreter.MaxSupportedScriptVersion) {
+
+    } else {
+      if (ergoTree.version > context.activatedScriptVersion)
+        throw new InterpreterException(s"Not supported script version ${ergoTree.version}")
     }
     implicit val vs: SigmaValidationSettings = context.validationSettings
 
