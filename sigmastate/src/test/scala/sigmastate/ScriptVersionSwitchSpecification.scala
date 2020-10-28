@@ -3,12 +3,12 @@ package sigmastate
 import org.ergoplatform.ErgoBox.AdditionalRegisters
 import org.ergoplatform._
 import scorex.util.ModifierId
-import sigmastate.Values.ErgoTree.{DefaultHeader, updateVersionBits, SizeFlag}
+import sigmastate.Values.ErgoTree.{DefaultHeader, updateVersionBits}
 import sigmastate.Values._
 import sigmastate.eval._
 import sigmastate.helpers.ErgoLikeContextTesting
 import sigmastate.helpers.TestingHelpers.createBox
-import sigmastate.interpreter.Interpreter
+import sigmastate.interpreter.{Interpreter, ProverResult}
 import sigmastate.lang.exceptions.InterpreterException
 import sigmastate.utxo._
 import sigmastate.utils.Helpers._
@@ -40,36 +40,7 @@ class ScriptVersionSwitchSpecification extends SigmaDslTesting {
     )
   )
 
-  /** Rule#| SF Status| Block Type| Script Version | Release | Validation Action
-    * -----|----------|-----------|----------------|---------|--------
-    * 1    | inactive | candidate | Script v1      | v4.0    | R4.0-AOT-cost, R4.0-AOT-verify
-    */
-  property("Rule 1 | inactive SF | candidate block | Script v1") {
-    val samples = genSamples[Coll[Box]](collOfN[Box](5), MinSuccessful(20))
-
-    verifyCases(
-      {
-        def success[T](v: T, c: Int) = Success(Expected(v, c))
-        Seq(
-          (Coll[Box](), success(Coll[Box](), 37297)),
-          (Coll[Box](b1), success(Coll[Box](), 37397))
-        )
-      },
-      existingFeature({ (x: Coll[Box]) => x.filter({ (b: Box) => b.value > 1 }) },
-      "{ (x: Coll[Box]) => x.filter({(b: Box) => b.value > 1 }) }",
-      FuncValue(
-        Vector((1, SCollectionType(SBox))),
-        Filter(
-          ValUse(1, SCollectionType(SBox)),
-          FuncValue(Vector((3, SBox)), GT(ExtractAmount(ValUse(3, SBox)), LongConstant(1L)))
-        )
-      )),
-      preGeneratedSamples = Some(samples))
-
-  }
-
   def createErgoTree(headerFlags: Byte)(implicit IR: IRContext): ErgoTree = {
-    import ErgoTree._
     val code =
       s"""{
         |  val func = { (x: Coll[Box]) => x.filter({(b: Box) => b.value > 1 }) }
@@ -108,28 +79,164 @@ class ScriptVersionSwitchSpecification extends SigmaDslTesting {
     pr
   }
 
+  def testVerify(ergoTree: ErgoTree, activatedScriptVersion: Byte) = {
+    val tpeA = SCollection(SBox)
+    val input = Coll[Box](b1)
+    val newRegisters: AdditionalRegisters = Map(
+      ErgoBox.R4 -> Constant[SType](Coll[Box]().asInstanceOf[SType#WrappedType], tpeA)
+    )
+
+    val ctx = copyContext(ErgoLikeContextTesting.dummy(
+      createBox(0, ergoTree, additionalRegisters = newRegisters)
+    ).withBindings(
+      1.toByte -> Constant[SType](input.asInstanceOf[SType#WrappedType], tpeA)
+    ).asInstanceOf[ErgoLikeContext])(activatedScriptVersion = activatedScriptVersion)
+
+    val verifier = new ErgoLikeInterpreter() { type CTX = ErgoLikeContext }
+    val pr = ProverResult(ProverResult.empty.proof, ctx.extension)
+
+    // NOTE: exactly this overload should also be called in Ergo
+    verifier.verify(ergoTree, ctx, pr, fakeMessage).getOrThrow
+  }
+
+  def ergoTreeHeader(version: Byte): Byte = {
+    val h = ErgoTree.SizeFlag | updateVersionBits(DefaultHeader, version)
+    h.toByte
+  }
+
+  property("new versions of scripts will require size bit in the header") {
+    (1 to 7).foreach { version =>
+      assertExceptionThrown(
+        createErgoTree(headerFlags = updateVersionBits(DefaultHeader, version.toByte)),
+        { t =>
+          t.isInstanceOf[IllegalArgumentException] &&
+              t.getMessage.contains("For newer version the size bit is required")
+        })
+    }
+  }
+
+  /** Rule#| SF Status| Block Type| Script Version | Release | Validation Action
+    * -----|----------|-----------|----------------|---------|--------
+    * 1    | inactive | candidate | Script v1      | v4.0    | R4.0-AOT-cost, R4.0-AOT-verify
+    * 5    | inactive | mined     | Script v1      | v4.0    | R4.0-AOT-cost, R4.0-AOT-verify
+    */
+  property("Rules 1,5 | inactive SF | candidate or mined block | Script v1") {
+    val samples = genSamples[Coll[Box]](collOfN[Box](5), MinSuccessful(20))
+
+    verifyCases(
+      {
+        def success[T](v: T, c: Int) = Success(Expected(v, c))
+        Seq(
+          (Coll[Box](), success(Coll[Box](), 37297)),
+          (Coll[Box](b1), success(Coll[Box](), 37397))
+        )
+      },
+      existingFeature({ (x: Coll[Box]) => x.filter({ (b: Box) => b.value > 1 }) },
+      "{ (x: Coll[Box]) => x.filter({(b: Box) => b.value > 1 }) }",
+      FuncValue(
+        Vector((1, SCollectionType(SBox))),
+        Filter(
+          ValUse(1, SCollectionType(SBox)),
+          FuncValue(Vector((3, SBox)), GT(ExtractAmount(ValUse(3, SBox)), LongConstant(1L)))
+        )
+      )),
+      preGeneratedSamples = Some(samples))
+
+  }
+
   /** Rule#| SF Status| Block Type| Script Version | Release | Validation Action
     * -----|----------|-----------|----------------|---------|--------
     * 3    | inactive | candidate | Script v2      | v4.0    | skip-pool-tx (cannot handle)
+    * 7    | inactive | mined     | Script v2      | v4.0    | skip-reject (cannot handle)
     */
-  property("Rule 3 | inactive SF | candidate block | Script v2") {
+  property("Rules 3, 7 | inactive SF | candidate or mined block | Script v2") {
+    val headerFlags = ergoTreeHeader( 1 /* Script v2 */)
+    val ergoTree = createErgoTree(headerFlags = headerFlags)
 
-    assertExceptionThrown(
-      createErgoTree(headerFlags = updateVersionBits(DefaultHeader, 1)),
-      { t =>
-        t.isInstanceOf[IllegalArgumentException] &&
-        t.getMessage.contains("For newer version the size bit is required")
-      })
-
-    val headerFlags = ErgoTree.SizeFlag | updateVersionBits(DefaultHeader, 1 /* Script v2 */)
-    val ergoTree = createErgoTree(headerFlags = headerFlags.toByte)
-    
+    // both prove and verify are rejecting
     assertExceptionThrown(
       testProve(ergoTree, activatedScriptVersion = 0 /* SF Status: inactive */),
       { t =>
         t.isInstanceOf[InterpreterException] &&
         t.getMessage.contains(s"Not supported script version ${ergoTree.version}")
       })
+
+    assertExceptionThrown(
+      testVerify(ergoTree, activatedScriptVersion = 0 /* SF Status: inactive */),
+      { t =>
+        t.isInstanceOf[InterpreterException] &&
+            t.getMessage.contains(s"Not supported script version ${ergoTree.version}")
+      })
+  }
+
+  /** Rule#| SF Status| Block Type| Script Version | Release | Validation Action
+    * -----|----------|-----------|----------------|---------|--------
+    * 9    | active   | candidate | Script v1      | v4.0    | R4.0-AOT-cost, R4.0-AOT-verify
+    */
+  property("Rule 9 | active SF | candidate block | Script v1") {
+    val headerFlags = ergoTreeHeader( 0 /* Script v1 */)
+    val ergoTree = createErgoTree(headerFlags = headerFlags)
+
+    val activatedVersion = 1.toByte // SF Status: active
+
+    // both prove and verify are accepting with full evaluation
+    val expectedCost = 5464L
+    val pr = testProve(
+      ergoTree,
+      activatedScriptVersion = Interpreter.MaxSupportedScriptVersion // special case for *candidate* block
+    )
+    pr.proof shouldBe Array.emptyByteArray
+    pr.cost shouldBe expectedCost
+    
+    val (ok, cost) = testVerify(
+      ergoTree,
+      activatedScriptVersion = Interpreter.MaxSupportedScriptVersion // special case for *candidate* block
+    )
+    ok shouldBe true
+    cost shouldBe expectedCost
+  }
+
+  /** Rule#| SF Status| Block Type| Script Version | Release | Validation Action
+    * -----|----------|-----------|----------------|---------|--------
+    * 11   | active   | candidate | Script v2      | v4.0    | skip-pool-tx (cannot handle)
+    * 15   | active   | mined     | Script v2      | v4.0    | skip-accept (rely on majority)
+    */
+  property("Rule 11, 15 | active SF | candidate or mined block | Script v2") {
+    val headerFlags = ergoTreeHeader( 1 /* Script v2 */)
+    val ergoTree = createErgoTree(headerFlags = headerFlags)
+
+    val activatedVersion = 1.toByte // SF Status: active
+
+    // both prove and verify are accepting without evaluation
+    val expectedCost = 0L
+    val pr = testProve(ergoTree, activatedScriptVersion = activatedVersion)
+    pr.proof shouldBe Array.emptyByteArray
+    pr.cost shouldBe expectedCost
+
+    val (ok, cost) = testVerify(ergoTree, activatedScriptVersion = activatedVersion)
+    ok shouldBe true
+    cost shouldBe expectedCost
+  }
+
+  /** Rule#| SF Status| Block Type| Script Version | Release | Validation Action
+    * -----|----------|-----------|----------------|---------|--------
+    * 13   | active   | mined     | Script v1      | v4.0    | skip-accept (rely on majority)
+    */
+  property("Rule 13 | active SF | mined block | Script v1") {
+    val headerFlags = ergoTreeHeader( 0 /* Script v1 */)
+    val ergoTree = createErgoTree(headerFlags = headerFlags)
+
+    val activatedVersion = 1.toByte // SF Status: active
+
+    // both prove and verify are accepting without evaluation
+    val expectedCost = 0L
+    val pr = testProve(ergoTree, activatedScriptVersion = activatedVersion)
+    pr.proof shouldBe Array.emptyByteArray
+    pr.cost shouldBe expectedCost
+
+    val (ok, cost) = testVerify(ergoTree, activatedScriptVersion = activatedVersion)
+    ok shouldBe true
+    cost shouldBe expectedCost
   }
 
 }

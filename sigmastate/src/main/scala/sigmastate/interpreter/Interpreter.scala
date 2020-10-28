@@ -152,7 +152,7 @@ trait Interpreter extends ScorexLogging {
     implicit val vs = context.validationSettings
     val maxCost = context.costLimit
     val initCost = context.initCost
-    trySoftForkable[ReductionResult](whenSoftFork = TrivialProp.TrueProp -> 0) {
+    trySoftForkable[ReductionResult](whenSoftFork = TrivialProp.TrueProp -> initCost) {
       val costingRes = doCostingEx(env, exp, true)
       val costF = costingRes.costF
       IR.onCostingResult(env, exp, costingRes)
@@ -196,7 +196,12 @@ trait Interpreter extends ScorexLogging {
                     context: CTX,
                     env: ScriptEnv): (SigmaBoolean, Long) = {
     if (context.activatedScriptVersion > Interpreter.MaxSupportedScriptVersion) {
-
+      // majority has already switched to higher version, accept without verification
+      // NOTE: this path should never be taken for validation of candidate blocks
+      // this means Ergo node should always pass Interpreter.MaxSupportedScriptVersion
+      // as the value of ErgoLikeContext.activatedScriptVersion.
+      // see also ErgoLikeContext ScalaDoc.
+      return TrivialProp.TrueProp -> context.initCost
     } else {
       if (ergoTree.version > context.activatedScriptVersion)
         throw new InterpreterException(s"Not supported script version ${ergoTree.version}")
@@ -358,7 +363,7 @@ object Interpreter {
     * For example in version 3.x-4.x this value should be 0, in 5.x increased to 1,
     * in 6.x set to 2, etc.
     */
-  val MaxSupportedScriptVersion: Int = 0
+  val MaxSupportedScriptVersion: Byte = 0
 
   def error(msg: String) = throw new InterpreterException(msg)
 
