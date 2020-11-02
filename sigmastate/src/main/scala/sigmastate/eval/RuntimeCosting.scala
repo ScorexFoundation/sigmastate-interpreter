@@ -903,8 +903,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
     (ByteElement,   ByteIsExactIntegral),
     (ShortElement,  ShortIsExactIntegral),
     (IntElement,    IntIsExactIntegral),
-    (LongElement,   LongIsExactIntegral),
-    (bigIntElement, BigIntIsExactIntegral)
+    (LongElement,   LongIsExactIntegral)
   )
   private lazy val elemToExactOrderingMap = Map[Elem[_], ExactOrdering[_]](
     (ByteElement,   ByteIsExactOrdering),

@@ -1,8 +1,7 @@
 package scalan
 
-import scalan.compilation.GraphVizExport
 import scalan.primitives._
-import scalan.staged.{Transforming}
+import scalan.staged.Transforming
 
 /** Aggregate cake with all inter-dependent modules assembled together.
   * Each instance of this class contains independent IR context, thus many
@@ -30,7 +29,6 @@ class Scalan
   with Functions
   with IfThenElse
   with Transforming
-//  with GraphVizExport
   with Thunks
   with Entities
   with Modules
