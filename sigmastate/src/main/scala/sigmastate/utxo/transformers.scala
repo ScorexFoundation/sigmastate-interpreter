@@ -231,10 +231,14 @@ case class ExtractRegisterAs[V <: SType]( input: Value[SBox.type],
                                           override val tpe: SOption[V])
   extends Extract[SOption[V]] with NotReadyValue[SOption[V]] {
   override def companion = ExtractRegisterAs
-  override val opType = SFunc(Array(SBox, SByte), tpe)
+  override val opType = SFunc(ExtractRegisterAs.BoxAndByte, tpe)
 }
 object ExtractRegisterAs extends ValueCompanion {
   override def opCode: OpCode = OpCodes.ExtractRegisterAs
+
+  //@hotspot: avoids thousands of allocations per second
+  private val BoxAndByte: IndexedSeq[SType] = Array(SBox, SByte)
+
   def apply[V <: SType](input: Value[SBox.type],
                         registerId: RegisterId)(implicit tpe: V): ExtractRegisterAs[V] =
     ExtractRegisterAs(input, registerId, SOption(tpe))

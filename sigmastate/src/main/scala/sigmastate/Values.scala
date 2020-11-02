@@ -37,6 +37,7 @@ import sigmastate.lang.SourceContext
 import special.collection.Coll
 
 import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 
 object Values {
 
@@ -114,6 +115,12 @@ object Values {
     }
     def notSupportedError(v: SValue, opName: String) =
       throw new IllegalArgumentException(s"Method $opName is not supported for node $v")
+
+    /** Immutable empty array of values. Can be used to avoid allocation. */
+    val EmptyArray = Array.empty[SValue]
+
+    /** Immutable empty Seq of values. Can be used to avoid allocation. */
+    val EmptySeq: IndexedSeq[SValue] = EmptyArray
   }
 
   trait ValueCompanion extends SigmaNodeCompanion {
@@ -183,7 +190,17 @@ object Values {
 
   object Constant extends ValueCompanion {
     override def opCode: OpCode = ConstantCode
+
+    /** Immutable empty array, can be used to save allocations in many places. */
+    val EmptyArray = Array.empty[Constant[SType]]
+
+    /** Immutable empty IndexedSeq, can be used to save allocations in many places. */
+    val EmptySeq: IndexedSeq[Constant[SType]] = Array.empty[Constant[SType]]
+
+    /** Helper factory method. */
     def apply[S <: SType](value: S#WrappedType, tpe: S): Constant[S] = ConstantNode(value, tpe)
+
+    /** Recognizer of Constant tree nodes used in patterns. */
     def unapply[S <: SType](v: EvaluatedValue[S]): Option[(S#WrappedType, S)] = v match {
       case ConstantNode(value, tpe) => Some((value, tpe))
       case _ => None
@@ -672,8 +689,12 @@ object Values {
 //      NOTE, the assert below should be commented before production release.
 //      Is it there for debuging only, basically to catch call stacks where the fancy types may
 //      occasionally be used.
-//    assert(items.isInstanceOf[mutable.WrappedArray[_]] || items.isInstanceOf[mutable.IndexedSeq[_]],
+//    assert(
+//      items.isInstanceOf[mutable.WrappedArray[_]] ||
+//      items.isInstanceOf[ArrayBuffer[_]] ||
+//      items.isInstanceOf[mutable.ArraySeq[_]],
 //      s"Invalid types of items ${items.getClass}")
+
     private val isBooleanConstants = elementType == SBoolean && items.forall(_.isInstanceOf[Constant[_]])
     override def companion =
       if (isBooleanConstants) ConcreteCollectionBooleanConstant
@@ -751,6 +772,13 @@ object Values {
     def rhs: SValue
     def isValDef: Boolean
   }
+  object BlockItem {
+    /** Immutable empty array, can be used to save allocations in many places. */
+    val EmptyArray = Array.empty[BlockItem]
+
+    /** Immutable empty IndexedSeq to save allocations in many places. */
+    val EmptySeq: IndexedSeq[BlockItem] = EmptyArray
+  }
 
   /** IR node for let-bound expressions `let x = rhs` which is ValDef, or `let f[T] = rhs` which is FunDef.
     * These nodes are used to represent ErgoTrees after common sub-expression elimination.
@@ -810,7 +838,14 @@ object Values {
     */
   case class FuncValue(args: IndexedSeq[(Int,SType)], body: Value[SType]) extends NotReadyValue[SFunc] {
     override def companion = FuncValue
-    lazy val tpe: SFunc = SFunc(args.toArray.map(_._2), body.tpe)
+    lazy val tpe: SFunc = {
+      val nArgs = args.length
+      val argTypes = new Array[SType](nArgs)
+      cfor(0)(_ < nArgs, _ + 1) { i =>
+        argTypes(i) = args(i)._2
+      }
+      SFunc(argTypes, body.tpe)
+    }
     /** This is not used as operation, but rather to form a program structure */
     override def opType: SFunc = SFunc(mutable.WrappedArray.empty, tpe)
   }
