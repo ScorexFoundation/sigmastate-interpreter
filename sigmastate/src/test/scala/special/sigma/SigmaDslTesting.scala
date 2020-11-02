@@ -445,7 +445,8 @@ class SigmaDslTesting extends PropSpec
         rootCause(exception).getClass shouldBe expectedException.getClass
       case _ =>
         if (failOnTestVectors) {
-          assertResult(expectedRes, s"Actual: ${SigmaPPrint(res, height = 150).plainText}")(res)
+          val actual = res.fold(t => Failure(rootCause(t)), Success(_))
+          assertResult(expectedRes, s"Actual: ${SigmaPPrint(actual, height = 150).plainText}")(actual)
         }
         else {
           if (expectedRes != res) {

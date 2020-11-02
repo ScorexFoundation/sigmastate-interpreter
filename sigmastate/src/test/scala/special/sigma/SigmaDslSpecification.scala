@@ -31,6 +31,7 @@ import sigmastate.helpers.TestingHelpers._
 
 import scala.util.{Success, Failure}
 import OrderingOps._
+import org.ergoplatform.ErgoBox.AdditionalRegisters
 import scorex.util.ModifierId
 import sigmastate.basics.ProveDHTuple
 
@@ -2533,6 +2534,128 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
     forAll { box: Box =>
       Seq(getReg).foreach(_.checkEquality(box))
     }
+  }
+
+  property("Conditional access to registers") {
+    def boxWithRegisters(regs: AdditionalRegisters): Box = {
+      SigmaDsl.Box(testBox(20, TrueProp, 0, Seq(), regs))
+    }
+    val box1 = boxWithRegisters(Map(
+      ErgoBox.R4 -> ByteConstant(0.toByte),
+      ErgoBox.R5 -> ShortConstant(1024.toShort),
+    ))
+    val box2 = boxWithRegisters(Map(
+      ErgoBox.R4 -> ByteConstant(1.toByte),
+      ErgoBox.R5 -> IntConstant(1024 * 1024),
+    ))
+    val box3 = boxWithRegisters(Map(
+      ErgoBox.R4 -> ByteConstant(2.toByte),
+    ))
+    val box4 = boxWithRegisters(Map.empty)
+
+    verifyCases(
+      Seq(
+        (box1, Success(Expected(1024.toShort, cost = 37190))),
+        (box2, Failure(
+          new InvalidType("Cannot getReg[Short](5): invalid type of value TestValue(1048576) at id=5")
+        )),
+        (box3, Success(Expected(0.toShort, cost = 37190)))
+      ),
+      existingFeature(
+        { (x: Box) =>
+          val tagOpt = x.R5[Short]
+          if (tagOpt.isDefined) {
+            tagOpt.get
+          } else {
+            0.toShort
+          }
+        },
+        """{ (x: Box) =>
+         |  val tagOpt = x.R5[Short]
+         |  if (tagOpt.isDefined) {
+         |    tagOpt.get
+         |  } else {
+         |    0.toShort
+         |  }
+         |}""".stripMargin,
+        FuncValue(
+          Array((1, SBox)),
+          BlockValue(
+            Array(ValDef(3, List(), ExtractRegisterAs(ValUse(1, SBox), ErgoBox.R5, SOption(SShort)))),
+            If(
+              OptionIsDefined(ValUse(3, SOption(SShort))),
+              OptionGet(ValUse(3, SOption(SShort))),
+              ShortConstant(0.toShort)
+            )
+          )
+        )))
+
+    verifyCases(
+      Seq(
+        (box1, Success(Expected(1024, cost = 39782))),
+        (box2, Success(Expected(1024 * 1024, cost = 39782))),
+        (box3, Success(Expected(0, cost = 39782))),
+        (box4, Success(Expected(-1, cost = 39782))),
+      ),
+      existingFeature(
+        { (x: Box) =>
+          val tagOpt = x.R4[Byte]
+          if (tagOpt.isDefined) {
+            val tag = tagOpt.get
+            if (tag == 0.toByte) {
+              val short = x.R5[Short].get  // access Short in the register
+              short.toInt
+            } else {
+              if (tag == 1.toByte) {
+                x.R5[Int].get    // access Int in the register
+              }
+              else 0
+            }
+          } else {
+            -1
+          }
+        },
+        """{
+         | (x: Box) =>
+         |   val tagOpt = x.R4[Byte]
+         |   if (tagOpt.isDefined) {
+         |     val tag = tagOpt.get
+         |     if (tag == 0.toByte) {
+         |       val short = x.R5[Short].get  // access Short in the register
+         |       short.toInt
+         |     } else {
+         |       if (tag == 1.toByte) {
+         |         x.R5[Int].get    // access Int in the register
+         |       }
+         |       else 0
+         |     }
+         |   } else {
+         |     -1
+         |   }
+         |}""".stripMargin,
+        FuncValue(
+          Array((1, SBox)),
+          BlockValue(
+            Array(ValDef(3, List(), ExtractRegisterAs(ValUse(1, SBox), ErgoBox.R4, SOption(SByte)))),
+            If(
+              OptionIsDefined(ValUse(3, SOption(SByte))),
+              BlockValue(
+                Array(ValDef(4, List(), OptionGet(ValUse(3, SOption(SByte))))),
+                If(
+                  EQ(ValUse(4, SByte), ByteConstant(0.toByte)),
+                  Upcast(OptionGet(ExtractRegisterAs(ValUse(1, SBox), ErgoBox.R5, SOption(SShort))), SInt),
+                  If(
+                    EQ(ValUse(4, SByte), ByteConstant(1.toByte)),
+                    OptionGet(ExtractRegisterAs(ValUse(1, SBox), ErgoBox.R5, SOption(SInt))),
+                    IntConstant(0)
+                  )
+                )
+              ),
+              IntConstant(-1)
+            )
+          )
+        )
+        ))
   }
 
   property("Advanced Box test") {
