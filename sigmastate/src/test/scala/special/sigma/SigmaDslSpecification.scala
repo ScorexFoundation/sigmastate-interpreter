@@ -35,6 +35,8 @@ import org.ergoplatform.ErgoBox.AdditionalRegisters
 import scorex.util.ModifierId
 import sigmastate.basics.ProveDHTuple
 
+import scala.collection.mutable
+
 
 /** This suite tests every method of every SigmaDsl type to be equivalent to
   * the evaluation of the corresponding ErgoScript operation */
@@ -3142,7 +3144,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
         )),
       preGeneratedSamples = Some(samples))
 
-    // NOTE: testCases2 is not used below because PreHeader/Header cannot be put in
+    // NOTE: verifyCases is not used below because PreHeader/Header cannot be put in
     // registers and context vars
     testCases(
       Seq(ctx -> Success(ctx.preHeader)),
@@ -3328,6 +3330,216 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
       "{ (x: Context) => getVar[Boolean](11).get }",
         FuncValue(Vector((1, SContext)), OptionGet(GetVar(11.toByte, SOption(SBoolean))))),
       preGeneratedSamples = Some(samples))
+
+    val expectedError = new IllegalArgumentException("assertion failed: Unexpected register type found at register #4")
+    
+    verifyCases(
+      Seq(
+        (ctx, Failure(expectedError))
+      ),
+      existingFeature(
+        { (x: Context) =>
+          // this error is expected in v3.x
+          throw expectedError
+          // TODO HF: this is expected in v5.0
+          val dataBox = x.dataInputs(0)
+          val ok = if (x.OUTPUTS(0).R5[Long].get == 1L) {
+            dataBox.R4[Long].get <= x.SELF.value
+          } else {
+            dataBox.R4[Coll[Byte]].get != x.SELF.propositionBytes
+          }
+          ok
+        },
+        s"""{ (x: Context) =>
+          |  val dataBox = x.dataInputs(0)
+          |  val ok = if (x.OUTPUTS(0).R5[Long].get == 1L) {
+          |    dataBox.R4[Long].get <= x.SELF.value
+          |  } else {
+          |    dataBox.R4[Coll[Byte]].get != x.SELF.propositionBytes
+          |  }
+          |  ok
+          |}
+          |""".stripMargin,
+        FuncValue(
+          Array((1, SContext)),
+          BlockValue(
+            Array(
+              ValDef(
+                3,
+                List(),
+                ByIndex(
+                  MethodCall.typed[Value[SCollection[SBox.type]]](
+                    ValUse(1, SContext),
+                    SContext.getMethodByName("dataInputs"),
+                    Vector(),
+                    Map()
+                  ),
+                  IntConstant(0),
+                  None
+                )
+              )
+            ),
+            If(
+              EQ(
+                OptionGet(
+                  ExtractRegisterAs(ByIndex(Outputs, IntConstant(0), None), ErgoBox.R5, SOption(SLong))
+                ),
+                LongConstant(1L)
+              ),
+              LE(
+                OptionGet(ExtractRegisterAs(ValUse(3, SBox), ErgoBox.R4, SOption(SLong))),
+                ExtractAmount(Self)
+              ),
+              NEQ(
+                OptionGet(ExtractRegisterAs(ValUse(3, SBox), ErgoBox.R4, SOption(SByteArray))),
+                ExtractScriptBytes(Self)
+              )
+            )
+          )
+        )
+      ),
+      preGeneratedSamples = Some(mutable.WrappedArray.empty))
+
+    verifyCases(
+      Seq(
+        (ctx, Success(Expected(-135729055492651903L, 38399)))
+      ),
+      existingFeature(
+        { (x: Context) =>
+          val tagOpt = x.dataInputs(0).R5[Long]
+          if (tagOpt.isDefined) {
+            tagOpt.get
+          } else {
+            0L
+          }
+        },
+        """{ (x: Context) =>
+         |  val tagOpt = x.dataInputs(0).R5[Long]
+         |  if (tagOpt.isDefined) {
+         |    tagOpt.get
+         |  } else {
+         |    0L
+         |  }
+         |}""".stripMargin,
+        FuncValue(
+          Array((1, SContext)),
+          BlockValue(
+            Array(
+              ValDef(
+                3,
+                List(),
+                ExtractRegisterAs(
+                  ByIndex(
+                    MethodCall.typed[Value[SCollection[SBox.type]]](
+                      ValUse(1, SContext),
+                      SContext.getMethodByName("dataInputs"),
+                      Vector(),
+                      Map()
+                    ),
+                    IntConstant(0),
+                    None
+                  ),
+                  ErgoBox.R5,
+                  SOption(SLong)
+                )
+              )
+            ),
+            If(
+              OptionIsDefined(ValUse(3, SOption(SLong))),
+              OptionGet(ValUse(3, SOption(SLong))),
+              LongConstant(0L)
+            )
+          )
+        )
+      ),
+      preGeneratedSamples = Some(mutable.WrappedArray.empty))
+
+     def outputWithRegs(ctx: CostingDataContext, regs: AdditionalRegisters) = {
+       ctx.copy(
+         outputs = Coll({
+           val box = ctx.outputs(0).asInstanceOf[CostingBox]
+           box.copy(ebox = copyBox(box.ebox)(additionalRegisters = regs))
+         })
+       )
+     }
+
+    verifyCases(
+      Seq(
+        ctx -> Success(Expected(5008366408131208436L, 40406)),
+        outputWithRegs(ctx, Map(
+          ErgoBox.R5 -> LongConstant(0L),
+          ErgoBox.R4 -> ShortConstant(10))) -> Success(Expected(10L, 40396)),
+        outputWithRegs(ctx, Map(
+          ErgoBox.R4 -> ShortConstant(10))) -> Success(Expected(-1L, 40396))
+      ),
+      existingFeature(
+        { (x: Context) =>
+          val tagOpt = x.OUTPUTS(0).R5[Long]
+          val res = if (tagOpt.isDefined) {
+            val tag = tagOpt.get
+            if (tag == 0L) {
+              val short = x.OUTPUTS(0).R4[Short].get  // access Short in the register
+              short.toLong
+            } else {
+              if (tag == 1L) {
+                val long = x.OUTPUTS(0).R4[Long].get    // access Long in the register
+                long
+              }
+              else 0L
+            }
+          } else {
+            -1L
+          }
+          res
+        },
+        """{
+         |(x: Context) =>
+         |  val tagOpt = x.OUTPUTS(0).R5[Long]
+         |  val res = if (tagOpt.isDefined) {
+         |    val tag = tagOpt.get
+         |    if (tag == 0L) {
+         |      val short = x.OUTPUTS(0).R4[Short].get  // access Short in the register
+         |      short.toLong
+         |    } else {
+         |      if (tag == 1L) {
+         |        val long = x.OUTPUTS(0).R4[Long].get    // access Long in the register
+         |        long
+         |      }
+         |      else 0L
+         |    }
+         |  } else {
+         |    -1L
+         |  }
+         |  res
+         |}""".stripMargin,
+        FuncValue(
+          Array((1, SContext)),
+          BlockValue(
+            Array(
+              ValDef(3, List(), ByIndex(Outputs, IntConstant(0), None)),
+              ValDef(4, List(), ExtractRegisterAs(ValUse(3, SBox), ErgoBox.R5, SOption(SLong)))
+            ),
+            If(
+              OptionIsDefined(ValUse(4, SOption(SLong))),
+              BlockValue(
+                Array(ValDef(5, List(), OptionGet(ValUse(4, SOption(SLong))))),
+                If(
+                  EQ(ValUse(5, SLong), LongConstant(0L)),
+                  Upcast(OptionGet(ExtractRegisterAs(ValUse(3, SBox), ErgoBox.R4, SOption(SShort))), SLong),
+                  If(
+                    EQ(ValUse(5, SLong), LongConstant(1L)),
+                    OptionGet(ExtractRegisterAs(ValUse(3, SBox), ErgoBox.R4, SOption(SLong))),
+                    LongConstant(0L)
+                  )
+                )
+              ),
+              LongConstant(-1L)
+            )
+          )
+        )
+      ),
+      preGeneratedSamples = Some(mutable.WrappedArray.empty))
+
   }
 
   property("xorOf equivalence") {
