@@ -2544,14 +2544,14 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
     }
     val box1 = boxWithRegisters(Map(
       ErgoBox.R4 -> ByteConstant(0.toByte),
-      ErgoBox.R5 -> ShortConstant(1024.toShort),
+      ErgoBox.R5 -> ShortConstant(1024.toShort)
     ))
     val box2 = boxWithRegisters(Map(
       ErgoBox.R4 -> ByteConstant(1.toByte),
-      ErgoBox.R5 -> IntConstant(1024 * 1024),
+      ErgoBox.R5 -> IntConstant(1024 * 1024)
     ))
     val box3 = boxWithRegisters(Map(
-      ErgoBox.R4 -> ByteConstant(2.toByte),
+      ErgoBox.R4 -> ByteConstant(2.toByte)
     ))
     val box4 = boxWithRegisters(Map.empty)
 
@@ -2597,7 +2597,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
         (box1, Success(Expected(1024, cost = 39782))),
         (box2, Success(Expected(1024 * 1024, cost = 39782))),
         (box3, Success(Expected(0, cost = 39782))),
-        (box4, Success(Expected(-1, cost = 39782))),
+        (box4, Success(Expected(-1, cost = 39782)))
       ),
       existingFeature(
         { (x: Box) =>
@@ -3335,7 +3335,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
     
     verifyCases(
       Seq(
-        (ctx, Failure(expectedError))
+        ctx -> Failure(expectedError)
       ),
       existingFeature(
         { (x: Context) =>
@@ -3402,7 +3402,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
     verifyCases(
       Seq(
-        (ctx, Success(Expected(-135729055492651903L, 38399)))
+        ctx -> Success(Expected(-135729055492651903L, 38399))
       ),
       existingFeature(
         { (x: Context) =>
