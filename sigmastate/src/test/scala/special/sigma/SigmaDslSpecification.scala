@@ -3540,6 +3540,105 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
       ),
       preGeneratedSamples = Some(mutable.WrappedArray.empty))
 
+    verifyCases(
+      Seq(
+        // case 1L
+        ctx -> Success(Expected(5008366408131289382L, 41016)),
+        // case 0L
+        outputWithRegs(ctx, Map(
+          ErgoBox.R5 -> LongConstant(0L),
+          ErgoBox.R4 -> ShortConstant(10))) -> Success(Expected(80956L, 41006)),
+
+        // case returning 0L
+        outputWithRegs(ctx, Map(
+          ErgoBox.R5 -> LongConstant(2L),
+          // note R4 is required to avoid
+          // "RuntimeException: Set of non-mandatory indexes is not densely packed"
+          ErgoBox.R4 -> ShortConstant(10))) -> Success(Expected(0L, 41006)),
+
+        // case returning -1L
+        outputWithRegs(ctx, Map(
+          ErgoBox.R4 -> ShortConstant(10))) -> Success(Expected(-1L, 41006))
+      ),
+      existingFeature(
+        { (x: Context) =>
+          val tagOpt = x.OUTPUTS(0).R5[Long]
+          val res = if (tagOpt.isDefined) {
+            val tag = tagOpt.get
+            if (tag == 0L) {
+              val short = x.OUTPUTS(0).R4[Short].get  // access Short in the register
+              short.toLong + x.SELF.value
+            } else {
+              if (tag == 1L) {
+                val long = x.OUTPUTS(0).R4[Long].get    // access Long in the register
+                long + x.SELF.value
+              }
+              else 0L
+            }
+          } else {
+            -1L
+          }
+          res
+        },
+        """{
+         |(x: Context) =>
+         |  val tagOpt = x.OUTPUTS(0).R5[Long]
+         |  val res = if (tagOpt.isDefined) {
+         |    val tag = tagOpt.get
+         |    if (tag == 0L) {
+         |      val short = x.OUTPUTS(0).R4[Short].get  // access Short in the register
+         |      short.toLong + x.SELF.value
+         |    } else {
+         |      if (tag == 1L) {
+         |        val long = x.OUTPUTS(0).R4[Long].get    // access Long in the register
+         |        long + x.SELF.value
+         |      }
+         |      else 0L
+         |    }
+         |  } else {
+         |    -1L
+         |  }
+         |  res
+         |}""".stripMargin,
+        FuncValue(
+          Array((1, SContext)),
+          BlockValue(
+            Array(
+              ValDef(3, List(), ByIndex(Outputs, IntConstant(0), None)),
+              ValDef(4, List(), ExtractRegisterAs(ValUse(3, SBox), ErgoBox.R5, SOption(SLong)))
+            ),
+            If(
+              OptionIsDefined(ValUse(4, SOption(SLong))),
+              BlockValue(
+                Array(ValDef(5, List(), OptionGet(ValUse(4, SOption(SLong))))),
+                If(
+                  EQ(ValUse(5, SLong), LongConstant(0L)),
+                  ArithOp(
+                    Upcast(
+                      OptionGet(ExtractRegisterAs(ValUse(3, SBox), ErgoBox.R4, SOption(SShort))),
+                      SLong
+                    ),
+                    ExtractAmount(Self),
+                    OpCode @@ (-102.toByte)
+                  ),
+                  If(
+                    EQ(ValUse(5, SLong), LongConstant(1L)),
+                    ArithOp(
+                      OptionGet(ExtractRegisterAs(ValUse(3, SBox), ErgoBox.R4, SOption(SLong))),
+                      ExtractAmount(Self),
+                      OpCode @@ (-102.toByte)
+                    ),
+                    LongConstant(0L)
+                  )
+                )
+              ),
+              LongConstant(-1L)
+            )
+          )
+        )
+      ),
+      preGeneratedSamples = Some(mutable.WrappedArray.empty))
+
   }
 
   property("xorOf equivalence") {
