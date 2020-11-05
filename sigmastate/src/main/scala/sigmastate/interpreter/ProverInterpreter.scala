@@ -1,84 +1,61 @@
 package sigmastate.interpreter
 
-import java.util
+import java.math.BigInteger
 
 import gf2t.{GF2_192, GF2_192_Poly}
 import org.bitbucket.inkytonik.kiama.attribution.AttributionCore
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, everywheretd, rule}
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
-import org.ergoplatform.settings.ErgoAlgos
 import scalan.util.CollectionUtil._
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.basics.DLogProtocol._
 import sigmastate.basics.VerifierMessage.Challenge
-import sigmastate.basics.{DiffieHellmanTupleInteractiveProver, DiffieHellmanTupleProverInput, ProveDHTuple, SigmaProtocolPrivateInput}
+import sigmastate.basics._
 import sigmastate.lang.exceptions.CostLimitException
-import sigmastate.serialization.SigmaSerializer
-import sigmastate.utils.{Helpers, SigmaByteReader, SigmaByteWriter}
-import Helpers._
+import sigmastate.utils.Helpers
+
 import scala.util.Try
 
-/**
-  * Proof of correctness of tx spending
-  *
-  * @param proof     - proof that satisfies final sigma proposition
-  * @param extension - user-defined variables to be put into context
-  */
-class ProverResult(val proof: Array[Byte], val extension: ContextExtension) {
-  override def hashCode(): Int = util.Arrays.hashCode(proof) * 31 + extension.hashCode()
-
-  override def equals(obj: scala.Any): Boolean = obj match {
-    case obj: ProverResult =>
-      util.Arrays.equals(proof, obj.proof) && extension == obj.extension
-    case _ => false
-  }
-
-  override def toString: String = s"ProverResult(${ErgoAlgos.encode(proof)},$extension)"
-}
-
-object ProverResult {
-  val empty: ProverResult = ProverResult(Array[Byte](), ContextExtension.empty)
-
-  def apply(proof: Array[Byte], extension: ContextExtension): ProverResult =
-    new ProverResult(proof, extension)
-
-  object serializer extends SigmaSerializer[ProverResult, ProverResult] {
-
-    override def serialize(obj: ProverResult, w: SigmaByteWriter): Unit = {
-      w.putUShort(obj.proof.length)
-      w.putBytes(obj.proof)
-      ContextExtension.serializer.serialize(obj.extension, w)
-    }
-
-    override def parse(r: SigmaByteReader): ProverResult = {
-      val sigBytesCount = r.getUShort()
-      val proofBytes = r.getBytes(sigBytesCount)
-      val ce = ContextExtension.serializer.parse(r)
-      ProverResult(proofBytes, ce)
-    }
-  }
-}
-
-case class CostedProverResult(override val proof: Array[Byte],
-                              override val extension: ContextExtension,
-                              cost: Long) extends ProverResult(proof, extension)
-
+// TODO ProverResult was moved from here, compare with new-eval after merge
 /**
   * Interpreter with enhanced functionality to prove statements.
   */
-trait ProverInterpreter extends Interpreter with AttributionCore {
+trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCore {
 
-  import CryptoConstants.secureRandomBytes
   import Interpreter._
+  import CryptoConstants.secureRandomBytes
 
   override type ProofT = UncheckedTree
 
-  val secrets: Seq[SigmaProtocolPrivateInput[_, _]]
+  def secrets: Seq[SigmaProtocolPrivateInput[_, _]]
+
+  /**
+    * Public keys of prover's secrets. This operation can be costly if there are many
+    * secrets the prover knows, consider re-implementation of this field then.
+    */
+  def publicKeys: Seq[SigmaBoolean] = secrets.map(_.publicImage.asInstanceOf[SigmaBoolean])
+
+  /**
+    * Generate commitments for given ergo tree for prover's secrets.
+    * The prover is reducing the given tree to crypto-tree by using the given context,
+    *   and then generates commitments.
+    */
+  def generateCommitments(ergoTree: ErgoTree, ctx: CTX): HintsBag = {
+    generateCommitmentsFor(ergoTree, ctx, publicKeys)
+  }
+
+  /**
+    * Generate commitments for given crypto-tree (sigma-tree) for prover's secrets.
+    */
+  def generateCommitments(sigmaTree: SigmaBoolean): HintsBag = {
+    generateCommitmentsFor(sigmaTree, publicKeys)
+  }
 
   /**
     * The comments in this section are taken from the algorithm for the
-    * Sigma-protocol prover as described in the white paper
+    * Sigma-protocol prover as described in the ErgoScript white-paper
+    * https://ergoplatform.org/docs/ErgoScript.pdf , Appendix A
     *
     */
   // todo: if we are concerned about timing attacks against the prover, we should make sure that this code
@@ -87,10 +64,10 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
   // todo: once the right value is (or is not) found. We should also make all loops look similar, the same
   // todo: amount of copying is done regardless of what's real or simulated,
   // todo: real vs. simulated computations take the same time, etc.
-  protected def prove(unprovenTree: UnprovenTree, message: Array[Byte]): ProofT = {
+  protected def prove(unprovenTree: UnprovenTree, message: Array[Byte], hintsBag: HintsBag): ProofT = {
 
     // Prover Step 1: Mark as real everything the prover can prove
-    val step1 = markReal(unprovenTree).get.asInstanceOf[UnprovenTree]
+    val step1 = markReal(hintsBag)(unprovenTree).get.asInstanceOf[UnprovenTree]
 
     // Prover Step 2: If the root of the tree is marked "simulated" then the prover does not have enough witnesses
     // to perform the proof. Abort.
@@ -102,56 +79,58 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
 
     // Prover Steps 4, 5, and 6 together: find challenges for simulated nodes; simulate simulated leaves;
     // compute commitments for real leaves
-    val step6 = simulateAndCommit(step3).get.asInstanceOf[UnprovenTree]
+    val step6 = simulateAndCommit(hintsBag)(step3).get.asInstanceOf[UnprovenTree]
 
     // Prover Steps 7: convert the relevant information in the tree (namely, tree structure, node types,
-    // the statements being proven and commitments at the leaves)
-    // to a string
-    val s = FiatShamirTree.toBytes(step6)
+    // the statements being proven and commitments at the leaves) to a bitstring.
+    // This bitstring corresponding to a proposition to prove is needed for Strong Fiat-Shamir transformation.
+    // See [BPW12] paper on Strong vs Weak Fiat-Shamir,
+    // (https://link.springer.com/content/pdf/10.1007/978-3-642-34961-4_38.pdf)
+    val propBytes = FiatShamirTree.toBytes(step6)
 
-    // Prover Step 8: compute the challenge for the root of the tree as the Fiat-Shamir hash of s
+    // Prover Step 8: compute the challenge for the root of the tree as the Fiat-Shamir hash of propBytes
     // and the message being signed.
-    val rootChallenge = Challenge @@ CryptoFunctions.hashFn(s ++ message)
+    val rootChallenge = Challenge @@ CryptoFunctions.hashFn(propBytes ++ message)
     val step8 = step6.withChallenge(rootChallenge)
 
     // Prover Step 9: complete the proof by computing challenges at real nodes and additionally responses at real leaves
-    val step9 = proving(step8).get.asInstanceOf[ProofTree]
+    val step9 = proving(hintsBag)(step8).get.asInstanceOf[ProofTree]
 
     // Syntactic step that performs a type conversion only
     convertToUnchecked(step9)
   }
 
-  def prove(exp: ErgoTree, context: CTX, message: Array[Byte]): Try[CostedProverResult] =
-    prove(emptyEnv, exp, context, message)
+  def prove(ergoTree: ErgoTree,
+            context: CTX,
+            message: Array[Byte],
+            hintsBag: HintsBag): Try[CostedProverResult] =
+    prove(emptyEnv, ergoTree, context, message, hintsBag)
 
-  def prove(env: ScriptEnv, tree: ErgoTree, ctx: CTX, message: Array[Byte]): Try[CostedProverResult] = Try {
+  def prove(ergoTree: ErgoTree,
+            context: CTX,
+            message: Array[Byte]): Try[CostedProverResult] =
+    prove(emptyEnv, ergoTree, context, message, HintsBag.empty)
+
+
+  def prove(env: ScriptEnv,
+            ergoTree: ErgoTree,
+            context: CTX,
+            message: Array[Byte],
+            hintsBag: HintsBag = HintsBag.empty): Try[CostedProverResult] = Try {
     import TrivialProp._
 
-    val initCost = tree.complexity + ctx.initCost
-    val remainingLimit = ctx.costLimit - initCost
-    if (remainingLimit <= 0)
-      throw new CostLimitException(initCost,
-        s"Estimated execution cost $initCost exceeds the limit ${ctx.costLimit}", None)
-
-    val ctxUpdInitCost = ctx.withInitCost(initCost).asInstanceOf[CTX]
-
-    val prop = propositionFromErgoTree(tree, ctxUpdInitCost)
-    val (propTree, context) = applyDeserializeContext(ctxUpdInitCost, prop)
-    val tried = reduceToCrypto(context, env, propTree)
-    val (reducedProp, cost) = tried.getOrThrow
-
-    def errorReducedToFalse = error("Script reduced to false")
+    val (reducedProp, cost) = fullReduction(ergoTree, context, env)
 
     val proofTree = reducedProp match {
       case TrueProp => NoProof
-      case FalseProp => errorReducedToFalse
+      case FalseProp => error("Script reduced to false")
       case sigmaTree =>
         val unprovenTree = convertToUnproven(sigmaTree)
-        prove(unprovenTree, message)
+        prove(unprovenTree, message, hintsBag)
     }
     // Prover Step 10: output the right information into the proof
     val proof = SigSerializer.toBytes(proofTree)
-    CostedProverResult(proof, ctxUpdInitCost.extension, cost)
+    CostedProverResult(proof, context.extension, cost)
   }
 
   /**
@@ -160,8 +139,9 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
     * necessary number of witnesses (for example, more than one child of an OR).
     * This will be corrected in the next step.
     * In a bottom-up traversal of the tree, do the following for each node:
+    *
     */
-  val markReal: Strategy = everywherebu(rule[UnprovenTree] {
+  def markReal(hintsBag: HintsBag): Strategy = everywherebu(rule[Any] {
     case and: CAndUnproven =>
       // If the node is AND, mark it "real" if all of its children are marked real; else mark it "simulated"
       val simulated = and.children.exists(_.asInstanceOf[UnprovenTree].simulated)
@@ -171,42 +151,56 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
       val simulated = or.children.forall(_.asInstanceOf[UnprovenTree].simulated)
       or.copy(simulated = simulated)
     case t: CThresholdUnproven =>
-      // If the node is TRESHOLD(k), mark it "real" if at least k of its children are marked real; else mark it "simulated"
-      val c = t.children.foldLeft(0) { (count, child) =>
+      // If the node is THRESHOLD(k), mark it "real" if at least k of its children are marked real; else mark it "simulated"
+      val realCount = t.children.foldLeft(0) { (count, child) =>
         count + (if (child.asInstanceOf[UnprovenTree].simulated) 0 else 1)
       }
-      t.copy(simulated = c < t.k)
-    case su: UnprovenSchnorr =>
-      // If the node is a leaf, mark it "real'' if the witness for it is available; else mark it "simulated"
-      val secretKnown = secrets.exists {
-        case in: DLogProverInput => in.publicImage == su.proposition
-        case _ => false
+      t.copy(simulated = realCount < t.k)
+    // UnprovenSchnorr | UnprovenDiffieHellmanTuple case
+    case ul: UnprovenLeaf =>
+      // If the node is a leaf, mark it "real'' if either the witness for it is available or a hint shows the secret
+      // is known to an external participant in multi-signing;
+      // else mark it "simulated"
+      val isReal = hintsBag.realImages.contains(ul.proposition) || secrets.exists {
+        case in: SigmaProtocolPrivateInput[_, _] => in.publicImage == ul.proposition
       }
-      su.copy(simulated = !secretKnown)
-    case dhu: UnprovenDiffieHellmanTuple =>
-      // If the node is a leaf, mark it "real" if the witness for it is available; else mark it "simulated"
-      val secretKnown = secrets.exists {
-        case in: DiffieHellmanTupleProverInput => in.publicImage == dhu.proposition
-        case _ => false
-      }
-      dhu.copy(simulated = !secretKnown)
-    case t =>
+      ul.withSimulated(!isReal)
+    case t: UnprovenTree =>
       error(s"Don't know how to markReal($t)")
   })
 
   /**
+    * Set positions for children of a unproven inner node (conjecture, so AND/OR/THRESHOLD)
+    */
+  protected def setPositions(uc: UnprovenConjecture): UnprovenConjecture = {
+    val updChildren = uc.children.zipWithIndex.map { case (pt, idx) =>
+        pt.asInstanceOf[UnprovenTree].withPosition(uc.position.child(idx))
+    }
+    uc match {
+      case and: CAndUnproven => and.copy(children = updChildren)
+      case or: COrUnproven => or.copy(children = updChildren)
+      case threshold: CThresholdUnproven => threshold.copy(children = updChildren)
+    }
+  }
+
+  /**
     * Prover Step 3: This step will change some "real" nodes to "simulated" to make sure each node has
-    * the right number of simulated children.
+    * the right number of simulated children. Also, children will get proper position set during this step.
     * In a top-down traversal of the tree, do the following for each node:
     */
-  val polishSimulated: Strategy = everywheretd(rule[UnprovenTree] {
+  val polishSimulated: Strategy = everywheretd(rule[Any] {
     case and: CAndUnproven =>
       // If the node is marked "simulated", mark all of its children "simulated"
-      if (and.simulated) and.copy(children = and.children.map(_.asInstanceOf[UnprovenTree].withSimulated(true)))
-      else and
+      val a = if (and.simulated) {
+        and.copy(children = and.children.map(_.asInstanceOf[UnprovenTree].withSimulated(true)))
+      } else {
+        and
+      }
+      setPositions(a)
+
     case or: COrUnproven =>
       // If the node is marked "simulated", mark all of its children "simulated"
-      if (or.simulated) {
+      val o = if (or.simulated) {
         or.copy(children = or.children.map(_.asInstanceOf[UnprovenTree].withSimulated(true)))
       } else {
         // If the node is OR marked "real",  mark all but one of its children "simulated"
@@ -224,10 +218,12 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
         }._1
         or.copy(children = newChildren)
       }
+      setPositions(o)
     case t: CThresholdUnproven =>
       // If the node is marked "simulated", mark all of its children "simulated"
-      if (t.simulated) t.copy(children = t.children.map(_.asInstanceOf[UnprovenTree].withSimulated(true)))
-      else {
+      val th = if (t.simulated) {
+        t.copy(children = t.children.map(_.asInstanceOf[UnprovenTree].withSimulated(true)))
+      } else {
         // If the node is THRESHOLD(k) marked "real", mark all but k of its children "simulated"
         // (the node is guaranteed, by the previous step, to have at least k "real" children).
         // Which particular ones are left "real" is not important for security;
@@ -236,19 +232,19 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
         // We'll mark the first k real ones real
         val newChildren = t.children.foldLeft((Seq[UnprovenTree](), 0)) { case ((children, countOfReal), child) =>
           val kid = child.asInstanceOf[UnprovenTree]
-          val (newKid, newCountOfReal) = kid.real match {
-            case false => (kid, countOfReal)
-            case true => ( {
-              if (countOfReal >= t.k) kid.withSimulated(true) else kid
-            }, countOfReal + 1)
+          val (newKid, newCountOfReal) = if (kid.real) {
+            ( { if (countOfReal >= t.k) kid.withSimulated(true) else kid }, countOfReal + 1)
+          } else {
+            (kid, countOfReal)
           }
           (children :+ newKid, newCountOfReal)
         }._1
         t.copy(children = newChildren)
       }
+      setPositions(th)
     case su: UnprovenSchnorr => su
     case dhu: UnprovenDiffieHellmanTuple => dhu
-    case _ => ???
+    case _: UnprovenTree => ???
   })
 
   /**
@@ -258,7 +254,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
     * Prover Step 6: For every leaf marked "real", use the first prover step of the Sigma-protocol for that leaf to
     * compute the commitment a.
     */
-  val simulateAndCommit: Strategy = everywheretd(rule[ProofTree] {
+  def simulateAndCommit(hintsBag: HintsBag): Strategy = everywheretd(rule[Any] {
     // Step 4 part 1: If the node is marked "real", then each of its simulated children gets a fresh uniformly
     // random challenge in {0,1}^t.
     case and: CAndUnproven if and.real => and // A real AND node has no simulated children
@@ -266,8 +262,16 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
     //real OR or Threshold case
     case uc: UnprovenConjecture if uc.real =>
       val newChildren = uc.children.cast[UnprovenTree].map(c =>
-        if (c.real) c
-        else c.withChallenge(Challenge @@ secureRandomBytes(CryptoFunctions.soundnessBytes))
+        if (c.real) {
+          c
+        } else {
+          // take challenge from previously done proof stored in the hints bag,
+          // or generate random challenge for simulated child
+          val newChallenge = hintsBag.proofs.find(_.position == c.position).map(_.challenge).getOrElse(
+            Challenge @@ secureRandomBytes(CryptoFunctions.soundnessBytes)
+          )
+          c.withChallenge(newChallenge)
+        }
       )
       uc match {
         case or: COrUnproven => or.copy(children = newChildren)
@@ -346,36 +350,50 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
     t.withPolynomial(q).copy(children=newChildren)
     */
 
-
-
     case su: UnprovenSchnorr =>
-      if (su.simulated) {
-        // Step 5 (simulated leaf -- complete the simulation)
-        assert(su.challengeOpt.isDefined)
-        val (fm, sm) = DLogInteractiveProver.simulate(su.proposition, su.challengeOpt.get)
-        UncheckedSchnorr(su.proposition, Some(fm), su.challengeOpt.get, sm)
-      } else {
-        // Step 6 (real leaf -- compute the commitment a)
-        val (r, commitment) = DLogInteractiveProver.firstMessage(su.proposition)
-        su.copy(commitmentOpt = Some(commitment), randomnessOpt = Some(r))
+      // Steps 5 & 6: first try pulling out commitment from the hints bag. If it exists proceed with it,
+      // otherwise, compute the commitment (if the node is real) or simulate it (if the node is simulated)
+
+      // Step 6 (real leaf -- compute the commitment a or take it from the hints bag)
+      hintsBag.commitments.find(_.position == su.position).map { cmtHint =>
+        su.copy(commitmentOpt = Some(cmtHint.commitment.asInstanceOf[FirstDLogProverMessage]))
+      }.getOrElse {
+        if (su.simulated) {
+          // Step 5 (simulated leaf -- complete the simulation)
+          assert(su.challengeOpt.isDefined)
+          val (fm, sm) = DLogInteractiveProver.simulate(su.proposition, su.challengeOpt.get)
+          UncheckedSchnorr(su.proposition, Some(fm), su.challengeOpt.get, sm)
+        } else {
+          // Step 6 -- compute the commitment
+          val (r, commitment) = DLogInteractiveProver.firstMessage()
+          su.copy(commitmentOpt = Some(commitment), randomnessOpt = Some(r))
+        }
       }
 
     case dhu: UnprovenDiffieHellmanTuple =>
-      if (dhu.simulated) {
-        // Step 5 (simulated leaf -- complete the simulation)
-        assert(dhu.challengeOpt.isDefined)
-        val (fm, sm) = DiffieHellmanTupleInteractiveProver.simulate(dhu.proposition, dhu.challengeOpt.get)
-        UncheckedDiffieHellmanTuple(dhu.proposition, Some(fm), dhu.challengeOpt.get, sm)
-      } else {
-        // Step 6 (real leaf -- compute the commitment a)
-        val (r, fm) = DiffieHellmanTupleInteractiveProver.firstMessage(dhu.proposition)
-        dhu.copy(commitmentOpt = Some(fm), randomnessOpt = Some(r))
-      }
+       //Steps 5 & 6: pull out commitment from the hints bag, otherwise, compute the commitment(if the node is real),
+       // or simulate it (if the node is simulated)
 
-    case a: Any => error(s"Don't know how to challengeSimulated($a)")
+        // Step 6 (real leaf -- compute the commitment a or take it from the hints bag)
+        hintsBag.commitments.find(_.position == dhu.position).map { cmtHint =>
+          dhu.copy(commitmentOpt = Some(cmtHint.commitment.asInstanceOf[FirstDiffieHellmanTupleProverMessage]))
+        }.getOrElse {
+          if (dhu.simulated) {
+            // Step 5 (simulated leaf -- complete the simulation)
+            assert(dhu.challengeOpt.isDefined)
+            val (fm, sm) = DiffieHellmanTupleInteractiveProver.simulate(dhu.proposition, dhu.challengeOpt.get)
+            UncheckedDiffieHellmanTuple(dhu.proposition, Some(fm), dhu.challengeOpt.get, sm)
+          } else {
+            // Step 6 -- compute the commitment
+            val (r, fm) = DiffieHellmanTupleInteractiveProver.firstMessage(dhu.proposition)
+            dhu.copy(commitmentOpt = Some(fm), randomnessOpt = Some(r))
+          }
+        }
+
+    case t: ProofTree => error(s"Don't know how to challengeSimulated($t)")
   })
 
-  def extractChallenge(pt: ProofTree): Option[Array[Byte]] = pt match {
+  private def extractChallenge(pt: ProofTree): Option[Array[Byte]] = pt match {
     case upt: UnprovenTree => upt.challengeOpt
     case sn: UncheckedSchnorr => Some(sn.challenge)
     case dh: UncheckedDiffieHellmanTuple => Some(dh.challenge)
@@ -387,7 +405,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
     * the challenge e for every node marked "real" below the root and, additionally, the response z for every leaf
     * marked "real"
     */
-  val proving: Strategy = everywheretd(rule[ProofTree] {
+  def proving(hintsBag: HintsBag): Strategy = everywheretd(rule[Any] {
     // If the node is a non-leaf marked real whose challenge is e_0, proceed as follows:
     case and: CAndUnproven if and.real =>
       assert(and.challengeOpt.isDefined)
@@ -441,25 +459,76 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
       t.withPolynomial(q).copy(children = newChildren)
 
     // If the node is a leaf marked "real", compute its response according to the second prover step
-    // of the Sigma-protocol given the commitment, challenge, and witness
+    // of the Sigma-protocol given the commitment, challenge, and witness, or pull response from the hints bag
     case su: UnprovenSchnorr if su.real =>
-      assert(su.challengeOpt.isDefined, s"Real UnprovenTree $su should have challenge defined")
-      val privKey = secrets
+      assert(su.challengeOpt.isDefined, s"Real UnprovenSchnorr $su should have challenge defined")
+      val privKeyOpt = secrets
         .filter(_.isInstanceOf[DLogProverInput])
         .find(_.asInstanceOf[DLogProverInput].publicImage == su.proposition)
-        .get.asInstanceOf[DLogProverInput]
-      val z = DLogInteractiveProver.secondMessage(privKey, su.randomnessOpt.get, su.challengeOpt.get)
+
+      val z = privKeyOpt match {
+        case Some(privKey: DLogProverInput) =>
+          hintsBag.ownCommitments.find(_.position == su.position).map { oc =>
+            DLogInteractiveProver.secondMessage(
+              privKey,
+              oc.secretRandomness,
+              su.challengeOpt.get)
+          }.getOrElse {
+            DLogInteractiveProver.secondMessage(
+              privKey,
+              su.randomnessOpt.get,
+              su.challengeOpt.get)
+          }
+
+        case _ =>
+          hintsBag.realProofs.find(_.position == su.position).map { proof =>
+            val provenSchnorr = proof.uncheckedTree.asInstanceOf[UncheckedSchnorr]
+            provenSchnorr.secondMessage
+          }.getOrElse {
+            val bs = secureRandomBytes(32)
+            SecondDLogProverMessage(new BigInteger(1, bs).mod(CryptoConstants.groupOrder))
+          }
+      }
       UncheckedSchnorr(su.proposition, None, su.challengeOpt.get, z)
 
+    // If the node is a leaf marked "real", compute its response according to the second prover step
+    // of the Sigma-protocol given the commitment, challenge, and witness, or pull response from the hints bag
     case dhu: UnprovenDiffieHellmanTuple if dhu.real =>
-      assert(dhu.challengeOpt.isDefined)
-      val privKey = secrets
+      assert(dhu.challengeOpt.isDefined, s"Real UnprovenDiffieHellmanTuple $dhu should have challenge defined")
+      val privKeyOpt = secrets
         .filter(_.isInstanceOf[DiffieHellmanTupleProverInput])
         .find(_.asInstanceOf[DiffieHellmanTupleProverInput].publicImage == dhu.proposition)
-        .get.asInstanceOf[DiffieHellmanTupleProverInput]
-      val z = DiffieHellmanTupleInteractiveProver.secondMessage(privKey, dhu.randomnessOpt.get, dhu.challengeOpt.get)
+
+      val z = privKeyOpt match {
+        case Some(privKey) =>
+          hintsBag.ownCommitments.find(_.position == dhu.position).map { oc =>
+            DiffieHellmanTupleInteractiveProver.secondMessage(
+              privKey.asInstanceOf[DiffieHellmanTupleProverInput],
+              oc.secretRandomness,
+              dhu.challengeOpt.get)
+          }.getOrElse {
+            DiffieHellmanTupleInteractiveProver.secondMessage(
+              privKey.asInstanceOf[DiffieHellmanTupleProverInput],
+              dhu.randomnessOpt.get,
+              dhu.challengeOpt.get)
+          }
+
+        case None =>
+          hintsBag.realProofs.find(_.position == dhu.position).map { proof =>
+            val provenSchnorr = proof.uncheckedTree.asInstanceOf[UncheckedDiffieHellmanTuple]
+            provenSchnorr.secondMessage
+          }.getOrElse {
+            val bs = secureRandomBytes(32)
+            SecondDiffieHellmanTupleProverMessage(new BigInteger(1, bs).mod(CryptoConstants.groupOrder))
+          }
+      }
       UncheckedDiffieHellmanTuple(dhu.proposition, None, dhu.challengeOpt.get, z)
 
+    // if the simulated node is proven by someone else, take it from hints bag
+    case su: UnprovenLeaf if su.simulated =>
+      hintsBag.simulatedProofs.find(_.image == su.proposition).map { proof =>
+        proof.uncheckedTree
+      }.getOrElse(su)
 
     case sn: UncheckedSchnorr => sn
 
@@ -467,7 +536,9 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
 
     case ut: UnprovenTree => ut
 
-    case a: Any => log.warn("Wrong input in prove(): ", a); ???
+    case t: ProofTree =>
+      log.warn("Wrong input in prove(): ", t);
+      ???
   })
 
 
@@ -497,6 +568,8 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
       CThresholdUncheckedNode(t.challengeOpt.get, t.children.map(convertToUnchecked), t.k, t.polynomialOpt)
     case s: UncheckedSchnorr => s
     case d: UncheckedDiffieHellmanTuple => d
-    case _ => ???
+    case a: Any =>
+      error(s"Cannot convertToUnproven($a)")
   }
+
 }

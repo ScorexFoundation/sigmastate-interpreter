@@ -3,6 +3,7 @@ package sigmastate.serialization
 
 import java.math.BigInteger
 
+import org.ergoplatform.JsonCodecs
 import org.scalacheck.Arbitrary._
 import scalan.RType
 import sigmastate.SCollection.SByteArray
@@ -13,9 +14,11 @@ import sigmastate.eval.Extensions._
 import sigmastate.eval.{Evaluation, _}
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.lang.exceptions.SerializerException
-import special.sigma.{AvlTree, Box}
+import special.sigma.{TestValue, Box, AvlTree}
 
 class DataJsonEncoderSpecification extends SerializationSpecification {
+  object JsonCodecs extends JsonCodecs
+
   def roundtrip[T <: SType](obj: T#WrappedType, tpe: T) = {
     val json = DataJsonEncoder.encode(obj, tpe)
     val res = DataJsonEncoder.decode(json)
@@ -56,6 +59,31 @@ class DataJsonEncoderSpecification extends SerializationSpecification {
     }
   }
 
+  def testAnyValue[T <: SType](tpe: T) = {
+    implicit val wWrapped = wrappedTypeGen(tpe)
+    implicit val tag = tpe.classTag[T#WrappedType]
+    implicit val tT = Evaluation.stypeToRType(tpe)
+    implicit val tAny = RType.AnyType
+    forAll { in: T#WrappedType =>
+      val x = TestValue(in, tT)
+      val json = JsonCodecs.anyValueEncoder(x)
+      val y = JsonCodecs.anyValueDecoder.decodeJson(json).right.get
+      x shouldBe y
+      
+      val tTup = Evaluation.stypeToRType(STuple(tpe, tpe)).asInstanceOf[RType[(T#WrappedType, T#WrappedType)]]
+      val xTup = TestValue((in, in), tTup)
+      val jsonTup = JsonCodecs.anyValueEncoder(xTup)
+      val yTup = JsonCodecs.anyValueDecoder.decodeJson(jsonTup).right.get
+      xTup shouldBe yTup
+
+      val tColl = Evaluation.stypeToRType(SCollection(tpe))
+      val xColl = TestValue(SigmaDsl.Colls.fromItems(in, in), tColl)
+      val jsonColl = JsonCodecs.anyValueEncoder(xColl)
+      val yColl = JsonCodecs.anyValueDecoder.decodeJson(jsonColl).right.get
+      xColl shouldBe yColl
+    }
+  }
+
   property("Data Json serialization round trip") {
     forAll { x: Byte => roundtrip[SByte.type](x, SByte) }
     forAll { x: Boolean => roundtrip[SBoolean.type](x, SBoolean) }
@@ -77,6 +105,30 @@ class DataJsonEncoderSpecification extends SerializationSpecification {
   property("Example test") {
     def toUnifiedString(from: String): String = from.replaceAll("[\n ]", "")
 
+    toUnifiedString(DataJsonEncoder.encode(().asWrappedType, SUnit).toString()) shouldBe
+      toUnifiedString(
+        """
+          |{ "type": "Unit",
+          |  "value": {}
+          |}""".stripMargin)
+    toUnifiedString(DataJsonEncoder.encode(Some(10).asWrappedType, SOption(SInt)).toString()) shouldBe
+      toUnifiedString(
+        """
+          |{ "type": "Option[Int]",
+          |  "value": [10]
+          |}""".stripMargin)
+    toUnifiedString(DataJsonEncoder.encode(None.asWrappedType, SOption(SInt)).toString()) shouldBe
+      toUnifiedString(
+        """
+          |{ "type": "Option[Int]",
+          |  "value": null
+          |}""".stripMargin)
+    toUnifiedString(DataJsonEncoder.encode(Some(None).asWrappedType, SOption(SOption(SInt))).toString()) shouldBe
+      toUnifiedString(
+        """
+          |{ "type": "Option[Option[Int]]",
+          |  "value": [null]
+          |}""".stripMargin)
     toUnifiedString(DataJsonEncoder.encode((10, 20).asWrappedType, STuple(SInt, SInt)).toString()) shouldBe
       toUnifiedString(
         """
@@ -132,12 +184,78 @@ class DataJsonEncoderSpecification extends SerializationSpecification {
     implicit val tag = tpe.classTag[T#WrappedType]
     implicit val tAny = RType.AnyType
     forAll { x: T#WrappedType =>
-      an[SerializerException] should be thrownBy
+      an[SerializerException] should be thrownBy {
         DataJsonEncoder.encode(TupleColl(x, x, x).asWrappedType, STuple(tpe, tpe, tpe))
+      }
+
+      // supported case
+      DataJsonEncoder.encode(SigmaDsl.Colls.fromItems(TupleColl(x, x)).asWrappedType, SCollection(STuple(tpe, tpe)))
+
+      // not supported case
+      an[SerializerException] should be thrownBy {
+        DataJsonEncoder.encode(SigmaDsl.Colls.fromItems(TupleColl(x, x, x)).asWrappedType, SCollection(STuple(tpe, tpe, tpe)))
+      }
+    }
+  }
+
+  property("AnyValue") {
+    forAll { t: SPredefType =>
+      testAnyValue(t)
+      testAnyValue(SOption(t))
     }
   }
 
   property("Tuples with > 2 items are not supported") {
-    forAll { t: SPredefType => testEncodeError(t) }
+    forAll { t: SPredefType =>
+      testEncodeError(t)
+    }
+  }
+
+  property("Reject decoding Tuple with more than 2 items") {
+    val pair = io.circe.parser.parse(
+      """
+       |{ "type": "(Int, Int)",
+       |  "value": {
+       |    "_1": 10,
+       |    "_2": 20
+       |  }
+       |}""".stripMargin).right.get
+
+    DataJsonEncoder.decode(pair) shouldBe (10, 20)
+
+    val triple = io.circe.parser.parse(
+      """
+       |{ "type": "(Int, Int, Int)",
+       |  "value": {
+       |    "_1": 10,
+       |    "_2": 20,
+       |    "_3": 30
+       |  }
+       |}""".stripMargin).right.get
+
+     assertExceptionThrown(
+       DataJsonEncoder.decode(triple),
+       { t =>
+         t.isInstanceOf[SerializerException] &&
+         t.getMessage.contains("Tuples with length not equal to 2 are not supported")
+       }
+     )
+
+    val tripleColl = io.circe.parser.parse(
+      """
+       |{ "type": "Coll[(Int, Int, Int)]",
+       |  "value": {
+       |    "_1": [1, 2, 3],
+       |    "_2": [10, 20, 30]
+       |  }
+       |}""".stripMargin).right.get
+
+    assertExceptionThrown(
+      DataJsonEncoder.decode(tripleColl),
+      { t =>
+        t.isInstanceOf[SerializerException] &&
+            t.getMessage.contains("Tuples with length not equal to 2 are not supported")
+      }
+    )
   }
 }

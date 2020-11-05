@@ -25,11 +25,18 @@ case class ConcreteCollectionSerializer(cons: (IndexedSeq[Value[SType]], SType) 
   override def parse(r: SigmaByteReader): Value[SCollection[SType]] = {
     val size = r.getUShort()   // READ
     val tItem = r.getType()    // READ
-    val values = new Array[SValue](size)
-    cfor(0)(_ < size, _ + 1) { i =>
-      values(i) = r.getValue() // READ
+    val values: IndexedSeq[Value[SType]] = if (size == 0) {
+      // reusing pre-allocated immutable instances
+      Value.EmptySeq
+    } else {
+      val values = new Array[SValue](size)
+      cfor(0)(_ < size, _ + 1) { i =>
+        val v = r.getValue() // READ
+        values(i) = v
+        assert(v.tpe == tItem, s"Invalid type of collection value in $values")
+      }
+      values
     }
-    assert(values.forall(_.tpe == tItem), s"Invalid type of collection value in $values")
     cons(values, tItem)
   }
 }

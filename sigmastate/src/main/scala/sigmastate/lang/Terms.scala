@@ -15,6 +15,8 @@ import spire.syntax.all._
 
 import scala.collection.mutable
 import scala.language.implicitConversions
+import scala.collection.mutable.WrappedArray
+import spire.syntax.all.cfor
 
 object Terms {
 
@@ -49,10 +51,11 @@ object Terms {
   case class ZKProofBlock(body: SigmaPropValue) extends BoolValue {
     override def companion = ZKProofBlock
     override def tpe = SBoolean
-    override def opType: SFunc = SFunc(SSigmaProp, SBoolean)
+    override def opType: SFunc = ZKProofBlock.OpType
   }
   object ZKProofBlock extends ValueCompanion {
     override def opCode: OpCode = OpCodes.Undefined
+    val OpType = SFunc(SSigmaProp, SBoolean)
   }
 
   trait Val extends Value[SType] {
@@ -102,13 +105,18 @@ object Terms {
     * compilation environment value. */
   case class Ident(name: String, tpe: SType = NoType) extends Value[SType] {
     override def companion = Ident
-    override def opType: SFunc = SFunc(Vector(), tpe)
+    override def opType: SFunc = SFunc(WrappedArray.empty, tpe)
   }
   object Ident extends ValueCompanion {
     override def opCode: OpCode = OpCodes.Undefined
     def apply(name: String): Ident = Ident(name, NoType)
   }
 
+  // TODO refactor: move to sigmastate.Values
+  /** ErgoTree node which represents application of function `func` to the given arguments.
+    * @param func expression which evaluates to a function
+    * @param args arguments of the function application
+    */
   case class Apply(func: Value[SType], args: IndexedSeq[Value[SType]]) extends Value[SType] {
     override def companion = Apply
     override lazy val tpe: SType = func.tpe match {
@@ -116,7 +124,15 @@ object Terms {
       case tColl: SCollectionType[_] => tColl.elemType
       case _ => NoType
     }
-    override def opType: SFunc = SFunc(Vector(func.tpe +: args.map(_.tpe):_*), tpe)
+    override lazy val opType: SFunc = {
+      val nArgs = args.length
+      val argTypes = new Array[SType](nArgs + 1)
+      argTypes(0) = func.tpe
+      cfor(0)(_ < nArgs, _ + 1) { i =>
+        argTypes(i + 1) = args(i).tpe
+      }
+      SFunc(argTypes, tpe)
+    }
 
     protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
       if (args.isEmpty) {
@@ -213,6 +229,17 @@ object Terms {
   }
   object MethodCall extends ValueCompanion {
     override def opCode: OpCode = OpCodes.MethodCallCode
+
+    /** Helper constructor which allows to cast the resulting node to the specified
+      * [[sigmastate.Values.Value]] type `T`.
+      * @see [[sigmastate.lang.Terms.MethodCall]]
+      */
+    def typed[T <: SValue](obj: Value[SType],
+                           method: SMethod,
+                           args: IndexedSeq[Value[SType]],
+                           typeSubst: Map[STypeVar, SType]): T = {
+      MethodCall(obj, method, args, typeSubst).asInstanceOf[T]
+    }
   }
   object PropertyCall extends ValueCompanion {
     override def opCode: OpCode = OpCodes.PropertyCallCode
@@ -300,8 +327,8 @@ object Terms {
       * @return AST where all nodes with missing source context are set to the given srcCtx
       */
     def withPropagatedSrcCtx[T <: SType](srcCtx: Nullable[SourceContext]): Value[T] = {
-      rewrite(everywherebu(rule[SValue] {
-        case node if node != null && node.sourceContext.isEmpty =>
+      rewrite(everywherebu(rule[Any] {
+        case node: SValue if node != null && node.sourceContext.isEmpty =>
           node.withSrcCtx(srcCtx)
       }))(v).asValue[T]
     }

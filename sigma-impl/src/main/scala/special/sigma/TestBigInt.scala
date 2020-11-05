@@ -4,8 +4,9 @@ import special.collection.Coll
 import java.math.BigInteger
 import scalan.util.Extensions.BigIntegerOps
 
+// TODO refactor: this class should be removed before v5.0
 abstract class TestBigInt(private[sigma] val value: BigInteger) extends BigInt {
-  val dsl: TestSigmaDslBuilder = new TestSigmaDslBuilder
+  def dsl: TestSigmaDslBuilder
 
   override def toByte : Byte  = value.byteValueExact()
   override def toShort: Short = value.shortValueExact()
@@ -49,4 +50,8 @@ abstract class TestBigInt(private[sigma] val value: BigInteger) extends BigInt {
   override def max(that: BigInt): BigInt = dsl.BigInt(value.max(that.value))
 
   override def negate(): BigInt = dsl.BigInt(value.negate().to256BitValueExact)
+
+  override def and(that: BigInt): BigInt = dsl.BigInt(value.and(that.value))
+
+  override def or(that: BigInt): BigInt = dsl.BigInt(value.or(that.value))
 }

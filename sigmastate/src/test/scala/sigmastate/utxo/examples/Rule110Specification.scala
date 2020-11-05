@@ -7,6 +7,7 @@ import sigmastate.Values.{BooleanConstant, ByteArrayConstant, ByteConstant, Fals
 import sigmastate._
 import sigmastate.eval._
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.ContextExtension
 import sigmastate.lang.Terms._
 import sigmastate.serialization.ValueSerializer
@@ -51,8 +52,8 @@ class Rule110Specification extends SigmaTestingCommons {
         |   (OUTPUTS(0).propositionBytes == SELF.propositionBytes)
          }""".stripMargin).asBoolValue.toSigmaProp
 
-    val input = ErgoBox(1, prop, 0, Seq(), Map(reg1 -> ByteArrayConstant(Array[Byte](0, 1, 1, 0, 1, 0))))
-    val output = ErgoBox(1, prop, 0, Seq(), Map(reg1 -> ByteArrayConstant(Array[Byte](1, 1, 1, 1, 1, 0))))
+    val input = testBox(1, prop, 0, Seq(), Map(reg1 -> ByteArrayConstant(Array[Byte](0, 1, 1, 0, 1, 0))))
+    val output = testBox(1, prop, 0, Seq(), Map(reg1 -> ByteArrayConstant(Array[Byte](1, 1, 1, 1, 1, 0))))
     val tx = UnsignedErgoLikeTransaction(IndexedSeq(new UnsignedInput(input.id)), IndexedSeq(output))
 
     val ctx = ErgoLikeContextTesting(
@@ -206,12 +207,12 @@ class Rule110Specification extends SigmaTestingCommons {
     val prop = AND(scriptIsCorrect, OR(normalCaseConditions, rightmostConditions, nLeftmostConditions, leftmostConditions)).toSigmaProp
 
     // test normal case
-    val nIn0 = ErgoBox(1, prop, 0, Seq(), Map(MidReg -> f, XReg -> ByteConstant(-2), YReg -> ByteConstant(0), ValReg -> t))
-    val nIn1 = ErgoBox(1, prop, 0, Seq(), Map(MidReg -> t, XReg -> ByteConstant(-1), YReg -> ByteConstant(0), ValReg -> f))
-    val nIn2 = ErgoBox(1, prop, 0, Seq(), Map(MidReg -> f, XReg -> ByteConstant(0), YReg -> ByteConstant(0), ValReg -> t))
-    val nOut0 = ErgoBox(1, prop, 0, Seq(), Map(MidReg -> f, XReg -> ByteConstant(-1), YReg -> ByteConstant(-1), ValReg -> t))
-    val nOut1 = ErgoBox(1, prop, 0, Seq(), Map(MidReg -> t, XReg -> ByteConstant(-1), YReg -> ByteConstant(-1), ValReg -> t))
-    val nOut2 = ErgoBox(1, prop, 0, Seq(), Map(MidReg -> f, XReg -> ByteConstant(-1), YReg -> ByteConstant(-1), ValReg -> t))
+    val nIn0 = testBox(1, prop, 0, Seq(), Map(MidReg -> f, XReg -> ByteConstant(-2), YReg -> ByteConstant(0), ValReg -> t))
+    val nIn1 = testBox(1, prop, 0, Seq(), Map(MidReg -> t, XReg -> ByteConstant(-1), YReg -> ByteConstant(0), ValReg -> f))
+    val nIn2 = testBox(1, prop, 0, Seq(), Map(MidReg -> f, XReg -> ByteConstant(0), YReg -> ByteConstant(0), ValReg -> t))
+    val nOut0 = testBox(1, prop, 0, Seq(), Map(MidReg -> f, XReg -> ByteConstant(-1), YReg -> ByteConstant(-1), ValReg -> t))
+    val nOut1 = testBox(1, prop, 0, Seq(), Map(MidReg -> t, XReg -> ByteConstant(-1), YReg -> ByteConstant(-1), ValReg -> t))
+    val nOut2 = testBox(1, prop, 0, Seq(), Map(MidReg -> f, XReg -> ByteConstant(-1), YReg -> ByteConstant(-1), ValReg -> t))
 
     val nTx = UnsignedErgoLikeTransaction(IndexedSeq(nIn0, nIn1, nIn2).map(i => new UnsignedInput(i.id)), IndexedSeq(nOut0, nOut1, nOut2))
     val nProver = new ContextEnrichingTestProvingInterpreter()
@@ -229,11 +230,11 @@ class Rule110Specification extends SigmaTestingCommons {
     verifier.verify(prop, nCtx, nProof, fakeMessage).get._1 shouldBe true
 
     // test rightmost case
-    val rIn0 = ErgoBox(1, prop, 0, Seq(), Map(MidReg -> f, XReg -> ByteConstant(-1), YReg -> ByteConstant(0), ValReg -> t))
-    val rIn1 = ErgoBox(1, prop, 0, Seq(), Map(MidReg -> t, XReg -> ByteConstant(0), YReg -> ByteConstant(0), ValReg -> t))
-    val rOut0 = ErgoBox(1, prop, 0, Seq(), Map(MidReg -> f, XReg -> ByteConstant(0), YReg -> ByteConstant(-1), ValReg -> t))
-    val rOut1 = ErgoBox(1, prop, 0, Seq(), Map(MidReg -> t, XReg -> ByteConstant(0), YReg -> ByteConstant(-1), ValReg -> t))
-    val rOut2 = ErgoBox(1, prop, 0, Seq(), Map(MidReg -> f, XReg -> ByteConstant(0), YReg -> ByteConstant(-1), ValReg -> t))
+    val rIn0 = testBox(1, prop, 0, Seq(), Map(MidReg -> f, XReg -> ByteConstant(-1), YReg -> ByteConstant(0), ValReg -> t))
+    val rIn1 = testBox(1, prop, 0, Seq(), Map(MidReg -> t, XReg -> ByteConstant(0), YReg -> ByteConstant(0), ValReg -> t))
+    val rOut0 = testBox(1, prop, 0, Seq(), Map(MidReg -> f, XReg -> ByteConstant(0), YReg -> ByteConstant(-1), ValReg -> t))
+    val rOut1 = testBox(1, prop, 0, Seq(), Map(MidReg -> t, XReg -> ByteConstant(0), YReg -> ByteConstant(-1), ValReg -> t))
+    val rOut2 = testBox(1, prop, 0, Seq(), Map(MidReg -> f, XReg -> ByteConstant(0), YReg -> ByteConstant(-1), ValReg -> t))
 
     val rTx = UnsignedErgoLikeTransaction(IndexedSeq(rIn0, rIn1).map(i => new UnsignedInput(i.id)), IndexedSeq(rOut0, rOut1, rOut2))
     val rProver = new ContextEnrichingTestProvingInterpreter()
@@ -251,11 +252,11 @@ class Rule110Specification extends SigmaTestingCommons {
     verifier.verify(prop, rCtx, rProof, fakeMessage).get._1 shouldBe true
 
     // test next to leftmost case
-    val lnIn0 = ErgoBox(1, prop, 0, Seq(), Map(MidReg -> t, XReg -> ByteConstant(-6), YReg -> ByteConstant(-6), ValReg -> t))
-    val lnIn1 = ErgoBox(1, prop, 0, Seq(), Map(MidReg -> f, XReg -> ByteConstant(-5), YReg -> ByteConstant(-6), ValReg -> t))
-    val lnOut0 = ErgoBox(1, prop, 0, Seq(), Map(MidReg -> f, XReg -> ByteConstant(-6), YReg -> ByteConstant(-7), ValReg -> t))
-    val lnOut1 = ErgoBox(1, prop, 0, Seq(), Map(MidReg -> t, XReg -> ByteConstant(-6), YReg -> ByteConstant(-7), ValReg -> t))
-    val lnOut2 = ErgoBox(1, prop, 0, Seq(), Map(MidReg -> f, XReg -> ByteConstant(-6), YReg -> ByteConstant(-7), ValReg -> t))
+    val lnIn0 = testBox(1, prop, 0, Seq(), Map(MidReg -> t, XReg -> ByteConstant(-6), YReg -> ByteConstant(-6), ValReg -> t))
+    val lnIn1 = testBox(1, prop, 0, Seq(), Map(MidReg -> f, XReg -> ByteConstant(-5), YReg -> ByteConstant(-6), ValReg -> t))
+    val lnOut0 = testBox(1, prop, 0, Seq(), Map(MidReg -> f, XReg -> ByteConstant(-6), YReg -> ByteConstant(-7), ValReg -> t))
+    val lnOut1 = testBox(1, prop, 0, Seq(), Map(MidReg -> t, XReg -> ByteConstant(-6), YReg -> ByteConstant(-7), ValReg -> t))
+    val lnOut2 = testBox(1, prop, 0, Seq(), Map(MidReg -> f, XReg -> ByteConstant(-6), YReg -> ByteConstant(-7), ValReg -> t))
 
     val lnTx = UnsignedErgoLikeTransaction(IndexedSeq(lnIn0, lnIn1).map(i => new UnsignedInput(i.id)), IndexedSeq(lnOut0, lnOut1, lnOut2))
     val lnProver = new ContextEnrichingTestProvingInterpreter()
@@ -273,10 +274,10 @@ class Rule110Specification extends SigmaTestingCommons {
     verifier.verify(prop, lnCtx, lnProof, fakeMessage).get._1 shouldBe true
 
     // test  leftmost case
-    val lIn0 = ErgoBox(1, prop, 0, Seq(), Map(MidReg -> f, XReg -> ByteConstant(-6), YReg -> ByteConstant(-6), ValReg -> t))
-    val lOut0 = ErgoBox(1, prop, 0, Seq(), Map(MidReg -> f, XReg -> ByteConstant(-7), YReg -> ByteConstant(-7), ValReg -> t))
-    val lOut1 = ErgoBox(1, prop, 0, Seq(), Map(MidReg -> t, XReg -> ByteConstant(-7), YReg -> ByteConstant(-7), ValReg -> t))
-    val lOut2 = ErgoBox(1, prop, 0, Seq(), Map(MidReg -> f, XReg -> ByteConstant(-7), YReg -> ByteConstant(-7), ValReg -> t))
+    val lIn0 = testBox(1, prop, 0, Seq(), Map(MidReg -> f, XReg -> ByteConstant(-6), YReg -> ByteConstant(-6), ValReg -> t))
+    val lOut0 = testBox(1, prop, 0, Seq(), Map(MidReg -> f, XReg -> ByteConstant(-7), YReg -> ByteConstant(-7), ValReg -> t))
+    val lOut1 = testBox(1, prop, 0, Seq(), Map(MidReg -> t, XReg -> ByteConstant(-7), YReg -> ByteConstant(-7), ValReg -> t))
+    val lOut2 = testBox(1, prop, 0, Seq(), Map(MidReg -> f, XReg -> ByteConstant(-7), YReg -> ByteConstant(-7), ValReg -> t))
 
     val lTx = UnsignedErgoLikeTransaction(IndexedSeq(lIn0).map(i => new UnsignedInput(i.id)), IndexedSeq(lOut0, lOut1, lOut2))
     val lProver = new ContextEnrichingTestProvingInterpreter()
@@ -400,7 +401,7 @@ class Rule110Specification extends SigmaTestingCommons {
       val row = RowReg -> LongConstant(0)
       val column = ColumnReg -> LongConstant(col)
       val value = if (col == 15) ValueReg -> TrueLeaf else ValueReg -> FalseLeaf
-      ErgoBox(0L, prop, 0, Nil, Map(row, column, value), txId.toModifierId, col.toShort)
+      testBox(0L, prop, 0, Nil, Map(row, column, value), txId.toModifierId, col.toShort)
     }
 
     val initBlock = FullBlock(

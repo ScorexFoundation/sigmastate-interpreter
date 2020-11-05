@@ -86,7 +86,7 @@ case class Slice[IV <: SType](input: Value[SCollection[IV]], from: Value[SInt.ty
   override val tpe = input.tpe
   override def opType = {
     val tpeColl = SCollection(input.tpe.typeParams.head.ident)
-    SFunc(Vector(tpeColl, SInt, SInt), tpeColl)
+    SFunc(Array(tpeColl, SInt, SInt), tpeColl)
   }
   protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val inputV = input.evalTo[Coll[Any]](E, env)
@@ -218,19 +218,11 @@ object Fold extends ValueCompanion {
   def sum[T <: SNumericType](input: Value[SCollection[T]], varId: Int)(implicit tT: T) =
     Fold(input,
       Constant(tT.upcast(0.toByte), tT),
-      FuncValue(Vector((varId, STuple(tT, tT))),
+      FuncValue(Array((varId, STuple(tT, tT))),
         Plus(
           SelectField(ValUse(varId, STuple(tT, tT)), 1).asNumValue,
           SelectField(ValUse(varId, STuple(tT, tT)), 2).asNumValue))
     )
-
-  def concat[T <: SType](input: Value[SCollection[SCollection[T]]])(implicit tT: T): Fold[SCollection[T], T] = {
-    val tColl = SCollection(tT)
-    Fold[SCollection[T], T](input,
-      ConcreteCollection(Array[Value[T]](), tT).asValue[T],
-      FuncValue(Array((1, tColl), (2, tColl)), Append(ValUse(1, tColl), ValUse(2, tColl)))
-    )
-  }
 }
 
 /** The element of the collection or default value.
@@ -289,13 +281,16 @@ case class SelectField(input: Value[STuple], fieldIndex: Byte)
 }
 object SelectField extends ValueCompanion {
   override def opCode: OpCode = OpCodes.SelectFieldCode
+  def typed[T <: SValue](input: Value[STuple], fieldIndex: Byte): T = {
+    SelectField(input, fieldIndex).asInstanceOf[T]
+  }
 }
 
 /** Represents execution of Sigma protocol that validates the given input SigmaProp. */
 case class SigmaPropIsProven(input: Value[SSigmaProp.type])
   extends Transformer[SSigmaProp.type, SBoolean.type] with NotReadyValueBoolean {
   override def companion = SigmaPropIsProven
-  override def opType = SFunc(input.tpe, SBoolean)
+  override val opType = SFunc(input.tpe, SBoolean)
 }
 object SigmaPropIsProven extends ValueCompanion {
   override def opCode: OpCode = OpCodes.SigmaPropIsProvenCode
@@ -324,7 +319,7 @@ trait SimpleTransformerCompanion extends ValueCompanion {
 case class SizeOf[V <: SType](input: Value[SCollection[V]])
   extends Transformer[SCollection[V], SInt.type] with NotReadyValueInt {
   override def companion = SizeOf
-  override val opType = SFunc(SCollection(SCollection.tIV), SInt)
+  override def opType = SizeOf.OpType
   protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val inputV = input.evalTo[Coll[Any]](E, env)
     E.addCostOf(this)
@@ -332,6 +327,7 @@ case class SizeOf[V <: SType](input: Value[SCollection[V]])
   }
 }
 object SizeOf extends SimpleTransformerCompanion {
+  val OpType = SFunc(SCollection(SType.tIV), SInt)
   override def opCode: OpCode = OpCodes.SizeOfCode
   override def argInfos: Seq[ArgInfo] = SizeOfInfo.argInfos
 }
@@ -342,7 +338,7 @@ sealed trait Extract[V <: SType] extends Transformer[SBox.type, V] {
 /** Extracts the monetary value, in Ergo tokens (NanoErg unit of measure) from input Box. */
 case class ExtractAmount(input: Value[SBox.type]) extends Extract[SLong.type] with NotReadyValueLong {
   override def companion = ExtractAmount
-  override val opType = SFunc(SBox, SLong)
+  override def opType = ExtractAmount.OpType
   protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val inputV = input.evalTo[Box](E, env)
     // TODO JITC
@@ -350,6 +346,7 @@ case class ExtractAmount(input: Value[SBox.type]) extends Extract[SLong.type] wi
   }
 }
 object ExtractAmount extends SimpleTransformerCompanion {
+  val OpType = SFunc(SBox, SLong)
   override def opCode: OpCode = OpCodes.ExtractAmountCode
   override def argInfos: Seq[ArgInfo] = ExtractAmountInfo.argInfos
 }
@@ -360,7 +357,7 @@ object ExtractAmount extends SimpleTransformerCompanion {
   */
 case class ExtractScriptBytes(input: Value[SBox.type]) extends Extract[SByteArray] with NotReadyValueByteArray {
   override def companion = ExtractScriptBytes
-  override val opType = SFunc(SBox, SByteArray)
+  override def opType = ExtractScriptBytes.OpType
   protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val inputV = input.evalTo[Box](E, env)
     // TODO JITC
@@ -368,6 +365,7 @@ case class ExtractScriptBytes(input: Value[SBox.type]) extends Extract[SByteArra
   }
 }
 object ExtractScriptBytes extends SimpleTransformerCompanion {
+  val OpType = SFunc(SBox, SByteArray)
   override def opCode: OpCode = OpCodes.ExtractScriptBytesCode
   override def argInfos: Seq[ArgInfo] = ExtractScriptBytesInfo.argInfos
 }
@@ -375,7 +373,7 @@ object ExtractScriptBytes extends SimpleTransformerCompanion {
 /** Extracts serialized bytes of this box's content, including proposition bytes. */
 case class ExtractBytes(input: Value[SBox.type]) extends Extract[SByteArray] with NotReadyValueByteArray {
   override def companion = ExtractBytes
-  override val opType = SFunc(SBox, SByteArray)
+  override def opType = ExtractBytes.OpType
   protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val inputV = input.evalTo[Box](E, env)
     // TODO JITC
@@ -383,6 +381,7 @@ case class ExtractBytes(input: Value[SBox.type]) extends Extract[SByteArray] wit
   }
 }
 object ExtractBytes extends SimpleTransformerCompanion {
+  val OpType = SFunc(SBox, SByteArray)
   override def opCode: OpCode = OpCodes.ExtractBytesCode
   override def argInfos: Seq[ArgInfo] = ExtractBytesInfo.argInfos
 }
@@ -390,7 +389,7 @@ object ExtractBytes extends SimpleTransformerCompanion {
 /** Extracts serialized bytes of this box's content, excluding transactionId and index of output. */
 case class ExtractBytesWithNoRef(input: Value[SBox.type]) extends Extract[SByteArray] with NotReadyValueByteArray {
   override def companion = ExtractBytesWithNoRef
-  override val opType = SFunc(SBox, SByteArray)
+  override def opType = ExtractBytesWithNoRef.OpType
   protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val inputV = input.evalTo[Box](E, env)
     // TODO JITC
@@ -398,6 +397,7 @@ case class ExtractBytesWithNoRef(input: Value[SBox.type]) extends Extract[SByteA
   }
 }
 object ExtractBytesWithNoRef extends SimpleTransformerCompanion {
+  val OpType = SFunc(SBox, SByteArray)
   override def opCode: OpCode = OpCodes.ExtractBytesWithNoRefCode
   override def argInfos: Seq[ArgInfo] = ExtractBytesWithNoRefInfo.argInfos
 }
@@ -405,7 +405,7 @@ object ExtractBytesWithNoRef extends SimpleTransformerCompanion {
 /** Extracts Blake2b256 hash of this box's content, basically equals to `blake2b256(bytes)` */
 case class ExtractId(input: Value[SBox.type]) extends Extract[SByteArray] with NotReadyValueByteArray {
   override def companion = ExtractId
-  override val opType = SFunc(SBox, SByteArray)
+  override def opType = ExtractId.OpType
   protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val inputV = input.evalTo[Box](E, env)
     // TODO JITC
@@ -413,6 +413,7 @@ case class ExtractId(input: Value[SBox.type]) extends Extract[SByteArray] with N
   }
 }
 object ExtractId extends SimpleTransformerCompanion {
+  val OpType = SFunc(SBox, SByteArray)
   override def opCode: OpCode = OpCodes.ExtractIdCode
   override def argInfos: Seq[ArgInfo] = ExtractIdInfo.argInfos
 }
@@ -423,7 +424,7 @@ case class ExtractRegisterAs[V <: SType]( input: Value[SBox.type],
                                           override val tpe: SOption[V])
   extends Extract[SOption[V]] with NotReadyValue[SOption[V]] {
   override def companion = ExtractRegisterAs
-  override def opType = SFunc(Vector(SBox, SByte), tpe)
+  override val opType = SFunc(ExtractRegisterAs.BoxAndByte, tpe)
   lazy val tV = Evaluation.stypeToRType(tpe.elemType)
   protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val inputV = input.evalTo[Box](E, env)
@@ -433,6 +434,10 @@ case class ExtractRegisterAs[V <: SType]( input: Value[SBox.type],
 }
 object ExtractRegisterAs extends ValueCompanion {
   override def opCode: OpCode = OpCodes.ExtractRegisterAs
+
+  //@hotspot: avoids thousands of allocations per second
+  private val BoxAndByte: IndexedSeq[SType] = Array(SBox, SByte)
+
   def apply[V <: SType](input: Value[SBox.type],
                         registerId: RegisterId)(implicit tpe: V): ExtractRegisterAs[V] =
     ExtractRegisterAs(input, registerId, SOption(tpe))
@@ -472,7 +477,7 @@ trait Deserialize[V <: SType] extends NotReadyValue[V]
   */
 case class DeserializeContext[V <: SType](id: Byte, tpe: V) extends Deserialize[V] {
   override def companion = DeserializeContext
-  override val opType = SFunc(Vector(SContext, SByte), tpe)
+  override val opType = SFunc(Array(SContext, SByte), tpe)
 }
 object DeserializeContext extends ValueCompanion {
   override def opCode: OpCode = OpCodes.DeserializeContextCode
@@ -483,7 +488,7 @@ object DeserializeContext extends ValueCompanion {
   */
 case class DeserializeRegister[V <: SType](reg: RegisterId, tpe: V, default: Option[Value[V]] = None) extends Deserialize[V] {
   override def companion = DeserializeRegister
-  override val opType = SFunc(Vector(SBox, SByte, SOption(tpe)), tpe)
+  override val opType = SFunc(Array(SBox, SByte, SOption(tpe)), tpe)
 }
 object DeserializeRegister extends ValueCompanion {
   override def opCode: OpCode = OpCodes.DeserializeRegisterCode
@@ -492,7 +497,7 @@ object DeserializeRegister extends ValueCompanion {
 /** See [[special.sigma.Context.getVar()]] for detailed description. */
 case class GetVar[V <: SType](varId: Byte, override val tpe: SOption[V]) extends NotReadyValue[SOption[V]] {
   override def companion = GetVar
-  override val opType = SFunc(Vector(SContext, SByte), tpe)
+  override val opType = SFunc(Array(SContext, SByte), tpe) // TODO optimize: avoid Array allocation
   protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val t = Evaluation.stypeToRType(tpe.elemType)
     E.addCostOf(this)

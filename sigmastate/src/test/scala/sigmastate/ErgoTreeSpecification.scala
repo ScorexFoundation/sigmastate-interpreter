@@ -1,12 +1,108 @@
 package sigmastate
 
-import org.ergoplatform.validation.ValidationException
+import org.ergoplatform.settings.ErgoAlgos
+import org.ergoplatform.validation.{ValidationException, ValidationRules}
+import scalan.Nullable
+import sigmastate.Values._
+import sigmastate.lang.SourceContext
 import special.sigma.SigmaTestingData
+import sigmastate.lang.Terms._
+import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 
 /** Regression tests with ErgoTree related test vectors.
   * This test vectors verify various constants which are consensus critical and should not change.
   */
 class ErgoTreeSpecification extends SigmaTestingData {
+
+  property("Value.sourceContext") {
+    val srcCtx = SourceContext.fromParserIndex(0, "")
+    val value = IntConstant(10)
+    value.sourceContext shouldBe Nullable.None
+
+    value.withSrcCtx(Nullable(srcCtx))
+    value.sourceContext shouldBe Nullable(srcCtx)
+
+    assertExceptionThrown(
+      value.withSrcCtx(Nullable(srcCtx)),
+      t => t.isInstanceOf[RuntimeException] && t.getMessage.contains("can be set only once"))
+  }
+
+  property("Value.opType") {
+    Seq(
+      Block(Seq(), null),
+      ValNode("x", SInt, null),
+      ApplyTypes(null, Seq()),
+      TaggedVariableNode(1, SByte),
+      ValDef(1, null),
+      ValUse(1, SInt),
+      BlockValue(IndexedSeq(), null)
+      ).foreach { node =>
+      assertExceptionThrown(node.opType, t => t.getMessage.contains("is not supported for node"))
+    }
+    FuncValue(Vector((1, SInt)), ValUse(1, SInt)).opType shouldBe
+      SFunc(Vector(), SFunc(SInt, SInt))
+  }
+
+  property("ErgoTree.toProposition") {
+    val t1 = new ErgoTree(
+      16.toByte,
+      Array(IntConstant(1)),
+      Right(BoolToSigmaProp(EQ(ConstantPlaceholder(0, SInt), IntConstant(1))))
+    )
+
+    val t = new ErgoTree(
+      16.toByte,
+      Array(IntConstant(1)),
+      Left(UnparsedErgoTree(t1.bytes, ValidationException("", ValidationRules.CheckTypeCode, Seq())))
+    )
+    assertExceptionThrown(
+      t.toProposition(true),
+      t => t.isInstanceOf[ValidationException]
+    )
+  }
+
+  property("ErgoTree.template") {
+    val t = new ErgoTree(
+      16.toByte,
+      Array(IntConstant(1)),
+      Right(BoolToSigmaProp(EQ(ConstantPlaceholder(0, SInt), IntConstant(1))))
+    )
+    t.template shouldBe ErgoAlgos.decodeUnsafe("d19373000402")
+  }
+
+  property("ErgoTree.bytes") {
+    val t = new ErgoTree(
+      16.toByte,
+      Array(IntConstant(1)),
+      Right(BoolToSigmaProp(EQ(ConstantPlaceholder(0, SInt), IntConstant(1))))
+    )
+    val expectedBytes = DefaultSerializer.serializeErgoTree(t)
+    t._bytes shouldBe expectedBytes
+  }
+
+  property("ErgoTree equality") {
+    val t1 = new ErgoTree(
+      16.toByte,
+      Array(IntConstant(1)),
+      Right(BoolToSigmaProp(EQ(ConstantPlaceholder(0, SInt), IntConstant(1))))
+    )
+    val t2 = new ErgoTree(16.toByte, Array(IntConstant(1)), Right(TrueSigmaProp))
+    val t3 = new ErgoTree(16.toByte, Array(IntConstant(1)), Right(TrueSigmaProp))
+    val t4 = new ErgoTree(16.toByte, Vector(), Right(TrueSigmaProp))
+    val t5 = new ErgoTree(ErgoTree.DefaultHeader, Vector(), Right(TrueSigmaProp))
+    assert(t1 != t2)
+    assert(t2 == t3)
+    assert(t3 != t4)
+    assert(t4 != t5)
+    assert(t5 != t1)
+  }
+
+  property("ConstantNode equality") {
+    assert(IntConstant(10) == IntConstant(10))
+    assert(ShortConstant(10) == ShortConstant(10))
+    assert(IntConstant(10) != IntConstant(11))
+    assert(IntConstant(10) != ShortConstant(10))
+  }
 
   val typeCodes = Table(
     ("constant", "expectedValue"),
@@ -50,6 +146,17 @@ class ErgoTreeSpecification extends SigmaTestingData {
       whenever(isPrim) {
         t.typeCode should be <= SPrimType.LastPrimTypeCode
       }
+    }
+    forAll(Table(("type", "isConstantSize"),
+      (NoType, true),
+      (SString, false),
+      (SAny, false),
+      (SUnit, true),
+      (SFunc(SInt, SAny), false),
+      (STypeApply("T"), false),
+      (SType.tT, false)
+    )) { (t, isConst) =>
+      t.isConstantSize shouldBe isConst
     }
   }
 
@@ -103,7 +210,7 @@ class ErgoTreeSpecification extends SigmaTestingData {
     { import SSigmaProp._
       (SSigmaProp.typeId,  Seq(
         MInfo(1, PropBytesMethod),
-        MInfo(2, IsProvenMethod)  // TODO HF: this method must be removed
+        MInfo(2, IsProvenMethod)  // TODO HF (3h): this method must be removed
       ), true)
     },
     { import SBox._
@@ -222,7 +329,6 @@ class ErgoTreeSpecification extends SigmaTestingData {
         MInfo(8, FilterMethod)
       ), true)
     }
-  //    (SNumericType.typeId, Seq.empty[(Int, SMethod)], true)
   )
 
   property("MethodCall Codes") {
@@ -240,13 +346,12 @@ class ErgoTreeSpecification extends SigmaTestingData {
 
               resolvedMethod.objType.typeId shouldBe typeId
               resolvedMethod.name shouldBe expectedMethod.method.name
-//              assert(resolvedMethod.irInfo.irBuilder.isDefined, s"irBuilder is not defined for $resolvedMethod")
               resolvedMethod.irInfo shouldBe expectedMethod.method.irInfo
             } else {
               // declared, but not supported
               assertExceptionThrown(
                 SMethod.fromIds(typeId, expectedMethod.methodId),
-                { case ve: ValidationException => true
+                { case _: ValidationException => true
                   case _ => false },
                 s"MethodCall shouldn't resolve for typeId = $typeId and $expectedMethod"
               )

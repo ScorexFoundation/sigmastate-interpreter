@@ -4,8 +4,7 @@ import java.math.BigInteger
 
 import org.bouncycastle.asn1.x9.X9ECParameters
 import org.bouncycastle.crypto.ec.CustomNamedCurves
-import org.bouncycastle.math.ec.custom.djb.Curve25519Point
-import org.bouncycastle.math.ec.custom.sec.{SecP256K1Point, SecP384R1Point, SecP521R1Point}
+import org.bouncycastle.math.ec.custom.sec.SecP256K1Point
 import org.bouncycastle.math.ec.ECPoint
 import org.bouncycastle.util.BigIntegers
 import spire.syntax.all.cfor
@@ -134,26 +133,6 @@ abstract class BcDlogGroup[ElemType <: ECPoint](val x9params: X9ECParameters) ex
   }
 
   /**
-    * This function returns the k least significant bytes of the number x
-    *
-    * @param x
-    * @param k
-    * @return k least significant bits of x
-    */
-  def getKLeastSignBytes(x: BigInteger, k: Int): Array[Byte] = { //To retrieve the k least significant bits of a number x we do:
-    //lsb = x mod (2^8k)
-    val modulo = BigInteger.valueOf(2).pow(8 * k)
-    x.mod(modulo).toByteArray
-  }
-
-  def checkMembershipAndCreate(x: BigInteger, y: BigInteger): Try[ElemType] = Try {
-    val valid = checkCurveMembership(x, y)
-    // checks validity
-    if (!valid) throw new IllegalArgumentException("x, y values are not a point on this curve")
-    curve.validatePoint(x, y).asInstanceOf[ElemType]
-  }
-
-  /**
     *
     * @return the order of this Dlog group
     */
@@ -165,16 +144,6 @@ abstract class BcDlogGroup[ElemType <: ECPoint](val x9params: X9ECParameters) ex
     */
   override lazy val identity: ElemType = curve.getInfinity.asInstanceOf[ElemType]
 
-
-  def createPoint(x: BigInteger, y: BigInteger): ElemType = curve.createPoint(x, y).asInstanceOf[ElemType]
-
-
-  /**
-    * Creates ECPoint.Fp with infinity values
-    */
-  lazy val getInfinity: ElemType = curve.getInfinity.asInstanceOf[ElemType]
-
-
   /**
     * Calculates the inverse of the given GroupElement.
     *
@@ -182,7 +151,7 @@ abstract class BcDlogGroup[ElemType <: ECPoint](val x9params: X9ECParameters) ex
     * @return the inverse element of the given GroupElement
     * @throws IllegalArgumentException
     **/
-  override def getInverse(groupElement: ElemType): ElemType =
+  override def inverseOf(groupElement: ElemType): ElemType =
     groupElement.negate().asInstanceOf[ElemType]
 
   /**
@@ -412,56 +381,5 @@ abstract class BcDlogGroup[ElemType <: ECPoint](val x9params: X9ECParameters) ex
     else 9
   }
 }
-
-object SecP384R1 extends BcDlogGroup[SecP384R1Point](CustomNamedCurves.getByName("secp384r1")) with App {
-  val elems = 5000
-  val base = generator
-  val exps = (1 to elems).map { _ =>
-    val one = BigInteger.ONE
-    val qMinusOne = x9params.getN.subtract(one)
-    // choose a random number x in Zq*
-    BigIntegers.createRandomInRange(one, qMinusOne, secureRandom)
-  }.toArray
-
-  println(exps.map(e => exponentiateWithPreComputedValues(base, e) == exponentiate(base, e)).forall(_ == true))
-
-  var t0 = System.currentTimeMillis()
-  exps.foreach(exp => exponentiate(base, exp))
-  println(System.currentTimeMillis() - t0)
-
-
-  t0 = System.currentTimeMillis()
-  exps.foreach(exp => exponentiateWithPreComputedValues(base, exp))
-  println(System.currentTimeMillis() - t0)
-}
-
-object SecP521R1 extends BcDlogGroup[SecP521R1Point](CustomNamedCurves.getByName("secp521r1")) with App {
-  val elems = 1000
-  val bases = (1 to elems).map(_ => createRandomGenerator()).toArray
-  val exps = (1 to elems).map { _ =>
-    val one = BigInteger.ONE
-    val qMinusOne = x9params.getN.subtract(one)
-    // choose a random number x in Zq*
-    BigIntegers.createRandomInRange(one, qMinusOne, secureRandom)
-  }.toArray
-
-  var t0 = System.currentTimeMillis()
-  val naive = computeNaive(bases, exps)
-  println(System.currentTimeMillis() - t0)
-
-  t0 = System.currentTimeMillis()
-  val ll = computeLL(bases, exps)
-  println(System.currentTimeMillis() - t0)
-
-  println(naive.normalize().getAffineXCoord)
-  println(naive.normalize().getAffineYCoord)
-
-  println(ll.normalize().getAffineXCoord)
-  println(ll.normalize().getAffineYCoord)
-
-  println(naive == ll)
-}
-
-object Curve25519 extends BcDlogGroup[Curve25519Point](CustomNamedCurves.getByName("curve25519"))
 
 object SecP256K1 extends BcDlogGroup[SecP256K1Point](CustomNamedCurves.getByName("secp256k1"))

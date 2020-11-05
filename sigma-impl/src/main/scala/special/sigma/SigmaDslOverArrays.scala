@@ -13,13 +13,14 @@ import special.SpecialPredef
 import special.collection._
 import scalan.util.Extensions.BigIntegerOps
 
+// TODO refactor: this class is not necessary and can be removed
 class TestSigmaDslBuilder extends SigmaDslBuilder {
   // manual fix
   def Colls: CollBuilder = new CollOverArrayBuilder
   def Monoids: MonoidBuilder = new MonoidBuilderInst
   def Costing: CostedBuilder = new CCostedBuilder
   @NeverInline
-  def CostModel: CostModel = new TestCostModel
+  def CostModel: CostModel = ???
 
   @NeverInline
   def verifyZK(proof: => SigmaProp): Boolean = proof.isValid
@@ -38,7 +39,10 @@ class TestSigmaDslBuilder extends SigmaDslBuilder {
   def anyZK(props: Coll[SigmaProp]): SigmaProp = MockSigma(props.exists(p => p.isValid))
 
   @NeverInline
-  override def xorOf(conditions: Coll[Boolean]): Boolean = conditions.toArray.distinct.length == 2
+  override def xorOf(conditions: Coll[Boolean]): Boolean = {
+    // TODO HF (2h): see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/640
+    conditions.toArray.distinct.length == 2
+  }
 
   @NeverInline
   def sigmaProp(b: Boolean): SigmaProp = MockSigma(b)
@@ -48,9 +52,6 @@ class TestSigmaDslBuilder extends SigmaDslBuilder {
 
   @NeverInline
   def sha256(bytes: Coll[Byte]): Coll[Byte] = Colls.fromArray(Sha256.hash(bytes.toArray))
-
-  @NeverInline
-  def PubKey(base64String: String): SigmaProp = ???
 
   @NeverInline
   def byteArrayToBigInt(bytes: Coll[Byte]): BigInt = {

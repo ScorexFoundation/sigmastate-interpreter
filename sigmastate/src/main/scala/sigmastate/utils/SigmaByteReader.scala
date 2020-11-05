@@ -2,10 +2,11 @@ package sigmastate.utils
 
 import scorex.util.serialization.Reader
 import sigmastate.SType
-import sigmastate.Values.SValue
-import sigmastate.lang.exceptions.{DeserializeCallDepthExceeded, InputSizeLimitExceeded}
+import sigmastate.Values.{SValue, Value}
+import sigmastate.lang.exceptions.{InputSizeLimitExceeded, DeserializeCallDepthExceeded}
 import sigmastate.serialization._
 import scorex.util.Extensions._
+import spire.syntax.all.cfor
 
 class SigmaByteReader(val r: Reader,
                       var constantStore: ConstantStore,
@@ -17,9 +18,12 @@ class SigmaByteReader(val r: Reader,
     if (position > positionLimit)
       throw new InputSizeLimitExceeded(s"SigmaByteReader position limit $positionLimit is reached at position $position")
 
-
-  val valDefTypeStore: ValDefTypeStore = new ValDefTypeStore()
-
+  /** The reader should be lightweight to create. In most cases ErgoTrees don't have
+    * ValDef nodes hence the store is not necessary and it's initialization dominates the
+    * reader instantiation time. Hence it's lazy.
+    * @hotspot
+    */
+  lazy val valDefTypeStore: ValDefTypeStore = new ValDefTypeStore()
 
   override type CH = r.CH
 
@@ -114,13 +118,21 @@ class SigmaByteReader(val r: Reader,
     lvl = v
   }
 
+  /** Read sequence of values from this reader.
+    * It first reads the number of values and then reads each value using `getValue` method.
+    *
+    * @return a sequence of zero of more values read
+    */
   @inline def getValues(): IndexedSeq[SValue] = {
     val size = getUInt().toIntExact
-    val xs = new Array[SValue](size)
-    for (i <- 0 until size) {
-      xs(i) = getValue()
+    if (size == 0) Value.EmptySeq // quick short-cut when there is nothing to read
+    else {
+      val xs = new Array[SValue](size)
+      cfor(0)(_ < size, _ + 1) { i =>
+        xs(i) = getValue()
+      }
+      xs
     }
-    xs
   }
 
   private var positionLmt: Int = r.position + r.remaining

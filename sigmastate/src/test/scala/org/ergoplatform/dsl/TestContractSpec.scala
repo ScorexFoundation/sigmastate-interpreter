@@ -3,24 +3,23 @@ package org.ergoplatform.dsl
 import sigmastate.interpreter.Interpreter.ScriptNameProp
 
 import scala.collection.mutable
-import sigmastate.interpreter.{ContextExtension, CostedProverResult, ProverResult}
+import sigmastate.interpreter.{ProverResult, CostedProverResult}
 
 import scala.collection.mutable.ArrayBuffer
 import org.ergoplatform.ErgoBox.NonMandatoryRegisterId
-import org.ergoplatform.SigmaConstants.ScriptCostLimit
 import scalan.Nullable
 import scorex.crypto.hash.Digest32
 
 import scala.util.Try
-import org.ergoplatform.{ErgoBox, ErgoLikeContext}
-import org.ergoplatform.dsl.ContractSyntax.{ErgoScript, Proposition, Token, TokenId}
-import org.ergoplatform.validation.ValidationRules
+import org.ergoplatform.{ErgoLikeContext, ErgoBox}
+import org.ergoplatform.dsl.ContractSyntax.{Token, TokenId, ErgoScript, Proposition}
 import sigmastate.{AvlTreeData, SType}
 import sigmastate.Values.{ErgoTree, EvaluatedValue}
-import sigmastate.eval.{CSigmaProp, Evaluation, IRContext}
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaTestingCommons}
+import sigmastate.eval.{IRContext, CSigmaProp, Evaluation}
+import sigmastate.helpers.{ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaTestingCommons, ContextEnrichingTestProvingInterpreter}
+import sigmastate.helpers.TestingHelpers._
 import sigmastate.lang.Terms.ValueOps
-import special.sigma.{AnyValue, SigmaProp, TestValue}
+import special.sigma.{AnyValue, TestValue, SigmaProp}
 
 case class TestContractSpec(testSuite: SigmaTestingCommons)(implicit val IR: IRContext) extends ContractSpec {
 
@@ -84,7 +83,7 @@ case class TestContractSpec(testSuite: SigmaTestingCommons)(implicit val IR: IRC
         minerPubkey = ErgoLikeContextTesting.dummyPubkey,
         dataBoxes   = dataBoxes,
         boxesToSpend = boxesToSpend,
-        spendingTransaction = testSuite.createTransaction(dataBoxes, tx.outputs.map(_.ergoBox).toIndexedSeq),
+        spendingTransaction = createTransaction(dataBoxes, tx.outputs.map(_.ergoBox).toIndexedSeq),
         selfIndex = boxesToSpend.indexOf(utxoBox.ergoBox) )
       ctx
     }
@@ -119,7 +118,7 @@ case class TestContractSpec(testSuite: SigmaTestingCommons)(implicit val IR: IRC
 
     private[dsl] lazy val ergoBox: ErgoBox = {
       val tokens = _tokens.map { t => (Digest32 @@ t.id.toArray, t.value) }
-      ErgoBox(value, propSpec.ergoTree, tx.block.height, tokens, _regs)
+      testBox(value, propSpec.ergoTree, tx.block.height, tokens, _regs)
     }
     def id = ergoBox.id
   }

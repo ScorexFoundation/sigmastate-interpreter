@@ -8,28 +8,52 @@ import sigmastate.{AvlTreeFlags, TrivialProp}
 import sigmastate.Values.{BooleanConstant, IntConstant}
 import org.scalacheck.{Arbitrary, Gen}
 import sigmastate.helpers.SigmaTestingCommons
+import sigmastate.helpers.TestingHelpers._
 import sigmastate.eval._
 import sigmastate.eval.Extensions._
-import org.ergoplatform.{DataInput, ErgoBox, ErgoLikeContext, ErgoLikeTransaction}
-import scorex.crypto.hash.{Blake2b256, Digest32}
+import org.ergoplatform.{ErgoLikeContext, DataInput, ErgoLikeTransaction, ErgoBox}
+import org.scalacheck.util.Buildable
+import scalan.RType
+import scorex.crypto.hash.{Digest32, Blake2b256}
 import scorex.crypto.authds.{ADKey, ADValue}
+import special.collection.Coll
 
 trait SigmaTestingData extends SigmaTestingCommons with SigmaTypeGens {
-  val bytesGen: Gen[Array[Byte]] = containerOfN[Array, Byte](100, Arbitrary.arbByte.arbitrary)
+  def collOfN[T: RType: Arbitrary](n: Int)(implicit b: Buildable[T, Array[T]]): Gen[Coll[T]] = {
+    implicit val g: Gen[T] = Arbitrary.arbitrary[T]
+    containerOfN[Array, T](n, g).map(Colls.fromArray(_))
+  }
+
+  val bytesGen: Gen[Array[Byte]] = for {
+    len <- Gen.choose(0, 100)
+    arr <- containerOfN[Array, Byte](len, Arbitrary.arbByte.arbitrary)
+  } yield arr
+
   val bytesCollGen = bytesGen.map(Colls.fromArray(_))
+  val intsCollGen = arrayGen[Int].map(Colls.fromArray(_))
+
   implicit val arbBytes = Arbitrary(bytesCollGen)
-  val keyCollGen = bytesCollGen.map(_.slice(0, 32))
+  implicit val arbInts = Arbitrary(intsCollGen)
+
+  val keyCollGen = collOfN[Byte](32)
+
   import org.ergoplatform.dsl.AvlTreeHelpers._
+
+  def createAvlTreeAndProver(entries: (Coll[Byte], Coll[Byte])*) = {
+    val kvs = entries.map { case (k,v) => ADKey @@ k.toArray -> ADValue @@ v.toArray}
+    val res = createAvlTree(AvlTreeFlags.AllOperationsAllowed, kvs:_*)
+    res
+  }
 
   protected def sampleAvlProver = {
     val key = keyCollGen.sample.get
     val value = bytesCollGen.sample.get
-    val (_, avlProver) = createAvlTree(AvlTreeFlags.AllOperationsAllowed, ADKey @@ key.toArray -> ADValue @@ value.toArray)
-    (key, value, avlProver)
+    val (tree, prover) = createAvlTreeAndProver(key -> value)
+    (key, value, tree, prover)
   }
 
   protected def sampleAvlTree: AvlTree = {
-    val (key, _, avlProver) = sampleAvlProver
+    val (_, _, _, avlProver) = sampleAvlProver
     val digest = avlProver.digest.toColl
     val tree = SigmaDsl.avlTree(AvlTreeFlags.ReadOnly.serializeToByte, digest, 32, None)
     tree
@@ -95,7 +119,7 @@ trait SigmaTestingData extends SigmaTestingCommons with SigmaTypeGens {
     boxesToSpend = IndexedSeq(inBox),
     spendingTransaction = new ErgoLikeTransaction(IndexedSeq(), IndexedSeq(DataInput(dataBox.id)), IndexedSeq(outBox)),
     selfIndex = 0, headers = headers, preHeader = preHeader, dataBoxes = IndexedSeq(dataBox),
-    extension = ContextExtension.empty,
+    extension = ContextExtension(Map(2.toByte -> IntConstant(10))),
     validationSettings = ValidationRules.currentSettings,
     costLimit = ScriptCostLimit.value, initCost = 0L)
 }

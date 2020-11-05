@@ -4,7 +4,7 @@ import java.security.SecureRandom
 
 import sigmastate.basics.VerifierMessage.Challenge
 import sigmastate.interpreter.CryptoConstants
-import sigmastate.{SigmaProofOfKnowledgeTree, UncheckedTree}
+import sigmastate.{SigmaProofOfKnowledgeLeaf, UncheckedTree}
 import supertagged.TaggedType
 
 import scala.concurrent.Future
@@ -23,7 +23,6 @@ import scala.concurrent.Future
 
 
 trait TranscriptMessage {
-  def bytes: Array[Byte]
 }
 
 /** The message sent by a prover to its associated verifier as part of a sigma protocol interaction. */
@@ -39,17 +38,23 @@ object VerifierMessage {
 }
 
 /** First message from the prover (message `a` of `SigmaProtocol`)*/
-trait FirstProverMessage[SP <: SigmaProtocol[SP]] extends ProverMessage
+trait FirstProverMessage extends ProverMessage {
+  type SP <: SigmaProtocol[SP]
+
+  def bytes: Array[Byte]
+}
 
 /** Second message from the prover (message `z` of `SigmaProtocol`)*/
-trait SecondProverMessage[SP <: SigmaProtocol[SP]] extends ProverMessage
+trait SecondProverMessage extends ProverMessage {
+  type SP <: SigmaProtocol[SP]
+}
 
 /** Abstract template for sigma protocols.
   * For details see the following book
   * [1] Efficient Secure Two-Party Protocols - Techniques and Constructions, p.150)*/
 trait SigmaProtocol[SP <: SigmaProtocol[SP]] {
-  type A <: FirstProverMessage[SP]
-  type Z <: SecondProverMessage[SP]
+  type A <: FirstProverMessage
+  type Z <: SecondProverMessage
 }
 
 
@@ -96,7 +101,7 @@ trait ZeroKnowledgeProofOfKnowledge[SP <: SigmaProtocol[SP]]
 
 trait NonInteractiveProver[SP <: SigmaProtocol[SP],
   PI <: SigmaProtocolPrivateInput[SP, CI],
-  CI <: SigmaProofOfKnowledgeTree[SP, PI],
+  CI <: SigmaProofOfKnowledgeLeaf[SP, PI],
   P <: UncheckedTree]
   extends Prover[SP, CI, PI] {
 
@@ -144,17 +149,3 @@ trait SigmaProtocolTranscript[SP <: SigmaProtocol[SP], CI <: SigmaProtocolCommon
   def accepted: Boolean
 }
 
-trait SigmaProtocolMsg
-
-object SigmaProtocolFunctions {
-
-  case class FirstMessage(s: SigmaProtocolMsg)
-
-  case class RandomChallenge(challenge: Challenge)
-
-  case class SecondMessage(s: SigmaProtocolMsg)
-
-  case object StartInteraction
-
-  case class Transcript(a: SigmaProtocolMsg, e: Challenge, z: SigmaProtocolMsg, accepted: Boolean)
-}

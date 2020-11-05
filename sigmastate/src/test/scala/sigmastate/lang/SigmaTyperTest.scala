@@ -14,6 +14,7 @@ import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.SigmaPredef._
 import sigmastate.lang.Terms.Select
 import sigmastate.lang.exceptions.TyperException
+import sigmastate.lang.syntax.ParserException
 import sigmastate.serialization.ErgoTreeSerializer
 import sigmastate.serialization.generators.ObjectGenerators
 import sigmastate.utxo.{Append, ExtractCreationInfo}
@@ -42,16 +43,23 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
 
   def typefail(env: ScriptEnv, x: String, expectedLine: Int, expectedCol: Int): Unit = {
     val builder = TransformingSigmaBuilder
-    val parsed = SigmaParser(x, builder).get.value
-    val predefinedFuncRegistry = new PredefinedFuncRegistry(builder)
-    val binder = new SigmaBinder(env, builder, TestnetNetworkPrefix, predefinedFuncRegistry)
-    val bound = binder.bind(parsed)
-    val typer = new SigmaTyper(builder, predefinedFuncRegistry)
-    val exception = the[TyperException] thrownBy typer.typecheck(bound)
-    withClue(s"Exception: $exception, is missing source context:") { exception.source shouldBe defined }
-    val sourceContext = exception.source.get
-    sourceContext.line shouldBe expectedLine
-    sourceContext.column shouldBe expectedCol
+    assertExceptionThrown({
+      val parsed = SigmaParser(x, builder).get.value
+      val predefinedFuncRegistry = new PredefinedFuncRegistry(builder)
+      val binder = new SigmaBinder(env, builder, TestnetNetworkPrefix, predefinedFuncRegistry)
+      val bound = binder.bind(parsed)
+      val typer = new SigmaTyper(builder, predefinedFuncRegistry)
+      typer.typecheck(bound)
+    }, {
+      case te: TyperException =>
+        withClue(s"Exception: $te, is missing source context:") { te.source shouldBe defined }
+        val sourceContext = te.source.get
+        sourceContext.line shouldBe expectedLine
+        sourceContext.column shouldBe expectedCol
+        true
+      case pe: ParserException => true
+      case t => throw t
+    })
   }
 
   property("simple expressions") {
@@ -304,12 +312,12 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
   property("compute unifying type substitution: prim types") {
     import SigmaTyper._
     forAll { t: SPredefType =>
-      unifyTypes(t, t) shouldBe Some(emptySubst)
-      unifyTypes(SAny, t) shouldBe Some(emptySubst)
-      unifyTypes(SAny, SCollection(t)) shouldBe Some(emptySubst)
-      unifyTypes(SCollection(SAny), SCollection(t)) shouldBe Some(emptySubst)
-      unifyTypes(SCollection(SAny), STuple(t, t, t)) shouldBe Some(emptySubst)
-      unifyTypes(SCollection(SAny), STuple(t, STuple(t, t))) shouldBe Some(emptySubst)
+      unifyTypes(t, t) shouldBe Some(EmptySubst)
+      unifyTypes(SAny, t) shouldBe Some(EmptySubst)
+      unifyTypes(SAny, SCollection(t)) shouldBe Some(EmptySubst)
+      unifyTypes(SCollection(SAny), SCollection(t)) shouldBe Some(EmptySubst)
+      unifyTypes(SCollection(SAny), STuple(t, t, t)) shouldBe Some(EmptySubst)
+      unifyTypes(SCollection(SAny), STuple(t, STuple(t, t))) shouldBe Some(EmptySubst)
     }
   }
 
@@ -319,11 +327,11 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
       unifyTypes(t1, t2) shouldBe exp
       exp match {
         case Some(subst) =>
-          unifyTypes(applySubst(t1, subst), t2) shouldBe Some(emptySubst)
+          unifyTypes(applySubst(t1, subst), t2) shouldBe Some(EmptySubst)
         case None =>
       }
     }
-    def check(s1: String, s2: String, exp: Option[STypeSubst] = Some(emptySubst)): Unit = {
+    def check(s1: String, s2: String, exp: Option[STypeSubst] = Some(EmptySubst)): Unit = {
       val t1 = ty(s1); val t2 = ty(s2)
       checkTypes(t1, t2, exp)
     }
@@ -400,7 +408,7 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
       "((Int,Int), Coll[Boolean] => Coll[(Coll[C], Boolean)]) => Int",
       ("A", SInt), ("B", SBoolean))
 
-    unifyTypes(SBoolean, SSigmaProp) shouldBe Some(emptySubst)
+    unifyTypes(SBoolean, SSigmaProp) shouldBe Some(EmptySubst)
     unifyTypes(SSigmaProp, SBoolean) shouldBe None
     check("(Int, Boolean)", "(Int, SigmaProp)")
     check("(Int, Boolean, Boolean)", "(Int, SigmaProp, SigmaProp)")

@@ -9,6 +9,7 @@ import sigmastate.{AvlTreeData, AvlTreeFlags, TrivialProp}
 import sigmastate.Values.{AvlTreeConstant, ByteArrayConstant, LongConstant, SigmaPropConstant}
 import sigmastate.eval.{IRContext, SigmaDsl}
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter.ScriptNameProp
 import sigmastate.serialization.ErgoTreeSerializer
 import sigmastate.lang.Terms._
@@ -165,8 +166,7 @@ import scala.util.Random
  some day this article will be continued!
   */
 
-class LetsSpecification extends SigmaTestingCommons {
-  suite =>
+class LetsSpecification extends SigmaTestingCommons { suite =>
   // Not mixed with TestContext since it is not possible to call compiler.compile outside tests if mixed
   implicit lazy val IR: IRContext = new TestingIRContext
 
@@ -283,7 +283,7 @@ class LetsSpecification extends SigmaTestingCommons {
     val digest = avlProver.digest
     val initTreeData = new AvlTreeData(digest, AvlTreeFlags.InsertOnly, 32, None)
 
-    val projectBoxBefore = ErgoBox(10, managementScript, 0,
+    val projectBoxBefore = testBox(10, managementScript, 0,
       Seq(letsTokenId -> 1L),
       Map(R4 -> AvlTreeConstant(SigmaDsl.avlTree(initTreeData)), R5 -> SigmaPropConstant(TrivialProp.TrueProp)))
 
@@ -294,11 +294,11 @@ class LetsSpecification extends SigmaTestingCommons {
     val proof = avlProver.generateProof()
     val endTree = new AvlTreeData(avlProver.digest, AvlTreeFlags.InsertOnly, 32, None)
 
-    val projectBoxAfter = ErgoBox(9, managementScript, 0,
+    val projectBoxAfter = testBox(9, managementScript, 0,
       Seq(letsTokenId -> 1L),
       Map(R4 -> AvlTreeConstant(SigmaDsl.avlTree(endTree)), R5 -> SigmaPropConstant(TrivialProp.TrueProp)))
-    val feeBox = ErgoBox(1, feeProp, 0, Seq(), Map())
-    val userBox = ErgoBox(1, exchangeScript, 0, Seq(userTokenId -> 1L), Map(R4 -> LongConstant(0)))
+    val feeBox = testBox(1, feeProp, 0, Seq(), Map())
+    val userBox = testBox(1, exchangeScript, 0, Seq(userTokenId -> 1L), Map(R4 -> LongConstant(0)))
 
     val issuanceTx = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(projectBoxAfter, userBox, feeBox))
 
@@ -333,19 +333,19 @@ class LetsSpecification extends SigmaTestingCommons {
     avlProver.performOneOperation(Lookup(ADKey @@ userTokenId1))
     val proof = avlProver.generateProof()
 
-    val directoryBox = ErgoBox(10, managementScript, 0,
+    val directoryBox = testBox(10, managementScript, 0,
       Seq(letsTokenId -> 1L),
       Map(R4 -> AvlTreeConstant(SigmaDsl.avlTree(initTreeData)), R5 -> SigmaPropConstant(TrivialProp.TrueProp)))
 
     val directoryDataInput = DataInput(directoryBox.id)
 
-    val userBoxBefore0 = ErgoBox(1, exchangeScript, 0, Seq(userTokenId0 -> 1L),
+    val userBoxBefore0 = testBox(1, exchangeScript, 0, Seq(userTokenId0 -> 1L),
       Map(R4 -> LongConstant(0), R5 -> SigmaPropConstant(TrivialProp.TrueProp)))
-    val userBoxBefore1 = ErgoBox(1, exchangeScript, 0, Seq(userTokenId1 -> 1L),
+    val userBoxBefore1 = testBox(1, exchangeScript, 0, Seq(userTokenId1 -> 1L),
       Map(R4 -> LongConstant(0), R5 -> SigmaPropConstant(TrivialProp.TrueProp)))
 
-    val userBoxAfter0 = ErgoBox(1, exchangeScript, 0, Seq(userTokenId0 -> 1L), Map(R4 -> LongConstant(-5)))
-    val userBoxAfter1 = ErgoBox(1, exchangeScript, 0, Seq(userTokenId1 -> 1L), Map(R4 -> LongConstant(5)))
+    val userBoxAfter0 = testBox(1, exchangeScript, 0, Seq(userTokenId0 -> 1L), Map(R4 -> LongConstant(-5)))
+    val userBoxAfter1 = testBox(1, exchangeScript, 0, Seq(userTokenId1 -> 1L), Map(R4 -> LongConstant(5)))
 
     val issuanceTx = new ErgoLikeTransaction(IndexedSeq(), IndexedSeq(directoryDataInput), IndexedSeq(userBoxAfter0, userBoxAfter1))
 

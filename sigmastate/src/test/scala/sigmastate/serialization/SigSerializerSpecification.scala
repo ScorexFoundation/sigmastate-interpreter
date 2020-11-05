@@ -68,7 +68,7 @@ class SigSerializerSpecification extends SigmaTestingCommons with ObjectGenerato
   }
 
   property("SigSerializer round trip") {
-    forAll { sb: SigmaBoolean =>
+    forAll(configParams = MinSuccessful(100)) { sb: SigmaBoolean =>
       val expr = sb.toSigmaProp
       val challenge = Array.fill(32)(Random.nextInt(100).toByte)
 
@@ -79,13 +79,20 @@ class SigSerializerSpecification extends SigmaTestingCommons with ObjectGenerato
         boxesToSpend = IndexedSeq(fakeSelf),
         spendingTransaction = ErgoLikeTransactionTesting.dummy,
         self = fakeSelf)
+        .withCostLimit(Long.MaxValue) // To avoid occasional cost limit exceptions which are irrelevant here
 
-      // get sigma conjectures out of transformers
-      val prop = prover.reduceToCrypto(ctx, expr).get._1
+      try {
+        // get sigma conjectures out of transformers
+        val prop = prover.reduceToCrypto(ctx, expr).get._1
 
-      val proof = prover.prove(expr, ctx, challenge).get.proof
-      val proofTree = SigSerializer.parseAndComputeChallenges(prop, proof)
-      roundTrip(proofTree, prop)
+        val proof = prover.prove(expr, ctx, challenge).get.proof
+        val proofTree = SigSerializer.parseAndComputeChallenges(prop, proof)
+        roundTrip(proofTree, prop)
+      } catch {
+        case t: Throwable =>
+          t.printStackTrace()
+          throw t
+      }
     }
   }
 

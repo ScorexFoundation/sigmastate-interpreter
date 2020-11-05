@@ -199,7 +199,7 @@ object ErgoLikeContext {
 /** When interpreted evaluates to a ByteArrayConstant built from Context.minerPubkey */
 case object MinerPubkey extends NotReadyValueByteArray with ValueCompanion {
   override def opCode: OpCode = OpCodes.MinerPubkeyCode
-  def opType = SFunc(SContext, SCollection.SByteArray)
+  override val opType = SFunc(SContext, SCollection.SByteArray)
   override def companion = this
   protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     E.context.minerPubKey
@@ -211,7 +211,7 @@ case object MinerPubkey extends NotReadyValueByteArray with ValueCompanion {
 case object Height extends NotReadyValueInt with ValueCompanion {
   override def companion = this
   override def opCode: OpCode = OpCodes.HeightCode
-  def opType = SFunc(SContext, SInt)
+  override val opType = SFunc(SContext, SInt)
   protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     E.context.HEIGHT
     // TODO JITC
@@ -222,8 +222,8 @@ case object Height extends NotReadyValueInt with ValueCompanion {
 case object Inputs extends LazyCollection[SBox.type] with ValueCompanion {
   override def companion = this
   override def opCode: OpCode = OpCodes.InputsCode
-  val tpe = SCollection(SBox)
-  def opType = SFunc(SContext, tpe)
+  override def tpe = SCollection.SBoxArray
+  override val opType = SFunc(SContext, tpe)
   protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     E.context.INPUTS
     // TODO JITC
@@ -234,8 +234,8 @@ case object Inputs extends LazyCollection[SBox.type] with ValueCompanion {
 case object Outputs extends LazyCollection[SBox.type] with ValueCompanion {
   override def companion = this
   override def opCode: OpCode = OpCodes.OutputsCode
-  val tpe = SCollection(SBox)
-  def opType = SFunc(SContext, tpe)
+  override def tpe = SCollection.SBoxArray
+  override val opType = SFunc(SContext, tpe)
   protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     E.context.OUTPUTS
     // TODO JITC
@@ -246,7 +246,7 @@ case object Outputs extends LazyCollection[SBox.type] with ValueCompanion {
 case object LastBlockUtxoRootHash extends NotReadyValueAvlTree with ValueCompanion {
   override def companion = this
   override def opCode: OpCode = OpCodes.LastBlockUtxoRootHashCode
-  def opType = SFunc(SContext, tpe)
+  override val opType = SFunc(SContext, tpe)
   protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     E.context.LastBlockUtxoRootHash
     // TODO JITC
@@ -258,29 +258,35 @@ case object LastBlockUtxoRootHash extends NotReadyValueAvlTree with ValueCompani
 case object Self extends NotReadyValueBox with ValueCompanion {
   override def companion = this
   override def opCode: OpCode = OpCodes.SelfCode
-  def opType = SFunc(SContext, SBox)
+  override val opType = SFunc(SContext, SBox)
   protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     E.context.SELF
     // TODO JITC
   }
 }
 
+/** When interpreted evaluates to the singleton instance of [[special.sigma.Context]].
+  * Corresponds to `CONTEXT` variable in ErgoScript which can be used like `CONTEXT.headers`.
+  */
 case object Context extends NotReadyValue[SContext.type] with ValueCompanion {
   override def companion = this
   override def opCode: OpCode = OpCodes.ContextCode
   override def tpe: SContext.type = SContext
-  override def opType: SFunc = SFunc(SUnit, SContext)
+  override val opType: SFunc = SFunc(SUnit, SContext)
   protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     E.context
     // TODO JITC
   }
 }
 
+/** When interpreted evaluates to the singleton instance of [[special.sigma.SigmaDslBuilder]].
+  * Corresponds to `Global` variable in ErgoScript which can be used like `Global.groupGenerator`.
+  */
 case object Global extends NotReadyValue[SGlobal.type] with ValueCompanion {
   override def companion = this
   override def opCode: OpCode = OpCodes.GlobalCode
   override def tpe: SGlobal.type = SGlobal
-  override def opType: SFunc = SFunc(SUnit, SGlobal)
+  override val opType: SFunc = SFunc(SUnit, SGlobal)
   protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     CostingSigmaDslBuilder
     // TODO JITC

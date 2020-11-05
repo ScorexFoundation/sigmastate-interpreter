@@ -6,16 +6,11 @@ import org.bouncycastle.math.ec.ECPoint
 import scalan.RType
 import scalan.RType.GeneralType
 
-import scala.reflect.{ClassTag, classTag}
+import scala.reflect.classTag
 
-package sigma {
-
-  case class ArgType(override val name: String) extends RType[Any] {
-    override def classTag: ClassTag[Any] = ClassTag.Any
-    override def isConstantSize: Boolean = false  // pessimistic but safe default
-  }
-}
-
+/** The following implicit values are used as type descriptors of all the predefined Sigma types.
+  * @see [[RType]] class
+  */
 package object sigma {
 
   implicit val BigIntRType: RType[BigInt] = new GeneralType(classTag[BigInt]) {
@@ -34,8 +29,6 @@ package object sigma {
   implicit val BoxRType:       RType[Box]       = GeneralType(classTag[Box])
   implicit val ContextRType:   RType[Context]   = GeneralType(classTag[Context])
 
-  // these are not wrapper types since they are used directly in ErgoTree values (e.g. Constants)
-  // and no conversion is necessary
   implicit val HeaderRType: RType[Header] = new GeneralType(classTag[Header]) {
     override def isConstantSize: Boolean = true
   }
@@ -64,5 +57,4 @@ package object sigma {
   implicit val SizeContextRType: RType[SizeContext] = RType.fromClassTag(classTag[SizeContext])
   implicit val SizeBuilderRType: RType[SizeBuilder] = RType.fromClassTag(classTag[SizeBuilder])
 
-  def argRType(name: String): RType[Any] = ArgType(name)
 }

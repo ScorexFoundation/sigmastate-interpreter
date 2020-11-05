@@ -26,6 +26,7 @@ case class DiffieHellmanTupleProverInput(w: BigInteger, commonInput: ProveDHTupl
 }
 
 object DiffieHellmanTupleProverInput {
+
   import sigmastate.interpreter.CryptoConstants.dlogGroup
 
   def random(): DiffieHellmanTupleProverInput = {
@@ -43,24 +44,28 @@ object DiffieHellmanTupleProverInput {
 
 //a = g^r, b = h^r
 case class FirstDiffieHellmanTupleProverMessage(a: CryptoConstants.EcPointType, b: CryptoConstants.EcPointType)
-  extends FirstProverMessage[DiffieHellmanTupleProtocol] {
+  extends FirstProverMessage {
+
+  override type SP = DiffieHellmanTupleProtocol
+
   override def bytes: Array[Byte] = {
     GroupElementSerializer.toBytes(a) ++ GroupElementSerializer.toBytes(b)
   }
 }
 
 //z = r + ew mod q
-case class SecondDiffieHellmanTupleProverMessage(z: BigInteger)
-  extends SecondProverMessage[DiffieHellmanTupleProtocol] {
-  override def bytes: Array[PropositionCode] = ???
+case class SecondDiffieHellmanTupleProverMessage(z: BigInteger) extends SecondProverMessage {
+
+  override type SP = DiffieHellmanTupleProtocol
+
 }
 
 /** Construct a new SigmaProp value representing public key of Diffie Hellman signature protocol.
-  * Common input: (g,h,u,v)*/
+  * Common input: (g,h,u,v) */
 case class ProveDHTuple(gv: EcPointType, hv: EcPointType, uv: EcPointType, vv: EcPointType)
   extends SigmaProtocolCommonInput[DiffieHellmanTupleProtocol]
-    with SigmaProofOfKnowledgeTree[DiffieHellmanTupleProtocol, DiffieHellmanTupleProverInput] {
-  override val opCode: OpCode = OpCodes.ProveDHTupleCode
+    with SigmaProofOfKnowledgeLeaf[DiffieHellmanTupleProtocol, DiffieHellmanTupleProverInput] {
+  override val opCode: OpCode = OpCodes.ProveDiffieHellmanTupleCode
   lazy val g = gv
   lazy val h = hv
   lazy val u = uv
@@ -79,42 +84,8 @@ object ProveDHTupleProp {
   }
 }
 
-class DiffieHellmanTupleInteractiveProver(override val publicInput: ProveDHTuple,
-                                          override val privateInputOpt: Option[DiffieHellmanTupleProverInput])
-  extends InteractiveProver[DiffieHellmanTupleProtocol, ProveDHTuple, DiffieHellmanTupleProverInput] {
-
-  var rOpt: Option[BigInteger] = None
-
-  override def firstMessage: FirstDiffieHellmanTupleProverMessage = {
-    assert(privateInputOpt.isDefined, "Secret is not known")
-    assert(rOpt.isEmpty, "Already generated r")
-
-    val (r, fm) = DiffieHellmanTupleInteractiveProver.firstMessage(publicInput)
-    rOpt = Some(r)
-    fm
-  }
-
-  override def secondMessage(challenge: Challenge): SecondDiffieHellmanTupleProverMessage = {
-    assert(privateInputOpt.isDefined, "Secret is not known")
-    assert(rOpt.isDefined)
-
-    val rnd = rOpt.get
-
-    val privateInput = privateInputOpt.get
-
-    val sm = DiffieHellmanTupleInteractiveProver.secondMessage(privateInput, rnd, challenge)
-    rOpt = None
-    sm
-  }
-
-  override def simulate(challenge: Challenge):
-  (FirstDiffieHellmanTupleProverMessage, SecondDiffieHellmanTupleProverMessage) = {
-    assert(privateInputOpt.isEmpty, "Secret is known, simulation is probably wrong action")
-    DiffieHellmanTupleInteractiveProver.simulate(publicInput, challenge)
-  }
-}
-
 object DiffieHellmanTupleInteractiveProver {
+
   import sigmastate.interpreter.CryptoConstants.dlogGroup
 
   def firstMessage(publicInput: ProveDHTuple): (BigInteger, FirstDiffieHellmanTupleProverMessage) = {
@@ -136,7 +107,7 @@ object DiffieHellmanTupleInteractiveProver {
   }
 
   def simulate(publicInput: ProveDHTuple, challenge: Challenge):
-    (FirstDiffieHellmanTupleProverMessage, SecondDiffieHellmanTupleProverMessage) = {
+  (FirstDiffieHellmanTupleProverMessage, SecondDiffieHellmanTupleProverMessage) = {
 
     val qMinusOne = dlogGroup.order.subtract(BigInteger.ONE)
 
@@ -187,8 +158,8 @@ object DiffieHellmanTupleInteractiveProver {
     val uToE = dlogGroup.exponentiate(u, e)
     val vToE = dlogGroup.exponentiate(v, e)
 
-    val a = dlogGroup.multiplyGroupElements(gToZ, dlogGroup.getInverse(uToE))
-    val b = dlogGroup.multiplyGroupElements(hToZ, dlogGroup.getInverse(vToE))
+    val a = dlogGroup.multiplyGroupElements(gToZ, dlogGroup.inverseOf(uToE))
+    val b = dlogGroup.multiplyGroupElements(hToZ, dlogGroup.inverseOf(vToE))
     a -> b
   }
 }

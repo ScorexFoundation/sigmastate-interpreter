@@ -21,7 +21,7 @@ object SigSerializer {
     def traverseNode(node: UncheckedSigmaTree,
                      acc: Array[Byte],
                      writeChallenge: Boolean = true): Array[Byte] = {
-      val parentChal = (if (writeChallenge) node.challenge else Array.emptyByteArray)
+      val parentChal = if (writeChallenge) node.challenge else Array.emptyByteArray
       node match {
         case dl: UncheckedSchnorr =>
           acc ++
@@ -100,7 +100,7 @@ object SigSerializer {
 
         case and: CAND =>
           // Verifier Step 2: If the node is AND, then all of its children get e_0 as the challenge
-          val (seq, finalPos) = and.sigmaBooleans.foldLeft(Seq[UncheckedSigmaTree]() -> (pos + chalLen)) { case ((s, p), child) =>
+          val (seq, finalPos) = and.children.foldLeft(Seq[UncheckedSigmaTree]() -> (pos + chalLen)) { case ((s, p), child) =>
             val (rewrittenChild, consumed) = traverseNode(child, bytes, p, Some(challenge))
             (s :+ rewrittenChild, p + consumed)
           }
@@ -112,14 +112,14 @@ object SigSerializer {
           // The rightmost child gets a challenge computed as an XOR of the challenges of all the other children and e_0.
 
           // Read all the children but the last and compute the XOR of all the challenges including e_0
-          val (seq, lastPos, lastChallenge) = or.sigmaBooleans.init.foldLeft((Seq[UncheckedSigmaTree](), pos + chalLen, challenge)) {
+          val (seq, lastPos, lastChallenge) = or.children.init.foldLeft((Seq[UncheckedSigmaTree](), pos + chalLen, challenge)) {
             case ((s, p, challengeXOR), child) =>
               val (rewrittenChild, consumed) = traverseNode(child, bytes, p, challengeOpt = None)
               val ch = Challenge @@ xor(challengeXOR, rewrittenChild.challenge)
               (s :+ rewrittenChild, p + consumed, ch)
           }
           // use the computed XOR for last child's challenge
-          val (lastChild, numRightChildBytes) = traverseNode(or.sigmaBooleans.last, bytes, lastPos, Some(lastChallenge))
+          val (lastChild, numRightChildBytes) = traverseNode(or.children.last, bytes, lastPos, Some(lastChallenge))
           COrUncheckedNode(challenge, seq :+ lastChild) -> (lastPos + numRightChildBytes - pos)
 
         case t: CTHRESHOLD =>
@@ -127,11 +127,11 @@ object SigSerializer {
           // evaluate the polynomial Q(x) at points 1, 2, ..., n to get challenges for child 1, 2, ..., n, respectively.
 
           // Read the polynomial -- it has n-k coefficients
-          val endPolyPos = pos + chalLen + hashSize * (t.sigmaBooleans.length - t.k)
+          val endPolyPos = pos + chalLen + hashSize * (t.children.length - t.k)
           val polynomial = GF2_192_Poly.fromByteArray(challenge, bytes.slice(pos + chalLen, endPolyPos))
 
 
-          val (seq, finalPos, _) = t.sigmaBooleans.foldLeft((Seq[UncheckedSigmaTree](), endPolyPos, 1)) {
+          val (seq, finalPos, _) = t.children.foldLeft((Seq[UncheckedSigmaTree](), endPolyPos, 1)) {
             case ((s, p, childIndex), child) =>
               val (rewrittenChild, consumed) = traverseNode(child, bytes, p, Some(Challenge @@ polynomial.evaluate(childIndex.toByte).toByteArray))
               (s :+ rewrittenChild, p + consumed, childIndex + 1)

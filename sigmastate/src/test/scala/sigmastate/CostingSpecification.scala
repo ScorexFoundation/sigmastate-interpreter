@@ -3,20 +3,21 @@ package sigmastate
 import org.ergoplatform.SigmaConstants.ScriptCostLimit
 import org.ergoplatform.ErgoScriptPredef.TrueProp
 import org.ergoplatform.validation.ValidationRules
-import org.ergoplatform.{ErgoBox, ErgoLikeContext, ErgoLikeTransaction}
+import org.ergoplatform.{ErgoLikeContext, ErgoBox}
 import scorex.crypto.authds.avltree.batch.Lookup
 import scorex.crypto.authds.{ADDigest, ADKey}
 import scorex.crypto.hash.Blake2b256
-import sigmastate.Values.{AvlTreeConstant, BigIntConstant, BooleanConstant, ByteArrayConstant, ConstantPlaceholder, ErgoTree, IntConstant, TrueLeaf}
+import sigmastate.Values.{TrueLeaf, BigIntConstant, AvlTreeConstant, ConstantPlaceholder, ByteArrayConstant, IntConstant, ErgoTree, BooleanConstant}
 import sigmastate.eval.Extensions._
 import sigmastate.eval.Sized._
 import sigmastate.eval._
+import sigmastate.helpers.TestingHelpers._
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter}
 import sigmastate.interpreter.ContextExtension
-import sigmastate.interpreter.Interpreter.{ScriptEnv, ScriptNameProp, emptyEnv}
+import sigmastate.interpreter.Interpreter.{ScriptNameProp, ScriptEnv, emptyEnv}
 import sigmastate.utxo.CostTable
 import sigmastate.utxo.CostTable._
-import special.sigma.{AvlTree, SigmaTestingData}
+import special.sigma.{SigmaTestingData, AvlTree}
 
 class CostingSpecification extends SigmaTestingData {
   implicit lazy val IR = new TestingIRContext {
@@ -29,7 +30,7 @@ class CostingSpecification extends SigmaTestingData {
 
   val printCosts = true
 
-  val (key1, _, avlProver) = sampleAvlProver
+  val (key1, _, _, avlProver) = sampleAvlProver
   val keys = Colls.fromItems(key1)
   val key2 = keyCollGen.sample.get
   avlProver.performOneOperation(Lookup(ADKey @@ key1.toArray))
@@ -58,8 +59,8 @@ class CostingSpecification extends SigmaTestingData {
       Map(ErgoBox.R4 -> ByteArrayConstant(Array[Byte](1, 2, 3)),
           ErgoBox.R5 -> IntConstant(3),
           ErgoBox.R6 -> AvlTreeConstant(avlTree)))
-  lazy val outBoxA = ErgoBox(10, pkA, 0)
-  lazy val outBoxB = ErgoBox(20, pkB, 0)
+  lazy val outBoxA = testBox(10, pkA, 0)
+  lazy val outBoxB = testBox(20, pkB, 0)
   lazy val tx = createTransaction(IndexedSeq(dataBox), IndexedSeq(outBoxA, outBoxB))
   lazy val context =
     new ErgoLikeContext(
@@ -170,9 +171,6 @@ class CostingSpecification extends SigmaTestingData {
     cost("{ SELF.tokens.size > 0 }")(accessBox + extractCost + LengthGTConstCost)
     cost("{ SELF.creationInfo._1 > 0 }")(accessBox + accessRegister + selectField + GTConstCost)
     cost("{ SELF.R5[Int].get > 0 }")(accessBox + RegisterAccess + GTConstCost)
-
-    // TODO coverage: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/416
-    // cost("{ SELF.getReg[Long](0.toByte).get > 0 }")(accessBox + RegisterAccess + GTConstCost)
   }
 
   lazy val OutputsCost = selectField + accessBox * tx.outputs.length

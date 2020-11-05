@@ -254,7 +254,7 @@ object SigmaByteWriter {
 
   implicit def argInfoToDataInfo[T](arg: ArgInfo)(implicit fmt: FormatDescriptor[T]): DataInfo[T] = DataInfo(arg, fmt)
 
-  // TODO remove this conversion and make it explicit
+  // TODO refactor: remove this conversion and make it explicit
   /**Helper conversion */
   implicit def nameToDataInfo[T](name: String)(implicit fmt: FormatDescriptor[T]): DataInfo[T] = ArgInfo(name, "")
 }

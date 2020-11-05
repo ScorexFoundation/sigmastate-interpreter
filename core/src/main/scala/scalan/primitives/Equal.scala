@@ -4,10 +4,14 @@ import scalan.{Base, Scalan}
 
 trait Equal extends Base { self: Scalan =>
   /** Binary operation representing structural equality between arguments. */
-  case class Equals[A: Elem]() extends BinOp[A, Boolean]("==", equalValues[A](_, _))
+  case class Equals[A: Elem]() extends BinOp[A, Boolean]("==") {
+    override def applySeq(x: A, y: A): Boolean = equalValues[A](x, y)
+  }
 
   /** Binary operation representing structural inequality between arguments. */
-  case class NotEquals[A: Elem]() extends BinOp[A, Boolean]("!=", !equalValues[A](_, _))
+  case class NotEquals[A: Elem]() extends BinOp[A, Boolean]("!=") {
+    override def applySeq(x: A, y: A): Boolean = !equalValues[A](x, y)
+  }
 
   protected def equalValues[A](x: Any, y: Any)(implicit eA: Elem[A]) = x == y
 

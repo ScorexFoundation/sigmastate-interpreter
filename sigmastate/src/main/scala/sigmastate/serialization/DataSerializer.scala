@@ -69,19 +69,20 @@ object DataSerializer {
       val len = arr.length
       assert(arr.length == t.items.length, s"Type $t doesn't correspond to value $arr")
       if (len > 0xFFFF)
-        sys.error(s"Length of tuple $arr exceeds ${0xFFFF} limit.")
+        sys.error(s"Length of tuple ${arr.length} exceeds ${0xFFFF} limit.")
       var i = 0
       while (i < arr.length) {
         serialize[SType](arr(i), t.items(i), w)
         i += 1
       }
 
+    // TODO HF (3h): support Option[T] (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/659)
     case _ => sys.error(s"Don't know how to serialize ($v, $tpe)")
   }
 
   /** Reads a data value from Reader. The data value bytes is expected to confirm
     * to the type descriptor `tpe`. */
-  def deserialize[T <: SType](tpe: T, r: SigmaByteReader): (T#WrappedType) = {
+  def deserialize[T <: SType](tpe: T, r: SigmaByteReader): T#WrappedType = {
     val depth = r.level
     r.level = depth + 1
     val res = (tpe match {
@@ -97,8 +98,10 @@ object DataSerializer {
         new String(bytes, StandardCharsets.UTF_8)
       case SBigInt =>
         val size: Short = r.getUShort().toShort
-        if (size > SBigInt.MaxSizeInBytes)
+        // TODO HF (2h): replace with validation rule to enable soft-forkability
+        if (size > SBigInt.MaxSizeInBytes) {
           throw new SerializerException(s"BigInt value doesn't not fit into ${SBigInt.MaxSizeInBytes} bytes: $size")
+        }
         val valueBytes = r.getBytes(size)
         SigmaDsl.BigInt(new BigInteger(valueBytes))
       case SGroupElement =>
@@ -111,10 +114,7 @@ object DataSerializer {
         SigmaDsl.avlTree(AvlTreeData.serializer.parse(r))
       case tColl: SCollectionType[a] =>
         val len = r.getUShort()
-        if (tColl.elemType == SByte)
-          Colls.fromArray(r.getBytes(len))
-        else
-          deserializeColl(len, tColl.elemType, r)
+        deserializeColl(len, tColl.elemType, r)
       case tuple: STuple =>
         val arr = tuple.items.map { t =>
           deserialize(t, r)
@@ -134,13 +134,12 @@ object DataSerializer {
       case SBoolean =>
         Colls.fromArray(r.getBits(len)).asInstanceOf[Coll[T#WrappedType]]
       case SByte =>
-        // TODO make covered
         Colls.fromArray(r.getBytes(len)).asInstanceOf[Coll[T#WrappedType]]
       case _ =>
         implicit val tItem = (tpeElem match {
           case tTup: STuple if tTup.items.length == 2 =>
             Evaluation.stypeToRType(tpeElem)
-          case tTup: STuple =>
+          case _: STuple =>
             collRType(RType.AnyType)
           case _ =>
             Evaluation.stypeToRType(tpeElem)

@@ -169,7 +169,6 @@ package special.sigma {
       def anyOf(conditions: Ref[Coll[Boolean]]): Ref[Boolean] = this.builder.anyOf(conditions);
       def anyZK(conditions: Ref[Coll[SigmaProp]]): Ref[SigmaProp] = this.builder.anyZK(conditions);
       def xorOf(conditions: Ref[Coll[Boolean]]): Ref[Boolean] = this.builder.xorOf(conditions);
-      def PubKey(base64String: Ref[String]): Ref[SigmaProp] = this.builder.PubKey(base64String);
       def sigmaProp(b: Ref[Boolean]): Ref[SigmaProp] = this.builder.sigmaProp(b);
       def blake2b256(bytes: Ref[Coll[Byte]]): Ref[Coll[Byte]] = this.builder.blake2b256(bytes);
       def sha256(bytes: Ref[Coll[Byte]]): Ref[Coll[Byte]] = this.builder.sha256(bytes);
@@ -194,7 +193,6 @@ package special.sigma {
       def anyOf(conditions: Ref[Coll[Boolean]]): Ref[Boolean];
       def anyZK(conditions: Ref[Coll[SigmaProp]]): Ref[SigmaProp];
       def xorOf(conditions: Ref[Coll[Boolean]]): Ref[Boolean];
-      def PubKey(base64String: Ref[String]): Ref[SigmaProp];
       def sigmaProp(b: Ref[Boolean]): Ref[SigmaProp];
       def blake2b256(bytes: Ref[Coll[Byte]]): Ref[Coll[Byte]];
       def sha256(bytes: Ref[Coll[Byte]]): Ref[Coll[Byte]];

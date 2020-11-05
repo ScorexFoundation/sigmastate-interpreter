@@ -46,7 +46,7 @@ object DataJsonEncoder {
   }
 
   private def encodeData[T <: SType](v: T#WrappedType, tpe: T): Json = tpe match {
-    case SUnit => Json.Null
+    case SUnit => Json.fromFields(mutable.WrappedArray.empty)
     case SBoolean => v.asInstanceOf[Boolean].asJson
     case SByte => v.asInstanceOf[Byte].asJson
     case SShort => v.asInstanceOf[Short].asJson
@@ -94,7 +94,9 @@ object DataJsonEncoder {
     case tOpt: SOption[a] =>
       val opt = v.asInstanceOf[tOpt.WrappedType]
       if (opt.isDefined) {
-        encodeData(opt.get, tOpt.elemType)
+        // save the single value as an array with one item
+        val valueJson = encodeData(opt.get, tOpt.elemType)
+        Json.fromValues(Array(valueJson))
       } else {
         Json.Null
       }
@@ -151,7 +153,7 @@ object DataJsonEncoder {
 
   private def decodeData[T <: SType](json: Json, tpe: T): (T#WrappedType) = {
     val res = (tpe match {
-      case SUnit => json.asNull.get
+      case SUnit => ()
       case SBoolean => json.asBoolean.get
       case SByte => json.asNumber.get.toByte.get
       case SShort => json.asNumber.get.toShort.get
@@ -168,7 +170,9 @@ object DataJsonEncoder {
         if (json == Json.Null) {
           None
         } else {
-          Some(decodeData(json, tOpt.elemType))
+          // read the array with single value
+          val items = decodeColl(json, tOpt.elemType)
+          Some(items(0))
         }
       case t: STuple =>
         val tArr = t.items.toArray
@@ -258,12 +262,12 @@ object DataJsonEncoder {
     (data, tpe)
   }
 
-  def decode(json: Json): (SType#WrappedType) = {
+  def decode(json: Json): SType#WrappedType = {
     val (data, _) = decodeWithTpe(json)
     data
   }
 
-  def decodeAnyValue(json: Json): (AnyValue) = {
+  def decodeAnyValue(json: Json): AnyValue = {
     val tpe = SigmaParser.parseType(json.hcursor.downField("type").focus.get.asString.get)
     val value = json.hcursor.downField("value").focus.get
     val data = decodeData(value, tpe)

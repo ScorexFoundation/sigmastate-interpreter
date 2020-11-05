@@ -10,6 +10,7 @@ import sigmastate.Values._
 import sigmastate._
 import sigmastate.eval.Extensions._
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter._
 import sigmastate.lang.Terms._
 import special.sigma.InvalidType
@@ -68,12 +69,12 @@ class BasicOpsSpecification extends SigmaTestingCommons {
       prop shouldBe propExp
 
     val p3 = prover.dlogSecrets(2).publicImage
-    val boxToSpend = ErgoBox(10, prop, additionalRegisters = Map(
+    val boxToSpend = testBox(10, prop, additionalRegisters = Map(
       reg1 -> SigmaPropConstant(p3),
       reg2 -> IntConstant(1)),
       creationHeight = 5)
 
-    val newBox1 = ErgoBox(10, prop, creationHeight = 0, boxIndex = 0, additionalRegisters = Map(
+    val newBox1 = testBox(10, prop, creationHeight = 0, boxIndex = 0, additionalRegisters = Map(
       reg1 -> IntConstant(1),
       reg2 -> IntConstant(10)))
     val tx = createTransaction(newBox1)
@@ -357,7 +358,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
       BoolToSigmaProp(
         EQ(
           MethodCall(Self, SBox.getRegMethod,
-            IndexedSeq(Plus(GetVarInt(1).get, IntConstant(4))), Map(SBox.tT -> SInt)
+            IndexedSeq(Plus(GetVarInt(1).get, IntConstant(4))), Map(SType.tT -> SInt)
           ).asInstanceOf[Value[SOption[SType]]].get,
           IntConstant(1)
         )

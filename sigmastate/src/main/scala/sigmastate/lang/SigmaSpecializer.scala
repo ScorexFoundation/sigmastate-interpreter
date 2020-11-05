@@ -29,7 +29,7 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
 
   /** Rewriting of AST with respect to environment to resolve all references
     * to let bound and lambda bound names. */
-  private def eval(env: Map[String, SValue], e: SValue): SValue = rewrite(reduce(strategy[SValue]({
+  private def eval(env: Map[String, SValue], e: SValue): SValue = rewrite(reduce(strategy[Any]({
     case Ident(n, _) => env.get(n)
 
     case _ @ Block(binds, res) =>

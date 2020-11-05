@@ -64,13 +64,19 @@ trait InterpreterContext {
   /** Creates a new instance with given validation settings. */
   def withValidationSettings(newVs: SigmaValidationSettings): InterpreterContext
 
-  /** Creates `special.sigma.Context` instance based on this context.
+  /** Creates `special.sigma.Context` instance based on this context. The created instance
+    * contains all data represented using types form [[special.sigma]] package.
+    * These types are used internally by ErgoTree interpreter.
+    * Thus, this method performs transformation from Ergo to internal Sigma representation
+    * of all context data.
     *
     * @param isCost     == true if the resulting context will be used in AOT cost estimation
     *                   otherwise it should be false
     * @param extensions additional context variables which will be merged with those in the
     *                   `extension` of this instance, overriding existing bindings in case
     *                   variable ids overlap.
+    *
+    * @see sigmastate.eval.Evaluation
     */
   def toSigmaContext(isCost: Boolean, extensions: Map[Byte, AnyValue] = Map()): sigma.Context
 }
