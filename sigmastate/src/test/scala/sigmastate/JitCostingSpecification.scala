@@ -12,6 +12,7 @@ import sigmastate.eval.Extensions._
 import sigmastate.eval.Sized._
 import sigmastate.eval._
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter}
+import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.ContextExtension
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, ScriptEnv, emptyEnv}
 import sigmastate.utxo.{CostTable, JitCostTable}
@@ -33,7 +34,7 @@ class JitCostingSpecification extends SigmaTestingData {
 
   val printCosts = true
 
-  val (key1, _, avlProver) = sampleAvlProver
+  val (key1, _, _, avlProver) = sampleAvlProver
   val keys = Colls.fromItems(key1)
   val key2 = keyCollGen.sample.get
   avlProver.performOneOperation(Lookup(ADKey @@ key1.toArray))
@@ -63,8 +64,8 @@ class JitCostingSpecification extends SigmaTestingData {
       Map(ErgoBox.R4 -> ByteArrayConstant(Array[Byte](1, 2, 3)),
           ErgoBox.R5 -> IntConstant(3),
           ErgoBox.R6 -> AvlTreeConstant(avlTree)))
-  lazy val outBoxA = ErgoBox(10, pkA, 0)
-  lazy val outBoxB = ErgoBox(20, pkB, 0)
+  lazy val outBoxA = createBox(10, pkA, 0)
+  lazy val outBoxB = createBox(20, pkB, 0)
   lazy val tx = createTransaction(IndexedSeq(dataBox), IndexedSeq(outBoxA, outBoxB))
   lazy val context =
     new ErgoLikeContext(

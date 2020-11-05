@@ -669,8 +669,7 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
 
   override def substConstants[T](scriptBytes: Coll[Byte],
                                  positions: Coll[Int],
-                                 newValues: Coll[T])
-                                (implicit cT: RType[T]): Coll[Byte] = {
+                                 newValues: Coll[T]): Coll[Byte] = {
     val typedNewVals = newValues.toArray.map(v => TransformingSigmaBuilder.liftAny(v) match {
       case Nullable(v) => v
       case _ => sys.error(s"Cannot evaluate substConstants($scriptBytes, $positions, $newValues): cannot lift value $v")

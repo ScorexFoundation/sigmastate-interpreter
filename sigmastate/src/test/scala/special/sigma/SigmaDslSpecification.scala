@@ -5393,7 +5393,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
       },
       existingFeature(
         { (x: (Coll[Byte], Int)) =>
-          SigmaDsl.substConstants(x._1, Coll[Int](x._2), Coll[Any](SigmaDsl.sigmaProp(false))(RType.AnyType))(RType.AnyType)
+          SigmaDsl.substConstants(x._1, Coll[Int](x._2), Coll[Any](SigmaDsl.sigmaProp(false))(RType.AnyType))
         },
         "{ (x: (Coll[Byte], Int)) => substConstants[Any](x._1, Coll[Int](x._2), Coll[Any](sigmaProp(false))) }",
         FuncValue(

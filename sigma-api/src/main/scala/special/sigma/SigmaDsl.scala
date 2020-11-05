@@ -885,7 +885,7 @@ trait SigmaDslBuilder {
     * @return original scriptBytes array where only specified constants are replaced and all other bytes remain exactly the same
     */
   @Reified("T")
-  def substConstants[T](scriptBytes: Coll[Byte], positions: Coll[Int], newValues: Coll[T])(implicit cT: RType[T]): Coll[Byte]
+  def substConstants[T](scriptBytes: Coll[Byte], positions: Coll[Int], newValues: Coll[T]): Coll[Byte]
 
   /** Decodes the given bytes to the corresponding GroupElement using default serialization.
     * @param encoded serialized bytes of some GroupElement value

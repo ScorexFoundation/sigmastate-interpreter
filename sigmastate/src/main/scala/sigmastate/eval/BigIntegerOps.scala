@@ -73,6 +73,13 @@ object NumericOps {
     override def times(x: BigInt, y: BigInt): BigInt = n.times(x, y)
   }
 
+  implicit object BigIntIsExactIntegral extends ExactIntegral[BigInt] {
+    val n = BigIntIsIntegral
+    override def plus(x: BigInt, y: BigInt): BigInt = n.plus(x, y)
+    override def minus(x: BigInt, y: BigInt): BigInt = n.minus(x, y)
+    override def times(x: BigInt, y: BigInt): BigInt = n.times(x, y)
+  }
+
   implicit object BigIntIsExactOrdering extends ExactOrderingImpl[BigInt](BigIntIsIntegral)
 }
 

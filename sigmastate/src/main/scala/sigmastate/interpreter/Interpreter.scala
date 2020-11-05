@@ -251,7 +251,7 @@ trait Interpreter extends ScorexLogging {
         CheckCostFunc(IR)(asRep[Any => Int](costF))
 
         val costingCtx = context.toSigmaContext(isCost = true)
-        val estimatedCost = IR.checkCostWithContext(costingCtx, exp, costF, maxCost, initCost).getOrThrow
+        val estimatedCost = IR.checkCostWithContext(costingCtx, costF, maxCost, initCost).getOrThrow
 
         IR.onEstimatedCost(env, exp, costingRes, costingCtx, estimatedCost)
 
@@ -304,21 +304,6 @@ trait Interpreter extends ScorexLogging {
    */
   def reduceToCryptoJITC(context: CTX, tree: ErgoTree): Try[ReductionResult] =
     reduceToCryptoJITC(context, Interpreter.emptyEnv, tree.toProposition(tree.isConstantSegregation), tree.complexity)
-
-  /** Extracts proposition for ErgoTree handing soft-fork condition.
-    * @note soft-fork handler */
-  def propositionFromErgoTree(tree: ErgoTree, ctx: CTX): SigmaPropValue = {
-    val prop = tree.root match {
-      case Right(_) =>
-        tree.toProposition(tree.isConstantSegregation)
-      case Left(UnparsedErgoTree(_, error)) if ctx.validationSettings.isSoftFork(error) =>
-        TrueSigmaProp
-      case Left(UnparsedErgoTree(_, error)) =>
-        throw new InterpreterException(
-          "Script has not been recognized due to ValidationException, and it cannot be accepted as soft-fork.", None, Some(error))
-    }
-    prop
-  }
 
   /**
     * Full reduction of initial expression given in the ErgoTree form to a SigmaBoolean value
@@ -438,7 +423,7 @@ trait Interpreter extends ScorexLogging {
       val initCost = context.initCost
       val remainingLimit = context.costLimit - initCost
       if (remainingLimit <= 0)
-        throw new CostLimitException(initCost, msgCostLimitError(initCost, context.costLimit), None)
+        throw new CostLimitException(initCost, Evaluation.msgCostLimitError(initCost, context.costLimit), None)
 
       val context1 = context.withInitCost(initCost).asInstanceOf[CTX]
       val prop = propositionFromErgoTree(tree, context1)

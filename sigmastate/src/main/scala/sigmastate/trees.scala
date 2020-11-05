@@ -21,8 +21,8 @@ import scalan.ExactNumeric._
 import scalan.ExactOrdering._
 import scalan.util.Extensions._
 import sigmastate.ArithOp.OperationImpl
-import sigmastate.eval.NumericOps.{BigIntIsExactOrdering, BigIntIsExactIntegral, BigIntIsExactNumeric}
-import sigmastate.eval.{Colls, SigmaDsl, Sized}
+import sigmastate.eval.NumericOps.{BigIntIsExactOrdering, BigIntIsExactNumeric, BigIntIsExactIntegral}
+import sigmastate.eval.{Colls, Sized, SigmaDsl}
 import special.collection.Coll
 import special.sigma.{SigmaProp, GroupElement}
 import spire.syntax.all._
@@ -357,10 +357,6 @@ case class AND(input: Value[SCollection[SBoolean.type]])
     E.addCostOf(this)
     res
   }
-}
-
-trait LogicalTransformerCompanion extends ValueCompanion {
-  def argInfos: Seq[ArgInfo]
 }
 
 object AND extends LogicalTransformerCompanion {
