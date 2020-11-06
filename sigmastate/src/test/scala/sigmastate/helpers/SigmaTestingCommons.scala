@@ -14,23 +14,23 @@ import org.scalacheck.Gen
 import org.scalatest.prop.{PropertyChecks, GeneratorDrivenPropertyChecks}
 import org.scalatest.{PropSpec, Assertion, Matchers}
 import scalan.{TestUtils, TestContexts, RType}
-import scorex.crypto.hash.{Digest32, Blake2b256}
+import scorex.crypto.hash.{Blake2b256}
 import sigma.types.IsPrimView
-import sigmastate.Values.{Constant, EvaluatedValue, SValue, Value, ErgoTree, GroupElementConstant}
+import sigmastate.Values.{Constant, SValue, Value, ErgoTree, GroupElementConstant}
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, ScriptEnv}
-import sigmastate.interpreter.{CryptoConstants, ErgoTreeEvaluator, Interpreter, EvalSettings, ContextExtension}
+import sigmastate.interpreter.{CryptoConstants, ErgoTreeEvaluator, Interpreter, CostAccumulator, EvalSettings, ContextExtension}
 import sigmastate.lang.{Terms, TransformingSigmaBuilder, SigmaCompiler}
-import sigmastate.serialization.{ValueSerializer, SigmaSerializer, GroupElementSerializer}
-import sigmastate.{SGroupElement, AvlTreeData, SType}
+import sigmastate.serialization.{ValueSerializer, SigmaSerializer}
+import sigmastate.{SGroupElement, SType}
 import sigmastate.eval.{CompiletimeCosting, IRContext, Evaluation, _}
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.utils.Helpers._
 import sigmastate.helpers.TestingHelpers._
-import special.collection.Coll
+import sigmastate.interpreter.ContextExtension.VarBinding
 import special.sigma
 
 import scala.language.implicitConversions
-import scala.util.{Success, Failure, Try}
+import scala.reflect.ClassTag
 
 trait SigmaTestingCommons extends PropSpec
   with PropertyChecks
@@ -113,7 +113,7 @@ trait SigmaTestingCommons extends PropSpec
   }
 
   case class CompiledFunc[A,B]
-    (script: String, bindings: Seq[(Byte, EvaluatedValue[_ <: SType])], expr: SValue, func: A => (B, Int))
+    (script: String, bindings: Seq[VarBinding], expr: SValue, func: A => (B, Int))
     (implicit val tA: RType[A], val tB: RType[B]) extends Function1[A, (B, Int)] {
     override def apply(x: A): (B, Int) = func(x)
   }
@@ -129,29 +129,51 @@ trait SigmaTestingCommons extends PropSpec
     costingRes
   }
 
-  /** Returns a Scala function which is equivalent to the given function script.
-    * The script is embedded into valid ErgoScript which is then compiled to
-    * [[sigmastate.Values.Value]] tree.
-    * Limitations:
-    * 1) DeserializeContext, ConstantPlaceholder is not supported
-    * @param funcScript source code of the function
-    * @param bindings additional context variables
-    */
-  def func[A: RType, B: RType]
-      (funcScript: String, bindings: (Byte, EvaluatedValue[_ <: SType])*)
-      (implicit IR: IRContext): CompiledFunc[A, B] = {
-    import IR._
-    import IR.Context._;
-    val tA = RType[A]
+  def createContexts[A](in: A, bindings: Seq[VarBinding])(implicit tA: RType[A]) = {
+    val x = fromPrimView(in)
     val tpeA = Evaluation.rtypeToSType(tA)
+    in match {
+      case ctx: CostingDataContext =>
+        // the context is passed as function argument (this is for testing only)
+        // This is to overcome non-functional semantics of context operations
+        // (such as Inputs, Height, etc which don't have arguments and refer to the
+        // context implicitly).
+        // These context operations are introduced by buildTree frontend function
+        // (ctx.HEIGHT method call compiled to Height IR node)
+        // -------
+        // We add ctx as it's own variable with id = 1
+        val ctxVar = Extensions.toAnyValue[special.sigma.Context](ctx)(special.sigma.ContextRType)
+        val newVars = if (ctx.vars.length < 2) {
+          val vars = ctx.vars.toArray
+          val buf = new Array[special.sigma.AnyValue](2)
+          Array.copy(vars, 0, buf, 0, vars.length)
+          buf(1) = ctxVar
+          CostingSigmaDslBuilder.Colls.fromArray(buf)
+        } else {
+          ctx.vars.updated(1, ctxVar)
+        }
+        val calcCtx = ctx.copy(vars = newVars)
+        val costCtx = calcCtx.copy(isCost = true)
+        (costCtx, calcCtx)
+      case _ =>
+        val ergoCtx = ErgoLikeContextTesting.dummy(createBox(0, TrueProp))
+            .withBindings(1.toByte -> Constant[SType](x.asInstanceOf[SType#WrappedType], tpeA))
+            .withBindings(bindings: _*)
+        val calcCtx = ergoCtx.toSigmaContext(isCost = false).asInstanceOf[CostingDataContext]
+        val costCtx = calcCtx.copy(isCost = true)
+        (costCtx, calcCtx)
+    }
+  }
+
+  def compileTestScript[A](env: ScriptEnv, funcScript: String)
+                          (implicit tA: RType[A], IR: IRContext): SValue = {
     val code =
       s"""{
-         |  val func = $funcScript
-         |  val res = func(getVar[${tA.name}](1).get)
-         |  res
-         |}
+        |  val func = $funcScript
+        |  val res = func(getVar[${tA.name}](1).get)
+        |  res
+        |}
       """.stripMargin
-    val env = Interpreter.emptyEnv
 
     // The following ops are performed by frontend
     // typecheck, create graphs, compile to Tree
@@ -164,6 +186,26 @@ trait SigmaTestingCommons extends PropSpec
       checkSerializationRoundTrip(tree)
       tree
     }
+    compiledTree
+  }
+
+  /** Returns a Scala function which is equivalent to the given function script.
+    * The script is embedded into valid ErgoScript which is then compiled to
+    * [[sigmastate.Values.Value]] tree.
+    * Limitations:
+    * 1) DeserializeContext, ConstantPlaceholder is not supported
+    * @param funcScript source code of the function
+    * @param bindings additional context variables
+    */
+  def func[A: RType, B: RType]
+      (funcScript: String, bindings: VarBinding*)
+      (implicit IR: IRContext): CompiledFunc[A, B] = {
+    import IR._
+    import IR.Context._
+    val tA = RType[A]
+    val env = Interpreter.emptyEnv
+
+    val compiledTree = compileTestScript[A](env, funcScript)
 
     // The following is done as part of Interpreter.verify()
     val (costF, valueFun) = {
@@ -182,39 +224,8 @@ trait SigmaTestingCommons extends PropSpec
     }
 
     val f = (in: A) => {
-      implicit val cA = tA.classTag
-      val x = fromPrimView(in)
-      val (costingCtx, sigmaCtx) = in match {
-        case ctx: CostingDataContext =>
-          // the context is passed as function argument (this is for testing only)
-          // This is to overcome non-functional semantics of context operations
-          // (such as Inputs, Height, etc which don't have arguments and refer to the
-          // context implicitly).
-          // These context operations are introduced by buildTree frontend function
-          // (ctx.HEIGHT method call compiled to Height IR node)
-          // -------
-          // We add ctx as it's own variable with id = 1
-          val ctxVar = Extensions.toAnyValue[special.sigma.Context](ctx)(special.sigma.ContextRType)
-          val newVars = if (ctx.vars.length < 2) {
-            val vars = ctx.vars.toArray
-            val buf = new Array[special.sigma.AnyValue](2)
-            Array.copy(vars, 0, buf, 0, vars.length)
-            buf(1) = ctxVar
-            CostingSigmaDslBuilder.Colls.fromArray(buf)
-          } else {
-            ctx.vars.updated(1, ctxVar)
-          }
-          val calcCtx = ctx.copy(vars = newVars)
-          val costCtx = calcCtx.copy(isCost = true)
-          (costCtx, calcCtx)
-        case _ =>
-          val ergoCtx = ErgoLikeContextTesting.dummy(createBox(0, TrueProp))
-              .withBindings(1.toByte -> Constant[SType](x.asInstanceOf[SType#WrappedType], tpeA))
-              .withBindings(bindings: _*)
-          val calcCtx = ergoCtx.toSigmaContext(isCost = false).asInstanceOf[CostingDataContext]
-          val costCtx = calcCtx.copy(isCost = true)
-          (costCtx, calcCtx)
-      }
+      implicit val cA: ClassTag[A] = tA.classTag
+      val (costingCtx, sigmaCtx) = createContexts(in, bindings)
 
       val estimatedCost = IR.checkCostWithContext(costingCtx, costF, ScriptCostLimit.value, 0L).getOrThrow
 
@@ -224,37 +235,28 @@ trait SigmaTestingCommons extends PropSpec
       (res.asInstanceOf[B], estimatedCost)
     }
     val Terms.Apply(funcVal, _) = compiledTree.asInstanceOf[SValue]
-    CompiledFunc(funcScript, bindings.toSeq, funcVal, f)
+    CompiledFunc(funcScript, bindings, funcVal, f)
   }
 
-  def funcJit[A: RType, B: RType](func: String, bindings: (Byte, EvaluatedValue[_ <: SType])*)
-                                 (implicit IR: IRContext, context: ErgoLikeContext, evalSettings: EvalSettings): A => B = {
-    val tA = RType[A]
-    val tB = RType[B]
-    val tpeA = Evaluation.rtypeToSType(tA)
-    val tpeB = Evaluation.rtypeToSType(tB)
-    val code =
-      s"""{
-        |  val func = $func
-        |  val res = func(getVar[${tA.name}](1).get)
-        |  res
-        |}
-      """.stripMargin
-    val env = Interpreter.emptyEnv
-    val interProp = compiler.typecheck(env, code)
-    val IR.Pair(calcF, _) = IR.doCosting[Any](env, interProp)
-    val tree = IR.buildTree(calcF)
-    checkSerializationRoundTrip(tree)
+  val evalSettings = ErgoTreeEvaluator.DefaultEvalSettings
 
-    (in: A) => {
-      implicit val cA = tA.classTag
-      val x = fromPrimView(in)
-      val ctx = context
-          .withBindings(1.toByte -> Constant[SType](x.asInstanceOf[SType#WrappedType], tpeA))
-          .withBindings(bindings: _*)
-      val (res, _) = ErgoTreeEvaluator.eval(ctx.asInstanceOf[ErgoLikeContext], ErgoTree.EmptyConstants, tree, evalSettings)
-      res.asInstanceOf[B]
+  def funcJit[A: RType, B: RType]
+      (funcScript: String, bindings: VarBinding*)
+      (implicit IR: IRContext): CompiledFunc[A, B] = {
+    val tA = RType[A]
+    val compiledTree = compileTestScript[A](Interpreter.emptyEnv, funcScript)
+
+    val f = (in: A) => {
+      implicit val cA: ClassTag[A] = tA.classTag
+      val (_, sigmaCtx) = createContexts(in, bindings)
+      val accumulator = new CostAccumulator(initialCost = 0, Some(ScriptCostLimit.value))
+      val (res, cost) = ErgoTreeEvaluator.eval(
+        sigmaCtx, accumulator,
+        constants = ErgoTree.EmptyConstants, exp = compiledTree, evalSettings = evalSettings)
+      (res.asInstanceOf[B], cost)
     }
+    val Terms.Apply(funcVal, _) = compiledTree.asInstanceOf[SValue]
+    CompiledFunc(funcScript, bindings, funcVal, f)
   }
 
   protected def roundTripTest[T](v: T)(implicit serializer: SigmaSerializer[T, T]): Assertion = {

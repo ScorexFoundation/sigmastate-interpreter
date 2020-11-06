@@ -12,10 +12,11 @@ import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.serialization.ValueSerializer
 import scorex.util.encode.Base58
 import sigmastate.{SigmaAnd, SType}
-import sigmastate.Values.{UnparsedErgoTree, Constant, EvaluatedValue, ByteArrayConstant, IntConstant, ErgoTree}
+import sigmastate.Values.{UnparsedErgoTree, Constant, ByteArrayConstant, IntConstant, ErgoTree}
 import sigmastate.eval.IRContext
 import sigmastate.helpers._
 import sigmastate.helpers.TestingHelpers._
+import sigmastate.interpreter.ContextExtension.VarBinding
 import sigmastate.interpreter.{ContextExtension, CostedProverResult}
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, ScriptEnv}
 import sigmastate.lang.Terms.ValueOps
@@ -215,7 +216,7 @@ class ErgoAddressSpecification extends SigmaDslTesting with TryValues {
   property("negative cases: deserialized script + costing exceptions") {
    implicit lazy val IR = new TestingIRContext
 
-    def testPay2SHAddress(address: Pay2SHAddress, script: (Byte, EvaluatedValue[_ <: SType]), costLimit: Int = ScriptCostLimit.value): CostedProverResult = {
+    def testPay2SHAddress(address: Pay2SHAddress, script: VarBinding, costLimit: Int = ScriptCostLimit.value): CostedProverResult = {
       val boxToSpend = testBox(10, address.script, creationHeight = 5)
       val ctx = copyContext(ErgoLikeContextTesting.dummy(boxToSpend)
           .withExtension(ContextExtension(Seq(

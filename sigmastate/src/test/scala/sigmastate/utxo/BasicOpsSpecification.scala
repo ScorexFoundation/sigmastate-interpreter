@@ -9,12 +9,13 @@ import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.eval.Extensions._
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, SigmaTestingCommons, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter._
 import sigmastate.lang.Terms._
 import special.sigma.InvalidType
 import SType.AnyOps
+import sigmastate.interpreter.ContextExtension.VarBinding
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.utils.Helpers._
 
@@ -38,7 +39,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
   val propVar2 = 11.toByte
   val lastExtVar = propVar2
 
-  val ext: Seq[(Byte, EvaluatedValue[_ <: SType])] = Seq(
+  val ext: Seq[VarBinding] = Seq(
     (intVar1, IntConstant(1)), (intVar2, IntConstant(2)),
     (byteVar1, ByteConstant(1)), (byteVar2, ByteConstant(2)),
     (bigIntVar1, BigIntConstant(BigInt(10).underlying())), (bigIntVar2, BigIntConstant(BigInt(20).underlying())),
@@ -53,7 +54,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     )
 
   def test(name: String, env: ScriptEnv,
-           ext: Seq[(Byte, EvaluatedValue[_ <: SType])],
+           ext: Seq[VarBinding],
            script: String, propExp: SValue,
       onlyPositive: Boolean = true) = {
     val prover = new ContextEnrichingTestProvingInterpreter() {
