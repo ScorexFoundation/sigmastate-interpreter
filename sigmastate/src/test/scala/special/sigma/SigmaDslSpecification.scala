@@ -1862,8 +1862,8 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
         contains.checkExpected(input, okContains)
         get.checkExpected(input, valueOpt)
 
-        contains.checkVerify(input, expectedRes = okContains, expectedCost = 37850)
-        get.checkVerify(input, expectedRes = valueOpt, expectedCost = 38372)
+        contains.checkVerify(input, Expected(value = okContains, cost = 37850))
+        get.checkVerify(input, Expected(value = valueOpt, cost = 38372))
       }
 
       val keys = Colls.fromItems(key)
@@ -1872,14 +1872,14 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
       {
         val input = (tree, (keys, proof))
         getMany.checkExpected(input, expRes)
-        getMany.checkVerify(input, expectedRes = expRes, expectedCost = 38991)
+        getMany.checkVerify(input, Expected(value = expRes, cost = 38991))
       }
 
       {
         val input = (tree, digest)
         val (res, _) = updateDigest.checkEquality(input).getOrThrow
         res.digest shouldBe digest
-        updateDigest.checkVerify(input, expectedRes = res, expectedCost = 36341)
+        updateDigest.checkVerify(input, Expected(value = res, cost = 36341))
       }
 
       val newOps = 1.toByte
@@ -1888,7 +1888,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
         val input = (tree, newOps)
         val (res,_) = updateOperations.checkEquality(input).getOrThrow
         res.enabledOperations shouldBe newOps
-        updateOperations.checkVerify(input, expectedRes = res, expectedCost = 36341)
+        updateOperations.checkVerify(input, Expected(value = res, cost = 36341))
       }
 
       // negative tests: invalid proof
@@ -1898,7 +1898,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
         val input = (tree, (key, invalidProof))
         val (res, _) = contains.checkEquality(input).getOrThrow
         res shouldBe false
-        contains.checkVerify(input, expectedRes = res, expectedCost = 37850)
+        contains.checkVerify(input, Expected(value = res, cost = 37850))
       }
 
       {
@@ -2021,7 +2021,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
         val input = (preInsertTree, (kvs, insertProof))
         val (res, _) = insert.checkEquality(input).getOrThrow
         res.isDefined shouldBe true
-        insert.checkVerify(input, expectedRes = res, expectedCost = 38501)
+        insert.checkVerify(input, Expected(value = res, cost = 38501))
       }
 
       { // negative: readonly tree
@@ -2029,7 +2029,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
         val input = (readonlyTree, (kvs, insertProof))
         val (res, _) = insert.checkEquality(input).getOrThrow
         res.isDefined shouldBe false
-        insert.checkVerify(input, expectedRes = res, expectedCost = 38501)
+        insert.checkVerify(input, Expected(value = res, cost = 38501))
       }
 
       { // negative: invalid key
@@ -2039,7 +2039,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
         val input = (tree, (invalidKvs, insertProof))
         val (res, _) = insert.checkEquality(input).getOrThrow
         res.isDefined shouldBe true // TODO HF: should it really be true? (looks like a bug)
-        insert.checkVerify(input, expectedRes = res, expectedCost = 38501)
+        insert.checkVerify(input, Expected(value = res, cost = 38501))
       }
 
       { // negative: invalid proof
@@ -2135,7 +2135,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
         val input = (preUpdateTree, (kvs, updateProof))
         val res = Some(endTree)
         update.checkExpected(input, res)
-        update.checkVerify(input, expectedRes = res, expectedCost = cost)
+        update.checkVerify(input, Expected(value = res, cost = cost))
       }
 
       { // positive: update to the same value (identity operation)
@@ -2144,14 +2144,14 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
         val input = (tree, (keys, updateProof))
         val res = Some(tree)
         update.checkExpected(input, res)
-        update.checkVerify(input, expectedRes = res, expectedCost = cost)
+        update.checkVerify(input, Expected(value = res, cost = cost))
       }
 
       { // negative: readonly tree
         val readonlyTree = createTree(preUpdateDigest)
         val input = (readonlyTree, (kvs, updateProof))
         update.checkExpected(input, None)
-        update.checkVerify(input, expectedRes = None, expectedCost = cost)
+        update.checkVerify(input, Expected(value = None, cost = cost))
       }
 
       { // negative: invalid key
@@ -2160,7 +2160,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
         val invalidKvs = Colls.fromItems((invalidKey -> newValue))
         val input = (tree, (invalidKvs, updateProof))
         update.checkExpected(input, None)
-        update.checkVerify(input, expectedRes = None, expectedCost = cost)
+        update.checkVerify(input, Expected(value = None, cost = cost))
       }
 
       { // negative: invalid value (different from the value in the proof)
@@ -2170,7 +2170,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
         val input = (tree, (invalidKvs, updateProof))
         val (res, _) = update.checkEquality(input).getOrThrow
         res.isDefined shouldBe true  // TODO HF: should it really be true? (looks like a bug)
-        update.checkVerify(input, expectedRes = res, expectedCost = cost)
+        update.checkVerify(input, Expected(value = res, cost = cost))
       }
 
       { // negative: invalid proof
@@ -2178,7 +2178,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
         val invalidProof = updateProof.map(x => (-x).toByte) // any other different from proof
         val input = (tree, (kvs, invalidProof))
         update.checkExpected(input, None)
-        update.checkVerify(input, expectedRes = None, expectedCost = cost)
+        update.checkVerify(input, Expected(value = None, cost = cost))
       }
     }
   }
@@ -2234,14 +2234,14 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
         val input = (preRemoveTree, (keys, removeProof))
         val res = Some(endTree)
         remove.checkExpected(input, res)
-        remove.checkVerify(input, expectedRes = res, expectedCost = cost)
+        remove.checkVerify(input, Expected(value = res, cost = cost))
       }
 
       { // negative: readonly tree
         val readonlyTree = createTree(preRemoveDigest)
         val input = (readonlyTree, (keys, removeProof))
         remove.checkExpected(input, None)
-        remove.checkVerify(input, expectedRes = None, expectedCost = cost)
+        remove.checkVerify(input, Expected(value = None, cost = cost))
       }
 
       { // negative: invalid key
@@ -2250,7 +2250,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
         val invalidKeys = Colls.fromItems(invalidKey)
         val input = (tree, (invalidKeys, removeProof))
         remove.checkExpected(input, None)
-        remove.checkVerify(input, expectedRes = None, expectedCost = cost)
+        remove.checkVerify(input, Expected(value = None, cost = cost))
       }
 
       { // negative: invalid proof
@@ -2258,7 +2258,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
         val invalidProof = removeProof.map(x => (-x).toByte) // any other different from `removeProof`
         val input = (tree, (keys, invalidProof))
         remove.checkExpected(input, None)
-        remove.checkVerify(input, expectedRes = None, expectedCost = cost)
+        remove.checkVerify(input, Expected(value = None, cost = cost))
       }
     }
   }

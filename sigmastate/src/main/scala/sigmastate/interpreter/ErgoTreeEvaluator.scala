@@ -8,6 +8,7 @@ import sigmastate.interpreter.ErgoTreeEvaluator.DataEnv
 import sigmastate.interpreter.Interpreter.ReductionResult
 import sigmastate.lang.exceptions.CostLimitException
 import special.sigma.Context
+import scalan.util.Extensions._
 
 /** Configuration parameters of the evaluation run. */
 case class EvalSettings(
@@ -137,7 +138,7 @@ object ErgoTreeEvaluator {
            constants: Seq[Constant[SType]],
            exp: SValue,
            evalSettings: EvalSettings): (Any, Int) = {
-    val costAccumulator = new CostAccumulator(0, Some(context.costLimit))
+    val costAccumulator = new CostAccumulator(context.initCost.toIntExact, Some(context.costLimit))
     val sigmaContext = context.toSigmaContext(isCost = false)
     eval(sigmaContext, costAccumulator, constants, exp, evalSettings)
   }

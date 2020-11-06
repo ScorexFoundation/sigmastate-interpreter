@@ -3,10 +3,10 @@ package sigmastate.interpreter
 import java.util
 import java.lang.{Math => JMath}
 
-import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, rule, strategy}
+import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{strategy, rule, everywherebu}
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
 import org.ergoplatform.validation.SigmaValidationSettings
-import sigmastate.basics.DLogProtocol.{DLogInteractiveProver, FirstDLogProverMessage}
+import sigmastate.basics.DLogProtocol.{FirstDLogProverMessage, DLogInteractiveProver}
 import org.ergoplatform.ErgoLikeContext
 import scorex.util.ScorexLogging
 import sigmastate.SCollection.SByteArray
@@ -14,7 +14,7 @@ import sigmastate.Values._
 import sigmastate.eval.{IRContext, Sized, Evaluation}
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.basics._
-import sigmastate.interpreter.Interpreter.{VerificationResult, ScriptEnv}
+import sigmastate.interpreter.Interpreter.{VerificationResult, ScriptEnv, ReductionResult}
 import sigmastate.lang.exceptions.{InterpreterException, CostLimitException}
 import sigmastate.serialization.{ValueSerializer, SigmaSerializer}
 import sigmastate.utxo.{DeserializeContext, CostTable}
@@ -182,8 +182,7 @@ trait Interpreter extends ScorexLogging {
 
   /** This method is used in both prover and verifier to compute SigmaBoolean value.
     * As the first step the cost of computing the `exp` expression in the given context is estimated.
-    * If cost is above limit
-    * then exception is returned and `exp` is not executed
+    * If cost is above limit then exception is returned and `exp` is not executed
     * else `exp` is computed in the given context and the resulting SigmaBoolean returned.
     *
     * @param context        the context in which `exp` should be executed
@@ -222,10 +221,11 @@ trait Interpreter extends ScorexLogging {
   def reduceToCrypto(context: CTX, exp: Value[SType]): Try[ReductionResult] =
     reduceToCrypto(context, Interpreter.emptyEnv, exp)
 
-  /** This method is used in both prover and verifier to compute SigmaProp value.
-    * As the first step the cost of computing the `exp` expression in the given context is estimated.
-    * If cost is above limit
-    * then exception is returned and `exp` is not executed
+  /** This method uses the new JIT costing with direct ErgoTree execution. It is used in
+    * both prover and verifier to compute SigmaProp value.
+    * As the first step the cost of computing the `exp` expression in the given context is
+    * estimated.
+    * If cost is above limit then exception is returned and `exp` is not executed
     * else `exp` is computed in the given context and the resulting SigmaBoolean returned.
     *
     * @param context        the context in which `exp` should be executed
@@ -236,74 +236,48 @@ trait Interpreter extends ScorexLogging {
     * @return result of script reduction
     * @see `ReductionResult`
     */
-  def reduceToCryptoJITC(context: CTX, env: ScriptEnv, exp: Value[SType], treeComplexity: Int): Try[ReductionResult] = Try {
-    import IR._
+  def reduceToCryptoJITC(context: CTX, env: ScriptEnv, exp: Value[SType]): Try[ReductionResult] = Try {
     implicit val vs = context.validationSettings
-    val maxCost = context.costLimit
-    val initCost = context.initCost
     trySoftForkable[ReductionResult](whenSoftFork = TrivialProp.TrueProp -> 0) {
-      // AOT version of costing and execution using graph IR
+
       val (res, cost) = {
-        val costingRes = doCostingEx(env, exp, true)
-        val costF = costingRes.costF
-        IR.onCostingResult(env, exp, costingRes)
-
-        CheckCostFunc(IR)(asRep[Any => Int](costF))
-
-        val costingCtx = context.toSigmaContext(isCost = true)
-        val estimatedCost = IR.checkCostWithContext(costingCtx, costF, maxCost, initCost).getOrThrow
-
-        IR.onEstimatedCost(env, exp, costingRes, costingCtx, estimatedCost)
-
-        // check calc
-        val calcF = costingRes.calcF
-        CheckCalcFunc(IR)(calcF)
-        val calcCtx = context.toSigmaContext(isCost = false)
-        val res = calcResult(calcCtx, calcF)
-        (res, estimatedCost)
+        val ctx = context.asInstanceOf[ErgoLikeContext]
+        ErgoTreeEvaluator.eval(ctx, ErgoTree.EmptyConstants, exp, evalSettings) match {
+          case (p: special.sigma.SigmaProp, c) => (p, c)
+          case (b: Boolean, c) => (SigmaDsl.sigmaProp(b), c)
+          case (res, _) =>
+            sys.error(s"Invalid result type of $res: expected Boolean or SigmaProp when evaluating $exp")
+        }
       }
 
-      val resCost = if (evalSettings.isDebug) {
-        // exercise the new JIT costing with direct ErgoTree execution
-        val (resNew, costNew) = {
-          val ctx = context.asInstanceOf[ErgoLikeContext]
-          val (res, cost) = ErgoTreeEvaluator.eval(ctx, ErgoTree.EmptyConstants, exp, evalSettings) match {
-            case (p: special.sigma.SigmaProp, c) => (p, c)
-            case (b: Boolean, c) => (SigmaDsl.sigmaProp(b), c)
-            case (res, _) => sys.error(s"Invalid result type of $res: expected Boolean or SigmaProp when evaluating $exp")
-          }
-          val scaledCost = JMath.multiplyExact(cost, CostTable.costFactorIncrease) / CostTable.costFactorDecrease
-          val totalCost = JMath.addExact(initCost.toInt, scaledCost)
-          (res, totalCost)
-        }
-        assert(resNew == res, s"The new Evaluator result differ from the old: $resNew != $res")
-
-        def costErr = s"The JIT cost differ from the AOT: $costNew != $cost"
-
-        val resCost = returnAOTCost match {
-          case Some(true) => // AOT costing requested
-            if (costNew != cost) println(s"WARNING: $costErr")
-            cost
-          case Some(false) => // JIT costing requested
-            if (costNew != cost) println(s"WARNING: $costErr")
-            costNew
-          case None => // nothing special was requested
-            assert((costNew - treeComplexity) / 2 <= cost, s"The JIT cost is larger than the AOT: $costNew > $cost")
-            cost
-        }
-        resCost
-      } else cost
-
-      SigmaDsl.toSigmaBoolean(res) -> resCost.toLong
+      SigmaDsl.toSigmaBoolean(res) -> cost.toLong
     }
   }
 
+  def compareResults(oldRes: Try[ReductionResult], newRes: Try[ReductionResult]) = {
+//    assert(resNew == res, s"The new Evaluator result differ from the old: $resNew != $res")
+//
+//    def costErr = s"The JIT cost differ from the AOT: $costNew != $cost"
+//
+//    val resCost = returnAOTCost match {
+//      case Some(true) => // AOT costing requested
+//        if (costNew != cost) println(s"WARNING: $costErr")
+//        cost
+//      case Some(false) => // JIT costing requested
+//        if (costNew != cost) println(s"WARNING: $costErr")
+//        costNew
+//      case None => // nothing special was requested
+//        assert((costNew - treeComplexity) / 2 <= cost, s"The JIT cost is larger than the AOT: $costNew > $cost")
+//        cost
+//    }
+//    resCost
+  }
 
   /** Transforms ErgoTree into Value by replacing placeholders with constants and then
    * delegates to the main implementation method.
    */
   def reduceToCryptoJITC(context: CTX, tree: ErgoTree): Try[ReductionResult] =
-    reduceToCryptoJITC(context, Interpreter.emptyEnv, tree.toProposition(tree.isConstantSegregation), tree.complexity)
+    reduceToCryptoJITC(context, Interpreter.emptyEnv, tree.toProposition(tree.isConstantSegregation))
 
   /**
     * Full reduction of initial expression given in the ErgoTree form to a SigmaBoolean value
@@ -318,11 +292,11 @@ trait Interpreter extends ScorexLogging {
     * @param ergoTree - input ErgoTree expression to reduce
     * @param context - context used in reduction
     * @param env - script environment
-    * @return sigma boolean and the updated cost counter after reduction
+    * @return reduction result as a pair of sigma boolean and the accumulated cost counter after reduction
     */
   def fullReduction(ergoTree: ErgoTree,
                     context: CTX,
-                    env: ScriptEnv): (SigmaBoolean, Long) = {
+                    env: ScriptEnv): ReductionResult = {
     implicit val vs: SigmaValidationSettings = context.validationSettings
 
     val initCost = JMath.addExact(ergoTree.complexity.toLong, context.initCost)
