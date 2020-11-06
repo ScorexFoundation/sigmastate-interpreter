@@ -11,7 +11,7 @@ import sigmastate.interpreter.ErgoTreeEvaluator.DataEnv
 import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.lang.TransformingSigmaBuilder._
-import spire.syntax.all._
+import sigmastate.utxo.CostTable.CostOf
 
 import scala.collection.mutable
 import scala.language.implicitConversions
@@ -135,6 +135,7 @@ object Terms {
     }
 
     protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+      E.coster.add(CostOf.Apply)
       if (args.isEmpty) {
         // TODO coverage
         val fV = func.evalTo[() => Any](E, env)
@@ -151,7 +152,6 @@ object Terms {
         val argsV = args.map(a => a.evalTo[Any](E, env))
         f(argsV)
       }
-      // TODO JITC
     }
   }
   object Apply extends ValueCompanion {

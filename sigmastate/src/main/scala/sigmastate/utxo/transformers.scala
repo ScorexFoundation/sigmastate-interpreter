@@ -13,6 +13,7 @@ import sigmastate.eval.{Evaluation, SigmaDsl}
 import sigmastate.interpreter.ErgoTreeEvaluator
 import sigmastate.interpreter.ErgoTreeEvaluator.{DataEnv, error}
 import sigmastate.lang.exceptions.InterpreterException
+import sigmastate.utxo.CostTable.CostOf
 import special.collection.Coll
 import special.sigma.{Box, SigmaProp}
 
@@ -269,7 +270,7 @@ case class SelectField(input: Value[STuple], fieldIndex: Byte)
 
   protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val inputV = input.evalTo[Any](E, env)
-    // TODO JITC
+    E.coster.add(CostOf.SelectField)
     inputV match {
       case p: Tuple2[_,_] =>
         if (fieldIndex == 1) p._1

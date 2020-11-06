@@ -34,13 +34,13 @@ import sigmastate.lang.DefaultSigmaBuilder._
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.serialization.transformers.ProveDHTupleSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import special.sigma.{AnyValue, AvlTree, PreHeader, Header, _}
+import special.sigma.{AvlTree, PreHeader, Header, _}
 import sigmastate.lang.{Terms, SourceContext}
 import special.collection.Coll
 import sigmastate.SType.AnyOps
+import sigmastate.utxo.CostTable.CostOf
 
 import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
 
 object Values {
 
@@ -1008,6 +1008,7 @@ object Values {
     override def opType: SFunc = SFunc(mutable.WrappedArray.empty, tpe)
 
     protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+      E.coster.add(CostOf.FuncValue)
       if (args.length == 0) {
         // TODO coverage
         () => {
@@ -1027,7 +1028,6 @@ object Values {
           body.evalTo[Any](E, env1)
         }
       }
-      // TODO JITC
     }
   }
   object FuncValue extends ValueCompanion {

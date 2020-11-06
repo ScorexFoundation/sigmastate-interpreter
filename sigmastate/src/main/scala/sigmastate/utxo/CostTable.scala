@@ -1,7 +1,8 @@
 package sigmastate.utxo
 
 import org.ergoplatform.SigmaConstants
-import sigmastate.{Downcast, Upcast}
+import sigmastate._
+import sigmastate.interpreter.Interpreter
 import sigmastate.lang.SigmaParser
 import sigmastate.lang.Terms.OperationId
 
@@ -305,6 +306,199 @@ object CostTable {
   //Maximum number of expressions in initial(non-reduced script)
   val MaxExpressions = 300
 
+  object CostOf {
+    def Constant(constType: SType): Int = constType match {
+      case SUnit | SBoolean | SByte | SShort | SInt | SLong | SBigInt | SString |
+           SGroupElement | SSigmaProp | SBox | SAvlTree => constCost
+      case _: SCollectionType[_] => constCost
+      case _ => Interpreter.error(s"Cost is not defined: unexpected constant type $constType")
+    }
+
+//    ("Lambda", "() => (D1) => R", lambdaCost),
+    def FuncValue = lambdaCost
+    def Apply = lambdaInvoke
+
+//    ("ConcreteCollection", "() => Coll[IV]", collToColl),
+//    ("GroupGenerator$", "() => GroupElement", constCost),
+//    ("Self$", "Context => Box", constCost),
+//    ("AccessAvlTree", "Context => AvlTree", constCost),
+
+//    ("SelectField", "() => Unit", selectField),
+    def SelectField = selectField
+
+//    ("AccessKiloByteOfData", "() => Unit", extractCost),
+//    ("AccessBox", "Context => Box", accessBox),
+//    ("GetVar", "(Context, Byte) => Option[T]", getVarCost),
+//    ("GetRegister", "(Box, Byte) => Option[T]", accessRegister),
+//    ("AccessRegister", "Box => Option[T]", accessRegister),
+//    ("ExtractAmount", "(Box) => Long", extractCost),
+//    ("ExtractId", "(Box) => Coll[Byte]", extractCost),
+//    ("ExtractBytes", "(Box) => Coll[Byte]", extractCost),
+//    ("ExtractScriptBytes", "(Box) => Coll[Byte]", extractCost),
+//    ("ExtractBytesWithNoRef", "(Box) => Coll[Byte]", extractCost),
+//    ("ExtractRegisterAs", "(Box,Byte) => Coll[BigInt]", extractCost),
+//    ("SBox$.tokens", "(Box) => Coll[(Coll[Byte],Long)]", extractCost),
+//
+//    ("Exponentiate", "(GroupElement,BigInt) => GroupElement", expCost),
+//    ("MultiplyGroup", "(GroupElement,GroupElement) => GroupElement", multiplyGroup),
+//    ("ByteArrayToBigInt", "(Coll[Byte]) => BigInt", castOp),
+//    ("new_BigInteger_per_item", "(Coll[Byte]) => BigInt", newBigIntPerItem),
+//    ("SGroupElement$.negate", "(GroupElement) => GroupElement", negateGroup),
+//
+//    ("Slice", "(Coll[IV],Int,Int) => Coll[IV]", collToColl),
+//    ("Append", "(Coll[IV],Coll[IV]) => Coll[IV]", collToColl),
+//
+//    ("SizeOf", "(Coll[IV]) => Int", collLength),
+//    ("ByIndex", "(Coll[IV],Int) => IV", collByIndex),
+//    ("SCollection$.exists", "(Coll[IV],(IV) => Boolean) => Boolean", collToColl),
+//    ("SCollection$.forall", "(Coll[IV],(IV) => Boolean) => Boolean", collToColl),
+//    ("SCollection$.map", "(Coll[IV],(IV) => OV) => Coll[OV]", collToColl),
+//    ("SCollection$.flatMap", "(Coll[IV],(IV) => Coll[OV]) => Coll[OV]", collToColl),
+//    ("SCollection$.indexOf_per_kb", "(Coll[IV],IV,Int) => Int", collToColl),
+//    ("SCollection$.zip", "(Coll[IV],Coll[OV]) => Coll[(IV,OV)]", collToColl),
+//    ("SCollection$.patch", "(Coll[IV],Int,Coll[IV],Int) => Coll[IV]", collToColl),
+//    ("SCollection$.updated", "(Coll[IV],Int,IV) => Coll[IV]", collToColl),
+//    ("SCollection$.updateMany_per_kb", "(Coll[IV],Coll[Int],Coll[IV]) => Coll[IV]", collToColl),
+//    ("SCollection$.filter", "(Coll[IV],(IV) => Boolean) => Coll[IV]", collToColl),
+//
+//    ("If", "(Boolean, T, T) => T", logicCost),
+//
+//    ("SigmaPropIsProven", "SigmaProp => Boolean", logicCost),
+//    ("BoolToSigmaProp", "Boolean => SigmaProp", logicCost),
+//    ("SigmaPropBytes", "SigmaProp => Coll[Byte]", logicCost),
+//    ("BinAnd", "(Boolean, Boolean) => Boolean", logicCost),
+//    ("BinOr", "(Boolean, Boolean) => Boolean", logicCost),
+
+//    ("BinXor", "(Boolean, Boolean) => Boolean", logicCost),
+    def BinXor = logicCost
+
+//    ("AND", "(Coll[Boolean]) => Boolean", logicCost),
+//    ("OR_per_item", "(Coll[Boolean]) => Boolean", logicCost),
+//    ("AND_per_item", "(Coll[Boolean]) => Boolean", logicCost),
+//    ("AtLeast", "(Int, Coll[Boolean]) => Boolean", logicCost),
+//    ("CalcBlake2b256_per_kb", "(Coll[Byte]) => Coll[Byte]", hashPerKb),
+//    ("CalcSha256_per_kb", "(Coll[Byte]) => Coll[Byte]", hashPerKb),
+//    ("Xor_per_kb", "(Coll[Byte],Coll[Byte]) => Coll[Byte]", hashPerKb / 2),
+//    ("XorOf_per_item", "(Coll[Boolean]) => Boolean", logicCost),
+//    ("LogicalNot", "(Boolean) => Boolean", logicCost),
+//
+//    ("GT", "(T,T) => Boolean", comparisonCost),
+//    ("GE", "(T,T) => Boolean", comparisonCost),
+//    ("LE", "(T,T) => Boolean", comparisonCost),
+//    ("LT", "(T,T) => Boolean", comparisonCost),
+//    ("EQ", "(T,T) => Boolean", comparisonCost),
+//    ("NEQ", "(T,T) => Boolean", comparisonCost),
+//
+//    ("GT_per_kb", "(T,T) => Boolean", comparisonPerKbCost),
+//    ("GE_per_kb", "(T,T) => Boolean", comparisonPerKbCost),
+//    ("LE_per_kb", "(T,T) => Boolean", comparisonPerKbCost),
+//    ("LT_per_kb", "(T,T) => Boolean", comparisonPerKbCost),
+//    ("EQ_per_kb", "(T,T) => Boolean", comparisonPerKbCost),
+//    ("NEQ_per_kb", "(T,T) => Boolean", comparisonPerKbCost),
+//
+//    ("GT", "(BigInt,BigInt) => Boolean", comparisonBigInt),
+//    ("GE", "(BigInt,BigInt) => Boolean", comparisonBigInt),
+//    ("LE", "(BigInt,BigInt) => Boolean", comparisonBigInt),
+//    ("LT", "(BigInt,BigInt) => Boolean", comparisonBigInt),
+//    ("EQ", "(BigInt,BigInt) => Boolean", comparisonBigInt),
+//    ("NEQ", "(BigInt,BigInt) => Boolean", comparisonBigInt),
+//    //    (">_per_item", "(BigInt, BigInt) => BigInt", MinimalCost),
+//
+//    ("+", "(Byte, Byte) => Byte", plusMinus),
+//    ("+", "(Short, Short) => Short", plusMinus),
+//    ("+", "(Int, Int) => Int", plusMinus),
+//    ("+", "(Long, Long) => Long", plusMinus),
+//
+//    ("-", "(Byte, Byte) => Byte", plusMinus),
+//    ("-", "(Short, Short) => Short", plusMinus),
+//    ("-", "(Int, Int) => Int", plusMinus),
+//    ("-", "(Long, Long) => Long", plusMinus),
+//
+//    ("*", "(Byte, Byte) => Byte", multiply),
+//    ("*", "(Short, Short) => Short", multiply),
+//    ("*", "(Int, Int) => Int", multiply),
+//    ("*", "(Long, Long) => Long", multiply),
+//
+//    ("/", "(Byte, Byte) => Byte", multiply),
+//    ("/", "(Short, Short) => Short", multiply),
+//    ("/", "(Int, Int) => Int", multiply),
+//    ("/", "(Long, Long) => Long", multiply),
+//
+//    ("%", "(Byte, Byte) => Byte", multiply),
+//    ("%", "(Short, Short) => Short", multiply),
+//    ("%", "(Int, Int) => Int", multiply),
+//    ("%", "(Long, Long) => Long", multiply),
+//
+//    ("Negation", "(Byte) => Byte", MinimalCost),
+//    ("Negation", "(Short) => Short", MinimalCost),
+//    ("Negation", "(Int) => Int", MinimalCost),
+//    ("Negation", "(Long) => Long", MinimalCost),
+//    ("Negation", "(BigInt) => BigInt", MinimalCost),
+//
+//    ("+", "(BigInt, BigInt) => BigInt", plusMinusBigInt),
+//    ("+_per_item", "(BigInt, BigInt) => BigInt", MinimalCost),
+//
+//    ("-", "(BigInt, BigInt) => BigInt", plusMinusBigInt),
+//    ("-_per_item", "(BigInt, BigInt) => BigInt", MinimalCost),
+//
+//    ("*", "(BigInt, BigInt) => BigInt", multiplyBigInt),
+//    ("*_per_item", "(BigInt, BigInt) => BigInt", MinimalCost),
+//
+//    ("/", "(BigInt, BigInt) => BigInt", multiplyBigInt),
+//    ("/_per_item", "(BigInt, BigInt) => BigInt", MinimalCost),
+//
+//    ("%", "(BigInt, BigInt) => BigInt", multiplyBigInt),
+//    ("%_per_item", "(BigInt, BigInt) => BigInt", MinimalCost),
+//
+//    ("ModQ", "(BigInt) => BigInt", MinimalCost),
+//    ("ModQArithOp", "(BigInt, BigInt) => BigInt", MinimalCost),
+//
+//    ("Downcast", s"(${Downcast.tT}) => ${Downcast.tR}", castOp),
+//    ("Upcast", s"(${Upcast.tT}) => ${Upcast.tR}", castOp),
+//
+//    ("Downcast", s"(BigInt) => ${Downcast.tR}", castOpBigInt),
+//    ("Upcast", s"(${Upcast.tT}) => BigInt", castOpBigInt),
+//
+//    ("min", "(Byte, Byte) => Byte", logicCost),
+//    ("min", "(Short, Short) => Short", logicCost),
+//    ("min", "(Int, Int) => Int", logicCost),
+//    ("min", "(Long, Long) => Long", logicCost),
+//    ("min", "(BigInt, BigInt) => BigInt", comparisonCost),
+//    ("min_per_item", "(BigInt, BigInt) => BigInt", comparisonCost),
+//
+//    ("max", "(Byte, Byte) => Byte", logicCost),
+//    ("max", "(Short, Short) => Short", logicCost),
+//    ("max", "(Int, Int) => Int", logicCost),
+//    ("max", "(Long, Long) => Long", logicCost),
+//    ("max", "(BigInt, BigInt) => BigInt", comparisonCost),
+//    ("max_per_item", "(BigInt, BigInt) => BigInt", comparisonCost),
+//
+//    ("SAvlTree$.insert_per_kb", "(AvlTree, Coll[(Coll[Byte], Coll[Byte])], Coll[Byte]) => Option[AvlTree]", avlTreeOp),
+//    ("SAvlTree$.update_per_kb", "(AvlTree, Coll[(Coll[Byte], Coll[Byte])], Coll[Byte]) => Option[AvlTree]", avlTreeOp),
+//    ("SAvlTree$.remove_per_kb", "(AvlTree, Coll[Coll[Byte]], Coll[Byte]) => Option[AvlTree]", avlTreeOp),
+//    ("SAvlTree$.contains_per_kb", "(AvlTree,Coll[Byte],Coll[Byte]) => Boolean", avlTreeOp),
+//    ("SAvlTree$.get_per_kb", "(AvlTree,Coll[Byte],Coll[Byte]) => Option[Coll[Byte]]", avlTreeOp),
+//    ("SAvlTree$.getMany_per_kb", "(AvlTree,Coll[Coll[Byte]],Coll[Byte]) => Coll[Option[Coll[Byte]]]", avlTreeOp),
+//    ("SAvlTree$.updateDigest", "(AvlTree,Coll[Byte]) => AvlTree", newAvlTreeCost),
+//    ("SAvlTree$.updateOperations", "(AvlTree,Byte) => AvlTree", newAvlTreeCost),
+//
+//    ("LongToByteArray", "(Long) => Coll[Byte]", castOp),
+//    ("ByteArrayToLong", "(Coll[Byte]) => Long", castOp),
+//
+//    ("ProveDlogEval", "(Unit) => SigmaProp", proveDlogEvalCost),
+//    ("ProveDHTuple", "(Unit) => SigmaProp", proveDHTupleEvalCost),
+//
+//    ("SigmaAnd_per_item", "(Coll[SigmaProp]) => SigmaProp", sigmaAndCost),
+//    ("SigmaOr_per_item", "(Coll[SigmaProp]) => SigmaProp", sigmaOrCost),
+//
+//    ("SubstConstants_per_kb", "(Coll[Byte], Coll[Int], Coll[T]) => Coll[Byte]", MinimalCost),
+//
+//    ("DecodePoint", "(Coll[Byte]) => GroupElement", decodePointCost),
+//
+//    ("SOption$.map", "(Option[T],(T) => R) => Option[R]", OptionOp),
+//    ("SOption$.filter", "(Option[T],(T) => Boolean) => Option[T]", OptionOp)
+
+  }
 }
 
 

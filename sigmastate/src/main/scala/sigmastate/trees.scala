@@ -21,11 +21,11 @@ import scalan.ExactNumeric._
 import scalan.ExactOrdering._
 import scalan.util.Extensions._
 import sigmastate.ArithOp.OperationImpl
-import sigmastate.eval.NumericOps.{BigIntIsExactOrdering, BigIntIsExactNumeric, BigIntIsExactIntegral}
+import sigmastate.eval.NumericOps.{BigIntIsExactOrdering, BigIntIsExactIntegral, BigIntIsExactNumeric}
 import sigmastate.eval.{Colls, Sized, SigmaDsl}
+import sigmastate.utxo.CostTable.CostOf
 import special.collection.Coll
 import special.sigma.{SigmaProp, GroupElement}
-import spire.syntax.all._
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -1097,7 +1097,7 @@ case class BinXor(override val left: BoolValue, override val right: BoolValue)
   protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val leftV = left.evalTo[Boolean](E, env)
     val rightV = right.evalTo[Boolean](E, env)
-    // TODO JITC
+    E.coster.add(CostOf.BinXor)
     leftV ^ rightV
   }
 }
