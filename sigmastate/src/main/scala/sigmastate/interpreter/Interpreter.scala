@@ -388,10 +388,11 @@ trait Interpreter extends ScorexLogging {
   /** This is fast version of verification based on direct ErgoTree evaluator.
     * It produces different costs and cannot be used in Ergo v3.x
     */
-  def verifyFast(env: ScriptEnv, tree: ErgoTree,
-                 context: CTX,
-                 proof: Array[Byte],
-                 message: Array[Byte]): Try[VerificationResult] = {
+  def verifyJit(env: ScriptEnv,
+                ergoTree: ErgoTree,
+                context: CTX,
+                proof: Array[Byte],
+                message: Array[Byte]): Try[VerificationResult] = {
     val (res, t) = BenchmarkUtil.measureTime(Try {
 
       val initCost = context.initCost
@@ -400,7 +401,7 @@ trait Interpreter extends ScorexLogging {
         throw new CostLimitException(initCost, Evaluation.msgCostLimitError(initCost, context.costLimit), None)
 
       val context1 = context.withInitCost(initCost).asInstanceOf[CTX]
-      val prop = propositionFromErgoTree(tree, context1)
+      val prop = propositionFromErgoTree(ergoTree, context1)
 
       implicit val vs = context1.validationSettings
       val (propTree, context2) = trySoftForkable[(SigmaPropValue, CTX)](whenSoftFork = (TrueLeaf, context1)) {

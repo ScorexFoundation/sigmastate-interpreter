@@ -3425,15 +3425,18 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
       existingFeature(
       { (x: Context) =>
         // this error is expected in v3.x
-        throw expectedError
-        // TODO HF: this is expected in v5.0
-        val dataBox = x.dataInputs(0)
-        val ok = if (x.OUTPUTS(0).R5[Long].get == 1L) {
-          dataBox.R4[Long].get <= x.SELF.value
-        } else {
-          dataBox.R4[Coll[Byte]].get != x.SELF.propositionBytes
+        if (isNewVersion.value) {
+          // TODO HF: this is expected in v5.0
+          val dataBox = x.dataInputs(0)
+          val ok = if (x.OUTPUTS(0).R5[Long].get == 1L) {
+            dataBox.R4[Long].get <= x.SELF.value
+          } else {
+            dataBox.R4[Coll[Byte]].get != x.SELF.propositionBytes
+          }
+          ok
         }
-        ok
+        else
+          throw expectedError
       },
       s"""{ (x: Context) =>
         |  val dataBox = x.dataInputs(0)
@@ -5001,7 +5004,16 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
         (Some(0L) -> Success(Expected(1L, 39012))),
         (Some(Long.MaxValue) -> Failure(new ArithmeticException("long overflow")))
       ),
-      existingFeature({ (x: Option[Long]) => x.fold(throw new NoSuchElementException("None.get"))( (v: Long) => n.plus(v, 1) ) },
+      existingFeature(
+        { (x: Option[Long]) =>
+          def f(opt: Long): Long = n.plus(opt, 1)
+          if (x.isDefined) f(x.get)
+          else {
+            if (!isNewVersion.value)
+              f(x.get); // simulate non-lazy 'if': f is called in both branches
+            5L
+          }
+        },
         """{(x: Option[Long]) =>
           |  def f(opt: Long): Long = opt + 1
           |  if (x.isDefined) f(x.get) else 5L
