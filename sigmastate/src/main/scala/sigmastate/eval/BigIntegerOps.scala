@@ -42,7 +42,7 @@ object NumericOps {
 
   trait BigIntIsIntegral extends Integral[BigInt] {
     def quot(x: BigInt, y: BigInt): BigInt = x.divide(y)
-    def rem(x: BigInt, y: BigInt): BigInt = x.remainder(y)
+    def rem(x: BigInt, y: BigInt): BigInt = x.mod(y)
     def plus(x: BigInt, y: BigInt): BigInt = x.add(y)
     def minus(x: BigInt, y: BigInt): BigInt = x.subtract(y)
     def times(x: BigInt, y: BigInt): BigInt = x.multiply(y)
