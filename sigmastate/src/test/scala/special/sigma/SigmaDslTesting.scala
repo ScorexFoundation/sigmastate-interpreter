@@ -191,10 +191,11 @@ class SigmaDslTesting extends PropSpec
       * @return result of feature execution */
     def checkEquality(input: A, logInputOutput: Boolean = false): Try[(B, Int)] = featureType match {
       case ExistingFeature =>
-        // check both implementations with Scala semantic
+        // check the old implementation with Scala semantic
         val oldRes = checkEq(scalaFunc)(oldF)(input)
 
         if (!(newImpl eq oldImpl)) {
+          // check the new implementation with Scala semantic
           val newRes = checkEq(scalaFunc)(newF)(input)
           newRes shouldBe oldRes
         }
@@ -217,11 +218,12 @@ class SigmaDslTesting extends PropSpec
     def checkExpected(input: A, expectedResult: B): Unit = {
       featureType match {
         case ExistingFeature =>
-          // check both implementations with Scala semantic
+          // check the old implementation with Scala semantic
           val (oldRes, _) = checkEq(scalaFunc)(oldF)(input).get
           oldRes shouldBe expectedResult
 
           if (!(newImpl eq oldImpl)) {
+            // check the new implementation with Scala semantic
             val (newRes, _) = checkEq(scalaFunc)(newF)(input).get
             newRes shouldBe expectedResult
           }
@@ -272,11 +274,12 @@ class SigmaDslTesting extends PropSpec
       * 2) the given expected intermediate result
       * 3) the total expected execution cost of the verification
       */
-    def checkVerify(input: A, expectedRes: B, expectedCost: Int): Unit = {
+    def checkVerify(input: A, expected: Expected[B]): Unit = {
       val tpeA = Evaluation.rtypeToSType(oldF.tA)
       val tpeB = Evaluation.rtypeToSType(oldF.tB)
 
       val prover = new FeatureProvingInterpreter()
+      val verifier = new ErgoLikeInterpreter()(createIR()) { type CTX = ErgoLikeContext }
 
       // Create synthetic ErgoTree which uses all main capabilities of evaluation machinery.
       // 1) first-class functions (lambdas); 2) Context variables; 3) Registers; 4) Equality
@@ -315,7 +318,7 @@ class SigmaDslTesting extends PropSpec
       val pkBobBytes = ValueSerializer.serialize(prover.pubKeys(1).toSigmaProp)
       val pkCarolBytes = ValueSerializer.serialize(prover.pubKeys(2).toSigmaProp)
       val newRegisters = Map(
-        ErgoBox.R4 -> Constant[SType](expectedRes.asInstanceOf[SType#WrappedType], tpeB),
+        ErgoBox.R4 -> Constant[SType](expected.value.asInstanceOf[SType#WrappedType], tpeB),
         ErgoBox.R5 -> ByteArrayConstant(pkBobBytes)
       )
 
@@ -359,10 +362,6 @@ class SigmaDslTesting extends PropSpec
 
       val pr = prover.prove(compiledTree, ergoCtx, fakeMessage).getOrThrow
 
-      implicit val IR: IRContext = createIR()
-
-      val verifier = new ErgoLikeInterpreter() { type CTX = ErgoLikeContext }
-
       val verificationCtx = ergoCtx.withExtension(pr.extension)
 
       val vres = verifier.verify(compiledTree, verificationCtx, pr, fakeMessage)
@@ -370,14 +369,14 @@ class SigmaDslTesting extends PropSpec
         case Success((ok, cost)) =>
           ok shouldBe true
           val verificationCost = cost.toIntExact
-// NOTE: you can uncomment this line and comment the assertion in order to
-// simplify adding new test vectors for cost estimation
-//          if (expectedCost != verificationCost) {
-//            println(s"Script: $script")
-//            println(s"Cost: $verificationCost\n")
-//          }
-          assertResult(expectedCost,
-            s"Actual verify() cost $cost != expected $expectedCost")(verificationCost)
+          // NOTE: you can uncomment this line and comment the assertion in order to
+          // simplify adding new test vectors for cost estimation
+          //          if (expectedCost != verificationCost) {
+          //            println(s"Script: $script")
+          //            println(s"Cost: $verificationCost\n")
+          //          }
+          assertResult(expected.cost,
+            s"Actual verify() cost $cost != expected ${expected.cost}")(verificationCost)
 
         case Failure(t) => throw t
       }
@@ -394,8 +393,20 @@ class SigmaDslTesting extends PropSpec
     * @param cost  expected cost value of the verification execution
     * @see [[testCases]]
     */
-  case class Expected[+A](value: A, cost: Int)
+  case class Expected[+A](value: A, cost: Int) {
+    def newCost: Int = cost
+    def newValue: A = value
+  }
 
+  object Expected {
+    def apply[A](value: A, cost: Int, expectedNewCost: Int) = new Expected(value, cost) {
+      override val newCost = expectedNewCost
+    }
+    def apply[A](value: A, cost: Int, expectedNewValue: A, expectedNewCost: Int) = new Expected(value, cost) {
+      override val newCost = expectedNewCost
+      override val newValue = expectedNewValue
+    }
+  }
   /** Describes existing language feature which should be equally supported in both v3 and
     * v4 of the language.
     *
@@ -513,8 +524,8 @@ class SigmaDslTesting extends PropSpec
           checkResult(funcRes.map(_._1), expectedResValue, failOnTestVectors)
 
           (funcRes, expectedRes) match {
-            case (Success((y, _)), Success(Expected(_, expectedCost))) =>
-              f.checkVerify(x, y, expectedCost)
+            case (Success((y, _)), Success(expected)) =>
+              f.checkVerify(x, expected)
             case _ =>
           }
         case AddedFeature =>
