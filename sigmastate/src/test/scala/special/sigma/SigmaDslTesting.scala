@@ -210,7 +210,7 @@ class SigmaDslTesting extends PropSpec
       * @param expectedResult the result values which are expected
       * @see checkVerify
       */
-    def verifyCase(input: A, expectedResult: Try[Expected[B]],
+    def verifyCase(input: A, expectedResult: Expected[B],
                    printTestCases: Boolean = PrintTestCasesDefault,
                    failOnTestVectors: Boolean = FailOnTestVectorsDefault): Unit
 
@@ -294,7 +294,7 @@ class SigmaDslTesting extends PropSpec
       val pkBobBytes = ValueSerializer.serialize(prover.pubKeys(1).toSigmaProp)
       val pkCarolBytes = ValueSerializer.serialize(prover.pubKeys(2).toSigmaProp)
       val newRegisters = Map(
-        ErgoBox.R4 -> Constant[SType](expected.value.asInstanceOf[SType#WrappedType], tpeB),
+        ErgoBox.R4 -> Constant[SType](expected.value.get.asInstanceOf[SType#WrappedType], tpeB),
         ErgoBox.R5 -> ByteArrayConstant(pkBobBytes)
       )
 
@@ -407,16 +407,15 @@ class SigmaDslTesting extends PropSpec
     }
 
     override def verifyCase(input: A,
-                            expectedResult: Try[Expected[B]],
+                            expected: Expected[B],
                             printTestCases: Boolean,
                             failOnTestVectors: Boolean): Unit = {
       val funcRes = checkEquality(input, printTestCases)
 
-      val expectedResValue = expectedResult.map(_.value)
-      checkResult(funcRes.map(_._1), expectedResValue, failOnTestVectors)
+      checkResult(funcRes.map(_._1), expected.value, failOnTestVectors)
 
-      (funcRes, expectedResult) match {
-        case (Success((y, _)), Success(expected)) =>
+      expected.value match {
+        case Success(y) =>
           checkVerify(input, expected)
         case _ =>
       }
@@ -462,13 +461,12 @@ class SigmaDslTesting extends PropSpec
     }
 
     override def verifyCase(input: A,
-                            expectedResult: Try[Expected[B]],
+                            expected: Expected[B],
                             printTestCases: Boolean,
                             failOnTestVectors: Boolean): Unit = {
       val funcRes = checkEquality(input, printTestCases)
-      val expectedResValue = expectedResult.map(_.value)
       funcRes.isFailure shouldBe true
-      Try(scalaFunc(input)) shouldBe expectedResValue
+      Try(scalaFunc(input)) shouldBe expected.value
     }
   }
 
@@ -477,16 +475,17 @@ class SigmaDslTesting extends PropSpec
     * @param cost  expected cost value of the verification execution
     * @see [[testCases]]
     */
-  case class Expected[+A](value: A, cost: Int) {
+  case class Expected[+A](value: Try[A], cost: Int) {
     def newCost: Int = cost
-    def newValue: A = value
+    def newValue: Try[A] = value
   }
 
   object Expected {
-    def apply[A](value: A, cost: Int, expectedNewCost: Int) = new Expected(value, cost) {
+    def apply[A](error: Throwable) = new Expected[A](Failure(error), 0)
+    def apply[A](value: Try[A], cost: Int, expectedNewCost: Int) = new Expected(value, cost) {
       override val newCost = expectedNewCost
     }
-    def apply[A](value: A, cost: Int, expectedNewValue: A, expectedNewCost: Int) = new Expected(value, cost) {
+    def apply[A](value: Try[A], cost: Int, expectedNewValue: Try[A], expectedNewCost: Int) = new Expected(value, cost) {
       override val newCost = expectedNewCost
       override val newValue = expectedNewValue
     }
@@ -583,14 +582,14 @@ class SigmaDslTesting extends PropSpec
     *                             if None, then the given Arbitrary is used to generate samples
     */
   def verifyCases[A: Ordering : Arbitrary : ClassTag, B]
-      (cases: Seq[(A, Try[Expected[B]])],
+      (cases: Seq[(A, Expected[B])],
        f: Feature[A, B],
        printTestCases: Boolean = PrintTestCasesDefault,
        failOnTestVectors: Boolean = FailOnTestVectorsDefault,
        preGeneratedSamples: Option[Seq[A]] = None): Unit = {
 
     val table = Table(("x", "y"), cases:_*)
-    forAll(table) { (x: A, expectedRes: Try[Expected[B]]) =>
+    forAll(table) { (x: A, expectedRes: Expected[B]) =>
       f.verifyCase(x, expectedRes, printTestCases, failOnTestVectors)
     }
     test(preGeneratedSamples, f, printTestCases)
