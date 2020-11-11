@@ -1849,7 +1849,13 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
     val (key, value, _, avlProver) = sampleAvlProver
     val otherKey = key.map(x => (-x).toByte) // any other different from key
 
-    val table = Table(("key", "contains", "valueOpt"), (key, true, Some(value)), (otherKey, false, None))
+    val table = Table(("key", "contains", "valueOpt"),
+      (key, true, Some(value)),
+      (otherKey, false, None)
+    )
+
+    def success[T](v: T) = Expected(Success(v), 0)
+
     forAll(table) { (key, okContains, valueOpt) =>
       avlProver.performOneOperation(Lookup(ADKey @@ key.toArray))
       val proof = avlProver.generateProof().toColl
@@ -1859,8 +1865,8 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
       // positive test
       {
         val input = (tree, (key, proof))
-        contains.checkExpected(input, okContains)
-        get.checkExpected(input, valueOpt)
+        contains.checkExpected(input, success(okContains))
+        get.checkExpected(input, success(valueOpt))
 
         contains.checkVerify(input, Expected(value = Success(okContains), cost = 37850))
         get.checkVerify(input, Expected(value = Success(valueOpt), cost = 38372))
@@ -1871,7 +1877,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
       
       {
         val input = (tree, (keys, proof))
-        getMany.checkExpected(input, expRes)
+        getMany.checkExpected(input, success(expRes))
         getMany.checkVerify(input, Expected(value = Success(expRes), cost = 38991))
       }
 
@@ -2121,6 +2127,8 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
       ))
     val cost = 40952
 
+    def success[T](v: T) = Expected(Success(v), 0)
+
     forAll(keyCollGen, bytesCollGen) { (key, value) =>
       val (_, avlProver) = createAvlTreeAndProver(key -> value)
       val preUpdateDigest = avlProver.digest.toColl
@@ -2134,7 +2142,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
         val endTree = preUpdateTree.updateDigest(endDigest)
         val input = (preUpdateTree, (kvs, updateProof))
         val res = Some(endTree)
-        update.checkExpected(input, res)
+        update.checkExpected(input, success(res))
         update.checkVerify(input, Expected(value = Success(res), cost = cost))
       }
 
@@ -2143,14 +2151,14 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
         val keys = Colls.fromItems((key -> value))
         val input = (tree, (keys, updateProof))
         val res = Some(tree)
-        update.checkExpected(input, res)
+        update.checkExpected(input, success(res))
         update.checkVerify(input, Expected(value = Success(res), cost = cost))
       }
 
       { // negative: readonly tree
         val readonlyTree = createTree(preUpdateDigest)
         val input = (readonlyTree, (kvs, updateProof))
-        update.checkExpected(input, None)
+        update.checkExpected(input, success(None))
         update.checkVerify(input, Expected(value = Success(None), cost = cost))
       }
 
@@ -2159,7 +2167,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
         val invalidKey = key.map(x => (-x).toByte) // any other different from key
         val invalidKvs = Colls.fromItems((invalidKey -> newValue))
         val input = (tree, (invalidKvs, updateProof))
-        update.checkExpected(input, None)
+        update.checkExpected(input, success(None))
         update.checkVerify(input, Expected(value = Success(None), cost = cost))
       }
 
@@ -2177,7 +2185,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
         val tree = createTree(preUpdateDigest, updateAllowed = true)
         val invalidProof = updateProof.map(x => (-x).toByte) // any other different from proof
         val input = (tree, (kvs, invalidProof))
-        update.checkExpected(input, None)
+        update.checkExpected(input, success(None))
         update.checkVerify(input, Expected(value = Success(None), cost = cost))
       }
     }
@@ -2220,6 +2228,8 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
         )
       ))
 
+    def success[T](v: T) = Expected(Success(v), 0)
+
     forAll(keyCollGen, bytesCollGen) { (key, value) =>
       val (_, avlProver) = createAvlTreeAndProver(key -> value)
       val preRemoveDigest = avlProver.digest.toColl
@@ -2233,14 +2243,14 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
         val endTree = preRemoveTree.updateDigest(endDigest)
         val input = (preRemoveTree, (keys, removeProof))
         val res = Some(endTree)
-        remove.checkExpected(input, res)
+        remove.checkExpected(input, success(res))
         remove.checkVerify(input, Expected(value = Success(res), cost = cost))
       }
 
       { // negative: readonly tree
         val readonlyTree = createTree(preRemoveDigest)
         val input = (readonlyTree, (keys, removeProof))
-        remove.checkExpected(input, None)
+        remove.checkExpected(input, success(None))
         remove.checkVerify(input, Expected(value = Success(None), cost = cost))
       }
 
@@ -2249,7 +2259,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
         val invalidKey = key.map(x => (-x).toByte) // any other different from `key`
         val invalidKeys = Colls.fromItems(invalidKey)
         val input = (tree, (invalidKeys, removeProof))
-        remove.checkExpected(input, None)
+        remove.checkExpected(input, success(None))
         remove.checkVerify(input, Expected(value = Success(None), cost = cost))
       }
 
@@ -2257,7 +2267,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
         val tree = createTree(preRemoveDigest, removeAllowed = true)
         val invalidProof = removeProof.map(x => (-x).toByte) // any other different from `removeProof`
         val input = (tree, (keys, invalidProof))
-        remove.checkExpected(input, None)
+        remove.checkExpected(input, success(None))
         remove.checkVerify(input, Expected(value = Success(None), cost = cost))
       }
     }
@@ -3167,8 +3177,8 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
         )),
       preGeneratedSamples = Some(samples))
 
-    // NOTE: verifyCases is not used below because PreHeader/Header cannot be put in
-    // registers and context vars
+    // NOTE: verifyCases is not used below because PreHeader/Header instances cannot be put in
+    // registers and context vars (which are used in `checkVerify` method)
     testCases(
       Seq(ctx -> Success(ctx.preHeader)),
       existingPropTest("preHeader", { (x: Context) => x.preHeader }),
@@ -3422,19 +3432,21 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
       Seq(
         ctx -> Expected(expectedError)
       ),
-      existingFeature(
-      { (x: Context) =>
-        // this error is expected in v3.x
-        throw expectedError
-        // TODO HF: this is expected in v5.0
-        val dataBox = x.dataInputs(0)
-        val ok = if (x.OUTPUTS(0).R5[Long].get == 1L) {
-          dataBox.R4[Long].get <= x.SELF.value
-        } else {
-          dataBox.R4[Coll[Byte]].get != x.SELF.propositionBytes
-        }
-        ok
-      },
+      changedFeature(
+        scalaFunc = { (x: Context) =>
+          // this error is expected in v3.x
+          throw expectedError
+        },
+        scalaFuncNew = { (x: Context) =>
+          // TODO HF: this is expected in v5.0
+          val dataBox = x.dataInputs(0)
+          val ok = if (x.OUTPUTS(0).R5[Long].get == 1L) {
+            dataBox.R4[Long].get <= x.SELF.value
+          } else {
+            dataBox.R4[Coll[Byte]].get != x.SELF.propositionBytes
+          }
+          ok
+        },
       s"""{ (x: Context) =>
         |  val dataBox = x.dataInputs(0)
         |  val ok = if (x.OUTPUTS(0).R5[Long].get == 1L) {
@@ -4997,11 +5009,25 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
     val n = ExactNumeric.LongIsExactNumeric
     verifyCases(
       Seq(
-        (None -> Expected(new NoSuchElementException("None.get"))),
+        (None -> Expected(
+          Failure(new NoSuchElementException("None.get")), 0,
+          expectedNewValue = Success(5L), expectedNewCost = 39012)),
         (Some(0L) -> Expected(Success(1L), 39012)),
         (Some(Long.MaxValue) -> Expected(new ArithmeticException("long overflow")))
       ),
-      existingFeature({ (x: Option[Long]) => x.fold(throw new NoSuchElementException("None.get"))( (v: Long) => n.plus(v, 1) ) },
+      changedFeature(
+        scalaFunc = { (x: Option[Long]) =>
+          def f(opt: Long): Long = n.plus(opt, 1)
+          if (x.isDefined) f(x.get)
+          else {
+            f(x.get); // simulate non-lazy 'if': f is called in both branches
+            5L
+          }
+        },
+        scalaFuncNew = { (x: Option[Long]) =>
+          def f(opt: Long): Long = n.plus(opt, 1)
+          if (x.isDefined) f(x.get) else 5L
+        },
         """{(x: Option[Long]) =>
           |  def f(opt: Long): Long = opt + 1
           |  if (x.isDefined) f(x.get) else 5L
