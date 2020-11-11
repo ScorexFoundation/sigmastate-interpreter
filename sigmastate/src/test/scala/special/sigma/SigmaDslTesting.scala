@@ -115,32 +115,34 @@ class SigmaDslTesting extends PropSpec
         .collect { case in: DLogProverInput => in.publicImage }
   }
 
-  /** Type of the language feature to be tested. */
-  sealed trait FeatureType
-  case object ExistingFeature extends FeatureType
-  case object AddedFeature extends FeatureType
-
   val LogScriptDefault: Boolean = false
 
   val isNewVersion = new scala.util.DynamicVariable(false)
 
-  /** Test case descriptor of the language feature.
-    *
-    * @param featureType   type of the language feature
-    * @param scalaFunc    feature semantic given by scala code
-    * @param expectedExpr expression which represents the test case code
-    * @param oldImpl      function that executes the feature using v3 interpreter implementation
-    * @param newImpl      function that executes the feature using v4 interpreter implementation
-    */
-  case class FeatureTest[A, B](featureType: FeatureType,
-                               script: String,
-                               scalaFunc: A => B,
-                               expectedExpr: Option[SValue],
-                               oldImpl: () => CompiledFunc[A, B],
-                               newImpl: () => CompiledFunc[A, B],
-                               printExpectedExpr: Boolean = true,
-                               logScript: Boolean = LogScriptDefault
-                              ) {
+  /** Descriptor of the language feature. */
+  trait Feature[A, B] {
+
+    /** Script containing this feature. */
+    def script: String
+
+    /** Semantics of this feature in ErgoTree v1 given by scala code */
+    def scalaFunc: A => B
+
+    /** Semantics of this feature in ErgoTree v2 given by scala code */
+    def scalaFuncNew: A => B = scalaFunc
+
+    /** Expression which represents the test case code. */
+    def expectedExpr: Option[SValue]
+
+    /** Function that executes the feature using v3 interpreter implementation. */
+    def oldImpl: () => CompiledFunc[A, B]
+
+    /** Function that executes the feature using v4 interpreter implementation. */
+    def newImpl: () => CompiledFunc[A, B]
+
+    def printExpectedExpr: Boolean
+    def logScript: Boolean
+
     /** Called to print test case expression (when it is not given).
       * Can be used to create regression test cases. */
     def printSuggestion(cf: CompiledFunc[_,_]): Unit = {
@@ -167,7 +169,7 @@ class SigmaDslTesting extends PropSpec
       true
     }
 
-    /** v3 implementation*/
+    /** v3 and v4 implementation*/
     private var _oldF: CompiledFunc[A, B] = _
     def oldF: CompiledFunc[A, B] = {
       if (_oldF == null) {
@@ -177,7 +179,7 @@ class SigmaDslTesting extends PropSpec
       _oldF
     }
 
-    /** v4 implementation*/
+    /** v5 implementation*/
     private var _newF: CompiledFunc[A, B] = _
     def newF: CompiledFunc[A, B] = {
       if (_newF == null) {
@@ -187,66 +189,35 @@ class SigmaDslTesting extends PropSpec
       _newF
     }
 
-    /** Depending on the featureType compares the old and new implementations against
+    /** Compares the old and new implementations against
       * semantic function (scalaFunc) on the given input.
-      * @param input  data which is used to execute feature
+      *
+      * @param input          data which is used to execute feature
+      * @param logInputOutput if true, then pretty-print input and output values
       * @return result of feature execution */
-    def checkEquality(input: A, logInputOutput: Boolean = false): Try[(B, Int)] = featureType match {
-      case ExistingFeature =>
-        // check the old implementation with Scala semantic
-        val oldRes = checkEq(scalaFunc)(oldF)(input)
-
-        if (!(newImpl eq oldImpl)) {
-          // check the new implementation with Scala semantic
-          val newRes = isNewVersion.withValue(true) {
-            checkEq(scalaFunc)(newF)(input)
-          }
-//          (oldRes, newRes) match {
-//            case (Success((oldRes, oldCost)), Success((newRes, newCost))) =>
-//              newRes shouldBe oldRes
-//              assertResult(true,
-//                s"New cost should not exceed old cost: (new: $newCost, old:$oldCost)")(newCost <= oldCost)
-//            case _ =>
-//              newRes shouldBe oldRes
-//          }
-        }
-        if (logInputOutput)
-          println(s"(${SigmaPPrint(input, height = 550, width = 150)}, ${SigmaPPrint(oldRes, height = 550, width = 150)}),${if (logScript) " // " + script else ""}")
-        oldRes
-      case AddedFeature =>
-        val oldRes = Try(oldF(input))
-        oldRes.isFailure shouldBe true
-        if (!(newImpl eq oldImpl)) {
-          val newRes = checkEq(scalaFunc)(newF)(input)
-          newRes shouldBe oldRes
-        }
-        oldRes
-    }
+    def checkEquality(input: A, logInputOutput: Boolean = false): Try[(B, Int)]
 
     /** Depending on the featureType compares the old and new implementations against
       * semantic function (scalaFunc) on the given input, also checking the given expected result.
       */
-    def checkExpected(input: A, expectedResult: B): Unit = {
-      featureType match {
-        case ExistingFeature =>
-          // check the old implementation with Scala semantic
-          val (oldRes, _) = checkEq(scalaFunc)(oldF)(input).get
-          oldRes shouldBe expectedResult
+    def checkExpected(input: A, expectedResult: Expected[B]): Unit
 
-          if (!(newImpl eq oldImpl)) {
-            // check the new implementation with Scala semantic
-            val (newRes, _) = checkEq(scalaFunc)(newF)(input).get
-            newRes shouldBe expectedResult
-          }
+    /** Tests this feature on the given input.
+      * @param input data value
+      * @param expectedResult the result which is expected
+      */
+    def testCase(input: A, expectedResult: Try[B],
+                 printTestCases: Boolean = PrintTestCasesDefault,
+                 failOnTestVectors: Boolean = FailOnTestVectorsDefault): Unit
 
-        case AddedFeature =>
-          Try(oldF(input)).isFailure shouldBe true
-          if (!(newImpl eq oldImpl)) {
-            val (newRes, _) = checkEq(scalaFunc)(newF)(input).get
-            newRes shouldBe expectedResult
-          }
-      }
-    }
+    /** Tests this feature by embedding it in the verification script.
+      * @param input data value
+      * @param expectedResult the result values which are expected
+      * @see checkVerify
+      */
+    def verifyCase(input: A, expectedResult: Expected[B],
+                   printTestCases: Boolean = PrintTestCasesDefault,
+                   failOnTestVectors: Boolean = FailOnTestVectorsDefault): Unit
 
     /** Creates a new ErgoLikeContext using given [[CostingDataContext]] as template.
       * Copies most of the data from ctx and the missing data is taken from the args.
@@ -282,8 +253,7 @@ class SigmaDslTesting extends PropSpec
 
     /** Executes the default feature verification wrapper script using:
       * 1) the given input
-      * 2) the given expected intermediate result
-      * 3) the total expected execution cost of the verification
+      * 2) the given expected results (values and costs)
       */
     def checkVerify(input: A, expected: Expected[B]): Unit = {
       val tpeA = Evaluation.rtypeToSType(oldF.tA)
@@ -329,7 +299,7 @@ class SigmaDslTesting extends PropSpec
       val pkBobBytes = ValueSerializer.serialize(prover.pubKeys(1).toSigmaProp)
       val pkCarolBytes = ValueSerializer.serialize(prover.pubKeys(2).toSigmaProp)
       val newRegisters = Map(
-        ErgoBox.R4 -> Constant[SType](expected.value.asInstanceOf[SType#WrappedType], tpeB),
+        ErgoBox.R4 -> Constant[SType](expected.value.get.asInstanceOf[SType#WrappedType], tpeB),
         ErgoBox.R5 -> ByteArrayConstant(pkBobBytes)
       )
 
@@ -400,10 +370,187 @@ class SigmaDslTesting extends PropSpec
       }
     }
   }
-  object FeatureTest {
-    /** Cost of the feature verify script.
-      * @see checkVerify() */
-    val VerifyScriptCost = 6317
+
+  case class ExistingFeature[A: RType, B: RType](
+    script: String,
+    scalaFunc: A => B,
+    expectedExpr: Option[SValue],
+    printExpectedExpr: Boolean = true,
+    logScript: Boolean = LogScriptDefault
+  )(implicit IR: IRContext) extends Feature[A, B] {
+
+    val oldImpl = () => func[A, B](script)
+    val newImpl = oldImpl // TODO HF (16h): use actual new implementation here
+
+    def checkEquality(input: A, logInputOutput: Boolean = false): Try[(B, Int)] = {
+      // check the old implementation against Scala semantic function
+      val oldRes = checkEq(scalaFunc)(oldF)(input)
+
+      if (!(newImpl eq oldImpl)) {
+        // check the new implementation against Scala semantic function
+        val newRes = checkEq(scalaFunc)(newF)(input)
+        newRes shouldBe oldRes
+      }
+      if (logInputOutput)
+        println(s"(${SigmaPPrint(input, height = 550, width = 150)}, ${SigmaPPrint(oldRes, height = 550, width = 150)}),${if (logScript) " // " + script else ""}")
+      oldRes
+    }
+
+    /** Depending on the featureType compares the old and new implementations against
+      * semantic function (scalaFunc) on the given input, also checking the given expected result.
+      */
+    override def checkExpected(input: A, expected: Expected[B]): Unit = {
+      // check the old implementation with Scala semantic
+      val (oldRes, _) = checkEq(scalaFunc)(oldF)(input).get
+      oldRes shouldBe expected.value.get
+
+      if (!(newImpl eq oldImpl)) {
+        // check the new implementation with Scala semantic
+        val (newRes, _) = checkEq(scalaFunc)(newF)(input).get
+        newRes shouldBe expected.value.get
+      }
+    }
+
+    override def testCase(input: A,
+                          expectedResult: Try[B],
+                          printTestCases: Boolean,
+                          failOnTestVectors: Boolean): Unit = {
+      val res = checkEquality(input, printTestCases).map(_._1)
+      checkResult(res, expectedResult, failOnTestVectors)
+    }
+
+    override def verifyCase(input: A,
+                            expected: Expected[B],
+                            printTestCases: Boolean,
+                            failOnTestVectors: Boolean): Unit = {
+      val funcRes = checkEquality(input, printTestCases)
+
+      checkResult(funcRes.map(_._1), expected.value, failOnTestVectors)
+
+      expected.value match {
+        case Success(y) =>
+          checkVerify(input, expected)
+        case _ =>
+      }
+    }
+  }
+
+  case class ChangedFeature[A: RType, B: RType](
+    script: String,
+    scalaFunc: A => B,
+    override val scalaFuncNew: A => B,
+    expectedExpr: Option[SValue],
+    printExpectedExpr: Boolean = true,
+    logScript: Boolean = LogScriptDefault
+  )(implicit IR: IRContext) extends Feature[A, B] {
+
+    val oldImpl = () => func[A, B](script)
+    val newImpl = oldImpl // TODO HF (16h): use actual new implementation here
+
+    def checkEquality(input: A, logInputOutput: Boolean = false): Try[(B, Int)] = {
+      // check the old implementation against Scala semantic function
+      val oldRes = checkEq(scalaFunc)(oldF)(input)
+
+      if (!(newImpl eq oldImpl)) {
+        // check the new implementation against Scala semantic function
+        val newRes = checkEq(scalaFuncNew)(newF)(input)
+      }
+      if (logInputOutput) {
+        val inputStr = SigmaPPrint(input, height = 550, width = 150)
+        val oldResStr = SigmaPPrint(oldRes, height = 550, width = 150)
+        val scriptComment = if (logScript) " // " + script else ""
+        println(s"($inputStr, $oldResStr),$scriptComment")
+      }
+      oldRes
+    }
+
+    /** Depending on the featureType compares the old and new implementations against
+      * semantic function (scalaFunc) on the given input, also checking the given expected result.
+      */
+    override def checkExpected(input: A, expected: Expected[B]): Unit = {
+      // check the old implementation with Scala semantic
+      val (oldRes, _) = checkEq(scalaFunc)(oldF)(input).get
+      oldRes shouldBe expected.value.get
+
+      if (!(newImpl eq oldImpl)) {
+        // check the new implementation with Scala semantic
+        val (newRes, _) = checkEq(scalaFuncNew)(newF)(input).get
+        newRes shouldBe expected.newValue.get
+      }
+    }
+
+    override def testCase(input: A,
+                          expectedResult: Try[B],
+                          printTestCases: Boolean,
+                          failOnTestVectors: Boolean): Unit = {
+      val res = checkEquality(input, printTestCases).map(_._1)
+      checkResult(res, expectedResult, failOnTestVectors)
+    }
+
+    override def verifyCase(input: A,
+                            expected: Expected[B],
+                            printTestCases: Boolean,
+                            failOnTestVectors: Boolean): Unit = {
+      val funcRes = checkEquality(input, printTestCases)
+
+      checkResult(funcRes.map(_._1), expected.value, failOnTestVectors)
+
+      expected.value match {
+        case Success(y) =>
+          checkVerify(input, expected)
+        case _ =>
+      }
+    }
+  }
+
+  case class NewFeature[A: RType, B: RType](
+    script: String,
+    override val scalaFuncNew: A => B,
+    expectedExpr: Option[SValue],
+    printExpectedExpr: Boolean = true,
+    logScript: Boolean = LogScriptDefault
+  )(implicit IR: IRContext) extends Feature[A, B] {
+    override def scalaFunc: A => B = { x =>
+      sys.error(s"Semantic Scala function is not defined for old implementation: $this")
+    }
+
+    val oldImpl = () => func[A, B](script)
+    val newImpl = oldImpl // TODO HF (16h): use actual new implementation here
+
+    override def checkEquality(input: A, logInputOutput: Boolean = false): Try[(B, Int)] = {
+      val oldRes = Try(oldF(input))
+      oldRes.isFailure shouldBe true
+      if (!(newImpl eq oldImpl)) {
+        val newRes = checkEq(scalaFuncNew)(newF)(input)
+      }
+      oldRes
+    }
+
+    override def checkExpected(input: A, expected: Expected[B]): Unit = {
+      Try(oldF(input)).isFailure shouldBe true
+      if (!(newImpl eq oldImpl)) {
+        val (newRes, _) = checkEq(scalaFuncNew)(newF)(input).get
+        newRes shouldBe expected.newValue.get
+      }
+    }
+
+    override def testCase(input: A,
+                          expectedResult: Try[B],
+                          printTestCases: Boolean,
+                          failOnTestVectors: Boolean): Unit = {
+      val res = checkEquality(input, printTestCases).map(_._1)
+      res.isFailure shouldBe true
+      Try(scalaFuncNew(input)) shouldBe expectedResult
+    }
+
+    override def verifyCase(input: A,
+                            expected: Expected[B],
+                            printTestCases: Boolean,
+                            failOnTestVectors: Boolean): Unit = {
+      val funcRes = checkEquality(input, printTestCases)
+      funcRes.isFailure shouldBe true
+      Try(scalaFunc(input)) shouldBe expected.value
+    }
   }
 
   /** Represents expected result of successful feature test exectuion.
@@ -411,19 +558,27 @@ class SigmaDslTesting extends PropSpec
     * @param cost  expected cost value of the verification execution
     * @see [[testCases]]
     */
-  case class Expected[+A](value: A, cost: Int) {
-    def newCost = cost
+  case class Expected[+A](value: Try[A], cost: Int) {
+    def newCost: Int = cost
+    def newValue: Try[A] = value
   }
+
   object Expected {
-    def apply[A](value: A, cost: Int, expectedNewCost: Int) = new Expected(value, cost) {
+    def apply[A](error: Throwable) = new Expected[A](Failure(error), 0)
+    def apply[A](value: Try[A], cost: Int, expectedNewCost: Int) = new Expected(value, cost) {
       override val newCost = expectedNewCost
+    }
+    def apply[A](value: Try[A], cost: Int, expectedNewValue: Try[A], expectedNewCost: Int) = new Expected(value, cost) {
+      override val newCost = expectedNewCost
+      override val newValue = expectedNewValue
     }
   }
 
-  /** Describes existing language feature which should be equally supported in both v3 and
-    * v4 of the language.
+  /** Describes existing language feature which should be equally supported in both
+    * Script v1 (v3.x and v4.x releases) and Script v2 (v5.x) versions of the language.
+    * A behavior of the given `script` is tested against semantic function.
     *
-    * @param scalaFunc    semantic function which defines expected behavior of the given script
+    * @param scalaFunc    semantic function for both v1 and v2 script interpretations
     * @param script       the script to be tested against semantic function
     * @param expectedExpr expected ErgoTree expression which corresponds to the given script
     * @return feature test descriptor object which can be used to execute this test case in
@@ -431,14 +586,29 @@ class SigmaDslTesting extends PropSpec
     */
   def existingFeature[A: RType, B: RType]
       (scalaFunc: A => B, script: String, expectedExpr: SValue = null)
-      (implicit IR: IRContext): FeatureTest[A, B] = {
-    val oldImpl = () => func[A, B](script)
-    val newImpl = () => funcJit[A, B](script) // TODO HF (16h): use actual new implementation here
-    FeatureTest(ExistingFeature, script, scalaFunc, Option(expectedExpr), oldImpl, newImpl)
+      (implicit IR: IRContext): Feature[A, B] = {
+    ExistingFeature(script, scalaFunc, Option(expectedExpr))
   }
 
-  /** Describes a NEW language feature which must NOT be supported in v3 and
-    * must BE supported in v4 of the language.
+  /** Describes existing language feature which should be differently supported in both
+    * Script v1 (v3.x and v4.x releases) and Script v2 (v5.x) versions of the language.
+    * The behavior of the given `script` is tested against the given semantic functions.
+    *
+    * @param scalaFunc    semantic function of v1 language version
+    * @param scalaFuncNew semantic function of v2 language version
+    * @param script       the script to be tested against semantic functions
+    * @param expectedExpr expected ErgoTree expression which corresponds to the given script
+    * @return feature test descriptor object which can be used to execute this test case in
+    *         various ways
+    */
+  def changedFeature[A: RType, B: RType]
+      (scalaFunc: A => B, scalaFuncNew: A => B, script: String, expectedExpr: SValue = null)
+      (implicit IR: IRContext): Feature[A, B] = {
+    ChangedFeature(script, scalaFunc, scalaFuncNew, Option(expectedExpr))
+  }
+
+  /** Describes a NEW language feature which must NOT be supported in v4 and
+    * must BE supported in v5 of the language.
     *
     * @param scalaFunc    semantic function which defines expected behavior of the given script
     * @param script       the script to be tested against semantic function
@@ -448,10 +618,8 @@ class SigmaDslTesting extends PropSpec
     */
   def newFeature[A: RType, B: RType]
       (scalaFunc: A => B, script: String, expectedExpr: SValue = null)
-      (implicit IR: IRContext): FeatureTest[A, B] = {
-    val oldImpl = () => func[A, B](script)
-    val newImpl = oldImpl // TODO HF (16h): use actual new implementation here
-    FeatureTest(AddedFeature, script, scalaFunc, Option(expectedExpr), oldImpl, newImpl)
+      (implicit IR: IRContext): Feature[A, B] = {
+    NewFeature(script, scalaFunc, Option(expectedExpr))
   }
 
   val contextGen: Gen[Context] = ergoLikeContextGen.map(c => c.toSigmaContext(isCost = false))
@@ -488,23 +656,14 @@ class SigmaDslTesting extends PropSpec
     */
   def testCases[A: Ordering : Arbitrary : ClassTag, B]
       (cases: Seq[(A, Try[B])],
-       f: FeatureTest[A, B],
+       f: Feature[A, B],
        printTestCases: Boolean = PrintTestCasesDefault,
        failOnTestVectors: Boolean = FailOnTestVectorsDefault,
        preGeneratedSamples: Option[Seq[A]] = None): Unit = {
     System.gc() // force GC to avoid occasional OOM exception
     val table = Table(("x", "y"), cases:_*)
     forAll(table) { (x: A, expectedRes: Try[B]) =>
-      val res = f.checkEquality(x, printTestCases).map(_._1)
-
-      // TODO HF (4h): remove this `if` once newImpl is implemented
-      f.featureType match {
-        case ExistingFeature =>
-          checkResult(res, expectedRes, failOnTestVectors)
-        case AddedFeature =>
-          res.isFailure shouldBe true
-          Try(f.scalaFunc(x)) shouldBe expectedRes
-      }
+      f.testCase(x, expectedRes, printTestCases, failOnTestVectors)
     }
     test(preGeneratedSamples, f, printTestCases)
   }
@@ -520,31 +679,15 @@ class SigmaDslTesting extends PropSpec
     *                             if None, then the given Arbitrary is used to generate samples
     */
   def verifyCases[A: Ordering : Arbitrary : ClassTag, B]
-      (cases: Seq[(A, Try[Expected[B]])],
-       f: FeatureTest[A, B],
+      (cases: Seq[(A, Expected[B])],
+       f: Feature[A, B],
        printTestCases: Boolean = PrintTestCasesDefault,
        failOnTestVectors: Boolean = FailOnTestVectorsDefault,
        preGeneratedSamples: Option[Seq[A]] = None): Unit = {
 
     val table = Table(("x", "y"), cases:_*)
-    forAll(table) { (x: A, expectedRes: Try[Expected[B]]) =>
-      val funcRes = f.checkEquality(x, printTestCases)
-
-      val expectedResValue = expectedRes.map(_.value)
-      // TODO HF (4h): remove this `match` once newImpl is implemented
-      f.featureType match {
-        case ExistingFeature =>
-          checkResult(funcRes.map(_._1), expectedResValue, failOnTestVectors)
-
-          (funcRes, expectedRes) match {
-            case (Success((y, _)), Success(expected)) =>
-              f.checkVerify(x, expected)
-            case _ =>
-          }
-        case AddedFeature =>
-          funcRes.isFailure shouldBe true
-          Try(f.scalaFunc(x)) shouldBe expectedResValue
-      }
+    forAll(table) { (x: A, expectedRes: Expected[B]) =>
+      f.verifyCase(x, expectedRes, printTestCases, failOnTestVectors)
     }
     test(preGeneratedSamples, f, printTestCases)
   }
@@ -576,7 +719,7 @@ class SigmaDslTesting extends PropSpec
     */
   def test[A: Arbitrary: Ordering : ClassTag, B]
       (preGeneratedSamples: Option[Seq[A]],
-       f: FeatureTest[A, B],
+       f: Feature[A, B],
        printTestCases: Boolean): Unit = {
     // either get provides or generate new samples (in sorted order)
     val samples = preGeneratedSamples.getOrElse(genSamples[A](DefaultMinSuccessful))
@@ -587,12 +730,12 @@ class SigmaDslTesting extends PropSpec
     }
   }
 
-  def test[A: Arbitrary : Ordering : ClassTag, B](samples: Seq[A], f: FeatureTest[A, B]): Unit = {
+  def test[A: Arbitrary : Ordering : ClassTag, B](samples: Seq[A], f: Feature[A, B]): Unit = {
     test(Some(samples), f, PrintTestCasesDefault)
   }
 
   def test[A: Arbitrary : Ordering : ClassTag, B]
-      (f: FeatureTest[A, B],
+      (f: Feature[A, B],
        printTestCases: Boolean = PrintTestCasesDefault): Unit = {
     test(None, f, printTestCases)
   }

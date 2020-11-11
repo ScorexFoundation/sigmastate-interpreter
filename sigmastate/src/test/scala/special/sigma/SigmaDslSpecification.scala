@@ -72,10 +72,10 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
         )
       ))
     val cases = Seq(
-      (true, true) -> Success(Expected(false, 36518)),
-      (true, false) -> Success(Expected(true, 36518)),
-      (false, false) -> Success(Expected(false, 36518)),
-      (false, true) -> Success(Expected(true, 36518))
+      (true, true) -> Expected(Success(false), 36518),
+      (true, false) -> Expected(Success(true), 36518),
+      (false, false) -> Expected(Success(false), 36518),
+      (false, true) -> Expected(Success(true), 36518)
     )
     verifyCases(cases, binXor)
   }
@@ -94,12 +94,12 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
         )
       ))
     val cases = Seq(
-      (1095564593, true) -> Success(Expected(true, 36865)),
-      (-901834021, true) -> Success(Expected(true, 36865)),
-      (595045530, false) -> Success(Expected(false, 36865)),
-      (-1157998227, false) -> Success(Expected(false, 36865)),
-      (0, true) -> Success(Expected(false, 36865)),
-      (0, false) -> Success(Expected(true, 36865))
+      (1095564593, true) -> Expected(Success(true), 36865),
+      (-901834021, true) -> Expected(Success(true), 36865),
+      (595045530, false) -> Expected(Success(false), 36865),
+      (-1157998227, false) -> Expected(Success(false), 36865),
+      (0, true) -> Expected(Success(false), 36865),
+      (0, false) -> Expected(Success(true), 36865)
     )
     verifyCases(cases, xor)
   }
@@ -115,10 +115,10 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
         )
       ))
     val cases = Seq(
-      (false, true) -> Success(Expected(false, 38241)),
-      (false, false) -> Success(Expected(false, 38241)),
-      (true, true) -> Success(Expected(true, 38241)),
-      (true, false) -> Success(Expected(false, 38241))
+      (false, true) -> Expected(Success(false), 38241),
+      (false, false) -> Expected(Success(false), 38241),
+      (true, true) -> Expected(Success(true), 38241),
+      (true, false) -> Expected(Success(false), 38241)
     )
     verifyCases(cases, eq)
   }
@@ -134,10 +134,10 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
         )
       ))
     val cases = Seq(
-      (true, false) -> Success(Expected(true, 38241)),
-      (true, true) -> Success(Expected(true, 38241)),
-      (false, false) -> Success(Expected(false, 38241)),
-      (false, true) -> Success(Expected(true, 38241))
+      (true, false) -> Expected(Success(true), 38241),
+      (true, true) -> Expected(Success(true), 38241),
+      (false, false) -> Expected(Success(false), 38241),
+      (false, true) -> Expected(Success(true), 38241)
     )
     verifyCases(cases, eq)
   }
@@ -145,8 +145,8 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
   property("lazy || and && boolean equivalence") {
     verifyCases(
       Seq(
-        (true, Success(Expected(true, 38467))),
-        (false, Failure(new ArithmeticException("/ by zero")))
+        (true, Expected(Success(true), 38467)),
+        (false, Expected(new ArithmeticException("/ by zero")))
       ),
       existingFeature((x: Boolean) => x || (1 / 0 == 1),
         "{ (x: Boolean) => x || (1 / 0 == 1) }",
@@ -160,8 +160,8 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
     verifyCases(
       Seq(
-        (true, Failure(new ArithmeticException("/ by zero"))),
-        (false, Success(Expected(false, 38467)))
+        (true, Expected(new ArithmeticException("/ by zero"))),
+        (false, Expected(Success(false), 38467))
       ),
       existingFeature((x: Boolean) => x && (1 / 0 == 1),
         "{ (x: Boolean) => x && (1 / 0 == 1) }",
@@ -175,8 +175,8 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
     verifyCases(
       Seq(
-        (false, Success(Expected(false, 40480))),
-        (true, Success(Expected(true, 40480)))
+        (false, Expected(Success(false), 40480)),
+        (true, Expected(Success(true), 40480))
       ),
       existingFeature((x: Boolean) => x && (x || (1 / 0 == 1)),
         "{ (x: Boolean) => x && (x || (1 / 0 == 1)) }",
@@ -193,8 +193,8 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
     verifyCases(
       Seq(
-        (false, Success(Expected(false, 42493))),
-        (true, Success(Expected(true, 42493)))
+        (false, Expected(Success(false), 42493)),
+        (true, Expected(Success(true), 42493))
       ),
       existingFeature((x: Boolean) => x && (x && (x || (1 / 0 == 1))),
         "{ (x: Boolean) => x && (x && (x || (1 / 0 == 1))) }",
@@ -214,8 +214,8 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
     verifyCases(
       Seq(
-        (false, Success(Expected(false, 44506))),
-        (true, Success(Expected(true, 44506)))
+        (false, Expected(Success(false), 44506)),
+        (true, Expected(Success(true), 44506))
       ),
       existingFeature((x: Boolean) => x && (x && (x && (x || (1 / 0 == 1)))),
         "{ (x: Boolean) => x && (x && (x && (x || (1 / 0 == 1)))) }",
@@ -238,8 +238,8 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
     verifyCases(
       Seq(
-        (false, Failure(new ArithmeticException("/ by zero"))),
-        (true, Success(Expected(true, 43281)))
+        (false, Expected(new ArithmeticException("/ by zero"))),
+        (true, Expected(Success(true), 43281))
       ),
       existingFeature((x: Boolean) => !(!x && (1 / 0 == 1)) && (x || (1 / 0 == 1)),
         "{ (x: Boolean) => !(!x && (1 / 0 == 1)) && (x || (1 / 0 == 1)) }",
@@ -261,8 +261,8 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
     verifyCases(
       Seq(
-        (true, Success(Expected(true, 40480))),
-        (false, Failure(new ArithmeticException("/ by zero")))
+        (true, Expected(Success(true), 40480)),
+        (false, Expected(new ArithmeticException("/ by zero")))
       ),
       existingFeature((x: Boolean) => (x || (1 / 0 == 1)) && x,
         "{ (x: Boolean) => (x || (1 / 0 == 1)) && x }",
@@ -279,8 +279,8 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
     verifyCases(
       Seq(
-        (true, Success(Expected(true, 43149))),
-        (false, Failure(new ArithmeticException("/ by zero")))
+        (true, Expected(Success(true), 43149)),
+        (false, Expected(new ArithmeticException("/ by zero")))
       ),
       existingFeature((x: Boolean) => (x || (1 / 0 == 1)) && (x || (1 / 0 == 1)),
         "{ (x: Boolean) => (x || (1 / 0 == 1)) && (x || (1 / 0 == 1)) }",
@@ -300,8 +300,8 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
     verifyCases(
       Seq(
-        (true, Success(Expected(true, 45950))),
-        (false, Failure(new ArithmeticException("/ by zero")))
+        (true, Expected(Success(true), 45950)),
+        (false, Expected(new ArithmeticException("/ by zero")))
       ),
       existingFeature(
         (x: Boolean) => (!(!x && (1 / 0 == 1)) || (1 / 0 == 0)) && (x || (1 / 0 == 1)),
@@ -327,8 +327,8 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
     verifyCases(
       Seq(
-        (false, Failure(new ArithmeticException("/ by zero"))),
-        (true, Success(Expected(true, 48862)))
+        (false, Expected(new ArithmeticException("/ by zero"))),
+        (true, Expected(Success(true), 48862))
       ),
       existingFeature(
         (x: Boolean) => (!(!x && (1 / 0 == 1)) || (1 / 0 == 0)) && (!(!x && (1 / 0 == 1)) || (1 / 0 == 1)),
@@ -367,7 +367,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
     verifyCases(
       {
-        def expect(v: Byte) = Success(Expected(v, 35798))
+        def expect(v: Byte) = Expected(Success(v), 35798)
         Seq(
           (0.toByte, expect(0.toByte)),
           (1.toByte, expect(1.toByte)),
@@ -384,7 +384,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
     verifyCases(
       {
-        def expected(v: Short) = Success(Expected(v, 35902))
+        def expected(v: Short) = Expected(Success(v), 35902)
         Seq(
           (0.toByte, expected(0.toShort)),
           (1.toByte, expected(1.toShort)),
@@ -401,7 +401,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
     verifyCases(
       {
-        def expected(v: Int) = Success(Expected(v, 35902))
+        def expected(v: Int) = Expected(Success(v), 35902)
         Seq(
           (0.toByte, expected(0)),
           (1.toByte, expected(1)),
@@ -418,7 +418,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
     verifyCases(
       {
-        def expected(v: Long) = Success(Expected(v, 35902))
+        def expected(v: Long) = Expected(Success(v), 35902)
         Seq(
           (0.toByte, expected(0L)),
           (1.toByte, expected(1L)),
@@ -435,7 +435,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
     verifyCases(
       {
-        def expected(v: BigInt) = Success(Expected(v, 35932))
+        def expected(v: BigInt) = Expected(Success(v), 35932)
         Seq(
           (0.toByte, expected(CBigInt(new BigInteger("0", 16)))),
           (1.toByte, expected(CBigInt(new BigInteger("1", 16)))),
@@ -453,38 +453,38 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
     val n = ExactNumeric.ByteIsExactNumeric
     verifyCases(
       {
-        def success[T](v: (T, (T, (T, (T, T))))) = Success(Expected(v, 39654))
+        def success[T](v: (T, (T, (T, (T, T))))) = Expected(Success(v), 39654)
         Seq(
-          ((-128.toByte, -128.toByte), Failure(new ArithmeticException("Byte overflow"))),
-          ((-128.toByte, 0.toByte), Failure(new ArithmeticException("/ by zero"))),
-          ((-128.toByte, 17.toByte), Failure(new ArithmeticException("Byte overflow"))),
-          ((-128.toByte, 127.toByte), Failure(new ArithmeticException("Byte overflow"))),
-          ((-120.toByte, 82.toByte), Failure(new ArithmeticException("Byte overflow"))),
+          ((-128.toByte, -128.toByte), Expected(new ArithmeticException("Byte overflow"))),
+          ((-128.toByte, 0.toByte), Expected(new ArithmeticException("/ by zero"))),
+          ((-128.toByte, 17.toByte), Expected(new ArithmeticException("Byte overflow"))),
+          ((-128.toByte, 127.toByte), Expected(new ArithmeticException("Byte overflow"))),
+          ((-120.toByte, 82.toByte), Expected(new ArithmeticException("Byte overflow"))),
           ((-103.toByte, 1.toByte), success((-102.toByte, (-104.toByte, (-103.toByte, (-103.toByte, 0.toByte)))))),
-          ((-90.toByte, 37.toByte), Failure(new ArithmeticException("Byte overflow"))),
-          ((-78.toByte, -111.toByte), Failure(new ArithmeticException("Byte overflow"))),
-          ((-71.toByte, -44.toByte), Failure(new ArithmeticException("Byte overflow"))),
-          ((-53.toByte, 0.toByte), Failure(new ArithmeticException("/ by zero"))),
-          ((-34.toByte, 8.toByte), Failure(new ArithmeticException("Byte overflow"))),
-          ((-24.toByte, 127.toByte), Failure(new ArithmeticException("Byte overflow"))),
+          ((-90.toByte, 37.toByte), Expected(new ArithmeticException("Byte overflow"))),
+          ((-78.toByte, -111.toByte), Expected(new ArithmeticException("Byte overflow"))),
+          ((-71.toByte, -44.toByte), Expected(new ArithmeticException("Byte overflow"))),
+          ((-53.toByte, 0.toByte), Expected(new ArithmeticException("/ by zero"))),
+          ((-34.toByte, 8.toByte), Expected(new ArithmeticException("Byte overflow"))),
+          ((-24.toByte, 127.toByte), Expected(new ArithmeticException("Byte overflow"))),
           ((-1.toByte, -1.toByte), success((-2.toByte, (0.toByte, (1.toByte, (1.toByte, 0.toByte)))))),
           ((-1.toByte, 23.toByte), success((22.toByte, (-24.toByte, (-23.toByte, (0.toByte, -1.toByte)))))),
-          ((0.toByte, -128.toByte), Failure(new ArithmeticException("Byte overflow"))),
+          ((0.toByte, -128.toByte), Expected(new ArithmeticException("Byte overflow"))),
           ((0.toByte, -23.toByte), success((-23.toByte, (23.toByte, (0.toByte, (0.toByte, 0.toByte)))))),
           ((0.toByte, -1.toByte), success((-1.toByte, (1.toByte, (0.toByte, (0.toByte, 0.toByte)))))),
-          ((0.toByte, 0.toByte), Failure(new ArithmeticException("/ by zero"))),
+          ((0.toByte, 0.toByte), Expected(new ArithmeticException("/ by zero"))),
           ((0.toByte, 1.toByte), success((1.toByte, (-1.toByte, (0.toByte, (0.toByte, 0.toByte)))))),
           ((0.toByte, 60.toByte), success((60.toByte, (-60.toByte, (0.toByte, (0.toByte, 0.toByte)))))),
           ((0.toByte, 127.toByte), success((127.toByte, (-127.toByte, (0.toByte, (0.toByte, 0.toByte)))))),
           ((1.toByte, -1.toByte), success((0.toByte, (2.toByte, (-1.toByte, (-1.toByte, 0.toByte)))))),
-          ((1.toByte, 0.toByte), Failure(new ArithmeticException("/ by zero"))),
+          ((1.toByte, 0.toByte), Expected(new ArithmeticException("/ by zero"))),
           ((1.toByte, 26.toByte), success((27.toByte, (-25.toByte, (26.toByte, (0.toByte, 1.toByte)))))),
-          ((7.toByte, -32.toByte), Failure(new ArithmeticException("Byte overflow"))),
+          ((7.toByte, -32.toByte), Expected(new ArithmeticException("Byte overflow"))),
           ((33.toByte, 1.toByte), success((34.toByte, (32.toByte, (33.toByte, (33.toByte, 0.toByte)))))),
-          ((90.toByte, 0.toByte), Failure(new ArithmeticException("/ by zero"))),
-          ((127.toByte, -128.toByte), Failure(new ArithmeticException("Byte overflow"))),
-          ((127.toByte, -47.toByte), Failure(new ArithmeticException("Byte overflow"))),
-          ((127.toByte, 127.toByte), Failure(new ArithmeticException("Byte overflow")))
+          ((90.toByte, 0.toByte), Expected(new ArithmeticException("/ by zero"))),
+          ((127.toByte, -128.toByte), Expected(new ArithmeticException("Byte overflow"))),
+          ((127.toByte, -47.toByte), Expected(new ArithmeticException("Byte overflow"))),
+          ((127.toByte, 127.toByte), Expected(new ArithmeticException("Byte overflow")))
         )
       },
       existingFeature(
@@ -578,17 +578,17 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
     verifyCases(
       {
-        def success[T](v: T) = Success(Expected(v, 35976))
+        def success[T](v: T) = Expected(Success(v), 35976)
         Seq(
-          (Short.MinValue, Failure(new ArithmeticException("Byte overflow"))),
-          (-21626.toShort, Failure(new ArithmeticException("Byte overflow"))),
+          (Short.MinValue, Expected(new ArithmeticException("Byte overflow"))),
+          (-21626.toShort, Expected(new ArithmeticException("Byte overflow"))),
           (Byte.MinValue.toShort, success(Byte.MinValue)),
           (-1.toShort, success(-1.toByte)),
           (0.toShort, success(0.toByte)),
           (1.toShort, success(1.toByte)),
           (Byte.MaxValue.toShort, success(Byte.MaxValue)),
-          (11768.toShort, Failure(new ArithmeticException("Byte overflow"))),
-          (Short.MaxValue, Failure(new ArithmeticException("Byte overflow")))
+          (11768.toShort, Expected(new ArithmeticException("Byte overflow"))),
+          (Short.MaxValue, Expected(new ArithmeticException("Byte overflow")))
         )
       },
       existingFeature((x: Short) => x.toByteExact,
@@ -597,7 +597,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
     verifyCases(
       {
-        def success[T](v: T) = Success(Expected(v, 35798))
+        def success[T](v: T) = Expected(Success(v), 35798)
         Seq(
           (-32768.toShort, success(-32768.toShort)),
           (-27798.toShort, success(-27798.toShort)),
@@ -614,7 +614,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
     verifyCases(
       {
-        def success[T](v: T) = Success(Expected(v, 35902))
+        def success[T](v: T) = Expected(Success(v), 35902)
         Seq(
           (-32768.toShort, success(-32768)),
           (-21064.toShort, success(-21064)),
@@ -631,7 +631,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
     verifyCases(
       {
-        def success[T](v: T) = Success(Expected(v, 35902))
+        def success[T](v: T) = Expected(Success(v), 35902)
         Seq(
           (-32768.toShort, success(-32768L)),
           (-23408.toShort, success(-23408L)),
@@ -648,7 +648,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
     verifyCases(
       {
-        def success(v: BigInt) = Success(Expected(v, 35932))
+        def success(v: BigInt) = Expected(Success(v), 35932)
         Seq(
           (-32768.toShort, success(CBigInt(new BigInteger("-8000", 16)))),
           (-26248.toShort, success(CBigInt(new BigInteger("-6688", 16)))),
@@ -666,34 +666,34 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
     val n = ExactNumeric.ShortIsExactNumeric
     verifyCases(
       {
-        def success[T](v: T) = Success(Expected(v, 39654))
+        def success[T](v: T) = Expected(Success(v), 39654)
         Seq(
-          ((-32768.toShort, 1.toShort), Failure(new ArithmeticException("Short overflow"))),
-          ((-32768.toShort, 4006.toShort), Failure(new ArithmeticException("Short overflow"))),
-          ((-21384.toShort, 0.toShort), Failure(new ArithmeticException("/ by zero"))),
-          ((-19027.toShort, 6073.toShort), Failure(new ArithmeticException("Short overflow"))),
-          ((-16800.toShort, 32767.toShort), Failure(new ArithmeticException("Short overflow"))),
+          ((-32768.toShort, 1.toShort), Expected(new ArithmeticException("Short overflow"))),
+          ((-32768.toShort, 4006.toShort), Expected(new ArithmeticException("Short overflow"))),
+          ((-21384.toShort, 0.toShort), Expected(new ArithmeticException("/ by zero"))),
+          ((-19027.toShort, 6073.toShort), Expected(new ArithmeticException("Short overflow"))),
+          ((-16800.toShort, 32767.toShort), Expected(new ArithmeticException("Short overflow"))),
           ((-1.toShort, -30005.toShort), success((-30006.toShort, (30004.toShort, (30005.toShort, (0.toShort, -1.toShort)))))),
-          ((-1.toShort, 0.toShort), Failure(new ArithmeticException("/ by zero"))),
+          ((-1.toShort, 0.toShort), Expected(new ArithmeticException("/ by zero"))),
           ((0.toShort, -1.toShort), success((-1.toShort, (1.toShort, (0.toShort, (0.toShort, 0.toShort)))))),
-          ((0.toShort, 0.toShort), Failure(new ArithmeticException("/ by zero"))),
+          ((0.toShort, 0.toShort), Expected(new ArithmeticException("/ by zero"))),
           ((0.toShort, 1.toShort), success((1.toShort, (-1.toShort, (0.toShort, (0.toShort, 0.toShort)))))),
           ((0.toShort, 25105.toShort), success((25105.toShort, (-25105.toShort, (0.toShort, (0.toShort, 0.toShort)))))),
-          ((1.toShort, -32768.toShort), Failure(new ArithmeticException("Short overflow"))),
+          ((1.toShort, -32768.toShort), Expected(new ArithmeticException("Short overflow"))),
           ((1.toShort, -1.toShort), success((0.toShort, (2.toShort, (-1.toShort, (-1.toShort, 0.toShort)))))),
-          ((1.toShort, 0.toShort), Failure(new ArithmeticException("/ by zero"))),
-          ((605.toShort, 7698.toShort), Failure(new ArithmeticException("Short overflow"))),
-          ((5094.toShort, -32768.toShort), Failure(new ArithmeticException("Short overflow"))),
+          ((1.toShort, 0.toShort), Expected(new ArithmeticException("/ by zero"))),
+          ((605.toShort, 7698.toShort), Expected(new ArithmeticException("Short overflow"))),
+          ((5094.toShort, -32768.toShort), Expected(new ArithmeticException("Short overflow"))),
           ((5350.toShort, -1.toShort), success((5349.toShort, (5351.toShort, (-5350.toShort, (-5350.toShort, 0.toShort)))))),
-          ((8115.toShort, -32768.toShort), Failure(new ArithmeticException("Short overflow"))),
-          ((14217.toShort, 32767.toShort), Failure(new ArithmeticException("Short overflow"))),
-          ((16223.toShort, -11686.toShort), Failure(new ArithmeticException("Short overflow"))),
+          ((8115.toShort, -32768.toShort), Expected(new ArithmeticException("Short overflow"))),
+          ((14217.toShort, 32767.toShort), Expected(new ArithmeticException("Short overflow"))),
+          ((16223.toShort, -11686.toShort), Expected(new ArithmeticException("Short overflow"))),
           ((16989.toShort, 1.toShort), success((16990.toShort, (16988.toShort, (16989.toShort, (16989.toShort, 0.toShort)))))),
-          ((20397.toShort, -4450.toShort), Failure(new ArithmeticException("Short overflow"))),
+          ((20397.toShort, -4450.toShort), Expected(new ArithmeticException("Short overflow"))),
           ((20488.toShort, 1.toShort), success((20489.toShort, (20487.toShort, (20488.toShort, (20488.toShort, 0.toShort)))))),
-          ((32767.toShort, -32768.toShort), Failure(new ArithmeticException("Short overflow"))),
-          ((32767.toShort, -13423.toShort), Failure(new ArithmeticException("Short overflow"))),
-          ((32767.toShort, 32767.toShort), Failure(new ArithmeticException("Short overflow")))
+          ((32767.toShort, -32768.toShort), Expected(new ArithmeticException("Short overflow"))),
+          ((32767.toShort, -13423.toShort), Expected(new ArithmeticException("Short overflow"))),
+          ((32767.toShort, 32767.toShort), Expected(new ArithmeticException("Short overflow")))
         )
       },
       existingFeature(
@@ -786,17 +786,17 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
     verifyCases(
       {
-        def success[T](v: T) = Success(Expected(v, 35976))
+        def success[T](v: T) = Expected(Success(v), 35976)
         Seq(
-          (Int.MinValue, Failure(new ArithmeticException("Byte overflow"))),
-          (-2014394379, Failure(new ArithmeticException("Byte overflow"))),
+          (Int.MinValue, Expected(new ArithmeticException("Byte overflow"))),
+          (-2014394379, Expected(new ArithmeticException("Byte overflow"))),
           (Byte.MinValue.toInt, success(Byte.MinValue)),
           (-1, success(-1.toByte)),
           (0, success(0.toByte)),
           (1, success(1.toByte)),
           (Byte.MaxValue.toInt, success(Byte.MaxValue)),
-          (181686429, Failure(new ArithmeticException("Byte overflow"))),
-          (Int.MaxValue, Failure(new ArithmeticException("Byte overflow")))
+          (181686429, Expected(new ArithmeticException("Byte overflow"))),
+          (Int.MaxValue, Expected(new ArithmeticException("Byte overflow")))
         )
       },
       existingFeature((x: Int) => x.toByteExact,
@@ -805,17 +805,17 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
     verifyCases(
       {
-        def success[T](v: T) = Success(Expected(v, 35976))
+        def success[T](v: T) = Expected(Success(v), 35976)
         Seq(
-          (Int.MinValue, Failure(new ArithmeticException("Short overflow"))),
-          (Short.MinValue - 1, Failure(new ArithmeticException("Short overflow"))),
+          (Int.MinValue, Expected(new ArithmeticException("Short overflow"))),
+          (Short.MinValue - 1, Expected(new ArithmeticException("Short overflow"))),
           (Short.MinValue.toInt, success(Short.MinValue)),
           (-1, success(-1.toShort)),
           (0, success(0.toShort)),
           (1, success(1.toShort)),
           (Short.MaxValue.toInt, success(Short.MaxValue)),
-          (Short.MaxValue + 1, Failure(new ArithmeticException("Short overflow"))),
-          (Int.MaxValue, Failure(new ArithmeticException("Short overflow")))
+          (Short.MaxValue + 1, Expected(new ArithmeticException("Short overflow"))),
+          (Int.MaxValue, Expected(new ArithmeticException("Short overflow")))
         )
       },
       existingFeature((x: Int) => x.toShortExact,
@@ -824,7 +824,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
     verifyCases(
       {
-        def success[T](v: T) = Success(Expected(v, 35798))
+        def success[T](v: T) = Expected(Success(v), 35798)
         Seq(
           (Int.MinValue, success(Int.MinValue)),
           (-1, success(-1)),
@@ -839,7 +839,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
     verifyCases(
       {
-        def success[T](v: T) = Success(Expected(v, 35902))
+        def success[T](v: T) = Expected(Success(v), 35902)
         Seq(
           (Int.MinValue, success(Int.MinValue.toLong)),
           (-1, success(-1L)),
@@ -854,7 +854,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
     verifyCases(
       {
-        def success(v: BigInt) = Success(Expected(v, 35932))
+        def success(v: BigInt) = Expected(Success(v), 35932)
         Seq(
           (Int.MinValue, success(CBigInt(new BigInteger("-80000000", 16)))),
           (-1937187314, success(CBigInt(new BigInteger("-737721f2", 16)))),
@@ -872,35 +872,35 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
     val n = ExactNumeric.IntIsExactNumeric
     verifyCases(
     {
-      def success[T](v: T) = Success(Expected(v, 39654))
+      def success[T](v: T) = Expected(Success(v), 39654)
       Seq(
-        ((Int.MinValue, 449583993), Failure(new ArithmeticException("integer overflow"))),
-        ((-1589633733, 2147483647), Failure(new ArithmeticException("integer overflow"))),
+        ((Int.MinValue, 449583993), Expected(new ArithmeticException("integer overflow"))),
+        ((-1589633733, 2147483647), Expected(new ArithmeticException("integer overflow"))),
         ((-1585471506, -1), success((-1585471507, (-1585471505, (1585471506, (1585471506, 0)))))),
-        ((-1569005179, 1230236634), Failure(new ArithmeticException("integer overflow"))),
-        ((-1493733356, -1319619597), Failure(new ArithmeticException("integer overflow"))),
-        ((-1100263120, -880052091), Failure(new ArithmeticException("integer overflow"))),
-        ((-1055955857, 309147303), Failure(new ArithmeticException("integer overflow"))),
-        ((-569807371, 0), Failure(new ArithmeticException("/ by zero"))),
-        ((-522264843, 2147483647), Failure(new ArithmeticException("integer overflow"))),
-        ((-109552389, 0), Failure(new ArithmeticException("/ by zero"))),
-        ((-1, -2147483648), Failure(new ArithmeticException("integer overflow"))),
+        ((-1569005179, 1230236634), Expected(new ArithmeticException("integer overflow"))),
+        ((-1493733356, -1319619597), Expected(new ArithmeticException("integer overflow"))),
+        ((-1100263120, -880052091), Expected(new ArithmeticException("integer overflow"))),
+        ((-1055955857, 309147303), Expected(new ArithmeticException("integer overflow"))),
+        ((-569807371, 0), Expected(new ArithmeticException("/ by zero"))),
+        ((-522264843, 2147483647), Expected(new ArithmeticException("integer overflow"))),
+        ((-109552389, 0), Expected(new ArithmeticException("/ by zero"))),
+        ((-1, -2147483648), Expected(new ArithmeticException("integer overflow"))),
         ((-1, -1), success((-2, (0, (1, (1, 0)))))),
-        ((-1, 0), Failure(new ArithmeticException("/ by zero"))),
-        ((0, -2147483648), Failure(new ArithmeticException("integer overflow"))),
+        ((-1, 0), Expected(new ArithmeticException("/ by zero"))),
+        ((0, -2147483648), Expected(new ArithmeticException("integer overflow"))),
         ((1, -1525049432), success((-1525049431, (1525049433, (-1525049432, (0, 1)))))),
-        ((1, 0), Failure(new ArithmeticException("/ by zero"))),
+        ((1, 0), Expected(new ArithmeticException("/ by zero"))),
         ((1, 805353746), success((805353747, (-805353745, (805353746, (0, 1)))))),
-        ((1, 2147483647), Failure(new ArithmeticException("integer overflow"))),
-        ((475797978, 0), Failure(new ArithmeticException("/ by zero"))),
-        ((782343922, -1448560539), Failure(new ArithmeticException("integer overflow"))),
-        ((928769361, 542647292), Failure(new ArithmeticException("integer overflow"))),
-        ((1568062151, 0), Failure(new ArithmeticException("/ by zero"))),
+        ((1, 2147483647), Expected(new ArithmeticException("integer overflow"))),
+        ((475797978, 0), Expected(new ArithmeticException("/ by zero"))),
+        ((782343922, -1448560539), Expected(new ArithmeticException("integer overflow"))),
+        ((928769361, 542647292), Expected(new ArithmeticException("integer overflow"))),
+        ((1568062151, 0), Expected(new ArithmeticException("/ by zero"))),
         ((1698252401, -1), success((1698252400, (1698252402, (-1698252401, (-1698252401, 0)))))),
-        ((1949795740, -1575667037), Failure(new ArithmeticException("integer overflow"))),
-        ((Int.MaxValue, -1), Failure(new ArithmeticException("integer overflow"))),
-        ((Int.MaxValue, 1), Failure(new ArithmeticException("integer overflow"))),
-        ((Int.MaxValue, 1738276576), Failure(new ArithmeticException("integer overflow")))
+        ((1949795740, -1575667037), Expected(new ArithmeticException("integer overflow"))),
+        ((Int.MaxValue, -1), Expected(new ArithmeticException("integer overflow"))),
+        ((Int.MaxValue, 1), Expected(new ArithmeticException("integer overflow"))),
+        ((Int.MaxValue, 1738276576), Expected(new ArithmeticException("integer overflow")))
       )
     },
     existingFeature(
@@ -991,17 +991,17 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
     verifyCases(
       {
-        def success[T](v: T) = Success(Expected(v, 35976))
+        def success[T](v: T) = Expected(Success(v), 35976)
         Seq(
-          (Long.MinValue, Failure(new ArithmeticException("Byte overflow"))),
-          (Byte.MinValue.toLong - 1, Failure(new ArithmeticException("Byte overflow"))),
+          (Long.MinValue, Expected(new ArithmeticException("Byte overflow"))),
+          (Byte.MinValue.toLong - 1, Expected(new ArithmeticException("Byte overflow"))),
           (Byte.MinValue.toLong, success(Byte.MinValue)),
           (-1L, success(-1.toByte)),
           (0L, success(0.toByte)),
           (1L, success(1.toByte)),
           (Byte.MaxValue.toLong, success(Byte.MaxValue)),
-          (Byte.MaxValue.toLong + 1, Failure(new ArithmeticException("Byte overflow"))),
-          (Long.MinValue, Failure(new ArithmeticException("Byte overflow")))
+          (Byte.MaxValue.toLong + 1, Expected(new ArithmeticException("Byte overflow"))),
+          (Long.MinValue, Expected(new ArithmeticException("Byte overflow")))
         )
       },
       existingFeature((x: Long) => x.toByteExact,
@@ -1010,17 +1010,17 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
     verifyCases(
       {
-        def success[T](v: T) = Success(Expected(v, 35976))
+        def success[T](v: T) = Expected(Success(v), 35976)
         Seq(
-          (Long.MinValue, Failure(new ArithmeticException("Short overflow"))),
-          (Short.MinValue.toLong - 1, Failure(new ArithmeticException("Short overflow"))),
+          (Long.MinValue, Expected(new ArithmeticException("Short overflow"))),
+          (Short.MinValue.toLong - 1, Expected(new ArithmeticException("Short overflow"))),
           (Short.MinValue.toLong, success(Short.MinValue)),
           (-1L, success(-1.toShort)),
           (0L, success(0.toShort)),
           (1L, success(1.toShort)),
           (Short.MaxValue.toLong, success(Short.MaxValue)),
-          (Short.MaxValue.toLong + 1, Failure(new ArithmeticException("Short overflow"))),
-          (Long.MinValue, Failure(new ArithmeticException("Short overflow")))
+          (Short.MaxValue.toLong + 1, Expected(new ArithmeticException("Short overflow"))),
+          (Long.MinValue, Expected(new ArithmeticException("Short overflow")))
         )
       },
       existingFeature((x: Long) => x.toShortExact,
@@ -1029,17 +1029,17 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
     verifyCases(
       {
-        def success[T](v: T) = Success(Expected(v, 35976))
+        def success[T](v: T) = Expected(Success(v), 35976)
         Seq(
-          (Long.MinValue, Failure(new ArithmeticException("Int overflow"))),
-          (Int.MinValue.toLong - 1, Failure(new ArithmeticException("Int overflow"))),
+          (Long.MinValue, Expected(new ArithmeticException("Int overflow"))),
+          (Int.MinValue.toLong - 1, Expected(new ArithmeticException("Int overflow"))),
           (Int.MinValue.toLong, success(Int.MinValue)),
           (-1L, success(-1.toInt)),
           (0L, success(0.toInt)),
           (1L, success(1.toInt)),
           (Int.MaxValue.toLong, success(Int.MaxValue)),
-          (Int.MaxValue.toLong + 1, Failure(new ArithmeticException("Int overflow"))),
-          (Long.MinValue, Failure(new ArithmeticException("Int overflow")))
+          (Int.MaxValue.toLong + 1, Expected(new ArithmeticException("Int overflow"))),
+          (Long.MinValue, Expected(new ArithmeticException("Int overflow")))
         )
       },
       existingFeature((x: Long) => x.toIntExact,
@@ -1048,7 +1048,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
     verifyCases(
       {
-        def success[T](v: T) = Success(Expected(v, 35798))
+        def success[T](v: T) = Expected(Success(v), 35798)
         Seq(
           (Long.MinValue, success(Long.MinValue)),
           (-1L, success(-1L)),
@@ -1063,7 +1063,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
     verifyCases(
       {
-        def success(v: BigInt) = Success(Expected(v, 35932))
+        def success(v: BigInt) = Expected(Success(v), 35932)
         Seq(
           (Long.MinValue, success(CBigInt(new BigInteger("-8000000000000000", 16)))),
           (-1074651039980347209L, success(CBigInt(new BigInteger("-ee9ed6d57885f49", 16)))),
@@ -1081,33 +1081,33 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
     val n = ExactNumeric.LongIsExactNumeric
     verifyCases(
     {
-      def success[T](v: T) = Success(Expected(v, 39654))
+      def success[T](v: T) = Expected(Success(v), 39654)
       Seq(
-        ((Long.MinValue, -4677100190307931395L), Failure(new ArithmeticException("long overflow"))),
-        ((Long.MinValue, -1L), Failure(new ArithmeticException("long overflow"))),
-        ((Long.MinValue, 1L), Failure(new ArithmeticException("long overflow"))),
-        ((-9223372036854775808L, 0L), Failure(new ArithmeticException("/ by zero"))),
-        ((-5828066432064138816L, 9105034716270510411L), Failure(new ArithmeticException("long overflow"))),
+        ((Long.MinValue, -4677100190307931395L), Expected(new ArithmeticException("long overflow"))),
+        ((Long.MinValue, -1L), Expected(new ArithmeticException("long overflow"))),
+        ((Long.MinValue, 1L), Expected(new ArithmeticException("long overflow"))),
+        ((-9223372036854775808L, 0L), Expected(new ArithmeticException("/ by zero"))),
+        ((-5828066432064138816L, 9105034716270510411L), Expected(new ArithmeticException("long overflow"))),
         ((-4564956247298949325L, -1L), success(
           (-4564956247298949326L, (-4564956247298949324L, (4564956247298949325L, (4564956247298949325L, 0L))))
         )),
-        ((-1499553565058783253L, -3237683216870282569L), Failure(new ArithmeticException("long overflow"))),
-        ((-1368457031689886112L, 9223372036854775807L), Failure(new ArithmeticException("long overflow"))),
+        ((-1499553565058783253L, -3237683216870282569L), Expected(new ArithmeticException("long overflow"))),
+        ((-1368457031689886112L, 9223372036854775807L), Expected(new ArithmeticException("long overflow"))),
         ((-1L, -4354407074688367443L), success((-4354407074688367444L, (4354407074688367442L, (4354407074688367443L, (0L, -1L)))))),
         ((-1L, -1L), success((-2L, (0L, (1L, (1L, 0L)))))),
         ((-1L, 5665019549505434695L), success((5665019549505434694L, (-5665019549505434696L, (-5665019549505434695L, (0L, -1L)))))),
         ((0L, -1L), success((-1L, (1L, (0L, (0L, 0L)))))),
-        ((0L, 0L), Failure(new ArithmeticException("/ by zero"))),
+        ((0L, 0L), Expected(new ArithmeticException("/ by zero"))),
         ((0L, 2112386634269044172L), success((2112386634269044172L, (-2112386634269044172L, (0L, (0L, 0L)))))),
-        ((2254604056782701370L, -5878231674026236574L), Failure(new ArithmeticException("long overflow"))),
+        ((2254604056782701370L, -5878231674026236574L), Expected(new ArithmeticException("long overflow"))),
         ((2903872550238813643L, 1L), success(
           (2903872550238813644L, (2903872550238813642L, (2903872550238813643L, (2903872550238813643L, 0L))))
         )),
-        ((5091129735284641762L, -427673944382373638L), Failure(new ArithmeticException("long overflow"))),
-        ((6029085020194630780L, 2261786144956037939L), Failure(new ArithmeticException("long overflow"))),
-        ((8126382074515995418L, -4746652047588907829L), Failure(new ArithmeticException("long overflow"))),
-        ((Long.MaxValue, 1L), Failure(new ArithmeticException("long overflow"))),
-        ((Long.MaxValue, -1L), Failure(new ArithmeticException("long overflow")))
+        ((5091129735284641762L, -427673944382373638L), Expected(new ArithmeticException("long overflow"))),
+        ((6029085020194630780L, 2261786144956037939L), Expected(new ArithmeticException("long overflow"))),
+        ((8126382074515995418L, -4746652047588907829L), Expected(new ArithmeticException("long overflow"))),
+        ((Long.MaxValue, 1L), Expected(new ArithmeticException("long overflow"))),
+        ((Long.MaxValue, -1L), Expected(new ArithmeticException("long overflow")))
       )
     },
     existingFeature(
@@ -1196,7 +1196,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
   property("BigInt methods equivalence") {
     verifyCases(
       {
-        def success(v: BigInt) = Success(Expected(v, 35798))
+        def success(v: BigInt) = Expected(Success(v), 35798)
         Seq(
           (CBigInt(new BigInteger("-85102d7f884ca0e8f56193b46133acaf7e4681e1757d03f191ae4f445c8e0", 16)), success(
             CBigInt(new BigInteger("-85102d7f884ca0e8f56193b46133acaf7e4681e1757d03f191ae4f445c8e0", 16))
@@ -1218,15 +1218,15 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
     val n = NumericOps.BigIntIsExactNumeric
     verifyCases(
     {
-      def success(v: (BigInt, (BigInt, (BigInt, (BigInt, BigInt))))) = Success(Expected(v, 39774))
+      def success(v: (BigInt, (BigInt, (BigInt, (BigInt, BigInt))))) = Expected(Success(v), 39774)
       Seq(
         ((CBigInt(new BigInteger("-8683d1cd99d5fcf0e6eff6295c285c36526190e13dbde008c49e5ae6fddc1c", 16)),
             CBigInt(new BigInteger("-2ef55db3f245feddacf0182e299dd", 16))),
-            Failure(new ArithmeticException("BigInteger out of 256 bit range"))),
+            Expected(new ArithmeticException("BigInteger out of 256 bit range"))),
 
         ((CBigInt(new BigInteger("-68e1136872f98fb0245ec5aa4bef46e16273e860746c892", 16)),
             CBigInt(new BigInteger("-352aaa769b41a327", 16))),
-            Failure(new ArithmeticException("BigInteger: modulus not positive"))),
+            Expected(new ArithmeticException("BigInteger: modulus not positive"))),
 
         ((CBigInt(new BigInteger("-39fc00ebf09080cbd8408dd38c4b7490bea533447047140", 16)),
             CBigInt(new BigInteger("31de9e96177dbd39", 16))),
@@ -1245,23 +1245,23 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
                         (CBigInt(new BigInteger("-1", 16)), CBigInt(new BigInteger("0", 16)))))) )),
 
         ((CBigInt(new BigInteger("-47dede8d3e4804bb", 16)), CBigInt(new BigInteger("-388828eb6dfce683", 16))),
-            Failure(new ArithmeticException("BigInteger: modulus not positive"))),
+            Expected(new ArithmeticException("BigInteger: modulus not positive"))),
 
         ((CBigInt(new BigInteger("-4fde491150ea00d", 16)), CBigInt(new BigInteger("-80000001", 16))),
-            Failure(new ArithmeticException("BigInteger: modulus not positive"))),
+            Expected(new ArithmeticException("BigInteger: modulus not positive"))),
 
         ((CBigInt(new BigInteger("-80000001", 16)), CBigInt(new BigInteger("-80000001", 16))),
-            Failure(new ArithmeticException("BigInteger: modulus not positive"))),
+            Expected(new ArithmeticException("BigInteger: modulus not positive"))),
 
         ((CBigInt(new BigInteger("0", 16)), CBigInt(new BigInteger("-8000000000000000", 16))),
-            Failure(new ArithmeticException("BigInteger: modulus not positive"))),
+            Expected(new ArithmeticException("BigInteger: modulus not positive"))),
 
         ((CBigInt(new BigInteger("0", 16)), CBigInt(new BigInteger("0", 16))),
-            Failure(new ArithmeticException("BigInteger divide by zero"))),
+            Expected(new ArithmeticException("BigInteger divide by zero"))),
 
         ((CBigInt(new BigInteger("1", 16)),
             CBigInt(new BigInteger("-86063f66e06d6d535c95862cd506309a95d10102422fee", 16))),
-            Failure(new ArithmeticException("BigInteger: modulus not positive"))),
+            Expected(new ArithmeticException("BigInteger: modulus not positive"))),
 
         ((CBigInt(new BigInteger("80000000", 16)), CBigInt(new BigInteger("4e592ce5b544b8f7a91f97ec9ea2f2c3660111360297a4", 16))),
             success((
@@ -1272,11 +1272,11 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
         ((CBigInt(new BigInteger("3d31398dc4783303", 16)),
             CBigInt(new BigInteger("-37b381db4e6e927e202a2a421d5a09ca", 16))),
-            Failure(new ArithmeticException("BigInteger: modulus not positive"))),
+            Expected(new ArithmeticException("BigInteger: modulus not positive"))),
 
         ((CBigInt(new BigInteger("5524814a26357cb71488b6fb26af2d3", 16)),
             CBigInt(new BigInteger("c413b7d975a9972427f46996299fe57cfe79479ac954a7", 16))),
-            Failure(new ArithmeticException("BigInteger out of 256 bit range")))
+            Expected(new ArithmeticException("BigInteger out of 256 bit range")))
       )
     },
     existingFeature(
@@ -1400,7 +1400,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
     verifyCases(
       {
-        def success[T](v: T) = Success(Expected(v, 37905))
+        def success[T](v: T) = Expected(Success(v), 37905)
         Seq(
           (Helpers.decodeGroupElement(ge1), success(Helpers.decodeBytes(ge1))),
           (Helpers.decodeGroupElement(ge2), success(Helpers.decodeBytes(ge2))),
@@ -1420,7 +1420,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
     verifyCases(
       {
-        def success[T](v: T) = Success(Expected(v, 38340))
+        def success[T](v: T) = Expected(Success(v), 38340)
         Seq(
           (Helpers.decodeGroupElement(ge1), success(true)),
           (Helpers.decodeGroupElement(ge2), success(true)),
@@ -1448,7 +1448,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
     verifyCases(
       {
-        def success[T](v: T) = Success(Expected(v, 36292))
+        def success[T](v: T) = Expected(Success(v), 36292)
         Seq(
           (Helpers.decodeGroupElement(ge1), success(Helpers.decodeGroupElement("02358d53f01276211f92d0aefbd278805121d4ff6eb534b777af1ee8abae5b2056"))),
           (Helpers.decodeGroupElement(ge2), success(Helpers.decodeGroupElement("03dba7b94b111f3894e2f9120b577da595ec7d58d488485adf73bf4e153af63575"))),
@@ -1470,7 +1470,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
     verifyCases(
       {
-        def success[T](v: T) = Success(Expected(v, 41484))
+        def success[T](v: T) = Expected(Success(v), 41484)
         Seq(
           ((Helpers.decodeGroupElement(ge1), CBigInt(new BigInteger("-25c80b560dd7844e2efd10f80f7ee57d", 16))),
               success(Helpers.decodeGroupElement("023a850181b7b73f92a5bbfa0bfc78f5bbb6ff00645ddde501037017e1a2251e2e"))),
@@ -1500,7 +1500,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
     verifyCases(
       {
-        def success[T](v: T) = Success(Expected(v, 36457))
+        def success[T](v: T) = Expected(Success(v), 36457)
         Seq(
           ((Helpers.decodeGroupElement(ge1), Helpers.decodeGroupElement("03e132ca090614bd6c9f811e91f6daae61f16968a1e6c694ed65aacd1b1092320e")),
               success(Helpers.decodeGroupElement("02bc48937b4a66f249a32dfb4d2efd0743dc88d46d770b8c5d39fd03325ba211df"))),
@@ -1568,7 +1568,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
     verifyCases(
       {
-        def success[T](v: T) = Success(Expected(v, 36182))
+        def success[T](v: T) = Expected(Success(v), 36182)
         Seq(
           (t1, success(Helpers.decodeBytes("000183807f66b301530120ff7fc6bd6601ff01ff7f7d2bedbbffff00187fe89094"))),
           (t2, success(Helpers.decodeBytes("ff000d937f80ffd731ed802d24358001ff8080ff71007f00ad37e0a7ae43fff95b"))),
@@ -1581,7 +1581,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
     verifyCases(
       {
-        def success[T](v: T) = Success(Expected(v, 36260))
+        def success[T](v: T) = Expected(Success(v), 36260)
         Seq(
           (t1, success(6.toByte)),
           (t2, success(0.toByte)),
@@ -1594,7 +1594,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
     verifyCases(
       {
-        def success[T](v: T) = Success(Expected(v, 36136))
+        def success[T](v: T) = Expected(Success(v), 36136)
         Seq(
           (t1, success(1)),
           (t2, success(32)),
@@ -1607,7 +1607,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
     verifyCases(
       {
-        def success[T](v: T) = Success(Expected(v, 37151))
+        def success[T](v: T) = Expected(Success(v), 37151)
         Seq(
           (t1, success(Some(1))),
           (t2, success(Some(64))),
@@ -1620,7 +1620,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
     verifyCases(
       {
-        def success[T](v: T) = Success(Expected(v, 36479))
+        def success[T](v: T) = Expected(Success(v), 36479)
         Seq(
           (t1, success(false)),
           (t2, success(false)),
@@ -1633,7 +1633,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
     verifyCases(
       {
-        def success[T](v: T) = Success(Expected(v, 36096))
+        def success[T](v: T) = Expected(Success(v), 36096)
         Seq(
           (t1, success(true)),
           (t2, success(false)),
@@ -1646,7 +1646,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
     verifyCases(
       {
-        def success[T](v: T) = Success(Expected(v, 36502))
+        def success[T](v: T) = Expected(Success(v), 36502)
         Seq(
           (t1, success(true)),
           (t2, success(false)),
@@ -1849,7 +1849,13 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
     val (key, value, _, avlProver) = sampleAvlProver
     val otherKey = key.map(x => (-x).toByte) // any other different from key
 
-    val table = Table(("key", "contains", "valueOpt"), (key, true, Some(value)), (otherKey, false, None))
+    val table = Table(("key", "contains", "valueOpt"),
+      (key, true, Some(value)),
+      (otherKey, false, None)
+    )
+
+    def success[T](v: T) = Expected(Success(v), 0)
+
     forAll(table) { (key, okContains, valueOpt) =>
       avlProver.performOneOperation(Lookup(ADKey @@ key.toArray))
       val proof = avlProver.generateProof().toColl
@@ -1859,11 +1865,11 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
       // positive test
       {
         val input = (tree, (key, proof))
-        contains.checkExpected(input, okContains)
-        get.checkExpected(input, valueOpt)
+        contains.checkExpected(input, success(okContains))
+        get.checkExpected(input, success(valueOpt))
 
-        contains.checkVerify(input, Expected(value = okContains, cost = 37850))
-        get.checkVerify(input, Expected(value = valueOpt, cost = 38372))
+        contains.checkVerify(input, Expected(value = Success(okContains), cost = 37850))
+        get.checkVerify(input, Expected(value = Success(valueOpt), cost = 38372))
       }
 
       val keys = Colls.fromItems(key)
@@ -1871,15 +1877,15 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
       
       {
         val input = (tree, (keys, proof))
-        getMany.checkExpected(input, expRes)
-        getMany.checkVerify(input, Expected(value = expRes, cost = 38991))
+        getMany.checkExpected(input, success(expRes))
+        getMany.checkVerify(input, Expected(value = Success(expRes), cost = 38991))
       }
 
       {
         val input = (tree, digest)
         val (res, _) = updateDigest.checkEquality(input).getOrThrow
         res.digest shouldBe digest
-        updateDigest.checkVerify(input, Expected(value = res, cost = 36341))
+        updateDigest.checkVerify(input, Expected(value = Success(res), cost = 36341))
       }
 
       val newOps = 1.toByte
@@ -1888,7 +1894,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
         val input = (tree, newOps)
         val (res,_) = updateOperations.checkEquality(input).getOrThrow
         res.enabledOperations shouldBe newOps
-        updateOperations.checkVerify(input, Expected(value = res, cost = 36341))
+        updateOperations.checkVerify(input, Expected(value = Success(res), cost = 36341))
       }
 
       // negative tests: invalid proof
@@ -1898,7 +1904,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
         val input = (tree, (key, invalidProof))
         val (res, _) = contains.checkEquality(input).getOrThrow
         res shouldBe false
-        contains.checkVerify(input, Expected(value = res, cost = 37850))
+        contains.checkVerify(input, Expected(value = Success(res), cost = 37850))
       }
 
       {
@@ -2021,7 +2027,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
         val input = (preInsertTree, (kvs, insertProof))
         val (res, _) = insert.checkEquality(input).getOrThrow
         res.isDefined shouldBe true
-        insert.checkVerify(input, Expected(value = res, cost = 38501))
+        insert.checkVerify(input, Expected(value = Success(res), cost = 38501))
       }
 
       { // negative: readonly tree
@@ -2029,7 +2035,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
         val input = (readonlyTree, (kvs, insertProof))
         val (res, _) = insert.checkEquality(input).getOrThrow
         res.isDefined shouldBe false
-        insert.checkVerify(input, Expected(value = res, cost = 38501))
+        insert.checkVerify(input, Expected(value = Success(res), cost = 38501))
       }
 
       { // negative: invalid key
@@ -2039,7 +2045,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
         val input = (tree, (invalidKvs, insertProof))
         val (res, _) = insert.checkEquality(input).getOrThrow
         res.isDefined shouldBe true // TODO HF: should it really be true? (looks like a bug)
-        insert.checkVerify(input, Expected(value = res, cost = 38501))
+        insert.checkVerify(input, Expected(value = Success(res), cost = 38501))
       }
 
       { // negative: invalid proof
@@ -2121,6 +2127,8 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
       ))
     val cost = 40952
 
+    def success[T](v: T) = Expected(Success(v), 0)
+
     forAll(keyCollGen, bytesCollGen) { (key, value) =>
       val (_, avlProver) = createAvlTreeAndProver(key -> value)
       val preUpdateDigest = avlProver.digest.toColl
@@ -2134,8 +2142,8 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
         val endTree = preUpdateTree.updateDigest(endDigest)
         val input = (preUpdateTree, (kvs, updateProof))
         val res = Some(endTree)
-        update.checkExpected(input, res)
-        update.checkVerify(input, Expected(value = res, cost = cost))
+        update.checkExpected(input, success(res))
+        update.checkVerify(input, Expected(value = Success(res), cost = cost))
       }
 
       { // positive: update to the same value (identity operation)
@@ -2143,15 +2151,15 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
         val keys = Colls.fromItems((key -> value))
         val input = (tree, (keys, updateProof))
         val res = Some(tree)
-        update.checkExpected(input, res)
-        update.checkVerify(input, Expected(value = res, cost = cost))
+        update.checkExpected(input, success(res))
+        update.checkVerify(input, Expected(value = Success(res), cost = cost))
       }
 
       { // negative: readonly tree
         val readonlyTree = createTree(preUpdateDigest)
         val input = (readonlyTree, (kvs, updateProof))
-        update.checkExpected(input, None)
-        update.checkVerify(input, Expected(value = None, cost = cost))
+        update.checkExpected(input, success(None))
+        update.checkVerify(input, Expected(value = Success(None), cost = cost))
       }
 
       { // negative: invalid key
@@ -2159,8 +2167,8 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
         val invalidKey = key.map(x => (-x).toByte) // any other different from key
         val invalidKvs = Colls.fromItems((invalidKey -> newValue))
         val input = (tree, (invalidKvs, updateProof))
-        update.checkExpected(input, None)
-        update.checkVerify(input, Expected(value = None, cost = cost))
+        update.checkExpected(input, success(None))
+        update.checkVerify(input, Expected(value = Success(None), cost = cost))
       }
 
       { // negative: invalid value (different from the value in the proof)
@@ -2170,15 +2178,15 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
         val input = (tree, (invalidKvs, updateProof))
         val (res, _) = update.checkEquality(input).getOrThrow
         res.isDefined shouldBe true  // TODO HF: should it really be true? (looks like a bug)
-        update.checkVerify(input, Expected(value = res, cost = cost))
+        update.checkVerify(input, Expected(value = Success(res), cost = cost))
       }
 
       { // negative: invalid proof
         val tree = createTree(preUpdateDigest, updateAllowed = true)
         val invalidProof = updateProof.map(x => (-x).toByte) // any other different from proof
         val input = (tree, (kvs, invalidProof))
-        update.checkExpected(input, None)
-        update.checkVerify(input, Expected(value = None, cost = cost))
+        update.checkExpected(input, success(None))
+        update.checkVerify(input, Expected(value = Success(None), cost = cost))
       }
     }
   }
@@ -2220,6 +2228,8 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
         )
       ))
 
+    def success[T](v: T) = Expected(Success(v), 0)
+
     forAll(keyCollGen, bytesCollGen) { (key, value) =>
       val (_, avlProver) = createAvlTreeAndProver(key -> value)
       val preRemoveDigest = avlProver.digest.toColl
@@ -2233,15 +2243,15 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
         val endTree = preRemoveTree.updateDigest(endDigest)
         val input = (preRemoveTree, (keys, removeProof))
         val res = Some(endTree)
-        remove.checkExpected(input, res)
-        remove.checkVerify(input, Expected(value = res, cost = cost))
+        remove.checkExpected(input, success(res))
+        remove.checkVerify(input, Expected(value = Success(res), cost = cost))
       }
 
       { // negative: readonly tree
         val readonlyTree = createTree(preRemoveDigest)
         val input = (readonlyTree, (keys, removeProof))
-        remove.checkExpected(input, None)
-        remove.checkVerify(input, Expected(value = None, cost = cost))
+        remove.checkExpected(input, success(None))
+        remove.checkVerify(input, Expected(value = Success(None), cost = cost))
       }
 
       { // negative: invalid key
@@ -2249,16 +2259,16 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
         val invalidKey = key.map(x => (-x).toByte) // any other different from `key`
         val invalidKeys = Colls.fromItems(invalidKey)
         val input = (tree, (invalidKeys, removeProof))
-        remove.checkExpected(input, None)
-        remove.checkVerify(input, Expected(value = None, cost = cost))
+        remove.checkExpected(input, success(None))
+        remove.checkVerify(input, Expected(value = Success(None), cost = cost))
       }
 
       { // negative: invalid proof
         val tree = createTree(preRemoveDigest, removeAllowed = true)
         val invalidProof = removeProof.map(x => (-x).toByte) // any other different from `removeProof`
         val input = (tree, (keys, invalidProof))
-        remove.checkExpected(input, None)
-        remove.checkVerify(input, Expected(value = None, cost = cost))
+        remove.checkExpected(input, success(None))
+        remove.checkVerify(input, Expected(value = Success(None), cost = cost))
       }
     }
   }
@@ -2266,7 +2276,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
   property("longToByteArray equivalence") {
     verifyCases(
       {
-        def success[T](v: T) = Success(Expected(v, 36007))
+        def success[T](v: T) = Expected(Success(v), 36007)
         Seq(
           (-9223372036854775808L, success(Helpers.decodeBytes("8000000000000000"))),
           (-1148502660425090565L, success(Helpers.decodeBytes("f00fb2ea55c579fb"))),
@@ -2285,10 +2295,10 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
   property("byteArrayToBigInt equivalence") {
     verifyCases(
       {
-        def success[T](v: T) = Success(Expected(v, 36536))
+        def success[T](v: T) = Expected(Success(v), 36536)
         Seq(
           (Helpers.decodeBytes(""),
-              Failure(new NumberFormatException("Zero length BigInteger"))),
+              Expected(new NumberFormatException("Zero length BigInteger"))),
           (Helpers.decodeBytes("00"),
               success(CBigInt(new BigInteger("0", 16)))),
           (Helpers.decodeBytes("01"),
@@ -2296,12 +2306,12 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
           (Helpers.decodeBytes("ff"),
               success(CBigInt(new BigInteger("-1", 16)))),
           (Helpers.decodeBytes("80d6c201"),
-              Success(Expected(CBigInt(new BigInteger("-7f293dff", 16)), 36539))),
+              Expected(Success(CBigInt(new BigInteger("-7f293dff", 16))), 36539)),
           (Helpers.decodeBytes("70d6c20170d6c201"),
-              Success(Expected(CBigInt(new BigInteger("70d6c20170d6c201", 16)), 36543))),
+              Expected(Success(CBigInt(new BigInteger("70d6c20170d6c201", 16))), 36543)),
           (Helpers.decodeBytes(
             "80e0ff7f02807fff72807f0a00ff7fb7c57f75c11ba2802970fd250052807fc37f6480ffff007fff18eeba44"
-          ), Failure(new ArithmeticException("BigInteger out of 256 bit range")))
+          ), Expected(new ArithmeticException("BigInteger out of 256 bit range")))
         )
       },
       existingFeature((x: Coll[Byte]) => SigmaDsl.byteArrayToBigInt(x),
@@ -2312,11 +2322,11 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
   property("byteArrayToLong equivalence") {
     verifyCases(
       {
-        def success[T](v: T) = Success(Expected(v, 36092))
+        def success[T](v: T) = Expected(Success(v), 36092)
         Seq(
-          (Helpers.decodeBytes(""), Failure(new IllegalArgumentException("array too small: 0 < 8"))),
-          (Helpers.decodeBytes("81"), Failure(new IllegalArgumentException("array too small: 1 < 8"))),
-          (Helpers.decodeBytes("812d7f00ff807f"), Failure(new IllegalArgumentException("array too small: 7 < 8"))),
+          (Helpers.decodeBytes(""), Expected(new IllegalArgumentException("array too small: 0 < 8"))),
+          (Helpers.decodeBytes("81"), Expected(new IllegalArgumentException("array too small: 1 < 8"))),
+          (Helpers.decodeBytes("812d7f00ff807f"), Expected(new IllegalArgumentException("array too small: 7 < 8"))),
           (Helpers.decodeBytes("812d7f00ff807f7f"), success(-9138508426601529473L)),
           (Helpers.decodeBytes("ffffffffffffffff"), success(-1L)),
           (Helpers.decodeBytes("0000000000000000"), success(0L)),
@@ -2419,7 +2429,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
     verifyCases(
       {
-       def success[T](v: T) = Success(Expected(v, 35984))
+       def success[T](v: T) = Expected(Success(v), 35984)
        Seq(
           (b1, success(Helpers.decodeBytes("5ee78f30ae4e770e44900a46854e9fecb6b12e8112556ef1cd19aef633b4421e"))),
           (b2, success(Helpers.decodeBytes("3a0089be265460e29ca47d26e5b55a6f3e3ffaf5b4aed941410a2437913848ad")))
@@ -2431,7 +2441,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
     verifyCases(
       {
-        def success[T](v: T) = Success(Expected(v, 35882))
+        def success[T](v: T) = Expected(Success(v), 35882)
         Seq(
           (b1, success(9223372036854775807L)),
           (b2, success(12345L))
@@ -2443,7 +2453,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
     verifyCases(
       {
-        def success[T](v: T) = Success(Expected(v, 35938))
+        def success[T](v: T) = Expected(Success(v), 35938)
         Seq(
           (b1, success(Helpers.decodeBytes(
             "100108cd0297c44a12f4eb99a85d298fa3ba829b5b42b9f63798c980ece801cc663cc5fc9e7300"
@@ -2457,7 +2467,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
     verifyCases(
       {
-        def success[T](v: T) = Success(Expected(v, 36012))
+        def success[T](v: T) = Expected(Success(v), 36012)
         Seq(
           (b1, success(Helpers.decodeBytes(
             "ffffffffffffffff7f100108cd0297c44a12f4eb99a85d298fa3ba829b5b42b9f63798c980ece801cc663cc5fc9e73009fac29026e789ab7b2fffff12280a6cd01557f6fb22b7f80ff7aff8e1f7f15973d7f000180ade204a3ff007f00057600808001ff8f8000019000ffdb806fff7cc0b6015eb37fa600f4030201000e067fc87f7f01ff218301ae8000018008637f0021fb9e00018055486f0b514121016a00ff718080bcb001"
@@ -2473,7 +2483,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
     verifyCases(
       {
-        def success[T](v: T) = Success(Expected(v, 35954))
+        def success[T](v: T) = Expected(Success(v), 35954)
         Seq(
           (b1, success(Helpers.decodeBytes(
             "ffffffffffffffff7f100108cd0297c44a12f4eb99a85d298fa3ba829b5b42b9f63798c980ece801cc663cc5fc9e73009fac29026e789ab7b2fffff12280a6cd01557f6fb22b7f80ff7aff8e1f7f15973d7f000180ade204a3ff007f00057600808001ff8f8000019000ffdb806fff7cc0b6015eb37fa600f4030201000e067fc87f7f01ff"
@@ -2489,7 +2499,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
     verifyCases(
       {
-        def success[T](v: T) = Success(Expected(v, 36074))
+        def success[T](v: T) = Expected(Success(v), 36074)
         Seq(
           (b1, success((
               677407,
@@ -2509,11 +2519,11 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
     //  (PairOfColl should be equal CollOverArray)
     verifyCases(
       Seq(
-        b1 -> Success(Expected(Coll[(Coll[Byte], Long)](
+        b1 -> Expected(Success(Coll[(Coll[Byte], Long)](
           (Helpers.decodeBytes("6e789ab7b2fffff12280a6cd01557f6fb22b7f80ff7aff8e1f7f15973d7f0001"), 10000000L),
           (Helpers.decodeBytes("a3ff007f00057600808001ff8f8000019000ffdb806fff7cc0b6015eb37fa600"), 500L)
-          ).map(identity), 36167)),
-        b2 -> Success(Expected(Coll[(Coll[Byte], Long)]().map(identity), 36157))
+          ).map(identity)), 36167),
+        b2 -> Expected(Success(Coll[(Coll[Byte], Long)]().map(identity)), 36157)
       ),
       existingFeature({ (x: Box) => x.tokens },
         "{ (x: Box) => x.tokens }",
@@ -2557,11 +2567,11 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
     verifyCases(
       Seq(
-        (box1, Success(Expected(1024.toShort, cost = 37190))),
-        (box2, Failure(
+        (box1, Expected(Success(1024.toShort), cost = 37190)),
+        (box2, Expected(
           new InvalidType("Cannot getReg[Short](5): invalid type of value TestValue(1048576) at id=5")
         )),
-        (box3, Success(Expected(0.toShort, cost = 37190)))
+        (box3, Expected(Success(0.toShort), cost = 37190))
       ),
       existingFeature(
         { (x: Box) =>
@@ -2594,10 +2604,10 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
     verifyCases(
       Seq(
-        (box1, Success(Expected(1024, cost = 39782))),
-        (box2, Success(Expected(1024 * 1024, cost = 39782))),
-        (box3, Success(Expected(0, cost = 39782))),
-        (box4, Success(Expected(-1, cost = 39782)))
+        (box1, Expected(Success(1024), cost = 39782)),
+        (box2, Expected(Success(1024 * 1024), cost = 39782)),
+        (box3, Expected(Success(0), cost = 39782)),
+        (box4, Expected(Success(-1), cost = 39782))
       ),
       existingFeature(
         { (x: Box) =>
@@ -2678,8 +2688,8 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
     verifyCases(
       Seq(
-        (box1, Success(Expected(1.toByte, cost = 36253))),
-        (box2, Failure(new InvalidType("Cannot getReg[Byte](4): invalid type of value Value(Coll(1)) at id=4")))
+        (box1, Expected(Success(1.toByte), cost = 36253)),
+        (box2, Expected(new InvalidType("Cannot getReg[Byte](4): invalid type of value Value(Coll(1)) at id=4")))
       ),
       existingFeature((x: Box) => x.R4[Byte].get,
         "{ (x: Box) => x.R4[Byte].get }",
@@ -2690,8 +2700,8 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
     verifyCases(
       Seq(
-        (box1, Success(Expected(1024.toShort, cost = 36253))),
-        (box2, Failure(new NoSuchElementException("None.get")))
+        (box1, Expected(Success(1024.toShort), cost = 36253)),
+        (box2, Expected(new NoSuchElementException("None.get")))
       ),
       existingFeature((x: Box) => x.R5[Short].get,
         "{ (x: Box) => x.R5[Short].get }",
@@ -2702,7 +2712,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
     verifyCases(
       Seq(
-        (box1, Success(Expected(1024 * 1024, cost = 36253)))
+        (box1, Expected(Success(1024 * 1024), cost = 36253))
       ),
       existingFeature((x: Box) => x.R6[Int].get,
         "{ (x: Box) => x.R6[Int].get }",
@@ -2713,7 +2723,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
     verifyCases(
       Seq(
-        (box1, Success(Expected(1024.toLong, cost = 36253)))
+        (box1, Expected(Success(1024.toLong), cost = 36253))
       ),
       existingFeature((x: Box) => x.R7[Long].get,
         "{ (x: Box) => x.R7[Long].get }",
@@ -2724,7 +2734,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
     verifyCases(
       Seq(
-        (box1, Success(Expected(CBigInt(BigInteger.valueOf(222L)), cost = 36253)))
+        (box1, Expected(Success(CBigInt(BigInteger.valueOf(222L))), cost = 36253))
       ),
       existingFeature((x: Box) => x.R8[BigInt].get,
         "{ (x: Box) => x.R8[BigInt].get }",
@@ -2735,7 +2745,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
     verifyCases(
       Seq(
-        (box1, Success(Expected(CAvlTree(
+        (box1, Expected(Success(CAvlTree(
           AvlTreeData(
             ADDigest @@ (
                 ErgoAlgos.decodeUnsafe("4ec61f485b98eb87153f7c57db4f5ecd75556fddbc403b41acf8441fde8e160900")
@@ -2744,8 +2754,8 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
             32,
             None
           )
-        ), cost = 36253)))
-      ),
+        )), cost = 36253)
+      )),
       existingFeature((x: Box) => x.R9[AvlTree].get,
         "{ (x: Box) => x.R9[AvlTree].get }",
         FuncValue(
@@ -2778,35 +2788,35 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
     )
 
     verifyCases(
-      Seq((h1, Success(Expected(0.toByte, cost = 37022)))),
+      Seq((h1, Expected(Success(0.toByte), cost = 37022))),
       existingPropTest("version", { (x: PreHeader) => x.version }))
 
     verifyCases(
-      Seq((h1, Success(Expected(
-        Helpers.decodeBytes("7fff7fdd6f62018bae0001006d9ca888ff7f56ff8006573700a167f17f2c9f40"),
-        cost = 36121)))),
+      Seq((h1, Expected(Success(
+        Helpers.decodeBytes("7fff7fdd6f62018bae0001006d9ca888ff7f56ff8006573700a167f17f2c9f40")),
+        cost = 36121))),
       existingPropTest("parentId", { (x: PreHeader) => x.parentId }))
 
     verifyCases(
-      Seq((h1, Success(Expected(6306290372572472443L, cost = 36147)))),
+      Seq((h1, Expected(Success(6306290372572472443L), cost = 36147))),
       existingPropTest("timestamp", { (x: PreHeader) => x.timestamp }))
 
     verifyCases(
-      Seq((h1, Success(Expected(-3683306095029417063L, cost = 36127)))),
+      Seq((h1, Expected(Success(-3683306095029417063L), cost = 36127))),
       existingPropTest("nBits", { (x: PreHeader) => x.nBits }))
 
     verifyCases(
-      Seq((h1, Success(Expected(1, cost = 36136)))),
+      Seq((h1, Expected(Success(1), cost = 36136))),
       existingPropTest("height", { (x: PreHeader) => x.height }))
 
     verifyCases(
-      Seq((h1, Success(Expected(
-        Helpers.decodeGroupElement("026930cb9972e01534918a6f6d6b8e35bc398f57140d13eb3623ea31fbd069939b"),
-        cost = 36255)))),
+      Seq((h1, Expected(Success(
+        Helpers.decodeGroupElement("026930cb9972e01534918a6f6d6b8e35bc398f57140d13eb3623ea31fbd069939b")),
+        cost = 36255))),
       existingPropTest("minerPk", { (x: PreHeader) => x.minerPk }))
 
     verifyCases(
-      Seq((h1, Success(Expected(Helpers.decodeBytes("ff8087"), cost = 36249)))),
+      Seq((h1, Expected(Success(Helpers.decodeBytes("ff8087")), cost = 36249))),
       existingPropTest("votes", { (x: PreHeader) => x.votes }))
   }
 
@@ -2838,83 +2848,83 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
     )
 
     verifyCases(
-      Seq((h1, Success(Expected(
-        Helpers.decodeBytes("957f008001808080ffe4ffffc8f3802401df40006aa05e017fa8d3f6004c804a"),
-        cost = 36955)))),
+      Seq((h1, Expected(Success(
+        Helpers.decodeBytes("957f008001808080ffe4ffffc8f3802401df40006aa05e017fa8d3f6004c804a")),
+        cost = 36955))),
       existingPropTest("id", { (x: Header) => x.id }))
 
     verifyCases(
-      Seq((h1, Success(Expected(0.toByte, cost = 36124)))),
+      Seq((h1, Expected(Success(0.toByte), cost = 36124))),
       existingPropTest("version", { (x: Header) => x.version }))
 
     verifyCases(
-      Seq((h1, Success(Expected(
-        Helpers.decodeBytes("0180dd805b0000ff5400b997fd7f0b9b00de00fb03c47e37806a8186b94f07ff"),
-        cost = 36097)))),
+      Seq((h1, Expected(Success(
+        Helpers.decodeBytes("0180dd805b0000ff5400b997fd7f0b9b00de00fb03c47e37806a8186b94f07ff")),
+        cost = 36097))),
       existingPropTest("parentId", { (x: Header) => x.parentId }))
 
     verifyCases(
-      Seq((h1, Success(Expected(
-        Helpers.decodeBytes("01f07f60d100ffb970c3007f60ff7f24d4070bb8fffa7fca7f34c10001ffe39d"),
-        cost = 36111)))),
+      Seq((h1, Expected(Success(
+        Helpers.decodeBytes("01f07f60d100ffb970c3007f60ff7f24d4070bb8fffa7fca7f34c10001ffe39d")),
+        cost = 36111))),
       existingPropTest("ADProofsRoot", { (x: Header) => x.ADProofsRoot}))
 
     verifyCases(
-      Seq((h1, Success(Expected(CAvlTree(treeData), cost = 36092)))),
+      Seq((h1, Expected(Success(CAvlTree(treeData)), cost = 36092))),
       existingPropTest("stateRoot", { (x: Header) => x.stateRoot }))
 
     verifyCases(
-      Seq((h1, Success(Expected(
-        Helpers.decodeBytes("804101ff01000080a3ffbd006ac080098df132a7017f00649311ec0e00000100"),
-        cost = 36094)))),
+      Seq((h1, Expected(Success(
+        Helpers.decodeBytes("804101ff01000080a3ffbd006ac080098df132a7017f00649311ec0e00000100")),
+        cost = 36094))),
       existingPropTest("transactionsRoot", { (x: Header) => x.transactionsRoot }))
 
     verifyCases(
-      Seq((h1, Success(Expected(1L, cost = 36151)))),
+      Seq((h1, Expected(Success(1L), cost = 36151))),
       existingPropTest("timestamp", { (x: Header) => x.timestamp }))
 
     verifyCases(
-      Seq((h1, Success(Expected(-1L, cost = 36125)))),
+      Seq((h1, Expected(Success(-1L), cost = 36125))),
       existingPropTest("nBits", { (x: Header) => x.nBits }))
 
     verifyCases(
-      Seq((h1, Success(Expected(1, cost = 36134)))),
+      Seq((h1, Expected(Success(1), cost = 36134))),
       existingPropTest("height", { (x: Header) => x.height }))
 
     verifyCases(
-      Seq((h1, Success(Expected(
-        Helpers.decodeBytes("e57f80885601b8ff348e01808000bcfc767f2dd37f0d01015030ec018080bc62"),
-        cost = 36133)))),
+      Seq((h1, Expected(Success(
+        Helpers.decodeBytes("e57f80885601b8ff348e01808000bcfc767f2dd37f0d01015030ec018080bc62")),
+        cost = 36133))),
       existingPropTest("extensionRoot", { (x: Header) => x.extensionRoot }))
 
     verifyCases(
-      Seq((h1, Success(Expected(
-        Helpers.decodeGroupElement("039bdbfa0b49cc6bef58297a85feff45f7bbeb500a9d2283004c74fcedd4bd2904"),
-        cost = 36111)))),
+      Seq((h1, Expected(Success(
+        Helpers.decodeGroupElement("039bdbfa0b49cc6bef58297a85feff45f7bbeb500a9d2283004c74fcedd4bd2904")),
+        cost = 36111))),
       existingPropTest("minerPk", { (x: Header) => x.minerPk }))
 
     verifyCases(
-      Seq((h1, Success(Expected(
-        Helpers.decodeGroupElement("0361299207fa392231e23666f6945ae3e867b978e021d8d702872bde454e9abe9c"),
-        cost = 36111)))),
+      Seq((h1, Expected(Success(
+        Helpers.decodeGroupElement("0361299207fa392231e23666f6945ae3e867b978e021d8d702872bde454e9abe9c")),
+        cost = 36111))),
       existingPropTest("powOnetimePk", { (x: Header) => x.powOnetimePk }))
 
     verifyCases(
-      Seq((h1, Success(Expected(
-        Helpers.decodeBytes("7f4f09012a807f01"),
-        cost = 36176)))),
+      Seq((h1, Expected(Success(
+        Helpers.decodeBytes("7f4f09012a807f01")),
+        cost = 36176))),
       existingPropTest("powNonce", { (x: Header) => x.powNonce }))
 
     verifyCases(
-      Seq((h1, Success(Expected(
-        CBigInt(new BigInteger("-e24990c47e15ed4d0178c44f1790cc72155d516c43c3e8684e75db3800a288", 16)),
-        cost = 36220)))),
+      Seq((h1, Expected(Success(
+        CBigInt(new BigInteger("-e24990c47e15ed4d0178c44f1790cc72155d516c43c3e8684e75db3800a288", 16))),
+        cost = 36220))),
       existingPropTest("powDistance", { (x: Header) => x.powDistance }))
 
     verifyCases(
-      Seq((h1, Success(Expected(
-        Helpers.decodeBytes("7f0180"),
-        cost = 36100)))),
+      Seq((h1, Expected(Success(
+        Helpers.decodeBytes("7f0180")),
+        cost = 36100))),
       existingPropTest("votes", { (x: Header) => x.votes }))
   }
 
@@ -3122,8 +3132,8 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
     verifyCases(
       Seq(
-        (ctx, Success(Expected(dataBox, cost = 37087))),
-        (ctx.copy(_dataInputs = Coll()), Failure(new ArrayIndexOutOfBoundsException("0")))
+        (ctx, Expected(Success(dataBox), cost = 37087)),
+        (ctx.copy(_dataInputs = Coll()), Expected(new ArrayIndexOutOfBoundsException("0")))
       ),
       existingFeature({ (x: Context) => x.dataInputs(0) },
         "{ (x: Context) => x.dataInputs(0) }",
@@ -3144,9 +3154,9 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
     verifyCases(
       Seq(
-        (ctx, Success(Expected(
-          Helpers.decodeBytes("7da4b55971f19a78d007638464580f91a020ab468c0dbe608deb1f619e245bc3"),
-          cost = 37193)))
+        (ctx, Expected(Success(
+          Helpers.decodeBytes("7da4b55971f19a78d007638464580f91a020ab468c0dbe608deb1f619e245bc3")),
+          cost = 37193))
       ),
       existingFeature({ (x: Context) => x.dataInputs(0).id },
         "{ (x: Context) => x.dataInputs(0).id }",
@@ -3167,8 +3177,8 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
         )),
       preGeneratedSamples = Some(samples))
 
-    // NOTE: verifyCases is not used below because PreHeader/Header cannot be put in
-    // registers and context vars
+    // NOTE: verifyCases is not used below because PreHeader/Header instances cannot be put in
+    // registers and context vars (which are used in `checkVerify` method)
     testCases(
       Seq(ctx -> Success(ctx.preHeader)),
       existingPropTest("preHeader", { (x: Context) => x.preHeader }),
@@ -3196,7 +3206,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
     "{ (x: Context) => x.SELF }", FuncValue(Vector((1, SContext)), Self)))
 
     verifyCases(
-      Seq(ctx -> Success(Expected(ctx.HEIGHT, cost = 35885))),
+      Seq(ctx -> Expected(Success(ctx.HEIGHT), cost = 35885)),
       existingFeature(
         { (x: Context) => x.HEIGHT },
         "{ (x: Context) => x.HEIGHT }",
@@ -3204,7 +3214,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
       preGeneratedSamples = Some(samples))
 
     verifyCases(
-      Seq((ctx, Success(Expected(Coll[Long](80946L), cost = 39152)))),
+      Seq((ctx, Expected(Success(Coll[Long](80946L)), cost = 39152))),
       existingFeature(
         { (x: Context) => x.INPUTS.map { (b: Box) => b.value } },
         "{ (x: Context) => x.INPUTS.map { (b: Box) => b.value } }",
@@ -3215,7 +3225,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
       preGeneratedSamples = Some(samples))
 
     verifyCases(
-      Seq((ctx, Success(Expected(Coll((80946L, 80946L)), cost = 39959)))),
+      Seq((ctx, Expected(Success(Coll((80946L, 80946L))), cost = 39959))),
       existingFeature(
         { (x: Context) => x.INPUTS.map { (b: Box) => (b.value, b.value) } },
         """{ (x: Context) =>
@@ -3237,7 +3247,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
       preGeneratedSamples = Some(samples))
 
     verifyCases(
-      Seq((ctx, Failure(new InvalidType("Cannot getReg[Int](4): invalid type of value Value(Coll(52)) at id=4")))),
+      Seq((ctx, Expected(new InvalidType("Cannot getReg[Int](4): invalid type of value Value(Coll(52)) at id=4")))),
       existingFeature(
         { (x: Context) =>
           x.INPUTS.map { (b: Box) =>
@@ -3271,7 +3281,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
       preGeneratedSamples = Some(samples))
 
     verifyCases(
-      Seq((ctx, Success(Expected(-1, cost = 36318)))),
+      Seq((ctx, Expected(Success(-1), cost = 36318))),
       existingFeature({ (x: Context) => x.selfBoxIndex },
         "{ (x: Context) => x.selfBoxIndex }",
         FuncValue(
@@ -3291,12 +3301,12 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
     }
 
     verifyCases(
-      Seq(ctx -> Success(Expected(ctx.LastBlockUtxoRootHash, cost = 35990))),
+      Seq(ctx -> Expected(Success(ctx.LastBlockUtxoRootHash), cost = 35990)),
       existingPropTest("LastBlockUtxoRootHash", { (x: Context) => x.LastBlockUtxoRootHash }),
       preGeneratedSamples = Some(samples))
 
     verifyCases(
-      Seq(ctx -> Success(Expected(ctx.LastBlockUtxoRootHash.isUpdateAllowed, cost = 36288))),
+      Seq(ctx -> Expected(Success(ctx.LastBlockUtxoRootHash.isUpdateAllowed), cost = 36288)),
       existingFeature(
         { (x: Context) => x.LastBlockUtxoRootHash.isUpdateAllowed },
         "{ (x: Context) => x.LastBlockUtxoRootHash.isUpdateAllowed }",
@@ -3317,7 +3327,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
       preGeneratedSamples = Some(samples))
 
     verifyCases(
-      Seq(ctx -> Success(Expected(ctx.minerPubKey, cost = 36047))),
+      Seq(ctx -> Expected(Success(ctx.minerPubKey), cost = 36047)),
       existingPropTest("minerPubKey", { (x: Context) => x.minerPubKey }),
       preGeneratedSamples = Some(samples))
 
@@ -3325,9 +3335,9 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 //  this will allow passing optional values in registers and also in constants
 //    testCases2(
 //      Seq(
-//        ctx -> Success(Expected(Some(true), cost = 0)),
-//        ctx2 -> Success(Expected(None, cost = 0)),
-//        ctx3 -> Success(Expected(None, cost = 0))
+//        ctx -> Expected(Success(Some(true), cost = 0)),
+//        ctx2 -> Expected(Success(None, cost = 0)),
+//        ctx3 -> Expected(Success(None, cost = 0))
 //      ),
     testCases(
       Seq(
@@ -3341,14 +3351,14 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
       preGeneratedSamples = Some(samples))
 
     verifyCases(
-      Seq((ctx, Failure(new InvalidType("Cannot getVar[Int](11): invalid type of value Value(true) at id=2")))),
+      Seq((ctx, Expected(new InvalidType("Cannot getVar[Int](11): invalid type of value Value(true) at id=2")))),
       existingFeature((x: Context) => x.getVar[Int](11).get,
       "{ (x: Context) => getVar[Int](11).get }",
         FuncValue(Vector((1, SContext)), OptionGet(GetVar(11.toByte, SOption(SInt))))),
       preGeneratedSamples = Some(samples))
 
     verifyCases(
-      Seq((ctx, Success(Expected(true, cost = 36750)))),
+      Seq((ctx, Expected(Success(true), cost = 36750))),
       existingFeature((x: Context) => x.getVar[Boolean](11).get,
       "{ (x: Context) => getVar[Boolean](11).get }",
         FuncValue(Vector((1, SContext)), OptionGet(GetVar(11.toByte, SOption(SBoolean))))),
@@ -3360,7 +3370,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
     verifyCases(
       Seq(
-        ctx -> Success(Expected(-135729055492651903L, 38399))
+        ctx -> Expected(Success(-135729055492651903L), 38399)
       ),
       existingFeature(
       { (x: Context) =>
@@ -3420,12 +3430,14 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
     verifyCases(
       Seq(
-        ctx -> Failure(expectedError)
+        ctx -> Expected(expectedError)
       ),
-      existingFeature(
-      { (x: Context) =>
-        // this error is expected in v3.x
-        if (isNewVersion.value) {
+      changedFeature(
+        scalaFunc = { (x: Context) =>
+          // this error is expected in v3.x
+          throw expectedError
+        },
+        scalaFuncNew = { (x: Context) =>
           // TODO HF: this is expected in v5.0
           val dataBox = x.dataInputs(0)
           val ok = if (x.OUTPUTS(0).R5[Long].get == 1L) {
@@ -3434,10 +3446,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
             dataBox.R4[Coll[Byte]].get != x.SELF.propositionBytes
           }
           ok
-        }
-        else
-          throw expectedError
-      },
+        },
       s"""{ (x: Context) =>
         |  val dataBox = x.dataInputs(0)
         |  val ok = if (x.OUTPUTS(0).R5[Long].get == 1L) {
@@ -3494,12 +3503,12 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
     verifyCases(
       Seq(
-        ctx -> Success(Expected(5008366408131208436L, 40406)),
+        ctx -> Expected(Success(5008366408131208436L), 40406),
         ctxWithRegsInOutput(ctx, Map(
           ErgoBox.R5 -> LongConstant(0L),
-          ErgoBox.R4 -> ShortConstant(10))) -> Success(Expected(10L, 40396)),
+          ErgoBox.R4 -> ShortConstant(10))) -> Expected(Success(10L), 40396),
         ctxWithRegsInOutput(ctx, Map(
-          ErgoBox.R4 -> ShortConstant(10))) -> Success(Expected(-1L, 40396))
+          ErgoBox.R4 -> ShortConstant(10))) -> Expected(Success(-1L), 40396)
       ),
       existingFeature(
       { (x: Context) =>
@@ -3575,22 +3584,22 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
     verifyCases(
       Seq(
         // case 1L
-        ctx -> Success(Expected(5008366408131289382L, 41016)),
+        ctx -> Expected(Success(5008366408131289382L), 41016),
         // case 0L
         ctxWithRegsInOutput(ctx, Map(
           ErgoBox.R5 -> LongConstant(0L),
-          ErgoBox.R4 -> ShortConstant(10))) -> Success(Expected(80956L, 41006)),
+          ErgoBox.R4 -> ShortConstant(10))) -> Expected(Success(80956L), 41006),
 
         // case returning 0L
         ctxWithRegsInOutput(ctx, Map(
           ErgoBox.R5 -> LongConstant(2L),
           // note R4 is required to avoid
           // "RuntimeException: Set of non-mandatory indexes is not densely packed"
-          ErgoBox.R4 -> ShortConstant(10))) -> Success(Expected(0L, 41006)),
+          ErgoBox.R4 -> ShortConstant(10))) -> Expected(Success(0L), 41006),
 
         // case returning -1L
         ctxWithRegsInOutput(ctx, Map(
-          ErgoBox.R4 -> ShortConstant(10))) -> Success(Expected(-1L, 41006))
+          ErgoBox.R4 -> ShortConstant(10))) -> Expected(Success(-1L), 41006)
       ),
       existingFeature(
       { (x: Context) =>
@@ -3678,15 +3687,15 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
       Seq(
         ctxWithRegsInDataInput(ctx, Map(
           ErgoBox.R5 -> LongConstant(1L),
-          ErgoBox.R4 -> LongConstant(10))) -> Success(Expected(10L, 41084)),
+          ErgoBox.R4 -> LongConstant(10))) -> Expected(Success(10L), 41084),
         ctxWithRegsInDataInput(ctx, Map(
           ErgoBox.R5 -> LongConstant(0L),
-          ErgoBox.R4 -> ShortConstant(10))) -> Success(Expected(10L, 41084)),
+          ErgoBox.R4 -> ShortConstant(10))) -> Expected(Success(10L), 41084),
         ctxWithRegsInDataInput(ctx, Map(
           ErgoBox.R5 -> LongConstant(2L),
-          ErgoBox.R4 -> ShortConstant(10))) -> Success(Expected(0L, 41084)),
+          ErgoBox.R4 -> ShortConstant(10))) -> Expected(Success(0L), 41084),
         ctxWithRegsInDataInput(ctx, Map(
-          ErgoBox.R4 -> ShortConstant(10))) -> Success(Expected(-1L, 41084))
+          ErgoBox.R4 -> ShortConstant(10))) -> Expected(Success(-1L), 41084)
       ),
       existingFeature(
       { (x: Context) =>
@@ -3776,15 +3785,15 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
       Seq(
         ctxWithRegsInDataInput(ctx, Map(
           ErgoBox.R5 -> LongConstant(1L),
-          ErgoBox.R4 -> LongConstant(10))) -> Success(Expected(80956L, 41694)),
+          ErgoBox.R4 -> LongConstant(10))) -> Expected(Success(80956L), 41694),
         ctxWithRegsInDataInput(ctx, Map(
           ErgoBox.R5 -> LongConstant(0L),
-          ErgoBox.R4 -> ShortConstant(10))) -> Success(Expected(80956L, 41694)),
+          ErgoBox.R4 -> ShortConstant(10))) -> Expected(Success(80956L), 41694),
         ctxWithRegsInDataInput(ctx, Map(
           ErgoBox.R5 -> LongConstant(2L),
-          ErgoBox.R4 -> ShortConstant(10))) -> Success(Expected(0L, 41694)),
+          ErgoBox.R4 -> ShortConstant(10))) -> Expected(Success(0L), 41694),
         ctxWithRegsInDataInput(ctx, Map(
-          ErgoBox.R4 -> ShortConstant(10))) -> Success(Expected(-1L, 41694))
+          ErgoBox.R4 -> ShortConstant(10))) -> Expected(Success(-1L), 41694)
       ),
       existingFeature(
       { (x: Context) =>
@@ -3884,7 +3893,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
     // TODO HF (3h): see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/640
     verifyCases(
       {
-        def success[T](v: T, c: Int) = Success(Expected(v, c))
+        def success[T](v: T, c: Int) = Expected(Success(v), c)
         Seq(
           (Coll[Boolean](false), success(false, 37071)),
           (Coll[Boolean](true), success(false, 37071)),
@@ -3914,8 +3923,8 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
   property("LogicalNot equivalence") {
     verifyCases(
       Seq(
-        (true, Success(Expected(false, 35864))),
-        (false, Success(Expected(true, 35864)))),
+        (true, Expected(Success(false), 35864)),
+        (false, Expected(Success(true), 35864))),
       existingFeature((x: Boolean) => !x,
         "{ (x: Boolean) => !x }",
         FuncValue(Vector((1, SBoolean)), LogicalNot(ValUse(1, SBoolean)))))
@@ -3924,7 +3933,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
   property("Numeric Negation equivalence") {
     verifyCases(
       {
-        def success[T](v: T) = Success(Expected(v, 36136))
+        def success[T](v: T) = Expected(Success(v), 36136)
         Seq(
           (Byte.MinValue, success(Byte.MinValue)), // !!!
           (-40.toByte, success(40.toByte)),
@@ -3940,7 +3949,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
     verifyCases(
       {
-        def success[T](v: T) = Success(Expected(v, 36136))
+        def success[T](v: T) = Expected(Success(v), 36136)
         Seq(
           (Short.MinValue, success(Short.MinValue)), // special case!
           ((Short.MinValue + 1).toShort, success(32767.toShort)),
@@ -3957,7 +3966,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
     verifyCases(
       {
-        def success[T](v: T) = Success(Expected(v, 36136))
+        def success[T](v: T) = Expected(Success(v), 36136)
         Seq(
           (Int.MinValue, success(Int.MinValue)),  // special case!
           (Int.MinValue + 1, success(2147483647)),
@@ -3974,7 +3983,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
     verifyCases(
       {
-        def success[T](v: T) = Success(Expected(v, 36136))
+        def success[T](v: T) = Expected(Success(v), 36136)
         Seq(
           (Long.MinValue, success(Long.MinValue)),   // special case!
           (Long.MinValue + 1, success(9223372036854775807L)),
@@ -3991,7 +4000,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
     verifyCases(
       {
-        def success[T](v: T) = Success(Expected(v, 36136))
+        def success[T](v: T) = Expected(Success(v), 36136)
         Seq(
           (CBigInt(new BigInteger("-1655a05845a6ad363ac88ea21e88b97e436a1f02c548537e12e2d9667bf0680", 16)), success(CBigInt(new BigInteger("1655a05845a6ad363ac88ea21e88b97e436a1f02c548537e12e2d9667bf0680", 16)))),
           (CBigInt(new BigInteger("-1b24ba8badba8abf347cce054d9b9f14f229321507245b8", 16)), success(CBigInt(new BigInteger("1b24ba8badba8abf347cce054d9b9f14f229321507245b8", 16)))),
@@ -4018,7 +4027,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
     verifyCases(
       {
-        def success[T](v: T) = Success(Expected(v, 35981))
+        def success[T](v: T) = Expected(Success(v), 35981)
         Seq(
           (-1, success(Helpers.decodeGroupElement("0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798"))),
           (1, success(Helpers.decodeGroupElement("0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798"))))
@@ -4037,7 +4046,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
     verifyCases(
       {
-        def success[T](v: T) = Success(Expected(v, 35981))
+        def success[T](v: T) = Expected(Success(v), 35981)
         Seq(
           (-1, success(Helpers.decodeGroupElement("0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798"))),
           (1, success(Helpers.decodeGroupElement("0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798"))))
@@ -4056,7 +4065,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
     verifyCases(
       {
-        def success[T](v: T) = Success(Expected(v, 41237))
+        def success[T](v: T) = Expected(Success(v), 41237)
         Seq(
           (CBigInt(new BigInteger("-e5c1a54694c85d644fa30a6fc5f3aa209ed304d57f72683a0ebf21038b6a9d", 16)), success(Helpers.decodeGroupElement("023395bcba3d7cf21d73c50f8af79d09a8c404c15ce9d04f067d672823bae91a54"))),
           (CBigInt(new BigInteger("-bc2d08f935259e0eebf272c66c6e1dbd484c6706390215", 16)), success(Helpers.decodeGroupElement("02ddcf4c48105faf3c16f7399b5dbedd82ab0bb50ae292d8f88f49a3f86e78974e"))),
@@ -4090,13 +4099,13 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
     // TODO HF (2h): fix semantics when the left collection is longer
     verifyCases(
       {
-        def success[T](v: T) = Success(Expected(v, 36903))
+        def success[T](v: T) = Expected(Success(v), 36903)
         Seq(
           ((Helpers.decodeBytes(""), Helpers.decodeBytes("")), success(Helpers.decodeBytes(""))),
           ((Helpers.decodeBytes("01"), Helpers.decodeBytes("01")), success(Helpers.decodeBytes("00"))),
           ((Helpers.decodeBytes("0100"), Helpers.decodeBytes("0101")), success(Helpers.decodeBytes("0001"))),
           ((Helpers.decodeBytes("01"), Helpers.decodeBytes("0101")), success(Helpers.decodeBytes("00"))),
-          ((Helpers.decodeBytes("0100"), Helpers.decodeBytes("01")), Failure(new ArrayIndexOutOfBoundsException("1"))),
+          ((Helpers.decodeBytes("0100"), Helpers.decodeBytes("01")), Expected(new ArrayIndexOutOfBoundsException("1"))),
           ((Helpers.decodeBytes("800136fe89afff802acea67128a0ff007fffe3498c8001806080012b"),
               Helpers.decodeBytes("648018010a5d5800f5b400a580e7b4809b0cd273ff1230bfa800017f7fdb002749b3ac2b86ff")),
               success(Helpers.decodeBytes("e4812eff83f2a780df7aa6d4a8474b80e4f3313a7392313fc8800054")))
@@ -4176,7 +4185,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
     verifyCases(
       {
-        def success[T](v: T, c: Int) = Success(Expected(v, c))
+        def success[T](v: T, c: Int) = Expected(Success(v), c)
         Seq(
           (Coll[Box](), success(Coll[Box](), 37297)),
           (Coll[Box](b1), success(Coll[Box](), 37397)),
@@ -4196,7 +4205,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
     verifyCases(
       {
-        def success[T](v: T, c: Int) = Success(Expected(v, c))
+        def success[T](v: T, c: Int) = Expected(Success(v), c)
         Seq(
           (Coll[Box](), success(Coll[Byte](), 38126)),
           (Coll[Box](b1), success(Helpers.decodeBytes(
@@ -4224,7 +4233,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
     verifyCases(
       {
-        def success[T](v: T, c: Int) = Success(Expected(v, c))
+        def success[T](v: T, c: Int) = Expected(Success(v), c)
         Seq(
           (Coll[Box](), success(Coll[(Box, Box)](), 37399)),
           (Coll[Box](b1), success(Coll[(Box, Box)]((b1, b1)), 37559)),
@@ -4248,7 +4257,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
     verifyCases(
       {
-        def success[T](v: T) = Success(Expected(v, 35954))
+        def success[T](v: T) = Expected(Success(v), 35954)
         Seq(
           (Coll[Box](), success(0)),
           (Coll[Box](b1), success(1)),
@@ -4262,7 +4271,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
     verifyCases(
       {
-        def success[T](v: T) = Success(Expected(v, 36036))
+        def success[T](v: T) = Expected(Success(v), 36036)
         Seq(
           (Coll[Box](), success(Coll[Int]())),
           (Coll[Box](b1), success(Coll[Int](0))),
@@ -4284,7 +4293,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
     verifyCases(
       {
-        def success[T](v: T, c: Int) = Success(Expected(v, c))
+        def success[T](v: T, c: Int) = Expected(Success(v), c)
         Seq(
           (Coll[Box](), success(true, 37909)),
           (Coll[Box](b1), success(false, 37969)),
@@ -4304,7 +4313,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
     verifyCases(
       {
-        def success[T](v: T, c: Int) = Success(Expected(v, c))
+        def success[T](v: T, c: Int) = Expected(Success(v), c)
         Seq(
           (Coll[Box](), success(false, 38455)),
           (Coll[Box](b1), success(false, 38515)),
@@ -4331,7 +4340,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
   property("Coll flatMap method equivalence") {
     verifyCases(
       {
-        def success[T](v: T, c: Int) = Success(Expected(v, c))
+        def success[T](v: T, c: Int) = Expected(Success(v), c)
         Seq(
           Coll[GroupElement]() -> success(Coll[Byte](), 40133),
           Coll[GroupElement](
@@ -4390,7 +4399,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
     val samples = genSamples(collWithRangeGen, MinSuccessful(50))
     verifyCases(
       {
-        def success[T](v: T) = Success(Expected(v, 37514))
+        def success[T](v: T) = Expected(Success(v), 37514)
         Seq(
           ((Coll[Int](), (0, 0)), success(Coll[Int]())),
           ((Coll[Int](1), (0, 0)), success(Coll[Int](1, 1))),
@@ -4458,16 +4467,16 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
     verifyCases(
       // (coll, (index, elem))
       {
-        def success[T](v: T) = Success(Expected(v, 37180))
+        def success[T](v: T) = Expected(Success(v), 37180)
         Seq(
-          ((Coll[Int](), (0, 0)), Failure(new IndexOutOfBoundsException("0"))),
+          ((Coll[Int](), (0, 0)), Expected(new IndexOutOfBoundsException("0"))),
           ((Coll[Int](1), (0, 0)), success(Coll[Int](0))),
           ((Coll[Int](1, 2), (0, 0)), success(Coll[Int](0, 2))),
           ((Coll[Int](1, 2), (1, 0)), success(Coll[Int](1, 0))),
           ((Coll[Int](1, 2, 3), (2, 0)), success(Coll[Int](1, 2, 0))),
-          ((Coll[Int](1, 2), (2, 0)), Failure(new IndexOutOfBoundsException("2"))),
-          ((Coll[Int](1, 2), (3, 0)), Failure(new IndexOutOfBoundsException("3"))),
-          ((Coll[Int](1, 2), (-1, 0)), Failure(new IndexOutOfBoundsException("-1")))
+          ((Coll[Int](1, 2), (2, 0)), Expected(new IndexOutOfBoundsException("2"))),
+          ((Coll[Int](1, 2), (3, 0)), Expected(new IndexOutOfBoundsException("3"))),
+          ((Coll[Int](1, 2), (-1, 0)), Expected(new IndexOutOfBoundsException("-1")))
         )
       },
       existingFeature(
@@ -4514,21 +4523,21 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
     verifyCases(
       // (coll, (indexes, values))
       {
-        def success[T](v: T) = Success(Expected(v, 37817))
+        def success[T](v: T) = Expected(Success(v), 37817)
         Seq(
-          ((Coll[Int](), (Coll(0), Coll(0))), Failure(new IndexOutOfBoundsException("0"))),
-          ((Coll[Int](), (Coll(0, 1), Coll(0, 0))), Failure(new IndexOutOfBoundsException("0"))),
-          ((Coll[Int](), (Coll(0, 1), Coll(0))), Failure(new IllegalArgumentException("requirement failed: Collections should have same length but was 2 and 1:\n xs=Coll(0,1);\n ys=Coll(0)"))),
+          ((Coll[Int](), (Coll(0), Coll(0))), Expected(new IndexOutOfBoundsException("0"))),
+          ((Coll[Int](), (Coll(0, 1), Coll(0, 0))), Expected(new IndexOutOfBoundsException("0"))),
+          ((Coll[Int](), (Coll(0, 1), Coll(0))), Expected(new IllegalArgumentException("requirement failed: Collections should have same length but was 2 and 1:\n xs=Coll(0,1);\n ys=Coll(0)"))),
           ((Coll[Int](1), (Coll(0), Coll(0))), success(Coll[Int](0))),
-          ((Coll[Int](1), (Coll(0, 1), Coll(0, 0))), Failure(new IndexOutOfBoundsException("1"))),
+          ((Coll[Int](1), (Coll(0, 1), Coll(0, 0))), Expected(new IndexOutOfBoundsException("1"))),
           ((Coll[Int](1, 2), (Coll(0), Coll(0))), success(Coll[Int](0, 2))),
           ((Coll[Int](1, 2), (Coll(0, 1), Coll(0, 0))), success(Coll[Int](0, 0))),
-          ((Coll[Int](1, 2), (Coll(0, 1, 2), Coll(0, 0, 0))), Failure(new IndexOutOfBoundsException("2"))),
+          ((Coll[Int](1, 2), (Coll(0, 1, 2), Coll(0, 0, 0))), Expected(new IndexOutOfBoundsException("2"))),
           ((Coll[Int](1, 2), (Coll(1), Coll(0))), success(Coll[Int](1, 0))),
           ((Coll[Int](1, 2, 3), (Coll(2), Coll(0))), success(Coll[Int](1, 2, 0))),
-          ((Coll[Int](1, 2), (Coll(2), Coll(0))), Failure(new IndexOutOfBoundsException("2"))),
-          ((Coll[Int](1, 2), (Coll(3), Coll(0))), Failure(new IndexOutOfBoundsException("3"))),
-          ((Coll[Int](1, 2), (Coll(-1), Coll(0))), Failure(new IndexOutOfBoundsException("-1"))),
+          ((Coll[Int](1, 2), (Coll(2), Coll(0))), Expected(new IndexOutOfBoundsException("2"))),
+          ((Coll[Int](1, 2), (Coll(3), Coll(0))), Expected(new IndexOutOfBoundsException("3"))),
+          ((Coll[Int](1, 2), (Coll(-1), Coll(0))), Expected(new IndexOutOfBoundsException("-1"))),
           ((Coll[Int](10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140),
               (Coll[Int](12, 12, 4, 11, 1, 8, 0, 1), Coll[Int](-10, -20, -30, -40, -50, -60, -70, -80))),
               success(Coll[Int](-70, -80, 30, 40, -30, 60, 70, 80, -60, 100, 110, -40, -20, 140)))
@@ -4611,14 +4620,14 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
     verifyCases(
       // (coll, initState)
       {
-        def success[T](v: T, c: Int) = Success(Expected(v, c))
+        def success[T](v: T, c: Int) = Expected(Success(v), c)
         Seq(
           ((Coll[Byte](),  0), success(0, 41266)),
           ((Coll[Byte](),  Int.MaxValue), success(Int.MaxValue, 41266)),
           ((Coll[Byte](1),  Int.MaxValue - 1), success(Int.MaxValue, 41396)),
-          ((Coll[Byte](1),  Int.MaxValue), Failure(new ArithmeticException("integer overflow"))),
+          ((Coll[Byte](1),  Int.MaxValue), Expected(new ArithmeticException("integer overflow"))),
           ((Coll[Byte](-1),  Int.MinValue + 1), success(Int.MinValue, 41396)),
-          ((Coll[Byte](-1),  Int.MinValue), Failure(new ArithmeticException("integer overflow"))),
+          ((Coll[Byte](-1),  Int.MinValue), Expected(new ArithmeticException("integer overflow"))),
           ((Coll[Byte](1, 2), 0), success(3, 41526)),
           ((Coll[Byte](1, -1), 0), success(0, 41526)),
           ((Coll[Byte](1, -1, 1), 0), success(1, 41656))
@@ -4648,7 +4657,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
     verifyCases(
       // (coll, (elem: Byte, from: Int))
       {
-        def success[T](v: T) = Success(Expected(v, 37649))
+        def success[T](v: T) = Expected(Success(v), 37649)
         Seq(
           ((Coll[Byte](),  (0.toByte, 0)), success(-1)),
           ((Coll[Byte](),  (0.toByte, -1)), success(-1)),
@@ -4702,16 +4711,16 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
   property("Coll apply method equivalence") {
     verifyCases(
       {
-        def success[T](v: T) = Success(Expected(v, 36410))
+        def success[T](v: T) = Expected(Success(v), 36410)
         Seq(
-          ((Coll[Int](), 0), Failure(new ArrayIndexOutOfBoundsException("0"))),
-          ((Coll[Int](), -1), Failure(new ArrayIndexOutOfBoundsException("-1"))),
+          ((Coll[Int](), 0), Expected(new ArrayIndexOutOfBoundsException("0"))),
+          ((Coll[Int](), -1), Expected(new ArrayIndexOutOfBoundsException("-1"))),
           ((Coll[Int](1), 0), success(1)),
-          ((Coll[Int](1), 1), Failure(new ArrayIndexOutOfBoundsException("1"))),
-          ((Coll[Int](1), -1), Failure(new ArrayIndexOutOfBoundsException("-1"))),
+          ((Coll[Int](1), 1), Expected(new ArrayIndexOutOfBoundsException("1"))),
+          ((Coll[Int](1), -1), Expected(new ArrayIndexOutOfBoundsException("-1"))),
           ((Coll[Int](1, 2), 1), success(2)),
           ((Coll[Int](1, 2), 1), success(2)),
-          ((Coll[Int](1, 2), 2), Failure(new ArrayIndexOutOfBoundsException("2")))
+          ((Coll[Int](1, 2), 2), Expected(new ArrayIndexOutOfBoundsException("2")))
         )
       },
       existingFeature((x: (Coll[Int], Int)) => x._1(x._2),
@@ -4734,7 +4743,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
     verifyCases(
       // (coll, (index, default))
       {
-        def success[T](v: T) = Success(Expected(v, 37020))
+        def success[T](v: T) = Expected(Success(v), 37020)
         Seq(
           ((Coll[Int](), (0, default)), success(default)),
           ((Coll[Int](), (-1, default)), success(default)),
@@ -4777,7 +4786,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
   property("Tuple size method equivalence") {
     verifyCases(
       {
-        def success[T](v: T) = Success(Expected(v, 35905))
+        def success[T](v: T) = Expected(Success(v), 35905)
         Seq(
           ((0, 0), success(2)),
           ((1, 2), success(2))
@@ -4791,7 +4800,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
   property("Tuple apply method equivalence") {
     val samples = genSamples[(Int, Int)](DefaultMinSuccessful)
     verifyCases(
-      Seq(((1, 2), Success(Expected(1, cost = 36013)))),
+      Seq(((1, 2), Expected(Success(1), cost = 36013))),
       existingFeature((x: (Int, Int)) => x._1,
         "{ (x: (Int, Int)) => x(0) }",
         FuncValue(
@@ -4800,7 +4809,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
         )),
       preGeneratedSamples = Some(samples))
     verifyCases(
-      Seq(((1, 2), Success(Expected(2, cost = 36013)))),
+      Seq(((1, 2), Expected(Success(2), cost = 36013))),
       existingFeature((x: (Int, Int)) => x._2,
         "{ (x: (Int, Int)) => x(1) }",
         FuncValue(
@@ -4814,12 +4823,12 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
     val n = ExactNumeric.IntIsExactNumeric
     verifyCases(
       {
-        def success[T](v: T, c: Int) = Success(Expected(v, c))
+        def success[T](v: T, c: Int) = Expected(Success(v), c)
         Seq(
           (Coll[Int](), success(Coll[Int](), 38886)),
           (Coll[Int](1), success(Coll[Int](2), 38936)),
           (Coll[Int](1, 2), success(Coll[Int](2, 3), 38986)),
-          (Coll[Int](1, 2, Int.MaxValue), Failure(new ArithmeticException("integer overflow")))
+          (Coll[Int](1, 2, Int.MaxValue), Expected(new ArithmeticException("integer overflow")))
         )
       },
       existingFeature((x: Coll[Int]) => x.map({ (v: Int) => n.plus(v, 1) }),
@@ -4838,7 +4847,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
     verifyCases(
       // (coll, (from, until))
       {
-        def success[T](v: T) = Success(Expected(v, 36964))
+        def success[T](v: T) = Expected(Success(v), 36964)
         Seq(
           ((Coll[Int](), (-1, 0)), success(Coll[Int]())),
           ((Coll[Int](), (0, 0)), success(Coll[Int]())),
@@ -4883,7 +4892,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
   property("Coll append method equivalence") {
     verifyCases(
       {
-        def success[T](v: T) = Success(Expected(v, 37765))
+        def success[T](v: T) = Expected(Success(v), 37765)
         Seq(
           (Coll[Int](), Coll[Int]()) -> success(Coll[Int]()),
           (Coll[Int](), Coll[Int](1)) -> success(Coll[Int](1)),
@@ -4913,11 +4922,11 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
   }
 
   property("Option methods equivalence") {
-    def success[T](v: T, c: Int) = Success(Expected(v, c))
+    def success[T](v: T, c: Int) = Expected(Success(v), c)
 
     verifyCases(
       Seq(
-        (None -> Failure(new NoSuchElementException("None.get"))),
+        (None -> Expected(new NoSuchElementException("None.get"))),
         (Some(10L) -> success(10L, 36046))),
       existingFeature({ (x: Option[Long]) => x.get },
         "{ (x: Option[Long]) => x.get }",
@@ -4961,7 +4970,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
       Seq(
         (None -> success(None, 38575)),
         (Some(10L) -> success(Some(11L), 38575)),
-        (Some(Long.MaxValue) -> Failure(new ArithmeticException("long overflow")))),
+        (Some(Long.MaxValue) -> Expected(new ArithmeticException("long overflow")))),
       existingFeature({ (x: Option[Long]) => x.map( (v: Long) => n.plus(v, 1) ) },
         "{ (x: Option[Long]) => x.map({ (v: Long) => v + 1 }) }",
         FuncValue(
@@ -5000,19 +5009,24 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
     val n = ExactNumeric.LongIsExactNumeric
     verifyCases(
       Seq(
-        (None -> Failure(new NoSuchElementException("None.get"))),
-        (Some(0L) -> Success(Expected(1L, 39012))),
-        (Some(Long.MaxValue) -> Failure(new ArithmeticException("long overflow")))
+        (None -> Expected(
+          Failure(new NoSuchElementException("None.get")), 0,
+          expectedNewValue = Success(5L), expectedNewCost = 39012)),
+        (Some(0L) -> Expected(Success(1L), 39012)),
+        (Some(Long.MaxValue) -> Expected(new ArithmeticException("long overflow")))
       ),
-      existingFeature(
-        { (x: Option[Long]) =>
+      changedFeature(
+        scalaFunc = { (x: Option[Long]) =>
           def f(opt: Long): Long = n.plus(opt, 1)
           if (x.isDefined) f(x.get)
           else {
-            if (!isNewVersion.value)
-              f(x.get); // simulate non-lazy 'if': f is called in both branches
+            f(x.get); // simulate non-lazy 'if': f is called in both branches
             5L
           }
+        },
+        scalaFuncNew = { (x: Option[Long]) =>
+          def f(opt: Long): Long = n.plus(opt, 1)
+          if (x.isDefined) f(x.get) else 5L
         },
         """{(x: Option[Long]) =>
           |  def f(opt: Long): Long = opt + 1
@@ -5035,7 +5049,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
   }
 
   property("blake2b256, sha256 equivalence") {
-    def success[T](v: T, c: Int) = Success(Expected(v, c))
+    def success[T](v: T, c: Int) = Expected(Success(v), c)
 
     verifyCases(
       Seq(
@@ -5075,15 +5089,15 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
   property("sigmaProp equivalence") {
     verifyCases(
       Seq(
-        (false, Success(Expected(CSigmaProp(TrivialProp.FalseProp), 35892))),
-        (true, Success(Expected(CSigmaProp(TrivialProp.TrueProp), 35892)))),
+        (false, Expected(Success(CSigmaProp(TrivialProp.FalseProp)), 35892)),
+        (true, Expected(Success(CSigmaProp(TrivialProp.TrueProp)), 35892))),
       existingFeature((x: Boolean) => sigmaProp(x),
        "{ (x: Boolean) => sigmaProp(x) }",
         FuncValue(Vector((1, SBoolean)), BoolToSigmaProp(ValUse(1, SBoolean)))))
   }
 
   property("atLeast equivalence") {
-    def success[T](v: T) = Success(Expected(v, 36462))
+    def success[T](v: T) = Expected(Success(v), 36462)
 
     verifyCases(
       Seq(
@@ -5125,7 +5139,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
           )
         ),
         Colls.replicate[SigmaProp](AtLeast.MaxChildrenCount + 1, CSigmaProp(TrivialProp.TrueProp)) ->
-          Failure(new IllegalArgumentException("Expected input elements count should not exceed 255, actual: 256"))
+          Expected(new IllegalArgumentException("Expected input elements count should not exceed 255, actual: 256"))
       ),
       existingFeature((x: Coll[SigmaProp]) => SigmaDsl.atLeast(x.size - 1, x),
         "{ (x: Coll[SigmaProp]) => atLeast(x.size - 1, x) }",
@@ -5142,7 +5156,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
     verifyCases(
       {
-        def success[T](v: T) = Success(Expected(v, 36428))
+        def success[T](v: T) = Expected(Success(v), 36428)
         Seq(
           (CSigmaProp(ProveDlog(Helpers.decodeECPoint("02ea9bf6da7f512386c6ca509d40f8c5e7e0ffb3eea5dc3c398443ea17f4510798"))),
               CSigmaProp(ProveDlog(Helpers.decodeECPoint("03a426a66fc1af2792b35d9583904c3fb877b49ae5cea45b7a2aa105ffa4c68606")))) ->
@@ -5185,7 +5199,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
     verifyCases(
       {
-        def success[T](v: T) = Success(Expected(v, 36522))
+        def success[T](v: T) = Expected(Success(v), 36522)
         Seq(
           (CSigmaProp(ProveDlog(Helpers.decodeECPoint("03a426a66fc1af2792b35d9583904c3fb877b49ae5cea45b7a2aa105ffa4c68606"))), true) ->
               success(CSigmaProp(ProveDlog(Helpers.decodeECPoint("03a426a66fc1af2792b35d9583904c3fb877b49ae5cea45b7a2aa105ffa4c68606")))),
@@ -5212,7 +5226,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
   property("|| sigma equivalence") {
     verifyCases(
       {
-        def success[T](v: T) = Success(Expected(v, 36494))
+        def success[T](v: T) = Expected(Success(v), 36494)
         Seq(
           (CSigmaProp(ProveDlog(Helpers.decodeECPoint("02ea9bf6da7f512386c6ca509d40f8c5e7e0ffb3eea5dc3c398443ea17f4510798"))),
               CSigmaProp(ProveDlog(Helpers.decodeECPoint("03a426a66fc1af2792b35d9583904c3fb877b49ae5cea45b7a2aa105ffa4c68606")))) ->
@@ -5255,7 +5269,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
     verifyCases(
       {
-        def success[T](v: T) = Success(Expected(v, 36588))
+        def success[T](v: T) = Expected(Success(v), 36588)
         Seq(
           (CSigmaProp(ProveDlog(Helpers.decodeECPoint("03a426a66fc1af2792b35d9583904c3fb877b49ae5cea45b7a2aa105ffa4c68606"))), false) ->
               success(CSigmaProp(ProveDlog(Helpers.decodeECPoint("03a426a66fc1af2792b35d9583904c3fb877b49ae5cea45b7a2aa105ffa4c68606")))),
@@ -5283,9 +5297,9 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
     verifyCases(
       Seq(
         CSigmaProp(ProveDlog(Helpers.decodeECPoint("039d0b1e46c21540d033143440d2fb7dd5d650cf89981c99ee53c6e0374d2b1b6f")))
-          -> Success(Expected(
-            Helpers.decodeBytes("0008cd039d0b1e46c21540d033143440d2fb7dd5d650cf89981c99ee53c6e0374d2b1b6f"),
-            cost = 35902))
+          -> Expected(Success(
+            Helpers.decodeBytes("0008cd039d0b1e46c21540d033143440d2fb7dd5d650cf89981c99ee53c6e0374d2b1b6f")),
+            cost = 35902)
       ),
       existingFeature((x: SigmaProp) => x.propBytes,
         "{ (x: SigmaProp) => x.propBytes }",
@@ -5311,7 +5325,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
   }
 
   property("allOf equivalence") {
-    def success[T](v: T, c: Int) = Success(Expected(v, c))
+    def success[T](v: T, c: Int) = Expected(Success(v), c)
 
     verifyCases(
       Seq(
@@ -5333,7 +5347,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
   }
 
   property("anyOf equivalence") {
-    def success[T](v: T, c: Int) = Success(Expected(v, c))
+    def success[T](v: T, c: Int) = Expected(Success(v), c)
 
     verifyCases(
       Seq(
@@ -5358,9 +5372,9 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
     verifyCases(
       Seq(
         (Helpers.decodeGroupElement("02288f0e55610c3355c89ed6c5de43cf20da145b8c54f03a29f481e540d94e9a69")
-          -> Success(Expected(
-               CSigmaProp(ProveDlog(Helpers.decodeECPoint("02288f0e55610c3355c89ed6c5de43cf20da145b8c54f03a29f481e540d94e9a69"))),
-               cost = 45935)))
+          -> Expected(Success(
+               CSigmaProp(ProveDlog(Helpers.decodeECPoint("02288f0e55610c3355c89ed6c5de43cf20da145b8c54f03a29f481e540d94e9a69")))),
+               cost = 45935))
       ),
       existingFeature({ (x: GroupElement) => SigmaDsl.proveDlog(x) },
         "{ (x: GroupElement) => proveDlog(x) }",
@@ -5371,7 +5385,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
     verifyCases(
       Seq(
         (Helpers.decodeGroupElement("039c15221a318d27c186eba84fa8d986c1f63bbd9f8060380c9bfc2ef455d8346a")
-          -> Success(Expected(
+          -> Expected(Success(
             CSigmaProp(
               ProveDHTuple(
                 Helpers.decodeECPoint("039c15221a318d27c186eba84fa8d986c1f63bbd9f8060380c9bfc2ef455d8346a"),
@@ -5379,9 +5393,9 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
                 Helpers.decodeECPoint("039c15221a318d27c186eba84fa8d986c1f63bbd9f8060380c9bfc2ef455d8346a"),
                 Helpers.decodeECPoint("039c15221a318d27c186eba84fa8d986c1f63bbd9f8060380c9bfc2ef455d8346a")
               )
-            ),
+            )),
             cost = 76215
-          )))
+          ))
       ),
       existingFeature({ (x: GroupElement) => SigmaDsl.proveDHTuple(x, x, x, x) },
         "{ (x: GroupElement) => proveDHTuple(x, x, x, x) }",
@@ -5411,9 +5425,9 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
       
     verifyCases(
       {
-        def success[T](v: T) = Success(Expected(v, 37694))
+        def success[T](v: T) = Expected(Success(v), 37694)
         Seq(
-          (Helpers.decodeBytes(""), 0) -> Failure(new java.nio.BufferUnderflowException()),
+          (Helpers.decodeBytes(""), 0) -> Expected(new java.nio.BufferUnderflowException()),
 
           // TODO HF (2h): fix for trees without segregation flag
           // NOTE: constants count is serialized erroneously in the following 2 cases
@@ -5426,7 +5440,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
           (Coll(t3.bytes:_*), 0) -> success(Helpers.decodeBytes("100108d27300")),
           (Helpers.decodeBytes("100108d37300"), 0) -> success(Helpers.decodeBytes("100108d27300")),
           (Coll(t3.bytes:_*), 1) -> success(Helpers.decodeBytes("100108d37300")),
-          (Coll(t4.bytes:_*), 0) -> Failure(new AssertionError("assertion failed: expected new constant to have the same SInt$ tpe, got SSigmaProp"))
+          (Coll(t4.bytes:_*), 0) -> Expected(new AssertionError("assertion failed: expected new constant to have the same SInt$ tpe, got SSigmaProp"))
         )
       },
       existingFeature(
