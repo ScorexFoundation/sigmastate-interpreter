@@ -3,6 +3,7 @@ package sigmastate.helpers
 import org.scalatest.Matchers
 
 import scala.annotation.tailrec
+import scala.util.{Failure, Success, Try}
 
 trait NegativeTesting extends Matchers {
 
@@ -33,4 +34,6 @@ trait NegativeTesting extends Matchers {
     if (t.getCause == null) t
     else rootCause(t.getCause)
 
+  final def rootCause[A](x: Try[A]): Try[A] =
+    x.fold(t => Failure(rootCause(t)), Success(_))
 }

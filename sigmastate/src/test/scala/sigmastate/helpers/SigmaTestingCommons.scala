@@ -113,7 +113,7 @@ trait SigmaTestingCommons extends PropSpec
   }
 
   case class CompiledFunc[A,B]
-    (script: String, bindings: Seq[VarBinding], expr: SValue, func: A => (B, Int))
+    (script: String, bindings: Seq[VarBinding], expr: SValue, compiledTree: SValue, func: A => (B, Int))
     (implicit val tA: RType[A], val tB: RType[B]) extends Function1[A, (B, Int)] {
     override def apply(x: A): (B, Int) = func(x)
   }
@@ -235,7 +235,7 @@ trait SigmaTestingCommons extends PropSpec
       (res.asInstanceOf[B], estimatedCost)
     }
     val Terms.Apply(funcVal, _) = compiledTree.asInstanceOf[SValue]
-    CompiledFunc(funcScript, bindings, funcVal, f)
+    CompiledFunc(funcScript, bindings, funcVal, compiledTree, f)
   }
 
   val evalSettings = ErgoTreeEvaluator.DefaultEvalSettings
@@ -256,7 +256,7 @@ trait SigmaTestingCommons extends PropSpec
       (res.asInstanceOf[B], cost)
     }
     val Terms.Apply(funcVal, _) = compiledTree.asInstanceOf[SValue]
-    CompiledFunc(funcScript, bindings, funcVal, f)
+    CompiledFunc(funcScript, bindings, funcVal, compiledTree, f)
   }
 
   protected def roundTripTest[T](v: T)(implicit serializer: SigmaSerializer[T, T]): Assertion = {

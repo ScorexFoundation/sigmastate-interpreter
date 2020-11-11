@@ -316,7 +316,10 @@ object CostTable {
 
 //    ("Lambda", "() => (D1) => R", lambdaCost),
     def FuncValue = lambdaCost
-    def Apply = lambdaInvoke
+    def Apply = 10
+    def OptionGet = selectField
+    def Outputs = selectField
+    def ValUse = 20
 
 //    ("ConcreteCollection", "() => Coll[IV]", collToColl),
 //    ("GroupGenerator$", "() => GroupElement", constCost),
@@ -328,7 +331,10 @@ object CostTable {
 
 //    ("AccessKiloByteOfData", "() => Unit", extractCost),
 //    ("AccessBox", "Context => Box", accessBox),
+
 //    ("GetVar", "(Context, Byte) => Option[T]", getVarCost),
+    def GetVar = getVarCost
+
 //    ("GetRegister", "(Box, Byte) => Option[T]", accessRegister),
 //    ("AccessRegister", "Box => Option[T]", accessRegister),
 //    ("ExtractAmount", "(Box) => Long", extractCost),

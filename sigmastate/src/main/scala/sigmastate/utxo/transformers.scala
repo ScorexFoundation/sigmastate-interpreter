@@ -501,7 +501,7 @@ case class GetVar[V <: SType](varId: Byte, override val tpe: SOption[V]) extends
   override val opType = SFunc(Array(SContext, SByte), tpe) // TODO optimize: avoid Array allocation
   protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val t = Evaluation.stypeToRType(tpe.elemType)
-    E.addCostOf(this)
+    E.coster.add(CostOf.GetVar)
     E.context.getVar(varId)(t)
   }
 }
@@ -521,7 +521,7 @@ case class OptionGet[V <: SType](input: Value[SOption[V]]) extends Transformer[S
   override def tpe: V = input.tpe.elemType
   override def toString: String = s"$input.get"
   protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
-    E.addCostOf(this)
+    E.coster.add(CostOf.OptionGet)
     input.evalTo[Option[V#WrappedType]](E, env).get
   }
 }

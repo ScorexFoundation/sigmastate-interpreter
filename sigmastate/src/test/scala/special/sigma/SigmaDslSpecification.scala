@@ -3189,7 +3189,8 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
       existingPropTest("headers", { (x: Context) => x.headers }),
       preGeneratedSamples = Some(samples))
 
-    // TODO: testCases2 doesn't work because of equality (check the reason)
+    // TODO: verifyCases doesn't work because of equality (check the reason)
+
     testCases(
       Seq(ctx -> Success(ctx.OUTPUTS)),
       existingFeature(
@@ -3198,7 +3199,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
         FuncValue(Vector((1, SContext)), Outputs)),
       preGeneratedSamples = Some(samples))
 
-    // NOTE: testCases2 is not supported because SELF modified to pass input
+    // NOTE: verifyCases is not supported because SELF modified to pass input
     test(samples, existingFeature({ (x: Context) => x.INPUTS },
       "{ (x: Context) => x.INPUTS }", FuncValue(Vector((1, SContext)), Inputs)))
 

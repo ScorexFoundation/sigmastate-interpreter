@@ -380,7 +380,7 @@ class SigmaDslTesting extends PropSpec
   )(implicit IR: IRContext) extends Feature[A, B] {
 
     val oldImpl = () => func[A, B](script)
-    val newImpl = oldImpl // TODO HF (16h): use actual new implementation here
+    val newImpl = () => funcJit[A, B](script)
 
     def checkEquality(input: A, logInputOutput: Boolean = false): Try[(B, Int)] = {
       // check the old implementation against Scala semantic function
@@ -389,7 +389,31 @@ class SigmaDslTesting extends PropSpec
       if (!(newImpl eq oldImpl)) {
         // check the new implementation against Scala semantic function
         val newRes = checkEq(scalaFunc)(newF)(input)
-        newRes shouldBe oldRes
+        (oldRes, newRes) match {
+          case (Success((oldRes, oldCost)), Success((newRes, newCost))) =>
+            newRes shouldBe oldRes
+            if (newCost != oldCost) {
+              assertResult(true,
+                s"""
+                  |New cost should not exceed old cost: (new: $newCost, old:$oldCost)
+                  |ExistingFeature.checkEquality(
+                  |  script = "$script",
+                  |  compiledTree = "${SigmaPPrint(newF.compiledTree, height = 550, width = 150)}"
+                  |)
+                  |""".stripMargin
+              )(newCost <= oldCost)
+
+              if (evalSettings.isLogEnabled) {
+                println(
+                  s"""
+                    |Different Costs (new: $newCost, old:$oldCost)
+                    |  script = "$script"
+                    |""".stripMargin)
+              }
+            }
+          case _ =>
+            checkResult(rootCause(newRes), rootCause(oldRes), failOnTestVectors = false)
+        }
       }
       if (logInputOutput)
         println(s"(${SigmaPPrint(input, height = 550, width = 150)}, ${SigmaPPrint(oldRes, height = 550, width = 150)}),${if (logScript) " // " + script else ""}")
@@ -445,7 +469,7 @@ class SigmaDslTesting extends PropSpec
   )(implicit IR: IRContext) extends Feature[A, B] {
 
     val oldImpl = () => func[A, B](script)
-    val newImpl = oldImpl // TODO HF (16h): use actual new implementation here
+    val newImpl = () => funcJit[A, B](script)
 
     def checkEquality(input: A, logInputOutput: Boolean = false): Try[(B, Int)] = {
       // check the old implementation against Scala semantic function
@@ -515,7 +539,7 @@ class SigmaDslTesting extends PropSpec
     }
 
     val oldImpl = () => func[A, B](script)
-    val newImpl = oldImpl // TODO HF (16h): use actual new implementation here
+    val newImpl = oldImpl // funcJit[A, B](script) // TODO HF (16h): use actual new implementation here
 
     override def checkEquality(input: A, logInputOutput: Boolean = false): Try[(B, Int)] = {
       val oldRes = Try(oldF(input))
@@ -637,8 +661,9 @@ class SigmaDslTesting extends PropSpec
         rootCause(exception).getClass shouldBe expectedException.getClass
       case _ =>
         if (failOnTestVectors) {
-          val actual = res.fold(t => Failure(rootCause(t)), Success(_))
-          assertResult(expectedRes, s"Actual: ${SigmaPPrint(actual, height = 150).plainText}")(actual)
+          val actual = rootCause(res)
+          val actualPrinted = SigmaPPrint(actual, height = 150).plainText
+          assertResult(expectedRes, s"Actual: $actualPrinted")(actual)
         }
         else {
           if (expectedRes != res) {

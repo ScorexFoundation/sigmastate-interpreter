@@ -12,6 +12,7 @@ import sigmastate.interpreter.ErgoTreeEvaluator.DataEnv
 import sigmastate.interpreter.{ContextExtension, InterpreterContext, ErgoTreeEvaluator}
 import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.OpCode
+import sigmastate.utxo.CostTable.CostOf
 import special.collection.Coll
 import special.sigma
 import special.sigma.{AnyValue, PreHeader, Header}
@@ -237,8 +238,8 @@ case object Outputs extends LazyCollection[SBox.type] with ValueCompanion {
   override def tpe = SCollection.SBoxArray
   override val opType = SFunc(SContext, tpe)
   protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    addCost(CostOf.Outputs, E)
     E.context.OUTPUTS
-    // TODO JITC
   }
 }
 

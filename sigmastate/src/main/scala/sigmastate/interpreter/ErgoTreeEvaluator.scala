@@ -17,7 +17,11 @@ case class EvalSettings(
   /** Used by [[ErgoTreeEvaluator]] to conditionally perform debug mode operations. */
   isDebug: Boolean = false,
   /** Used by [[ErgoTreeEvaluator]] to conditionally emit log messages. */
-  isLogEnabled: Boolean = false)
+  isLogEnabled: Boolean = false,
+  /** Used by [[ErgoTreeEvaluator]] to conditionally build a trace of added costs.
+    * @see Value.addCost
+    */
+  costTracingEnabled: Boolean = false)
 
 /** Implements a simple and fast direct-style interpreter of ErgoTrees.
   *

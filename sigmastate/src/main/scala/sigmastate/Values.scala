@@ -122,6 +122,13 @@ object Values {
       if (E.settings.isMeasureOperationTime) E.profiler.onAfterNode(this)
       v.asInstanceOf[T]
     }
+
+    @inline final def addCost(cost: Int, E: ErgoTreeEvaluator): Unit = {
+      E.coster.add(cost)
+      if (E.settings.isMeasureOperationTime) {
+        println(s"added cost: $opName -> $cost")
+      }
+    }
   }
 
   object Value {
@@ -955,8 +962,8 @@ object Values {
     def opType: SFunc = Value.notSupportedError(this, "opType")
 
     protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+// TODO     E.coster.add(CostOf.ValUse)
       env.getOrElse(valId, error(s"cannot resolve $this"))
-      // TODO JITC
     }
   }
   object ValUse extends ValueCompanion {
