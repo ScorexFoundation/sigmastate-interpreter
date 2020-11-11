@@ -34,6 +34,9 @@ trait NegativeTesting extends Matchers {
     if (t.getCause == null) t
     else rootCause(t.getCause)
 
-  final def rootCause[A](x: Try[A]): Try[A] =
-    x.fold(t => Failure(rootCause(t)), Success(_))
+  /** If error then maps it to the root cause, otherwise returns the original value. */
+  final def rootCause[A](x: Try[A]): Try[A] = x match {
+    case s: Success[_] => s
+    case Failure(t) => Failure(rootCause(t))
+  }
 }
