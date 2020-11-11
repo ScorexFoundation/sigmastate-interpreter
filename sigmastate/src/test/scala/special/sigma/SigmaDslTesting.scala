@@ -359,22 +359,23 @@ class SigmaDslTesting extends PropSpec
     }
   }
 
-  case class ExistingFeature[A, B](
+  case class ExistingFeature[A: RType, B: RType](
     script: String,
     scalaFunc: A => B,
     expectedExpr: Option[SValue],
-    oldImpl: () => CompiledFunc[A, B],
-    newImpl: () => CompiledFunc[A, B],
     printExpectedExpr: Boolean = true,
     logScript: Boolean = LogScriptDefault
-  ) extends Feature[A, B] {
+  )(implicit IR: IRContext) extends Feature[A, B] {
+
+    val oldImpl = () => func[A, B](script)
+    val newImpl = oldImpl // TODO HF (16h): use actual new implementation here
 
     def checkEquality(input: A, logInputOutput: Boolean = false): Try[(B, Int)] = {
-      // check the old implementation with Scala semantic
+      // check the old implementation against Scala semantic function
       val oldRes = checkEq(scalaFunc)(oldF)(input)
 
       if (!(newImpl eq oldImpl)) {
-        // check the new implementation with Scala semantic
+        // check the new implementation against Scala semantic function
         val newRes = checkEq(scalaFunc)(newF)(input)
         newRes shouldBe oldRes
       }
@@ -423,15 +424,15 @@ class SigmaDslTesting extends PropSpec
 
   }
 
-  case class NewFeature[A, B](
+  case class NewFeature[A: RType, B: RType](
     script: String,
     scalaFunc: A => B,
     expectedExpr: Option[SValue],
-    oldImpl: () => CompiledFunc[A, B],
-    newImpl: () => CompiledFunc[A, B],
     printExpectedExpr: Boolean = true,
     logScript: Boolean = LogScriptDefault
-  ) extends Feature[A, B] {
+  )(implicit IR: IRContext) extends Feature[A, B] {
+    val oldImpl = () => func[A, B](script)
+    val newImpl = oldImpl // TODO HF (16h): use actual new implementation here
 
     override def checkEquality(input: A, logInputOutput: Boolean = false): Try[(B, Int)] = {
       val oldRes = Try(oldF(input))
@@ -491,10 +492,11 @@ class SigmaDslTesting extends PropSpec
     }
   }
 
-  /** Describes existing language feature which should be equally supported in both v3 and
-    * v4 of the language.
+  /** Describes existing language feature which should be equally supported in both
+    * Script v1 (v3.x and v4.x releases) and Script v2 (v5.x) versions of the language.
+    * A behavior of the given `script` is tested against semantic function.
     *
-    * @param scalaFunc    semantic function which defines expected behavior of the given script
+    * @param scalaFunc    semantic function for both v1 and v2 script interpretations
     * @param script       the script to be tested against semantic function
     * @param expectedExpr expected ErgoTree expression which corresponds to the given script
     * @return feature test descriptor object which can be used to execute this test case in
@@ -503,13 +505,30 @@ class SigmaDslTesting extends PropSpec
   def existingFeature[A: RType, B: RType]
       (scalaFunc: A => B, script: String, expectedExpr: SValue = null)
       (implicit IR: IRContext): Feature[A, B] = {
-    val oldImpl = () => func[A, B](script)
-    val newImpl = oldImpl // TODO HF (16h): use actual new implementation here
-    ExistingFeature(script, scalaFunc, Option(expectedExpr), oldImpl, newImpl)
+    ExistingFeature(script, scalaFunc, Option(expectedExpr))
   }
 
-  /** Describes a NEW language feature which must NOT be supported in v3 and
-    * must BE supported in v4 of the language.
+//  /** Describes existing language feature which should be differently supported in both
+//    * Script v1 (v3.x and v4.x releases) and Script v2 (v5.x) versions of the language.
+//    * The behavior of the given `script` is tested against the given semantic functions.
+//    *
+//    * @param scalaFunc    semantic function of v1 language version
+//    * @param scalaFuncNew semantic function of v2 language version
+//    * @param script       the script to be tested against semantic functions
+//    * @param expectedExpr expected ErgoTree expression which corresponds to the given script
+//    * @return feature test descriptor object which can be used to execute this test case in
+//    *         various ways
+//    */
+//  def changedFeature[A: RType, B: RType]
+//      (scalaFunc: A => B, scalaFuncNew: A => B, script: String, expectedExpr: SValue = null)
+//      (implicit IR: IRContext): Feature[A, B] = {
+//    val oldImpl = () => func[A, B](script)
+//    val newImpl = oldImpl // TODO HF (16h): use actual new implementation here
+//    ChangedFeature(script, scalaFunc, scalaFuncNew, Option(expectedExpr), oldImpl, newImpl)
+//  }
+
+  /** Describes a NEW language feature which must NOT be supported in v4 and
+    * must BE supported in v5 of the language.
     *
     * @param scalaFunc    semantic function which defines expected behavior of the given script
     * @param script       the script to be tested against semantic function
@@ -520,9 +539,7 @@ class SigmaDslTesting extends PropSpec
   def newFeature[A: RType, B: RType]
       (scalaFunc: A => B, script: String, expectedExpr: SValue = null)
       (implicit IR: IRContext): Feature[A, B] = {
-    val oldImpl = () => func[A, B](script)
-    val newImpl = oldImpl // TODO HF (16h): use actual new implementation here
-    NewFeature(script, scalaFunc, Option(expectedExpr), oldImpl, newImpl)
+    NewFeature(script, scalaFunc, Option(expectedExpr))
   }
 
   val contextGen: Gen[Context] = ergoLikeContextGen.map(c => c.toSigmaContext(isCost = false))
