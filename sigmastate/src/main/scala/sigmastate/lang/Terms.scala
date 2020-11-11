@@ -134,22 +134,22 @@ object Terms {
       SFunc(argTypes, tpe)
     }
 
-    protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
       E.coster.add(CostOf.Apply)
       if (args.isEmpty) {
         // TODO coverage
-        val fV = func.evalTo[() => Any](E, env)
+        val fV = func.evalTo[() => Any](env)
         fV()
       }
       else if (args.length == 1) {
-        val fV = func.evalTo[Any => Any](E, env)
-        val argV = args(0).evalTo[Any](E, env)
+        val fV = func.evalTo[Any => Any](env)
+        val argV = args(0).evalTo[Any](env)
         fV(argV)
       }
       else {
         // TODO coverage
-        val f = func.evalTo[Seq[Any] => Any](E, env)
-        val argsV = args.map(a => a.evalTo[Any](E, env))
+        val f = func.evalTo[Seq[Any] => Any](env)
+        val argsV = args.map(a => a.evalTo[Any](env))
         f(argsV)
       }
     }
@@ -212,13 +212,13 @@ object Terms {
     }
 
     /** @hotspot don't beautify this code */
-    protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
-      val objV = obj.evalTo[Any](E, env)
+    protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
+      val objV = obj.evalTo[Any](env)
       val argsBuf = mutable.ArrayBuilder.make[Any]() // TODO optimize: avoid using resizable buffer
       val len = args.length
       cfor(0)(_ < len, _ + 1) { i =>
         val arg = args(i)
-        val argV = arg.evalTo[Any](E, env)
+        val argV = arg.evalTo[Any](env)
         argsBuf += argV
       }
       val extra = method.extraDescriptors

@@ -68,7 +68,7 @@ class ErgoTreeEvaluator(
 {
   /** Evaluates the given expression in the given data environment. */
   def eval(env: DataEnv, exp: SValue): Any = {
-    exp.evalTo[Any](this, env)
+    exp.evalTo[Any](env)(this)
   }
 
   def addCostOf(opName: String, opType: SFunc) = {

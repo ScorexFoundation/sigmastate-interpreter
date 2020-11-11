@@ -106,7 +106,7 @@ object Values {
       * @param  env immutable map, which binds variables (given by ids) to the values
       * @return the data value which is the result of evaluation
       */
-    protected def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = sys.error(s"Should be overriden in ${this.getClass}: $this")
+    protected def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = sys.error(s"Should be overriden in ${this.getClass}: $this")
 
     /** Evaluates this node to the value of the given expected type.
       * This method should called from all `eval` implementations.
@@ -116,14 +116,14 @@ object Values {
       * @param  env immutable map, which binds variables (given by ids) to the values
       * @return the data value which is the result of evaluation
       */
-    @inline final def evalTo[T](E: ErgoTreeEvaluator, env: DataEnv): T = {
+    @inline final def evalTo[T](env: DataEnv)(implicit E: ErgoTreeEvaluator): T = {
       if (E.settings.isMeasureOperationTime) E.profiler.onBeforeNode(this)
-      val v = eval(E, env)
+      val v = eval(env)
       if (E.settings.isMeasureOperationTime) E.profiler.onAfterNode(this)
       v.asInstanceOf[T]
     }
 
-    @inline final def addCost(cost: Int, E: ErgoTreeEvaluator): Unit = {
+    @inline final def addCost(cost: Int)(implicit E: ErgoTreeEvaluator): Unit = {
       E.coster.add(cost)
       if (E.settings.isMeasureOperationTime) {
         println(s"added cost: $opName -> $cost")
@@ -282,7 +282,7 @@ object Values {
     override def opCode: OpCode = companion.opCode
     override def opName: String = s"Const"
 
-    protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
       E.addCostOf(this)
       value
     }
@@ -362,7 +362,7 @@ object Values {
   case class ConstantPlaceholder[S <: SType](id: Int, override val tpe: S) extends Value[S] {
     def opType = SFunc(SInt, tpe)
     override def companion: ValueCompanion = ConstantPlaceholder
-    override protected def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    override protected def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
       val c = E.constants(id)
       E.addCostOf(c)
       c.value
@@ -645,7 +645,7 @@ object Values {
     override def tpe = SGroupElement
     override val value = SigmaDsl.GroupElement(CryptoConstants.dlogGroup.generator)
     override def companion = this
-    protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
       SigmaDsl.groupGenerator
       // TODO JITC
     }
@@ -779,17 +779,17 @@ object Values {
       val xs = items.cast[EvaluatedValue[SAny.type]].map(_.value)
       Colls.fromArray(xs.toArray(SAny.classTag.asInstanceOf[ClassTag[SAny.WrappedType]]))(RType.AnyType)
     }
-    protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
       if (items.length < 2)
         error(s"Invalid tuple $this")
 
       if (items.length == 2) {
-        val x = items(0).evalTo[Any](E, env)
-        val y = items(1).evalTo[Any](E, env)
+        val x = items(0).evalTo[Any](env)
+        val y = items(1).evalTo[Any](env)
         (x, y) // special representation for pairs (to pass directly to Coll primitives)
       }
       else
-        items.map(_.evalTo[Any](E, env)) // general case
+        items.map(_.evalTo[Any](env)) // general case
 
       // TODO JITC
     }
@@ -852,8 +852,8 @@ object Values {
       Colls.fromArray(xs.toArray(elementType.classTag.asInstanceOf[ClassTag[V#WrappedType]]))
     }
 
-    protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
-      val is = items.map(_.evalTo[V#WrappedType](E, env)).toArray(tElement.classTag)
+    protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
+      val is = items.map(_.evalTo[V#WrappedType](env)).toArray(tElement.classTag)
       E.addCostOf(this)
       Colls.fromArray(is)
     }
@@ -961,7 +961,7 @@ object Values {
     /** This is not used as operation, but rather to form a program structure */
     def opType: SFunc = Value.notSupportedError(this, "opType")
 
-    protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
 // TODO     E.coster.add(CostOf.ValUse)
       env.getOrElse(valId, error(s"cannot resolve $this"))
     }
@@ -984,13 +984,13 @@ object Values {
     /** This is not used as operation, but rather to form a program structure */
     def opType: SFunc = Value.notSupportedError(this, "opType")
 
-    protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
       var curEnv = env
       items.foreach { case vd: ValDef =>
-        val v = vd.rhs.evalTo[Any](E, curEnv)
+        val v = vd.rhs.evalTo[Any](curEnv)
         curEnv += (vd.id -> v)
       }
-      result.evalTo[Any](E, curEnv)
+      result.evalTo[Any](curEnv)
       // TODO JITC
     }
   }
@@ -1014,25 +1014,25 @@ object Values {
     /** This is not used as operation, but rather to form a program structure */
     override def opType: SFunc = SFunc(mutable.WrappedArray.empty, tpe)
 
-    protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
       E.coster.add(CostOf.FuncValue)
       if (args.length == 0) {
         // TODO coverage
         () => {
-          body.evalTo[Any](E, env)
+          body.evalTo[Any](env)
         }
       }
       else if (args.length == 1) {
         (vArg: Any) => {
           val env1 = env + (args(0)._1 -> vArg)
-          body.evalTo[Any](E, env1)
+          body.evalTo[Any](env1)
         }
       }
       else {
         // TODO coverage
         (vArgs: Seq[Any]) => {
           val env1 = env ++ args.zip(vArgs).map { case ((id, _), v) => id -> v }
-          body.evalTo[Any](E, env1)
+          body.evalTo[Any](env1)
         }
       }
     }
