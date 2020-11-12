@@ -372,8 +372,12 @@ object CostTable {
 //    ("SigmaPropIsProven", "SigmaProp => Boolean", logicCost),
 //    ("BoolToSigmaProp", "Boolean => SigmaProp", logicCost),
 //    ("SigmaPropBytes", "SigmaProp => Coll[Byte]", logicCost),
+
 //    ("BinAnd", "(Boolean, Boolean) => Boolean", logicCost),
+    def BinAnd = logicCost
+
 //    ("BinOr", "(Boolean, Boolean) => Boolean", logicCost),
+    def BinOr = logicCost
 
 //    ("BinXor", "(Boolean, Boolean) => Boolean", logicCost),
     def BinXor = logicCost
@@ -422,48 +426,52 @@ object CostTable {
 
 //    ("NEQ", "(BigInt,BigInt) => Boolean", comparisonBigInt),
 //    //    (">_per_item", "(BigInt, BigInt) => BigInt", MinimalCost),
-//
-//    ("+", "(Byte, Byte) => Byte", plusMinus),
-//    ("+", "(Short, Short) => Short", plusMinus),
-//    ("+", "(Int, Int) => Int", plusMinus),
-//    ("+", "(Long, Long) => Long", plusMinus),
-//
-//    ("-", "(Byte, Byte) => Byte", plusMinus),
-//    ("-", "(Short, Short) => Short", plusMinus),
-//    ("-", "(Int, Int) => Int", plusMinus),
-//    ("-", "(Long, Long) => Long", plusMinus),
-//
-//    ("*", "(Byte, Byte) => Byte", multiply),
+
+    //    ("+", "(Byte, Byte) => Byte", plusMinus),
+    def Plus(argTpe: SType) = argTpe match {
+      case SBigInt => plusMinusBigInt
+      case _ => plusMinus
+    }
+
+    //    ("-", "(Byte, Byte) => Byte", plusMinus),
+    def Minus(argTpe: SType) = argTpe match {
+      case SBigInt => plusMinusBigInt
+      case _ => plusMinus
+    }
+
+    //    ("*", "(Byte, Byte) => Byte", multiply),
+    def Multiply(argTpe: SType) = argTpe match {
+      case SBigInt => multiplyBigInt
+      case _ => multiply
+    }
 //    ("*", "(Short, Short) => Short", multiply),
 //    ("*", "(Int, Int) => Int", multiply),
 //    ("*", "(Long, Long) => Long", multiply),
-//
-//    ("/", "(Byte, Byte) => Byte", multiply),
-//    ("/", "(Short, Short) => Short", multiply),
-//    ("/", "(Int, Int) => Int", multiply),
-//    ("/", "(Long, Long) => Long", multiply),
-//
-//    ("%", "(Byte, Byte) => Byte", multiply),
-//    ("%", "(Short, Short) => Short", multiply),
-//    ("%", "(Int, Int) => Int", multiply),
-//    ("%", "(Long, Long) => Long", multiply),
-//
+
+    //Example: ("/", "(Byte, Byte) => Byte", multiply),
+    def Division(argTpe: SType) = argTpe match {
+      case SBigInt => multiplyBigInt
+      case _ => multiply
+    }
+
+    //    ("%", "(Byte, Byte) => Byte", multiply),
+    def Modulo(argTpe: SType) = argTpe match {
+      case SBigInt => multiplyBigInt
+      case _ => multiply
+    }
+
 //    ("Negation", "(Byte) => Byte", MinimalCost),
 //    ("Negation", "(Short) => Short", MinimalCost),
 //    ("Negation", "(Int) => Int", MinimalCost),
 //    ("Negation", "(Long) => Long", MinimalCost),
 //    ("Negation", "(BigInt) => BigInt", MinimalCost),
 //
-//    ("+", "(BigInt, BigInt) => BigInt", plusMinusBigInt),
 //    ("+_per_item", "(BigInt, BigInt) => BigInt", MinimalCost),
 //
-//    ("-", "(BigInt, BigInt) => BigInt", plusMinusBigInt),
 //    ("-_per_item", "(BigInt, BigInt) => BigInt", MinimalCost),
 //
-//    ("*", "(BigInt, BigInt) => BigInt", multiplyBigInt),
 //    ("*_per_item", "(BigInt, BigInt) => BigInt", MinimalCost),
 //
-//    ("/", "(BigInt, BigInt) => BigInt", multiplyBigInt),
 //    ("/_per_item", "(BigInt, BigInt) => BigInt", MinimalCost),
 //
 //    ("%", "(BigInt, BigInt) => BigInt", multiplyBigInt),
@@ -478,18 +486,20 @@ object CostTable {
 //    ("Downcast", s"(BigInt) => ${Downcast.tR}", castOpBigInt),
 //    ("Upcast", s"(${Upcast.tT}) => BigInt", castOpBigInt),
 //
-//    ("min", "(Byte, Byte) => Byte", logicCost),
-//    ("min", "(Short, Short) => Short", logicCost),
-//    ("min", "(Int, Int) => Int", logicCost),
-//    ("min", "(Long, Long) => Long", logicCost),
-//    ("min", "(BigInt, BigInt) => BigInt", comparisonCost),
-//    ("min_per_item", "(BigInt, BigInt) => BigInt", comparisonCost),
-//
-//    ("max", "(Byte, Byte) => Byte", logicCost),
-//    ("max", "(Short, Short) => Short", logicCost),
-//    ("max", "(Int, Int) => Int", logicCost),
-//    ("max", "(Long, Long) => Long", logicCost),
-//    ("max", "(BigInt, BigInt) => BigInt", comparisonCost),
+    //    ("min", "(Byte, Byte) => Byte", logicCost),
+    def Min(argTpe: SType) = argTpe match {
+      case SBigInt => comparisonCost
+      case _ => logicCost
+    }
+
+    //    ("max", "(Byte, Byte) => Byte", logicCost),
+    def Max(argTpe: SType) = argTpe match {
+      case SBigInt => comparisonCost
+      case _ => logicCost
+    }
+
+    //    ("min_per_item", "(BigInt, BigInt) => BigInt", comparisonCost),
+    //
 //    ("max_per_item", "(BigInt, BigInt) => BigInt", comparisonCost),
 //
 //    ("SAvlTree$.insert_per_kb", "(AvlTree, Coll[(Coll[Byte], Coll[Byte])], Coll[Byte]) => Option[AvlTree]", avlTreeOp),

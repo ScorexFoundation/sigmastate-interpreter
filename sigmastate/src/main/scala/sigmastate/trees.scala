@@ -705,45 +705,56 @@ case class ArithOp[T <: SType](left: Value[T], right: Value[T], override val opC
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val x = left.evalTo[Any](env)
     val y = right.evalTo[Any](env)
-    E.addCostOf(this)
-    companion.eval(tpe.typeCode, x, y)
+    companion.eval(this, tpe.typeCode, x, y) // NOTE: cost is added as part of eval call
   }
 }
 /** NOTE: by-name argument is required for correct initialization order. */
 abstract class ArithOpCompanion(val opCode: OpCode, val name: String, _argInfos: => Seq[ArgInfo]) extends TwoArgumentOperationCompanion {
   override def argInfos: Seq[ArgInfo] = _argInfos
-  @inline final def eval(typeCode: SType.TypeCode, x: Any, y: Any): Any = eval(ArithOp.numerics(typeCode), x, y)
+  @inline final def eval(node: SValue, typeCode: SType.TypeCode, x: Any, y: Any)(implicit E: ErgoTreeEvaluator): Any = {
+    val impl = ArithOp.numerics(typeCode)
+    E.addCost(operationCost(impl), node)
+    eval(impl, x, y)
+  }
   def eval(impl: OperationImpl, x: Any, y: Any): Any
+  def operationCost(impl: OperationImpl): Int
 }
 
 object ArithOp {
   import OpCodes._
   object Plus     extends ArithOpCompanion(PlusCode,     "+", PlusInfo.argInfos) {
     def eval(impl: OperationImpl, x: Any, y: Any): Any = impl.n.plus(x, y)
+    def operationCost(impl: OperationImpl) = CostOf.Plus(impl.argTpe)
   }
   object Minus    extends ArithOpCompanion(MinusCode,    "-", MinusInfo.argInfos) {
     def eval(impl: OperationImpl, x: Any, y: Any): Any = impl.n.minus(x, y)
+    def operationCost(impl: OperationImpl) = CostOf.Minus(impl.argTpe)
   }
   object Multiply extends ArithOpCompanion(MultiplyCode, "*", MultiplyInfo.argInfos) {
     def eval(impl: OperationImpl, x: Any, y: Any): Any = impl.n.times(x, y)
+    def operationCost(impl: OperationImpl) = CostOf.Multiply(impl.argTpe)
   }
   object Division extends ArithOpCompanion(DivisionCode, "/", DivisionInfo.argInfos) {
     def eval(impl: OperationImpl, x: Any, y: Any): Any = impl.i.quot(x, y)
+    def operationCost(impl: OperationImpl) = CostOf.Division(impl.argTpe)
   }
   object Modulo   extends ArithOpCompanion(ModuloCode,   "%", ModuloInfo.argInfos) {
     def eval(impl: OperationImpl, x: Any, y: Any): Any = impl.i.rem(x, y)
+    def operationCost(impl: OperationImpl) = CostOf.Modulo(impl.argTpe)
   }
   object Min      extends ArithOpCompanion(MinCode,      "min", MinInfo.argInfos) {
     def eval(impl: OperationImpl, x: Any, y: Any): Any = impl.o.min(x, y)
+    def operationCost(impl: OperationImpl) = CostOf.Min(impl.argTpe)
   }
   object Max      extends ArithOpCompanion(MaxCode,      "max", MaxInfo.argInfos) {
     def eval(impl: OperationImpl, x: Any, y: Any): Any = impl.o.max(x, y)
+    def operationCost(impl: OperationImpl) = CostOf.Max(impl.argTpe)
   }
 
   private[sigmastate] val operations: DMap[Byte, ArithOpCompanion] =
     DMap.fromIterable(Seq(Plus, Minus, Multiply, Division, Modulo, Min, Max).map(o => (o.opCode, o)))
 
-  class OperationImpl(_n: ExactNumeric[_], _i: ExactIntegral[_], _o: ExactOrdering[_]) {
+  class OperationImpl(_n: ExactNumeric[_], _i: ExactIntegral[_], _o: ExactOrdering[_], val argTpe: SType) {
     val n = _n.asInstanceOf[ExactNumeric[Any]]
     val i = _i.asInstanceOf[ExactIntegral[Any]]
     val o = _o.asInstanceOf[ExactOrdering[Any]]
@@ -751,11 +762,11 @@ object ArithOp {
 
   private[sigmastate] val numerics: DMap[SType.TypeCode, OperationImpl] =
     DMap.fromIterable(Seq(
-      SByte   -> new OperationImpl(ByteIsExactNumeric,   ByteIsExactIntegral,   ByteIsExactOrdering),
-      SShort  -> new OperationImpl(ShortIsExactNumeric,  ShortIsExactIntegral,  ShortIsExactOrdering),
-      SInt    -> new OperationImpl(IntIsExactNumeric,    IntIsExactIntegral,    IntIsExactOrdering),
-      SLong   -> new OperationImpl(LongIsExactNumeric,   LongIsExactIntegral,   LongIsExactOrdering),
-      SBigInt -> new OperationImpl(BigIntIsExactNumeric, BigIntIsExactIntegral, BigIntIsExactOrdering)
+      SByte   -> new OperationImpl(ByteIsExactNumeric,   ByteIsExactIntegral,   ByteIsExactOrdering,   SByte),
+      SShort  -> new OperationImpl(ShortIsExactNumeric,  ShortIsExactIntegral,  ShortIsExactOrdering,  SShort),
+      SInt    -> new OperationImpl(IntIsExactNumeric,    IntIsExactIntegral,    IntIsExactOrdering,    SInt),
+      SLong   -> new OperationImpl(LongIsExactNumeric,   LongIsExactIntegral,   LongIsExactOrdering,   SLong),
+      SBigInt -> new OperationImpl(BigIntIsExactNumeric, BigIntIsExactIntegral, BigIntIsExactOrdering, SBigInt)
     ).map { case (t, n) => (t.typeCode, n) })
 
   def opcodeToArithOpName(opCode: Byte): String = operations.get(opCode) match {
@@ -1060,7 +1071,7 @@ case class BinOr(override val left: BoolValue, override val right: BoolValue)
   override def opType = BinOr.OpType
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val l = left.evalTo[Boolean](env)
-    E.addCostOf(this)
+    addCost(CostOf.BinOr)
     l || right.evalTo[Boolean](env)  // rely on short-cutting semantics of Scala's ||
   }
 }
@@ -1080,7 +1091,7 @@ case class BinAnd(override val left: BoolValue, override val right: BoolValue)
   override def opType = BinAnd.OpType
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val l = left.evalTo[Boolean](env)
-    E.addCostOf(this)
+    addCost(CostOf.BinAnd)
     l && right.evalTo[Boolean](env)  // rely on short-cutting semantics of Scala's &&
   }
 }

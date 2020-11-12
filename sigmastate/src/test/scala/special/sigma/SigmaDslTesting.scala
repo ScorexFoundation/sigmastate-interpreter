@@ -407,6 +407,7 @@ class SigmaDslTesting extends PropSpec
                 println(
                   s"""
                     |Different Costs (new: $newCost, old:$oldCost)
+                    |  input = ${SigmaPPrint(input, height = 550, width = 150)}
                     |  script = "$script"
                     |""".stripMargin)
               }
