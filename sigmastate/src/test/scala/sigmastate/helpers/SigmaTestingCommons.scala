@@ -14,7 +14,7 @@ import org.scalacheck.Gen
 import org.scalatest.prop.{PropertyChecks, GeneratorDrivenPropertyChecks}
 import org.scalatest.{PropSpec, Assertion, Matchers}
 import scalan.{TestUtils, TestContexts, RType}
-import scorex.crypto.hash.{Blake2b256}
+import scorex.crypto.hash.Blake2b256
 import sigma.types.IsPrimView
 import sigmastate.Values.{Constant, SValue, Value, ErgoTree, GroupElementConstant}
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, ScriptEnv}
@@ -27,6 +27,7 @@ import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.utils.Helpers._
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.ContextExtension.VarBinding
+import sigmastate.interpreter.ErgoTreeEvaluator.DefaultProfiler
 import special.sigma
 
 import scala.language.implicitConversions
@@ -250,9 +251,21 @@ trait SigmaTestingCommons extends PropSpec
       implicit val cA: ClassTag[A] = tA.classTag
       val (_, sigmaCtx) = createContexts(in, bindings)
       val accumulator = new CostAccumulator(initialCost = 0, Some(ScriptCostLimit.value))
-      val (res, cost) = ErgoTreeEvaluator.eval(
-        sigmaCtx, accumulator,
-        constants = ErgoTree.EmptyConstants, exp = compiledTree, evalSettings = evalSettings)
+      val evaluator = new ErgoTreeEvaluator(
+        context = sigmaCtx,
+        constants = ErgoTree.EmptyConstants,
+        coster = accumulator, DefaultProfiler, evalSettings)
+
+      val (res, cost) = evaluator.evalWithCost(ErgoTreeEvaluator.EmptyDataEnv, compiledTree)
+      if (evalSettings.costTracingEnabled) {
+        val traceLines = evaluator.costTrace.mkString("\n")
+        println(
+          s"""Cost Trace
+            |------------------------
+            |$traceLines
+            |
+            |""".stripMargin)
+      }
       (res.asInstanceOf[B], cost)
     }
     val Terms.Apply(funcVal, _) = compiledTree.asInstanceOf[SValue]

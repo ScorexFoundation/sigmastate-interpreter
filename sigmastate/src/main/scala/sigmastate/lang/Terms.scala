@@ -135,7 +135,7 @@ object Terms {
     }
 
     protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
-      E.coster.add(CostOf.Apply)
+      addCost(CostOf.Apply)
       if (args.isEmpty) {
         // TODO coverage
         val fV = func.evalTo[() => Any](env)

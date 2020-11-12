@@ -1,14 +1,16 @@
 package sigmastate.interpreter
 
 import org.ergoplatform.ErgoLikeContext
-import sigmastate.{SFunc, SType}
+import sigmastate.{SType, SFunc}
 import sigmastate.Values._
 import sigmastate.eval.Profiler
-import sigmastate.interpreter.ErgoTreeEvaluator.DataEnv
+import sigmastate.interpreter.ErgoTreeEvaluator.{DataEnv, CostTraceItem}
 import sigmastate.interpreter.Interpreter.ReductionResult
 import sigmastate.lang.exceptions.CostLimitException
 import special.sigma.Context
 import scalan.util.Extensions._
+
+import scala.collection.mutable.ArrayBuffer
 
 /** Configuration parameters of the evaluation run. */
 case class EvalSettings(
@@ -62,13 +64,29 @@ case class EvalSettings(
 class ErgoTreeEvaluator(
   val context: Context,
   val constants: Seq[Constant[SType]],
-  val coster: CostAccumulator,
+  protected val coster: CostAccumulator,
   val profiler: Profiler,
   val settings: EvalSettings)
 {
   /** Evaluates the given expression in the given data environment. */
   def eval(env: DataEnv, exp: SValue): Any = {
     exp.evalTo[Any](env)(this)
+  }
+
+  /** Evaluates the given expression in the given data environment. */
+  def evalWithCost(env: DataEnv, exp: SValue): (Any, Int) = {
+    val res = eval(env, exp)
+    val cost = coster.totalCost
+    (res, cost)
+  }
+
+  val costTrace = ArrayBuffer.empty[CostTraceItem]
+
+  def addCost(cost: Int, opNode: SValue) = {
+    coster.add(cost)
+    if (settings.costTracingEnabled) {
+      costTrace += CostTraceItem(opNode.opName, cost)
+    }
   }
 
   def addCostOf(opName: String, opType: SFunc) = {
@@ -104,11 +122,21 @@ object ErgoTreeEvaluator {
   /** Immutable data environment used to assign data values to graph nodes. */
   type DataEnv = Map[Int, Any]
 
+  /** Empty data environment. */
+  val EmptyDataEnv: DataEnv = Map.empty
+
   /** A profiler which is used by default if [[EvalSettings.isMeasureOperationTime]] is enabled. */
   val DefaultProfiler = new Profiler
 
   /** Default global [[EvalSettings]] instance. */
   val DefaultEvalSettings = EvalSettings(isMeasureOperationTime = false)
+
+  /** An item in the cost accumulation trace of a [[ErgoTreeEvaluator]].
+    * Used for debugging of costing.
+    * @param opName  name of the ErgoTree operation
+    * @param cost    cost added to accumulator
+    */
+  case class CostTraceItem(opName: String, cost: Int)
 
   /** Evaluate the given [[ErgoTree]] in the given Ergo context using the given settings.
     * The given ErgoTree is evaluated as-is and is not changed during evaluation.

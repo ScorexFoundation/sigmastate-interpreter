@@ -270,7 +270,7 @@ case class SelectField(input: Value[STuple], fieldIndex: Byte)
 
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val inputV = input.evalTo[Any](env)
-    E.coster.add(CostOf.SelectField)
+    addCost(CostOf.SelectField)
     inputV match {
       case p: Tuple2[_,_] =>
         if (fieldIndex == 1) p._1
@@ -501,7 +501,7 @@ case class GetVar[V <: SType](varId: Byte, override val tpe: SOption[V]) extends
   override val opType = SFunc(Array(SContext, SByte), tpe) // TODO optimize: avoid Array allocation
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val t = Evaluation.stypeToRType(tpe.elemType)
-    E.coster.add(CostOf.GetVar)
+    addCost(CostOf.GetVar)
     E.context.getVar(varId)(t)
   }
 }
@@ -521,7 +521,7 @@ case class OptionGet[V <: SType](input: Value[SOption[V]]) extends Transformer[S
   override def tpe: V = input.tpe.elemType
   override def toString: String = s"$input.get"
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
-    E.coster.add(CostOf.OptionGet)
+    addCost(CostOf.OptionGet)
     input.evalTo[Option[V#WrappedType]](env).get
   }
 }

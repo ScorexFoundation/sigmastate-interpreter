@@ -124,10 +124,7 @@ object Values {
     }
 
     @inline final def addCost(cost: Int)(implicit E: ErgoTreeEvaluator): Unit = {
-      E.coster.add(cost)
-      if (E.settings.isMeasureOperationTime) {
-        println(s"added cost: $opName -> $cost")
-      }
+      E.addCost(cost, this)
     }
   }
 
@@ -190,11 +187,11 @@ object Values {
     }
 
     def perKbCostOf(node: SValue, dataSize: Int): Int = {
-      perKbCostOf(node.getClass.getSimpleName, node.opType, dataSize)
+      perKbCostOf(node.opName, node.opType, dataSize)
     }
 
     def perItemCostOf(node: SValue, arrLength: Int) = {
-      val opName = s"${node.getClass.getSimpleName}_per_item"
+      val opName = s"${node.opName}_per_item"
       costOf(opName, node.opType) * arrLength
     }
 
@@ -283,7 +280,7 @@ object Values {
     override def opName: String = s"Const"
 
     protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
-      E.addCostOf(this)
+      addCost(CostOf.Constant(tpe))
       value
     }
 
@@ -1015,7 +1012,7 @@ object Values {
     override def opType: SFunc = SFunc(mutable.WrappedArray.empty, tpe)
 
     protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
-      E.coster.add(CostOf.FuncValue)
+      addCost(CostOf.FuncValue)
       if (args.length == 0) {
         // TODO coverage
         () => {

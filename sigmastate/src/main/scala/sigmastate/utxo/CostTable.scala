@@ -392,21 +392,34 @@ object CostTable {
 //    ("GE", "(T,T) => Boolean", comparisonCost),
 //    ("LE", "(T,T) => Boolean", comparisonCost),
 //    ("LT", "(T,T) => Boolean", comparisonCost),
+
 //    ("EQ", "(T,T) => Boolean", comparisonCost),
+    def EQConstSize = comparisonCost
+
 //    ("NEQ", "(T,T) => Boolean", comparisonCost),
 //
 //    ("GT_per_kb", "(T,T) => Boolean", comparisonPerKbCost),
 //    ("GE_per_kb", "(T,T) => Boolean", comparisonPerKbCost),
 //    ("LE_per_kb", "(T,T) => Boolean", comparisonPerKbCost),
 //    ("LT_per_kb", "(T,T) => Boolean", comparisonPerKbCost),
+
 //    ("EQ_per_kb", "(T,T) => Boolean", comparisonPerKbCost),
-//    ("NEQ_per_kb", "(T,T) => Boolean", comparisonPerKbCost),
+    def EQDynSize(dataSize: Int) = {
+      val numKbs = dataSize / 1024 + 1
+      numKbs * comparisonPerKbCost
+    }
+
+
+    //    ("NEQ_per_kb", "(T,T) => Boolean", comparisonPerKbCost),
 //
 //    ("GT", "(BigInt,BigInt) => Boolean", comparisonBigInt),
 //    ("GE", "(BigInt,BigInt) => Boolean", comparisonBigInt),
 //    ("LE", "(BigInt,BigInt) => Boolean", comparisonBigInt),
 //    ("LT", "(BigInt,BigInt) => Boolean", comparisonBigInt),
+
 //    ("EQ", "(BigInt,BigInt) => Boolean", comparisonBigInt),
+    def EQBigInt = comparisonBigInt
+
 //    ("NEQ", "(BigInt,BigInt) => Boolean", comparisonBigInt),
 //    //    (">_per_item", "(BigInt, BigInt) => BigInt", MinimalCost),
 //

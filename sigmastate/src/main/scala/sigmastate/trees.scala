@@ -1019,12 +1019,12 @@ case class EQ[S <: SType](override val left: Value[S], override val right: Value
     val l = left.evalTo[S#WrappedType](env)
     val r = right.evalTo[S#WrappedType](env)
     left.tpe.asInstanceOf[SType] match {
-      case SBigInt => E.addCostOf("EQ", SBigInt.RelationOpType)
-      case t if t.isConstantSize => E.addCostOf(this)
+      case t if t.isConstantSize =>
+        addCost(CostOf.EQConstSize)
       case _ =>
         val lds = Sized.dataSizeOf[S](l, left.tpe)
         val rds = Sized.dataSizeOf[S](r, right.tpe)
-        E.addPerKbCostOf(this, (lds + rds).toIntExact)
+        addCost(CostOf.EQDynSize(dataSize = (lds + rds).toIntExact))
     }
     l == r
   }
@@ -1097,7 +1097,7 @@ case class BinXor(override val left: BoolValue, override val right: BoolValue)
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val leftV = left.evalTo[Boolean](env)
     val rightV = right.evalTo[Boolean](env)
-    E.coster.add(CostOf.BinXor)
+    addCost(CostOf.BinXor)
     leftV ^ rightV
   }
 }

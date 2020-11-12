@@ -34,6 +34,7 @@ import OrderingOps._
 import org.ergoplatform.ErgoBox.AdditionalRegisters
 import scorex.util.ModifierId
 import sigmastate.basics.ProveDHTuple
+import sigmastate.interpreter.{EvalSettings, ErgoTreeEvaluator}
 
 import scala.collection.mutable
 
@@ -43,6 +44,12 @@ import scala.collection.mutable
 class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
   override implicit val generatorDrivenConfig = PropertyCheckConfiguration(minSuccessful = 30)
+
+  override val evalSettings: EvalSettings =
+    ErgoTreeEvaluator.DefaultEvalSettings.copy(
+      isLogEnabled = true,
+      costTracingEnabled = true
+    )
 
   implicit def IR = createIR()
 
