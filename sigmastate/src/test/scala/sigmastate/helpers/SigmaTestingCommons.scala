@@ -263,7 +263,6 @@ trait SigmaTestingCommons extends PropSpec
           s"""Cost Trace
             |------------------------
             |$traceLines
-            |
             |""".stripMargin)
       }
       (res.asInstanceOf[B], cost)

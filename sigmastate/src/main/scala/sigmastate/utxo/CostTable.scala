@@ -314,26 +314,39 @@ object CostTable {
       case _ => Interpreter.error(s"Cost is not defined: unexpected constant type $constType")
     }
 
-//    ("Lambda", "() => (D1) => R", lambdaCost),
-    def FuncValue = lambdaCost
-    def Apply = 10
-    def OptionGet = selectField
-    def Outputs = selectField
-    def ValUse = 20
+    //
+    /** Cost of: 1) switch on the number of args 2) allocating a new Scala closure
+      * Old cost: ("Lambda", "() => (D1) => R", lambdaCost),*/
+    def FuncValue = 2 // cf. lambdaCost
+
+    /** Cost of: 1) switch on the number of args 2) Scala method call 3) add args to env
+      * Old cost: lambdaInvoke == 30 */
+    def Apply = 20
+
+    /** Cost of: 1) Calling Option.get Scala method. */
+    def OptionGet = 2 // cf. selectField
+
+    /** Cost of: 1) Calling Context.OUTPUTS Scala method. */
+    def Outputs = 2 // cf. selectField
+
+    /** Cost of: 1) Lookup in immutable HashMap by valId: Int 2) alloc of Some(v) */
+    def ValUse = 5
 
 //    ("ConcreteCollection", "() => Coll[IV]", collToColl),
 //    ("GroupGenerator$", "() => GroupElement", constCost),
 //    ("Self$", "Context => Box", constCost),
 //    ("AccessAvlTree", "Context => AvlTree", constCost),
 
-//    ("SelectField", "() => Unit", selectField),
-    def SelectField = selectField
+    /** Cost of: 1) Calling Tuple2.{_1, _2} Scala methods.
+      * Old cost: ("SelectField", "() => Unit", selectField) */
+    def SelectField = 2 // cf. selectField
 
 //    ("AccessKiloByteOfData", "() => Unit", extractCost),
 //    ("AccessBox", "Context => Box", accessBox),
 
-//    ("GetVar", "(Context, Byte) => Option[T]", getVarCost),
-    def GetVar = getVarCost
+    /** Cost of: 1) accessing to array of context vars by index
+      * Old cost: ("GetVar", "(Context, Byte) => Option[T]", getVarCost) */
+    def GetVar = 5
 
 //    ("GetRegister", "(Box, Byte) => Option[T]", accessRegister),
 //    ("AccessRegister", "Box => Option[T]", accessRegister),
@@ -373,14 +386,17 @@ object CostTable {
 //    ("BoolToSigmaProp", "Boolean => SigmaProp", logicCost),
 //    ("SigmaPropBytes", "SigmaProp => Coll[Byte]", logicCost),
 
-//    ("BinAnd", "(Boolean, Boolean) => Boolean", logicCost),
-    def BinAnd = logicCost
+    /** Cost of: scala `&&` operation
+      * Old cost: ("BinAnd", "(Boolean, Boolean) => Boolean", logicCost) */
+    def BinAnd = 5 // cf. logicCost
 
-//    ("BinOr", "(Boolean, Boolean) => Boolean", logicCost),
-    def BinOr = logicCost
+    /** Cost of: scala `||` operation
+      * Old cost: ("BinOr", "(Boolean, Boolean) => Boolean", logicCost) */
+    def BinOr = 5 // cf. logicCost
 
-//    ("BinXor", "(Boolean, Boolean) => Boolean", logicCost),
-    def BinXor = logicCost
+    /** Cost of: scala `^` operation
+      * Old cost: ("BinXor", "(Boolean, Boolean) => Boolean", logicCost) */
+    def BinXor = 5 // cf. logicCost
 
 //    ("AND", "(Coll[Boolean]) => Boolean", logicCost),
 //    ("OR_per_item", "(Coll[Boolean]) => Boolean", logicCost),
@@ -396,71 +412,103 @@ object CostTable {
 //    ("GE", "(T,T) => Boolean", comparisonCost),
 //    ("LE", "(T,T) => Boolean", comparisonCost),
 //    ("LT", "(T,T) => Boolean", comparisonCost),
+//    ("NEQ", "(T,T) => Boolean", comparisonCost),
 
-//    ("EQ", "(T,T) => Boolean", comparisonCost),
+    /** Cost of:
+      * 1) compute isConstSize for left argument
+      * 2) dataSizeOf for left and right arguments
+      * Old cost: ("EQ", "(T,T) => Boolean", comparisonCost)
+      */
     def EQConstSize = comparisonCost
 
-//    ("NEQ", "(T,T) => Boolean", comparisonCost),
-//
-//    ("GT_per_kb", "(T,T) => Boolean", comparisonPerKbCost),
-//    ("GE_per_kb", "(T,T) => Boolean", comparisonPerKbCost),
-//    ("LE_per_kb", "(T,T) => Boolean", comparisonPerKbCost),
-//    ("LT_per_kb", "(T,T) => Boolean", comparisonPerKbCost),
-
-//    ("EQ_per_kb", "(T,T) => Boolean", comparisonPerKbCost),
+    /** Cost of:
+      * 1) compute isConstSize for left argument
+      * 2) dataSizeOf for left and right arguments
+      * 3) perform comparison of two arguments
+      */
     def EQDynSize(dataSize: Int) = {
       val numKbs = dataSize / 1024 + 1
       numKbs * comparisonPerKbCost
     }
 
-
-    //    ("NEQ_per_kb", "(T,T) => Boolean", comparisonPerKbCost),
-//
+//    ("GT_per_kb", "(T,T) => Boolean", comparisonPerKbCost),
+//    ("GE_per_kb", "(T,T) => Boolean", comparisonPerKbCost),
+//    ("LE_per_kb", "(T,T) => Boolean", comparisonPerKbCost),
+//    ("LT_per_kb", "(T,T) => Boolean", comparisonPerKbCost),
+//    ("NEQ_per_kb", "(T,T) => Boolean", comparisonPerKbCost),
 //    ("GT", "(BigInt,BigInt) => Boolean", comparisonBigInt),
 //    ("GE", "(BigInt,BigInt) => Boolean", comparisonBigInt),
 //    ("LE", "(BigInt,BigInt) => Boolean", comparisonBigInt),
 //    ("LT", "(BigInt,BigInt) => Boolean", comparisonBigInt),
-
-//    ("EQ", "(BigInt,BigInt) => Boolean", comparisonBigInt),
-    def EQBigInt = comparisonBigInt
-
 //    ("NEQ", "(BigInt,BigInt) => Boolean", comparisonBigInt),
 //    //    (">_per_item", "(BigInt, BigInt) => BigInt", MinimalCost),
 
     //    ("+", "(Byte, Byte) => Byte", plusMinus),
+
+    /** Cost of:
+      * 1) resolving ArithOpCompanion by typeCode
+      * 2) calling method of Numeric
+      */
     def Plus(argTpe: SType) = argTpe match {
       case SBigInt => plusMinusBigInt
-      case _ => plusMinus
+      case _ => 5 // cf. plusMinus
     }
 
-    //    ("-", "(Byte, Byte) => Byte", plusMinus),
+    /** Cost of:
+      * 1) resolving ArithOpCompanion by typeCode
+      * 2) calling method of Numeric
+      */
     def Minus(argTpe: SType) = argTpe match {
       case SBigInt => plusMinusBigInt
-      case _ => plusMinus
+      case _ => 5 // cf. plusMinus
     }
 
-    //    ("*", "(Byte, Byte) => Byte", multiply),
+    /** Cost of:
+      * 1) resolving ArithOpCompanion by typeCode
+      * 2) calling method of Numeric
+      */
     def Multiply(argTpe: SType) = argTpe match {
       case SBigInt => multiplyBigInt
-      case _ => multiply
+      case _ => 5 // cf. multiply
     }
-//    ("*", "(Short, Short) => Short", multiply),
-//    ("*", "(Int, Int) => Int", multiply),
-//    ("*", "(Long, Long) => Long", multiply),
 
-    //Example: ("/", "(Byte, Byte) => Byte", multiply),
+    /** Cost of:
+      * 1) resolving ArithOpCompanion by typeCode
+      * 2) calling method of Integral
+      */
     def Division(argTpe: SType) = argTpe match {
       case SBigInt => multiplyBigInt
-      case _ => multiply
+      case _ => 5 // cf. multiply
     }
 
-    //    ("%", "(Byte, Byte) => Byte", multiply),
+    /** Cost of:
+      * 1) resolving ArithOpCompanion by typeCode
+      * 2) calling method of Integral
+      */
     def Modulo(argTpe: SType) = argTpe match {
       case SBigInt => multiplyBigInt
-      case _ => multiply
+      case _ => 5 // cf. multiply
     }
 
-//    ("Negation", "(Byte) => Byte", MinimalCost),
+    /** Cost of:
+      * 1) resolving ArithOpCompanion by typeCode
+      * 2) calling method of ExactOrdering
+      */
+    def Min(argTpe: SType) = argTpe match {
+      case SBigInt => 10 // cf. comparisonCost
+      case _ => 5 // cf. logicCost
+    }
+
+    /** Cost of:
+      * 1) resolving ArithOpCompanion by typeCode
+      * 2) calling method of ExactOrdering
+      */
+    def Max(argTpe: SType) = argTpe match {
+      case SBigInt => 10 // cf. comparisonCost
+      case _ => 5 // cf. logicCost
+    }
+
+    //    ("Negation", "(Byte) => Byte", MinimalCost),
 //    ("Negation", "(Short) => Short", MinimalCost),
 //    ("Negation", "(Int) => Int", MinimalCost),
 //    ("Negation", "(Long) => Long", MinimalCost),
@@ -486,18 +534,6 @@ object CostTable {
 //    ("Downcast", s"(BigInt) => ${Downcast.tR}", castOpBigInt),
 //    ("Upcast", s"(${Upcast.tT}) => BigInt", castOpBigInt),
 //
-    //    ("min", "(Byte, Byte) => Byte", logicCost),
-    def Min(argTpe: SType) = argTpe match {
-      case SBigInt => comparisonCost
-      case _ => logicCost
-    }
-
-    //    ("max", "(Byte, Byte) => Byte", logicCost),
-    def Max(argTpe: SType) = argTpe match {
-      case SBigInt => comparisonCost
-      case _ => logicCost
-    }
-
     //    ("min_per_item", "(BigInt, BigInt) => BigInt", comparisonCost),
     //
 //    ("max_per_item", "(BigInt, BigInt) => BigInt", comparisonCost),

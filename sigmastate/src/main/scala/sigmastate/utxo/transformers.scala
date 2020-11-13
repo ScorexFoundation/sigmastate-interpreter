@@ -521,8 +521,9 @@ case class OptionGet[V <: SType](input: Value[SOption[V]]) extends Transformer[S
   override def tpe: V = input.tpe.elemType
   override def toString: String = s"$input.get"
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
+    val opt = input.evalTo[Option[V#WrappedType]](env)
     addCost(CostOf.OptionGet)
-    input.evalTo[Option[V#WrappedType]](env).get
+    opt.get
   }
 }
 object OptionGet extends SimpleTransformerCompanion {

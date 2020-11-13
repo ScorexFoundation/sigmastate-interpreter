@@ -959,7 +959,7 @@ object Values {
     def opType: SFunc = Value.notSupportedError(this, "opType")
 
     protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
-// TODO     E.coster.add(CostOf.ValUse)
+      addCost(CostOf.ValUse)
       env.getOrElse(valId, error(s"cannot resolve $this"))
     }
   }
