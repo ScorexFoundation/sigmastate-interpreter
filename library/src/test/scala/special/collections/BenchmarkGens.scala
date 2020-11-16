@@ -4,7 +4,7 @@ import org.scalameter.KeyValue
 import org.scalameter.api.{Gen, Bench, _}
 
 trait BenchmarkGens extends CollGens { suite: Bench[Double] =>
-  val maxSize = 100000
+  def maxSize = 100000
 
   val sizes = Gen.exponential("size")(10, maxSize, 10)
 
