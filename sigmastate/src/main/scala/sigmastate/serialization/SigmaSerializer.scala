@@ -63,7 +63,7 @@ object SigmaSerializer {
   }
 }
 
-trait SigmaSerializer[TFamily, T <: TFamily] extends Serializer[TFamily, T, SigmaByteReader, SigmaByteWriter] {
+abstract class SigmaSerializer[TFamily, T <: TFamily] extends Serializer[TFamily, T, SigmaByteReader, SigmaByteWriter] {
 
   /** Wraps the given writer in SigmaByteWriter and delegates to [[serialize]].
     * NOTE: it is used in spam tests.
