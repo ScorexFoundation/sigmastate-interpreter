@@ -125,7 +125,7 @@ class ScriptVersionSwitchSpecification extends SigmaDslTesting {
 
     verifyCases(
       {
-        def success[T](v: T, c: Int) = Success(Expected(v, c))
+        def success[T](v: T, c: Int) = Expected(Success(v), c)
         Seq(
           (Coll[Box](), success(Coll[Box](), 37297)),
           (Coll[Box](b1), success(Coll[Box](), 37397))
