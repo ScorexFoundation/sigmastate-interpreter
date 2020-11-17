@@ -28,11 +28,11 @@ import spire.syntax.all.cfor
   * @param boxesToSpend           - boxes, that corresponds to id's of `spendingTransaction.inputs`
   * @param spendingTransaction    - transaction that contains `self` box
   * @param extension              - prover-defined key-value pairs, that may be used inside a script
-  * @param validationSettings     validataion parameters passed to Interpreter.verify to detect soft-fork conditions
+  * @param validationSettings     validation parameters passed to Interpreter.verify to detect soft-fork conditions
   * @param costLimit              hard limit on accumulated execution cost, if exceeded lead to CostLimitException to be thrown
   * @param initCost               initial value of execution cost already accumulated before Interpreter.verify is called
   * @param activatedScriptVersion Maximum version of ErgoTree currently activated on the network.
-  *                               The activation is performed via miners voting majority switches to higher version.
+  *                               The activation is performed via miners voting.
   *                               For verification of *mined* blocks this parameter should  be passed according
   *                               to the latest voted (activated) script version on the network.
   *                               However this is not the case for *candidate* blocks.

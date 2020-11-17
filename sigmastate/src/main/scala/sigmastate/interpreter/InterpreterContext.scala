@@ -53,7 +53,7 @@ trait InterpreterContext {
   /** Prover-defined key-value pairs, that may be used inside a script. */
   val extension: ContextExtension
 
-  /** Validataion parameters passed to Interpreter.verify to detect soft-fork conditions. */
+  /** Validation parameters passed to Interpreter.verify to detect soft-fork conditions. */
   val validationSettings: SigmaValidationSettings
 
   /** Hard limit on accumulated execution cost. Exceeding it leads to CostLimitException

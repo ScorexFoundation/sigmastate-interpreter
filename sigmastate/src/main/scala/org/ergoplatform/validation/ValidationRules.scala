@@ -76,6 +76,12 @@ case class ValidationException(message: String, rule: ValidationRule, args: Seq[
   override def fillInStackTrace(): Throwable = this  // to avoid spending time on recording stack trace
 }
 
+/** All validation rules which are used to check soft-forkable conditions. Each validation
+  * rule throws a [[org.ergoplatform.validation.ValidationException]]. Each
+  * ValidationException can be caught and handled with respect to
+  * [[SigmaValidationSettings]], which can be changed by miners via voting.
+  * Thus, the behavior of the rules can be overridden without breaking consensus.
+  */
 object ValidationRules {
   /** The id of the first validation rule. Can be used as the beginning of the rules id range. */
   val FirstRuleId = 1000.toShort

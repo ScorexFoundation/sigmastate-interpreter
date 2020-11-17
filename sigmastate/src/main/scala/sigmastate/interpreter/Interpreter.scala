@@ -195,10 +195,13 @@ trait Interpreter extends ScorexLogging {
   def fullReduction(ergoTree: ErgoTree,
                     context: CTX,
                     env: ScriptEnv): (SigmaBoolean, Long) = {
+    // The following conditions define behavior which depend on the version of ergoTree
+    // This works in addition to more fine-grained soft-forkabiltiy mechanism implemented
+    // using ValidationRules (see trySoftForkable method call here and in reduceToCrypto).
     if (context.activatedScriptVersion > Interpreter.MaxSupportedScriptVersion) {
       // majority has already switched to higher version, accept without verification
       // NOTE: this path should never be taken for validation of candidate blocks
-      // this means Ergo node should always pass Interpreter.MaxSupportedScriptVersion
+      // in which case Ergo node should always pass Interpreter.MaxSupportedScriptVersion
       // as the value of ErgoLikeContext.activatedScriptVersion.
       // see also ErgoLikeContext ScalaDoc.
       return TrivialProp.TrueProp -> context.initCost
@@ -206,6 +209,7 @@ trait Interpreter extends ScorexLogging {
       if (ergoTree.version > context.activatedScriptVersion)
         throw new InterpreterException(s"Not supported script version ${ergoTree.version}")
     }
+
     implicit val vs: SigmaValidationSettings = context.validationSettings
 
     val initCost = JMath.addExact(ergoTree.complexity.toLong, context.initCost)
@@ -216,6 +220,7 @@ trait Interpreter extends ScorexLogging {
     val contextWithCost = context.withInitCost(initCost).asInstanceOf[CTX]
 
     val prop = propositionFromErgoTree(ergoTree, contextWithCost)
+
     val (propTree, context2) = trySoftForkable[(BoolValue, CTX)](whenSoftFork = (TrueLeaf, contextWithCost)) {
       applyDeserializeContext(contextWithCost, prop)
     }

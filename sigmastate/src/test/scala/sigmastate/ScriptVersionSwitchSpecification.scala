@@ -177,7 +177,9 @@ class ScriptVersionSwitchSpecification extends SigmaDslTesting {
     val headerFlags = ergoTreeHeader( 0 /* Script v1 */)
     val ergoTree = createErgoTree(headerFlags = headerFlags)
 
-    val activatedVersion = 1.toByte // SF Status: active
+    // Even though the SF is active and the v2 scripts can be accepted in `mined` blocks
+    // this test case is for `candidate` block, so we MUST use
+    // Interpreter.MaxSupportedScriptVersion
 
     // both prove and verify are accepting with full evaluation
     val expectedCost = 5464L
