@@ -174,7 +174,7 @@ class ErgoTreeSpecification extends SigmaTestingData {
       (constSizeTuple, true),
       (constSizeTuple, true), // should avoid re-computation
       (dynSizeTuple, false),
-      (dynSizeTuple, false), // should avoid re-computation
+      (dynSizeTuple, false)   // should avoid re-computation
     )) { (t, isConst) =>
       t.isConstantSize shouldBe isConst
     }
