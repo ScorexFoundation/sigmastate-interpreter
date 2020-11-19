@@ -82,18 +82,17 @@ class ErgoTreeEvaluator(
 
   val costTrace = ArrayBuffer.empty[CostTraceItem]
 
-  def addCost(cost: Int, opNode: SValue) = {
+  /** Adds the given cost to the `coster`. If tracing is enabled, associates the cost with
+    * the given node operation.
+    * @param cost the cost to be added to `coster`
+    * @param opNode the node to associate the cost with (when costTracingEnabled)
+    */
+  def addCost(cost: Int, opNode: SValue): this.type = {
     coster.add(cost)
     if (settings.costTracingEnabled) {
       costTrace += CostTraceItem(opNode.opName, cost)
     }
-  }
-
-  def addCostOf(opName: String, opType: SFunc) = {
-    val cost = Value.costOf(opName, opType)
-    coster.add(cost)
-    if (settings.isLogEnabled)
-      println(s"CostOf($opName, $opType) -> $cost")
+    this
   }
 
   def addCostOf(node: SValue) = {

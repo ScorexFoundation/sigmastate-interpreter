@@ -5,27 +5,6 @@ import sigmastate.{Downcast, Upcast}
 import sigmastate.lang.SigmaParser
 import sigmastate.lang.Terms.OperationId
 
-case class JitCostTable(operCosts: Map[OperationId, Int]) extends (OperationId => Int) {
-  @inline private def cleanOperId(operId: OperationId): OperationId = {
-    if (operId.opType.tpeParams.isEmpty) operId
-    else operId.copy(opType = operId.opType.copy(tpeParams = Nil))
-  }
-  @inline final def get(operId: OperationId): Option[Int] = {
-    val cleanId = cleanOperId(operId)
-    operCosts.get(cleanId)
-  }
-  override def apply(operId: OperationId): Int = {
-    val costOpt = this.get(operId)
-    costOpt match {
-      case Some(cost) =>
-        // println(s"$operId -> $cost")
-        cost
-      case None => //costToInt(MinimalCost)
-        sys.error(s"Cannot find cost in CostTable for $operId")
-    }
-  }
-}
-
 object JitCostTable {
   type ExpressionCost = Int
 
