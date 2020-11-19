@@ -47,8 +47,8 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
   override val evalSettings: EvalSettings =
     ErgoTreeEvaluator.DefaultEvalSettings.copy(
-      isLogEnabled = true,
-      costTracingEnabled = true
+      isLogEnabled = false,
+      costTracingEnabled = false
     )
 
   implicit def IR = createIR()
