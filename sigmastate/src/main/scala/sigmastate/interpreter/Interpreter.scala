@@ -195,11 +195,12 @@ trait Interpreter extends ScorexLogging {
   def fullReduction(ergoTree: ErgoTree,
                     context: CTX,
                     env: ScriptEnv): (SigmaBoolean, Long) = {
+    // TODO v5.0: the condition below should be revised if necessary
     // The following conditions define behavior which depend on the version of ergoTree
     // This works in addition to more fine-grained soft-forkabiltiy mechanism implemented
     // using ValidationRules (see trySoftForkable method call here and in reduceToCrypto).
     if (context.activatedScriptVersion > Interpreter.MaxSupportedScriptVersion) {
-      // majority has already switched to higher version, accept without verification
+      // > 90% has already switched to higher version, accept without verification
       // NOTE: this path should never be taken for validation of candidate blocks
       // in which case Ergo node should always pass Interpreter.MaxSupportedScriptVersion
       // as the value of ErgoLikeContext.activatedScriptVersion.
