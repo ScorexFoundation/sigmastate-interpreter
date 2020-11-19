@@ -3,11 +3,8 @@ package org.ergoplatform
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate.eval.IRContext
-import sigmastate.interpreter.{Interpreter, ErgoTreeEvaluator}
-import sigmastate.interpreter.Interpreter.{ScriptEnv, ReductionResult}
+import sigmastate.interpreter.Interpreter
 import sigmastate.utxo._
-
-import scala.util.Try
 
 
 class ErgoLikeInterpreter(implicit val IR: IRContext) extends Interpreter {
