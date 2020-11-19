@@ -367,7 +367,12 @@ object CostTable {
 //    ("Slice", "(Coll[IV],Int,Int) => Coll[IV]", collToColl),
 //    ("Append", "(Coll[IV],Coll[IV]) => Coll[IV]", collToColl),
 //
-//    ("SizeOf", "(Coll[IV]) => Int", collLength),
+
+    /** Cost of: 1) calling Coll.length method (guaranteed to be O(1))
+      * Twice the cost of SelectField.
+      * Old cost: ("SizeOf", "(Coll[IV]) => Int", collLength) */
+    def SizeOf = 4  // cf. collLength
+
 //    ("ByIndex", "(Coll[IV],Int) => IV", collByIndex),
 //    ("SCollection$.exists", "(Coll[IV],(IV) => Boolean) => Boolean", collToColl),
 //    ("SCollection$.forall", "(Coll[IV],(IV) => Boolean) => Boolean", collToColl),
@@ -401,6 +406,30 @@ object CostTable {
 //    ("AND", "(Coll[Boolean]) => Boolean", logicCost),
 //    ("OR_per_item", "(Coll[Boolean]) => Boolean", logicCost),
 //    ("AND_per_item", "(Coll[Boolean]) => Boolean", logicCost),
+    /** Cost of: operations factored out of reduction loop.
+      * @see OR_PerItem,  */
+    def OR = 2
+    
+    /** Cost of: single scala `||` operation amortized over a loop of boolean values.
+      * @see OR */
+    def OR_PerItem = 2
+
+    /** Cost of: operations factored out of reduction loop.
+      * @see BinAnd */
+    def AND = 2
+
+    /** Cost of: single scala `&&` operation amortized over a loop of boolean values.
+      * @see OR */
+    def AND_PerItem = 2
+
+    /** Cost of: operations factored out of reduction loop.
+      * @see XOR_PerItem,  */
+    def XOR = 2
+
+    /** Cost of: single scala `^` operation amortized over a loop of boolean values.
+      * @see XOR */
+    def XOR_PerItem = 2
+
 //    ("AtLeast", "(Int, Coll[Boolean]) => Boolean", logicCost),
 //    ("CalcBlake2b256_per_kb", "(Coll[Byte]) => Coll[Byte]", hashPerKb),
 //    ("CalcSha256_per_kb", "(Coll[Byte]) => Coll[Byte]", hashPerKb),

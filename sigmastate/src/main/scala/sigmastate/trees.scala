@@ -296,12 +296,14 @@ case class OR(input: Value[SCollection[SBoolean.type]])
   override def opType = OR.OpType
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val inputV = input.evalTo[Coll[Boolean]](env)
-    val res = if (inputV.isEmpty) false
-    else {
-      E.addPerItemCostOf(this, inputV.length - 1)
-      SigmaDsl.anyOf(inputV)
+    var foldingCost = 0
+    var res = false
+    val len = inputV.length
+    cfor(0)(_ < len && !res, _ + 1) { i =>
+      foldingCost += CostOf.OR_PerItem
+      res ||= inputV(i)
     }
-    E.addCostOf(this)
+    E.addCost(CostOf.OR + foldingCost, this)
     res
   }
 }
@@ -324,10 +326,16 @@ case class XorOf(input: Value[SCollection[SBoolean.type]])
   override def opType = XorOf.OpType
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val inputV = input.evalTo[Coll[Boolean]](env)
-    if (inputV.nonEmpty)
-      E.addPerItemCostOf(this, inputV.length - 1)
-    E.addCostOf(this)
-    SigmaDsl.xorOf(inputV)
+    val len = inputV.length
+    E.addCost(CostOf.XOR + CostOf.XOR_PerItem * len, this)
+    // TODO HF: the code should be versioned
+    val res = SigmaDsl.xorOf(inputV)  // this is v3.x version (Script v1)
+    // The following is v5.x version (Script v2)
+    //    var res = false
+    //    cfor(0)(_ < len, _ + 1) { i =>
+    //      res ^= inputV(i)
+    //    }
+    res
   }
 }
 
@@ -349,12 +357,14 @@ case class AND(input: Value[SCollection[SBoolean.type]])
   override def opType = AND.OpType
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val inputV = input.evalTo[Coll[Boolean]](env)
-    val res = if (inputV.isEmpty) true
-    else {
-      E.addPerItemCostOf(this, inputV.length - 1)
-      SigmaDsl.allOf(inputV)
+    var foldingCost = 0
+    var res = true
+    val len = inputV.length
+    cfor(0)(_ < len && res, _ + 1) { i =>
+      foldingCost += CostOf.AND_PerItem
+      res &&= inputV(i)
     }
-    E.addCostOf(this)
+    E.addCost(CostOf.AND + foldingCost, this)
     res
   }
 }
