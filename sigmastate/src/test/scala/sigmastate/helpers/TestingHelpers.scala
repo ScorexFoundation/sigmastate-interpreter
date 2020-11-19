@@ -68,10 +68,11 @@ object TestingHelpers {
       extension: ContextExtension = ctx.extension,
       validationSettings: SigmaValidationSettings = ctx.validationSettings,
       costLimit: Long = ctx.costLimit,
-      initCost: Long = ctx.initCost): ErgoLikeContext = {
+      initCost: Long = ctx.initCost,
+      activatedScriptVersion: Byte = ctx.activatedScriptVersion): ErgoLikeContext = {
     new ErgoLikeContext(
       lastBlockUtxoRoot, headers, preHeader, dataBoxes, boxesToSpend,
-      spendingTransaction, selfIndex, extension, validationSettings, costLimit, initCost)
+      spendingTransaction, selfIndex, extension, validationSettings, costLimit, initCost, activatedScriptVersion)
   }
 
   /** Creates a new box by updating some of the additional registers with the given new bindings.

@@ -152,7 +152,7 @@ trait Interpreter extends ScorexLogging {
     implicit val vs = context.validationSettings
     val maxCost = context.costLimit
     val initCost = context.initCost
-    trySoftForkable[ReductionResult](whenSoftFork = TrivialProp.TrueProp -> 0) {
+    trySoftForkable[ReductionResult](whenSoftFork = TrivialProp.TrueProp -> initCost) {
       val costingRes = doCostingEx(env, exp, true)
       val costF = costingRes.costF
       IR.onCostingResult(env, exp, costingRes)
@@ -195,6 +195,22 @@ trait Interpreter extends ScorexLogging {
   def fullReduction(ergoTree: ErgoTree,
                     context: CTX,
                     env: ScriptEnv): (SigmaBoolean, Long) = {
+    // TODO v5.0: the condition below should be revised if necessary
+    // The following conditions define behavior which depend on the version of ergoTree
+    // This works in addition to more fine-grained soft-forkabiltiy mechanism implemented
+    // using ValidationRules (see trySoftForkable method call here and in reduceToCrypto).
+    if (context.activatedScriptVersion > Interpreter.MaxSupportedScriptVersion) {
+      // > 90% has already switched to higher version, accept without verification
+      // NOTE: this path should never be taken for validation of candidate blocks
+      // in which case Ergo node should always pass Interpreter.MaxSupportedScriptVersion
+      // as the value of ErgoLikeContext.activatedScriptVersion.
+      // see also ErgoLikeContext ScalaDoc.
+      return TrivialProp.TrueProp -> context.initCost
+    } else {
+      if (ergoTree.version > context.activatedScriptVersion)
+        throw new InterpreterException(s"Not supported script version ${ergoTree.version}")
+    }
+
     implicit val vs: SigmaValidationSettings = context.validationSettings
 
     val initCost = JMath.addExact(ergoTree.complexity.toLong, context.initCost)
@@ -205,6 +221,7 @@ trait Interpreter extends ScorexLogging {
     val contextWithCost = context.withInitCost(initCost).asInstanceOf[CTX]
 
     val prop = propositionFromErgoTree(ergoTree, contextWithCost)
+
     val (propTree, context2) = trySoftForkable[(BoolValue, CTX)](whenSoftFork = (TrueLeaf, contextWithCost)) {
       applyDeserializeContext(contextWithCost, prop)
     }
@@ -345,6 +362,14 @@ object Interpreter {
   type ScriptEnv = Map[String, Any]
   val emptyEnv: ScriptEnv = Map.empty[String, Any]
   val ScriptNameProp = "ScriptName"
+
+  /** Maximum version of ErgoTree supported by this interpreter release.
+    * See version bits in `ErgoTree.header` for more details.
+    * This value should be increased with each new language update via soft-fork.
+    * For example in version 3.x-4.x this value should be 0, in 5.x increased to 1,
+    * in 6.x set to 2, etc.
+    */
+  val MaxSupportedScriptVersion: Byte = 0
 
   def error(msg: String) = throw new InterpreterException(msg)
 

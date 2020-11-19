@@ -1043,9 +1043,20 @@ object Values {
     /** Default header with constant segregation enabled. */
     val ConstantSegregationHeader: Byte = (DefaultHeader | ConstantSegregationFlag).toByte
 
+    /** @return true if the constant segregation flag is set to 1 in the given header byte. */
     @inline final def isConstantSegregation(header: Byte): Boolean = (header & ConstantSegregationFlag) != 0
+
+    /** @return true if the size flag is set to 1 in the given header byte. */
     @inline final def hasSize(header: Byte): Boolean = (header & SizeFlag) != 0
+
+    /** @return a value of the version bits from the given header byte. */
     @inline final def getVersion(header: Byte): Byte = (header & VersionMask).toByte
+
+    /** Update the version bits of the given header byte with the given version value. */
+    @inline final def updateVersionBits(header: Byte, version: Byte): Byte = {
+      require(version < 8, s"ErgoTree.version should be < 8: $version")
+      (header | version).toByte
+    }
 
     def substConstants(root: SValue, constants: IndexedSeq[Constant[SType]]): SValue = {
       val store = new ConstantStore(constants)
