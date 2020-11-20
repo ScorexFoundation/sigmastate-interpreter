@@ -196,17 +196,9 @@ trait Interpreter extends ScorexLogging {
                     context: CTX,
                     env: ScriptEnv): (SigmaBoolean, Long) = {
     implicit val vs: SigmaValidationSettings = context.validationSettings
-
-    val initCost = JMath.addExact(ergoTree.complexity.toLong, context.initCost)
-    val remainingLimit = context.costLimit - initCost
-    if (remainingLimit <= 0) {
-      throw new CostLimitException(initCost, Evaluation.msgCostLimitError(initCost, context.costLimit), None)
-    }
-    val contextWithCost = context.withInitCost(initCost).asInstanceOf[CTX]
-
-    val prop = propositionFromErgoTree(ergoTree, contextWithCost)
-    val (propTree, context2) = trySoftForkable[(BoolValue, CTX)](whenSoftFork = (TrueLeaf, contextWithCost)) {
-      applyDeserializeContext(contextWithCost, prop)
+    val prop = propositionFromErgoTree(ergoTree, context)
+    val (propTree, context2) = trySoftForkable[(BoolValue, CTX)](whenSoftFork = (TrueLeaf, context)) {
+      applyDeserializeContext(context, prop)
     }
 
     // here we assume that when `propTree` is TrueProp then `reduceToCrypto` always succeeds
@@ -240,7 +232,15 @@ trait Interpreter extends ScorexLogging {
              message: Array[Byte]): Try[VerificationResult] = {
     val (res, t) = BenchmarkUtil.measureTime(Try {
 
-      val (cProp, cost) = fullReduction(ergoTree, context, env)
+      val initCost = JMath.addExact(ergoTree.complexity.toLong, context.initCost)
+      val remainingLimit = context.costLimit - initCost
+      if (remainingLimit <= 0) {
+        // TODO cover with tests (2h)
+        throw new CostLimitException(initCost, Evaluation.msgCostLimitError(initCost, context.costLimit), None)
+      }
+      val contextWithCost = context.withInitCost(initCost).asInstanceOf[CTX]
+
+      val (cProp, cost) = fullReduction(ergoTree, contextWithCost, env)
 
       val checkingResult = cProp match {
         case TrivialProp.TrueProp => true
