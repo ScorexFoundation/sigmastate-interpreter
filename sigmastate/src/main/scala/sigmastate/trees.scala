@@ -396,7 +396,7 @@ case class AtLeast(bound: Value[SInt.type], input: Value[SCollection[SSigmaProp.
     val b = bound.evalTo[Int](env)
     val props = input.evalTo[Coll[SigmaProp]](env)
     addCost(CostOf.AtLeast)
-    addCollCost(CostOf.AtLeast_PerItem, props.length)
+    addSeqCost(CostOf.AtLeast_PerItem, props.length)
     SigmaDsl.atLeast(b, props)
   }
 }

@@ -123,11 +123,18 @@ object Values {
       v.asInstanceOf[T]
     }
 
+    /** Add the given cost amount to the accumulator and associate it with this operation
+      * node.
+      */
     @inline final def addCost(cost: Int)(implicit E: ErgoTreeEvaluator): Unit = {
       E.addCost(cost, this)
     }
 
-    @inline final def addCollCost(perItemCost: Int, nItems: Int)(implicit E: ErgoTreeEvaluator): Unit = {
+    /** Add the cost of a repeated operation to the accumulator and associate it with this operation.
+      * @param perItemCost cost per operation
+      * @param nItems number of operations
+      */
+    @inline final def addSeqCost(perItemCost: Int, nItems: Int)(implicit E: ErgoTreeEvaluator): Unit = {
       E.addCost(perItemCost, nItems, this.opName)
     }
   }

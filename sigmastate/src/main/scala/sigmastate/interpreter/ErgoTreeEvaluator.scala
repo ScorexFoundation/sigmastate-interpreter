@@ -4,7 +4,7 @@ import org.ergoplatform.ErgoLikeContext
 import sigmastate.SType
 import sigmastate.Values._
 import sigmastate.eval.Profiler
-import sigmastate.interpreter.ErgoTreeEvaluator.{CostTraceItem, DataEnv}
+import sigmastate.interpreter.ErgoTreeEvaluator.{CostItem, DataEnv, SimpleCostItem, SeqCostItem}
 import sigmastate.interpreter.Interpreter.ReductionResult
 import sigmastate.lang.exceptions.CostLimitException
 import special.sigma.Context
@@ -83,7 +83,7 @@ class ErgoTreeEvaluator(
     (res, cost)
   }
 
-  val costTrace = ArrayBuffer.empty[CostTraceItem]
+  val costTrace = ArrayBuffer.empty[CostItem]
 
   /** Adds the given cost to the `coster`. If tracing is enabled, associates the cost with
     * the given node operation.
@@ -102,7 +102,7 @@ class ErgoTreeEvaluator(
   def addCost(cost: Int, opName: String): this.type = {
     coster.add(cost)
     if (settings.costTracingEnabled) {
-      costTrace += CostTraceItem(opName, cost)
+      costTrace += SimpleCostItem(opName, cost)
     }
     this
   }
@@ -117,7 +117,7 @@ class ErgoTreeEvaluator(
     val cost = Math.multiplyExact(perItemCost, nItems)
     coster.add(cost)
     if (settings.costTracingEnabled) {
-      costTrace += CostTraceItem(opName, cost)  // TODO v5.0: more accurate tracing
+      costTrace += SeqCostItem(opName, perItemCost, nItems)  // TODO v5.0: more accurate tracing
     }
     this
   }
@@ -160,15 +160,36 @@ object ErgoTreeEvaluator {
   /** Evaluator currently is being executed on the current thread.
     * This variable is set in a single place, specifically in the `eval` method of
     * [[ErgoTreeEvaluator]].
+    * @see getCurrentEvaluator
     */
   private val currentEvaluator = new DynamicVariable[ErgoTreeEvaluator](null)
 
+  /** Returns a current evaluator for the current thread. */
+  def getCurrentEvaluator: ErgoTreeEvaluator = currentEvaluator.value
+
+  /** An item in the cost accumulation trace of a [[ErgoTreeEvaluator]]. */
+  abstract class CostItem {
+    def opName: String
+  }
+
   /** An item in the cost accumulation trace of a [[ErgoTreeEvaluator]].
+    * Represents cost of simple operation.
     * Used for debugging of costing.
     * @param opName  name of the ErgoTree operation
     * @param cost    cost added to accumulator
     */
-  case class CostTraceItem(opName: String, cost: Int)
+  case class SimpleCostItem(opName: String, cost: Int) extends CostItem
+
+  /** An item in the cost accumulation trace of a [[ErgoTreeEvaluator]].
+    * Represents cost of a sequence of operation.
+    * Used for debugging of costing.
+    *
+    * @param opName      name of the ErgoTree operation
+    * @param perItemCost cost added to accumulator for each item of a collection
+    * @param nItems      number of items in the collection
+    */
+  case class SeqCostItem(opName: String, perItemCost: Int, nItems: Int)
+    extends CostItem
 
   /** Evaluate the given [[ErgoTree]] in the given Ergo context using the given settings.
     * The given ErgoTree is evaluated as-is and is not changed during evaluation.
