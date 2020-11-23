@@ -126,6 +126,10 @@ object Values {
     @inline final def addCost(cost: Int)(implicit E: ErgoTreeEvaluator): Unit = {
       E.addCost(cost, this)
     }
+
+    @inline final def addCollCost(perItemCost: Int, nItems: Int)(implicit E: ErgoTreeEvaluator): Unit = {
+      E.addCost(perItemCost, nItems, this.opName)
+    }
   }
 
   object Value {

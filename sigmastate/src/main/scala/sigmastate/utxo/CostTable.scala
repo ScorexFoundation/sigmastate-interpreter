@@ -430,7 +430,14 @@ object CostTable {
       * @see XOR */
     def XOR_PerItem = 2
 
-//    ("AtLeast", "(Int, Coll[Boolean]) => Boolean", logicCost),
+    /** Cost of: constructing new CSigmaProp value
+      * @see AtLeast_PerItem */
+    def AtLeast = 2 // cf. logicCost
+
+    /** Cost of: obtaining SigmaBoolean for each item in AtLeast
+      * @see AtLeast */
+    def AtLeast_PerItem = 1 // cf. logicCost
+
 //    ("CalcBlake2b256_per_kb", "(Coll[Byte]) => Coll[Byte]", hashPerKb),
 //    ("CalcSha256_per_kb", "(Coll[Byte]) => Coll[Byte]", hashPerKb),
 //    ("Xor_per_kb", "(Coll[Byte],Coll[Byte]) => Coll[Byte]", hashPerKb / 2),

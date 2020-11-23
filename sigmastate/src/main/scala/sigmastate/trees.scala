@@ -395,7 +395,8 @@ case class AtLeast(bound: Value[SInt.type], input: Value[SCollection[SSigmaProp.
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val b = bound.evalTo[Int](env)
     val props = input.evalTo[Coll[SigmaProp]](env)
-    E.addCostOf(this)
+    addCost(CostOf.AtLeast)
+    addCollCost(CostOf.AtLeast_PerItem, props.length)
     SigmaDsl.atLeast(b, props)
   }
 }

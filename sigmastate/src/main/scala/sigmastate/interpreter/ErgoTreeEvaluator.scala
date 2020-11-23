@@ -1,16 +1,17 @@
 package sigmastate.interpreter
 
 import org.ergoplatform.ErgoLikeContext
-import sigmastate.{SType, SFunc}
+import sigmastate.SType
 import sigmastate.Values._
 import sigmastate.eval.Profiler
-import sigmastate.interpreter.ErgoTreeEvaluator.{DataEnv, CostTraceItem}
+import sigmastate.interpreter.ErgoTreeEvaluator.{CostTraceItem, DataEnv}
 import sigmastate.interpreter.Interpreter.ReductionResult
 import sigmastate.lang.exceptions.CostLimitException
 import special.sigma.Context
 import scalan.util.Extensions._
 
 import scala.collection.mutable.ArrayBuffer
+import scala.util.DynamicVariable
 
 /** Configuration parameters of the evaluation run. */
 case class EvalSettings(
@@ -70,7 +71,9 @@ class ErgoTreeEvaluator(
 {
   /** Evaluates the given expression in the given data environment. */
   def eval(env: DataEnv, exp: SValue): Any = {
-    exp.evalTo[Any](env)(this)
+    ErgoTreeEvaluator.currentEvaluator.withValue(this) {
+      exp.evalTo[Any](env)(this)
+    }
   }
 
   /** Evaluates the given expression in the given data environment. */
@@ -88,9 +91,33 @@ class ErgoTreeEvaluator(
     * @param opNode the node to associate the cost with (when costTracingEnabled)
     */
   def addCost(cost: Int, opNode: SValue): this.type = {
+    addCost(cost, opNode.opName)
+  }
+
+  /** Adds the given cost to the `coster`. If tracing is enabled, associates the cost with
+    * the given operation.
+    * @param cost the cost to be added to `coster`
+    * @param opName the operation name to associate the cost with (when costTracingEnabled)
+    */
+  def addCost(cost: Int, opName: String): this.type = {
     coster.add(cost)
     if (settings.costTracingEnabled) {
-      costTrace += CostTraceItem(opNode.opName, cost)
+      costTrace += CostTraceItem(opName, cost)
+    }
+    this
+  }
+
+  /** Adds the given cost to the `coster`. If tracing is enabled, associates the cost with
+    * the given operation.
+    * @param perItemCost the cost to be added to `coster` for each item
+    * @param nItems the number of items
+    * @param opName the operation name to associate the cost with (when costTracingEnabled)
+    */
+  def addCost(perItemCost: Int, nItems: Int, opName: String): this.type = {
+    val cost = Math.multiplyExact(perItemCost, nItems)
+    coster.add(cost)
+    if (settings.costTracingEnabled) {
+      costTrace += CostTraceItem(opName, cost)  // TODO v5.0: more accurate tracing
     }
     this
   }
@@ -129,6 +156,12 @@ object ErgoTreeEvaluator {
 
   /** Default global [[EvalSettings]] instance. */
   val DefaultEvalSettings = EvalSettings(isMeasureOperationTime = false)
+
+  /** Evaluator currently is being executed on the current thread.
+    * This variable is set in a single place, specifically in the `eval` method of
+    * [[ErgoTreeEvaluator]].
+    */
+  private val currentEvaluator = new DynamicVariable[ErgoTreeEvaluator](null)
 
   /** An item in the cost accumulation trace of a [[ErgoTreeEvaluator]].
     * Used for debugging of costing.
