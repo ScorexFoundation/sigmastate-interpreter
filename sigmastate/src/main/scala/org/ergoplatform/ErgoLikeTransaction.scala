@@ -105,6 +105,14 @@ class ErgoLikeTransaction(override val inputs: IndexedSeq[Input],
   }
 
   override def hashCode(): Int = id.hashCode()
+
+  /** Similar to case class `copy` method. Different name is used to not interfere with
+    * possible derived case classes.
+    */
+  def clone(inputs: IndexedSeq[Input] = inputs,
+           dataInputs: IndexedSeq[DataInput] = dataInputs,
+           outputCandidates: IndexedSeq[ErgoBoxCandidate] = outputCandidates) =
+    new ErgoLikeTransaction(inputs, dataInputs, outputCandidates)
 }
 
 object ErgoLikeTransactionSerializer extends SigmaSerializer[ErgoLikeTransaction, ErgoLikeTransaction] {

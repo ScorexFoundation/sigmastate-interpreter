@@ -40,7 +40,6 @@ object ContextExtension {
         case Nullable(_) => r.getUByte()  // v4.0 and above
         case _ => r.getByte() // v3.x
       }
-
       val ext = (0 until extSize)
         .map(_ => (r.getByte(), r.getValue().asInstanceOf[EvaluatedValue[_ <: SType]]))
         .toMap[Byte, EvaluatedValue[_ <: SType]]
