@@ -1,9 +1,9 @@
 package sigmastate.interpreter
 
 import org.ergoplatform.validation.SigmaValidationSettings
+import scalan.Nullable
 import sigmastate.SType
 import sigmastate.Values.EvaluatedValue
-import sigmastate.eval.Evaluation
 import sigmastate.serialization.SigmaSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import special.sigma
@@ -36,7 +36,11 @@ object ContextExtension {
     }
 
     override def parse(r: SigmaByteReader): ContextExtension = {
-      val extSize = r.getByte()
+      val extSize = r.versionContext match {
+        case Nullable(_) => r.getUByte()  // v4.0 and above
+        case _ => r.getByte() // v3.x
+      }
+
       val ext = (0 until extSize)
         .map(_ => (r.getByte(), r.getValue().asInstanceOf[EvaluatedValue[_ <: SType]]))
         .toMap[Byte, EvaluatedValue[_ <: SType]]
@@ -102,3 +106,5 @@ trait InterpreterContext {
     */
   def toSigmaContext(isCost: Boolean, extensions: Map[Byte, AnyValue] = Map()): sigma.Context
 }
+
+case class VersionContext(ergoProtocolVersion: Byte, scriptVersion: Byte)

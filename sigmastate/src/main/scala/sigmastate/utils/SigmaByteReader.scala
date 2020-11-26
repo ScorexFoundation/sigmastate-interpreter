@@ -1,17 +1,35 @@
 package sigmastate.utils
 
+import scalan.Nullable
 import scorex.util.serialization.Reader
 import sigmastate.SType
 import sigmastate.Values.{SValue, Value}
 import sigmastate.lang.exceptions.{InputSizeLimitExceeded, DeserializeCallDepthExceeded}
 import sigmastate.serialization._
 import scorex.util.Extensions._
+import sigmastate.interpreter.VersionContext
 import spire.syntax.all.cfor
 
+/** Reader used in the concrete implementations of [[SigmaSerializer]].
+  * It decorates the given reader, delegates most of the methods to it, but also adds new
+  * methods.
+  *
+  * @param r                              the underlying reader this reader reads from
+  * @param constantStore                  the store of constants which is used to resolve
+  *                                       [[sigmastate.Values.ConstantPlaceholder]]
+  * @param resolvePlaceholdersToConstants if true then resolved constants will be
+  *                                       substituted in the tree instead of the placeholder.
+  * @param maxTreeDepth                   limit on the tree depth (recursive invocations)
+  *                                       of the deserializer
+  * @param versionContext                 optional version context to support soft and
+  *                                       hard forks in serialization logic.
+  *                                       If None, then no SF or HF activated.
+  */
 class SigmaByteReader(val r: Reader,
                       var constantStore: ConstantStore,
                       var resolvePlaceholdersToConstants: Boolean,
-                      val maxTreeDepth: Int = SigmaSerializer.MaxTreeDepth)
+                      val maxTreeDepth: Int = SigmaSerializer.MaxTreeDepth,
+                      val versionContext: Nullable[VersionContext] = Nullable.None)
   extends Reader {
 
   @inline private def checkPositionLimit(): Unit =
