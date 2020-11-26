@@ -2,12 +2,13 @@ package org.ergoplatform
 
 import org.ergoplatform.ErgoBox.TokenId
 import org.ergoplatform.settings.ErgoAlgos
+import scalan.Nullable
 import scorex.crypto.hash.Digest32
 import scorex.util.{Random, ModifierId}
 import sigmastate.SCollection.SByteArray
 import sigmastate.{SSigmaProp, SPair, SInt, TrivialProp, SType}
-import sigmastate.Values.{LongConstant, FalseLeaf, ConstantNode, SigmaPropConstant, ConstantPlaceholder, TrueSigmaProp, ByteArrayConstant, ErgoTree}
-import sigmastate.interpreter.{ProverResult, ContextExtension}
+import sigmastate.Values.{LongConstant, FalseLeaf, ConstantNode, SigmaPropConstant, ConstantPlaceholder, TrueSigmaProp, ByteArrayConstant, IntConstant, ErgoTree}
+import sigmastate.interpreter.{ProverResult, ContextExtension, VersionContext}
 import sigmastate.serialization.SigmaSerializer
 import sigmastate.eval._
 import sigmastate.eval.Extensions._
@@ -272,13 +273,27 @@ class ErgoLikeTransactionSpec extends SigmaDslTesting {
 
   property("context extension serialization") {
     forAll { tx: ErgoLikeTransaction =>
-      val ce = ContextExtension((Byte.MinValue to (Byte.MaxValue - 1)).map(i => i.toByte -> IntConstant(4)).toMap)
+      val idRange = Byte.MinValue to (Byte.MaxValue - 1)
+      val ce = ContextExtension(idRange.map(id => id.toByte -> IntConstant(4)).toMap)
       val wrongInput = Input(tx.inputs.head.boxId, ProverResult(Array.emptyByteArray, ce))
       val ins = IndexedSeq(wrongInput) ++ tx.inputs.tail
       val tx2 = tx.clone(inputs = ins)
-      val bs = ErgoLikeTransactionSerializer.toBytes(tx2)
-      val restored = ErgoLikeTransactionSerializer.fromBytes(bs)
-      restored.inputs.head.extension.values.size shouldBe tx2.inputs.head.extension.values.size
+      def roundtrip(version: Nullable[VersionContext]) = {
+        val bs = ErgoLikeTransactionSerializer.toBytes(tx2)
+        val restored = ErgoLikeTransactionSerializer.parse(
+          SigmaSerializer.startReader(bs, 0, version)
+        )
+        restored.inputs.head.extension.values.size shouldBe tx2.inputs.head.extension.values.size
+      }
+
+      // successful for v4.0 and above
+      roundtrip(Nullable(VersionContext.MaxSupportedVersion))
+
+      // unsuccessful if version context is not passed (which means v3.x version)
+      assertExceptionThrown(
+        roundtrip(Nullable.None),
+        { _ => true }
+      )
     }
   }
 }

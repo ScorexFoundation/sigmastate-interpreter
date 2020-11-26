@@ -4,10 +4,12 @@ import java.nio.ByteBuffer
 
 import org.ergoplatform.SigmaConstants
 import org.ergoplatform.validation.SigmaValidationSettings
+import scalan.Nullable
 import scorex.util.ByteArrayBuilder
 import sigmastate.lang.exceptions.SerializerException
 import sigmastate.utils._
 import scorex.util.serialization._
+import sigmastate.interpreter.VersionContext
 import sigmastate.serialization.OpCodes.OpCode
 
 object SigmaSerializer {
@@ -17,29 +19,42 @@ object SigmaSerializer {
   val MaxPropositionSize: Int = SigmaConstants.MaxPropositionBytes.value
   val MaxTreeDepth: Int = SigmaConstants.MaxTreeDepth.value
 
-    /** Helper function to be use in serializers.
+  //TODO v5.0: remove default value of versionContext parameter
+  // All usages of this method should pass a version context explicitly.
+
+  /** Helper function to be use in serializers.
     * Starting position is marked and then used to compute number of consumed bytes.
     * val r = Serializer.startReader(bytes, pos)
     * val obj = r.getValue()
-    * obj -> r.consumed */
-  def startReader(bytes: Array[Byte], pos: Int = 0): SigmaByteReader = {
+    * obj -> r.consumed
+    */
+  def startReader(bytes: Array[Byte],
+                  pos: Int = 0,
+                  versionContext: Nullable[VersionContext] = Nullable.None): SigmaByteReader = {
     val buf = ByteBuffer.wrap(bytes)
     buf.position(pos)
-    val r = new SigmaByteReader(new VLQByteBufferReader(buf),
+    val r = new SigmaByteReader(
+      new VLQByteBufferReader(buf),
       new ConstantStore(),
       resolvePlaceholdersToConstants = false,
-      maxTreeDepth = MaxTreeDepth).mark()
+      maxTreeDepth = MaxTreeDepth,
+      versionContext = versionContext
+    ).mark()
     r
   }
 
+  /** Helper function to be use in serializers. */
   def startReader(bytes: Array[Byte],
                   constantStore: ConstantStore,
-                  resolvePlaceholdersToConstants: Boolean)(implicit vs: SigmaValidationSettings): SigmaByteReader = {
+                  resolvePlaceholdersToConstants: Boolean,
+                  versionContext: Nullable[VersionContext])
+                 (implicit vs: SigmaValidationSettings): SigmaByteReader = {
     val buf = ByteBuffer.wrap(bytes)
     val r = new SigmaByteReader(new VLQByteBufferReader(buf),
       constantStore,
       resolvePlaceholdersToConstants,
-      maxTreeDepth = MaxTreeDepth).mark()
+      maxTreeDepth = MaxTreeDepth,
+      versionContext = versionContext).mark()
     r
   }
 
