@@ -9,7 +9,7 @@ import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import spire.syntax.all.cfor
 
 /** Serialization of types according to specification in TypeSerialization.md. */
-object TypeSerializer extends ByteBufferSerializer[SType] {
+object TypeSerializer {
 
   import sigmastate.SCollectionType._
 
@@ -23,7 +23,7 @@ object TypeSerializer extends ByteBufferSerializer[SType] {
     embeddableIdToType(code)
   }
 
-  override def serialize(tpe: SType, w: SigmaByteWriter) = tpe match {
+  def serialize(tpe: SType, w: SigmaByteWriter): Unit = tpe match {
     case p: SEmbeddable => w.put(p.typeCode)
     case SString => w.put(SString.typeCode)
     case SAny => w.put(SAny.typeCode)
@@ -114,7 +114,7 @@ object TypeSerializer extends ByteBufferSerializer[SType] {
     }
   }
 
-  override def deserialize(r: SigmaByteReader): SType = deserialize(r, 0)
+  def deserialize(r: SigmaByteReader): SType = deserialize(r, 0)
 
   private def deserialize(r: SigmaByteReader, depth: Int): SType = {
     val c = r.getUByte()
