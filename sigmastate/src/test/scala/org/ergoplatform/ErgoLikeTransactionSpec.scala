@@ -13,6 +13,7 @@ import sigmastate.serialization.SigmaSerializer
 import sigmastate.eval._
 import sigmastate.eval.Extensions._
 import sigmastate.SType._
+import sigmastate.helpers.TestingHelpers.copyTransaction
 import sigmastate.utils.Helpers
 import special.sigma.SigmaDslTesting
 
@@ -277,7 +278,7 @@ class ErgoLikeTransactionSpec extends SigmaDslTesting {
       val ce = ContextExtension(idRange.map(id => id.toByte -> IntConstant(4)).toMap)
       val wrongInput = Input(tx.inputs.head.boxId, ProverResult(Array.emptyByteArray, ce))
       val ins = IndexedSeq(wrongInput) ++ tx.inputs.tail
-      val tx2 = tx.clone(inputs = ins)
+      val tx2 = copyTransaction(tx)(inputs = ins)
       def roundtrip(version: Nullable[VersionContext]) = {
         val bs = ErgoLikeTransactionSerializer.toBytes(tx2)
         val restored = ErgoLikeTransactionSerializer.parse(
