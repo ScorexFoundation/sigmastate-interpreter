@@ -7,7 +7,7 @@ import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 
 /** This works in tandem with DataSerializer, if you change one make sure to check the other.*/
 case class ConstantSerializer(builder: SigmaBuilder)
-  extends ByteBufferSerializer[Constant[SType]] with ValueSerializer[Constant[SType]] {
+  extends ValueSerializer[Constant[SType]] {
   override def opDesc = Constant
 
   override def parse(r: SigmaByteReader): Value[SType] = deserialize(r)
@@ -17,7 +17,7 @@ case class ConstantSerializer(builder: SigmaBuilder)
     DataSerializer.serialize(c.value, c.tpe, w)
   }
 
-  override def deserialize(r: SigmaByteReader): Constant[SType] = {
+  def deserialize(r: SigmaByteReader): Constant[SType] = {
     val tpe = r.getType()
     val obj = DataSerializer.deserialize(tpe, r)
     builder.mkConstant(obj, tpe)

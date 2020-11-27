@@ -642,7 +642,7 @@ object BitOp {
   }
 }
 
-// TODO HF: implement modular operations
+// TODO HF (24h): implement modular operations
 case class ModQ(input: Value[SBigInt.type])
   extends NotReadyValue[SBigInt.type] {
   override def companion = ModQ

@@ -108,7 +108,7 @@ object Terms {
     def apply(name: String): Ident = Ident(name, NoType)
   }
 
-  // TODO HF: move to sigmastate.Values
+  // TODO refactor: move to sigmastate.Values
   /** ErgoTree node which represents application of function `func` to the given arguments.
     * @param func expression which evaluates to a function
     * @param args arguments of the function application

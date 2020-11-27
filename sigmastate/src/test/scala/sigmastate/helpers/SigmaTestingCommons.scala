@@ -167,7 +167,8 @@ trait SigmaTestingCommons extends PropSpec
       val tree = IR.buildTree(calcF)
 
       // sanity check that buildTree is reverse to buildGraph (see doCostingEx)
-      tree shouldBe compiledTree
+      if (tA != special.sigma.ContextRType)
+        tree shouldBe compiledTree
 
       val lA = Liftables.asLiftable[SContext, IR.Context](calcF.elem.eDom.liftable)
       val lB = Liftables.asLiftable[Any, Any](calcF.elem.eRange.liftable)

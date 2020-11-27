@@ -7,6 +7,7 @@ import org.scalatest.{PropSpec, Assertion, Matchers}
 import org.scalacheck.Arbitrary._
 import sigmastate.Values._
 import sigmastate.SType
+import sigmastate.helpers.NegativeTesting
 import sigmastate.serialization.generators._
 
 trait SerializationSpecification extends PropSpec
@@ -19,7 +20,8 @@ trait SerializationSpecification extends PropSpec
   with OpcodesGen
   with TransformerGenerators
   with RelationGenerators
-  with ValidationSpecification {
+  with ValidationSpecification
+  with NegativeTesting {
 
   protected def roundTripTest[V <: Value[_ <: SType]](v: V): Assertion = {
     val bytes = ValueSerializer.serialize(v)

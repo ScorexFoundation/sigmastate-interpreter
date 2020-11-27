@@ -160,6 +160,26 @@ class ErgoTreeSpecification extends SigmaTestingData {
     }
   }
 
+  property("Tuple Types") {
+    val constSizeTuple = STuple(SByte, SInt, SBigInt)
+    val dynSizeTuple = STuple(SByte, SInt, SBox, SBigInt)
+    forAll(Table(("type", "isConstantSize"),
+      (STuple(SByte), true),
+      (STuple(SByte, SInt), true),
+      (STuple(SByte, SInt, SAvlTree), true),
+      (STuple(SBox), false),
+      (STuple(SByte, SBox), false),
+      (STuple(SByte, SInt, SBox), false),
+      (STuple(SBox, SByte, SInt), false),
+      (constSizeTuple, true),
+      (constSizeTuple, true), // should avoid re-computation
+      (dynSizeTuple, false),
+      (dynSizeTuple, false)   // should avoid re-computation
+    )) { (t, isConst) =>
+      t.isConstantSize shouldBe isConst
+    }
+  }
+
   /** Expected parameters of resolved method (see `methods` table below).
     *
     * @param isResolvableFromIds if true, them SMethod.fromIds must resolve, otherwise
@@ -210,7 +230,7 @@ class ErgoTreeSpecification extends SigmaTestingData {
     { import SSigmaProp._
       (SSigmaProp.typeId,  Seq(
         MInfo(1, PropBytesMethod),
-        MInfo(2, IsProvenMethod)  // TODO HF: this method must be removed
+        MInfo(2, IsProvenMethod)  // TODO HF (3h): this method must be removed
       ), true)
     },
     { import SBox._
