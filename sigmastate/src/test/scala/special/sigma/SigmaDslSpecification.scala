@@ -1238,6 +1238,144 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
         )))
   }
 
+  property("Int LT, GT") {
+    val o = ExactOrdering.IntIsExactOrdering
+    def expect(v: Boolean) = Expected(Success(v), 36328)
+    val LT_cases: Seq[((Int, Int), Expected[Boolean])] = Seq(
+      (Int.MinValue, Int.MinValue) -> expect(false),
+      (Int.MinValue, (Int.MinValue + 1).toInt) -> expect(true),
+      (Int.MinValue, -1.toInt) -> expect(true),
+      (Int.MinValue, 0.toInt) -> expect(true),
+      (Int.MinValue, 1.toInt) -> expect(true),
+      (Int.MinValue, Int.MaxValue) -> expect(true),
+      (-120.toInt, Int.MinValue) -> expect(false),
+      (-120.toInt, -121.toInt) -> expect(false),
+      (-120.toInt, -120.toInt) -> expect(false),
+      (-120.toInt, -82.toInt) -> expect(true),
+      (-103.toInt, -1.toInt) -> expect(true),
+      (-103.toInt, -0.toInt) -> expect(true),
+      (-103.toInt, 1.toInt) -> expect(true),
+      (-103.toInt, Int.MaxValue) -> expect(true),
+      (-1.toInt, -2.toInt) -> expect(false),
+      (-1.toInt, -1.toInt) -> expect(false),
+      (-1.toInt, 0.toInt) -> expect(true),
+      (-1.toInt, 1.toInt) -> expect(true),
+      (0.toInt, Int.MinValue) -> expect(false),
+      (0.toInt, -1.toInt) -> expect(false),
+      (0.toInt, 0.toInt) -> expect(false),
+      (0.toInt, 1.toInt) -> expect(true),
+      (0.toInt, 60.toInt) -> expect(true),
+      (0.toInt, Int.MaxValue) -> expect(true),
+      (1.toInt, -1.toInt) -> expect(false),
+      (1.toInt, 0.toInt) -> expect(false),
+      (1.toInt, 26.toInt) -> expect(true),
+      (7.toInt, -32.toInt) -> expect(false),
+      (7.toInt, 0.toInt) -> expect(false),
+      (33.toInt, 1.toInt) -> expect(false),
+      (126.toInt, Int.MaxValue) -> expect(true),
+      (Int.MaxValue, Int.MinValue) -> expect(false),
+      (Int.MaxValue, -47.toInt) -> expect(false),
+      (Int.MaxValue, Int.MaxValue) -> expect(false)
+    )
+    verifyCases(
+      LT_cases,
+      existingFeature(
+      { (x: (Int, Int)) => o.lt(x._1, x._2) },
+      """{ (x: (Int, Int)) => x._1 < x._2 }""".stripMargin,
+      FuncValue(
+        Vector((1, SPair(SInt, SInt))),
+        LT(
+          SelectField.typed[Value[SInt.type]](ValUse(1, SPair(SInt, SInt)), 1.toByte),
+          SelectField.typed[Value[SInt.type]](ValUse(1, SPair(SInt, SInt)), 2.toByte)
+        )
+      )
+      ))
+
+    verifyCases(
+      LT_cases.map { case ((x, y), res) => ((y, x), res.copy(cost = 36342)) }, // swap arguments
+      existingFeature(
+      { (x: (Int, Int)) => o.gt(x._1, x._2) },
+      """{ (x: (Int, Int)) => x._1 > x._2 }""".stripMargin,
+      FuncValue(
+        Vector((1, SPair(SInt, SInt))),
+        GT(
+          SelectField.typed[Value[SInt.type]](ValUse(1, SPair(SInt, SInt)), 1.toByte),
+          SelectField.typed[Value[SInt.type]](ValUse(1, SPair(SInt, SInt)), 2.toByte)
+        )
+      )
+      ))
+  }
+
+  property("Int LE, GE") {
+    val o = ExactOrdering.IntIsExactOrdering
+    def expect(v: Boolean) = Expected(Success(v), 36337)
+    val LE_cases: Seq[((Int, Int), Expected[Boolean])] = Seq(
+      (Int.MinValue, Int.MinValue) -> expect(true),
+      (Int.MinValue, (Int.MinValue + 1).toInt) -> expect(true),
+      (Int.MinValue, -1.toInt) -> expect(true),
+      (Int.MinValue, 0.toInt) -> expect(true),
+      (Int.MinValue, 1.toInt) -> expect(true),
+      (Int.MinValue, Int.MaxValue) -> expect(true),
+      (-120.toInt, Int.MinValue) -> expect(false),
+      (-120.toInt, -121.toInt) -> expect(false),
+      (-120.toInt, -120.toInt) -> expect(true),
+      (-120.toInt, -82.toInt) -> expect(true),
+      (-103.toInt, -1.toInt) -> expect(true),
+      (-103.toInt, -0.toInt) -> expect(true),
+      (-103.toInt, 1.toInt) -> expect(true),
+      (-103.toInt, Int.MaxValue) -> expect(true),
+      (-1.toInt, -2.toInt) -> expect(false),
+      (-1.toInt, -1.toInt) -> expect(true),
+      (-1.toInt, 0.toInt) -> expect(true),
+      (-1.toInt, 1.toInt) -> expect(true),
+      (0.toInt, Int.MinValue) -> expect(false),
+      (0.toInt, -1.toInt) -> expect(false),
+      (0.toInt, 0.toInt) -> expect(true),
+      (0.toInt, 1.toInt) -> expect(true),
+      (0.toInt, 60.toInt) -> expect(true),
+      (0.toInt, Int.MaxValue) -> expect(true),
+      (1.toInt, -1.toInt) -> expect(false),
+      (1.toInt, 0.toInt) -> expect(false),
+      (1.toInt, 1.toInt) -> expect(true),
+      (1.toInt, 26.toInt) -> expect(true),
+      (7.toInt, -32.toInt) -> expect(false),
+      (7.toInt, 0.toInt) -> expect(false),
+      (33.toInt, 1.toInt) -> expect(false),
+      (126.toInt, Int.MaxValue) -> expect(true),
+      (Int.MaxValue, Int.MinValue) -> expect(false),
+      (Int.MaxValue, -47.toInt) -> expect(false),
+      (Int.MaxValue, Int.MaxValue) -> expect(true)
+    )
+
+    verifyCases(
+      LE_cases,
+      existingFeature(
+      { (x: (Int, Int)) => o.lteq(x._1, x._2) },
+      """{ (x: (Int, Int)) => x._1 <= x._2 }""".stripMargin,
+      FuncValue(
+        Vector((1, SPair(SInt, SInt))),
+        LE(
+          SelectField.typed[Value[SInt.type]](ValUse(1, SPair(SInt, SInt)), 1.toByte),
+          SelectField.typed[Value[SInt.type]](ValUse(1, SPair(SInt, SInt)), 2.toByte)
+        )
+      )
+      ))
+
+    verifyCases(
+      LE_cases.map { case ((x, y), res) => ((y, x), res.copy(cost = 36336)) }, // swap arguments,
+      existingFeature(
+      { (x: (Int, Int)) => o.gteq(x._1, x._2) },
+      """{ (x: (Int, Int)) => x._1 >= x._2 }""".stripMargin,
+      FuncValue(
+        Vector((1, SPair(SInt, SInt))),
+        GE(
+          SelectField.typed[Value[SInt.type]](ValUse(1, SPair(SInt, SInt)), 1.toByte),
+          SelectField.typed[Value[SInt.type]](ValUse(1, SPair(SInt, SInt)), 2.toByte)
+        )
+      )
+      ))
+  }
+
   property("Int methods equivalence (new features)") {
     lazy val toBytes = newFeature((x: Int) => x.toBytes, "{ (x: Int) => x.toBytes }")
     lazy val toBits = newFeature((x: Int) => x.toBits, "{ (x: Int) => x.toBits }")
