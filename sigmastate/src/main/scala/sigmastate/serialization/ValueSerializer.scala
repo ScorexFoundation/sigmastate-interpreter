@@ -17,7 +17,7 @@ import sigmastate.utxo._
 
 import scala.collection.mutable
 
-trait ValueSerializer[V <: Value[SType]] extends SigmaSerializer[Value[SType], V] {
+abstract class ValueSerializer[V <: Value[SType]] extends SigmaSerializer[Value[SType], V] {
   import scala.language.implicitConversions
   val companion = ValueSerializer
 

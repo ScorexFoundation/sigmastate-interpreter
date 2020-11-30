@@ -4,6 +4,22 @@ import org.scalameter.api._
 import spire.syntax.all.cfor
 
 trait BasicBenchmarkCases extends BenchmarkGens { suite: Bench[Double] =>
+
+  performance of "allocation" in {
+    measure method "new" in {
+      using(sizes) in { case n =>
+        val arr = new Array[Integer](n)
+        cfor(0)(_ < n, _ + 1) { i =>
+          arr(i) = Integer.valueOf(i)
+        }
+        var s = 0
+        cfor(0)(_ < n, _ + 1) { i =>
+          s += arr(i).intValue()
+        }
+      }
+    }
+  }
+
   performance of "Seq" in {
     var res: Seq[Int] = null
     measure method "Nil" in {

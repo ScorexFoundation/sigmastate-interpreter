@@ -2,7 +2,6 @@ package sigmastate
 
 import java.lang.reflect.Method
 import java.math.BigInteger
-import java.util
 
 import org.ergoplatform._
 import org.ergoplatform.validation._
@@ -12,7 +11,6 @@ import sigmastate.SType.{TypeCode, AnyOps}
 import sigmastate.interpreter.{CryptoConstants, ErgoTreeEvaluator}
 import sigmastate.utils.Overloading.Overload1
 import scalan.util.Extensions._
-import sigmastate.SBigInt.MaxSizeInBytes
 import sigmastate.Values._
 import sigmastate.lang.Terms._
 import sigmastate.lang.{SigmaBuilder, SigmaTyper}
@@ -33,7 +31,7 @@ import special.sigma.{Header, Box, SigmaProp, AvlTree, SigmaDslBuilder, PreHeade
 import sigmastate.lang.SigmaTyper.STypeSubst
 import sigmastate.eval.Evaluation.stypeToRType
 import sigmastate.eval._
-import sigmastate.lang.exceptions.SerializerException
+import spire.syntax.all.cfor
 
 /** Base type for all AST nodes of sigma lang. */
 trait SigmaNode extends Product
@@ -73,7 +71,10 @@ sealed trait SType extends SigmaNode {
   def isEmbeddable: Boolean = false
 
   /** Returns true if dataSize doesn't depend on data value.
-    * This is useful for optimizations of calculating sizes of collections. */
+    * This is useful for optimizations of calculating sizes of collections.
+    * The method should have O(1) amortized complexity over n invocations to avoid
+    * over-cost attacks on ErgoTree interpretation.
+    */
   def isConstantSize: Boolean
 
   /** Elvis operator for types. See https://en.wikipedia.org/wiki/Elvis_operator*/
@@ -1272,8 +1273,30 @@ case class STuple(items: IndexedSeq[SType]) extends SCollection[SAny.type] {
   import STuple._
   override val typeCode = STuple.TupleTypeCode
 
+  /** Lazily computed value representing true | false | none.
+    * 0 - none, 1 - false, 2 - true
+    */
+  @volatile
+  private var _isConstantSizeCode: Byte = 0.toByte
+
+  /** use lazy pattern to support O(1) amortized complexity over n invocations. */
   override def isConstantSize: Boolean = {
-    items.forall(t => t.isConstantSize)
+    val code = _isConstantSizeCode
+    if (code == 0) {
+      val len = items.length
+      var isConst: Boolean = true
+      cfor(0)(_ < len && isConst, _ + 1) { i =>
+        val t = items(i)
+        isConst = t.isConstantSize
+      }
+      if (isConst) {
+        _isConstantSizeCode = 2
+      } else {
+        _isConstantSizeCode = 1
+      }
+      return isConst
+    }
+    code == 2.toByte
   }
 
   override def dataSize(v: SType#WrappedType) = {
