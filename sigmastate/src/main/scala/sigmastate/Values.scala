@@ -131,8 +131,9 @@ object Values {
     }
 
     /** Add the cost of a repeated operation to the accumulator and associate it with this operation.
+      * The number of items (loop iterations) is known in advance (like in Coll.map operation)
       * @param perItemCost cost per operation
-      * @param nItems number of operations
+      * @param nItems number of operations known in advance (before loop execution)
       */
     @inline final def addSeqCost(perItemCost: Int, nItems: Int)(implicit E: ErgoTreeEvaluator): Unit = {
       E.addCost(perItemCost, nItems, this.opName)
