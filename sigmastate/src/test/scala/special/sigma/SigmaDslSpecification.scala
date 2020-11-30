@@ -7,7 +7,7 @@ import org.ergoplatform.ErgoScriptPredef.TrueProp
 import org.ergoplatform._
 import org.ergoplatform.settings.ErgoAlgos
 import org.scalacheck.Gen
-import scalan.{ExactNumeric, RType}
+import scalan.{ExactNumeric, RType, ExactOrdering}
 import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.authds.{ADDigest, ADKey, ADValue}
 import scorex.crypto.hash.{Digest32, Blake2b256}
@@ -29,7 +29,7 @@ import sigmastate.utils.Helpers
 import sigmastate.utils.Helpers._
 import sigmastate.helpers.TestingHelpers._
 
-import scala.util.{Success, Failure}
+import scala.util.{Success, Failure, Try}
 import OrderingOps._
 import org.ergoplatform.ErgoBox.AdditionalRegisters
 import scorex.util.ModifierId
@@ -544,6 +544,144 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
             )
           )
         )
+      ))
+  }
+
+  property("Byte LT, GT") {
+    val o = ExactOrdering.ByteIsExactOrdering
+    def expect(v: Boolean) = Expected(Success(v), 36328)
+    val LT_cases: Seq[((Byte, Byte), Expected[Boolean])] = Seq(
+      (-128.toByte, -128.toByte) -> expect(false),
+      (-128.toByte, -127.toByte) -> expect(true),
+      (-128.toByte, -1.toByte) -> expect(true),
+      (-128.toByte, 0.toByte) -> expect(true),
+      (-128.toByte, 1.toByte) -> expect(true),
+      (-128.toByte, 127.toByte) -> expect(true),
+      (-120.toByte, -128.toByte) -> expect(false),
+      (-120.toByte, -121.toByte) -> expect(false),
+      (-120.toByte, -120.toByte) -> expect(false),
+      (-120.toByte, -82.toByte) -> expect(true),
+      (-103.toByte, -1.toByte) -> expect(true),
+      (-103.toByte, -0.toByte) -> expect(true),
+      (-103.toByte, 1.toByte) -> expect(true),
+      (-103.toByte, 127.toByte) -> expect(true),
+      (-1.toByte, -2.toByte) -> expect(false),
+      (-1.toByte, -1.toByte) -> expect(false),
+      (-1.toByte, 0.toByte) -> expect(true),
+      (-1.toByte, 1.toByte) -> expect(true),
+      (0.toByte, -128.toByte) -> expect(false),
+      (0.toByte, -1.toByte) -> expect(false),
+      (0.toByte, 0.toByte) -> expect(false),
+      (0.toByte, 1.toByte) -> expect(true),
+      (0.toByte, 60.toByte) -> expect(true),
+      (0.toByte, 127.toByte) -> expect(true),
+      (1.toByte, -1.toByte) -> expect(false),
+      (1.toByte, 0.toByte) -> expect(false),
+      (1.toByte, 26.toByte) -> expect(true),
+      (7.toByte, -32.toByte) -> expect(false),
+      (7.toByte, 0.toByte) -> expect(false),
+      (33.toByte, 1.toByte) -> expect(false),
+      (126.toByte, 127.toByte) -> expect(true),
+      (127.toByte, -128.toByte) -> expect(false),
+      (127.toByte, -47.toByte) -> expect(false),
+      (127.toByte, 127.toByte) -> expect(false)
+    )
+    verifyCases(
+      LT_cases,
+      existingFeature(
+      { (x: (Byte, Byte)) => o.lt(x._1, x._2) },
+      """{ (x: (Byte, Byte)) => x._1 < x._2 }""".stripMargin,
+      FuncValue(
+        Vector((1, SPair(SByte, SByte))),
+        LT(
+          SelectField.typed[Value[SByte.type]](ValUse(1, SPair(SByte, SByte)), 1.toByte),
+          SelectField.typed[Value[SByte.type]](ValUse(1, SPair(SByte, SByte)), 2.toByte)
+        )
+      )
+      ))
+
+    verifyCases(
+      LT_cases.map { case ((x, y), res) => ((y, x), res.copy(cost = 36342)) }, // swap arguments
+      existingFeature(
+      { (x: (Byte, Byte)) => o.gt(x._1, x._2) },
+      """{ (x: (Byte, Byte)) => x._1 > x._2 }""".stripMargin,
+      FuncValue(
+        Vector((1, SPair(SByte, SByte))),
+        GT(
+          SelectField.typed[Value[SByte.type]](ValUse(1, SPair(SByte, SByte)), 1.toByte),
+          SelectField.typed[Value[SByte.type]](ValUse(1, SPair(SByte, SByte)), 2.toByte)
+        )
+      )
+      ))
+  }
+
+  property("Byte LE, GE") {
+    val o = ExactOrdering.ByteIsExactOrdering
+    def expect(v: Boolean) = Expected(Success(v), 36337)
+    val LE_cases: Seq[((Byte, Byte), Expected[Boolean])] = Seq(
+      (-128.toByte, -128.toByte) -> expect(true),
+      (-128.toByte, -127.toByte) -> expect(true),
+      (-128.toByte, -1.toByte) -> expect(true),
+      (-128.toByte, 0.toByte) -> expect(true),
+      (-128.toByte, 1.toByte) -> expect(true),
+      (-128.toByte, 127.toByte) -> expect(true),
+      (-120.toByte, -128.toByte) -> expect(false),
+      (-120.toByte, -121.toByte) -> expect(false),
+      (-120.toByte, -120.toByte) -> expect(true),
+      (-120.toByte, -82.toByte) -> expect(true),
+      (-103.toByte, -1.toByte) -> expect(true),
+      (-103.toByte, -0.toByte) -> expect(true),
+      (-103.toByte, 1.toByte) -> expect(true),
+      (-103.toByte, 127.toByte) -> expect(true),
+      (-1.toByte, -2.toByte) -> expect(false),
+      (-1.toByte, -1.toByte) -> expect(true),
+      (-1.toByte, 0.toByte) -> expect(true),
+      (-1.toByte, 1.toByte) -> expect(true),
+      (0.toByte, -128.toByte) -> expect(false),
+      (0.toByte, -1.toByte) -> expect(false),
+      (0.toByte, 0.toByte) -> expect(true),
+      (0.toByte, 1.toByte) -> expect(true),
+      (0.toByte, 60.toByte) -> expect(true),
+      (0.toByte, 127.toByte) -> expect(true),
+      (1.toByte, -1.toByte) -> expect(false),
+      (1.toByte, 0.toByte) -> expect(false),
+      (1.toByte, 1.toByte) -> expect(true),
+      (1.toByte, 26.toByte) -> expect(true),
+      (7.toByte, -32.toByte) -> expect(false),
+      (7.toByte, 0.toByte) -> expect(false),
+      (33.toByte, 1.toByte) -> expect(false),
+      (126.toByte, 127.toByte) -> expect(true),
+      (127.toByte, -128.toByte) -> expect(false),
+      (127.toByte, -47.toByte) -> expect(false),
+      (127.toByte, 127.toByte) -> expect(true)
+    )
+
+    verifyCases(
+      LE_cases,
+      existingFeature(
+      { (x: (Byte, Byte)) => o.lteq(x._1, x._2) },
+      """{ (x: (Byte, Byte)) => x._1 <= x._2 }""".stripMargin,
+      FuncValue(
+        Vector((1, SPair(SByte, SByte))),
+        LE(
+          SelectField.typed[Value[SByte.type]](ValUse(1, SPair(SByte, SByte)), 1.toByte),
+          SelectField.typed[Value[SByte.type]](ValUse(1, SPair(SByte, SByte)), 2.toByte)
+        )
+      )
+      ))
+
+    verifyCases(
+      LE_cases.map { case ((x, y), res) => ((y, x), res.copy(cost = 36336)) }, // swap arguments,
+      existingFeature(
+      { (x: (Byte, Byte)) => o.gteq(x._1, x._2) },
+      """{ (x: (Byte, Byte)) => x._1 >= x._2 }""".stripMargin,
+      FuncValue(
+        Vector((1, SPair(SByte, SByte))),
+        GE(
+          SelectField.typed[Value[SByte.type]](ValUse(1, SPair(SByte, SByte)), 1.toByte),
+          SelectField.typed[Value[SByte.type]](ValUse(1, SPair(SByte, SByte)), 2.toByte)
+        )
+      )
       ))
   }
 
