@@ -1168,6 +1168,143 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
         )))
   }
 
+  property("Int LT, GT") {
+    val o = ExactOrdering.IntIsExactOrdering
+    val LT_cases: Seq[((Int, Int), Try[Boolean])] = Seq(
+      (Int.MinValue, Int.MinValue) -> Success(false),
+      (Int.MinValue, (Int.MinValue + 1).toInt) -> Success(true),
+      (Int.MinValue, -1.toInt) -> Success(true),
+      (Int.MinValue, 0.toInt) -> Success(true),
+      (Int.MinValue, 1.toInt) -> Success(true),
+      (Int.MinValue, Int.MaxValue) -> Success(true),
+      (-120.toInt, Int.MinValue) -> Success(false),
+      (-120.toInt, -121.toInt) -> Success(false),
+      (-120.toInt, -120.toInt) -> Success(false),
+      (-120.toInt, -82.toInt) -> Success(true),
+      (-103.toInt, -1.toInt) -> Success(true),
+      (-103.toInt, -0.toInt) -> Success(true),
+      (-103.toInt, 1.toInt) -> Success(true),
+      (-103.toInt, Int.MaxValue) -> Success(true),
+      (-1.toInt, -2.toInt) -> Success(false),
+      (-1.toInt, -1.toInt) -> Success(false),
+      (-1.toInt, 0.toInt) -> Success(true),
+      (-1.toInt, 1.toInt) -> Success(true),
+      (0.toInt, Int.MinValue) -> Success(false),
+      (0.toInt, -1.toInt) -> Success(false),
+      (0.toInt, 0.toInt) -> Success(false),
+      (0.toInt, 1.toInt) -> Success(true),
+      (0.toInt, 60.toInt) -> Success(true),
+      (0.toInt, Int.MaxValue) -> Success(true),
+      (1.toInt, -1.toInt) -> Success(false),
+      (1.toInt, 0.toInt) -> Success(false),
+      (1.toInt, 26.toInt) -> Success(true),
+      (7.toInt, -32.toInt) -> Success(false),
+      (7.toInt, 0.toInt) -> Success(false),
+      (33.toInt, 1.toInt) -> Success(false),
+      (126.toInt, Int.MaxValue) -> Success(true),
+      (Int.MaxValue, Int.MinValue) -> Success(false),
+      (Int.MaxValue, -47.toInt) -> Success(false),
+      (Int.MaxValue, Int.MaxValue) -> Success(false)
+    )
+    testCases(
+      LT_cases,
+      existingFeature(
+      { (x: (Int, Int)) => o.lt(x._1, x._2) },
+      """{ (x: (Int, Int)) => x._1 < x._2 }""".stripMargin,
+      FuncValue(
+        Vector((1, SPair(SInt, SInt))),
+        LT(
+          SelectField.typed[Value[SInt.type]](ValUse(1, SPair(SInt, SInt)), 1.toByte),
+          SelectField.typed[Value[SInt.type]](ValUse(1, SPair(SInt, SInt)), 2.toByte)
+        )
+      )
+      ))
+
+    testCases(
+      LT_cases.map { case ((x, y), res) => ((y, x), res) }, // swap arguments
+      existingFeature(
+      { (x: (Int, Int)) => o.gt(x._1, x._2) },
+      """{ (x: (Int, Int)) => x._1 > x._2 }""".stripMargin,
+      FuncValue(
+        Vector((1, SPair(SInt, SInt))),
+        GT(
+          SelectField.typed[Value[SInt.type]](ValUse(1, SPair(SInt, SInt)), 1.toByte),
+          SelectField.typed[Value[SInt.type]](ValUse(1, SPair(SInt, SInt)), 2.toByte)
+        )
+      )
+      ))
+  }
+
+  property("Int LE, GE") {
+    val o = ExactOrdering.IntIsExactOrdering
+    val LE_cases: Seq[((Int, Int), Try[Boolean])] = Seq(
+      (Int.MinValue, Int.MinValue) -> Success(true),
+      (Int.MinValue, (Int.MinValue + 1).toInt) -> Success(true),
+      (Int.MinValue, -1.toInt) -> Success(true),
+      (Int.MinValue, 0.toInt) -> Success(true),
+      (Int.MinValue, 1.toInt) -> Success(true),
+      (Int.MinValue, Int.MaxValue) -> Success(true),
+      (-120.toInt, Int.MinValue) -> Success(false),
+      (-120.toInt, -121.toInt) -> Success(false),
+      (-120.toInt, -120.toInt) -> Success(true),
+      (-120.toInt, -82.toInt) -> Success(true),
+      (-103.toInt, -1.toInt) -> Success(true),
+      (-103.toInt, -0.toInt) -> Success(true),
+      (-103.toInt, 1.toInt) -> Success(true),
+      (-103.toInt, Int.MaxValue) -> Success(true),
+      (-1.toInt, -2.toInt) -> Success(false),
+      (-1.toInt, -1.toInt) -> Success(true),
+      (-1.toInt, 0.toInt) -> Success(true),
+      (-1.toInt, 1.toInt) -> Success(true),
+      (0.toInt, Int.MinValue) -> Success(false),
+      (0.toInt, -1.toInt) -> Success(false),
+      (0.toInt, 0.toInt) -> Success(true),
+      (0.toInt, 1.toInt) -> Success(true),
+      (0.toInt, 60.toInt) -> Success(true),
+      (0.toInt, Int.MaxValue) -> Success(true),
+      (1.toInt, -1.toInt) -> Success(false),
+      (1.toInt, 0.toInt) -> Success(false),
+      (1.toInt, 1.toInt) -> Success(true),
+      (1.toInt, 26.toInt) -> Success(true),
+      (7.toInt, -32.toInt) -> Success(false),
+      (7.toInt, 0.toInt) -> Success(false),
+      (33.toInt, 1.toInt) -> Success(false),
+      (126.toInt, Int.MaxValue) -> Success(true),
+      (Int.MaxValue, Int.MinValue) -> Success(false),
+      (Int.MaxValue, -47.toInt) -> Success(false),
+      (Int.MaxValue, Int.MaxValue) -> Success(true)
+    )
+
+    testCases(
+      LE_cases,
+      existingFeature(
+      { (x: (Int, Int)) => o.lteq(x._1, x._2) },
+      """{ (x: (Int, Int)) => x._1 <= x._2 }""".stripMargin,
+      FuncValue(
+        Vector((1, SPair(SInt, SInt))),
+        LE(
+          SelectField.typed[Value[SInt.type]](ValUse(1, SPair(SInt, SInt)), 1.toByte),
+          SelectField.typed[Value[SInt.type]](ValUse(1, SPair(SInt, SInt)), 2.toByte)
+        )
+      )
+      ))
+
+    testCases(
+      LE_cases.map { case ((x, y), res) => ((y, x), res) }, // swap arguments,
+      existingFeature(
+      { (x: (Int, Int)) => o.gteq(x._1, x._2) },
+      """{ (x: (Int, Int)) => x._1 >= x._2 }""".stripMargin,
+      FuncValue(
+        Vector((1, SPair(SInt, SInt))),
+        GE(
+          SelectField.typed[Value[SInt.type]](ValUse(1, SPair(SInt, SInt)), 1.toByte),
+          SelectField.typed[Value[SInt.type]](ValUse(1, SPair(SInt, SInt)), 2.toByte)
+        )
+      )
+      ))
+  }
+
+
   property("Int methods equivalence (new features)") {
     lazy val toBytes = newFeature((x: Int) => x.toBytes, "{ (x: Int) => x.toBytes }")
     lazy val toBits = newFeature((x: Int) => x.toBits, "{ (x: Int) => x.toBits }")
