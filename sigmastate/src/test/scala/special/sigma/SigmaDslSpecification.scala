@@ -1583,6 +1583,144 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
       )))
   }
 
+  property("Long LT, GT") {
+    val o = ExactOrdering.LongIsExactOrdering
+    def expect(v: Boolean) = Expected(Success(v), 36328)
+    val LT_cases: Seq[((Long, Long), Expected[Boolean])] = Seq(
+      (Long.MinValue, Long.MinValue) -> expect(false),
+      (Long.MinValue, (Long.MinValue + 1).toLong) -> expect(true),
+      (Long.MinValue, -1.toLong) -> expect(true),
+      (Long.MinValue, 0.toLong) -> expect(true),
+      (Long.MinValue, 1.toLong) -> expect(true),
+      (Long.MinValue, Long.MaxValue) -> expect(true),
+      (-120.toLong, Long.MinValue) -> expect(false),
+      (-120.toLong, -121.toLong) -> expect(false),
+      (-120.toLong, -120.toLong) -> expect(false),
+      (-120.toLong, -82.toLong) -> expect(true),
+      (-103.toLong, -1.toLong) -> expect(true),
+      (-103.toLong, -0.toLong) -> expect(true),
+      (-103.toLong, 1.toLong) -> expect(true),
+      (-103.toLong, Long.MaxValue) -> expect(true),
+      (-1.toLong, -2.toLong) -> expect(false),
+      (-1.toLong, -1.toLong) -> expect(false),
+      (-1.toLong, 0.toLong) -> expect(true),
+      (-1.toLong, 1.toLong) -> expect(true),
+      (0.toLong, Long.MinValue) -> expect(false),
+      (0.toLong, -1.toLong) -> expect(false),
+      (0.toLong, 0.toLong) -> expect(false),
+      (0.toLong, 1.toLong) -> expect(true),
+      (0.toLong, 60.toLong) -> expect(true),
+      (0.toLong, Long.MaxValue) -> expect(true),
+      (1.toLong, -1.toLong) -> expect(false),
+      (1.toLong, 0.toLong) -> expect(false),
+      (1.toLong, 26.toLong) -> expect(true),
+      (7.toLong, -32.toLong) -> expect(false),
+      (7.toLong, 0.toLong) -> expect(false),
+      (33.toLong, 1.toLong) -> expect(false),
+      (126.toLong, Long.MaxValue) -> expect(true),
+      (Long.MaxValue, Long.MinValue) -> expect(false),
+      (Long.MaxValue, -47.toLong) -> expect(false),
+      (Long.MaxValue, Long.MaxValue) -> expect(false)
+    )
+    verifyCases(
+      LT_cases,
+      existingFeature(
+      { (x: (Long, Long)) => o.lt(x._1, x._2) },
+      """{ (x: (Long, Long)) => x._1 < x._2 }""".stripMargin,
+      FuncValue(
+        Vector((1, SPair(SLong, SLong))),
+        LT(
+          SelectField.typed[Value[SLong.type]](ValUse(1, SPair(SLong, SLong)), 1.toByte),
+          SelectField.typed[Value[SLong.type]](ValUse(1, SPair(SLong, SLong)), 2.toByte)
+        )
+      )
+      ))
+
+    verifyCases(
+      LT_cases.map { case ((x, y), res) => ((y, x), res.copy(cost = 36342)) }, // swap arguments
+      existingFeature(
+      { (x: (Long, Long)) => o.gt(x._1, x._2) },
+      """{ (x: (Long, Long)) => x._1 > x._2 }""".stripMargin,
+      FuncValue(
+        Vector((1, SPair(SLong, SLong))),
+        GT(
+          SelectField.typed[Value[SLong.type]](ValUse(1, SPair(SLong, SLong)), 1.toByte),
+          SelectField.typed[Value[SLong.type]](ValUse(1, SPair(SLong, SLong)), 2.toByte)
+        )
+      )
+      ))
+  }
+
+  property("Long LE, GE") {
+    val o = ExactOrdering.LongIsExactOrdering
+    def expect(v: Boolean) = Expected(Success(v), 36337)
+    val LE_cases: Seq[((Long, Long), Expected[Boolean])] = Seq(
+      (Long.MinValue, Long.MinValue) -> expect(true),
+      (Long.MinValue, (Long.MinValue + 1).toLong) -> expect(true),
+      (Long.MinValue, -1.toLong) -> expect(true),
+      (Long.MinValue, 0.toLong) -> expect(true),
+      (Long.MinValue, 1.toLong) -> expect(true),
+      (Long.MinValue, Long.MaxValue) -> expect(true),
+      (-120.toLong, Long.MinValue) -> expect(false),
+      (-120.toLong, -121.toLong) -> expect(false),
+      (-120.toLong, -120.toLong) -> expect(true),
+      (-120.toLong, -82.toLong) -> expect(true),
+      (-103.toLong, -1.toLong) -> expect(true),
+      (-103.toLong, -0.toLong) -> expect(true),
+      (-103.toLong, 1.toLong) -> expect(true),
+      (-103.toLong, Long.MaxValue) -> expect(true),
+      (-1.toLong, -2.toLong) -> expect(false),
+      (-1.toLong, -1.toLong) -> expect(true),
+      (-1.toLong, 0.toLong) -> expect(true),
+      (-1.toLong, 1.toLong) -> expect(true),
+      (0.toLong, Long.MinValue) -> expect(false),
+      (0.toLong, -1.toLong) -> expect(false),
+      (0.toLong, 0.toLong) -> expect(true),
+      (0.toLong, 1.toLong) -> expect(true),
+      (0.toLong, 60.toLong) -> expect(true),
+      (0.toLong, Long.MaxValue) -> expect(true),
+      (1.toLong, -1.toLong) -> expect(false),
+      (1.toLong, 0.toLong) -> expect(false),
+      (1.toLong, 1.toLong) -> expect(true),
+      (1.toLong, 26.toLong) -> expect(true),
+      (7.toLong, -32.toLong) -> expect(false),
+      (7.toLong, 0.toLong) -> expect(false),
+      (33.toLong, 1.toLong) -> expect(false),
+      (126.toLong, Long.MaxValue) -> expect(true),
+      (Long.MaxValue, Long.MinValue) -> expect(false),
+      (Long.MaxValue, -47.toLong) -> expect(false),
+      (Long.MaxValue, Long.MaxValue) -> expect(true)
+    )
+
+    verifyCases(
+      LE_cases,
+      existingFeature(
+      { (x: (Long, Long)) => o.lteq(x._1, x._2) },
+      """{ (x: (Long, Long)) => x._1 <= x._2 }""".stripMargin,
+      FuncValue(
+        Vector((1, SPair(SLong, SLong))),
+        LE(
+          SelectField.typed[Value[SLong.type]](ValUse(1, SPair(SLong, SLong)), 1.toByte),
+          SelectField.typed[Value[SLong.type]](ValUse(1, SPair(SLong, SLong)), 2.toByte)
+        )
+      )
+      ))
+
+    verifyCases(
+      LE_cases.map { case ((x, y), res) => ((y, x), res.copy(cost = 36336)) }, // swap arguments,
+      existingFeature(
+      { (x: (Long, Long)) => o.gteq(x._1, x._2) },
+      """{ (x: (Long, Long)) => x._1 >= x._2 }""".stripMargin,
+      FuncValue(
+        Vector((1, SPair(SLong, SLong))),
+        GE(
+          SelectField.typed[Value[SLong.type]](ValUse(1, SPair(SLong, SLong)), 1.toByte),
+          SelectField.typed[Value[SLong.type]](ValUse(1, SPair(SLong, SLong)), 2.toByte)
+        )
+      )
+      ))
+  }
+
   property("Long methods equivalence (new features)") {
     lazy val toBytes = newFeature((x: Long) => x.toBytes, "{ (x: Long) => x.toBytes }")
     lazy val toBits = newFeature((x: Long) => x.toBits, "{ (x: Long) => x.toBits }")
