@@ -12,6 +12,7 @@ import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util._
 import sigmastate.Values.{IntConstant, LongConstant}
 import sigmastate.helpers.{BlockchainState, ErgoLikeContextTesting, ErgoLikeTestProvingInterpreter, ErgoTransactionValidator, SigmaTestingCommons}
+import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.ContextExtension
 import sigmastate.eval._
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
@@ -212,7 +213,7 @@ object BlockchainSimulationSpecification {
     val initBlock = Block(
       (0 until windowSize).map { i =>
         val txId = hash.hash(i.toString.getBytes ++ scala.util.Random.nextString(12).getBytes).toModifierId
-        val boxes = (1 to 30).map(_ => ErgoBox(10, GE(Height, IntConstant(i)).toSigmaProp, 0, Seq(), Map(heightReg -> IntConstant(i)), txId))
+        val boxes = (1 to 30).map(_ => testBox(10, GE(Height, IntConstant(i)).toSigmaProp, 0, Seq(), Map(heightReg -> IntConstant(i)), txId))
         ergoplatform.ErgoLikeTransaction(IndexedSeq(), boxes)
       },
       ErgoLikeContextTesting.dummyPubkey

@@ -211,7 +211,7 @@ class CollOverArrayBuilder extends CollBuilder {
   override def Monoids: MonoidBuilder = new MonoidBuilderInst
 
   @inline override def pairColl[@specialized A, @specialized B](as: Coll[A], bs: Coll[B]): PairColl[A, B] = {
-    // TODO HF: use minimal length and slice longer collection
+    // TODO HF (2h): use minimal length and slice longer collection
     // The current implementation doesn't check the case when `as` and `bs` have different lengths.
     // in which case the implementation of `PairOfCols` has inconsistent semantics of `map`, `exists` etc methods.
     // To fix the problem, the longer collection have to be truncated (which is consistent
@@ -305,7 +305,7 @@ class CollOverArrayBuilder extends CollBuilder {
       val rs = emptyColl(pt.tSnd)
       asColl[T](pairColl(ls, rs))
     case _ =>
-      new CollOverArray[T](Array[T]())
+      new CollOverArray[T](cT.emptyArray)
   }
 
   @NeverInline

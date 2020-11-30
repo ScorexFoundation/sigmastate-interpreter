@@ -78,8 +78,8 @@ version in ThisBuild := {
 git.gitUncommittedChanges in ThisBuild := true
 
 val bouncycastleBcprov = "org.bouncycastle" % "bcprov-jdk15on" % "1.64"
-val scrypto            = "org.scorexfoundation" %% "scrypto" % "2.1.9"
-val scorexUtil         = "org.scorexfoundation" %% "scorex-util" % "0.1.6"
+val scrypto            = "org.scorexfoundation" %% "scrypto" % "2.1.10"
+val scorexUtil         = "org.scorexfoundation" %% "scorex-util" % "0.1.8"
 val macroCompat        = "org.typelevel" %% "macro-compat" % "1.1.1"
 val paradise           = "org.scalamacros" %% "paradise" % "2.1.0" cross CrossVersion.full
 val debox              = "org.spire-math" %% "debox" % "0.8.0"
@@ -118,12 +118,19 @@ libraryDependencies ++= Seq(
   kiama, fastparse, debox
 ) ++ testingDependencies
 
-val circeVersion = "0.10.0"
-val circeCore = "io.circe" %% "circe-core" % circeVersion 
-val circeGeneric = "io.circe" %% "circe-generic" % circeVersion 
-val circeParser = "io.circe" %% "circe-parser" % circeVersion 
+lazy val circeCore211 = "io.circe" %% "circe-core" % "0.10.0"
+lazy val circeGeneric211 = "io.circe" %% "circe-generic" % "0.10.0"
+lazy val circeParser211 = "io.circe" %% "circe-parser" % "0.10.0"
 
-libraryDependencies ++= Seq( circeCore, circeGeneric, circeParser )
+lazy val circeCore = "io.circe" %% "circe-core" % "0.13.0"
+lazy val circeGeneric = "io.circe" %% "circe-generic" % "0.13.0"
+lazy val circeParser = "io.circe" %% "circe-parser" % "0.13.0"
+
+libraryDependencies ++= Seq(
+  if (scalaVersion.value == scala211) circeCore211 else circeCore,
+  if (scalaVersion.value == scala211) circeGeneric211 else circeGeneric,
+  if (scalaVersion.value == scala211) circeParser211 else circeParser
+  )
 
 scalacOptions ++= Seq("-feature", "-deprecation")
 
@@ -274,7 +281,11 @@ lazy val sigmastate = (project in file("sigmastate"))
   .dependsOn(sigmaimpl % allConfigDependency, sigmalibrary % allConfigDependency)
   .settings(libraryDefSettings)
   .settings(libraryDependencies ++= Seq(
-    scorexUtil, kiama, fastparse, circeCore, circeGeneric, circeParser))
+    scorexUtil, kiama, fastparse,
+    if (scalaVersion.value == scala211) circeCore211 else circeCore,
+    if (scalaVersion.value == scala211) circeGeneric211 else circeGeneric,
+    if (scalaVersion.value == scala211) circeParser211 else circeParser
+    ))
   .settings(publish / skip := true)
 
 lazy val sigma = (project in file("."))
@@ -300,7 +311,7 @@ lazy val rootSettings = Seq(
 )
 
 def runErgoTask(task: String, sigmastateVersion: String, log: Logger): Unit = {
-  val ergoBranch = "master"
+  val ergoBranch = "test-coverage"
   val sbtEnvVars = Seq("BUILD_ENV" -> "test", "SIGMASTATE_VERSION" -> sigmastateVersion)
   
   log.info(s"Testing current build in Ergo (branch $ergoBranch):")
@@ -354,7 +365,7 @@ commands += Command.command("ergoItTest") { state =>
 }
 
 def runSpamTestTask(task: String, sigmastateVersion: String, log: Logger): Unit = {
-  val spamBranch = "revert-23-revert-22-serialize-opt"
+  val spamBranch = "master"
   val envVars = Seq("SIGMASTATE_VERSION" -> sigmastateVersion,
     "SPECIAL_VERSION" -> specialVersion,
     // SSH_SPAM_REPO_KEY should be set (see Jenkins Credentials Binding Plugin)

@@ -84,41 +84,6 @@ object ProveDHTupleProp {
   }
 }
 
-class DiffieHellmanTupleInteractiveProver(override val publicInput: ProveDHTuple,
-                                          override val privateInputOpt: Option[DiffieHellmanTupleProverInput])
-  extends InteractiveProver[DiffieHellmanTupleProtocol, ProveDHTuple, DiffieHellmanTupleProverInput] {
-
-  var rOpt: Option[BigInteger] = None
-
-  override def firstMessage: FirstDiffieHellmanTupleProverMessage = {
-    assert(privateInputOpt.isDefined, "Secret is not known")
-    assert(rOpt.isEmpty, "Already generated r")
-
-    val (r, fm) = DiffieHellmanTupleInteractiveProver.firstMessage(publicInput)
-    rOpt = Some(r)
-    fm
-  }
-
-  override def secondMessage(challenge: Challenge): SecondDiffieHellmanTupleProverMessage = {
-    assert(privateInputOpt.isDefined, "Secret is not known")
-    assert(rOpt.isDefined)
-
-    val rnd = rOpt.get
-
-    val privateInput = privateInputOpt.get
-
-    val sm = DiffieHellmanTupleInteractiveProver.secondMessage(privateInput, rnd, challenge)
-    rOpt = None
-    sm
-  }
-
-  override def simulate(challenge: Challenge):
-  (FirstDiffieHellmanTupleProverMessage, SecondDiffieHellmanTupleProverMessage) = {
-    assert(privateInputOpt.isEmpty, "Secret is known, simulation is probably wrong action")
-    DiffieHellmanTupleInteractiveProver.simulate(publicInput, challenge)
-  }
-}
-
 object DiffieHellmanTupleInteractiveProver {
 
   import sigmastate.interpreter.CryptoConstants.dlogGroup

@@ -6,6 +6,7 @@ import scorex.crypto.hash.Blake2b256
 import sigmastate.Values.{IntConstant, SigmaPropConstant}
 import sigmastate._
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter.ScriptNameProp
 import sigmastate.lang.Terms._
 
@@ -125,7 +126,7 @@ class ReversibleTxExampleSpecification extends SigmaTestingCommons {
     // In the example, we don't create the transaction; we just create a box below
 
 
-    val depositOutput = ErgoBox(depositAmount, depositAddress.script, depositHeight)
+    val depositOutput = testBox(depositAmount, depositAddress.script, depositHeight)
 
     // Now Alice wants to give Bob some amount from the wallet in a "reversible" way.
 
@@ -133,7 +134,7 @@ class ReversibleTxExampleSpecification extends SigmaTestingCommons {
     val withdrawHeight = 101
     val bobDeadline = withdrawHeight+blocksIn24h
 
-    val reversibleWithdrawOutput = ErgoBox(withdrawAmount, withdrawScript, withdrawHeight, Nil,
+    val reversibleWithdrawOutput = testBox(withdrawAmount, withdrawScript, withdrawHeight, Nil,
       Map(
         R4 -> SigmaPropConstant(bobPubKey),
         R5 -> IntConstant(bobDeadline)
@@ -167,7 +168,7 @@ class ReversibleTxExampleSpecification extends SigmaTestingCommons {
     val bobSpendAmount = 10
     val bobSpendHeight = bobDeadline+1
 
-    val bobSpendOutput = ErgoBox(bobSpendAmount, davePubKey, bobSpendHeight)
+    val bobSpendOutput = testBox(bobSpendAmount, davePubKey, bobSpendHeight)
 
     //normally this transaction would be invalid (why?), but we're not checking it in this test
     val bobSpendTx = createTransaction(bobSpendOutput)
@@ -194,7 +195,7 @@ class ReversibleTxExampleSpecification extends SigmaTestingCommons {
     val carolSpendHeight = bobDeadline - 1
 
     // Carol sends to Dave
-    val carolSpendOutput = ErgoBox(carolSpendAmount, davePubKey, carolSpendHeight)
+    val carolSpendOutput = testBox(carolSpendAmount, davePubKey, carolSpendHeight)
 
     //normally this transaction would be invalid (why?), but we're not checking it in this test
     val carolSpendTx = createTransaction(carolSpendOutput)

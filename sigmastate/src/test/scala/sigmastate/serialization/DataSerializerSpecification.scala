@@ -14,6 +14,8 @@ import sigmastate.eval.Extensions._
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import special.sigma.AvlTree
 import SType.AnyOps
+import sigmastate.lang.exceptions.SerializerException
+import sigmastate.utils.Helpers
 
 class DataSerializerSpecification extends SerializationSpecification {
 
@@ -88,4 +90,31 @@ class DataSerializerSpecification extends SerializationSpecification {
     forAll { t: SPredefType => testTuples(t) }
   }
 
+  property("Should check limits and fail") {
+    val len = 0xFFFF + 1
+    val tup = SigmaDsl.Colls.replicate(len, 1.asInstanceOf[Any])(RType.AnyType)
+    assertExceptionThrown({
+        val w = SigmaSerializer.startWriter()
+        DataSerializer.serialize(tup.asWrappedType, STuple(Array.fill(len)(SInt)), w)
+      },
+      { t =>
+        t.isInstanceOf[RuntimeException] &&
+        t.getMessage.contains(s"Length of tuple $len exceeds ${0xFFFF} limit.")
+      })
+
+    val tooBig = SigmaDsl.BigInt(new BigInteger(Helpers.decodeBytes(
+      "80e0ff7f02807fff72807f0a00ff7fb7c57f75c11ba2802970fd250052807fc37f6480ffff007fff18eeba44").toArray))
+
+    assertExceptionThrown({
+      val w = SigmaSerializer.startWriter()
+      DataSerializer.serialize(tooBig.asWrappedType, SBigInt, w)
+      val r = SigmaSerializer.startReader(w.toBytes)
+      DataSerializer.deserialize(SBigInt, r)
+    },
+    { t =>
+      t.isInstanceOf[SerializerException] &&
+          t.getMessage.contains(s"BigInt value doesn't not fit into ${SBigInt.MaxSizeInBytes} bytes")
+    })
+
+  }
 }

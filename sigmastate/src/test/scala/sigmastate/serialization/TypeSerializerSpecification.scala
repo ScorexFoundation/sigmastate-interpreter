@@ -96,4 +96,13 @@ class TypeSerializerSpecification extends SerializationSpecification {
       roundtrip(ti)
     }
   }
+
+  property("negative cases") {
+    assertExceptionThrown(
+      SigmaSerializer.startWriter().putType(STuple(SInt)),
+      { t =>
+        t.isInstanceOf[RuntimeException] &&
+        t.getMessage.contains("Invalid Tuple type with less than 2 items")
+      })
+  }
 }

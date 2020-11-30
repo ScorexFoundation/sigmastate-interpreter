@@ -7,29 +7,22 @@ import scalan.util.CollectionUtil.TraversableOps
 import org.ergoplatform._
 import sigmastate._
 import sigmastate.Values._
-import sigmastate.interpreter.CryptoConstants
 import sigmastate.lang.Terms._
 import sigmastate.lang.exceptions.CosterException
 import sigmastate.serialization.OpCodes
-import sigmastate.utxo.CostTable.Cost
 import sigmastate.utxo._
 import scalan.compilation.GraphVizConfig
 import SType._
-import org.ergoplatform.SigmaConstants._
 import scalan.RType._
-import scorex.crypto.hash.{Sha256, Blake2b256}
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.{Terms, SourceContext}
-import sigma.types.PrimViewType
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import special.collection.CollType
-import special.Types._
-import special.sigma.{GroupElementRType, AvlTreeRType, BigIntegerRType, BoxRType, ECPointRType, BigIntRType, SigmaPropRType}
+import special.sigma.{GroupElementRType, AvlTreeRType, BoxRType, BigIntRType, SigmaPropRType}
 import special.sigma.Extensions._
 import org.ergoplatform.validation.ValidationRules._
-import scalan.util.ReflectionUtil
 import scalan.ExactIntegral._
 import scalan.ExactNumeric._
 import scalan.ExactOrdering.{ShortIsExactOrdering, ByteIsExactOrdering, IntIsExactOrdering, LongIsExactOrdering}
@@ -396,12 +389,6 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
   implicit def extendCostedCollElem[A](elem: Elem[CostedColl[A]]): CostedCollElem[A, CostedColl[A]] =
     elem.asInstanceOf[CostedCollElem[A, CostedColl[A]]]
 
-  def splitCostedFunc2[A,B](f: RFuncCosted[A,B]): (Ref[A=>B], Ref[((Int, Size[A])) => Int]) = {
-    implicit val eA = f.elem.eDom.eVal
-    val calcF = f.sliceCalc
-    val costF = f.sliceCost
-    (calcF, costF)
-  }
   def splitCostedFunc2[A, B](f: RFuncCosted[A,B], okRemoveIsValid: Boolean): (Ref[A=>Any], Ref[((Int, Size[A])) => Int]) = {
     implicit val eA = f.elem.eDom.eVal
     val calcF = f.sliceCalc(okRemoveIsValid)
@@ -779,9 +766,6 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
   private val _colBuilder: LazyRep[CollBuilder] = MutableLazy(variable[CollBuilder])
   @inline def colBuilder: Ref[CollBuilder] = _colBuilder.value
 
-//  private val _sizeBuilder: LazyRep[SizeBuilder] = MutableLazy(RCSizeBuilder())
-//  @inline def sizeBuilder: Ref[SizeBuilder] = _sizeBuilder.value
-
   private val _costedBuilder: LazyRep[CostedBuilder] = MutableLazy(RCCostedBuilder())
   @inline def costedBuilder: Ref[CostedBuilder] = _costedBuilder.value
 
@@ -814,8 +798,6 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
     _contextDependantNodes = debox.Set.ofSize[Int](InitDependantNodes)
   }
 
-  import Cost._
-
   def removeIsProven[T,R](f: Ref[T] => Ref[Any]): Ref[T] => Ref[Any] = { x: Ref[T] =>
     val y = f(x);
     val res = y match {
@@ -846,7 +828,6 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
     case SAvlTree => avlTreeElement
     case SSigmaProp => sigmaPropElement
     case STuple(Seq(a, b)) => pairElement(stypeToElem(a), stypeToElem(b))
-//    case STuple(items) => tupleStructElement(items.map(stypeToElem(_)):_*)
     case c: SCollectionType[a] => collElement(stypeToElem(c.elemType))
     case o: SOption[a] => wOptionElement(stypeToElem(o.elemType))
     case SFunc(Seq(tpeArg), tpeRange, Nil) => funcElement(stypeToElem(tpeArg), stypeToElem(tpeRange))
@@ -871,9 +852,6 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
     case _: HeaderElem[_] => SHeader
     case _: PreHeaderElem[_] => SPreHeader
     case _: SigmaPropElem[_] => SSigmaProp
-//    case se: StructElem[_] =>
-//      assert(se.fieldNames.zipWithIndex.forall { case (n,i) => n == s"_${i+1}" })
-//      STuple(se.fieldElems.map(elemToSType(_)).toIndexedSeq)
     case ce: CollElem[_, _] => SCollection(elemToSType(ce.eItem))
     case fe: FuncElem[_, _] => SFunc(elemToSType(fe.eDom), elemToSType(fe.eRange))
     case pe: PairElem[_, _] => STuple(elemToSType(pe.eFst), elemToSType(pe.eSnd))
@@ -925,8 +903,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
     (ByteElement,   ByteIsExactIntegral),
     (ShortElement,  ShortIsExactIntegral),
     (IntElement,    IntIsExactIntegral),
-    (LongElement,   LongIsExactIntegral),
-    (bigIntElement, BigIntIsExactIntegral)
+    (LongElement,   LongIsExactIntegral)
   )
   private lazy val elemToExactOrderingMap = Map[Elem[_], ExactOrdering[_]](
     (ByteElement,   ByteIsExactOrdering),
@@ -981,11 +958,6 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
 
   import sigmastate._
 
-  protected def isOperationNode(v: SValue): Boolean = v match {
-    case _: Block | _: BlockValue | _: TaggedVariableNode[_] | _: ValNode | _: ValDef | _: ValUse[_] | _: FuncValue => false
-    case _ => true
-  }
-
   protected def onTreeNodeCosted[T <: SType](
         ctx: RCosted[Context], env: CostingEnv,
         node: Value[T], costed: RCosted[T#WrappedType]): Unit = {
@@ -1017,11 +989,11 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
       implicit val tA = ct.tItem
       implicit val sizedA = Sized.typeToSized(tA)
       liftConst(Sized.sizeOf(x.asInstanceOf[special.collection.Coll[a]]))
-    case ct: OptionType[a] =>
+    case ct: OptionType[a] =>  // TODO cover with tests (1h)
       implicit val tA = ct.tA
       implicit val sizedA = Sized.typeToSized(tA)
       liftConst(Sized.sizeOf(x.asInstanceOf[Option[a]]))
-    case ct: PairType[a, b] =>
+    case ct: PairType[a, b] => // TODO cover with tests (1h)
       implicit val tA = ct.tFst
       implicit val tB = ct.tSnd
       implicit val sizedA = Sized.typeToSized(tA)
@@ -1146,6 +1118,17 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
 
   var ruleStack: List[CostingRuleStat] = Nil
 
+  /** Recursively translates each ErgoTree `node` into the corresponding cost formula.
+    * The cost formula is represented using graph-based IR defined by this IRContext cake.
+    * Each `node: Value[T]` which evaluates to the value of type `T` is transformed
+    * to a value of type `RCosted[A]` which is a synonym of `Ref[Costed[A]]` type.
+    * The translation is performed recursively on a structure of the ErgoTree expression.
+    *
+    * @param ctx  reference to the graph node, which represents costed `CONTEXT` expression.
+    * @param env  environment of costed ValDef nodes (see BlockValue case).
+    * @param node expression to be costed
+    * @return a reference to the graph node of type Costed[T#WrappedType]`
+    */
   protected def evalNode[T <: SType](ctx: RCosted[Context], env: CostingEnv, node: Value[T]): RCosted[T#WrappedType] = {
     import WOption._
     def eval[T <: SType](node: Value[T]): RCosted[T#WrappedType] = evalNode(ctx, env, node)
@@ -1177,9 +1160,6 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
     }
 
     val res: Ref[Any] = node match {
-      case TaggedVariableNode(id, _) =>
-        env.getOrElse(id, !!!(s"TaggedVariable $id not found in environment $env"))
-
       case c @ Constant(v, tpe) => v match {
         case p: SSigmaProp =>
           assert(tpe == SSigmaProp)
@@ -1251,7 +1231,11 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
 
       case BlockValue(binds, res) =>
         var curEnv = env
-        for (vd @ ValDef(n, _, b) <- binds) {
+        val len = binds.length
+        cfor(0)(_ < len, _ + 1) { i =>
+          val vd = binds(i).asInstanceOf[ValDef]
+          val n = vd.id
+          val b = vd.rhs
           if (curEnv.contains(n)) error(s"Variable $n already defined ($n = ${curEnv(n)}", vd.sourceContext.toOption)
           val bC = evalNode(ctx, curEnv, b)
           curEnv = curEnv + (n -> bC)
@@ -1620,10 +1604,17 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
         RCCostedPrim(v, opCost(v, Array(lC.cost, rC.cost), costOf(node)), SizeBigInt)
 
       case OR(input) => input match {
-        case ConcreteCollection(items, tpe) =>
-          val itemsC = items.map(item => eval(adaptSigmaBoolean(item)))
-          val res = sigmaDslBuilder.anyOf(colBuilder.fromItems(itemsC.map(_.value): _*))
-          val costs = itemsC.map(_.cost)
+        case ConcreteCollection(items, _) =>
+          val len = items.length
+          val values = new Array[Ref[Boolean]](len)
+          val costs = new Array[Ref[Int]](len)
+          cfor(0)(_ < len, _ + 1) { i =>
+            val item = items(i)
+            val itemC = eval(adaptSigmaBoolean(item))
+            values(i) = itemC.value
+            costs(i) = itemC.cost
+          }
+          val res = sigmaDslBuilder.anyOf(colBuilder.fromItems(values: _*))
           val nOps = costs.length - 1
           val cost = opCost(res, costs, perItemCostOf(node, nOps))
           withConstantSize(res, cost)
@@ -1636,10 +1627,17 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
       }
 
       case AND(input) => input match {
-        case ConcreteCollection(items, tpe) =>
-          val itemsC = items.map(item => eval(adaptSigmaBoolean(item)))
-          val res = sigmaDslBuilder.allOf(colBuilder.fromItems(itemsC.map(_.value): _*))
-          val costs = itemsC.map(_.cost)
+        case ConcreteCollection(items, _) =>
+          val len = items.length
+          val values = new Array[Ref[Boolean]](len)
+          val costs = new Array[Ref[Int]](len)
+          cfor(0)(_ < len, _ + 1) { i =>
+            val item = items(i)
+            val itemC = eval(adaptSigmaBoolean(item))
+            values(i) = itemC.value
+            costs(i) = itemC.cost
+          }
+          val res = sigmaDslBuilder.allOf(colBuilder.fromItems(values: _*))
           val nOps = costs.length - 1
           val cost = opCost(res, costs, perItemCostOf(node, nOps))
           withConstantSize(res, cost)
@@ -1652,10 +1650,17 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
       }
 
       case XorOf(input) => input match {
-        case ConcreteCollection(items, tpe) =>
-          val itemsC = items.map(item => eval(item))
-          val res = sigmaDslBuilder.xorOf(colBuilder.fromItems(itemsC.map(_.value): _*))
-          val costs = itemsC.map(_.cost)
+        case ConcreteCollection(items, _) =>
+          val len = items.length
+          val values = new Array[Ref[Boolean]](len)
+          val costs = new Array[Ref[Int]](len)
+          cfor(0)(_ < len, _ + 1) { i =>
+            val item = items(i)
+            val itemC = eval(adaptSigmaBoolean(item))
+            values(i) = itemC.value
+            costs(i) = itemC.cost
+          }
+          val res = sigmaDslBuilder.xorOf(colBuilder.fromItems(values: _*))
           val nOps = costs.length - 1
           val cost = opCost(res, costs, perItemCostOf(node, nOps))
           withConstantSize(res, cost)
@@ -1699,16 +1704,30 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
         }
 
       case SigmaAnd(items) =>
-        val itemsC = items.map(eval)
-        val res = sigmaDslBuilder.allZK(colBuilder.fromItems(itemsC.map(s => asRep[SigmaProp](s.value)): _*))
-        val costs = itemsC.map(_.cost)
+        val len = items.length
+        val values = new Array[Ref[SigmaProp]](len)
+        val costs = new Array[Ref[Int]](len)
+        cfor(0)(_ < len, _ + 1) { i =>
+          val item = items(i)
+          val itemC = eval(item)
+          values(i) = asRep[SigmaProp](itemC.value)
+          costs(i) = itemC.cost
+        }
+        val res = sigmaDslBuilder.allZK(colBuilder.fromItems(values: _*))
         val cost = opCost(res, costs, perItemCostOf(node, costs.length))
         RCCostedPrim(res, cost, SizeSigmaProposition)
 
       case SigmaOr(items) =>
-        val itemsC = items.map(eval)
-        val res = sigmaDslBuilder.anyZK(colBuilder.fromItems(itemsC.map(s => asRep[SigmaProp](s.value)): _*))
-        val costs = itemsC.map(_.cost)
+        val len = items.length
+        val values = new Array[Ref[SigmaProp]](len)
+        val costs = new Array[Ref[Int]](len)
+        cfor(0)(_ < len, _ + 1) { i =>
+          val item = items(i)
+          val itemC = eval(item)
+          values(i) = asRep[SigmaProp](itemC.value)
+          costs(i) = itemC.cost
+        }
+        val res = sigmaDslBuilder.anyZK(colBuilder.fromItems(values: _*))
         val cost = opCost(res, costs, perItemCostOf(node, costs.length))
         RCCostedPrim(res, cost, SizeSigmaProposition)
 
@@ -1717,7 +1736,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
         def tC = evalNode(ctx, env, t)
         def eC = evalNode(ctx, env, e)
         val resV = IF (cC.value) THEN tC.value ELSE eC.value
-        val resCost = opCost(resV, Array(cC.cost, tC.cost, eC.cost), costOf("If", SFunc(Vector(SBoolean, If.tT, If.tT), If.tT)))
+        val resCost = opCost(resV, Array(cC.cost, tC.cost, eC.cost), costOf("If", If.GenericOpType))
         RCCostedPrim(resV, resCost, tC.size) // TODO costing: implement tC.size max eC.size
 
       case rel: Relation[t, _] =>
@@ -1821,8 +1840,29 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
       // fallback rule for MethodCall, should be the last case in the list
       case Terms.MethodCall(obj, method, args, typeSubst) if method.objType.coster.isDefined =>
         val objC = eval(obj)
-        val argsC = args.map(eval)
-        val elems = typeSubst.values.toSeq.map(tpe => liftElem(stypeToElem(tpe).asInstanceOf[Elem[Any]]))
+        val argsC: Seq[RCosted[SType#WrappedType]] =
+          if (args.isEmpty)
+            EmptySeqOfSym.asInstanceOf[Seq[RCosted[SType#WrappedType]]]
+          else {
+            val len = args.length
+            val res = new Array[RCosted[SType#WrappedType]](len)
+            cfor(0)(_ < len, _ + 1) { i =>
+              res(i) = eval(args(i))
+            }
+            res
+          }
+        val elems: Seq[Sym] =
+          if (typeSubst.isEmpty)
+            EmptySeqOfSym
+          else {
+            val ts = typeSubst.values.toArray
+            val len = ts.length
+            val res = new Array[Sym](len)
+            cfor(0)(_ < len, _ + 1) { i =>
+              res(i) = liftElem(stypeToElem(ts(i)).asInstanceOf[Elem[Any]])
+            }
+            res
+          }
         method.objType.coster.get(IR)(objC, method, argsC, elems)
 
       case _ =>

@@ -76,6 +76,11 @@ class SigmaByteWriter(val w: Writer,
     w.putULong(x); this
   }
 
+  override def putBytes(xs: Array[Byte],
+                        offset: Int,
+                        length: Int): this.type = {
+    w.putBytes(xs, offset, length); this
+  }
   @inline def putBytes(xs: Array[Byte]): this.type = { w.putBytes(xs); this }
   @inline def putBytes(xs: Array[Byte], info: DataInfo[Array[Byte]]): this.type = {
     ValueSerializer.addArgInfo(info)
@@ -254,7 +259,7 @@ object SigmaByteWriter {
 
   implicit def argInfoToDataInfo[T](arg: ArgInfo)(implicit fmt: FormatDescriptor[T]): DataInfo[T] = DataInfo(arg, fmt)
 
-  // TODO remove this conversion and make it explicit
+  // TODO refactor: remove this conversion and make it explicit
   /**Helper conversion */
   implicit def nameToDataInfo[T](name: String)(implicit fmt: FormatDescriptor[T]): DataInfo[T] = ArgInfo(name, "")
 }

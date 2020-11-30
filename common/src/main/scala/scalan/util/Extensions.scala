@@ -195,6 +195,8 @@ object Extensions {
       res
     }
     def getBytes(size: Int): Array[Byte] = {
+      if (size > buf.remaining)
+        throw new IllegalArgumentException(s"Not enough bytes in the ByteBuffer: $size")
       val res = new Array[Byte](size)
       buf.get(res)
       res

@@ -2,7 +2,10 @@ package scalan.primitives
 
 import scalan.{ExactNumeric, Base, Scalan, ExactIntegral}
 
+/** Slice in Scala cake with definitions of numeric operations. */
 trait NumericOps extends Base { self: Scalan =>
+
+  /** Extension methods over `Ref[T]` where T is instance of ExactNumeric type-class. */
   implicit class NumericOpsCls[T](x: Ref[T])(implicit val n: ExactNumeric[T]) {
     def +(y: Ref[T]): Ref[T] = NumericPlus(n)(x.elem).apply(x, y)
     def -(y: Ref[T]): Ref[T] = NumericMinus(n)(x.elem).apply(x, y)
@@ -15,6 +18,7 @@ trait NumericOps extends Base { self: Scalan =>
     def toLong: Ref[Long] = NumericToLong(n).apply(x)
   }
 
+  /** Extension methods over `Ref[T]` where T is instance of ExactIntegral type-class. */
   implicit class IntegralOpsCls[T](x: Ref[T])(implicit i: ExactIntegral[T]) {
     def div(y: Ref[T]): Ref[T] = IntegralDivide(i)(x.elem).apply(x, y)
     def mod(y: Ref[T]): Ref[T] = IntegralMod(i)(x.elem).apply(x, y)
@@ -23,35 +27,80 @@ trait NumericOps extends Base { self: Scalan =>
     def %(y: Ref[T]): Ref[T] = mod(y)
   }
 
+  /** Return an ExactNumeric for a given type T. */
   def numeric[T:ExactNumeric]: ExactNumeric[T] = implicitly[ExactNumeric[T]]
+
+  /** Return an ExactIntegral for a given type T. */
   def integral[T:ExactIntegral]: ExactIntegral[T] = implicitly[ExactIntegral[T]]
 
-  case class NumericPlus[T: Elem](n: ExactNumeric[T]) extends EndoBinOp[T]("+", n.plus)
+  /** Descriptor of binary `+` operation. */
+  case class NumericPlus[T: Elem](n: ExactNumeric[T]) extends EndoBinOp[T]("+") {
+    override def applySeq(x: T, y: T): T = n.plus(x, y)
+  }
 
-  case class NumericMinus[T: Elem](n: ExactNumeric[T]) extends EndoBinOp[T]("-", n.minus)
+  /** Descriptor of binary `-` operation. */
+  case class NumericMinus[T: Elem](n: ExactNumeric[T]) extends EndoBinOp[T]("-") {
+    override def applySeq(x: T, y: T): T = n.minus(x, y)
+  }
 
-  case class NumericTimes[T: Elem](n: ExactNumeric[T]) extends EndoBinOp[T]("*", n.times)
+  /** Descriptor of binary `*` operation. */
+  case class NumericTimes[T: Elem](n: ExactNumeric[T]) extends EndoBinOp[T]("*") {
+    override def applySeq(x: T, y: T): T = n.times(x, y)
+  }
 
-  class DivOp[T: Elem](opName: String, applySeq: (T, T) => T, n: ExactIntegral[T]) extends EndoBinOp[T](opName, applySeq) {
+  /** Base class for descriptors of binary division operations. */
+  abstract class DivOp[T: Elem](opName: String, n: ExactIntegral[T]) extends EndoBinOp[T](opName) {
     override def shouldPropagate(lhs: T, rhs: T) = rhs != n.zero
   }
 
-  case class NumericNegate[T: Elem](n: ExactNumeric[T]) extends UnOp[T, T]("-", n.negate)
+  /** Descriptor of unary `-` operation. */
+  case class NumericNegate[T: Elem](n: ExactNumeric[T]) extends UnOp[T, T]("-") {
+    override def applySeq(x: T): T = n.negate(x)
+  }
 
-  case class NumericToDouble[T](n: ExactNumeric[T]) extends UnOp[T,Double]("ToDouble", n.toDouble)
+  /** Descriptor of unary `ToDouble` conversion operation. */
+  case class NumericToDouble[T](n: ExactNumeric[T]) extends UnOp[T,Double]("ToDouble") {
+    override def applySeq(x: T): Double = n.toDouble(x)
+  }
 
-  case class NumericToFloat[T](n: ExactNumeric[T]) extends UnOp[T, Float]("ToFloat", n.toFloat)
+  /** Descriptor of unary `ToFloat` conversion operation. */
+  case class NumericToFloat[T](n: ExactNumeric[T]) extends UnOp[T, Float]("ToFloat") {
+    override def applySeq(x: T): Float = n.toFloat(x)
+  }
 
-  case class NumericToInt[T](n: ExactNumeric[T]) extends UnOp[T,Int]("ToInt", n.toInt)
+  /** Descriptor of unary `ToInt` conversion operation. */
+  case class NumericToInt[T](n: ExactNumeric[T]) extends UnOp[T,Int]("ToInt") {
+    override def applySeq(x: T): Int = n.toInt(x)
+  }
 
-  case class NumericToLong[T](n: ExactNumeric[T]) extends UnOp[T,Long]("ToLong", n.toLong)
+  /** Descriptor of unary `ToLong` conversion operation. */
+  case class NumericToLong[T](n: ExactNumeric[T]) extends UnOp[T,Long]("ToLong") {
+    override def applySeq(x: T): Long = n.toLong(x)
+  }
 
-  case class Abs[T: Elem](n: ExactNumeric[T]) extends UnOp[T, T]("Abs", n.abs)
+  /** Descriptor of unary `abs` operation. */
+  case class Abs[T: Elem](n: ExactNumeric[T]) extends UnOp[T, T]("Abs") {
+    override def applySeq(x: T): T = n.abs(x)
+  }
 
-  case class IntegralDivide[T](i: ExactIntegral[T])(implicit elem: Elem[T]) extends DivOp[T]("/", i.quot, i)
+  /** Descriptor of binary `/` operation (integral division). */
+  case class IntegralDivide[T](i: ExactIntegral[T])(implicit elem: Elem[T]) extends DivOp[T]("/", i) {
+    override def applySeq(x: T, y: T): T = i.quot(x, y)
+  }
 
-  case class IntegralMod[T](i: ExactIntegral[T])(implicit elem: Elem[T]) extends DivOp[T]("%", i.rem, i)
+  /** Descriptor of binary `%` operation (reminder of integral division). */
+case class IntegralMod[T](i: ExactIntegral[T])(implicit elem: Elem[T]) extends DivOp[T]("%", i) {
+    /** Note, this is implemented using `ExactIntegral.rem` method which delegates to
+      * `scala.math.Integral.rem`. The later also implements `%` operator in Scala for
+      * numeric types.
+      * @see sigmastate.eval.NumericOps.BigIntIsIntegral
+      */
+    override def applySeq(x: T, y: T): T = i.rem(x, y)
+  }
 
+  /** Compares the given value with zero of the given ExactNumeric instance. */
   @inline final def isZero[T](x: T, n: ExactNumeric[T]) = x == n.zero
+
+  /** Compares the given value with 1 of the given ExactNumeric instance. */
   @inline final def isOne[T](x: T, n: ExactNumeric[T]) = x == n.fromInt(1)
 }

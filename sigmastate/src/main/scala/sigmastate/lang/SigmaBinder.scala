@@ -37,7 +37,7 @@ class SigmaBinder(env: ScriptEnv, builder: SigmaBuilder,
 
   /** Rewriting of AST with respect to environment to resolve all references to global names
     * and infer their types. */
-  private def eval(e: SValue, env: ScriptEnv): SValue = rewrite(reduce(strategy[SValue]({
+  private def eval(e: SValue, env: ScriptEnv): SValue = rewrite(reduce(strategy[Any]({
     case i @ Ident(n, NoType) => env.get(n) match {
       case Some(v) => Option(liftAny(v).get.withPropagatedSrcCtx(i.sourceContext))
       case None => n match {

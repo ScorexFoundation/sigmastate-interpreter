@@ -1,6 +1,5 @@
 package sigmastate.eval
 
-import java.lang.Math
 import java.math.BigInteger
 
 import org.bouncycastle.math.ec.ECPoint
@@ -8,18 +7,15 @@ import org.ergoplatform._
 import org.ergoplatform.validation.ValidationRules.{CheckLoopLevelInCostFunction, CheckCostFuncOperation}
 import sigmastate._
 import sigmastate.Values.{Value, GroupElementConstant, SigmaBoolean, Constant}
-import sigmastate.lang.Terms.OperationId
-import sigmastate.utxo.CostTableStat
 
 import scala.reflect.ClassTag
 import scala.util.Try
 import sigmastate.SType._
-import sigmastate.interpreter.CryptoConstants.EcPointType
 import scalan.{Nullable, RType}
 import scalan.RType._
 import sigma.types.PrimViewType
 import sigmastate.basics.DLogProtocol.ProveDlog
-import sigmastate.basics.{ProveDHTuple, DLogProtocol}
+import sigmastate.basics.{ProveDHTuple}
 import special.sigma.Extensions._
 import sigmastate.lang.exceptions.CostLimitException
 import sigmastate.serialization.OpCodes
@@ -29,6 +25,7 @@ import special.Types._
 import scala.collection.immutable.HashSet
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
+import spire.syntax.all.cfor
 
 /** This is a slice in IRContext cake which implements evaluation of graphs.
   */
@@ -85,99 +82,17 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
   private val SPCM = WSpecialPredefCompanionMethods
   private val MBM = MonoidBuilderMethods
 
-  private val _allowedOpCodesInCosting: HashSet[OpCodeExtra] = HashSet[OpCode](
-    AppendCode,
-    ByIndexCode,
-    ConstantCode,
-    DivisionCode,
-    DowncastCode,
-    ExtractBytesWithNoRefCode,
-    ExtractRegisterAs,
-    ExtractScriptBytesCode,
-    FoldCode,
-    FuncApplyCode,
-    FuncValueCode,
-    GetVarCode,
-    InputsCode,
-    LastBlockUtxoRootHashCode,
-    MapCollectionCode,
-    FlatMapCollectionCode,
-    MaxCode,
-    MethodCallCode,
-    MinCode,
-    MinusCode,
-    ModuloCode,
-    MultiplyCode,
-    OptionGetCode,
-    OptionGetOrElseCode,
-    OptionIsDefinedCode,
-    OutputsCode,
-    PlusCode,
-    SelectFieldCode,
-    SelfCode,
-    SigmaPropBytesCode,
-    SizeOfCode,
-    SliceCode,
-    TupleCode,
-    UpcastCode
-  ).map(toExtra) ++ HashSet[OpCodeExtra](
-    OpCostCode,
-    PerKbCostOfCode,
-    CastCode,
-    IntPlusMonoidCode,
-    ThunkDefCode,
-    ThunkForceCode,
-    SCMInputsCode,
-    SCMOutputsCode,
-    SCMDataInputsCode,
-    SCMSelfBoxCode,
-    SCMLastBlockUtxoRootHashCode,
-    SCMHeadersCode,
-    SCMPreHeaderCode,
-    SCMGetVarCode,
-    SBMPropositionBytesCode,
-    SBMBytesCode,
-    SBMBytesWithoutRefCode,
-    SBMRegistersCode,
-    SBMGetRegCode,
-    SBMTokensCode,
-    SSPMPropBytesCode,
-    SAVMTValCode,
-    SAVMValueSizeCode,
-    SizeMDataSizeCode,
-    SPairLCode,
-    SPairRCode,
-    SCollMSizesCode,
-    SOptMSizeOptCode,
-    SFuncMSizeEnvCode,
-    CSizePairCtorCode,
-    CSizeFuncCtorCode,
-    CSizeOptionCtorCode,
-    CSizeCollCtorCode,
-    CSizeBoxCtorCode,
-    CSizeContextCtorCode,
-    CSizeAnyValueCtorCode,
-    CReplCollCtorCode,
-    PairOfColsCtorCode,
-    CollMSumCode,
-    CBMReplicateCode,
-    CBMFromItemsCode,
-    CostOfCode,
-    UOSizeOfCode,
-    SPCMSomeCode
-  )
-
   /** Returns a set of opCodeEx values (extended op codes) which are allowed in cost function.
     * This may include both ErgoTree codes (from OpCodes) and also additional non-ErgoTree codes
     * from OpCodesExtra.
     * Any IR graph node can be uniquely assigned to extended op code value
     * from OpCodes + OpCodesExtra combined range. (See getOpCodeEx) */
-  protected def allowedOpCodesInCosting: HashSet[OpCodeExtra] = _allowedOpCodesInCosting
+  protected def allowedOpCodesInCosting: HashSet[OpCodeExtra] = Evaluation.AllowedOpCodesInCosting
 
+  /** Checks the given opCode belong to an operation allowed in cost function. */
   def isAllowedOpCodeInCosting(opCode: OpCodeExtra): Boolean = allowedOpCodesInCosting.contains(opCode)
 
-  /** Returns extended op code assigned to the given IR graph node.
-    */
+  /** Returns extended op code assigned to the given IR graph node. */
   def getOpCodeEx(d: Def[_]): OpCodeExtra = d match {
     case _: OpCost => OpCostCode
     case _: PerKbCostOf => PerKbCostOfCode
@@ -402,13 +317,6 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
     }
   }
 
-  object IsTupleFN {
-    def unapply(fn: String): Nullable[Byte] = {
-      if (fn.startsWith("_")) Nullable[Byte](fn.substring(1).toByte)
-      else Nullable.None.asInstanceOf[Nullable[Byte]]
-    }
-  }
-
   import sigmastate._
   import special.sigma.{Context => SigmaContext}
 
@@ -432,8 +340,6 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
     )
     env
   }
-
-  case class EvaluatedEntry(env: DataEnv, sym: Sym, value: AnyRef)
 
   protected def printEnvEntry(sym: Sym, value: AnyRef) = {
     def trim[A](arr: Array[A]) = arr.take(arr.length min 100)
@@ -464,8 +370,6 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
     case _ => error(s"Cannot find value in environment for $s (dataEnv = $dataEnv)")
   }
 
-  def msgCostLimitError(cost: Long, limit: Long) = s"Estimated execution cost $cost exceeds the limit $limit"
-
   /** Incapsulate simple monotonic (add only) counter with reset. */
   class CostCounter(val initialCost: Int) {
     private var _currentCost: Int = initialCost
@@ -475,7 +379,6 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
       this._currentCost = java.lang.Math.addExact(this._currentCost, n)
     }
     @inline def currentCost: Int = _currentCost
-    @inline def resetCost() = { _currentCost = initialCost }
   }
 
   /** Implements finite state machine with stack of graph blocks (scopes),
@@ -569,9 +472,7 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
         val loopCost = if (_loopStack.isEmpty) 0 else _loopStack.head.accumulatedCost
         val accumulatedCost = java.lang.Math.addExact(cost, loopCost)
         if (accumulatedCost > limit) {
-//          if (cost < limit)
-//            println(s"FAIL FAST in loop: $accumulatedCost > $limit")
-          throw new CostLimitException(accumulatedCost, msgCostLimitError(accumulatedCost, limit), None)
+          throw new CostLimitException(accumulatedCost, Evaluation.msgCostLimitError(accumulatedCost, limit), None)
         }
       }
 
@@ -648,11 +549,22 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
 
           case wc: LiftedConst[_,_] => out(wc.constValue)
 
-          case _: SigmaDslBuilder | _: CollBuilder | _: CostedBuilder |
-               _: WSpecialPredefCompanion |
-               _: IntPlusMonoid | _: LongPlusMonoid |
-               MBM.intPlusMonoid(_) | MBM.longPlusMonoid(_) => // TODO no HF proof
-            out(dataEnv.getOrElse(sym, !!!(s"Cannot resolve companion instance for $sym -> ${sym.node}")))
+          case _: IntPlusMonoid | MBM.intPlusMonoid(_)  =>
+            // always return the same value since monoids are singletons
+            out(monoidBuilderValue.intPlusMonoid)
+
+          case _: LongPlusMonoid | MBM.longPlusMonoid(_) =>
+            // always return the same value since monoids are singletons
+            out(monoidBuilderValue.longPlusMonoid)
+
+          case _: SigmaDslBuilder =>
+            // always return the same value since SigmaDslBuilder is singleton
+            out(sigmaDslBuilderValue)
+
+          case _: CollBuilder | _: CostedBuilder | _: WSpecialPredefCompanion =>
+            out(dataEnv.getOrElse(sym, {
+               !!!(s"Cannot resolve companion instance for $sym -> ${sym.node}")
+            }))
 
           case SigmaM.isValid(In(prop: AnyRef)) =>
             out(prop)
@@ -661,6 +573,7 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
             In(input: special.collection.Coll[Byte]@unchecked),
             In(positions: special.collection.Coll[Int]@unchecked),
             In(newVals: special.collection.Coll[Any]@unchecked), _) =>
+            // TODO refactor: call sigmaDslBuilderValue.substConstants
             val typedNewVals = newVals.toArray.map(v => builder.liftAny(v) match {
               case Nullable(v) => v
               case _ => sys.error(s"Cannot evaluate substConstants($input, $positions, $newVals): cannot lift value $v")
@@ -782,28 +695,6 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
 
           case ThunkForce(In(t: ThunkData[Any])) =>
             out(t())
-          case SDBM.sigmaProp(_, In(isValid: Boolean)) =>
-            val res = CSigmaProp(sigmastate.TrivialProp(isValid))
-            out(res)
-          case SDBM.proveDlog(_, In(g: EcPointType)) =>
-            val res = CSigmaProp(DLogProtocol.ProveDlog(g))
-            out(res)
-          case SDBM.proveDHTuple(_, In(g: EcPointType), In(h: EcPointType), In(u: EcPointType), In(v: EcPointType)) =>
-            val res = CSigmaProp(ProveDHTuple(g, h, u, v))
-            out(res)
-          case SDBM.avlTree(_, In(flags: Byte),
-                           In(digest: SColl[Byte]@unchecked), In(keyLength: Int),
-                           In(valueLengthOpt: Option[Int]@unchecked)) =>
-            val res = sigmaDslBuilderValue.avlTree(flags, digest, keyLength, valueLengthOpt)
-            out(res)
-
-//          case CReplCollCtor(valueSym @ In(value), In(len: Int)) =>
-//            val res = sigmaDslBuilderValue.Colls.replicate(len, value)(asType[Any](valueSym.elem.sourceType))
-//            out(res)
-//
-//          case PairOfColsCtor(In(ls: SColl[a]@unchecked), In(rs: SColl[b]@unchecked)) =>
-//            val res = sigmaDslBuilderValue.Colls.pairColl(ls, rs)
-//            out(res)
 
           case CSizePrimCtor(In(dataSize: Long), tVal) =>
             val res = new special.collection.CSizePrim(dataSize, tVal.eA.sourceType)
@@ -817,15 +708,6 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
           case CSizeOptionCtor(In(optSize: Option[SSize[_]] @unchecked)) =>
             val res = new special.collection.CSizeOption(optSize)
             out(res)
-//          case CSizeAnyValueCtor(tVal, In(valueSize: SSize[Any] @unchecked)) =>
-//            val res = new special.sigma.CSizeAnyValue(tVal.eA.sourceType.asInstanceOf[RType[Any]], valueSize)
-//            out(res)
-//          case CSizeBoxCtor(
-//                 In(propBytes: SSize[SColl[Byte]]@unchecked), In(bytes: SSize[SColl[Byte]]@unchecked),
-//                 In(bytesWithoutRef: SSize[SColl[Byte]]@unchecked), In(regs: SSize[SColl[Option[SAnyValue]]]@unchecked),
-//                 In(tokens: SSize[SColl[(SColl[Byte], Long)]]@unchecked)) =>
-//            val res = new EvalSizeBox(propBytes, bytes, bytesWithoutRef, regs, tokens)
-//            out(res)
 
           case costOp: CostOf =>
             out(costOp.eval)
@@ -837,8 +719,6 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
           case SizeOf(sym @ In(data)) =>
             val tpe = elemToSType(sym.elem)
             val size = tpe match {
-//              case SAvlTree =>
-//                data.asInstanceOf[special.sigma.AvlTree].dataSize
               case _ => data match {
                 case w: WrapperOf[_] =>
                   tpe.dataSize(w.wrappedValue.asWrappedType)
@@ -897,6 +777,91 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
 object Evaluation {
   import special.sigma._
   import special.collection._
+  import OpCodes._
+
+  val AllowedOpCodesInCosting: HashSet[OpCodeExtra] = HashSet[OpCode](
+    AppendCode,
+    ByIndexCode,
+    ConstantCode,
+    DivisionCode,
+    DowncastCode,
+    ExtractBytesWithNoRefCode,
+    ExtractRegisterAs,
+    ExtractScriptBytesCode,
+    FoldCode,
+    FuncApplyCode,
+    FuncValueCode,
+    GetVarCode,
+    InputsCode,
+    LastBlockUtxoRootHashCode,
+    MapCollectionCode,
+    FlatMapCollectionCode,
+    MaxCode,
+    MethodCallCode,
+    MinCode,
+    MinusCode,
+    ModuloCode,
+    MultiplyCode,
+    OptionGetCode,
+    OptionGetOrElseCode,
+    OptionIsDefinedCode,
+    OutputsCode,
+    PlusCode,
+    SelectFieldCode,
+    SelfCode,
+    SigmaPropBytesCode,
+    SizeOfCode,
+    SliceCode,
+    TupleCode,
+    UpcastCode
+  ).map(toExtra) ++ HashSet[OpCodeExtra](
+    OpCostCode,
+    PerKbCostOfCode,
+    CastCode,
+    IntPlusMonoidCode,
+    ThunkDefCode,
+    ThunkForceCode,
+    SCMInputsCode,
+    SCMOutputsCode,
+    SCMDataInputsCode,
+    SCMSelfBoxCode,
+    SCMLastBlockUtxoRootHashCode,
+    SCMHeadersCode,
+    SCMPreHeaderCode,
+    SCMGetVarCode,
+    SBMPropositionBytesCode,
+    SBMBytesCode,
+    SBMBytesWithoutRefCode,
+    SBMRegistersCode,
+    SBMGetRegCode,
+    SBMTokensCode,
+    SSPMPropBytesCode,
+    SAVMTValCode,
+    SAVMValueSizeCode,
+    SizeMDataSizeCode,
+    SPairLCode,
+    SPairRCode,
+    SCollMSizesCode,
+    SOptMSizeOptCode,
+    SFuncMSizeEnvCode,
+    CSizePairCtorCode,
+    CSizeFuncCtorCode,
+    CSizeOptionCtorCode,
+    CSizeCollCtorCode,
+    CSizeBoxCtorCode,
+    CSizeContextCtorCode,
+    CSizeAnyValueCtorCode,
+    CReplCollCtorCode,
+    PairOfColsCtorCode,
+    CollMSumCode,
+    CBMReplicateCode,
+    CBMFromItemsCode,
+    CostOfCode,
+    UOSizeOfCode,
+    SPCMSomeCode
+  )
+
+  def msgCostLimitError(cost: Long, limit: Long) = s"Estimated execution cost $cost exceeds the limit $limit"
 
   /** Transforms a serializable ErgoTree type descriptor to the corresponding RType descriptor of SigmaDsl,
     * which is used during evaluation.
@@ -919,15 +884,25 @@ object Evaluation {
     case SGroupElement => GroupElementRType
     case SAvlTree => AvlTreeRType
     case SSigmaProp => SigmaPropRType
-    case STuple(Seq(tpeA, tpeB)) =>
+    case tup: STuple if tup.items.length == 2 =>
+      val tpeA = tup.items(0)
+      val tpeB = tup.items(1)
       pairRType(stypeToRType(tpeA), stypeToRType(tpeB))
     case STuple(items) =>
       val types = items.toArray
-      tupleRType(types.map(t => stypeToRType(t).asInstanceOf[SomeType]))
+      val len = types.length
+      val rtypes = new Array[SomeType](len)
+      cfor(0)(_ < len, _ + 1) { i =>
+        rtypes(i) = stypeToRType(types(i)).asInstanceOf[SomeType]
+      }
+      tupleRType(rtypes)
     case c: SCollectionType[a] => collRType(stypeToRType(c.elemType))
     case o: SOption[a] => optionRType(stypeToRType(o.elemType))
-    case SFunc(Seq(tpeArg), tpeRange, Nil) => funcRType(stypeToRType(tpeArg), stypeToRType(tpeRange))
-    case _ => sys.error(s"Don't know how to convert SType $t to RType")
+    case SFunc(args, tpeRange, Nil) if args.length == 1 =>
+      val tpeArg = args(0)
+      funcRType(stypeToRType(tpeArg), stypeToRType(tpeRange))
+    case _ =>
+      sys.error(s"Don't know how to convert SType $t to RType")
   }).asInstanceOf[RType[T#WrappedType]]
 
   /** Transforms RType descriptor of SigmaDsl, which is used during evaluation,
@@ -958,7 +933,7 @@ object Evaluation {
     case PreHeaderRType => SPreHeader
     case SigmaPropRType => SSigmaProp
     case SigmaBooleanRType => SSigmaProp
-    case tup: TupleType => STuple(tup.items.map(t => rtypeToSType(t)).toIndexedSeq)
+    case tup: TupleType => STuple(tup.items.map(t => rtypeToSType(t)))
     case at: ArrayType[_] => SCollection(rtypeToSType(at.tA))
     case ct: CollType[_] => SCollection(rtypeToSType(ct.tItem))
     case ft: FuncType[_,_] => SFunc(rtypeToSType(ft.tDom), rtypeToSType(ft.tRange))

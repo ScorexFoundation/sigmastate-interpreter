@@ -54,8 +54,8 @@ object Zero extends ZeroLowPriority {
     case AvlTreeRType => Zero[AvlTree]
     case SigmaPropRType => sigmaPropIsZero
     case ct: CollType[a] => collIsZero(typeToZero(ct.tItem), ct.tItem)
-    case ct: OptionType[a] => optionIsZero(typeToZero(ct.tA))
-    case ct: PairType[a, b] => pairIsZero(typeToZero(ct.tFst), typeToZero(ct.tSnd))
+    case ct: OptionType[a] => optionIsZero(typeToZero(ct.tA))  // TODO cover with tests (2h)
+    case ct: PairType[a, b] => pairIsZero(typeToZero(ct.tFst), typeToZero(ct.tSnd)) // TODO cover with tests (1h)
     case _ => sys.error(s"Don't know how to compute Zero for type $t")
   }).asInstanceOf[Zero[T]]
 

@@ -15,7 +15,7 @@ import sigmastate.serialization.OpCodes.{OpCode, OpCodeExtra}
 import sigmastate.serialization.TypeSerializer.embeddableIdToType
 import sigmastate.serialization.{OpCodes, ValueSerializer}
 import sigmastate.utxo.DeserializeContext
-import sigmastate.utils.Helpers._
+import sigmastate.utils.Helpers._  // required for Scala 2.11
 import scala.collection.mutable
 
 /** Base class for different validation rules registered in ValidationRules.currentSettings.
@@ -37,8 +37,9 @@ case class ValidationRule(
     */
   @inline protected final def checkRule(): Unit = {
     if (!_checked) {
-      if (ValidationRules.currentSettings.getStatus(this.id).isEmpty)
+      if (ValidationRules.currentSettings.getStatus(this.id).isEmpty) {
         throw new SigmaException(s"ValidationRule $this not found in validation settings")
+      }
       _checked = true  // prevent this check on every call (only first call is checked)
     }
     // upon successful return we know the rule is registered with EnabledRule status
@@ -121,10 +122,12 @@ object ValidationRules {
     "Check the index expression for accessing collection element is supported.") {
     final def apply[Ctx <: IRContext, T](ctx: Ctx)(coll: Value[SCollection[_]], i: IntValue, iSym: ctx.Ref[Int]): Unit = {
       checkRule()
-      if (!ctx.isSupportedIndexExpression(iSym))
+      if (!ctx.isSupportedIndexExpression(iSym)) {
+        // TODO consensus: cover with tests
         throwValidationException(
           new SigmaException(s"Unsupported index expression $i when accessing collection $coll", i.sourceContext.toOption),
           Array(coll, i))
+      }
     }
   }
 
@@ -350,6 +353,18 @@ object ValidationRules {
     map
   })
 
+  /** Executes the given `block` catching [[ValidationException]] and checking possible
+    * soft-fork condition in the context of the given [[SigmaValidationSettings]].
+    * If soft-fork condition is recognized the `whenSoftFork` is executed and its result
+    * is returned.
+    *
+    * @param whenSoftFork executed when soft-fork condition is detected
+    * @param block        block of code, which may throw [[ValidationException]]
+    * @param vs           set of [[SigmaValidationSettings]] which can be used to recognize soft-fork conditions.
+    * @return result of `block` if no ValidationException was thrown, or the result of
+    * `whenSoftFork` if soft-fork condition is detected.
+    * @throws ValidationException if soft-fork condition is not recognized by the given `vs`
+    */
   def trySoftForkable[T](whenSoftFork: => T)(block: => T)(implicit vs: SigmaValidationSettings): T = {
     try block
     catch {

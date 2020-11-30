@@ -83,6 +83,8 @@ object SigmaPPrint extends PPrinter {
   private val exceptionHandlers: PartialFunction[Any, Tree] = {
     case ex: Exception =>
       Tree.Apply(s"new ${ex.getClass.getSimpleName}", treeifySeq(Seq(ex.getMessage)))
+    case ex: Error =>
+      Tree.Apply(s"new ${ex.getClass.getSimpleName}", treeifySeq(Seq(ex.getMessage)))
   }
 
   /** Generated Scala code which creates the given byte array from a hex string literal. */
@@ -131,6 +133,9 @@ object SigmaPPrint extends PPrinter {
     case coll: Coll[_] =>
       val elemTpe = coll.tItem.name
       Tree.Apply(s"Coll[$elemTpe]", treeifySeq(coll.toArray))
+
+    case tp: TrivialProp =>
+      Tree.Literal(s"TrivialProp.${if (tp.condition) "True" else "False"}Prop")
 
     case t: AvlTreeData =>
       Tree.Apply("AvlTreeData", treeifyMany(
@@ -188,12 +193,19 @@ object SigmaPPrint extends PPrinter {
     case ConstantNode(v, SCollectionType(elemType)) if elemType.isInstanceOf[SPredefType] =>
       Tree.Apply(tpeName(elemType) + "ArrayConstant", treeifySeq(Seq(v)))
 
+    case ConstantNode(true, SBoolean) =>
+      Tree.Literal("TrueLeaf")
+
+    case ConstantNode(false, SBoolean) =>
+      Tree.Literal("FalseLeaf")
+
     case c: ConstantNode[_] if c.tpe.isInstanceOf[SPredefType] =>
       Tree.Apply(tpeName(c.tpe) + "Constant", treeifySeq(Seq(c.value)))
 
     case ArithOp(l, r, code) =>
       val args = treeifySeq(Seq(l, r)).toSeq :+ Tree.Apply("OpCode @@ ", treeifySeq(Seq(code)))
       Tree.Apply("ArithOp", args.iterator)
+
     case mc @ MethodCall(obj, method, args, typeSubst) =>
       val objType = apply(method.objType).plainText
       val methodTemplate = method.objType.getMethodByName(method.name)

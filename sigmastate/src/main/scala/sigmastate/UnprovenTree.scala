@@ -6,9 +6,6 @@ import com.google.common.primitives.Shorts
 import gf2t.GF2_192_Poly
 import sigmastate.basics.DLogProtocol.{FirstDLogProverMessage, ProveDlog}
 import sigmastate.basics.VerifierMessage.Challenge
-import sigmastate.Values.{SigmaBoolean, SigmaPropConstant}
-import sigmastate.basics.{FirstDiffieHellmanTupleProverMessage, FirstProverMessage, ProveDHTuple, SigmaProtocol}
-import sigmastate.serialization.ErgoTreeSerializer
 import sigmastate.Values.{ErgoTree, SigmaBoolean, SigmaPropConstant}
 import sigmastate.basics.{FirstDiffieHellmanTupleProverMessage, FirstProverMessage, ProveDHTuple}
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
@@ -35,56 +32,128 @@ trait ProofTreeConjecture extends ProofTree {
   val children: Seq[ProofTree]
 }
 
+/**
+  * Data type which encodes position of a node in a tree.
+  *
+  * Position is encoded like following (the example provided is for CTHRESHOLD(2, Seq(pk1, pk2, pk3 && pk4)) :
+  *
+  *            0
+  *          / | \
+  *         /  |  \
+  *       0-0 0-1 0-2
+  *               /|
+  *              / |
+  *             /  |
+  *            /   |
+  *          0-2-0 0-2-1
+  *
+  * So a hint associated with pk1 has a position "0-0", pk4 - "0-2-1" .
+  *
+  * Please note that "0" prefix is for a crypto tree. There are several kinds of trees during evaluation.
+  * Initial mixed tree (ergoTree) would have another prefix.
+  *
+  * @param positions - positions from root (inclusive) in top-down order
+  */
+case class NodePosition(positions: Seq[Int]) {
 
+  def child(childIdx: Int): NodePosition = NodePosition(positions :+ childIdx)
+
+  override def toString: String = positions.mkString("-")
+}
+
+object NodePosition {
+  /**
+    * Prefix to encode node positions in a crypto tree.
+    */
+  val CryptoTreePrefix = NodePosition(Seq(0))
+
+  /**
+    * Prefix to encode node positions in an ErgoTree instance.
+    */
+  val ErgoTreePrefix = NodePosition(Seq(1))
+}
+
+/**
+  * A node of a sigma-tree used by the prover. See ProverInterpreter comments and the
+  * ErgoScript white-paper https://ergoplatform.org/docs/ErgoScript.pdf , Appendix A, for details
+  */
 sealed trait UnprovenTree extends ProofTree {
+
+  /**
+    * Position of the node in the tree, see comments for `position` field in
+    * `sigmastate.interpreter.Hint`
+    */
+  val position: NodePosition
+
+  /**
+    * Node's sigma-protocol statement to be proven.
+    */
   val proposition: SigmaBoolean
 
+  /**
+    * Whether the node represents simulated sigma-protocol
+    */
   val simulated: Boolean
 
   def real: Boolean = !simulated
 
+  /**
+    * Challenge used by the prover.
+    */
   val challengeOpt: Option[Array[Byte]]
 
   def withChallenge(challenge: Challenge): UnprovenTree
 
   def withSimulated(newSimulated: Boolean): UnprovenTree
+
+  def withPosition(updatedPosition: NodePosition): UnprovenTree
 }
 
 sealed trait UnprovenLeaf extends UnprovenTree with ProofTreeLeaf
 
-sealed trait UnprovenConjecture extends UnprovenTree with ProofTreeConjecture {
-}
+sealed trait UnprovenConjecture extends UnprovenTree with ProofTreeConjecture
 
 case class CAndUnproven(override val proposition: CAND,
                         override val challengeOpt: Option[Challenge] = None,
                         override val simulated: Boolean,
-                        children: Seq[ProofTree]) extends UnprovenConjecture {
+                        children: Seq[ProofTree],
+                        override val position: NodePosition = NodePosition.CryptoTreePrefix) extends UnprovenConjecture {
 
   override val conjectureType = ConjectureType.AndConjecture
 
   override def withChallenge(challenge: Challenge) = this.copy(challengeOpt = Some(challenge))
 
   override def withSimulated(newSimulated: Boolean) = this.copy(simulated = newSimulated)
+
+  override def withPosition(updatedPosition: NodePosition): UnprovenTree = this.copy(position = updatedPosition)
 }
 
 case class COrUnproven(override val proposition: COR,
                        override val challengeOpt: Option[Challenge] = None,
                        override val simulated: Boolean,
-                       children: Seq[ProofTree]) extends UnprovenConjecture {
+                       children: Seq[ProofTree],
+                       override val position: NodePosition = NodePosition.CryptoTreePrefix) extends UnprovenConjecture {
 
   override val conjectureType = ConjectureType.OrConjecture
 
   override def withChallenge(challenge: Challenge) = this.copy(challengeOpt = Some(challenge))
 
   override def withSimulated(newSimulated: Boolean) = this.copy(simulated = newSimulated)
+
+  override def withPosition(updatedPosition: NodePosition): UnprovenTree = this.copy(position = updatedPosition)
 }
 
+/**
+  * Unproven threshold k-out-n conjecture. k secrets will be proven, (n-k) simulated.
+  * For details on challenge and polynomial used in this case, see [CramerDamgardSchoenmakers94].
+  */
 case class CThresholdUnproven(override val proposition: CTHRESHOLD,
                        override val challengeOpt: Option[Challenge] = None,
                        override val simulated: Boolean,
                        k: Integer,
                        children: Seq[ProofTree],
-                       polynomialOpt: Option[GF2_192_Poly]) extends UnprovenConjecture {
+                       polynomialOpt: Option[GF2_192_Poly],
+                       override val position: NodePosition = NodePosition.CryptoTreePrefix) extends UnprovenConjecture {
 
   require(k >= 0 && k <= children.length, "Wrong k value")
   require(children.size <= 255) // Our polynomial arithmetic can take only byte inputs
@@ -95,6 +164,8 @@ case class CThresholdUnproven(override val proposition: CTHRESHOLD,
 
   override def withSimulated(newSimulated: Boolean) = this.copy(simulated = newSimulated)
 
+  override def withPosition(updatedPosition: NodePosition) = this.copy(position = updatedPosition)
+
   def withPolynomial(newPolynomial: GF2_192_Poly) = this.copy(polynomialOpt = Some(newPolynomial))
 }
 
@@ -103,22 +174,27 @@ case class UnprovenSchnorr(override val proposition: ProveDlog,
                            override val commitmentOpt: Option[FirstDLogProverMessage],
                            randomnessOpt: Option[BigInteger],
                            override val challengeOpt: Option[Challenge] = None,
-                           override val simulated: Boolean) extends UnprovenLeaf {
+                           override val simulated: Boolean,
+                           override val position: NodePosition = NodePosition.CryptoTreePrefix) extends UnprovenLeaf {
 
   override def withChallenge(challenge: Challenge) = this.copy(challengeOpt = Some(challenge))
 
   override def withSimulated(newSimulated: Boolean) = this.copy(simulated = newSimulated)
+
+  override def withPosition(updatedPosition: NodePosition) = this.copy(position = updatedPosition)
 }
 
 case class UnprovenDiffieHellmanTuple(override val proposition: ProveDHTuple,
                                       override val commitmentOpt: Option[FirstDiffieHellmanTupleProverMessage],
                                       randomnessOpt: Option[BigInteger],
                                       override val challengeOpt: Option[Challenge] = None,
-                                      override val simulated: Boolean
-                                     ) extends UnprovenLeaf {
+                                      override val simulated: Boolean,
+                                      override val position: NodePosition = NodePosition.CryptoTreePrefix) extends UnprovenLeaf {
   override def withChallenge(challenge: Challenge) = this.copy(challengeOpt = Some(challenge))
 
   override def withSimulated(newSimulated: Boolean) = this.copy(simulated = newSimulated)
+
+  override def withPosition(updatedPosition: NodePosition) = this.copy(position = updatedPosition)
 }
 
 
@@ -131,7 +207,7 @@ case class UnprovenDiffieHellmanTuple(override val proposition: ProveDHTuple,
   *  and should not contain challenges, responses, or the real/simulated flag for any node.
   *
   */
-// TODO coverage: write a test that restores the tree from this string and check that the result is equal,
+// TODO coverage (8h): write a test that restores the tree from this string and check that the result is equal,
 // in order to make sure this conversion is unambiguous
 object FiatShamirTree {
   val internalNodePrefix = 0: Byte

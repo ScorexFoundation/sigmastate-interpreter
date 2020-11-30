@@ -26,7 +26,6 @@ object OrderingOps {
 object NumericOps {
 
   trait BigIntegerIsIntegral extends Integral[BigInteger] {
-//    private val BI = implicitly[Integral[BigInt]]
     def quot(x: BigInteger, y: BigInteger): BigInteger = x.divide(y)
     def rem(x: BigInteger, y: BigInteger): BigInteger = x.remainder(y)
     def plus(x: BigInteger, y: BigInteger): BigInteger = x.add(y)
@@ -54,16 +53,20 @@ object NumericOps {
     def toFloat(x: BigInt): Float = CostingSigmaDslBuilder.toBigInteger(x).floatValue()
     def toDouble(x: BigInt): Double = CostingSigmaDslBuilder.toBigInteger(x).doubleValue()
   }
+
+  /** The instance of Integral for BigInt.
+    *
+    * Note: ExactIntegral is not defined for [[special.sigma.BigInt]].
+    * This is because arithmetic BigInt operations are handled specially
+    * (see `case op: ArithOp[t] if op.tpe == SBigInt =>` in RuntimeCosting.scala).
+    * As result [[scalan.primitives.UnBinOps.ApplyBinOp]] nodes are not created for BigInt
+    * operations, and hence operation descriptors such as
+    * [[scalan.primitives.NumericOps.IntegralDivide]] and
+    * [[scalan.primitives.NumericOps.IntegralMod]] are not used for BigInt.
+    */
   implicit object BigIntIsIntegral extends BigIntIsIntegral with OrderingOps.BigIntOrdering
 
   implicit object BigIntIsExactNumeric extends ExactNumeric[BigInt] {
-    val n = BigIntIsIntegral
-    override def plus(x: BigInt, y: BigInt): BigInt = n.plus(x, y)
-    override def minus(x: BigInt, y: BigInt): BigInt = n.minus(x, y)
-    override def times(x: BigInt, y: BigInt): BigInt = n.times(x, y)
-  }
-
-  implicit object BigIntIsExactIntegral extends ExactIntegral[BigInt] {
     val n = BigIntIsIntegral
     override def plus(x: BigInt, y: BigInt): BigInt = n.plus(x, y)
     override def minus(x: BigInt, y: BigInt): BigInt = n.minus(x, y)

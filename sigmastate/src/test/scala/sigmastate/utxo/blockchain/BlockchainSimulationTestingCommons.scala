@@ -5,10 +5,11 @@ import org.ergoplatform._
 import scorex.crypto.authds.{ADDigest, ADKey, ADValue}
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Remove}
 import scorex.crypto.hash.{Blake2b256, Digest32}
-import sigmastate.{AvlTreeData, AvlTreeFlags, GE, Values}
+import sigmastate.{AvlTreeData, AvlTreeFlags, Values}
 import sigmastate.Values.{ErgoTree, LongConstant}
 import sigmastate.eval._
 import sigmastate.helpers.{BlockchainState, ErgoLikeContextTesting, ErgoLikeTestProvingInterpreter, ErgoTransactionValidator, SigmaTestingCommons}
+import sigmastate.helpers.TestingHelpers._
 import sigmastate.utils.Helpers._
 import scala.collection.mutable
 import scala.util.{Random, Try}
@@ -147,7 +148,7 @@ object BlockchainSimulationTestingCommons extends SigmaTestingCommons {
     val initBlock = FullBlock(
       (0 until 10).map { i =>
         val txId = Blake2b256.hash(i.toString.getBytes ++ scala.util.Random.nextString(12).getBytes).toModifierId
-        val boxes = (1 to 50).map(_ => ErgoBox(10, Values.TrueLeaf.toSigmaProp, i, Seq(), Map(), txId))
+        val boxes = (1 to 50).map(_ => testBox(10, Values.TrueLeaf.toSigmaProp, i, Seq(), Map(), txId))
         createTransaction(boxes)
       },
       ErgoLikeContextTesting.dummyPubkey

@@ -6,9 +6,10 @@ import org.ergoplatform.validation.ValidationRules.{CheckPrimitiveTypeCode, Chec
 import sigmastate._
 import sigmastate.lang.exceptions.InvalidTypePrefix
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
+import spire.syntax.all.cfor
 
 /** Serialization of types according to specification in TypeSerialization.md. */
-object TypeSerializer extends ByteBufferSerializer[SType] {
+object TypeSerializer {
 
   import sigmastate.SCollectionType._
 
@@ -22,7 +23,7 @@ object TypeSerializer extends ByteBufferSerializer[SType] {
     embeddableIdToType(code)
   }
 
-  override def serialize(tpe: SType, w: SigmaByteWriter) = tpe match {
+  def serialize(tpe: SType, w: SigmaByteWriter): Unit = tpe match {
     case p: SEmbeddable => w.put(p.typeCode)
     case SString => w.put(SString.typeCode)
     case SAny => w.put(SAny.typeCode)
@@ -113,7 +114,7 @@ object TypeSerializer extends ByteBufferSerializer[SType] {
     }
   }
 
-  override def deserialize(r: SigmaByteReader): SType = deserialize(r, 0)
+  def deserialize(r: SigmaByteReader): SType = deserialize(r, 0)
 
   private def deserialize(r: SigmaByteReader, depth: Int): SType = {
     val c = r.getUByte()
@@ -173,7 +174,10 @@ object TypeSerializer extends ByteBufferSerializer[SType] {
       c match {
         case STuple.TupleTypeCode => {
           val len = r.getUByte()
-          val items = (0 until len).map(_ => deserialize(r, depth + 1))
+          val items = new Array[SType](len)
+          cfor(0)(_ < len, _ + 1) { i =>
+            items(i) = deserialize(r, depth + 1)
+          }
           STuple(items)
         }
         case SAny.typeCode => SAny

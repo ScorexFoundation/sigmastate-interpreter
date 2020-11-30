@@ -1,23 +1,122 @@
 package org.ergoplatform
 
 import org.ergoplatform.ErgoBox.TokenId
-import org.scalatest.prop.GeneratorDrivenPropertyChecks
-import org.scalatest.{Matchers, PropSpec}
-import scorex.util.Random
-import sigmastate.Values.ByteArrayConstant
-import sigmastate.helpers.SigmaTestingCommons
-import sigmastate.interpreter.{ContextExtension, ProverResult}
+import org.ergoplatform.settings.ErgoAlgos
+import scorex.crypto.hash.Digest32
+import scorex.util.{Random, ModifierId}
+import sigmastate.SCollection.SByteArray
+import sigmastate.{SSigmaProp, SPair, SInt, TrivialProp, SType}
+import sigmastate.Values.{LongConstant, FalseLeaf, ConstantNode, SigmaPropConstant, ConstantPlaceholder, TrueSigmaProp, ByteArrayConstant, ErgoTree}
+import sigmastate.interpreter.{ProverResult, ContextExtension}
 import sigmastate.serialization.SigmaSerializer
-import sigmastate.serialization.generators.ObjectGenerators
 import sigmastate.eval._
 import sigmastate.eval.Extensions._
 import sigmastate.SType._
+import sigmastate.utils.Helpers
+import special.sigma.SigmaDslTesting
 
-class ErgoLikeTransactionSpec extends PropSpec
-  with GeneratorDrivenPropertyChecks
-  with Matchers
-  with ObjectGenerators
-  with SigmaTestingCommons {
+class ErgoLikeTransactionSpec extends SigmaDslTesting {
+
+  property("ErgoBox test vectors") {
+    val token1 = "6e789ab7b2fffff12280a6cd01557f6fb22b7f80ff7aff8e1f7f15973d7f0001"
+    val token2 = "a3ff007f00057600808001ff8f8000019000ffdb806fff7cc0b6015eb37fa600"
+    val b1 = new ErgoBoxCandidate(
+      10L,
+      ErgoTree(ErgoTree.DefaultHeader, Vector(), TrueSigmaProp),
+      100,
+      Coll(
+        Digest32 @@ (ErgoAlgos.decodeUnsafe(token1)) -> 10000000L,
+        Digest32 @@ (ErgoAlgos.decodeUnsafe(token2)) -> 500L
+      )
+    )
+    val b1_clone = new ErgoBoxCandidate(
+      10L,
+      ErgoTree(ErgoTree.DefaultHeader, Vector(), TrueSigmaProp),
+      100,
+      Coll(
+        Digest32 @@ (ErgoAlgos.decodeUnsafe(token1)) -> 10000000L,
+        Digest32 @@ (ErgoAlgos.decodeUnsafe(token2)) -> 500L
+      )
+    )
+    val b2 = new ErgoBoxCandidate(
+      10L,
+      ErgoTree(ErgoTree.ConstantSegregationHeader, Vector(TrueSigmaProp), ConstantPlaceholder(0, SSigmaProp)),
+      100,
+      Coll(
+        Digest32 @@ (ErgoAlgos.decodeUnsafe(token1)) -> 10000000L,
+        Digest32 @@ (ErgoAlgos.decodeUnsafe(token2)) -> 500L
+      )
+    )
+    val b3 = new ErgoBox(
+      10L,
+      ErgoTree(ErgoTree.DefaultHeader, Vector(), TrueSigmaProp),
+      Coll(
+        Digest32 @@ (ErgoAlgos.decodeUnsafe(token1)) -> 10000000L,
+        Digest32 @@ (ErgoAlgos.decodeUnsafe(token2)) -> 500L
+      ),
+      Map(
+        ErgoBox.R5 -> ByteArrayConstant(Helpers.decodeBytes("7fc87f7f01ff")),
+        ErgoBox.R4 -> FalseLeaf
+      ),
+      ModifierId @@ ("218301ae8000018008637f0021fb9e00018055486f0b514121016a00ff718080"),
+      0.toShort,
+      100
+    )
+    val expectedTokens = Map[ModifierId, Long](ModifierId @@ token1 -> 10000000L, ModifierId @@ token2 -> 500L)
+    val assetHolder = ErgoBoxAssetsHolder(10L, expectedTokens)
+
+    b1.tokens shouldBe expectedTokens
+    b1_clone.tokens shouldBe expectedTokens
+    b3.tokens shouldBe expectedTokens
+
+    assertResult(true)(b1.hashCode() == b1.hashCode())
+    assertResult(true)(b1 == b1)
+    assertResult(true)(b1 != assetHolder)
+
+    assertResult(true)(b1.hashCode() == b1_clone.hashCode())
+    assertResult(true)(b1 == b1_clone)
+
+    assertResult(true)(b1.hashCode() != b3.hashCode() || b1 != b3)
+    assertResult(true)(b1 != b3)
+    assertResult(true)(b3 != b1)
+
+    val b4 = b3.toCandidate
+    assertResult(true)(b3 != b4)
+    assertResult(true)(b4 == b3) // asymmetic !!!
+    assertResult(true)(b3.hashCode() != b4.hashCode())
+
+    b1.get(ErgoBox.R0).get shouldBe LongConstant(10)
+    b1.get(ErgoBox.R1).get shouldBe ByteArrayConstant(Helpers.decodeBytes("0008d3"))
+
+    { // test case for R2
+      val res = b1.get(ErgoBox.R2).get
+      val exp = Coll(
+        ErgoAlgos.decodeUnsafe(token1).toColl -> 10000000L,
+        ErgoAlgos.decodeUnsafe(token2).toColl -> 500L
+      ).map(identity).toConstant
+      // TODO HF (16h): fix collections equality and remove map(identity)
+      //  (PairOfColl should be equal CollOverArray but now it is not)
+      res shouldBe exp
+    }
+
+    { // test case for R3
+      val res = b1.get(ErgoBox.R3).get
+      res shouldBe ConstantNode[SType](
+        (100, Helpers.decodeBytes("00000000000000000000000000000000000000000000000000000000000000000000")).asWrappedType,
+        SPair(SInt, SByteArray)
+      )
+    }
+
+    { // test case for R5
+      val res = b3.get(ErgoBox.R5).get
+      res shouldBe ByteArrayConstant(Helpers.decodeBytes("7fc87f7f01ff"))
+    }
+
+    { // for proposition
+      b1.proposition shouldBe SigmaPropConstant(CSigmaProp(TrivialProp.TrueProp))
+      b2.proposition shouldBe SigmaPropConstant(CSigmaProp(TrivialProp.TrueProp))
+    }
+  }
 
   property("ErgoLikeTransaction: Serializer round trip") {
     forAll(MinSuccessful(50)) { t: ErgoLikeTransaction => roundTripTest(t)(ErgoLikeTransaction.serializer) }
@@ -103,6 +202,16 @@ class ErgoLikeTransactionSpec extends PropSpec
         val headInput8 = headInput.copy(spendingProof = newProof8)
         val itx8 = new ErgoLikeTransaction(headInput8 +: tailInputs, di, txIn.outputCandidates)
         (itx8.messageToSign sameElements initialMessage) shouldBe true
+
+        // ProverResult equality checks
+        val copiedResult = new ProverResult(newProof7.proof, newProof7.extension)
+        assertResult(true)(copiedResult == newProof7)
+        assertResult(true, "hash codes")(copiedResult.hashCode() == newProof7.hashCode())
+        assertResult(true, "different types")(newProof7 != headInput7)
+        assertResult(true, "different extensions")(newProof8 != newProof7)
+        val tmpResult = new ProverResult(Array[Byte](), newProof7.extension)
+        assertResult(true, "different proofs")(tmpResult != newProof7)
+        assertResult(true)(newProof8.hashCode() != newProof7.hashCode() || newProof8 != newProof7)
 
         /**
           * Check data inputs modifications
