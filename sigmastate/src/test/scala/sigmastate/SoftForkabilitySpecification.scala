@@ -7,12 +7,12 @@ import sigmastate.SPrimType.MaxPrimTypeCode
 import sigmastate.Values.ErgoTree.EmptyConstants
 import sigmastate.Values.{UnparsedErgoTree, NotReadyValueInt, ByteArrayConstant, Tuple, IntConstant, ErgoTree, ValueCompanion}
 import sigmastate.eval.Colls
-import sigmastate.helpers.{ErgoLikeContextTesting, ErgoLikeTestInterpreter, ErgoLikeTestProvingInterpreter}
+import sigmastate.helpers.{ErgoLikeContextTesting, ErgoLikeTestProvingInterpreter, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.interpreter.{ProverResult, ContextExtension}
 import sigmastate.lang.Terms._
-import sigmastate.lang.exceptions.{SerializerException, SigmaException, CosterException}
+import sigmastate.lang.exceptions.{SerializerException, SigmaException, CosterException, InterpreterException}
 import sigmastate.serialization.OpCodes.{OpCodeExtra, LastConstantCode, OpCode}
 import sigmastate.serialization._
 import sigmastate.utxo.{DeserializeContext, SelectField}
@@ -26,14 +26,19 @@ class SoftForkabilitySpecification extends SigmaTestingData {
   lazy val verifier = new ErgoLikeTestInterpreter
   val deadline = 100
   val boxAmt = 100L
-  lazy val invalidPropV1 = compile(emptyEnv + ("deadline" -> deadline),
+
+  lazy val booleanPropV1 = compile(emptyEnv + ("deadline" -> deadline),
     """{
      |  HEIGHT > deadline && OUTPUTS.size == 1
      |}""".stripMargin).asBoolValue
-  lazy val invalidTxV1 = createTransaction(createBox(boxAmt, invalidPropV1.asSigmaProp, 1))
+
+  // cast Boolean typed prop to SigmaProp (which is invalid)
+  lazy val invalidPropV1 = ErgoTree.fromProposition(booleanPropV1.asSigmaProp)
+
+  lazy val invalidTxV1 = createTransaction(createBox(boxAmt, invalidPropV1, 1))
   lazy val invalidTxV1bytes = invalidTxV1.messageToSign
 
-  lazy val propV1 = invalidPropV1.toSigmaProp
+  lazy val propV1 = booleanPropV1.toSigmaProp
   lazy val txV1 = createTransaction(createBox(boxAmt, propV1, 1))
   lazy val txV1bytes = txV1.messageToSign
 
@@ -108,11 +113,12 @@ class SoftForkabilitySpecification extends SigmaTestingData {
     res
   }
 
-  lazy val prop = GT(Height2, IntConstant(deadline))
-  lazy val invalidTxV2 = createTransaction(createBox(boxAmt, prop.asSigmaProp, 1))
+  lazy val booleanPropV2 = GT(Height2, IntConstant(deadline))
+  lazy val invalidPropV2 = ErgoTree.fromProposition(booleanPropV2.asSigmaProp)
+  lazy val invalidTxV2 = createTransaction(createBox(boxAmt, invalidPropV2, 1))
 
 
-  lazy val propV2 = prop.toSigmaProp
+  lazy val propV2 = booleanPropV2.toSigmaProp
   // prepare bytes using special serialization WITH `size flag` in the header
   lazy val propV2tree = ErgoTree.withSegregation(ErgoTree.SizeFlag,  propV2)
   lazy val propV2treeBytes = runOnV2Node {
@@ -177,6 +183,15 @@ class SoftForkabilitySpecification extends SigmaTestingData {
     val tx = ErgoLikeTransaction.serializer.parse(SigmaSerializer.startReader(txV2bytes))
     proveAndVerifyTx("propV2", tx, v2vs)
 
+    // and with v1 settings
+    assertExceptionThrown(
+      proveAndVerifyTx("propV2", tx, vs),
+      { t =>
+        t.isInstanceOf[InterpreterException] &&
+        t.getMessage.contains("Script has not been recognized due to ValidationException, and it cannot be accepted as soft-fork.")
+      }
+    )
+
     // also check that transaction prop was trivialized due to soft-fork
     tx.outputs(0).ergoTree.root.left.get.bytes.array shouldBe treeBytes
     tx.outputs(0).ergoTree.root.left.get.isInstanceOf[UnparsedErgoTree] shouldBe true
@@ -221,11 +236,11 @@ class SoftForkabilitySpecification extends SigmaTestingData {
       })
     }
   }
-  
+
   property("our node v1, was soft-fork up to v2, received v1 script, DeserializeContext of v2 script") {
     // script bytes for context variable containing v2 operation
     val propBytes = runOnV2Node {
-      ValueSerializer.serialize(prop)
+      ValueSerializer.serialize(booleanPropV2)
     }
 
     // v1 main script which deserializes from context v2 script

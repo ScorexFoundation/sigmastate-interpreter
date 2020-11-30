@@ -76,6 +76,11 @@ class SigmaByteWriter(val w: Writer,
     w.putULong(x); this
   }
 
+  override def putBytes(xs: Array[Byte],
+                        offset: Int,
+                        length: Int): this.type = {
+    w.putBytes(xs, offset, length); this
+  }
   @inline def putBytes(xs: Array[Byte]): this.type = { w.putBytes(xs); this }
   @inline def putBytes(xs: Array[Byte], info: DataInfo[Array[Byte]]): this.type = {
     ValueSerializer.addArgInfo(info)

@@ -5,8 +5,8 @@ import org.ergoplatform.ErgoScriptPredef.TrueProp
 import org.ergoplatform._
 import org.ergoplatform.dsl.{ContractSpec, SigmaContractSyntax, TestContractSpec}
 import scorex.crypto.authds.avltree.batch._
-import scorex.crypto.authds.{ADKey, ADValue}
-import scorex.crypto.hash.{Blake2b256, Digest32}
+import scorex.crypto.authds.{ADKey, ADValue, SerializedAdProof}
+import scorex.crypto.hash.{Digest32, Blake2b256}
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
@@ -16,6 +16,7 @@ import sigmastate.eval.Extensions._
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaTestingCommons}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter.ScriptNameProp
+import sigmastate.interpreter.ProverResult
 import sigmastate.lang.Terms._
 import special.collection.Coll
 import special.sigma.{AvlTree, Context}
@@ -267,7 +268,16 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons { suite =>
       .withContextExtender(elementId, LongConstant(elements.head))
     val proof = prover.prove(prop, ctx, fakeMessage).get
 
-    (new ErgoLikeTestInterpreter).verify(prop, ctx, proof, fakeMessage).get._1 shouldBe true
+    val verifier = new ErgoLikeTestInterpreter
+    verifier.verify(prop, ctx, proof, fakeMessage).get._1 shouldBe true
+
+    // check that verifier returns false for incorrect proofs?
+    val invalidProof = SerializedAdProof @@ Array[Byte](1, 2, 3)
+    val invalidProofResult = new ProverResult(
+      proof = proof.proof,
+      extension = proof.extension.add(proofId -> ByteArrayConstant(invalidProof))
+    )
+    verifier.verify(prop, ctx, invalidProofResult, fakeMessage).get._1 shouldBe false
 
     avlProver.performOneOperation(Lookup(treeElements.last._1))
     val smallLeafTreeProof = avlProver.generateProof()
@@ -275,7 +285,6 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons { suite =>
       .withContextExtender(proofId, ByteArrayConstant(smallLeafTreeProof))
       .withContextExtender(elementId, LongConstant(elements.head))
     smallProver.prove(prop, ctx, fakeMessage).isSuccess shouldBe false
-    // TODO coverage: check that verifier return false for incorrect proofs?
   }
 
   property("avl tree - prover provides proof") {

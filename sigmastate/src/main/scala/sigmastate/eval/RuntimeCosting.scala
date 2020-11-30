@@ -989,11 +989,11 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
       implicit val tA = ct.tItem
       implicit val sizedA = Sized.typeToSized(tA)
       liftConst(Sized.sizeOf(x.asInstanceOf[special.collection.Coll[a]]))
-    case ct: OptionType[a] =>  // TODO cover with tests
+    case ct: OptionType[a] =>  // TODO cover with tests (1h)
       implicit val tA = ct.tA
       implicit val sizedA = Sized.typeToSized(tA)
       liftConst(Sized.sizeOf(x.asInstanceOf[Option[a]]))
-    case ct: PairType[a, b] => // TODO cover with tests
+    case ct: PairType[a, b] => // TODO cover with tests (1h)
       implicit val tA = ct.tFst
       implicit val tB = ct.tSnd
       implicit val sizedA = Sized.typeToSized(tA)

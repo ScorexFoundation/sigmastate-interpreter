@@ -19,8 +19,10 @@ case class ConcreteCollectionBooleanConstantSerializer(cons: (IndexedSeq[Value[S
     val bits = new Array[Boolean](len)
     cfor(0)(_ < len, _ + 1) { i =>
       bits(i) = items(i) match {
-        case v: BooleanConstant => v.value
-        case v => error(s"Expected collection of BooleanConstant values, got: $v") // TODO cover with tests
+        case v: BooleanConstant if v.tpe == SBoolean =>
+          v.value
+        case v =>
+          error(s"Expected collection of BooleanConstant values, got: $v")
       }
     }
     w.putBits(bits, bitsInfo)

@@ -1,6 +1,5 @@
 package sigmastate.utxo
 
-import org.ergoplatform
 import org.ergoplatform.ErgoScriptPredef.TrueProp
 import sigmastate.Values._
 import sigmastate._
@@ -95,22 +94,37 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
 
     val newBox1 = testBox(16, pubkey, 0)
     val newBox2 = testBox(15, pubkey, 0)
-    val newBoxes = IndexedSeq(newBox1, newBox2)
 
-    val spendingTransaction = createTransaction(newBoxes)
+    val spendingTransaction = createTransaction(Array(newBox1, newBox2))
 
     val ctx = ErgoLikeContextTesting(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
-      boxesToSpend = IndexedSeq(fakeSelf),
+      boxesToSpend = Array(fakeSelf),
       spendingTransaction,
       self = fakeSelf)
 
-    val pr = prover.prove(prop, ctx, fakeMessage).get
-    verifier.verify(prop, ctx, pr, fakeMessage).get._1 shouldBe true
+    {
+      val pr = prover.prove(prop, ctx, fakeMessage).get
+      verifier.verify(prop, ctx, pr, fakeMessage).get._1 shouldBe true
+    }
 
-    //TODO coverage: add negative case for `exists`
+    // negative case for `exists`
+    {
+      val newBox1 = testBox(1, pubkey, 0)
+      val newBox2 = testBox(5, pubkey, 0)
+      val tx2 = createTransaction(Array(newBox1, newBox2))
+      val ctx2 = ErgoLikeContextTesting(
+        currentHeight = ctx.preHeader.height,
+        lastBlockUtxoRoot = AvlTreeData.dummy,
+        minerPubkey = ErgoLikeContextTesting.dummyPubkey,
+        boxesToSpend = Array(fakeSelf),
+        spendingTransaction = tx2,
+        self = fakeSelf)
+
+      prover.prove(prop, ctx2, fakeMessage).isFailure shouldBe true
+    }
   }
 
   property("forall") {
