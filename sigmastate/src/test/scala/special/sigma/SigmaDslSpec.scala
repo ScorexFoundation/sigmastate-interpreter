@@ -8,7 +8,7 @@ import org.ergoplatform.settings.ErgoAlgos
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.prop.{PropertyChecks, TableFor2}
 import org.scalatest.{PropSpec, Matchers, Tag}
-import scalan.{ExactNumeric, RType}
+import scalan.{ExactNumeric, RType, ExactOrdering}
 import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.authds.{ADDigest, ADKey, ADValue}
 import scorex.crypto.hash.{Digest32, Blake2b256}
@@ -356,6 +356,142 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
             )
           )
         )))
+  }
+
+  property("Byte LT, GT") {
+    val o = ExactOrdering.ByteIsExactOrdering
+    val LT_cases: Seq[((Byte, Byte), Try[Boolean])] = Seq(
+      (-128.toByte, -128.toByte) -> Success(false),
+      (-128.toByte, -127.toByte) -> Success(true),
+      (-128.toByte, -1.toByte) -> Success(true),
+      (-128.toByte, 0.toByte) -> Success(true),
+      (-128.toByte, 1.toByte) -> Success(true),
+      (-128.toByte, 127.toByte) -> Success(true),
+      (-120.toByte, -128.toByte) -> Success(false),
+      (-120.toByte, -121.toByte) -> Success(false),
+      (-120.toByte, -120.toByte) -> Success(false),
+      (-120.toByte, -82.toByte) -> Success(true),
+      (-103.toByte, -1.toByte) -> Success(true),
+      (-103.toByte, -0.toByte) -> Success(true),
+      (-103.toByte, 1.toByte) -> Success(true),
+      (-103.toByte, 127.toByte) -> Success(true),
+      (-1.toByte, -2.toByte) -> Success(false),
+      (-1.toByte, -1.toByte) -> Success(false),
+      (-1.toByte, 0.toByte) -> Success(true),
+      (-1.toByte, 1.toByte) -> Success(true),
+      (0.toByte, -128.toByte) -> Success(false),
+      (0.toByte, -1.toByte) -> Success(false),
+      (0.toByte, 0.toByte) -> Success(false),
+      (0.toByte, 1.toByte) -> Success(true),
+      (0.toByte, 60.toByte) -> Success(true),
+      (0.toByte, 127.toByte) -> Success(true),
+      (1.toByte, -1.toByte) -> Success(false),
+      (1.toByte, 0.toByte) -> Success(false),
+      (1.toByte, 26.toByte) -> Success(true),
+      (7.toByte, -32.toByte) -> Success(false),
+      (7.toByte, 0.toByte) -> Success(false),
+      (33.toByte, 1.toByte) -> Success(false),
+      (126.toByte, 127.toByte) -> Success(true),
+      (127.toByte, -128.toByte) -> Success(false),
+      (127.toByte, -47.toByte) -> Success(false),
+      (127.toByte, 127.toByte) -> Success(false)
+    )
+    testCases(
+      LT_cases,
+      existingFeature(
+        { (x: (Byte, Byte)) => o.lt(x._1, x._2) },
+        """{ (x: (Byte, Byte)) => x._1 < x._2 }""".stripMargin,
+        FuncValue(
+          Vector((1, SPair(SByte, SByte))),
+          LT(
+            SelectField.typed[Value[SByte.type]](ValUse(1, SPair(SByte, SByte)), 1.toByte),
+            SelectField.typed[Value[SByte.type]](ValUse(1, SPair(SByte, SByte)), 2.toByte)
+          )
+        )
+      ))
+
+    testCases(
+      LT_cases.map { case ((x, y), res) => ((y, x), res) }, // swap arguments
+      existingFeature(
+        { (x: (Byte, Byte)) => o.gt(x._1, x._2) },
+        """{ (x: (Byte, Byte)) => x._1 > x._2 }""".stripMargin,
+        FuncValue(
+          Vector((1, SPair(SByte, SByte))),
+          GT(
+            SelectField.typed[Value[SByte.type]](ValUse(1, SPair(SByte, SByte)), 1.toByte),
+            SelectField.typed[Value[SByte.type]](ValUse(1, SPair(SByte, SByte)), 2.toByte)
+          )
+        )
+      ))
+  }
+
+  property("Byte LE, GE") {
+    val o = ExactOrdering.ByteIsExactOrdering
+    val LE_cases: Seq[((Byte, Byte), Try[Boolean])] = Seq(
+      (-128.toByte, -128.toByte) -> Success(true),
+      (-128.toByte, -127.toByte) -> Success(true),
+      (-128.toByte, -1.toByte) -> Success(true),
+      (-128.toByte, 0.toByte) -> Success(true),
+      (-128.toByte, 1.toByte) -> Success(true),
+      (-128.toByte, 127.toByte) -> Success(true),
+      (-120.toByte, -128.toByte) -> Success(false),
+      (-120.toByte, -121.toByte) -> Success(false),
+      (-120.toByte, -120.toByte) -> Success(true),
+      (-120.toByte, -82.toByte) -> Success(true),
+      (-103.toByte, -1.toByte) -> Success(true),
+      (-103.toByte, -0.toByte) -> Success(true),
+      (-103.toByte, 1.toByte) -> Success(true),
+      (-103.toByte, 127.toByte) -> Success(true),
+      (-1.toByte, -2.toByte) -> Success(false),
+      (-1.toByte, -1.toByte) -> Success(true),
+      (-1.toByte, 0.toByte) -> Success(true),
+      (-1.toByte, 1.toByte) -> Success(true),
+      (0.toByte, -128.toByte) -> Success(false),
+      (0.toByte, -1.toByte) -> Success(false),
+      (0.toByte, 0.toByte) -> Success(true),
+      (0.toByte, 1.toByte) -> Success(true),
+      (0.toByte, 60.toByte) -> Success(true),
+      (0.toByte, 127.toByte) -> Success(true),
+      (1.toByte, -1.toByte) -> Success(false),
+      (1.toByte, 0.toByte) -> Success(false),
+      (1.toByte, 1.toByte) -> Success(true),
+      (1.toByte, 26.toByte) -> Success(true),
+      (7.toByte, -32.toByte) -> Success(false),
+      (7.toByte, 0.toByte) -> Success(false),
+      (33.toByte, 1.toByte) -> Success(false),
+      (126.toByte, 127.toByte) -> Success(true),
+      (127.toByte, -128.toByte) -> Success(false),
+      (127.toByte, -47.toByte) -> Success(false),
+      (127.toByte, 127.toByte) -> Success(true)
+    )
+
+    testCases(
+      LE_cases,
+      existingFeature(
+        { (x: (Byte, Byte)) => o.lteq(x._1, x._2) },
+        """{ (x: (Byte, Byte)) => x._1 <= x._2 }""".stripMargin,
+        FuncValue(
+          Vector((1, SPair(SByte, SByte))),
+          LE(
+            SelectField.typed[Value[SByte.type]](ValUse(1, SPair(SByte, SByte)), 1.toByte),
+            SelectField.typed[Value[SByte.type]](ValUse(1, SPair(SByte, SByte)), 2.toByte)
+          )
+        )
+      ))
+
+    testCases(
+      LE_cases.map { case ((x, y), res) => ((y, x), res) }, // swap arguments,
+      existingFeature(
+        { (x: (Byte, Byte)) => o.gteq(x._1, x._2) },
+        """{ (x: (Byte, Byte)) => x._1 >= x._2 }""".stripMargin,
+        FuncValue(
+          Vector((1, SPair(SByte, SByte))),
+          GE(
+            SelectField.typed[Value[SByte.type]](ValUse(1, SPair(SByte, SByte)), 1.toByte),
+            SelectField.typed[Value[SByte.type]](ValUse(1, SPair(SByte, SByte)), 2.toByte)
+          )
+        )
+      ))
   }
 
   property("Byte methods equivalence") {
