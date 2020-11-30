@@ -1891,6 +1891,160 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
     ))
   }
 
+  property("BigInt LT, GT") {
+    val o = NumericOps.BigIntIsExactOrdering
+    // TODO HF: this values have bitCount == 255 (see to256BitValueExact)
+    val BigIntMinValue = CBigInt(new BigInteger("-7F" + "ff" * 31, 16))
+    val BigIntMaxValue = CBigInt(new BigInteger("7F" + "ff" * 31, 16))
+    val BigIntOverlimit = CBigInt(new BigInteger("7F" + "ff" * 33, 16))
+
+    def expect(v: Boolean) = Expected(Success(v), 36328)
+    
+    val LT_cases: Seq[((BigInt, BigInt), Expected[Boolean])] = Seq(
+      (BigIntMinValue, BigIntMinValue) -> expect(false),
+      (BigIntMinValue, BigIntMinValue.add(1.toBigInt)) -> expect(true),
+      (BigIntMinValue, -1.toBigInt) -> expect(true),
+      (BigIntMinValue, 0.toBigInt) -> expect(true),
+      (BigIntMinValue, 1.toBigInt) -> expect(true),
+      (BigIntMinValue, BigIntMaxValue) -> expect(true),
+      (-120.toBigInt, BigIntMinValue) -> expect(false),
+      (-120.toBigInt, -121.toBigInt) -> expect(false),
+      (-120.toBigInt, -120.toBigInt) -> expect(false),
+      (-120.toBigInt, -82.toBigInt) -> expect(true),
+      (-103.toBigInt, -1.toBigInt) -> expect(true),
+      (-103.toBigInt, -0.toBigInt) -> expect(true),
+      (-103.toBigInt, 1.toBigInt) -> expect(true),
+      (-103.toBigInt, BigIntMaxValue) -> expect(true),
+      (-1.toBigInt, -2.toBigInt) -> expect(false),
+      (-1.toBigInt, -1.toBigInt) -> expect(false),
+      (-1.toBigInt, 0.toBigInt) -> expect(true),
+      (-1.toBigInt, 1.toBigInt) -> expect(true),
+      (0.toBigInt, BigIntMinValue) -> expect(false),
+      (0.toBigInt, -1.toBigInt) -> expect(false),
+      (0.toBigInt, 0.toBigInt) -> expect(false),
+      (0.toBigInt, 1.toBigInt) -> expect(true),
+      (0.toBigInt, 60.toBigInt) -> expect(true),
+      (0.toBigInt, BigIntMaxValue) -> expect(true),
+      (1.toBigInt, -1.toBigInt) -> expect(false),
+      (1.toBigInt, 0.toBigInt) -> expect(false),
+      (1.toBigInt, 26.toBigInt) -> expect(true),
+      (7.toBigInt, -32.toBigInt) -> expect(false),
+      (7.toBigInt, 0.toBigInt) -> expect(false),
+      (33.toBigInt, 1.toBigInt) -> expect(false),
+      (126.toBigInt, BigIntMaxValue) -> expect(true),
+      (BigIntMaxValue, BigIntMinValue) -> expect(false),
+      (BigIntMaxValue, -47.toBigInt) -> expect(false),
+      (BigIntMaxValue, BigIntMaxValue) -> expect(false),
+      (BigIntMaxValue, BigIntOverlimit) -> expect(true),  // TODO v5.0: reject this overlimit cases
+      (BigIntOverlimit, BigIntOverlimit) -> expect(false)
+    )
+    verifyCases(
+      LT_cases,
+      existingFeature(
+      { (x: (BigInt, BigInt)) => o.lt(x._1, x._2) },
+      """{ (x: (BigInt, BigInt)) => x._1 < x._2 }""".stripMargin,
+      FuncValue(
+        Vector((1, SPair(SBigInt, SBigInt))),
+        LT(
+          SelectField.typed[Value[SBigInt.type]](ValUse(1, SPair(SBigInt, SBigInt)), 1.toByte),
+          SelectField.typed[Value[SBigInt.type]](ValUse(1, SPair(SBigInt, SBigInt)), 2.toByte)
+        )
+      )
+      ))
+
+    verifyCases(
+      LT_cases.map { case ((x, y), res) => ((y, x), res.copy(cost = 36342)) }, // swap arguments
+      existingFeature(
+      { (x: (BigInt, BigInt)) => o.gt(x._1, x._2) },
+      """{ (x: (BigInt, BigInt)) => x._1 > x._2 }""".stripMargin,
+      FuncValue(
+        Vector((1, SPair(SBigInt, SBigInt))),
+        GT(
+          SelectField.typed[Value[SBigInt.type]](ValUse(1, SPair(SBigInt, SBigInt)), 1.toByte),
+          SelectField.typed[Value[SBigInt.type]](ValUse(1, SPair(SBigInt, SBigInt)), 2.toByte)
+        )
+      )
+      ))
+  }
+
+  property("BigInt LE, GE") {
+    val o = NumericOps.BigIntIsExactOrdering
+    // TODO HF: this values have bitCount == 255 (see to256BitValueExact)
+    val BigIntMinValue = CBigInt(new BigInteger("-7F" + "ff" * 31, 16))
+    val BigIntMaxValue = CBigInt(new BigInteger("7F" + "ff" * 31, 16))
+    val BigIntOverlimit = CBigInt(new BigInteger("7F" + "ff" * 33, 16))
+
+    def expect(v: Boolean) = Expected(Success(v), 36337)
+    
+    val LE_cases: Seq[((BigInt, BigInt), Expected[Boolean])] = Seq(
+      (BigIntMinValue, BigIntMinValue) -> expect(true),
+      (BigIntMinValue, BigIntMinValue.add(1.toBigInt)) -> expect(true),
+      (BigIntMinValue, -1.toBigInt) -> expect(true),
+      (BigIntMinValue, 0.toBigInt) -> expect(true),
+      (BigIntMinValue, 1.toBigInt) -> expect(true),
+      (BigIntMinValue, BigIntMaxValue) -> expect(true),
+      (-120.toBigInt, BigIntMinValue) -> expect(false),
+      (-120.toBigInt, -121.toBigInt) -> expect(false),
+      (-120.toBigInt, -120.toBigInt) -> expect(true),
+      (-120.toBigInt, -82.toBigInt) -> expect(true),
+      (-103.toBigInt, -1.toBigInt) -> expect(true),
+      (-103.toBigInt, -0.toBigInt) -> expect(true),
+      (-103.toBigInt, 1.toBigInt) -> expect(true),
+      (-103.toBigInt, BigIntMaxValue) -> expect(true),
+      (-1.toBigInt, -2.toBigInt) -> expect(false),
+      (-1.toBigInt, -1.toBigInt) -> expect(true),
+      (-1.toBigInt, 0.toBigInt) -> expect(true),
+      (-1.toBigInt, 1.toBigInt) -> expect(true),
+      (0.toBigInt, BigIntMinValue) -> expect(false),
+      (0.toBigInt, -1.toBigInt) -> expect(false),
+      (0.toBigInt, 0.toBigInt) -> expect(true),
+      (0.toBigInt, 1.toBigInt) -> expect(true),
+      (0.toBigInt, 60.toBigInt) -> expect(true),
+      (0.toBigInt, BigIntMaxValue) -> expect(true),
+      (1.toBigInt, -1.toBigInt) -> expect(false),
+      (1.toBigInt, 0.toBigInt) -> expect(false),
+      (1.toBigInt, 1.toBigInt) -> expect(true),
+      (1.toBigInt, 26.toBigInt) -> expect(true),
+      (7.toBigInt, -32.toBigInt) -> expect(false),
+      (7.toBigInt, 0.toBigInt) -> expect(false),
+      (33.toBigInt, 1.toBigInt) -> expect(false),
+      (126.toBigInt, BigIntMaxValue) -> expect(true),
+      (BigIntMaxValue, BigIntMinValue) -> expect(false),
+      (BigIntMaxValue, -47.toBigInt) -> expect(false),
+      (BigIntMaxValue, BigIntMaxValue) -> expect(true),
+      (BigIntMaxValue, BigIntOverlimit) -> expect(true), // TODO v5.0: reject this overlimit cases
+      (BigIntOverlimit, BigIntOverlimit) -> expect(true)
+    )
+
+    verifyCases(
+      LE_cases,
+      existingFeature(
+      { (x: (BigInt, BigInt)) => o.lteq(x._1, x._2) },
+      """{ (x: (BigInt, BigInt)) => x._1 <= x._2 }""".stripMargin,
+      FuncValue(
+        Vector((1, SPair(SBigInt, SBigInt))),
+        LE(
+          SelectField.typed[Value[SBigInt.type]](ValUse(1, SPair(SBigInt, SBigInt)), 1.toByte),
+          SelectField.typed[Value[SBigInt.type]](ValUse(1, SPair(SBigInt, SBigInt)), 2.toByte)
+        )
+      )
+      ))
+
+    verifyCases(
+      LE_cases.map { case ((x, y), res) => ((y, x), res.copy(cost = 36336)) }, // swap arguments,
+      existingFeature(
+      { (x: (BigInt, BigInt)) => o.gteq(x._1, x._2) },
+      """{ (x: (BigInt, BigInt)) => x._1 >= x._2 }""".stripMargin,
+      FuncValue(
+        Vector((1, SPair(SBigInt, SBigInt))),
+        GE(
+          SelectField.typed[Value[SBigInt.type]](ValUse(1, SPair(SBigInt, SBigInt)), 1.toByte),
+          SelectField.typed[Value[SBigInt.type]](ValUse(1, SPair(SBigInt, SBigInt)), 2.toByte)
+        )
+      )
+      ))
+  }
+
   property("BigInt methods equivalence (new features)") {
     // TODO HF (2h): the behavior of `upcast` for BigInt is different from all other Numeric types
     // The `Upcast(bigInt, SBigInt)` node is never produced by ErgoScript compiler, but is still valid ErgoTree.
