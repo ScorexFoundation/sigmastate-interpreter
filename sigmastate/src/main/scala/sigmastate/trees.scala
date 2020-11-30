@@ -973,7 +973,7 @@ case class LT[T <: SType](override val left: Value[T], override val right: Value
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val lV = left.evalTo[Any](env)
     val rV = right.evalTo[Any](env)
-    E.addCostOf(this)
+    addCost(CostOf.LT(left.tpe))
     opImpl.o.lt(lV, rV)
   }
 }
@@ -989,7 +989,7 @@ case class LE[T <: SType](override val left: Value[T], override val right: Value
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val lV = left.evalTo[Any](env)
     val rV = right.evalTo[Any](env)
-    E.addCostOf(this)
+    addCost(CostOf.LE(left.tpe))
     opImpl.o.lteq(lV, rV)
   }
 }
@@ -1005,7 +1005,7 @@ case class GT[T <: SType](override val left: Value[T], override val right: Value
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val lV = left.evalTo[Any](env)
     val rV = right.evalTo[Any](env)
-    E.addCostOf(this)
+    addCost(CostOf.GT(left.tpe))
     opImpl.o.gt(lV, rV)
   }
 }
@@ -1021,7 +1021,7 @@ case class GE[T <: SType](override val left: Value[T], override val right: Value
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val lV = left.evalTo[Any](env)
     val rV = right.evalTo[Any](env)
-    E.addCostOf(this)
+    addCost(CostOf.GE(left.tpe))
     opImpl.o.gteq(lV, rV)
   }
 }
@@ -1044,8 +1044,9 @@ case class EQ[S <: SType](override val left: Value[S], override val right: Value
       case t if t.isConstantSize =>
         addCost(CostOf.EQConstSize)
       case _ =>
-        val lds = Sized.dataSizeOf[S](l, left.tpe)
+        // TODO v5.0: revisit this formula of costing
         val rds = Sized.dataSizeOf[S](r, right.tpe)
+        val lds = Sized.dataSizeOf[S](l, left.tpe)
         addCost(CostOf.EQDynSize(dataSize = (lds + rds).toIntExact))
     }
     l == r
@@ -1063,8 +1064,18 @@ case class NEQ[S <: SType](override val left: Value[S], override val right: Valu
   extends SimpleRelation[S] {
   override def companion = NEQ
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
-    // TODO JITC
-    left.evalTo[Any](env) != right.evalTo[Any](env)
+    val l = left.evalTo[S#WrappedType](env)
+    val r = right.evalTo[S#WrappedType](env)
+    left.tpe.asInstanceOf[SType] match {
+      case t if t.isConstantSize =>
+        addCost(CostOf.EQConstSize)
+      case _ =>
+        // TODO v5.0: revisit this formula of costing
+        val rds = Sized.dataSizeOf[S](r, right.tpe)
+        val lds = Sized.dataSizeOf[S](l, left.tpe)
+        addCost(CostOf.EQDynSize(dataSize = (lds + rds).toIntExact))
+    }
+    l != r
   }
 }
 object NEQ extends RelationCompanion {

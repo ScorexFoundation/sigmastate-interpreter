@@ -443,12 +443,6 @@ object CostTable {
 //    ("Xor_per_kb", "(Coll[Byte],Coll[Byte]) => Coll[Byte]", hashPerKb / 2),
 //    ("XorOf_per_item", "(Coll[Boolean]) => Boolean", logicCost),
 //    ("LogicalNot", "(Boolean) => Boolean", logicCost),
-//
-//    ("GT", "(T,T) => Boolean", comparisonCost),
-//    ("GE", "(T,T) => Boolean", comparisonCost),
-//    ("LE", "(T,T) => Boolean", comparisonCost),
-//    ("LT", "(T,T) => Boolean", comparisonCost),
-//    ("NEQ", "(T,T) => Boolean", comparisonCost),
 
     /** Cost of:
       * 1) compute isConstSize for left argument
@@ -472,21 +466,50 @@ object CostTable {
 //    ("LE_per_kb", "(T,T) => Boolean", comparisonPerKbCost),
 //    ("LT_per_kb", "(T,T) => Boolean", comparisonPerKbCost),
 //    ("NEQ_per_kb", "(T,T) => Boolean", comparisonPerKbCost),
-//    ("GT", "(BigInt,BigInt) => Boolean", comparisonBigInt),
-//    ("GE", "(BigInt,BigInt) => Boolean", comparisonBigInt),
-//    ("LE", "(BigInt,BigInt) => Boolean", comparisonBigInt),
-//    ("LT", "(BigInt,BigInt) => Boolean", comparisonBigInt),
-//    ("NEQ", "(BigInt,BigInt) => Boolean", comparisonBigInt),
 //    //    (">_per_item", "(BigInt, BigInt) => BigInt", MinimalCost),
 
-    //    ("+", "(Byte, Byte) => Byte", plusMinus),
+    /** Cost of:
+      * 1) resolving ArithOpCompanion by typeCode
+      * 2) calling method of Numeric
+      */
+    def GT(argTpe: SType) = argTpe match {
+      case SBigInt => 10 // cf. comparisonBigInt
+      case _ => 5 // cf. comparisonCost
+    }
+
+    /** Cost of:
+      * 1) resolving ArithOpCompanion by typeCode
+      * 2) calling method of Numeric
+      */
+    def GE(argTpe: SType) = argTpe match {
+      case SBigInt => 10 // cf. comparisonBigInt
+      case _ => 5 // cf. comparisonCost
+    }
+
+    /** Cost of:
+      * 1) resolving ArithOpCompanion by typeCode
+      * 2) calling method of Numeric
+      */
+    def LT(argTpe: SType) = argTpe match {
+      case SBigInt => 10 // cf. comparisonBigInt
+      case _ => 5 // cf. comparisonCost
+    }
+
+    /** Cost of:
+      * 1) resolving ArithOpCompanion by typeCode
+      * 2) calling method of Numeric
+      */
+    def LE(argTpe: SType) = argTpe match {
+      case SBigInt => 10 // cf. comparisonBigInt
+      case _ => 5 // cf. comparisonCost
+    }
 
     /** Cost of:
       * 1) resolving ArithOpCompanion by typeCode
       * 2) calling method of Numeric
       */
     def Plus(argTpe: SType) = argTpe match {
-      case SBigInt => plusMinusBigInt
+      case SBigInt => 10 // cf. plusMinusBigInt
       case _ => 5 // cf. plusMinus
     }
 
@@ -495,7 +518,7 @@ object CostTable {
       * 2) calling method of Numeric
       */
     def Minus(argTpe: SType) = argTpe match {
-      case SBigInt => plusMinusBigInt
+      case SBigInt => 10 // cf. plusMinusBigInt
       case _ => 5 // cf. plusMinus
     }
 
@@ -504,7 +527,7 @@ object CostTable {
       * 2) calling method of Numeric
       */
     def Multiply(argTpe: SType) = argTpe match {
-      case SBigInt => multiplyBigInt
+      case SBigInt => 50 // cf. multiplyBigInt
       case _ => 5 // cf. multiply
     }
 
@@ -513,7 +536,7 @@ object CostTable {
       * 2) calling method of Integral
       */
     def Division(argTpe: SType) = argTpe match {
-      case SBigInt => multiplyBigInt
+      case SBigInt => 50 // cf. multiplyBigInt
       case _ => 5 // cf. multiply
     }
 
@@ -522,7 +545,7 @@ object CostTable {
       * 2) calling method of Integral
       */
     def Modulo(argTpe: SType) = argTpe match {
-      case SBigInt => multiplyBigInt
+      case SBigInt => 50 // cf. multiplyBigInt
       case _ => 5 // cf. multiply
     }
 
