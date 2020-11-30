@@ -847,6 +847,142 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
       ))
   }
 
+  property("Short LT, GT") {
+    val o = ExactOrdering.ShortIsExactOrdering
+    val LT_cases: Seq[((Short, Short), Try[Boolean])] = Seq(
+      (Short.MinValue, Short.MinValue) -> Success(false),
+      (Short.MinValue, (Short.MinValue + 1).toShort) -> Success(true),
+      (Short.MinValue, -1.toShort) -> Success(true),
+      (Short.MinValue, 0.toShort) -> Success(true),
+      (Short.MinValue, 1.toShort) -> Success(true),
+      (Short.MinValue, Short.MaxValue) -> Success(true),
+      (-120.toShort, Short.MinValue) -> Success(false),
+      (-120.toShort, -121.toShort) -> Success(false),
+      (-120.toShort, -120.toShort) -> Success(false),
+      (-120.toShort, -82.toShort) -> Success(true),
+      (-103.toShort, -1.toShort) -> Success(true),
+      (-103.toShort, -0.toShort) -> Success(true),
+      (-103.toShort, 1.toShort) -> Success(true),
+      (-103.toShort, Short.MaxValue) -> Success(true),
+      (-1.toShort, -2.toShort) -> Success(false),
+      (-1.toShort, -1.toShort) -> Success(false),
+      (-1.toShort, 0.toShort) -> Success(true),
+      (-1.toShort, 1.toShort) -> Success(true),
+      (0.toShort, Short.MinValue) -> Success(false),
+      (0.toShort, -1.toShort) -> Success(false),
+      (0.toShort, 0.toShort) -> Success(false),
+      (0.toShort, 1.toShort) -> Success(true),
+      (0.toShort, 60.toShort) -> Success(true),
+      (0.toShort, Short.MaxValue) -> Success(true),
+      (1.toShort, -1.toShort) -> Success(false),
+      (1.toShort, 0.toShort) -> Success(false),
+      (1.toShort, 26.toShort) -> Success(true),
+      (7.toShort, -32.toShort) -> Success(false),
+      (7.toShort, 0.toShort) -> Success(false),
+      (33.toShort, 1.toShort) -> Success(false),
+      (126.toShort, Short.MaxValue) -> Success(true),
+      (Short.MaxValue, Short.MinValue) -> Success(false),
+      (Short.MaxValue, -47.toShort) -> Success(false),
+      (Short.MaxValue, Short.MaxValue) -> Success(false)
+    )
+    testCases(
+      LT_cases,
+      existingFeature(
+      { (x: (Short, Short)) => o.lt(x._1, x._2) },
+      """{ (x: (Short, Short)) => x._1 < x._2 }""".stripMargin,
+      FuncValue(
+        Vector((1, SPair(SShort, SShort))),
+        LT(
+          SelectField.typed[Value[SShort.type]](ValUse(1, SPair(SShort, SShort)), 1.toByte),
+          SelectField.typed[Value[SShort.type]](ValUse(1, SPair(SShort, SShort)), 2.toByte)
+        )
+      )
+      ))
+
+    testCases(
+      LT_cases.map { case ((x, y), res) => ((y, x), res) }, // swap arguments
+      existingFeature(
+      { (x: (Short, Short)) => o.gt(x._1, x._2) },
+      """{ (x: (Short, Short)) => x._1 > x._2 }""".stripMargin,
+      FuncValue(
+        Vector((1, SPair(SShort, SShort))),
+        GT(
+          SelectField.typed[Value[SShort.type]](ValUse(1, SPair(SShort, SShort)), 1.toByte),
+          SelectField.typed[Value[SShort.type]](ValUse(1, SPair(SShort, SShort)), 2.toByte)
+        )
+      )
+      ))
+  }
+
+  property("Short LE, GE") {
+    val o = ExactOrdering.ShortIsExactOrdering
+    val LE_cases: Seq[((Short, Short), Try[Boolean])] = Seq(
+      (Short.MinValue, Short.MinValue) -> Success(true),
+      (Short.MinValue, (Short.MinValue + 1).toShort) -> Success(true),
+      (Short.MinValue, -1.toShort) -> Success(true),
+      (Short.MinValue, 0.toShort) -> Success(true),
+      (Short.MinValue, 1.toShort) -> Success(true),
+      (Short.MinValue, Short.MaxValue) -> Success(true),
+      (-120.toShort, Short.MinValue) -> Success(false),
+      (-120.toShort, -121.toShort) -> Success(false),
+      (-120.toShort, -120.toShort) -> Success(true),
+      (-120.toShort, -82.toShort) -> Success(true),
+      (-103.toShort, -1.toShort) -> Success(true),
+      (-103.toShort, -0.toShort) -> Success(true),
+      (-103.toShort, 1.toShort) -> Success(true),
+      (-103.toShort, Short.MaxValue) -> Success(true),
+      (-1.toShort, -2.toShort) -> Success(false),
+      (-1.toShort, -1.toShort) -> Success(true),
+      (-1.toShort, 0.toShort) -> Success(true),
+      (-1.toShort, 1.toShort) -> Success(true),
+      (0.toShort, Short.MinValue) -> Success(false),
+      (0.toShort, -1.toShort) -> Success(false),
+      (0.toShort, 0.toShort) -> Success(true),
+      (0.toShort, 1.toShort) -> Success(true),
+      (0.toShort, 60.toShort) -> Success(true),
+      (0.toShort, Short.MaxValue) -> Success(true),
+      (1.toShort, -1.toShort) -> Success(false),
+      (1.toShort, 0.toShort) -> Success(false),
+      (1.toShort, 1.toShort) -> Success(true),
+      (1.toShort, 26.toShort) -> Success(true),
+      (7.toShort, -32.toShort) -> Success(false),
+      (7.toShort, 0.toShort) -> Success(false),
+      (33.toShort, 1.toShort) -> Success(false),
+      (126.toShort, Short.MaxValue) -> Success(true),
+      (Short.MaxValue, Short.MinValue) -> Success(false),
+      (Short.MaxValue, -47.toShort) -> Success(false),
+      (Short.MaxValue, Short.MaxValue) -> Success(true)
+    )
+
+    testCases(
+      LE_cases,
+      existingFeature(
+      { (x: (Short, Short)) => o.lteq(x._1, x._2) },
+      """{ (x: (Short, Short)) => x._1 <= x._2 }""".stripMargin,
+      FuncValue(
+        Vector((1, SPair(SShort, SShort))),
+        LE(
+          SelectField.typed[Value[SShort.type]](ValUse(1, SPair(SShort, SShort)), 1.toByte),
+          SelectField.typed[Value[SShort.type]](ValUse(1, SPair(SShort, SShort)), 2.toByte)
+        )
+      )
+      ))
+
+    testCases(
+      LE_cases.map { case ((x, y), res) => ((y, x), res) }, // swap arguments,
+      existingFeature(
+      { (x: (Short, Short)) => o.gteq(x._1, x._2) },
+      """{ (x: (Short, Short)) => x._1 >= x._2 }""".stripMargin,
+      FuncValue(
+        Vector((1, SPair(SShort, SShort))),
+        GE(
+          SelectField.typed[Value[SShort.type]](ValUse(1, SPair(SShort, SShort)), 1.toByte),
+          SelectField.typed[Value[SShort.type]](ValUse(1, SPair(SShort, SShort)), 2.toByte)
+        )
+      )
+      ))
+  }
+
   property("Short methods equivalence (new features)") {
     lazy val toBytes = newFeature((x: Short) => x.toBytes, "{ (x: Short) => x.toBytes }")
     lazy val toBits = newFeature((x: Short) => x.toBits, "{ (x: Short) => x.toBits }")
