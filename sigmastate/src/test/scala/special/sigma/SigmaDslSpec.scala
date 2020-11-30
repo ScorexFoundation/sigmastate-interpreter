@@ -1790,6 +1790,150 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
     ), true)
   }
 
+  property("BigInt LT, GT") {
+    val o = NumericOps.BigIntIsExactOrdering
+    // TODO HF: this values have bitCount == 255 (see to256BitValueExact)
+    val BigIntMinValue = CBigInt(new BigInteger("-7F" + "ff" * 31, 16))
+    val BigIntMaxValue = CBigInt(new BigInteger("7F" + "ff" * 31, 16))
+
+    val LT_cases: Seq[((BigInt, BigInt), Try[Boolean])] = Seq(
+      (BigIntMinValue, BigIntMinValue) -> Success(false),
+      (BigIntMinValue, BigIntMinValue.add(1.toBigInt)) -> Success(true),
+      (BigIntMinValue, -1.toBigInt) -> Success(true),
+      (BigIntMinValue, 0.toBigInt) -> Success(true),
+      (BigIntMinValue, 1.toBigInt) -> Success(true),
+      (BigIntMinValue, BigIntMaxValue) -> Success(true),
+      (-120.toBigInt, BigIntMinValue) -> Success(false),
+      (-120.toBigInt, -121.toBigInt) -> Success(false),
+      (-120.toBigInt, -120.toBigInt) -> Success(false),
+      (-120.toBigInt, -82.toBigInt) -> Success(true),
+      (-103.toBigInt, -1.toBigInt) -> Success(true),
+      (-103.toBigInt, -0.toBigInt) -> Success(true),
+      (-103.toBigInt, 1.toBigInt) -> Success(true),
+      (-103.toBigInt, BigIntMaxValue) -> Success(true),
+      (-1.toBigInt, -2.toBigInt) -> Success(false),
+      (-1.toBigInt, -1.toBigInt) -> Success(false),
+      (-1.toBigInt, 0.toBigInt) -> Success(true),
+      (-1.toBigInt, 1.toBigInt) -> Success(true),
+      (0.toBigInt, BigIntMinValue) -> Success(false),
+      (0.toBigInt, -1.toBigInt) -> Success(false),
+      (0.toBigInt, 0.toBigInt) -> Success(false),
+      (0.toBigInt, 1.toBigInt) -> Success(true),
+      (0.toBigInt, 60.toBigInt) -> Success(true),
+      (0.toBigInt, BigIntMaxValue) -> Success(true),
+      (1.toBigInt, -1.toBigInt) -> Success(false),
+      (1.toBigInt, 0.toBigInt) -> Success(false),
+      (1.toBigInt, 26.toBigInt) -> Success(true),
+      (7.toBigInt, -32.toBigInt) -> Success(false),
+      (7.toBigInt, 0.toBigInt) -> Success(false),
+      (33.toBigInt, 1.toBigInt) -> Success(false),
+      (126.toBigInt, BigIntMaxValue) -> Success(true),
+      (BigIntMaxValue, BigIntMinValue) -> Success(false),
+      (BigIntMaxValue, -47.toBigInt) -> Success(false),
+      (BigIntMaxValue, BigIntMaxValue) -> Success(false)
+    )
+    testCases(
+      LT_cases,
+      existingFeature(
+      { (x: (BigInt, BigInt)) => o.lt(x._1, x._2) },
+      """{ (x: (BigInt, BigInt)) => x._1 < x._2 }""".stripMargin,
+      FuncValue(
+        Vector((1, SPair(SBigInt, SBigInt))),
+        LT(
+          SelectField.typed[Value[SBigInt.type]](ValUse(1, SPair(SBigInt, SBigInt)), 1.toByte),
+          SelectField.typed[Value[SBigInt.type]](ValUse(1, SPair(SBigInt, SBigInt)), 2.toByte)
+        )
+      )
+      ))
+
+    testCases(
+      LT_cases.map { case ((x, y), res) => ((y, x), res) }, // swap arguments
+      existingFeature(
+      { (x: (BigInt, BigInt)) => o.gt(x._1, x._2) },
+      """{ (x: (BigInt, BigInt)) => x._1 > x._2 }""".stripMargin,
+      FuncValue(
+        Vector((1, SPair(SBigInt, SBigInt))),
+        GT(
+          SelectField.typed[Value[SBigInt.type]](ValUse(1, SPair(SBigInt, SBigInt)), 1.toByte),
+          SelectField.typed[Value[SBigInt.type]](ValUse(1, SPair(SBigInt, SBigInt)), 2.toByte)
+        )
+      )
+      ))
+  }
+
+  property("BigInt LE, GE") {
+    val o = NumericOps.BigIntIsExactOrdering
+    // TODO HF: this values have bitCount == 255 (see to256BitValueExact)
+    val BigIntMinValue = CBigInt(new BigInteger("-7F" + "ff" * 31, 16))
+    val BigIntMaxValue = CBigInt(new BigInteger("7F" + "ff" * 31, 16))
+
+    val LE_cases: Seq[((BigInt, BigInt), Try[Boolean])] = Seq(
+      (BigIntMinValue, BigIntMinValue) -> Success(true),
+      (BigIntMinValue, BigIntMinValue.add(1.toBigInt)) -> Success(true),
+      (BigIntMinValue, -1.toBigInt) -> Success(true),
+      (BigIntMinValue, 0.toBigInt) -> Success(true),
+      (BigIntMinValue, 1.toBigInt) -> Success(true),
+      (BigIntMinValue, BigIntMaxValue) -> Success(true),
+      (-120.toBigInt, BigIntMinValue) -> Success(false),
+      (-120.toBigInt, -121.toBigInt) -> Success(false),
+      (-120.toBigInt, -120.toBigInt) -> Success(true),
+      (-120.toBigInt, -82.toBigInt) -> Success(true),
+      (-103.toBigInt, -1.toBigInt) -> Success(true),
+      (-103.toBigInt, -0.toBigInt) -> Success(true),
+      (-103.toBigInt, 1.toBigInt) -> Success(true),
+      (-103.toBigInt, BigIntMaxValue) -> Success(true),
+      (-1.toBigInt, -2.toBigInt) -> Success(false),
+      (-1.toBigInt, -1.toBigInt) -> Success(true),
+      (-1.toBigInt, 0.toBigInt) -> Success(true),
+      (-1.toBigInt, 1.toBigInt) -> Success(true),
+      (0.toBigInt, BigIntMinValue) -> Success(false),
+      (0.toBigInt, -1.toBigInt) -> Success(false),
+      (0.toBigInt, 0.toBigInt) -> Success(true),
+      (0.toBigInt, 1.toBigInt) -> Success(true),
+      (0.toBigInt, 60.toBigInt) -> Success(true),
+      (0.toBigInt, BigIntMaxValue) -> Success(true),
+      (1.toBigInt, -1.toBigInt) -> Success(false),
+      (1.toBigInt, 0.toBigInt) -> Success(false),
+      (1.toBigInt, 1.toBigInt) -> Success(true),
+      (1.toBigInt, 26.toBigInt) -> Success(true),
+      (7.toBigInt, -32.toBigInt) -> Success(false),
+      (7.toBigInt, 0.toBigInt) -> Success(false),
+      (33.toBigInt, 1.toBigInt) -> Success(false),
+      (126.toBigInt, BigIntMaxValue) -> Success(true),
+      (BigIntMaxValue, BigIntMinValue) -> Success(false),
+      (BigIntMaxValue, -47.toBigInt) -> Success(false),
+      (BigIntMaxValue, BigIntMaxValue) -> Success(true)
+    )
+
+    testCases(
+      LE_cases,
+      existingFeature(
+      { (x: (BigInt, BigInt)) => o.lteq(x._1, x._2) },
+      """{ (x: (BigInt, BigInt)) => x._1 <= x._2 }""".stripMargin,
+      FuncValue(
+        Vector((1, SPair(SBigInt, SBigInt))),
+        LE(
+          SelectField.typed[Value[SBigInt.type]](ValUse(1, SPair(SBigInt, SBigInt)), 1.toByte),
+          SelectField.typed[Value[SBigInt.type]](ValUse(1, SPair(SBigInt, SBigInt)), 2.toByte)
+        )
+      )
+      ))
+
+    testCases(
+      LE_cases.map { case ((x, y), res) => ((y, x), res) }, // swap arguments,
+      existingFeature(
+      { (x: (BigInt, BigInt)) => o.gteq(x._1, x._2) },
+      """{ (x: (BigInt, BigInt)) => x._1 >= x._2 }""".stripMargin,
+      FuncValue(
+        Vector((1, SPair(SBigInt, SBigInt))),
+        GE(
+          SelectField.typed[Value[SBigInt.type]](ValUse(1, SPair(SBigInt, SBigInt)), 1.toByte),
+          SelectField.typed[Value[SBigInt.type]](ValUse(1, SPair(SBigInt, SBigInt)), 2.toByte)
+        )
+      )
+      ))
+  }
+  
   property("BigInt methods equivalence (new features)") {
     val toByte = newFeature((x: BigInt) => x.toByte,
       "{ (x: BigInt) => x.toByte }",

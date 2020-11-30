@@ -164,7 +164,7 @@ object Extensions {
       * @see BigInteger#longValueExact
       */
     @inline final def to256BitValueExact: BigInteger = {
-      if (x.bitLength() <= 255) x
+      if (x.bitLength() <= 255) x // TODO HF: allow 256 bit values
       else
         throw new ArithmeticException("BigInteger out of 256 bit range");
     }
