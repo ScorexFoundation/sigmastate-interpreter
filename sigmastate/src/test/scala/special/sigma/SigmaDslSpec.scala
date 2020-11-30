@@ -1304,7 +1304,6 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
       ))
   }
 
-
   property("Int methods equivalence (new features)") {
     lazy val toBytes = newFeature((x: Int) => x.toBytes, "{ (x: Int) => x.toBytes }")
     lazy val toBits = newFeature((x: Int) => x.toBits, "{ (x: Int) => x.toBits }")
@@ -1489,6 +1488,142 @@ class SigmaDslSpec extends SigmaDslTesting { suite =>
           )
         )
       )))
+  }
+
+  property("Long LT, GT") {
+    val o = ExactOrdering.LongIsExactOrdering
+    val LT_cases: Seq[((Long, Long), Try[Boolean])] = Seq(
+      (Long.MinValue, Long.MinValue) -> Success(false),
+      (Long.MinValue, (Long.MinValue + 1).toLong) -> Success(true),
+      (Long.MinValue, -1.toLong) -> Success(true),
+      (Long.MinValue, 0.toLong) -> Success(true),
+      (Long.MinValue, 1.toLong) -> Success(true),
+      (Long.MinValue, Long.MaxValue) -> Success(true),
+      (-120.toLong, Long.MinValue) -> Success(false),
+      (-120.toLong, -121.toLong) -> Success(false),
+      (-120.toLong, -120.toLong) -> Success(false),
+      (-120.toLong, -82.toLong) -> Success(true),
+      (-103.toLong, -1.toLong) -> Success(true),
+      (-103.toLong, -0.toLong) -> Success(true),
+      (-103.toLong, 1.toLong) -> Success(true),
+      (-103.toLong, Long.MaxValue) -> Success(true),
+      (-1.toLong, -2.toLong) -> Success(false),
+      (-1.toLong, -1.toLong) -> Success(false),
+      (-1.toLong, 0.toLong) -> Success(true),
+      (-1.toLong, 1.toLong) -> Success(true),
+      (0.toLong, Long.MinValue) -> Success(false),
+      (0.toLong, -1.toLong) -> Success(false),
+      (0.toLong, 0.toLong) -> Success(false),
+      (0.toLong, 1.toLong) -> Success(true),
+      (0.toLong, 60.toLong) -> Success(true),
+      (0.toLong, Long.MaxValue) -> Success(true),
+      (1.toLong, -1.toLong) -> Success(false),
+      (1.toLong, 0.toLong) -> Success(false),
+      (1.toLong, 26.toLong) -> Success(true),
+      (7.toLong, -32.toLong) -> Success(false),
+      (7.toLong, 0.toLong) -> Success(false),
+      (33.toLong, 1.toLong) -> Success(false),
+      (126.toLong, Long.MaxValue) -> Success(true),
+      (Long.MaxValue, Long.MinValue) -> Success(false),
+      (Long.MaxValue, -47.toLong) -> Success(false),
+      (Long.MaxValue, Long.MaxValue) -> Success(false)
+    )
+    testCases(
+      LT_cases,
+      existingFeature(
+      { (x: (Long, Long)) => o.lt(x._1, x._2) },
+      """{ (x: (Long, Long)) => x._1 < x._2 }""".stripMargin,
+      FuncValue(
+        Vector((1, SPair(SLong, SLong))),
+        LT(
+          SelectField.typed[Value[SLong.type]](ValUse(1, SPair(SLong, SLong)), 1.toByte),
+          SelectField.typed[Value[SLong.type]](ValUse(1, SPair(SLong, SLong)), 2.toByte)
+        )
+      )
+      ))
+
+    testCases(
+      LT_cases.map { case ((x, y), res) => ((y, x), res) }, // swap arguments
+      existingFeature(
+      { (x: (Long, Long)) => o.gt(x._1, x._2) },
+      """{ (x: (Long, Long)) => x._1 > x._2 }""".stripMargin,
+      FuncValue(
+        Vector((1, SPair(SLong, SLong))),
+        GT(
+          SelectField.typed[Value[SLong.type]](ValUse(1, SPair(SLong, SLong)), 1.toByte),
+          SelectField.typed[Value[SLong.type]](ValUse(1, SPair(SLong, SLong)), 2.toByte)
+        )
+      )
+      ))
+  }
+
+  property("Long LE, GE") {
+    val o = ExactOrdering.LongIsExactOrdering
+    val LE_cases: Seq[((Long, Long), Try[Boolean])] = Seq(
+      (Long.MinValue, Long.MinValue) -> Success(true),
+      (Long.MinValue, (Long.MinValue + 1).toLong) -> Success(true),
+      (Long.MinValue, -1.toLong) -> Success(true),
+      (Long.MinValue, 0.toLong) -> Success(true),
+      (Long.MinValue, 1.toLong) -> Success(true),
+      (Long.MinValue, Long.MaxValue) -> Success(true),
+      (-120.toLong, Long.MinValue) -> Success(false),
+      (-120.toLong, -121.toLong) -> Success(false),
+      (-120.toLong, -120.toLong) -> Success(true),
+      (-120.toLong, -82.toLong) -> Success(true),
+      (-103.toLong, -1.toLong) -> Success(true),
+      (-103.toLong, -0.toLong) -> Success(true),
+      (-103.toLong, 1.toLong) -> Success(true),
+      (-103.toLong, Long.MaxValue) -> Success(true),
+      (-1.toLong, -2.toLong) -> Success(false),
+      (-1.toLong, -1.toLong) -> Success(true),
+      (-1.toLong, 0.toLong) -> Success(true),
+      (-1.toLong, 1.toLong) -> Success(true),
+      (0.toLong, Long.MinValue) -> Success(false),
+      (0.toLong, -1.toLong) -> Success(false),
+      (0.toLong, 0.toLong) -> Success(true),
+      (0.toLong, 1.toLong) -> Success(true),
+      (0.toLong, 60.toLong) -> Success(true),
+      (0.toLong, Long.MaxValue) -> Success(true),
+      (1.toLong, -1.toLong) -> Success(false),
+      (1.toLong, 0.toLong) -> Success(false),
+      (1.toLong, 1.toLong) -> Success(true),
+      (1.toLong, 26.toLong) -> Success(true),
+      (7.toLong, -32.toLong) -> Success(false),
+      (7.toLong, 0.toLong) -> Success(false),
+      (33.toLong, 1.toLong) -> Success(false),
+      (126.toLong, Long.MaxValue) -> Success(true),
+      (Long.MaxValue, Long.MinValue) -> Success(false),
+      (Long.MaxValue, -47.toLong) -> Success(false),
+      (Long.MaxValue, Long.MaxValue) -> Success(true)
+    )
+
+    testCases(
+      LE_cases,
+      existingFeature(
+      { (x: (Long, Long)) => o.lteq(x._1, x._2) },
+      """{ (x: (Long, Long)) => x._1 <= x._2 }""".stripMargin,
+      FuncValue(
+        Vector((1, SPair(SLong, SLong))),
+        LE(
+          SelectField.typed[Value[SLong.type]](ValUse(1, SPair(SLong, SLong)), 1.toByte),
+          SelectField.typed[Value[SLong.type]](ValUse(1, SPair(SLong, SLong)), 2.toByte)
+        )
+      )
+      ))
+
+    testCases(
+      LE_cases.map { case ((x, y), res) => ((y, x), res) }, // swap arguments,
+      existingFeature(
+      { (x: (Long, Long)) => o.gteq(x._1, x._2) },
+      """{ (x: (Long, Long)) => x._1 >= x._2 }""".stripMargin,
+      FuncValue(
+        Vector((1, SPair(SLong, SLong))),
+        GE(
+          SelectField.typed[Value[SLong.type]](ValUse(1, SPair(SLong, SLong)), 1.toByte),
+          SelectField.typed[Value[SLong.type]](ValUse(1, SPair(SLong, SLong)), 2.toByte)
+        )
+      )
+      ))
   }
 
   property("Long methods equivalence (new features)") {
