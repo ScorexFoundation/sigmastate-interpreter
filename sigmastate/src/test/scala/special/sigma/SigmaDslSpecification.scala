@@ -6,8 +6,8 @@ import java.math.BigInteger
 import org.ergoplatform.ErgoScriptPredef.TrueProp
 import org.ergoplatform._
 import org.ergoplatform.settings.ErgoAlgos
-import org.scalacheck.Gen
-import scalan.{ExactNumeric, RType, ExactOrdering}
+import org.scalacheck.{Gen, Arbitrary}
+import scalan.{ExactOrdering, ExactNumeric, RType}
 import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.authds.{ADDigest, ADKey, ADValue}
 import scorex.crypto.hash.{Digest32, Blake2b256}
@@ -547,7 +547,40 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
       ))
   }
 
-  property("Byte LT, GT") {
+  def swapArgs[A](cases: Seq[((A, A), Expected[Boolean])], cost: Int) =
+    cases.map { case ((x, y), res) => ((y, x), res.copy(cost = cost)) }
+
+  def newCasesFrom[A, R](cases: Seq[(A, A)])(getExpectedRes: (A, A) => R, cost: Int) =
+    cases.map { case (x, y) =>
+      ((x, y), Expected(Success(getExpectedRes(x, y)), cost = cost))
+    }    
+
+  def verifyOp[A: Ordering: Arbitrary]
+              (cases: Seq[((A, A), Expected[Boolean])],
+               opName: String,
+               op: (SValue, SValue) => SValue)
+              (expectedFunc: (A, A) => Boolean)
+              (implicit tA: RType[A]) = {
+    val nameA = RType[A].name
+    val tpeA = Evaluation.rtypeToSType(tA)
+    verifyCases(cases,
+      existingFeature(
+        { (x: (A, A)) => expectedFunc(x._1, x._2) },
+        s"""{ (x: ($nameA, $nameA)) => x._1 $opName x._2 }""".stripMargin,
+        {
+          val tPair = SPair(tpeA, tpeA)
+          FuncValue(
+            Array((1, tPair)),
+            op(
+              SelectField.typed[Value[SType]](ValUse(1, tPair), 1.toByte),
+              SelectField.typed[Value[SType]](ValUse(1, tPair), 2.toByte)
+            )
+          )
+        }
+      ))
+  }
+
+  property("Byte LT, GT, NEQ") {
     val o = ExactOrdering.ByteIsExactOrdering
     def expect(v: Boolean) = Expected(Success(v), 36328)
     val LT_cases: Seq[((Byte, Byte), Expected[Boolean])] = Seq(
@@ -586,33 +619,13 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
       (127.toByte, -47.toByte) -> expect(false),
       (127.toByte, 127.toByte) -> expect(false)
     )
-    verifyCases(
-      LT_cases,
-      existingFeature(
-      { (x: (Byte, Byte)) => o.lt(x._1, x._2) },
-      """{ (x: (Byte, Byte)) => x._1 < x._2 }""".stripMargin,
-      FuncValue(
-        Vector((1, SPair(SByte, SByte))),
-        LT(
-          SelectField.typed[Value[SByte.type]](ValUse(1, SPair(SByte, SByte)), 1.toByte),
-          SelectField.typed[Value[SByte.type]](ValUse(1, SPair(SByte, SByte)), 2.toByte)
-        )
-      )
-      ))
 
-    verifyCases(
-      LT_cases.map { case ((x, y), res) => ((y, x), res.copy(cost = 36342)) }, // swap arguments
-      existingFeature(
-      { (x: (Byte, Byte)) => o.gt(x._1, x._2) },
-      """{ (x: (Byte, Byte)) => x._1 > x._2 }""".stripMargin,
-      FuncValue(
-        Vector((1, SPair(SByte, SByte))),
-        GT(
-          SelectField.typed[Value[SByte.type]](ValUse(1, SPair(SByte, SByte)), 1.toByte),
-          SelectField.typed[Value[SByte.type]](ValUse(1, SPair(SByte, SByte)), 2.toByte)
-        )
-      )
-      ))
+    verifyOp(LT_cases, "<", LT.apply)(_ < _)
+
+    verifyOp(swapArgs(LT_cases, cost = 36342), ">", GT.apply)(_ > _)
+
+    val neqCases = newCasesFrom(LT_cases.map(_._1))(_ != _, cost = 36337)
+    verifyOp(neqCases, "!=", NEQ.apply)(_ != _)
   }
 
   property("Byte LE, GE") {
@@ -656,33 +669,9 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
       (127.toByte, 127.toByte) -> expect(true)
     )
 
-    verifyCases(
-      LE_cases,
-      existingFeature(
-      { (x: (Byte, Byte)) => o.lteq(x._1, x._2) },
-      """{ (x: (Byte, Byte)) => x._1 <= x._2 }""".stripMargin,
-      FuncValue(
-        Vector((1, SPair(SByte, SByte))),
-        LE(
-          SelectField.typed[Value[SByte.type]](ValUse(1, SPair(SByte, SByte)), 1.toByte),
-          SelectField.typed[Value[SByte.type]](ValUse(1, SPair(SByte, SByte)), 2.toByte)
-        )
-      )
-      ))
+    verifyOp(LE_cases, "<=", LE.apply)(_ <= _)
 
-    verifyCases(
-      LE_cases.map { case ((x, y), res) => ((y, x), res.copy(cost = 36336)) }, // swap arguments,
-      existingFeature(
-      { (x: (Byte, Byte)) => o.gteq(x._1, x._2) },
-      """{ (x: (Byte, Byte)) => x._1 >= x._2 }""".stripMargin,
-      FuncValue(
-        Vector((1, SPair(SByte, SByte))),
-        GE(
-          SelectField.typed[Value[SByte.type]](ValUse(1, SPair(SByte, SByte)), 1.toByte),
-          SelectField.typed[Value[SByte.type]](ValUse(1, SPair(SByte, SByte)), 2.toByte)
-        )
-      )
-      ))
+    verifyOp(swapArgs(LE_cases, cost = 36336), ">=", GE.apply)(_ >= _)
   }
 
   property("Byte methods equivalence (new features)") {
@@ -894,7 +883,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
       ))
   }
 
-  property("Short LT, GT") {
+  property("Short LT, GT, NEQ") {
     val o = ExactOrdering.ShortIsExactOrdering
     def expect(v: Boolean) = Expected(Success(v), 36328)
     val LT_cases: Seq[((Short, Short), Expected[Boolean])] = Seq(
@@ -933,33 +922,13 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
       (Short.MaxValue, -47.toShort) -> expect(false),
       (Short.MaxValue, Short.MaxValue) -> expect(false)
     )
-    verifyCases(
-      LT_cases,
-      existingFeature(
-      { (x: (Short, Short)) => o.lt(x._1, x._2) },
-      """{ (x: (Short, Short)) => x._1 < x._2 }""".stripMargin,
-      FuncValue(
-        Vector((1, SPair(SShort, SShort))),
-        LT(
-          SelectField.typed[Value[SShort.type]](ValUse(1, SPair(SShort, SShort)), 1.toByte),
-          SelectField.typed[Value[SShort.type]](ValUse(1, SPair(SShort, SShort)), 2.toByte)
-        )
-      )
-      ))
 
-    verifyCases(
-      LT_cases.map { case ((x, y), res) => ((y, x), res.copy(cost = 36342)) }, // swap arguments
-      existingFeature(
-      { (x: (Short, Short)) => o.gt(x._1, x._2) },
-      """{ (x: (Short, Short)) => x._1 > x._2 }""".stripMargin,
-      FuncValue(
-        Vector((1, SPair(SShort, SShort))),
-        GT(
-          SelectField.typed[Value[SShort.type]](ValUse(1, SPair(SShort, SShort)), 1.toByte),
-          SelectField.typed[Value[SShort.type]](ValUse(1, SPair(SShort, SShort)), 2.toByte)
-        )
-      )
-      ))
+    verifyOp(LT_cases, "<", LT.apply)(_ < _)
+
+    verifyOp(swapArgs(LT_cases, cost = 36342), ">", GT.apply)(_ > _)
+
+    val neqCases = newCasesFrom(LT_cases.map(_._1))(_ != _, cost = 36337)
+    verifyOp(neqCases, "!=", NEQ.apply)(_ != _)
   }
 
   property("Short LE, GE") {
@@ -1003,33 +972,9 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
       (Short.MaxValue, Short.MaxValue) -> expect(true)
     )
 
-    verifyCases(
-      LE_cases,
-      existingFeature(
-      { (x: (Short, Short)) => o.lteq(x._1, x._2) },
-      """{ (x: (Short, Short)) => x._1 <= x._2 }""".stripMargin,
-      FuncValue(
-        Vector((1, SPair(SShort, SShort))),
-        LE(
-          SelectField.typed[Value[SShort.type]](ValUse(1, SPair(SShort, SShort)), 1.toByte),
-          SelectField.typed[Value[SShort.type]](ValUse(1, SPair(SShort, SShort)), 2.toByte)
-        )
-      )
-      ))
+    verifyOp(LE_cases, "<=", LE.apply)(_ <= _)
 
-    verifyCases(
-      LE_cases.map { case ((x, y), res) => ((y, x), res.copy(cost = 36336)) }, // swap arguments,
-      existingFeature(
-      { (x: (Short, Short)) => o.gteq(x._1, x._2) },
-      """{ (x: (Short, Short)) => x._1 >= x._2 }""".stripMargin,
-      FuncValue(
-        Vector((1, SPair(SShort, SShort))),
-        GE(
-          SelectField.typed[Value[SShort.type]](ValUse(1, SPair(SShort, SShort)), 1.toByte),
-          SelectField.typed[Value[SShort.type]](ValUse(1, SPair(SShort, SShort)), 2.toByte)
-        )
-      )
-      ))
+    verifyOp(swapArgs(LE_cases, cost = 36336), ">=", GE.apply)(_ >= _)
   }
 
   property("Short methods equivalence (new features)") {
@@ -1238,7 +1183,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
         )))
   }
 
-  property("Int LT, GT") {
+  property("Int LT, GT, NEQ") {
     val o = ExactOrdering.IntIsExactOrdering
     def expect(v: Boolean) = Expected(Success(v), 36328)
     val LT_cases: Seq[((Int, Int), Expected[Boolean])] = Seq(
@@ -1277,33 +1222,13 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
       (Int.MaxValue, -47.toInt) -> expect(false),
       (Int.MaxValue, Int.MaxValue) -> expect(false)
     )
-    verifyCases(
-      LT_cases,
-      existingFeature(
-      { (x: (Int, Int)) => o.lt(x._1, x._2) },
-      """{ (x: (Int, Int)) => x._1 < x._2 }""".stripMargin,
-      FuncValue(
-        Vector((1, SPair(SInt, SInt))),
-        LT(
-          SelectField.typed[Value[SInt.type]](ValUse(1, SPair(SInt, SInt)), 1.toByte),
-          SelectField.typed[Value[SInt.type]](ValUse(1, SPair(SInt, SInt)), 2.toByte)
-        )
-      )
-      ))
 
-    verifyCases(
-      LT_cases.map { case ((x, y), res) => ((y, x), res.copy(cost = 36342)) }, // swap arguments
-      existingFeature(
-      { (x: (Int, Int)) => o.gt(x._1, x._2) },
-      """{ (x: (Int, Int)) => x._1 > x._2 }""".stripMargin,
-      FuncValue(
-        Vector((1, SPair(SInt, SInt))),
-        GT(
-          SelectField.typed[Value[SInt.type]](ValUse(1, SPair(SInt, SInt)), 1.toByte),
-          SelectField.typed[Value[SInt.type]](ValUse(1, SPair(SInt, SInt)), 2.toByte)
-        )
-      )
-      ))
+    verifyOp(LT_cases, "<", LT.apply)(_ < _)
+
+    verifyOp(swapArgs(LT_cases, cost = 36342), ">", GT.apply)(_ > _)
+
+    val neqCases = newCasesFrom(LT_cases.map(_._1))(_ != _, cost = 36337)
+    verifyOp(neqCases, "!=", NEQ.apply)(_ != _)
   }
 
   property("Int LE, GE") {
@@ -1347,33 +1272,9 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
       (Int.MaxValue, Int.MaxValue) -> expect(true)
     )
 
-    verifyCases(
-      LE_cases,
-      existingFeature(
-      { (x: (Int, Int)) => o.lteq(x._1, x._2) },
-      """{ (x: (Int, Int)) => x._1 <= x._2 }""".stripMargin,
-      FuncValue(
-        Vector((1, SPair(SInt, SInt))),
-        LE(
-          SelectField.typed[Value[SInt.type]](ValUse(1, SPair(SInt, SInt)), 1.toByte),
-          SelectField.typed[Value[SInt.type]](ValUse(1, SPair(SInt, SInt)), 2.toByte)
-        )
-      )
-      ))
+    verifyOp(LE_cases, "<=", LE.apply)(_ <= _)
 
-    verifyCases(
-      LE_cases.map { case ((x, y), res) => ((y, x), res.copy(cost = 36336)) }, // swap arguments,
-      existingFeature(
-      { (x: (Int, Int)) => o.gteq(x._1, x._2) },
-      """{ (x: (Int, Int)) => x._1 >= x._2 }""".stripMargin,
-      FuncValue(
-        Vector((1, SPair(SInt, SInt))),
-        GE(
-          SelectField.typed[Value[SInt.type]](ValUse(1, SPair(SInt, SInt)), 1.toByte),
-          SelectField.typed[Value[SInt.type]](ValUse(1, SPair(SInt, SInt)), 2.toByte)
-        )
-      )
-      ))
+    verifyOp(swapArgs(LE_cases, cost = 36336), ">=", GE.apply)(_ >= _)
   }
 
   property("Int methods equivalence (new features)") {
@@ -1583,7 +1484,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
       )))
   }
 
-  property("Long LT, GT") {
+  property("Long LT, GT, NEQ") {
     val o = ExactOrdering.LongIsExactOrdering
     def expect(v: Boolean) = Expected(Success(v), 36328)
     val LT_cases: Seq[((Long, Long), Expected[Boolean])] = Seq(
@@ -1622,33 +1523,13 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
       (Long.MaxValue, -47.toLong) -> expect(false),
       (Long.MaxValue, Long.MaxValue) -> expect(false)
     )
-    verifyCases(
-      LT_cases,
-      existingFeature(
-      { (x: (Long, Long)) => o.lt(x._1, x._2) },
-      """{ (x: (Long, Long)) => x._1 < x._2 }""".stripMargin,
-      FuncValue(
-        Vector((1, SPair(SLong, SLong))),
-        LT(
-          SelectField.typed[Value[SLong.type]](ValUse(1, SPair(SLong, SLong)), 1.toByte),
-          SelectField.typed[Value[SLong.type]](ValUse(1, SPair(SLong, SLong)), 2.toByte)
-        )
-      )
-      ))
 
-    verifyCases(
-      LT_cases.map { case ((x, y), res) => ((y, x), res.copy(cost = 36342)) }, // swap arguments
-      existingFeature(
-      { (x: (Long, Long)) => o.gt(x._1, x._2) },
-      """{ (x: (Long, Long)) => x._1 > x._2 }""".stripMargin,
-      FuncValue(
-        Vector((1, SPair(SLong, SLong))),
-        GT(
-          SelectField.typed[Value[SLong.type]](ValUse(1, SPair(SLong, SLong)), 1.toByte),
-          SelectField.typed[Value[SLong.type]](ValUse(1, SPair(SLong, SLong)), 2.toByte)
-        )
-      )
-      ))
+    verifyOp(LT_cases, "<", LT.apply)(_ < _)
+
+    verifyOp(swapArgs(LT_cases, cost = 36342), ">", GT.apply)(_ > _)
+
+    val neqCases = newCasesFrom(LT_cases.map(_._1))(_ != _, cost = 36337)
+    verifyOp(neqCases, "!=", NEQ.apply)(_ != _)
   }
 
   property("Long LE, GE") {
@@ -1692,33 +1573,9 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
       (Long.MaxValue, Long.MaxValue) -> expect(true)
     )
 
-    verifyCases(
-      LE_cases,
-      existingFeature(
-      { (x: (Long, Long)) => o.lteq(x._1, x._2) },
-      """{ (x: (Long, Long)) => x._1 <= x._2 }""".stripMargin,
-      FuncValue(
-        Vector((1, SPair(SLong, SLong))),
-        LE(
-          SelectField.typed[Value[SLong.type]](ValUse(1, SPair(SLong, SLong)), 1.toByte),
-          SelectField.typed[Value[SLong.type]](ValUse(1, SPair(SLong, SLong)), 2.toByte)
-        )
-      )
-      ))
+    verifyOp(LE_cases, "<=", LE.apply)(_ <= _)
 
-    verifyCases(
-      LE_cases.map { case ((x, y), res) => ((y, x), res.copy(cost = 36336)) }, // swap arguments,
-      existingFeature(
-      { (x: (Long, Long)) => o.gteq(x._1, x._2) },
-      """{ (x: (Long, Long)) => x._1 >= x._2 }""".stripMargin,
-      FuncValue(
-        Vector((1, SPair(SLong, SLong))),
-        GE(
-          SelectField.typed[Value[SLong.type]](ValUse(1, SPair(SLong, SLong)), 1.toByte),
-          SelectField.typed[Value[SLong.type]](ValUse(1, SPair(SLong, SLong)), 2.toByte)
-        )
-      )
-      ))
+    verifyOp(swapArgs(LE_cases, cost = 36336), ">=", GE.apply)(_ >= _)
   }
 
   property("Long methods equivalence (new features)") {
@@ -1891,7 +1748,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
     ))
   }
 
-  property("BigInt LT, GT") {
+  property("BigInt LT, GT, NEQ") {
     val o = NumericOps.BigIntIsExactOrdering
     // TODO HF: this values have bitCount == 255 (see to256BitValueExact)
     val BigIntMinValue = CBigInt(new BigInteger("-7F" + "ff" * 31, 16))
@@ -1938,33 +1795,13 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
       (BigIntMaxValue, BigIntOverlimit) -> expect(true),  // TODO v5.0: reject this overlimit cases
       (BigIntOverlimit, BigIntOverlimit) -> expect(false)
     )
-    verifyCases(
-      LT_cases,
-      existingFeature(
-      { (x: (BigInt, BigInt)) => o.lt(x._1, x._2) },
-      """{ (x: (BigInt, BigInt)) => x._1 < x._2 }""".stripMargin,
-      FuncValue(
-        Vector((1, SPair(SBigInt, SBigInt))),
-        LT(
-          SelectField.typed[Value[SBigInt.type]](ValUse(1, SPair(SBigInt, SBigInt)), 1.toByte),
-          SelectField.typed[Value[SBigInt.type]](ValUse(1, SPair(SBigInt, SBigInt)), 2.toByte)
-        )
-      )
-      ))
 
-    verifyCases(
-      LT_cases.map { case ((x, y), res) => ((y, x), res.copy(cost = 36342)) }, // swap arguments
-      existingFeature(
-      { (x: (BigInt, BigInt)) => o.gt(x._1, x._2) },
-      """{ (x: (BigInt, BigInt)) => x._1 > x._2 }""".stripMargin,
-      FuncValue(
-        Vector((1, SPair(SBigInt, SBigInt))),
-        GT(
-          SelectField.typed[Value[SBigInt.type]](ValUse(1, SPair(SBigInt, SBigInt)), 1.toByte),
-          SelectField.typed[Value[SBigInt.type]](ValUse(1, SPair(SBigInt, SBigInt)), 2.toByte)
-        )
-      )
-      ))
+    verifyOp(LT_cases, "<", LT.apply)(o.lt(_, _))
+
+    verifyOp(swapArgs(LT_cases, cost = 36342), ">", GT.apply)(o.gt(_, _))
+
+    val neqCases = newCasesFrom(LT_cases.map(_._1))(_ != _, cost = 36337)
+    verifyOp(neqCases, "!=", NEQ.apply)(_ != _)
   }
 
   property("BigInt LE, GE") {
@@ -2016,33 +1853,9 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
       (BigIntOverlimit, BigIntOverlimit) -> expect(true)
     )
 
-    verifyCases(
-      LE_cases,
-      existingFeature(
-      { (x: (BigInt, BigInt)) => o.lteq(x._1, x._2) },
-      """{ (x: (BigInt, BigInt)) => x._1 <= x._2 }""".stripMargin,
-      FuncValue(
-        Vector((1, SPair(SBigInt, SBigInt))),
-        LE(
-          SelectField.typed[Value[SBigInt.type]](ValUse(1, SPair(SBigInt, SBigInt)), 1.toByte),
-          SelectField.typed[Value[SBigInt.type]](ValUse(1, SPair(SBigInt, SBigInt)), 2.toByte)
-        )
-      )
-      ))
+    verifyOp(LE_cases, "<=", LE.apply)(o.lteq(_, _))
 
-    verifyCases(
-      LE_cases.map { case ((x, y), res) => ((y, x), res.copy(cost = 36336)) }, // swap arguments,
-      existingFeature(
-      { (x: (BigInt, BigInt)) => o.gteq(x._1, x._2) },
-      """{ (x: (BigInt, BigInt)) => x._1 >= x._2 }""".stripMargin,
-      FuncValue(
-        Vector((1, SPair(SBigInt, SBigInt))),
-        GE(
-          SelectField.typed[Value[SBigInt.type]](ValUse(1, SPair(SBigInt, SBigInt)), 1.toByte),
-          SelectField.typed[Value[SBigInt.type]](ValUse(1, SPair(SBigInt, SBigInt)), 2.toByte)
-        )
-      )
-      ))
+    verifyOp(swapArgs(LE_cases, cost = 36336), ">=", GE.apply)(o.gteq(_, _))
   }
 
   property("BigInt methods equivalence (new features)") {
@@ -2097,6 +1910,40 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
     forAll { x: (BigInt, BigInt) =>
       Seq(compareTo, bitOr, bitAnd).foreach(_.checkEquality(x))
     }
+  }
+
+  property("NEQ equivalence") {
+//    def expect(v: Boolean) = Expected(Success(v), 36328)
+//    val LT_cases: Seq[((Byte, Byte), Expected[Boolean])] = Seq(
+//      (-128.toByte, -128.toByte) -> expect(false),
+//      (-128.toByte, -127.toByte) -> expect(true),
+//      (-128.toByte, 0.toByte) -> expect(true),
+//      (-128.toByte, 1.toByte) -> expect(true),
+//      (-128.toByte, 127.toByte) -> expect(true),
+//      (-120.toByte, -120.toByte) -> expect(false),
+//      (-120.toByte, 120.toByte) -> expect(true),
+//      (-1.toByte, 0.toByte) -> expect(true),
+//      (0.toByte, 0.toByte) -> expect(false),
+//      (0.toByte, 1.toByte) -> expect(true),
+//      (25.toByte, 26.toByte) -> expect(true),
+//      (25.toByte, 25.toByte) -> expect(false),
+//      (127.toByte, -128.toByte) -> expect(true),
+//      (127.toByte, 127.toByte) -> expect(false)
+//    )
+//    verifyCases(
+//      LT_cases,
+//      existingFeature(
+//      { (x: (Byte, Byte)) => o.lt(x._1, x._2) },
+//      """{ (x: (Byte, Byte)) => x._1 < x._2 }""".stripMargin,
+//      FuncValue(
+//        Vector((1, SPair(SByte, SByte))),
+//        LT(
+//          SelectField.typed[Value[SByte.type]](ValUse(1, SPair(SByte, SByte)), 1.toByte),
+//          SelectField.typed[Value[SByte.type]](ValUse(1, SPair(SByte, SByte)), 2.toByte)
+//        )
+//      )
+//      ))
+
   }
 
   property("GroupElement methods equivalence") {
