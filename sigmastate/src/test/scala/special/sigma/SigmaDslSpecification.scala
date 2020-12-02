@@ -2062,33 +2062,45 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
   }
   import TestData._
 
+  def verifyNeq[A: Ordering: Arbitrary: RType]
+      (x: A, y: A, cost: Int)(copy: A => A) = {
+    verifyOp(Seq(
+      (x, x) -> Expected(Success(false), cost),
+      (x, copy(x)) -> Expected(Success(false), cost),
+      (x, y) -> Expected(Success(true), cost)),
+      "!=", NEQ.apply)(_ != _)
+  }
+
   property("NEQ equivalence") {
     def expect(v: Boolean): Expected[Boolean] = Expected(Success(v), 36337)
 
-    verifyOp(Seq(
-      (ge1, ge1) -> expect(false),
-      (ge1, ge2) -> expect(true)),
-      "!=", NEQ.apply)(_ != _)
+    // inequality of pre-defined types
+    verifyNeq(ge1, ge2, 36337)(_.asInstanceOf[CGroupElement].copy())
 
-    verifyOp(Seq(
-      (t1, t1) -> expect(false),
-      (t1, t2) -> expect(true)),
-      "!=", NEQ.apply)(_ != _)
+    verifyNeq(t1, t2, 36337)(_.asInstanceOf[CAvlTree].copy())
 
-    verifyOp(Seq(
-      (b1, b1) -> Expected(Success(false), 36417),
-      (b1, b2) -> Expected(Success(true), 36417)),
-      "!=", NEQ.apply)(_ != _)
+    verifyNeq(b1, b2, 36417)(_.asInstanceOf[CostingBox].copy())
 
-    verifyOp(Seq(
-      (preH1, preH1) -> expect(false),
-      (preH1, preH2) -> expect(true)),
-      "!=", NEQ.apply)(_ != _)
+    verifyNeq(preH1, preH2, 36337)(_.asInstanceOf[CPreHeader].copy())
 
-    verifyOp(Seq(
-      (h1, h1) -> expect(false),
-      (h1, h2) -> expect(true)),
-      "!=", NEQ.apply)(_ != _)
+    verifyNeq(h1, h2, 36337)(_.asInstanceOf[CHeader].copy())
+
+    // tuples of numerics
+    verifyNeq((0.toByte, 1.toByte), (1.toByte, 1.toByte), 36337)(_.copy())
+    verifyNeq((0.toShort, 1.toByte), (1.toShort, 1.toByte), 36337)(_.copy())
+    verifyNeq((0, 1.toByte), (1, 1.toByte), 36337)(_.copy())
+    verifyNeq((0.toLong, 1.toByte), (1.toLong, 1.toByte), 36337)(_.copy())
+    verifyNeq((0.toBigInt, 1.toByte), (1.toBigInt, 1.toByte), 36337)(_.copy())
+
+    // tuples of pre-defined types
+    verifyNeq((ge1, ge1), (ge1, ge2), 36337)(_.copy())
+    verifyNeq((t1, t1), (t1, t2), 36337)(_.copy())
+    verifyNeq((b1, b1), (b1, b2), 36497)(_.copy())
+    verifyNeq((preH1, preH1), (preH1, preH2), 36337)(_.copy())
+    verifyNeq((h1, h1), (h1, h2), 36337)(_.copy())
+
+    // collections
+//    verifyNeq(Coll[Byte](), Coll(1.toByte), 36337)(_.clone())
 
   }
 
