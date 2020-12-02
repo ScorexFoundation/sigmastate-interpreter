@@ -559,7 +559,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
               (cases: Seq[((A, A), Expected[Boolean])],
                opName: String,
                op: (SValue, SValue) => SValue)
-              (expectedFunc: (A, A) => Boolean)
+              (expectedFunc: (A, A) => Boolean, generateCases: Boolean = true)
               (implicit tA: RType[A]) = {
     val nameA = RType[A].name
     val tpeA = Evaluation.rtypeToSType(tA)
@@ -577,7 +577,8 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
             )
           )
         }
-      ))
+      ),
+      preGeneratedSamples = if (generateCases) None else Some(mutable.WrappedArray.empty))
   }
 
   property("Byte LT, GT, NEQ") {
@@ -2067,7 +2068,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
     * @param cost the expected cost of `verify` (the same for all cases)
     */
   def verifyNeq[A: Ordering: Arbitrary: RType]
-      (x: A, y: A, cost: Int)(copy: A => A) = {
+      (x: A, y: A, cost: Int)(copy: A => A, generateCases: Boolean = true) = {
     val copied_x = copy(x)
     verifyOp(Seq(
         (x, x) -> Expected(Success(false), cost),
@@ -2076,7 +2077,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
         (x, y) -> Expected(Success(true), cost),
         (y, x) -> Expected(Success(true), cost)
       ),
-      "!=", NEQ.apply)(_ != _)
+      "!=", NEQ.apply)(_ != _, generateCases)
   }
 
   property("NEQ equivalence") {
@@ -2107,16 +2108,29 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
     verifyNeq((preH1, preH1), (preH1, preH2), 36337)(_.copy())
     verifyNeq((h1, h1), (h1, h2), 36337)(_.copy())
 
-    // collections
+    // collections of pre-defined types
     verifyNeq(Coll[Byte](), Coll(1.toByte), 36337)(cloneColl(_))
-    verifyNeq(Coll[Short](), Coll(1.toShort), 36337)(cloneColl(_))
-    verifyNeq(Coll[Int](), Coll(1), 36337)(cloneColl(_))
-    verifyNeq(Coll[Long](), Coll(1.toLong), 36337)(cloneColl(_))
-    verifyNeq(Coll[BigInt](), Coll(1.toBigInt), 36337)(cloneColl(_))
-    verifyNeq(Coll[GroupElement](), Coll(ge1), 36337)(cloneColl(_))
-    verifyNeq(Coll[AvlTree](), Coll(t1), 36337)(cloneColl(_))
+    verifyNeq(Coll[Byte](0, 1), Coll(1.toByte, 1.toByte), 36337)(cloneColl(_))
 
-    { // since SBox.isConstantSize = false the cost is different among cases
+    verifyNeq(Coll[Short](), Coll(1.toShort), 36337)(cloneColl(_))
+    verifyNeq(Coll[Short](0), Coll(1.toShort), 36337)(cloneColl(_))
+
+    verifyNeq(Coll[Int](), Coll(1), 36337)(cloneColl(_))
+    verifyNeq(Coll[Int](0), Coll(1), 36337)(cloneColl(_))
+
+    verifyNeq(Coll[Long](), Coll(1.toLong), 36337)(cloneColl(_))
+    verifyNeq(Coll[Long](0), Coll(1.toLong), 36337)(cloneColl(_))
+
+    verifyNeq(Coll[BigInt](), Coll(1.toBigInt), 36337)(cloneColl(_))
+    verifyNeq(Coll[BigInt](0.toBigInt), Coll(1.toBigInt), 36337)(cloneColl(_))
+
+    verifyNeq(Coll[GroupElement](), Coll(ge1), 36337)(cloneColl(_))
+    verifyNeq(Coll[GroupElement](ge1), Coll(ge2), 36337)(cloneColl(_))
+
+    verifyNeq(Coll[AvlTree](), Coll(t1), 36337)(cloneColl(_))
+    verifyNeq(Coll[AvlTree](t1), Coll(t2), 36337)(cloneColl(_))
+
+    { // since SBox.isConstantSize = false, the cost is different among cases
       val x = Coll[Box]()
       val y = Coll(b1)
       val copied_x = cloneColl(x)
@@ -2127,13 +2141,16 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
           (x, y) -> Expected(Success(true), 36377),
           (y, x) -> Expected(Success(true), 36377)
         ),
-        "!=", NEQ.apply)(_ != _)
+        "!=", NEQ.apply)(_ != _, generateCases = false)
 
-      verifyNeq(Coll[Box](b1), Coll(b2), 36417)(cloneColl(_))
+      verifyNeq(Coll[Box](b1), Coll(b2), 36417)(cloneColl(_), generateCases = false)
     }
 
     verifyNeq(Coll[PreHeader](), Coll(preH1), 36337)(cloneColl(_))
+    verifyNeq(Coll[PreHeader](preH1), Coll(preH2), 36337)(cloneColl(_))
+
     verifyNeq(Coll[Header](), Coll(h1), 36337)(cloneColl(_))
+    verifyNeq(Coll[Header](h1), Coll(h2), 36337)(cloneColl(_))
 
   }
 
