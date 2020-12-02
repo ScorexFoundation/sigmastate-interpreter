@@ -2062,12 +2062,20 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
   }
   import TestData._
 
+  /** Executed a series of test cases of NEQ operation verify using two _different_
+    * data instances `x` and `y`.
+    * @param cost the expected cost of `verify` (the same for all cases)
+    */
   def verifyNeq[A: Ordering: Arbitrary: RType]
       (x: A, y: A, cost: Int)(copy: A => A) = {
+    val copied_x = copy(x)
     verifyOp(Seq(
-      (x, x) -> Expected(Success(false), cost),
-      (x, copy(x)) -> Expected(Success(false), cost),
-      (x, y) -> Expected(Success(true), cost)),
+        (x, x) -> Expected(Success(false), cost),
+        (x, copied_x) -> Expected(Success(false), cost),
+        (copied_x, x) -> Expected(Success(false), cost),
+        (x, y) -> Expected(Success(true), cost),
+        (y, x) -> Expected(Success(true), cost)
+      ),
       "!=", NEQ.apply)(_ != _)
   }
 
@@ -2100,7 +2108,32 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
     verifyNeq((h1, h1), (h1, h2), 36337)(_.copy())
 
     // collections
-//    verifyNeq(Coll[Byte](), Coll(1.toByte), 36337)(_.clone())
+    verifyNeq(Coll[Byte](), Coll(1.toByte), 36337)(cloneColl(_))
+    verifyNeq(Coll[Short](), Coll(1.toShort), 36337)(cloneColl(_))
+    verifyNeq(Coll[Int](), Coll(1), 36337)(cloneColl(_))
+    verifyNeq(Coll[Long](), Coll(1.toLong), 36337)(cloneColl(_))
+    verifyNeq(Coll[BigInt](), Coll(1.toBigInt), 36337)(cloneColl(_))
+    verifyNeq(Coll[GroupElement](), Coll(ge1), 36337)(cloneColl(_))
+    verifyNeq(Coll[AvlTree](), Coll(t1), 36337)(cloneColl(_))
+
+    { // since SBox.isConstantSize = false the cost is different among cases
+      val x = Coll[Box]()
+      val y = Coll(b1)
+      val copied_x = cloneColl(x)
+      verifyOp(Seq(
+          (x, x) -> Expected(Success(false), 36337),
+          (x, copied_x) -> Expected(Success(false), 36337),
+          (copied_x, x) -> Expected(Success(false), 36337),
+          (x, y) -> Expected(Success(true), 36377),
+          (y, x) -> Expected(Success(true), 36377)
+        ),
+        "!=", NEQ.apply)(_ != _)
+
+      verifyNeq(Coll[Box](b1), Coll(b2), 36417)(cloneColl(_))
+    }
+
+    verifyNeq(Coll[PreHeader](), Coll(preH1), 36337)(cloneColl(_))
+    verifyNeq(Coll[Header](), Coll(h1), 36337)(cloneColl(_))
 
   }
 
