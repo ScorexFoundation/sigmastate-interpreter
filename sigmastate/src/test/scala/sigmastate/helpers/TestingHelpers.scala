@@ -1,7 +1,7 @@
 package sigmastate.helpers
 
 import scorex.crypto.hash.Digest32
-import special.collection.{Coll, CollOverArray}
+import special.collection.{Coll, CollOverArray, PairOfCols}
 import scorex.util.ModifierId
 import org.ergoplatform.{ErgoLikeTransactionTemplate, ErgoLikeTransaction, ErgoLikeContext, UnsignedInput, ErgoBox, DataInput, ErgoBoxCandidate}
 import sigmastate.Values.ErgoTree
@@ -39,6 +39,7 @@ object TestingHelpers {
                 additionalRegisters: AdditionalRegisters = Map.empty)
   = testBox(value, proposition, 0, additionalTokens, additionalRegisters)
 
+  /** Creates a new test box with the given parameters. */
   def createBox(value: Long,
                 proposition: ErgoTree,
                 creationHeight: Int)
@@ -48,7 +49,10 @@ object TestingHelpers {
     * sub-collections.
     */
   def cloneColl[A](c: Coll[A]): Coll[A] = (c match {
-    case c: CollOverArray[_] => new CollOverArray(c.toArray.clone())(c.tItem)
+    case c: CollOverArray[_] =>
+      new CollOverArray(c.toArray.clone())(c.tItem)
+    case ps: PairOfCols[_,_] =>
+      new PairOfCols(cloneColl(ps.ls), cloneColl(ps.rs))
   }).asInstanceOf[Coll[A]]
 
   /** Copies the given box allowing also to update fields. */

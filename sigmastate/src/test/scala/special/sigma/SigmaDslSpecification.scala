@@ -2080,35 +2080,43 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
       "!=", NEQ.apply)(_ != _, generateCases)
   }
 
-  property("NEQ equivalence") {
-    def expect(v: Boolean): Expected[Boolean] = Expected(Success(v), 36337)
-
-    // inequality of pre-defined types
+  property("NEQ of pre-defined types") {
     verifyNeq(ge1, ge2, 36337)(_.asInstanceOf[CGroupElement].copy())
-
     verifyNeq(t1, t2, 36337)(_.asInstanceOf[CAvlTree].copy())
-
     verifyNeq(b1, b2, 36417)(_.asInstanceOf[CostingBox].copy())
-
     verifyNeq(preH1, preH2, 36337)(_.asInstanceOf[CPreHeader].copy())
-
     verifyNeq(h1, h2, 36337)(_.asInstanceOf[CHeader].copy())
+  }
 
-    // tuples of numerics
+  property("NEQ of tuples of numerics") {
     verifyNeq((0.toByte, 1.toByte), (1.toByte, 1.toByte), 36337)(_.copy())
     verifyNeq((0.toShort, 1.toByte), (1.toShort, 1.toByte), 36337)(_.copy())
     verifyNeq((0, 1.toByte), (1, 1.toByte), 36337)(_.copy())
     verifyNeq((0.toLong, 1.toByte), (1.toLong, 1.toByte), 36337)(_.copy())
     verifyNeq((0.toBigInt, 1.toByte), (1.toBigInt, 1.toByte), 36337)(_.copy())
+  }
 
-    // tuples of pre-defined types
+  property("NEQ of tuples of pre-defined types") {
     verifyNeq((ge1, ge1), (ge1, ge2), 36337)(_.copy())
     verifyNeq((t1, t1), (t1, t2), 36337)(_.copy())
     verifyNeq((b1, b1), (b1, b2), 36497)(_.copy())
     verifyNeq((preH1, preH1), (preH1, preH2), 36337)(_.copy())
     verifyNeq((h1, h1), (h1, h2), 36337)(_.copy())
+  }
 
-    // collections of pre-defined types
+  property("NEQ of nested tuples") {
+    verifyNeq((ge1, (t1, t1)), (ge1, (t1, t2)), 36337)(_.copy())
+    verifyNeq((ge1, (t1, (b1, b1))), (ge1, (t1, (b1, b2))), 36497)(_.copy())
+    verifyNeq((ge1, (t1, (b1, (preH1, preH1)))), (ge1, (t1, (b1, (preH1, preH2)))), 36417)(_.copy())
+    verifyNeq((ge1, (t1, (b1, (preH1, (h1, h1))))), (ge1, (t1, (b1, (preH1, (h1, h2))))), 36427)(_.copy())
+
+    verifyNeq(((ge1, t1), t1), ((ge1, t1), t2), 36337)(_.copy())
+    verifyNeq((((ge1, t1), b1), b1), (((ge1, t1), b1), b2), 36497)(_.copy())
+    verifyNeq((((ge1, t1), b1), (preH1, preH1)), (((ge1, t1), b1), (preH1, preH2)), 36417)(_.copy())
+    verifyNeq((((ge1, t1), b1), (preH1, (h1, h1))), (((ge1, t1), b1), (preH1, (h1, h2))), 36427)(_.copy())
+  }
+
+  property("NEQ of collections of pre-defined types") {
     verifyNeq(Coll[Byte](), Coll(1.toByte), 36337)(cloneColl(_))
     verifyNeq(Coll[Byte](0, 1), Coll(1.toByte, 1.toByte), 36337)(cloneColl(_))
 
@@ -2151,7 +2159,28 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
     verifyNeq(Coll[Header](), Coll(h1), 36337)(cloneColl(_))
     verifyNeq(Coll[Header](h1), Coll(h2), 36337)(cloneColl(_))
+  }
 
+  property("NEQ of nested collections and tuples") {
+    verifyNeq(Coll[Coll[Int]](), Coll(Coll[Int]()), 36337)(cloneColl(_))
+    verifyNeq(Coll(Coll[Int]()), Coll(Coll[Int](1)), 36337)(cloneColl(_))
+    verifyNeq(Coll(Coll[Int](1)), Coll(Coll[Int](2)), 36337)(cloneColl(_))
+    verifyNeq(Coll(Coll[Int](1)), Coll(Coll[Int](1, 2)), 36337)(cloneColl(_))
+
+    verifyNeq(Coll(Coll((1, 10.toBigInt))), Coll(Coll((1, 11.toBigInt))), 36337)(cloneColl(_))
+    verifyNeq(Coll(Coll(Coll((1, 10.toBigInt)))), Coll(Coll(Coll((1, 11.toBigInt)))), 36337)(cloneColl(_))
+    verifyNeq(
+      (Coll(
+         (Coll(
+           (t1, Coll((1, 10.toBigInt), (1, 10.toBigInt)))
+          ), ge1)
+       ), preH1),
+      (Coll(
+         (Coll(
+           (t1, Coll((1, 10.toBigInt), (1, 11.toBigInt)))
+          ), ge1)
+       ), preH1),
+      36337)(x => (cloneColl(x._1), x._2))
   }
 
   property("GroupElement methods equivalence") {
