@@ -196,8 +196,22 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
       Helpers.decodeBytes("7f0180")
     )
     val h2: Header = h1.asInstanceOf[CHeader].copy(height = 2)
+
   }
   import TestData._
+
+  prepareSamples[BigInt]
+  prepareSamples[GroupElement]
+  prepareSamples[AvlTree]
+  prepareSamples[Box]
+  prepareSamples[PreHeader]
+  prepareSamples[Header]
+  prepareSamples[(BigInt, BigInt)]
+  prepareSamples[(GroupElement, GroupElement)]
+  prepareSamples[(AvlTree, AvlTree)]
+  prepareSamples[(Box, Box)]
+  prepareSamples[(PreHeader, PreHeader)]
+  prepareSamples[(Header, Header)]
 
   ///=====================================================
   ///              Boolean type operations
@@ -2134,16 +2148,20 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
     verifyNeq(Coll[Long](), Coll(1.toLong), 36337)(cloneColl(_))
     verifyNeq(Coll[Long](0), Coll(1.toLong), 36337)(cloneColl(_))
 
+    prepareSamples[Coll[BigInt]]
     verifyNeq(Coll[BigInt](), Coll(1.toBigInt), 36337)(cloneColl(_))
     verifyNeq(Coll[BigInt](0.toBigInt), Coll(1.toBigInt), 36337)(cloneColl(_))
 
+    prepareSamples[Coll[GroupElement]]
     verifyNeq(Coll[GroupElement](), Coll(ge1), 36337)(cloneColl(_))
     verifyNeq(Coll[GroupElement](ge1), Coll(ge2), 36337)(cloneColl(_))
 
+    prepareSamples[Coll[AvlTree]]
     verifyNeq(Coll[AvlTree](), Coll(t1), 36337)(cloneColl(_))
     verifyNeq(Coll[AvlTree](t1), Coll(t2), 36337)(cloneColl(_))
 
     { // since SBox.isConstantSize = false, the cost is different among cases
+      prepareSamples[Coll[AvlTree]]
       val x = Coll[Box]()
       val y = Coll(b1)
       val copied_x = cloneColl(x)
@@ -2159,9 +2177,11 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
       verifyNeq(Coll[Box](b1), Coll(b2), 36417)(cloneColl(_), generateCases = false)
     }
 
+    prepareSamples[Coll[PreHeader]]
     verifyNeq(Coll[PreHeader](), Coll(preH1), 36337)(cloneColl(_))
     verifyNeq(Coll[PreHeader](preH1), Coll(preH2), 36337)(cloneColl(_))
 
+    prepareSamples[Coll[Header]]
     verifyNeq(Coll[Header](), Coll(h1), 36337)(cloneColl(_))
     verifyNeq(Coll[Header](h1), Coll(h2), 36337)(cloneColl(_))
   }
@@ -2176,10 +2196,6 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
     verifyNeq(Coll(Coll[Int](1)), Coll(Coll[Int](2)), 36337)(cloneColl(_))
     verifyNeq(Coll(Coll[Int](1)), Coll(Coll[Int](1, 2)), 36337)(cloneColl(_))
 
-    prepareSamples[BigInt]
-    prepareSamples[GroupElement]
-    prepareSamples[PreHeader]
-    prepareSamples[AvlTree]
     prepareSamples[Coll[(Int, BigInt)]]
     prepareSamples[Coll[Coll[(Int, BigInt)]]]
 
