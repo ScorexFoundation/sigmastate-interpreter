@@ -698,11 +698,20 @@ class SigmaDslTesting extends PropSpec
     * @return array-backed ordered sequence of samples
     */
   def genSamples[A: Arbitrary: Ordering: ClassTag](config: PropertyCheckConfigParam): Seq[A] = {
+    genSamples[A](config, Some(implicitly[Ordering[A]]))
+  }
+
+  /** Generate samples with optional sorted order.
+    * @param config generation configuration
+    * @param optOrd optional ordering of the generated samples in the resuting sequence
+    * @return array-backed ordered sequence of samples
+    */
+  def genSamples[A: Arbitrary: ClassTag](config: PropertyCheckConfigParam, optOrd: Option[Ordering[A]]): Seq[A] = {
     val inputs = scala.collection.mutable.ArrayBuilder.make[A]()
     forAll(config) { x: A =>
       inputs += x
     }
-    inputs.result().sorted
+    optOrd.fold(inputs.result())(implicit ord => inputs.result.sorted)
   }
 
   /** Test the given samples or generate new samples using the given Arbitrary.
