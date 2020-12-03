@@ -6,7 +6,7 @@ import java.math.BigInteger
 import org.ergoplatform.ErgoScriptPredef.TrueProp
 import org.ergoplatform._
 import org.ergoplatform.settings.ErgoAlgos
-import org.scalacheck.{Gen, Arbitrary}
+import org.scalacheck.{Arbitrary, Gen}
 import scalan.{ExactOrdering, ExactNumeric, RType}
 import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.authds.{ADDigest, ADKey, ADValue}
@@ -32,6 +32,9 @@ import sigmastate.helpers.TestingHelpers._
 import scala.util.{Success, Failure, Try}
 import OrderingOps._
 import org.ergoplatform.ErgoBox.AdditionalRegisters
+import org.scalacheck.Arbitrary.{arbTuple2, arbAnyVal, arbShort, arbUnit, arbInt, arbLong, arbBool, arbByte}
+import org.scalacheck.Gen.frequency
+import scalan.RType.{AnyType, LongType, IntType, UnitType, OptionType, BooleanType, PairType, ByteType, ShortType}
 import scorex.util.ModifierId
 import sigmastate.basics.ProveDHTuple
 
@@ -193,29 +196,6 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
       Helpers.decodeBytes("7f0180")
     )
     val h2: Header = h1.asInstanceOf[CHeader].copy(height = 2)
-
-    abstract class Sampled[A] {
-      def samples: Seq[A]
-    }
-
-    val arbitraryCache = new mutable.HashMap[RType[_], Arbitrary[_]]()
-
-    def lookupArbitrary[A](t: RType[A]): Arbitrary[A] = arbitraryCache(t).asInstanceOf[Arbitrary[A]]
-
-    def registerArbitrary[A](implicit t: RType[A], a: Arbitrary[A]) = {
-      arbitraryCache.put(t, a)
-    }
-
-    val sampledCache = new mutable.HashMap[RType[_], Sampled[_]]
-      .withDefault { case t: RType[a] =>
-        implicit val arb = lookupArbitrary(t)
-        implicit val tagA = t.classTag
-        new Sampled[a] {
-          val samples = genSamples[a](DefaultMinSuccessful, None)
-        }
-      }
-
-    implicit def lookupSampled[A](implicit t: RType[A]): Sampled[A] = sampledCache(t).asInstanceOf[Sampled[A]]
   }
   import TestData._
 
@@ -733,7 +713,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
                opName: String,
                op: (SValue, SValue) => SValue)
               (expectedFunc: (A, A) => Boolean, generateCases: Boolean = true)
-              (implicit tA: RType[A]) = {
+              (implicit tA: RType[A], sampled: Sampled[(A, A)]) = {
     val nameA = RType[A].name
     val tpeA = Evaluation.rtypeToSType(tA)
     verifyCases(cases,
@@ -751,7 +731,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
           )
         }
       ),
-      preGeneratedSamples = if (generateCases) None else Some(mutable.WrappedArray.empty))
+      preGeneratedSamples = Some(sampled.samples))
   }
 
   property("Byte LT, GT, NEQ") {
@@ -2091,7 +2071,9 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
     * @param cost the expected cost of `verify` (the same for all cases)
     */
   def verifyNeq[A: Ordering: Arbitrary: RType]
-      (x: A, y: A, cost: Int)(copy: A => A, generateCases: Boolean = true) = {
+      (x: A, y: A, cost: Int)
+      (copy: A => A, generateCases: Boolean = true)
+      (implicit sampled: Sampled[(A, A)]) = {
     val copied_x = copy(x)
     verifyOp(Seq(
         (x, x) -> Expected(Success(false), cost),
@@ -2185,10 +2167,21 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
   }
 
   property("NEQ of nested collections and tuples") {
+    prepareSamples[Coll[Int]]
+    prepareSamples[Coll[Coll[Int]]]
+    prepareSamples[Coll[Coll[Int]]]
+
     verifyNeq(Coll[Coll[Int]](), Coll(Coll[Int]()), 36337)(cloneColl(_))
     verifyNeq(Coll(Coll[Int]()), Coll(Coll[Int](1)), 36337)(cloneColl(_))
     verifyNeq(Coll(Coll[Int](1)), Coll(Coll[Int](2)), 36337)(cloneColl(_))
     verifyNeq(Coll(Coll[Int](1)), Coll(Coll[Int](1, 2)), 36337)(cloneColl(_))
+
+    prepareSamples[BigInt]
+    prepareSamples[GroupElement]
+    prepareSamples[PreHeader]
+    prepareSamples[AvlTree]
+    prepareSamples[Coll[(Int, BigInt)]]
+    prepareSamples[Coll[Coll[(Int, BigInt)]]]
 
     verifyNeq(Coll(Coll((1, 10.toBigInt))), Coll(Coll((1, 11.toBigInt))), 36337)(cloneColl(_))
     verifyNeq(Coll(Coll(Coll((1, 10.toBigInt)))), Coll(Coll(Coll((1, 11.toBigInt)))), 36337)(cloneColl(_))
