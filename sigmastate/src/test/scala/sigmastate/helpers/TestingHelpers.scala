@@ -1,7 +1,7 @@
 package sigmastate.helpers
 
 import scorex.crypto.hash.Digest32
-import special.collection.Coll
+import special.collection.{Coll, CollOverArray, PairOfCols}
 import scorex.util.ModifierId
 import org.ergoplatform.{ErgoLikeTransactionTemplate, ErgoLikeTransaction, ErgoLikeContext, UnsignedInput, ErgoBox, DataInput, ErgoBoxCandidate}
 import sigmastate.Values.ErgoTree
@@ -11,7 +11,7 @@ import sigmastate.AvlTreeData
 import sigmastate.eval.CostingSigmaDslBuilder
 import sigmastate.eval._
 import sigmastate.interpreter.ContextExtension
-import special.sigma.{Header, PreHeader}
+import special.sigma.{PreHeader, Header}
 
 import scala.collection.mutable.WrappedArray
 
@@ -39,10 +39,21 @@ object TestingHelpers {
                 additionalRegisters: AdditionalRegisters = Map.empty)
   = testBox(value, proposition, 0, additionalTokens, additionalRegisters)
 
+  /** Creates a new test box with the given parameters. */
   def createBox(value: Long,
                 proposition: ErgoTree,
                 creationHeight: Int)
   = testBox(value, proposition, creationHeight, WrappedArray.empty, Map.empty, ErgoBox.allZerosModifierId)
+
+  /** Creates a clone instance of the given collection by recursively cloning all the underlying
+    * sub-collections.
+    */
+  def cloneColl[A](c: Coll[A]): Coll[A] = (c match {
+    case c: CollOverArray[_] =>
+      new CollOverArray(c.toArray.clone())(c.tItem)
+    case ps: PairOfCols[_,_] =>
+      new PairOfCols(cloneColl(ps.ls), cloneColl(ps.rs))
+  }).asInstanceOf[Coll[A]]
 
   /** Copies the given box allowing also to update fields. */
   def copyBox(box: ErgoBox)(
