@@ -245,7 +245,8 @@ case class SigmaAnd(items: Seq[SigmaPropValue]) extends SigmaTransformer[SigmaPr
     cfor(0)(_ < len, _ + 1) { i =>
       is(i) = items(i).evalTo[SigmaProp](env)
     }
-    E.addPerItemCostOf(this, len - 1)
+    addCost(CostOf.SigmaAnd)
+    addSeqCost(CostOf.SigmaAnd_PerItem, len)
     SigmaDsl.allZK(Colls.fromArray(is))
   }
 }
@@ -269,7 +270,8 @@ case class SigmaOr(items: Seq[SigmaPropValue]) extends SigmaTransformer[SigmaPro
     cfor(0)(_ < len, _ + 1) { i =>
       is(i) = items(i).evalTo[SigmaProp](env)
     }
-    E.addPerItemCostOf(this, len - 1)
+    addCost(CostOf.SigmaOr)
+    addSeqCost(CostOf.SigmaOr_PerItem, len)
     SigmaDsl.anyZK(Colls.fromArray(is))
   }
 }

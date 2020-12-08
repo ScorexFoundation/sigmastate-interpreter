@@ -441,6 +441,22 @@ object CostTable {
       * @see XOR */
     def XOR_PerItem = 2
 
+    /** Cost of: constructing new CSigmaProp and allocation collection
+      * @see SigmaAnd_PerItem */
+    def SigmaAnd = 2 // cf. logicCost
+
+    /** Cost of: one iteration over collection of items
+      * @see SigmaAnd */
+    def SigmaAnd_PerItem = 1 // cf. logicCost
+
+    /** Cost of: constructing new CSigmaProp and allocation collection
+      * @see SigmaOr_PerItem */
+    def SigmaOr = 2 // cf. logicCost
+
+    /** Cost of: one iteration over collection of items
+      * @see SigmaOr */
+    def SigmaOr_PerItem = 1 // cf. logicCost
+
     /** Cost of: constructing new CSigmaProp value
       * @see AtLeast_PerItem */
     def AtLeast = 2 // cf. logicCost
