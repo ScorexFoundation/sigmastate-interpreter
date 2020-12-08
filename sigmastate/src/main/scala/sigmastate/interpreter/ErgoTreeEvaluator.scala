@@ -122,13 +122,6 @@ class ErgoTreeEvaluator(
     this
   }
 
-  def addCostOf(node: SValue) = {
-    val cost = Value.costOf(node)
-    coster.add(cost)
-    if (settings.isLogEnabled)
-      println(s"CostOf(${node.opName}) -> $cost")
-  }
-
   def addPerItemCostOf(node: SValue, arrLen: Int) = {
     val cost = Value.perItemCostOf(node, arrLen)
     coster.add(cost)

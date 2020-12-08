@@ -373,7 +373,7 @@ object Values {
     override def companion: ValueCompanion = ConstantPlaceholder
     override protected def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
       val c = E.constants(id)
-      E.addCostOf(c)
+      addCost(CostOf.ConstantPlaceholder)
       c.value
     }
   }
@@ -862,8 +862,13 @@ object Values {
     }
 
     protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
-      val is = items.map(_.evalTo[V#WrappedType](env)).toArray(tElement.classTag)
-      E.addCostOf(this)
+      val len = items.length
+      addCost(CostOf.ConcreteCollection)
+      addSeqCost(CostOf.ConcreteCollection_PerItem, len)
+      val is = Array.ofDim[V#WrappedType](len)(tElement.classTag)
+      cfor(0)(_ < len, _ + 1) { i =>
+        is(i) = items(i).evalTo[V#WrappedType](env)
+      }
       Colls.fromArray(is)
     }
   }

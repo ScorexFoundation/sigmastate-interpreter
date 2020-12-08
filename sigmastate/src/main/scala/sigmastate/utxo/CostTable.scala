@@ -314,7 +314,9 @@ object CostTable {
       case _ => Interpreter.error(s"Cost is not defined: unexpected constant type $constType")
     }
 
-    //
+    /** Cost of: accessing Constant in array by index. */
+    def ConstantPlaceholder = 1
+
     /** Cost of: 1) switch on the number of args 2) allocating a new Scala closure
       * Old cost: ("Lambda", "() => (D1) => R", lambdaCost),*/
     def FuncValue = 2 // cf. lambdaCost
@@ -332,7 +334,16 @@ object CostTable {
     /** Cost of: 1) Lookup in immutable HashMap by valId: Int 2) alloc of Some(v) */
     def ValUse = 5
 
-//    ("ConcreteCollection", "() => Coll[IV]", collToColl),
+
+    /** Cost of: allocating new collection
+      * @see ConcreteCollection_PerItem */
+    def ConcreteCollection = 1 // cf. collToColl
+
+    /** Cost of: one iteration of the loop over items
+      * @see ConcreteCollection */
+    def ConcreteCollection_PerItem = 1 // cf. logicCost
+
+    //    ("ConcreteCollection", "() => Coll[IV]", collToColl),
 //    ("GroupGenerator$", "() => GroupElement", constCost),
 //    ("Self$", "Context => Box", constCost),
 //    ("AccessAvlTree", "Context => AvlTree", constCost),
