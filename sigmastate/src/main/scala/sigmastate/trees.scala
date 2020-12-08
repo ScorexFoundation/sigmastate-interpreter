@@ -610,7 +610,7 @@ case class CalcBlake2b256(override val input: Value[SByteArray]) extends CalcHas
   override val hashFn: CryptographicHash32 = Blake2b256
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val inputV = input.evalTo[Coll[Byte]](env)
-    E.addPerKbCostOf(this, inputV.length)
+    addPerKbCost(CostOf.CalcBlake2b256_PerKb, inputV.length)
     SigmaDsl.blake2b256(inputV)
   }
 }
@@ -627,7 +627,7 @@ case class CalcSha256(override val input: Value[SByteArray]) extends CalcHash {
   override val hashFn: CryptographicHash32 = Sha256
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val inputV = input.evalTo[Coll[Byte]](env)
-    E.addPerKbCostOf(this, inputV.length)
+    addPerKbCost(CostOf.CalcSha256_PerKb, inputV.length)
     SigmaDsl.sha256(inputV)
   }
 }

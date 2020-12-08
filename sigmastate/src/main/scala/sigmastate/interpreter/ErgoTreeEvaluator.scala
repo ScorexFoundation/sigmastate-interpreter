@@ -4,7 +4,7 @@ import org.ergoplatform.ErgoLikeContext
 import sigmastate.SType
 import sigmastate.Values._
 import sigmastate.eval.Profiler
-import sigmastate.interpreter.ErgoTreeEvaluator.{CostItem, DataEnv, SimpleCostItem, SeqCostItem}
+import sigmastate.interpreter.ErgoTreeEvaluator.{DataEnv, SeqCostItem, PerKbCostItem, CostItem, SimpleCostItem}
 import sigmastate.interpreter.Interpreter.ReductionResult
 import sigmastate.lang.exceptions.CostLimitException
 import special.sigma.Context
@@ -122,11 +122,20 @@ class ErgoTreeEvaluator(
     this
   }
 
-  def addPerKbCostOf(node: SValue, dataSize: Int) = {
-    val cost = Value.perKbCostOf(node, dataSize)
+  /** Add the size-based cost of an operation to the accumulator and associate it with this operation.
+    * The size in bytes of the data is known in advance (like in CalcSha256 operation)
+    * @param perKbCost cost per kilobyte of data
+    * @param dataSize size of data in bytes known in advance (before operation execution)
+    * @param opName the operation name to associate the cost with (when costTracingEnabled)
+    */
+  @inline final def addPerKbCost(perKbCost: Int, dataSize: Int, opName: String): this.type = {
+    val numKbs = (dataSize - 1) / 1024 + 1 // number of kilobytes to cover dataSize
+    val cost = Math.multiplyExact(perKbCost, numKbs)
     coster.add(cost)
-    if (settings.isLogEnabled)
-      println(s"PerKbCostOf(${node.opName}) -> $cost")
+    if (settings.costTracingEnabled) {
+      costTrace += PerKbCostItem(opName, perKbCost, numKbs)  // TODO v5.0: more accurate tracing
+    }
+    this
   }
 }
 
@@ -175,6 +184,17 @@ object ErgoTreeEvaluator {
     * @param nItems      number of items in the collection
     */
   case class SeqCostItem(opName: String, perItemCost: Int, nItems: Int)
+    extends CostItem
+
+  /** An item in the cost accumulation trace of a [[ErgoTreeEvaluator]].
+    * Represents cost of data size dependent operation (like CalcSha256).
+    * Used for debugging of costing.
+    *
+    * @param opName     name of the ErgoTree operation
+    * @param perKbCost  cost added to accumulator for each Kb of data
+    * @param nKilobytes size of data in kilobytes
+    */
+  case class PerKbCostItem(opName: String, perKbCost: Int, nKilobytes: Int)
     extends CostItem
 
   /** Evaluate the given [[ErgoTree]] in the given Ergo context using the given settings.

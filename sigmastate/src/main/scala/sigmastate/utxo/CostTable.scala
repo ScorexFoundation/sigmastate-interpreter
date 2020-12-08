@@ -465,8 +465,12 @@ object CostTable {
       * @see AtLeast */
     def AtLeast_PerItem = 1 // cf. logicCost
 
-//    ("CalcBlake2b256_per_kb", "(Coll[Byte]) => Coll[Byte]", hashPerKb),
-//    ("CalcSha256_per_kb", "(Coll[Byte]) => Coll[Byte]", hashPerKb),
+    /** Cost of: of hashing 1 KiB of data */
+    def CalcBlake2b256_PerKb = 100 // cf. hashPerKb
+
+    /** Cost of: of hashing 1 KiB of data */
+    def CalcSha256_PerKb = 100 // cf. hashPerKb
+
 //    ("Xor_per_kb", "(Coll[Byte],Coll[Byte]) => Coll[Byte]", hashPerKb / 2),
 //    ("XorOf_per_item", "(Coll[Boolean]) => Boolean", logicCost),
 //    ("LogicalNot", "(Boolean) => Boolean", logicCost),

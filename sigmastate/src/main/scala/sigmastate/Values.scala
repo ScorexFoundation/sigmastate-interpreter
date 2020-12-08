@@ -138,6 +138,15 @@ object Values {
     @inline final def addSeqCost(perItemCost: Int, nItems: Int)(implicit E: ErgoTreeEvaluator): Unit = {
       E.addCost(perItemCost, nItems, this.opName)
     }
+
+    /** Add the size-based cost of an operation to the accumulator and associate it with this operation.
+      * The size in bytes of the data is known in advance (like in CalcSha256 operation)
+      * @param perKbCost cost per kilobyte of data
+      * @param dataSize size of data in bytes known in advance (before operation execution)
+      */
+    @inline final def addPerKbCost(perKbCost: Int, dataSize: Int)(implicit E: ErgoTreeEvaluator): Unit = {
+      E.addPerKbCost(perKbCost, dataSize, this.opName)
+    }
   }
 
   object Value {
