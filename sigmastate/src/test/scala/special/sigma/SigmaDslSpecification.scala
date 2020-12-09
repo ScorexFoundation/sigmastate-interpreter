@@ -5525,6 +5525,39 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
         )))
   }
 
+  property("Coll map with nested if") {
+    val n = ExactNumeric.IntIsExactNumeric
+    verifyCases(
+      {
+        def success[T](v: T, c: Int) = Expected(Success(v), c)
+        Seq(
+          (Coll[Int](), success(Coll[Int](), 39571)),
+          (Coll[Int](1), success(Coll[Int](2), 39671)),
+          (Coll[Int](-1), success(Coll[Int](1), 39671)),
+          (Coll[Int](1, -2), success(Coll[Int](2, 2), 39771)),
+          (Coll[Int](1, 2, Int.MaxValue), Expected(new ArithmeticException("integer overflow"))),
+          (Coll[Int](1, 2, Int.MinValue), Expected(new ArithmeticException("integer overflow")))
+        )
+      },
+      existingFeature(
+        (x: Coll[Int]) => x.map({ (v: Int) => if (v > 0) n.plus(v, 1) else n.times(-1, v) }),
+        "{ (x: Coll[Int]) => x.map({ (v: Int) => if (v > 0) v + 1 else -1 * v }) }",
+        FuncValue(
+          Array((1, SCollectionType(SInt))),
+          MapCollection(
+            ValUse(1, SCollectionType(SInt)),
+            FuncValue(
+              Array((3, SInt)),
+              If(
+                GT(ValUse(3, SInt), IntConstant(0)),
+                ArithOp(ValUse(3, SInt), IntConstant(1), OpCode @@ (-102.toByte)),
+                ArithOp(IntConstant(-1), ValUse(3, SInt), OpCode @@ (-100.toByte))
+              )
+            )
+          )
+        ) ))
+  }
+
   property("Coll slice method equivalence") {
     val samples = genSamples(collWithRangeGen, DefaultMinSuccessful)
     verifyCases(
