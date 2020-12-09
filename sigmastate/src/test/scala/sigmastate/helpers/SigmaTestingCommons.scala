@@ -167,8 +167,19 @@ trait SigmaTestingCommons extends PropSpec
       val tree = IR.buildTree(calcF)
 
       // sanity check that buildTree is reverse to buildGraph (see doCostingEx)
-      if (tA != special.sigma.ContextRType)
-        tree shouldBe compiledTree
+      if (tA != special.sigma.ContextRType) {
+        if (tree != compiledTree) {
+          println(s"Result of buildTree:")
+          val prettyTree = SigmaPPrint(tree, height = 150)
+          println(prettyTree)
+
+          println(s"compiledTree:")
+          val prettyCompiledTree = SigmaPPrint(compiledTree, height = 150)
+          println(prettyCompiledTree)
+
+          assert(prettyTree.plainText == prettyCompiledTree.plainText, "Failed sanity check that buildTree is reverse to buildGraph")
+        }
+      }
 
       val lA = Liftables.asLiftable[SContext, IR.Context](calcF.elem.eDom.liftable)
       val lB = Liftables.asLiftable[Any, Any](calcF.elem.eRange.liftable)

@@ -5336,6 +5336,61 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
         )))
   }
 
+  property("Coll fold with nested If") {
+    val n = ExactNumeric.IntIsExactNumeric
+    verifyCases(
+      // (coll, initState)
+      {
+        def success[T](v: T, c: Int) = Expected(Success(v), c)
+        Seq(
+          ((Coll[Byte](),  0), success(0, 42037)),
+          ((Coll[Byte](),  Int.MaxValue), success(Int.MaxValue, 42037)),
+          ((Coll[Byte](1),  Int.MaxValue - 1), success(Int.MaxValue, 42197)),
+          ((Coll[Byte](1),  Int.MaxValue), Expected(new ArithmeticException("integer overflow"))),
+          ((Coll[Byte](-1),  Int.MinValue + 1), success(Int.MinValue + 1, 42197)),
+          ((Coll[Byte](-1),  Int.MinValue), success(Int.MinValue, 42197)),
+          ((Coll[Byte](1, 2), 0), success(3, 42357)),
+          ((Coll[Byte](1, -1), 0), success(1, 42357)),
+          ((Coll[Byte](1, -1, 1), 0), success(2, 42517))
+        )
+      },
+      existingFeature(
+        { (x: (Coll[Byte], Int)) => x._1.foldLeft(x._2, { i: (Int, Byte) => if (i._2 > 0) n.plus(i._1, i._2) else i._1 }) },
+        "{ (x: (Coll[Byte], Int)) => x._1.fold(x._2, { (i1: Int, i2: Byte) => if (i2 > 0) i1 + i2 else i1 }) }",
+        FuncValue(
+          Array((1, SPair(SByteArray, SInt))),
+          Fold(
+            SelectField.typed[Value[SCollection[SByte.type]]](ValUse(1, SPair(SByteArray, SInt)), 1.toByte),
+            SelectField.typed[Value[SInt.type]](ValUse(1, SPair(SByteArray, SInt)), 2.toByte),
+            FuncValue(
+              Array((3, SPair(SInt, SByte))),
+              BlockValue(
+                Array(
+                  ValDef(
+                    5,
+                    List(),
+                    Upcast(
+                      SelectField.typed[Value[SByte.type]](ValUse(3, SPair(SInt, SByte)), 2.toByte),
+                      SInt
+                    )
+                  ),
+                  ValDef(
+                    6,
+                    List(),
+                    SelectField.typed[Value[SInt.type]](ValUse(3, SPair(SInt, SByte)), 1.toByte)
+                  )
+                ),
+                If(
+                  GT(ValUse(5, SInt), IntConstant(0)),
+                  ArithOp(ValUse(6, SInt), ValUse(5, SInt), OpCode @@ (-102.toByte)),
+                  ValUse(6, SInt)
+                )
+              )
+            )
+          )
+        ) ))
+  }
+
   property("Coll indexOf method equivalence") {
     verifyCases(
       // (coll, (elem: Byte, from: Int))
