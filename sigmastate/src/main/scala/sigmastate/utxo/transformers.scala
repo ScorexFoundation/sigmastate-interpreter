@@ -46,7 +46,7 @@ case class MapCollection[IV <: SType, OV <: SType](
     val inputV = input.evalTo[Coll[Any]](env)
     val mapperV = mapper.evalTo[Any => Any](env)
     val tResItem = Evaluation.stypeToRType(mapper.tpe.tRange).asInstanceOf[RType[Any]]
-    // TODO JITC
+    addCost(CostOf.MapCollection)
     inputV.map(mapperV)(tResItem)
   }
 }

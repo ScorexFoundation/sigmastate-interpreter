@@ -1194,7 +1194,7 @@ case class If[T <: SType](condition: Value[SBoolean.type], trueBranch: Value[T],
   override lazy val third = falseBranch
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val c = condition.evalTo[Boolean](env)
-    // TODO JITC
+    addCost(CostOf.If)
     if (c) trueBranch.evalTo[T#WrappedType](env)
     else   falseBranch.evalTo[T#WrappedType](env)
   }

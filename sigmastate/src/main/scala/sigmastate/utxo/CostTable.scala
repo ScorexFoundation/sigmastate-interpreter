@@ -309,8 +309,8 @@ object CostTable {
   object CostOf {
     def Constant(constType: SType): Int = constType match {
       case SUnit | SBoolean | SByte | SShort | SInt | SLong | SBigInt | SString |
-           SGroupElement | SSigmaProp | SBox | SAvlTree => constCost
-      case _: SCollectionType[_] => constCost
+           SGroupElement | SSigmaProp | SBox | SAvlTree => 5 // cf. constCost
+      case _: SCollectionType[_] => 5 // cf. constCost
       case _ => Interpreter.error(s"Cost is not defined: unexpected constant type $constType")
     }
 
@@ -384,10 +384,13 @@ object CostTable {
       * Old cost: ("SizeOf", "(Coll[IV]) => Int", collLength) */
     def SizeOf = 4  // cf. collLength
 
+    /** Cost of: 1) obtain result RType 2) invoke map method 3) allocation of resulting
+     * collection */
+    def MapCollection = 10 // cf. collToColl
+
 //    ("ByIndex", "(Coll[IV],Int) => IV", collByIndex),
 //    ("SCollection$.exists", "(Coll[IV],(IV) => Boolean) => Boolean", collToColl),
 //    ("SCollection$.forall", "(Coll[IV],(IV) => Boolean) => Boolean", collToColl),
-//    ("SCollection$.map", "(Coll[IV],(IV) => OV) => Coll[OV]", collToColl),
 //    ("SCollection$.flatMap", "(Coll[IV],(IV) => Coll[OV]) => Coll[OV]", collToColl),
 //    ("SCollection$.indexOf_per_kb", "(Coll[IV],IV,Int) => Int", collToColl),
 //    ("SCollection$.zip", "(Coll[IV],Coll[OV]) => Coll[(IV,OV)]", collToColl),
@@ -396,8 +399,11 @@ object CostTable {
 //    ("SCollection$.updateMany_per_kb", "(Coll[IV],Coll[Int],Coll[IV]) => Coll[IV]", collToColl),
 //    ("SCollection$.filter", "(Coll[IV],(IV) => Boolean) => Coll[IV]", collToColl),
 //
-//    ("If", "(Boolean, T, T) => T", logicCost),
-//
+    /** Cost of: conditional switching to the right branch (excluding the cost both
+     * condition itself and the branches) */
+    def If = 5 // cf. logicCost
+
+    //
 //    ("SigmaPropIsProven", "SigmaProp => Boolean", logicCost),
 //    ("BoolToSigmaProp", "Boolean => SigmaProp", logicCost),
 //    ("SigmaPropBytes", "SigmaProp => Coll[Byte]", logicCost),
