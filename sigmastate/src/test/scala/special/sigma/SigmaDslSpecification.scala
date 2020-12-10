@@ -5613,6 +5613,58 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
         ) ))
   }
 
+  property("Coll filter") {
+    val o = ExactOrdering.IntIsExactOrdering
+    verifyCases(
+    {
+      def success[T](v: T, c: Int) = Expected(Success(v), c)
+      Seq(
+        (Coll[Int](), success(Coll[Int](), 37223)),
+        (Coll[Int](1), success(Coll[Int](1), 37273)),
+        (Coll[Int](1, 2), success(Coll[Int](1, 2), 37323)),
+        (Coll[Int](1, 2, -1), success(Coll[Int](1, 2), 37373)),
+        (Coll[Int](1, -1, 2, -2), success(Coll[Int](1, 2), 37423))
+      )
+    },
+    existingFeature((x: Coll[Int]) => x.filter({ (v: Int) => o.gt(v, 0) }),
+      "{ (x: Coll[Int]) => x.filter({ (v: Int) => v > 0 }) }",
+      FuncValue(
+        Array((1, SCollectionType(SInt))),
+        Filter(
+          ValUse(1, SCollectionType(SInt)),
+          FuncValue(Array((3, SInt)), GT(ValUse(3, SInt), IntConstant(0)))
+        )
+      )))
+  }
+
+  property("Coll filter with nested If") {
+    val o = ExactOrdering.IntIsExactOrdering
+    verifyCases(
+    {
+      def success[T](v: T, c: Int) = Expected(Success(v), c)
+      Seq(
+        (Coll[Int](), success(Coll[Int](), 37797)),
+        (Coll[Int](1), success(Coll[Int](1), 37887)),
+        (Coll[Int](10), success(Coll[Int](), 37887)),
+        (Coll[Int](1, 2), success(Coll[Int](1, 2), 37977)),
+        (Coll[Int](1, 2, 0), success(Coll[Int](1, 2), 38067)),
+        (Coll[Int](1, -1, 2, -2, 11), success(Coll[Int](1, 2), 38247))
+      )
+    },
+    existingFeature((x: Coll[Int]) => x.filter({ (v: Int) => if (o.gt(v, 0)) v < 10 else false }),
+      "{ (x: Coll[Int]) => x.filter({ (v: Int) => if (v > 0) v < 10 else false }) }",
+      FuncValue(
+        Array((1, SCollectionType(SInt))),
+        Filter(
+          ValUse(1, SCollectionType(SInt)),
+          FuncValue(
+            Array((3, SInt)),
+            If(GT(ValUse(3, SInt), IntConstant(0)), LT(ValUse(3, SInt), IntConstant(10)), FalseLeaf)
+          )
+        )
+      )))
+  }
+
   property("Coll slice method equivalence") {
     val samples = genSamples(collWithRangeGen, DefaultMinSuccessful)
     verifyCases(
