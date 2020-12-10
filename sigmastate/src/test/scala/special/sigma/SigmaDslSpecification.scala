@@ -5031,7 +5031,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
         (Coll[BigInt](BigIntZero), success(false, 39045)),
         (Coll[BigInt](BigIntOne), success(true, 39045)),
         (Coll[BigInt](BigIntZero, BigIntOne), success(true, 39135)),
-        (Coll[BigInt](BigIntZero, BigInt10), success(false, 39135)),
+        (Coll[BigInt](BigIntZero, BigInt10), success(false, 39135))
       )
     },
     existingFeature(
@@ -5066,7 +5066,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
         (Coll[BigInt](BigIntMinusOne), success(false, 38502)),
         (Coll[BigInt](BigIntOne), success(true, 38502)),
         (Coll[BigInt](BigIntZero, BigIntOne), success(true, 38592)),
-        (Coll[BigInt](BigIntZero, BigInt11), success(false, 38592)),
+        (Coll[BigInt](BigIntZero, BigInt11), success(false, 38592))
       )
     },
     existingFeature(
