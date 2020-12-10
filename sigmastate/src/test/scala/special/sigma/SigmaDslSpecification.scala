@@ -5814,6 +5814,71 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
         )))
   }
 
+  property("Option filter,map with nested If") {
+    def success[T](v: T, c: Int) = Expected(Success(v), c)
+
+    val o = ExactOrdering.LongIsExactOrdering
+    verifyCases(
+      Seq(
+        (None -> success(None, 38736)),
+        (Some(0L) -> success(None, 38736)),
+        (Some(10L) -> success(Some(10L), 38736)),
+        (Some(11L) -> success(None, 38736))),
+      existingFeature(
+        { (x: Option[Long]) => x.filter({ (v: Long) => if (o.gt(v, 0L)) v <= 10 else false } ) },
+        "{ (x: Option[Long]) => x.filter({ (v: Long) => if (v > 0) v <= 10 else false }) }",
+        FuncValue(
+          Array((1, SOption(SLong))),
+          MethodCall.typed[Value[SOption[SLong.type]]](
+            ValUse(1, SOption(SLong)),
+            SOption.getMethodByName("filter").withConcreteTypes(Map(STypeVar("T") -> SLong)),
+            Vector(
+              FuncValue(
+                Array((3, SLong)),
+                If(
+                  GT(ValUse(3, SLong), LongConstant(0L)),
+                  LE(ValUse(3, SLong), LongConstant(10L)),
+                  FalseLeaf
+                )
+              )
+            ),
+            Map()
+          )
+        )))
+
+    val n = ExactNumeric.LongIsExactNumeric
+    verifyCases(
+      Seq(
+        (None -> success(None, 39077)),
+        (Some(0L) -> success(Some(0L), 39077)),
+        (Some(10L) -> success(Some(10L), 39077)),
+        (Some(-1L) -> success(Some(-2L), 39077)),
+        (Some(Long.MinValue) -> Expected(new ArithmeticException("long overflow")))),
+      existingFeature(
+        { (x: Option[Long]) => x.map( (v: Long) => if (o.lt(v, 0)) n.minus(v, 1) else v ) },
+        "{ (x: Option[Long]) => x.map({ (v: Long) => if (v < 0) v - 1 else v }) }",
+        FuncValue(
+          Array((1, SOption(SLong))),
+          MethodCall.typed[Value[SOption[SLong.type]]](
+            ValUse(1, SOption(SLong)),
+            SOption.getMethodByName("map").withConcreteTypes(
+              Map(STypeVar("T") -> SLong, STypeVar("R") -> SLong)
+            ),
+            Vector(
+              FuncValue(
+                Array((3, SLong)),
+                If(
+                  LT(ValUse(3, SLong), LongConstant(0L)),
+                  ArithOp(ValUse(3, SLong), LongConstant(1L), OpCode @@ (-103.toByte)),
+                  ValUse(3, SLong)
+                )
+              )
+            ),
+            Map()
+          )
+        ) ))
+  }
+
   // TODO HF (3h): implement Option.fold
   property("Option new methods") {
     val isEmpty = newFeature({ (x: Option[Long]) => x.isEmpty },
