@@ -5056,6 +5056,41 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
       )))
   }
 
+  property("Coll forall with nested If") {
+    val o = NumericOps.BigIntIsExactOrdering
+    verifyCases(
+    {
+      def success[T](v: T, c: Int) = Expected(Success(v), c)
+      Seq(
+        (Coll[BigInt](), success(true, 38412)),
+        (Coll[BigInt](BigIntMinusOne), success(false, 38502)),
+        (Coll[BigInt](BigIntOne), success(true, 38502)),
+        (Coll[BigInt](BigIntZero, BigIntOne), success(true, 38592)),
+        (Coll[BigInt](BigIntZero, BigInt11), success(false, 38592)),
+      )
+    },
+    existingFeature(
+      { (x: Coll[BigInt]) => x.forall({ (b: BigInt) =>
+          if (o.gteq(b, BigIntZero)) o.lteq(b, BigInt10) else false
+        })
+      },
+      "{ (x: Coll[BigInt]) => x.forall({(b: BigInt) => if (b >= 0) b <= 10 else false }) }",
+      FuncValue(
+        Array((1, SCollectionType(SBigInt))),
+        ForAll(
+          ValUse(1, SCollectionType(SBigInt)),
+          FuncValue(
+            Array((3, SBigInt)),
+            If(
+              GE(ValUse(3, SBigInt), BigIntConstant(CBigInt(new BigInteger("0", 16)))),
+              LE(ValUse(3, SBigInt), BigIntConstant(CBigInt(new BigInteger("a", 16)))),
+              FalseLeaf
+            )
+          )
+        )
+      )))
+  }
+
   val collWithRangeGen = for {
     arr <- collGen[Int]
     l <- Gen.choose(0, arr.length - 1)
