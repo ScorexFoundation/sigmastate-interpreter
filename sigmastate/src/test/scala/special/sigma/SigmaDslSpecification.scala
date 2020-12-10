@@ -50,6 +50,12 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
   implicit def IR = createIR()
 
   object TestData {
+    val BigIntZero: BigInt = CBigInt(new BigInteger("0", 16))
+    val BigIntOne: BigInt = CBigInt(new BigInteger("1", 16))
+    val BigIntMinusOne: BigInt = CBigInt(new BigInteger("-1", 16))
+    val BigInt10: BigInt = CBigInt(new BigInteger("a", 16))
+    val BigInt11: BigInt = CBigInt(new BigInteger("b", 16))
+
     val ge1str = "03358d53f01276211f92d0aefbd278805121d4ff6eb534b777af1ee8abae5b2056"
     val ge2str = "02dba7b94b111f3894e2f9120b577da595ec7d58d488485adf73bf4e153af63575"
     val ge3str = "0290449814f5671172dd696a61b8aa49aaa4c87013f56165e27d49944e98bc414d"
@@ -5013,6 +5019,41 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
           )
         )),
       preGeneratedSamples = Some(samples))
+  }
+
+  property("Coll exists with nested If") {
+    val o = NumericOps.BigIntIsExactOrdering
+    verifyCases(
+    {
+      def success[T](v: T, c: Int) = Expected(Success(v), c)
+      Seq(
+        (Coll[BigInt](), success(false, 38955)),
+        (Coll[BigInt](BigIntZero), success(false, 39045)),
+        (Coll[BigInt](BigIntOne), success(true, 39045)),
+        (Coll[BigInt](BigIntZero, BigIntOne), success(true, 39135)),
+        (Coll[BigInt](BigIntZero, BigInt10), success(false, 39135)),
+      )
+    },
+    existingFeature(
+      { (x: Coll[BigInt]) => x.exists({ (b: BigInt) =>
+          if (o.gt(b, BigIntZero)) o.lt(b, BigInt10) else false
+        })
+      },
+      "{ (x: Coll[BigInt]) => x.exists({(b: BigInt) => if (b > 0) b < 10 else false }) }",
+      FuncValue(
+        Array((1, SCollectionType(SBigInt))),
+        Exists(
+          ValUse(1, SCollectionType(SBigInt)),
+          FuncValue(
+            Array((3, SBigInt)),
+            If(
+              GT(ValUse(3, SBigInt), BigIntConstant(CBigInt(new BigInteger("0", 16)))),
+              LT(ValUse(3, SBigInt), BigIntConstant(CBigInt(new BigInteger("a", 16)))),
+              FalseLeaf
+            )
+          )
+        )
+      )))
   }
 
   val collWithRangeGen = for {
