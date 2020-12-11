@@ -422,7 +422,16 @@ trait TreeBuilding extends RuntimeCosting { IR: IRContext =>
     }
     val Seq(root) = subG.roots
     val rhs = buildValue(ctx, mainG, curEnv, root, curId, constantsProcessing)
-    val res = if (valdefs.nonEmpty) BlockValue(valdefs.toArray[BlockItem], rhs) else rhs
+    val res = if (valdefs.nonEmpty) {
+      (valdefs.toArray[BlockItem], rhs) match {
+        // simple optimization to avoid producing block sub-expressions like:
+        // `{ val idNew = id; idNew }` which this rules rewrites to just `id`
+        case (Array(ValDef(idNew, _, source @ ValUse(id, tpe))), ValUse(idUse, tpeUse))
+          if idUse == idNew && tpeUse == tpe => source
+        case (items, _) =>
+          BlockValue(items, rhs)
+      }
+    } else rhs
     res
   }
 

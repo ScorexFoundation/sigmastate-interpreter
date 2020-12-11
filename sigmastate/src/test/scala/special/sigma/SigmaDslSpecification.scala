@@ -57,6 +57,12 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
   implicit def IR = createIR()
 
   object TestData {
+    val BigIntZero: BigInt = CBigInt(new BigInteger("0", 16))
+    val BigIntOne: BigInt = CBigInt(new BigInteger("1", 16))
+    val BigIntMinusOne: BigInt = CBigInt(new BigInteger("-1", 16))
+    val BigInt10: BigInt = CBigInt(new BigInteger("a", 16))
+    val BigInt11: BigInt = CBigInt(new BigInteger("b", 16))
+
     val ge1str = "03358d53f01276211f92d0aefbd278805121d4ff6eb534b777af1ee8abae5b2056"
     val ge2str = "02dba7b94b111f3894e2f9120b577da595ec7d58d488485adf73bf4e153af63575"
     val ge3str = "0290449814f5671172dd696a61b8aa49aaa4c87013f56165e27d49944e98bc414d"
@@ -5023,6 +5029,76 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
       preGeneratedSamples = Some(samples))
   }
 
+  property("Coll exists with nested If") {
+    val o = NumericOps.BigIntIsExactOrdering
+    verifyCases(
+    {
+      def success[T](v: T, c: Int) = Expected(Success(v), c)
+      Seq(
+        (Coll[BigInt](), success(false, 38955)),
+        (Coll[BigInt](BigIntZero), success(false, 39045)),
+        (Coll[BigInt](BigIntOne), success(true, 39045)),
+        (Coll[BigInt](BigIntZero, BigIntOne), success(true, 39135)),
+        (Coll[BigInt](BigIntZero, BigInt10), success(false, 39135))
+      )
+    },
+    existingFeature(
+      { (x: Coll[BigInt]) => x.exists({ (b: BigInt) =>
+          if (o.gt(b, BigIntZero)) o.lt(b, BigInt10) else false
+        })
+      },
+      "{ (x: Coll[BigInt]) => x.exists({(b: BigInt) => if (b > 0) b < 10 else false }) }",
+      FuncValue(
+        Array((1, SCollectionType(SBigInt))),
+        Exists(
+          ValUse(1, SCollectionType(SBigInt)),
+          FuncValue(
+            Array((3, SBigInt)),
+            If(
+              GT(ValUse(3, SBigInt), BigIntConstant(CBigInt(new BigInteger("0", 16)))),
+              LT(ValUse(3, SBigInt), BigIntConstant(CBigInt(new BigInteger("a", 16)))),
+              FalseLeaf
+            )
+          )
+        )
+      )))
+  }
+
+  property("Coll forall with nested If") {
+    val o = NumericOps.BigIntIsExactOrdering
+    verifyCases(
+    {
+      def success[T](v: T, c: Int) = Expected(Success(v), c)
+      Seq(
+        (Coll[BigInt](), success(true, 38412)),
+        (Coll[BigInt](BigIntMinusOne), success(false, 38502)),
+        (Coll[BigInt](BigIntOne), success(true, 38502)),
+        (Coll[BigInt](BigIntZero, BigIntOne), success(true, 38592)),
+        (Coll[BigInt](BigIntZero, BigInt11), success(false, 38592))
+      )
+    },
+    existingFeature(
+      { (x: Coll[BigInt]) => x.forall({ (b: BigInt) =>
+          if (o.gteq(b, BigIntZero)) o.lteq(b, BigInt10) else false
+        })
+      },
+      "{ (x: Coll[BigInt]) => x.forall({(b: BigInt) => if (b >= 0) b <= 10 else false }) }",
+      FuncValue(
+        Array((1, SCollectionType(SBigInt))),
+        ForAll(
+          ValUse(1, SCollectionType(SBigInt)),
+          FuncValue(
+            Array((3, SBigInt)),
+            If(
+              GE(ValUse(3, SBigInt), BigIntConstant(CBigInt(new BigInteger("0", 16)))),
+              LE(ValUse(3, SBigInt), BigIntConstant(CBigInt(new BigInteger("a", 16)))),
+              FalseLeaf
+            )
+          )
+        )
+      )))
+  }
+
   val collWithRangeGen = for {
     arr <- collGen[Int]
     l <- Gen.choose(0, arr.length - 1)
@@ -5344,6 +5420,61 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
         )))
   }
 
+  property("Coll fold with nested If") {
+    val n = ExactNumeric.IntIsExactNumeric
+    verifyCases(
+      // (coll, initState)
+      {
+        def success[T](v: T, c: Int) = Expected(Success(v), c)
+        Seq(
+          ((Coll[Byte](),  0), success(0, 42037)),
+          ((Coll[Byte](),  Int.MaxValue), success(Int.MaxValue, 42037)),
+          ((Coll[Byte](1),  Int.MaxValue - 1), success(Int.MaxValue, 42197)),
+          ((Coll[Byte](1),  Int.MaxValue), Expected(new ArithmeticException("integer overflow"))),
+          ((Coll[Byte](-1),  Int.MinValue + 1), success(Int.MinValue + 1, 42197)),
+          ((Coll[Byte](-1),  Int.MinValue), success(Int.MinValue, 42197)),
+          ((Coll[Byte](1, 2), 0), success(3, 42357)),
+          ((Coll[Byte](1, -1), 0), success(1, 42357)),
+          ((Coll[Byte](1, -1, 1), 0), success(2, 42517))
+        )
+      },
+      existingFeature(
+        { (x: (Coll[Byte], Int)) => x._1.foldLeft(x._2, { i: (Int, Byte) => if (i._2 > 0) n.plus(i._1, i._2) else i._1 }) },
+        "{ (x: (Coll[Byte], Int)) => x._1.fold(x._2, { (i1: Int, i2: Byte) => if (i2 > 0) i1 + i2 else i1 }) }",
+        FuncValue(
+          Array((1, SPair(SByteArray, SInt))),
+          Fold(
+            SelectField.typed[Value[SCollection[SByte.type]]](ValUse(1, SPair(SByteArray, SInt)), 1.toByte),
+            SelectField.typed[Value[SInt.type]](ValUse(1, SPair(SByteArray, SInt)), 2.toByte),
+            FuncValue(
+              Array((3, SPair(SInt, SByte))),
+              BlockValue(
+                Array(
+                  ValDef(
+                    5,
+                    List(),
+                    Upcast(
+                      SelectField.typed[Value[SByte.type]](ValUse(3, SPair(SInt, SByte)), 2.toByte),
+                      SInt
+                    )
+                  ),
+                  ValDef(
+                    6,
+                    List(),
+                    SelectField.typed[Value[SInt.type]](ValUse(3, SPair(SInt, SByte)), 1.toByte)
+                  )
+                ),
+                If(
+                  GT(ValUse(5, SInt), IntConstant(0)),
+                  ArithOp(ValUse(6, SInt), ValUse(5, SInt), OpCode @@ (-102.toByte)),
+                  ValUse(6, SInt)
+                )
+              )
+            )
+          )
+        ) ))
+  }
+
   property("Coll indexOf method equivalence") {
     verifyCases(
       // (coll, (elem: Byte, from: Int))
@@ -5533,6 +5664,91 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
         )))
   }
 
+  property("Coll map with nested if") {
+    val n = ExactNumeric.IntIsExactNumeric
+    verifyCases(
+      {
+        def success[T](v: T, c: Int) = Expected(Success(v), c)
+        Seq(
+          (Coll[Int](), success(Coll[Int](), 39571)),
+          (Coll[Int](1), success(Coll[Int](2), 39671)),
+          (Coll[Int](-1), success(Coll[Int](1), 39671)),
+          (Coll[Int](1, -2), success(Coll[Int](2, 2), 39771)),
+          (Coll[Int](1, 2, Int.MaxValue), Expected(new ArithmeticException("integer overflow"))),
+          (Coll[Int](1, 2, Int.MinValue), Expected(new ArithmeticException("integer overflow")))
+        )
+      },
+      existingFeature(
+        (x: Coll[Int]) => x.map({ (v: Int) => if (v > 0) n.plus(v, 1) else n.times(-1, v) }),
+        "{ (x: Coll[Int]) => x.map({ (v: Int) => if (v > 0) v + 1 else -1 * v }) }",
+        FuncValue(
+          Array((1, SCollectionType(SInt))),
+          MapCollection(
+            ValUse(1, SCollectionType(SInt)),
+            FuncValue(
+              Array((3, SInt)),
+              If(
+                GT(ValUse(3, SInt), IntConstant(0)),
+                ArithOp(ValUse(3, SInt), IntConstant(1), OpCode @@ (-102.toByte)),
+                ArithOp(IntConstant(-1), ValUse(3, SInt), OpCode @@ (-100.toByte))
+              )
+            )
+          )
+        ) ))
+  }
+
+  property("Coll filter") {
+    val o = ExactOrdering.IntIsExactOrdering
+    verifyCases(
+    {
+      def success[T](v: T, c: Int) = Expected(Success(v), c)
+      Seq(
+        (Coll[Int](), success(Coll[Int](), 37223)),
+        (Coll[Int](1), success(Coll[Int](1), 37273)),
+        (Coll[Int](1, 2), success(Coll[Int](1, 2), 37323)),
+        (Coll[Int](1, 2, -1), success(Coll[Int](1, 2), 37373)),
+        (Coll[Int](1, -1, 2, -2), success(Coll[Int](1, 2), 37423))
+      )
+    },
+    existingFeature((x: Coll[Int]) => x.filter({ (v: Int) => o.gt(v, 0) }),
+      "{ (x: Coll[Int]) => x.filter({ (v: Int) => v > 0 }) }",
+      FuncValue(
+        Array((1, SCollectionType(SInt))),
+        Filter(
+          ValUse(1, SCollectionType(SInt)),
+          FuncValue(Array((3, SInt)), GT(ValUse(3, SInt), IntConstant(0)))
+        )
+      )))
+  }
+
+  property("Coll filter with nested If") {
+    val o = ExactOrdering.IntIsExactOrdering
+    verifyCases(
+    {
+      def success[T](v: T, c: Int) = Expected(Success(v), c)
+      Seq(
+        (Coll[Int](), success(Coll[Int](), 37797)),
+        (Coll[Int](1), success(Coll[Int](1), 37887)),
+        (Coll[Int](10), success(Coll[Int](), 37887)),
+        (Coll[Int](1, 2), success(Coll[Int](1, 2), 37977)),
+        (Coll[Int](1, 2, 0), success(Coll[Int](1, 2), 38067)),
+        (Coll[Int](1, -1, 2, -2, 11), success(Coll[Int](1, 2), 38247))
+      )
+    },
+    existingFeature((x: Coll[Int]) => x.filter({ (v: Int) => if (o.gt(v, 0)) v < 10 else false }),
+      "{ (x: Coll[Int]) => x.filter({ (v: Int) => if (v > 0) v < 10 else false }) }",
+      FuncValue(
+        Array((1, SCollectionType(SInt))),
+        Filter(
+          ValUse(1, SCollectionType(SInt)),
+          FuncValue(
+            Array((3, SInt)),
+            If(GT(ValUse(3, SInt), IntConstant(0)), LT(ValUse(3, SInt), IntConstant(10)), FalseLeaf)
+          )
+        )
+      )))
+  }
+
   property("Coll slice method equivalence") {
     val samples = genSamples(collWithRangeGen, DefaultMinSuccessful)
     verifyCases(
@@ -5680,6 +5896,71 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
             Map()
           )
         )))
+  }
+
+  property("Option filter,map with nested If") {
+    def success[T](v: T, c: Int) = Expected(Success(v), c)
+
+    val o = ExactOrdering.LongIsExactOrdering
+    verifyCases(
+      Seq(
+        (None -> success(None, 38736)),
+        (Some(0L) -> success(None, 38736)),
+        (Some(10L) -> success(Some(10L), 38736)),
+        (Some(11L) -> success(None, 38736))),
+      existingFeature(
+        { (x: Option[Long]) => x.filter({ (v: Long) => if (o.gt(v, 0L)) v <= 10 else false } ) },
+        "{ (x: Option[Long]) => x.filter({ (v: Long) => if (v > 0) v <= 10 else false }) }",
+        FuncValue(
+          Array((1, SOption(SLong))),
+          MethodCall.typed[Value[SOption[SLong.type]]](
+            ValUse(1, SOption(SLong)),
+            SOption.getMethodByName("filter").withConcreteTypes(Map(STypeVar("T") -> SLong)),
+            Vector(
+              FuncValue(
+                Array((3, SLong)),
+                If(
+                  GT(ValUse(3, SLong), LongConstant(0L)),
+                  LE(ValUse(3, SLong), LongConstant(10L)),
+                  FalseLeaf
+                )
+              )
+            ),
+            Map()
+          )
+        )))
+
+    val n = ExactNumeric.LongIsExactNumeric
+    verifyCases(
+      Seq(
+        (None -> success(None, 39077)),
+        (Some(0L) -> success(Some(0L), 39077)),
+        (Some(10L) -> success(Some(10L), 39077)),
+        (Some(-1L) -> success(Some(-2L), 39077)),
+        (Some(Long.MinValue) -> Expected(new ArithmeticException("long overflow")))),
+      existingFeature(
+        { (x: Option[Long]) => x.map( (v: Long) => if (o.lt(v, 0)) n.minus(v, 1) else v ) },
+        "{ (x: Option[Long]) => x.map({ (v: Long) => if (v < 0) v - 1 else v }) }",
+        FuncValue(
+          Array((1, SOption(SLong))),
+          MethodCall.typed[Value[SOption[SLong.type]]](
+            ValUse(1, SOption(SLong)),
+            SOption.getMethodByName("map").withConcreteTypes(
+              Map(STypeVar("T") -> SLong, STypeVar("R") -> SLong)
+            ),
+            Vector(
+              FuncValue(
+                Array((3, SLong)),
+                If(
+                  LT(ValUse(3, SLong), LongConstant(0L)),
+                  ArithOp(ValUse(3, SLong), LongConstant(1L), OpCode @@ (-103.toByte)),
+                  ValUse(3, SLong)
+                )
+              )
+            ),
+            Map()
+          )
+        ) ))
   }
 
   // TODO HF (3h): implement Option.fold

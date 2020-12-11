@@ -657,7 +657,7 @@ class SigmaDslTesting extends PropSpec
   /** NOTE, this should be `def` to allow overriding of generatorDrivenConfig in derived Spec classes. */
   def DefaultMinSuccessful: MinSuccessful = MinSuccessful(generatorDrivenConfig.minSuccessful)
 
-  val PrintTestCasesDefault: Boolean = false
+  val PrintTestCasesDefault: Boolean = false // true
   val FailOnTestVectorsDefault: Boolean = true
 
   private def checkResult[B](res: Try[B], expectedRes: Try[B], failOnTestVectors: Boolean): Unit = {
