@@ -493,7 +493,7 @@ class SigmaDslTesting extends PropSpec
       oldRes
     }
 
-    /** Depending on the featureType compares the old and new implementations against
+    /** compares the old and new implementations against
       * semantic function (scalaFunc) on the given input, also checking the given expected result.
       */
     override def checkExpected(input: A, expected: Expected[B]): Unit = {
@@ -588,8 +588,8 @@ class SigmaDslTesting extends PropSpec
     * @see [[testCases]]
     */
   case class Expected[+A](value: Try[A], cost: Int) {
-    def newCost: Int = cost
     def newValue: Try[A] = value
+    def newCost: Int = cost
   }
 
   object Expected {

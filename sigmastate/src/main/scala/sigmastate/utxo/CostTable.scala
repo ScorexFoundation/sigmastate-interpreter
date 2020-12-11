@@ -334,6 +334,8 @@ object CostTable {
     /** Cost of: 1) Lookup in immutable HashMap by valId: Int 2) alloc of Some(v) */
     def ValUse = 5
 
+    /** Cost of: 1) packing args into Array 2) java.lang.reflect.Method.invoke */
+    def MethodCall = 5
 
     /** Cost of: allocating new collection
       * @see ConcreteCollection_PerItem */

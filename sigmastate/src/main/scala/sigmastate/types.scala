@@ -5,7 +5,7 @@ import java.math.BigInteger
 
 import org.ergoplatform._
 import org.ergoplatform.validation._
-import scalan.{RType, Nullable}
+import scalan.{Nullable, RType}
 import scalan.RType.GeneralType
 import sigmastate.SType.{TypeCode, AnyOps}
 import sigmastate.interpreter.{CryptoConstants, ErgoTreeEvaluator}
@@ -23,7 +23,7 @@ import sigmastate.eval.RuntimeCosting
 
 import scala.language.implicitConversions
 import scala.reflect.{ClassTag, classTag}
-import sigmastate.SMethod.{MethodCallIrBuilder, InvokeDescBuilder, javaMethodOf}
+import sigmastate.SMethod.{MethodCallIrBuilder, javaMethodOf, InvokeDescBuilder}
 import sigmastate.utxo.ByIndex
 import sigmastate.utxo.ExtractCreationInfo
 import sigmastate.utxo._
@@ -32,6 +32,8 @@ import sigmastate.lang.SigmaTyper.STypeSubst
 import sigmastate.eval.Evaluation.stypeToRType
 import sigmastate.eval._
 import spire.syntax.all.cfor
+
+import scala.collection.mutable
 
 /** Base type for all AST nodes of sigma lang. */
 trait SigmaNode extends Product
@@ -397,12 +399,13 @@ case class SMethod(
     irInfo.invokeDescsBuilder match {
       case Some(builder) =>
         builder(stype).map(Evaluation.stypeToRType)
-      case None => Array.empty[RType[_]]
+      case None =>
+        mutable.WrappedArray.empty[RType[_]]
     }
   }
 
   /** Invoke this method on the given object with the arguments. */
-  def invoke(obj: Any, args: Array[Any]) = {
+  def invoke(obj: Any, args: Array[Any])(implicit E: ErgoTreeEvaluator): AnyRef = {
     javaMethod.invoke(obj, args.asInstanceOf[Array[AnyRef]]:_*)
   }
 

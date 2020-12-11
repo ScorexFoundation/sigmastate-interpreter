@@ -214,17 +214,18 @@ object Terms {
     /** @hotspot don't beautify this code */
     protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
       val objV = obj.evalTo[Any](env)
-      val argsBuf = mutable.ArrayBuilder.make[Any]() // TODO optimize: avoid using resizable buffer
-      val len = args.length
-      cfor(0)(_ < len, _ + 1) { i =>
-        val arg = args(i)
-        val argV = arg.evalTo[Any](env)
-        argsBuf += argV
-      }
       val extra = method.extraDescriptors
-      if (extra.nonEmpty) argsBuf ++= extra
-      method.invoke(objV, argsBuf.result())
-      // TODO JITC
+      val extraLen = extra.length
+      val len = args.length
+      val argsBuf = new Array[Any](len + extraLen)
+      cfor(0)(_ < len, _ + 1) { i =>
+        argsBuf(i) = args(i).evalTo[Any](env)
+      }
+      cfor(0)(_ < extraLen, _ + 1) { i =>
+        argsBuf(len + i) = extra(i)
+      }
+      addCost(CostOf.MethodCall)
+      method.invoke(objV, argsBuf)
     }
   }
   object MethodCall extends ValueCompanion {

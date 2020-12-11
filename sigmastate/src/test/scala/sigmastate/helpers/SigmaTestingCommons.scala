@@ -268,7 +268,7 @@ trait SigmaTestingCommons extends PropSpec
         coster = accumulator, DefaultProfiler, evalSettings)
 
       val (res, cost) = evaluator.evalWithCost(ErgoTreeEvaluator.EmptyDataEnv, compiledTree)
-      if (evalSettings.costTracingEnabled) {
+      if (evalSettings.isLogEnabled) {
         val traceLines = evaluator.costTrace.mkString("\n")
         println(
           s"""Cost Trace
