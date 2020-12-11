@@ -121,5 +121,6 @@ trait SigmaTestingData extends SigmaTestingCommons with SigmaTypeGens {
     selfIndex = 0, headers = headers, preHeader = preHeader, dataBoxes = IndexedSeq(dataBox),
     extension = ContextExtension(Map(2.toByte -> IntConstant(10))),
     validationSettings = ValidationRules.currentSettings,
-    costLimit = ScriptCostLimit.value, initCost = 0L)
+    costLimit = ScriptCostLimit.value, initCost = 0L,
+    activatedScriptVersion = ActivatedVersionInTest)
 }

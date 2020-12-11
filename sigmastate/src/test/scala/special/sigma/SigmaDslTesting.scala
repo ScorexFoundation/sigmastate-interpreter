@@ -246,7 +246,8 @@ class SigmaDslTesting extends PropSpec
       new ErgoLikeContext(
         treeData, ctx.headers, ctx.preHeader,
         dataBoxes, boxesToSpend, tx, selfIndex,
-        extension, validationSettings, costLimit, initCost)
+        extension, validationSettings, costLimit, initCost,
+        ActivatedVersionInTest)
     }
 
     /** Executes the default feature verification wrapper script.

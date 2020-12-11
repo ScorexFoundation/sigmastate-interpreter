@@ -13,7 +13,7 @@ import sigmastate.eval.Sized._
 import sigmastate.eval._
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter}
-import sigmastate.interpreter.ContextExtension
+import sigmastate.interpreter.{ContextExtension, Interpreter}
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, ScriptEnv, emptyEnv}
 import sigmastate.utxo.CostTable
 import sigmastate.utxo.CostTable._
@@ -62,13 +62,15 @@ class CostingSpecification extends SigmaTestingData {
   lazy val outBoxA = testBox(10, pkA, 0)
   lazy val outBoxB = testBox(20, pkB, 0)
   lazy val tx = createTransaction(IndexedSeq(dataBox), IndexedSeq(outBoxA, outBoxB))
-  lazy val context =
-    new ErgoLikeContext(
-      lastBlockUtxoRoot = header2.stateRoot.asInstanceOf[CAvlTree].treeData,
-      headers = headers, preHeader = preHeader,
-      dataBoxes = IndexedSeq(dataBox),
-      boxesToSpend = IndexedSeq(selfBox),
-      spendingTransaction = tx, selfIndex = 0, extension, ValidationRules.currentSettings, ScriptCostLimit.value, CostTable.interpreterInitCost)
+  lazy val context = new ErgoLikeContext(
+    lastBlockUtxoRoot = header2.stateRoot.asInstanceOf[CAvlTree].treeData,
+    headers = headers, preHeader = preHeader,
+    dataBoxes = IndexedSeq(dataBox),
+    boxesToSpend = IndexedSeq(selfBox),
+    spendingTransaction = tx, selfIndex = 0, extension,
+    ValidationRules.currentSettings, ScriptCostLimit.value,
+    CostTable.interpreterInitCost, ActivatedVersionInTest
+  )
 
   def cost(script: String)(expCost: Int): Unit = {
     val ergoTree = compiler.compile(env, script)
