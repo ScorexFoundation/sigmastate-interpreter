@@ -107,16 +107,13 @@ trait InterpreterContext {
 }
 
 /** Descriptor of protocol versions.
-  * @param ergoProtocolVersion the version of Ergo protocol (see Header.version)
   * @param scriptVersion       the version of ErgoTree (see ErgoTree.header)
   */
-case class VersionContext(ergoProtocolVersion: Byte, scriptVersion: Byte)
+case class VersionContext(scriptVersion: Byte)
 
 object VersionContext {
-  val MaxSupportedErgoProtocol: Byte = 2
 
   /** Descriptor of the max supported versions. */
   val MaxSupportedVersion = VersionContext(
-    ergoProtocolVersion = MaxSupportedErgoProtocol,
     scriptVersion = Interpreter.MaxSupportedScriptVersion)
 }

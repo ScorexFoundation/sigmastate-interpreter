@@ -1058,6 +1058,13 @@ object Values {
       (header | version).toByte
     }
 
+    @inline def headerWithVersion(version: Byte): Byte = {
+      var h = updateVersionBits(DefaultHeader, version)
+      if (version > 0)
+        h = (h | ErgoTree.SizeFlag).toByte
+      h
+    }
+
     def substConstants(root: SValue, constants: IndexedSeq[Constant[SType]]): SValue = {
       val store = new ConstantStore(constants)
       val substRule = strategy[Any] {
