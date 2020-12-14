@@ -13,7 +13,7 @@ import sigmastate.eval.Extensions._
 import sigmastate.eval._
 import sigmastate.helpers.{ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
-import sigmastate.interpreter.{ContextExtension, CryptoConstants, CostedProverResult, VersionContext}
+import sigmastate.interpreter.{ContextExtension, CryptoConstants, CostedProverResult}
 import sigmastate.lang.Terms._
 import sigmastate.lang.exceptions.{DeserializeCallDepthExceeded, InputSizeLimitExceeded, InvalidTypePrefix, SerializerException}
 import sigmastate.serialization.OpCodes._
@@ -23,7 +23,9 @@ import sigmastate.utils.Helpers._
 
 import scala.collection.mutable
 
-class DeserializationResilience extends SerializationSpecification with SigmaTestingCommons {
+class DeserializationResilience extends SerializationSpecification
+  with SigmaTestingCommons
+  with CrossVersionProps {
 
   implicit lazy val IR: TestingIRContext = new TestingIRContext {
     //    substFromCostTable = false
@@ -37,7 +39,7 @@ class DeserializationResilience extends SerializationSpecification with SigmaTes
       new VLQByteBufferReader(buf),
       new ConstantStore(),
       resolvePlaceholdersToConstants = false,
-      VersionContext(0),
+      activatedVersion,
       maxTreeDepth = maxTreeDepth).mark()
     r
   }
@@ -107,7 +109,7 @@ class DeserializationResilience extends SerializationSpecification with SigmaTes
       SigmaByteReader(r,
         new ConstantStore(),
         resolvePlaceholdersToConstants = false,
-        VersionContext(0),
+        activatedVersion,
         maxTreeDepth = SigmaSerializer.MaxTreeDepth) {
       val levels: mutable.ArrayBuilder[Int] = mutable.ArrayBuilder.make[Int]()
       override def level_=(v: Int): Unit = {
@@ -128,7 +130,7 @@ class DeserializationResilience extends SerializationSpecification with SigmaTes
       SigmaByteReader(r,
         new ConstantStore(),
         resolvePlaceholdersToConstants = false,
-        VersionContext(0),
+        activatedVersion,
         maxTreeDepth = SigmaSerializer.MaxTreeDepth) {
       private var levelCall: Int = 0
       override def level_=(v: Int): Unit = {

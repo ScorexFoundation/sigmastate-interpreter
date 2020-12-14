@@ -6,12 +6,12 @@ import sigmastate.Values.{ShortConstant, BigIntConstant, SigmaPropValue, IntCons
 import sigmastate._
 import sigmastate.eval.{IRContext, CBigInt}
 import sigmastate.helpers.SigmaTestingCommons
-import sigmastate.interpreter.VersionContext
 import sigmastate.lang.exceptions.{SerializerException, InputSizeLimitExceeded}
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 
 class ErgoTreeSerializerSpecification extends SerializationSpecification
-  with SigmaTestingCommons {
+  with SigmaTestingCommons
+  with CrossVersionProps {
 
   implicit lazy val IR: TestingIRContext = new TestingIRContext {
     beginPass(noConstPropagationPass)
@@ -46,7 +46,7 @@ class ErgoTreeSerializerSpecification extends SerializationSpecification
         treeBytes,
         new ConstantStore(deserializedConstants),
         resolvePlaceholdersToConstants = true,
-        versionContext = VersionContext(0))
+        versionContext = activatedVersion)
       val deserializedTree = ValueSerializer.deserialize(r)
       deserializedTree shouldEqual tree
     }
