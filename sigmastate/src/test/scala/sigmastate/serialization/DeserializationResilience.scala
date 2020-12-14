@@ -3,7 +3,7 @@ package sigmastate.serialization
 import java.nio.ByteBuffer
 
 import org.ergoplatform.validation.ValidationException
-import org.ergoplatform.{ErgoBoxCandidate, ErgoLikeContext, Outputs}
+import org.ergoplatform.{ErgoBoxCandidate, Outputs}
 import org.scalacheck.Gen
 import scalan.util.BenchmarkUtil
 import scorex.util.serialization.{Reader, VLQByteBufferReader}
@@ -13,7 +13,7 @@ import sigmastate.eval.Extensions._
 import sigmastate.eval._
 import sigmastate.helpers.{ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
-import sigmastate.interpreter.{ContextExtension, CostedProverResult, CryptoConstants}
+import sigmastate.interpreter.{ContextExtension, CryptoConstants, CostedProverResult, VersionContext}
 import sigmastate.lang.Terms._
 import sigmastate.lang.exceptions.{DeserializeCallDepthExceeded, InputSizeLimitExceeded, InvalidTypePrefix, SerializerException}
 import sigmastate.serialization.OpCodes._
@@ -37,6 +37,7 @@ class DeserializationResilience extends SerializationSpecification with SigmaTes
       new VLQByteBufferReader(buf),
       new ConstantStore(),
       resolvePlaceholdersToConstants = false,
+      VersionContext(0),
       maxTreeDepth = maxTreeDepth).mark()
     r
   }
@@ -106,6 +107,7 @@ class DeserializationResilience extends SerializationSpecification with SigmaTes
       SigmaByteReader(r,
         new ConstantStore(),
         resolvePlaceholdersToConstants = false,
+        VersionContext(0),
         maxTreeDepth = SigmaSerializer.MaxTreeDepth) {
       val levels: mutable.ArrayBuilder[Int] = mutable.ArrayBuilder.make[Int]()
       override def level_=(v: Int): Unit = {
@@ -126,6 +128,7 @@ class DeserializationResilience extends SerializationSpecification with SigmaTes
       SigmaByteReader(r,
         new ConstantStore(),
         resolvePlaceholdersToConstants = false,
+        VersionContext(0),
         maxTreeDepth = SigmaSerializer.MaxTreeDepth) {
       private var levelCall: Int = 0
       override def level_=(v: Int): Unit = {

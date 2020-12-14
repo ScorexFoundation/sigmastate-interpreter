@@ -2,11 +2,11 @@ package sigmastate.serialization
 
 import java.math.BigInteger
 
-import scalan.Nullable
-import sigmastate.Values.{ShortConstant, LongConstant, BigIntConstant, SigmaPropValue, IntConstant, ErgoTree, ByteConstant}
+import sigmastate.Values.{ShortConstant, BigIntConstant, SigmaPropValue, IntConstant, ErgoTree, ByteConstant}
 import sigmastate._
 import sigmastate.eval.{IRContext, CBigInt}
 import sigmastate.helpers.SigmaTestingCommons
+import sigmastate.interpreter.VersionContext
 import sigmastate.lang.exceptions.{SerializerException, InputSizeLimitExceeded}
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 
@@ -46,7 +46,7 @@ class ErgoTreeSerializerSpecification extends SerializationSpecification
         treeBytes,
         new ConstantStore(deserializedConstants),
         resolvePlaceholdersToConstants = true,
-        versionContext = Nullable.None)
+        versionContext = VersionContext(0))
       val deserializedTree = ValueSerializer.deserialize(r)
       deserializedTree shouldEqual tree
     }

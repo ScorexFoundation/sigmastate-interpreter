@@ -4,7 +4,6 @@ import java.nio.ByteBuffer
 
 import org.ergoplatform.SigmaConstants
 import org.ergoplatform.validation.SigmaValidationSettings
-import scalan.Nullable
 import scorex.util.ByteArrayBuilder
 import sigmastate.lang.exceptions.SerializerException
 import sigmastate.utils._
@@ -30,15 +29,15 @@ object SigmaSerializer {
     */
   def startReader(bytes: Array[Byte],
                   pos: Int = 0,
-                  versionContext: Nullable[VersionContext] = Nullable.None): SigmaByteReader = {
+                  versionContext: VersionContext = VersionContext(0)): SigmaByteReader = {
     val buf = ByteBuffer.wrap(bytes)
     buf.position(pos)
     val r = new SigmaByteReader(
       new VLQByteBufferReader(buf),
       new ConstantStore(),
       resolvePlaceholdersToConstants = false,
-      maxTreeDepth = MaxTreeDepth,
-      versionContext = versionContext
+      versionContext = versionContext,
+      maxTreeDepth = MaxTreeDepth
     ).mark()
     r
   }
@@ -47,7 +46,7 @@ object SigmaSerializer {
   def startReader(bytes: Array[Byte],
                   constantStore: ConstantStore,
                   resolvePlaceholdersToConstants: Boolean,
-                  versionContext: Nullable[VersionContext])
+                  versionContext: VersionContext)
                  (implicit vs: SigmaValidationSettings): SigmaByteReader = {
     val buf = ByteBuffer.wrap(bytes)
     val r = new SigmaByteReader(new VLQByteBufferReader(buf),
@@ -94,6 +93,7 @@ abstract class SigmaSerializer[TFamily, T <: TFamily] extends Serializer[TFamily
     val sigmaByteReader = new SigmaByteReader(r,
       new ConstantStore(),
       resolvePlaceholdersToConstants = false,
+      versionContext = VersionContext(0),
       maxTreeDepth = SigmaSerializer.MaxTreeDepth)
     parse(sigmaByteReader)
   }

@@ -1,10 +1,10 @@
 package sigmastate.serialization
 
 import org.scalacheck.Gen
-import scalan.Nullable
 import sigmastate.SType
 import sigmastate.Values.Constant
-import sigmastate.lang.{DeserializationSigmaBuilder, SigmaBuilder}
+import sigmastate.interpreter.VersionContext
+import sigmastate.lang.{SigmaBuilder, DeserializationSigmaBuilder}
 
 class BlockSerializerSpecification extends SerializationSpecification {
 
@@ -28,7 +28,7 @@ class BlockSerializerSpecification extends SerializationSpecification {
       val s = ConstantPlaceholderSerializer(DeserializationSigmaBuilder.mkConstantPlaceholder)
       val w = SigmaSerializer.startWriter()
       s.serialize(placeholder, w)
-      val r = SigmaSerializer.startReader(w.toBytes, store, resolvePlaceholdersToConstants = false, Nullable.None)
+      val r = SigmaSerializer.startReader(w.toBytes, store, resolvePlaceholdersToConstants = false, VersionContext(0))
       s.parse(r) shouldEqual placeholder
     }
   }

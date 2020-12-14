@@ -2,7 +2,6 @@ package org.ergoplatform
 
 import org.ergoplatform.ErgoBox.TokenId
 import org.ergoplatform.settings.ErgoAlgos
-import scalan.Nullable
 import scorex.crypto.hash.Digest32
 import scorex.util.{Random, ModifierId}
 import sigmastate.SCollection.SByteArray
@@ -279,7 +278,7 @@ class ErgoLikeTransactionSpec extends SigmaDslTesting {
       val wrongInput = Input(tx.inputs.head.boxId, ProverResult(Array.emptyByteArray, ce))
       val ins = IndexedSeq(wrongInput) ++ tx.inputs.tail
       val tx2 = copyTransaction(tx)(inputs = ins)
-      def roundtrip(version: Nullable[VersionContext]) = {
+      def roundtrip(version: VersionContext) = {
         val bs = ErgoLikeTransactionSerializer.toBytes(tx2)
         val restored = ErgoLikeTransactionSerializer.parse(
           SigmaSerializer.startReader(bs, 0, version)
@@ -288,11 +287,11 @@ class ErgoLikeTransactionSpec extends SigmaDslTesting {
       }
 
       // successful for v4.0 and above
-      roundtrip(Nullable(VersionContext.MaxSupportedVersion))
+      roundtrip(VersionContext.MaxSupportedVersion)
 
       // unsuccessful if version context is not passed (which means v3.x version)
       assertExceptionThrown(
-        roundtrip(Nullable.None),
+        roundtrip(VersionContext(0)),
         { _ => true }
       )
     }
