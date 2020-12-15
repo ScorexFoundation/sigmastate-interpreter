@@ -148,7 +148,7 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
     * In a bottom-up traversal of the tree, do the following for each node:
     *
     */
-  def markReal(hintsBag: HintsBag): Strategy = everywherebu(rule[UnprovenTree] {
+  def markReal(hintsBag: HintsBag): Strategy = everywherebu(rule[Any] {
     case and: CAndUnproven =>
       // If the node is AND, mark it "real" if all of its children are marked real; else mark it "simulated"
       val simulated = and.children.exists(_.asInstanceOf[UnprovenTree].simulated)
@@ -172,7 +172,7 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
         case in: SigmaProtocolPrivateInput[_, _] => in.publicImage == ul.proposition
       }
       ul.withSimulated(!isReal)
-    case t =>
+    case t: UnprovenTree =>
       error(s"Don't know how to markReal($t)")
   })
 
@@ -195,7 +195,7 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
     * the right number of simulated children. Also, children will get proper position set during this step.
     * In a top-down traversal of the tree, do the following for each node:
     */
-  val polishSimulated: Strategy = everywheretd(rule[UnprovenTree] {
+  val polishSimulated: Strategy = everywheretd(rule[Any] {
     case and: CAndUnproven =>
       // If the node is marked "simulated", mark all of its children "simulated"
       val a = if (and.simulated) {
@@ -251,7 +251,7 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
       setPositions(th)
     case su: UnprovenSchnorr => su
     case dhu: UnprovenDiffieHellmanTuple => dhu
-    case _ => ???
+    case _: UnprovenTree => ???
   })
 
   /**
@@ -261,7 +261,7 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
     * Prover Step 6: For every leaf marked "real", use the first prover step of the Sigma-protocol for that leaf to
     * compute the commitment a.
     */
-  def simulateAndCommit(hintsBag: HintsBag): Strategy = everywheretd(rule[ProofTree] {
+  def simulateAndCommit(hintsBag: HintsBag): Strategy = everywheretd(rule[Any] {
     // Step 4 part 1: If the node is marked "real", then each of its simulated children gets a fresh uniformly
     // random challenge in {0,1}^t.
     case and: CAndUnproven if and.real => and // A real AND node has no simulated children
@@ -397,7 +397,7 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
           }
         }
 
-    case a: Any => error(s"Don't know how to challengeSimulated($a)")
+    case t: ProofTree => error(s"Don't know how to challengeSimulated($t)")
   })
 
   private def extractChallenge(pt: ProofTree): Option[Array[Byte]] = pt match {
@@ -412,7 +412,7 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
     * the challenge e for every node marked "real" below the root and, additionally, the response z for every leaf
     * marked "real"
     */
-  def proving(hintsBag: HintsBag): Strategy = everywheretd(rule[ProofTree] {
+  def proving(hintsBag: HintsBag): Strategy = everywheretd(rule[Any] {
     // If the node is a non-leaf marked real whose challenge is e_0, proceed as follows:
     case and: CAndUnproven if and.real =>
       assert(and.challengeOpt.isDefined)
@@ -543,7 +543,9 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
 
     case ut: UnprovenTree => ut
 
-    case a: Any => log.warn("Wrong input in prove(): ", a); ???
+    case t: ProofTree =>
+      log.warn("Wrong input in prove(): ", t);
+      ???
   })
 
 

@@ -49,10 +49,17 @@ case class MethodCallSerializer(cons: (Value[SType], SMethod, IndexedSeq[Value[S
     val complexity = ComplexityTable.MethodCallComplexity.getOrElse((typeId, methodId), ComplexityTable.MinimalComplexity)
     r.addComplexity(complexity)
     val nArgs = args.length
-    val types = new Array[SType](nArgs)
-    cfor(0)(_ < nArgs, _ + 1) { i =>
-      types(i) = args(i).tpe
-    }
+
+    val types: Seq[SType] =
+      if (nArgs == 0) SType.EmptySeq
+      else {
+        val types = new Array[SType](nArgs)
+        cfor(0)(_ < nArgs, _ + 1) { i =>
+          types(i) = args(i).tpe
+        }
+        types
+      }
+
     val specMethod = method.specializeFor(obj.tpe, types)
     cons(obj, specMethod, args, Map.empty)
   }

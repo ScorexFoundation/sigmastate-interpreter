@@ -13,6 +13,7 @@ import sigmastate._
 import sigmastate.eval._
 import sigmastate.lang.Terms._
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.CryptoConstants
 import org.ergoplatform._
 import org.ergoplatform.dsl.{ContractSpec, SigmaContractSyntax, StdContracts, TestContractSpec}
@@ -98,7 +99,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons { suite =>
 
     val z = (r + e.bigInteger.multiply(oraclePrivKey.w)).mod(group.order).bigInteger
 
-    val oracleBox = ErgoBox(
+    val oracleBox = testBox(
       value = 1L,
       ergoTree = oraclePubKey,
       creationHeight = 0,
@@ -154,7 +155,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons { suite =>
     avlProver.performOneOperation(Lookup(ADKey @@ oracleBox.id))
     val proof = avlProver.generateProof()
 
-    val newBox1 = ErgoBox(20, alicePubKey, 0, boxIndex = 2)
+    val newBox1 = testBox(20, alicePubKey, 0, boxIndex = 2)
     val newBoxes = IndexedSeq(newBox1)
     val spendingTransaction = createTransaction(newBoxes)
 
@@ -163,14 +164,14 @@ class OracleExamplesSpecification extends SigmaTestingCommons { suite =>
 
     val propAlice = withinTimeframe(sinceHeight, timeout, alicePubKey.isProven)(oracleProp).toSigmaProp
 
-    val sAlice = ErgoBox(10, propAlice, 0, Seq(), Map(), boxIndex = 3)
+    val sAlice = testBox(10, propAlice, 0, Seq(), Map(), boxIndex = 3)
 
     //"along with a brother" script
     val propAlong = AND(
       EQ(SizeOf(Inputs), IntConstant(2)),
       EQ(ExtractId(ByIndex(Inputs, 0)), ByteArrayConstant(sAlice.id)))
     val propBob = withinTimeframe(sinceHeight, timeout, bobPubKey.isProven)(propAlong).toSigmaProp
-    val sBob = ErgoBox(10, propBob, 0, Seq(), Map(), boxIndex = 4)
+    val sBob = testBox(10, propBob, 0, Seq(), Map(), boxIndex = 4)
 
    val ctx = ErgoLikeContextTesting(
       currentHeight = 50,
@@ -223,7 +224,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons { suite =>
 
     val temperature: Long = 18
 
-    val oracleBox = ErgoBox(
+    val oracleBox = testBox(
       value = 1L,
       ergoTree = oraclePubKey,
       creationHeight = 0,
@@ -242,10 +243,10 @@ class OracleExamplesSpecification extends SigmaTestingCommons { suite =>
     ).toSigmaProp
 
     val sOracle = oracleBox
-    val sAlice = ErgoBox(10, prop, 0, Seq(), Map())
-    val sBob = ErgoBox(10, prop, 0, Seq(), Map())
+    val sAlice = testBox(10, prop, 0, Seq(), Map())
+    val sBob = testBox(10, prop, 0, Seq(), Map())
 
-    val newBox1 = ErgoBox(20, alicePubKey, 0)
+    val newBox1 = testBox(20, alicePubKey, 0)
     val newBoxes = IndexedSeq(newBox1)
     val spendingTransaction = createTransaction(newBoxes)
 

@@ -25,7 +25,7 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
 
   private implicit val implicitPredefFuncRegistry: PredefinedFuncRegistry = predefFuncRegistry
 
-  private val tT = STypeVar("T") // to be used in typing rules
+  import SType.tT
 
   private val predefinedEnv: Map[String, SType] =
       predefFuncRegistry.funcs.mapValues(f => f.declaration.tpe)
@@ -36,9 +36,9 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
     val global = Global.withPropagatedSrcCtx(srcCtx)
     val node = for {
       pf <- method.irInfo.irBuilder
-      res <- pf.lift((builder, global, method, args, emptySubst))
+      res <- pf.lift((builder, global, method, args, EmptySubst))
     } yield res
-    node.getOrElse(mkMethodCall(global, method, args, emptySubst).withPropagatedSrcCtx(srcCtx))
+    node.getOrElse(mkMethodCall(global, method, args, EmptySubst).withPropagatedSrcCtx(srcCtx))
   }
   /**
     * Rewrite tree to typed tree.  Checks constituent names and types.  Uses
@@ -286,7 +286,7 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
                   case None =>
                     error(s"Invalid argument type of method call $mc : expected ${sfunc.tDom}; actual: $actualTypes", mc.sourceContext)
                 }
-              case _ => emptySubst
+              case _ => EmptySubst
             }
             method.irInfo.irBuilder.flatMap(_.lift(builder, newObj, method, newArgs, typeSubst))
               .getOrElse(mkMethodCall(newObj, method, newArgs, typeSubst))
@@ -598,8 +598,8 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
 
     // traverse the tree bottom-up checking that all the nodes have a type
     var untyped: SValue = null
-    rewrite(everywherebu(rule[SValue]{
-      case v =>
+    rewrite(everywherebu(rule[Any]{
+      case v: SValue =>
         if (v.tpe == NoType) untyped = v
         v
     }))(assigned)
@@ -614,7 +614,7 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
 object SigmaTyper {
 
   type STypeSubst = Map[STypeVar, SType]
-  val emptySubst = Map.empty[STypeVar, SType]
+  val EmptySubst = Map.empty[STypeVar, SType]
 
   /** Performs pairwise type unification making sure each type variable is equally
     * substituted in all items. */
@@ -623,7 +623,7 @@ object SigmaTyper {
     val itemsUni = (items1, items2).zipped.map((t1, t2) => unifyTypes(t1,t2))
     if (itemsUni.forall(_.isDefined)) {
       // merge substitutions making sure the same id is equally substituted in all items
-      val merged = itemsUni.foldLeft(emptySubst)((acc, subst) => {
+      val merged = itemsUni.foldLeft(EmptySubst)((acc, subst) => {
         var res = acc
         for ((id, t) <- subst.get) {
           if (res.contains(id) && res(id) != t) return None
@@ -636,7 +636,7 @@ object SigmaTyper {
       None
   }
 
-  private val unifiedWithoutSubst = Some(emptySubst)
+  private val unifiedWithoutSubst = Some(EmptySubst)
 
   /** Finds a substitution `subst` of type variables such that unifyTypes(applySubst(t1, subst), t2) shouldBe Some(emptySubst) */
   def unifyTypes(t1: SType, t2: SType): Option[STypeSubst] = (t1, t2) match {
@@ -671,7 +671,7 @@ object SigmaTyper {
       val remainingVars = tparams.filterNot { p => subst.contains(p.ident) }
       SFunc(args.map(applySubst(_, subst)), applySubst(res, subst), remainingVars)
     case _ =>
-      val substRule = rule[SType] {
+      val substRule = rule[Any] {
         case id: STypeVar if subst.contains(id) => subst(id)
       }
       rewrite(everywherebu(substRule))(tpe)

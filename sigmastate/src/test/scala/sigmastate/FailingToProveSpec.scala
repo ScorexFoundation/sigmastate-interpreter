@@ -1,9 +1,7 @@
 package sigmastate
 
-import org.ergoplatform.{ErgoBox, ErgoLikeContext}
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
-import org.ergoplatform.{ErgoBox, ErgoLikeContext, ErgoLikeInterpreter, ErgoLikeTransaction}
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.TestingHelpers._
 import sigmastate.lang.Terms._
 import org.scalatest.TryValues._
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
@@ -34,9 +32,9 @@ class FailingToProveSpec extends SigmaTestingCommons {
          | }
        """.stripMargin).asBoolValue.toSigmaProp
 
-    val selfBox = ErgoBox(200L, compiledScript, 0)
-    val o1 = ErgoBox(101L, TrueProp, 5001)
-    val o2 = ErgoBox(99L, TrueProp, 5001)
+    val selfBox = testBox(200L, compiledScript, 0)
+    val o1 = testBox(101L, TrueProp, 5001)
+    val o2 = testBox(99L, TrueProp, 5001)
     val tx =  createTransaction(IndexedSeq(o1, o2))
     val ctx = ErgoLikeContextTesting(
       currentHeight = 5001,
@@ -67,10 +65,10 @@ class FailingToProveSpec extends SigmaTestingCommons {
          | }
        """.stripMargin).asBoolValue.toSigmaProp
 
-    val selfBox = ErgoBox(200L, compiledScript, 0)
-    val o1 = ErgoBox(102L, TrueProp, 5001)
-    val o2 = ErgoBox(98L, TrueProp, 5001)
-    val o3 = ErgoBox(100L, TrueProp, 5001)
+    val selfBox = testBox(200L, compiledScript, 0)
+    val o1 = testBox(102L, TrueProp, 5001)
+    val o2 = testBox(98L, TrueProp, 5001)
+    val o3 = testBox(100L, TrueProp, 5001)
     val tx =  createTransaction(IndexedSeq(o1, o2, o3))
     val ctx = ErgoLikeContextTesting(
       currentHeight = 5001,

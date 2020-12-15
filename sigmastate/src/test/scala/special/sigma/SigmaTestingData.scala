@@ -8,6 +8,7 @@ import sigmastate.{AvlTreeFlags, TrivialProp}
 import sigmastate.Values.{BooleanConstant, IntConstant}
 import org.scalacheck.{Arbitrary, Gen}
 import sigmastate.helpers.SigmaTestingCommons
+import sigmastate.helpers.TestingHelpers._
 import sigmastate.eval._
 import sigmastate.eval.Extensions._
 import org.ergoplatform.{ErgoLikeContext, DataInput, ErgoLikeTransaction, ErgoBox}

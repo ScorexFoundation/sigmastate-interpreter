@@ -87,8 +87,8 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ObjectGe
   }
 
   property("global methods") {
-    comp(env, "{ groupGenerator }") shouldBe MethodCall(Global, SGlobal.groupGeneratorMethod, IndexedSeq(), SigmaTyper.emptySubst)
-    comp(env, "{ Global.groupGenerator }") shouldBe MethodCall(Global, SGlobal.groupGeneratorMethod, IndexedSeq(), SigmaTyper.emptySubst)
+    comp(env, "{ groupGenerator }") shouldBe MethodCall(Global, SGlobal.groupGeneratorMethod, IndexedSeq(), SigmaTyper.EmptySubst)
+    comp(env, "{ Global.groupGenerator }") shouldBe MethodCall(Global, SGlobal.groupGeneratorMethod, IndexedSeq(), SigmaTyper.EmptySubst)
     comp(env, "{ Global.xor(arr1, arr2) }") shouldBe Xor(ByteArrayConstant(arr1), ByteArrayConstant(arr2))
     comp(env, "{ xor(arr1, arr2) }") shouldBe Xor(ByteArrayConstant(arr1), ByteArrayConstant(arr2))
   }
@@ -320,7 +320,7 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ObjectGe
   property("SOption.map") {
     comp("getVar[Int](1).map({(i: Int) => i + 1})") shouldBe
       mkMethodCall(GetVarInt(1),
-        SOption.MapMethod.withConcreteTypes(Map(SOption.tT -> SInt, SOption.tR -> SInt)),
+        SOption.MapMethod.withConcreteTypes(Map(SType.tT -> SInt, SType.tR -> SInt)),
         IndexedSeq(FuncValue(
           Vector((1, SInt)),
           Plus(ValUse(1, SInt), IntConstant(1)))), Map()
@@ -330,7 +330,7 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ObjectGe
   property("SOption.filter") {
     comp("getVar[Int](1).filter({(i: Int) => i > 0})") shouldBe
       mkMethodCall(GetVarInt(1),
-        SOption.FilterMethod.withConcreteTypes(Map(SOption.tT -> SInt)),
+        SOption.FilterMethod.withConcreteTypes(Map(SType.tT -> SInt)),
         IndexedSeq(FuncValue(
           Vector((1, SInt)),
           GT(ValUse(1, SInt), IntConstant(0)))), Map()
@@ -439,7 +439,7 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ObjectGe
         Map())
   }
 
-  // TODO HF: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
+  // TODO soft-fork: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
   ignore("SCollection.find") {
     comp("OUTPUTS.find({ (out: Box) => out.value >= 1L })") shouldBe
       mkMethodCall(Outputs,
@@ -498,7 +498,7 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ObjectGe
       "Coll(1, 2).mapReduce({ (i: Int) => (i > 0, i.toLong) }, { (tl: (Long, Long)) => tl._1 + tl._2 })") shouldBe
       mkMethodCall(
         ConcreteCollection.fromItems(IntConstant(1), IntConstant(2)),
-        SCollection.MapReduceMethod.withConcreteTypes(Map(SCollection.tIV -> SInt, SCollection.tK -> SBoolean, SCollection.tV -> SLong)),
+        SCollection.MapReduceMethod.withConcreteTypes(Map(SCollection.tIV -> SInt, SType.tK -> SBoolean, SType.tV -> SLong)),
         Vector(
           Lambda(List(),
             Vector(("i", SInt)),

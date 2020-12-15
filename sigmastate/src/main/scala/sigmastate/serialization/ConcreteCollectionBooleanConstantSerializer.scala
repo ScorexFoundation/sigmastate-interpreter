@@ -19,8 +19,10 @@ case class ConcreteCollectionBooleanConstantSerializer(cons: (IndexedSeq[Value[S
     val bits = new Array[Boolean](len)
     cfor(0)(_ < len, _ + 1) { i =>
       bits(i) = items(i) match {
-        case v: BooleanConstant => v.value
-        case v => error(s"Expected collection of BooleanConstant values, got: $v") // TODO cover with tests
+        case v: BooleanConstant if v.tpe == SBoolean =>
+          v.value
+        case v =>
+          error(s"Expected collection of BooleanConstant values, got: $v")
       }
     }
     w.putBits(bits, bitsInfo)
@@ -30,10 +32,17 @@ case class ConcreteCollectionBooleanConstantSerializer(cons: (IndexedSeq[Value[S
   override def parse(r: SigmaByteReader): Value[SCollection[SBoolean.type]] = {
     val size = r.getUShort()    // READ
     val bits = r.getBits(size)  // READ
-    val items = new Array[BoolValue](size)
-    cfor(0)(_ < size, _ + 1) { i =>
-      items(i) = BooleanConstant.fromBoolean(bits(i))
+    val items: IndexedSeq[Value[SBoolean.type]] = if (size == 0) {
+      // reusing pre-allocated immutable instances
+      Value.EmptySeq.asInstanceOf[IndexedSeq[Value[SBoolean.type]]]
+    } else {
+      val items = new Array[BoolValue](size)
+      cfor(0)(_ < size, _ + 1) { i =>
+        items(i) = BooleanConstant.fromBoolean(bits(i))
+      }
+      items
     }
     cons(items, SBoolean)
   }
+
 }

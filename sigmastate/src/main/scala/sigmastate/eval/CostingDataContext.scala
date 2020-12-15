@@ -10,7 +10,7 @@ import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.authds.{ADDigest, ADKey, SerializedAdProof, ADValue}
 import sigmastate.SCollection.SByteArray
 import sigmastate.{TrivialProp, _}
-import sigmastate.Values.{Constant, EvaluatedValue, SValue, ConstantNode, Value, ErgoTree, SigmaBoolean}
+import sigmastate.Values.{Constant, EvaluatedValue, SValue, ConstantNode, ErgoTree, SigmaBoolean}
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.interpreter.{CryptoConstants, Interpreter}
 import special.collection.{Size, CSizeOption, SizeColl, CCostedBuilder, CollType, SizeOption, CostedBuilder, Coll}
@@ -29,6 +29,7 @@ import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.serialization.{SigmaSerializer, GroupElementSerializer}
 import special.Types.TupleType
 
+import scala.collection.mutable
 import scala.reflect.ClassTag
 
 /** Interface implmented by wrappers to provide access to the underlying wrapped value. */
@@ -241,7 +242,7 @@ class EvalSizeBox(
     val foundSize = varSize.asInstanceOf[SizeOption[AnyValue]].sizeOpt
     val regSize = foundSize match {
       case Some(varSize: SizeAnyValue) =>
-        assert(varSize.tVal == tT, s"Unexpected register type found at register #$id: ${varSize.tVal}, expected $tT")
+        require(varSize.tVal == tT, s"Unexpected register type found at register #$id: ${varSize.tVal}, expected $tT")
         val regSize = varSize.valueSize.asInstanceOf[Size[T]]
         regSize
       case _ =>
@@ -461,6 +462,29 @@ object CHeader {
   * @see [[CostModel]] for detailed descriptions
   */
 class CCostModel extends CostModel {
+  import CCostModel._
+
+  override def AccessBox: Int = AccessBoxCost
+
+  override def AccessAvlTree: Int = AccessAvlTreeCost
+
+  override def GetVar: Int = GetVarCost
+
+  def DeserializeVar: Int = DeserializeVarCost
+
+  def GetRegister: Int = GetRegisterCost
+
+  def DeserializeRegister: Int = DeserializeRegisterCost
+
+  def SelectField: Int = SelectFieldCost
+
+  def CollectionConst: Int = CollectionConstCost
+
+  def AccessKiloByteOfData: Int = AccessKiloByteOfDataCost
+
+  def PubKeySize: Long = CryptoConstants.EncodedGroupElementLength
+}
+object CCostModel {
   private def costOf(opName: String, opType: SFunc): Int = {
     val operId = OperationId(opName, opType)
     costOf(operId)
@@ -471,27 +495,35 @@ class CCostModel extends CostModel {
     cost
   }
 
-  def AccessBox: Int = costOf("AccessBox", SFunc(SContext, SBox))
+  // NOTE: lazy vals are necessary to avoid initialization exception
 
-  def AccessAvlTree: Int = costOf("AccessAvlTree", SFunc(SContext, SAvlTree))
+  private val AccessBoxOpType: SFunc = SFunc(SContext, SBox)
+  private lazy val AccessBoxCost: Int = costOf("AccessBox", AccessBoxOpType)
 
-  def GetVar: Int = costOf("GetVar", SFunc(IndexedSeq(SContext, SByte), SOption(SOption.tT)))
+  private val AccessAvlTreeOpType: SFunc = SFunc(SContext, SAvlTree)
+  private lazy val AccessAvlTreeCost: Int = costOf("AccessAvlTree", AccessAvlTreeOpType)
 
-  def DeserializeVar: Int = costOf("DeserializeVar", SFunc(IndexedSeq(SContext, SByte), SOption(SOption.tT)))
+  private val GetVarOpType: SFunc = SFunc(Array(SContext, SByte), SOption.ThisType)
+  private lazy val GetVarCost: Int = costOf("GetVar", GetVarOpType)
 
-  def GetRegister: Int = costOf("GetRegister", SFunc(IndexedSeq(SBox, SByte), SOption(SOption.tT)))
+  private val DeserializeVarOpType: SFunc = SFunc(Array(SContext, SByte), SOption.ThisType)
+  private lazy val DeserializeVarCost: Int = costOf("DeserializeVar", DeserializeVarOpType)
 
-  def DeserializeRegister: Int = costOf("DeserializeRegister", SFunc(IndexedSeq(SBox, SByte), SOption(SOption.tT)))
+  private val GetRegisterOpType: SFunc = SFunc(Array(SBox, SByte), SOption.ThisType)
+  private lazy val GetRegisterCost: Int = costOf("GetRegister", GetRegisterOpType)
 
-  def SelectField: Int = costOf("SelectField", SFunc(IndexedSeq(), SUnit))
+  private val DeserializeRegisterOpType: SFunc = SFunc(Array(SBox, SByte), SOption.ThisType)
+  private lazy val DeserializeRegisterCost: Int = costOf("DeserializeRegister", DeserializeRegisterOpType)
 
-  def CollectionConst: Int = costOf("Const", SFunc(IndexedSeq(), SCollection(STypeVar("IV"))))
+  private val SelectFieldOpType: SFunc = SFunc(mutable.WrappedArray.empty, SUnit)
+  private lazy val SelectFieldCost: Int = costOf("SelectField", SelectFieldOpType)
 
-  def AccessKiloByteOfData: Int = costOf("AccessKiloByteOfData", SFunc(IndexedSeq(), SUnit))
+  private val CollectionConstOpType: SFunc = SFunc(mutable.WrappedArray.empty, SCollection.ThisType)
+  private lazy val CollectionConstCost: Int = costOf("Const", CollectionConstOpType)
 
-  def PubKeySize: Long = CryptoConstants.EncodedGroupElementLength
+  private val AccessKiloByteOfDataOpType: SFunc = SFunc(mutable.WrappedArray.empty, SUnit)
+  private lazy val AccessKiloByteOfDataCost: Int = costOf("AccessKiloByteOfData", AccessKiloByteOfDataOpType)
 }
-
 
 /** A default implementation of [[SigmaDslBuilder]] interface.
   * @see [[SigmaDslBuilder]] for detailed descriptions
@@ -737,5 +769,34 @@ case class CostingDataContext(
         }
       } else None
     }
+  }
+
+  /** Return a new context instance with variables collection updated.
+    * @param bindings  a new binding of the context variables with new values.
+    * @return a new instance (if `bindings` non-empty) with the specified bindings.
+    *         other existing bindings are copied to the new instance
+    */
+  def withUpdatedVars(bindings: (Int, AnyValue)*): CostingDataContext = {
+    if (bindings.isEmpty) return this
+
+    val ids = bindings.map(_._1).toArray
+    val values = bindings.map(_._2).toArray
+    val maxVarId = ids.max  // INV: ids is not empty
+    val requiredNewLength = maxVarId + 1
+
+    val newVars = if (vars.length < requiredNewLength) {
+      // grow vars collection
+      val currVars = vars.toArray
+      val buf = new Array[AnyValue](requiredNewLength)
+      Array.copy(currVars, 0, buf, 0, currVars.length)
+      cfor(0)(_ < ids.length, _ + 1) { i =>
+        buf(ids(i)) = values(i)
+      }
+      buf.toColl
+    } else {
+      vars.updateMany(ids.toColl, values.toColl)
+    }
+
+    this.copy(vars = newVars)
   }
 }

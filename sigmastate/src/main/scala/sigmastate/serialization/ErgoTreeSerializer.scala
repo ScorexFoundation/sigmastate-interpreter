@@ -210,22 +210,28 @@ class ErgoTreeSerializer {
   /** Deserialize constants section only.
     * @hotspot don't beautify this code
     */
-  private def deserializeConstants(header: Byte, r: SigmaByteReader): Array[Constant[SType]] = {
-    val constants = if (ErgoTree.isConstantSegregation(header)) {
-      val nConsts = r.getUInt().toInt
-      val res = new Array[Constant[SType]](nConsts)
-      cfor(0)(_ < nConsts, _ + 1) { i =>
-        res(i) = constantSerializer.deserialize(r)
+  private def deserializeConstants(header: Byte, r: SigmaByteReader): IndexedSeq[Constant[SType]] = {
+    val constants: IndexedSeq[Constant[SType]] =
+      if (ErgoTree.isConstantSegregation(header)) {
+        val nConsts = r.getUInt().toInt
+        if (nConsts > 0) {
+          // @hotspot: allocate new array only if it is not empty
+          val res = new Array[Constant[SType]](nConsts)
+          cfor(0)(_ < nConsts, _ + 1) { i =>
+            res(i) = constantSerializer.deserialize(r)
+          }
+          res
+        }
+        else
+          Constant.EmptySeq
       }
-      res
-    }
-    else
-      Array.empty[Constant[SType]]
+      else
+        Constant.EmptySeq
     constants
   }
 
   /** Deserialize header and constant sections, but output the rest of the bytes as separate array. */
-  def deserializeHeaderWithTreeBytes(r: SigmaByteReader): (Byte, Option[Int], Array[Constant[SType]], Array[Byte]) = {
+  def deserializeHeaderWithTreeBytes(r: SigmaByteReader): (Byte, Option[Int], IndexedSeq[Constant[SType]], Array[Byte]) = {
     val (header, sizeOpt) = deserializeHeaderAndSize(r)
     val constants = deserializeConstants(header, r)
     val treeBytes = r.getBytes(r.remaining)
@@ -241,7 +247,7 @@ class ErgoTreeSerializer {
     val (header, _, constants, treeBytes) = deserializeHeaderWithTreeBytes(r)
     val w = SigmaSerializer.startWriter()
     w.put(header)
-    w.putUInt(constants.length) // TODO HF: this should not be serialized when segregation is off
+    w.putUInt(constants.length) // TODO HF (3h): this should not be serialized when segregation is off
     val constantSerializer = ConstantSerializer(DeserializationSigmaBuilder)
 
     constants.zipWithIndex.foreach {
@@ -254,7 +260,7 @@ class ErgoTreeSerializer {
         val newConsts = constantStore.getAll
         assert(newConsts.length == 1)
         val newConst = newConsts.head
-        // TODO HF: replace assert with require
+        // TODO HF (1h): replace assert with require
         assert(c.tpe == newConst.tpe, s"expected new constant to have the same ${c.tpe} tpe, got ${newConst.tpe}")
         constantSerializer.serialize(newConst, w)
       case (c, _) =>

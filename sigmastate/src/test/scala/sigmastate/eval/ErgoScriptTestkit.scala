@@ -4,19 +4,17 @@ import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
 import org.ergoplatform.validation.ValidationSpecification
 
 import scala.util.Success
-import sigmastate.{SInt, AvlTreeData, SLong, SType}
-import sigmastate.Values.{LongConstant, Constant, EvaluatedValue, SValue, TrueLeaf, SigmaPropConstant, Value, IntConstant, ErgoTree, BigIntArrayConstant}
+import sigmastate.{AvlTreeData, SType}
+import sigmastate.Values.{EvaluatedValue, SValue, SigmaPropConstant, Value, BigIntArrayConstant}
 import org.ergoplatform.{Context => _, _}
 import sigmastate.utxo.CostTable
 import scalan.BaseCtxTests
 import sigmastate.lang.{LangTests, SigmaCompiler}
-import sigmastate.helpers.ContextEnrichingTestProvingInterpreter
-import sigmastate.helpers.ErgoLikeContextTesting
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting}
+import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.ContextExtension
 import sigmastate.interpreter.Interpreter.ScriptEnv
-import sigmastate.serialization.ErgoTreeSerializer
 import special.sigma.{ContractsTestkit, Context => DContext, _}
-import sigmastate.eval.Extensions._
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 
 import scala.language.implicitConversions
@@ -66,10 +64,10 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests
   lazy val backerPubKey = backerProver.dlogSecrets.head.publicImage
   lazy val projectPubKey = projectProver.dlogSecrets.head.publicImage
 
-  val boxToSpend = ErgoBox(10, ErgoScriptPredef.TrueProp, 0,
+  val boxToSpend = testBox(10, ErgoScriptPredef.TrueProp, 0,
     additionalRegisters = Map(ErgoBox.R4 -> BigIntArrayConstant(bigIntegerArr1)))
-  lazy val tx1Output1 = ErgoBox(minToRaise, projectPubKey, 0)
-  lazy val tx1Output2 = ErgoBox(1, projectPubKey, 0)
+  lazy val tx1Output1 = testBox(minToRaise, projectPubKey, 0)
+  lazy val tx1Output2 = testBox(1, projectPubKey, 0)
   lazy val tx1 = new ErgoLikeTransaction(IndexedSeq(), IndexedSeq(), IndexedSeq(tx1Output1, tx1Output2))
   lazy val ergoCtx = ErgoLikeContextTesting(
     currentHeight = timeout - 1,
@@ -175,14 +173,14 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests
       }
 
       if (ergoCtx.isDefined) {
-        val calcCtx = ergoCtx.get.toSigmaContext(IR, isCost = false)
+        val calcCtx = ergoCtx.get.toSigmaContext(isCost = false)
         val testContractRes = testContract.map(_(calcCtx))
         testContractRes.foreach { res =>
           checkExpected(res, expectedResult.calc, "Test Contract actual: %s, expected: %s")
         }
 
         // check cost
-        val costCtx = ergoCtx.get.toSigmaContext(IR, isCost = true)
+        val costCtx = ergoCtx.get.toSigmaContext(isCost = true)
         val estimatedCost = IR.checkCost(costCtx, tree, costF, CostTable.ScriptLimit)
 
         // check size

@@ -5,8 +5,8 @@ import org.ergoplatform.ErgoScriptPredef.TrueProp
 import org.ergoplatform._
 import org.ergoplatform.dsl.{ContractSpec, SigmaContractSyntax, TestContractSpec}
 import scorex.crypto.authds.avltree.batch._
-import scorex.crypto.authds.{ADKey, ADValue}
-import scorex.crypto.hash.{Blake2b256, Digest32}
+import scorex.crypto.authds.{ADKey, ADValue, SerializedAdProof}
+import scorex.crypto.hash.{Digest32, Blake2b256}
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
@@ -14,7 +14,9 @@ import sigmastate.eval.{CSigmaProp, IRContext}
 import sigmastate.eval._
 import sigmastate.eval.Extensions._
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter.ScriptNameProp
+import sigmastate.interpreter.ProverResult
 import sigmastate.lang.Terms._
 import special.collection.Coll
 import special.sigma.{AvlTree, Context}
@@ -210,12 +212,12 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons { suite =>
     ).asBoolValue.toSigmaProp
     prop shouldBe propTree
 
-    val newBox1 = ErgoBox(10, pubkey, 0)
+    val newBox1 = testBox(10, pubkey, 0)
     val newBoxes = IndexedSeq(newBox1)
 
     val spendingTransaction = createTransaction(newBoxes)
 
-    val s = ErgoBox(20, TrueProp, 0, Seq(), Map(reg1 -> AvlTreeConstant(SigmaDsl.avlTree(treeData))))
+    val s = testBox(20, TrueProp, 0, Seq(), Map(reg1 -> AvlTreeConstant(SigmaDsl.avlTree(treeData))))
 
     val ctx = ErgoLikeContextTesting(
       currentHeight = 50,
@@ -250,13 +252,13 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons { suite =>
         |}""".stripMargin).asBoolValue.toSigmaProp
 
     val recipientProposition = new ContextEnrichingTestProvingInterpreter().dlogSecrets.head.publicImage
-    val selfBox = ErgoBox(20, TrueProp, 0, Seq(), Map(reg1 -> AvlTreeConstant(SigmaDsl.avlTree(treeData))))
+    val selfBox = testBox(20, TrueProp, 0, Seq(), Map(reg1 -> AvlTreeConstant(SigmaDsl.avlTree(treeData))))
     val ctx = ErgoLikeContextTesting(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(selfBox),
-      createTransaction(ErgoBox(1, recipientProposition, 0)),
+      createTransaction(testBox(1, recipientProposition, 0)),
       self = selfBox)
 
     avlProver.performOneOperation(Lookup(treeElements.head._1))
@@ -266,7 +268,16 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons { suite =>
       .withContextExtender(elementId, LongConstant(elements.head))
     val proof = prover.prove(prop, ctx, fakeMessage).get
 
-    (new ErgoLikeTestInterpreter).verify(prop, ctx, proof, fakeMessage).get._1 shouldBe true
+    val verifier = new ErgoLikeTestInterpreter
+    verifier.verify(prop, ctx, proof, fakeMessage).get._1 shouldBe true
+
+    // check that verifier returns false for incorrect proofs?
+    val invalidProof = SerializedAdProof @@ Array[Byte](1, 2, 3)
+    val invalidProofResult = new ProverResult(
+      proof = proof.proof,
+      extension = proof.extension.add(proofId -> ByteArrayConstant(invalidProof))
+    )
+    verifier.verify(prop, ctx, invalidProofResult, fakeMessage).get._1 shouldBe false
 
     avlProver.performOneOperation(Lookup(treeElements.last._1))
     val smallLeafTreeProof = avlProver.generateProof()
@@ -274,7 +285,6 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons { suite =>
       .withContextExtender(proofId, ByteArrayConstant(smallLeafTreeProof))
       .withContextExtender(elementId, LongConstant(elements.head))
     smallProver.prove(prop, ctx, fakeMessage).isSuccess shouldBe false
-    // TODO coverage: check that verifier return false for incorrect proofs?
   }
 
   property("avl tree - prover provides proof") {
@@ -314,12 +324,12 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons { suite =>
     ).asBoolValue.toSigmaProp
     prop shouldBe propTree
 
-    val newBox1 = ErgoBox(10, pubkey, 0)
+    val newBox1 = testBox(10, pubkey, 0)
     val newBoxes = IndexedSeq(newBox1)
 
     val spendingTransaction = createTransaction(newBoxes)
 
-    val s = ErgoBox(20, TrueProp, 0, Seq(), Map(reg1 -> AvlTreeConstant(treeData), reg2 -> ByteArrayConstant(key)))
+    val s = testBox(20, TrueProp, 0, Seq(), Map(reg1 -> AvlTreeConstant(treeData), reg2 -> ByteArrayConstant(key)))
 
     val ctx = ErgoLikeContextTesting(
       currentHeight = 50,
@@ -366,12 +376,12 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons { suite =>
         |  sigmaProp(tree.getMany(keys, proof).forall( { (o: Option[Coll[Byte]]) => o.isDefined }))
         |}""".stripMargin).asBoolValue.toSigmaProp
 
-    val newBox1 = ErgoBox(10, pubkey, 0)
+    val newBox1 = testBox(10, pubkey, 0)
     val newBoxes = IndexedSeq(newBox1)
 
     val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
 
-    val s = ErgoBox(20, TrueProp, 0, Seq(), Map(reg1 -> AvlTreeConstant(treeData)))
+    val s = testBox(20, TrueProp, 0, Seq(), Map(reg1 -> AvlTreeConstant(treeData)))
 
     val ctx = ErgoLikeContextTesting(
       currentHeight = 50,

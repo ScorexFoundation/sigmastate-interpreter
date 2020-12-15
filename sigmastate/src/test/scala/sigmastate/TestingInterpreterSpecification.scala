@@ -10,6 +10,7 @@ import sigmastate.lang.Terms._
 import org.ergoplatform._
 import scorex.util.encode.Base58
 import sigmastate.helpers.{ErgoLikeContextTesting, ErgoLikeTestInterpreter, ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.TestingHelpers._
 import sigmastate.serialization.ValueSerializer
 import TrivialProp._
 import sigmastate.utils.Helpers._
@@ -115,7 +116,7 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
       "dk2" -> dk2,
       "bytes1" -> Array[Byte](1, 2, 3),
       "bytes2" -> Array[Byte](4, 5, 6),
-      "box1" -> ErgoBox(10, ErgoScriptPredef.TrueProp, 0, Seq(), Map(
+      "box1" -> testBox(10, ErgoScriptPredef.TrueProp, 0, Seq(), Map(
           reg1 -> IntArrayConstant(Array[Int](1, 2, 3)),
           reg2 -> BoolArrayConstant(Array[Boolean](true, false, true)))))
     val prop = compile(env, code).asBoolValue.toSigmaProp
@@ -193,14 +194,6 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
         |  arr.filter {(i: Int) => i < 3} == Coll(1, 2)
         |}""".stripMargin)
   }
-
-// TODO coverage: implement it as negative test
-//  property("Evaluate sigma in lambdas") {
-//    testeval("""{
-//              |  val arr = Array(dk1, dk2)
-//              |  allOf(arr.map(fun (d: Boolean) = d && true))
-//              |}""".stripMargin)
-//  }
 
   property("Evaluate numeric casting ops") {
     def testWithCasting(castSuffix: String): Unit = {

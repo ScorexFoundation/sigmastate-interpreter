@@ -10,7 +10,7 @@ import sigmastate.basics.DLogProtocol.{DLogInteractiveProver, FirstDLogProverMes
 import scorex.util.ScorexLogging
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
-import sigmastate.eval.{IRContext, Sized}
+import sigmastate.eval.{IRContext, Sized, Evaluation}
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.basics._
 import sigmastate.interpreter.Interpreter.{ScriptEnv, VerificationResult}
@@ -52,9 +52,9 @@ trait Interpreter extends ScorexLogging {
 
     val currCost = JMath.addExact(context.initCost, scriptComplexity)
     val remainingLimit = context.costLimit - currCost
-    if (remainingLimit <= 0)
-      throw new CostLimitException(currCost, msgCostLimitError(currCost, context.costLimit), None) // TODO cover with tests
-
+    if (remainingLimit <= 0) {
+      throw new CostLimitException(currCost, Evaluation.msgCostLimitError(currCost, context.costLimit), None)
+    }
     val ctx1 = context.withInitCost(currCost).asInstanceOf[CTX]
     (ctx1, script)
   }
@@ -71,17 +71,20 @@ trait Interpreter extends ScorexLogging {
 
             CheckDeserializedScriptType(d, script)
             Some(script)
-          case _ => None // TODO cover with tests
+          case _ =>
+            None
         }
       else
-        None // TODO cover with tests
+        None
     case _ => None
   }
 
   def toValidScriptType(exp: SValue): BoolValue = exp match {
     case v: Value[SBoolean.type]@unchecked if v.tpe == SBoolean => v
     case p: SValue if p.tpe == SSigmaProp => p.asSigmaProp.isProven
-    case x => // TODO cover with tests
+    case x =>
+      // This case is not possible, due to exp is always of Boolean/SigmaProp type.
+      // In case it will ever change, leave it here to throw an explaining message.
       throw new Error(s"Context-dependent pre-processing should produce tree of type Boolean or SigmaProp but was $x")
   }
 
@@ -96,7 +99,7 @@ trait Interpreter extends ScorexLogging {
         ergoTree.toProposition(ergoTree.isConstantSegregation)
       case Left(UnparsedErgoTree(_, error)) if validationSettings.isSoftFork(error) =>
         TrueSigmaProp
-      case Left(UnparsedErgoTree(_, error)) => // TODO cover with tests
+      case Left(UnparsedErgoTree(_, error)) =>
         throw new InterpreterException(
           "Script has not been recognized due to ValidationException, and it cannot be accepted as soft-fork.", None, Some(error))
     }
@@ -107,7 +110,7 @@ trait Interpreter extends ScorexLogging {
     * We can estimate cost of the tree evaluation only after this step.*/
   def applyDeserializeContext(context: CTX, exp: Value[SType]): (BoolValue, CTX) = {
     val currContext = new MutableCell(context)
-    val substRule = strategy[Value[_ <: SType]] { case x =>
+    val substRule = strategy[Any] { case x: SValue =>
       substDeserialize(currContext.value, { ctx: CTX => currContext.value = ctx }, x)
     }
     val Some(substTree: SValue) = everywherebu(substRule)(exp)
@@ -115,7 +118,7 @@ trait Interpreter extends ScorexLogging {
     (res, currContext.value)
   }
 
-  def calcResult(context: special.sigma.Context, calcF: Ref[IR.Context => Any]): special.sigma.SigmaProp = {
+  private def calcResult(context: special.sigma.Context, calcF: Ref[IR.Context => Any]): special.sigma.SigmaProp = {
     import IR._
     import Context._
     import SigmaProp._
@@ -156,15 +159,15 @@ trait Interpreter extends ScorexLogging {
 
       CheckCostFunc(IR)(asRep[Any => Int](costF))
 
-      val costingCtx = context.toSigmaContext(IR, isCost = true)
-      val estimatedCost = IR.checkCostWithContext(costingCtx, exp, costF, maxCost, initCost).getOrThrow
+      val costingCtx = context.toSigmaContext(isCost = true)
+      val estimatedCost = IR.checkCostWithContext(costingCtx, costF, maxCost, initCost).getOrThrow
 
       IR.onEstimatedCost(env, exp, costingRes, costingCtx, estimatedCost)
 
       // check calc
       val calcF = costingRes.calcF
       CheckCalcFunc(IR)(calcF)
-      val calcCtx = context.toSigmaContext(IR, isCost = false)
+      val calcCtx = context.toSigmaContext(isCost = false)
       val res = calcResult(calcCtx, calcF)
       SigmaDsl.toSigmaBoolean(res) -> estimatedCost
     }
@@ -231,9 +234,10 @@ trait Interpreter extends ScorexLogging {
 
       val initCost = JMath.addExact(ergoTree.complexity.toLong, context.initCost)
       val remainingLimit = context.costLimit - initCost
-      if (remainingLimit <= 0)
-        throw new CostLimitException(initCost, msgCostLimitError(initCost, context.costLimit), None) // TODO cover with tests
-
+      if (remainingLimit <= 0) {
+        // TODO cover with tests (2h)
+        throw new CostLimitException(initCost, Evaluation.msgCostLimitError(initCost, context.costLimit), None)
+      }
       val contextWithCost = context.withInitCost(initCost).asInstanceOf[CTX]
 
       val (cProp, cost) = fullReduction(ergoTree, contextWithCost, env)
@@ -283,7 +287,7 @@ trait Interpreter extends ScorexLogging {
     * per the verifier algorithm of the leaf's Sigma-protocol.
     * If the verifier algorithm of the Sigma-protocol for any of the leaves rejects, then reject the entire proof.
     */
-  val computeCommitments: Strategy = everywherebu(rule[UncheckedSigmaTree] {
+  val computeCommitments: Strategy = everywherebu(rule[Any] {
     case c: UncheckedConjecture => c // Do nothing for internal nodes
 
     case sn: UncheckedSchnorr =>
@@ -294,7 +298,7 @@ trait Interpreter extends ScorexLogging {
       val (a, b) = DiffieHellmanTupleInteractiveProver.computeCommitment(dh.proposition, dh.challenge, dh.secondMessage)
       dh.copy(commitmentOpt = Some(FirstDiffieHellmanTupleProverMessage(a, b)))
 
-    case _ => ???
+    case _: UncheckedSigmaTree => ???
   })
 
   def verify(ergoTree: ErgoTree,
