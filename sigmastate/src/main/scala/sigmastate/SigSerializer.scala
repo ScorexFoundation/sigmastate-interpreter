@@ -141,15 +141,10 @@ object SigSerializer {
       }
     }
 
-    if (bytes.isEmpty) {
+    if (bytes.isEmpty)
       NoProof
-    } else {
-      // Verifier step 1: Read the root challenge from the proof.
-      val (res, finalPos) = traverseNode(exp, bytes, pos = 0, challengeOpt = None) // get the root hash, then call
-      if (finalPos != bytes.length) {
-        throw new Exception("Signature contains extra bytes")
-      }
-      res
-    }
+    else
+    // Verifier step 1: Read the root challenge from the proof.
+      traverseNode(exp, bytes, 0, challengeOpt = None)._1 // get the root hash, then call
   }
 }
