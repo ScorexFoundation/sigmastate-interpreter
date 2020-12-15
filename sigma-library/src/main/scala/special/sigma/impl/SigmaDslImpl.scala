@@ -1,5 +1,6 @@
 package special.sigma
 
+import scala.language.{existentials,implicitConversions}
 import scalan._
 import scala.reflect.runtime.universe._
 import scala.reflect._
