@@ -35,16 +35,16 @@ object ContextExtension {
     }
 
     override def parse(r: SigmaByteReader): ContextExtension = {
-      val extSize = r.versionContext match {
-        case VersionContext(0) => r.getByte() // v3.x
-        case _ => r.getUByte()  // v4.0 and above
-      }
+      val extSize = r.getByte()
+      if (extSize < 0) throw new Exception("Negative amount of context extension values")
       val ext = (0 until extSize)
         .map(_ => (r.getByte(), r.getValue().asInstanceOf[EvaluatedValue[_ <: SType]]))
         .toMap[Byte, EvaluatedValue[_ <: SType]]
       ContextExtension(ext)
     }
+
   }
+
 }
 
 

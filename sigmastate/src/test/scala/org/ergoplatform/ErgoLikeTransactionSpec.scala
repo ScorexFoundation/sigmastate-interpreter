@@ -272,28 +272,32 @@ class ErgoLikeTransactionSpec extends SigmaDslTesting {
   }
 
   property("context extension serialization") {
-    forAll { tx: ErgoLikeTransaction =>
-      val idRange = Byte.MinValue to (Byte.MaxValue - 1)
-      val ce = ContextExtension(idRange.map(id => id.toByte -> IntConstant(4)).toMap)
-      val wrongInput = Input(tx.inputs.head.boxId, ProverResult(Array.emptyByteArray, ce))
-      val ins = IndexedSeq(wrongInput) ++ tx.inputs.tail
-      val tx2 = copyTransaction(tx)(inputs = ins)
-      def roundtrip(version: VersionContext) = {
-        val bs = ErgoLikeTransactionSerializer.toBytes(tx2)
-        val restored = ErgoLikeTransactionSerializer.parse(
-          SigmaSerializer.startReader(bs, 0, version)
-        )
-        restored.inputs.head.extension.values.size shouldBe tx2.inputs.head.extension.values.size
+    forAll { (tx: ErgoLikeTransaction, startIndex: Byte, endIndex: Byte) =>
+      whenever(endIndex >= startIndex) {
+        val idRange = endIndex - startIndex
+
+        val ce = ContextExtension(startIndex.to(endIndex).map(id => id.toByte -> IntConstant(4)).toMap)
+        val wrongInput = Input(tx.inputs.head.boxId, ProverResult(Array.emptyByteArray, ce))
+        val ins = IndexedSeq(wrongInput) ++ tx.inputs.tail
+        val tx2 = copyTransaction(tx)(inputs = ins)
+
+        def roundtrip() = {
+          val bs = ErgoLikeTransactionSerializer.toBytes(tx2)
+          val restored = ErgoLikeTransactionSerializer.parse(
+            SigmaSerializer.startReader(bs, 0)
+          )
+          restored.inputs.head.extension.values.size shouldBe tx2.inputs.head.extension.values.size
+        }
+
+        if(idRange < 127) {
+          roundtrip()
+        } else {
+          assertExceptionThrown(
+            roundtrip(),
+            { _ => true }
+          )
+        }
       }
-
-      // successful for v4.0 and above
-      roundtrip(VersionContext.MaxSupportedVersion)
-
-      // unsuccessful if version context is not passed (which means v3.x version)
-      assertExceptionThrown(
-        roundtrip(VersionContext(0)),
-        { _ => true }
-      )
     }
   }
 }
