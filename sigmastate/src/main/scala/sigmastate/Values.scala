@@ -1058,10 +1058,15 @@ object Values {
       (header | version).toByte
     }
 
+    /** Creates valid header byte with the given version.
+      * The SizeFlag is set if version > 0 */
     @inline def headerWithVersion(version: Byte): Byte = {
+      // take default header and embedd the given version in it
       var h = updateVersionBits(DefaultHeader, version)
-      if (version > 0)
+      if (version > 0) {
+        // set SizeFlag if version is greater then 0 (see require() in ErgoTree constructor)
         h = (h | ErgoTree.SizeFlag).toByte
+      }
       h
     }
 

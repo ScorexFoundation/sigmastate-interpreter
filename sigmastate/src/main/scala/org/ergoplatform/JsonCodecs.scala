@@ -401,7 +401,7 @@ trait JsonCodecs {
       "validationSettings" -> ctx.validationSettings.asJson,
       "costLimit" -> ctx.costLimit.asJson,
       "initCost" -> ctx.initCost.asJson,
-      "activatedVersion" -> ctx.activatedScriptVersion.asJson
+      "scriptVersion" -> ctx.activatedScriptVersion.asJson
     )
   })
 
@@ -418,7 +418,7 @@ trait JsonCodecs {
       validationSettings <- cursor.downField("validationSettings").as[SigmaValidationSettings]
       costLimit <- cursor.downField("costLimit").as[Long]
       initCost <- cursor.downField("initCost").as[Long]
-      version <- cursor.downField("activatedVersion").as[Byte]
+      version <- cursor.downField("scriptVersion").as[Byte]
     } yield new ErgoLikeContext(
       lastBlockUtxoRoot, Colls.fromArray(headers.toArray), preHeader,
       dataBoxes, boxesToSpend, spendingTransaction, selfIndex, extension,

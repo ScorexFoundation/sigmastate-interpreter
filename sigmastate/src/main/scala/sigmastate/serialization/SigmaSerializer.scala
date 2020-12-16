@@ -17,9 +17,6 @@ object SigmaSerializer {
   val MaxPropositionSize: Int = SigmaConstants.MaxPropositionBytes.value
   val MaxTreeDepth: Int = SigmaConstants.MaxTreeDepth.value
 
-  //TODO v5.0: remove default value of versionContext parameter
-  // All usages of this method should pass a version context explicitly.
-
   /** Helper function to be use in serializers.
     * Starting position is marked and then used to compute number of consumed bytes.
     * val r = Serializer.startReader(bytes, pos)
