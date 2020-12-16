@@ -628,10 +628,25 @@ object CostTable {
 //
 //    ("Downcast", s"(${Downcast.tT}) => ${Downcast.tR}", castOp),
 //    ("Upcast", s"(${Upcast.tT}) => ${Upcast.tR}", castOp),
-//
-//    ("Downcast", s"(BigInt) => ${Downcast.tR}", castOpBigInt),
+
 //    ("Upcast", s"(${Upcast.tT}) => BigInt", castOpBigInt),
+//    ("Downcast", s"(BigInt) => ${Downcast.tR}", castOpBigInt),
 //
+    /** Cost of: 1) converting larger numeric value to lower numeric value, i.e. Int -> Byte.
+      * NOTE: the cost of BigInt casting is the same in JITC (comparing to AOTC) to simplify implementation. */
+    def Downcast = 5 // cf. castOp
+
+    /** Cost of: 1) converting lower numeric value to larger numeric value, i.e. Byte -> Int
+      * NOTE: the cost of BigInt casting is the same in JITC (comparing to AOTC) to simplify implementation. */
+    def Upcast = 5
+
+    /** Cost of: 1) creating Byte collection from a numeric value */
+    def NumericToBytes = 5
+
+    /** Cost of: 1) creating Boolean collection (one bool for each bit) from a numeric
+     * value. */
+    def NumericToBits = 5
+
     //    ("min_per_item", "(BigInt, BigInt) => BigInt", comparisonCost),
     //
 //    ("max_per_item", "(BigInt, BigInt) => BigInt", comparisonCost),

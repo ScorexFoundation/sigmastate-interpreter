@@ -31,6 +31,7 @@ import special.sigma.{Header, Box, SigmaProp, AvlTree, SigmaDslBuilder, PreHeade
 import sigmastate.lang.SigmaTyper.STypeSubst
 import sigmastate.eval.Evaluation.stypeToRType
 import sigmastate.eval._
+import sigmastate.utxo.CostTable.CostOf
 import spire.syntax.all.cfor
 
 import scala.collection.mutable
@@ -378,7 +379,25 @@ case class SMethod(
     stype: SFunc,
     methodId: Byte,
     irInfo: MethodIRInfo,
-    docInfo: Option[OperationInfo]) {
+    docInfo: Option[OperationInfo],
+    costFunc: Option[PartialFunction[(MethodCall, Any, Array[Any]), Int]]) {
+
+
+  /** Do some checks the method descriptor is well configured and consistent. */
+  def checkWellDefined(): Boolean = {
+    docInfo match {
+      case Some(opInfo) =>
+        opInfo.opDesc match {
+          case Some(opDesc) if (opDesc == MethodCall || opDesc == PropertyCall) =>
+            if (costFunc.isEmpty)
+              throw new IllegalStateException(
+                s"Cost function is not defined for $this")
+            else true
+          case _ => true
+        }
+      case None => true
+    }
+  }
 
   /** Finds and keeps the [[Method]] instance which corresponds to this method descriptor.
     * The lazy value is forced only if irInfo.javaMethod == None
@@ -410,6 +429,8 @@ case class SMethod(
   }
 
   def withSType(newSType: SFunc): SMethod = copy(stype = newSType)
+
+  def withCost(costFunc: PartialFunction[(MethodCall, Any, Array[Any]), Int]): SMethod = copy(costFunc = Some(costFunc))
 
   def withConcreteTypes(subst: Map[STypeVar, SType]): SMethod =
     withSType(stype.withSubstTypes(subst).asFunc)
@@ -463,7 +484,7 @@ object SMethod {
   }
 
   def apply(objType: STypeCompanion, name: String, stype: SFunc, methodId: Byte): SMethod = {
-    SMethod(objType, name, stype, methodId, MethodIRInfo(None, None, None), None)
+    SMethod(objType, name, stype, methodId, MethodIRInfo(None, None, None), None, None)
   }
 
   def fromIds(typeId: Byte, methodId: Byte): SMethod = {
@@ -537,6 +558,9 @@ trait SNumericType extends SProduct {
   @inline def max(that: SNumericType): SNumericType =
     if (this.typeIndex > that.typeIndex) this else that
 
+  /** Returns true if this numeric type is larger than that. */
+  @inline def >(that: SNumericType): Boolean = this.typeIndex > that.typeIndex
+
   /** Number of bytes to store values of this type. */
   @inline private def typeIndex: Int = allNumericTypes.indexOf(this)
 
@@ -553,17 +577,33 @@ object SNumericType extends STypeCompanion {
 
   val tNum = STypeVar("TNum")
 
+  val costOfNumericCast: PartialFunction[(MethodCall, Any, Array[Any]), Int] = {
+    case (mc, _, _) =>
+      val cast = getNumericCast(mc.obj.tpe, mc.method.name, mc.method.stype.tRange).get
+      if (cast == Downcast) CostOf.Downcast else CostOf.Upcast
+  }
+
+  def givenCost(cost: Int): PartialFunction[(MethodCall, Any, Array[Any]), Int] = {
+    case _ => cost
+  }
+
   val ToByteMethod: SMethod = SMethod(this, "toByte", SFunc(tNum, SByte), 1)
+    .withCost(costOfNumericCast)
     .withInfo(PropertyCall, "Converts this numeric value to \\lst{Byte}, throwing exception if overflow.")
   val ToShortMethod: SMethod = SMethod(this, "toShort", SFunc(tNum, SShort), 2)
+    .withCost(costOfNumericCast)
     .withInfo(PropertyCall, "Converts this numeric value to \\lst{Short}, throwing exception if overflow.")
   val ToIntMethod: SMethod = SMethod(this, "toInt", SFunc(tNum, SInt), 3)
+    .withCost(costOfNumericCast)
     .withInfo(PropertyCall, "Converts this numeric value to \\lst{Int}, throwing exception if overflow.")
   val ToLongMethod: SMethod = SMethod(this, "toLong", SFunc(tNum, SLong), 4)
+    .withCost(costOfNumericCast)
     .withInfo(PropertyCall, "Converts this numeric value to \\lst{Long}, throwing exception if overflow.")
   val ToBigIntMethod: SMethod = SMethod(this, "toBigInt", SFunc(tNum, SBigInt), 5)
+    .withCost(costOfNumericCast)
     .withInfo(PropertyCall, "Converts this numeric value to \\lst{BigInt}")
   val ToBytesMethod: SMethod = SMethod(this, "toBytes", SFunc(tNum, SByteArray), 6)
+    .withCost(givenCost(CostOf.NumericToBytes))
     .withIRInfo(MethodCallIrBuilder)
     .withInfo(PropertyCall,
       """ Returns a big-endian representation of this numeric value in a collection of bytes.
@@ -571,6 +611,7 @@ object SNumericType extends STypeCompanion {
         | collection of bytes \lst{[0x12, 0x13, 0x14, 0x15]}.
           """.stripMargin)
   val ToBitsMethod: SMethod = SMethod(this, "toBits", SFunc(tNum, SBooleanArray), 7)
+    .withCost(givenCost(CostOf.NumericToBits))
     .withIRInfo(MethodCallIrBuilder)
     .withInfo(PropertyCall,
       """ Returns a big-endian representation of this numeric in a collection of Booleans.
@@ -585,10 +626,24 @@ object SNumericType extends STypeCompanion {
     ToBigIntMethod,  // see Downcast
     ToBytesMethod,
     ToBitsMethod
-  )
+  ).ensuring(_.forall { m => m.checkWellDefined() })
+
+
   val castMethods: Array[String] =
     Array(ToByteMethod, ToShortMethod, ToIntMethod, ToLongMethod, ToBigIntMethod)
       .map(_.name)
+
+  /** Checks the given name is numeric type cast method (like toByte, toInt, etc.).*/
+  def isCastMethod(name: String): Boolean = castMethods.contains(name)
+
+  /** Convert the given method to a cast operation from fromTpe to resTpe. */
+  def getNumericCast(fromTpe: SType, methodName: String, resTpe: SType): Option[NumericCastCompanion] = (fromTpe, resTpe) match {
+    case (from: SNumericType, to: SNumericType) if isCastMethod(methodName) =>
+      val op = if (to > from) Upcast else Downcast
+      Some(op)
+    case _ => None  // the method in not numeric type cast
+  }
+
 }
 
 trait SLogical extends SType {

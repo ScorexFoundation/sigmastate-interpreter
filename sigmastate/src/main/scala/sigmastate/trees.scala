@@ -479,7 +479,7 @@ case class Upcast[T <: SNumericType, R <: SNumericType](input: Value[T], tpe: R)
 
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val inputV = input.evalTo[AnyVal](env)
-    // TODO JITC
+    addCost(CostOf.Upcast)
     tpe.upcast(inputV)
   }
 }
@@ -505,7 +505,7 @@ case class Downcast[T <: SNumericType, R <: SNumericType](input: Value[T], tpe: 
   override def opType = Downcast.OpType
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val inputV = input.evalTo[AnyVal](env)
-    // TODO JITC
+    addCost(CostOf.Downcast)
     tpe.downcast(inputV)
   }
 }
