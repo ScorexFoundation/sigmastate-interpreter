@@ -10,8 +10,7 @@ import sigmastate.lang.exceptions.{SerializerException, InputSizeLimitExceeded}
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 
 class ErgoTreeSerializerSpecification extends SerializationSpecification
-  with SigmaTestingCommons
-  with CrossVersionProps {
+  with SigmaTestingCommons {
 
   implicit lazy val IR: TestingIRContext = new TestingIRContext {
     beginPass(noConstPropagationPass)
@@ -45,8 +44,7 @@ class ErgoTreeSerializerSpecification extends SerializationSpecification
       val r = SigmaSerializer.startReader(
         treeBytes,
         new ConstantStore(deserializedConstants),
-        resolvePlaceholdersToConstants = true,
-        versionContext = activatedVersion)
+        resolvePlaceholdersToConstants = true)
       val deserializedTree = ValueSerializer.deserialize(r)
       deserializedTree shouldEqual tree
     }

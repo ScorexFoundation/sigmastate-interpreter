@@ -8,7 +8,6 @@ import scorex.util.ByteArrayBuilder
 import sigmastate.lang.exceptions.SerializerException
 import sigmastate.utils._
 import scorex.util.serialization._
-import sigmastate.interpreter.VersionContext
 import sigmastate.serialization.OpCodes.OpCode
 
 object SigmaSerializer {
@@ -28,15 +27,13 @@ object SigmaSerializer {
     * obj -> r.consumed
     */
   def startReader(bytes: Array[Byte],
-                  pos: Int = 0,
-                  versionContext: VersionContext = VersionContext(0)): SigmaByteReader = {
+                  pos: Int = 0): SigmaByteReader = {
     val buf = ByteBuffer.wrap(bytes)
     buf.position(pos)
     val r = new SigmaByteReader(
       new VLQByteBufferReader(buf),
       new ConstantStore(),
       resolvePlaceholdersToConstants = false,
-      versionContext = versionContext,
       maxTreeDepth = MaxTreeDepth
     ).mark()
     r
@@ -45,15 +42,13 @@ object SigmaSerializer {
   /** Helper function to be use in serializers. */
   def startReader(bytes: Array[Byte],
                   constantStore: ConstantStore,
-                  resolvePlaceholdersToConstants: Boolean,
-                  versionContext: VersionContext)
+                  resolvePlaceholdersToConstants: Boolean)
                  (implicit vs: SigmaValidationSettings): SigmaByteReader = {
     val buf = ByteBuffer.wrap(bytes)
     val r = new SigmaByteReader(new VLQByteBufferReader(buf),
       constantStore,
       resolvePlaceholdersToConstants,
-      maxTreeDepth = MaxTreeDepth,
-      versionContext = versionContext).mark()
+      maxTreeDepth = MaxTreeDepth).mark()
     r
   }
 
@@ -93,7 +88,6 @@ abstract class SigmaSerializer[TFamily, T <: TFamily] extends Serializer[TFamily
     val sigmaByteReader = new SigmaByteReader(r,
       new ConstantStore(),
       resolvePlaceholdersToConstants = false,
-      versionContext = VersionContext(0),
       maxTreeDepth = SigmaSerializer.MaxTreeDepth)
     parse(sigmaByteReader)
   }

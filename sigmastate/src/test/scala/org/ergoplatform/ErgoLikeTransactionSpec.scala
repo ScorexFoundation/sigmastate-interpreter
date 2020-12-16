@@ -7,7 +7,7 @@ import scorex.util.{Random, ModifierId}
 import sigmastate.SCollection.SByteArray
 import sigmastate.{SSigmaProp, SPair, SInt, TrivialProp, SType}
 import sigmastate.Values.{LongConstant, FalseLeaf, ConstantNode, SigmaPropConstant, ConstantPlaceholder, TrueSigmaProp, ByteArrayConstant, IntConstant, ErgoTree}
-import sigmastate.interpreter.{ProverResult, ContextExtension, VersionContext}
+import sigmastate.interpreter.{ProverResult, ContextExtension}
 import sigmastate.serialization.SigmaSerializer
 import sigmastate.eval._
 import sigmastate.eval.Extensions._

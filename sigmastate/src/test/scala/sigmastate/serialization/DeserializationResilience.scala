@@ -24,8 +24,7 @@ import sigmastate.utils.Helpers._
 import scala.collection.mutable
 
 class DeserializationResilience extends SerializationSpecification
-  with SigmaTestingCommons
-  with CrossVersionProps {
+  with SigmaTestingCommons {
 
   implicit lazy val IR: TestingIRContext = new TestingIRContext {
     //    substFromCostTable = false
@@ -39,7 +38,6 @@ class DeserializationResilience extends SerializationSpecification
       new VLQByteBufferReader(buf),
       new ConstantStore(),
       resolvePlaceholdersToConstants = false,
-      activatedVersion,
       maxTreeDepth = maxTreeDepth).mark()
     r
   }
@@ -109,7 +107,6 @@ class DeserializationResilience extends SerializationSpecification
       SigmaByteReader(r,
         new ConstantStore(),
         resolvePlaceholdersToConstants = false,
-        activatedVersion,
         maxTreeDepth = SigmaSerializer.MaxTreeDepth) {
       val levels: mutable.ArrayBuilder[Int] = mutable.ArrayBuilder.make[Int]()
       override def level_=(v: Int): Unit = {
@@ -130,7 +127,6 @@ class DeserializationResilience extends SerializationSpecification
       SigmaByteReader(r,
         new ConstantStore(),
         resolvePlaceholdersToConstants = false,
-        activatedVersion,
         maxTreeDepth = SigmaSerializer.MaxTreeDepth) {
       private var levelCall: Int = 0
       override def level_=(v: Int): Unit = {

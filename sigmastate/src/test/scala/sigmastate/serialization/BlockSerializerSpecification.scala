@@ -1,11 +1,11 @@
 package sigmastate.serialization
 
 import org.scalacheck.Gen
-import sigmastate.{SType, CrossVersionProps}
+import sigmastate.SType
 import sigmastate.Values.Constant
 import sigmastate.lang.{SigmaBuilder, DeserializationSigmaBuilder}
 
-class BlockSerializerSpecification extends SerializationSpecification with CrossVersionProps {
+class BlockSerializerSpecification extends SerializationSpecification {
 
   property("ValDef: serializer round trip") {
     forAll(valOrFunDefGen) { v =>
@@ -27,7 +27,7 @@ class BlockSerializerSpecification extends SerializationSpecification with Cross
       val s = ConstantPlaceholderSerializer(DeserializationSigmaBuilder.mkConstantPlaceholder)
       val w = SigmaSerializer.startWriter()
       s.serialize(placeholder, w)
-      val r = SigmaSerializer.startReader(w.toBytes, store, resolvePlaceholdersToConstants = false, activatedVersion)
+      val r = SigmaSerializer.startReader(w.toBytes, store, resolvePlaceholdersToConstants = false)
       s.parse(r) shouldEqual placeholder
     }
   }

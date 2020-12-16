@@ -109,14 +109,3 @@ trait InterpreterContext {
   def toSigmaContext(isCost: Boolean, extensions: Map[Byte, AnyValue] = Map()): sigma.Context
 }
 
-/** Descriptor of protocol versions.
-  * @param scriptVersion       the version of ErgoTree (see ErgoTree.header)
-  */
-case class VersionContext(scriptVersion: Byte)
-
-object VersionContext {
-
-  /** Descriptor of the max supported versions. */
-  val MaxSupportedVersion = VersionContext(
-    scriptVersion = Interpreter.MaxSupportedScriptVersion)
-}
