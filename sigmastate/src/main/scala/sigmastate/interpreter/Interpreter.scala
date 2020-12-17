@@ -207,8 +207,13 @@ trait Interpreter extends ScorexLogging {
       // see also ErgoLikeContext ScalaDoc.
       return TrivialProp.TrueProp -> context.initCost
     } else {
-      if (ergoTree.version > context.activatedScriptVersion)
-        throw new InterpreterException(s"Not supported script version ${ergoTree.version}")
+      // activated version is within the supported range [0..MaxSupportedScriptVersion]
+      // however
+      if (ergoTree.version > context.activatedScriptVersion) {
+        throw new InterpreterException(
+          s"ErgoTree version ${ergoTree.version} is higher than activated ${context.activatedScriptVersion}")
+      }
+      // else proceed normally
     }
 
     implicit val vs: SigmaValidationSettings = context.validationSettings
@@ -365,11 +370,14 @@ object Interpreter {
 
   /** Maximum version of ErgoTree supported by this interpreter release.
     * See version bits in `ErgoTree.header` for more details.
-    * This value should be increased with each new language update via soft-fork.
-    * For example in version 3.x-4.x this value should be 0, in 5.x increased to 1,
-    * in 6.x set to 2, etc.
+    * This value should be increased with each new protocol update via soft-fork.
+    * The following values are used for current and upcoming forks:
+    * - version 3.x this value must be 0
+    * - in v4.0 must be 1
+    * - in v5.x must be 2
+    * etc.
     */
-  val MaxSupportedScriptVersion: Byte = 0
+  val MaxSupportedScriptVersion: Byte = 1 // supported versions 0 and 1
 
   def error(msg: String) = throw new InterpreterException(msg)
 

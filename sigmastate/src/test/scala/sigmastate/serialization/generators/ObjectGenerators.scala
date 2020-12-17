@@ -19,7 +19,7 @@ import sigmastate.basics.ProveDHTuple
 import sigmastate.eval.Extensions._
 import sigmastate.eval.{CostingBox, SigmaDsl, _}
 import sigmastate.interpreter.CryptoConstants.EcPointType
-import sigmastate.interpreter.{ProverResult, ContextExtension, CryptoConstants}
+import sigmastate.interpreter.{ProverResult, ContextExtension, CryptoConstants, Interpreter}
 import sigmastate.lang.TransformingSigmaBuilder._
 import sigmastate._
 import sigmastate.utxo._
@@ -30,7 +30,10 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 import scala.reflect.ClassTag
 
-trait ObjectGenerators extends TypeGenerators with ValidationSpecification with ConcreteCollectionGenerators {
+trait ObjectGenerators extends TypeGenerators
+  with ValidationSpecification
+  with ConcreteCollectionGenerators
+  with TestsBase {
 
   val ThresholdLimit = 10
 
@@ -199,7 +202,7 @@ trait ObjectGenerators extends TypeGenerators with ValidationSpecification with 
   val unsignedShortGen: Gen[Short] = Gen.chooseNum(0, Short.MaxValue).map(_.toShort)
 
   val contextExtensionGen: Gen[ContextExtension] = for {
-    values <- Gen.sequence(contextExtensionValuesGen(0, 3))
+    values <- Gen.sequence(contextExtensionValuesGen(0, 5))
   } yield ContextExtension(values.asScala.toMap)
 
   val serializedProverResultGen: Gen[ProverResult] = for {
@@ -786,7 +789,8 @@ trait ObjectGenerators extends TypeGenerators with ValidationSpecification with 
     extension = extension,
     validationSettings = ValidationRules.currentSettings,
     costLimit = costLimit,
-    initCost = initCost
+    initCost = initCost,
+    ActivatedVersionInTest
   )
 
 }

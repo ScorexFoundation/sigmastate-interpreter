@@ -6,12 +6,13 @@ import scorex.crypto.hash.Digest32
 import scorex.util.{Random, ModifierId}
 import sigmastate.SCollection.SByteArray
 import sigmastate.{SSigmaProp, SPair, SInt, TrivialProp, SType}
-import sigmastate.Values.{LongConstant, FalseLeaf, ConstantNode, SigmaPropConstant, ConstantPlaceholder, TrueSigmaProp, ByteArrayConstant, ErgoTree}
+import sigmastate.Values.{LongConstant, FalseLeaf, ConstantNode, SigmaPropConstant, ConstantPlaceholder, TrueSigmaProp, ByteArrayConstant, IntConstant, ErgoTree}
 import sigmastate.interpreter.{ProverResult, ContextExtension}
 import sigmastate.serialization.SigmaSerializer
 import sigmastate.eval._
 import sigmastate.eval.Extensions._
 import sigmastate.SType._
+import sigmastate.helpers.TestingHelpers.copyTransaction
 import sigmastate.utils.Helpers
 import special.sigma.SigmaDslTesting
 
@@ -270,4 +271,33 @@ class ErgoLikeTransactionSpec extends SigmaDslTesting {
     }
   }
 
+  property("context extension serialization") {
+    forAll { (tx: ErgoLikeTransaction, startIndex: Byte, endIndex: Byte) =>
+      whenever(endIndex >= startIndex) {
+        val idRange = endIndex - startIndex
+
+        val ce = ContextExtension(startIndex.to(endIndex).map(id => id.toByte -> IntConstant(4)).toMap)
+        val wrongInput = Input(tx.inputs.head.boxId, ProverResult(Array.emptyByteArray, ce))
+        val ins = IndexedSeq(wrongInput) ++ tx.inputs.tail
+        val tx2 = copyTransaction(tx)(inputs = ins)
+
+        def roundtrip() = {
+          val bs = ErgoLikeTransactionSerializer.toBytes(tx2)
+          val restored = ErgoLikeTransactionSerializer.parse(
+            SigmaSerializer.startReader(bs, 0)
+          )
+          restored.inputs.head.extension.values.size shouldBe tx2.inputs.head.extension.values.size
+        }
+
+        if(idRange < 127) {
+          roundtrip()
+        } else {
+          assertExceptionThrown(
+            roundtrip(),
+            { _ => true }
+          )
+        }
+      }
+    }
+  }
 }

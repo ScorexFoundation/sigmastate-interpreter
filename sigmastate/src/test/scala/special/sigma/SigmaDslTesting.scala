@@ -246,14 +246,26 @@ class SigmaDslTesting extends PropSpec
       new ErgoLikeContext(
         treeData, ctx.headers, ctx.preHeader,
         dataBoxes, boxesToSpend, tx, selfIndex,
-        extension, validationSettings, costLimit, initCost)
+        extension, validationSettings, costLimit, initCost,
+        ActivatedVersionInTest)
     }
 
-    /** Executes the default feature verification wrapper script using:
-      * 1) the given input
-      * 2) the given expected results (values and costs)
+    /** Executes the default feature verification wrapper script.
+      * @param input the given input
+      * @param expected the given expected results (values and costs)
       */
     def checkVerify(input: A, expected: Expected[B]): Unit = {
+      checkVerifyVersion(input, expected, 0)
+      checkVerifyVersion(input, expected, 1)
+    }
+
+    /** Executes the default feature verification wrapper script for the specific ErgoTree
+      * version.
+      * @param input the given input
+      * @param expected the given expected results (values and costs)
+      * @param scriptVersion version to use when the test ErgoTree is created
+      */
+    def checkVerifyVersion(input: A, expected: Expected[B], scriptVersion: Byte): Unit = {
       val tpeA = Evaluation.rtypeToSType(oldF.tA)
       val tpeB = Evaluation.rtypeToSType(oldF.tB)
 
@@ -291,7 +303,8 @@ class SigmaDslTesting extends PropSpec
             pkAlice,
             DeserializeRegister(ErgoBox.R5, SSigmaProp),  // deserialize pkBob
             DeserializeContext(2, SSigmaProp)))           // deserialize pkCarol
-        ErgoTree.fromProposition(sigmastate.SigmaOr(prop, multisig))
+        val header = ErgoTree.headerWithVersion(scriptVersion)
+        ErgoTree.withSegregation(header, sigmastate.SigmaOr(prop, multisig))
       }
 
       val pkBobBytes = ValueSerializer.serialize(prover.pubKeys(1).toSigmaProp)

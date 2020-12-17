@@ -6,7 +6,7 @@ import org.ergoplatform._
 import org.ergoplatform.validation.{ValidationRules, SigmaValidationSettings}
 import sigmastate.AvlTreeData
 import sigmastate.eval._
-import sigmastate.interpreter.{ContextExtension, CryptoConstants}
+import sigmastate.interpreter.{ContextExtension, CryptoConstants, Interpreter}
 import sigmastate.serialization.{SigmaSerializer, GroupElementSerializer}
 import special.collection.Coll
 import special.sigma.{Box, PreHeader, Header}
@@ -43,8 +43,10 @@ object ErgoLikeContextTesting {
             self: ErgoBox,
             extension: ContextExtension = ContextExtension.empty,
             vs: SigmaValidationSettings = ValidationRules.currentSettings): ErgoLikeContext =
-    new ErgoLikeContext(lastBlockUtxoRoot, noHeaders, dummyPreHeader(currentHeight, minerPubkey), noBoxes,
-      boxesToSpend, spendingTransaction, boxesToSpend.indexOf(self), extension, vs, ScriptCostLimit.value, 0L)
+    new ErgoLikeContext(
+      lastBlockUtxoRoot, noHeaders, dummyPreHeader(currentHeight, minerPubkey), noBoxes,
+      boxesToSpend, spendingTransaction, boxesToSpend.indexOf(self), extension, vs,
+      ScriptCostLimit.value, initCost = 0L, Interpreter.MaxSupportedScriptVersion)
 
   def apply(currentHeight: Height,
             lastBlockUtxoRoot: AvlTreeData,
@@ -53,8 +55,11 @@ object ErgoLikeContextTesting {
             boxesToSpend: IndexedSeq[ErgoBox],
             spendingTransaction: ErgoLikeTransactionTemplate[_ <: UnsignedInput],
             selfIndex: Int) =
-    new ErgoLikeContext(lastBlockUtxoRoot, noHeaders, dummyPreHeader(currentHeight, minerPubkey),
-      dataBoxes, boxesToSpend, spendingTransaction, selfIndex, ContextExtension.empty, ValidationRules.currentSettings, ScriptCostLimit.value, 0L)
+    new ErgoLikeContext(
+      lastBlockUtxoRoot, noHeaders, dummyPreHeader(currentHeight, minerPubkey),
+      dataBoxes, boxesToSpend, spendingTransaction, selfIndex, ContextExtension.empty,
+      ValidationRules.currentSettings, ScriptCostLimit.value,
+      initCost = 0L, Interpreter.MaxSupportedScriptVersion)
 
 
   def dummy(selfDesc: ErgoBox): ErgoLikeContext = ErgoLikeContextTesting(currentHeight = 0,

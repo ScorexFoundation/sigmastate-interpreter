@@ -54,7 +54,7 @@ class ErgoLikeContext(val lastBlockUtxoRoot: AvlTreeData,
                       val validationSettings: SigmaValidationSettings,
                       val costLimit: Long,
                       val initCost: Long,
-                      val activatedScriptVersion: Byte = Interpreter.MaxSupportedScriptVersion
+                      val activatedScriptVersion: Byte
                  ) extends InterpreterContext {
   // TODO lastBlockUtxoRoot should be calculated from headers if it is nonEmpty
 
