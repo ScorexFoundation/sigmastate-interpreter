@@ -148,14 +148,10 @@ class ScriptVersionSwitchSpecification extends SigmaDslTesting {
     val headerFlags = ErgoTree.headerWithVersion( 2 /* Script v2 */)
     val ergoTree = createErgoTree(headerFlags = headerFlags)
 
-    // both prove and verify are rejecting
-    assertExceptionThrown(
-      testProve(ergoTree, activatedScriptVersion = 1 /* SF Status: inactive */),
-      { t =>
-        t.isInstanceOf[InterpreterException] &&
-        t.getMessage.contains(s"ErgoTree version ${ergoTree.version} is higher than activated 1")
-      })
+    // the prove is successful (since it is not part of consensus)
+    testProve(ergoTree, activatedScriptVersion = 1 /* SF Status: inactive */)
 
+    // and verify is rejecting
     assertExceptionThrown(
       testVerify(ergoTree, activatedScriptVersion = 1 /* SF Status: inactive */),
       { t =>
@@ -204,12 +200,13 @@ class ScriptVersionSwitchSpecification extends SigmaDslTesting {
 
     val activatedVersion = 2.toByte // SF Status: active
 
-    // both prove and verify are accepting without evaluation
-    val expectedCost = 0L
+    // the prove is doing normal reduction and proof generation
     val pr = testProve(ergoTree, activatedScriptVersion = activatedVersion)
     pr.proof shouldBe Array.emptyByteArray
-    pr.cost shouldBe expectedCost
+    pr.cost shouldBe 5464
 
+    // and verify is accepting without evaluation
+    val expectedCost = 0L
     val (ok, cost) = testVerify(ergoTree, activatedScriptVersion = activatedVersion)
     ok shouldBe true
     cost shouldBe expectedCost
@@ -225,15 +222,15 @@ class ScriptVersionSwitchSpecification extends SigmaDslTesting {
 
     val activatedVersion = 2.toByte // SF Status: active
 
-    // both prove and verify are accepting without evaluation
-    val expectedCost = 0L
+    // the prove is doing normal reduction and proof generation
     val pr = testProve(ergoTree, activatedScriptVersion = activatedVersion)
     pr.proof shouldBe Array.emptyByteArray
-    pr.cost shouldBe expectedCost
+    pr.cost shouldBe 5464
 
+    // and verify is accepting without evaluation
     val (ok, cost) = testVerify(ergoTree, activatedScriptVersion = activatedVersion)
     ok shouldBe true
-    cost shouldBe expectedCost
+    cost shouldBe 0L
   }
 
 }

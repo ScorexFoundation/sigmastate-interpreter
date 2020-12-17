@@ -22,7 +22,7 @@ import org.ergoplatform.validation.ValidationRules._
 import scalan.util.BenchmarkUtil
 import sigmastate.utils.Helpers._
 
-import scala.util.Try
+import scala.util.{Try, Success}
 
 trait Interpreter extends ScorexLogging {
 
@@ -195,27 +195,6 @@ trait Interpreter extends ScorexLogging {
   def fullReduction(ergoTree: ErgoTree,
                     context: CTX,
                     env: ScriptEnv): (SigmaBoolean, Long) = {
-    // TODO v5.0: the condition below should be revised if necessary
-    // The following conditions define behavior which depend on the version of ergoTree
-    // This works in addition to more fine-grained soft-forkabiltiy mechanism implemented
-    // using ValidationRules (see trySoftForkable method call here and in reduceToCrypto).
-    if (context.activatedScriptVersion > Interpreter.MaxSupportedScriptVersion) {
-      // > 90% has already switched to higher version, accept without verification
-      // NOTE: this path should never be taken for validation of candidate blocks
-      // in which case Ergo node should always pass Interpreter.MaxSupportedScriptVersion
-      // as the value of ErgoLikeContext.activatedScriptVersion.
-      // see also ErgoLikeContext ScalaDoc.
-      return TrivialProp.TrueProp -> context.initCost
-    } else {
-      // activated version is within the supported range [0..MaxSupportedScriptVersion]
-      // however
-      if (ergoTree.version > context.activatedScriptVersion) {
-        throw new InterpreterException(
-          s"ErgoTree version ${ergoTree.version} is higher than activated ${context.activatedScriptVersion}")
-      }
-      // else proceed normally
-    }
-
     implicit val vs: SigmaValidationSettings = context.validationSettings
 
     val initCost = JMath.addExact(ergoTree.complexity.toLong, context.initCost)
@@ -261,6 +240,26 @@ trait Interpreter extends ScorexLogging {
              proof: Array[Byte],
              message: Array[Byte]): Try[VerificationResult] = {
     val (res, t) = BenchmarkUtil.measureTime(Try {
+      // TODO v5.0: the condition below should be revised if necessary
+      // The following conditions define behavior which depend on the version of ergoTree
+      // This works in addition to more fine-grained soft-forkabiltiy mechanism implemented
+      // using ValidationRules (see trySoftForkable method call here and in reduceToCrypto).
+      if (context.activatedScriptVersion > Interpreter.MaxSupportedScriptVersion) {
+        // > 90% has already switched to higher version, accept without verification
+        // NOTE: this path should never be taken for validation of candidate blocks
+        // in which case Ergo node should always pass Interpreter.MaxSupportedScriptVersion
+        // as the value of ErgoLikeContext.activatedScriptVersion.
+        // see also ErgoLikeContext ScalaDoc.
+        return Success(true -> context.initCost)
+      } else {
+        // activated version is within the supported range [0..MaxSupportedScriptVersion]
+        // however
+        if (ergoTree.version > context.activatedScriptVersion) {
+          throw new InterpreterException(
+            s"ErgoTree version ${ergoTree.version} is higher than activated ${context.activatedScriptVersion}")
+        }
+        // else proceed normally
+      }
 
       val (cProp, cost) = fullReduction(ergoTree, context, env)
 
