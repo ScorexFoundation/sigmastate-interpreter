@@ -152,7 +152,7 @@ trait Interpreter extends ScorexLogging {
     implicit val vs = context.validationSettings
     val maxCost = context.costLimit
     val initCost = context.initCost
-    trySoftForkable[ReductionResult](whenSoftFork = TrivialProp.TrueProp -> initCost) {
+    trySoftForkable[ReductionResult](whenSoftFork = TrivialProp.TrueProp -> 0) {
       val costingRes = doCostingEx(env, exp, true)
       val costF = costingRes.costF
       IR.onCostingResult(env, exp, costingRes)
