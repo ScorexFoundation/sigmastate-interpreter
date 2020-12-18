@@ -790,7 +790,7 @@ trait ObjectGenerators extends TypeGenerators
     validationSettings = ValidationRules.currentSettings,
     costLimit = costLimit,
     initCost = initCost,
-    ActivatedVersionInTest
+    activatedScriptVersion = activatedVersionInTests
   )
 
 }

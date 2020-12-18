@@ -114,7 +114,7 @@ trait SigmaTestingData extends SigmaTestingCommons with SigmaTypeGens {
     minerPk = SigmaDsl.groupGenerator,
     votes = Colls.emptyColl[Byte]
   )
-  val ergoCtx = new ErgoLikeContext(
+  def ergoCtx = new ErgoLikeContext(
     lastBlockUtxoRoot = header2.stateRoot.asInstanceOf[CAvlTree].treeData,
     boxesToSpend = IndexedSeq(inBox),
     spendingTransaction = new ErgoLikeTransaction(IndexedSeq(), IndexedSeq(DataInput(dataBox.id)), IndexedSeq(outBox)),
@@ -122,5 +122,5 @@ trait SigmaTestingData extends SigmaTestingCommons with SigmaTypeGens {
     extension = ContextExtension(Map(2.toByte -> IntConstant(10))),
     validationSettings = ValidationRules.currentSettings,
     costLimit = ScriptCostLimit.value, initCost = 0L,
-    activatedScriptVersion = ActivatedVersionInTest)
+    activatedScriptVersion = activatedVersionInTests)
 }

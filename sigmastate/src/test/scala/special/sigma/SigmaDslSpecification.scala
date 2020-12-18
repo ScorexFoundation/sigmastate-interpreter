@@ -2349,8 +2349,6 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
   //    doApply((CFunc[Int, Int](ctx, code), 10))
   //  }
 
-  lazy val ctx = ergoCtx.toSigmaContext(false)
-
   property("Box properties equivalence") {
     val b1 = CostingBox(
       false,

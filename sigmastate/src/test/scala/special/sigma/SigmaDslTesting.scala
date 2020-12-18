@@ -247,25 +247,15 @@ class SigmaDslTesting extends PropSpec
         treeData, ctx.headers, ctx.preHeader,
         dataBoxes, boxesToSpend, tx, selfIndex,
         extension, validationSettings, costLimit, initCost,
-        ActivatedVersionInTest)
-    }
-
-    /** Executes the default feature verification wrapper script.
-      * @param input the given input
-      * @param expected the given expected results (values and costs)
-      */
-    def checkVerify(input: A, expected: Expected[B]): Unit = {
-      checkVerifyVersion(input, expected, 0)
-      checkVerifyVersion(input, expected, 1)
+        activatedVersionInTests)
     }
 
     /** Executes the default feature verification wrapper script for the specific ErgoTree
       * version.
       * @param input the given input
       * @param expected the given expected results (values and costs)
-      * @param scriptVersion version to use when the test ErgoTree is created
       */
-    def checkVerifyVersion(input: A, expected: Expected[B], scriptVersion: Byte): Unit = {
+    def checkVerify(input: A, expected: Expected[B]): Unit = {
       val tpeA = Evaluation.rtypeToSType(oldF.tA)
       val tpeB = Evaluation.rtypeToSType(oldF.tB)
 
@@ -303,7 +293,7 @@ class SigmaDslTesting extends PropSpec
             pkAlice,
             DeserializeRegister(ErgoBox.R5, SSigmaProp),  // deserialize pkBob
             DeserializeContext(2, SSigmaProp)))           // deserialize pkCarol
-        val header = ErgoTree.headerWithVersion(scriptVersion)
+        val header = ErgoTree.headerWithVersion(ergoTreeVersionInTests)
         ErgoTree.withSegregation(header, sigmastate.SigmaOr(prop, multisig))
       }
 

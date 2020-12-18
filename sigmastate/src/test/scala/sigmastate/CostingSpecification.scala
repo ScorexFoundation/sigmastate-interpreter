@@ -69,7 +69,7 @@ class CostingSpecification extends SigmaTestingData {
     boxesToSpend = IndexedSeq(selfBox),
     spendingTransaction = tx, selfIndex = 0, extension,
     ValidationRules.currentSettings, ScriptCostLimit.value,
-    CostTable.interpreterInitCost, ActivatedVersionInTest
+    CostTable.interpreterInitCost, activatedVersionInTests
   )
 
   def cost(script: String)(expCost: Int): Unit = {
