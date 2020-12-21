@@ -10,7 +10,8 @@ import sigmastate.lang.Terms._
 import sigmastate.lang.exceptions.InterpreterException
 
 
-class TimedPaymentExampleSpecification extends SigmaTestingCommons {
+class TimedPaymentExampleSpecification extends SigmaTestingCommons
+  with CrossVersionProps {
   private implicit lazy val IR: TestingIRContext = new TestingIRContext
 
   import ErgoAddressEncoder._

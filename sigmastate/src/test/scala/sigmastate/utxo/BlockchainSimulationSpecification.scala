@@ -1,22 +1,22 @@
 package sigmastate.utxo
 
-import java.io.{File, FileWriter}
+import java.io.{FileWriter, File}
 
 import org.ergoplatform
 import org.ergoplatform.ErgoBox.TokenId
 import org.ergoplatform._
 import org.scalacheck.Gen
-import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Remove}
+import scorex.crypto.authds.avltree.batch.{Remove, BatchAVLProver, Insert}
 import scorex.crypto.authds.{ADDigest, ADKey, ADValue}
-import scorex.crypto.hash.{Blake2b256, Digest32}
+import scorex.crypto.hash.{Digest32, Blake2b256}
 import scorex.util._
-import sigmastate.Values.{IntConstant, LongConstant}
-import sigmastate.helpers.{BlockchainState, ErgoLikeContextTesting, ErgoLikeTestProvingInterpreter, ErgoTransactionValidator, SigmaTestingCommons}
+import sigmastate.Values.{LongConstant, IntConstant}
+import sigmastate.helpers.{ErgoTransactionValidator, ErgoLikeContextTesting, ErgoLikeTestProvingInterpreter, SigmaTestingCommons, BlockchainState}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.ContextExtension
 import sigmastate.eval._
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
-import sigmastate.{AvlTreeData, AvlTreeFlags, GE}
+import sigmastate.{GE, AvlTreeData, AvlTreeFlags, CrossVersionProps}
 
 import scala.annotation.tailrec
 import scala.collection.concurrent.TrieMap
@@ -24,7 +24,8 @@ import scala.collection.mutable
 import scala.util.Try
 
 
-class BlockchainSimulationSpecification extends SigmaTestingCommons {
+class BlockchainSimulationSpecification extends SigmaTestingCommons
+  with CrossVersionProps {
   import BlockchainSimulationSpecification._
   implicit lazy val IR = new TestingIRContext
 

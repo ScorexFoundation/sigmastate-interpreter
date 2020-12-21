@@ -1,6 +1,5 @@
 package sigmastate.utxo
 
-import org.ergoplatform.{ErgoLikeContext, ErgoLikeTransaction}
 import sigmastate.basics.DLogProtocol.{DLogProverInput, ProveDlog}
 import sigmastate.Values.{ConcreteCollection, FalseLeaf, IntConstant, SigmaPropConstant, SigmaPropValue, TrueLeaf}
 import sigmastate._

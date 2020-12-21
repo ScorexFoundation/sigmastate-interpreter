@@ -17,7 +17,8 @@ import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo._
 
 
-class FsmExampleSpecification extends SigmaTestingCommons {
+class FsmExampleSpecification extends SigmaTestingCommons
+  with CrossVersionProps {
   private implicit lazy val IR: TestingIRContext = new TestingIRContext
   /**
     * Similarly to the MAST-like example (in the MASTExampleSpecification class), we can do more complex contracts,

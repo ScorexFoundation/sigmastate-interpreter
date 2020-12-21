@@ -7,7 +7,8 @@ import org.scalatest.TryValues._
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import org.ergoplatform.ErgoScriptPredef._
 
-class FailingToProveSpec extends SigmaTestingCommons {
+class FailingToProveSpec extends SigmaTestingCommons
+  with CrossVersionProps {
   implicit lazy val IR = new TestingIRContext
   /**
     * Both properties should work fine.

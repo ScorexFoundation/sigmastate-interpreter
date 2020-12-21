@@ -12,7 +12,8 @@ import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.serialization.OpCodes._
 import sigmastate.utils.Helpers._
 
-class CollectionOperationsSpecification extends SigmaTestingCommons {
+class CollectionOperationsSpecification extends SigmaTestingCommons
+  with CrossVersionProps {
   implicit lazy val IR: TestingIRContext = new TestingIRContext
   private val reg1 = ErgoBox.nonMandatoryRegisters.head
 

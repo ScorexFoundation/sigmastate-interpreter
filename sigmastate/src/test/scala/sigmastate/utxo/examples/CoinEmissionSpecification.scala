@@ -20,7 +20,8 @@ import sigmastate.eval._
   * This script is corresponding to the whitepaper. Please note that Ergo has different contract
   * defined in ErgoScriptPredef.
   */
-class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
+class CoinEmissionSpecification extends SigmaTestingCommons
+  with ScorexLogging with CrossVersionProps {
   // don't use TestingIRContext, this suite also serves the purpose of testing the RuntimeIRContext
   implicit lazy val IR: TestingIRContext = new TestingIRContext {
     // uncomment if you want to log script evaluation

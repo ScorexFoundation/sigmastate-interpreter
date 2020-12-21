@@ -11,7 +11,7 @@ import sigmastate.basics.DLogProtocol.DLogProverInput
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.serialization.ValueSerializer
 import scorex.util.encode.Base58
-import sigmastate.{SigmaAnd, SType}
+import sigmastate.{SigmaAnd, SType, CrossVersionProps}
 import sigmastate.Values.{UnparsedErgoTree, Constant, EvaluatedValue, ByteArrayConstant, IntConstant, ErgoTree}
 import sigmastate.eval.IRContext
 import sigmastate.helpers._
@@ -23,7 +23,8 @@ import sigmastate.lang.exceptions.{CosterException, CostLimitException}
 import sigmastate.utils.Helpers._
 import special.sigma.SigmaDslTesting
 
-class ErgoAddressSpecification extends SigmaDslTesting with TryValues {
+class ErgoAddressSpecification extends SigmaDslTesting
+  with TryValues with CrossVersionProps {
 
   private implicit val ergoAddressEncoder: ErgoAddressEncoder =
     new ErgoAddressEncoder(TestnetNetworkPrefix)

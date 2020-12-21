@@ -26,7 +26,8 @@ import scala.util.Random
   * remain unrevealed, providing more privacy and saving space in a blockchain.
   * See more at https://bitcointechtalk.com/what-is-a-bitcoin-merklized-abstract-syntax-tree-mast-33fdf2da5e2f
   */
-class MASTExampleSpecification extends SigmaTestingCommons {
+class MASTExampleSpecification extends SigmaTestingCommons
+  with CrossVersionProps {
   implicit lazy val IR = new TestingIRContext
   private val reg1 = ErgoBox.nonMandatoryRegisters.head
 

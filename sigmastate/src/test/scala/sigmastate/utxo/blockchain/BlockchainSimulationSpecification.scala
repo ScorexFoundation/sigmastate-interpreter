@@ -1,18 +1,18 @@
 package sigmastate.utxo.blockchain
 
-import java.io.{File, FileWriter}
+import java.io.{FileWriter, File}
 
-import org.scalacheck.Gen
-import sigmastate.Values.{BooleanConstant, ErgoTree, GetVarBoolean, TrueLeaf}
+import sigmastate.CrossVersionProps
+import sigmastate.Values.{TrueLeaf, GetVarBoolean}
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestProvingInterpreter}
 import sigmastate.interpreter.ContextExtension
 import sigmastate.utxo.blockchain.BlockchainSimulationTestingCommons._
 
 import scala.collection.concurrent.TrieMap
-import scala.util.Random
 
 
-class BlockchainSimulationSpecification extends BlockchainSimulationTestingCommons {
+class BlockchainSimulationSpecification extends BlockchainSimulationTestingCommons
+  with CrossVersionProps {
 
   implicit lazy val IR = new TestingIRContext
 

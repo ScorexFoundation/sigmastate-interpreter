@@ -11,7 +11,8 @@ import sigmastate.interpreter.Interpreter.ScriptNameProp
 import sigmastate.lang.Terms._
 
 
-class ReversibleTxExampleSpecification extends SigmaTestingCommons {
+class ReversibleTxExampleSpecification extends SigmaTestingCommons
+  with CrossVersionProps {
   private implicit lazy val IR: TestingIRContext = new TestingIRContext
 
   import ErgoAddressEncoder._

@@ -1,6 +1,5 @@
 package sigmastate.utxo
 
-import org.ergoplatform.ErgoLikeContext
 import scorex.util.encode.Base16
 import scorex.crypto.hash.Blake2b256
 import sigmastate.Values._
@@ -10,7 +9,8 @@ import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeConte
 import special.collection.Coll
 
 
-class ContextEnrichingSpecification extends SigmaTestingCommons {
+class ContextEnrichingSpecification extends SigmaTestingCommons
+  with CrossVersionProps {
 
   implicit lazy val IR: TestingIRContext = new TestingIRContext
 

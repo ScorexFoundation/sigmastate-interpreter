@@ -22,7 +22,8 @@ import sigmastate.utxo._
 import special.sigma.Context
 import sigmastate.utils.Helpers._
 
-class OracleExamplesSpecification extends SigmaTestingCommons { suite =>
+class OracleExamplesSpecification extends SigmaTestingCommons
+  with CrossVersionProps { suite =>
   implicit lazy val IR: TestingIRContext = new TestingIRContext
 
   private val reg1 = ErgoBox.nonMandatoryRegisters(0)

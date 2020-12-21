@@ -18,7 +18,8 @@ import sigmastate.utxo.blockchain.BlockchainSimulationTestingCommons._
   * Wolfram's Rule110 implementations
   *
   */
-class Rule110Specification extends SigmaTestingCommons {
+class Rule110Specification extends SigmaTestingCommons
+  with CrossVersionProps {
   implicit lazy val IR = new TestingIRContext
   private val reg1 = ErgoBox.nonMandatoryRegisters.head
   private val reg2 = ErgoBox.nonMandatoryRegisters(1)

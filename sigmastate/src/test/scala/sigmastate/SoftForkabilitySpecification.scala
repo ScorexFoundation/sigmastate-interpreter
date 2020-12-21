@@ -19,7 +19,8 @@ import sigmastate.utxo.{DeserializeContext, SelectField}
 import special.sigma.SigmaTestingData
 import sigmastate.utils.Helpers._
 
-class SoftForkabilitySpecification extends SigmaTestingData {
+class SoftForkabilitySpecification extends SigmaTestingData
+  with CrossVersionProps {
 
   implicit lazy val IR = new TestingIRContext
   lazy val prover = new ErgoLikeTestProvingInterpreter()

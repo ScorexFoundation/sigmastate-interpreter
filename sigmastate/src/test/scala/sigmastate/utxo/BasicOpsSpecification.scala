@@ -18,7 +18,8 @@ import SType.AnyOps
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.utils.Helpers._
 
-class BasicOpsSpecification extends SigmaTestingCommons {
+class BasicOpsSpecification extends SigmaTestingCommons
+  with CrossVersionProps {
   implicit lazy val IR = new TestingIRContext {
     override val okPrintEvaluatedEntries: Boolean = false
   }

@@ -9,7 +9,8 @@ import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.ContextExtension
 import sigmastate.lang.Terms._
 
-class DemurrageExampleSpecification extends SigmaTestingCommons {
+class DemurrageExampleSpecification extends SigmaTestingCommons
+  with CrossVersionProps {
   implicit lazy val IR = new TestingIRContext
 
   /**

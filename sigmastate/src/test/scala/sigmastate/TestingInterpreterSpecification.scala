@@ -17,7 +17,8 @@ import sigmastate.utils.Helpers._
 
 import scala.util.Random
 
-class TestingInterpreterSpecification extends SigmaTestingCommons {
+class TestingInterpreterSpecification extends SigmaTestingCommons
+  with CrossVersionProps {
   implicit lazy val IR = new TestingIRContext
   lazy val prover = new ErgoLikeTestProvingInterpreter()
   lazy val verifier = new ErgoLikeTestInterpreter

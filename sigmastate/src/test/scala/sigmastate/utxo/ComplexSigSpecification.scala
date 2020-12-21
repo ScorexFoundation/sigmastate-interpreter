@@ -9,7 +9,8 @@ import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeConte
 
 import scala.util.Random
 
-class ComplexSigSpecification extends SigmaTestingCommons {
+class ComplexSigSpecification extends SigmaTestingCommons
+  with CrossVersionProps {
   implicit lazy val IR: TestingIRContext = new TestingIRContext
 
   private def proverGen: Gen[ContextEnrichingTestProvingInterpreter] = for {

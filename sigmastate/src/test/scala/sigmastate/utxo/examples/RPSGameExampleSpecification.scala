@@ -12,7 +12,8 @@ import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter._
 import sigmastate.lang.Terms._
 
-class RPSGameExampleSpecification extends SigmaTestingCommons {
+class RPSGameExampleSpecification extends SigmaTestingCommons
+  with CrossVersionProps {
   implicit lazy val IR = new TestingIRContext
   /** RPS game:
 
