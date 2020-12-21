@@ -84,7 +84,7 @@ class DHTupleExampleSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(inBox),
       spendingTransaction = tx,
-      self = inBox
+      self = inBox, activatedVersionInTests
     )
     val dhtBob = DiffieHellmanTupleProverInput(y, ProveDHTuple(g, g_x, g_y, g_xy))
 

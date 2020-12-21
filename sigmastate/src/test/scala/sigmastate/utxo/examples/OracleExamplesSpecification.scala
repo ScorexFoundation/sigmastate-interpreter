@@ -179,7 +179,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons { suite =>
       ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(sAlice, sBob),
       spendingTransaction,
-      self = sAlice)
+      self = sAlice, activatedVersionInTests)
 
     val alice = aliceTemplate
       .withContextExtender(22: Byte, BoxConstant(oracleBox))
@@ -256,7 +256,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons { suite =>
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(sOracle, sAlice, sBob),
       spendingTransaction,
-      self = sOracle)
+      self = sOracle, activatedVersionInTests)
 
     val prA = alice.prove(emptyEnv + (ScriptNameProp -> "alice_prove"), prop, ctx, fakeMessage).get
     verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, ctx, prA, fakeMessage).get._1 shouldBe true

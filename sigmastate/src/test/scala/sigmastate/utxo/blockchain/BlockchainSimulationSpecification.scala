@@ -17,7 +17,7 @@ class BlockchainSimulationSpecification extends BlockchainSimulationTestingCommo
   implicit lazy val IR = new TestingIRContext
 
   property("apply one valid block") {
-    val state = ValidationState.initialState()
+    val state = ValidationState.initialState(activatedVersionInTests)
     val miner = new ErgoLikeTestProvingInterpreter()
     val block = generateBlock(state, miner, 0)
     val updStateTry = state.applyBlock(block)
@@ -25,7 +25,7 @@ class BlockchainSimulationSpecification extends BlockchainSimulationTestingCommo
   }
 
   property("too costly block") {
-    val state = ValidationState.initialState()
+    val state = ValidationState.initialState(activatedVersionInTests)
     val miner = new ErgoLikeTestProvingInterpreter()
     val block = generateBlock(state, miner, 0)
     val updStateTry = state.applyBlock(block, maxCost = 1)
@@ -33,13 +33,13 @@ class BlockchainSimulationSpecification extends BlockchainSimulationTestingCommo
   }
 
   property("apply many blocks") {
-    val state = ValidationState.initialState()
+    val state = ValidationState.initialState(activatedVersionInTests)
     val miner = new ErgoLikeTestProvingInterpreter()
     checkState(state, miner, 0, randomDeepness)
   }
 
   property("apply many blocks with enriched context") {
-    val state = ValidationState.initialState()
+    val state = ValidationState.initialState(activatedVersionInTests)
     val miner = new ErgoLikeTestProvingInterpreter()
     val varId = 1.toByte
     val prop = GetVarBoolean(varId).get.toSigmaProp
@@ -56,7 +56,7 @@ class BlockchainSimulationSpecification extends BlockchainSimulationTestingCommo
 
     def bench(numberOfBlocks: Int): Unit = {
 
-      val state = ValidationState.initialState()
+      val state = ValidationState.initialState(activatedVersionInTests)
       val miner = new ContextEnrichingTestProvingInterpreter()
 
       val (_, time) = (0 until numberOfBlocks).foldLeft(state -> 0L) { case ((s, timeAcc), h) =>

@@ -40,7 +40,7 @@ class ThresholdSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction = ErgoLikeTransactionTesting.dummy,
-      self = fakeSelf)
+      self = fakeSelf, activatedVersionInTests)
 
     val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "pubkeyC" -> pubkeyC)
 
@@ -119,7 +119,7 @@ class ThresholdSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction = ErgoLikeTransactionTesting.dummy,
-      self = fakeSelf)
+      self = fakeSelf, activatedVersionInTests)
 
     case class TestCase(numTrue: Int, vector: Seq[SigmaPropValue], dlogOnlyVector: DlogOnlyVector)
     case class DlogOnlyVector(v: Seq[SigmaPropValue]) {
@@ -289,7 +289,7 @@ class ThresholdSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction = ErgoLikeTransactionTesting.dummy,
-      self = fakeSelf)
+      self = fakeSelf, activatedVersionInTests)
 
     val verifier = new ErgoLikeTestInterpreter
 
@@ -336,7 +336,7 @@ class ThresholdSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction = ErgoLikeTransactionTesting.dummy,
-      self = fakeSelf)
+      self = fakeSelf, activatedVersionInTests)
 
     val verifier = new ErgoLikeTestInterpreter
 

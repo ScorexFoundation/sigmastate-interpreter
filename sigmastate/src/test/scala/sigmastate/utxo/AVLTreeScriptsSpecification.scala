@@ -225,7 +225,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons { suite =>
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(s),
       spendingTransaction,
-      self = s)
+      self = s, activatedVersionInTests)
 
     val pr = prover.prove(prop, ctx, fakeMessage).get
     verifier.verify(prop, ctx, pr, fakeMessage).get._1 shouldBe true
@@ -259,7 +259,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons { suite =>
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(selfBox),
       createTransaction(testBox(1, recipientProposition, 0)),
-      self = selfBox)
+      self = selfBox, activatedVersionInTests)
 
     avlProver.performOneOperation(Lookup(treeElements.head._1))
     val bigLeafProof = avlProver.generateProof()
@@ -336,7 +336,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons { suite =>
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(s),
-      spendingTransaction, self = s)
+      spendingTransaction, self = s, activatedVersionInTests)
     val pr = prover.prove(prop, ctx, fakeMessage).get
 
     val ctxv = ctx.withExtension(pr.extension)
@@ -388,7 +388,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons { suite =>
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(s),
-      spendingTransaction, self = s)
+      spendingTransaction, self = s, activatedVersionInTests)
     val pr = prover.prove(env + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage).get
 
     val ctxv = ctx.withExtension(pr.extension)

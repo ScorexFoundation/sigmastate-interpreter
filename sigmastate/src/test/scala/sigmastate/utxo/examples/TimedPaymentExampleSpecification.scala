@@ -63,7 +63,8 @@ class TimedPaymentExampleSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(depositOutput),
       spendingTransaction = withdrawTx,
-      self = depositOutput
+      self = depositOutput,
+      activatedVersionInTests
     )
 
     val proofWithdraw = alice.withContextExtender(
@@ -80,7 +81,8 @@ class TimedPaymentExampleSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(depositOutput),
       spendingTransaction = withdrawTx,
-      self = depositOutput
+      self = depositOutput,
+      activatedVersionInTests
     )
     an [InterpreterException] should be thrownBy (alice.withContextExtender(
       1, IntConstant(confDeadline - 20)

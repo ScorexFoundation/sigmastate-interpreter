@@ -134,7 +134,8 @@ class ColdWalletAdvContractExampleSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(depositOutput),
       spendingTransaction = firstWithdrawTx1Key,
-      self = depositOutput
+      self = depositOutput,
+      activatedVersionInTests
     )
 
     val verifier = new ErgoLikeTestInterpreter
@@ -170,7 +171,8 @@ class ColdWalletAdvContractExampleSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(depositOutput),
       spendingTransaction = firstWithdrawTx2Key,
-      self = depositOutput
+      self = depositOutput,
+      activatedVersionInTests
     )
 
     val proofAliceBobWithdraw = alice.withSecrets(bob.dlogSecrets).prove(spendEnv, script, firstWithdrawContext2Key, fakeMessage).get.proof

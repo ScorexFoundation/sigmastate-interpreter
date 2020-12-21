@@ -26,7 +26,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
         minerPubkey = ErgoLikeContextTesting.dummyPubkey,
         boxesToSpend = toSpend,
         spendingTransaction = createTransaction(outputs),
-        self = selfBox)
+        self = selfBox, activatedVersionInTests)
     }
 
   private def assertProof(code: String,
@@ -103,7 +103,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = Array(fakeSelf),
       spendingTransaction,
-      self = fakeSelf)
+      self = fakeSelf, activatedVersionInTests)
 
     {
       val pr = prover.prove(prop, ctx, fakeMessage).get
@@ -121,7 +121,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
         minerPubkey = ErgoLikeContextTesting.dummyPubkey,
         boxesToSpend = Array(fakeSelf),
         spendingTransaction = tx2,
-        self = fakeSelf)
+        self = fakeSelf, activatedVersionInTests)
 
       prover.prove(prop, ctx2, fakeMessage).isFailure shouldBe true
     }
@@ -151,7 +151,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction,
-      self = fakeSelf)
+      self = fakeSelf, activatedVersionInTests)
 
     val pr = prover.prove(prop, ctx, fakeMessage).get
     verifier.verify(prop, ctx, pr, fakeMessage).get._1 shouldBe true
@@ -181,7 +181,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction,
-      self = fakeSelf)
+      self = fakeSelf, activatedVersionInTests)
 
     prover.prove(prop, ctx, fakeMessage).isSuccess shouldBe false
   }
@@ -221,7 +221,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(s),
       spendingTransaction,
-      self = s)
+      self = s, activatedVersionInTests)
 
     val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage).get
     verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, ctx, pr, fakeMessage).get._1 shouldBe true
@@ -264,7 +264,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(s),
       spendingTransaction,
-      self = s)
+      self = s, activatedVersionInTests)
 
     val pr = prover.prove(prop, ctx, fakeMessage).get
     verifier.verify(prop, ctx, pr, fakeMessage).get._1 shouldBe true
@@ -295,7 +295,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(s),
       spendingTransaction,
-      self = s)
+      self = s, activatedVersionInTests)
 
     val pr = prover.prove(prop, ctx, fakeMessage).get
     verifier.verify(prop, ctx, pr, fakeMessage)

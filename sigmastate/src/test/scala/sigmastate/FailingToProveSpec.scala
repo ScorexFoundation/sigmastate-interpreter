@@ -42,7 +42,8 @@ class FailingToProveSpec extends SigmaTestingCommons {
       boxesToSpend = IndexedSeq(selfBox),
       spendingTransaction = tx,
       self = selfBox,
-      minerPubkey = ErgoLikeContextTesting.dummyPubkey)
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
+      activatedVersion = activatedVersionInTests)
     val proof = interpreter.prove(emptyEnv + (ScriptNameProp -> "prove"), compiledScript, ctx, fakeMessage).success.value.proof
     verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), compiledScript, ctx, proof, fakeMessage) should be a 'success
   }
@@ -76,7 +77,8 @@ class FailingToProveSpec extends SigmaTestingCommons {
       boxesToSpend = IndexedSeq(selfBox),
       spendingTransaction = tx,
       self = selfBox,
-      minerPubkey = ErgoLikeContextTesting.dummyPubkey)
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
+      activatedVersion = activatedVersionInTests)
     val proof = interpreter.prove(emptyEnv + (ScriptNameProp -> "prove"), compiledScript, ctx, fakeMessage).success.value.proof
     verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), compiledScript, ctx, proof, fakeMessage) should be a 'success
   }

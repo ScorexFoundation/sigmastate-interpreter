@@ -265,7 +265,7 @@ class DeserializationResilience extends SerializationSpecification
     assertExceptionThrown({
       val verifier = new ErgoLikeTestInterpreter
       val pr = CostedProverResult(Array[Byte](), ContextExtension(Map()), 0L)
-      val ctx = ErgoLikeContextTesting.dummy(fakeSelf)
+      val ctx = ErgoLikeContextTesting.dummy(fakeSelf, activatedVersionInTests)
       val (res, calcTime) = BenchmarkUtil.measureTime {
         verifier.verify(emptyEnv + (ScriptNameProp -> "verify"),
           ErgoTree(ErgoTree.DefaultHeader, IndexedSeq(), recursiveScript), ctx, pr, fakeMessage)

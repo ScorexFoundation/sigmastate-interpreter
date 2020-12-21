@@ -81,7 +81,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
 
     val ctx = ErgoLikeContextTesting(currentHeight = 0,
       lastBlockUtxoRoot = AvlTreeData.dummy, ErgoLikeContextTesting.dummyPubkey, boxesToSpend = IndexedSeq(boxToSpend),
-      spendingTransaction = tx, self = boxToSpend)
+      spendingTransaction = tx, self = boxToSpend, activatedVersionInTests)
 
     val pr = prover.prove(env + (ScriptNameProp -> s"${name}_prove"), prop, ctx, fakeMessage).getOrThrow
 

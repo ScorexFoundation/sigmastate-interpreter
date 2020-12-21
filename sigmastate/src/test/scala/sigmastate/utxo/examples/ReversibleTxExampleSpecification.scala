@@ -150,7 +150,7 @@ class ReversibleTxExampleSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(depositOutput),
       spendingTransaction = withdrawTx,
-      self = depositOutput
+      self = depositOutput, activatedVersionInTests
     )
 
     val proofWithdraw = alice.prove(depositEnv, depositScript, withdrawContext, fakeMessage).get.proof
@@ -179,7 +179,7 @@ class ReversibleTxExampleSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(reversibleWithdrawOutput),
       spendingTransaction = bobSpendTx,
-      self = reversibleWithdrawOutput
+      self = reversibleWithdrawOutput, activatedVersionInTests
     )
 
     val spendEnv = Map(ScriptNameProp -> "spendEnv")
@@ -206,7 +206,7 @@ class ReversibleTxExampleSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(reversibleWithdrawOutput),
       spendingTransaction = carolSpendTx,
-      self = reversibleWithdrawOutput
+      self = reversibleWithdrawOutput, activatedVersionInTests
     )
 
     val proofCarolSpend = carol.prove(spendEnv, withdrawScript, carolSpendContext, fakeMessage).get.proof

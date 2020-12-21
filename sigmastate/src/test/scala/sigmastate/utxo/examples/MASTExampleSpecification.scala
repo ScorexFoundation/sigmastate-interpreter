@@ -55,7 +55,7 @@ class MASTExampleSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(input1),
       tx,
-      self = input1)
+      self = input1, activatedVersionInTests)
 
 
     val prover = new ContextEnrichingTestProvingInterpreter()
@@ -109,7 +109,7 @@ class MASTExampleSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(selfBox),
       createTransaction(testBox(1, recipientProposition, 0)),
-      self = selfBox)
+      self = selfBox, activatedVersionInTests)
 
     avlProver.performOneOperation(Lookup(knownSecretTreeKey))
     val knownSecretPathProof = avlProver.generateProof()

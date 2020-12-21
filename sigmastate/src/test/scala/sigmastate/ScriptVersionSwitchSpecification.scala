@@ -70,7 +70,8 @@ class ScriptVersionSwitchSpecification extends SigmaDslTesting {
     )
 
     val ctx = copyContext(ErgoLikeContextTesting.dummy(
-      createBox(0, ergoTree, additionalRegisters = newRegisters)
+      createBox(0, ergoTree, additionalRegisters = newRegisters),
+      activatedVersionInTests
     ).withBindings(
       1.toByte -> Constant[SType](input.asInstanceOf[SType#WrappedType], tpeA)
     ).asInstanceOf[ErgoLikeContext])(activatedScriptVersion = activatedScriptVersion)
@@ -87,7 +88,8 @@ class ScriptVersionSwitchSpecification extends SigmaDslTesting {
     )
 
     val ctx = copyContext(ErgoLikeContextTesting.dummy(
-      createBox(0, ergoTree, additionalRegisters = newRegisters)
+      createBox(0, ergoTree, additionalRegisters = newRegisters),
+      activatedVersionInTests
     ).withBindings(
       1.toByte -> Constant[SType](input.asInstanceOf[SType#WrappedType], tpeA)
     ).asInstanceOf[ErgoLikeContext])(activatedScriptVersion = activatedScriptVersion)

@@ -27,7 +27,7 @@ class CoopExampleSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(self),
       spendingTransaction = tx,
-      self = self)
+      self = self, activatedVersionInTests)
   }
 
   def successProofTest(exp: SigmaPropValue,

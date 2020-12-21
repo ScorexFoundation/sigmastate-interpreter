@@ -308,7 +308,7 @@ class LetsSpecification extends SigmaTestingCommons { suite =>
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(projectBoxBefore),
       spendingTransaction = issuanceTx,
-      self = projectBoxBefore)
+      self = projectBoxBefore, activatedVersionInTests)
 
     val managementProver = new ContextEnrichingTestProvingInterpreter()
       .withContextExtender(1, ByteArrayConstant(proof))

@@ -40,7 +40,7 @@ import scala.collection.mutable
 
 /** This suite tests every method of every SigmaDsl type to be equivalent to
   * the evaluation of the corresponding ErgoScript operation */
-class SigmaDslSpecification extends SigmaDslTesting { suite =>
+class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { suite =>
 
   override implicit val generatorDrivenConfig = PropertyCheckConfiguration(minSuccessful = 30)
 

@@ -414,7 +414,7 @@ class IcoExample extends SigmaTestingCommons { suite =>
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = inputBoxes,
       spendingTransaction = fundingTx,
-      self = projectBoxBefore)
+      self = projectBoxBefore, activatedVersionInTests)
 
     val projectProver = new ContextEnrichingTestProvingInterpreter()
       .withContextExtender(1, ByteArrayConstant(proof))
@@ -451,7 +451,7 @@ class IcoExample extends SigmaTestingCommons { suite =>
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(projectBoxBeforeClosing),
       spendingTransaction = issuanceTx,
-      self = projectBoxBeforeClosing)
+      self = projectBoxBeforeClosing, activatedVersionInTests)
 
     val res = project.prove(env, issuanceScript, issuanceContext, fakeMessage).get
     println("token issuance script cost: " + res.cost)
@@ -523,7 +523,7 @@ class IcoExample extends SigmaTestingCommons { suite =>
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(projectBoxBefore),
       spendingTransaction = fundingTx,
-      self = projectBoxBefore)
+      self = projectBoxBefore, activatedVersionInTests)
 
     val projectProver =
       new ContextEnrichingTestProvingInterpreter()

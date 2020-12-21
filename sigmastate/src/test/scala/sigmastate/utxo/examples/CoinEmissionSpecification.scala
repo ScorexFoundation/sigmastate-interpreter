@@ -138,7 +138,7 @@ block 1600 in 1622 ms, 30000000000 coins remain, defs: 61661
 
     val initialBoxCandidate: ErgoBox = testBox(coinsTotal / 4, prop, 0, Seq(), Map(register -> IntConstant(-1)))
     val initBlock = FullBlock(IndexedSeq(createTransaction(initialBoxCandidate)), minerPubkey)
-    val genesisState = ValidationState.initialState(initBlock)
+    val genesisState = ValidationState.initialState(activatedVersionInTests, initBlock)
     val fromState = genesisState.boxesReader.byId(genesisState.boxesReader.allIds.head).get
     val initialBox = new ErgoBox(initialBoxCandidate.value, initialBoxCandidate.ergoTree,
       initialBoxCandidate.additionalTokens, initialBoxCandidate.additionalRegisters,
@@ -173,6 +173,7 @@ block 1600 in 1622 ms, 30000000000 coins remain, defs: 61661
         IndexedSeq(emissionBox),
         ut,
         emissionBox,
+        activatedVersionInTests,
         ContextExtension.empty)
       val proverResult = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, context, ut.messageToSign).get
       ut.toSigned(IndexedSeq(proverResult))

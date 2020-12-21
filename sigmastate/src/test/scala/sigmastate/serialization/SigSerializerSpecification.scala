@@ -78,7 +78,7 @@ class SigSerializerSpecification extends SigmaTestingCommons with ObjectGenerato
         minerPubkey = ErgoLikeContextTesting.dummyPubkey,
         boxesToSpend = IndexedSeq(fakeSelf),
         spendingTransaction = ErgoLikeTransactionTesting.dummy,
-        self = fakeSelf)
+        self = fakeSelf, activatedVersionInTests)
         .withCostLimit(Long.MaxValue) // To avoid occasional cost limit exceptions which are irrelevant here
 
       try {

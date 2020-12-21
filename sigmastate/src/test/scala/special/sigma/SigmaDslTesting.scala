@@ -335,7 +335,8 @@ class SigmaDslTesting extends PropSpec
 
         case _ =>
           ErgoLikeContextTesting.dummy(
-            createBox(0, compiledTree, additionalRegisters = newRegisters)
+            createBox(0, compiledTree, additionalRegisters = newRegisters),
+            activatedVersionInTests
           ).withBindings(
               1.toByte -> Constant[SType](input.asInstanceOf[SType#WrappedType], tpeA),
               2.toByte -> ByteArrayConstant(pkCarolBytes)

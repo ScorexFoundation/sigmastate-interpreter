@@ -162,7 +162,7 @@ class MixExampleSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(halfMixOutput),
       spendingTransaction = fullMixTx,
-      self = halfMixOutput
+      self = halfMixOutput, activatedVersionInTests
     )
 
     // bob (2nd player) is generating a proof and it is passing verification
@@ -217,7 +217,7 @@ class MixExampleSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(aliceAnonBox),
       spendingTransaction = spendingTx,
-      self = aliceAnonBox
+      self = aliceAnonBox, activatedVersionInTests
     )
 
     // To Do: Extract below g_y, g_xy from fullMixOutputs registers
@@ -239,7 +239,7 @@ class MixExampleSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(bobAnonBox),
       spendingTransaction = spendingTx,
-      self = bobAnonBox
+      self = bobAnonBox, activatedVersionInTests
     )
 
     val proofBobSpend = bob.prove(fullMixEnv, fullMixScript, bobSpendContext, fakeMessage).get.proof

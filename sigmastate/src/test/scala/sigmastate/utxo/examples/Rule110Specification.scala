@@ -62,7 +62,7 @@ class Rule110Specification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(input),
       tx,
-      self = input).withCostLimit(maxCost)
+      self = input, activatedVersionInTests).withCostLimit(maxCost)
 
     val pr = prover.prove(prop, ctx, fakeMessage).get
     verifier.verify(prop, ctx, pr, fakeMessage).get._1 shouldBe true
@@ -224,7 +224,7 @@ class Rule110Specification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(nIn0, nIn1, nIn2),
       nTx,
-      self = nIn0)
+      self = nIn0, activatedVersionInTests)
 
     val nProof = nProver.prove(prop, nCtx, fakeMessage).get
     verifier.verify(prop, nCtx, nProof, fakeMessage).get._1 shouldBe true
@@ -246,7 +246,7 @@ class Rule110Specification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(rIn0, rIn1),
       rTx,
-      self = rIn0)
+      self = rIn0, activatedVersionInTests)
 
     val rProof = rProver.prove(prop, rCtx, fakeMessage).get
     verifier.verify(prop, rCtx, rProof, fakeMessage).get._1 shouldBe true
@@ -268,7 +268,7 @@ class Rule110Specification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(lnIn0, lnIn1),
       lnTx,
-      self = lnIn0)
+      self = lnIn0, activatedVersionInTests)
 
     val lnProof = lnProver.prove(prop, lnCtx, fakeMessage).get
     verifier.verify(prop, lnCtx, lnProof, fakeMessage).get._1 shouldBe true
@@ -289,7 +289,7 @@ class Rule110Specification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(lIn0),
       lTx,
-      self = lIn0)
+      self = lIn0, activatedVersionInTests)
 
     val lProof = lProver.prove(prop, lCtx, fakeMessage).get
     verifier.verify(prop, lCtx, lProof, fakeMessage).get._1 shouldBe true
@@ -409,7 +409,7 @@ class Rule110Specification extends SigmaTestingCommons {
       ErgoLikeContextTesting.dummyPubkey
     )
 
-    val genesisState = ValidationState.initialState(initBlock)
+    val genesisState = ValidationState.initialState(activatedVersionInTests, initBlock)
 
     def byPos(state: ValidationState, row: Int, pos: Int) =
       state.boxesReader.byTwoInts(RowReg, row, ColumnReg, pos).get
@@ -445,6 +445,7 @@ class Rule110Specification extends SigmaTestingCommons {
           IndexedSeq(left, center, right),
           ut,
           left,
+          activatedVersionInTests,
           ContextExtension.empty)
         val proverResultLeft = prover.prove(left.ergoTree, contextLeft, ut.messageToSign).get
 
@@ -454,6 +455,7 @@ class Rule110Specification extends SigmaTestingCommons {
           IndexedSeq(left, center, right),
           ut,
           center,
+          activatedVersionInTests,
           ContextExtension.empty)
         val proverResultCenter = prover.prove(center.ergoTree, contextCenter, ut.messageToSign).get
 
@@ -463,6 +465,7 @@ class Rule110Specification extends SigmaTestingCommons {
           IndexedSeq(left, center, right),
           ut,
           right,
+          activatedVersionInTests,
           ContextExtension.empty)
         val proverResultRight = prover.prove(right.ergoTree, contextRight, ut.messageToSign).get
         ut.toSigned(IndexedSeq(proverResultLeft, proverResultCenter, proverResultRight))

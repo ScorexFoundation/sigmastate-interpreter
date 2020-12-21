@@ -36,7 +36,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
     val h1 = SigmaPropConstant(prover1.dlogSecrets.head.publicImage)
     val h2 = SigmaPropConstant(prover2.dlogSecrets.head.publicImage)
 
-    val ctx = ErgoLikeContextTesting.dummy(fakeSelf)
+    val ctx = ErgoLikeContextTesting.dummy(fakeSelf, activatedVersionInTests)
 
     val e = compile(Map("h1" -> h1.treeWithSegregation.bytes, "h2" -> h2.treeWithSegregation.bytes), "h1 == h1")
     val exp = TrueLeaf
@@ -77,7 +77,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction = ErgoLikeTransactionTesting.dummy,
-      self = fakeSelf)
+      self = fakeSelf, activatedVersionInTests)
 
     val pr = prover.prove(prop, ctx, fakeMessage).get
     verifier.verify(prop, ctx, pr, fakeMessage).get._1 shouldBe true
@@ -107,7 +107,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction = ErgoLikeTransactionTesting.dummy,
-      self = fakeSelf)
+      self = fakeSelf, activatedVersionInTests)
 
     val prA = proverA.prove(compiledProp, ctx, fakeMessage).get
     verifier.verify(compiledProp, ctx, prA, fakeMessage).get._1 shouldBe true
@@ -134,7 +134,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction = ErgoLikeTransactionTesting.dummy,
-      self = fakeSelf)
+      self = fakeSelf, activatedVersionInTests)
 
     val prA = proverA.prove(compiledProp, ctx, fakeMessage).get
 
@@ -189,7 +189,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction,
-      self = fakeSelf)
+      self = fakeSelf, activatedVersionInTests)
 
     //before timeout
     val prA = proverA.prove(
@@ -252,7 +252,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction,
-      self = fakeSelf)
+      self = fakeSelf, activatedVersionInTests)
 
     val pr = prover.prove(prop, ctx, fakeMessage).get
     verifier.verify(prop, ctx, pr, fakeMessage)
@@ -282,7 +282,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction,
-      self = fakeSelf)
+      self = fakeSelf, activatedVersionInTests)
 
     val pr = prover.prove(compiledProp, ctx, fakeMessage).get
     verifier.verify(compiledProp, ctx, pr, fakeMessage)
@@ -318,7 +318,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(selfBox),
       createTransaction(testBox(1, recipientProposition, 0)),
-      self = selfBox)
+      self = selfBox, activatedVersionInTests)
 
     val proof = prover.prove(prop, ctx, fakeMessage).get
 
@@ -362,7 +362,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(s1),
       spendingTransaction,
-      self = s1)
+      self = s1, activatedVersionInTests)
 
     val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage).getOrThrow
     verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, ctx, pr, fakeMessage).getOrThrow._1 shouldBe true
@@ -377,7 +377,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(s2),
       spendingTransaction,
-      self = s2)
+      self = s2, activatedVersionInTests)
 
     prover.prove(prop, wrongCtx, fakeMessage).isFailure shouldBe true
     verifier.verify(prop, wrongCtx, pr, fakeMessage).isFailure shouldBe true
@@ -412,7 +412,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(selfBox),
       createTransaction(testBox(1, recipientProposition, 0)),
-      self = selfBox)
+      self = selfBox, activatedVersionInTests)
 
     val proof = prover.prove(prop, ctx, fakeMessage).get
 
@@ -465,7 +465,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(brother, s),
       spendingTransaction,
-      self = s)
+      self = s, activatedVersionInTests)
 
     val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove_prop"), prop, ctx, fakeMessage).getOrThrow
     verifier.verify(emptyEnv + (ScriptNameProp -> "verify_prop"), prop, ctx, pr, fakeMessage).getOrThrow._1 shouldBe true
@@ -476,7 +476,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(brotherWithWrongId, s),
       spendingTransaction,
-      self = s)
+      self = s, activatedVersionInTests)
 
     prover.prove(prop, wrongCtx, fakeMessage).isFailure shouldBe true
     verifier.verify(prop, wrongCtx, pr, fakeMessage).getOrThrow._1 shouldBe false
@@ -545,7 +545,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(friend, s),
       spendingTransaction,
-      self = s)
+      self = s, activatedVersionInTests)
 
     val pr1 = prover.prove(prop, ctx1, fakeMessage).success.value
     verifier.verify(prop, ctx1, pr1, fakeMessage).success.value._1 shouldBe true
@@ -556,7 +556,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(s, friend),
       spendingTransaction,
-      self = s)
+      self = s, activatedVersionInTests)
 
     val pr2 = prover.prove(prop, ctx2, fakeMessage).success.value
     verifier.verify(prop, ctx2, pr2, fakeMessage).success.value._1 shouldBe true
@@ -570,7 +570,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(friendWithWrongId, s),
       spendingTransaction,
-      self = s)
+      self = s, activatedVersionInTests)
 
     prover.prove(prop, wrongCtx1, fakeMessage).isFailure shouldBe true
     verifier.verify(prop, wrongCtx1, pr1, fakeMessage).success.value._1 shouldBe false
@@ -620,7 +620,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(input0, input1, input2, input3),
       spendingTransaction,
-      self = input3)
+      self = input3, activatedVersionInTests)
 
     val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx1, fakeMessage).get
     verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, ctx1, pr, fakeMessage).get._1 shouldBe true
@@ -633,7 +633,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
         copyBox(input0)(value = 20), // to go through `then` branch of `if` in the script
         input1, input2, input3),
       spendingTransaction,
-      self = input3)
+      self = input3, activatedVersionInTests)
     prover.prove(prop, ctx2, fakeMessage).isFailure shouldBe true
   }
 
@@ -654,7 +654,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(box),
       createTransaction(IndexedSeq(testBox(10, TrueProp, 0))),
-      self = box)
+      self = box, activatedVersionInTests)
 
     an[RuntimeException] should be thrownBy
       prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage).getOrThrow
@@ -679,7 +679,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
         minerPubkey = ErgoLikeContextTesting.dummyPubkey,
         boxesToSpend = IndexedSeq(box),
         createTransaction(IndexedSeq(testBox(10, TrueProp, 0))),
-        self = box)
+        self = box, activatedVersionInTests)
 
       val pr = prover.prove(prop, ctx, fakeMessage).get
       // make sure verifier will fail on deserializing context with mismatched type
@@ -695,7 +695,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
   property("DeserializeContext can return expression of non-Boolean/SigmaProp type") {
     def prove(ergoTree: ErgoTree, script: (Byte, EvaluatedValue[_ <: SType])): CostedProverResult = {
       val boxToSpend = testBox(10, ergoTree, creationHeight = 5)
-      val ctx = ErgoLikeContextTesting.dummy(boxToSpend)
+      val ctx = ErgoLikeContextTesting.dummy(boxToSpend, activatedVersionInTests)
           .withExtension(
             ContextExtension(Seq(script).toMap)) // provide script bytes in context variable
 

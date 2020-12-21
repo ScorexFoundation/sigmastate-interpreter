@@ -100,7 +100,8 @@ class ColdWalletContractExampleSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(depositOutput),
       spendingTransaction = withdrawTxAliceAndBob,
-      self = depositOutput
+      self = depositOutput,
+      activatedVersionInTests
     )
 
     val proofAliceAndBobWithdraw = alice.withSecrets(bob.dlogSecrets).prove(spendEnv, script, withdrawContextAliceandBob, fakeMessage).get.proof
@@ -130,7 +131,8 @@ class ColdWalletContractExampleSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(depositOutput),
       spendingTransaction = firstWithdrawTx,
-      self = depositOutput
+      self = depositOutput,
+      activatedVersionInTests
     )
 
     val proofAliceWithdraw = alice.prove(spendEnv, script, firstWithdrawContext, fakeMessage).get.proof
@@ -159,7 +161,8 @@ class ColdWalletContractExampleSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(depositOutput),
       spendingTransaction = withdrawTxInvalid,
-      self = depositOutput
+      self = depositOutput,
+      activatedVersionInTests
     )
 
     an [AssertionError] should be thrownBy (
@@ -193,7 +196,8 @@ class ColdWalletContractExampleSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(firstChangeOutput),
       spendingTransaction = secondWithdrawTx,
-      self = firstChangeOutput
+      self = firstChangeOutput,
+      activatedVersionInTests
     )
 
     val proofAliceSecondWithdraw = alice.prove(spendEnv, script, secondWithdrawContext, fakeMessage).get.proof

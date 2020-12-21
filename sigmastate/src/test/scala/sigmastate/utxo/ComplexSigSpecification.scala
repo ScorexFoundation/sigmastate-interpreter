@@ -43,7 +43,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction = ErgoLikeTransactionTesting.dummy,
-      self = fakeSelf)
+      self = fakeSelf, activatedVersionInTests)
 
     val prA = proverA.prove(compiledProp, ctx, fakeMessage).get
     verifier.verify(compiledProp, ctx, prA, fakeMessage).get._1 shouldBe true
@@ -76,7 +76,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction = ErgoLikeTransactionTesting.dummy,
-      self = fakeSelf)
+      self = fakeSelf, activatedVersionInTests)
 
     val prA = proverA.prove(compiledProp, ctx, fakeMessage).get
     verifier.verify(compiledProp, ctx, prA, fakeMessage).get._1 shouldBe true
@@ -110,7 +110,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction = ErgoLikeTransactionTesting.dummy,
-      self = fakeSelf)
+      self = fakeSelf, activatedVersionInTests)
 
     val prA = proverA.prove(compiledProp, ctx, fakeMessage).get
     verifier.verify(compiledProp, ctx, prA, fakeMessage).get._1 shouldBe true
@@ -145,7 +145,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction = ErgoLikeTransactionTesting.dummy,
-      self = fakeSelf)
+      self = fakeSelf, activatedVersionInTests)
 
     val prA = proverA.prove(compiledProp, ctx, fakeMessage).get
     verifier.verify(compiledProp, ctx, prA, fakeMessage).get._1 shouldBe true
@@ -176,7 +176,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction = ErgoLikeTransactionTesting.dummy,
-      self = fakeSelf)
+      self = fakeSelf, activatedVersionInTests)
 
     proverA.prove(compiledProp, ctx, fakeMessage).isFailure shouldBe true
     proverB.prove(compiledProp, ctx, fakeMessage).isFailure shouldBe true
@@ -217,7 +217,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction = ErgoLikeTransactionTesting.dummy,
-      self = fakeSelf)
+      self = fakeSelf, activatedVersionInTests)
 
     proverA.prove(compiledProp, ctx, fakeMessage).isFailure shouldBe true
     proverB.prove(compiledProp, ctx, fakeMessage).isFailure shouldBe true
@@ -254,7 +254,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction = ErgoLikeTransactionTesting.dummy,
-      self = fakeSelf)
+      self = fakeSelf, activatedVersionInTests)
 
     proverA.prove(compiledProp, ctx, fakeMessage).isFailure shouldBe true
     proverB.prove(compiledProp, ctx, fakeMessage).isFailure shouldBe true
@@ -287,7 +287,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction = ErgoLikeTransactionTesting.dummy,
-      self = fakeSelf)
+      self = fakeSelf, activatedVersionInTests)
 
     proverA.prove(compiledProp, ctx, fakeMessage).isFailure shouldBe true
     proverB.prove(compiledProp, ctx, fakeMessage).isFailure shouldBe true
@@ -327,7 +327,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction = ErgoLikeTransactionTesting.dummy,
-      self = fakeSelf)
+      self = fakeSelf, activatedVersionInTests)
 
     proverA.prove(compiledProp, ctx, fakeMessage).isFailure shouldBe true
     proverB.prove(compiledProp, ctx, fakeMessage).isFailure shouldBe true
@@ -368,7 +368,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction = ErgoLikeTransactionTesting.dummy,
-      self = fakeSelf)
+      self = fakeSelf, activatedVersionInTests)
 
     proverA.prove(compiledProp, ctx, fakeMessage).isFailure shouldBe true
     proverB.prove(compiledProp, ctx, fakeMessage).isFailure shouldBe true
@@ -412,7 +412,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction = ErgoLikeTransactionTesting.dummy,
-      self = fakeSelf)
+      self = fakeSelf, activatedVersionInTests)
 
     val prA = proverA.prove(compiledProp, ctx, fakeMessage).get
     verifier.verify(compiledProp, ctx, prA, fakeMessage).get._1 shouldBe true
@@ -450,7 +450,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction = ErgoLikeTransactionTesting.dummy,
-      self = fakeSelf)
+      self = fakeSelf, activatedVersionInTests)
     val prA = proverA.prove(compiledProp, ctx1, fakeMessage).get
     verifier.verify(compiledProp, ctx1, prA, fakeMessage).get._1 shouldBe true
     val prB = proverB.prove(compiledProp, ctx1, fakeMessage).get
@@ -463,7 +463,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction = ErgoLikeTransactionTesting.dummy,
-      self = fakeSelf)
+      self = fakeSelf, activatedVersionInTests)
     val prC = proverC.prove(compiledProp, ctx2, fakeMessage).get
     verifier.verify(compiledProp, ctx2, prC, fakeMessage).get._1 shouldBe true
   }
@@ -492,7 +492,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction = ErgoLikeTransactionTesting.dummy,
-      self = fakeSelf)
+      self = fakeSelf, activatedVersionInTests)
 
     val prA = proverA.prove(compiledProp, ctx1, fakeMessage).get
     verifier.verify(compiledProp, ctx1, prA, fakeMessage).get._1 shouldBe true
@@ -507,7 +507,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction = ErgoLikeTransactionTesting.dummy,
-      self = fakeSelf)
+      self = fakeSelf, activatedVersionInTests)
 
     val prA2 = proverA.prove(compiledProp, ctx2, fakeMessage).get
     verifier.verify(compiledProp, ctx2, prA2, fakeMessage).get._1 shouldBe true
@@ -540,7 +540,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction = ErgoLikeTransactionTesting.dummy,
-      self = fakeSelf)
+      self = fakeSelf, activatedVersionInTests)
 
     val prA = proverA.prove(compiledProp, ctx1, fakeMessage).get
     verifier.verify(compiledProp, ctx1, prA, fakeMessage).get._1 shouldBe true
@@ -555,7 +555,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction = ErgoLikeTransactionTesting.dummy,
-      self = fakeSelf)
+      self = fakeSelf, activatedVersionInTests)
 
     val prA2 = proverA.prove(compiledProp, ctx2, fakeMessage).get
     verifier.verify(compiledProp, ctx2, prA2, fakeMessage).get._1 shouldBe true
@@ -590,7 +590,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
         minerPubkey = ErgoLikeContextTesting.dummyPubkey,
         boxesToSpend = IndexedSeq(fakeSelf),
         spendingTransaction = ErgoLikeTransactionTesting.dummy,
-        self = fakeSelf)
+        self = fakeSelf, activatedVersionInTests)
 
       // any prover alone (no added secrets) should fail
       allProvers.foreach(_.prove(prop, ctx, fakeMessage).isFailure shouldBe true)

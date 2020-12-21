@@ -41,12 +41,13 @@ object ErgoLikeContextTesting {
             boxesToSpend: IndexedSeq[ErgoBox],
             spendingTransaction: ErgoLikeTransactionTemplate[_ <: UnsignedInput],
             self: ErgoBox,
+            activatedVersion: Byte,
             extension: ContextExtension = ContextExtension.empty,
             vs: SigmaValidationSettings = ValidationRules.currentSettings): ErgoLikeContext =
     new ErgoLikeContext(
       lastBlockUtxoRoot, noHeaders, dummyPreHeader(currentHeight, minerPubkey), noBoxes,
       boxesToSpend, spendingTransaction, boxesToSpend.indexOf(self), extension, vs,
-      ScriptCostLimit.value, initCost = 0L, Interpreter.MaxSupportedScriptVersion)
+      ScriptCostLimit.value, initCost = 0L, activatedVersion)
 
   def apply(currentHeight: Height,
             lastBlockUtxoRoot: AvlTreeData,
@@ -62,27 +63,10 @@ object ErgoLikeContextTesting {
       initCost = 0L, Interpreter.MaxSupportedScriptVersion)
 
 
-  def dummy(selfDesc: ErgoBox): ErgoLikeContext = ErgoLikeContextTesting(currentHeight = 0,
+  def dummy(selfDesc: ErgoBox, activatedVersion: Byte): ErgoLikeContext = ErgoLikeContextTesting(currentHeight = 0,
     lastBlockUtxoRoot = AvlTreeData.dummy, dummyPubkey, boxesToSpend = IndexedSeq(selfDesc),
-    spendingTransaction = ErgoLikeTransaction(IndexedSeq(), IndexedSeq()), self = selfDesc)
-
-  def fromTransaction(tx: ErgoLikeTransaction,
-                      blockchainState: BlockchainState,
-                      boxesReader: ErgoBoxReader,
-                      inputIndex: Int): Try[ErgoLikeContext] = Try {
-
-    val boxes = tx.inputs.map(_.boxId).map(id => boxesReader.byId(id).get)
-
-    val proverExtension = tx.inputs(inputIndex).spendingProof.extension
-
-    ErgoLikeContextTesting(blockchainState.currentHeight,
-      blockchainState.lastBlockUtxoRoot,
-      dummyPubkey,
-      boxes,
-      tx,
-      boxes(inputIndex),
-      proverExtension)
-  }
+    spendingTransaction = ErgoLikeTransaction(IndexedSeq(), IndexedSeq()), self = selfDesc,
+    activatedVersion = activatedVersion)
 
   val noInputs: Array[Box] = Array[Box]()
   val noOutputs: Array[Box] = Array[Box]()
