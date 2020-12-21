@@ -1,25 +1,24 @@
 package sigmastate
 
 import org.ergoplatform.SigmaConstants.ScriptCostLimit
-import org.ergoplatform.ErgoScriptPredef.TrueProp
 import org.ergoplatform.validation.ValidationRules
 import org.ergoplatform.{ErgoLikeContext, ErgoBox}
 import scorex.crypto.authds.avltree.batch.Lookup
 import scorex.crypto.authds.{ADDigest, ADKey}
 import scorex.crypto.hash.Blake2b256
-import sigmastate.Values.{TrueLeaf, BigIntConstant, AvlTreeConstant, ConstantPlaceholder, ByteArrayConstant, IntConstant, ErgoTree, BooleanConstant}
+import sigmastate.Values._
 import sigmastate.eval.Extensions._
 import sigmastate.eval.Sized._
 import sigmastate.eval._
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter}
-import sigmastate.interpreter.{ContextExtension, Interpreter}
+import sigmastate.interpreter.ContextExtension
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, ScriptEnv, emptyEnv}
 import sigmastate.utxo.CostTable
 import sigmastate.utxo.CostTable._
 import special.sigma.{SigmaTestingData, AvlTree}
 
-class CostingSpecification extends SigmaTestingData {
+class CostingSpecification extends SigmaTestingData with CrossVersionProps {
   implicit lazy val IR = new TestingIRContext {
 //    override val okPrintEvaluatedEntries = true
     substFromCostTable = false
@@ -55,39 +54,56 @@ class CostingSpecification extends SigmaTestingData {
     3.toByte -> BigIntConstant(BigInt("12345678901").bigInteger)
   ))
   val tokenId = Blake2b256("tokenA")
-  val selfBox = createBox(0, TrueProp, Seq(tokenId -> 10L),
-      Map(ErgoBox.R4 -> ByteArrayConstant(Array[Byte](1, 2, 3)),
-          ErgoBox.R5 -> IntConstant(3),
-          ErgoBox.R6 -> AvlTreeConstant(avlTree)))
-  lazy val outBoxA = testBox(10, pkA, 0)
-  lazy val outBoxB = testBox(20, pkB, 0)
-  lazy val tx = createTransaction(IndexedSeq(dataBox), IndexedSeq(outBoxA, outBoxB))
-  lazy val context = new ErgoLikeContext(
-    lastBlockUtxoRoot = header2.stateRoot.asInstanceOf[CAvlTree].treeData,
-    headers = headers, preHeader = preHeader,
-    dataBoxes = IndexedSeq(dataBox),
-    boxesToSpend = IndexedSeq(selfBox),
-    spendingTransaction = tx, selfIndex = 0, extension,
-    ValidationRules.currentSettings, ScriptCostLimit.value,
-    CostTable.interpreterInitCost, activatedVersionInTests
-  )
 
-  def cost(script: String)(expCost: Int): Unit = {
-    val ergoTree = compiler.compile(env, script)
-    val res = interpreter.reduceToCrypto(context, env, ergoTree).get._2
-    if (printCosts)
-      println(script + s" --> cost $res")
-    res shouldBe ((expCost * CostTable.costFactorIncrease / CostTable.costFactorDecrease) + CostTable.interpreterInitCost).toLong
+  class TestData {
+    val headerFlags = ErgoTree.headerWithVersion(ergoTreeVersionInTests)
+    val selfBox = createBox(0,
+        ErgoTree.withoutSegregation(headerFlags, TrueSigmaProp),
+        Seq(tokenId -> 10L),
+        Map(ErgoBox.R4 -> ByteArrayConstant(Array[Byte](1, 2, 3)),
+            ErgoBox.R5 -> IntConstant(3),
+            ErgoBox.R6 -> AvlTreeConstant(avlTree)))
+    val outBoxA = testBox(10, ErgoTree.fromSigmaBoolean(headerFlags, pkA), 0)
+    val outBoxB = testBox(20, ErgoTree.fromSigmaBoolean(headerFlags, pkB), 0)
+    val dataBox = createBox(1000,
+      ErgoTree.withoutSegregation(headerFlags, TrueSigmaProp),
+      Seq(tokenId1 -> 10L, tokenId2 -> 20L),
+      Map(ErgoBox.R4 -> IntConstant(100), ErgoBox.R5 -> BooleanConstant(true)))
+    val tx = createTransaction(IndexedSeq(dataBox), IndexedSeq(outBoxA, outBoxB))
+    val context = new ErgoLikeContext(
+      lastBlockUtxoRoot = header2.stateRoot.asInstanceOf[CAvlTree].treeData,
+      headers = headers, preHeader = preHeader,
+      dataBoxes = IndexedSeq(dataBox),
+      boxesToSpend = IndexedSeq(selfBox),
+      spendingTransaction = tx, selfIndex = 0, extension,
+      ValidationRules.currentSettings, ScriptCostLimit.value,
+      CostTable.interpreterInitCost, activatedVersionInTests
+    )
+
+    def cost(script: String)(expCost: Int): Unit = {
+      val ergoTree = compiler.compile(env, script)
+      val res = interpreter.reduceToCrypto(context, env, ergoTree).get._2
+      if (printCosts)
+        println(script + s" --> cost $res")
+      res shouldBe ((expCost * CostTable.costFactorIncrease / CostTable.costFactorDecrease) + CostTable.interpreterInitCost).toLong
+    }
+
+    val ContextVarAccess = getVarCost + selectField  // `getVar(id)` + `.get`
+    val RegisterAccess = accessRegister + selectField  // `getReg(id)` + `.get`
+    val GTConstCost = comparisonCost + constCost
+    val LengthGTConstCost = collLength + GTConstCost
+    val LengthGTCost = collLength + comparisonCost  // can be used when constCost is already accumulated
+
+    val OutputsCost = selectField + accessBox * tx.outputs.length
+    val InputsCost = selectField + accessBox * context.boxesToSpend.length
+    val DataInputsCost = selectField + accessBox * context.dataBoxes.length
+    val HeadersCost = selectField
+    val PreHeaderCost = selectField
+    val AccessHeaderCost = selectField + collByIndex + constCost
   }
 
-  val ContextVarAccess = getVarCost + selectField  // `getVar(id)` + `.get`
-  val RegisterAccess = accessRegister + selectField  // `getReg(id)` + `.get`
-  val GTConstCost = comparisonCost + constCost
-  val LengthGTConstCost = collLength + GTConstCost
-  val LengthGTCost = collLength + comparisonCost  // can be used when constCost is already accumulated
-
   property("basic (smoke) tests") {
-
+    val d = new TestData; import d._
     cost("{ getVar[Boolean](2).get }")(ContextVarAccess)
 
     cost("{ getVar[Int](1).get > 1 }")(ContextVarAccess + GTConstCost)
@@ -104,6 +120,7 @@ class CostingSpecification extends SigmaTestingData {
   }
 
   property("logical op costs") {
+    val d = new TestData; import d._
     cost("{ val cond = getVar[Boolean](2).get; cond && cond }")(ContextVarAccess + logicCost)
     cost("{ val cond = getVar[Boolean](2).get; cond || cond }")(ContextVarAccess + logicCost)
     cost("{ val cond = getVar[Boolean](2).get; cond || cond && true }")(ContextVarAccess + logicCost * 2 + constCost)
@@ -115,27 +132,33 @@ class CostingSpecification extends SigmaTestingData {
   }
 
   property("atLeast costs") {
+    val d = new TestData; import d._
     cost("{ atLeast(2, Coll(pkA, pkB, pkB)) }")(
       concreteCollectionItemCost * 3 + collToColl + proveDlogEvalCost * 2 + logicCost + constCost)
   }
 
   property("allZK costs") {
+    val d = new TestData; import d._
     cost("{ pkA && pkB }") (proveDlogEvalCost * 2 + sigmaAndCost * 2)
   }
 
   property("anyZK costs") {
+    val d = new TestData; import d._
     cost("{ pkA || pkB }") (proveDlogEvalCost * 2 + sigmaOrCost * 2)
   }
 
   property("blake2b256 costs") {
+    val d = new TestData; import d._
     cost("{ blake2b256(key1).size > 0 }") (constCost + hashPerKb + LengthGTConstCost)
   }
 
   property("sha256 costs") {
+    val d = new TestData; import d._
     cost("{ sha256(key1).size > 0 }") (constCost + hashPerKb + LengthGTConstCost)
   }
 
   property("byteArrayToBigInt") {
+    val d = new TestData; import d._
     cost("{ byteArrayToBigInt(Coll[Byte](1.toByte)) > 0 }")(
       constCost // byte const
         + collToColl // concrete collection
@@ -144,6 +167,7 @@ class CostingSpecification extends SigmaTestingData {
   }
 
   property("byteArrayToLong") {
+    val d = new TestData; import d._
     cost("{ byteArrayToLong(Coll[Byte](1.toByte, 1.toByte, 1.toByte, 1.toByte, 1.toByte, 1.toByte, 1.toByte, 1.toByte)) > 0 }") (
       constCost // byte const
         + collToColl // concrete collection
@@ -152,22 +176,27 @@ class CostingSpecification extends SigmaTestingData {
   }
 
   property("longToByteArray") {
+    val d = new TestData; import d._
     cost("{ longToByteArray(1L).size > 0 }") (constCost + castOp + LengthGTConstCost)
   }
 
   property("decodePoint and GroupElement.getEncoded") {
+    val d = new TestData; import d._
     cost("{ decodePoint(groupGenerator.getEncoded) == groupGenerator }") (selectField + selectField + decodePointCost + comparisonCost)
   }
 
   property("GroupElement.negate") {
+    val d = new TestData; import d._
     cost("{ groupGenerator.negate != groupGenerator }") (selectField + negateGroup + comparisonCost)
   }
 
   property("GroupElement.exp") {
+    val d = new TestData; import d._
     cost("{ groupGenerator.exp(getVar[BigInt](3).get) == groupGenerator }") (selectField + expCost + ContextVarAccess + comparisonCost)
   }
 
   property("SELF box operations cost") {
+    val d = new TestData; import d._
     cost("{ SELF.value > 0 }")(accessBox + extractCost + GTConstCost)
     cost("{ SELF.id.size > 0 }")(accessBox + extractCost + LengthGTConstCost)
     cost("{ SELF.tokens.size > 0 }")(accessBox + extractCost + LengthGTConstCost)
@@ -175,14 +204,8 @@ class CostingSpecification extends SigmaTestingData {
     cost("{ SELF.R5[Int].get > 0 }")(accessBox + RegisterAccess + GTConstCost)
   }
 
-  lazy val OutputsCost = selectField + accessBox * tx.outputs.length
-  lazy val InputsCost = selectField + accessBox * context.boxesToSpend.length
-  lazy val DataInputsCost = selectField + accessBox * context.dataBoxes.length
-  lazy val HeadersCost = selectField
-  lazy val PreHeaderCost = selectField
-  lazy val AccessHeaderCost = selectField + collByIndex + constCost
-
   property("Global operations cost") {
+    val d = new TestData; import d._
     // TODO costing: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
     // cost("{ groupGenerator.isIdentity > 0 }")(selectField + selectField + GTConstCost)
 
@@ -192,6 +215,7 @@ class CostingSpecification extends SigmaTestingData {
   }
 
   property("Context operations cost") {
+    val d = new TestData; import d._
     cost("{ HEIGHT > 0 }")(selectField + GTConstCost)
     cost("{ OUTPUTS.size > 0 }")(OutputsCost + LengthGTConstCost)
     cost("{ INPUTS.size > 0 }")(InputsCost + LengthGTConstCost)
@@ -204,6 +228,7 @@ class CostingSpecification extends SigmaTestingData {
   }
 
   property("PreHeader operations cost") {
+    val d = new TestData; import d._
     cost("{ CONTEXT.preHeader.version > 0 }")(PreHeaderCost + selectField + castOp + GTConstCost)
     cost("{ CONTEXT.preHeader.parentId.size > 0 }")(PreHeaderCost + selectField + LengthGTConstCost)
     cost("{ CONTEXT.preHeader.timestamp > 0L }")(PreHeaderCost + selectField + GTConstCost)
@@ -217,6 +242,7 @@ class CostingSpecification extends SigmaTestingData {
   }
 
   property("Header operations cost") {
+    val d = new TestData; import d._
     val header = "CONTEXT.headers(0)"
     cost(s"{ $header.id.size > 0 }")(AccessHeaderCost + selectField + LengthGTCost)
     cost(s"{ $header.version > 0 }")(AccessHeaderCost + selectField + castOp + comparisonCost)
@@ -245,6 +271,7 @@ class CostingSpecification extends SigmaTestingData {
   }
 
   property("AvlTree operations cost") {
+    val d = new TestData; import d._
     val rootTree = "LastBlockUtxoRootHash"
 //    cost(s"{ $rootTree.digest.size > 0 }")(AccessRootHash + selectField + LengthGTConstCost)
 //    cost(s"{ $rootTree.enabledOperations > 0 }")(AccessRootHash + selectField + castOp + GTConstCost)
@@ -290,6 +317,7 @@ class CostingSpecification extends SigmaTestingData {
   }
 
   property("Coll operations cost") {
+    val d = new TestData; import d._
     val coll = "OUTPUTS"
     val nOutputs = tx.outputs.length
     val collBytes = "CONTEXT.headers(0).id"
@@ -338,6 +366,7 @@ class CostingSpecification extends SigmaTestingData {
   }
 
   property("Option operations cost") {
+    val d = new TestData; import d._
     val opt = "SELF.R5[Int]"
     val accessOpt = accessBox + accessRegister
     cost(s"{ $opt.get > 0 }")(accessOpt + selectField + GTConstCost)
@@ -350,10 +379,12 @@ class CostingSpecification extends SigmaTestingData {
   }
 
   property("TrueLeaf cost") {
+    val d = new TestData; import d._
     cost("{ true }")(constCost)
   }
 
   property("ErgoTree with TrueLeaf costs") {
+    val d = new TestData; import d._
     val tree = ErgoTree(16, IndexedSeq(TrueLeaf), BoolToSigmaProp(ConstantPlaceholder(0, SBoolean)))
 
     val pr = interpreter.prove(tree, context, fakeMessage).get
@@ -374,6 +405,7 @@ class CostingSpecification extends SigmaTestingData {
   }
 
   property("laziness of AND, OR costs") {
+    val d = new TestData; import d._
     cost("{ val cond = getVar[Boolean](2).get; !(!cond && (1 / 0 == 1)) }")(
       ContextVarAccess + constCost * 2 + logicCost * 3 + multiply + comparisonCost)
     cost("{ val cond = getVar[Boolean](2).get; (cond || (1 / 0 == 1)) }")(

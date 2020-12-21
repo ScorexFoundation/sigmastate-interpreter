@@ -61,17 +61,6 @@ trait SigmaTestingData extends SigmaTestingCommons with SigmaTypeGens {
 
   val tokenId1: Digest32 = Blake2b256("id1")
   val tokenId2: Digest32 = Blake2b256("id2")
-  val inBox = createBox(10, TrivialProp.TrueProp,
-    Seq(tokenId1 -> 10L, tokenId2 -> 20L),
-    Map(ErgoBox.R4 -> IntConstant(100), ErgoBox.R5 -> BooleanConstant(true)))
-
-  val dataBox = createBox(1000, TrivialProp.TrueProp,
-    Seq(tokenId1 -> 10L, tokenId2 -> 20L),
-    Map(ErgoBox.R4 -> IntConstant(100), ErgoBox.R5 -> BooleanConstant(true)))
-
-  val outBox = createBox(10, TrivialProp.TrueProp,
-    Seq(tokenId1 -> 10L, tokenId2 -> 20L),
-    Map(ErgoBox.R4 -> IntConstant(100), ErgoBox.R5 -> BooleanConstant(true)))
 
   val header1: Header = CHeader(Blake2b256("Header.id").toColl,
     0,
@@ -114,13 +103,4 @@ trait SigmaTestingData extends SigmaTestingCommons with SigmaTypeGens {
     minerPk = SigmaDsl.groupGenerator,
     votes = Colls.emptyColl[Byte]
   )
-  def ergoCtx = new ErgoLikeContext(
-    lastBlockUtxoRoot = header2.stateRoot.asInstanceOf[CAvlTree].treeData,
-    boxesToSpend = IndexedSeq(inBox),
-    spendingTransaction = new ErgoLikeTransaction(IndexedSeq(), IndexedSeq(DataInput(dataBox.id)), IndexedSeq(outBox)),
-    selfIndex = 0, headers = headers, preHeader = preHeader, dataBoxes = IndexedSeq(dataBox),
-    extension = ContextExtension(Map(2.toByte -> IntConstant(10))),
-    validationSettings = ValidationRules.currentSettings,
-    costLimit = ScriptCostLimit.value, initCost = 0L,
-    activatedScriptVersion = activatedVersionInTests)
 }

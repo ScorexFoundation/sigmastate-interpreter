@@ -28,6 +28,7 @@ trait CrossVersionProps extends PropSpecLike with TestsBase {
               }
             }
           }
+
         }
       }
     }

@@ -1089,6 +1089,9 @@ object Values {
     def withoutSegregation(root: SigmaPropValue): ErgoTree =
       ErgoTree(ErgoTree.DefaultHeader, EmptyConstants, root)
 
+    def withoutSegregation(headerFlags: Byte, root: SigmaPropValue): ErgoTree =
+      ErgoTree((ErgoTree.DefaultHeader | headerFlags).toByte, EmptyConstants, root)
+
     implicit def fromProposition(prop: SigmaPropValue): ErgoTree = {
       prop match {
         case SigmaPropConstant(_) => withoutSegregation(prop)
@@ -1098,6 +1101,10 @@ object Values {
 
     implicit def fromSigmaBoolean(pk: SigmaBoolean): ErgoTree = {
       withoutSegregation(pk.toSigmaProp)
+    }
+
+    def fromSigmaBoolean(headerFlags: Byte, pk: SigmaBoolean): ErgoTree = {
+      withoutSegregation(headerFlags, pk.toSigmaProp)
     }
 
     /** Build ErgoTree via serialization of the value with ConstantSegregationHeader, constants segregated
