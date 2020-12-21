@@ -356,7 +356,8 @@ class LetsSpecification extends SigmaTestingCommons { suite =>
       dataBoxes = IndexedSeq(directoryBox),
       boxesToSpend = IndexedSeq(userBoxBefore0, userBoxBefore1),
       spendingTransaction = issuanceTx,
-      selfIndex = 0)
+      selfIndex = 0,
+      activatedVersionInTests)
 
     val managementProver = new ContextEnrichingTestProvingInterpreter()
       .withContextExtender(1, ByteArrayConstant(proof))

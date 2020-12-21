@@ -55,18 +55,20 @@ object ErgoLikeContextTesting {
             dataBoxes: IndexedSeq[ErgoBox],
             boxesToSpend: IndexedSeq[ErgoBox],
             spendingTransaction: ErgoLikeTransactionTemplate[_ <: UnsignedInput],
-            selfIndex: Int) =
+            selfIndex: Int,
+            activatedVersion: Byte) =
     new ErgoLikeContext(
       lastBlockUtxoRoot, noHeaders, dummyPreHeader(currentHeight, minerPubkey),
       dataBoxes, boxesToSpend, spendingTransaction, selfIndex, ContextExtension.empty,
       ValidationRules.currentSettings, ScriptCostLimit.value,
-      initCost = 0L, Interpreter.MaxSupportedScriptVersion)
+      initCost = 0L, activatedVersion)
 
 
-  def dummy(selfDesc: ErgoBox, activatedVersion: Byte): ErgoLikeContext = ErgoLikeContextTesting(currentHeight = 0,
-    lastBlockUtxoRoot = AvlTreeData.dummy, dummyPubkey, boxesToSpend = IndexedSeq(selfDesc),
-    spendingTransaction = ErgoLikeTransaction(IndexedSeq(), IndexedSeq()), self = selfDesc,
-    activatedVersion = activatedVersion)
+  def dummy(selfDesc: ErgoBox, activatedVersion: Byte): ErgoLikeContext =
+    ErgoLikeContextTesting(currentHeight = 0,
+      lastBlockUtxoRoot = AvlTreeData.dummy, dummyPubkey, boxesToSpend = IndexedSeq(selfDesc),
+      spendingTransaction = ErgoLikeTransaction(IndexedSeq(), IndexedSeq()), self = selfDesc,
+      activatedVersion = activatedVersion)
 
   val noInputs: Array[Box] = Array[Box]()
   val noOutputs: Array[Box] = Array[Box]()
