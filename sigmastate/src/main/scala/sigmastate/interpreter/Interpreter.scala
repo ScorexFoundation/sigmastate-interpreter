@@ -10,7 +10,7 @@ import sigmastate.basics.DLogProtocol.{DLogInteractiveProver, FirstDLogProverMes
 import scorex.util.ScorexLogging
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
-import sigmastate.eval.{IRContext, Sized, Evaluation}
+import sigmastate.eval.{IRContext, Evaluation}
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.basics._
 import sigmastate.interpreter.Interpreter.{ScriptEnv, VerificationResult}
