@@ -16,7 +16,7 @@ javacOptions ++=
 
 lazy val allConfigDependency = "compile->compile;test->test"
 
-ThisBuild / crossScalaVersions := Seq(scala212, scala211)
+crossScalaVersions := Seq(scala212, scala211)
 
 lazy val commonSettings = Seq(
   organization := "org.scorexfoundation",
