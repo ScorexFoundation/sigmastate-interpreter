@@ -46,7 +46,7 @@ jobs:
           key: ${{ runner.os }}-sbt-cache-v2-${{ hashFiles('**/*.sbt') }}-${{ hashFiles('project/build.properties') }}
 
       - name: Runs tests and collect coverage
-        run: sbt -jvm-opts .travis.jvmopts ++${{ matrix.scala }} coverage test && sbt coverageReport coverageAggregate coveralls
+        run: sbt -jvm-opts .travis.jvmopts ++${{ matrix.scala }} coverage test && sbt ++${{ matrix.scala }} coverageReport coverageAggregate coveralls
         env:
           COVERALLS_REPO_TOKEN: $${{ secrets.COVERALLS_REPO_TOKEN }}
 
