@@ -49,10 +49,6 @@ jobs:
             ~/Library/Caches/Coursier/v1
           key: ${{ runner.os }}-sbt-cache-v2-${{ hashFiles('**/*.sbt') }}-${{ hashFiles('project/build.properties') }}
 
-      - run: sbt -jvm-opts .travis.jvmopts ++${{ matrix.scala }} coverage test
-
-      - run: sbt -jvm-opts .travis.jvmopts ++${{ matrix.scala }} coverageReport 
-
-      - run: sbt coverageAggregate coveralls
+      - run: sbt -jvm-opts .travis.jvmopts ++${{ matrix.scala }} coverage test && sbt coverageReport coverageAggregate coveralls
 
       - run: sbt -jvm-opts .travis.jvmopts ++${{ matrix.scala }} publish
