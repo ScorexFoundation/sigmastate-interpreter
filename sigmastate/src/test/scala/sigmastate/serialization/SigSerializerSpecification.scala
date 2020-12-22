@@ -15,7 +15,8 @@ import sigmastate.utxo.Transformer
 
 import scala.util.Random
 
-class SigSerializerSpecification extends SigmaTestingCommons with ObjectGenerators {
+class SigSerializerSpecification extends SigmaTestingCommons
+  with ObjectGenerators with CrossVersionProps {
   implicit lazy val IR = new TestingIRContext
   private lazy implicit val arbExprGen: Arbitrary[SigmaBoolean] = Arbitrary(exprTreeGen)
 
@@ -78,7 +79,7 @@ class SigSerializerSpecification extends SigmaTestingCommons with ObjectGenerato
         minerPubkey = ErgoLikeContextTesting.dummyPubkey,
         boxesToSpend = IndexedSeq(fakeSelf),
         spendingTransaction = ErgoLikeTransactionTesting.dummy,
-        self = fakeSelf)
+        self = fakeSelf, activatedVersionInTests)
         .withCostLimit(Long.MaxValue) // To avoid occasional cost limit exceptions which are irrelevant here
 
       try {

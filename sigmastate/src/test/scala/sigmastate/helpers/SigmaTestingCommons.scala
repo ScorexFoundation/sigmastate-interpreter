@@ -18,7 +18,7 @@ import sigmastate.interpreter.Interpreter.{ScriptNameProp, ScriptEnv}
 import sigmastate.interpreter.{CryptoConstants, Interpreter}
 import sigmastate.lang.{Terms, TransformingSigmaBuilder, SigmaCompiler}
 import sigmastate.serialization.{ValueSerializer, SigmaSerializer}
-import sigmastate.{SGroupElement, SType}
+import sigmastate.{SGroupElement, SType, TestsBase}
 import sigmastate.eval.{CompiletimeCosting, IRContext, Evaluation, _}
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.utils.Helpers._
@@ -31,11 +31,13 @@ trait SigmaTestingCommons extends PropSpec
   with PropertyChecks
   with GeneratorDrivenPropertyChecks
   with Matchers with TestUtils with TestContexts with ValidationSpecification
-  with NegativeTesting {
+  with NegativeTesting
+  with TestsBase {
 
   val fakeSelf: ErgoBox = createBox(0, TrueProp)
 
-  val fakeContext: ErgoLikeContext = ErgoLikeContextTesting.dummy(fakeSelf)
+  def fakeContext: ErgoLikeContext =
+    ErgoLikeContextTesting.dummy(fakeSelf, activatedVersionInTests)
 
   //fake message, in a real-life a message is to be derived from a spending transaction
   val fakeMessage = Blake2b256("Hello World")
@@ -203,9 +205,11 @@ trait SigmaTestingCommons extends PropSpec
           val costCtx = calcCtx.copy(isCost = true)
           (costCtx, calcCtx)
         case _ =>
-          val ergoCtx = ErgoLikeContextTesting.dummy(createBox(0, TrueProp))
-              .withBindings(1.toByte -> Constant[SType](x.asInstanceOf[SType#WrappedType], tpeA))
-              .withBindings(bindings: _*)
+          val ergoCtx = ErgoLikeContextTesting.dummy(
+            createBox(0, TrueProp), activatedVersionInTests
+          ).withBindings(1.toByte -> Constant[SType](x.asInstanceOf[SType#WrappedType], tpeA))
+           .withBindings(bindings: _*)
+
           val calcCtx = ergoCtx.toSigmaContext(isCost = false).asInstanceOf[CostingDataContext]
           val costCtx = calcCtx.copy(isCost = true)
           (costCtx, calcCtx)

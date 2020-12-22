@@ -4,7 +4,7 @@ import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
 import org.ergoplatform.validation.ValidationSpecification
 
 import scala.util.Success
-import sigmastate.{AvlTreeData, SType}
+import sigmastate.{AvlTreeData, SType, TestsBase}
 import sigmastate.Values.{EvaluatedValue, SValue, SigmaPropConstant, Value, BigIntArrayConstant}
 import org.ergoplatform.{Context => _, _}
 import sigmastate.utxo.CostTable
@@ -20,7 +20,7 @@ import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import scala.language.implicitConversions
 
 trait ErgoScriptTestkit extends ContractsTestkit with LangTests
-    with ValidationSpecification { self: BaseCtxTests =>
+    with ValidationSpecification with TestsBase { self: BaseCtxTests =>
 
   implicit lazy val IR: TestContext with IRContext =
     new TestContext with IRContext with CompiletimeCosting
@@ -41,7 +41,7 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(boxToSpend),
       spendingTransaction = tx1,
-      self = boxToSpend,
+      self = boxToSpend, activatedVersionInTests,
       extension = ContextExtension(extension))
     ergoCtx
   }
@@ -76,6 +76,7 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests
     boxesToSpend = IndexedSeq(boxToSpend),
     spendingTransaction = tx1,
     self = boxToSpend,
+    activatedVersionInTests,
     extension = ContextExtension(Map(
       backerPubKeyId -> SigmaPropConstant(backerPubKey),
       projectPubKeyId -> SigmaPropConstant(projectPubKey),

@@ -7,7 +7,8 @@ import org.scalatest.TryValues._
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import org.ergoplatform.ErgoScriptPredef._
 
-class FailingToProveSpec extends SigmaTestingCommons {
+class FailingToProveSpec extends SigmaTestingCommons
+  with CrossVersionProps {
   implicit lazy val IR = new TestingIRContext
   /**
     * Both properties should work fine.
@@ -42,7 +43,8 @@ class FailingToProveSpec extends SigmaTestingCommons {
       boxesToSpend = IndexedSeq(selfBox),
       spendingTransaction = tx,
       self = selfBox,
-      minerPubkey = ErgoLikeContextTesting.dummyPubkey)
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
+      activatedVersion = activatedVersionInTests)
     val proof = interpreter.prove(emptyEnv + (ScriptNameProp -> "prove"), compiledScript, ctx, fakeMessage).success.value.proof
     verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), compiledScript, ctx, proof, fakeMessage) should be a 'success
   }
@@ -76,7 +78,8 @@ class FailingToProveSpec extends SigmaTestingCommons {
       boxesToSpend = IndexedSeq(selfBox),
       spendingTransaction = tx,
       self = selfBox,
-      minerPubkey = ErgoLikeContextTesting.dummyPubkey)
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
+      activatedVersion = activatedVersionInTests)
     val proof = interpreter.prove(emptyEnv + (ScriptNameProp -> "prove"), compiledScript, ctx, fakeMessage).success.value.proof
     verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), compiledScript, ctx, proof, fakeMessage) should be a 'success
   }

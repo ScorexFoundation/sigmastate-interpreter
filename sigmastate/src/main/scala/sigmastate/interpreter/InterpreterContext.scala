@@ -76,7 +76,7 @@ trait InterpreterContext {
     * performed via miners voting.
     * The maximum version supported by the interpreter is defined by
     * `Interpreter.MaxSupportedScriptVersion`. As a result, the execution of the
-    * `Interpreter.verify` and `Interpreter.prove` methods depend on the relation between
+    * `Interpreter.verify` method depends on the relation between
     * max supported and activated version. (see docs/aot-jit-switch.md).
     */
   def activatedScriptVersion: Byte
