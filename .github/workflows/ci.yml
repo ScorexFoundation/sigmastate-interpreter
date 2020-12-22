@@ -46,12 +46,15 @@ jobs:
           key: ${{ runner.os }}-sbt-cache-v2-${{ hashFiles('**/*.sbt') }}-${{ hashFiles('project/build.properties') }}
 
       - name: Runs tests and collect coverage
-        run: sbt -jvm-opts .travis.jvmopts ++${{ matrix.scala }} coverage test && sbt ++${{ matrix.scala }} coverageReport coverageAggregate coveralls
+        run: sbt -jvm-opts ci/ci.jvmopts ++${{ matrix.scala }} coverage test 
+
+      - name: Upload coverage report
+        run: sbt ++${{ matrix.scala }} coverageReport coverageAggregate coveralls
         env:
           COVERALLS_REPO_TOKEN: $${{ secrets.COVERALLS_REPO_TOKEN }}
 
       - name: Publish a snapshot ${{ github.ref }}
-        run: sbt -jvm-opts .travis.jvmopts ++${{ matrix.scala }} publish
+        run: sbt ++${{ matrix.scala }} publish
         env:
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
