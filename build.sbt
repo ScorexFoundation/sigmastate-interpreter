@@ -16,9 +16,10 @@ javacOptions ++=
 
 lazy val allConfigDependency = "compile->compile;test->test"
 
+ThisBuild / crossScalaVersions := Seq(scala212, scala211)
+
 lazy val commonSettings = Seq(
   organization := "org.scorexfoundation",
-  crossScalaVersions := Seq(scala212, scala211),
   scalaVersion := scala212,
   resolvers += Resolver.sonatypeRepo("public"),
   licenses := Seq("CC0" -> url("https://creativecommons.org/publicdomain/zero/1.0/legalcode")),
@@ -44,6 +45,14 @@ lazy val commonSettings = Seq(
       </developers>,
   publishMavenStyle := true,
   publishTo := sonatypePublishToBundle.value
+)
+
+
+// options for sbt-github-action plugin (generate workflow files with `sbt githubWorkflowGenerate`)
+ThisBuild / githubWorkflowJavaVersions := Seq("adopt@1.11")
+ThisBuild / githubWorkflowBuild := Seq(
+  WorkflowStep.Sbt(List("compile")),
+  WorkflowStep.Sbt(List("test")),
 )
 
 enablePlugins(GitVersioning)
