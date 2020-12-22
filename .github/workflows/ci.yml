@@ -5,13 +5,17 @@ on:
     branches:
       - master
       - develop
+    tags-ignore: ["v*"]
   pull_request:
     types:
       - opened
       - synchronize
+    tags-ignore: ["v*"]
 
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+  SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
 
 jobs:
   build:

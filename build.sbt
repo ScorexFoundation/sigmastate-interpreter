@@ -18,8 +18,8 @@ lazy val allConfigDependency = "compile->compile;test->test"
 
 lazy val commonSettings = Seq(
   organization := "org.scorexfoundation",
-  scalaVersion := scala212,
   crossScalaVersions := Seq(scala212, scala211),
+  scalaVersion := scala212,
   resolvers += Resolver.sonatypeRepo("public"),
   licenses := Seq("CC0" -> url("https://creativecommons.org/publicdomain/zero/1.0/legalcode")),
   homepage := Some(url("https://github.com/ScorexFoundation/sigmastate-interpreter")),
@@ -45,7 +45,6 @@ lazy val commonSettings = Seq(
   publishMavenStyle := true,
   publishTo := sonatypePublishToBundle.value
 )
-
 
 enablePlugins(GitVersioning)
 
