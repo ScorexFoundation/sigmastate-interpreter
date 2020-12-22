@@ -1,0 +1,26 @@
+name: Publish a release
+
+on:
+  release:
+    types: [published]
+
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+jobs:
+  publish_release:
+    name: Publish release to Sonatype
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: olafurpg/setup-scala@v10
+      - name: Import GPG key
+        run: ci/import_gpg.sh
+        env:
+          GPG_SIGNING_KEY: ${{ secrets.GPG_SIGNING_KEY }}
+      - name: Publish contracts release ${{ github.ref }}
+        run: sbt +publishSigned sonatypeBundleRelease
+        env:
+          PGP_PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
+          SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+          SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
