@@ -16,8 +16,6 @@ javacOptions ++=
 
 lazy val allConfigDependency = "compile->compile;test->test"
 
-ThisBuild / crossScalaVersions := Seq(scala212, scala211)
-
 lazy val commonSettings = Seq(
   organization := "org.scorexfoundation",
   scalaVersion := scala212,
@@ -48,13 +46,6 @@ lazy val commonSettings = Seq(
   publishTo := sonatypePublishToBundle.value
 )
 
-
-// options for sbt-github-action plugin (generate workflow files with `sbt githubWorkflowGenerate`)
-ThisBuild / githubWorkflowJavaVersions := Seq("adopt@1.11")
-ThisBuild / githubWorkflowBuild := Seq(
-  WorkflowStep.Sbt(List("compile")),
-  WorkflowStep.Sbt(List("test")),
-)
 
 enablePlugins(GitVersioning)
 
