@@ -19,7 +19,8 @@ import sigmastate.helpers.TestingHelpers._
 import scala.util.Success
 
 /** Specification to verify that the interpreter behaves according to docs/aot-jit-switch.md. */
-class ScriptVersionSwitchSpecification extends SigmaDslTesting {
+class ScriptVersionSwitchSpecification extends SigmaDslTesting
+  with CrossVersionProps {
   override implicit val generatorDrivenConfig = PropertyCheckConfiguration(minSuccessful = 30)
   implicit def IR = createIR()
 
@@ -69,11 +70,12 @@ class ScriptVersionSwitchSpecification extends SigmaDslTesting {
       ErgoBox.R4 -> Constant[SType](Coll[Box]().asInstanceOf[SType#WrappedType], tpeA)
     )
 
-    val ctx = copyContext(ErgoLikeContextTesting.dummy(
-      createBox(0, ergoTree, additionalRegisters = newRegisters)
+    val ctx = ErgoLikeContextTesting.dummy(
+      createBox(0, ergoTree, additionalRegisters = newRegisters),
+      activatedScriptVersion
     ).withBindings(
       1.toByte -> Constant[SType](input.asInstanceOf[SType#WrappedType], tpeA)
-    ).asInstanceOf[ErgoLikeContext])(activatedScriptVersion = activatedScriptVersion)
+    ).asInstanceOf[ErgoLikeContext]
     val prover = new FeatureProvingInterpreter()
     val pr = prover.prove(ergoTree, ctx, fakeMessage).getOrThrow
     pr
@@ -86,11 +88,12 @@ class ScriptVersionSwitchSpecification extends SigmaDslTesting {
       ErgoBox.R4 -> Constant[SType](Coll[Box]().asInstanceOf[SType#WrappedType], tpeA)
     )
 
-    val ctx = copyContext(ErgoLikeContextTesting.dummy(
-      createBox(0, ergoTree, additionalRegisters = newRegisters)
+    val ctx = ErgoLikeContextTesting.dummy(
+      createBox(0, ergoTree, additionalRegisters = newRegisters),
+      activatedScriptVersion
     ).withBindings(
       1.toByte -> Constant[SType](input.asInstanceOf[SType#WrappedType], tpeA)
-    ).asInstanceOf[ErgoLikeContext])(activatedScriptVersion = activatedScriptVersion)
+    ).asInstanceOf[ErgoLikeContext]
 
     val verifier = new ErgoLikeInterpreter() { type CTX = ErgoLikeContext }
     val pr = ProverResult(ProverResult.empty.proof, ctx.extension)

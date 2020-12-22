@@ -23,7 +23,7 @@ import sigmastate.utils.Helpers._
 
 import scala.util.Try
 
-class ErgoScriptPredefSpec extends SigmaTestingCommons {
+class ErgoScriptPredefSpec extends SigmaTestingCommons with CrossVersionProps {
   private implicit lazy val IR: TestingIRContext = new TestingIRContext {
     override val okPrintEvaluatedEntries: Boolean = false
   }
@@ -56,7 +56,7 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
       minerPubkey = pk,
       boxesToSpend = inputBoxes,
       spendingTransaction,
-      self = inputBox)
+      self = inputBox, activatedVersionInTests)
     val pr = prover.prove(emptyEnv + (ScriptNameProp -> "boxCreationHeight_prove"), prop, ctx, fakeMessage).get
     verifier.verify(emptyEnv + (ScriptNameProp -> "boxCreationHeight_verify"), prop, ctx, pr, fakeMessage).get._1 shouldBe true
   }
@@ -114,7 +114,7 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
         minerPubkey = ErgoLikeContextTesting.dummyPubkey,
         boxesToSpend = inputBoxes,
         spendingTransaction,
-        self = inputBoxes.head)
+        self = inputBoxes.head, activatedVersionInTests)
       val pr = prover.prove(emptyEnv + (ScriptNameProp -> "checkSpending_prove"), prop, ctx, fakeMessage).get
       verifier.verify(emptyEnv + (ScriptNameProp -> "checkSpending_verify"), prop, ctx, pr, fakeMessage).get._1 shouldBe true
     }
@@ -135,14 +135,14 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = inputBoxes,
       spendingTransaction,
-      self = inputBoxes.head)
+      self = inputBoxes.head, activatedVersionInTests)
     val prevBlockCtx = ErgoLikeContextTesting(
       currentHeight = inputBoxes.head.creationHeight + settings.minerRewardDelay - 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = inputBoxes,
       spendingTransaction,
-      self = inputBoxes.head)
+      self = inputBoxes.head, activatedVersionInTests)
 
     // should not be able to collect before minerRewardDelay
     val prove = prover.prove(emptyEnv + (ScriptNameProp -> "rewardOutputScript_prove"), prop, ctx, fakeMessage).get
@@ -224,7 +224,8 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
         minerPubkey = ErgoLikeContextTesting.dummyPubkey,
         boxesToSpend = inputBoxes,
         spendingTransaction,
-        self = inputBoxes.head).withCostLimit(CostTable.ScriptLimit * 10)
+        self = inputBoxes.head,
+        activatedVersionInTests).withCostLimit(CostTable.ScriptLimit * 10)
 
       val pr = prover.prove(emptyEnv + (ScriptNameProp -> "tokenThresholdScript_prove"), prop, ctx, fakeMessage).getOrThrow
       verifier.verify(emptyEnv + (ScriptNameProp -> "tokenThresholdScript_verify"), prop, ctx, pr, fakeMessage).getOrThrow._1 shouldBe true
@@ -301,7 +302,7 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
       minerPubkey = pkBytes,
       boxesToSpend = inputBoxes,
       spendingTransaction,
-      self = inputBoxes.head)
+      self = inputBoxes.head, activatedVersionInTests)
     val pr = prover.prove(emptyEnv + (ScriptNameProp -> "checkRewardTx_prove"), prop, ctx, fakeMessage).getOrThrow
     verifier.verify(emptyEnv + (ScriptNameProp -> "checkRewardTx_verify"), prop, ctx, pr, fakeMessage).getOrThrow._1 shouldBe true
     spendingTransaction

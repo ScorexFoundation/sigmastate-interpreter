@@ -12,7 +12,8 @@ import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter._
 import sigmastate.lang.Terms._
 
-class XorGameExampleSpecification extends SigmaTestingCommons {
+class XorGameExampleSpecification extends SigmaTestingCommons
+  with CrossVersionProps {
   private implicit lazy val IR: TestingIRContext = new TestingIRContext
   /** XOR game:
 
@@ -149,7 +150,8 @@ class XorGameExampleSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(halfGameOutput),
       spendingTransaction = abortHalfGameTx,
-      self = halfGameOutput // what is the use of self?
+      self = halfGameOutput, // what is the use of self?
+      activatedVersionInTests
     )
 
     val proofAbortHalfGame = alice.prove(halfGameEnv, halfGameScript, abortHalfGameContext, fakeMessage).get.proof
@@ -185,7 +187,8 @@ class XorGameExampleSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(halfGameOutput),
       spendingTransaction = fullGameTx,
-      self = halfGameOutput // what is the use of self?
+      self = halfGameOutput, // what is the use of self?
+      activatedVersionInTests
     )
 
     // bob (2nd player) is generating a proof and it is passing verification
@@ -235,7 +238,8 @@ class XorGameExampleSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fullGameOutput),
       spendingTransaction = gameOverTx,
-      self = fullGameOutput // what is the use of self?
+      self = fullGameOutput, // what is the use of self?
+      activatedVersionInTests
     )
 
     val proofGameOver = winner.prove(fullGameEnv, fullGameScript, gameOverContext, fakeMessage).get
@@ -262,7 +266,8 @@ class XorGameExampleSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fullGameOutput),
       spendingTransaction = defaultWinTx,
-      self = fullGameOutput // what is the use of self?
+      self = fullGameOutput, // what is the use of self?
+      activatedVersionInTests
     )
 
     val sDummy = Array[Byte]()  // empty value for s; commitment cannot be opened but still Bob will be able to spend
