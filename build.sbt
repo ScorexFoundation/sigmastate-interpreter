@@ -16,11 +16,12 @@ javacOptions ++=
 
 lazy val allConfigDependency = "compile->compile;test->test"
 
-crossScalaVersions := Seq(scala212, scala211)
+ThisBuild / crossScalaVersions := Seq(scala212, scala211)
 
 lazy val commonSettings = Seq(
   organization := "org.scorexfoundation",
   scalaVersion := scala212,
+  crossScalaVersions := Seq(scala212, scala211),
   resolvers += Resolver.sonatypeRepo("public"),
   licenses := Seq("CC0" -> url("https://creativecommons.org/publicdomain/zero/1.0/legalcode")),
   homepage := Some(url("https://github.com/ScorexFoundation/sigmastate-interpreter")),
