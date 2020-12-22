@@ -1,4 +1,4 @@
-name: Continuous Integration
+name: Test and publish a snapshot
 
 on:
   push:
@@ -18,7 +18,7 @@ env:
 
 jobs:
   build:
-    name: Test and publish snapshot
+    name: Test and publish a snapshot
     strategy:
       matrix:
         os: [ubuntu-latest]
