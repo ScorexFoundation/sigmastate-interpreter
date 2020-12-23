@@ -43,7 +43,13 @@ lazy val commonSettings = Seq(
         </developer>
       </developers>,
   publishMavenStyle := true,
-  publishTo := sonatypePublishToBundle.value
+  publishTo := sonatypePublishToBundle.value,
+  scmInfo := Some(
+      ScmInfo(
+          url("https://github.com/ScorexFoundation/sigmastate-interpreter"),
+          "scm:git@github.com:ScorexFoundation/sigmastate-interpreter.git"
+      )
+  ),
 )
 
 // prefix version with "-SNAPSHOT" for builds without a git tag
