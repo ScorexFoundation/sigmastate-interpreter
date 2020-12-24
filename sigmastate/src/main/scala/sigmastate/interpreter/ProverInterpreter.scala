@@ -12,6 +12,7 @@ import sigmastate._
 import sigmastate.basics.DLogProtocol._
 import sigmastate.basics.VerifierMessage.Challenge
 import sigmastate.basics._
+import sigmastate.lang.exceptions.CostLimitException
 import sigmastate.utils.Helpers
 
 import scala.util.Try

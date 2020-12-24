@@ -8,7 +8,7 @@ import sigmastate.Values._
 import sigmastate._
 import sigmastate.eval.Extensions._
 import sigmastate.eval._
-import sigmastate.interpreter.{ContextExtension, InterpreterContext, Interpreter}
+import sigmastate.interpreter.{ContextExtension, InterpreterContext}
 import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.OpCode
 import special.collection.Coll
@@ -42,6 +42,11 @@ import spire.syntax.all.cfor
   *                               This means Ergo node should always pass Interpreter.MaxSupportedScriptVersion
   *                               as a value of ErgoLikeContext.activatedScriptVersion during
   *                               verification of candidate blocks (which is a default).
+  *                               The following values are used for current and upcoming forks:
+  *                               - version 3.x this value must be 0
+  *                               - in v4.0 must be 1
+  *                               - in v5.x must be 2
+  *                               etc.
   */
 class ErgoLikeContext(val lastBlockUtxoRoot: AvlTreeData,
                       val headers: Coll[Header],
@@ -108,8 +113,8 @@ class ErgoLikeContext(val lastBlockUtxoRoot: AvlTreeData,
   override def withCostLimit(newCostLimit: Long): ErgoLikeContext =
     ErgoLikeContext.copy(this)(costLimit = newCostLimit)
 
-  override def withInitCost(newCost: Long): ErgoLikeContext =
-    ErgoLikeContext.copy(this)(initCost = newCost)
+  override def withInitCost(newInitCost: Long): ErgoLikeContext =
+    ErgoLikeContext.copy(this)(initCost = newInitCost)
 
   override def withValidationSettings(newVs: SigmaValidationSettings): ErgoLikeContext =
     ErgoLikeContext.copy(this)(validationSettings = newVs)
@@ -214,7 +219,8 @@ object ErgoLikeContext {
       activatedScriptVersion: Byte = ctx.activatedScriptVersion): ErgoLikeContext = {
     new ErgoLikeContext(
       lastBlockUtxoRoot, headers, preHeader, dataBoxes, boxesToSpend,
-      spendingTransaction, selfIndex, extension, validationSettings, costLimit, initCost, activatedScriptVersion)
+      spendingTransaction, selfIndex, extension, validationSettings, costLimit, initCost,
+      activatedScriptVersion)
   }
 }
 
