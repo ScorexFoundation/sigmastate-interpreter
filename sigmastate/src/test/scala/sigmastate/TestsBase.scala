@@ -1,5 +1,6 @@
 package sigmastate
 
+import org.ergoplatform.ErgoScriptPredef
 import sigmastate.Values.ErgoTree
 import sigmastate.interpreter.Interpreter
 
@@ -24,4 +25,7 @@ trait TestsBase {
     * ergoTreeVersionInTests.
     */
   def ergoTreeHeaderInTests: Byte = ErgoTree.headerWithVersion(ergoTreeVersionInTests)
+
+  def TrueProp: ErgoTree = ErgoScriptPredef.TrueProp(ergoTreeHeaderInTests)
+  def FalseProp: ErgoTree = ErgoScriptPredef.FalseProp(ergoTreeHeaderInTests)
 }

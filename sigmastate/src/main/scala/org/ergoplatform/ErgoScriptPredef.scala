@@ -24,8 +24,17 @@ object ErgoScriptPredef {
     IR.buildTree(calcF)
   }
 
-  val FalseProp = ErgoTree.withoutSegregation(FalseSigmaProp)
-  val TrueProp  = ErgoTree.withoutSegregation(TrueSigmaProp)
+  /** Create ErgoTree with `false` proposition, which is never true.
+    * @param headerFlags ErgoTree header flags to be combined with default header
+    * @see ErgoTree.headerWithVersion()
+    */
+  def FalseProp(headerFlags: Byte): ErgoTree = ErgoTree.withoutSegregation(headerFlags, FalseSigmaProp)
+
+  /** Create ErgoTree with `true` proposition, which is always true.
+    * @param headerFlags ErgoTree header flags to be combined with default header
+    * @see ErgoTree.headerWithVersion()
+    */
+  def TrueProp(headerFlags: Byte): ErgoTree = ErgoTree.withoutSegregation(headerFlags, TrueSigmaProp)
 
   /**
     * Byte array value of the serialized reward output script proposition with pk being substituted

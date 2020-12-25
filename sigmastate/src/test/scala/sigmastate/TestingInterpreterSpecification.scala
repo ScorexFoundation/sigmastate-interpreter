@@ -45,17 +45,17 @@ class TestingInterpreterSpecification extends SigmaTestingCommons
 
         {
           val res = prover.reduceToCrypto(ctx, AND(GE(Height, IntConstant(h + 1)), dk1)).get._1
-          res should matchPattern { case FalseProp => }
+          res should matchPattern { case TrivialProp.FalseProp => }
         }
 
         {
           val res = prover.reduceToCrypto(ctx, OR(GE(Height, IntConstant(h - 1)), dk1)).get._1
-          res should matchPattern { case TrueProp => }
+          res should matchPattern { case TrivialProp.TrueProp => }
         }
 
         {
           val res = prover.reduceToCrypto(ctx, OR(GE(Height, IntConstant(h)), dk1)).get._1
-          res should matchPattern { case TrueProp => }
+          res should matchPattern { case TrivialProp.TrueProp => }
         }
         {
           val res = prover.reduceToCrypto(ctx, OR(GE(Height, IntConstant(h + 1)), dk1)).get._1
@@ -89,7 +89,7 @@ class TestingInterpreterSpecification extends SigmaTestingCommons
         prover.reduceToCrypto(ctx, OR(
           AND(LE(Height, IntConstant(h - 1)), AND(dk1, dk2)),
           AND(GT(Height, IntConstant(h + 1)), dk1)
-        )).get._1 shouldBe FalseProp
+        )).get._1 shouldBe TrivialProp.FalseProp
 
         prover.reduceToCrypto(ctx,
           OR(
@@ -99,7 +99,7 @@ class TestingInterpreterSpecification extends SigmaTestingCommons
             ),
             AND(GT(Height, IntConstant(h - 1)), LE(Height, IntConstant(h + 1)))
           )
-        ).get._1 shouldBe TrueProp
+        ).get._1 shouldBe TrivialProp.TrueProp
 
       }
     }
@@ -117,7 +117,7 @@ class TestingInterpreterSpecification extends SigmaTestingCommons
       "dk2" -> dk2,
       "bytes1" -> Array[Byte](1, 2, 3),
       "bytes2" -> Array[Byte](4, 5, 6),
-      "box1" -> testBox(10, ErgoScriptPredef.TrueProp, 0, Seq(), Map(
+      "box1" -> testBox(10, TrueProp, 0, Seq(), Map(
           reg1 -> IntArrayConstant(Array[Int](1, 2, 3)),
           reg2 -> BoolArrayConstant(Array[Boolean](true, false, true)))))
     val prop = compile(env, code).asBoolValue.toSigmaProp
@@ -268,7 +268,7 @@ class TestingInterpreterSpecification extends SigmaTestingCommons
   }
 
   property("Evaluation - no real proving - true case") {
-    val prop1 = ErgoScriptPredef.TrueProp
+    val prop1 = TrueProp
 
     val challenge = Array.fill(32)(Random.nextInt(100).toByte)
     val proof = NoProof
@@ -287,7 +287,7 @@ class TestingInterpreterSpecification extends SigmaTestingCommons
   }
 
   property("Evaluation - no real proving - false case") {
-    val prop1 = ErgoScriptPredef.FalseProp
+    val prop1 = FalseProp
 
     val challenge = Array.fill(32)(Random.nextInt(100).toByte)
     val proof = NoProof

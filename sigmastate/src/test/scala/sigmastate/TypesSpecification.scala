@@ -3,7 +3,6 @@ package sigmastate
 import java.math.BigInteger
 
 import org.ergoplatform.ErgoBox
-import org.ergoplatform.ErgoScriptPredef.TrueProp
 import org.ergoplatform.settings.ErgoAlgos
 import scalan.RType
 import scorex.crypto.hash.Digest32

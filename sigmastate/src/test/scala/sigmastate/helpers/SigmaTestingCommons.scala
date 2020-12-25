@@ -1,7 +1,6 @@
 package sigmastate.helpers
 
 import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
-import org.ergoplatform.ErgoScriptPredef.TrueProp
 import org.ergoplatform.SigmaConstants.ScriptCostLimit
 import org.ergoplatform._
 import org.ergoplatform.validation.ValidationRules.{CheckCostFunc, CheckCalcFunc}
@@ -34,7 +33,7 @@ trait SigmaTestingCommons extends PropSpec
   with NegativeTesting
   with TestsBase {
 
-  val fakeSelf: ErgoBox = createBox(0, TrueProp)
+  def fakeSelf: ErgoBox = createBox(0, TrueProp)
 
   def fakeContext: ErgoLikeContext =
     ErgoLikeContextTesting.dummy(fakeSelf, activatedVersionInTests)

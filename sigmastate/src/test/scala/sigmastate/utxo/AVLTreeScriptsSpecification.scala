@@ -1,7 +1,6 @@
 package sigmastate.utxo
 
 import com.google.common.primitives.Longs
-import org.ergoplatform.ErgoScriptPredef.TrueProp
 import org.ergoplatform._
 import org.ergoplatform.dsl.{ContractSpec, SigmaContractSyntax, TestContractSpec}
 import scorex.crypto.authds.avltree.batch._

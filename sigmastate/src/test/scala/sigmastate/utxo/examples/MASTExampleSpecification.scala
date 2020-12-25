@@ -49,7 +49,7 @@ class MASTExampleSpecification extends SigmaTestingCommons
 
     val input1 = testBox(20, prop, 0)
     val tx = UnsignedErgoLikeTransaction(IndexedSeq(input1).map(i => new UnsignedInput(i.id)),
-      IndexedSeq(testBox(1, ErgoScriptPredef.TrueProp, 0)))
+      IndexedSeq(testBox(1, TrueProp, 0)))
     val ctx = ErgoLikeContextTesting(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
@@ -103,7 +103,7 @@ class MASTExampleSpecification extends SigmaTestingCommons
     val prop = AND(merklePathToScript, scriptIsCorrect).toSigmaProp
 
     val recipientProposition = new ContextEnrichingTestProvingInterpreter().dlogSecrets.head.publicImage
-    val selfBox = testBox(20, ErgoScriptPredef.TrueProp, 0, Seq(), Map(reg1 -> AvlTreeConstant(treeData)))
+    val selfBox = testBox(20, TrueProp, 0, Seq(), Map(reg1 -> AvlTreeConstant(treeData)))
     val ctx = ErgoLikeContextTesting(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,

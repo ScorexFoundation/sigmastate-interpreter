@@ -171,23 +171,23 @@ class ThresholdSpecification extends SigmaTestingCommons {
         pReduced.mapOrThrow(_ => true) shouldBe true
         if (t.dlogOnlyVector.v.isEmpty) { // Case 0: no ProveDlogs in the test vector -- just booleans
           if (t.numTrue >= bound) {
-            pReduced.get._1 shouldBe TrueProp
+            pReduced.get._1 shouldBe TrivialProp.TrueProp
             case0TrueHit = true
           }
           else {
-            pReduced.get._1 shouldBe FalseProp
+            pReduced.get._1 shouldBe TrivialProp.FalseProp
             case0FalseHit = true
           }
         }
         else if (t.dlogOnlyVector.v.length == 1) { // Case 1: 1 ProveDlog in the test vector
           // Should be just true if numTrue>=bound
           if (t.numTrue >= bound) {
-            pReduced.get._1 shouldBe TrueProp
+            pReduced.get._1 shouldBe TrivialProp.TrueProp
             case1TrueHit = true
           }
           // Should be false if bound>numTrue + 1
           else if (bound > t.numTrue + 1) {
-            pReduced.get._1 shouldBe FalseProp
+            pReduced.get._1 shouldBe TrivialProp.FalseProp
             case1FalseHit = true
           }
           // if bound is exactly numTrue+1, should be just dlog
@@ -199,12 +199,12 @@ class ThresholdSpecification extends SigmaTestingCommons {
         else { // Case 2: more than 1 ProveDlogs in the test vector
           // Should be just true if numTrue>=bound
           if (t.numTrue >= bound) {
-            pReduced.get._1 shouldBe TrueProp
+            pReduced.get._1 shouldBe TrivialProp.TrueProp
             case2TrueHit = true
           }
           // Should be false if bound>numTrue + dlogOnlyVector.length
           else if (bound > t.numTrue + t.dlogOnlyVector.v.length) {
-            pReduced.get._1 shouldBe FalseProp
+            pReduced.get._1 shouldBe TrivialProp.FalseProp
             case2FalseHit = true
           }
           // if bound is exactly numTrue+dlogOnlyVector, should be just AND of all dlogs

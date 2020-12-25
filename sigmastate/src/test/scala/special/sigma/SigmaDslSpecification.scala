@@ -3,7 +3,6 @@ package special.sigma
 import java.lang.reflect.InvocationTargetException
 import java.math.BigInteger
 
-import org.ergoplatform.ErgoScriptPredef.TrueProp
 import org.ergoplatform._
 import org.ergoplatform.settings.ErgoAlgos
 import org.scalacheck.Gen

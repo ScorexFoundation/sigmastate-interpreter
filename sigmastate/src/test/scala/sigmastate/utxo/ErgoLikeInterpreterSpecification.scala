@@ -44,12 +44,12 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
     e shouldBe exp
 
     val res = verifier.reduceToCrypto(ctx, exp).get._1
-    res shouldBe TrueProp
+    res shouldBe TrivialProp.TrueProp
 
     val res2 = verifier.reduceToCrypto(ctx,
       EQ(ByteArrayConstant(h1.treeWithSegregation.bytes),
         ByteArrayConstant(h2.treeWithSegregation.bytes))).get._1
-    res2 shouldBe FalseProp
+    res2 shouldBe TrivialProp.FalseProp
   }
 
   property("DH tuple") {
@@ -312,7 +312,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
     val prop = SigmaAnd(hashEquals, scriptIsCorrect)
 
     val recipientProposition = SigmaPropConstant(new ContextEnrichingTestProvingInterpreter().dlogSecrets.head.publicImage)
-    val selfBox = testBox(20, ErgoScriptPredef.TrueProp, 0, Seq(), Map())
+    val selfBox = testBox(20, TrueProp, 0, Seq(), Map())
     val ctx = ErgoLikeContextTesting(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
@@ -353,7 +353,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
     val newBoxes = IndexedSeq(newBox1)
     val spendingTransaction = createTransaction(newBoxes)
 
-    val s1 = testBox(20, ErgoScriptPredef.TrueProp, 0, Seq(),
+    val s1 = testBox(20, TrueProp, 0, Seq(),
       Map(regPubkey1 -> GroupElementConstant(pubkey1.value),
         regPubkey2 -> GroupElementConstant(pubkey2.value)))
 
@@ -370,7 +370,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
 
 
     //make sure that wrong case couldn't be proved
-    val s2 = testBox(20, ErgoScriptPredef.TrueProp, 0, Seq(),
+    val s2 = testBox(20, TrueProp, 0, Seq(),
       Map(regPubkey1 -> GroupElementConstant(pubkey1.value)))
     val wrongCtx = ErgoLikeContextTesting(
       currentHeight = 50,
@@ -673,7 +673,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
         DeserializeContext(scriptId, scriptProp.tpe)
       ).toSigmaProp
 
-      val box = testBox(20, ErgoScriptPredef.TrueProp, 0, Seq(), Map())
+      val box = testBox(20, TrueProp, 0, Seq(), Map())
       val ctx = ErgoLikeContextTesting(
         currentHeight = 50,
         lastBlockUtxoRoot = AvlTreeData.dummy,
