@@ -6,6 +6,8 @@ import spire.syntax.all.cfor
 
 trait CrossVersionProps extends PropSpecLike with TestsBase {
 
+  val printVersions: Boolean = false
+
   override protected def property(testName: String, testTags: Tag*)
                                  (testFun: => Any)
                                  (implicit pos: Position): Unit = {
@@ -20,10 +22,15 @@ trait CrossVersionProps extends PropSpecLike with TestsBase {
             _ + 1) { j =>
             val treeVersion = ergoTreeVersions(j)
             _currErgoTreeVersion.withValue(treeVersion) {
+              def msg = s"""property("$testName")(ActivatedVersion = $activatedVersion; ErgoTree version = $treeVersion)"""
+              if (printVersions) println(msg)
               try testFun
               catch {
                 case t: Throwable =>
-                  println(s"ActivatedVersion = $activatedVersion; ErgoTree version = $treeVersion")
+                  if (!printVersions) {
+                    // wasn't printed, print it now
+                    println(msg)
+                  }
                   throw t
               }
             }

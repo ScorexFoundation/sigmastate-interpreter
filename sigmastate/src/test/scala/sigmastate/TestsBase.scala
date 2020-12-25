@@ -1,5 +1,6 @@
 package sigmastate
 
+import sigmastate.Values.ErgoTree
 import sigmastate.interpreter.Interpreter
 
 import scala.util.DynamicVariable
@@ -15,6 +16,12 @@ trait TestsBase {
     (0 to Interpreter.MaxSupportedScriptVersion).map(_.toByte).toArray[Byte]
 
   private[sigmastate] val _currErgoTreeVersion = new DynamicVariable[Byte](0)
+
+  /** Current ErgoTree version assigned dynamically using [[CrossVersionProps]]. */
   def ergoTreeVersionInTests: Byte = _currErgoTreeVersion.value
 
+  /** Current ErgoTree header flags assigned dynamically using [[CrossVersionProps]] and
+    * ergoTreeVersionInTests.
+    */
+  def ergoTreeHeaderInTests: Byte = ErgoTree.headerWithVersion(ergoTreeVersionInTests)
 }
