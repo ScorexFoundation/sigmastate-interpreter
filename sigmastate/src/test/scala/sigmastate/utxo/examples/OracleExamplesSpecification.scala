@@ -197,8 +197,6 @@ class OracleExamplesSpecification extends SigmaTestingCommons
     //todo: check timing conditions - write tests for height  < 40 and >= 60
   }
 
-
-
   /**
     * In previous example, Alice and Bob can use the same box with temperature written into multiple times (possibly,
     * in one block). Costs for a prover are high though.
@@ -293,16 +291,21 @@ class OracleExamplesSpecification extends SigmaTestingCommons
      |}
     """.stripMargin)
 
-    lazy val oracleSignature = proposition("oracleSignature", _ => pkOracle, "pkOracle")
-    lazy val aliceSignature  = proposition("aliceSignature", _ => pkA, "pkA")
+    lazy val oracleSignature = proposition(
+      "oracleSignature", _ => pkOracle, "pkOracle",
+      scriptVersion = Some(0) // this version is required for `INPUTS(0).propositionBytes == pkOracle.propBytes`
+    )
+
+    lazy val aliceSignature  = proposition(
+      "aliceSignature", _ => pkA, "pkA")
   }
 
-  lazy val spec = TestContractSpec(suite)(new TestingIRContext)
-  lazy val oracle = spec.ProvingParty("Alice")
-  lazy val alice = spec.ProvingParty("Alice")
-  lazy val bob = spec.ProvingParty("Bob")
-
   property("lightweight oracle example (ErgoDsl)") {
+    val spec = TestContractSpec(suite)(new TestingIRContext)
+    val oracle = spec.ProvingParty("Alice")
+    val alice = spec.ProvingParty("Alice")
+    val bob = spec.ProvingParty("Bob")
+
     val temperature: Long = 18
     val contract = OracleContract[spec.type](temperature, oracle, alice, bob)(spec)
     import contract.spec._
