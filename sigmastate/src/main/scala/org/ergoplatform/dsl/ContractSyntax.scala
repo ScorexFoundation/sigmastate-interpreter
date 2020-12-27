@@ -22,13 +22,16 @@ trait ContractSyntax { contract: SigmaContract =>
 
   def Coll[T](items: T*)(implicit cT: RType[T]) = builder.Colls.fromItems(items:_*)
 
-  def proposition(name: String, dslSpec: Proposition, scriptCode: String) = {
+  def proposition(name: String,
+                  dslSpec: Proposition,
+                  scriptCode: String,
+                  scriptVersion: Option[Byte] = None): spec.PropositionSpec = {
     val env = contractEnv.mapValues { v =>
       val tV = Evaluation.rtypeOf(v).get
       val elemTpe = Evaluation.rtypeToSType(tV)
       spec.IR.builder.mkConstant[SType](v.asWrappedType, elemTpe)
     }
-    spec.mkPropositionSpec(name, dslSpec, ErgoScript(env, scriptCode))
+    spec.mkPropositionSpec(name, dslSpec, ErgoScript(env, scriptCode, scriptVersion))
   }
 
   def Env(entries: (String, Any)*): ScriptEnv = Map(entries:_*)
@@ -36,7 +39,7 @@ trait ContractSyntax { contract: SigmaContract =>
 object ContractSyntax {
   type Proposition = Context => SigmaProp
   type TokenId = Coll[Byte]
-  case class ErgoScript(env: ScriptEnv, code: String)
+  case class ErgoScript(env: ScriptEnv, code: String, scriptVersion: Option[Byte])
   case class Token(id: TokenId, value: Long)
 }
 
