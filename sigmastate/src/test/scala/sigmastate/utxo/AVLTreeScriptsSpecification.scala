@@ -205,12 +205,12 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons
     val env = Map("key" -> key, "proof" -> proof)
     val prop = compile(env, """SELF.R4[AvlTree].get.contains(key, proof)""").asBoolValue.toSigmaProp
 
-    val propTree = IR.builder.mkMethodCall(
+    val propExp = IR.builder.mkMethodCall(
       ExtractRegisterAs[SAvlTree.type](Self, reg1).get,
       SAvlTree.containsMethod,
       IndexedSeq(ByteArrayConstant(key), ByteArrayConstant(proof))
     ).asBoolValue.toSigmaProp
-    prop shouldBe propTree
+    prop shouldBe propExp
 
     val newBox1 = testBox(10, pubkey, 0)
     val newBoxes = IndexedSeq(newBox1)
@@ -227,8 +227,9 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons
       spendingTransaction,
       self = s, activatedVersionInTests)
 
-    val pr = prover.prove(prop, ctx, fakeMessage).get
-    verifier.verify(prop, ctx, pr, fakeMessage).get._1 shouldBe true
+    val propTree = ErgoTree.fromProposition(ergoTreeHeaderInTests, prop)
+    val pr = prover.prove(propTree, ctx, fakeMessage).get
+    verifier.verify(propTree, ctx, pr, fakeMessage).get._1 shouldBe true
   }
 
   property("avl tree - contains key satisfying condition") {
@@ -242,14 +243,15 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons
     val elementId = 1: Byte
 
     val env = Map("proofId" -> proofId.toLong, "elementId" -> elementId.toLong)
-    val prop = compile(env,
+    val prop = ErgoTree.fromProposition(ergoTreeHeaderInTests,
+      compile(env,
       """{
         |  val tree = SELF.R4[AvlTree].get
         |  val proof = getVar[Coll[Byte]](proofId).get
         |  val element = getVar[Long](elementId).get
         |  val elementKey = blake2b256(longToByteArray(element))
         |  element >= 120L && tree.contains(elementKey, proof)
-        |}""".stripMargin).asBoolValue.toSigmaProp
+        |}""".stripMargin).asBoolValue.toSigmaProp)
 
     val recipientProposition = new ContextEnrichingTestProvingInterpreter().dlogSecrets.head.publicImage
     val selfBox = testBox(20, TrueProp, 0, Seq(), Map(reg1 -> AvlTreeConstant(SigmaDsl.avlTree(treeData))))
@@ -317,12 +319,14 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons
         |  tree.contains(key, proof)
         |}""".stripMargin).asBoolValue.toSigmaProp
 
-    val propTree = IR.builder.mkMethodCall(
+    val propTree = ErgoTree.fromProposition(ergoTreeHeaderInTests, prop)
+
+    val propExp = IR.builder.mkMethodCall(
       ExtractRegisterAs[SAvlTree.type](Self, reg1).get,
       SAvlTree.containsMethod,
       IndexedSeq(ExtractRegisterAs[SByteArray](Self, reg2).get, GetVarByteArray(proofId).get)
     ).asBoolValue.toSigmaProp
-    prop shouldBe propTree
+    prop shouldBe propExp
 
     val newBox1 = testBox(10, pubkey, 0)
     val newBoxes = IndexedSeq(newBox1)
@@ -337,10 +341,10 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(s),
       spendingTransaction, self = s, activatedVersionInTests)
-    val pr = prover.prove(prop, ctx, fakeMessage).get
+    val pr = prover.prove(propTree, ctx, fakeMessage).get
 
     val ctxv = ctx.withExtension(pr.extension)
-    verifier.verify(prop, ctxv, pr, fakeMessage).get._1 shouldBe true
+    verifier.verify(propTree, ctxv, pr, fakeMessage).get._1 shouldBe true
   }
 
   property("avl tree - getMany") {
@@ -376,6 +380,8 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons
         |  sigmaProp(tree.getMany(keys, proof).forall( { (o: Option[Coll[Byte]]) => o.isDefined }))
         |}""".stripMargin).asBoolValue.toSigmaProp
 
+    val propTree = ErgoTree.fromProposition(ergoTreeHeaderInTests, prop)
+
     val newBox1 = testBox(10, pubkey, 0)
     val newBoxes = IndexedSeq(newBox1)
 
@@ -389,10 +395,10 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(s),
       spendingTransaction, self = s, activatedVersionInTests)
-    val pr = prover.prove(env + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage).get
+    val pr = prover.prove(env + (ScriptNameProp -> "prove"), propTree, ctx, fakeMessage).get
 
     val ctxv = ctx.withExtension(pr.extension)
-    verifier.verify(env + (ScriptNameProp -> "verify"), prop, ctxv, pr, fakeMessage).get._1 shouldBe true
+    verifier.verify(env + (ScriptNameProp -> "verify"), propTree, ctxv, pr, fakeMessage).get._1 shouldBe true
   }
 
 }
