@@ -161,7 +161,7 @@ object SType {
 
   /** All pre-defined types should be listed here. Note, NoType is not listed.
     * Should be in sync with sigmastate.lang.Types.predefTypes. */
-  val allPredefTypes = Seq(SBoolean, SByte, SShort, SInt, SLong, SBigInt, SContext, SGlobal, SHeader, SPreHeader, SAvlTree, SGroupElement, SSigmaProp, SString, SBox, SUnit, SAny)
+  val allPredefTypes: Seq[SType] = Array(SBoolean, SByte, SShort, SInt, SLong, SBigInt, SContext, SGlobal, SHeader, SPreHeader, SAvlTree, SGroupElement, SSigmaProp, SString, SBox, SUnit, SAny)
   val typeCodeToType = allPredefTypes.map(t => t.typeCode -> t).toMap
 
   /** A mapping of object types supporting MethodCall operations. For each serialized typeId this map contains
@@ -170,7 +170,7 @@ object SType {
   // TODO HF (h4): should contain all numeric types (including also SNumericType)
   //  to support method calls like 10.toByte which encoded as MethodCall with typeId = 4, methodId = 1
   //  see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/667
-  val types: Map[Byte, STypeCompanion] = Seq(
+  lazy val types: Map[Byte, STypeCompanion] = Seq(
     SBoolean, SNumericType, SString, STuple, SGroupElement, SSigmaProp, SContext, SGlobal, SHeader, SPreHeader,
     SAvlTree, SBox, SOption, SCollection, SBigInt
   ).map { t => (t.typeId, t) }.toMap
