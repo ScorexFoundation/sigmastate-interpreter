@@ -2,7 +2,7 @@ package sigmastate.utxo.examples
 
 import org.ergoplatform._
 import scorex.util.ScorexLogging
-import sigmastate.Values.IntConstant
+import sigmastate.Values.{IntConstant, ErgoTree}
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, SigmaTestingCommons}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.ContextExtension
@@ -137,7 +137,9 @@ block 1600 in 1622 ms, 30000000000 coins remain, defs: 61661
     val minerPubkey = minerImage.pkBytes
     val minerProp = minerImage
 
-    val initialBoxCandidate: ErgoBox = testBox(coinsTotal / 4, prop, 0, Seq(), Map(register -> IntConstant(-1)))
+    val initialBoxCandidate: ErgoBox = testBox(coinsTotal / 4,
+      ErgoTree.fromProposition(ergoTreeHeaderInTests, prop),
+      0, Seq(), Map(register -> IntConstant(-1)))
     val initBlock = FullBlock(IndexedSeq(createTransaction(initialBoxCandidate)), minerPubkey)
     val genesisState = ValidationState.initialState(activatedVersionInTests, initBlock)
     val fromState = genesisState.boxesReader.byId(genesisState.boxesReader.allIds.head).get
@@ -153,7 +155,7 @@ block 1600 in 1622 ms, 30000000000 coins remain, defs: 61661
       val ut = if (emissionBox.value > s.oneEpochReduction) {
         val minerBox = new ErgoBoxCandidate(emissionAtHeight(height), minerProp, height, Colls.emptyColl, Map())
         val newEmissionBox: ErgoBoxCandidate =
-          new ErgoBoxCandidate(emissionBox.value - minerBox.value, prop, height, Colls.emptyColl, Map(register -> IntConstant(height)))
+          new ErgoBoxCandidate(emissionBox.value - minerBox.value, mkTestErgoTree(prop), height, Colls.emptyColl, Map(register -> IntConstant(height)))
 
         UnsignedErgoLikeTransaction(
           IndexedSeq(new UnsignedInput(emissionBox.id)),
@@ -176,7 +178,7 @@ block 1600 in 1622 ms, 30000000000 coins remain, defs: 61661
         emissionBox,
         activatedVersionInTests,
         ContextExtension.empty)
-      val proverResult = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, context, ut.messageToSign).get
+      val proverResult = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), mkTestErgoTree(prop), context, ut.messageToSign).get
       ut.toSigned(IndexedSeq(proverResult))
     }
 
