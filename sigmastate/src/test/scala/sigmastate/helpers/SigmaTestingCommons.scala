@@ -33,7 +33,7 @@ trait SigmaTestingCommons extends PropSpec
   with NegativeTesting
   with TestsBase {
 
-  def fakeSelf: ErgoBox = createBox(0, TrueProp)
+  def fakeSelf: ErgoBox = createBox(0, TrueTree)
 
   def fakeContext: ErgoLikeContext =
     ErgoLikeContextTesting.dummy(fakeSelf, activatedVersionInTests)
@@ -205,7 +205,7 @@ trait SigmaTestingCommons extends PropSpec
           (costCtx, calcCtx)
         case _ =>
           val ergoCtx = ErgoLikeContextTesting.dummy(
-            createBox(0, TrueProp), activatedVersionInTests
+            createBox(0, TrueTree), activatedVersionInTests
           ).withBindings(1.toByte -> Constant[SType](x.asInstanceOf[SType#WrappedType], tpeA))
            .withBindings(bindings: _*)
 

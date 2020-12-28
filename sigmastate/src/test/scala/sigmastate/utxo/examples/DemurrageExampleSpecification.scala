@@ -169,7 +169,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons
 
     //miner can destroy a box if it contains less than the storage fee
     val iv = inValue - outValue
-    val b3 = createBox(iv, FalseProp, currentHeight2)
+    val b3 = createBox(iv, FalseTree, currentHeight2)
     val tx6 = createTransaction(b3)
     val selfBox6 = createBox(iv, prop, inHeight)
     val ctx6 = ErgoLikeContextTesting(

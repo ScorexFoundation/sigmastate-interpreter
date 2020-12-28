@@ -34,8 +34,8 @@ class FailingToProveSpec extends SigmaTestingCommons
        """.stripMargin).asBoolValue.toSigmaProp
 
     val selfBox = testBox(200L, compiledScript, 0)
-    val o1 = testBox(101L, TrueProp, 5001)
-    val o2 = testBox(99L, TrueProp, 5001)
+    val o1 = testBox(101L, TrueTree, 5001)
+    val o2 = testBox(99L, TrueTree, 5001)
     val tx =  createTransaction(IndexedSeq(o1, o2))
     val ctx = ErgoLikeContextTesting(
       currentHeight = 5001,
@@ -68,9 +68,9 @@ class FailingToProveSpec extends SigmaTestingCommons
        """.stripMargin).asBoolValue.toSigmaProp
 
     val selfBox = testBox(200L, compiledScript, 0)
-    val o1 = testBox(102L, TrueProp, 5001)
-    val o2 = testBox(98L, TrueProp, 5001)
-    val o3 = testBox(100L, TrueProp, 5001)
+    val o1 = testBox(102L, TrueTree, 5001)
+    val o2 = testBox(98L, TrueTree, 5001)
+    val o3 = testBox(100L, TrueTree, 5001)
     val tx =  createTransaction(IndexedSeq(o1, o2, o3))
     val ctx = ErgoLikeContextTesting(
       currentHeight = 5001,

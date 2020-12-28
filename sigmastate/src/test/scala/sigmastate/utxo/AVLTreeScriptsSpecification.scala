@@ -217,7 +217,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons
 
     val spendingTransaction = createTransaction(newBoxes)
 
-    val s = testBox(20, TrueProp, 0, Seq(), Map(reg1 -> AvlTreeConstant(SigmaDsl.avlTree(treeData))))
+    val s = testBox(20, TrueTree, 0, Seq(), Map(reg1 -> AvlTreeConstant(SigmaDsl.avlTree(treeData))))
 
     val ctx = ErgoLikeContextTesting(
       currentHeight = 50,
@@ -254,7 +254,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons
         |}""".stripMargin).asBoolValue.toSigmaProp)
 
     val recipientProposition = new ContextEnrichingTestProvingInterpreter().dlogSecrets.head.publicImage
-    val selfBox = testBox(20, TrueProp, 0, Seq(), Map(reg1 -> AvlTreeConstant(SigmaDsl.avlTree(treeData))))
+    val selfBox = testBox(20, TrueTree, 0, Seq(), Map(reg1 -> AvlTreeConstant(SigmaDsl.avlTree(treeData))))
     val ctx = ErgoLikeContextTesting(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
@@ -333,7 +333,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons
 
     val spendingTransaction = createTransaction(newBoxes)
 
-    val s = testBox(20, TrueProp, 0, Seq(), Map(reg1 -> AvlTreeConstant(treeData), reg2 -> ByteArrayConstant(key)))
+    val s = testBox(20, TrueTree, 0, Seq(), Map(reg1 -> AvlTreeConstant(treeData), reg2 -> ByteArrayConstant(key)))
 
     val ctx = ErgoLikeContextTesting(
       currentHeight = 50,
@@ -387,7 +387,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons
 
     val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
 
-    val s = testBox(20, TrueProp, 0, Seq(), Map(reg1 -> AvlTreeConstant(treeData)))
+    val s = testBox(20, TrueTree, 0, Seq(), Map(reg1 -> AvlTreeConstant(treeData)))
 
     val ctx = ErgoLikeContextTesting(
       currentHeight = 50,

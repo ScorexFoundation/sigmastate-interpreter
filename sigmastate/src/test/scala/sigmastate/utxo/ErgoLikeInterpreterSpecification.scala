@@ -312,7 +312,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
     val prop = SigmaAnd(hashEquals, scriptIsCorrect)
 
     val recipientProposition = SigmaPropConstant(new ContextEnrichingTestProvingInterpreter().dlogSecrets.head.publicImage)
-    val selfBox = testBox(20, TrueProp, 0, Seq(), Map())
+    val selfBox = testBox(20, TrueTree, 0, Seq(), Map())
     val ctx = ErgoLikeContextTesting(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
@@ -353,7 +353,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
     val newBoxes = IndexedSeq(newBox1)
     val spendingTransaction = createTransaction(newBoxes)
 
-    val s1 = testBox(20, TrueProp, 0, Seq(),
+    val s1 = testBox(20, TrueTree, 0, Seq(),
       Map(regPubkey1 -> GroupElementConstant(pubkey1.value),
         regPubkey2 -> GroupElementConstant(pubkey2.value)))
 
@@ -370,7 +370,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
 
 
     //make sure that wrong case couldn't be proved
-    val s2 = testBox(20, TrueProp, 0, Seq(),
+    val s2 = testBox(20, TrueTree, 0, Seq(),
       Map(regPubkey1 -> GroupElementConstant(pubkey1.value)))
     val wrongCtx = ErgoLikeContextTesting(
       currentHeight = 50,
@@ -406,7 +406,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
     val prop = SigmaAnd(hashEquals.toSigmaProp, scriptIsCorrect)
 
     val recipientProposition = new ContextEnrichingTestProvingInterpreter().dlogSecrets.head.publicImage
-    val selfBox = testBox(20, TrueProp, 0, Seq(), Map())
+    val selfBox = testBox(20, TrueTree, 0, Seq(), Map())
     val ctx = ErgoLikeContextTesting(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
@@ -644,7 +644,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
     val sigmaProp = SigmaPropConstant(prover.dlogSecrets.head.publicImage)
     // put SigmaProp into the register
     val regValue = ByteArrayConstant(ValueSerializer.serialize(sigmaProp))
-    val box = testBox(20, TrueProp, 0, Seq(), Map(R4 -> regValue))
+    val box = testBox(20, TrueTree, 0, Seq(), Map(R4 -> regValue))
 
     // expect SBoolean in the register
     val prop = DeserializeRegister(R4, SBoolean).toSigmaProp
@@ -654,7 +654,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(box),
-      createTransaction(IndexedSeq(testBox(10, TrueProp, 0))),
+      createTransaction(IndexedSeq(testBox(10, TrueTree, 0))),
       self = box, activatedVersionInTests)
 
     an[RuntimeException] should be thrownBy
@@ -673,13 +673,13 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
         DeserializeContext(scriptId, scriptProp.tpe)
       ).toSigmaProp
 
-      val box = testBox(20, TrueProp, 0, Seq(), Map())
+      val box = testBox(20, TrueTree, 0, Seq(), Map())
       val ctx = ErgoLikeContextTesting(
         currentHeight = 50,
         lastBlockUtxoRoot = AvlTreeData.dummy,
         minerPubkey = ErgoLikeContextTesting.dummyPubkey,
         boxesToSpend = IndexedSeq(box),
-        createTransaction(IndexedSeq(testBox(10, TrueProp, 0))),
+        createTransaction(IndexedSeq(testBox(10, TrueTree, 0))),
         self = box, activatedVersionInTests)
 
       val pr = prover.prove(prop, ctx, fakeMessage).get

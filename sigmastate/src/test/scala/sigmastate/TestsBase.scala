@@ -26,6 +26,6 @@ trait TestsBase {
     */
   def ergoTreeHeaderInTests: Byte = ErgoTree.headerWithVersion(ergoTreeVersionInTests)
 
-  def TrueProp: ErgoTree = ErgoScriptPredef.TrueProp(ergoTreeHeaderInTests)
-  def FalseProp: ErgoTree = ErgoScriptPredef.FalseProp(ergoTreeHeaderInTests)
+  def TrueTree: ErgoTree = ErgoScriptPredef.TrueProp(ergoTreeHeaderInTests)
+  def FalseTree: ErgoTree = ErgoScriptPredef.FalseProp(ergoTreeHeaderInTests)
 }

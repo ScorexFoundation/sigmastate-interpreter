@@ -117,7 +117,7 @@ class TestingInterpreterSpecification extends SigmaTestingCommons
       "dk2" -> dk2,
       "bytes1" -> Array[Byte](1, 2, 3),
       "bytes2" -> Array[Byte](4, 5, 6),
-      "box1" -> testBox(10, TrueProp, 0, Seq(), Map(
+      "box1" -> testBox(10, TrueTree, 0, Seq(), Map(
           reg1 -> IntArrayConstant(Array[Int](1, 2, 3)),
           reg2 -> BoolArrayConstant(Array[Boolean](true, false, true)))))
     val prop = compile(env, code).asBoolValue.toSigmaProp
@@ -268,7 +268,7 @@ class TestingInterpreterSpecification extends SigmaTestingCommons
   }
 
   property("Evaluation - no real proving - true case") {
-    val prop1 = TrueProp
+    val prop1 = TrueTree
 
     val challenge = Array.fill(32)(Random.nextInt(100).toByte)
     val proof = NoProof
@@ -287,7 +287,7 @@ class TestingInterpreterSpecification extends SigmaTestingCommons
   }
 
   property("Evaluation - no real proving - false case") {
-    val prop1 = FalseProp
+    val prop1 = FalseTree
 
     val challenge = Array.fill(32)(Random.nextInt(100).toByte)
     val proof = NoProof

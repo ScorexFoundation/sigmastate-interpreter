@@ -213,7 +213,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons
 
     val spendingTransaction = createTransaction(newBoxes)
 
-    val s = testBox(20, TrueProp, 0, Seq(), Map(reg1 -> LongConstant(5)))
+    val s = testBox(20, TrueTree, 0, Seq(), Map(reg1 -> LongConstant(5)))
 
     val ctx = ErgoLikeContextTesting(
       currentHeight = 50,
@@ -256,7 +256,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons
 
     val spendingTransaction = createTransaction(newBoxes)
 
-    val s = testBox(20, TrueProp, 0, Seq(), Map(reg1 -> LongConstant(5)))
+    val s = testBox(20, TrueTree, 0, Seq(), Map(reg1 -> LongConstant(5)))
 
     val ctx = ErgoLikeContextTesting(
       currentHeight = 50,

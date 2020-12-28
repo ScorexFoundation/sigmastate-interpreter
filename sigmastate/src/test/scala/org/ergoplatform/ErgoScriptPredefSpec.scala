@@ -106,7 +106,7 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons with CrossVersionProps {
       val inputBoxes = IndexedSeq(testBox(emission.foundersCoinsTotal, prop, 0, Seq(), Map(R4 -> inputR4Val)))
       val inputs = inputBoxes.map(b => Input(b.id, emptyProverResult))
       val newFoundersBox = testBox(remainingAmount, newProp, 0, Seq(), Map(R4 -> outputR4Val))
-      val collectedBox = testBox(inputBoxes.head.value - remainingAmount, TrueProp, 0)
+      val collectedBox = testBox(inputBoxes.head.value - remainingAmount, TrueTree, 0)
       val spendingTransaction = ErgoLikeTransaction(inputs, IndexedSeq(newFoundersBox, collectedBox))
       val ctx = ErgoLikeContextTesting(
         currentHeight = height,
@@ -127,7 +127,7 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons with CrossVersionProps {
     val verifier = new ErgoLikeTestInterpreter
     val inputBoxes = IndexedSeq(testBox(20, prop, 0, Seq(), Map()))
     val inputs = inputBoxes.map(b => Input(b.id, emptyProverResult))
-    val spendingTransaction = ErgoLikeTransaction(inputs, IndexedSeq(testBox(inputBoxes.head.value, TrueProp, 0)))
+    val spendingTransaction = ErgoLikeTransaction(inputs, IndexedSeq(testBox(inputBoxes.head.value, TrueTree, 0)))
 
     val ctx = ErgoLikeContextTesting(
       currentHeight = inputBoxes.head.creationHeight + settings.minerRewardDelay,

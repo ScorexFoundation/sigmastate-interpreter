@@ -318,7 +318,7 @@ class CoopExampleSpecification extends SigmaTestingCommons
       val output2 = testBox(constructionValue, spendingProp3, 0)
       val output3 = testBox(totalValue - toolValue - constructionValue, spendingProp5, 0)
       //hack for avoiding None.get exception.
-      val dummy = testBox(0L, TrueProp, 0)
+      val dummy = testBox(0L, TrueTree, 0)
       val tx = mkTxFromOutputs(output1, output2, output3, dummy)
       val ctx = mkCtx(2000, tx, self)
 

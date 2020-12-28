@@ -237,7 +237,7 @@ class FsmExampleSpecification extends SigmaTestingCommons
 
     //clearing FSM out of the box in the final state
 
-    val freeBox = testBox(100, TrueProp, 0)
+    val freeBox = testBox(100, TrueTree, 0)
 
     avlProver.performOneOperation(Lookup(ADKey @@ (transition30 ++ script4Hash)))
     val transition30Proof = avlProver.generateProof()
