@@ -39,7 +39,7 @@ class ColdWalletContractExampleSpecification extends SigmaTestingCommons
     )
 
     // assume that person topping up address creates the box correctly... i.e., sets the correct value of start (in R4)
-    val script = compile(env,
+    val scriptProp = compile(env,
       """{
         |  val lastMinBal = SELF.R5[Long].get // min balance needed in this period
         |  val depth = HEIGHT - SELF.creationInfo._1 // number of confirmations
@@ -66,7 +66,8 @@ class ColdWalletContractExampleSpecification extends SigmaTestingCommons
         |  )
         |}""".stripMargin).asSigmaProp
 
-    val address = Pay2SHAddress(script)
+    val scriptTree = mkTestErgoTree(scriptProp)
+    val address = Pay2SHAddress(scriptTree)
 
     // someone creates a transaction that outputs a box depositing money into the wallet.
     // In the example, we don't create the transaction; we just create a box below
@@ -105,11 +106,11 @@ class ColdWalletContractExampleSpecification extends SigmaTestingCommons
       activatedVersionInTests
     )
 
-    val proofAliceAndBobWithdraw = alice.withSecrets(bob.dlogSecrets).prove(spendEnv, script, withdrawContextAliceandBob, fakeMessage).get.proof
+    val proofAliceAndBobWithdraw = alice.withSecrets(bob.dlogSecrets).prove(spendEnv, scriptTree, withdrawContextAliceandBob, fakeMessage).get.proof
 
     val verifier = new ErgoLikeTestInterpreter
 
-    verifier.verify(spendEnv, script, withdrawContextAliceandBob, proofAliceAndBobWithdraw, fakeMessage).get._1 shouldBe true
+    verifier.verify(spendEnv, scriptTree, withdrawContextAliceandBob, proofAliceAndBobWithdraw, fakeMessage).get._1 shouldBe true
 
     // One of Alice or Bob withdraws (1% max)
     val firstWithdrawAmount = depositAmount * percent / 100     // less than or eqaul to percent (1000)
@@ -136,11 +137,11 @@ class ColdWalletContractExampleSpecification extends SigmaTestingCommons
       activatedVersionInTests
     )
 
-    val proofAliceWithdraw = alice.prove(spendEnv, script, firstWithdrawContext, fakeMessage).get.proof
-    verifier.verify(env, script, firstWithdrawContext, proofAliceWithdraw, fakeMessage).get._1 shouldBe true
+    val proofAliceWithdraw = alice.prove(spendEnv, scriptTree, firstWithdrawContext, fakeMessage).get.proof
+    verifier.verify(env, scriptTree, firstWithdrawContext, proofAliceWithdraw, fakeMessage).get._1 shouldBe true
 
-    val proofBobWithdraw = bob.prove(env, script, firstWithdrawContext, fakeMessage).get.proof
-    verifier.verify(env, script, firstWithdrawContext, proofBobWithdraw, fakeMessage).get._1 shouldBe true
+    val proofBobWithdraw = bob.prove(env, scriptTree, firstWithdrawContext, fakeMessage).get.proof
+    verifier.verify(env, scriptTree, firstWithdrawContext, proofBobWithdraw, fakeMessage).get._1 shouldBe true
 
     // invalid (amount greater than allowed)
     val withdrawAmountInvalid = depositAmount * percent / 100 + 1 // more than percent
@@ -167,10 +168,10 @@ class ColdWalletContractExampleSpecification extends SigmaTestingCommons
     )
 
     an [AssertionError] should be thrownBy (
-      alice.prove(spendEnv, script, withdrawContextInvalid, fakeMessage).get
+      alice.prove(spendEnv, scriptTree, withdrawContextInvalid, fakeMessage).get
     )
     an [AssertionError] should be thrownBy (
-      bob.prove(spendEnv, script, withdrawContextInvalid, fakeMessage).get
+      bob.prove(spendEnv, scriptTree, withdrawContextInvalid, fakeMessage).get
     )
 
     // second withdraw (valid case)
@@ -201,11 +202,11 @@ class ColdWalletContractExampleSpecification extends SigmaTestingCommons
       activatedVersionInTests
     )
 
-    val proofAliceSecondWithdraw = alice.prove(spendEnv, script, secondWithdrawContext, fakeMessage).get.proof
-    verifier.verify(env, script, secondWithdrawContext, proofAliceSecondWithdraw, fakeMessage).get._1 shouldBe true
+    val proofAliceSecondWithdraw = alice.prove(spendEnv, scriptTree, secondWithdrawContext, fakeMessage).get.proof
+    verifier.verify(env, scriptTree, secondWithdrawContext, proofAliceSecondWithdraw, fakeMessage).get._1 shouldBe true
 
-    val proofBobSecondWithdraw = bob.prove(spendEnv, script, secondWithdrawContext, fakeMessage).get.proof
-    verifier.verify(env, script, secondWithdrawContext, proofBobSecondWithdraw, fakeMessage).get._1 shouldBe true
+    val proofBobSecondWithdraw = bob.prove(spendEnv, scriptTree, secondWithdrawContext, fakeMessage).get.proof
+    verifier.verify(env, scriptTree, secondWithdrawContext, proofBobSecondWithdraw, fakeMessage).get._1 shouldBe true
 
   }
   
