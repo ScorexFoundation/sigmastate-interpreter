@@ -745,6 +745,8 @@ object Values {
     def isProven: Value[SBoolean.type] = SigmaPropIsProven(p)
     def propBytes: Value[SByteArray] = SigmaPropBytes(p)
     def treeWithSegregation: ErgoTree = ErgoTree.withSegregation(p)
+    def treeWithSegregation(headerFlags: Byte): ErgoTree =
+      ErgoTree.withSegregation(headerFlags, p)
   }
 
   implicit class SigmaBooleanOps(val sb: SigmaBoolean) extends AnyVal {

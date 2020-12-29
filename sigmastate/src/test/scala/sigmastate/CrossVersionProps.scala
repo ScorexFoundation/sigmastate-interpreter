@@ -22,7 +22,7 @@ trait CrossVersionProps extends PropSpecLike with TestsBase {
             _ + 1) { j =>
             val treeVersion = ergoTreeVersions(j)
             _currErgoTreeVersion.withValue(treeVersion) {
-              def msg = s"""property("$testName")(ActivatedVersion = $activatedVersion; ErgoTree version = $treeVersion)"""
+              def msg = s"""property("$testName")(ActivatedVersion = $activatedVersionInTests; ErgoTree version = $ergoTreeVersionInTests)"""
               if (printVersions) println(msg)
               try testFun
               catch {

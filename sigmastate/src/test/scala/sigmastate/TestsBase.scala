@@ -1,7 +1,7 @@
 package sigmastate
 
 import org.ergoplatform.ErgoScriptPredef
-import sigmastate.Values.{ErgoTree, SigmaPropValue}
+import sigmastate.Values.{ErgoTree, SigmaPropValue, SigmaBoolean}
 import sigmastate.interpreter.Interpreter
 
 import scala.util.DynamicVariable
@@ -37,4 +37,8 @@ trait TestsBase {
   /** Transform proposition into [[ErgoTree]] using current ergoTreeHeaderInTests. */
   def mkTestErgoTree(prop: SigmaPropValue): ErgoTree =
     ErgoTree.fromProposition(ergoTreeHeaderInTests, prop)
+
+  /** Transform sigma proposition into [[ErgoTree]] using current ergoTreeHeaderInTests. */
+  def mkTestErgoTree(prop: SigmaBoolean): ErgoTree =
+    ErgoTree.fromSigmaBoolean(ergoTreeHeaderInTests, prop)
 }
