@@ -34,16 +34,18 @@ class CollectionOperationsSpecification extends SigmaTestingCommons
                           outputBoxValues: IndexedSeq[Long],
                           boxesToSpendValues: IndexedSeq[Long] = IndexedSeq()) = {
     val (prover, verifier, prop, ctx) = buildEnv(code, expectedComp, outputBoxValues, boxesToSpendValues)
-    val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage).getOrThrow
-    verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, ctx, pr, fakeMessage).getOrThrow._1 shouldBe true
+    val propTree = mkTestErgoTree(prop)
+    val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), propTree, ctx, fakeMessage).getOrThrow
+    verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), propTree, ctx, pr, fakeMessage).getOrThrow._1 shouldBe true
   }
 
   private def assertProof(code: String,
                           outputBoxValues: IndexedSeq[Long],
                           boxesToSpendValues: IndexedSeq[Long]) = {
     val (prover, verifier, prop, ctx) = buildEnv(code, None, outputBoxValues, boxesToSpendValues)
-    val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage).getOrThrow
-    verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, ctx, pr, fakeMessage).getOrThrow._1 shouldBe true
+    val propTree = mkTestErgoTree(prop)
+    val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), propTree, ctx, fakeMessage).getOrThrow
+    verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), propTree, ctx, pr, fakeMessage).getOrThrow._1 shouldBe true
   }
 
   private def assertProverFail(code: String,
@@ -51,7 +53,8 @@ class CollectionOperationsSpecification extends SigmaTestingCommons
                                outputBoxValues: IndexedSeq[Long],
                                boxesToSpendValues: IndexedSeq[Long] = IndexedSeq()) = {
     val (prover, _, prop, ctx) = buildEnv(code, expectedComp, outputBoxValues, boxesToSpendValues)
-    prover.prove(prop, ctx, fakeMessage).isSuccess shouldBe false
+    val propTree = mkTestErgoTree(prop)
+    prover.prove(propTree, ctx, fakeMessage).isSuccess shouldBe false
   }
 
   private def buildEnv(code: String,
@@ -68,13 +71,15 @@ class CollectionOperationsSpecification extends SigmaTestingCommons
   (ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaPropValue, ErgoLikeContext) = {
     val prover = new ContextEnrichingTestProvingInterpreter
     val verifier = new ErgoLikeTestInterpreter
+
     val pubkey = prover.dlogSecrets.head.publicImage
+    val pubkeyTree = mkTestErgoTree(pubkey)
 
     val prop = compile(Map(), code).asBoolValue.toSigmaProp
 
     expectedComp.foreach(prop shouldBe _)
-    val ctx = context(boxesToSpendValues.map(testBox(_, pubkey, 0)),
-      outputBoxValues.map(testBox(_, pubkey, 0)))
+    val ctx = context(boxesToSpendValues.map(testBox(_, pubkeyTree, 0)),
+      outputBoxValues.map(testBox(_, pubkeyTree, 0)))
     (prover, verifier, prop, ctx)
   }
 
@@ -83,8 +88,10 @@ class CollectionOperationsSpecification extends SigmaTestingCommons
     val verifier = new ErgoLikeTestInterpreter
 
     val pubkey = prover.dlogSecrets.head.publicImage.toSigmaProp
+    val pubkeyTree = mkTestErgoTree(pubkey)
 
     val prop = compile(Map(), "OUTPUTS.exists({ (box: Box) => box.value + 5 > 10 })").asBoolValue.toSigmaProp
+    val propTree = mkTestErgoTree(prop)
 
     val expProp = Exists(Outputs,
       FuncValue(Vector((1, SBox)),
@@ -92,8 +99,8 @@ class CollectionOperationsSpecification extends SigmaTestingCommons
     ).toSigmaProp
     prop shouldBe expProp
 
-    val newBox1 = testBox(16, pubkey, 0)
-    val newBox2 = testBox(15, pubkey, 0)
+    val newBox1 = testBox(16, pubkeyTree, 0)
+    val newBox2 = testBox(15, pubkeyTree, 0)
 
     val spendingTransaction = createTransaction(Array(newBox1, newBox2))
 
@@ -106,14 +113,14 @@ class CollectionOperationsSpecification extends SigmaTestingCommons
       self = fakeSelf, activatedVersionInTests)
 
     {
-      val pr = prover.prove(prop, ctx, fakeMessage).get
-      verifier.verify(prop, ctx, pr, fakeMessage).get._1 shouldBe true
+      val pr = prover.prove(propTree, ctx, fakeMessage).get
+      verifier.verify(propTree, ctx, pr, fakeMessage).get._1 shouldBe true
     }
 
     // negative case for `exists`
     {
-      val newBox1 = testBox(1, pubkey, 0)
-      val newBox2 = testBox(5, pubkey, 0)
+      val newBox1 = testBox(1, pubkeyTree, 0)
+      val newBox2 = testBox(5, pubkeyTree, 0)
       val tx2 = createTransaction(Array(newBox1, newBox2))
       val ctx2 = ErgoLikeContextTesting(
         currentHeight = ctx.preHeader.height,
@@ -123,24 +130,27 @@ class CollectionOperationsSpecification extends SigmaTestingCommons
         spendingTransaction = tx2,
         self = fakeSelf, activatedVersionInTests)
 
-      prover.prove(prop, ctx2, fakeMessage).isFailure shouldBe true
+      prover.prove(propTree, ctx2, fakeMessage).isFailure shouldBe true
     }
   }
 
   property("forall") {
     val prover = new ContextEnrichingTestProvingInterpreter
     val verifier = new ErgoLikeTestInterpreter
+
     val pubkey = prover.dlogSecrets.head.publicImage
+    val pubkeyTree = mkTestErgoTree(pubkey)
 
     val prop = compile(Map(), "OUTPUTS.forall({ (box: Box) => box.value == 10 })").asBoolValue.toSigmaProp
+    val propTree = mkTestErgoTree(prop)
 
-    val propTree = ForAll(Outputs,
+    val propExpected = ForAll(Outputs,
         FuncValue(Vector((1, SBox)), EQ(ExtractAmount(ValUse(1, SBox)), LongConstant(10)))
       ).toSigmaProp
-    prop shouldBe propTree
+    prop shouldBe propExpected
 
-    val newBox1 = testBox(10, pubkey, 0)
-    val newBox2 = testBox(10, pubkey, 0)
+    val newBox1 = testBox(10, pubkeyTree, 0)
+    val newBox2 = testBox(10, pubkeyTree, 0)
     val newBoxes = IndexedSeq(newBox1, newBox2)
 
     val spendingTransaction = createTransaction(newBoxes)
@@ -153,24 +163,26 @@ class CollectionOperationsSpecification extends SigmaTestingCommons
       spendingTransaction,
       self = fakeSelf, activatedVersionInTests)
 
-    val pr = prover.prove(prop, ctx, fakeMessage).get
-    verifier.verify(prop, ctx, pr, fakeMessage).get._1 shouldBe true
+    val pr = prover.prove(propTree, ctx, fakeMessage).get
+    verifier.verify(propTree, ctx, pr, fakeMessage).get._1 shouldBe true
   }
-
 
   property("forall - fail") {
     val prover = new ContextEnrichingTestProvingInterpreter
 
     val pubkey = prover.dlogSecrets.head.publicImage
+    val pubkeyTree = mkTestErgoTree(pubkey)
 
     val prop = compile(Map(), "OUTPUTS.forall({ (box: Box) => box.value == 10 })").asBoolValue.toSigmaProp
-    val propTree = ForAll(Outputs,
+    val propTree = mkTestErgoTree(prop)
+
+    val propExpected = ForAll(Outputs,
         FuncValue(Vector((1, SBox)), EQ(ExtractAmount(ValUse(1, SBox)), LongConstant(10)))
       ).toSigmaProp
-    prop shouldBe propTree
+    prop shouldBe propExpected
 
-    val newBox1 = testBox(10, pubkey, 0)
-    val newBox2 = testBox(11, pubkey, 0)
+    val newBox1 = testBox(10, pubkeyTree, 0)
+    val newBox2 = testBox(11, pubkeyTree, 0)
     val newBoxes = IndexedSeq(newBox1, newBox2)
 
     val spendingTransaction = createTransaction(newBoxes)
@@ -183,7 +195,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons
       spendingTransaction,
       self = fakeSelf, activatedVersionInTests)
 
-    prover.prove(prop, ctx, fakeMessage).isSuccess shouldBe false
+    prover.prove(propTree, ctx, fakeMessage).isSuccess shouldBe false
   }
 
   property("counter") {
@@ -191,13 +203,15 @@ class CollectionOperationsSpecification extends SigmaTestingCommons
     val verifier = new ErgoLikeTestInterpreter
 
     val pubkey = prover.dlogSecrets.head.publicImage.toSigmaProp
+    val pubkeyTree = mkTestErgoTree(pubkey)
 
     val prop = compile(Map(),
       """OUTPUTS.exists { (box: Box) =>
         |  box.R4[Long].get == SELF.R4[Long].get + 1
          }""".stripMargin).asBoolValue.toSigmaProp
+    val propTree = mkTestErgoTree(prop)
 
-    val propTree = Exists(Outputs,
+    val propExpected = Exists(Outputs,
       FuncValue(
         Vector((1, SBox)),
         EQ(
@@ -205,10 +219,10 @@ class CollectionOperationsSpecification extends SigmaTestingCommons
           Plus(ExtractRegisterAs[SLong.type](Self, reg1).get, LongConstant(1)))
       )
     ).toSigmaProp
-    prop shouldBe propTree
+    prop shouldBe propExpected
 
-    val newBox1 = testBox(10, pubkey, 0, Seq(), Map(reg1 -> LongConstant(3)))
-    val newBox2 = testBox(10, pubkey, 0, Seq(), Map(reg1 -> LongConstant(6)))
+    val newBox1 = testBox(10, pubkeyTree, 0, Seq(), Map(reg1 -> LongConstant(3)))
+    val newBox2 = testBox(10, pubkeyTree, 0, Seq(), Map(reg1 -> LongConstant(6)))
     val newBoxes = IndexedSeq(newBox1, newBox2)
 
     val spendingTransaction = createTransaction(newBoxes)
@@ -223,8 +237,8 @@ class CollectionOperationsSpecification extends SigmaTestingCommons
       spendingTransaction,
       self = s, activatedVersionInTests)
 
-    val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage).get
-    verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, ctx, pr, fakeMessage).get._1 shouldBe true
+    val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), propTree, ctx, fakeMessage).get
+    verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), propTree, ctx, pr, fakeMessage).get._1 shouldBe true
   }
 
   property("counter - no register in outputs") {
@@ -232,13 +246,15 @@ class CollectionOperationsSpecification extends SigmaTestingCommons
     val verifier = new ErgoLikeTestInterpreter
 
     val pubkey = prover.dlogSecrets.head.publicImage
+    val pubkeyTree = mkTestErgoTree(pubkey)
 
     val prop = compile(Map(),
       """OUTPUTS.exists { (box: Box) =>
         |  box.R4[Long].getOrElse(0L) == SELF.R4[Long].get + 1
          }""".stripMargin).asBoolValue.toSigmaProp
+    val propTree = mkTestErgoTree(prop)
 
-    val propTree = Exists(Outputs,
+    val propExpected = Exists(Outputs,
       FuncValue(
         Vector((1, SBox)),
         EQ(
@@ -248,10 +264,10 @@ class CollectionOperationsSpecification extends SigmaTestingCommons
       )
     ).toSigmaProp
 
-    prop shouldBe propTree
+    prop shouldBe propExpected
 
-    val newBox1 = testBox(10, pubkey, 0)
-    val newBox2 = testBox(10, pubkey, 0, Seq(), Map(reg1 -> LongConstant(6)))
+    val newBox1 = testBox(10, pubkeyTree, 0)
+    val newBox2 = testBox(10, pubkeyTree, 0, Seq(), Map(reg1 -> LongConstant(6)))
     val newBoxes = IndexedSeq(newBox1, newBox2)
 
     val spendingTransaction = createTransaction(newBoxes)
@@ -266,8 +282,8 @@ class CollectionOperationsSpecification extends SigmaTestingCommons
       spendingTransaction,
       self = s, activatedVersionInTests)
 
-    val pr = prover.prove(prop, ctx, fakeMessage).get
-    verifier.verify(prop, ctx, pr, fakeMessage).get._1 shouldBe true
+    val pr = prover.prove(propTree, ctx, fakeMessage).get
+    verifier.verify(propTree, ctx, pr, fakeMessage).get._1 shouldBe true
   }
 
   property("sizeof - num of outputs = num of inputs + 1") {
@@ -275,19 +291,22 @@ class CollectionOperationsSpecification extends SigmaTestingCommons
     val verifier = new ErgoLikeTestInterpreter
 
     val pubkey = prover.dlogSecrets.head.publicImage
+    val pubkeyTree = mkTestErgoTree(pubkey)
 
     val env = Map("pubkey" -> pubkey)
     val prop = compile(env, """pubkey && OUTPUTS.size == INPUTS.size + 1""").asSigmaProp
-    val propTree = SigmaAnd(pubkey, BoolToSigmaProp(EQ(SizeOf(Outputs), Plus(SizeOf(Inputs), IntConstant(1)))))
-    prop shouldBe propTree
+    val propTree = mkTestErgoTree(prop)
 
-    val newBox1 = testBox(11, pubkey, 0)
-    val newBox2 = testBox(10, pubkey, 0)
+    val propExpected = SigmaAnd(pubkey, BoolToSigmaProp(EQ(SizeOf(Outputs), Plus(SizeOf(Inputs), IntConstant(1)))))
+    prop shouldBe propExpected
+
+    val newBox1 = testBox(11, pubkeyTree, 0)
+    val newBox2 = testBox(10, pubkeyTree, 0)
     val newBoxes = IndexedSeq(newBox1, newBox2)
 
     val spendingTransaction = createTransaction(newBoxes)
 
-    val s = testBox(21, pubkey, 0)
+    val s = testBox(21, pubkeyTree, 0)
 
     val ctx = ErgoLikeContextTesting(
       currentHeight = 50,
@@ -297,12 +316,12 @@ class CollectionOperationsSpecification extends SigmaTestingCommons
       spendingTransaction,
       self = s, activatedVersionInTests)
 
-    val pr = prover.prove(prop, ctx, fakeMessage).get
-    verifier.verify(prop, ctx, pr, fakeMessage)
+    val pr = prover.prove(propTree, ctx, fakeMessage).get
+    verifier.verify(propTree, ctx, pr, fakeMessage)
 
 
     val fProp = SigmaAnd(pubkey, EQ(SizeOf(Outputs), SizeOf(Inputs)))
-    prover.prove(fProp, ctx, fakeMessage).isSuccess shouldBe false
+    prover.prove(mkTestErgoTree(fProp), ctx, fakeMessage).isSuccess shouldBe false
   }
 
   property("slice") {
@@ -472,7 +491,8 @@ class CollectionOperationsSpecification extends SigmaTestingCommons
   }
 
   property("flatMap") {
-    assertProof("OUTPUTS.flatMap({ (out: Box) => out.propositionBytes })(0) == 0.toByte",
+    assertProof(
+      s"OUTPUTS.flatMap({ (out: Box) => out.propositionBytes })(0) == $ergoTreeHeaderInTests.toByte",
       EQ(
         ByIndex(
           MethodCall(Outputs,
@@ -484,7 +504,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons
           ).asCollection[SByte.type],
           IntConstant(0)
         ),
-        ByteConstant(0)
+        ByteConstant(ergoTreeHeaderInTests)
       ),
       IndexedSeq(1L, 1L))
   }
