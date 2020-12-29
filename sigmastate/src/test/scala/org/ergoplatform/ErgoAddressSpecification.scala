@@ -107,7 +107,7 @@ class ErgoAddressSpecification extends SigmaDslTesting
     assertResult(true)(parsed_p2pk == p2pk && p2pk == parsed_p2pk)
     parsed_p2pk.hashCode() shouldBe p2pk.hashCode()
 
-    val tree = ErgoTree.fromProposition(pk)
+    val tree = mkTestErgoTree(pk)
     val p2s_2: Pay2SAddress = Pay2SAddress(tree) // address created via P2S constructor method
     assertResult(true)(p2s_2 != p2pk && p2pk != p2s_2)
 
