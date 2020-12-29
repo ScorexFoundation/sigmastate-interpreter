@@ -86,7 +86,7 @@ class SigSerializerSpecification extends SigmaTestingCommons
         // get sigma conjectures out of transformers
         val prop = prover.reduceToCrypto(ctx, expr).get._1
 
-        val proof = prover.prove(expr, ctx, challenge).get.proof
+        val proof = prover.prove(mkTestErgoTree(expr), ctx, challenge).get.proof
         val proofTree = SigSerializer.parseAndComputeChallenges(prop, proof)
         roundTrip(proofTree, prop)
       } catch {
