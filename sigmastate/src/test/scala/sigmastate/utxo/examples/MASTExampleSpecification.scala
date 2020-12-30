@@ -32,9 +32,7 @@ class MASTExampleSpecification extends SigmaTestingCommons
   private val reg1 = ErgoBox.nonMandatoryRegisters.head
 
   /**
-    *
     * In the provided example simple branching by condition, based on number of inputs
-    *
     */
   property("Merklized Abstract Syntax Tree - simple branching") {
     val scriptId = 21.toByte
@@ -44,7 +42,12 @@ class MASTExampleSpecification extends SigmaTestingCommons
     val script1Hash = Blake2b256(script1Bytes)
     val script2Hash = Blake2b256(ValueSerializer.serialize(GT(SizeOf(Inputs).upcastTo(SLong), LongConstant(1))))
 
-    val prop = AND(scriptIsCorrect, If(EQ(SizeOf(Inputs), 1), EQ(scriptHash, script1Hash), EQ(scriptHash, script2Hash))).toSigmaProp
+    val prop = mkTestErgoTree(AND(
+      scriptIsCorrect,
+      If(
+        EQ(SizeOf(Inputs), 1),
+        EQ(scriptHash, script1Hash),
+        EQ(scriptHash, script2Hash))).toSigmaProp)
 
 
     val input1 = testBox(20, prop, 0)
@@ -69,10 +72,8 @@ class MASTExampleSpecification extends SigmaTestingCommons
     (new ErgoLikeTestInterpreter).verify(verifyEnv, prop, ctx, proof, fakeMessage).get._1 shouldBe true
   }
 
-
   /**
     * In the provided example there are 5 different branches of a tree, each one require to reveal some secret.
-    *
     */
   property("Merklized Abstract Syntax Tree") {
     val scriptId = 21.toByte
@@ -100,10 +101,12 @@ class MASTExampleSpecification extends SigmaTestingCommons
           GetVarByteArray(proofId).get)).asOption[SByteArray]
     )
     val scriptIsCorrect = DeserializeContext(scriptId, SBoolean)
-    val prop = AND(merklePathToScript, scriptIsCorrect).toSigmaProp
+    val prop = mkTestErgoTree(AND(merklePathToScript, scriptIsCorrect).toSigmaProp)
 
     val recipientProposition = new ContextEnrichingTestProvingInterpreter().dlogSecrets.head.publicImage
-    val selfBox = testBox(20, TrueTree, 0, Seq(), Map(reg1 -> AvlTreeConstant(treeData)))
+    val selfBox = testBox(20, TrueTree, 0,
+      additionalTokens = Seq(),
+      additionalRegisters = Map(reg1 -> AvlTreeConstant(treeData)))
     val ctx = ErgoLikeContextTesting(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
