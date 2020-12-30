@@ -3,7 +3,8 @@ package special.sigma
 import scalan._
 import special.collection.{Coll, CollOverArrayBuilder}
 import scalan.RType
-import sigmastate.{AvlTreeData, TrivialProp}
+import sigmastate.Values.ErgoTree
+import sigmastate.{AvlTreeData, TrivialProp, Values}
 import sigmastate.eval._
 import sigmastate.eval.Extensions._
 import sigmastate.helpers.TestingHelpers._
@@ -57,7 +58,7 @@ trait ContractsTestkit {
 
   val AliceId = Array[Byte](1) // 0x0001
   def newAliceBox(id: Byte, value: Long): Box = {
-    val ergoBox = testBox(value, TrivialProp.TrueProp.toSigmaProp, 0, Seq(), Map())
+    val ergoBox = testBox(value, ErgoTree.fromProposition(Values.TrueSigmaProp), 0, Seq(), Map())
     new CostingBox(false, ergoBox)
   }
 
