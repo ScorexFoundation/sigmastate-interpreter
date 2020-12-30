@@ -127,10 +127,10 @@ class FsmExampleSpecification extends SigmaTestingCommons
     val finalScriptCorrect = TrueLeaf
 
 
-    val fsmScript = SigmaOr(
+    val fsmScript = mkTestErgoTree(SigmaOr(
       SigmaAnd(isMember, DeserializeContext(scriptVarId, SSigmaProp), preservation), //going through FSM
       SigmaAnd(finalStateCheck, finalScriptCorrect, DeserializeContext(scriptVarId, SSigmaProp)) //leaving FSM
-    )
+    ))
 
 
     //creating a box in an initial state
