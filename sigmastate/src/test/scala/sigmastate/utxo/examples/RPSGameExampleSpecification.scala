@@ -56,7 +56,7 @@ class RPSGameExampleSpecification extends SigmaTestingCommons
       "k" -> h
     )
 
-    val fullGameScript = compile(fullGameEnv,
+    val fullGameScript = mkTestErgoTree(compile(fullGameEnv,
       """{
         |  val s = getVar[Coll[Byte]](0).get  // Alice's secret byte string s
         |  val a = getVar[Byte](1).get        // Alice's secret choice a (represented as a byte)
@@ -75,18 +75,18 @@ class RPSGameExampleSpecification extends SigmaTestingCommons
         |    }
         |  }
         |}""".stripMargin
-    ).asSigmaProp
+    ).asSigmaProp)
 
     val halfGameEnv = Map(
       ScriptNameProp -> "halfGameScript",
       "alice" -> alicePubKey,
-      "fullGameScriptHash" -> Blake2b256(fullGameScript.treeWithSegregation.bytes)
+      "fullGameScriptHash" -> Blake2b256(fullGameScript.bytes)
     )
 
     // Note that below script allows Alice to spend the half-game output anytime before Bob spends it.
     // We could also consider a more restricted version of the game where Alice is unable to spend the half-game output
     // before some minimum height.
-    val halfGameScript = compile(halfGameEnv,
+    val halfGameScript = mkTestErgoTree(compile(halfGameEnv,
       """{
         |  OUTPUTS.forall{(out:Box) =>
         |    val b             = out.R4[Byte].get
@@ -101,7 +101,7 @@ class RPSGameExampleSpecification extends SigmaTestingCommons
         |  OUTPUTS(0).R7[SigmaProp].get == alice // Alice does not care for Bob's draw case
         |  // Bob needs to ensure that OUTPUTS(1).R7 contains his public key
         |}
-      """.stripMargin).asBoolValue.toSigmaProp
+      """.stripMargin).asBoolValue.toSigmaProp)
 
     /////////////////////////////////////////////////////////
     //// Alice starts creating a Half-Game
