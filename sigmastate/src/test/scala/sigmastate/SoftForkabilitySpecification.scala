@@ -40,7 +40,10 @@ class SoftForkabilitySpecification extends SigmaTestingData
   lazy val invalidTxV1bytes = invalidTxV1.messageToSign
 
   lazy val propV1 = booleanPropV1.toSigmaProp
-  lazy val txV1 = createTransaction(createBox(boxAmt, propV1, 1))
+  lazy val txV1 = createTransaction(
+    createBox(boxAmt,
+      ErgoTree.fromProposition(propV1), // ErgoTree v0
+      1))
   lazy val txV1bytes = txV1.messageToSign
 
   val blockHeight = 110
