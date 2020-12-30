@@ -1,12 +1,19 @@
 package sigmastate
 
+import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
 import org.ergoplatform.ErgoScriptPredef
-import sigmastate.Values.{ErgoTree, SigmaPropValue, SigmaBoolean}
+import org.scalatest.Matchers
+import sigmastate.Values.{SValue, Value, SigmaPropValue, ErgoTree, SigmaBoolean}
+import sigmastate.eval.IRContext
 import sigmastate.interpreter.Interpreter
+import sigmastate.interpreter.Interpreter.ScriptEnv
+import sigmastate.lang.{SigmaCompiler, TransformingSigmaBuilder}
+import sigmastate.lang.Terms.ValueOps
+import sigmastate.serialization.ValueSerializer
 
 import scala.util.DynamicVariable
 
-trait TestsBase {
+trait TestsBase extends Matchers {
 
   val activatedVersions: Seq[Byte] = Array[Byte](0, 1)
 
@@ -41,4 +48,30 @@ trait TestsBase {
   /** Transform sigma proposition into [[ErgoTree]] using current ergoTreeHeaderInTests. */
   def mkTestErgoTree(prop: SigmaBoolean): ErgoTree =
     ErgoTree.fromSigmaBoolean(ergoTreeHeaderInTests, prop)
+
+  lazy val compiler = SigmaCompiler(TestnetNetworkPrefix, TransformingSigmaBuilder)
+
+  def checkSerializationRoundTrip(v: SValue): Unit = {
+    val compiledTreeBytes = ValueSerializer.serialize(v)
+    withClue(s"(De)Serialization roundtrip failed for the tree:") {
+      ValueSerializer.deserialize(compiledTreeBytes) shouldEqual v
+    }
+  }
+
+  def compileWithoutCosting(env: ScriptEnv, code: String): Value[SType] =
+    compiler.compileWithoutCosting(env, code)
+
+  def compile(env: ScriptEnv, code: String)(implicit IR: IRContext): Value[SType] = {
+    val tree = compiler.compile(env, code)
+    checkSerializationRoundTrip(tree)
+    tree
+  }
+
+  def compileAndCheck(env: ScriptEnv, code: String, expected: SValue)
+                     (implicit IR: IRContext): (ErgoTree, SigmaPropValue) = {
+    val prop = compile(env, code).asSigmaProp
+    prop shouldBe expected
+    val tree = mkTestErgoTree(prop)
+    (tree, prop)
+  }
 }
