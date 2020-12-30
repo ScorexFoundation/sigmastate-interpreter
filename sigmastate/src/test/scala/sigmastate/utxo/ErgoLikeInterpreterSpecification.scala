@@ -330,7 +330,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(selfBox),
-      createTransaction(testBox(1, recipientProposition, 0)),
+      createTransaction(testBox(1, mkTestErgoTree(recipientProposition), 0)),
       self = selfBox, activatedVersionInTests)
 
     val proof = prover.prove(propTree, ctx, fakeMessage).get
