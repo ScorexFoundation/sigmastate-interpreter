@@ -17,6 +17,7 @@ class TimedPaymentExampleSpecification extends SigmaTestingCommons
   import ErgoAddressEncoder._
 
   implicit val ergoAddressEncoder: ErgoAddressEncoder = new ErgoAddressEncoder(TestnetNetworkPrefix)
+
   property("Evaluation - Timed payment Tx Example") {
 
     val alice = new ContextEnrichingTestProvingInterpreter // customer at coffee shop
@@ -30,9 +31,9 @@ class TimedPaymentExampleSpecification extends SigmaTestingCommons
       "alice" -> alicePubKey
     )
 
-    val script = compile(env,
+    val script = mkTestErgoTree(compile(env,
       """{ alice && HEIGHT <= getVar[Int](1).get }""".stripMargin
-    ).asSigmaProp
+    ).asSigmaProp)
 
     val address = Pay2SHAddress(script)
     // The above is a "timed address".
