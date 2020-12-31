@@ -58,7 +58,9 @@ trait ContractsTestkit {
 
   val AliceId = Array[Byte](1) // 0x0001
   def newAliceBox(id: Byte, value: Long): Box = {
-    val ergoBox = testBox(value, ErgoTree.fromProposition(Values.TrueSigmaProp), 0, Seq(), Map())
+    val ergoBox = testBox(value,
+      ErgoTree.fromProposition(Values.TrueSigmaProp),
+      creationHeight = 0, additionalTokens = Seq(), additionalRegisters = Map())
     new CostingBox(false, ergoBox)
   }
 
