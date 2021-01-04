@@ -233,7 +233,7 @@ trait Interpreter extends ScorexLogging {
     val (res, t) = BenchmarkUtil.measureTime(Try {
       // TODO v5.0: the condition below should be revised if necessary
       // The following conditions define behavior which depend on the version of ergoTree
-      // This works in addition to more fine-grained soft-forkabiltiy mechanism implemented
+      // This works in addition to more fine-grained soft-forkability mechanism implemented
       // using ValidationRules (see trySoftForkable method call here and in reduceToCrypto).
       if (context.activatedScriptVersion > Interpreter.MaxSupportedScriptVersion) {
         // > 90% has already switched to higher version, accept without verification

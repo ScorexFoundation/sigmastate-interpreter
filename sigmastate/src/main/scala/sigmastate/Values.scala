@@ -37,7 +37,6 @@ import sigmastate.lang.SourceContext
 import special.collection.Coll
 
 import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
 
 object Values {
 
