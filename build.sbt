@@ -43,39 +43,19 @@ lazy val commonSettings = Seq(
         </developer>
       </developers>,
   publishMavenStyle := true,
-  publishTo := sonatypePublishToBundle.value
+  publishTo := sonatypePublishToBundle.value,
+  scmInfo := Some(
+      ScmInfo(
+          url("https://github.com/ScorexFoundation/sigmastate-interpreter"),
+          "scm:git@github.com:ScorexFoundation/sigmastate-interpreter.git"
+      )
+  ),
 )
 
-enablePlugins(GitVersioning)
-
-version in ThisBuild := {
-  if (git.gitCurrentTags.value.nonEmpty) {
-    git.gitDescribedVersion.value.get
-  } else {
-    if (git.gitHeadCommit.value.contains(git.gitCurrentBranch.value)) {
-      // see https://docs.travis-ci.com/user/environment-variables/#default-environment-variables
-      if (Try(sys.env("TRAVIS")).getOrElse("false") == "true") {
-        // pull request number, "false" if not a pull request
-        if (Try(sys.env("TRAVIS_PULL_REQUEST")).getOrElse("false") != "false") {
-          // build is triggered by a pull request
-          val prBranchName = Try(sys.env("TRAVIS_PULL_REQUEST_BRANCH")).get
-          val prHeadCommitSha = Try(sys.env("TRAVIS_PULL_REQUEST_SHA")).get
-          prBranchName + "-" + prHeadCommitSha.take(8) + "-SNAPSHOT"
-        } else {
-          // build is triggered by a push
-          val branchName = Try(sys.env("TRAVIS_BRANCH")).get
-          branchName + "-" + git.gitHeadCommit.value.get.take(8) + "-SNAPSHOT"
-        }
-      } else {
-        git.gitHeadCommit.value.get.take(8) + "-SNAPSHOT"
-      }
-    } else {
-      git.gitCurrentBranch.value + "-" + git.gitHeadCommit.value.get.take(8) + "-SNAPSHOT"
-    }
-  }
-}
-
-git.gitUncommittedChanges in ThisBuild := true
+// prefix version with "-SNAPSHOT" for builds without a git tag
+dynverSonatypeSnapshots in ThisBuild := true
+// use "-" instead of default "+"
+dynverSeparator in ThisBuild := "-"
 
 val bouncycastleBcprov = "org.bouncycastle" % "bcprov-jdk15on" % "1.64"
 val scrypto            = "org.scorexfoundation" %% "scrypto" % "2.1.10"

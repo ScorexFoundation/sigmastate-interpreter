@@ -4,18 +4,19 @@ import java.math.BigInteger
 
 import org.ergoplatform.ErgoBox.{R4, R5}
 import scorex.crypto.hash.Blake2b256
-import sigmastate.AvlTreeData
+import sigmastate.{AvlTreeData, CrossVersionProps}
 import sigmastate.Values.GroupElementConstant
 import sigmastate.basics.DLogProtocol.ProveDlog
-import sigmastate.basics.{DiffieHellmanTupleProverInput, ProveDHTuple}
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaTestingCommons}
+import sigmastate.basics.{ProveDHTuple, DiffieHellmanTupleProverInput}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, SigmaTestingCommons, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.interpreter.Interpreter._
 import sigmastate.lang.Terms._
 import sigmastate.eval._
 
-class MixExampleSpecification extends SigmaTestingCommons {
+class MixExampleSpecification extends SigmaTestingCommons
+  with CrossVersionProps {
   private implicit lazy val IR: TestingIRContext = new TestingIRContext
 
   property("Evaluation - Mix Example") {
@@ -162,7 +163,7 @@ class MixExampleSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(halfMixOutput),
       spendingTransaction = fullMixTx,
-      self = halfMixOutput
+      self = halfMixOutput, activatedVersionInTests
     )
 
     // bob (2nd player) is generating a proof and it is passing verification
@@ -217,7 +218,7 @@ class MixExampleSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(aliceAnonBox),
       spendingTransaction = spendingTx,
-      self = aliceAnonBox
+      self = aliceAnonBox, activatedVersionInTests
     )
 
     // To Do: Extract below g_y, g_xy from fullMixOutputs registers
@@ -239,7 +240,7 @@ class MixExampleSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(bobAnonBox),
       spendingTransaction = spendingTx,
-      self = bobAnonBox
+      self = bobAnonBox, activatedVersionInTests
     )
 
     val proofBobSpend = bob.prove(fullMixEnv, fullMixScript, bobSpendContext, fakeMessage).get.proof

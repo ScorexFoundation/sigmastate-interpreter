@@ -1,12 +1,12 @@
 package sigmastate
 
-import org.ergoplatform.ErgoLikeContext
 import org.scalatest.prop.TableFor2
 import scorex.util.encode.Base16
 import sigmastate.Values.{ByteArrayConstant, CollectionConstant}
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, SigmaTestingCommons}
 
-class CalcSha256Specification extends SigmaTestingCommons {
+class CalcSha256Specification extends SigmaTestingCommons
+  with CrossVersionProps {
   implicit lazy val IR = new TestingIRContext
 
   def stringToByteConstant(in: String): CollectionConstant[SByte.type] = ByteArrayConstant(in.getBytes("UTF-8"))
@@ -29,7 +29,7 @@ class CalcSha256Specification extends SigmaTestingCommons {
 
   property("CalcSha256: Should pass standard tests.") {
     val int = new ContextEnrichingTestProvingInterpreter()
-    val ctx = ErgoLikeContextTesting.dummy(fakeSelf)
+    val ctx = ErgoLikeContextTesting.dummy(fakeSelf, activatedVersionInTests)
     forAll(objects) { (in, result) =>
       val expectedResult = decodeString(result)
       val calcSha256 = EQ(CalcSha256(stringToByteConstant(in)), expectedResult)

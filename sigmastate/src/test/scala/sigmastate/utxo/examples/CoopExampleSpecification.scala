@@ -5,13 +5,14 @@ import org.scalatest.Assertion
 import org.scalatest.TryValues._
 import sigmastate.basics.DLogProtocol.ProveDlog
 import scorex.crypto.hash.Blake2b256
-import sigmastate.Values.{ByteArrayConstant, SigmaPropValue, BooleanConstant}
+import sigmastate.Values.{ByteArrayConstant, BooleanConstant, SigmaPropValue}
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, SigmaTestingCommons, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.lang.Terms._
-import sigmastate.AvlTreeData
+import sigmastate.{AvlTreeData, CrossVersionProps}
 
-class CoopExampleSpecification extends SigmaTestingCommons {
+class CoopExampleSpecification extends SigmaTestingCommons
+  with CrossVersionProps {
   implicit lazy val IR = new TestingIRContext
   
   def mkTxFromOutputs(ergoBox: ErgoBox*): ErgoLikeTransaction = {
@@ -27,7 +28,7 @@ class CoopExampleSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(self),
       spendingTransaction = tx,
-      self = self)
+      self = self, activatedVersionInTests)
   }
 
   def successProofTest(exp: SigmaPropValue,

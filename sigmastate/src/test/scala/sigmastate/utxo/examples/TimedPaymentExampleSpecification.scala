@@ -10,7 +10,8 @@ import sigmastate.lang.Terms._
 import sigmastate.lang.exceptions.InterpreterException
 
 
-class TimedPaymentExampleSpecification extends SigmaTestingCommons {
+class TimedPaymentExampleSpecification extends SigmaTestingCommons
+  with CrossVersionProps {
   private implicit lazy val IR: TestingIRContext = new TestingIRContext
 
   import ErgoAddressEncoder._
@@ -63,7 +64,8 @@ class TimedPaymentExampleSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(depositOutput),
       spendingTransaction = withdrawTx,
-      self = depositOutput
+      self = depositOutput,
+      activatedVersionInTests
     )
 
     val proofWithdraw = alice.withContextExtender(
@@ -80,7 +82,8 @@ class TimedPaymentExampleSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(depositOutput),
       spendingTransaction = withdrawTx,
-      self = depositOutput
+      self = depositOutput,
+      activatedVersionInTests
     )
     an [InterpreterException] should be thrownBy (alice.withContextExtender(
       1, IntConstant(confDeadline - 20)

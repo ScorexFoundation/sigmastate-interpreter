@@ -17,24 +17,30 @@ object SigmaSerializer {
   val MaxPropositionSize: Int = SigmaConstants.MaxPropositionBytes.value
   val MaxTreeDepth: Int = SigmaConstants.MaxTreeDepth.value
 
-    /** Helper function to be use in serializers.
+  /** Helper function to be use in serializers.
     * Starting position is marked and then used to compute number of consumed bytes.
     * val r = Serializer.startReader(bytes, pos)
     * val obj = r.getValue()
-    * obj -> r.consumed */
-  def startReader(bytes: Array[Byte], pos: Int = 0): SigmaByteReader = {
+    * obj -> r.consumed
+    */
+  def startReader(bytes: Array[Byte],
+                  pos: Int = 0): SigmaByteReader = {
     val buf = ByteBuffer.wrap(bytes)
     buf.position(pos)
-    val r = new SigmaByteReader(new VLQByteBufferReader(buf),
+    val r = new SigmaByteReader(
+      new VLQByteBufferReader(buf),
       new ConstantStore(),
       resolvePlaceholdersToConstants = false,
-      maxTreeDepth = MaxTreeDepth).mark()
+      maxTreeDepth = MaxTreeDepth
+    ).mark()
     r
   }
 
+  /** Helper function to be use in serializers. */
   def startReader(bytes: Array[Byte],
                   constantStore: ConstantStore,
-                  resolvePlaceholdersToConstants: Boolean)(implicit vs: SigmaValidationSettings): SigmaByteReader = {
+                  resolvePlaceholdersToConstants: Boolean)
+                 (implicit vs: SigmaValidationSettings): SigmaByteReader = {
     val buf = ByteBuffer.wrap(bytes)
     val r = new SigmaByteReader(new VLQByteBufferReader(buf),
       constantStore,
