@@ -37,7 +37,6 @@ import sigmastate.lang.SourceContext
 import special.collection.Coll
 
 import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
 
 object Values {
 
@@ -1043,9 +1042,32 @@ object Values {
     /** Default header with constant segregation enabled. */
     val ConstantSegregationHeader: Byte = (DefaultHeader | ConstantSegregationFlag).toByte
 
+    /** @return true if the constant segregation flag is set to 1 in the given header byte. */
     @inline final def isConstantSegregation(header: Byte): Boolean = (header & ConstantSegregationFlag) != 0
+
+    /** @return true if the size flag is set to 1 in the given header byte. */
     @inline final def hasSize(header: Byte): Boolean = (header & SizeFlag) != 0
+
+    /** @return a value of the version bits from the given header byte. */
     @inline final def getVersion(header: Byte): Byte = (header & VersionMask).toByte
+
+    /** Update the version bits of the given header byte with the given version value. */
+    @inline final def updateVersionBits(header: Byte, version: Byte): Byte = {
+      require(version < 8, s"ErgoTree.version should be < 8: $version")
+      (header | version).toByte
+    }
+
+    /** Creates valid header byte with the given version.
+      * The SizeFlag is set if version > 0 */
+    @inline def headerWithVersion(version: Byte): Byte = {
+      // take default header and embedd the given version in it
+      var h = updateVersionBits(DefaultHeader, version)
+      if (version > 0) {
+        // set SizeFlag if version is greater then 0 (see require() in ErgoTree constructor)
+        h = (h | ErgoTree.SizeFlag).toByte
+      }
+      h
+    }
 
     def substConstants(root: SValue, constants: IndexedSeq[Constant[SType]]): SValue = {
       val store = new ConstantStore(constants)
@@ -1066,6 +1088,9 @@ object Values {
     def withoutSegregation(root: SigmaPropValue): ErgoTree =
       ErgoTree(ErgoTree.DefaultHeader, EmptyConstants, root)
 
+    def withoutSegregation(headerFlags: Byte, root: SigmaPropValue): ErgoTree =
+      ErgoTree((ErgoTree.DefaultHeader | headerFlags).toByte, EmptyConstants, root)
+
     implicit def fromProposition(prop: SigmaPropValue): ErgoTree = {
       prop match {
         case SigmaPropConstant(_) => withoutSegregation(prop)
@@ -1075,6 +1100,10 @@ object Values {
 
     implicit def fromSigmaBoolean(pk: SigmaBoolean): ErgoTree = {
       withoutSegregation(pk.toSigmaProp)
+    }
+
+    def fromSigmaBoolean(headerFlags: Byte, pk: SigmaBoolean): ErgoTree = {
+      withoutSegregation(headerFlags, pk.toSigmaProp)
     }
 
     /** Build ErgoTree via serialization of the value with ConstantSegregationHeader, constants segregated

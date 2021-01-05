@@ -4,17 +4,18 @@ package sigmastate.utxo.examples
 import java.math.BigInteger
 
 import org.ergoplatform.ErgoBox.{R4, R5}
-import sigmastate.AvlTreeData
+import sigmastate.{AvlTreeData, CrossVersionProps}
 import sigmastate.Values.GroupElementConstant
 import sigmastate.basics.DLogProtocol.ProveDlog
-import sigmastate.basics.{DiffieHellmanTupleProverInput, ProveDHTuple}
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaTestingCommons}
+import sigmastate.basics.{ProveDHTuple, DiffieHellmanTupleProverInput}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, SigmaTestingCommons, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.interpreter.Interpreter._
 import sigmastate.lang.Terms._
 
-class DHTupleExampleSpecification extends SigmaTestingCommons {
+class DHTupleExampleSpecification extends SigmaTestingCommons
+  with CrossVersionProps {
   private implicit lazy val IR = new TestingIRContext
   /**
     * let Alice's secret be x and Bob's be y
@@ -84,7 +85,7 @@ class DHTupleExampleSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(inBox),
       spendingTransaction = tx,
-      self = inBox
+      self = inBox, activatedVersionInTests
     )
     val dhtBob = DiffieHellmanTupleProverInput(y, ProveDHTuple(g, g_x, g_y, g_xy))
 

@@ -9,7 +9,8 @@ import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.ContextExtension
 import sigmastate.lang.Terms._
 
-class DemurrageExampleSpecification extends SigmaTestingCommons {
+class DemurrageExampleSpecification extends SigmaTestingCommons
+  with CrossVersionProps {
   implicit lazy val IR = new TestingIRContext
 
   /**
@@ -91,7 +92,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(selfBox),
       spendingTransaction = tx1,
-      self = selfBox,
+      self = selfBox, activatedVersionInTests,
       extension = ce)
 
     //user can spend all the money
@@ -111,7 +112,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(selfBox),
       spendingTransaction = tx2,
-      self = selfBox,
+      self = selfBox, activatedVersionInTests,
       extension = ce)
 
     //user can spend all the money
@@ -127,7 +128,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(b, selfBox),
       spendingTransaction = tx3,
-      self = selfBox)
+      self = selfBox, activatedVersionInTests)
 
     assert(ctx3.spendingTransaction.outputs.head.propositionBytes sameElements ctx3.boxesToSpend(ctx3.selfIndex).propositionBytes)
 
@@ -144,7 +145,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(b2, selfBox),
       spendingTransaction = tx4,
-      self = selfBox,
+      self = selfBox, activatedVersionInTests,
       extension = ce)
 
     minerProver.prove(prop, ctx4, fakeMessage).isSuccess shouldBe false
@@ -159,7 +160,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(selfBox),
       spendingTransaction = tx5,
-      self = selfBox,
+      self = selfBox, activatedVersionInTests,
       extension = ce)
 
     val mProof2 = minerProver.prove(prop, ctx5, fakeMessage).get
@@ -176,7 +177,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(b3, selfBox6),
       spendingTransaction = tx6,
-      self = selfBox6,
+      self = selfBox6, activatedVersionInTests,
       extension = ce)
 
     val mProof3 = minerProver.prove(prop, ctx6, fakeMessage).get

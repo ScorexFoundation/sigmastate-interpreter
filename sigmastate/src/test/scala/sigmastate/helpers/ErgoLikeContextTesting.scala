@@ -6,7 +6,7 @@ import org.ergoplatform._
 import org.ergoplatform.validation.{ValidationRules, SigmaValidationSettings}
 import sigmastate.AvlTreeData
 import sigmastate.eval._
-import sigmastate.interpreter.{ContextExtension, CryptoConstants}
+import sigmastate.interpreter.{ContextExtension, CryptoConstants, Interpreter}
 import sigmastate.serialization.{SigmaSerializer, GroupElementSerializer}
 import special.collection.Coll
 import special.sigma.{Box, PreHeader, Header}
@@ -41,10 +41,13 @@ object ErgoLikeContextTesting {
             boxesToSpend: IndexedSeq[ErgoBox],
             spendingTransaction: ErgoLikeTransactionTemplate[_ <: UnsignedInput],
             self: ErgoBox,
+            activatedVersion: Byte,
             extension: ContextExtension = ContextExtension.empty,
             vs: SigmaValidationSettings = ValidationRules.currentSettings): ErgoLikeContext =
-    new ErgoLikeContext(lastBlockUtxoRoot, noHeaders, dummyPreHeader(currentHeight, minerPubkey), noBoxes,
-      boxesToSpend, spendingTransaction, boxesToSpend.indexOf(self), extension, vs, ScriptCostLimit.value, 0L)
+    new ErgoLikeContext(
+      lastBlockUtxoRoot, noHeaders, dummyPreHeader(currentHeight, minerPubkey), noBoxes,
+      boxesToSpend, spendingTransaction, boxesToSpend.indexOf(self), extension, vs,
+      ScriptCostLimit.value, initCost = 0L, activatedVersion)
 
   def apply(currentHeight: Height,
             lastBlockUtxoRoot: AvlTreeData,
@@ -52,32 +55,20 @@ object ErgoLikeContextTesting {
             dataBoxes: IndexedSeq[ErgoBox],
             boxesToSpend: IndexedSeq[ErgoBox],
             spendingTransaction: ErgoLikeTransactionTemplate[_ <: UnsignedInput],
-            selfIndex: Int) =
-    new ErgoLikeContext(lastBlockUtxoRoot, noHeaders, dummyPreHeader(currentHeight, minerPubkey),
-      dataBoxes, boxesToSpend, spendingTransaction, selfIndex, ContextExtension.empty, ValidationRules.currentSettings, ScriptCostLimit.value, 0L)
+            selfIndex: Int,
+            activatedVersion: Byte) =
+    new ErgoLikeContext(
+      lastBlockUtxoRoot, noHeaders, dummyPreHeader(currentHeight, minerPubkey),
+      dataBoxes, boxesToSpend, spendingTransaction, selfIndex, ContextExtension.empty,
+      ValidationRules.currentSettings, ScriptCostLimit.value,
+      initCost = 0L, activatedVersion)
 
 
-  def dummy(selfDesc: ErgoBox): ErgoLikeContext = ErgoLikeContextTesting(currentHeight = 0,
-    lastBlockUtxoRoot = AvlTreeData.dummy, dummyPubkey, boxesToSpend = IndexedSeq(selfDesc),
-    spendingTransaction = ErgoLikeTransaction(IndexedSeq(), IndexedSeq()), self = selfDesc)
-
-  def fromTransaction(tx: ErgoLikeTransaction,
-                      blockchainState: BlockchainState,
-                      boxesReader: ErgoBoxReader,
-                      inputIndex: Int): Try[ErgoLikeContext] = Try {
-
-    val boxes = tx.inputs.map(_.boxId).map(id => boxesReader.byId(id).get)
-
-    val proverExtension = tx.inputs(inputIndex).spendingProof.extension
-
-    ErgoLikeContextTesting(blockchainState.currentHeight,
-      blockchainState.lastBlockUtxoRoot,
-      dummyPubkey,
-      boxes,
-      tx,
-      boxes(inputIndex),
-      proverExtension)
-  }
+  def dummy(selfDesc: ErgoBox, activatedVersion: Byte): ErgoLikeContext =
+    ErgoLikeContextTesting(currentHeight = 0,
+      lastBlockUtxoRoot = AvlTreeData.dummy, dummyPubkey, boxesToSpend = IndexedSeq(selfDesc),
+      spendingTransaction = ErgoLikeTransaction(IndexedSeq(), IndexedSeq()), self = selfDesc,
+      activatedVersion = activatedVersion)
 
   val noInputs: Array[Box] = Array[Box]()
   val noOutputs: Array[Box] = Array[Box]()

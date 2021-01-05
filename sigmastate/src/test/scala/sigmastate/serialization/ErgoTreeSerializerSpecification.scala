@@ -2,7 +2,7 @@ package sigmastate.serialization
 
 import java.math.BigInteger
 
-import sigmastate.Values.{ShortConstant, LongConstant, BigIntConstant, SigmaPropValue, IntConstant, ErgoTree, ByteConstant}
+import sigmastate.Values.{ShortConstant, BigIntConstant, SigmaPropValue, IntConstant, ErgoTree, ByteConstant}
 import sigmastate._
 import sigmastate.eval.{IRContext, CBigInt}
 import sigmastate.helpers.SigmaTestingCommons
@@ -41,7 +41,9 @@ class ErgoTreeSerializerSpecification extends SerializationSpecification
       val (_, _, deserializedConstants, treeBytes) = DefaultSerializer
         .deserializeHeaderWithTreeBytes(SigmaSerializer.startReader(bytes))
       deserializedConstants shouldEqual ergoTree.constants
-      val r = SigmaSerializer.startReader(treeBytes, new ConstantStore(deserializedConstants),
+      val r = SigmaSerializer.startReader(
+        treeBytes,
+        new ConstantStore(deserializedConstants),
         resolvePlaceholdersToConstants = true)
       val deserializedTree = ValueSerializer.deserialize(r)
       deserializedTree shouldEqual tree

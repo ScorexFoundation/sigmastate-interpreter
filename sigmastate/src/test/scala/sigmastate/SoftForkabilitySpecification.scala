@@ -19,7 +19,8 @@ import sigmastate.utxo.{DeserializeContext, SelectField}
 import special.sigma.SigmaTestingData
 import sigmastate.utils.Helpers._
 
-class SoftForkabilitySpecification extends SigmaTestingData {
+class SoftForkabilitySpecification extends SigmaTestingData
+  with CrossVersionProps {
 
   implicit lazy val IR = new TestingIRContext
   lazy val prover = new ErgoLikeTestProvingInterpreter()
@@ -47,7 +48,7 @@ class SoftForkabilitySpecification extends SigmaTestingData {
   def createContext(h: Int, tx: ErgoLikeTransaction, vs: SigmaValidationSettings) =
     ErgoLikeContextTesting(h,
       AvlTreeData.dummy, ErgoLikeContextTesting.dummyPubkey, IndexedSeq(fakeSelf),
-      tx, fakeSelf, vs = vs)
+      tx, fakeSelf, vs = vs, activatedVersion = activatedVersionInTests)
 
   def proveTx(name: String, tx: ErgoLikeTransaction, vs: SigmaValidationSettings): ProverResult = {
     val env = Map(ScriptNameProp -> (name + "_prove"))

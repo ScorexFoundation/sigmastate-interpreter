@@ -1,6 +1,5 @@
 package sigmastate.utxo
 
-import org.ergoplatform.{ErgoLikeContext, ErgoLikeTransaction}
 import sigmastate.basics.DLogProtocol.{DLogProverInput, ProveDlog}
 import sigmastate.Values.{ConcreteCollection, FalseLeaf, IntConstant, SigmaPropConstant, SigmaPropValue, TrueLeaf}
 import sigmastate._
@@ -40,7 +39,7 @@ class ThresholdSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction = ErgoLikeTransactionTesting.dummy,
-      self = fakeSelf)
+      self = fakeSelf, activatedVersionInTests)
 
     val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "pubkeyC" -> pubkeyC)
 
@@ -119,7 +118,7 @@ class ThresholdSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction = ErgoLikeTransactionTesting.dummy,
-      self = fakeSelf)
+      self = fakeSelf, activatedVersionInTests)
 
     case class TestCase(numTrue: Int, vector: Seq[SigmaPropValue], dlogOnlyVector: DlogOnlyVector)
     case class DlogOnlyVector(v: Seq[SigmaPropValue]) {
@@ -289,7 +288,7 @@ class ThresholdSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction = ErgoLikeTransactionTesting.dummy,
-      self = fakeSelf)
+      self = fakeSelf, activatedVersionInTests)
 
     val verifier = new ErgoLikeTestInterpreter
 
@@ -336,7 +335,7 @@ class ThresholdSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction = ErgoLikeTransactionTesting.dummy,
-      self = fakeSelf)
+      self = fakeSelf, activatedVersionInTests)
 
     val verifier = new ErgoLikeTestInterpreter
 
