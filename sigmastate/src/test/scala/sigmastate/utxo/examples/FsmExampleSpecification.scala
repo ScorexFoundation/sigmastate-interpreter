@@ -17,7 +17,8 @@ import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo._
 
 
-class FsmExampleSpecification extends SigmaTestingCommons {
+class FsmExampleSpecification extends SigmaTestingCommons
+  with CrossVersionProps {
   private implicit lazy val IR: TestingIRContext = new TestingIRContext
   /**
     * Similarly to the MAST-like example (in the MASTExampleSpecification class), we can do more complex contracts,
@@ -150,7 +151,7 @@ class FsmExampleSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fsmBox1),
       createTransaction(fsmBox2),
-      self = fsmBox1)
+      self = fsmBox1, activatedVersionInTests)
 
     val spendingProof = prover
       .withContextExtender(scriptVarId, ByteArrayConstant(ValueSerializer.serialize(script1)))
@@ -170,7 +171,7 @@ class FsmExampleSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fsmBox2),
       createTransaction(fsmBox1),
-      self = fsmBox2)
+      self = fsmBox2, activatedVersionInTests)
 
     val spendingProof2 = prover
       .withContextExtender(scriptVarId, ByteArrayConstant(ValueSerializer.serialize(script2)))
@@ -198,7 +199,7 @@ class FsmExampleSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fsmBox1),
       createTransaction(fsmBox3),
-      self = fsmBox1)
+      self = fsmBox1, activatedVersionInTests)
 
     //honest prover fails
     prover
@@ -225,7 +226,7 @@ class FsmExampleSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fsmBox2),
       createTransaction(fsmBox3),
-      self = fsmBox2)
+      self = fsmBox2, activatedVersionInTests)
 
     val spendingProof23 = prover
       .withContextExtender(scriptVarId, ByteArrayConstant(ValueSerializer.serialize(script3)))
@@ -247,7 +248,7 @@ class FsmExampleSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fsmBox3),
       createTransaction(freeBox),
-      self = fsmBox3)
+      self = fsmBox3, activatedVersionInTests)
 
     val spendingProof30 = prover
       .withContextExtender(scriptVarId, ByteArrayConstant(ValueSerializer.serialize(script4)))
@@ -263,7 +264,7 @@ class FsmExampleSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fsmBox2),
       createTransaction(freeBox),
-      self = fsmBox2)
+      self = fsmBox2, activatedVersionInTests)
 
     //honest prover fails
     prover

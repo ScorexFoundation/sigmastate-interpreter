@@ -10,11 +10,10 @@ import sigmastate.lang.Terms._
   * See EIP-11 for generic signing procedure.
   * In some simple generic procedure is simplified.
   */
-class DistributedSigSpecification extends SigmaTestingCommons {
+class DistributedSigSpecification extends SigmaTestingCommons
+  with CrossVersionProps {
 
   implicit lazy val IR: TestingIRContext = new TestingIRContext
-
-  private val ctx = fakeContext
 
   /**
     * An example test where Alice (A) and Bob (B) are signing an input in a distributed way. A statement which
@@ -34,6 +33,7 @@ class DistributedSigSpecification extends SigmaTestingCommons {
     * proof ((a_Alice, a_Bob), e, (z_Alice, z_Bob)).
     */
   property("distributed AND (2 out of 2)") {
+    val ctx = fakeContext
     val proverA = new ErgoLikeTestProvingInterpreter
     val proverB = new ErgoLikeTestProvingInterpreter
     val verifier: ContextEnrichingTestProvingInterpreter = new ContextEnrichingTestProvingInterpreter
@@ -63,6 +63,7 @@ class DistributedSigSpecification extends SigmaTestingCommons {
 
   //  3-out-of-3 AND signature
   property("distributed AND (3 out of 3)") {
+    val ctx = fakeContext
     val proverA = new ErgoLikeTestProvingInterpreter
     val proverB = new ErgoLikeTestProvingInterpreter
     val proverC = new ErgoLikeTestProvingInterpreter
@@ -121,6 +122,7 @@ class DistributedSigSpecification extends SigmaTestingCommons {
     *     He's using his randomness from his first step and completes the (valid) signature.
     */
   property("distributed THRESHOLD - 2 out of 3") {
+    val ctx = fakeContext
     val proverA = new ErgoLikeTestProvingInterpreter
     val proverB = new ErgoLikeTestProvingInterpreter
     val proverC = new ErgoLikeTestProvingInterpreter
@@ -155,6 +157,7 @@ class DistributedSigSpecification extends SigmaTestingCommons {
     * Distributed threshold signature, 3 out of 4 case.
     */
   property("distributed THRESHOLD - 3 out of 4") {
+    val ctx = fakeContext
     val proverA = new ErgoLikeTestProvingInterpreter
     val proverB = new ErgoLikeTestProvingInterpreter
     val proverC = new ErgoLikeTestProvingInterpreter
@@ -203,6 +206,7 @@ class DistributedSigSpecification extends SigmaTestingCommons {
     * Distributed threshold signature, 3 out of 4 case, 1 real and 1 simulated secrets are of DH kind.
     */
   property("distributed THRESHOLD - 3 out of 4 - w. DH") {
+    val ctx = fakeContext
     val proverA = new ErgoLikeTestProvingInterpreter
     val proverB = new ErgoLikeTestProvingInterpreter
     val proverC = new ErgoLikeTestProvingInterpreter
@@ -248,7 +252,7 @@ class DistributedSigSpecification extends SigmaTestingCommons {
   }
 
   property("distributed THRESHOLD - 2 out of 5") {
-
+    val ctx = fakeContext
     val proverA = new ErgoLikeTestProvingInterpreter
     val proverB = new ErgoLikeTestProvingInterpreter
     val proverC = new ErgoLikeTestProvingInterpreter
@@ -285,7 +289,7 @@ class DistributedSigSpecification extends SigmaTestingCommons {
   }
 
   property("distributed THRESHOLD - 4 out of 8 - DH") {
-
+    val ctx = fakeContext
     val proverA = new ErgoLikeTestProvingInterpreter
     val proverB = new ErgoLikeTestProvingInterpreter
     val proverC = new ErgoLikeTestProvingInterpreter
@@ -377,6 +381,7 @@ class DistributedSigSpecification extends SigmaTestingCommons {
   }
 
   property("distributed THRESHOLD - (1-out-of-2) and (1-out-of-2) - DLOG and DH") {
+    val ctx = fakeContext
     val proverA = new ErgoLikeTestProvingInterpreter
     val proverB = new ErgoLikeTestProvingInterpreter
     val proverC = new ErgoLikeTestProvingInterpreter
@@ -419,6 +424,7 @@ class DistributedSigSpecification extends SigmaTestingCommons {
 
   property("distributed THRESHOLD mixed via AND") {
     // atLeast(3, Coll(proveDlog(pkA), proveDlog(pkB), proveDlog(pkC), proveDlog(pkD), proveDlog(pkE))) && (proveDlog(pkB) || proveDlog(pkF))
+    val ctx = fakeContext
     val proverA = new ErgoLikeTestProvingInterpreter
     val proverB = new ErgoLikeTestProvingInterpreter
     val proverC = new ErgoLikeTestProvingInterpreter

@@ -12,7 +12,8 @@ import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter._
 import sigmastate.lang.Terms._
 
-class RPSGameExampleSpecification extends SigmaTestingCommons {
+class RPSGameExampleSpecification extends SigmaTestingCommons
+  with CrossVersionProps {
   implicit lazy val IR = new TestingIRContext
   /** RPS game:
 
@@ -160,7 +161,8 @@ class RPSGameExampleSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(halfGameOutput),
       spendingTransaction = fullGameTx,
-      self = halfGameOutput // what is the use of self?
+      self = halfGameOutput, // what is the use of self?
+      activatedVersionInTests
     )
 
     // bob (2nd player) is generating a proof and it is passing verification
@@ -196,7 +198,7 @@ class RPSGameExampleSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fullGameOutput0, fullGameOutput1),
       spendingTransaction = gameOverTx,
-      self = fullGameOutput0
+      self = fullGameOutput0, activatedVersionInTests
     )
 
     val winContext1 = ErgoLikeContextTesting(
@@ -205,7 +207,7 @@ class RPSGameExampleSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fullGameOutput0, fullGameOutput1),
       spendingTransaction = gameOverTx,
-      self = fullGameOutput1
+      self = fullGameOutput1, activatedVersionInTests
     )
 
     a - b match {
@@ -221,7 +223,7 @@ class RPSGameExampleSpecification extends SigmaTestingCommons {
           minerPubkey = ErgoLikeContextTesting.dummyPubkey,
           boxesToSpend = IndexedSeq(fullGameOutput0),
           spendingTransaction = gameOverTx,
-          self = fullGameOutput0
+          self = fullGameOutput0, activatedVersionInTests
         )
 
         val proofAliceDraw = aliceProver.prove(fullGameEnv, fullGameScript, drawContextAlice, fakeMessage).get
@@ -233,7 +235,7 @@ class RPSGameExampleSpecification extends SigmaTestingCommons {
           minerPubkey = ErgoLikeContextTesting.dummyPubkey,
           boxesToSpend = IndexedSeq(fullGameOutput1),
           spendingTransaction = gameOverTx,
-          self = fullGameOutput1
+          self = fullGameOutput1, activatedVersionInTests
         )
 
         val proofBobDraw = bobProver.prove(fullGameEnv, fullGameScript, drawContextBob, fakeMessage).get
@@ -282,7 +284,8 @@ class RPSGameExampleSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fullGameOutput0, fullGameOutput1),
       spendingTransaction = defaultWinTx,
-      self = fullGameOutput0 // what is the use of self?
+      self = fullGameOutput0, // what is the use of self?
+      activatedVersionInTests
     )
     val defaultWinContext1 = ErgoLikeContextTesting(
       currentHeight = defaultWinHeight,
@@ -290,7 +293,8 @@ class RPSGameExampleSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fullGameOutput0, fullGameOutput1),
       spendingTransaction = defaultWinTx,
-      self = fullGameOutput1 // what is the use of self?
+      self = fullGameOutput1, // what is the use of self?
+      activatedVersionInTests
     )
 
     val sDummy = Array[Byte]()  // empty value for s; commitment cannot be opened but still Bob will be able to spend

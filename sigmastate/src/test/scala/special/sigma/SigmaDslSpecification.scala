@@ -43,7 +43,7 @@ import scala.collection.mutable
 
 /** This suite tests every method of every SigmaDsl type to be equivalent to
   * the evaluation of the corresponding ErgoScript operation */
-class SigmaDslSpecification extends SigmaDslTesting { suite =>
+class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { suite =>
 
   override implicit val generatorDrivenConfig = PropertyCheckConfiguration(minSuccessful = 30)
 
@@ -3148,8 +3148,6 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
   //    val ctx = ErgoLikeContext.dummy(fakeSelf)
   //    doApply((CFunc[Int, Int](ctx, code), 10))
   //  }
-
-  lazy val ctx = ergoCtx.toSigmaContext(false)
 
   property("Box properties equivalence") {
     verifyCases(

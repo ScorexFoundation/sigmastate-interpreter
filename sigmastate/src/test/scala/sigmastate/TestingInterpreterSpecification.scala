@@ -17,7 +17,8 @@ import sigmastate.utils.Helpers._
 
 import scala.util.Random
 
-class TestingInterpreterSpecification extends SigmaTestingCommons {
+class TestingInterpreterSpecification extends SigmaTestingCommons
+  with CrossVersionProps {
   implicit lazy val IR = new TestingIRContext
   lazy val prover = new ErgoLikeTestProvingInterpreter()
   lazy val verifier = new ErgoLikeTestInterpreter
@@ -28,7 +29,7 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
     ErgoLikeContextTesting(h,
       AvlTreeData.dummy, ErgoLikeContextTesting.dummyPubkey, IndexedSeq(fakeSelf),
       ErgoLikeTransaction(IndexedSeq.empty, IndexedSeq.empty),
-      fakeSelf)
+      fakeSelf, activatedVersionInTests)
 
   property("Reduction to crypto #1") {
     forAll() { i: Int =>

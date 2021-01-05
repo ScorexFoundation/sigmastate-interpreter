@@ -10,7 +10,7 @@ import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeConte
 import sigmastate.lang.Terms._
 import sigmastate.utxo.SizeOf
 
-class AtomicSwapExampleSpecification extends SigmaTestingCommons {
+class AtomicSwapExampleSpecification extends SigmaTestingCommons with CrossVersionProps {
   private implicit lazy val IR: TestingIRContext = new TestingIRContext
 
   /**
@@ -103,7 +103,8 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction = ErgoLikeTransactionTesting.dummy,
-      self = fakeSelf)
+      self = fakeSelf,
+      activatedVersionInTests)
     proverB.prove(env, prop1, ctxf1, fakeMessage).isSuccess shouldBe false
 
     //A can't withdraw her coins in chain1 (generate a valid proof)
@@ -114,7 +115,10 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
       currentHeight = height2 + 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
-      boxesToSpend = IndexedSeq(fakeSelf), spendingTransaction = ErgoLikeTransactionTesting.dummy, self = fakeSelf)
+      boxesToSpend = IndexedSeq(fakeSelf),
+      spendingTransaction = ErgoLikeTransactionTesting.dummy,
+      self = fakeSelf,
+      activatedVersionInTests)
     proverB.prove(env, prop2, ctxf2, fakeMessage).isSuccess shouldBe false
 
     //Successful run below:
@@ -126,7 +130,8 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction = ErgoLikeTransactionTesting.dummy,
-      self = fakeSelf)
+      self = fakeSelf,
+      activatedVersionInTests)
     val pr = proverA.prove(env, prop2, ctx1, fakeMessage).get
     verifier.verify(env, prop2, ctx1, pr, fakeMessage).get._1 shouldBe true
 
@@ -141,7 +146,8 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction = ErgoLikeTransactionTesting.dummy,
-      self = fakeSelf)
+      self = fakeSelf,
+      activatedVersionInTests)
     val pr2 = proverB2.prove(env, prop1, ctx2, fakeMessage).get
     verifier.verify(env, prop1, ctx2, pr2, fakeMessage).get._1 shouldBe true
 

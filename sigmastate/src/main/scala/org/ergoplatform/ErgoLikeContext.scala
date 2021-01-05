@@ -13,24 +13,40 @@ import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.OpCode
 import special.collection.Coll
 import special.sigma
-import special.sigma.{AnyValue, Header, PreHeader}
+import special.sigma.{AnyValue, PreHeader, Header}
 import spire.syntax.all.cfor
 
-/**
-  * TODO lastBlockUtxoRoot should be calculated from headers if it is nonEmpty
+/** Represents a script evaluation context to be passed to a prover and a verifier to execute and
+  * validate guarding proposition of input boxes of a transaction.
   *
-  * @param selfIndex           - index of the box in `boxesToSpend` that contains the script we're evaluating
-  * @param lastBlockUtxoRoot   - state root before current block application
-  * @param headers             - fixed number of last block headers in descending order (first header is the newest one)
-  * @param preHeader           - fields of block header with the current `spendingTransaction`, that can be predicted
-  *                            by a miner before it's formation
-  * @param dataBoxes           -  boxes, that corresponds to id's of `spendingTransaction.dataInputs`
-  * @param boxesToSpend        - boxes, that corresponds to id's of `spendingTransaction.inputs`
-  * @param spendingTransaction - transaction that contains `self` box
-  * @param extension           - prover-defined key-value pairs, that may be used inside a script
-  * @param validationSettings  validataion parameters passed to Interpreter.verify to detect soft-fork conditions
-  * @param costLimit           hard limit on accumulated execution cost, if exceeded lead to CostLimitException to be thrown
-  * @param initCost            initial value of execution cost already accumulated before Interpreter.verify is called
+  * @param selfIndex              - index of the box in `boxesToSpend` that contains the script we're evaluating
+  * @param lastBlockUtxoRoot      - state root before current block application
+  * @param headers                - fixed number of last block headers in descending order (first header is the newest one)
+  * @param preHeader              - fields of block header with the current `spendingTransaction`, that can be predicted
+  *                               by a miner before it's formation
+  * @param dataBoxes              -  boxes, that corresponds to id's of `spendingTransaction.dataInputs`
+  * @param boxesToSpend           - boxes, that corresponds to id's of `spendingTransaction.inputs`
+  * @param spendingTransaction    - transaction that contains `self` box
+  * @param extension              - prover-defined key-value pairs, that may be used inside a script
+  * @param validationSettings     validation parameters passed to Interpreter.verify to detect soft-fork conditions
+  * @param costLimit              hard limit on accumulated execution cost, if exceeded lead to CostLimitException to be thrown
+  * @param initCost               initial value of execution cost already accumulated before Interpreter.verify is called
+  * @param activatedScriptVersion Maximum version of ErgoTree currently activated on the network.
+  *                               The activation is performed via miners voting.
+  *                               For verification of *mined* blocks this parameter should  be passed according
+  *                               to the latest voted (activated) script version on the network.
+  *                               However this is not the case for *candidate* blocks.
+  *                               When `activatedScriptVersion > Interpreter.MaxSupportedScriptVersion`
+  *                               then the interpreter accept script without verification which is not
+  *                               what should happen for *candidate* blocks.
+  *                               This means Ergo node should always pass Interpreter.MaxSupportedScriptVersion
+  *                               as a value of ErgoLikeContext.activatedScriptVersion during
+  *                               verification of candidate blocks (which is a default).
+  *                               The following values are used for current and upcoming forks:
+  *                               - version 3.x this value must be 0
+  *                               - in v4.0 must be 1
+  *                               - in v5.x must be 2
+  *                               etc.
   */
 class ErgoLikeContext(val lastBlockUtxoRoot: AvlTreeData,
                       val headers: Coll[Header],
@@ -42,8 +58,10 @@ class ErgoLikeContext(val lastBlockUtxoRoot: AvlTreeData,
                       val extension: ContextExtension,
                       val validationSettings: SigmaValidationSettings,
                       val costLimit: Long,
-                      val initCost: Long
+                      val initCost: Long,
+                      val activatedScriptVersion: Byte
                  ) extends InterpreterContext {
+  // TODO lastBlockUtxoRoot should be calculated from headers if it is nonEmpty
 
   /* NOHF PROOF:
   Added: assert(preHeader != null)
@@ -93,30 +111,19 @@ class ErgoLikeContext(val lastBlockUtxoRoot: AvlTreeData,
   val self: ErgoBox = boxesToSpend(selfIndex)
 
   override def withCostLimit(newCostLimit: Long): ErgoLikeContext =
-    new ErgoLikeContext(
-      lastBlockUtxoRoot, headers, preHeader,
-      dataBoxes, boxesToSpend, spendingTransaction, selfIndex, extension, validationSettings, newCostLimit, initCost)
+    ErgoLikeContext.copy(this)(costLimit = newCostLimit)
 
-  override def withInitCost(newCost: Long): ErgoLikeContext =
-    new ErgoLikeContext(
-      lastBlockUtxoRoot, headers, preHeader,
-      dataBoxes, boxesToSpend, spendingTransaction, selfIndex, extension, validationSettings, costLimit, newCost)
+  override def withInitCost(newInitCost: Long): ErgoLikeContext =
+    ErgoLikeContext.copy(this)(initCost = newInitCost)
 
   override def withValidationSettings(newVs: SigmaValidationSettings): ErgoLikeContext =
-    new ErgoLikeContext(
-      lastBlockUtxoRoot, headers, preHeader,
-      dataBoxes, boxesToSpend, spendingTransaction, selfIndex, extension, newVs, costLimit, initCost)
+    ErgoLikeContext.copy(this)(validationSettings = newVs)
 
   override def withExtension(newExtension: ContextExtension): ErgoLikeContext =
-    new ErgoLikeContext(
-      lastBlockUtxoRoot, headers, preHeader,
-      dataBoxes, boxesToSpend, spendingTransaction, selfIndex, newExtension, validationSettings, costLimit, initCost)
+    ErgoLikeContext.copy(this)(extension = newExtension)
 
   def withTransaction(newSpendingTransaction: ErgoLikeTransactionTemplate[_ <: UnsignedInput]): ErgoLikeContext =
-    new ErgoLikeContext(
-      lastBlockUtxoRoot, headers, preHeader,
-      dataBoxes, boxesToSpend, newSpendingTransaction, selfIndex, extension, validationSettings, costLimit, initCost)
-
+    ErgoLikeContext.copy(this)(spendingTransaction = newSpendingTransaction)
 
   override def toSigmaContext(isCost: Boolean, extensions: Map[Byte, AnyValue] = Map()): sigma.Context = {
     import Evaluation._
@@ -164,14 +171,18 @@ class ErgoLikeContext(val lastBlockUtxoRoot: AvlTreeData,
         extension == that.extension &&
         validationSettings == that.validationSettings &&
         costLimit == that.costLimit &&
-        initCost == that.initCost
+        initCost == that.initCost &&
+        activatedScriptVersion == that.activatedScriptVersion
     case _ => false
   }
 
   def canEqual(other: Any): Boolean = other.isInstanceOf[ErgoLikeContext]
 
   override def hashCode(): Int = {
-    val state = Array(lastBlockUtxoRoot, headers, preHeader, dataBoxes, boxesToSpend, spendingTransaction, selfIndex, extension, validationSettings, costLimit, initCost)
+    val state = Array(
+      lastBlockUtxoRoot, headers, preHeader, dataBoxes, boxesToSpend, spendingTransaction,
+      selfIndex, extension, validationSettings, costLimit, initCost,
+      activatedScriptVersion)
     var hashCode = 0
     cfor(0)(_ < state.length, _ + 1) { i =>
       hashCode = 31 * hashCode + state(i).hashCode
@@ -179,7 +190,7 @@ class ErgoLikeContext(val lastBlockUtxoRoot: AvlTreeData,
     hashCode
   }
 
-  override def toString = s"ErgoLikeContext(lastBlockUtxoRoot=$lastBlockUtxoRoot, headers=$headers, preHeader=$preHeader, dataBoxes=$dataBoxes, boxesToSpend=$boxesToSpend, spendingTransaction=$spendingTransaction, selfIndex=$selfIndex, extension=$extension, validationSettings=$validationSettings, costLimit=$costLimit, initCost=$initCost)"
+  override def toString = s"ErgoLikeContext(lastBlockUtxoRoot=$lastBlockUtxoRoot, headers=$headers, preHeader=$preHeader, dataBoxes=$dataBoxes, boxesToSpend=$boxesToSpend, spendingTransaction=$spendingTransaction, selfIndex=$selfIndex, extension=$extension, validationSettings=$validationSettings, costLimit=$costLimit, initCost=$initCost, activatedScriptVersion=$activatedScriptVersion)"
 }
 
 object ErgoLikeContext {
@@ -188,6 +199,29 @@ object ErgoLikeContext {
 
   /** Maximimum number of headers in `headers` collection of the context. */
   val MaxHeaders = SigmaConstants.MaxHeaders.value
+
+  /** Copies the given context allowing also to update fields.
+    * NOTE: it can be used ONLY for instances of ErgoLikeContext.
+    * @tparam T used here to limit use of this method to only ErgoLikeContext instances
+    * @return a new instance of [[ErgoLikeContext]]. */
+  @inline def copy[T >: ErgoLikeContext <: ErgoLikeContext](ctx: T)(
+      lastBlockUtxoRoot: AvlTreeData = ctx.lastBlockUtxoRoot,
+      headers: Coll[Header] = ctx.headers,
+      preHeader: PreHeader = ctx.preHeader,
+      dataBoxes: IndexedSeq[ErgoBox] = ctx.dataBoxes,
+      boxesToSpend: IndexedSeq[ErgoBox] = ctx.boxesToSpend,
+      spendingTransaction: ErgoLikeTransactionTemplate[_ <: UnsignedInput] = ctx.spendingTransaction,
+      selfIndex: Int = ctx.selfIndex,
+      extension: ContextExtension = ctx.extension,
+      validationSettings: SigmaValidationSettings = ctx.validationSettings,
+      costLimit: Long = ctx.costLimit,
+      initCost: Long = ctx.initCost,
+      activatedScriptVersion: Byte = ctx.activatedScriptVersion): ErgoLikeContext = {
+    new ErgoLikeContext(
+      lastBlockUtxoRoot, headers, preHeader, dataBoxes, boxesToSpend,
+      spendingTransaction, selfIndex, extension, validationSettings, costLimit, initCost,
+      activatedScriptVersion)
+  }
 }
 
 /** When interpreted evaluates to a ByteArrayConstant built from Context.minerPubkey */

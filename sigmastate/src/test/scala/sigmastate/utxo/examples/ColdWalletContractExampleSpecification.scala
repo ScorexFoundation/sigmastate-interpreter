@@ -2,15 +2,16 @@ package sigmastate.utxo.examples
 
 import org.ergoplatform.ErgoBox.{R4, R5}
 import org.ergoplatform._
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, SigmaTestingCommons, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
-import sigmastate.AvlTreeData
-import sigmastate.Values.{IntConstant, LongConstant}
+import sigmastate.{AvlTreeData, CrossVersionProps}
+import sigmastate.Values.{LongConstant, IntConstant}
 import sigmastate.interpreter.Interpreter.ScriptNameProp
 import sigmastate.lang.Terms._
 
 
-class ColdWalletContractExampleSpecification extends SigmaTestingCommons {
+class ColdWalletContractExampleSpecification extends SigmaTestingCommons
+  with CrossVersionProps {
   private implicit lazy val IR: TestingIRContext = new TestingIRContext
 
   import ErgoAddressEncoder._
@@ -100,7 +101,8 @@ class ColdWalletContractExampleSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(depositOutput),
       spendingTransaction = withdrawTxAliceAndBob,
-      self = depositOutput
+      self = depositOutput,
+      activatedVersionInTests
     )
 
     val proofAliceAndBobWithdraw = alice.withSecrets(bob.dlogSecrets).prove(spendEnv, script, withdrawContextAliceandBob, fakeMessage).get.proof
@@ -130,7 +132,8 @@ class ColdWalletContractExampleSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(depositOutput),
       spendingTransaction = firstWithdrawTx,
-      self = depositOutput
+      self = depositOutput,
+      activatedVersionInTests
     )
 
     val proofAliceWithdraw = alice.prove(spendEnv, script, firstWithdrawContext, fakeMessage).get.proof
@@ -159,7 +162,8 @@ class ColdWalletContractExampleSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(depositOutput),
       spendingTransaction = withdrawTxInvalid,
-      self = depositOutput
+      self = depositOutput,
+      activatedVersionInTests
     )
 
     an [AssertionError] should be thrownBy (
@@ -193,7 +197,8 @@ class ColdWalletContractExampleSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(firstChangeOutput),
       spendingTransaction = secondWithdrawTx,
-      self = firstChangeOutput
+      self = firstChangeOutput,
+      activatedVersionInTests
     )
 
     val proofAliceSecondWithdraw = alice.prove(spendEnv, script, secondWithdrawContext, fakeMessage).get.proof
