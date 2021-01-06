@@ -350,20 +350,37 @@ case class OperationInfo(opDesc: Option[ValueCompanion], description: String, ar
 }
 
 object OperationInfo {
+  /** Convenience factory method. */
   def apply(opDesc: ValueCompanion, description: String, args: Seq[ArgInfo]): OperationInfo =
     OperationInfo(Some(opDesc), description, args)
 }
 
 /** Meta information connecting SMethod with ErgoTree.
-  * @param  irBuilder  optional recognizer and ErgoTree node builder.    */
+  * The optional builder is used by front-end ErgoScript compiler to replace method calls
+  * with ErgoTree nodes. In many cases [[SMethod.MethodCallIrBuilder]] builder is used.
+  * However there are specific cases where more complex builders are used, see for example
+  * usage of `withIRInfo` in the declaration of [[SCollection.GetOrElseMethod]].
+  * @param  irBuilder  optional method call recognizer and ErgoTree node builder.
+  *                    When the partial function is defined on a tuple
+  *                    (builder, obj, m, args, subst) it transforms it to a new ErgoTree
+  *                    node, which is then used in the resuting ErgoTree coming out of
+  *                    the ErgoScript compiler.
+  */
 case class MethodIRInfo(
     irBuilder: Option[PartialFunction[(SigmaBuilder, SValue, SMethod, Seq[SValue], STypeSubst), SValue]]
 )
 
-
-/** Method info including name, arg type and result type.
-  * Here stype.tDom - arg type and stype.tRange - result type.
-  * `methodId` should be unique among methods of the same objType. */
+/** Represents method descriptor.
+  *
+  * @param objType type or type constructor descriptor
+  * @param name    method name
+  * @param stype   method signature type,
+  *                where `stype.tDom`` - argument type and
+  *                `stype.tRange` - method result type.
+  * @param methodId method code, it should be unique among methods of the same objType.
+  * @param irInfo  meta information connecting SMethod with ErgoTree (see [[MethodIRInfo]])
+  * @param docInfo optional human readable method description data
+  */
 case class SMethod(
     objType: STypeCompanion,
     name: String,
@@ -372,16 +389,30 @@ case class SMethod(
     irInfo: MethodIRInfo,
     docInfo: Option[OperationInfo]) {
 
+  /** Create a new instance with the given stype. */
   def withSType(newSType: SFunc): SMethod = copy(stype = newSType)
 
+  /** Create a new instance in which the `stype` field transformed using
+    * the given substitution. */
   def withConcreteTypes(subst: Map[STypeVar, SType]): SMethod =
     withSType(stype.withSubstTypes(subst).asFunc)
 
+  /** Returns [[OperationId]] for AOT costing. */
   def opId: OperationId = {
     val opName = objType.getClass.getSimpleName + "." + name
     OperationId(opName, stype)
   }
 
+  /** Specializes this instance by creating a new [[SMethod]] instance where signature
+    * is specialized with respect to the given object and args types. It is used in
+    * [[sigmastate.serialization.MethodCallSerializer]] `parse` method, so it is part of
+    * consensus protocol.
+    *
+    * @param objTpe specific type of method receiver (aka object)
+    * @param args   specific types of method arguments
+    * @return new instance of method descriptor with specialized signature
+    * @consensus
+    */
   def specializeFor(objTpe: SType, args: Seq[SType]): SMethod = {
     SigmaTyper.unifyTypeLists(stype.tDom, objTpe +: args) match {
       case Some(subst) if subst.nonEmpty =>
@@ -389,32 +420,54 @@ case class SMethod(
       case _ => this
     }
   }
+
+  /** Create a new instance with the given [[OperationInfo]] parameters. */
   def withInfo(opDesc: ValueCompanion, desc: String, args: ArgInfo*): SMethod = {
     this.copy(docInfo = Some(OperationInfo(opDesc, desc, ArgInfo("this", "this instance") +: args.toSeq)))
   }
+
+  /** Create a new instance with the given [[OperationInfo]] parameters.
+    * NOTE: opDesc parameter is not defined and falls back to None.
+    */
   def withInfo(desc: String, args: ArgInfo*): SMethod = {
     this.copy(docInfo = Some(OperationInfo(None, desc, ArgInfo("this", "this instance") +: args.toSeq)))
   }
+
+  /** Create a new instance with the given IR builder (aka MethodCall rewriter) parameter. */
   def withIRInfo(
       irBuilder: PartialFunction[(SigmaBuilder, SValue, SMethod, Seq[SValue], STypeSubst), SValue]): SMethod = {
     this.copy(irInfo = MethodIRInfo(Some(irBuilder)))
   }
+
+  /** Lookup [[ArgInfo]] for the given argName or throw an exception. */
   def argInfo(argName: String): ArgInfo =
     docInfo.get.args.find(_.name == argName).get
 }
 
 
 object SMethod {
-  type RCosted[A] = RuntimeCosting#RCosted[A]
+
+  /** Default fallback method call recognizer which builds MethodCall ErgoTree nodes. */
   val MethodCallIrBuilder: PartialFunction[(SigmaBuilder, SValue, SMethod, Seq[SValue], STypeSubst), SValue] = {
     case (builder, obj, method, args, tparamSubst) =>
       builder.mkMethodCall(obj, method, args.toIndexedSeq, tparamSubst)
   }
 
+  /** Convenience factory method. */
   def apply(objType: STypeCompanion, name: String, stype: SFunc, methodId: Byte): SMethod = {
     SMethod(objType, name, stype, methodId, MethodIRInfo(None), None)
   }
 
+  /** Looks up [[SMethod]] instance for the given type and method ids.
+    *
+    * @param typeId   id of a type which can contain methods
+    * @param methodId id of a method of the type given by `typeId`
+    * @return an instance of [[SMethod]] which may contain generic type variables in the
+    *         signature (see SMethod.stype). As a result `specializeFor` is called by
+    *         deserializer to obtain monomorphic method descriptor.
+    * @consensus this is method is used in [[sigmastate.serialization.MethodCallSerializer]]
+    *            `parse` method and hence it is part of consensus protocol
+    */
   def fromIds(typeId: Byte, methodId: Byte): SMethod = {
     ValidationRules.CheckTypeWithMethods(typeId, SType.types.contains(typeId))
     val typeCompanion = SType.types(typeId)
