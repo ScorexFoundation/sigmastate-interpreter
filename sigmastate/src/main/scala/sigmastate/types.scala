@@ -263,7 +263,7 @@ trait STypeCompanion {
   /** List of methods defined for instances of this type. */
   def methods: Seq[SMethod]
 
-  lazy val _methodsMap: Map[Byte, Map[Byte, SMethod]] = methods
+  private lazy val _methodsMap: Map[Byte, Map[Byte, SMethod]] = methods
     .groupBy(_.objType.typeId)
     .map { case (typeId, ms) => (typeId -> ms.map(m => m.methodId -> m).toMap) }
 
@@ -282,11 +282,17 @@ trait STypeCompanion {
     ValidationRules.CheckAndGetMethod(this, methodId)
   }
 
+  /** Looks up the method descriptor by the method name. */
   def getMethodByName(name: String): SMethod = methods.find(_.name == name).get
 
+  /** CosterFactory associated with this type. */
   def coster: Option[CosterFactory] = None
 }
 
+/** Defines recognizer method which allows the derived object to be used in patterns
+  * to recognize method descriptors by method name.
+  * @see SCollecton
+  */
 trait MethodByNameUnapply extends STypeCompanion {
   def unapply(methodName: String): Option[SMethod] = methods.find(_.name == methodName)
 }
@@ -295,6 +301,8 @@ trait MethodByNameUnapply extends STypeCompanion {
 trait SProduct extends SType {
   /** Returns -1 if `method` is not found. */
   def methodIndex(name: String): Int = methods.indexWhere(_.name == name)
+
+  /** Returns true if this type has a method with the given name. */
   def hasMethod(name: String): Boolean = methodIndex(name) != -1
 
   /** This method should be overriden in derived classes to add new methods in addition to inherited.
@@ -311,6 +319,7 @@ trait SProduct extends SType {
     ms
   }
 
+  /** Finds a method descriptor [[SMethod]] for the given name. */
   def method(methodName: String): Option[SMethod] = methods.find(_.name == methodName)
 }
 
