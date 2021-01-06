@@ -11,8 +11,8 @@ import sigmastate.basics.DLogProtocol.DLogProverInput
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.serialization.ValueSerializer
 import scorex.util.encode.Base58
-import sigmastate.{SigmaAnd, SType}
-import sigmastate.Values.{UnparsedErgoTree, Constant, ByteArrayConstant, IntConstant, ErgoTree}
+import sigmastate.{SigmaAnd, SType, CrossVersionProps}
+import sigmastate.Values.{UnparsedErgoTree, Constant, EvaluatedValue, ByteArrayConstant, IntConstant, ErgoTree}
 import sigmastate.eval.IRContext
 import sigmastate.helpers._
 import sigmastate.helpers.TestingHelpers._
@@ -24,7 +24,8 @@ import sigmastate.lang.exceptions.{CosterException, CostLimitException}
 import sigmastate.utils.Helpers._
 import special.sigma.SigmaDslTesting
 
-class ErgoAddressSpecification extends SigmaDslTesting with TryValues {
+class ErgoAddressSpecification extends SigmaDslTesting
+  with TryValues with CrossVersionProps {
 
   private implicit val ergoAddressEncoder: ErgoAddressEncoder =
     new ErgoAddressEncoder(TestnetNetworkPrefix)
@@ -187,7 +188,7 @@ class ErgoAddressSpecification extends SigmaDslTesting with TryValues {
   def testPay2SHAddress(address: Pay2SHAddress, scriptBytes: Array[Byte])(implicit IR: IRContext) = {
     val scriptId = 1.toByte
     val boxToSpend = testBox(10, address.script, creationHeight = 5)
-    val ctx = ErgoLikeContextTesting.dummy(boxToSpend)
+    val ctx = ErgoLikeContextTesting.dummy(boxToSpend, activatedVersionInTests)
         .withExtension(ContextExtension(Seq(
           scriptId -> ByteArrayConstant(scriptBytes)  // provide script bytes in context variable
         ).toMap))
@@ -218,7 +219,7 @@ class ErgoAddressSpecification extends SigmaDslTesting with TryValues {
 
     def testPay2SHAddress(address: Pay2SHAddress, script: VarBinding, costLimit: Int = ScriptCostLimit.value): CostedProverResult = {
       val boxToSpend = testBox(10, address.script, creationHeight = 5)
-      val ctx = copyContext(ErgoLikeContextTesting.dummy(boxToSpend)
+      val ctx = copyContext(ErgoLikeContextTesting.dummy(boxToSpend, activatedVersionInTests)
           .withExtension(ContextExtension(Seq(
             script // provide script bytes in context variable
           ).toMap)))(costLimit = costLimit)

@@ -8,6 +8,18 @@ import sigmastate.serialization._
 import scorex.util.Extensions._
 import spire.syntax.all.cfor
 
+/** Reader used in the concrete implementations of [[SigmaSerializer]].
+  * It decorates the given reader, delegates most of the methods to it, but also adds new
+  * methods.
+  *
+  * @param r                              the underlying reader this reader reads from
+  * @param constantStore                  the store of constants which is used to resolve
+  *                                       [[sigmastate.Values.ConstantPlaceholder]]
+  * @param resolvePlaceholdersToConstants if true then resolved constants will be
+  *                                       substituted in the tree instead of the placeholder.
+  * @param maxTreeDepth                   limit on the tree depth (recursive invocations)
+  *                                       of the deserializer
+  */
 class SigmaByteReader(val r: Reader,
                       var constantStore: ConstantStore,
                       var resolvePlaceholdersToConstants: Boolean,

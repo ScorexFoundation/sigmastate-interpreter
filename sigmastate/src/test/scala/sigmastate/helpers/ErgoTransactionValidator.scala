@@ -13,7 +13,7 @@ class ErgoLikeTestInterpreter(implicit override val IR: IRContext) extends ErgoL
   override val evalSettings: EvalSettings = DefaultEvalSettings.copy(isDebug = true)
 }
 
-class ErgoTransactionValidator(implicit IR: IRContext) {
+class ErgoTransactionValidator(activatedVersion: Byte)(implicit IR: IRContext) {
   val verifier = new ErgoLikeTestInterpreter()
 
   def validate(tx: ErgoLikeTransaction,
@@ -39,7 +39,7 @@ class ErgoTransactionValidator(implicit IR: IRContext) {
 
       val context =
         ErgoLikeContextTesting(blockchainState.currentHeight, blockchainState.lastBlockUtxoRoot, minerPubkey, boxes,
-          tx, box, proverExtension)
+          tx, box, activatedVersion, proverExtension)
       val verificationResult = verifier.verify(
         emptyEnv + (ScriptNameProp -> s"height_${blockchainState.currentHeight }_verify"),
         box.ergoTree, context, proof, msg)

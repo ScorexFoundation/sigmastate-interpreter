@@ -19,7 +19,8 @@ import sigmastate.interpreter.ContextExtension.VarBinding
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.utils.Helpers._
 
-class BasicOpsSpecification extends SigmaTestingCommons {
+class BasicOpsSpecification extends SigmaTestingCommons
+  with CrossVersionProps {
   implicit lazy val IR = new TestingIRContext {
     override val okPrintEvaluatedEntries: Boolean = false
   }
@@ -82,7 +83,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
 
     val ctx = ErgoLikeContextTesting(currentHeight = 0,
       lastBlockUtxoRoot = AvlTreeData.dummy, ErgoLikeContextTesting.dummyPubkey, boxesToSpend = IndexedSeq(boxToSpend),
-      spendingTransaction = tx, self = boxToSpend)
+      spendingTransaction = tx, self = boxToSpend, activatedVersionInTests)
 
     val pr = prover.prove(env + (ScriptNameProp -> s"${name}_prove"), prop, ctx, fakeMessage).getOrThrow
 

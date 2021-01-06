@@ -232,7 +232,8 @@ by miners via storage rent mechanism, potentially for decades or even centuries.
 reasonable to have an additional input from the project with the value equal to the value of the fee output. And so on.
   */
 
-class IcoExample extends SigmaTestingCommons { suite =>
+class IcoExample extends SigmaTestingCommons
+  with CrossVersionProps { suite =>
 
   // Not mixed with TestContext since it is not possible to call commpiler.compile outside tests if mixed
   implicit lazy val IR: IRContext = new IRContext with CompiletimeCosting
@@ -414,7 +415,7 @@ class IcoExample extends SigmaTestingCommons { suite =>
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = inputBoxes,
       spendingTransaction = fundingTx,
-      self = projectBoxBefore)
+      self = projectBoxBefore, activatedVersionInTests)
 
     val projectProver = new ContextEnrichingTestProvingInterpreter()
       .withContextExtender(1, ByteArrayConstant(proof))
@@ -451,7 +452,7 @@ class IcoExample extends SigmaTestingCommons { suite =>
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(projectBoxBeforeClosing),
       spendingTransaction = issuanceTx,
-      self = projectBoxBeforeClosing)
+      self = projectBoxBeforeClosing, activatedVersionInTests)
 
     val res = project.prove(env, issuanceScript, issuanceContext, fakeMessage).get
     println("token issuance script cost: " + res.cost)
@@ -523,7 +524,7 @@ class IcoExample extends SigmaTestingCommons { suite =>
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(projectBoxBefore),
       spendingTransaction = fundingTx,
-      self = projectBoxBefore)
+      self = projectBoxBefore, activatedVersionInTests)
 
     val projectProver =
       new ContextEnrichingTestProvingInterpreter()
