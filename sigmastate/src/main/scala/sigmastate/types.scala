@@ -448,6 +448,7 @@ case class SMethod(
 
   def withSType(newSType: SFunc): SMethod = copy(stype = newSType)
 
+  /** Create a new instance with the given cost function. */
   def withCost(costFunc: PartialFunction[(MethodCall, Any, Array[Any]), Int]): SMethod = copy(costFunc = Some(costFunc))
 
   def withConcreteTypes(subst: Map[STypeVar, SType]): SMethod =
@@ -588,19 +589,23 @@ object SNumericType extends STypeCompanion {
   final val allNumericTypes = Array(SByte, SShort, SInt, SLong, SBigInt)
   // TODO HF (4h): this typeId is now shadowed by SGlobal.typeId
   //  see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/667
-  def typeId: TypeCode = 106: Byte
+  override def typeId: TypeCode = 106: Byte
 
   /** Since this object is not used in SMethod instances. */
   override def reprClass: Class[_] = sys.error(s"Shouldn't be called.")
 
+  /** Type variable used in generic signatures of method descriptors. */
   val tNum = STypeVar("TNum")
 
+  /** Cost function which is assigned for numeric cast MethodCall nodes in ErgoTree.
+    * It is called as part of MethodCall.eval method. */
   val costOfNumericCast: PartialFunction[(MethodCall, Any, Array[Any]), Int] = {
     case (mc, _, _) =>
       val cast = getNumericCast(mc.obj.tpe, mc.method.name, mc.method.stype.tRange).get
       if (cast == Downcast) CostOf.Downcast else CostOf.Upcast
   }
 
+  /** Returns a cost function which always returs the given cost. */
   def givenCost(cost: Int): PartialFunction[(MethodCall, Any, Array[Any]), Int] = {
     case _ => cost
   }

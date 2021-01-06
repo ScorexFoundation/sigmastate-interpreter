@@ -224,7 +224,15 @@ object Terms {
       cfor(0)(_ < extraLen, _ + 1) { i =>
         argsBuf(len + i) = extra(i)
       }
-      addCost(CostOf.MethodCall)
+      addCost(CostOf.MethodCall) // MethodCall overhead
+
+      // add approximated cost of invoked method (if specified)
+      val cost = method.costFunc match {
+        case Some(costFunc) => costFunc.lift((this, objV, argsBuf)).getOrElse(0)
+        case _ => 0
+      }
+      addCost(cost)
+
       method.invoke(objV, argsBuf)
     }
   }
