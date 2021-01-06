@@ -530,10 +530,24 @@ trait SNumericType extends SProduct {
       m => m.copy(stype = SigmaTyper.applySubst(m.stype, Map(tNum -> this)).asFunc)
     }
   }
+
+  /** Checks if the given name is a cast method name.
+    * @return true if it is. */
   def isCastMethod (name: String): Boolean = castMethods.contains(name)
 
-  def upcast(i: AnyVal): WrappedType
-  def downcast(i: AnyVal): WrappedType
+  /** Upcasts the given value of a smaller type to this larger type.
+    * @param n numeric value to be converted
+    * @return a value of WrappedType of this type descriptor's instance.
+    * @throw exception if `i` has actual type which is larger than this type.
+    */
+  def upcast(n: AnyVal): WrappedType
+
+  /** Downcasts the given value of a larger type to this smaller type.
+    * @param n numeric value to be converted
+    * @return a value of WrappedType of this type descriptor's instance.
+    * @throw exception if the actual value of `i` cannot fit into this type.
+    */
+  def downcast(n: AnyVal): WrappedType
 
   /** Returns a type which is larger. */
   @inline def max(that: SNumericType): SNumericType =
@@ -584,6 +598,8 @@ object SNumericType extends STypeCompanion {
     ToBytesMethod,
     ToBitsMethod
   )
+
+  /** Collection of names of numeric casting methods (like `toByte`, `toInt`, etc). */
   val castMethods: Array[String] =
     Array(ToByteMethod, ToShortMethod, ToIntMethod, ToLongMethod, ToBigIntMethod)
       .map(_.name)
