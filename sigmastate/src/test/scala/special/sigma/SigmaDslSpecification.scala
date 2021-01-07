@@ -50,7 +50,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
   override val evalSettings: EvalSettings =
     ErgoTreeEvaluator.DefaultEvalSettings.copy(
-      isLogEnabled = true, // don't commit the `true` value (travis log is too high)
+      isLogEnabled = false, // don't commit the `true` value (travis log is too high)
       costTracingEnabled = true  // should always be enabled in tests (and false by default)
     )
 
