@@ -37,7 +37,7 @@ import org.scalacheck.Gen.frequency
 import scalan.RType.{AnyType, LongType, IntType, UnitType, OptionType, BooleanType, PairType, ByteType, ShortType}
 import scorex.util.ModifierId
 import sigmastate.basics.ProveDHTuple
-import sigmastate.interpreter.{EvalSettings, ErgoTreeEvaluator}
+import sigmastate.interpreter.{EvalSettings, ErgoTreeEvaluator, CostDetails, SimpleCostItem, SeqCostItem, PerKbCostItem}
 
 import scala.collection.mutable
 
@@ -251,11 +251,25 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
           SelectField.typed[BoolValue](ValUse(1, STuple(Vector(SBoolean, SBoolean))), 2.toByte)
         )
       ))
+    val newCost = CostDetails(
+      48,
+      Array(
+        SimpleCostItem("Apply", 20),
+        SimpleCostItem("FuncValue", 2),
+        SimpleCostItem("GetVar", 5),
+        SimpleCostItem("OptionGet", 2),
+        SimpleCostItem("ValUse", 5),
+        SimpleCostItem("SelectField", 2),
+        SimpleCostItem("ValUse", 5),
+        SimpleCostItem("SelectField", 2),
+        SimpleCostItem("BinXor", 5)
+      )
+    )
     val cases = Seq(
-      (true, true) -> Expected(Success(false), 36518),
-      (true, false) -> Expected(Success(true), 36518),
-      (false, false) -> Expected(Success(false), 36518),
-      (false, true) -> Expected(Success(true), 36518)
+      (true, true) -> Expected(Success(false), 36518, newCost),
+      (true, false) -> Expected(Success(true), 36518, newCost),
+      (false, false) -> Expected(Success(false), 36518, newCost),
+      (false, true) -> Expected(Success(true), 36518, newCost)
     )
     verifyCases(cases, binXor)
   }
@@ -273,13 +287,29 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
           SelectField.typed[BoolValue](ValUse(1, STuple(Vector(SInt, SBoolean))), 2.toByte)
         )
       ))
+    val newCost = CostDetails(
+      63,
+      Array(
+        SimpleCostItem("Apply", 20),
+        SimpleCostItem("FuncValue", 2),
+        SimpleCostItem("GetVar", 5),
+        SimpleCostItem("OptionGet", 2),
+        SimpleCostItem("ValUse", 5),
+        SimpleCostItem("SelectField", 2),
+        SimpleCostItem("Const", 5),
+        SimpleCostItem("EQ", 10),
+        SimpleCostItem("ValUse", 5),
+        SimpleCostItem("SelectField", 2),
+        SimpleCostItem("BinXor", 5)
+      )
+    )
     val cases = Seq(
-      (1095564593, true) -> Expected(Success(true), 36865),
-      (-901834021, true) -> Expected(Success(true), 36865),
-      (595045530, false) -> Expected(Success(false), 36865),
-      (-1157998227, false) -> Expected(Success(false), 36865),
-      (0, true) -> Expected(Success(false), 36865),
-      (0, false) -> Expected(Success(true), 36865)
+      (1095564593, true) -> Expected(Success(true), 36865, newCost),
+      (-901834021, true) -> Expected(Success(true), 36865, newCost),
+      (595045530, false) -> Expected(Success(false), 36865, newCost),
+      (-1157998227, false) -> Expected(Success(false), 36865, newCost),
+      (0, true) -> Expected(Success(false), 36865, newCost),
+      (0, false) -> Expected(Success(true), 36865, newCost)
     )
     verifyCases(cases, xor)
   }
@@ -294,11 +324,37 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
           SelectField.typed[BoolValue](ValUse(1, STuple(Vector(SBoolean, SBoolean))), 2.toByte)
         )
       ))
+    val cost1 = CostDetails(
+      41,
+      Array(
+        SimpleCostItem("Apply", 20),
+        SimpleCostItem("FuncValue", 2),
+        SimpleCostItem("GetVar", 5),
+        SimpleCostItem("OptionGet", 2),
+        SimpleCostItem("ValUse", 5),
+        SimpleCostItem("SelectField", 2),
+        SimpleCostItem("BinAnd", 5)
+      )
+    )
+    val cost2 = CostDetails(
+      48,
+      Array(
+        SimpleCostItem("Apply", 20),
+        SimpleCostItem("FuncValue", 2),
+        SimpleCostItem("GetVar", 5),
+        SimpleCostItem("OptionGet", 2),
+        SimpleCostItem("ValUse", 5),
+        SimpleCostItem("SelectField", 2),
+        SimpleCostItem("BinAnd", 5),
+        SimpleCostItem("ValUse", 5),
+        SimpleCostItem("SelectField", 2)
+      )
+    )
     val cases = Seq(
-      (false, true) -> Expected(Success(false), 38241),
-      (false, false) -> Expected(Success(false), 38241),
-      (true, true) -> Expected(Success(true), 38241),
-      (true, false) -> Expected(Success(false), 38241)
+      (false, true) -> Expected(Success(false), 38241, cost1),
+      (false, false) -> Expected(Success(false), 38241, cost1),
+      (true, true) -> Expected(Success(true), 38241, cost2),
+      (true, false) -> Expected(Success(false), 38241, cost2)
     )
     verifyCases(cases, eq)
   }
@@ -313,21 +369,60 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
           SelectField.typed[BoolValue](ValUse(1, STuple(Vector(SBoolean, SBoolean))), 2.toByte)
         )
       ))
+    val cost1 = CostDetails(
+      41,
+      Array(
+        SimpleCostItem("Apply", 20),
+        SimpleCostItem("FuncValue", 2),
+        SimpleCostItem("GetVar", 5),
+        SimpleCostItem("OptionGet", 2),
+        SimpleCostItem("ValUse", 5),
+        SimpleCostItem("SelectField", 2),
+        SimpleCostItem("BinOr", 5)
+      )
+    )
+    val cost2 = CostDetails(
+      48,
+      Array(
+        SimpleCostItem("Apply", 20),
+        SimpleCostItem("FuncValue", 2),
+        SimpleCostItem("GetVar", 5),
+        SimpleCostItem("OptionGet", 2),
+        SimpleCostItem("ValUse", 5),
+        SimpleCostItem("SelectField", 2),
+        SimpleCostItem("BinOr", 5),
+        SimpleCostItem("ValUse", 5),
+        SimpleCostItem("SelectField", 2)
+      )
+    )
     val cases = Seq(
-      (true, false) -> Expected(Success(true), 38241),
-      (true, true) -> Expected(Success(true), 38241),
-      (false, false) -> Expected(Success(false), 38241),
-      (false, true) -> Expected(Success(true), 38241)
+      (true, false) -> Expected(Success(true), 38241, cost1),
+      (true, true) -> Expected(Success(true), 38241, cost1),
+      (false, false) -> Expected(Success(false), 38241, cost2),
+      (false, true) -> Expected(Success(true), 38241, cost2)
     )
     verifyCases(cases, eq)
   }
 
   property("lazy || and && boolean equivalence") {
     verifyCases(
-      Seq(
-        (true, Expected(Success(true), 38467)),
-        (false, Expected(new ArithmeticException("/ by zero")))
-      ),
+      {
+        val cost1 = CostDetails(
+          39,
+          Array(
+            SimpleCostItem("Apply", 20),
+            SimpleCostItem("FuncValue", 2),
+            SimpleCostItem("GetVar", 5),
+            SimpleCostItem("OptionGet", 2),
+            SimpleCostItem("ValUse", 5),
+            SimpleCostItem("BinOr", 5)
+          )
+        )
+        Seq(
+          (true, Expected(Success(true), 38467, cost1)),
+          (false, Expected(new ArithmeticException("/ by zero")))
+        )
+      },
       existingFeature((x: Boolean) => x || (1 / 0 == 1),
         "{ (x: Boolean) => x || (1 / 0 == 1) }",
         FuncValue(
@@ -339,10 +434,23 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
         )))
 
     verifyCases(
-      Seq(
-        (true, Expected(new ArithmeticException("/ by zero"))),
-        (false, Expected(Success(false), 38467))
-      ),
+      {
+        val cost = CostDetails(
+          39,
+          Array(
+            SimpleCostItem("Apply", 20),
+            SimpleCostItem("FuncValue", 2),
+            SimpleCostItem("GetVar", 5),
+            SimpleCostItem("OptionGet", 2),
+            SimpleCostItem("ValUse", 5),
+            SimpleCostItem("BinAnd", 5)
+          )
+        )
+        Seq(
+          (true, Expected(new ArithmeticException("/ by zero"))),
+          (false, Expected(Success(false), 38467, cost))
+        )
+      },
       existingFeature((x: Boolean) => x && (1 / 0 == 1),
         "{ (x: Boolean) => x && (1 / 0 == 1) }",
         FuncValue(
@@ -354,10 +462,36 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
         )))
 
     verifyCases(
-      Seq(
-        (false, Expected(Success(false), 40480)),
-        (true, Expected(Success(true), 40480))
-      ),
+      {
+        val cost1 = CostDetails(
+          39,
+          Array(
+            SimpleCostItem("Apply", 20),
+            SimpleCostItem("FuncValue", 2),
+            SimpleCostItem("GetVar", 5),
+            SimpleCostItem("OptionGet", 2),
+            SimpleCostItem("ValUse", 5),
+            SimpleCostItem("BinAnd", 5)
+          )
+        )
+        val cost2 = CostDetails(
+          49,
+          Array(
+            SimpleCostItem("Apply", 20),
+            SimpleCostItem("FuncValue", 2),
+            SimpleCostItem("GetVar", 5),
+            SimpleCostItem("OptionGet", 2),
+            SimpleCostItem("ValUse", 5),
+            SimpleCostItem("BinAnd", 5),
+            SimpleCostItem("ValUse", 5),
+            SimpleCostItem("BinOr", 5)
+          )
+        )
+        Seq(
+          (false, Expected(Success(false), 40480, cost1)),
+          (true, Expected(Success(true), 40480, cost2))
+        )
+      },
       existingFeature((x: Boolean) => x && (x || (1 / 0 == 1)),
         "{ (x: Boolean) => x && (x || (1 / 0 == 1)) }",
         FuncValue(
@@ -5981,7 +6115,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
       Seq(
         (None -> Expected(
           Failure(new NoSuchElementException("None.get")), 0,
-          expectedNewValue = Success(5L), expectedNewCost = 39012)),
+          expectedNewValue = Success(5L), expectedNewCost = CostDetails(39012))),
         (Some(0L) -> Expected(Success(1L), 39012)),
         (Some(Long.MaxValue) -> Expected(new ArithmeticException("long overflow")))
       ),

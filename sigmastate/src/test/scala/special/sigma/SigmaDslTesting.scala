@@ -468,6 +468,15 @@ class SigmaDslTesting extends PropSpec
 
       checkResult(funcRes.map(_._1), expected.value, failOnTestVectors)
 
+      val expectedTrace = expected.newCost.trace
+      if (!expectedTrace.isEmpty) {
+        // new cost expectation is specified, compare it with the actual result
+        // NOTE: funcRes is obtained using newImpl
+        funcRes.foreach { case (_, newCost) =>
+          newCost.trace shouldBe expectedTrace
+        }
+      }
+
       expected.value match {
         case Success(y) =>
           checkVerify(input, expected)
@@ -601,17 +610,24 @@ class SigmaDslTesting extends PropSpec
     */
   case class Expected[+A](value: Try[A], cost: Int) {
     def newValue: Try[A] = value
-    def newCost: Int = cost
+    def newCost: CostDetails = CostDetails(cost)
   }
 
   object Expected {
     def apply[A](error: Throwable) = new Expected[A](Failure(error), 0)
-    def apply[A](value: Try[A], cost: Int, expectedNewCost: Int) = new Expected(value, cost) {
+
+    def apply[A](value: Try[A],
+                 cost: Int,
+                 expectedNewCost: CostDetails): Expected[A] = new Expected(value, cost) {
       override val newCost = expectedNewCost
     }
-    def apply[A](value: Try[A], cost: Int, expectedNewValue: Try[A], expectedNewCost: Int) = new Expected(value, cost) {
-      override val newCost = expectedNewCost
+
+    def apply[A](value: Try[A],
+                 cost: Int,
+                 expectedNewValue: Try[A],
+                 expectedNewCost: CostDetails): Expected[A] = new Expected(value, cost) {
       override val newValue = expectedNewValue
+      override val newCost = expectedNewCost
     }
   }
 
