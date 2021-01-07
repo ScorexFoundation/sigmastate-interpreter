@@ -28,7 +28,7 @@ import sigmastate.utils.Helpers._
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.helpers.{ErgoLikeContextTesting, SigmaPPrint}
 import sigmastate.helpers.TestingHelpers._
-import sigmastate.interpreter.{ProverResult, ContextExtension, ProverInterpreter}
+import sigmastate.interpreter.{ProverResult, ContextExtension, ProverInterpreter, CostDetails}
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo.{DeserializeContext, DeserializeRegister}
 import special.collection.{Coll, CollType}
@@ -52,7 +52,7 @@ class SigmaDslTesting extends PropSpec
     override val okMeasureOperationTime: Boolean = true
   }
 
-  def checkEq[A,B](scalaFunc: A => B)(g: A => (B, Int)): A => Try[(B, Int)] = { x: A =>
+  def checkEq[A,B](scalaFunc: A => B)(g: A => (B, CostDetails)): A => Try[(B, CostDetails)] = { x: A =>
     val b1 = Try(scalaFunc(x)); val b2 = Try(g(x))
     (b1, b2) match {
       case (Success(b1), res @ Success((b2, _))) =>
@@ -199,7 +199,7 @@ class SigmaDslTesting extends PropSpec
       * @param input          data which is used to execute feature
       * @param logInputOutput if true, then pretty-print input and output values
       * @return result of feature execution */
-    def checkEquality(input: A, logInputOutput: Boolean = false): Try[(B, Int)]
+    def checkEquality(input: A, logInputOutput: Boolean = false): Try[(B, CostDetails)]
 
     /** Depending on the featureType compares the old and new implementations against
       * semantic function (scalaFunc) on the given input, also checking the given expected result.
@@ -390,15 +390,15 @@ class SigmaDslTesting extends PropSpec
     val oldImpl = () => func[A, B](script)
     val newImpl = () => funcJit[A, B](script)
 
-    def checkEquality(input: A, logInputOutput: Boolean = false): Try[(B, Int)] = {
+    def checkEquality(input: A, logInputOutput: Boolean = false): Try[(B, CostDetails)] = {
       // check the old implementation against Scala semantic function
       val oldRes = checkEq(scalaFunc)(oldF)(input)
 
-      if (!(newImpl eq oldImpl)) {
+      val res = if (!(newImpl eq oldImpl)) {
         // check the new implementation against Scala semantic function
         val newRes = checkEq(scalaFunc)(newF)(input)
         (oldRes, newRes) match {
-          case (Success((oldRes, oldCost)), Success((newRes, newCost))) =>
+          case (Success((oldRes, CostDetails(oldCost, _))), Success((newRes, CostDetails(newCost, _)))) =>
             newRes shouldBe oldRes
             if (newCost != oldCost) {
               assertResult(true,
@@ -423,10 +423,18 @@ class SigmaDslTesting extends PropSpec
           case _ =>
             checkResult(rootCause(newRes), rootCause(oldRes), failOnTestVectors = false)
         }
+        newRes
+      } else
+        oldRes
+
+      if (logInputOutput) {
+        val scriptComment = if (logScript) " // " + script else ""
+        val inputStr = SigmaPPrint(input, height = 550, width = 150)
+        val oldResStr = SigmaPPrint(oldRes, height = 550, width = 150)
+        println(s"($inputStr, $oldResStr),$scriptComment")
       }
-      if (logInputOutput)
-        println(s"(${SigmaPPrint(input, height = 550, width = 150)}, ${SigmaPPrint(oldRes, height = 550, width = 150)}),${if (logScript) " // " + script else ""}")
-      oldRes
+
+      res
     }
 
     /** Depending on the featureType compares the old and new implementations against
@@ -480,7 +488,7 @@ class SigmaDslTesting extends PropSpec
     val oldImpl = () => func[A, B](script)
     val newImpl = () => funcJit[A, B](script)
 
-    def checkEquality(input: A, logInputOutput: Boolean = false): Try[(B, Int)] = {
+    def checkEquality(input: A, logInputOutput: Boolean = false): Try[(B, CostDetails)] = {
       // check the old implementation against Scala semantic function
       val oldRes = checkEq(scalaFunc)(oldF)(input)
 
@@ -550,7 +558,7 @@ class SigmaDslTesting extends PropSpec
     val oldImpl = () => func[A, B](script)
     val newImpl = oldImpl // funcJit[A, B](script) // TODO HF (16h): use actual new implementation here
 
-    override def checkEquality(input: A, logInputOutput: Boolean = false): Try[(B, Int)] = {
+    override def checkEquality(input: A, logInputOutput: Boolean = false): Try[(B, CostDetails)] = {
       val oldRes = Try(oldF(input))
       oldRes.isFailure shouldBe true
       if (!(newImpl eq oldImpl)) {

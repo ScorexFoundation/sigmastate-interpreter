@@ -4,12 +4,13 @@ import org.ergoplatform.ErgoLikeContext
 import sigmastate.SType
 import sigmastate.Values._
 import sigmastate.eval.Profiler
-import sigmastate.interpreter.ErgoTreeEvaluator.{DataEnv, SeqCostItem, PerKbCostItem, CostItem, SimpleCostItem}
+import sigmastate.interpreter.ErgoTreeEvaluator.DataEnv
 import sigmastate.interpreter.Interpreter.ReductionResult
 import sigmastate.lang.exceptions.CostLimitException
 import special.sigma.Context
 import scalan.util.Extensions._
 
+import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.util.DynamicVariable
 
@@ -162,41 +163,6 @@ object ErgoTreeEvaluator {
   /** Returns a current evaluator for the current thread. */
   def getCurrentEvaluator: ErgoTreeEvaluator = currentEvaluator.value
 
-  /** An item in the cost accumulation trace of a [[ErgoTreeEvaluator]]. */
-  abstract class CostItem {
-    def opName: String
-  }
-
-  /** An item in the cost accumulation trace of a [[ErgoTreeEvaluator]].
-    * Represents cost of simple operation.
-    * Used for debugging of costing.
-    * @param opName  name of the ErgoTree operation
-    * @param cost    cost added to accumulator
-    */
-  case class SimpleCostItem(opName: String, cost: Int) extends CostItem
-
-  /** An item in the cost accumulation trace of a [[ErgoTreeEvaluator]].
-    * Represents cost of a sequence of operation.
-    * Used for debugging of costing.
-    *
-    * @param opName      name of the ErgoTree operation
-    * @param perItemCost cost added to accumulator for each item of a collection
-    * @param nItems      number of items in the collection
-    */
-  case class SeqCostItem(opName: String, perItemCost: Int, nItems: Int)
-    extends CostItem
-
-  /** An item in the cost accumulation trace of a [[ErgoTreeEvaluator]].
-    * Represents cost of data size dependent operation (like CalcSha256).
-    * Used for debugging of costing.
-    *
-    * @param opName     name of the ErgoTree operation
-    * @param perKbCost  cost added to accumulator for each Kb of data
-    * @param nKilobytes size of data in kilobytes
-    */
-  case class PerKbCostItem(opName: String, perKbCost: Int, nKilobytes: Int)
-    extends CostItem
-
   /** Evaluate the given [[ErgoTree]] in the given Ergo context using the given settings.
     * The given ErgoTree is evaluated as-is and is not changed during evaluation.
     *
@@ -336,3 +302,48 @@ class CostAccumulator(initialCost: Int, costLimit: Option[Long]) {
   @inline def totalCost: Int = currentScope.currentCost
 }
 
+/** An item in the cost accumulation trace of a [[ErgoTreeEvaluator]]. */
+abstract class CostItem {
+  def opName: String
+}
+
+/** An item in the cost accumulation trace of a [[ErgoTreeEvaluator]].
+  * Represents cost of simple operation.
+  * Used for debugging of costing.
+  * @param opName  name of the ErgoTree operation
+  * @param cost    cost added to accumulator
+  */
+case class SimpleCostItem(opName: String, cost: Int) extends CostItem
+
+/** An item in the cost accumulation trace of a [[ErgoTreeEvaluator]].
+  * Represents cost of a sequence of operation.
+  * Used for debugging of costing.
+  *
+  * @param opName      name of the ErgoTree operation
+  * @param perItemCost cost added to accumulator for each item of a collection
+  * @param nItems      number of items in the collection
+  */
+case class SeqCostItem(opName: String, perItemCost: Int, nItems: Int)
+    extends CostItem
+
+/** An item in the cost accumulation trace of a [[ErgoTreeEvaluator]].
+  * Represents cost of data size dependent operation (like CalcSha256).
+  * Used for debugging of costing.
+  *
+  * @param opName     name of the ErgoTree operation
+  * @param perKbCost  cost added to accumulator for each Kb of data
+  * @param nKilobytes size of data in kilobytes
+  */
+case class PerKbCostItem(opName: String, perKbCost: Int, nKilobytes: Int)
+    extends CostItem
+
+/** Detailed results of cost evaluation.
+  * NOTE: the `trace` is obtained during execution of [[ErgoTreeEvaluator]])
+  * @param cost accumulated cost of operation
+  * @param trace accumulated trace of all cost items (empty for AOT costing)
+  */
+case class CostDetails(cost: Int, trace: Seq[CostItem])
+
+object CostDetails {
+  def apply(cost: Int): CostDetails = CostDetails(cost, mutable.WrappedArray.empty)
+}

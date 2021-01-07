@@ -18,7 +18,7 @@ import scorex.crypto.hash.Blake2b256
 import sigma.types.IsPrimView
 import sigmastate.Values.{Constant, SValue, Value, ErgoTree, GroupElementConstant}
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, ScriptEnv}
-import sigmastate.interpreter.{CryptoConstants, ErgoTreeEvaluator, Interpreter, CostAccumulator, EvalSettings, ContextExtension}
+import sigmastate.interpreter.{CryptoConstants, ErgoTreeEvaluator, Interpreter, CostAccumulator, CostDetails, CostItem}
 import sigmastate.lang.{Terms, TransformingSigmaBuilder, SigmaCompiler}
 import sigmastate.serialization.{ValueSerializer, SigmaSerializer}
 import sigmastate.{SGroupElement, SType, TestsBase}
@@ -116,9 +116,9 @@ trait SigmaTestingCommons extends PropSpec
   }
 
   case class CompiledFunc[A,B]
-    (script: String, bindings: Seq[VarBinding], expr: SValue, compiledTree: SValue, func: A => (B, Int))
-    (implicit val tA: RType[A], val tB: RType[B]) extends Function1[A, (B, Int)] {
-    override def apply(x: A): (B, Int) = func(x)
+    (script: String, bindings: Seq[VarBinding], expr: SValue, compiledTree: SValue, func: A => (B, CostDetails))
+    (implicit val tA: RType[A], val tB: RType[B]) extends Function1[A, (B, CostDetails)] {
+    override def apply(x: A): (B, CostDetails) = func(x)
   }
 
   /** The same operations are executed as part of Interpreter.verify() */
@@ -247,7 +247,7 @@ trait SigmaTestingCommons extends PropSpec
       val (res, _) = valueFun(sigmaCtx)
       //      val (resNew, _) = ErgoTreeEvaluator.eval(ctx.asInstanceOf[ErgoLikeContext], tree)
       //      assert(resNew == res, s"The new Evaluator result differ from the old: $resNew != $res")
-      (res.asInstanceOf[B], estimatedCost)
+      (res.asInstanceOf[B], CostDetails(estimatedCost))
     }
     val Terms.Apply(funcVal, _) = compiledTree.asInstanceOf[SValue]
     CompiledFunc(funcScript, bindings, funcVal, compiledTree, f)
@@ -279,7 +279,7 @@ trait SigmaTestingCommons extends PropSpec
             |$traceLines
             |""".stripMargin)
       }
-      (res.asInstanceOf[B], cost)
+      (res.asInstanceOf[B], CostDetails(cost, evaluator.costTrace.toArray[CostItem]))
     }
     val Terms.Apply(funcVal, _) = compiledTree.asInstanceOf[SValue]
     CompiledFunc(funcScript, bindings, funcVal, compiledTree, f)
