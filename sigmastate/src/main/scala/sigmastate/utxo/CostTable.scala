@@ -422,6 +422,9 @@ object CostTable {
       * Old cost: ("BinXor", "(Boolean, Boolean) => Boolean", logicCost) */
     def BinXor = 5 // cf. logicCost
 
+    /** Cost of: scala `!` operation */
+    def LogicalNot = 5
+
 //    ("AND", "(Coll[Boolean]) => Boolean", logicCost),
 //    ("OR_per_item", "(Coll[Boolean]) => Boolean", logicCost),
 //    ("AND_per_item", "(Coll[Boolean]) => Boolean", logicCost),

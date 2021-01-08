@@ -1210,7 +1210,7 @@ case class LogicalNot(input: Value[SBoolean.type]) extends NotReadyValueBoolean 
   override def opType = LogicalNot.OpType
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val inputV = input.evalTo[Boolean](env)
-    // TODO JITC
+    addCost(CostOf.LogicalNot)
     !inputV
   }
 }
