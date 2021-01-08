@@ -405,24 +405,78 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
   }
 
   property("lazy || and && boolean equivalence") {
+    val cost1 = CostDetails(
+      39,
+      Array(
+        SimpleCostItem("Apply", 20),
+        SimpleCostItem("FuncValue", 2),
+        SimpleCostItem("GetVar", 5),
+        SimpleCostItem("OptionGet", 2),
+        SimpleCostItem("ValUse", 5),
+        SimpleCostItem("BinOr", 5)
+      )
+    )
+    val cost2 = CostDetails(
+      39,
+      Array(
+        SimpleCostItem("Apply", 20),
+        SimpleCostItem("FuncValue", 2),
+        SimpleCostItem("GetVar", 5),
+        SimpleCostItem("OptionGet", 2),
+        SimpleCostItem("ValUse", 5),
+        SimpleCostItem("BinAnd", 5)
+      )
+    )
+    val cost3 = CostDetails(
+      49,
+      Array(
+        SimpleCostItem("Apply", 20),
+        SimpleCostItem("FuncValue", 2),
+        SimpleCostItem("GetVar", 5),
+        SimpleCostItem("OptionGet", 2),
+        SimpleCostItem("ValUse", 5),
+        SimpleCostItem("BinAnd", 5),
+        SimpleCostItem("ValUse", 5),
+        SimpleCostItem("BinOr", 5)
+      )
+    )
+    val cost4 = CostDetails(
+      59,
+      Array(
+        SimpleCostItem("Apply", 20),
+        SimpleCostItem("FuncValue", 2),
+        SimpleCostItem("GetVar", 5),
+        SimpleCostItem("OptionGet", 2),
+        SimpleCostItem("ValUse", 5),
+        SimpleCostItem("BinAnd", 5),
+        SimpleCostItem("ValUse", 5),
+        SimpleCostItem("BinAnd", 5),
+        SimpleCostItem("ValUse", 5),
+        SimpleCostItem("BinOr", 5)
+      )
+    )
+    val cost5 = CostDetails(
+      69,
+      Array(
+        SimpleCostItem("Apply", 20),
+        SimpleCostItem("FuncValue", 2),
+        SimpleCostItem("GetVar", 5),
+        SimpleCostItem("OptionGet", 2),
+        SimpleCostItem("ValUse", 5),
+        SimpleCostItem("BinAnd", 5),
+        SimpleCostItem("ValUse", 5),
+        SimpleCostItem("BinAnd", 5),
+        SimpleCostItem("ValUse", 5),
+        SimpleCostItem("BinAnd", 5),
+        SimpleCostItem("ValUse", 5),
+        SimpleCostItem("BinOr", 5)
+      )
+    )
     verifyCases(
-      {
-        val cost1 = CostDetails(
-          39,
-          Array(
-            SimpleCostItem("Apply", 20),
-            SimpleCostItem("FuncValue", 2),
-            SimpleCostItem("GetVar", 5),
-            SimpleCostItem("OptionGet", 2),
-            SimpleCostItem("ValUse", 5),
-            SimpleCostItem("BinOr", 5)
-          )
-        )
-        Seq(
-          (true, Expected(Success(true), 38467, cost1)),
-          (false, Expected(new ArithmeticException("/ by zero")))
-        )
-      },
+      Seq(
+        (true, Expected(Success(true), 38467, cost1)),
+        (false, Expected(new ArithmeticException("/ by zero")))
+      ),
       existingFeature((x: Boolean) => x || (1 / 0 == 1),
         "{ (x: Boolean) => x || (1 / 0 == 1) }",
         FuncValue(
@@ -434,23 +488,10 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
         )))
 
     verifyCases(
-      {
-        val cost = CostDetails(
-          39,
-          Array(
-            SimpleCostItem("Apply", 20),
-            SimpleCostItem("FuncValue", 2),
-            SimpleCostItem("GetVar", 5),
-            SimpleCostItem("OptionGet", 2),
-            SimpleCostItem("ValUse", 5),
-            SimpleCostItem("BinAnd", 5)
-          )
-        )
-        Seq(
-          (true, Expected(new ArithmeticException("/ by zero"))),
-          (false, Expected(Success(false), 38467, cost))
-        )
-      },
+      Seq(
+        (true, Expected(new ArithmeticException("/ by zero"))),
+        (false, Expected(Success(false), 38467, cost2))
+      ),
       existingFeature((x: Boolean) => x && (1 / 0 == 1),
         "{ (x: Boolean) => x && (1 / 0 == 1) }",
         FuncValue(
@@ -462,36 +503,10 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
         )))
 
     verifyCases(
-      {
-        val cost1 = CostDetails(
-          39,
-          Array(
-            SimpleCostItem("Apply", 20),
-            SimpleCostItem("FuncValue", 2),
-            SimpleCostItem("GetVar", 5),
-            SimpleCostItem("OptionGet", 2),
-            SimpleCostItem("ValUse", 5),
-            SimpleCostItem("BinAnd", 5)
-          )
-        )
-        val cost2 = CostDetails(
-          49,
-          Array(
-            SimpleCostItem("Apply", 20),
-            SimpleCostItem("FuncValue", 2),
-            SimpleCostItem("GetVar", 5),
-            SimpleCostItem("OptionGet", 2),
-            SimpleCostItem("ValUse", 5),
-            SimpleCostItem("BinAnd", 5),
-            SimpleCostItem("ValUse", 5),
-            SimpleCostItem("BinOr", 5)
-          )
-        )
-        Seq(
-          (false, Expected(Success(false), 40480, cost1)),
-          (true, Expected(Success(true), 40480, cost2))
-        )
-      },
+      Seq(
+        (false, Expected(Success(false), 40480, cost2)),
+        (true, Expected(Success(true), 40480, cost3))
+      ),
       existingFeature((x: Boolean) => x && (x || (1 / 0 == 1)),
         "{ (x: Boolean) => x && (x || (1 / 0 == 1)) }",
         FuncValue(
@@ -507,8 +522,8 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
     verifyCases(
       Seq(
-        (false, Expected(Success(false), 42493)),
-        (true, Expected(Success(true), 42493))
+        (false, Expected(Success(false), 42493, cost2)),
+        (true, Expected(Success(true), 42493, cost4))
       ),
       existingFeature((x: Boolean) => x && (x && (x || (1 / 0 == 1))),
         "{ (x: Boolean) => x && (x && (x || (1 / 0 == 1))) }",
@@ -528,8 +543,8 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
     verifyCases(
       Seq(
-        (false, Expected(Success(false), 44506)),
-        (true, Expected(Success(true), 44506))
+        (false, Expected(Success(false), 44506, cost2)),
+        (true, Expected(Success(true), 44506, cost5))
       ),
       existingFeature((x: Boolean) => x && (x && (x && (x || (1 / 0 == 1)))),
         "{ (x: Boolean) => x && (x && (x && (x || (1 / 0 == 1)))) }",
@@ -550,10 +565,26 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
           )
         )))
 
+    val cost6 = CostDetails(
+      64,
+      Array(
+        SimpleCostItem("Apply", 20),
+        SimpleCostItem("FuncValue", 2),
+        SimpleCostItem("GetVar", 5),
+        SimpleCostItem("OptionGet", 2),
+        SimpleCostItem("ValUse", 5),
+        SimpleCostItem("LogicalNot", 5),
+        SimpleCostItem("BinAnd", 5),
+        SimpleCostItem("LogicalNot", 5),
+        SimpleCostItem("BinAnd", 5),
+        SimpleCostItem("ValUse", 5),
+        SimpleCostItem("BinOr", 5)
+      )
+    )
     verifyCases(
       Seq(
         (false, Expected(new ArithmeticException("/ by zero"))),
-        (true, Expected(Success(true), 43281))
+        (true, Expected(Success(true), 43281, cost6))
       ),
       existingFeature((x: Boolean) => !(!x && (1 / 0 == 1)) && (x || (1 / 0 == 1)),
         "{ (x: Boolean) => !(!x && (1 / 0 == 1)) && (x || (1 / 0 == 1)) }",
@@ -573,9 +604,22 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
           )
         )))
 
+    val cost7 = CostDetails(
+      49,
+      Array(
+        SimpleCostItem("Apply", 20),
+        SimpleCostItem("FuncValue", 2),
+        SimpleCostItem("GetVar", 5),
+        SimpleCostItem("OptionGet", 2),
+        SimpleCostItem("ValUse", 5),
+        SimpleCostItem("BinOr", 5),
+        SimpleCostItem("BinAnd", 5),
+        SimpleCostItem("ValUse", 5)
+      )
+    )
     verifyCases(
       Seq(
-        (true, Expected(Success(true), 40480)),
+        (true, Expected(Success(true), 40480, cost7)),
         (false, Expected(new ArithmeticException("/ by zero")))
       ),
       existingFeature((x: Boolean) => (x || (1 / 0 == 1)) && x,
@@ -591,9 +635,23 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
           )
         )))
 
+    val cost8 = CostDetails(
+      54,
+      Array(
+        SimpleCostItem("Apply", 20),
+        SimpleCostItem("FuncValue", 2),
+        SimpleCostItem("GetVar", 5),
+        SimpleCostItem("OptionGet", 2),
+        SimpleCostItem("ValUse", 5),
+        SimpleCostItem("BinOr", 5),
+        SimpleCostItem("BinAnd", 5),
+        SimpleCostItem("ValUse", 5),
+        SimpleCostItem("BinOr", 5)
+      )
+    )
     verifyCases(
       Seq(
-        (true, Expected(Success(true), 43149)),
+        (true, Expected(Success(true), 43149, cost8)),
         (false, Expected(new ArithmeticException("/ by zero")))
       ),
       existingFeature((x: Boolean) => (x || (1 / 0 == 1)) && (x || (1 / 0 == 1)),
@@ -612,9 +670,26 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
           )
         )))
 
+    val cost9 = CostDetails(
+      69,
+      Array(
+        SimpleCostItem("Apply", 20),
+        SimpleCostItem("FuncValue", 2),
+        SimpleCostItem("GetVar", 5),
+        SimpleCostItem("OptionGet", 2),
+        SimpleCostItem("ValUse", 5),
+        SimpleCostItem("LogicalNot", 5),
+        SimpleCostItem("BinAnd", 5),
+        SimpleCostItem("LogicalNot", 5),
+        SimpleCostItem("BinOr", 5),
+        SimpleCostItem("BinAnd", 5),
+        SimpleCostItem("ValUse", 5),
+        SimpleCostItem("BinOr", 5)
+      )
+    )
     verifyCases(
       Seq(
-        (true, Expected(Success(true), 45950)),
+        (true, Expected(Success(true), 45950, cost9)),
         (false, Expected(new ArithmeticException("/ by zero")))
       ),
       existingFeature(
@@ -639,10 +714,30 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
           )
         )))
 
+    val cost10 = CostDetails(
+      84,
+      Array(
+        SimpleCostItem("Apply", 20),
+        SimpleCostItem("FuncValue", 2),
+        SimpleCostItem("GetVar", 5),
+        SimpleCostItem("OptionGet", 2),
+        SimpleCostItem("ValUse", 5),
+        SimpleCostItem("LogicalNot", 5),
+        SimpleCostItem("ValUse", 5),
+        SimpleCostItem("BinAnd", 5),
+        SimpleCostItem("LogicalNot", 5),
+        SimpleCostItem("BinOr", 5),
+        SimpleCostItem("BinAnd", 5),
+        SimpleCostItem("ValUse", 5),
+        SimpleCostItem("BinAnd", 5),
+        SimpleCostItem("LogicalNot", 5),
+        SimpleCostItem("BinOr", 5)
+      )
+    )
     verifyCases(
       Seq(
         (false, Expected(new ArithmeticException("/ by zero"))),
-        (true, Expected(Success(true), 48862))
+        (true, Expected(Success(true), 48862, cost10))
       ),
       existingFeature(
         (x: Boolean) => (!(!x && (1 / 0 == 1)) || (1 / 0 == 0)) && (!(!x && (1 / 0 == 1)) || (1 / 0 == 1)),

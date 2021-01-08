@@ -255,6 +255,15 @@ trait SigmaTestingCommons extends PropSpec
 
   val evalSettings = ErgoTreeEvaluator.DefaultEvalSettings
 
+  def printCostDetails(script: String, details: CostDetails) = {
+    val traceLines = SigmaPPrint(details, height = 550, width = 150)
+    println(
+      s"""------------------------
+        |Script: $script
+        |$traceLines
+        |""".stripMargin)
+  }
+
   def funcJit[A: RType, B: RType]
       (funcScript: String, bindings: VarBinding*)
       (implicit IR: IRContext): CompiledFunc[A, B] = {
@@ -275,11 +284,7 @@ trait SigmaTestingCommons extends PropSpec
       val costDetails = CostDetails(cost, trace)
 
       if (evalSettings.isLogEnabled) {
-        val traceLines = SigmaPPrint(costDetails, height = 550, width = 150)
-        println(
-          s"""------------------------
-            |$traceLines
-            |""".stripMargin)
+        printCostDetails(funcScript, costDetails)
       }
       (res.asInstanceOf[B], costDetails)
     }

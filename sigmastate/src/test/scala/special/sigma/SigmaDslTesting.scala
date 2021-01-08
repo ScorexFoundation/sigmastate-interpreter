@@ -464,14 +464,20 @@ class SigmaDslTesting extends PropSpec
                             expected: Expected[B],
                             printTestCases: Boolean,
                             failOnTestVectors: Boolean): Unit = {
-      val funcRes = checkEquality(input, printTestCases)
+      val funcRes = checkEquality(input, printTestCases) // NOTE: funcRes comes from newImpl
 
       checkResult(funcRes.map(_._1), expected.value, failOnTestVectors)
 
       val expectedTrace = expected.newCost.trace
-      if (!expectedTrace.isEmpty) {
+      if (expectedTrace.isEmpty) {
+        // new cost expectation is missing, print out actual cost results
+        funcRes.foreach { case (_, newCost) =>
+          // uncomment to output actual cost details to be used as test vectors
+          // printCostDetails(script, newCost)
+        }
+      }
+      else {
         // new cost expectation is specified, compare it with the actual result
-        // NOTE: funcRes is obtained using newImpl
         funcRes.foreach { case (_, newCost) =>
           newCost.trace shouldBe expectedTrace
         }
