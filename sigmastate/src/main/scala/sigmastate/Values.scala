@@ -726,7 +726,7 @@ object Values {
       if (items.length < 2)
         error(s"Invalid tuple $this")
 
-      if (items.length == 2) {
+      val res: Any = if (items.length == 2) {
         val x = items(0).evalTo[Any](env)
         val y = items(1).evalTo[Any](env)
         (x, y) // special representation for pairs (to pass directly to Coll primitives)
@@ -734,7 +734,8 @@ object Values {
       else
         items.map(_.evalTo[Any](env)) // general case
 
-      // TODO JITC
+      addCost(CostOf.Tuple)
+      res
     }
   }
 

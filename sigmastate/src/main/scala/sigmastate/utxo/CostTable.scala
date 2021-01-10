@@ -354,6 +354,9 @@ object CostTable {
       * Old cost: ("SelectField", "() => Unit", selectField) */
     def SelectField = 2 // cf. selectField
 
+    /** Cost of: 1) allocating a new tuple (of limited max size)*/
+    def Tuple = 5
+
 //    ("AccessKiloByteOfData", "() => Unit", extractCost),
 //    ("AccessBox", "Context => Box", accessBox),
 
