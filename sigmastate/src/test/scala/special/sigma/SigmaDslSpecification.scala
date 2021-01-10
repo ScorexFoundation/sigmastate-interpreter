@@ -1181,7 +1181,21 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
   property("Byte LE, GE") {
     val o = ExactOrdering.ByteIsExactOrdering
-    def expect(v: Boolean) = Expected(Success(v), 36337)
+    val costLE = CostDetails(
+      48,
+      Array(
+        SimpleCostItem("Apply", 20),
+        SimpleCostItem("FuncValue", 2),
+        SimpleCostItem("GetVar", 5),
+        SimpleCostItem("OptionGet", 2),
+        SimpleCostItem("ValUse", 5),
+        SimpleCostItem("SelectField", 2),
+        SimpleCostItem("ValUse", 5),
+        SimpleCostItem("SelectField", 2),
+        SimpleCostItem("LE", 5)
+      )
+    )
+    def expect(v: Boolean) = Expected(Success(v), 36337, costLE)
     val LE_cases: Seq[((Byte, Byte), Expected[Boolean])] = Seq(
       (-128.toByte, -128.toByte) -> expect(true),
       (-128.toByte, -127.toByte) -> expect(true),
@@ -1222,7 +1236,23 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
     verifyOp(LE_cases, "<=", LE.apply)(_ <= _)
 
-    verifyOp(swapArgs(LE_cases, cost = 36336), ">=", GE.apply)(_ >= _)
+    val costGE = CostDetails(
+      48,
+      Array(
+        SimpleCostItem("Apply", 20),
+        SimpleCostItem("FuncValue", 2),
+        SimpleCostItem("GetVar", 5),
+        SimpleCostItem("OptionGet", 2),
+        SimpleCostItem("ValUse", 5),
+        SimpleCostItem("SelectField", 2),
+        SimpleCostItem("ValUse", 5),
+        SimpleCostItem("SelectField", 2),
+        SimpleCostItem("GE", 5)
+      )
+    )
+    verifyOp(
+      swapArgs(LE_cases, cost = 36336, newCost = costGE),
+      ">=", GE.apply)(_ >= _)
   }
 
   property("Byte methods equivalence (new features)") {
