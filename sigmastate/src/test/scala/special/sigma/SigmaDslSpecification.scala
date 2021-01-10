@@ -1044,11 +1044,22 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
   def swapArgs[A](cases: Seq[((A, A), Expected[Boolean])], cost: Int) =
     cases.map { case ((x, y), res) => ((y, x), res.copy(cost = cost)) }
+    
+  def swapArgs[A](cases: Seq[((A, A), Expected[Boolean])], cost: Int, newCost: CostDetails) =
+    cases.map { case ((x, y), res) =>
+      ((y, x), Expected(res.value, cost, newCost))
+    }
 
   def newCasesFrom[A, R](cases: Seq[(A, A)])(getExpectedRes: (A, A) => R, cost: Int) =
     cases.map { case (x, y) =>
       ((x, y), Expected(Success(getExpectedRes(x, y)), cost = cost))
     }    
+
+  def newCasesFrom2[A, R](cases: Seq[(A, A)])
+                        (getExpectedRes: (A, A) => R, cost: Int, newCost: CostDetails) =
+    cases.map { case (x, y) =>
+      ((x, y), Expected(Success(getExpectedRes(x, y)), cost = cost, expectedNewCost = newCost))
+    }
 
   def verifyOp[A: Ordering: Arbitrary]
               (cases: Seq[((A, A), Expected[Boolean])],
@@ -1078,7 +1089,21 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
   property("Byte LT, GT, NEQ") {
     val o = ExactOrdering.ByteIsExactOrdering
-    def expect(v: Boolean) = Expected(Success(v), 36328)
+    val newCost = CostDetails(
+      48,
+      Array(
+        SimpleCostItem("Apply", 20),
+        SimpleCostItem("FuncValue", 2),
+        SimpleCostItem("GetVar", 5),
+        SimpleCostItem("OptionGet", 2),
+        SimpleCostItem("ValUse", 5),
+        SimpleCostItem("SelectField", 2),
+        SimpleCostItem("ValUse", 5),
+        SimpleCostItem("SelectField", 2),
+        SimpleCostItem("LT", 5)
+      )
+    )
+    def expect(v: Boolean) = Expected(Success(v), 36328, newCost)
     val LT_cases: Seq[((Byte, Byte), Expected[Boolean])] = Seq(
       (-128.toByte, -128.toByte) -> expect(false),
       (-128.toByte, -127.toByte) -> expect(true),
@@ -1118,9 +1143,39 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
     verifyOp(LT_cases, "<", LT.apply)(_ < _)
 
-    verifyOp(swapArgs(LT_cases, cost = 36342), ">", GT.apply)(_ > _)
+    val costGT = CostDetails(
+      48,
+      Array(
+        SimpleCostItem("Apply", 20),
+        SimpleCostItem("FuncValue", 2),
+        SimpleCostItem("GetVar", 5),
+        SimpleCostItem("OptionGet", 2),
+        SimpleCostItem("ValUse", 5),
+        SimpleCostItem("SelectField", 2),
+        SimpleCostItem("ValUse", 5),
+        SimpleCostItem("SelectField", 2),
+        SimpleCostItem("GT", 5)
+      )
+    )
+    verifyOp(
+      swapArgs(LT_cases, cost = 36342, newCost = costGT),
+      ">", GT.apply)(_ > _)
 
-    val neqCases = newCasesFrom(LT_cases.map(_._1))(_ != _, cost = 36337)
+    val costNEQ = CostDetails(
+      53,
+      Array(
+        SimpleCostItem("Apply", 20),
+        SimpleCostItem("FuncValue", 2),
+        SimpleCostItem("GetVar", 5),
+        SimpleCostItem("OptionGet", 2),
+        SimpleCostItem("ValUse", 5),
+        SimpleCostItem("SelectField", 2),
+        SimpleCostItem("ValUse", 5),
+        SimpleCostItem("SelectField", 2),
+        SimpleCostItem("NEQ", 10)
+      )
+    )
+    val neqCases = newCasesFrom2(LT_cases.map(_._1))(_ != _, cost = 36337, newCost = costNEQ)
     verifyOp(neqCases, "!=", NEQ.apply)(_ != _)
   }
 
