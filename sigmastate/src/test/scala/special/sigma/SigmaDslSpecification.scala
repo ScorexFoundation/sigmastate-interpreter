@@ -770,23 +770,78 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
         )))
   }
 
+  val costIdentity = CostDetails(
+    34,
+    Array(
+      SimpleCostItem("Apply", 20),
+      SimpleCostItem("FuncValue", 2),
+      SimpleCostItem("GetVar", 5),
+      SimpleCostItem("OptionGet", 2),
+      SimpleCostItem("ValUse", 5)
+    )
+  )
+  val costUpcast = CostDetails(
+    39,
+    Array(
+      SimpleCostItem("Apply", 20),
+      SimpleCostItem("FuncValue", 2),
+      SimpleCostItem("GetVar", 5),
+      SimpleCostItem("OptionGet", 2),
+      SimpleCostItem("ValUse", 5),
+      SimpleCostItem("Upcast", 5)
+    )
+  )
+  val costDowncast = CostDetails(
+    39,
+    Array(
+      SimpleCostItem("Apply", 20),
+      SimpleCostItem("FuncValue", 2),
+      SimpleCostItem("GetVar", 5),
+      SimpleCostItem("OptionGet", 2),
+      SimpleCostItem("ValUse", 5),
+      SimpleCostItem("Downcast", 5)
+    )
+  )
+  val costArithOps = CostDetails(
+    138,
+    Array(
+      SimpleCostItem("Apply", 20),
+      SimpleCostItem("FuncValue", 2),
+      SimpleCostItem("GetVar", 5),
+      SimpleCostItem("OptionGet", 2),
+      SimpleCostItem("ValUse", 5),
+      SimpleCostItem("SelectField", 2),
+      SimpleCostItem("ValUse", 5),
+      SimpleCostItem("SelectField", 2),
+      SimpleCostItem("ValUse", 5),
+      SimpleCostItem("ValUse", 5),
+      SimpleCostItem("+", 5),
+      SimpleCostItem("ValUse", 5),
+      SimpleCostItem("ValUse", 5),
+      SimpleCostItem("-", 5),
+      SimpleCostItem("ValUse", 5),
+      SimpleCostItem("ValUse", 5),
+      SimpleCostItem("*", 5),
+      SimpleCostItem("ValUse", 5),
+      SimpleCostItem("ValUse", 5),
+      SimpleCostItem("/", 5),
+      SimpleCostItem("ValUse", 5),
+      SimpleCostItem("ValUse", 5),
+      SimpleCostItem("%", 5),
+      SimpleCostItem("Tuple", 5),
+      SimpleCostItem("Tuple", 5),
+      SimpleCostItem("Tuple", 5),
+      SimpleCostItem("Tuple", 5)
+    )
+  )
+
   property("Byte methods equivalence") {
     SByte.upcast(0.toByte) shouldBe 0.toByte  // boundary test case
     SByte.downcast(0.toByte) shouldBe 0.toByte  // boundary test case
 
     verifyCases(
       {
-        val cost = CostDetails(
-          34,
-          Array(
-            SimpleCostItem("Apply", 20),
-            SimpleCostItem("FuncValue", 2),
-            SimpleCostItem("GetVar", 5),
-            SimpleCostItem("OptionGet", 2),
-            SimpleCostItem("ValUse", 5)
-          )
-        )
-        def expect(v: Byte) = Expected(Success(v), 35798, cost)
+        def expect(v: Byte) = Expected(Success(v), 35798, costIdentity)
         Seq(
           (0.toByte, expect(0.toByte)),
           (1.toByte, expect(1.toByte)),
@@ -803,18 +858,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
     verifyCases(
       {
-        val newCost = CostDetails(
-          39,
-          Array(
-            SimpleCostItem("Apply", 20),
-            SimpleCostItem("FuncValue", 2),
-            SimpleCostItem("GetVar", 5),
-            SimpleCostItem("OptionGet", 2),
-            SimpleCostItem("ValUse", 5),
-            SimpleCostItem("Upcast", 5)
-          )
-        )
-        def expected(v: Short) = Expected(Success(v), 35902, newCost)
+        def expected(v: Short) = Expected(Success(v), 35902, costUpcast)
         Seq(
           (0.toByte, expected(0.toShort)),
           (1.toByte, expected(1.toShort)),
@@ -831,18 +875,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
     verifyCases(
       {
-        val newCost = CostDetails(
-          39,
-          Array(
-            SimpleCostItem("Apply", 20),
-            SimpleCostItem("FuncValue", 2),
-            SimpleCostItem("GetVar", 5),
-            SimpleCostItem("OptionGet", 2),
-            SimpleCostItem("ValUse", 5),
-            SimpleCostItem("Upcast", 5)
-          )
-        )
-        def expected(v: Int) = Expected(Success(v), 35902, newCost)
+        def expected(v: Int) = Expected(Success(v), 35902, costUpcast)
         Seq(
           (0.toByte, expected(0)),
           (1.toByte, expected(1)),
@@ -859,18 +892,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
     verifyCases(
       {
-        val newCost = CostDetails(
-          39,
-          Array(
-            SimpleCostItem("Apply", 20),
-            SimpleCostItem("FuncValue", 2),
-            SimpleCostItem("GetVar", 5),
-            SimpleCostItem("OptionGet", 2),
-            SimpleCostItem("ValUse", 5),
-            SimpleCostItem("Upcast", 5)
-          )
-        )
-        def expected(v: Long) = Expected(Success(v), 35902, newCost)
+        def expected(v: Long) = Expected(Success(v), 35902, costUpcast)
         Seq(
           (0.toByte, expected(0L)),
           (1.toByte, expected(1L)),
@@ -887,18 +909,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
     verifyCases(
       {
-        val newCost = CostDetails(
-          39,
-          Array(
-            SimpleCostItem("Apply", 20),
-            SimpleCostItem("FuncValue", 2),
-            SimpleCostItem("GetVar", 5),
-            SimpleCostItem("OptionGet", 2),
-            SimpleCostItem("ValUse", 5),
-            SimpleCostItem("Upcast", 5)
-          )
-        )
-        def expected(v: BigInt) = Expected(Success(v), 35932, newCost)
+        def expected(v: BigInt) = Expected(Success(v), 35932, costUpcast)
         Seq(
           (0.toByte, expected(CBigInt(new BigInteger("0", 16)))),
           (1.toByte, expected(CBigInt(new BigInteger("1", 16)))),
@@ -916,39 +927,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
     val n = ExactNumeric.ByteIsExactNumeric
     verifyCases(
       {
-        val newCost = CostDetails(
-          138,
-          Array(
-            SimpleCostItem("Apply", 20),
-            SimpleCostItem("FuncValue", 2),
-            SimpleCostItem("GetVar", 5),
-            SimpleCostItem("OptionGet", 2),
-            SimpleCostItem("ValUse", 5),
-            SimpleCostItem("SelectField", 2),
-            SimpleCostItem("ValUse", 5),
-            SimpleCostItem("SelectField", 2),
-            SimpleCostItem("ValUse", 5),
-            SimpleCostItem("ValUse", 5),
-            SimpleCostItem("+", 5),
-            SimpleCostItem("ValUse", 5),
-            SimpleCostItem("ValUse", 5),
-            SimpleCostItem("-", 5),
-            SimpleCostItem("ValUse", 5),
-            SimpleCostItem("ValUse", 5),
-            SimpleCostItem("*", 5),
-            SimpleCostItem("ValUse", 5),
-            SimpleCostItem("ValUse", 5),
-            SimpleCostItem("/", 5),
-            SimpleCostItem("ValUse", 5),
-            SimpleCostItem("ValUse", 5),
-            SimpleCostItem("%", 5),
-            SimpleCostItem("Tuple", 5),
-            SimpleCostItem("Tuple", 5),
-            SimpleCostItem("Tuple", 5),
-            SimpleCostItem("Tuple", 5)
-          )
-        )
-        def success[T](v: (T, (T, (T, (T, T))))) = Expected(Success(v), 39654, newCost)
+        def success[T](v: (T, (T, (T, (T, T))))) = Expected(Success(v), 39654, costArithOps)
         Seq(
           ((-128.toByte, -128.toByte), Expected(new ArithmeticException("Byte overflow"))),
           ((-128.toByte, 0.toByte), Expected(new ArithmeticException("/ by zero"))),
@@ -1087,23 +1066,80 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
       preGeneratedSamples = Some(sampled.samples))
   }
 
+  def costLT(ltOpCost: Int) = CostDetails(
+    43 + ltOpCost,
+    Array(
+      SimpleCostItem("Apply", 20),
+      SimpleCostItem("FuncValue", 2),
+      SimpleCostItem("GetVar", 5),
+      SimpleCostItem("OptionGet", 2),
+      SimpleCostItem("ValUse", 5),
+      SimpleCostItem("SelectField", 2),
+      SimpleCostItem("ValUse", 5),
+      SimpleCostItem("SelectField", 2),
+      SimpleCostItem("LT", ltOpCost)
+    )
+  )
+  def costGT(gtOpCost: Int) = CostDetails(
+    43 + gtOpCost,
+    Array(
+      SimpleCostItem("Apply", 20),
+      SimpleCostItem("FuncValue", 2),
+      SimpleCostItem("GetVar", 5),
+      SimpleCostItem("OptionGet", 2),
+      SimpleCostItem("ValUse", 5),
+      SimpleCostItem("SelectField", 2),
+      SimpleCostItem("ValUse", 5),
+      SimpleCostItem("SelectField", 2),
+      SimpleCostItem("GT", gtOpCost)
+    )
+  )
+  def costNEQ(neqOpCost: Int) = CostDetails(
+    43 + neqOpCost,
+    Array(
+      SimpleCostItem("Apply", 20),
+      SimpleCostItem("FuncValue", 2),
+      SimpleCostItem("GetVar", 5),
+      SimpleCostItem("OptionGet", 2),
+      SimpleCostItem("ValUse", 5),
+      SimpleCostItem("SelectField", 2),
+      SimpleCostItem("ValUse", 5),
+      SimpleCostItem("SelectField", 2),
+      SimpleCostItem("NEQ", neqOpCost)
+    )
+  )
+  def costLE(leOpCost: Int) = CostDetails(
+    43 + leOpCost,
+    Array(
+      SimpleCostItem("Apply", 20),
+      SimpleCostItem("FuncValue", 2),
+      SimpleCostItem("GetVar", 5),
+      SimpleCostItem("OptionGet", 2),
+      SimpleCostItem("ValUse", 5),
+      SimpleCostItem("SelectField", 2),
+      SimpleCostItem("ValUse", 5),
+      SimpleCostItem("SelectField", 2),
+      SimpleCostItem("LE", leOpCost)
+    )
+  )
+  def costGE(geOpCost: Int) = CostDetails(
+    43 + geOpCost,
+    Array(
+      SimpleCostItem("Apply", 20),
+      SimpleCostItem("FuncValue", 2),
+      SimpleCostItem("GetVar", 5),
+      SimpleCostItem("OptionGet", 2),
+      SimpleCostItem("ValUse", 5),
+      SimpleCostItem("SelectField", 2),
+      SimpleCostItem("ValUse", 5),
+      SimpleCostItem("SelectField", 2),
+      SimpleCostItem("GE", geOpCost)
+    )
+  )
+
   property("Byte LT, GT, NEQ") {
     val o = ExactOrdering.ByteIsExactOrdering
-    val newCost = CostDetails(
-      48,
-      Array(
-        SimpleCostItem("Apply", 20),
-        SimpleCostItem("FuncValue", 2),
-        SimpleCostItem("GetVar", 5),
-        SimpleCostItem("OptionGet", 2),
-        SimpleCostItem("ValUse", 5),
-        SimpleCostItem("SelectField", 2),
-        SimpleCostItem("ValUse", 5),
-        SimpleCostItem("SelectField", 2),
-        SimpleCostItem("LT", 5)
-      )
-    )
-    def expect(v: Boolean) = Expected(Success(v), 36328, newCost)
+    def expect(v: Boolean) = Expected(Success(v), 36328, costLT(5))
     val LT_cases: Seq[((Byte, Byte), Expected[Boolean])] = Seq(
       (-128.toByte, -128.toByte) -> expect(false),
       (-128.toByte, -127.toByte) -> expect(true),
@@ -1143,59 +1179,17 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
     verifyOp(LT_cases, "<", LT.apply)(_ < _)
 
-    val costGT = CostDetails(
-      48,
-      Array(
-        SimpleCostItem("Apply", 20),
-        SimpleCostItem("FuncValue", 2),
-        SimpleCostItem("GetVar", 5),
-        SimpleCostItem("OptionGet", 2),
-        SimpleCostItem("ValUse", 5),
-        SimpleCostItem("SelectField", 2),
-        SimpleCostItem("ValUse", 5),
-        SimpleCostItem("SelectField", 2),
-        SimpleCostItem("GT", 5)
-      )
-    )
     verifyOp(
-      swapArgs(LT_cases, cost = 36342, newCost = costGT),
+      swapArgs(LT_cases, cost = 36342, newCost = costGT(5)),
       ">", GT.apply)(_ > _)
 
-    val costNEQ = CostDetails(
-      53,
-      Array(
-        SimpleCostItem("Apply", 20),
-        SimpleCostItem("FuncValue", 2),
-        SimpleCostItem("GetVar", 5),
-        SimpleCostItem("OptionGet", 2),
-        SimpleCostItem("ValUse", 5),
-        SimpleCostItem("SelectField", 2),
-        SimpleCostItem("ValUse", 5),
-        SimpleCostItem("SelectField", 2),
-        SimpleCostItem("NEQ", 10)
-      )
-    )
-    val neqCases = newCasesFrom2(LT_cases.map(_._1))(_ != _, cost = 36337, newCost = costNEQ)
+    val neqCases = newCasesFrom2(LT_cases.map(_._1))(_ != _, cost = 36337, newCost = costNEQ(10))
     verifyOp(neqCases, "!=", NEQ.apply)(_ != _)
   }
 
   property("Byte LE, GE") {
     val o = ExactOrdering.ByteIsExactOrdering
-    val costLE = CostDetails(
-      48,
-      Array(
-        SimpleCostItem("Apply", 20),
-        SimpleCostItem("FuncValue", 2),
-        SimpleCostItem("GetVar", 5),
-        SimpleCostItem("OptionGet", 2),
-        SimpleCostItem("ValUse", 5),
-        SimpleCostItem("SelectField", 2),
-        SimpleCostItem("ValUse", 5),
-        SimpleCostItem("SelectField", 2),
-        SimpleCostItem("LE", 5)
-      )
-    )
-    def expect(v: Boolean) = Expected(Success(v), 36337, costLE)
+    def expect(v: Boolean) = Expected(Success(v), 36337, costLE(5))
     val LE_cases: Seq[((Byte, Byte), Expected[Boolean])] = Seq(
       (-128.toByte, -128.toByte) -> expect(true),
       (-128.toByte, -127.toByte) -> expect(true),
@@ -1236,22 +1230,8 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
     verifyOp(LE_cases, "<=", LE.apply)(_ <= _)
 
-    val costGE = CostDetails(
-      48,
-      Array(
-        SimpleCostItem("Apply", 20),
-        SimpleCostItem("FuncValue", 2),
-        SimpleCostItem("GetVar", 5),
-        SimpleCostItem("OptionGet", 2),
-        SimpleCostItem("ValUse", 5),
-        SimpleCostItem("SelectField", 2),
-        SimpleCostItem("ValUse", 5),
-        SimpleCostItem("SelectField", 2),
-        SimpleCostItem("GE", 5)
-      )
-    )
     verifyOp(
-      swapArgs(LE_cases, cost = 36336, newCost = costGE),
+      swapArgs(LE_cases, cost = 36336, newCost = costGE(5)),
       ">=", GE.apply)(_ >= _)
   }
 
@@ -1286,7 +1266,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 35976)
+        def success[T](v: T) = Expected(Success(v), 35976, costDowncast)
         Seq(
           (Short.MinValue, Expected(new ArithmeticException("Byte overflow"))),
           (-21626.toShort, Expected(new ArithmeticException("Byte overflow"))),
@@ -1305,7 +1285,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 35798)
+        def success[T](v: T) = Expected(Success(v), 35798, costIdentity)
         Seq(
           (-32768.toShort, success(-32768.toShort)),
           (-27798.toShort, success(-27798.toShort)),
@@ -1322,7 +1302,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 35902)
+        def success[T](v: T) = Expected(Success(v), 35902, costUpcast)
         Seq(
           (-32768.toShort, success(-32768)),
           (-21064.toShort, success(-21064)),
@@ -1339,7 +1319,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 35902)
+        def success[T](v: T) = Expected(Success(v), 35902, costUpcast)
         Seq(
           (-32768.toShort, success(-32768L)),
           (-23408.toShort, success(-23408L)),
@@ -1356,7 +1336,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
     verifyCases(
       {
-        def success(v: BigInt) = Expected(Success(v), 35932)
+        def success(v: BigInt) = Expected(Success(v), 35932, costUpcast)
         Seq(
           (-32768.toShort, success(CBigInt(new BigInteger("-8000", 16)))),
           (-26248.toShort, success(CBigInt(new BigInteger("-6688", 16)))),
@@ -1374,7 +1354,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
     val n = ExactNumeric.ShortIsExactNumeric
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 39654)
+        def success[T](v: T) = Expected(Success(v), 39654, costArithOps)
         Seq(
           ((-32768.toShort, 1.toShort), Expected(new ArithmeticException("Short overflow"))),
           ((-32768.toShort, 4006.toShort), Expected(new ArithmeticException("Short overflow"))),
@@ -1466,7 +1446,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
   property("Short LT, GT, NEQ") {
     val o = ExactOrdering.ShortIsExactOrdering
-    def expect(v: Boolean) = Expected(Success(v), 36328)
+    def expect(v: Boolean) = Expected(Success(v), 36328, costLT(5))
     val LT_cases: Seq[((Short, Short), Expected[Boolean])] = Seq(
       (Short.MinValue, Short.MinValue) -> expect(false),
       (Short.MinValue, (Short.MinValue + 1).toShort) -> expect(true),
@@ -1506,15 +1486,15 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
     verifyOp(LT_cases, "<", LT.apply)(_ < _)
 
-    verifyOp(swapArgs(LT_cases, cost = 36342), ">", GT.apply)(_ > _)
+    verifyOp(swapArgs(LT_cases, cost = 36342, costGT(5)), ">", GT.apply)(_ > _)
 
-    val neqCases = newCasesFrom(LT_cases.map(_._1))(_ != _, cost = 36337)
+    val neqCases = newCasesFrom2(LT_cases.map(_._1))(_ != _, cost = 36337, newCost = costNEQ(10))
     verifyOp(neqCases, "!=", NEQ.apply)(_ != _)
   }
 
   property("Short LE, GE") {
     val o = ExactOrdering.ShortIsExactOrdering
-    def expect(v: Boolean) = Expected(Success(v), 36337)
+    def expect(v: Boolean) = Expected(Success(v), 36337, costLE(5))
     val LE_cases: Seq[((Short, Short), Expected[Boolean])] = Seq(
       (Short.MinValue, Short.MinValue) -> expect(true),
       (Short.MinValue, (Short.MinValue + 1).toShort) -> expect(true),
@@ -1555,7 +1535,9 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
     verifyOp(LE_cases, "<=", LE.apply)(_ <= _)
 
-    verifyOp(swapArgs(LE_cases, cost = 36336), ">=", GE.apply)(_ >= _)
+    verifyOp(
+      swapArgs(LE_cases, cost = 36336, newCost = costGE(5)),
+      ">=", GE.apply)(_ >= _)
   }
 
   property("Short methods equivalence (new features)") {
@@ -1588,7 +1570,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 35976)
+        def success[T](v: T) = Expected(Success(v), 35976, costDowncast)
         Seq(
           (Int.MinValue, Expected(new ArithmeticException("Byte overflow"))),
           (-2014394379, Expected(new ArithmeticException("Byte overflow"))),
@@ -1607,7 +1589,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 35976)
+        def success[T](v: T) = Expected(Success(v), 35976, costDowncast)
         Seq(
           (Int.MinValue, Expected(new ArithmeticException("Short overflow"))),
           (Short.MinValue - 1, Expected(new ArithmeticException("Short overflow"))),
@@ -1626,7 +1608,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 35798)
+        def success[T](v: T) = Expected(Success(v), 35798, costIdentity)
         Seq(
           (Int.MinValue, success(Int.MinValue)),
           (-1, success(-1)),
@@ -1641,7 +1623,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 35902)
+        def success[T](v: T) = Expected(Success(v), 35902, costUpcast)
         Seq(
           (Int.MinValue, success(Int.MinValue.toLong)),
           (-1, success(-1L)),
@@ -1656,7 +1638,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
     verifyCases(
       {
-        def success(v: BigInt) = Expected(Success(v), 35932)
+        def success(v: BigInt) = Expected(Success(v), 35932, costUpcast)
         Seq(
           (Int.MinValue, success(CBigInt(new BigInteger("-80000000", 16)))),
           (-1937187314, success(CBigInt(new BigInteger("-737721f2", 16)))),
@@ -1674,7 +1656,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
     val n = ExactNumeric.IntIsExactNumeric
     verifyCases(
     {
-      def success[T](v: T) = Expected(Success(v), 39654)
+      def success[T](v: T) = Expected(Success(v), 39654, costArithOps)
       Seq(
         ((Int.MinValue, 449583993), Expected(new ArithmeticException("integer overflow"))),
         ((-1589633733, 2147483647), Expected(new ArithmeticException("integer overflow"))),
@@ -1766,7 +1748,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
   property("Int LT, GT, NEQ") {
     val o = ExactOrdering.IntIsExactOrdering
-    def expect(v: Boolean) = Expected(Success(v), 36328)
+    def expect(v: Boolean) = Expected(Success(v), 36328, costLT(5))
     val LT_cases: Seq[((Int, Int), Expected[Boolean])] = Seq(
       (Int.MinValue, Int.MinValue) -> expect(false),
       (Int.MinValue, (Int.MinValue + 1).toInt) -> expect(true),
@@ -1806,15 +1788,17 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
     verifyOp(LT_cases, "<", LT.apply)(_ < _)
 
-    verifyOp(swapArgs(LT_cases, cost = 36342), ">", GT.apply)(_ > _)
+    verifyOp(
+      swapArgs(LT_cases, cost = 36342, newCost = costGT(5)),
+      ">", GT.apply)(_ > _)
 
-    val neqCases = newCasesFrom(LT_cases.map(_._1))(_ != _, cost = 36337)
+    val neqCases = newCasesFrom2(LT_cases.map(_._1))(_ != _, cost = 36337, newCost = costNEQ(10))
     verifyOp(neqCases, "!=", NEQ.apply)(_ != _)
   }
 
   property("Int LE, GE") {
     val o = ExactOrdering.IntIsExactOrdering
-    def expect(v: Boolean) = Expected(Success(v), 36337)
+    def expect(v: Boolean) = Expected(Success(v), 36337, costLE(5))
     val LE_cases: Seq[((Int, Int), Expected[Boolean])] = Seq(
       (Int.MinValue, Int.MinValue) -> expect(true),
       (Int.MinValue, (Int.MinValue + 1).toInt) -> expect(true),
@@ -1855,7 +1839,9 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
     verifyOp(LE_cases, "<=", LE.apply)(_ <= _)
 
-    verifyOp(swapArgs(LE_cases, cost = 36336), ">=", GE.apply)(_ >= _)
+    verifyOp(
+      swapArgs(LE_cases, cost = 36336, newCost = costGE(5)),
+      ">=", GE.apply)(_ >= _)
   }
 
   property("Int methods equivalence (new features)") {
@@ -1887,7 +1873,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 35976)
+        def success[T](v: T) = Expected(Success(v), 35976, costDowncast)
         Seq(
           (Long.MinValue, Expected(new ArithmeticException("Byte overflow"))),
           (Byte.MinValue.toLong - 1, Expected(new ArithmeticException("Byte overflow"))),
@@ -1906,7 +1892,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 35976)
+        def success[T](v: T) = Expected(Success(v), 35976, costDowncast)
         Seq(
           (Long.MinValue, Expected(new ArithmeticException("Short overflow"))),
           (Short.MinValue.toLong - 1, Expected(new ArithmeticException("Short overflow"))),
@@ -1925,7 +1911,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 35976)
+        def success[T](v: T) = Expected(Success(v), 35976, costDowncast)
         Seq(
           (Long.MinValue, Expected(new ArithmeticException("Int overflow"))),
           (Int.MinValue.toLong - 1, Expected(new ArithmeticException("Int overflow"))),
@@ -1944,7 +1930,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 35798)
+        def success[T](v: T) = Expected(Success(v), 35798, costIdentity)
         Seq(
           (Long.MinValue, success(Long.MinValue)),
           (-1L, success(-1L)),
@@ -1959,7 +1945,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
     verifyCases(
       {
-        def success(v: BigInt) = Expected(Success(v), 35932)
+        def success(v: BigInt) = Expected(Success(v), 35932, costUpcast)
         Seq(
           (Long.MinValue, success(CBigInt(new BigInteger("-8000000000000000", 16)))),
           (-1074651039980347209L, success(CBigInt(new BigInteger("-ee9ed6d57885f49", 16)))),
@@ -1977,7 +1963,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
     val n = ExactNumeric.LongIsExactNumeric
     verifyCases(
     {
-      def success[T](v: T) = Expected(Success(v), 39654)
+      def success[T](v: T) = Expected(Success(v), 39654, costArithOps)
       Seq(
         ((Long.MinValue, -4677100190307931395L), Expected(new ArithmeticException("long overflow"))),
         ((Long.MinValue, -1L), Expected(new ArithmeticException("long overflow"))),
@@ -2067,7 +2053,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
   property("Long LT, GT, NEQ") {
     val o = ExactOrdering.LongIsExactOrdering
-    def expect(v: Boolean) = Expected(Success(v), 36328)
+    def expect(v: Boolean) = Expected(Success(v), 36328, costLT(5))
     val LT_cases: Seq[((Long, Long), Expected[Boolean])] = Seq(
       (Long.MinValue, Long.MinValue) -> expect(false),
       (Long.MinValue, (Long.MinValue + 1).toLong) -> expect(true),
@@ -2107,15 +2093,17 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
     verifyOp(LT_cases, "<", LT.apply)(_ < _)
 
-    verifyOp(swapArgs(LT_cases, cost = 36342), ">", GT.apply)(_ > _)
+    verifyOp(
+      swapArgs(LT_cases, cost = 36342, newCost = costGT(5)),
+      ">", GT.apply)(_ > _)
 
-    val neqCases = newCasesFrom(LT_cases.map(_._1))(_ != _, cost = 36337)
+    val neqCases = newCasesFrom2(LT_cases.map(_._1))(_ != _, cost = 36337, newCost = costNEQ(10))
     verifyOp(neqCases, "!=", NEQ.apply)(_ != _)
   }
 
   property("Long LE, GE") {
     val o = ExactOrdering.LongIsExactOrdering
-    def expect(v: Boolean) = Expected(Success(v), 36337)
+    def expect(v: Boolean) = Expected(Success(v), 36337, costLE(5))
     val LE_cases: Seq[((Long, Long), Expected[Boolean])] = Seq(
       (Long.MinValue, Long.MinValue) -> expect(true),
       (Long.MinValue, (Long.MinValue + 1).toLong) -> expect(true),
@@ -2156,7 +2144,9 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
     verifyOp(LE_cases, "<=", LE.apply)(_ <= _)
 
-    verifyOp(swapArgs(LE_cases, cost = 36336), ">=", GE.apply)(_ >= _)
+    verifyOp(
+      swapArgs(LE_cases, cost = 36336, newCost = costGE(5)),
+      ">=", GE.apply)(_ >= _)
   }
 
   property("Long methods equivalence (new features)") {
@@ -2186,7 +2176,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
   property("BigInt methods equivalence") {
     verifyCases(
       {
-        def success(v: BigInt) = Expected(Success(v), 35798)
+        def success(v: BigInt) = Expected(Success(v), 35798, costIdentity)
         Seq(
           (CBigInt(new BigInteger("-85102d7f884ca0e8f56193b46133acaf7e4681e1757d03f191ae4f445c8e0", 16)), success(
             CBigInt(new BigInteger("-85102d7f884ca0e8f56193b46133acaf7e4681e1757d03f191ae4f445c8e0", 16))
@@ -2208,7 +2198,40 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
     val n = NumericOps.BigIntIsExactNumeric
     verifyCases(
     {
-      def success(v: (BigInt, (BigInt, (BigInt, (BigInt, BigInt))))) = Expected(Success(v), 39774)
+      val costArithOps = CostDetails(
+        283,
+        Array(
+          SimpleCostItem("Apply", 20),
+          SimpleCostItem("FuncValue", 2),
+          SimpleCostItem("GetVar", 5),
+          SimpleCostItem("OptionGet", 2),
+          SimpleCostItem("ValUse", 5),
+          SimpleCostItem("SelectField", 2),
+          SimpleCostItem("ValUse", 5),
+          SimpleCostItem("SelectField", 2),
+          SimpleCostItem("ValUse", 5),
+          SimpleCostItem("ValUse", 5),
+          SimpleCostItem("+", 10),
+          SimpleCostItem("ValUse", 5),
+          SimpleCostItem("ValUse", 5),
+          SimpleCostItem("-", 10),
+          SimpleCostItem("ValUse", 5),
+          SimpleCostItem("ValUse", 5),
+          SimpleCostItem("*", 50),
+          SimpleCostItem("ValUse", 5),
+          SimpleCostItem("ValUse", 5),
+          SimpleCostItem("/", 50),
+          SimpleCostItem("ValUse", 5),
+          SimpleCostItem("ValUse", 5),
+          SimpleCostItem("%", 50),
+          SimpleCostItem("Tuple", 5),
+          SimpleCostItem("Tuple", 5),
+          SimpleCostItem("Tuple", 5),
+          SimpleCostItem("Tuple", 5)
+        )
+      )
+      def success(v: (BigInt, (BigInt, (BigInt, (BigInt, BigInt))))) =
+        Expected(Success(v), 39774, costArithOps)
       Seq(
         ((CBigInt(new BigInteger("-8683d1cd99d5fcf0e6eff6295c285c36526190e13dbde008c49e5ae6fddc1c", 16)),
             CBigInt(new BigInteger("-2ef55db3f245feddacf0182e299dd", 16))),
@@ -2336,7 +2359,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
     val BigIntMaxValue = CBigInt(new BigInteger("7F" + "ff" * 31, 16))
     val BigIntOverlimit = CBigInt(new BigInteger("7F" + "ff" * 33, 16))
 
-    def expect(v: Boolean) = Expected(Success(v), 36328)
+    def expect(v: Boolean) = Expected(Success(v), 36328, costLT(10))
     
     val LT_cases: Seq[((BigInt, BigInt), Expected[Boolean])] = Seq(
       (BigIntMinValue, BigIntMinValue) -> expect(false),
@@ -2379,9 +2402,11 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
     verifyOp(LT_cases, "<", LT.apply)(o.lt(_, _))
 
-    verifyOp(swapArgs(LT_cases, cost = 36342), ">", GT.apply)(o.gt(_, _))
+    verifyOp(
+      swapArgs(LT_cases, cost = 36342, newCost = costGT(10)),
+      ">", GT.apply)(o.gt(_, _))
 
-    val neqCases = newCasesFrom(LT_cases.map(_._1))(_ != _, cost = 36337)
+    val neqCases = newCasesFrom2(LT_cases.map(_._1))(_ != _, cost = 36337, newCost = costNEQ(10))
     verifyOp(neqCases, "!=", NEQ.apply)(_ != _)
   }
 
@@ -2392,7 +2417,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
     val BigIntMaxValue = CBigInt(new BigInteger("7F" + "ff" * 31, 16))
     val BigIntOverlimit = CBigInt(new BigInteger("7F" + "ff" * 33, 16))
 
-    def expect(v: Boolean) = Expected(Success(v), 36337)
+    def expect(v: Boolean) = Expected(Success(v), 36337, costLE(10))
     
     val LE_cases: Seq[((BigInt, BigInt), Expected[Boolean])] = Seq(
       (BigIntMinValue, BigIntMinValue) -> expect(true),
@@ -2436,7 +2461,9 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
     verifyOp(LE_cases, "<=", LE.apply)(o.lteq(_, _))
 
-    verifyOp(swapArgs(LE_cases, cost = 36336), ">=", GE.apply)(o.gteq(_, _))
+    verifyOp(
+      swapArgs(LE_cases, cost = 36336, newCost = costGE(10)),
+      ">=", GE.apply)(o.gteq(_, _))
   }
 
   property("BigInt methods equivalence (new features)") {
@@ -2498,42 +2525,45 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
     * @param cost the expected cost of `verify` (the same for all cases)
     */
   def verifyNeq[A: Ordering: Arbitrary: RType]
-      (x: A, y: A, cost: Int)
+      (x: A, y: A, cost: Int, neqOpCost: Int = 0)
       (copy: A => A, generateCases: Boolean = true)
       (implicit sampled: Sampled[(A, A)]) = {
     val copied_x = copy(x)
+    val newCost = if (neqOpCost == 0) CostDetails(0) else costNEQ(neqOpCost)
+    def expected(v: Boolean) = Expected(Success(v), cost, newCost)
     verifyOp(Seq(
-        (x, x) -> Expected(Success(false), cost),
-        (x, copied_x) -> Expected(Success(false), cost),
-        (copied_x, x) -> Expected(Success(false), cost),
-        (x, y) -> Expected(Success(true), cost),
-        (y, x) -> Expected(Success(true), cost)
+        (x, x) -> expected(false),
+        (x, copied_x) -> expected(false),
+        (copied_x, x) -> expected(false),
+        (x, y) -> expected(true),
+        (y, x) -> expected(true)
       ),
       "!=", NEQ.apply)(_ != _, generateCases)
   }
 
   property("NEQ of pre-defined types") {
-    verifyNeq(ge1, ge2, 36337)(_.asInstanceOf[CGroupElement].copy())
-    verifyNeq(t1, t2, 36337)(_.asInstanceOf[CAvlTree].copy())
-    verifyNeq(b1, b2, 36417)(_.asInstanceOf[CostingBox].copy())
-    verifyNeq(preH1, preH2, 36337)(_.asInstanceOf[CPreHeader].copy())
-    verifyNeq(h1, h2, 36337)(_.asInstanceOf[CHeader].copy())
+    verifyNeq(ge1, ge2, 36337, 10)(_.asInstanceOf[CGroupElement].copy())
+    verifyNeq(t1, t2, 36337, 10)(_.asInstanceOf[CAvlTree].copy())
+    verifyNeq(b1, b2, 36417, 90)(_.asInstanceOf[CostingBox].copy())
+    verifyNeq(preH1, preH2, 36337, 10)(_.asInstanceOf[CPreHeader].copy())
+    verifyNeq(h1, h2, 36337, 10)(_.asInstanceOf[CHeader].copy())
   }
 
   property("NEQ of tuples of numerics") {
-    verifyNeq((0.toByte, 1.toByte), (1.toByte, 1.toByte), 36337)(_.copy())
-    verifyNeq((0.toShort, 1.toByte), (1.toShort, 1.toByte), 36337)(_.copy())
-    verifyNeq((0, 1.toByte), (1, 1.toByte), 36337)(_.copy())
-    verifyNeq((0.toLong, 1.toByte), (1.toLong, 1.toByte), 36337)(_.copy())
-    verifyNeq((0.toBigInt, 1.toByte), (1.toBigInt, 1.toByte), 36337)(_.copy())
+    val neqOpCost = 10
+    verifyNeq((0.toByte, 1.toByte), (1.toByte, 1.toByte), 36337, neqOpCost)(_.copy())
+    verifyNeq((0.toShort, 1.toByte), (1.toShort, 1.toByte), 36337, neqOpCost)(_.copy())
+    verifyNeq((0, 1.toByte), (1, 1.toByte), 36337, neqOpCost)(_.copy())
+    verifyNeq((0.toLong, 1.toByte), (1.toLong, 1.toByte), 36337, neqOpCost)(_.copy())
+    verifyNeq((0.toBigInt, 1.toByte), (1.toBigInt, 1.toByte), 36337, neqOpCost)(_.copy())
   }
 
   property("NEQ of tuples of pre-defined types") {
-    verifyNeq((ge1, ge1), (ge1, ge2), 36337)(_.copy())
-    verifyNeq((t1, t1), (t1, t2), 36337)(_.copy())
-    verifyNeq((b1, b1), (b1, b2), 36497)(_.copy())
-    verifyNeq((preH1, preH1), (preH1, preH2), 36337)(_.copy())
-    verifyNeq((h1, h1), (h1, h2), 36337)(_.copy())
+    verifyNeq((ge1, ge1), (ge1, ge2), 36337, 10)(_.copy())
+    verifyNeq((t1, t1), (t1, t2), 36337, 10)(_.copy())
+    verifyNeq((b1, b1), (b1, b2), 36497, 170)(_.copy())
+    verifyNeq((preH1, preH1), (preH1, preH2), 36337, 10)(_.copy())
+    verifyNeq((h1, h1), (h1, h2), 36337, 10)(_.copy())
   }
 
   property("NEQ of nested tuples") {
