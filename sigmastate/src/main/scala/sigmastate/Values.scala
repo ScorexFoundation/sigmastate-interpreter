@@ -144,8 +144,8 @@ object Values {
       * @param perKbCost cost per kilobyte of data
       * @param dataSize size of data in bytes known in advance (before operation execution)
       */
-    @inline final def addPerKbCost(perKbCost: Int, dataSize: Int)(implicit E: ErgoTreeEvaluator): Unit = {
-      E.addPerKbCost(perKbCost, dataSize, this.opName)
+    @inline final def addPerBlockCost(perKbCost: Int, dataSize: Int)(implicit E: ErgoTreeEvaluator): Unit = {
+      E.addPerBlockCost(perKbCost, dataSize, this.opName)
     }
   }
 

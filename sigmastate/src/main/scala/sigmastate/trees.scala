@@ -610,7 +610,7 @@ case class CalcBlake2b256(override val input: Value[SByteArray]) extends CalcHas
   override val hashFn: CryptographicHash32 = Blake2b256
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val inputV = input.evalTo[Coll[Byte]](env)
-    addPerKbCost(CostOf.CalcBlake2b256_PerKb, inputV.length)
+    addPerBlockCost(CostOf.CalcBlake2b256_PerBlock, inputV.length)
     SigmaDsl.blake2b256(inputV)
   }
 }
@@ -627,7 +627,7 @@ case class CalcSha256(override val input: Value[SByteArray]) extends CalcHash {
   override val hashFn: CryptographicHash32 = Sha256
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val inputV = input.evalTo[Coll[Byte]](env)
-    addPerKbCost(CostOf.CalcSha256_PerKb, inputV.length)
+    addPerBlockCost(CostOf.CalcSha256_PerBlock, inputV.length)
     SigmaDsl.sha256(inputV)
   }
 }
@@ -1046,11 +1046,13 @@ case class EQ[S <: SType](override val left: Value[S], override val right: Value
       case t if t.isConstantSize =>
         addCost(CostOf.EQConstSize)
       case _ =>
-        // TODO v5.0: revisit this formula of costing
-        val rds = Sized.dataSizeOf[S](r, right.tpe)
+        // TODO v5.0: re-implement without Sized
         val lds = Sized.dataSizeOf[S](l, left.tpe)
-        addCost(CostOf.EQDynSize(dataSize = (lds + rds).toIntExact))
+        val rds = Sized.dataSizeOf[S](r, right.tpe)
+        addCost(CostOf.EQConstSize)
+        addPerBlockCost(CostOf.EQ_PerBlock, dataSize = (lds + rds).toIntExact)
     }
+    // TODO v5.0: re-implement using explicit recursive predicate `equalDataValues`
     l == r
   }
 }
@@ -1072,12 +1074,14 @@ case class NEQ[S <: SType](override val left: Value[S], override val right: Valu
       case t if t.isConstantSize =>
         addCost(CostOf.EQConstSize)
       case _ =>
-        // TODO v5.0: revisit this formula of costing
-        val rds = Sized.dataSizeOf[S](r, right.tpe)
+        // TODO v5.0: re-implement without Sized
         val lds = Sized.dataSizeOf[S](l, left.tpe)
-        addCost(CostOf.EQDynSize(dataSize = (lds + rds).toIntExact))
+        val rds = Sized.dataSizeOf[S](r, right.tpe)
+        addCost(CostOf.EQConstSize)
+        addPerBlockCost(CostOf.EQ_PerBlock, dataSize = (lds + rds).toIntExact)
     }
-    l != r
+    // TODO v5.0: re-implement using explicit recursive predicate `equalDataValues`
+    !(l == r)
   }
 }
 object NEQ extends RelationCompanion {

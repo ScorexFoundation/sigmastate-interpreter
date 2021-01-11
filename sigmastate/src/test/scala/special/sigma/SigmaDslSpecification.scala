@@ -37,7 +37,7 @@ import org.scalacheck.Gen.frequency
 import scalan.RType.{AnyType, LongType, IntType, UnitType, OptionType, BooleanType, PairType, ByteType, ShortType}
 import scorex.util.ModifierId
 import sigmastate.basics.ProveDHTuple
-import sigmastate.interpreter.{EvalSettings, ErgoTreeEvaluator, CostDetails, SimpleCostItem, SeqCostItem, PerKbCostItem}
+import sigmastate.interpreter.{PerBlockCostItem, ErgoTreeEvaluator, SeqCostItem, EvalSettings, CostDetails, CostItem, SimpleCostItem}
 
 import scala.collection.mutable
 
@@ -1094,9 +1094,8 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
       SimpleCostItem("GT", gtOpCost)
     )
   )
-  def costNEQ(neqOpCost: Int) = CostDetails(
-    43 + neqOpCost,
-    Array(
+  def costNEQ(neqCost: Seq[CostItem]) = {
+    val trace = Array(
       SimpleCostItem("Apply", 20),
       SimpleCostItem("FuncValue", 2),
       SimpleCostItem("GetVar", 5),
@@ -1104,10 +1103,13 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
       SimpleCostItem("ValUse", 5),
       SimpleCostItem("SelectField", 2),
       SimpleCostItem("ValUse", 5),
-      SimpleCostItem("SelectField", 2),
-      SimpleCostItem("NEQ", neqOpCost)
-    )
-  )
+      SimpleCostItem("SelectField", 2)
+    ) ++ neqCost
+    val cost = trace.map(_.cost).sum
+    CostDetails(cost, trace)
+  }
+  val constNeqCost: Seq[CostItem] = Array(SimpleCostItem("NEQ", 10))
+
   def costLE(leOpCost: Int) = CostDetails(
     43 + leOpCost,
     Array(
@@ -1183,7 +1185,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
       swapArgs(LT_cases, cost = 36342, newCost = costGT(5)),
       ">", GT.apply)(_ > _)
 
-    val neqCases = newCasesFrom2(LT_cases.map(_._1))(_ != _, cost = 36337, newCost = costNEQ(10))
+    val neqCases = newCasesFrom2(LT_cases.map(_._1))(_ != _, cost = 36337, newCost = costNEQ(constNeqCost))
     verifyOp(neqCases, "!=", NEQ.apply)(_ != _)
   }
 
@@ -1488,7 +1490,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
     verifyOp(swapArgs(LT_cases, cost = 36342, costGT(5)), ">", GT.apply)(_ > _)
 
-    val neqCases = newCasesFrom2(LT_cases.map(_._1))(_ != _, cost = 36337, newCost = costNEQ(10))
+    val neqCases = newCasesFrom2(LT_cases.map(_._1))(_ != _, cost = 36337, newCost = costNEQ(constNeqCost))
     verifyOp(neqCases, "!=", NEQ.apply)(_ != _)
   }
 
@@ -1792,7 +1794,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
       swapArgs(LT_cases, cost = 36342, newCost = costGT(5)),
       ">", GT.apply)(_ > _)
 
-    val neqCases = newCasesFrom2(LT_cases.map(_._1))(_ != _, cost = 36337, newCost = costNEQ(10))
+    val neqCases = newCasesFrom2(LT_cases.map(_._1))(_ != _, cost = 36337, newCost = costNEQ(constNeqCost))
     verifyOp(neqCases, "!=", NEQ.apply)(_ != _)
   }
 
@@ -2097,7 +2099,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
       swapArgs(LT_cases, cost = 36342, newCost = costGT(5)),
       ">", GT.apply)(_ > _)
 
-    val neqCases = newCasesFrom2(LT_cases.map(_._1))(_ != _, cost = 36337, newCost = costNEQ(10))
+    val neqCases = newCasesFrom2(LT_cases.map(_._1))(_ != _, cost = 36337, newCost = costNEQ(constNeqCost))
     verifyOp(neqCases, "!=", NEQ.apply)(_ != _)
   }
 
@@ -2406,7 +2408,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
       swapArgs(LT_cases, cost = 36342, newCost = costGT(10)),
       ">", GT.apply)(o.gt(_, _))
 
-    val neqCases = newCasesFrom2(LT_cases.map(_._1))(_ != _, cost = 36337, newCost = costNEQ(10))
+    val neqCases = newCasesFrom2(LT_cases.map(_._1))(_ != _, cost = 36337, newCost = costNEQ(constNeqCost))
     verifyOp(neqCases, "!=", NEQ.apply)(_ != _)
   }
 
@@ -2525,11 +2527,11 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
     * @param cost the expected cost of `verify` (the same for all cases)
     */
   def verifyNeq[A: Ordering: Arbitrary: RType]
-      (x: A, y: A, cost: Int, neqOpCost: Int = 0)
+      (x: A, y: A, cost: Int, neqCost: Seq[CostItem] = mutable.WrappedArray.empty)
       (copy: A => A, generateCases: Boolean = true)
       (implicit sampled: Sampled[(A, A)]) = {
     val copied_x = copy(x)
-    val newCost = if (neqOpCost == 0) CostDetails(0) else costNEQ(neqOpCost)
+    val newCost = if (neqCost.isEmpty) CostDetails(0) else costNEQ(neqCost)
     def expected(v: Boolean) = Expected(Success(v), cost, newCost)
     verifyOp(Seq(
         (x, x) -> expected(false),
@@ -2542,28 +2544,30 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
   }
 
   property("NEQ of pre-defined types") {
-    verifyNeq(ge1, ge2, 36337, 10)(_.asInstanceOf[CGroupElement].copy())
-    verifyNeq(t1, t2, 36337, 10)(_.asInstanceOf[CAvlTree].copy())
-    verifyNeq(b1, b2, 36417, 90)(_.asInstanceOf[CostingBox].copy())
-    verifyNeq(preH1, preH2, 36337, 10)(_.asInstanceOf[CPreHeader].copy())
-    verifyNeq(h1, h2, 36337, 10)(_.asInstanceOf[CHeader].copy())
+    verifyNeq(ge1, ge2, 36337, constNeqCost)(_.asInstanceOf[CGroupElement].copy())
+    verifyNeq(t1, t2, 36337, constNeqCost)(_.asInstanceOf[CAvlTree].copy())
+    verifyNeq(b1, b2, 36417,
+      Array(
+        SimpleCostItem("NEQ", 10),
+        PerBlockCostItem("NEQ", 5, 32)))(_.asInstanceOf[CostingBox].copy())
+    verifyNeq(preH1, preH2, 36337, constNeqCost)(_.asInstanceOf[CPreHeader].copy())
+    verifyNeq(h1, h2, 36337, constNeqCost)(_.asInstanceOf[CHeader].copy())
   }
 
   property("NEQ of tuples of numerics") {
-    val neqOpCost = 10
-    verifyNeq((0.toByte, 1.toByte), (1.toByte, 1.toByte), 36337, neqOpCost)(_.copy())
-    verifyNeq((0.toShort, 1.toByte), (1.toShort, 1.toByte), 36337, neqOpCost)(_.copy())
-    verifyNeq((0, 1.toByte), (1, 1.toByte), 36337, neqOpCost)(_.copy())
-    verifyNeq((0.toLong, 1.toByte), (1.toLong, 1.toByte), 36337, neqOpCost)(_.copy())
-    verifyNeq((0.toBigInt, 1.toByte), (1.toBigInt, 1.toByte), 36337, neqOpCost)(_.copy())
+    verifyNeq((0.toByte, 1.toByte), (1.toByte, 1.toByte), 36337, constNeqCost)(_.copy())
+    verifyNeq((0.toShort, 1.toByte), (1.toShort, 1.toByte), 36337, constNeqCost)(_.copy())
+    verifyNeq((0, 1.toByte), (1, 1.toByte), 36337, constNeqCost)(_.copy())
+    verifyNeq((0.toLong, 1.toByte), (1.toLong, 1.toByte), 36337, constNeqCost)(_.copy())
+    verifyNeq((0.toBigInt, 1.toByte), (1.toBigInt, 1.toByte), 36337, constNeqCost)(_.copy())
   }
 
   property("NEQ of tuples of pre-defined types") {
-    verifyNeq((ge1, ge1), (ge1, ge2), 36337, 10)(_.copy())
-    verifyNeq((t1, t1), (t1, t2), 36337, 10)(_.copy())
-    verifyNeq((b1, b1), (b1, b2), 36497, 170)(_.copy())
-    verifyNeq((preH1, preH1), (preH1, preH2), 36337, 10)(_.copy())
-    verifyNeq((h1, h1), (h1, h2), 36337, 10)(_.copy())
+    verifyNeq((ge1, ge1), (ge1, ge2), 36337, constNeqCost)(_.copy())
+    verifyNeq((t1, t1), (t1, t2), 36337, constNeqCost)(_.copy())
+    verifyNeq((b1, b1), (b1, b2), 36497)(_.copy())
+    verifyNeq((preH1, preH1), (preH1, preH2), 36337, constNeqCost)(_.copy())
+    verifyNeq((h1, h1), (h1, h2), 36337, constNeqCost)(_.copy())
   }
 
   property("NEQ of nested tuples") {

@@ -118,23 +118,23 @@ class ErgoTreeEvaluator(
     val cost = Math.multiplyExact(perItemCost, nItems)
     coster.add(cost)
     if (settings.costTracingEnabled) {
-      costTrace += SeqCostItem(opName, perItemCost, nItems)  // TODO v5.0: more accurate tracing
+      costTrace += SeqCostItem(opName, perItemCost, nItems)
     }
     this
   }
 
   /** Add the size-based cost of an operation to the accumulator and associate it with this operation.
     * The size in bytes of the data is known in advance (like in CalcSha256 operation)
-    * @param perKbCost cost per kilobyte of data
+    * @param perBlockCost cost of operation per block of data
     * @param dataSize size of data in bytes known in advance (before operation execution)
     * @param opName the operation name to associate the cost with (when costTracingEnabled)
     */
-  @inline final def addPerKbCost(perKbCost: Int, dataSize: Int, opName: String): this.type = {
-    val numKbs = (dataSize - 1) / 1024 + 1 // number of kilobytes to cover dataSize
-    val cost = Math.multiplyExact(perKbCost, numKbs)
+  @inline final def addPerBlockCost(perBlockCost: Int, dataSize: Int, opName: String): this.type = {
+    val numBlocks = (dataSize - 1) / ErgoTreeEvaluator.DataBlockSize + 1 // number of blocks to cover dataSize
+    val cost = Math.multiplyExact(perBlockCost, numBlocks)
     coster.add(cost)
     if (settings.costTracingEnabled) {
-      costTrace += PerKbCostItem(opName, perKbCost, numKbs)  // TODO v5.0: more accurate tracing
+      costTrace += PerBlockCostItem(opName, perBlockCost, numBlocks)
     }
     this
   }
@@ -143,6 +143,11 @@ class ErgoTreeEvaluator(
 object ErgoTreeEvaluator {
   /** Immutable data environment used to assign data values to graph nodes. */
   type DataEnv = Map[Int, Any]
+
+  /** Size of data block in bytes. Used in JIT cost calculations.
+    * @see [[sigmastate.NEQ]],
+    */
+  val DataBlockSize: Int = 256
 
   /** Empty data environment. */
   val EmptyDataEnv: DataEnv = Map.empty
@@ -305,6 +310,7 @@ class CostAccumulator(initialCost: Int, costLimit: Option[Long]) {
 /** An item in the cost accumulation trace of a [[ErgoTreeEvaluator]]. */
 abstract class CostItem {
   def opName: String
+  def cost: Int
 }
 
 /** An item in the cost accumulation trace of a [[ErgoTreeEvaluator]].
@@ -324,18 +330,22 @@ case class SimpleCostItem(opName: String, cost: Int) extends CostItem
   * @param nItems      number of items in the collection
   */
 case class SeqCostItem(opName: String, perItemCost: Int, nItems: Int)
-    extends CostItem
+    extends CostItem {
+  override def cost: Int = Math.multiplyExact(perItemCost, nItems)
+}
 
 /** An item in the cost accumulation trace of a [[ErgoTreeEvaluator]].
   * Represents cost of data size dependent operation (like CalcSha256).
   * Used for debugging of costing.
   *
   * @param opName     name of the ErgoTree operation
-  * @param perKbCost  cost added to accumulator for each Kb of data
-  * @param nKilobytes size of data in kilobytes
+  * @param perBlockCost  cost added to accumulator for each block of data
+  * @param nBlocks size of data in blocks
   */
-case class PerKbCostItem(opName: String, perKbCost: Int, nKilobytes: Int)
-    extends CostItem
+case class PerBlockCostItem(opName: String, perBlockCost: Int, nBlocks: Int)
+    extends CostItem {
+  override def cost: Int = Math.multiplyExact(perBlockCost, nBlocks)
+}
 
 /** Detailed results of cost evaluation.
   * NOTE: the `trace` is obtained during execution of [[ErgoTreeEvaluator]])

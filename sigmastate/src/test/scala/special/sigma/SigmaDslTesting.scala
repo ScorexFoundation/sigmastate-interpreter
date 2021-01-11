@@ -473,13 +473,16 @@ class SigmaDslTesting extends PropSpec
         // new cost expectation is missing, print out actual cost results
         funcRes.foreach { case (_, newCost) =>
           // uncomment to output actual cost details to be used as test vectors
-          // printCostDetails(script, newCost)
+          printCostDetails(script, newCost)
         }
       }
       else {
         // new cost expectation is specified, compare it with the actual result
         funcRes.foreach { case (_, newCost) =>
-          newCost.trace shouldBe expectedTrace
+          if (newCost.trace != expectedTrace) {
+            printCostDetails(script, newCost)
+            newCost.trace shouldBe expectedTrace
+          }
         }
       }
 

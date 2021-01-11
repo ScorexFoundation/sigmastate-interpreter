@@ -480,10 +480,10 @@ object CostTable {
     def AtLeast_PerItem = 1 // cf. logicCost
 
     /** Cost of: of hashing 1 KiB of data */
-    def CalcBlake2b256_PerKb = 100 // cf. hashPerKb
+    def CalcBlake2b256_PerBlock = 100 // cf. hashPerKb
 
     /** Cost of: of hashing 1 KiB of data */
-    def CalcSha256_PerKb = 100 // cf. hashPerKb
+    def CalcSha256_PerBlock = 100 // cf. hashPerKb
 
 //    ("Xor_per_kb", "(Coll[Byte],Coll[Byte]) => Coll[Byte]", hashPerKb / 2),
 //    ("XorOf_per_item", "(Coll[Boolean]) => Boolean", logicCost),
@@ -491,27 +491,14 @@ object CostTable {
 
     /** Cost of:
       * 1) compute isConstSize for left argument
-      * 2) dataSizeOf for left and right arguments
       * Old cost: ("EQ", "(T,T) => Boolean", comparisonCost)
       */
     def EQConstSize = comparisonCost
 
-    /** Cost of:
-      * 1) compute isConstSize for left argument
-      * 2) dataSizeOf for left and right arguments
-      * 3) perform comparison of two arguments
+    /** Cost of: 1) equality comparison cost per data of the block size
+      * @see [[sigmastate.interpreter.ErgoTreeEvaluator.DataBlockSize]]
       */
-    def EQDynSize(dataSize: Int) = {
-      val numKbs = dataSize / 1024 + 1
-      numKbs * comparisonPerKbCost
-    }
-
-//    ("GT_per_kb", "(T,T) => Boolean", comparisonPerKbCost),
-//    ("GE_per_kb", "(T,T) => Boolean", comparisonPerKbCost),
-//    ("LE_per_kb", "(T,T) => Boolean", comparisonPerKbCost),
-//    ("LT_per_kb", "(T,T) => Boolean", comparisonPerKbCost),
-//    ("NEQ_per_kb", "(T,T) => Boolean", comparisonPerKbCost),
-//    //    (">_per_item", "(BigInt, BigInt) => BigInt", MinimalCost),
+    def EQ_PerBlock = 5 // cf. comparisonPerKbCost
 
     /** Cost of:
       * 1) resolving ArithOpCompanion by typeCode
