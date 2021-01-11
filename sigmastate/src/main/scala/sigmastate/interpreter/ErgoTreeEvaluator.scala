@@ -375,7 +375,7 @@ object MethodCallCostItem {
               (implicit E: ErgoTreeEvaluator): CostDetails = {
     // add approximated cost of invoked method (if specified)
     val cost = mc.method.costFunc match {
-      case Some(costFunc) => costFunc.lift((mc, obj, args)).getOrElse(CostDetails.ZeroCost)
+      case Some(costFunc) => costFunc(E, mc, obj, args)
       case _ => CostDetails.ZeroCost // TODO v5.0: throw exception if not defined
     }
     cost

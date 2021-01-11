@@ -8,11 +8,11 @@ import org.ergoplatform.validation._
 import scalan.{Nullable, RType}
 import scalan.RType.GeneralType
 import sigmastate.SType.{TypeCode, AnyOps}
-import sigmastate.interpreter.{CryptoConstants, ErgoTreeEvaluator, CostItem, SimpleCostItem, CostDetails}
+import sigmastate.interpreter.{CryptoConstants, ErgoTreeEvaluator, CostDetails, CostItem, SimpleCostItem}
 import sigmastate.utils.Overloading.Overload1
 import scalan.util.Extensions._
 import sigmastate.Values._
-import sigmastate.lang.Terms._
+import sigmastate.lang.Terms.{MethodCall, _}
 import sigmastate.lang.{SigmaBuilder, SigmaTyper}
 import sigmastate.SCollection._
 import sigmastate.interpreter.CryptoConstants.{EcPointType, hashLength}
@@ -491,15 +491,26 @@ object SMethod {
     * For a function `f: (mc, obj, args) => cost` it is called before the evaluation of
     * the `mc` node with the given `obj` as method receiver and `args` as method
     * arguments.
-    * The function returns an estimated cost of evaluation BEFORE actual evaluation of
-    * the method. For this reason [[MethodCostFunc]] is not used for higher-order
-    * operations like `Coll.map`, `Coll.filter` etc.
     */
-  type MethodCostFunc = PartialFunction[(MethodCall, Any, Array[Any]), CostDetails]
+  abstract class MethodCostFunc extends Function4[ErgoTreeEvaluator, MethodCall, Any, Array[Any], CostDetails] {
+    /**
+      * The function returns an estimated cost of evaluation BEFORE actual evaluation of
+      * the method. For this reason [[MethodCostFunc]] is not used for higher-order
+      * operations like `Coll.map`, `Coll.filter` etc.
+      */
+    def apply(E: ErgoTreeEvaluator, mc: MethodCall, obj: Any, args: Array[Any]): CostDetails
+  }
 
   /** Returns a cost function which always returs the given cost. */
-  def givenCost(cost: Int): MethodCostFunc = {
-    case (mc, _, _) => CostDetails(cost, Array(SimpleCostItem(mc.method.opName, cost)))
+  def givenCost(cost: Int): MethodCostFunc = new MethodCostFunc {
+    override def apply(E: ErgoTreeEvaluator,
+                       mc: MethodCall,
+                       obj: Any, args: Array[Any]): CostDetails = {
+      if (E.settings.costTracingEnabled)
+        CostDetails(cost, Array(SimpleCostItem(mc.method.opName, cost)))
+      else
+        CostDetails(cost)
+    }
   }
 
   /** Some runtime methods (like Coll.map, Coll.flatMap) require additional RType descriptors.
@@ -615,11 +626,15 @@ object SNumericType extends STypeCompanion {
 
   /** Cost function which is assigned for numeric cast MethodCall nodes in ErgoTree.
     * It is called as part of MethodCall.eval method. */
-  val costOfNumericCast: MethodCostFunc = {
-    case (mc, _, _) =>
+  val costOfNumericCast: MethodCostFunc = new MethodCostFunc {
+    override def apply(E: ErgoTreeEvaluator,
+                       mc: MethodCall,
+                       obj: Any,
+                       args: Array[Any]): CostDetails = {
       val cast = getNumericCast(mc.obj.tpe, mc.method.name, mc.method.stype.tRange).get
       val cost = if (cast == Downcast) CostOf.Downcast else CostOf.Upcast
       CostDetails(cost, Array(SimpleCostItem(mc.method.opName, cost)))
+    }
   }
 
   val ToByteMethod: SMethod = SMethod(this, "toByte", SFunc(tNum, SByte), 1)
