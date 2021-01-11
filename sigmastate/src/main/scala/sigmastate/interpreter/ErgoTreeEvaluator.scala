@@ -9,6 +9,7 @@ import sigmastate.interpreter.Interpreter.ReductionResult
 import sigmastate.lang.exceptions.CostLimitException
 import special.sigma.Context
 import scalan.util.Extensions._
+import sigmastate.lang.Terms.MethodCall
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -114,8 +115,8 @@ class ErgoTreeEvaluator(
     * @param nItems the number of items
     * @param opName the operation name to associate the cost with (when costTracingEnabled)
     */
-  def addCost(perItemCost: Int, nItems: Int, opName: String): this.type = {
-    val cost = Math.multiplyExact(perItemCost, nItems)
+  def addSeqCost(perItemCost: Int, nItems: Int, opName: String): this.type = {
+    val cost = SeqCostItem.calcCost(perItemCost, nItems)
     coster.add(cost)
     if (settings.costTracingEnabled) {
       costTrace += SeqCostItem(opName, perItemCost, nItems)
@@ -130,11 +131,23 @@ class ErgoTreeEvaluator(
     * @param opName the operation name to associate the cost with (when costTracingEnabled)
     */
   @inline final def addPerBlockCost(perBlockCost: Int, dataSize: Int, opName: String): this.type = {
-    val numBlocks = (dataSize - 1) / ErgoTreeEvaluator.DataBlockSize + 1 // number of blocks to cover dataSize
-    val cost = Math.multiplyExact(perBlockCost, numBlocks)
+    val numBlocks = PerBlockCostItem.blocksToCover(dataSize)
+    val cost = PerBlockCostItem.calcCost(perBlockCost, numBlocks)
     coster.add(cost)
     if (settings.costTracingEnabled) {
       costTrace += PerBlockCostItem(opName, perBlockCost, numBlocks)
+    }
+    this
+  }
+
+  final def addMethodCallCost(mc: MethodCall, obj: Any, args: Array[Any]): this.type = {
+    val cost = MethodCallCostItem.calcCost(mc, obj, args)
+    coster.add(cost)
+    if (settings.costTracingEnabled) {
+      costTrace += MethodCallCostItem(
+        mc.opName,
+        Array(SimpleCostItem(mc.method.opName, cost))
+      )
     }
     this
   }
@@ -331,7 +344,10 @@ case class SimpleCostItem(opName: String, cost: Int) extends CostItem
   */
 case class SeqCostItem(opName: String, perItemCost: Int, nItems: Int)
     extends CostItem {
-  override def cost: Int = Math.multiplyExact(perItemCost, nItems)
+  override def cost: Int = SeqCostItem.calcCost(perItemCost, nItems)
+}
+object SeqCostItem {
+  def calcCost(perItemCost: Int, nItems: Int) = Math.multiplyExact(perItemCost, nItems)
 }
 
 /** An item in the cost accumulation trace of a [[ErgoTreeEvaluator]].
@@ -344,9 +360,28 @@ case class SeqCostItem(opName: String, perItemCost: Int, nItems: Int)
   */
 case class PerBlockCostItem(opName: String, perBlockCost: Int, nBlocks: Int)
     extends CostItem {
-  override def cost: Int = Math.multiplyExact(perBlockCost, nBlocks)
+  override def cost: Int = PerBlockCostItem.calcCost(perBlockCost, nBlocks)
+}
+object PerBlockCostItem {
+  /** Returns a number of blocks to cover dataSize bytes. */
+  def blocksToCover(dataSize: Int) = (dataSize - 1) / ErgoTreeEvaluator.DataBlockSize + 1
+
+  def calcCost(perBlockCost: Int, nBlocks: Int): Int = Math.multiplyExact(perBlockCost, nBlocks)
 }
 
+case class MethodCallCostItem(opName: String, items: Seq[CostItem]) extends CostItem {
+  override def cost: Int = items.map(_.cost).sum
+}
+object MethodCallCostItem {
+  def calcCost(mc: MethodCall, obj: Any, args: Array[Any]): Int = {
+    // add approximated cost of invoked method (if specified)
+    val cost = mc.method.costFunc match {
+      case Some(costFunc) => costFunc.lift((mc, obj, args)).getOrElse(0)
+      case _ => 0 // TODO v5.0: throw exception if not defined
+    }
+    cost
+  }
+}
 /** Detailed results of cost evaluation.
   * NOTE: the `trace` is obtained during execution of [[ErgoTreeEvaluator]])
   * @param cost accumulated cost of operation

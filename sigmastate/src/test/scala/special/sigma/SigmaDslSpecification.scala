@@ -2565,7 +2565,10 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
   property("NEQ of tuples of pre-defined types") {
     verifyNeq((ge1, ge1), (ge1, ge2), 36337, constNeqCost)(_.copy())
     verifyNeq((t1, t1), (t1, t2), 36337, constNeqCost)(_.copy())
-    verifyNeq((b1, b1), (b1, b2), 36497)(_.copy())
+    verifyNeq((b1, b1), (b1, b2),
+      cost = 36497,
+      neqCost = Array(SimpleCostItem("NEQ", 10), PerBlockCostItem("NEQ", 5, 64))
+      )(_.copy())
     verifyNeq((preH1, preH1), (preH1, preH2), 36337, constNeqCost)(_.copy())
     verifyNeq((h1, h1), (h1, h2), 36337, constNeqCost)(_.copy())
   }

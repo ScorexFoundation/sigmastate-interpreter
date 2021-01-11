@@ -374,6 +374,10 @@ object CostTable {
 //    ("ExtractRegisterAs", "(Box,Byte) => Coll[BigInt]", extractCost),
 //    ("SBox$.tokens", "(Box) => Coll[(Coll[Byte],Long)]", extractCost),
 //
+
+    /** Cost of: 1) serializing EcPointType to bytes 2) packing them in Coll. */
+    def GroupElement_GetEncoded = 20
+
 //    ("Exponentiate", "(GroupElement,BigInt) => GroupElement", expCost),
 //    ("MultiplyGroup", "(GroupElement,GroupElement) => GroupElement", multiplyGroup),
 //    ("ByteArrayToBigInt", "(Coll[Byte]) => BigInt", castOp),

@@ -136,7 +136,7 @@ object Values {
       * @param nItems number of operations known in advance (before loop execution)
       */
     @inline final def addSeqCost(perItemCost: Int, nItems: Int)(implicit E: ErgoTreeEvaluator): Unit = {
-      E.addCost(perItemCost, nItems, this.opName)
+      E.addSeqCost(perItemCost, nItems, this.opName)
     }
 
     /** Add the size-based cost of an operation to the accumulator and associate it with this operation.

@@ -23,7 +23,7 @@ import sigmastate.eval.RuntimeCosting
 
 import scala.language.implicitConversions
 import scala.reflect.{ClassTag, classTag}
-import sigmastate.SMethod.{MethodCallIrBuilder, javaMethodOf, InvokeDescBuilder}
+import sigmastate.SMethod.{InvokeDescBuilder, MethodCostFunc, givenCost, javaMethodOf, MethodCallIrBuilder}
 import sigmastate.utxo.ByIndex
 import sigmastate.utxo.ExtractCreationInfo
 import sigmastate.utxo._
@@ -398,7 +398,7 @@ case class SMethod(
     methodId: Byte,
     irInfo: MethodIRInfo,
     docInfo: Option[OperationInfo],
-    costFunc: Option[PartialFunction[(MethodCall, Any, Array[Any]), Int]]) {
+    costFunc: Option[MethodCostFunc]) {
 
 
   /** Do some checks the method descriptor is well configured and consistent. */
@@ -449,13 +449,14 @@ case class SMethod(
   def withSType(newSType: SFunc): SMethod = copy(stype = newSType)
 
   /** Create a new instance with the given cost function. */
-  def withCost(costFunc: PartialFunction[(MethodCall, Any, Array[Any]), Int]): SMethod = copy(costFunc = Some(costFunc))
+  def withCost(costFunc: MethodCostFunc): SMethod = copy(costFunc = Some(costFunc))
 
   def withConcreteTypes(subst: Map[STypeVar, SType]): SMethod =
     withSType(stype.withSubstTypes(subst).asFunc)
 
+  def opName = objType.getClass.getSimpleName + "." + name
+
   def opId: OperationId = {
-    val opName = objType.getClass.getSimpleName + "." + name
     OperationId(opName, stype)
   }
 
@@ -485,6 +486,21 @@ case class SMethod(
 
 object SMethod {
   type RCosted[A] = RuntimeCosting#RCosted[A]
+
+  /** Type of functions used to assign cost to method call nodes.
+    * For a function `f: (mc, obj, args) => cost` it is called before the evaluation of
+    * the `mc` node with the given `obj` as method receiver and `args` as method
+    * arguments.
+    * The function returns an estimated cost of evaluation BEFORE actual evaluation of
+    * the method. For this reason [[MethodCostFunc]] is not used for higher-order
+    * operations like `Coll.map`, `Coll.filter` etc.
+    */
+  type MethodCostFunc = PartialFunction[(MethodCall, Any, Array[Any]), Int]
+
+  /** Returns a cost function which always returs the given cost. */
+  def givenCost(cost: Int): MethodCostFunc = {
+    case _ => cost
+  }
 
   /** Some runtime methods (like Coll.map, Coll.flatMap) require additional RType descriptors.
     * The builder can extract those descriptors from the given type of the method signature.
@@ -599,15 +615,10 @@ object SNumericType extends STypeCompanion {
 
   /** Cost function which is assigned for numeric cast MethodCall nodes in ErgoTree.
     * It is called as part of MethodCall.eval method. */
-  val costOfNumericCast: PartialFunction[(MethodCall, Any, Array[Any]), Int] = {
+  val costOfNumericCast: MethodCostFunc = {
     case (mc, _, _) =>
       val cast = getNumericCast(mc.obj.tpe, mc.method.name, mc.method.stype.tRange).get
       if (cast == Downcast) CostOf.Downcast else CostOf.Upcast
-  }
-
-  /** Returns a cost function which always returs the given cost. */
-  def givenCost(cost: Int): PartialFunction[(MethodCall, Any, Array[Any]), Int] = {
-    case _ => cost
   }
 
   val ToByteMethod: SMethod = SMethod(this, "toByte", SFunc(tNum, SByte), 1)
@@ -872,6 +883,7 @@ case object SGroupElement extends SProduct with SPrimType with SEmbeddable with 
 
   lazy val GetEncodedMethod: SMethod = SMethod(this, "getEncoded", SFunc(IndexedSeq(this), SByteArray), 2)
     .withIRInfo(MethodCallIrBuilder)
+    .withCost(givenCost(CostOf.GroupElement_GetEncoded))
     .withInfo(PropertyCall, "Get an encoding of the point value.")
   lazy val ExponentiateMethod: SMethod = SMethod(this, "exp", SFunc(IndexedSeq(this, SBigInt), this), 3)
     .withIRInfo({ case (builder, obj, _, Seq(arg), _) =>
