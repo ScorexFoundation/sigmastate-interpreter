@@ -8,7 +8,7 @@ import org.ergoplatform.validation._
 import scalan.{Nullable, RType}
 import scalan.RType.GeneralType
 import sigmastate.SType.{TypeCode, AnyOps}
-import sigmastate.interpreter.{CryptoConstants, ErgoTreeEvaluator, CostDetails, CostItem, SimpleCostItem}
+import sigmastate.interpreter.{CryptoConstants, TracedCost, ErgoTreeEvaluator, GivenCost, CostDetails, CostItem, SimpleCostItem}
 import sigmastate.utils.Overloading.Overload1
 import scalan.util.Extensions._
 import sigmastate.Values._
@@ -507,9 +507,9 @@ object SMethod {
                        mc: MethodCall,
                        obj: Any, args: Array[Any]): CostDetails = {
       if (E.settings.costTracingEnabled)
-        CostDetails(cost, Array(SimpleCostItem(mc.method.opName, cost)))
+        TracedCost(Array(SimpleCostItem(mc.method.opName, cost)))
       else
-        CostDetails(cost)
+        GivenCost(cost)
     }
   }
 
@@ -633,7 +633,7 @@ object SNumericType extends STypeCompanion {
                        args: Array[Any]): CostDetails = {
       val cast = getNumericCast(mc.obj.tpe, mc.method.name, mc.method.stype.tRange).get
       val cost = if (cast == Downcast) CostOf.Downcast else CostOf.Upcast
-      CostDetails(cost, Array(SimpleCostItem(mc.method.opName, cost)))
+      TracedCost(Array(SimpleCostItem(mc.method.opName, cost)))
     }
   }
 

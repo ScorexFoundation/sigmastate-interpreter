@@ -366,11 +366,18 @@ object PerBlockCostItem {
   def calcCost(perBlockCost: Int, nBlocks: Int): Int = Math.multiplyExact(perBlockCost, nBlocks)
 }
 
+/** An item in the cost accumulation trace of a [[ErgoTreeEvaluator]].
+  * Represents cost of MethodCall operation.
+  * Used for debugging of costing.
+  *
+  * @param items cost details obtained as part of MethodCall evaluation
+  */
 case class MethodCallCostItem(items: CostDetails) extends CostItem {
   override def opName: String = MethodCall.typeName
   override def cost: Int = items.cost
 }
 object MethodCallCostItem {
+  /** Helper method to compute cost details for the given method call. */
   def calcCost(mc: MethodCall, obj: Any, args: Array[Any])
               (implicit E: ErgoTreeEvaluator): CostDetails = {
     // add approximated cost of invoked method (if specified)
@@ -381,14 +388,50 @@ object MethodCallCostItem {
     cost
   }
 }
-/** Detailed results of cost evaluation.
+
+/** Abstract representation of cost results obtained during evaluation. */
+abstract class CostDetails {
+  /** The total cost of evaluation. */
+  def cost: Int
+  /** The trace of costed operations performed during evaluation. */
+  def trace: Seq[CostItem]
+}
+
+/** Detailed results of cost evaluation represented by trace.
   * NOTE: the `trace` is obtained during execution of [[ErgoTreeEvaluator]])
-  * @param cost accumulated cost of operation
   * @param trace accumulated trace of all cost items (empty for AOT costing)
   */
-case class CostDetails(cost: Int, trace: Seq[CostItem])
+case class TracedCost(trace: Seq[CostItem]) extends CostDetails {
+  /** Total cost of all cost items. */
+  def cost: Int = trace.map(_.cost).sum
+}
+
+/** Result of cost evaluation represented using simple given value.
+  * Used to represent cost of AOT costing.
+  * @param cost the given value of the total cost
+  */
+case class GivenCost(cost: Int) extends CostDetails {
+  /** The trait is empty for this representation of CostDetails.
+    */
+  override def trace: Seq[CostItem] = mutable.WrappedArray.empty
+}
 
 object CostDetails {
-  val ZeroCost = apply(0)
-  def apply(cost: Int): CostDetails = CostDetails(cost, mutable.WrappedArray.empty)
+  /** Empty sequence of cost items. Should be used whenever possible to avoid allocations. */
+  val EmptyTrace: Seq[CostItem] = mutable.WrappedArray.empty
+
+  /** CostDetails with empty trace have also zero total cost. */
+  val ZeroCost = TracedCost(EmptyTrace)
+
+  /** Helper factory method to create CostDetails from the given trace. */
+  def apply(trace: Seq[CostItem]): CostDetails = TracedCost(trace)
+
+  /** Helper recognizer to work with different representations of costs in patterns
+   * uniformly.
+   */
+  def unapply(d: CostDetails): Option[(Int, Seq[CostItem])] = d match {
+    case TracedCost(t) => Some((d.cost, t))
+    case GivenCost(c) => Some((c, EmptyTrace))
+    case _ => None
+  }
 }

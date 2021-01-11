@@ -252,7 +252,6 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
         )
       ))
     val newCost = CostDetails(
-      48,
       Array(
         SimpleCostItem("Apply", 20),
         SimpleCostItem("FuncValue", 2),
@@ -288,7 +287,6 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
         )
       ))
     val newCost = CostDetails(
-      63,
       Array(
         SimpleCostItem("Apply", 20),
         SimpleCostItem("FuncValue", 2),
@@ -325,7 +323,6 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
         )
       ))
     val cost1 = CostDetails(
-      41,
       Array(
         SimpleCostItem("Apply", 20),
         SimpleCostItem("FuncValue", 2),
@@ -337,7 +334,6 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
       )
     )
     val cost2 = CostDetails(
-      48,
       Array(
         SimpleCostItem("Apply", 20),
         SimpleCostItem("FuncValue", 2),
@@ -370,7 +366,6 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
         )
       ))
     val cost1 = CostDetails(
-      41,
       Array(
         SimpleCostItem("Apply", 20),
         SimpleCostItem("FuncValue", 2),
@@ -382,7 +377,6 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
       )
     )
     val cost2 = CostDetails(
-      48,
       Array(
         SimpleCostItem("Apply", 20),
         SimpleCostItem("FuncValue", 2),
@@ -406,7 +400,6 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
   property("lazy || and && boolean equivalence") {
     val cost1 = CostDetails(
-      39,
       Array(
         SimpleCostItem("Apply", 20),
         SimpleCostItem("FuncValue", 2),
@@ -417,7 +410,6 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
       )
     )
     val cost2 = CostDetails(
-      39,
       Array(
         SimpleCostItem("Apply", 20),
         SimpleCostItem("FuncValue", 2),
@@ -428,7 +420,6 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
       )
     )
     val cost3 = CostDetails(
-      49,
       Array(
         SimpleCostItem("Apply", 20),
         SimpleCostItem("FuncValue", 2),
@@ -441,7 +432,6 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
       )
     )
     val cost4 = CostDetails(
-      59,
       Array(
         SimpleCostItem("Apply", 20),
         SimpleCostItem("FuncValue", 2),
@@ -456,7 +446,6 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
       )
     )
     val cost5 = CostDetails(
-      69,
       Array(
         SimpleCostItem("Apply", 20),
         SimpleCostItem("FuncValue", 2),
@@ -566,7 +555,6 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
         )))
 
     val cost6 = CostDetails(
-      64,
       Array(
         SimpleCostItem("Apply", 20),
         SimpleCostItem("FuncValue", 2),
@@ -605,7 +593,6 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
         )))
 
     val cost7 = CostDetails(
-      49,
       Array(
         SimpleCostItem("Apply", 20),
         SimpleCostItem("FuncValue", 2),
@@ -636,7 +623,6 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
         )))
 
     val cost8 = CostDetails(
-      54,
       Array(
         SimpleCostItem("Apply", 20),
         SimpleCostItem("FuncValue", 2),
@@ -671,7 +657,6 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
         )))
 
     val cost9 = CostDetails(
-      69,
       Array(
         SimpleCostItem("Apply", 20),
         SimpleCostItem("FuncValue", 2),
@@ -715,7 +700,6 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
         )))
 
     val cost10 = CostDetails(
-      84,
       Array(
         SimpleCostItem("Apply", 20),
         SimpleCostItem("FuncValue", 2),
@@ -771,7 +755,6 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
   }
 
   val costIdentity = CostDetails(
-    34,
     Array(
       SimpleCostItem("Apply", 20),
       SimpleCostItem("FuncValue", 2),
@@ -781,7 +764,6 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
     )
   )
   val costUpcast = CostDetails(
-    39,
     Array(
       SimpleCostItem("Apply", 20),
       SimpleCostItem("FuncValue", 2),
@@ -792,7 +774,6 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
     )
   )
   val costDowncast = CostDetails(
-    39,
     Array(
       SimpleCostItem("Apply", 20),
       SimpleCostItem("FuncValue", 2),
@@ -803,7 +784,6 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
     )
   )
   val costArithOps = CostDetails(
-    138,
     Array(
       SimpleCostItem("Apply", 20),
       SimpleCostItem("FuncValue", 2),
@@ -1067,7 +1047,6 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
   }
 
   def costLT(ltOpCost: Int) = CostDetails(
-    43 + ltOpCost,
     Array(
       SimpleCostItem("Apply", 20),
       SimpleCostItem("FuncValue", 2),
@@ -1081,7 +1060,6 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
     )
   )
   def costGT(gtOpCost: Int) = CostDetails(
-    43 + gtOpCost,
     Array(
       SimpleCostItem("Apply", 20),
       SimpleCostItem("FuncValue", 2),
@@ -1105,13 +1083,11 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
       SimpleCostItem("ValUse", 5),
       SimpleCostItem("SelectField", 2)
     ) ++ neqCost
-    val cost = trace.map(_.cost).sum
-    CostDetails(cost, trace)
+    CostDetails(trace)
   }
   val constNeqCost: Seq[CostItem] = Array(SimpleCostItem("NEQ", 10))
 
   def costLE(leOpCost: Int) = CostDetails(
-    43 + leOpCost,
     Array(
       SimpleCostItem("Apply", 20),
       SimpleCostItem("FuncValue", 2),
@@ -1125,7 +1101,6 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
     )
   )
   def costGE(geOpCost: Int) = CostDetails(
-    43 + geOpCost,
     Array(
       SimpleCostItem("Apply", 20),
       SimpleCostItem("FuncValue", 2),
@@ -2201,7 +2176,6 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
     verifyCases(
     {
       val costArithOps = CostDetails(
-        283,
         Array(
           SimpleCostItem("Apply", 20),
           SimpleCostItem("FuncValue", 2),
@@ -2531,7 +2505,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
       (copy: A => A, generateCases: Boolean = true)
       (implicit sampled: Sampled[(A, A)]) = {
     val copied_x = copy(x)
-    val newCost = if (neqCost.isEmpty) CostDetails(0) else costNEQ(neqCost)
+    val newCost = if (neqCost.isEmpty) CostDetails.ZeroCost else costNEQ(neqCost)
     def expected(v: Boolean) = Expected(Success(v), cost, newCost)
     verifyOp(Seq(
         (x, x) -> expected(false),
@@ -6418,7 +6392,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
       Seq(
         (None -> Expected(
           Failure(new NoSuchElementException("None.get")), 0,
-          expectedNewValue = Success(5L), expectedNewCost = CostDetails(39012))),
+          expectedNewValue = Success(5L), CostDetails.ZeroCost)),
         (Some(0L) -> Expected(Success(1L), 39012)),
         (Some(Long.MaxValue) -> Expected(new ArithmeticException("long overflow")))
       ),

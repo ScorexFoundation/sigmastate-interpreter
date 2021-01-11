@@ -18,7 +18,7 @@ import scorex.crypto.hash.Blake2b256
 import sigma.types.IsPrimView
 import sigmastate.Values.{Constant, SValue, Value, ErgoTree, GroupElementConstant}
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, ScriptEnv}
-import sigmastate.interpreter.{CryptoConstants, ErgoTreeEvaluator, Interpreter, CostAccumulator, CostDetails, CostItem}
+import sigmastate.interpreter.{CryptoConstants, TracedCost, ErgoTreeEvaluator, Interpreter, CostAccumulator, GivenCost, CostDetails, CostItem}
 import sigmastate.lang.{Terms, TransformingSigmaBuilder, SigmaCompiler}
 import sigmastate.serialization.{ValueSerializer, SigmaSerializer}
 import sigmastate.{SGroupElement, SType, TestsBase}
@@ -247,7 +247,7 @@ trait SigmaTestingCommons extends PropSpec
       val (res, _) = valueFun(sigmaCtx)
       //      val (resNew, _) = ErgoTreeEvaluator.eval(ctx.asInstanceOf[ErgoLikeContext], tree)
       //      assert(resNew == res, s"The new Evaluator result differ from the old: $resNew != $res")
-      (res.asInstanceOf[B], CostDetails(estimatedCost))
+      (res.asInstanceOf[B], GivenCost(estimatedCost))
     }
     val Terms.Apply(funcVal, _) = compiledTree.asInstanceOf[SValue]
     CompiledFunc(funcScript, bindings, funcVal, compiledTree, f)
@@ -281,7 +281,8 @@ trait SigmaTestingCommons extends PropSpec
 
       val (res, cost) = evaluator.evalWithCost(ErgoTreeEvaluator.EmptyDataEnv, compiledTree)
       val trace: Seq[CostItem] = evaluator.costTrace.toArray[CostItem]
-      val costDetails = CostDetails(cost, trace)
+      val costDetails = TracedCost(trace)
+      assert(cost == costDetails.cost)
 
       if (evalSettings.isLogEnabled) {
         printCostDetails(funcScript, costDetails)

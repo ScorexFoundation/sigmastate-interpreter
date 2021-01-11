@@ -28,7 +28,7 @@ import sigmastate.utils.Helpers._
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.helpers.{ErgoLikeContextTesting, SigmaPPrint}
 import sigmastate.helpers.TestingHelpers._
-import sigmastate.interpreter.{ProverResult, ContextExtension, ProverInterpreter, CostDetails}
+import sigmastate.interpreter.{ProverResult, ContextExtension, GivenCost, CostDetails, ProverInterpreter}
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo.{DeserializeContext, DeserializeRegister}
 import special.collection.{Coll, CollType}
@@ -619,7 +619,7 @@ class SigmaDslTesting extends PropSpec
     */
   case class Expected[+A](value: Try[A], cost: Int) {
     def newValue: Try[A] = value
-    def newCost: CostDetails = CostDetails(cost)
+    def newCost: CostDetails = GivenCost(cost)
   }
 
   object Expected {
