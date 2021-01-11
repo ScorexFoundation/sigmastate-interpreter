@@ -141,13 +141,10 @@ class ErgoTreeEvaluator(
   }
 
   final def addMethodCallCost(mc: MethodCall, obj: Any, args: Array[Any]): this.type = {
-    val cost = MethodCallCostItem.calcCost(mc, obj, args)
-    coster.add(cost)
+    val costDetails = MethodCallCostItem.calcCost(mc, obj, args)(this)
+    coster.add(costDetails.cost)
     if (settings.costTracingEnabled) {
-      costTrace += MethodCallCostItem(
-        mc.opName,
-        Array(SimpleCostItem(mc.method.opName, cost))
-      )
+      costTrace += MethodCallCostItem(costDetails)
     }
     this
   }
@@ -369,15 +366,17 @@ object PerBlockCostItem {
   def calcCost(perBlockCost: Int, nBlocks: Int): Int = Math.multiplyExact(perBlockCost, nBlocks)
 }
 
-case class MethodCallCostItem(opName: String, items: Seq[CostItem]) extends CostItem {
-  override def cost: Int = items.map(_.cost).sum
+case class MethodCallCostItem(items: CostDetails) extends CostItem {
+  override def opName: String = MethodCall.typeName
+  override def cost: Int = items.cost
 }
 object MethodCallCostItem {
-  def calcCost(mc: MethodCall, obj: Any, args: Array[Any]): Int = {
+  def calcCost(mc: MethodCall, obj: Any, args: Array[Any])
+              (implicit E: ErgoTreeEvaluator): CostDetails = {
     // add approximated cost of invoked method (if specified)
     val cost = mc.method.costFunc match {
-      case Some(costFunc) => costFunc.lift((mc, obj, args)).getOrElse(0)
-      case _ => 0 // TODO v5.0: throw exception if not defined
+      case Some(costFunc) => costFunc.lift((mc, obj, args)).getOrElse(CostDetails.ZeroCost)
+      case _ => CostDetails.ZeroCost // TODO v5.0: throw exception if not defined
     }
     cost
   }
@@ -390,5 +389,6 @@ object MethodCallCostItem {
 case class CostDetails(cost: Int, trace: Seq[CostItem])
 
 object CostDetails {
+  val ZeroCost = apply(0)
   def apply(cost: Int): CostDetails = CostDetails(cost, mutable.WrappedArray.empty)
 }

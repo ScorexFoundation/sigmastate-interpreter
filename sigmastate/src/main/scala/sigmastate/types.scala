@@ -8,7 +8,7 @@ import org.ergoplatform.validation._
 import scalan.{Nullable, RType}
 import scalan.RType.GeneralType
 import sigmastate.SType.{TypeCode, AnyOps}
-import sigmastate.interpreter.{CryptoConstants, ErgoTreeEvaluator}
+import sigmastate.interpreter.{CryptoConstants, ErgoTreeEvaluator, CostItem, SimpleCostItem, CostDetails}
 import sigmastate.utils.Overloading.Overload1
 import scalan.util.Extensions._
 import sigmastate.Values._
@@ -495,11 +495,11 @@ object SMethod {
     * the method. For this reason [[MethodCostFunc]] is not used for higher-order
     * operations like `Coll.map`, `Coll.filter` etc.
     */
-  type MethodCostFunc = PartialFunction[(MethodCall, Any, Array[Any]), Int]
+  type MethodCostFunc = PartialFunction[(MethodCall, Any, Array[Any]), CostDetails]
 
   /** Returns a cost function which always returs the given cost. */
   def givenCost(cost: Int): MethodCostFunc = {
-    case _ => cost
+    case (mc, _, _) => CostDetails(cost, Array(SimpleCostItem(mc.method.opName, cost)))
   }
 
   /** Some runtime methods (like Coll.map, Coll.flatMap) require additional RType descriptors.
@@ -618,7 +618,8 @@ object SNumericType extends STypeCompanion {
   val costOfNumericCast: MethodCostFunc = {
     case (mc, _, _) =>
       val cast = getNumericCast(mc.obj.tpe, mc.method.name, mc.method.stype.tRange).get
-      if (cast == Downcast) CostOf.Downcast else CostOf.Upcast
+      val cost = if (cast == Downcast) CostOf.Downcast else CostOf.Upcast
+      CostDetails(cost, Array(SimpleCostItem(mc.method.opName, cost)))
   }
 
   val ToByteMethod: SMethod = SMethod(this, "toByte", SFunc(tNum, SByte), 1)
