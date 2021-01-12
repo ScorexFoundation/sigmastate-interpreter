@@ -584,7 +584,7 @@ case class DecodePoint(input: Value[SByteArray])
   override def opType = DecodePoint.OpType
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val inputV = input.evalTo[Coll[Byte]](env)
-    // TODO JITC
+    addCost(CostOf.DecodePoint)
     SigmaDsl.decodePoint(inputV)
   }
 }
@@ -922,7 +922,7 @@ case class Exponentiate(override val left: Value[SGroupElement.type],
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val leftV = left.evalTo[GroupElement](env)
     val rightV = right.evalTo[special.sigma.BigInt](env)
-    // TODO JITC
+    addCost(CostOf.Exponentiate)
     leftV.exp(rightV)
   }
 }
@@ -941,7 +941,7 @@ case class MultiplyGroup(override val left: Value[SGroupElement.type],
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val leftV = left.evalTo[GroupElement](env)
     val rightV = right.evalTo[GroupElement](env)
-    // TODO JITC
+    addCost(CostOf.MultiplyGroup)
     leftV.multiply(rightV)
   }
 }

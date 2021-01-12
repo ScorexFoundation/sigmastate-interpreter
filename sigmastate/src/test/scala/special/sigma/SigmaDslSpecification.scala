@@ -37,7 +37,7 @@ import org.scalacheck.Gen.frequency
 import scalan.RType.{AnyType, LongType, IntType, UnitType, OptionType, BooleanType, PairType, ByteType, ShortType}
 import scorex.util.ModifierId
 import sigmastate.basics.ProveDHTuple
-import sigmastate.interpreter.{PerBlockCostItem, ErgoTreeEvaluator, SeqCostItem, EvalSettings, CostDetails, CostItem, SimpleCostItem}
+import sigmastate.interpreter.{PerBlockCostItem, TracedCost, ErgoTreeEvaluator, SeqCostItem, EvalSettings, CostDetails, CostItem, SimpleCostItem, MethodCallCostItem}
 
 import scala.collection.mutable
 
@@ -2643,7 +2643,18 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 37905)
+        val cost = TracedCost(
+          Array(
+            SimpleCostItem("Apply", 20),
+            SimpleCostItem("FuncValue", 2),
+            SimpleCostItem("GetVar", 5),
+            SimpleCostItem("OptionGet", 2),
+            SimpleCostItem("ValUse", 5),
+            SimpleCostItem("MethodCall", 5),
+            MethodCallCostItem(TracedCost(Array(SimpleCostItem("SGroupElement$.getEncoded", 20))))
+          )
+        )
+        def success[T](v: T) = Expected(Success(v), 37905, cost)
         Seq(
           (ge1, success(Helpers.decodeBytes(ge1str))),
           (ge2, success(Helpers.decodeBytes(ge2str))),
@@ -2663,7 +2674,21 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 38340)
+        val cost = TracedCost(
+          Array(
+            SimpleCostItem("Apply", 20),
+            SimpleCostItem("FuncValue", 2),
+            SimpleCostItem("GetVar", 5),
+            SimpleCostItem("OptionGet", 2),
+            SimpleCostItem("ValUse", 5),
+            SimpleCostItem("MethodCall", 5),
+            MethodCallCostItem(TracedCost(Array(SimpleCostItem("SGroupElement$.getEncoded", 20)))),
+            SimpleCostItem("DecodePoint", 20),
+            SimpleCostItem("ValUse", 5),
+            SimpleCostItem("EQ", 10)
+          )
+        )
+        def success[T](v: T) = Expected(Success(v), 38340, cost)
         Seq(
           (ge1, success(true)),
           (ge2, success(true)),
@@ -2691,7 +2716,18 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 36292)
+        val cost = TracedCost(
+          Array(
+            SimpleCostItem("Apply", 20),
+            SimpleCostItem("FuncValue", 2),
+            SimpleCostItem("GetVar", 5),
+            SimpleCostItem("OptionGet", 2),
+            SimpleCostItem("ValUse", 5),
+            SimpleCostItem("MethodCall", 5),
+            MethodCallCostItem(TracedCost(Array(SimpleCostItem("SGroupElement$.negate", 10))))
+          )
+        )
+        def success[T](v: T) = Expected(Success(v), 36292, cost)
         Seq(
           (ge1, success(Helpers.decodeGroupElement("02358d53f01276211f92d0aefbd278805121d4ff6eb534b777af1ee8abae5b2056"))),
           (ge2, success(Helpers.decodeGroupElement("03dba7b94b111f3894e2f9120b577da595ec7d58d488485adf73bf4e153af63575"))),
@@ -2713,7 +2749,20 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 41484)
+        val cost = TracedCost(
+          Array(
+            SimpleCostItem("Apply", 20),
+            SimpleCostItem("FuncValue", 2),
+            SimpleCostItem("GetVar", 5),
+            SimpleCostItem("OptionGet", 2),
+            SimpleCostItem("ValUse", 5),
+            SimpleCostItem("SelectField", 2),
+            SimpleCostItem("ValUse", 5),
+            SimpleCostItem("SelectField", 2),
+            SimpleCostItem("Exponentiate", 500)
+          )
+        )
+        def success[T](v: T) = Expected(Success(v), 41484, cost)
         Seq(
           ((ge1, CBigInt(new BigInteger("-25c80b560dd7844e2efd10f80f7ee57d", 16))),
               success(Helpers.decodeGroupElement("023a850181b7b73f92a5bbfa0bfc78f5bbb6ff00645ddde501037017e1a2251e2e"))),
@@ -2743,7 +2792,20 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 36457)
+        val cost = TracedCost(
+          Array(
+            SimpleCostItem("Apply", 20),
+            SimpleCostItem("FuncValue", 2),
+            SimpleCostItem("GetVar", 5),
+            SimpleCostItem("OptionGet", 2),
+            SimpleCostItem("ValUse", 5),
+            SimpleCostItem("SelectField", 2),
+            SimpleCostItem("ValUse", 5),
+            SimpleCostItem("SelectField", 2),
+            SimpleCostItem("MultiplyGroup", 50)
+          )
+        )
+        def success[T](v: T) = Expected(Success(v), 36457, cost)
         Seq(
           ((ge1, Helpers.decodeGroupElement("03e132ca090614bd6c9f811e91f6daae61f16968a1e6c694ed65aacd1b1092320e")),
               success(Helpers.decodeGroupElement("02bc48937b4a66f249a32dfb4d2efd0743dc88d46d770b8c5d39fd03325ba211df"))),

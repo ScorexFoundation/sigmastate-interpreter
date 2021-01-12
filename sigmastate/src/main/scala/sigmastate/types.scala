@@ -915,6 +915,7 @@ case object SGroupElement extends SProduct with SPrimType with SEmbeddable with 
     .withInfo(MultiplyGroup, "Group operation.", ArgInfo("other", "other element of the group"))
   lazy val NegateMethod: SMethod = SMethod(this, "negate", SFunc(this, this), 5)
     .withIRInfo(MethodCallIrBuilder)
+    .withCost(givenCost(CostOf.GroupElement_Negate))
     .withInfo(PropertyCall, "Inverse element of the group.")
 
   protected override def getMethods(): Seq[SMethod] = super.getMethods() ++ Seq(
