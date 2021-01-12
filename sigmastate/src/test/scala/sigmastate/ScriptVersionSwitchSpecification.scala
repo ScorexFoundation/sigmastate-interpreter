@@ -8,13 +8,12 @@ import sigmastate.Values._
 import sigmastate.eval._
 import sigmastate.helpers.ErgoLikeContextTesting
 import sigmastate.helpers.TestingHelpers.createBox
-import sigmastate.interpreter.{Interpreter, ProverResult}
+import sigmastate.interpreter.{Interpreter, ProverResult, ErgoTreeEvaluator, EvalSettings}
 import sigmastate.lang.exceptions.InterpreterException
 import sigmastate.utxo._
 import sigmastate.utils.Helpers._
 import special.collection._
 import special.sigma.{SigmaDslTesting, Box}
-import sigmastate.helpers.TestingHelpers._
 
 import scala.util.Success
 
@@ -22,6 +21,11 @@ import scala.util.Success
 class ScriptVersionSwitchSpecification extends SigmaDslTesting
   with CrossVersionProps {
   override implicit val generatorDrivenConfig = PropertyCheckConfiguration(minSuccessful = 30)
+  override val evalSettings: EvalSettings =
+    ErgoTreeEvaluator.DefaultEvalSettings.copy(
+      costTracingEnabled = true  // should always be enabled in tests (and false by default)
+    )
+
   implicit def IR = createIR()
 
   val b1 = CostingBox(
