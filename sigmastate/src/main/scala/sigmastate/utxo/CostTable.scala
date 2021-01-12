@@ -367,6 +367,10 @@ object CostTable {
 //    ("GetRegister", "(Box, Byte) => Option[T]", accessRegister),
 //    ("AccessRegister", "Box => Option[T]", accessRegister),
 //    ("ExtractAmount", "(Box) => Long", extractCost),
+
+    /** Cost of: 1) access `value` property of a [[special.sigma.Box]] */
+    def ExtractAmount = 2
+
 //    ("ExtractId", "(Box) => Coll[Byte]", extractCost),
 //    ("ExtractBytes", "(Box) => Coll[Byte]", extractCost),
 //    ("ExtractScriptBytes", "(Box) => Coll[Byte]", extractCost),

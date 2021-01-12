@@ -342,7 +342,7 @@ case class ExtractAmount(input: Value[SBox.type]) extends Extract[SLong.type] wi
   override def opType = ExtractAmount.OpType
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val inputV = input.evalTo[Box](env)
-    // TODO JITC
+    addCost(CostOf.ExtractAmount)
     inputV.value
   }
 }
