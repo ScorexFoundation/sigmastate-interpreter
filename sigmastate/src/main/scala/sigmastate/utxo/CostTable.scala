@@ -435,6 +435,8 @@ object CostTable {
 //    ("SigmaPropIsProven", "SigmaProp => Boolean", logicCost),
 //    ("BoolToSigmaProp", "Boolean => SigmaProp", logicCost),
 //    ("SigmaPropBytes", "SigmaProp => Coll[Byte]", logicCost),
+    /** Cost of: serializing one node of SigmaBoolean proposition */
+    def SigmaPropBytes_PerItem = 5
 
     /** Cost of: scala `&&` operation
       * Old cost: ("BinAnd", "(Boolean, Boolean) => Boolean", logicCost) */

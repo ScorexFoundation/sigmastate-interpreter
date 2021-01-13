@@ -305,7 +305,8 @@ case class SigmaPropBytes(input: Value[SSigmaProp.type])
   override val opType = SFunc(input.tpe, tpe)
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val inputV = input.evalTo[SigmaProp](env)
-    // TODO JITC
+    val numNodes = SigmaDsl.toSigmaBoolean(inputV).size
+    addSeqCost(CostOf.SigmaPropBytes_PerItem, numNodes)
     inputV.propBytes
   }
 }
