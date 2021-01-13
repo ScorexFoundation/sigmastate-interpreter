@@ -630,9 +630,21 @@ object Values {
   trait SigmaBoolean {
     /** Unique id of the node class used in serialization of SigmaBoolean. */
     val opCode: OpCode
+    /** Size of the proposition tree (number of nodes). */
+    def size: Int
   }
 
   object SigmaBoolean {
+    /** Compute total size of the trees in the collection of children. */
+    def totalSize(children: Seq[SigmaBoolean]): Int = {
+      var res = 0
+      val len = children.length
+      cfor(0)(_ < len, _ + 1) { i =>
+        res += children(i).size
+      }
+      res
+    }
+
     /** @hotspot don't beautify this code */
     object serializer extends SigmaSerializer[SigmaBoolean, SigmaBoolean] {
       val dhtSerializer = ProveDHTupleSerializer(ProveDHTuple.apply)

@@ -51,6 +51,7 @@ trait SigmaProofOfKnowledgeLeaf[SP <: SigmaProtocol[SP], S <: SigmaProtocolPriva
 case class CAND(override val children: Seq[SigmaBoolean]) extends SigmaConjecture {
   /** The same code is used for AND operation, but they belong to different type hierarchies. */
   override val opCode: OpCode = OpCodes.AndCode
+  override val size: Int = SigmaBoolean.totalSize(children) + 1
 }
 
 object CAND {
@@ -86,6 +87,7 @@ object CAND {
 case class COR(children: Seq[SigmaBoolean]) extends SigmaConjecture {
   /** The same code is also used for OR operation, but they belong to different type hierarchies. */
   override val opCode: OpCode = OpCodes.OrCode
+  override val size: Int = SigmaBoolean.totalSize(children) + 1
 }
 
 object COR {
@@ -123,6 +125,7 @@ case class CTHRESHOLD(k: Int, children: Seq[SigmaBoolean]) extends SigmaConjectu
   require(k >= 0 && k <= children.length && children.length <= 255)
 
   override val opCode: OpCode = OpCodes.AtLeastCode
+  override val size: Int = SigmaBoolean.totalSize(children) + 1
 }
 
 
@@ -143,10 +146,12 @@ object TrivialProp {
 
   val FalseProp = new TrivialProp(false) {
     override val opCode: OpCode = OpCodes.TrivialPropFalseCode
+    override def size: Int = 1
     override def toString = "FalseProp"
   }
   val TrueProp = new TrivialProp(true) {
     override val opCode: OpCode = OpCodes.TrivialPropTrueCode
+    override def size: Int = 1
     override def toString = "TrueProp"
   }
 }
