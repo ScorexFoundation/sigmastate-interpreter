@@ -6506,7 +6506,11 @@ class SigmaDslSpecification extends SigmaDslTesting
         Helpers.decodeBytes("e0ff0105ffffac31010017ff33") ->
           success(
             Helpers.decodeBytes("33707eed9aab64874ff2daa6d6a378f61e7da36398fb36c194c7562c9ff846b5"),
-            36269)
+            36269),
+        Colls.replicate(1024, 1.toByte) ->
+          success(
+            Helpers.decodeBytes("45d8456fc5d41d1ec1124cb92e41192c1c3ec88f0bf7ae2dc6e9cf75bec22045"),
+            36369)
       ),
       existingFeature((x: Coll[Byte]) => SigmaDsl.blake2b256(x),
         "{ (x: Coll[Byte]) => blake2b256(x) }",
@@ -6521,7 +6525,11 @@ class SigmaDslSpecification extends SigmaDslTesting
         Helpers.decodeBytes("e0ff0105ffffac31010017ff33") ->
           success(
             Helpers.decodeBytes("367d0ec2cdc14aac29d5beb60c2bfc86d5a44a246308659af61c1b85fa2ca2cc"),
-            36393)
+            36393),
+        Colls.replicate(1024, 1.toByte) ->
+          success(
+            Helpers.decodeBytes("5a648d8015900d89664e00e125df179636301a2d8fa191c1aa2bd9358ea53a69"),
+            36493)
       ),
       existingFeature((x: Coll[Byte]) => SigmaDsl.sha256(x),
         "{ (x: Coll[Byte]) => sha256(x) }",

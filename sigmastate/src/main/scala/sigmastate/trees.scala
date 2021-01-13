@@ -618,8 +618,9 @@ case class CalcBlake2b256(override val input: Value[SByteArray]) extends CalcHas
   override val hashFn: CryptographicHash32 = Blake2b256
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val inputV = input.evalTo[Coll[Byte]](env)
-    addPerBlockCost(CostOf.CalcBlake2b256_PerBlock, inputV.length)
-    SigmaDsl.blake2b256(inputV)
+    addPerBlockCost(CostOf.CalcBlake2b256_PerBlock, inputV.length) {
+      SigmaDsl.blake2b256(inputV)
+    }
   }
 }
 object CalcBlake2b256 extends SimpleTransformerCompanion {
@@ -635,8 +636,9 @@ case class CalcSha256(override val input: Value[SByteArray]) extends CalcHash {
   override val hashFn: CryptographicHash32 = Sha256
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val inputV = input.evalTo[Coll[Byte]](env)
-    addPerBlockCost(CostOf.CalcSha256_PerBlock, inputV.length)
-    SigmaDsl.sha256(inputV)
+    addPerBlockCost(CostOf.CalcSha256_PerBlock, inputV.length) {
+      SigmaDsl.sha256(inputV)
+    }
   }
 }
 object CalcSha256 extends SimpleTransformerCompanion {
@@ -1050,18 +1052,21 @@ case class EQ[S <: SType](override val left: Value[S], override val right: Value
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val l = left.evalTo[S#WrappedType](env)
     val r = right.evalTo[S#WrappedType](env)
+
+    // TODO v5.0: re-implement using explicit recursive predicate `equalDataValues`
     left.tpe.asInstanceOf[SType] match {
       case t if t.isConstantSize =>
         addCost(CostOf.EQConstSize)
+        l == r
       case _ =>
         // TODO v5.0: re-implement without Sized
         val lds = Sized.dataSizeOf[S](l, left.tpe)
         val rds = Sized.dataSizeOf[S](r, right.tpe)
         addCost(CostOf.EQConstSize)
-        addPerBlockCost(CostOf.EQ_PerBlock, dataSize = (lds + rds).toIntExact)
+        addPerBlockCost(CostOf.EQ_PerBlock, dataSize = (lds + rds).toIntExact) {
+          l == r
+        }
     }
-    // TODO v5.0: re-implement using explicit recursive predicate `equalDataValues`
-    l == r
   }
 }
 object EQ extends RelationCompanion {
@@ -1078,18 +1083,21 @@ case class NEQ[S <: SType](override val left: Value[S], override val right: Valu
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val l = left.evalTo[S#WrappedType](env)
     val r = right.evalTo[S#WrappedType](env)
+
+    // TODO v5.0: re-implement using explicit recursive predicate `equalDataValues`
     left.tpe.asInstanceOf[SType] match {
       case t if t.isConstantSize =>
         addCost(CostOf.EQConstSize)
+        !(l == r)
       case _ =>
         // TODO v5.0: re-implement without Sized
         val lds = Sized.dataSizeOf[S](l, left.tpe)
         val rds = Sized.dataSizeOf[S](r, right.tpe)
         addCost(CostOf.EQConstSize)
-        addPerBlockCost(CostOf.EQ_PerBlock, dataSize = (lds + rds).toIntExact)
+        addPerBlockCost(CostOf.EQ_PerBlock, dataSize = (lds + rds).toIntExact) {
+          !(l == r)
+        }
     }
-    // TODO v5.0: re-implement using explicit recursive predicate `equalDataValues`
-    !(l == r)
   }
 }
 object NEQ extends RelationCompanion {

@@ -136,7 +136,7 @@ object Values {
       * @param perItemCost cost per operation
       * @param nItems      number of operations known in advance (before loop execution)
       * @param block       operation executed under the given cost
-      * @tparam R result of the operation
+      * @tparam R result type of the operation
       */
     @inline final def addSeqCost[R](perItemCost: Int, nItems: Int)(block: => R)(implicit E: ErgoTreeEvaluator): R = {
       E.addSeqCost(perItemCost, nItems, this.opName)(block)
@@ -144,11 +144,14 @@ object Values {
 
     /** Add the size-based cost of an operation to the accumulator and associate it with this operation.
       * The size in bytes of the data is known in advance (like in CalcSha256 operation)
+      *
       * @param perKbCost cost per kilobyte of data
-      * @param dataSize size of data in bytes known in advance (before operation execution)
+      * @param dataSize  size of data in bytes known in advance (before operation execution)
+      * @param block     operation executed under the given cost
+      * @tparam R result type of the operation
       */
-    @inline final def addPerBlockCost(perKbCost: Int, dataSize: Int)(implicit E: ErgoTreeEvaluator): Unit = {
-      E.addPerBlockCost(perKbCost, dataSize, this.opName)
+    @inline final def addPerBlockCost[R](perKbCost: Int, dataSize: Int)(block: => R)(implicit E: ErgoTreeEvaluator): R = {
+      E.addPerBlockCost(perKbCost, dataSize, this.opName)(block)
     }
   }
 

@@ -101,7 +101,7 @@ class ErgoTreeEvaluator(
     * @param cost the cost to be added to `coster`
     * @param opName the operation name to associate the cost with (when costTracingEnabled)
     */
-  def addCost(cost: Int, opName: String): this.type = {
+  final def addCost(cost: Int, opName: String): this.type = {
     coster.add(cost)
     if (settings.costTracingEnabled) {
       costTrace += SimpleCostItem(opName, cost)
@@ -109,19 +109,17 @@ class ErgoTreeEvaluator(
     this
   }
 
-  /** Adds the given cost to the `coster`. If tracing is enabled, associates the cost with
-    * the given operation.
+  /** Adds the given cost to the `coster`. If tracing is enabled, creates a new cost item
+    * with the given operation.
     *
     * @param perItemCost the cost to be added to `coster` for each item
     * @param nItems      the number of items
     * @param opName      the operation name to associate the cost with (when costTracingEnabled)
     * @param block       operation executed under the given cost
-    * @tparam R result of the operation
+    * @tparam R result type of the operation
     * @hotspot don't beautify the code
     */
-  def addSeqCost[R](perItemCost: Int, nItems: Int, opName: String)(block: => R): R = {
-    val cost = SeqCostItem.calcCost(perItemCost, nItems)
-    coster.add(cost)
+  final def addSeqCost[R](perItemCost: Int, nItems: Int, opName: String)(block: => R): R = {
     var costItem: SeqCostItem = null
     if (settings.costTracingEnabled) {
       costItem = SeqCostItem(opName, perItemCost, nItems)
@@ -132,13 +130,17 @@ class ErgoTreeEvaluator(
         costItem = SeqCostItem(opName, perItemCost, nItems)
       }
       val start = System.nanoTime()
+      val cost = SeqCostItem.calcCost(perItemCost, nItems) // should be measured
+      coster.add(cost)
       val res = block
       val end = System.nanoTime()
       profiler.addCostItem(costItem, end - start)
       res
-    }
-    else
+    } else {
+      val cost = SeqCostItem.calcCost(perItemCost, nItems)
+      coster.add(cost)
       block
+    }
   }
 
   /** Add the size-based cost of an operation to the accumulator and associate it with this operation.
@@ -146,15 +148,35 @@ class ErgoTreeEvaluator(
     * @param perBlockCost cost of operation per block of data
     * @param dataSize size of data in bytes known in advance (before operation execution)
     * @param opName the operation name to associate the cost with (when costTracingEnabled)
+    * @param block  operation executed under the given cost
+    * @tparam R result type of the operation
+    * @hotspot don't beautify the code
     */
-  @inline final def addPerBlockCost(perBlockCost: Int, dataSize: Int, opName: String): this.type = {
+  @inline
+  final def addPerBlockCost[R](perBlockCost: Int, dataSize: Int, opName: String)
+                              (block: => R): R = {
     val numBlocks = PerBlockCostItem.blocksToCover(dataSize)
-    val cost = PerBlockCostItem.calcCost(perBlockCost, numBlocks)
-    coster.add(cost)
+    var costItem: PerBlockCostItem = null
     if (settings.costTracingEnabled) {
-      costTrace += PerBlockCostItem(opName, perBlockCost, numBlocks)
+      costItem = PerBlockCostItem(opName, perBlockCost, numBlocks)
+      costTrace += costItem
     }
-    this
+    if (settings.isMeasureOperationTime) {
+      if (costItem == null) {
+        costItem = PerBlockCostItem(opName, perBlockCost, numBlocks)
+      }
+      val start = System.nanoTime()
+      val cost = PerBlockCostItem.calcCost(perBlockCost, numBlocks) // should be measured
+      coster.add(cost)
+      val res = block
+      val end = System.nanoTime()
+      profiler.addCostItem(costItem, end - start)
+      res
+    } else {
+      val cost = PerBlockCostItem.calcCost(perBlockCost, numBlocks)
+      coster.add(cost)
+      block
+    }
   }
 
   final def addMethodCallCost(mc: MethodCall, obj: Any, args: Array[Any]): this.type = {
