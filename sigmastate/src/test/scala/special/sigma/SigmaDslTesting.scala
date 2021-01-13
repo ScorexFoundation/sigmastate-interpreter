@@ -398,7 +398,8 @@ class SigmaDslTesting extends PropSpec
         // check the new implementation against Scala semantic function
         val newRes = checkEq(scalaFunc)(newF)(input)
         (oldRes, newRes) match {
-          case (Success((oldRes, CostDetails(oldCost, _))), Success((newRes, CostDetails(newCost, _)))) =>
+          case (Success((oldRes, CostDetails(oldCost, _))),
+                Success((newRes, CostDetails(newCost, _)))) =>
             newRes shouldBe oldRes
             if (newCost != oldCost) {
               assertResult(true,
@@ -409,7 +410,7 @@ class SigmaDslTesting extends PropSpec
                   |  compiledTree = "${SigmaPPrint(newF.compiledTree, height = 550, width = 150)}"
                   |)
                   |""".stripMargin
-              )(newCost / 2 <= oldCost)
+              )(newCost / 5 <= oldCost)
 
               if (evalSettings.isLogEnabled) {
                 println(

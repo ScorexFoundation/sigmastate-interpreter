@@ -251,8 +251,9 @@ case class SigmaAnd(items: Seq[SigmaPropValue]) extends SigmaTransformer[SigmaPr
       is(i) = items(i).evalTo[SigmaProp](env)
     }
     addCost(CostOf.SigmaAnd)
-    addSeqCost(CostOf.SigmaAnd_PerItem, len)
-    SigmaDsl.allZK(Colls.fromArray(is))
+    addSeqCost(CostOf.SigmaAnd_PerItem, len) {
+      SigmaDsl.allZK(Colls.fromArray(is))
+    }
   }
 }
 object SigmaAnd extends SigmaTransformerCompanion {
@@ -276,8 +277,9 @@ case class SigmaOr(items: Seq[SigmaPropValue]) extends SigmaTransformer[SigmaPro
       is(i) = items(i).evalTo[SigmaProp](env)
     }
     addCost(CostOf.SigmaOr)
-    addSeqCost(CostOf.SigmaOr_PerItem, len)
-    SigmaDsl.anyZK(Colls.fromArray(is))
+    addSeqCost(CostOf.SigmaOr_PerItem, len) {
+      SigmaDsl.anyZK(Colls.fromArray(is))
+    }
   }
 }
 
@@ -403,8 +405,9 @@ case class AtLeast(bound: Value[SInt.type], input: Value[SCollection[SSigmaProp.
     val b = bound.evalTo[Int](env)
     val props = input.evalTo[Coll[SigmaProp]](env)
     addCost(CostOf.AtLeast)
-    addSeqCost(CostOf.AtLeast_PerItem, props.length)
-    SigmaDsl.atLeast(b, props)
+    addSeqCost(CostOf.AtLeast_PerItem, props.length) {
+      SigmaDsl.atLeast(b, props)
+    }
   }
 }
 

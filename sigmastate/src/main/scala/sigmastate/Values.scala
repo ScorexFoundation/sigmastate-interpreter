@@ -132,11 +132,14 @@ object Values {
 
     /** Add the cost of a repeated operation to the accumulator and associate it with this operation.
       * The number of items (loop iterations) is known in advance (like in Coll.map operation)
+      *
       * @param perItemCost cost per operation
-      * @param nItems number of operations known in advance (before loop execution)
+      * @param nItems      number of operations known in advance (before loop execution)
+      * @param block       operation executed under the given cost
+      * @tparam R result of the operation
       */
-    @inline final def addSeqCost(perItemCost: Int, nItems: Int)(implicit E: ErgoTreeEvaluator): Unit = {
-      E.addSeqCost(perItemCost, nItems, this.opName)
+    @inline final def addSeqCost[R](perItemCost: Int, nItems: Int)(block: => R)(implicit E: ErgoTreeEvaluator): R = {
+      E.addSeqCost(perItemCost, nItems, this.opName)(block)
     }
 
     /** Add the size-based cost of an operation to the accumulator and associate it with this operation.
@@ -811,12 +814,13 @@ object Values {
     protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
       val len = items.length
       addCost(CostOf.ConcreteCollection)
-      addSeqCost(CostOf.ConcreteCollection_PerItem, len)
-      val is = Array.ofDim[V#WrappedType](len)(tElement.classTag)
-      cfor(0)(_ < len, _ + 1) { i =>
-        is(i) = items(i).evalTo[V#WrappedType](env)
+      addSeqCost(CostOf.ConcreteCollection_PerItem, len) {
+        val is = Array.ofDim[V#WrappedType](len)(tElement.classTag)
+        cfor(0)(_ < len, _ + 1) { i =>
+          is(i) = items(i).evalTo[V#WrappedType](env)
+        }
+        Colls.fromArray(is)
       }
-      Colls.fromArray(is)
     }
   }
   object ConcreteCollection extends ValueCompanion {

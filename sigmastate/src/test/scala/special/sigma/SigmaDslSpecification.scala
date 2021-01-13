@@ -34,6 +34,7 @@ import OrderingOps._
 import org.ergoplatform.ErgoBox.AdditionalRegisters
 import org.scalacheck.Arbitrary.{arbTuple2, arbAnyVal, arbShort, arbUnit, arbInt, arbLong, arbBool, arbByte}
 import org.scalacheck.Gen.frequency
+import org.scalatest.BeforeAndAfterAll
 import scalan.RType.{AnyType, LongType, IntType, UnitType, OptionType, BooleanType, PairType, ByteType, ShortType}
 import scorex.util.ModifierId
 import sigmastate.basics.ProveDHTuple
@@ -44,7 +45,9 @@ import scala.collection.mutable
 
 /** This suite tests every method of every SigmaDsl type to be equivalent to
   * the evaluation of the corresponding ErgoScript operation */
-class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { suite =>
+class SigmaDslSpecification extends SigmaDslTesting
+  with CrossVersionProps
+  with BeforeAndAfterAll { suite =>
 
   override implicit val generatorDrivenConfig = PropertyCheckConfiguration(minSuccessful = 30)
 
@@ -6916,4 +6919,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
         )))
   }
 
+  override protected def afterAll(): Unit = {
+    println(ErgoTreeEvaluator.DefaultProfiler.opStatTableString)
+  }
 }

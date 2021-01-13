@@ -306,8 +306,9 @@ case class SigmaPropBytes(input: Value[SSigmaProp.type])
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val inputV = input.evalTo[SigmaProp](env)
     val numNodes = SigmaDsl.toSigmaBoolean(inputV).size
-    addSeqCost(CostOf.SigmaPropBytes_PerItem, numNodes)
-    inputV.propBytes
+    addSeqCost(CostOf.SigmaPropBytes_PerItem, numNodes) {
+      inputV.propBytes
+    }
   }
 }
 object SigmaPropBytes extends ValueCompanion {
