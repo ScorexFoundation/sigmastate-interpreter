@@ -21,7 +21,7 @@ import scala.util.Success
 class ScriptVersionSwitchSpecification extends SigmaDslTesting
   with CrossVersionProps {
   override implicit val generatorDrivenConfig = PropertyCheckConfiguration(minSuccessful = 30)
-  override val evalSettings: EvalSettings =
+  override implicit val evalSettings: EvalSettings =
     ErgoTreeEvaluator.DefaultEvalSettings.copy(
       costTracingEnabled = true  // should always be enabled in tests (and false by default)
     )

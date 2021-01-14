@@ -196,7 +196,7 @@ object ErgoTreeEvaluator {
   /** Size of data block in bytes. Used in JIT cost calculations.
     * @see [[sigmastate.NEQ]],
     */
-  val DataBlockSize: Int = 256
+  val DataBlockSize: Int = 512
 
   /** Empty data environment. */
   val EmptyDataEnv: DataEnv = Map.empty

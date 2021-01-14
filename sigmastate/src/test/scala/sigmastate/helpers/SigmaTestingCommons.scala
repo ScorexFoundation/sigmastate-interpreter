@@ -18,7 +18,7 @@ import scorex.crypto.hash.Blake2b256
 import sigma.types.IsPrimView
 import sigmastate.Values.{Constant, SValue, Value, ErgoTree, GroupElementConstant}
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, ScriptEnv}
-import sigmastate.interpreter.{CryptoConstants, TracedCost, ErgoTreeEvaluator, Interpreter, CostAccumulator, GivenCost, CostDetails, CostItem}
+import sigmastate.interpreter.{CryptoConstants, TracedCost, ErgoTreeEvaluator, Interpreter, CostAccumulator, EvalSettings, GivenCost, CostDetails, CostItem}
 import sigmastate.lang.{Terms, TransformingSigmaBuilder, SigmaCompiler}
 import sigmastate.serialization.{ValueSerializer, SigmaSerializer}
 import sigmastate.{SGroupElement, SType, TestsBase}
@@ -266,7 +266,7 @@ trait SigmaTestingCommons extends PropSpec
 
   def funcJit[A: RType, B: RType]
       (funcScript: String, bindings: VarBinding*)
-      (implicit IR: IRContext): CompiledFunc[A, B] = {
+      (implicit IR: IRContext, evalSettings: EvalSettings): CompiledFunc[A, B] = {
     val tA = RType[A]
     val compiledTree = compileTestScript[A](Interpreter.emptyEnv, funcScript)
 

@@ -82,6 +82,9 @@ class Profiler {
       /** Sum of all execution times */
       def sum: Long = times.sum(spire.math.Numeric[Long])
 
+      /** Returns average time in nanoseconds. */
+      def avgTimeNano: Long = sum / count
+
       /** Returns average time in microseconds. */
       def avgTimeMicroseconds: Long = {
         val avgTime = sum / count
@@ -154,8 +157,8 @@ class Profiler {
 
     val ciLines = costItemsStat.mapToArray { case (ci, stat) =>
       val time = ci match {
-        case SeqCostItem(_, _, nItems) => stat.avgTimeMicroseconds / nItems
-        case PerBlockCostItem(_, _, nBlocks) => stat.avgTimeMicroseconds / nBlocks
+        case SeqCostItem(_, _, nItems) => stat.avgTimeNano / nItems
+        case PerBlockCostItem(_, _, nBlocks) => stat.avgTimeNano / nBlocks
       }
       (ci.toString, time, stat.count.toString)
     }.toList.sortBy(_._2)(Ordering[Long].reverse)

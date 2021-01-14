@@ -28,7 +28,7 @@ import sigmastate.utils.Helpers._
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.helpers.{ErgoLikeContextTesting, SigmaPPrint}
 import sigmastate.helpers.TestingHelpers._
-import sigmastate.interpreter.{ProverResult, ContextExtension, GivenCost, CostDetails, ProverInterpreter}
+import sigmastate.interpreter.{ProverResult, EvalSettings, ContextExtension, GivenCost, CostDetails, ProverInterpreter}
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo.{DeserializeContext, DeserializeRegister}
 import special.collection.{Coll, CollType}
@@ -385,7 +385,7 @@ class SigmaDslTesting extends PropSpec
     expectedExpr: Option[SValue],
     printExpectedExpr: Boolean = true,
     logScript: Boolean = LogScriptDefault
-  )(implicit IR: IRContext) extends Feature[A, B] {
+  )(implicit IR: IRContext, evalSettings: EvalSettings) extends Feature[A, B] {
 
     val oldImpl = () => func[A, B](script)
     val newImpl = () => funcJit[A, B](script)
@@ -502,7 +502,7 @@ class SigmaDslTesting extends PropSpec
     expectedExpr: Option[SValue],
     printExpectedExpr: Boolean = true,
     logScript: Boolean = LogScriptDefault
-  )(implicit IR: IRContext) extends Feature[A, B] {
+  )(implicit IR: IRContext, evalSettings: EvalSettings) extends Feature[A, B] {
 
     val oldImpl = () => func[A, B](script)
     val newImpl = () => funcJit[A, B](script)
@@ -653,7 +653,7 @@ class SigmaDslTesting extends PropSpec
     */
   def existingFeature[A: RType, B: RType]
       (scalaFunc: A => B, script: String, expectedExpr: SValue = null)
-      (implicit IR: IRContext): Feature[A, B] = {
+      (implicit IR: IRContext, evalSettings: EvalSettings): Feature[A, B] = {
     ExistingFeature(script, scalaFunc, Option(expectedExpr))
   }
 
@@ -670,7 +670,7 @@ class SigmaDslTesting extends PropSpec
     */
   def changedFeature[A: RType, B: RType]
       (scalaFunc: A => B, scalaFuncNew: A => B, script: String, expectedExpr: SValue = null)
-      (implicit IR: IRContext): Feature[A, B] = {
+      (implicit IR: IRContext, evalSettings: EvalSettings): Feature[A, B] = {
     ChangedFeature(script, scalaFunc, scalaFuncNew, Option(expectedExpr))
   }
 

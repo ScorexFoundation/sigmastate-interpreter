@@ -1062,7 +1062,6 @@ case class EQ[S <: SType](override val left: Value[S], override val right: Value
         // TODO v5.0: re-implement without Sized
         val lds = Sized.dataSizeOf[S](l, left.tpe)
         val rds = Sized.dataSizeOf[S](r, right.tpe)
-        addCost(CostOf.EQConstSize)
         addPerBlockCost(CostOf.EQ_PerBlock, dataSize = (lds + rds).toIntExact) {
           l == r
         }
@@ -1093,7 +1092,6 @@ case class NEQ[S <: SType](override val left: Value[S], override val right: Valu
         // TODO v5.0: re-implement without Sized
         val lds = Sized.dataSizeOf[S](l, left.tpe)
         val rds = Sized.dataSizeOf[S](r, right.tpe)
-        addCost(CostOf.EQConstSize)
         addPerBlockCost(CostOf.EQ_PerBlock, dataSize = (lds + rds).toIntExact) {
           !(l == r)
         }

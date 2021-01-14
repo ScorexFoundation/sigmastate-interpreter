@@ -49,9 +49,9 @@ class SigmaDslSpecification extends SigmaDslTesting
   with CrossVersionProps
   with BeforeAndAfterAll { suite =>
 
-  override implicit val generatorDrivenConfig = PropertyCheckConfiguration(minSuccessful = 30)
+  implicit override val generatorDrivenConfig = PropertyCheckConfiguration(minSuccessful = 30)
 
-  override val evalSettings: EvalSettings =
+  implicit override val evalSettings: EvalSettings =
     ErgoTreeEvaluator.DefaultEvalSettings.copy(
       isLogEnabled = false, // don't commit the `true` value (travis log is too high)
       costTracingEnabled = true  // should always be enabled in tests (and false by default)
@@ -1028,7 +1028,7 @@ class SigmaDslSpecification extends SigmaDslTesting
                opName: String,
                op: (SValue, SValue) => SValue)
               (expectedFunc: (A, A) => Boolean, generateCases: Boolean = true)
-              (implicit tA: RType[A], sampled: Sampled[(A, A)]) = {
+              (implicit tA: RType[A], sampled: Sampled[(A, A)], evalSettings: EvalSettings) = {
     val nameA = RType[A].name
     val tpeA = Evaluation.rtypeToSType(tA)
     verifyCases(cases,
@@ -2506,7 +2506,7 @@ class SigmaDslSpecification extends SigmaDslTesting
   def verifyNeq[A: Ordering: Arbitrary: RType]
       (x: A, y: A, cost: Int, neqCost: Seq[CostItem] = mutable.WrappedArray.empty)
       (copy: A => A, generateCases: Boolean = true)
-      (implicit sampled: Sampled[(A, A)]) = {
+      (implicit sampled: Sampled[(A, A)], evalSettings: EvalSettings) = {
     val copied_x = copy(x)
     val newCost = if (neqCost.isEmpty) CostDetails.ZeroCost else costNEQ(neqCost)
     def expected(v: Boolean) = Expected(Success(v), cost, newCost)
@@ -2524,9 +2524,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     verifyNeq(ge1, ge2, 36337, constNeqCost)(_.asInstanceOf[CGroupElement].copy())
     verifyNeq(t1, t2, 36337, constNeqCost)(_.asInstanceOf[CAvlTree].copy())
     verifyNeq(b1, b2, 36417,
-      Array(
-        SimpleCostItem("NEQ", 10),
-        PerBlockCostItem("NEQ", 5, 32)))(_.asInstanceOf[CostingBox].copy())
+      Array(PerBlockCostItem("NEQ", 5, 16)))(_.asInstanceOf[CostingBox].copy())
     verifyNeq(preH1, preH2, 36337, constNeqCost)(_.asInstanceOf[CPreHeader].copy())
     verifyNeq(h1, h2, 36337, constNeqCost)(_.asInstanceOf[CHeader].copy())
   }
@@ -2544,7 +2542,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     verifyNeq((t1, t1), (t1, t2), 36337, constNeqCost)(_.copy())
     verifyNeq((b1, b1), (b1, b2),
       cost = 36497,
-      neqCost = Array(SimpleCostItem("NEQ", 10), PerBlockCostItem("NEQ", 5, 64))
+      neqCost = Array(PerBlockCostItem("NEQ", 5, 32))
       )(_.copy())
     verifyNeq((preH1, preH1), (preH1, preH2), 36337, constNeqCost)(_.copy())
     verifyNeq((h1, h1), (h1, h2), 36337, constNeqCost)(_.copy())
@@ -2563,6 +2561,7 @@ class SigmaDslSpecification extends SigmaDslTesting
   }
 
   property("NEQ of collections of pre-defined types") {
+    implicit val evalSettings = suite.evalSettings.copy(isMeasureOperationTime = false)
     verifyNeq(Coll[Byte](), Coll(1.toByte), 36337)(cloneColl(_))
     verifyNeq(Coll[Byte](0, 1), Coll(1.toByte, 1.toByte), 36337)(cloneColl(_))
 
@@ -2614,6 +2613,7 @@ class SigmaDslSpecification extends SigmaDslTesting
   }
 
   property("NEQ of nested collections and tuples") {
+    implicit val evalSettings = suite.evalSettings.copy(isMeasureOperationTime = false)
     prepareSamples[Coll[Int]]
     prepareSamples[Coll[Coll[Int]]]
     prepareSamples[Coll[Coll[Int]]]
@@ -2643,7 +2643,6 @@ class SigmaDslSpecification extends SigmaDslTesting
   }
 
   property("GroupElement methods equivalence") {
-
     verifyCases(
       {
         val cost = TracedCost(
