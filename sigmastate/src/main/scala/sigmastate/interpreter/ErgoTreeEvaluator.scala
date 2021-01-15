@@ -461,7 +461,7 @@ abstract class CostDetails {
   */
 case class TracedCost(trace: Seq[CostItem]) extends CostDetails {
   /** Total cost of all cost items. */
-  def cost: Int = trace.map(_.cost).sum
+  def cost: Int = trace.foldLeft(0)(_ + _.cost)
 }
 
 /** Result of cost evaluation represented using simple given value.

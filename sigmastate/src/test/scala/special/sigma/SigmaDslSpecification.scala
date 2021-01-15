@@ -53,6 +53,7 @@ class SigmaDslSpecification extends SigmaDslTesting
 
   implicit override val evalSettings: EvalSettings =
     ErgoTreeEvaluator.DefaultEvalSettings.copy(
+      isMeasureOperationTime = true,
       isLogEnabled = false, // don't commit the `true` value (travis log is too high)
       costTracingEnabled = true  // should always be enabled in tests (and false by default)
     )
@@ -6493,6 +6494,37 @@ class SigmaDslSpecification extends SigmaDslTesting
         )))
   }
 
+  property("blake2b256 benchmark: different sizes") {
+    val cases = (1 to 10).map(i => (s"case $i", Colls.replicate(1000 * i, i.toByte)))
+    benchmarkCases(cases,
+      existingFeature((x: Coll[Byte]) => SigmaDsl.blake2b256(x),
+        "{ (x: Coll[Byte]) => blake2b256(x) }",
+        FuncValue(Vector((1, SByteArray)), CalcBlake2b256(ValUse(1, SByteArray)))),
+      nIters = 1000)
+  }
+
+  property("blake2b256 benchmark: same size") {
+    val cases = (1 to 20).map(i => (s"case $i", Colls.fromArray(Array.fill(1000)(i.toByte))))
+    benchmarkCases(cases,
+      existingFeature((x: Coll[Byte]) => SigmaDsl.blake2b256(x),
+        "{ (x: Coll[Byte]) => blake2b256(x) }",
+        FuncValue(Vector((1, SByteArray)), CalcBlake2b256(ValUse(1, SByteArray)))),
+      nIters = 1000)
+  }
+
+  property("blake2b256 benchmark: to estimate timeout") {
+    implicit val evalSettings = suite.evalSettings.copy(
+      isMeasureOperationTime = false,
+      costTracingEnabled = false)
+    val block = Colls.fromArray(Array.fill(16)(0.toByte))
+    val cases = (1 to 30).map(i => (s"case $i", block))
+    benchmarkCases(cases,
+      existingFeature((x: Coll[Byte]) => SigmaDsl.blake2b256(x),
+        "{ (x: Coll[Byte]) => blake2b256(x) }",
+        FuncValue(Vector((1, SByteArray)), CalcBlake2b256(ValUse(1, SByteArray)))),
+      nIters = 1000)
+  }
+
   property("blake2b256, sha256 equivalence") {
     def success[T](v: T, c: Int) = Expected(Success(v), c)
 
@@ -6533,10 +6565,6 @@ class SigmaDslSpecification extends SigmaDslTesting
       existingFeature((x: Coll[Byte]) => SigmaDsl.sha256(x),
         "{ (x: Coll[Byte]) => sha256(x) }",
         FuncValue(Vector((1, SByteArray)), CalcSha256(ValUse(1, SByteArray)))))
-  }
-
-  property("print") {
-    println(ComplexityTableStat.complexityTableString)
   }
 
   property("sigmaProp equivalence") {

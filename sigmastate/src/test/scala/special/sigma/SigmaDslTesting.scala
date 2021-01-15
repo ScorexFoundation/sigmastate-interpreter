@@ -36,6 +36,7 @@ import special.collection.{Coll, CollType}
 import scala.collection.mutable
 import scala.math.Ordering
 import scala.reflect.ClassTag
+import spire.syntax.all.cfor
 
 class SigmaDslTesting extends PropSpec
     with PropertyChecks
@@ -758,6 +759,32 @@ class SigmaDslTesting extends PropSpec
       f.verifyCase(x, expectedRes, printTestCases, failOnTestVectors)
     }
     test(preGeneratedSamples, f, printTestCases)
+  }
+
+  def measureTimeNano[R](block: => R): (R, Long) = {
+    val start = System.nanoTime()
+    val res = block
+    val end = System.nanoTime()
+    (res, end - start)
+  }
+
+  def benchmarkCases[A: Ordering : Arbitrary : ClassTag, B]
+      (cases: Seq[(String, A)], f: Feature[A, B], nIters: Int): Seq[Long] = {
+    val func = f.newF
+    var iCase = 0
+    val (res, total) = measureTimeNano {
+      cases.map { case (label, x) =>
+        val (_, t) = measureTimeNano {
+          cfor(0)(_ < nIters, _ + 1) { i =>
+            val res = func(x)
+          }
+        }
+        println(s"$label: ${t / 1000} usec")
+        t
+      }
+    }
+    println(s"Total time: ${total / 1000000} msec")
+    res
   }
 
   /** Generate samples in sorted order.
