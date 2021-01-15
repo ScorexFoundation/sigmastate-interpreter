@@ -225,9 +225,9 @@ object Terms {
         argsBuf(len + i) = extra(i)
       }
       addCost(CostOf.MethodCall) // MethodCall overhead
-      E.addMethodCallCost(this, objV, argsBuf)
-
-      method.invoke(objV, argsBuf)
+      E.addMethodCallCost(this, objV, argsBuf) {
+        method.invoke(objV, argsBuf)
+      }
     }
   }
   object MethodCall extends ValueCompanion {

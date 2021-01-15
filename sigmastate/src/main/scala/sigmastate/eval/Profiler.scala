@@ -8,7 +8,7 @@ import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.ValueSerializer.getSerializer
 import scalan.util.Extensions.ByteOps
 import debox.{Buffer => DBuffer, Map => DMap}
-import sigmastate.interpreter.{CostItem, SeqCostItem, PerBlockCostItem}
+import sigmastate.interpreter.{CostItem, PerBlockCostItem, SeqCostItem, SimpleCostItem}
 
 /** A simple profiler to measure average execution times of ErgoTree operations. */
 class Profiler {
@@ -157,6 +157,7 @@ class Profiler {
 
     val ciLines = costItemsStat.mapToArray { case (ci, stat) =>
       val time = ci match {
+        case _: SimpleCostItem => stat.avgTimeNano
         case SeqCostItem(_, _, nItems) => stat.avgTimeNano / nItems
         case PerBlockCostItem(_, _, nBlocks) => stat.avgTimeNano / nBlocks
       }

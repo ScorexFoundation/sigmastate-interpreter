@@ -10,7 +10,7 @@ import sigmastate.lang.exceptions.CostLimitException
 import special.sigma.Context
 import scalan.util.Extensions._
 import sigmastate.lang.Terms.MethodCall
-
+import spire.syntax.all.cfor
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.util.DynamicVariable
@@ -179,13 +179,32 @@ class ErgoTreeEvaluator(
     }
   }
 
-  final def addMethodCallCost(mc: MethodCall, obj: Any, args: Array[Any]): this.type = {
+  final def addMethodCallCost[R](mc: MethodCall, obj: Any, args: Array[Any])
+                                (block: => R): R = {
     val costDetails = MethodCallCostItem.calcCost(mc, obj, args)(this)
-    coster.add(costDetails.cost)
     if (settings.costTracingEnabled) {
       costTrace += MethodCallCostItem(costDetails)
     }
-    this
+
+    if (settings.isMeasureOperationTime) {
+      // measure time
+      val start = System.nanoTime()
+      coster.add(costDetails.cost)
+      val res = block
+      val end = System.nanoTime()
+      val time = end - start
+
+      val len = costDetails.trace.length
+      val totalCost = costDetails.cost
+      cfor(0)(_ < len, _ + 1) { i =>
+        val costItem = costDetails.trace(i)
+        profiler.addCostItem(costItem, time * costItem.cost / totalCost)
+      }
+      res
+    } else {
+      coster.add(costDetails.cost)
+      block
+    }
   }
 }
 
