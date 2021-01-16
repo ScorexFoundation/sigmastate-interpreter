@@ -768,19 +768,41 @@ class SigmaDslTesting extends PropSpec
     (res, end - start)
   }
 
+  case class MeasureInfo[A](input: A, iteration: Int, nIters: Int, measuredTime: Long)
+
+  type MeasureFormatter[A] = MeasureInfo[A] => String
+
   def benchmarkCases[A: Ordering : Arbitrary : ClassTag, B]
-      (cases: Seq[(String, A)], f: Feature[A, B], nIters: Int): Seq[Long] = {
-    val func = f.newF
+      (cases: Seq[A], f: Feature[A, B], nIters: Int, formatter: MeasureFormatter[A])
+      (implicit IR: IRContext, evalSettings: EvalSettings): Seq[Long] = {
+    val fNew = f.newF
+    implicit val tA = fNew.tA
+    implicit val tB = fNew.tB
+    val func = funcJitFast[A, B](f.script)
+    val noTraceSettings = evalSettings.copy(
+      isMeasureOperationTime = false,
+      costTracingEnabled = false)
+    val funcNoTrace = funcJitFast[A, B](f.script)(tA, tB, IR, noTraceSettings)
     var iCase = 0
     val (res, total) = measureTimeNano {
-      cases.map { case (label, x) =>
-        val (_, t) = measureTimeNano {
-          cfor(0)(_ < nIters, _ + 1) { i =>
-            val res = func(x)
+      cases.map { x =>
+        assert(func(x)._1 == f.newF(x)._1)
+        iCase += 1
+        def benchmarkCase(func: CompiledFunc[A,B], printOut: Boolean) = {
+          val (_, t) = measureTimeNano {
+            cfor(0)(_ < nIters, _ + 1) { i =>
+              val res = func(x)
+            }
           }
+          if (printOut) {
+            val info = MeasureInfo(x, iCase, nIters, t)
+            val out = formatter(info)
+            println(out)
+          }
+          t
         }
-        println(s"$label: ${t / 1000} usec")
-        t
+        benchmarkCase(func, printOut = false)
+        benchmarkCase(funcNoTrace, printOut = true)
       }
     }
     println(s"Total time: ${total / 1000000} msec")

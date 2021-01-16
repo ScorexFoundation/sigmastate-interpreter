@@ -6494,35 +6494,24 @@ class SigmaDslSpecification extends SigmaDslTesting
         )))
   }
 
-  property("blake2b256 benchmark: different sizes") {
-    val cases = (1 to 10).map(i => (s"case $i", Colls.replicate(1000 * i, i.toByte)))
-    benchmarkCases(cases,
-      existingFeature((x: Coll[Byte]) => SigmaDsl.blake2b256(x),
-        "{ (x: Coll[Byte]) => blake2b256(x) }",
-        FuncValue(Vector((1, SByteArray)), CalcBlake2b256(ValUse(1, SByteArray)))),
-      nIters = 1000)
-  }
-
-  property("blake2b256 benchmark: same size") {
-    val cases = (1 to 20).map(i => (s"case $i", Colls.fromArray(Array.fill(1000)(i.toByte))))
-    benchmarkCases(cases,
-      existingFeature((x: Coll[Byte]) => SigmaDsl.blake2b256(x),
-        "{ (x: Coll[Byte]) => blake2b256(x) }",
-        FuncValue(Vector((1, SByteArray)), CalcBlake2b256(ValUse(1, SByteArray)))),
-      nIters = 1000)
+  val formatter = (info: MeasureInfo[Coll[Byte]]) => {
+    val numBlocks = PerBlockCostItem.blocksToCover(info.input.length)
+    val time = info.measuredTime / 1000
+    val timePerBlock = info.measuredTime / info.nIters / numBlocks
+    s"case ${info.iteration}: ${time} usec; numBlocks: $numBlocks; timePerBlock: $timePerBlock"
   }
 
   property("blake2b256 benchmark: to estimate timeout") {
-    implicit val evalSettings = suite.evalSettings.copy(
-      isMeasureOperationTime = false,
-      costTracingEnabled = false)
-    val block = Colls.fromArray(Array.fill(16)(0.toByte))
-    val cases = (1 to 30).map(i => (s"case $i", block))
+    val cases = (1 to 10).map { i =>
+      val block = Colls.fromArray(Array.fill(ErgoTreeEvaluator.DataBlockSize * i)(0.toByte))
+      block
+    }
     benchmarkCases(cases,
       existingFeature((x: Coll[Byte]) => SigmaDsl.blake2b256(x),
         "{ (x: Coll[Byte]) => blake2b256(x) }",
         FuncValue(Vector((1, SByteArray)), CalcBlake2b256(ValUse(1, SByteArray)))),
-      nIters = 1000)
+      nIters = 1000,
+      formatter)
   }
 
   property("blake2b256, sha256 equivalence") {
