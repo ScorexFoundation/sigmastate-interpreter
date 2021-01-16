@@ -504,11 +504,32 @@ object CostTable {
       * @see AtLeast */
     def AtLeast_PerItem = 1 // cf. logicCost
 
-    /** Cost of: of hashing 1 KiB of data */
-    def CalcBlake2b256_PerBlock = 100 // cf. hashPerKb
+    /** Cost of: of hashing 1 block of data.
+      *
+      * This cost is used as a baseline to connect cost units with absolute time.
+      * The block validation have 1000000 of cost units budget, and we want this to
+      * correspond to 1 second. Thus we can assume 1 cost unit == 1 micro-second.
+      *
+      * It takes approximately 10 micro-seconds on average to compute hash of 512 bytes
+      * block on MacBook Pro (16-inch, 2019) 2.3 GHz 8-Core Intel Core i9.
+      *
+      * Thus per block cost of Blake2b256 hashing can be limited by 10 cost units.
+      * However, on a less powerful processor it may take much more time, so we add
+      * a factor of 3 for that. Additionally, the interpreter have an overhead so that
+      * performing 1000 of hashes in a tight loop is 1.5-2 times faster then doing the same
+      * via ErgoTreeEvaluator. Thus we should add another factor of 2 and this takes
+      * place for all operations. So we will use a total factor of 5 to convert
+      * actual operation micro-seconds time (obtained via benchmarking) to cost unit
+      * estimation (used for cost prediction).
+      *
+      * Cost_in_units = time_in_micro-seconds * 5
+      *
+      * @see [[sigmastate.interpreter.ErgoTreeEvaluator.DataBlockSize]]
+      */
+    def CalcBlake2b256_PerBlock = 50 // cf. hashPerKb
 
     /** Cost of: of hashing 1 KiB of data */
-    def CalcSha256_PerBlock = 100 // cf. hashPerKb
+    def CalcSha256_PerBlock = 50 // cf. hashPerKb
 
 //    ("Xor_per_kb", "(Coll[Byte],Coll[Byte]) => Coll[Byte]", hashPerKb / 2),
 //    ("XorOf_per_item", "(Coll[Boolean]) => Boolean", logicCost),
