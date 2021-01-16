@@ -297,6 +297,38 @@ trait SigmaTestingCommons extends PropSpec
     CompiledFunc(funcScript, bindings, funcVal, compiledTree, f)
   }
 
+  /** Creates a specialized (faster) version which can be used to benchmark performance of
+   * various scripts. */
+  def funcJitFast[A: RType, B: RType]
+      (funcScript: String, bindings: VarBinding*)
+      (implicit IR: IRContext, evalSettings: EvalSettings): CompiledFunc[A, B] = {
+    val tA = RType[A]
+    val compiledTree = compileTestScript[A](Interpreter.emptyEnv, funcScript)
+    implicit val cA: ClassTag[A] = tA.classTag
+    val tpeA = Evaluation.rtypeToSType(tA)
+    val ergoCtxTemp = ErgoLikeContextTesting.dummy(
+      createBox(0, TrueProp), activatedVersionInTests)
+        .withBindings(bindings: _*)
+
+    val f = (in: A) => {
+      val x = fromPrimView(in)
+      val ergoCtx = ergoCtxTemp
+          .withBindings(1.toByte -> Constant[SType](x.asInstanceOf[SType#WrappedType], tpeA))
+      val sigmaCtx = ergoCtx.toSigmaContext(isCost = false).asInstanceOf[CostingDataContext]
+
+      val accumulator = new CostAccumulator(initialCost = 0, Some(ScriptCostLimit.value))
+      val evaluator = new ErgoTreeEvaluator(
+        context = sigmaCtx,
+        constants = ErgoTree.EmptyConstants,
+        coster = accumulator, DefaultProfiler, evalSettings)
+
+      val (res, cost) = evaluator.evalWithCost(ErgoTreeEvaluator.EmptyDataEnv, compiledTree)
+      (res.asInstanceOf[B], GivenCost(cost))
+    }
+    val Terms.Apply(funcVal, _) = compiledTree.asInstanceOf[SValue]
+    CompiledFunc(funcScript, bindings, funcVal, compiledTree, f)
+  }
+
   protected def roundTripTest[T](v: T)(implicit serializer: SigmaSerializer[T, T]): Assertion = {
     // using default sigma reader/writer
     val bytes = serializer.toBytes(v)
