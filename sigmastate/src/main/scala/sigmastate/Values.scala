@@ -139,7 +139,7 @@ object Values {
       * @tparam R result type of the operation
       */
     @inline final def addSeqCost[R](perItemCost: Int, nItems: Int)(block: => R)(implicit E: ErgoTreeEvaluator): R = {
-      E.addSeqCost(perItemCost, nItems, this.opName)(block)
+      E.addSeqCost(perItemCost, nItems, this)(block)
     }
 
     /** Add the size-based cost of an operation to the accumulator and associate it with this operation.
@@ -151,7 +151,7 @@ object Values {
       * @tparam R result type of the operation
       */
     @inline final def addPerBlockCost[R](perKbCost: Int, dataSize: Int)(block: => R)(implicit E: ErgoTreeEvaluator): R = {
-      E.addPerBlockCost(perKbCost, dataSize, this.opName)(block)
+      E.addPerBlockCost(perKbCost, dataSize, this)(block)
     }
   }
 

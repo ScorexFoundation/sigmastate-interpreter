@@ -88,23 +88,14 @@ class ErgoTreeEvaluator(
   val costTrace = ArrayBuffer.empty[CostItem]
 
   /** Adds the given cost to the `coster`. If tracing is enabled, associates the cost with
-    * the given node operation.
+    * the given operation.
     * @param cost the cost to be added to `coster`
     * @param opNode the node to associate the cost with (when costTracingEnabled)
     */
-  def addCost(cost: Int, opNode: SValue): this.type = {
-    addCost(cost, opNode.opName)
-  }
-
-  /** Adds the given cost to the `coster`. If tracing is enabled, associates the cost with
-    * the given operation.
-    * @param cost the cost to be added to `coster`
-    * @param opName the operation name to associate the cost with (when costTracingEnabled)
-    */
-  final def addCost(cost: Int, opName: String): this.type = {
+  final def addCost(cost: Int, opNode: SValue): this.type = {
     coster.add(cost)
     if (settings.costTracingEnabled) {
-      costTrace += SimpleCostItem(opName, cost)
+      costTrace += SimpleCostItem(opNode.opName, cost)
     }
     this
   }
@@ -114,20 +105,20 @@ class ErgoTreeEvaluator(
     *
     * @param perItemCost the cost to be added to `coster` for each item
     * @param nItems      the number of items
-    * @param opName      the operation name to associate the cost with (when costTracingEnabled)
+    * @param opNode the node to associate the cost with (when costTracingEnabled)
     * @param block       operation executed under the given cost
     * @tparam R result type of the operation
     * @hotspot don't beautify the code
     */
-  final def addSeqCost[R](perItemCost: Int, nItems: Int, opName: String)(block: => R): R = {
+  final def addSeqCost[R](perItemCost: Int, nItems: Int, opNode: SValue)(block: => R): R = {
     var costItem: SeqCostItem = null
     if (settings.costTracingEnabled) {
-      costItem = SeqCostItem(opName, perItemCost, nItems)
+      costItem = SeqCostItem(opNode.opName, perItemCost, nItems)
       costTrace += costItem
     }
     if (settings.isMeasureOperationTime) {
       if (costItem == null) {
-        costItem = SeqCostItem(opName, perItemCost, nItems)
+        costItem = SeqCostItem(opNode.opName, perItemCost, nItems)
       }
       val start = System.nanoTime()
       val cost = SeqCostItem.calcCost(perItemCost, nItems) // should be measured
@@ -147,23 +138,23 @@ class ErgoTreeEvaluator(
     * The size in bytes of the data is known in advance (like in CalcSha256 operation)
     * @param perBlockCost cost of operation per block of data
     * @param dataSize size of data in bytes known in advance (before operation execution)
-    * @param opName the operation name to associate the cost with (when costTracingEnabled)
+    * @param opNode the node to associate the cost with (when costTracingEnabled)
     * @param block  operation executed under the given cost
     * @tparam R result type of the operation
     * @hotspot don't beautify the code
     */
   @inline
-  final def addPerBlockCost[R](perBlockCost: Int, dataSize: Int, opName: String)
+  final def addPerBlockCost[R](perBlockCost: Int, dataSize: Int, opNode: SValue)
                               (block: => R): R = {
     val numBlocks = PerBlockCostItem.blocksToCover(dataSize)
     var costItem: PerBlockCostItem = null
     if (settings.costTracingEnabled) {
-      costItem = PerBlockCostItem(opName, perBlockCost, numBlocks)
+      costItem = PerBlockCostItem(opNode.opName, perBlockCost, numBlocks)
       costTrace += costItem
     }
     if (settings.isMeasureOperationTime) {
       if (costItem == null) {
-        costItem = PerBlockCostItem(opName, perBlockCost, numBlocks)
+        costItem = PerBlockCostItem(opNode.opName, perBlockCost, numBlocks)
       }
       val start = System.nanoTime()
       val cost = PerBlockCostItem.calcCost(perBlockCost, numBlocks) // should be measured

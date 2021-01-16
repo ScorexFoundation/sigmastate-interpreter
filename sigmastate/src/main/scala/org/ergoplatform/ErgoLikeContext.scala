@@ -131,7 +131,7 @@ class ErgoLikeContext(val lastBlockUtxoRoot: AvlTreeData,
     import Evaluation._
 
     def contextVars(m: Map[Byte, AnyValue]): Coll[AnyValue] = {
-      val maxKey = if (m.keys.isEmpty) 0 else m.keys.max
+      val maxKey = if (m.keys.isEmpty) 0 else m.keys.max  // TODO optimize: max takes 90% of this method
       val res = new Array[AnyValue](maxKey + 1)
       for ((id, v) <- m) {
         res(id) = v

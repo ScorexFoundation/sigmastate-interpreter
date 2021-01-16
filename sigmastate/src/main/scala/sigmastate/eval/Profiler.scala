@@ -142,14 +142,14 @@ class Profiler {
     */
   def opStatTableString: String = {
     val opCodeLines = opStat.mapToArray { case (opCode, stat) =>
-      val time = stat.avgTimeMicroseconds
+      val time = stat.avgTimeNano
       val ser = getSerializer(opCode)
       val opName = ser.opDesc.typeName
       (opName, (opCode.toUByte - OpCodes.LastConstantCode).toString, time, stat.count.toString)
     }.toList.sortBy(_._3)(Ordering[Long].reverse)
 
     val mcLines = mcStat.mapToArray { case (id @ (typeId, methodId), stat) =>
-      val time = stat.avgTimeMicroseconds
+      val time = stat.avgTimeNano
       val m = SMethod.fromIds(typeId, methodId)
       val typeName = m.objType.typeName
       (s"$typeName.${m.name}", typeId, methodId, time, stat.count.toString)
