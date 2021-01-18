@@ -140,7 +140,7 @@ class Profiler {
 
   /** Prints the operation timing table using collected information.
     */
-  def opStatTableString: String = {
+  def opStatTableString(): String = {
     val opCodeLines = opStat.mapToArray { case (opCode, stat) =>
       val time = stat.avgTimeNano
       val ser = getSerializer(opCode)

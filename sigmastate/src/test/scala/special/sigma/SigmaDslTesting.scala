@@ -12,7 +12,7 @@ import scala.util.{Success, Failure, Try}
 import sigmastate.Values.{Constant, SValue, ConstantNode, ByteArrayConstant, IntConstant, ErgoTree}
 import scalan.RType
 import scalan.util.Extensions._
-import org.ergoplatform.dsl.{SigmaContractSyntax, TestContractSpec, ContractSpec}
+import org.ergoplatform.dsl.{SigmaContractSyntax, ContractSpec, TestContractSpec}
 import org.ergoplatform.validation.{ValidationRules, SigmaValidationSettings}
 import sigmastate.{eval, SSigmaProp, SType}
 import SType.AnyOps
@@ -20,6 +20,7 @@ import org.ergoplatform.SigmaConstants.ScriptCostLimit
 import org.scalacheck.Arbitrary._
 import org.scalacheck.Gen.frequency
 import scalan.RType._
+import scalan.util.BenchmarkUtil
 import sigmastate.basics.DLogProtocol.{ProveDlog, DLogProverInput}
 import sigmastate.basics.{SigmaProtocol, SigmaProtocolPrivateInput, SigmaProtocolCommonInput}
 import sigmastate.eval.{CompiletimeIRContext, Evaluation, CostingBox, SigmaDsl, IRContext, CostingDataContext}
@@ -761,13 +762,6 @@ class SigmaDslTesting extends PropSpec
     test(preGeneratedSamples, f, printTestCases)
   }
 
-  def measureTimeNano[R](block: => R): (R, Long) = {
-    val start = System.nanoTime()
-    val res = block
-    val end = System.nanoTime()
-    (res, end - start)
-  }
-
   case class MeasureInfo[A](input: A, iteration: Int, nIters: Int, measuredTime: Long)
 
   type MeasureFormatter[A] = MeasureInfo[A] => String
@@ -784,12 +778,12 @@ class SigmaDslTesting extends PropSpec
       costTracingEnabled = false)
     val funcNoTrace = funcJitFast[A, B](f.script)(tA, tB, IR, noTraceSettings)
     var iCase = 0
-    val (res, total) = measureTimeNano {
+    val (res, total) = BenchmarkUtil.measureTimeNano {
       cases.map { x =>
         assert(func(x)._1 == f.newF(x)._1)
         iCase += 1
         def benchmarkCase(func: CompiledFunc[A,B], printOut: Boolean) = {
-          val (_, t) = measureTimeNano {
+          val (_, t) = BenchmarkUtil.measureTimeNano {
             cfor(0)(_ < nIters, _ + 1) { i =>
               val res = func(x)
             }
