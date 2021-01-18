@@ -1,5 +1,6 @@
 package special.collections
 
+import scala.language.{existentials,implicitConversions}
 import special.collection.{Coll, PairOfCols, CollOverArray, CReplColl}
 import org.scalacheck.Gen
 import org.scalatest.{PropSpec, Matchers}

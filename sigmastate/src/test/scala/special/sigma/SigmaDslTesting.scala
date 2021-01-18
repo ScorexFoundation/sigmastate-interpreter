@@ -17,6 +17,9 @@ import org.ergoplatform.validation.{ValidationRules, SigmaValidationSettings}
 import sigmastate.{eval, SSigmaProp, SType}
 import SType.AnyOps
 import org.ergoplatform.SigmaConstants.ScriptCostLimit
+import org.scalacheck.Arbitrary._
+import org.scalacheck.Gen.frequency
+import scalan.RType._
 import sigmastate.basics.DLogProtocol.{ProveDlog, DLogProverInput}
 import sigmastate.basics.{SigmaProtocol, SigmaProtocolPrivateInput, SigmaProtocolCommonInput}
 import sigmastate.eval.{CompiletimeIRContext, Evaluation, CostingBox, SigmaDsl, IRContext, CostingDataContext}
@@ -28,8 +31,9 @@ import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.{ProverResult, ContextExtension, ProverInterpreter}
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo.{DeserializeContext, DeserializeRegister}
-import special.collection.Coll
+import special.collection.{Coll, CollType}
 
+import scala.collection.mutable
 import scala.math.Ordering
 import scala.reflect.ClassTag
 
@@ -623,7 +627,7 @@ class SigmaDslTesting extends PropSpec
   /** NOTE, this should be `def` to allow overriding of generatorDrivenConfig in derived Spec classes. */
   def DefaultMinSuccessful: MinSuccessful = MinSuccessful(generatorDrivenConfig.minSuccessful)
 
-  val PrintTestCasesDefault: Boolean = false
+  val PrintTestCasesDefault: Boolean = false // true
   val FailOnTestVectorsDefault: Boolean = true
 
   private def checkResult[B](res: Try[B], expectedRes: Try[B], failOnTestVectors: Boolean): Unit = {
@@ -702,11 +706,20 @@ class SigmaDslTesting extends PropSpec
     * @return array-backed ordered sequence of samples
     */
   def genSamples[A: Arbitrary: Ordering: ClassTag](config: PropertyCheckConfigParam): Seq[A] = {
+    genSamples[A](config, Some(implicitly[Ordering[A]]))
+  }
+
+  /** Generate samples with optional sorted order.
+    * @param config generation configuration
+    * @param optOrd optional ordering of the generated samples in the resuting sequence
+    * @return array-backed ordered sequence of samples
+    */
+  def genSamples[A: Arbitrary: ClassTag](config: PropertyCheckConfigParam, optOrd: Option[Ordering[A]]): Seq[A] = {
     val inputs = scala.collection.mutable.ArrayBuilder.make[A]()
     forAll(config) { x: A =>
       inputs += x
     }
-    inputs.result().sorted
+    optOrd.fold(inputs.result())(implicit ord => inputs.result.sorted)
   }
 
   /** Test the given samples or generate new samples using the given Arbitrary.
@@ -734,6 +747,97 @@ class SigmaDslTesting extends PropSpec
        printTestCases: Boolean = PrintTestCasesDefault): Unit = {
     test(None, f, printTestCases)
   }
+
+  /** Represents generated samples for the type `A`. */
+  abstract class Sampled[A] {
+    /** An instance of [[Arbitrary]] which is used to generate samples. */
+    def arbitrary: Arbitrary[A]
+
+    /** Return a sequence of samples. */
+    def samples: Seq[A]
+  }
+
+  /** Default implementation of [[Sampled]]. */
+  case class SampledData[A](samples: Seq[A])(implicit val arbitrary: Arbitrary[A])
+      extends Sampled[A]
+
+  /** Arbitrary instance for each type descriptor. */
+  private val arbitraryCache = new mutable.HashMap[RType[_], Arbitrary[_]]
+
+  /** Lookup [[Arbitrary]] in the cache by type descriptor or create new instance and
+    * add it to the cache.
+    */
+  def lookupArbitrary[A](t: RType[A]): Arbitrary[A] = (arbitraryCache.get(t) match {
+    case Some(arb) => arb
+    case None =>
+      val arb = (t match {
+        case BooleanType => arbBool
+        case ByteType => arbByte
+        case ShortType => arbShort
+        case IntType => arbInt
+        case LongType => arbLong
+        case BigIntRType => arbBigInt
+        case GroupElementRType => arbGroupElement
+        case SigmaPropRType => arbSigmaProp
+        case BoxRType => arbBox
+        case PreHeaderRType => arbPreHeader
+        case HeaderRType => arbHeader
+        case AvlTreeRType => arbAvlTree
+        case AnyType => arbAnyVal
+        case UnitType => arbUnit
+        case p: PairType[a, b] =>
+          implicit val arbA: Arbitrary[a] = lookupArbitrary[a](p.tFst)
+          implicit val arbB: Arbitrary[b] = lookupArbitrary[b](p.tSnd)
+          arbTuple2[a,b]
+        case opt: OptionType[a] =>
+          Arbitrary(frequency((5, None), (5, for (x <- lookupArbitrary(opt.tA).arbitrary) yield Some(x))))
+        case coll: CollType[a] =>
+          implicit val elemArb: Arbitrary[a] = lookupArbitrary(coll.tItem)
+          implicit val elemT: RType[a] = coll.tItem
+          Arbitrary(collGen[a])
+      }).asInstanceOf[Arbitrary[A]]
+      arbitraryCache.put(t, arb)
+      arb
+  }).asInstanceOf[Arbitrary[A]]
+
+  /** Update cached [[Arbitrary]] with a new instance, which generates its data from the
+    * given [[Sampled]] instance (randomly selects oneOf sample).
+    */
+  def updateArbitrary[A](t: RType[A], sampled: Sampled[A]) = {
+    t match {
+      case BigIntRType | GroupElementRType | SigmaPropRType |
+           BoxRType | PreHeaderRType | HeaderRType | AvlTreeRType |
+           _: CollType[_] | _: PairType[_,_] | _: OptionType[_] =>
+        val newArb = Arbitrary(Gen.oneOf(sampled.samples))
+        arbitraryCache.put(t, newArb)
+      case _ =>
+    }
+  }
+
+  /** Sampled test data from each data type. */
+  private val sampledCache = new mutable.HashMap[RType[_], Sampled[_]]
+
+  /** Lookup [[Sampled]] test data in the cache by type descriptor or create a new instance and
+    * add it to the cache.
+    */
+  implicit def lookupSampled[A](implicit t: RType[A]): Sampled[A] = (sampledCache.get(t) match {
+    case Some(s) => s
+    case _ =>
+      implicit val tagA = t.classTag
+      implicit val arb = lookupArbitrary(t)
+      val res = new SampledData[A](
+        samples = genSamples[A](DefaultMinSuccessful, None))
+      sampledCache.put(t, res)
+      updateArbitrary(t, res)
+      res
+  }).asInstanceOf[Sampled[A]]
+
+  /** Call this function to prepare samples for the given type.
+    * They can later be retrieved using `lookupSampled`. */
+  def prepareSamples[A](implicit t: RType[A]) = {
+    lookupSampled[A]
+  }
+
 
   /** Helper implementation for ordering samples. */
   trait GroupElementOrdering extends Ordering[GroupElement] {

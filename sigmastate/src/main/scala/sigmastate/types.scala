@@ -161,13 +161,31 @@ object SType {
 
   /** All pre-defined types should be listed here. Note, NoType is not listed.
     * Should be in sync with sigmastate.lang.Types.predefTypes. */
-  val allPredefTypes: Seq[SType] = Array(SBoolean, SByte, SShort, SInt, SLong, SBigInt, SContext, SGlobal, SHeader, SPreHeader, SAvlTree, SGroupElement, SSigmaProp, SString, SBox, SUnit, SAny)
+  val allPredefTypes: Seq[SType] = Array(SBoolean, SByte, SShort, SInt, SLong, SBigInt, SContext,
+    SGlobal, SHeader, SPreHeader, SAvlTree, SGroupElement, SSigmaProp, SString, SBox,
+    SUnit, SAny)
+
   val typeCodeToType = allPredefTypes.map(t => t.typeCode -> t).toMap
 
-  /** A mapping of object types supporting MethodCall operations. For each serialized typeId this map contains
-    * a companion object which can be used to access the list of corresponding methods.
-    * NOTE: in the current implementation only monomorphic methods are supported (without type parameters)*/
-  // TODO HF (h4): should contain all numeric types (including also SNumericType)
+  /** A mapping of object types supporting MethodCall operations. For each serialized
+    * typeId this map contains a companion object which can be used to access the list of
+    * corresponding methods.
+    *
+    * NOTE: in the current implementation only monomorphic methods are supported (without
+    * type parameters)
+    *
+    * NOTE2: in v3.x SNumericType.typeId is silently shadowed by SGlobal.typeId as part of
+    * `toMap` operation. As a result, the methods collected into SByte.methods cannot be
+    * resolved (using SMethod.fromIds()) for all numeric types (SByte, SShort, SInt,
+    * SLong, SBigInt). See the corresponding regression `property("MethodCall on numerics")`.
+    * However, this "shadowing" is not a problem since all casting methods are implemented
+    * via Downcast, Upcast opcodes and the remaining `toBytes`, `toBits` methods are not
+    * implemented at all.
+    * In order to allow MethodCalls on numeric types in future versions the SNumericType.typeId
+    * should be changed and SGlobal.typeId should be preserved. The regression tests in
+    * `property("MethodCall Codes")` should pass.
+    */
+  // TODO v5.0 (h4): should contain all numeric types (including also SNumericType)
   //  to support method calls like 10.toByte which encoded as MethodCall with typeId = 4, methodId = 1
   //  see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/667
   lazy val types: Map[Byte, STypeCompanion] = Seq(
