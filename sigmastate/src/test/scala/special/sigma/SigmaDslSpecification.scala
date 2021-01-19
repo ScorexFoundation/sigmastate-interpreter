@@ -57,6 +57,7 @@ class SigmaDslSpecification extends SigmaDslTesting
       isLogEnabled = false, // don't commit the `true` value (travis log is too high)
       costTracingEnabled = true  // should always be enabled in tests (and false by default)
     )
+  override val nBenchmarkIters = 100
 
   implicit def IR = createIR()
 

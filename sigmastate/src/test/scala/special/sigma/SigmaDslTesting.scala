@@ -381,6 +381,8 @@ class SigmaDslTesting extends PropSpec
     }
   }
 
+  val nBenchmarkIters: Int = 1
+
   case class ExistingFeature[A: RType, B: RType](
     script: String,
     scalaFunc: A => B,
@@ -467,7 +469,10 @@ class SigmaDslTesting extends PropSpec
                             expected: Expected[B],
                             printTestCases: Boolean,
                             failOnTestVectors: Boolean): Unit = {
-      val funcRes = checkEquality(input, printTestCases) // NOTE: funcRes comes from newImpl
+      var funcRes: Try[(B, CostDetails)] = null
+      cfor(0)(_ < nBenchmarkIters, _ + 1) { i => 
+        funcRes = checkEquality(input, printTestCases) // NOTE: funcRes comes from newImpl
+      }
 
       checkResult(funcRes.map(_._1), expected.value, failOnTestVectors)
 

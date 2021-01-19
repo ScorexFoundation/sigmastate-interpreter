@@ -9,7 +9,7 @@ import sigmastate.serialization.ValueSerializer.getSerializer
 import scalan.util.Extensions.ByteOps
 import debox.{Buffer => DBuffer, Map => DMap}
 import sigmastate.interpreter.{CostItem, PerBlockCostItem, SeqCostItem, SimpleCostItem}
-import spire.sp
+import spire.{sp, math}
 
 import scala.reflect.ClassTag
 
@@ -22,10 +22,18 @@ abstract class StatItem[@sp (Long, Double) V] {
 
   /** Returns arithmetic average value. */
   def avg: V
+
+  /** Returns arithmetic mean value (excluding 10% of smallest and 10% of highest values).
+    */
+  def mean: (V, Int)
 }
 
 class StatCollection[@sp(Int) K, @sp(Long, Double) V]
-  (implicit n: spire.math.Numeric[V], ctK: ClassTag[K], ctV: ClassTag[V]) {
+  (implicit n: math.Numeric[V], ctK: ClassTag[K], ctV: ClassTag[V]) {
+
+  private def calcAvg(buf: DBuffer[V]): V = {
+    n.div(buf.sum, n.fromInt(buf.length))
+  }
 
   // NOTE: this class is mutable so better to keep it private
   class StatItemImpl extends StatItem[V] {
@@ -33,14 +41,22 @@ class StatCollection[@sp(Int) K, @sp(Long, Double) V]
 
     def addPoint(point: V) = dataPoints += point
 
-    /** How many data points has been collected */
-    def count: Int = dataPoints.length
+    override def count: Int = dataPoints.length
+    override def sum: V = dataPoints.sum
+    override def avg: V = calcAvg(dataPoints)
 
-    /** Sum of all data points */
-    def sum: V = dataPoints.sum(spire.math.Numeric[V])
-
-    /** Returns arithmetic average value. */
-    def avg: V = n.div(sum, n.fromInt(count))
+    override def mean: (V, Int) = {
+      val nCropped = dataPoints.length / 10
+      if (nCropped == 0) {
+        (calcAvg(dataPoints), dataPoints.length)
+      }
+      else {
+        val sorted = dataPoints.copy()
+        sorted.sort
+        val slice = sorted.slice(nCropped, sorted.length - nCropped)
+        (calcAvg(slice), slice.length)
+      }
+    }
   }
 
   /** Timings of op codes. For performance debox.Map is used, which keeps keys unboxed. */
@@ -124,29 +140,6 @@ class Profiler {
     }
   }
 
-  // NOTE: this class is mutable so better to keep it private
-  private class StatItem {
-      val times: DBuffer[Long] = DBuffer.ofSize(256)
-
-      def addTime(time: Long) = times += time
-
-      /** How many times the operation has been executed */
-      def count: Int = times.length
-
-      /** Sum of all execution times */
-      def sum: Long = times.sum(spire.math.Numeric[Long])
-
-      /** Returns average time in nanoseconds. */
-      def avgTimeNano: Long = sum / count
-
-      /** Returns average time in microseconds. */
-      def avgTimeMicroseconds: Long = {
-        val avgTime = sum / count
-        avgTime / 1000
-      }
-  }
-
-
   /** Timings of op codes. For performance debox implementation of Map is used. */
   private val opStat = new StatCollection[Int, Long]()
 
@@ -185,34 +178,38 @@ class Profiler {
     */
   def opStatTableString(): String = {
     val opCodeLines = opStat.mapToArray { case (key, stat) =>
-      val time = stat.avg
+      val (time, count) = stat.mean
       val opCode = OpCode @@ key.toByte
       val ser = getSerializer(opCode)
       val opName = ser.opDesc.typeName
-      (opName, (opCode.toUByte - OpCodes.LastConstantCode).toString, time, stat.count.toString)
+      (opName, (opCode.toUByte - OpCodes.LastConstantCode).toString, time, count.toString)
     }.toList.sortBy(_._3)(Ordering[Long].reverse)
 
     val mcLines = mcStat.mapToArray { case (key, stat) =>
       val methodId = (key & 0xFF).toByte
       val typeId = (key >> 8).toByte
-      val time = stat.avg
+      val (time, count) = stat.mean
       val m = SMethod.fromIds(typeId, methodId)
       val typeName = m.objType.typeName
-      (s"$typeName.${m.name}", typeId, methodId, time, stat.count.toString)
+      (s"$typeName.${m.name}", typeId, methodId, time, count.toString)
     }.toList.sortBy(r => (r._2,r._3))(Ordering[(Byte,Byte)].reverse)
 
     val ciLines = costItemsStat.mapToArray { case (ci, stat) =>
-      val time = ci match {
-        case _: SimpleCostItem => stat.avg
-        case SeqCostItem(_, _, nItems) => stat.avg / nItems
-        case PerBlockCostItem(_, _, nBlocks) => stat.avg / nBlocks
+      val (time, count) = ci match {
+        case _: SimpleCostItem => stat.mean
+        case SeqCostItem(_, _, nItems) =>
+          val (time, count) = stat.mean
+          (time / nItems, count)
+        case PerBlockCostItem(_, _, nBlocks) =>
+          val (time, count) = stat.mean
+          (time / nBlocks, count)
       }
-      (ci.toString, time, stat.count.toString)
+      (ci.toString, time, count.toString)
     }.toList.sortBy(_._2)(Ordering[Long].reverse)
 
     val estLines = estimationStat.mapToArray { case (script, stat) =>
-      val time = stat.avg
-      (script, time, stat.count.toString)
+      val (time, count) = stat.mean
+      (script, time, count.toString)
     }.toList.sortBy(_._2)(Ordering[Double].reverse)
 
 
