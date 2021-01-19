@@ -9,6 +9,59 @@ import sigmastate.serialization.ValueSerializer.getSerializer
 import scalan.util.Extensions.ByteOps
 import debox.{Buffer => DBuffer, Map => DMap}
 import sigmastate.interpreter.{CostItem, PerBlockCostItem, SeqCostItem, SimpleCostItem}
+import spire.sp
+
+import scala.reflect.ClassTag
+
+abstract class StatItem[@sp (Long, Double) V] {
+  /** How many data points has been collected */
+  def count: Int
+
+  /** Sum of all data points */
+  def sum: V
+
+  /** Returns arithmetic average value. */
+  def avg: V
+}
+
+class StatCollection[@sp(Int) K, @sp(Long, Double) V]
+  (implicit n: spire.math.Numeric[V], ctK: ClassTag[K], ctV: ClassTag[V]) {
+
+  // NOTE: this class is mutable so better to keep it private
+  class StatItemImpl extends StatItem[V] {
+    val dataPoints: DBuffer[V] = DBuffer.ofSize[V](256)
+
+    def addPoint(point: V) = dataPoints += point
+
+    /** How many data points has been collected */
+    def count: Int = dataPoints.length
+
+    /** Sum of all data points */
+    def sum: V = dataPoints.sum(spire.math.Numeric[V])
+
+    /** Returns arithmetic average value. */
+    def avg: V = n.div(sum, n.fromInt(count))
+  }
+
+  /** Timings of op codes. For performance debox.Map is used, which keeps keys unboxed. */
+  private val opStat = DMap[K, StatItemImpl]()
+
+  /** Update time measurement stats for a given operation. */
+  final def addPoint(key: K, point: V) = {
+    val item = opStat.getOrElse(key, null)
+    if (item != null) {
+      item.addPoint(point)
+    } else {
+      val item = new StatItemImpl
+      item.addPoint(point)
+      opStat(key) = item
+    }
+  }
+
+  final def mapToArray[@sp C: ClassTag](f: (K, StatItem[V]) => C): Array[C] = {
+    opStat.mapToArray(f)
+  }
+}
 
 /** A simple profiler to measure average execution times of ErgoTree operations. */
 class Profiler {
@@ -62,7 +115,8 @@ class Profiler {
 
     // update timing stats
     node match {
-      case mc: Terms.MethodCall =>
+      case mc: Terms.MethodCall if mc.method.costFunc.isEmpty =>
+        // NOTE: the remaining MethodCalls are profiled via addCostItem
         val m = mc.method
         addMcTime(m.objType.typeId, m.methodId, opSelfTime)
       case _ =>
@@ -94,62 +148,54 @@ class Profiler {
 
 
   /** Timings of op codes. For performance debox implementation of Map is used. */
-  private val opStat = DMap[OpCode, StatItem]()
+  private val opStat = new StatCollection[Int, Long]()
 
   /** Update time measurement stats for a given operation. */
   @inline private final def addOpTime(op: OpCode, time: Long) = {
-    val item = opStat.getOrElse(op, null)
-    if (item != null) {
-      item.addTime(time)
-    } else {
-      val item = new StatItem
-      item.addTime(time)
-      opStat(op) = item
-    }
+    opStat.addPoint(OpCode.raw(op), time)
   }
 
   /** Timings of method calls */
-  private val mcStat = DMap[(Byte, Byte), StatItem]()  // TODO JITC, TODO optimize: pack (Byte, Byte) into Short
+  private val mcStat = new StatCollection[Int, Long]()
 
   /** Update time measurement stats for a given method. */
   @inline private final def addMcTime(typeId: Byte, methodId: Byte, time: Long) = {
-    val key = (typeId, methodId)
-    val item = mcStat.getOrElse(key, null)
-    if (item != null) {
-      item.addTime(time)
-    } else {
-      val item = new StatItem
-      item.addTime(time)
-      mcStat(key) = item
-    }
+    val key = typeId << 8 | methodId
+    mcStat.addPoint(key, time)
   }
 
   /** Timings of cost items */
-  private val costItemsStat = DMap[CostItem, StatItem]()
+  private val costItemsStat = new StatCollection[CostItem, Long]()
 
   def addCostItem(costItem: CostItem, time: Long) = {
-    val item = costItemsStat.getOrElse(costItem, null)
-    if (item != null) {
-      item.addTime(time)
-    } else {
-      val item = new StatItem
-      item.addTime(time)
-      costItemsStat(costItem) = item
-    }
+    costItemsStat.addPoint(costItem, time)
+  }
+
+  /** Estimation errors for each script */
+  private val estimationStat = new StatCollection[String, Double]()
+
+  def addEstimation(script: String, cost: Int, actualTimeNano: Long) = {
+    val actualTimeMicro = actualTimeNano.toDouble / 1000
+    val delta = Math.abs(cost.toDouble - actualTimeMicro)
+    val error = delta / actualTimeMicro
+    estimationStat.addPoint(script, error)
   }
 
   /** Prints the operation timing table using collected information.
     */
   def opStatTableString(): String = {
-    val opCodeLines = opStat.mapToArray { case (opCode, stat) =>
-      val time = stat.avgTimeNano
+    val opCodeLines = opStat.mapToArray { case (key, stat) =>
+      val time = stat.avg
+      val opCode = OpCode @@ key.toByte
       val ser = getSerializer(opCode)
       val opName = ser.opDesc.typeName
       (opName, (opCode.toUByte - OpCodes.LastConstantCode).toString, time, stat.count.toString)
     }.toList.sortBy(_._3)(Ordering[Long].reverse)
 
-    val mcLines = mcStat.mapToArray { case (id @ (typeId, methodId), stat) =>
-      val time = stat.avgTimeNano
+    val mcLines = mcStat.mapToArray { case (key, stat) =>
+      val methodId = (key & 0xFF).toByte
+      val typeId = (key >> 8).toByte
+      val time = stat.avg
       val m = SMethod.fromIds(typeId, methodId)
       val typeName = m.objType.typeName
       (s"$typeName.${m.name}", typeId, methodId, time, stat.count.toString)
@@ -157,12 +203,17 @@ class Profiler {
 
     val ciLines = costItemsStat.mapToArray { case (ci, stat) =>
       val time = ci match {
-        case _: SimpleCostItem => stat.avgTimeNano
-        case SeqCostItem(_, _, nItems) => stat.avgTimeNano / nItems
-        case PerBlockCostItem(_, _, nBlocks) => stat.avgTimeNano / nBlocks
+        case _: SimpleCostItem => stat.avg
+        case SeqCostItem(_, _, nItems) => stat.avg / nItems
+        case PerBlockCostItem(_, _, nBlocks) => stat.avg / nBlocks
       }
       (ci.toString, time, stat.count.toString)
     }.toList.sortBy(_._2)(Ordering[Long].reverse)
+
+    val estLines = estimationStat.mapToArray { case (script, stat) =>
+      val time = stat.avg
+      (script, time, stat.count.toString)
+    }.toList.sortBy(_._2)(Ordering[Double].reverse)
 
 
     val rows = opCodeLines
@@ -186,6 +237,13 @@ class Profiler {
         }
         .mkString("\n")
 
+    val estRows = (estLines)
+        .map { case (opName, time, count) =>
+          val key = s"$opName".padTo(30, ' ')
+          s"$key -> $time,  // count = $count "
+        }
+        .mkString("\n")
+
     s"""
       |-----------
       |$rows
@@ -193,6 +251,8 @@ class Profiler {
       |$mcRows
       |-----------
       |$ciRows
+      |-----------
+      |$estRows
       |-----------
      """.stripMargin
   }

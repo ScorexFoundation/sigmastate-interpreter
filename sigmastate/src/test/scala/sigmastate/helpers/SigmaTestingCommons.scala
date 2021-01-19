@@ -290,6 +290,10 @@ trait SigmaTestingCommons extends PropSpec
       } else
         GivenCost(cost, Some(actualTime))
 
+      if (evalSettings.isMeasureOperationTime) {
+        evaluator.profiler.addEstimation(funcScript, cost, actualTime)
+      }
+
       if (evalSettings.isLogEnabled) {
         printCostDetails(funcScript, costDetails)
       }
