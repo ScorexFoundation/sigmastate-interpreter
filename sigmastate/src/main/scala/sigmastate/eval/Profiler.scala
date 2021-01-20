@@ -62,6 +62,8 @@ class StatCollection[@sp(Int) K, @sp(Long, Double) V]
   /** Timings of op codes. For performance debox.Map is used, which keeps keys unboxed. */
   private val opStat = DMap[K, StatItemImpl]()
 
+  final def getMean(key: K): Option[(V, Int)] = opStat.get(key).map(_.mean)
+
   /** Update time measurement stats for a given operation. */
   final def addPoint(key: K, point: V) = {
     val item = opStat.getOrElse(key, null)
@@ -164,17 +166,26 @@ class Profiler {
     costItemsStat.addPoint(costItem, time)
   }
 
-  /** Estimation errors for each script */
-  private val estimationStat = new StatCollection[String, Double]()
+  /** Estimation cost for each script */
+  private val estimationCostStat = new StatCollection[String, Int]()
+  /** Estimation cost for each script */
+  private val measuredTimeStat = new StatCollection[String, Long]()
 
-  def addEstimation(script: String, cost: Int, actualTimeNano: Long) = {
-    val actualTimeMicro = actualTimeNano.toDouble / 1000
-    val delta = Math.abs(cost.toDouble - actualTimeMicro)
-    val error = delta / actualTimeMicro
-    estimationStat.addPoint(script, error)
+  /** Returns relative error between estimated and actual values. */
+  def relativeError(est: Double, act: Double): Double = {
+    val delta = Math.abs(est - act)
+    delta / act
   }
 
-  /** Prints the operation timing table using collected information.
+  /** Adds estimated cost and actual measured time data point to the StatCollection for
+    * the given script.
+    */
+  def addEstimation(script: String, cost: Int, actualTimeNano: Long) = {
+    estimationCostStat.addPoint(script, cost)
+    measuredTimeStat.addPoint(script, actualTimeNano)
+  }
+
+  /** Prints the operation timing table using collected execution profile information.
     */
   def opStatTableString(): String = {
     val opCodeLines = opStat.mapToArray { case (key, stat) =>
@@ -207,9 +218,12 @@ class Profiler {
       (ci.toString, time, count.toString)
     }.toList.sortBy(_._2)(Ordering[Long].reverse)
 
-    val estLines = estimationStat.mapToArray { case (script, stat) =>
-      val (time, count) = stat.mean
-      (script, time, count.toString)
+    val estLines = estimationCostStat.mapToArray { case (script, stat) =>
+      val (cost, count) = stat.mean
+      val (timeNano, _) = measuredTimeStat.getMean(script).get
+      val actualTimeMicro = timeNano.toDouble / 1000
+      val error = relativeError(cost.toDouble, actualTimeMicro)
+      (script, error, cost, timeNano, count.toString)
     }.toList.sortBy(_._2)(Ordering[Double].reverse)
 
 
@@ -220,24 +234,24 @@ class Profiler {
         }
         .mkString("\n")
 
-    val mcRows = (mcLines)
+    val mcRows = mcLines
         .map { case (opName, typeId, methodId, time, count) =>
           val key = s"($typeId.toByte, $methodId.toByte)".padTo(25, ' ')
           s"$key -> $time,  // count = $count, $opName "
         }
         .mkString("\n")
 
-    val ciRows = (ciLines)
+    val ciRows = ciLines
         .map { case (opName, time, count) =>
           val key = s"$opName".padTo(30, ' ')
           s"$key -> $time,  // count = $count "
         }
         .mkString("\n")
 
-    val estRows = (estLines)
-        .map { case (opName, time, count) =>
+    val estRows = estLines
+        .map { case (opName, error, cost, time, count) =>
           val key = s"$opName".padTo(30, ' ')
-          s"$key -> $time,  // count = $count "
+          s"$key -> ($error, $cost, $time),  // count = $count "
         }
         .mkString("\n")
 

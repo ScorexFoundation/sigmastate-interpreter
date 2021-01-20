@@ -17,8 +17,10 @@ import scala.util.DynamicVariable
 
 /** Configuration parameters of the evaluation run. */
 case class EvalSettings(
-  /** Used by [[ErgoTreeEvaluator.profiler]] to measure operations timings. */
+  /** Used together with [[ErgoTreeEvaluator.profiler]] to measure individual operations timings. */
   isMeasureOperationTime: Boolean,
+  /** Used together with [[ErgoTreeEvaluator.profiler]] to measure script timings. */
+  isMeasureScriptTime: Boolean,
   /** Used by [[ErgoTreeEvaluator]] to conditionally perform debug mode operations. */
   isDebug: Boolean = false,
   /** Used by [[ErgoTreeEvaluator]] to conditionally emit log messages. */
@@ -215,7 +217,9 @@ object ErgoTreeEvaluator {
   val DefaultProfiler = new Profiler
 
   /** Default global [[EvalSettings]] instance. */
-  val DefaultEvalSettings = EvalSettings(isMeasureOperationTime = false)
+  val DefaultEvalSettings = EvalSettings(
+    isMeasureOperationTime = false,
+    isMeasureScriptTime = false)
 
   /** Evaluator currently is being executed on the current thread.
     * This variable is set in a single place, specifically in the `eval` method of

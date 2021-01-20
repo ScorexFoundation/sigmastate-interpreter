@@ -319,11 +319,11 @@ object CostTable {
 
     /** Cost of: 1) switch on the number of args 2) allocating a new Scala closure
       * Old cost: ("Lambda", "() => (D1) => R", lambdaCost),*/
-    def FuncValue = 2 // cf. lambdaCost
+    def FuncValue = 4 // cf. lambdaCost
 
     /** Cost of: 1) switch on the number of args 2) Scala method call 3) add args to env
       * Old cost: lambdaInvoke == 30 */
-    def Apply = 20
+    def Apply = 10
 
     /** Cost of: 1) Calling Option.get Scala method. */
     def OptionGet = 2 // cf. selectField
@@ -332,7 +332,7 @@ object CostTable {
     def Outputs = 2 // cf. selectField
 
     /** Cost of: 1) Lookup in immutable HashMap by valId: Int 2) alloc of Some(v) */
-    def ValUse = 5
+    def ValUse = 6
 
     /** Cost of: 1) packing args into Array 2) java.lang.reflect.Method.invoke */
     def MethodCall = 5
@@ -362,7 +362,7 @@ object CostTable {
 
     /** Cost of: 1) accessing to array of context vars by index
       * Old cost: ("GetVar", "(Context, Byte) => Option[T]", getVarCost) */
-    def GetVar = 5
+    def GetVar = 3
 
 //    ("GetRegister", "(Box, Byte) => Option[T]", accessRegister),
 //    ("AccessRegister", "Box => Option[T]", accessRegister),
@@ -448,7 +448,7 @@ object CostTable {
 
     /** Cost of: scala `^` operation
       * Old cost: ("BinXor", "(Boolean, Boolean) => Boolean", logicCost) */
-    def BinXor = 5 // cf. logicCost
+    def BinXor = 3 // cf. logicCost
 
     /** Cost of: scala `!` operation */
     def LogicalNot = 5
