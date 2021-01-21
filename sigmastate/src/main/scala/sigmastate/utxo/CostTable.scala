@@ -4,12 +4,6 @@ import org.ergoplatform.SigmaConstants
 import sigmastate.{Downcast, Upcast}
 import sigmastate.lang.SigmaParser
 import sigmastate.lang.Terms.OperationId
-import sigmastate.serialization.OpCodes
-import sigmastate.serialization.OpCodes.{LastConstantCode, OpCode}
-import scalan.util.Extensions.ByteOps
-import sigmastate.serialization.ValueSerializer.getSerializer
-
-import scala.collection.mutable
 
 case class CostTable(operCosts: Map[OperationId, Int]) extends (OperationId => Int) {
   @inline private def cleanOperId(operId: OperationId): OperationId = {

@@ -1,12 +1,12 @@
 package sigmastate.utxo.examples
 
-import org.ergoplatform.{ErgoLikeContext, ErgoLikeTransaction, Height}
+import org.ergoplatform.Height
 import scorex.crypto.hash.Blake2b256
 import scorex.utils.Random
 import sigmastate.Values._
 import sigmastate._
-import interpreter.Interpreter._
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, ErgoLikeTransactionTesting, SigmaTestingCommons}
+import sigmastate.interpreter.Interpreter._
+import sigmastate.helpers._
 import sigmastate.lang.Terms._
 import sigmastate.utxo.SizeOf
 

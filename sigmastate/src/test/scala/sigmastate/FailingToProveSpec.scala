@@ -5,7 +5,6 @@ import sigmastate.helpers.TestingHelpers._
 import sigmastate.lang.Terms._
 import org.scalatest.TryValues._
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
-import org.ergoplatform.ErgoScriptPredef._
 
 class FailingToProveSpec extends SigmaTestingCommons
   with CrossVersionProps {

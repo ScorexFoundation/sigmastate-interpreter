@@ -4,7 +4,7 @@ import fastparse.all._
 import Identifiers._
 import sigmastate._
 import Values._
-import fastparse.{all, core}
+import fastparse.core
 import java.lang.Long.parseLong
 import java.lang.Integer.parseInt
 

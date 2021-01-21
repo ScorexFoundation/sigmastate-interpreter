@@ -1,6 +1,6 @@
 package sigmastate.utxo
 
-import org.ergoplatform.{ErgoLikeTransaction, ErgoBoxCandidate, _}
+import org.ergoplatform._
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
 import org.scalatest.{PropSpec, Matchers}
 import scalan.util.BenchmarkUtil

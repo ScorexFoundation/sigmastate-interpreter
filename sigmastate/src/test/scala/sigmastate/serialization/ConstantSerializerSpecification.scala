@@ -18,7 +18,6 @@ import SType.AnyOps
 import scorex.util.encode.Base16
 import sigmastate.lang.DeserializationSigmaBuilder
 import sigmastate.lang.exceptions.SerializerException
-import sigmastate.utils.Helpers
 
 class ConstantSerializerSpecification extends TableSerializationSpecification {
 

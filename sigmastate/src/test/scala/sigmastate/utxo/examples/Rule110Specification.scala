@@ -3,7 +3,7 @@ package sigmastate.utxo.examples
 import org.ergoplatform._
 import scorex.crypto.hash.Blake2b256
 import scorex.util._
-import sigmastate.Values.{LongConstant, FalseLeaf, TrueLeaf, GetVarByteArray, Value, ByteArrayConstant, IntConstant, ErgoTree, BooleanConstant, ByteConstant}
+import sigmastate.Values._
 import sigmastate._
 import sigmastate.eval._
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, SigmaTestingCommons, ErgoLikeTestInterpreter}

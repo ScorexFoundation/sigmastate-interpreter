@@ -31,9 +31,9 @@ import sigmastate.helpers.TestingHelpers._
 import scala.util.{Success, Failure, Try}
 import OrderingOps._
 import org.ergoplatform.ErgoBox.AdditionalRegisters
-import org.scalacheck.Arbitrary.{arbTuple2, arbAnyVal, arbShort, arbUnit, arbInt, arbLong, arbBool, arbByte}
+import org.scalacheck.Arbitrary._
 import org.scalacheck.Gen.frequency
-import scalan.RType.{AnyType, LongType, IntType, UnitType, OptionType, BooleanType, PairType, ByteType, ShortType}
+import scalan.RType._
 import scorex.util.ModifierId
 import sigmastate.basics.ProveDHTuple
 

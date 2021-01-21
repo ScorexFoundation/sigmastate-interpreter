@@ -14,7 +14,7 @@ import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.helpers.SigmaTestingCommons
 import sigmastate.interpreter.{ProverResult, ContextExtension, CryptoConstants}
 import sigmastate.serialization.SerializationSpecification
-import sigmastate.utils.Helpers._
+import sigmastate.utils.Helpers._ // required for Scala 2.11
 import special.collection.Coll
 import special.sigma.{PreHeader, Header}
 

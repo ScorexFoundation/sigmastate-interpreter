@@ -2,7 +2,7 @@ package sigmastate.serialization.generators
 
 import org.scalacheck.{Arbitrary, Gen}
 import sigmastate._
-import sigmastate.Values.{ConcreteCollection, Value, EvaluatedValue, IntConstant}
+import sigmastate.Values.{ConcreteCollection, Value, IntConstant}
 
 trait ConcreteCollectionGenerators { self: ObjectGenerators =>
   val minCollLength = 1

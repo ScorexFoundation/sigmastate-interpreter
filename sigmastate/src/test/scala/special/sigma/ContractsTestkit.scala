@@ -1,13 +1,13 @@
 package special.sigma
 
-import scalan._
 import special.collection.{Coll, CollOverArrayBuilder}
 import scalan.RType
 import sigmastate.Values.ErgoTree
-import sigmastate.{AvlTreeData, TrivialProp, Values}
+import sigmastate.{AvlTreeData, Values}
 import sigmastate.eval._
 import sigmastate.eval.Extensions._
 import sigmastate.helpers.TestingHelpers._
+import scalan._  // imports implicit ClassTag
 
 trait ContractsTestkit {
   val R0 = 0.toByte;

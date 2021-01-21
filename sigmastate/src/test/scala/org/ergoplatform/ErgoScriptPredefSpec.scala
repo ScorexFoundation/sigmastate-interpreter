@@ -18,7 +18,6 @@ import sigmastate.lang.Terms.ValueOps
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo.{CostTable, ExtractCreationInfo, ByIndex, SelectField}
 import scalan.util.BenchmarkUtil._
-import ErgoScriptPredef._
 import sigmastate.utils.Helpers._
 
 import scala.util.Try

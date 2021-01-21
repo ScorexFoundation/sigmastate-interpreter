@@ -1,6 +1,5 @@
 package sigmastate.helpers
 
-import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
 import org.ergoplatform.SigmaConstants.ScriptCostLimit
 import org.ergoplatform._
 import org.ergoplatform.validation.ValidationRules.{CheckCostFunc, CheckCalcFunc}
@@ -15,9 +14,9 @@ import sigma.types.IsPrimView
 import sigmastate.Values.{Constant, EvaluatedValue, SValue, Value, GroupElementConstant}
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, ScriptEnv}
 import sigmastate.interpreter.{CryptoConstants, Interpreter}
-import sigmastate.lang.{Terms, TransformingSigmaBuilder, SigmaCompiler}
-import sigmastate.serialization.{ValueSerializer, SigmaSerializer}
-import sigmastate.{SGroupElement, SType, TestsBase}
+import sigmastate.lang.Terms
+import sigmastate.serialization.SigmaSerializer
+import sigmastate.{SGroupElement, TestsBase, SType}
 import sigmastate.eval.{CompiletimeCosting, IRContext, Evaluation, _}
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.utils.Helpers._

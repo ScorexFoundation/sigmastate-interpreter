@@ -12,7 +12,6 @@ import sigmastate.lang.exceptions.{CosterException, InvalidArguments, TyperExcep
 import sigmastate.serialization.ValueSerializer
 import sigmastate.serialization.generators.ObjectGenerators
 import sigmastate.utxo.{ByIndex, ExtractAmount, GetVar, SelectField}
-import sigmastate.eval._
 
 class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ObjectGenerators {
   import CheckingSigmaBuilder._

@@ -14,7 +14,6 @@ import sigmastate.utxo._
 import sigmastate.utils.Helpers._
 import special.collection._
 import special.sigma.{SigmaDslTesting, Box}
-import sigmastate.helpers.TestingHelpers._
 
 import scala.util.Success
 
