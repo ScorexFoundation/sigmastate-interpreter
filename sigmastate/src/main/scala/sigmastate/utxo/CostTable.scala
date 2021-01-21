@@ -323,7 +323,7 @@ object CostTable {
 
     /** Cost of: 1) switch on the number of args 2) Scala method call 3) add args to env
       * Old cost: lambdaInvoke == 30 */
-    def Apply = 10
+    def Apply = 5
 
     /** Cost of: 1) Calling Option.get Scala method. */
     def OptionGet = 2 // cf. selectField
@@ -332,7 +332,7 @@ object CostTable {
     def Outputs = 2 // cf. selectField
 
     /** Cost of: 1) Lookup in immutable HashMap by valId: Int 2) alloc of Some(v) */
-    def ValUse = 6
+    def ValUse = 5
 
     /** Cost of: 1) packing args into Array 2) java.lang.reflect.Method.invoke */
     def MethodCall = 5
@@ -352,7 +352,7 @@ object CostTable {
 
     /** Cost of: 1) Calling Tuple2.{_1, _2} Scala methods.
       * Old cost: ("SelectField", "() => Unit", selectField) */
-    def SelectField = 2 // cf. selectField
+    def SelectField = 1 // cf. selectField
 
     /** Cost of: 1) allocating a new tuple (of limited max size)*/
     def Tuple = 5
@@ -362,7 +362,7 @@ object CostTable {
 
     /** Cost of: 1) accessing to array of context vars by index
       * Old cost: ("GetVar", "(Context, Byte) => Option[T]", getVarCost) */
-    def GetVar = 3
+    def GetVar = 1
 
 //    ("GetRegister", "(Box, Byte) => Option[T]", accessRegister),
 //    ("AccessRegister", "Box => Option[T]", accessRegister),
@@ -380,22 +380,22 @@ object CostTable {
 //
 
     /** Cost of: 1) serializing EcPointType to bytes 2) packing them in Coll. */
-    def GroupElement_GetEncoded = 20
+    def GroupElement_GetEncoded = 3
 
     /** Cost of: 1) calling EcPoint.negate 2) wrapping in GroupElement. */
-    def GroupElement_Negate = 10
+    def GroupElement_Negate = 1
 
     /** Cost of:
       * 1) create reader and read bytes in a new array
       * 2) calling curve.decodePoint and obtain EcPoint
       * 3) wrap EcPoint in GroupElement*/
-    def DecodePoint = 20
+    def DecodePoint = 24
 
     /** Cost of: 1) calling EcPoint.multiply 2) wrapping in GroupElement */
-    def Exponentiate = 500 // cf. expCost
+    def Exponentiate = 100 // cf. expCost
 
     /** Cost of: 1) calling EcPoint.add 2) wrapping in GroupElement */
-    def MultiplyGroup = 50 // cf. expCost
+    def MultiplyGroup = 3 // cf. expCost
 
 //    ("Exponentiate", "(GroupElement,BigInt) => GroupElement", expCost),
 //    ("MultiplyGroup", "(GroupElement,GroupElement) => GroupElement", multiplyGroup),
@@ -539,7 +539,7 @@ object CostTable {
       * 1) compute isConstSize for left argument
       * Old cost: ("EQ", "(T,T) => Boolean", comparisonCost)
       */
-    def EQConstSize = comparisonCost
+    def EQConstSize = 3 // cf. comparisonCost
 
     /** Cost of: 1) equality comparison cost per data of the block size
       * @see [[sigmastate.interpreter.ErgoTreeEvaluator.DataBlockSize]]

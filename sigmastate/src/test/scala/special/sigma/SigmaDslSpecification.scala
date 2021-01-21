@@ -58,7 +58,7 @@ class SigmaDslSpecification extends SigmaDslTesting
       isLogEnabled = false, // don't commit the `true` value (travis log is too high)
       costTracingEnabled = true  // should always be enabled in tests (and false by default)
     )
-  override val nBenchmarkIters = 100
+  override val nBenchmarkIters = 500
 
   implicit def IR = createIR()
 
@@ -259,14 +259,14 @@ class SigmaDslSpecification extends SigmaDslTesting
       ))
     val newCost = CostDetails(
       Array(
-        SimpleCostItem("Apply", 10),
+        SimpleCostItem("Apply", 5),
         SimpleCostItem("FuncValue", 4),
-        SimpleCostItem("GetVar", 3),
+        SimpleCostItem("GetVar", 1),
         SimpleCostItem("OptionGet", 2),
-        SimpleCostItem("ValUse", 6),
-        SimpleCostItem("SelectField", 2),
-        SimpleCostItem("ValUse", 6),
-        SimpleCostItem("SelectField", 2),
+        SimpleCostItem("ValUse", 5),
+        SimpleCostItem("SelectField", 1),
+        SimpleCostItem("ValUse", 5),
+        SimpleCostItem("SelectField", 1),
         SimpleCostItem("BinXor", 3)
       )
     )
@@ -298,16 +298,16 @@ class SigmaDslSpecification extends SigmaDslTesting
       ))
     val newCost = CostDetails(
       Array(
-        SimpleCostItem("Apply", 10),
+        SimpleCostItem("Apply", 5),
         SimpleCostItem("FuncValue", 4),
-        SimpleCostItem("GetVar", 3),
+        SimpleCostItem("GetVar", 1),
         SimpleCostItem("OptionGet", 2),
-        SimpleCostItem("ValUse", 6),
-        SimpleCostItem("SelectField", 2),
+        SimpleCostItem("ValUse", 5),
+        SimpleCostItem("SelectField", 1),
         SimpleCostItem("Const", 5),
-        SimpleCostItem("EQ", 10),
-        SimpleCostItem("ValUse", 6),
-        SimpleCostItem("SelectField", 2),
+        SimpleCostItem("EQ", 3),
+        SimpleCostItem("ValUse", 5),
+        SimpleCostItem("SelectField", 1),
         SimpleCostItem("BinXor", 3)
       )
     )
@@ -334,26 +334,26 @@ class SigmaDslSpecification extends SigmaDslTesting
       ))
     val cost1 = CostDetails(
       Array(
-        SimpleCostItem("Apply", 10),
+        SimpleCostItem("Apply", 5),
         SimpleCostItem("FuncValue", 4),
-        SimpleCostItem("GetVar", 3),
+        SimpleCostItem("GetVar", 1),
         SimpleCostItem("OptionGet", 2),
-        SimpleCostItem("ValUse", 6),
-        SimpleCostItem("SelectField", 2),
+        SimpleCostItem("ValUse", 5),
+        SimpleCostItem("SelectField", 1),
         SimpleCostItem("BinAnd", 5)
       )
     )
     val cost2 = CostDetails(
       Array(
-        SimpleCostItem("Apply", 10),
+        SimpleCostItem("Apply", 5),
         SimpleCostItem("FuncValue", 4),
-        SimpleCostItem("GetVar", 3),
+        SimpleCostItem("GetVar", 1),
         SimpleCostItem("OptionGet", 2),
-        SimpleCostItem("ValUse", 6),
-        SimpleCostItem("SelectField", 2),
+        SimpleCostItem("ValUse", 5),
+        SimpleCostItem("SelectField", 1),
         SimpleCostItem("BinAnd", 5),
-        SimpleCostItem("ValUse", 6),
-        SimpleCostItem("SelectField", 2)
+        SimpleCostItem("ValUse", 5),
+        SimpleCostItem("SelectField", 1)
       )
     )
     val cases = Seq(
@@ -377,26 +377,26 @@ class SigmaDslSpecification extends SigmaDslTesting
       ))
     val cost1 = CostDetails(
       Array(
-        SimpleCostItem("Apply", 10),
+        SimpleCostItem("Apply", 5),
         SimpleCostItem("FuncValue", 4),
-        SimpleCostItem("GetVar", 3),
+        SimpleCostItem("GetVar", 1),
         SimpleCostItem("OptionGet", 2),
-        SimpleCostItem("ValUse", 6),
-        SimpleCostItem("SelectField", 2),
+        SimpleCostItem("ValUse", 5),
+        SimpleCostItem("SelectField", 1),
         SimpleCostItem("BinOr", 5)
       )
     )
     val cost2 = CostDetails(
       Array(
-        SimpleCostItem("Apply", 10),
+        SimpleCostItem("Apply", 5),
         SimpleCostItem("FuncValue", 4),
-        SimpleCostItem("GetVar", 3),
+        SimpleCostItem("GetVar", 1),
         SimpleCostItem("OptionGet", 2),
-        SimpleCostItem("ValUse", 6),
-        SimpleCostItem("SelectField", 2),
+        SimpleCostItem("ValUse", 5),
+        SimpleCostItem("SelectField", 1),
         SimpleCostItem("BinOr", 5),
-        SimpleCostItem("ValUse", 6),
-        SimpleCostItem("SelectField", 2)
+        SimpleCostItem("ValUse", 5),
+        SimpleCostItem("SelectField", 1)
       )
     )
     val cases = Seq(
@@ -411,63 +411,63 @@ class SigmaDslSpecification extends SigmaDslTesting
   property("lazy || and && boolean equivalence") {
     val cost1 = CostDetails(
       Array(
-        SimpleCostItem("Apply", 10),
+        SimpleCostItem("Apply", 5),
         SimpleCostItem("FuncValue", 4),
-        SimpleCostItem("GetVar", 3),
+        SimpleCostItem("GetVar", 1),
         SimpleCostItem("OptionGet", 2),
-        SimpleCostItem("ValUse", 6),
+        SimpleCostItem("ValUse", 5),
         SimpleCostItem("BinOr", 5)
       )
     )
     val cost2 = CostDetails(
       Array(
-        SimpleCostItem("Apply", 10),
+        SimpleCostItem("Apply", 5),
         SimpleCostItem("FuncValue", 4),
-        SimpleCostItem("GetVar", 3),
+        SimpleCostItem("GetVar", 1),
         SimpleCostItem("OptionGet", 2),
-        SimpleCostItem("ValUse", 6),
+        SimpleCostItem("ValUse", 5),
         SimpleCostItem("BinAnd", 5)
       )
     )
     val cost3 = CostDetails(
       Array(
-        SimpleCostItem("Apply", 10),
+        SimpleCostItem("Apply", 5),
         SimpleCostItem("FuncValue", 4),
-        SimpleCostItem("GetVar", 3),
+        SimpleCostItem("GetVar", 1),
         SimpleCostItem("OptionGet", 2),
-        SimpleCostItem("ValUse", 6),
+        SimpleCostItem("ValUse", 5),
         SimpleCostItem("BinAnd", 5),
-        SimpleCostItem("ValUse", 6),
+        SimpleCostItem("ValUse", 5),
         SimpleCostItem("BinOr", 5)
       )
     )
     val cost4 = CostDetails(
       Array(
-        SimpleCostItem("Apply", 10),
+        SimpleCostItem("Apply", 5),
         SimpleCostItem("FuncValue", 4),
-        SimpleCostItem("GetVar", 3),
+        SimpleCostItem("GetVar", 1),
         SimpleCostItem("OptionGet", 2),
-        SimpleCostItem("ValUse", 6),
+        SimpleCostItem("ValUse", 5),
         SimpleCostItem("BinAnd", 5),
-        SimpleCostItem("ValUse", 6),
+        SimpleCostItem("ValUse", 5),
         SimpleCostItem("BinAnd", 5),
-        SimpleCostItem("ValUse", 6),
+        SimpleCostItem("ValUse", 5),
         SimpleCostItem("BinOr", 5)
       )
     )
     val cost5 = CostDetails(
       Array(
-        SimpleCostItem("Apply", 10),
+        SimpleCostItem("Apply", 5),
         SimpleCostItem("FuncValue", 4),
-        SimpleCostItem("GetVar", 3),
+        SimpleCostItem("GetVar", 1),
         SimpleCostItem("OptionGet", 2),
-        SimpleCostItem("ValUse", 6),
+        SimpleCostItem("ValUse", 5),
         SimpleCostItem("BinAnd", 5),
-        SimpleCostItem("ValUse", 6),
+        SimpleCostItem("ValUse", 5),
         SimpleCostItem("BinAnd", 5),
-        SimpleCostItem("ValUse", 6),
+        SimpleCostItem("ValUse", 5),
         SimpleCostItem("BinAnd", 5),
-        SimpleCostItem("ValUse", 6),
+        SimpleCostItem("ValUse", 5),
         SimpleCostItem("BinOr", 5)
       )
     )
@@ -566,16 +566,16 @@ class SigmaDslSpecification extends SigmaDslTesting
 
     val cost6 = CostDetails(
       Array(
-        SimpleCostItem("Apply", 10),
+        SimpleCostItem("Apply", 5),
         SimpleCostItem("FuncValue", 4),
-        SimpleCostItem("GetVar", 3),
+        SimpleCostItem("GetVar", 1),
         SimpleCostItem("OptionGet", 2),
-        SimpleCostItem("ValUse", 6),
+        SimpleCostItem("ValUse", 5),
         SimpleCostItem("LogicalNot", 5),
         SimpleCostItem("BinAnd", 5),
         SimpleCostItem("LogicalNot", 5),
         SimpleCostItem("BinAnd", 5),
-        SimpleCostItem("ValUse", 6),
+        SimpleCostItem("ValUse", 5),
         SimpleCostItem("BinOr", 5)
       )
     )
@@ -604,14 +604,14 @@ class SigmaDslSpecification extends SigmaDslTesting
 
     val cost7 = CostDetails(
       Array(
-        SimpleCostItem("Apply", 10),
+        SimpleCostItem("Apply", 5),
         SimpleCostItem("FuncValue", 4),
-        SimpleCostItem("GetVar", 3),
+        SimpleCostItem("GetVar", 1),
         SimpleCostItem("OptionGet", 2),
-        SimpleCostItem("ValUse", 6),
+        SimpleCostItem("ValUse", 5),
         SimpleCostItem("BinOr", 5),
         SimpleCostItem("BinAnd", 5),
-        SimpleCostItem("ValUse", 6)
+        SimpleCostItem("ValUse", 5)
       )
     )
     verifyCases(
@@ -634,14 +634,14 @@ class SigmaDslSpecification extends SigmaDslTesting
 
     val cost8 = CostDetails(
       Array(
-        SimpleCostItem("Apply", 10),
+        SimpleCostItem("Apply", 5),
         SimpleCostItem("FuncValue", 4),
-        SimpleCostItem("GetVar", 3),
+        SimpleCostItem("GetVar", 1),
         SimpleCostItem("OptionGet", 2),
-        SimpleCostItem("ValUse", 6),
+        SimpleCostItem("ValUse", 5),
         SimpleCostItem("BinOr", 5),
         SimpleCostItem("BinAnd", 5),
-        SimpleCostItem("ValUse", 6),
+        SimpleCostItem("ValUse", 5),
         SimpleCostItem("BinOr", 5)
       )
     )
@@ -668,17 +668,17 @@ class SigmaDslSpecification extends SigmaDslTesting
 
     val cost9 = CostDetails(
       Array(
-        SimpleCostItem("Apply", 10),
+        SimpleCostItem("Apply", 5),
         SimpleCostItem("FuncValue", 4),
-        SimpleCostItem("GetVar", 3),
+        SimpleCostItem("GetVar", 1),
         SimpleCostItem("OptionGet", 2),
-        SimpleCostItem("ValUse", 6),
+        SimpleCostItem("ValUse", 5),
         SimpleCostItem("LogicalNot", 5),
         SimpleCostItem("BinAnd", 5),
         SimpleCostItem("LogicalNot", 5),
         SimpleCostItem("BinOr", 5),
         SimpleCostItem("BinAnd", 5),
-        SimpleCostItem("ValUse", 6),
+        SimpleCostItem("ValUse", 5),
         SimpleCostItem("BinOr", 5)
       )
     )
@@ -711,18 +711,18 @@ class SigmaDslSpecification extends SigmaDslTesting
 
     val cost10 = CostDetails(
       Array(
-        SimpleCostItem("Apply", 10),
+        SimpleCostItem("Apply", 5),
         SimpleCostItem("FuncValue", 4),
-        SimpleCostItem("GetVar", 3),
+        SimpleCostItem("GetVar", 1),
         SimpleCostItem("OptionGet", 2),
-        SimpleCostItem("ValUse", 6),
+        SimpleCostItem("ValUse", 5),
         SimpleCostItem("LogicalNot", 5),
-        SimpleCostItem("ValUse", 6),
+        SimpleCostItem("ValUse", 5),
         SimpleCostItem("BinAnd", 5),
         SimpleCostItem("LogicalNot", 5),
         SimpleCostItem("BinOr", 5),
         SimpleCostItem("BinAnd", 5),
-        SimpleCostItem("ValUse", 6),
+        SimpleCostItem("ValUse", 5),
         SimpleCostItem("BinAnd", 5),
         SimpleCostItem("LogicalNot", 5),
         SimpleCostItem("BinOr", 5)
@@ -766,57 +766,57 @@ class SigmaDslSpecification extends SigmaDslTesting
 
   val costIdentity = CostDetails(
     Array(
-      SimpleCostItem("Apply", 10),
+      SimpleCostItem("Apply", 5),
       SimpleCostItem("FuncValue", 4),
-      SimpleCostItem("GetVar", 3),
+      SimpleCostItem("GetVar", 1),
       SimpleCostItem("OptionGet", 2),
-      SimpleCostItem("ValUse", 6)
+      SimpleCostItem("ValUse", 5)
     )
   )
   val costUpcast = CostDetails(
     Array(
-      SimpleCostItem("Apply", 10),
+      SimpleCostItem("Apply", 5),
       SimpleCostItem("FuncValue", 4),
-      SimpleCostItem("GetVar", 3),
+      SimpleCostItem("GetVar", 1),
       SimpleCostItem("OptionGet", 2),
-      SimpleCostItem("ValUse", 6),
+      SimpleCostItem("ValUse", 5),
       SimpleCostItem("Upcast", 5)
     )
   )
   val costDowncast = CostDetails(
     Array(
-      SimpleCostItem("Apply", 10),
+      SimpleCostItem("Apply", 5),
       SimpleCostItem("FuncValue", 4),
-      SimpleCostItem("GetVar", 3),
+      SimpleCostItem("GetVar", 1),
       SimpleCostItem("OptionGet", 2),
-      SimpleCostItem("ValUse", 6),
+      SimpleCostItem("ValUse", 5),
       SimpleCostItem("Downcast", 5)
     )
   )
   val costArithOps = CostDetails(
     Array(
-      SimpleCostItem("Apply", 10),
+      SimpleCostItem("Apply", 5),
       SimpleCostItem("FuncValue", 4),
-      SimpleCostItem("GetVar", 3),
+      SimpleCostItem("GetVar", 1),
       SimpleCostItem("OptionGet", 2),
-      SimpleCostItem("ValUse", 6),
-      SimpleCostItem("SelectField", 2),
-      SimpleCostItem("ValUse", 6),
-      SimpleCostItem("SelectField", 2),
-      SimpleCostItem("ValUse", 6),
-      SimpleCostItem("ValUse", 6),
+      SimpleCostItem("ValUse", 5),
+      SimpleCostItem("SelectField", 1),
+      SimpleCostItem("ValUse", 5),
+      SimpleCostItem("SelectField", 1),
+      SimpleCostItem("ValUse", 5),
+      SimpleCostItem("ValUse", 5),
       SimpleCostItem("+", 5),
-      SimpleCostItem("ValUse", 6),
-      SimpleCostItem("ValUse", 6),
+      SimpleCostItem("ValUse", 5),
+      SimpleCostItem("ValUse", 5),
       SimpleCostItem("-", 5),
-      SimpleCostItem("ValUse", 6),
-      SimpleCostItem("ValUse", 6),
+      SimpleCostItem("ValUse", 5),
+      SimpleCostItem("ValUse", 5),
       SimpleCostItem("*", 5),
-      SimpleCostItem("ValUse", 6),
-      SimpleCostItem("ValUse", 6),
+      SimpleCostItem("ValUse", 5),
+      SimpleCostItem("ValUse", 5),
       SimpleCostItem("/", 5),
-      SimpleCostItem("ValUse", 6),
-      SimpleCostItem("ValUse", 6),
+      SimpleCostItem("ValUse", 5),
+      SimpleCostItem("ValUse", 5),
       SimpleCostItem("%", 5),
       SimpleCostItem("Tuple", 5),
       SimpleCostItem("Tuple", 5),
@@ -1058,68 +1058,68 @@ class SigmaDslSpecification extends SigmaDslTesting
 
   def costLT(ltOpCost: Int) = CostDetails(
     Array(
-      SimpleCostItem("Apply", 10),
+      SimpleCostItem("Apply", 5),
       SimpleCostItem("FuncValue", 4),
-      SimpleCostItem("GetVar", 3),
+      SimpleCostItem("GetVar", 1),
       SimpleCostItem("OptionGet", 2),
-      SimpleCostItem("ValUse", 6),
-      SimpleCostItem("SelectField", 2),
-      SimpleCostItem("ValUse", 6),
-      SimpleCostItem("SelectField", 2),
+      SimpleCostItem("ValUse", 5),
+      SimpleCostItem("SelectField", 1),
+      SimpleCostItem("ValUse", 5),
+      SimpleCostItem("SelectField", 1),
       SimpleCostItem("LT", ltOpCost)
     )
   )
   def costGT(gtOpCost: Int) = CostDetails(
     Array(
-      SimpleCostItem("Apply", 10),
+      SimpleCostItem("Apply", 5),
       SimpleCostItem("FuncValue", 4),
-      SimpleCostItem("GetVar", 3),
+      SimpleCostItem("GetVar", 1),
       SimpleCostItem("OptionGet", 2),
-      SimpleCostItem("ValUse", 6),
-      SimpleCostItem("SelectField", 2),
-      SimpleCostItem("ValUse", 6),
-      SimpleCostItem("SelectField", 2),
+      SimpleCostItem("ValUse", 5),
+      SimpleCostItem("SelectField", 1),
+      SimpleCostItem("ValUse", 5),
+      SimpleCostItem("SelectField", 1),
       SimpleCostItem("GT", gtOpCost)
     )
   )
   def costNEQ(neqCost: Seq[CostItem]) = {
     val trace = Array(
-      SimpleCostItem("Apply", 10),
+      SimpleCostItem("Apply", 5),
       SimpleCostItem("FuncValue", 4),
-      SimpleCostItem("GetVar", 3),
+      SimpleCostItem("GetVar", 1),
       SimpleCostItem("OptionGet", 2),
-      SimpleCostItem("ValUse", 6),
-      SimpleCostItem("SelectField", 2),
-      SimpleCostItem("ValUse", 6),
-      SimpleCostItem("SelectField", 2)
+      SimpleCostItem("ValUse", 5),
+      SimpleCostItem("SelectField", 1),
+      SimpleCostItem("ValUse", 5),
+      SimpleCostItem("SelectField", 1)
     ) ++ neqCost
     CostDetails(trace)
   }
-  val constNeqCost: Seq[CostItem] = Array(SimpleCostItem("NEQ", 10))
+  val constNeqCost: Seq[CostItem] = Array(SimpleCostItem("NEQ", 3))
 
   def costLE(leOpCost: Int) = CostDetails(
     Array(
-      SimpleCostItem("Apply", 10),
+      SimpleCostItem("Apply", 5),
       SimpleCostItem("FuncValue", 4),
-      SimpleCostItem("GetVar", 3),
+      SimpleCostItem("GetVar", 1),
       SimpleCostItem("OptionGet", 2),
-      SimpleCostItem("ValUse", 6),
-      SimpleCostItem("SelectField", 2),
-      SimpleCostItem("ValUse", 6),
-      SimpleCostItem("SelectField", 2),
+      SimpleCostItem("ValUse", 5),
+      SimpleCostItem("SelectField", 1),
+      SimpleCostItem("ValUse", 5),
+      SimpleCostItem("SelectField", 1),
       SimpleCostItem("LE", leOpCost)
     )
   )
   def costGE(geOpCost: Int) = CostDetails(
     Array(
-      SimpleCostItem("Apply", 10),
+      SimpleCostItem("Apply", 5),
       SimpleCostItem("FuncValue", 4),
-      SimpleCostItem("GetVar", 3),
+      SimpleCostItem("GetVar", 1),
       SimpleCostItem("OptionGet", 2),
-      SimpleCostItem("ValUse", 6),
-      SimpleCostItem("SelectField", 2),
-      SimpleCostItem("ValUse", 6),
-      SimpleCostItem("SelectField", 2),
+      SimpleCostItem("ValUse", 5),
+      SimpleCostItem("SelectField", 1),
+      SimpleCostItem("ValUse", 5),
+      SimpleCostItem("SelectField", 1),
       SimpleCostItem("GE", geOpCost)
     )
   )
@@ -2187,28 +2187,28 @@ class SigmaDslSpecification extends SigmaDslTesting
     {
       val costArithOps = CostDetails(
         Array(
-          SimpleCostItem("Apply", 10),
+          SimpleCostItem("Apply", 5),
           SimpleCostItem("FuncValue", 4),
-          SimpleCostItem("GetVar", 3),
+          SimpleCostItem("GetVar", 1),
           SimpleCostItem("OptionGet", 2),
-          SimpleCostItem("ValUse", 6),
-          SimpleCostItem("SelectField", 2),
-          SimpleCostItem("ValUse", 6),
-          SimpleCostItem("SelectField", 2),
-          SimpleCostItem("ValUse", 6),
-          SimpleCostItem("ValUse", 6),
+          SimpleCostItem("ValUse", 5),
+          SimpleCostItem("SelectField", 1),
+          SimpleCostItem("ValUse", 5),
+          SimpleCostItem("SelectField", 1),
+          SimpleCostItem("ValUse", 5),
+          SimpleCostItem("ValUse", 5),
           SimpleCostItem("+", 10),
-          SimpleCostItem("ValUse", 6),
-          SimpleCostItem("ValUse", 6),
+          SimpleCostItem("ValUse", 5),
+          SimpleCostItem("ValUse", 5),
           SimpleCostItem("-", 10),
-          SimpleCostItem("ValUse", 6),
-          SimpleCostItem("ValUse", 6),
+          SimpleCostItem("ValUse", 5),
+          SimpleCostItem("ValUse", 5),
           SimpleCostItem("*", 50),
-          SimpleCostItem("ValUse", 6),
-          SimpleCostItem("ValUse", 6),
+          SimpleCostItem("ValUse", 5),
+          SimpleCostItem("ValUse", 5),
           SimpleCostItem("/", 50),
-          SimpleCostItem("ValUse", 6),
-          SimpleCostItem("ValUse", 6),
+          SimpleCostItem("ValUse", 5),
+          SimpleCostItem("ValUse", 5),
           SimpleCostItem("%", 50),
           SimpleCostItem("Tuple", 5),
           SimpleCostItem("Tuple", 5),
@@ -2654,13 +2654,13 @@ class SigmaDslSpecification extends SigmaDslTesting
       {
         val cost = TracedCost(
           Array(
-            SimpleCostItem("Apply", 10),
+            SimpleCostItem("Apply", 5),
             SimpleCostItem("FuncValue", 4),
-            SimpleCostItem("GetVar", 3),
+            SimpleCostItem("GetVar", 1),
             SimpleCostItem("OptionGet", 2),
-            SimpleCostItem("ValUse", 6),
+            SimpleCostItem("ValUse", 5),
             SimpleCostItem("MethodCall", 5),
-            MethodCallCostItem(TracedCost(Array(SimpleCostItem("SGroupElement$.getEncoded", 20))))
+            MethodCallCostItem(TracedCost(Array(SimpleCostItem("SGroupElement$.getEncoded", 3))))
           )
         )
         def success[T](v: T) = Expected(Success(v), 37905, cost)
@@ -2685,16 +2685,16 @@ class SigmaDslSpecification extends SigmaDslTesting
       {
         val cost = TracedCost(
           Array(
-            SimpleCostItem("Apply", 10),
+            SimpleCostItem("Apply", 5),
             SimpleCostItem("FuncValue", 4),
-            SimpleCostItem("GetVar", 3),
+            SimpleCostItem("GetVar", 1),
             SimpleCostItem("OptionGet", 2),
-            SimpleCostItem("ValUse", 6),
+            SimpleCostItem("ValUse", 5),
             SimpleCostItem("MethodCall", 5),
-            MethodCallCostItem(TracedCost(Array(SimpleCostItem("SGroupElement$.getEncoded", 20)))),
-            SimpleCostItem("DecodePoint", 20),
-            SimpleCostItem("ValUse", 6),
-            SimpleCostItem("EQ", 10)
+            MethodCallCostItem(TracedCost(Array(SimpleCostItem("SGroupElement$.getEncoded", 3)))),
+            SimpleCostItem("DecodePoint", 24),
+            SimpleCostItem("ValUse", 5),
+            SimpleCostItem("EQ", 3)
           )
         )
         def success[T](v: T) = Expected(Success(v), 38340, cost)
@@ -2727,13 +2727,13 @@ class SigmaDslSpecification extends SigmaDslTesting
       {
         val cost = TracedCost(
           Array(
-            SimpleCostItem("Apply", 10),
+            SimpleCostItem("Apply", 5),
             SimpleCostItem("FuncValue", 4),
-            SimpleCostItem("GetVar", 3),
+            SimpleCostItem("GetVar", 1),
             SimpleCostItem("OptionGet", 2),
-            SimpleCostItem("ValUse", 6),
+            SimpleCostItem("ValUse", 5),
             SimpleCostItem("MethodCall", 5),
-            MethodCallCostItem(TracedCost(Array(SimpleCostItem("SGroupElement$.negate", 10))))
+            MethodCallCostItem(TracedCost(Array(SimpleCostItem("SGroupElement$.negate", 1))))
           )
         )
         def success[T](v: T) = Expected(Success(v), 36292, cost)
@@ -2760,15 +2760,15 @@ class SigmaDslSpecification extends SigmaDslTesting
       {
         val cost = TracedCost(
           Array(
-            SimpleCostItem("Apply", 10),
+            SimpleCostItem("Apply", 5),
             SimpleCostItem("FuncValue", 4),
-            SimpleCostItem("GetVar", 3),
+            SimpleCostItem("GetVar", 1),
             SimpleCostItem("OptionGet", 2),
-            SimpleCostItem("ValUse", 6),
-            SimpleCostItem("SelectField", 2),
-            SimpleCostItem("ValUse", 6),
-            SimpleCostItem("SelectField", 2),
-            SimpleCostItem("Exponentiate", 500)
+            SimpleCostItem("ValUse", 5),
+            SimpleCostItem("SelectField", 1),
+            SimpleCostItem("ValUse", 5),
+            SimpleCostItem("SelectField", 1),
+            SimpleCostItem("Exponentiate", 100)
           )
         )
         def success[T](v: T) = Expected(Success(v), 41484, cost)
@@ -2803,15 +2803,15 @@ class SigmaDslSpecification extends SigmaDslTesting
       {
         val cost = TracedCost(
           Array(
-            SimpleCostItem("Apply", 10),
+            SimpleCostItem("Apply", 5),
             SimpleCostItem("FuncValue", 4),
-            SimpleCostItem("GetVar", 3),
+            SimpleCostItem("GetVar", 1),
             SimpleCostItem("OptionGet", 2),
-            SimpleCostItem("ValUse", 6),
-            SimpleCostItem("SelectField", 2),
-            SimpleCostItem("ValUse", 6),
-            SimpleCostItem("SelectField", 2),
-            SimpleCostItem("MultiplyGroup", 50)
+            SimpleCostItem("ValUse", 5),
+            SimpleCostItem("SelectField", 1),
+            SimpleCostItem("ValUse", 5),
+            SimpleCostItem("SelectField", 1),
+            SimpleCostItem("MultiplyGroup", 3)
           )
         )
         def success[T](v: T) = Expected(Success(v), 36457, cost)
@@ -6774,11 +6774,11 @@ class SigmaDslSpecification extends SigmaDslTesting
       {
         val newCost = TracedCost(
           Array(
-            SimpleCostItem("Apply", 10),
+            SimpleCostItem("Apply", 5),
             SimpleCostItem("FuncValue", 4),
-            SimpleCostItem("GetVar", 3),
+            SimpleCostItem("GetVar", 1),
             SimpleCostItem("OptionGet", 2),
-            SimpleCostItem("ValUse", 6),
+            SimpleCostItem("ValUse", 5),
             SeqCostItem("SigmaPropBytes", 5, 1)
           )
         )
