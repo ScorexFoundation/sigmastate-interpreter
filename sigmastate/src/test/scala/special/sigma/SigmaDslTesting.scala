@@ -30,6 +30,7 @@ import sigmastate.helpers.{ErgoLikeContextTesting, SigmaPPrint}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.{ProverResult, ContextExtension, ProverInterpreter}
 import sigmastate.serialization.ValueSerializer
+import sigmastate.serialization.generators.ObjectGenerators
 import sigmastate.utxo.{DeserializeContext, DeserializeRegister}
 import special.collection.{Coll, CollType}
 
@@ -41,7 +42,7 @@ class SigmaDslTesting extends PropSpec
     with PropertyChecks
     with Matchers
     with SigmaTestingData with SigmaContractSyntax
-    with SigmaTypeGens { suite =>
+    with ObjectGenerators { suite =>
 
   lazy val spec: ContractSpec = TestContractSpec(suite)(new TestingIRContext)
 

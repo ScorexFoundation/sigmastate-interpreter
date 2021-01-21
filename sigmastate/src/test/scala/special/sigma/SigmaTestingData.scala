@@ -10,9 +10,10 @@ import org.scalacheck.util.Buildable
 import scalan.RType
 import scorex.crypto.hash.{Digest32, Blake2b256}
 import scorex.crypto.authds.{ADKey, ADValue}
+import sigmastate.serialization.generators.ObjectGenerators
 import special.collection.Coll
 
-trait SigmaTestingData extends SigmaTestingCommons with SigmaTypeGens {
+trait SigmaTestingData extends SigmaTestingCommons with ObjectGenerators {
   def collOfN[T: RType: Arbitrary](n: Int)(implicit b: Buildable[T, Array[T]]): Gen[Coll[T]] = {
     implicit val g: Gen[T] = Arbitrary.arbitrary[T]
     containerOfN[Array, T](n, g).map(Colls.fromArray(_))
