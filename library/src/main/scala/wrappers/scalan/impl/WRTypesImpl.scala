@@ -1,5 +1,6 @@
 package wrappers.scalan
 
+import scala.language.{existentials,implicitConversions}
 import scalan._
 import scalan.RType
 import special.wrappers.WrappersModule

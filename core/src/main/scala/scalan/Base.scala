@@ -3,6 +3,7 @@ package scalan
 import java.lang.reflect.{Constructor => Constr}
 import java.util.Arrays
 import scalan.OverloadHack.Overloaded1
+import scala.language.implicitConversions
 import scala.annotation.implicitNotFound
 import scala.annotation.unchecked.uncheckedVariance
 import scalan.compilation.GraphVizConfig

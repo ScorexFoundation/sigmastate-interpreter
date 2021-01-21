@@ -1,7 +1,7 @@
 package scalan.util
 
 import java.lang.reflect.{Method, AnnotatedElement}
-
+import scala.language.existentials
 import scala.reflect.{classTag, ClassTag}
 import scalan.OverloadId
 
