@@ -3,12 +3,9 @@ package sigmastate.lang
 import fastparse.core.Parsed
 import fastparse.core.Parsed.Success
 import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
-import org.ergoplatform.ErgoLikeContext
-import scalan.RType
-import sigmastate.{SBoolean, SType}
-import sigmastate.Values.{TrueLeaf, Value, Constant, SValue}
-import sigmastate.eval.{Evaluation, IRContext}
-import sigmastate.interpreter.Interpreter
+import sigmastate.SType
+import sigmastate.Values.{Value, SValue}
+import sigmastate.eval.IRContext
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.SigmaPredef.PredefinedFuncRegistry
 import sigmastate.lang.syntax.ParserException

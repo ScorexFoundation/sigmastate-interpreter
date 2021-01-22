@@ -380,10 +380,13 @@ case class Upcast[T <: SNumericType, R <: SNumericType](input: Value[T], tpe: R)
   override def companion = Upcast
   override def opType = Upcast.OpType
 }
+
+/** Base class for Upcast and Downcast companion objects. */
 trait NumericCastCompanion extends ValueCompanion {
   def argInfos: Seq[ArgInfo]
   val OpType = SFunc(Array(SType.tT), SType.tR)
 }
+
 object Upcast extends NumericCastCompanion {
   override def opCode: OpCode = OpCodes.UpcastCode
   override def argInfos: Seq[ArgInfo] = UpcastInfo.argInfos

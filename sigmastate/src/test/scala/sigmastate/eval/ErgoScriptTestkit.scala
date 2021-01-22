@@ -4,7 +4,7 @@ import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
 import org.ergoplatform.validation.ValidationSpecification
 
 import scala.util.Success
-import sigmastate.{AvlTreeData, SType}
+import sigmastate.{AvlTreeData, SType, TestsBase}
 import sigmastate.Values.{EvaluatedValue, SValue, SigmaPropConstant, Value, BigIntArrayConstant}
 import org.ergoplatform.{Context => _, _}
 import sigmastate.utxo.CostTable
@@ -20,7 +20,7 @@ import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import scala.language.implicitConversions
 
 trait ErgoScriptTestkit extends ContractsTestkit with LangTests
-    with ValidationSpecification { self: BaseCtxTests =>
+    with ValidationSpecification with TestsBase { self: BaseCtxTests =>
 
   implicit lazy val IR: TestContext with IRContext =
     new TestContext with IRContext with CompiletimeCosting
@@ -31,7 +31,7 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests
   import Size._
   import BigInt._
 
-  lazy val compiler = new SigmaCompiler(TestnetNetworkPrefix, IR.builder)
+  override lazy val compiler = new SigmaCompiler(TestnetNetworkPrefix, IR.builder)
 
   def newErgoContext(height: Int, boxToSpend: ErgoBox, extension: Map[Byte, EvaluatedValue[SType]] = Map()): ErgoLikeContext = {
     val tx1 = new ErgoLikeTransaction(IndexedSeq(), IndexedSeq(), IndexedSeq(boxToSpend))
@@ -41,7 +41,7 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(boxToSpend),
       spendingTransaction = tx1,
-      self = boxToSpend,
+      self = boxToSpend, activatedVersionInTests,
       extension = ContextExtension(extension))
     ergoCtx
   }
@@ -64,7 +64,7 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests
   lazy val backerPubKey = backerProver.dlogSecrets.head.publicImage
   lazy val projectPubKey = projectProver.dlogSecrets.head.publicImage
 
-  val boxToSpend = testBox(10, ErgoScriptPredef.TrueProp, 0,
+  val boxToSpend = testBox(10, TrueTree, 0,
     additionalRegisters = Map(ErgoBox.R4 -> BigIntArrayConstant(bigIntegerArr1)))
   lazy val tx1Output1 = testBox(minToRaise, projectPubKey, 0)
   lazy val tx1Output2 = testBox(1, projectPubKey, 0)
@@ -76,6 +76,7 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests
     boxesToSpend = IndexedSeq(boxToSpend),
     spendingTransaction = tx1,
     self = boxToSpend,
+    activatedVersionInTests,
     extension = ContextExtension(Map(
       backerPubKeyId -> SigmaPropConstant(backerPubKey),
       projectPubKeyId -> SigmaPropConstant(projectPubKey),

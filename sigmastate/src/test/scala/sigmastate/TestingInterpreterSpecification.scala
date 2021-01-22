@@ -12,12 +12,12 @@ import scorex.util.encode.Base58
 import sigmastate.helpers.{ErgoLikeContextTesting, ErgoLikeTestInterpreter, ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.serialization.ValueSerializer
-import TrivialProp._
 import sigmastate.utils.Helpers._
 
 import scala.util.Random
 
-class TestingInterpreterSpecification extends SigmaTestingCommons {
+class TestingInterpreterSpecification extends SigmaTestingCommons
+  with CrossVersionProps {
   implicit lazy val IR = new TestingIRContext
   lazy val prover = new ErgoLikeTestProvingInterpreter()
   lazy val verifier = new ErgoLikeTestInterpreter
@@ -28,7 +28,7 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
     ErgoLikeContextTesting(h,
       AvlTreeData.dummy, ErgoLikeContextTesting.dummyPubkey, IndexedSeq(fakeSelf),
       ErgoLikeTransaction(IndexedSeq.empty, IndexedSeq.empty),
-      fakeSelf)
+      fakeSelf, activatedVersionInTests)
 
   property("Reduction to crypto #1") {
     forAll() { i: Int =>
@@ -44,17 +44,17 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
 
         {
           val res = prover.reduceToCrypto(ctx, AND(GE(Height, IntConstant(h + 1)), dk1)).get._1
-          res should matchPattern { case FalseProp => }
+          res should matchPattern { case TrivialProp.FalseProp => }
         }
 
         {
           val res = prover.reduceToCrypto(ctx, OR(GE(Height, IntConstant(h - 1)), dk1)).get._1
-          res should matchPattern { case TrueProp => }
+          res should matchPattern { case TrivialProp.TrueProp => }
         }
 
         {
           val res = prover.reduceToCrypto(ctx, OR(GE(Height, IntConstant(h)), dk1)).get._1
-          res should matchPattern { case TrueProp => }
+          res should matchPattern { case TrivialProp.TrueProp => }
         }
         {
           val res = prover.reduceToCrypto(ctx, OR(GE(Height, IntConstant(h + 1)), dk1)).get._1
@@ -88,7 +88,7 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
         prover.reduceToCrypto(ctx, OR(
           AND(LE(Height, IntConstant(h - 1)), AND(dk1, dk2)),
           AND(GT(Height, IntConstant(h + 1)), dk1)
-        )).get._1 shouldBe FalseProp
+        )).get._1 shouldBe TrivialProp.FalseProp
 
         prover.reduceToCrypto(ctx,
           OR(
@@ -98,7 +98,7 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
             ),
             AND(GT(Height, IntConstant(h - 1)), LE(Height, IntConstant(h + 1)))
           )
-        ).get._1 shouldBe TrueProp
+        ).get._1 shouldBe TrivialProp.TrueProp
 
       }
     }
@@ -116,10 +116,10 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
       "dk2" -> dk2,
       "bytes1" -> Array[Byte](1, 2, 3),
       "bytes2" -> Array[Byte](4, 5, 6),
-      "box1" -> testBox(10, ErgoScriptPredef.TrueProp, 0, Seq(), Map(
+      "box1" -> testBox(10, TrueTree, 0, Seq(), Map(
           reg1 -> IntArrayConstant(Array[Int](1, 2, 3)),
           reg2 -> BoolArrayConstant(Array[Boolean](true, false, true)))))
-    val prop = compile(env, code).asBoolValue.toSigmaProp
+    val prop = mkTestErgoTree(compile(env, code).asBoolValue.toSigmaProp)
     println(code)
     println(prop)
     val challenge = Array.fill(32)(Random.nextInt(100).toByte)
@@ -252,10 +252,10 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
     val env1 = testingContext(99)
     val env2 = testingContext(101)
 
-    val prop = OR(
+    val prop = mkTestErgoTree(OR(
       AND(LE(Height, IntConstant(100)), AND(dk1, dk2)),
       AND(GT(Height, IntConstant(100)), dk1)
-    ).toSigmaProp
+    ).toSigmaProp)
 
     val challenge = Array.fill(32)(Random.nextInt(100).toByte)
 
@@ -267,7 +267,7 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
   }
 
   property("Evaluation - no real proving - true case") {
-    val prop1 = ErgoScriptPredef.TrueProp
+    val prop1 = TrueTree
 
     val challenge = Array.fill(32)(Random.nextInt(100).toByte)
     val proof = NoProof
@@ -275,18 +275,18 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
 
     verifier.verify(prop1, env, proof, challenge).map(_._1).getOrThrow shouldBe true
 
-    val prop2 = OR(TrueLeaf, FalseLeaf).toSigmaProp
+    val prop2 = mkTestErgoTree(OR(TrueLeaf, FalseLeaf).toSigmaProp)
     verifier.verify(prop2, env, proof, challenge).map(_._1).getOrThrow shouldBe true
 
-    val prop3 = AND(TrueLeaf, TrueLeaf).toSigmaProp
+    val prop3 = mkTestErgoTree(AND(TrueLeaf, TrueLeaf).toSigmaProp)
     verifier.verify(prop3, env, proof, challenge).map(_._1).getOrThrow shouldBe true
 
-    val prop4 = GT(Height, IntConstant(90)).toSigmaProp
+    val prop4 = mkTestErgoTree(GT(Height, IntConstant(90)).toSigmaProp)
     verifier.verify(prop4, env, proof, challenge).map(_._1).getOrThrow shouldBe true
   }
 
   property("Evaluation - no real proving - false case") {
-    val prop1 = ErgoScriptPredef.FalseProp
+    val prop1 = FalseTree
 
     val challenge = Array.fill(32)(Random.nextInt(100).toByte)
     val proof = NoProof
@@ -294,13 +294,13 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
 
     verifier.verify(prop1, env, proof, challenge).map(_._1).getOrThrow shouldBe false
 
-    val prop2 = OR(FalseLeaf, FalseLeaf).toSigmaProp
+    val prop2 = mkTestErgoTree(OR(FalseLeaf, FalseLeaf).toSigmaProp)
     verifier.verify(prop2, env, proof, challenge).map(_._1).getOrThrow shouldBe false
 
-    val prop3 = AND(FalseLeaf, TrueLeaf).toSigmaProp
+    val prop3 = mkTestErgoTree(AND(FalseLeaf, TrueLeaf).toSigmaProp)
     verifier.verify(prop3, env, proof, challenge).map(_._1).getOrThrow shouldBe false
 
-    val prop4 = GT(Height, IntConstant(100)).toSigmaProp
+    val prop4 = mkTestErgoTree(GT(Height, IntConstant(100)).toSigmaProp)
     verifier.verify(prop4, env, proof, challenge).map(_._1).getOrThrow shouldBe false
   }
 
@@ -308,7 +308,9 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
     val bytes = "hello world".getBytes
     val hash = Blake2b256(bytes)
 
-    val prop1 = EQ(CalcBlake2b256(ByteArrayConstant(bytes)), ByteArrayConstant(hash)).toSigmaProp
+    val prop1 = mkTestErgoTree(EQ(
+      CalcBlake2b256(ByteArrayConstant(bytes)),
+      ByteArrayConstant(hash)).toSigmaProp)
 
     val challenge = Array.fill(32)(Random.nextInt(100).toByte)
     val proof = NoProof
@@ -316,11 +318,15 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
 
     verifier.verify(prop1, env, proof, challenge).map(_._1).getOrElse(false) shouldBe true
 
-    val prop2 = NEQ(CalcBlake2b256(ByteArrayConstant(bytes)), ByteArrayConstant(hash)).toSigmaProp
+    val prop2 = mkTestErgoTree(NEQ(
+      CalcBlake2b256(ByteArrayConstant(bytes)),
+      ByteArrayConstant(hash)).toSigmaProp)
 
     verifier.verify(prop2, env, proof, challenge).map(_._1).getOrElse(false) shouldBe false
 
-    val prop3 = EQ(CalcBlake2b256(ByteArrayConstant(bytes)), ByteArrayConstant(bytes)).toSigmaProp
+    val prop3 = mkTestErgoTree(EQ(
+      CalcBlake2b256(ByteArrayConstant(bytes)),
+      ByteArrayConstant(bytes)).toSigmaProp)
 
     verifier.verify(prop3, env, proof, challenge).map(_._1).getOrElse(false) shouldBe false
   }

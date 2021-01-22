@@ -12,8 +12,10 @@ import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter._
 import sigmastate.lang.Terms._
 
-class XorGameExampleSpecification extends SigmaTestingCommons {
+class XorGameExampleSpecification extends SigmaTestingCommons
+  with CrossVersionProps {
   private implicit lazy val IR: TestingIRContext = new TestingIRContext
+
   /** XOR game:
 
      Alice creates a XOR game of "playAmount" ergs by creating a Half-game UTXO called the "halfGameOutput" output below.
@@ -54,7 +56,7 @@ class XorGameExampleSpecification extends SigmaTestingCommons {
       "h" -> h
     )
 
-    val fullGameScript = compile(fullGameEnv,
+    val fullGameScript = mkTestErgoTree(compile(fullGameEnv,
       """{
         |  val s           = getVar[Coll[Byte]](0).get  // Alice's secret byte string s
         |  val a           = getVar[Byte](1).get        // Alice's secret bit a (represented as a byte)
@@ -68,18 +70,18 @@ class XorGameExampleSpecification extends SigmaTestingCommons {
         |    }
         |  }
         |}""".stripMargin
-    ).asSigmaProp
+    ).asSigmaProp)
 
     val halfGameEnv = Map(
       ScriptNameProp -> "halfGameScript",
       "alice" -> alicePubKey,
-      "fullGameScriptHash" -> Blake2b256(fullGameScript.treeWithSegregation.bytes)
+      "fullGameScriptHash" -> Blake2b256(fullGameScript.bytes)
     )
 
     // Note that below script allows Alice to spend the half-game output anytime before Bob spends it.
     // We could also consider a more restricted version of the game where Alice is unable to spend the half-game output
     // before some minimum height.
-    val halfGameScript = compile(halfGameEnv,
+    val halfGameScript = mkTestErgoTree(compile(halfGameEnv,
       """{
         |  alice || {
         |    val out           = OUTPUTS(0)
@@ -94,7 +96,7 @@ class XorGameExampleSpecification extends SigmaTestingCommons {
         |    blake2b256(out.propositionBytes) == fullGameScriptHash
         |  }
         |}
-      """.stripMargin).asSigmaProp
+      """.stripMargin).asSigmaProp)
 
     /////////////////////////////////////////////////////////
     //// Alice starts creating a Half-Game
@@ -121,7 +123,8 @@ class XorGameExampleSpecification extends SigmaTestingCommons {
 
     // Alice pays to Carol. Game ends here
     val carol = new ContextEnrichingTestProvingInterpreter
-    val carolPubKey:ProveDlog = carol.dlogSecrets.head.publicImage
+    val carolPubKey: ProveDlog = carol.dlogSecrets.head.publicImage
+    val carolPubKeyTree = mkTestErgoTree(carolPubKey)
 
     val abortHalfGameHeight = halfGameCreationHeight + 10 // can be anything
 
@@ -132,7 +135,7 @@ class XorGameExampleSpecification extends SigmaTestingCommons {
     //
     //   val abortHalfGameOutput = ErgoBox(playAmount, carolPubKey, abortHalfGameHeight) // gives error
 
-    val abortHalfGameOutput = testBox(playAmount, carolPubKey, abortHalfGameHeight, Nil,
+    val abortHalfGameOutput = testBox(playAmount, carolPubKeyTree, abortHalfGameHeight, Nil,
       Map(
         R4 -> ByteConstant(0), // dummy data. Has to be given, even though not needed as per halfGameScript
         R5 -> SigmaPropConstant((new ContextEnrichingTestProvingInterpreter).dlogSecrets.head.publicImage), // dummy statement
@@ -149,7 +152,8 @@ class XorGameExampleSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(halfGameOutput),
       spendingTransaction = abortHalfGameTx,
-      self = halfGameOutput // what is the use of self?
+      self = halfGameOutput, // what is the use of self?
+      activatedVersionInTests
     )
 
     val proofAbortHalfGame = alice.prove(halfGameEnv, halfGameScript, abortHalfGameContext, fakeMessage).get.proof
@@ -185,7 +189,8 @@ class XorGameExampleSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(halfGameOutput),
       spendingTransaction = fullGameTx,
-      self = halfGameOutput // what is the use of self?
+      self = halfGameOutput, // what is the use of self?
+      activatedVersionInTests
     )
 
     // bob (2nd player) is generating a proof and it is passing verification
@@ -224,7 +229,7 @@ class XorGameExampleSpecification extends SigmaTestingCommons {
 
     // assume winner is paying to Carol
     // note that playAmount*2 below is not checked. It could be anything.
-    val gameOverOutput = testBox(playAmount*2, carolPubKey, gameOverHeight)
+    val gameOverOutput = testBox(playAmount*2, carolPubKeyTree, gameOverHeight)
 
     //normally this transaction would invalid (why?), but we're not checking it in this test
     val gameOverTx = createTransaction(gameOverOutput)
@@ -235,7 +240,8 @@ class XorGameExampleSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fullGameOutput),
       spendingTransaction = gameOverTx,
-      self = fullGameOutput // what is the use of self?
+      self = fullGameOutput, // what is the use of self?
+      activatedVersionInTests
     )
 
     val proofGameOver = winner.prove(fullGameEnv, fullGameScript, gameOverContext, fakeMessage).get
@@ -251,7 +257,7 @@ class XorGameExampleSpecification extends SigmaTestingCommons {
 
     // assume Bob is paying to Carol
     // note that playAmount*2 below is not checked. It could be anything.
-    val defaultWinOutput = testBox(playAmount*2, carolPubKey, defaultWinHeight)
+    val defaultWinOutput = testBox(playAmount*2, carolPubKeyTree, defaultWinHeight)
 
     //normally this transaction would invalid (why?), but we're not checking it in this test
     val defaultWinTx = createTransaction(defaultWinOutput)
@@ -262,7 +268,8 @@ class XorGameExampleSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fullGameOutput),
       spendingTransaction = defaultWinTx,
-      self = fullGameOutput // what is the use of self?
+      self = fullGameOutput, // what is the use of self?
+      activatedVersionInTests
     )
 
     val sDummy = Array[Byte]()  // empty value for s; commitment cannot be opened but still Bob will be able to spend

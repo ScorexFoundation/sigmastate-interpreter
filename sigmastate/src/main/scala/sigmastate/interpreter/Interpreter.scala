@@ -10,7 +10,7 @@ import sigmastate.basics.DLogProtocol.{DLogInteractiveProver, FirstDLogProverMes
 import scorex.util.ScorexLogging
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
-import sigmastate.eval.{IRContext, Sized, Evaluation}
+import sigmastate.eval.{IRContext, Evaluation}
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.basics._
 import sigmastate.interpreter.Interpreter.{ScriptEnv, VerificationResult}
@@ -22,7 +22,7 @@ import org.ergoplatform.validation.ValidationRules._
 import scalan.util.BenchmarkUtil
 import sigmastate.utils.Helpers._
 
-import scala.util.Try
+import scala.util.{Try, Success}
 
 trait Interpreter extends ScorexLogging {
 
@@ -231,6 +231,26 @@ trait Interpreter extends ScorexLogging {
              proof: Array[Byte],
              message: Array[Byte]): Try[VerificationResult] = {
     val (res, t) = BenchmarkUtil.measureTime(Try {
+      // TODO v5.0: the condition below should be revised if necessary
+      // The following conditions define behavior which depend on the version of ergoTree
+      // This works in addition to more fine-grained soft-forkability mechanism implemented
+      // using ValidationRules (see trySoftForkable method call here and in reduceToCrypto).
+      if (context.activatedScriptVersion > Interpreter.MaxSupportedScriptVersion) {
+        // > 90% has already switched to higher version, accept without verification
+        // NOTE: this path should never be taken for validation of candidate blocks
+        // in which case Ergo node should always pass Interpreter.MaxSupportedScriptVersion
+        // as the value of ErgoLikeContext.activatedScriptVersion.
+        // see also ErgoLikeContext ScalaDoc.
+        return Success(true -> context.initCost)
+      } else {
+        // activated version is within the supported range [0..MaxSupportedScriptVersion]
+        // however
+        if (ergoTree.version > context.activatedScriptVersion) {
+          throw new InterpreterException(
+            s"ErgoTree version ${ergoTree.version} is higher than activated ${context.activatedScriptVersion}")
+        }
+        // else proceed normally
+      }
 
       val initCost = JMath.addExact(ergoTree.complexity.toLong, context.initCost)
       val remainingLimit = context.costLimit - initCost
@@ -368,6 +388,17 @@ object Interpreter {
   type ScriptEnv = Map[String, Any]
   val emptyEnv: ScriptEnv = Map.empty[String, Any]
   val ScriptNameProp = "ScriptName"
+
+  /** Maximum version of ErgoTree supported by this interpreter release.
+    * See version bits in `ErgoTree.header` for more details.
+    * This value should be increased with each new protocol update via soft-fork.
+    * The following values are used for current and upcoming forks:
+    * - version 3.x this value must be 0
+    * - in v4.0 must be 1
+    * - in v5.x must be 2
+    * etc.
+    */
+  val MaxSupportedScriptVersion: Byte = 1 // supported versions 0 and 1
 
   def error(msg: String) = throw new InterpreterException(msg)
 

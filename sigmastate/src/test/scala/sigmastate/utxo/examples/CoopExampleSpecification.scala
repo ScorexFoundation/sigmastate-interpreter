@@ -1,17 +1,18 @@
 package sigmastate.utxo.examples
 
-import org.ergoplatform.{ErgoLikeContext, ErgoLikeTransaction, ErgoBox, ErgoScriptPredef}
+import org.ergoplatform.{ErgoLikeContext, ErgoLikeTransaction, ErgoBox}
 import org.scalatest.Assertion
 import org.scalatest.TryValues._
-import sigmastate.basics.DLogProtocol.ProveDlog
+import sigmastate.basics.DLogProtocol.{ProveDlog, DLogProverInput}
 import scorex.crypto.hash.Blake2b256
-import sigmastate.Values.{ByteArrayConstant, SigmaPropValue, BooleanConstant}
+import sigmastate.Values.{ByteArrayConstant, ErgoTree, BooleanConstant}
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, SigmaTestingCommons, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.lang.Terms._
-import sigmastate.AvlTreeData
+import sigmastate.{AvlTreeData, CrossVersionProps}
 
-class CoopExampleSpecification extends SigmaTestingCommons {
+class CoopExampleSpecification extends SigmaTestingCommons
+  with CrossVersionProps {
   implicit lazy val IR = new TestingIRContext
   
   def mkTxFromOutputs(ergoBox: ErgoBox*): ErgoLikeTransaction = {
@@ -27,22 +28,22 @@ class CoopExampleSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(self),
       spendingTransaction = tx,
-      self = self)
+      self = self, activatedVersionInTests)
   }
 
-  def successProofTest(exp: SigmaPropValue,
+  def successProofTest(tree: ErgoTree,
                        ctx: ErgoLikeContext,
                        prover: ContextEnrichingTestProvingInterpreter,
                        verifier: ErgoLikeTestInterpreter): Assertion = {
-    val proofResult = prover.prove(exp, ctx, fakeMessage)
+    val proofResult = prover.prove(tree, ctx, fakeMessage)
     proofResult should be a 'success
-    verifier.verify(exp, ctx, proofResult.success.value, fakeMessage) should be a 'success
+    verifier.verify(tree, ctx, proofResult.success.value, fakeMessage) should be a 'success
   }
 
-  def failingProofTest(exp: SigmaPropValue,
+  def failingProofTest(tree: ErgoTree,
                        ctx: ErgoLikeContext,
                        prover: ContextEnrichingTestProvingInterpreter): Assertion = {
-    prover.prove(exp, ctx, fakeMessage) should be a 'failure
+    prover.prove(tree, ctx, fakeMessage) should be a 'failure
   }
 
   property("commit to the threshold sig") {
@@ -62,10 +63,16 @@ class CoopExampleSpecification extends SigmaTestingCommons {
     val skC = coopC.dlogSecrets.head
     val skD = coopD.dlogSecrets.head
 
-    val pubkeyA = skA.publicImage
-    val pubkeyB = skB.publicImage
-    val pubkeyC = skC.publicImage
-    val pubkeyD = skD.publicImage
+    def pkWithTree(in: DLogProverInput): (ProveDlog, ErgoTree) = {
+      val pk = in.publicImage
+      val tree = ErgoTree.fromSigmaBoolean(ErgoTree.headerWithVersion(0), pk)
+      (pk, tree)
+    }
+
+    val (pubkeyA, treeA) = pkWithTree(skA)
+    val (pubkeyB, treeB) = pkWithTree(skB)
+    val (pubkeyC, treeC) = pkWithTree(skC)
+    val (pubkeyD, treeD) = pkWithTree(skD)
 
     val toolA = new ContextEnrichingTestProvingInterpreter
     val toolB = new ContextEnrichingTestProvingInterpreter
@@ -116,7 +123,7 @@ class CoopExampleSpecification extends SigmaTestingCommons {
       "pubkeyConstr3" -> constructionRing(2)
     )
 
-     val spendingProp1 = compile(spendingEnv,
+     val spendingProp1 = mkTestErgoTree(compile(spendingEnv,
       s"""
          |{
          | val spendingSuccess = (pubkeyTool1 || pubkeyTool2 || pubkeyTool3 || pubkeyTool4) && businessKey
@@ -125,14 +132,14 @@ class CoopExampleSpecification extends SigmaTestingCommons {
          |
          | spendingSuccess || withdrawCondition
          |}
-       """.stripMargin).asSigmaProp
+       """.stripMargin).asSigmaProp)
 
     {
       val self = testBox(totalValue, spendingProp1, 0)
-      val output1 = testBox(totalValue / 4, pubkeyA, 0)
-      val output2 = testBox(totalValue / 4, pubkeyB, 0)
-      val output3 = testBox(totalValue / 4, pubkeyC, 0)
-      val output4 = testBox(totalValue / 4, pubkeyD, 0)
+      val output1 = testBox(totalValue / 4, treeA, 0)
+      val output2 = testBox(totalValue / 4, treeB, 0)
+      val output3 = testBox(totalValue / 4, treeC, 0)
+      val output4 = testBox(totalValue / 4, treeD, 0)
       val tx = mkTxFromOutputs(output1, output2, output3, output4)
       val ctx = mkCtx(5001, tx, self)
       successProofTest(spendingProp1, ctx, coopA, verifier)
@@ -153,7 +160,7 @@ class CoopExampleSpecification extends SigmaTestingCommons {
       "pubkeyConstr3" -> constructionRing(2)
     )
 
-    val spendingProp2 = compile(spendingEnv2,
+    val spendingProp2 = mkTestErgoTree(compile(spendingEnv2,
       s"""
          |{
          | val spendingSuccess = (pubkeyTool1 || pubkeyTool2 || pubkeyTool3 || pubkeyTool4) && businessKey
@@ -162,17 +169,17 @@ class CoopExampleSpecification extends SigmaTestingCommons {
          |
          | spendingSuccess || withdrawCondition
          |}
-       """.stripMargin).asSigmaProp
+       """.stripMargin).asSigmaProp)
 
     /**
       * Withdraw successfully
       */
     {
       val self = testBox(totalValue, spendingProp2, 0)
-      val output1 = testBox(totalValue / 4, pubkeyA, 0)
-      val output2 = testBox(totalValue / 4, pubkeyB, 0)
-      val output3 = testBox(totalValue / 4, pubkeyC, 0)
-      val output4 = testBox(totalValue / 4, pubkeyD, 0)
+      val output1 = testBox(totalValue / 4, treeA, 0)
+      val output2 = testBox(totalValue / 4, treeB, 0)
+      val output3 = testBox(totalValue / 4, treeC, 0)
+      val output4 = testBox(totalValue / 4, treeD, 0)
       val tx = mkTxFromOutputs(output1, output2, output3, output4)
       val ctx = mkCtx(5001, tx, self)
       successProofTest(spendingProp2, ctx, coopA, verifier)
@@ -183,8 +190,8 @@ class CoopExampleSpecification extends SigmaTestingCommons {
       */
     {
       val self = testBox(totalValue, spendingProp2, 0)
-      val output1 = testBox(totalValue / 2, pubkeyB, 0)
-      val output2 = testBox(totalValue / 2, pubkeyC, 0)
+      val output1 = testBox(totalValue / 2, treeB, 0)
+      val output2 = testBox(totalValue / 2, treeC, 0)
       val tx = mkTxFromOutputs(output1, output2)
       val ctx = mkCtx(5001, tx, self = self)
       failingProofTest(spendingProp2, ctx, coopA)
@@ -195,17 +202,17 @@ class CoopExampleSpecification extends SigmaTestingCommons {
       */
     {
       val self = testBox(totalValue, spendingProp2, 0)
-      val output1 = testBox(totalValue / 4, pubkeyA, 0)
-      val output2 = testBox(totalValue / 4, pubkeyB, 0)
-      val output3 = testBox(totalValue / 4, pubkeyC, 0)
-      val output4 = testBox(totalValue / 4, pubkeyD, 0)
+      val output1 = testBox(totalValue / 4, treeA, 0)
+      val output2 = testBox(totalValue / 4, treeB, 0)
+      val output3 = testBox(totalValue / 4, treeC, 0)
+      val output4 = testBox(totalValue / 4, treeD, 0)
       val tx = mkTxFromOutputs(output1, output2, output3, output4)
       val ctx = mkCtx(5000, tx, self)
       failingProofTest(spendingProp2, ctx, coopA)
     }
 
 
-    val spendingProp3 = compile(spendingEnv,
+    val spendingProp3 = mkTestErgoTree(compile(spendingEnv,
       s"""
          | {
          |
@@ -215,17 +222,17 @@ class CoopExampleSpecification extends SigmaTestingCommons {
          |
          |  spendingSuccess || withdrawCondition
          | }
-       """.stripMargin).asSigmaProp
+       """.stripMargin).asSigmaProp)
 
     /**
       * Will spend correctly if all the conditions are satisfied
       */
     {
       val self = testBox(totalValue, spendingProp3, 0)
-      val output1 = testBox(totalValue / 4, pubkeyA, 0)
-      val output2 = testBox(totalValue / 4, pubkeyB, 0)
-      val output3 = testBox(totalValue / 4, pubkeyC, 0)
-      val output4 = testBox(totalValue / 4, pubkeyD, 0)
+      val output1 = testBox(totalValue / 4, treeA, 0)
+      val output2 = testBox(totalValue / 4, treeB, 0)
+      val output3 = testBox(totalValue / 4, treeC, 0)
+      val output4 = testBox(totalValue / 4, treeD, 0)
       val tx = mkTxFromOutputs(output1, output2, output3, output4)
       val ctx = mkCtx(5001, tx, self)
       successProofTest(spendingProp2, ctx, coopA, verifier)
@@ -246,7 +253,7 @@ class CoopExampleSpecification extends SigmaTestingCommons {
       "pubkeyConstr3" -> BooleanConstant(false)
     )
 
-    val spendingProp4 = compile(spendingEnv3,
+    val spendingProp4 = mkTestErgoTree(compile(spendingEnv3,
       s"""
          | {
          |
@@ -256,24 +263,24 @@ class CoopExampleSpecification extends SigmaTestingCommons {
          |
          |  spendingSuccess || withdrawCondition
          | }
-       """.stripMargin).asSigmaProp
+       """.stripMargin).asSigmaProp)
 
     {
       val self = testBox(totalValue, spendingProp4, 0)
-      val output1 = testBox(totalValue / 4, pubkeyA, 0)
-      val output2 = testBox(totalValue / 4, pubkeyB, 0)
-      val output3 = testBox(totalValue / 4, pubkeyC, 0)
-      val output4 = testBox(totalValue / 4, pubkeyD, 0)
+      val output1 = testBox(totalValue / 4, treeA, 0)
+      val output2 = testBox(totalValue / 4, treeB, 0)
+      val output3 = testBox(totalValue / 4, treeC, 0)
+      val output4 = testBox(totalValue / 4, treeD, 0)
       val tx = mkTxFromOutputs(output1, output2, output3, output4)
       val ctx = mkCtx(5001, tx, self)
       successProofTest(spendingProp4, ctx, coopA, verifier)
     }
 
-    val spendingProp5 = compile(spendingEnv, "businessKey").asSigmaProp
+    val spendingProp5 = mkTestErgoTree(compile(spendingEnv, "businessKey").asSigmaProp)
 
     {
       val self = testBox(totalValue, spendingProp5, 0)
-      val output = testBox(totalValue, businessKey, 0)
+      val output = testBox(totalValue, mkTestErgoTree(businessKey), 0)
       val tx = mkTxFromOutputs(output)
       val ctx = mkCtx(1, tx, self)
       failingProofTest(spendingProp5, ctx, coopA)
@@ -288,12 +295,12 @@ class CoopExampleSpecification extends SigmaTestingCommons {
       "pubkeyB" -> pubkeyB,
       "pubkeyC" -> pubkeyC,
       "pubkeyD" -> pubkeyD,
-      "spendingContract1Hash" -> ByteArrayConstant(Blake2b256(spendingProp1.treeWithSegregation.bytes)),
-      "spendingContract2Hash" -> ByteArrayConstant(Blake2b256(spendingProp3.treeWithSegregation.bytes))
+      "spendingContract1Hash" -> ByteArrayConstant(Blake2b256(spendingProp1.bytes)),
+      "spendingContract2Hash" -> ByteArrayConstant(Blake2b256(spendingProp3.bytes))
     )
 
     // Basic compilation
-    val thresholdProp = compile(thresholdEnv,
+    val thresholdProp = mkTestErgoTree(compile(thresholdEnv,
       s""" {
          | val votingSuccess = atLeast(3, Coll(pubkeyA, pubkeyB, pubkeyC, pubkeyD))
          | val properSpending = OUTPUTS(0).value >= ${toolValue}L &&
@@ -305,7 +312,7 @@ class CoopExampleSpecification extends SigmaTestingCommons {
          |
          | (votingSuccess && properSpending) || withdrawCondition
          | }
-      """.stripMargin).asSigmaProp
+      """.stripMargin).asSigmaProp)
 
 
     /**
@@ -317,7 +324,7 @@ class CoopExampleSpecification extends SigmaTestingCommons {
       val output2 = testBox(constructionValue, spendingProp3, 0)
       val output3 = testBox(totalValue - toolValue - constructionValue, spendingProp5, 0)
       //hack for avoiding None.get exception.
-      val dummy = testBox(0L, ErgoScriptPredef.TrueProp, 0)
+      val dummy = testBox(0L, TrueTree, 0)
       val tx = mkTxFromOutputs(output1, output2, output3, dummy)
       val ctx = mkCtx(2000, tx, self)
 
@@ -333,10 +340,10 @@ class CoopExampleSpecification extends SigmaTestingCommons {
       */
     {
       val self = testBox(totalValue + 1L, thresholdProp, 0)
-      val output0 = testBox(totalValue / 4, pubkeyA, 0)
-      val output1 = testBox(totalValue / 4, pubkeyB, 0)
-      val output2 = testBox(totalValue / 4, pubkeyC, 0)
-      val output3 = testBox(totalValue / 4, pubkeyD, 0)
+      val output0 = testBox(totalValue / 4, treeA, 0)
+      val output1 = testBox(totalValue / 4, treeB, 0)
+      val output2 = testBox(totalValue / 4, treeC, 0)
+      val output3 = testBox(totalValue / 4, treeD, 0)
       val tx = mkTxFromOutputs(output0, output1, output2, output3)
       val ctx = mkCtx(2000, tx, self)
       successProofTest(thresholdProp, ctx, business, verifier)
@@ -347,10 +354,10 @@ class CoopExampleSpecification extends SigmaTestingCommons {
       */
     {
       val self = testBox(totalValue + 1L, thresholdProp, 0)
-      val output0 = testBox(totalValue / 4, pubkeyA, 0)
-      val output1 = testBox(totalValue / 4, pubkeyB, 0)
-      val output2 = testBox(totalValue / 4, pubkeyC, 0)
-      val output3 = testBox(totalValue / 4, pubkeyD, 0)
+      val output0 = testBox(totalValue / 4, treeA, 0)
+      val output1 = testBox(totalValue / 4, treeB, 0)
+      val output2 = testBox(totalValue / 4, treeC, 0)
+      val output3 = testBox(totalValue / 4, treeD, 0)
       val tx = mkTxFromOutputs(output0, output1, output2, output3)
       val ctx = mkCtx(1000, tx, self)
       failingProofTest(thresholdProp, ctx, business)
@@ -358,14 +365,14 @@ class CoopExampleSpecification extends SigmaTestingCommons {
 
 
     val inputEnv = Map(
-      "thresholdProp" -> ByteArrayConstant(Blake2b256(thresholdProp.treeWithSegregation.bytes)),
+      "thresholdProp" -> ByteArrayConstant(Blake2b256(thresholdProp.bytes)),
       "pubkeyA" -> pubkeyA
     )
 
-    val inputProp = compile(inputEnv,
+    val inputProp = mkTestErgoTree(compile(inputEnv,
       s"""(OUTPUTS(0).value == $totalValue && blake2b256(OUTPUTS(0).propositionBytes) == thresholdProp) ||
          | (HEIGHT > 1000 && pubkeyA)
-       """.stripMargin).asSigmaProp
+       """.stripMargin).asSigmaProp)
 
     /**
       * height not higher, total value is equal

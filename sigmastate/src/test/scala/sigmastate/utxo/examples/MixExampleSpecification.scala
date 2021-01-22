@@ -4,18 +4,19 @@ import java.math.BigInteger
 
 import org.ergoplatform.ErgoBox.{R4, R5}
 import scorex.crypto.hash.Blake2b256
-import sigmastate.AvlTreeData
+import sigmastate.{AvlTreeData, CrossVersionProps}
 import sigmastate.Values.GroupElementConstant
 import sigmastate.basics.DLogProtocol.ProveDlog
-import sigmastate.basics.{DiffieHellmanTupleProverInput, ProveDHTuple}
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaTestingCommons}
+import sigmastate.basics.{ProveDHTuple, DiffieHellmanTupleProverInput}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, SigmaTestingCommons, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.interpreter.Interpreter._
 import sigmastate.lang.Terms._
 import sigmastate.eval._
 
-class MixExampleSpecification extends SigmaTestingCommons {
+class MixExampleSpecification extends SigmaTestingCommons
+  with CrossVersionProps {
   private implicit lazy val IR: TestingIRContext = new TestingIRContext
 
   property("Evaluation - Mix Example") {
@@ -48,20 +49,20 @@ class MixExampleSpecification extends SigmaTestingCommons {
 
     // y is Bob's secret key and h = g^y is kind of like his "public key"
     // The Diffie-Hellman solution is g_xy = g_y^x = g_x^y = g^xy.
-    val fullMixScript = compile(fullMixEnv,
+    val fullMixScript = mkTestErgoTree(compile(fullMixEnv,
       """{
         |  val c1 = SELF.R4[GroupElement].get
         |  val c2 = SELF.R5[GroupElement].get
         |  proveDlog(c2) ||            // either c2 is g^y
         |  proveDHTuple(g, c1, gX, c2) // or c2 is u^y = g^xy
         |}""".stripMargin
-    ).asSigmaProp
+    ).asSigmaProp)
 
     val halfMixEnv = Map(
       ScriptNameProp -> "halfMixEnv",
       "g" -> g,
       "gX" -> gX,
-      "fullMixScriptHash" -> Blake2b256(fullMixScript.treeWithSegregation.bytes)
+      "fullMixScriptHash" -> Blake2b256(fullMixScript.bytes)
     )
 
     // Note that below script allows Alice to spend the half-mix output anytime before Bob spends it.
@@ -71,7 +72,7 @@ class MixExampleSpecification extends SigmaTestingCommons {
     // The proveDHTuple instruction takes parameters (g, h, u, v) where g, h are generators (discrete log bases)
     // with u = g^x and v = h^x. Note that y = log_g(h), where y is Bob's secret.
 
-    val halfMixScript = compile(halfMixEnv,
+    val halfMixScript = mkTestErgoTree(compile(halfMixEnv,
       """{
         |  val c1 = OUTPUTS(0).R4[GroupElement].get
         |  val c2 = OUTPUTS(0).R5[GroupElement].get
@@ -87,7 +88,7 @@ class MixExampleSpecification extends SigmaTestingCommons {
         |    proveDHTuple(g, gX, c2, c1)
         |  }
         |}""".stripMargin
-    ).asSigmaProp
+    ).asSigmaProp)
 
 
     /////////////////////////////////////////////////////////
@@ -162,7 +163,7 @@ class MixExampleSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(halfMixOutput),
       spendingTransaction = fullMixTx,
-      self = halfMixOutput
+      self = halfMixOutput, activatedVersionInTests
     )
 
     // bob (2nd player) is generating a proof and it is passing verification
@@ -217,7 +218,7 @@ class MixExampleSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(aliceAnonBox),
       spendingTransaction = spendingTx,
-      self = aliceAnonBox
+      self = aliceAnonBox, activatedVersionInTests
     )
 
     // To Do: Extract below g_y, g_xy from fullMixOutputs registers
@@ -239,7 +240,7 @@ class MixExampleSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(bobAnonBox),
       spendingTransaction = spendingTx,
-      self = bobAnonBox
+      self = bobAnonBox, activatedVersionInTests
     )
 
     val proofBobSpend = bob.prove(fullMixEnv, fullMixScript, bobSpendContext, fakeMessage).get.proof

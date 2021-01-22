@@ -3,7 +3,6 @@ package sigmastate
 import java.math.BigInteger
 
 import org.ergoplatform.ErgoBox
-import org.ergoplatform.ErgoScriptPredef.TrueProp
 import org.ergoplatform.settings.ErgoAlgos
 import scalan.RType
 import scorex.crypto.hash.Digest32
@@ -55,7 +54,7 @@ class TypesSpecification extends SigmaTestingData {
 
     val (tree, _) = createAvlTreeAndProver()
 
-    val box = SigmaDsl.Box(testBox(20, TrueProp, 0,
+    val box = SigmaDsl.Box(testBox(20, TrueTree, 0,
       Seq(
         (Digest32 @@ (ErgoAlgos.decodeUnsafe("6e789ab7b2fffff12280a6cd01557f6fb22b7f80ff7aff8e1f7f15973d7f0001")),
             10000000L)

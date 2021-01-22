@@ -1,9 +1,9 @@
 package sigmastate.helpers
 
 import scorex.crypto.hash.Digest32
-import special.collection.Coll
+import special.collection.{Coll, CollOverArray, PairOfCols}
 import scorex.util.ModifierId
-import org.ergoplatform.{ErgoLikeTransactionTemplate, ErgoLikeTransaction, ErgoLikeContext, UnsignedInput, ErgoBox, DataInput, ErgoBoxCandidate}
+import org.ergoplatform.{ErgoLikeTransactionTemplate, ErgoLikeTransaction, ErgoLikeContext, UnsignedInput, Input, ErgoBox, DataInput, ErgoBoxCandidate}
 import sigmastate.Values.ErgoTree
 import org.ergoplatform.ErgoBox.{AdditionalRegisters, allZerosModifierId, TokenId}
 import org.ergoplatform.validation.SigmaValidationSettings
@@ -11,7 +11,7 @@ import sigmastate.AvlTreeData
 import sigmastate.eval.CostingSigmaDslBuilder
 import sigmastate.eval._
 import sigmastate.interpreter.ContextExtension
-import special.sigma.{Header, PreHeader}
+import special.sigma.{PreHeader, Header}
 
 import scala.collection.mutable.WrappedArray
 
@@ -39,10 +39,21 @@ object TestingHelpers {
                 additionalRegisters: AdditionalRegisters = Map.empty)
   = testBox(value, proposition, 0, additionalTokens, additionalRegisters)
 
+  /** Creates a new test box with the given parameters. */
   def createBox(value: Long,
                 proposition: ErgoTree,
                 creationHeight: Int)
   = testBox(value, proposition, creationHeight, WrappedArray.empty, Map.empty, ErgoBox.allZerosModifierId)
+
+  /** Creates a clone instance of the given collection by recursively cloning all the underlying
+    * sub-collections.
+    */
+  def cloneColl[A](c: Coll[A]): Coll[A] = (c match {
+    case c: CollOverArray[_] =>
+      new CollOverArray(c.toArray.clone())(c.tItem)
+    case ps: PairOfCols[_,_] =>
+      new PairOfCols(cloneColl(ps.ls), cloneColl(ps.rs))
+  }).asInstanceOf[Coll[A]]
 
   /** Copies the given box allowing also to update fields. */
   def copyBox(box: ErgoBox)(
@@ -54,6 +65,17 @@ object TestingHelpers {
       index: Short = box.index,
       creationHeight: Int = box.creationHeight): ErgoBox = {
     new ErgoBox(value, ergoTree, additionalTokens, additionalRegisters, transactionId, index, creationHeight)
+  }
+
+  /** Copies the given transaction allowing also to update fields.
+    * NOTE: it can be used ONLY for instances of ErgoLikeTransaction.
+    * @tparam T used here to limit use of this method to only ErgoLikeTransaction instances
+    * @return a new instance of [[ErgoLikeTransaction]]. */
+  def copyTransaction[T >: ErgoLikeTransaction <: ErgoLikeTransaction](tx: T)(
+      inputs: IndexedSeq[Input] = tx.inputs,
+      dataInputs: IndexedSeq[DataInput] = tx.dataInputs,
+      outputCandidates: IndexedSeq[ErgoBoxCandidate] = tx.outputCandidates) = {
+    new ErgoLikeTransaction(inputs, dataInputs, outputCandidates)
   }
 
   /** Copies the given context allowing also to update fields. */
@@ -68,10 +90,12 @@ object TestingHelpers {
       extension: ContextExtension = ctx.extension,
       validationSettings: SigmaValidationSettings = ctx.validationSettings,
       costLimit: Long = ctx.costLimit,
-      initCost: Long = ctx.initCost): ErgoLikeContext = {
+      initCost: Long = ctx.initCost,
+      activatedScriptVersion: Byte = ctx.activatedScriptVersion): ErgoLikeContext = {
     new ErgoLikeContext(
       lastBlockUtxoRoot, headers, preHeader, dataBoxes, boxesToSpend,
-      spendingTransaction, selfIndex, extension, validationSettings, costLimit, initCost)
+      spendingTransaction, selfIndex, extension, validationSettings,
+      costLimit, initCost, activatedScriptVersion)
   }
 
   /** Creates a new box by updating some of the additional registers with the given new bindings.

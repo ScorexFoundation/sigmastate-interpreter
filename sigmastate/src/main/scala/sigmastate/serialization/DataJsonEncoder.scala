@@ -8,7 +8,6 @@ import org.ergoplatform.ErgoBox
 import org.ergoplatform.ErgoBox.NonMandatoryRegisterId
 import org.ergoplatform.settings.ErgoAlgos
 import scalan.RType
-import scalan.RType.PairType
 import scorex.crypto.hash.Digest32
 import scorex.util._
 import sigmastate.Values.{Constant, EvaluatedValue}
@@ -16,7 +15,7 @@ import sigmastate._
 import sigmastate.eval._
 import sigmastate.lang.SigmaParser
 import sigmastate.lang.exceptions.SerializerException
-import special.collection.{Coll, PairColl, collRType}
+import special.collection.{Coll, collRType}
 import special.sigma._
 import spire.syntax.all.cfor
 

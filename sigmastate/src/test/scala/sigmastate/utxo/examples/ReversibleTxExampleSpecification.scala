@@ -11,7 +11,8 @@ import sigmastate.interpreter.Interpreter.ScriptNameProp
 import sigmastate.lang.Terms._
 
 
-class ReversibleTxExampleSpecification extends SigmaTestingCommons {
+class ReversibleTxExampleSpecification extends SigmaTestingCommons
+  with CrossVersionProps {
   private implicit lazy val IR: TestingIRContext = new TestingIRContext
 
   import ErgoAddressEncoder._
@@ -81,13 +82,13 @@ class ReversibleTxExampleSpecification extends SigmaTestingCommons {
       "carol" -> carolPubKey // this pub key can reverse payments
     )
 
-    val withdrawScript = compile(withdrawEnv,
+    val withdrawScript = mkTestErgoTree(compile(withdrawEnv,
       """{
         |  val bob         = SELF.R4[SigmaProp].get     // Bob's key (or script) that Alice sent money to
         |  val bobDeadline = SELF.R5[Int].get           // after this height, Bob gets to spend unconditionally
         |
         |  (bob && HEIGHT > bobDeadline) || (carol && HEIGHT <= bobDeadline)
-        |}""".stripMargin).asSigmaProp
+        |}""".stripMargin).asSigmaProp)
 
     val blocksIn24h = 500
     val feeProposition = ErgoScriptPredef.feeProposition()
@@ -97,10 +98,10 @@ class ReversibleTxExampleSpecification extends SigmaTestingCommons {
       "blocksIn24h" -> blocksIn24h,
       "maxFee" -> 10L,
       "feePropositionBytes" -> feeProposition.bytes,
-      "withdrawScriptHash" -> Blake2b256(withdrawScript.treeWithSegregation.bytes)
+      "withdrawScriptHash" -> Blake2b256(withdrawScript.bytes)
     )
 
-    val depositScript = compile(depositEnv,
+    val depositScript = mkTestErgoTree(compile(depositEnv,
       """{
         |  val isChange = {(b:Box) => b.propositionBytes == SELF.propositionBytes}
         |  val isWithdraw = {(b:Box) => b.R5[Int].get >= HEIGHT + blocksIn24h &&
@@ -112,7 +113,7 @@ class ReversibleTxExampleSpecification extends SigmaTestingCommons {
         |
         |  alice && OUTPUTS.forall(isValidOut) && totalFeeAlt <= maxFee
         |}""".stripMargin
-    ).asSigmaProp
+    ).asSigmaProp)
     // Note: in above bobDeadline is stored in R5. After this height, Bob gets to spend unconditionally
 
     val depositAddress = Pay2SHAddress(depositScript)
@@ -150,7 +151,7 @@ class ReversibleTxExampleSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(depositOutput),
       spendingTransaction = withdrawTx,
-      self = depositOutput
+      self = depositOutput, activatedVersionInTests
     )
 
     val proofWithdraw = alice.prove(depositEnv, depositScript, withdrawContext, fakeMessage).get.proof
@@ -179,7 +180,7 @@ class ReversibleTxExampleSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(reversibleWithdrawOutput),
       spendingTransaction = bobSpendTx,
-      self = reversibleWithdrawOutput
+      self = reversibleWithdrawOutput, activatedVersionInTests
     )
 
     val spendEnv = Map(ScriptNameProp -> "spendEnv")
@@ -206,7 +207,7 @@ class ReversibleTxExampleSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(reversibleWithdrawOutput),
       spendingTransaction = carolSpendTx,
-      self = reversibleWithdrawOutput
+      self = reversibleWithdrawOutput, activatedVersionInTests
     )
 
     val proofCarolSpend = carol.prove(spendEnv, withdrawScript, carolSpendContext, fakeMessage).get.proof

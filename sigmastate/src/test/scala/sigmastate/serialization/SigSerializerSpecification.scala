@@ -2,20 +2,19 @@ package sigmastate.serialization
 
 import java.util
 
-import org.ergoplatform.{ErgoLikeContext, ErgoLikeTransaction}
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.Assertion
-import sigmastate.Values.{SigmaBoolean, SigmaPropConstant, SigmaPropValue, Value}
+import sigmastate.Values.SigmaBoolean
 import sigmastate._
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTransactionTesting, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, SigmaTestingCommons, ErgoLikeTransactionTesting}
 import sigmastate.serialization.generators.ObjectGenerators
-import sigmastate.utxo.Transformer
 
 import scala.util.Random
 
-class SigSerializerSpecification extends SigmaTestingCommons with ObjectGenerators {
+class SigSerializerSpecification extends SigmaTestingCommons
+  with ObjectGenerators with CrossVersionProps {
   implicit lazy val IR = new TestingIRContext
   private lazy implicit val arbExprGen: Arbitrary[SigmaBoolean] = Arbitrary(exprTreeGen)
 
@@ -78,14 +77,14 @@ class SigSerializerSpecification extends SigmaTestingCommons with ObjectGenerato
         minerPubkey = ErgoLikeContextTesting.dummyPubkey,
         boxesToSpend = IndexedSeq(fakeSelf),
         spendingTransaction = ErgoLikeTransactionTesting.dummy,
-        self = fakeSelf)
+        self = fakeSelf, activatedVersionInTests)
         .withCostLimit(Long.MaxValue) // To avoid occasional cost limit exceptions which are irrelevant here
 
       try {
         // get sigma conjectures out of transformers
         val prop = prover.reduceToCrypto(ctx, expr).get._1
 
-        val proof = prover.prove(expr, ctx, challenge).get.proof
+        val proof = prover.prove(mkTestErgoTree(expr), ctx, challenge).get.proof
         val proofTree = SigSerializer.parseAndComputeChallenges(prop, proof)
         roundTrip(proofTree, prop)
       } catch {

@@ -42,7 +42,8 @@ trait BlockchainSimulationTestingCommons extends SigmaTestingCommons {
                               height: Int,
                               propOpt: Option[ErgoTree] = None,
                               extension: ContextExtension = ContextExtension.empty): FullBlock = {
-    val prop: ErgoTree = propOpt.getOrElse(prover.dlogSecrets.head.publicImage.toSigmaProp)
+    val prop: ErgoTree = propOpt.getOrElse(
+      mkTestErgoTree(prover.dlogSecrets.head.publicImage.toSigmaProp))
     val minerPubkey = prover.dlogSecrets.head.publicImage.pkBytes
 
     val boxesToSpend = state.boxesReader.randomBoxes(30 + height)
@@ -58,6 +59,7 @@ trait BlockchainSimulationTestingCommons extends SigmaTestingCommons {
         IndexedSeq(box),
         tx,
         box,
+        activatedVersionInTests,
         extension)
       val env = emptyEnv + (ScriptNameProp -> s"height_${state.state.currentHeight}_prove")
       val proverResult = prover.prove(env, box.ergoTree, context, tx.messageToSign).get
@@ -119,8 +121,8 @@ object BlockchainSimulationTestingCommons extends SigmaTestingCommons {
   }
 
 
-  case class ValidationState(state: BlockchainState, boxesReader: InMemoryErgoBoxReader)(implicit IR: IRContext) {
-    val validator = new ErgoTransactionValidator
+  case class ValidationState(state: BlockchainState, boxesReader: InMemoryErgoBoxReader, activatedVersion: Byte)(implicit IR: IRContext) {
+    val validator = new ErgoTransactionValidator(activatedVersion)
 
     def applyBlock(block: FullBlock, maxCost: Int = MaxBlockCost): Try[ValidationState] = Try {
       val height = state.currentHeight + 1
@@ -138,23 +140,28 @@ object BlockchainSimulationTestingCommons extends SigmaTestingCommons {
 
       boxesReader.applyBlock(block)
       val newState = BlockchainState(height, state.lastBlockUtxoRoot.copy(digest = boxesReader.digest))
-      ValidationState(newState, boxesReader)
+      ValidationState(newState, boxesReader, activatedVersion)
     }
   }
 
   object ValidationState {
     type BatchProver = BatchAVLProver[Digest32, Blake2b256.type]
 
-    val initBlock = FullBlock(
+    def initBlock(scriptVersion: Byte) = FullBlock(
       (0 until 10).map { i =>
         val txId = Blake2b256.hash(i.toString.getBytes ++ scala.util.Random.nextString(12).getBytes).toModifierId
-        val boxes = (1 to 50).map(_ => testBox(10, Values.TrueLeaf.toSigmaProp, i, Seq(), Map(), txId))
+        val boxes = (1 to 50).map(_ =>
+          testBox(10,
+            ErgoTree.fromProposition(
+              ErgoTree.headerWithVersion(scriptVersion),
+              Values.TrueLeaf.toSigmaProp),
+            i, Seq(), Map(), txId))
         createTransaction(boxes)
       },
       ErgoLikeContextTesting.dummyPubkey
     )
 
-    def initialState(block: FullBlock = initBlock)(implicit IR: IRContext): ValidationState = {
+    def initialState(activatedVersion: Byte, block: FullBlock)(implicit IR: IRContext): ValidationState = {
       val keySize = 32
       val prover = new BatchProver(keySize, None)
 
@@ -165,7 +172,7 @@ object BlockchainSimulationTestingCommons extends SigmaTestingCommons {
 
       val boxReader = new InMemoryErgoBoxReader(prover)
 
-      ValidationState(bs, boxReader).applyBlock(block).get
+      ValidationState(bs, boxReader, activatedVersion).applyBlock(block).get
     }
   }
 

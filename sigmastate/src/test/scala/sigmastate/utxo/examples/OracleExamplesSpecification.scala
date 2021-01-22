@@ -22,7 +22,8 @@ import sigmastate.utxo._
 import special.sigma.Context
 import sigmastate.utils.Helpers._
 
-class OracleExamplesSpecification extends SigmaTestingCommons { suite =>
+class OracleExamplesSpecification extends SigmaTestingCommons
+  with CrossVersionProps { suite =>
   implicit lazy val IR: TestingIRContext = new TestingIRContext
 
   private val reg1 = ErgoBox.nonMandatoryRegisters(0)
@@ -162,7 +163,8 @@ class OracleExamplesSpecification extends SigmaTestingCommons { suite =>
     val sinceHeight = 40
     val timeout = 60
 
-    val propAlice = withinTimeframe(sinceHeight, timeout, alicePubKey.isProven)(oracleProp).toSigmaProp
+    val propAlice = mkTestErgoTree(
+      withinTimeframe(sinceHeight, timeout, alicePubKey.isProven)(oracleProp).toSigmaProp)
 
     val sAlice = testBox(10, propAlice, 0, Seq(), Map(), boxIndex = 3)
 
@@ -170,7 +172,8 @@ class OracleExamplesSpecification extends SigmaTestingCommons { suite =>
     val propAlong = AND(
       EQ(SizeOf(Inputs), IntConstant(2)),
       EQ(ExtractId(ByIndex(Inputs, 0)), ByteArrayConstant(sAlice.id)))
-    val propBob = withinTimeframe(sinceHeight, timeout, bobPubKey.isProven)(propAlong).toSigmaProp
+    val propBob = mkTestErgoTree(
+      withinTimeframe(sinceHeight, timeout, bobPubKey.isProven)(propAlong).toSigmaProp)
     val sBob = testBox(10, propBob, 0, Seq(), Map(), boxIndex = 4)
 
    val ctx = ErgoLikeContextTesting(
@@ -179,24 +182,26 @@ class OracleExamplesSpecification extends SigmaTestingCommons { suite =>
       ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(sAlice, sBob),
       spendingTransaction,
-      self = sAlice)
+      self = sAlice, activatedVersionInTests)
 
     val alice = aliceTemplate
       .withContextExtender(22: Byte, BoxConstant(oracleBox))
       .withContextExtender(23: Byte, ByteArrayConstant(proof))
-    val prA = alice.prove(emptyEnv + (ScriptNameProp -> "alice_prove"), propAlice, ctx, fakeMessage).getOrThrow
+    val prA = alice.prove(emptyEnv + (ScriptNameProp -> "alice_prove"),
+      propAlice, ctx, fakeMessage).getOrThrow
 
-    val prB = bob.prove(emptyEnv + (ScriptNameProp -> "bob_prove"), propBob, ctx, fakeMessage).getOrThrow
+    val prB = bob.prove(emptyEnv + (ScriptNameProp -> "bob_prove"),
+      propBob, ctx, fakeMessage).getOrThrow
 
     val ctxv = ctx.withExtension(prA.extension)
-    verifier.verify(emptyEnv + (ScriptNameProp -> "alice_verify"), propAlice, ctxv, prA, fakeMessage).getOrThrow._1 shouldBe true
+    verifier.verify(emptyEnv + (ScriptNameProp -> "alice_verify"),
+      propAlice, ctxv, prA, fakeMessage).getOrThrow._1 shouldBe true
 
-    verifier.verify(emptyEnv + (ScriptNameProp -> "bob_verify"), propBob, ctx, prB, fakeMessage).getOrThrow._1 shouldBe true
+    verifier.verify(emptyEnv + (ScriptNameProp -> "bob_verify"),
+      propBob, ctx, prB, fakeMessage).getOrThrow._1 shouldBe true
 
     //todo: check timing conditions - write tests for height  < 40 and >= 60
   }
-
-
 
   /**
     * In previous example, Alice and Bob can use the same box with temperature written into multiple times (possibly,
@@ -226,27 +231,37 @@ class OracleExamplesSpecification extends SigmaTestingCommons { suite =>
 
     val oracleBox = testBox(
       value = 1L,
-      ergoTree = oraclePubKey,
+      ergoTree = mkTestErgoTree(oraclePubKey),
       creationHeight = 0,
       additionalRegisters = Map(reg1 -> LongConstant(temperature))
     )
 
     val contractLogic = OR(
-      AND(GT(ExtractRegisterAs[SLong.type](ByIndex(Inputs, 0), reg1).get, LongConstant(15)), alicePubKey.isProven),
-      AND(LE(ExtractRegisterAs[SLong.type](ByIndex(Inputs, 0), reg1).get, LongConstant(15)), bobPubKey.isProven)
+      AND(
+        GT(
+          ExtractRegisterAs[SLong.type](ByIndex(Inputs, 0), reg1).get,
+          LongConstant(15)),
+        alicePubKey.isProven),
+      AND(
+        LE(
+          ExtractRegisterAs[SLong.type](ByIndex(Inputs, 0), reg1).get,
+          LongConstant(15)),
+        bobPubKey.isProven)
     )
 
-    val prop = AND(
+    val prop = mkTestErgoTree(AND(
       EQ(SizeOf(Inputs), IntConstant(3)),
-      EQ(ExtractScriptBytes(ByIndex(Inputs, 0)), ByteArrayConstant(ErgoTree.fromSigmaBoolean(oraclePubKey).bytes)),
+      EQ(
+        ExtractScriptBytes(ByIndex(Inputs, 0)),
+        ByteArrayConstant(mkTestErgoTree(oraclePubKey).bytes)),
       contractLogic
-    ).toSigmaProp
+    ).toSigmaProp)
 
     val sOracle = oracleBox
     val sAlice = testBox(10, prop, 0, Seq(), Map())
     val sBob = testBox(10, prop, 0, Seq(), Map())
 
-    val newBox1 = testBox(20, alicePubKey, 0)
+    val newBox1 = testBox(20, mkTestErgoTree(alicePubKey), 0)
     val newBoxes = IndexedSeq(newBox1)
     val spendingTransaction = createTransaction(newBoxes)
 
@@ -256,7 +271,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons { suite =>
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(sOracle, sAlice, sBob),
       spendingTransaction,
-      self = sOracle)
+      self = sOracle, activatedVersionInTests)
 
     val prA = alice.prove(emptyEnv + (ScriptNameProp -> "alice_prove"), prop, ctx, fakeMessage).get
     verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, ctx, prA, fakeMessage).get._1 shouldBe true
@@ -292,16 +307,21 @@ class OracleExamplesSpecification extends SigmaTestingCommons { suite =>
      |}
     """.stripMargin)
 
-    lazy val oracleSignature = proposition("oracleSignature", _ => pkOracle, "pkOracle")
-    lazy val aliceSignature  = proposition("aliceSignature", _ => pkA, "pkA")
+    lazy val oracleSignature = proposition(
+      "oracleSignature", _ => pkOracle, "pkOracle",
+      scriptVersion = Some(0) // this version is required for `INPUTS(0).propositionBytes == pkOracle.propBytes`
+    )
+
+    lazy val aliceSignature  = proposition(
+      "aliceSignature", _ => pkA, "pkA")
   }
 
-  lazy val spec = TestContractSpec(suite)(new TestingIRContext)
-  lazy val oracle = spec.ProvingParty("Alice")
-  lazy val alice = spec.ProvingParty("Alice")
-  lazy val bob = spec.ProvingParty("Bob")
-
   property("lightweight oracle example (ErgoDsl)") {
+    val spec = TestContractSpec(suite)(new TestingIRContext)
+    val oracle = spec.ProvingParty("Alice")
+    val alice = spec.ProvingParty("Alice")
+    val bob = spec.ProvingParty("Bob")
+
     val temperature: Long = 18
     val contract = OracleContract[spec.type](temperature, oracle, alice, bob)(spec)
     import contract.spec._

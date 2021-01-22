@@ -9,7 +9,9 @@ import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.ContextExtension
 import sigmastate.lang.Terms._
 
-class DemurrageExampleSpecification extends SigmaTestingCommons {
+class DemurrageExampleSpecification extends SigmaTestingCommons
+  with CrossVersionProps {
+  override val printVersions: Boolean = true
   implicit lazy val IR = new TestingIRContext
 
   /**
@@ -52,7 +54,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
       "regScript" -> regScript
     )
 
-    val prop = compile(env,
+    val propTree = mkTestErgoTree(compile(env,
       """{
         | val outIdx = getVar[Short](127).get
         | val out = OUTPUTS(outIdx)
@@ -71,11 +73,11 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
         |
         | anyOf(Coll(regScript, c1, c2))
         | }
-      """.stripMargin).asSigmaProp
+      """.stripMargin).asSigmaProp)
 
     val inHeight = 0
     val outValue = 100
-    val approxSize = createBox(outValue, prop, inHeight).bytes.length + 2
+    val approxSize = createBox(outValue, propTree, inHeight).bytes.length + 2
     val inValue: Int = (outValue + demurrageCoeff * demurragePeriod * approxSize).toInt
 
     val ce = ContextExtension(Map(outIdxVarId -> ShortConstant(0)))
@@ -83,43 +85,43 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
     //case 1: demurrage time hasn't come yet
     val currentHeight1 = inHeight + demurragePeriod - 1
 
-    val tx1 = createTransaction(createBox(outValue, prop, currentHeight1))
-    val selfBox = createBox(inValue, prop, inHeight)
+    val tx1 = createTransaction(createBox(outValue, propTree, currentHeight1))
+    val selfBox = createBox(inValue, propTree, inHeight)
     val ctx1 = ErgoLikeContextTesting(
       currentHeight1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(selfBox),
       spendingTransaction = tx1,
-      self = selfBox,
+      self = selfBox, activatedVersionInTests,
       extension = ce)
 
     //user can spend all the money
-    val uProof1 = userProver.prove(prop, ctx1, fakeMessage).get.proof
-    verifier.verify(emptyEnv, prop, ctx1, uProof1, fakeMessage).get._1 shouldBe true
+    val uProof1 = userProver.prove(propTree, ctx1, fakeMessage).get.proof
+    verifier.verify(emptyEnv, propTree, ctx1, uProof1, fakeMessage).get._1 shouldBe true
 
     //miner can't spend any money
-    minerProver.prove(prop, ctx1, fakeMessage).isSuccess shouldBe false
-    verifier.verify(prop, ctx1, NoProof, fakeMessage).get._1 shouldBe false
+    minerProver.prove(propTree, ctx1, fakeMessage).isSuccess shouldBe false
+    verifier.verify(propTree, ctx1, NoProof, fakeMessage).get._1 shouldBe false
 
     //case 2: demurrage time has come
     val currentHeight2 = inHeight + demurragePeriod
-    val tx2 = createTransaction(createBox(outValue, prop, currentHeight2))
+    val tx2 = createTransaction(createBox(outValue, propTree, currentHeight2))
     val ctx2 = ErgoLikeContextTesting(
       currentHeight2,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(selfBox),
       spendingTransaction = tx2,
-      self = selfBox,
+      self = selfBox, activatedVersionInTests,
       extension = ce)
 
     //user can spend all the money
-    val uProof2 = userProver.prove(prop, ctx2, fakeMessage).get.proof
-    verifier.verify(env, prop, ctx2, uProof2, fakeMessage).get._1 shouldBe true
+    val uProof2 = userProver.prove(propTree, ctx2, fakeMessage).get.proof
+    verifier.verify(env, propTree, ctx2, uProof2, fakeMessage).get._1 shouldBe true
 
     //miner can spend "demurrageCoeff * demurragePeriod" tokens
-    val b = createBox(outValue, prop, currentHeight2)
+    val b = createBox(outValue, propTree, currentHeight2)
     val tx3 = createTransaction(b)
     val ctx3 = ErgoLikeContextTesting(
       currentHeight = currentHeight2,
@@ -127,16 +129,16 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(b, selfBox),
       spendingTransaction = tx3,
-      self = selfBox)
+      self = selfBox, activatedVersionInTests)
 
     assert(ctx3.spendingTransaction.outputs.head.propositionBytes sameElements ctx3.boxesToSpend(ctx3.selfIndex).propositionBytes)
 
-    val mProverRes1 = minerProver.prove(prop, ctx3, fakeMessage).get
+    val mProverRes1 = minerProver.prove(propTree, ctx3, fakeMessage).get
     val _ctx3: ErgoLikeContext = ctx3.withExtension(mProverRes1.extension)
-    verifier.verify(prop, _ctx3, mProverRes1, fakeMessage: Array[Byte]).get._1 shouldBe true
+    verifier.verify(propTree, _ctx3, mProverRes1, fakeMessage: Array[Byte]).get._1 shouldBe true
 
     //miner can't spend more
-    val b2 = createBox(outValue - 1, prop, currentHeight2)
+    val b2 = createBox(outValue - 1, propTree, currentHeight2)
     val tx4 = createTransaction(b2)
     val ctx4 = ErgoLikeContextTesting(
       currentHeight = currentHeight2,
@@ -144,14 +146,14 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(b2, selfBox),
       spendingTransaction = tx4,
-      self = selfBox,
+      self = selfBox, activatedVersionInTests,
       extension = ce)
 
-    minerProver.prove(prop, ctx4, fakeMessage).isSuccess shouldBe false
-    verifier.verify(prop, ctx4, NoProof, fakeMessage).get._1 shouldBe false
+    minerProver.prove(propTree, ctx4, fakeMessage).isSuccess shouldBe false
+    verifier.verify(propTree, ctx4, NoProof, fakeMessage).get._1 shouldBe false
 
     //miner can spend less
-    val tx5 = createTransaction(createBox(outValue + 1, prop, currentHeight2))
+    val tx5 = createTransaction(createBox(outValue + 1, propTree, currentHeight2))
 
     val ctx5 = ErgoLikeContextTesting(
       currentHeight = currentHeight2,
@@ -159,28 +161,28 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(selfBox),
       spendingTransaction = tx5,
-      self = selfBox,
+      self = selfBox, activatedVersionInTests,
       extension = ce)
 
-    val mProof2 = minerProver.prove(prop, ctx5, fakeMessage).get
-    verifier.verify(prop, ctx5, mProof2, fakeMessage).get._1 shouldBe true
+    val mProof2 = minerProver.prove(propTree, ctx5, fakeMessage).get
+    verifier.verify(propTree, ctx5, mProof2, fakeMessage).get._1 shouldBe true
 
     //miner can destroy a box if it contains less than the storage fee
     val iv = inValue - outValue
-    val b3 = createBox(iv, ErgoScriptPredef.FalseProp, currentHeight2)
+    val b3 = createBox(iv, FalseTree, currentHeight2)
     val tx6 = createTransaction(b3)
-    val selfBox6 = createBox(iv, prop, inHeight)
+    val selfBox6 = createBox(iv, propTree, inHeight)
     val ctx6 = ErgoLikeContextTesting(
       currentHeight = currentHeight2,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(b3, selfBox6),
       spendingTransaction = tx6,
-      self = selfBox6,
+      self = selfBox6, activatedVersionInTests,
       extension = ce)
 
-    val mProof3 = minerProver.prove(prop, ctx6, fakeMessage).get
-    verifier.verify(prop, ctx6, mProof3, fakeMessage).get._1 shouldBe true
+    val mProof3 = minerProver.prove(propTree, ctx6, fakeMessage).get
+    verifier.verify(propTree, ctx6, mProof3, fakeMessage).get._1 shouldBe true
 
   }
 }

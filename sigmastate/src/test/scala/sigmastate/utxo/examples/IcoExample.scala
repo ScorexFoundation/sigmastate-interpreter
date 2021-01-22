@@ -7,7 +7,7 @@ import org.ergoplatform._
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.hash.{Digest32, Blake2b256}
-import sigmastate.Values.{AvlTreeConstant, IntArrayConstant, CollectionConstant, ByteArrayConstant, SigmaPropValue, GroupElementConstant}
+import sigmastate.Values._
 import sigmastate._
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.helpers.ErgoLikeContextTesting
@@ -232,7 +232,8 @@ by miners via storage rent mechanism, potentially for decades or even centuries.
 reasonable to have an additional input from the project with the value equal to the value of the fee output. And so on.
   */
 
-class IcoExample extends SigmaTestingCommons { suite =>
+class IcoExample extends SigmaTestingCommons
+  with CrossVersionProps { suite =>
 
   // Not mixed with TestContext since it is not possible to call commpiler.compile outside tests if mixed
   implicit lazy val IR: IRContext = new IRContext with CompiletimeCosting
@@ -241,7 +242,7 @@ class IcoExample extends SigmaTestingCommons { suite =>
   lazy val project = new ErgoLikeTestProvingInterpreter()
 
   private val miningRewardsDelay = 720
-  private val feeProp = ErgoScriptPredef.feeProposition(miningRewardsDelay)
+  private val feeProp = ErgoScriptPredef.feeProposition(miningRewardsDelay) // create ErgoTree v0
   private val feeBytes = feeProp.bytes
 
   val env = Map(
@@ -301,10 +302,13 @@ class IcoExample extends SigmaTestingCommons { suite =>
       | // properTreeModification && valuesCorrect && selfOutputCorrect && tokensPreserved
       |}""".stripMargin
   ).asBoolValue.toSigmaProp
+  def withdrawalTree = mkTestErgoTree(withdrawalScript)
 
-  lazy val wsHash = Blake2b256(ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(withdrawalScript))
+  def wsHash = {
+    Blake2b256(ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(withdrawalTree))
+  }
 
-  lazy val issuanceScript: SigmaPropValue = compile(env.updated("nextStageScriptHash", wsHash),
+  def issuanceScript: SigmaPropValue = compile(env.updated("nextStageScriptHash", wsHash),
     """{
       |  val openTree = SELF.R5[AvlTree].get
       |
@@ -335,9 +339,12 @@ class IcoExample extends SigmaTestingCommons { suite =>
       |}""".stripMargin
   ).asSigmaProp
 
-  lazy val issuanceHash = Blake2b256(ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(issuanceScript))
+  def issuanceHash = {
+    val tree = mkTestErgoTree(issuanceScript)
+    Blake2b256(ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(tree))
+  }
 
-  lazy val fundingScript: SigmaPropValue = compile(env.updated("nextStageScriptHash", issuanceHash),
+  def fundingScript: SigmaPropValue = compile(env.updated("nextStageScriptHash", issuanceHash),
     """{
       |
       |  val selfIndexIsZero = INPUTS(0).id == SELF.id
@@ -374,20 +381,20 @@ class IcoExample extends SigmaTestingCommons { suite =>
       |}""".stripMargin
   ).asBoolValue.toSigmaProp
 
-
-
   property("simple ico example - fundraising stage only") {
     val avlProver = new BatchAVLProver[Digest32, Blake2b256.type](keyLength = 32, None)
     val digest = avlProver.digest
     val initTreeData = SigmaDsl.avlTree(new AvlTreeData(digest, AvlTreeFlags.AllOperationsAllowed, 32, None))
 
-    val projectBoxBefore = testBox(10, fundingScript, 0, Seq(),
+    val fundingTree = mkTestErgoTree(fundingScript)
+
+    val projectBoxBefore = testBox(10, fundingTree, 0, Seq(),
       Map(R4 -> ByteArrayConstant(Array.fill(1)(0: Byte)), R5 -> AvlTreeConstant(initTreeData)))
 
     val funderBoxCount = 2000
 
     val funderBoxes = (1 to funderBoxCount).map { _ =>
-      testBox(10, Values.TrueLeaf.asSigmaProp, 0, Seq(),
+      testBox(10, TrueTree, 0, Seq(),
         Map(R4 -> ByteArrayConstant(Array.fill(32)(Random.nextInt(Byte.MaxValue).toByte))))
     }
 
@@ -402,7 +409,7 @@ class IcoExample extends SigmaTestingCommons { suite =>
     val proof = avlProver.generateProof()
     val endTree = SigmaDsl.avlTree(new AvlTreeData(avlProver.digest, AvlTreeFlags.AllOperationsAllowed, 32, None))
 
-    val projectBoxAfter = testBox(funderBoxCount * 10 - 1, fundingScript, 0, Seq(),
+    val projectBoxAfter = testBox(funderBoxCount * 10 - 1, fundingTree, 0, Seq(),
       Map(R4 -> ByteArrayConstant(Array.fill(1)(0: Byte)), R5 -> AvlTreeConstant(endTree)))
     val feeBox = testBox(1, feeProp, 0, Seq(), Map())
 
@@ -414,12 +421,12 @@ class IcoExample extends SigmaTestingCommons { suite =>
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = inputBoxes,
       spendingTransaction = fundingTx,
-      self = projectBoxBefore)
+      self = projectBoxBefore, activatedVersionInTests)
 
     val projectProver = new ContextEnrichingTestProvingInterpreter()
       .withContextExtender(1, ByteArrayConstant(proof))
 
-    val res = projectProver.prove(env, fundingScript, fundingContext, fakeMessage).get
+    val res = projectProver.prove(env, fundingTree, fundingContext, fakeMessage).get
     println("funding script cost: " + res.cost)
     println("lookup proof size: " + proof.length)
 
@@ -431,19 +438,22 @@ class IcoExample extends SigmaTestingCommons { suite =>
     val digest = avlProver.digest
     val openTreeData = SigmaDsl.avlTree(new AvlTreeData(digest, AvlTreeFlags.AllOperationsAllowed, 32, None))
 
-    val projectBoxBeforeClosing = testBox(10, issuanceScript, 0, Seq(),
+    val issuanceTree = mkTestErgoTree(issuanceScript)
+    val projectBoxBeforeClosing = testBox(10, issuanceTree, 0, Seq(),
       Map(R4 -> ByteArrayConstant(Array.emptyByteArray), R5 -> AvlTreeConstant(openTreeData)))
 
     val tokenId = Digest32 @@ projectBoxBeforeClosing.id
     val closedTreeData = SigmaDsl.avlTree(new AvlTreeData(digest, AvlTreeFlags.RemoveOnly, 32, None))
 
-    val projectBoxAfterClosing = testBox(1, withdrawalScript, 0, Seq(tokenId -> projectBoxBeforeClosing.value),
+    val projectBoxAfterClosing = testBox(1, withdrawalTree, 0,
+      Seq(tokenId -> projectBoxBeforeClosing.value),
       Map(R4 -> ByteArrayConstant(tokenId), R5 -> AvlTreeConstant(closedTreeData)))
 
-    val ergoWithdrawalBox = testBox(8, Values.TrueLeaf.asSigmaProp, 0, Seq(), Map())
+    val ergoWithdrawalBox = testBox(8, TrueTree, 0, Seq(), Map())
     val feeBox = testBox(1, feeProp, 0, Seq(), Map())
 
-    val issuanceTx = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(projectBoxAfterClosing, ergoWithdrawalBox, feeBox))
+    val issuanceTx = ErgoLikeTransaction(
+      IndexedSeq(), IndexedSeq(projectBoxAfterClosing, ergoWithdrawalBox, feeBox))
 
     val issuanceContext = ErgoLikeContextTesting(
       currentHeight = 1000,
@@ -451,9 +461,9 @@ class IcoExample extends SigmaTestingCommons { suite =>
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(projectBoxBeforeClosing),
       spendingTransaction = issuanceTx,
-      self = projectBoxBeforeClosing)
+      self = projectBoxBeforeClosing, activatedVersionInTests)
 
-    val res = project.prove(env, issuanceScript, issuanceContext, fakeMessage).get
+    val res = project.prove(env, issuanceTree, issuanceContext, fakeMessage).get
     println("token issuance script cost: " + res.cost)
   }
 
@@ -463,8 +473,8 @@ class IcoExample extends SigmaTestingCommons { suite =>
     val funderBoxCount = 2000
     val funderProps = (1 to funderBoxCount).map { _ =>
       val keyPoint = CryptoConstants.dlogGroup.createRandomElement()
-      val prop = CreateProveDlog(GroupElementConstant(keyPoint)).asSigmaProp
-      val propBytes = DefaultSerializer.serializeErgoTree(prop)
+      val tree = mkTestErgoTree(CreateProveDlog(GroupElementConstant(keyPoint)).asSigmaProp)
+      val propBytes = DefaultSerializer.serializeErgoTree(tree)
       propBytes -> Longs.toByteArray(Random.nextInt(Int.MaxValue).toLong)
     }
     val funderKvs = funderProps.map { case (prop, v) =>
@@ -508,9 +518,11 @@ class IcoExample extends SigmaTestingCommons { suite =>
 
     val totalTokenAmount = withdrawalAmounts.map(_._2).sum + 1
 
-    val projectBoxBefore = testBox(11, withdrawalScript, 0, Seq(tokenId -> totalTokenAmount),
+    val projectBoxBefore = testBox(11, withdrawalTree, 0,
+      Seq(tokenId -> totalTokenAmount),
       Map(R4 -> ByteArrayConstant(tokenId), R5 -> AvlTreeConstant(fundersTree)))
-    val projectBoxAfter = testBox(1, withdrawalScript, 0, Seq(tokenId -> 1),
+    val projectBoxAfter = testBox(1, withdrawalTree, 0,
+      Seq(tokenId -> 1),
       Map(R4 -> ByteArrayConstant(tokenId), R5 -> AvlTreeConstant(finalTree)))
     val feeBox = testBox(1, feeProp, 0, Seq(), Map())
 
@@ -523,7 +535,7 @@ class IcoExample extends SigmaTestingCommons { suite =>
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(projectBoxBefore),
       spendingTransaction = fundingTx,
-      self = projectBoxBefore)
+      self = projectBoxBefore, activatedVersionInTests)
 
     val projectProver =
       new ContextEnrichingTestProvingInterpreter()
@@ -531,7 +543,7 @@ class IcoExample extends SigmaTestingCommons { suite =>
         .withContextExtender(3, ByteArrayConstant(lookupProof))
         .withContextExtender(4, IntArrayConstant((1 to withdrawalsCount).toArray))
 
-    val res = projectProver.prove(env, withdrawalScript, fundingContext, fakeMessage).get
+    val res = projectProver.prove(env, withdrawalTree, fundingContext, fakeMessage).get
     println("withdrawal script cost: " + res.cost)
     println("remove proof size: " + removalProof.length)
     println("lookup proof size: " + lookupProof.length)

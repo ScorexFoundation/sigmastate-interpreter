@@ -199,7 +199,7 @@ class ErgoTreeSpecification extends SigmaTestingData {
     (SLong.typeId,    Seq.empty[MInfo], false),
 
     { // SNumericType.typeId is erroneously shadowed by SGlobal.typeId
-      // this should be preserved in 3.x and fixed in 4.0
+      // this should be preserved in v3.x and fixed in v4.0
       (SNumericType.typeId,  Seq(
         MInfo(methodId = 1, SGlobal.groupGeneratorMethod),
         MInfo(2, SGlobal.xorMethod)
@@ -382,5 +382,21 @@ class ErgoTreeSpecification extends SigmaTestingData {
       }
     }
 
+  }
+
+  property("MethodCall on numerics") {
+    forAll(Table[STypeCompanion]("type", SByte, SShort, SInt, SLong, SBigInt)) { t =>
+      // this methods are expected to fail resolution in v3.x (but may change in future)
+      (1 to 7).foreach { methodId =>
+        assertExceptionThrown(
+          SMethod.fromIds(t.typeId, methodId.toByte),
+          {
+            case _: ValidationException => true
+            case _ => false
+          },
+          s"SMethod mustn't resolve for typeId = ${t.typeId} and methodId = $methodId"
+        )
+      }
+    }
   }
 }

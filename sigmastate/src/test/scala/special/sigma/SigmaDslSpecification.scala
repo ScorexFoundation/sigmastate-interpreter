@@ -3,11 +3,10 @@ package special.sigma
 import java.lang.reflect.InvocationTargetException
 import java.math.BigInteger
 
-import org.ergoplatform.ErgoScriptPredef.TrueProp
 import org.ergoplatform._
 import org.ergoplatform.settings.ErgoAlgos
-import org.scalacheck.Gen
-import scalan.{ExactNumeric, RType}
+import org.scalacheck.{Arbitrary, Gen}
+import scalan.{ExactOrdering, ExactNumeric, RType}
 import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.authds.{ADDigest, ADKey, ADValue}
 import scorex.crypto.hash.{Digest32, Blake2b256}
@@ -29,9 +28,12 @@ import sigmastate.utils.Helpers
 import sigmastate.utils.Helpers._
 import sigmastate.helpers.TestingHelpers._
 
-import scala.util.{Success, Failure}
+import scala.util.{Success, Failure, Try}
 import OrderingOps._
 import org.ergoplatform.ErgoBox.AdditionalRegisters
+import org.scalacheck.Arbitrary._
+import org.scalacheck.Gen.frequency
+import scalan.RType._
 import scorex.util.ModifierId
 import sigmastate.basics.ProveDHTuple
 
@@ -40,11 +42,181 @@ import scala.collection.mutable
 
 /** This suite tests every method of every SigmaDsl type to be equivalent to
   * the evaluation of the corresponding ErgoScript operation */
-class SigmaDslSpecification extends SigmaDslTesting { suite =>
+class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { suite =>
 
   override implicit val generatorDrivenConfig = PropertyCheckConfiguration(minSuccessful = 30)
 
   implicit def IR = createIR()
+
+  object TestData {
+    val BigIntZero: BigInt = CBigInt(new BigInteger("0", 16))
+    val BigIntOne: BigInt = CBigInt(new BigInteger("1", 16))
+    val BigIntMinusOne: BigInt = CBigInt(new BigInteger("-1", 16))
+    val BigInt10: BigInt = CBigInt(new BigInteger("a", 16))
+    val BigInt11: BigInt = CBigInt(new BigInteger("b", 16))
+
+    val ge1str = "03358d53f01276211f92d0aefbd278805121d4ff6eb534b777af1ee8abae5b2056"
+    val ge2str = "02dba7b94b111f3894e2f9120b577da595ec7d58d488485adf73bf4e153af63575"
+    val ge3str = "0290449814f5671172dd696a61b8aa49aaa4c87013f56165e27d49944e98bc414d"
+
+    val ge1 = Helpers.decodeGroupElement(ge1str)
+    val ge2 = Helpers.decodeGroupElement(ge2str)
+    val ge3 = Helpers.decodeGroupElement(ge3str)
+
+    val t1: AvlTree = CAvlTree(
+      AvlTreeData(
+        ADDigest @@ ErgoAlgos.decodeUnsafe("000183807f66b301530120ff7fc6bd6601ff01ff7f7d2bedbbffff00187fe89094"),
+        AvlTreeFlags(false, true, true),
+        1,
+        Some(1)
+      )
+    )
+    val t2: AvlTree = CAvlTree(
+      AvlTreeData(
+        ADDigest @@ ErgoAlgos.decodeUnsafe("ff000d937f80ffd731ed802d24358001ff8080ff71007f00ad37e0a7ae43fff95b"),
+        AvlTreeFlags(false, false, false),
+        32,
+        Some(64)
+      )
+    )
+    val t3: AvlTree = CAvlTree(
+      AvlTreeData(
+        ADDigest @@ ErgoAlgos.decodeUnsafe("3100d2e101ff01fc047c7f6f00ff80129df69a5090012f01ffca99f5bfff0c8036"),
+        AvlTreeFlags(true, false, false),
+        128,
+        None
+      )
+    )
+
+    val b1: Box = CostingBox(
+      false,
+      new ErgoBox(
+        9223372036854775807L,
+        new ErgoTree(
+          16.toByte,
+          Array(
+            SigmaPropConstant(
+              CSigmaProp(
+                ProveDlog(
+                  Helpers.decodeECPoint(
+                    "0297c44a12f4eb99a85d298fa3ba829b5b42b9f63798c980ece801cc663cc5fc9e"
+                  )
+                )
+              )
+            )
+          ),
+          Right(ConstantPlaceholder(0, SSigmaProp))
+        ),
+        Coll(
+          (Digest32 @@ (ErgoAlgos.decodeUnsafe("6e789ab7b2fffff12280a6cd01557f6fb22b7f80ff7aff8e1f7f15973d7f0001")),
+              10000000L),
+          (Digest32 @@ (ErgoAlgos.decodeUnsafe("a3ff007f00057600808001ff8f8000019000ffdb806fff7cc0b6015eb37fa600")),
+              500L)
+        ),
+        Map(
+          ErgoBox.R5 -> ByteArrayConstant(Helpers.decodeBytes("7fc87f7f01ff")),
+          ErgoBox.R4 -> FalseLeaf
+        ),
+        ModifierId @@ ("218301ae8000018008637f0021fb9e00018055486f0b514121016a00ff718080"),
+        22588.toShort,
+        677407
+      )
+    )
+
+    val b2: Box = CostingBox(
+      false,
+      new ErgoBox(
+        12345L,
+        new ErgoTree(
+          0.toByte,
+          Vector(),
+          Right(
+            BoolToSigmaProp(
+              AND(
+                ConcreteCollection(
+                  Array(
+                    FalseLeaf,
+                    XorOf(
+                      ConcreteCollection(Array(EQ(IntConstant(1), IntConstant(1)), FalseLeaf), SBoolean)
+                    )
+                  ),
+                  SBoolean
+                )
+              )
+            )
+          )
+        ),
+        Coll(),
+        Map(
+          ErgoBox.R5 -> ByteArrayConstant(
+            Helpers.decodeBytes(
+              "297000800b80f1d56c809a8c6affbed864b87f007f6f007f00ac00018c01c4fdff011088807f0100657f00f9ab0101ff6d65"
+            )
+          ),
+          ErgoBox.R4 -> TrueLeaf,
+          ErgoBox.R7 -> LongConstant(9223372036854775807L),
+          ErgoBox.R6 -> LongConstant(2115927197107005906L)
+        ),
+        ModifierId @@ ("003bd5c630803cfff6c1ff7f7fb980ff136afc011f8080b8b04ad4dbda2d7f4e"),
+        1.toShort,
+        1000000
+      )
+    )
+
+    val preH1: PreHeader = CPreHeader(
+      0.toByte,
+      Helpers.decodeBytes("7fff7fdd6f62018bae0001006d9ca888ff7f56ff8006573700a167f17f2c9f40"),
+      6306290372572472443L,
+      -3683306095029417063L,
+      1,
+      Helpers.decodeGroupElement("026930cb9972e01534918a6f6d6b8e35bc398f57140d13eb3623ea31fbd069939b"),
+      Helpers.decodeBytes("ff8087")
+    )
+
+    val preH2: PreHeader = preH1.asInstanceOf[CPreHeader].copy(height = 2)
+
+    val treeData = AvlTreeData(
+      ADDigest @@ (
+          ErgoAlgos.decodeUnsafe("010180017f7f7b7f720c00007f7f7f0f01e857a626f37f1483d06af8077a008080")
+          ),
+      AvlTreeFlags(false, true, false),
+      728138553,
+      Some(2147483647)
+    )
+    val h1: Header = CHeader(
+      Helpers.decodeBytes("957f008001808080ffe4ffffc8f3802401df40006aa05e017fa8d3f6004c804a"),
+      0.toByte,
+      Helpers.decodeBytes("0180dd805b0000ff5400b997fd7f0b9b00de00fb03c47e37806a8186b94f07ff"),
+      Helpers.decodeBytes("01f07f60d100ffb970c3007f60ff7f24d4070bb8fffa7fca7f34c10001ffe39d"),
+      CAvlTree(treeData),
+      Helpers.decodeBytes("804101ff01000080a3ffbd006ac080098df132a7017f00649311ec0e00000100"),
+      1L,
+      -1L,
+      1,
+      Helpers.decodeBytes("e57f80885601b8ff348e01808000bcfc767f2dd37f0d01015030ec018080bc62"),
+      Helpers.decodeGroupElement("039bdbfa0b49cc6bef58297a85feff45f7bbeb500a9d2283004c74fcedd4bd2904"),
+      Helpers.decodeGroupElement("0361299207fa392231e23666f6945ae3e867b978e021d8d702872bde454e9abe9c"),
+      Helpers.decodeBytes("7f4f09012a807f01"),
+      CBigInt(new BigInteger("-e24990c47e15ed4d0178c44f1790cc72155d516c43c3e8684e75db3800a288", 16)),
+      Helpers.decodeBytes("7f0180")
+    )
+    val h2: Header = h1.asInstanceOf[CHeader].copy(height = 2)
+
+  }
+  import TestData._
+
+  prepareSamples[BigInt]
+  prepareSamples[GroupElement]
+  prepareSamples[AvlTree]
+  prepareSamples[Box]
+  prepareSamples[PreHeader]
+  prepareSamples[Header]
+  prepareSamples[(BigInt, BigInt)]
+  prepareSamples[(GroupElement, GroupElement)]
+  prepareSamples[(AvlTree, AvlTree)]
+  prepareSamples[(Box, Box)]
+  prepareSamples[(PreHeader, PreHeader)]
+  prepareSamples[(Header, Header)]
 
   ///=====================================================
   ///              Boolean type operations
@@ -547,6 +719,134 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
       ))
   }
 
+  def swapArgs[A](cases: Seq[((A, A), Expected[Boolean])], cost: Int) =
+    cases.map { case ((x, y), res) => ((y, x), res.copy(cost = cost)) }
+
+  def newCasesFrom[A, R](cases: Seq[(A, A)])(getExpectedRes: (A, A) => R, cost: Int) =
+    cases.map { case (x, y) =>
+      ((x, y), Expected(Success(getExpectedRes(x, y)), cost = cost))
+    }    
+
+  def verifyOp[A: Ordering: Arbitrary]
+              (cases: Seq[((A, A), Expected[Boolean])],
+               opName: String,
+               op: (SValue, SValue) => SValue)
+              (expectedFunc: (A, A) => Boolean, generateCases: Boolean = true)
+              (implicit tA: RType[A], sampled: Sampled[(A, A)]) = {
+    val nameA = RType[A].name
+    val tpeA = Evaluation.rtypeToSType(tA)
+    verifyCases(cases,
+      existingFeature(
+        { (x: (A, A)) => expectedFunc(x._1, x._2) },
+        s"""{ (x: ($nameA, $nameA)) => x._1 $opName x._2 }""".stripMargin,
+        {
+          val tPair = SPair(tpeA, tpeA)
+          FuncValue(
+            Array((1, tPair)),
+            op(
+              SelectField.typed[Value[SType]](ValUse(1, tPair), 1.toByte),
+              SelectField.typed[Value[SType]](ValUse(1, tPair), 2.toByte)
+            )
+          )
+        }
+      ),
+      preGeneratedSamples = Some(sampled.samples))
+  }
+
+  property("Byte LT, GT, NEQ") {
+    val o = ExactOrdering.ByteIsExactOrdering
+    def expect(v: Boolean) = Expected(Success(v), 36328)
+    val LT_cases: Seq[((Byte, Byte), Expected[Boolean])] = Seq(
+      (-128.toByte, -128.toByte) -> expect(false),
+      (-128.toByte, -127.toByte) -> expect(true),
+      (-128.toByte, -1.toByte) -> expect(true),
+      (-128.toByte, 0.toByte) -> expect(true),
+      (-128.toByte, 1.toByte) -> expect(true),
+      (-128.toByte, 127.toByte) -> expect(true),
+      (-120.toByte, -128.toByte) -> expect(false),
+      (-120.toByte, -121.toByte) -> expect(false),
+      (-120.toByte, -120.toByte) -> expect(false),
+      (-120.toByte, -82.toByte) -> expect(true),
+      (-103.toByte, -1.toByte) -> expect(true),
+      (-103.toByte, -0.toByte) -> expect(true),
+      (-103.toByte, 1.toByte) -> expect(true),
+      (-103.toByte, 127.toByte) -> expect(true),
+      (-1.toByte, -2.toByte) -> expect(false),
+      (-1.toByte, -1.toByte) -> expect(false),
+      (-1.toByte, 0.toByte) -> expect(true),
+      (-1.toByte, 1.toByte) -> expect(true),
+      (0.toByte, -128.toByte) -> expect(false),
+      (0.toByte, -1.toByte) -> expect(false),
+      (0.toByte, 0.toByte) -> expect(false),
+      (0.toByte, 1.toByte) -> expect(true),
+      (0.toByte, 60.toByte) -> expect(true),
+      (0.toByte, 127.toByte) -> expect(true),
+      (1.toByte, -1.toByte) -> expect(false),
+      (1.toByte, 0.toByte) -> expect(false),
+      (1.toByte, 26.toByte) -> expect(true),
+      (7.toByte, -32.toByte) -> expect(false),
+      (7.toByte, 0.toByte) -> expect(false),
+      (33.toByte, 1.toByte) -> expect(false),
+      (126.toByte, 127.toByte) -> expect(true),
+      (127.toByte, -128.toByte) -> expect(false),
+      (127.toByte, -47.toByte) -> expect(false),
+      (127.toByte, 127.toByte) -> expect(false)
+    )
+
+    verifyOp(LT_cases, "<", LT.apply)(_ < _)
+
+    verifyOp(swapArgs(LT_cases, cost = 36342), ">", GT.apply)(_ > _)
+
+    val neqCases = newCasesFrom(LT_cases.map(_._1))(_ != _, cost = 36337)
+    verifyOp(neqCases, "!=", NEQ.apply)(_ != _)
+  }
+
+  property("Byte LE, GE") {
+    val o = ExactOrdering.ByteIsExactOrdering
+    def expect(v: Boolean) = Expected(Success(v), 36337)
+    val LE_cases: Seq[((Byte, Byte), Expected[Boolean])] = Seq(
+      (-128.toByte, -128.toByte) -> expect(true),
+      (-128.toByte, -127.toByte) -> expect(true),
+      (-128.toByte, -1.toByte) -> expect(true),
+      (-128.toByte, 0.toByte) -> expect(true),
+      (-128.toByte, 1.toByte) -> expect(true),
+      (-128.toByte, 127.toByte) -> expect(true),
+      (-120.toByte, -128.toByte) -> expect(false),
+      (-120.toByte, -121.toByte) -> expect(false),
+      (-120.toByte, -120.toByte) -> expect(true),
+      (-120.toByte, -82.toByte) -> expect(true),
+      (-103.toByte, -1.toByte) -> expect(true),
+      (-103.toByte, -0.toByte) -> expect(true),
+      (-103.toByte, 1.toByte) -> expect(true),
+      (-103.toByte, 127.toByte) -> expect(true),
+      (-1.toByte, -2.toByte) -> expect(false),
+      (-1.toByte, -1.toByte) -> expect(true),
+      (-1.toByte, 0.toByte) -> expect(true),
+      (-1.toByte, 1.toByte) -> expect(true),
+      (0.toByte, -128.toByte) -> expect(false),
+      (0.toByte, -1.toByte) -> expect(false),
+      (0.toByte, 0.toByte) -> expect(true),
+      (0.toByte, 1.toByte) -> expect(true),
+      (0.toByte, 60.toByte) -> expect(true),
+      (0.toByte, 127.toByte) -> expect(true),
+      (1.toByte, -1.toByte) -> expect(false),
+      (1.toByte, 0.toByte) -> expect(false),
+      (1.toByte, 1.toByte) -> expect(true),
+      (1.toByte, 26.toByte) -> expect(true),
+      (7.toByte, -32.toByte) -> expect(false),
+      (7.toByte, 0.toByte) -> expect(false),
+      (33.toByte, 1.toByte) -> expect(false),
+      (126.toByte, 127.toByte) -> expect(true),
+      (127.toByte, -128.toByte) -> expect(false),
+      (127.toByte, -47.toByte) -> expect(false),
+      (127.toByte, 127.toByte) -> expect(true)
+    )
+
+    verifyOp(LE_cases, "<=", LE.apply)(_ <= _)
+
+    verifyOp(swapArgs(LE_cases, cost = 36336), ">=", GE.apply)(_ >= _)
+  }
+
   property("Byte methods equivalence (new features)") {
     lazy val toBytes = newFeature((x: Byte) => x.toBytes, "{ (x: Byte) => x.toBytes }")
     lazy val toBits = newFeature((x: Byte) => x.toBits, "{ (x: Byte) => x.toBits }")
@@ -756,6 +1056,100 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
       ))
   }
 
+  property("Short LT, GT, NEQ") {
+    val o = ExactOrdering.ShortIsExactOrdering
+    def expect(v: Boolean) = Expected(Success(v), 36328)
+    val LT_cases: Seq[((Short, Short), Expected[Boolean])] = Seq(
+      (Short.MinValue, Short.MinValue) -> expect(false),
+      (Short.MinValue, (Short.MinValue + 1).toShort) -> expect(true),
+      (Short.MinValue, -1.toShort) -> expect(true),
+      (Short.MinValue, 0.toShort) -> expect(true),
+      (Short.MinValue, 1.toShort) -> expect(true),
+      (Short.MinValue, Short.MaxValue) -> expect(true),
+      (-120.toShort, Short.MinValue) -> expect(false),
+      (-120.toShort, -121.toShort) -> expect(false),
+      (-120.toShort, -120.toShort) -> expect(false),
+      (-120.toShort, -82.toShort) -> expect(true),
+      (-103.toShort, -1.toShort) -> expect(true),
+      (-103.toShort, -0.toShort) -> expect(true),
+      (-103.toShort, 1.toShort) -> expect(true),
+      (-103.toShort, Short.MaxValue) -> expect(true),
+      (-1.toShort, -2.toShort) -> expect(false),
+      (-1.toShort, -1.toShort) -> expect(false),
+      (-1.toShort, 0.toShort) -> expect(true),
+      (-1.toShort, 1.toShort) -> expect(true),
+      (0.toShort, Short.MinValue) -> expect(false),
+      (0.toShort, -1.toShort) -> expect(false),
+      (0.toShort, 0.toShort) -> expect(false),
+      (0.toShort, 1.toShort) -> expect(true),
+      (0.toShort, 60.toShort) -> expect(true),
+      (0.toShort, Short.MaxValue) -> expect(true),
+      (1.toShort, -1.toShort) -> expect(false),
+      (1.toShort, 0.toShort) -> expect(false),
+      (1.toShort, 26.toShort) -> expect(true),
+      (7.toShort, -32.toShort) -> expect(false),
+      (7.toShort, 0.toShort) -> expect(false),
+      (33.toShort, 1.toShort) -> expect(false),
+      (126.toShort, Short.MaxValue) -> expect(true),
+      (Short.MaxValue, Short.MinValue) -> expect(false),
+      (Short.MaxValue, -47.toShort) -> expect(false),
+      (Short.MaxValue, Short.MaxValue) -> expect(false)
+    )
+
+    verifyOp(LT_cases, "<", LT.apply)(_ < _)
+
+    verifyOp(swapArgs(LT_cases, cost = 36342), ">", GT.apply)(_ > _)
+
+    val neqCases = newCasesFrom(LT_cases.map(_._1))(_ != _, cost = 36337)
+    verifyOp(neqCases, "!=", NEQ.apply)(_ != _)
+  }
+
+  property("Short LE, GE") {
+    val o = ExactOrdering.ShortIsExactOrdering
+    def expect(v: Boolean) = Expected(Success(v), 36337)
+    val LE_cases: Seq[((Short, Short), Expected[Boolean])] = Seq(
+      (Short.MinValue, Short.MinValue) -> expect(true),
+      (Short.MinValue, (Short.MinValue + 1).toShort) -> expect(true),
+      (Short.MinValue, -1.toShort) -> expect(true),
+      (Short.MinValue, 0.toShort) -> expect(true),
+      (Short.MinValue, 1.toShort) -> expect(true),
+      (Short.MinValue, Short.MaxValue) -> expect(true),
+      (-120.toShort, Short.MinValue) -> expect(false),
+      (-120.toShort, -121.toShort) -> expect(false),
+      (-120.toShort, -120.toShort) -> expect(true),
+      (-120.toShort, -82.toShort) -> expect(true),
+      (-103.toShort, -1.toShort) -> expect(true),
+      (-103.toShort, -0.toShort) -> expect(true),
+      (-103.toShort, 1.toShort) -> expect(true),
+      (-103.toShort, Short.MaxValue) -> expect(true),
+      (-1.toShort, -2.toShort) -> expect(false),
+      (-1.toShort, -1.toShort) -> expect(true),
+      (-1.toShort, 0.toShort) -> expect(true),
+      (-1.toShort, 1.toShort) -> expect(true),
+      (0.toShort, Short.MinValue) -> expect(false),
+      (0.toShort, -1.toShort) -> expect(false),
+      (0.toShort, 0.toShort) -> expect(true),
+      (0.toShort, 1.toShort) -> expect(true),
+      (0.toShort, 60.toShort) -> expect(true),
+      (0.toShort, Short.MaxValue) -> expect(true),
+      (1.toShort, -1.toShort) -> expect(false),
+      (1.toShort, 0.toShort) -> expect(false),
+      (1.toShort, 1.toShort) -> expect(true),
+      (1.toShort, 26.toShort) -> expect(true),
+      (7.toShort, -32.toShort) -> expect(false),
+      (7.toShort, 0.toShort) -> expect(false),
+      (33.toShort, 1.toShort) -> expect(false),
+      (126.toShort, Short.MaxValue) -> expect(true),
+      (Short.MaxValue, Short.MinValue) -> expect(false),
+      (Short.MaxValue, -47.toShort) -> expect(false),
+      (Short.MaxValue, Short.MaxValue) -> expect(true)
+    )
+
+    verifyOp(LE_cases, "<=", LE.apply)(_ <= _)
+
+    verifyOp(swapArgs(LE_cases, cost = 36336), ">=", GE.apply)(_ >= _)
+  }
+
   property("Short methods equivalence (new features)") {
     lazy val toBytes = newFeature((x: Short) => x.toBytes, "{ (x: Short) => x.toBytes }")
     lazy val toBits = newFeature((x: Short) => x.toBits, "{ (x: Short) => x.toBits }")
@@ -960,6 +1354,100 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
             )
           )
         )))
+  }
+
+  property("Int LT, GT, NEQ") {
+    val o = ExactOrdering.IntIsExactOrdering
+    def expect(v: Boolean) = Expected(Success(v), 36328)
+    val LT_cases: Seq[((Int, Int), Expected[Boolean])] = Seq(
+      (Int.MinValue, Int.MinValue) -> expect(false),
+      (Int.MinValue, (Int.MinValue + 1).toInt) -> expect(true),
+      (Int.MinValue, -1.toInt) -> expect(true),
+      (Int.MinValue, 0.toInt) -> expect(true),
+      (Int.MinValue, 1.toInt) -> expect(true),
+      (Int.MinValue, Int.MaxValue) -> expect(true),
+      (-120.toInt, Int.MinValue) -> expect(false),
+      (-120.toInt, -121.toInt) -> expect(false),
+      (-120.toInt, -120.toInt) -> expect(false),
+      (-120.toInt, -82.toInt) -> expect(true),
+      (-103.toInt, -1.toInt) -> expect(true),
+      (-103.toInt, -0.toInt) -> expect(true),
+      (-103.toInt, 1.toInt) -> expect(true),
+      (-103.toInt, Int.MaxValue) -> expect(true),
+      (-1.toInt, -2.toInt) -> expect(false),
+      (-1.toInt, -1.toInt) -> expect(false),
+      (-1.toInt, 0.toInt) -> expect(true),
+      (-1.toInt, 1.toInt) -> expect(true),
+      (0.toInt, Int.MinValue) -> expect(false),
+      (0.toInt, -1.toInt) -> expect(false),
+      (0.toInt, 0.toInt) -> expect(false),
+      (0.toInt, 1.toInt) -> expect(true),
+      (0.toInt, 60.toInt) -> expect(true),
+      (0.toInt, Int.MaxValue) -> expect(true),
+      (1.toInt, -1.toInt) -> expect(false),
+      (1.toInt, 0.toInt) -> expect(false),
+      (1.toInt, 26.toInt) -> expect(true),
+      (7.toInt, -32.toInt) -> expect(false),
+      (7.toInt, 0.toInt) -> expect(false),
+      (33.toInt, 1.toInt) -> expect(false),
+      (126.toInt, Int.MaxValue) -> expect(true),
+      (Int.MaxValue, Int.MinValue) -> expect(false),
+      (Int.MaxValue, -47.toInt) -> expect(false),
+      (Int.MaxValue, Int.MaxValue) -> expect(false)
+    )
+
+    verifyOp(LT_cases, "<", LT.apply)(_ < _)
+
+    verifyOp(swapArgs(LT_cases, cost = 36342), ">", GT.apply)(_ > _)
+
+    val neqCases = newCasesFrom(LT_cases.map(_._1))(_ != _, cost = 36337)
+    verifyOp(neqCases, "!=", NEQ.apply)(_ != _)
+  }
+
+  property("Int LE, GE") {
+    val o = ExactOrdering.IntIsExactOrdering
+    def expect(v: Boolean) = Expected(Success(v), 36337)
+    val LE_cases: Seq[((Int, Int), Expected[Boolean])] = Seq(
+      (Int.MinValue, Int.MinValue) -> expect(true),
+      (Int.MinValue, (Int.MinValue + 1).toInt) -> expect(true),
+      (Int.MinValue, -1.toInt) -> expect(true),
+      (Int.MinValue, 0.toInt) -> expect(true),
+      (Int.MinValue, 1.toInt) -> expect(true),
+      (Int.MinValue, Int.MaxValue) -> expect(true),
+      (-120.toInt, Int.MinValue) -> expect(false),
+      (-120.toInt, -121.toInt) -> expect(false),
+      (-120.toInt, -120.toInt) -> expect(true),
+      (-120.toInt, -82.toInt) -> expect(true),
+      (-103.toInt, -1.toInt) -> expect(true),
+      (-103.toInt, -0.toInt) -> expect(true),
+      (-103.toInt, 1.toInt) -> expect(true),
+      (-103.toInt, Int.MaxValue) -> expect(true),
+      (-1.toInt, -2.toInt) -> expect(false),
+      (-1.toInt, -1.toInt) -> expect(true),
+      (-1.toInt, 0.toInt) -> expect(true),
+      (-1.toInt, 1.toInt) -> expect(true),
+      (0.toInt, Int.MinValue) -> expect(false),
+      (0.toInt, -1.toInt) -> expect(false),
+      (0.toInt, 0.toInt) -> expect(true),
+      (0.toInt, 1.toInt) -> expect(true),
+      (0.toInt, 60.toInt) -> expect(true),
+      (0.toInt, Int.MaxValue) -> expect(true),
+      (1.toInt, -1.toInt) -> expect(false),
+      (1.toInt, 0.toInt) -> expect(false),
+      (1.toInt, 1.toInt) -> expect(true),
+      (1.toInt, 26.toInt) -> expect(true),
+      (7.toInt, -32.toInt) -> expect(false),
+      (7.toInt, 0.toInt) -> expect(false),
+      (33.toInt, 1.toInt) -> expect(false),
+      (126.toInt, Int.MaxValue) -> expect(true),
+      (Int.MaxValue, Int.MinValue) -> expect(false),
+      (Int.MaxValue, -47.toInt) -> expect(false),
+      (Int.MaxValue, Int.MaxValue) -> expect(true)
+    )
+
+    verifyOp(LE_cases, "<=", LE.apply)(_ <= _)
+
+    verifyOp(swapArgs(LE_cases, cost = 36336), ">=", GE.apply)(_ >= _)
   }
 
   property("Int methods equivalence (new features)") {
@@ -1169,6 +1657,100 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
       )))
   }
 
+  property("Long LT, GT, NEQ") {
+    val o = ExactOrdering.LongIsExactOrdering
+    def expect(v: Boolean) = Expected(Success(v), 36328)
+    val LT_cases: Seq[((Long, Long), Expected[Boolean])] = Seq(
+      (Long.MinValue, Long.MinValue) -> expect(false),
+      (Long.MinValue, (Long.MinValue + 1).toLong) -> expect(true),
+      (Long.MinValue, -1.toLong) -> expect(true),
+      (Long.MinValue, 0.toLong) -> expect(true),
+      (Long.MinValue, 1.toLong) -> expect(true),
+      (Long.MinValue, Long.MaxValue) -> expect(true),
+      (-120.toLong, Long.MinValue) -> expect(false),
+      (-120.toLong, -121.toLong) -> expect(false),
+      (-120.toLong, -120.toLong) -> expect(false),
+      (-120.toLong, -82.toLong) -> expect(true),
+      (-103.toLong, -1.toLong) -> expect(true),
+      (-103.toLong, -0.toLong) -> expect(true),
+      (-103.toLong, 1.toLong) -> expect(true),
+      (-103.toLong, Long.MaxValue) -> expect(true),
+      (-1.toLong, -2.toLong) -> expect(false),
+      (-1.toLong, -1.toLong) -> expect(false),
+      (-1.toLong, 0.toLong) -> expect(true),
+      (-1.toLong, 1.toLong) -> expect(true),
+      (0.toLong, Long.MinValue) -> expect(false),
+      (0.toLong, -1.toLong) -> expect(false),
+      (0.toLong, 0.toLong) -> expect(false),
+      (0.toLong, 1.toLong) -> expect(true),
+      (0.toLong, 60.toLong) -> expect(true),
+      (0.toLong, Long.MaxValue) -> expect(true),
+      (1.toLong, -1.toLong) -> expect(false),
+      (1.toLong, 0.toLong) -> expect(false),
+      (1.toLong, 26.toLong) -> expect(true),
+      (7.toLong, -32.toLong) -> expect(false),
+      (7.toLong, 0.toLong) -> expect(false),
+      (33.toLong, 1.toLong) -> expect(false),
+      (126.toLong, Long.MaxValue) -> expect(true),
+      (Long.MaxValue, Long.MinValue) -> expect(false),
+      (Long.MaxValue, -47.toLong) -> expect(false),
+      (Long.MaxValue, Long.MaxValue) -> expect(false)
+    )
+
+    verifyOp(LT_cases, "<", LT.apply)(_ < _)
+
+    verifyOp(swapArgs(LT_cases, cost = 36342), ">", GT.apply)(_ > _)
+
+    val neqCases = newCasesFrom(LT_cases.map(_._1))(_ != _, cost = 36337)
+    verifyOp(neqCases, "!=", NEQ.apply)(_ != _)
+  }
+
+  property("Long LE, GE") {
+    val o = ExactOrdering.LongIsExactOrdering
+    def expect(v: Boolean) = Expected(Success(v), 36337)
+    val LE_cases: Seq[((Long, Long), Expected[Boolean])] = Seq(
+      (Long.MinValue, Long.MinValue) -> expect(true),
+      (Long.MinValue, (Long.MinValue + 1).toLong) -> expect(true),
+      (Long.MinValue, -1.toLong) -> expect(true),
+      (Long.MinValue, 0.toLong) -> expect(true),
+      (Long.MinValue, 1.toLong) -> expect(true),
+      (Long.MinValue, Long.MaxValue) -> expect(true),
+      (-120.toLong, Long.MinValue) -> expect(false),
+      (-120.toLong, -121.toLong) -> expect(false),
+      (-120.toLong, -120.toLong) -> expect(true),
+      (-120.toLong, -82.toLong) -> expect(true),
+      (-103.toLong, -1.toLong) -> expect(true),
+      (-103.toLong, -0.toLong) -> expect(true),
+      (-103.toLong, 1.toLong) -> expect(true),
+      (-103.toLong, Long.MaxValue) -> expect(true),
+      (-1.toLong, -2.toLong) -> expect(false),
+      (-1.toLong, -1.toLong) -> expect(true),
+      (-1.toLong, 0.toLong) -> expect(true),
+      (-1.toLong, 1.toLong) -> expect(true),
+      (0.toLong, Long.MinValue) -> expect(false),
+      (0.toLong, -1.toLong) -> expect(false),
+      (0.toLong, 0.toLong) -> expect(true),
+      (0.toLong, 1.toLong) -> expect(true),
+      (0.toLong, 60.toLong) -> expect(true),
+      (0.toLong, Long.MaxValue) -> expect(true),
+      (1.toLong, -1.toLong) -> expect(false),
+      (1.toLong, 0.toLong) -> expect(false),
+      (1.toLong, 1.toLong) -> expect(true),
+      (1.toLong, 26.toLong) -> expect(true),
+      (7.toLong, -32.toLong) -> expect(false),
+      (7.toLong, 0.toLong) -> expect(false),
+      (33.toLong, 1.toLong) -> expect(false),
+      (126.toLong, Long.MaxValue) -> expect(true),
+      (Long.MaxValue, Long.MinValue) -> expect(false),
+      (Long.MaxValue, -47.toLong) -> expect(false),
+      (Long.MaxValue, Long.MaxValue) -> expect(true)
+    )
+
+    verifyOp(LE_cases, "<=", LE.apply)(_ <= _)
+
+    verifyOp(swapArgs(LE_cases, cost = 36336), ">=", GE.apply)(_ >= _)
+  }
+
   property("Long methods equivalence (new features)") {
     lazy val toBytes = newFeature((x: Long) => x.toBytes, "{ (x: Long) => x.toBytes }")
     lazy val toBits = newFeature((x: Long) => x.toBits, "{ (x: Long) => x.toBits }")
@@ -1339,6 +1921,116 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
     ))
   }
 
+  property("BigInt LT, GT, NEQ") {
+    val o = NumericOps.BigIntIsExactOrdering
+    // TODO HF: this values have bitCount == 255 (see to256BitValueExact)
+    val BigIntMinValue = CBigInt(new BigInteger("-7F" + "ff" * 31, 16))
+    val BigIntMaxValue = CBigInt(new BigInteger("7F" + "ff" * 31, 16))
+    val BigIntOverlimit = CBigInt(new BigInteger("7F" + "ff" * 33, 16))
+
+    def expect(v: Boolean) = Expected(Success(v), 36328)
+    
+    val LT_cases: Seq[((BigInt, BigInt), Expected[Boolean])] = Seq(
+      (BigIntMinValue, BigIntMinValue) -> expect(false),
+      (BigIntMinValue, BigIntMinValue.add(1.toBigInt)) -> expect(true),
+      (BigIntMinValue, -1.toBigInt) -> expect(true),
+      (BigIntMinValue, 0.toBigInt) -> expect(true),
+      (BigIntMinValue, 1.toBigInt) -> expect(true),
+      (BigIntMinValue, BigIntMaxValue) -> expect(true),
+      (-120.toBigInt, BigIntMinValue) -> expect(false),
+      (-120.toBigInt, -121.toBigInt) -> expect(false),
+      (-120.toBigInt, -120.toBigInt) -> expect(false),
+      (-120.toBigInt, -82.toBigInt) -> expect(true),
+      (-103.toBigInt, -1.toBigInt) -> expect(true),
+      (-103.toBigInt, -0.toBigInt) -> expect(true),
+      (-103.toBigInt, 1.toBigInt) -> expect(true),
+      (-103.toBigInt, BigIntMaxValue) -> expect(true),
+      (-1.toBigInt, -2.toBigInt) -> expect(false),
+      (-1.toBigInt, -1.toBigInt) -> expect(false),
+      (-1.toBigInt, 0.toBigInt) -> expect(true),
+      (-1.toBigInt, 1.toBigInt) -> expect(true),
+      (0.toBigInt, BigIntMinValue) -> expect(false),
+      (0.toBigInt, -1.toBigInt) -> expect(false),
+      (0.toBigInt, 0.toBigInt) -> expect(false),
+      (0.toBigInt, 1.toBigInt) -> expect(true),
+      (0.toBigInt, 60.toBigInt) -> expect(true),
+      (0.toBigInt, BigIntMaxValue) -> expect(true),
+      (1.toBigInt, -1.toBigInt) -> expect(false),
+      (1.toBigInt, 0.toBigInt) -> expect(false),
+      (1.toBigInt, 26.toBigInt) -> expect(true),
+      (7.toBigInt, -32.toBigInt) -> expect(false),
+      (7.toBigInt, 0.toBigInt) -> expect(false),
+      (33.toBigInt, 1.toBigInt) -> expect(false),
+      (126.toBigInt, BigIntMaxValue) -> expect(true),
+      (BigIntMaxValue, BigIntMinValue) -> expect(false),
+      (BigIntMaxValue, -47.toBigInt) -> expect(false),
+      (BigIntMaxValue, BigIntMaxValue) -> expect(false),
+      (BigIntMaxValue, BigIntOverlimit) -> expect(true),  // TODO v5.0: reject this overlimit cases
+      (BigIntOverlimit, BigIntOverlimit) -> expect(false)
+    )
+
+    verifyOp(LT_cases, "<", LT.apply)(o.lt(_, _))
+
+    verifyOp(swapArgs(LT_cases, cost = 36342), ">", GT.apply)(o.gt(_, _))
+
+    val neqCases = newCasesFrom(LT_cases.map(_._1))(_ != _, cost = 36337)
+    verifyOp(neqCases, "!=", NEQ.apply)(_ != _)
+  }
+
+  property("BigInt LE, GE") {
+    val o = NumericOps.BigIntIsExactOrdering
+    // TODO HF: this values have bitCount == 255 (see to256BitValueExact)
+    val BigIntMinValue = CBigInt(new BigInteger("-7F" + "ff" * 31, 16))
+    val BigIntMaxValue = CBigInt(new BigInteger("7F" + "ff" * 31, 16))
+    val BigIntOverlimit = CBigInt(new BigInteger("7F" + "ff" * 33, 16))
+
+    def expect(v: Boolean) = Expected(Success(v), 36337)
+    
+    val LE_cases: Seq[((BigInt, BigInt), Expected[Boolean])] = Seq(
+      (BigIntMinValue, BigIntMinValue) -> expect(true),
+      (BigIntMinValue, BigIntMinValue.add(1.toBigInt)) -> expect(true),
+      (BigIntMinValue, -1.toBigInt) -> expect(true),
+      (BigIntMinValue, 0.toBigInt) -> expect(true),
+      (BigIntMinValue, 1.toBigInt) -> expect(true),
+      (BigIntMinValue, BigIntMaxValue) -> expect(true),
+      (-120.toBigInt, BigIntMinValue) -> expect(false),
+      (-120.toBigInt, -121.toBigInt) -> expect(false),
+      (-120.toBigInt, -120.toBigInt) -> expect(true),
+      (-120.toBigInt, -82.toBigInt) -> expect(true),
+      (-103.toBigInt, -1.toBigInt) -> expect(true),
+      (-103.toBigInt, -0.toBigInt) -> expect(true),
+      (-103.toBigInt, 1.toBigInt) -> expect(true),
+      (-103.toBigInt, BigIntMaxValue) -> expect(true),
+      (-1.toBigInt, -2.toBigInt) -> expect(false),
+      (-1.toBigInt, -1.toBigInt) -> expect(true),
+      (-1.toBigInt, 0.toBigInt) -> expect(true),
+      (-1.toBigInt, 1.toBigInt) -> expect(true),
+      (0.toBigInt, BigIntMinValue) -> expect(false),
+      (0.toBigInt, -1.toBigInt) -> expect(false),
+      (0.toBigInt, 0.toBigInt) -> expect(true),
+      (0.toBigInt, 1.toBigInt) -> expect(true),
+      (0.toBigInt, 60.toBigInt) -> expect(true),
+      (0.toBigInt, BigIntMaxValue) -> expect(true),
+      (1.toBigInt, -1.toBigInt) -> expect(false),
+      (1.toBigInt, 0.toBigInt) -> expect(false),
+      (1.toBigInt, 1.toBigInt) -> expect(true),
+      (1.toBigInt, 26.toBigInt) -> expect(true),
+      (7.toBigInt, -32.toBigInt) -> expect(false),
+      (7.toBigInt, 0.toBigInt) -> expect(false),
+      (33.toBigInt, 1.toBigInt) -> expect(false),
+      (126.toBigInt, BigIntMaxValue) -> expect(true),
+      (BigIntMaxValue, BigIntMinValue) -> expect(false),
+      (BigIntMaxValue, -47.toBigInt) -> expect(false),
+      (BigIntMaxValue, BigIntMaxValue) -> expect(true),
+      (BigIntMaxValue, BigIntOverlimit) -> expect(true), // TODO v5.0: reject this overlimit cases
+      (BigIntOverlimit, BigIntOverlimit) -> expect(true)
+    )
+
+    verifyOp(LE_cases, "<=", LE.apply)(o.lteq(_, _))
+
+    verifyOp(swapArgs(LE_cases, cost = 36336), ">=", GE.apply)(o.gteq(_, _))
+  }
+
   property("BigInt methods equivalence (new features)") {
     // TODO HF (2h): the behavior of `upcast` for BigInt is different from all other Numeric types
     // The `Upcast(bigInt, SBigInt)` node is never produced by ErgoScript compiler, but is still valid ErgoTree.
@@ -1393,18 +2085,150 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
     }
   }
 
+  /** Executed a series of test cases of NEQ operation verify using two _different_
+    * data instances `x` and `y`.
+    * @param cost the expected cost of `verify` (the same for all cases)
+    */
+  def verifyNeq[A: Ordering: Arbitrary: RType]
+      (x: A, y: A, cost: Int)
+      (copy: A => A, generateCases: Boolean = true)
+      (implicit sampled: Sampled[(A, A)]) = {
+    val copied_x = copy(x)
+    verifyOp(Seq(
+        (x, x) -> Expected(Success(false), cost),
+        (x, copied_x) -> Expected(Success(false), cost),
+        (copied_x, x) -> Expected(Success(false), cost),
+        (x, y) -> Expected(Success(true), cost),
+        (y, x) -> Expected(Success(true), cost)
+      ),
+      "!=", NEQ.apply)(_ != _, generateCases)
+  }
+
+  property("NEQ of pre-defined types") {
+    verifyNeq(ge1, ge2, 36337)(_.asInstanceOf[CGroupElement].copy())
+    verifyNeq(t1, t2, 36337)(_.asInstanceOf[CAvlTree].copy())
+    verifyNeq(b1, b2, 36417)(_.asInstanceOf[CostingBox].copy())
+    verifyNeq(preH1, preH2, 36337)(_.asInstanceOf[CPreHeader].copy())
+    verifyNeq(h1, h2, 36337)(_.asInstanceOf[CHeader].copy())
+  }
+
+  property("NEQ of tuples of numerics") {
+    verifyNeq((0.toByte, 1.toByte), (1.toByte, 1.toByte), 36337)(_.copy())
+    verifyNeq((0.toShort, 1.toByte), (1.toShort, 1.toByte), 36337)(_.copy())
+    verifyNeq((0, 1.toByte), (1, 1.toByte), 36337)(_.copy())
+    verifyNeq((0.toLong, 1.toByte), (1.toLong, 1.toByte), 36337)(_.copy())
+    verifyNeq((0.toBigInt, 1.toByte), (1.toBigInt, 1.toByte), 36337)(_.copy())
+  }
+
+  property("NEQ of tuples of pre-defined types") {
+    verifyNeq((ge1, ge1), (ge1, ge2), 36337)(_.copy())
+    verifyNeq((t1, t1), (t1, t2), 36337)(_.copy())
+    verifyNeq((b1, b1), (b1, b2), 36497)(_.copy())
+    verifyNeq((preH1, preH1), (preH1, preH2), 36337)(_.copy())
+    verifyNeq((h1, h1), (h1, h2), 36337)(_.copy())
+  }
+
+  property("NEQ of nested tuples") {
+    verifyNeq((ge1, (t1, t1)), (ge1, (t1, t2)), 36337)(_.copy())
+    verifyNeq((ge1, (t1, (b1, b1))), (ge1, (t1, (b1, b2))), 36497)(_.copy())
+    verifyNeq((ge1, (t1, (b1, (preH1, preH1)))), (ge1, (t1, (b1, (preH1, preH2)))), 36417)(_.copy())
+    verifyNeq((ge1, (t1, (b1, (preH1, (h1, h1))))), (ge1, (t1, (b1, (preH1, (h1, h2))))), 36427)(_.copy())
+
+    verifyNeq(((ge1, t1), t1), ((ge1, t1), t2), 36337)(_.copy())
+    verifyNeq((((ge1, t1), b1), b1), (((ge1, t1), b1), b2), 36497)(_.copy())
+    verifyNeq((((ge1, t1), b1), (preH1, preH1)), (((ge1, t1), b1), (preH1, preH2)), 36417)(_.copy())
+    verifyNeq((((ge1, t1), b1), (preH1, (h1, h1))), (((ge1, t1), b1), (preH1, (h1, h2))), 36427)(_.copy())
+  }
+
+  property("NEQ of collections of pre-defined types") {
+    verifyNeq(Coll[Byte](), Coll(1.toByte), 36337)(cloneColl(_))
+    verifyNeq(Coll[Byte](0, 1), Coll(1.toByte, 1.toByte), 36337)(cloneColl(_))
+
+    verifyNeq(Coll[Short](), Coll(1.toShort), 36337)(cloneColl(_))
+    verifyNeq(Coll[Short](0), Coll(1.toShort), 36337)(cloneColl(_))
+
+    verifyNeq(Coll[Int](), Coll(1), 36337)(cloneColl(_))
+    verifyNeq(Coll[Int](0), Coll(1), 36337)(cloneColl(_))
+
+    verifyNeq(Coll[Long](), Coll(1.toLong), 36337)(cloneColl(_))
+    verifyNeq(Coll[Long](0), Coll(1.toLong), 36337)(cloneColl(_))
+
+    prepareSamples[Coll[BigInt]]
+    verifyNeq(Coll[BigInt](), Coll(1.toBigInt), 36337)(cloneColl(_))
+    verifyNeq(Coll[BigInt](0.toBigInt), Coll(1.toBigInt), 36337)(cloneColl(_))
+
+    prepareSamples[Coll[GroupElement]]
+    verifyNeq(Coll[GroupElement](), Coll(ge1), 36337)(cloneColl(_))
+    verifyNeq(Coll[GroupElement](ge1), Coll(ge2), 36337)(cloneColl(_))
+
+    prepareSamples[Coll[AvlTree]]
+    verifyNeq(Coll[AvlTree](), Coll(t1), 36337)(cloneColl(_))
+    verifyNeq(Coll[AvlTree](t1), Coll(t2), 36337)(cloneColl(_))
+
+    { // since SBox.isConstantSize = false, the cost is different among cases
+      prepareSamples[Coll[AvlTree]]
+      val x = Coll[Box]()
+      val y = Coll(b1)
+      val copied_x = cloneColl(x)
+      verifyOp(Seq(
+          (x, x) -> Expected(Success(false), 36337),
+          (x, copied_x) -> Expected(Success(false), 36337),
+          (copied_x, x) -> Expected(Success(false), 36337),
+          (x, y) -> Expected(Success(true), 36377),
+          (y, x) -> Expected(Success(true), 36377)
+        ),
+        "!=", NEQ.apply)(_ != _, generateCases = false)
+
+      verifyNeq(Coll[Box](b1), Coll(b2), 36417)(cloneColl(_), generateCases = false)
+    }
+
+    prepareSamples[Coll[PreHeader]]
+    verifyNeq(Coll[PreHeader](), Coll(preH1), 36337)(cloneColl(_))
+    verifyNeq(Coll[PreHeader](preH1), Coll(preH2), 36337)(cloneColl(_))
+
+    prepareSamples[Coll[Header]]
+    verifyNeq(Coll[Header](), Coll(h1), 36337)(cloneColl(_))
+    verifyNeq(Coll[Header](h1), Coll(h2), 36337)(cloneColl(_))
+  }
+
+  property("NEQ of nested collections and tuples") {
+    prepareSamples[Coll[Int]]
+    prepareSamples[Coll[Coll[Int]]]
+    prepareSamples[Coll[Coll[Int]]]
+
+    verifyNeq(Coll[Coll[Int]](), Coll(Coll[Int]()), 36337)(cloneColl(_))
+    verifyNeq(Coll(Coll[Int]()), Coll(Coll[Int](1)), 36337)(cloneColl(_))
+    verifyNeq(Coll(Coll[Int](1)), Coll(Coll[Int](2)), 36337)(cloneColl(_))
+    verifyNeq(Coll(Coll[Int](1)), Coll(Coll[Int](1, 2)), 36337)(cloneColl(_))
+
+    prepareSamples[Coll[(Int, BigInt)]]
+    prepareSamples[Coll[Coll[(Int, BigInt)]]]
+
+    verifyNeq(Coll(Coll((1, 10.toBigInt))), Coll(Coll((1, 11.toBigInt))), 36337)(cloneColl(_))
+    verifyNeq(Coll(Coll(Coll((1, 10.toBigInt)))), Coll(Coll(Coll((1, 11.toBigInt)))), 36337)(cloneColl(_))
+    verifyNeq(
+      (Coll(
+         (Coll(
+           (t1, Coll((1, 10.toBigInt), (1, 10.toBigInt)))
+          ), ge1)
+       ), preH1),
+      (Coll(
+         (Coll(
+           (t1, Coll((1, 10.toBigInt), (1, 11.toBigInt)))
+          ), ge1)
+       ), preH1),
+      36337)(x => (cloneColl(x._1), x._2))
+  }
+
   property("GroupElement methods equivalence") {
-    val ge1 = "03358d53f01276211f92d0aefbd278805121d4ff6eb534b777af1ee8abae5b2056"
-    val ge2 = "02dba7b94b111f3894e2f9120b577da595ec7d58d488485adf73bf4e153af63575"
-    val ge3 = "0290449814f5671172dd696a61b8aa49aaa4c87013f56165e27d49944e98bc414d"
 
     verifyCases(
       {
         def success[T](v: T) = Expected(Success(v), 37905)
         Seq(
-          (Helpers.decodeGroupElement(ge1), success(Helpers.decodeBytes(ge1))),
-          (Helpers.decodeGroupElement(ge2), success(Helpers.decodeBytes(ge2))),
-          (Helpers.decodeGroupElement(ge3), success(Helpers.decodeBytes(ge3))),
+          (ge1, success(Helpers.decodeBytes(ge1str))),
+          (ge2, success(Helpers.decodeBytes(ge2str))),
+          (ge3, success(Helpers.decodeBytes(ge3str))),
           (SigmaDsl.groupGenerator,
               success(Helpers.decodeBytes("0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798"))),
           (SigmaDsl.groupIdentity,
@@ -1422,9 +2246,9 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
       {
         def success[T](v: T) = Expected(Success(v), 38340)
         Seq(
-          (Helpers.decodeGroupElement(ge1), success(true)),
-          (Helpers.decodeGroupElement(ge2), success(true)),
-          (Helpers.decodeGroupElement(ge3), success(true)),
+          (ge1, success(true)),
+          (ge2, success(true)),
+          (ge3, success(true)),
           (SigmaDsl.groupGenerator, success(true)),
           (SigmaDsl.groupIdentity, success(true))
         )
@@ -1450,9 +2274,9 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
       {
         def success[T](v: T) = Expected(Success(v), 36292)
         Seq(
-          (Helpers.decodeGroupElement(ge1), success(Helpers.decodeGroupElement("02358d53f01276211f92d0aefbd278805121d4ff6eb534b777af1ee8abae5b2056"))),
-          (Helpers.decodeGroupElement(ge2), success(Helpers.decodeGroupElement("03dba7b94b111f3894e2f9120b577da595ec7d58d488485adf73bf4e153af63575"))),
-          (Helpers.decodeGroupElement(ge3), success(Helpers.decodeGroupElement("0390449814f5671172dd696a61b8aa49aaa4c87013f56165e27d49944e98bc414d"))),
+          (ge1, success(Helpers.decodeGroupElement("02358d53f01276211f92d0aefbd278805121d4ff6eb534b777af1ee8abae5b2056"))),
+          (ge2, success(Helpers.decodeGroupElement("03dba7b94b111f3894e2f9120b577da595ec7d58d488485adf73bf4e153af63575"))),
+          (ge3, success(Helpers.decodeGroupElement("0390449814f5671172dd696a61b8aa49aaa4c87013f56165e27d49944e98bc414d"))),
           (SigmaDsl.groupGenerator, success(Helpers.decodeGroupElement("0379be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798"))),
           (SigmaDsl.groupIdentity, success(Helpers.decodeGroupElement("000000000000000000000000000000000000000000000000000000000000000000")))
         )
@@ -1472,14 +2296,14 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
       {
         def success[T](v: T) = Expected(Success(v), 41484)
         Seq(
-          ((Helpers.decodeGroupElement(ge1), CBigInt(new BigInteger("-25c80b560dd7844e2efd10f80f7ee57d", 16))),
+          ((ge1, CBigInt(new BigInteger("-25c80b560dd7844e2efd10f80f7ee57d", 16))),
               success(Helpers.decodeGroupElement("023a850181b7b73f92a5bbfa0bfc78f5bbb6ff00645ddde501037017e1a2251e2e"))),
-          ((Helpers.decodeGroupElement(ge2), CBigInt(new BigInteger("2488741265082fb02b09f992be3dd8d60d2bbe80d9e2630", 16))),
+          ((ge2, CBigInt(new BigInteger("2488741265082fb02b09f992be3dd8d60d2bbe80d9e2630", 16))),
               success(Helpers.decodeGroupElement("032045b928fb7774a4cd9ef5fa8209f4e493cd4cc5bd536b52746a53871bf73431"))),
-          ((Helpers.decodeGroupElement(ge3), CBigInt(new BigInteger("-33e8fbdb13d2982e92583445e1fdcb5901a178a7aa1e100", 16))),
+          ((ge3, CBigInt(new BigInteger("-33e8fbdb13d2982e92583445e1fdcb5901a178a7aa1e100", 16))),
               success(Helpers.decodeGroupElement("036128efaf14d8ac2812a662f6494dc617b87986a3dc6b4a59440048a7ac7d2729"))),
-          ((Helpers.decodeGroupElement(ge3), CBigInt(new BigInteger("1", 16))),
-              success(Helpers.decodeGroupElement(ge3)))
+          ((ge3, CBigInt(new BigInteger("1", 16))),
+              success(ge3))
         )
       },
       existingFeature({ (x: (GroupElement, BigInt)) => x._1.exp(x._2) },
@@ -1502,14 +2326,14 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
       {
         def success[T](v: T) = Expected(Success(v), 36457)
         Seq(
-          ((Helpers.decodeGroupElement(ge1), Helpers.decodeGroupElement("03e132ca090614bd6c9f811e91f6daae61f16968a1e6c694ed65aacd1b1092320e")),
+          ((ge1, Helpers.decodeGroupElement("03e132ca090614bd6c9f811e91f6daae61f16968a1e6c694ed65aacd1b1092320e")),
               success(Helpers.decodeGroupElement("02bc48937b4a66f249a32dfb4d2efd0743dc88d46d770b8c5d39fd03325ba211df"))),
-          ((Helpers.decodeGroupElement(ge2), Helpers.decodeGroupElement("03e132ca090614bd6c9f811e91f6daae61f16968a1e6c694ed65aacd1b1092320e")),
+          ((ge2, Helpers.decodeGroupElement("03e132ca090614bd6c9f811e91f6daae61f16968a1e6c694ed65aacd1b1092320e")),
               success(Helpers.decodeGroupElement("0359c3bb2ac4ea4dbd7b1e09d7b11198141a3263834fb84a88039629ec1e9311d1"))),
-          ((Helpers.decodeGroupElement(ge3), Helpers.decodeGroupElement("03e132ca090614bd6c9f811e91f6daae61f16968a1e6c694ed65aacd1b1092320e")),
+          ((ge3, Helpers.decodeGroupElement("03e132ca090614bd6c9f811e91f6daae61f16968a1e6c694ed65aacd1b1092320e")),
               success(Helpers.decodeGroupElement("02eca42e28548d3fb9fa77cdd0c983066c3ad141ebb086b5044ce46b9ba9b5a714"))),
-          ((Helpers.decodeGroupElement(ge3), SigmaDsl.groupIdentity),
-              success(Helpers.decodeGroupElement(ge3)))
+          ((ge3, SigmaDsl.groupIdentity),
+              success(ge3))
         )
       },
       existingFeature({ (x: (GroupElement, GroupElement)) => x._1.multiply(x._2) },
@@ -1541,31 +2365,6 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
         )
       )
     }
-    val t1 = CAvlTree(
-      AvlTreeData(
-        ADDigest @@ ErgoAlgos.decodeUnsafe("000183807f66b301530120ff7fc6bd6601ff01ff7f7d2bedbbffff00187fe89094"),
-        AvlTreeFlags(false, true, true),
-        1,
-        Some(1)
-      )
-    )
-    val t2 = CAvlTree(
-      AvlTreeData(
-        ADDigest @@ ErgoAlgos.decodeUnsafe("ff000d937f80ffd731ed802d24358001ff8080ff71007f00ad37e0a7ae43fff95b"),
-        AvlTreeFlags(false, false, false),
-        32,
-        Some(64)
-      )
-    )
-    val t3 = CAvlTree(
-      AvlTreeData(
-        ADDigest @@ ErgoAlgos.decodeUnsafe("3100d2e101ff01fc047c7f6f00ff80129df69a5090012f01ffca99f5bfff0c8036"),
-        AvlTreeFlags(true, false, false),
-        128,
-        None
-      )
-    )
-
     verifyCases(
       {
         def success[T](v: T) = Expected(Success(v), 36182)
@@ -1874,7 +2673,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
       val keys = Colls.fromItems(key)
       val expRes = Colls.fromItems(valueOpt)
-      
+
       {
         val input = (tree, (keys, proof))
         getMany.checkExpected(input, success(expRes))
@@ -2349,84 +3148,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
   //    doApply((CFunc[Int, Int](ctx, code), 10))
   //  }
 
-  lazy val ctx = ergoCtx.toSigmaContext(false)
-
   property("Box properties equivalence") {
-    val b1 = CostingBox(
-      false,
-      new ErgoBox(
-        9223372036854775807L,
-        new ErgoTree(
-          16.toByte,
-          Array(
-            SigmaPropConstant(
-              CSigmaProp(
-                ProveDlog(
-                  Helpers.decodeECPoint(
-                    "0297c44a12f4eb99a85d298fa3ba829b5b42b9f63798c980ece801cc663cc5fc9e"
-                  )
-                )
-              )
-            )
-          ),
-          Right(ConstantPlaceholder(0, SSigmaProp))
-        ),
-        Coll(
-          (Digest32 @@ (ErgoAlgos.decodeUnsafe("6e789ab7b2fffff12280a6cd01557f6fb22b7f80ff7aff8e1f7f15973d7f0001")),
-              10000000L),
-          (Digest32 @@ (ErgoAlgos.decodeUnsafe("a3ff007f00057600808001ff8f8000019000ffdb806fff7cc0b6015eb37fa600")),
-              500L)
-        ),
-        Map(
-          ErgoBox.R5 -> ByteArrayConstant(Helpers.decodeBytes("7fc87f7f01ff")),
-          ErgoBox.R4 -> FalseLeaf
-        ),
-        ModifierId @@ ("218301ae8000018008637f0021fb9e00018055486f0b514121016a00ff718080"),
-        22588.toShort,
-        677407
-      )
-    )
-
-    val b2 = CostingBox(
-      false,
-      new ErgoBox(
-        12345L,
-        new ErgoTree(
-          0.toByte,
-          Vector(),
-          Right(
-            BoolToSigmaProp(
-              AND(
-                ConcreteCollection(
-                  Array(
-                    FalseLeaf,
-                    XorOf(
-                      ConcreteCollection(Array(EQ(IntConstant(1), IntConstant(1)), FalseLeaf), SBoolean)
-                    )
-                  ),
-                  SBoolean
-                )
-              )
-            )
-          )
-        ),
-        Coll(),
-        Map(
-          ErgoBox.R5 -> ByteArrayConstant(
-            Helpers.decodeBytes(
-              "297000800b80f1d56c809a8c6affbed864b87f007f6f007f00ac00018c01c4fdff011088807f0100657f00f9ab0101ff6d65"
-            )
-          ),
-          ErgoBox.R4 -> TrueLeaf,
-          ErgoBox.R7 -> LongConstant(9223372036854775807L),
-          ErgoBox.R6 -> LongConstant(2115927197107005906L)
-        ),
-        ModifierId @@ ("003bd5c630803cfff6c1ff7f7fb980ff136afc011f8080b8b04ad4dbda2d7f4e"),
-        1.toShort,
-        1000000
-      )
-    )
-
     verifyCases(
       {
        def success[T](v: T) = Expected(Success(v), 35984)
@@ -2550,7 +3272,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
 
   property("Conditional access to registers") {
     def boxWithRegisters(regs: AdditionalRegisters): Box = {
-      SigmaDsl.Box(testBox(20, TrueProp, 0, Seq(), regs))
+      SigmaDsl.Box(testBox(20, TrueTree, 0, Seq(), regs))
     }
     val box1 = boxWithRegisters(Map(
       ErgoBox.R4 -> ByteConstant(0.toByte),
@@ -2673,7 +3395,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
   property("Advanced Box test") {
     val (tree, _) = createAvlTreeAndProver()
 
-    val box1 = SigmaDsl.Box(testBox(20, TrueProp, 0, Seq(), Map(
+    val box1 = SigmaDsl.Box(testBox(20, TrueTree, 0, Seq(), Map(
       ErgoBox.R4 -> ByteConstant(1.toByte),
       ErgoBox.R5 -> ShortConstant(1024.toShort),
       ErgoBox.R6 -> IntConstant(1024 * 1024),
@@ -2682,7 +3404,7 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
       ErgoBox.R9 -> AvlTreeConstant(tree)
     )))
 
-    val box2 = SigmaDsl.Box(testBox(20, TrueProp, 0, Seq(), Map(
+    val box2 = SigmaDsl.Box(testBox(20, TrueTree, 0, Seq(), Map(
       ErgoBox.R4 -> ByteArrayConstant(Coll(1.toByte))
     )))
 
@@ -2777,76 +3499,40 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
   }
 
   property("PreHeader properties equivalence") {
-    val h1 = CPreHeader(
-      0.toByte,
-      Helpers.decodeBytes("7fff7fdd6f62018bae0001006d9ca888ff7f56ff8006573700a167f17f2c9f40"),
-      6306290372572472443L,
-      -3683306095029417063L,
-      1,
-      Helpers.decodeGroupElement("026930cb9972e01534918a6f6d6b8e35bc398f57140d13eb3623ea31fbd069939b"),
-      Helpers.decodeBytes("ff8087")
-    )
-
     verifyCases(
-      Seq((h1, Expected(Success(0.toByte), cost = 37022))),
+      Seq((preH1, Expected(Success(0.toByte), cost = 37022))),
       existingPropTest("version", { (x: PreHeader) => x.version }))
 
     verifyCases(
-      Seq((h1, Expected(Success(
+      Seq((preH1, Expected(Success(
         Helpers.decodeBytes("7fff7fdd6f62018bae0001006d9ca888ff7f56ff8006573700a167f17f2c9f40")),
         cost = 36121))),
       existingPropTest("parentId", { (x: PreHeader) => x.parentId }))
 
     verifyCases(
-      Seq((h1, Expected(Success(6306290372572472443L), cost = 36147))),
+      Seq((preH1, Expected(Success(6306290372572472443L), cost = 36147))),
       existingPropTest("timestamp", { (x: PreHeader) => x.timestamp }))
 
     verifyCases(
-      Seq((h1, Expected(Success(-3683306095029417063L), cost = 36127))),
+      Seq((preH1, Expected(Success(-3683306095029417063L), cost = 36127))),
       existingPropTest("nBits", { (x: PreHeader) => x.nBits }))
 
     verifyCases(
-      Seq((h1, Expected(Success(1), cost = 36136))),
+      Seq((preH1, Expected(Success(1), cost = 36136))),
       existingPropTest("height", { (x: PreHeader) => x.height }))
 
     verifyCases(
-      Seq((h1, Expected(Success(
+      Seq((preH1, Expected(Success(
         Helpers.decodeGroupElement("026930cb9972e01534918a6f6d6b8e35bc398f57140d13eb3623ea31fbd069939b")),
         cost = 36255))),
       existingPropTest("minerPk", { (x: PreHeader) => x.minerPk }))
 
     verifyCases(
-      Seq((h1, Expected(Success(Helpers.decodeBytes("ff8087")), cost = 36249))),
+      Seq((preH1, Expected(Success(Helpers.decodeBytes("ff8087")), cost = 36249))),
       existingPropTest("votes", { (x: PreHeader) => x.votes }))
   }
 
   property("Header properties equivalence") {
-    val treeData = AvlTreeData(
-      ADDigest @@ (
-          ErgoAlgos.decodeUnsafe("010180017f7f7b7f720c00007f7f7f0f01e857a626f37f1483d06af8077a008080")
-          ),
-      AvlTreeFlags(false, true, false),
-      728138553,
-      Some(2147483647)
-    )
-    val h1 = CHeader(
-      Helpers.decodeBytes("957f008001808080ffe4ffffc8f3802401df40006aa05e017fa8d3f6004c804a"),
-      0.toByte,
-      Helpers.decodeBytes("0180dd805b0000ff5400b997fd7f0b9b00de00fb03c47e37806a8186b94f07ff"),
-      Helpers.decodeBytes("01f07f60d100ffb970c3007f60ff7f24d4070bb8fffa7fca7f34c10001ffe39d"),
-      CAvlTree(treeData),
-      Helpers.decodeBytes("804101ff01000080a3ffbd006ac080098df132a7017f00649311ec0e00000100"),
-      1L,
-      -1L,
-      1,
-      Helpers.decodeBytes("e57f80885601b8ff348e01808000bcfc767f2dd37f0d01015030ec018080bc62"),
-      Helpers.decodeGroupElement("039bdbfa0b49cc6bef58297a85feff45f7bbeb500a9d2283004c74fcedd4bd2904"),
-      Helpers.decodeGroupElement("0361299207fa392231e23666f6945ae3e867b978e021d8d702872bde454e9abe9c"),
-      Helpers.decodeBytes("7f4f09012a807f01"),
-      CBigInt(new BigInteger("-e24990c47e15ed4d0178c44f1790cc72155d516c43c3e8684e75db3800a288", 16)),
-      Helpers.decodeBytes("7f0180")
-    )
-
     verifyCases(
       Seq((h1, Expected(Success(
         Helpers.decodeBytes("957f008001808080ffe4ffffc8f3802401df40006aa05e017fa8d3f6004c804a")),
@@ -4332,6 +5018,76 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
       preGeneratedSamples = Some(samples))
   }
 
+  property("Coll exists with nested If") {
+    val o = NumericOps.BigIntIsExactOrdering
+    verifyCases(
+    {
+      def success[T](v: T, c: Int) = Expected(Success(v), c)
+      Seq(
+        (Coll[BigInt](), success(false, 38955)),
+        (Coll[BigInt](BigIntZero), success(false, 39045)),
+        (Coll[BigInt](BigIntOne), success(true, 39045)),
+        (Coll[BigInt](BigIntZero, BigIntOne), success(true, 39135)),
+        (Coll[BigInt](BigIntZero, BigInt10), success(false, 39135))
+      )
+    },
+    existingFeature(
+      { (x: Coll[BigInt]) => x.exists({ (b: BigInt) =>
+          if (o.gt(b, BigIntZero)) o.lt(b, BigInt10) else false
+        })
+      },
+      "{ (x: Coll[BigInt]) => x.exists({(b: BigInt) => if (b > 0) b < 10 else false }) }",
+      FuncValue(
+        Array((1, SCollectionType(SBigInt))),
+        Exists(
+          ValUse(1, SCollectionType(SBigInt)),
+          FuncValue(
+            Array((3, SBigInt)),
+            If(
+              GT(ValUse(3, SBigInt), BigIntConstant(CBigInt(new BigInteger("0", 16)))),
+              LT(ValUse(3, SBigInt), BigIntConstant(CBigInt(new BigInteger("a", 16)))),
+              FalseLeaf
+            )
+          )
+        )
+      )))
+  }
+
+  property("Coll forall with nested If") {
+    val o = NumericOps.BigIntIsExactOrdering
+    verifyCases(
+    {
+      def success[T](v: T, c: Int) = Expected(Success(v), c)
+      Seq(
+        (Coll[BigInt](), success(true, 38412)),
+        (Coll[BigInt](BigIntMinusOne), success(false, 38502)),
+        (Coll[BigInt](BigIntOne), success(true, 38502)),
+        (Coll[BigInt](BigIntZero, BigIntOne), success(true, 38592)),
+        (Coll[BigInt](BigIntZero, BigInt11), success(false, 38592))
+      )
+    },
+    existingFeature(
+      { (x: Coll[BigInt]) => x.forall({ (b: BigInt) =>
+          if (o.gteq(b, BigIntZero)) o.lteq(b, BigInt10) else false
+        })
+      },
+      "{ (x: Coll[BigInt]) => x.forall({(b: BigInt) => if (b >= 0) b <= 10 else false }) }",
+      FuncValue(
+        Array((1, SCollectionType(SBigInt))),
+        ForAll(
+          ValUse(1, SCollectionType(SBigInt)),
+          FuncValue(
+            Array((3, SBigInt)),
+            If(
+              GE(ValUse(3, SBigInt), BigIntConstant(CBigInt(new BigInteger("0", 16)))),
+              LE(ValUse(3, SBigInt), BigIntConstant(CBigInt(new BigInteger("a", 16)))),
+              FalseLeaf
+            )
+          )
+        )
+      )))
+  }
+
   val collWithRangeGen = for {
     arr <- collGen[Int]
     l <- Gen.choose(0, arr.length - 1)
@@ -4653,6 +5409,61 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
         )))
   }
 
+  property("Coll fold with nested If") {
+    val n = ExactNumeric.IntIsExactNumeric
+    verifyCases(
+      // (coll, initState)
+      {
+        def success[T](v: T, c: Int) = Expected(Success(v), c)
+        Seq(
+          ((Coll[Byte](),  0), success(0, 42037)),
+          ((Coll[Byte](),  Int.MaxValue), success(Int.MaxValue, 42037)),
+          ((Coll[Byte](1),  Int.MaxValue - 1), success(Int.MaxValue, 42197)),
+          ((Coll[Byte](1),  Int.MaxValue), Expected(new ArithmeticException("integer overflow"))),
+          ((Coll[Byte](-1),  Int.MinValue + 1), success(Int.MinValue + 1, 42197)),
+          ((Coll[Byte](-1),  Int.MinValue), success(Int.MinValue, 42197)),
+          ((Coll[Byte](1, 2), 0), success(3, 42357)),
+          ((Coll[Byte](1, -1), 0), success(1, 42357)),
+          ((Coll[Byte](1, -1, 1), 0), success(2, 42517))
+        )
+      },
+      existingFeature(
+        { (x: (Coll[Byte], Int)) => x._1.foldLeft(x._2, { i: (Int, Byte) => if (i._2 > 0) n.plus(i._1, i._2) else i._1 }) },
+        "{ (x: (Coll[Byte], Int)) => x._1.fold(x._2, { (i1: Int, i2: Byte) => if (i2 > 0) i1 + i2 else i1 }) }",
+        FuncValue(
+          Array((1, SPair(SByteArray, SInt))),
+          Fold(
+            SelectField.typed[Value[SCollection[SByte.type]]](ValUse(1, SPair(SByteArray, SInt)), 1.toByte),
+            SelectField.typed[Value[SInt.type]](ValUse(1, SPair(SByteArray, SInt)), 2.toByte),
+            FuncValue(
+              Array((3, SPair(SInt, SByte))),
+              BlockValue(
+                Array(
+                  ValDef(
+                    5,
+                    List(),
+                    Upcast(
+                      SelectField.typed[Value[SByte.type]](ValUse(3, SPair(SInt, SByte)), 2.toByte),
+                      SInt
+                    )
+                  ),
+                  ValDef(
+                    6,
+                    List(),
+                    SelectField.typed[Value[SInt.type]](ValUse(3, SPair(SInt, SByte)), 1.toByte)
+                  )
+                ),
+                If(
+                  GT(ValUse(5, SInt), IntConstant(0)),
+                  ArithOp(ValUse(6, SInt), ValUse(5, SInt), OpCode @@ (-102.toByte)),
+                  ValUse(6, SInt)
+                )
+              )
+            )
+          )
+        ) ))
+  }
+
   property("Coll indexOf method equivalence") {
     verifyCases(
       // (coll, (elem: Byte, from: Int))
@@ -4842,6 +5653,91 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
         )))
   }
 
+  property("Coll map with nested if") {
+    val n = ExactNumeric.IntIsExactNumeric
+    verifyCases(
+      {
+        def success[T](v: T, c: Int) = Expected(Success(v), c)
+        Seq(
+          (Coll[Int](), success(Coll[Int](), 39571)),
+          (Coll[Int](1), success(Coll[Int](2), 39671)),
+          (Coll[Int](-1), success(Coll[Int](1), 39671)),
+          (Coll[Int](1, -2), success(Coll[Int](2, 2), 39771)),
+          (Coll[Int](1, 2, Int.MaxValue), Expected(new ArithmeticException("integer overflow"))),
+          (Coll[Int](1, 2, Int.MinValue), Expected(new ArithmeticException("integer overflow")))
+        )
+      },
+      existingFeature(
+        (x: Coll[Int]) => x.map({ (v: Int) => if (v > 0) n.plus(v, 1) else n.times(-1, v) }),
+        "{ (x: Coll[Int]) => x.map({ (v: Int) => if (v > 0) v + 1 else -1 * v }) }",
+        FuncValue(
+          Array((1, SCollectionType(SInt))),
+          MapCollection(
+            ValUse(1, SCollectionType(SInt)),
+            FuncValue(
+              Array((3, SInt)),
+              If(
+                GT(ValUse(3, SInt), IntConstant(0)),
+                ArithOp(ValUse(3, SInt), IntConstant(1), OpCode @@ (-102.toByte)),
+                ArithOp(IntConstant(-1), ValUse(3, SInt), OpCode @@ (-100.toByte))
+              )
+            )
+          )
+        ) ))
+  }
+
+  property("Coll filter") {
+    val o = ExactOrdering.IntIsExactOrdering
+    verifyCases(
+    {
+      def success[T](v: T, c: Int) = Expected(Success(v), c)
+      Seq(
+        (Coll[Int](), success(Coll[Int](), 37223)),
+        (Coll[Int](1), success(Coll[Int](1), 37273)),
+        (Coll[Int](1, 2), success(Coll[Int](1, 2), 37323)),
+        (Coll[Int](1, 2, -1), success(Coll[Int](1, 2), 37373)),
+        (Coll[Int](1, -1, 2, -2), success(Coll[Int](1, 2), 37423))
+      )
+    },
+    existingFeature((x: Coll[Int]) => x.filter({ (v: Int) => o.gt(v, 0) }),
+      "{ (x: Coll[Int]) => x.filter({ (v: Int) => v > 0 }) }",
+      FuncValue(
+        Array((1, SCollectionType(SInt))),
+        Filter(
+          ValUse(1, SCollectionType(SInt)),
+          FuncValue(Array((3, SInt)), GT(ValUse(3, SInt), IntConstant(0)))
+        )
+      )))
+  }
+
+  property("Coll filter with nested If") {
+    val o = ExactOrdering.IntIsExactOrdering
+    verifyCases(
+    {
+      def success[T](v: T, c: Int) = Expected(Success(v), c)
+      Seq(
+        (Coll[Int](), success(Coll[Int](), 37797)),
+        (Coll[Int](1), success(Coll[Int](1), 37887)),
+        (Coll[Int](10), success(Coll[Int](), 37887)),
+        (Coll[Int](1, 2), success(Coll[Int](1, 2), 37977)),
+        (Coll[Int](1, 2, 0), success(Coll[Int](1, 2), 38067)),
+        (Coll[Int](1, -1, 2, -2, 11), success(Coll[Int](1, 2), 38247))
+      )
+    },
+    existingFeature((x: Coll[Int]) => x.filter({ (v: Int) => if (o.gt(v, 0)) v < 10 else false }),
+      "{ (x: Coll[Int]) => x.filter({ (v: Int) => if (v > 0) v < 10 else false }) }",
+      FuncValue(
+        Array((1, SCollectionType(SInt))),
+        Filter(
+          ValUse(1, SCollectionType(SInt)),
+          FuncValue(
+            Array((3, SInt)),
+            If(GT(ValUse(3, SInt), IntConstant(0)), LT(ValUse(3, SInt), IntConstant(10)), FalseLeaf)
+          )
+        )
+      )))
+  }
+
   property("Coll slice method equivalence") {
     val samples = genSamples(collWithRangeGen, DefaultMinSuccessful)
     verifyCases(
@@ -4989,6 +5885,71 @@ class SigmaDslSpecification extends SigmaDslTesting { suite =>
             Map()
           )
         )))
+  }
+
+  property("Option filter,map with nested If") {
+    def success[T](v: T, c: Int) = Expected(Success(v), c)
+
+    val o = ExactOrdering.LongIsExactOrdering
+    verifyCases(
+      Seq(
+        (None -> success(None, 38736)),
+        (Some(0L) -> success(None, 38736)),
+        (Some(10L) -> success(Some(10L), 38736)),
+        (Some(11L) -> success(None, 38736))),
+      existingFeature(
+        { (x: Option[Long]) => x.filter({ (v: Long) => if (o.gt(v, 0L)) v <= 10 else false } ) },
+        "{ (x: Option[Long]) => x.filter({ (v: Long) => if (v > 0) v <= 10 else false }) }",
+        FuncValue(
+          Array((1, SOption(SLong))),
+          MethodCall.typed[Value[SOption[SLong.type]]](
+            ValUse(1, SOption(SLong)),
+            SOption.getMethodByName("filter").withConcreteTypes(Map(STypeVar("T") -> SLong)),
+            Vector(
+              FuncValue(
+                Array((3, SLong)),
+                If(
+                  GT(ValUse(3, SLong), LongConstant(0L)),
+                  LE(ValUse(3, SLong), LongConstant(10L)),
+                  FalseLeaf
+                )
+              )
+            ),
+            Map()
+          )
+        )))
+
+    val n = ExactNumeric.LongIsExactNumeric
+    verifyCases(
+      Seq(
+        (None -> success(None, 39077)),
+        (Some(0L) -> success(Some(0L), 39077)),
+        (Some(10L) -> success(Some(10L), 39077)),
+        (Some(-1L) -> success(Some(-2L), 39077)),
+        (Some(Long.MinValue) -> Expected(new ArithmeticException("long overflow")))),
+      existingFeature(
+        { (x: Option[Long]) => x.map( (v: Long) => if (o.lt(v, 0)) n.minus(v, 1) else v ) },
+        "{ (x: Option[Long]) => x.map({ (v: Long) => if (v < 0) v - 1 else v }) }",
+        FuncValue(
+          Array((1, SOption(SLong))),
+          MethodCall.typed[Value[SOption[SLong.type]]](
+            ValUse(1, SOption(SLong)),
+            SOption.getMethodByName("map").withConcreteTypes(
+              Map(STypeVar("T") -> SLong, STypeVar("R") -> SLong)
+            ),
+            Vector(
+              FuncValue(
+                Array((3, SLong)),
+                If(
+                  LT(ValUse(3, SLong), LongConstant(0L)),
+                  ArithOp(ValUse(3, SLong), LongConstant(1L), OpCode @@ (-103.toByte)),
+                  ValUse(3, SLong)
+                )
+              )
+            ),
+            Map()
+          )
+        ) ))
   }
 
   // TODO HF (3h): implement Option.fold

@@ -10,12 +10,14 @@ import sigmastate.lang.Terms._
 import sigmastate.lang.exceptions.InterpreterException
 
 
-class TimedPaymentExampleSpecification extends SigmaTestingCommons {
+class TimedPaymentExampleSpecification extends SigmaTestingCommons
+  with CrossVersionProps {
   private implicit lazy val IR: TestingIRContext = new TestingIRContext
 
   import ErgoAddressEncoder._
 
   implicit val ergoAddressEncoder: ErgoAddressEncoder = new ErgoAddressEncoder(TestnetNetworkPrefix)
+
   property("Evaluation - Timed payment Tx Example") {
 
     val alice = new ContextEnrichingTestProvingInterpreter // customer at coffee shop
@@ -29,9 +31,9 @@ class TimedPaymentExampleSpecification extends SigmaTestingCommons {
       "alice" -> alicePubKey
     )
 
-    val script = compile(env,
+    val script = mkTestErgoTree(compile(env,
       """{ alice && HEIGHT <= getVar[Int](1).get }""".stripMargin
-    ).asSigmaProp
+    ).asSigmaProp)
 
     val address = Pay2SHAddress(script)
     // The above is a "timed address".
@@ -63,7 +65,8 @@ class TimedPaymentExampleSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(depositOutput),
       spendingTransaction = withdrawTx,
-      self = depositOutput
+      self = depositOutput,
+      activatedVersionInTests
     )
 
     val proofWithdraw = alice.withContextExtender(
@@ -80,7 +83,8 @@ class TimedPaymentExampleSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(depositOutput),
       spendingTransaction = withdrawTx,
-      self = depositOutput
+      self = depositOutput,
+      activatedVersionInTests
     )
     an [InterpreterException] should be thrownBy (alice.withContextExtender(
       1, IntConstant(confDeadline - 20)

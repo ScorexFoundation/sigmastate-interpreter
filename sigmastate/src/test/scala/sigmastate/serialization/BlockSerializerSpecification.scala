@@ -3,7 +3,7 @@ package sigmastate.serialization
 import org.scalacheck.Gen
 import sigmastate.SType
 import sigmastate.Values.Constant
-import sigmastate.lang.{DeserializationSigmaBuilder, SigmaBuilder}
+import sigmastate.lang.{SigmaBuilder, DeserializationSigmaBuilder}
 
 class BlockSerializerSpecification extends SerializationSpecification {
 

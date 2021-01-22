@@ -3,10 +3,10 @@ package sigmastate.utxo.examples
 import org.ergoplatform._
 import org.ergoplatform.ErgoBox.{R4, R5}
 import scorex.crypto.authds.{ADKey, ADValue}
-import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup}
-import scorex.crypto.hash.{Blake2b256, Digest32}
-import sigmastate.{AvlTreeData, AvlTreeFlags, TrivialProp}
-import sigmastate.Values.{AvlTreeConstant, ByteArrayConstant, LongConstant, SigmaPropConstant}
+import scorex.crypto.authds.avltree.batch.{Lookup, BatchAVLProver, Insert}
+import scorex.crypto.hash.{Digest32, Blake2b256}
+import sigmastate.{AvlTreeData, AvlTreeFlags, TrivialProp, CrossVersionProps}
+import sigmastate.Values.{ByteArrayConstant, AvlTreeConstant, SigmaPropConstant, LongConstant}
 import sigmastate.eval.{IRContext, SigmaDsl}
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.helpers.TestingHelpers._
@@ -166,7 +166,7 @@ import scala.util.Random
  some day this article will be continued!
   */
 
-class LetsSpecification extends SigmaTestingCommons { suite =>
+class LetsSpecification extends SigmaTestingCommons with CrossVersionProps { suite =>
   // Not mixed with TestContext since it is not possible to call compiler.compile outside tests if mixed
   implicit lazy val IR: IRContext = new TestingIRContext
 
@@ -177,7 +177,7 @@ class LetsSpecification extends SigmaTestingCommons { suite =>
   val env = Map(ScriptNameProp -> "withdrawalScriptEnv", "letsToken" -> ByteArrayConstant(letsTokenId))
 
   private val miningRewardsDelay = 720
-  private val feeProp = ErgoScriptPredef.feeProposition(miningRewardsDelay)
+  private val feeProp = ErgoScriptPredef.feeProposition(miningRewardsDelay) // create ErgoTree v0
 
   lazy val exchangeScript = compiler.compile(env,
     """{
@@ -227,10 +227,11 @@ class LetsSpecification extends SigmaTestingCommons { suite =>
       |  selfPubKey && properLetsToken && membersExist && diffCorrect && scriptsSaved
       |}""".stripMargin
   ).asSigmaProp
+  def exchangeTree = mkTestErgoTree(exchangeScript)
 
-  lazy val userContractHash = Blake2b256(ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(exchangeScript))
+  def userContractHash = Blake2b256(ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(exchangeTree))
 
-  lazy val managementScript = compiler.compile(env.updated("userContractHash", userContractHash),
+  def managementScript = compiler.compile(env.updated("userContractHash", userContractHash),
     """{
       |
       | val selfOut = OUTPUTS(0)
@@ -283,9 +284,12 @@ class LetsSpecification extends SigmaTestingCommons { suite =>
     val digest = avlProver.digest
     val initTreeData = new AvlTreeData(digest, AvlTreeFlags.InsertOnly, 32, None)
 
-    val projectBoxBefore = testBox(10, managementScript, 0,
+    val managementTree = mkTestErgoTree(managementScript)
+    val projectBoxBefore = testBox(10, managementTree, 0,
       Seq(letsTokenId -> 1L),
-      Map(R4 -> AvlTreeConstant(SigmaDsl.avlTree(initTreeData)), R5 -> SigmaPropConstant(TrivialProp.TrueProp)))
+      Map(
+        R4 -> AvlTreeConstant(SigmaDsl.avlTree(initTreeData)),
+        R5 -> SigmaPropConstant(TrivialProp.TrueProp)))
 
     val userTokenId = Digest32 @@ projectBoxBefore.id
 
@@ -294,11 +298,14 @@ class LetsSpecification extends SigmaTestingCommons { suite =>
     val proof = avlProver.generateProof()
     val endTree = new AvlTreeData(avlProver.digest, AvlTreeFlags.InsertOnly, 32, None)
 
-    val projectBoxAfter = testBox(9, managementScript, 0,
+    val projectBoxAfter = testBox(9, managementTree, 0,
       Seq(letsTokenId -> 1L),
-      Map(R4 -> AvlTreeConstant(SigmaDsl.avlTree(endTree)), R5 -> SigmaPropConstant(TrivialProp.TrueProp)))
+      Map(
+        R4 -> AvlTreeConstant(SigmaDsl.avlTree(endTree)),
+        R5 -> SigmaPropConstant(TrivialProp.TrueProp)))
+
     val feeBox = testBox(1, feeProp, 0, Seq(), Map())
-    val userBox = testBox(1, exchangeScript, 0, Seq(userTokenId -> 1L), Map(R4 -> LongConstant(0)))
+    val userBox = testBox(1, exchangeTree, 0, Seq(userTokenId -> 1L), Map(R4 -> LongConstant(0)))
 
     val issuanceTx = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(projectBoxAfter, userBox, feeBox))
 
@@ -308,12 +315,12 @@ class LetsSpecification extends SigmaTestingCommons { suite =>
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(projectBoxBefore),
       spendingTransaction = issuanceTx,
-      self = projectBoxBefore)
+      self = projectBoxBefore, activatedVersionInTests)
 
     val managementProver = new ContextEnrichingTestProvingInterpreter()
       .withContextExtender(1, ByteArrayConstant(proof))
 
-    val res = managementProver.prove(env, managementScript, fundingContext, fakeMessage).get
+    val res = managementProver.prove(env, managementTree, fundingContext, fakeMessage).get
     println("new user script cost: " + res.cost)
   }
 
@@ -333,21 +340,32 @@ class LetsSpecification extends SigmaTestingCommons { suite =>
     avlProver.performOneOperation(Lookup(ADKey @@ userTokenId1))
     val proof = avlProver.generateProof()
 
-    val directoryBox = testBox(10, managementScript, 0,
+    val managementTree = mkTestErgoTree(managementScript)
+    val directoryBox = testBox(10, managementTree, 0,
       Seq(letsTokenId -> 1L),
-      Map(R4 -> AvlTreeConstant(SigmaDsl.avlTree(initTreeData)), R5 -> SigmaPropConstant(TrivialProp.TrueProp)))
+      Map(
+        R4 -> AvlTreeConstant(SigmaDsl.avlTree(initTreeData)),
+        R5 -> SigmaPropConstant(TrivialProp.TrueProp)))
 
     val directoryDataInput = DataInput(directoryBox.id)
 
-    val userBoxBefore0 = testBox(1, exchangeScript, 0, Seq(userTokenId0 -> 1L),
+    val exchangeTree = mkTestErgoTree(exchangeScript)
+    val userBoxBefore0 = testBox(1, exchangeTree, 0,
+      Seq(userTokenId0 -> 1L),
       Map(R4 -> LongConstant(0), R5 -> SigmaPropConstant(TrivialProp.TrueProp)))
-    val userBoxBefore1 = testBox(1, exchangeScript, 0, Seq(userTokenId1 -> 1L),
+    val userBoxBefore1 = testBox(1, exchangeTree, 0,
+      Seq(userTokenId1 -> 1L),
       Map(R4 -> LongConstant(0), R5 -> SigmaPropConstant(TrivialProp.TrueProp)))
 
-    val userBoxAfter0 = testBox(1, exchangeScript, 0, Seq(userTokenId0 -> 1L), Map(R4 -> LongConstant(-5)))
-    val userBoxAfter1 = testBox(1, exchangeScript, 0, Seq(userTokenId1 -> 1L), Map(R4 -> LongConstant(5)))
+    val userBoxAfter0 = testBox(1, exchangeTree, 0,
+      Seq(userTokenId0 -> 1L), Map(R4 -> LongConstant(-5)))
+    val userBoxAfter1 = testBox(1, exchangeTree, 0,
+      Seq(userTokenId1 -> 1L), Map(R4 -> LongConstant(5)))
 
-    val issuanceTx = new ErgoLikeTransaction(IndexedSeq(), IndexedSeq(directoryDataInput), IndexedSeq(userBoxAfter0, userBoxAfter1))
+    val issuanceTx = new ErgoLikeTransaction(
+      IndexedSeq(),
+      IndexedSeq(directoryDataInput),
+      IndexedSeq(userBoxAfter0, userBoxAfter1))
 
     val exchangeContext = ErgoLikeContextTesting(
       currentHeight = 1000,
@@ -356,12 +374,13 @@ class LetsSpecification extends SigmaTestingCommons { suite =>
       dataBoxes = IndexedSeq(directoryBox),
       boxesToSpend = IndexedSeq(userBoxBefore0, userBoxBefore1),
       spendingTransaction = issuanceTx,
-      selfIndex = 0)
+      selfIndex = 0,
+      activatedVersionInTests)
 
     val managementProver = new ContextEnrichingTestProvingInterpreter()
       .withContextExtender(1, ByteArrayConstant(proof))
 
-    val res = managementProver.prove(env, exchangeScript, exchangeContext, fakeMessage).get
+    val res = managementProver.prove(env, exchangeTree, exchangeContext, fakeMessage).get
     println("exchange script cost: " + res.cost)
   }
 

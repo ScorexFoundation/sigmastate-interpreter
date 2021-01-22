@@ -1,5 +1,6 @@
 package scalan
 
+import scala.language.implicitConversions
 import org.scalatest.words.ResultOfStringPassedToVerb
 import org.scalatest.{FlatSpec, _}
 

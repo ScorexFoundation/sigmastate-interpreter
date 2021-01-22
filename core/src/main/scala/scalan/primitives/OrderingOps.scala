@@ -1,6 +1,7 @@
 package scalan.primitives
 
 import scalan.{Base, Scalan, ExactOrdering}
+import scala.language.implicitConversions
 
 /** Slice in Scala cake with definitions of comparison operations. */
 trait OrderingOps extends Base { self: Scalan =>

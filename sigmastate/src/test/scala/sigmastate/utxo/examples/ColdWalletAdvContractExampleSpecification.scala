@@ -1,16 +1,17 @@
 package sigmastate.utxo.examples
 
-import org.ergoplatform.ErgoBox.{R4, R5, R6}
+import org.ergoplatform.ErgoBox.{R6, R4, R5}
 import org.ergoplatform._
-import sigmastate.AvlTreeData
-import sigmastate.Values.{IntConstant, LongConstant}
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
+import sigmastate.{AvlTreeData, CrossVersionProps}
+import sigmastate.Values.{LongConstant, IntConstant}
+import sigmastate.helpers.{ErgoLikeContextTesting, ErgoLikeTestInterpreter, ErgoLikeTestProvingInterpreter, SigmaTestingCommons, ContextEnrichingTestProvingInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter.ScriptNameProp
 import sigmastate.lang.Terms._
 
 
-class ColdWalletAdvContractExampleSpecification extends SigmaTestingCommons {
+class ColdWalletAdvContractExampleSpecification extends SigmaTestingCommons
+  with CrossVersionProps {
   private implicit lazy val IR: TestingIRContext = new TestingIRContext
 
   import ErgoAddressEncoder._
@@ -51,7 +52,7 @@ class ColdWalletAdvContractExampleSpecification extends SigmaTestingCommons {
     //           3. make start of output box as max of all starts of the inputs
     //           4. output must contain at least one box of same type with min bal based on avbl1Key/avbl2Key
 
-    val script = compile(env,
+    val scriptProp = compile(env,
       """{
         |  val depth = HEIGHT - SELF.creationInfo._1 // number of confirmations
         |  val start = min(depth, SELF.R4[Int].get) // height at which period started
@@ -88,7 +89,8 @@ class ColdWalletAdvContractExampleSpecification extends SigmaTestingCommons {
         |  )
         |}""".stripMargin).asSigmaProp
 
-    val address = Pay2SHAddress(script)
+    val scriptTree = mkTestErgoTree(scriptProp)
+    val address = Pay2SHAddress(scriptProp)
 
     // someone creates a transaction that outputs a box depositing money into the wallet.
     // In the example, we don't create the transaction; we just create a box below
@@ -134,19 +136,20 @@ class ColdWalletAdvContractExampleSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(depositOutput),
       spendingTransaction = firstWithdrawTx1Key,
-      self = depositOutput
+      self = depositOutput,
+      activatedVersionInTests
     )
 
     val verifier = new ErgoLikeTestInterpreter
 
-    val proofAliceWithdraw = alice.prove(spendEnv, script, firstWithdrawContext1Key, fakeMessage).get.proof
-    verifier.verify(env, script, firstWithdrawContext1Key, proofAliceWithdraw, fakeMessage).get._1 shouldBe true
+    val proofAliceWithdraw = alice.prove(spendEnv, scriptTree, firstWithdrawContext1Key, fakeMessage).get.proof
+    verifier.verify(env, scriptTree, firstWithdrawContext1Key, proofAliceWithdraw, fakeMessage).get._1 shouldBe true
 
-    val proofBobWithdraw = bob.prove(env, script, firstWithdrawContext1Key, fakeMessage).get.proof
-    verifier.verify(env, script, firstWithdrawContext1Key, proofBobWithdraw, fakeMessage).get._1 shouldBe true
+    val proofBobWithdraw = bob.prove(env, scriptTree, firstWithdrawContext1Key, fakeMessage).get.proof
+    verifier.verify(env, scriptTree, firstWithdrawContext1Key, proofBobWithdraw, fakeMessage).get._1 shouldBe true
 
-    val proofCarolWithdraw = carol.prove(env, script, firstWithdrawContext1Key, fakeMessage).get.proof
-    verifier.verify(env, script, firstWithdrawContext1Key, proofCarolWithdraw, fakeMessage).get._1 shouldBe true
+    val proofCarolWithdraw = carol.prove(env, scriptTree, firstWithdrawContext1Key, fakeMessage).get.proof
+    verifier.verify(env, scriptTree, firstWithdrawContext1Key, proofCarolWithdraw, fakeMessage).get._1 shouldBe true
 
     // any two of Alice, Bob  or Carol withdraws
     val firstWithdrawAmount2Key = depositAmount * percent2Key / 100 // less than or equal to percent
@@ -170,11 +173,12 @@ class ColdWalletAdvContractExampleSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(depositOutput),
       spendingTransaction = firstWithdrawTx2Key,
-      self = depositOutput
+      self = depositOutput,
+      activatedVersionInTests
     )
 
-    val proofAliceBobWithdraw = alice.withSecrets(bob.dlogSecrets).prove(spendEnv, script, firstWithdrawContext2Key, fakeMessage).get.proof
-    verifier.verify(env, script, firstWithdrawContext2Key, proofAliceBobWithdraw, fakeMessage).get._1 shouldBe true
+    val proofAliceBobWithdraw = alice.withSecrets(bob.dlogSecrets).prove(spendEnv, scriptTree, firstWithdrawContext2Key, fakeMessage).get.proof
+    verifier.verify(env, scriptTree, firstWithdrawContext2Key, proofAliceBobWithdraw, fakeMessage).get._1 shouldBe true
 
   }
 

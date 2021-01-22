@@ -1,24 +1,19 @@
 package special.sigma
 
-import org.ergoplatform.SigmaConstants.ScriptCostLimit
-import org.ergoplatform.validation.ValidationRules
-import sigmastate.interpreter.ContextExtension
 import org.scalacheck.Gen.containerOfN
-import sigmastate.{AvlTreeFlags, TrivialProp}
-import sigmastate.Values.{BooleanConstant, IntConstant}
+import sigmastate.AvlTreeFlags
 import org.scalacheck.{Arbitrary, Gen}
 import sigmastate.helpers.SigmaTestingCommons
-import sigmastate.helpers.TestingHelpers._
 import sigmastate.eval._
 import sigmastate.eval.Extensions._
-import org.ergoplatform.{ErgoLikeContext, DataInput, ErgoLikeTransaction, ErgoBox}
 import org.scalacheck.util.Buildable
 import scalan.RType
 import scorex.crypto.hash.{Digest32, Blake2b256}
 import scorex.crypto.authds.{ADKey, ADValue}
+import sigmastate.serialization.generators.ObjectGenerators
 import special.collection.Coll
 
-trait SigmaTestingData extends SigmaTestingCommons with SigmaTypeGens {
+trait SigmaTestingData extends SigmaTestingCommons with ObjectGenerators {
   def collOfN[T: RType: Arbitrary](n: Int)(implicit b: Buildable[T, Array[T]]): Gen[Coll[T]] = {
     implicit val g: Gen[T] = Arbitrary.arbitrary[T]
     containerOfN[Array, T](n, g).map(Colls.fromArray(_))
@@ -61,17 +56,6 @@ trait SigmaTestingData extends SigmaTestingCommons with SigmaTypeGens {
 
   val tokenId1: Digest32 = Blake2b256("id1")
   val tokenId2: Digest32 = Blake2b256("id2")
-  val inBox = createBox(10, TrivialProp.TrueProp,
-    Seq(tokenId1 -> 10L, tokenId2 -> 20L),
-    Map(ErgoBox.R4 -> IntConstant(100), ErgoBox.R5 -> BooleanConstant(true)))
-
-  val dataBox = createBox(1000, TrivialProp.TrueProp,
-    Seq(tokenId1 -> 10L, tokenId2 -> 20L),
-    Map(ErgoBox.R4 -> IntConstant(100), ErgoBox.R5 -> BooleanConstant(true)))
-
-  val outBox = createBox(10, TrivialProp.TrueProp,
-    Seq(tokenId1 -> 10L, tokenId2 -> 20L),
-    Map(ErgoBox.R4 -> IntConstant(100), ErgoBox.R5 -> BooleanConstant(true)))
 
   val header1: Header = CHeader(Blake2b256("Header.id").toColl,
     0,
@@ -114,12 +98,4 @@ trait SigmaTestingData extends SigmaTestingCommons with SigmaTypeGens {
     minerPk = SigmaDsl.groupGenerator,
     votes = Colls.emptyColl[Byte]
   )
-  val ergoCtx = new ErgoLikeContext(
-    lastBlockUtxoRoot = header2.stateRoot.asInstanceOf[CAvlTree].treeData,
-    boxesToSpend = IndexedSeq(inBox),
-    spendingTransaction = new ErgoLikeTransaction(IndexedSeq(), IndexedSeq(DataInput(dataBox.id)), IndexedSeq(outBox)),
-    selfIndex = 0, headers = headers, preHeader = preHeader, dataBoxes = IndexedSeq(dataBox),
-    extension = ContextExtension(Map(2.toByte -> IntConstant(10))),
-    validationSettings = ValidationRules.currentSettings,
-    costLimit = ScriptCostLimit.value, initCost = 0L)
 }

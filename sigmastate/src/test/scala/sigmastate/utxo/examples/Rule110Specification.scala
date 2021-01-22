@@ -3,10 +3,10 @@ package sigmastate.utxo.examples
 import org.ergoplatform._
 import scorex.crypto.hash.Blake2b256
 import scorex.util._
-import sigmastate.Values.{BooleanConstant, ByteArrayConstant, ByteConstant, FalseLeaf, GetVarByteArray, IntConstant, LongConstant, TrueLeaf, Value}
+import sigmastate.Values._
 import sigmastate._
 import sigmastate.eval._
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, SigmaTestingCommons, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.ContextExtension
 import sigmastate.lang.Terms._
@@ -18,7 +18,8 @@ import sigmastate.utxo.blockchain.BlockchainSimulationTestingCommons._
   * Wolfram's Rule110 implementations
   *
   */
-class Rule110Specification extends SigmaTestingCommons {
+class Rule110Specification extends SigmaTestingCommons
+  with CrossVersionProps {
   implicit lazy val IR = new TestingIRContext
   private val reg1 = ErgoBox.nonMandatoryRegisters.head
   private val reg2 = ErgoBox.nonMandatoryRegisters(1)
@@ -52,8 +53,8 @@ class Rule110Specification extends SigmaTestingCommons {
         |   (OUTPUTS(0).propositionBytes == SELF.propositionBytes)
          }""".stripMargin).asBoolValue.toSigmaProp
 
-    val input = testBox(1, prop, 0, Seq(), Map(reg1 -> ByteArrayConstant(Array[Byte](0, 1, 1, 0, 1, 0))))
-    val output = testBox(1, prop, 0, Seq(), Map(reg1 -> ByteArrayConstant(Array[Byte](1, 1, 1, 1, 1, 0))))
+    val input = testBox(1, mkTestErgoTree(prop), 0, Seq(), Map(reg1 -> ByteArrayConstant(Array[Byte](0, 1, 1, 0, 1, 0))))
+    val output = testBox(1, mkTestErgoTree(prop), 0, Seq(), Map(reg1 -> ByteArrayConstant(Array[Byte](1, 1, 1, 1, 1, 0))))
     val tx = UnsignedErgoLikeTransaction(IndexedSeq(new UnsignedInput(input.id)), IndexedSeq(output))
 
     val ctx = ErgoLikeContextTesting(
@@ -62,10 +63,10 @@ class Rule110Specification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(input),
       tx,
-      self = input).withCostLimit(maxCost)
+      self = input, activatedVersionInTests).withCostLimit(maxCost)
 
-    val pr = prover.prove(prop, ctx, fakeMessage).get
-    verifier.verify(prop, ctx, pr, fakeMessage).get._1 shouldBe true
+    val pr = prover.prove(mkTestErgoTree(prop), ctx, fakeMessage).get
+    verifier.verify(mkTestErgoTree(prop), ctx, pr, fakeMessage).get._1 shouldBe true
   }
 
 
@@ -205,14 +206,15 @@ class Rule110Specification extends SigmaTestingCommons {
 
     val scriptIsCorrect = DeserializeContext(scriptId, SBoolean)
     val prop = AND(scriptIsCorrect, OR(normalCaseConditions, rightmostConditions, nLeftmostConditions, leftmostConditions)).toSigmaProp
+    val propTree = mkTestErgoTree(prop)
 
     // test normal case
-    val nIn0 = testBox(1, prop, 0, Seq(), Map(MidReg -> f, XReg -> ByteConstant(-2), YReg -> ByteConstant(0), ValReg -> t))
-    val nIn1 = testBox(1, prop, 0, Seq(), Map(MidReg -> t, XReg -> ByteConstant(-1), YReg -> ByteConstant(0), ValReg -> f))
-    val nIn2 = testBox(1, prop, 0, Seq(), Map(MidReg -> f, XReg -> ByteConstant(0), YReg -> ByteConstant(0), ValReg -> t))
-    val nOut0 = testBox(1, prop, 0, Seq(), Map(MidReg -> f, XReg -> ByteConstant(-1), YReg -> ByteConstant(-1), ValReg -> t))
-    val nOut1 = testBox(1, prop, 0, Seq(), Map(MidReg -> t, XReg -> ByteConstant(-1), YReg -> ByteConstant(-1), ValReg -> t))
-    val nOut2 = testBox(1, prop, 0, Seq(), Map(MidReg -> f, XReg -> ByteConstant(-1), YReg -> ByteConstant(-1), ValReg -> t))
+    val nIn0 = testBox(1, propTree, 0, Seq(), Map(MidReg -> f, XReg -> ByteConstant(-2), YReg -> ByteConstant(0), ValReg -> t))
+    val nIn1 = testBox(1, propTree, 0, Seq(), Map(MidReg -> t, XReg -> ByteConstant(-1), YReg -> ByteConstant(0), ValReg -> f))
+    val nIn2 = testBox(1, propTree, 0, Seq(), Map(MidReg -> f, XReg -> ByteConstant(0), YReg -> ByteConstant(0), ValReg -> t))
+    val nOut0 = testBox(1, propTree, 0, Seq(), Map(MidReg -> f, XReg -> ByteConstant(-1), YReg -> ByteConstant(-1), ValReg -> t))
+    val nOut1 = testBox(1, propTree, 0, Seq(), Map(MidReg -> t, XReg -> ByteConstant(-1), YReg -> ByteConstant(-1), ValReg -> t))
+    val nOut2 = testBox(1, propTree, 0, Seq(), Map(MidReg -> f, XReg -> ByteConstant(-1), YReg -> ByteConstant(-1), ValReg -> t))
 
     val nTx = UnsignedErgoLikeTransaction(IndexedSeq(nIn0, nIn1, nIn2).map(i => new UnsignedInput(i.id)), IndexedSeq(nOut0, nOut1, nOut2))
     val nProver = new ContextEnrichingTestProvingInterpreter()
@@ -224,17 +226,17 @@ class Rule110Specification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(nIn0, nIn1, nIn2),
       nTx,
-      self = nIn0)
+      self = nIn0, activatedVersionInTests)
 
-    val nProof = nProver.prove(prop, nCtx, fakeMessage).get
-    verifier.verify(prop, nCtx, nProof, fakeMessage).get._1 shouldBe true
+    val nProof = nProver.prove(propTree, nCtx, fakeMessage).get
+    verifier.verify(propTree, nCtx, nProof, fakeMessage).get._1 shouldBe true
 
     // test rightmost case
-    val rIn0 = testBox(1, prop, 0, Seq(), Map(MidReg -> f, XReg -> ByteConstant(-1), YReg -> ByteConstant(0), ValReg -> t))
-    val rIn1 = testBox(1, prop, 0, Seq(), Map(MidReg -> t, XReg -> ByteConstant(0), YReg -> ByteConstant(0), ValReg -> t))
-    val rOut0 = testBox(1, prop, 0, Seq(), Map(MidReg -> f, XReg -> ByteConstant(0), YReg -> ByteConstant(-1), ValReg -> t))
-    val rOut1 = testBox(1, prop, 0, Seq(), Map(MidReg -> t, XReg -> ByteConstant(0), YReg -> ByteConstant(-1), ValReg -> t))
-    val rOut2 = testBox(1, prop, 0, Seq(), Map(MidReg -> f, XReg -> ByteConstant(0), YReg -> ByteConstant(-1), ValReg -> t))
+    val rIn0 = testBox(1, propTree, 0, Seq(), Map(MidReg -> f, XReg -> ByteConstant(-1), YReg -> ByteConstant(0), ValReg -> t))
+    val rIn1 = testBox(1, propTree, 0, Seq(), Map(MidReg -> t, XReg -> ByteConstant(0), YReg -> ByteConstant(0), ValReg -> t))
+    val rOut0 = testBox(1, propTree, 0, Seq(), Map(MidReg -> f, XReg -> ByteConstant(0), YReg -> ByteConstant(-1), ValReg -> t))
+    val rOut1 = testBox(1, propTree, 0, Seq(), Map(MidReg -> t, XReg -> ByteConstant(0), YReg -> ByteConstant(-1), ValReg -> t))
+    val rOut2 = testBox(1, propTree, 0, Seq(), Map(MidReg -> f, XReg -> ByteConstant(0), YReg -> ByteConstant(-1), ValReg -> t))
 
     val rTx = UnsignedErgoLikeTransaction(IndexedSeq(rIn0, rIn1).map(i => new UnsignedInput(i.id)), IndexedSeq(rOut0, rOut1, rOut2))
     val rProver = new ContextEnrichingTestProvingInterpreter()
@@ -246,17 +248,17 @@ class Rule110Specification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(rIn0, rIn1),
       rTx,
-      self = rIn0)
+      self = rIn0, activatedVersionInTests)
 
-    val rProof = rProver.prove(prop, rCtx, fakeMessage).get
-    verifier.verify(prop, rCtx, rProof, fakeMessage).get._1 shouldBe true
+    val rProof = rProver.prove(propTree, rCtx, fakeMessage).get
+    verifier.verify(propTree, rCtx, rProof, fakeMessage).get._1 shouldBe true
 
     // test next to leftmost case
-    val lnIn0 = testBox(1, prop, 0, Seq(), Map(MidReg -> t, XReg -> ByteConstant(-6), YReg -> ByteConstant(-6), ValReg -> t))
-    val lnIn1 = testBox(1, prop, 0, Seq(), Map(MidReg -> f, XReg -> ByteConstant(-5), YReg -> ByteConstant(-6), ValReg -> t))
-    val lnOut0 = testBox(1, prop, 0, Seq(), Map(MidReg -> f, XReg -> ByteConstant(-6), YReg -> ByteConstant(-7), ValReg -> t))
-    val lnOut1 = testBox(1, prop, 0, Seq(), Map(MidReg -> t, XReg -> ByteConstant(-6), YReg -> ByteConstant(-7), ValReg -> t))
-    val lnOut2 = testBox(1, prop, 0, Seq(), Map(MidReg -> f, XReg -> ByteConstant(-6), YReg -> ByteConstant(-7), ValReg -> t))
+    val lnIn0 = testBox(1, propTree, 0, Seq(), Map(MidReg -> t, XReg -> ByteConstant(-6), YReg -> ByteConstant(-6), ValReg -> t))
+    val lnIn1 = testBox(1, propTree, 0, Seq(), Map(MidReg -> f, XReg -> ByteConstant(-5), YReg -> ByteConstant(-6), ValReg -> t))
+    val lnOut0 = testBox(1, propTree, 0, Seq(), Map(MidReg -> f, XReg -> ByteConstant(-6), YReg -> ByteConstant(-7), ValReg -> t))
+    val lnOut1 = testBox(1, propTree, 0, Seq(), Map(MidReg -> t, XReg -> ByteConstant(-6), YReg -> ByteConstant(-7), ValReg -> t))
+    val lnOut2 = testBox(1, propTree, 0, Seq(), Map(MidReg -> f, XReg -> ByteConstant(-6), YReg -> ByteConstant(-7), ValReg -> t))
 
     val lnTx = UnsignedErgoLikeTransaction(IndexedSeq(lnIn0, lnIn1).map(i => new UnsignedInput(i.id)), IndexedSeq(lnOut0, lnOut1, lnOut2))
     val lnProver = new ContextEnrichingTestProvingInterpreter()
@@ -268,16 +270,16 @@ class Rule110Specification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(lnIn0, lnIn1),
       lnTx,
-      self = lnIn0)
+      self = lnIn0, activatedVersionInTests)
 
-    val lnProof = lnProver.prove(prop, lnCtx, fakeMessage).get
-    verifier.verify(prop, lnCtx, lnProof, fakeMessage).get._1 shouldBe true
+    val lnProof = lnProver.prove(propTree, lnCtx, fakeMessage).get
+    verifier.verify(propTree, lnCtx, lnProof, fakeMessage).get._1 shouldBe true
 
     // test  leftmost case
-    val lIn0 = testBox(1, prop, 0, Seq(), Map(MidReg -> f, XReg -> ByteConstant(-6), YReg -> ByteConstant(-6), ValReg -> t))
-    val lOut0 = testBox(1, prop, 0, Seq(), Map(MidReg -> f, XReg -> ByteConstant(-7), YReg -> ByteConstant(-7), ValReg -> t))
-    val lOut1 = testBox(1, prop, 0, Seq(), Map(MidReg -> t, XReg -> ByteConstant(-7), YReg -> ByteConstant(-7), ValReg -> t))
-    val lOut2 = testBox(1, prop, 0, Seq(), Map(MidReg -> f, XReg -> ByteConstant(-7), YReg -> ByteConstant(-7), ValReg -> t))
+    val lIn0 = testBox(1, propTree, 0, Seq(), Map(MidReg -> f, XReg -> ByteConstant(-6), YReg -> ByteConstant(-6), ValReg -> t))
+    val lOut0 = testBox(1, propTree, 0, Seq(), Map(MidReg -> f, XReg -> ByteConstant(-7), YReg -> ByteConstant(-7), ValReg -> t))
+    val lOut1 = testBox(1, propTree, 0, Seq(), Map(MidReg -> t, XReg -> ByteConstant(-7), YReg -> ByteConstant(-7), ValReg -> t))
+    val lOut2 = testBox(1, propTree, 0, Seq(), Map(MidReg -> f, XReg -> ByteConstant(-7), YReg -> ByteConstant(-7), ValReg -> t))
 
     val lTx = UnsignedErgoLikeTransaction(IndexedSeq(lIn0).map(i => new UnsignedInput(i.id)), IndexedSeq(lOut0, lOut1, lOut2))
     val lProver = new ContextEnrichingTestProvingInterpreter()
@@ -289,10 +291,10 @@ class Rule110Specification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(lIn0),
       lTx,
-      self = lIn0)
+      self = lIn0, activatedVersionInTests)
 
-    val lProof = lProver.prove(prop, lCtx, fakeMessage).get
-    verifier.verify(prop, lCtx, lProof, fakeMessage).get._1 shouldBe true
+    val lProof = lProver.prove(propTree, lCtx, fakeMessage).get
+    verifier.verify(propTree, lCtx, lProof, fakeMessage).get._1 shouldBe true
   }
 
 
@@ -389,7 +391,7 @@ class Rule110Specification extends SigmaTestingCommons {
       row2,
       rule110
     )).toSigmaProp
-
+    val propTree = mkTestErgoTree(prop)
 
     val hash = Blake2b256
     val txId = hash.hash(scala.util.Random.nextString(12).getBytes)
@@ -401,7 +403,9 @@ class Rule110Specification extends SigmaTestingCommons {
       val row = RowReg -> LongConstant(0)
       val column = ColumnReg -> LongConstant(col)
       val value = if (col == 15) ValueReg -> TrueLeaf else ValueReg -> FalseLeaf
-      testBox(0L, prop, 0, Nil, Map(row, column, value), txId.toModifierId, col.toShort)
+      testBox(0L,
+        propTree,
+        0, Nil, Map(row, column, value), txId.toModifierId, col.toShort)
     }
 
     val initBlock = FullBlock(
@@ -409,7 +413,7 @@ class Rule110Specification extends SigmaTestingCommons {
       ErgoLikeContextTesting.dummyPubkey
     )
 
-    val genesisState = ValidationState.initialState(initBlock)
+    val genesisState = ValidationState.initialState(activatedVersionInTests, initBlock)
 
     def byPos(state: ValidationState, row: Int, pos: Int) =
       state.boxesReader.byTwoInts(RowReg, row, ColumnReg, pos).get
@@ -432,7 +436,7 @@ class Rule110Specification extends SigmaTestingCommons {
 
         val value = ValueReg -> BooleanConstant.fromBoolean(calcRule110(lv, cv, rv))
 
-        val c = new ErgoBoxCandidate(0L, prop, row, Colls.emptyColl, Map(RowReg -> LongConstant(row), ColumnReg -> LongConstant(col), value))
+        val c = new ErgoBoxCandidate(0L, propTree, row, Colls.emptyColl, Map(RowReg -> LongConstant(row), ColumnReg -> LongConstant(col), value))
 
         val ut = UnsignedErgoLikeTransaction(
           IndexedSeq(new UnsignedInput(left.id), new UnsignedInput(center.id), new UnsignedInput(right.id)),
@@ -445,6 +449,7 @@ class Rule110Specification extends SigmaTestingCommons {
           IndexedSeq(left, center, right),
           ut,
           left,
+          activatedVersionInTests,
           ContextExtension.empty)
         val proverResultLeft = prover.prove(left.ergoTree, contextLeft, ut.messageToSign).get
 
@@ -454,6 +459,7 @@ class Rule110Specification extends SigmaTestingCommons {
           IndexedSeq(left, center, right),
           ut,
           center,
+          activatedVersionInTests,
           ContextExtension.empty)
         val proverResultCenter = prover.prove(center.ergoTree, contextCenter, ut.messageToSign).get
 
@@ -463,6 +469,7 @@ class Rule110Specification extends SigmaTestingCommons {
           IndexedSeq(left, center, right),
           ut,
           right,
+          activatedVersionInTests,
           ContextExtension.empty)
         val proverResultRight = prover.prove(right.ergoTree, contextRight, ut.messageToSign).get
         ut.toSigned(IndexedSeq(proverResultLeft, proverResultCenter, proverResultRight))

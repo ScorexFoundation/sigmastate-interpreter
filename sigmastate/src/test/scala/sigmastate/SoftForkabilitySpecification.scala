@@ -32,14 +32,20 @@ class SoftForkabilitySpecification extends SigmaTestingData {
      |  HEIGHT > deadline && OUTPUTS.size == 1
      |}""".stripMargin).asBoolValue
 
-  // cast Boolean typed prop to SigmaProp (which is invalid)
-  lazy val invalidPropV1 = ErgoTree.fromProposition(booleanPropV1.asSigmaProp)
+  // cast Boolean typed prop to SigmaProp (which is invalid) // ErgoTree v0
+  lazy val invalidPropV1: ErgoTree =
+    ErgoTree.fromProposition(
+      ErgoTree.headerWithVersion(0),
+      booleanPropV1.asSigmaProp)
 
   lazy val invalidTxV1 = createTransaction(createBox(boxAmt, invalidPropV1, 1))
   lazy val invalidTxV1bytes = invalidTxV1.messageToSign
 
   lazy val propV1 = booleanPropV1.toSigmaProp
-  lazy val txV1 = createTransaction(createBox(boxAmt, propV1, 1))
+  lazy val txV1 = createTransaction(
+    createBox(boxAmt,
+      ErgoTree.fromProposition(ErgoTree.headerWithVersion(0), propV1), // ErgoTree v0
+      1))
   lazy val txV1bytes = txV1.messageToSign
 
   val blockHeight = 110
@@ -47,7 +53,7 @@ class SoftForkabilitySpecification extends SigmaTestingData {
   def createContext(h: Int, tx: ErgoLikeTransaction, vs: SigmaValidationSettings) =
     ErgoLikeContextTesting(h,
       AvlTreeData.dummy, ErgoLikeContextTesting.dummyPubkey, IndexedSeq(fakeSelf),
-      tx, fakeSelf, vs = vs)
+      tx, fakeSelf, vs = vs, activatedVersion = activatedVersionInTests)
 
   def proveTx(name: String, tx: ErgoLikeTransaction, vs: SigmaValidationSettings): ProverResult = {
     val env = Map(ScriptNameProp -> (name + "_prove"))
@@ -114,7 +120,11 @@ class SoftForkabilitySpecification extends SigmaTestingData {
   }
 
   lazy val booleanPropV2 = GT(Height2, IntConstant(deadline))
-  lazy val invalidPropV2 = ErgoTree.fromProposition(booleanPropV2.asSigmaProp)
+
+  lazy val invalidPropV2: ErgoTree = ErgoTree.fromProposition(
+    headerFlags = ErgoTree.headerWithVersion(0),  // ErgoTree v0
+    prop = booleanPropV2.asSigmaProp)
+
   lazy val invalidTxV2 = createTransaction(createBox(boxAmt, invalidPropV2, 1))
 
 
@@ -143,9 +153,12 @@ class SoftForkabilitySpecification extends SigmaTestingData {
 
     // prepare bytes using default serialization and then replacing version in the header
     val v2tree_withoutSize_bytes = runOnV2Node {
-      val tree = ErgoTree.fromProposition(propV2)
+      val tree = ErgoTree.fromProposition(
+        ErgoTree.headerWithVersion(0), propV2)  // ErgoTree v0
       val bytes = tree.bytes
-      bytes(0) = 1.toByte  // set version to v2, we cannot do this using ErgoTree constructor
+      // set version to v2 while not setting the size bit,
+      // we cannot do this using ErgoTree constructor (due to require() check)
+      bytes(0) = 1.toByte
       bytes
     }
 
@@ -245,8 +258,11 @@ class SoftForkabilitySpecification extends SigmaTestingData {
 
     // v1 main script which deserializes from context v2 script
     val mainProp = BinAnd(GT(Height, IntConstant(deadline)), DeserializeContext(1, SBoolean)).toSigmaProp
+    val mainTree = ErgoTree.fromProposition(
+      headerFlags = ErgoTree.headerWithVersion(0), // ErgoTree v0
+      prop = mainProp)
 
-    val tx = createTransaction(createBox(boxAmt, ErgoTree.fromProposition(mainProp), 1))
+    val tx = createTransaction(createBox(boxAmt, mainTree, 1))
     val bindings = Map(1.toByte -> ByteArrayConstant(Colls.fromArray(propBytes)))
     val proof = new ProverResult(Array.emptyByteArray, ContextExtension(bindings))
 

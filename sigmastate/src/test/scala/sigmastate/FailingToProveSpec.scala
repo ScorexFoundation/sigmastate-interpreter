@@ -5,9 +5,9 @@ import sigmastate.helpers.TestingHelpers._
 import sigmastate.lang.Terms._
 import org.scalatest.TryValues._
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
-import org.ergoplatform.ErgoScriptPredef._
 
-class FailingToProveSpec extends SigmaTestingCommons {
+class FailingToProveSpec extends SigmaTestingCommons
+  with CrossVersionProps {
   implicit lazy val IR = new TestingIRContext
   /**
     * Both properties should work fine.
@@ -20,7 +20,7 @@ class FailingToProveSpec extends SigmaTestingCommons {
     val verifier = new ErgoLikeTestInterpreter()
 
     val env = Map.empty[String, Any]
-    val compiledScript = compile(env,
+    val tree = mkTestErgoTree(compile(env,
       s"""
          | {
          |  val withdrawCondition1 =
@@ -30,11 +30,11 @@ class FailingToProveSpec extends SigmaTestingCommons {
          |
          |  withdrawCondition1 || withdrawCondition2
          | }
-       """.stripMargin).asBoolValue.toSigmaProp
+       """.stripMargin).asBoolValue.toSigmaProp)
 
-    val selfBox = testBox(200L, compiledScript, 0)
-    val o1 = testBox(101L, TrueProp, 5001)
-    val o2 = testBox(99L, TrueProp, 5001)
+    val selfBox = testBox(200L, tree, 0)
+    val o1 = testBox(101L, TrueTree, 5001)
+    val o2 = testBox(99L, TrueTree, 5001)
     val tx =  createTransaction(IndexedSeq(o1, o2))
     val ctx = ErgoLikeContextTesting(
       currentHeight = 5001,
@@ -42,9 +42,10 @@ class FailingToProveSpec extends SigmaTestingCommons {
       boxesToSpend = IndexedSeq(selfBox),
       spendingTransaction = tx,
       self = selfBox,
-      minerPubkey = ErgoLikeContextTesting.dummyPubkey)
-    val proof = interpreter.prove(emptyEnv + (ScriptNameProp -> "prove"), compiledScript, ctx, fakeMessage).success.value.proof
-    verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), compiledScript, ctx, proof, fakeMessage) should be a 'success
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
+      activatedVersion = activatedVersionInTests)
+    val proof = interpreter.prove(emptyEnv + (ScriptNameProp -> "prove"), tree, ctx, fakeMessage).success.value.proof
+    verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), tree, ctx, proof, fakeMessage) should be a 'success
   }
 
   property("successfully evaluate proof 2") {
@@ -52,7 +53,7 @@ class FailingToProveSpec extends SigmaTestingCommons {
     val verifier = new ErgoLikeTestInterpreter()
 
     val env = Map.empty[String, Any]
-    val compiledScript = compile(env,
+    val tree = mkTestErgoTree(compile(env,
       s"""
          | {
          |
@@ -63,12 +64,12 @@ class FailingToProveSpec extends SigmaTestingCommons {
          |
          |  withdrawCondition1 || withdrawCondition2
          | }
-       """.stripMargin).asBoolValue.toSigmaProp
+       """.stripMargin).asBoolValue.toSigmaProp)
 
-    val selfBox = testBox(200L, compiledScript, 0)
-    val o1 = testBox(102L, TrueProp, 5001)
-    val o2 = testBox(98L, TrueProp, 5001)
-    val o3 = testBox(100L, TrueProp, 5001)
+    val selfBox = testBox(200L, tree, 0)
+    val o1 = testBox(102L, TrueTree, 5001)
+    val o2 = testBox(98L, TrueTree, 5001)
+    val o3 = testBox(100L, TrueTree, 5001)
     val tx =  createTransaction(IndexedSeq(o1, o2, o3))
     val ctx = ErgoLikeContextTesting(
       currentHeight = 5001,
@@ -76,9 +77,10 @@ class FailingToProveSpec extends SigmaTestingCommons {
       boxesToSpend = IndexedSeq(selfBox),
       spendingTransaction = tx,
       self = selfBox,
-      minerPubkey = ErgoLikeContextTesting.dummyPubkey)
-    val proof = interpreter.prove(emptyEnv + (ScriptNameProp -> "prove"), compiledScript, ctx, fakeMessage).success.value.proof
-    verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), compiledScript, ctx, proof, fakeMessage) should be a 'success
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
+      activatedVersion = activatedVersionInTests)
+    val proof = interpreter.prove(emptyEnv + (ScriptNameProp -> "prove"), tree, ctx, fakeMessage).success.value.proof
+    verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), tree, ctx, proof, fakeMessage) should be a 'success
   }
 
 }

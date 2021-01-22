@@ -3,8 +3,8 @@ package sigmastate.eval
 import java.math.BigInteger
 
 import org.bouncycastle.crypto.ec.CustomNamedCurves
-import org.scalatest.{FunSuite, Matchers}
-import special.sigma.{Box, Context, ContractsTestkit, MockSigma, SigmaContract, SigmaDslBuilder, SigmaProp, TestSigmaDslBuilder}
+import org.scalatest.{Matchers, FunSuite}
+import special.sigma.{SigmaDslBuilder, ContractsTestkit, MockSigma, SigmaProp}
 
 import scala.language.implicitConversions
 
