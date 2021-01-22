@@ -1,13 +1,15 @@
 package sigmastate.crypto
 
+import org.scalacheck.Gen
 import scorex.util.encode.Base16
-import sigmastate.AtLeast
+import sigmastate.{AtLeast, CAND}
+import sigmastate.Values.SigmaBoolean
 import sigmastate.basics.DLogProtocol.DLogProverInput
 import sigmastate.helpers.{ErgoLikeTestInterpreter, ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
-import sigmastate.interpreter.{ContextExtension, ProverResult}
+import sigmastate.interpreter.{ContextExtension, HintsBag, ProverResult}
 
 class SigningSpecification extends SigmaTestingCommons {
-  implicit lazy val IR = new TestingIRContext
+  implicit lazy val IR: TestingIRContext = new TestingIRContext
 
   property("simple signature test vector") {
 
@@ -43,6 +45,48 @@ class SigningSpecification extends SigmaTestingCommons {
 
     // print one more random vector for debug purposes
     printThresholdSignature(msg)
+  }
+
+  property("signMessage / verifyMessage roundtrip - simple dlog") {
+    forAll(Gen.alphaNumStr){str =>
+      val msg = str.getBytes("UTF-8")
+      val pi = new ErgoLikeTestProvingInterpreter()
+      val sigmaTree: SigmaBoolean = pi.publicKeys.head
+      val sig = pi.signMessage(sigmaTree, msg, HintsBag.empty).get
+      pi.verifySignature(sigmaTree, msg, sig) shouldBe true
+      pi.verifySignature(sigmaTree, (str + "1").getBytes("UTF-8"), sig) shouldBe false
+      pi.verifySignature(sigmaTree, msg, sig :+ (1: Byte)) shouldBe true //possible to append bytes
+      val wrongTree = pi.publicKeys(1)
+      pi.verifySignature(wrongTree, msg, sig) shouldBe false
+    }
+  }
+
+  property("signMessage / verifyMessage roundtrip - complex key") {
+    forAll(Gen.alphaNumStr){str =>
+      val msg = str.getBytes("UTF-8")
+      val pi = new ErgoLikeTestProvingInterpreter()
+      val sigmaTree: SigmaBoolean = CAND(Seq(pi.dlogSecrets.head.publicImage, pi.dhSecrets.head.publicImage))
+      val sig = pi.signMessage(sigmaTree, msg, HintsBag.empty).get
+      pi.verifySignature(sigmaTree, msg, sig) shouldBe true
+      pi.verifySignature(sigmaTree, (str + "1").getBytes("UTF-8"), sig) shouldBe false
+      pi.verifySignature(sigmaTree, msg, sig :+ (1: Byte)) shouldBe true //possible to append bytes
+      val wrongTree = CAND(Seq(pi.dlogSecrets.head.publicImage, pi.dhSecrets(1).publicImage))
+      pi.verifySignature(wrongTree, msg, sig) shouldBe false
+    }
+  }
+
+  property("verifySignature w. simple signature test vector") {
+
+    val msg = Base16.decode("1dc01772ee0171f5f614c673e3c7fa1107a8cf727bdf5a6dadb379e93c0d1d00").get
+    val sk = DLogProverInput(BigInt("109749205800194830127901595352600384558037183218698112947062497909408298157746").bigInteger)
+    val signature = Base16.decode("bcb866ba434d5c77869ddcbc3f09ddd62dd2d2539bf99076674d1ae0c32338ea95581fdc18a3b66789904938ac641eba1a66d234070207a2").get
+
+    // check that signature is correct
+    val verifier = new ErgoLikeTestInterpreter
+    verifier.verifySignature(sk.publicImage, msg, signature) shouldBe true
+
+    // print one more random vector for debug purposes
+    printSimpleSignature(msg: Array[Byte])
   }
 
   private def printSimpleSignature(msg: Array[Byte]) {
