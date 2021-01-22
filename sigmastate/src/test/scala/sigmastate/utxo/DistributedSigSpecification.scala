@@ -501,6 +501,7 @@ class DistributedSigSpecification extends SigmaTestingCommons
   }
 
   property("distributed message signing - AND (2 out of 2)") {
+    val ctx = fakeContext
     val proverA = new ErgoLikeTestProvingInterpreter
     val proverB = new ErgoLikeTestProvingInterpreter
     val verifier: ContextEnrichingTestProvingInterpreter = new ContextEnrichingTestProvingInterpreter
