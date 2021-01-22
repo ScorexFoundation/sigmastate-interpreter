@@ -42,7 +42,8 @@ trait BlockchainSimulationTestingCommons extends SigmaTestingCommons {
                               height: Int,
                               propOpt: Option[ErgoTree] = None,
                               extension: ContextExtension = ContextExtension.empty): FullBlock = {
-    val prop: ErgoTree = propOpt.getOrElse(prover.dlogSecrets.head.publicImage.toSigmaProp)
+    val prop: ErgoTree = propOpt.getOrElse(
+      mkTestErgoTree(prover.dlogSecrets.head.publicImage.toSigmaProp))
     val minerPubkey = prover.dlogSecrets.head.publicImage.pkBytes
 
     val boxesToSpend = state.boxesReader.randomBoxes(30 + height)
@@ -146,16 +147,21 @@ object BlockchainSimulationTestingCommons extends SigmaTestingCommons {
   object ValidationState {
     type BatchProver = BatchAVLProver[Digest32, Blake2b256.type]
 
-    val initBlock = FullBlock(
+    def initBlock(scriptVersion: Byte) = FullBlock(
       (0 until 10).map { i =>
         val txId = Blake2b256.hash(i.toString.getBytes ++ scala.util.Random.nextString(12).getBytes).toModifierId
-        val boxes = (1 to 50).map(_ => testBox(10, Values.TrueLeaf.toSigmaProp, i, Seq(), Map(), txId))
+        val boxes = (1 to 50).map(_ =>
+          testBox(10,
+            ErgoTree.fromProposition(
+              ErgoTree.headerWithVersion(scriptVersion),
+              Values.TrueLeaf.toSigmaProp),
+            i, Seq(), Map(), txId))
         createTransaction(boxes)
       },
       ErgoLikeContextTesting.dummyPubkey
     )
 
-    def initialState(activatedVersion: Byte, block: FullBlock = initBlock)(implicit IR: IRContext): ValidationState = {
+    def initialState(activatedVersion: Byte, block: FullBlock)(implicit IR: IRContext): ValidationState = {
       val keySize = 32
       val prover = new BatchProver(keySize, None)
 

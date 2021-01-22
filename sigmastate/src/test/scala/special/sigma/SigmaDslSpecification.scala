@@ -3,7 +3,6 @@ package special.sigma
 import java.lang.reflect.InvocationTargetException
 import java.math.BigInteger
 
-import org.ergoplatform.ErgoScriptPredef.TrueProp
 import org.ergoplatform._
 import org.ergoplatform.settings.ErgoAlgos
 import org.scalacheck.{Arbitrary, Gen}
@@ -32,9 +31,9 @@ import sigmastate.helpers.TestingHelpers._
 import scala.util.{Success, Failure, Try}
 import OrderingOps._
 import org.ergoplatform.ErgoBox.AdditionalRegisters
-import org.scalacheck.Arbitrary.{arbTuple2, arbAnyVal, arbShort, arbUnit, arbInt, arbLong, arbBool, arbByte}
+import org.scalacheck.Arbitrary._
 import org.scalacheck.Gen.frequency
-import scalan.RType.{AnyType, LongType, IntType, UnitType, OptionType, BooleanType, PairType, ByteType, ShortType}
+import scalan.RType._
 import scorex.util.ModifierId
 import sigmastate.basics.ProveDHTuple
 
@@ -3273,7 +3272,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
   property("Conditional access to registers") {
     def boxWithRegisters(regs: AdditionalRegisters): Box = {
-      SigmaDsl.Box(testBox(20, TrueProp, 0, Seq(), regs))
+      SigmaDsl.Box(testBox(20, TrueTree, 0, Seq(), regs))
     }
     val box1 = boxWithRegisters(Map(
       ErgoBox.R4 -> ByteConstant(0.toByte),
@@ -3396,7 +3395,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
   property("Advanced Box test") {
     val (tree, _) = createAvlTreeAndProver()
 
-    val box1 = SigmaDsl.Box(testBox(20, TrueProp, 0, Seq(), Map(
+    val box1 = SigmaDsl.Box(testBox(20, TrueTree, 0, Seq(), Map(
       ErgoBox.R4 -> ByteConstant(1.toByte),
       ErgoBox.R5 -> ShortConstant(1024.toShort),
       ErgoBox.R6 -> IntConstant(1024 * 1024),
@@ -3405,7 +3404,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
       ErgoBox.R9 -> AvlTreeConstant(tree)
     )))
 
-    val box2 = SigmaDsl.Box(testBox(20, TrueProp, 0, Seq(), Map(
+    val box2 = SigmaDsl.Box(testBox(20, TrueTree, 0, Seq(), Map(
       ErgoBox.R4 -> ByteArrayConstant(Coll(1.toByte))
     )))
 

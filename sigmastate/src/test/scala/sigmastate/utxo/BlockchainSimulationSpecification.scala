@@ -10,13 +10,13 @@ import scorex.crypto.authds.avltree.batch.{Remove, BatchAVLProver, Insert}
 import scorex.crypto.authds.{ADDigest, ADKey, ADValue}
 import scorex.crypto.hash.{Digest32, Blake2b256}
 import scorex.util._
-import sigmastate.Values.{LongConstant, IntConstant}
+import sigmastate.Values.{LongConstant, IntConstant, ErgoTree}
 import sigmastate.helpers.{ErgoTransactionValidator, ErgoLikeContextTesting, ErgoLikeTestProvingInterpreter, SigmaTestingCommons, BlockchainState}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.ContextExtension
 import sigmastate.eval._
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
-import sigmastate.{GE, AvlTreeData, AvlTreeFlags, CrossVersionProps}
+import sigmastate.{GE, AvlTreeData, CrossVersionProps, AvlTreeFlags}
 
 import scala.annotation.tailrec
 import scala.collection.concurrent.TrieMap
@@ -55,8 +55,10 @@ class BlockchainSimulationSpecification extends SigmaTestingCommons
     Block(txs, minerPubKey.pkBytes)
   }
 
+  import ValidationState._
+
   property("apply one valid block") {
-    val state = ValidationState.initialState(activatedVersionInTests)
+    val state = initialState(activatedVersionInTests, initBlock(ergoTreeVersionInTests))
     val miner = new ErgoLikeTestProvingInterpreter()
     val block = generateBlock(state, miner, 0)
     val updStateTry = state.applyBlock(block)
@@ -64,7 +66,7 @@ class BlockchainSimulationSpecification extends SigmaTestingCommons
   }
 
   property("too costly block") {
-    val state = ValidationState.initialState(activatedVersionInTests)
+    val state = initialState(activatedVersionInTests, initBlock(ergoTreeVersionInTests))
     val miner = new ErgoLikeTestProvingInterpreter()
     val block = generateBlock(state, miner, 0)
     val updStateTry = state.applyBlock(block, maxCost = 1)
@@ -72,7 +74,7 @@ class BlockchainSimulationSpecification extends SigmaTestingCommons
   }
 
   property("apply many blocks") {
-    val state = ValidationState.initialState(activatedVersionInTests)
+    val state = initialState(activatedVersionInTests, initBlock(ergoTreeVersionInTests))
     val miner = new ErgoLikeTestProvingInterpreter()
 
     @tailrec
@@ -97,7 +99,7 @@ class BlockchainSimulationSpecification extends SigmaTestingCommons
 
     def bench(numberOfBlocks: Int): Unit = {
 
-      val state = ValidationState.initialState(activatedVersionInTests)
+      val state = initialState(activatedVersionInTests, initBlock(ergoTreeVersionInTests))
       val miner = new ErgoLikeTestProvingInterpreter()
 
       val (_, time) = (0 until numberOfBlocks).foldLeft(state -> 0L) { case ((s, timeAcc), h) =>
@@ -212,16 +214,21 @@ object BlockchainSimulationSpecification {
   object ValidationState {
     type BatchProver = BatchAVLProver[Digest32, Blake2b256.type]
 
-    val initBlock = Block(
+    def initBlock(scriptVersion: Byte) = Block(
       (0 until windowSize).map { i =>
         val txId = hash.hash(i.toString.getBytes ++ scala.util.Random.nextString(12).getBytes).toModifierId
-        val boxes = (1 to 30).map(_ => testBox(10, GE(Height, IntConstant(i)).toSigmaProp, 0, Seq(), Map(heightReg -> IntConstant(i)), txId))
+        val boxes = (1 to 30).map(_ =>
+          testBox(10,
+            ErgoTree.fromProposition(
+              ErgoTree.headerWithVersion(scriptVersion),
+              GE(Height, IntConstant(i)).toSigmaProp),
+            0, Seq(), Map(heightReg -> IntConstant(i)), txId))
         ergoplatform.ErgoLikeTransaction(IndexedSeq(), boxes)
       },
       ErgoLikeContextTesting.dummyPubkey
     )
 
-    def initialState(activatedVersion: Byte, block: Block = initBlock)(implicit IR: IRContext): ValidationState = {
+    def initialState(activatedVersion: Byte, block: Block)(implicit IR: IRContext): ValidationState = {
       val keySize = 32
       val prover = new BatchProver(keySize, None)
 

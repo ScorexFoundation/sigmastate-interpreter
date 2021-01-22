@@ -44,19 +44,19 @@ class ErgoAddressSpecification extends SigmaDslTesting
 
   property("SHA roundtrip") {
     forAll(proveDlogGen) { pk =>
-      addressRoundtrip(Pay2SHAddress(ErgoTree.fromSigmaBoolean(pk)))
+      addressRoundtrip(Pay2SHAddress(ErgoTree.fromSigmaBoolean(ergoTreeHeaderInTests, pk)))
     }
   }
 
   property("SA roundtrip") {
     forAll(proveDlogGen) { pk =>
-      addressRoundtrip(Pay2SAddress(ErgoTree.fromSigmaBoolean(pk)))
+      addressRoundtrip(Pay2SAddress(ErgoTree.fromSigmaBoolean(ergoTreeHeaderInTests, pk)))
     }
   }
 
   property("P2SH proper bytes to track") {
     forAll(proveDlogGen) { pk =>
-      val p2sh = Pay2SHAddress(ErgoTree.fromSigmaBoolean(pk))
+      val p2sh = Pay2SHAddress(ErgoTree.fromSigmaBoolean(ergoTreeHeaderInTests, pk))
 
       //search we're doing to find a box potentially corresponding to some address
       DefaultSerializer.serializeErgoTree(p2sh.script).containsSlice(p2sh.contentBytes) shouldBe true
@@ -65,24 +65,28 @@ class ErgoAddressSpecification extends SigmaDslTesting
 
   property("P2S proper bytes to track") {
     forAll(proveDlogGen) { pk =>
-      val p2s = Pay2SAddress(ErgoTree.fromSigmaBoolean(pk))
+      val p2s = Pay2SAddress(ErgoTree.fromSigmaBoolean(ergoTreeHeaderInTests, pk))
 
       //search we're doing to find a box potentially corresponding to some address
       DefaultSerializer.serializeErgoTree(p2s.script).containsSlice(p2s.contentBytes) shouldBe true
     }
   }
 
-  property("fromProposition() should properly distinct all types of addresses from script AST") {
+  def testFromProposition(scriptVersion: Byte,
+                          expectedP2S: String, expectedP2SH: String, expectedP2PK: String) = {
     val pk: DLogProtocol.ProveDlog = DLogProverInput(BigInteger.ONE).publicImage
     val pk10: DLogProtocol.ProveDlog = DLogProverInput(BigInteger.TEN).publicImage
 
-    val p2s: Pay2SAddress = Pay2SAddress(ErgoTree.fromProposition(SigmaAnd(pk, pk10)))
+    val p2s: Pay2SAddress = Pay2SAddress(
+      ErgoTree.fromProposition(
+        ErgoTree.headerWithVersion(scriptVersion),
+        SigmaAnd(pk, pk10)))
     val p2sh: Pay2SHAddress = Pay2SHAddress(pk)
     val p2pk: P2PKAddress = P2PKAddress(pk)
 
-    p2s.toString shouldBe "JryiCXrZf5VDetH1PM7rKDX3q4sLF34AdErWJFqG87Hf5ikTDf636b35Nr7goWMdRUKA3ZPxdeqFNbQzBjhnDR9SUMYwDX1tdV8ZuGgXwQPaRVcB9"
-    p2sh.toString shouldBe "qETVgcEctaXurNbFRgGUcZEGg4EKa8R4a5UNHY7"
-    p2pk.toString shouldBe "3WwXpssaZwcNzaGMv3AgxBdTPJQBt5gCmqBsg3DykQ39bYdhJBsN"
+    p2s.toString shouldBe expectedP2S
+    p2sh.toString shouldBe expectedP2SH
+    p2pk.toString shouldBe expectedP2PK
 
     assertResult(true)(p2s != p2sh && p2sh != p2s)
     assertResult(true)(p2sh != p2pk && p2pk != p2sh)
@@ -103,7 +107,7 @@ class ErgoAddressSpecification extends SigmaDslTesting
     assertResult(true)(parsed_p2pk == p2pk && p2pk == parsed_p2pk)
     parsed_p2pk.hashCode() shouldBe p2pk.hashCode()
 
-    val tree = ErgoTree.fromProposition(pk)
+    val tree = mkTestErgoTree(pk)
     val p2s_2: Pay2SAddress = Pay2SAddress(tree) // address created via P2S constructor method
     assertResult(true)(p2s_2 != p2pk && p2pk != p2s_2)
 
@@ -113,10 +117,28 @@ class ErgoAddressSpecification extends SigmaDslTesting
     assertResult(true)(from_tree == p2pk)
   }
 
+  property("fromProposition() should properly distinct all types of addresses from script AST") {
+    testFromProposition(scriptVersion = 0,
+      expectedP2S = "JryiCXrZf5VDetH1PM7rKDX3q4sLF34AdErWJFqG87Hf5ikTDf636b35Nr7goWMdRUKA3ZPxdeqFNbQzBjhnDR9SUMYwDX1tdV8ZuGgXwQPaRVcB9",
+      expectedP2SH = "qETVgcEctaXurNbFRgGUcZEGg4EKa8R4a5UNHY7",
+      expectedP2PK = "3WwXpssaZwcNzaGMv3AgxBdTPJQBt5gCmqBsg3DykQ39bYdhJBsN")
+
+    testFromProposition(scriptVersion = 1,
+      expectedP2S = "2MzJLjzX6UNfJHSVvioB6seYZ99FpWHB4Ds1gekHPv5KtNmLJUecgRWwvcGEqbt8ZAokUxGvKMuNgMZFzkPPdTGiYzPQoSR55NT5isCidMywgp52LYV",
+      expectedP2SH = "qETVgcEctaXurNbFRgGUcZEGg4EKa8R4a5UNHY7",
+      expectedP2PK = "3WwXpssaZwcNzaGMv3AgxBdTPJQBt5gCmqBsg3DykQ39bYdhJBsN")
+  }
+
   property("decode with wrong address") {
     assertExceptionThrown(
       ergoAddressEncoder.fromString(
         "JryiCXrZf5VDetH1PM7rKDX3q4sLF34AdErWJFqG87Hf5ikTDf636b35Nr7goWMdRUKA3ZPxdeqFNbQzBjhnDR9SUMYwDX1tdV8ZuGgXwQPaRVcB8")
+          .getOrThrow,
+      t => t.getMessage.contains("Checksum check fails")
+    )
+    assertExceptionThrown(
+      ergoAddressEncoder.fromString(
+        "2MzJLjzX6UNfJHSVvioB6seYZ99FpWHB4Ds1gekHPv5KtNmLJUecgRWwvcGEqbt8ZAokUxGvKMuNgMZFzkPPdTGiYzPQoSR55NT5isCidMywgp52LYU")
           .getOrThrow,
       t => t.getMessage.contains("Checksum check fails")
     )
@@ -149,7 +171,7 @@ class ErgoAddressSpecification extends SigmaDslTesting
 
     {
       val unparsedTree = new ErgoTree(
-        ErgoTree.ConstantSegregationHeader,
+        (ErgoTree.ConstantSegregationHeader | ergoTreeHeaderInTests).toByte,
         Array[Constant[SType]](),
         Left(UnparsedErgoTree(Array[Byte](), ValidationException("", ValidationRules.CheckTypeCode, Seq())))
       )
@@ -161,7 +183,7 @@ class ErgoAddressSpecification extends SigmaDslTesting
 
     {
       val invalidTree = new ErgoTree(
-        ErgoTree.ConstantSegregationHeader,
+        (ErgoTree.ConstantSegregationHeader | ergoTreeHeaderInTests).toByte,
         Array[Constant[SType]](),
         Right(IntConstant(10).asSigmaProp)
       )
@@ -209,8 +231,8 @@ class ErgoAddressSpecification extends SigmaDslTesting
 
     testPay2SHAddress(Pay2SHAddress(prop), scriptBytes)
 
-    val tree = ErgoTree.fromProposition(prop)
-    testPay2SHAddress(Pay2SHAddress(tree), scriptBytes)
+    val tree = mkTestErgoTree(prop)
+    testPay2SHAddress(Pay2SHAddress(tree), scriptBytes) // NOTE: same scriptBytes regardless of ErgoTree version
   }
 
   property("negative cases: deserialized script + costing exceptions") {

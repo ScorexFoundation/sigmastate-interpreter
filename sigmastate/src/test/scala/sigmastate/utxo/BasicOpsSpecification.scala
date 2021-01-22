@@ -20,6 +20,7 @@ import sigmastate.utils.Helpers._
 
 class BasicOpsSpecification extends SigmaTestingCommons
   with CrossVersionProps {
+  override val printVersions: Boolean = false
   implicit lazy val IR = new TestingIRContext {
     override val okPrintEvaluatedEntries: Boolean = false
   }
@@ -69,13 +70,14 @@ class BasicOpsSpecification extends SigmaTestingCommons
     if (propExp != null)
       prop shouldBe propExp
 
+    val tree = ErgoTree.fromProposition(ergoTreeHeaderInTests, prop)
     val p3 = prover.dlogSecrets(2).publicImage
-    val boxToSpend = testBox(10, prop, additionalRegisters = Map(
+    val boxToSpend = testBox(10, tree, additionalRegisters = Map(
       reg1 -> SigmaPropConstant(p3),
       reg2 -> IntConstant(1)),
       creationHeight = 5)
 
-    val newBox1 = testBox(10, prop, creationHeight = 0, boxIndex = 0, additionalRegisters = Map(
+    val newBox1 = testBox(10, tree, creationHeight = 0, boxIndex = 0, additionalRegisters = Map(
       reg1 -> IntConstant(1),
       reg2 -> IntConstant(10)))
     val tx = createTransaction(newBox1)
@@ -84,14 +86,14 @@ class BasicOpsSpecification extends SigmaTestingCommons
       lastBlockUtxoRoot = AvlTreeData.dummy, ErgoLikeContextTesting.dummyPubkey, boxesToSpend = IndexedSeq(boxToSpend),
       spendingTransaction = tx, self = boxToSpend, activatedVersionInTests)
 
-    val pr = prover.prove(env + (ScriptNameProp -> s"${name}_prove"), prop, ctx, fakeMessage).getOrThrow
+    val pr = prover.prove(env + (ScriptNameProp -> s"${name}_prove"), tree, ctx, fakeMessage).getOrThrow
 
     val ctxExt = ctx.withExtension(pr.extension)
 
     val verifier = new ErgoLikeTestInterpreter
     if (!onlyPositive)
-      verifier.verify(env + (ScriptNameProp -> s"${name}_verify"), prop, ctx, pr.proof, fakeMessage).map(_._1).getOrElse(false) shouldBe false //context w/out extensions
-    verifier.verify(env + (ScriptNameProp -> s"${name}_verify_ext"), prop, ctxExt, pr.proof, fakeMessage).get._1 shouldBe true
+      verifier.verify(env + (ScriptNameProp -> s"${name}_verify"), tree, ctx, pr.proof, fakeMessage).map(_._1).getOrElse(false) shouldBe false //context w/out extensions
+    verifier.verify(env + (ScriptNameProp -> s"${name}_verify_ext"), tree, ctxExt, pr.proof, fakeMessage).get._1 shouldBe true
   }
 
   property("Relation operations") {

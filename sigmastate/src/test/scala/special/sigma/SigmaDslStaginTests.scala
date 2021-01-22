@@ -1,12 +1,11 @@
 package special.sigma
 
-import special.wrappers.WrappersTests
 import special.collection._
+
 import scala.language.reflectiveCalls
-import scalan.{SigmaLibrary, BaseCtxTests, BaseLiftableTests}
+import scalan.{BaseLiftableTests, BaseCtxTests}
 import sigmastate.eval.Extensions._
 import sigmastate.eval.{IRContext, ErgoScriptTestkit}
-import sigmastate.helpers.SigmaTestingCommons
 
 class SigmaDslStaginTests extends BaseCtxTests with ErgoScriptTestkit with BaseLiftableTests {
   class Ctx extends TestContext with IRContext with LiftableTestKit {

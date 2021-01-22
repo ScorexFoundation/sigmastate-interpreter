@@ -49,20 +49,20 @@ class MixExampleSpecification extends SigmaTestingCommons
 
     // y is Bob's secret key and h = g^y is kind of like his "public key"
     // The Diffie-Hellman solution is g_xy = g_y^x = g_x^y = g^xy.
-    val fullMixScript = compile(fullMixEnv,
+    val fullMixScript = mkTestErgoTree(compile(fullMixEnv,
       """{
         |  val c1 = SELF.R4[GroupElement].get
         |  val c2 = SELF.R5[GroupElement].get
         |  proveDlog(c2) ||            // either c2 is g^y
         |  proveDHTuple(g, c1, gX, c2) // or c2 is u^y = g^xy
         |}""".stripMargin
-    ).asSigmaProp
+    ).asSigmaProp)
 
     val halfMixEnv = Map(
       ScriptNameProp -> "halfMixEnv",
       "g" -> g,
       "gX" -> gX,
-      "fullMixScriptHash" -> Blake2b256(fullMixScript.treeWithSegregation.bytes)
+      "fullMixScriptHash" -> Blake2b256(fullMixScript.bytes)
     )
 
     // Note that below script allows Alice to spend the half-mix output anytime before Bob spends it.
@@ -72,7 +72,7 @@ class MixExampleSpecification extends SigmaTestingCommons
     // The proveDHTuple instruction takes parameters (g, h, u, v) where g, h are generators (discrete log bases)
     // with u = g^x and v = h^x. Note that y = log_g(h), where y is Bob's secret.
 
-    val halfMixScript = compile(halfMixEnv,
+    val halfMixScript = mkTestErgoTree(compile(halfMixEnv,
       """{
         |  val c1 = OUTPUTS(0).R4[GroupElement].get
         |  val c2 = OUTPUTS(0).R5[GroupElement].get
@@ -88,7 +88,7 @@ class MixExampleSpecification extends SigmaTestingCommons
         |    proveDHTuple(g, gX, c2, c1)
         |  }
         |}""".stripMargin
-    ).asSigmaProp
+    ).asSigmaProp)
 
 
     /////////////////////////////////////////////////////////

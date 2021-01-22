@@ -1,7 +1,5 @@
 package sigmastate.serialization
 
-import org.ergoplatform.{ErgoAddressEncoder, ErgoLikeContext}
-import sigmastate.Values.StringConstant
 import sigmastate._
 import sigmastate.utxo._
 

@@ -39,7 +39,7 @@ class SigningSpecification extends SigmaTestingCommons {
     val prop = AtLeast(2, sk1.publicImage, sk2.publicImage, sk3.publicImage)
     val verifier = new ErgoLikeTestInterpreter
     val proverResult = ProverResult(signature, ContextExtension.empty)
-    verifier.verify(prop, fakeContext, proverResult, msg).get._1 shouldBe true
+    verifier.verify(mkTestErgoTree(prop), fakeContext, proverResult, msg).get._1 shouldBe true
 
     // print one more random vector for debug purposes
     printThresholdSignature(msg)
@@ -71,7 +71,7 @@ class SigningSpecification extends SigmaTestingCommons {
 
 
     val prop = AtLeast(2, sk1.publicImage, sk2.publicImage, sk3.publicImage)
-    val prove = proverA.prove(prop, fakeContext, msg).get
+    val prove = proverA.prove(mkTestErgoTree(prop), fakeContext, msg).get
 
     println(s"Message: ${Base16.encode(msg)}")
     println(s"sk1: ${sk1.w}")

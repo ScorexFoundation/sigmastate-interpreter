@@ -1,12 +1,12 @@
 package sigmastate.utxo.examples
 
-import org.ergoplatform.{ErgoLikeContext, ErgoLikeTransaction, Height}
+import org.ergoplatform.Height
 import scorex.crypto.hash.Blake2b256
 import scorex.utils.Random
 import sigmastate.Values._
 import sigmastate._
-import interpreter.Interpreter._
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, ErgoLikeTransactionTesting, SigmaTestingCommons}
+import sigmastate.interpreter.Interpreter._
+import sigmastate.helpers._
 import sigmastate.lang.Terms._
 import sigmastate.utxo.SizeOf
 
@@ -51,12 +51,14 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons with CrossVersi
         |  ))
         |}""".stripMargin).asSigmaProp
 
+    val prop1Tree = ErgoTree.fromProposition(ergoTreeHeaderInTests, prop1)
+
     //chain1 script
-    val prop1Tree = SigmaOr(
+    val prop1Exp = SigmaOr(
       SigmaAnd(GT(Height, IntConstant(height1 + deadlineB)).toSigmaProp, pubkeyA),
       SigmaAnd(pubkeyB, EQ(CalcBlake2b256(GetVarByteArray(1).get), hx).toSigmaProp)
     )
-    prop1 shouldBe prop1Tree
+    prop1 shouldBe prop1Exp
 
     val script2 =
       """{
@@ -71,9 +73,10 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons with CrossVersi
         |}
       """.stripMargin
     val prop2 = compile(env, script2).asSigmaProp
+    val prop2Tree = ErgoTree.fromProposition(ergoTreeHeaderInTests, prop2)
 
     //chain2 script
-    val prop2Tree = BlockValue(
+    val prop2Exp = BlockValue(
       Vector(ValDef(1, GetVarByteArray(1).get)),
       SigmaOr(
         SigmaAnd(
@@ -91,7 +94,7 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons with CrossVersi
       )
     )
 
-    prop2 shouldBe prop2Tree
+    prop2 shouldBe prop2Exp
 
 
     //Preliminary checks:
@@ -105,10 +108,10 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons with CrossVersi
       spendingTransaction = ErgoLikeTransactionTesting.dummy,
       self = fakeSelf,
       activatedVersionInTests)
-    proverB.prove(env, prop1, ctxf1, fakeMessage).isSuccess shouldBe false
+    proverB.prove(env, prop1Tree, ctxf1, fakeMessage).isSuccess shouldBe false
 
     //A can't withdraw her coins in chain1 (generate a valid proof)
-    proverA.prove(env, prop1, ctxf1, fakeMessage).isSuccess shouldBe false
+    proverA.prove(env, prop1Tree, ctxf1, fakeMessage).isSuccess shouldBe false
 
     //B cant't withdraw his coins in chain2 (generate a valid proof)
     val ctxf2 = ErgoLikeContextTesting(
@@ -119,7 +122,7 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons with CrossVersi
       spendingTransaction = ErgoLikeTransactionTesting.dummy,
       self = fakeSelf,
       activatedVersionInTests)
-    proverB.prove(env, prop2, ctxf2, fakeMessage).isSuccess shouldBe false
+    proverB.prove(env, prop2Tree, ctxf2, fakeMessage).isSuccess shouldBe false
 
     //Successful run below:
 
@@ -132,8 +135,8 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons with CrossVersi
       spendingTransaction = ErgoLikeTransactionTesting.dummy,
       self = fakeSelf,
       activatedVersionInTests)
-    val pr = proverA.prove(env, prop2, ctx1, fakeMessage).get
-    verifier.verify(env, prop2, ctx1, pr, fakeMessage).get._1 shouldBe true
+    val pr = proverA.prove(env, prop2Tree, ctx1, fakeMessage).get
+    verifier.verify(env, prop2Tree, ctx1, pr, fakeMessage).get._1 shouldBe true
 
     //B extracts preimage x of hx
     val t = pr.extension.values(1)
@@ -148,8 +151,8 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons with CrossVersi
       spendingTransaction = ErgoLikeTransactionTesting.dummy,
       self = fakeSelf,
       activatedVersionInTests)
-    val pr2 = proverB2.prove(env, prop1, ctx2, fakeMessage).get
-    verifier.verify(env, prop1, ctx2, pr2, fakeMessage).get._1 shouldBe true
+    val pr2 = proverB2.prove(env, prop1Tree, ctx2, fakeMessage).get
+    verifier.verify(env, prop1Tree, ctx2, pr2, fakeMessage).get._1 shouldBe true
 
     // Bad prover with x that is too long should fail
     // Replace x with a longer one and hx with the hash of this longer x in the script
@@ -159,7 +162,8 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons with CrossVersi
     val badHx = ByteArrayConstant(Blake2b256(badX))
     val badEnv = env + ("hx" -> badHx)
     val badProp2 = compile(badEnv, script2).asSigmaProp
+    val badProp2Tree = ErgoTree.fromProposition(ergoTreeHeaderInTests, badProp2)
 
-    badProverA.prove(badEnv, badProp2, ctx1, fakeMessage).isSuccess shouldBe false
+    badProverA.prove(badEnv, badProp2Tree, ctx1, fakeMessage).isSuccess shouldBe false
   }
 }

@@ -1,10 +1,8 @@
 package sigmastate.eval
 
 
-import sigmastate.Values.{BlockItem, BlockValue, BoolValue, Constant, ConstantNode, SValue, SigmaPropConstant, ValDef, ValUse, Value}
+import sigmastate.Values._
 import org.ergoplatform._
-
-import org.ergoplatform.{Height, Inputs, Outputs, Self}
 import sigmastate._
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.serialization.OpCodes._

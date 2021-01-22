@@ -1,10 +1,9 @@
 package sigmastate.lang.syntax
 
 import scala.language.implicitConversions
-import sigmastate.lang.Terms._
 import sigmastate._
 import sigmastate.Values._
-import sigmastate.lang.{SigmaBuilder, StdSigmaBuilder, syntax}
+import sigmastate.lang.syntax
 
 trait Core extends syntax.Literals {
   import fastparse.noApi._

@@ -2,12 +2,11 @@ package sigmastate.eval
 
 import java.math.BigInteger
 
-import scalan.{ExactNumeric, ExactIntegral, ExactOrderingImpl}
+import scalan.{ExactNumeric, ExactOrderingImpl}
 
 import scala.math.{Integral, Ordering}
 import special.sigma._
 import sigmastate.eval.Extensions._
-import special.collection.Coll
 
 object OrderingOps {
   def apply[T](implicit ord: Ordering[T]) = ord

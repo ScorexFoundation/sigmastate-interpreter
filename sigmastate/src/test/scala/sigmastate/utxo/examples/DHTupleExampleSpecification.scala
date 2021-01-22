@@ -43,7 +43,7 @@ class DHTupleExampleSpecification extends SigmaTestingCommons
       "g_x" -> g_x
     )
 
-    val script = compile(env,
+    val script = mkTestErgoTree(compile(env,
       """{
         |  val g_y = OUTPUTS(0).R4[GroupElement].get
         |  val g_xy = OUTPUTS(0).R5[GroupElement].get
@@ -51,7 +51,7 @@ class DHTupleExampleSpecification extends SigmaTestingCommons
         |  proveDHTuple(g, g_x, g_y, g_xy) || // for bob
         |  proveDHTuple(g, g_y, g_x, g_xy)    // for alice
         |}""".stripMargin
-    ).asSigmaProp
+    ).asSigmaProp)
 
     val inBox = testBox(10, script, 50)
 
@@ -70,7 +70,7 @@ class DHTupleExampleSpecification extends SigmaTestingCommons
     val carol = new ContextEnrichingTestProvingInterpreter
     val carolPubKey:ProveDlog = carol.dlogSecrets.head.publicImage
 
-    val outBox = testBox(10, carolPubKey, 70, Nil,
+    val outBox = testBox(10, mkTestErgoTree(carolPubKey), 70, Nil,
       Map(
         R4 -> g_y,
         R5 -> g_xy
