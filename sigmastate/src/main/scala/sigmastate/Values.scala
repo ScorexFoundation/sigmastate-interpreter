@@ -744,6 +744,8 @@ object Values {
     def isProven: Value[SBoolean.type] = SigmaPropIsProven(p)
     def propBytes: Value[SByteArray] = SigmaPropBytes(p)
     def treeWithSegregation: ErgoTree = ErgoTree.withSegregation(p)
+    def treeWithSegregation(headerFlags: Byte): ErgoTree =
+      ErgoTree.withSegregation(headerFlags, p)
   }
 
   implicit class SigmaBooleanOps(val sb: SigmaBoolean) extends AnyVal {
@@ -1069,6 +1071,12 @@ object Values {
       h
     }
 
+    /** Substitute [[ConstantPlaceholder]] nodes in the given expression with the constants
+      * taken from the given collection.
+      * @param root expression to transform
+      * @param constants collection of constants to replace placeholders
+      * @return new expression without placeholders
+      */
     def substConstants(root: SValue, constants: IndexedSeq[Constant[SType]]): SValue = {
       val store = new ConstantStore(constants)
       val substRule = strategy[Any] {
@@ -1079,29 +1087,52 @@ object Values {
       everywherebu(substRule)(root).fold(root)(_.asInstanceOf[SValue])
     }
 
+    /** Create an ErgoTree with the given parameters. */
     def apply(header: Byte, constants: IndexedSeq[Constant[SType]], root: SigmaPropValue): ErgoTree = {
       new ErgoTree(header, constants, Right(root))
     }
 
     val EmptyConstants: IndexedSeq[Constant[SType]] = Array[Constant[SType]]()
 
+    /** Create new ErgoTree for the given proposition using the given header flags and
+      * without performing constant segregation.
+      */
     def withoutSegregation(root: SigmaPropValue): ErgoTree =
       ErgoTree(ErgoTree.DefaultHeader, EmptyConstants, root)
 
+    /** Create new ErgoTree for the given proposition using the given header flags and
+      * without performing constant segregation.
+      */
     def withoutSegregation(headerFlags: Byte, root: SigmaPropValue): ErgoTree =
       ErgoTree((ErgoTree.DefaultHeader | headerFlags).toByte, EmptyConstants, root)
 
+    /** Create new ErgoTree for the given proposition using default header.
+      * If the property is not a simple constant, then constant segregation is performed.
+      */
     implicit def fromProposition(prop: SigmaPropValue): ErgoTree = {
+      fromProposition(ErgoTree.DefaultHeader, prop)
+    }
+
+    /** Create new ErgoTree for the given proposition using the given header flags.
+      * If the property is not a simple constant, then constant segregation is performed.
+      */
+    def fromProposition(headerFlags: Byte, prop: SigmaPropValue): ErgoTree = {
       prop match {
-        case SigmaPropConstant(_) => withoutSegregation(prop)
-        case _ => withSegregation(prop)
+        case SigmaPropConstant(_) => withoutSegregation(headerFlags, prop)
+        case _ => withSegregation(headerFlags, prop)
       }
     }
 
+    /** Create new ErgoTree for the given sigma proposition using default header and
+      * without performing constant segregation.
+      */
     implicit def fromSigmaBoolean(pk: SigmaBoolean): ErgoTree = {
       withoutSegregation(pk.toSigmaProp)
     }
 
+    /** Create new ErgoTree for the given sigma proposition using the given header flags
+      * and without performing constant segregation.
+      */
     def fromSigmaBoolean(headerFlags: Byte, pk: SigmaBoolean): ErgoTree = {
       withoutSegregation(headerFlags, pk.toSigmaProp)
     }
@@ -1114,12 +1145,15 @@ object Values {
       * 2) replace constants with ConstantPlaceholders in the `tree`;
       * 3) write the `tree` to the Writer's buffer obtaining `treeBytes`;
       * 4) deserialize `tree` with ConstantPlaceholders.
+      * @param headerFlags additional header flags to combine with
+      *                    ConstantSegregationHeader flag.
+      * @param prop expression to be transformed into ErgoTree
       **/
-    def withSegregation(headerFlags: Byte, value: SigmaPropValue): ErgoTree = {
+    def withSegregation(headerFlags: Byte, prop: SigmaPropValue): ErgoTree = {
       val constantStore = new ConstantStore()
       val byteWriter = SigmaSerializer.startWriter(constantStore)
       // serialize value and segregate constants into constantStore
-      ValueSerializer.serialize(value, byteWriter)
+      ValueSerializer.serialize(prop, byteWriter)
       val extractedConstants = constantStore.getAll
       val r = SigmaSerializer.startReader(byteWriter.toBytes)
       r.constantStore = new ConstantStore(extractedConstants)
@@ -1129,8 +1163,11 @@ object Values {
       new ErgoTree(header, extractedConstants, Right(valueWithPlaceholders))
     }
 
-    def withSegregation(value: SigmaPropValue): ErgoTree =
-      withSegregation(0, value)
+    /** Create new ErgoTree for the given sigma proposition using default header and
+      * also performing constant segregation.
+      */
+    def withSegregation(prop: SigmaPropValue): ErgoTree =
+      withSegregation(DefaultHeader, prop)
   }
 
 }

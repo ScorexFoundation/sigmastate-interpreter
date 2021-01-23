@@ -127,10 +127,10 @@ class FsmExampleSpecification extends SigmaTestingCommons
     val finalScriptCorrect = TrueLeaf
 
 
-    val fsmScript = SigmaOr(
+    val fsmScript = mkTestErgoTree(SigmaOr(
       SigmaAnd(isMember, DeserializeContext(scriptVarId, SSigmaProp), preservation), //going through FSM
       SigmaAnd(finalStateCheck, finalScriptCorrect, DeserializeContext(scriptVarId, SSigmaProp)) //leaving FSM
-    )
+    ))
 
 
     //creating a box in an initial state
@@ -237,7 +237,7 @@ class FsmExampleSpecification extends SigmaTestingCommons
 
     //clearing FSM out of the box in the final state
 
-    val freeBox = testBox(100, ErgoScriptPredef.TrueProp, 0)
+    val freeBox = testBox(100, TrueTree, 0)
 
     avlProver.performOneOperation(Lookup(ADKey @@ (transition30 ++ script4Hash)))
     val transition30Proof = avlProver.generateProof()

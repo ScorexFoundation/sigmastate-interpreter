@@ -4,6 +4,7 @@
  */
 package scalan.primitives
 
+import scala.language.implicitConversions
 import scalan.{Base, Scalan, AVHashMap}
 
 trait Tuples extends Base { self: Scalan =>

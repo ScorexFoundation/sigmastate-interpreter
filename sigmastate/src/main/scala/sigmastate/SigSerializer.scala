@@ -10,7 +10,6 @@ import Helpers.xor
 import gf2t.GF2_192_Poly
 import sigmastate.basics.{SecondDiffieHellmanTupleProverMessage, ProveDHTuple}
 
-
 object SigSerializer {
 
   val hashSize = CryptoConstants.soundnessBits / 8

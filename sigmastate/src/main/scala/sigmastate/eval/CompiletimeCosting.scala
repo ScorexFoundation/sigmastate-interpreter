@@ -12,7 +12,6 @@ import sigmastate.SCollection._
 import sigmastate.SBigInt._
 import sigmastate.Values.Value.Typed
 import sigmastate.lang.Terms
-import scalan.util.Extensions._
 
 trait CompiletimeCosting extends RuntimeCosting { IR: IRContext =>
   import builder._

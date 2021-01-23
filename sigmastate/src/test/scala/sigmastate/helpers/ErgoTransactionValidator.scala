@@ -3,7 +3,6 @@ package sigmastate.helpers
 import org.ergoplatform._
 import sigmastate.eval.IRContext
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
-import sigmastate.utxo.CostTable
 
 import scala.util.{Failure, Success}
 

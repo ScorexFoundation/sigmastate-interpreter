@@ -6,12 +6,10 @@ import org.ergoplatform._
 import org.ergoplatform.validation.{ValidationRules, SigmaValidationSettings}
 import sigmastate.AvlTreeData
 import sigmastate.eval._
-import sigmastate.interpreter.{ContextExtension, CryptoConstants, Interpreter}
+import sigmastate.interpreter.{ContextExtension, CryptoConstants}
 import sigmastate.serialization.{SigmaSerializer, GroupElementSerializer}
 import special.collection.Coll
 import special.sigma.{Box, PreHeader, Header}
-
-import scala.util.Try
 
 object ErgoLikeContextTesting {
   /* NO HF PROOF:

@@ -1,7 +1,6 @@
 package sigmastate.lang.syntax
 
 import fastparse.noApi._
-import scalan.Nullable
 import sigmastate._
 import sigmastate.Values._
 import sigmastate.lang.Terms.{ValueOps, Ident, Val}

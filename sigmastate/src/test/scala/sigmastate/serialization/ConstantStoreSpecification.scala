@@ -1,11 +1,9 @@
 package sigmastate.serialization
 
-import org.ergoplatform.Self
-import sigmastate.Values.{BlockValue, Constant, ConstantPlaceholder, IntConstant, LongConstant, ValDef, ValUse, Value}
+import sigmastate.Values.{Constant, IntConstant}
 import sigmastate._
 import sigmastate.helpers.SigmaTestingCommons
-import sigmastate.lang.{DeserializationSigmaBuilder, SigmaBuilder}
-import sigmastate.utxo.ExtractAmount
+import sigmastate.lang.{SigmaBuilder, DeserializationSigmaBuilder}
 
 class ConstantStoreSpecification extends SerializationSpecification with SigmaTestingCommons {
 

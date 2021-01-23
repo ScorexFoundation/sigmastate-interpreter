@@ -2,6 +2,7 @@ package scalan
 
 import scala.reflect.ClassTag
 import scala.annotation.implicitNotFound
+import scala.language.implicitConversions
 
 /** Base type for all runtime type descriptors. Sigma uses type descriptors to
   * represent structure of the data values. Data values of registers and context

@@ -68,7 +68,7 @@ trait ProverUtils extends Interpreter {
     * See DistributedSigSpecification for examples of usage.
     *
     * @param context                   - context used to reduce the proposition
-    * @param ergoTree                       - proposition to reduce
+    * @param ergoTree                 - proposition to reduce
     * @param proof                     - proof for reduced proposition
     * @param realSecretsToExtract      - public keys of secrets with real proofs
     * @param simulatedSecretsToExtract - public keys of secrets with simulated proofs
@@ -79,10 +79,30 @@ trait ProverUtils extends Interpreter {
                      proof: Array[Byte],
                      realSecretsToExtract: Seq[SigmaBoolean],
                      simulatedSecretsToExtract: Seq[SigmaBoolean] = Seq.empty): HintsBag = {
-
     val reducedTree = fullReduction(ergoTree, context, Interpreter.emptyEnv)._1
+    bagForMultisig(context, reducedTree, proof, realSecretsToExtract, simulatedSecretsToExtract)
+  }
 
-    val ut = SigSerializer.parseAndComputeChallenges(reducedTree, proof)
+  /**
+    * A method which is extracting partial proofs of secret knowledge for particular secrets with their
+    * respective public images given. Useful for distributed signature applications.
+    *
+    * See DistributedSigSpecification for examples of usage.
+    *
+    * @param context                   - context used to reduce the proposition
+    * @param sigmaTree                 - public key (in form of a sigma-tree)
+    * @param proof                     - signature for the key
+    * @param realSecretsToExtract      - public keys of secrets with real proofs
+    * @param simulatedSecretsToExtract - public keys of secrets with simulated proofs
+    * @return - bag of OtherSecretProven and OtherCommitment hints
+    */
+  def bagForMultisig(context: CTX,
+                     sigmaTree: SigmaBoolean,
+                     proof: Array[Byte],
+                     realSecretsToExtract: Seq[SigmaBoolean],
+                     simulatedSecretsToExtract: Seq[SigmaBoolean]): HintsBag = {
+
+    val ut = SigSerializer.parseAndComputeChallenges(sigmaTree, proof)
     val proofTree = computeCommitments(ut).get.asInstanceOf[UncheckedSigmaTree]
 
     def traverseNode(tree: ProofTree,

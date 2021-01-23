@@ -161,16 +161,34 @@ object SType {
 
   /** All pre-defined types should be listed here. Note, NoType is not listed.
     * Should be in sync with sigmastate.lang.Types.predefTypes. */
-  val allPredefTypes = Seq(SBoolean, SByte, SShort, SInt, SLong, SBigInt, SContext, SGlobal, SHeader, SPreHeader, SAvlTree, SGroupElement, SSigmaProp, SString, SBox, SUnit, SAny)
+  val allPredefTypes: Seq[SType] = Array(SBoolean, SByte, SShort, SInt, SLong, SBigInt, SContext,
+    SGlobal, SHeader, SPreHeader, SAvlTree, SGroupElement, SSigmaProp, SString, SBox,
+    SUnit, SAny)
+
   val typeCodeToType = allPredefTypes.map(t => t.typeCode -> t).toMap
 
-  /** A mapping of object types supporting MethodCall operations. For each serialized typeId this map contains
-    * a companion object which can be used to access the list of corresponding methods.
-    * NOTE: in the current implementation only monomorphic methods are supported (without type parameters)*/
-  // TODO HF (h4): should contain all numeric types (including also SNumericType)
+  /** A mapping of object types supporting MethodCall operations. For each serialized
+    * typeId this map contains a companion object which can be used to access the list of
+    * corresponding methods.
+    *
+    * NOTE: in the current implementation only monomorphic methods are supported (without
+    * type parameters)
+    *
+    * NOTE2: in v3.x SNumericType.typeId is silently shadowed by SGlobal.typeId as part of
+    * `toMap` operation. As a result, the methods collected into SByte.methods cannot be
+    * resolved (using SMethod.fromIds()) for all numeric types (SByte, SShort, SInt,
+    * SLong, SBigInt). See the corresponding regression `property("MethodCall on numerics")`.
+    * However, this "shadowing" is not a problem since all casting methods are implemented
+    * via Downcast, Upcast opcodes and the remaining `toBytes`, `toBits` methods are not
+    * implemented at all.
+    * In order to allow MethodCalls on numeric types in future versions the SNumericType.typeId
+    * should be changed and SGlobal.typeId should be preserved. The regression tests in
+    * `property("MethodCall Codes")` should pass.
+    */
+  // TODO v5.0 (h4): should contain all numeric types (including also SNumericType)
   //  to support method calls like 10.toByte which encoded as MethodCall with typeId = 4, methodId = 1
   //  see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/667
-  val types: Map[Byte, STypeCompanion] = Seq(
+  lazy val types: Map[Byte, STypeCompanion] = Seq(
     SBoolean, SNumericType, SString, STuple, SGroupElement, SSigmaProp, SContext, SGlobal, SHeader, SPreHeader,
     SAvlTree, SBox, SOption, SCollection, SBigInt
   ).map { t => (t.typeId, t) }.toMap
@@ -263,7 +281,7 @@ trait STypeCompanion {
   /** List of methods defined for instances of this type. */
   def methods: Seq[SMethod]
 
-  lazy val _methodsMap: Map[Byte, Map[Byte, SMethod]] = methods
+  private lazy val _methodsMap: Map[Byte, Map[Byte, SMethod]] = methods
     .groupBy(_.objType.typeId)
     .map { case (typeId, ms) => (typeId -> ms.map(m => m.methodId -> m).toMap) }
 
@@ -282,11 +300,17 @@ trait STypeCompanion {
     ValidationRules.CheckAndGetMethod(this, methodId)
   }
 
+  /** Looks up the method descriptor by the method name. */
   def getMethodByName(name: String): SMethod = methods.find(_.name == name).get
 
+  /** CosterFactory associated with this type. */
   def coster: Option[CosterFactory] = None
 }
 
+/** Defines recognizer method which allows the derived object to be used in patterns
+  * to recognize method descriptors by method name.
+  * @see SCollecton
+  */
 trait MethodByNameUnapply extends STypeCompanion {
   def unapply(methodName: String): Option[SMethod] = methods.find(_.name == methodName)
 }
@@ -295,6 +319,8 @@ trait MethodByNameUnapply extends STypeCompanion {
 trait SProduct extends SType {
   /** Returns -1 if `method` is not found. */
   def methodIndex(name: String): Int = methods.indexWhere(_.name == name)
+
+  /** Returns true if this type has a method with the given name. */
   def hasMethod(name: String): Boolean = methodIndex(name) != -1
 
   /** This method should be overriden in derived classes to add new methods in addition to inherited.
@@ -311,6 +337,7 @@ trait SProduct extends SType {
     ms
   }
 
+  /** Finds a method descriptor [[SMethod]] for the given name. */
   def method(methodName: String): Option[SMethod] = methods.find(_.name == methodName)
 }
 
@@ -350,20 +377,37 @@ case class OperationInfo(opDesc: Option[ValueCompanion], description: String, ar
 }
 
 object OperationInfo {
+  /** Convenience factory method. */
   def apply(opDesc: ValueCompanion, description: String, args: Seq[ArgInfo]): OperationInfo =
     OperationInfo(Some(opDesc), description, args)
 }
 
 /** Meta information connecting SMethod with ErgoTree.
-  * @param  irBuilder  optional recognizer and ErgoTree node builder.    */
+  * The optional builder is used by front-end ErgoScript compiler to replace method calls
+  * with ErgoTree nodes. In many cases [[SMethod.MethodCallIrBuilder]] builder is used.
+  * However there are specific cases where more complex builders are used, see for example
+  * usage of `withIRInfo` in the declaration of [[SCollection.GetOrElseMethod]].
+  * @param  irBuilder  optional method call recognizer and ErgoTree node builder.
+  *                    When the partial function is defined on a tuple
+  *                    (builder, obj, m, args, subst) it transforms it to a new ErgoTree
+  *                    node, which is then used in the resuting ErgoTree coming out of
+  *                    the ErgoScript compiler.
+  */
 case class MethodIRInfo(
     irBuilder: Option[PartialFunction[(SigmaBuilder, SValue, SMethod, Seq[SValue], STypeSubst), SValue]]
 )
 
-
-/** Method info including name, arg type and result type.
-  * Here stype.tDom - arg type and stype.tRange - result type.
-  * `methodId` should be unique among methods of the same objType. */
+/** Represents method descriptor.
+  *
+  * @param objType type or type constructor descriptor
+  * @param name    method name
+  * @param stype   method signature type,
+  *                where `stype.tDom`` - argument type and
+  *                `stype.tRange` - method result type.
+  * @param methodId method code, it should be unique among methods of the same objType.
+  * @param irInfo  meta information connecting SMethod with ErgoTree (see [[MethodIRInfo]])
+  * @param docInfo optional human readable method description data
+  */
 case class SMethod(
     objType: STypeCompanion,
     name: String,
@@ -372,16 +416,30 @@ case class SMethod(
     irInfo: MethodIRInfo,
     docInfo: Option[OperationInfo]) {
 
+  /** Create a new instance with the given stype. */
   def withSType(newSType: SFunc): SMethod = copy(stype = newSType)
 
+  /** Create a new instance in which the `stype` field transformed using
+    * the given substitution. */
   def withConcreteTypes(subst: Map[STypeVar, SType]): SMethod =
     withSType(stype.withSubstTypes(subst).asFunc)
 
+  /** Returns [[OperationId]] for AOT costing. */
   def opId: OperationId = {
     val opName = objType.getClass.getSimpleName + "." + name
     OperationId(opName, stype)
   }
 
+  /** Specializes this instance by creating a new [[SMethod]] instance where signature
+    * is specialized with respect to the given object and args types. It is used in
+    * [[sigmastate.serialization.MethodCallSerializer]] `parse` method, so it is part of
+    * consensus protocol.
+    *
+    * @param objTpe specific type of method receiver (aka object)
+    * @param args   specific types of method arguments
+    * @return new instance of method descriptor with specialized signature
+    * @consensus
+    */
   def specializeFor(objTpe: SType, args: Seq[SType]): SMethod = {
     SigmaTyper.unifyTypeLists(stype.tDom, objTpe +: args) match {
       case Some(subst) if subst.nonEmpty =>
@@ -389,32 +447,54 @@ case class SMethod(
       case _ => this
     }
   }
+
+  /** Create a new instance with the given [[OperationInfo]] parameters. */
   def withInfo(opDesc: ValueCompanion, desc: String, args: ArgInfo*): SMethod = {
     this.copy(docInfo = Some(OperationInfo(opDesc, desc, ArgInfo("this", "this instance") +: args.toSeq)))
   }
+
+  /** Create a new instance with the given [[OperationInfo]] parameters.
+    * NOTE: opDesc parameter is not defined and falls back to None.
+    */
   def withInfo(desc: String, args: ArgInfo*): SMethod = {
     this.copy(docInfo = Some(OperationInfo(None, desc, ArgInfo("this", "this instance") +: args.toSeq)))
   }
+
+  /** Create a new instance with the given IR builder (aka MethodCall rewriter) parameter. */
   def withIRInfo(
       irBuilder: PartialFunction[(SigmaBuilder, SValue, SMethod, Seq[SValue], STypeSubst), SValue]): SMethod = {
     this.copy(irInfo = MethodIRInfo(Some(irBuilder)))
   }
+
+  /** Lookup [[ArgInfo]] for the given argName or throw an exception. */
   def argInfo(argName: String): ArgInfo =
     docInfo.get.args.find(_.name == argName).get
 }
 
 
 object SMethod {
-  type RCosted[A] = RuntimeCosting#RCosted[A]
+
+  /** Default fallback method call recognizer which builds MethodCall ErgoTree nodes. */
   val MethodCallIrBuilder: PartialFunction[(SigmaBuilder, SValue, SMethod, Seq[SValue], STypeSubst), SValue] = {
     case (builder, obj, method, args, tparamSubst) =>
       builder.mkMethodCall(obj, method, args.toIndexedSeq, tparamSubst)
   }
 
+  /** Convenience factory method. */
   def apply(objType: STypeCompanion, name: String, stype: SFunc, methodId: Byte): SMethod = {
     SMethod(objType, name, stype, methodId, MethodIRInfo(None), None)
   }
 
+  /** Looks up [[SMethod]] instance for the given type and method ids.
+    *
+    * @param typeId   id of a type which can contain methods
+    * @param methodId id of a method of the type given by `typeId`
+    * @return an instance of [[SMethod]] which may contain generic type variables in the
+    *         signature (see SMethod.stype). As a result `specializeFor` is called by
+    *         deserializer to obtain monomorphic method descriptor.
+    * @consensus this is method is used in [[sigmastate.serialization.MethodCallSerializer]]
+    *            `parse` method and hence it is part of consensus protocol
+    */
   def fromIds(typeId: Byte, methodId: Byte): SMethod = {
     ValidationRules.CheckTypeWithMethods(typeId, SType.types.contains(typeId))
     val typeCompanion = SType.types(typeId)
@@ -477,10 +557,24 @@ trait SNumericType extends SProduct {
       m => m.copy(stype = SigmaTyper.applySubst(m.stype, Map(tNum -> this)).asFunc)
     }
   }
+
+  /** Checks if the given name is a cast method name.
+    * @return true if it is. */
   def isCastMethod (name: String): Boolean = castMethods.contains(name)
 
-  def upcast(i: AnyVal): WrappedType
-  def downcast(i: AnyVal): WrappedType
+  /** Upcasts the given value of a smaller type to this larger type.
+    * @param n numeric value to be converted
+    * @return a value of WrappedType of this type descriptor's instance.
+    * @throw exception if `i` has actual type which is larger than this type.
+    */
+  def upcast(n: AnyVal): WrappedType
+
+  /** Downcasts the given value of a larger type to this smaller type.
+    * @param n numeric value to be converted
+    * @return a value of WrappedType of this type descriptor's instance.
+    * @throw exception if the actual value of `i` cannot fit into this type.
+    */
+  def downcast(n: AnyVal): WrappedType
 
   /** Returns a type which is larger. */
   @inline def max(that: SNumericType): SNumericType =
@@ -531,6 +625,8 @@ object SNumericType extends STypeCompanion {
     ToBytesMethod,
     ToBitsMethod
   )
+
+  /** Collection of names of numeric casting methods (like `toByte`, `toInt`, etc). */
   val castMethods: Array[String] =
     Array(ToByteMethod, ToShortMethod, ToIntMethod, ToLongMethod, ToBigIntMethod)
       .map(_.name)

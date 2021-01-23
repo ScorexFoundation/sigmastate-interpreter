@@ -16,8 +16,10 @@ class BlockchainSimulationSpecification extends BlockchainSimulationTestingCommo
 
   implicit lazy val IR = new TestingIRContext
 
+  import ValidationState._
+
   property("apply one valid block") {
-    val state = ValidationState.initialState(activatedVersionInTests)
+    val state = ValidationState.initialState(activatedVersionInTests, initBlock(ergoTreeVersionInTests))
     val miner = new ErgoLikeTestProvingInterpreter()
     val block = generateBlock(state, miner, 0)
     val updStateTry = state.applyBlock(block)
@@ -25,7 +27,7 @@ class BlockchainSimulationSpecification extends BlockchainSimulationTestingCommo
   }
 
   property("too costly block") {
-    val state = ValidationState.initialState(activatedVersionInTests)
+    val state = ValidationState.initialState(activatedVersionInTests, initBlock(ergoTreeVersionInTests))
     val miner = new ErgoLikeTestProvingInterpreter()
     val block = generateBlock(state, miner, 0)
     val updStateTry = state.applyBlock(block, maxCost = 1)
@@ -33,22 +35,24 @@ class BlockchainSimulationSpecification extends BlockchainSimulationTestingCommo
   }
 
   property("apply many blocks") {
-    val state = ValidationState.initialState(activatedVersionInTests)
+    val state = ValidationState.initialState(activatedVersionInTests, initBlock(ergoTreeVersionInTests))
     val miner = new ErgoLikeTestProvingInterpreter()
     checkState(state, miner, 0, randomDeepness)
   }
 
   property("apply many blocks with enriched context") {
-    val state = ValidationState.initialState(activatedVersionInTests)
+    val state = ValidationState.initialState(activatedVersionInTests, initBlock(ergoTreeVersionInTests))
     val miner = new ErgoLikeTestProvingInterpreter()
     val varId = 1.toByte
     val prop = GetVarBoolean(varId).get.toSigmaProp
     // unable to spend boxes without correct context extension
-    an[RuntimeException] should be thrownBy checkState(state, miner, 0, randomDeepness, Some(prop))
+    an[RuntimeException] should be thrownBy {
+      checkState(state, miner, 0, randomDeepness, Some(mkTestErgoTree(prop)))
+    }
 
     // spend boxes with context extension
     val contextExtension = ContextExtension(Map(varId -> TrueLeaf))
-    checkState(state, miner, 0, randomDeepness, Some(prop), contextExtension)
+    checkState(state, miner, 0, randomDeepness, Some(mkTestErgoTree(prop)), contextExtension)
   }
 
   ignore(s"benchmarking applying many blocks (!!! ignored)") {
@@ -56,7 +60,7 @@ class BlockchainSimulationSpecification extends BlockchainSimulationTestingCommo
 
     def bench(numberOfBlocks: Int): Unit = {
 
-      val state = ValidationState.initialState(activatedVersionInTests)
+      val state = ValidationState.initialState(activatedVersionInTests, initBlock(ergoTreeVersionInTests))
       val miner = new ContextEnrichingTestProvingInterpreter()
 
       val (_, time) = (0 until numberOfBlocks).foldLeft(state -> 0L) { case ((s, timeAcc), h) =>

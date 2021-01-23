@@ -42,9 +42,9 @@ class DistributedSigSpecification extends SigmaTestingCommons
     val pubkeyBob = proverB.dlogSecrets.head.publicImage
 
     val env = Map("pubkeyA" -> pubkeyAlice, "pubkeyB" -> pubkeyBob)
-    val prop: Values.Value[SSigmaProp.type] = compile(env, """pubkeyA && pubkeyB""").asSigmaProp
+    val prop = mkTestErgoTree(compile(env, """pubkeyA && pubkeyB""").asSigmaProp)
 
-    val hintsFromBob: HintsBag = proverB.generateCommitments(prop.treeWithSegregation, ctx)
+    val hintsFromBob: HintsBag = proverB.generateCommitments(prop, ctx)
     val bagA = HintsBag(hintsFromBob.realCommitments)
 
     val proofAlice = proverA.prove(prop, ctx, fakeMessage, bagA).get
@@ -74,10 +74,10 @@ class DistributedSigSpecification extends SigmaTestingCommons
     val pubkeyCarol = proverC.dlogSecrets.head.publicImage
 
     val env = Map("pubkeyA" -> pubkeyAlice, "pubkeyB" -> pubkeyBob, "pubkeyC" -> pubkeyCarol)
-    val prop: Values.Value[SSigmaProp.type] = compile(env, """pubkeyA && pubkeyB && pubkeyC""").asSigmaProp
+    val prop = mkTestErgoTree(compile(env, """pubkeyA && pubkeyB && pubkeyC""").asSigmaProp)
 
-    val bobHints = proverB.generateCommitments(prop.treeWithSegregation, ctx)
-    val carolHints = proverC.generateCommitments(prop.treeWithSegregation, ctx)
+    val bobHints = proverB.generateCommitments(prop, ctx)
+    val carolHints = proverC.generateCommitments(prop, ctx)
 
     val dlBKnown: Hint = bobHints.realCommitments.head
     val dlCKnown: Hint = carolHints.realCommitments.head
@@ -133,9 +133,10 @@ class DistributedSigSpecification extends SigmaTestingCommons
     val pubkeyCarol = proverC.dlogSecrets.head.publicImage
 
     val env = Map("pubkeyA" -> pubkeyAlice, "pubkeyB" -> pubkeyBob, "pubkeyC" -> pubkeyCarol)
-    val prop = compile(env, """atLeast(2, Coll(pubkeyA, pubkeyB, pubkeyC))""").asSigmaProp
+    val prop = mkTestErgoTree(
+      compile(env, """atLeast(2, Coll(pubkeyA, pubkeyB, pubkeyC))""").asSigmaProp)
 
-    val bobHints = proverB.generateCommitments(prop.treeWithSegregation, ctx)
+    val bobHints = proverB.generateCommitments(prop, ctx)
     val dlBKnown: Hint = bobHints.realCommitments.head
 
     val bagA = HintsBag(Seq(dlBKnown))
@@ -170,13 +171,14 @@ class DistributedSigSpecification extends SigmaTestingCommons
     val pubkeyDave = proverD.dlogSecrets.head.publicImage
 
     val env = Map("pubkeyA" -> pubkeyAlice, "pubkeyB" -> pubkeyBob, "pubkeyC" -> pubkeyCarol, "pubkeyD" -> pubkeyDave)
-    val prop = compile(env, """atLeast(3, Coll(pubkeyA, pubkeyB, pubkeyC, pubkeyD))""").asSigmaProp
+    val prop = mkTestErgoTree(
+      compile(env, """atLeast(3, Coll(pubkeyA, pubkeyB, pubkeyC, pubkeyD))""").asSigmaProp)
 
     // Alice, Bob and Carol are signing
-    val bobHints = proverB.generateCommitments(prop.treeWithSegregation, ctx)
+    val bobHints = proverB.generateCommitments(prop, ctx)
     val dlBKnown: Hint = bobHints.realCommitments.head
 
-    val carolHints = proverC.generateCommitments(prop.treeWithSegregation, ctx)
+    val carolHints = proverC.generateCommitments(prop, ctx)
     val dlCKnown: Hint = carolHints.realCommitments.head
 
     val bagA = HintsBag(Seq(dlBKnown, dlCKnown))
@@ -218,14 +220,19 @@ class DistributedSigSpecification extends SigmaTestingCommons
     val pubkeyCarol = proverC.dhSecrets.head.publicImage
     val pubkeyDave = proverD.dhSecrets.head.publicImage
 
-    val env = Map("pubkeyA" -> pubkeyAlice, "pubkeyB" -> pubkeyBob, "pubkeyC" -> pubkeyCarol, "pubkeyD" -> pubkeyDave)
-    val prop = compile(env, """atLeast(3, Coll(pubkeyA, pubkeyB, pubkeyC, pubkeyD))""").asSigmaProp
+    val env = Map(
+      "pubkeyA" -> pubkeyAlice,
+      "pubkeyB" -> pubkeyBob,
+      "pubkeyC" -> pubkeyCarol,
+      "pubkeyD" -> pubkeyDave)
+    val prop = mkTestErgoTree(
+      compile(env, """atLeast(3, Coll(pubkeyA, pubkeyB, pubkeyC, pubkeyD))""").asSigmaProp)
 
     // Alice, Bob and Carol are signing
-    val bobHints = proverB.generateCommitments(prop.treeWithSegregation, ctx)
+    val bobHints = proverB.generateCommitments(prop, ctx)
     val dlBKnown: Hint = bobHints.realCommitments.head
 
-    val carolHints = proverC.generateCommitments(prop.treeWithSegregation, ctx)
+    val carolHints = proverC.generateCommitments(prop, ctx)
     val dlCKnown: Hint = carolHints.realCommitments.head
 
     val bagA = HintsBag(Seq(dlBKnown, dlCKnown))
@@ -268,10 +275,11 @@ class DistributedSigSpecification extends SigmaTestingCommons
 
     val env = Map("pubkeyA" -> pubkeyAlice, "pubkeyB" -> pubkeyBob, "pubkeyC" -> pubkeyCarol,
                   "pubkeyD" -> pubkeyDave, "pubkeyE" -> pubkeyEmma)
-    val prop = compile(env, """atLeast(2, Coll(pubkeyA, pubkeyB, pubkeyC, pubkeyD, pubkeyE))""").asSigmaProp
+    val prop = mkTestErgoTree(compile(env,
+      """atLeast(2, Coll(pubkeyA, pubkeyB, pubkeyC, pubkeyD, pubkeyE))""").asSigmaProp)
 
     //Alice and Dave are signing
-    val daveHints = proverD.generateCommitments(prop.treeWithSegregation, ctx)
+    val daveHints = proverD.generateCommitments(prop, ctx)
     val dlDKnown: Hint = daveHints.realCommitments.head
 
     val bagA = HintsBag(Seq(dlDKnown))
@@ -313,25 +321,25 @@ class DistributedSigSpecification extends SigmaTestingCommons
       "pubkeyD" -> pubkeyDave, "pubkeyE" -> pubkeyEmma, "pubkeyF" -> pubkeyFrank,
       "pubkeyG" -> pubkeyGerard, "pubkeyH" -> pubkeyHannah)
     val script = """atLeast(4, Coll(pubkeyA, pubkeyB, pubkeyC, pubkeyD, pubkeyE, pubkeyF, pubkeyG, pubkeyH))"""
-    val prop = compile(env, script).asSigmaProp
+    val prop = mkTestErgoTree(compile(env, script).asSigmaProp)
 
     // Alice, Bob, Gerard, and Hannah are signing, others are simulated
 
     // first, commitments are needed from real signers
 
-    val aliceHints = proverA.generateCommitments(prop.treeWithSegregation, ctx)
+    val aliceHints = proverA.generateCommitments(prop, ctx)
     val dlAKnown: Hint = aliceHints.realCommitments.head
     val secretCmtA: Hint = aliceHints.ownCommitments.head
 
-    val bobHints = proverB.generateCommitments(prop.treeWithSegregation, ctx)
+    val bobHints = proverB.generateCommitments(prop, ctx)
     val dlBKnown: Hint = bobHints.realCommitments.head
     val secretCmtB: Hint = bobHints.ownCommitments.head
 
-    val gerardHints = proverG.generateCommitments(prop.treeWithSegregation, ctx)
+    val gerardHints = proverG.generateCommitments(prop, ctx)
     val dlGKnown: Hint = gerardHints.realCommitments.head
     val secretCmtG: Hint = gerardHints.ownCommitments.head
 
-    val hannahHints = proverH.generateCommitments(prop.treeWithSegregation, ctx)
+    val hannahHints = proverH.generateCommitments(prop, ctx)
     val secretCmtH: Hint = hannahHints.ownCommitments.head
 
     val bagH = HintsBag(Seq(dlAKnown, dlBKnown, dlGKnown, secretCmtH))
@@ -396,16 +404,16 @@ class DistributedSigSpecification extends SigmaTestingCommons
 
     val env = Map("pubkeyA" -> pubkeyAlice, "pubkeyB" -> pubkeyBob, "pubkeyC" -> pubkeyCarol, "pubkeyD" -> pubkeyDave)
     val script = """(pubkeyA || pubkeyB) && (pubkeyC || pubkeyD)"""
-    val prop = compile(env, script).asSigmaProp
+    val prop = mkTestErgoTree(compile(env, script).asSigmaProp)
 
     //Alice and Dave are signing
 
     //first, commitments are needed from real signers
-    val aliceHints = proverA.generateCommitments(prop.treeWithSegregation, ctx)
+    val aliceHints = proverA.generateCommitments(prop, ctx)
     println(aliceHints)
     val secretCmtA: Hint = aliceHints.ownCommitments.head
 
-    val daveHints = proverD.generateCommitments(prop.treeWithSegregation, ctx)
+    val daveHints = proverD.generateCommitments(prop, ctx)
     val dlDKnown: Hint = daveHints.realCommitments.head
     val secretCmtD: Hint = daveHints.ownCommitments.head
 
@@ -445,19 +453,19 @@ class DistributedSigSpecification extends SigmaTestingCommons
                   "pubkeyD" -> pubkeyDave, "pubkeyE" -> pubkeyEmma, "pubkeyF" -> pubkeyFrank)
     val script =
       """atLeast(3, Coll(pubkeyA, pubkeyB, pubkeyC, pubkeyD, pubkeyE)) && (pubkeyB || pubkeyF)""".stripMargin
-    val prop = compile(env, script).asSigmaProp
+    val prop = mkTestErgoTree(compile(env, script).asSigmaProp)
     // Alice, Bob and Emma are signing
 
     // first, commitments are needed from real signers
-    val aliceHints = proverA.generateCommitments(prop.treeWithSegregation, ctx)
+    val aliceHints = proverA.generateCommitments(prop, ctx)
     val dlAKnown: Hint = aliceHints.realCommitments.head
     val secretCmtA: Hint = aliceHints.ownCommitments.head
 
-    val bobHints = proverB.generateCommitments(prop.treeWithSegregation, ctx)
+    val bobHints = proverB.generateCommitments(prop, ctx)
     val dlBKnown: Seq[Hint] = bobHints.realCommitments
     val secretCmtB: Seq[Hint] = bobHints.ownCommitments
 
-    val emmaHints = proverE.generateCommitments(prop.treeWithSegregation, ctx)
+    val emmaHints = proverE.generateCommitments(prop, ctx)
     val dlEKnown: Hint = emmaHints.realCommitments.head
     val secretCmtE: Hint = emmaHints.ownCommitments.head
 
@@ -492,4 +500,33 @@ class DistributedSigSpecification extends SigmaTestingCommons
     verifier.verify(prop, ctx, validProofB, fakeMessage).get._1 shouldBe true
   }
 
+  property("distributed message signing - AND (2 out of 2)") {
+    val ctx = fakeContext
+    val proverA = new ErgoLikeTestProvingInterpreter
+    val proverB = new ErgoLikeTestProvingInterpreter
+    val verifier: ContextEnrichingTestProvingInterpreter = new ContextEnrichingTestProvingInterpreter
+
+    val msg = "Let's have a deal".getBytes("UTF-8")
+
+    val pubkeyAlice = proverA.dlogSecrets.head.publicImage
+    val pubkeyBob = proverB.dlogSecrets.head.publicImage
+
+    val sigmaTree = CAND(Seq(pubkeyAlice, pubkeyBob))
+
+    val hintsFromBob: HintsBag = proverB.generateCommitments(sigmaTree)
+    val bagA = HintsBag(hintsFromBob.realCommitments)
+
+    val sigAlice = proverA.signMessage(sigmaTree, msg, bagA).get
+
+    val bagB = proverB.bagForMultisig(ctx, sigmaTree, sigAlice, Seq(pubkeyAlice))
+      .addHint(hintsFromBob.ownCommitments.head)
+
+    val sigBob = proverB.signMessage(sigmaTree, msg, bagB).get
+
+    // Proof generated by Alice without getting Bob's part is not correct
+    verifier.verifySignature(sigmaTree, msg, sigAlice) shouldBe false
+
+    // Compound proof from Bob is correct
+    verifier.verifySignature(sigmaTree, msg, sigBob) shouldBe true
+  }
 }

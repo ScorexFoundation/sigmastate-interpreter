@@ -4,11 +4,11 @@ import sigmastate.basics.DLogProtocol.{DLogProverInput, ProveDlog}
 import sigmastate.Values.{ConcreteCollection, FalseLeaf, IntConstant, SigmaPropConstant, SigmaPropValue, TrueLeaf}
 import sigmastate._
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, ErgoLikeTransactionTesting, SigmaTestingCommons}
-import sigmastate.lang.Terms._
 import sigmastate.lang.exceptions.CosterException
 import sigmastate.utils.Helpers._
 
-class ThresholdSpecification extends SigmaTestingCommons {
+class ThresholdSpecification extends SigmaTestingCommons
+  with CrossVersionProps {
   implicit lazy val IR = new TestingIRContext {
     override val okPrintEvaluatedEntries: Boolean = false
   }
@@ -44,68 +44,64 @@ class ThresholdSpecification extends SigmaTestingCommons {
     val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "pubkeyC" -> pubkeyC)
 
     // Basic compilation
-    val compiledProp1 = compile(env, """atLeast(2, Coll(pubkeyA, pubkeyB, pubkeyC))""")
-    val prop1 = AtLeast(2, pubkeyA, pubkeyB, pubkeyC)
-    compiledProp1 shouldBe prop1
+    compileAndCheck(env,
+      """atLeast(2, Coll(pubkeyA, pubkeyB, pubkeyC))""",
+      AtLeast(2, pubkeyA, pubkeyB, pubkeyC))
 
     // this example is from the white paper
-    val compiledProp2 = compile(env,
+    val (compiledTree2, compiledProp2) = compileAndCheck(env,
       """{
         |    val array = Coll(pubkeyA, pubkeyB, pubkeyC)
         |    atLeast(array.size, array)
-        |}""".stripMargin).asSigmaProp
+        |}""".stripMargin,
+      AtLeast(
+        IntConstant(3),
+        ConcreteCollection(Array[SigmaPropValue](pubkeyA, pubkeyB, pubkeyC), SSigmaProp)))
 
-
-    val prop2 = AtLeast(IntConstant(3),
-      ConcreteCollection(Array[SigmaPropValue](pubkeyA, pubkeyB, pubkeyC), SSigmaProp))
-    compiledProp2 shouldBe prop2
-
-    val proof = proverABC.prove(compiledProp2, ctx, fakeMessage).get
-    verifier.verify(compiledProp2, ctx, proof, fakeMessage).get._1 shouldBe true
+    val proof = proverABC.prove(compiledTree2, ctx, fakeMessage).get
+    verifier.verify(compiledTree2, ctx, proof, fakeMessage).get._1 shouldBe true
 
     val nonWorkingProvers2 = Seq(proverA, proverB, proverC, proverAB, proverAC, proverBC, proverD)
     for (prover <- nonWorkingProvers2) {
-      prover.prove(compiledProp2, ctx, fakeMessage).isFailure shouldBe true
+      prover.prove(compiledTree2, ctx, fakeMessage).isFailure shouldBe true
     }
 
     val prop2And = CAND(Seq(pubkeyA, pubkeyB, pubkeyC)).toSigmaProp
     proverA.reduceToCrypto(ctx, compiledProp2).get._1 shouldBe proverA.reduceToCrypto(ctx, prop2And).get._1
 
     // this example is from the white paper
-    val compiledProp3 = compile(env,
+    val (compiledTree3, compiledProp3) = compileAndCheck(env,
       """{
         |    val array = Coll(pubkeyA, pubkeyB, pubkeyC)
         |    atLeast(1, array)
-        |}""".stripMargin).asSigmaProp
-    val prop3 = AtLeast(1, pubkeyA, pubkeyB, pubkeyC)
-    compiledProp3 shouldBe prop3
+        |}""".stripMargin,
+      AtLeast(1, pubkeyA, pubkeyB, pubkeyC))
 
     val workingProvers3 = Seq(proverA, proverB, proverC, proverAB, proverBC, proverAC, proverABC)
     for (prover <- workingProvers3) {
-      val proof = prover.prove(compiledProp3, ctx, fakeMessage).get
-      verifier.verify(compiledProp3, ctx, proof, fakeMessage).get._1 shouldBe true
+      val proof = prover.prove(compiledTree3, ctx, fakeMessage).get
+      verifier.verify(compiledTree3, ctx, proof, fakeMessage).get._1 shouldBe true
     }
-    proverD.prove(compiledProp3, ctx, fakeMessage).isFailure shouldBe true
+    proverD.prove(compiledTree3, ctx, fakeMessage).isFailure shouldBe true
 
     val prop3Or = COR(Seq(pubkeyA, pubkeyB, pubkeyC)).toSigmaProp
     proverA.reduceToCrypto(ctx, compiledProp3).get._1 shouldBe proverA.reduceToCrypto(ctx, prop3Or).get._1
 
-    val compiledProp4 = compile(env,
+    val (compiledTree4, _) = compileAndCheck(env,
       """{
         |    val array = Coll(pubkeyA, pubkeyB, pubkeyC)
         |    atLeast(2, array)
-        |}""".stripMargin).asSigmaProp
-    val prop4 = AtLeast(2, pubkeyA, pubkeyB, pubkeyC)
-    compiledProp4 shouldBe prop4
+        |}""".stripMargin,
+      AtLeast(2, pubkeyA, pubkeyB, pubkeyC))
 
     val workingProvers4 = Seq(proverAB, proverBC, proverAC, proverABC)
     for (prover <- workingProvers4) {
-      val proof = prover.prove(compiledProp4, ctx, fakeMessage).get
-      verifier.verify(compiledProp4, ctx, proof, fakeMessage).get._1 shouldBe true
+      val proof = prover.prove(compiledTree4, ctx, fakeMessage).get
+      verifier.verify(compiledTree4, ctx, proof, fakeMessage).get._1 shouldBe true
     }
     val nonWorkingProvers4 = Seq(proverA, proverB, proverC, proverD)
     for (prover <- nonWorkingProvers4) {
-      prover.prove(compiledProp4, ctx, fakeMessage).isFailure shouldBe true
+      prover.prove(compiledTree4, ctx, fakeMessage).isFailure shouldBe true
     }
   }
 
@@ -171,23 +167,23 @@ class ThresholdSpecification extends SigmaTestingCommons {
         pReduced.mapOrThrow(_ => true) shouldBe true
         if (t.dlogOnlyVector.v.isEmpty) { // Case 0: no ProveDlogs in the test vector -- just booleans
           if (t.numTrue >= bound) {
-            pReduced.get._1 shouldBe TrueProp
+            pReduced.get._1 shouldBe TrivialProp.TrueProp
             case0TrueHit = true
           }
           else {
-            pReduced.get._1 shouldBe FalseProp
+            pReduced.get._1 shouldBe TrivialProp.FalseProp
             case0FalseHit = true
           }
         }
         else if (t.dlogOnlyVector.v.length == 1) { // Case 1: 1 ProveDlog in the test vector
           // Should be just true if numTrue>=bound
           if (t.numTrue >= bound) {
-            pReduced.get._1 shouldBe TrueProp
+            pReduced.get._1 shouldBe TrivialProp.TrueProp
             case1TrueHit = true
           }
           // Should be false if bound>numTrue + 1
           else if (bound > t.numTrue + 1) {
-            pReduced.get._1 shouldBe FalseProp
+            pReduced.get._1 shouldBe TrivialProp.FalseProp
             case1FalseHit = true
           }
           // if bound is exactly numTrue+1, should be just dlog
@@ -199,12 +195,12 @@ class ThresholdSpecification extends SigmaTestingCommons {
         else { // Case 2: more than 1 ProveDlogs in the test vector
           // Should be just true if numTrue>=bound
           if (t.numTrue >= bound) {
-            pReduced.get._1 shouldBe TrueProp
+            pReduced.get._1 shouldBe TrivialProp.TrueProp
             case2TrueHit = true
           }
           // Should be false if bound>numTrue + dlogOnlyVector.length
           else if (bound > t.numTrue + t.dlogOnlyVector.v.length) {
-            pReduced.get._1 shouldBe FalseProp
+            pReduced.get._1 shouldBe TrivialProp.FalseProp
             case2FalseHit = true
           }
           // if bound is exactly numTrue+dlogOnlyVector, should be just AND of all dlogs
@@ -268,11 +264,9 @@ class ThresholdSpecification extends SigmaTestingCommons {
     val env = Map("pkA" -> pkA, "pkB" -> pkB, "pkC" -> pkC,
       "pkD" -> pkD, "pkE" -> pkE, "pkF" -> pkF,
       "pkG" -> pkG, "pkH" -> pkH, "pkI" -> pkI)
-    val compiledProp = compile(env,
-      """atLeast(3, Coll (pkA, pkB, pkC, pkD && pkE, pkF && pkG, pkH && pkI))""").asSigmaProp
-    val prop = AtLeast(3, pkA, pkB, pkC, SigmaAnd(pkD, pkE), SigmaAnd(pkF, pkG), SigmaAnd(pkH, pkI))
-
-    compiledProp shouldBe prop
+    val (compiledTree, _) = compileAndCheck(env,
+      """atLeast(3, Coll (pkA, pkB, pkC, pkD && pkE, pkF && pkG, pkH && pkI))""",
+      AtLeast(3, pkA, pkB, pkC, SigmaAnd(pkD, pkE), SigmaAnd(pkF, pkG), SigmaAnd(pkH, pkI)))
 
     val badProver = proverH.withSecrets(Seq(skB, skC, skE))
     val goodProver1 = badProver.withSecrets(Seq(skD))
@@ -294,12 +288,11 @@ class ThresholdSpecification extends SigmaTestingCommons {
 
 
     for (prover <- goodProvers) {
-      val proof = prover.prove(compiledProp, ctx, fakeMessage).get
-      verifier.verify(compiledProp, ctx, proof, fakeMessage).get._1 shouldBe true
+      val proof = prover.prove(compiledTree, ctx, fakeMessage).get
+      verifier.verify(compiledTree, ctx, proof, fakeMessage).get._1 shouldBe true
     }
 
-    badProver.prove(compiledProp, ctx, fakeMessage).isFailure shouldBe true
-
+    badProver.prove(compiledTree, ctx, fakeMessage).isFailure shouldBe true
   }
 
   property("threshold proving of different trees") {
@@ -322,7 +315,6 @@ class ThresholdSpecification extends SigmaTestingCommons {
     val propComponents = Seq[SigmaPropValue](subProp1, subProp2, subProp3, subProp4, subProp5)
     val secrets = Seq(Seq(secret1), Seq(secret2), Seq(secret31), Seq(secret41, secret42), Seq(secret51, secret53))
 
-
     // the integer indicates how many subpropositions the prover can prove
     var provers = Seq[(Int, ContextEnrichingTestProvingInterpreter)]((0, new ContextEnrichingTestProvingInterpreter))
     // create 32 different provers
@@ -340,14 +332,14 @@ class ThresholdSpecification extends SigmaTestingCommons {
     val verifier = new ErgoLikeTestInterpreter
 
     def canProve(prover: ContextEnrichingTestProvingInterpreter, proposition: SigmaPropValue): Unit = {
-      val proof = prover.prove(proposition, ctx, fakeMessage).get
-      verifier.verify(proposition, ctx, proof, fakeMessage).get._1 shouldBe true
+      val tree = mkTestErgoTree(proposition)
+      val proof = prover.prove(tree, ctx, fakeMessage).get
+      verifier.verify(tree, ctx, proof, fakeMessage).get._1 shouldBe true
     }
 
     def cannotProve(prover: ContextEnrichingTestProvingInterpreter, proposition: SigmaPropValue): Unit = {
-      prover.prove(proposition, ctx, fakeMessage).isFailure shouldBe true
+      prover.prove(mkTestErgoTree(proposition), ctx, fakeMessage).isFailure shouldBe true
     }
-
 
     var twoToi = 1
     for (i <- 0 to secrets.length) {
