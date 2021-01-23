@@ -309,8 +309,8 @@ object CostTable {
   object CostOf {
     def Constant(constType: SType): Int = constType match {
       case SUnit | SBoolean | SByte | SShort | SInt | SLong | SBigInt | SString |
-           SGroupElement | SSigmaProp | SBox | SAvlTree => 5 // cf. constCost
-      case _: SCollectionType[_] => 5 // cf. constCost
+           SGroupElement | SSigmaProp | SBox | SAvlTree => 1 // cf. constCost
+      case _: SCollectionType[_] => 1 // cf. constCost
       case _ => Interpreter.error(s"Cost is not defined: unexpected constant type $constType")
     }
 
@@ -326,10 +326,10 @@ object CostTable {
     def Apply = 5
 
     /** Cost of: 1) Calling Option.get Scala method. */
-    def OptionGet = 2 // cf. selectField
+    def OptionGet = 1 // cf. selectField
 
     /** Cost of: 1) Calling Context.OUTPUTS Scala method. */
-    def Outputs = 2 // cf. selectField
+    def Outputs = 1 // cf. selectField
 
     /** Cost of: 1) Lookup in immutable HashMap by valId: Int 2) alloc of Some(v) */
     def ValUse = 5
@@ -366,7 +366,6 @@ object CostTable {
 
 //    ("GetRegister", "(Box, Byte) => Option[T]", accessRegister),
 //    ("AccessRegister", "Box => Option[T]", accessRegister),
-//    ("ExtractAmount", "(Box) => Long", extractCost),
 
     /** Cost of: 1) access `value` property of a [[special.sigma.Box]] */
     def ExtractAmount = 2
@@ -410,11 +409,11 @@ object CostTable {
     /** Cost of: 1) calling Coll.length method (guaranteed to be O(1))
       * Twice the cost of SelectField.
       * Old cost: ("SizeOf", "(Coll[IV]) => Int", collLength) */
-    def SizeOf = 4  // cf. collLength
+    def SizeOf = 2  // cf. collLength
 
     /** Cost of: 1) obtain result RType 2) invoke map method 3) allocation of resulting
      * collection */
-    def MapCollection = 10 // cf. collToColl
+    def MapCollection = 4 // cf. collToColl
 
 //    ("ByIndex", "(Coll[IV],Int) => IV", collByIndex),
 //    ("SCollection$.exists", "(Coll[IV],(IV) => Boolean) => Boolean", collToColl),
@@ -429,29 +428,29 @@ object CostTable {
 //
     /** Cost of: conditional switching to the right branch (excluding the cost both
      * condition itself and the branches) */
-    def If = 5 // cf. logicCost
+    def If = 2 // cf. logicCost
 
     //
 //    ("SigmaPropIsProven", "SigmaProp => Boolean", logicCost),
 //    ("BoolToSigmaProp", "Boolean => SigmaProp", logicCost),
 //    ("SigmaPropBytes", "SigmaProp => Coll[Byte]", logicCost),
     /** Cost of: serializing one node of SigmaBoolean proposition */
-    def SigmaPropBytes_PerItem = 5
+    def SigmaPropBytes_PerItem = 47
 
     /** Cost of: scala `&&` operation
       * Old cost: ("BinAnd", "(Boolean, Boolean) => Boolean", logicCost) */
-    def BinAnd = 5 // cf. logicCost
+    def BinAnd = 2 // cf. logicCost
 
     /** Cost of: scala `||` operation
       * Old cost: ("BinOr", "(Boolean, Boolean) => Boolean", logicCost) */
-    def BinOr = 5 // cf. logicCost
+    def BinOr = 2 // cf. logicCost
 
     /** Cost of: scala `^` operation
       * Old cost: ("BinXor", "(Boolean, Boolean) => Boolean", logicCost) */
-    def BinXor = 3 // cf. logicCost
+    def BinXor = 2 // cf. logicCost
 
     /** Cost of: scala `!` operation */
-    def LogicalNot = 5
+    def LogicalNot = 2
 
 //    ("AND", "(Coll[Boolean]) => Boolean", logicCost),
 //    ("OR_per_item", "(Coll[Boolean]) => Boolean", logicCost),
@@ -498,7 +497,7 @@ object CostTable {
 
     /** Cost of: constructing new CSigmaProp value
       * @see AtLeast_PerItem */
-    def AtLeast = 2 // cf. logicCost
+    def AtLeast = 1 // cf. logicCost
 
     /** Cost of: obtaining SigmaBoolean for each item in AtLeast
       * @see AtLeast */
@@ -510,10 +509,10 @@ object CostTable {
       * The block validation have 1000000 of cost units budget, and we want this to
       * correspond to 1 second. Thus we can assume 1 cost unit == 1 micro-second.
       *
-      * It takes approximately 10 micro-seconds on average to compute hash of 512 bytes
+      * It takes approximately 1 micro-seconds on average to compute hash of 512 bytes
       * block on MacBook Pro (16-inch, 2019) 2.3 GHz 8-Core Intel Core i9.
       *
-      * Thus per block cost of Blake2b256 hashing can be limited by 10 cost units.
+      * Thus per block cost of Blake2b256 hashing can be limited by 1 cost units.
       * However, on a less powerful processor it may take much more time, so we add
       * a factor of 3 for that. Additionally, the interpreter have an overhead so that
       * performing 1000 of hashes in a tight loop is 1.5-2 times faster then doing the same
@@ -522,14 +521,14 @@ object CostTable {
       * actual operation micro-seconds time (obtained via benchmarking) to cost unit
       * estimation (used for cost prediction).
       *
-      * Cost_in_units = time_in_micro-seconds * 5
+      * Cost_in_units = time_in_micro-seconds * 5 = 5
       *
       * @see [[sigmastate.interpreter.ErgoTreeEvaluator.DataBlockSize]]
       */
-    def CalcBlake2b256_PerBlock = 50 // cf. hashPerKb
+    def CalcBlake2b256_PerBlock = 5 // cf. hashPerKb
 
-    /** Cost of: of hashing 1 KiB of data */
-    def CalcSha256_PerBlock = 50 // cf. hashPerKb
+    /** Cost of: of hashing 1 KiB of data (see also CalcBlake2b256_PerBlock). */
+    def CalcSha256_PerBlock = 5 // cf. hashPerKb
 
 //    ("Xor_per_kb", "(Coll[Byte],Coll[Byte]) => Coll[Byte]", hashPerKb / 2),
 //    ("XorOf_per_item", "(Coll[Boolean]) => Boolean", logicCost),
@@ -673,11 +672,11 @@ object CostTable {
 //
     /** Cost of: 1) converting larger numeric value to lower numeric value, i.e. Int -> Byte.
       * NOTE: the cost of BigInt casting is the same in JITC (comparing to AOTC) to simplify implementation. */
-    def Downcast = 5 // cf. castOp
+    def Downcast = 2 // cf. castOp
 
     /** Cost of: 1) converting lower numeric value to larger numeric value, i.e. Byte -> Int
       * NOTE: the cost of BigInt casting is the same in JITC (comparing to AOTC) to simplify implementation. */
-    def Upcast = 5
+    def Upcast = 2
 
     /** Cost of: 1) creating Byte collection from a numeric value */
     def NumericToBytes = 5

@@ -262,12 +262,12 @@ class SigmaDslSpecification extends SigmaDslTesting
         SimpleCostItem("Apply", 5),
         SimpleCostItem("FuncValue", 4),
         SimpleCostItem("GetVar", 1),
-        SimpleCostItem("OptionGet", 2),
+        SimpleCostItem("OptionGet", 1),
         SimpleCostItem("ValUse", 5),
         SimpleCostItem("SelectField", 1),
         SimpleCostItem("ValUse", 5),
         SimpleCostItem("SelectField", 1),
-        SimpleCostItem("BinXor", 3)
+        SimpleCostItem("BinXor", 2)
       )
     )
     val cases = Seq(
@@ -301,14 +301,14 @@ class SigmaDslSpecification extends SigmaDslTesting
         SimpleCostItem("Apply", 5),
         SimpleCostItem("FuncValue", 4),
         SimpleCostItem("GetVar", 1),
-        SimpleCostItem("OptionGet", 2),
+        SimpleCostItem("OptionGet", 1),
         SimpleCostItem("ValUse", 5),
         SimpleCostItem("SelectField", 1),
-        SimpleCostItem("Const", 5),
+        SimpleCostItem("Const", 1),
         SimpleCostItem("EQ", 3),
         SimpleCostItem("ValUse", 5),
         SimpleCostItem("SelectField", 1),
-        SimpleCostItem("BinXor", 3)
+        SimpleCostItem("BinXor", 2)
       )
     )
     val cases = Seq(
@@ -337,10 +337,10 @@ class SigmaDslSpecification extends SigmaDslTesting
         SimpleCostItem("Apply", 5),
         SimpleCostItem("FuncValue", 4),
         SimpleCostItem("GetVar", 1),
-        SimpleCostItem("OptionGet", 2),
+        SimpleCostItem("OptionGet", 1),
         SimpleCostItem("ValUse", 5),
         SimpleCostItem("SelectField", 1),
-        SimpleCostItem("BinAnd", 5)
+        SimpleCostItem("BinAnd", 2)
       )
     )
     val cost2 = CostDetails(
@@ -348,10 +348,10 @@ class SigmaDslSpecification extends SigmaDslTesting
         SimpleCostItem("Apply", 5),
         SimpleCostItem("FuncValue", 4),
         SimpleCostItem("GetVar", 1),
-        SimpleCostItem("OptionGet", 2),
+        SimpleCostItem("OptionGet", 1),
         SimpleCostItem("ValUse", 5),
         SimpleCostItem("SelectField", 1),
-        SimpleCostItem("BinAnd", 5),
+        SimpleCostItem("BinAnd", 2),
         SimpleCostItem("ValUse", 5),
         SimpleCostItem("SelectField", 1)
       )
@@ -380,10 +380,10 @@ class SigmaDslSpecification extends SigmaDslTesting
         SimpleCostItem("Apply", 5),
         SimpleCostItem("FuncValue", 4),
         SimpleCostItem("GetVar", 1),
-        SimpleCostItem("OptionGet", 2),
+        SimpleCostItem("OptionGet", 1),
         SimpleCostItem("ValUse", 5),
         SimpleCostItem("SelectField", 1),
-        SimpleCostItem("BinOr", 5)
+        SimpleCostItem("BinOr", 2)
       )
     )
     val cost2 = CostDetails(
@@ -391,10 +391,10 @@ class SigmaDslSpecification extends SigmaDslTesting
         SimpleCostItem("Apply", 5),
         SimpleCostItem("FuncValue", 4),
         SimpleCostItem("GetVar", 1),
-        SimpleCostItem("OptionGet", 2),
+        SimpleCostItem("OptionGet", 1),
         SimpleCostItem("ValUse", 5),
         SimpleCostItem("SelectField", 1),
-        SimpleCostItem("BinOr", 5),
+        SimpleCostItem("BinOr", 2),
         SimpleCostItem("ValUse", 5),
         SimpleCostItem("SelectField", 1)
       )
@@ -414,9 +414,9 @@ class SigmaDslSpecification extends SigmaDslTesting
         SimpleCostItem("Apply", 5),
         SimpleCostItem("FuncValue", 4),
         SimpleCostItem("GetVar", 1),
-        SimpleCostItem("OptionGet", 2),
+        SimpleCostItem("OptionGet", 1),
         SimpleCostItem("ValUse", 5),
-        SimpleCostItem("BinOr", 5)
+        SimpleCostItem("BinOr", 2)
       )
     )
     val cost2 = CostDetails(
@@ -424,9 +424,9 @@ class SigmaDslSpecification extends SigmaDslTesting
         SimpleCostItem("Apply", 5),
         SimpleCostItem("FuncValue", 4),
         SimpleCostItem("GetVar", 1),
-        SimpleCostItem("OptionGet", 2),
+        SimpleCostItem("OptionGet", 1),
         SimpleCostItem("ValUse", 5),
-        SimpleCostItem("BinAnd", 5)
+        SimpleCostItem("BinAnd", 2)
       )
     )
     val cost3 = CostDetails(
@@ -434,11 +434,11 @@ class SigmaDslSpecification extends SigmaDslTesting
         SimpleCostItem("Apply", 5),
         SimpleCostItem("FuncValue", 4),
         SimpleCostItem("GetVar", 1),
-        SimpleCostItem("OptionGet", 2),
+        SimpleCostItem("OptionGet", 1),
         SimpleCostItem("ValUse", 5),
-        SimpleCostItem("BinAnd", 5),
+        SimpleCostItem("BinAnd", 2),
         SimpleCostItem("ValUse", 5),
-        SimpleCostItem("BinOr", 5)
+        SimpleCostItem("BinOr", 2)
       )
     )
     val cost4 = CostDetails(
@@ -446,13 +446,13 @@ class SigmaDslSpecification extends SigmaDslTesting
         SimpleCostItem("Apply", 5),
         SimpleCostItem("FuncValue", 4),
         SimpleCostItem("GetVar", 1),
-        SimpleCostItem("OptionGet", 2),
+        SimpleCostItem("OptionGet", 1),
         SimpleCostItem("ValUse", 5),
-        SimpleCostItem("BinAnd", 5),
+        SimpleCostItem("BinAnd", 2),
         SimpleCostItem("ValUse", 5),
-        SimpleCostItem("BinAnd", 5),
+        SimpleCostItem("BinAnd", 2),
         SimpleCostItem("ValUse", 5),
-        SimpleCostItem("BinOr", 5)
+        SimpleCostItem("BinOr", 2)
       )
     )
     val cost5 = CostDetails(
@@ -460,15 +460,15 @@ class SigmaDslSpecification extends SigmaDslTesting
         SimpleCostItem("Apply", 5),
         SimpleCostItem("FuncValue", 4),
         SimpleCostItem("GetVar", 1),
-        SimpleCostItem("OptionGet", 2),
+        SimpleCostItem("OptionGet", 1),
         SimpleCostItem("ValUse", 5),
-        SimpleCostItem("BinAnd", 5),
+        SimpleCostItem("BinAnd", 2),
         SimpleCostItem("ValUse", 5),
-        SimpleCostItem("BinAnd", 5),
+        SimpleCostItem("BinAnd", 2),
         SimpleCostItem("ValUse", 5),
-        SimpleCostItem("BinAnd", 5),
+        SimpleCostItem("BinAnd", 2),
         SimpleCostItem("ValUse", 5),
-        SimpleCostItem("BinOr", 5)
+        SimpleCostItem("BinOr", 2)
       )
     )
     verifyCases(
@@ -569,14 +569,14 @@ class SigmaDslSpecification extends SigmaDslTesting
         SimpleCostItem("Apply", 5),
         SimpleCostItem("FuncValue", 4),
         SimpleCostItem("GetVar", 1),
-        SimpleCostItem("OptionGet", 2),
+        SimpleCostItem("OptionGet", 1),
         SimpleCostItem("ValUse", 5),
-        SimpleCostItem("LogicalNot", 5),
-        SimpleCostItem("BinAnd", 5),
-        SimpleCostItem("LogicalNot", 5),
-        SimpleCostItem("BinAnd", 5),
+        SimpleCostItem("LogicalNot", 2),
+        SimpleCostItem("BinAnd", 2),
+        SimpleCostItem("LogicalNot", 2),
+        SimpleCostItem("BinAnd", 2),
         SimpleCostItem("ValUse", 5),
-        SimpleCostItem("BinOr", 5)
+        SimpleCostItem("BinOr", 2)
       )
     )
     verifyCases(
@@ -607,10 +607,10 @@ class SigmaDslSpecification extends SigmaDslTesting
         SimpleCostItem("Apply", 5),
         SimpleCostItem("FuncValue", 4),
         SimpleCostItem("GetVar", 1),
-        SimpleCostItem("OptionGet", 2),
+        SimpleCostItem("OptionGet", 1),
         SimpleCostItem("ValUse", 5),
-        SimpleCostItem("BinOr", 5),
-        SimpleCostItem("BinAnd", 5),
+        SimpleCostItem("BinOr", 2),
+        SimpleCostItem("BinAnd", 2),
         SimpleCostItem("ValUse", 5)
       )
     )
@@ -637,12 +637,12 @@ class SigmaDslSpecification extends SigmaDslTesting
         SimpleCostItem("Apply", 5),
         SimpleCostItem("FuncValue", 4),
         SimpleCostItem("GetVar", 1),
-        SimpleCostItem("OptionGet", 2),
+        SimpleCostItem("OptionGet", 1),
         SimpleCostItem("ValUse", 5),
-        SimpleCostItem("BinOr", 5),
-        SimpleCostItem("BinAnd", 5),
+        SimpleCostItem("BinOr", 2),
+        SimpleCostItem("BinAnd", 2),
         SimpleCostItem("ValUse", 5),
-        SimpleCostItem("BinOr", 5)
+        SimpleCostItem("BinOr", 2)
       )
     )
     verifyCases(
@@ -671,15 +671,15 @@ class SigmaDslSpecification extends SigmaDslTesting
         SimpleCostItem("Apply", 5),
         SimpleCostItem("FuncValue", 4),
         SimpleCostItem("GetVar", 1),
-        SimpleCostItem("OptionGet", 2),
+        SimpleCostItem("OptionGet", 1),
         SimpleCostItem("ValUse", 5),
-        SimpleCostItem("LogicalNot", 5),
-        SimpleCostItem("BinAnd", 5),
-        SimpleCostItem("LogicalNot", 5),
-        SimpleCostItem("BinOr", 5),
-        SimpleCostItem("BinAnd", 5),
+        SimpleCostItem("LogicalNot", 2),
+        SimpleCostItem("BinAnd", 2),
+        SimpleCostItem("LogicalNot", 2),
+        SimpleCostItem("BinOr", 2),
+        SimpleCostItem("BinAnd", 2),
         SimpleCostItem("ValUse", 5),
-        SimpleCostItem("BinOr", 5)
+        SimpleCostItem("BinOr", 2)
       )
     )
     verifyCases(
@@ -714,18 +714,18 @@ class SigmaDslSpecification extends SigmaDslTesting
         SimpleCostItem("Apply", 5),
         SimpleCostItem("FuncValue", 4),
         SimpleCostItem("GetVar", 1),
-        SimpleCostItem("OptionGet", 2),
+        SimpleCostItem("OptionGet", 1),
         SimpleCostItem("ValUse", 5),
-        SimpleCostItem("LogicalNot", 5),
+        SimpleCostItem("LogicalNot", 2),
         SimpleCostItem("ValUse", 5),
-        SimpleCostItem("BinAnd", 5),
-        SimpleCostItem("LogicalNot", 5),
-        SimpleCostItem("BinOr", 5),
-        SimpleCostItem("BinAnd", 5),
+        SimpleCostItem("BinAnd", 2),
+        SimpleCostItem("LogicalNot", 2),
+        SimpleCostItem("BinOr", 2),
+        SimpleCostItem("BinAnd", 2),
         SimpleCostItem("ValUse", 5),
-        SimpleCostItem("BinAnd", 5),
-        SimpleCostItem("LogicalNot", 5),
-        SimpleCostItem("BinOr", 5)
+        SimpleCostItem("BinAnd", 2),
+        SimpleCostItem("LogicalNot", 2),
+        SimpleCostItem("BinOr", 2)
       )
     )
     verifyCases(
@@ -769,7 +769,7 @@ class SigmaDslSpecification extends SigmaDslTesting
       SimpleCostItem("Apply", 5),
       SimpleCostItem("FuncValue", 4),
       SimpleCostItem("GetVar", 1),
-      SimpleCostItem("OptionGet", 2),
+      SimpleCostItem("OptionGet", 1),
       SimpleCostItem("ValUse", 5)
     )
   )
@@ -778,9 +778,9 @@ class SigmaDslSpecification extends SigmaDslTesting
       SimpleCostItem("Apply", 5),
       SimpleCostItem("FuncValue", 4),
       SimpleCostItem("GetVar", 1),
-      SimpleCostItem("OptionGet", 2),
+      SimpleCostItem("OptionGet", 1),
       SimpleCostItem("ValUse", 5),
-      SimpleCostItem("Upcast", 5)
+      SimpleCostItem("Upcast", 2)
     )
   )
   val costDowncast = CostDetails(
@@ -788,9 +788,9 @@ class SigmaDslSpecification extends SigmaDslTesting
       SimpleCostItem("Apply", 5),
       SimpleCostItem("FuncValue", 4),
       SimpleCostItem("GetVar", 1),
-      SimpleCostItem("OptionGet", 2),
+      SimpleCostItem("OptionGet", 1),
       SimpleCostItem("ValUse", 5),
-      SimpleCostItem("Downcast", 5)
+      SimpleCostItem("Downcast", 2)
     )
   )
   val costArithOps = CostDetails(
@@ -798,7 +798,7 @@ class SigmaDslSpecification extends SigmaDslTesting
       SimpleCostItem("Apply", 5),
       SimpleCostItem("FuncValue", 4),
       SimpleCostItem("GetVar", 1),
-      SimpleCostItem("OptionGet", 2),
+      SimpleCostItem("OptionGet", 1),
       SimpleCostItem("ValUse", 5),
       SimpleCostItem("SelectField", 1),
       SimpleCostItem("ValUse", 5),
@@ -1061,7 +1061,7 @@ class SigmaDslSpecification extends SigmaDslTesting
       SimpleCostItem("Apply", 5),
       SimpleCostItem("FuncValue", 4),
       SimpleCostItem("GetVar", 1),
-      SimpleCostItem("OptionGet", 2),
+      SimpleCostItem("OptionGet", 1),
       SimpleCostItem("ValUse", 5),
       SimpleCostItem("SelectField", 1),
       SimpleCostItem("ValUse", 5),
@@ -1074,7 +1074,7 @@ class SigmaDslSpecification extends SigmaDslTesting
       SimpleCostItem("Apply", 5),
       SimpleCostItem("FuncValue", 4),
       SimpleCostItem("GetVar", 1),
-      SimpleCostItem("OptionGet", 2),
+      SimpleCostItem("OptionGet", 1),
       SimpleCostItem("ValUse", 5),
       SimpleCostItem("SelectField", 1),
       SimpleCostItem("ValUse", 5),
@@ -1087,7 +1087,7 @@ class SigmaDslSpecification extends SigmaDslTesting
       SimpleCostItem("Apply", 5),
       SimpleCostItem("FuncValue", 4),
       SimpleCostItem("GetVar", 1),
-      SimpleCostItem("OptionGet", 2),
+      SimpleCostItem("OptionGet", 1),
       SimpleCostItem("ValUse", 5),
       SimpleCostItem("SelectField", 1),
       SimpleCostItem("ValUse", 5),
@@ -1102,7 +1102,7 @@ class SigmaDslSpecification extends SigmaDslTesting
       SimpleCostItem("Apply", 5),
       SimpleCostItem("FuncValue", 4),
       SimpleCostItem("GetVar", 1),
-      SimpleCostItem("OptionGet", 2),
+      SimpleCostItem("OptionGet", 1),
       SimpleCostItem("ValUse", 5),
       SimpleCostItem("SelectField", 1),
       SimpleCostItem("ValUse", 5),
@@ -1115,7 +1115,7 @@ class SigmaDslSpecification extends SigmaDslTesting
       SimpleCostItem("Apply", 5),
       SimpleCostItem("FuncValue", 4),
       SimpleCostItem("GetVar", 1),
-      SimpleCostItem("OptionGet", 2),
+      SimpleCostItem("OptionGet", 1),
       SimpleCostItem("ValUse", 5),
       SimpleCostItem("SelectField", 1),
       SimpleCostItem("ValUse", 5),
@@ -2190,7 +2190,7 @@ class SigmaDslSpecification extends SigmaDslTesting
           SimpleCostItem("Apply", 5),
           SimpleCostItem("FuncValue", 4),
           SimpleCostItem("GetVar", 1),
-          SimpleCostItem("OptionGet", 2),
+          SimpleCostItem("OptionGet", 1),
           SimpleCostItem("ValUse", 5),
           SimpleCostItem("SelectField", 1),
           SimpleCostItem("ValUse", 5),
@@ -2657,7 +2657,7 @@ class SigmaDslSpecification extends SigmaDslTesting
             SimpleCostItem("Apply", 5),
             SimpleCostItem("FuncValue", 4),
             SimpleCostItem("GetVar", 1),
-            SimpleCostItem("OptionGet", 2),
+            SimpleCostItem("OptionGet", 1),
             SimpleCostItem("ValUse", 5),
             SimpleCostItem("MethodCall", 5),
             MethodCallCostItem(TracedCost(Array(SimpleCostItem("SGroupElement$.getEncoded", 3))))
@@ -2688,7 +2688,7 @@ class SigmaDslSpecification extends SigmaDslTesting
             SimpleCostItem("Apply", 5),
             SimpleCostItem("FuncValue", 4),
             SimpleCostItem("GetVar", 1),
-            SimpleCostItem("OptionGet", 2),
+            SimpleCostItem("OptionGet", 1),
             SimpleCostItem("ValUse", 5),
             SimpleCostItem("MethodCall", 5),
             MethodCallCostItem(TracedCost(Array(SimpleCostItem("SGroupElement$.getEncoded", 3)))),
@@ -2730,7 +2730,7 @@ class SigmaDslSpecification extends SigmaDslTesting
             SimpleCostItem("Apply", 5),
             SimpleCostItem("FuncValue", 4),
             SimpleCostItem("GetVar", 1),
-            SimpleCostItem("OptionGet", 2),
+            SimpleCostItem("OptionGet", 1),
             SimpleCostItem("ValUse", 5),
             SimpleCostItem("MethodCall", 5),
             MethodCallCostItem(TracedCost(Array(SimpleCostItem("SGroupElement$.negate", 1))))
@@ -2763,7 +2763,7 @@ class SigmaDslSpecification extends SigmaDslTesting
             SimpleCostItem("Apply", 5),
             SimpleCostItem("FuncValue", 4),
             SimpleCostItem("GetVar", 1),
-            SimpleCostItem("OptionGet", 2),
+            SimpleCostItem("OptionGet", 1),
             SimpleCostItem("ValUse", 5),
             SimpleCostItem("SelectField", 1),
             SimpleCostItem("ValUse", 5),
@@ -2806,7 +2806,7 @@ class SigmaDslSpecification extends SigmaDslTesting
             SimpleCostItem("Apply", 5),
             SimpleCostItem("FuncValue", 4),
             SimpleCostItem("GetVar", 1),
-            SimpleCostItem("OptionGet", 2),
+            SimpleCostItem("OptionGet", 1),
             SimpleCostItem("ValUse", 5),
             SimpleCostItem("SelectField", 1),
             SimpleCostItem("ValUse", 5),
@@ -6777,9 +6777,9 @@ class SigmaDslSpecification extends SigmaDslTesting
             SimpleCostItem("Apply", 5),
             SimpleCostItem("FuncValue", 4),
             SimpleCostItem("GetVar", 1),
-            SimpleCostItem("OptionGet", 2),
+            SimpleCostItem("OptionGet", 1),
             SimpleCostItem("ValUse", 5),
-            SeqCostItem("SigmaPropBytes", 5, 1)
+            SeqCostItem("SigmaPropBytes", 47, 1)
           )
         )
         Seq(
