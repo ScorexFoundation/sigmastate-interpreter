@@ -8,8 +8,8 @@ import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.ValueSerializer.getSerializer
 import scalan.util.Extensions.ByteOps
 import debox.{Buffer => DBuffer, Map => DMap}
-import sigmastate.interpreter.{CostItem, PerBlockCostItem, SeqCostItem, SimpleCostItem}
-import spire.{sp, math}
+import sigmastate.interpreter.{PerBlockCostItem, MethodCostItem, SeqCostItem, CostItem, OperationCostItem}
+import spire.{math, sp}
 
 import scala.reflect.ClassTag
 
@@ -207,7 +207,7 @@ class Profiler {
 
     val ciLines = costItemsStat.mapToArray { case (ci, stat) =>
       val (time, count) = ci match {
-        case _: SimpleCostItem => stat.mean
+        case _: OperationCostItem | _: MethodCostItem => stat.mean
         case SeqCostItem(_, _, nItems) =>
           val (time, count) = stat.mean
           (time / nItems, count)

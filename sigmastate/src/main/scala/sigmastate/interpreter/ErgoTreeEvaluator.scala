@@ -1,7 +1,7 @@
 package sigmastate.interpreter
 
 import org.ergoplatform.ErgoLikeContext
-import sigmastate.SType
+import sigmastate.{SType, SMethod}
 import sigmastate.Values._
 import sigmastate.eval.Profiler
 import sigmastate.interpreter.ErgoTreeEvaluator.DataEnv
@@ -11,6 +11,7 @@ import special.sigma.Context
 import scalan.util.Extensions._
 import sigmastate.lang.Terms.MethodCall
 import spire.syntax.all.cfor
+
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.util.DynamicVariable
@@ -97,7 +98,7 @@ class ErgoTreeEvaluator(
   final def addCost(cost: Int, opNode: SValue): this.type = {
     coster.add(cost)
     if (settings.costTracingEnabled) {
-      costTrace += SimpleCostItem(opNode.opName, cost)
+      costTrace += OperationCostItem(opNode.companion, cost)
     }
     this
   }
@@ -378,15 +379,27 @@ abstract class CostItem {
 
 /** An item in the cost accumulation trace of a [[ErgoTreeEvaluator]].
   * Represents cost of simple operation.
-  * Used for debugging of costing.
-  * @param opName  name of the ErgoTree operation
+  * Used for debugging, testing and profiling of costing.
+  * @param opDesc  descriptor of the ErgoTree operation
   * @param cost    cost added to accumulator
   */
-case class SimpleCostItem(opName: String, cost: Int) extends CostItem
+case class OperationCostItem(opDesc: ValueCompanion, cost: Int) extends CostItem {
+  override def opName: String = opDesc.typeName
+}
+
+/** An item in the cost accumulation trace of a [[ErgoTreeEvaluator]].
+  * Represents cost of simple operation.
+  * Used for debugging, testing and profiling of costing.
+  * @param method  method descriptor
+  * @param cost    cost added to accumulator
+  */
+case class MethodCostItem(method: SMethod, cost: Int) extends CostItem {
+  override def opName: String = method.opName
+}
 
 /** An item in the cost accumulation trace of a [[ErgoTreeEvaluator]].
   * Represents cost of a sequence of operation.
-  * Used for debugging of costing.
+  * Used for debugging, testing and profiling of costing.
   *
   * @param opName      name of the ErgoTree operation
   * @param perItemCost cost added to accumulator for each item of a collection
@@ -402,7 +415,7 @@ object SeqCostItem {
 
 /** An item in the cost accumulation trace of a [[ErgoTreeEvaluator]].
   * Represents cost of data size dependent operation (like CalcSha256).
-  * Used for debugging of costing.
+  * Used for debugging, testing and profiling of costing.
   *
   * @param opName     name of the ErgoTree operation
   * @param perBlockCost  cost added to accumulator for each block of data
@@ -421,7 +434,7 @@ object PerBlockCostItem {
 
 /** An item in the cost accumulation trace of a [[ErgoTreeEvaluator]].
   * Represents cost of MethodCall operation.
-  * Used for debugging of costing.
+  * Used for debugging, testing and profiling of costing.
   *
   * @param items cost details obtained as part of MethodCall evaluation
   */
