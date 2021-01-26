@@ -400,7 +400,11 @@ class SigmaDslTesting extends PropSpec
 
       val res = if (!(newImpl eq oldImpl)) {
         // check the new implementation against Scala semantic function
-        val newRes = checkEq(scalaFunc)(newF)(input)
+        var newRes: Try[(B, CostDetails)] = null
+        cfor(0)(_ < nBenchmarkIters, _ + 1) { _ =>
+          newRes = checkEq(scalaFunc)(newF)(input)
+        }
+
         (oldRes, newRes) match {
           case (Success((oldRes, CostDetails(oldCost, _))),
                 Success((newRes, CostDetails(newCost, _)))) =>
@@ -469,10 +473,7 @@ class SigmaDslTesting extends PropSpec
                             expected: Expected[B],
                             printTestCases: Boolean,
                             failOnTestVectors: Boolean): Unit = {
-      var funcRes: Try[(B, CostDetails)] = null
-      cfor(0)(_ < nBenchmarkIters, _ + 1) { i => 
-        funcRes = checkEquality(input, printTestCases) // NOTE: funcRes comes from newImpl
-      }
+      val funcRes = checkEquality(input, printTestCases) // NOTE: funcRes comes from newImpl
 
       checkResult(funcRes.map(_._1), expected.value, failOnTestVectors)
 
