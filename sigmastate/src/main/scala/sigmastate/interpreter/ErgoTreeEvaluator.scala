@@ -1,10 +1,10 @@
 package sigmastate.interpreter
 
 import org.ergoplatform.ErgoLikeContext
-import sigmastate.{SType, SMethod}
+import sigmastate.{SMethod, SType}
 import sigmastate.Values._
 import sigmastate.eval.Profiler
-import sigmastate.interpreter.ErgoTreeEvaluator.DataEnv
+import sigmastate.interpreter.ErgoTreeEvaluator.{DataEnv, OperationDesc}
 import sigmastate.interpreter.Interpreter.ReductionResult
 import sigmastate.lang.exceptions.CostLimitException
 import special.sigma.Context
@@ -98,7 +98,7 @@ class ErgoTreeEvaluator(
   final def addCost(cost: Int, opNode: SValue): this.type = {
     coster.add(cost)
     if (settings.costTracingEnabled) {
-      costTrace += OperationCostItem(opNode.companion, cost)
+      costTrace += SimpleCostItem(Left(opNode.companion), cost)
     }
     this
   }
@@ -116,12 +116,12 @@ class ErgoTreeEvaluator(
   final def addSeqCost[R](perItemCost: Int, nItems: Int, opNode: SValue)(block: => R): R = {
     var costItem: SeqCostItem = null
     if (settings.costTracingEnabled) {
-      costItem = SeqCostItem(opNode.opName, perItemCost, nItems)
+      costItem = SeqCostItem(Left(opNode.companion), perItemCost, nItems)
       costTrace += costItem
     }
     if (settings.isMeasureOperationTime) {
       if (costItem == null) {
-        costItem = SeqCostItem(opNode.opName, perItemCost, nItems)
+        costItem = SeqCostItem(Left(opNode.companion), perItemCost, nItems)
       }
       val start = System.nanoTime()
       val cost = SeqCostItem.calcCost(perItemCost, nItems) // should be measured
@@ -152,12 +152,12 @@ class ErgoTreeEvaluator(
     val numBlocks = PerBlockCostItem.blocksToCover(dataSize)
     var costItem: PerBlockCostItem = null
     if (settings.costTracingEnabled) {
-      costItem = PerBlockCostItem(opNode.opName, perBlockCost, numBlocks)
+      costItem = PerBlockCostItem(Left(opNode.companion), perBlockCost, numBlocks)
       costTrace += costItem
     }
     if (settings.isMeasureOperationTime) {
       if (costItem == null) {
-        costItem = PerBlockCostItem(opNode.opName, perBlockCost, numBlocks)
+        costItem = PerBlockCostItem(Left(opNode.companion), perBlockCost, numBlocks)
       }
       val start = System.nanoTime()
       val cost = PerBlockCostItem.calcCost(perBlockCost, numBlocks) // should be measured
@@ -205,6 +205,15 @@ class ErgoTreeEvaluator(
 object ErgoTreeEvaluator {
   /** Immutable data environment used to assign data values to graph nodes. */
   type DataEnv = Map[Int, Any]
+
+  /** Each ErgoTree operation is described either using [[ValueCompanion]] or using
+   * [[SMethod]]. */
+  type OperationDesc = Either[ValueCompanion, SMethod]
+
+  def operationName(opDesc: OperationDesc): String = opDesc match {
+    case Left(companion) => companion.typeName
+    case Right(method) => method.opName
+  }
 
   /** Size of data block in bytes. Used in JIT cost calculations.
     * @see [[sigmastate.NEQ]],
@@ -383,33 +392,28 @@ abstract class CostItem {
   * @param opDesc  descriptor of the ErgoTree operation
   * @param cost    cost added to accumulator
   */
-case class OperationCostItem(opDesc: ValueCompanion, cost: Int) extends CostItem {
-  override def opName: String = opDesc.typeName
+case class SimpleCostItem(opDesc: OperationDesc, cost: Int) extends CostItem {
+  override def opName: String = ErgoTreeEvaluator.operationName(opDesc)
 }
-
-/** An item in the cost accumulation trace of a [[ErgoTreeEvaluator]].
-  * Represents cost of simple operation.
-  * Used for debugging, testing and profiling of costing.
-  * @param method  method descriptor
-  * @param cost    cost added to accumulator
-  */
-case class MethodCostItem(method: SMethod, cost: Int) extends CostItem {
-  override def opName: String = method.opName
+object SimpleCostItem {
+  def apply(companion: ValueCompanion, cost: Int): SimpleCostItem = SimpleCostItem(Left(companion), cost)
 }
-
 /** An item in the cost accumulation trace of a [[ErgoTreeEvaluator]].
   * Represents cost of a sequence of operation.
   * Used for debugging, testing and profiling of costing.
   *
-  * @param opName      name of the ErgoTree operation
+  * @param opDesc      descriptor of the ErgoTree operation
   * @param perItemCost cost added to accumulator for each item of a collection
   * @param nItems      number of items in the collection
   */
-case class SeqCostItem(opName: String, perItemCost: Int, nItems: Int)
+case class SeqCostItem(opDesc: OperationDesc, perItemCost: Int, nItems: Int)
     extends CostItem {
+  override def opName: String = ErgoTreeEvaluator.operationName(opDesc)
   override def cost: Int = SeqCostItem.calcCost(perItemCost, nItems)
 }
 object SeqCostItem {
+  def apply(companion: ValueCompanion, perItemCost: Int, nItems: Int): SeqCostItem =
+    SeqCostItem(Left(companion), perItemCost, nItems)
   def calcCost(perItemCost: Int, nItems: Int) = Math.multiplyExact(perItemCost, nItems)
 }
 
@@ -417,15 +421,20 @@ object SeqCostItem {
   * Represents cost of data size dependent operation (like CalcSha256).
   * Used for debugging, testing and profiling of costing.
   *
-  * @param opName     name of the ErgoTree operation
+  * @param opDesc     descriptor of the ErgoTree operation
   * @param perBlockCost  cost added to accumulator for each block of data
   * @param nBlocks size of data in blocks
   */
-case class PerBlockCostItem(opName: String, perBlockCost: Int, nBlocks: Int)
+case class PerBlockCostItem(opDesc: OperationDesc, perBlockCost: Int, nBlocks: Int)
     extends CostItem {
+  override def opName: String = ErgoTreeEvaluator.operationName(opDesc)
   override def cost: Int = PerBlockCostItem.calcCost(perBlockCost, nBlocks)
 }
 object PerBlockCostItem {
+  /** Helper constructor method. */
+  def apply(companion: ValueCompanion, perBlockCost: Int, nBlocks: Int): PerBlockCostItem =
+    PerBlockCostItem(Left(companion), perBlockCost, nBlocks)
+
   /** Returns a number of blocks to cover dataSize bytes. */
   def blocksToCover(dataSize: Int) = (dataSize - 1) / ErgoTreeEvaluator.DataBlockSize + 1
 

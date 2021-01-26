@@ -507,7 +507,7 @@ object SMethod {
                        mc: MethodCall,
                        obj: Any, args: Array[Any]): CostDetails = {
       if (E.settings.costTracingEnabled)
-        TracedCost(Array(MethodCostItem(mc.method, cost)))
+        TracedCost(Array(SimpleCostItem(Right(mc.method), cost)))
       else
         GivenCost(cost)
     }
@@ -633,7 +633,7 @@ object SNumericType extends STypeCompanion {
                        args: Array[Any]): CostDetails = {
       val cast = getNumericCast(mc.obj.tpe, mc.method.name, mc.method.stype.tRange).get
       val cost = if (cast == Downcast) CostOf.Downcast else CostOf.Upcast
-      TracedCost(Array(MethodCostItem(mc.method, cost)))
+      TracedCost(Array(SimpleCostItem(Right(mc.method), cost)))
     }
   }
 
