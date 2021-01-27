@@ -25,7 +25,7 @@ import special.sigma.Extensions._
 import sigmastate.eval._
 import sigmastate.eval.Extensions._
 import scalan.util.Extensions.ByteOps
-import sigmastate.interpreter.ErgoTreeEvaluator.{DataEnv, error}
+import sigmastate.interpreter.ErgoTreeEvaluator.{DataEnv, error, NamedDesc}
 import spire.syntax.all.cfor
 
 import scala.language.implicitConversions
@@ -116,7 +116,8 @@ object Values {
       * @param  env immutable map, which binds variables (given by ids) to the values
       * @return the data value which is the result of evaluation
       */
-    @inline final def evalTo[T](env: DataEnv)(implicit E: ErgoTreeEvaluator): T = {
+    @inline
+    final def evalTo[T](env: DataEnv)(implicit E: ErgoTreeEvaluator): T = {
       if (E.settings.isMeasureOperationTime) E.profiler.onBeforeNode(this)
       val v = eval(env)
       if (E.settings.isMeasureOperationTime) E.profiler.onAfterNode(this)
@@ -126,7 +127,8 @@ object Values {
     /** Add the given cost amount to the accumulator and associate it with this operation
       * node.
       */
-    @inline final def addCost(cost: Int)(implicit E: ErgoTreeEvaluator): Unit = {
+    @inline
+    final def addCost(cost: Int)(implicit E: ErgoTreeEvaluator): Unit = {
       E.addCost(cost, this)
     }
 
@@ -138,7 +140,9 @@ object Values {
       * @param block       operation executed under the given cost
       * @tparam R result type of the operation
       */
-    @inline final def addSeqCost[R](perItemCost: Int, nItems: Int)(block: => R)(implicit E: ErgoTreeEvaluator): R = {
+    @inline
+    final def addSeqCost[R](perItemCost: Int, nItems: Int)
+                           (block: => R)(implicit E: ErgoTreeEvaluator): R = {
       E.addSeqCost(perItemCost, nItems, this)(block)
     }
 
@@ -150,7 +154,9 @@ object Values {
       * @param block     operation executed under the given cost
       * @tparam R result type of the operation
       */
-    @inline final def addPerBlockCost[R](perKbCost: Int, dataSize: Int)(block: => R)(implicit E: ErgoTreeEvaluator): R = {
+    @inline
+    final def addPerBlockCost[R](perKbCost: Int, dataSize: Int)
+                                (block: => R)(implicit E: ErgoTreeEvaluator): R = {
       E.addPerBlockCost(perKbCost, dataSize, this)(block)
     }
   }
@@ -992,20 +998,31 @@ object Values {
       }
       else if (args.length == 1) {
         (vArg: Any) => {
-          val env1 = env + (args(0)._1 -> vArg)
+          val env1 = E.addSimpleCost(CostOf.AddToEnvironment, FuncValue.AddToEnvironmentDesc) {
+            env + (args(0)._1 -> vArg)
+          }
           body.evalTo[Any](env1)
         }
       }
       else {
         // TODO coverage
         (vArgs: Seq[Any]) => {
-          val env1 = env ++ args.zip(vArgs).map { case ((id, _), v) => id -> v }
+          var env1 = env
+          val len = args.length
+          cfor(0)(_ < len, _ + 1) { i =>
+            val id = args(i)._1
+            val v = vArgs(i)
+            env1 = E.addSimpleCost(CostOf.AddToEnvironment, FuncValue.AddToEnvironmentDesc) {
+              env1 + (id -> v)
+            }
+          }
           body.evalTo[Any](env1)
         }
       }
     }
   }
   object FuncValue extends ValueCompanion {
+    val AddToEnvironmentDesc = NamedDesc("AddToEnvironment")
     override def opCode: OpCode = FuncValueCode
     def apply(argId: Int, tArg: SType, body: SValue): FuncValue =
       FuncValue(IndexedSeq((argId,tArg)), body)

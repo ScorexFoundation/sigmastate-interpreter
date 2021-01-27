@@ -20,7 +20,7 @@ import sigmastate.Values._
 import sigmastate.lang.Terms.Apply
 import sigmastate.eval.Extensions._
 import sigmastate.eval._
-import sigmastate.lang.Terms.{MethodCall, PropertyCall}
+import sigmastate.lang.Terms.{PropertyCall, MethodCall}
 import sigmastate.utxo._
 import special.collection._
 import sigmastate.serialization.OpCodes.OpCode
@@ -37,6 +37,7 @@ import org.scalatest.BeforeAndAfterAll
 import scalan.RType._
 import scorex.util.ModifierId
 import sigmastate.basics.ProveDHTuple
+import sigmastate.interpreter.ErgoTreeEvaluator.MethodDesc
 import sigmastate.interpreter._
 
 import scala.collection.mutable
@@ -2659,7 +2660,7 @@ class SigmaDslSpecification extends SigmaDslTesting
             SimpleCostItem(OptionGet, 1),
             SimpleCostItem(ValUse, 5),
             SimpleCostItem(PropertyCall, 5),
-            MethodCallCostItem(TracedCost(Array(SimpleCostItem(Right(SGroupElement.GetEncodedMethod), 3))))
+            MethodCallCostItem(TracedCost(Array(SimpleCostItem(MethodDesc(SGroupElement.GetEncodedMethod), 3))))
           )
         )
         def success[T](v: T) = Expected(Success(v), 37905, cost)
@@ -2690,7 +2691,7 @@ class SigmaDslSpecification extends SigmaDslTesting
             SimpleCostItem(OptionGet, 1),
             SimpleCostItem(ValUse, 5),
             SimpleCostItem(PropertyCall, 5),
-            MethodCallCostItem(TracedCost(Array(SimpleCostItem(Right(SGroupElement.GetEncodedMethod), 3)))),
+            MethodCallCostItem(TracedCost(Array(SimpleCostItem(MethodDesc(SGroupElement.GetEncodedMethod), 3)))),
             SimpleCostItem(DecodePoint, 24),
             SimpleCostItem(ValUse, 5),
             SimpleCostItem(EQ, 3)
@@ -2732,7 +2733,7 @@ class SigmaDslSpecification extends SigmaDslTesting
             SimpleCostItem(OptionGet, 1),
             SimpleCostItem(ValUse, 5),
             SimpleCostItem(PropertyCall, 5),
-            MethodCallCostItem(TracedCost(Array(SimpleCostItem(Right(SGroupElement.NegateMethod), 1))))
+            MethodCallCostItem(TracedCost(Array(SimpleCostItem(MethodDesc(SGroupElement.NegateMethod), 1))))
           )
         )
         def success[T](v: T) = Expected(Success(v), 36292, cost)

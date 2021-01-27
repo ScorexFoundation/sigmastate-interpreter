@@ -31,6 +31,7 @@ import special.sigma.{Header, Box, SigmaProp, AvlTree, SigmaDslBuilder, PreHeade
 import sigmastate.lang.SigmaTyper.STypeSubst
 import sigmastate.eval.Evaluation.stypeToRType
 import sigmastate.eval._
+import sigmastate.interpreter.ErgoTreeEvaluator.MethodDesc
 import sigmastate.utxo.CostTable.CostOf
 import spire.syntax.all.cfor
 
@@ -558,7 +559,7 @@ object SMethod {
                        mc: MethodCall,
                        obj: Any, args: Array[Any]): CostDetails = {
       if (E.settings.costTracingEnabled)
-        TracedCost(Array(SimpleCostItem(Right(mc.method), cost)))
+        TracedCost(Array(SimpleCostItem(MethodDesc(mc.method), cost)))
       else
         GivenCost(cost)
     }
@@ -711,7 +712,7 @@ object SNumericType extends STypeCompanion {
                        args: Array[Any]): CostDetails = {
       val cast = getNumericCast(mc.obj.tpe, mc.method.name, mc.method.stype.tRange).get
       val cost = if (cast == Downcast) CostOf.Downcast else CostOf.Upcast
-      TracedCost(Array(SimpleCostItem(Right(mc.method), cost)))
+      TracedCost(Array(SimpleCostItem(MethodDesc(mc.method), cost)))
     }
   }
 

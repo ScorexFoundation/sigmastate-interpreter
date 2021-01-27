@@ -117,7 +117,7 @@ case class Filter[IV <: SType](input: Value[SCollection[IV]],
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val inputV = input.evalTo[Coll[Any]](env)
     val conditionV = condition.evalTo[Any => Boolean](env)
-    // TODO JITC
+    addCost(CostOf.Filter)
     inputV.filter(conditionV)
   }
 }

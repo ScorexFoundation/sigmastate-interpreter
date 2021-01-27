@@ -321,6 +321,9 @@ object CostTable {
       * Old cost: ("Lambda", "() => (D1) => R", lambdaCost),*/
     def FuncValue = 4 // cf. lambdaCost
 
+    /** Cost of: adding value to evaluator environment */
+    def AddToEnvironment = 1
+
     /** Cost of: 1) switch on the number of args 2) Scala method call 3) add args to env
       * Old cost: lambdaInvoke == 30 */
     def Apply = 5
@@ -410,6 +413,10 @@ object CostTable {
     /** Cost of: 1) obtain result RType 2) invoke map method 3) allocation of resulting
      * collection */
     def MapCollection = 4 // cf. collToColl
+
+    /** Cost of: 1) invoke Coll.filter method 2) allocation of resulting
+     * collection */
+    def Filter = 2 // cf. collToColl
 
 //    ("ByIndex", "(Coll[IV],Int) => IV", collByIndex),
 //    ("SCollection$.exists", "(Coll[IV],(IV) => Boolean) => Boolean", collToColl),
