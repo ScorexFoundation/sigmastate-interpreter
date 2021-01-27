@@ -817,13 +817,11 @@ object Values {
     protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
       val len = items.length
       addCost(CostOf.ConcreteCollection)
-      addSeqCost(CostOf.ConcreteCollection_PerItem, len) {
-        val is = Array.ofDim[V#WrappedType](len)(tElement.classTag)
-        cfor(0)(_ < len, _ + 1) { i =>
-          is(i) = items(i).evalTo[V#WrappedType](env)
-        }
-        Colls.fromArray(is)
+      val is = Array.ofDim[V#WrappedType](len)(tElement.classTag)
+      cfor(0)(_ < len, _ + 1) { i =>
+        is(i) = items(i).evalTo[V#WrappedType](env)
       }
+      Colls.fromArray(is)
     }
   }
   object ConcreteCollection extends ValueCompanion {

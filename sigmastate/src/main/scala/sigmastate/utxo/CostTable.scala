@@ -341,10 +341,6 @@ object CostTable {
       * @see ConcreteCollection_PerItem */
     def ConcreteCollection = 1 // cf. collToColl
 
-    /** Cost of: one iteration of the loop over items
-      * @see ConcreteCollection */
-    def ConcreteCollection_PerItem = 1 // cf. logicCost
-
     //    ("ConcreteCollection", "() => Coll[IV]", collToColl),
 //    ("GroupGenerator$", "() => GroupElement", constCost),
 //    ("Self$", "Context => Box", constCost),
