@@ -6779,7 +6779,7 @@ class SigmaDslSpecification extends SigmaDslTesting
             SimpleCostItem(GetVar, 1),
             SimpleCostItem(OptionGet, 1),
             SimpleCostItem(ValUse, 5),
-            SeqCostItem(SigmaPropBytes, 2, nItems)
+            SeqCostItem(SigmaPropBytes, 1, nItems)
           )
         )
         def pk = ProveDlog(Helpers.decodeECPoint("039d0b1e46c21540d033143440d2fb7dd5d650cf89981c99ee53c6e0374d2b1b6f"))
@@ -6793,14 +6793,14 @@ class SigmaDslSpecification extends SigmaDslTesting
         def or = COR(Array(pk, dht))
         def threshold = CTHRESHOLD(2, Array(pk, dht, or, and))
         Seq(
-          CSigmaProp(pk) -> Expected(Success(
-            Helpers.decodeBytes("0008cd039d0b1e46c21540d033143440d2fb7dd5d650cf89981c99ee53c6e0374d2b1b6f")),
-            cost = 35902, newCost(1)),
           CSigmaProp(dht) -> Expected(Success(
             Helpers.decodeBytes(
               "0008ce03c046fccb95549910767d0543f5e8ce41d66ae6a8720a46f4049cac3b3d26dafb023479c9c3b86a0d3c8be3db0a2d186788e9af1db76d55f3dad127d15185d83d0303d7898641cb6653585a8e1dabfa7f665e61e0498963e329e6e3744bd764db2d72037ae057d89ec0b46ff8e9ff4c37e85c12acddb611c3f636421bef1542c11b0441"
             )
           ), cost = 35902, newCost(4)),
+          CSigmaProp(pk) -> Expected(Success(
+            Helpers.decodeBytes("0008cd039d0b1e46c21540d033143440d2fb7dd5d650cf89981c99ee53c6e0374d2b1b6f")),
+            cost = 35902, newCost(1)),
           CSigmaProp(and) -> Expected(Success(
             Helpers.decodeBytes(
               "00089602cd039d0b1e46c21540d033143440d2fb7dd5d650cf89981c99ee53c6e0374d2b1b6fce03c046fccb95549910767d0543f5e8ce41d66ae6a8720a46f4049cac3b3d26dafb023479c9c3b86a0d3c8be3db0a2d186788e9af1db76d55f3dad127d15185d83d0303d7898641cb6653585a8e1dabfa7f665e61e0498963e329e6e3744bd764db2d72037ae057d89ec0b46ff8e9ff4c37e85c12acddb611c3f636421bef1542c11b0441"
