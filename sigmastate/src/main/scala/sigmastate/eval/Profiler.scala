@@ -37,9 +37,15 @@ class StatCollection[@sp(Int) K, @sp(Long, Double) V]
 
   // NOTE: this class is mutable so better to keep it private
   class StatItemImpl extends StatItem[V] {
+    final val NumMaxPoints = 50000
+
     val dataPoints: DBuffer[V] = DBuffer.ofSize[V](256)
 
-    def addPoint(point: V) = dataPoints += point
+    def addPoint(point: V) = {
+      if (dataPoints.length < NumMaxPoints) {
+        dataPoints += point
+      }
+    }
 
     override def count: Int = dataPoints.length
     override def sum: V = dataPoints.sum

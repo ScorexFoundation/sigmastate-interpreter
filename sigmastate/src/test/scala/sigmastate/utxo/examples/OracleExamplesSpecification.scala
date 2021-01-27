@@ -164,7 +164,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons
     val timeout = 60
 
     val propAlice = mkTestErgoTree(
-      withinTimeframe(sinceHeight, timeout, alicePubKey)(oracleProp).toSigmaProp)
+      withinTimeframe(sinceHeight, timeout, alicePubKey)(oracleProp))
 
     val sAlice = testBox(10, propAlice, 0, Seq(), Map(), boxIndex = 3)
 
@@ -173,7 +173,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons
       EQ(SizeOf(Inputs), IntConstant(2)),
       EQ(ExtractId(ByIndex(Inputs, 0)), ByteArrayConstant(sAlice.id)))
     val propBob = mkTestErgoTree(
-      withinTimeframe(sinceHeight, timeout, bobPubKey)(propAlong).toSigmaProp)
+      withinTimeframe(sinceHeight, timeout, bobPubKey)(propAlong))
     val sBob = testBox(10, propBob, 0, Seq(), Map(), boxIndex = 4)
 
    val ctx = ErgoLikeContextTesting(

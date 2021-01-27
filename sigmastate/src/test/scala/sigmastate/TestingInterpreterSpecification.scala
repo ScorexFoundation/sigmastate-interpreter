@@ -252,7 +252,7 @@ class TestingInterpreterSpecification extends SigmaTestingCommons
     val env1 = testingContext(99)
     val env2 = testingContext(101)
 
-    val prop = mkTestErgoTreeSigmaOr(
+    val prop = mkTestErgoTree(SigmaOr(
       SigmaAnd(LE(Height, IntConstant(100)), SigmaAnd(dk1, dk2)),
       SigmaAnd(GT(Height, IntConstant(100)), dk1)
     ))

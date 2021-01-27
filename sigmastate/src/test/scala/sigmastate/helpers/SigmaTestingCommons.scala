@@ -1,14 +1,9 @@
 package sigmastate.helpers
 
-import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
-import org.ergoplatform.ErgoBox.NonMandatoryRegisterId
-import org.ergoplatform.SigmaConstants.ScriptCostLimit
-import org.ergoplatform.ErgoLikeContext.Height
-import org.ergoplatform.ErgoScriptPredef.TrueProp
 import org.ergoplatform.SigmaConstants.ScriptCostLimit
 import org.ergoplatform._
 import org.ergoplatform.validation.ValidationRules.{CheckCostFunc, CheckCalcFunc}
-import org.ergoplatform.validation.{ValidationSpecification, ValidationRules, SigmaValidationSettings}
+import org.ergoplatform.validation.ValidationSpecification
 import org.scalacheck.Arbitrary.arbByte
 import org.scalacheck.Gen
 import org.scalatest.prop.{PropertyChecks, GeneratorDrivenPropertyChecks}
@@ -19,9 +14,9 @@ import scorex.crypto.hash.Blake2b256
 import sigma.types.IsPrimView
 import sigmastate.Values.{Constant, SValue, Value, ErgoTree, GroupElementConstant}
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, ScriptEnv}
-import sigmastate.interpreter.{CryptoConstants, TracedCost, ErgoTreeEvaluator, Interpreter, CostAccumulator, EvalSettings, GivenCost, CostDetails, CostItem}
-import sigmastate.lang.{Terms, TransformingSigmaBuilder, SigmaCompiler}
-import sigmastate.serialization.{ValueSerializer, SigmaSerializer}
+import sigmastate.interpreter._
+import sigmastate.lang.Terms
+import sigmastate.serialization.SigmaSerializer
 import sigmastate.{SGroupElement, TestsBase, SType}
 import sigmastate.eval.{CompiletimeCosting, IRContext, Evaluation, _}
 import sigmastate.interpreter.CryptoConstants.EcPointType
@@ -296,7 +291,7 @@ trait SigmaTestingCommons extends PropSpec
     implicit val cA: ClassTag[A] = tA.classTag
     val tpeA = Evaluation.rtypeToSType(tA)
     val ergoCtxTemp = ErgoLikeContextTesting.dummy(
-      createBox(0, TrueProp), activatedVersionInTests)
+      createBox(0, TrueTree), activatedVersionInTests)
         .withBindings(bindings: _*)
 
     val f = (in: A) => {
