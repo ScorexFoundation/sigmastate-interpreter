@@ -17,7 +17,7 @@ import scalan.{Nullable, RType}
 import scalan.RType._
 import sigma.types.PrimViewType
 import sigmastate.basics.DLogProtocol.ProveDlog
-import sigmastate.basics.{ProveDHTuple}
+import sigmastate.basics.ProveDHTuple
 import special.sigma.Extensions._
 import sigmastate.lang.exceptions.CostLimitException
 import sigmastate.serialization.OpCodes

@@ -1,10 +1,9 @@
 package sigmastate.utxo.examples
 
-import org.ergoplatform.dsl.{ContractSpec, SigmaContractSyntax, StdContracts, TestContractSpec}
+import org.ergoplatform.dsl.{SigmaContractSyntax, ContractSpec, TestContractSpec, StdContracts}
 import sigmastate.eval.Extensions
 import sigmastate.helpers.SigmaTestingCommons
-import special.collection.Coll
-import special.sigma.{Box, Context}
+import special.sigma.Context
 
 class RevenueSharingExamplesSpecification extends SigmaTestingCommons { suite =>
   implicit lazy val IR = new TestingIRContext

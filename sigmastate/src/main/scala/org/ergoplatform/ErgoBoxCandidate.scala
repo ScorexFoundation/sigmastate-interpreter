@@ -5,11 +5,10 @@ import java.util
 import org.ergoplatform.ErgoBox._
 import org.ergoplatform.settings.ErgoAlgos
 import scorex.crypto.hash.Digest32
-import scorex.util.{bytesToId, idToBytes, ModifierId}
+import scorex.util.{bytesToId, ModifierId}
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.SType.AnyOps
-import sigmastate.lang.Terms._
 import sigmastate.serialization.SigmaSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import special.collection.Coll

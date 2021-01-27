@@ -435,23 +435,7 @@ trait Interpreter extends ScorexLogging {
       val checkingResult = cProp match {
         case TrivialProp.TrueProp => true
         case TrivialProp.FalseProp => false
-        case _ =>
-          // Perform Verifier Steps 1-3
-          SigSerializer.parseAndComputeChallenges(cProp, proof) match {
-            case NoProof => false
-            case sp: UncheckedSigmaTree =>
-              // Perform Verifier Step 4
-              val newRoot = computeCommitments(sp).get.asInstanceOf[UncheckedSigmaTree]
-
-              /**
-                * Verifier Steps 5-6: Convert the tree to a string `s` for input to the Fiat-Shamir hash function,
-                * using the same conversion as the prover in 7
-                * Accept the proof if the challenge at the root of the tree is equal to the Fiat-Shamir hash of `s`
-                * (and, if applicable,  the associated data). Reject otherwise.
-                */
-              val expectedChallenge = CryptoFunctions.hashFn(FiatShamirTree.toBytes(newRoot) ++ message)
-              util.Arrays.equals(newRoot.challenge, expectedChallenge)
-          }
+        case _ => verifySignature(cProp, message, proof)
       }
       checkingResult -> cost
     })
@@ -471,6 +455,21 @@ trait Interpreter extends ScorexLogging {
       }
     }
     res
+  }
+
+  // Perform Verifier Steps 4-6
+  private def checkCommitments(sp: UncheckedSigmaTree, message: Array[Byte]): Boolean = {
+    // Perform Verifier Step 4
+    val newRoot = computeCommitments(sp).get.asInstanceOf[UncheckedSigmaTree]
+
+    /**
+      * Verifier Steps 5-6: Convert the tree to a string `s` for input to the Fiat-Shamir hash function,
+      * using the same conversion as the prover in 7
+      * Accept the proof if the challenge at the root of the tree is equal to the Fiat-Shamir hash of `s`
+      * (and, if applicable,  the associated data). Reject otherwise.
+      */
+    val expectedChallenge = CryptoFunctions.hashFn(FiatShamirTree.toBytes(newRoot) ++ message)
+    util.Arrays.equals(newRoot.challenge, expectedChallenge)
   }
 
   /**
@@ -515,6 +514,30 @@ trait Interpreter extends ScorexLogging {
              proof: ProofT,
              message: Array[Byte]): Try[VerificationResult] = {
     verify(Interpreter.emptyEnv, ergoTree, context, SigSerializer.toBytes(proof), message)
+  }
+
+  /**
+    * Verify a signature on given (arbitrary) message for a given public key.
+    *
+    * @param sigmaTree - public key (represented as a tree)
+    * @param message - message
+    * @param signature - signature for the message
+    * @return - whether signature is valid or not
+    */
+  def verifySignature(sigmaTree: SigmaBoolean,
+                      message: Array[Byte],
+                      signature: Array[Byte]): Boolean = {
+    // Perform Verifier Steps 1-3
+    try {
+      SigSerializer.parseAndComputeChallenges(sigmaTree, signature) match {
+        case NoProof => false
+        case sp: UncheckedSigmaTree =>
+          // Perform Verifier Steps 4-6
+          checkCommitments(sp, message)
+      }
+    } catch {
+      case e: Exception => log.warn("Improper signature: ", e); false
+    }
   }
 
 }

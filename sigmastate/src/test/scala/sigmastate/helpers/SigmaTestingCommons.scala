@@ -41,7 +41,7 @@ trait SigmaTestingCommons extends PropSpec
   with NegativeTesting
   with TestsBase {
 
-  val fakeSelf: ErgoBox = createBox(0, TrueProp)
+  def fakeSelf: ErgoBox = createBox(0, TrueTree)
 
   def fakeContext: ErgoLikeContext =
     ErgoLikeContextTesting.dummy(fakeSelf, activatedVersionInTests)
@@ -53,23 +53,6 @@ trait SigmaTestingCommons extends PropSpec
     SigmaDsl.toECPoint(leafConstant.value).asInstanceOf[EcPointType]
 
   implicit def grLeafConvert(elem: CryptoConstants.EcPointType): Value[SGroupElement.type] = GroupElementConstant(elem)
-
-  val compiler = SigmaCompiler(TestnetNetworkPrefix, TransformingSigmaBuilder)
-
-  def checkSerializationRoundTrip(v: SValue): Unit = {
-    val compiledTreeBytes = ValueSerializer.serialize(v)
-    withClue(s"(De)Serialization roundtrip failed for the tree:") {
-      ValueSerializer.deserialize(compiledTreeBytes) shouldEqual v
-    }
-  }
-
-  def compileWithoutCosting(env: ScriptEnv, code: String): Value[SType] = compiler.compileWithoutCosting(env, code)
-
-  def compile(env: ScriptEnv, code: String)(implicit IR: IRContext): Value[SType] = {
-    val tree = compiler.compile(env, code)
-    checkSerializationRoundTrip(tree)
-    tree
-  }
 
   class TestingIRContext extends TestContext with IRContext with CompiletimeCosting {
     override def onCostingResult[T](env: ScriptEnv, tree: SValue, res: RCostingResultEx[T]): Unit = {
@@ -161,7 +144,7 @@ trait SigmaTestingCommons extends PropSpec
         (costCtx, calcCtx)
       case _ =>
         val ergoCtx = ErgoLikeContextTesting.dummy(
-          createBox(0, TrueProp), activatedVersionInTests)
+          createBox(0, TrueTree), activatedVersionInTests)
             .withBindings(1.toByte -> Constant[SType](x.asInstanceOf[SType#WrappedType], tpeA))
             .withBindings(bindings: _*)
         val calcCtx = ergoCtx.toSigmaContext(isCost = false).asInstanceOf[CostingDataContext]

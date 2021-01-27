@@ -3,7 +3,6 @@ package special.sigma
 import java.lang.reflect.InvocationTargetException
 import java.math.BigInteger
 
-import org.ergoplatform.ErgoScriptPredef.TrueProp
 import org.ergoplatform._
 import org.ergoplatform.settings.ErgoAlgos
 import org.scalacheck.{Arbitrary, Gen}
@@ -32,7 +31,7 @@ import sigmastate.helpers.TestingHelpers._
 import scala.util.{Success, Failure, Try}
 import OrderingOps._
 import org.ergoplatform.ErgoBox.AdditionalRegisters
-import org.scalacheck.Arbitrary.{arbTuple2, arbAnyVal, arbShort, arbUnit, arbInt, arbLong, arbBool, arbByte}
+import org.scalacheck.Arbitrary._
 import org.scalacheck.Gen.frequency
 import org.scalatest.BeforeAndAfterAll
 import scalan.RType._
@@ -1013,7 +1012,7 @@ class SigmaDslSpecification extends SigmaDslTesting
 
   def swapArgs[A](cases: Seq[((A, A), Expected[Boolean])], cost: Int) =
     cases.map { case ((x, y), res) => ((y, x), res.copy(cost = cost)) }
-    
+
   def swapArgs[A](cases: Seq[((A, A), Expected[Boolean])], cost: Int, newCost: CostDetails) =
     cases.map { case ((x, y), res) =>
       ((y, x), Expected(res.value, cost, newCost))
@@ -3762,7 +3761,7 @@ class SigmaDslSpecification extends SigmaDslTesting
 
   property("Conditional access to registers") {
     def boxWithRegisters(regs: AdditionalRegisters): Box = {
-      SigmaDsl.Box(testBox(20, TrueProp, 0, Seq(), regs))
+      SigmaDsl.Box(testBox(20, TrueTree, 0, Seq(), regs))
     }
     val box1 = boxWithRegisters(Map(
       ErgoBox.R4 -> ByteConstant(0.toByte),
@@ -3885,7 +3884,7 @@ class SigmaDslSpecification extends SigmaDslTesting
   property("Advanced Box test") {
     val (tree, _) = createAvlTreeAndProver()
 
-    val box1 = SigmaDsl.Box(testBox(20, TrueProp, 0, Seq(), Map(
+    val box1 = SigmaDsl.Box(testBox(20, TrueTree, 0, Seq(), Map(
       ErgoBox.R4 -> ByteConstant(1.toByte),
       ErgoBox.R5 -> ShortConstant(1024.toShort),
       ErgoBox.R6 -> IntConstant(1024 * 1024),
@@ -3894,7 +3893,7 @@ class SigmaDslSpecification extends SigmaDslTesting
       ErgoBox.R9 -> AvlTreeConstant(tree)
     )))
 
-    val box2 = SigmaDsl.Box(testBox(20, TrueProp, 0, Seq(), Map(
+    val box2 = SigmaDsl.Box(testBox(20, TrueTree, 0, Seq(), Map(
       ErgoBox.R4 -> ByteArrayConstant(Coll(1.toByte))
     )))
 

@@ -6,7 +6,6 @@ import sigmastate.Values._
 import sigmastate.basics.DLogProtocol.DLogProverInput
 import sigmastate.basics.DiffieHellmanTupleProverInput
 import sigmastate.eval.IRContext
-import sigmastate.utxo.CostTable
 
 class ContextEnrichingTestProvingInterpreter(implicit override val IR: IRContext)
   extends ErgoLikeTestProvingInterpreter with ContextEnrichingProverInterpreter {

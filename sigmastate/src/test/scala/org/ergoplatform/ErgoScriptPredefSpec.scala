@@ -18,7 +18,6 @@ import sigmastate.lang.Terms.ValueOps
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo.{CostTable, ExtractCreationInfo, ByIndex, SelectField}
 import scalan.util.BenchmarkUtil._
-import ErgoScriptPredef._
 import sigmastate.utils.Helpers._
 
 import scala.util.Try
@@ -43,10 +42,11 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons with CrossVersionProps {
     val prop = EQ(Height, ErgoScriptPredef.boxCreationHeight(ByIndex(Outputs, IntConstant(0)))).toSigmaProp
     val propInlined = EQ(Height, SelectField(ExtractCreationInfo(ByIndex(Outputs, IntConstant(0))), 1).asIntValue).toSigmaProp
     prop shouldBe propInlined
-    val inputBox = testBox(1, prop, nextHeight, Seq(), Map())
+    val propTree = mkTestErgoTree(prop)
+    val inputBox = testBox(1, propTree, nextHeight, Seq(), Map())
     val inputBoxes = IndexedSeq(inputBox)
     val inputs = inputBoxes.map(b => Input(b.id, emptyProverResult))
-    val minerBox = new ErgoBoxCandidate(1, SigmaPropConstant(minerProp), nextHeight)
+    val minerBox = new ErgoBoxCandidate(1, mkTestErgoTree(SigmaPropConstant(minerProp)), nextHeight)
 
     val spendingTransaction = ErgoLikeTransaction(inputs, IndexedSeq(minerBox))
 
@@ -57,8 +57,8 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons with CrossVersionProps {
       boxesToSpend = inputBoxes,
       spendingTransaction,
       self = inputBox, activatedVersionInTests)
-    val pr = prover.prove(emptyEnv + (ScriptNameProp -> "boxCreationHeight_prove"), prop, ctx, fakeMessage).get
-    verifier.verify(emptyEnv + (ScriptNameProp -> "boxCreationHeight_verify"), prop, ctx, pr, fakeMessage).get._1 shouldBe true
+    val pr = prover.prove(emptyEnv + (ScriptNameProp -> "boxCreationHeight_prove"), propTree, ctx, fakeMessage).get
+    verifier.verify(emptyEnv + (ScriptNameProp -> "boxCreationHeight_verify"), propTree, ctx, pr, fakeMessage).get._1 shouldBe true
   }
 
   property("collect coins from the founders' box") {
@@ -106,7 +106,7 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons with CrossVersionProps {
       val inputBoxes = IndexedSeq(testBox(emission.foundersCoinsTotal, prop, 0, Seq(), Map(R4 -> inputR4Val)))
       val inputs = inputBoxes.map(b => Input(b.id, emptyProverResult))
       val newFoundersBox = testBox(remainingAmount, newProp, 0, Seq(), Map(R4 -> outputR4Val))
-      val collectedBox = testBox(inputBoxes.head.value - remainingAmount, TrueProp, 0)
+      val collectedBox = testBox(inputBoxes.head.value - remainingAmount, TrueTree, 0)
       val spendingTransaction = ErgoLikeTransaction(inputs, IndexedSeq(newFoundersBox, collectedBox))
       val ctx = ErgoLikeContextTesting(
         currentHeight = height,
@@ -127,7 +127,7 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons with CrossVersionProps {
     val verifier = new ErgoLikeTestInterpreter
     val inputBoxes = IndexedSeq(testBox(20, prop, 0, Seq(), Map()))
     val inputs = inputBoxes.map(b => Input(b.id, emptyProverResult))
-    val spendingTransaction = ErgoLikeTransaction(inputs, IndexedSeq(testBox(inputBoxes.head.value, TrueProp, 0)))
+    val spendingTransaction = ErgoLikeTransaction(inputs, IndexedSeq(testBox(inputBoxes.head.value, TrueTree, 0)))
 
     val ctx = ErgoLikeContextTesting(
       currentHeight = inputBoxes.head.creationHeight + settings.minerRewardDelay,
@@ -205,18 +205,19 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons with CrossVersionProps {
     val verifier = new ErgoLikeTestInterpreter()
 
     val pubkey = prover.dlogSecrets.head.publicImage
+    val pubkeyTree = mkTestErgoTree(pubkey)
 
     val tokenId: Digest32 = Blake2b256("id")
     val wrongId: Digest32 = Blake2b256(tokenId)
     val wrongId2: Digest32 = Blake2b256(wrongId)
     val tokenAmount: Int = 50
 
-    val prop = ErgoScriptPredef.tokenThresholdScript(tokenId, tokenAmount, TestnetNetworkPrefix)
+    val prop = mkTestErgoTree(ErgoScriptPredef.tokenThresholdScript(tokenId, tokenAmount, TestnetNetworkPrefix))
 
     def check(inputBoxes: IndexedSeq[ErgoBox]): Try[Unit] = Try {
       val inputs = inputBoxes.map(b => Input(b.id, emptyProverResult))
       val amount = inputBoxes.map(_.value).sum
-      val spendingTransaction = ErgoLikeTransaction(inputs, IndexedSeq(testBox(amount, pubkey.toSigmaProp, 0)))
+      val spendingTransaction = ErgoLikeTransaction(inputs, IndexedSeq(testBox(amount, pubkeyTree, 0)))
 
       val ctx = ErgoLikeContextTesting(
         currentHeight = 50,

@@ -2,17 +2,14 @@ package sigmastate.eval
 
 import java.math.BigInteger
 
-import scalan.{Nullable, RType}
-import special.collection.{CSizePrim, CSizePair, Size, CSizeOption, CollType, Coll, CSizeColl}
+import scalan.RType
+import special.collection.{Coll, CollType}
 import scalan.RType._
 import sigmastate._
-import sigmastate.SBigInt.MaxSizeInBytes
 import special.sigma._
-import SType.AnyOps
 import scorex.crypto.authds.avltree.batch.BatchAVLProver
 import scorex.crypto.hash.{Digest32, Blake2b256}
 import sigmastate.interpreter.CryptoConstants
-import sigmastate.interpreter.CryptoConstants.EcPointType
 
 trait Zero[T] {
     def zero: T

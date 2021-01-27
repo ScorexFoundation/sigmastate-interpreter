@@ -9,6 +9,7 @@ import sigmastate.lang.Terms._
 
 class TrustlessLETS1 extends SigmaTestingCommons {
   private implicit lazy val IR: TestingIRContext = new TestingIRContext
+
   property("Evaluation - LETS1 Example") {
 
     val rateTokenID = Blake2b256("rate")
@@ -22,7 +23,7 @@ class TrustlessLETS1 extends SigmaTestingCommons {
       "minWithdrawTime" -> minWithdrawTime
     )
 
-    val memberBoxScript = compile(memberBoxEnv,
+    val memberBoxScript = mkTestErgoTree(compile(memberBoxEnv,
       """{
         |val validRateOracle = CONTEXT.dataInputs(0).tokens(0)._1 == rateTokenID
         |val rate = CONTEXT.dataInputs(0).R4[Int].get
@@ -71,17 +72,17 @@ class TrustlessLETS1 extends SigmaTestingCommons {
         |  (pubKey && correctErgs)  // ... or a signature is present and output box has correct ergs
         |)
         |}""".stripMargin
-    ).asSigmaProp
+    ).asSigmaProp)
 
     val tokenBoxEnv = Map(
       ScriptNameProp -> "tokenBoxEnv",
       "rateTokenID" -> rateTokenID,
       "letsTokenID" -> letsTokenID,
       "minErgsToJoin" -> minErgsToJoin,
-      "memberBoxScriptHash" -> Blake2b256(memberBoxScript.treeWithSegregation.bytes)
+      "memberBoxScriptHash" -> Blake2b256(memberBoxScript.bytes)
     )
 
-    val tokenScript = compile(tokenBoxEnv,
+    val tokenScript = mkTestErgoTree(compile(tokenBoxEnv,
       """{
         |// a tokenBox stores the membership tokens.
         |val tokenBox = OUTPUTS(0) // first output should contain remaining LETS tokens
@@ -102,7 +103,7 @@ class TrustlessLETS1 extends SigmaTestingCommons {
         |tokenBox.tokens(0)._2 == SELF.tokens(0)._2 - numLetsBoxes && //  quantity is preserved
         |tokenBox.propositionBytes == SELF.propositionBytes           //  script is preserved
         |}
-      """.stripMargin).asSigmaProp
+      """.stripMargin).asSigmaProp)
 
     val tokenBoxCreationHeight = 70
     val tokenAmount = 10      // LongConstant(10)
@@ -118,6 +119,7 @@ class TrustlessLETS2 extends SigmaTestingCommons {
   //  Non-refundable ergs
   //  Zero sum
   private implicit lazy val IR: TestingIRContext = new TestingIRContext
+
   property("Evaluation - LETS2 Example") {
 
     val rateTokenID = Blake2b256("rate")
@@ -130,7 +132,7 @@ class TrustlessLETS2 extends SigmaTestingCommons {
       "maxNegativeBalance" -> -10000
     )
 
-    val memberBoxScript = compile(memberBoxEnv,
+    val memberBoxScript = mkTestErgoTree(compile(memberBoxEnv,
       """{
         |val inBalance = SELF.R4[Long].get
         |val pubKey = SELF.R5[SigmaProp].get
@@ -159,7 +161,7 @@ class TrustlessLETS2 extends SigmaTestingCommons {
         |OUTPUTS(index).R5[SigmaProp].get == pubKey &&
         |receiver || pubKey
         |}""".stripMargin
-    ).asSigmaProp
+    ).asSigmaProp)
 
     val trustedProver = new ContextEnrichingTestProvingInterpreter
     val trustedPubKey = trustedProver.dlogSecrets.head.publicImage
@@ -170,10 +172,10 @@ class TrustlessLETS2 extends SigmaTestingCommons {
       "letsTokenID" -> letsTokenID,
       "minErgsToJoin" -> minErgsToJoin,
       "trustedPubKey" -> trustedPubKey,
-      "memberBoxScriptHash" -> Blake2b256(memberBoxScript.treeWithSegregation.bytes)
+      "memberBoxScriptHash" -> Blake2b256(memberBoxScript.bytes)
     )
 
-    val tokenScript = compile(tokenBoxEnv,
+    val tokenScript = mkTestErgoTree(compile(tokenBoxEnv,
       """{
         |val tokenBox = OUTPUTS(0) // first output should contain remaining LETS tokens and joining fee added
         |val letsBox = OUTPUTS(1) // second output contains membership box that is created
@@ -204,7 +206,7 @@ class TrustlessLETS2 extends SigmaTestingCommons {
         |
         |memberSpend || trustedPubKeySpend
         |}
-      """.stripMargin).asSigmaProp
+      """.stripMargin).asSigmaProp)
 
     val tokenBoxCreationHeight = 70
     val tokenAmount = 10      // LongConstant(10)
@@ -221,6 +223,7 @@ class TrustlessLETS3 extends SigmaTestingCommons {
   //  Positive sum
 
   private implicit lazy val IR: TestingIRContext = new TestingIRContext
+
   property("Evaluation - LETS3 Example") {
 
     val rateTokenID = Blake2b256("rate")
@@ -235,7 +238,7 @@ class TrustlessLETS3 extends SigmaTestingCommons {
       "minWithdrawTime" -> minWithdrawTime
     )
 
-    val memberBoxScript = compile(memberBoxEnv,
+    val memberBoxScript = mkTestErgoTree(compile(memberBoxEnv,
       """{
         |val validRateOracle = CONTEXT.dataInputs(0).tokens(0)._1 == rateTokenID
         |val rate = CONTEXT.dataInputs(0).R4[Int].get
@@ -279,7 +282,7 @@ class TrustlessLETS3 extends SigmaTestingCommons {
         |OUTPUTS(index).R6[Long].get == SELF.R6[Long].get && // creation height
         |(receiver || (pubKey && correctErgs))
         |}""".stripMargin
-    ).asSigmaProp
+    ).asSigmaProp)
 
     val trustedProver = new ContextEnrichingTestProvingInterpreter
     val trustedPubKey = trustedProver.dlogSecrets.head.publicImage
@@ -290,10 +293,10 @@ class TrustlessLETS3 extends SigmaTestingCommons {
       "letsTokenID" -> letsTokenID,
       "minErgsToJoin" -> minErgsToJoin,
       "trustedPubKey" -> trustedPubKey,
-      "memberBoxScriptHash" -> Blake2b256(memberBoxScript.treeWithSegregation.bytes)
+      "memberBoxScriptHash" -> Blake2b256(memberBoxScript.bytes)
     )
 
-    val tokenScript = compile(tokenBoxEnv,
+    val tokenScript = mkTestErgoTree(compile(tokenBoxEnv,
       """{
         |val validRateOracle = CONTEXT.dataInputs(0).tokens(0)._1 == rateTokenID
         |val rate = CONTEXT.dataInputs(0).R4[Int].get
@@ -318,7 +321,7 @@ class TrustlessLETS3 extends SigmaTestingCommons {
         |
         |validLetsBox && validTokenBox
         |}
-      """.stripMargin).asSigmaProp
+      """.stripMargin).asSigmaProp)
 
     val tokenBoxCreationHeight = 70
     val tokenAmount = 10      // LongConstant(10)
@@ -345,7 +348,7 @@ class TrustlessLETS4 extends SigmaTestingCommons {
       "letsTokenID" -> letsTokenID
     )
 
-    val memberBoxScript = compile(memberBoxEnv,
+    val memberBoxScript = mkTestErgoTree(compile(memberBoxEnv,
       """{
         |val inBalance = SELF.R4[Long].get    // LETS balance of current input
         |val pubKey = SELF.R5[SigmaProp].get  // Owner of the current input
@@ -378,7 +381,7 @@ class TrustlessLETS4 extends SigmaTestingCommons {
         |OUTPUTS(index).R5[SigmaProp].get == pubKey &&
         |receiver || pubKey
         |}""".stripMargin
-    ).asSigmaProp
+    ).asSigmaProp)
 
     val trustedProver = new ContextEnrichingTestProvingInterpreter
     val trustedPubKey = trustedProver.dlogSecrets.head.publicImage
@@ -389,10 +392,10 @@ class TrustlessLETS4 extends SigmaTestingCommons {
       "letsTokenID" -> letsTokenID,
       "minErgsToJoin" -> minErgsToJoin,
       "trustedPubKey" -> trustedPubKey,
-      "memberBoxScriptHash" -> Blake2b256(memberBoxScript.treeWithSegregation.bytes)
+      "memberBoxScriptHash" -> Blake2b256(memberBoxScript.bytes)
     )
 
-    val tokenScript = compile(tokenBoxEnv,
+    val tokenScript = mkTestErgoTree(compile(tokenBoxEnv,
       """{
         |val validRateOracle = CONTEXT.dataInputs(0).tokens(0)._1 == rateTokenID
         |val rate = CONTEXT.dataInputs(0).R4[Int].get
@@ -425,7 +428,7 @@ class TrustlessLETS4 extends SigmaTestingCommons {
         |
         |memberSpend || trustedPubKeySpend
         |}
-      """.stripMargin).asSigmaProp
+      """.stripMargin).asSigmaProp)
 
     val tokenBoxCreationHeight = 70
     val tokenAmount = 10      // LongConstant(10)

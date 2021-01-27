@@ -281,6 +281,8 @@ object Terms {
     def apply(args: IndexedSeq[(String,SType)], body: Value[SType]): Lambda = Lambda(Nil, args, NoType, Some(body))
   }
 
+  /** Operation identity descriptor used in AOT costing (see usages in RuntimeCosting and
+    * CostTable) */
   case class OperationId(name: String, opType: SFunc)
 
   implicit class ValueOps(val v: Value[SType]) extends AnyVal {
