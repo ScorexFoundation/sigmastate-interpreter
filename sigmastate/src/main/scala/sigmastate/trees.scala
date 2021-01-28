@@ -172,6 +172,7 @@ case class BoolToSigmaProp(value: BoolValue) extends SigmaPropValue {
 }
 object BoolToSigmaProp extends ValueCompanion {
   override def opCode: OpCode = OpCodes.BoolToSigmaPropCode
+  override def costKind: CostKind = FixedCost
   val OpType = SFunc(SBoolean, SSigmaProp)
 }
 
@@ -189,6 +190,7 @@ case class CreateProveDlog(value: Value[SGroupElement.type]) extends SigmaPropVa
 }
 object CreateProveDlog extends ValueCompanion {
   override def opCode: OpCode = OpCodes.ProveDlogCode
+  override def costKind: CostKind = FixedCost
   val OpType = SFunc(SGroupElement, SSigmaProp)
 }
 
@@ -204,6 +206,7 @@ case class CreateAvlTree(operationFlags: ByteValue,
 }
 object CreateAvlTree extends ValueCompanion {
   override def opCode: OpCode = OpCodes.AvlTreeCode
+  override def costKind: CostKind = FixedCost
   val OpType = SFunc(Array(SByte, SByteArray, SInt, SIntOption), SAvlTree)
 }
 
@@ -228,6 +231,7 @@ case class CreateProveDHTuple(gv: Value[SGroupElement.type],
 }
 object CreateProveDHTuple extends ValueCompanion {
   override def opCode: OpCode = OpCodes.ProveDiffieHellmanTupleCode
+  override def costKind: CostKind = FixedCost
 }
 
 trait SigmaTransformer[IV <: SigmaPropValue, OV <: SigmaPropValue] extends SigmaPropValue {
@@ -259,6 +263,7 @@ case class SigmaAnd(items: Seq[SigmaPropValue]) extends SigmaTransformer[SigmaPr
 object SigmaAnd extends SigmaTransformerCompanion {
   val OpType = SFunc(SCollection.SSigmaPropArray, SSigmaProp)
   override def opCode: OpCode = OpCodes.SigmaAndCode
+  override def costKind: CostKind = PerItemCost
   override def argInfos: Seq[ArgInfo] = SigmaAndInfo.argInfos
   def apply(first: SigmaPropValue, second: SigmaPropValue, tail: SigmaPropValue*): SigmaAnd = SigmaAnd(Array(first, second) ++ tail)
 }
@@ -286,6 +291,7 @@ case class SigmaOr(items: Seq[SigmaPropValue]) extends SigmaTransformer[SigmaPro
 object SigmaOr extends SigmaTransformerCompanion {
   val OpType = SFunc(SCollection.SSigmaPropArray, SSigmaProp)
   override def opCode: OpCode = OpCodes.SigmaOrCode
+  override def costKind: CostKind = PerItemCost
   override def argInfos: Seq[ArgInfo] = SigmaOrInfo.argInfos
   def apply(head: SigmaPropValue, tail: SigmaPropValue*): SigmaOr = SigmaOr(head +: tail)
 }
@@ -319,6 +325,7 @@ case class OR(input: Value[SCollection[SBoolean.type]])
 
 object OR extends LogicalTransformerCompanion {
   override def opCode: OpCode = OrCode
+  override def costKind: CostKind = PerItemCost
   override def argInfos: Seq[ArgInfo] = Operations.ORInfo.argInfos
 
   def apply(children: Seq[Value[SBoolean.type]]): OR =
@@ -350,6 +357,7 @@ case class XorOf(input: Value[SCollection[SBoolean.type]])
 
 object XorOf extends LogicalTransformerCompanion {
   override def opCode: OpCode = XorOfCode
+  override def costKind: CostKind = PerItemCost
   override def argInfos: Seq[ArgInfo] = Operations.XorOfInfo.argInfos
 
   def apply(children: Seq[Value[SBoolean.type]]): XorOf =
@@ -380,6 +388,7 @@ case class AND(input: Value[SCollection[SBoolean.type]])
 
 object AND extends LogicalTransformerCompanion {
   override def opCode: OpCode = AndCode
+  override def costKind: CostKind = PerItemCost
   override def argInfos: Seq[ArgInfo] = Operations.ANDInfo.argInfos
 
   def apply(children: Seq[Value[SBoolean.type]]): AND =
@@ -413,6 +422,7 @@ case class AtLeast(bound: Value[SInt.type], input: Value[SCollection[SSigmaProp.
 
 object AtLeast extends ValueCompanion {
   override def opCode: OpCode = AtLeastCode
+  override def costKind: CostKind = PerItemCost
   val OpType: SFunc = SFunc(Array(SInt, SCollection.SBooleanArray), SBoolean)
   val MaxChildrenCount: Int = SigmaConstants.MaxChildrenCountForAtLeastOp.value
 
@@ -500,6 +510,7 @@ trait NumericCastCompanion extends ValueCompanion {
 
 object Upcast extends NumericCastCompanion {
   override def opCode: OpCode = OpCodes.UpcastCode
+  override def costKind: CostKind = FixedCost
   override def argInfos: Seq[ArgInfo] = UpcastInfo.argInfos
   def tT = SType.tT
   def tR = SType.tR
@@ -523,6 +534,7 @@ case class Downcast[T <: SNumericType, R <: SNumericType](input: Value[T], tpe: 
 
 object Downcast extends NumericCastCompanion {
   override def opCode: OpCode = OpCodes.DowncastCode
+  override def costKind: CostKind = FixedCost
   override def argInfos: Seq[ArgInfo] = DowncastInfo.argInfos
   def tT = SType.tT
   def tR = SType.tR
@@ -545,6 +557,7 @@ case class LongToByteArray(input: Value[SLong.type])
 object LongToByteArray extends SimpleTransformerCompanion {
   val OpType = SFunc(SLong, SByteArray)
   override def opCode: OpCode = OpCodes.LongToByteArrayCode
+  override def costKind: CostKind = FixedCost
   override def argInfos: Seq[ArgInfo] = LongToByteArrayInfo.argInfos
 }
 
@@ -564,6 +577,7 @@ case class ByteArrayToLong(input: Value[SByteArray])
 object ByteArrayToLong extends SimpleTransformerCompanion {
   val OpType = SFunc(SByteArray, SLong)
   override def opCode: OpCode = OpCodes.ByteArrayToLongCode
+  override def costKind: CostKind = FixedCost
   override def argInfos: Seq[ArgInfo] = ByteArrayToLongInfo.argInfos
 }
 
@@ -583,6 +597,7 @@ case class ByteArrayToBigInt(input: Value[SByteArray])
 object ByteArrayToBigInt extends SimpleTransformerCompanion {
   val OpType = SFunc(SByteArray, SBigInt)
   override def opCode: OpCode = OpCodes.ByteArrayToBigIntCode
+  override def costKind: CostKind = FixedCost
   override def argInfos: Seq[ArgInfo] = ByteArrayToBigIntInfo.argInfos
 }
 
@@ -602,6 +617,7 @@ case class DecodePoint(input: Value[SByteArray])
 object DecodePoint extends SimpleTransformerCompanion {
   val OpType = SFunc(SByteArray, SGroupElement)
   override def opCode: OpCode = OpCodes.DecodePointCode
+  override def costKind: CostKind = FixedCost
   override def argInfos: Seq[ArgInfo] = DecodePointInfo.argInfos
 }
 
@@ -628,6 +644,7 @@ case class CalcBlake2b256(override val input: Value[SByteArray]) extends CalcHas
 }
 object CalcBlake2b256 extends SimpleTransformerCompanion {
   override def opCode: OpCode = OpCodes.CalcBlake2b256Code
+  override def costKind: CostKind = PerBlockCost
   override def argInfos: Seq[ArgInfo] = CalcBlake2b256Info.argInfos
 }
 
@@ -646,6 +663,7 @@ case class CalcSha256(override val input: Value[SByteArray]) extends CalcHash {
 }
 object CalcSha256 extends SimpleTransformerCompanion {
   override def opCode: OpCode = OpCodes.CalcSha256Code
+  override def costKind: CostKind = PerBlockCost
   override def argInfos: Seq[ArgInfo] = CalcSha256Info.argInfos
 }
 
@@ -679,6 +697,7 @@ case class SubstConstants[T <: SType](scriptBytes: Value[SByteArray], positions:
 
 object SubstConstants extends ValueCompanion {
   override def opCode: OpCode = OpCodes.SubstConstantsCode
+  override def costKind: CostKind = PerItemCost
 
   def eval(scriptBytes: Array[Byte],
            positions: Array[Int],
@@ -736,6 +755,7 @@ case class ArithOp[T <: SType](left: Value[T], right: Value[T], override val opC
 }
 /** NOTE: by-name argument is required for correct initialization order. */
 abstract class ArithOpCompanion(val opCode: OpCode, val name: String, _argInfos: => Seq[ArgInfo]) extends TwoArgumentOperationCompanion {
+  override def costKind: CostKind = FixedCost
   override def argInfos: Seq[ArgInfo] = _argInfos
   @inline final def eval(node: SValue, typeCode: SType.TypeCode, x: Any, y: Any)(implicit E: ErgoTreeEvaluator): Any = {
     val impl = ArithOp.numerics(typeCode)
@@ -815,6 +835,7 @@ case class Negation[T <: SType](input: Value[T]) extends OneArgumentOperation[T,
 }
 object Negation extends OneArgumentOperationCompanion {
   override def opCode: OpCode = OpCodes.NegationCode
+  override def costKind: CostKind = FixedCost
   override def argInfos: Seq[ArgInfo] = NegationInfo.argInfos
 }
 
@@ -825,6 +846,7 @@ case class BitInversion[T <: SType](input: Value[T]) extends OneArgumentOperatio
 }
 object BitInversion extends OneArgumentOperationCompanion {
   override def opCode: OpCode = OpCodes.BitInversionCode
+  override def costKind: CostKind = FixedCost
   override def argInfos: Seq[ArgInfo] = BitInversionInfo.argInfos
 }
 
@@ -838,6 +860,7 @@ case class BitOp[T <: SType](left: Value[T], right: Value[T], override val opCod
 /** NOTE: by-name argument is required for correct initialization order. */
 class BitOpCompanion(val opCode: OpCode, val name: String, _argInfos: => Seq[ArgInfo]) extends TwoArgumentOperationCompanion {
   override def argInfos: Seq[ArgInfo] = _argInfos
+  override def costKind: CostKind = FixedCost
 }
 
 object BitOp {
@@ -867,6 +890,7 @@ case class ModQ(input: Value[SBigInt.type])
 }
 object ModQ extends ValueCompanion {
   override def opCode: OpCode = OpCodes.ModQCode
+  override def costKind: CostKind = FixedCost
 }
 
 case class ModQArithOp(left: Value[SBigInt.type], right: Value[SBigInt.type], override val opCode: OpCode)
@@ -877,6 +901,7 @@ case class ModQArithOp(left: Value[SBigInt.type], right: Value[SBigInt.type], ov
 }
 abstract class ModQArithOpCompanion(val opCode: OpCode, val name: String) extends ValueCompanion {
   def argInfos: Seq[ArgInfo]
+  override def costKind: CostKind = FixedCost
 }
 
 trait OpGroup[C <: ValueCompanion] {
@@ -922,6 +947,7 @@ case class Xor(override val left: Value[SByteArray],
 object Xor extends TwoArgumentOperationCompanion {
   val OpType = SFunc(Array(SByteArray, SByteArray), SByteArray)
   override def opCode: OpCode = XorCode
+  override def costKind: CostKind = PerBlockCost
   override def argInfos: Seq[ArgInfo] = XorInfo.argInfos
 }
 
@@ -942,6 +968,7 @@ case class Exponentiate(override val left: Value[SGroupElement.type],
 object Exponentiate extends TwoArgumentOperationCompanion {
   val OpType = SFunc(Array(SGroupElement, SBigInt), SGroupElement)
   override def opCode: OpCode = ExponentiateCode
+  override def costKind: CostKind = FixedCost
   override def argInfos: Seq[ArgInfo] = ExponentiateInfo.argInfos
 }
 
@@ -961,6 +988,7 @@ case class MultiplyGroup(override val left: Value[SGroupElement.type],
 object MultiplyGroup extends TwoArgumentOperationCompanion {
   val OpType = SFunc(Array(SGroupElement, SGroupElement), SGroupElement)
   override def opCode: OpCode = MultiplyGroupCode
+  override def costKind: CostKind = FixedCost
   override def argInfos: Seq[ArgInfo] = MultiplyGroupInfo.argInfos
 }
 // Relation
@@ -994,6 +1022,7 @@ case class LT[T <: SType](override val left: Value[T], override val right: Value
 }
 object LT extends RelationCompanion {
   override def opCode: OpCode = LtCode
+  override def costKind: CostKind = FixedCost
   override def argInfos: Seq[ArgInfo] = LTInfo.argInfos
 }
 /**
@@ -1010,6 +1039,7 @@ case class LE[T <: SType](override val left: Value[T], override val right: Value
 }
 object LE extends RelationCompanion {
   override def opCode: OpCode = LeCode
+  override def costKind: CostKind = FixedCost
   override def argInfos: Seq[ArgInfo] = LEInfo.argInfos
 }
 /**
@@ -1026,6 +1056,7 @@ case class GT[T <: SType](override val left: Value[T], override val right: Value
 }
 object GT extends RelationCompanion {
   override def opCode: OpCode = GtCode
+  override def costKind: CostKind = FixedCost
   override def argInfos: Seq[ArgInfo] = GTInfo.argInfos
 }
 /**
@@ -1042,6 +1073,7 @@ case class GE[T <: SType](override val left: Value[T], override val right: Value
 }
 object GE extends RelationCompanion {
   override def opCode: OpCode = GeCode
+  override def costKind: CostKind = FixedCost
   override def argInfos: Seq[ArgInfo] = GEInfo.argInfos
 }
 
@@ -1073,6 +1105,7 @@ case class EQ[S <: SType](override val left: Value[S], override val right: Value
 }
 object EQ extends RelationCompanion {
   override def opCode: OpCode = EqCode
+  override def costKind: CostKind = PerBlockCost
   override def argInfos: Seq[ArgInfo] = EQInfo.argInfos
 }
 
@@ -1103,6 +1136,7 @@ case class NEQ[S <: SType](override val left: Value[S], override val right: Valu
 }
 object NEQ extends RelationCompanion {
   override def opCode: OpCode = NeqCode
+  override def costKind: CostKind = PerBlockCost
   override def argInfos: Seq[ArgInfo] = NEQInfo.argInfos
 }
 
@@ -1123,6 +1157,7 @@ case class BinOr(override val left: BoolValue, override val right: BoolValue)
 object BinOr extends RelationCompanion {
   val OpType = SFunc(Array(SBoolean, SBoolean), SBoolean)
   override def opCode: OpCode = BinOrCode
+  override def costKind: CostKind = FixedCost
   override def argInfos: Seq[ArgInfo] = BinOrInfo.argInfos
 }
 
@@ -1143,6 +1178,7 @@ case class BinAnd(override val left: BoolValue, override val right: BoolValue)
 object BinAnd extends RelationCompanion {
   val OpType = SFunc(Array(SBoolean, SBoolean), SBoolean)
   override def opCode: OpCode = BinAndCode
+  override def costKind: CostKind = FixedCost
   override def argInfos: Seq[ArgInfo] = BinAndInfo.argInfos
 }
 
@@ -1160,6 +1196,7 @@ case class BinXor(override val left: BoolValue, override val right: BoolValue)
 object BinXor extends RelationCompanion {
   val OpType = SFunc(Array(SBoolean, SBoolean), SBoolean)
   override def opCode: OpCode = BinXorCode
+  override def costKind: CostKind = FixedCost
   override def argInfos: Seq[ArgInfo] = BinXorInfo.argInfos
 }
 
@@ -1195,6 +1232,7 @@ trait QuadrupleCompanion extends ValueCompanion {
 }
 object TreeLookup extends QuadrupleCompanion {
   override def opCode: OpCode = OpCodes.AvlTreeGetCode
+  override def costKind: CostKind = FixedCost
   override def argInfos: Seq[ArgInfo] = TreeLookupInfo.argInfos
 }
 
@@ -1222,6 +1260,7 @@ case class If[T <: SType](condition: Value[SBoolean.type], trueBranch: Value[T],
 }
 object If extends QuadrupleCompanion {
   override def opCode: OpCode = OpCodes.IfCode
+  override def costKind: CostKind = FixedCost
   override def argInfos: Seq[ArgInfo] = IfInfo.argInfos
   val GenericOpType = SFunc(Array(SBoolean, SType.tT, SType.tT), SType.tT)
 }
@@ -1238,6 +1277,7 @@ case class LogicalNot(input: Value[SBoolean.type]) extends NotReadyValueBoolean 
 object LogicalNot extends ValueCompanion {
   val OpType = SFunc(Array(SBoolean), SBoolean)
   override def opCode: OpCode = OpCodes.LogicalNotCode
+  override def costKind: CostKind = FixedCost
 }
 
 

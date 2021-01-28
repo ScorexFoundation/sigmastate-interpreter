@@ -52,6 +52,7 @@ case class MapCollection[IV <: SType, OV <: SType](
 }
 object MapCollection extends ValueCompanion {
   override def opCode: OpCode = OpCodes.MapCollectionCode
+  override def costKind: CostKind = PerItemCost
 }
 
 /** Puts the elements of other collection `col2` after the elements of `input` collection
@@ -71,6 +72,7 @@ case class Append[IV <: SType](input: Value[SCollection[IV]], col2: Value[SColle
 }
 object Append extends ValueCompanion {
   override def opCode: OpCode = OpCodes.AppendCode
+  override def costKind: CostKind = PerItemCost
 }
 
 /** Selects an interval of elements.  The returned collection is made up
@@ -99,6 +101,7 @@ case class Slice[IV <: SType](input: Value[SCollection[IV]], from: Value[SInt.ty
 }
 object Slice extends ValueCompanion {
   override def opCode: OpCode = OpCodes.SliceCode
+  override def costKind: CostKind = PerItemCost
 }
 
 /** Selects all elements of `input` collection which satisfy the condition.
@@ -123,6 +126,7 @@ case class Filter[IV <: SType](input: Value[SCollection[IV]],
 }
 object Filter extends ValueCompanion {
   override def opCode: OpCode = OpCodes.FilterCode
+  override def costKind: CostKind = PerItemCost
 }
 
 /** Transforms a collection of values to a boolean (see [[Exists]], [[ForAll]]). */
@@ -156,6 +160,7 @@ case class Exists[IV <: SType](override val input: Value[SCollection[IV]],
 }
 object Exists extends BooleanTransformerCompanion {
   override def opCode: OpCode = OpCodes.ExistsCode
+  override def costKind: CostKind = PerItemCost
   override def argInfos: Seq[ArgInfo] = ExistsInfo.argInfos
 }
 
@@ -180,6 +185,7 @@ case class ForAll[IV <: SType](override val input: Value[SCollection[IV]],
 }
 object ForAll extends BooleanTransformerCompanion {
   override def opCode: OpCode = OpCodes.ForAllCode
+  override def costKind: CostKind = PerItemCost
   override def argInfos: Seq[ArgInfo] = ForAllInfo.argInfos
 }
 
@@ -216,6 +222,7 @@ case class Fold[IV <: SType, OV <: SType](input: Value[SCollection[IV]],
 
 object Fold extends ValueCompanion {
   override def opCode: OpCode = OpCodes.FoldCode
+  override def costKind: CostKind = PerItemCost
   def sum[T <: SNumericType](input: Value[SCollection[T]], varId: Int)(implicit tT: T) =
     Fold(input,
       Constant(tT.upcast(0.toByte), tT),
@@ -257,6 +264,7 @@ case class ByIndex[V <: SType](input: Value[SCollection[V]],
 }
 object ByIndex extends ValueCompanion {
   override def opCode: OpCode = OpCodes.ByIndexCode
+  override def costKind: CostKind = FixedCost
 }
 
 /** Select tuple field by its 1-based index. E.g. input._1 is transformed to
@@ -282,6 +290,7 @@ case class SelectField(input: Value[STuple], fieldIndex: Byte)
 }
 object SelectField extends ValueCompanion {
   override def opCode: OpCode = OpCodes.SelectFieldCode
+  override def costKind: CostKind = FixedCost
   def typed[T <: SValue](input: Value[STuple], fieldIndex: Byte): T = {
     SelectField(input, fieldIndex).asInstanceOf[T]
   }
@@ -295,6 +304,7 @@ case class SigmaPropIsProven(input: Value[SSigmaProp.type])
 }
 object SigmaPropIsProven extends ValueCompanion {
   override def opCode: OpCode = OpCodes.SigmaPropIsProvenCode
+  override def costKind: CostKind = FixedCost
 }
 
 /** Extract serialized bytes of a SigmaProp value */
@@ -313,6 +323,7 @@ case class SigmaPropBytes(input: Value[SSigmaProp.type])
 }
 object SigmaPropBytes extends ValueCompanion {
   override def opCode: OpCode = OpCodes.SigmaPropBytesCode
+  override def costKind: CostKind = PerItemCost
 }
 trait SimpleTransformerCompanion extends ValueCompanion {
   def argInfos: Seq[ArgInfo]
@@ -332,6 +343,7 @@ case class SizeOf[V <: SType](input: Value[SCollection[V]])
 object SizeOf extends SimpleTransformerCompanion {
   val OpType = SFunc(SCollection(SType.tIV), SInt)
   override def opCode: OpCode = OpCodes.SizeOfCode
+  override def costKind: CostKind = FixedCost
   override def argInfos: Seq[ArgInfo] = SizeOfInfo.argInfos
 }
 
@@ -351,6 +363,7 @@ case class ExtractAmount(input: Value[SBox.type]) extends Extract[SLong.type] wi
 object ExtractAmount extends SimpleTransformerCompanion {
   val OpType = SFunc(SBox, SLong)
   override def opCode: OpCode = OpCodes.ExtractAmountCode
+  override def costKind: CostKind = FixedCost
   override def argInfos: Seq[ArgInfo] = ExtractAmountInfo.argInfos
 }
 
@@ -370,6 +383,12 @@ case class ExtractScriptBytes(input: Value[SBox.type]) extends Extract[SByteArra
 object ExtractScriptBytes extends SimpleTransformerCompanion {
   val OpType = SFunc(SBox, SByteArray)
   override def opCode: OpCode = OpCodes.ExtractScriptBytesCode
+
+  /** The cost if fixed and doesn't include serialization of ErgoTree because
+    * the ErgoTree is expected to be constructed with non-null propositionBytes.
+    * This is (and must be) guaranteed by ErgoTree deserializer. */
+  override def costKind: CostKind = FixedCost
+
   override def argInfos: Seq[ArgInfo] = ExtractScriptBytesInfo.argInfos
 }
 
@@ -386,6 +405,10 @@ case class ExtractBytes(input: Value[SBox.type]) extends Extract[SByteArray] wit
 object ExtractBytes extends SimpleTransformerCompanion {
   val OpType = SFunc(SBox, SByteArray)
   override def opCode: OpCode = OpCodes.ExtractBytesCode
+  /** The cost if fixed and doesn't include serialization of ErgoBox because
+    * the ErgoBox is expected to be constructed with non-null `bytes`.
+    * TODO JITC: This is not, but must be guaranteed by ErgoBox deserializer. */
+  override def costKind: CostKind = FixedCost
   override def argInfos: Seq[ArgInfo] = ExtractBytesInfo.argInfos
 }
 
@@ -402,6 +425,11 @@ case class ExtractBytesWithNoRef(input: Value[SBox.type]) extends Extract[SByteA
 object ExtractBytesWithNoRef extends SimpleTransformerCompanion {
   val OpType = SFunc(SBox, SByteArray)
   override def opCode: OpCode = OpCodes.ExtractBytesWithNoRefCode
+
+  /** The cost if fixed and doesn't include serialization of ErgoBox because
+    * the ErgoBox is expected to be constructed with non-null `bytes`. */
+  override def costKind: CostKind = FixedCost
+
   override def argInfos: Seq[ArgInfo] = ExtractBytesWithNoRefInfo.argInfos
 }
 
@@ -418,6 +446,7 @@ case class ExtractId(input: Value[SBox.type]) extends Extract[SByteArray] with N
 object ExtractId extends SimpleTransformerCompanion {
   val OpType = SFunc(SBox, SByteArray)
   override def opCode: OpCode = OpCodes.ExtractIdCode
+  override def costKind: CostKind = FixedCost
   override def argInfos: Seq[ArgInfo] = ExtractIdInfo.argInfos
 }
 
@@ -437,6 +466,7 @@ case class ExtractRegisterAs[V <: SType]( input: Value[SBox.type],
 }
 object ExtractRegisterAs extends ValueCompanion {
   override def opCode: OpCode = OpCodes.ExtractRegisterAs
+  override def costKind: CostKind = FixedCost
 
   //@hotspot: avoids thousands of allocations per second
   private val BoxAndByte: IndexedSeq[SType] = Array(SBox, SByte)
@@ -463,6 +493,7 @@ case class ExtractCreationInfo(input: Value[SBox.type]) extends Extract[STuple] 
 }
 object ExtractCreationInfo extends SimpleTransformerCompanion {
   override def opCode: OpCode = OpCodes.ExtractCreationInfoCode
+  override def costKind: CostKind = FixedCost
   override def argInfos: Seq[ArgInfo] = ExtractCreationInfoInfo.argInfos
   val ResultType = STuple(SInt, SByteArray)
   val OpType = SFunc(SBox, ResultType)
@@ -484,6 +515,7 @@ case class DeserializeContext[V <: SType](id: Byte, tpe: V) extends Deserialize[
 }
 object DeserializeContext extends ValueCompanion {
   override def opCode: OpCode = OpCodes.DeserializeContextCode
+  override def costKind: CostKind = PerBlockCost
 }
 
 /** Extract register of SELF box as Coll[Byte], deserialize it into Value and inline into executing script.
@@ -495,6 +527,7 @@ case class DeserializeRegister[V <: SType](reg: RegisterId, tpe: V, default: Opt
 }
 object DeserializeRegister extends ValueCompanion {
   override def opCode: OpCode = OpCodes.DeserializeRegisterCode
+  override def costKind: CostKind = PerBlockCost
 }
 
 /** See [[special.sigma.Context.getVar()]] for detailed description. */
@@ -509,6 +542,7 @@ case class GetVar[V <: SType](varId: Byte, override val tpe: SOption[V]) extends
 }
 object GetVar extends ValueCompanion {
   override def opCode: OpCode = OpCodes.GetVarCode
+  override def costKind: CostKind = FixedCost
   def apply[V <: SType](varId: Byte, innerTpe: V): GetVar[V] = GetVar[V](varId, SOption(innerTpe))
 }
 
@@ -530,6 +564,7 @@ case class OptionGet[V <: SType](input: Value[SOption[V]]) extends Transformer[S
 }
 object OptionGet extends SimpleTransformerCompanion {
   override def opCode: OpCode = OpCodes.OptionGetCode
+  override def costKind: CostKind = FixedCost
   override def argInfos: Seq[ArgInfo] = OptionGetInfo.argInfos
 }
 
@@ -554,6 +589,7 @@ case class OptionGetOrElse[V <: SType](input: Value[SOption[V]], default: Value[
 }
 object OptionGetOrElse extends ValueCompanion {
   override def opCode: OpCode = OpCodes.OptionGetOrElseCode
+  override def costKind: CostKind = FixedCost
 }
 
 /** Returns false if the option is None, true otherwise. */
@@ -570,5 +606,6 @@ case class OptionIsDefined[V <: SType](input: Value[SOption[V]])
 }
 object OptionIsDefined extends SimpleTransformerCompanion {
   override def opCode: OpCode = OpCodes.OptionIsDefinedCode
+  override def costKind: CostKind = FixedCost
   override def argInfos: Seq[ArgInfo] = OptionIsDefinedInfo.argInfos
 }

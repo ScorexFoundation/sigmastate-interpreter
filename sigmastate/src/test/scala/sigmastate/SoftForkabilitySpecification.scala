@@ -5,14 +5,14 @@ import org.ergoplatform.validation.ValidationRules.{CheckValidOpCode, trySoftFor
 import org.ergoplatform.validation._
 import sigmastate.SPrimType.MaxPrimTypeCode
 import sigmastate.Values.ErgoTree.EmptyConstants
-import sigmastate.Values.{UnparsedErgoTree, NotReadyValueInt, ByteArrayConstant, Tuple, IntConstant, ErgoTree, ValueCompanion}
+import sigmastate.Values.{UnparsedErgoTree, CostKind, NotReadyValueInt, FixedCost, ByteArrayConstant, Tuple, IntConstant, ErgoTree, ValueCompanion}
 import sigmastate.eval.Colls
 import sigmastate.helpers.{ErgoLikeContextTesting, ErgoLikeTestProvingInterpreter, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.interpreter.{ProverResult, ContextExtension}
 import sigmastate.lang.Terms._
-import sigmastate.lang.exceptions.{SerializerException, SigmaException, CosterException, InterpreterException}
+import sigmastate.lang.exceptions.{SerializerException, SigmaException, InterpreterException, CosterException}
 import sigmastate.serialization.OpCodes.{OpCodeExtra, LastConstantCode, OpCode}
 import sigmastate.serialization._
 import sigmastate.utxo.{DeserializeContext, SelectField}
@@ -104,6 +104,7 @@ class SoftForkabilitySpecification extends SigmaTestingData {
   case object Height2 extends NotReadyValueInt with ValueCompanion {
     override def companion = this
     override val opCode: OpCode = Height2Code // use reserved code
+    override def costKind: CostKind = FixedCost
     def opType = SFunc(SContext, SInt)
   }
   val Height2Ser = CaseObjectSerialization(Height2, Height2)

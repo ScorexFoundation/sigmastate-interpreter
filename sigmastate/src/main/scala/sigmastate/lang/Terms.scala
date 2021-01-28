@@ -32,6 +32,7 @@ object Terms {
   }
   object Block extends ValueCompanion {
     override def opCode: OpCode = OpCodes.Undefined
+    override def costKind: CostKind = Value.notSupportedError(this, "costKind")
     def apply(let: Val, result: SValue)(implicit o1: Overload1): Block =
       Block(Seq(let), result)
   }
@@ -55,6 +56,7 @@ object Terms {
   }
   object ZKProofBlock extends ValueCompanion {
     override def opCode: OpCode = OpCodes.Undefined
+    override def costKind: CostKind = Value.notSupportedError(this, "costKind")
     val OpType = SFunc(SSigmaProp, SBoolean)
   }
 
@@ -82,6 +84,7 @@ object Terms {
   }
   object ValNode extends ValueCompanion {
     override def opCode: OpCode = OpCodes.Undefined
+    override def costKind: CostKind = Value.notSupportedError(this, "costKind")
   }
 
   /** Frontend node to select a field from an object. Should be transformed to SelectField*/
@@ -98,6 +101,7 @@ object Terms {
   }
   object Select extends ValueCompanion {
     override def opCode: OpCode = OpCodes.Undefined
+    override def costKind: CostKind = Value.notSupportedError(this, "costKind")
   }
 
   /** Frontend node to represent variable names parsed in a source code.
@@ -109,6 +113,7 @@ object Terms {
   }
   object Ident extends ValueCompanion {
     override def opCode: OpCode = OpCodes.Undefined
+    override def costKind: CostKind = Value.notSupportedError(this, "costKind")
     def apply(name: String): Ident = Ident(name, NoType)
   }
 
@@ -156,6 +161,7 @@ object Terms {
   }
   object Apply extends ValueCompanion {
     override def opCode: OpCode = OpCodes.FuncApplyCode
+    override def costKind: CostKind = FixedCost
   }
 
   /** Apply types for type parameters of input value. */
@@ -172,6 +178,7 @@ object Terms {
   }
   object ApplyTypes extends ValueCompanion {
     override def opCode: OpCode = OpCodes.Undefined
+    override def costKind: CostKind = Value.notSupportedError(this, "costKind")
   }
 
   /** Frontend node to represent potential method call in a source code.
@@ -183,6 +190,7 @@ object Terms {
   }
   object MethodCallLike extends ValueCompanion {
     override def opCode: OpCode = OpCodes.Undefined
+    override def costKind: CostKind = Value.notSupportedError(this, "costKind")
   }
 
   /** Represents in ErgoTree an invocation of method of the object `obj` with arguments `args`.
@@ -232,6 +240,7 @@ object Terms {
   }
   object MethodCall extends ValueCompanion {
     override def opCode: OpCode = OpCodes.MethodCallCode
+    override def costKind: CostKind = FixedCost
 
     /** Helper constructor which allows to cast the resulting node to the specified
       * [[sigmastate.Values.Value]] type `T`.
@@ -246,6 +255,7 @@ object Terms {
   }
   object PropertyCall extends ValueCompanion {
     override def opCode: OpCode = OpCodes.PropertyCallCode
+    override def costKind: CostKind = FixedCost
   }
 
   case class STypeParam(ident: STypeVar, upperBound: Option[SType] = None, lowerBound: Option[SType] = None) {
@@ -274,6 +284,7 @@ object Terms {
   }
   object Lambda extends ValueCompanion {
     override def opCode: OpCode = OpCodes.Undefined
+    override def costKind: CostKind = Value.notSupportedError(this, "costKind")
     def apply(args: IndexedSeq[(String,SType)], resTpe: SType, body: Value[SType]): Lambda =
       Lambda(Nil, args, resTpe, Some(body))
     def apply(args: IndexedSeq[(String,SType)], resTpe: SType, body: Option[Value[SType]]): Lambda =
