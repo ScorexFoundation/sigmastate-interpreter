@@ -1016,7 +1016,7 @@ case class LT[T <: SType](override val left: Value[T], override val right: Value
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val lV = left.evalTo[Any](env)
     val rV = right.evalTo[Any](env)
-    addCost(CostOf.LT(left.tpe))
+    addCost(CostOf.LT(left.tpe))  // TODO JITC: measure
     opImpl.o.lt(lV, rV)
   }
 }

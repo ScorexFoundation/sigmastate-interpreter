@@ -418,7 +418,7 @@ case class ExtractBytesWithNoRef(input: Value[SBox.type]) extends Extract[SByteA
   override def opType = ExtractBytesWithNoRef.OpType
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val inputV = input.evalTo[Box](env)
-    // TODO JITC
+    // TODO JITC: add cost of extracting directly from `ErgoBox.bytes` array
     inputV.bytesWithoutRef
   }
 }
@@ -439,7 +439,7 @@ case class ExtractId(input: Value[SBox.type]) extends Extract[SByteArray] with N
   override def opType = ExtractId.OpType
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val inputV = input.evalTo[Box](env)
-    // TODO JITC
+    // TODO JITC: add cost of computing hash from `ErgoBox.bytes`
     inputV.id
   }
 }
