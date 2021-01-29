@@ -565,6 +565,28 @@ object SMethod {
     }
   }
 
+  /** Returns a cost function which expects `obj` to be of `Coll[T]` type and
+    * uses its length to compute SeqCostItem  */
+  def perItemCost(baseCost: Int, perItemCost: Int): MethodCostFunc = new MethodCostFunc {
+    override def apply(E: ErgoTreeEvaluator,
+                       mc: MethodCall,
+                       obj: Any, args: Array[Any]): CostDetails = obj match {
+      case coll: Coll[a] =>
+        if (E.settings.costTracingEnabled) {
+          val desc = MethodDesc(mc.method)
+          TracedCost(Array(
+            SimpleCostItem(desc, baseCost),
+            SeqCostItem(desc, perItemCost, coll.length)
+          ))
+        }
+        else
+          GivenCost(baseCost + SeqCostItem.calcCost(perItemCost, coll.length))
+      case _ =>
+        ErgoTreeEvaluator.error(
+          s"Invalid object $obj of method call $mc: Coll type is expected")
+    }
+  }
+
   /** Some runtime methods (like Coll.map, Coll.flatMap) require additional RType descriptors.
     * The builder can extract those descriptors from the given type of the method signature.
     */
@@ -1279,10 +1301,10 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
         ArgInfo("p", "the predicate used to test elements."))
 
   val AppendMethod = SMethod(this, "append", SFunc(IndexedSeq(ThisType, ThisType), ThisType, Seq(paramIV)), 9)
-  .withIRInfo({
-    case (builder, obj, _, Seq(xs), _) =>
-      builder.mkAppend(obj.asCollection[SType], xs.asCollection[SType])
-  })
+      .withIRInfo({
+        case (builder, obj, _, Seq(xs), _) =>
+          builder.mkAppend(obj.asCollection[SType], xs.asCollection[SType])
+      })
       .withInfo(Append, "Puts the elements of other collection after the elements of this collection (concatenation of 2 collections)",
         ArgInfo("other", "the collection to append at the end of this"))
   val ApplyMethod = SMethod(this, "apply", SFunc(IndexedSeq(ThisType, SInt), tIV, Seq(tIV)), 10)
@@ -1303,6 +1325,7 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
 
   val IndicesMethod = SMethod(this, "indices", SFunc(ThisType, SCollection(SInt)), 14)
       .withIRInfo(MethodCallIrBuilder)
+      .withCost(givenCost(CostOf.Indices))
       .withInfo(PropertyCall,
         """Produces the range of all indices of this collection as a new collection
          | containing [0 .. length-1] values.
@@ -1314,6 +1337,7 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
         MethodCallIrBuilder,
         javaMethodOf[Coll[_], Function1[_,_], RType[_]]("flatMap"),
         { mtype => Array(mtype.tRange.asCollection[SType].elemType) })
+      .withCost(SMethod.perItemCost(CostOf.Flatmap, CostOf.Flatmap_PerItem))
       .withInfo(MethodCall,
         """ Builds a new collection by applying a function to all elements of this collection
          | and using the elements of the resulting collections.
@@ -1370,7 +1394,9 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
 
   val ZipMethod = SMethod(this, "zip",
     SFunc(IndexedSeq(ThisType, tOVColl), SCollection(STuple(tIV, tOV)), Seq(tIV, tOV)), 29)
-      .withIRInfo(MethodCallIrBuilder).withInfo(MethodCall, "")
+      .withIRInfo(MethodCallIrBuilder)
+      .withCost(SMethod.perItemCost(CostOf.Zip, CostOf.Zip_PerItem))
+      .withInfo(MethodCall, "")
 
   val DistinctMethod = SMethod(this, "distinct",
     SFunc(IndexedSeq(ThisType), ThisType, Seq(tIV)), 30)

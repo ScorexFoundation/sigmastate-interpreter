@@ -376,7 +376,7 @@ case class ExtractScriptBytes(input: Value[SBox.type]) extends Extract[SByteArra
   override def opType = ExtractScriptBytes.OpType
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val inputV = input.evalTo[Box](env)
-    // TODO JITC
+    addCost(CostOf.ExtractScriptBytes)
     inputV.propositionBytes
   }
 }

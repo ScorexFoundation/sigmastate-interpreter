@@ -2660,7 +2660,7 @@ class SigmaDslSpecification extends SigmaDslTesting
             SimpleCostItem(OptionGet, 1), SimpleCostItem(FuncValue.AddToEnvironmentDesc, 1),
             SimpleCostItem(ValUse, 5),
             SimpleCostItem(PropertyCall, 5),
-            MethodCallCostItem(TracedCost(Array(SimpleCostItem(MethodDesc(SGroupElement.GetEncodedMethod), 3))))
+            MethodCallCostItem(TracedCost(Array(SimpleCostItem(SGroupElement.GetEncodedMethod, 3))))
           )
         )
         def success[T](v: T) = Expected(Success(v), 37905, cost)

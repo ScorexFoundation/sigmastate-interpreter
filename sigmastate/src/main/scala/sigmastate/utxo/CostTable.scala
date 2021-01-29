@@ -309,8 +309,8 @@ object CostTable {
   object CostOf {
     def Constant(constType: SType): Int = constType match {
       case SUnit | SBoolean | SByte | SShort | SInt | SLong | SBigInt | SString |
-           SGroupElement | SSigmaProp | SBox | SAvlTree => 1 // cf. constCost
-      case _: SCollectionType[_] => 1 // cf. constCost
+           SGroupElement | SSigmaProp | SBox | SAvlTree => 2 // cf. constCost
+      case _: SCollectionType[_] => 2 // cf. constCost
       case _ => Interpreter.error(s"Cost is not defined: unexpected constant type $constType")
     }
 
@@ -319,26 +319,26 @@ object CostTable {
 
     /** Cost of: 1) switch on the number of args 2) allocating a new Scala closure
       * Old cost: ("Lambda", "() => (D1) => R", lambdaCost),*/
-    def FuncValue = 4 // cf. lambdaCost
+    def FuncValue = 2
 
     /** Cost of: adding value to evaluator environment */
-    def AddToEnvironment = 1
+    def AddToEnvironment = 2
 
     /** Cost of: 1) switch on the number of args 2) Scala method call 3) add args to env
       * Old cost: lambdaInvoke == 30 */
-    def Apply = 5
+    def Apply = 13
 
     /** Cost of: 1) Calling Option.get Scala method. */
-    def OptionGet = 1 // cf. selectField
+    def OptionGet = 5 // cf. selectField
 
     /** Cost of: 1) Calling Context.OUTPUTS Scala method. */
     def Outputs = 1 // cf. selectField
 
     /** Cost of: 1) Lookup in immutable HashMap by valId: Int 2) alloc of Some(v) */
-    def ValUse = 5
+    def ValUse = 2
 
     /** Cost of: 1) packing args into Array 2) java.lang.reflect.Method.invoke */
-    def MethodCall = 5
+    def MethodCall = 3
 
     /** Cost of: allocating new collection
       * @see ConcreteCollection_PerItem */
@@ -361,17 +361,20 @@ object CostTable {
 
     /** Cost of: 1) accessing to array of context vars by index
       * Old cost: ("GetVar", "(Context, Byte) => Option[T]", getVarCost) */
-    def GetVar = 1
+    def GetVar = 3
 
 //    ("GetRegister", "(Box, Byte) => Option[T]", accessRegister),
 //    ("AccessRegister", "Box => Option[T]", accessRegister),
 
     /** Cost of: 1) access `value` property of a [[special.sigma.Box]] */
-    def ExtractAmount = 2
+    def ExtractAmount = 3
 
 //    ("ExtractId", "(Box) => Coll[Byte]", extractCost),
 //    ("ExtractBytes", "(Box) => Coll[Byte]", extractCost),
-//    ("ExtractScriptBytes", "(Box) => Coll[Byte]", extractCost),
+
+    /** CostOf: accessing ErgoBox.propositionBytes */
+    def ExtractScriptBytes = 3
+
 //    ("ExtractBytesWithNoRef", "(Box) => Coll[Byte]", extractCost),
 //    ("ExtractRegisterAs", "(Box,Byte) => Coll[BigInt]", extractCost),
 //    ("SBox$.tokens", "(Box) => Coll[(Coll[Byte],Long)]", extractCost),
@@ -408,7 +411,7 @@ object CostTable {
     /** Cost of: 1) calling Coll.length method (guaranteed to be O(1))
       * Twice the cost of SelectField.
       * Old cost: ("SizeOf", "(Coll[IV]) => Int", collLength) */
-    def SizeOf = 2  // cf. collLength
+    def SizeOf = 3  // cf. collLength
 
     /** Cost of: 1) obtain result RType 2) invoke map method 3) allocation of resulting
      * collection */
@@ -416,7 +419,24 @@ object CostTable {
 
     /** Cost of: 1) invoke Coll.filter method 2) allocation of resulting
      * collection */
-    def Filter = 2 // cf. collToColl
+    def Filter = 2
+
+    /** Cost of: 1) base cost of creating a collection of indices */
+    def Indices = 6
+
+    /** Cost of: 1) base cost of zipping two collections */
+    def Zip = 1
+
+    /** Cost of: 1) zipping two collections (per item) */
+    def Zip_PerItem = 1
+
+    /** Cost of: 1) base cost of Coll.flatMap */
+    def Flatmap = 2
+
+    /** Cost of: 1) cost of Coll.flatMap (per item)
+      * 2) new collection is allocated for each item
+      * 3) each collection is then appended to the resulting collection */
+    def Flatmap_PerItem = 2 // cf. collToColl
 
 //    ("ByIndex", "(Coll[IV],Int) => IV", collByIndex),
 //    ("SCollection$.exists", "(Coll[IV],(IV) => Boolean) => Boolean", collToColl),
@@ -554,7 +574,7 @@ object CostTable {
       */
     def GT(argTpe: SType) = argTpe match {
       case SBigInt => 10 // cf. comparisonBigInt
-      case _ => 5 // cf. comparisonCost
+      case _ => 6 // cf. comparisonCost
     }
 
     /** Cost of:

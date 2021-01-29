@@ -4,7 +4,7 @@ import org.ergoplatform.ErgoLikeContext
 import sigmastate.{SMethod, SType}
 import sigmastate.Values._
 import sigmastate.eval.Profiler
-import sigmastate.interpreter.ErgoTreeEvaluator.{OperationDesc, DataEnv, CompanionDesc}
+import sigmastate.interpreter.ErgoTreeEvaluator.{OperationDesc, CompanionDesc, DataEnv, MethodDesc}
 import sigmastate.interpreter.Interpreter.ReductionResult
 import sigmastate.lang.exceptions.CostLimitException
 import special.sigma.Context
@@ -249,7 +249,9 @@ object ErgoTreeEvaluator {
    * [[SMethod]]. */
   abstract class OperationDesc
   case class CompanionDesc(companion: ValueCompanion) extends OperationDesc
-  case class MethodDesc(method: SMethod) extends OperationDesc
+  case class MethodDesc(method: SMethod) extends OperationDesc {
+    override def toString: String = s"MethodDesc(${method.opName})"
+  }
   case class NamedDesc(name: String) extends OperationDesc
 
   def operationName(opDesc: OperationDesc): String = opDesc match {
@@ -440,6 +442,7 @@ case class SimpleCostItem(opDesc: OperationDesc, cost: Int) extends CostItem {
 }
 object SimpleCostItem {
   def apply(companion: ValueCompanion, cost: Int): SimpleCostItem = SimpleCostItem(CompanionDesc(companion), cost)
+  def apply(method: SMethod, cost: Int): SimpleCostItem = SimpleCostItem(MethodDesc(method), cost)
 }
 /** An item in the cost accumulation trace of a [[ErgoTreeEvaluator]].
   * Represents cost of a sequence of operation.

@@ -1,14 +1,15 @@
 package sigmastate.eval
 
 import sigmastate.SMethod
-import sigmastate.Values.SValue
+import sigmastate.Values.{SValue, FixedCost}
 import sigmastate.lang.Terms
 import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.ValueSerializer.getSerializer
 import scalan.util.Extensions.ByteOps
 import debox.{Buffer => DBuffer, Map => DMap}
-import sigmastate.interpreter.{PerBlockCostItem, SeqCostItem, CostItem, SimpleCostItem}
+import sigmastate.interpreter.{CostItem, PerBlockCostItem, SeqCostItem, SimpleCostItem}
+import sigmastate.lang.Terms.{MethodCall, PropertyCall}
 import spire.{math, sp}
 
 import scala.reflect.ClassTag
@@ -198,9 +199,14 @@ class Profiler {
       val (time, count) = stat.mean
       val opCode = OpCode @@ key.toByte
       val ser = getSerializer(opCode)
-      val opName = ser.opDesc.typeName
+      val opDesc = ser.opDesc
+      val opName = opDesc.costKind match {
+        case FixedCost if opDesc != MethodCall && opDesc != PropertyCall =>
+          opDesc.typeName
+        case _ => ""
+      }
       (opName, (opCode.toUByte - OpCodes.LastConstantCode).toString, time, count.toString)
-    }.toList.sortBy(_._3)(Ordering[Long].reverse)
+    }.filter(_._1.nonEmpty).sortBy(_._3)(Ordering[Long].reverse)
 
     val mcLines = mcStat.mapToArray { case (key, stat) =>
       val methodId = (key & 0xFF).toByte
@@ -209,28 +215,33 @@ class Profiler {
       val m = SMethod.fromIds(typeId, methodId)
       val typeName = m.objType.typeName
       (s"$typeName.${m.name}", typeId, methodId, time, count.toString)
-    }.toList.sortBy(r => (r._2,r._3))(Ordering[(Byte,Byte)].reverse)
+    }.sortBy(r => (r._2,r._3))(Ordering[(Byte,Byte)].reverse)
 
     val ciLines = costItemsStat.mapToArray { case (ci, stat) =>
-      val (time, count) = ci match {
-        case _: SimpleCostItem => stat.mean
+      val (timePerItem, time, count) = ci match {
+        case _: SimpleCostItem =>
+          val (time, count) = stat.mean
+          (time, time, count)
         case SeqCostItem(_, _, nItems) =>
           val (time, count) = stat.mean
-          (time / nItems, count)
+          val timePerItem = if (nItems > 0) time / nItems else time
+          (timePerItem, time, count)
         case PerBlockCostItem(_, _, nBlocks) =>
           val (time, count) = stat.mean
-          (time / nBlocks, count)
+          val timePerBlock = if (nBlocks > 0) time / nBlocks else time
+          (timePerBlock, time, count)
       }
-      (ci.toString, time, count.toString)
-    }.toList.sortBy(_._2)(Ordering[Long].reverse)
+      (ci.toString, timePerItem, time, count.toString)
+    }.sortBy(_._2)(Ordering[Long].reverse)
 
     val estLines = estimationCostStat.mapToArray { case (script, stat) =>
       val (cost, count) = stat.mean
       val (timeNano, _) = measuredTimeStat.getMean(script).get
       val actualTimeMicro = timeNano.toDouble / 1000
-      val error = relativeError(cost.toDouble, actualTimeMicro)
-      (script, error, cost, timeNano, count.toString)
-    }.toList.sortBy(_._2)(Ordering[Double].reverse)
+      val actualCost = cost.toDouble / 10
+      val error = relativeError(actualCost, actualTimeMicro)
+      (script, error, cost / 10, timeNano, count.toString)
+    }.sortBy(_._2)(Ordering[Double].reverse)
 
 
     val rows = opCodeLines
@@ -248,9 +259,10 @@ class Profiler {
         .mkString("\n")
 
     val ciRows = ciLines
-        .map { case (opName, time, count) =>
+        .map { case (opName, timePerItem, time, count) =>
           val key = s"$opName".padTo(30, ' ')
-          s"$key -> $time,  // count = $count "
+          val totalTime = if (time != timePerItem) s"($time)" else ""
+          s"$key -> $timePerItem${totalTime},  // count = $count "
         }
         .mkString("\n")
 

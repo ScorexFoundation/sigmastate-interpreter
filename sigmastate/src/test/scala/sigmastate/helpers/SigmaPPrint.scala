@@ -11,13 +11,15 @@ import pprint.{Tree, PPrinter}
 import scalan.RType
 import scalan.RType.PrimitiveType
 import sigmastate.SCollection._
-import sigmastate.Values.{ValueCompanion, ConstantNode, ErgoTree}
+import sigmastate.Values.{ValueCompanion, ErgoTree, FuncValue, ConstantNode}
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.lang.SigmaTyper
 import sigmastate.lang.Terms.MethodCall
 import sigmastate.serialization.GroupElementSerializer
 import sigmastate.utxo.SelectField
 import sigmastate._
+import sigmastate.interpreter.ErgoTreeEvaluator.{CompanionDesc, MethodDesc}
+import sigmastate.interpreter.{ErgoTreeEvaluator, SimpleCostItem}
 import special.collection.Coll
 import special.sigma.GroupElement
 
@@ -168,11 +170,24 @@ object SigmaPPrint extends PPrinter {
       ))
   }
 
+  def methodLiteral(m: SMethod) = {
+    val objType = apply(m.objType).plainText
+    Tree.Literal(s"$objType.${m.name}")
+  }
+
   override val additionalHandlers: PartialFunction[Any, Tree] =
     typeHandlers
      .orElse(exceptionHandlers)
      .orElse(dataHandlers)
      .orElse {
+    case SimpleCostItem(CompanionDesc(c), cost) =>
+      Tree.Apply("SimpleCostItem", treeifySeq(Seq(c, cost)))
+    case SimpleCostItem(MethodDesc(m), cost) =>
+      Tree.Apply("SimpleCostItem", Seq(methodLiteral(m)).iterator ++ treeifySeq(Seq(cost)))
+    case FuncValue.AddToEnvironmentDesc =>
+      Tree.Literal(s"FuncValue.AddToEnvironmentDesc")
+    case MethodDesc(method) =>
+      Tree.Apply("MethodDesc", Seq(methodLiteral(method)).iterator)
     case sigmastate.SGlobal =>
       Tree.Literal(s"SGlobal")
     case sigmastate.SCollection =>
