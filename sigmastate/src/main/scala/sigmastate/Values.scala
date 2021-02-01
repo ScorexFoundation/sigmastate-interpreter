@@ -999,12 +999,15 @@ object Values {
 
     protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
       var curEnv = env
-      items.foreach { case vd: ValDef =>
+      val len = items.length
+      cfor(0)(_ < len, _ + 1) { i =>
+        val vd = items(i).asInstanceOf[ValDef]
         val v = vd.rhs.evalTo[Any](curEnv)
-        curEnv += (vd.id -> v)
+        curEnv = E.addSimpleCost(CostOf.AddToEnvironment, FuncValue.AddToEnvironmentDesc) {
+          curEnv + (vd.id -> v)
+        }
       }
       result.evalTo[Any](curEnv)
-      // TODO JITC
     }
   }
   object BlockValue extends ValueCompanion {

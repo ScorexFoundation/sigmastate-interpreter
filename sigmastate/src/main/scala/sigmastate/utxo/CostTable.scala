@@ -322,7 +322,7 @@ object CostTable {
 
     /** Cost of: 1) switch on the number of args 2) Scala method call 3) add args to env
       * Old cost: lambdaInvoke == 30 */
-    def Apply = 13
+    def Apply = 15
 
     /** Cost of: 1) Calling Option.get Scala method. */
     def OptionGet = 5 // cf. selectField
@@ -349,7 +349,7 @@ object CostTable {
     def Context = 1
 
     /** Cost of: 1) accessing Global instance. */
-    def Global = 1
+    def Global = 2
 
     /** Cost of: 1) Calling Context.LastBlockUtxoRootHash Scala method. */
     def LastBlockUtxoRootHash = 1
@@ -367,7 +367,7 @@ object CostTable {
       * @see ConcreteCollection_PerItem */
     def ConcreteCollection = 1 // cf. collToColl
 
-    def GroupGenerator = 1
+    def GroupGenerator = 3
 
 //    ("AccessAvlTree", "Context => AvlTree", constCost),
 
@@ -421,7 +421,7 @@ object CostTable {
     def DecodePoint = 24
 
     /** Cost of: 1) calling EcPoint.multiply 2) wrapping in GroupElement */
-    def Exponentiate = 100 // cf. expCost
+    def Exponentiate = 800 // cf. expCost
 
     /** Cost of: 1) calling EcPoint.add 2) wrapping in GroupElement */
     def MultiplyGroup = 3 // cf. expCost
@@ -590,7 +590,9 @@ object CostTable {
     /** Cost of: of hashing 1 KiB of data (see also CalcBlake2b256_PerBlock). */
     def CalcSha256_PerBlock = 5 // cf. hashPerKb
 
-//    ("Xor_per_kb", "(Coll[Byte],Coll[Byte]) => Coll[Byte]", hashPerKb / 2),
+    def Xor = 3
+    def Xor_PerBlock = 5
+
 //    ("XorOf_per_item", "(Coll[Boolean]) => Boolean", logicCost),
 //    ("LogicalNot", "(Boolean) => Boolean", logicCost),
 

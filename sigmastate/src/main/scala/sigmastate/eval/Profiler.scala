@@ -11,7 +11,7 @@ import debox.{Buffer => DBuffer, Map => DMap}
 import sigmastate.interpreter.{CostItem, PerBlockCostItem, SeqCostItem, SimpleCostItem}
 import sigmastate.lang.Terms.{MethodCall, PropertyCall}
 import spire.{math, sp}
-
+import scalan.util.PrintExtensions._
 import scala.reflect.ClassTag
 
 abstract class StatItem[@sp (Long, Double) V] {
@@ -200,13 +200,13 @@ class Profiler {
       val opCode = OpCode @@ key.toByte
       val ser = getSerializer(opCode)
       val opDesc = ser.opDesc
-      val opName = opDesc.costKind match {
-        case _: FixedCost if opDesc != MethodCall && opDesc != PropertyCall =>
-          opDesc.typeName
-        case _ => ""
+      val (opName, cost) = opDesc.costKind match {
+        case FixedCost(c) if opDesc != MethodCall && opDesc != PropertyCall =>
+          (opDesc.typeName, c)
+        case _ => ("", 0)
       }
       val suggestedCost = (time - 1) / 100 + 1
-      val comment = s"count = $count, suggested cost: $suggestedCost"
+      val comment = s"count: $count, suggestedCost: $suggestedCost, actualCost: $cost"
       (opName, (opCode.toUByte - OpCodes.LastConstantCode).toString, time, comment)
     }.filter(_._1.nonEmpty).sortBy(_._3)(Ordering[Long].reverse)
 
@@ -248,8 +248,8 @@ class Profiler {
 
     val rows = opCodeLines
         .map { case (opName, opCode, time, comment) =>
-          val key = s"$opName.opCode".padTo(30, ' ')
-          s"$key -> $time,  // $comment "
+          val key = s"$opName.opCode".padTo(26, ' ')
+          s"$key -> time: $time ns, $comment "
         }
         .mkString("\n")
 

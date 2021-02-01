@@ -587,6 +587,29 @@ object SMethod {
     }
   }
 
+  /** Returns a cost function which expects `obj` to be of `Coll[Byte]` type and
+    * uses its length to compute PerBlockCostItem  */
+  def perBlockCost(baseCost: Int, perBlockCost: Int): MethodCostFunc = new MethodCostFunc {
+    override def apply(E: ErgoTreeEvaluator,
+                       mc: MethodCall,
+                       obj: Any, args: Array[Any]): CostDetails = obj match {
+      case coll: Coll[a] if coll.tItem == RType.ByteType =>
+        val nBlocks = PerBlockCostItem.blocksToCover(coll.length)
+        if (E.settings.costTracingEnabled) {
+          val desc = MethodDesc(mc.method)
+          TracedCost(Array(
+            SimpleCostItem(desc, baseCost),
+            PerBlockCostItem(desc, perBlockCost, nBlocks)
+          ))
+        }
+        else
+          GivenCost(baseCost + SeqCostItem.calcCost(perBlockCost, nBlocks))
+      case _ =>
+        ErgoTreeEvaluator.error(
+          s"Invalid object $obj of method call $mc: Coll[Byte] type is expected")
+    }
+  }
+
   /** Some runtime methods (like Coll.map, Coll.flatMap) require additional RType descriptors.
     * The builder can extract those descriptors from the given type of the method signature.
     */
@@ -2103,11 +2126,13 @@ case object SGlobal extends SProduct with SPredefType with SMonoType {
 
   lazy val groupGeneratorMethod = SMethod(this, "groupGenerator", SFunc(this, SGroupElement), 1)
     .withIRInfo({ case (builder, obj, method, args, tparamSubst) => GroupGenerator })
+    .withCost(givenCost(CostOf.GroupGenerator))
     .withInfo(GroupGenerator, "")
   lazy val xorMethod = SMethod(this, "xor", SFunc(IndexedSeq(this, SByteArray, SByteArray), SByteArray), 2)
     .withIRInfo({
         case (_, _, _, Seq(l, r), _) => Xor(l.asByteArray, r.asByteArray)
     })
+    .withCost(SMethod.perBlockCost(CostOf.Xor, CostOf.Xor_PerBlock))
     .withInfo(Xor, "Byte-wise XOR of two collections of bytes",
       ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))
 

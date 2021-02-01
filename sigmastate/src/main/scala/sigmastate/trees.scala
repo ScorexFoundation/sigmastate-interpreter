@@ -957,8 +957,10 @@ case class Xor(override val left: Value[SByteArray],
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val lV = left.evalTo[Coll[Byte]](env)
     val rV = right.evalTo[Coll[Byte]](env)
-    // TODO JITC
-    Colls.xor(lV, rV)
+    addCost(CostOf.Xor)
+    addPerBlockCost(CostOf.Xor_PerBlock, lV.length) {
+      Colls.xor(lV, rV)
+    }
   }
 }
 object Xor extends TwoArgumentOperationCompanion {
