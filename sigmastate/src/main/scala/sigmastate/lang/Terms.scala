@@ -140,7 +140,7 @@ object Terms {
     }
 
     protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
-      addCost(CostOf.Apply)
+      addCost(Apply.costKind)
       if (args.isEmpty) {
         // TODO coverage
         val fV = func.evalTo[() => Any](env)
@@ -161,7 +161,7 @@ object Terms {
   }
   object Apply extends ValueCompanion {
     override def opCode: OpCode = OpCodes.FuncApplyCode
-    override def costKind: CostKind = FixedCost
+    override val costKind = FixedCost(CostOf.Apply)
   }
 
   /** Apply types for type parameters of input value. */
@@ -240,7 +240,7 @@ object Terms {
   }
   object MethodCall extends ValueCompanion {
     override def opCode: OpCode = OpCodes.MethodCallCode
-    override def costKind: CostKind = FixedCost
+    override val costKind = FixedCost(CostOf.MethodCall)
 
     /** Helper constructor which allows to cast the resulting node to the specified
       * [[sigmastate.Values.Value]] type `T`.
@@ -255,7 +255,7 @@ object Terms {
   }
   object PropertyCall extends ValueCompanion {
     override def opCode: OpCode = OpCodes.PropertyCallCode
-    override def costKind: CostKind = FixedCost
+    override val costKind = FixedCost(CostOf.MethodCall)
   }
 
   case class STypeParam(ident: STypeVar, upperBound: Option[SType] = None, lowerBound: Option[SType] = None) {

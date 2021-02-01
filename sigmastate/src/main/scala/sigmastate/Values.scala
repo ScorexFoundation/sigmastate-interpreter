@@ -132,6 +132,14 @@ object Values {
       E.addCost(cost, this)
     }
 
+    /** Add the cost given by the descriptor to the accumulator and associate it with this operation
+      * node.
+      */
+    @inline
+    final def addCost(costDesc: FixedCost)(implicit E: ErgoTreeEvaluator): Unit = {
+      E.addCost(costDesc.cost, this)
+    }
+
     /** Add the cost of a repeated operation to the accumulator and associate it with this operation.
       * The number of items (loop iterations) is known in advance (like in Coll.map operation)
       *
@@ -195,8 +203,9 @@ object Values {
   /** The kind of the cost formula.*/
   sealed abstract class CostKind
 
-  /** Simple fixed cost formula. */
-  case object FixedCost extends CostKind
+  /** Descriptor of the simple fixed cost formula.
+    * @param cost  given cost of the operation */
+  case class FixedCost(cost: Int) extends CostKind
 
   /** Per-item cost is formula. */
   case object PerItemCost extends CostKind
@@ -253,7 +262,7 @@ object Values {
     override def opName: String = s"Const"
 
     protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
-      addCost(CostOf.Constant(tpe))
+      addCost(Constant.costKind)
       value
     }
 
@@ -279,7 +288,7 @@ object Values {
 
   object Constant extends ValueCompanion {
     override def opCode: OpCode = ConstantCode
-    override def costKind: CostKind = FixedCost
+    override val costKind = FixedCost(CostOf.Constant)
 
     /** Immutable empty array, can be used to save allocations in many places. */
     val EmptyArray = Array.empty[Constant[SType]]
@@ -341,7 +350,7 @@ object Values {
   }
   object ConstantPlaceholder extends ValueCompanion {
     override def opCode: OpCode = ConstantPlaceholderCode
-    override def costKind: CostKind = FixedCost
+    override val costKind: CostKind = FixedCost(CostOf.ConstantPlaceholder)
   }
 
   trait NotReadyValue[S <: SType] extends Value[S] {
@@ -364,7 +373,7 @@ object Values {
 
   object TaggedVariable extends ValueCompanion {
     override def opCode: OpCode = TaggedVariableCode
-    override def costKind: CostKind = FixedCost
+    override def costKind: CostKind = FixedCost(1)
     def apply[T <: SType](varId: Byte, tpe: T): TaggedVariable[T] =
       TaggedVariableNode(varId, tpe)
   }
@@ -376,7 +385,7 @@ object Values {
   }
   object UnitConstant extends ValueCompanion {
     override val opCode = UnitConstantCode
-    override def costKind: CostKind = FixedCost
+    override def costKind: CostKind = FixedCost(CostOf.Constant)
   }
 
   type BoolValue = Value[SBoolean.type]
@@ -616,13 +625,13 @@ object Values {
 
   case object GroupGenerator extends EvaluatedValue[SGroupElement.type] with ValueCompanion {
     override def opCode: OpCode = OpCodes.GroupGeneratorCode
-    override def costKind: CostKind = FixedCost
+    override val costKind = FixedCost(CostOf.GroupGenerator)
     override def tpe = SGroupElement
     override val value = SigmaDsl.GroupElement(CryptoConstants.dlogGroup.generator)
     override def companion = this
     protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
+      addCost(costKind)
       SigmaDsl.groupGenerator
-      // TODO JITC
     }
   }
 
@@ -645,13 +654,13 @@ object Values {
   object TrueLeaf extends ConstantNode[SBoolean.type](true, SBoolean) with ValueCompanion {
     override def companion = this
     override def opCode: OpCode = TrueCode
-    override def costKind: CostKind = FixedCost
+    override def costKind: FixedCost = Constant.costKind
   }
 
   object FalseLeaf extends ConstantNode[SBoolean.type](false, SBoolean) with ValueCompanion {
     override def companion = this
     override def opCode: OpCode = FalseCode
-    override def costKind: CostKind = FixedCost
+    override def costKind: FixedCost = Constant.costKind
   }
 
   trait NotReadyValueBoolean extends NotReadyValue[SBoolean.type] {
@@ -780,14 +789,14 @@ object Values {
       else
         items.map(_.evalTo[Any](env)) // general case
 
-      addCost(CostOf.Tuple)
+      addCost(Tuple.costKind)
       res
     }
   }
 
   object Tuple extends ValueCompanion {
     override def opCode: OpCode = TupleCode
-    override def costKind: CostKind = FixedCost
+    override val costKind = FixedCost(CostOf.Tuple)
     def apply(items: Value[SType]*): Tuple = Tuple(items.toIndexedSeq)
   }
 
@@ -803,7 +812,7 @@ object Values {
   }
   object SomeValue extends ValueCompanion {
     override val opCode = SomeValueCode
-    override def costKind: CostKind = FixedCost
+    override def costKind: CostKind = Constant.costKind
   }
 
   case class NoneValue[T <: SType](elemType: T) extends OptionValue[T] {
@@ -813,7 +822,7 @@ object Values {
   }
   object NoneValue extends ValueCompanion {
     override val opCode = NoneValueCode
-    override def costKind: CostKind = FixedCost
+    override def costKind: CostKind = Constant.costKind
   }
 
   case class ConcreteCollection[V <: SType](items: Seq[Value[V]], elementType: V)
@@ -857,7 +866,7 @@ object Values {
   }
   object ConcreteCollection extends ValueCompanion {
     override def opCode: OpCode = ConcreteCollectionCode
-    override def costKind: CostKind = FixedCost
+    override val costKind = FixedCost(CostOf.ConcreteCollection)
 
     def fromSeq[V <: SType](items: Seq[Value[V]])(implicit tV: V): ConcreteCollection[V] =
       ConcreteCollection(items, tV)
@@ -867,7 +876,7 @@ object Values {
   }
   object ConcreteCollectionBooleanConstant extends ValueCompanion {
     override def opCode: OpCode = ConcreteCollectionBooleanConstantCode
-    override def costKind: CostKind = FixedCost
+    override val costKind = FixedCost(CostOf.ConcreteCollection)
   }
 
   trait LazyCollection[V <: SType] extends NotReadyValue[SCollection[V]]
@@ -946,12 +955,12 @@ object Values {
   }
   object ValDef extends ValueCompanion {
     override def opCode: OpCode = ValDefCode
-    override def costKind: CostKind = FixedCost
+    override def costKind = Value.notSupportedError(this, "costKind")
     def apply(id: Int, rhs: SValue): ValDef = ValDef(id, Nil, rhs)
   }
   object FunDef extends ValueCompanion {
     override def opCode: OpCode = FunDefCode
-    override def costKind: CostKind = FixedCost
+    override def costKind = Value.notSupportedError(this, "costKind")
     def unapply(d: BlockItem): Option[(Int, Seq[STypeVar], SValue)] = d match {
       case ValDef(id, targs, rhs) if !d.isValDef => Some((id, targs, rhs))
       case _ => None
@@ -971,7 +980,7 @@ object Values {
   }
   object ValUse extends ValueCompanion {
     override def opCode: OpCode = ValUseCode
-    override def costKind: CostKind = FixedCost
+    override val costKind = FixedCost(CostOf.ValUse)
   }
 
   /** The order of ValDefs in the block is used to assign ids to ValUse(id) nodes
@@ -1055,7 +1064,7 @@ object Values {
   object FuncValue extends ValueCompanion {
     val AddToEnvironmentDesc = NamedDesc("AddToEnvironment")
     override def opCode: OpCode = FuncValueCode
-    override def costKind: CostKind = FixedCost
+    override val costKind = FixedCost(CostOf.FuncValue)
     def apply(argId: Int, tArg: SType, body: SValue): FuncValue =
       FuncValue(IndexedSeq((argId,tArg)), body)
   }

@@ -38,7 +38,7 @@ class StatCollection[@sp(Int) K, @sp(Long, Double) V]
 
   // NOTE: this class is mutable so better to keep it private
   class StatItemImpl extends StatItem[V] {
-    final val NumMaxPoints = 50000
+    final val NumMaxPoints = 20000
 
     val dataPoints: DBuffer[V] = DBuffer.ofSize[V](256)
 
@@ -194,18 +194,20 @@ class Profiler {
 
   /** Prints the operation timing table using collected execution profile information.
     */
-  def opStatTableString(): String = {
+  def generateReport(): String = {
     val opCodeLines = opStat.mapToArray { case (key, stat) =>
       val (time, count) = stat.mean
       val opCode = OpCode @@ key.toByte
       val ser = getSerializer(opCode)
       val opDesc = ser.opDesc
       val opName = opDesc.costKind match {
-        case FixedCost if opDesc != MethodCall && opDesc != PropertyCall =>
+        case _: FixedCost if opDesc != MethodCall && opDesc != PropertyCall =>
           opDesc.typeName
         case _ => ""
       }
-      (opName, (opCode.toUByte - OpCodes.LastConstantCode).toString, time, count.toString)
+      val suggestedCost = (time - 1) / 100 + 1
+      val comment = s"count = $count, suggested cost: $suggestedCost"
+      (opName, (opCode.toUByte - OpCodes.LastConstantCode).toString, time, comment)
     }.filter(_._1.nonEmpty).sortBy(_._3)(Ordering[Long].reverse)
 
     val mcLines = mcStat.mapToArray { case (key, stat) =>
@@ -245,9 +247,9 @@ class Profiler {
 
 
     val rows = opCodeLines
-        .map { case (opName, opCode, time, count) =>
+        .map { case (opName, opCode, time, comment) =>
           val key = s"$opName.opCode".padTo(30, ' ')
-          s"$key -> $time,  // count = $count "
+          s"$key -> $time,  // $comment "
         }
         .mkString("\n")
 

@@ -165,14 +165,14 @@ case class BoolToSigmaProp(value: BoolValue) extends SigmaPropValue {
   override def tpe = SSigmaProp
   override def opType = BoolToSigmaProp.OpType
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
-    // TODO JITC
     val v = value.evalTo[Boolean](env)
+    addCost(BoolToSigmaProp.costKind)
     SigmaDsl.sigmaProp(v)
   }
 }
 object BoolToSigmaProp extends ValueCompanion {
   override def opCode: OpCode = OpCodes.BoolToSigmaPropCode
-  override def costKind: CostKind = FixedCost
+  override val costKind = FixedCost(CostOf.BoolToSigmaProp)
   val OpType = SFunc(SBoolean, SSigmaProp)
 }
 
@@ -183,14 +183,14 @@ case class CreateProveDlog(value: Value[SGroupElement.type]) extends SigmaPropVa
   override def tpe = SSigmaProp
   override def opType = CreateProveDlog.OpType
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
-    // TODO JITC
     val v = value.evalTo[GroupElement](env)
+    addCost(CreateProveDlog.costKind)
     SigmaDsl.proveDlog(v)
   }
 }
 object CreateProveDlog extends ValueCompanion {
   override def opCode: OpCode = OpCodes.ProveDlogCode
-  override def costKind: CostKind = FixedCost
+  override val costKind = FixedCost(CostOf.CreateProveDlog)
   val OpType = SFunc(SGroupElement, SSigmaProp)
 }
 
@@ -206,7 +206,7 @@ case class CreateAvlTree(operationFlags: ByteValue,
 }
 object CreateAvlTree extends ValueCompanion {
   override def opCode: OpCode = OpCodes.AvlTreeCode
-  override def costKind: CostKind = FixedCost
+  override def costKind: CostKind = Value.notSupportedError(this, "costKind")
   val OpType = SFunc(Array(SByte, SByteArray, SInt, SIntOption), SAvlTree)
 }
 
@@ -221,17 +221,17 @@ case class CreateProveDHTuple(gv: Value[SGroupElement.type],
   override def tpe = SSigmaProp
   override def opType = SFunc(IndexedSeq(SGroupElement, SGroupElement, SGroupElement, SGroupElement), SSigmaProp)
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
-    // TODO JITC
     val g = gv.evalTo[GroupElement](env)
     val h = hv.evalTo[GroupElement](env)
     val u = uv.evalTo[GroupElement](env)
     val v = vv.evalTo[GroupElement](env)
+    addCost(CreateProveDHTuple.costKind)
     SigmaDsl.proveDHTuple(g, h, u, v)
   }
 }
 object CreateProveDHTuple extends ValueCompanion {
   override def opCode: OpCode = OpCodes.ProveDiffieHellmanTupleCode
-  override def costKind: CostKind = FixedCost
+  override val costKind = FixedCost(CostOf.CreateProveDHTuple)
 }
 
 trait SigmaTransformer[IV <: SigmaPropValue, OV <: SigmaPropValue] extends SigmaPropValue {
@@ -510,7 +510,7 @@ trait NumericCastCompanion extends ValueCompanion {
 
 object Upcast extends NumericCastCompanion {
   override def opCode: OpCode = OpCodes.UpcastCode
-  override def costKind: CostKind = FixedCost
+  override val costKind = FixedCost(CostOf.Upcast)
   override def argInfos: Seq[ArgInfo] = UpcastInfo.argInfos
   def tT = SType.tT
   def tR = SType.tR
@@ -534,7 +534,7 @@ case class Downcast[T <: SNumericType, R <: SNumericType](input: Value[T], tpe: 
 
 object Downcast extends NumericCastCompanion {
   override def opCode: OpCode = OpCodes.DowncastCode
-  override def costKind: CostKind = FixedCost
+  override val costKind = FixedCost(CostOf.Downcast)
   override def argInfos: Seq[ArgInfo] = DowncastInfo.argInfos
   def tT = SType.tT
   def tR = SType.tR
@@ -550,14 +550,14 @@ case class LongToByteArray(input: Value[SLong.type])
   override def opType = LongToByteArray.OpType
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val inputV = input.evalTo[Long](env)
-    // TODO JITC
+    addCost(LongToByteArray.costKind)
     SigmaDsl.longToByteArray(inputV)
   }
 }
 object LongToByteArray extends SimpleTransformerCompanion {
   val OpType = SFunc(SLong, SByteArray)
   override def opCode: OpCode = OpCodes.LongToByteArrayCode
-  override def costKind: CostKind = FixedCost
+  override val costKind = FixedCost(CostOf.LongToByteArray)
   override def argInfos: Seq[ArgInfo] = LongToByteArrayInfo.argInfos
 }
 
@@ -570,14 +570,14 @@ case class ByteArrayToLong(input: Value[SByteArray])
   override def opType = ByteArrayToLong.OpType
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val inputV = input.evalTo[Coll[Byte]](env)
-    // TODO JITC
+    addCost(ByteArrayToLong.costKind)
     SigmaDsl.byteArrayToLong(inputV)
   }
 }
 object ByteArrayToLong extends SimpleTransformerCompanion {
   val OpType = SFunc(SByteArray, SLong)
   override def opCode: OpCode = OpCodes.ByteArrayToLongCode
-  override def costKind: CostKind = FixedCost
+  override val costKind = FixedCost(CostOf.ByteArrayToLong)
   override def argInfos: Seq[ArgInfo] = ByteArrayToLongInfo.argInfos
 }
 
@@ -590,14 +590,14 @@ case class ByteArrayToBigInt(input: Value[SByteArray])
   override val opType = ByteArrayToBigInt.OpType
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val inputV = input.evalTo[Coll[Byte]](env)
-    // TODO JITC
+    addCost(ByteArrayToBigInt.costKind)
     SigmaDsl.byteArrayToBigInt(inputV)
   }
 }
 object ByteArrayToBigInt extends SimpleTransformerCompanion {
   val OpType = SFunc(SByteArray, SBigInt)
   override def opCode: OpCode = OpCodes.ByteArrayToBigIntCode
-  override def costKind: CostKind = FixedCost
+  override val costKind = FixedCost(CostOf.ByteArrayToBigInt)
   override def argInfos: Seq[ArgInfo] = ByteArrayToBigIntInfo.argInfos
 }
 
@@ -610,14 +610,14 @@ case class DecodePoint(input: Value[SByteArray])
   override def opType = DecodePoint.OpType
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val inputV = input.evalTo[Coll[Byte]](env)
-    addCost(CostOf.DecodePoint)
+    addCost(DecodePoint.costKind)
     SigmaDsl.decodePoint(inputV)
   }
 }
 object DecodePoint extends SimpleTransformerCompanion {
   val OpType = SFunc(SByteArray, SGroupElement)
   override def opCode: OpCode = OpCodes.DecodePointCode
-  override def costKind: CostKind = FixedCost
+  override val costKind = FixedCost(CostOf.DecodePoint)
   override def argInfos: Seq[ArgInfo] = DecodePointInfo.argInfos
 }
 
@@ -755,7 +755,6 @@ case class ArithOp[T <: SType](left: Value[T], right: Value[T], override val opC
 }
 /** NOTE: by-name argument is required for correct initialization order. */
 abstract class ArithOpCompanion(val opCode: OpCode, val name: String, _argInfos: => Seq[ArgInfo]) extends TwoArgumentOperationCompanion {
-  override def costKind: CostKind = FixedCost
   override def argInfos: Seq[ArgInfo] = _argInfos
   @inline final def eval(node: SValue, typeCode: SType.TypeCode, x: Any, y: Any)(implicit E: ErgoTreeEvaluator): Any = {
     val impl = ArithOp.numerics(typeCode)
@@ -771,30 +770,37 @@ object ArithOp {
   object Plus     extends ArithOpCompanion(PlusCode,     "+", PlusInfo.argInfos) {
     def eval(impl: OperationImpl, x: Any, y: Any): Any = impl.n.plus(x, y)
     def operationCost(impl: OperationImpl) = CostOf.Plus(impl.argTpe)
+    override val costKind = FixedCost(CostOf.Plus(SInt))
   }
   object Minus    extends ArithOpCompanion(MinusCode,    "-", MinusInfo.argInfos) {
     def eval(impl: OperationImpl, x: Any, y: Any): Any = impl.n.minus(x, y)
     def operationCost(impl: OperationImpl) = CostOf.Minus(impl.argTpe)
+    override val costKind = FixedCost(CostOf.Minus(SInt))
   }
   object Multiply extends ArithOpCompanion(MultiplyCode, "*", MultiplyInfo.argInfos) {
     def eval(impl: OperationImpl, x: Any, y: Any): Any = impl.n.times(x, y)
     def operationCost(impl: OperationImpl) = CostOf.Multiply(impl.argTpe)
+    override val costKind = FixedCost(CostOf.Multiply(SInt))
   }
   object Division extends ArithOpCompanion(DivisionCode, "/", DivisionInfo.argInfos) {
     def eval(impl: OperationImpl, x: Any, y: Any): Any = impl.i.quot(x, y)
     def operationCost(impl: OperationImpl) = CostOf.Division(impl.argTpe)
+    override val costKind = FixedCost(CostOf.Division(SInt))
   }
   object Modulo   extends ArithOpCompanion(ModuloCode,   "%", ModuloInfo.argInfos) {
     def eval(impl: OperationImpl, x: Any, y: Any): Any = impl.i.rem(x, y)
     def operationCost(impl: OperationImpl) = CostOf.Modulo(impl.argTpe)
+    override val costKind = FixedCost(CostOf.Modulo(SInt))
   }
   object Min      extends ArithOpCompanion(MinCode,      "min", MinInfo.argInfos) {
     def eval(impl: OperationImpl, x: Any, y: Any): Any = impl.o.min(x, y)
     def operationCost(impl: OperationImpl) = CostOf.Min(impl.argTpe)
+    override val costKind = FixedCost(CostOf.Min(SInt))
   }
   object Max      extends ArithOpCompanion(MaxCode,      "max", MaxInfo.argInfos) {
     def eval(impl: OperationImpl, x: Any, y: Any): Any = impl.o.max(x, y)
     def operationCost(impl: OperationImpl) = CostOf.Max(impl.argTpe)
+    override val costKind = FixedCost(CostOf.Max(SInt))
   }
 
   private[sigmastate] val operations: DMap[Byte, ArithOpCompanion] =
@@ -829,13 +835,13 @@ case class Negation[T <: SType](input: Value[T]) extends OneArgumentOperation[T,
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val inputV = input.evalTo[AnyVal](env)
     val n = ArithOp.numerics(input.tpe.typeCode).n
-    // TODO JITC
+    addCost(Negation.costKind)
     n.negate(inputV)
   }
 }
 object Negation extends OneArgumentOperationCompanion {
   override def opCode: OpCode = OpCodes.NegationCode
-  override def costKind: CostKind = FixedCost
+  override val costKind = FixedCost(CostOf.Negation)
   override def argInfos: Seq[ArgInfo] = NegationInfo.argInfos
 }
 
@@ -846,7 +852,7 @@ case class BitInversion[T <: SType](input: Value[T]) extends OneArgumentOperatio
 }
 object BitInversion extends OneArgumentOperationCompanion {
   override def opCode: OpCode = OpCodes.BitInversionCode
-  override def costKind: CostKind = FixedCost
+  override def costKind: CostKind = Value.notSupportedError(this, "costKind")
   override def argInfos: Seq[ArgInfo] = BitInversionInfo.argInfos
 }
 
@@ -858,19 +864,30 @@ case class BitOp[T <: SType](left: Value[T], right: Value[T], override val opCod
   override val opType = SFunc(Array[SType](left.tpe, right.tpe), tpe)
 }
 /** NOTE: by-name argument is required for correct initialization order. */
-class BitOpCompanion(val opCode: OpCode, val name: String, _argInfos: => Seq[ArgInfo]) extends TwoArgumentOperationCompanion {
+abstract class BitOpCompanion(val opCode: OpCode, val name: String, _argInfos: => Seq[ArgInfo]) extends TwoArgumentOperationCompanion {
   override def argInfos: Seq[ArgInfo] = _argInfos
-  override def costKind: CostKind = FixedCost
 }
 
 object BitOp {
   import OpCodes._
-  object BitOr     extends BitOpCompanion(BitOrCode,  "|", BitOrInfo.argInfos)
-  object BitAnd    extends BitOpCompanion(BitAndCode, "&", BitAndInfo.argInfos)
-  object BitXor    extends BitOpCompanion(BitXorCode, "^", BitXorInfo.argInfos)
-  object BitShiftRight extends BitOpCompanion(BitShiftRightCode, ">>", BitShiftRightInfo.argInfos)
-  object BitShiftLeft        extends BitOpCompanion(BitShiftLeftCode,   "<<", BitShiftLeftInfo.argInfos)
-  object BitShiftRightZeroed extends BitOpCompanion(BitShiftRightZeroedCode, ">>>", BitShiftRightZeroedInfo.argInfos)
+  object BitOr     extends BitOpCompanion(BitOrCode,  "|", BitOrInfo.argInfos) {
+    override val costKind = FixedCost(CostOf.BitOr)
+  }
+  object BitAnd    extends BitOpCompanion(BitAndCode, "&", BitAndInfo.argInfos) {
+    override val costKind = FixedCost(CostOf.BitAnd)
+  }
+  object BitXor    extends BitOpCompanion(BitXorCode, "^", BitXorInfo.argInfos) {
+    override val costKind = FixedCost(CostOf.BitXor)
+  }
+  object BitShiftRight extends BitOpCompanion(BitShiftRightCode, ">>", BitShiftRightInfo.argInfos) {
+    override val costKind = FixedCost(CostOf.BitShiftRight)
+  }
+  object BitShiftLeft  extends BitOpCompanion(BitShiftLeftCode,   "<<", BitShiftLeftInfo.argInfos) {
+    override val costKind = FixedCost(CostOf.BitShiftLeft)
+  }
+  object BitShiftRightZeroed extends BitOpCompanion(BitShiftRightZeroedCode, ">>>", BitShiftRightZeroedInfo.argInfos) {
+    override val costKind = FixedCost(CostOf.BitShiftRightZeroed)
+  }
 
   val operations: Map[Byte, BitOpCompanion] =
     Seq(BitOr, BitAnd, BitXor, BitShiftRight, BitShiftLeft, BitShiftRightZeroed).map(o => (o.opCode, o)).toMap
@@ -890,7 +907,7 @@ case class ModQ(input: Value[SBigInt.type])
 }
 object ModQ extends ValueCompanion {
   override def opCode: OpCode = OpCodes.ModQCode
-  override def costKind: CostKind = FixedCost
+  override val costKind: CostKind = FixedCost(1)
 }
 
 case class ModQArithOp(left: Value[SBigInt.type], right: Value[SBigInt.type], override val opCode: OpCode)
@@ -901,7 +918,7 @@ case class ModQArithOp(left: Value[SBigInt.type], right: Value[SBigInt.type], ov
 }
 abstract class ModQArithOpCompanion(val opCode: OpCode, val name: String) extends ValueCompanion {
   def argInfos: Seq[ArgInfo]
-  override def costKind: CostKind = FixedCost
+  override val costKind: CostKind = FixedCost(1)
 }
 
 trait OpGroup[C <: ValueCompanion] {
@@ -961,14 +978,14 @@ case class Exponentiate(override val left: Value[SGroupElement.type],
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val leftV = left.evalTo[GroupElement](env)
     val rightV = right.evalTo[special.sigma.BigInt](env)
-    addCost(CostOf.Exponentiate)
+    addCost(Exponentiate.costKind)
     leftV.exp(rightV)
   }
 }
 object Exponentiate extends TwoArgumentOperationCompanion {
   val OpType = SFunc(Array(SGroupElement, SBigInt), SGroupElement)
   override def opCode: OpCode = ExponentiateCode
-  override def costKind: CostKind = FixedCost
+  override val costKind = FixedCost(CostOf.Exponentiate)
   override def argInfos: Seq[ArgInfo] = ExponentiateInfo.argInfos
 }
 
@@ -981,14 +998,14 @@ case class MultiplyGroup(override val left: Value[SGroupElement.type],
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val leftV = left.evalTo[GroupElement](env)
     val rightV = right.evalTo[GroupElement](env)
-    addCost(CostOf.MultiplyGroup)
+    addCost(MultiplyGroup.costKind)
     leftV.multiply(rightV)
   }
 }
 object MultiplyGroup extends TwoArgumentOperationCompanion {
   val OpType = SFunc(Array(SGroupElement, SGroupElement), SGroupElement)
   override def opCode: OpCode = MultiplyGroupCode
-  override def costKind: CostKind = FixedCost
+  override val costKind = FixedCost(CostOf.MultiplyGroup)
   override def argInfos: Seq[ArgInfo] = MultiplyGroupInfo.argInfos
 }
 // Relation
@@ -1022,7 +1039,7 @@ case class LT[T <: SType](override val left: Value[T], override val right: Value
 }
 object LT extends RelationCompanion {
   override def opCode: OpCode = LtCode
-  override def costKind: CostKind = FixedCost
+  override val costKind = FixedCost(CostOf.LT(SInt)) // TODO JITC
   override def argInfos: Seq[ArgInfo] = LTInfo.argInfos
 }
 /**
@@ -1039,7 +1056,7 @@ case class LE[T <: SType](override val left: Value[T], override val right: Value
 }
 object LE extends RelationCompanion {
   override def opCode: OpCode = LeCode
-  override def costKind: CostKind = FixedCost
+  override val costKind = FixedCost(CostOf.LE(SInt)) // TODO JITC
   override def argInfos: Seq[ArgInfo] = LEInfo.argInfos
 }
 /**
@@ -1056,7 +1073,7 @@ case class GT[T <: SType](override val left: Value[T], override val right: Value
 }
 object GT extends RelationCompanion {
   override def opCode: OpCode = GtCode
-  override def costKind: CostKind = FixedCost
+  override val costKind = FixedCost(CostOf.GT(SInt)) // TODO JITC
   override def argInfos: Seq[ArgInfo] = GTInfo.argInfos
 }
 /**
@@ -1073,7 +1090,7 @@ case class GE[T <: SType](override val left: Value[T], override val right: Value
 }
 object GE extends RelationCompanion {
   override def opCode: OpCode = GeCode
-  override def costKind: CostKind = FixedCost
+  override val costKind = FixedCost(CostOf.GE(SInt)) // TODO JITC
   override def argInfos: Seq[ArgInfo] = GEInfo.argInfos
 }
 
@@ -1157,7 +1174,7 @@ case class BinOr(override val left: BoolValue, override val right: BoolValue)
 object BinOr extends RelationCompanion {
   val OpType = SFunc(Array(SBoolean, SBoolean), SBoolean)
   override def opCode: OpCode = BinOrCode
-  override def costKind: CostKind = FixedCost
+  override val costKind = FixedCost(CostOf.BinOr)
   override def argInfos: Seq[ArgInfo] = BinOrInfo.argInfos
 }
 
@@ -1178,7 +1195,7 @@ case class BinAnd(override val left: BoolValue, override val right: BoolValue)
 object BinAnd extends RelationCompanion {
   val OpType = SFunc(Array(SBoolean, SBoolean), SBoolean)
   override def opCode: OpCode = BinAndCode
-  override def costKind: CostKind = FixedCost
+  override val costKind = FixedCost(CostOf.BinAnd)
   override def argInfos: Seq[ArgInfo] = BinAndInfo.argInfos
 }
 
@@ -1196,7 +1213,7 @@ case class BinXor(override val left: BoolValue, override val right: BoolValue)
 object BinXor extends RelationCompanion {
   val OpType = SFunc(Array(SBoolean, SBoolean), SBoolean)
   override def opCode: OpCode = BinXorCode
-  override def costKind: CostKind = FixedCost
+  override val costKind = FixedCost(CostOf.BinXor)
   override def argInfos: Seq[ArgInfo] = BinXorInfo.argInfos
 }
 
@@ -1232,7 +1249,7 @@ trait QuadrupleCompanion extends ValueCompanion {
 }
 object TreeLookup extends QuadrupleCompanion {
   override def opCode: OpCode = OpCodes.AvlTreeGetCode
-  override def costKind: CostKind = FixedCost
+  override def costKind: CostKind = Value.notSupportedError(this, "costKind")
   override def argInfos: Seq[ArgInfo] = TreeLookupInfo.argInfos
 }
 
@@ -1260,7 +1277,7 @@ case class If[T <: SType](condition: Value[SBoolean.type], trueBranch: Value[T],
 }
 object If extends QuadrupleCompanion {
   override def opCode: OpCode = OpCodes.IfCode
-  override def costKind: CostKind = FixedCost
+  override val costKind = FixedCost(CostOf.If)
   override def argInfos: Seq[ArgInfo] = IfInfo.argInfos
   val GenericOpType = SFunc(Array(SBoolean, SType.tT, SType.tT), SType.tT)
 }
@@ -1277,7 +1294,7 @@ case class LogicalNot(input: Value[SBoolean.type]) extends NotReadyValueBoolean 
 object LogicalNot extends ValueCompanion {
   val OpType = SFunc(Array(SBoolean), SBoolean)
   override def opCode: OpCode = OpCodes.LogicalNotCode
-  override def costKind: CostKind = FixedCost
+  override val costKind = FixedCost(CostOf.LogicalNot)
 }
 
 

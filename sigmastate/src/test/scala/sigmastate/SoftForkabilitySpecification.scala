@@ -18,6 +18,7 @@ import sigmastate.serialization._
 import sigmastate.utxo.{DeserializeContext, SelectField}
 import special.sigma.SigmaTestingData
 import sigmastate.utils.Helpers._
+import sigmastate.utxo.CostTable.CostOf
 
 class SoftForkabilitySpecification extends SigmaTestingData {
 
@@ -104,7 +105,7 @@ class SoftForkabilitySpecification extends SigmaTestingData {
   case object Height2 extends NotReadyValueInt with ValueCompanion {
     override def companion = this
     override val opCode: OpCode = Height2Code // use reserved code
-    override def costKind: CostKind = FixedCost
+    override val costKind: CostKind = FixedCost(CostOf.Height)
     def opType = SFunc(SContext, SInt)
   }
   val Height2Ser = CaseObjectSerialization(Height2, Height2)

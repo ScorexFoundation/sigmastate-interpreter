@@ -230,12 +230,12 @@ object ErgoLikeContext {
 /** When interpreted evaluates to a ByteArrayConstant built from Context.minerPubkey */
 case object MinerPubkey extends NotReadyValueByteArray with ValueCompanion {
   override def opCode: OpCode = OpCodes.MinerPubkeyCode
-  override def costKind: CostKind = FixedCost
+  override val costKind = FixedCost(CostOf.MinerPubkey)
   override val opType = SFunc(SContext, SCollection.SByteArray)
   override def companion = this
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
+    addCost(this.costKind)
     E.context.minerPubKey
-    // TODO JITC
   }
 }
 
@@ -243,11 +243,11 @@ case object MinerPubkey extends NotReadyValueByteArray with ValueCompanion {
 case object Height extends NotReadyValueInt with ValueCompanion {
   override def companion = this
   override def opCode: OpCode = OpCodes.HeightCode
-  override def costKind: CostKind = FixedCost
+  override val costKind = FixedCost(CostOf.Height)
   override val opType = SFunc(SContext, SInt)
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
+    addCost(this.costKind)
     E.context.HEIGHT
-    // TODO JITC
   }
 }
 
@@ -255,12 +255,12 @@ case object Height extends NotReadyValueInt with ValueCompanion {
 case object Inputs extends LazyCollection[SBox.type] with ValueCompanion {
   override def companion = this
   override def opCode: OpCode = OpCodes.InputsCode
-  override def costKind: CostKind = FixedCost
+  override val costKind = FixedCost(CostOf.Inputs)
   override def tpe = SCollection.SBoxArray
   override val opType = SFunc(SContext, tpe)
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
+    addCost(this.costKind)
     E.context.INPUTS
-    // TODO JITC
   }
 }
 
@@ -268,11 +268,11 @@ case object Inputs extends LazyCollection[SBox.type] with ValueCompanion {
 case object Outputs extends LazyCollection[SBox.type] with ValueCompanion {
   override def companion = this
   override def opCode: OpCode = OpCodes.OutputsCode
-  override def costKind: CostKind = FixedCost
+  override val costKind = FixedCost(CostOf.Outputs)
   override def tpe = SCollection.SBoxArray
   override val opType = SFunc(SContext, tpe)
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
-    addCost(CostOf.Outputs)
+    addCost(this.costKind)
     E.context.OUTPUTS
   }
 }
@@ -281,11 +281,11 @@ case object Outputs extends LazyCollection[SBox.type] with ValueCompanion {
 case object LastBlockUtxoRootHash extends NotReadyValueAvlTree with ValueCompanion {
   override def companion = this
   override def opCode: OpCode = OpCodes.LastBlockUtxoRootHashCode
-  override def costKind: CostKind = FixedCost
+  override val costKind = FixedCost(CostOf.LastBlockUtxoRootHash)
   override val opType = SFunc(SContext, tpe)
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
+    addCost(this.costKind)
     E.context.LastBlockUtxoRootHash
-    // TODO JITC
   }
 }
 
@@ -294,11 +294,11 @@ case object LastBlockUtxoRootHash extends NotReadyValueAvlTree with ValueCompani
 case object Self extends NotReadyValueBox with ValueCompanion {
   override def companion = this
   override def opCode: OpCode = OpCodes.SelfCode
-  override def costKind: CostKind = FixedCost
+  override val costKind = FixedCost(CostOf.Self)
   override val opType = SFunc(SContext, SBox)
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
+    addCost(this.costKind)
     E.context.SELF
-    // TODO JITC
   }
 }
 
@@ -308,12 +308,12 @@ case object Self extends NotReadyValueBox with ValueCompanion {
 case object Context extends NotReadyValue[SContext.type] with ValueCompanion {
   override def companion = this
   override def opCode: OpCode = OpCodes.ContextCode
-  override def costKind: CostKind = FixedCost
+  override val costKind = FixedCost(CostOf.Context)
   override def tpe: SContext.type = SContext
   override val opType: SFunc = SFunc(SUnit, SContext)
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
+    addCost(this.costKind)
     E.context
-    // TODO JITC
   }
 }
 
@@ -323,11 +323,11 @@ case object Context extends NotReadyValue[SContext.type] with ValueCompanion {
 case object Global extends NotReadyValue[SGlobal.type] with ValueCompanion {
   override def companion = this
   override def opCode: OpCode = OpCodes.GlobalCode
-  override def costKind: CostKind = FixedCost
+  override val costKind = FixedCost(CostOf.Global)
   override def tpe: SGlobal.type = SGlobal
   override val opType: SFunc = SFunc(SUnit, SGlobal)
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
+    addCost(this.costKind)
     CostingSigmaDslBuilder
-    // TODO JITC
   }
 }

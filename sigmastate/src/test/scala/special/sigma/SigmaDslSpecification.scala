@@ -6980,6 +6980,6 @@ class SigmaDslSpecification extends SigmaDslTesting
   }
 
   override protected def afterAll(): Unit = {
-    println(ErgoTreeEvaluator.DefaultProfiler.opStatTableString)
+    println(ErgoTreeEvaluator.DefaultProfiler.generateReport)
   }
 }

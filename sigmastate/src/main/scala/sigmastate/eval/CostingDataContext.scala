@@ -658,9 +658,8 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
     CSigmaProp(dht)
   }
 
-  override def groupGenerator: GroupElement = {
-    this.GroupElement(CryptoConstants.dlogGroup.generator)
-  }
+  private lazy val _generatorElement = this.GroupElement(CryptoConstants.dlogGroup.generator)
+  override def groupGenerator: GroupElement = _generatorElement
 
   /**
     * @return the identity of the Dlog group used in ErgoTree
