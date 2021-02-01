@@ -307,12 +307,8 @@ object CostTable {
   val MaxExpressions = 300
 
   object CostOf {
-    def Constant(constType: SType): Int = constType match {
-      case SUnit | SBoolean | SByte | SShort | SInt | SLong | SBigInt | SString |
-           SGroupElement | SSigmaProp | SBox | SAvlTree => 2 // cf. constCost
-      case _: SCollectionType[_] => 2 // cf. constCost
-      case _ => Interpreter.error(s"Cost is not defined: unexpected constant type $constType")
-    }
+    /** Cost of: returning value from Constant node. */
+    def Constant = 2
 
     /** Cost of: accessing Constant in array by index. */
     def ConstantPlaceholder = 1
@@ -331,8 +327,35 @@ object CostTable {
     /** Cost of: 1) Calling Option.get Scala method. */
     def OptionGet = 5 // cf. selectField
 
+    /** Cost of: 1) Calling Option.getOrElse Scala method. */
+    def OptionGetOrElse = 5 // cf. selectField
+
+    /** Cost of: 1) Calling Option.isDefined Scala method. */
+    def OptionIsDefined = 1 // cf. selectField
+
     /** Cost of: 1) Calling Context.OUTPUTS Scala method. */
     def Outputs = 1 // cf. selectField
+
+    /** Cost of: 1) Calling Context.INPUTS Scala method. */
+    def Inputs = 1 // cf. selectField
+
+    /** Cost of: 1) Calling Context.HEIGHT Scala method. */
+    def Height = 1 // cf. selectField
+
+    /** Cost of: 1) Calling Context.minerPubkey Scala method. */
+    def MinerPubkey = 1
+
+    /** Cost of: 1) accessing global Context instance. */
+    def Context = 1
+
+    /** Cost of: 1) accessing Global instance. */
+    def Global = 1
+
+    /** Cost of: 1) Calling Context.LastBlockUtxoRootHash Scala method. */
+    def LastBlockUtxoRootHash = 1
+
+    /** Cost of: 1) Calling Context.SELF Scala method. */
+    def Self = 1
 
     /** Cost of: 1) Lookup in immutable HashMap by valId: Int 2) alloc of Some(v) */
     def ValUse = 2
@@ -344,14 +367,13 @@ object CostTable {
       * @see ConcreteCollection_PerItem */
     def ConcreteCollection = 1 // cf. collToColl
 
-    //    ("ConcreteCollection", "() => Coll[IV]", collToColl),
-//    ("GroupGenerator$", "() => GroupElement", constCost),
-//    ("Self$", "Context => Box", constCost),
+    def GroupGenerator = 1
+
 //    ("AccessAvlTree", "Context => AvlTree", constCost),
 
     /** Cost of: 1) Calling Tuple2.{_1, _2} Scala methods.
       * Old cost: ("SelectField", "() => Unit", selectField) */
-    def SelectField = 1 // cf. selectField
+    def SelectField = 3 // cf. selectField
 
     /** Cost of: 1) allocating a new tuple (of limited max size)*/
     def Tuple = 5
@@ -369,14 +391,20 @@ object CostTable {
     /** Cost of: 1) access `value` property of a [[special.sigma.Box]] */
     def ExtractAmount = 3
 
-//    ("ExtractId", "(Box) => Coll[Byte]", extractCost),
-//    ("ExtractBytes", "(Box) => Coll[Byte]", extractCost),
 
     /** CostOf: accessing ErgoBox.propositionBytes */
     def ExtractScriptBytes = 3
 
-//    ("ExtractBytesWithNoRef", "(Box) => Coll[Byte]", extractCost),
-//    ("ExtractRegisterAs", "(Box,Byte) => Coll[BigInt]", extractCost),
+    def ExtractBytes = 3
+
+    /** CostOf: cost of computing hash from `ErgoBox.bytes` */
+    def ExtractId = 3
+
+    def ExtractBytesWithNoRef = 3
+
+    def ExtractRegisterAs = 1
+
+    def ExtractCreationInfo = 1
 //    ("SBox$.tokens", "(Box) => Coll[(Coll[Byte],Long)]", extractCost),
 //
 
@@ -398,9 +426,8 @@ object CostTable {
     /** Cost of: 1) calling EcPoint.add 2) wrapping in GroupElement */
     def MultiplyGroup = 3 // cf. expCost
 
-//    ("Exponentiate", "(GroupElement,BigInt) => GroupElement", expCost),
-//    ("MultiplyGroup", "(GroupElement,GroupElement) => GroupElement", multiplyGroup),
-//    ("ByteArrayToBigInt", "(Coll[Byte]) => BigInt", castOp),
+    def ByteArrayToBigInt = 1
+
 //    ("new_BigInteger_per_item", "(Coll[Byte]) => BigInt", newBigIntPerItem),
 //    ("SGroupElement$.negate", "(GroupElement) => GroupElement", negateGroup),
 //
@@ -412,6 +439,8 @@ object CostTable {
       * Twice the cost of SelectField.
       * Old cost: ("SizeOf", "(Coll[IV]) => Int", collLength) */
     def SizeOf = 3  // cf. collLength
+
+    def ByIndex = 1
 
     /** Cost of: 1) obtain result RType 2) invoke map method 3) allocation of resulting
      * collection */
@@ -453,10 +482,11 @@ object CostTable {
      * condition itself and the branches) */
     def If = 2 // cf. logicCost
 
-    //
-//    ("SigmaPropIsProven", "SigmaProp => Boolean", logicCost),
-//    ("BoolToSigmaProp", "Boolean => SigmaProp", logicCost),
-//    ("SigmaPropBytes", "SigmaProp => Coll[Byte]", logicCost),
+    def BoolToSigmaProp = 1
+
+    def CreateProveDlog = 1
+    def CreateProveDHTuple = 1
+
     /** Cost of: serializing one node of SigmaBoolean proposition */
     def SigmaPropBytes_PerItem = 1
 
@@ -470,10 +500,17 @@ object CostTable {
 
     /** Cost of: scala `^` operation
       * Old cost: ("BinXor", "(Boolean, Boolean) => Boolean", logicCost) */
-    def BinXor = 2 // cf. logicCost
+    def BinXor = 6 // cf. logicCost
 
     /** Cost of: scala `!` operation */
     def LogicalNot = 2
+
+    def BitOr = 1
+    def BitAnd = 1
+    def BitXor = 1
+    def BitShiftRight = 1
+    def BitShiftLeft = 1
+    def BitShiftRightZeroed = 1
 
 //    ("AND", "(Coll[Boolean]) => Boolean", logicCost),
 //    ("OR_per_item", "(Coll[Boolean]) => Boolean", logicCost),
@@ -667,12 +704,8 @@ object CostTable {
       case _ => 5 // cf. logicCost
     }
 
-    //    ("Negation", "(Byte) => Byte", MinimalCost),
-//    ("Negation", "(Short) => Short", MinimalCost),
-//    ("Negation", "(Int) => Int", MinimalCost),
-//    ("Negation", "(Long) => Long", MinimalCost),
-//    ("Negation", "(BigInt) => BigInt", MinimalCost),
-//
+    def Negation = 1
+
 //    ("+_per_item", "(BigInt, BigInt) => BigInt", MinimalCost),
 //
 //    ("-_per_item", "(BigInt, BigInt) => BigInt", MinimalCost),
@@ -720,10 +753,10 @@ object CostTable {
 //    ("SAvlTree$.getMany_per_kb", "(AvlTree,Coll[Coll[Byte]],Coll[Byte]) => Coll[Option[Coll[Byte]]]", avlTreeOp),
 //    ("SAvlTree$.updateDigest", "(AvlTree,Coll[Byte]) => AvlTree", newAvlTreeCost),
 //    ("SAvlTree$.updateOperations", "(AvlTree,Byte) => AvlTree", newAvlTreeCost),
-//
-//    ("LongToByteArray", "(Long) => Coll[Byte]", castOp),
-//    ("ByteArrayToLong", "(Coll[Byte]) => Long", castOp),
-//
+
+    def LongToByteArray = 1
+    def ByteArrayToLong = 1
+
 //    ("ProveDlogEval", "(Unit) => SigmaProp", proveDlogEvalCost),
 //    ("ProveDHTuple", "(Unit) => SigmaProp", proveDHTupleEvalCost),
 //
