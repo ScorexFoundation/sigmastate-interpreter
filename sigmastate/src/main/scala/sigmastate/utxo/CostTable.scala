@@ -446,6 +446,12 @@ object CostTable {
      * collection */
     def MapCollection = 4 // cf. collToColl
 
+    /** Cost of:  invoke exists method */
+    def Exists = 3
+
+    /** Cost of:  invoke forall method */
+    def ForAll = 3
+
     /** Cost of: 1) invoke Coll.filter method 2) allocation of resulting
      * collection */
     def Filter = 2
@@ -486,6 +492,9 @@ object CostTable {
 
     def CreateProveDlog = 1
     def CreateProveDHTuple = 1
+
+    /** Cost of: serializing one node of SigmaBoolean proposition */
+    def SigmaPropBytes = 1
 
     /** Cost of: serializing one node of SigmaBoolean proposition */
     def SigmaPropBytes_PerItem = 1

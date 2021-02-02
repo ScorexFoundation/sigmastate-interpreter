@@ -150,8 +150,16 @@ object Values {
       */
     @inline
     final def addSeqCost[R](perItemCost: Int, nItems: Int)
-                           (block: => R)(implicit E: ErgoTreeEvaluator): R = {
+                           (block:() => R)(implicit E: ErgoTreeEvaluator): R = {
       E.addSeqCost(perItemCost, nItems, this)(block)
+    }
+
+    @inline
+    final def addSeqCost[R](costDesc: PerItemCost, nItems: Int)
+                           (block: () => R)(implicit E: ErgoTreeEvaluator): R = {
+      E.addCost(costDesc.baseCost, this)
+      E.addSeqCost(costDesc.perItemCost, nItems, this)(block)
+      // TODO JITC: take into account chunkSize
     }
 
     /** Add the size-based cost of an operation to the accumulator and associate it with this operation.
@@ -207,8 +215,20 @@ object Values {
     * @param cost  given cost of the operation */
   case class FixedCost(cost: Int) extends CostKind
 
-  /** Per-item cost is formula. */
-  case object PerItemCost extends CostKind
+  /** Cost of operation over collection of the known length.
+    * See for example [[Exists]], [[MapCollection]].
+    * @param baseCost cost of operation factored out of the loop iterations
+    * @param perItemCost cost associated with each chunk of items
+    * @param chunkSize number of items in a chunk
+    */
+  case class PerItemCost(baseCost: Int, perItemCost: Int, chunkSize: Int) extends CostKind
+
+  /** Cost of the operation with conditional number of iterations.
+    * See for example [[OR]], [[AND]].
+    * @param baseCost cost of operation factored out of the loop iterations
+    * @param perIterCost cost associated with each iteration
+    */
+  case class LoopWhileCost(baseCost: Int, perIterCost: Int) extends CostKind
 
   /** Per-block cost is formula. */
   case object PerBlockCost extends CostKind
@@ -1006,6 +1026,7 @@ object Values {
     protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
       var curEnv = env
       val len = items.length
+      addSeqCost(BlockValue.costKind, len)(null)
       cfor(0)(_ < len, _ + 1) { i =>
         val vd = items(i).asInstanceOf[ValDef]
         val v = vd.rhs.evalTo[Any](curEnv)
@@ -1018,7 +1039,7 @@ object Values {
   }
   object BlockValue extends ValueCompanion {
     override def opCode: OpCode = BlockValueCode
-    override def costKind: CostKind = PerItemCost
+    override val costKind = PerItemCost(1, 1, 10)
   }
   /**
     * @param args parameters list, where each parameter has an id and a type.

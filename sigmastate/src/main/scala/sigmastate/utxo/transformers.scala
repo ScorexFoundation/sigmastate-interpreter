@@ -52,7 +52,7 @@ case class MapCollection[IV <: SType, OV <: SType](
 }
 object MapCollection extends ValueCompanion {
   override def opCode: OpCode = OpCodes.MapCollectionCode
-  override def costKind: CostKind = PerItemCost
+  override val costKind = PerItemCost(CostOf.MapCollection, 1, 10)
 }
 
 /** Puts the elements of other collection `col2` after the elements of `input` collection
@@ -66,13 +66,14 @@ case class Append[IV <: SType](input: Value[SCollection[IV]], col2: Value[SColle
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val inputV = input.evalTo[Coll[IV#WrappedType]](env)
     val col2V = col2.evalTo[Coll[IV#WrappedType]](env)
-    // TODO JITC
-    inputV.append(col2V)
+    addSeqCost(Append.costKind, inputV.length + col2V.length) { () =>
+      inputV.append(col2V)
+    }
   }
 }
 object Append extends ValueCompanion {
   override def opCode: OpCode = OpCodes.AppendCode
-  override def costKind: CostKind = PerItemCost
+  override val costKind = PerItemCost(1, 1, 100)
 }
 
 /** Selects an interval of elements.  The returned collection is made up
@@ -95,13 +96,15 @@ case class Slice[IV <: SType](input: Value[SCollection[IV]], from: Value[SInt.ty
     val inputV = input.evalTo[Coll[Any]](env)
     val fromV = from.evalTo[Int](env)
     val untilV = until.evalTo[Int](env)
-    // TODO JITC
-    inputV.slice(fromV, untilV)
+    val len = Math.max(0, untilV - fromV)
+    addSeqCost(Slice.costKind, len) { () =>
+      inputV.slice(fromV, untilV)
+    }
   }
 }
 object Slice extends ValueCompanion {
   override def opCode: OpCode = OpCodes.SliceCode
-  override def costKind: CostKind = PerItemCost
+  override val costKind = PerItemCost(1, 1, 100)
 }
 
 /** Selects all elements of `input` collection which satisfy the condition.
@@ -120,13 +123,13 @@ case class Filter[IV <: SType](input: Value[SCollection[IV]],
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val inputV = input.evalTo[Coll[Any]](env)
     val conditionV = condition.evalTo[Any => Boolean](env)
-    addCost(CostOf.Filter)
+    addSeqCost(Filter.costKind, inputV.length)(null)
     inputV.filter(conditionV)
   }
 }
 object Filter extends ValueCompanion {
   override def opCode: OpCode = OpCodes.FilterCode
-  override def costKind: CostKind = PerItemCost
+  override val costKind = PerItemCost(CostOf.Filter, 1, 10)
 }
 
 /** Transforms a collection of values to a boolean (see [[Exists]], [[ForAll]]). */
@@ -154,13 +157,13 @@ case class Exists[IV <: SType](override val input: Value[SCollection[IV]],
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val inputV = input.evalTo[Coll[Any]](env)
     val conditionV = condition.evalTo[Any => Boolean](env)
-    // TODO JITC
+    addSeqCost(Exists.costKind, inputV.length)(null)
     inputV.exists(conditionV)
   }
 }
 object Exists extends BooleanTransformerCompanion {
   override def opCode: OpCode = OpCodes.ExistsCode
-  override def costKind: CostKind = PerItemCost
+  override val costKind = PerItemCost(CostOf.Exists, 1, 10)
   override def argInfos: Seq[ArgInfo] = ExistsInfo.argInfos
 }
 
@@ -179,13 +182,13 @@ case class ForAll[IV <: SType](override val input: Value[SCollection[IV]],
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val inputV = input.evalTo[Coll[Any]](env)
     val conditionV = condition.evalTo[Any => Boolean](env)
-    // TODO JITC
+    addSeqCost(ForAll.costKind, inputV.length)(null)
     inputV.forall(conditionV)
   }
 }
 object ForAll extends BooleanTransformerCompanion {
   override def opCode: OpCode = OpCodes.ForAllCode
-  override def costKind: CostKind = PerItemCost
+  override val costKind = PerItemCost(CostOf.ForAll, 1, 10)
   override def argInfos: Seq[ArgInfo] = ForAllInfo.argInfos
 }
 
@@ -215,14 +218,14 @@ case class Fold[IV <: SType, OV <: SType](input: Value[SCollection[IV]],
     val inputV = input.evalTo[Coll[IV#WrappedType]](env)
     val zeroV = zero.evalTo[OV#WrappedType](env)
     val foldOpV = foldOp.evalTo[((OV#WrappedType, IV#WrappedType)) => OV#WrappedType](env)
-    // TODO JITC
+    addSeqCost(Fold.costKind, inputV.length)(null)
     inputV.foldLeft(zeroV, foldOpV)
   }
 }
 
 object Fold extends ValueCompanion {
   override def opCode: OpCode = OpCodes.FoldCode
-  override def costKind: CostKind = PerItemCost
+  override val costKind = PerItemCost(3, 1, 10)
   def sum[T <: SNumericType](input: Value[SCollection[T]], varId: Int)(implicit tT: T) =
     Fold(input,
       Constant(tT.upcast(0.toByte), tT),
@@ -317,14 +320,14 @@ case class SigmaPropBytes(input: Value[SSigmaProp.type])
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val inputV = input.evalTo[SigmaProp](env)
     val numNodes = SigmaDsl.toSigmaBoolean(inputV).size
-    addSeqCost(CostOf.SigmaPropBytes_PerItem, numNodes) {
+    addSeqCost(SigmaPropBytes.costKind, numNodes) { () =>
       inputV.propBytes
     }
   }
 }
 object SigmaPropBytes extends ValueCompanion {
   override def opCode: OpCode = OpCodes.SigmaPropBytesCode
-  override def costKind: CostKind = PerItemCost
+  override val costKind = PerItemCost(CostOf.SigmaPropBytes, CostOf.SigmaPropBytes_PerItem, 1)
 }
 trait SimpleTransformerCompanion extends ValueCompanion {
   def argInfos: Seq[ArgInfo]

@@ -254,8 +254,7 @@ case class SigmaAnd(items: Seq[SigmaPropValue]) extends SigmaTransformer[SigmaPr
     cfor(0)(_ < len, _ + 1) { i =>
       is(i) = items(i).evalTo[SigmaProp](env)
     }
-    addCost(CostOf.SigmaAnd)
-    addSeqCost(CostOf.SigmaAnd_PerItem, len) {
+    addSeqCost(SigmaAnd.costKind, len) { () =>
       SigmaDsl.allZK(Colls.fromArray(is))
     }
   }
@@ -263,7 +262,7 @@ case class SigmaAnd(items: Seq[SigmaPropValue]) extends SigmaTransformer[SigmaPr
 object SigmaAnd extends SigmaTransformerCompanion {
   val OpType = SFunc(SCollection.SSigmaPropArray, SSigmaProp)
   override def opCode: OpCode = OpCodes.SigmaAndCode
-  override def costKind: CostKind = PerItemCost
+  override val costKind = PerItemCost(CostOf.SigmaAnd, CostOf.SigmaAnd_PerItem, 1)
   override def argInfos: Seq[ArgInfo] = SigmaAndInfo.argInfos
   def apply(first: SigmaPropValue, second: SigmaPropValue, tail: SigmaPropValue*): SigmaAnd = SigmaAnd(Array(first, second) ++ tail)
 }
@@ -281,8 +280,7 @@ case class SigmaOr(items: Seq[SigmaPropValue]) extends SigmaTransformer[SigmaPro
     cfor(0)(_ < len, _ + 1) { i =>
       is(i) = items(i).evalTo[SigmaProp](env)
     }
-    addCost(CostOf.SigmaOr)
-    addSeqCost(CostOf.SigmaOr_PerItem, len) {
+    addSeqCost(SigmaOr.costKind, len) { () =>
       SigmaDsl.anyZK(Colls.fromArray(is))
     }
   }
@@ -291,7 +289,7 @@ case class SigmaOr(items: Seq[SigmaPropValue]) extends SigmaTransformer[SigmaPro
 object SigmaOr extends SigmaTransformerCompanion {
   val OpType = SFunc(SCollection.SSigmaPropArray, SSigmaProp)
   override def opCode: OpCode = OpCodes.SigmaOrCode
-  override def costKind: CostKind = PerItemCost
+  override val costKind = PerItemCost(CostOf.SigmaOr, CostOf.SigmaOr_PerItem, 1)
   override def argInfos: Seq[ArgInfo] = SigmaOrInfo.argInfos
   def apply(head: SigmaPropValue, tail: SigmaPropValue*): SigmaOr = SigmaOr(head +: tail)
 }
@@ -325,7 +323,7 @@ case class OR(input: Value[SCollection[SBoolean.type]])
 
 object OR extends LogicalTransformerCompanion {
   override def opCode: OpCode = OrCode
-  override def costKind: CostKind = PerItemCost
+  override val costKind = LoopWhileCost(CostOf.OR, CostOf.OR_PerItem)
   override def argInfos: Seq[ArgInfo] = Operations.ORInfo.argInfos
 
   def apply(children: Seq[Value[SBoolean.type]]): OR =
@@ -344,7 +342,7 @@ case class XorOf(input: Value[SCollection[SBoolean.type]])
     val inputV = input.evalTo[Coll[Boolean]](env)
     val len = inputV.length
     E.addCost(CostOf.XOR + CostOf.XOR_PerItem * len, this)
-    // TODO HF: the code should be versioned
+    // TODO JITC: the code should be versioned
     val res = SigmaDsl.xorOf(inputV)  // this is v3.x version (Script v1)
     // The following is v5.x version (Script v2)
     //    var res = false
@@ -357,7 +355,7 @@ case class XorOf(input: Value[SCollection[SBoolean.type]])
 
 object XorOf extends LogicalTransformerCompanion {
   override def opCode: OpCode = XorOfCode
-  override def costKind: CostKind = PerItemCost
+  override val costKind = PerItemCost(CostOf.XOR, CostOf.XOR_PerItem, 1)
   override def argInfos: Seq[ArgInfo] = Operations.XorOfInfo.argInfos
 
   def apply(children: Seq[Value[SBoolean.type]]): XorOf =
@@ -388,7 +386,7 @@ case class AND(input: Value[SCollection[SBoolean.type]])
 
 object AND extends LogicalTransformerCompanion {
   override def opCode: OpCode = AndCode
-  override def costKind: CostKind = PerItemCost
+  override val costKind = LoopWhileCost(CostOf.AND, CostOf.AND_PerItem)
   override def argInfos: Seq[ArgInfo] = Operations.ANDInfo.argInfos
 
   def apply(children: Seq[Value[SBoolean.type]]): AND =
@@ -413,8 +411,7 @@ case class AtLeast(bound: Value[SInt.type], input: Value[SCollection[SSigmaProp.
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val b = bound.evalTo[Int](env)
     val props = input.evalTo[Coll[SigmaProp]](env)
-    addCost(CostOf.AtLeast)
-    addSeqCost(CostOf.AtLeast_PerItem, props.length) {
+    addSeqCost(AtLeast.costKind, props.length) { () =>
       SigmaDsl.atLeast(b, props)
     }
   }
@@ -422,7 +419,7 @@ case class AtLeast(bound: Value[SInt.type], input: Value[SCollection[SSigmaProp.
 
 object AtLeast extends ValueCompanion {
   override def opCode: OpCode = AtLeastCode
-  override def costKind: CostKind = PerItemCost
+  override val costKind = PerItemCost(CostOf.AtLeast, CostOf.AtLeast_PerItem, 1)
   val OpType: SFunc = SFunc(Array(SInt, SCollection.SBooleanArray), SBoolean)
   val MaxChildrenCount: Int = SigmaConstants.MaxChildrenCountForAtLeastOp.value
 
@@ -690,14 +687,15 @@ case class SubstConstants[T <: SType](scriptBytes: Value[SByteArray], positions:
     val scriptBytesV = scriptBytes.evalTo[Coll[Byte]](env)
     val positionsV = positions.evalTo[Coll[Int]](env)
     val newValuesV = newValues.evalTo[Coll[T]](env)
-    // TODO JITC
-    SigmaDsl.substConstants(scriptBytesV, positionsV, newValuesV)
+    addSeqCost(SubstConstants.costKind, positionsV.length) { () =>
+      SigmaDsl.substConstants(scriptBytesV, positionsV, newValuesV)
+    }
   }
 }
 
 object SubstConstants extends ValueCompanion {
   override def opCode: OpCode = OpCodes.SubstConstantsCode
-  override def costKind: CostKind = PerItemCost
+  override val costKind = PerItemCost(1, 1, 1)
 
   def eval(scriptBytes: Array[Byte],
            positions: Array[Int],

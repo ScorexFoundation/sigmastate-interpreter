@@ -152,27 +152,27 @@ class ErgoTreeEvaluator(
     * @tparam R result type of the operation
     * @hotspot don't beautify the code
     */
-  final def addSeqCost[R](perItemCost: Int, nItems: Int, opNode: SValue)(block: => R): R = {
+  final def addSeqCost[R](perItemCost: Int, nItems: Int, opNode: SValue)(block: () => R): R = {
     var costItem: SeqCostItem = null
     if (settings.costTracingEnabled) {
       costItem = SeqCostItem(CompanionDesc(opNode.companion), perItemCost, nItems)
       costTrace += costItem
     }
-    if (settings.isMeasureOperationTime) {
+    if (settings.isMeasureOperationTime && block != null) {
       if (costItem == null) {
         costItem = SeqCostItem(CompanionDesc(opNode.companion), perItemCost, nItems)
       }
       val start = System.nanoTime()
       val cost = SeqCostItem.calcCost(perItemCost, nItems) // should be measured
       coster.add(cost)
-      val res = block
+      val res = block()
       val end = System.nanoTime()
       profiler.addCostItem(costItem, end - start)
       res
     } else {
       val cost = SeqCostItem.calcCost(perItemCost, nItems)
       coster.add(cost)
-      block
+      if (block == null) null.asInstanceOf[R] else block()
     }
   }
 
