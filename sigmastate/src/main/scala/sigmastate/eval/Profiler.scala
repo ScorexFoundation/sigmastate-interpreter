@@ -220,21 +220,26 @@ class Profiler {
     }.sortBy(r => (r._2,r._3))(Ordering[(Byte,Byte)].reverse)
 
     val ciLines = costItemsStat.mapToArray { case (ci, stat) =>
-      val (timePerItem, time, count) = ci match {
-        case _: SimpleCostItem =>
+      val (name, timePerItem, time, comment) = ci match {
+        case ci: SimpleCostItem =>
           val (time, count) = stat.mean
-          (time, time, count)
-        case SeqCostItem(_, _, nItems) =>
+          val comment = s"count: $count, actualCost: ${ci.cost}"
+          (ci.opName, time, time, comment)
+        case SeqCostItem(_, perItemCost, nItems) =>
           val (time, count) = stat.mean
           val timePerItem = if (nItems > 0) time / nItems else time
-          (timePerItem, time, count)
-        case PerBlockCostItem(_, _, nBlocks) =>
+          val name = s"${ci.opName}(nItems: $nItems)"
+          val comment = s"count: $count, perItemCost: $perItemCost"
+          (name, timePerItem, time, comment)
+        case PerBlockCostItem(_, perBlockCost, nBlocks) =>
           val (time, count) = stat.mean
           val timePerBlock = if (nBlocks > 0) time / nBlocks else time
-          (timePerBlock, time, count)
+          val name = s"${ci.opName}(nBlocks: $nBlocks)"
+          val comment = s"count: $count, perBlockCost: $perBlockCost"
+          (name, timePerBlock, time, comment)
       }
-      (ci.toString, timePerItem, time, count.toString)
-    }.sortBy(_._2)(Ordering[Long].reverse)
+      (name, timePerItem, time, comment)
+    }.sortBy({ case (name, tpi, t, c) => (name, tpi)})(Ordering[(String, Long)])
 
     val estLines = estimationCostStat.mapToArray { case (script, stat) =>
       val (cost, count) = stat.mean
@@ -248,7 +253,7 @@ class Profiler {
 
     val rows = opCodeLines
         .map { case (opName, opCode, time, comment) =>
-          val key = s"$opName.opCode".padTo(26, ' ')
+          val key = s"$opName".padTo(26, ' ')
           s"$key -> time: $time ns, $comment "
         }
         .mkString("\n")
@@ -261,10 +266,10 @@ class Profiler {
         .mkString("\n")
 
     val ciRows = ciLines
-        .map { case (opName, timePerItem, time, count) =>
+        .map { case (opName, timePerItem, time, comment) =>
           val key = s"$opName".padTo(30, ' ')
           val totalTime = if (time != timePerItem) s"($time)" else ""
-          s"$key -> $timePerItem${totalTime},  // count = $count "
+          s"$key -> $timePerItem${totalTime} ns, $comment"
         }
         .mkString("\n")
 

@@ -830,11 +830,13 @@ trait SMonoType extends SType with STypeCompanion {
   protected def property(name: String, tpeRes: SType, id: Byte): SMethod =
     SMethod(this, name, SFunc(this, tpeRes), id)
       .withIRInfo(MethodCallIrBuilder)
+      .withCost(givenCost(1))
       .withInfo(PropertyCall, "")
 
   protected def property(name: String, tpeRes: SType, id: Byte, valueCompanion: ValueCompanion): SMethod =
     SMethod(this, name, SFunc(this, tpeRes), id)
       .withIRInfo(MethodCallIrBuilder)
+      .withCost(givenCost(1))
       .withInfo(valueCompanion, "")
 }
 
