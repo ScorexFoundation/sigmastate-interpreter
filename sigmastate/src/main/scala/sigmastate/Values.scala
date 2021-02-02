@@ -200,10 +200,10 @@ object Values {
     val EmptySeq: IndexedSeq[SValue] = EmptyArray
   }
 
-  /** The kind of the cost formula.*/
+  /** The kind of the cost.*/
   sealed abstract class CostKind
 
-  /** Descriptor of the simple fixed cost formula.
+  /** Descriptor of the simple fixed cost.
     * @param cost  given cost of the operation */
   case class FixedCost(cost: Int) extends CostKind
 
@@ -212,6 +212,12 @@ object Values {
 
   /** Per-block cost is formula. */
   case object PerBlockCost extends CostKind
+
+  /** Descriptor of the cost which depends on type. */
+  abstract class TypeBasedCost extends CostKind {
+    /** Returns cost value depending on the given type. */
+    def costFunc(tpe: SType): Int
+  }
 
   trait ValueCompanion extends SigmaNodeCompanion {
     import ValueCompanion._

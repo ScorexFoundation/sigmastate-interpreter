@@ -1041,7 +1041,9 @@ case class LT[T <: SType](override val left: Value[T], override val right: Value
 }
 object LT extends RelationCompanion {
   override def opCode: OpCode = LtCode
-  override val costKind = FixedCost(CostOf.LT(SInt)) // TODO JITC
+  override val costKind = new TypeBasedCost {
+    override def costFunc(tpe: SType): Int = CostOf.LT(tpe)
+  }
   override def argInfos: Seq[ArgInfo] = LTInfo.argInfos
 }
 /**
@@ -1058,7 +1060,9 @@ case class LE[T <: SType](override val left: Value[T], override val right: Value
 }
 object LE extends RelationCompanion {
   override def opCode: OpCode = LeCode
-  override val costKind = FixedCost(CostOf.LE(SInt)) // TODO JITC
+  override val costKind = new TypeBasedCost {
+    override def costFunc(tpe: SType): Int = CostOf.LE(tpe)
+  }
   override def argInfos: Seq[ArgInfo] = LEInfo.argInfos
 }
 /**
@@ -1075,7 +1079,9 @@ case class GT[T <: SType](override val left: Value[T], override val right: Value
 }
 object GT extends RelationCompanion {
   override def opCode: OpCode = GtCode
-  override val costKind = FixedCost(CostOf.GT(SInt)) // TODO JITC
+  override val costKind = new TypeBasedCost {
+    override def costFunc(tpe: SType): Int = CostOf.GT(tpe)
+  }
   override def argInfos: Seq[ArgInfo] = GTInfo.argInfos
 }
 /**
@@ -1092,7 +1098,9 @@ case class GE[T <: SType](override val left: Value[T], override val right: Value
 }
 object GE extends RelationCompanion {
   override def opCode: OpCode = GeCode
-  override val costKind = FixedCost(CostOf.GE(SInt)) // TODO JITC
+  override val costKind = new TypeBasedCost {
+    override def costFunc(tpe: SType): Int = CostOf.GE(tpe)
+  }
   override def argInfos: Seq[ArgInfo] = GEInfo.argInfos
 }
 
