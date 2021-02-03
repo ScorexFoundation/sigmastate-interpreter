@@ -6,7 +6,7 @@ import org.ergoplatform.ErgoBox
 import org.scalacheck.Arbitrary._
 import scalan.RType
 import sigmastate.SCollection.SByteArray
-import sigmastate.Values.SigmaBoolean
+import sigmastate.Values.{SigmaBoolean, ErgoTree}
 import sigmastate._
 import sigmastate.eval.Evaluation
 import sigmastate.eval._
@@ -14,6 +14,9 @@ import sigmastate.eval.Extensions._
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import special.sigma.AvlTree
 import SType.AnyOps
+import org.ergoplatform.SigmaConstants.ScriptCostLimit
+import sigmastate.interpreter.{CostAccumulator, ErgoTreeEvaluator}
+import sigmastate.interpreter.ErgoTreeEvaluator.DefaultProfiler
 import sigmastate.lang.exceptions.SerializerException
 import sigmastate.utils.Helpers
 
@@ -23,9 +26,17 @@ class DataSerializerSpecification extends SerializationSpecification {
     val w = SigmaSerializer.startWriter()
     DataSerializer.serialize(obj, tpe, w)
     val bytes = w.toBytes
-    val r = SigmaSerializer.startReader(bytes, 0)
+    val r = SigmaSerializer.startReader(bytes)
     val res = DataSerializer.deserialize(tpe, r)
     res shouldBe obj
+
+    val accumulator = new CostAccumulator(initialCost = 0, Some(ScriptCostLimit.value))
+    val evaluator = new ErgoTreeEvaluator(
+      context = null,
+      constants = ErgoTree.EmptyConstants,
+      coster = accumulator, DefaultProfiler, ErgoTreeEvaluator.DefaultEvalSettings)
+    EQ.equalDataValues(res, obj)(evaluator) shouldBe true
+
     val randomPrefix = arrayGen[Byte].sample.get
     val r2 = SigmaSerializer.startReader(randomPrefix ++ bytes, randomPrefix.length)
     val res2 = DataSerializer.deserialize(tpe, r2)

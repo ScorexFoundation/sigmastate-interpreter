@@ -25,7 +25,7 @@ import sigmastate.eval.NumericOps.{BigIntIsExactOrdering, BigIntIsExactIntegral,
 import sigmastate.eval.{Colls, Sized, SigmaDsl}
 import sigmastate.utxo.CostTable.CostOf
 import special.collection.Coll
-import special.sigma.{SigmaProp, GroupElement}
+import special.sigma.{SigmaProp, GroupElement, Box}
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -1120,8 +1120,9 @@ object GE extends RelationCompanion {
   * Equals operation for SType
   * todo: make EQ to really accept only values of the same type, now EQ(TrueLeaf, IntConstant(5)) is valid
   */
-case class EQ[S <: SType](override val left: Value[S], override val right: Value[S])
-  extends SimpleRelation[S] {
+case class EQ[S <: SType](
+    override val left: Value[S],
+    override val right: Value[S]) extends SimpleRelation[S] {
   override def companion = EQ
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val l = left.evalTo[S#WrappedType](env)
@@ -1133,12 +1134,7 @@ case class EQ[S <: SType](override val left: Value[S], override val right: Value
         addCost(CostOf.EQConstSize)
         l == r
       case _ =>
-        // TODO v5.0: re-implement without Sized
-        val lds = Sized.dataSizeOf[S](l, left.tpe)
-        val rds = Sized.dataSizeOf[S](r, right.tpe)
-        addPerBlockCost(CostOf.EQ_PerBlock, dataSize = (lds + rds).toIntExact) {
-          l == r
-        }
+        EQ.equalDataValues(l, r)
     }
   }
 }
@@ -1146,6 +1142,27 @@ object EQ extends RelationCompanion {
   override def opCode: OpCode = EqCode
   override def costKind: CostKind = PerBlockCost
   override def argInfos: Seq[ArgInfo] = EQInfo.argInfos
+
+  // TODO v5.0: introduce a new limit on structural depth of data values
+  def equalDataValues(l: Any, r: Any)(implicit E: ErgoTreeEvaluator): Boolean = {
+    l match {
+      case coll1: Coll[_] if r.isInstanceOf[Coll[_]] =>
+        val coll2 = r.asInstanceOf[Coll[_]]
+        val len = coll1.length
+        if (len != coll2.length) return false
+        var okEqual = true
+        cfor(0)(_ < len && okEqual, _ + 1) { i =>
+          okEqual = equalDataValues(coll1(i), coll2(i))
+        }
+        okEqual
+      case box1: Box if r.isInstanceOf[Box] =>
+        val box2 = r.asInstanceOf[Box]
+        // TODO JITC: E.addCost(BoxEqCost)
+        box1 == box2
+      case _ => l == r
+    }
+  }
+  val BoxEqCost = FixedCost(1)
 }
 
 /**
@@ -1164,12 +1181,7 @@ case class NEQ[S <: SType](override val left: Value[S], override val right: Valu
         addCost(CostOf.EQConstSize)
         !(l == r)
       case _ =>
-        // TODO v5.0: re-implement without Sized
-        val lds = Sized.dataSizeOf[S](l, left.tpe)
-        val rds = Sized.dataSizeOf[S](r, right.tpe)
-        addPerBlockCost(CostOf.EQ_PerBlock, dataSize = (lds + rds).toIntExact) {
-          !(l == r)
-        }
+        !EQ.equalDataValues(l, r)
     }
   }
 }
