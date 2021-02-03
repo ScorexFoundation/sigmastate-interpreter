@@ -18,8 +18,6 @@ import sigmastate.helpers.TestingHelpers._
 
 class TypesSpecification extends SigmaTestingData {
 
-  def Coll[T](items: T*)(implicit cT: RType[T]) = SigmaDsl.Colls.fromItems(items:_*)
-
   def check(tpe: SType, v: Any, exp: Long) =
     tpe.dataSize(v.asWrappedType) shouldBe exp
 

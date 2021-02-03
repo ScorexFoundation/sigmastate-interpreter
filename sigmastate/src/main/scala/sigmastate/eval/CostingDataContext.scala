@@ -336,6 +336,7 @@ case class CostingBox(isCost: Boolean, val ebox: ErgoBox) extends Box with Wrapp
 
   override def equals(obj: Any): Boolean = (this eq obj.asInstanceOf[AnyRef]) || (obj != null && ( obj match {
     case obj: Box => util.Arrays.equals(id.toArray, obj.id.toArray)
+    // TODO v5.0 HF: return false when obj in not Box instead of throwing an exception
   }))
 }
 

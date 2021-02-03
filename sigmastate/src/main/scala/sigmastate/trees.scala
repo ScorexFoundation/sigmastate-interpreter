@@ -1149,7 +1149,8 @@ object EQ extends RelationCompanion {
       case coll1: Coll[_] if r.isInstanceOf[Coll[_]] =>
         val coll2 = r.asInstanceOf[Coll[_]]
         val len = coll1.length
-        if (len != coll2.length) return false
+        if (len != coll2.length || coll1.tItem != coll2.tItem)
+          return false
         var okEqual = true
         cfor(0)(_ < len && okEqual, _ + 1) { i =>
           okEqual = equalDataValues(coll1(i), coll2(i))
@@ -1159,6 +1160,9 @@ object EQ extends RelationCompanion {
         val box2 = r.asInstanceOf[Box]
         // TODO JITC: E.addCost(BoxEqCost)
         box1 == box2
+      case tup1: Tuple2[_,_] if r.isInstanceOf[Tuple2[_,_]] =>
+        val tup2 = r.asInstanceOf[Tuple2[_,_]]
+        equalDataValues(tup1._1, tup2._1) && equalDataValues(tup1._2, tup2._2)
       case _ => l == r
     }
   }

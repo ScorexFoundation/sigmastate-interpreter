@@ -39,4 +39,31 @@ trait NegativeTesting extends Matchers {
     case s: Success[_] => s
     case Failure(t) => Failure(rootCause(t))
   }
+
+  def sameResultOrError[B](f: => B, g: => B): Try[B] = {
+    val b1 = Try(f); val b2 = Try(g)
+    (b1, b2) match {
+      case (Success(b1), res @ Success(b2)) =>
+        assert(b1 == b2)
+        res
+      case (Failure(t1), res @ Failure(t2)) =>
+        val c1 = rootCause(t1).getClass
+        val c2 = rootCause(t2).getClass
+        c1 shouldBe c2
+        res
+      case _ =>
+        val cause = if (b1.isFailure)
+          rootCause(b1.asInstanceOf[Failure[_]].exception)
+        else
+          rootCause(b2.asInstanceOf[Failure[_]].exception)
+
+        sys.error(
+          s"""Should succeed with the same value or fail with the same exception, but was:
+            |First result: $b1
+            |Second result: $b2
+            |Root cause: $cause
+            |""".stripMargin)
+    }
+  }
+
 }

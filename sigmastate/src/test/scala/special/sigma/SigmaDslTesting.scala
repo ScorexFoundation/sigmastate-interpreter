@@ -45,6 +45,7 @@ class SigmaDslTesting extends PropSpec
     with Matchers
     with SigmaTestingData with SigmaContractSyntax
     with ObjectGenerators { suite =>
+  override def Coll[T](items: T*)(implicit cT: RType[T]): Coll[T] = super.Coll(items:_*)
 
   lazy val spec: ContractSpec = TestContractSpec(suite)(new TestingIRContext)
 
