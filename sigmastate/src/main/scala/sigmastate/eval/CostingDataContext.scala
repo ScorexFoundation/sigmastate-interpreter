@@ -706,6 +706,7 @@ case class CostingDataContext(
                                lastBlockUtxoRootHash: AvlTree,
                                _minerPubKey: Coll[Byte],
                                vars: Coll[AnyValue],
+                               override val activatedScriptVersion: Byte,
                                var isCost: Boolean)
   extends Context {
   @inline override def builder: SigmaDslBuilder = CostingSigmaDslBuilder

@@ -725,6 +725,10 @@ trait Context {
   def getVar[T](id: Byte)(implicit cT: RType[T]): Option[T]
 
   def vars: Coll[AnyValue]
+
+  /** Maximum version of ErgoTree currently activated on the network.
+    * See [[ErgoLikeContext]] class for details. */
+  def activatedScriptVersion: Byte
 }
 
 @scalan.Liftable

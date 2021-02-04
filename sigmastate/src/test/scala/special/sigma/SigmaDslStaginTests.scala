@@ -6,6 +6,7 @@ import scala.language.reflectiveCalls
 import scalan.{BaseLiftableTests, BaseCtxTests}
 import sigmastate.eval.Extensions._
 import sigmastate.eval.{IRContext, ErgoScriptTestkit}
+import sigmastate.interpreter.Interpreter
 
 class SigmaDslStaginTests extends BaseCtxTests with ErgoScriptTestkit with BaseLiftableTests {
   class Ctx extends TestContext with IRContext with LiftableTestKit {
@@ -29,7 +30,7 @@ class SigmaDslStaginTests extends BaseCtxTests with ErgoScriptTestkit with BaseL
     type RSigmaProp = cake.SigmaProp
     val boxA1 = newAliceBox(1, 100)
     val boxA2 = newAliceBox(2, 200)
-    val ctx: SContext = newContext(10, boxA1)
+    val ctx: SContext = newContext(10, boxA1, Interpreter.MaxSupportedScriptVersion)
       .withInputs(boxA2)
       .withVariables(Map(1 -> toAnyValue(30), 2 -> toAnyValue(40)))
     val p1: SSigmaProp = new special.sigma.MockSigma(true)

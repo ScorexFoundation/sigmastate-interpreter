@@ -157,7 +157,7 @@ class ErgoLikeContext(val lastBlockUtxoRoot: AvlTreeData,
     val selfBox = boxesToSpend(selfIndex).toTestBox(isCost)
     CostingDataContext(
       dataInputs, headers, preHeader, inputs, outputs, preHeader.height, selfBox, avlTree,
-      preHeader.minerPk.getEncoded, vars, isCost)
+      preHeader.minerPk.getEncoded, vars, activatedScriptVersion, isCost)
   }
 
 

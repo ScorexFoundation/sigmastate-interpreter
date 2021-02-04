@@ -22,10 +22,10 @@ import scalan.ExactOrdering._
 import scalan.util.Extensions._
 import sigmastate.ArithOp.OperationImpl
 import sigmastate.eval.NumericOps.{BigIntIsExactOrdering, BigIntIsExactIntegral, BigIntIsExactNumeric}
-import sigmastate.eval.{Colls, Sized, SigmaDsl}
+import sigmastate.eval.{Colls, SigmaDsl}
 import sigmastate.utxo.CostTable.CostOf
-import special.collection.Coll
-import special.sigma.{SigmaProp, GroupElement, Box}
+import special.collection.{Coll, CollOverArray}
+import special.sigma.{Box, SigmaProp, GroupElement}
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -1166,6 +1166,17 @@ object EQ extends RelationCompanion {
       case _ => l == r
     }
   }
+
+//  def equalColls(coll1: Coll[_], coll2: Coll[_]): Boolean = {
+//    coll1 match {
+//      case coll1: CollOverArray[_] => coll2 match {
+//        case coll2: CollOverArray[_] =>
+//          java.util.Arrays.eq
+//      }
+//
+//    }
+//  }
+
   val BoxEqCost = FixedCost(1)
 }
 
