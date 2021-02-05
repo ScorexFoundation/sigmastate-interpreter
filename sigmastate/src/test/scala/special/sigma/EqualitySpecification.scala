@@ -3,7 +3,7 @@ package special.sigma
 import java.math.BigInteger
 
 import org.ergoplatform.SigmaConstants.ScriptCostLimit
-import sigmastate.EQ
+import sigmastate.{EQ, DataValueComparer}
 import sigmastate.Values.ErgoTree
 import sigmastate.eval.CBigInt
 import sigmastate.interpreter.ErgoTreeEvaluator.{DefaultProfiler, DefaultEvalSettings}
@@ -29,7 +29,7 @@ class EqualitySpecification extends SigmaTestingData {
     val evaluator = createEvaluator()
     withClue(s"EQ.equalDataValues($x, $y)") {
       val res = sameResultOrError(
-        EQ.equalDataValues(x, y)(evaluator),
+        DataValueComparer.equalDataValues(x, y)(evaluator),
         x == y)
       res match {
         case Success(res) => res shouldBe expected

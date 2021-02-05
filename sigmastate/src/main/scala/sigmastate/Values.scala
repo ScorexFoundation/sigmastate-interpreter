@@ -25,7 +25,7 @@ import special.sigma.Extensions._
 import sigmastate.eval._
 import sigmastate.eval.Extensions._
 import scalan.util.Extensions.ByteOps
-import sigmastate.interpreter.ErgoTreeEvaluator.{DataEnv, error, NamedDesc}
+import sigmastate.interpreter.ErgoTreeEvaluator.{NamedDesc, DataEnv, error, CompanionDesc}
 import spire.syntax.all.cfor
 
 import scala.language.implicitConversions
@@ -151,14 +151,14 @@ object Values {
     @inline
     final def addSeqCost[R](perItemCost: Int, nItems: Int)
                            (block:() => R)(implicit E: ErgoTreeEvaluator): R = {
-      E.addSeqCost(perItemCost, nItems, this)(block)
+      E.addSeqCost(perItemCost, nItems, CompanionDesc(this.companion))(block)
     }
 
     @inline
     final def addSeqCost[R](costDesc: PerItemCost, nItems: Int)
                            (block: () => R)(implicit E: ErgoTreeEvaluator): R = {
       E.addCost(costDesc.baseCost, this)
-      E.addSeqCost(costDesc.perItemCost, nItems, this)(block)
+      E.addSeqCost(costDesc.perItemCost, nItems, CompanionDesc(this.companion))(block)
       // TODO JITC: take into account chunkSize
     }
 

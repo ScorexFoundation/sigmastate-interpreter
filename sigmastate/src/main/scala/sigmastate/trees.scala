@@ -2,7 +2,7 @@ package sigmastate
 
 import org.ergoplatform.SigmaConstants
 import org.ergoplatform.validation.SigmaValidationSettings
-import scalan.{ExactOrdering, ExactNumeric, ExactIntegral, RType}
+import scalan.{ExactOrdering, ExactNumeric, ExactIntegral}
 import scalan.OverloadHack.Overloaded1
 import scorex.crypto.hash.{Sha256, Blake2b256, CryptographicHash32}
 import sigmastate.Operations._
@@ -19,13 +19,12 @@ import debox.{Map => DMap}
 import scalan.ExactIntegral._
 import scalan.ExactNumeric._
 import scalan.ExactOrdering._
-import scalan.util.Extensions._
 import sigmastate.ArithOp.OperationImpl
 import sigmastate.eval.NumericOps.{BigIntIsExactOrdering, BigIntIsExactIntegral, BigIntIsExactNumeric}
 import sigmastate.eval.{Colls, SigmaDsl}
 import sigmastate.utxo.CostTable.CostOf
-import special.collection.{Coll, CollOverArray}
-import special.sigma.{Box, SigmaProp, GroupElement}
+import special.collection.Coll
+import special.sigma.{SigmaProp, GroupElement}
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -1134,7 +1133,7 @@ case class EQ[S <: SType](
         addCost(CostOf.EQConstSize)
         l == r
       case _ =>
-        EQ.equalDataValues(l, r)
+        DataValueComparer.equalDataValues(l, r)
     }
   }
 }
@@ -1142,42 +1141,6 @@ object EQ extends RelationCompanion {
   override def opCode: OpCode = EqCode
   override def costKind: CostKind = PerBlockCost
   override def argInfos: Seq[ArgInfo] = EQInfo.argInfos
-
-  // TODO v5.0: introduce a new limit on structural depth of data values
-  def equalDataValues(l: Any, r: Any)(implicit E: ErgoTreeEvaluator): Boolean = {
-    l match {
-      case coll1: Coll[_] if r.isInstanceOf[Coll[_]] =>
-        val coll2 = r.asInstanceOf[Coll[_]]
-        val len = coll1.length
-        if (len != coll2.length || coll1.tItem != coll2.tItem)
-          return false
-        var okEqual = true
-        cfor(0)(_ < len && okEqual, _ + 1) { i =>
-          okEqual = equalDataValues(coll1(i), coll2(i))
-        }
-        okEqual
-      case box1: Box if r.isInstanceOf[Box] =>
-        val box2 = r.asInstanceOf[Box]
-        // TODO JITC: E.addCost(BoxEqCost)
-        box1 == box2
-      case tup1: Tuple2[_,_] if r.isInstanceOf[Tuple2[_,_]] =>
-        val tup2 = r.asInstanceOf[Tuple2[_,_]]
-        equalDataValues(tup1._1, tup2._1) && equalDataValues(tup1._2, tup2._2)
-      case _ => l == r
-    }
-  }
-
-//  def equalColls(coll1: Coll[_], coll2: Coll[_]): Boolean = {
-//    coll1 match {
-//      case coll1: CollOverArray[_] => coll2 match {
-//        case coll2: CollOverArray[_] =>
-//          java.util.Arrays.eq
-//      }
-//
-//    }
-//  }
-
-  val BoxEqCost = FixedCost(1)
 }
 
 /**
@@ -1196,7 +1159,7 @@ case class NEQ[S <: SType](override val left: Value[S], override val right: Valu
         addCost(CostOf.EQConstSize)
         !(l == r)
       case _ =>
-        !EQ.equalDataValues(l, r)
+        !DataValueComparer.equalDataValues(l, r)
     }
   }
 }
