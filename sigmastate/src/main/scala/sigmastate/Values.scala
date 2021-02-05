@@ -124,14 +124,6 @@ object Values {
       v.asInstanceOf[T]
     }
 
-    /** Add the given cost amount to the accumulator and associate it with this operation
-      * node.
-      */
-    @inline
-    final def addCost(cost: Int)(implicit E: ErgoTreeEvaluator): Unit = {
-      E.addCost(cost, this)
-    }
-
     /** Add the cost given by the descriptor to the accumulator and associate it with this operation
       * node.
       */
@@ -384,13 +376,13 @@ object Values {
     override def companion: ValueCompanion = ConstantPlaceholder
     override protected def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
       val c = E.constants(id)
-      addCost(CostOf.ConstantPlaceholder)
+      addCost(ConstantPlaceholder.costKind)
       c.value
     }
   }
   object ConstantPlaceholder extends ValueCompanion {
     override def opCode: OpCode = ConstantPlaceholderCode
-    override val costKind: CostKind = FixedCost(CostOf.ConstantPlaceholder)
+    override val costKind = FixedCost(CostOf.ConstantPlaceholder)
   }
 
   trait NotReadyValue[S <: SType] extends Value[S] {
@@ -896,7 +888,7 @@ object Values {
 
     protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
       val len = items.length
-      addCost(CostOf.ConcreteCollection)
+      addCost(ConcreteCollection.costKind)
       val is = Array.ofDim[V#WrappedType](len)(tElement.classTag)
       cfor(0)(_ < len, _ + 1) { i =>
         is(i) = items(i).evalTo[V#WrappedType](env)
@@ -1014,7 +1006,7 @@ object Values {
     def opType: SFunc = Value.notSupportedError(this, "opType")
 
     protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
-      addCost(CostOf.ValUse)
+      addCost(ValUse.costKind)
       env.getOrElse(valId, error(s"cannot resolve $this"))
     }
   }
@@ -1073,7 +1065,7 @@ object Values {
     override def opType: SFunc = SFunc(mutable.WrappedArray.empty, tpe)
 
     protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
-      addCost(CostOf.FuncValue)
+      addCost(FuncValue.costKind)
       if (args.length == 0) {
         // TODO coverage
         () => {

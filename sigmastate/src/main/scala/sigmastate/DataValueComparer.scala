@@ -10,9 +10,11 @@ import special.sigma.Box
 import special.collection.{Coll, PairOfCols, CollOverArray}
 
 object DataValueComparer {
-  final val CostOf_EqualCollByte = PerItemCost(1, 1, 64)
-  final val CostOf_EqualCollInt = PerItemCost(1, 1, 16)
+  final val CostDesc_EQCollByte = PerItemCost(1, 1, 64)
+  final val CostDesc_EQCollInt = PerItemCost(1, 1, 16)
+
   final val OpDesc_EqualBaseCollsOfPrim = NamedDesc("EqualBaseCollsOfPrim")
+  final val OpDesc_EQPerDataNode = NamedDesc("EQPerDataNode")
 
   def equalBaseCollsOfPrim[@sp(Byte, Int) A]
                           (c1: CollOverArray[A],
@@ -53,11 +55,11 @@ object DataValueComparer {
           case ByteType =>
             equalBaseCollsOfPrim(
               coll1.asInstanceOf[CollOverArray[Byte]],
-              coll2.asInstanceOf[CollOverArray[Byte]], CostOf_EqualCollByte)
+              coll2.asInstanceOf[CollOverArray[Byte]], CostDesc_EQCollByte)
           case IntType =>
             equalBaseCollsOfPrim(
               coll1.asInstanceOf[CollOverArray[Int]],
-              coll2.asInstanceOf[CollOverArray[Int]], CostOf_EqualCollInt)
+              coll2.asInstanceOf[CollOverArray[Int]], CostDesc_EQCollInt)
           case _ =>
             equalBaseColls(coll1, coll2.asInstanceOf[CollOverArray[a]])
         }
@@ -70,6 +72,7 @@ object DataValueComparer {
 
   // TODO v5.0: introduce a new limit on structural depth of data values
   def equalDataValues(l: Any, r: Any)(implicit E: ErgoTreeEvaluator): Boolean = {
+    E.addCost(1, OpDesc_EQPerDataNode)
     l match {
       case coll1: Coll[_] if r.isInstanceOf[Coll[_]] =>
         val coll2 = r.asInstanceOf[Coll[_]]

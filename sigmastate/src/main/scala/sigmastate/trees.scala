@@ -1064,7 +1064,7 @@ case class LE[T <: SType](override val left: Value[T], override val right: Value
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val lV = left.evalTo[Any](env)
     val rV = right.evalTo[Any](env)
-    addCost(CostOf.LE(left.tpe))
+    addCost(LE.costKind, left.tpe)
     opImpl.o.lteq(lV, rV)
   }
 }
@@ -1083,7 +1083,7 @@ case class GT[T <: SType](override val left: Value[T], override val right: Value
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val lV = left.evalTo[Any](env)
     val rV = right.evalTo[Any](env)
-    addCost(CostOf.GT(left.tpe))
+    addCost(GT.costKind, left.tpe)
     opImpl.o.gt(lV, rV)
   }
 }
@@ -1102,7 +1102,7 @@ case class GE[T <: SType](override val left: Value[T], override val right: Value
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val lV = left.evalTo[Any](env)
     val rV = right.evalTo[Any](env)
-    addCost(CostOf.GE(left.tpe))
+    addCost(GE.costKind, left.tpe)
     opImpl.o.gteq(lV, rV)
   }
 }
@@ -1125,15 +1125,7 @@ case class EQ[S <: SType](
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val l = left.evalTo[S#WrappedType](env)
     val r = right.evalTo[S#WrappedType](env)
-
-    // TODO v5.0: re-implement using explicit recursive predicate `equalDataValues`
-    left.tpe.asInstanceOf[SType] match {
-      case t if t.isConstantSize =>
-        addCost(CostOf.EQConstSize)
-        l == r
-      case _ =>
-        DataValueComparer.equalDataValues(l, r)
-    }
+    DataValueComparer.equalDataValues(l, r)
   }
 }
 object EQ extends RelationCompanion {
@@ -1151,15 +1143,7 @@ case class NEQ[S <: SType](override val left: Value[S], override val right: Valu
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val l = left.evalTo[S#WrappedType](env)
     val r = right.evalTo[S#WrappedType](env)
-
-    // TODO v5.0: re-implement using explicit recursive predicate `equalDataValues`
-    left.tpe.asInstanceOf[SType] match {
-      case t if t.isConstantSize =>
-        addCost(CostOf.EQConstSize)
-        !(l == r)
-      case _ =>
-        !DataValueComparer.equalDataValues(l, r)
-    }
+    !DataValueComparer.equalDataValues(l, r)
   }
 }
 object NEQ extends RelationCompanion {
@@ -1178,7 +1162,7 @@ case class BinOr(override val left: BoolValue, override val right: BoolValue)
   override def opType = BinOr.OpType
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val l = left.evalTo[Boolean](env)
-    addCost(CostOf.BinOr)
+    addCost(BinOr.costKind)
     l || right.evalTo[Boolean](env)  // rely on short-cutting semantics of Scala's ||
   }
 }
@@ -1199,7 +1183,7 @@ case class BinAnd(override val left: BoolValue, override val right: BoolValue)
   override def opType = BinAnd.OpType
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val l = left.evalTo[Boolean](env)
-    addCost(CostOf.BinAnd)
+    addCost(BinAnd.costKind)
     l && right.evalTo[Boolean](env)  // rely on short-cutting semantics of Scala's &&
   }
 }
@@ -1217,7 +1201,7 @@ case class BinXor(override val left: BoolValue, override val right: BoolValue)
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val leftV = left.evalTo[Boolean](env)
     val rightV = right.evalTo[Boolean](env)
-    addCost(CostOf.BinXor)
+    addCost(BinXor.costKind)
     leftV ^ rightV
   }
 }
@@ -1281,7 +1265,7 @@ case class If[T <: SType](condition: Value[SBoolean.type], trueBranch: Value[T],
   override lazy val third = falseBranch
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val c = condition.evalTo[Boolean](env)
-    addCost(CostOf.If)
+    addCost(If.costKind)
     if (c) trueBranch.evalTo[T#WrappedType](env)
     else   falseBranch.evalTo[T#WrappedType](env)
   }
@@ -1298,7 +1282,7 @@ case class LogicalNot(input: Value[SBoolean.type]) extends NotReadyValueBoolean 
   override def opType = LogicalNot.OpType
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val inputV = input.evalTo[Boolean](env)
-    addCost(CostOf.LogicalNot)
+    addCost(LogicalNot.costKind)
     !inputV
   }
 }
