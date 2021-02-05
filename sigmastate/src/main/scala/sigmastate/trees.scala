@@ -311,18 +311,20 @@ case class OR(input: Value[SCollection[SBoolean.type]])
     var foldingCost = 0
     var res = false
     val len = inputV.length
-    cfor(0)(_ < len && !res, _ + 1) { i =>
+    var i = 0
+    while (i < len && !res) {
       foldingCost += CostOf.OR_PerItem
       res ||= inputV(i)
+      i += 1
     }
-    E.addCost(CostOf.OR + foldingCost, this)
+    addSeqCost(OR.costKind, i)(null) // TODO JITC: measure time
     res
   }
 }
 
 object OR extends LogicalTransformerCompanion {
   override def opCode: OpCode = OrCode
-  override val costKind = LoopWhileCost(CostOf.OR, CostOf.OR_PerItem)
+  override val costKind = PerItemCost(CostOf.OR, CostOf.OR_PerItem, 64 /*size of cache line in bytes*/)
   override def argInfos: Seq[ArgInfo] = Operations.ORInfo.argInfos
 
   def apply(children: Seq[Value[SBoolean.type]]): OR =
@@ -340,15 +342,22 @@ case class XorOf(input: Value[SCollection[SBoolean.type]])
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val inputV = input.evalTo[Coll[Boolean]](env)
     val len = inputV.length
-    E.addCost(CostOf.XOR + CostOf.XOR_PerItem * len, this)
-    // TODO JITC: the code should be versioned
-    val res = SigmaDsl.xorOf(inputV)  // this is v3.x version (Script v1)
-    // The following is v5.x version (Script v2)
-    //    var res = false
-    //    cfor(0)(_ < len, _ + 1) { i =>
-    //      res ^= inputV(i)
-    //    }
-    res
+    addSeqCost(XorOf.costKind, len) { () =>
+      val res = if (E.context.activatedScriptVersion >= 2) {
+        if (len == 0) false
+        else if (len == 1) inputV(0)
+        else {
+          var res = inputV(0)
+          cfor(1)(_ < len, _ + 1) { i =>
+            res ^= inputV(i)
+          }
+          res
+        }
+      } else {
+        SigmaDsl.xorOf(inputV)
+      }
+      res
+    }
   }
 }
 
@@ -371,21 +380,21 @@ case class AND(input: Value[SCollection[SBoolean.type]])
   override def opType = AND.OpType
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val inputV = input.evalTo[Coll[Boolean]](env)
-    var foldingCost = 0
     var res = true
     val len = inputV.length
-    cfor(0)(_ < len && res, _ + 1) { i =>
-      foldingCost += CostOf.AND_PerItem
+    var i = 0
+    while (i < len && res) {
       res &&= inputV(i)
+      i += 1
     }
-    E.addCost(CostOf.AND + foldingCost, this)
+    addSeqCost(AND.costKind, i)(null) // TODO JITC: measure time
     res
   }
 }
 
 object AND extends LogicalTransformerCompanion {
   override def opCode: OpCode = AndCode
-  override val costKind = LoopWhileCost(CostOf.AND, CostOf.AND_PerItem)
+  override val costKind = PerItemCost(CostOf.AND, CostOf.AND_PerItem, 64/*size of cache line in bytes*/)
   override def argInfos: Seq[ArgInfo] = Operations.ANDInfo.argInfos
 
   def apply(children: Seq[Value[SBoolean.type]]): AND =
@@ -753,9 +762,10 @@ case class ArithOp[T <: SType](left: Value[T], right: Value[T], override val opC
 /** NOTE: by-name argument is required for correct initialization order. */
 abstract class ArithOpCompanion(val opCode: OpCode, val name: String, _argInfos: => Seq[ArgInfo]) extends TwoArgumentOperationCompanion {
   override def argInfos: Seq[ArgInfo] = _argInfos
+  override def costKind: TypeBasedCost
   @inline final def eval(node: SValue, typeCode: SType.TypeCode, x: Any, y: Any)(implicit E: ErgoTreeEvaluator): Any = {
     val impl = ArithOp.numerics(typeCode)
-    E.addCost(operationCost(impl), node)
+    node.addCost(costKind, impl.argTpe)
     eval(impl, x, y)
   }
   def eval(impl: OperationImpl, x: Any, y: Any): Any
@@ -766,7 +776,7 @@ object ArithOp {
   import OpCodes._
   object Plus     extends ArithOpCompanion(PlusCode,     "+", PlusInfo.argInfos) {
     def eval(impl: OperationImpl, x: Any, y: Any): Any = impl.n.plus(x, y)
-    def operationCost(impl: OperationImpl) = CostOf.Plus(impl.argTpe)
+    override def operationCost(impl: OperationImpl) = CostOf.Plus(impl.argTpe)
     override val costKind = new TypeBasedCost {
       override def costFunc(tpe: SType): Int = CostOf.Plus(tpe)
     }

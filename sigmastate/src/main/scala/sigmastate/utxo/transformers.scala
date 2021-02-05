@@ -340,7 +340,7 @@ case class SizeOf[V <: SType](input: Value[SCollection[V]])
   override def opType = SizeOf.OpType
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val inputV = input.evalTo[Coll[Any]](env)
-    E.addCost(CostOf.SizeOf, this)
+    addCost(SizeOf.costKind)
     inputV.length
   }
 }

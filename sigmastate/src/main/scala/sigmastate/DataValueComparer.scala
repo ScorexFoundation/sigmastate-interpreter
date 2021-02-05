@@ -27,10 +27,8 @@ object DataValueComparer {
       okEqual = c1(i) == c2(i)
       i += 1
     }
-    // compute actual number of chunks to cover all compared items
-    val nChunks = (i - 1) / costDesc.chunkSize + 1
     // TODO JITC: measure time
-    E.addSeqCost(costDesc.perItemCost, nChunks, OpDesc_EqualBaseCollsOfPrim)(null)
+    E.addSeqCost(costDesc.perItemCost, i, OpDesc_EqualBaseCollsOfPrim)(null)
 
     okEqual
   }
