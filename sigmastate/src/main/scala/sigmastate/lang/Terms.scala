@@ -232,7 +232,7 @@ object Terms {
       cfor(0)(_ < extraLen, _ + 1) { i =>
         argsBuf(len + i) = extra(i)
       }
-      addCost(CostOf.MethodCall) // MethodCall overhead
+      addCost(MethodCall.costKind) // MethodCall overhead
       E.addMethodCallCost(this, objV, argsBuf) {
         method.invoke(objV, argsBuf)
       }

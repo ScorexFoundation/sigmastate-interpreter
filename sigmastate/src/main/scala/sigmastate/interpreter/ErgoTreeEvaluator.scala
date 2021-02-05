@@ -229,6 +229,8 @@ class ErgoTreeEvaluator(
 
       val len = costDetails.trace.length
       val totalCost = costDetails.cost
+
+      // spread the measured time between individial cost items
       cfor(0)(_ < len, _ + 1) { i =>
         val costItem = costDetails.trace(i)
         profiler.addCostItem(costItem, time * costItem.cost / totalCost)

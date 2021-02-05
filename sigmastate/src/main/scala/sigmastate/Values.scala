@@ -140,20 +140,24 @@ object Values {
       E.addCost(costDesc.cost, this)
     }
 
-    /** Add the cost of a repeated operation to the accumulator and associate it with this operation.
-      * The number of items (loop iterations) is known in advance (like in Coll.map operation)
-      *
-      * @param perItemCost cost per operation
-      * @param nItems      number of operations known in advance (before loop execution)
-      * @param block       operation executed under the given cost
-      * @tparam R result type of the operation
+    /** Add the cost given by the descriptor to the accumulator and associate it with this operation
+      * node.
       */
     @inline
-    final def addSeqCost[R](perItemCost: Int, nItems: Int)
-                           (block:() => R)(implicit E: ErgoTreeEvaluator): R = {
-      E.addSeqCost(perItemCost, nItems, CompanionDesc(this.companion))(block)
+    final def addCost(costDesc: TypeBasedCost, tpe: SType)(implicit E: ErgoTreeEvaluator): Unit = {
+      val cost = costDesc.costFunc(tpe)
+      E.addCost(cost, this)
     }
 
+    /** Add the cost of a repeated operation to the accumulator and associate it with this
+      * operation. The number of items (loop iterations) is known in advance (like in
+      * Coll.map operation)
+      *
+      * @param costDesc cost descriptor of the operation
+      * @param nItems   number of operations known in advance (before loop execution)
+      * @param block    operation executed under the given cost
+      * @tparam R result type of the operation
+      */
     @inline
     final def addSeqCost[R](costDesc: PerItemCost, nItems: Int)
                            (block: () => R)(implicit E: ErgoTreeEvaluator): R = {
@@ -165,15 +169,16 @@ object Values {
     /** Add the size-based cost of an operation to the accumulator and associate it with this operation.
       * The size in bytes of the data is known in advance (like in CalcSha256 operation)
       *
-      * @param perKbCost cost per kilobyte of data
-      * @param dataSize  size of data in bytes known in advance (before operation execution)
-      * @param block     operation executed under the given cost
+      * @param costDesc cost descriptor of the operation
+      * @param dataSize size of data in bytes known in advance (before operation execution)
+      * @param block    operation executed under the given cost
       * @tparam R result type of the operation
       */
     @inline
-    final def addPerBlockCost[R](perKbCost: Int, dataSize: Int)
+    final def addPerBlockCost[R](costDesc: PerBlockCost, dataSize: Int)
                                 (block: => R)(implicit E: ErgoTreeEvaluator): R = {
-      E.addPerBlockCost(perKbCost, dataSize, this)(block)
+      E.addCost(costDesc.baseCost, this)
+      E.addPerBlockCost(costDesc.perBlockCost, dataSize, this)(block)
     }
   }
 
@@ -230,14 +235,23 @@ object Values {
     */
   case class LoopWhileCost(baseCost: Int, perIterCost: Int) extends CostKind
 
-  /** Per-block cost is formula. */
-  case object PerBlockCost extends CostKind
+  /** Cost of operation over data of the known size.
+    * See for example [[CalcBlake2b256]], [[CalcSha256]].
+    *
+    * @param baseCost     cost of operation factored out of the loop iterations
+    * @param perBlockCost cost associated with each chunk of items
+    */
+  case class PerBlockCost(baseCost: Int, perBlockCost: Int) extends CostKind
 
   /** Descriptor of the cost which depends on type. */
   abstract class TypeBasedCost extends CostKind {
     /** Returns cost value depending on the given type. */
     def costFunc(tpe: SType): Int
   }
+
+  /** Cost of operation cannot be described using fixed set of parameters.
+    * See [[EQ]], [[NEQ]]. */
+  case object DynamicCost extends CostKind
 
   trait ValueCompanion extends SigmaNodeCompanion {
     import ValueCompanion._

@@ -46,7 +46,7 @@ case class MapCollection[IV <: SType, OV <: SType](
     val inputV = input.evalTo[Coll[Any]](env)
     val mapperV = mapper.evalTo[Any => Any](env)
     val tResItem = Evaluation.stypeToRType(mapper.tpe.tRange).asInstanceOf[RType[Any]]
-    addCost(CostOf.MapCollection)
+    addSeqCost(MapCollection.costKind, inputV.length)(null)
     inputV.map(mapperV)(tResItem)
   }
 }
@@ -282,7 +282,7 @@ case class SelectField(input: Value[STuple], fieldIndex: Byte)
 
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val inputV = input.evalTo[Any](env)
-    addCost(CostOf.SelectField)
+    addCost(SelectField.costKind)
     inputV match {
       case p: Tuple2[_,_] =>
         if (fieldIndex == 1) p._1
@@ -360,7 +360,7 @@ case class ExtractAmount(input: Value[SBox.type]) extends Extract[SLong.type] wi
   override def opType = ExtractAmount.OpType
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val inputV = input.evalTo[Box](env)
-    addCost(CostOf.ExtractAmount)
+    addCost(ExtractAmount.costKind)
     inputV.value
   }
 }
@@ -380,7 +380,7 @@ case class ExtractScriptBytes(input: Value[SBox.type]) extends Extract[SByteArra
   override def opType = ExtractScriptBytes.OpType
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val inputV = input.evalTo[Box](env)
-    addCost(CostOf.ExtractScriptBytes)
+    addCost(ExtractScriptBytes.costKind)
     inputV.propositionBytes
   }
 }
@@ -388,10 +388,11 @@ object ExtractScriptBytes extends SimpleTransformerCompanion {
   val OpType = SFunc(SBox, SByteArray)
   override def opCode: OpCode = OpCodes.ExtractScriptBytesCode
 
+  // TODO JITC: ensure the following is true
   /** The cost if fixed and doesn't include serialization of ErgoTree because
     * the ErgoTree is expected to be constructed with non-null propositionBytes.
     * This is (and must be) guaranteed by ErgoTree deserializer. */
-  override val costKind: CostKind = FixedCost(CostOf.ExtractScriptBytes)
+  override val costKind = FixedCost(CostOf.ExtractScriptBytes)
 
   override def argInfos: Seq[ArgInfo] = ExtractScriptBytesInfo.argInfos
 }
@@ -402,7 +403,7 @@ case class ExtractBytes(input: Value[SBox.type]) extends Extract[SByteArray] wit
   override def opType = ExtractBytes.OpType
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val inputV = input.evalTo[Box](env)
-    addCost(CostOf.ExtractBytes)
+    addCost(ExtractBytes.costKind)
     inputV.bytes
   }
 }
@@ -412,7 +413,7 @@ object ExtractBytes extends SimpleTransformerCompanion {
   /** The cost if fixed and doesn't include serialization of ErgoBox because
     * the ErgoBox is expected to be constructed with non-null `bytes`.
     * TODO JITC: This is not, but must be guaranteed by ErgoBox deserializer. */
-  override val costKind: CostKind = FixedCost(CostOf.ExtractBytes)
+  override val costKind = FixedCost(CostOf.ExtractBytes)
   override def argInfos: Seq[ArgInfo] = ExtractBytesInfo.argInfos
 }
 
@@ -519,7 +520,7 @@ case class DeserializeContext[V <: SType](id: Byte, tpe: V) extends Deserialize[
 }
 object DeserializeContext extends ValueCompanion {
   override def opCode: OpCode = OpCodes.DeserializeContextCode
-  override def costKind: CostKind = PerBlockCost
+  override val costKind = PerBlockCost(1, 1)
 }
 
 /** Extract register of SELF box as Coll[Byte], deserialize it into Value and inline into executing script.
@@ -531,7 +532,7 @@ case class DeserializeRegister[V <: SType](reg: RegisterId, tpe: V, default: Opt
 }
 object DeserializeRegister extends ValueCompanion {
   override def opCode: OpCode = OpCodes.DeserializeRegisterCode
-  override def costKind: CostKind = PerBlockCost
+  override val costKind = PerBlockCost(1, 1)
 }
 
 /** See [[special.sigma.Context.getVar()]] for detailed description. */
@@ -540,13 +541,13 @@ case class GetVar[V <: SType](varId: Byte, override val tpe: SOption[V]) extends
   override val opType = SFunc(Array(SContext, SByte), tpe) // TODO optimize: avoid Array allocation
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val t = Evaluation.stypeToRType(tpe.elemType)
-    addCost(CostOf.GetVar)
+    addCost(GetVar.costKind)
     E.context.getVar(varId)(t)
   }
 }
 object GetVar extends ValueCompanion {
   override def opCode: OpCode = OpCodes.GetVarCode
-  override val costKind: CostKind = FixedCost(CostOf.GetVar)
+  override val costKind = FixedCost(CostOf.GetVar)
   def apply[V <: SType](varId: Byte, innerTpe: V): GetVar[V] = GetVar[V](varId, SOption(innerTpe))
 }
 
@@ -562,13 +563,13 @@ case class OptionGet[V <: SType](input: Value[SOption[V]]) extends Transformer[S
   override def toString: String = s"$input.get"
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val opt = input.evalTo[Option[V#WrappedType]](env)
-    addCost(CostOf.OptionGet)
+    addCost(OptionGet.costKind)
     opt.get
   }
 }
 object OptionGet extends SimpleTransformerCompanion {
   override def opCode: OpCode = OpCodes.OptionGetCode
-  override val costKind: CostKind = FixedCost(CostOf.OptionGet)
+  override val costKind = FixedCost(CostOf.OptionGet)
   override def argInfos: Seq[ArgInfo] = OptionGetInfo.argInfos
 }
 

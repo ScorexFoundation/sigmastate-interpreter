@@ -493,7 +493,7 @@ case class Upcast[T <: SNumericType, R <: SNumericType](input: Value[T], tpe: R)
 
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val inputV = input.evalTo[AnyVal](env)
-    addCost(CostOf.Upcast)
+    addCost(Upcast.costKind)
     tpe.upcast(inputV)
   }
 }
@@ -523,7 +523,7 @@ case class Downcast[T <: SNumericType, R <: SNumericType](input: Value[T], tpe: 
   override def opType = Downcast.OpType
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val inputV = input.evalTo[AnyVal](env)
-    addCost(CostOf.Downcast)
+    addCost(Downcast.costKind)
     tpe.downcast(inputV)
   }
 }
@@ -633,14 +633,14 @@ case class CalcBlake2b256(override val input: Value[SByteArray]) extends CalcHas
   override val hashFn: CryptographicHash32 = Blake2b256
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val inputV = input.evalTo[Coll[Byte]](env)
-    addPerBlockCost(CostOf.CalcBlake2b256_PerBlock, inputV.length) {
+    addPerBlockCost(CalcBlake2b256.costKind, inputV.length) {
       SigmaDsl.blake2b256(inputV)
     }
   }
 }
 object CalcBlake2b256 extends SimpleTransformerCompanion {
   override def opCode: OpCode = OpCodes.CalcBlake2b256Code
-  override def costKind: CostKind = PerBlockCost
+  override val costKind = PerBlockCost(1, CostOf.CalcBlake2b256_PerBlock)
   override def argInfos: Seq[ArgInfo] = CalcBlake2b256Info.argInfos
 }
 
@@ -652,14 +652,14 @@ case class CalcSha256(override val input: Value[SByteArray]) extends CalcHash {
   override val hashFn: CryptographicHash32 = Sha256
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val inputV = input.evalTo[Coll[Byte]](env)
-    addPerBlockCost(CostOf.CalcSha256_PerBlock, inputV.length) {
+    addPerBlockCost(CalcSha256.costKind, inputV.length) {
       SigmaDsl.sha256(inputV)
     }
   }
 }
 object CalcSha256 extends SimpleTransformerCompanion {
   override def opCode: OpCode = OpCodes.CalcSha256Code
-  override def costKind: CostKind = PerBlockCost
+  override val costKind = PerBlockCost(1, CostOf.CalcSha256_PerBlock)
   override def argInfos: Seq[ArgInfo] = CalcSha256Info.argInfos
 }
 
@@ -968,8 +968,7 @@ case class Xor(override val left: Value[SByteArray],
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val lV = left.evalTo[Coll[Byte]](env)
     val rV = right.evalTo[Coll[Byte]](env)
-    addCost(CostOf.Xor)
-    addPerBlockCost(CostOf.Xor_PerBlock, lV.length) {
+    addPerBlockCost(Xor.costKind, lV.length) {
       Colls.xor(lV, rV)
     }
   }
@@ -977,7 +976,7 @@ case class Xor(override val left: Value[SByteArray],
 object Xor extends TwoArgumentOperationCompanion {
   val OpType = SFunc(Array(SByteArray, SByteArray), SByteArray)
   override def opCode: OpCode = XorCode
-  override def costKind: CostKind = PerBlockCost
+  override val costKind = PerBlockCost(CostOf.Xor, CostOf.Xor_PerBlock)
   override def argInfos: Seq[ArgInfo] = XorInfo.argInfos
 }
 
@@ -1046,7 +1045,7 @@ case class LT[T <: SType](override val left: Value[T], override val right: Value
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val lV = left.evalTo[Any](env)
     val rV = right.evalTo[Any](env)
-    addCost(CostOf.LT(left.tpe))  // TODO JITC: measure
+    addCost(LT.costKind, left.tpe)  // TODO JITC: measure
     opImpl.o.lt(lV, rV)
   }
 }
@@ -1139,7 +1138,7 @@ case class EQ[S <: SType](
 }
 object EQ extends RelationCompanion {
   override def opCode: OpCode = EqCode
-  override def costKind: CostKind = PerBlockCost
+  override def costKind = DynamicCost
   override def argInfos: Seq[ArgInfo] = EQInfo.argInfos
 }
 
@@ -1165,7 +1164,7 @@ case class NEQ[S <: SType](override val left: Value[S], override val right: Valu
 }
 object NEQ extends RelationCompanion {
   override def opCode: OpCode = NeqCode
-  override def costKind: CostKind = PerBlockCost
+  override def costKind = DynamicCost
   override def argInfos: Seq[ArgInfo] = NEQInfo.argInfos
 }
 
