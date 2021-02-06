@@ -460,8 +460,12 @@ case class SimpleCostItem(opDesc: OperationDesc, cost: Int) extends CostItem {
   override def opName: String = ErgoTreeEvaluator.operationName(opDesc)
 }
 object SimpleCostItem {
-  def apply(companion: ValueCompanion, cost: Int): SimpleCostItem = SimpleCostItem(companion.opDesc, cost)
-  def apply(method: SMethod, cost: Int): SimpleCostItem = SimpleCostItem(MethodDesc(method), cost)
+  def apply(companion: ValueCompanion, cost: Int): SimpleCostItem = {
+    SimpleCostItem(companion.opDesc, cost)
+  }
+  def apply(method: SMethod, cost: Int): SimpleCostItem = {
+    SimpleCostItem(MethodDesc(method), cost)
+  }
 }
 
 /** An item in the cost accumulation trace of a [[ErgoTreeEvaluator]].

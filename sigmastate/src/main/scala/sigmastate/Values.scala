@@ -106,7 +106,8 @@ object Values {
       * @param  env immutable map, which binds variables (given by ids) to the values
       * @return the data value which is the result of evaluation
       */
-    protected def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = sys.error(s"Should be overriden in ${this.getClass}: $this")
+    protected def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any =
+      sys.error(s"Should be overriden in ${this.getClass}: $this")
 
     /** Evaluates this node to the value of the given expected type.
       * This method should called from all `eval` implementations.
