@@ -88,11 +88,14 @@ class ErgoTreeEvaluator(
     (res, cost)
   }
 
+  /** Trace of cost items accumulated during execution of `eval` method.
+    * Call [[ArrayBuffer.clear()]] before each `eval` invocation. */
   val costTrace = ArrayBuffer.empty[CostItem]
 
   /** Adds the given cost to the `coster`. If tracing is enabled, associates the cost with
     * the given operation.
-    * @param cost the cost to be added to `coster`
+    *
+    * @param cost   the cost to be added to `coster`
     * @param opDesc the operation descriptor to associate the cost with (when costTracingEnabled)
     */
   final def addCost(cost: Int, opDesc: OperationDesc): this.type = {
@@ -101,6 +104,27 @@ class ErgoTreeEvaluator(
       costTrace += SimpleCostItem(opDesc, cost)
     }
     this
+  }
+
+  /** Add the cost given by the cost descriptor and the type to the accumulator and
+    * associate it with this operation descriptor.
+    *
+    * @param costDesc descriptor of the cost
+    * @param tpe      specific type for which the cost should be computed by this descriptor
+    *                 (see costFunc method)
+    * @param opDesc   operation which is associated with this cost
+    */
+  @inline
+  final def addTypeBasedCost(costDesc: TypeBasedCost,
+                             tpe: SType, opDesc: OperationDesc): Unit = {
+    if (settings.costTracingEnabled) {
+      val costItem = TypeBasedCostItem(opDesc, costDesc, tpe)
+      coster.add(costItem.cost)
+      costTrace += costItem
+    } else {
+      val cost = costDesc.costFunc(tpe)
+      coster.add(cost)
+    }
   }
 
   /** Adds the given cost to the `coster`. If tracing is enabled, associates the cost with
@@ -439,6 +463,24 @@ object SimpleCostItem {
   def apply(companion: ValueCompanion, cost: Int): SimpleCostItem = SimpleCostItem(companion.opDesc, cost)
   def apply(method: SMethod, cost: Int): SimpleCostItem = SimpleCostItem(MethodDesc(method), cost)
 }
+
+/** An item in the cost accumulation trace of a [[ErgoTreeEvaluator]].
+  * Represents cost of an operation which depends on type (e.g. type of arguments).
+  * Used for debugging, testing and profiling of costing.
+  * @param opDesc   descriptor of the ErgoTree operation
+  * @param costDesc type based cost descriptor added to accumulator
+  * @param tpe      concrete type on this the operation is executed
+  * @see [[sigmastate.LE]], [[sigmastate.GT]]
+  */
+case class TypeBasedCostItem(
+    opDesc: OperationDesc,
+    costDesc: TypeBasedCost,
+    tpe: SType) extends CostItem {
+  override def opName: String = ErgoTreeEvaluator.operationName(opDesc)
+  override def cost: Int = costDesc.costFunc(tpe)
+}
+
+
 /** An item in the cost accumulation trace of a [[ErgoTreeEvaluator]].
   * Represents cost of a sequence of operation.
   * Used for debugging, testing and profiling of costing.

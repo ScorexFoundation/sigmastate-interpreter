@@ -137,8 +137,7 @@ object Values {
       */
     @inline
     final def addCost(costDesc: TypeBasedCost, tpe: SType)(implicit E: ErgoTreeEvaluator): Unit = {
-      val cost = costDesc.costFunc(tpe)
-      E.addCost(cost, this.companion.opDesc)
+      E.addTypeBasedCost(costDesc, tpe, this.companion.opDesc)
     }
 
     /** Add the cost of a repeated operation to the accumulator and associate it with this
@@ -216,13 +215,6 @@ object Values {
     * @param chunkSize number of items in a chunk
     */
   case class PerItemCost(baseCost: Int, perItemCost: Int, chunkSize: Int) extends CostKind
-
-  /** Cost of the operation with conditional number of iterations.
-    * See for example [[OR]], [[AND]].
-    * @param baseCost cost of operation factored out of the loop iterations
-    * @param perIterCost cost associated with each iteration
-    */
-  case class LoopWhileCost(baseCost: Int, perIterCost: Int) extends CostKind
 
   /** Cost of operation over data of the known size.
     * See for example [[CalcBlake2b256]], [[CalcSha256]].
