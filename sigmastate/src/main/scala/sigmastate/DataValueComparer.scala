@@ -28,7 +28,7 @@ object DataValueComparer {
       i += 1
     }
     // TODO JITC: measure time
-    E.addSeqCost(costDesc.perItemCost, i, OpDesc_EqualBaseCollsOfPrim)(null)
+    E.addSeqCost(costDesc, i, OpDesc_EqualBaseCollsOfPrim)(null)
 
     okEqual
   }

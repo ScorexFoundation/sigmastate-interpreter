@@ -133,44 +133,36 @@ class ErgoTreeEvaluator(
     }
   }
 
-  /** Adds the given cost to the `coster`. If tracing is enabled, associates the cost with
-    * the given operation.
-    * @param cost the cost to be added to `coster`
-    * @param opNode the node to associate the cost with (when costTracingEnabled)
-    */
-  final def addCost(cost: Int, opNode: SValue): this.type = {
-    addCost(cost, CompanionDesc(opNode.companion))
-  }
-
   /** Adds the given cost to the `coster`. If tracing is enabled, creates a new cost item
     * with the given operation.
     *
-    * @param perItemCost the cost to be added to `coster` for each item
-    * @param nItems      the number of items
-    * @param opDesc      the operation to associate the cost with (when costTracingEnabled)
-    * @param block       operation executed under the given cost
+    * @param costDesc the cost to be added to `coster` for each item
+    * @param nItems   the number of items
+    * @param opDesc   the operation to associate the cost with (when costTracingEnabled)
+    * @param block    operation executed under the given cost
     * @tparam R result type of the operation
     * @hotspot don't beautify the code
     */
-  final def addSeqCost[R](perItemCost: Int, nItems: Int, opDesc: OperationDesc)(block: () => R): R = {
+  final def addSeqCost[R](costDesc: PerItemCost, nItems: Int, opDesc: OperationDesc)(block: () => R): R = {
+    // TODO JITC: take into account chunkSize
     var costItem: SeqCostItem = null
     if (settings.costTracingEnabled) {
-      costItem = SeqCostItem(opDesc, perItemCost, nItems)
+      costItem = SeqCostItem(opDesc, costDesc.perItemCost, nItems)
       costTrace += costItem
     }
     if (settings.isMeasureOperationTime && block != null) {
       if (costItem == null) {
-        costItem = SeqCostItem(opDesc, perItemCost, nItems)
+        costItem = SeqCostItem(opDesc, costDesc.perItemCost, nItems)
       }
       val start = System.nanoTime()
-      val cost = SeqCostItem.calcCost(perItemCost, nItems) // should be measured
+      val cost = SeqCostItem.calcCost(costDesc.perItemCost, nItems) // should be measured
       coster.add(cost)
       val res = block()
       val end = System.nanoTime()
       profiler.addCostItem(costItem, end - start)
       res
     } else {
-      val cost = SeqCostItem.calcCost(perItemCost, nItems)
+      val cost = SeqCostItem.calcCost(costDesc.perItemCost, nItems)
       coster.add(cost)
       if (block == null) null.asInstanceOf[R] else block()
     }
@@ -178,35 +170,36 @@ class ErgoTreeEvaluator(
 
   /** Add the size-based cost of an operation to the accumulator and associate it with this operation.
     * The size in bytes of the data is known in advance (like in CalcSha256 operation)
-    * @param perBlockCost cost of operation per block of data
+    *
+    * @param costDesc cost of operation per block of data
     * @param dataSize size of data in bytes known in advance (before operation execution)
-    * @param opNode the node to associate the cost with (when costTracingEnabled)
-    * @param block  operation executed under the given cost
+    * @param opNode   the node to associate the cost with (when costTracingEnabled)
+    * @param block    operation executed under the given cost
     * @tparam R result type of the operation
     * @hotspot don't beautify the code
     */
   @inline
-  final def addPerBlockCost[R](perBlockCost: Int, dataSize: Int, opNode: SValue)
+  final def addPerBlockCost[R](costDesc: PerBlockCost, dataSize: Int, opNode: SValue)
                               (block: => R): R = {
     val numBlocks = PerBlockCostItem.blocksToCover(dataSize)
     var costItem: PerBlockCostItem = null
     if (settings.costTracingEnabled) {
-      costItem = PerBlockCostItem(CompanionDesc(opNode.companion), perBlockCost, numBlocks)
+      costItem = PerBlockCostItem(opNode.companion.opDesc, costDesc.perBlockCost, numBlocks)
       costTrace += costItem
     }
     if (settings.isMeasureOperationTime) {
       if (costItem == null) {
-        costItem = PerBlockCostItem(CompanionDesc(opNode.companion), perBlockCost, numBlocks)
+        costItem = PerBlockCostItem(opNode.companion.opDesc, costDesc.perBlockCost, numBlocks)
       }
       val start = System.nanoTime()
-      val cost = PerBlockCostItem.calcCost(perBlockCost, numBlocks) // should be measured
+      val cost = PerBlockCostItem.calcCost(costDesc.perBlockCost, numBlocks) // should be measured
       coster.add(cost)
       val res = block
       val end = System.nanoTime()
       profiler.addCostItem(costItem, end - start)
       res
     } else {
-      val cost = PerBlockCostItem.calcCost(perBlockCost, numBlocks)
+      val cost = PerBlockCostItem.calcCost(costDesc.perBlockCost, numBlocks)
       coster.add(cost)
       block
     }
@@ -443,7 +436,7 @@ case class SimpleCostItem(opDesc: OperationDesc, cost: Int) extends CostItem {
   override def opName: String = ErgoTreeEvaluator.operationName(opDesc)
 }
 object SimpleCostItem {
-  def apply(companion: ValueCompanion, cost: Int): SimpleCostItem = SimpleCostItem(CompanionDesc(companion), cost)
+  def apply(companion: ValueCompanion, cost: Int): SimpleCostItem = SimpleCostItem(companion.opDesc, cost)
   def apply(method: SMethod, cost: Int): SimpleCostItem = SimpleCostItem(MethodDesc(method), cost)
 }
 /** An item in the cost accumulation trace of a [[ErgoTreeEvaluator]].
@@ -461,7 +454,7 @@ case class SeqCostItem(opDesc: OperationDesc, perItemCost: Int, nItems: Int)
 }
 object SeqCostItem {
   def apply(companion: ValueCompanion, perItemCost: Int, nItems: Int): SeqCostItem =
-    SeqCostItem(CompanionDesc(companion), perItemCost, nItems)
+    SeqCostItem(companion.opDesc, perItemCost, nItems)
   def calcCost(perItemCost: Int, nItems: Int) = Math.multiplyExact(perItemCost, nItems)
 }
 
@@ -481,7 +474,7 @@ case class PerBlockCostItem(opDesc: OperationDesc, perBlockCost: Int, nBlocks: I
 object PerBlockCostItem {
   /** Helper constructor method. */
   def apply(companion: ValueCompanion, perBlockCost: Int, nBlocks: Int): PerBlockCostItem =
-    PerBlockCostItem(CompanionDesc(companion), perBlockCost, nBlocks)
+    PerBlockCostItem(companion.opDesc, perBlockCost, nBlocks)
 
   /** Returns a number of blocks to cover dataSize bytes. */
   def blocksToCover(dataSize: Int) = (dataSize - 1) / ErgoTreeEvaluator.DataBlockSize + 1

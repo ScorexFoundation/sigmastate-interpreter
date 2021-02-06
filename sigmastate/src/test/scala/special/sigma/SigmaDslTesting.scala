@@ -420,7 +420,7 @@ class SigmaDslTesting extends PropSpec
                   |  compiledTree = "${SigmaPPrint(newF.compiledTree, height = 550, width = 150)}"
                   |)
                   |""".stripMargin
-              )(newCost / 5 <= oldCost)
+              )(newCost / 10 <= oldCost)
 
               if (evalSettings.isLogEnabled) {
                 println(

@@ -129,7 +129,7 @@ object Values {
       */
     @inline
     final def addCost(costDesc: FixedCost)(implicit E: ErgoTreeEvaluator): Unit = {
-      E.addCost(costDesc.cost, this)
+      E.addCost(costDesc.cost, this.companion.opDesc)
     }
 
     /** Add the cost given by the descriptor to the accumulator and associate it with this operation
@@ -138,7 +138,7 @@ object Values {
     @inline
     final def addCost(costDesc: TypeBasedCost, tpe: SType)(implicit E: ErgoTreeEvaluator): Unit = {
       val cost = costDesc.costFunc(tpe)
-      E.addCost(cost, this)
+      E.addCost(cost, this.companion.opDesc)
     }
 
     /** Add the cost of a repeated operation to the accumulator and associate it with this
@@ -153,9 +153,7 @@ object Values {
     @inline
     final def addSeqCost[R](costDesc: PerItemCost, nItems: Int)
                            (block: () => R)(implicit E: ErgoTreeEvaluator): R = {
-      E.addCost(costDesc.baseCost, this)
-      E.addSeqCost(costDesc.perItemCost, nItems, CompanionDesc(this.companion))(block)
-      // TODO JITC: take into account chunkSize
+      E.addSeqCost(costDesc, nItems, this.companion.opDesc)(block)
     }
 
     /** Add the size-based cost of an operation to the accumulator and associate it with this operation.
@@ -169,8 +167,7 @@ object Values {
     @inline
     final def addPerBlockCost[R](costDesc: PerBlockCost, dataSize: Int)
                                 (block: => R)(implicit E: ErgoTreeEvaluator): R = {
-      E.addCost(costDesc.baseCost, this)
-      E.addPerBlockCost(costDesc.perBlockCost, dataSize, this)(block)
+      E.addPerBlockCost(costDesc, dataSize, this)(block)
     }
   }
 
@@ -265,6 +262,7 @@ object Values {
 
     init()
 
+    val opDesc = CompanionDesc(this)
   }
   object ValueCompanion {
     private val _allOperations: mutable.HashMap[Byte, ValueCompanion] = mutable.HashMap.empty
