@@ -10,16 +10,16 @@ import special.sigma.Box
 import special.collection.{Coll, PairOfCols, CollOverArray}
 
 object DataValueComparer {
-  final val CostDesc_EQCollByte = PerItemCost(1, 1, 64)
-  final val CostDesc_EQCollInt = PerItemCost(1, 1, 16)
-  final val CostDesc_EQPerDataNode = FixedCost(1)
+  final val CostKind_EQCollByte = PerItemCost(1, 1, 64)
+  final val CostKind_EQCollInt = PerItemCost(1, 1, 16)
+  final val CostKind_EQPerDataNode = FixedCost(1)
 
   final val OpDesc_EqualBaseCollsOfPrim = NamedDesc("EqualBaseCollsOfPrim")
   final val OpDesc_EQPerDataNode = NamedDesc("EQPerDataNode")
 
   def equalBaseCollsOfPrim[@sp(Byte, Int) A]
                           (c1: CollOverArray[A],
-                           c2: CollOverArray[A], costDesc: PerItemCost)
+                           c2: CollOverArray[A], costKind: PerItemCost)
                           (implicit E: ErgoTreeEvaluator): Boolean = {
     val len = c1.length
     var okEqual = true
@@ -29,7 +29,7 @@ object DataValueComparer {
       i += 1
     }
     // TODO JITC: measure time
-    E.addSeqCost(costDesc, i, OpDesc_EqualBaseCollsOfPrim)(null)
+    E.addSeqCost(costKind, i, OpDesc_EqualBaseCollsOfPrim)(null)
 
     okEqual
   }
@@ -54,11 +54,11 @@ object DataValueComparer {
           case ByteType =>
             equalBaseCollsOfPrim(
               coll1.asInstanceOf[CollOverArray[Byte]],
-              coll2.asInstanceOf[CollOverArray[Byte]], CostDesc_EQCollByte)
+              coll2.asInstanceOf[CollOverArray[Byte]], CostKind_EQCollByte)
           case IntType =>
             equalBaseCollsOfPrim(
               coll1.asInstanceOf[CollOverArray[Int]],
-              coll2.asInstanceOf[CollOverArray[Int]], CostDesc_EQCollInt)
+              coll2.asInstanceOf[CollOverArray[Int]], CostKind_EQCollInt)
           case _ =>
             equalBaseColls(coll1, coll2.asInstanceOf[CollOverArray[a]])
         }
@@ -71,7 +71,7 @@ object DataValueComparer {
 
   // TODO v5.0: introduce a new limit on structural depth of data values
   def equalDataValues(l: Any, r: Any)(implicit E: ErgoTreeEvaluator): Boolean = {
-    E.addCost(CostDesc_EQPerDataNode, OpDesc_EQPerDataNode)
+    E.addCost(CostKind_EQPerDataNode, OpDesc_EQPerDataNode)
     l match {
       case coll1: Coll[_] if r.isInstanceOf[Coll[_]] =>
         val coll2 = r.asInstanceOf[Coll[_]]

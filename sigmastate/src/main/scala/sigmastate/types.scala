@@ -554,20 +554,20 @@ object SMethod {
   }
 
   /** Returns a cost function which always returs the given cost. */
-  def givenCost(costDesc: FixedCost): MethodCostFunc = new MethodCostFunc {
+  def givenCost(costKind: FixedCost): MethodCostFunc = new MethodCostFunc {
     override def apply(E: ErgoTreeEvaluator,
                        mc: MethodCall,
                        obj: Any, args: Array[Any]): CostDetails = {
       if (E.settings.costTracingEnabled)
-        TracedCost(Array(FixedCostItem(MethodDesc(mc.method), costDesc)))
+        TracedCost(Array(FixedCostItem(MethodDesc(mc.method), costKind)))
       else
-        GivenCost(costDesc.cost)
+        GivenCost(costKind.cost)
     }
   }
 
   /** Returns a cost function which expects `obj` to be of `Coll[T]` type and
     * uses its length to compute SeqCostItem  */
-  def perItemCost(costDesc: PerItemCost): MethodCostFunc = new MethodCostFunc {
+  def perItemCost(costKind: PerItemCost): MethodCostFunc = new MethodCostFunc {
     override def apply(E: ErgoTreeEvaluator,
                        mc: MethodCall,
                        obj: Any, args: Array[Any]): CostDetails = obj match {
@@ -575,12 +575,12 @@ object SMethod {
         if (E.settings.costTracingEnabled) {
           val desc = MethodDesc(mc.method)
           TracedCost(Array(
-            FixedCostItem(desc, FixedCost(costDesc.baseCost)),  // TODO refactor: remove this
-            SeqCostItem(desc, costDesc.perItemCost, coll.length)
+            FixedCostItem(desc, FixedCost(costKind.baseCost)),  // TODO refactor: remove this
+            SeqCostItem(desc, costKind.perItemCost, coll.length)
           ))
         }
         else
-          GivenCost(costDesc.cost(coll.length))
+          GivenCost(costKind.cost(coll.length))
       case _ =>
         ErgoTreeEvaluator.error(
           s"Invalid object $obj of method call $mc: Coll type is expected")
@@ -589,7 +589,7 @@ object SMethod {
 
   /** Returns a cost function which expects `obj` to be of `Coll[Byte]` type and
     * uses its length to compute PerBlockCostItem  */
-  def perBlockCost(costDesc: PerBlockCost): MethodCostFunc = new MethodCostFunc {
+  def perBlockCost(costKind: PerBlockCost): MethodCostFunc = new MethodCostFunc {
     override def apply(E: ErgoTreeEvaluator,
                        mc: MethodCall,
                        obj: Any, args: Array[Any]): CostDetails = obj match {
@@ -598,12 +598,12 @@ object SMethod {
         if (E.settings.costTracingEnabled) {
           val desc = MethodDesc(mc.method)
           TracedCost(Array(
-            FixedCostItem(desc, FixedCost(costDesc.baseCost)),   // TODO refactor: remove this
-            PerBlockCostItem(desc, costDesc.perBlockCost, nBlocks)
+            FixedCostItem(desc, FixedCost(costKind.baseCost)),   // TODO refactor: remove this
+            PerBlockCostItem(desc, costKind.perBlockCost, nBlocks)
           ))
         }
         else
-          GivenCost(costDesc.cost(nBlocks))
+          GivenCost(costKind.cost(nBlocks))
       case _ =>
         ErgoTreeEvaluator.error(
           s"Invalid object $obj of method call $mc: Coll[Byte] type is expected")
@@ -756,8 +756,8 @@ object SNumericType extends STypeCompanion {
                        obj: Any,
                        args: Array[Any]): CostDetails = {
       val cast = getNumericCast(mc.obj.tpe, mc.method.name, mc.method.stype.tRange).get
-      val costDesc = if (cast == Downcast) Downcast.costKind else Upcast.costKind
-      TracedCost(Array(FixedCostItem(MethodDesc(mc.method), costDesc)))
+      val costKind = if (cast == Downcast) Downcast.costKind else Upcast.costKind
+      TracedCost(Array(FixedCostItem(MethodDesc(mc.method), costKind)))
     }
   }
 

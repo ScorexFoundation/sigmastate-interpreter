@@ -125,49 +125,49 @@ object Values {
       v.asInstanceOf[T]
     }
 
-    /** Add the cost given by the descriptor to the accumulator and associate it with this operation
+    /** Add the cost given by the kind to the accumulator and associate it with this operation
       * node.
       */
     @inline
-    final def addCost(costDesc: FixedCost)(implicit E: ErgoTreeEvaluator): Unit = {
-      E.addCost(costDesc, this.companion.opDesc)
+    final def addCost(costKind: FixedCost)(implicit E: ErgoTreeEvaluator): Unit = {
+      E.addCost(costKind, this.companion.opDesc)
     }
 
     /** Add the cost given by the descriptor to the accumulator and associate it with this operation
       * node.
       */
     @inline
-    final def addCost(costDesc: TypeBasedCost, tpe: SType)(implicit E: ErgoTreeEvaluator): Unit = {
-      E.addTypeBasedCost(costDesc, tpe, this.companion.opDesc)
+    final def addCost(costKind: TypeBasedCost, tpe: SType)(implicit E: ErgoTreeEvaluator): Unit = {
+      E.addTypeBasedCost(costKind, tpe, this.companion.opDesc)
     }
 
     /** Add the cost of a repeated operation to the accumulator and associate it with this
       * operation. The number of items (loop iterations) is known in advance (like in
       * Coll.map operation)
       *
-      * @param costDesc cost descriptor of the operation
+      * @param costKind cost descriptor of the operation
       * @param nItems   number of operations known in advance (before loop execution)
       * @param block    operation executed under the given cost
       * @tparam R result type of the operation
       */
     @inline
-    final def addSeqCost[R](costDesc: PerItemCost, nItems: Int)
+    final def addSeqCost[R](costKind: PerItemCost, nItems: Int)
                            (block: () => R)(implicit E: ErgoTreeEvaluator): R = {
-      E.addSeqCost(costDesc, nItems, this.companion.opDesc)(block)
+      E.addSeqCost(costKind, nItems, this.companion.opDesc)(block)
     }
 
     /** Add the size-based cost of an operation to the accumulator and associate it with this operation.
       * The size in bytes of the data is known in advance (like in CalcSha256 operation)
       *
-      * @param costDesc cost descriptor of the operation
+      * @param costKind cost descriptor of the operation
       * @param dataSize size of data in bytes known in advance (before operation execution)
       * @param block    operation executed under the given cost
       * @tparam R result type of the operation
       */
     @inline
-    final def addPerBlockCost[R](costDesc: PerBlockCost, dataSize: Int)
+    final def addPerBlockCost[R](costKind: PerBlockCost, dataSize: Int)
                                 (block: => R)(implicit E: ErgoTreeEvaluator): R = {
-      E.addPerBlockCost(costDesc, dataSize, this)(block)
+      E.addPerBlockCost(costKind, dataSize, this)(block)
     }
   }
 

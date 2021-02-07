@@ -95,13 +95,13 @@ class ErgoTreeEvaluator(
   /** Adds the given cost to the `coster`. If tracing is enabled, associates the cost with
     * the given operation.
     *
-    * @param costDesc descriptor of the cost to be added to `coster`
+    * @param costKind kind of the cost to be added to `coster`
     * @param opDesc   operation descriptor to associate the cost with (when costTracingEnabled)
     */
-  final def addCost(costDesc: FixedCost, opDesc: OperationDesc): this.type = {
-    coster.add(costDesc.cost)
+  final def addCost(costKind: FixedCost, opDesc: OperationDesc): this.type = {
+    coster.add(costKind.cost)
     if (settings.costTracingEnabled) {
-      costTrace += FixedCostItem(opDesc, costDesc)
+      costTrace += FixedCostItem(opDesc, costKind)
     }
     this
   }
@@ -109,50 +109,50 @@ class ErgoTreeEvaluator(
   /** Add the cost given by the cost descriptor and the type to the accumulator and
     * associate it with this operation descriptor.
     *
-    * @param costDesc descriptor of the cost
+    * @param costKind descriptor of the cost
     * @param tpe      specific type for which the cost should be computed by this descriptor
     *                 (see costFunc method)
     * @param opDesc   operation which is associated with this cost
     */
   @inline
-  final def addTypeBasedCost(costDesc: TypeBasedCost,
+  final def addTypeBasedCost(costKind: TypeBasedCost,
                              tpe: SType, opDesc: OperationDesc): Unit = {
     if (settings.costTracingEnabled) {
-      val costItem = TypeBasedCostItem(opDesc, costDesc, tpe)
+      val costItem = TypeBasedCostItem(opDesc, costKind, tpe)
       coster.add(costItem.cost)
       costTrace += costItem
     } else {
-      val cost = costDesc.costFunc(tpe)
+      val cost = costKind.costFunc(tpe)
       coster.add(cost)
     }
   }
 
   /** Adds the given cost to the `coster`. If tracing is enabled, associates the cost with
     * the given operation.
-    * @param costDesc cost descriptor of the cost to be added to `coster`
+    * @param costKind kind of the cost to be added to `coster`
     * @param opDesc the operation descriptor to associate the cost with (when costTracingEnabled)
     * @param block  operation executed under the given cost
     * @tparam R result type of the operation
     * @hotspot don't beautify the code
     */
-  final def addFixedCost[R](costDesc: FixedCost, opDesc: OperationDesc)(block: => R): R = {
+  final def addFixedCost[R](costKind: FixedCost, opDesc: OperationDesc)(block: => R): R = {
     var costItem: FixedCostItem = null
     if (settings.costTracingEnabled) {
-      costItem = FixedCostItem(opDesc, costDesc)
+      costItem = FixedCostItem(opDesc, costKind)
       costTrace += costItem
     }
     if (settings.isMeasureOperationTime) {
       if (costItem == null) {
-        costItem = FixedCostItem(opDesc, costDesc)
+        costItem = FixedCostItem(opDesc, costKind)
       }
       val start = System.nanoTime()
-      coster.add(costDesc.cost)
+      coster.add(costKind.cost)
       val res = block
       val end = System.nanoTime()
       profiler.addCostItem(costItem, end - start)
       res
     } else {
-      coster.add(costDesc.cost)
+      coster.add(costKind.cost)
       block
     }
   }
@@ -160,33 +160,33 @@ class ErgoTreeEvaluator(
   /** Adds the given cost to the `coster`. If tracing is enabled, creates a new cost item
     * with the given operation.
     *
-    * @param costDesc the cost to be added to `coster` for each item
+    * @param costKind the cost to be added to `coster` for each item
     * @param nItems   the number of items
     * @param opDesc   the operation to associate the cost with (when costTracingEnabled)
     * @param block    operation executed under the given cost
     * @tparam R result type of the operation
     * @hotspot don't beautify the code
     */
-  final def addSeqCost[R](costDesc: PerItemCost, nItems: Int, opDesc: OperationDesc)(block: () => R): R = {
+  final def addSeqCost[R](costKind: PerItemCost, nItems: Int, opDesc: OperationDesc)(block: () => R): R = {
     // TODO JITC: take into account chunkSize
     var costItem: SeqCostItem = null
     if (settings.costTracingEnabled) {
-      costItem = SeqCostItem(opDesc, costDesc.perItemCost, nItems)
+      costItem = SeqCostItem(opDesc, costKind.perItemCost, nItems)
       costTrace += costItem
     }
     if (settings.isMeasureOperationTime && block != null) {
       if (costItem == null) {
-        costItem = SeqCostItem(opDesc, costDesc.perItemCost, nItems)
+        costItem = SeqCostItem(opDesc, costKind.perItemCost, nItems)
       }
       val start = System.nanoTime()
-      val cost = SeqCostItem.calcCost(costDesc.perItemCost, nItems) // should be measured
+      val cost = SeqCostItem.calcCost(costKind.perItemCost, nItems) // should be measured
       coster.add(cost)
       val res = block()
       val end = System.nanoTime()
       profiler.addCostItem(costItem, end - start)
       res
     } else {
-      val cost = SeqCostItem.calcCost(costDesc.perItemCost, nItems)
+      val cost = SeqCostItem.calcCost(costKind.perItemCost, nItems)
       coster.add(cost)
       if (block == null) null.asInstanceOf[R] else block()
     }
@@ -195,7 +195,7 @@ class ErgoTreeEvaluator(
   /** Add the size-based cost of an operation to the accumulator and associate it with this operation.
     * The size in bytes of the data is known in advance (like in CalcSha256 operation)
     *
-    * @param costDesc cost of operation per block of data
+    * @param costKind cost of operation per block of data
     * @param dataSize size of data in bytes known in advance (before operation execution)
     * @param opNode   the node to associate the cost with (when costTracingEnabled)
     * @param block    operation executed under the given cost
@@ -203,27 +203,27 @@ class ErgoTreeEvaluator(
     * @hotspot don't beautify the code
     */
   @inline
-  final def addPerBlockCost[R](costDesc: PerBlockCost, dataSize: Int, opNode: SValue)
+  final def addPerBlockCost[R](costKind: PerBlockCost, dataSize: Int, opNode: SValue)
                               (block: => R): R = {
     val numBlocks = PerBlockCostItem.blocksToCover(dataSize)
     var costItem: PerBlockCostItem = null
     if (settings.costTracingEnabled) {
-      costItem = PerBlockCostItem(opNode.companion.opDesc, costDesc.perBlockCost, numBlocks)
+      costItem = PerBlockCostItem(opNode.companion.opDesc, costKind.perBlockCost, numBlocks)
       costTrace += costItem
     }
     if (settings.isMeasureOperationTime) {
       if (costItem == null) {
-        costItem = PerBlockCostItem(opNode.companion.opDesc, costDesc.perBlockCost, numBlocks)
+        costItem = PerBlockCostItem(opNode.companion.opDesc, costKind.perBlockCost, numBlocks)
       }
       val start = System.nanoTime()
-      val cost = PerBlockCostItem.calcCost(costDesc.perBlockCost, numBlocks) // should be measured
+      val cost = PerBlockCostItem.calcCost(costKind.perBlockCost, numBlocks) // should be measured
       coster.add(cost)
       val res = block
       val end = System.nanoTime()
       profiler.addCostItem(costItem, end - start)
       res
     } else {
-      val cost = PerBlockCostItem.calcCost(costDesc.perBlockCost, numBlocks)
+      val cost = PerBlockCostItem.calcCost(costKind.perBlockCost, numBlocks)
       coster.add(cost)
       block
     }
@@ -454,18 +454,18 @@ abstract class CostItem {
   * Represents cost of simple operation.
   * Used for debugging, testing and profiling of costing.
   * @param opDesc   descriptor of the ErgoTree operation
-  * @param costDesc descriptor of the cost to be added to accumulator
+  * @param costKind kind of the cost to be added to accumulator
   */
-case class FixedCostItem(opDesc: OperationDesc, costDesc: FixedCost) extends CostItem {
+case class FixedCostItem(opDesc: OperationDesc, costKind: FixedCost) extends CostItem {
   override def opName: String = ErgoTreeEvaluator.operationName(opDesc)
-  override def cost: Int = costDesc.cost
+  override def cost: Int = costKind.cost
 }
 object FixedCostItem {
   def apply(companion: FixedCostValueCompanion): FixedCostItem = {
     FixedCostItem(companion.opDesc, companion.costKind)
   }
-  def apply(method: SMethod, costDesc: FixedCost): FixedCostItem = {
-    FixedCostItem(MethodDesc(method), costDesc)
+  def apply(method: SMethod, costKind: FixedCost): FixedCostItem = {
+    FixedCostItem(MethodDesc(method), costKind)
   }
 }
 
@@ -473,16 +473,16 @@ object FixedCostItem {
   * Represents cost of an operation which depends on type (e.g. type of arguments).
   * Used for debugging, testing and profiling of costing.
   * @param opDesc   descriptor of the ErgoTree operation
-  * @param costDesc type based cost descriptor added to accumulator
+  * @param costKind type based cost descriptor added to accumulator
   * @param tpe      concrete type on this the operation is executed
   * @see [[sigmastate.LE]], [[sigmastate.GT]]
   */
 case class TypeBasedCostItem(
     opDesc: OperationDesc,
-    costDesc: TypeBasedCost,
+    costKind: TypeBasedCost,
     tpe: SType) extends CostItem {
   override def opName: String = ErgoTreeEvaluator.operationName(opDesc)
-  override def cost: Int = costDesc.costFunc(tpe)
+  override def cost: Int = costKind.costFunc(tpe)
   override def equals(obj: Any): Boolean =
     (this eq obj.asInstanceOf[AnyRef]) || (obj != null && (obj match {
       case that: TypeBasedCostItem =>
