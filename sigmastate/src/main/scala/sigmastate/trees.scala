@@ -308,16 +308,16 @@ case class OR(input: Value[SCollection[SBoolean.type]])
   override def opType = OR.OpType
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val inputV = input.evalTo[Coll[Boolean]](env)
-    var foldingCost = 0
     var res = false
     val len = inputV.length
     var i = 0
-    while (i < len && !res) {
-      foldingCost += CostOf.OR_PerItem
-      res ||= inputV(i)
-      i += 1
+    E.addSeqCost(OR.costKind, this.companion.opDesc) { () =>
+      while (i < len && !res) {
+        res ||= inputV(i)
+        i += 1
+      }
+      i // return actual number of processed items
     }
-    addSeqCost(OR.costKind, i)(null) // TODO JITC: measure time
     res
   }
 }
@@ -383,11 +383,13 @@ case class AND(input: Value[SCollection[SBoolean.type]])
     var res = true
     val len = inputV.length
     var i = 0
-    while (i < len && res) {
-      res &&= inputV(i)
-      i += 1
+    E.addSeqCost(AND.costKind, this.companion.opDesc) { () =>
+      while (i < len && res) {
+        res &&= inputV(i)
+        i += 1
+      }
+      i // return actual number of processed items
     }
-    addSeqCost(AND.costKind, i)(null) // TODO JITC: measure time
     res
   }
 }

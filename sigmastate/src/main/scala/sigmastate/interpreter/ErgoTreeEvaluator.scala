@@ -168,7 +168,6 @@ class ErgoTreeEvaluator(
     * @hotspot don't beautify the code
     */
   final def addSeqCost[R](costKind: PerItemCost, nItems: Int, opDesc: OperationDesc)(block: () => R): R = {
-    // TODO JITC: take into account chunkSize
     var costItem: SeqCostItem = null
     if (settings.costTracingEnabled) {
       costItem = SeqCostItem(opDesc, costKind, nItems)
@@ -179,7 +178,7 @@ class ErgoTreeEvaluator(
         costItem = SeqCostItem(opDesc, costKind, nItems)
       }
       val start = System.nanoTime()
-      val cost = costKind.cost(nItems) // should be measured
+      val cost = costKind.cost(nItems) // should be measured as part of the operation
       coster.add(cost)
       val res = block()
       val end = System.nanoTime()
@@ -189,6 +188,41 @@ class ErgoTreeEvaluator(
       val cost = costKind.cost(nItems)
       coster.add(cost)
       if (block == null) null.asInstanceOf[R] else block()
+    }
+  }
+
+  /** Adds the cost to the `coster`. If tracing is enabled, creates a new cost item with
+    * the given operation descriptor and cost kind. If time measuring is enabled also
+    * performs profiling.
+    *
+    * @param costKind the cost descriptor to be used to compute the cost based on the
+    *                 actual number of items returned by the `block`
+    * @param opDesc   the operation to associate the cost with (when costTracingEnabled)
+    * @param block    operation executed under the given cost, returns number of items
+    *                 processed
+    * @hotspot don't beautify the code
+    */
+  final def addSeqCost(costKind: PerItemCost, opDesc: OperationDesc)(block: () => Int): Unit = {
+    var costItem: SeqCostItem = null
+    var nItems = 0
+    if (settings.isMeasureOperationTime) {
+      val start = System.nanoTime()
+      nItems = block()
+      val cost = costKind.cost(nItems) // should be measured as part of the operation
+      coster.add(cost)
+      val end = System.nanoTime()
+
+      costItem = SeqCostItem(opDesc, costKind, nItems)
+      profiler.addCostItem(costItem, end - start)
+    } else {
+      nItems = block()
+      val cost = costKind.cost(nItems)
+      coster.add(cost)
+    }
+    if (settings.costTracingEnabled) {
+      if (costItem == null)
+        costItem = SeqCostItem(opDesc, costKind, nItems)
+      costTrace += costItem
     }
   }
 

@@ -24,13 +24,13 @@ object DataValueComparer {
     val len = c1.length
     var okEqual = true
     var i = 0
-    while (i < len && okEqual) {
-      okEqual = c1(i) == c2(i)
-      i += 1
+    E.addSeqCost(costKind, OpDesc_EqualBaseCollsOfPrim) { () =>
+      while (i < len && okEqual) {
+        okEqual = c1(i) == c2(i)
+        i += 1
+      }
+      i  // return the number of actually compared elements
     }
-    // TODO JITC: measure time
-    E.addSeqCost(costKind, i, OpDesc_EqualBaseCollsOfPrim)(null)
-
     okEqual
   }
 
