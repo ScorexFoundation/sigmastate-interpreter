@@ -159,7 +159,7 @@ object Terms {
       }
     }
   }
-  object Apply extends ValueCompanion {
+  object Apply extends FixedCostValueCompanion {
     override def opCode: OpCode = OpCodes.FuncApplyCode
     override val costKind = FixedCost(CostOf.Apply)
   }
@@ -253,7 +253,7 @@ object Terms {
       MethodCall(obj, method, args, typeSubst).asInstanceOf[T]
     }
   }
-  object PropertyCall extends ValueCompanion {
+  object PropertyCall extends FixedCostValueCompanion {
     override def opCode: OpCode = OpCodes.PropertyCallCode
     override val costKind = FixedCost(CostOf.MethodCall)
   }

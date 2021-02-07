@@ -292,7 +292,7 @@ case class SelectField(input: Value[STuple], fieldIndex: Byte)
     }
   }
 }
-object SelectField extends ValueCompanion {
+object SelectField extends FixedCostValueCompanion {
   override def opCode: OpCode = OpCodes.SelectFieldCode
   override val costKind = FixedCost(CostOf.SelectField)
   def typed[T <: SValue](input: Value[STuple], fieldIndex: Byte): T = {
@@ -545,7 +545,7 @@ case class GetVar[V <: SType](varId: Byte, override val tpe: SOption[V]) extends
     E.context.getVar(varId)(t)
   }
 }
-object GetVar extends ValueCompanion {
+object GetVar extends FixedCostValueCompanion {
   override def opCode: OpCode = OpCodes.GetVarCode
   override val costKind = FixedCost(CostOf.GetVar)
   def apply[V <: SType](varId: Byte, innerTpe: V): GetVar[V] = GetVar[V](varId, SOption(innerTpe))
@@ -567,7 +567,7 @@ case class OptionGet[V <: SType](input: Value[SOption[V]]) extends Transformer[S
     opt.get
   }
 }
-object OptionGet extends SimpleTransformerCompanion {
+object OptionGet extends SimpleTransformerCompanion with FixedCostValueCompanion {
   override def opCode: OpCode = OpCodes.OptionGetCode
   override val costKind = FixedCost(CostOf.OptionGet)
   override def argInfos: Seq[ArgInfo] = OptionGetInfo.argInfos

@@ -554,20 +554,20 @@ object SMethod {
   }
 
   /** Returns a cost function which always returs the given cost. */
-  def givenCost(cost: Int): MethodCostFunc = new MethodCostFunc {
+  def givenCost(costDesc: FixedCost): MethodCostFunc = new MethodCostFunc {
     override def apply(E: ErgoTreeEvaluator,
                        mc: MethodCall,
                        obj: Any, args: Array[Any]): CostDetails = {
       if (E.settings.costTracingEnabled)
-        TracedCost(Array(SimpleCostItem(MethodDesc(mc.method), cost)))
+        TracedCost(Array(FixedCostItem(MethodDesc(mc.method), costDesc)))
       else
-        GivenCost(cost)
+        GivenCost(costDesc.cost)
     }
   }
 
   /** Returns a cost function which expects `obj` to be of `Coll[T]` type and
     * uses its length to compute SeqCostItem  */
-  def perItemCost(baseCost: Int, perItemCost: Int): MethodCostFunc = new MethodCostFunc {
+  def perItemCost(costDesc: PerItemCost): MethodCostFunc = new MethodCostFunc {
     override def apply(E: ErgoTreeEvaluator,
                        mc: MethodCall,
                        obj: Any, args: Array[Any]): CostDetails = obj match {
@@ -575,12 +575,12 @@ object SMethod {
         if (E.settings.costTracingEnabled) {
           val desc = MethodDesc(mc.method)
           TracedCost(Array(
-            SimpleCostItem(desc, baseCost),
-            SeqCostItem(desc, perItemCost, coll.length)
+            FixedCostItem(desc, FixedCost(costDesc.baseCost)),  // TODO refactor: remove this
+            SeqCostItem(desc, costDesc.perItemCost, coll.length)
           ))
         }
         else
-          GivenCost(baseCost + SeqCostItem.calcCost(perItemCost, coll.length))
+          GivenCost(costDesc.cost(coll.length))
       case _ =>
         ErgoTreeEvaluator.error(
           s"Invalid object $obj of method call $mc: Coll type is expected")
@@ -589,7 +589,7 @@ object SMethod {
 
   /** Returns a cost function which expects `obj` to be of `Coll[Byte]` type and
     * uses its length to compute PerBlockCostItem  */
-  def perBlockCost(baseCost: Int, perBlockCost: Int): MethodCostFunc = new MethodCostFunc {
+  def perBlockCost(costDesc: PerBlockCost): MethodCostFunc = new MethodCostFunc {
     override def apply(E: ErgoTreeEvaluator,
                        mc: MethodCall,
                        obj: Any, args: Array[Any]): CostDetails = obj match {
@@ -598,12 +598,12 @@ object SMethod {
         if (E.settings.costTracingEnabled) {
           val desc = MethodDesc(mc.method)
           TracedCost(Array(
-            SimpleCostItem(desc, baseCost),
-            PerBlockCostItem(desc, perBlockCost, nBlocks)
+            FixedCostItem(desc, FixedCost(costDesc.baseCost)),   // TODO refactor: remove this
+            PerBlockCostItem(desc, costDesc.perBlockCost, nBlocks)
           ))
         }
         else
-          GivenCost(baseCost + SeqCostItem.calcCost(perBlockCost, nBlocks))
+          GivenCost(costDesc.cost(nBlocks))
       case _ =>
         ErgoTreeEvaluator.error(
           s"Invalid object $obj of method call $mc: Coll[Byte] type is expected")
@@ -756,8 +756,8 @@ object SNumericType extends STypeCompanion {
                        obj: Any,
                        args: Array[Any]): CostDetails = {
       val cast = getNumericCast(mc.obj.tpe, mc.method.name, mc.method.stype.tRange).get
-      val cost = if (cast == Downcast) CostOf.Downcast else CostOf.Upcast
-      TracedCost(Array(SimpleCostItem(MethodDesc(mc.method), cost)))
+      val costDesc = if (cast == Downcast) Downcast.costKind else Upcast.costKind
+      TracedCost(Array(FixedCostItem(MethodDesc(mc.method), costDesc)))
     }
   }
 
@@ -777,7 +777,7 @@ object SNumericType extends STypeCompanion {
     .withCost(costOfNumericCast)
     .withInfo(PropertyCall, "Converts this numeric value to \\lst{BigInt}")
   val ToBytesMethod: SMethod = SMethod(this, "toBytes", SFunc(tNum, SByteArray), 6)
-    .withCost(givenCost(CostOf.NumericToBytes))
+    .withCost(givenCost(FixedCost(CostOf.NumericToBytes)))
     .withIRInfo(MethodCallIrBuilder)
     .withInfo(PropertyCall,
       """ Returns a big-endian representation of this numeric value in a collection of bytes.
@@ -785,7 +785,7 @@ object SNumericType extends STypeCompanion {
         | collection of bytes \lst{[0x12, 0x13, 0x14, 0x15]}.
           """.stripMargin)
   val ToBitsMethod: SMethod = SMethod(this, "toBits", SFunc(tNum, SBooleanArray), 7)
-    .withCost(givenCost(CostOf.NumericToBits))
+    .withCost(givenCost(FixedCost(CostOf.NumericToBits)))
     .withIRInfo(MethodCallIrBuilder)
     .withInfo(PropertyCall,
       """ Returns a big-endian representation of this numeric in a collection of Booleans.
@@ -830,13 +830,13 @@ trait SMonoType extends SType with STypeCompanion {
   protected def property(name: String, tpeRes: SType, id: Byte): SMethod =
     SMethod(this, name, SFunc(this, tpeRes), id)
       .withIRInfo(MethodCallIrBuilder)
-      .withCost(givenCost(1))
+      .withCost(givenCost(FixedCost(1)))
       .withInfo(PropertyCall, "")
 
   protected def property(name: String, tpeRes: SType, id: Byte, valueCompanion: ValueCompanion): SMethod =
     SMethod(this, name, SFunc(this, tpeRes), id)
       .withIRInfo(MethodCallIrBuilder)
-      .withCost(givenCost(1))
+      .withCost(givenCost(FixedCost(1)))
       .withInfo(valueCompanion, "")
 }
 
@@ -1025,7 +1025,7 @@ case object SGroupElement extends SProduct with SPrimType with SEmbeddable with 
 
   lazy val GetEncodedMethod: SMethod = SMethod(this, "getEncoded", SFunc(IndexedSeq(this), SByteArray), 2)
     .withIRInfo(MethodCallIrBuilder)
-    .withCost(givenCost(CostOf.GroupElement_GetEncoded))
+    .withCost(givenCost(FixedCost(CostOf.GroupElement_GetEncoded)))
     .withInfo(PropertyCall, "Get an encoding of the point value.")
   lazy val ExponentiateMethod: SMethod = SMethod(this, "exp", SFunc(IndexedSeq(this, SBigInt), this), 3)
     .withIRInfo({ case (builder, obj, _, Seq(arg), _) =>
@@ -1041,7 +1041,7 @@ case object SGroupElement extends SProduct with SPrimType with SEmbeddable with 
     .withInfo(MultiplyGroup, "Group operation.", ArgInfo("other", "other element of the group"))
   lazy val NegateMethod: SMethod = SMethod(this, "negate", SFunc(this, this), 5)
     .withIRInfo(MethodCallIrBuilder)
-    .withCost(givenCost(CostOf.GroupElement_Negate))
+    .withCost(givenCost(FixedCost(CostOf.GroupElement_Negate)))
     .withInfo(PropertyCall, "Inverse element of the group.")
 
   protected override def getMethods(): Seq[SMethod] = super.getMethods() ++ Seq(
@@ -1350,7 +1350,7 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
 
   val IndicesMethod = SMethod(this, "indices", SFunc(ThisType, SCollection(SInt)), 14)
       .withIRInfo(MethodCallIrBuilder)
-      .withCost(givenCost(CostOf.Indices))
+      .withCost(givenCost(FixedCost(CostOf.Indices)))
       .withInfo(PropertyCall,
         """Produces the range of all indices of this collection as a new collection
          | containing [0 .. length-1] values.
@@ -1362,7 +1362,7 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
         MethodCallIrBuilder,
         javaMethodOf[Coll[_], Function1[_,_], RType[_]]("flatMap"),
         { mtype => Array(mtype.tRange.asCollection[SType].elemType) })
-      .withCost(SMethod.perItemCost(CostOf.Flatmap, CostOf.Flatmap_PerItem))
+      .withCost(SMethod.perItemCost(PerItemCost(CostOf.Flatmap, CostOf.Flatmap_PerItem, 1)))
       .withInfo(MethodCall,
         """ Builds a new collection by applying a function to all elements of this collection
          | and using the elements of the resulting collections.
@@ -1420,7 +1420,7 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
   val ZipMethod = SMethod(this, "zip",
     SFunc(IndexedSeq(ThisType, tOVColl), SCollection(STuple(tIV, tOV)), Seq(tIV, tOV)), 29)
       .withIRInfo(MethodCallIrBuilder)
-      .withCost(SMethod.perItemCost(CostOf.Zip, CostOf.Zip_PerItem))
+      .withCost(SMethod.perItemCost(PerItemCost(CostOf.Zip, CostOf.Zip_PerItem, 10)))
       .withInfo(MethodCall, "")
 
   val DistinctMethod = SMethod(this, "distinct",
@@ -2128,13 +2128,13 @@ case object SGlobal extends SProduct with SPredefType with SMonoType {
 
   lazy val groupGeneratorMethod = SMethod(this, "groupGenerator", SFunc(this, SGroupElement), 1)
     .withIRInfo({ case (builder, obj, method, args, tparamSubst) => GroupGenerator })
-    .withCost(givenCost(CostOf.GroupGenerator))
+    .withCost(givenCost(FixedCost(CostOf.GroupGenerator)))
     .withInfo(GroupGenerator, "")
   lazy val xorMethod = SMethod(this, "xor", SFunc(IndexedSeq(this, SByteArray, SByteArray), SByteArray), 2)
     .withIRInfo({
         case (_, _, _, Seq(l, r), _) => Xor(l.asByteArray, r.asByteArray)
     })
-    .withCost(SMethod.perBlockCost(CostOf.Xor, CostOf.Xor_PerBlock))
+    .withCost(SMethod.perBlockCost(PerBlockCost(CostOf.Xor, CostOf.Xor_PerBlock)))
     .withInfo(Xor, "Byte-wise XOR of two collections of bytes",
       ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))
 

@@ -19,7 +19,7 @@ import sigmastate.serialization.GroupElementSerializer
 import sigmastate.utxo.SelectField
 import sigmastate._
 import sigmastate.interpreter.ErgoTreeEvaluator.{CompanionDesc, MethodDesc}
-import sigmastate.interpreter.{ErgoTreeEvaluator, SimpleCostItem}
+import sigmastate.interpreter.{ErgoTreeEvaluator, FixedCostItem}
 import special.collection.Coll
 import special.sigma.GroupElement
 
@@ -180,10 +180,10 @@ object SigmaPPrint extends PPrinter {
      .orElse(exceptionHandlers)
      .orElse(dataHandlers)
      .orElse {
-    case SimpleCostItem(CompanionDesc(c), cost) =>
-      Tree.Apply("SimpleCostItem", treeifySeq(Seq(c, cost)))
-    case SimpleCostItem(MethodDesc(m), cost) =>
-      Tree.Apply("SimpleCostItem", Seq(methodLiteral(m)).iterator ++ treeifySeq(Seq(cost)))
+    case FixedCostItem(CompanionDesc(c), cost) =>
+      Tree.Apply("FixedCostItem", treeifySeq(Seq(c, cost)))
+    case FixedCostItem(MethodDesc(m), cost) =>
+      Tree.Apply("FixedCostItem", Seq(methodLiteral(m)).iterator ++ treeifySeq(Seq(cost)))
     case FuncValue.AddToEnvironmentDesc =>
       Tree.Literal(s"FuncValue.AddToEnvironmentDesc")
     case MethodDesc(method) =>

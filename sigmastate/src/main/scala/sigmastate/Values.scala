@@ -11,7 +11,7 @@ import scalan.{Nullable, RType}
 import scalan.util.CollectionUtil._
 import sigmastate.SCollection.{SIntArray, SByteArray}
 import sigmastate.interpreter.CryptoConstants.EcPointType
-import sigmastate.interpreter.{CryptoConstants, ErgoTreeEvaluator}
+import sigmastate.interpreter.{CryptoConstants, ErgoTreeEvaluator, SeqCostItem, PerBlockCostItem}
 import sigmastate.serialization.{OpCodes, ConstantStore, _}
 import sigmastate.serialization.OpCodes._
 import sigmastate.TrivialProp.{FalseProp, TrueProp}
@@ -25,7 +25,7 @@ import special.sigma.Extensions._
 import sigmastate.eval._
 import sigmastate.eval.Extensions._
 import scalan.util.Extensions.ByteOps
-import sigmastate.interpreter.ErgoTreeEvaluator.{NamedDesc, DataEnv, error, CompanionDesc}
+import sigmastate.interpreter.ErgoTreeEvaluator.{NamedDesc, CompanionDesc, DataEnv, error}
 import spire.syntax.all.cfor
 
 import scala.language.implicitConversions
@@ -130,7 +130,7 @@ object Values {
       */
     @inline
     final def addCost(costDesc: FixedCost)(implicit E: ErgoTreeEvaluator): Unit = {
-      E.addCost(costDesc.cost, this.companion.opDesc)
+      E.addCost(costDesc, this.companion.opDesc)
     }
 
     /** Add the cost given by the descriptor to the accumulator and associate it with this operation
@@ -215,7 +215,12 @@ object Values {
     * @param perItemCost cost associated with each chunk of items
     * @param chunkSize number of items in a chunk
     */
-  case class PerItemCost(baseCost: Int, perItemCost: Int, chunkSize: Int) extends CostKind
+  case class PerItemCost(baseCost: Int, perItemCost: Int, chunkSize: Int) extends CostKind {
+    def cost (nItems: Int): Int = {
+      val nChunks = (nItems - 1) / chunkSize + 1
+      baseCost + SeqCostItem.calcCost(nChunks, chunkSize)
+    }
+  }
 
   /** Cost of operation over data of the known size.
     * See for example [[CalcBlake2b256]], [[CalcSha256]].
@@ -223,7 +228,11 @@ object Values {
     * @param baseCost     cost of operation factored out of the loop iterations
     * @param perBlockCost cost associated with each chunk of items
     */
-  case class PerBlockCost(baseCost: Int, perBlockCost: Int) extends CostKind
+  case class PerBlockCost(baseCost: Int, perBlockCost: Int) extends CostKind {
+    def cost(nBlocks: Int): Int = {
+      baseCost + PerBlockCostItem.calcCost(perBlockCost, nBlocks)
+    }
+  }
 
   /** Descriptor of the cost which depends on type. */
   abstract class TypeBasedCost extends CostKind {
@@ -235,12 +244,13 @@ object Values {
     * See [[EQ]], [[NEQ]]. */
   case object DynamicCost extends CostKind
 
+  // TODO optimize: change into abstract class
   trait ValueCompanion extends SigmaNodeCompanion {
     import ValueCompanion._
     /** Unique id of the node class used in serialization of ErgoTree. */
     def opCode: OpCode
     
-    /** Returns true if this operation has simple (constant) cost. */
+    /** Returns cost descriptor of this operation. */
     def costKind: CostKind
 
     override def toString: String = s"${this.getClass.getSimpleName}(${opCode.toUByte})"
@@ -260,6 +270,11 @@ object Values {
   object ValueCompanion {
     private val _allOperations: mutable.HashMap[Byte, ValueCompanion] = mutable.HashMap.empty
     lazy val allOperations = _allOperations.toMap
+  }
+
+  trait FixedCostValueCompanion extends ValueCompanion {
+    /** Returns cost descriptor of this operation. */
+    def costKind: FixedCost
   }
 
   abstract class EvaluatedValue[+S <: SType] extends Value[S] {
@@ -309,7 +324,7 @@ object Values {
     }
   }
 
-  object Constant extends ValueCompanion {
+  object Constant extends FixedCostValueCompanion {
     override def opCode: OpCode = ConstantCode
     override val costKind = FixedCost(CostOf.Constant)
 
@@ -817,7 +832,7 @@ object Values {
     }
   }
 
-  object Tuple extends ValueCompanion {
+  object Tuple extends FixedCostValueCompanion {
     override def opCode: OpCode = TupleCode
     override val costKind = FixedCost(CostOf.Tuple)
     def apply(items: Value[SType]*): Tuple = Tuple(items.toIndexedSeq)
@@ -1001,7 +1016,7 @@ object Values {
       env.getOrElse(valId, error(s"cannot resolve $this"))
     }
   }
-  object ValUse extends ValueCompanion {
+  object ValUse extends FixedCostValueCompanion {
     override def opCode: OpCode = ValUseCode
     override val costKind = FixedCost(CostOf.ValUse)
   }
@@ -1027,7 +1042,8 @@ object Values {
       cfor(0)(_ < len, _ + 1) { i =>
         val vd = items(i).asInstanceOf[ValDef]
         val v = vd.rhs.evalTo[Any](curEnv)
-        curEnv = E.addSimpleCost(CostOf.AddToEnvironment, FuncValue.AddToEnvironmentDesc) {
+        curEnv = E.addFixedCost(FuncValue.AddToEnvironmentDesc_CostKind,
+                                 FuncValue.AddToEnvironmentDesc) {
           curEnv + (vd.id -> v)
         }
       }
@@ -1065,7 +1081,8 @@ object Values {
       }
       else if (args.length == 1) {
         (vArg: Any) => {
-          val env1 = E.addSimpleCost(CostOf.AddToEnvironment, FuncValue.AddToEnvironmentDesc) {
+          val env1 = E.addFixedCost(FuncValue.AddToEnvironmentDesc_CostKind,
+                                     FuncValue.AddToEnvironmentDesc) {
             env + (args(0)._1 -> vArg)
           }
           body.evalTo[Any](env1)
@@ -1079,7 +1096,8 @@ object Values {
           cfor(0)(_ < len, _ + 1) { i =>
             val id = args(i)._1
             val v = vArgs(i)
-            env1 = E.addSimpleCost(CostOf.AddToEnvironment, FuncValue.AddToEnvironmentDesc) {
+            env1 = E.addFixedCost(FuncValue.AddToEnvironmentDesc_CostKind,
+                                   FuncValue.AddToEnvironmentDesc) {
               env1 + (id -> v)
             }
           }
@@ -1088,8 +1106,9 @@ object Values {
       }
     }
   }
-  object FuncValue extends ValueCompanion {
+  object FuncValue extends FixedCostValueCompanion {
     val AddToEnvironmentDesc = NamedDesc("AddToEnvironment")
+    val AddToEnvironmentDesc_CostKind = FixedCost(CostOf.AddToEnvironment)
     override def opCode: OpCode = FuncValueCode
     override val costKind = FixedCost(CostOf.FuncValue)
     def apply(argId: Int, tArg: SType, body: SValue): FuncValue =

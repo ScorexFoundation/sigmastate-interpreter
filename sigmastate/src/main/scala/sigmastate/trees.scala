@@ -508,7 +508,7 @@ case class Upcast[T <: SNumericType, R <: SNumericType](input: Value[T], tpe: R)
 }
 
 /** Base class for Upcast and Downcast companion objects. */
-trait NumericCastCompanion extends ValueCompanion {
+trait NumericCastCompanion extends FixedCostValueCompanion {
   def argInfos: Seq[ArgInfo]
   val OpType = SFunc(Array(SType.tT), SType.tR)
 }
@@ -619,7 +619,7 @@ case class DecodePoint(input: Value[SByteArray])
     SigmaDsl.decodePoint(inputV)
   }
 }
-object DecodePoint extends SimpleTransformerCompanion {
+object DecodePoint extends SimpleTransformerCompanion with FixedCostValueCompanion {
   val OpType = SFunc(SByteArray, SGroupElement)
   override def opCode: OpCode = OpCodes.DecodePointCode
   override val costKind = FixedCost(CostOf.DecodePoint)
@@ -760,7 +760,8 @@ case class ArithOp[T <: SType](left: Value[T], right: Value[T], override val opC
   }
 }
 /** NOTE: by-name argument is required for correct initialization order. */
-abstract class ArithOpCompanion(val opCode: OpCode, val name: String, _argInfos: => Seq[ArgInfo]) extends TwoArgumentOperationCompanion {
+abstract class ArithOpCompanion(val opCode: OpCode, val name: String, _argInfos: => Seq[ArgInfo])
+  extends TwoArgumentOperationCompanion {
   override def argInfos: Seq[ArgInfo] = _argInfos
   override def costKind: TypeBasedCost
   @inline final def eval(node: SValue, typeCode: SType.TypeCode, x: Any, y: Any)(implicit E: ErgoTreeEvaluator): Any = {
@@ -769,7 +770,7 @@ abstract class ArithOpCompanion(val opCode: OpCode, val name: String, _argInfos:
     eval(impl, x, y)
   }
   def eval(impl: OperationImpl, x: Any, y: Any): Any
-  def operationCost(impl: OperationImpl): Int
+  def operationCost(impl: OperationImpl): Int // TODO refactor: remove unused
 }
 
 object ArithOp {
@@ -1004,7 +1005,7 @@ case class Exponentiate(override val left: Value[SGroupElement.type],
     leftV.exp(rightV)
   }
 }
-object Exponentiate extends TwoArgumentOperationCompanion {
+object Exponentiate extends TwoArgumentOperationCompanion with FixedCostValueCompanion {
   val OpType = SFunc(Array(SGroupElement, SBigInt), SGroupElement)
   override def opCode: OpCode = ExponentiateCode
   override val costKind = FixedCost(CostOf.Exponentiate)
@@ -1024,7 +1025,7 @@ case class MultiplyGroup(override val left: Value[SGroupElement.type],
     leftV.multiply(rightV)
   }
 }
-object MultiplyGroup extends TwoArgumentOperationCompanion {
+object MultiplyGroup extends TwoArgumentOperationCompanion with FixedCostValueCompanion {
   val OpType = SFunc(Array(SGroupElement, SGroupElement), SGroupElement)
   override def opCode: OpCode = MultiplyGroupCode
   override val costKind = FixedCost(CostOf.MultiplyGroup)
@@ -1176,7 +1177,7 @@ case class BinOr(override val left: BoolValue, override val right: BoolValue)
     l || right.evalTo[Boolean](env)  // rely on short-cutting semantics of Scala's ||
   }
 }
-object BinOr extends RelationCompanion {
+object BinOr extends RelationCompanion with FixedCostValueCompanion {
   val OpType = SFunc(Array(SBoolean, SBoolean), SBoolean)
   override def opCode: OpCode = BinOrCode
   override val costKind = FixedCost(CostOf.BinOr)
@@ -1197,7 +1198,7 @@ case class BinAnd(override val left: BoolValue, override val right: BoolValue)
     l && right.evalTo[Boolean](env)  // rely on short-cutting semantics of Scala's &&
   }
 }
-object BinAnd extends RelationCompanion {
+object BinAnd extends RelationCompanion with FixedCostValueCompanion {
   val OpType = SFunc(Array(SBoolean, SBoolean), SBoolean)
   override def opCode: OpCode = BinAndCode
   override val costKind = FixedCost(CostOf.BinAnd)
@@ -1215,7 +1216,7 @@ case class BinXor(override val left: BoolValue, override val right: BoolValue)
     leftV ^ rightV
   }
 }
-object BinXor extends RelationCompanion {
+object BinXor extends RelationCompanion with FixedCostValueCompanion {
   val OpType = SFunc(Array(SBoolean, SBoolean), SBoolean)
   override def opCode: OpCode = BinXorCode
   override val costKind = FixedCost(CostOf.BinXor)
@@ -1296,7 +1297,7 @@ case class LogicalNot(input: Value[SBoolean.type]) extends NotReadyValueBoolean 
     !inputV
   }
 }
-object LogicalNot extends ValueCompanion {
+object LogicalNot extends FixedCostValueCompanion {
   val OpType = SFunc(Array(SBoolean), SBoolean)
   override def opCode: OpCode = OpCodes.LogicalNotCode
   override val costKind = FixedCost(CostOf.LogicalNot)
