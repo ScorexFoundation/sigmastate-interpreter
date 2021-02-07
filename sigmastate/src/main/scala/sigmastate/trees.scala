@@ -770,56 +770,48 @@ abstract class ArithOpCompanion(val opCode: OpCode, val name: String, _argInfos:
     eval(impl, x, y)
   }
   def eval(impl: OperationImpl, x: Any, y: Any): Any
-  def operationCost(impl: OperationImpl): Int // TODO refactor: remove unused
 }
 
 object ArithOp {
   import OpCodes._
   object Plus     extends ArithOpCompanion(PlusCode,     "+", PlusInfo.argInfos) {
     def eval(impl: OperationImpl, x: Any, y: Any): Any = impl.n.plus(x, y)
-    override def operationCost(impl: OperationImpl) = CostOf.Plus(impl.argTpe)
     override val costKind = new TypeBasedCost {
       override def costFunc(tpe: SType): Int = CostOf.Plus(tpe)
     }
   }
   object Minus    extends ArithOpCompanion(MinusCode,    "-", MinusInfo.argInfos) {
     def eval(impl: OperationImpl, x: Any, y: Any): Any = impl.n.minus(x, y)
-    def operationCost(impl: OperationImpl) = CostOf.Minus(impl.argTpe)
     override val costKind = new TypeBasedCost {
       override def costFunc(tpe: SType): Int = CostOf.Minus(tpe)
     }
   }
   object Multiply extends ArithOpCompanion(MultiplyCode, "*", MultiplyInfo.argInfos) {
     def eval(impl: OperationImpl, x: Any, y: Any): Any = impl.n.times(x, y)
-    def operationCost(impl: OperationImpl) = CostOf.Multiply(impl.argTpe)
     override val costKind = new TypeBasedCost {
       override def costFunc(tpe: SType): Int = CostOf.Multiply(tpe)
     }
   }
   object Division extends ArithOpCompanion(DivisionCode, "/", DivisionInfo.argInfos) {
     def eval(impl: OperationImpl, x: Any, y: Any): Any = impl.i.quot(x, y)
-    def operationCost(impl: OperationImpl) = CostOf.Division(impl.argTpe)
     override val costKind = new TypeBasedCost {
       override def costFunc(tpe: SType): Int = CostOf.Division(tpe)
     }
   }
   object Modulo   extends ArithOpCompanion(ModuloCode,   "%", ModuloInfo.argInfos) {
     def eval(impl: OperationImpl, x: Any, y: Any): Any = impl.i.rem(x, y)
-    def operationCost(impl: OperationImpl) = CostOf.Modulo(impl.argTpe)
     override val costKind = new TypeBasedCost {
       override def costFunc(tpe: SType): Int = CostOf.Modulo(tpe)
     }
   }
   object Min      extends ArithOpCompanion(MinCode,      "min", MinInfo.argInfos) {
     def eval(impl: OperationImpl, x: Any, y: Any): Any = impl.o.min(x, y)
-    def operationCost(impl: OperationImpl) = CostOf.Min(impl.argTpe)
     override val costKind = new TypeBasedCost {
       override def costFunc(tpe: SType): Int = CostOf.Min(tpe)
     }
   }
   object Max      extends ArithOpCompanion(MaxCode,      "max", MaxInfo.argInfos) {
     def eval(impl: OperationImpl, x: Any, y: Any): Any = impl.o.max(x, y)
-    def operationCost(impl: OperationImpl) = CostOf.Max(impl.argTpe)
     override val costKind = new TypeBasedCost {
       override def costFunc(tpe: SType): Int = CostOf.Max(tpe)
     }
