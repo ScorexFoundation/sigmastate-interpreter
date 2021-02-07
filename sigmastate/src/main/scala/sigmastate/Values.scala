@@ -228,7 +228,7 @@ object Values {
     */
   case class PerBlockCost(baseCost: Int, perBlockCost: Int) extends CostKind {
     def cost(nBlocks: Int): Int = {
-      Math.addExact(baseCost, PerBlockCostItem.calcCost(perBlockCost, nBlocks))
+      Math.addExact(baseCost, Math.multiplyExact(perBlockCost, nBlocks))
     }
   }
 

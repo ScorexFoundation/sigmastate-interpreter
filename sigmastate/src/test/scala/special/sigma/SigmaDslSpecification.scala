@@ -2390,7 +2390,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     verifyNeq(ge1, ge2, 36337, constNeqCost)(_.asInstanceOf[CGroupElement].copy())
     verifyNeq(t1, t2, 36337, constNeqCost)(_.asInstanceOf[CAvlTree].copy())
     verifyNeq(b1, b2, 36417,
-      Array(PerBlockCostItem(NEQ, 5, 16)))(_.asInstanceOf[CostingBox].copy())
+      Array[CostItem]())(_.asInstanceOf[CostingBox].copy())
     verifyNeq(preH1, preH2, 36337, constNeqCost)(_.asInstanceOf[CPreHeader].copy())
     verifyNeq(h1, h2, 36337, constNeqCost)(_.asInstanceOf[CHeader].copy())
   }
@@ -2408,7 +2408,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     verifyNeq((t1, t1), (t1, t2), 36337, constNeqCost)(_.copy())
     verifyNeq((b1, b1), (b1, b2),
       cost = 36497,
-      neqCost = Array(PerBlockCostItem(NEQ, 5, 32))
+      neqCost = Array[CostItem]()
       )(_.copy())
     verifyNeq((preH1, preH1), (preH1, preH2), 36337, constNeqCost)(_.copy())
     verifyNeq((h1, h1), (h1, h2), 36337, constNeqCost)(_.copy())

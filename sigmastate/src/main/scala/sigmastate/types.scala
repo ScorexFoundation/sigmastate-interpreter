@@ -594,10 +594,7 @@ object SMethod {
         val nBlocks = PerBlockCostItem.blocksToCover(coll.length)
         if (E.settings.costTracingEnabled) {
           val desc = MethodDesc(mc.method)
-          TracedCost(Array(
-            FixedCostItem(desc, FixedCost(costKind.baseCost)),   // TODO refactor: remove this
-            PerBlockCostItem(desc, costKind.perBlockCost, nBlocks)
-          ))
+          TracedCost(Array(PerBlockCostItem(desc, costKind, nBlocks)))
         }
         else
           GivenCost(costKind.cost(nBlocks))
