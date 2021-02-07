@@ -574,10 +574,7 @@ object SMethod {
       case coll: Coll[a] =>
         if (E.settings.costTracingEnabled) {
           val desc = MethodDesc(mc.method)
-          TracedCost(Array(
-            FixedCostItem(desc, FixedCost(costKind.baseCost)),  // TODO refactor: remove this
-            SeqCostItem(desc, costKind.perItemCost, coll.length)
-          ))
+          TracedCost(Array(SeqCostItem(desc, costKind, coll.length)))
         }
         else
           GivenCost(costKind.cost(coll.length))

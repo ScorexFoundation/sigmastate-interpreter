@@ -6644,7 +6644,7 @@ class SigmaDslSpecification extends SigmaDslTesting
             FixedCostItem(OptionGet),
             FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
             FixedCostItem(ValUse),
-            SeqCostItem(SigmaPropBytes, 1, nItems)
+            SeqCostItem(SigmaPropBytes, nItems)
           )
         )
         def pk = ProveDlog(Helpers.decodeECPoint("039d0b1e46c21540d033143440d2fb7dd5d650cf89981c99ee53c6e0374d2b1b6f"))

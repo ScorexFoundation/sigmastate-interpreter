@@ -4,14 +4,13 @@ import java.math.BigInteger
 import java.util
 import java.util.Objects
 
-import org.bitbucket.inkytonik.kiama.relation.Tree
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{strategy, everywherebu}
 import org.ergoplatform.validation.ValidationException
 import scalan.{Nullable, RType}
 import scalan.util.CollectionUtil._
 import sigmastate.SCollection.{SIntArray, SByteArray}
 import sigmastate.interpreter.CryptoConstants.EcPointType
-import sigmastate.interpreter.{CryptoConstants, ErgoTreeEvaluator, SeqCostItem, PerBlockCostItem}
+import sigmastate.interpreter.{CryptoConstants, ErgoTreeEvaluator, PerBlockCostItem}
 import sigmastate.serialization.{OpCodes, ConstantStore, _}
 import sigmastate.serialization.OpCodes._
 import sigmastate.TrivialProp.{FalseProp, TrueProp}
@@ -20,7 +19,6 @@ import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
 import sigmastate.lang.Terms._
 import sigmastate.utxo._
-import sigmastate.SType.SigmaBooleanRType
 import special.sigma.Extensions._
 import sigmastate.eval._
 import sigmastate.eval.Extensions._
@@ -218,7 +216,7 @@ object Values {
   case class PerItemCost(baseCost: Int, perItemCost: Int, chunkSize: Int) extends CostKind {
     def cost (nItems: Int): Int = {
       val nChunks = (nItems - 1) / chunkSize + 1
-      baseCost + SeqCostItem.calcCost(nChunks, chunkSize)
+      Math.addExact(baseCost, Math.multiplyExact(perItemCost, nChunks))
     }
   }
 
@@ -230,7 +228,7 @@ object Values {
     */
   case class PerBlockCost(baseCost: Int, perBlockCost: Int) extends CostKind {
     def cost(nBlocks: Int): Int = {
-      baseCost + PerBlockCostItem.calcCost(perBlockCost, nBlocks)
+      Math.addExact(baseCost, PerBlockCostItem.calcCost(perBlockCost, nBlocks))
     }
   }
 
@@ -244,7 +242,7 @@ object Values {
     * See [[EQ]], [[NEQ]]. */
   case object DynamicCost extends CostKind
 
-  // TODO optimize: change into abstract class
+  /** Base class for all companion objects which are used as operation descriptors. */
   trait ValueCompanion extends SigmaNodeCompanion {
     import ValueCompanion._
     /** Unique id of the node class used in serialization of ErgoTree. */
@@ -272,9 +270,22 @@ object Values {
     lazy val allOperations = _allOperations.toMap
   }
 
+  /** Should be inherited by companion objects of operations with fixed cost kind. */
   trait FixedCostValueCompanion extends ValueCompanion {
     /** Returns cost descriptor of this operation. */
     def costKind: FixedCost
+  }
+
+  /** Should be inherited by companion objects of operations with per-item cost kind. */
+  trait PerItemCostValueCompanion extends ValueCompanion {
+    /** Returns cost descriptor of this operation. */
+    def costKind: PerItemCost
+  }
+
+  /** Should be inherited by companion objects of operations with per data block cost kind. */
+  trait PerBlockCostValueCompanion extends ValueCompanion {
+    /** Returns cost descriptor of this operation. */
+    def costKind: PerBlockCost
   }
 
   abstract class EvaluatedValue[+S <: SType] extends Value[S] {

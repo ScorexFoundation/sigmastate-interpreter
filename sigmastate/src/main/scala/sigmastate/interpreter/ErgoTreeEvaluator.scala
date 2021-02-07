@@ -171,22 +171,22 @@ class ErgoTreeEvaluator(
     // TODO JITC: take into account chunkSize
     var costItem: SeqCostItem = null
     if (settings.costTracingEnabled) {
-      costItem = SeqCostItem(opDesc, costKind.perItemCost, nItems)
+      costItem = SeqCostItem(opDesc, costKind, nItems)
       costTrace += costItem
     }
     if (settings.isMeasureOperationTime && block != null) {
       if (costItem == null) {
-        costItem = SeqCostItem(opDesc, costKind.perItemCost, nItems)
+        costItem = SeqCostItem(opDesc, costKind, nItems)
       }
       val start = System.nanoTime()
-      val cost = SeqCostItem.calcCost(costKind.perItemCost, nItems) // should be measured
+      val cost = costKind.cost(nItems) // should be measured
       coster.add(cost)
       val res = block()
       val end = System.nanoTime()
       profiler.addCostItem(costItem, end - start)
       res
     } else {
-      val cost = SeqCostItem.calcCost(costKind.perItemCost, nItems)
+      val cost = costKind.cost(nItems)
       coster.add(cost)
       if (block == null) null.asInstanceOf[R] else block()
     }
@@ -501,18 +501,18 @@ object TypeBasedCostItem {
   * Represents cost of a sequence of operation.
   * Used for debugging, testing and profiling of costing.
   *
-  * @param opDesc      descriptor of the ErgoTree operation
-  * @param perItemCost cost added to accumulator for each item of a collection
-  * @param nItems      number of items in the collection
+  * @param opDesc   descriptor of the ErgoTree operation
+  * @param costKind descriptor of the cost added to accumulator
+  * @param nItems   number of items in the sequence
   */
-case class SeqCostItem(opDesc: OperationDesc, perItemCost: Int, nItems: Int)
+case class SeqCostItem(opDesc: OperationDesc, costKind: PerItemCost, nItems: Int)
     extends CostItem {
   override def opName: String = ErgoTreeEvaluator.operationName(opDesc)
-  override def cost: Int = SeqCostItem.calcCost(perItemCost, nItems)
+  override def cost: Int = costKind.cost(nItems)
 }
 object SeqCostItem {
-  def apply(companion: ValueCompanion, perItemCost: Int, nItems: Int): SeqCostItem =
-    SeqCostItem(companion.opDesc, perItemCost, nItems)
+  def apply(companion: PerItemCostValueCompanion, nItems: Int): SeqCostItem =
+    SeqCostItem(companion.opDesc, companion.costKind, nItems)
   def calcCost(perItemCost: Int, nItems: Int) = Math.multiplyExact(perItemCost, nItems)
 }
 

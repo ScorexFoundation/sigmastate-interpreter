@@ -325,7 +325,7 @@ case class SigmaPropBytes(input: Value[SSigmaProp.type])
     }
   }
 }
-object SigmaPropBytes extends ValueCompanion {
+object SigmaPropBytes extends PerItemCostValueCompanion {
   override def opCode: OpCode = OpCodes.SigmaPropBytesCode
   override val costKind = PerItemCost(CostOf.SigmaPropBytes, CostOf.SigmaPropBytes_PerItem, 1)
 }
