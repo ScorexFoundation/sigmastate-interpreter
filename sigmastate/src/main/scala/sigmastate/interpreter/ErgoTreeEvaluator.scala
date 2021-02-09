@@ -132,10 +132,9 @@ class ErgoTreeEvaluator(
     * @param costKind kind of the cost to be added to `coster`
     * @param opDesc the operation descriptor to associate the cost with (when costTracingEnabled)
     * @param block  operation executed under the given cost
-    * @tparam R result type of the operation
     * @hotspot don't beautify the code
     */
-  final def addFixedCost[R](costKind: FixedCost, opDesc: OperationDesc)(block: => R): R = {
+  final def addFixedCost(costKind: FixedCost, opDesc: OperationDesc)(block: => Unit): Unit = {
     var costItem: FixedCostItem = null
     if (settings.costTracingEnabled) {
       costItem = FixedCostItem(opDesc, costKind)

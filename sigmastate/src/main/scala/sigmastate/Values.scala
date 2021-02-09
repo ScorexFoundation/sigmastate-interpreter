@@ -1053,9 +1053,9 @@ object Values {
       cfor(0)(_ < len, _ + 1) { i =>
         val vd = items(i).asInstanceOf[ValDef]
         val v = vd.rhs.evalTo[Any](curEnv)
-        curEnv = E.addFixedCost(FuncValue.AddToEnvironmentDesc_CostKind,
+        E.addFixedCost(FuncValue.AddToEnvironmentDesc_CostKind,
                                  FuncValue.AddToEnvironmentDesc) {
-          curEnv + (vd.id -> v)
+          curEnv = curEnv + (vd.id -> v)
         }
       }
       result.evalTo[Any](curEnv)
@@ -1092,9 +1092,10 @@ object Values {
       }
       else if (args.length == 1) {
         (vArg: Any) => {
-          val env1 = E.addFixedCost(FuncValue.AddToEnvironmentDesc_CostKind,
+          var env1: DataEnv = null
+          E.addFixedCost(FuncValue.AddToEnvironmentDesc_CostKind,
                                      FuncValue.AddToEnvironmentDesc) {
-            env + (args(0)._1 -> vArg)
+            env1 = env + (args(0)._1 -> vArg)
           }
           body.evalTo[Any](env1)
         }
@@ -1107,9 +1108,9 @@ object Values {
           cfor(0)(_ < len, _ + 1) { i =>
             val id = args(i)._1
             val v = vArgs(i)
-            env1 = E.addFixedCost(FuncValue.AddToEnvironmentDesc_CostKind,
+            E.addFixedCost(FuncValue.AddToEnvironmentDesc_CostKind,
                                    FuncValue.AddToEnvironmentDesc) {
-              env1 + (id -> v)
+              env1 = env1 + (id -> v)
             }
           }
           body.evalTo[Any](env1)
