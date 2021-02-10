@@ -4,6 +4,7 @@ import org.scalatest.Matchers
 
 import scala.annotation.tailrec
 import scala.util.{Failure, Success, Try}
+import spire.syntax.all.cfor
 
 trait NegativeTesting extends Matchers {
 
@@ -40,6 +41,13 @@ trait NegativeTesting extends Matchers {
     case Failure(t) => Failure(rootCause(t))
   }
 
+  /** Checks that both computations either succeed with the same value or fail with the same
+    * error. If this is not true, exception is thrown.
+    *
+    * @param f first computation
+    * @param g second computation
+    * @return result of the second computation `g`
+    */
   def sameResultOrError[B](f: => B, g: => B): Try[B] = {
     val b1 = Try(f); val b2 = Try(g)
     (b1, b2) match {
@@ -66,4 +74,17 @@ trait NegativeTesting extends Matchers {
     }
   }
 
+  /** Repeat the given `block` computation `nIters` times.
+    *
+    * @param nIters number of iterations to repeat the computation
+    * @param block  the computation to execute on each iteration
+    * @return the result of the last iteration
+    */
+  def repeatAndReturnLast[A](nIters: Int)(block: => A): A = {
+    var res = block
+    cfor(1)(_ < nIters, _ + 1) { i =>
+      res = block
+    }
+    res
+  }
 }

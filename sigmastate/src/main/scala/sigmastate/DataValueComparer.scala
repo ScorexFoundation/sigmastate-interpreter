@@ -11,7 +11,9 @@ import special.collection.{Coll, PairOfCols, CollOverArray}
 
 object DataValueComparer {
 
-  final val CostKind_EQ_Prim = FixedCost(1)
+  final val CostOf_TypeCheck = 5
+
+  final val CostKind_EQ_Prim = FixedCost(2 + 6 * CostOf_TypeCheck)
   final val OpDesc_EQ_Prim = NamedDesc("EQ_Prim")
   final val EQ_Prim = OperationInfo(CostKind_EQ_Prim, OpDesc_EQ_Prim)
 
@@ -20,11 +22,13 @@ object DataValueComparer {
   final val OpDesc_EQ_Coll = NamedDesc("EQ_Coll")
   final val EQ_Coll = OperationInfo(CostKind_EQ_Coll, OpDesc_EQ_Coll)
 
-  final val CostKind_EQ_Tuple = FixedCost(1)
+  final val CostKind_EQ_Tuple = FixedCost(3 + 2 * CostOf_TypeCheck)
   final val OpDesc_EQ_Tuple = NamedDesc("EQ_Tuple")
   final val EQ_Tuple = OperationInfo(CostKind_EQ_Tuple, OpDesc_EQ_Tuple)
 
-  final val CostKind_EQ_BigInt = FixedCost(1)
+  /** The cost depends on the position in `match` statement.
+    * The cost of each type check == 10 units. */
+  final val CostKind_EQ_BigInt = FixedCost(15 + 4 * CostOf_TypeCheck)
   final val OpDesc_EQ_BigInt = NamedDesc("EQ_BigInt")
   final val EQ_BigInt = OperationInfo(CostKind_EQ_BigInt, OpDesc_EQ_BigInt)
 

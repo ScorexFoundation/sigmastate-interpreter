@@ -146,10 +146,9 @@ class ErgoTreeEvaluator(
       }
       val start = System.nanoTime()
       coster.add(costKind.cost)
-      val res = block
+      val _ = block
       val end = System.nanoTime()
       profiler.addCostItem(costItem, end - start)
-      res
     } else {
       coster.add(costKind.cost)
       block

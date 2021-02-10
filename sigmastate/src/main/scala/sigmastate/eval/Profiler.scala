@@ -192,6 +192,10 @@ class Profiler {
     measuredTimeStat.addPoint(script, actualTimeNano)
   }
 
+  def suggestCost(time: Long): Int = {
+    ((time - 1) / 100 + 1).toInt
+  }
+
   /** Prints the operation timing table using collected execution profile information.
     */
   def generateReport(): String = {
@@ -205,7 +209,7 @@ class Profiler {
           (opDesc.typeName, c)
         case _ => ("", 0)
       }
-      val suggestedCost = (time - 1) / 100 + 1
+      val suggestedCost = suggestCost(time)
       val comment = s"count: $count, suggestedCost: $suggestedCost, actualCost: $cost"
       (opName, (opCode.toUByte - OpCodes.LastConstantCode).toString, time, comment)
     }.filter(_._1.nonEmpty).sortBy(_._3)(Ordering[Long].reverse)
@@ -223,7 +227,8 @@ class Profiler {
       val (name, timePerItem, time, comment) = ci match {
         case ci: FixedCostItem =>
           val (time, count) = stat.mean
-          val comment = s"count: $count, actualCost: ${ci.cost}"
+          val suggestedCost = suggestCost(time)
+          val comment = s"count: $count, suggestedCost: $suggestedCost, actualCost: ${ci.cost}"
           (ci.opName, time, time, comment)
         case SeqCostItem(_, perItemCost, nItems) =>
           val (time, count) = stat.mean
@@ -244,10 +249,10 @@ class Profiler {
     val estLines = estimationCostStat.mapToArray { case (script, stat) =>
       val (cost, count) = stat.mean
       val (timeNano, _) = measuredTimeStat.getMean(script).get
-      val actualTimeMicro = timeNano.toDouble / 1000
-      val actualCost = cost.toDouble / 10
+      val actualTimeMicro = timeNano.toDouble / 100
+      val actualCost = cost.toDouble
       val error = relativeError(actualCost, actualTimeMicro)
-      (script, error, cost / 10, timeNano, count.toString)
+      (script, error, cost, timeNano, count.toString)
     }.sortBy(_._2)(Ordering[Double].reverse)
 
 
