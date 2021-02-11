@@ -2199,10 +2199,6 @@ class SigmaDslSpecification extends SigmaDslTesting
 
   property("BigInt LT, GT, NEQ") {
     val o = NumericOps.BigIntIsExactOrdering
-    // TODO HF: this values have bitCount == 255 (see to256BitValueExact)
-    val BigIntMinValue = CBigInt(new BigInteger("-7F" + "ff" * 31, 16))
-    val BigIntMaxValue = CBigInt(new BigInteger("7F" + "ff" * 31, 16))
-    val BigIntOverlimit = CBigInt(new BigInteger("7F" + "ff" * 33, 16))
 
     def expect(v: Boolean) = Expected(Success(v), 36328, costLT(SBigInt))
     

@@ -4,7 +4,7 @@ import org.ergoplatform.ErgoLikeContext
 import sigmastate.{SMethod, SType}
 import sigmastate.Values._
 import sigmastate.eval.Profiler
-import sigmastate.interpreter.ErgoTreeEvaluator.{OperationDesc, CompanionDesc, DataEnv, MethodDesc}
+import sigmastate.interpreter.ErgoTreeEvaluator.{DataEnv, OperationCostInfo, MethodDesc, CompanionDesc, OperationDesc}
 import sigmastate.interpreter.Interpreter.ReductionResult
 import sigmastate.lang.exceptions.CostLimitException
 import special.sigma.Context
@@ -98,12 +98,15 @@ class ErgoTreeEvaluator(
     * @param costKind kind of the cost to be added to `coster`
     * @param opDesc   operation descriptor to associate the cost with (when costTracingEnabled)
     */
-  final def addCost(costKind: FixedCost, opDesc: OperationDesc): this.type = {
+  final def addCost(costKind: FixedCost, opDesc: OperationDesc): Unit = {
     coster.add(costKind.cost)
     if (settings.costTracingEnabled) {
       costTrace += FixedCostItem(opDesc, costKind)
     }
-    this
+  }
+
+  @inline final def addCost(costInfo: OperationCostInfo[FixedCost]): Unit = {
+    addCost(costInfo.costKind, costInfo.opDesc)
   }
 
   /** Add the cost given by the cost descriptor and the type to the accumulator and
@@ -153,6 +156,11 @@ class ErgoTreeEvaluator(
       coster.add(costKind.cost)
       block
     }
+  }
+
+  @inline
+  final def addFixedCost(costInfo: OperationCostInfo[FixedCost])(block: => Unit): Unit = {
+    addFixedCost(costInfo.costKind, costInfo.opDesc)(block)
   }
 
   /** Adds the given cost to the `coster`. If tracing is enabled, creates a new cost item
@@ -304,6 +312,9 @@ object ErgoTreeEvaluator {
     override def toString: String = s"MethodDesc(${method.opName})"
   }
   case class NamedDesc(name: String) extends OperationDesc
+
+  /** Operation costing descriptors combined together. */
+  case class OperationCostInfo[C <: CostKind](costKind: C, opDesc: OperationDesc)
 
   def operationName(opDesc: OperationDesc): String = opDesc match {
     case CompanionDesc(companion) => companion.typeName

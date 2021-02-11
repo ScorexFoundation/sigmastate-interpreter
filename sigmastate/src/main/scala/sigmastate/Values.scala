@@ -10,7 +10,7 @@ import scalan.{Nullable, RType}
 import scalan.util.CollectionUtil._
 import sigmastate.SCollection.{SIntArray, SByteArray}
 import sigmastate.interpreter.CryptoConstants.EcPointType
-import sigmastate.interpreter.{CryptoConstants, ErgoTreeEvaluator, PerBlockCostItem}
+import sigmastate.interpreter.{CryptoConstants, ErgoTreeEvaluator}
 import sigmastate.serialization.{OpCodes, ConstantStore, _}
 import sigmastate.serialization.OpCodes._
 import sigmastate.TrivialProp.{FalseProp, TrueProp}
@@ -23,7 +23,7 @@ import special.sigma.Extensions._
 import sigmastate.eval._
 import sigmastate.eval.Extensions._
 import scalan.util.Extensions.ByteOps
-import sigmastate.interpreter.ErgoTreeEvaluator.{NamedDesc, CompanionDesc, DataEnv, error}
+import sigmastate.interpreter.ErgoTreeEvaluator.{DataEnv, error, CompanionDesc, NamedDesc, OperationDesc}
 import spire.syntax.all.cfor
 
 import scala.language.implicitConversions
@@ -33,9 +33,8 @@ import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.serialization.transformers.ProveDHTupleSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import special.sigma.{AvlTree, PreHeader, Header, _}
-import sigmastate.lang.{Terms, SourceContext}
+import sigmastate.lang.SourceContext
 import special.collection.Coll
-import sigmastate.SType.AnyOps
 import sigmastate.utxo.CostTable.CostOf
 
 import scala.collection.mutable

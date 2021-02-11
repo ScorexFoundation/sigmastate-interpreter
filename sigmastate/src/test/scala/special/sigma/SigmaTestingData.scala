@@ -116,22 +116,36 @@ trait SigmaTestingData extends SigmaTestingCommons with ObjectGenerators {
     val BigInt10: BigInt = CBigInt(new BigInteger("a", 16))
     val BigInt11: BigInt = CBigInt(new BigInteger("b", 16))
 
+    // TODO HF: this values have bitCount == 255 (see to256BitValueExact)
+    val BigIntMinValue = CBigInt(new BigInteger("-7F" + "ff" * 31, 16))
+    val BigIntMaxValue = CBigInt(new BigInteger("7F" + "ff" * 31, 16))
+    val BigIntOverlimit = CBigInt(new BigInteger("7F" + "ff" * 33, 16))
+
     val ge1str = "03358d53f01276211f92d0aefbd278805121d4ff6eb534b777af1ee8abae5b2056"
     val ge2str = "02dba7b94b111f3894e2f9120b577da595ec7d58d488485adf73bf4e153af63575"
     val ge3str = "0290449814f5671172dd696a61b8aa49aaa4c87013f56165e27d49944e98bc414d"
 
-    val ge1 = Helpers.decodeGroupElement(ge1str)
+    def create_ge1: GroupElement = {
+      Helpers.decodeGroupElement(ge1str)
+    }
+
+    val ge1 = create_ge1
     val ge2 = Helpers.decodeGroupElement(ge2str)
     val ge3 = Helpers.decodeGroupElement(ge3str)
 
-    val t1: AvlTree = CAvlTree(
-      AvlTreeData(
-        ADDigest @@ ErgoAlgos.decodeUnsafe("000183807f66b301530120ff7fc6bd6601ff01ff7f7d2bedbbffff00187fe89094"),
-        AvlTreeFlags(false, true, true),
-        1,
-        Some(1)
+    val t1: AvlTree = create_t1
+
+    def create_t1 = {
+      CAvlTree(
+        AvlTreeData(
+          ADDigest @@ ErgoAlgos.decodeUnsafe("000183807f66b301530120ff7fc6bd6601ff01ff7f7d2bedbbffff00187fe89094"),
+          AvlTreeFlags(false, true, true),
+          1,
+          Some(1)
+        )
       )
-    )
+    }
+
     val t2: AvlTree = CAvlTree(
       AvlTreeData(
         ADDigest @@ ErgoAlgos.decodeUnsafe("ff000d937f80ffd731ed802d24358001ff8080ff71007f00ad37e0a7ae43fff95b"),
@@ -149,40 +163,44 @@ trait SigmaTestingData extends SigmaTestingCommons with ObjectGenerators {
       )
     )
 
-    val b1: Box = CostingBox(
-      false,
-      new ErgoBox(
-        9223372036854775807L,
-        new ErgoTree(
-          16.toByte,
-          Array(
-            SigmaPropConstant(
-              CSigmaProp(
-                ProveDlog(
-                  Helpers.decodeECPoint(
-                    "0297c44a12f4eb99a85d298fa3ba829b5b42b9f63798c980ece801cc663cc5fc9e"
+    def create_b1 = {
+      CostingBox(
+        false,
+        new ErgoBox(
+          9223372036854775807L,
+          new ErgoTree(
+            16.toByte,
+            Array(
+              SigmaPropConstant(
+                CSigmaProp(
+                  ProveDlog(
+                    Helpers.decodeECPoint(
+                      "0297c44a12f4eb99a85d298fa3ba829b5b42b9f63798c980ece801cc663cc5fc9e"
+                    )
                   )
                 )
               )
-            )
+            ),
+            Right(ConstantPlaceholder(0, SSigmaProp))
           ),
-          Right(ConstantPlaceholder(0, SSigmaProp))
-        ),
-        Coll(
-          (Digest32 @@ (ErgoAlgos.decodeUnsafe("6e789ab7b2fffff12280a6cd01557f6fb22b7f80ff7aff8e1f7f15973d7f0001")),
-              10000000L),
-          (Digest32 @@ (ErgoAlgos.decodeUnsafe("a3ff007f00057600808001ff8f8000019000ffdb806fff7cc0b6015eb37fa600")),
-              500L)
-        ),
-        Map(
-          ErgoBox.R5 -> ByteArrayConstant(Helpers.decodeBytes("7fc87f7f01ff")),
-          ErgoBox.R4 -> FalseLeaf
-        ),
-        ModifierId @@ ("218301ae8000018008637f0021fb9e00018055486f0b514121016a00ff718080"),
-        22588.toShort,
-        677407
+          Coll(
+            (Digest32 @@ (ErgoAlgos.decodeUnsafe("6e789ab7b2fffff12280a6cd01557f6fb22b7f80ff7aff8e1f7f15973d7f0001")),
+                10000000L),
+            (Digest32 @@ (ErgoAlgos.decodeUnsafe("a3ff007f00057600808001ff8f8000019000ffdb806fff7cc0b6015eb37fa600")),
+                500L)
+          ),
+          Map(
+            ErgoBox.R5 -> ByteArrayConstant(Helpers.decodeBytes("7fc87f7f01ff")),
+            ErgoBox.R4 -> FalseLeaf
+          ),
+          ModifierId @@ ("218301ae8000018008637f0021fb9e00018055486f0b514121016a00ff718080"),
+          22588.toShort,
+          677407
+        )
       )
-    )
+    }
+
+    val b1: Box = create_b1
 
     val b2: Box = CostingBox(
       false,

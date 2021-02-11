@@ -25,13 +25,13 @@ class DataValueComparerSpecification extends SigmaDslTesting
     isLogEnabled = false, // don't commit the `true` value (CI log is too high)
     costTracingEnabled = true  // should always be enabled in tests (and false by default)
   )
-  override val nBenchmarkIters = 5000
+  override val nBenchmarkIters = 500
 
-  val profiler = new Profiler
+  implicit val suiteProfiler = new Profiler
 
   import TestData._
 
-  def createEvaluator(settings: EvalSettings): ErgoTreeEvaluator = {
+  def createEvaluator(settings: EvalSettings, profiler: Profiler): ErgoTreeEvaluator = {
     val accumulator = new CostAccumulator(initialCost = 0, Some(ScriptCostLimit.value))
     val evaluator = new ErgoTreeEvaluator(
       context = null,
@@ -42,8 +42,8 @@ class DataValueComparerSpecification extends SigmaDslTesting
 
   /** Checks (on positive cases) that EQ.equalDataValues used in v5.0 is equivalent to
     * `==` used in v4.0 */
-  def check(x: Any, y: Any, expected: Boolean)(implicit settings: EvalSettings) = {
-    val evaluator = createEvaluator(settings)
+  def check(x: => Any, y: => Any, expected: Boolean)(implicit settings: EvalSettings, profiler: Profiler) = {
+    val evaluator = createEvaluator(settings, profiler)
     withClue(s"EQ.equalDataValues($x, $y)") {
       val res = sameResultOrError(
         repeatAndReturnLast(nBenchmarkIters) {
@@ -56,9 +56,12 @@ class DataValueComparerSpecification extends SigmaDslTesting
       }
     }
     if (evaluator.settings.isMeasureScriptTime) {
-      val evaluator = createEvaluator(settings)
-      val (res, actualTime) = BenchmarkUtil.measureTimeNano(
-        Try(DataValueComparer.equalDataValues(x, y)(evaluator)))
+      val evaluator = createEvaluator(settings, profiler)
+      val _x = x
+      val _y = y
+      val (res, actualTime) = BenchmarkUtil.measureTimeNano {
+        Try(DataValueComparer.equalDataValues(_x, _y)(evaluator))
+      }
       if (res.isSuccess) {
         val costDetails = TracedCost(evaluator.costTrace, Some(actualTime))
         val xStr = SigmaPPrint(x).plainText
@@ -75,33 +78,36 @@ class DataValueComparerSpecification extends SigmaDslTesting
 
   override protected def beforeAll(): Unit = {
     // warm up DataValueComparer
-    repeatAndReturnLast(nIters = 20000 / nBenchmarkIters) {
-      runPosititveCases(
-        evalSettings = evalSettings.copy(
-          isMeasureOperationTime = false,
-          isMeasureScriptTime = false,
-          costTracingEnabled = true))
+    val warmUpProfiler = new Profiler
+    repeatAndReturnLast(nIters = 50000 / nBenchmarkIters) {
+      runBaseCases(warmUpProfiler)(evalSettings = evalSettings.copy(isLogEnabled = false))
     }
   }
 
-  /** This is not comprehensive list of positive checks.
+  /** This is NOT comprehensive list of possible checks.
     * See also DataSerializerSpecification.roundtrip where comprehensive
     * checking of positive cases is done.
-    * This method also used to warm up DataValueComparer. */
-  def runPosititveCases(implicit evalSettings: EvalSettings) = {
+    * This method also used to warm up DataValueComparer in the beforeAll method. */
+  def runBaseCases(profiler: Profiler)(implicit evalSettings: EvalSettings) = {
+    implicit val suiteProfiler = profiler  // hide suite's profiler and use explicitly passed
     ones.foreach { x =>
       ones.foreach { y =>
         check(x, y, true)  // numeric values are equal regardless of their type
         check(Option(x), Option(y), true)  // numeric values in Option
+        check(Option(x), y, false)  // numeric values in Option
         check((x, 1), (y, 1), true)        // and in Tuple
         check((1, x), (1, y), true)
+        check((1, x), y, false)
       }
     }
-    check(BigIntZero, CBigInt(new BigInteger("0", 16)), true)
+    check(BigIntMaxValue, BigIntMaxValue - BigIntOne + BigIntOne, true)
+    check(ge1, create_ge1, true)
+    check(t1, create_t1, true)
+    check(create_b1, create_b1, true)
   }
 
-  property("equalDataValues positive cases") {
-    runPosititveCases(evalSettings)
+  property("equalDataValues base cases") {
+    runBaseCases(suiteProfiler)(evalSettings)
   }
 
   property("equalDataValues positive cases (Coll)") {
@@ -156,7 +162,7 @@ class DataValueComparerSpecification extends SigmaDslTesting
   }
 
   override protected def afterAll(): Unit = {
-    println(profiler.generateReport)
+    println(suiteProfiler.generateReport)
   }
 
 }

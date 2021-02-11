@@ -2,77 +2,102 @@ package sigmastate
 
 import scalan.{AVHashMap, Nullable, RType}
 import scalan.RType._
-import sigmastate.Values.{PerItemCost, FixedCost, CostKind}
+import sigmastate.Values.{PerItemCost, FixedCost}
 import spire.sp
 import sigmastate.interpreter.ErgoTreeEvaluator
-import sigmastate.interpreter.ErgoTreeEvaluator.{OperationDesc, NamedDesc}
-import special.sigma.{Box, GroupElementRType, GroupElement, AvlTreeRType, BigInt, BoxRType, AvlTree, BigIntRType}
+import sigmastate.interpreter.ErgoTreeEvaluator.{OperationCostInfo, OperationDesc, NamedDesc}
+import special.sigma.{Header, Box, GroupElementRType, GroupElement, AvlTreeRType, BigInt, BoxRType, AvlTree, BigIntRType, PreHeader}
 import special.collection.{Coll, PairOfCols, CollOverArray}
-
+/** Implementation of data equality for two arbitrary ErgoTree data types.
+  * @see [[DataValueComparer.equalDataValues]]
+  */
 object DataValueComparer {
 
-  final val CostOf_TypeCheck = 5
+  /** NOTE: The cost of most equality operations depends on the position in `match` statement.
+    * Thus the full cost to compare x and y equals DispatchCost * OperationCost, where
+    * DispatchCost = CasePosition * CostOf_MatchType,
+    * OperationCost is the type specific cost.
+    * For this reason reordering of cases may lead to divergence between an estimated and
+    * the actual execution cost (time).
+    * The constants are part of the consensus procotol and cannot be changed without forking.
+    */
+  final val CostOf_MatchType = 1
+  final val CostKind_MatchType = FixedCost(CostOf_MatchType)
+  final val OpDesc_MatchType = NamedDesc("MatchType")
+  final val MatchType = OperationCostInfo(CostKind_MatchType, OpDesc_MatchType)
 
-  final val CostKind_EQ_Prim = FixedCost(2 + 6 * CostOf_TypeCheck)
+  final val CostKind_EQ_Prim = FixedCost(3)         // default case
   final val OpDesc_EQ_Prim = NamedDesc("EQ_Prim")
-  final val EQ_Prim = OperationInfo(CostKind_EQ_Prim, OpDesc_EQ_Prim)
+  final val EQ_Prim = OperationCostInfo(CostKind_EQ_Prim, OpDesc_EQ_Prim)
 
-  /** Equals two Colls of non-primitive (boxed) types. */
-  final val CostKind_EQ_Coll = PerItemCost(1, 1, 16)
+
+  /** Equals two Colls of non-primitive (boxed) types.
+    */
+  final val CostKind_EQ_Coll = PerItemCost(1 * CostOf_MatchType, 1, 16)    // case 2
   final val OpDesc_EQ_Coll = NamedDesc("EQ_Coll")
-  final val EQ_Coll = OperationInfo(CostKind_EQ_Coll, OpDesc_EQ_Coll)
+  final val EQ_Coll = OperationCostInfo(CostKind_EQ_Coll, OpDesc_EQ_Coll)
 
-  final val CostKind_EQ_Tuple = FixedCost(3 + 2 * CostOf_TypeCheck)
+  /** NOTE: In the formula `(2 + 1)` the 1 corresponds to the second type match. */
+  final val CostKind_EQ_Tuple = FixedCost((3 + 1) * CostOf_MatchType - 1)  // case 3
   final val OpDesc_EQ_Tuple = NamedDesc("EQ_Tuple")
-  final val EQ_Tuple = OperationInfo(CostKind_EQ_Tuple, OpDesc_EQ_Tuple)
+  final val EQ_Tuple = OperationCostInfo(CostKind_EQ_Tuple, OpDesc_EQ_Tuple)
 
-  /** The cost depends on the position in `match` statement.
-    * The cost of each type check == 10 units. */
-  final val CostKind_EQ_BigInt = FixedCost(15 + 4 * CostOf_TypeCheck)
-  final val OpDesc_EQ_BigInt = NamedDesc("EQ_BigInt")
-  final val EQ_BigInt = OperationInfo(CostKind_EQ_BigInt, OpDesc_EQ_BigInt)
-
-  final val CostKind_EQ_GroupElement = FixedCost(1)
+  final val CostKind_EQ_GroupElement = FixedCost(3 + 3 * CostOf_MatchType) // case 4
   final val OpDesc_EQ_GroupElement = NamedDesc("EQ_GroupElement")
-  final val EQ_GroupElement = OperationInfo(CostKind_EQ_GroupElement, OpDesc_EQ_GroupElement)
+  final val EQ_GroupElement = OperationCostInfo(CostKind_EQ_GroupElement, OpDesc_EQ_GroupElement)
 
-  final val CostKind_EQ_AvlTree = FixedCost(1)
+  final val CostKind_EQ_BigInt = FixedCost(5)       // case 5
+  final val OpDesc_EQ_BigInt = NamedDesc("EQ_BigInt")
+  final val EQ_BigInt = OperationCostInfo(CostKind_EQ_BigInt, OpDesc_EQ_BigInt)
+
+  final val CostKind_EQ_AvlTree = FixedCost(2 + (6 * CostOf_MatchType) / 2)      // case 6
   final val OpDesc_EQ_AvlTree = NamedDesc("EQ_AvlTree")
-  final val EQ_AvlTree = OperationInfo(CostKind_EQ_AvlTree, OpDesc_EQ_AvlTree)
+  final val EQ_AvlTree = OperationCostInfo(CostKind_EQ_AvlTree, OpDesc_EQ_AvlTree)
 
-  final val CostKind_EQ_Box = FixedCost(1)
+  final val CostKind_EQ_Box = FixedCost(2 + 6 * CostOf_MatchType)          // case 7
   final val OpDesc_EQ_Box = NamedDesc("EQ_Box")
-  final val EQ_Box = OperationInfo(CostKind_EQ_Box, OpDesc_EQ_Box)
+  final val EQ_Box = OperationCostInfo(CostKind_EQ_Box, OpDesc_EQ_Box)
+
+  /** NOTE: In the formula `(7 + 1)` the 1 corresponds to the second type match. */
+  final val CostKind_EQ_Option = FixedCost(1 + (7 + 1) * CostOf_MatchType / 2 - 1) // case 8
+  final val OpDesc_EQ_Option = NamedDesc("EQ_Option")
+  final val EQ_Option = OperationCostInfo(CostKind_EQ_Option, OpDesc_EQ_Option)
+
+  final val CostKind_EQ_Header = FixedCost(9) // case 9
+  final val OpDesc_EQ_Header = NamedDesc("EQ_Header")
+  final val EQ_Header = OperationCostInfo(CostKind_EQ_Header, OpDesc_EQ_Header)
+
+  final val CostKind_EQ_PreHeader = FixedCost(10) // case 10
+  final val OpDesc_EQ_PreHeader = NamedDesc("EQ_PreHeader")
+  final val EQ_PreHeader = OperationCostInfo(CostKind_EQ_PreHeader, OpDesc_EQ_PreHeader)
 
   /** Equals two CollOverArray of primitive (unboxed) type. */
   final val CostKind_EQ_COA_Prim = PerItemCost(1, 1, 64)
   final val OpDesc_EQ_COA_Prim = NamedDesc("EQ_COA_Prim")
-  final val EQ_COA_Prim = OperationInfo(CostKind_EQ_COA_Prim, OpDesc_EQ_COA_Prim)
+  final val EQ_COA_Prim = OperationCostInfo(CostKind_EQ_COA_Prim, OpDesc_EQ_COA_Prim)
 
   /** Equals two CollOverArray of GroupElement type. */
   final val CostKind_EQ_COA_GroupElement = PerItemCost(1, 1, 8)
   final val OpDesc_EQ_COA_GroupElement = NamedDesc("EQ_COA_GroupElement")
-  final val EQ_COA_GroupElement = OperationInfo(CostKind_EQ_COA_GroupElement, OpDesc_EQ_COA_GroupElement)
+  final val EQ_COA_GroupElement = OperationCostInfo(CostKind_EQ_COA_GroupElement, OpDesc_EQ_COA_GroupElement)
 
   /** Equals two CollOverArray of BigInt type. */
   final val CostKind_EQ_COA_BigInt = PerItemCost(1, 1, 8)
   final val OpDesc_EQ_COA_BigInt = NamedDesc("EQ_COA_BigInt")
-  final val EQ_COA_BigInt = OperationInfo(CostKind_EQ_COA_BigInt, OpDesc_EQ_COA_BigInt)
+  final val EQ_COA_BigInt = OperationCostInfo(CostKind_EQ_COA_BigInt, OpDesc_EQ_COA_BigInt)
 
   /** Equals two CollOverArray of GroupElement type. */
   final val CostKind_EQ_COA_AvlTree = PerItemCost(1, 1, 8)
   final val OpDesc_EQ_COA_AvlTree = NamedDesc("EQ_COA_AvlTree")
-  final val EQ_COA_AvlTree = OperationInfo(CostKind_EQ_COA_AvlTree, OpDesc_EQ_COA_AvlTree)
+  final val EQ_COA_AvlTree = OperationCostInfo(CostKind_EQ_COA_AvlTree, OpDesc_EQ_COA_AvlTree)
 
   /** Equals two CollOverArray of Box type. */
   final val CostKind_EQ_COA_Box = PerItemCost(1, 1, 8)
   final val OpDesc_EQ_COA_Box = NamedDesc("EQ_COA_Box")
-  final val EQ_COA_Box = OperationInfo(CostKind_EQ_COA_Box, OpDesc_EQ_COA_Box)
+  final val EQ_COA_Box = OperationCostInfo(CostKind_EQ_COA_Box, OpDesc_EQ_COA_Box)
 
-  case class OperationInfo[C <: CostKind](costKind: C, opDesc: OperationDesc)
-
-  val descriptors: AVHashMap[RType[_], (OperationInfo[FixedCost], OperationInfo[PerItemCost])] =
-    AVHashMap.fromSeq(Array[(RType[_], (OperationInfo[FixedCost], OperationInfo[PerItemCost]))](
+  val descriptors: AVHashMap[RType[_], (OperationCostInfo[FixedCost], OperationCostInfo[PerItemCost])] =
+    AVHashMap.fromSeq(Array[(RType[_], (OperationCostInfo[FixedCost], OperationCostInfo[PerItemCost]))](
       (BigIntRType, (EQ_BigInt, EQ_COA_BigInt)),
       (GroupElementRType, (EQ_GroupElement, EQ_COA_GroupElement)),
       (AvlTreeRType, (EQ_AvlTree, EQ_COA_AvlTree)),
@@ -162,7 +187,13 @@ object DataValueComparer {
   def equalDataValues(l: Any, r: Any)(implicit E: ErgoTreeEvaluator): Boolean = {
     var okEqual: Boolean = false
     l match {
-      case coll1: Coll[a] =>
+      case _: java.lang.Number => /** case 1 (see [[EQ_Prim]]) */
+        E.addFixedCost(EQ_Prim) {
+          okEqual = l == r
+        }
+
+      case coll1: Coll[a] =>  /** case 2 (see [[EQ_Coll]]) */
+        E.addCost(MatchType) // for second match below
         okEqual = r match {
           case coll2: Coll[_] =>
             val len = coll1.length
@@ -174,8 +205,8 @@ object DataValueComparer {
           case _ => false
         }
 
-      case tup1: Tuple2[_,_] =>
-        E.addFixedCost(CostKind_EQ_Tuple, OpDesc_EQ_Tuple) {
+      case tup1: Tuple2[_,_] => /** case 3 (see [[EQ_Tuple]]) */
+        E.addFixedCost(EQ_Tuple) {
           okEqual = r match {
             case tup2: Tuple2[_,_] =>
               equalDataValues(tup1._1, tup2._1) && equalDataValues(tup1._2, tup2._2)
@@ -183,30 +214,53 @@ object DataValueComparer {
           }
         }
 
-      case ge1: GroupElement =>
-        E.addFixedCost(CostKind_EQ_GroupElement, OpDesc_EQ_GroupElement) {
+      case ge1: GroupElement => /** case 4 (see [[EQ_GroupElement]]) */
+        E.addFixedCost(EQ_GroupElement) {
           okEqual = ge1 == r
         }
 
-      case bi: BigInt =>
-        E.addFixedCost(CostKind_EQ_BigInt, OpDesc_EQ_BigInt) {
+      case bi: BigInt => /** case 5 (see [[EQ_BigInt]]) */
+        E.addFixedCost(EQ_BigInt) {
           okEqual = bi == r
         }
 
-      case bi: AvlTree =>
-        E.addFixedCost(CostKind_EQ_AvlTree, OpDesc_EQ_AvlTree) {
+      case bi: AvlTree =>  /** case 6 (see [[EQ_AvlTree]]) */
+        E.addFixedCost(EQ_AvlTree) {
           okEqual = bi == r
         }
 
-      case box: Box =>
-        E.addFixedCost(CostKind_EQ_Box, OpDesc_EQ_Box) {
+      case box: Box => /** case 7 (see [[EQ_Box]]) */
+        E.addFixedCost(EQ_Box) {
           okEqual = box == r
         }
 
-      case _ =>
-        E.addFixedCost(CostKind_EQ_Prim, OpDesc_EQ_Prim) {
-          okEqual = l == r
+      case opt1: Option[_] => /** case 8 (see [[EQ_Option]]) */
+        E.addFixedCost(EQ_Option) {
+          okEqual = r match {
+            case opt2: Option[_] =>
+              if (opt1.isDefined) {
+                if (opt2.isDefined) {
+                  equalDataValues(opt1.get, opt2.get)
+                } else
+                  false // right is not Some
+              } else {
+                // here left in None
+                opt2.isEmpty  // return if the right is also None
+              }
+            case _ =>
+              false // right is not an Option
+          }
         }
+      case h: Header =>  /** default case (see [[EQ_Header]]) */
+        E.addFixedCost(EQ_Header) {
+          okEqual = h == r
+        }
+      case ph: PreHeader =>  /** default case (see [[EQ_PreHeader]]) */
+        E.addFixedCost(EQ_PreHeader) {
+          okEqual = ph == r
+        }
+      case _ =>
+        ErgoTreeEvaluator.error(s"Cannot compare $l and $r: unknown type")
     }
     okEqual
   }
