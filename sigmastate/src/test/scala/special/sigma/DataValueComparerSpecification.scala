@@ -1,15 +1,13 @@
 package special.sigma
 
-import java.math.BigInteger
-
 import org.ergoplatform.SigmaConstants.ScriptCostLimit
 import org.scalatest.BeforeAndAfterAll
 import scalan.util.BenchmarkUtil
 import sigmastate.DataValueComparer
 import sigmastate.Values.ErgoTree
-import sigmastate.eval.{CBigInt, Profiler}
+import sigmastate.eval.Profiler
 import sigmastate.helpers.SigmaPPrint
-import sigmastate.interpreter.{TracedCost, ErgoTreeEvaluator, CostAccumulator, EvalSettings, CostItem}
+import sigmastate.interpreter.{TracedCost, ErgoTreeEvaluator, CostAccumulator, EvalSettings}
 
 import scala.util.{Success, Try}
 
@@ -25,7 +23,7 @@ class DataValueComparerSpecification extends SigmaDslTesting
     isLogEnabled = false, // don't commit the `true` value (CI log is too high)
     costTracingEnabled = true  // should always be enabled in tests (and false by default)
   )
-  override val nBenchmarkIters = 500
+  override val nBenchmarkIters = 50
 
   implicit val suiteProfiler = new Profiler
 
@@ -41,7 +39,10 @@ class DataValueComparerSpecification extends SigmaDslTesting
   }
 
   /** Checks (on positive cases) that EQ.equalDataValues used in v5.0 is equivalent to
-    * `==` used in v4.0 */
+    * `==` used in v4.0
+    * @param x computation which produced first argument
+    * @param y computation which produced second argument
+    */
   def check(x: => Any, y: => Any, expected: Boolean)(implicit settings: EvalSettings, profiler: Profiler) = {
     val evaluator = createEvaluator(settings, profiler)
     withClue(s"EQ.equalDataValues($x, $y)") {
@@ -64,8 +65,8 @@ class DataValueComparerSpecification extends SigmaDslTesting
       }
       if (res.isSuccess) {
         val costDetails = TracedCost(evaluator.costTrace, Some(actualTime))
-        val xStr = SigmaPPrint(x).plainText
-        val yStr = SigmaPPrint(y).plainText
+        val xStr = SigmaPPrint(_x).plainText
+        val yStr = SigmaPPrint(_y).plainText
         val script = s"$xStr == $yStr"
         evaluator.profiler.addEstimation(script, costDetails.cost, actualTime)
       }
@@ -73,8 +74,9 @@ class DataValueComparerSpecification extends SigmaDslTesting
 
   }
 
-  val zeros = Array[Any](0.toByte, 0.toShort, 0, 0.toLong)
-  val ones = Array[Any](1.toByte, 1.toShort, 1, 1.toLong)
+  /** It is important for profiling to return a new array on every method call. */
+  def zeros = Array[Any](0.toByte, 0.toShort, 0, 0.toLong)
+  def ones = Array[Any](1.toByte, 1.toShort, 1, 1.toLong)
 
   override protected def beforeAll(): Unit = {
     // warm up DataValueComparer
@@ -82,6 +84,8 @@ class DataValueComparerSpecification extends SigmaDslTesting
     repeatAndReturnLast(nIters = 50000 / nBenchmarkIters) {
       runBaseCases(warmUpProfiler)(evalSettings = evalSettings.copy(isLogEnabled = false))
     }
+    System.gc()
+    Thread.sleep(1000)
   }
 
   /** This is NOT comprehensive list of possible checks.
@@ -94,16 +98,20 @@ class DataValueComparerSpecification extends SigmaDslTesting
       ones.foreach { y =>
         check(x, y, true)  // numeric values are equal regardless of their type
         check(Option(x), Option(y), true)  // numeric values in Option
-        check(Option(x), y, false)  // numeric values in Option
+        check(Option(x), y, false)
+        check(Option(x), None, false)
+        check(None, Option(x), false)
         check((x, 1), (y, 1), true)        // and in Tuple
         check((1, x), (1, y), true)
         check((1, x), y, false)
       }
     }
-    check(BigIntMaxValue, BigIntMaxValue - BigIntOne + BigIntOne, true)
-    check(ge1, create_ge1, true)
-    check(t1, create_t1, true)
-    check(create_b1, create_b1, true)
+    check(createBigIntMaxValue(), createBigIntMaxValue(), true)
+    check(create_ge1(), create_ge1(), true)
+    check(create_t1, create_t1(), true)
+    check(create_b1(), create_b1(), true)
+    check(create_preH1(), create_preH1(), true)
+    check(create_h1(), create_h1(), true)
   }
 
   property("equalDataValues base cases") {

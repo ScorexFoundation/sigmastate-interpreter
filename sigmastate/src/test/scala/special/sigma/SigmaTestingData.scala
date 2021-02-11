@@ -116,26 +116,30 @@ trait SigmaTestingData extends SigmaTestingCommons with ObjectGenerators {
     val BigInt10: BigInt = CBigInt(new BigInteger("a", 16))
     val BigInt11: BigInt = CBigInt(new BigInteger("b", 16))
 
+    def createBigIntMaxValue(): CBigInt = {
+      CBigInt(new BigInteger("7F" + "ff" * 31, 16))
+    }
+
     // TODO HF: this values have bitCount == 255 (see to256BitValueExact)
     val BigIntMinValue = CBigInt(new BigInteger("-7F" + "ff" * 31, 16))
-    val BigIntMaxValue = CBigInt(new BigInteger("7F" + "ff" * 31, 16))
+    val BigIntMaxValue = createBigIntMaxValue()
     val BigIntOverlimit = CBigInt(new BigInteger("7F" + "ff" * 33, 16))
 
     val ge1str = "03358d53f01276211f92d0aefbd278805121d4ff6eb534b777af1ee8abae5b2056"
     val ge2str = "02dba7b94b111f3894e2f9120b577da595ec7d58d488485adf73bf4e153af63575"
     val ge3str = "0290449814f5671172dd696a61b8aa49aaa4c87013f56165e27d49944e98bc414d"
 
-    def create_ge1: GroupElement = {
+    def create_ge1(): GroupElement = {
       Helpers.decodeGroupElement(ge1str)
     }
 
-    val ge1 = create_ge1
+    val ge1 = create_ge1()
     val ge2 = Helpers.decodeGroupElement(ge2str)
     val ge3 = Helpers.decodeGroupElement(ge3str)
 
-    val t1: AvlTree = create_t1
+    val t1: AvlTree = create_t1()
 
-    def create_t1 = {
+    def create_t1(): CAvlTree = {
       CAvlTree(
         AvlTreeData(
           ADDigest @@ ErgoAlgos.decodeUnsafe("000183807f66b301530120ff7fc6bd6601ff01ff7f7d2bedbbffff00187fe89094"),
@@ -163,7 +167,7 @@ trait SigmaTestingData extends SigmaTestingCommons with ObjectGenerators {
       )
     )
 
-    def create_b1 = {
+    def create_b1(): CostingBox = {
       CostingBox(
         false,
         new ErgoBox(
@@ -200,7 +204,7 @@ trait SigmaTestingData extends SigmaTestingCommons with ObjectGenerators {
       )
     }
 
-    val b1: Box = create_b1
+    val b1: Box = create_b1()
 
     val b2: Box = CostingBox(
       false,
@@ -242,19 +246,23 @@ trait SigmaTestingData extends SigmaTestingCommons with ObjectGenerators {
       )
     )
 
-    val preH1: PreHeader = CPreHeader(
-      0.toByte,
-      Helpers.decodeBytes("7fff7fdd6f62018bae0001006d9ca888ff7f56ff8006573700a167f17f2c9f40"),
-      6306290372572472443L,
-      -3683306095029417063L,
-      1,
-      Helpers.decodeGroupElement("026930cb9972e01534918a6f6d6b8e35bc398f57140d13eb3623ea31fbd069939b"),
-      Helpers.decodeBytes("ff8087")
-    )
+    def create_preH1(): CPreHeader = {
+      CPreHeader(
+        0.toByte,
+        Helpers.decodeBytes("7fff7fdd6f62018bae0001006d9ca888ff7f56ff8006573700a167f17f2c9f40"),
+        6306290372572472443L,
+        -3683306095029417063L,
+        1,
+        Helpers.decodeGroupElement("026930cb9972e01534918a6f6d6b8e35bc398f57140d13eb3623ea31fbd069939b"),
+        Helpers.decodeBytes("ff8087")
+      )
+    }
 
-    val preH2: PreHeader = preH1.asInstanceOf[CPreHeader].copy(height = 2)
+    val preH1: PreHeader = create_preH1()
 
-    val treeData = AvlTreeData(
+    val preH2: PreHeader = create_preH1().copy(height = 2)
+
+    def createAvlTreeData() = AvlTreeData(
       ADDigest @@ (
           ErgoAlgos.decodeUnsafe("010180017f7f7b7f720c00007f7f7f0f01e857a626f37f1483d06af8077a008080")
           ),
@@ -262,24 +270,29 @@ trait SigmaTestingData extends SigmaTestingCommons with ObjectGenerators {
       728138553,
       Some(2147483647)
     )
-    val h1: Header = CHeader(
-      Helpers.decodeBytes("957f008001808080ffe4ffffc8f3802401df40006aa05e017fa8d3f6004c804a"),
-      0.toByte,
-      Helpers.decodeBytes("0180dd805b0000ff5400b997fd7f0b9b00de00fb03c47e37806a8186b94f07ff"),
-      Helpers.decodeBytes("01f07f60d100ffb970c3007f60ff7f24d4070bb8fffa7fca7f34c10001ffe39d"),
-      CAvlTree(treeData),
-      Helpers.decodeBytes("804101ff01000080a3ffbd006ac080098df132a7017f00649311ec0e00000100"),
-      1L,
-      -1L,
-      1,
-      Helpers.decodeBytes("e57f80885601b8ff348e01808000bcfc767f2dd37f0d01015030ec018080bc62"),
-      Helpers.decodeGroupElement("039bdbfa0b49cc6bef58297a85feff45f7bbeb500a9d2283004c74fcedd4bd2904"),
-      Helpers.decodeGroupElement("0361299207fa392231e23666f6945ae3e867b978e021d8d702872bde454e9abe9c"),
-      Helpers.decodeBytes("7f4f09012a807f01"),
-      CBigInt(new BigInteger("-e24990c47e15ed4d0178c44f1790cc72155d516c43c3e8684e75db3800a288", 16)),
-      Helpers.decodeBytes("7f0180")
-    )
-    val h2: Header = h1.asInstanceOf[CHeader].copy(height = 2)
 
+    def create_h1() = {
+      CHeader(
+        Helpers.decodeBytes("957f008001808080ffe4ffffc8f3802401df40006aa05e017fa8d3f6004c804a"),
+        0.toByte,
+        Helpers.decodeBytes("0180dd805b0000ff5400b997fd7f0b9b00de00fb03c47e37806a8186b94f07ff"),
+        Helpers.decodeBytes("01f07f60d100ffb970c3007f60ff7f24d4070bb8fffa7fca7f34c10001ffe39d"),
+        CAvlTree(createAvlTreeData()),
+        Helpers.decodeBytes("804101ff01000080a3ffbd006ac080098df132a7017f00649311ec0e00000100"),
+        1L,
+        -1L,
+        1,
+        Helpers.decodeBytes("e57f80885601b8ff348e01808000bcfc767f2dd37f0d01015030ec018080bc62"),
+        Helpers.decodeGroupElement("039bdbfa0b49cc6bef58297a85feff45f7bbeb500a9d2283004c74fcedd4bd2904"),
+        Helpers.decodeGroupElement("0361299207fa392231e23666f6945ae3e867b978e021d8d702872bde454e9abe9c"),
+        Helpers.decodeBytes("7f4f09012a807f01"),
+        CBigInt(new BigInteger("-e24990c47e15ed4d0178c44f1790cc72155d516c43c3e8684e75db3800a288", 16)),
+        Helpers.decodeBytes("7f0180")
+      )
+    }
+
+    val h1: Header = create_h1()
+
+    val h2: Header = create_h1().copy(height = 2)
   }
 }

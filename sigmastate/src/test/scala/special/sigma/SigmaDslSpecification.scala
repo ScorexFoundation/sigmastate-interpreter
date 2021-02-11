@@ -3905,7 +3905,7 @@ class SigmaDslSpecification extends SigmaDslTesting
       existingPropTest("ADProofsRoot", { (x: Header) => x.ADProofsRoot}))
 
     verifyCases(
-      Seq((h1, Expected(Success(CAvlTree(treeData)), cost = 36092))),
+      Seq((h1, Expected(Success(CAvlTree(createAvlTreeData())), cost = 36092))),
       existingPropTest("stateRoot", { (x: Header) => x.stateRoot }))
 
     verifyCases(

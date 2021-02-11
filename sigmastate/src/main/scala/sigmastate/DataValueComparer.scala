@@ -38,7 +38,7 @@ object DataValueComparer {
   final val EQ_Coll = OperationCostInfo(CostKind_EQ_Coll, OpDesc_EQ_Coll)
 
   /** NOTE: In the formula `(2 + 1)` the 1 corresponds to the second type match. */
-  final val CostKind_EQ_Tuple = FixedCost((3 + 1) * CostOf_MatchType - 1)  // case 3
+  final val CostKind_EQ_Tuple = FixedCost(3)  // case 3
   final val OpDesc_EQ_Tuple = NamedDesc("EQ_Tuple")
   final val EQ_Tuple = OperationCostInfo(CostKind_EQ_Tuple, OpDesc_EQ_Tuple)
 
@@ -46,7 +46,7 @@ object DataValueComparer {
   final val OpDesc_EQ_GroupElement = NamedDesc("EQ_GroupElement")
   final val EQ_GroupElement = OperationCostInfo(CostKind_EQ_GroupElement, OpDesc_EQ_GroupElement)
 
-  final val CostKind_EQ_BigInt = FixedCost(5)       // case 5
+  final val CostKind_EQ_BigInt = FixedCost(4)       // case 5
   final val OpDesc_EQ_BigInt = NamedDesc("EQ_BigInt")
   final val EQ_BigInt = OperationCostInfo(CostKind_EQ_BigInt, OpDesc_EQ_BigInt)
 
@@ -54,7 +54,8 @@ object DataValueComparer {
   final val OpDesc_EQ_AvlTree = NamedDesc("EQ_AvlTree")
   final val EQ_AvlTree = OperationCostInfo(CostKind_EQ_AvlTree, OpDesc_EQ_AvlTree)
 
-  final val CostKind_EQ_Box = FixedCost(2 + 6 * CostOf_MatchType)          // case 7
+  // TODO JITC: update value after serialization is avoided
+  final val CostKind_EQ_Box = FixedCost(60)          // case 7
   final val OpDesc_EQ_Box = NamedDesc("EQ_Box")
   final val EQ_Box = OperationCostInfo(CostKind_EQ_Box, OpDesc_EQ_Box)
 
@@ -63,13 +64,13 @@ object DataValueComparer {
   final val OpDesc_EQ_Option = NamedDesc("EQ_Option")
   final val EQ_Option = OperationCostInfo(CostKind_EQ_Option, OpDesc_EQ_Option)
 
-  final val CostKind_EQ_Header = FixedCost(9) // case 9
-  final val OpDesc_EQ_Header = NamedDesc("EQ_Header")
-  final val EQ_Header = OperationCostInfo(CostKind_EQ_Header, OpDesc_EQ_Header)
-
-  final val CostKind_EQ_PreHeader = FixedCost(10) // case 10
+  final val CostKind_EQ_PreHeader = FixedCost(8) // case 9
   final val OpDesc_EQ_PreHeader = NamedDesc("EQ_PreHeader")
   final val EQ_PreHeader = OperationCostInfo(CostKind_EQ_PreHeader, OpDesc_EQ_PreHeader)
+
+  final val CostKind_EQ_Header = FixedCost(12) // case 10
+  final val OpDesc_EQ_Header = NamedDesc("EQ_Header")
+  final val EQ_Header = OperationCostInfo(CostKind_EQ_Header, OpDesc_EQ_Header)
 
   /** Equals two CollOverArray of primitive (unboxed) type. */
   final val CostKind_EQ_COA_Prim = PerItemCost(1, 1, 64)
@@ -251,13 +252,13 @@ object DataValueComparer {
               false // right is not an Option
           }
         }
-      case h: Header =>  /** default case (see [[EQ_Header]]) */
-        E.addFixedCost(EQ_Header) {
-          okEqual = h == r
-        }
-      case ph: PreHeader =>  /** default case (see [[EQ_PreHeader]]) */
+      case ph: PreHeader =>  /** case 9 (see [[EQ_PreHeader]]) */
         E.addFixedCost(EQ_PreHeader) {
           okEqual = ph == r
+        }
+      case h: Header =>  /** case 10 (see [[EQ_Header]]) */
+        E.addFixedCost(EQ_Header) {
+          okEqual = h == r
         }
       case _ =>
         ErgoTreeEvaluator.error(s"Cannot compare $l and $r: unknown type")
