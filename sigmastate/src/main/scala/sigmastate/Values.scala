@@ -209,13 +209,17 @@ object Values {
   /** Cost of operation over collection of the known length.
     * See for example [[Exists]], [[MapCollection]].
     * @param baseCost cost of operation factored out of the loop iterations
-    * @param perItemCost cost associated with each chunk of items
+    * @param perChunkCost cost associated with each chunk of items
     * @param chunkSize number of items in a chunk
     */
-  case class PerItemCost(baseCost: Int, perItemCost: Int, chunkSize: Int) extends CostKind {
+  case class PerItemCost(baseCost: Int, perChunkCost: Int, chunkSize: Int) extends CostKind {
+    /** Compute number of chunks necessary to cover the given number of items. */
+    def chunks(nItems: Int) = (nItems - 1) / chunkSize + 1
+
+    /** Computes the cost for the given number of items. */
     def cost (nItems: Int): Int = {
-      val nChunks = (nItems - 1) / chunkSize + 1
-      Math.addExact(baseCost, Math.multiplyExact(perItemCost, nChunks))
+      val nChunks = chunks(nItems)
+      Math.addExact(baseCost, Math.multiplyExact(perChunkCost, nChunks))
     }
   }
 

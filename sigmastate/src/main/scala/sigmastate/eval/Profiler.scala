@@ -230,12 +230,13 @@ class Profiler {
           val suggestedCost = suggestCost(time)
           val comment = s"count: $count, suggestedCost: $suggestedCost, actualCost: ${ci.cost}"
           (ci.opName, time, time, comment)
-        case SeqCostItem(_, perItemCost, nItems) =>
+        case ci @ SeqCostItem(_, costKind, nItems) =>
           val (time, count) = stat.mean
-          val timePerItem = if (nItems > 0) time / nItems else time
-          val name = s"${ci.opName}(nItems: $nItems)"
-          val comment = s"count: $count, perItemCost: $perItemCost"
-          (name, timePerItem, time, comment)
+          val nChunks = ci.chunks
+          val timePerChunk = if (nChunks > 0) time / nChunks else time
+          val name = s"${ci.opName}(nItems: $nItems, nChunks: $nChunks)"
+          val comment = s"count: $count, costKind: $costKind"
+          (name, timePerChunk, time, comment)
         case PerBlockCostItem(_, perBlockCost, nBlocks) =>
           val (time, count) = stat.mean
           val timePerBlock = if (nBlocks > 0) time / nBlocks else time
@@ -272,7 +273,7 @@ class Profiler {
 
     val ciRows = ciLines
         .map { case (opName, timePerItem, time, comment) =>
-          val key = s"$opName".padTo(30, ' ')
+          val key = s"$opName".padTo(40, ' ')
           val totalTime = if (time != timePerItem) s"($time)" else ""
           s"$key -> $timePerItem${totalTime} ns, $comment"
         }

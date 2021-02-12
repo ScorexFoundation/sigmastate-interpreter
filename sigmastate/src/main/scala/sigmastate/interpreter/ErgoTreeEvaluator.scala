@@ -552,6 +552,8 @@ case class SeqCostItem(opDesc: OperationDesc, costKind: PerItemCost, nItems: Int
     extends CostItem {
   override def opName: String = ErgoTreeEvaluator.operationName(opDesc)
   override def cost: Int = costKind.cost(nItems)
+  /** How many data chunks in this cost item. */
+  def chunks: Int = costKind.chunks(nItems)
 }
 object SeqCostItem {
   def apply(companion: PerItemCostValueCompanion, nItems: Int): SeqCostItem =
