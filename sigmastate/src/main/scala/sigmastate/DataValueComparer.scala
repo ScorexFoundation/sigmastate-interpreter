@@ -26,7 +26,7 @@ object DataValueComparer {
   final val OpDesc_MatchType = NamedDesc("MatchType")
   final val MatchType = OperationCostInfo(CostKind_MatchType, OpDesc_MatchType)
 
-  final val CostKind_EQ_Prim = FixedCost(3)         // default case
+  final val CostKind_EQ_Prim = FixedCost(3)         // case 1
   final val OpDesc_EQ_Prim = NamedDesc("EQ_Prim")
   final val EQ_Prim = OperationCostInfo(CostKind_EQ_Prim, OpDesc_EQ_Prim)
 
@@ -73,7 +73,17 @@ object DataValueComparer {
   final val EQ_Header = OperationCostInfo(CostKind_EQ_Header, OpDesc_EQ_Header)
 
   /** Equals two CollOverArray of primitive (unboxed) type. */
-  final val CostKind_EQ_COA_Prim = PerItemCost(1, 1, 64)
+  final val CostKind_EQ_COA_Byte = PerItemCost(1, 1, 64)
+  final val OpDesc_EQ_COA_Byte = NamedDesc("EQ_COA_Byte")
+  final val EQ_COA_Byte = OperationCostInfo(CostKind_EQ_COA_Byte, OpDesc_EQ_COA_Byte)
+  
+  /** Equals two CollOverArray of primitive (unboxed) type. */
+  final val CostKind_EQ_COA_Short = PerItemCost(2, 1, 64)
+  final val OpDesc_EQ_COA_Short = NamedDesc("EQ_COA_Short")
+  final val EQ_COA_Short = OperationCostInfo(CostKind_EQ_COA_Short, OpDesc_EQ_COA_Short)
+
+  /** Equals two CollOverArray of primitive (unboxed) type. */
+  final val CostKind_EQ_COA_Prim = PerItemCost(2, 1, 64)
   final val OpDesc_EQ_COA_Prim = NamedDesc("EQ_COA_Prim")
   final val EQ_COA_Prim = OperationCostInfo(CostKind_EQ_COA_Prim, OpDesc_EQ_COA_Prim)
 
@@ -113,10 +123,11 @@ object DataValueComparer {
     * in a most efficient way. This efficient implementation is reflected in the cost
     * parameters, which are part of the protocol. Thus any alternative protocol
     * implementation should implement comparison is the same way.
+    * @param itemSize size of each item in bytes
     */
   private def equalCOA_Prim[@sp(Byte, Short, Int, Long) A]
                    (c1: COA[A], c2: COA[A],
-                    costKind: PerItemCost, opDesc: OperationDesc, sizeFactor: Int)
+                    costKind: PerItemCost, opDesc: OperationDesc, itemSize: Int)
                    (implicit E: ErgoTreeEvaluator): Boolean = {
     var okEqual = true
     E.addSeqCost(costKind, opDesc) { () =>
@@ -126,7 +137,7 @@ object DataValueComparer {
         okEqual = c1(i) == c2(i)
         i += 1
       }
-      i * sizeFactor  // return the number of actually compared elements
+      i * itemSize  // return the number of actually compared bytes
     }
     okEqual
   }
@@ -151,25 +162,25 @@ object DataValueComparer {
         equalCOA_Prim(
           coll1.asInstanceOf[COA[Byte]],
           coll2.asInstanceOf[COA[Byte]],
-          CostKind_EQ_COA_Prim, OpDesc_EQ_COA_Prim, sizeFactor = 1)
+          CostKind_EQ_COA_Byte, OpDesc_EQ_COA_Byte, itemSize = 1)
 
       case ShortType =>
         equalCOA_Prim(
           coll1.asInstanceOf[COA[Short]],
           coll2.asInstanceOf[COA[Short]],
-          CostKind_EQ_COA_Prim, OpDesc_EQ_COA_Prim, sizeFactor = 2)
+          CostKind_EQ_COA_Short, OpDesc_EQ_COA_Short, itemSize = 2)
 
       case IntType =>
         equalCOA_Prim(
           coll1.asInstanceOf[COA[Int]],
           coll2.asInstanceOf[COA[Int]],
-          CostKind_EQ_COA_Prim, OpDesc_EQ_COA_Prim, sizeFactor = 4)
+          CostKind_EQ_COA_Prim, OpDesc_EQ_COA_Prim, itemSize = 4)
 
       case LongType =>
         equalCOA_Prim(
           coll1.asInstanceOf[COA[Long]],
           coll2.asInstanceOf[COA[Long]],
-          CostKind_EQ_COA_Prim, OpDesc_EQ_COA_Prim, sizeFactor = 8)
+          CostKind_EQ_COA_Prim, OpDesc_EQ_COA_Prim, itemSize = 8)
 
       case t =>
         descriptors.get(t) match {
@@ -177,7 +188,7 @@ object DataValueComparer {
             equalCOA_Prim(
               coll1.asInstanceOf[COA[A]],
               coll2.asInstanceOf[COA[A]],
-              info.costKind, info.opDesc, sizeFactor = 8)
+              info.costKind, info.opDesc, itemSize = 8)
           case _ =>
             equalColls(coll1, coll2)
         }

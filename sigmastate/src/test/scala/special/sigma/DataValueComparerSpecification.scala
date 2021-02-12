@@ -2,12 +2,14 @@ package special.sigma
 
 import org.ergoplatform.SigmaConstants.ScriptCostLimit
 import org.scalatest.BeforeAndAfterAll
+import scalan.RType
 import scalan.util.BenchmarkUtil
 import sigmastate.DataValueComparer
 import sigmastate.Values.ErgoTree
 import sigmastate.eval.Profiler
 import sigmastate.helpers.SigmaPPrint
-import sigmastate.interpreter.{TracedCost, ErgoTreeEvaluator, CostAccumulator, EvalSettings}
+import sigmastate.interpreter.{EvalSettings, TracedCost, CostAccumulator, ErgoTreeEvaluator}
+import special.collection.Coll
 
 import scala.util.{Success, Try}
 
@@ -40,17 +42,24 @@ class DataValueComparerSpecification extends SigmaDslTesting
 
   /** Checks (on positive cases) that EQ.equalDataValues used in v5.0 is equivalent to
     * `==` used in v4.0
+    * NOTE: the computations `x` and `y` are expected to be stable (i.e. always producing
+    * equal values)
     * @param x computation which produced first argument
     * @param y computation which produced second argument
     */
   def check(x: => Any, y: => Any, expected: Boolean)(implicit settings: EvalSettings, profiler: Profiler) = {
     val evaluator = createEvaluator(settings, profiler)
-    withClue(s"EQ.equalDataValues($x, $y)") {
+    val _x = x // force computation and obtain value
+    val _y = y
+    withClue(s"EQ.equalDataValues(${_x}, ${_y})") {
       val res = sameResultOrError(
         repeatAndReturnLast(nBenchmarkIters) {
-          DataValueComparer.equalDataValues(x, y)(evaluator)
+          // it's important to use fresh values to neutralize memory cache to some extent
+          val fresh_x = x
+          val fresh_y = y
+          DataValueComparer.equalDataValues(fresh_x, fresh_y)(evaluator)
         },
-        x == y)
+        _x == _y)
       res match {
         case Success(res) => res shouldBe expected
         case _ =>
@@ -58,15 +67,15 @@ class DataValueComparerSpecification extends SigmaDslTesting
     }
     if (evaluator.settings.isMeasureScriptTime) {
       val evaluator = createEvaluator(settings, profiler)
-      val _x = x
-      val _y = y
+      val fresh_x = x
+      val fresh_y = y
       val (res, actualTime) = BenchmarkUtil.measureTimeNano {
-        Try(DataValueComparer.equalDataValues(_x, _y)(evaluator))
+        Try(DataValueComparer.equalDataValues(fresh_x, fresh_y)(evaluator))
       }
       if (res.isSuccess) {
         val costDetails = TracedCost(evaluator.costTrace, Some(actualTime))
-        val xStr = SigmaPPrint(_x).plainText
-        val yStr = SigmaPPrint(_y).plainText
+        val xStr = SigmaPPrint(fresh_x).plainText
+        val yStr = SigmaPPrint(fresh_y).plainText
         val script = s"$xStr == $yStr"
         evaluator.profiler.addEstimation(script, costDetails.cost, actualTime)
       }
@@ -74,18 +83,34 @@ class DataValueComparerSpecification extends SigmaDslTesting
 
   }
 
-  /** It is important for profiling to return a new array on every method call. */
+  /** It is important for profiling to return a new array on every method call.
+    * This is to avoid reusing the same memory location during numerous iterations
+    * which doesn't reflect the real world scenario. Thus, creating a new array on every
+    * request neutralizes the effects of cache and makes profiling more accurate. */
   def zeros = Array[Any](0.toByte, 0.toShort, 0, 0.toLong)
   def ones = Array[Any](1.toByte, 1.toShort, 1, 1.toLong)
 
+  val nWarmUpIterations = 30000
+
   override protected def beforeAll(): Unit = {
-    // warm up DataValueComparer
+    // this method warms up the code in DataValueComparer
     val warmUpProfiler = new Profiler
-    repeatAndReturnLast(nIters = 50000 / nBenchmarkIters) {
+    // each test case is executed nBenchmarkIters times in `check` method
+    // so we account for that here
+    val nIters = nWarmUpIterations / nBenchmarkIters
+    repeatAndReturnLast(nIters) {
       runBaseCases(warmUpProfiler)(evalSettings = evalSettings.copy(isLogEnabled = false))
     }
     System.gc()
-    Thread.sleep(1000)
+    Thread.sleep(1000) // let GC to its job before running the tests
+  }
+
+  /** Runs a number of equality checks for a value produced by the given computation.
+    * @param x computation which produces value to be exercised. */
+  def checkIsEqual(x: => Any) = {
+    check(x, x, true)
+    check(Some(x), Some(x), true)
+    check((x, x), (x, x), true)
   }
 
   /** This is NOT comprehensive list of possible checks.
@@ -97,34 +122,46 @@ class DataValueComparerSpecification extends SigmaDslTesting
     ones.foreach { x =>
       ones.foreach { y =>
         check(x, y, true)  // numeric values are equal regardless of their type
-        check(Option(x), Option(y), true)  // numeric values in Option
-        check(Option(x), y, false)
-        check(Option(x), None, false)
-        check(None, Option(x), false)
+        check(Some(x), Some(y), true)  // numeric values in Option
+        check(Some(x), y, false)
+        check(x, Some(y), false)
+        check(Some(x), None, false)
+        check(None, Some(x), false)
         check((x, 1), (y, 1), true)        // and in Tuple
         check((1, x), (1, y), true)
         check((1, x), y, false)
+        check(x, (1, y), false)
       }
     }
-    check(createBigIntMaxValue(), createBigIntMaxValue(), true)
-    check(create_ge1(), create_ge1(), true)
-    check(create_t1, create_t1(), true)
-    check(create_b1(), create_b1(), true)
-    check(create_preH1(), create_preH1(), true)
-    check(create_h1(), create_h1(), true)
+    val sizes = Array(0, 1, 4, 8, 16, 32, 64, 128, 256, 512)
+    def coll[T: RType](s: Int, v: T): Coll[T] = {
+      val repl = builder.Colls.replicate(s, v)
+      val arr = repl.toArray
+      builder.Colls.fromArray(arr)
+    }
+
+    sizes.foreach { s =>
+//      checkIsEqual(coll(s, 1.toByte))
+//      checkIsEqual(coll(s, 1.toShort))
+      checkIsEqual(coll(s, 1))
+    }
+
+//    checkIsEqual(createBigIntMaxValue())
+//    checkIsEqual(create_ge1())
+//    checkIsEqual(create_t1)
+//    checkIsEqual(create_b1())
+//    checkIsEqual(create_preH1())
+//    checkIsEqual(create_h1())
   }
 
-  property("equalDataValues base cases") {
+  /** Run this property alone for profiling and see the report generated in afterAll. */
+  property("equalDataValues base cases (use for profiling)") {
     runBaseCases(suiteProfiler)(evalSettings)
   }
 
   property("equalDataValues positive cases (Coll)") {
-    val empty1 = Coll[Int]()
-    val empty2 = Coll[Int]()
-    check(empty1, empty2, true)
-    val single1 = Coll[Int](1)
-    val single2 = Coll[Int](1)
-    check(single1, single2, true)
+    checkIsEqual(Coll[Int]())
+    checkIsEqual(Coll[Int](1))
   }
 
   property("equalDataValues negative cases") {
