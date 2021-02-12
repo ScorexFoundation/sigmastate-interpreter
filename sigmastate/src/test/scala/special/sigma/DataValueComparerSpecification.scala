@@ -90,7 +90,7 @@ class DataValueComparerSpecification extends SigmaDslTesting
   def zeros = Array[Any](0.toByte, 0.toShort, 0, 0.toLong)
   def ones = Array[Any](1.toByte, 1.toShort, 1, 1.toLong)
 
-  val nWarmUpIterations = 30000
+  val nWarmUpIterations = 20000
 
   override protected def beforeAll(): Unit = {
     // this method warms up the code in DataValueComparer
@@ -135,23 +135,23 @@ class DataValueComparerSpecification extends SigmaDslTesting
     }
     val sizes = Array(0, 1, 4, 8, 16, 32, 64, 128, 256, 512)
     def coll[T: RType](s: Int, v: T): Coll[T] = {
-      val repl = builder.Colls.replicate(s, v)
-      val arr = repl.toArray
+      val arr = Array.fill(s)(v)(RType[T].classTag)
       builder.Colls.fromArray(arr)
     }
 
     sizes.foreach { s =>
-//      checkIsEqual(coll(s, 1.toByte))
-//      checkIsEqual(coll(s, 1.toShort))
+      checkIsEqual(coll(s, 1.toByte))
+      checkIsEqual(coll(s, 1.toShort))
       checkIsEqual(coll(s, 1))
+      checkIsEqual(coll(s, 1L))
     }
 
-//    checkIsEqual(createBigIntMaxValue())
-//    checkIsEqual(create_ge1())
-//    checkIsEqual(create_t1)
-//    checkIsEqual(create_b1())
-//    checkIsEqual(create_preH1())
-//    checkIsEqual(create_h1())
+    checkIsEqual(createBigIntMaxValue())
+    checkIsEqual(create_ge1())
+    checkIsEqual(create_t1)
+    checkIsEqual(create_b1())
+    checkIsEqual(create_preH1())
+    checkIsEqual(create_h1())
   }
 
   /** Run this property alone for profiling and see the report generated in afterAll. */
