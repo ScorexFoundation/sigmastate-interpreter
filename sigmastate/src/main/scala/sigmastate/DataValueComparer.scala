@@ -33,7 +33,7 @@ object DataValueComparer {
 
   /** Equals two Colls of non-primitive (boxed) types.
     */
-  final val CostKind_EQ_Coll = PerItemCost(1 * CostOf_MatchType, 1, 16)    // case 2
+  final val CostKind_EQ_Coll = PerItemCost(3, 0, 1)    // case 2
   final val OpDesc_EQ_Coll = NamedDesc("EQ_Coll")
   final val EQ_Coll = OperationCostInfo(CostKind_EQ_Coll, OpDesc_EQ_Coll)
 

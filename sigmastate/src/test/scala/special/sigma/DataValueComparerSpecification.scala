@@ -116,7 +116,9 @@ class DataValueComparerSpecification extends SigmaDslTesting
   /** This is NOT comprehensive list of possible checks.
     * See also DataSerializerSpecification.roundtrip where comprehensive
     * checking of positive cases is done.
-    * This method also used to warm up DataValueComparer in the beforeAll method. */
+    * This method is used:
+    * 1) to warm up DataValueComparer in the beforeAll method
+    * 2) to profile DataValueComparer operations */
   def runBaseCases(profiler: Profiler)(implicit evalSettings: EvalSettings) = {
     implicit val suiteProfiler = profiler  // hide suite's profiler and use explicitly passed
     ones.foreach { x =>
@@ -149,6 +151,11 @@ class DataValueComparerSpecification extends SigmaDslTesting
       checkIsEqual(coll(s, create_b1()))
       checkIsEqual(coll(s, create_preH1()))
       checkIsEqual(coll(s, create_h1()))
+      // collections of complex types
+      checkIsEqual(coll(s, (1.toByte, 1)))
+      checkIsEqual(coll(s, Option((1.toByte, 1))))
+      checkIsEqual(coll(s, (create_ge1(), Option((1.toByte, 1)))))
+      checkIsEqual(coll(s, (create_ge1(), (Option((1.toByte, 1)), coll(32, 7.toByte)))))
     }
 
     checkIsEqual(createBigIntMaxValue())
