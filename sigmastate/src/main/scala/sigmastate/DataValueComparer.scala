@@ -5,8 +5,8 @@ import scalan.RType._
 import sigmastate.Values.{PerItemCost, FixedCost}
 import spire.sp
 import sigmastate.interpreter.ErgoTreeEvaluator
-import sigmastate.interpreter.ErgoTreeEvaluator.{OperationCostInfo, OperationDesc, NamedDesc}
-import special.sigma.{Header, Box, GroupElementRType, GroupElement, AvlTreeRType, BigInt, BoxRType, AvlTree, BigIntRType, PreHeader}
+import sigmastate.interpreter.ErgoTreeEvaluator.{OperationCostInfo, NamedDesc}
+import special.sigma.{Header, HeaderRType, Box, GroupElementRType, GroupElement, AvlTreeRType, BigInt, BoxRType, AvlTree, BigIntRType, PreHeader, PreHeaderRType}
 import special.collection.{Coll, PairOfCols, CollOverArray}
 /** Implementation of data equality for two arbitrary ErgoTree data types.
   * @see [[DataValueComparer.equalDataValues]]
@@ -113,12 +113,24 @@ object DataValueComparer {
   final val OpDesc_EQ_COA_Box = NamedDesc("EQ_COA_Box")
   final val EQ_COA_Box = OperationCostInfo(CostKind_EQ_COA_Box, OpDesc_EQ_COA_Box)
 
+  /** Equals two CollOverArray of PreHeader type. */
+  final val CostKind_EQ_COA_PreHeader = PerItemCost(1, 2, 1)
+  final val OpDesc_EQ_COA_PreHeader = NamedDesc("EQ_COA_PreHeader")
+  final val EQ_COA_PreHeader = OperationCostInfo(CostKind_EQ_COA_PreHeader, OpDesc_EQ_COA_PreHeader)
+
+  /** Equals two CollOverArray of Header type. */
+  final val CostKind_EQ_COA_Header = PerItemCost(1, 5, 1)
+  final val OpDesc_EQ_COA_Header = NamedDesc("EQ_COA_Header")
+  final val EQ_COA_Header = OperationCostInfo(CostKind_EQ_COA_Header, OpDesc_EQ_COA_Header)
+
   val descriptors: AVHashMap[RType[_], (OperationCostInfo[FixedCost], OperationCostInfo[PerItemCost])] =
     AVHashMap.fromSeq(Array[(RType[_], (OperationCostInfo[FixedCost], OperationCostInfo[PerItemCost]))](
       (BigIntRType, (EQ_BigInt, EQ_COA_BigInt)),
       (GroupElementRType, (EQ_GroupElement, EQ_COA_GroupElement)),
       (AvlTreeRType, (EQ_AvlTree, EQ_COA_AvlTree)),
-      (BoxRType, (EQ_Box, EQ_COA_Box))
+      (BoxRType, (EQ_Box, EQ_COA_Box)),
+      (PreHeaderRType, (EQ_PreHeader, EQ_COA_PreHeader)),
+      (HeaderRType, (EQ_Header, EQ_COA_Header))
     ))
 
   type COA[A] = CollOverArray[A]

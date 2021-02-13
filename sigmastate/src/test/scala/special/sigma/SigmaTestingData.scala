@@ -264,21 +264,21 @@ trait SigmaTestingData extends SigmaTestingCommons with ObjectGenerators {
       )
     )
 
-    def create_preH1(): CPreHeader = {
-      CPreHeader(
-        0.toByte,
-        Helpers.decodeBytes("7fff7fdd6f62018bae0001006d9ca888ff7f56ff8006573700a167f17f2c9f40"),
-        6306290372572472443L,
-        -3683306095029417063L,
-        1,
-        Helpers.decodeGroupElement("026930cb9972e01534918a6f6d6b8e35bc398f57140d13eb3623ea31fbd069939b"),
-        Helpers.decodeBytes("ff8087")
-      )
-    }
+    val preH1_instances = new CloneSet(1000, CPreHeader(
+      0.toByte,
+      Helpers.decodeBytes("7fff7fdd6f62018bae0001006d9ca888ff7f56ff8006573700a167f17f2c9f40"),
+      6306290372572472443L,
+      -3683306095029417063L,
+      1,
+      Helpers.decodeGroupElement("026930cb9972e01534918a6f6d6b8e35bc398f57140d13eb3623ea31fbd069939b"),
+      Helpers.decodeBytes("ff8087")
+    ))
+    
+    def create_preH1(): PreHeader = preH1_instances.getNext
 
     val preH1: PreHeader = create_preH1()
 
-    val preH2: PreHeader = create_preH1().copy(height = 2)
+    val preH2: PreHeader = create_preH1().asInstanceOf[CPreHeader].copy(height = 2)
 
     def createAvlTreeData() = AvlTreeData(
       ADDigest @@ (
@@ -289,28 +289,28 @@ trait SigmaTestingData extends SigmaTestingCommons with ObjectGenerators {
       Some(2147483647)
     )
 
-    def create_h1() = {
-      CHeader(
-        Helpers.decodeBytes("957f008001808080ffe4ffffc8f3802401df40006aa05e017fa8d3f6004c804a"),
-        0.toByte,
-        Helpers.decodeBytes("0180dd805b0000ff5400b997fd7f0b9b00de00fb03c47e37806a8186b94f07ff"),
-        Helpers.decodeBytes("01f07f60d100ffb970c3007f60ff7f24d4070bb8fffa7fca7f34c10001ffe39d"),
-        CAvlTree(createAvlTreeData()),
-        Helpers.decodeBytes("804101ff01000080a3ffbd006ac080098df132a7017f00649311ec0e00000100"),
-        1L,
-        -1L,
-        1,
-        Helpers.decodeBytes("e57f80885601b8ff348e01808000bcfc767f2dd37f0d01015030ec018080bc62"),
-        Helpers.decodeGroupElement("039bdbfa0b49cc6bef58297a85feff45f7bbeb500a9d2283004c74fcedd4bd2904"),
-        Helpers.decodeGroupElement("0361299207fa392231e23666f6945ae3e867b978e021d8d702872bde454e9abe9c"),
-        Helpers.decodeBytes("7f4f09012a807f01"),
-        CBigInt(new BigInteger("-e24990c47e15ed4d0178c44f1790cc72155d516c43c3e8684e75db3800a288", 16)),
-        Helpers.decodeBytes("7f0180")
-      )
-    }
+    val h1_instances = new CloneSet(1000, CHeader(
+      Helpers.decodeBytes("957f008001808080ffe4ffffc8f3802401df40006aa05e017fa8d3f6004c804a"),
+      0.toByte,
+      Helpers.decodeBytes("0180dd805b0000ff5400b997fd7f0b9b00de00fb03c47e37806a8186b94f07ff"),
+      Helpers.decodeBytes("01f07f60d100ffb970c3007f60ff7f24d4070bb8fffa7fca7f34c10001ffe39d"),
+      CAvlTree(createAvlTreeData()),
+      Helpers.decodeBytes("804101ff01000080a3ffbd006ac080098df132a7017f00649311ec0e00000100"),
+      1L,
+      -1L,
+      1,
+      Helpers.decodeBytes("e57f80885601b8ff348e01808000bcfc767f2dd37f0d01015030ec018080bc62"),
+      Helpers.decodeGroupElement("039bdbfa0b49cc6bef58297a85feff45f7bbeb500a9d2283004c74fcedd4bd2904"),
+      Helpers.decodeGroupElement("0361299207fa392231e23666f6945ae3e867b978e021d8d702872bde454e9abe9c"),
+      Helpers.decodeBytes("7f4f09012a807f01"),
+      CBigInt(new BigInteger("-e24990c47e15ed4d0178c44f1790cc72155d516c43c3e8684e75db3800a288", 16)),
+      Helpers.decodeBytes("7f0180")
+    ))
+
+    def create_h1(): Header = h1_instances.getNext
 
     val h1: Header = create_h1()
 
-    val h2: Header = create_h1().copy(height = 2)
+    val h2: Header = create_h1().asInstanceOf[CHeader].copy(height = 2)
   }
 }
