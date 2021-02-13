@@ -143,6 +143,7 @@ class DataValueComparerSpecification extends SigmaDslTesting
       checkIsEqual(coll(s, 1.toShort))
       checkIsEqual(coll(s, 1))
       checkIsEqual(coll(s, 1L))
+      checkIsEqual(coll(s, createBigIntMaxValue()))
       checkIsEqual(coll(s, create_ge1()))
       checkIsEqual(coll(s, create_t1()))
     }

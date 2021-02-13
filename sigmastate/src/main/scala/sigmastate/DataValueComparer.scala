@@ -98,7 +98,7 @@ object DataValueComparer {
   final val EQ_COA_GroupElement = OperationCostInfo(CostKind_EQ_COA_GroupElement, OpDesc_EQ_COA_GroupElement)
 
   /** Equals two CollOverArray of BigInt type. */
-  final val CostKind_EQ_COA_BigInt = PerItemCost(1, 1, 8)
+  final val CostKind_EQ_COA_BigInt = PerItemCost(1, 1, 5)
   final val OpDesc_EQ_COA_BigInt = NamedDesc("EQ_COA_BigInt")
   final val EQ_COA_BigInt = OperationCostInfo(CostKind_EQ_COA_BigInt, OpDesc_EQ_COA_BigInt)
 

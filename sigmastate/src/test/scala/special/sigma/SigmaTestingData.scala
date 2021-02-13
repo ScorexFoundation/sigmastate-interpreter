@@ -118,9 +118,11 @@ trait SigmaTestingData extends SigmaTestingCommons with ObjectGenerators {
     val BigInt10: BigInt = CBigInt(new BigInteger("a", 16))
     val BigInt11: BigInt = CBigInt(new BigInteger("b", 16))
 
-    def createBigIntMaxValue(): CBigInt = {
-      CBigInt(new BigInteger("7F" + "ff" * 31, 16))
-    }
+    val BigIntMaxValueStr = "7F" + "ff" * 31
+    val BigIntMaxValue_instances = new CloneSet(1000,
+      CBigInt(new BigInteger(BigIntMaxValueStr, 16)))
+
+    def createBigIntMaxValue(): BigInt = BigIntMaxValue_instances.getNext
 
     // TODO HF: this values have bitCount == 255 (see to256BitValueExact)
     val BigIntMinValue = CBigInt(new BigInteger("-7F" + "ff" * 31, 16))
