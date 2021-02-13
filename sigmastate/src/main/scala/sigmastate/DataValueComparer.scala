@@ -93,7 +93,7 @@ object DataValueComparer {
   final val EQ_COA_Long = OperationCostInfo(CostKind_EQ_COA_Long, OpDesc_EQ_COA_Long)
 
   /** Equals two CollOverArray of GroupElement type. */
-  final val CostKind_EQ_COA_GroupElement = PerItemCost(1, 1, 8)
+  final val CostKind_EQ_COA_GroupElement = PerItemCost(1, 1, 1)
   final val OpDesc_EQ_COA_GroupElement = NamedDesc("EQ_COA_GroupElement")
   final val EQ_COA_GroupElement = OperationCostInfo(CostKind_EQ_COA_GroupElement, OpDesc_EQ_COA_GroupElement)
 

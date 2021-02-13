@@ -90,7 +90,7 @@ class DataValueComparerSpecification extends SigmaDslTesting
   def zeros = Array[Any](0.toByte, 0.toShort, 0, 0.toLong)
   def ones = Array[Any](1.toByte, 1.toShort, 1, 1.toLong)
 
-  val nWarmUpIterations = 20000
+  val nWarmUpIterations = 10000
 
   override protected def beforeAll(): Unit = {
     // this method warms up the code in DataValueComparer
@@ -134,16 +134,16 @@ class DataValueComparerSpecification extends SigmaDslTesting
       }
     }
     val sizes = Array(0, 1, 4, 8, 16, 32, 64, 128, 256, 512)
-    def coll[T: RType](s: Int, v: T): Coll[T] = {
+    def coll[T: RType](s: Int, v: => T): Coll[T] = {
       val arr = Array.fill(s)(v)(RType[T].classTag)
       builder.Colls.fromArray(arr)
     }
-
     sizes.foreach { s =>
       checkIsEqual(coll(s, 1.toByte))
       checkIsEqual(coll(s, 1.toShort))
       checkIsEqual(coll(s, 1))
       checkIsEqual(coll(s, 1L))
+      checkIsEqual(coll(s, create_ge1()))
     }
 
     checkIsEqual(createBigIntMaxValue())

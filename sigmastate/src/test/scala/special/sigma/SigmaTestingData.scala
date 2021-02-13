@@ -8,12 +8,12 @@ import org.scalacheck.Gen.containerOfN
 import sigmastate._
 import org.scalacheck.{Arbitrary, Gen}
 import sigmastate.helpers.SigmaTestingCommons
-import sigmastate.eval._
+import sigmastate.eval.{Colls, _}
 import sigmastate.eval.Extensions._
 import org.scalacheck.util.Buildable
 import scalan.RType
 import scorex.crypto.hash.{Digest32, Blake2b256}
-import scorex.crypto.authds.{ADKey, ADValue, ADDigest}
+import scorex.crypto.authds.{ADDigest, ADKey, ADValue}
 import scorex.util.ModifierId
 import sigmastate.Values._
 import sigmastate.basics.DLogProtocol.ProveDlog
@@ -129,8 +129,16 @@ trait SigmaTestingData extends SigmaTestingCommons with ObjectGenerators {
     val ge2str = "02dba7b94b111f3894e2f9120b577da595ec7d58d488485adf73bf4e153af63575"
     val ge3str = "0290449814f5671172dd696a61b8aa49aaa4c87013f56165e27d49944e98bc414d"
 
+    val ge1_bytes = ErgoAlgos.decodeUnsafe(ge1str)
+    private val num_ge1 = 1000
+    val ge1_instances = Array.fill(num_ge1)(SigmaDsl.decodePoint(Colls.fromArray(ge1_bytes)))
+
+    /** Selects next ge1 instance (round-robin). */
+    var current_ge1: Int = 0
     def create_ge1(): GroupElement = {
-      Helpers.decodeGroupElement(ge1str)
+      val res = ge1_instances(current_ge1)
+      current_ge1 = (current_ge1 + 1) % num_ge1
+      res
     }
 
     val ge1 = create_ge1()
