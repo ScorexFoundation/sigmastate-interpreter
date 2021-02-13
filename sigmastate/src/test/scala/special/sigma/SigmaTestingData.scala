@@ -21,6 +21,8 @@ import sigmastate.serialization.generators.ObjectGenerators
 import sigmastate.utils.Helpers
 import special.collection.Coll
 
+import scala.reflect.ClassTag
+
 trait SigmaTestingData extends SigmaTestingCommons with ObjectGenerators {
   def Coll[T](items: T*)(implicit cT: RType[T]) = CostingSigmaDslBuilder.Colls.fromItems(items:_*)
 
@@ -130,34 +132,40 @@ trait SigmaTestingData extends SigmaTestingCommons with ObjectGenerators {
     val ge3str = "0290449814f5671172dd696a61b8aa49aaa4c87013f56165e27d49944e98bc414d"
 
     val ge1_bytes = ErgoAlgos.decodeUnsafe(ge1str)
-    private val num_ge1 = 1000
-    val ge1_instances = Array.fill(num_ge1)(SigmaDsl.decodePoint(Colls.fromArray(ge1_bytes)))
+
+    class CloneSet[T: ClassTag](val size: Int, generator: => T) {
+      val instances = Array.fill(size)(generator)
+      var currentInst: Int = 0
+
+      /** Selects next instance (round-robin). */
+      def getNext: T = {
+        val res = instances(currentInst)
+        currentInst = (currentInst + 1) % size
+        res
+      }
+    }
+
+    val ge1_instances = new CloneSet(1000, SigmaDsl.decodePoint(Colls.fromArray(ge1_bytes)))
 
     /** Selects next ge1 instance (round-robin). */
-    var current_ge1: Int = 0
-    def create_ge1(): GroupElement = {
-      val res = ge1_instances(current_ge1)
-      current_ge1 = (current_ge1 + 1) % num_ge1
-      res
-    }
+    def create_ge1(): GroupElement = ge1_instances.getNext
 
     val ge1 = create_ge1()
     val ge2 = Helpers.decodeGroupElement(ge2str)
     val ge3 = Helpers.decodeGroupElement(ge3str)
 
-    val t1: AvlTree = create_t1()
-
-    def create_t1(): CAvlTree = {
-      CAvlTree(
-        AvlTreeData(
-          ADDigest @@ ErgoAlgos.decodeUnsafe("000183807f66b301530120ff7fc6bd6601ff01ff7f7d2bedbbffff00187fe89094"),
-          AvlTreeFlags(false, true, true),
-          1,
-          Some(1)
-        )
+    val t1_instances = new CloneSet(1000, CAvlTree(
+      AvlTreeData(
+        ADDigest @@ ErgoAlgos.decodeUnsafe("000183807f66b301530120ff7fc6bd6601ff01ff7f7d2bedbbffff00187fe89094"),
+        AvlTreeFlags(false, true, true),
+        1,
+        Some(1)
       )
-    }
+    ))
 
+    def create_t1(): AvlTree = t1_instances.getNext
+
+    val t1: AvlTree = create_t1()
     val t2: AvlTree = CAvlTree(
       AvlTreeData(
         ADDigest @@ ErgoAlgos.decodeUnsafe("ff000d937f80ffd731ed802d24358001ff8080ff71007f00ad37e0a7ae43fff95b"),

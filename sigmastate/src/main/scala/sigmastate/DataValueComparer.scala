@@ -103,7 +103,7 @@ object DataValueComparer {
   final val EQ_COA_BigInt = OperationCostInfo(CostKind_EQ_COA_BigInt, OpDesc_EQ_COA_BigInt)
 
   /** Equals two CollOverArray of AvlTree type. */
-  final val CostKind_EQ_COA_AvlTree = PerItemCost(1, 1, 8)
+  final val CostKind_EQ_COA_AvlTree = PerItemCost(1, 1, 2)
   final val OpDesc_EQ_COA_AvlTree = NamedDesc("EQ_COA_AvlTree")
   final val EQ_COA_AvlTree = OperationCostInfo(CostKind_EQ_COA_AvlTree, OpDesc_EQ_COA_AvlTree)
 
