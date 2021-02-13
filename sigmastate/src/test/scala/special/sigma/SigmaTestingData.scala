@@ -185,42 +185,42 @@ trait SigmaTestingData extends SigmaTestingCommons with ObjectGenerators {
       )
     )
 
-    def create_b1(): CostingBox = {
-      CostingBox(
-        false,
-        new ErgoBox(
-          9223372036854775807L,
-          new ErgoTree(
-            16.toByte,
-            Array(
-              SigmaPropConstant(
-                CSigmaProp(
-                  ProveDlog(
-                    Helpers.decodeECPoint(
-                      "0297c44a12f4eb99a85d298fa3ba829b5b42b9f63798c980ece801cc663cc5fc9e"
-                    )
+    val b1_instances = new CloneSet(1000, CostingBox(
+      false,
+      new ErgoBox(
+        9223372036854775807L,
+        new ErgoTree(
+          16.toByte,
+          Array(
+            SigmaPropConstant(
+              CSigmaProp(
+                ProveDlog(
+                  Helpers.decodeECPoint(
+                    "0297c44a12f4eb99a85d298fa3ba829b5b42b9f63798c980ece801cc663cc5fc9e"
                   )
                 )
               )
-            ),
-            Right(ConstantPlaceholder(0, SSigmaProp))
+            )
           ),
-          Coll(
-            (Digest32 @@ (ErgoAlgos.decodeUnsafe("6e789ab7b2fffff12280a6cd01557f6fb22b7f80ff7aff8e1f7f15973d7f0001")),
-                10000000L),
-            (Digest32 @@ (ErgoAlgos.decodeUnsafe("a3ff007f00057600808001ff8f8000019000ffdb806fff7cc0b6015eb37fa600")),
-                500L)
-          ),
-          Map(
-            ErgoBox.R5 -> ByteArrayConstant(Helpers.decodeBytes("7fc87f7f01ff")),
-            ErgoBox.R4 -> FalseLeaf
-          ),
-          ModifierId @@ ("218301ae8000018008637f0021fb9e00018055486f0b514121016a00ff718080"),
-          22588.toShort,
-          677407
-        )
+          Right(ConstantPlaceholder(0, SSigmaProp))
+        ),
+        Coll(
+          (Digest32 @@ (ErgoAlgos.decodeUnsafe("6e789ab7b2fffff12280a6cd01557f6fb22b7f80ff7aff8e1f7f15973d7f0001")),
+              10000000L),
+          (Digest32 @@ (ErgoAlgos.decodeUnsafe("a3ff007f00057600808001ff8f8000019000ffdb806fff7cc0b6015eb37fa600")),
+              500L)
+        ),
+        Map(
+          ErgoBox.R5 -> ByteArrayConstant(Helpers.decodeBytes("7fc87f7f01ff")),
+          ErgoBox.R4 -> FalseLeaf
+        ),
+        ModifierId @@ ("218301ae8000018008637f0021fb9e00018055486f0b514121016a00ff718080"),
+        22588.toShort,
+        677407
       )
-    }
+    ))
+
+    def create_b1(): Box = b1_instances.getNext
 
     val b1: Box = create_b1()
 

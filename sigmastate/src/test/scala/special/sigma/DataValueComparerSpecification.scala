@@ -32,7 +32,7 @@ class DataValueComparerSpecification extends SigmaDslTesting
   import TestData._
 
   def createEvaluator(settings: EvalSettings, profiler: Profiler): ErgoTreeEvaluator = {
-    val accumulator = new CostAccumulator(initialCost = 0, Some(ScriptCostLimit.value))
+    val accumulator = new CostAccumulator(initialCost = 0, Some(ScriptCostLimit.value * 10))
     val evaluator = new ErgoTreeEvaluator(
       context = null,
       constants = ErgoTree.EmptyConstants,
@@ -146,6 +146,7 @@ class DataValueComparerSpecification extends SigmaDslTesting
       checkIsEqual(coll(s, createBigIntMaxValue()))
       checkIsEqual(coll(s, create_ge1()))
       checkIsEqual(coll(s, create_t1()))
+      checkIsEqual(coll(s, create_b1()))
     }
 
     checkIsEqual(createBigIntMaxValue())

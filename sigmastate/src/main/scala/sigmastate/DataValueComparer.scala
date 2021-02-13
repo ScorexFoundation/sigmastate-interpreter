@@ -54,8 +54,8 @@ object DataValueComparer {
   final val OpDesc_EQ_AvlTree = NamedDesc("EQ_AvlTree")
   final val EQ_AvlTree = OperationCostInfo(CostKind_EQ_AvlTree, OpDesc_EQ_AvlTree)
 
-  // TODO JITC: update value after serialization is avoided
-  final val CostKind_EQ_Box = FixedCost(60)          // case 7
+  // TODO JITC: update value after serialization is avoided to compute ErgoBox.id
+  final val CostKind_EQ_Box = FixedCost(6)          // case 7
   final val OpDesc_EQ_Box = NamedDesc("EQ_Box")
   final val EQ_Box = OperationCostInfo(CostKind_EQ_Box, OpDesc_EQ_Box)
 
@@ -107,8 +107,9 @@ object DataValueComparer {
   final val OpDesc_EQ_COA_AvlTree = NamedDesc("EQ_COA_AvlTree")
   final val EQ_COA_AvlTree = OperationCostInfo(CostKind_EQ_COA_AvlTree, OpDesc_EQ_COA_AvlTree)
 
+  // TODO JITC: update value after serialization is avoided to compute ErgoBox.id
   /** Equals two CollOverArray of Box type. */
-  final val CostKind_EQ_COA_Box = PerItemCost(1, 1, 8)
+  final val CostKind_EQ_COA_Box = PerItemCost(1, 1, 1)
   final val OpDesc_EQ_COA_Box = NamedDesc("EQ_COA_Box")
   final val EQ_COA_Box = OperationCostInfo(CostKind_EQ_COA_Box, OpDesc_EQ_COA_Box)
 
