@@ -42,7 +42,8 @@ object DataValueComparer {
   final val OpDesc_EQ_Tuple = NamedDesc("EQ_Tuple")
   final val EQ_Tuple = OperationCostInfo(CostKind_EQ_Tuple, OpDesc_EQ_Tuple)
 
-  final val CostKind_EQ_GroupElement = FixedCost(3 + 3 * CostOf_MatchType) // case 4
+  /** NOTE: the value is set based on benchmarking of SigmaDslSpecification. */
+  final val CostKind_EQ_GroupElement = FixedCost(188) // case 4
   final val OpDesc_EQ_GroupElement = NamedDesc("EQ_GroupElement")
   final val EQ_GroupElement = OperationCostInfo(CostKind_EQ_GroupElement, OpDesc_EQ_GroupElement)
 
