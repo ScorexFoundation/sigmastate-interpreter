@@ -76,6 +76,16 @@ class SigmaDslSpecification extends SigmaDslTesting
   prepareSamples[(PreHeader, PreHeader)]
   prepareSamples[(Header, Header)]
 
+  override protected def beforeAll(): Unit = {
+    val warmUpProfiler = new Profiler
+    warmUpBeforeAllTest(nTotalIters = 1000) {
+      val settings = evalSettings.copy(
+        isLogEnabled = false,
+        profilerOpt = Some(warmUpProfiler))
+      runLazy_And_Or_BooleanEquivalence(settings)
+    }
+  }
+
   ///=====================================================
   ///              Boolean type operations
   ///-----------------------------------------------------
@@ -253,7 +263,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     verifyCases(cases, eq)
   }
 
-  property("lazy || and && boolean equivalence") {
+  def runLazy_And_Or_BooleanEquivalence(implicit evalSettings: EvalSettings) = {
     val cost1 = CostDetails(
       Array(
         FixedCostItem(Apply),
@@ -611,6 +621,10 @@ class SigmaDslSpecification extends SigmaDslTesting
             )
           )
         )))
+  }
+
+  property("lazy || and && boolean equivalence") {
+    runLazy_And_Or_BooleanEquivalence(evalSettings)
   }
 
   val costIdentity = CostDetails(

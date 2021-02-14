@@ -95,14 +95,9 @@ class DataValueComparerSpecification extends SigmaDslTesting
   override protected def beforeAll(): Unit = {
     // this method warms up the code in DataValueComparer
     val warmUpProfiler = new Profiler
-    // each test case is executed nBenchmarkIters times in `check` method
-    // so we account for that here
-    val nIters = nWarmUpIterations / nBenchmarkIters
-    repeatAndReturnLast(nIters) {
+    warmUpBeforeAllTest(nTotalIters = nWarmUpIterations) {
       runBaseCases(warmUpProfiler)(evalSettings = evalSettings.copy(isLogEnabled = false))
     }
-    System.gc()
-    Thread.sleep(1000) // let GC to its job before running the tests
   }
 
   /** Runs a number of equality checks for a value produced by the given computation.

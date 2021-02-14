@@ -256,7 +256,7 @@ trait SigmaTestingCommons extends PropSpec
       val evaluator = new ErgoTreeEvaluator(
         context = sigmaCtx,
         constants = ErgoTree.EmptyConstants,
-        coster = accumulator, DefaultProfiler, evalSettings)
+        coster = accumulator, evalSettings.profilerOpt.getOrElse(DefaultProfiler), evalSettings)
 
       val ((res, cost), actualTime) = BenchmarkUtil.measureTimeNano(
         evaluator.evalWithCost(ErgoTreeEvaluator.EmptyDataEnv, compiledTree))

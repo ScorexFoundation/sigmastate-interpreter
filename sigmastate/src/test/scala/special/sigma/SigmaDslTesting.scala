@@ -385,6 +385,15 @@ class SigmaDslTesting extends PropSpec
 
   val nBenchmarkIters: Int = 1
 
+  def warmUpBeforeAllTest(nTotalIters: Int)(block: => Unit) = {
+    // each test case is executed nBenchmarkIters times in `check` method
+    // so we account for that here
+    val nIters = nTotalIters / nBenchmarkIters
+    repeatAndReturnLast(nIters)(block)
+    System.gc()
+    Thread.sleep(1000) // let GC to its job before running the tests
+  }
+
   case class ExistingFeature[A: RType, B: RType](
     script: String,
     scalaFunc: A => B,
