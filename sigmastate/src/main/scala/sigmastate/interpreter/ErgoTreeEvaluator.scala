@@ -29,7 +29,9 @@ case class EvalSettings(
   /** Used by [[ErgoTreeEvaluator]] to conditionally build a trace of added costs.
     * @see Value.addCost
     */
-  costTracingEnabled: Boolean = false)
+  costTracingEnabled: Boolean = false,
+  /** Profiler which, when defined, should be used in [[ErgoTreeEvaluator]] constructor. */
+  profilerOpt: Option[Profiler] = None)
 
 /** Implements a simple and fast direct-style interpreter of ErgoTrees.
   *
