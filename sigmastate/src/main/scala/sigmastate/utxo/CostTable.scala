@@ -365,7 +365,7 @@ object CostTable {
 
     /** Cost of: allocating new collection
       * @see ConcreteCollection_PerItem */
-    def ConcreteCollection = 1 // cf. collToColl
+    def ConcreteCollection = 6 // cf. collToColl
 
     def GroupGenerator = 3
 
@@ -404,7 +404,7 @@ object CostTable {
 
     def ExtractRegisterAs = 1
 
-    def ExtractCreationInfo = 1
+    def ExtractCreationInfo = 7
 //    ("SBox$.tokens", "(Box) => Coll[(Coll[Byte],Long)]", extractCost),
 //
 
@@ -426,7 +426,7 @@ object CostTable {
     /** Cost of: 1) calling EcPoint.add 2) wrapping in GroupElement */
     def MultiplyGroup = 23 // cf. expCost
 
-    def ByteArrayToBigInt = 1
+    def ByteArrayToBigInt = 6
 
 //    ("new_BigInteger_per_item", "(Coll[Byte]) => BigInt", newBigIntPerItem),
 //    ("SGroupElement$.negate", "(GroupElement) => GroupElement", negateGroup),
@@ -440,7 +440,7 @@ object CostTable {
       * Old cost: ("SizeOf", "(Coll[IV]) => Int", collLength) */
     def SizeOf = 3  // cf. collLength
 
-    def ByIndex = 1
+    def ByIndex = 7
 
     /** Cost of: 1) obtain result RType 2) invoke map method 3) allocation of resulting
      * collection */
@@ -491,7 +491,7 @@ object CostTable {
     def BoolToSigmaProp = 1
 
     def CreateProveDlog = 1
-    def CreateProveDHTuple = 1
+    def CreateProveDHTuple = 9
 
     /** Cost of: serializing one node of SigmaBoolean proposition */
     def SigmaPropBytes = 1

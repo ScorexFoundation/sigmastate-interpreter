@@ -1809,9 +1809,9 @@ case object SAvlTree extends SProduct with SPredefType with SMonoType {
   lazy val keyLengthMethod         = SMethod(this, "keyLength", SFunc(this, SInt),               3)
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(PropertyCall,
-    """
-     |
-        """.stripMargin)
+        """
+         |
+            """.stripMargin)
   lazy val valueLengthOptMethod    = SMethod(this, "valueLengthOpt", SFunc(this, SIntOption),    4)
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(PropertyCall,
