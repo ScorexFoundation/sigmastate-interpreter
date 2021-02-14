@@ -134,8 +134,8 @@ object Values {
       * node.
       */
     @inline
-    final def addCost(costKind: TypeBasedCost, tpe: SType)(implicit E: ErgoTreeEvaluator): Unit = {
-      E.addTypeBasedCost(costKind, tpe, this.companion.opDesc)
+    final def addCost[R](costKind: TypeBasedCost, tpe: SType)(block: () => R)(implicit E: ErgoTreeEvaluator): R = {
+      E.addTypeBasedCost(costKind, tpe, this.companion.opDesc)(block)
     }
 
     /** Add the cost of a repeated operation to the accumulator and associate it with this

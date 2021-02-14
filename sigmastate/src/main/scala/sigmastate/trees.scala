@@ -768,8 +768,9 @@ abstract class ArithOpCompanion(val opCode: OpCode, val name: String, _argInfos:
   override def costKind: TypeBasedCost
   @inline final def eval(node: SValue, typeCode: SType.TypeCode, x: Any, y: Any)(implicit E: ErgoTreeEvaluator): Any = {
     val impl = ArithOp.numerics(typeCode)
-    node.addCost(costKind, impl.argTpe)
-    eval(impl, x, y)
+    node.addCost(costKind, impl.argTpe) { () =>
+      eval(impl, x, y)
+    }
   }
   def eval(impl: OperationImpl, x: Any, y: Any): Any
 }
@@ -1050,8 +1051,9 @@ case class LT[T <: SType](override val left: Value[T], override val right: Value
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val lV = left.evalTo[Any](env)
     val rV = right.evalTo[Any](env)
-    addCost(LT.costKind, left.tpe)  // TODO JITC: measure
-    opImpl.o.lt(lV, rV)
+    addCost(LT.costKind, left.tpe) { () =>
+      opImpl.o.lt(lV, rV)
+    }
   }
 }
 object LT extends RelationCompanion {
@@ -1069,8 +1071,9 @@ case class LE[T <: SType](override val left: Value[T], override val right: Value
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val lV = left.evalTo[Any](env)
     val rV = right.evalTo[Any](env)
-    addCost(LE.costKind, left.tpe)
-    opImpl.o.lteq(lV, rV)
+    addCost(LE.costKind, left.tpe) { () =>
+      opImpl.o.lteq(lV, rV)
+    }
   }
 }
 object LE extends RelationCompanion {
@@ -1088,8 +1091,9 @@ case class GT[T <: SType](override val left: Value[T], override val right: Value
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val lV = left.evalTo[Any](env)
     val rV = right.evalTo[Any](env)
-    addCost(GT.costKind, left.tpe)
-    opImpl.o.gt(lV, rV)
+    addCost(GT.costKind, left.tpe) { () =>
+      opImpl.o.gt(lV, rV)
+    }
   }
 }
 object GT extends RelationCompanion {
@@ -1107,8 +1111,9 @@ case class GE[T <: SType](override val left: Value[T], override val right: Value
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val lV = left.evalTo[Any](env)
     val rV = right.evalTo[Any](env)
-    addCost(GE.costKind, left.tpe)
-    opImpl.o.gteq(lV, rV)
+    addCost(GE.costKind, left.tpe) { () =>
+      opImpl.o.gteq(lV, rV)
+    }
   }
 }
 object GE extends RelationCompanion {

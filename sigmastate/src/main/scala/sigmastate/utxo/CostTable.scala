@@ -657,7 +657,7 @@ object CostTable {
       * 2) calling method of Numeric
       */
     def Plus(argTpe: SType) = argTpe match {
-      case SBigInt => 10 // cf. plusMinusBigInt
+      case SBigInt => 6 // cf. plusMinusBigInt
       case _ => 5 // cf. plusMinus
     }
 
@@ -666,7 +666,7 @@ object CostTable {
       * 2) calling method of Numeric
       */
     def Minus(argTpe: SType) = argTpe match {
-      case SBigInt => 10 // cf. plusMinusBigInt
+      case SBigInt => 6 // cf. plusMinusBigInt
       case _ => 5 // cf. plusMinus
     }
 
@@ -675,7 +675,7 @@ object CostTable {
       * 2) calling method of Numeric
       */
     def Multiply(argTpe: SType) = argTpe match {
-      case SBigInt => 50 // cf. multiplyBigInt
+      case SBigInt => 10 // cf. multiplyBigInt
       case _ => 5 // cf. multiply
     }
 
@@ -684,7 +684,7 @@ object CostTable {
       * 2) calling method of Integral
       */
     def Division(argTpe: SType) = argTpe match {
-      case SBigInt => 50 // cf. multiplyBigInt
+      case SBigInt => 10 // cf. multiplyBigInt
       case _ => 5 // cf. multiply
     }
 
@@ -693,7 +693,7 @@ object CostTable {
       * 2) calling method of Integral
       */
     def Modulo(argTpe: SType) = argTpe match {
-      case SBigInt => 50 // cf. multiplyBigInt
+      case SBigInt => 10 // cf. multiplyBigInt
       case _ => 5 // cf. multiply
     }
 

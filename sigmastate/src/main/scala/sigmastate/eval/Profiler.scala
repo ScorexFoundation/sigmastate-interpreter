@@ -8,10 +8,11 @@ import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.ValueSerializer.getSerializer
 import scalan.util.Extensions.ByteOps
 import debox.{Buffer => DBuffer, Map => DMap}
-import sigmastate.interpreter.{CostItem, PerBlockCostItem, SeqCostItem, FixedCostItem}
-import sigmastate.lang.Terms.{MethodCall, PropertyCall}
+import sigmastate.interpreter.{PerBlockCostItem, SeqCostItem, CostItem, TypeBasedCostItem, FixedCostItem}
+import sigmastate.lang.Terms.{PropertyCall, MethodCall}
 import spire.{math, sp}
 import scalan.util.PrintExtensions._
+
 import scala.reflect.ClassTag
 
 abstract class StatItem[@sp (Long, Double) V] {
@@ -224,25 +225,29 @@ class Profiler {
     }.sortBy(r => (r._2,r._3))(Ordering[(Byte,Byte)].reverse)
 
     val ciLines = costItemsStat.mapToArray { case (ci, stat) =>
-      val (name, timePerItem, time, comment) = ci match {
-        case ci: FixedCostItem =>
-          val (time, count) = stat.mean
-          val suggestedCost = suggestCost(time)
-          val comment = s"count: $count, suggestedCost: $suggestedCost, actualCost: ${ci.cost}"
-          (ci.opName, time, time, comment)
-        case ci @ SeqCostItem(_, costKind, nItems) =>
-          val (time, count) = stat.mean
-          val nChunks = ci.chunks
-          val timePerChunk = if (nChunks > 0) time / nChunks else time
-          val name = s"${ci.opName}(nItems: $nItems, nChunks: $nChunks)"
-          val comment = s"count: $count, costKind: $costKind"
-          (name, timePerChunk, time, comment)
-        case PerBlockCostItem(_, perBlockCost, nBlocks) =>
-          val (time, count) = stat.mean
-          val timePerBlock = if (nBlocks > 0) time / nBlocks else time
-          val name = s"${ci.opName}(nBlocks: $nBlocks)"
-          val comment = s"count: $count, perBlockCost: $perBlockCost"
-          (name, timePerBlock, time, comment)
+      val (name, timePerItem, time, comment) = {
+        val (time, count) = stat.mean
+        ci match {
+          case ci: FixedCostItem =>
+            val suggestedCost = suggestCost(time)
+            val comment = s"count: $count, suggestedCost: $suggestedCost, actualCost: ${ci.cost}"
+            (ci.opName, time, time, comment)
+          case ci: TypeBasedCostItem =>
+            val suggestedCost = suggestCost(time)
+            val comment = s"count: $count, suggestedCost: $suggestedCost, actualCost: ${ci.cost}"
+            (ci.opName, time, time, comment)
+          case ci @ SeqCostItem(_, costKind, nItems) =>
+            val nChunks = ci.chunks
+            val timePerChunk = if (nChunks > 0) time / nChunks else time
+            val name = s"${ci.opName}(nItems: $nItems, nChunks: $nChunks)"
+            val comment = s"count: $count, costKind: $costKind"
+            (name, timePerChunk, time, comment)
+          case PerBlockCostItem(_, perBlockCost, nBlocks) =>
+            val timePerBlock = if (nBlocks > 0) time / nBlocks else time
+            val name = s"${ci.opName}(nBlocks: $nBlocks)"
+            val comment = s"count: $count, perBlockCost: $perBlockCost"
+            (name, timePerBlock, time, comment)
+        }
       }
       (name, timePerItem, time, comment)
     }.sortBy({ case (name, tpi, t, c) => (name, tpi)})(Ordering[(String, Long)])

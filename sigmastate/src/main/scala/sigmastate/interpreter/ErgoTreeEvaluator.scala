@@ -120,15 +120,28 @@ class ErgoTreeEvaluator(
     * @param opDesc   operation which is associated with this cost
     */
   @inline
-  final def addTypeBasedCost(costKind: TypeBasedCost,
-                             tpe: SType, opDesc: OperationDesc): Unit = {
+  final def addTypeBasedCost[R](costKind: TypeBasedCost,
+                             tpe: SType, opDesc: OperationDesc)(block: () => R): R = {
+    var costItem: TypeBasedCostItem = null
     if (settings.costTracingEnabled) {
-      val costItem = TypeBasedCostItem(opDesc, costKind, tpe)
-      coster.add(costItem.cost)
+      costItem = TypeBasedCostItem(opDesc, costKind, tpe)
       costTrace += costItem
+    }
+    if (settings.isMeasureOperationTime && block != null) {
+      if (costItem == null) {
+        costItem = TypeBasedCostItem(opDesc, costKind, tpe)
+      }
+      val start = System.nanoTime()
+      val cost = costKind.costFunc(tpe) // should be measured as part of the operation
+      coster.add(cost)
+      val res = block()
+      val end = System.nanoTime()
+      profiler.addCostItem(costItem, end - start)
+      res
     } else {
       val cost = costKind.costFunc(tpe)
       coster.add(cost)
+      if (block == null) null.asInstanceOf[R] else block()
     }
   }
 
@@ -526,7 +539,10 @@ case class TypeBasedCostItem(
     opDesc: OperationDesc,
     costKind: TypeBasedCost,
     tpe: SType) extends CostItem {
-  override def opName: String = ErgoTreeEvaluator.operationName(opDesc)
+  override def opName: String = {
+    val name = ErgoTreeEvaluator.operationName(opDesc)
+    s"$name[$tpe]"
+  }
   override def cost: Int = costKind.costFunc(tpe)
   override def equals(obj: Any): Boolean =
     (this eq obj.asInstanceOf[AnyRef]) || (obj != null && (obj match {
