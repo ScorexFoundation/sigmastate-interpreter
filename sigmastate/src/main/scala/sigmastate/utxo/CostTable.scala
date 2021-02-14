@@ -409,22 +409,22 @@ object CostTable {
 //
 
     /** Cost of: 1) serializing EcPointType to bytes 2) packing them in Coll. */
-    def GroupElement_GetEncoded = 3
+    def GroupElement_GetEncoded = 223
 
     /** Cost of: 1) calling EcPoint.negate 2) wrapping in GroupElement. */
-    def GroupElement_Negate = 1
+    def GroupElement_Negate = 2
 
     /** Cost of:
       * 1) create reader and read bytes in a new array
       * 2) calling curve.decodePoint and obtain EcPoint
       * 3) wrap EcPoint in GroupElement*/
-    def DecodePoint = 24
+    def DecodePoint = 240
 
     /** Cost of: 1) calling EcPoint.multiply 2) wrapping in GroupElement */
-    def Exponentiate = 800 // cf. expCost
+    def Exponentiate = 900 // cf. expCost
 
     /** Cost of: 1) calling EcPoint.add 2) wrapping in GroupElement */
-    def MultiplyGroup = 3 // cf. expCost
+    def MultiplyGroup = 23 // cf. expCost
 
     def ByteArrayToBigInt = 1
 
