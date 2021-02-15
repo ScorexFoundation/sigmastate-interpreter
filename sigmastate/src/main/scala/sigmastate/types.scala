@@ -473,9 +473,26 @@ case class SMethod(
     }
   }
 
-  /** Invoke this method on the given object with the arguments. */
-  def invoke(obj: Any, args: Array[Any])(implicit E: ErgoTreeEvaluator): AnyRef = {
+  /** Invoke this method on the given object with the arguments.
+    * This is used for methods with FixedCost costKind. */
+  def invokeFixed(obj: Any, args: Array[Any])(implicit E: ErgoTreeEvaluator): AnyRef = {
     javaMethod.invoke(obj, args.asInstanceOf[Array[AnyRef]]:_*)
+  }
+
+  lazy val evalMethod: Method = {
+    val paramTypes = (
+      classOf[MethodCall] +:
+      stype.tDom.map(t => t match {
+        case _: STypeVar => classOf[AnyRef]
+        case _: SFunc => classOf[_ => _]
+        case _: SCollectionType[_] => classOf[Coll[_]]
+        case _: SOption[_] => classOf[Option[_]]
+        case _ =>
+          Evaluation.stypeToRType(t).classTag.runtimeClass
+      }) :+
+      classOf[ErgoTreeEvaluator]).toArray
+    val m = objType.getClass().getMethod(name + "_eval", paramTypes:_*)
+    m
   }
 
   /** Create a new instance with the given stype. */
@@ -803,7 +820,7 @@ object SNumericType extends STypeCompanion {
     ToBigIntMethod,  // see Downcast
     ToBytesMethod,
     ToBitsMethod
-  ).ensuring(_.forall { m => m.checkWellDefined() })
+  ) // TODO v5.0: .ensuring(_.forall { m => m.checkWellDefined() })
 
   /** Collection of names of numeric casting methods (like `toByte`, `toInt`, etc). */
   val castMethods: Array[String] =
@@ -1298,6 +1315,12 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
         """.stripMargin,
         ArgInfo("f", "the function to apply to each element"))
 
+  def map_eval[A,B](mc: MethodCall, obj: Coll[A], f: A => B)(implicit E: ErgoTreeEvaluator): Coll[B] = {
+    val tpeB = mc.tpe.asInstanceOf[SCollection[SType]].elemType
+    val tB = Evaluation.stypeToRType(tpeB).asInstanceOf[RType[B]]
+    obj.map(f)(tB)
+  }
+
   val ExistsMethod = SMethod(this, "exists",
     SFunc(Array(ThisType, tPredicate), SBoolean, paramIVSeq), 4, Exists.costKind)
       .withInfo(Exists,
@@ -1417,6 +1440,14 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
     20, PerItemCost(1, 1, 10))
       .withIRInfo(MethodCallIrBuilder, javaMethodOf[Coll[_], Int, Any]("updated"))
       .withInfo(MethodCall, "")
+
+  def updated_eval[A](mc: MethodCall, coll: Coll[A], index: Int, elem: A)
+                     (implicit E: ErgoTreeEvaluator): Coll[A] = {
+    val costKind = mc.method.costKind.asInstanceOf[PerItemCost]
+    E.addSeqCost(costKind, coll.length, mc.method.opDesc) { () =>
+      coll.updated(index, elem)
+    }
+  }
 
   val UpdateManyMethod = SMethod(this, "updateMany",
     SFunc(Array(ThisType, SCollection(SInt), ThisType), ThisType, paramIVSeq),

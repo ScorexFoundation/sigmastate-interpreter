@@ -7,7 +7,7 @@ import sigmastate.Values._
 import sigmastate.utils.Overloading.Overload1
 import sigmastate._
 import sigmastate.interpreter.ErgoTreeEvaluator
-import sigmastate.interpreter.ErgoTreeEvaluator.DataEnv
+import sigmastate.interpreter.ErgoTreeEvaluator.{DataEnv, MethodDesc}
 import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.lang.TransformingSigmaBuilder._
@@ -222,22 +222,41 @@ object Terms {
     /** @hotspot don't beautify this code */
     protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
       val objV = obj.evalTo[Any](env)
-      val extra = method.extraDescriptors
-      val extraLen = extra.length
-      val len = args.length
-      val argsBuf = new Array[Any](len + extraLen)
-      cfor(0)(_ < len, _ + 1) { i =>
-        argsBuf(i) = args(i).evalTo[Any](env)
-      }
-      cfor(0)(_ < extraLen, _ + 1) { i =>
-        argsBuf(len + i) = extra(i)
-      }
       addCost(MethodCall.costKind) // MethodCall overhead
-      E.addMethodCallCost(this, objV, argsBuf) {
-        method.invoke(objV, argsBuf)
+      method.costKind match {
+        case fixed: FixedCost =>
+          val extra = method.extraDescriptors
+          val extraLen = extra.length
+          val len = args.length
+          val argsBuf = new Array[Any](len + extraLen)
+          cfor(0)(_ < len, _ + 1) { i =>
+            argsBuf(i) = args(i).evalTo[Any](env)
+          }
+          cfor(0)(_ < extraLen, _ + 1) { i =>
+            argsBuf(len + i) = extra(i)
+          }
+          var res: Any = null
+          E.addFixedCost(fixed, method.opDesc) {
+            res = method.invokeFixed(objV, argsBuf)
+          }
+          res
+        case _ =>
+          val len = args.length
+          val argsBuf = new Array[Any](len + 3)
+          argsBuf(0) = this
+          argsBuf(1) = objV
+          cfor(0)(_ < len, _ + 1) { i =>
+            argsBuf(i + 2) = args(i).evalTo[Any](env)
+          }
+          argsBuf(argsBuf.length - 1) = E
+
+          val genericMethod = method.objType.methodById(method.methodId)
+          val evalMethod = genericMethod.evalMethod
+          evalMethod.invoke(method.objType, argsBuf.asInstanceOf[Array[AnyRef]]:_*)
       }
     }
   }
+  
   object MethodCall extends ValueCompanion {
     override def opCode: OpCode = OpCodes.MethodCallCode
     override val costKind = FixedCost(CostOf.MethodCall)

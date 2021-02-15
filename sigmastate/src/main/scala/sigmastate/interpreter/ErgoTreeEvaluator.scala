@@ -292,9 +292,9 @@ class ErgoTreeEvaluator(
     }
 
     if (settings.isMeasureOperationTime) {
+      coster.add(costDetails.cost)
       // measure time
       val start = System.nanoTime()
-      coster.add(costDetails.cost)
       val res = block
       val end = System.nanoTime()
       val time = end - start

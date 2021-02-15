@@ -76,15 +76,15 @@ class SigmaDslSpecification extends SigmaDslTesting
   prepareSamples[(PreHeader, PreHeader)]
   prepareSamples[(Header, Header)]
 
-  override protected def beforeAll(): Unit = {
-    val warmUpProfiler = new Profiler
-    warmUpBeforeAllTest(nTotalIters = 1000) {
-      val settings = evalSettings.copy(
-        isLogEnabled = false,
-        profilerOpt = Some(warmUpProfiler))
-      runLazy_And_Or_BooleanEquivalence(settings)
-    }
-  }
+//  override protected def beforeAll(): Unit = {
+//    val warmUpProfiler = new Profiler
+//    warmUpBeforeAllTest(nTotalIters = 1000) {
+//      val settings = evalSettings.copy(
+//        isLogEnabled = false,
+//        profilerOpt = Some(warmUpProfiler))
+//      runLazy_And_Or_BooleanEquivalence(settings)
+//    }
+//  }
 
   ///=====================================================
   ///              Boolean type operations
