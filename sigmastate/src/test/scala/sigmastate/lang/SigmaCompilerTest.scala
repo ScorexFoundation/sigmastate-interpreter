@@ -222,36 +222,6 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ObjectGe
     testMissingCosting("1 >>> 2", mkBitShiftRightZeroed(IntConstant(1), IntConstant(2)))
   }
 
-  // TODO soft-fork: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/418
-  ignore("Collection.BitShiftLeft") {
-    comp("Coll(1,2) << 2") shouldBe
-      mkMethodCall(
-        ConcreteCollection.fromItems(IntConstant(1), IntConstant(2)),
-        SCollection.BitShiftLeftMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
-        Vector(IntConstant(2)), Map())
-  }
-
-  // TODO soft-fork: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/418
-  ignore("Collection.BitShiftRight") {
-    testMissingCosting("Coll(1,2) >> 2",
-      mkMethodCall(
-        ConcreteCollection.fromItems(IntConstant(1), IntConstant(2)),
-        SCollection.BitShiftRightMethod,
-        Vector(IntConstant(2)),
-        Map(SCollection.tIV -> SInt))
-    )
-  }
-
-  // TODO soft-fork: 1) implement method for special.collection.Coll 2) add rule to CollCoster
-  ignore("Collection.BitShiftRightZeroed") {
-    comp("Coll(true, false) >>> 2") shouldBe
-      mkMethodCall(
-        ConcreteCollection.fromItems(TrueLeaf, FalseLeaf),
-        SCollection.BitShiftRightZeroedMethod,
-        Vector(IntConstant(2))
-      )
-  }
-
   property("Collection.indices") {
     comp("Coll(true, false).indices") shouldBe
       mkMethodCall(
@@ -259,33 +229,6 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ObjectGe
         SCollection.IndicesMethod.withConcreteTypes(Map(SCollection.tIV -> SBoolean)),
         Vector()
       )
-  }
-
-  // TODO soft-fork: enable after such lambda is implemented in CollCoster.flatMap
-  ignore("SCollection.flatMap") {
-    comp("OUTPUTS.flatMap({ (out: Box) => Coll(out.value >= 1L) })") shouldBe
-      mkMethodCall(Outputs,
-        SCollection.FlatMapMethod.withConcreteTypes(Map(SCollection.tIV -> SBox, SCollection.tOV -> SBoolean)),
-        Vector(FuncValue(1,SBox,
-          ConcreteCollection(Array(GE(ExtractAmount(ValUse(1, SBox)), LongConstant(1))), SBoolean))), Map())
-  }
-
-  // TODO soft-fork: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/486
-  ignore("SNumeric.toBytes") {
-    comp("4.toBytes") shouldBe
-      mkMethodCall(IntConstant(4), SInt.method("toBytes").get, IndexedSeq())
-  }
-
-  // TODO soft-fork: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/486
-  ignore("SNumeric.toBits") {
-    comp("4.toBits") shouldBe
-      mkMethodCall(IntConstant(4), SInt.method("toBits").get, IndexedSeq())
-  }
-
-  // TODO soft-fork: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/327
-  ignore("SBigInt.multModQ") {
-    comp("1.toBigInt.multModQ(2.toBigInt)") shouldBe
-      mkMethodCall(BigIntConstant(1), SBigInt.MultModQMethod, IndexedSeq(BigIntConstant(2)))
   }
 
   property("SBox.tokens") {
@@ -375,110 +318,12 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ObjectGe
         Map())
   }
 
-  // TODO soft-fork: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
-  ignore("SCollection.unionSets") {
-    comp("Coll(1, 2).unionSets(Coll(1))") shouldBe
-      mkMethodCall(
-        ConcreteCollection.fromItems(IntConstant(1), IntConstant(2)),
-        SCollection.UnionSetsMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
-        Vector(ConcreteCollection.fromItems(IntConstant(1))),
-        Map())
-  }
-
-  // TODO soft-fork: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
-  ignore("SCollection.diff") {
-    comp("Coll(1, 2).diff(Coll(1))") shouldBe
-      mkMethodCall(
-        ConcreteCollection.fromItems(IntConstant(1), IntConstant(2)),
-        SCollection.DiffMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
-        Vector(ConcreteCollection.fromItems(IntConstant(1))),
-        Map())
-  }
-
-  // TODO soft-fork: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
-  ignore("SCollection.intersect") {
-    comp("Coll(1, 2).intersect(Coll(1))") shouldBe
-      mkMethodCall(
-        ConcreteCollection.fromItems(IntConstant(1), IntConstant(2)),
-        SCollection.IntersectMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
-        Vector(ConcreteCollection.fromItems(IntConstant(1))),
-        Map())
-  }
-
-  // TODO soft-fork: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
-  ignore("SCollection.prefixLength") {
-    comp("OUTPUTS.prefixLength({ (out: Box) => out.value >= 1L })") shouldBe
-      mkMethodCall(Outputs,
-        SCollection.PrefixLengthMethod.withConcreteTypes(Map(SCollection.tIV -> SBox)),
-        Vector(
-          Terms.Lambda(
-            Vector(("out",SBox)),
-            SBoolean,
-            Some(GE(ExtractAmount(Ident("out",SBox).asBox),LongConstant(1))))
-        ),
-        Map())
-  }
-
   property("SCollection.indexOf") {
     comp("Coll(1, 2).indexOf(1, 0)") shouldBe
       mkMethodCall(
         ConcreteCollection.fromItems(IntConstant(1), IntConstant(2)),
         SCollection.IndexOfMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
         Vector(IntConstant(1), IntConstant(0)),
-        Map())
-  }
-
-  // TODO soft-fork: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
-  ignore("SCollection.lastIndexOf") {
-    comp("Coll(1, 2).lastIndexOf(1, 0)") shouldBe
-      mkMethodCall(
-        ConcreteCollection.fromItems(IntConstant(1), IntConstant(2)),
-        SCollection.LastIndexOfMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
-        Vector(IntConstant(1), IntConstant(0)),
-        Map())
-  }
-
-  // TODO soft-fork: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
-  ignore("SCollection.find") {
-    comp("OUTPUTS.find({ (out: Box) => out.value >= 1L })") shouldBe
-      mkMethodCall(Outputs,
-        SCollection.FindMethod.withConcreteTypes(Map(SCollection.tIV -> SBox)),
-        Vector(
-          Terms.Lambda(
-            Vector(("out",SBox)),
-            SBoolean,
-            Some(GE(ExtractAmount(Ident("out",SBox).asBox),LongConstant(1))))
-        ),
-        Map())
-  }
-
-  // TODO soft-fork: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
-  ignore("Collection.distinct") {
-    comp("Coll(true, false).distinct") shouldBe
-      mkMethodCall(
-        ConcreteCollection.fromItems(TrueLeaf, FalseLeaf),
-        SCollection.DistinctMethod.withConcreteTypes(Map(SCollection.tIV -> SBoolean)),
-        Vector()
-      )
-  }
-
-  // TODO soft-fork: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
-  ignore("SCollection.startsWith") {
-    comp("Coll(1, 2).startsWith(Coll(1), 1)") shouldBe
-      mkMethodCall(
-        ConcreteCollection.fromItems(IntConstant(1), IntConstant(2)),
-        SCollection.StartsWithMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
-        Vector(ConcreteCollection.fromItems(IntConstant(1)), IntConstant(1)),
-        Map())
-  }
-
-  // TODO soft-fork: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
-  ignore("SCollection.endsWith") {
-    comp("Coll(1, 2).endsWith(Coll(1))") shouldBe
-      mkMethodCall(
-        ConcreteCollection.fromItems(IntConstant(1), IntConstant(2)),
-        SCollection.EndsWithMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
-        Vector(ConcreteCollection.fromItems(IntConstant(1))),
         Map())
   }
 
@@ -489,34 +334,6 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ObjectGe
         SCollection.ZipMethod.withConcreteTypes(Map(SCollection.tIV -> SInt, SCollection.tOV -> SInt)),
         Vector(ConcreteCollection.fromItems(IntConstant(1), IntConstant(1)))
       )
-  }
-
-  // TODO soft-fork: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
-  ignore("SCollection.mapReduce") {
-    comp(
-      "Coll(1, 2).mapReduce({ (i: Int) => (i > 0, i.toLong) }, { (tl: (Long, Long)) => tl._1 + tl._2 })") shouldBe
-      mkMethodCall(
-        ConcreteCollection.fromItems(IntConstant(1), IntConstant(2)),
-        SCollection.MapReduceMethod.withConcreteTypes(Map(SCollection.tIV -> SInt, SType.tK -> SBoolean, SType.tV -> SLong)),
-        Vector(
-          Lambda(List(),
-            Vector(("i", SInt)),
-            STuple(SBoolean, SLong),
-            Some(Tuple(Vector(
-              GT(Ident("i", SInt).asIntValue, IntConstant(0)),
-              Upcast(Ident("i", SInt).asIntValue, SLong)
-            )))
-          ),
-          Lambda(List(),
-            Vector(("tl", STuple(SLong, SLong))),
-            SLong,
-            Some(Plus(
-              SelectField(Ident("tl", STuple(SLong, SLong)).asValue[STuple], 1).asInstanceOf[Value[SLong.type]],
-              SelectField(Ident("tl", STuple(SLong, SLong)).asValue[STuple], 2).asInstanceOf[Value[SLong.type]])
-            )
-          )
-        ),
-        Map())
   }
 
   property("SCollection.filter") {
