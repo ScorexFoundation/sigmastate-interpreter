@@ -1481,22 +1481,6 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
     }
   }
 
-  val UnionSetsMethod = SMethod(this, "unionSets",
-    SFunc(Array(ThisType, ThisType), ThisType, paramIVSeq), 22, null)
-      .withIRInfo(MethodCallIrBuilder).withInfo(MethodCall, "")
-
-  val DiffMethod = SMethod(this, "diff",
-    SFunc(Array(ThisType, ThisType), ThisType, paramIVSeq), 23, null)
-      .withIRInfo(MethodCallIrBuilder).withInfo(MethodCall, "")
-
-  val IntersectMethod = SMethod(this, "intersect",
-    SFunc(Array(ThisType, ThisType), ThisType, paramIVSeq), 24, null)
-      .withIRInfo(MethodCallIrBuilder).withInfo(MethodCall, "")
-
-  val PrefixLengthMethod = SMethod(this, "prefixLength",
-    SFunc(Array(ThisType, tPredicate), SInt, paramIVSeq), 25, null)
-      .withIRInfo(MethodCallIrBuilder).withInfo(MethodCall, "")
-
   val IndexOfMethod = SMethod(this, "indexOf",
     SFunc(Array(ThisType, tIV, SInt), SInt, paramIVSeq), 26, PerItemCost(3, 3, 2))
       .withIRInfo(MethodCallIrBuilder, javaMethodOf[Coll[_], Any, Int]("indexOf"))
@@ -1524,16 +1508,6 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
     res
   }
 
-  val LastIndexOfMethod = SMethod(this, "lastIndexOf",
-    SFunc(Array(ThisType, tIV, SInt), SInt, paramIVSeq), 27, null)
-      .withIRInfo(MethodCallIrBuilder)
-      .withInfo(MethodCall, "")
-
-  // TODO HF (1h): related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
-  lazy val FindMethod = SMethod(this, "find",
-    SFunc(Array(ThisType, tPredicate), SOption(tIV), paramIVSeq), 28, null)
-      .withIRInfo(MethodCallIrBuilder).withInfo(MethodCall, "")
-
   val ZipMethod = SMethod(this, "zip",
     SFunc(Array(ThisType, tOVColl), SCollection(STuple(tIV, tOV)), Array[STypeParam](tIV, tOV)),
     29, PerItemCost(CostOf.Zip, CostOf.Zip_PerItem, 10))
@@ -1548,25 +1522,6 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
     }
   }
 
-  val DistinctMethod = SMethod(this, "distinct",
-    SFunc(Array(ThisType), ThisType, Array[STypeParam](tIV)), 30, null)
-      .withIRInfo(MethodCallIrBuilder).withInfo(PropertyCall, "")
-
-  val StartsWithMethod = SMethod(this, "startsWith",
-    SFunc(IndexedSeq(ThisType, ThisType, SInt), SBoolean, paramIVSeq), 31, null)
-      .withIRInfo(MethodCallIrBuilder).withInfo(MethodCall, "")
-
-  val EndsWithMethod = SMethod(this, "endsWith",
-    SFunc(IndexedSeq(ThisType, ThisType), SBoolean, paramIVSeq), 32, null)
-      .withIRInfo(MethodCallIrBuilder).withInfo(MethodCall, "")
-
-  val MapReduceMethod = SMethod(this, "mapReduce",
-    SFunc(
-      IndexedSeq(ThisType, SFunc(tIV, STuple(tK, tV)), SFunc(STuple(tV, tV), tV)),
-      SCollection(STuple(tK, tV)),
-      Seq(paramIV, STypeParam(tK), STypeParam(tV))), 34, null)
-      .withIRInfo(MethodCallIrBuilder).withInfo(MethodCall, "")
-
   lazy val methods: Seq[SMethod] = Seq(
     SizeMethod,
     GetOrElseMethod,
@@ -1578,34 +1533,13 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
     FilterMethod,
     AppendMethod,
     ApplyMethod,
-    /* TODO HF (1h): https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
-    BitShiftLeftMethod,
-    BitShiftRightMethod,
-    BitShiftRightZeroedMethod,
-    */
     IndicesMethod,
     FlatMapMethod,
     PatchMethod,
     UpdatedMethod,
     UpdateManyMethod,
-    /*TODO HF (1h): https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
-    UnionSetsMethod,
-    DiffMethod,
-    IntersectMethod,
-    PrefixLengthMethod,
-    */
     IndexOfMethod,
-    /* TODO HF (1h): https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
-    LastIndexOfMethod,
-    FindMethod,
-    */
     ZipMethod
-    /* TODO HF (1h): https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
-    DistinctMethod,
-    StartsWithMethod,
-    EndsWithMethod,
-    MapReduceMethod,
-    */
   )
   def apply[T <: SType](elemType: T): SCollection[T] = SCollectionType(elemType)
   def apply[T <: SType](implicit elemType: T, ov: Overload1): SCollection[T] = SCollectionType(elemType)
