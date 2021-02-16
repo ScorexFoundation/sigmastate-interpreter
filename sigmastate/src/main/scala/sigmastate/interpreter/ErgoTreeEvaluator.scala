@@ -212,6 +212,12 @@ class ErgoTreeEvaluator(
     }
   }
 
+  @inline
+  final def addSeqCost[R](costInfo: OperationCostInfo[PerItemCost], nItems: Int)
+                         (block: () => R): R = {
+    addSeqCost(costInfo.costKind, nItems, costInfo.opDesc)(block)
+  }
+
   /** Adds the cost to the `coster`. If tracing is enabled, creates a new cost item with
     * the given operation descriptor and cost kind. If time measuring is enabled also
     * performs profiling.
