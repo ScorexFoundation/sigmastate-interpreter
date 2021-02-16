@@ -73,11 +73,16 @@ object DataValueComparer {
   final val OpDesc_EQ_Header = NamedDesc("EQ_Header")
   final val EQ_Header = OperationCostInfo(CostKind_EQ_Header, OpDesc_EQ_Header)
 
+  /** Equals two CollOverArray of Boolean type. */
+  final val CostKind_EQ_COA_Boolean = PerItemCost(1, 1, 128)
+  final val OpDesc_EQ_COA_Boolean = NamedDesc("EQ_COA_Boolean")
+  final val EQ_COA_Boolean = OperationCostInfo(CostKind_EQ_COA_Boolean, OpDesc_EQ_COA_Boolean)
+
   /** Equals two CollOverArray of Byte type. */
   final val CostKind_EQ_COA_Byte = PerItemCost(1, 1, 128)
   final val OpDesc_EQ_COA_Byte = NamedDesc("EQ_COA_Byte")
   final val EQ_COA_Byte = OperationCostInfo(CostKind_EQ_COA_Byte, OpDesc_EQ_COA_Byte)
-  
+
   /** Equals two CollOverArray of Short type. */
   final val CostKind_EQ_COA_Short = PerItemCost(1, 1, 96)
   final val OpDesc_EQ_COA_Short = NamedDesc("EQ_COA_Short")
@@ -143,7 +148,7 @@ object DataValueComparer {
     * parameters, which are part of the protocol. Thus any alternative protocol
     * implementation should implement comparison is the same way.
     */
-  private def equalCOA_Prim[@sp(Byte, Short, Int, Long) A]
+  private def equalCOA_Prim[@sp(Boolean, Byte, Short, Int, Long) A]
                    (c1: COA[A], c2: COA[A], costInfo: OperationCostInfo[PerItemCost])
                    (implicit E: ErgoTreeEvaluator): Boolean = {
     var okEqual = true
@@ -177,6 +182,11 @@ object DataValueComparer {
 
   def equalColls_Dispatch[A](coll1: Coll[A], coll2: Coll[A])(implicit E: ErgoTreeEvaluator): Boolean = {
     coll1.tItem match {
+      case BooleanType =>
+        equalCOA_Prim(
+          coll1.asInstanceOf[COA[Boolean]],
+          coll2.asInstanceOf[COA[Boolean]], EQ_COA_Boolean)
+
       case ByteType =>
         equalCOA_Prim(
           coll1.asInstanceOf[COA[Byte]],
@@ -213,7 +223,7 @@ object DataValueComparer {
   def equalDataValues(l: Any, r: Any)(implicit E: ErgoTreeEvaluator): Boolean = {
     var okEqual: Boolean = false
     l match {
-      case _: java.lang.Number => /** case 1 (see [[EQ_Prim]]) */
+      case _: java.lang.Number | _: Boolean => /** case 1 (see [[EQ_Prim]]) */
         E.addFixedCost(EQ_Prim) {
           okEqual = l == r
         }
@@ -285,6 +295,21 @@ object DataValueComparer {
         E.addFixedCost(EQ_Header) {
           okEqual = h == r
         }
+      case s1: String =>
+        E.addCost(MatchType) // for second match below
+        okEqual = r match {
+          case s2: String =>
+            val len = s1.length
+            if (len != s2.length)
+              return false
+            E.addSeqCost(EQ_COA_Short, len) { () =>
+              s1 == s2
+            }
+          case _ => false
+        }
+      case _: Unit =>
+        okEqual = r.isInstanceOf[Unit]
+
       case _ =>
         ErgoTreeEvaluator.error(s"Cannot compare $l and $r: unknown type")
     }
