@@ -1331,10 +1331,11 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
         """.stripMargin,
         ArgInfo("f", "the function to apply to each element"))
 
-  def map_eval[A,B](mc: MethodCall, obj: Coll[A], f: A => B)(implicit E: ErgoTreeEvaluator): Coll[B] = {
+  def map_eval[A,B](mc: MethodCall, xs: Coll[A], f: A => B)(implicit E: ErgoTreeEvaluator): Coll[B] = {
     val tpeB = mc.tpe.asInstanceOf[SCollection[SType]].elemType
     val tB = Evaluation.stypeToRType(tpeB).asInstanceOf[RType[B]]
-    obj.map(f)(tB)
+    E.addSeqCost(MapCollection.costKind, xs.length, mc.method.opDesc)(null)
+    xs.map(f)(tB)
   }
 
   val ExistsMethod = SMethod(this, "exists",
@@ -1429,27 +1430,29 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
          | \lst{f} to each element of this collection and concatenating the results.
         """.stripMargin, ArgInfo("f", "the function to apply to each element."))
 
+  def flatMap_eval[A, B](mc: MethodCall, xs: Coll[A], f: A => Coll[B])
+                        (implicit E: ErgoTreeEvaluator): Coll[B] = {
+    val tpeB = mc.tpe.asInstanceOf[SCollection[SType]].elemType
+    val tB = Evaluation.stypeToRType(tpeB).asInstanceOf[RType[B]]
+    val m = mc.method
+    E.addSeqCost(m.costKind.asInstanceOf[PerItemCost], xs.length, m.opDesc)(null)
+    xs.flatMap(f)(tB)
+  }
+
   val PatchMethod = SMethod(this, "patch",
-    SFunc(Array(ThisType, SInt, ThisType, SInt), ThisType, paramIVSeq), 19, null)
+    SFunc(Array(ThisType, SInt, ThisType, SInt), ThisType, paramIVSeq),
+      19, PerItemCost(1, 1, 10))
       .withIRInfo(MethodCallIrBuilder)
-//      .withCost(new MethodCostFunc {
-//        override def apply(E: ErgoTreeEvaluator,
-//                           mc: MethodCall,
-//                           obj: Any,
-//                           args: Array[Any]): CostDetails = obj match {
-//          case coll: Coll[a] =>
-//            if (E.settings.costTracingEnabled) {
-//              val desc = MethodDesc(mc.method)
-//              TracedCost(Array(SeqCostItem(desc, costKind, coll.length)))
-//            }
-//            else
-//              GivenCost(costKind.cost(coll.length))
-//          case _ =>
-//            ErgoTreeEvaluator.error(
-//              s"Invalid object $obj of method call $mc: Coll type is expected")
-//        }
-//      })
       .withInfo(MethodCall, "")
+
+  def patch_eval[A](mc: MethodCall, xs: Coll[A], from: Int, patch: Coll[A], replaced: Int)
+                   (implicit E: ErgoTreeEvaluator): Coll[A] = {
+    val m = mc.method
+    val nItems = xs.length + patch.length
+    E.addSeqCost(m.costKind.asInstanceOf[PerItemCost], nItems, m.opDesc) { () =>
+      xs.patch(from, patch, replaced)
+    }
+  }
 
   val UpdatedMethod = SMethod(this, "updated",
     SFunc(Array(ThisType, SInt, tIV), ThisType, paramIVSeq),
@@ -1470,6 +1473,14 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
     21, PerItemCost(1, 1, 10))
       .withIRInfo(MethodCallIrBuilder).withInfo(MethodCall, "")
 
+  def updateMany_eval[A](mc: MethodCall, coll: Coll[A], indexes: Coll[Int], values: Coll[A])
+                        (implicit E: ErgoTreeEvaluator): Coll[A] = {
+    val costKind = mc.method.costKind.asInstanceOf[PerItemCost]
+    E.addSeqCost(costKind, coll.length, mc.method.opDesc) { () =>
+      coll.updateMany(indexes, values)
+    }
+  }
+
   val UnionSetsMethod = SMethod(this, "unionSets",
     SFunc(Array(ThisType, ThisType), ThisType, paramIVSeq), 22, null)
       .withIRInfo(MethodCallIrBuilder).withInfo(MethodCall, "")
@@ -1487,9 +1498,31 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
       .withIRInfo(MethodCallIrBuilder).withInfo(MethodCall, "")
 
   val IndexOfMethod = SMethod(this, "indexOf",
-    SFunc(Array(ThisType, tIV, SInt), SInt, paramIVSeq), 26, PerItemCost(1, 1, 10))
+    SFunc(Array(ThisType, tIV, SInt), SInt, paramIVSeq), 26, PerItemCost(3, 3, 2))
       .withIRInfo(MethodCallIrBuilder, javaMethodOf[Coll[_], Any, Int]("indexOf"))
       .withInfo(MethodCall, "")
+
+  // TODO v5.0: optimize using specialization for numeric and predefined types
+  /** This method is called via Reflection as part of evaluating the given MethodCall. */
+  def indexOf_eval[A](mc: MethodCall, xs: Coll[A], elem: A, from: Int)
+                     (implicit E: ErgoTreeEvaluator): Int = {
+    val costKind = mc.method.costKind.asInstanceOf[PerItemCost]
+    var res: Int = -1
+    E.addSeqCost(costKind, mc.method.opDesc) { () =>
+      val len = xs.length
+      val start = math.max(from, 0)
+      var i = start
+      var different = true
+      while (i < len && different) {
+        different = !DataValueComparer.equalDataValues(xs(i), elem)
+        i += 1
+      }
+      if (!different)
+        res = i - 1
+      i - start  // return number of performed iterations
+    }
+    res
+  }
 
   val LastIndexOfMethod = SMethod(this, "lastIndexOf",
     SFunc(Array(ThisType, tIV, SInt), SInt, paramIVSeq), 27, null)
@@ -1506,6 +1539,14 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
     29, PerItemCost(CostOf.Zip, CostOf.Zip_PerItem, 10))
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(MethodCall, "")
+
+  def zip_eval[A, B](mc: MethodCall, xs: Coll[A], ys: Coll[B])
+                    (implicit E: ErgoTreeEvaluator): Coll[(A,B)] = {
+    val m = mc.method
+    E.addSeqCost(m.costKind.asInstanceOf[PerItemCost], xs.length, m.opDesc) { () =>
+      xs.zip(ys)
+    }
+  }
 
   val DistinctMethod = SMethod(this, "distinct",
     SFunc(Array(ThisType), ThisType, Array[STypeParam](tIV)), 30, null)
