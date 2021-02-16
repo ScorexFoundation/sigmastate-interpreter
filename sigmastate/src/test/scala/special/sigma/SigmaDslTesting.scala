@@ -780,6 +780,17 @@ class SigmaDslTesting extends PropSpec
     test(preGeneratedSamples, f, printTestCases)
   }
 
+  def verifyCasesMany[A: Ordering : Arbitrary : ClassTag, B]
+      (cases: Seq[(A, Expected[B])],
+       features: Seq[Feature[A, B]],
+       printTestCases: Boolean = PrintTestCasesDefault,
+       failOnTestVectors: Boolean = FailOnTestVectorsDefault,
+       preGeneratedSamples: Option[Seq[A]] = None): Unit = {
+    features.foreach { f =>
+      verifyCases(cases, f, printTestCases, failOnTestVectors, preGeneratedSamples)
+    }
+  }
+
   case class MeasureInfo[A](input: A, iteration: Int, nIters: Int, measuredTime: Long)
 
   type MeasureFormatter[A] = MeasureInfo[A] => String

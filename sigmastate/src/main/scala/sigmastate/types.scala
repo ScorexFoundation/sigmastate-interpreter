@@ -32,6 +32,7 @@ import sigmastate.lang.SigmaTyper.STypeSubst
 import sigmastate.eval.Evaluation.stypeToRType
 import sigmastate.eval._
 import sigmastate.interpreter.ErgoTreeEvaluator.MethodDesc
+import sigmastate.lang.exceptions.MethodNotFound
 import sigmastate.utxo.CostTable.CostOf
 import spire.syntax.all.cfor
 
@@ -293,8 +294,10 @@ trait STypeCompanion {
 
   /** Lookup method by its id in this type. */
   @inline def getMethodById(methodId: Byte): Option[SMethod] =
-    _methodsMap.get(typeId)
-        .flatMap(ms => ms.get(methodId))
+    _methodsMap.get(typeId) match {
+      case Some(ms) => ms.get(methodId)
+      case None => None
+    }
 
   /** Lookup method in this type by method's id or throw ValidationException.
     * This method can be used in trySoftForkable section to either obtain valid method
@@ -479,19 +482,31 @@ case class SMethod(
     javaMethod.invoke(obj, args.asInstanceOf[Array[AnyRef]]:_*)
   }
 
+  /** @hotspot don't beautify the code */
   lazy val evalMethod: Method = {
-    val paramTypes = (
-      classOf[MethodCall] +:
-      stype.tDom.map(t => t match {
+    val argTypes = stype.tDom
+    val nArgs = argTypes.length
+    val paramTypes = new Array[Class[_]](nArgs + 2)
+    paramTypes(0) = classOf[MethodCall]
+    cfor(0)(_ < nArgs, _ + 1) { i =>
+      paramTypes(i + 1) = argTypes(i) match {
         case _: STypeVar => classOf[AnyRef]
         case _: SFunc => classOf[_ => _]
         case _: SCollectionType[_] => classOf[Coll[_]]
         case _: SOption[_] => classOf[Option[_]]
-        case _ =>
+        case t =>
           Evaluation.stypeToRType(t).classTag.runtimeClass
-      }) :+
-      classOf[ErgoTreeEvaluator]).toArray
-    val m = objType.getClass().getMethod(name + "_eval", paramTypes:_*)
+      }
+    }
+    paramTypes(paramTypes.length - 1) = classOf[ErgoTreeEvaluator]
+
+    val methodName = name + "_eval"
+    val m = try {
+      objType.getClass().getMethod(methodName, paramTypes:_*)
+    }
+    catch { case e: MethodNotFound =>
+      throw new RuntimeException(s"Cannot find eval method def $methodName(${Seq(paramTypes:_*)})", e)
+    }
     m
   }
 
@@ -774,9 +789,10 @@ object SNumericType extends STypeCompanion {
                        mc: MethodCall,
                        obj: Any,
                        args: Array[Any]): CostDetails = {
-      val cast = getNumericCast(mc.obj.tpe, mc.method.name, mc.method.stype.tRange).get
+      val targetTpe = mc.method.stype.tRange
+      val cast = getNumericCast(mc.obj.tpe, mc.method.name, targetTpe).get
       val costKind = if (cast == Downcast) Downcast.costKind else Upcast.costKind
-      TracedCost(Array(FixedCostItem(MethodDesc(mc.method), costKind)))
+      TracedCost(Array(TypeBasedCostItem(MethodDesc(mc.method), costKind, targetTpe)))
     }
   }
 

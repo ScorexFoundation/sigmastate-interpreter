@@ -645,7 +645,6 @@ class SigmaDslSpecification extends SigmaDslTesting
       FixedCostItem(OptionGet),
       FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
       FixedCostItem(ValUse),
-      FixedCostItem(Upcast)
     )
   )
   val costDowncast = CostDetails(
@@ -656,7 +655,6 @@ class SigmaDslSpecification extends SigmaDslTesting
       FixedCostItem(OptionGet),
       FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
       FixedCostItem(ValUse),
-      FixedCostItem(Downcast)
     )
   )
   def costArithOps(tpe: SType) = CostDetails(

@@ -504,20 +504,26 @@ case class Upcast[T <: SNumericType, R <: SNumericType](input: Value[T], tpe: R)
 
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val inputV = input.evalTo[AnyVal](env)
-    addCost(Upcast.costKind)
-    tpe.upcast(inputV)
+    addCost(Upcast.costKind, tpe) { () =>
+      tpe.upcast(inputV)
+    }
   }
 }
 
 /** Base class for Upcast and Downcast companion objects. */
-trait NumericCastCompanion extends FixedCostValueCompanion {
+trait NumericCastCompanion extends ValueCompanion {
   def argInfos: Seq[ArgInfo]
   val OpType = SFunc(Array(SType.tT), SType.tR)
+  /** Returns cost descriptor of this operation. */
+  def costKind: TypeBasedCost = NumericCastCostKind
+}
+
+object NumericCastCostKind extends TypeBasedCost {
+  override def costFunc(tpe: SType): Int = CostOf.NumericCast(targetTpe = tpe)
 }
 
 object Upcast extends NumericCastCompanion {
   override def opCode: OpCode = OpCodes.UpcastCode
-  override val costKind = FixedCost(CostOf.Upcast)
   override def argInfos: Seq[ArgInfo] = UpcastInfo.argInfos
   def tT = SType.tT
   def tR = SType.tR
@@ -534,14 +540,14 @@ case class Downcast[T <: SNumericType, R <: SNumericType](input: Value[T], tpe: 
   override def opType = Downcast.OpType
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val inputV = input.evalTo[AnyVal](env)
-    addCost(Downcast.costKind)
-    tpe.downcast(inputV)
+    addCost(Downcast.costKind, tpe) { () =>
+      tpe.downcast(inputV)
+    }
   }
 }
 
 object Downcast extends NumericCastCompanion {
   override def opCode: OpCode = OpCodes.DowncastCode
-  override val costKind = FixedCost(CostOf.Downcast)
   override def argInfos: Seq[ArgInfo] = DowncastInfo.argInfos
   def tT = SType.tT
   def tR = SType.tR
