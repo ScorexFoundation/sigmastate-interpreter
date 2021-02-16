@@ -325,6 +325,16 @@ object ErgoTreeEvaluator {
   case class CompanionDesc(companion: ValueCompanion) extends OperationDesc
   case class MethodDesc(method: SMethod) extends OperationDesc {
     override def toString: String = s"MethodDesc(${method.opName})"
+
+    override def hashCode(): Int = (method.objType.typeId << 8) | method.methodId
+
+    override def equals(obj: Any): Boolean =
+      this.eq(obj.asInstanceOf[AnyRef]) || (obj != null && (obj match {
+        case that: MethodDesc =>
+          method.objType.typeId == that.method.objType.typeId &&
+          method.methodId == that.method.methodId
+        case _ => false
+      }))
   }
   case class NamedDesc(name: String) extends OperationDesc
 
