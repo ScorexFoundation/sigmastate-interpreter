@@ -2,12 +2,18 @@ package sigmastate
 
 import scalan.{AVHashMap, Nullable, RType}
 import scalan.RType._
-import sigmastate.Values.{PerItemCost, FixedCost}
+import sigmastate.Values.{SigmaBoolean, PerItemCost, FixedCost}
+import sigmastate.basics.DLogProtocol.ProveDlog
+import sigmastate.basics.ProveDHTuple
+import sigmastate.eval.SigmaDsl
+import sigmastate.interpreter.CryptoConstants.EcPointType
 import spire.sp
 import sigmastate.interpreter.ErgoTreeEvaluator
 import sigmastate.interpreter.ErgoTreeEvaluator.{OperationCostInfo, NamedDesc}
-import special.sigma.{Header, HeaderRType, Box, GroupElementRType, GroupElement, AvlTreeRType, BigInt, BoxRType, AvlTree, BigIntRType, PreHeader, PreHeaderRType}
+import special.sigma.{Header, HeaderRType, Box, GroupElementRType, SigmaProp, GroupElement, AvlTreeRType, PreHeaderRType, BigInt, BoxRType, AvlTree, BigIntRType, PreHeader}
 import special.collection.{Coll, PairOfCols, CollOverArray}
+import spire.syntax.all.cfor
+
 /** Implementation of data equality for two arbitrary ErgoTree data types.
   * @see [[DataValueComparer.equalDataValues]]
   */
@@ -219,6 +225,61 @@ object DataValueComparer {
     }
   }
 
+  def equalSigmaBooleans(xs: Seq[SigmaBoolean], ys: Seq[SigmaBoolean])
+                        (implicit E: ErgoTreeEvaluator): Boolean = {
+    val len = xs.length
+    if (len != ys.length) return false
+    var okEqual = true
+    cfor(0)(_ < len && okEqual, _ + 1) { i =>
+      okEqual = equalSigmaBoolean(xs(i), ys(i))
+    }
+    okEqual
+  }
+
+  def equalSigmaBoolean(l: SigmaBoolean, r: SigmaBoolean)
+                        (implicit E: ErgoTreeEvaluator): Boolean = l match {
+    case ProveDlog(x) => r match {
+      case ProveDlog(y) => equalECPoint(x, y)
+      case _ => false
+    }
+    case x: ProveDHTuple => r match {
+      case y: ProveDHTuple =>
+        equalECPoint(x.gv, y.gv) && equalECPoint(x.hv, y.hv) &&
+        equalECPoint(x.uv, y.uv) && equalECPoint(x.vv, y.vv)
+      case _ => false
+    }
+    case x: TrivialProp => r match {
+      case y: TrivialProp => x.condition == y.condition
+      case _ => false
+    }
+    case CAND(children) if r.isInstanceOf[CAND] =>
+      equalSigmaBooleans(children, r.asInstanceOf[CAND].children)
+    case COR(children) if r.isInstanceOf[COR] =>
+      equalSigmaBooleans(children, r.asInstanceOf[COR].children)
+    case CTHRESHOLD(k, children) if r.isInstanceOf[CTHRESHOLD] =>
+      val sb2 = r.asInstanceOf[CTHRESHOLD]
+      k == sb2.k && equalSigmaBooleans(children, sb2.children)
+    case _ =>
+      ErgoTreeEvaluator.error(
+        s"Cannot compare SigmaBoolean values $l and $r: unknown type")
+  }
+
+  def equalGroupElement(ge1: GroupElement, r: Any)(implicit E: ErgoTreeEvaluator): Boolean = {
+    var okEqual = true
+    E.addFixedCost(EQ_GroupElement) {
+      okEqual = ge1 == r
+    }
+    okEqual
+  }
+
+  def equalECPoint(p1: EcPointType, r: Any)(implicit E: ErgoTreeEvaluator): Boolean = {
+    var okEqual = true
+    E.addFixedCost(EQ_GroupElement) {
+      okEqual = p1 == r
+    }
+    okEqual
+  }
+
   // TODO v5.0: introduce a new limit on structural depth of data values
   def equalDataValues(l: Any, r: Any)(implicit E: ErgoTreeEvaluator): Boolean = {
     var okEqual: Boolean = false
@@ -251,13 +312,21 @@ object DataValueComparer {
         }
 
       case ge1: GroupElement => /** case 4 (see [[EQ_GroupElement]]) */
-        E.addFixedCost(EQ_GroupElement) {
-          okEqual = ge1 == r
-        }
+        equalGroupElement(ge1, r)
 
       case bi: BigInt => /** case 5 (see [[EQ_BigInt]]) */
         E.addFixedCost(EQ_BigInt) {
           okEqual = bi == r
+        }
+
+      case sp1: SigmaProp =>
+        E.addCost(MatchType) // for second match below
+        okEqual = r match {
+          case sp2: SigmaProp =>
+            equalSigmaBoolean(
+              SigmaDsl.toSigmaBoolean(sp1),
+              SigmaDsl.toSigmaBoolean(sp2))
+          case _ => false
         }
 
       case bi: AvlTree =>  /** case 6 (see [[EQ_AvlTree]]) */
@@ -265,12 +334,7 @@ object DataValueComparer {
           okEqual = bi == r
         }
 
-      case box: Box => /** case 7 (see [[EQ_Box]]) */
-        E.addFixedCost(EQ_Box) {
-          okEqual = box == r
-        }
-
-      case opt1: Option[_] => /** case 8 (see [[EQ_Option]]) */
+      case opt1: Option[_] => /** case 7 (see [[EQ_Option]]) */
         E.addFixedCost(EQ_Option) {
           okEqual = r match {
             case opt2: Option[_] =>
@@ -287,13 +351,17 @@ object DataValueComparer {
               false // right is not an Option
           }
         }
-      case ph: PreHeader =>  /** case 9 (see [[EQ_PreHeader]]) */
+      case ph: PreHeader =>  /** case 8 (see [[EQ_PreHeader]]) */
         E.addFixedCost(EQ_PreHeader) {
           okEqual = ph == r
         }
-      case h: Header =>  /** case 10 (see [[EQ_Header]]) */
+      case h: Header =>  /** case 9 (see [[EQ_Header]]) */
         E.addFixedCost(EQ_Header) {
           okEqual = h == r
+        }
+      case box: Box => /** case 10 (see [[EQ_Box]]) */
+        E.addFixedCost(EQ_Box) {
+          okEqual = box == r
         }
       case s1: String =>
         E.addCost(MatchType) // for second match below
