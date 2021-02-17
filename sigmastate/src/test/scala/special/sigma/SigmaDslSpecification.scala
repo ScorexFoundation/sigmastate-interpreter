@@ -58,8 +58,8 @@ class SigmaDslSpecification extends SigmaDslTesting
       costTracingEnabled = true  // should always be enabled in tests (and false by default)
     )
 
-  override val nBenchmarkIters = 1
-  val nTotalWarmUpIters = 1
+  override val nBenchmarkIters = 50
+  val nBeforeAllWarmUpIters = 100
 
   implicit def IR = createIR()
 
@@ -80,7 +80,7 @@ class SigmaDslSpecification extends SigmaDslTesting
 
   override protected def beforeAll(): Unit = {
     val warmUpProfiler = new Profiler
-    warmUpBeforeAllTest(nTotalIters = nTotalWarmUpIters) {
+    warmUpBeforeAllTest(nTotalIters = nBeforeAllWarmUpIters) {
       val settings = evalSettings.copy(
         isLogEnabled = false,
         profilerOpt = Some(warmUpProfiler))
@@ -2819,6 +2819,8 @@ class SigmaDslSpecification extends SigmaDslTesting
         "{ (t: AvlTree) => t.isRemoveAllowed }",
         expectedExprFor("isRemoveAllowed")))
   }
+
+  //override val perTestWarmUpIters: Int = 10
 
   property("AvlTree.{contains, get, getMany, updateDigest, updateOperations} equivalence") {
     val contains = existingFeature(

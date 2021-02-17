@@ -11,6 +11,7 @@ import sigmastate.SType.{TypeCode, AnyOps}
 import sigmastate.interpreter._
 import sigmastate.utils.Overloading.Overload1
 import scalan.util.Extensions._
+import scorex.crypto.hash.Blake2b256
 import sigmastate.Values._
 import sigmastate.lang.Terms.{MethodCall, _}
 import sigmastate.lang.{SigmaBuilder, SigmaTyper}
@@ -1925,7 +1926,7 @@ case object SAvlTree extends SProduct with SPredefType with SMonoType {
         """.stripMargin)
 
   lazy val updateOperationsMethod  = SMethod(this, "updateOperations",
-    SFunc(Array(SAvlTree, SByte), SAvlTree), 8, FixedCost(1))
+    SFunc(Array(SAvlTree, SByte), SAvlTree), 8, FixedCost(5))
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(MethodCall,
         """
@@ -1933,7 +1934,7 @@ case object SAvlTree extends SProduct with SPredefType with SMonoType {
         """.stripMargin)
 
   lazy val containsMethod = SMethod(this, "contains",
-    SFunc(Array(SAvlTree, SByteArray, SByteArray), SBoolean), 9, FixedCost(1))
+    SFunc(Array(SAvlTree, SByteArray, SByteArray), SBoolean), 9, PerItemCost(25, 67, 1))
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(MethodCall,
         """
@@ -1948,6 +1949,22 @@ case object SAvlTree extends SProduct with SPredefType with SMonoType {
          |    */
          |
         """.stripMargin)
+
+  def contains_eval(mc: MethodCall, tree: AvlTree, key: Coll[Byte], proof: Coll[Byte])
+                   (implicit E: ErgoTreeEvaluator): Boolean = {
+    var res = false
+    val m = mc.method
+    // the proof may contain both keys and labels, we don't know for sure
+    // so the following is approximation of the maximum number of tree depth
+    // the cost of operation is O(depth), hence PerItemCost is used
+    val maxLabelsInProof = (proof.length - 1) / Blake2b256.DigestSize + 1
+    val maxKeysInProof = (proof.length - 1) / tree.keyLength + 1
+    val depth = Math.max(maxLabelsInProof, maxKeysInProof)
+    E.addSeqCost(m.costKind.asInstanceOf[PerItemCost], nItems = depth, m.opDesc) { () =>
+      res = tree.contains(key, proof)
+    }
+    res
+  }
 
   lazy val getMethod = SMethod(this, "get",
     SFunc(Array(SAvlTree, SByteArray, SByteArray), SByteArrayOption), 10, FixedCost(1))
@@ -2033,7 +2050,7 @@ case object SAvlTree extends SProduct with SPredefType with SMonoType {
         """.stripMargin)
 
   lazy val updateDigestMethod = SMethod(this, "updateDigest",
-    SFunc(Array(SAvlTree, SByteArray), SAvlTree), 15, FixedCost(1))
+    SFunc(Array(SAvlTree, SByteArray), SAvlTree), 15, FixedCost(5))
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(MethodCall,
         """
