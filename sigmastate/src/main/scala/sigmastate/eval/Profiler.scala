@@ -140,14 +140,7 @@ class Profiler {
     val opSelfTime = opFullTime - op.innerTime
 
     // update timing stats
-    node match {
-      case mc: Terms.MethodCall if mc.method.costFunc.isEmpty =>
-        // NOTE: the remaining MethodCalls are profiled via addCostItem
-        val m = mc.method
-        addMcTime(m.objType.typeId, m.methodId, opSelfTime)
-      case _ =>
-        addOpTime(node.opCode, opSelfTime)
-    }
+    addOpTime(node.opCode, opSelfTime)
   }
 
   /** Timings of op codes. For performance debox implementation of Map is used. */
