@@ -35,7 +35,8 @@ class DataSerializerSpecification extends SerializationSpecification {
       context = null,
       constants = ErgoTree.EmptyConstants,
       coster = accumulator, DefaultProfiler, ErgoTreeEvaluator.DefaultEvalSettings)
-    DataValueComparer.equalDataValues(res, obj)(evaluator) shouldBe true
+    val ok = DataValueComparer.equalDataValues(res, obj)(evaluator)
+    ok shouldBe true
 
     val randomPrefix = arrayGen[Byte].sample.get
     val r2 = SigmaSerializer.startReader(randomPrefix ++ bytes, randomPrefix.length)

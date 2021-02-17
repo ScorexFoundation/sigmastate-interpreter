@@ -4,9 +4,9 @@ import org.ergoplatform.SigmaConstants.ScriptCostLimit
 import org.scalatest.BeforeAndAfterAll
 import scalan.RType
 import scalan.util.BenchmarkUtil
-import sigmastate.DataValueComparer
+import sigmastate.{DataValueComparer, TrivialProp}
 import sigmastate.Values.ErgoTree
-import sigmastate.eval.Profiler
+import sigmastate.eval.{CSigmaProp, Profiler, SigmaDsl}
 import sigmastate.helpers.SigmaPPrint
 import sigmastate.interpreter.{EvalSettings, TracedCost, CostAccumulator, ErgoTreeEvaluator}
 import special.collection.Coll
@@ -25,7 +25,9 @@ class DataValueComparerSpecification extends SigmaDslTesting
     isLogEnabled = false, // don't commit the `true` value (CI log is too high)
     costTracingEnabled = true  // should always be enabled in tests (and false by default)
   )
-  override val nBenchmarkIters = 50
+  override val nBenchmarkIters = 10
+
+  val nWarmUpIterations = 100
 
   implicit val suiteProfiler = new Profiler
 
@@ -48,12 +50,12 @@ class DataValueComparerSpecification extends SigmaDslTesting
     * @param y computation which produced second argument
     */
   def check(x: => Any, y: => Any, expected: Boolean)(implicit settings: EvalSettings, profiler: Profiler) = {
-    val evaluator = createEvaluator(settings, profiler)
     val _x = x // force computation and obtain value
     val _y = y
     withClue(s"EQ.equalDataValues(${_x}, ${_y})") {
       val res = sameResultOrError(
         repeatAndReturnLast(nBenchmarkIters) {
+          val evaluator = createEvaluator(settings, profiler)
           // it's important to use fresh values to neutralize memory cache to some extent
           val fresh_x = x
           val fresh_y = y
@@ -65,7 +67,7 @@ class DataValueComparerSpecification extends SigmaDslTesting
         case _ =>
       }
     }
-    if (evaluator.settings.isMeasureScriptTime) {
+    if (settings.isMeasureScriptTime) {
       val evaluator = createEvaluator(settings, profiler)
       val fresh_x = x
       val fresh_y = y
@@ -73,7 +75,7 @@ class DataValueComparerSpecification extends SigmaDslTesting
         Try(DataValueComparer.equalDataValues(fresh_x, fresh_y)(evaluator))
       }
       if (res.isSuccess) {
-        val costDetails = TracedCost(evaluator.costTrace, Some(actualTime))
+        val costDetails = TracedCost(evaluator.costTrace.result(), Some(actualTime))
         val xStr = SigmaPPrint(fresh_x).plainText
         val yStr = SigmaPPrint(fresh_y).plainText
         val script = s"$xStr == $yStr"
@@ -89,8 +91,6 @@ class DataValueComparerSpecification extends SigmaDslTesting
     * request neutralizes the effects of cache and makes profiling more accurate. */
   def zeros = Array[Any](0.toByte, 0.toShort, 0, 0.toLong)
   def ones = Array[Any](1.toByte, 1.toShort, 1, 1.toLong)
-
-  val nWarmUpIterations = 10000
 
   override protected def beforeAll(): Unit = {
     // this method warms up the code in DataValueComparer
@@ -151,6 +151,12 @@ class DataValueComparerSpecification extends SigmaDslTesting
       checkIsEqual(coll(s, Option((1.toByte, 1))))
       checkIsEqual(coll(s, (create_ge1(), Option((1.toByte, 1)))))
       checkIsEqual(coll(s, (create_ge1(), (Option((1.toByte, 1)), coll(32, 7.toByte)))))
+      checkIsEqual(coll(s, SigmaDsl.SigmaProp(create_dlog())))
+      checkIsEqual(coll(s, SigmaDsl.SigmaProp(create_dht())))
+      checkIsEqual(coll(s, SigmaDsl.SigmaProp(create_and())))
+      checkIsEqual(coll(s, SigmaDsl.SigmaProp(create_or())))
+      checkIsEqual(coll(s, SigmaDsl.SigmaProp(TrivialProp.TrueProp)))
+      checkIsEqual(coll(s, SigmaDsl.SigmaProp(TrivialProp.FalseProp)))
     }
 
     checkIsEqual(createBigIntMaxValue())
@@ -159,6 +165,12 @@ class DataValueComparerSpecification extends SigmaDslTesting
     checkIsEqual(create_b1())
     checkIsEqual(create_preH1())
     checkIsEqual(create_h1())
+    checkIsEqual(CSigmaProp(create_dlog()))
+    checkIsEqual(CSigmaProp(create_dht()))
+    checkIsEqual(CSigmaProp(create_and()))
+    checkIsEqual(CSigmaProp(create_or()))
+    checkIsEqual(CSigmaProp(TrivialProp.TrueProp))
+    checkIsEqual(CSigmaProp(TrivialProp.FalseProp))
   }
 
   /** Run this property alone for profiling and see the report generated in afterAll. */

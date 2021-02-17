@@ -17,6 +17,8 @@ import scorex.crypto.authds.{ADDigest, ADKey, ADValue}
 import scorex.util.ModifierId
 import sigmastate.Values._
 import sigmastate.basics.DLogProtocol.ProveDlog
+import sigmastate.basics.ProveDHTuple
+import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.serialization.generators.ObjectGenerators
 import sigmastate.utils.Helpers
 import special.collection.Coll
@@ -153,7 +155,12 @@ trait SigmaTestingData extends SigmaTestingCommons with ObjectGenerators {
     def create_ge1(): GroupElement = ge1_instances.getNext
 
     val ge1 = create_ge1()
-    val ge2 = Helpers.decodeGroupElement(ge2str)
+
+    val ge2_bytes = ErgoAlgos.decodeUnsafe(ge2str)
+    val ge2_instances = new CloneSet(1000, SigmaDsl.decodePoint(Colls.fromArray(ge2_bytes)))
+    def create_ge2(): GroupElement = ge2_instances.getNext
+    val ge2 = create_ge2()
+
     val ge3 = Helpers.decodeGroupElement(ge3str)
 
     val t1_instances = new CloneSet(1000, CAvlTree(
@@ -312,5 +319,24 @@ trait SigmaTestingData extends SigmaTestingCommons with ObjectGenerators {
     val h1: Header = create_h1()
 
     val h2: Header = create_h1().asInstanceOf[CHeader].copy(height = 2)
+
+    val dlog_instances = new CloneSet(1000, ProveDlog(
+      SigmaDsl.toECPoint(create_ge1()).asInstanceOf[EcPointType]
+    ))
+
+    def create_dlog(): ProveDlog = dlog_instances.getNext
+
+    val dht_instances = new CloneSet(1000, ProveDHTuple(
+      create_dlog().value,
+      SigmaDsl.toECPoint(create_ge2()).asInstanceOf[EcPointType],
+      create_dlog().value,
+      SigmaDsl.toECPoint(create_ge2()).asInstanceOf[EcPointType]
+    ))
+
+    def create_dht(): ProveDHTuple = dht_instances.getNext
+      
+    def create_and() = CAND(Array(create_dlog(), create_dht()))
+
+    def create_or() = COR(Array(create_dlog(), create_dht()))
   }
 }

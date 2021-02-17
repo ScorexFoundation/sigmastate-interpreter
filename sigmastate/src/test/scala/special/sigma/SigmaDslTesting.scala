@@ -65,7 +65,13 @@ class SigmaDslTesting extends PropSpec
       case (Failure(t1), res @ Failure(t2)) =>
         val c1 = rootCause(t1).getClass
         val c2 = rootCause(t2).getClass
-        c1 shouldBe c2
+        if (c1 != c2) {
+          assert(c1 == c2,
+            s"""Different errors:
+              |First result: $t1
+              |Second result: $t2
+              |""".stripMargin)
+        }
         res
       case _ =>
         val cause = if (b1.isFailure)

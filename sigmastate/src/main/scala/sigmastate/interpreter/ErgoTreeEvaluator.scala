@@ -92,7 +92,11 @@ class ErgoTreeEvaluator(
 
   /** Trace of cost items accumulated during execution of `eval` method.
     * Call [[ArrayBuffer.clear()]] before each `eval` invocation. */
-  val costTrace = ArrayBuffer.empty[CostItem]
+  val costTrace = {
+    val b = mutable.ArrayBuilder.make[CostItem]
+    b.sizeHint(1000)
+    b
+  }
 
   /** Adds the given cost to the `coster`. If tracing is enabled, associates the cost with
     * the given operation.

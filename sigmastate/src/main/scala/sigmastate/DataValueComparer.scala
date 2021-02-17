@@ -49,7 +49,7 @@ object DataValueComparer {
   final val EQ_Tuple = OperationCostInfo(CostKind_EQ_Tuple, OpDesc_EQ_Tuple)
 
   /** NOTE: the value is set based on benchmarking of SigmaDslSpecification. */
-  final val CostKind_EQ_GroupElement = FixedCost(188) // case 4
+  final val CostKind_EQ_GroupElement = FixedCost(4) // case 4
   final val OpDesc_EQ_GroupElement = NamedDesc("EQ_GroupElement")
   final val EQ_GroupElement = OperationCostInfo(CostKind_EQ_GroupElement, OpDesc_EQ_GroupElement)
 
@@ -237,31 +237,34 @@ object DataValueComparer {
   }
 
   def equalSigmaBoolean(l: SigmaBoolean, r: SigmaBoolean)
-                        (implicit E: ErgoTreeEvaluator): Boolean = l match {
-    case ProveDlog(x) => r match {
-      case ProveDlog(y) => equalECPoint(x, y)
-      case _ => false
+                        (implicit E: ErgoTreeEvaluator): Boolean = {
+    E.addCost(MatchType) // once for every node of the SigmaBoolean tree
+    l match {
+      case ProveDlog(x) => r match {
+        case ProveDlog(y) => equalECPoint(x, y)
+        case _ => false
+      }
+      case x: ProveDHTuple => r match {
+        case y: ProveDHTuple =>
+          equalECPoint(x.gv, y.gv) && equalECPoint(x.hv, y.hv) &&
+              equalECPoint(x.uv, y.uv) && equalECPoint(x.vv, y.vv)
+        case _ => false
+      }
+      case x: TrivialProp => r match {
+        case y: TrivialProp => x.condition == y.condition
+        case _ => false
+      }
+      case CAND(children) if r.isInstanceOf[CAND] =>
+        equalSigmaBooleans(children, r.asInstanceOf[CAND].children)
+      case COR(children) if r.isInstanceOf[COR] =>
+        equalSigmaBooleans(children, r.asInstanceOf[COR].children)
+      case CTHRESHOLD(k, children) if r.isInstanceOf[CTHRESHOLD] =>
+        val sb2 = r.asInstanceOf[CTHRESHOLD]
+        k == sb2.k && equalSigmaBooleans(children, sb2.children)
+      case _ =>
+        ErgoTreeEvaluator.error(
+          s"Cannot compare SigmaBoolean values $l and $r: unknown type")
     }
-    case x: ProveDHTuple => r match {
-      case y: ProveDHTuple =>
-        equalECPoint(x.gv, y.gv) && equalECPoint(x.hv, y.hv) &&
-        equalECPoint(x.uv, y.uv) && equalECPoint(x.vv, y.vv)
-      case _ => false
-    }
-    case x: TrivialProp => r match {
-      case y: TrivialProp => x.condition == y.condition
-      case _ => false
-    }
-    case CAND(children) if r.isInstanceOf[CAND] =>
-      equalSigmaBooleans(children, r.asInstanceOf[CAND].children)
-    case COR(children) if r.isInstanceOf[COR] =>
-      equalSigmaBooleans(children, r.asInstanceOf[COR].children)
-    case CTHRESHOLD(k, children) if r.isInstanceOf[CTHRESHOLD] =>
-      val sb2 = r.asInstanceOf[CTHRESHOLD]
-      k == sb2.k && equalSigmaBooleans(children, sb2.children)
-    case _ =>
-      ErgoTreeEvaluator.error(
-        s"Cannot compare SigmaBoolean values $l and $r: unknown type")
   }
 
   def equalGroupElement(ge1: GroupElement, r: Any)(implicit E: ErgoTreeEvaluator): Boolean = {
@@ -312,7 +315,7 @@ object DataValueComparer {
         }
 
       case ge1: GroupElement => /** case 4 (see [[EQ_GroupElement]]) */
-        equalGroupElement(ge1, r)
+        okEqual = equalGroupElement(ge1, r)
 
       case bi: BigInt => /** case 5 (see [[EQ_BigInt]]) */
         E.addFixedCost(EQ_BigInt) {

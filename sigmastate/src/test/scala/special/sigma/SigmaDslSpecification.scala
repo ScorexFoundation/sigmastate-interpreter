@@ -57,7 +57,9 @@ class SigmaDslSpecification extends SigmaDslTesting
       isLogEnabled = false, // don't commit the `true` value (travis log is too high)
       costTracingEnabled = true  // should always be enabled in tests (and false by default)
     )
-  override val nBenchmarkIters = 50
+
+  override val nBenchmarkIters = 1
+  val nTotalWarmUpIters = 1
 
   implicit def IR = createIR()
 
@@ -76,15 +78,15 @@ class SigmaDslSpecification extends SigmaDslTesting
   prepareSamples[(PreHeader, PreHeader)]
   prepareSamples[(Header, Header)]
 
-//  override protected def beforeAll(): Unit = {
-//    val warmUpProfiler = new Profiler
-//    warmUpBeforeAllTest(nTotalIters = 1000) {
-//      val settings = evalSettings.copy(
-//        isLogEnabled = false,
-//        profilerOpt = Some(warmUpProfiler))
-//      runLazy_And_Or_BooleanEquivalence(settings)
-//    }
-//  }
+  override protected def beforeAll(): Unit = {
+    val warmUpProfiler = new Profiler
+    warmUpBeforeAllTest(nTotalIters = nTotalWarmUpIters) {
+      val settings = evalSettings.copy(
+        isLogEnabled = false,
+        profilerOpt = Some(warmUpProfiler))
+      runLazy_And_Or_BooleanEquivalence(settings)
+    }
+  }
 
   ///=====================================================
   ///              Boolean type operations
@@ -5879,7 +5881,7 @@ class SigmaDslSpecification extends SigmaDslTesting
               Map()
             )
           )
-        )))
+        )), preGeneratedSamples = Some(Seq()))
   }
 
   property("Coll apply method equivalence") {
