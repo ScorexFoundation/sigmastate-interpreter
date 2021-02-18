@@ -3,9 +3,12 @@ package special.sigma
 import java.math.BigInteger
 
 import org.bouncycastle.math.ec.ECPoint
-
 import special.collection._
 import scalan._
+import scorex.crypto.authds.{ADDigest, ADValue}
+import scorex.crypto.authds.avltree.batch.Operation
+
+import scala.util.Try
 
 @scalan.Liftable
 trait CostModel {
@@ -543,7 +546,39 @@ trait AvlTree {
     * @param proof
     */
   def remove(operations: Coll[Coll[Byte]], proof: Coll[Byte]): Option[AvlTree]
+
+  def createVerifier(proof: Coll[Byte]): AvlTreeVerifier
 }
+
+trait AvlTreeVerifier {
+  /**
+    * If operation.key exists in the tree and the operation succeeds,
+    * returns Success(Some(v)), where v is the value associated with operation.key
+    * before the operation.
+    * If operation.key does not exists in the tree and the operation succeeds, returns Success(None).
+    * Returns Failure if the operation fails or the proof does not verify.
+    * After one failure, all subsequent operations will fail and digest
+    * is None.
+    *
+    * @param operation
+    * @return - Success(Some(old value)), Success(None), or Failure
+    */
+  def performOneOperation(operation: Operation): Try[Option[ADValue]]
+
+  /** Returns the max height of the tree extracted from the root digest. */
+  def treeHeight: Int
+
+  /**
+    * Returns Some[the current digest of the authenticated data structure],
+    * where the digest contains the root hash and the root height
+    * Returns None if the proof verification failed at construction
+    * or during any of the operations.
+    *
+    * @return - Some[digest] or None
+    */
+  def digest: Option[ADDigest]
+}
+
 
 /** Only header fields that can be predicted by a miner.
   * @since 2.0

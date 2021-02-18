@@ -10,10 +10,10 @@ import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.authds.{ADDigest, ADKey, SerializedAdProof, ADValue}
 import sigmastate.SCollection.SByteArray
 import sigmastate.{TrivialProp, _}
-import sigmastate.Values.{Constant, ConstantNode, ErgoTree, EvaluatedValue, SValue, SigmaBoolean}
+import sigmastate.Values.{Constant, EvaluatedValue, SValue, ConstantNode, ErgoTree, SigmaBoolean}
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.interpreter.{CryptoConstants, Interpreter}
-import special.collection.{CCostedBuilder, CSizeOption, Coll, CollType, CostedBuilder, Size, SizeColl, SizeOption}
+import special.collection.{Size, CSizeOption, SizeColl, CCostedBuilder, CollType, SizeOption, CostedBuilder, Coll}
 import special.sigma.{Box, _}
 import sigmastate.eval.Extensions._
 import spire.syntax.all.cfor
@@ -98,6 +98,19 @@ case class CSigmaProp(sigmaTree: SigmaBoolean) extends SigmaProp with WrapperOf[
   override def toString: String = s"SigmaProp(${wrappedValue.showToString})"
 }
 
+class CAvlTreeVerifier(startingDigest: ADDigest,
+                       proof: SerializedAdProof,
+                       override val keyLength: Int,
+                       override val valueLengthOpt: Option[Int])
+    extends BatchAVLVerifier[Digest32, Blake2b256.type](
+      startingDigest, proof, keyLength, valueLengthOpt)
+    with AvlTreeVerifier {
+  override def treeHeight: Int = rootNodeHeight
+
+  /** Override default logging which outputs stack trace to the console. */
+  override protected def logError(t: Throwable): Unit = {}
+}
+
 /** A default implementation of [[AvlTree]] interface.
   * @see [[AvlTree]] for detailed descriptions
   */
@@ -131,14 +144,10 @@ case class CAvlTree(treeData: AvlTreeData) extends AvlTree with WrapperOf[AvlTre
     this.copy(treeData = td)
   }
 
-  private def createVerifier(proof: Coll[Byte]): BatchAVLVerifier[Digest32, Blake2b256.type] = {
+  override def createVerifier(proof: Coll[Byte]): AvlTreeVerifier = {
     val adProof = SerializedAdProof @@ proof.toArray
-    val bv = new BatchAVLVerifier[Digest32, Blake2b256.type](
-      treeData.digest, adProof,
-      treeData.keyLength, treeData.valueLengthOpt) {
-      /** Override default logging which outputs stack trace to the console. */
-      override protected def logError(t: Throwable): Unit = {}
-    }
+    val bv = new CAvlTreeVerifier(
+      treeData.digest, adProof, treeData.keyLength, treeData.valueLengthOpt)
     bv
   }
 
@@ -802,3 +811,4 @@ case class CostingDataContext(
     this.copy(vars = newVars)
   }
 }
+
