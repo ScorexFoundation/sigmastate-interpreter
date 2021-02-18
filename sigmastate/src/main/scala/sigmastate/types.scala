@@ -11,6 +11,8 @@ import sigmastate.SType.{TypeCode, AnyOps}
 import sigmastate.interpreter._
 import sigmastate.utils.Overloading.Overload1
 import scalan.util.Extensions._
+import scorex.crypto.authds.ADKey
+import scorex.crypto.authds.avltree.batch.Lookup
 import scorex.crypto.hash.Blake2b256
 import sigmastate.Values._
 import sigmastate.lang.Terms.{MethodCall, _}
@@ -32,12 +34,13 @@ import special.sigma.{Header, Box, SigmaProp, AvlTree, SigmaDslBuilder, PreHeade
 import sigmastate.lang.SigmaTyper.STypeSubst
 import sigmastate.eval.Evaluation.stypeToRType
 import sigmastate.eval._
-import sigmastate.interpreter.ErgoTreeEvaluator.MethodDesc
+import sigmastate.interpreter.ErgoTreeEvaluator.{MethodDesc, OperationCostInfo, NamedDesc}
 import sigmastate.lang.exceptions.MethodNotFound
 import sigmastate.utxo.CostTable.CostOf
 import spire.syntax.all.cfor
 
 import scala.collection.mutable
+import scala.util.{Success, Failure}
 
 /** Base type for all AST nodes of sigma lang. */
 trait SigmaNode extends Product
@@ -1934,7 +1937,7 @@ case object SAvlTree extends SProduct with SPredefType with SMonoType {
         """.stripMargin)
 
   lazy val containsMethod = SMethod(this, "contains",
-    SFunc(Array(SAvlTree, SByteArray, SByteArray), SBoolean), 9, PerItemCost(25, 67, 1))
+    SFunc(Array(SAvlTree, SByteArray, SByteArray), SBoolean), 9, DynamicCost)
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(MethodCall,
         """
@@ -1950,24 +1953,44 @@ case object SAvlTree extends SProduct with SPredefType with SMonoType {
          |
         """.stripMargin)
 
+  /** The proof may contain keys, labels and values, we don't know for sure how many,
+    * but we assume the cost is O(proof.length).
+    * So the following is an approximation of the proof parsing cost.
+    */
+  final val CreateAvlVerifier_Info = OperationCostInfo(
+    PerItemCost(30, 22, 32), NamedDesc("CreateAvlVerifier"))
+
+  final val LookupAvlTree_Info = OperationCostInfo(
+    PerItemCost(4, 5, 1), NamedDesc("LookupAvlTree"))
+
+  def createVerifier(tree: AvlTree, proof: Coll[Byte])(implicit E: ErgoTreeEvaluator) = {
+    // the cost of tree reconstruction from proof is O(proof.length)
+    E.addSeqCost(CreateAvlVerifier_Info, proof.length) { () =>
+      tree.createVerifier(proof)
+    }
+  }
+
   def contains_eval(mc: MethodCall, tree: AvlTree, key: Coll[Byte], proof: Coll[Byte])
                    (implicit E: ErgoTreeEvaluator): Boolean = {
+    val bv = createVerifier(tree, proof)
+    val nItems = bv.treeHeight
+
     var res = false
-    val m = mc.method
-    // the proof may contain both keys and labels, we don't know for sure
-    // so the following is approximation of the maximum number of tree depth
-    // the cost of operation is O(depth), hence PerItemCost is used
-    val maxLabelsInProof = (proof.length - 1) / Blake2b256.DigestSize + 1
-    val maxKeysInProof = (proof.length - 1) / tree.keyLength + 1
-    val depth = Math.max(maxLabelsInProof, maxKeysInProof)
-    E.addSeqCost(m.costKind.asInstanceOf[PerItemCost], nItems = depth, m.opDesc) { () =>
-      res = tree.contains(key, proof)
+    // the cost of tree lookup is O(bv.treeHeight)
+    E.addSeqCost(LookupAvlTree_Info, nItems) { () =>
+      res = bv.performOneOperation(Lookup(ADKey @@ key.toArray)) match {
+        case Success(r) => r match {
+          case Some(_) => true
+          case _ => false
+        }
+        case Failure(_) => false
+      }
     }
     res
   }
 
   lazy val getMethod = SMethod(this, "get",
-    SFunc(Array(SAvlTree, SByteArray, SByteArray), SByteArrayOption), 10, FixedCost(1))
+    SFunc(Array(SAvlTree, SByteArray, SByteArray), SByteArrayOption), 10, DynamicCost)
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(MethodCall,
         """
@@ -1983,8 +2006,25 @@ case object SAvlTree extends SProduct with SPredefType with SMonoType {
          |
         """.stripMargin)
 
+  def get_eval(mc: MethodCall, tree: AvlTree, key: Coll[Byte], proof: Coll[Byte])
+              (implicit E: ErgoTreeEvaluator): Option[Coll[Byte]] = {
+    val bv = createVerifier(tree, proof)
+    val nItems = bv.treeHeight
+
+    // the cost of tree lookup is O(bv.treeHeight)
+    E.addSeqCost(LookupAvlTree_Info, nItems) { () =>
+      bv.performOneOperation(Lookup(ADKey @@ key.toArray)) match {
+        case Success(r) => r match {
+          case Some(v) => Some(Colls.fromArray(v))
+          case _ => None
+        }
+        case Failure(_) => Interpreter.error(s"Tree proof is incorrect $tree")
+      }
+    }
+  }
+
   lazy val getManyMethod = SMethod(this, "getMany",
-    SFunc(Array(SAvlTree, SByteArray2, SByteArray), TCollOptionCollByte), 11, FixedCost(1))
+    SFunc(Array(SAvlTree, SByteArray2, SByteArray), TCollOptionCollByte), 11, DynamicCost)
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(MethodCall,
         """
@@ -1997,6 +2037,24 @@ case object SAvlTree extends SProduct with SPredefType with SMonoType {
          |    */
          |
         """.stripMargin)
+
+  def getMany_eval(mc: MethodCall, tree: AvlTree, keys: Coll[Coll[Byte]], proof: Coll[Byte])
+                  (implicit E: ErgoTreeEvaluator): Coll[Option[Coll[Byte]]] = {
+    val bv = createVerifier(tree, proof)
+    val nItems = bv.treeHeight
+    keys.map { key =>
+      // the cost of tree lookup is O(bv.treeHeight)
+      E.addSeqCost(LookupAvlTree_Info, nItems) { () =>
+        bv.performOneOperation(Lookup(ADKey @@ key.toArray)) match {
+          case Success(r) => r match {
+            case Some(v) => Some(Colls.fromArray(v))
+            case _ => None
+          }
+          case Failure(_) => Interpreter.error(s"Tree proof is incorrect $tree")
+        }
+      }
+    }
+  }
 
   lazy val insertMethod = SMethod(this, "insert",
     SFunc(Array(SAvlTree, CollKeyValue, SByteArray), SAvlTreeOption), 12, FixedCost(1))

@@ -2820,7 +2820,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         expectedExprFor("isRemoveAllowed")))
   }
 
-  //override val perTestWarmUpIters: Int = 10
+//  override val perTestWarmUpIters: Int = 50
 
   property("AvlTree.{contains, get, getMany, updateDigest, updateOperations} equivalence") {
     val contains = existingFeature(
@@ -3010,15 +3010,33 @@ class SigmaDslSpecification extends SigmaDslTesting
         )
       ))
 
-    val (key, value, _, avlProver) = sampleAvlProver
+    def success[T](v: T) = Expected(Success(v), 0)
+
+    { // getMany with a bunch of existing keys
+      val (keysArr, valuesArr, _, avlProver) = sampleAvlProver
+      val keys = Colls.fromArray(keysArr.slice(0, 20))
+      val expRes = Colls.fromArray(valuesArr.slice(0, 20).map(Option(_)))
+
+      keys.foreach { key =>
+        avlProver.performOneOperation(Lookup(ADKey @@ key.toArray))
+      }
+      val proof = avlProver.generateProof().toColl
+      val digest = avlProver.digest.toColl
+      val tree = SigmaDsl.avlTree(AvlTreeFlags.ReadOnly.serializeToByte, digest, 32, None)
+
+      val input = (tree, (keys, proof))
+      getMany.checkExpected(input, success(expRes))
+    }
+
+    val (keysArr, valuesArr, _, avlProver) = sampleAvlProver
+    val key = keysArr(0)
+    val value = valuesArr(0)
     val otherKey = key.map(x => (-x).toByte) // any other different from key
 
     val table = Table(("key", "contains", "valueOpt"),
       (key, true, Some(value)),
       (otherKey, false, None)
     )
-
-    def success[T](v: T) = Expected(Success(v), 0)
 
     forAll(table) { (key, okContains, valueOpt) =>
       avlProver.performOneOperation(Lookup(ADKey @@ key.toArray))

@@ -29,8 +29,9 @@ class CostingSpecification extends SigmaTestingData with CrossVersionProps {
 
   val printCosts = true
 
-  val (key1, _, _, avlProver) = sampleAvlProver
-  val keys = Colls.fromItems(key1)
+  val (keysArr, _, _, avlProver) = sampleAvlProver
+  val keys = Colls.fromItems(keysArr(0))
+  val key1 = keys(0)
   val key2 = keyCollGen.sample.get
   avlProver.performOneOperation(Lookup(ADKey @@ key1.toArray))
   val digest = avlProver.digest.toColl

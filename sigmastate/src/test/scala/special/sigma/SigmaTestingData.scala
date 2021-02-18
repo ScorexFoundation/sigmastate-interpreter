@@ -55,10 +55,10 @@ trait SigmaTestingData extends SigmaTestingCommons with ObjectGenerators {
   }
 
   protected def sampleAvlProver = {
-    val key = keyCollGen.sample.get
-    val value = bytesCollGen.sample.get
-    val (tree, prover) = createAvlTreeAndProver(key -> value)
-    (key, value, tree, prover)
+    val keys   = arrayOfN(100, keyCollGen).sample.get
+    val values = arrayOfN(100, bytesCollGen).sample.get
+    val (tree, prover) = createAvlTreeAndProver(keys.zip(values):_*)
+    (keys, values, tree, prover)
   }
 
   protected def sampleAvlTree: AvlTree = {
