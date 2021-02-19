@@ -486,6 +486,12 @@ case class SMethod(
     javaMethod.invoke(obj, args.asInstanceOf[Array[AnyRef]]:_*)
   }
 
+  // TODO optimize: avoid lookup when this SMethod is created via `specializeFor`
+  /** Return generic template of this method. */
+  @inline final def genericMethod: SMethod = {
+    objType.getMethodById(methodId).get
+  }
+
   /** @hotspot don't beautify the code */
   lazy val evalMethod: Method = {
     val argTypes = stype.tDom
@@ -1434,13 +1440,71 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
          | \lst{f} to each element of this collection and concatenating the results.
         """.stripMargin, ArgInfo("f", "the function to apply to each element."))
 
+  final val CheckFlatmapBody_Info = OperationCostInfo(
+    PerItemCost(2, 1, 1), NamedDesc("CheckFlatmapBody"))
+
+  val flatMap_BodyPatterns = Array[PartialFunction[SValue, Int]](
+    { case ExtractScriptBytes(ValUse(id, _)) => id }
+  )
+
+  def isValidPropertyAccess(varId: Int, expr: SValue)
+                           (implicit E: ErgoTreeEvaluator): Boolean = {
+    var found = false
+    E.addSeqCost(CheckFlatmapBody_Info) { () =>
+      var i = 0
+      val nPatterns = flatMap_BodyPatterns.length
+      while (i < nPatterns && !found) {
+        val p = flatMap_BodyPatterns(i)
+        found = p.lift(expr) match {
+          case Some(id) => id == varId  // id in the pattern is equal to lambda varId
+          case None => false
+        }
+        i += 1
+      }
+      i // how many patterns checked
+    }
+    found
+  }
+
+  final val MatchFlatmapNode_Info = OperationCostInfo(
+    FixedCost(3), NamedDesc("MatchFlatmapNode"))
+
+  object IsFlatMap {
+    def unapply(mc:MethodCall)
+               (implicit E: ErgoTreeEvaluator): Nullable[(Int, SValue)] = {
+      var res: Nullable[(Int, SValue)] = Nullable.None
+      E.addFixedCost(MatchFlatmapNode_Info) {
+        res = mc match {
+          case MethodCall(_, m, Seq(FuncValue(args, body)), _) if args.length == 1 =>
+            val id = args(0)._1
+            Nullable((id, body))
+          case _ =>
+            Nullable.None
+        }
+      }
+      res
+    }
+  }
+
+  def checkValidFlatmap(mc: MethodCall)(implicit E: ErgoTreeEvaluator) = {
+    mc match {
+      case IsFlatMap(varId, lambdaBody) if isValidPropertyAccess(varId, lambdaBody) =>
+          // ok, do nothing
+      case _ =>
+        ErgoTreeEvaluator.error(
+          s"Unsupported lambda in flatMap: allowed usage `xs.flatMap(x => x.property)`: $mc")
+    }
+  }
+
   def flatMap_eval[A, B](mc: MethodCall, xs: Coll[A], f: A => Coll[B])
                         (implicit E: ErgoTreeEvaluator): Coll[B] = {
+    checkValidFlatmap(mc)
     val tpeB = mc.tpe.asInstanceOf[SCollection[SType]].elemType
     val tB = Evaluation.stypeToRType(tpeB).asInstanceOf[RType[B]]
     val m = mc.method
-    E.addSeqCost(m.costKind.asInstanceOf[PerItemCost], xs.length, m.opDesc)(null)
-    xs.flatMap(f)(tB)
+    E.addSeqCost(m.costKind.asInstanceOf[PerItemCost], xs.length, m.opDesc) { () =>
+      xs.flatMap(f)(tB)
+    }
   }
 
   val PatchMethod = SMethod(this, "patch",
@@ -1788,6 +1852,7 @@ case object SBox extends SProduct with SPredefType with SMonoType {
       }
     }
   }
+
   val PropositionBytes = "propositionBytes"
   val Value = "value"
   val Id = "id"
@@ -2411,12 +2476,12 @@ case object SGlobal extends SProduct with SPredefType with SMonoType {
   import SType.tT
 
   lazy val groupGeneratorMethod = SMethod(
-    this, "groupGenerator", SFunc(this, SGroupElement), 1, FixedCost(CostOf.GroupGenerator))
+    this, "groupGenerator", SFunc(this, SGroupElement), 1, GroupGenerator.costKind)
     .withIRInfo({ case (builder, obj, method, args, tparamSubst) => GroupGenerator })
     .withInfo(GroupGenerator, "")
 
   lazy val xorMethod = SMethod(
-    this, "xor", SFunc(Array(this, SByteArray, SByteArray), SByteArray), 2, PerBlockCost(CostOf.Xor, CostOf.Xor_PerBlock))
+    this, "xor", SFunc(Array(this, SByteArray, SByteArray), SByteArray), 2, Xor.costKind)
     .withIRInfo({
         case (_, _, _, Seq(l, r), _) => Xor(l.asByteArray, r.asByteArray)
     })

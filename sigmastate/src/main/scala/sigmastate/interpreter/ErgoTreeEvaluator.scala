@@ -257,6 +257,10 @@ class ErgoTreeEvaluator(
     }
   }
 
+  final def addSeqCost(costInfo: OperationCostInfo[PerItemCost])(block: () => Int): Unit = {
+    addSeqCost(costInfo.costKind, costInfo.opDesc)(block)
+  }
+
   /** Add the size-based cost of an operation to the accumulator and associate it with this operation.
     * The size in bytes of the data is known in advance (like in CalcSha256 operation)
     *

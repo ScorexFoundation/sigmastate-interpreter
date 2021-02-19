@@ -59,7 +59,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     )
 
   override val nBenchmarkIters = 50
-  val nBeforeAllWarmUpIters = 100
+  val nBeforeAllWarmUpIters = 50
 
   implicit def IR = createIR()
 

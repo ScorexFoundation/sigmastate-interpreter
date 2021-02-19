@@ -250,8 +250,7 @@ object Terms {
           }
           argsBuf(argsBuf.length - 1) = E
 
-          val genericMethod = method.objType.getMethodById(method.methodId).get
-          val evalMethod = genericMethod.evalMethod
+          val evalMethod = method.genericMethod.evalMethod
           evalMethod.invoke(method.objType, argsBuf.asInstanceOf[Array[AnyRef]]:_*)
       }
     }

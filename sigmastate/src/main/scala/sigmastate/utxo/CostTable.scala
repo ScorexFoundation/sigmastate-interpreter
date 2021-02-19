@@ -361,7 +361,7 @@ object CostTable {
     def ValUse = 2
 
     /** Cost of: 1) packing args into Array 2) java.lang.reflect.Method.invoke */
-    def MethodCall = 3
+    def MethodCall = 4
 
     /** Cost of: allocating new collection
       * @see ConcreteCollection_PerItem */
@@ -466,12 +466,12 @@ object CostTable {
     def Zip_PerItem = 1
 
     /** Cost of: 1) base cost of Coll.flatMap */
-    def Flatmap = 2
+    def Flatmap = 6
 
     /** Cost of: 1) cost of Coll.flatMap (per item)
       * 2) new collection is allocated for each item
       * 3) each collection is then appended to the resulting collection */
-    def Flatmap_PerItem = 2 // cf. collToColl
+    def Flatmap_PerItem = 5 // cf. collToColl
 
 //    ("ByIndex", "(Coll[IV],Int) => IV", collByIndex),
 //    ("SCollection$.exists", "(Coll[IV],(IV) => Boolean) => Boolean", collToColl),
