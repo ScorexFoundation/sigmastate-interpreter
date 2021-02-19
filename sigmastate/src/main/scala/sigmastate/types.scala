@@ -1440,23 +1440,40 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
          | \lst{f} to each element of this collection and concatenating the results.
         """.stripMargin, ArgInfo("f", "the function to apply to each element."))
 
+  /** We assume all flatMap body patterns have similar executon cost. */
   final val CheckFlatmapBody_Info = OperationCostInfo(
-    PerItemCost(2, 1, 1), NamedDesc("CheckFlatmapBody"))
+    PerItemCost(2, 2, 1), NamedDesc("CheckFlatmapBody"))
 
+
+  /** This patterns recognize all expressions, which are allowed as lambda body
+    * of flatMap. Other bodies are rejected with throwing exception.
+    */
   val flatMap_BodyPatterns = Array[PartialFunction[SValue, Int]](
-    { case ExtractScriptBytes(ValUse(id, _)) => id }
+    { case MethodCall(ValUse(id, tpe), m, args, _) if args.isEmpty => id },
+    { case ExtractScriptBytes(ValUse(id, _)) => id },
+    { case ExtractId(ValUse(id, _)) => id },
+    { case SigmaPropBytes(ValUse(id, _)) => id },
+    { case ExtractBytes(ValUse(id, _)) => id },
+    { case ExtractBytesWithNoRef(ValUse(id, _)) => id }
   )
 
+  /** Check the given expression is valid body of flatMap argument lambda.
+    * @param varId id of lambda variable (see [[FuncValue]].args)
+    * @param expr expression with is expected to use varId in ValUse node.
+    * @return true if the body is allowed
+    */
   def isValidPropertyAccess(varId: Int, expr: SValue)
                            (implicit E: ErgoTreeEvaluator): Boolean = {
     var found = false
+    // NOTE: the cost depends on the position of the pattern since
+    // we are checking until the first matching pattern found.
     E.addSeqCost(CheckFlatmapBody_Info) { () =>
       var i = 0
       val nPatterns = flatMap_BodyPatterns.length
       while (i < nPatterns && !found) {
         val p = flatMap_BodyPatterns(i)
         found = p.lift(expr) match {
-          case Some(id) => id == varId  // id in the pattern is equal to lambda varId
+          case Some(id) => id == varId  // `id` in the pattern is equal to lambda `varId`
           case None => false
         }
         i += 1
@@ -1466,14 +1483,14 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
     found
   }
 
-  final val MatchFlatmapNode_Info = OperationCostInfo(
-    FixedCost(3), NamedDesc("MatchFlatmapNode"))
+  final val MatchSingleArgMethodCall_Info = OperationCostInfo(
+    FixedCost(3), NamedDesc("MatchSingleArgMethodCall"))
 
-  object IsFlatMap {
+  object IsSingleArgMethodCall {
     def unapply(mc:MethodCall)
                (implicit E: ErgoTreeEvaluator): Nullable[(Int, SValue)] = {
       var res: Nullable[(Int, SValue)] = Nullable.None
-      E.addFixedCost(MatchFlatmapNode_Info) {
+      E.addFixedCost(MatchSingleArgMethodCall_Info) {
         res = mc match {
           case MethodCall(_, m, Seq(FuncValue(args, body)), _) if args.length == 1 =>
             val id = args(0)._1
@@ -1488,8 +1505,9 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
 
   def checkValidFlatmap(mc: MethodCall)(implicit E: ErgoTreeEvaluator) = {
     mc match {
-      case IsFlatMap(varId, lambdaBody) if isValidPropertyAccess(varId, lambdaBody) =>
-          // ok, do nothing
+      case IsSingleArgMethodCall(varId, lambdaBody)
+            if isValidPropertyAccess(varId, lambdaBody) =>
+        // ok, do nothing
       case _ =>
         ErgoTreeEvaluator.error(
           s"Unsupported lambda in flatMap: allowed usage `xs.flatMap(x => x.property)`: $mc")
@@ -1499,10 +1517,10 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
   def flatMap_eval[A, B](mc: MethodCall, xs: Coll[A], f: A => Coll[B])
                         (implicit E: ErgoTreeEvaluator): Coll[B] = {
     checkValidFlatmap(mc)
-    val tpeB = mc.tpe.asInstanceOf[SCollection[SType]].elemType
-    val tB = Evaluation.stypeToRType(tpeB).asInstanceOf[RType[B]]
     val m = mc.method
     E.addSeqCost(m.costKind.asInstanceOf[PerItemCost], xs.length, m.opDesc) { () =>
+      val tpeB = mc.tpe.asInstanceOf[SCollection[SType]].elemType
+      val tB = Evaluation.stypeToRType(tpeB).asInstanceOf[RType[B]]
       xs.flatMap(f)(tB)
     }
   }

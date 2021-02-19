@@ -409,7 +409,7 @@ object CostTable {
 //
 
     /** Cost of: 1) serializing EcPointType to bytes 2) packing them in Coll. */
-    def GroupElement_GetEncoded = 223
+    def GroupElement_GetEncoded = 250
 
     /** Cost of: 1) calling EcPoint.negate 2) wrapping in GroupElement. */
     def GroupElement_Negate = 2
