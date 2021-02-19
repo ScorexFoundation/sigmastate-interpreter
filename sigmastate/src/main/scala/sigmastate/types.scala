@@ -12,7 +12,7 @@ import sigmastate.interpreter._
 import sigmastate.utils.Overloading.Overload1
 import scalan.util.Extensions._
 import scorex.crypto.authds.{ADKey, ADValue}
-import scorex.crypto.authds.avltree.batch.{Lookup, Insert}
+import scorex.crypto.authds.avltree.batch.{Lookup, Insert, Update}
 import scorex.crypto.hash.Blake2b256
 import sigmastate.Values._
 import sigmastate.lang.Terms.{MethodCall, _}
@@ -1912,6 +1912,11 @@ case object SAvlTree extends SProduct with SPredefType with SMonoType {
          |
         """.stripMargin)
 
+  lazy val isInsertAllowed_Info = {
+    val m = isInsertAllowedMethod
+    OperationCostInfo(m.costKind.asInstanceOf[FixedCost], m.opDesc)
+  }
+
   lazy val isUpdateAllowedMethod = SMethod(
     this, "isUpdateAllowed", SFunc(this, SBoolean), 6, FixedCost(1))
       .withIRInfo(MethodCallIrBuilder)
@@ -1919,6 +1924,11 @@ case object SAvlTree extends SProduct with SPredefType with SMonoType {
         """
          |
         """.stripMargin)
+
+  lazy val isUpdateAllowed_Info = {
+    val m = isUpdateAllowedMethod
+    OperationCostInfo(m.costKind.asInstanceOf[FixedCost], m.opDesc)
+  }
 
   lazy val isRemoveAllowedMethod = SMethod(
     this, "isRemoveAllowed", SFunc(this, SBoolean), 7, FixedCost(1))
@@ -1965,6 +1975,9 @@ case object SAvlTree extends SProduct with SPredefType with SMonoType {
 
   final val InsertIntoAvlTree_Info = OperationCostInfo(
     PerItemCost(4, 5, 1), NamedDesc("InsertIntoAvlTree"))
+
+  final val UpdateAvlTree_Info = OperationCostInfo(
+    PerItemCost(4, 5, 1), NamedDesc("UpdateAvlTree"))
 
   def createVerifier(tree: AvlTree, proof: Coll[Byte])(implicit E: ErgoTreeEvaluator) = {
     // the cost of tree reconstruction from proof is O(proof.length)
@@ -2078,17 +2091,22 @@ case object SAvlTree extends SProduct with SPredefType with SMonoType {
 
   def insert_eval(mc: MethodCall, tree: AvlTree, entries: Coll[(Coll[Byte], Coll[Byte])], proof: Coll[Byte])
                  (implicit E: ErgoTreeEvaluator): Option[AvlTree] = {
-    E.addCost(isInsertAllowedMethod.costKind.asInstanceOf[FixedCost], isInsertAllowedMethod.opDesc)
+    E.addCost(isInsertAllowed_Info)
     if (!tree.isInsertAllowed) {
       None
     } else {
       val bv = createVerifier(tree, proof)
-      val nItems = bv.treeHeight + 1 // when the tree is empty
+      // when the tree is empty we still need to add the insert cost
+      val nItems = Math.max(bv.treeHeight, 1)
+
       entries.forall { case (key, value) =>
         var res = true
         // the cost of tree lookup is O(bv.treeHeight)
         E.addSeqCost(InsertIntoAvlTree_Info, nItems) { () =>
-          val insertRes = bv.performOneOperation(Insert(ADKey @@ key.toArray, ADValue @@ value.toArray))
+          val insert = Insert(ADKey @@ key.toArray, ADValue @@ value.toArray)
+          val insertRes = bv.performOneOperation(insert)
+          // TODO v5.0: throwing exception is not consistent with update semantics
+          //  however it preserves v4.0 semantics
           if (insertRes.isFailure) {
             Interpreter.error(s"Incorrect insert for $tree (key: $key, value: $value, digest: ${tree.digest}): ${insertRes.failed.get}}")
           }
@@ -2098,16 +2116,15 @@ case object SAvlTree extends SProduct with SPredefType with SMonoType {
       }
       bv.digest match {
         case Some(d) =>
-          E.addCost(updateDigestMethod.costKind.asInstanceOf[FixedCost], updateDigestMethod.opDesc)
+          E.addCost(updateDigest_Info)
           Some(tree.updateDigest(Colls.fromArray(d)))
         case _ => None
       }
     }
-
   }
 
   lazy val updateMethod = SMethod(this, "update",
-    SFunc(Array(SAvlTree, CollKeyValue, SByteArray), SAvlTreeOption), 13, FixedCost(1))
+    SFunc(Array(SAvlTree, CollKeyValue, SByteArray), SAvlTreeOption), 13, DynamicCost)
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(MethodCall,
         """
@@ -2122,6 +2139,37 @@ case object SAvlTree extends SProduct with SPredefType with SMonoType {
          |    */
          |
         """.stripMargin)
+
+  def update_eval(mc: MethodCall, tree: AvlTree,
+                  operations: Coll[(Coll[Byte], Coll[Byte])], proof: Coll[Byte])
+                 (implicit E: ErgoTreeEvaluator): Option[AvlTree] = {
+    E.addCost(isUpdateAllowed_Info)
+    if (!tree.isUpdateAllowed) {
+      None
+    } else {
+      val bv = createVerifier(tree, proof)
+      // when the tree is empty we still need to add the insert cost
+      val nItems = Math.max(bv.treeHeight, 1)
+
+      // here we use forall as looping with fast break on first failed tree oparation
+      operations.forall { case (key, value) =>
+        var res = true
+        // the cost of tree update is O(bv.treeHeight)
+        E.addSeqCost(UpdateAvlTree_Info, nItems) { () =>
+          val op = Update(ADKey @@ key.toArray, ADValue @@ value.toArray)
+          val updateRes = bv.performOneOperation(op)
+          res = updateRes.isSuccess
+        }
+        res
+      }
+      bv.digest match {
+        case Some(d) =>
+          E.addCost(updateDigest_Info)
+          Some(tree.updateDigest(Colls.fromArray(d)))
+        case _ => None
+      }
+    }
+  }
 
   lazy val removeMethod = SMethod(this, "remove",
     SFunc(Array(SAvlTree, SByteArray2, SByteArray), SAvlTreeOption), 14, FixedCost(1))
@@ -2147,6 +2195,11 @@ case object SAvlTree extends SProduct with SPredefType with SMonoType {
         """
          |
         """.stripMargin)
+
+  lazy val updateDigest_Info = {
+    val m = updateDigestMethod
+    OperationCostInfo(m.costKind.asInstanceOf[FixedCost], m.opDesc)
+  }
 
   protected override def getMethods(): Seq[SMethod] = super.getMethods() ++ Seq(
     digestMethod,
