@@ -12,7 +12,7 @@ import sigmastate.interpreter._
 import sigmastate.utils.Overloading.Overload1
 import scalan.util.Extensions._
 import scorex.crypto.authds.{ADKey, ADValue}
-import scorex.crypto.authds.avltree.batch.{Lookup, Insert, Update}
+import scorex.crypto.authds.avltree.batch.{Lookup, Insert, Update, Remove}
 import scorex.crypto.hash.Blake2b256
 import sigmastate.Values._
 import sigmastate.lang.Terms.{MethodCall, _}
@@ -1878,6 +1878,11 @@ case object SAvlTree extends SProduct with SPredefType with SMonoType {
          | Authenticated tree \lst{digest} = \lst{root hash bytes} ++ \lst{tree height}
         """.stripMargin)
 
+  lazy val digest_Info = {
+    val m = digestMethod
+    OperationCostInfo(m.costKind.asInstanceOf[FixedCost], m.opDesc)
+  }
+
   lazy val enabledOperationsMethod = SMethod(
     this, "enabledOperations", SFunc(this, SByte), 2, FixedCost(1))
       .withIRInfo(MethodCallIrBuilder)
@@ -1938,6 +1943,11 @@ case object SAvlTree extends SProduct with SPredefType with SMonoType {
          |
         """.stripMargin)
 
+  lazy val isRemoveAllowed_Info = {
+    val m = isRemoveAllowedMethod
+    OperationCostInfo(m.costKind.asInstanceOf[FixedCost], m.opDesc)
+  }
+
   lazy val updateOperationsMethod  = SMethod(this, "updateOperations",
     SFunc(Array(SAvlTree, SByte), SAvlTree), 8, FixedCost(5))
       .withIRInfo(MethodCallIrBuilder)
@@ -1978,6 +1988,9 @@ case object SAvlTree extends SProduct with SPredefType with SMonoType {
 
   final val UpdateAvlTree_Info = OperationCostInfo(
     PerItemCost(4, 5, 1), NamedDesc("UpdateAvlTree"))
+
+  final val RemoveAvlTree_Info = OperationCostInfo(
+    PerItemCost(10, 15, 1), NamedDesc("RemoveAvlTree"))
 
   def createVerifier(tree: AvlTree, proof: Coll[Byte])(implicit E: ErgoTreeEvaluator) = {
     // the cost of tree reconstruction from proof is O(proof.length)
@@ -2172,7 +2185,7 @@ case object SAvlTree extends SProduct with SPredefType with SMonoType {
   }
 
   lazy val removeMethod = SMethod(this, "remove",
-    SFunc(Array(SAvlTree, SByteArray2, SByteArray), SAvlTreeOption), 14, FixedCost(1))
+    SFunc(Array(SAvlTree, SByteArray2, SByteArray), SAvlTreeOption), 14, DynamicCost)
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(MethodCall,
         """
@@ -2187,6 +2200,34 @@ case object SAvlTree extends SProduct with SPredefType with SMonoType {
          |    */
          |
         """.stripMargin)
+
+  def remove_eval(mc: MethodCall, tree: AvlTree, 
+                  operations: Coll[Coll[Byte]], proof: Coll[Byte])
+                 (implicit E: ErgoTreeEvaluator): Option[AvlTree] = {
+    E.addCost(isRemoveAllowed_Info)
+    if (!tree.isRemoveAllowed) {
+      None
+    } else {
+      val bv = createVerifier(tree, proof)
+      // when the tree is empty we still need to add the insert cost
+      val nItems = Math.max(bv.treeHeight, 1)
+
+      cfor(0)(_ < operations.length, _ + 1) { i =>
+        E.addSeqCost(RemoveAvlTree_Info, nItems) { () =>
+          val key = operations(i).toArray
+          bv.performOneOperation(Remove(ADKey @@ key))
+        }
+      }
+
+      E.addCost(digest_Info)
+      bv.digest match {
+        case Some(d) =>
+          E.addCost(updateDigest_Info)
+          Some(tree.updateDigest(Colls.fromArray(d)))
+        case _ => None
+      }
+    }
+  }
 
   lazy val updateDigestMethod = SMethod(this, "updateDigest",
     SFunc(Array(SAvlTree, SByteArray), SAvlTree), 15, FixedCost(5))

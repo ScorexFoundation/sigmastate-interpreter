@@ -3115,8 +3115,10 @@ class SigmaDslSpecification extends SigmaDslTesting
     proof
   }
 
-  def performRemove(avlProver: BatchProver, key: Coll[Byte]) = {
-    avlProver.performOneOperation(Remove(ADKey @@ key.toArray))
+  def performRemove(avlProver: BatchProver, keys: Seq[Coll[Byte]]) = {
+    keys.foreach { key =>
+      avlProver.performOneOperation(Remove(ADKey @@ key.toArray))
+    }
     val proof = avlProver.generateProof().toColl
     proof
   }
@@ -3412,10 +3414,26 @@ class SigmaDslSpecification extends SigmaDslTesting
 
     def success[T](v: T) = Expected(Success(v), 0)
 
+    { // positive test with many keys in the tree and to remove
+      val keys = arrayOfN(100, keyCollGen).sample.get
+      val values = arrayOfN(100, bytesCollGen).sample.get
+      val (_, avlProver) = createAvlTreeAndProver(keys.zip(values):_*)
+      val preRemoveDigest = avlProver.digest.toColl
+      val keysToRemove = keys.zipWithIndex.collect { case (k, i) if i % 2 != 0 => k }
+      val removeProof = performRemove(avlProver, keysToRemove)
+      val endDigest = avlProver.digest.toColl
+
+      val preRemoveTree = createTree(preRemoveDigest, removeAllowed = true)
+      val endTree = preRemoveTree.updateDigest(endDigest)
+      val input = (preRemoveTree, (Colls.fromArray(keysToRemove), removeProof))
+      val res = Some(endTree)
+      remove.checkExpected(input, success(res))
+    }
+
     forAll(keyCollGen, bytesCollGen) { (key, value) =>
       val (_, avlProver) = createAvlTreeAndProver(key -> value)
       val preRemoveDigest = avlProver.digest.toColl
-      val removeProof = performRemove(avlProver, key)
+      val removeProof = performRemove(avlProver, Array(key))
       val endDigest = avlProver.digest.toColl
       val keys = Colls.fromItems(key)
       val cost = 38270
