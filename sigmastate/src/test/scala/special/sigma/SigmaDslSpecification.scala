@@ -33,12 +33,13 @@ import OrderingOps._
 import org.ergoplatform.ErgoBox.AdditionalRegisters
 import org.scalacheck.Arbitrary._
 import org.scalacheck.Gen.frequency
-import org.scalatest.BeforeAndAfterAll
+import org.scalatest.{BeforeAndAfterAll, Tag}
 import scalan.RType._
 import scorex.util.ModifierId
 import sigmastate.basics.ProveDHTuple
 import sigmastate.interpreter.ErgoTreeEvaluator.{MethodDesc, NamedDesc}
 import sigmastate.interpreter._
+import org.scalactic.source.Position
 
 import scala.collection.mutable
 
@@ -65,6 +66,14 @@ class SigmaDslSpecification extends SigmaDslTesting
 //  override val perTestWarmUpIters = 10
 
   implicit def IR = createIR()
+
+  override protected def property(testName: String, testTags: Tag*)
+                                 (testFun: => Any)
+                                 (implicit pos: Position): Unit = {
+    super.property(testName, testTags:_*)(testFun)
+
+  }
+
 
   import TestData._
 

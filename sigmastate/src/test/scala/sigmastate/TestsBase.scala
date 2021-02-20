@@ -49,9 +49,16 @@ trait TestsBase extends Matchers {
   def mkTestErgoTree(prop: SigmaBoolean): ErgoTree =
     ErgoTree.fromSigmaBoolean(ergoTreeHeaderInTests, prop)
 
-  lazy val compiler = SigmaCompiler(
-    TestnetNetworkPrefix,
-    lowerMethodCalls = true, TransformingSigmaBuilder)
+  protected val _lowerMethodCalls = new DynamicVariable[Boolean](true)
+
+  /** Returns true if MethodCall nodes should be lowered by TypeChecker to the
+    * corresponding ErgoTree nodes. E.g. xs.map(f) -->  MapCollection(xs, f).
+    * NOTE: The value of the flag is assigned dynamically using _lowerMethodCalls
+    * DynamicVariable. */
+  def lowerMethodCallsInTests: Boolean = _lowerMethodCalls.value
+
+  def compiler = SigmaCompiler(
+    TestnetNetworkPrefix, lowerMethodCallsInTests, TransformingSigmaBuilder)
 
   def checkSerializationRoundTrip(v: SValue): Unit = {
     val compiledTreeBytes = ValueSerializer.serialize(v)

@@ -10,7 +10,7 @@ trait CrossVersionProps extends PropSpecLike with TestsBase {
   /** Number of times each test property is warmed up (i.e. executed before final execution). */
   val perTestWarmUpIters: Int = 0
 
-  private def testFun_Run(testName: String, testFun: => Any): Unit = {
+  protected def testFun_Run(testName: String, testFun: => Any): Unit = {
     def msg = s"""property("$testName")(ActivatedVersion = $activatedVersionInTests; ErgoTree version = $ergoTreeVersionInTests)"""
     if (printVersions) println(msg)
     try testFun
