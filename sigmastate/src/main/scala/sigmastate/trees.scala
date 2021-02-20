@@ -650,14 +650,15 @@ case class CalcBlake2b256(override val input: Value[SByteArray]) extends CalcHas
   override val hashFn: CryptographicHash32 = Blake2b256
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val inputV = input.evalTo[Coll[Byte]](env)
-    addPerBlockCost(CalcBlake2b256.costKind, inputV.length) {
+    addSeqCost(CalcBlake2b256.costKind, inputV.length) { () =>
       SigmaDsl.blake2b256(inputV)
     }
   }
 }
 object CalcBlake2b256 extends SimpleTransformerCompanion {
   override def opCode: OpCode = OpCodes.CalcBlake2b256Code
-  override val costKind = PerBlockCost(1, CostOf.CalcBlake2b256_PerBlock)
+  /** 128 is the size of message chunk processed by Blake2b256 algorithm. */
+  override val costKind = PerItemCost(1, CostOf.CalcBlake2b256_PerBlock, 128)
   override def argInfos: Seq[ArgInfo] = CalcBlake2b256Info.argInfos
 }
 
@@ -669,14 +670,14 @@ case class CalcSha256(override val input: Value[SByteArray]) extends CalcHash {
   override val hashFn: CryptographicHash32 = Sha256
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val inputV = input.evalTo[Coll[Byte]](env)
-    addPerBlockCost(CalcSha256.costKind, inputV.length) {
+    addSeqCost(CalcSha256.costKind, inputV.length) { () =>
       SigmaDsl.sha256(inputV)
     }
   }
 }
 object CalcSha256 extends SimpleTransformerCompanion {
   override def opCode: OpCode = OpCodes.CalcSha256Code
-  override val costKind = PerBlockCost(1, CostOf.CalcSha256_PerBlock)
+  override val costKind = PerItemCost(1, CostOf.CalcSha256_PerBlock, 128)
   override def argInfos: Seq[ArgInfo] = CalcSha256Info.argInfos
 }
 
@@ -980,7 +981,7 @@ case class Xor(override val left: Value[SByteArray],
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val lV = left.evalTo[Coll[Byte]](env)
     val rV = right.evalTo[Coll[Byte]](env)
-    addPerBlockCost(Xor.costKind, lV.length) {
+    addSeqCost(Xor.costKind, lV.length) { () =>
       Colls.xor(lV, rV)
     }
   }
@@ -988,7 +989,7 @@ case class Xor(override val left: Value[SByteArray],
 object Xor extends TwoArgumentOperationCompanion {
   val OpType = SFunc(Array(SByteArray, SByteArray), SByteArray)
   override def opCode: OpCode = XorCode
-  override val costKind = PerBlockCost(CostOf.Xor, CostOf.Xor_PerBlock)
+  override val costKind = PerItemCost(CostOf.Xor, CostOf.Xor_PerBlock, 512)
   override def argInfos: Seq[ArgInfo] = XorInfo.argInfos
 }
 

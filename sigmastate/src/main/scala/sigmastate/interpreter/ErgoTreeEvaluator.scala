@@ -261,42 +261,6 @@ class ErgoTreeEvaluator(
     addSeqCost(costInfo.costKind, costInfo.opDesc)(block)
   }
 
-  /** Add the size-based cost of an operation to the accumulator and associate it with this operation.
-    * The size in bytes of the data is known in advance (like in CalcSha256 operation)
-    *
-    * @param costKind cost of operation per block of data
-    * @param dataSize size of data in bytes known in advance (before operation execution)
-    * @param opNode   the node to associate the cost with (when costTracingEnabled)
-    * @param block    operation executed under the given cost
-    * @tparam R result type of the operation
-    * @hotspot don't beautify the code
-    */
-  @inline
-  final def addPerBlockCost[R](costKind: PerBlockCost, dataSize: Int, opNode: SValue)
-                              (block: => R): R = {
-    val numBlocks = PerBlockCostItem.blocksToCover(dataSize)
-    var costItem: PerBlockCostItem = null
-    if (settings.costTracingEnabled) {
-      costItem = PerBlockCostItem(opNode.companion.opDesc, costKind, numBlocks)
-      costTrace += costItem
-    }
-    if (settings.isMeasureOperationTime) {
-      if (costItem == null) {
-        costItem = PerBlockCostItem(opNode.companion.opDesc, costKind, numBlocks)
-      }
-      val start = System.nanoTime()
-      val cost = costKind.cost(numBlocks) // should be measured
-      coster.add(cost)
-      val res = block
-      val end = System.nanoTime()
-      profiler.addCostItem(costItem, end - start)
-      res
-    } else {
-      val cost = costKind.cost(numBlocks)
-      coster.add(cost)
-      block
-    }
-  }
 
   final def addMethodCallCost[R](mc: MethodCall, obj: Any, args: Array[Any])
                                 (block: => R): R = {
@@ -600,28 +564,6 @@ case class SeqCostItem(opDesc: OperationDesc, costKind: PerItemCost, nItems: Int
 object SeqCostItem {
   def apply(companion: PerItemCostValueCompanion, nItems: Int): SeqCostItem =
     SeqCostItem(companion.opDesc, companion.costKind, nItems)
-}
-
-/** An item in the cost accumulation trace of a [[ErgoTreeEvaluator]].
-  * Represents cost of data size dependent operation (like CalcSha256).
-  * Used for debugging, testing and profiling of costing.
-  *
-  * @param opDesc   descriptor of the ErgoTree operation
-  * @param costKind descriptor of the cost added to accumulator
-  * @param nBlocks  size of data in blocks
-  */
-case class PerBlockCostItem(opDesc: OperationDesc, costKind: PerBlockCost, nBlocks: Int)
-    extends CostItem {
-  override def opName: String = ErgoTreeEvaluator.operationName(opDesc)
-  override def cost: Int = costKind.cost(nBlocks)
-}
-object PerBlockCostItem {
-  /** Helper constructor method. */
-  def apply(companion: PerBlockCostValueCompanion, nBlocks: Int): PerBlockCostItem =
-    PerBlockCostItem(companion.opDesc, companion.costKind, nBlocks)
-
-  /** Returns a number of blocks to cover dataSize bytes. */
-  def blocksToCover(dataSize: Int) = (dataSize - 1) / ErgoTreeEvaluator.DataBlockSize + 1
 }
 
 /** An item in the cost accumulation trace of a [[ErgoTreeEvaluator]].

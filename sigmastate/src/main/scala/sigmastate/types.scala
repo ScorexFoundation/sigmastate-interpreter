@@ -630,26 +630,6 @@ object SMethod {
     }
   }
 
-  /** Returns a cost function which expects `obj` to be of `Coll[Byte]` type and
-    * uses its length to compute PerBlockCostItem  */
-  def perBlockCost(costKind: PerBlockCost): MethodCostFunc = new MethodCostFunc {
-    override def apply(E: ErgoTreeEvaluator,
-                       mc: MethodCall,
-                       obj: Any, args: Array[Any]): CostDetails = obj match {
-      case coll: Coll[a] if coll.tItem == RType.ByteType =>
-        val nBlocks = PerBlockCostItem.blocksToCover(coll.length)
-        if (E.settings.costTracingEnabled) {
-          val desc = MethodDesc(mc.method)
-          TracedCost(Array(PerBlockCostItem(desc, costKind, nBlocks)))
-        }
-        else
-          GivenCost(costKind.cost(nBlocks))
-      case _ =>
-        ErgoTreeEvaluator.error(
-          s"Invalid object $obj of method call $mc: Coll[Byte] type is expected")
-    }
-  }
-
   /** Some runtime methods (like Coll.map, Coll.flatMap) require additional RType descriptors.
     * The builder can extract those descriptors from the given type of the method signature.
     */

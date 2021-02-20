@@ -152,20 +152,6 @@ object Values {
                            (block: () => R)(implicit E: ErgoTreeEvaluator): R = {
       E.addSeqCost(costKind, nItems, this.companion.opDesc)(block)
     }
-
-    /** Add the size-based cost of an operation to the accumulator and associate it with this operation.
-      * The size in bytes of the data is known in advance (like in CalcSha256 operation)
-      *
-      * @param costKind cost descriptor of the operation
-      * @param dataSize size of data in bytes known in advance (before operation execution)
-      * @param block    operation executed under the given cost
-      * @tparam R result type of the operation
-      */
-    @inline
-    final def addPerBlockCost[R](costKind: PerBlockCost, dataSize: Int)
-                                (block: => R)(implicit E: ErgoTreeEvaluator): R = {
-      E.addPerBlockCost(costKind, dataSize, this)(block)
-    }
   }
 
   object Value {
@@ -283,12 +269,6 @@ object Values {
   trait PerItemCostValueCompanion extends ValueCompanion {
     /** Returns cost descriptor of this operation. */
     def costKind: PerItemCost
-  }
-
-  /** Should be inherited by companion objects of operations with per data block cost kind. */
-  trait PerBlockCostValueCompanion extends ValueCompanion {
-    /** Returns cost descriptor of this operation. */
-    def costKind: PerBlockCost
   }
 
   abstract class EvaluatedValue[+S <: SType] extends Value[S] {

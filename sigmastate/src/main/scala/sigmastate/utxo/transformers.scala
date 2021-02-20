@@ -520,7 +520,7 @@ case class DeserializeContext[V <: SType](id: Byte, tpe: V) extends Deserialize[
 }
 object DeserializeContext extends ValueCompanion {
   override def opCode: OpCode = OpCodes.DeserializeContextCode
-  override val costKind = PerBlockCost(1, 1)
+  override val costKind = PerItemCost(1, 10, 128)
 }
 
 /** Extract register of SELF box as Coll[Byte], deserialize it into Value and inline into executing script.
@@ -532,7 +532,7 @@ case class DeserializeRegister[V <: SType](reg: RegisterId, tpe: V, default: Opt
 }
 object DeserializeRegister extends ValueCompanion {
   override def opCode: OpCode = OpCodes.DeserializeRegisterCode
-  override val costKind = PerBlockCost(1, 1)
+  override val costKind = PerItemCost(1, 10, 128)
 }
 
 /** See [[special.sigma.Context.getVar()]] for detailed description. */

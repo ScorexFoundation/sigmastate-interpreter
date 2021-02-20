@@ -2,16 +2,14 @@ package sigmastate.eval
 
 import sigmastate.SMethod
 import sigmastate.Values.{SValue, FixedCost}
-import sigmastate.lang.Terms
 import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.ValueSerializer.getSerializer
 import scalan.util.Extensions.ByteOps
 import debox.{Buffer => DBuffer, Map => DMap}
-import sigmastate.interpreter.{PerBlockCostItem, SeqCostItem, CostItem, TypeBasedCostItem, FixedCostItem}
+import sigmastate.interpreter.{SeqCostItem, CostItem, TypeBasedCostItem, FixedCostItem}
 import sigmastate.lang.Terms.{PropertyCall, MethodCall}
 import spire.{math, sp}
-import scalan.util.PrintExtensions._
 
 import scala.reflect.ClassTag
 
@@ -235,11 +233,6 @@ class Profiler {
             val name = s"${ci.opName}(nItems: $nItems, nChunks: $nChunks)"
             val comment = s"count: $count, costKind: $costKind"
             (name, timePerChunk, time, comment)
-          case PerBlockCostItem(_, perBlockCost, nBlocks) =>
-            val timePerBlock = if (nBlocks > 0) time / nBlocks else time
-            val name = s"${ci.opName}(nBlocks: $nBlocks)"
-            val comment = s"count: $count, perBlockCost: $perBlockCost"
-            (name, timePerBlock, time, comment)
         }
       }
       (name, timePerItem, time, comment)
