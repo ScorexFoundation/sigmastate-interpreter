@@ -49,7 +49,9 @@ trait TestsBase extends Matchers {
   def mkTestErgoTree(prop: SigmaBoolean): ErgoTree =
     ErgoTree.fromSigmaBoolean(ergoTreeHeaderInTests, prop)
 
-  lazy val compiler = SigmaCompiler(TestnetNetworkPrefix, TransformingSigmaBuilder)
+  lazy val compiler = SigmaCompiler(
+    TestnetNetworkPrefix,
+    lowerMethodCalls = true, TransformingSigmaBuilder)
 
   def checkSerializationRoundTrip(v: SValue): Unit = {
     val compiledTreeBytes = ValueSerializer.serialize(v)

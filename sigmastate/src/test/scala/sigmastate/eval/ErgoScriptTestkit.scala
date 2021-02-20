@@ -31,7 +31,10 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests
   import Size._
   import BigInt._
 
-  override lazy val compiler = new SigmaCompiler(TestnetNetworkPrefix, IR.builder)
+  override lazy val compiler = new SigmaCompiler(
+    TestnetNetworkPrefix, IR.builder,
+    lowerMethodCalls = true
+  )
 
   def newErgoContext(height: Int, boxToSpend: ErgoBox, extension: Map[Byte, EvaluatedValue[SType]] = Map()): ErgoLikeContext = {
     val tx1 = new ErgoLikeTransaction(IndexedSeq(), IndexedSeq(), IndexedSeq(boxToSpend))

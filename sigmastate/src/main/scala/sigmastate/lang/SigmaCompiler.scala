@@ -14,7 +14,9 @@ import sigmastate.lang.syntax.ParserException
   * @param networkPrefix network prefix to decode an ergo address from string (PK op)
   * @param builder
   */
-class SigmaCompiler(networkPrefix: NetworkPrefix, builder: SigmaBuilder) {
+class SigmaCompiler(networkPrefix: NetworkPrefix,
+                    builder: SigmaBuilder,
+                    lowerMethodCalls: Boolean) {
 
   def parse(x: String): SValue = {
     SigmaParser(x, builder) match {
@@ -28,7 +30,7 @@ class SigmaCompiler(networkPrefix: NetworkPrefix, builder: SigmaBuilder) {
     val predefinedFuncRegistry = new PredefinedFuncRegistry(builder)
     val binder = new SigmaBinder(env, builder, networkPrefix, predefinedFuncRegistry)
     val bound = binder.bind(parsed)
-    val typer = new SigmaTyper(builder, predefinedFuncRegistry)
+    val typer = new SigmaTyper(builder, predefinedFuncRegistry, lowerMethodCalls)
     val typed = typer.typecheck(bound)
     typed
   }
@@ -53,6 +55,8 @@ class SigmaCompiler(networkPrefix: NetworkPrefix, builder: SigmaBuilder) {
 }
 
 object SigmaCompiler {
-  def apply(networkPrefix: NetworkPrefix, builder: SigmaBuilder = TransformingSigmaBuilder): SigmaCompiler =
-    new SigmaCompiler(networkPrefix, builder)
+  def apply(networkPrefix: NetworkPrefix,
+            lowerMethodCalls: Boolean,
+            builder: SigmaBuilder = TransformingSigmaBuilder): SigmaCompiler =
+    new SigmaCompiler(networkPrefix, builder, lowerMethodCalls)
 }

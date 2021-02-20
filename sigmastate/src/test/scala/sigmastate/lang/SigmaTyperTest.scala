@@ -31,7 +31,7 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
       val predefinedFuncRegistry = new PredefinedFuncRegistry(builder)
       val binder = new SigmaBinder(env, builder, TestnetNetworkPrefix, predefinedFuncRegistry)
       val bound = binder.bind(parsed)
-      val typer = new SigmaTyper(builder, predefinedFuncRegistry)
+      val typer = new SigmaTyper(builder, predefinedFuncRegistry, true)
       val typed = typer.typecheck(bound)
       assertSrcCtxForAllNodes(typed)
       if (expected != null) typed shouldBe expected
@@ -48,7 +48,7 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
       val predefinedFuncRegistry = new PredefinedFuncRegistry(builder)
       val binder = new SigmaBinder(env, builder, TestnetNetworkPrefix, predefinedFuncRegistry)
       val bound = binder.bind(parsed)
-      val typer = new SigmaTyper(builder, predefinedFuncRegistry)
+      val typer = new SigmaTyper(builder, predefinedFuncRegistry, lowerMethodCalls = true)
       typer.typecheck(bound)
     }, {
       case te: TyperException =>

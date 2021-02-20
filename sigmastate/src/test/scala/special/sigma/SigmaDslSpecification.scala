@@ -58,8 +58,11 @@ class SigmaDslSpecification extends SigmaDslTesting
       costTracingEnabled = true  // should always be enabled in tests (and false by default)
     )
 
-  override val nBenchmarkIters = 50
-  val nBeforeAllWarmUpIters = 50
+//  override val nBenchmarkIters = 50  // number of times each test feature is repeated
+  val nBeforeAllWarmUpIters = 1 // total warm-up iterations: should be >= nBenchmarkIters
+
+  // number of times each test is warmed up
+//  override val perTestWarmUpIters = 10
 
   implicit def IR = createIR()
 
@@ -2819,8 +2822,6 @@ class SigmaDslSpecification extends SigmaDslTesting
         "{ (t: AvlTree) => t.isRemoveAllowed }",
         expectedExprFor("isRemoveAllowed")))
   }
-
-//  override val perTestWarmUpIters: Int = 50
 
   property("AvlTree.{contains, get, getMany, updateDigest, updateOperations} equivalence") {
     val contains = existingFeature(
@@ -6412,11 +6413,11 @@ class SigmaDslSpecification extends SigmaDslTesting
         )))
   }
 
-  val formatter = (info: MeasureInfo[Coll[Byte]]) => {
-    val numBlocks = PerBlockCostItem.blocksToCover(info.input.length)
-    val time = info.measuredTime / 1000
-    val timePerBlock = info.measuredTime / info.nIters / numBlocks
-    s"case ${info.iteration}: ${time} usec; numBlocks: $numBlocks; timePerBlock: $timePerBlock"
+  def formatter(costKind: PerItemCost) = (info: MeasureInfo[Coll[Byte]]) => {
+    val numChunks = costKind.chunks(info.input.length)
+    val timeUs = info.measuredTime / 1000
+    val timePerBlock = info.measuredTime / info.nIters / numChunks
+    s"case ${info.iteration}: ${timeUs} usec; numChunks: $numChunks; timePerBlock: $timePerBlock"
   }
 
   property("blake2b256 benchmark: to estimate timeout") {
@@ -6429,7 +6430,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         "{ (x: Coll[Byte]) => blake2b256(x) }",
         FuncValue(Vector((1, SByteArray)), CalcBlake2b256(ValUse(1, SByteArray)))),
       nIters = 1000,
-      formatter)
+      formatter(CalcBlake2b256.costKind))
   }
 
   property("blake2b256, sha256 equivalence") {

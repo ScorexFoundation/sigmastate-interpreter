@@ -7,6 +7,7 @@ import spire.syntax.all.cfor
 trait CrossVersionProps extends PropSpecLike with TestsBase {
 
   val printVersions: Boolean = false
+  /** Number of times each test property is warmed up (i.e. executed before final execution). */
   val perTestWarmUpIters: Int = 0
 
   private def testFun_Run(testName: String, testFun: => Any): Unit = {
@@ -33,6 +34,7 @@ trait CrossVersionProps extends PropSpecLike with TestsBase {
           testFun_Run(testName, testFun)
         }
         System.gc()
+        Thread.sleep(100) // give it some time to finish warm-up
       }
 
       cfor(0)(_ < activatedVersions.length, _ + 1) { i =>

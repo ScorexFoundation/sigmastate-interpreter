@@ -18,7 +18,7 @@ object ErgoScriptPredef {
   import sigmastate.interpreter.Interpreter._
 
   def compileWithCosting(env: ScriptEnv, code: String, networkPrefix: NetworkPrefix)(implicit IR: IRContext): Value[SType] = {
-    val compiler = new SigmaCompiler(networkPrefix, TransformingSigmaBuilder)
+    val compiler = new SigmaCompiler(networkPrefix, TransformingSigmaBuilder, lowerMethodCalls = true)
     val interProp = compiler.typecheck(env, code)
     val IR.Pair(calcF, _) = IR.doCosting(env, interProp)
     IR.buildTree(calcF)
