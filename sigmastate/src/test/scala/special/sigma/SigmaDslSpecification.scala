@@ -67,14 +67,6 @@ class SigmaDslSpecification extends SigmaDslTesting
 
   implicit def IR = createIR()
 
-  override protected def property(testName: String, testTags: Tag*)
-                                 (testFun: => Any)
-                                 (implicit pos: Position): Unit = {
-    super.property(testName, testTags:_*)(testFun)
-
-  }
-
-
   import TestData._
 
   prepareSamples[BigInt]

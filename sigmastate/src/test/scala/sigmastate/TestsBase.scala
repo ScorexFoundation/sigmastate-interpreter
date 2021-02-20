@@ -57,6 +57,11 @@ trait TestsBase extends Matchers {
     * DynamicVariable. */
   def lowerMethodCallsInTests: Boolean = _lowerMethodCalls.value
 
+  /** If true, then all suite properties are executed with _lowerMethodCalls set to false.
+    * This allow to test execution of MethodCall nodes in ErgoTree.
+    */
+  val okRunTestsWithoutMCLowering: Boolean = false
+
   def compiler = SigmaCompiler(
     TestnetNetworkPrefix, lowerMethodCallsInTests, TransformingSigmaBuilder)
 

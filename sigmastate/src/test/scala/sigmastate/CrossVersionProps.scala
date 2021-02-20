@@ -52,6 +52,12 @@ trait CrossVersionProps extends PropSpecLike with TestsBase {
 
         }
       }
+
+      if (okRunTestsWithoutMCLowering) {
+        _lowerMethodCalls.withValue(false) {
+          testFun_Run(testName, testFun)
+        }
+      }
     }
   }
 }
