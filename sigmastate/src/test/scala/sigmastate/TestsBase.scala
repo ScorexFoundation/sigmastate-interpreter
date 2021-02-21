@@ -7,7 +7,7 @@ import sigmastate.Values.{SValue, Value, SigmaPropValue, ErgoTree, SigmaBoolean}
 import sigmastate.eval.IRContext
 import sigmastate.interpreter.Interpreter
 import sigmastate.interpreter.Interpreter.ScriptEnv
-import sigmastate.lang.{SigmaCompiler, TransformingSigmaBuilder}
+import sigmastate.lang.{TransformingSigmaBuilder, SigmaCompiler, CompilerSettings}
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.serialization.ValueSerializer
 
@@ -62,8 +62,11 @@ trait TestsBase extends Matchers {
     */
   val okRunTestsWithoutMCLowering: Boolean = false
 
+  val defaultCompilerSettings: CompilerSettings = CompilerSettings(
+    TestnetNetworkPrefix, TransformingSigmaBuilder, lowerMethodCalls = true)
+
   def compiler = SigmaCompiler(
-    TestnetNetworkPrefix, lowerMethodCallsInTests, TransformingSigmaBuilder)
+    defaultCompilerSettings.copy(lowerMethodCalls = lowerMethodCallsInTests))
 
   def checkSerializationRoundTrip(v: SValue): Unit = {
     val compiledTreeBytes = ValueSerializer.serialize(v)

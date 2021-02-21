@@ -11,12 +11,20 @@ import sigmastate.lang.SigmaPredef.PredefinedFuncRegistry
 import sigmastate.lang.syntax.ParserException
 
 /**
-  * @param networkPrefix network prefix to decode an ergo address from string (PK op)
-  * @param builder
+  * @param networkPrefix    network prefix to decode an ergo address from string (PK op)
+  * @param builder          used to create ErgoTree nodes
+  * @param lowerMethodCalls if true then MethodCall nodes are lowered to ErgoTree nodes
+  *                         when [[sigmastate.SMethod.irInfo.irBuilder]] is defined
   */
-class SigmaCompiler(networkPrefix: NetworkPrefix,
-                    builder: SigmaBuilder,
-                    lowerMethodCalls: Boolean) {
+case class CompilerSettings(
+   networkPrefix: NetworkPrefix,
+   builder: SigmaBuilder,
+   lowerMethodCalls: Boolean
+)
+
+class SigmaCompiler(settings: CompilerSettings) {
+  @inline final def builder = settings.builder
+  @inline final def networkPrefix = settings.networkPrefix
 
   def parse(x: String): SValue = {
     SigmaParser(x, builder) match {
@@ -30,7 +38,7 @@ class SigmaCompiler(networkPrefix: NetworkPrefix,
     val predefinedFuncRegistry = new PredefinedFuncRegistry(builder)
     val binder = new SigmaBinder(env, builder, networkPrefix, predefinedFuncRegistry)
     val bound = binder.bind(parsed)
-    val typer = new SigmaTyper(builder, predefinedFuncRegistry, lowerMethodCalls)
+    val typer = new SigmaTyper(builder, predefinedFuncRegistry, settings.lowerMethodCalls)
     val typed = typer.typecheck(bound)
     typed
   }
@@ -55,8 +63,6 @@ class SigmaCompiler(networkPrefix: NetworkPrefix,
 }
 
 object SigmaCompiler {
-  def apply(networkPrefix: NetworkPrefix,
-            lowerMethodCalls: Boolean,
-            builder: SigmaBuilder = TransformingSigmaBuilder): SigmaCompiler =
-    new SigmaCompiler(networkPrefix, builder, lowerMethodCalls)
+  def apply(settings: CompilerSettings): SigmaCompiler =
+    new SigmaCompiler(settings)
 }

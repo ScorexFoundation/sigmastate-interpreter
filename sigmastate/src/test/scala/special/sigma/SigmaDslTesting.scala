@@ -405,7 +405,8 @@ class SigmaDslTesting extends PropSpec
     scalaFunc: A => B,
     expectedExpr: Option[SValue],
     printExpectedExpr: Boolean = true,
-    logScript: Boolean = LogScriptDefault
+    logScript: Boolean = LogScriptDefault,
+    supportsMCLowering: Boolean = true
   )(implicit IR: IRContext, evalSettings: EvalSettings) extends Feature[A, B] {
 
     val oldImpl = () => func[A, B](script)
@@ -678,9 +679,12 @@ class SigmaDslTesting extends PropSpec
     *         various ways
     */
   def existingFeature[A: RType, B: RType]
-      (scalaFunc: A => B, script: String, expectedExpr: SValue = null)
+      (scalaFunc: A => B, script: String,
+       expectedExpr: SValue = null, supportsMCLowering: Boolean = true)
       (implicit IR: IRContext, evalSettings: EvalSettings): Feature[A, B] = {
-    ExistingFeature(script, scalaFunc, Option(expectedExpr))
+    ExistingFeature(
+      script, scalaFunc, Option(expectedExpr),
+      supportsMCLowering = supportsMCLowering)
   }
 
   /** Describes existing language feature which should be differently supported in both

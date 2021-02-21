@@ -65,6 +65,8 @@ class SigmaDslSpecification extends SigmaDslTesting
   // number of times each test is warmed up
 //  override val perTestWarmUpIters = 10
 
+//  override val okRunTestsWithoutMCLowering: Boolean = true
+
   implicit def IR = createIR()
 
   import TestData._
