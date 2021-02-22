@@ -412,15 +412,7 @@ class SigmaDslTesting extends PropSpec
 
     implicit val cs = compilerSettingsInTests
 
-    val oldImpl = () => {
-      try func[A, B](script)
-      catch {
-        case e: NoSuchMethodException =>
-          CompiledFunc(script,
-            mutable.WrappedArray.empty, null, null,
-            x => throw e)
-      }
-    }
+    val oldImpl = () => func[A, B](script)
     val newImpl = () => funcJit[A, B](script)
 
     def checkEquality(input: A, logInputOutput: Boolean = false): Try[(B, CostDetails)] = {

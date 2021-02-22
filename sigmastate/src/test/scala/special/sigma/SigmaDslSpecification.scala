@@ -65,7 +65,7 @@ class SigmaDslSpecification extends SigmaDslTesting
   // number of times each test is warmed up
 //  override val perTestWarmUpIters = 10
 
-//  override val okRunTestsWithoutMCLowering: Boolean = true
+  override val okRunTestsWithoutMCLowering: Boolean = true
 
   implicit def IR = createIR()
 
@@ -2633,7 +2633,8 @@ class SigmaDslSpecification extends SigmaDslTesting
     // val isIdentity = existingFeature({ (x: GroupElement) => x.isIdentity },
     //   "{ (x: GroupElement) => x.isIdentity }")
 
-    verifyCases(
+    if (lowerMethodCallsInTests) {
+      verifyCases(
       {
         val cost = TracedCost(
           Array(
@@ -2661,7 +2662,8 @@ class SigmaDslSpecification extends SigmaDslTesting
               success(ge3))
         )
       },
-      existingFeature({ (x: (GroupElement, BigInt)) => x._1.exp(x._2) },
+      existingFeature(
+        { (x: (GroupElement, BigInt)) => x._1.exp(x._2) },
         "{ (x: (GroupElement, BigInt)) => x._1.exp(x._2) }",
         FuncValue(
           Vector((1, STuple(Vector(SGroupElement, SBigInt)))),
@@ -2676,8 +2678,12 @@ class SigmaDslSpecification extends SigmaDslTesting
             )
           )
         )))
+    } else {
+      // TODO v5.0: add test case with `exp` MethodCall
+    }
 
-    verifyCases(
+    if (lowerMethodCallsInTests) {
+      verifyCases(
       {
         val cost = TracedCost(
           Array(
@@ -2720,6 +2726,9 @@ class SigmaDslSpecification extends SigmaDslTesting
             )
           )
         )))
+    } else {
+      //TODO v5.0: add test case with `exp` MethodCall
+    }
   }
 
   property("AvlTree properties equivalence") {
@@ -5156,7 +5165,8 @@ class SigmaDslSpecification extends SigmaDslTesting
           )
         )))
 
-    verifyCases(
+    if (lowerMethodCallsInTests) {
+      verifyCases(
       {
         def success[T](v: T) = Expected(Success(v), 41237)
         Seq(
@@ -5175,22 +5185,26 @@ class SigmaDslSpecification extends SigmaDslTesting
           (CBigInt(new BigInteger("102bb404f5e36bdba004fdefa34df8cfa02e7912f3caf79", 16)), success(Helpers.decodeGroupElement("03ce82f431d115d45ad555084f8b2861ce5c4561d154e931e9f778594896e46a25"))))
       },
       existingFeature({ (n: BigInt) => SigmaDsl.groupGenerator.exp(n) },
-        "{ (n: BigInt) => groupGenerator.exp(n) }",
-        FuncValue(
-          Vector((1, SBigInt)),
-          Exponentiate(
-            MethodCall.typed[Value[SGroupElement.type]](
-              Global,
-              SGlobal.getMethodByName("groupGenerator"),
-              Vector(),
-              Map()
-            ),
-            ValUse(1, SBigInt)
-          )
-        )))
+      "{ (n: BigInt) => groupGenerator.exp(n) }",
+      FuncValue(
+        Vector((1, SBigInt)),
+        Exponentiate(
+          MethodCall.typed[Value[SGroupElement.type]](
+            Global,
+            SGlobal.getMethodByName("groupGenerator"),
+            Vector(),
+            Map()
+          ),
+          ValUse(1, SBigInt)
+        )
+      )))
+    } else {
+      // TODO v5.0: add test case with `exp` MethodCall
+    }
 
     // TODO HF (2h): fix semantics when the left collection is longer
-    verifyCases(
+    if (lowerMethodCallsInTests) {
+      verifyCases(
       {
         def success[T](v: T) = Expected(Success(v), 36903)
         Seq(
@@ -5219,6 +5233,9 @@ class SigmaDslSpecification extends SigmaDslTesting
             )
           )
         )))
+    } else {
+      // TODO v5.0: add test case with `SGlobal.xor` MethodCall
+    }
   }
 
   property("Coll[Box] methods equivalence") {
@@ -5548,7 +5565,7 @@ class SigmaDslSpecification extends SigmaDslTesting
 
     val f = existingFeature(
       { (x: Coll[GroupElement]) => x.flatMap({ (b: GroupElement) => b.getEncoded.append(b.getEncoded) }) },
-      "{ (x: Coll[GroupElement]) => x.flatMap({ (b: GroupElement) => b.getEncoded.append(b.getEncoded) }) }" )
+      "{ (x: Coll[GroupElement]) => x.flatMap({ (b: GroupElement) => b.getEncoded.indices }) }" )
     assertExceptionThrown(
       f.oldF,
       t => t match {
@@ -5958,7 +5975,8 @@ class SigmaDslSpecification extends SigmaDslTesting
 
   property("Coll getOrElse method equivalence") {
     val default = 10
-    verifyCases(
+    if (lowerMethodCallsInTests) {
+      verifyCases(
       // (coll, (index, default))
       {
         def success[T](v: T) = Expected(Success(v), 37020)
@@ -5999,6 +6017,9 @@ class SigmaDslSpecification extends SigmaDslTesting
             )
           )
         )))
+    } else {
+      // TODO v5.0: add test case with `SCollection.getOrElse` MethodCall
+    }
   }
 
   property("Tuple size method equivalence") {
@@ -6193,7 +6214,8 @@ class SigmaDslSpecification extends SigmaDslTesting
   }
 
   property("Coll append method equivalence") {
-    verifyCases(
+    if (lowerMethodCallsInTests) {
+      verifyCases(
       {
         def success[T](v: T) = Expected(Success(v), 37765)
         Seq(
@@ -6222,6 +6244,9 @@ class SigmaDslSpecification extends SigmaDslTesting
             )
           )
         )))
+    } else {
+      // TODO v5.0: add test case with `SCollection.append` MethodCall
+    }
   }
 
   property("Option methods equivalence") {
