@@ -148,10 +148,10 @@ class SigmaDslTesting extends PropSpec
     /** Expression which represents the test case code. */
     def expectedExpr: Option[SValue]
 
-    /** Function that executes the feature using v3 interpreter implementation. */
+    /** Function that executes the feature using v4.x interpreter implementation. */
     def oldImpl: () => CompiledFunc[A, B]
 
-    /** Function that executes the feature using v4 interpreter implementation. */
+    /** Function that executes the feature using v5.x interpreter implementation. */
     def newImpl: () => CompiledFunc[A, B]
 
     def printExpectedExpr: Boolean
@@ -173,7 +173,7 @@ class SigmaDslTesting extends PropSpec
     def checkExpectedExprIn(cf: CompiledFunc[_,_]): Boolean = {
       expectedExpr match {
         case Some(e) =>
-          if (cf.expr != e) {
+          if (cf.expr != null && cf.expr != e) {
             printSuggestion(cf)
             cf.expr shouldBe e
           }
@@ -400,16 +400,27 @@ class SigmaDslTesting extends PropSpec
     Thread.sleep(1000) // let GC to its job before running the tests
   }
 
-  case class ExistingFeature[A: RType, B: RType](
+  case class ExistingFeature[A, B](
     script: String,
     scalaFunc: A => B,
     expectedExpr: Option[SValue],
     printExpectedExpr: Boolean = true,
     logScript: Boolean = LogScriptDefault,
-    supportsMCLowering: Boolean = true
-  )(implicit IR: IRContext, evalSettings: EvalSettings) extends Feature[A, B] {
+    requireMCLowering: Boolean = false
+  )(implicit IR: IRContext, tA: RType[A], tB: RType[B],
+             evalSettings: EvalSettings) extends Feature[A, B] {
 
-    val oldImpl = () => func[A, B](script)
+    implicit val cs = compilerSettingsInTests
+
+    val oldImpl = () => {
+      try func[A, B](script)
+      catch {
+        case e: NoSuchMethodException =>
+          CompiledFunc(script,
+            mutable.WrappedArray.empty, null, null,
+            x => throw e)
+      }
+    }
     val newImpl = () => funcJit[A, B](script)
 
     def checkEquality(input: A, logInputOutput: Boolean = false): Try[(B, CostDetails)] = {
@@ -528,8 +539,11 @@ class SigmaDslTesting extends PropSpec
     override val scalaFuncNew: A => B,
     expectedExpr: Option[SValue],
     printExpectedExpr: Boolean = true,
-    logScript: Boolean = LogScriptDefault
+    logScript: Boolean = LogScriptDefault,
+    requireMCLowering: Boolean = false
   )(implicit IR: IRContext, evalSettings: EvalSettings) extends Feature[A, B] {
+
+    implicit val cs = compilerSettingsInTests
 
     val oldImpl = () => func[A, B](script)
     val newImpl = () => funcJit[A, B](script)
@@ -600,6 +614,7 @@ class SigmaDslTesting extends PropSpec
     override def scalaFunc: A => B = { x =>
       sys.error(s"Semantic Scala function is not defined for old implementation: $this")
     }
+    implicit val cs = compilerSettingsInTests
 
     val oldImpl = () => func[A, B](script)
     val newImpl = oldImpl // funcJit[A, B](script) // TODO HF (16h): use actual new implementation here
@@ -680,11 +695,11 @@ class SigmaDslTesting extends PropSpec
     */
   def existingFeature[A: RType, B: RType]
       (scalaFunc: A => B, script: String,
-       expectedExpr: SValue = null, supportsMCLowering: Boolean = true)
+       expectedExpr: SValue = null, requireMCLowering: Boolean = false)
       (implicit IR: IRContext, evalSettings: EvalSettings): Feature[A, B] = {
     ExistingFeature(
       script, scalaFunc, Option(expectedExpr),
-      supportsMCLowering = supportsMCLowering)
+      requireMCLowering = requireMCLowering)
   }
 
   /** Describes existing language feature which should be differently supported in both
@@ -811,11 +826,12 @@ class SigmaDslTesting extends PropSpec
     val fNew = f.newF
     implicit val tA = fNew.tA
     implicit val tB = fNew.tB
+    implicit val cs = defaultCompilerSettings
     val func = funcJitFast[A, B](f.script)
     val noTraceSettings = evalSettings.copy(
       isMeasureOperationTime = false,
       costTracingEnabled = false)
-    val funcNoTrace = funcJitFast[A, B](f.script)(tA, tB, IR, noTraceSettings)
+    val funcNoTrace = funcJitFast[A, B](f.script)(tA, tB, IR, noTraceSettings, cs)
     var iCase = 0
     val (res, total) = BenchmarkUtil.measureTimeNano {
       cases.map { x =>

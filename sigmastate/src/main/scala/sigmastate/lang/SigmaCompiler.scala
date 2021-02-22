@@ -13,7 +13,7 @@ import sigmastate.lang.syntax.ParserException
 /**
   * @param networkPrefix    network prefix to decode an ergo address from string (PK op)
   * @param builder          used to create ErgoTree nodes
-  * @param lowerMethodCalls if true then MethodCall nodes are lowered to ErgoTree nodes
+  * @param lowerMethodCalls if true, then MethodCall nodes are lowered to ErgoTree nodes
   *                         when [[sigmastate.SMethod.irInfo.irBuilder]] is defined
   */
 case class CompilerSettings(

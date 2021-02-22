@@ -15,7 +15,7 @@ import sigma.types.IsPrimView
 import sigmastate.Values.{Constant, SValue, Value, ErgoTree, GroupElementConstant}
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, ScriptEnv}
 import sigmastate.interpreter._
-import sigmastate.lang.Terms
+import sigmastate.lang.{Terms, CompilerSettings, SigmaCompiler}
 import sigmastate.serialization.SigmaSerializer
 import sigmastate.{SGroupElement, TestsBase, SType}
 import sigmastate.eval.{CompiletimeCosting, IRContext, Evaluation, _}
@@ -148,8 +148,11 @@ trait SigmaTestingCommons extends PropSpec
     }
   }
 
-  def compileTestScript[A](env: ScriptEnv, funcScript: String)
-                          (implicit tA: RType[A], IR: IRContext): SValue = {
+  def compileTestScript[A]
+      (env: ScriptEnv, funcScript: String)
+      (implicit tA: RType[A],
+                IR: IRContext,
+                compilerSettings: CompilerSettings): SValue = {
     val code =
       s"""{
         |  val func = $funcScript
@@ -162,6 +165,7 @@ trait SigmaTestingCommons extends PropSpec
     // typecheck, create graphs, compile to Tree
     // The resulting tree should be serializable
     val compiledTree = {
+      val compiler = SigmaCompiler(compilerSettings)
       val internalProp = compiler.typecheck(env, code)
       val costingRes = getCostingResult(env, internalProp)
       val calcF = costingRes.calcF
@@ -182,7 +186,8 @@ trait SigmaTestingCommons extends PropSpec
     */
   def func[A: RType, B: RType]
       (funcScript: String, bindings: VarBinding*)
-      (implicit IR: IRContext): CompiledFunc[A, B] = {
+      (implicit IR: IRContext,
+                compilerSettings: CompilerSettings): CompiledFunc[A, B] = {
     import IR._
     import IR.Context._
     val tA = RType[A]
@@ -245,7 +250,9 @@ trait SigmaTestingCommons extends PropSpec
 
   def funcJit[A: RType, B: RType]
       (funcScript: String, bindings: VarBinding*)
-      (implicit IR: IRContext, evalSettings: EvalSettings): CompiledFunc[A, B] = {
+      (implicit IR: IRContext,
+                evalSettings: EvalSettings,
+                compilerSettings: CompilerSettings): CompiledFunc[A, B] = {
     val tA = RType[A]
     val compiledTree = compileTestScript[A](Interpreter.emptyEnv, funcScript)
 
@@ -285,7 +292,9 @@ trait SigmaTestingCommons extends PropSpec
    * various scripts. */
   def funcJitFast[A: RType, B: RType]
       (funcScript: String, bindings: VarBinding*)
-      (implicit IR: IRContext, evalSettings: EvalSettings): CompiledFunc[A, B] = {
+      (implicit IR: IRContext,
+                evalSettings: EvalSettings,
+                compilerSettings: CompilerSettings): CompiledFunc[A, B] = {
     val tA = RType[A]
     val compiledTree = compileTestScript[A](Interpreter.emptyEnv, funcScript)
     implicit val cA: ClassTag[A] = tA.classTag

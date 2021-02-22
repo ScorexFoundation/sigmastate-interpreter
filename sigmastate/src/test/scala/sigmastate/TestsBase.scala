@@ -63,10 +63,14 @@ trait TestsBase extends Matchers {
   val okRunTestsWithoutMCLowering: Boolean = false
 
   val defaultCompilerSettings: CompilerSettings = CompilerSettings(
-    TestnetNetworkPrefix, TransformingSigmaBuilder, lowerMethodCalls = true)
+    TestnetNetworkPrefix, TransformingSigmaBuilder,
+    lowerMethodCalls = true
+  )
 
-  def compiler = SigmaCompiler(
-    defaultCompilerSettings.copy(lowerMethodCalls = lowerMethodCallsInTests))
+  def compilerSettingsInTests: CompilerSettings =
+    defaultCompilerSettings.copy(lowerMethodCalls = lowerMethodCallsInTests)
+
+  def compiler = SigmaCompiler(compilerSettingsInTests)
 
   def checkSerializationRoundTrip(v: SValue): Unit = {
     val compiledTreeBytes = ValueSerializer.serialize(v)
