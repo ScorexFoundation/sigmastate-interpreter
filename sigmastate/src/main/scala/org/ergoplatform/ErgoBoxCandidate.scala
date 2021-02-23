@@ -189,19 +189,22 @@ object ErgoBoxCandidate {
       val nTokens = r.getUByte()                // READ
       val tokenIds = new Array[Digest32](nTokens)
       val tokenAmounts = new Array[Long](nTokens)
-      val tokenIdSize = TokenId.size
-      cfor(0)(_ < nTokens, _ + 1) { i =>
-        val tokenId = if (digestsInTx.isDefined) {
-          val digestIndex = r.getUInt().toInt   // READ
-          val digests = digestsInTx.get
-          if (!digests.isDefinedAt(digestIndex)) sys.error(s"failed to find token id with index $digestIndex")
-          digests(digestIndex)
-        } else {
-          r.getBytes(tokenIdSize)               // READ
-        }
-        val amount = r.getULong()               // READ
-        tokenIds(i) = tokenId.asInstanceOf[Digest32]
-        tokenAmounts(i) = amount
+      digestsInTx match {
+        case Some(digests) =>
+          cfor(0)(_ < nTokens, _ + 1) { i =>
+            val digestIndex = r.getUInt().toInt // READ
+            if (!digests.isDefinedAt(digestIndex))
+              sys.error(s"failed to find token id with index $digestIndex")
+            val amount = r.getULong()           // READ
+            tokenIds(i) = digests(digestIndex).asInstanceOf[Digest32]
+            tokenAmounts(i) = amount
+          }
+        case None =>
+          val tokenIdSize = TokenId.size  // optimization: access the value once
+          cfor(0)(_ < nTokens, _ + 1) { i =>
+            tokenIds(i) = r.getBytes(tokenIdSize).asInstanceOf[Digest32] // READ
+            tokenAmounts(i) = r.getULong()                               // READ
+          }
       }
       val tokens = Colls.pairCollFromArrays(tokenIds, tokenAmounts)
 
