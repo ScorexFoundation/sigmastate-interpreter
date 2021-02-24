@@ -4,6 +4,7 @@ import java.util
 
 import org.ergoplatform.ErgoBox._
 import org.ergoplatform.settings.ErgoAlgos
+import scalan.Nullable
 import scorex.crypto.hash.Digest32
 import scorex.util.{bytesToId, ModifierId}
 import sigmastate.Values._
@@ -180,7 +181,7 @@ object ErgoBoxCandidate {
     /** Helper method to parse [[ErgoBoxCandidate]] previously serialized by
       * [[serializeBodyWithIndexedDigests()]].
       */
-    def parseBodyWithIndexedDigests(digestsInTx: Option[Coll[TokenId]], r: SigmaByteReader): ErgoBoxCandidate = {
+    def parseBodyWithIndexedDigests(digestsInTx: Nullable[Array[TokenId]], r: SigmaByteReader): ErgoBoxCandidate = {
       val previousPositionLimit = r.positionLimit
       r.positionLimit = r.position + ErgoBox.MaxBoxSize
       val value = r.getULong()                  // READ
@@ -190,16 +191,17 @@ object ErgoBoxCandidate {
       val tokenIds = new Array[Digest32](nTokens)
       val tokenAmounts = new Array[Long](nTokens)
       digestsInTx match {
-        case Some(digests) =>
+        case Nullable(digests) =>
+          val nDigests = digests.length
           cfor(0)(_ < nTokens, _ + 1) { i =>
             val digestIndex = r.getUInt().toInt // READ
-            if (!digests.isDefinedAt(digestIndex))
+            if (digestIndex < 0 || digestIndex >= nDigests)
               sys.error(s"failed to find token id with index $digestIndex")
             val amount = r.getULong()           // READ
-            tokenIds(i) = digests(digestIndex).asInstanceOf[Digest32]
+            tokenIds(i) = digests(digestIndex)
             tokenAmounts(i) = amount
           }
-        case None =>
+        case _ =>
           val tokenIdSize = TokenId.size  // optimization: access the value once
           cfor(0)(_ < nTokens, _ + 1) { i =>
             tokenIds(i) = r.getBytes(tokenIdSize).asInstanceOf[Digest32] // READ
@@ -222,7 +224,7 @@ object ErgoBoxCandidate {
     }
 
     override def parse(r: SigmaByteReader): ErgoBoxCandidate = {
-      parseBodyWithIndexedDigests(None, r)
+      parseBodyWithIndexedDigests(Nullable.None, r)
     }
   }
 

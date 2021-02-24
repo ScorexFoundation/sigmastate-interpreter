@@ -1,8 +1,9 @@
 package org.ergoplatform
 
 import org.ergoplatform.ErgoBox.TokenId
+import scalan.Nullable
 import scorex.crypto.authds.ADKey
-import scorex.crypto.hash.{Blake2b256, Digest32}
+import scorex.crypto.hash.{Digest32, Blake2b256}
 import scorex.util._
 import sigmastate.SType._
 import sigmastate.eval.Extensions._
@@ -12,6 +13,7 @@ import sigmastate.serialization.SigmaSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import special.collection.ExtensionMethods._
 import spire.syntax.all.cfor
+
 import scala.util.Try
 
 trait ErgoBoxReader {
@@ -156,17 +158,16 @@ object ErgoLikeTransactionSerializer extends SigmaSerializer[ErgoLikeTransaction
     }
     // parse distinct ids of tokens in transaction outputs
     val tokensCount = r.getUInt().toInt
-    val tokensArr = new Array[TokenId](tokensCount)
+    val tokens = new Array[TokenId](tokensCount)
     cfor(0)(_ < tokensCount, _ + 1) { i =>
-      tokensArr(i) = Digest32 @@ r.getBytes(TokenId.size)
+      tokens(i) = Digest32 @@ r.getBytes(TokenId.size)
     }
-    val tokens = tokensArr.toColl
     // parse outputs
 
     val outsCount = r.getUShort()
     val outputCandidates = new Array[ErgoBoxCandidate](outsCount)
     cfor(0)(_ < outsCount, _ + 1) { i =>
-      outputCandidates(i) = ErgoBoxCandidate.serializer.parseBodyWithIndexedDigests(Some(tokens), r)
+      outputCandidates(i) = ErgoBoxCandidate.serializer.parseBodyWithIndexedDigests(Nullable(tokens), r)
     }
     new ErgoLikeTransaction(inputs, dataInputs, outputCandidates)
   }
