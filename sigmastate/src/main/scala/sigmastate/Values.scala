@@ -561,7 +561,14 @@ object Values {
   }
 
   object SigmaBoolean {
-    def estimateCost(sigmaTree: SigmaBoolean): Int = sigmaTree match {
+    /** Computes the estimated cost of verifying the given sigma proposition.
+      * This method should be O(nNodes), where nNodes is the number of the nodes in the
+      * tree.
+      *
+      * @param sb sigma proposition to estimate
+      * @return the value of estimated cost
+      */
+    def estimateCost(sb: SigmaBoolean): Int = sb match {
       case _: ProveDlog => CostTable.proveDlogEvalCost
       case _: ProveDHTuple => CostTable.proveDHTupleEvalCost
       case and: CAND =>

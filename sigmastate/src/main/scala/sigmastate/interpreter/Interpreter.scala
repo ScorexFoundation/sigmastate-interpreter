@@ -3,26 +3,26 @@ package sigmastate.interpreter
 import java.util
 import java.lang.{Math => JMath}
 
-import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, rule, strategy}
+import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{strategy, rule, everywherebu}
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
 import org.ergoplatform.validation.SigmaValidationSettings
-import sigmastate.basics.DLogProtocol.{DLogInteractiveProver, FirstDLogProverMessage}
+import sigmastate.basics.DLogProtocol.{FirstDLogProverMessage, DLogInteractiveProver}
 import scorex.util.ScorexLogging
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate.eval.{IRContext, Evaluation}
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.basics._
-import sigmastate.interpreter.Interpreter.{ScriptEnv, VerificationResult}
-import sigmastate.lang.exceptions.{CostLimitException, InterpreterException}
-import sigmastate.serialization.{SigmaSerializer, ValueSerializer}
+import sigmastate.interpreter.Interpreter.{VerificationResult, ScriptEnv}
+import sigmastate.lang.exceptions.{InterpreterException, CostLimitException}
+import sigmastate.serialization.{ValueSerializer, SigmaSerializer}
 import sigmastate.utxo.DeserializeContext
 import sigmastate.{SType, _}
 import org.ergoplatform.validation.ValidationRules._
 import scalan.util.BenchmarkUtil
 import sigmastate.utils.Helpers._
 
-import scala.util.{Try, Success}
+import scala.util.{Success, Try}
 
 trait Interpreter extends ScorexLogging {
 
@@ -197,13 +197,20 @@ trait Interpreter extends ScorexLogging {
                     env: ScriptEnv): (SigmaBoolean, Long) = {
     implicit val vs: SigmaValidationSettings = context.validationSettings
     val prop = propositionFromErgoTree(ergoTree, context)
-    val (propTree, context2) = trySoftForkable[(BoolValue, CTX)](whenSoftFork = (TrueLeaf, context)) {
-      applyDeserializeContext(context, prop)
-    }
+    prop match {
+      case SigmaPropConstant(p) =>
+        val sb = SigmaDsl.toSigmaBoolean(p)
+        val cost = SigmaBoolean.estimateCost(sb)
+        (sb, cost)
+      case _ =>
+        val (propTree, context2) = trySoftForkable[(BoolValue, CTX)](whenSoftFork = (TrueLeaf, context)) {
+          applyDeserializeContext(context, prop)
+        }
 
-    // here we assume that when `propTree` is TrueProp then `reduceToCrypto` always succeeds
-    // and the rest of the verification is also trivial
-    reduceToCrypto(context2, env, propTree).getOrThrow
+        // here we assume that when `propTree` is TrueProp then `reduceToCrypto` always succeeds
+        // and the rest of the verification is also trivial
+        reduceToCrypto(context2, env, propTree).getOrThrow
+    }
   }
 
   /** Executes the script in a given context.
