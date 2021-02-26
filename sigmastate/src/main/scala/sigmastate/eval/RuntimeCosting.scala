@@ -165,15 +165,6 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
   val _costOfProveDlogEval = CostOf("ProveDlogEval", SFunc(SUnit, SSigmaProp))
   val _costOfProveDHTuple = CostOf("ProveDHTuple", SFunc(SUnit, SSigmaProp))
 
-  def costOfSigmaTree(sigmaTree: SigmaBoolean): Int = sigmaTree match {
-    case _: ProveDlog => _costOfProveDlogEval.eval
-    case _: ProveDHTuple => _costOfProveDHTuple.eval
-    case CAND(children) => Colls.fromArray(children.toArray).map(costOfSigmaTree(_)).sum(intPlusMonoidValue)
-    case COR(children)  => Colls.fromArray(children.toArray).map(costOfSigmaTree(_)).sum(intPlusMonoidValue)
-    case CTHRESHOLD(_, children)  => Colls.fromArray(children.toArray).map(costOfSigmaTree(_)).sum(intPlusMonoidValue)
-    case _ => CostTable.MinimalCost
-  }
-
   def perKbCostOf(opName: String, opType: SFunc, dataSize: Ref[Long]): Ref[Int] = {
     val opNamePerKb = s"${opName}_per_kb"
     PerKbCostOf(OperationId(opNamePerKb, opType), dataSize)
@@ -1164,7 +1155,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
         case p: SSigmaProp =>
           assert(tpe == SSigmaProp)
           val resV = liftConst(p)
-          RCCostedPrim(resV, opCost(resV, Nil, costOfSigmaTree(p)), SizeSigmaProposition)
+          RCCostedPrim(resV, opCost(resV, Nil, SigmaBoolean.estimateCost(p)), SizeSigmaProposition)
         case bi: SBigInt =>
           assert(tpe == SBigInt)
           val resV = liftConst(bi)

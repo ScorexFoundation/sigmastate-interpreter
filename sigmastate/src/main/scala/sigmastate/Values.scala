@@ -561,6 +561,40 @@ object Values {
   }
 
   object SigmaBoolean {
+    def estimateCost(sigmaTree: SigmaBoolean): Int = sigmaTree match {
+      case _: ProveDlog => CostTable.proveDlogEvalCost
+      case _: ProveDHTuple => CostTable.proveDHTupleEvalCost
+      case and: CAND =>
+        val children = and.children.toArray
+        val nChildren = children.length
+        var sum = 0
+        cfor(0)(_ < nChildren, _ + 1) { i =>
+          val c = estimateCost(children(i))
+          sum = Math.addExact(sum, c)
+        }
+        sum
+      case or: COR  =>
+        val children = or.children.toArray
+        val nChildren = children.length
+        var sum = 0
+        cfor(0)(_ < nChildren, _ + 1) { i =>
+          val c = estimateCost(children(i))
+          sum = Math.addExact(sum, c)
+        }
+        sum
+      case th: CTHRESHOLD =>
+        val children = th.children.toArray
+        val nChildren = children.length
+        var sum = 0
+        cfor(0)(_ < nChildren, _ + 1) { i =>
+          val c = estimateCost(children(i))
+          sum = Math.addExact(sum, c)
+        }
+        sum
+      case _ =>
+        CostTable.MinimalCost
+    }
+
     /** @hotspot don't beautify this code */
     object serializer extends SigmaSerializer[SigmaBoolean, SigmaBoolean] {
       val dhtSerializer = ProveDHTupleSerializer(ProveDHTuple.apply)
