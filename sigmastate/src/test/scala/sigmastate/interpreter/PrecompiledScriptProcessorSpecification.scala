@@ -6,7 +6,7 @@ import sigmastate.Values.ErgoTree
 import sigmastate.helpers.SigmaPPrint
 import special.sigma.SigmaDslTesting
 
-class PredefScriptProcessorSpecification extends SigmaDslTesting {
+class PrecompiledScriptProcessorSpecification extends SigmaDslTesting {
 
   def parseTree(hex: String): ErgoTree = {
     val bytes = ErgoAlgos.decodeUnsafe(hex)
@@ -31,7 +31,7 @@ class PredefScriptProcessorSpecification extends SigmaDslTesting {
     val extraTrees = Seq(TrueTree, FalseTree)
     val trees = extraTrees ++ predefTrees
     val scripts = trees.map { t => t.bytes: Seq[Byte] }
-    val processor = PredefScriptProcessor(scripts)
+    val processor = PrecompiledScriptProcessor(scripts)
     trees.foreach { t =>
       processor.getVerifier(t).isDefined shouldBe true
     }
@@ -41,7 +41,7 @@ class PredefScriptProcessorSpecification extends SigmaDslTesting {
     val trees = Seq(TrueTree, TrueTree)
     val scripts = trees.map { t => t.bytes: Seq[Byte] }
     assertExceptionThrown(
-      PredefScriptProcessor(scripts),
+      PrecompiledScriptProcessor(scripts),
       { case _: IllegalArgumentException => true
         case _ => false }
     )

@@ -10,7 +10,7 @@ import sigmastate.interpreter.Interpreter.ReductionResult
 import sigmastate.serialization.ErgoTreeSerializer
 import sigmastate.utils.Helpers._
 
-/** This class implements optimized verification of the given predefined script.
+/** This class implements optimized verification of the given pre-compiled script.
   * Pre-compilation of the necessary graphs is performed as part of constructor and
   * the graphs are stored in the given IR instance.
   *
@@ -23,7 +23,7 @@ import sigmastate.utils.Helpers._
   * The code should correspond to reduceToCrypto method, but some operations may be
   * optimized due to assumptions above.
   */
-case class PredefScriptVerifier(scriptBytes: Seq[Byte])(implicit val IR: IRContext) {
+case class PrecompiledScriptVerifier(scriptBytes: Seq[Byte])(implicit val IR: IRContext) {
 
   /** The following operations create [[RCostingResultEx]] structure for the given
     * `scriptBytes` and they should be the same as in `reduceToCrypto` method.
@@ -65,16 +65,16 @@ case class PredefScriptVerifier(scriptBytes: Seq[Byte])(implicit val IR: IRConte
 }
 
 /** Script processor which holds pre-compiled verifiers for the given scripts.
-  * @param predefScripts collection of scripts to pre-compile (each given by ErgoTree bytes)
+  * @param predefScripts collection of scripts to ALWAYS pre-compile (each given by ErgoTree bytes)
   */
-case class PredefScriptProcessor(predefScripts: Seq[Seq[Byte]]) {
+class PrecompiledScriptProcessor(val predefScripts: Seq[Seq[Byte]]) {
   private implicit val IR: IRContext = new RuntimeIRContext
 
   /** Holds for each ErgoTree bytes the corresponding pre-compiled verifier. */
   val verifiers = {
-    val res = AVHashMap[Seq[Byte], PredefScriptVerifier](predefScripts.length)
+    val res = AVHashMap[Seq[Byte], PrecompiledScriptVerifier](predefScripts.length)
     predefScripts.foreach { s =>
-      val verifier = PredefScriptVerifier(s)
+      val verifier = PrecompiledScriptVerifier(s)
       val old = res.put(s, verifier)
       require(old == null, s"duplicate predefined script: '${ErgoAlgos.encode(s.toArray)}'")
     }
@@ -86,7 +86,7 @@ case class PredefScriptProcessor(predefScripts: Seq[Seq[Byte]]) {
     * @return non-empty Nullable instance with verifier for the given tree, otherwise
     *         Nullable.None
     */
-  def getVerifier(ergoTree: ErgoTree): Nullable[PredefScriptVerifier] = {
+  def getVerifier(ergoTree: ErgoTree): Nullable[PrecompiledScriptVerifier] = {
     val key: Seq[Byte] = ergoTree.bytes
     verifiers.get(key)
   }

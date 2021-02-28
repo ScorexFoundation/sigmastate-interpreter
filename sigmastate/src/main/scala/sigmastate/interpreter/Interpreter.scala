@@ -36,7 +36,7 @@ trait Interpreter extends ScorexLogging {
   val IR: IRContext
   import IR._
 
-  def predefScriptProcessor: PredefScriptProcessor
+  def precompiledScriptProcessor: PrecompiledScriptProcessor
 
   /** Deserializes given script bytes using ValueSerializer (i.e. assuming expression tree format).
     * It also measures tree complexity adding to the total estimated cost of script execution.
@@ -189,7 +189,7 @@ trait Interpreter extends ScorexLogging {
         val cost = SigmaBoolean.estimateCost(sb)
         (sb, cost)
       case _ =>
-        predefScriptProcessor.getVerifier(ergoTree) match {
+        precompiledScriptProcessor.getVerifier(ergoTree) match {
           case Nullable(verifier) =>
             verifier.verify(context)
           case _ =>

@@ -3,7 +3,7 @@ package org.ergoplatform
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate.eval.IRContext
-import sigmastate.interpreter.{Interpreter, PredefScriptProcessor}
+import sigmastate.interpreter.{Interpreter, PrecompiledScriptProcessor}
 import sigmastate.utxo._
 
 
@@ -11,7 +11,7 @@ class ErgoLikeInterpreter(implicit val IR: IRContext) extends Interpreter {
 
   override type CTX <: ErgoLikeContext
 
-  override val predefScriptProcessor: PredefScriptProcessor = new PredefScriptProcessor(Array.empty[Seq[Byte]])
+  override val precompiledScriptProcessor: PrecompiledScriptProcessor = new PrecompiledScriptProcessor(Array.empty[Seq[Byte]])
 
   override def substDeserialize(context: CTX, updateContext: CTX => Unit, node: SValue): Option[SValue] = node match {
       case d: DeserializeRegister[_] =>
