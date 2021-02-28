@@ -1,6 +1,7 @@
 package sigmastate.interpreter
 
-import org.ergoplatform.validation.ValidationRules.{trySoftForkable, CheckCostFunc, CheckCalcFunc}
+import org.ergoplatform.settings.ErgoAlgos
+import org.ergoplatform.validation.ValidationRules.{CheckCostFunc, CheckCalcFunc, trySoftForkable}
 import scalan.{AVHashMap, Nullable}
 import sigmastate.TrivialProp
 import sigmastate.Values.ErgoTree
@@ -74,7 +75,8 @@ case class PredefScriptProcessor(predefScripts: Seq[Seq[Byte]]) {
     val res = AVHashMap[Seq[Byte], PredefScriptVerifier](predefScripts.length)
     predefScripts.foreach { s =>
       val verifier = PredefScriptVerifier(s)
-      res.put(s, verifier)
+      val old = res.put(s, verifier)
+      require(old == null, s"duplicate predefined script: '${ErgoAlgos.encode(s.toArray)}'")
     }
     res
   }
