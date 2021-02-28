@@ -19,6 +19,7 @@ import sigmastate.serialization.{ValueSerializer, SigmaSerializer}
 import sigmastate.utxo.DeserializeContext
 import sigmastate.{SType, _}
 import org.ergoplatform.validation.ValidationRules._
+import scalan.{MutableLazy, Nullable}
 import scalan.util.BenchmarkUtil
 import sigmastate.utils.Helpers._
 
@@ -34,6 +35,8 @@ trait Interpreter extends ScorexLogging {
 
   val IR: IRContext
   import IR._
+
+  def predefScriptProcessor: PredefScriptProcessor
 
   /** Deserializes given script bytes using ValueSerializer (i.e. assuming expression tree format).
     * It also measures tree complexity adding to the total estimated cost of script execution.
@@ -118,23 +121,6 @@ trait Interpreter extends ScorexLogging {
     (res, currContext.value)
   }
 
-  private def calcResult(context: special.sigma.Context, calcF: Ref[IR.Context => Any]): special.sigma.SigmaProp = {
-    import IR._
-    import Context._
-    import SigmaProp._
-    val res = calcF.elem.eRange.asInstanceOf[Any] match {
-      case _: SigmaPropElem[_] =>
-        val valueFun = compile[SContext, SSigmaProp, Context, SigmaProp](getDataEnv, asRep[Context => SigmaProp](calcF))
-        val (sp, _) = valueFun(context)
-        sp
-      case BooleanElement =>
-        val valueFun = compile[SContext, Boolean, IR.Context, Boolean](IR.getDataEnv, asRep[Context => Boolean](calcF))
-        val (b, _) = valueFun(context)
-        sigmaDslBuilderValue.sigmaProp(b)
-    }
-    res
-  }
-
   /** This method is used in both prover and verifier to compute SigmaBoolean value.
     * As the first step the cost of computing the `exp` expression in the given context is estimated.
     * If cost is above limit
@@ -168,7 +154,7 @@ trait Interpreter extends ScorexLogging {
       val calcF = costingRes.calcF
       CheckCalcFunc(IR)(calcF)
       val calcCtx = context.toSigmaContext(isCost = false)
-      val res = calcResult(calcCtx, calcF)
+      val res = Interpreter.calcResult(IR)(calcCtx, calcF)
       SigmaDsl.toSigmaBoolean(res) -> estimatedCost
     }
   }
@@ -203,13 +189,18 @@ trait Interpreter extends ScorexLogging {
         val cost = SigmaBoolean.estimateCost(sb)
         (sb, cost)
       case _ =>
-        val (propTree, context2) = trySoftForkable[(BoolValue, CTX)](whenSoftFork = (TrueLeaf, context)) {
-          applyDeserializeContext(context, prop)
-        }
+        predefScriptProcessor.getVerifier(ergoTree) match {
+          case Nullable(verifier) =>
+            verifier.verify(context)
+          case _ =>
+            val (propTree, context2) = trySoftForkable[(BoolValue, CTX)](whenSoftFork = (TrueLeaf, context)) {
+              applyDeserializeContext(context, prop)
+            }
 
-        // here we assume that when `propTree` is TrueProp then `reduceToCrypto` always succeeds
-        // and the rest of the verification is also trivial
-        reduceToCrypto(context2, env, propTree).getOrThrow
+            // here we assume that when `propTree` is TrueProp then `reduceToCrypto` always succeeds
+            // and the rest of the verification is also trivial
+            reduceToCrypto(context2, env, propTree).getOrThrow
+        }
     }
   }
 
@@ -406,6 +397,31 @@ object Interpreter {
     * etc.
     */
   val MaxSupportedScriptVersion: Byte = 1 // supported versions 0 and 1
+
+  def calcResult(IR: IRContext)
+                (context: special.sigma.Context,
+                 calcF: IR.Ref[IR.Context => Any]): special.sigma.SigmaProp = {
+    import IR._
+    import IR.Context._
+    import IR.SigmaProp._
+    import IR.Liftables._
+    val res = calcF.elem.eRange.asInstanceOf[Any] match {
+      case _: SigmaPropElem[_] =>
+        val valueFun = compile[IR.Context.SContext, IR.SigmaProp.SSigmaProp, IR.Context, IR.SigmaProp](
+          getDataEnv,
+          IR.asRep[IR.Context => IR.SigmaProp](calcF))(LiftableContext, LiftableSigmaProp)
+        val (sp, _) = valueFun(context)
+        sp
+      case BooleanElement =>
+        val valueFun = compile[SContext, Boolean, IR.Context, Boolean](
+          IR.getDataEnv,
+          asRep[IR.Context => Boolean](calcF))(LiftableContext, BooleanIsLiftable)
+        val (b, _) = valueFun(context)
+        sigmaDslBuilderValue.sigmaProp(b)
+    }
+    res
+  }
+
 
   def error(msg: String) = throw new InterpreterException(msg)
 
