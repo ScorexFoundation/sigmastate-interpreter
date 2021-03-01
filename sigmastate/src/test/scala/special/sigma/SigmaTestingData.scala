@@ -1,5 +1,6 @@
 package special.sigma
 
+import org.ergoplatform.settings.ErgoAlgos
 import org.scalacheck.Gen.containerOfN
 import sigmastate.AvlTreeFlags
 import org.scalacheck.{Arbitrary, Gen}
@@ -10,6 +11,8 @@ import org.scalacheck.util.Buildable
 import scalan.RType
 import scorex.crypto.hash.{Digest32, Blake2b256}
 import scorex.crypto.authds.{ADKey, ADValue}
+import sigmastate.Values.ErgoTree
+import sigmastate.serialization.ErgoTreeSerializer
 import sigmastate.serialization.generators.ObjectGenerators
 import special.collection.Coll
 
@@ -113,4 +116,10 @@ trait SigmaTestingData extends SigmaTestingCommons with ObjectGenerators {
     "100204a00b08cd02ebaaeb381c9d855af1807781fa20ef6c0c34833275ce7913a9e4469f7bcb3becea02d192a39a8cc7a70173007301"
   )
 
+  /** Parses ErgoTree instance from hex string. */
+  def parseTree(hex: String): ErgoTree = {
+    val bytes = ErgoAlgos.decodeUnsafe(hex)
+    val tree = ErgoTreeSerializer.DefaultSerializer.deserializeErgoTree(bytes)
+    tree
+  }
 }

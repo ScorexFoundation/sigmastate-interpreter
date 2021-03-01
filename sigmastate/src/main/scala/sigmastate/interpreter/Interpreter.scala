@@ -82,15 +82,6 @@ trait Interpreter extends ScorexLogging {
     case _ => None
   }
 
-  def toValidScriptType(exp: SValue): BoolValue = exp match {
-    case v: Value[SBoolean.type]@unchecked if v.tpe == SBoolean => v
-    case p: SValue if p.tpe == SSigmaProp => p.asSigmaProp.isProven
-    case x =>
-      // This case is not possible, due to exp is always of Boolean/SigmaProp type.
-      // In case it will ever change, leave it here to throw an explaining message.
-      throw new Error(s"Context-dependent pre-processing should produce tree of type Boolean or SigmaProp but was $x")
-  }
-
   class MutableCell[T](var value: T)
 
   /** Extracts proposition for ErgoTree handing soft-fork condition.
@@ -117,7 +108,7 @@ trait Interpreter extends ScorexLogging {
       substDeserialize(currContext.value, { ctx: CTX => currContext.value = ctx }, x)
     }
     val Some(substTree: SValue) = everywherebu(substRule)(exp)
-    val res = toValidScriptType(substTree)
+    val res = Interpreter.toValidScriptType(substTree)
     (res, currContext.value)
   }
 
@@ -189,9 +180,9 @@ trait Interpreter extends ScorexLogging {
         val cost = SigmaBoolean.estimateCost(sb)
         (sb, cost)
       case _ =>
-        precompiledScriptProcessor.getVerifier(ergoTree) match {
+        precompiledScriptProcessor.getReducer(ergoTree) match {
           case Nullable(verifier) =>
-            verifier.verify(context)
+            verifier.reduce(context)
           case _ =>
             val (propTree, context2) = trySoftForkable[(BoolValue, CTX)](whenSoftFork = (TrueLeaf, context)) {
               applyDeserializeContext(context, prop)
@@ -422,6 +413,14 @@ object Interpreter {
     res
   }
 
+  def toValidScriptType(exp: SValue): BoolValue = exp match {
+    case v: Value[SBoolean.type]@unchecked if v.tpe == SBoolean => v
+    case p: SValue if p.tpe == SSigmaProp => p.asSigmaProp.isProven
+    case x =>
+      // This case is not possible, due to exp is always of Boolean/SigmaProp type.
+      // In case it will ever change, leave it here to throw an explaining message.
+      throw new Error(s"Context-dependent pre-processing should produce tree of type Boolean or SigmaProp but was $x")
+  }
 
   def error(msg: String) = throw new InterpreterException(msg)
 
