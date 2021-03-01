@@ -21,6 +21,7 @@ case class DeserializeContextSerializer(cons: (Byte, SType) => Value[SType])
   override def parse(r: SigmaByteReader): Value[SType] = {
     val tpe = r.getType()
     val id = r.getByte()
+    r.wasDeserialize ||= true // mark the flag
     cons(id, tpe)
   }
 }
