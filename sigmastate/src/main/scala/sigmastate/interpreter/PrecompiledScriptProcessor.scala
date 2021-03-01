@@ -1,10 +1,13 @@
 package sigmastate.interpreter
 
+import java.util.concurrent.ExecutionException
+
 import com.google.common.cache.{RemovalListener, CacheBuilder, RemovalNotification, CacheLoader}
 import org.ergoplatform.settings.ErgoAlgos
+import org.ergoplatform.validation.{ValidationRules, SigmaValidationSettings}
 import org.ergoplatform.validation.ValidationRules.{CheckCostFunc, CheckCalcFunc, trySoftForkable}
 import scalan.{AVHashMap, Nullable}
-import sigmastate.TrivialProp
+import sigmastate.{Values, TrivialProp}
 import sigmastate.Values.ErgoTree
 import sigmastate.eval.{RuntimeIRContext, IRContext}
 import sigmastate.interpreter.Interpreter.ReductionResult
@@ -12,6 +15,20 @@ import sigmastate.serialization.ErgoTreeSerializer
 import sigmastate.utils.Helpers._
 
 import scala.collection.mutable
+
+trait ScriptReducer {
+  /** Reduce this pre-compiled script in the given context.
+    * This is equivalent to reduceToCrypto, except that graph construction is
+    * completely avoided.
+    */
+  def reduce(context: InterpreterContext): ReductionResult
+}
+
+case object WhenSoftForkReducer extends ScriptReducer {
+  override def reduce(context: InterpreterContext): (Values.SigmaBoolean, Long) = {
+    TrivialProp.TrueProp -> 0
+  }
+}
 
 /** This class implements optimized reduction of the given pre-compiled script.
   * Pre-compilation of the necessary graphs is performed as part of constructor and
@@ -24,7 +41,8 @@ import scala.collection.mutable
   * The code should correspond to reduceToCrypto method, but some operations may be
   * optimized due to assumptions above.
   */
-case class PrecompiledScriptReducer(scriptBytes: Seq[Byte])(implicit val IR: IRContext) {
+case class PrecompiledScriptReducer(scriptBytes: Seq[Byte])(implicit val IR: IRContext)
+  extends ScriptReducer {
 
   /** The following operations create [[RCostingResultEx]] structure for the given
     * `scriptBytes` and they should be the same as in `reduceToCrypto` method.
@@ -66,12 +84,13 @@ case class PrecompiledScriptReducer(scriptBytes: Seq[Byte])(implicit val IR: IRC
   }
 }
 
+case class CacheKey(scriptBytes: Seq[Byte], vs: SigmaValidationSettings)
+
+
 /** Script processor which holds pre-compiled reducers for the given scripts.
   * @param predefScripts collection of scripts to ALWAYS pre-compile (each given by ErgoTree bytes)
   */
-class PrecompiledScriptProcessor(val predefScripts: Seq[Seq[Byte]]) {
-  /** Convenience synonym */
-  type PSR = PrecompiledScriptReducer
+class PrecompiledScriptProcessor(val predefScripts: Seq[CacheKey]) {
 
   /** Creates a new instance of IRContex to be used in reducers.
     * The default implementation can be overriden in derived classes.
@@ -81,19 +100,19 @@ class PrecompiledScriptProcessor(val predefScripts: Seq[Seq[Byte]]) {
   /** Holds for each ErgoTree bytes the corresponding pre-compiled reducer. */
   val reducers = {
     implicit val IR: IRContext = createIR()
-    val res = AVHashMap[Seq[Byte], PSR](predefScripts.length)
+    val res = AVHashMap[CacheKey, ScriptReducer](predefScripts.length)
     predefScripts.foreach { s =>
-      val r = PrecompiledScriptReducer(s)
+      val r = PrecompiledScriptReducer(s.scriptBytes)
       val old = res.put(s, r)
-      require(old == null, s"duplicate predefined script: '${ErgoAlgos.encode(s.toArray)}'")
+      require(old == null, s"duplicate predefined script: '${ErgoAlgos.encode(s.scriptBytes.toArray)}'")
     }
     res
   }
 
-  private val CacheListener = new RemovalListener[Seq[Byte], PSR]() {
-    override def onRemoval(notification: RemovalNotification[Seq[Byte], PSR]): Unit = {
+  private val CacheListener = new RemovalListener[CacheKey, ScriptReducer]() {
+    override def onRemoval(notification: RemovalNotification[CacheKey, ScriptReducer]): Unit = {
       if (notification.wasEvicted()) {
-        val scriptHex = ErgoAlgos.encode(notification.getKey.toArray)
+        val scriptHex = ErgoAlgos.encode(notification.getKey.scriptBytes.toArray)
         println(s"Evicted: ${scriptHex}")
       }
     }
@@ -104,9 +123,11 @@ class PrecompiledScriptProcessor(val predefScripts: Seq[Seq[Byte]]) {
       .maximumSize(1000)
       .removalListener(CacheListener)
       .recordStats()
-      .build(new CacheLoader[Seq[Byte], PSR]() {
-        override def load(key: Seq[Byte]): PSR = {
-          PrecompiledScriptReducer(scriptBytes = key)(createIR())
+      .build(new CacheLoader[CacheKey, ScriptReducer]() {
+        override def load(key: CacheKey): ScriptReducer = {
+          trySoftForkable[ScriptReducer](whenSoftFork = WhenSoftForkReducer) {
+            PrecompiledScriptReducer(key.scriptBytes)(createIR())
+          }(key.vs)
         }
       })
   }
@@ -116,11 +137,16 @@ class PrecompiledScriptProcessor(val predefScripts: Seq[Seq[Byte]]) {
     * @return non-empty Nullable instance with verifier for the given tree, otherwise
     *         Nullable.None
     */
-  def getReducer(ergoTree: ErgoTree): Nullable[PSR] = {
-    val key: Seq[Byte] = ergoTree.bytes
+  def getReducer(ergoTree: ErgoTree, context: InterpreterContext): Nullable[ScriptReducer] = {
+    val key = CacheKey(ergoTree.bytes, context.validationSettings)
     reducers.get(key) match {
       case Nullable.None =>
-        val verifier = cache.get(key)
+        val verifier = try {
+          cache.get(key)
+        } catch {
+          case e: ExecutionException =>
+            throw e.getCause
+        }
         Nullable(verifier)
       case v => v
     }
@@ -128,5 +154,5 @@ class PrecompiledScriptProcessor(val predefScripts: Seq[Seq[Byte]]) {
 }
 
 object PrecompiledScriptProcessor {
-  val Default = new PrecompiledScriptProcessor(mutable.WrappedArray.empty[Seq[Byte]])
+  val Default = new PrecompiledScriptProcessor(mutable.WrappedArray.empty[CacheKey])
 }

@@ -1,8 +1,6 @@
 package sigmastate.interpreter
 
-import sigmastate.serialization.ErgoTreeSerializer
-import org.ergoplatform.settings.ErgoAlgos
-import sigmastate.Values.ErgoTree
+import org.ergoplatform.validation.ValidationRules
 import sigmastate.helpers.SigmaPPrint
 import special.sigma.SigmaDslTesting
 
@@ -24,16 +22,16 @@ class PrecompiledScriptProcessorSpecification extends SigmaDslTesting {
     val predefTrees = predefScriptHexes.map { h => parseTree(h) }
     val extraTrees = Seq(TrueTree, FalseTree)
     val trees = extraTrees ++ predefTrees
-    val scripts = trees.map { t => t.bytes: Seq[Byte] }
+    val scripts = trees.map { t => CacheKey(t.bytes, ValidationRules.currentSettings) }
     val processor = new PrecompiledScriptProcessor(scripts)
     trees.foreach { t =>
-      processor.getReducer(t).isDefined shouldBe true
+      processor.getReducer(t, fakeContext).isDefined shouldBe true
     }
   }
 
   property("rejects duplicates") {
     val trees = Seq(TrueTree, TrueTree)
-    val scripts = trees.map { t => t.bytes: Seq[Byte] }
+    val scripts = trees.map { t => CacheKey(t.bytes, ValidationRules.currentSettings) }
     assertExceptionThrown(
       new PrecompiledScriptProcessor(scripts),
       { case _: IllegalArgumentException => true

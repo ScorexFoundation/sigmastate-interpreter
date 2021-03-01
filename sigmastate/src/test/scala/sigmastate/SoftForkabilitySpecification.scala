@@ -256,7 +256,7 @@ class SoftForkabilitySpecification extends SigmaTestingData {
       ValueSerializer.serialize(booleanPropV2)
     }
 
-    // v1 main script which deserializes from context v2 script
+    // v1 main script which deserializes v2 script from context
     val mainProp = BinAnd(GT(Height, IntConstant(deadline)), DeserializeContext(1, SBoolean)).toSigmaProp
     val mainTree = ErgoTree.fromProposition(
       headerFlags = ErgoTree.headerWithVersion(0), // ErgoTree v0

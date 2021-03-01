@@ -180,7 +180,7 @@ trait Interpreter extends ScorexLogging {
         val cost = SigmaBoolean.estimateCost(sb)
         (sb, cost)
       case _ =>
-        precompiledScriptProcessor.getReducer(ergoTree) match {
+        precompiledScriptProcessor.getReducer(ergoTree, context) match {
           case Nullable(verifier) =>
             verifier.reduce(context)
           case _ =>

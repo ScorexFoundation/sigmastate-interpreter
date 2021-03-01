@@ -28,7 +28,7 @@ import sigmastate.utils.Helpers._
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.helpers.{ErgoLikeContextTesting, SigmaPPrint}
 import sigmastate.helpers.TestingHelpers._
-import sigmastate.interpreter.{ProverResult, ContextExtension, ProverInterpreter, PrecompiledScriptProcessor}
+import sigmastate.interpreter.{ProverResult, PrecompiledScriptProcessor, ContextExtension, ProverInterpreter, CacheKey}
 import sigmastate.serialization.ValueSerializer
 import sigmastate.serialization.generators.ObjectGenerators
 import sigmastate.utxo.{DeserializeContext, DeserializeRegister}
@@ -271,7 +271,7 @@ class SigmaDslTesting extends PropSpec
         type CTX = ErgoLikeContext
         override val precompiledScriptProcessor =
           new PrecompiledScriptProcessor(
-            predefScripts.map { hex => parseTree(hex).bytes: Seq[Byte] }
+            predefScripts.map { hex => CacheKey(parseTree(hex).bytes, ValidationRules.currentSettings) }
           )
       }
 
