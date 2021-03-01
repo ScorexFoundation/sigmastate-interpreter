@@ -1,13 +1,19 @@
 package sigmastate.helpers
 
 import org.ergoplatform._
-import sigmastate.eval.IRContext
+import sigmastate.eval.{IRContext, CompiletimeIRContext}
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
+import sigmastate.interpreter.PrecompiledScriptProcessor
 
-import scala.util.{Failure, Success}
+import scala.collection.mutable
+import scala.util.{Success, Failure}
 
 class ErgoLikeTestInterpreter(implicit override val IR: IRContext) extends ErgoLikeInterpreter {
   override type CTX = ErgoLikeContext
+  override val precompiledScriptProcessor: PrecompiledScriptProcessor =
+    new PrecompiledScriptProcessor(mutable.WrappedArray.empty) {
+      override protected def createIR(): IRContext = new CompiletimeIRContext
+    }
 }
 
 class ErgoTransactionValidator(activatedVersion: Byte)(implicit IR: IRContext) {
