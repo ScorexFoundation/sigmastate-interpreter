@@ -162,4 +162,10 @@ class SigmaByteReader(val r: Reader,
   @inline final def addComplexity(delta: Int): Unit = {
     _complexity += delta
   }
+
+  private var _wasDeserialize: Boolean = false
+  @inline final def wasDeserialize: Boolean = _wasDeserialize
+  @inline final def wasDeserialize_=(v: Boolean): Unit = {
+    _wasDeserialize = v
+  }
 }

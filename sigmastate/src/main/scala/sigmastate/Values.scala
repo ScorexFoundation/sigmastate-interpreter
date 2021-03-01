@@ -5,7 +5,7 @@ import java.util
 import java.util.Objects
 
 import org.bitbucket.inkytonik.kiama.relation.Tree
-import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{strategy, everywherebu}
+import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{strategy, everywherebu, count}
 import org.ergoplatform.validation.ValidationException
 import scalan.{Nullable, RType}
 import scalan.util.CollectionUtil._
@@ -120,6 +120,15 @@ object Values {
 
     /** Immutable empty Seq of values. Can be used to avoid allocation. */
     val EmptySeq: IndexedSeq[SValue] = EmptyArray
+
+    def hasDeserialize(exp: SValue): Boolean = {
+      val deserializeNode: PartialFunction[Any, Int] = {
+        case _: DeserializeContext[_] => 1
+        case _: DeserializeRegister[_] => 1
+      }
+      val c = count(deserializeNode)(exp)
+      c > 0
+    }
   }
 
   trait ValueCompanion extends SigmaNodeCompanion {
@@ -982,13 +991,20 @@ object Values {
     constants: IndexedSeq[Constant[SType]],
     root: Either[UnparsedErgoTree, SigmaPropValue],
     private val givenComplexity: Int,
-    private val propositionBytes: Array[Byte]
+    private val propositionBytes: Array[Byte],
+    private val givenDeserialize: Option[Boolean]
   ) {
 
     def this(header: Byte,
              constants: IndexedSeq[Constant[SType]],
              root: Either[UnparsedErgoTree, SigmaPropValue]) =
-      this(header, constants, root, 0, DefaultSerializer.serializeErgoTree(ErgoTree(header, constants, root, 0, null)))
+      this(
+        header, constants, root, 0,
+        propositionBytes = DefaultSerializer.serializeErgoTree(
+          ErgoTree(header, constants, root, 0, null, None)
+        ),
+        givenDeserialize = None
+      )
 
     require(isConstantSegregation || constants.isEmpty)
     require(version == 0 || hasSize, s"For newer version the size bit is required: $this")
@@ -1026,7 +1042,22 @@ object Values {
       _complexity
     }
 
-    /** Serialized proposition expression of SigmaProp type with 
+    private[sigmastate] var _hasDeserialize: Option[Boolean] = givenDeserialize
+
+    /** Structural complexity estimation of this tree.
+      * @see ComplexityTable
+      */
+    lazy val hasDeserialize: Boolean = {
+      if (_hasDeserialize.isEmpty) {
+        _hasDeserialize = Some(root match {
+          case Right(p) => Value.hasDeserialize(p)
+          case _ => false
+        })
+      }
+      _hasDeserialize.get
+    }
+
+    /** Serialized proposition expression of SigmaProp type with
       * ConstantPlaceholder nodes instead of Constant nodes 
       */
     lazy val template: Array[Byte] = {
