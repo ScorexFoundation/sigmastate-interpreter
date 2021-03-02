@@ -25,7 +25,7 @@ class PrecompiledScriptProcessorSpecification extends SigmaDslTesting {
     val scripts = trees.map { t => CacheKey(t.bytes, ValidationRules.currentSettings) }
     val processor = new PrecompiledScriptProcessor(scripts)
     trees.foreach { t =>
-      processor.getReducer(t, fakeContext).isDefined shouldBe true
+      processor.getReducer(t, ValidationRules.currentSettings) should not be null
     }
   }
 

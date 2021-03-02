@@ -36,6 +36,10 @@ trait Interpreter extends ScorexLogging {
   val IR: IRContext
   import IR._
 
+  /** Processor instance which is used by this interpreter to execute ErgoTrees that
+    * contain neither [[DeserializeContext]] nor [[sigmastate.utxo.DeserializeRegister]]
+    * operations.
+    */
   def precompiledScriptProcessor: PrecompiledScriptProcessor
 
   /** Deserializes given script bytes using ValueSerializer (i.e. assuming expression tree format).
@@ -172,27 +176,32 @@ trait Interpreter extends ScorexLogging {
   def fullReduction(ergoTree: ErgoTree,
                     context: CTX,
                     env: ScriptEnv): (SigmaBoolean, Long) = {
-    implicit val vs: SigmaValidationSettings = context.validationSettings
     val prop = propositionFromErgoTree(ergoTree, context)
     prop match {
       case SigmaPropConstant(p) =>
         val sb = SigmaDsl.toSigmaBoolean(p)
         val cost = SigmaBoolean.estimateCost(sb)
         (sb, cost)
+      case _ if !ergoTree.hasDeserialize =>
+        val r = precompiledScriptProcessor.getReducer(ergoTree, context.validationSettings)
+        r.reduce(context)
       case _ =>
-        precompiledScriptProcessor.getReducer(ergoTree, context) match {
-          case Nullable(verifier) =>
-            verifier.reduce(context)
-          case _ =>
-            val (propTree, context2) = trySoftForkable[(BoolValue, CTX)](whenSoftFork = (TrueLeaf, context)) {
-              applyDeserializeContext(context, prop)
-            }
-
-            // here we assume that when `propTree` is TrueProp then `reduceToCrypto` always succeeds
-            // and the rest of the verification is also trivial
-            reduceToCrypto(context2, env, propTree).getOrThrow
-        }
+        reductionWithDeserialize(prop, context, env)
     }
+  }
+
+  /** Perfroms reduction of proposition which contains deserialization operations. */
+  private def reductionWithDeserialize(prop: SigmaPropValue,
+                                       context: CTX,
+                                       env: ScriptEnv) = {
+    implicit val vs: SigmaValidationSettings = context.validationSettings
+    val (propTree, context2) = trySoftForkable[(BoolValue, CTX)](whenSoftFork = (TrueLeaf, context)) {
+      applyDeserializeContext(context, prop)
+    }
+
+    // here we assume that when `propTree` is TrueProp then `reduceToCrypto` always succeeds
+    // and the rest of the verification is also trivial
+    reduceToCrypto(context2, env, propTree).getOrThrow
   }
 
   /** Executes the script in a given context.

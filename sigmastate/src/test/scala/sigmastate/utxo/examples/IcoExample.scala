@@ -16,8 +16,9 @@ import sigmastate.interpreter.Interpreter.ScriptNameProp
 import sigmastate.lang.Terms._
 import sigmastate.serialization.ErgoTreeSerializer
 import ErgoTreeSerializer.DefaultSerializer
+import org.scalatest.BeforeAndAfterAll
 import sigmastate.eval.{CompiletimeCosting, IRContext}
-import sigmastate.interpreter.CryptoConstants
+import sigmastate.interpreter.{CryptoConstants, PrecompiledScriptProcessor}
 
 import scala.util.Random
 import sigmastate.eval._
@@ -233,7 +234,7 @@ reasonable to have an additional input from the project with the value equal to 
   */
 
 class IcoExample extends SigmaTestingCommons
-  with CrossVersionProps { suite =>
+  with CrossVersionProps with BeforeAndAfterAll { suite =>
 
   // Not mixed with TestContext since it is not possible to call commpiler.compile outside tests if mixed
   implicit lazy val IR: IRContext = new IRContext with CompiletimeCosting
@@ -551,6 +552,12 @@ class IcoExample extends SigmaTestingCommons
 
   property("ComplexityTableStat") {
     println(ComplexityTableStat.complexityTableString)
+  }
+
+  /** This is the last executed test suite, so this method is executed after all tests.
+    * We output statistics of how PrecompiledScriptProcessor cache was used. */
+  override protected def afterAll(): Unit = {
+    println(PrecompiledScriptProcessor.WithCompiletimeIRContext.cache.stats())
   }
 
 }

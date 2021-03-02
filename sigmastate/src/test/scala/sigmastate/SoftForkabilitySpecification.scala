@@ -3,6 +3,7 @@ package sigmastate
 import org.ergoplatform._
 import org.ergoplatform.validation.ValidationRules.{CheckValidOpCode, trySoftForkable, CheckCostFuncOperation, CheckTupleType, CheckCostFunc, CheckDeserializedScriptIsSigmaProp, _}
 import org.ergoplatform.validation._
+import org.scalatest.BeforeAndAfterAll
 import sigmastate.SPrimType.MaxPrimTypeCode
 import sigmastate.Values.ErgoTree.EmptyConstants
 import sigmastate.Values.{UnparsedErgoTree, NotReadyValueInt, ByteArrayConstant, Tuple, IntConstant, ErgoTree, ValueCompanion}
@@ -10,16 +11,16 @@ import sigmastate.eval.Colls
 import sigmastate.helpers.{ErgoLikeContextTesting, ErgoLikeTestProvingInterpreter, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
-import sigmastate.interpreter.{ProverResult, ContextExtension}
+import sigmastate.interpreter.{ProverResult, ContextExtension, PrecompiledScriptProcessor}
 import sigmastate.lang.Terms._
-import sigmastate.lang.exceptions.{SerializerException, SigmaException, CosterException, InterpreterException}
+import sigmastate.lang.exceptions.{SerializerException, SigmaException, InterpreterException, CosterException}
 import sigmastate.serialization.OpCodes.{OpCodeExtra, LastConstantCode, OpCode}
 import sigmastate.serialization._
 import sigmastate.utxo.{DeserializeContext, SelectField}
 import special.sigma.SigmaTestingData
 import sigmastate.utils.Helpers._
 
-class SoftForkabilitySpecification extends SigmaTestingData {
+class SoftForkabilitySpecification extends SigmaTestingData with BeforeAndAfterAll {
 
   implicit lazy val IR = new TestingIRContext
   lazy val prover = new ErgoLikeTestProvingInterpreter()
@@ -371,4 +372,9 @@ class SoftForkabilitySpecification extends SigmaTestingData {
       CheckCostFunc(tIR)(asRep[Any => Int](costF))
     })
   }
+
+  override protected def afterAll(): Unit = {
+    println(PrecompiledScriptProcessor.WithCompiletimeIRContext.cache.stats())
+  }
+
 }

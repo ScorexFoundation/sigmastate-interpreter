@@ -9,7 +9,7 @@ import org.ergoplatform.validation.ValidationRules.{CheckCostFunc, CheckCalcFunc
 import scalan.{AVHashMap, Nullable}
 import sigmastate.{Values, TrivialProp}
 import sigmastate.Values.ErgoTree
-import sigmastate.eval.{RuntimeIRContext, IRContext}
+import sigmastate.eval.{RuntimeIRContext, IRContext, CompiletimeIRContext}
 import sigmastate.interpreter.Interpreter.ReductionResult
 import sigmastate.serialization.ErgoTreeSerializer
 import sigmastate.utils.Helpers._
@@ -137,22 +137,28 @@ class PrecompiledScriptProcessor(val predefScripts: Seq[CacheKey]) {
     * @return non-empty Nullable instance with verifier for the given tree, otherwise
     *         Nullable.None
     */
-  def getReducer(ergoTree: ErgoTree, context: InterpreterContext): Nullable[ScriptReducer] = {
-    val key = CacheKey(ergoTree.bytes, context.validationSettings)
+  def getReducer(ergoTree: ErgoTree, vs: SigmaValidationSettings): ScriptReducer = {
+    val key = CacheKey(ergoTree.bytes, vs)
     reducers.get(key) match {
-      case Nullable.None =>
-        val verifier = try {
+      case Nullable(r) => r
+      case _ =>
+        val r = try {
           cache.get(key)
         } catch {
           case e: ExecutionException =>
             throw e.getCause
         }
-        Nullable(verifier)
-      case v => v
+        r
     }
   }
 }
 
 object PrecompiledScriptProcessor {
+  /** Default script processor which uses [[RuntimeIRContext]] to process graphs. */
   val Default = new PrecompiledScriptProcessor(mutable.WrappedArray.empty[CacheKey])
+
+  /** Script processor which uses [[CompiletimeIRContext]] to process graphs. */
+  val WithCompiletimeIRContext = new PrecompiledScriptProcessor(mutable.WrappedArray.empty) {
+    override protected def createIR(): IRContext = new CompiletimeIRContext
+  }
 }
