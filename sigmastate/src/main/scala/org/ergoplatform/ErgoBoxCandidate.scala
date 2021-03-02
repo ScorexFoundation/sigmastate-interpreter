@@ -181,32 +181,31 @@ object ErgoBoxCandidate {
     /** Helper method to parse [[ErgoBoxCandidate]] previously serialized by
       * [[serializeBodyWithIndexedDigests()]].
       */
-    def parseBodyWithIndexedDigests(digestsInTx: Nullable[Array[TokenId]], r: SigmaByteReader): ErgoBoxCandidate = {
+    def parseBodyWithIndexedDigests(digestsInTx: Array[Array[Byte]], r: SigmaByteReader): ErgoBoxCandidate = {
       val previousPositionLimit = r.positionLimit
       r.positionLimit = r.position + ErgoBox.MaxBoxSize
       val value = r.getULong()                  // READ
       val tree = DefaultSerializer.deserializeErgoTree(r, SigmaSerializer.MaxPropositionSize)  // READ
       val creationHeight = r.getUInt().toInt    // READ
       val nTokens = r.getUByte()                // READ
-      val tokenIds = new Array[Digest32](nTokens)
+      val tokenIds = new Array[Array[Byte]](nTokens)
       val tokenAmounts = new Array[Long](nTokens)
-      digestsInTx match {
-        case Nullable(digests) =>
-          val nDigests = digests.length
-          cfor(0)(_ < nTokens, _ + 1) { i =>
-            val digestIndex = r.getUInt().toInt // READ
-            if (digestIndex < 0 || digestIndex >= nDigests)
-              sys.error(s"failed to find token id with index $digestIndex")
-            val amount = r.getULong()           // READ
-            tokenIds(i) = digests(digestIndex)
-            tokenAmounts(i) = amount
-          }
-        case _ =>
-          val tokenIdSize = TokenId.size  // optimization: access the value once
-          cfor(0)(_ < nTokens, _ + 1) { i =>
-            tokenIds(i) = r.getBytes(tokenIdSize).asInstanceOf[Digest32] // READ
-            tokenAmounts(i) = r.getULong()                               // READ
-          }
+      if (digestsInTx != null) {
+        val nDigests = digestsInTx.length
+        cfor(0)(_ < nTokens, _ + 1) { i =>
+          val digestIndex = r.getUInt().toInt // READ
+          if (digestIndex < 0 || digestIndex >= nDigests)
+            sys.error(s"failed to find token id with index $digestIndex")
+          val amount = r.getULong()           // READ
+          tokenIds(i) = digestsInTx(digestIndex)
+          tokenAmounts(i) = amount
+        }
+      } else {
+        val tokenIdSize = TokenId.size  // optimization: access the value once
+        cfor(0)(_ < nTokens, _ + 1) { i =>
+          tokenIds(i) = r.getBytes(tokenIdSize) // READ
+          tokenAmounts(i) = r.getULong()        // READ
+        }
       }
       val tokens = Colls.pairCollFromArrays(tokenIds, tokenAmounts)
 
@@ -220,11 +219,13 @@ object ErgoBoxCandidate {
         b += ((reg, v))  // don't use `->` since it incur additional wrapper overhead
       }
       r.positionLimit = previousPositionLimit
-      new ErgoBoxCandidate(value, tree, creationHeight, tokens, b.result())
+      new ErgoBoxCandidate(
+        value, tree, creationHeight,
+        tokens.asInstanceOf[Coll[(TokenId, Long)]], b.result())
     }
 
     override def parse(r: SigmaByteReader): ErgoBoxCandidate = {
-      parseBodyWithIndexedDigests(Nullable.None, r)
+      parseBodyWithIndexedDigests(digestsInTx = null, r)
     }
   }
 

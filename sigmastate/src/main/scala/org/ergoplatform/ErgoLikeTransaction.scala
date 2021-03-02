@@ -143,6 +143,7 @@ object ErgoLikeTransactionSerializer extends SigmaSerializer[ErgoLikeTransaction
     }
   }
 
+  /** @hotspot don't beautify the code */
   override def parse(r: SigmaByteReader): ErgoLikeTransaction = {
     // parse transaction inputs
     val inputsCount = r.getUShort()
@@ -150,25 +151,28 @@ object ErgoLikeTransactionSerializer extends SigmaSerializer[ErgoLikeTransaction
     cfor(0)(_ < inputsCount, _ + 1) { i =>
       inputs(i) = Input.serializer.parse(r)
     }
+
     // parse transaction data inputs
     val dataInputsCount = r.getUShort()
     val dataInputs = new Array[DataInput](dataInputsCount)
     cfor(0)(_ < dataInputsCount, _ + 1) { i =>
       dataInputs(i) = DataInput(ADKey @@ r.getBytes(ErgoBox.BoxId.size))
     }
+
     // parse distinct ids of tokens in transaction outputs
     val tokensCount = r.getUInt().toInt
-    val tokens = new Array[TokenId](tokensCount)
+    val tokens = new Array[Array[Byte]](tokensCount)
     cfor(0)(_ < tokensCount, _ + 1) { i =>
-      tokens(i) = Digest32 @@ r.getBytes(TokenId.size)
+      tokens(i) = r.getBytes(TokenId.size)
     }
-    // parse outputs
 
+    // parse outputs
     val outsCount = r.getUShort()
     val outputCandidates = new Array[ErgoBoxCandidate](outsCount)
     cfor(0)(_ < outsCount, _ + 1) { i =>
-      outputCandidates(i) = ErgoBoxCandidate.serializer.parseBodyWithIndexedDigests(Nullable(tokens), r)
+      outputCandidates(i) = ErgoBoxCandidate.serializer.parseBodyWithIndexedDigests(tokens, r)
     }
+
     new ErgoLikeTransaction(inputs, dataInputs, outputCandidates)
   }
 
