@@ -154,6 +154,7 @@ class SigmaByteReader(val r: Reader,
   }
 
   private var _complexity: Int = 0
+  /** Helper property which is used to accumulate complexity during parsing. */
   @inline final def complexity: Int = _complexity
   @inline final def complexity_=(v: Int): Unit = {
     _complexity = v
@@ -164,6 +165,7 @@ class SigmaByteReader(val r: Reader,
   }
 
   private var _wasDeserialize: Boolean = false
+  /** Helper property which is used to track deserialization operations during parsing. */
   @inline final def wasDeserialize: Boolean = _wasDeserialize
   @inline final def wasDeserialize_=(v: Boolean): Unit = {
     _wasDeserialize = v

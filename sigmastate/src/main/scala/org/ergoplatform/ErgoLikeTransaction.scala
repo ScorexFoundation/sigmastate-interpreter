@@ -3,7 +3,7 @@ package org.ergoplatform
 import org.ergoplatform.ErgoBox.TokenId
 import scalan.Nullable
 import scorex.crypto.authds.ADKey
-import scorex.crypto.hash.{Digest32, Blake2b256}
+import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util._
 import sigmastate.SType._
 import sigmastate.eval.Extensions._

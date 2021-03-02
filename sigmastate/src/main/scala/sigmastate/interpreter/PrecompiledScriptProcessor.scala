@@ -16,6 +16,11 @@ import sigmastate.utils.Helpers._
 
 import scala.collection.mutable
 
+/** A reducer which represents precompiled script reduction function.
+  * The function takes script execution context and produces the [[ReductionResult]],
+  * which contains both sigma proposition and the approximation of the cost taken by the
+  * reduction.
+  */
 trait ScriptReducer {
   /** Reduce this pre-compiled script in the given context.
     * This is equivalent to reduceToCrypto, except that graph construction is
@@ -24,6 +29,7 @@ trait ScriptReducer {
   def reduce(context: InterpreterContext): ReductionResult
 }
 
+/** Used as a fallback reducer when precompilation failed due to soft-fork condition. */
 case object WhenSoftForkReducer extends ScriptReducer {
   override def reduce(context: InterpreterContext): (Values.SigmaBoolean, Long) = {
     TrivialProp.TrueProp -> 0
@@ -84,7 +90,14 @@ case class PrecompiledScriptReducer(scriptBytes: Seq[Byte])(implicit val IR: IRC
   }
 }
 
-case class CacheKey(scriptBytes: Seq[Byte], vs: SigmaValidationSettings)
+/** Represents keys in the cache of precompiled ErgoTrees for repeated evaluation.
+  * Note, [[SigmaValidationSettings]] are part of the key, which is important, because
+  * the output of compilation depends on validation settings.
+  *
+  * @param ergoTreeBytes serialized bytes of ErgoTree instance (returned by ErgoTreeSerializer)
+  * @param vs validation settings which where used for soft-forkable compilation.
+  */
+case class CacheKey(ergoTreeBytes: Seq[Byte], vs: SigmaValidationSettings)
 
 
 /** Script processor which holds pre-compiled reducers for the given scripts.
@@ -102,22 +115,24 @@ class PrecompiledScriptProcessor(val predefScripts: Seq[CacheKey]) {
     implicit val IR: IRContext = createIR()
     val res = AVHashMap[CacheKey, ScriptReducer](predefScripts.length)
     predefScripts.foreach { s =>
-      val r = PrecompiledScriptReducer(s.scriptBytes)
+      val r = PrecompiledScriptReducer(s.ergoTreeBytes)
       val old = res.put(s, r)
-      require(old == null, s"duplicate predefined script: '${ErgoAlgos.encode(s.scriptBytes.toArray)}'")
+      require(old == null, s"duplicate predefined script: '${ErgoAlgos.encode(s.ergoTreeBytes.toArray)}'")
     }
     res
   }
 
+  /** Called when a cache item is removed. */
   private val CacheListener = new RemovalListener[CacheKey, ScriptReducer]() {
     override def onRemoval(notification: RemovalNotification[CacheKey, ScriptReducer]): Unit = {
       if (notification.wasEvicted()) {
-        val scriptHex = ErgoAlgos.encode(notification.getKey.scriptBytes.toArray)
+        val scriptHex = ErgoAlgos.encode(notification.getKey.ergoTreeBytes.toArray)
         println(s"Evicted: ${scriptHex}")
       }
     }
   }
 
+  /** The cache which stores MRU set of pre-compiled reducers. */
   val cache = {
     CacheBuilder.newBuilder
       .maximumSize(1000)
@@ -126,7 +141,7 @@ class PrecompiledScriptProcessor(val predefScripts: Seq[CacheKey]) {
       .build(new CacheLoader[CacheKey, ScriptReducer]() {
         override def load(key: CacheKey): ScriptReducer = {
           trySoftForkable[ScriptReducer](whenSoftFork = WhenSoftForkReducer) {
-            PrecompiledScriptReducer(key.scriptBytes)(createIR())
+            PrecompiledScriptReducer(key.ergoTreeBytes)(createIR())
           }(key.vs)
         }
       })

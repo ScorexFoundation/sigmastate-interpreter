@@ -7,6 +7,10 @@ import sigmastate.interpreter.{Interpreter, PrecompiledScriptProcessor}
 import sigmastate.utxo._
 
 
+/** Base class of verifying interpreter which expects ErgoLikeContext as input of
+  * verify method.
+  * It implements deserialization of register of SELF box.
+  */
 class ErgoLikeInterpreter(implicit val IR: IRContext) extends Interpreter {
 
   override type CTX <: ErgoLikeContext

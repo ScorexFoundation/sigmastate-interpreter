@@ -269,10 +269,6 @@ class SigmaDslTesting extends PropSpec
       val prover = new FeatureProvingInterpreter()
       val verifier = new ErgoLikeInterpreter()(createIR()) {
         type CTX = ErgoLikeContext
-        override val precompiledScriptProcessor =
-          new PrecompiledScriptProcessor(
-            predefScripts.map { hex => CacheKey(parseTree(hex).bytes, ValidationRules.currentSettings) }
-          )
       }
 
       // Create synthetic ErgoTree which uses all main capabilities of evaluation machinery.

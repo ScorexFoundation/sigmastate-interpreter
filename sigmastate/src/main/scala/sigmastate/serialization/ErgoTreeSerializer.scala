@@ -156,7 +156,7 @@ class ErgoTreeSerializer {
         r.wasDeserialize = false
 
         val root = ValueSerializer.deserialize(r)
-        val hasDeserialize = r.wasDeserialize
+        val hasDeserialize = r.wasDeserialize  // == true if there was deserialization node
         r.wasDeserialize = wasDeserialize_saved
 
         if (checkType) {

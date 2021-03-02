@@ -121,6 +121,8 @@ object Values {
     /** Immutable empty Seq of values. Can be used to avoid allocation. */
     val EmptySeq: IndexedSeq[SValue] = EmptyArray
 
+    /** Traverses the given expression tree and counts the number of deserialization
+      * operations. If it it non zero, returns true. */
     def hasDeserialize(exp: SValue): Boolean = {
       val deserializeNode: PartialFunction[Any, Int] = {
         case _: DeserializeContext[_] => 1
@@ -984,7 +986,13 @@ object Values {
     *                          These bytes are obtained in two ways:
     *                          1) in the ErgoTreeSerializer from Reader
     *                          2) in the alternative constructor using ErgoTreeSerializer.serializeErgoTree
-    *
+    *  @param givenDeserialize optional flag, which contains information about presence of
+    *                          deserialization operations in the tree. If it is None, the information is not
+    *                          available. If Some(true) then there are deserialization operations, otherwise
+    *                          the tree doesn't contain deserialization and is eligible
+    *                          for optimized execution.
+    *                          ErgoTreeSerializer parsing method computes the value of
+    *                          this flag and provides it to the constructor.
     */
   case class ErgoTree private[sigmastate](
     header: Byte,
@@ -1044,8 +1052,8 @@ object Values {
 
     private[sigmastate] var _hasDeserialize: Option[Boolean] = givenDeserialize
 
-    /** Structural complexity estimation of this tree.
-      * @see ComplexityTable
+    /** Returns true if the tree contains at least one deserialization operation,
+      * false otherwise.
       */
     lazy val hasDeserialize: Boolean = {
       if (_hasDeserialize.isEmpty) {

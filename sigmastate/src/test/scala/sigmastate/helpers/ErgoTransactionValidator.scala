@@ -5,7 +5,7 @@ import sigmastate.eval.IRContext
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.interpreter.PrecompiledScriptProcessor
 
-import scala.util.{Success, Failure}
+import scala.util.{Failure, Success}
 
 /** Base class for interpreters used in tests.
   * @see derived classes */

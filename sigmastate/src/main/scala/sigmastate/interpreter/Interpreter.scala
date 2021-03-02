@@ -377,10 +377,10 @@ object Interpreter {
     * The second component is the estimated cost of contract execution. */
   type VerificationResult = (Boolean, Long)
 
-  /** Result of ErgoTree reduction procedure (see `reduceToCrypto`).
+  /** Result of ErgoTree reduction procedure (see `reduceToCrypto` and friends).
     * The first component is the value of SigmaProp type which represents a statement
     * verifiable via sigma protocol.
-    * The second component is the estimated cost of contract execution */
+    * The second component is the estimated cost of consumed by the contract execution. */
   type ReductionResult = (SigmaBoolean, Long)
 
   type ScriptEnv = Map[String, Any]
@@ -398,6 +398,12 @@ object Interpreter {
     */
   val MaxSupportedScriptVersion: Byte = 1 // supported versions 0 and 1
 
+  /** Executes the given `calcF` graph in the given context.
+    * @param IR      containier of the graph (see [[IRContext]])
+    * @param context script execution context (built from [[org.ergoplatform.ErgoLikeContext]])
+    * @param calcF   graph which represents a reduction function from Context to SigmaProp.
+    * @return a reduction result
+    */
   def calcResult(IR: IRContext)
                 (context: special.sigma.Context,
                  calcF: IR.Ref[IR.Context => Any]): special.sigma.SigmaProp = {
@@ -422,6 +428,8 @@ object Interpreter {
     res
   }
 
+  /** Special helper function which converts the given expression to expression returning
+    * boolean or throws an exception if the conversion is not defined. */
   def toValidScriptType(exp: SValue): BoolValue = exp match {
     case v: Value[SBoolean.type]@unchecked if v.tpe == SBoolean => v
     case p: SValue if p.tpe == SSigmaProp => p.asSigmaProp.isProven
