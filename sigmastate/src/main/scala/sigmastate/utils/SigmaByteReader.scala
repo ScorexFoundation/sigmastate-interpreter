@@ -33,7 +33,7 @@ class SigmaByteReader(val r: Reader,
   /** The reader should be lightweight to create. In most cases ErgoTrees don't have
     * ValDef nodes hence the store is not necessary and it's initialization dominates the
     * reader instantiation time. Hence it's lazy.
-    * @hotspot
+    * HOTSPOT:
     */
   lazy val valDefTypeStore: ValDefTypeStore = new ValDefTypeStore()
 

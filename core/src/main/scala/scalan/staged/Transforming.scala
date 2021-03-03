@@ -71,7 +71,7 @@ trait Transforming { self: Scalan =>
   }
 
   /** Concrete and default implementation of Transformer using underlying HashMap.
-    * @hotspot  don't beatify the code */
+    * HOTSPOT:  don't beatify the code */
   case class MapTransformer(private val subst: util.HashMap[Sym, Sym]) extends Transformer {
     def this(substPairs: (Sym, Sym)*) {
       this({
@@ -145,7 +145,7 @@ trait Transforming { self: Scalan =>
 
   /** Base class for mirrors of graph nodes. Provides default implementations which can be
     * overriden if special logic is required.
-    * @hotspot don't beautify the code */
+    * HOTSPOT: don't beautify the code */
   abstract class Mirror {
     def apply[A](t: Transformer, rewriter: Rewriter, node: Ref[A], d: Def[A]): Sym = d.mirror(t)
 
@@ -246,7 +246,7 @@ trait Transforming { self: Scalan =>
       }
     }
 
-    /** @hotspot */
+    /** HOTSPOT: */
     def mirrorSymbols(t0: Transformer, rewriter: Rewriter, g: AstGraph, nodes: DBuffer[Int]) = {
       var t: Transformer = t0
       cfor(0)(_ < nodes.length, _ + 1) { i =>

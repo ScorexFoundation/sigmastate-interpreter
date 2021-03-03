@@ -28,7 +28,7 @@ case class ConcreteCollectionBooleanConstantSerializer(cons: (IndexedSeq[Value[S
     w.putBits(bits, bitsInfo)
   }
 
-  /** @hotspot don't beautify this code */
+  /** HOTSPOT: don't beautify this code */
   override def parse(r: SigmaByteReader): Value[SCollection[SBoolean.type]] = {
     val size = r.getUShort()    // READ
     val bits = r.getBits(size)  // READ

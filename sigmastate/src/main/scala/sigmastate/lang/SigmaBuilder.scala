@@ -651,7 +651,7 @@ class StdSigmaBuilder extends SigmaBuilder {
 
 trait TypeConstraintCheck {
 
-  /** @hotspot called during script deserialization (don't beautify this code)
+  /** HOTSPOT: called during script deserialization (don't beautify this code)
     * @consensus
     */
   def check2[T <: SType](left: Value[T],

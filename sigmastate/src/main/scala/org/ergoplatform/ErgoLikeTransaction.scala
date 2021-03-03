@@ -143,7 +143,7 @@ object ErgoLikeTransactionSerializer extends SigmaSerializer[ErgoLikeTransaction
     }
   }
 
-  /** @hotspot don't beautify the code */
+  /** HOTSPOT: don't beautify the code */
   override def parse(r: SigmaByteReader): ErgoLikeTransaction = {
     // parse transaction inputs
     val inputsCount = r.getUShort()

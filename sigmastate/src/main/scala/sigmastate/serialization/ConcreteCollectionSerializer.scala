@@ -21,7 +21,7 @@ case class ConcreteCollectionSerializer(cons: (IndexedSeq[Value[SType]], SType) 
     foreach(numItemsInfo.info.name, cc.items)(w.putValue(_, itemInfo))
   }
 
-  /** @hotspot don't beautify this code */
+  /** HOTSPOT: don't beautify this code */
   override def parse(r: SigmaByteReader): Value[SCollection[SType]] = {
     val size = r.getUShort()   // READ
     val tItem = r.getType()    // READ

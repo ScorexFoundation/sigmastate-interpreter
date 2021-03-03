@@ -122,7 +122,7 @@ object Values {
     val EmptySeq: IndexedSeq[SValue] = EmptyArray
 
     /** Traverses the given expression tree and counts the number of deserialization
-      * operations. If it it non zero, returns true. */
+      * operations. If it is non-zero, returns true. */
     def hasDeserialize(exp: SValue): Boolean = {
       val deserializeNode: PartialFunction[Any, Int] = {
         case _: DeserializeContext[_] => 1
@@ -578,6 +578,8 @@ object Values {
       *
       * @param sb sigma proposition to estimate
       * @return the value of estimated cost
+      *
+      * HOTSPOT: don't beautify the code
       */
     def estimateCost(sb: SigmaBoolean): Int = sb match {
       case _: ProveDlog => CostTable.proveDlogEvalCost
@@ -613,7 +615,7 @@ object Values {
         CostTable.MinimalCost
     }
 
-    /** @hotspot don't beautify this code */
+    /** HOTSPOT: don't beautify this code */
     object serializer extends SigmaSerializer[SigmaBoolean, SigmaBoolean] {
       val dhtSerializer = ProveDHTupleSerializer(ProveDHTuple.apply)
       val dlogSerializer = ProveDlogSerializer(ProveDlog.apply)

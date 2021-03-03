@@ -511,7 +511,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
     * Unfortunately, this is less readable, but gives significant performance boost
     * Look at comments to understand the logic of the rules.
     *
-    * @hotspot executed for each node of the graph, don't beautify.
+    * HOTSPOT: executed for each node of the graph, don't beautify.
     */
   override def rewriteDef[T](d: Def[T]): Ref[_] = {
     // First we match on node type, and then depending on it, we have further branching logic.
@@ -1027,7 +1027,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
       _contextDependantNodes(sym.node.nodeId)
     }
 
-  /** @hotspot don't beautify the code */
+  /** HOTSPOT: don't beautify the code */
   @inline final def allContextDependant(syms: Array[Sym]): Boolean = {
     val len = syms.length
     cfor(0)(_ < len, _ + 1) { i =>

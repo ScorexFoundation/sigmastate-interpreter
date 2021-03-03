@@ -116,7 +116,7 @@ object ErgoBoxCandidate {
     */
   val UndefinedBoxRef: Coll[Byte] = Array.fill(34)(0: Byte).toColl
 
-  /** @hotspot don't beautify the code */
+  /** HOTSPOT: don't beautify the code */
   object serializer extends SigmaSerializer[ErgoBoxCandidate, ErgoBoxCandidate] {
 
     /** Helper method for [[ErgoBoxCandidate]] serialization.
