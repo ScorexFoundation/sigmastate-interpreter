@@ -1,8 +1,9 @@
 package sigmastate.interpreter
 
 import java.util.concurrent.ExecutionException
+import java.util.concurrent.atomic.AtomicInteger
 
-import com.google.common.cache.{RemovalListener, CacheBuilder, RemovalNotification, CacheLoader}
+import com.google.common.cache.{CacheBuilder, RemovalNotification, RemovalListener, LoadingCache, CacheLoader, CacheStats}
 import org.ergoplatform.settings.ErgoAlgos
 import org.ergoplatform.validation.{ValidationRules, SigmaValidationSettings}
 import org.ergoplatform.validation.ValidationRules.{CheckCostFunc, CheckCalcFunc, trySoftForkable}
@@ -99,11 +100,23 @@ case class PrecompiledScriptReducer(scriptBytes: Seq[Byte])(implicit val IR: IRC
   */
 case class CacheKey(ergoTreeBytes: Seq[Byte], vs: SigmaValidationSettings)
 
+/** Settings to configure script processor.
+  * @param predefScripts collection of scripts to ALWAYS pre-compile (each given by ErgoTree bytes)
+  * @param maxCacheSize  maximum number of entries in the cache
+  * @param recordCacheStats if true, then cache statistics is recorded
+  * @param reportingInterval number of cache load operations between two reporting events
+  */
+case class ScriptProcessorSettings(
+  predefScripts: Seq[CacheKey],
+  maxCacheSize: Int = 1000,
+  recordCacheStats: Boolean = false,
+  reportingInterval: Int = 100
+)
 
 /** Script processor which holds pre-compiled reducers for the given scripts.
-  * @param predefScripts collection of scripts to ALWAYS pre-compile (each given by ErgoTree bytes)
+  * This class is thread-safe.
   */
-class PrecompiledScriptProcessor(val predefScripts: Seq[CacheKey]) {
+class PrecompiledScriptProcessor(val settings: ScriptProcessorSettings) {
 
   /** Creates a new instance of IRContex to be used in reducers.
     * The default implementation can be overriden in derived classes.
@@ -111,8 +124,9 @@ class PrecompiledScriptProcessor(val predefScripts: Seq[CacheKey]) {
   protected def createIR(): IRContext = new RuntimeIRContext
 
   /** Holds for each ErgoTree bytes the corresponding pre-compiled reducer. */
-  val reducers = {
+  protected val predefReducers = {
     implicit val IR: IRContext = createIR()
+    val predefScripts = settings.predefScripts
     val res = AVHashMap[CacheKey, ScriptReducer](predefScripts.length)
     predefScripts.foreach { s =>
       val r = PrecompiledScriptReducer(s.ergoTreeBytes)
@@ -122,39 +136,69 @@ class PrecompiledScriptProcessor(val predefScripts: Seq[CacheKey]) {
     res
   }
 
+  protected def onEvictedCacheEntry(key: CacheKey): Unit = {
+  }
+
   /** Called when a cache item is removed. */
-  private val CacheListener = new RemovalListener[CacheKey, ScriptReducer]() {
+  protected val cacheListener = new RemovalListener[CacheKey, ScriptReducer]() {
     override def onRemoval(notification: RemovalNotification[CacheKey, ScriptReducer]): Unit = {
       if (notification.wasEvicted()) {
-        val scriptHex = ErgoAlgos.encode(notification.getKey.ergoTreeBytes.toArray)
-        println(s"Evicted: ${scriptHex}")
+        onEvictedCacheEntry(notification.getKey)
       }
     }
   }
 
-  /** The cache which stores MRU set of pre-compiled reducers. */
-  val cache = {
-    CacheBuilder.newBuilder
-      .maximumSize(1000)
-      .removalListener(CacheListener)
-      .recordStats()
-      .build(new CacheLoader[CacheKey, ScriptReducer]() {
-        override def load(key: CacheKey): ScriptReducer = {
-          trySoftForkable[ScriptReducer](whenSoftFork = WhenSoftForkReducer) {
-            PrecompiledScriptReducer(key.ergoTreeBytes)(createIR())
-          }(key.vs)
+  protected def onReportStats(stats: CacheStats) = {
+  }
+
+  /** Loader to be used on a cache miss. The loader creates a new [[ScriptReducer]] for
+    * the given [[CacheKey]]. The default loader creates an instance of
+    * [[PrecompiledScriptReducer]] which stores its own IRContext and compiles costF,
+    * calcF graphs. */
+  protected val cacheLoader = new CacheLoader[CacheKey, ScriptReducer]() {
+    /** Internal counter of all load operations happening an different threads. */
+    private val loadCounder = new AtomicInteger(1)
+
+    override def load(key: CacheKey): ScriptReducer = {
+      val r = trySoftForkable[ScriptReducer](whenSoftFork = WhenSoftForkReducer) {
+        PrecompiledScriptReducer(key.ergoTreeBytes)(createIR())
+      }(key.vs)
+
+      val c = loadCounder.incrementAndGet()
+      if (c > settings.reportingInterval) {
+        if (loadCounder.compareAndSet(c, 1)) {
+          // call reporting only if we was able to reset the counter
+          // avoid double reporting
+          onReportStats(cache.stats())
         }
-      })
+      }
+
+      r
+    }
+  }
+
+  /** The cache which stores MRU set of pre-compiled reducers. */
+  val cache: LoadingCache[CacheKey, ScriptReducer] = {
+    var b = CacheBuilder.newBuilder
+      .maximumSize(settings.maxCacheSize)
+      .removalListener(cacheListener)
+    if (settings.recordCacheStats) {
+      b = b.recordStats()
+    }
+    b.build(cacheLoader)
   }
 
   /** Looks up verifier for the given ErgoTree using its 'bytes' property.
+    * It first looks up for predefReducers, if not found it looks up in the cache.
+    * If there is no cache entry, the `cacheLoader` is used to load a new `ScriptReducer`.
+    *
     * @param ergoTree a tree to lookup pre-compiled verifier.
     * @return non-empty Nullable instance with verifier for the given tree, otherwise
     *         Nullable.None
     */
   def getReducer(ergoTree: ErgoTree, vs: SigmaValidationSettings): ScriptReducer = {
     val key = CacheKey(ergoTree.bytes, vs)
-    reducers.get(key) match {
+    predefReducers.get(key) match {
       case Nullable(r) => r
       case _ =>
         val r = try {
@@ -170,10 +214,24 @@ class PrecompiledScriptProcessor(val predefScripts: Seq[CacheKey]) {
 
 object PrecompiledScriptProcessor {
   /** Default script processor which uses [[RuntimeIRContext]] to process graphs. */
-  val Default = new PrecompiledScriptProcessor(mutable.WrappedArray.empty[CacheKey])
+  val Default = new PrecompiledScriptProcessor(
+    ScriptProcessorSettings(mutable.WrappedArray.empty[CacheKey]))
 
   /** Script processor which uses [[CompiletimeIRContext]] to process graphs. */
-  val WithCompiletimeIRContext = new PrecompiledScriptProcessor(mutable.WrappedArray.empty) {
+  val WithCompiletimeIRContext = new PrecompiledScriptProcessor(
+    ScriptProcessorSettings(
+      predefScripts = mutable.WrappedArray.empty,
+      recordCacheStats = true,
+      reportingInterval = 10)) {
     override protected def createIR(): IRContext = new CompiletimeIRContext
+
+    override protected def onReportStats(stats: CacheStats): Unit = {
+      println(s"Cache Stats: $stats")
+    }
+
+    override protected def onEvictedCacheEntry(key: CacheKey): Unit = {
+      val scriptHex = ErgoAlgos.encode(key.ergoTreeBytes.toArray)
+      println(s"Evicted: ${scriptHex}")
+    }
   }
 }

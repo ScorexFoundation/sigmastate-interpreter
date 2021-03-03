@@ -23,7 +23,7 @@ class PrecompiledScriptProcessorSpecification extends SigmaDslTesting {
     val extraTrees = Seq(TrueTree, FalseTree)
     val trees = extraTrees ++ predefTrees
     val scripts = trees.map { t => CacheKey(t.bytes, ValidationRules.currentSettings) }
-    val processor = new PrecompiledScriptProcessor(scripts)
+    val processor = new PrecompiledScriptProcessor(ScriptProcessorSettings(scripts))
     trees.foreach { t =>
       processor.getReducer(t, ValidationRules.currentSettings) should not be null
     }
@@ -33,7 +33,7 @@ class PrecompiledScriptProcessorSpecification extends SigmaDslTesting {
     val trees = Seq(TrueTree, TrueTree)
     val scripts = trees.map { t => CacheKey(t.bytes, ValidationRules.currentSettings) }
     assertExceptionThrown(
-      new PrecompiledScriptProcessor(scripts),
+      new PrecompiledScriptProcessor(ScriptProcessorSettings(scripts)),
       { case _: IllegalArgumentException => true
         case _ => false }
     )
