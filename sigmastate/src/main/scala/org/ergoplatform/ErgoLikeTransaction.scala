@@ -1,9 +1,8 @@
 package org.ergoplatform
 
 import org.ergoplatform.ErgoBox.TokenId
-import scalan.Nullable
 import scorex.crypto.authds.ADKey
-import scorex.crypto.hash.{Blake2b256, Digest32}
+import scorex.crypto.hash.Blake2b256
 import scorex.util._
 import sigmastate.SType._
 import sigmastate.eval.Extensions._
@@ -20,27 +19,28 @@ trait ErgoBoxReader {
   def byId(boxId: ADKey): Try[ErgoBox]
 }
 
-/**
-  * Base trait of a real transaction to be used in Ergo network.
+/** Base trait of a real transaction to be used in Ergo network.
   * May be in unsigned (`UnsignedErgoLikeTransaction`) or in signed (`ErgoLikeTransaction`) version.
-  *
-  * Consists of:
-  *
-  * @param inputs           - inputs, that will be spent by this transaction.
-  * @param dataInputs       - inputs, that are not going to be spent by transaction, but will be
-  *                         reachable from inputs scripts. `dataInputs` scripts will not be executed,
-  *                         thus their scripts costs are not included in transaction cost and
-  *                         they do not contain spending proofs.
-  * @param outputCandidates - box candidates to be created by this transaction.
-  *                         Differ from ordinary ones in that they do not include transaction id and index
   */
 trait ErgoLikeTransactionTemplate[IT <: UnsignedInput] {
+  /** Inputs, that are not going to be spent by transaction, but will be
+    * reachable from inputs scripts. `dataInputs` scripts will not be executed,
+    * thus their scripts costs are not included in transaction cost and
+    * they do not contain spending proofs.
+    */
   val dataInputs: IndexedSeq[DataInput]
+
+  /** Inputs, that will be spent by this transaction. */
   val inputs: IndexedSeq[IT]
+
+  /** Box candidates to be created by this transaction.
+    * Differ from ordinary ones in that they do not include transaction id and index.
+    */
   val outputCandidates: IndexedSeq[ErgoBoxCandidate]
 
   require(outputCandidates.size <= Short.MaxValue)
 
+  /** Indentifier of this transaction as state Modifier. */
   val id: ModifierId
 
   lazy val outputs: IndexedSeq[ErgoBox] =
