@@ -9,8 +9,7 @@ import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.hash.{Digest32, Blake2b256}
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
-import sigmastate.helpers.ErgoLikeContextTesting
+import sigmastate.helpers.{ErgoLikeContextTesting, ErgoLikeTestInterpreter, ErgoLikeTestProvingInterpreter, SigmaTestingCommons, ContextEnrichingTestProvingInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter.ScriptNameProp
 import sigmastate.lang.Terms._
@@ -557,7 +556,7 @@ class IcoExample extends SigmaTestingCommons
   /** This is the last executed test suite, so this method is executed after all tests.
     * We output statistics of how PrecompiledScriptProcessor cache was used. */
   override protected def afterAll(): Unit = {
-    println(PrecompiledScriptProcessor.WithCompiletimeIRContext.cache.stats())
+    println(ErgoLikeTestInterpreter.DefaultProcessorInTests.cache.stats())
   }
 
 }

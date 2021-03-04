@@ -38,4 +38,20 @@ class PrecompiledScriptProcessorSpecification extends SigmaDslTesting {
         case _ => false }
     )
   }
+
+  property("collects predef hit statistics") {
+    val predefTrees = predefScriptHexes.map { h => parseTree(h) }
+    val scriptKeys = predefTrees.map { t => CacheKey(t.bytes, ValidationRules.currentSettings) }
+    Array(false, true).foreach { recordStats =>
+      val processor = new PrecompiledScriptProcessor(
+        ScriptProcessorSettings(
+          predefScripts = scriptKeys,
+          recordCacheStats = recordStats))
+      predefTrees.foreach { t =>
+        processor.getReducer(t, ValidationRules.currentSettings) should not be null
+      }
+      val expectedHits = if (recordStats) 1 else 0
+      processor.getPredefStats() shouldBe Array.fill(scriptKeys.length)(expectedHits).toSeq
+    }
+  }
 }

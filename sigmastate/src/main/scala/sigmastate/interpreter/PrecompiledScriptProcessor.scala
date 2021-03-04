@@ -14,7 +14,7 @@ import sigmastate.eval.{RuntimeIRContext, IRContext, CompiletimeIRContext}
 import sigmastate.interpreter.Interpreter.ReductionResult
 import sigmastate.serialization.ErgoTreeSerializer
 import sigmastate.utils.Helpers._
-
+import spire.syntax.all.cfor
 import scala.collection.mutable
 
 /** A reducer which represents precompiled script reduction function.
@@ -113,6 +113,12 @@ case class ScriptProcessorSettings(
   reportingInterval: Int = 100
 )
 
+/** Statistics of ScriptProcessor operations.
+  * @param cacheStats cache statistics such as hits and misses
+  * @param predefHits one hit counter for each predefined script
+  */
+case class ProcessorStats(cacheStats: CacheStats, predefHits: Seq[Int])
+
 /** Script processor which holds pre-compiled reducers for the given scripts.
   * This class is thread-safe.
   */
@@ -123,19 +129,41 @@ class PrecompiledScriptProcessor(val settings: ScriptProcessorSettings) {
     */
   protected def createIR(): IRContext = new RuntimeIRContext
 
-  /** Holds for each ErgoTree bytes the corresponding pre-compiled reducer. */
-  protected val predefReducers = {
+  /** Holds for each ErgoTree bytes the corresponding pre-compiled reducer.
+    * Since [[AVHashMap]] is not thread-safe it should be immutable
+    * after it is constructed. However the counters will be updated on each increase.
+    */
+  protected val predefReducers: AVHashMap[CacheKey, (ScriptReducer, AtomicInteger)] = {
     implicit val IR: IRContext = createIR()
     val predefScripts = settings.predefScripts
-    val res = AVHashMap[CacheKey, ScriptReducer](predefScripts.length)
+    val res = AVHashMap[CacheKey, (ScriptReducer, AtomicInteger)](predefScripts.length)
     predefScripts.foreach { s =>
       val r = PrecompiledScriptReducer(s.ergoTreeBytes)
-      val old = res.put(s, r)
+      val old = res.put(s, (r, new AtomicInteger(0)))
       require(old == null, s"duplicate predefined script: '${ErgoAlgos.encode(s.ergoTreeBytes.toArray)}'")
     }
     res
   }
 
+  /** Obtain hit counter for each predefined script. The order of counters corresponds to
+    * the order of the scripts in `settings`.
+    * */
+  def getPredefStats(): Seq[Int] = {
+    val scriptKeys = settings.predefScripts.toArray
+    val nScripts = scriptKeys.length
+    val res = new Array[Int](nScripts)
+    cfor(0)(_ < nScripts, _ + 1) { i =>
+      val key = scriptKeys(i)
+      val counter = predefReducers.get(key).get._2
+      res(i) = counter.get()
+    }
+    res
+  }
+
+  /** Returns accumulated statistics info. */
+  def getStats(): ProcessorStats = ProcessorStats(cache.stats(), getPredefStats())
+
+  /** Called when the cache entry is evicted. */
   protected def onEvictedCacheEntry(key: CacheKey): Unit = {
   }
 
@@ -148,7 +176,8 @@ class PrecompiledScriptProcessor(val settings: ScriptProcessorSettings) {
     }
   }
 
-  protected def onReportStats(stats: CacheStats) = {
+  /** Called to report processor stats. */
+  protected def onReportStats(stats: ProcessorStats) = {
   }
 
   /** Loader to be used on a cache miss. The loader creates a new [[ScriptReducer]] for
@@ -157,19 +186,19 @@ class PrecompiledScriptProcessor(val settings: ScriptProcessorSettings) {
     * calcF graphs. */
   protected val cacheLoader = new CacheLoader[CacheKey, ScriptReducer]() {
     /** Internal counter of all load operations happening an different threads. */
-    private val loadCounder = new AtomicInteger(1)
+    private val loadCounter = new AtomicInteger(1)
 
     override def load(key: CacheKey): ScriptReducer = {
       val r = trySoftForkable[ScriptReducer](whenSoftFork = WhenSoftForkReducer) {
         PrecompiledScriptReducer(key.ergoTreeBytes)(createIR())
       }(key.vs)
 
-      val c = loadCounder.incrementAndGet()
+      val c = loadCounter.incrementAndGet()
       if (c > settings.reportingInterval) {
-        if (loadCounder.compareAndSet(c, 1)) {
+        if (loadCounter.compareAndSet(c, 1)) {
           // call reporting only if we was able to reset the counter
           // avoid double reporting
-          onReportStats(cache.stats())
+          onReportStats(ProcessorStats(cache.stats(), getPredefStats()))
         }
       }
 
@@ -192,14 +221,18 @@ class PrecompiledScriptProcessor(val settings: ScriptProcessorSettings) {
     * It first looks up for predefReducers, if not found it looks up in the cache.
     * If there is no cache entry, the `cacheLoader` is used to load a new `ScriptReducer`.
     *
-    * @param ergoTree a tree to lookup pre-compiled verifier.
-    * @return non-empty Nullable instance with verifier for the given tree, otherwise
-    *         Nullable.None
+    * @param ergoTree a tree to lookup pre-compiled reducer.
+    * @return a reducer for the given tree
+    * May throw an exception if error happens and no soft-fork condition detected in `vs`.
     */
   def getReducer(ergoTree: ErgoTree, vs: SigmaValidationSettings): ScriptReducer = {
     val key = CacheKey(ergoTree.bytes, vs)
     predefReducers.get(key) match {
-      case Nullable(r) => r
+      case Nullable(r) =>
+        if (settings.recordCacheStats) {
+          r._2.incrementAndGet()  // update hit counter
+        }
+        r._1
       case _ =>
         val r = try {
           cache.get(key)
@@ -217,21 +250,4 @@ object PrecompiledScriptProcessor {
   val Default = new PrecompiledScriptProcessor(
     ScriptProcessorSettings(mutable.WrappedArray.empty[CacheKey]))
 
-  /** Script processor which uses [[CompiletimeIRContext]] to process graphs. */
-  val WithCompiletimeIRContext = new PrecompiledScriptProcessor(
-    ScriptProcessorSettings(
-      predefScripts = mutable.WrappedArray.empty,
-      recordCacheStats = true,
-      reportingInterval = 10)) {
-    override protected def createIR(): IRContext = new CompiletimeIRContext
-
-    override protected def onReportStats(stats: CacheStats): Unit = {
-      println(s"Cache Stats: $stats")
-    }
-
-    override protected def onEvictedCacheEntry(key: CacheKey): Unit = {
-      val scriptHex = ErgoAlgos.encode(key.ergoTreeBytes.toArray)
-      println(s"Evicted: ${scriptHex}")
-    }
-  }
 }
