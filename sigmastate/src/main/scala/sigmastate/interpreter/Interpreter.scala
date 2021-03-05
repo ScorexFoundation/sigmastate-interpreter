@@ -398,8 +398,8 @@ object Interpreter {
     */
   val MaxSupportedScriptVersion: Byte = 1 // supported versions 0 and 1
 
-  /** The result of script reduction when soft-fork condition is detected by the old node.
-    * This which case the script is reduced to trivial true proposition and takes up 0 cost.
+  /** The result of script reduction when soft-fork condition is detected by the old node,
+    * in which case the script is reduced to the trivial true proposition and takes up 0 cost.
     */
   val WhenSoftForkReductionResult: ReductionResult = TrivialProp.TrueProp -> 0
 
