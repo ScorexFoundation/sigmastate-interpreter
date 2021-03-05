@@ -13,7 +13,7 @@ import sigmastate.Values._
 import sigmastate.eval.{IRContext, Evaluation}
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.basics._
-import sigmastate.interpreter.Interpreter.{VerificationResult, ScriptEnv}
+import sigmastate.interpreter.Interpreter.{VerificationResult, ScriptEnv, WhenSoftForkReductionResult}
 import sigmastate.lang.exceptions.{InterpreterException, CostLimitException}
 import sigmastate.serialization.{ValueSerializer, SigmaSerializer}
 import sigmastate.utxo.DeserializeContext
@@ -133,7 +133,7 @@ trait Interpreter extends ScorexLogging {
     implicit val vs = context.validationSettings
     val maxCost = context.costLimit
     val initCost = context.initCost
-    trySoftForkable[ReductionResult](whenSoftFork = TrivialProp.TrueProp -> 0) {
+    trySoftForkable[ReductionResult](whenSoftFork = WhenSoftForkReductionResult) {
       val costingRes = doCostingEx(env, exp, true)
       val costF = costingRes.costF
       IR.onCostingResult(env, exp, costingRes)
@@ -397,6 +397,11 @@ object Interpreter {
     * etc.
     */
   val MaxSupportedScriptVersion: Byte = 1 // supported versions 0 and 1
+
+  /** The result of script reduction when soft-fork condition is detected by the old node.
+    * This which case the script is reduced to trivial true proposition and takes up 0 cost.
+    */
+  val WhenSoftForkReductionResult: ReductionResult = TrivialProp.TrueProp -> 0
 
   /** Executes the given `calcF` graph in the given context.
     * @param IR      containier of the graph (see [[IRContext]])

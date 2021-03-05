@@ -28,7 +28,7 @@ object ErgoLikeTestInterpreter {
   )
 
   /** Script processor which uses [[CompiletimeIRContext]] to process graphs. */
-  val DefaultProcessorInTests = {
+  val DefaultProcessorInTests: PrecompiledScriptProcessor = {
     val scriptKeys = predefScriptsInTests.flatMap { s =>
       val bytes = ErgoAlgos.decodeUnsafe(s)
       validationSettings.map(vs => CacheKey(bytes, vs))

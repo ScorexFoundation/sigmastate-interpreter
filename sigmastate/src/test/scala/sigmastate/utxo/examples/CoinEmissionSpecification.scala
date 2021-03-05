@@ -2,7 +2,6 @@ package sigmastate.utxo.examples
 
 import org.ergoplatform._
 import org.ergoplatform.settings.ErgoAlgos
-import org.ergoplatform.validation.ValidationRules
 import scorex.util.ScorexLogging
 import sigmastate.Values.{ErgoTree, IntConstant}
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, SigmaTestingCommons}
@@ -219,6 +218,5 @@ block 1600 in 1622 ms, 30000000000 coins remain, defs: 61661
 
     println(s"Emission Tree: ${ErgoAlgos.encode(tree.bytes)}")
     println(prover.precompiledScriptProcessor.getStats())
-//    prover.precompiledScriptProcessor.getReducer(tree, ValidationRules.currentSettings)
   }
 }

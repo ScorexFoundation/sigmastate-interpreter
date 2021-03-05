@@ -5,16 +5,17 @@ import java.util.concurrent.atomic.AtomicInteger
 
 import com.google.common.cache.{CacheBuilder, RemovalNotification, RemovalListener, LoadingCache, CacheLoader, CacheStats}
 import org.ergoplatform.settings.ErgoAlgos
-import org.ergoplatform.validation.{ValidationRules, SigmaValidationSettings}
+import org.ergoplatform.validation.SigmaValidationSettings
 import org.ergoplatform.validation.ValidationRules.{CheckCostFunc, CheckCalcFunc, trySoftForkable}
 import scalan.{AVHashMap, Nullable}
-import sigmastate.{Values, TrivialProp}
+import sigmastate.Values
 import sigmastate.Values.ErgoTree
-import sigmastate.eval.{RuntimeIRContext, IRContext, CompiletimeIRContext}
-import sigmastate.interpreter.Interpreter.ReductionResult
+import sigmastate.eval.{RuntimeIRContext, IRContext}
+import sigmastate.interpreter.Interpreter.{ReductionResult, WhenSoftForkReductionResult}
 import sigmastate.serialization.ErgoTreeSerializer
 import sigmastate.utils.Helpers._
 import spire.syntax.all.cfor
+
 import scala.collection.mutable
 
 /** A reducer which represents precompiled script reduction function.
@@ -33,7 +34,7 @@ trait ScriptReducer {
 /** Used as a fallback reducer when precompilation failed due to soft-fork condition. */
 case object WhenSoftForkReducer extends ScriptReducer {
   override def reduce(context: InterpreterContext): (Values.SigmaBoolean, Long) = {
-    TrivialProp.TrueProp -> 0
+    WhenSoftForkReductionResult
   }
 }
 
@@ -77,7 +78,7 @@ case class PrecompiledScriptReducer(scriptBytes: Seq[Byte])(implicit val IR: IRC
     implicit val vs = context.validationSettings
     val maxCost = context.costLimit
     val initCost = context.initCost
-    trySoftForkable[ReductionResult](whenSoftFork = TrivialProp.TrueProp -> 0) {
+    trySoftForkable[ReductionResult](whenSoftFork = WhenSoftForkReductionResult) {
       val costF = costingRes.costF
       val costingCtx = context.toSigmaContext(isCost = true)
       val estimatedCost = IR.checkCostWithContext(costingCtx, costF, maxCost, initCost).getOrThrow
@@ -217,16 +218,28 @@ class PrecompiledScriptProcessor(val settings: ScriptProcessorSettings) {
     b.build(cacheLoader)
   }
 
-  /** Looks up verifier for the given ErgoTree using its 'bytes' property.
-    * It first looks up for predefReducers, if not found it looks up in the cache.
-    * If there is no cache entry, the `cacheLoader` is used to load a new `ScriptReducer`.
+  /** An overload version of the method which looks up reducer for the given ErgoTree
+    * using its 'bytes' property. See also `getReducer(key)`.
     *
     * @param ergoTree a tree to lookup pre-compiled reducer.
+    * @param vs       validation settings which are used to detect soft-fork condition
     * @return a reducer for the given tree
     * May throw an exception if error happens and no soft-fork condition detected in `vs`.
     */
   def getReducer(ergoTree: ErgoTree, vs: SigmaValidationSettings): ScriptReducer = {
     val key = CacheKey(ergoTree.bytes, vs)
+    getReducer(key)
+  }
+
+  /** Looks up reducer for the given key using its 'ergoTreeBytes' property.
+    * It first looks up for predefReducers, if not found it looks up in the cache.
+    * If there is no cache entry, the `cacheLoader` is used to load a new `ScriptReducer`.
+    *
+    * @param key a script key to lookup pre-compiled reducer.
+    * @return a reducer for the given script
+    * May throw an exception if error happens and no soft-fork condition detected in `key.vs`.
+    */
+  def getReducer(key: CacheKey): ScriptReducer = {
     predefReducers.get(key) match {
       case Nullable(r) =>
         if (settings.recordCacheStats) {
