@@ -16,7 +16,9 @@ import scala.util.{Success, Failure}
   * @see derived classes */
 class ErgoLikeTestInterpreter(implicit override val IR: IRContext) extends ErgoLikeInterpreter {
   override type CTX = ErgoLikeContext
-  override val evalSettings: EvalSettings = DefaultEvalSettings.copy(isDebug = true)
+  override val evalSettings: EvalSettings = DefaultEvalSettings.copy(
+    isDebug = true,
+    isTestRun = true)
   override val precompiledScriptProcessor = ErgoLikeTestInterpreter.DefaultProcessorInTests
 }
 object ErgoLikeTestInterpreter {

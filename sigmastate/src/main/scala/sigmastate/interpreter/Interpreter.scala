@@ -141,7 +141,7 @@ trait Interpreter extends ScorexLogging {
   /** Same as applyDeserializeContext, but returns SigmaPropValue instead of BoolValue. */
   def applyDeserializeContextJITC(context: CTX, exp: Value[SType]): (SigmaPropValue, CTX) = {
     val currContext = new MutableCell(context)
-    val substRule = strategy[Value[_ <: SType]] { case x =>
+    val substRule = strategy[Any] { case x: SValue =>
       substDeserialize(currContext.value, { ctx: CTX => currContext.value = ctx }, x)
     }
     val Some(substTree: SValue) = everywherebu(substRule)(exp)
@@ -205,17 +205,17 @@ trait Interpreter extends ScorexLogging {
     * @return result of script reduction
     * @see `ReductionResult`
     */
-  def reduceToCryptoJITC(context: CTX, env: ScriptEnv, exp: Value[SType]): Try[ReductionResult] = Try {
+  def reduceToCryptoJITC(context: CTX, env: ScriptEnv, exp: SigmaPropValue): Try[ReductionResult] = Try {
     implicit val vs = context.validationSettings
-    trySoftForkable[ReductionResult](whenSoftFork = TrivialProp.TrueProp -> 0) {
+    trySoftForkable[ReductionResult](whenSoftFork = WhenSoftForkReductionResult) {
 
       val (res, cost) = {
         val ctx = context.asInstanceOf[ErgoLikeContext]
         ErgoTreeEvaluator.eval(ctx, ErgoTree.EmptyConstants, exp, evalSettings) match {
           case (p: special.sigma.SigmaProp, c) => (p, c)
-          case (b: Boolean, c) => (SigmaDsl.sigmaProp(b), c)
+//          case (b: Boolean, c) => (SigmaDsl.sigmaProp(b), c)
           case (res, _) =>
-            sys.error(s"Invalid result type of $res: expected Boolean or SigmaProp when evaluating $exp")
+            sys.error(s"Invalid result type of $res: expected SigmaProp when evaluating $exp")
         }
       }
 
@@ -275,24 +275,59 @@ trait Interpreter extends ScorexLogging {
         (sb, cost)
       case _ if !ergoTree.hasDeserialize =>
         val r = precompiledScriptProcessor.getReducer(ergoTree, context.validationSettings)
-        r.reduce(context)
+        val res = r.reduce(context)
+        val jitRes = ErgoTreeEvaluator.evalToCrypto(
+          context.asInstanceOf[ErgoLikeContext], ergoTree, evalSettings)
+        checkResults(ergoTree, res, jitRes)
+        res
       case _ =>
-        reductionWithDeserialize(prop, context, env)
+        reductionWithDeserialize(ergoTree, prop, context, env)
+    }
+  }
+
+  private def checkResults(ergoTree: ErgoTree, res: ReductionResult, jitRes: ReductionResult) = {
+    val oldValue = res._1
+    val newValue = jitRes._1
+    if (oldValue != newValue) {
+      val msg =
+        s"""Wrong JIT result: -----------------------------------------
+          |Old result: $oldValue
+          |New result: $newValue
+          |------------------------------------------------------------""".stripMargin
+      if (evalSettings.isTestRun) {
+        error(msg)
+      }
+      else
+        println(msg)
     }
   }
 
   /** Perfroms reduction of proposition which contains deserialization operations. */
-  private def reductionWithDeserialize(prop: SigmaPropValue,
+  private def reductionWithDeserialize(ergoTree: ErgoTree,
+                                       prop: SigmaPropValue,
                                        context: CTX,
                                        env: ScriptEnv) = {
     implicit val vs: SigmaValidationSettings = context.validationSettings
-    val (propTree, context2) = trySoftForkable[(BoolValue, CTX)](whenSoftFork = (TrueLeaf, context)) {
-      applyDeserializeContext(context, prop)
-    }
+    val res = {
+      val (propTree, context2) = trySoftForkable[(BoolValue, CTX)](whenSoftFork = (TrueLeaf, context)) {
+        applyDeserializeContext(context, prop)
+      }
 
-    // here we assume that when `propTree` is TrueProp then `reduceToCrypto` always succeeds
-    // and the rest of the verification is also trivial
-    reduceToCrypto(context2, env, propTree).getOrThrow
+      // here we assume that when `propTree` is TrueProp then `reduceToCrypto` always succeeds
+      // and the rest of the verification is also trivial
+      reduceToCrypto(context2, env, propTree).getOrThrow
+    }
+    val jitRes = {
+      val (propTree, context2) = trySoftForkable[(SigmaPropValue, CTX)](whenSoftFork = (TrueSigmaProp, context)) {
+        applyDeserializeContextJITC(context, prop)
+      }
+
+      // here we assume that when `propTree` is TrueProp then `reduceToCrypto` always succeeds
+      // and the rest of the verification is also trivial
+      reduceToCryptoJITC(context2, env, propTree).getOrThrow
+    }
+    checkResults(ergoTree, res, jitRes)
+    res
   }
 
   /** Executes the script in a given context.
@@ -572,7 +607,7 @@ object Interpreter {
   /** The result of script reduction when soft-fork condition is detected by the old node,
     * in which case the script is reduced to the trivial true proposition and takes up 0 cost.
     */
-  val WhenSoftForkReductionResult: ReductionResult = TrivialProp.TrueProp -> 0
+  val WhenSoftForkReductionResult: ReductionResult = TrivialProp.TrueProp -> 0L
 
   /** Executes the given `calcF` graph in the given context.
     * @param IR      containier of the graph (see [[IRContext]])

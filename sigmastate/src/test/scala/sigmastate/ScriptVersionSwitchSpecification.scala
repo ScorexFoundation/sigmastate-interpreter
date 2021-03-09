@@ -6,9 +6,9 @@ import scorex.util.ModifierId
 import sigmastate.Values.ErgoTree.{DefaultHeader, updateVersionBits}
 import sigmastate.Values._
 import sigmastate.eval._
-import sigmastate.helpers.ErgoLikeContextTesting
+import sigmastate.helpers.{ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers.createBox
-import sigmastate.interpreter.{Interpreter, ProverResult, ErgoTreeEvaluator, EvalSettings}
+import sigmastate.interpreter.{ProverResult, EvalSettings, ErgoTreeEvaluator, Interpreter}
 import sigmastate.lang.exceptions.InterpreterException
 import sigmastate.utxo._
 import sigmastate.utils.Helpers._
@@ -99,7 +99,7 @@ class ScriptVersionSwitchSpecification extends SigmaDslTesting
       1.toByte -> Constant[SType](input.asInstanceOf[SType#WrappedType], tpeA)
     ).asInstanceOf[ErgoLikeContext]
 
-    val verifier = new ErgoLikeInterpreter() { type CTX = ErgoLikeContext }
+    val verifier = new ErgoLikeTestInterpreter()
     val pr = ProverResult(ProverResult.empty.proof, ctx.extension)
 
     // NOTE: exactly this overload should also be called in Ergo

@@ -27,7 +27,7 @@ import sigmastate.eval.{CompiletimeIRContext, Evaluation, CostingBox, SigmaDsl, 
 import sigmastate.eval.Extensions._
 import sigmastate.utils.Helpers._
 import sigmastate.lang.Terms.ValueOps
-import sigmastate.helpers.{ErgoLikeContextTesting, SigmaPPrint}
+import sigmastate.helpers.{ErgoLikeContextTesting, SigmaPPrint, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter._
 import sigmastate.serialization.ValueSerializer
@@ -108,8 +108,7 @@ class SigmaDslTesting extends PropSpec
     indices <- Gen.containerOfN[Array, Int](nIndexes, Gen.choose(0, arrLength - 1))
   } yield indices
 
-  class FeatureProvingInterpreter extends ErgoLikeInterpreter()(new CompiletimeIRContext) with ProverInterpreter {
-    override type CTX = ErgoLikeContext
+  class FeatureProvingInterpreter extends ErgoLikeTestInterpreter()(new TestingIRContext) with ProverInterpreter {
 
     def decodeSecretInput(decimalStr: String): DLogProverInput = DLogProverInput(BigInt(decimalStr).bigInteger)
 
@@ -278,9 +277,7 @@ class SigmaDslTesting extends PropSpec
       val tpeB = Evaluation.rtypeToSType(oldF.tB)
 
       val prover = new FeatureProvingInterpreter()
-      val verifier = new ErgoLikeInterpreter()(createIR()) {
-        type CTX = ErgoLikeContext
-      }
+      val verifier = new ErgoLikeTestInterpreter()(createIR())
 
       // Create synthetic ErgoTree which uses all main capabilities of evaluation machinery.
       // 1) first-class functions (lambdas); 2) Context variables; 3) Registers; 4) Equality
