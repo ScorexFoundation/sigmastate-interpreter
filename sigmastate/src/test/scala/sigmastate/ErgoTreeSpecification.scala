@@ -1,5 +1,6 @@
 package sigmastate
 
+import org.ergoplatform.ErgoBox
 import org.ergoplatform.settings.ErgoAlgos
 import org.ergoplatform.validation.{ValidationException, ValidationRules}
 import scalan.Nullable
@@ -8,6 +9,7 @@ import sigmastate.lang.SourceContext
 import special.sigma.SigmaTestingData
 import sigmastate.lang.Terms._
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
+import sigmastate.utxo.{DeserializeContext, DeserializeRegister}
 
 /** Regression tests with ErgoTree related test vectors.
   * This test vectors verify various constants which are consensus critical and should not change.
@@ -78,6 +80,44 @@ class ErgoTreeSpecification extends SigmaTestingData {
     )
     val expectedBytes = DefaultSerializer.serializeErgoTree(t)
     t._bytes shouldBe expectedBytes
+  }
+
+  property("Value.hasDeserialize") {
+    val const = IntConstant(10)
+    Value.hasDeserialize(const) shouldBe false
+    val dc = DeserializeContext(1.toByte, SInt)
+    Value.hasDeserialize(dc) shouldBe true
+    val dr = DeserializeRegister(ErgoBox.R4, SInt)
+    Value.hasDeserialize(dr) shouldBe true
+    Value.hasDeserialize(EQ(const, dc)) shouldBe true
+    Value.hasDeserialize(Plus(Plus(const, dc), dr)) shouldBe true
+    val t = new ErgoTree(
+      16.toByte,
+      Array(IntConstant(1)),
+      Right(BoolToSigmaProp(EQ(ConstantPlaceholder(0, SInt), IntConstant(1))))
+    )
+    Value.hasDeserialize(t.toProposition(replaceConstants = true)) shouldBe false
+  }
+
+  property("ErgoTree.hasDeserialize") {
+    {
+      val t = new ErgoTree(
+        0.toByte,
+        Array[Constant[SType]](),
+        Right(TrueSigmaProp))
+      t._hasDeserialize shouldBe None
+      t.hasDeserialize shouldBe false
+    }
+
+    {
+      val t = new ErgoTree(
+        16.toByte,
+        Array(IntConstant(1)),
+        Right(BoolToSigmaProp(EQ(ConstantPlaceholder(0, SInt), DeserializeContext(1.toByte, SInt))))
+      )
+      t._hasDeserialize shouldBe None
+      t.hasDeserialize shouldBe true
+    }
   }
 
   property("ErgoTree equality") {

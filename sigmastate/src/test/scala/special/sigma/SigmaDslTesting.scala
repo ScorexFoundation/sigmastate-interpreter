@@ -29,7 +29,7 @@ import sigmastate.utils.Helpers._
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.helpers.{ErgoLikeContextTesting, SigmaPPrint}
 import sigmastate.helpers.TestingHelpers._
-import sigmastate.interpreter.{ProverResult, EvalSettings, ContextExtension, GivenCost, CostDetails, ProverInterpreter}
+import sigmastate.interpreter._
 import sigmastate.serialization.ValueSerializer
 import sigmastate.serialization.generators.ObjectGenerators
 import sigmastate.utxo.{DeserializeContext, DeserializeRegister}
@@ -132,6 +132,8 @@ class SigmaDslTesting extends PropSpec
   val LogScriptDefault: Boolean = false
 
   val isNewVersion = new scala.util.DynamicVariable(false)
+
+  val predefScripts = Seq[String]()
 
   /** Descriptor of the language feature. */
   trait Feature[A, B] {
@@ -276,7 +278,9 @@ class SigmaDslTesting extends PropSpec
       val tpeB = Evaluation.rtypeToSType(oldF.tB)
 
       val prover = new FeatureProvingInterpreter()
-      val verifier = new ErgoLikeInterpreter()(createIR()) { type CTX = ErgoLikeContext }
+      val verifier = new ErgoLikeInterpreter()(createIR()) {
+        type CTX = ErgoLikeContext
+      }
 
       // Create synthetic ErgoTree which uses all main capabilities of evaluation machinery.
       // 1) first-class functions (lambdas); 2) Context variables; 3) Registers; 4) Equality

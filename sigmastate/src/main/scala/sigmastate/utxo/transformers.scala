@@ -473,7 +473,7 @@ object ExtractRegisterAs extends ValueCompanion {
   override def opCode: OpCode = OpCodes.ExtractRegisterAs
   override val costKind = FixedCost(CostOf.ExtractRegisterAs)
 
-  //@hotspot: avoids thousands of allocations per second
+  //HOTSPOT:: avoids thousands of allocations per second
   private val BoxAndByte: IndexedSeq[SType] = Array(SBox, SByte)
 
   def apply[V <: SType](input: Value[SBox.type],

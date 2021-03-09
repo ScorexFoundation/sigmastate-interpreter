@@ -3,13 +3,19 @@ package org.ergoplatform
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate.eval.IRContext
-import sigmastate.interpreter.Interpreter
+import sigmastate.interpreter.{Interpreter, PrecompiledScriptProcessor}
 import sigmastate.utxo._
 
 
+/** Base class of verifying interpreter which expects ErgoLikeContext as input of
+  * verify method.
+  * It implements deserialization of register of SELF box.
+  */
 class ErgoLikeInterpreter(implicit val IR: IRContext) extends Interpreter {
 
   override type CTX <: ErgoLikeContext
+
+  override val precompiledScriptProcessor: PrecompiledScriptProcessor = PrecompiledScriptProcessor.Default
 
   override def substDeserialize(context: CTX, updateContext: CTX => Unit, node: SValue): Option[SValue] = node match {
       case d: DeserializeRegister[_] =>

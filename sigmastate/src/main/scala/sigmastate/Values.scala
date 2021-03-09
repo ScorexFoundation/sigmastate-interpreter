@@ -4,7 +4,8 @@ import java.math.BigInteger
 import java.util
 import java.util.Objects
 
-import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{strategy, everywherebu}
+import org.bitbucket.inkytonik.kiama.relation.Tree
+import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{strategy, everywherebu, count}
 import org.ergoplatform.validation.ValidationException
 import scalan.{Nullable, RType}
 import scalan.util.CollectionUtil._
@@ -183,6 +184,17 @@ object Values {
 
     /** Immutable empty Seq of values. Can be used to avoid allocation. */
     val EmptySeq: IndexedSeq[SValue] = EmptyArray
+
+    /** Traverses the given expression tree and counts the number of deserialization
+      * operations. If it is non-zero, returns true. */
+    def hasDeserialize(exp: SValue): Boolean = {
+      val deserializeNode: PartialFunction[Any, Int] = {
+        case _: DeserializeContext[_] => 1
+        case _: DeserializeRegister[_] => 1
+      }
+      val c = count(deserializeNode)(exp)
+      c > 0
+    }
   }
 
   /** The kind of the cost.*/
@@ -236,7 +248,7 @@ object Values {
     import ValueCompanion._
     /** Unique id of the node class used in serialization of ErgoTree. */
     def opCode: OpCode
-    
+
     /** Returns cost descriptor of this operation. */
     def costKind: CostKind
 
@@ -710,6 +722,49 @@ object Values {
   }
 
   object SigmaBoolean {
+    /** Computes the estimated cost of verifying the given sigma proposition.
+      * This method should be O(nNodes), where nNodes is the number of the nodes in the
+      * tree.
+      *
+      * @param sb sigma proposition to estimate
+      * @return the value of estimated cost
+      *
+      * HOTSPOT: don't beautify the code
+      */
+    def estimateCost(sb: SigmaBoolean): Int = sb match {
+      case _: ProveDlog => CostTable.proveDlogEvalCost
+      case _: ProveDHTuple => CostTable.proveDHTupleEvalCost
+      case and: CAND =>
+        val children = and.children.toArray
+        val nChildren = children.length
+        var sum = 0
+        cfor(0)(_ < nChildren, _ + 1) { i =>
+          val c = estimateCost(children(i))
+          sum = Math.addExact(sum, c)
+        }
+        sum
+      case or: COR  =>
+        val children = or.children.toArray
+        val nChildren = children.length
+        var sum = 0
+        cfor(0)(_ < nChildren, _ + 1) { i =>
+          val c = estimateCost(children(i))
+          sum = Math.addExact(sum, c)
+        }
+        sum
+      case th: CTHRESHOLD =>
+        val children = th.children.toArray
+        val nChildren = children.length
+        var sum = 0
+        cfor(0)(_ < nChildren, _ + 1) { i =>
+          val c = estimateCost(children(i))
+          sum = Math.addExact(sum, c)
+        }
+        sum
+      case _ =>
+        CostTable.MinimalCost
+    }
+
     /** Compute total size of the trees in the collection of children. */
     def totalSize(children: Seq[SigmaBoolean]): Int = {
       var res = 0
@@ -720,7 +775,7 @@ object Values {
       res
     }
 
-    /** @hotspot don't beautify this code */
+    /** HOTSPOT: don't beautify this code */
     object serializer extends SigmaSerializer[SigmaBoolean, SigmaBoolean] {
       val dhtSerializer = ProveDHTupleSerializer(ProveDHTuple.apply)
       val dlogSerializer = ProveDlogSerializer(ProveDlog.apply)
@@ -1188,20 +1243,33 @@ object Values {
     *                          These bytes are obtained in two ways:
     *                          1) in the ErgoTreeSerializer from Reader
     *                          2) in the alternative constructor using ErgoTreeSerializer.serializeErgoTree
-    *
+    *  @param givenDeserialize optional flag, which contains information about presence of
+    *                          deserialization operations in the tree. If it is None, the information is not
+    *                          available. If Some(true) then there are deserialization operations, otherwise
+    *                          the tree doesn't contain deserialization and is eligible
+    *                          for optimized execution.
+    *                          ErgoTreeSerializer parsing method computes the value of
+    *                          this flag and provides it to the constructor.
     */
   case class ErgoTree private[sigmastate](
     header: Byte,
     constants: IndexedSeq[Constant[SType]],
     root: Either[UnparsedErgoTree, SigmaPropValue],
     private val givenComplexity: Int,
-    private val propositionBytes: Array[Byte]
+    private val propositionBytes: Array[Byte],
+    private val givenDeserialize: Option[Boolean]
   ) {
 
     def this(header: Byte,
              constants: IndexedSeq[Constant[SType]],
              root: Either[UnparsedErgoTree, SigmaPropValue]) =
-      this(header, constants, root, 0, DefaultSerializer.serializeErgoTree(ErgoTree(header, constants, root, 0, null)))
+      this(
+        header, constants, root, 0,
+        propositionBytes = DefaultSerializer.serializeErgoTree(
+          ErgoTree(header, constants, root, 0, null, None)
+        ),
+        givenDeserialize = None
+      )
 
     require(isConstantSegregation || constants.isEmpty)
     require(version == 0 || hasSize, s"For newer version the size bit is required: $this")
@@ -1239,7 +1307,22 @@ object Values {
       _complexity
     }
 
-    /** Serialized proposition expression of SigmaProp type with 
+    private[sigmastate] var _hasDeserialize: Option[Boolean] = givenDeserialize
+
+    /** Returns true if the tree contains at least one deserialization operation,
+      * false otherwise.
+      */
+    lazy val hasDeserialize: Boolean = {
+      if (_hasDeserialize.isEmpty) {
+        _hasDeserialize = Some(root match {
+          case Right(p) => Value.hasDeserialize(p)
+          case _ => false
+        })
+      }
+      _hasDeserialize.get
+    }
+
+    /** Serialized proposition expression of SigmaProp type with
       * ConstantPlaceholder nodes instead of Constant nodes 
       */
     lazy val template: Array[Byte] = {

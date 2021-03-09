@@ -35,7 +35,7 @@ case class Relation2Serializer[S1 <: SType, S2 <: SType, R <: Value[SBoolean.typ
     }
   }
 
-  /** @hotspot don't beautify this code */
+  /** HOTSPOT: don't beautify this code */
   override def parse(r: SigmaByteReader): R = {
     if (r.peekByte() == ConcreteCollectionBooleanConstantCode) {
       val _ = r.getByte() // skip collection op code

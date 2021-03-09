@@ -60,7 +60,7 @@ sealed class MapSigmaValidationSettings(private val map: Map[Short, (ValidationR
   override def iterator: Iterator[(Short, (ValidationRule, RuleStatus))] = map.iterator
   override def get(id: Short): Option[(ValidationRule, RuleStatus)] = map.get(id)
 
-  /** @hotspot don't beautify this code */
+  /** HOTSPOT: don't beautify this code */
   override def getStatus(id: Short): Option[RuleStatus] = {
     val statusOpt = map.get(id)
     val res = if (statusOpt.isDefined) Some(statusOpt.get._2) else None

@@ -610,7 +610,7 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
   /** Extracts [[ErgoBox]] from the given [[Box]] instance. This is inverse to the Box method. */
   def toErgoBox(b: Box): ErgoBox = b.asInstanceOf[CostingBox].ebox
 
-  /** @hotspot don't beautify this code */
+  /** HOTSPOT: don't beautify this code */
   private def toSigmaTrees(props: Array[SigmaProp]): Array[SigmaBoolean] = {
     val len = props.length
     val res = new Array[SigmaBoolean](len)

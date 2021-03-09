@@ -28,6 +28,7 @@ case class DeserializeRegisterSerializer(cons: (RegisterId, SType, Option[Value[
     val registerId = ErgoBox.findRegisterByIndex(r.getByte()).get
     val tpe = r.getType()
     val dv = r.getOption(r.getValue())
+    r.wasDeserialize ||= true // mark the flag
     cons(registerId, tpe, dv)
   }
 

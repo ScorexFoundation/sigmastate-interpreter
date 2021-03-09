@@ -28,7 +28,7 @@ case class BlockValueSerializer(cons: (IndexedSeq[BlockItem], Value[SType]) => V
     val values: IndexedSeq[BlockItem] = if (itemsSize == 0)
       BlockItem.EmptySeq
     else {
-      // @hotspot: allocate new array only if it is not empty
+      // HOTSPOT:: allocate new array only if it is not empty
       val buf = new Array[BlockItem](itemsSize)
       cfor(0)(_ < itemsSize, _ + 1) { i =>
         buf(i) = r.getValue().asInstanceOf[BlockItem]

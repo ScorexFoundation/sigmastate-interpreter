@@ -151,7 +151,13 @@ class ErgoTreeSerializer {
         val previousConstantStore = r.constantStore
         // reader with constant store attached is required (to get tpe for a constant placeholder)
         r.constantStore = new ConstantStore(cs)
+
+        val wasDeserialize_saved = r.wasDeserialize
+        r.wasDeserialize = false
+
         val root = ValueSerializer.deserialize(r)
+        val hasDeserialize = r.wasDeserialize  // == true if there was deserialization node
+        r.wasDeserialize = wasDeserialize_saved
 
         if (checkType) {
           CheckDeserializedScriptIsSigmaProp(root)
@@ -165,7 +171,9 @@ class ErgoTreeSerializer {
         r.position = startPos
         val propositionBytes = r.getBytes(treeSize)
 
-        new ErgoTree(h, cs, Right(root.asSigmaProp), complexity, propositionBytes)
+        new ErgoTree(
+          h, cs, Right(root.asSigmaProp), complexity,
+          propositionBytes, Some(hasDeserialize))
       }
       catch {
         case e: InputSizeLimitExceeded =>
@@ -180,7 +188,7 @@ class ErgoTreeSerializer {
             r.position = startPos
             val bytes = r.getBytes(numBytes)
             val complexity = ComplexityTable.OpCodeComplexity(Constant.opCode)
-            new ErgoTree(ErgoTree.DefaultHeader, EmptyConstants, Left(UnparsedErgoTree(bytes, ve)), complexity, bytes)
+            new ErgoTree(ErgoTree.DefaultHeader, EmptyConstants, Left(UnparsedErgoTree(bytes, ve)), complexity, bytes, None)
           case None =>
             throw new SerializerException(
               s"Cannot handle ValidationException, ErgoTree serialized without size bit.", None, Some(ve))
@@ -208,14 +216,14 @@ class ErgoTreeSerializer {
   private val constantSerializer = ConstantSerializer(DeserializationSigmaBuilder)
 
   /** Deserialize constants section only.
-    * @hotspot don't beautify this code
+    * HOTSPOT: don't beautify this code
     */
   private def deserializeConstants(header: Byte, r: SigmaByteReader): IndexedSeq[Constant[SType]] = {
     val constants: IndexedSeq[Constant[SType]] =
       if (ErgoTree.isConstantSegregation(header)) {
         val nConsts = r.getUInt().toInt
         if (nConsts > 0) {
-          // @hotspot: allocate new array only if it is not empty
+          // HOTSPOT:: allocate new array only if it is not empty
           val res = new Array[Constant[SType]](nConsts)
           cfor(0)(_ < nConsts, _ + 1) { i =>
             res(i) = constantSerializer.deserialize(r)

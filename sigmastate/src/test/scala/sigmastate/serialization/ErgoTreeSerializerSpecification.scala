@@ -2,12 +2,14 @@ package sigmastate.serialization
 
 import java.math.BigInteger
 
-import sigmastate.Values.{ShortConstant, BigIntConstant, SigmaPropValue, IntConstant, ErgoTree, ByteConstant}
+import org.ergoplatform.ErgoBox
+import sigmastate.Values.{ShortConstant, BigIntConstant, ConstantPlaceholder, Value, SigmaPropValue, IntConstant, ErgoTree, ByteConstant}
 import sigmastate._
 import sigmastate.eval.{IRContext, CBigInt}
 import sigmastate.helpers.SigmaTestingCommons
 import sigmastate.lang.exceptions.{SerializerException, InputSizeLimitExceeded}
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
+import sigmastate.utxo.{DeserializeContext, DeserializeRegister}
 
 class ErgoTreeSerializerSpecification extends SerializationSpecification
   with SigmaTestingCommons {
@@ -114,5 +116,33 @@ class ErgoTreeSerializerSpecification extends SerializationSpecification
     r.positionLimit = 1
     DefaultSerializer.deserializeErgoTree(r, SigmaSerializer.MaxPropositionSize) shouldEqual tree
     r.positionLimit shouldBe 1
+  }
+
+  property("should compute hasDeserialize during parsing") {
+    val const = IntConstant(10)
+    val dc = DeserializeContext(1.toByte, SInt)
+    val dr = DeserializeRegister(ErgoBox.R4, SInt)
+
+    val samples = Table(("exp", "hasDeserialize"),
+      const -> false,
+      dc -> true,
+      dr -> true,
+      Plus(Plus(const, dc), dr) -> true,
+      Plus(Plus(const, const), const) -> false
+    )
+
+    forAll(samples) { (exp, hasDeserialize) =>
+      val t = new ErgoTree(
+        16.toByte,
+        Array(IntConstant(1)),
+        Right(BoolToSigmaProp(EQ(ConstantPlaceholder(0, SInt), exp)))
+      )
+      t._hasDeserialize shouldBe None
+
+      val parsedTree = ErgoTreeSerializer.DefaultSerializer.deserializeErgoTree(t.bytes)
+      parsedTree shouldBe t
+      parsedTree._hasDeserialize.isDefined shouldBe true
+      parsedTree.hasDeserialize shouldBe hasDeserialize
+    }
   }
 }

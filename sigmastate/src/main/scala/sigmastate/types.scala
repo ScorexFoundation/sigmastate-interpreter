@@ -1782,7 +1782,7 @@ case class SFunc(tDom: IndexedSeq[SType],  tRange: SType, tpeParams: Seq[STypePa
 
 object SFunc {
   final val FuncTypeCode: TypeCode = OpCodes.FirstFuncType
-  def apply(tDom: SType, tRange: SType): SFunc = SFunc(Array(tDom), tRange) // @hotspot
+  def apply(tDom: SType, tRange: SType): SFunc = SFunc(Array(tDom), tRange) // HOTSPOT:
   val identity = { x: Any => x }
 }
 

@@ -1,26 +1,28 @@
 package sigmastate
 
 import org.ergoplatform._
-import org.ergoplatform.validation.ValidationRules.{CheckValidOpCode, trySoftForkable, CheckCostFuncOperation, CheckTupleType, CheckCostFunc, CheckDeserializedScriptIsSigmaProp, _}
+import org.ergoplatform.validation.ValidationRules._
 import org.ergoplatform.validation._
+import org.scalatest.BeforeAndAfterAll
 import sigmastate.SPrimType.MaxPrimTypeCode
 import sigmastate.Values.ErgoTree.EmptyConstants
 import sigmastate.Values.{UnparsedErgoTree, CostKind, NotReadyValueInt, FixedCost, ByteArrayConstant, Tuple, IntConstant, ErgoTree, ValueCompanion}
 import sigmastate.eval.Colls
 import sigmastate.helpers.{ErgoLikeContextTesting, ErgoLikeTestProvingInterpreter, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
-import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
-import sigmastate.interpreter.{ProverResult, ContextExtension}
+import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv, WhenSoftForkReductionResult}
+import sigmastate.interpreter.{ProverResult, Interpreter, WhenSoftForkReducer, ContextExtension, CacheKey}
 import sigmastate.lang.Terms._
 import sigmastate.lang.exceptions.{SerializerException, SigmaException, InterpreterException, CosterException}
 import sigmastate.serialization.OpCodes.{OpCodeExtra, LastConstantCode, OpCode}
+import sigmastate.serialization.SigmaSerializer.startReader
 import sigmastate.serialization._
 import sigmastate.utxo.{DeserializeContext, SelectField}
 import special.sigma.SigmaTestingData
 import sigmastate.utils.Helpers._
 import sigmastate.utxo.CostTable.CostOf
 
-class SoftForkabilitySpecification extends SigmaTestingData {
+class SoftForkabilitySpecification extends SigmaTestingData with BeforeAndAfterAll {
 
   implicit lazy val IR = new TestingIRContext
   lazy val prover = new ErgoLikeTestProvingInterpreter()
@@ -83,7 +85,7 @@ class SoftForkabilitySpecification extends SigmaTestingData {
   property("node v1, received tx with script v1, incorrect script") {
     assertExceptionThrown({
       // CheckDeserializedScriptIsSigmaProp rule violated
-      ErgoLikeTransaction.serializer.parse(SigmaSerializer.startReader(invalidTxV1bytes))
+      ErgoLikeTransaction.serializer.parse(startReader(invalidTxV1bytes))
     }, {
       case se: SerializerException if se.cause.isDefined =>
         val ve = se.cause.get.asInstanceOf[ValidationException]
@@ -94,7 +96,7 @@ class SoftForkabilitySpecification extends SigmaTestingData {
 
   property("node v1, received tx with script v1, correct script") {
     // able to parse
-    val tx = ErgoLikeTransaction.serializer.parse(SigmaSerializer.startReader(txV1bytes))
+    val tx = ErgoLikeTransaction.serializer.parse(startReader(txV1bytes))
 
     // validating script
     proveAndVerifyTx("propV1", tx, vs)
@@ -105,8 +107,8 @@ class SoftForkabilitySpecification extends SigmaTestingData {
   case object Height2 extends NotReadyValueInt with ValueCompanion {
     override def companion = this
     override val opCode: OpCode = Height2Code // use reserved code
+    override val opType = SFunc(SContext, SInt)
     override val costKind: CostKind = FixedCost(CostOf.Height)
-    def opType = SFunc(SContext, SInt)
   }
   val Height2Ser = CaseObjectSerialization(Height2, Height2)
 
@@ -167,7 +169,7 @@ class SoftForkabilitySpecification extends SigmaTestingData {
     // v1 node should fail
     assertExceptionThrown(
       {
-        val r = SigmaSerializer.startReader(v2tree_withoutSize_bytes)
+        val r = startReader(v2tree_withoutSize_bytes)
         ErgoTreeSerializer.DefaultSerializer.deserializeErgoTree(r, SigmaSerializer.MaxPropositionSize)
       },
       {
@@ -180,7 +182,7 @@ class SoftForkabilitySpecification extends SigmaTestingData {
     runOnV2Node {
       assertExceptionThrown(
         {
-          val r = SigmaSerializer.startReader(v2tree_withoutSize_bytes)
+          val r = startReader(v2tree_withoutSize_bytes)
           ErgoTreeSerializer.DefaultSerializer.deserializeErgoTree(r, SigmaSerializer.MaxPropositionSize)
         },
         {
@@ -195,7 +197,7 @@ class SoftForkabilitySpecification extends SigmaTestingData {
     val txV2bytes = txV2messageToSign
 
     // parse and validate tx with v2 settings
-    val tx = ErgoLikeTransaction.serializer.parse(SigmaSerializer.startReader(txV2bytes))
+    val tx = ErgoLikeTransaction.serializer.parse(startReader(txV2bytes))
     proveAndVerifyTx("propV2", tx, v2vs)
 
     // and with v1 settings
@@ -223,7 +225,7 @@ class SoftForkabilitySpecification extends SigmaTestingData {
   property("node v1, no soft-fork, received script v2, raise error") {
     assertExceptionThrown({
       val invalidTxV2bytes = runOnV2Node { invalidTxV2.messageToSign }
-      ErgoLikeTransaction.serializer.parse(SigmaSerializer.startReader(invalidTxV2bytes))
+      ErgoLikeTransaction.serializer.parse(startReader(invalidTxV2bytes))
     },{
       case se: SerializerException if se.cause.isDefined =>
         val ve = se.cause.get.asInstanceOf[ValidationException]
@@ -239,7 +241,7 @@ class SoftForkabilitySpecification extends SigmaTestingData {
     runOnV2Node {
 
       // parse and validate tx with v2 script (since serializers were extended to v2)
-      val tx = ErgoLikeTransaction.serializer.parse(SigmaSerializer.startReader(txV2bytes))
+      val tx = ErgoLikeTransaction.serializer.parse(startReader(txV2bytes))
       tx shouldBe txV2
 
       // fails evaluation of v2 script (due to the rest of the implementation is still v1)
@@ -258,7 +260,7 @@ class SoftForkabilitySpecification extends SigmaTestingData {
       ValueSerializer.serialize(booleanPropV2)
     }
 
-    // v1 main script which deserializes from context v2 script
+    // v1 main script which deserializes v2 script from context
     val mainProp = BinAnd(GT(Height, IntConstant(deadline)), DeserializeContext(1, SBoolean)).toSigmaProp
     val mainTree = ErgoTree.fromProposition(
       headerFlags = ErgoTree.headerWithVersion(0), // ErgoTree v0
@@ -305,7 +307,7 @@ class SoftForkabilitySpecification extends SigmaTestingData {
     val typeBytes = Array[Byte](MaxPrimTypeCode)
     val v2vs = vs.updated(CheckPrimitiveTypeCode.id, ChangedRule(Array[Byte](MaxPrimTypeCode)))
     checkRule(CheckPrimitiveTypeCode, v2vs, {
-      val r = SigmaSerializer.startReader(typeBytes)
+      val r = startReader(typeBytes)
       TypeSerializer.deserialize(r)
     })
   }
@@ -314,7 +316,7 @@ class SoftForkabilitySpecification extends SigmaTestingData {
     val typeBytes = Array[Byte](newTypeCode)
     val v2vs = vs.updated(CheckTypeCode.id, ChangedRule(Array[Byte](newTypeCode)))
     checkRule(CheckTypeCode, v2vs, {
-      val r = SigmaSerializer.startReader(typeBytes)
+      val r = startReader(typeBytes)
       TypeSerializer.deserialize(r)
     })
   }
@@ -324,7 +326,7 @@ class SoftForkabilitySpecification extends SigmaTestingData {
     val dataBytes = Array[Byte](1, 2, 3) // any random bytes will work
     val v2vs = vs.updated(CheckSerializableTypeCode.id, ReplacedRule(0))
     checkRule(CheckSerializableTypeCode, v2vs, {
-      val r = SigmaSerializer.startReader(dataBytes)
+      val r = startReader(dataBytes)
       DataSerializer.deserialize(newType, r)
     })
   }
@@ -349,11 +351,16 @@ class SoftForkabilitySpecification extends SigmaTestingData {
 
   property("CheckCostFuncOperation rule") {
     val exp = Height
-    val v2vs = vs.updated(CheckCostFuncOperation.id,
+    val v2vs = vs.updated(
+      CheckCostFuncOperation.id,
       ChangedRule(CheckCostFuncOperation.encodeVLQUShort(Seq(OpCodes.toExtra(Height.opCode)))))
     checkRule(CheckCostFuncOperation, v2vs, {
       val costingRes = IR.doCostingEx(emptyEnv, exp, okRemoveIsProven = false)
-      // use calcF as costing function to have forbidden (not allowed) op (Height) in the costing function
+      // We need to exercise CheckCostFunc rule.
+      // The calcF graph have Height operation in it, which is not allowed to be in cost graph.
+      // This leads to a ValidationException to be thrown with the CheckCostFunc rule in it.
+      // And the rule is changed in v2vs, so Height is allowed, which is interpreted as
+      // soft-fork condition
       CheckCostFunc(IR)(IR.asRep[Any => Int](costingRes.calcF))
     })
   }
@@ -373,4 +380,24 @@ class SoftForkabilitySpecification extends SigmaTestingData {
       CheckCostFunc(tIR)(asRep[Any => Int](costF))
     })
   }
+
+  property("PrecompiledScriptProcessor is soft-forkable") {
+    val p = ErgoLikeTestInterpreter.DefaultProcessorInTests
+    val v1key = CacheKey(propV2treeBytes, vs)
+    checkRule(CheckValidOpCode, v2vs, {
+      p.getReducer(v1key)
+    })
+
+    val v2key = CacheKey(propV2treeBytes, v2vs)
+    val r = p.getReducer(v2key)
+    r shouldBe WhenSoftForkReducer
+
+    val ctx = createContext(blockHeight, txV2, v2vs)
+    r.reduce(ctx) shouldBe WhenSoftForkReductionResult
+  }
+
+  override protected def afterAll(): Unit = {
+    println(ErgoLikeTestInterpreter.DefaultProcessorInTests.cache.stats())
+  }
+
 }
