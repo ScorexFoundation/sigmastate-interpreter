@@ -5,7 +5,8 @@ import java.util
 import java.util.Objects
 
 import org.bitbucket.inkytonik.kiama.relation.Tree
-import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{strategy, everywherebu, count}
+import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{strategy, count, everywherebu}
+import org.ergoplatform.settings.ErgoAlgos
 import org.ergoplatform.validation.ValidationException
 import scalan.{Nullable, RType}
 import scalan.util.CollectionUtil._
@@ -1294,6 +1295,9 @@ object Values {
       }
       _bytes
     }
+
+    /** Hexadecimal encoded string of ErgoTree.bytes. */
+    final def bytesHex: String = ErgoAlgos.encode(bytes)
 
     private var _complexity: Int = givenComplexity
 

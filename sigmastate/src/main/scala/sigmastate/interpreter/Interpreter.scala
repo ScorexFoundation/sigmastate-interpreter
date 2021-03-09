@@ -291,6 +291,7 @@ trait Interpreter extends ScorexLogging {
     if (oldValue != newValue) {
       val msg =
         s"""Wrong JIT result: -----------------------------------------
+          |ErgoTree: ${ergoTree.bytesHex}
           |Old result: $oldValue
           |New result: $newValue
           |------------------------------------------------------------""".stripMargin
