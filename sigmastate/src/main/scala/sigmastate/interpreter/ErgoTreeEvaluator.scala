@@ -364,6 +364,8 @@ object ErgoTreeEvaluator {
   def evalToCrypto(context: ErgoLikeContext, ergoTree: ErgoTree, evalSettings: EvalSettings): ReductionResult = {
     val (res, cost) = eval(context, ergoTree.constants, ergoTree.toProposition(replaceConstants = false), evalSettings)
     val sb = res match {
+      case sp: SigmaProp =>
+        sigmastate.eval.SigmaDsl.toSigmaBoolean(sp)
       case sb: SigmaBoolean => sb
       case _ => error(s"Expected SigmaBoolean but was: $res")
     }
