@@ -7,13 +7,12 @@ import sigmastate.eval.Profiler
 import sigmastate.interpreter.ErgoTreeEvaluator.{DataEnv, OperationCostInfo, MethodDesc, CompanionDesc, OperationDesc}
 import sigmastate.interpreter.Interpreter.ReductionResult
 import sigmastate.lang.exceptions.CostLimitException
-import special.sigma.Context
+import special.sigma.{Context, SigmaProp}
 import scalan.util.Extensions._
 import sigmastate.lang.Terms.MethodCall
 import spire.syntax.all.cfor
 
 import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
 import scala.util.DynamicVariable
 
 /** Configuration parameters of the evaluation run. */
@@ -31,7 +30,10 @@ case class EvalSettings(
     */
   costTracingEnabled: Boolean = false,
   /** Profiler which, when defined, should be used in [[ErgoTreeEvaluator]] constructor. */
-  profilerOpt: Option[Profiler] = None)
+  profilerOpt: Option[Profiler] = None,
+  /** Should be set to true, if evaluation is performed as part of test suite.
+    * In such a case, additional operations may be performed (such as sanity checks). */
+  isTestRun: Boolean = false)
 
 /** Implements a simple and fast direct-style interpreter of ErgoTrees.
   *
