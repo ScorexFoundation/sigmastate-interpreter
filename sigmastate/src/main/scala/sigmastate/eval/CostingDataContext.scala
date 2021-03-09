@@ -72,7 +72,7 @@ case class CSigmaProp(sigmaTree: SigmaBoolean) extends SigmaProp with WrapperOf[
     // in order to have comparisons like  `box.propositionBytes == pk.propBytes` we need to make sure
     // the same serialization method is used in both cases
     val root = sigmaTree.toSigmaProp
-    val ergoTree = new ErgoTree(ErgoTree.DefaultHeader, EmptyConstants, Right(root), 0, null)
+    val ergoTree = new ErgoTree(ErgoTree.DefaultHeader, EmptyConstants, Right(root), 0, null, None)
     val bytes = DefaultSerializer.serializeErgoTree(ergoTree)
     Colls.fromArray(bytes)
   }
