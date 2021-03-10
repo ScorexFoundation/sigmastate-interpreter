@@ -4,8 +4,6 @@ import java.util
 
 import org.ergoplatform.ErgoBox._
 import org.ergoplatform.settings.ErgoAlgos
-import scalan.Nullable
-import scorex.crypto.hash.Digest32
 import scorex.util.{bytesToId, ModifierId}
 import sigmastate.Values._
 import sigmastate._
