@@ -40,7 +40,7 @@ trait ErgoLikeTransactionTemplate[IT <: UnsignedInput] {
 
   require(outputCandidates.size <= Short.MaxValue)
 
-  /** Indentifier of this transaction as state Modifier. */
+  /** Identifier of this transaction as state Modifier. */
   val id: ModifierId
 
   lazy val outputs: IndexedSeq[ErgoBox] =

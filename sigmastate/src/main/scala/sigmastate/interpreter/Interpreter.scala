@@ -303,7 +303,7 @@ trait Interpreter extends ScorexLogging {
     }
   }
 
-  /** Perfroms reduction of proposition which contains deserialization operations. */
+  /** Performs reduction of proposition which contains deserialization operations. */
   private def reductionWithDeserialize(ergoTree: ErgoTree,
                                        prop: SigmaPropValue,
                                        context: CTX,
@@ -611,7 +611,7 @@ object Interpreter {
   val WhenSoftForkReductionResult: ReductionResult = TrivialProp.TrueProp -> 0L
 
   /** Executes the given `calcF` graph in the given context.
-    * @param IR      containier of the graph (see [[IRContext]])
+    * @param IR      container of the graph (see [[IRContext]])
     * @param context script execution context (built from [[org.ergoplatform.ErgoLikeContext]])
     * @param calcF   graph which represents a reduction function from Context to SigmaProp.
     * @return a reduction result

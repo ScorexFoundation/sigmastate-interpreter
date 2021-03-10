@@ -52,12 +52,12 @@ case object WhenSoftForkReducer extends ScriptReducer {
 case class PrecompiledScriptReducer(scriptBytes: Seq[Byte])(implicit val IR: IRContext)
   extends ScriptReducer {
 
-  /** The following operations create [[RCostingResultEx]] structure for the given
+  /** The following operations create [[IR.RCostingResultEx]] structure for the given
     * `scriptBytes` and they should be the same as in `reduceToCrypto` method.
     * This can be viewed as ahead of time pre-compilation of the cost and calc graphs
     * which are reused over many invocations of the `reduce` method.
     */
-  val costingRes = {
+  val costingRes: IR.RCostingResultEx[Any] = {
     val tree = ErgoTreeSerializer.DefaultSerializer.deserializeErgoTree(scriptBytes.toArray)
     val prop = tree.toProposition(tree.isConstantSegregation)
     val validProp = Interpreter.toValidScriptType(prop)
