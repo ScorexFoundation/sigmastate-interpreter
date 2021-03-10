@@ -38,7 +38,7 @@ case class MethodCallSerializer(cons: (Value[SType], SMethod, IndexedSeq[Value[S
     * This is limitation of MethodCall, because we cannot use it to represent for example
     * def Box.getReg[T](id: Int): Option[T], which require serialization of expected type `T`
     * However it can be implemented using separate node type (new type code) and can be added via soft-fork.
-    * @hotspot don't beautify this code
+    * HOTSPOT: don't beautify this code
     */
   override def parse(r: SigmaByteReader): Value[SType] = {
     val typeId = r.getByte()

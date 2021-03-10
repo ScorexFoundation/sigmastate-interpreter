@@ -317,7 +317,7 @@ object AtLeast extends ValueCompanion {
   def apply(bound: Value[SInt.type], head: SigmaPropValue, tail: SigmaPropValue*): AtLeast =
     apply(bound, head +: tail)
 
-  /** @hotspot don't beautify this code */
+  /** HOTSPOT: don't beautify this code */
   def reduce(bound: Int, children: Seq[SigmaBoolean]): SigmaBoolean = {
     import sigmastate.TrivialProp._
     if (bound <= 0) return TrueProp

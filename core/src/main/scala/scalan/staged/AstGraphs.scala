@@ -49,7 +49,7 @@ trait AstGraphs extends Transforming { self: Scalan =>
       * If the graph represents a compound definition (Lambda, Thunk etc),
       * then each item in `freeVars` is used in the body, but not part of it.
       * Intersection of free vars with bound vars is empty.
-      * @hotspot don't beautify the code
+      * HOTSPOT: don't beautify the code
       */
     def freeVars: Seq[Sym] = {
       val sch = schedule.toArray
@@ -89,7 +89,7 @@ trait AstGraphs extends Transforming { self: Scalan =>
     def scheduleIds: DBuffer[Int]
 
     /** Sequence of node references forming a schedule.
-      * @hotspot don't beautify the code */
+      * HOTSPOT: don't beautify the code */
     lazy val schedule: Schedule = {
       val ids = scheduleIds
       val len = ids.length
@@ -155,7 +155,7 @@ trait AstGraphs extends Transforming { self: Scalan =>
 
     /** Build usage information induced by the given schedule.
       * For each symbol of the schedule a GraphNode is created and usages are collected.
-      * @hotspot don't beautify the code
+      * HOTSPOT: don't beautify the code
       */
     def buildUsageMap(schedule: Schedule, usingDeps: Boolean): DMap[Int, GraphNode] = {
       val len = schedule.length
@@ -203,7 +203,7 @@ trait AstGraphs extends Transforming { self: Scalan =>
 
     def hasManyUsagesGlobal(s: Sym): Boolean = globalUsagesOf(s).length > 1
 
-    /** @hotspot  for performance we return mutable structure, but it should never be changed. */
+    /** HOTSPOT:  for performance we return mutable structure, but it should never be changed. */
     def usagesOf(id: Int): DBuffer[Int] = {
       val node = usageMap.getOrElse(id, null)
       if (node == null) return emptyDBufferOfInt

@@ -3,26 +3,27 @@ package sigmastate.interpreter
 import java.util
 import java.lang.{Math => JMath}
 
-import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, rule, strategy}
+import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{strategy, rule, everywherebu}
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
 import org.ergoplatform.validation.SigmaValidationSettings
-import sigmastate.basics.DLogProtocol.{DLogInteractiveProver, FirstDLogProverMessage}
+import sigmastate.basics.DLogProtocol.{FirstDLogProverMessage, DLogInteractiveProver}
 import scorex.util.ScorexLogging
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate.eval.{IRContext, Evaluation}
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.basics._
-import sigmastate.interpreter.Interpreter.{ScriptEnv, VerificationResult}
-import sigmastate.lang.exceptions.{CostLimitException, InterpreterException}
-import sigmastate.serialization.{SigmaSerializer, ValueSerializer}
+import sigmastate.interpreter.Interpreter.{VerificationResult, ScriptEnv, WhenSoftForkReductionResult}
+import sigmastate.lang.exceptions.{InterpreterException, CostLimitException}
+import sigmastate.serialization.{ValueSerializer, SigmaSerializer}
 import sigmastate.utxo.DeserializeContext
 import sigmastate.{SType, _}
 import org.ergoplatform.validation.ValidationRules._
+import scalan.{MutableLazy, Nullable}
 import scalan.util.BenchmarkUtil
 import sigmastate.utils.Helpers._
 
-import scala.util.{Try, Success}
+import scala.util.{Success, Try}
 
 trait Interpreter extends ScorexLogging {
 
@@ -34,6 +35,12 @@ trait Interpreter extends ScorexLogging {
 
   val IR: IRContext
   import IR._
+
+  /** Processor instance which is used by this interpreter to execute ErgoTrees that
+    * contain neither [[DeserializeContext]] nor [[sigmastate.utxo.DeserializeRegister]]
+    * operations.
+    */
+  def precompiledScriptProcessor: PrecompiledScriptProcessor
 
   /** Deserializes given script bytes using ValueSerializer (i.e. assuming expression tree format).
     * It also measures tree complexity adding to the total estimated cost of script execution.
@@ -79,15 +86,6 @@ trait Interpreter extends ScorexLogging {
     case _ => None
   }
 
-  def toValidScriptType(exp: SValue): BoolValue = exp match {
-    case v: Value[SBoolean.type]@unchecked if v.tpe == SBoolean => v
-    case p: SValue if p.tpe == SSigmaProp => p.asSigmaProp.isProven
-    case x =>
-      // This case is not possible, due to exp is always of Boolean/SigmaProp type.
-      // In case it will ever change, leave it here to throw an explaining message.
-      throw new Error(s"Context-dependent pre-processing should produce tree of type Boolean or SigmaProp but was $x")
-  }
-
   class MutableCell[T](var value: T)
 
   /** Extracts proposition for ErgoTree handing soft-fork condition.
@@ -114,25 +112,8 @@ trait Interpreter extends ScorexLogging {
       substDeserialize(currContext.value, { ctx: CTX => currContext.value = ctx }, x)
     }
     val Some(substTree: SValue) = everywherebu(substRule)(exp)
-    val res = toValidScriptType(substTree)
+    val res = Interpreter.toValidScriptType(substTree)
     (res, currContext.value)
-  }
-
-  private def calcResult(context: special.sigma.Context, calcF: Ref[IR.Context => Any]): special.sigma.SigmaProp = {
-    import IR._
-    import Context._
-    import SigmaProp._
-    val res = calcF.elem.eRange.asInstanceOf[Any] match {
-      case _: SigmaPropElem[_] =>
-        val valueFun = compile[SContext, SSigmaProp, Context, SigmaProp](getDataEnv, asRep[Context => SigmaProp](calcF))
-        val (sp, _) = valueFun(context)
-        sp
-      case BooleanElement =>
-        val valueFun = compile[SContext, Boolean, IR.Context, Boolean](IR.getDataEnv, asRep[Context => Boolean](calcF))
-        val (b, _) = valueFun(context)
-        sigmaDslBuilderValue.sigmaProp(b)
-    }
-    res
   }
 
   /** This method is used in both prover and verifier to compute SigmaBoolean value.
@@ -152,7 +133,7 @@ trait Interpreter extends ScorexLogging {
     implicit val vs = context.validationSettings
     val maxCost = context.costLimit
     val initCost = context.initCost
-    trySoftForkable[ReductionResult](whenSoftFork = TrivialProp.TrueProp -> 0) {
+    trySoftForkable[ReductionResult](whenSoftFork = WhenSoftForkReductionResult) {
       val costingRes = doCostingEx(env, exp, true)
       val costF = costingRes.costF
       IR.onCostingResult(env, exp, costingRes)
@@ -168,7 +149,7 @@ trait Interpreter extends ScorexLogging {
       val calcF = costingRes.calcF
       CheckCalcFunc(IR)(calcF)
       val calcCtx = context.toSigmaContext(isCost = false)
-      val res = calcResult(calcCtx, calcF)
+      val res = Interpreter.calcResult(IR)(calcCtx, calcF)
       SigmaDsl.toSigmaBoolean(res) -> estimatedCost
     }
   }
@@ -195,8 +176,25 @@ trait Interpreter extends ScorexLogging {
   def fullReduction(ergoTree: ErgoTree,
                     context: CTX,
                     env: ScriptEnv): (SigmaBoolean, Long) = {
-    implicit val vs: SigmaValidationSettings = context.validationSettings
     val prop = propositionFromErgoTree(ergoTree, context)
+    prop match {
+      case SigmaPropConstant(p) =>
+        val sb = SigmaDsl.toSigmaBoolean(p)
+        val cost = SigmaBoolean.estimateCost(sb)
+        (sb, cost)
+      case _ if !ergoTree.hasDeserialize =>
+        val r = precompiledScriptProcessor.getReducer(ergoTree, context.validationSettings)
+        r.reduce(context)
+      case _ =>
+        reductionWithDeserialize(prop, context, env)
+    }
+  }
+
+  /** Performs reduction of proposition which contains deserialization operations. */
+  private def reductionWithDeserialize(prop: SigmaPropValue,
+                                       context: CTX,
+                                       env: ScriptEnv) = {
+    implicit val vs: SigmaValidationSettings = context.validationSettings
     val (propTree, context2) = trySoftForkable[(BoolValue, CTX)](whenSoftFork = (TrueLeaf, context)) {
       applyDeserializeContext(context, prop)
     }
@@ -379,10 +377,10 @@ object Interpreter {
     * The second component is the estimated cost of contract execution. */
   type VerificationResult = (Boolean, Long)
 
-  /** Result of ErgoTree reduction procedure (see `reduceToCrypto`).
+  /** Result of ErgoTree reduction procedure (see `reduceToCrypto` and friends).
     * The first component is the value of SigmaProp type which represents a statement
     * verifiable via sigma protocol.
-    * The second component is the estimated cost of contract execution */
+    * The second component is the estimated cost of consumed by the contract execution. */
   type ReductionResult = (SigmaBoolean, Long)
 
   type ScriptEnv = Map[String, Any]
@@ -399,6 +397,52 @@ object Interpreter {
     * etc.
     */
   val MaxSupportedScriptVersion: Byte = 1 // supported versions 0 and 1
+
+  /** The result of script reduction when soft-fork condition is detected by the old node,
+    * in which case the script is reduced to the trivial true proposition and takes up 0 cost.
+    */
+  val WhenSoftForkReductionResult: ReductionResult = TrivialProp.TrueProp -> 0
+
+  /** Executes the given `calcF` graph in the given context.
+    * @param IR      container of the graph (see [[IRContext]])
+    * @param context script execution context (built from [[org.ergoplatform.ErgoLikeContext]])
+    * @param calcF   graph which represents a reduction function from Context to SigmaProp.
+    * @return a reduction result
+    */
+  def calcResult(IR: IRContext)
+                (context: special.sigma.Context,
+                 calcF: IR.Ref[IR.Context => Any]): special.sigma.SigmaProp = {
+    import IR._
+    import IR.Context._
+    import IR.SigmaProp._
+    import IR.Liftables._
+    val res = calcF.elem.eRange.asInstanceOf[Any] match {
+      case _: SigmaPropElem[_] =>
+        val valueFun = compile[IR.Context.SContext, IR.SigmaProp.SSigmaProp, IR.Context, IR.SigmaProp](
+          getDataEnv,
+          IR.asRep[IR.Context => IR.SigmaProp](calcF))(LiftableContext, LiftableSigmaProp)
+        val (sp, _) = valueFun(context)
+        sp
+      case BooleanElement =>
+        val valueFun = compile[SContext, Boolean, IR.Context, Boolean](
+          IR.getDataEnv,
+          asRep[IR.Context => Boolean](calcF))(LiftableContext, BooleanIsLiftable)
+        val (b, _) = valueFun(context)
+        sigmaDslBuilderValue.sigmaProp(b)
+    }
+    res
+  }
+
+  /** Special helper function which converts the given expression to expression returning
+    * boolean or throws an exception if the conversion is not defined. */
+  def toValidScriptType(exp: SValue): BoolValue = exp match {
+    case v: Value[SBoolean.type]@unchecked if v.tpe == SBoolean => v
+    case p: SValue if p.tpe == SSigmaProp => p.asSigmaProp.isProven
+    case x =>
+      // This case is not possible, due to exp is always of Boolean/SigmaProp type.
+      // In case it will ever change, leave it here to throw an explaining message.
+      throw new Error(s"Context-dependent pre-processing should produce tree of type Boolean or SigmaProp but was $x")
+  }
 
   def error(msg: String) = throw new InterpreterException(msg)
 

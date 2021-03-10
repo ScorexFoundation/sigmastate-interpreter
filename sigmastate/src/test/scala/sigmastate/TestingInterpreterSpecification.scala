@@ -1,6 +1,6 @@
 package sigmastate
 
-import sigmastate.basics.DLogProtocol.{DLogProverInput, ProveDlog}
+import sigmastate.basics.DLogProtocol.{ProveDlog, DLogProverInput}
 import scorex.crypto.hash.Blake2b256
 import sigmastate.Values._
 import sigmastate.interpreter._
@@ -8,19 +8,33 @@ import scalan.util.Extensions._
 import Interpreter._
 import sigmastate.lang.Terms._
 import org.ergoplatform._
+import org.scalatest.BeforeAndAfterAll
 import scorex.util.encode.Base58
-import sigmastate.helpers.{ErgoLikeContextTesting, ErgoLikeTestInterpreter, ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
+import sigmastate.eval.IRContext
+import sigmastate.helpers.{ErgoLikeContextTesting, ErgoLikeTestProvingInterpreter, SigmaTestingCommons, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utils.Helpers._
 
+import scala.collection.mutable
 import scala.util.Random
 
 class TestingInterpreterSpecification extends SigmaTestingCommons
-  with CrossVersionProps {
+  with CrossVersionProps with BeforeAndAfterAll {
   implicit lazy val IR = new TestingIRContext
-  lazy val prover = new ErgoLikeTestProvingInterpreter()
-  lazy val verifier = new ErgoLikeTestInterpreter
+
+  lazy val processor = new PrecompiledScriptProcessor(
+    ScriptProcessorSettings(mutable.WrappedArray.empty)) {
+    override protected def createIR(): IRContext = new TestingIRContext
+  }
+
+  lazy val prover = new ErgoLikeTestProvingInterpreter() {
+    override val precompiledScriptProcessor = processor
+  }
+
+  lazy val verifier = new ErgoLikeTestInterpreter {
+    override val precompiledScriptProcessor = processor
+  }
 
   implicit val soundness = CryptoConstants.soundnessBits
   
@@ -364,5 +378,10 @@ class TestingInterpreterSpecification extends SigmaTestingCommons
     val str = Base58.encode(ValueSerializer.serialize(ByteArrayConstant(Array[Byte](2))))
     testEval(s"""deserialize[Coll[Byte]]("$str")(0) == 2""")
   }
+
+  override protected def afterAll(): Unit = {
+    println(processor.getStats())
+  }
+
 }
 

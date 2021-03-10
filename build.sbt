@@ -9,11 +9,6 @@ name := "sigma-state"
 lazy val scala212 = "2.12.10"
 lazy val scala211 = "2.11.12"
 
-javacOptions ++=
-    "-source" :: "1.7" ::
-    "-target" :: "1.7" ::
-    Nil
-
 lazy val allConfigDependency = "compile->compile;test->test"
 
 lazy val commonSettings = Seq(

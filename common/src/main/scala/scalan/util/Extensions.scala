@@ -13,7 +13,7 @@ object Extensions {
     def toByte: Byte = if (b) 1 else 0
   }
 
-  /** @hotspot  it is used in deserialization so we avoid allocation by any means. */
+  /** HOTSPOT:  it is used in deserialization so we avoid allocation by any means. */
   @inline final def toUByte(b: Byte) = b & 0xFF
 
   implicit class ByteOps(val b: Byte) extends AnyVal {

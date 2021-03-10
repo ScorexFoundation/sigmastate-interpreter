@@ -33,7 +33,7 @@ case class ValidationRule(
   /** Check the rule is registered and enabled.
     * Since it is easy to forget to register new rule, we need to do this check.
     * But because it is hotspot, we do this check only once for each rule.
-    * @hotspot executed on every typeCode and opCode during script deserialization
+    * HOTSPOT: executed on every typeCode and opCode during script deserialization
     */
   @inline protected final def checkRule(): Unit = {
     if (!_checked) {

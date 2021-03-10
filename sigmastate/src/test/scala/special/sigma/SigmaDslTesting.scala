@@ -12,7 +12,7 @@ import scala.util.{Success, Failure, Try}
 import sigmastate.Values.{Constant, SValue, ConstantNode, ByteArrayConstant, IntConstant, ErgoTree}
 import scalan.RType
 import scalan.util.Extensions._
-import org.ergoplatform.dsl.{SigmaContractSyntax, TestContractSpec, ContractSpec}
+import org.ergoplatform.dsl.{SigmaContractSyntax, ContractSpec, TestContractSpec}
 import org.ergoplatform.validation.{ValidationRules, SigmaValidationSettings}
 import sigmastate.{eval, SSigmaProp, SType}
 import SType.AnyOps
@@ -28,7 +28,7 @@ import sigmastate.utils.Helpers._
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.helpers.{ErgoLikeContextTesting, SigmaPPrint}
 import sigmastate.helpers.TestingHelpers._
-import sigmastate.interpreter.{ProverResult, ContextExtension, ProverInterpreter}
+import sigmastate.interpreter.{ProverResult, PrecompiledScriptProcessor, ContextExtension, ProverInterpreter, CacheKey}
 import sigmastate.serialization.ValueSerializer
 import sigmastate.serialization.generators.ObjectGenerators
 import sigmastate.utxo.{DeserializeContext, DeserializeRegister}
@@ -121,6 +121,8 @@ class SigmaDslTesting extends PropSpec
   }
 
   val LogScriptDefault: Boolean = false
+
+  val predefScripts = Seq[String]()
 
   /** Descriptor of the language feature. */
   trait Feature[A, B] {
@@ -265,7 +267,9 @@ class SigmaDslTesting extends PropSpec
       val tpeB = Evaluation.rtypeToSType(oldF.tB)
 
       val prover = new FeatureProvingInterpreter()
-      val verifier = new ErgoLikeInterpreter()(createIR()) { type CTX = ErgoLikeContext }
+      val verifier = new ErgoLikeInterpreter()(createIR()) {
+        type CTX = ErgoLikeContext
+      }
 
       // Create synthetic ErgoTree which uses all main capabilities of evaluation machinery.
       // 1) first-class functions (lambdas); 2) Context variables; 3) Registers; 4) Equality
