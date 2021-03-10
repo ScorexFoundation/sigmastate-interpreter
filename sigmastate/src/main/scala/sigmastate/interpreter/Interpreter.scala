@@ -211,15 +211,16 @@ trait Interpreter extends ScorexLogging {
 
       val (res, cost) = {
         val ctx = context.asInstanceOf[ErgoLikeContext]
+          .withInitCost(context.initCost * 10)   // adjust for Evaluator cost units scale
+          .withCostLimit(context.costLimit * 10)
         ErgoTreeEvaluator.eval(ctx, ErgoTree.EmptyConstants, exp, evalSettings) match {
           case (p: special.sigma.SigmaProp, c) => (p, c)
-//          case (b: Boolean, c) => (SigmaDsl.sigmaProp(b), c)
           case (res, _) =>
             sys.error(s"Invalid result type of $res: expected SigmaProp when evaluating $exp")
         }
       }
 
-      SigmaDsl.toSigmaBoolean(res) -> cost.toLong
+      SigmaDsl.toSigmaBoolean(res) -> cost.toLong / 10  // scale back
     }
   }
 
@@ -276,8 +277,11 @@ trait Interpreter extends ScorexLogging {
       case _ if !ergoTree.hasDeserialize =>
         val r = precompiledScriptProcessor.getReducer(ergoTree, context.validationSettings)
         val res = r.reduce(context)
-        val jitRes = ErgoTreeEvaluator.evalToCrypto(
-          context.asInstanceOf[ErgoLikeContext], ergoTree, evalSettings)
+        val ctx = context.asInstanceOf[ErgoLikeContext]
+          .withInitCost(context.initCost * 10)    // adjust for Evaluator cost units scale
+          .withCostLimit(context.costLimit * 10)
+        val (v, c) = ErgoTreeEvaluator.evalToCrypto(ctx, ergoTree, evalSettings)
+        val jitRes = (v, c / 10) // scale cost back
         checkResults(ergoTree, res, jitRes)
         res
       case _ =>
@@ -294,6 +298,21 @@ trait Interpreter extends ScorexLogging {
           |ErgoTree: ${ergoTree.bytesHex}
           |Old result: $oldValue
           |New result: $newValue
+          |------------------------------------------------------------""".stripMargin
+      if (evalSettings.isTestRun) {
+        error(msg)
+      }
+      else
+        println(msg)
+    }
+    val oldCost = res._2
+    val newCost = jitRes._2
+    if (oldCost < newCost) {
+      val msg =
+        s"""Wrong JIT cost: -----------------------------------------
+          |ErgoTree: ${ergoTree.bytesHex}
+          |Old cost: $oldCost
+          |New cost: $newCost
           |------------------------------------------------------------""".stripMargin
       if (evalSettings.isTestRun) {
         error(msg)

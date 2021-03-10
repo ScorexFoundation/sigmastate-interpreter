@@ -439,7 +439,7 @@ class CostCounter(val initialCost: Int) {
   * At any time `totalCost` is the currently accumulated cost. */
 class CostAccumulator(initialCost: Int, costLimit: Option[Long]) {
 
-  @inline private def initialStack() = List(new Scope(0))
+  @inline private def initialStack() = List(new Scope(initialCost))
   private var _scopeStack: List[Scope] = initialStack
 
   @inline def currentScope: Scope = _scopeStack.head
