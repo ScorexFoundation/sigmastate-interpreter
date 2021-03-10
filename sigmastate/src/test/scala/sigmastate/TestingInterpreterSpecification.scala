@@ -380,7 +380,7 @@ class TestingInterpreterSpecification extends SigmaTestingCommons
   }
 
   override protected def afterAll(): Unit = {
-    println(processor.cache.stats())
+    println(processor.getStats())
   }
 
 }

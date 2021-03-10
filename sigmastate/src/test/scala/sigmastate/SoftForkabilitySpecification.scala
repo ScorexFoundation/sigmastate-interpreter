@@ -395,7 +395,7 @@ class SoftForkabilitySpecification extends SigmaTestingData with BeforeAndAfterA
   }
 
   override protected def afterAll(): Unit = {
-    println(ErgoLikeTestInterpreter.DefaultProcessorInTests.cache.stats())
+    println(ErgoLikeTestInterpreter.DefaultProcessorInTests.getStats())
   }
 
 }
