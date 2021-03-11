@@ -49,7 +49,7 @@ object DataValueComparer {
   final val EQ_Tuple = OperationCostInfo(CostKind_EQ_Tuple, OpDesc_EQ_Tuple)
 
   /** NOTE: the value is set based on benchmarking of SigmaDslSpecification. */
-  final val CostKind_EQ_GroupElement = FixedCost(4) // case 4
+  final val CostKind_EQ_GroupElement = FixedCost(172) // case 4
   final val OpDesc_EQ_GroupElement = NamedDesc("EQ_GroupElement")
   final val EQ_GroupElement = OperationCostInfo(CostKind_EQ_GroupElement, OpDesc_EQ_GroupElement)
 
@@ -71,11 +71,11 @@ object DataValueComparer {
   final val OpDesc_EQ_Option = NamedDesc("EQ_Option")
   final val EQ_Option = OperationCostInfo(CostKind_EQ_Option, OpDesc_EQ_Option)
 
-  final val CostKind_EQ_PreHeader = FixedCost(8) // case 9
+  final val CostKind_EQ_PreHeader = FixedCost(4) // case 9
   final val OpDesc_EQ_PreHeader = NamedDesc("EQ_PreHeader")
   final val EQ_PreHeader = OperationCostInfo(CostKind_EQ_PreHeader, OpDesc_EQ_PreHeader)
 
-  final val CostKind_EQ_Header = FixedCost(12) // case 10
+  final val CostKind_EQ_Header = FixedCost(6) // case 10
   final val OpDesc_EQ_Header = NamedDesc("EQ_Header")
   final val EQ_Header = OperationCostInfo(CostKind_EQ_Header, OpDesc_EQ_Header)
 
