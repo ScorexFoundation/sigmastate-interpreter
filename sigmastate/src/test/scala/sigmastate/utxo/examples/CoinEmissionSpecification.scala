@@ -1,8 +1,9 @@
 package sigmastate.utxo.examples
 
 import org.ergoplatform._
+import org.ergoplatform.settings.ErgoAlgos
 import scorex.util.ScorexLogging
-import sigmastate.Values.{IntConstant, ErgoTree}
+import sigmastate.Values.{ErgoTree, IntConstant}
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, SigmaTestingCommons}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.ContextExtension
@@ -112,6 +113,7 @@ block 1600 in 1622 ms, 30000000000 coins remain, defs: 61661
       AND(heightCorrect, heightIncreased, sameScriptRule, correctCoinsConsumed),
       BinAnd(heightIncreased, lastCoins)
     ).toSigmaProp
+    val tree = mkTestErgoTree(prop)
 
     val env = Map("fixedRatePeriod" -> s.fixedRatePeriod,
       "epochLength" -> s.epochLength,
@@ -155,7 +157,7 @@ block 1600 in 1622 ms, 30000000000 coins remain, defs: 61661
       val ut = if (emissionBox.value > s.oneEpochReduction) {
         val minerBox = new ErgoBoxCandidate(emissionAtHeight(height), minerProp, height, Colls.emptyColl, Map())
         val newEmissionBox: ErgoBoxCandidate =
-          new ErgoBoxCandidate(emissionBox.value - minerBox.value, mkTestErgoTree(prop), height, Colls.emptyColl, Map(register -> IntConstant(height)))
+          new ErgoBoxCandidate(emissionBox.value - minerBox.value, tree, height, Colls.emptyColl, Map(register -> IntConstant(height)))
 
         UnsignedErgoLikeTransaction(
           IndexedSeq(new UnsignedInput(emissionBox.id)),
@@ -178,7 +180,8 @@ block 1600 in 1622 ms, 30000000000 coins remain, defs: 61661
         emissionBox,
         activatedVersionInTests,
         ContextExtension.empty)
-      val proverResult = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), mkTestErgoTree(prop), context, ut.messageToSign).get
+      val proverResult = prover.prove(
+        emptyEnv + (ScriptNameProp -> "prove"), tree, context, ut.messageToSign).get
       ut.toSigned(IndexedSeq(proverResult))
     }
 
@@ -212,5 +215,8 @@ block 1600 in 1622 ms, 30000000000 coins remain, defs: 61661
     }
 
     chainGen(genesisState, initialBox, 0, 1000000)
+
+    println(s"Emission Tree: ${ErgoAlgos.encode(tree.bytes)}")
+    println(prover.precompiledScriptProcessor.getStats())
   }
 }

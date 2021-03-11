@@ -2,7 +2,7 @@ package org.ergoplatform
 
 import org.ergoplatform.ErgoBox.TokenId
 import scorex.crypto.authds.ADKey
-import scorex.crypto.hash.{Blake2b256, Digest32}
+import scorex.crypto.hash.Blake2b256
 import scorex.util._
 import sigmastate.SType._
 import sigmastate.eval.Extensions._
@@ -13,34 +13,34 @@ import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import special.collection.ExtensionMethods._
 import spire.syntax.all.cfor
 
-import scala.collection.mutable
 import scala.util.Try
 
 trait ErgoBoxReader {
   def byId(boxId: ADKey): Try[ErgoBox]
 }
 
-/**
-  * Base trait of a real transaction to be used in Ergo network.
+/** Base trait of a real transaction to be used in Ergo network.
   * May be in unsigned (`UnsignedErgoLikeTransaction`) or in signed (`ErgoLikeTransaction`) version.
-  *
-  * Consists of:
-  *
-  * @param inputs           - inputs, that will be spent by this transaction.
-  * @param dataInputs       - inputs, that are not going to be spent by transaction, but will be
-  *                         reachable from inputs scripts. `dataInputs` scripts will not be executed,
-  *                         thus their scripts costs are not included in transaction cost and
-  *                         they do not contain spending proofs.
-  * @param outputCandidates - box candidates to be created by this transaction.
-  *                         Differ from ordinary ones in that they do not include transaction id and index
   */
 trait ErgoLikeTransactionTemplate[IT <: UnsignedInput] {
+  /** Inputs, that are not going to be spent by transaction, but will be
+    * reachable from inputs scripts. `dataInputs` scripts will not be executed,
+    * thus their scripts costs are not included in transaction cost and
+    * they do not contain spending proofs.
+    */
   val dataInputs: IndexedSeq[DataInput]
+
+  /** Inputs, that will be spent by this transaction. */
   val inputs: IndexedSeq[IT]
+
+  /** Box candidates to be created by this transaction.
+    * Differ from ordinary ones in that they do not include transaction id and index.
+    */
   val outputCandidates: IndexedSeq[ErgoBoxCandidate]
 
   require(outputCandidates.size <= Short.MaxValue)
 
+  /** Identifier of this transaction as state Modifier. */
   val id: ModifierId
 
   lazy val outputs: IndexedSeq[ErgoBox] =
@@ -143,34 +143,37 @@ object ErgoLikeTransactionSerializer extends SigmaSerializer[ErgoLikeTransaction
     }
   }
 
+  /** HOTSPOT: don't beautify the code */
   override def parse(r: SigmaByteReader): ErgoLikeTransaction = {
     // parse transaction inputs
     val inputsCount = r.getUShort()
-    val inputsBuilder = mutable.ArrayBuilder.make[Input]()
-    for (_ <- 0 until inputsCount) {
-      inputsBuilder += Input.serializer.parse(r)
+    val inputs = new Array[Input](inputsCount)
+    cfor(0)(_ < inputsCount, _ + 1) { i =>
+      inputs(i) = Input.serializer.parse(r)
     }
+
     // parse transaction data inputs
     val dataInputsCount = r.getUShort()
-    val dataInputsBuilder = mutable.ArrayBuilder.make[DataInput]()
-    for (_ <- 0 until dataInputsCount) {
-      dataInputsBuilder += DataInput(ADKey @@ r.getBytes(ErgoBox.BoxId.size))
+    val dataInputs = new Array[DataInput](dataInputsCount)
+    cfor(0)(_ < dataInputsCount, _ + 1) { i =>
+      dataInputs(i) = DataInput(ADKey @@ r.getBytes(ErgoBox.BoxId.size))
     }
+
     // parse distinct ids of tokens in transaction outputs
     val tokensCount = r.getUInt().toInt
-    val tokensBuilder = mutable.ArrayBuilder.make[TokenId]()
-    for (_ <- 0 until tokensCount) {
-      tokensBuilder += Digest32 @@ r.getBytes(TokenId.size)
+    val tokens = new Array[Array[Byte]](tokensCount)
+    cfor(0)(_ < tokensCount, _ + 1) { i =>
+      tokens(i) = r.getBytes(TokenId.size)
     }
-    val tokens = tokensBuilder.result().toColl
-    // parse outputs
 
+    // parse outputs
     val outsCount = r.getUShort()
-    val outputCandidatesBuilder = mutable.ArrayBuilder.make[ErgoBoxCandidate]()
-    for (_ <- 0 until outsCount) {
-      outputCandidatesBuilder += ErgoBoxCandidate.serializer.parseBodyWithIndexedDigests(Some(tokens), r)
+    val outputCandidates = new Array[ErgoBoxCandidate](outsCount)
+    cfor(0)(_ < outsCount, _ + 1) { i =>
+      outputCandidates(i) = ErgoBoxCandidate.serializer.parseBodyWithIndexedDigests(tokens, r)
     }
-    new ErgoLikeTransaction(inputsBuilder.result(), dataInputsBuilder.result(), outputCandidatesBuilder.result())
+
+    new ErgoLikeTransaction(inputs, dataInputs, outputCandidates)
   }
 
 }

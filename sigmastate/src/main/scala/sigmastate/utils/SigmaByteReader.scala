@@ -33,7 +33,7 @@ class SigmaByteReader(val r: Reader,
   /** The reader should be lightweight to create. In most cases ErgoTrees don't have
     * ValDef nodes hence the store is not necessary and it's initialization dominates the
     * reader instantiation time. Hence it's lazy.
-    * @hotspot
+    * HOTSPOT:
     */
   lazy val valDefTypeStore: ValDefTypeStore = new ValDefTypeStore()
 
@@ -154,6 +154,7 @@ class SigmaByteReader(val r: Reader,
   }
 
   private var _complexity: Int = 0
+  /** Helper property which is used to accumulate complexity during parsing. */
   @inline final def complexity: Int = _complexity
   @inline final def complexity_=(v: Int): Unit = {
     _complexity = v
@@ -161,5 +162,12 @@ class SigmaByteReader(val r: Reader,
 
   @inline final def addComplexity(delta: Int): Unit = {
     _complexity += delta
+  }
+
+  private var _wasDeserialize: Boolean = false
+  /** Helper property which is used to track deserialization operations during parsing. */
+  @inline final def wasDeserialize: Boolean = _wasDeserialize
+  @inline final def wasDeserialize_=(v: Boolean): Unit = {
+    _wasDeserialize = v
   }
 }

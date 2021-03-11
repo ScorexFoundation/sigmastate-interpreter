@@ -538,7 +538,7 @@ abstract class Base { scalan: Scalan =>
   /** Transforms this object into new one by applying `t` to every Ref inside
     * its structure. The structure is build out of Seq, Array, Option and Def values.
     * Other structure items remain unchanged and copied to the new instance.
-    * @hotspot don't beautify the code */
+    * HOTSPOT: don't beautify the code */
   protected def transformProductParam(x: Any, t: Transformer): Any = x match {
     case (_: UnOp[_, _]) | (_: BinOp[_, _]) =>
       // allows use of context bounds in classes extending UnOp/BinOp.
@@ -687,7 +687,7 @@ abstract class Base { scalan: Scalan =>
   /** Create or find symbol (node Ref) which refers to the given node in the table of all created symbols.
     * The d.nodeId is the index in the _symbolTable which is DBuffer (backed by Array)
     * @return   new of existing symbol
-    * @hotspot  the method should be allocation-free (make it sure by examining the generated Java code)
+    * HOTSPOT:  the method should be allocation-free (make it sure by examining the generated Java code)
     */
   final def updateSymbolTable[T](s: Ref[T], d: Def[T]): Ref[T] = {
     val id = d.nodeId
@@ -769,7 +769,7 @@ abstract class Base { scalan: Scalan =>
     * @param  d       node to be added to the head of nodes
     * @param  newSym  producer of the reference to be used as the reference to `d` node.
     * @return         return a reference to `d` node in the heap
-    * @hotspot */
+    * HOTSPOT: */
   def findOrCreateDefinition[T](d: Def[T], newSym: => Ref[T]): Ref[T] = {
     val optScope = thunkStack.top
     var sym = optScope match {
