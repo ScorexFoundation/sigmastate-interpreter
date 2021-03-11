@@ -33,7 +33,9 @@ case class EvalSettings(
   profilerOpt: Option[Profiler] = None,
   /** Should be set to true, if evaluation is performed as part of test suite.
     * In such a case, additional operations may be performed (such as sanity checks). */
-  isTestRun: Boolean = false)
+  isTestRun: Boolean = false,
+  /** If true, then expected test vectors are pretty-printed. */
+  printTestVectors: Boolean = false)
 
 /** Implements a simple and fast direct-style interpreter of ErgoTrees.
   *

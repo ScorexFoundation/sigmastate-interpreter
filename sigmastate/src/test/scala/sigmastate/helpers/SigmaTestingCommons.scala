@@ -237,7 +237,7 @@ trait SigmaTestingCommons extends PropSpec
     CompiledFunc(funcScript, bindings, funcVal, compiledTree, f)
   }
 
-  val evalSettings = ErgoTreeEvaluator.DefaultEvalSettings
+  def evalSettings = ErgoTreeEvaluator.DefaultEvalSettings
 
   def printCostDetails(script: String, details: CostDetails) = {
     val traceLines = SigmaPPrint(details, height = 550, width = 150)

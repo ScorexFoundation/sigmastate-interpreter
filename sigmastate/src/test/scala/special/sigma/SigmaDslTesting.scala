@@ -396,6 +396,11 @@ class SigmaDslTesting extends PropSpec
     * @see SigmaDslSpecification */
   def nBenchmarkIters: Int = 1
 
+  /** Total warm-up iterations: should be >= nBenchmarkIters */
+  def nWarmUpItersBeforeAll = {
+    nBenchmarkIters
+  }.ensuring(_ >= nBenchmarkIters)
+
   def warmUpBeforeAllTest(nTotalIters: Int)(block: => Unit) = {
     // each test case is executed nBenchmarkIters times in `check` method
     // so we account for that here
@@ -505,8 +510,10 @@ class SigmaDslTesting extends PropSpec
       val expectedTrace = expected.newCost.trace
       if (expectedTrace.isEmpty) {
         // new cost expectation is missing, print out actual cost results
-        funcRes.foreach { case (_, newCost) =>
-          printCostDetails(script, newCost)
+        if (evalSettings.printTestVectors) {
+          funcRes.foreach { case (_, newCost) =>
+            printCostDetails(script, newCost)
+          }
         }
       }
       else {

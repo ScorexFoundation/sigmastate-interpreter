@@ -51,19 +51,32 @@ class SigmaDslSpecification extends SigmaDslTesting
 
   implicit override val generatorDrivenConfig = PropertyCheckConfiguration(minSuccessful = 30)
 
-  implicit override val evalSettings: EvalSettings =
-    ErgoTreeEvaluator.DefaultEvalSettings.copy(
-      isMeasureOperationTime = true,
-      isMeasureScriptTime = true,
-      isLogEnabled = false, // don't commit the `true` value (travis log is too high)
-      costTracingEnabled = true  // should always be enabled in tests (and false by default)
-    )
+  val evalSettingsInTests = ErgoTreeEvaluator.DefaultEvalSettings.copy(
+    isMeasureOperationTime = true,
+    isMeasureScriptTime = true,
+    isLogEnabled = false, // don't commit the `true` value (travis log is too high)
+    printTestVectors = false, // don't commit the `true` value (travis log is too high)
+    costTracingEnabled = true,  // should always be enabled in tests (and false by default)
+    profilerOpt = Some(ErgoTreeEvaluator.DefaultProfiler),
+    isTestRun = true
+  )
 
-  override val nBenchmarkIters = 1
-  val nWarmUpItersBeforeAll = nBenchmarkIters // total warm-up iterations: should be >= nBenchmarkIters
+  def warmupSettings(p: Profiler) = evalSettingsInTests.copy(
+    isLogEnabled = false,
+    printTestVectors = false,
+    profilerOpt = Some(p)
+  )
 
-  // number of times each test is warmed up
-//  override val perTestWarmUpIters = 10
+  implicit override def evalSettings: EvalSettings = {
+    warmupProfiler match {
+      case Some(p) => warmupSettings(p)
+      case _ => evalSettingsInTests
+    }
+  }
+
+  override val perTestWarmUpIters = 1
+
+  override val nBenchmarkIters = 500
 
   override val okRunTestsWithoutMCLowering: Boolean = true
 
@@ -83,16 +96,6 @@ class SigmaDslSpecification extends SigmaDslTesting
   prepareSamples[(Box, Box)]
   prepareSamples[(PreHeader, PreHeader)]
   prepareSamples[(Header, Header)]
-
-  override protected def beforeAll(): Unit = {
-    val warmUpProfiler = new Profiler
-    warmUpBeforeAllTest(nTotalIters = nWarmUpItersBeforeAll) {
-      val settings = evalSettings.copy(
-        isLogEnabled = false,
-        profilerOpt = Some(warmUpProfiler))
-      runLazy_And_Or_BooleanEquivalence(settings)
-    }
-  }
 
   ///=====================================================
   ///              Boolean type operations

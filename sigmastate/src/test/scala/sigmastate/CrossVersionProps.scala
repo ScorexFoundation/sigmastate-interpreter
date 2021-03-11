@@ -2,13 +2,20 @@ package sigmastate
 
 import org.scalatest.{PropSpecLike, Tag}
 import org.scalactic.source.Position
+import sigmastate.eval.Profiler
 import spire.syntax.all.cfor
+
+import scala.util.DynamicVariable
 
 trait CrossVersionProps extends PropSpecLike with TestsBase {
 
   val printVersions: Boolean = false
+
   /** Number of times each test property is warmed up (i.e. executed before final execution). */
   val perTestWarmUpIters: Int = 0
+
+  private[sigmastate] val _warmupProfiler = new DynamicVariable[Option[Profiler]](None)
+  def warmupProfiler: Option[Profiler] = _warmupProfiler.value
 
   protected def testFun_Run(testName: String, testFun: => Any): Unit = {
     def msg = s"""property("$testName")(ActivatedVersion = $activatedVersionInTests; ErgoTree version = $ergoTreeVersionInTests)"""
@@ -30,8 +37,10 @@ trait CrossVersionProps extends PropSpecLike with TestsBase {
     super.property(testName, testTags:_*) {
       // do warmup if necessary
       if (perTestWarmUpIters > 0) {
-        cfor(0)(_ < perTestWarmUpIters, _ + 1) { _ =>
-          testFun_Run(testName, testFun)
+        _warmupProfiler.withValue(Some(new Profiler)) {
+          cfor(0)(_ < perTestWarmUpIters, _ + 1) { _ =>
+            testFun_Run(testName, testFun)
+          }
         }
         System.gc()
         Thread.sleep(100) // give it some time to finish warm-up
