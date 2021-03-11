@@ -390,7 +390,11 @@ class SigmaDslTesting extends PropSpec
     }
   }
 
-  val nBenchmarkIters: Int = 1
+  /** A number of times the newF function in each test feature is repeated.
+    * In combination with [[sigmastate.eval.Profiler]] it allows to collect more accurate
+    * timings for all operations.
+    * @see SigmaDslSpecification */
+  def nBenchmarkIters: Int = 1
 
   def warmUpBeforeAllTest(nTotalIters: Int)(block: => Unit) = {
     // each test case is executed nBenchmarkIters times in `check` method
@@ -420,43 +424,42 @@ class SigmaDslTesting extends PropSpec
       // check the old implementation against Scala semantic function
       val oldRes = checkEq(scalaFunc)(oldF)(input)
 
-      val res = if (!(newImpl eq oldImpl)) {
-        // check the new implementation against Scala semantic function
-        var newRes: Try[(B, CostDetails)] = null
-        cfor(0)(_ < nBenchmarkIters, _ + 1) { _ =>
-          newRes = checkEq(scalaFunc)(newF)(input)
+      val newRes = checkEq(scalaFunc)({ x =>
+        var y: (B, CostDetails) = null
+        val N = nBenchmarkIters
+        cfor(0)(_ < N, _ + 1) { _ =>
+          y = newF(x)
         }
+        y
+      })(input)
 
-        (oldRes, newRes) match {
-          case (Success((oldRes, CostDetails(oldCost, _))),
-                Success((newRes, CostDetails(newCost, _)))) =>
-            newRes shouldBe oldRes
-            if (newCost != oldCost) {
-              assertResult(true,
-                s"""
-                  |New cost should not exceed old cost: (new: $newCost, old:$oldCost)
-                  |ExistingFeature.checkEquality(
-                  |  script = "$script",
-                  |  compiledTree = "${SigmaPPrint(newF.compiledTree, height = 550, width = 150)}"
-                  |)
-                  |""".stripMargin
-              )(newCost / 20 <= oldCost)
+      (oldRes, newRes) match {
+        case (Success((oldRes, CostDetails(oldCost, _))),
+              Success((newRes, CostDetails(newCost, _)))) =>
+          newRes shouldBe oldRes
+          if (newCost != oldCost) {
+            assertResult(true,
+              s"""
+                |New cost should not exceed old cost: (new: $newCost, old:$oldCost)
+                |ExistingFeature.checkEquality(
+                |  script = "$script",
+                |  compiledTree = "${SigmaPPrint(newF.compiledTree, height = 550, width = 150)}"
+                |)
+                |""".stripMargin
+            )(newCost / 20 <= oldCost)
 
-              if (evalSettings.isLogEnabled) {
-                println(
-                  s"""Different Costs (new: $newCost, old:$oldCost)
-                    |  input = ${SigmaPPrint(input, height = 550, width = 150)}
-                    |  script = "$script"
-                    |
-                    |""".stripMargin)
-              }
+            if (evalSettings.isLogEnabled) {
+              println(
+                s"""Different Costs (new: $newCost, old:$oldCost)
+                  |  input = ${SigmaPPrint(input, height = 550, width = 150)}
+                  |  script = "$script"
+                  |
+                  |""".stripMargin)
             }
-          case _ =>
-            checkResult(rootCause(newRes), rootCause(oldRes), failOnTestVectors = false)
-        }
-        newRes
-      } else
-        oldRes
+          }
+        case _ =>
+          checkResult(rootCause(newRes), rootCause(oldRes), failOnTestVectors = true)
+      }
 
       if (logInputOutput) {
         val scriptComment = if (logScript) " // " + script else ""
@@ -465,7 +468,7 @@ class SigmaDslTesting extends PropSpec
         println(s"($inputStr, $oldResStr),$scriptComment")
       }
 
-      res
+      newRes
     }
 
     /** Depending on the featureType compares the old and new implementations against
@@ -503,7 +506,6 @@ class SigmaDslTesting extends PropSpec
       if (expectedTrace.isEmpty) {
         // new cost expectation is missing, print out actual cost results
         funcRes.foreach { case (_, newCost) =>
-          // uncomment to output actual cost details to be used as test vectors
           printCostDetails(script, newCost)
         }
       }
@@ -743,8 +745,10 @@ class SigmaDslTesting extends PropSpec
       case _ =>
         if (failOnTestVectors) {
           val actual = rootCause(res)
-          val actualPrinted = SigmaPPrint(actual, height = 150).plainText
-          assertResult(expectedRes, s"Actual: $actualPrinted")(actual)
+          if (expectedRes != actual) {
+            val actualPrinted = SigmaPPrint(actual, height = 150).plainText
+            assert(false, s"Actual: $actualPrinted")
+          }
         }
         else {
           if (expectedRes != res) {

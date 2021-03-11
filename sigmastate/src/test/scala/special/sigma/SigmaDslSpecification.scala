@@ -59,8 +59,8 @@ class SigmaDslSpecification extends SigmaDslTesting
       costTracingEnabled = true  // should always be enabled in tests (and false by default)
     )
 
-//  override val nBenchmarkIters = 50  // number of times each test feature is repeated
-  val nBeforeAllWarmUpIters = 1 // total warm-up iterations: should be >= nBenchmarkIters
+  override val nBenchmarkIters = 1
+  val nWarmUpItersBeforeAll = nBenchmarkIters // total warm-up iterations: should be >= nBenchmarkIters
 
   // number of times each test is warmed up
 //  override val perTestWarmUpIters = 10
@@ -86,7 +86,7 @@ class SigmaDslSpecification extends SigmaDslTesting
 
   override protected def beforeAll(): Unit = {
     val warmUpProfiler = new Profiler
-    warmUpBeforeAllTest(nTotalIters = nBeforeAllWarmUpIters) {
+    warmUpBeforeAllTest(nTotalIters = nWarmUpItersBeforeAll) {
       val settings = evalSettings.copy(
         isLogEnabled = false,
         profilerOpt = Some(warmUpProfiler))
