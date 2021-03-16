@@ -4,9 +4,10 @@ import java.math.BigInteger
 
 import gf2t.{GF2_192, GF2_192_Poly}
 import org.bitbucket.inkytonik.kiama.attribution.AttributionCore
-import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, everywheretd, rule}
+import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{rule, everywheretd, everywherebu}
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
 import scalan.util.CollectionUtil._
+import sigmastate.TrivialProp.{TrueProp, FalseProp}
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.basics.DLogProtocol._
@@ -116,7 +117,6 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
             context: CTX,
             message: Array[Byte],
             hintsBag: HintsBag = HintsBag.empty): Try[CostedProverResult] = Try {
-    import TrivialProp._
 
     val initCost = ergoTree.complexity + context.initCost
     val remainingLimit = context.costLimit - initCost
@@ -127,8 +127,15 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
     val ctxUpdInitCost = context.withInitCost(initCost).asInstanceOf[CTX]
 
     val (reducedProp, cost) = fullReduction(ergoTree, ctxUpdInitCost, env)
+    val proof = generateProof(reducedProp, message, hintsBag)
 
-    val proofTree = reducedProp match {
+    CostedProverResult(proof, ctxUpdInitCost.extension, cost)
+  }
+
+  def generateProof(sb: SigmaBoolean,
+                    message: Array[Byte],
+                    hintsBag: HintsBag): Array[Byte] = {
+    val proofTree = sb match {
       case TrueProp => NoProof
       case FalseProp => error("Script reduced to false")
       case sigmaTree =>
@@ -137,9 +144,8 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
     }
     // Prover Step 10: output the right information into the proof
     val proof = SigSerializer.toBytes(proofTree)
-    CostedProverResult(proof, ctxUpdInitCost.extension, cost)
+    proof
   }
-
   /**
     * Prover Step 1: This step will mark as "real" every node for which the prover can produce a real proof.
     * This step may mark as "real" more nodes than necessary if the prover has more than the minimal

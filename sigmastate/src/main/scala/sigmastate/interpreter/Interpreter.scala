@@ -364,7 +364,8 @@ trait Interpreter extends ScorexLogging {
           checkCommitments(sp, message)
       }
     } catch {
-      case e: Exception => log.warn("Improper signature: ", e); false
+      case e: Exception =>
+        log.warn("Improper signature: ", e); false
     }
   }
 
