@@ -275,15 +275,15 @@ trait Interpreter extends ScorexLogging {
         val cost = SigmaBoolean.estimateCost(sb)
         (sb, cost)
       case _ if !ergoTree.hasDeserialize =>
-        val r = precompiledScriptProcessor.getReducer(ergoTree, context.validationSettings)
-        val res = r.reduce(context)
+//        val r = precompiledScriptProcessor.getReducer(ergoTree, context.validationSettings)
+//        val res = r.reduce(context)
         val ctx = context.asInstanceOf[ErgoLikeContext]
           .withInitCost(context.initCost * 10)    // adjust for Evaluator cost units scale
           .withCostLimit(context.costLimit * 10)
         val (v, c) = ErgoTreeEvaluator.evalToCrypto(ctx, ergoTree, evalSettings)
         val jitRes = (v, c / 10) // scale cost back
-        checkResults(ergoTree, res, jitRes)
-        res
+//        checkResults(ergoTree, res, jitRes)
+        jitRes
       case _ =>
         reductionWithDeserialize(ergoTree, prop, context, env)
     }
@@ -328,15 +328,15 @@ trait Interpreter extends ScorexLogging {
                                        context: CTX,
                                        env: ScriptEnv) = {
     implicit val vs: SigmaValidationSettings = context.validationSettings
-    val res = {
-      val (propTree, context2) = trySoftForkable[(BoolValue, CTX)](whenSoftFork = (TrueLeaf, context)) {
-        applyDeserializeContext(context, prop)
-      }
-
-      // here we assume that when `propTree` is TrueProp then `reduceToCrypto` always succeeds
-      // and the rest of the verification is also trivial
-      reduceToCrypto(context2, env, propTree).getOrThrow
-    }
+//    val res = {
+//      val (propTree, context2) = trySoftForkable[(BoolValue, CTX)](whenSoftFork = (TrueLeaf, context)) {
+//        applyDeserializeContext(context, prop)
+//      }
+//
+//      // here we assume that when `propTree` is TrueProp then `reduceToCrypto` always succeeds
+//      // and the rest of the verification is also trivial
+//      reduceToCrypto(context2, env, propTree).getOrThrow
+//    }
     val jitRes = {
       val (propTree, context2) = trySoftForkable[(SigmaPropValue, CTX)](whenSoftFork = (TrueSigmaProp, context)) {
         applyDeserializeContextJITC(context, prop)
@@ -346,8 +346,8 @@ trait Interpreter extends ScorexLogging {
       // and the rest of the verification is also trivial
       reduceToCryptoJITC(context2, env, propTree).getOrThrow
     }
-    checkResults(ergoTree, res, jitRes)
-    res
+//    checkResults(ergoTree, res, jitRes)
+    jitRes
   }
 
   /** Executes the script in a given context.
@@ -406,13 +406,25 @@ trait Interpreter extends ScorexLogging {
 
       val (cProp, cost) = fullReduction(ergoTree, contextWithCost, env)
 
-      val checkingResult = cProp match {
-        case TrivialProp.TrueProp => true
-        case TrivialProp.FalseProp => false
+      val res = cProp match {
+        case TrivialProp.TrueProp => (true, cost)
+        case TrivialProp.FalseProp => (false, cost)
         case _ =>
+          // TODO v5.0: add AOT estimation of sigma proposition verification
+          //  Math.addExact(cost, SigmaBoolean.estimateCostJit(cProp))
+          val fullCost = cost
+          if (fullCost > context.costLimit) {
+            // TODO cover with tests (2h)
+            throw new CostLimitException(
+              estimatedCost = fullCost,
+              message = Evaluation.msgCostLimitError(fullCost, context.costLimit),
+              cause = None)
+          }
+
           // Perform Verifier Steps 1-3
           SigSerializer.parseAndComputeChallenges(cProp, proof) match {
-            case NoProof => false
+            case NoProof =>
+              (false, fullCost)
             case sp: UncheckedSigmaTree =>
               // Perform Verifier Step 4
               val newRoot = computeCommitments(sp).get.asInstanceOf[UncheckedSigmaTree]
@@ -424,10 +436,11 @@ trait Interpreter extends ScorexLogging {
                 * (and, if applicable,  the associated data). Reject otherwise.
                 */
               val expectedChallenge = CryptoFunctions.hashFn(FiatShamirTree.toBytes(newRoot) ++ message)
-              util.Arrays.equals(newRoot.challenge, expectedChallenge)
+              val ok = util.Arrays.equals(newRoot.challenge, expectedChallenge)
+              (ok, fullCost)
           }
       }
-      checkingResult -> cost
+      res
     })
     if (outputComputedResults) {
       res.foreach { case (_, cost) =>
