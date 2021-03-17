@@ -5,10 +5,13 @@ import sigmastate.basics.DLogProtocol.{SecondDLogProverMessage, ProveDlog}
 import sigmastate.basics.VerifierMessage.Challenge
 import sigmastate.Values.SigmaBoolean
 import sigmastate.interpreter.CryptoConstants
-import sigmastate.utils.Helpers
+import sigmastate.utils.{SigmaByteReader, Helpers}
 import Helpers.xor
 import gf2t.GF2_192_Poly
+import scalan.Nullable
 import sigmastate.basics.{SecondDiffieHellmanTupleProverMessage, ProveDHTuple}
+import sigmastate.serialization.SigmaSerializer
+import spire.syntax.all.cfor
 
 object SigSerializer {
 
@@ -137,14 +140,95 @@ object SigSerializer {
           }
 
           // Verifier doesn't need the polynomial anymore -- hence pass in None
-          CThresholdUncheckedNode(challenge, seq, t.k, None) -> (finalPos - pos)
+          CThresholdUncheckedNode(challenge, seq, t.k, Some(polynomial)) -> (finalPos - pos)
       }
     }
 
     if (bytes.isEmpty)
       NoProof
-    else
+    else {
     // Verifier step 1: Read the root challenge from the proof.
-      traverseNode(exp, bytes, 0, challengeOpt = None)._1 // get the root hash, then call
+      val res = traverseNode(exp, bytes, 0, challengeOpt = None)._1 // get the root hash, then call
+      val r = SigmaSerializer.startReader(bytes)
+      val resNew = parseAndComputeChallenges(exp, r, Nullable.None)
+      assert(res == resNew)
+      res
+    }
   }
+
+  /** HOTSPOT: don't beautify the code
+    * Note, Nullable is used instead of Option to avoid allocations. */
+  def parseAndComputeChallenges(exp: SigmaBoolean,
+                                r: SigmaByteReader,
+                                challengeOpt: Nullable[Challenge] = Nullable.None): UncheckedSigmaTree = {
+    // Verifier Step 2: Let e_0 be the challenge in the node here (e_0 is called "challenge" in the code)
+    val challenge = if (challengeOpt.isEmpty) {
+      Challenge @@ r.getBytes(hashSize)
+    } else {
+      challengeOpt.get
+    }
+
+    exp match {
+      case dl: ProveDlog =>
+        // Verifier Step 3: For every leaf node, read the response z provided in the proof.
+        val z = BigIntegers.fromUnsignedByteArray(r.getBytes(order))
+        UncheckedSchnorr(dl, None, challenge, SecondDLogProverMessage(z))
+
+      case dh: ProveDHTuple =>
+        // Verifier Step 3: For every leaf node, read the response z provided in the proof.
+        val z = BigIntegers.fromUnsignedByteArray(r.getBytes(order))
+        UncheckedDiffieHellmanTuple(dh, None, challenge, SecondDiffieHellmanTupleProverMessage(z))
+
+      case and: CAND =>
+        // Verifier Step 2: If the node is AND, then all of its children get e_0 as the challenge
+        val nChildren = and.children.length
+        val children = new Array[UncheckedSigmaTree](nChildren)
+        cfor(0)(_ < nChildren, _ + 1) { i =>
+          children(i) = parseAndComputeChallenges(and.children(i), r, Nullable(challenge))
+        }
+        CAndUncheckedNode(challenge, children)
+
+      case or: COR =>
+        // Verifier Step 2: If the node is OR, then each of its children except rightmost
+        // one gets the challenge given in the proof for that node.
+        // The rightmost child gets a challenge computed as an XOR of the challenges of all the other children and e_0.
+
+        // Read all the children but the last and compute the XOR of all the challenges including e_0
+        val nChildren = or.children.length
+        val children = new Array[UncheckedSigmaTree](nChildren)
+        val xorBuf = challenge.clone()
+        val iLastChild = nChildren - 1
+        cfor(0)(_ < iLastChild, _ + 1) { i =>
+          val parsedChild = parseAndComputeChallenges(or.children(i), r, Nullable.None)
+          children(i) = parsedChild
+          Helpers.xorU(xorBuf, parsedChild.challenge) // xor it into buffer
+        }
+        val lastChild = or.children(iLastChild)
+
+        // use the computed XOR for last child's challenge
+        children(iLastChild) = parseAndComputeChallenges(
+          lastChild, r, challengeOpt = Nullable(Challenge @@ xorBuf))
+
+        COrUncheckedNode(challenge, children)
+
+      case t: CTHRESHOLD =>
+        // Verifier Step 2: If the node is THRESHOLD,
+        // evaluate the polynomial Q(x) at points 1, 2, ..., n to get challenges for child 1, 2, ..., n, respectively.
+
+        // Read the polynomial -- it has n-k coefficients
+        val nChildren = t.children.length
+        val coeffBytes = r.getBytes(hashSize * (nChildren - t.k))
+        val polynomial = GF2_192_Poly.fromByteArray(challenge, coeffBytes)
+
+        val children = new Array[UncheckedSigmaTree](nChildren)
+        cfor(0)(_ < nChildren, _ + 1) { i =>
+          val c = Challenge @@ polynomial.evaluate((i + 1).toByte).toByteArray
+          children(i) = parseAndComputeChallenges(t.children(i), r, Nullable(c))
+        }
+
+        // Verifier doesn't need the polynomial anymore -- hence pass in None
+        CThresholdUncheckedNode(challenge, children, t.k, Some(polynomial))
+    }
+  }
+
 }
