@@ -103,6 +103,9 @@ object SigmaPPrint extends PPrinter {
     case v: BigInteger =>
       Tree.Apply("new BigInteger", treeifyMany(v.toString(16), 16))
 
+    case v: BigInt =>
+      Tree.Apply("BigInt", treeifyMany(v.toString(16), 16))
+
     case wa: mutable.WrappedArray[Byte @unchecked] if wa.elemTag == ClassTag.Byte =>
       treeifyByteArray(wa.array)
 
