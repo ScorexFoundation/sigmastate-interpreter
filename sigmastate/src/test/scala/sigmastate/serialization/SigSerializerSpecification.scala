@@ -107,10 +107,16 @@ class SigSerializerSpecification extends SigmaTestingCommons
     }
   }
 
+  /** This is used to represent related test vectors to test:
+    * - SigSerializer.toBytes
+    * - SigSerializer.parseAndComputeChallenges
+    * - FiatShamirTree.toBytes
+    */
   case class ProofTestCase(
     prop: SigmaBoolean,
     proof: Array[Byte],
-    uncheckedTree: UncheckedTree
+    uncheckedTree: UncheckedTree,
+    fiatShamirHex: String = ""
   )
 
   property("SigSerializer test vectors")  {
@@ -131,7 +137,8 @@ class SigSerializerSpecification extends SigmaTestingCommons
           SecondDLogProverMessage(
             BigInt("b277b8462a8b9098f5d4c934ab2876eb1b5707f3119e209bdbbad831e7cc4a41", 16)
           )
-        )
+        ),
+        fiatShamirHex = "010027100108cd02e8e77123e300f8324e7b5c4cbe0f7ac616e0b78fc45f28f54fa6696231fc8ec373000021021d30cef8084f8659e9734099bf8e6faa89d81f908c3a62e7638da7b2a33822fc"
       ),
       ProofTestCase(
         ProveDHTuple(
@@ -155,7 +162,8 @@ class SigSerializerSpecification extends SigmaTestingCommons
           SecondDiffieHellmanTupleProverMessage(
             new BigInteger("bb2e6f44a38052b3f564fafcd477c4eb8cda1a8a553a4a5f38f1e1084d6a69f0", 16)
           )
-        )
+        ),
+        "01008a100108ce0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798024ebfeb5a2b6ad997e40efb4888b3f091a611df8298cf7fb24315b4d112ad7c3c03d41afc8c5875a8d52439d088b66ed63a5d64f16e1efd7f17c6036a923c637e5c034132d4c7eb387f12ef40ba3ec03723bda0ee5707f7471185aafc316167e851377300004203724c887a207569c4648a81bc2d66bddeefe14b3ed259ee320773ec0c7df714490338360ba3350c16c42839878fc13b641c0a67372c4217e2ceafe1d40405f03708"
       ),
       ProofTestCase(
         CAND(
@@ -199,7 +207,8 @@ class SigSerializerSpecification extends SigmaTestingCommons
               )
             )
           )
-        )
+        ),
+        "00000002010027100108cd03670a10fcf68531423e3aa8bdad2d755eb5363ac53068e80d44578861f80abef373000021024fc32f5fc7dad49005dc86b8ad95975d62ee4336cdddd4de8868414211370320010027100108cd0249829d9ca70fa3974c1354d7d112390e07b826032c5a7c3bc39e56b3f480bb877300002103f084eb45540454909d3e793d876262fa184f90412c33a046a0b1c4d7c8933f67"
       ),
       ProofTestCase(
         COR(
@@ -243,7 +252,8 @@ class SigSerializerSpecification extends SigmaTestingCommons
               )
             )
           )
-        )
+        ),
+        "00010002010027100108cd0344789e3a797e713103f2a8edd673fac35e56d414c584e575aaa750f3e8728b5b730000210207700723f7cf3a94782a56d9366f3916c548616edf9bcbaecb892f8a52b28836010027100108cd0249829d9ca70fa3974c1354d7d112390e07b826032c5a7c3bc39e56b3f480bb8773000021039072557976001866ac8a1a6a8bd921e5b18171b195e6dabffff667f9a88ab9a2"
       ),
       ProofTestCase(
         COR(
@@ -307,7 +317,8 @@ class SigSerializerSpecification extends SigmaTestingCommons
               )
             )
           )
-        )
+        ),
+        "0001000201008a100108ce0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f8179803a5f4c3b8217557514df3df8537ca13f991b11538935b2ea407e8b24afcabe509029837d12c86c29c92e74229dfd3fcb10933b696685209b14baa74dbabacb2dee503f17cefec3911966dc9952090325267a5cf7f9b0be76b02623021989d7f0007a273000042035e192266f309bebe0a3e50f96f8161ad4dbd6136771619b7560b8ea4271ff2be036ebbb7e8e91546c16a41d79971d81513813416c06ef4ee92825065c484f43c6f00010002010027100108cd03f997167c03aa234732e3a68126b371dffa1e409f62ca8fa18cea6acd1dbe54d573000021031a93fccb6536b097682276ec047138f95ad05369b8bd24d73ecdc46571b5a7e601008a100108ce0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f8179803f5921dde02233135665d006838fcb783deca634ee333c5541cc05a9012e684ee039b65625db7aad6d86599355b7cac785e6b5ac85b8a32e0d6927b324704d0a26102fc58b939b105231da101540c87e56f5703460c179935aaee47137f3c367904f1730000420359bc0180bf8e1df00dd5021dd43cb52acd5612fa5baa3d517222a514ed7e4d1903de533bce02969892436e113cad7270de0b3d051035629abd645d3470928f3700"
       ),
       ProofTestCase(
         COR(
@@ -397,15 +408,32 @@ class SigSerializerSpecification extends SigmaTestingCommons
               )
             )
           )
-        )
+        ),
+        "0001000200000002010027100108cd0368c0d88d9eb2972bbfc23c961de6307f6a944352cbfe316f262401feabdaa87d7300002102628c0e33748b2e120536945d77e69b3fb5fb3878c5697c20bf70b8459f476e4b01008a100108ce0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f8179802badd523c2f5c12f4a3d4d667efb6ce8e95c8ad007cc697c34e91884335b5524902c455e55dc7bc731c5a487778e84814080fb70cc59957bc2a40c45373fe1ce14c029d4ec275379f9212a53e15994aef203dcec43a177c0b1f40afcf592e5753ce6773000042030064fb366dce2d424a14308d2c3d562f3558b042250cc28eab47a594efdec9c603787ca34604619468b3c677e2887a0de382a093264729a15ace38f1e3be20fd0f0001000201008a100108ce0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f8179802a5af61e5c0eaad47ffdf29a91afffb1791295fff434831802e7f36b885fc2aa703a9aa914199bb0e3b00ff4dd6ff82ec34d5f451825c28c41dc6432c763b6061e20315d84dba1b29074f766e57bb11843687da899180cf2487ccecd0a3ec5f05365a7300004202f718c7ac18b4d942056b7237809f843811a04314044d6dd517022f6d15198c4e0329ecb543ea406fda96d3088196f4490cacdea49286c954ea2924523a57847a7d01008a100108ce0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f8179802a5af61e5c0eaad47ffdf29a91afffb1791295fff434831802e7f36b885fc2aa703a9aa914199bb0e3b00ff4dd6ff82ec34d5f451825c28c41dc6432c763b6061e20315d84dba1b29074f766e57bb11843687da899180cf2487ccecd0a3ec5f05365a73000042021cc93df3de5b405ee306f5c7003b6abbfb7b4d0ab356c36d0c454a4c6b3403f603608a98d8aa0781ec96970353b4e22ae05454833528ae8f8468d0a8fc3f92675a"
       )
     )
 
-    cases.foreach { c =>
+    cases.zipWithIndex.foreach { case (c, iCase) =>
       val sigBytes = SigSerializer.toBytes(c.uncheckedTree)
       sigBytes shouldBe c.proof
       val uncheckedTree = SigSerializer.parseAndComputeChallenges(c.prop, c.proof)
       uncheckedTree shouldBe c.uncheckedTree
+
+      // this step is performed in Interpreter.checkCommitments
+      val newRoot = prover.computeCommitments(c.uncheckedTree).get.asInstanceOf[UncheckedSigmaTree]
+      val fiatShamirBytes = FiatShamirTree.toBytes(newRoot)
+      val hex = ErgoAlgos.encode(fiatShamirBytes)
+
+      if (c.fiatShamirHex.isEmpty) {
+        // output test vector
+        val vector = sigmastate.helpers.SigmaPPrint(hex, width = 150, height = 150)
+        println(
+          s"""case $iCase: -------------------------
+            |hex: $vector
+            |""".stripMargin)
+      }
+
+      hex shouldBe c.fiatShamirHex
     }
   }
 }
