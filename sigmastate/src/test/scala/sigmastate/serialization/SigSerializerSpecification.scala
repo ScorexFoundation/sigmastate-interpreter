@@ -3,15 +3,16 @@ package sigmastate.serialization
 import java.math.BigInteger
 import java.util
 
+import gf2t.GF2_192_Poly
 import org.ergoplatform.settings.ErgoAlgos
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.Assertion
 import sigmastate.Values.SigmaBoolean
 import sigmastate._
-import sigmastate.basics.DLogProtocol.{ProveDlog, SecondDLogProverMessage}
+import sigmastate.basics.DLogProtocol.{SecondDLogProverMessage, ProveDlog}
 import sigmastate.basics.VerifierMessage.Challenge
 import sigmastate.basics.{SecondDiffieHellmanTupleProverMessage, ProveDHTuple}
-import sigmastate.helpers.{ErgoLikeTransactionTesting, ErgoLikeContextTesting, SigmaTestingCommons, ContextEnrichingTestProvingInterpreter}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, SigmaTestingCommons, ErgoLikeTransactionTesting}
 import sigmastate.interpreter.Interpreter
 import sigmastate.serialization.generators.ObjectGenerators
 import sigmastate.utils.Helpers
@@ -37,10 +38,9 @@ class SigSerializerSpecification extends SigmaTestingCommons
     third <- exprTreeGen
     node <- Gen.oneOf(
       COR(Array(left, right)),
-      CAND(Array(left, right))
-      // TODO v5.0: uncomment to test property("SigSerializer round trip")
-      // CTHRESHOLD(2, Array(left, right, third))
-    )
+      CAND(Array(left, right)),
+      CTHRESHOLD(2, Array(left, right, third))
+    ) if SigmaBoolean.estimateCost(node) <= 100000 // limit size of the generated tree
   } yield node
 
   private def exprTreeGen: Gen[SigmaBoolean] =
@@ -91,10 +91,11 @@ class SigSerializerSpecification extends SigmaTestingCommons
         val prop = prover.fullReduction(tree, ctx, Interpreter.emptyEnv)._1
 
         val proof = prover.prove(tree, ctx, challenge).get.proof
-        val proofTree = SigSerializer.parseAndComputeChallenges(prop, proof)
-        roundTrip(proofTree, prop)
+        val uncheckedTree = SigSerializer.parseAndComputeChallenges(prop, proof)
+        roundTrip(uncheckedTree, prop)
 // uncomment to print more useful test cases
-//        val testCase = ProofTestCase(prop, proof, proofTree)
+//        val fiatShamirHex = getFiatShamirHex(uncheckedTree)
+//        val testCase = ProofTestCase(prop, proof, uncheckedTree, fiatShamirHex)
 //        println(
 //          s"""-------------------------------
 //            |${sigmastate.helpers.SigmaPPrint(testCase, width = 150, height = 150)}
@@ -118,6 +119,15 @@ class SigSerializerSpecification extends SigmaTestingCommons
     uncheckedTree: UncheckedTree,
     fiatShamirHex: String = ""
   )
+
+  /** This steps are performed in Interpreter.checkCommitments and should be in sync with
+    * that code. */
+  def getFiatShamirHex(uncheckedTree: UncheckedTree): String = {
+    val newRoot = prover.computeCommitments(uncheckedTree).get.asInstanceOf[UncheckedSigmaTree]
+    val fiatShamirBytes = FiatShamirTree.toBytes(newRoot)
+    val hex = ErgoAlgos.encode(fiatShamirBytes)
+    hex
+  }
 
   property("SigSerializer test vectors")  {
     val cases = Seq(
@@ -410,6 +420,70 @@ class SigSerializerSpecification extends SigmaTestingCommons
           )
         ),
         "0001000200000002010027100108cd0368c0d88d9eb2972bbfc23c961de6307f6a944352cbfe316f262401feabdaa87d7300002102628c0e33748b2e120536945d77e69b3fb5fb3878c5697c20bf70b8459f476e4b01008a100108ce0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f8179802badd523c2f5c12f4a3d4d667efb6ce8e95c8ad007cc697c34e91884335b5524902c455e55dc7bc731c5a487778e84814080fb70cc59957bc2a40c45373fe1ce14c029d4ec275379f9212a53e15994aef203dcec43a177c0b1f40afcf592e5753ce6773000042030064fb366dce2d424a14308d2c3d562f3558b042250cc28eab47a594efdec9c603787ca34604619468b3c677e2887a0de382a093264729a15ace38f1e3be20fd0f0001000201008a100108ce0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f8179802a5af61e5c0eaad47ffdf29a91afffb1791295fff434831802e7f36b885fc2aa703a9aa914199bb0e3b00ff4dd6ff82ec34d5f451825c28c41dc6432c763b6061e20315d84dba1b29074f766e57bb11843687da899180cf2487ccecd0a3ec5f05365a7300004202f718c7ac18b4d942056b7237809f843811a04314044d6dd517022f6d15198c4e0329ecb543ea406fda96d3088196f4490cacdea49286c954ea2924523a57847a7d01008a100108ce0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f8179802a5af61e5c0eaad47ffdf29a91afffb1791295fff434831802e7f36b885fc2aa703a9aa914199bb0e3b00ff4dd6ff82ec34d5f451825c28c41dc6432c763b6061e20315d84dba1b29074f766e57bb11843687da899180cf2487ccecd0a3ec5f05365a73000042021cc93df3de5b405ee306f5c7003b6abbfb7b4d0ab356c36d0c454a4c6b3403f603608a98d8aa0781ec96970353b4e22ae05454833528ae8f8468d0a8fc3f92675a"
+      ),
+      ProofTestCase(
+        CTHRESHOLD(
+          2,
+          Array(
+            ProveDlog(Helpers.decodeECPoint("03a5a5234701fff48be4ed1b3e1fab446657eeddb52e2573c52b9c4021f2403866")),
+            ProveDHTuple(
+              Helpers.decodeECPoint("0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798"),
+              Helpers.decodeECPoint("036b52166c82e61d0954d521a8a8a20af0eb1adb7f23a9c3ee1ebac1242e35ac18"),
+              Helpers.decodeECPoint("0339a5debbb2bb67aa560e98dbfc4050e8ca0643683314cd1bc911f11c5477a312"),
+              Helpers.decodeECPoint("02730455ebb8c01a89dced09c5253c9bfa4b1471d1068ba30ab226104a6551c461")
+            ),
+            ProveDHTuple(
+              Helpers.decodeECPoint("0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798"),
+              Helpers.decodeECPoint("029775461de9886800dac39ef14f535e38dc3b2719770d69627007aee9f638e918"),
+              Helpers.decodeECPoint("02fdc07913da5615db53a0351a47131832d77e29c6520248e82a568d02b09d4604"),
+              Helpers.decodeECPoint("03cefefa1511430ca2a873759107085f269f6fbcd4e836db7760749f52b7f7923a")
+            )
+          )
+        ),
+        ErgoAlgos.decodeUnsafe(
+          "c94696c3e3089d9fd1174c18e6dd22f1be8003bbea08011fcf39310e7c9049c1c9966198b8d63a2f19e98843b81b74399f662dba4e764cd548406dd180453dd1bc0e24562f0184d189ca25a41ca8b54ada857dd649d3228a8c359ac499d430ecada3f92d5206cddeffb16248068c1003477d717e04afbf206c87a59ce5263ee7cc4020b5772d91b1df00bd72b15347fd"
+        ),
+        CThresholdUncheckedNode(
+          Challenge @@ ErgoAlgos.decodeUnsafe("c94696c3e3089d9fd1174c18e6dd22f1be8003bbea08011f"),
+          List(
+            UncheckedSchnorr(
+              ProveDlog(Helpers.decodeECPoint("03a5a5234701fff48be4ed1b3e1fab446657eeddb52e2573c52b9c4021f2403866")),
+              None,
+              Challenge @@ ErgoAlgos.decodeUnsafe("067fa7cd9f98d45e18812d805e0b18dea7698bf852137526"),
+              SecondDLogProverMessage(BigInt("9f662dba4e764cd548406dd180453dd1bc0e24562f0184d189ca25a41ca8b54a", 16))
+            ),
+            UncheckedDiffieHellmanTuple(
+              ProveDHTuple(
+                Helpers.decodeECPoint("0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798"),
+                Helpers.decodeECPoint("036b52166c82e61d0954d521a8a8a20af0eb1adb7f23a9c3ee1ebac1242e35ac18"),
+                Helpers.decodeECPoint("0339a5debbb2bb67aa560e98dbfc4050e8ca0643683314cd1bc911f11c5477a312"),
+                Helpers.decodeECPoint("02730455ebb8c01a89dced09c5253c9bfa4b1471d1068ba30ab226104a6551c461")
+              ),
+              None,
+              Challenge @@ ErgoAlgos.decodeUnsafe("5735f4df1b280e1d423a8f28977057af8c52123c9a3fe96d"),
+              SecondDiffieHellmanTupleProverMessage(new BigInteger("da857dd649d3228a8c359ac499d430ecada3f92d5206cddeffb16248068c1003", 16))
+            ),
+            UncheckedDiffieHellmanTuple(
+              ProveDHTuple(
+                Helpers.decodeECPoint("0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798"),
+                Helpers.decodeECPoint("029775461de9886800dac39ef14f535e38dc3b2719770d69627007aee9f638e918"),
+                Helpers.decodeECPoint("02fdc07913da5615db53a0351a47131832d77e29c6520248e82a568d02b09d4604"),
+                Helpers.decodeECPoint("03cefefa1511430ca2a873759107085f269f6fbcd4e836db7760749f52b7f7923a")
+              ),
+              None,
+              Challenge @@ ErgoAlgos.decodeUnsafe("980cc5d167b847dc8baceeb02fa66d8095bb9a7f22249d54"),
+              SecondDiffieHellmanTupleProverMessage(new BigInteger("477d717e04afbf206c87a59ce5263ee7cc4020b5772d91b1df00bd72b15347fd", 16))
+            )
+          ),
+          2,
+          Some(
+            GF2_192_Poly.fromByteArray(
+              ErgoAlgos.decodeUnsafe("c94696c3e3089d9fd1174c18e6dd22f1be8003bbea08011f"),
+              ErgoAlgos.decodeUnsafe("cf39310e7c9049c1c9966198b8d63a2f19e98843b81b7439")
+            )
+          )
+        ),
+        "0002020003010027100108cd03a5a5234701fff48be4ed1b3e1fab446657eeddb52e2573c52b9c4021f2403866730000210337af2d4066efa710279bcf8e1e53bb0cc7a164d04b5b1734f182fc33517a1aa701008a100108ce0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798036b52166c82e61d0954d521a8a8a20af0eb1adb7f23a9c3ee1ebac1242e35ac180339a5debbb2bb67aa560e98dbfc4050e8ca0643683314cd1bc911f11c5477a31202730455ebb8c01a89dced09c5253c9bfa4b1471d1068ba30ab226104a6551c46173000042033569a1a0dc21c510fb415b8cf11bc79d40ba0c9344ac4f6d031e0cefb0c5a86a039e35b6fde9f8443e18527807007619874abcc5a6d28d8ad9324bf89749d2f72901008a100108ce0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798029775461de9886800dac39ef14f535e38dc3b2719770d69627007aee9f638e91802fdc07913da5615db53a0351a47131832d77e29c6520248e82a568d02b09d460403cefefa1511430ca2a873759107085f269f6fbcd4e836db7760749f52b7f7923a7300004203e4ffc0fd026f9b9ab6d80d13e453f14caf09b1157ffca8d3da899b52f6b10d1603e119655077c1fda14ab47138496b50f4e7305edbfd0a6925952a4650d4f2729f"
       )
     )
 
@@ -419,10 +493,7 @@ class SigSerializerSpecification extends SigmaTestingCommons
       val uncheckedTree = SigSerializer.parseAndComputeChallenges(c.prop, c.proof)
       uncheckedTree shouldBe c.uncheckedTree
 
-      // this step is performed in Interpreter.checkCommitments
-      val newRoot = prover.computeCommitments(c.uncheckedTree).get.asInstanceOf[UncheckedSigmaTree]
-      val fiatShamirBytes = FiatShamirTree.toBytes(newRoot)
-      val hex = ErgoAlgos.encode(fiatShamirBytes)
+      val hex = getFiatShamirHex(c.uncheckedTree)
 
       if (c.fiatShamirHex.isEmpty) {
         // output test vector
