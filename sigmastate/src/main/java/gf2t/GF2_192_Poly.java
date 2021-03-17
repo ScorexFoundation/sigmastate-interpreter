@@ -29,6 +29,8 @@
 
 package gf2t;
 
+import java.util.Arrays;
+
 public class GF2_192_Poly {
     private final GF2_192 [] c; // must be not null and of length at least 1
 
@@ -226,5 +228,20 @@ public class GF2_192_Poly {
      */
     public  byte[] coeff0Bytes() {
         return c[0].toByteArray();
+    }
+
+    @Override
+    public int hashCode() {
+        return 31 * Arrays.deepHashCode(c) + deg;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj instanceof GF2_192_Poly) {
+            GF2_192_Poly that = (GF2_192_Poly)obj;
+            return Arrays.deepEquals(c, that.c) && deg == that.deg;
+        }
+        return false;
     }
 }
