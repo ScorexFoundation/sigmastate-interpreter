@@ -137,7 +137,7 @@ object SigSerializer {
           }
 
           // Verifier doesn't need the polynomial anymore -- hence pass in None
-          CThresholdUncheckedNode(challenge, seq, t.k, None) -> (finalPos - pos)
+          CThresholdUncheckedNode(challenge, seq, t.k, Some(polynomial)) -> (finalPos - pos)
       }
     }
 
