@@ -28,16 +28,29 @@
  */
 package gf2t;
 
+import java.util.Arrays;
+
 public class GF2_192 {
     private final long [] word = new long[3];
 
     /**
      *
-     * @param that the field element with which to compare
+     * @param obj the field element with which to compare
      * @return true if and only if this and that represent the same field element
      */
-    public boolean equals(GF2_192 that) {
-        return this.word[0]==that.word[0] && this.word[1]==that.word[1] && this.word[2]==that.word[2];
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true; // equal references
+        if (obj instanceof GF2_192) {
+            GF2_192 that = (GF2_192)obj;
+            return this.word[0]==that.word[0] && this.word[1]==that.word[1] && this.word[2]==that.word[2];
+        }
+        return false; // different types
+    }
+
+    @Override
+    public int hashCode() {
+        return Arrays.hashCode(word);
     }
 
     // using irreducible polynomial x^192+x^7+x^2+x+1
