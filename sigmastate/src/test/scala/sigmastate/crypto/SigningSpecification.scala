@@ -29,6 +29,15 @@ class SigningSpecification extends SigmaTestingCommons {
     printSimpleSignature(msg: Array[Byte])
   }
 
+  property("handle improper signature") {
+    val pi = new ErgoLikeTestProvingInterpreter()
+    val sigmaTree: SigmaBoolean = pi.publicKeys.head
+    val verifier = new ErgoLikeTestInterpreter
+    val msg = "any message".getBytes("UTF-8")
+    val sig = "invalid signature".getBytes("UTF-8")
+    verifier.verifySignature(sigmaTree, msg, sig) shouldBe false
+  }
+
   property("threshold signature test vector") {
 
     val msg = Base16.decode("1dc01772ee0171f5f614c673e3c7fa1107a8cf727bdf5a6dadb379e93c0d1d00").get
