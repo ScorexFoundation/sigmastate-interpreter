@@ -4,10 +4,10 @@ import java.math.BigInteger
 
 import gf2t.{GF2_192, GF2_192_Poly}
 import org.bitbucket.inkytonik.kiama.attribution.AttributionCore
-import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{rule, everywheretd, everywherebu}
+import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, everywheretd, rule}
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
 import scalan.util.CollectionUtil._
-import sigmastate.TrivialProp.{TrueProp, FalseProp}
+import sigmastate.TrivialProp.{FalseProp, TrueProp}
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.basics.DLogProtocol._

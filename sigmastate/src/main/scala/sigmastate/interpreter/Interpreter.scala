@@ -364,8 +364,12 @@ trait Interpreter extends ScorexLogging {
           checkCommitments(sp, message)
       }
     } catch {
-      case e: Exception =>
-        log.warn("Improper signature: ", e); false
+      case t: Throwable =>
+        // TODO coverage: property("handle improper signature") doesn't lead to exception
+        //  because the current implementation of parseAndComputeChallenges doesn't check
+        //  signature format
+        log.warn("Improper signature: ", t);
+        false
     }
   }
 

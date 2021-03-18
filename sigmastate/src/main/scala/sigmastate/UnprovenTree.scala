@@ -213,7 +213,7 @@ object FiatShamirTree {
   val internalNodePrefix = 0: Byte
   val leafPrefix = 1: Byte
 
-  // TODO optimize: this serialization is not the hot path during verification
+  // TODO optimize: this serialization is on the hot path during verification
   /** HOTSPOT: */
   def toBytes(tree: ProofTree): Array[Byte] = {
 
