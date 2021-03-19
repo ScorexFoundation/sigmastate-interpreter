@@ -87,6 +87,14 @@ class SigmaByteWriter(val w: Writer,
     w.putBytes(xs); this
   }
 
+  /** Put the two bytes of the big-endian representation of the Short value into the
+   * writer. */
+  @inline def putShortBytes(value: Short): this.type = {
+    w.put((value >> 8).toByte)
+    w.put(value.toByte)
+    this
+  }
+
   @inline def putBits(xs: Array[Boolean]): this.type = { w.putBits(xs); this }
   @inline def putBits(xs: Array[Boolean], info: DataInfo[Bits]): this.type = {
     ValueSerializer.addArgInfo(info)
