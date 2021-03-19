@@ -341,7 +341,7 @@ trait Interpreter extends ScorexLogging {
              context: CTX,
              proof: ProofT,
              message: Array[Byte]): Try[VerificationResult] = {
-    verify(Interpreter.emptyEnv, ergoTree, context, SigSerializer.toBytes(proof), message)
+    verify(Interpreter.emptyEnv, ergoTree, context, SigSerializer.toProofBytes(proof), message)
   }
 
   /**
