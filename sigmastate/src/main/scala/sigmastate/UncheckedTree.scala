@@ -40,15 +40,17 @@ case class UncheckedSchnorr(override val proposition: ProveDlog,
 
   override def equals(obj: Any): Boolean = (this eq obj.asInstanceOf[AnyRef]) || (obj match {
     case x: UncheckedSchnorr =>
-      util.Arrays.equals(challenge, x.challenge) &&
-        commitmentOpt == x.commitmentOpt &&
+      // NOTE, proposition is not compared because it is included into challenge
+      // like `challenge = hash(prop ++ msg)`
+      commitmentOpt == x.commitmentOpt &&
+        util.Arrays.equals(challenge, x.challenge) &&
         secondMessage == x.secondMessage
     case _ => false
   })
 
   override def hashCode(): Int = {
-    var h = util.Arrays.hashCode(challenge)
-    h = 31 * h + commitmentOpt.hashCode()
+    var h = commitmentOpt.hashCode()
+    h = 31 * h + util.Arrays.hashCode(challenge)
     h = 31 * h + secondMessage.hashCode()
     h
   }
@@ -63,16 +65,16 @@ case class UncheckedDiffieHellmanTuple(override val proposition: ProveDHTuple,
 
   override def equals(obj: Any): Boolean = (this eq obj.asInstanceOf[AnyRef]) || (obj match {
     case x: UncheckedDiffieHellmanTuple =>
-      proposition == x.proposition &&
-        commitmentOpt == x.commitmentOpt &&
+      // NOTE, proposition is not compared because it is included into challenge
+      // like `challenge = hash(prop ++ msg)`
+      commitmentOpt == x.commitmentOpt &&
         util.Arrays.equals(challenge, x.challenge) &&
         secondMessage == x.secondMessage
     case _ => false
   })
 
   override def hashCode(): Int = {
-    var h = proposition.hashCode()
-    h = 31 * h + commitmentOpt.hashCode()
+    var h = commitmentOpt.hashCode()
     h = 31 * h + util.Arrays.hashCode(challenge)
     h = 31 * h + secondMessage.hashCode()
     h
