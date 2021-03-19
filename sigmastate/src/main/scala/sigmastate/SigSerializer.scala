@@ -2,7 +2,6 @@ package sigmastate
 
 import gf2t.GF2_192_Poly
 import org.bouncycastle.util.BigIntegers
-import scalan.Nullable
 import sigmastate.Values.SigmaBoolean
 import sigmastate.basics.DLogProtocol.{ProveDlog, SecondDLogProverMessage}
 import sigmastate.basics.VerifierMessage.Challenge
@@ -111,7 +110,7 @@ object SigSerializer {
     else {
       // Verifier step 1: Read the root challenge from the proof.
       val r = SigmaSerializer.startReader(proof)
-      val res = parseAndComputeChallenges(exp, r, Nullable.None)
+      val res = parseAndComputeChallenges(exp, r, null)
       res
     }
   }
@@ -132,12 +131,12 @@ object SigSerializer {
   def parseAndComputeChallenges(
         exp: SigmaBoolean,
         r: SigmaByteReader,
-        challengeOpt: Nullable[Challenge] = Nullable.None): UncheckedSigmaTree = {
+        challengeOpt: Challenge = null): UncheckedSigmaTree = {
     // Verifier Step 2: Let e_0 be the challenge in the node here (e_0 is called "challenge" in the code)
-    val challenge = if (challengeOpt.isEmpty) {
+    val challenge = if (challengeOpt == null) {
       Challenge @@ r.getBytes(hashSize)
     } else {
-      challengeOpt.get
+      challengeOpt
     }
 
     exp match {
@@ -156,7 +155,7 @@ object SigSerializer {
         val nChildren = and.children.length
         val children = new Array[UncheckedSigmaTree](nChildren)
         cfor(0)(_ < nChildren, _ + 1) { i =>
-          children(i) = parseAndComputeChallenges(and.children(i), r, Nullable(challenge))
+          children(i) = parseAndComputeChallenges(and.children(i), r, challenge)
         }
         CAndUncheckedNode(challenge, children)
 
@@ -171,7 +170,7 @@ object SigSerializer {
         val xorBuf = challenge.clone()
         val iLastChild = nChildren - 1
         cfor(0)(_ < iLastChild, _ + 1) { i =>
-          val parsedChild = parseAndComputeChallenges(or.children(i), r, Nullable.None)
+          val parsedChild = parseAndComputeChallenges(or.children(i), r, null)
           children(i) = parsedChild
           Helpers.xorU(xorBuf, parsedChild.challenge) // xor it into buffer
         }
@@ -179,7 +178,7 @@ object SigSerializer {
 
         // use the computed XOR for last child's challenge
         children(iLastChild) = parseAndComputeChallenges(
-          lastChild, r, challengeOpt = Nullable(Challenge @@ xorBuf))
+          lastChild, r, challengeOpt = Challenge @@ xorBuf)
 
         COrUncheckedNode(challenge, children)
 
@@ -195,7 +194,7 @@ object SigSerializer {
         val children = new Array[UncheckedSigmaTree](nChildren)
         cfor(0)(_ < nChildren, _ + 1) { i =>
           val c = Challenge @@ polynomial.evaluate((i + 1).toByte).toByteArray
-          children(i) = parseAndComputeChallenges(t.children(i), r, Nullable(c))
+          children(i) = parseAndComputeChallenges(t.children(i), r, c)
         }
 
         // Verifier doesn't need the polynomial anymore -- hence pass in None
