@@ -33,7 +33,7 @@ class CalcSha256Specification extends SigmaTestingCommons
     forAll(objects) { (in, result) =>
       val expectedResult = decodeString(result)
       val calcSha256 = EQ(CalcSha256(stringToByteConstant(in)), expectedResult)
-      val res = int.reduceToCrypto(ctx, calcSha256.toSigmaProp).get._1
+      val res = int.reduceToCrypto(ctx, calcSha256.toSigmaProp).get.value
       res shouldBe TrivialProp.TrueProp
     }
   }

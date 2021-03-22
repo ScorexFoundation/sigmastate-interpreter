@@ -89,7 +89,7 @@ class SigSerializerSpecification extends SigmaTestingCommons
       try {
         // get sigma conjectures out of transformers
         val tree = mkTestErgoTree(expr)
-        val prop = prover.fullReduction(tree, ctx, Interpreter.emptyEnv)._1
+        val prop = prover.fullReduction(tree, ctx, Interpreter.emptyEnv).value
 
         val proof = prover.prove(tree, ctx, challenge).get.proof
         val uncheckedTree = SigSerializer.parseAndComputeChallenges(prop, proof)

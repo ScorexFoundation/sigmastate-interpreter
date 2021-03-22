@@ -183,7 +183,7 @@ trait Interpreter extends ScorexLogging {
       CheckCalcFunc(IR)(calcF)
       val calcCtx = context.toSigmaContext(isCost = false)
       val res = Interpreter.calcResult(IR)(calcCtx, calcF)
-      SigmaDsl.toSigmaBoolean(res) -> estimatedCost
+      ReductionResult(SigmaDsl.toSigmaBoolean(res), estimatedCost)
     }
   }
 
@@ -275,7 +275,7 @@ trait Interpreter extends ScorexLogging {
         val sb = SigmaDsl.toSigmaBoolean(p)
         val cost = SigmaBoolean.estimateCost(sb)
         val jitCost = SigmaBoolean.estimateCostJit(sb)
-        (sb, cost)
+        ReductionResult(sb, cost)
       case _ if !ergoTree.hasDeserialize =>
         val r = precompiledScriptProcessor.getReducer(ergoTree, context.validationSettings)
         val res = r.reduce(context)
@@ -406,12 +406,12 @@ trait Interpreter extends ScorexLogging {
       }
       val contextWithCost = context.withInitCost(initCost).asInstanceOf[CTX]
 
-      val (cProp, cost) = fullReduction(ergoTree, contextWithCost, env)
+      val res = fullReduction(ergoTree, contextWithCost, env)
 
-      val res = cProp match {
+      val res = res.value match {
         case TrivialProp.TrueProp => (true, cost)
         case TrivialProp.FalseProp => (false, cost)
-        case _ =>
+        case cProp =>
           // TODO v5.0: add AOT estimation of sigma proposition verification
           //  Math.addExact(cost, SigmaBoolean.estimateCostJit(cProp))
           val fullCost = cost
@@ -487,9 +487,9 @@ trait Interpreter extends ScorexLogging {
       val checkingResult = cProp match {
         case TrivialProp.TrueProp => true
         case TrivialProp.FalseProp => false
-        case _ => verifySignature(cProp, message, proof)
+        case cProp => verifySignature(cProp, message, proof)
       }
-      checkingResult -> cost
+      checkingResult -> res.cost
     })
     if (outputComputedResults) {
       res.foreach { case (_, cost) =>
@@ -610,7 +610,7 @@ object Interpreter {
     * The first component is the value of SigmaProp type which represents a statement
     * verifiable via sigma protocol.
     * The second component is the estimated cost of consumed by the contract execution. */
-  type ReductionResult = (SigmaBoolean, Long)
+  case class ReductionResult(value: SigmaBoolean, cost: Long)
 
   type ScriptEnv = Map[String, Any]
   val emptyEnv: ScriptEnv = Map.empty[String, Any]
@@ -630,7 +630,7 @@ object Interpreter {
   /** The result of script reduction when soft-fork condition is detected by the old node,
     * in which case the script is reduced to the trivial true proposition and takes up 0 cost.
     */
-  val WhenSoftForkReductionResult: ReductionResult = TrivialProp.TrueProp -> 0L
+  val WhenSoftForkReductionResult: ReductionResult = ReductionResult(TrivialProp.TrueProp, 0)
 
   /** Executes the given `calcF` graph in the given context.
     * @param IR      container of the graph (see [[IRContext]])
