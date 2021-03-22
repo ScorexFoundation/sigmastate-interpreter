@@ -221,7 +221,7 @@ trait Interpreter extends ScorexLogging {
         }
       }
 
-      SigmaDsl.toSigmaBoolean(res) -> cost.toLong / 10  // scale back
+      ReductionResult(SigmaDsl.toSigmaBoolean(res), cost.toLong / 10)  // scale back
     }
   }
 
@@ -282,8 +282,8 @@ trait Interpreter extends ScorexLogging {
         val ctx = context.asInstanceOf[ErgoLikeContext]
           .withInitCost(context.initCost * 10)    // adjust for Evaluator cost units scale
           .withCostLimit(context.costLimit * 10)
-        val (v, c) = ErgoTreeEvaluator.evalToCrypto(ctx, ergoTree, evalSettings)
-        val jitRes = (v, c / 10) // scale cost back
+        val ReductionResult(v, c) = ErgoTreeEvaluator.evalToCrypto(ctx, ergoTree, evalSettings)
+        val jitRes = ReductionResult(v, c / 10) // scale cost back
         checkResults(ergoTree, res, jitRes)
         res
       case _ =>
@@ -292,8 +292,8 @@ trait Interpreter extends ScorexLogging {
   }
 
   private def checkResults(ergoTree: ErgoTree, res: ReductionResult, jitRes: ReductionResult) = {
-    val oldValue = res._1
-    val newValue = jitRes._1
+    val oldValue = res.value
+    val newValue = jitRes.value
     if (oldValue != newValue) {
       val msg =
         s"""Wrong JIT result: -----------------------------------------
@@ -307,8 +307,8 @@ trait Interpreter extends ScorexLogging {
       else
         println(msg)
     }
-    val oldCost = res._2
-    val newCost = jitRes._2
+    val oldCost = res.cost
+    val newCost = jitRes.cost
     if (oldCost < newCost) {
       val msg =
         s"""Wrong JIT cost: -----------------------------------------
@@ -406,12 +406,12 @@ trait Interpreter extends ScorexLogging {
       }
       val contextWithCost = context.withInitCost(initCost).asInstanceOf[CTX]
 
-      val res = fullReduction(ergoTree, contextWithCost, env)
+      val ReductionResult(cProp, cost) = fullReduction(ergoTree, contextWithCost, env)
 
-      val res = res.value match {
+      val res = cProp match {
         case TrivialProp.TrueProp => (true, cost)
         case TrivialProp.FalseProp => (false, cost)
-        case cProp =>
+        case _ =>
           // TODO v5.0: add AOT estimation of sigma proposition verification
           //  Math.addExact(cost, SigmaBoolean.estimateCostJit(cProp))
           val fullCost = cost
@@ -489,7 +489,7 @@ trait Interpreter extends ScorexLogging {
         case TrivialProp.FalseProp => false
         case cProp => verifySignature(cProp, message, proof)
       }
-      checkingResult -> res.cost
+      checkingResult -> cost
     })
     if (outputComputedResults) {
       res.foreach { case (_, cost) =>

@@ -371,7 +371,7 @@ object ErgoTreeEvaluator {
       case sb: SigmaBoolean => sb
       case _ => error(s"Expected SigmaBoolean but was: $res")
     }
-    (sb, cost)
+    ReductionResult(sb, cost)
   }
 
   /** Evaluate the given expression in the given Ergo context using the given settings.
