@@ -274,6 +274,7 @@ trait Interpreter extends ScorexLogging {
       case SigmaPropConstant(p) =>
         val sb = SigmaDsl.toSigmaBoolean(p)
         val cost = SigmaBoolean.estimateCost(sb)
+        val jitCost = SigmaBoolean.estimateCostJit(sb)
         (sb, cost)
       case _ if !ergoTree.hasDeserialize =>
         val r = precompiledScriptProcessor.getReducer(ergoTree, context.validationSettings)
@@ -421,25 +422,8 @@ trait Interpreter extends ScorexLogging {
               message = Evaluation.msgCostLimitError(fullCost, context.costLimit),
               cause = None)
           }
-
-          // Perform Verifier Steps 1-3
-          SigSerializer.parseAndComputeChallenges(cProp, proof) match {
-            case NoProof =>
-              (false, fullCost)
-            case sp: UncheckedSigmaTree =>
-              // Perform Verifier Step 4
-              val newRoot = computeCommitments(sp).get.asInstanceOf[UncheckedSigmaTree]
-
-              /**
-                * Verifier Steps 5-6: Convert the tree to a string `s` for input to the Fiat-Shamir hash function,
-                * using the same conversion as the prover in 7
-                * Accept the proof if the challenge at the root of the tree is equal to the Fiat-Shamir hash of `s`
-                * (and, if applicable,  the associated data). Reject otherwise.
-                */
-              val expectedChallenge = CryptoFunctions.hashFn(FiatShamirTree.toBytes(newRoot) ++ message)
-              val ok = util.Arrays.equals(newRoot.challenge, expectedChallenge)
-              (ok, fullCost)
-          }
+          val ok = verifySignature(cProp, message, proof)
+          (ok, fullCost)
       }
       res
     })
