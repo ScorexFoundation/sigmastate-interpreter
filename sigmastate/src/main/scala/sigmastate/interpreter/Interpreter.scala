@@ -6,6 +6,7 @@ import java.util
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, rule, strategy}
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
 import org.ergoplatform.validation.SigmaValidationSettings
+import org.ergoplatform.validation.ValidationRules._
 import sigmastate.basics.DLogProtocol.{FirstDLogProverMessage, DLogInteractiveProver}
 import org.ergoplatform.ErgoLikeContext
 import scorex.util.ScorexLogging
@@ -18,6 +19,11 @@ import sigmastate.lang.exceptions.{InterpreterException, CostLimitException}
 import sigmastate.serialization.{ValueSerializer, SigmaSerializer}
 import sigmastate.utxo.{DeserializeContext, CostTable}
 import sigmastate.{SType, _}
+import sigmastate.eval.{IRContext, Evaluation}
+import scalan.{MutableLazy, Nullable}
+import scalan.util.BenchmarkUtil
+import sigmastate.utils.Helpers._
+import sigmastate.lang.Terms.ValueOps
 
 import scala.util.{Success, Try}
 
@@ -523,7 +529,7 @@ trait Interpreter extends ScorexLogging {
   private def checkCommitments(sp: UncheckedSigmaTree, message: Array[Byte]): Boolean = {
     // Perform Verifier Step 4
     val newRoot = computeCommitments(sp).get.asInstanceOf[UncheckedSigmaTree]
-    val bytes = Helpers.concatArrays(FiatShamirTree.toBytes(newRoot), message)
+    val bytes = concatArrays(FiatShamirTree.toBytes(newRoot), message)
     /**
       * Verifier Steps 5-6: Convert the tree to a string `s` for input to the Fiat-Shamir hash function,
       * using the same conversion as the prover in 7
