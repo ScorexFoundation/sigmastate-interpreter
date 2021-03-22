@@ -33,7 +33,7 @@ trait ScriptReducer {
 
 /** Used as a fallback reducer when precompilation failed due to soft-fork condition. */
 case object WhenSoftForkReducer extends ScriptReducer {
-  override def reduce(context: InterpreterContext): (Values.SigmaBoolean, Long) = {
+  override def reduce(context: InterpreterContext): ReductionResult = {
     WhenSoftForkReductionResult
   }
 }
@@ -87,7 +87,7 @@ case class PrecompiledScriptReducer(scriptBytes: Seq[Byte])(implicit val IR: IRC
       val calcF = costingRes.calcF
       val calcCtx = context.toSigmaContext(isCost = false)
       val res = Interpreter.calcResult(IR)(calcCtx, calcF)
-      SigmaDsl.toSigmaBoolean(res) -> estimatedCost
+      ReductionResult(SigmaDsl.toSigmaBoolean(res), estimatedCost)
     }
   }
 }

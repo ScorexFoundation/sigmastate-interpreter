@@ -82,7 +82,7 @@ class CostingSpecification extends SigmaTestingData with CrossVersionProps {
 
     def cost(script: String)(expCost: Int): Unit = {
       val ergoTree = compiler.compile(env, script)
-      val res = interpreter.reduceToCrypto(context, env, ergoTree).get._2
+      val res = interpreter.reduceToCrypto(context, env, ergoTree).get.cost
       if (printCosts)
         println(script + s" --> cost $res")
       res shouldBe ((expCost * CostTable.costFactorIncrease / CostTable.costFactorDecrease) + CostTable.interpreterInitCost).toLong
