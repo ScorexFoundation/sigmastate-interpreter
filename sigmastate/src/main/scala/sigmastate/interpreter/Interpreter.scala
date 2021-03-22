@@ -276,15 +276,15 @@ trait Interpreter extends ScorexLogging {
         val cost = SigmaBoolean.estimateCost(sb)
         (sb, cost)
       case _ if !ergoTree.hasDeserialize =>
-//        val r = precompiledScriptProcessor.getReducer(ergoTree, context.validationSettings)
-//        val res = r.reduce(context)
+        val r = precompiledScriptProcessor.getReducer(ergoTree, context.validationSettings)
+        val res = r.reduce(context)
         val ctx = context.asInstanceOf[ErgoLikeContext]
           .withInitCost(context.initCost * 10)    // adjust for Evaluator cost units scale
           .withCostLimit(context.costLimit * 10)
         val (v, c) = ErgoTreeEvaluator.evalToCrypto(ctx, ergoTree, evalSettings)
         val jitRes = (v, c / 10) // scale cost back
-//        checkResults(ergoTree, res, jitRes)
-        jitRes
+        checkResults(ergoTree, res, jitRes)
+        res
       case _ =>
         reductionWithDeserialize(ergoTree, prop, context, env)
     }
@@ -329,15 +329,15 @@ trait Interpreter extends ScorexLogging {
                                        context: CTX,
                                        env: ScriptEnv) = {
     implicit val vs: SigmaValidationSettings = context.validationSettings
-//    val res = {
-//      val (propTree, context2) = trySoftForkable[(BoolValue, CTX)](whenSoftFork = (TrueLeaf, context)) {
-//        applyDeserializeContext(context, prop)
-//      }
-//
-//      // here we assume that when `propTree` is TrueProp then `reduceToCrypto` always succeeds
-//      // and the rest of the verification is also trivial
-//      reduceToCrypto(context2, env, propTree).getOrThrow
-//    }
+    val res = {
+      val (propTree, context2) = trySoftForkable[(BoolValue, CTX)](whenSoftFork = (TrueLeaf, context)) {
+        applyDeserializeContext(context, prop)
+      }
+
+      // here we assume that when `propTree` is TrueProp then `reduceToCrypto` always succeeds
+      // and the rest of the verification is also trivial
+      reduceToCrypto(context2, env, propTree).getOrThrow
+    }
     val jitRes = {
       val (propTree, context2) = trySoftForkable[(SigmaPropValue, CTX)](whenSoftFork = (TrueSigmaProp, context)) {
         applyDeserializeContextJITC(context, prop)
@@ -347,8 +347,8 @@ trait Interpreter extends ScorexLogging {
       // and the rest of the verification is also trivial
       reduceToCryptoJITC(context2, env, propTree).getOrThrow
     }
-//    checkResults(ergoTree, res, jitRes)
-    jitRes
+    checkResults(ergoTree, res, jitRes)
+    res
   }
 
   /** Executes the script in a given context.
