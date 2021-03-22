@@ -7,6 +7,7 @@ import org.bitbucket.inkytonik.kiama.attribution.AttributionCore
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, everywheretd, rule}
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
 import scalan.util.CollectionUtil._
+import sigmastate.TrivialProp.{FalseProp, TrueProp}
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.basics.DLogProtocol._
@@ -90,7 +91,7 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
 
     // Prover Step 8: compute the challenge for the root of the tree as the Fiat-Shamir hash of propBytes
     // and the message being signed.
-    val rootChallenge = Challenge @@ CryptoFunctions.hashFn(propBytes ++ message)
+    val rootChallenge = Challenge @@ CryptoFunctions.hashFn(Helpers.concatArrays(propBytes, message))
     val step8 = step6.withChallenge(rootChallenge)
 
     // Prover Step 9: complete the proof by computing challenges at real nodes and additionally responses at real leaves
@@ -116,7 +117,6 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
             context: CTX,
             message: Array[Byte],
             hintsBag: HintsBag = HintsBag.empty): Try[CostedProverResult] = Try {
-    import TrivialProp._
 
     val initCost = ergoTree.complexity + context.initCost
     val remainingLimit = context.costLimit - initCost
@@ -127,8 +127,15 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
     val ctxUpdInitCost = context.withInitCost(initCost).asInstanceOf[CTX]
 
     val (reducedProp, cost) = fullReduction(ergoTree, ctxUpdInitCost, env)
+    val proof = generateProof(reducedProp, message, hintsBag)
 
-    val proofTree = reducedProp match {
+    CostedProverResult(proof, ctxUpdInitCost.extension, cost)
+  }
+
+  def generateProof(sb: SigmaBoolean,
+                    message: Array[Byte],
+                    hintsBag: HintsBag): Array[Byte] = {
+    val proofTree = sb match {
       case TrueProp => NoProof
       case FalseProp => error("Script reduced to false")
       case sigmaTree =>
@@ -136,10 +143,9 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
         prove(unprovenTree, message, hintsBag)
     }
     // Prover Step 10: output the right information into the proof
-    val proof = SigSerializer.toBytes(proofTree)
-    CostedProverResult(proof, ctxUpdInitCost.extension, cost)
+    val proof = SigSerializer.toProofBytes(proofTree)
+    proof
   }
-
   /**
     * Prover Step 1: This step will mark as "real" every node for which the prover can produce a real proof.
     * This step may mark as "real" more nodes than necessary if the prover has more than the minimal
@@ -593,7 +599,7 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
                   hintsBag: HintsBag): Try[Array[Byte]] = Try {
     val unprovenTree = convertToUnproven(sigmaTree)
     val proofTree = prove(unprovenTree, message, hintsBag)
-    SigSerializer.toBytes(proofTree)
+    SigSerializer.toProofBytes(proofTree)
   }
 
 }

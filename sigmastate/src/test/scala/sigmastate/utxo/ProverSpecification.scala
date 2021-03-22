@@ -1,10 +1,14 @@
 package sigmastate.utxo
 
-import sigmastate.{CAND, CAndUnproven, COR, COrUnproven, CTHRESHOLD, CThresholdUnproven, NodePosition, UnprovenSchnorr}
+import org.ergoplatform.ErgoLikeInterpreter
+import scorex.crypto.hash.Blake2b256
 import sigmastate.Values.SigmaBoolean
+import sigmastate._
 import sigmastate.basics.DLogProtocol.FirstDLogProverMessage
 import sigmastate.basics.{FirstDiffieHellmanTupleProverMessage, SecP256K1}
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
+import sigmastate.interpreter.{HintsBag, ProverInterpreter}
+import sigmastate.lang.exceptions.InterpreterException
 
 class ProverSpecification extends SigmaTestingCommons {
 
@@ -104,4 +108,84 @@ class ProverSpecification extends SigmaTestingCommons {
     c1.children(1).asInstanceOf[UnprovenSchnorr].position shouldBe NodePosition(Seq(0, 0, 1))
   }
 
+  val message = Blake2b256("some message based on tx content")
+
+  def checkProof(sb: SigmaBoolean)(implicit prover: ProverInterpreter) = {
+    val verifier = new ErgoLikeInterpreter()
+    val proof = prover.generateProof(sb, message, HintsBag.empty)
+    val ok = verifier.verifySignature(sb, message, proof)
+    ok shouldBe true
+  }
+
+  def checkUnrealRoot(sb: SigmaBoolean)(implicit prover: ProverInterpreter) = {
+    assertExceptionThrown(
+      checkProof(sb),
+      { case e: AssertionError => e.getMessage.contains("Tree root should be real but was")
+        case _ => false })
+  }
+
+  property("proof/verify completeness") {
+    implicit val prover = new ErgoLikeTestProvingInterpreter
+    val pk0 = prover.dlogSecrets(0).publicImage
+    val pk1 = prover.dlogSecrets(1).publicImage
+    val dht0 = prover.dhSecrets(0).publicImage
+
+    val otherProver = new ErgoLikeTestProvingInterpreter
+    val pkUnknown0 = otherProver.dlogSecrets(0).publicImage
+    val pkUnknown1 = otherProver.dlogSecrets(1).publicImage
+    val pkUnknown2 = otherProver.dlogSecrets(2).publicImage
+
+    assertExceptionThrown(
+      checkProof(TrivialProp.FalseProp),
+      { case e: InterpreterException =>
+        e.getMessage.contains("Script reduced to false")
+        case _ => false })
+
+    checkProof(pk0)
+    checkProof(dht0)
+
+    checkProof(CAND(Array(pk0)))
+    checkUnrealRoot(CAND(Array(pkUnknown0)))
+
+    checkProof(CAND(Array(pk0, pk1)))
+    checkUnrealRoot(CAND(Array(pk0, pkUnknown0)))
+    checkUnrealRoot(CAND(Array(pkUnknown0, pk0)))
+    checkUnrealRoot(CAND(Array(pkUnknown0, pkUnknown1)))
+
+    checkProof(COR(Array(pk0)))
+    checkUnrealRoot(COR(Array(pkUnknown0)))
+
+    checkProof(COR(Array(pk0, pk1)))
+    checkProof(COR(Array(pk0, pkUnknown0)))
+    checkProof(COR(Array(pkUnknown0, pk0)))
+    checkUnrealRoot(COR(Array(pkUnknown0, pkUnknown1)))
+
+    checkProof(CTHRESHOLD(1, Array(pk0)))
+    checkUnrealRoot(CTHRESHOLD(1, Array(pkUnknown0)))
+
+    checkProof(CTHRESHOLD(1, Array(pk0, pk1)))
+    checkProof(CTHRESHOLD(1, Array(pk0, pkUnknown1)))
+    checkProof(CTHRESHOLD(1, Array(pkUnknown1, pk0)))
+    checkUnrealRoot(CTHRESHOLD(1, Array(pkUnknown0, pkUnknown1)))
+
+    checkProof(CTHRESHOLD(1, Array(pk0, pk1, dht0)))
+    checkProof(CTHRESHOLD(1, Array(pk0, pkUnknown0, dht0)))
+    checkProof(CTHRESHOLD(1, Array(pkUnknown0, pkUnknown1, dht0)))
+    checkProof(CTHRESHOLD(1, Array(pkUnknown0, dht0, pkUnknown1)))
+    checkProof(CTHRESHOLD(1, Array(dht0, pkUnknown0, pkUnknown1)))
+    checkUnrealRoot(CTHRESHOLD(1, Array(pkUnknown0, pkUnknown1, pkUnknown2)))
+
+    checkProof(CTHRESHOLD(2, Array(pk0, pk1, dht0)))
+    checkProof(CTHRESHOLD(2, Array(pkUnknown0, pk0, dht0)))
+    checkProof(CTHRESHOLD(2, Array(pk0, pkUnknown0, dht0)))
+    checkProof(CTHRESHOLD(2, Array(pk0, dht0, pkUnknown0)))
+    checkUnrealRoot(CTHRESHOLD(2, Array(pk0, pkUnknown0, pkUnknown1)))
+    checkUnrealRoot(CTHRESHOLD(2, Array(pkUnknown0, pk0, pkUnknown1)))
+    checkUnrealRoot(CTHRESHOLD(2, Array(pkUnknown0, pkUnknown1, pk0)))
+
+    checkProof(CTHRESHOLD(3, Array(pk0, pk1, dht0)))
+    checkUnrealRoot(CTHRESHOLD(3, Array(pkUnknown0, pk0, dht0)))
+    checkUnrealRoot(CTHRESHOLD(3, Array(pk0, pkUnknown0, dht0)))
+    checkUnrealRoot(CTHRESHOLD(3, Array(pk0, dht0, pkUnknown0)))
+  }
 }

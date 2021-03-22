@@ -2,11 +2,11 @@ package sigmastate
 
 import java.util
 
-import sigmastate.basics.DLogProtocol.{FirstDLogProverMessage, ProveDlog, SecondDLogProverMessage}
+import sigmastate.basics.DLogProtocol.{FirstDLogProverMessage, SecondDLogProverMessage, ProveDlog}
 import sigmastate.basics.VerifierMessage.Challenge
 import sigmastate.Values.SigmaBoolean
 import gf2t.GF2_192_Poly
-import sigmastate.basics.{FirstDiffieHellmanTupleProverMessage, ProveDHTuple, SecondDiffieHellmanTupleProverMessage}
+import sigmastate.basics.{SecondDiffieHellmanTupleProverMessage, ProveDHTuple, FirstDiffieHellmanTupleProverMessage}
 
 sealed trait UncheckedTree extends ProofTree
 
@@ -18,10 +18,14 @@ sealed trait UncheckedSigmaTree extends UncheckedTree {
 
 trait UncheckedConjecture extends UncheckedSigmaTree with ProofTreeConjecture {
 
-  override def equals(obj: Any): Boolean = obj match {
+  override def equals(obj: Any): Boolean = (this eq obj.asInstanceOf[AnyRef]) || (obj match {
     case x: UncheckedConjecture =>
       util.Arrays.equals(challenge, x.challenge) && children == x.children
-  }
+    case _ => false
+  })
+
+  override def hashCode(): Int =
+    31 * util.Arrays.hashCode(challenge) + children.hashCode()
 }
 
 trait UncheckedLeaf[SP <: SigmaBoolean] extends UncheckedSigmaTree with ProofTreeLeaf {
@@ -34,12 +38,21 @@ case class UncheckedSchnorr(override val proposition: ProveDlog,
                             secondMessage: SecondDLogProverMessage)
   extends UncheckedLeaf[ProveDlog] {
 
-  override def equals(obj: Any): Boolean = obj match {
+  override def equals(obj: Any): Boolean = (this eq obj.asInstanceOf[AnyRef]) || (obj match {
     case x: UncheckedSchnorr =>
-      util.Arrays.equals(challenge, x.challenge) &&
-        commitmentOpt == x.commitmentOpt &&
+      // NOTE, proposition is not compared because it is included into challenge
+      // like `challenge = hash(prop ++ msg)`
+      commitmentOpt == x.commitmentOpt &&
+        util.Arrays.equals(challenge, x.challenge) &&
         secondMessage == x.secondMessage
     case _ => false
+  })
+
+  override def hashCode(): Int = {
+    var h = commitmentOpt.hashCode()
+    h = 31 * h + util.Arrays.hashCode(challenge)
+    h = 31 * h + secondMessage.hashCode()
+    h
   }
 }
 
@@ -50,12 +63,21 @@ case class UncheckedDiffieHellmanTuple(override val proposition: ProveDHTuple,
                                        secondMessage: SecondDiffieHellmanTupleProverMessage)
   extends UncheckedLeaf[ProveDHTuple] {
 
-  override def equals(obj: Any): Boolean = obj match {
+  override def equals(obj: Any): Boolean = (this eq obj.asInstanceOf[AnyRef]) || (obj match {
     case x: UncheckedDiffieHellmanTuple =>
-      proposition == x.proposition &&
-        commitmentOpt == x.commitmentOpt &&
+      // NOTE, proposition is not compared because it is included into challenge
+      // like `challenge = hash(prop ++ msg)`
+      commitmentOpt == x.commitmentOpt &&
         util.Arrays.equals(challenge, x.challenge) &&
         secondMessage == x.secondMessage
+    case _ => false
+  })
+
+  override def hashCode(): Int = {
+    var h = commitmentOpt.hashCode()
+    h = 31 * h + util.Arrays.hashCode(challenge)
+    h = 31 * h + secondMessage.hashCode()
+    h
   }
 }
 
@@ -84,6 +106,7 @@ case class CThresholdUncheckedNode(override val challenge: Challenge,
   override val conjectureType = ConjectureType.ThresholdConjecture
 
   override def canEqual(other: Any) = other.isInstanceOf[CThresholdUncheckedNode]
+
   override def equals(other: Any) = (this eq other.asInstanceOf[AnyRef]) || (other match {
     case other: CThresholdUncheckedNode =>
       util.Arrays.equals(challenge, other.challenge) &&
@@ -92,4 +115,12 @@ case class CThresholdUncheckedNode(override val challenge: Challenge,
       polynomialOpt == other.polynomialOpt
     case _ => false
   })
+
+  override def hashCode(): Int = {
+    var h = util.Arrays.hashCode(challenge)
+    h = 31 * h + children.hashCode
+    h = 31 * h + k.hashCode()
+    h = 31 * h + polynomialOpt.hashCode()
+    h
+  }
 }

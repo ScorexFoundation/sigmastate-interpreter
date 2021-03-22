@@ -2,27 +2,27 @@ package sigmastate.helpers
 
 import java.math.BigInteger
 
+import gf2t.GF2_192_Poly
 import org.ergoplatform.ErgoBox
 import org.ergoplatform.ErgoBox.RegisterId
 import org.ergoplatform.settings.ErgoAlgos
-
-import scala.collection.mutable
-import pprint.{Tree, PPrinter}
+import pprint.{PPrinter, Tree}
 import scalan.RType
 import scalan.RType.PrimitiveType
 import sigmastate.SCollection._
-import sigmastate.Values.{ValueCompanion, ErgoTree, FuncValue, ConstantNode}
+import sigmastate.Values.{ConstantNode, ErgoTree, FuncValue, ValueCompanion}
+import sigmastate._
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.lang.SigmaTyper
 import sigmastate.lang.Terms.MethodCall
 import sigmastate.serialization.GroupElementSerializer
 import sigmastate.utxo.SelectField
-import sigmastate._
 import sigmastate.interpreter.ErgoTreeEvaluator.{CompanionDesc, MethodDesc}
 import sigmastate.interpreter.{ErgoTreeEvaluator, FixedCostItem}
 import special.collection.Coll
 import special.sigma.GroupElement
 
+import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
 
@@ -104,6 +104,14 @@ object SigmaPPrint extends PPrinter {
 
     case v: BigInteger =>
       Tree.Apply("new BigInteger", treeifyMany(v.toString(16), 16))
+
+    case v: BigInt =>
+      Tree.Apply("BigInt", treeifyMany(v.toString(16), 16))
+
+    case poly: GF2_192_Poly =>
+      val c0 = poly.coeff0Bytes()
+      val others = poly.toByteArray(false) // don't output
+      Tree.Apply("GF2_192_Poly.fromByteArray", treeifyMany(c0, others))
 
     case wa: mutable.WrappedArray[Byte @unchecked] if wa.elemTag == ClassTag.Byte =>
       treeifyByteArray(wa.array)

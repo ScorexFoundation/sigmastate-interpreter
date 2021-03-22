@@ -745,6 +745,7 @@ object Values {
         CostTable.MinimalCost
     }
 
+    /** Compute the total cost of the given children. */
     private def childrenCost(children: Seq[SigmaBoolean]): Int = {
       val childrenArr = children.toArray
       val nChildren = childrenArr.length
