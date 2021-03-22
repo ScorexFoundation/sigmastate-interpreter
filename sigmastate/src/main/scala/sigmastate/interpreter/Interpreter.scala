@@ -1,27 +1,27 @@
 package sigmastate.interpreter
 
-import java.util
 import java.lang.{Math => JMath}
+import java.util
 
-import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{strategy, rule, everywherebu}
+import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, rule, strategy}
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
 import org.ergoplatform.validation.SigmaValidationSettings
-import sigmastate.basics.DLogProtocol.{FirstDLogProverMessage, DLogInteractiveProver}
+import org.ergoplatform.validation.ValidationRules._
+import scalan.util.BenchmarkUtil
 import scorex.util.ScorexLogging
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
-import sigmastate.eval.{IRContext, Evaluation}
-import sigmastate.lang.Terms.ValueOps
+import sigmastate.basics.DLogProtocol.{DLogInteractiveProver, FirstDLogProverMessage}
 import sigmastate.basics._
-import sigmastate.interpreter.Interpreter.{VerificationResult, ScriptEnv, WhenSoftForkReductionResult}
-import sigmastate.lang.exceptions.{InterpreterException, CostLimitException}
-import sigmastate.serialization.{ValueSerializer, SigmaSerializer}
+import sigmastate.eval.{Evaluation, IRContext}
+import sigmastate.interpreter.Interpreter.{ScriptEnv, VerificationResult, WhenSoftForkReductionResult}
+import sigmastate.lang.Terms.ValueOps
+import sigmastate.lang.exceptions.{CostLimitException, InterpreterException}
+import sigmastate.serialization.{SigmaSerializer, ValueSerializer}
+import sigmastate.utils.Helpers
+import sigmastate.utils.Helpers._
 import sigmastate.utxo.DeserializeContext
 import sigmastate.{SType, _}
-import org.ergoplatform.validation.ValidationRules._
-import scalan.{MutableLazy, Nullable}
-import scalan.util.BenchmarkUtil
-import sigmastate.utils.Helpers._
 
 import scala.util.{Success, Try}
 
@@ -289,14 +289,14 @@ trait Interpreter extends ScorexLogging {
   private def checkCommitments(sp: UncheckedSigmaTree, message: Array[Byte]): Boolean = {
     // Perform Verifier Step 4
     val newRoot = computeCommitments(sp).get.asInstanceOf[UncheckedSigmaTree]
-
+    val bytes = Helpers.concatArrays(FiatShamirTree.toBytes(newRoot), message)
     /**
       * Verifier Steps 5-6: Convert the tree to a string `s` for input to the Fiat-Shamir hash function,
       * using the same conversion as the prover in 7
       * Accept the proof if the challenge at the root of the tree is equal to the Fiat-Shamir hash of `s`
       * (and, if applicable,  the associated data). Reject otherwise.
       */
-    val expectedChallenge = CryptoFunctions.hashFn(FiatShamirTree.toBytes(newRoot) ++ message)
+    val expectedChallenge = CryptoFunctions.hashFn(bytes)
     util.Arrays.equals(newRoot.challenge, expectedChallenge)
   }
 

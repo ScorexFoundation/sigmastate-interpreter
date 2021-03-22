@@ -54,11 +54,16 @@ object Helpers {
     result
   }
 
+  /** Concatenates two arrays into a new resulting array.
+    * All items of both arrays are copied to the result using System.arraycopy.
+    */
   def concatArrays[T:ClassTag](arr1: Array[T], arr2: Array[T]): Array[T] = {
-    val length: Int = arr1.length + arr2.length
+    val l1 = arr1.length
+    val l2 = arr2.length
+    val length: Int = l1 + l2
     val result: Array[T] = new Array[T](length)
-    System.arraycopy(arr1, 0, result, 0, arr1.length)
-    System.arraycopy(arr2, 0, result, arr1.length, arr2.length)
+    System.arraycopy(arr1, 0, result, 0, l1)
+    System.arraycopy(arr2, 0, result, l1, l2)
     result
   }
 
