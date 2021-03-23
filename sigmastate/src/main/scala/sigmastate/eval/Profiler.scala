@@ -37,7 +37,7 @@ class StatCollection[@sp(Int) K, @sp(Long, Double) V]
 
   // NOTE: this class is mutable so better to keep it private
   class StatItemImpl extends StatItem[V] {
-    final val NumMaxPoints = 20000
+    final val NumMaxPoints = 10000
 
     val dataPoints: DBuffer[V] = DBuffer.ofSize[V](256)
 

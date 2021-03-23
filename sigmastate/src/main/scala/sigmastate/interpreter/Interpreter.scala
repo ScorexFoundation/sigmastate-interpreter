@@ -22,6 +22,7 @@ import sigmastate.{SType, _}
 import sigmastate.eval.{Evaluation, IRContext, Profiler}
 import scalan.{MutableLazy, Nullable}
 import scalan.util.BenchmarkUtil
+import sigmastate.interpreter.ErgoTreeEvaluator.{NamedDesc, OperationCostInfo, fixedCostOp}
 import sigmastate.utils.Helpers._
 import sigmastate.lang.Terms.ValueOps
 
@@ -532,6 +533,12 @@ trait Interpreter extends ScorexLogging {
     util.Arrays.equals(newRoot.challenge, expectedChallenge)
   }
 
+  final val ComputeCommitments_Schnorr = OperationCostInfo(
+    FixedCost(3200), NamedDesc("ComputeCommitments_Schnorr"))
+
+  final val ComputeCommitments_DHT = OperationCostInfo(
+    FixedCost(6450), NamedDesc("ComputeCommitments_DHT"))
+
   /**
     * Verifier Step 4: For every leaf node, compute the commitment a from the challenge e and response $z$,
     * per the verifier algorithm of the leaf's Sigma-protocol.
@@ -541,12 +548,18 @@ trait Interpreter extends ScorexLogging {
     case c: UncheckedConjecture => c // Do nothing for internal nodes
 
     case sn: UncheckedSchnorr =>
-      val a = DLogInteractiveProver.computeCommitment(sn.proposition, sn.challenge, sn.secondMessage)
-      sn.copy(commitmentOpt = Some(FirstDLogProverMessage(a)))
+      implicit val E = ErgoTreeEvaluator.getCurrentEvaluator
+      fixedCostOp(ComputeCommitments_Schnorr) {
+        val a = DLogInteractiveProver.computeCommitment(sn.proposition, sn.challenge, sn.secondMessage)
+        sn.copy(commitmentOpt = Some(FirstDLogProverMessage(a)))
+      }
 
     case dh: UncheckedDiffieHellmanTuple =>
-      val (a, b) = DiffieHellmanTupleInteractiveProver.computeCommitment(dh.proposition, dh.challenge, dh.secondMessage)
-      dh.copy(commitmentOpt = Some(FirstDiffieHellmanTupleProverMessage(a, b)))
+      implicit val E = ErgoTreeEvaluator.getCurrentEvaluator
+      fixedCostOp(ComputeCommitments_DHT) {
+        val (a, b) = DiffieHellmanTupleInteractiveProver.computeCommitment(dh.proposition, dh.challenge, dh.secondMessage)
+        dh.copy(commitmentOpt = Some(FirstDiffieHellmanTupleProverMessage(a, b)))
+      }
 
     case _: UncheckedSigmaTree => ???
   })

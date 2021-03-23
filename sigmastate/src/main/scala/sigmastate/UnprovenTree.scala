@@ -3,10 +3,12 @@ package sigmastate
 import java.math.BigInteger
 
 import gf2t.GF2_192_Poly
-import sigmastate.Values.{ErgoTree, SigmaBoolean, SigmaPropConstant}
+import sigmastate.Values.{ErgoTree, FixedCost, SigmaBoolean, SigmaPropConstant}
 import sigmastate.basics.DLogProtocol.{FirstDLogProverMessage, ProveDlog}
 import sigmastate.basics.VerifierMessage.Challenge
 import sigmastate.basics.{FirstDiffieHellmanTupleProverMessage, FirstProverMessage, ProveDHTuple}
+import sigmastate.interpreter.ErgoTreeEvaluator
+import sigmastate.interpreter.ErgoTreeEvaluator.{NamedDesc, OperationCostInfo, fixedCostOp}
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.serialization.SigmaSerializer
 import sigmastate.utils.SigmaByteWriter
@@ -205,12 +207,22 @@ object FiatShamirTree {
   val internalNodePrefix: Byte = 0
   val leafPrefix: Byte = 1
 
+  final val ToBytes_Schnorr = OperationCostInfo(
+    FixedCost(550), NamedDesc("ToBytes_Schnorr"))
+
+  final val ToBytes_DHT = OperationCostInfo(
+    FixedCost(680), NamedDesc("ToBytes_DHT"))
+
+  final val ToBytes_ProofTreeConjecture = OperationCostInfo(
+    FixedCost(11), NamedDesc("ToBytes_ProofTreeConjecture"))
+
   /** Prover Step 7: Convert the tree to a byte array `s` for input to the Fiat-Shamir hash
     * function.
     * See the other overload for details. */
   def toBytes(tree: ProofTree): Array[Byte] = {
     val w = SigmaSerializer.startWriter()
-    toBytes(tree, w)
+    val E = ErgoTreeEvaluator.getCurrentEvaluator
+    toBytes(tree, w)(E)
     w.toBytes
   }
 
@@ -229,29 +241,38 @@ object FiatShamirTree {
     *
     * HOTSPOT: don't beautify the code
     */
-  def toBytes(tree: ProofTree, w: SigmaByteWriter): Unit = tree match {
+  def toBytes(tree: ProofTree, w: SigmaByteWriter)
+             (implicit E: ErgoTreeEvaluator): Unit = tree match {
     case l: ProofTreeLeaf =>
-      val propTree = ErgoTree.withSegregation(SigmaPropConstant(l.proposition))
-      val propBytes = DefaultSerializer.serializeErgoTree(propTree)
-      val commitmentBytes = l.commitmentOpt.get.bytes
-      w.put(leafPrefix)
-      w.putShortBytes(propBytes.length.toShort)
-      w.putBytes(propBytes)
-      w.putShortBytes(commitmentBytes.length.toShort)
-      w.putBytes(commitmentBytes)
+      val costInfo = l match {
+        case _: UncheckedSchnorr | _: UnprovenSchnorr => ToBytes_Schnorr
+        case _: UncheckedDiffieHellmanTuple | _: UnprovenDiffieHellmanTuple => ToBytes_DHT
+      }
+      fixedCostOp(costInfo) {
+        val propTree = ErgoTree.withSegregation(SigmaPropConstant(l.proposition))
+        val propBytes = DefaultSerializer.serializeErgoTree(propTree)
+        val commitmentBytes = l.commitmentOpt.get.bytes
+        w.put(leafPrefix)
+        w.putShortBytes(propBytes.length.toShort)
+        w.putBytes(propBytes)
+        w.putShortBytes(commitmentBytes.length.toShort)
+        w.putBytes(commitmentBytes)
+      }
 
     case c: ProofTreeConjecture =>
-      w.put(internalNodePrefix)
-      w.put(c.conjectureType.id.toByte)
-      c match {
-        case unproven: CThresholdUnproven =>
-          w.put(unproven.k.toByte)
-        case unchecked: CThresholdUncheckedNode =>
-          w.put(unchecked.k.toByte)
-        case _ =>
+      fixedCostOp(ToBytes_ProofTreeConjecture) {
+        w.put(internalNodePrefix)
+        w.put(c.conjectureType.id.toByte)
+        c match {
+          case unproven: CThresholdUnproven =>
+            w.put(unproven.k.toByte)
+          case unchecked: CThresholdUncheckedNode =>
+            w.put(unchecked.k.toByte)
+          case _ =>
+        }
+        val childrenCount = c.children.length.toShort
+        w.putShortBytes(childrenCount)
       }
-      val childrenCount = c.children.length.toShort
-      w.putShortBytes(childrenCount)
 
       val cs = c.children.toArray
       cfor(0)(_ < cs.length, _ + 1) { i =>
