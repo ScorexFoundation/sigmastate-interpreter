@@ -1,10 +1,11 @@
 package sigmastate.interpreter
 
 import org.ergoplatform.ErgoLikeContext
+import org.ergoplatform.SigmaConstants.ScriptCostLimit
 import sigmastate.{SMethod, SType}
 import sigmastate.Values._
 import sigmastate.eval.Profiler
-import sigmastate.interpreter.ErgoTreeEvaluator.{DataEnv, OperationCostInfo, MethodDesc, CompanionDesc, OperationDesc}
+import sigmastate.interpreter.ErgoTreeEvaluator.{DataEnv, MethodDesc, OperationCostInfo, OperationDesc}
 import sigmastate.interpreter.Interpreter.ReductionResult
 import sigmastate.lang.exceptions.CostLimitException
 import special.sigma.{Context, SigmaProp}
@@ -350,10 +351,72 @@ object ErgoTreeEvaluator {
     * [[ErgoTreeEvaluator]].
     * @see getCurrentEvaluator
     */
-  private val currentEvaluator = new DynamicVariable[ErgoTreeEvaluator](null)
+  private[sigmastate] val currentEvaluator = new DynamicVariable[ErgoTreeEvaluator](null)
 
   /** Returns a current evaluator for the current thread. */
   def getCurrentEvaluator: ErgoTreeEvaluator = currentEvaluator.value
+
+  /** Creates a new [[ErgoTreeEvaluator]] instance with the given profiler and settings.
+    * The returned evaluator can be used to initialize the `currentEvaluator` variable.
+    * As a result, cost-aware operations (code blocks) can be implemented, even when those
+    * operations don't involve ErgoTree evaluation.
+    * As an example, see methods in [[sigmastate.SigSerializer]] and
+    * [[sigmastate.FiatShamirTree]] where cost-aware code blocks are used.
+    */
+  def forProfiling(profiler: Profiler, evalSettings: EvalSettings): ErgoTreeEvaluator = {
+    val acc = new CostAccumulator(0, Some(ScriptCostLimit.value))
+    new ErgoTreeEvaluator(
+      context = null,
+      constants = mutable.WrappedArray.empty,
+      acc, profiler, evalSettings.copy(profilerOpt = Some(profiler)))
+  }
+
+  /** Executes [[FixedCost]] code `block` and use the given evaluator `E` to perform
+    * profiling and cost tracing.
+    * This helper method allows implementation of cost-aware code blocks by using
+    * thread-local instance of [[ErgoTreeEvaluator]].
+    * If the `currentEvaluator` [[DynamicVariable]] is not initialized (equals to null),
+    * then the block is executed with minimal overhead.
+    *
+    * @param costInfo operation descriptor
+    * @param block    block of code to be executed (given as lazy by-name argument)
+    * @param E        evaluator to be used (or null if it is not avaialble on the
+    *                 current thread)
+    * @return result of code block execution
+    */
+  def fixedCostOp[R <: AnyRef](costInfo: OperationCostInfo[FixedCost])
+                              (block: => R)(implicit E: ErgoTreeEvaluator): R = {
+    if (E != null) {
+      var res: R = null.asInstanceOf[R]
+      E.addFixedCost(costInfo) {
+        res = block
+      }
+      res
+    } else
+      block
+  }
+
+  /** Executes [[PerItemCost]] code `block` and use the given evaluator `E` to perform
+    * profiling and cost tracing.
+    * This helper method allows implementation of cost-aware code blocks by using
+    * thread-local instance of [[ErgoTreeEvaluator]].
+    * If the `currentEvaluator` [[DynamicVariable]] is not initialized (equals to null),
+    * then the block is executed with minimal overhead.
+    *
+    * @param costInfo operation descriptor
+    * @param nItems   number of data items in the operation
+    * @param block    block of code to be executed (given as lazy by-name argument)
+    * @param E        evaluator to be used (or null if it is not avaialble on the
+    *                 current thread)
+    * @return result of code block execution
+    */
+  def perItemCostOp[R](costInfo: OperationCostInfo[PerItemCost], nItems: Int)
+                      (block: () => R)(implicit E: ErgoTreeEvaluator): R = {
+    if (E != null) {
+      E.addSeqCost(costInfo, nItems)(block)
+    } else
+      block()
+  }
 
   /** Evaluate the given [[ErgoTree]] in the given Ergo context using the given settings.
     * The given ErgoTree is evaluated as-is and is not changed during evaluation.

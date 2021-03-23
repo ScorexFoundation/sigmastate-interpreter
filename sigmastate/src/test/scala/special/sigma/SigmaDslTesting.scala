@@ -135,7 +135,7 @@ class SigmaDslTesting extends PropSpec
   val predefScripts = Seq[String]()
 
   /** Descriptor of the language feature. */
-  trait Feature[A, B] {
+  trait Feature[A, B] { feature =>
 
     /** Script containing this feature. */
     def script: String
@@ -154,6 +154,8 @@ class SigmaDslTesting extends PropSpec
 
     /** Function that executes the feature using v5.x interpreter implementation. */
     def newImpl: () => CompiledFunc[A, B]
+
+    def evalSettings: EvalSettings
 
     def printExpectedExpr: Boolean
     def logScript: Boolean
@@ -277,7 +279,9 @@ class SigmaDslTesting extends PropSpec
       val tpeB = Evaluation.rtypeToSType(oldF.tB)
 
       val prover = new FeatureProvingInterpreter()
-      val verifier = new ErgoLikeTestInterpreter()(createIR())
+      val verifier = new ErgoLikeTestInterpreter()(createIR()) {
+        override val evalSettings: EvalSettings = feature.evalSettings
+      }
 
       // Create synthetic ErgoTree which uses all main capabilities of evaluation machinery.
       // 1) first-class functions (lambdas); 2) Context variables; 3) Registers; 4) Equality
@@ -418,7 +422,7 @@ class SigmaDslTesting extends PropSpec
     logScript: Boolean = LogScriptDefault,
     requireMCLowering: Boolean = false
   )(implicit IR: IRContext, tA: RType[A], tB: RType[B],
-             evalSettings: EvalSettings) extends Feature[A, B] {
+             override val evalSettings: EvalSettings) extends Feature[A, B] {
 
     implicit val cs = compilerSettingsInTests
 
@@ -543,7 +547,8 @@ class SigmaDslTesting extends PropSpec
     printExpectedExpr: Boolean = true,
     logScript: Boolean = LogScriptDefault,
     requireMCLowering: Boolean = false
-  )(implicit IR: IRContext, evalSettings: EvalSettings) extends Feature[A, B] {
+  )(implicit IR: IRContext, override val evalSettings: EvalSettings)
+    extends Feature[A, B] {
 
     implicit val cs = compilerSettingsInTests
 
@@ -612,7 +617,8 @@ class SigmaDslTesting extends PropSpec
     expectedExpr: Option[SValue],
     printExpectedExpr: Boolean = true,
     logScript: Boolean = LogScriptDefault
-  )(implicit IR: IRContext) extends Feature[A, B] {
+  )(implicit IR: IRContext, override val evalSettings: EvalSettings)
+    extends Feature[A, B] {
     override def scalaFunc: A => B = { x =>
       sys.error(s"Semantic Scala function is not defined for old implementation: $this")
     }
@@ -732,7 +738,7 @@ class SigmaDslTesting extends PropSpec
     */
   def newFeature[A: RType, B: RType]
       (scalaFunc: A => B, script: String, expectedExpr: SValue = null)
-      (implicit IR: IRContext): Feature[A, B] = {
+      (implicit IR: IRContext, es: EvalSettings): Feature[A, B] = {
     NewFeature(script, scalaFunc, Option(expectedExpr))
   }
 

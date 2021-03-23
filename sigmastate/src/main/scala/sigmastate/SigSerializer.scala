@@ -2,11 +2,12 @@ package sigmastate
 
 import gf2t.GF2_192_Poly
 import org.bouncycastle.util.BigIntegers
-import sigmastate.Values.SigmaBoolean
+import sigmastate.Values.{FixedCost, PerItemCost, SigmaBoolean}
 import sigmastate.basics.DLogProtocol.{ProveDlog, SecondDLogProverMessage}
 import sigmastate.basics.VerifierMessage.Challenge
 import sigmastate.basics.{ProveDHTuple, SecondDiffieHellmanTupleProverMessage}
-import sigmastate.interpreter.CryptoConstants
+import sigmastate.interpreter.ErgoTreeEvaluator.{NamedDesc, OperationCostInfo, fixedCostOp, perItemCostOp}
+import sigmastate.interpreter.{CryptoConstants, ErgoTreeEvaluator}
 import sigmastate.lang.exceptions.SerializerException
 import sigmastate.serialization.SigmaSerializer
 import sigmastate.utils.{Helpers, SigmaByteReader, SigmaByteWriter}
@@ -110,10 +111,23 @@ object SigSerializer {
     else {
       // Verifier step 1: Read the root challenge from the proof.
       val r = SigmaSerializer.startReader(proof)
-      val res = parseAndComputeChallenges(exp, r, null)
+      val E = ErgoTreeEvaluator.getCurrentEvaluator
+      val res = parseAndComputeChallenges(exp, r, null)(E)
       res
     }
   }
+
+  final val ParseChallenge_ProveDlog = OperationCostInfo(
+    FixedCost(4), NamedDesc("ParseChallenge_ProveDlog"))
+
+  final val ParseChallenge_ProveDHT = OperationCostInfo(
+    FixedCost(9), NamedDesc("ParseChallenge_ProveDHT"))
+
+  final val ParsePolynomial = OperationCostInfo(
+    PerItemCost(1, 10, 1), NamedDesc("ParsePolynomial"))
+
+  final val EvaluatePolynomial = OperationCostInfo(
+    PerItemCost(1, 3, 1), NamedDesc("EvaluatePolynomial"))
 
   /** Verifier Step 2: In a top-down traversal of the tree, obtain the challenges for the
     * children of every non-leaf node by reading them from the proof or computing them.
@@ -131,7 +145,7 @@ object SigSerializer {
   def parseAndComputeChallenges(
         exp: SigmaBoolean,
         r: SigmaByteReader,
-        challengeOpt: Challenge = null): UncheckedSigmaTree = {
+        challengeOpt: Challenge = null)(implicit E: ErgoTreeEvaluator): UncheckedSigmaTree = {
     // Verifier Step 2: Let e_0 be the challenge in the node here (e_0 is called "challenge" in the code)
     val challenge = if (challengeOpt == null) {
       Challenge @@ r.getBytes(hashSize)
@@ -142,13 +156,17 @@ object SigSerializer {
     exp match {
       case dl: ProveDlog =>
         // Verifier Step 3: For every leaf node, read the response z provided in the proof.
-        val z = BigIntegers.fromUnsignedByteArray(r.getBytes(order))
-        UncheckedSchnorr(dl, None, challenge, SecondDLogProverMessage(z))
+        fixedCostOp(ParseChallenge_ProveDlog) {
+          val z = BigIntegers.fromUnsignedByteArray(r.getBytes(order))
+          UncheckedSchnorr(dl, None, challenge, SecondDLogProverMessage(z))
+        }
 
       case dh: ProveDHTuple =>
         // Verifier Step 3: For every leaf node, read the response z provided in the proof.
-        val z = BigIntegers.fromUnsignedByteArray(r.getBytes(order))
-        UncheckedDiffieHellmanTuple(dh, None, challenge, SecondDiffieHellmanTupleProverMessage(z))
+        fixedCostOp(ParseChallenge_ProveDHT) {
+          val z = BigIntegers.fromUnsignedByteArray(r.getBytes(order))
+          UncheckedDiffieHellmanTuple(dh, None, challenge, SecondDiffieHellmanTupleProverMessage(z))
+        }
 
       case and: CAND =>
         // Verifier Step 2: If the node is AND, then all of its children get e_0 as the challenge
@@ -182,23 +200,28 @@ object SigSerializer {
 
         COrUncheckedNode(challenge, children)
 
-      case t: CTHRESHOLD =>
+      case th: CTHRESHOLD =>
         // Verifier Step 2: If the node is THRESHOLD,
         // evaluate the polynomial Q(x) at points 1, 2, ..., n to get challenges for child 1, 2, ..., n, respectively.
 
         // Read the polynomial -- it has n-k coefficients
-        val nChildren = t.children.length
-        val coeffBytes = r.getBytes(hashSize * (nChildren - t.k))
-        val polynomial = GF2_192_Poly.fromByteArray(challenge, coeffBytes)
+        val nChildren = th.children.length
+        val nCoefs = nChildren - th.k
+        val polynomial = perItemCostOp(ParsePolynomial, nCoefs) { () =>
+          val coeffBytes = r.getBytes(hashSize * nCoefs)
+          GF2_192_Poly.fromByteArray(challenge, coeffBytes)
+        }
 
         val children = new Array[UncheckedSigmaTree](nChildren)
         cfor(0)(_ < nChildren, _ + 1) { i =>
-          val c = Challenge @@ polynomial.evaluate((i + 1).toByte).toByteArray
-          children(i) = parseAndComputeChallenges(t.children(i), r, c)
+          val c = perItemCostOp(EvaluatePolynomial, nCoefs) { () =>
+            Challenge @@ polynomial.evaluate((i + 1).toByte).toByteArray
+          }
+          children(i) = parseAndComputeChallenges(th.children(i), r, c)
         }
 
         // Verifier doesn't need the polynomial anymore -- hence pass in None
-        CThresholdUncheckedNode(challenge, children, t.k, Some(polynomial))
+        CThresholdUncheckedNode(challenge, children, th.k, Some(polynomial))
     }
   }
 

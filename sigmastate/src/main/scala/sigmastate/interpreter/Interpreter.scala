@@ -7,19 +7,19 @@ import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, rule, str
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
 import org.ergoplatform.validation.SigmaValidationSettings
 import org.ergoplatform.validation.ValidationRules._
-import sigmastate.basics.DLogProtocol.{FirstDLogProverMessage, DLogInteractiveProver}
+import sigmastate.basics.DLogProtocol.{DLogInteractiveProver, FirstDLogProverMessage}
 import org.ergoplatform.ErgoLikeContext
 import scorex.util.ScorexLogging
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate.basics.DLogProtocol.{DLogInteractiveProver, FirstDLogProverMessage}
 import sigmastate.basics._
-import sigmastate.interpreter.Interpreter.{VerificationResult, ScriptEnv, ReductionResult, WhenSoftForkReductionResult}
-import sigmastate.lang.exceptions.{InterpreterException, CostLimitException}
-import sigmastate.serialization.{ValueSerializer, SigmaSerializer}
-import sigmastate.utxo.{DeserializeContext, CostTable}
+import sigmastate.interpreter.Interpreter.{ReductionResult, ScriptEnv, VerificationResult, WhenSoftForkReductionResult}
+import sigmastate.lang.exceptions.{CostLimitException, InterpreterException}
+import sigmastate.serialization.{SigmaSerializer, ValueSerializer}
+import sigmastate.utxo.{CostTable, DeserializeContext}
 import sigmastate.{SType, _}
-import sigmastate.eval.{IRContext, Evaluation}
+import sigmastate.eval.{Evaluation, IRContext, Profiler}
 import scalan.{MutableLazy, Nullable}
 import scalan.util.BenchmarkUtil
 import sigmastate.utils.Helpers._
@@ -354,21 +354,23 @@ trait Interpreter extends ScorexLogging {
 
   /** Executes the script in a given context.
     * Step 1: Deserialize context variables
-    * Step 2: Evaluate expression and produce SigmaProp value, which is zero-knowledge statement (see also `SigmaBoolean`).
+    * Step 2: Evaluate expression and produce SigmaProp value, which is zero-knowledge
+    *         statement (see also `SigmaBoolean`).
     * Step 3: Verify that the proof is presented to satisfy SigmaProp conditions.
     *
-    * @param env       environment of system variables used by the interpreter internally
-    * @param ergoTree       ErgoTree expression to execute in the given context and verify its result
-    * @param context   the context in which `exp` should be executed
-    * @param proof     The proof of knowledge of the secrets which is expected by the resulting SigmaProp
-    * @param message   message bytes, which are used in verification of the proof
-    *
-    * @return          verification result or Exception.
-    *                   If if the estimated cost of execution of the `exp` exceeds the limit (given in `context`),
-    *                   then exception if thrown and packed in Try.
-    *                   If left component is false, then:
-    *                    1) script executed to false or
-    *                    2) the given proof failed to validate resulting SigmaProp conditions.
+    * @param env      environment of system variables used by the interpreter internally
+    * @param ergoTree ErgoTree expression to execute in the given context and verify its
+    *                 result
+    * @param context  the context in which `exp` should be executed
+    * @param proof    The proof of knowledge of the secrets which is expected by the
+    *                 resulting SigmaProp
+    * @param message  message bytes, which are used in verification of the proof
+    * @return verification result or Exception.
+    *         If if the estimated cost of execution of the `exp` exceeds the limit (given
+    *         in `context`), then exception if thrown and packed in Try.
+    *         If left component is false, then:
+    *         1) script executed to false or
+    *         2) the given proof failed to validate resulting SigmaProp conditions.
     * @see `reduceToCrypto`
     */
   def verify(env: ScriptEnv,
@@ -422,7 +424,13 @@ trait Interpreter extends ScorexLogging {
               message = Evaluation.msgCostLimitError(fullCost, context.costLimit),
               cause = None)
           }
-          val ok = verifySignature(cProp, message, proof)
+          val ok = if (evalSettings.isMeasureOperationTime) {
+            val E = ErgoTreeEvaluator.forProfiling(Interpreter.verifySignatureProfiler, evalSettings)
+            ErgoTreeEvaluator.currentEvaluator.withValue(E) {
+              verifySignature(cProp, message, proof)
+            }
+          } else
+            verifySignature(cProp, message, proof)
           (ok, fullCost)
       }
       res
@@ -631,6 +639,11 @@ object Interpreter {
     * in which case the script is reduced to the trivial true proposition and takes up 0 cost.
     */
   val WhenSoftForkReductionResult: ReductionResult = ReductionResult(TrivialProp.TrueProp, 0)
+
+  /** An instance of profiler used to measure cost parameters of verifySignature
+    * operations.
+    */
+  val verifySignatureProfiler = new Profiler
 
   /** Executes the given `calcF` graph in the given context.
     * @param IR      container of the graph (see [[IRContext]])
