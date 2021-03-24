@@ -17,6 +17,7 @@ import sigmastate.interpreter.Interpreter.{ScriptNameProp, ScriptEnv, emptyEnv}
 import sigmastate.utxo.CostTable
 import sigmastate.utxo.CostTable._
 import special.sigma.{SigmaTestingData, AvlTree}
+import sigmastate.lang.Terms.ValueOps
 
 class CostingSpecification extends SigmaTestingData with CrossVersionProps {
   implicit lazy val IR = new TestingIRContext {
@@ -402,6 +403,38 @@ class CostingSpecification extends SigmaTestingData with CrossVersionProps {
     val cost = verifier.verify(emptyEnv, tree, context, pr, fakeMessage).get._2
 
     cost shouldBe expectedCost
+  }
+
+  property("ErgoTree with SigmaPropConstant costs") {
+    val d = new TestData; import d._
+
+    def testTree(tree: ErgoTree, initCost: Long, expectedCost: Long) = {
+      val ctx = context.withInitCost(initCost)
+      val pr = interpreter.prove(tree, ctx, fakeMessage).get
+      pr.cost shouldBe expectedCost
+
+      val verifier = new ErgoLikeTestInterpreter
+      val cost = verifier.verify(emptyEnv, tree, ctx, pr, fakeMessage).get._2
+      cost shouldBe expectedCost
+    }
+
+    // simple trees containing SigmaPropConstant
+    val tree1 = ErgoTree.fromSigmaBoolean(pkA) // without segregation
+    val tree2 = ErgoTree.withSegregation(pkA)
+
+    testTree(tree1, 0, 10061)
+    testTree(tree2, 0, 10061)
+
+    testTree(tree1, context.initCost, 20061)
+    testTree(tree2, context.initCost, 20061)
+
+    // more complex tree without Deserialize
+    val tree3 = ErgoTree.fromProposition(compiler
+      .compile(env, "{ sigmaProp(HEIGHT == 2) }")
+      .asSigmaProp)
+    
+    testTree(tree3, 0, 541)
+    testTree(tree3, context.initCost, 10541)
   }
 
   property("laziness of AND, OR costs") {
