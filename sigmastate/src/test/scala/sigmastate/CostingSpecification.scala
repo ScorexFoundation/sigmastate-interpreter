@@ -420,13 +420,13 @@ class CostingSpecification extends SigmaTestingData with CrossVersionProps {
 
     // simple trees containing SigmaPropConstant
     val tree1 = ErgoTree.fromSigmaBoolean(pkA) // without segregation
-    val tree2 = ErgoTree.withSegregation(pkA)
+    val tree2 = ErgoTree.withSegregation(pkA)  // with segregation, have different `complexity`
 
-    testTree(tree1, 0, 10061)
-    testTree(tree2, 0, 10061)
+    testTree(tree1, 0, 10141)
+    testTree(tree2, 0, 10161)
 
-    testTree(tree1, context.initCost, 20061)
-    testTree(tree2, context.initCost, 20061)
+    testTree(tree1, context.initCost, 20141)
+    testTree(tree2, context.initCost, 20161)
 
     // more complex tree without Deserialize
     val tree3 = ErgoTree.fromProposition(compiler
