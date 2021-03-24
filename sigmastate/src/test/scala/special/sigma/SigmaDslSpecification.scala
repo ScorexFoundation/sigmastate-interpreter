@@ -264,14 +264,14 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
       ))
     val expectedCost = 36518
     val cases = Seq(
-      (true, true) -> Expected(Success(false), expectedCost),
+      (true, true) -> Expected(Success(false), expectedCost)
     )
     verifyCases(cases, feature)
 
     val initCost = 100
     initialCostInTests.withValue(initCost) {
       val cases = Seq(
-        (true, true) -> Expected(Success(false), expectedCost + initCost),
+        (true, true) -> Expected(Success(false), expectedCost + initCost)
       )
       verifyCases(cases, feature)
     }
