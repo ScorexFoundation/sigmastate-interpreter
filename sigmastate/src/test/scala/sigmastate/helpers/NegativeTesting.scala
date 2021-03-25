@@ -3,6 +3,7 @@ package sigmastate.helpers
 import org.scalatest.Matchers
 
 import scala.annotation.tailrec
+import scala.reflect.ClassTag
 
 trait NegativeTesting extends Matchers {
 
@@ -32,5 +33,17 @@ trait NegativeTesting extends Matchers {
   final def rootCause(t: Throwable): Throwable =
     if (t.getCause == null) t
     else rootCause(t.getCause)
+
+  /** Creates an assertion which checks the given type and message contents.
+    *
+    * @tparam E expected type of exception
+    * @param msgParts expected parts of the exception message
+    * @return the assertion which can be used in assertExceptionThrown method
+    */
+  def exceptionLike[E <: Throwable : ClassTag]
+                   (msgParts: String*): Throwable => Boolean = {
+    case t: E => msgParts.forall(t.getMessage.contains(_))
+    case _ => false
+  }
 
 }
