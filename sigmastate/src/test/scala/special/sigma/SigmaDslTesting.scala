@@ -2,43 +2,42 @@ package special.sigma
 
 import java.util
 
-import org.ergoplatform.{ErgoAddressEncoder, ErgoLikeTransaction, ErgoLikeContext, ErgoLikeInterpreter, Input, ErgoBox, DataInput, ErgoScriptPredef}
-import org.scalatest.prop.PropertyChecks
-import sigmastate.interpreter.Interpreter.ScriptEnv
-import org.scalacheck.{Arbitrary, Gen}
-import org.scalatest.{PropSpec, Matchers}
-
-import scala.util.{Success, Failure, Try}
-import sigmastate.Values.{Constant, SValue, ConstantNode, ByteArrayConstant, IntConstant, ErgoTree}
-import scalan.RType
-import scalan.util.Extensions._
-import org.ergoplatform.dsl.{SigmaContractSyntax, ContractSpec, TestContractSpec}
-import org.ergoplatform.validation.{ValidationRules, SigmaValidationSettings}
-import sigmastate.{eval, SSigmaProp, SType}
-import SType.AnyOps
 import org.ergoplatform.SigmaConstants.ScriptCostLimit
+import org.ergoplatform.dsl.{ContractSpec, SigmaContractSyntax, TestContractSpec}
+import org.ergoplatform.validation.{SigmaValidationSettings, ValidationRules}
+import org.ergoplatform._
 import org.scalacheck.Arbitrary._
 import org.scalacheck.Gen.frequency
+import org.scalacheck.{Arbitrary, Gen}
+import org.scalatest.prop.PropertyChecks
+import org.scalatest.{Matchers, PropSpec}
+import scalan.RType
 import scalan.RType._
 import scalan.util.BenchmarkUtil
-import sigmastate.basics.DLogProtocol.{ProveDlog, DLogProverInput}
-import sigmastate.basics.{SigmaProtocol, SigmaProtocolPrivateInput, SigmaProtocolCommonInput}
-import sigmastate.eval.{CompiletimeIRContext, Evaluation, CostingBox, SigmaDsl, IRContext, CostingDataContext}
+import scalan.util.Extensions._
+import sigmastate.SType.AnyOps
+import sigmastate.Values.{ByteArrayConstant, Constant, ConstantNode, ErgoTree, IntConstant, SValue}
+import sigmastate.basics.DLogProtocol.{DLogProverInput, ProveDlog}
+import sigmastate.basics.{SigmaProtocol, SigmaProtocolCommonInput, SigmaProtocolPrivateInput}
 import sigmastate.eval.Extensions._
-import sigmastate.utils.Helpers._
-import sigmastate.lang.Terms.ValueOps
-import sigmastate.helpers.{ErgoLikeContextTesting, SigmaPPrint, ErgoLikeTestInterpreter}
+import sigmastate.eval.{CompiletimeIRContext, CostingBox, CostingDataContext, Evaluation, IRContext, SigmaDsl}
 import sigmastate.helpers.TestingHelpers._
+import sigmastate.helpers.{ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaPPrint}
+import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.interpreter._
+import sigmastate.lang.Terms.ValueOps
 import sigmastate.serialization.ValueSerializer
 import sigmastate.serialization.generators.ObjectGenerators
+import sigmastate.utils.Helpers._
 import sigmastate.utxo.{DeserializeContext, DeserializeRegister}
+import sigmastate.{SSigmaProp, SType, eval}
 import special.collection.{Coll, CollType}
+import spire.syntax.all.cfor
 
 import scala.collection.mutable
 import scala.math.Ordering
 import scala.reflect.ClassTag
-import spire.syntax.all.cfor
+import scala.util.{Failure, Success, Try}
 
 class SigmaDslTesting extends PropSpec
     with PropertyChecks

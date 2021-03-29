@@ -8,40 +8,25 @@ import org.scalacheck.Arbitrary.arbByte
 import org.scalacheck.Gen
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
 import org.scalatest.{Assertion, Matchers, PropSpec}
+import scalan.util.BenchmarkUtil
 import scalan.{RType, TestContexts, TestUtils}
 import scorex.crypto.hash.Blake2b256
 import sigma.types.IsPrimView
-import sigmastate.Values.{Constant, EvaluatedValue, GroupElementConstant, SValue, Value}
-import sigmastate.interpreter.Interpreter.{ScriptEnv, ScriptNameProp}
-import sigmastate.interpreter.{CryptoConstants, Interpreter}
-import sigmastate.lang.Terms
-import sigmastate.serialization.SigmaSerializer
-import sigmastate.{SGroupElement, SType, TestsBase}
+import sigmastate.Values.{Constant, ErgoTree, GroupElementConstant, SValue, Value}
 import sigmastate.eval.{CompiletimeCosting, Evaluation, IRContext, _}
-import sigmastate.interpreter.CryptoConstants.EcPointType
-import sigmastate.utils.Helpers._
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.ContextExtension.VarBinding
+import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.interpreter.ErgoTreeEvaluator.DefaultProfiler
+import sigmastate.interpreter.Interpreter.{ScriptEnv, ScriptNameProp}
+import sigmastate.interpreter.{CryptoConstants, Interpreter, _}
+import sigmastate.lang.{CompilerSettings, SigmaCompiler, Terms}
+import sigmastate.serialization.SigmaSerializer
+import sigmastate.utils.Helpers._
+import sigmastate.{SGroupElement, SType, TestsBase}
 import special.sigma
 
 import scala.language.implicitConversions
-import scala.util.DynamicVariable
-import org.scalatest.prop.{PropertyChecks, GeneratorDrivenPropertyChecks}
-import org.scalatest.{PropSpec, Assertion, Matchers}
-import scalan.util.BenchmarkUtil
-import scalan.{TestUtils, TestContexts, RType}
-import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
-import org.scalatest.{Assertion, Matchers, PropSpec}
-import scalan.{RType, TestContexts, TestUtils}
-import sigmastate.Values.{Constant, SValue, Value, ErgoTree, GroupElementConstant}
-import sigmastate.interpreter.Interpreter.{ScriptNameProp, ScriptEnv}
-import sigmastate.interpreter._
-import sigmastate.lang.{Terms, CompilerSettings, SigmaCompiler}
-import sigmastate.Values.{Constant, EvaluatedValue, GroupElementConstant, SValue, Value}
-import sigmastate.interpreter.Interpreter.{ScriptEnv, ScriptNameProp}
-import sigmastate.interpreter.{CryptoConstants, Interpreter}
-import sigmastate.lang.Terms
 import scala.reflect.ClassTag
 import scala.util.DynamicVariable
 
