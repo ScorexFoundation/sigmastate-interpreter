@@ -5,6 +5,7 @@ import org.scalatest.Matchers
 import scala.annotation.tailrec
 import scala.util.{Failure, Success, Try}
 import spire.syntax.all.cfor
+import scala.reflect.ClassTag
 
 trait NegativeTesting extends Matchers {
 
@@ -39,6 +40,18 @@ trait NegativeTesting extends Matchers {
   final def rootCause[A](x: Try[A]): Try[A] = x match {
     case s: Success[_] => s
     case Failure(t) => Failure(rootCause(t))
+  }
+
+  /** Creates an assertion which checks the given type and message contents.
+    *
+    * @tparam E expected type of exception
+    * @param msgParts expected parts of the exception message
+    * @return the assertion which can be used in assertExceptionThrown method
+    */
+  def exceptionLike[E <: Throwable : ClassTag]
+      (msgParts: String*): Throwable => Boolean = {
+    case t: E => msgParts.forall(t.getMessage.contains(_))
+    case _ => false
   }
 
   /** Checks that both computations either succeed with the same value or fail with the same

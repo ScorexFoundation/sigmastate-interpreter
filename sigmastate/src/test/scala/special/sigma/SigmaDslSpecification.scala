@@ -149,6 +149,31 @@ class SigmaDslSpecification extends SigmaDslTesting
     verifyCases(cases, binXor)
   }
 
+  property("verify should respect Context.initCost") {
+    val feature = existingFeature((x: (Boolean, Boolean)) => x._1 ^ x._2,
+      "{ (x: (Boolean, Boolean)) => x._1 ^ x._2 }",
+      FuncValue(
+        Vector((1, STuple(Vector(SBoolean, SBoolean)))),
+        BinXor(
+          SelectField.typed[BoolValue](ValUse(1, STuple(Vector(SBoolean, SBoolean))), 1.toByte),
+          SelectField.typed[BoolValue](ValUse(1, STuple(Vector(SBoolean, SBoolean))), 2.toByte)
+        )
+      ))
+    val expectedCost = 36518
+    val cases = Seq(
+      (true, true) -> Expected(Success(false), expectedCost)
+    )
+    verifyCases(cases, feature)
+
+    val initCost = 100
+    initialCostInTests.withValue(initCost) {
+      val cases = Seq(
+        (true, true) -> Expected(Success(false), expectedCost + initCost)
+      )
+      verifyCases(cases, feature)
+    }
+  }
+
   property("BinXor(logical XOR) test") {
     val xor = existingFeature((x: (Int, Boolean)) => (x._1 == 0) ^ x._2,
       "{ (x: (Int, Boolean)) => (x._1 == 0) ^ x._2 }",

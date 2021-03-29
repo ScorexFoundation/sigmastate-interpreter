@@ -859,6 +859,24 @@ object Evaluation {
 
   def msgCostLimitError(cost: Long, limit: Long) = s"Estimated execution cost $cost exceeds the limit $limit"
 
+  /** Helper method to accumulate cost while checking limit.
+    * @param current current cost value
+    * @param more    additional cost to add to the current value
+    * @param limit   total cost limit
+    * @return new increased cost when it doesn't exceed the limit
+    * @throws CostLimitException
+    */
+  def addCostChecked(current: Long, more: Long, limit: Long): Long = {
+    val newCost = Math.addExact(current, more)
+    if (newCost > limit) {
+      throw new CostLimitException(
+        estimatedCost = newCost,
+        message = msgCostLimitError(newCost, limit), cause = None)
+    }
+    newCost
+  }
+
+
   /** Transforms a serializable ErgoTree type descriptor to the corresponding RType descriptor of SigmaDsl,
     * which is used during evaluation.
     */
