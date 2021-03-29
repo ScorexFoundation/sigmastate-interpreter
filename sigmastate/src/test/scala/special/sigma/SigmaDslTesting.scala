@@ -339,17 +339,18 @@ class SigmaDslTesting extends PropSpec
             newCtx,
             ValidationRules.currentSettings,
             ScriptCostLimit.value,
-            initCost = 0L
+            initCost = initialCostInTests.value
           )
 
         case _ =>
           ErgoLikeContextTesting.dummy(
-            createBox(0, compiledTree, additionalRegisters = newRegisters),
-            activatedVersionInTests
-          ).withBindings(
+              createBox(0, compiledTree, additionalRegisters = newRegisters),
+              activatedVersionInTests)
+            .withBindings(
               1.toByte -> Constant[SType](input.asInstanceOf[SType#WrappedType], tpeA),
-              2.toByte -> ByteArrayConstant(pkCarolBytes)
-            ).asInstanceOf[ErgoLikeContext]
+              2.toByte -> ByteArrayConstant(pkCarolBytes))
+            .withInitCost(initialCostInTests.value)
+            .asInstanceOf[ErgoLikeContext]
       }
 
       val pr = prover.prove(compiledTree, ergoCtx, fakeMessage).getOrThrow

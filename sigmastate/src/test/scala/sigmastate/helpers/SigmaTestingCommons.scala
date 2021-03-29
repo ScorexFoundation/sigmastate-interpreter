@@ -2,28 +2,29 @@ package sigmastate.helpers
 
 import org.ergoplatform.SigmaConstants.ScriptCostLimit
 import org.ergoplatform._
-import org.ergoplatform.validation.ValidationRules.{CheckCostFunc, CheckCalcFunc}
+import org.ergoplatform.validation.ValidationRules.{CheckCalcFunc, CheckCostFunc}
 import org.ergoplatform.validation.ValidationSpecification
 import org.scalacheck.Arbitrary.arbByte
 import org.scalacheck.Gen
-import org.scalatest.prop.{PropertyChecks, GeneratorDrivenPropertyChecks}
-import org.scalatest.{PropSpec, Assertion, Matchers}
-import scalan.{TestUtils, TestContexts, RType}
+import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
+import org.scalatest.{Assertion, Matchers, PropSpec}
+import scalan.{RType, TestContexts, TestUtils}
 import scorex.crypto.hash.Blake2b256
 import sigma.types.IsPrimView
-import sigmastate.Values.{Constant, EvaluatedValue, SValue, Value, GroupElementConstant}
-import sigmastate.interpreter.Interpreter.{ScriptNameProp, ScriptEnv}
+import sigmastate.Values.{Constant, EvaluatedValue, GroupElementConstant, SValue, Value}
+import sigmastate.interpreter.Interpreter.{ScriptEnv, ScriptNameProp}
 import sigmastate.interpreter.{CryptoConstants, Interpreter}
 import sigmastate.lang.Terms
 import sigmastate.serialization.SigmaSerializer
-import sigmastate.{SGroupElement, TestsBase, SType}
-import sigmastate.eval.{CompiletimeCosting, IRContext, Evaluation, _}
+import sigmastate.{SGroupElement, SType, TestsBase}
+import sigmastate.eval.{CompiletimeCosting, Evaluation, IRContext, _}
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.utils.Helpers._
 import sigmastate.helpers.TestingHelpers._
 import special.sigma
 
 import scala.language.implicitConversions
+import scala.util.DynamicVariable
 
 trait SigmaTestingCommons extends PropSpec
   with PropertyChecks
@@ -106,6 +107,13 @@ trait SigmaTestingCommons extends PropSpec
     CheckCalcFunc(IR)(calcF)
     costingRes
   }
+
+  /** This value is used as Context.initCost value. The default value is used for most
+    * test vectors.
+    * Change this value using `withValue` method to test behavior with non-default
+    * initial cost.
+    */
+  protected val initialCostInTests = new DynamicVariable[Long](0)
 
   /** Returns a Scala function which is equivalent to the given function script.
     * The script is embedded into valid ErgoScript which is then compiled to
@@ -207,7 +215,7 @@ trait SigmaTestingCommons extends PropSpec
           (costCtx, calcCtx)
       }
 
-      val estimatedCost = IR.checkCostWithContext(costingCtx, costF, ScriptCostLimit.value, 0L).getOrThrow
+      val estimatedCost = IR.checkCostWithContext(costingCtx, costF, ScriptCostLimit.value, initialCostInTests.value).getOrThrow
 
       val (res, _) = valueFun(sigmaCtx)
       (res.asInstanceOf[B], estimatedCost)

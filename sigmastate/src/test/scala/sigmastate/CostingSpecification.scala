@@ -2,7 +2,7 @@ package sigmastate
 
 import org.ergoplatform.SigmaConstants.ScriptCostLimit
 import org.ergoplatform.validation.ValidationRules
-import org.ergoplatform.{ErgoLikeContext, ErgoBox}
+import org.ergoplatform.{ErgoBox, ErgoLikeContext}
 import scorex.crypto.authds.avltree.batch.Lookup
 import scorex.crypto.authds.{ADDigest, ADKey}
 import scorex.crypto.hash.Blake2b256
@@ -13,10 +13,12 @@ import sigmastate.eval._
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter}
 import sigmastate.interpreter.ContextExtension
-import sigmastate.interpreter.Interpreter.{ScriptNameProp, ScriptEnv, emptyEnv}
+import sigmastate.interpreter.Interpreter.{ScriptEnv, ScriptNameProp, emptyEnv}
 import sigmastate.utxo.CostTable
 import sigmastate.utxo.CostTable._
-import special.sigma.{SigmaTestingData, AvlTree}
+import special.sigma.{AvlTree, SigmaTestingData}
+import sigmastate.lang.Terms.ValueOps
+import sigmastate.lang.exceptions.CostLimitException
 
 class CostingSpecification extends SigmaTestingData with CrossVersionProps {
   implicit lazy val IR = new TestingIRContext {
@@ -402,6 +404,52 @@ class CostingSpecification extends SigmaTestingData with CrossVersionProps {
     val cost = verifier.verify(emptyEnv, tree, context, pr, fakeMessage).get._2
 
     cost shouldBe expectedCost
+  }
+
+  property("ErgoTree with SigmaPropConstant costs") {
+    val d = new TestData; import d._
+
+    def proveAndVerify(ctx: ErgoLikeContext, tree: ErgoTree, expectedCost: Long) = {
+      val pr = interpreter.prove(tree, ctx, fakeMessage).get
+      pr.cost shouldBe expectedCost
+
+      val verifier = new ErgoLikeTestInterpreter
+      val cost = verifier.verify(emptyEnv, tree, ctx, pr, fakeMessage).get._2
+      cost shouldBe expectedCost
+    }
+
+    // simple trees containing SigmaPropConstant
+    val tree1 = ErgoTree.fromSigmaBoolean(pkA) // without segregation
+    val tree2 = ErgoTree.withSegregation(pkA)  // with segregation, have different `complexity`
+
+    {
+      val ctx = context.withInitCost(0)
+      proveAndVerify(ctx, tree1, expectedCost = 10141)
+      proveAndVerify(ctx, tree2, expectedCost = 10161)
+    }
+
+    {
+      val ctx = context.withInitCost(10000)
+      proveAndVerify(ctx, tree1, expectedCost = 20141)
+      proveAndVerify(ctx, tree2, expectedCost = 20161)
+    }
+
+    {
+      val ctx = context.withInitCost(10000).withCostLimit(20000)
+      assertExceptionThrown(
+        proveAndVerify(ctx, tree1, expectedCost = 20141),
+        exceptionLike[CostLimitException](
+          "Estimated execution cost", "exceeds the limit")
+      )
+    }
+
+    // more complex tree without Deserialize
+    val tree3 = ErgoTree.fromProposition(compiler
+      .compile(env, "{ sigmaProp(HEIGHT == 2) }")
+      .asSigmaProp)
+    
+    proveAndVerify(context.withInitCost(0), tree3, expectedCost = 541)
+    proveAndVerify(context.withInitCost(10000), tree3, expectedCost = 10541)
   }
 
   property("laziness of AND, OR costs") {
