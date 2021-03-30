@@ -5,15 +5,15 @@ import java.util
 import java.util.Objects
 
 import org.bitbucket.inkytonik.kiama.relation.Tree
-import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{strategy, count, everywherebu}
+import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{count, everywherebu, strategy}
 import org.ergoplatform.settings.ErgoAlgos
 import org.ergoplatform.validation.ValidationException
 import scalan.{Nullable, RType}
 import scalan.util.CollectionUtil._
-import sigmastate.SCollection.{SIntArray, SByteArray}
+import sigmastate.SCollection.{SByteArray, SIntArray}
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.interpreter.{CryptoConstants, ErgoTreeEvaluator}
-import sigmastate.serialization.{OpCodes, ConstantStore, _}
+import sigmastate.serialization.{ConstantStore, OpCodes, _}
 import sigmastate.serialization.OpCodes._
 import sigmastate.TrivialProp.{FalseProp, TrueProp}
 import sigmastate.Values.ErgoTree.substConstants
@@ -25,7 +25,8 @@ import special.sigma.Extensions._
 import sigmastate.eval._
 import sigmastate.eval.Extensions._
 import scalan.util.Extensions.ByteOps
-import sigmastate.interpreter.ErgoTreeEvaluator.{DataEnv, error, CompanionDesc, NamedDesc, OperationDesc}
+import sigmastate.SigSerializer.ParseChallenge_ProveDlog
+import sigmastate.interpreter.ErgoTreeEvaluator.{CompanionDesc, DataEnv, NamedDesc, OperationDesc, error}
 import spire.syntax.all.cfor
 
 import scala.language.implicitConversions
@@ -34,7 +35,7 @@ import sigmastate.lang.DefaultSigmaBuilder._
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.serialization.transformers.ProveDHTupleSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import special.sigma.{AvlTree, PreHeader, Header, _}
+import special.sigma.{AvlTree, Header, PreHeader, _}
 import sigmastate.lang.SourceContext
 import special.collection.Coll
 import sigmastate.utxo.CostTable.CostOf

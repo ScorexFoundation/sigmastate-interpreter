@@ -207,7 +207,7 @@ trait Interpreter extends ScorexLogging {
     implicit val vs = context.validationSettings
     trySoftForkable[ReductionResult](whenSoftFork = WhenSoftForkReductionResult(context.initCost)) {
 
-      val (res, cost) = {
+      val (resProp, cost) = {
         val ctx = context.asInstanceOf[ErgoLikeContext]
           .withInitCost(context.initCost * 10)   // adjust for Evaluator cost units scale
           .withCostLimit(context.costLimit * 10)
@@ -218,7 +218,7 @@ trait Interpreter extends ScorexLogging {
         }
       }
 
-      ReductionResult(SigmaDsl.toSigmaBoolean(res), cost.toLong / 10)  // scale back
+      ReductionResult(SigmaDsl.toSigmaBoolean(resProp), cost.toLong / 10)  // scale back
     }
   }
 
@@ -264,29 +264,35 @@ trait Interpreter extends ScorexLogging {
     */
   def fullReduction(ergoTree: ErgoTree,
                     context: CTX,
-                    env: ScriptEnv): ReductionResult = {
+                    env: ScriptEnv): (ReductionResult, ReductionResult) = {
     implicit val vs: SigmaValidationSettings = context.validationSettings
     val prop = propositionFromErgoTree(ergoTree, context)
-    prop match {
+    val res @ (aotRes, jitRes) = prop match {
       case SigmaPropConstant(p) =>
         val sb = SigmaDsl.toSigmaBoolean(p)
+
         val cost = SigmaBoolean.estimateCost(sb)
         val resCost = Evaluation.addCostChecked(context.initCost, cost, context.costLimit)
-        val jitCost = SigmaBoolean.estimateCostJit(sb)
-        ReductionResult(sb, resCost)
+
+        val jitCost = Constant.costKind.cost
+        val resJitCost = Evaluation.addCostChecked(context.initCost, jitCost, context.costLimit)
+        (ReductionResult(sb, resCost), ReductionResult(sb, resJitCost))
       case _ if !ergoTree.hasDeserialize =>
         val r = precompiledScriptProcessor.getReducer(ergoTree, context.validationSettings)
-        val res = r.reduce(context)
+        val aotRes = r.reduce(context)
+
         val ctx = context.asInstanceOf[ErgoLikeContext]
           .withInitCost(context.initCost * 10)    // adjust for Evaluator cost units scale
           .withCostLimit(context.costLimit * 10)
         val ReductionResult(v, c) = ErgoTreeEvaluator.evalToCrypto(ctx, ergoTree, evalSettings)
         val jitRes = ReductionResult(v, c / 10) // scale cost back
-        checkResults(ergoTree, res, jitRes)
-        res
+        (aotRes, jitRes)
       case _ =>
         reductionWithDeserialize(ergoTree, prop, context, env)
     }
+
+    checkResults(ergoTree, aotRes, jitRes)
+    res
   }
 
   private def checkResults(ergoTree: ErgoTree, res: ReductionResult, jitRes: ReductionResult) = {
@@ -305,8 +311,12 @@ trait Interpreter extends ScorexLogging {
       else
         println(msg)
     }
-    val oldCost = res.cost
-    val newCost = jitRes.cost
+    checkCosts(ergoTree, res.cost, jitRes.cost)
+  }
+
+  private def checkCosts(ergoTree: ErgoTree,
+                         oldCost: Long,
+                         newCost: Long) = {
     if (oldCost < newCost) {
       val msg =
         s"""Wrong JIT cost: -----------------------------------------
@@ -326,7 +336,7 @@ trait Interpreter extends ScorexLogging {
   private def reductionWithDeserialize(ergoTree: ErgoTree,
                                        prop: SigmaPropValue,
                                        context: CTX,
-                                       env: ScriptEnv) = {
+                                       env: ScriptEnv): (ReductionResult, ReductionResult) = {
     implicit val vs: SigmaValidationSettings = context.validationSettings
     val res = {
       val (propTree, context2) = trySoftForkable[(BoolValue, CTX)](whenSoftFork = (TrueLeaf, context)) {
@@ -346,8 +356,7 @@ trait Interpreter extends ScorexLogging {
       // and the rest of the verification is also trivial
       reduceToCryptoJITC(context2, env, propTree).getOrThrow
     }
-    checkResults(ergoTree, res, jitRes)
-    res
+    (res, jitRes)
   }
 
   /** Executes the script in a given context.
@@ -402,30 +411,26 @@ trait Interpreter extends ScorexLogging {
       val initCost = Evaluation.addCostChecked(context.initCost, complexityCost, context.costLimit)
       val contextWithCost = context.withInitCost(initCost).asInstanceOf[CTX]
 
-      val ReductionResult(cProp, cost) = fullReduction(ergoTree, contextWithCost, env)
+      val (ReductionResult(cProp, cost), jitRes) = fullReduction(ergoTree, contextWithCost, env)
 
       val res = cProp match {
         case TrivialProp.TrueProp => (true, cost)
         case TrivialProp.FalseProp => (false, cost)
         case _ =>
-          // TODO v5.0: add AOT estimation of sigma proposition verification
-          //  Math.addExact(cost, SigmaBoolean.estimateCostJit(cProp))
-          val fullCost = cost
-          if (fullCost > context.costLimit) {
-            // TODO cover with tests (2h)
-            throw new CostLimitException(
-              estimatedCost = fullCost,
-              message = Evaluation.msgCostLimitError(fullCost, context.costLimit),
-              cause = None)
-          }
+          val fullJitCost = Evaluation.addCostChecked(
+            jitRes.cost, SigmaBoolean.estimateCostJit(cProp), context.costLimit)
+
+          checkCosts(ergoTree, cost, fullJitCost)
+
           val ok = if (evalSettings.isMeasureOperationTime) {
-            val E = ErgoTreeEvaluator.forProfiling(Interpreter.verifySignatureProfiler, evalSettings)
+            val E = ErgoTreeEvaluator.forProfiling(
+              Interpreter.verifySignatureProfiler, evalSettings)
             ErgoTreeEvaluator.currentEvaluator.withValue(E) {
               verifySignature(cProp, message, proof)
             }
           } else
             verifySignature(cProp, message, proof)
-          (ok, fullCost)
+          (ok, cost)
       }
       res
     })

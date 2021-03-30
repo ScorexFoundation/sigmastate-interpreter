@@ -126,7 +126,7 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
 
     val ctxUpdInitCost = context.withInitCost(initCost).asInstanceOf[CTX]
 
-    val res = fullReduction(ergoTree, ctxUpdInitCost, env)
+    val res = fullReduction(ergoTree, ctxUpdInitCost, env)._1
     val proof = generateProof(res.value, message, hintsBag)
 
     CostedProverResult(proof, ctxUpdInitCost.extension, res.cost)
