@@ -5,16 +5,16 @@ import java.util
 
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, rule, strategy}
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
+import org.ergoplatform.ErgoLikeContext
 import org.ergoplatform.validation.SigmaValidationSettings
 import org.ergoplatform.validation.ValidationRules._
-import sigmastate.basics.DLogProtocol.{DLogInteractiveProver, FirstDLogProverMessage}
-import org.ergoplatform.ErgoLikeContext
+import sigmastate.basics.DLogProtocol.{DLogInteractiveProver, FirstDLogProverMessage, ProveDlog}
 import scorex.util.ScorexLogging
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate.basics.DLogProtocol.{DLogInteractiveProver, FirstDLogProverMessage}
 import sigmastate.basics._
-import sigmastate.interpreter.Interpreter.{ReductionResult, ScriptEnv, VerificationResult, WhenSoftForkReductionResult}
+import sigmastate.interpreter.Interpreter._
 import sigmastate.lang.exceptions.{CostLimitException, InterpreterException}
 import sigmastate.serialization.{SigmaSerializer, ValueSerializer}
 import sigmastate.utxo.{CostTable, DeserializeContext}
@@ -22,9 +22,12 @@ import sigmastate.{SType, _}
 import sigmastate.eval.{Evaluation, IRContext, Profiler}
 import scalan.{MutableLazy, Nullable}
 import scalan.util.BenchmarkUtil
+import sigmastate.FiatShamirTree._
+import sigmastate.SigSerializer._
 import sigmastate.interpreter.ErgoTreeEvaluator.{NamedDesc, OperationCostInfo, fixedCostOp}
 import sigmastate.utils.Helpers._
 import sigmastate.lang.Terms.ValueOps
+import spire.syntax.all.cfor
 
 import scala.util.{Success, Try}
 
@@ -274,7 +277,9 @@ trait Interpreter extends ScorexLogging {
         val cost = SigmaBoolean.estimateCost(sb)
         val resCost = Evaluation.addCostChecked(context.initCost, cost, context.costLimit)
 
-        val jitCost = Constant.costKind.cost
+        // NOTE, evaluator cost unit is 10 times smaller then the cost unit of context
+        val jitCost = Eval_SigmaPropConstant.costKind.cost / 10
+
         val resJitCost = Evaluation.addCostChecked(context.initCost, jitCost, context.costLimit)
         (ReductionResult(sb, resCost), ReductionResult(sb, resJitCost))
       case _ if !ergoTree.hasDeserialize =>
@@ -417,8 +422,9 @@ trait Interpreter extends ScorexLogging {
         case TrivialProp.TrueProp => (true, cost)
         case TrivialProp.FalseProp => (false, cost)
         case _ =>
-          val fullJitCost = Evaluation.addCostChecked(
-            jitRes.cost, SigmaBoolean.estimateCostJit(cProp), context.costLimit)
+          val verificationC = estimateVerificationCost(cProp) / 10 // scale eval to tx cost
+          // Note, jitRes.cost is already scaled in fullReduction
+          val fullJitCost = Evaluation.addCostChecked(jitRes.cost, verificationC, context.costLimit)
 
           checkCosts(ergoTree, cost, fullJitCost)
 
@@ -531,12 +537,6 @@ trait Interpreter extends ScorexLogging {
     util.Arrays.equals(newRoot.challenge, expectedChallenge)
   }
 
-  final val ComputeCommitments_Schnorr = OperationCostInfo(
-    FixedCost(3200), NamedDesc("ComputeCommitments_Schnorr"))
-
-  final val ComputeCommitments_DHT = OperationCostInfo(
-    FixedCost(6450), NamedDesc("ComputeCommitments_DHT"))
-
   /**
     * Verifier Step 4: For every leaf node, compute the commitment a from the challenge e and response $z$,
     * per the verifier algorithm of the leaf's Sigma-protocol.
@@ -547,14 +547,14 @@ trait Interpreter extends ScorexLogging {
 
     case sn: UncheckedSchnorr =>
       implicit val E = ErgoTreeEvaluator.getCurrentEvaluator
-      fixedCostOp(ComputeCommitments_Schnorr) {
+      fixedCostOp(Interpreter.ComputeCommitments_Schnorr) {
         val a = DLogInteractiveProver.computeCommitment(sn.proposition, sn.challenge, sn.secondMessage)
         sn.copy(commitmentOpt = Some(FirstDLogProverMessage(a)))
       }
 
     case dh: UncheckedDiffieHellmanTuple =>
       implicit val E = ErgoTreeEvaluator.getCurrentEvaluator
-      fixedCostOp(ComputeCommitments_DHT) {
+      fixedCostOp(Interpreter.ComputeCommitments_DHT) {
         val (a, b) = DiffieHellmanTupleInteractiveProver.computeCommitment(dh.proposition, dh.challenge, dh.secondMessage)
         dh.copy(commitmentOpt = Some(FirstDiffieHellmanTupleProverMessage(a, b)))
       }
@@ -650,6 +650,75 @@ object Interpreter {
     * in which case the script is reduced to the trivial true proposition and takes up 0 cost.
     */
   def WhenSoftForkReductionResult(cost: Long): ReductionResult = ReductionResult(TrivialProp.TrueProp, cost)
+
+  final val ComputeCommitments_Schnorr = OperationCostInfo(
+    FixedCost(3200), NamedDesc("ComputeCommitments_Schnorr"))
+
+  final val ComputeCommitments_DHT = OperationCostInfo(
+    FixedCost(6450), NamedDesc("ComputeCommitments_DHT"))
+
+  /** Represents the cost spent by JIT evaluator on a simple ErgoTree containing
+    * SigmaPropConstant.
+    * It doesn't include cost of crypto verification.
+    */
+  final val Eval_SigmaPropConstant = OperationCostInfo(
+    FixedCost(10), NamedDesc("Eval_SigmaPropConstant"))
+
+  /** Computes the estimated cost of verification of sigma proposition.
+    * The cost is estimated ahead of time, without actually performing expencive crypto
+    * operations.
+    * @param sb sigma proposition
+    * @return estimated cost of verification of the given proposition
+    */
+  def estimateVerificationCost(sb: SigmaBoolean): Int = {
+    /** Recursively compute the total cost of the given children. */
+    def childrenCost(children: Seq[SigmaBoolean]): Int = {
+      val childrenArr = children.toArray
+      val nChildren = childrenArr.length
+      var sum = 0
+      cfor(0)(_ < nChildren, _ + 1) { i =>
+        val c = estimateVerificationCost(childrenArr(i))
+        sum = Math.addExact(sum, c)
+      }
+      sum
+    }
+    sb match {
+      case _: ProveDlog =>
+        Math.addExact(
+          Math.addExact(
+            ParseChallenge_ProveDlog.costKind.cost,
+            ComputeCommitments_Schnorr.costKind.cost),
+          ToBytes_Schnorr.costKind.cost)
+
+      case _: ProveDHTuple =>
+        Math.addExact(
+          Math.addExact(
+            ParseChallenge_ProveDHT.costKind.cost,
+            ComputeCommitments_DHT.costKind.cost),
+          ToBytes_DHT.costKind.cost)
+
+      case and: CAND =>
+        val nodeC = ToBytes_ProofTreeConjecture.costKind.cost
+        val childrenC = childrenCost(and.children)
+        Math.addExact(nodeC, childrenC)
+
+      case or: COR =>
+        val nodeC = ToBytes_ProofTreeConjecture.costKind.cost
+        val childrenC = childrenCost(or.children)
+        Math.addExact(nodeC, childrenC)
+
+      case th: CTHRESHOLD =>
+        val nChildren = th.children.length
+        val nCoefs = nChildren - th.k
+        val parseC = ParsePolynomial.costKind.cost(nCoefs)
+        val evalC = EvaluatePolynomial.costKind.cost(nCoefs) * nChildren
+        val nodeC = ToBytes_ProofTreeConjecture.costKind.cost
+        val childernC = childrenCost(th.children)
+        Math.addExact(Math.addExact(Math.addExact(parseC, evalC), nodeC), childernC)
+      case _ =>
+        0  // the cost of trivial proposition
+    }
+  }
 
   /** An instance of profiler used to measure cost parameters of verifySignature
     * operations.

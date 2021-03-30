@@ -4,7 +4,6 @@ import java.math.BigInteger
 import java.util
 import java.util.Objects
 
-import org.bitbucket.inkytonik.kiama.relation.Tree
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{count, everywherebu, strategy}
 import org.ergoplatform.settings.ErgoAlgos
 import org.ergoplatform.validation.ValidationException
@@ -25,8 +24,7 @@ import special.sigma.Extensions._
 import sigmastate.eval._
 import sigmastate.eval.Extensions._
 import scalan.util.Extensions.ByteOps
-import sigmastate.SigSerializer.ParseChallenge_ProveDlog
-import sigmastate.interpreter.ErgoTreeEvaluator.{CompanionDesc, DataEnv, NamedDesc, OperationDesc, error}
+import sigmastate.interpreter.ErgoTreeEvaluator._
 import spire.syntax.all.cfor
 
 import scala.language.implicitConversions
@@ -746,34 +744,6 @@ object Values {
         sum
       }
 
-      sb match {
-        case _: ProveDlog => CostTable.proveDlogEvalCost
-        case _: ProveDHTuple => CostTable.proveDHTupleEvalCost
-        case and: CAND =>
-          childrenCost(and.children)
-        case or: COR =>
-          childrenCost(or.children)
-        case th: CTHRESHOLD =>
-          childrenCost(th.children)
-        case _ =>
-          CostTable.MinimalCost
-      }
-    }
-
-
-    /** Jit version with adjusted cost parameters. */
-    def estimateCostJit(sb: SigmaBoolean): Int = {
-      /** Compute the total cost of the given children. */
-      def childrenCost(children: Seq[SigmaBoolean]): Int = {
-        val childrenArr = children.toArray
-        val nChildren = childrenArr.length
-        var sum = 0
-        cfor(0)(_ < nChildren, _ + 1) { i =>
-          val c = estimateCostJit(childrenArr(i))
-          sum = Math.addExact(sum, c)
-        }
-        sum
-      }
       sb match {
         case _: ProveDlog => CostTable.proveDlogEvalCost
         case _: ProveDHTuple => CostTable.proveDHTupleEvalCost
