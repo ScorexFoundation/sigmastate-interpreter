@@ -73,11 +73,7 @@ trait Interpreter extends ScorexLogging {
     val script = ValueSerializer.deserialize(r)  // Why ValueSerializer? read NOTE above
     val scriptComplexity = r.complexity
 
-    val currCost = JMath.addExact(context.initCost, scriptComplexity)
-    val remainingLimit = context.costLimit - currCost
-    if (remainingLimit <= 0) {
-      throw new CostLimitException(currCost, Evaluation.msgCostLimitError(currCost, context.costLimit), None)
-    }
+    val currCost = Evaluation.addCostChecked(context.initCost, scriptComplexity, context.costLimit)
     val ctx1 = context.withInitCost(currCost).asInstanceOf[CTX]
     (ctx1, script)
   }
@@ -167,7 +163,7 @@ trait Interpreter extends ScorexLogging {
     implicit val vs = context.validationSettings
     val maxCost = context.costLimit
     val initCost = context.initCost
-    trySoftForkable[ReductionResult](whenSoftFork = WhenSoftForkReductionResult) {
+    trySoftForkable[ReductionResult](whenSoftFork = WhenSoftForkReductionResult(initCost)) {
       val costingRes = doCostingEx(env, exp, true)
       val costF = costingRes.costF
       IR.onCostingResult(env, exp, costingRes)
@@ -402,12 +398,8 @@ trait Interpreter extends ScorexLogging {
         // else proceed normally
       }
 
-      val initCost = JMath.addExact(ergoTree.complexity.toLong, context.initCost)
-      val remainingLimit = context.costLimit - initCost
-      if (remainingLimit <= 0) {
-        // TODO cover with tests (2h)
-        throw new CostLimitException(initCost, Evaluation.msgCostLimitError(initCost, context.costLimit), None)
-      }
+      val complexityCost = ergoTree.complexity.toLong
+      val initCost = Evaluation.addCostChecked(context.initCost, complexityCost, context.costLimit)
       val contextWithCost = context.withInitCost(initCost).asInstanceOf[CTX]
 
       val ReductionResult(cProp, cost) = fullReduction(ergoTree, contextWithCost, env)
@@ -652,7 +644,7 @@ object Interpreter {
   /** The result of script reduction when soft-fork condition is detected by the old node,
     * in which case the script is reduced to the trivial true proposition and takes up 0 cost.
     */
-  val WhenSoftForkReductionResult: ReductionResult = ReductionResult(TrivialProp.TrueProp, 0)
+  def WhenSoftForkReductionResult(cost: Long): ReductionResult = ReductionResult(TrivialProp.TrueProp, cost)
 
   /** An instance of profiler used to measure cost parameters of verifySignature
     * operations.
