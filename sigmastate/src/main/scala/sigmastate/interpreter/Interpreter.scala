@@ -205,7 +205,7 @@ trait Interpreter extends ScorexLogging {
     */
   def reduceToCryptoJITC(context: CTX, env: ScriptEnv, exp: SigmaPropValue): Try[ReductionResult] = Try {
     implicit val vs = context.validationSettings
-    trySoftForkable[ReductionResult](whenSoftFork = WhenSoftForkReductionResult) {
+    trySoftForkable[ReductionResult](whenSoftFork = WhenSoftForkReductionResult(context.initCost)) {
 
       val (res, cost) = {
         val ctx = context.asInstanceOf[ErgoLikeContext]
