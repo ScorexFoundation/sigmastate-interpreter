@@ -2,6 +2,7 @@ package sigmastate
 
 import gf2t.GF2_192_Poly
 import org.bouncycastle.util.BigIntegers
+import scorex.util.encode.Base16
 import sigmastate.Values.{FixedCost, PerItemCost, SigmaBoolean}
 import sigmastate.basics.DLogProtocol.{ProveDlog, SecondDLogProverMessage}
 import sigmastate.basics.VerifierMessage.Challenge
@@ -129,6 +130,16 @@ object SigSerializer {
   final val EvaluatePolynomial = OperationCostInfo(
     PerItemCost(1, 3, 1), NamedDesc("EvaluatePolynomial"))
 
+  /** Helper method to read requested or remaining bytes from the reader. */
+  def readBytesChecked(r: SigmaByteReader, numRequestedBytes: Int, msg: String => String): Array[Byte] = {
+    val bytes = r.getBytesUnsafe(numRequestedBytes)
+    if (bytes.length != numRequestedBytes) {
+      val hex = Base16.encode(r.getAllBufferBytes)
+      println(msg(hex))
+    }
+    bytes
+  }
+
   /** Verifier Step 2: In a top-down traversal of the tree, obtain the challenges for the
     * children of every non-leaf node by reading them from the proof or computing them.
     * Verifier Step 3: For every leaf node, read the response z provided in the proof.
@@ -148,7 +159,7 @@ object SigSerializer {
         challengeOpt: Challenge = null)(implicit E: ErgoTreeEvaluator): UncheckedSigmaTree = {
     // Verifier Step 2: Let e_0 be the challenge in the node here (e_0 is called "challenge" in the code)
     val challenge = if (challengeOpt == null) {
-      Challenge @@ r.getBytes(hashSize)
+      Challenge @@ readBytesChecked(r, hashSize, hex => s"Invalid challenge in: $hex")
     } else {
       challengeOpt
     }
@@ -157,14 +168,16 @@ object SigSerializer {
       case dl: ProveDlog =>
         // Verifier Step 3: For every leaf node, read the response z provided in the proof.
         fixedCostOp(ParseChallenge_ProveDlog) {
-          val z = BigIntegers.fromUnsignedByteArray(r.getBytes(order))
+          val z_bytes = readBytesChecked(r, order, hex => s"Invalid z bytes for $dl: $hex")
+          val z = BigIntegers.fromUnsignedByteArray(z_bytes)
           UncheckedSchnorr(dl, None, challenge, SecondDLogProverMessage(z))
         }
 
       case dh: ProveDHTuple =>
         // Verifier Step 3: For every leaf node, read the response z provided in the proof.
         fixedCostOp(ParseChallenge_ProveDHT) {
-          val z = BigIntegers.fromUnsignedByteArray(r.getBytes(order))
+          val z_bytes = readBytesChecked(r, order, hex => s"Invalid z bytes for $dh: $hex")
+          val z = BigIntegers.fromUnsignedByteArray(z_bytes)
           UncheckedDiffieHellmanTuple(dh, None, challenge, SecondDiffieHellmanTupleProverMessage(z))
         }
 
@@ -208,7 +221,7 @@ object SigSerializer {
         val nChildren = th.children.length
         val nCoefs = nChildren - th.k
         val polynomial = perItemCostOp(ParsePolynomial, nCoefs) { () =>
-          val coeffBytes = r.getBytes(hashSize * nCoefs)
+          val coeffBytes = readBytesChecked(r, hashSize * nCoefs, hex => s"Invalid coeffBytes for $th: $hex")
           GF2_192_Poly.fromByteArray(challenge, coeffBytes)
         }
 

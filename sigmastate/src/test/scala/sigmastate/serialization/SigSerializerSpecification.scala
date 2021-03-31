@@ -513,4 +513,16 @@ class SigSerializerSpecification extends SigmaTestingCommons
       hex shouldBe c.fiatShamirHex
     }
   }
+
+  property("Invalid signature parsing") {
+    forAll { bytes: Array[Byte] =>
+      val r = SigmaSerializer.startReader(bytes)
+      val readBytes = r.getBytesUnsafe(bytes.length + 1) // request more than present
+      readBytes shouldBe bytes
+
+      // we now at the limit position of reader, and still can get all buffer bytes
+      val allBytes = r.getAllBufferBytes
+      allBytes shouldBe bytes
+    }
+  }
 }
