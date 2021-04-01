@@ -80,11 +80,8 @@ class ErgoTreeEvaluator(
   val constants: Seq[Constant[SType]],
   protected val coster: CostAccumulator,
   val profiler: Profiler,
-  val settings: EvalSettings) extends LazyLogging
-{
-  /** Log warning message using this class's logger. */
-  def warn(msg: String) = logger.warn(msg)
-
+  val settings: EvalSettings) {
+  
   /** Evaluates the given expression in the given data environment. */
   def eval(env: DataEnv, exp: SValue): Any = {
     ErgoTreeEvaluator.currentEvaluator.withValue(this) {
