@@ -1,7 +1,10 @@
 package sigmastate
 
+import com.typesafe.scalalogging.LazyLogging
 import gf2t.GF2_192_Poly
 import org.bouncycastle.util.BigIntegers
+import scorex.util.encode.Base16
+import sigmastate.SigSerializer.{logger, readBytesChecked}
 import sigmastate.Values.SigmaBoolean
 import sigmastate.basics.DLogProtocol.{ProveDlog, SecondDLogProverMessage}
 import sigmastate.basics.VerifierMessage.Challenge
@@ -12,7 +15,9 @@ import sigmastate.serialization.SigmaSerializer
 import sigmastate.utils.{Helpers, SigmaByteReader, SigmaByteWriter}
 import spire.syntax.all.cfor
 
-object SigSerializer {
+object SigSerializer extends LazyLogging {
+  /** Log warning message using this class's logger. */
+  def warn(msg: String) = logger.warn(msg)
 
   val hashSize = CryptoConstants.soundnessBits / 8
   val order = CryptoConstants.groupSize
@@ -115,6 +120,16 @@ object SigSerializer {
     }
   }
 
+  /** Helper method to read requested or remaining bytes from the reader. */
+  def readBytesChecked(r: SigmaByteReader, numRequestedBytes: Int, onError: String => Unit): Array[Byte] = {
+    val bytes = r.getBytesUnsafe(numRequestedBytes)
+    if (bytes.length != numRequestedBytes) {
+      val hex = Base16.encode(r.getAllBufferBytes)
+      onError(hex)
+    }
+    bytes
+  }
+
   /** Verifier Step 2: In a top-down traversal of the tree, obtain the challenges for the
     * children of every non-leaf node by reading them from the proof or computing them.
     * Verifier Step 3: For every leaf node, read the response z provided in the proof.
@@ -134,7 +149,8 @@ object SigSerializer {
         challengeOpt: Challenge = null): UncheckedSigmaTree = {
     // Verifier Step 2: Let e_0 be the challenge in the node here (e_0 is called "challenge" in the code)
     val challenge = if (challengeOpt == null) {
-      Challenge @@ r.getBytes(hashSize)
+      Challenge @@ readBytesChecked(r, hashSize,
+        hex => warn(s"Invalid challenge in: $hex"))
     } else {
       challengeOpt
     }
@@ -142,12 +158,14 @@ object SigSerializer {
     exp match {
       case dl: ProveDlog =>
         // Verifier Step 3: For every leaf node, read the response z provided in the proof.
-        val z = BigIntegers.fromUnsignedByteArray(r.getBytes(order))
+        val z_bytes = readBytesChecked(r, order, hex => warn(s"Invalid z bytes for $dl: $hex"))
+        val z = BigIntegers.fromUnsignedByteArray(z_bytes)
         UncheckedSchnorr(dl, None, challenge, SecondDLogProverMessage(z))
 
       case dh: ProveDHTuple =>
         // Verifier Step 3: For every leaf node, read the response z provided in the proof.
-        val z = BigIntegers.fromUnsignedByteArray(r.getBytes(order))
+        val z_bytes = readBytesChecked(r, order, hex => warn(s"Invalid z bytes for $dh: $hex"))
+        val z = BigIntegers.fromUnsignedByteArray(z_bytes)
         UncheckedDiffieHellmanTuple(dh, None, challenge, SecondDiffieHellmanTupleProverMessage(z))
 
       case and: CAND =>
@@ -182,23 +200,25 @@ object SigSerializer {
 
         COrUncheckedNode(challenge, children)
 
-      case t: CTHRESHOLD =>
+      case th: CTHRESHOLD =>
         // Verifier Step 2: If the node is THRESHOLD,
         // evaluate the polynomial Q(x) at points 1, 2, ..., n to get challenges for child 1, 2, ..., n, respectively.
 
         // Read the polynomial -- it has n-k coefficients
-        val nChildren = t.children.length
-        val coeffBytes = r.getBytes(hashSize * (nChildren - t.k))
+        val nChildren = th.children.length
+        val nCoefs = nChildren - th.k
+        val coeffBytes = readBytesChecked(r, hashSize * nCoefs,
+          hex => warn(s"Invalid coeffBytes for $th: $hex"))
         val polynomial = GF2_192_Poly.fromByteArray(challenge, coeffBytes)
 
         val children = new Array[UncheckedSigmaTree](nChildren)
         cfor(0)(_ < nChildren, _ + 1) { i =>
           val c = Challenge @@ polynomial.evaluate((i + 1).toByte).toByteArray
-          children(i) = parseAndComputeChallenges(t.children(i), r, c)
+          children(i) = parseAndComputeChallenges(th.children(i), r, c)
         }
 
         // Verifier doesn't need the polynomial anymore -- hence pass in None
-        CThresholdUncheckedNode(challenge, children, t.k, Some(polynomial))
+        CThresholdUncheckedNode(challenge, children, th.k, Some(polynomial))
     }
   }
 
