@@ -312,6 +312,7 @@ case class OR(input: Value[SCollection[SBoolean.type]])
     val len = inputV.length
     var i = 0
     E.addSeqCost(OR.costKind, this.companion.opDesc) { () =>
+      // this loop is bounded since ErgoTree is bounded by MaxBoxSize
       while (i < len && !res) {
         res ||= inputV(i)
         i += 1
@@ -384,6 +385,7 @@ case class AND(input: Value[SCollection[SBoolean.type]])
     val len = inputV.length
     var i = 0
     E.addSeqCost(AND.costKind, this.companion.opDesc) { () =>
+      // this loop is bounded since ErgoTree is bounded by MaxBoxSize
       while (i < len && res) {
         res &&= inputV(i)
         i += 1

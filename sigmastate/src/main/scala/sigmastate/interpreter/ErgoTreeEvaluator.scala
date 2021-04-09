@@ -232,11 +232,15 @@ class ErgoTreeEvaluator(
     * the given operation descriptor and cost kind. If time measuring is enabled also
     * performs profiling.
     *
+    * WARNING: The cost is accumulated AFTER the block is executed.
+    * Each usage of this method should be accompanied with a proof of why this cannot lead
+    * to unbounded execution (see all usages).
+    *
     * @param costKind the cost descriptor to be used to compute the cost based on the
     *                 actual number of items returned by the `block`
     * @param opDesc   the operation to associate the cost with (when costTracingEnabled)
-    * @param block    operation executed under the given cost, returns number of items
-    *                 processed
+    * @param block    operation executed under the given cost descriptors, returns a number
+    *                 of items processed
     * @hotspot don't beautify the code
     */
   final def addSeqCost(costKind: PerItemCost, opDesc: OperationDesc)(block: () => Int): Unit = {

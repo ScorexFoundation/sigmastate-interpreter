@@ -1448,6 +1448,7 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
     // NOTE: the cost depends on the position of the pattern since
     // we are checking until the first matching pattern found.
     E.addSeqCost(CheckFlatmapBody_Info) { () =>
+      // the loop is bounded because flatMap_BodyPatterns is fixed
       var i = 0
       val nPatterns = flatMap_BodyPatterns.length
       while (i < nPatterns && !found) {
@@ -1559,6 +1560,7 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
     val costKind = mc.method.costKind.asInstanceOf[PerItemCost]
     var res: Int = -1
     E.addSeqCost(costKind, mc.method.opDesc) { () =>
+      // TODO v5.0: this loop is bounded when MaxCollSize limit is enforced
       val len = xs.length
       val start = math.max(from, 0)
       var i = start
