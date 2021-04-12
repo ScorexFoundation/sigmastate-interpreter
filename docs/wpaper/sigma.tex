@@ -329,7 +329,7 @@ To access a register, the type of the register needs to be specified in brackets
 In addition to registers, scripts can access two serialized versions of the box: \texttt{b.bytes} is a serialization of the entire box including all its registers, and \texttt{b.bytesWithNoRef}, which the same but without the transaction identifier and the output index~(so that a box can be viewed independently of where it appeared.
 
 \paragraph{Example: atomic exchange on a single block chain}
-These box registers provide additional capabilities to \langname. Consider, for example, Alice and Bob who want to exchange tokens: they agree that  Alice will give Bob 60 tokens of type \texttt{token1} (this type is mapped to an actual token id in the environment map) in exchange for 100 Ergo tokens. Alice could create an output box with value 100 and protect it with the following script:
+These box registers provide additional capabilities to \langname. Consider, for example, Alice and Bob who want to exchange tokens: they agree that Bob will give Alice 60 tokens of type \texttt{token1} (this type is mapped to an actual token id in the environment map) in exchange for 100 Ergo tokens. Alice could create an output box with value 100 and protect it with the following script:
 
 \begin{verbatim}
   (HEIGHT > deadline && pkA) || {
