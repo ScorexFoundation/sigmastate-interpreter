@@ -217,7 +217,6 @@ object SigSerializer extends LazyLogging {
           children(i) = parseAndComputeChallenges(th.children(i), r, c)
         }
 
-        // Verifier doesn't need the polynomial anymore -- hence pass in None
         CThresholdUncheckedNode(challenge, children, th.k, Some(polynomial))
     }
   }

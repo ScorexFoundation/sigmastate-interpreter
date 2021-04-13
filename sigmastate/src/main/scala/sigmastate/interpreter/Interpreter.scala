@@ -181,7 +181,8 @@ trait Interpreter extends ScorexLogging {
       case SigmaPropConstant(p) =>
         val sb = SigmaDsl.toSigmaBoolean(p)
         val cost = SigmaBoolean.estimateCost(sb)
-        (sb, cost)
+        val resCost = Evaluation.addCostChecked(context.initCost, cost, context.costLimit)
+        (sb, resCost)
       case _ if !ergoTree.hasDeserialize =>
         val r = precompiledScriptProcessor.getReducer(ergoTree, context.validationSettings)
         r.reduce(context)
