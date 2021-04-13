@@ -141,7 +141,7 @@ object SigSerializer extends LazyLogging {
     * @return An instance of [[UncheckedSigmaTree]]
     *
     * HOTSPOT: don't beautify the code
-    * Note, Nullable is used instead of Option to avoid allocations.
+    * Note, `null` is used instead of Option to avoid allocations.
     */
   def parseAndComputeChallenges(
         exp: SigmaBoolean,
