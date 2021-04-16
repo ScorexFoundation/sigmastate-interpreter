@@ -13,6 +13,8 @@ import sigmastate._
 import sigmastate.basics.DLogProtocol._
 import sigmastate.basics.VerifierMessage.Challenge
 import sigmastate.basics._
+import sigmastate.eval.Evaluation
+import sigmastate.eval.Evaluation.addCostChecked
 import sigmastate.lang.exceptions.CostLimitException
 import sigmastate.utils.Helpers
 
@@ -118,18 +120,19 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
             message: Array[Byte],
             hintsBag: HintsBag = HintsBag.empty): Try[CostedProverResult] = Try {
 
-    val initCost = ergoTree.complexity + context.initCost
-    val remainingLimit = context.costLimit - initCost
-    if (remainingLimit <= 0)
-      throw new CostLimitException(initCost,
-        s"Estimated execution cost $initCost exceeds the limit ${context.costLimit}", None)
+    val costWithComplexity = addCostChecked(context.initCost, ergoTree.complexity, context.costLimit)
+    val ctxWithComplexity = context.withInitCost(costWithComplexity).asInstanceOf[CTX]
+    val (res, jitRes) = fullReduction(ergoTree, ctxWithComplexity, env)
 
-    val ctxUpdInitCost = context.withInitCost(initCost).asInstanceOf[CTX]
+    val verificationC = estimateVerificationCost(res.value) / 10 // scale eval to tx cost
+    // Note, jitRes.cost is already scaled in fullReduction
+    val fullJitCost = addCostChecked(jitRes.cost, verificationC, ctxWithComplexity.costLimit)
 
-    val res = fullReduction(ergoTree, ctxUpdInitCost, env)._1
+    checkCosts(ergoTree, res.cost, fullJitCost)
+
     val proof = generateProof(res.value, message, hintsBag)
 
-    CostedProverResult(proof, ctxUpdInitCost.extension, res.cost)
+    CostedProverResult(proof, ctxWithComplexity.extension, res.cost)
   }
 
   def generateProof(sb: SigmaBoolean,

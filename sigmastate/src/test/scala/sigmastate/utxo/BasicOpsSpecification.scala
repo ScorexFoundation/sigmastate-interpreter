@@ -68,6 +68,10 @@ class BasicOpsSpecification extends SigmaTestingCommons
         val p2 = dlogSecrets(1).publicImage
         (ext ++ Seq(propVar1 -> SigmaPropConstant(p1), propVar2 -> SigmaPropConstant(p2))).toMap
       }
+      override val evalSettings: EvalSettings = DefaultEvalSettings.copy(
+        isMeasureOperationTime = true,
+        isDebug = true,
+        isTestRun = testExceededCost)
     }
 
     val prop = compile(env, script).asBoolValue.toSigmaProp

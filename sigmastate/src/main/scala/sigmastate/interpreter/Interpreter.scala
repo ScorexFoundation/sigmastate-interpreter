@@ -319,7 +319,7 @@ trait Interpreter extends ScorexLogging {
     checkCosts(ergoTree, res.cost, jitRes.cost)
   }
 
-  private def checkCosts(ergoTree: ErgoTree,
+  protected def checkCosts(ergoTree: ErgoTree,
                          oldCost: Long,
                          newCost: Long) = {
     if (oldCost < newCost) {
