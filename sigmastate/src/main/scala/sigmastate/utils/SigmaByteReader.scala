@@ -96,6 +96,25 @@ class SigmaByteReader(val r: Reader,
     r.getBytes(size)
   }
 
+  /** Reads either the given of remaining number of bytes from this reader.
+    * This method is `unsafe` because it may return less than requested number of bytes.
+    * @param numRequestedBytes
+    */
+  @inline final def getBytesUnsafe(numRequestedBytes: Int): Array[Byte] = {
+    checkPositionLimit()
+    val bytesToRead = Math.min(numRequestedBytes, remaining)
+    r.getBytes(bytesToRead)
+  }
+
+  /** Returns all bytes of the underlying ByteBuffer. */
+  private[sigmastate] def getAllBufferBytes: Array[Byte] = {
+    val savedPos = position
+    position = 0
+    val res = getBytesUnsafe(remaining)
+    position = savedPos
+    res
+  }
+
   @inline override def getBits(size: Int): Array[Boolean] = {
     checkPositionLimit()
     r.getBits(size)
