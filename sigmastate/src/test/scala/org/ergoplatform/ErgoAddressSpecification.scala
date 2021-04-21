@@ -2,24 +2,26 @@ package org.ergoplatform
 
 import java.math.BigInteger
 
-import org.ergoplatform.ErgoAddressEncoder.{hash256, MainnetNetworkPrefix, TestnetNetworkPrefix}
+import org.ergoplatform.ErgoAddressEncoder.{MainnetNetworkPrefix, TestnetNetworkPrefix, hash256}
 import org.ergoplatform.SigmaConstants.ScriptCostLimit
 import org.ergoplatform.validation.{ValidationException, ValidationRules}
 import org.scalatest.{Assertion, TryValues}
+import scorex.crypto.hash.Blake2b256
 import sigmastate.basics.DLogProtocol
-import sigmastate.basics.DLogProtocol.DLogProverInput
+import sigmastate.basics.DLogProtocol.{DLogProverInput, ProveDlog}
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
-import sigmastate.serialization.ValueSerializer
+import sigmastate.serialization.{GroupElementSerializer, ValueSerializer}
 import scorex.util.encode.Base58
-import sigmastate.{SigmaAnd, SType, CrossVersionProps}
-import sigmastate.Values.{UnparsedErgoTree, Constant, EvaluatedValue, ByteArrayConstant, IntConstant, ErgoTree}
+import sigmastate.{CrossVersionProps, SType, SigmaAnd}
+import sigmastate.Values.{ByteArrayConstant, Constant, ErgoTree, EvaluatedValue, IntConstant, UnparsedErgoTree}
 import sigmastate.eval.IRContext
 import sigmastate.helpers._
 import sigmastate.helpers.TestingHelpers._
+import sigmastate.interpreter.CryptoConstants.dlogGroup
 import sigmastate.interpreter.{ContextExtension, CostedProverResult}
-import sigmastate.interpreter.Interpreter.{ScriptNameProp, ScriptEnv}
+import sigmastate.interpreter.Interpreter.{ScriptEnv, ScriptNameProp}
 import sigmastate.lang.Terms.ValueOps
-import sigmastate.lang.exceptions.{CosterException, CostLimitException}
+import sigmastate.lang.exceptions.{CostLimitException, CosterException}
 import sigmastate.utils.Helpers._
 import special.sigma.SigmaDslTesting
 
@@ -115,6 +117,25 @@ class ErgoAddressSpecification extends SigmaDslTesting
     val from_tree = ergoAddressEncoder.fromProposition(tree).success.value
     assertResult(true)(from_tree != p2s_2)
     assertResult(true)(from_tree == p2pk)
+  }
+
+  property("derivation from private key") {
+    val w = new BigInteger("bb2e6f44a38052b3f564fafcd477c4eb8cda1a8a553a4a5f38f1e1084d6a69f0", 16)
+    val g = dlogGroup.generator
+    val pk = dlogGroup.exponentiate(g, w)
+    val pkBytes = GroupElementSerializer.toBytes(pk)
+    val encoder = new ErgoAddressEncoder(MainnetNetworkPrefix)
+    val p2pk =  new P2PKAddress(ProveDlog(pk), pkBytes)(encoder)
+    val addrStr = p2pk.toString
+
+    val prefix = (encoder.networkPrefix + P2PKAddress.addressTypePrefix).toByte
+    val bytes = prefix +: pkBytes
+
+    val checksum = Blake2b256(bytes).take(ErgoAddressEncoder.ChecksumLength)
+    val expectedAddrStr = Base58.encode(bytes ++ checksum)
+
+    addrStr shouldBe expectedAddrStr
+    addrStr shouldBe "9iJd9drp1KR3R7HLi7YmQbB5sJ5HFKZoPb5MxGepamggJs5vDHm"
   }
 
   property("fromProposition() should properly distinct all types of addresses from script AST") {
