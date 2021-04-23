@@ -2,7 +2,7 @@ package sigmastate.crypto
 
 import org.scalacheck.Gen
 import scorex.util.encode.Base16
-import sigmastate.{AtLeast, CAND}
+import sigmastate.{AtLeast, CAND, COR}
 import sigmastate.Values.SigmaBoolean
 import sigmastate.basics.DLogProtocol.DLogProverInput
 import sigmastate.helpers.{ErgoLikeTestInterpreter, ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
@@ -36,6 +36,30 @@ class SigningSpecification extends SigmaTestingCommons {
     val msg = "any message".getBytes("UTF-8")
     val sig = "invalid signature".getBytes("UTF-8")
     verifier.verifySignature(sigmaTree, msg, sig) shouldBe false
+  }
+  
+  property("AND signature test vector") {
+    val msg = Base16.decode("1dc01772ee0171f5f614c673e3c7fa1107a8cf727bdf5a6dadb379e93c0d1d00").get
+    val sk1 = DLogProverInput(BigInt("109749205800194830127901595352600384558037183218698112947062497909408298157746").bigInteger)
+    val sk2 = DLogProverInput(BigInt("50415569076448343263191022044468203756975150511337537963383000142821297891310").bigInteger)
+    val signature = Base16.decode("9b2ebb226be42df67817e9c56541de061997c3ea84e7e72dbb69edb7318d7bb525f9c16ccb1adc0ede4700a046d0a4ab1e239245460c1ba45e5637f7a2d4cc4cc460e5895125be73a2ca16091db2dcf51d3028043c2b9340").get
+    // check that signature is correct
+    val verifier = new ErgoLikeTestInterpreter
+    val proverResult = ProverResult(signature, ContextExtension.empty)
+    val sigmaTree: SigmaBoolean = CAND(Seq(sk1.publicImage, sk2.publicImage))
+    verifier.verify(sigmaTree, fakeContext, proverResult, msg).get._1 shouldBe true
+  }
+  
+  property("OR signature test vector") {
+    val msg = Base16.decode("1dc01772ee0171f5f614c673e3c7fa1107a8cf727bdf5a6dadb379e93c0d1d00").get
+    val sk1 = DLogProverInput(BigInt("109749205800194830127901595352600384558037183218698112947062497909408298157746").bigInteger)
+    val sk2 = DLogProverInput(BigInt("50415569076448343263191022044468203756975150511337537963383000142821297891310").bigInteger)
+    val signature = Base16.decode("ec94d2d5ef0e1e638237f53fd883c339f9771941f70020742a7dc85130aaee535c61321aa1e1367befb500256567b3e6f9c7a3720baa75ba6056305d7595748a93f23f9fc0eb9c1aaabc24acc4197030834d76d3c95ede60c5b59b4b306cd787d010e8217f34677d046646778877c669").get
+    // check that signature is correct
+    val verifier = new ErgoLikeTestInterpreter
+    val proverResult = ProverResult(signature, ContextExtension.empty)
+    val sigmaTree: SigmaBoolean = COR(Seq(sk1.publicImage, sk2.publicImage))
+    verifier.verify(sigmaTree, fakeContext, proverResult, msg).get._1 shouldBe true
   }
 
   property("threshold signature test vector") {
