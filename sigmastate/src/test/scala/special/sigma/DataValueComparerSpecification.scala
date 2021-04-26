@@ -54,7 +54,7 @@ class DataValueComparerSpecification extends SigmaDslTesting
     val _y = y
     withClue(s"EQ.equalDataValues(${_x}, ${_y})") {
       val res = sameResultOrError(
-        repeatAndReturnLast(nBenchmarkIters) {
+        repeatAndReturnLast(nBenchmarkIters + 1) {
           val evaluator = createEvaluator(settings, profiler)
           // it's important to use fresh values to neutralize memory cache to some extent
           val fresh_x = x

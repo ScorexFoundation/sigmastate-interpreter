@@ -471,7 +471,8 @@ case class ExtractRegisterAs[V <: SType]( input: Value[SBox.type],
 }
 object ExtractRegisterAs extends ValueCompanion {
   override def opCode: OpCode = OpCodes.ExtractRegisterAs
-  override val costKind = FixedCost(CostOf.ExtractRegisterAs)
+  /** CostOf: 1) accessing `registers` collection 2) comparing types 3) allocating Some()*/
+  override val costKind = FixedCost(50)
 
   //HOTSPOT:: avoids thousands of allocations per second
   private val BoxAndByte: IndexedSeq[SType] = Array(SBox, SByte)

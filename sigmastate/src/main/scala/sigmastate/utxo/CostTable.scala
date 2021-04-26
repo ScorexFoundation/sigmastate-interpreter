@@ -402,8 +402,6 @@ object CostTable {
 
     def ExtractBytesWithNoRef = 3
 
-    def ExtractRegisterAs = 1
-
     def ExtractCreationInfo = 7
 //    ("SBox$.tokens", "(Box) => Coll[(Coll[Byte],Long)]", extractCost),
 //
@@ -414,19 +412,8 @@ object CostTable {
     /** Cost of: 1) calling EcPoint.negate 2) wrapping in GroupElement. */
     def GroupElement_Negate = 2
 
-    /** Cost of:
-      * 1) create reader and read bytes in a new array
-      * 2) calling curve.decodePoint and obtain EcPoint
-      * 3) wrap EcPoint in GroupElement*/
-    def DecodePoint = 240
-
     /** Cost of: 1) calling EcPoint.multiply 2) wrapping in GroupElement */
     def Exponentiate = 900 // cf. expCost
-
-    /** Cost of: 1) calling EcPoint.add 2) wrapping in GroupElement */
-    def MultiplyGroup = 23 // cf. expCost
-
-    def ByteArrayToBigInt = 6
 
 //    ("new_BigInteger_per_item", "(Coll[Byte]) => BigInt", newBigIntPerItem),
 //    ("SGroupElement$.negate", "(GroupElement) => GroupElement", negateGroup),

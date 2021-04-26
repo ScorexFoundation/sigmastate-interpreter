@@ -12,7 +12,7 @@ trait CrossVersionProps extends PropSpecLike with TestsBase {
   val printVersions: Boolean = false
 
   /** Number of times each test property is warmed up (i.e. executed before final execution). */
-  val perTestWarmUpIters: Int = 0
+  def perTestWarmUpIters: Int = 0
 
   private[sigmastate] val _warmupProfiler = new DynamicVariable[Option[Profiler]](None)
   def warmupProfiler: Option[Profiler] = _warmupProfiler.value

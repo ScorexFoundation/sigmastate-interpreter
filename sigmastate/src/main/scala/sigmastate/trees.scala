@@ -612,7 +612,7 @@ case class ByteArrayToBigInt(input: Value[SByteArray])
 object ByteArrayToBigInt extends SimpleTransformerCompanion {
   val OpType = SFunc(SByteArray, SBigInt)
   override def opCode: OpCode = OpCodes.ByteArrayToBigIntCode
-  override val costKind = FixedCost(CostOf.ByteArrayToBigInt)
+  override val costKind = FixedCost(25)
   override def argInfos: Seq[ArgInfo] = ByteArrayToBigIntInfo.argInfos
 }
 
@@ -632,7 +632,11 @@ case class DecodePoint(input: Value[SByteArray])
 object DecodePoint extends SimpleTransformerCompanion with FixedCostValueCompanion {
   val OpType = SFunc(SByteArray, SGroupElement)
   override def opCode: OpCode = OpCodes.DecodePointCode
-  override val costKind = FixedCost(CostOf.DecodePoint)
+  /** Cost of:
+    * 1) create reader and read bytes in a new array
+    * 2) calling curve.decodePoint and obtain EcPoint
+    * 3) wrap EcPoint in GroupElement*/
+  override val costKind = FixedCost(300)
   override def argInfos: Seq[ArgInfo] = DecodePointInfo.argInfos
 }
 
@@ -1032,7 +1036,8 @@ case class MultiplyGroup(override val left: Value[SGroupElement.type],
 object MultiplyGroup extends TwoArgumentOperationCompanion with FixedCostValueCompanion {
   val OpType = SFunc(Array(SGroupElement, SGroupElement), SGroupElement)
   override def opCode: OpCode = MultiplyGroupCode
-  override val costKind = FixedCost(CostOf.MultiplyGroup)
+  /** Cost of: 1) calling EcPoint.add 2) wrapping in GroupElement */
+  override val costKind = FixedCost(30)
   override def argInfos: Seq[ArgInfo] = MultiplyGroupInfo.argInfos
 }
 // Relation

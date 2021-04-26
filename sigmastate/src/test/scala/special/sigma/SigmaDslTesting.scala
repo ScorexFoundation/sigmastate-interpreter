@@ -398,17 +398,12 @@ class SigmaDslTesting extends PropSpec
     * In combination with [[sigmastate.eval.Profiler]] it allows to collect more accurate
     * timings for all operations.
     * @see SigmaDslSpecification */
-  def nBenchmarkIters: Int = 1
-
-  /** Total warm-up iterations: should be >= nBenchmarkIters */
-  def nWarmUpItersBeforeAll = {
-    nBenchmarkIters
-  }.ensuring(_ >= nBenchmarkIters)
+  def nBenchmarkIters: Int = 0
 
   def warmUpBeforeAllTest(nTotalIters: Int)(block: => Unit) = {
     // each test case is executed nBenchmarkIters times in `check` method
     // so we account for that here
-    val nIters = nTotalIters / nBenchmarkIters
+    val nIters = nTotalIters / (nBenchmarkIters + 1)
     repeatAndReturnLast(nIters)(block)
     System.gc()
     Thread.sleep(1000) // let GC to its job before running the tests
@@ -435,7 +430,7 @@ class SigmaDslTesting extends PropSpec
 
       val newRes = checkEq(scalaFunc)({ x =>
         var y: (B, CostDetails) = null
-        val N = nBenchmarkIters
+        val N = nBenchmarkIters + 1
         cfor(0)(_ < N, _ + 1) { _ =>
           y = newF(x)
         }

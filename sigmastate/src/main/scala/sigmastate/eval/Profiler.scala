@@ -1,14 +1,15 @@
 package sigmastate.eval
 
 import sigmastate.SMethod
-import sigmastate.Values.{SValue, FixedCost}
+import sigmastate.Values.{FixedCost, SValue}
 import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.ValueSerializer.getSerializer
 import scalan.util.Extensions.ByteOps
 import debox.{Buffer => DBuffer, Map => DMap}
-import sigmastate.interpreter.{SeqCostItem, CostItem, TypeBasedCostItem, FixedCostItem}
-import sigmastate.lang.Terms.{PropertyCall, MethodCall}
+import org.apache.commons.math3.util.Precision
+import sigmastate.interpreter.{CostItem, FixedCostItem, SeqCostItem, TypeBasedCostItem}
+import sigmastate.lang.Terms.{MethodCall, PropertyCall}
 import spire.{math, sp}
 
 import scala.reflect.ClassTag
@@ -202,7 +203,8 @@ class Profiler {
         case _ => ("", 0)
       }
       val suggestedCost = suggestCost(time)
-      val comment = s"count: $count, suggestedCost: $suggestedCost, actualCost: $cost"
+      val warn = if (suggestedCost > cost) "!!!" else ""
+      val comment = s"count: $count, suggestedCost: $suggestedCost, actualCost: $cost$warn"
       (opName, (opCode.toUByte - OpCodes.LastConstantCode).toString, time, comment)
     }.filter(_._1.nonEmpty).sortBy(_._3)(Ordering[Long].reverse)
 
@@ -218,20 +220,20 @@ class Profiler {
     val ciLines = costItemsStat.mapToArray { case (ci, stat) =>
       val (name, timePerItem, time, comment) = {
         val (time, count) = stat.mean
+        val suggestedCost = suggestCost(time)
+        val warn = if (suggestedCost > ci.cost) "!!!" else ""
         ci match {
           case ci: FixedCostItem =>
-            val suggestedCost = suggestCost(time)
-            val comment = s"count: $count, suggestedCost: $suggestedCost, actualCost: ${ci.cost}"
+            val comment = s"count: $count, suggested: $suggestedCost, actCost: ${ci.cost}$warn"
             (ci.opName, time, time, comment)
           case ci: TypeBasedCostItem =>
-            val suggestedCost = suggestCost(time)
-            val comment = s"count: $count, suggestedCost: $suggestedCost, actualCost: ${ci.cost}"
+            val comment = s"count: $count, suggested: $suggestedCost, actCost: ${ci.cost}$warn"
             (ci.opName, time, time, comment)
           case ci @ SeqCostItem(_, costKind, nItems) =>
             val nChunks = ci.chunks
             val timePerChunk = if (nChunks > 0) time / nChunks else time
             val name = s"${ci.opName}(nItems: $nItems, nChunks: $nChunks)"
-            val comment = s"count: $count, costKind: $costKind"
+            val comment = s"count: $count, suggested: $suggestedCost, actCost: ${ci.cost}$warn, kind: $costKind"
             (name, timePerChunk, time, comment)
         }
       }
@@ -244,7 +246,7 @@ class Profiler {
       val actualTimeMicro = timeNano.toDouble / 100
       val actualCost = cost.toDouble
       val error = relativeError(actualCost, actualTimeMicro)
-      (script, error, cost, timeNano, count.toString)
+      (script, error, cost, Math.round(actualTimeMicro), count.toString)
     }.sortBy(_._2)(Ordering[Double].reverse)
 
 
@@ -273,7 +275,9 @@ class Profiler {
     val estRows = estLines
         .map { case (opName, error, cost, time, count) =>
           val key = s"$opName".padTo(30, ' ')
-          s"$key -> ($error, $cost, $time),  // count = $count "
+          val warn = if (cost < time) "!!!" else ""
+          val err = Precision.round(error, 4)
+          s"$key -> ($err, $cost$warn, $time),  // count = $count "
         }
         .mkString("\n")
 
