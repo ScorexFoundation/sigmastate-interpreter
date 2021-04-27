@@ -159,11 +159,38 @@ class Profiler {
     mcStat.addPoint(key, time)
   }
 
+  /** Wrapper class which implementes special equality between CostItem instances,
+   * suitable for collecting of the statistics. */
+  class CostItemKey(val costItem: CostItem) {
+    override def hashCode(): Int = costItem match {
+      case sci: SeqCostItem => 31 * sci.opDesc.hashCode + sci.chunks
+      case _ => costItem.hashCode()
+    }
+
+    override def equals(obj: scala.Any): Boolean = (obj != null) &&
+      (this.eq(obj.asInstanceOf[AnyRef]) || {
+        (obj match {
+          case that: CostItemKey =>
+            this.costItem match {
+              case sciThis: SeqCostItem  =>
+                that.costItem match {
+                  case sciThat: SeqCostItem =>
+                    sciThis.opDesc == sciThat.opDesc && sciThis.chunks == sciThat.chunks
+                  case _ => false
+                }
+              case _ => this.costItem == that.costItem
+            }
+          case _ => false
+        })
+      })
+
+  }
+
   /** Timings of cost items */
-  private val costItemsStat = new StatCollection[CostItem, Long]()
+  private val costItemsStat = new StatCollection[CostItemKey, Long]()
 
   def addCostItem(costItem: CostItem, time: Long) = {
-    costItemsStat.addPoint(costItem, time)
+    costItemsStat.addPoint(new CostItemKey(costItem), time)
   }
 
   /** Estimation cost for each script */
@@ -217,12 +244,12 @@ class Profiler {
       (s"$typeName.${m.name}", typeId, methodId, time, count.toString)
     }.sortBy(r => (r._2,r._3))(Ordering[(Byte,Byte)].reverse)
 
-    val ciLines = costItemsStat.mapToArray { case (ci, stat) =>
+    val ciLines = costItemsStat.mapToArray { case (ciKey, stat) =>
       val (name, timePerItem, time, comment) = {
         val (time, count) = stat.mean
         val suggestedCost = suggestCost(time)
-        val warn = if (suggestedCost > ci.cost) "!!!" else ""
-        ci match {
+        val warn = if (suggestedCost > ciKey.costItem.cost) "!!!" else ""
+        ciKey.costItem match {
           case ci: FixedCostItem =>
             val comment = s"count: $count, suggested: $suggestedCost, actCost: ${ci.cost}$warn"
             (ci.opName, time, time, comment)
@@ -232,7 +259,7 @@ class Profiler {
           case ci @ SeqCostItem(_, costKind, nItems) =>
             val nChunks = ci.chunks
             val timePerChunk = if (nChunks > 0) time / nChunks else time
-            val name = s"${ci.opName}(nItems: $nItems, nChunks: $nChunks)"
+            val name = s"${ci.opName}(nChunks: $nChunks)"
             val comment = s"count: $count, suggested: $suggestedCost, actCost: ${ci.cost}$warn, kind: $costKind"
             (name, timePerChunk, time, comment)
         }
