@@ -1422,7 +1422,7 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
 
   /** We assume all flatMap body patterns have similar executon cost. */
   final val CheckFlatmapBody_Info = OperationCostInfo(
-    PerItemCost(2, 2, 1), NamedDesc("CheckFlatmapBody"))
+    PerItemCost(20, 20, 1), NamedDesc("CheckFlatmapBody"))
 
 
   /** This patterns recognize all expressions, which are allowed as lambda body
@@ -1465,7 +1465,7 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
   }
 
   final val MatchSingleArgMethodCall_Info = OperationCostInfo(
-    FixedCost(3), NamedDesc("MatchSingleArgMethodCall"))
+    FixedCost(30), NamedDesc("MatchSingleArgMethodCall"))
 
   object IsSingleArgMethodCall {
     def unapply(mc:MethodCall)
@@ -2043,19 +2043,19 @@ case object SAvlTree extends SProduct with SPredefType with SMonoType {
     * So the following is an approximation of the proof parsing cost.
     */
   final val CreateAvlVerifier_Info = OperationCostInfo(
-    PerItemCost(30, 22, 32), NamedDesc("CreateAvlVerifier"))
+    PerItemCost(100, 20, 64), NamedDesc("CreateAvlVerifier"))
 
   final val LookupAvlTree_Info = OperationCostInfo(
-    PerItemCost(4, 5, 1), NamedDesc("LookupAvlTree"))
+    PerItemCost(40, 10, 1), NamedDesc("LookupAvlTree"))
 
   final val InsertIntoAvlTree_Info = OperationCostInfo(
-    PerItemCost(4, 5, 1), NamedDesc("InsertIntoAvlTree"))
+    PerItemCost(40, 10, 1), NamedDesc("InsertIntoAvlTree"))
 
   final val UpdateAvlTree_Info = OperationCostInfo(
     PerItemCost(4, 5, 1), NamedDesc("UpdateAvlTree"))
 
   final val RemoveAvlTree_Info = OperationCostInfo(
-    PerItemCost(10, 15, 1), NamedDesc("RemoveAvlTree"))
+    PerItemCost(100, 15, 1), NamedDesc("RemoveAvlTree"))
 
   def createVerifier(tree: AvlTree, proof: Coll[Byte])(implicit E: ErgoTreeEvaluator) = {
     // the cost of tree reconstruction from proof is O(proof.length)

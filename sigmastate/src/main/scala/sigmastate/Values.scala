@@ -950,7 +950,7 @@ object Values {
     override def opCode: OpCode = ConcreteCollectionCode
     /** Cost of: allocating new collection
       * @see ConcreteCollection_PerItem */
-    override val costKind = FixedCost(17)
+    override val costKind = FixedCost(20)
 
     def fromSeq[V <: SType](items: Seq[Value[V]])(implicit tV: V): ConcreteCollection[V] =
       ConcreteCollection(items, tV)
@@ -1156,7 +1156,8 @@ object Values {
   }
   object FuncValue extends FixedCostValueCompanion {
     val AddToEnvironmentDesc = NamedDesc("AddToEnvironment")
-    val AddToEnvironmentDesc_CostKind = FixedCost(CostOf.AddToEnvironment)
+    /** Cost of: adding value to evaluator environment */
+    val AddToEnvironmentDesc_CostKind = FixedCost(4)
     override def opCode: OpCode = FuncValueCode
     /** Cost of: 1) switch on the number of args 2) allocating a new Scala closure
       * Old cost: ("Lambda", "() => (D1) => R", lambdaCost),*/

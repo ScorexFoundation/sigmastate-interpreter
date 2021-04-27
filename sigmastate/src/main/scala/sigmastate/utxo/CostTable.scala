@@ -310,9 +310,6 @@ object CostTable {
     /** Cost of: accessing Constant in array by index. */
     def ConstantPlaceholder = 1
 
-    /** Cost of: adding value to evaluator environment */
-    def AddToEnvironment = 2
-
 
     /** Cost of: 1) Calling Context.minerPubkey Scala method. */
     def MinerPubkey = 1
@@ -400,8 +397,6 @@ object CostTable {
 //    ("SCollection$.filter", "(Coll[IV],(IV) => Boolean) => Coll[IV]", collToColl),
 //
 
-    def CreateProveDlog = 1
-
     /** Cost of: serializing one node of SigmaBoolean proposition */
     def SigmaPropBytes = 1
 
@@ -434,40 +429,6 @@ object CostTable {
       * @see SigmaOr */
     def SigmaOr_PerItem = 1 // cf. logicCost
 
-    /** Cost of: constructing new CSigmaProp value
-      * @see AtLeast_PerItem */
-    def AtLeast = 1 // cf. logicCost
-
-    /** Cost of: obtaining SigmaBoolean for each item in AtLeast
-      * @see AtLeast */
-    def AtLeast_PerItem = 1 // cf. logicCost
-
-    /** Cost of: of hashing 1 block of data.
-      *
-      * This cost is used as a baseline to connect cost units with absolute time.
-      * The block validation have 1000000 of cost units budget, and we want this to
-      * correspond to 1 second. Thus we can assume 1 cost unit == 1 micro-second.
-      *
-      * It takes approximately 1 micro-seconds on average to compute hash of 512 bytes
-      * block on MacBook Pro (16-inch, 2019) 2.3 GHz 8-Core Intel Core i9.
-      *
-      * Thus per block cost of Blake2b256 hashing can be limited by 1 cost units.
-      * However, on a less powerful processor it may take much more time, so we add
-      * a factor of 3 for that. Additionally, the interpreter have an overhead so that
-      * performing 1000 of hashes in a tight loop is 1.5-2 times faster then doing the same
-      * via ErgoTreeEvaluator. Thus we should add another factor of 2 and this takes
-      * place for all operations. So we will use a total factor of 5 to convert
-      * actual operation micro-seconds time (obtained via benchmarking) to cost unit
-      * estimation (used for cost prediction).
-      *
-      * Cost_in_units = time_in_micro-seconds * 5 = 5
-      *
-      * @see [[sigmastate.interpreter.ErgoTreeEvaluator.DataBlockSize]]
-      */
-    def CalcBlake2b256_PerBlock = 5 // cf. hashPerKb
-
-    /** Cost of: of hashing 1 KiB of data (see also CalcBlake2b256_PerBlock). */
-    def CalcSha256_PerBlock = 5 // cf. hashPerKb
 
     def Xor = 3
     def Xor_PerBlock = 5
@@ -491,8 +452,8 @@ object CostTable {
       * 2) calling method of Numeric
       */
     def GT(argTpe: SType) = argTpe match {
-      case SBigInt => 10 // cf. comparisonBigInt
-      case _ => 6 // cf. comparisonCost
+      case SBigInt => 20 // cf. comparisonBigInt
+      case _ => 15 // cf. comparisonCost
     }
 
     /** Cost of:
@@ -500,8 +461,8 @@ object CostTable {
       * 2) calling method of Numeric
       */
     def GE(argTpe: SType) = argTpe match {
-      case SBigInt => 10 // cf. comparisonBigInt
-      case _ => 5 // cf. comparisonCost
+      case SBigInt => 20 // cf. comparisonBigInt
+      case _ => 15 // cf. comparisonCost
     }
 
     /** Cost of:
@@ -509,8 +470,8 @@ object CostTable {
       * 2) calling method of Numeric
       */
     def LT(argTpe: SType) = argTpe match {
-      case SBigInt => 10 // cf. comparisonBigInt
-      case _ => 5 // cf. comparisonCost
+      case SBigInt => 20 // cf. comparisonBigInt
+      case _ => 15 // cf. comparisonCost
     }
 
     /** Cost of:
@@ -518,8 +479,8 @@ object CostTable {
       * 2) calling method of Numeric
       */
     def LE(argTpe: SType) = argTpe match {
-      case SBigInt => 10 // cf. comparisonBigInt
-      case _ => 5 // cf. comparisonCost
+      case SBigInt => 20 // cf. comparisonBigInt
+      case _ => 15 // cf. comparisonCost
     }
 
     /** Cost of:
@@ -527,8 +488,8 @@ object CostTable {
       * 2) calling method of Numeric
       */
     def Plus(argTpe: SType) = argTpe match {
-      case SBigInt => 6 // cf. plusMinusBigInt
-      case _ => 5 // cf. plusMinus
+      case SBigInt => 15 // cf. plusMinusBigInt
+      case _ => 10 // cf. plusMinus
     }
 
     /** Cost of:
@@ -536,8 +497,8 @@ object CostTable {
       * 2) calling method of Numeric
       */
     def Minus(argTpe: SType) = argTpe match {
-      case SBigInt => 6 // cf. plusMinusBigInt
-      case _ => 5 // cf. plusMinus
+      case SBigInt => 15 // cf. plusMinusBigInt
+      case _ => 10 // cf. plusMinus
     }
 
     /** Cost of:
@@ -545,8 +506,8 @@ object CostTable {
       * 2) calling method of Numeric
       */
     def Multiply(argTpe: SType) = argTpe match {
-      case SBigInt => 10 // cf. multiplyBigInt
-      case _ => 5 // cf. multiply
+      case SBigInt => 25 // cf. multiplyBigInt
+      case _ => 15 // cf. multiply
     }
 
     /** Cost of:
@@ -554,8 +515,8 @@ object CostTable {
       * 2) calling method of Integral
       */
     def Division(argTpe: SType) = argTpe match {
-      case SBigInt => 10 // cf. multiplyBigInt
-      case _ => 5 // cf. multiply
+      case SBigInt => 25 // cf. multiplyBigInt
+      case _ => 15 // cf. multiply
     }
 
     /** Cost of:
@@ -563,8 +524,8 @@ object CostTable {
       * 2) calling method of Integral
       */
     def Modulo(argTpe: SType) = argTpe match {
-      case SBigInt => 10 // cf. multiplyBigInt
-      case _ => 5 // cf. multiply
+      case SBigInt => 25 // cf. multiplyBigInt
+      case _ => 15 // cf. multiply
     }
 
     /** Cost of:
@@ -608,8 +569,8 @@ object CostTable {
     /** Cost of: 1) converting numeric value to the numeric value of the given type, i.e. Byte -> Int
       * NOTE: the cost of BigInt casting is the same in JITC (comparing to AOTC) to simplify implementation. */
     def NumericCast(targetTpe: SType): Int = targetTpe match {
-      case SBigInt => 4
-      case _ => 2
+      case SBigInt => 30
+      case _ => 10
     }
 
     /** Cost of: 1) creating Byte collection from a numeric value */

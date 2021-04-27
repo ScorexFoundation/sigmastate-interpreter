@@ -189,7 +189,7 @@ case class CreateProveDlog(value: Value[SGroupElement.type]) extends SigmaPropVa
 }
 object CreateProveDlog extends ValueCompanion {
   override def opCode: OpCode = OpCodes.ProveDlogCode
-  override val costKind = FixedCost(CostOf.CreateProveDlog)
+  override val costKind = FixedCost(10)
   val OpType = SFunc(SGroupElement, SSigmaProp)
 }
 
@@ -410,7 +410,7 @@ object AND extends LogicalTransformerCompanion {
     * Per-chunk cost: cost of scala `&&` operations amortized over a chunk of boolean values.
     * @see BinAnd
     * @see OR */
-  override val costKind = PerItemCost(5, 5, 64/*size of cache line in bytes*/)
+  override val costKind = PerItemCost(10, 5, 32/* half size of cache line in bytes */)
   override def argInfos: Seq[ArgInfo] = Operations.ANDInfo.argInfos
 
   def apply(children: Seq[Value[SBoolean.type]]): AND =
@@ -443,7 +443,10 @@ case class AtLeast(bound: Value[SInt.type], input: Value[SCollection[SSigmaProp.
 
 object AtLeast extends ValueCompanion {
   override def opCode: OpCode = AtLeastCode
-  override val costKind = PerItemCost(CostOf.AtLeast, CostOf.AtLeast_PerItem, 1)
+  /** Base cost: constructing new CSigmaProp value
+    * Per chunk cost: obtaining SigmaBooleans for each chunk in AtLeast
+    */
+  override val costKind = PerItemCost(10, 5, 5)
   val OpType: SFunc = SFunc(Array(SInt, SCollection.SBooleanArray), SBoolean)
   val MaxChildrenCount: Int = SigmaConstants.MaxChildrenCountForAtLeastOp.value
 
@@ -624,7 +627,7 @@ case class ByteArrayToBigInt(input: Value[SByteArray])
 object ByteArrayToBigInt extends SimpleTransformerCompanion {
   val OpType = SFunc(SByteArray, SBigInt)
   override def opCode: OpCode = OpCodes.ByteArrayToBigIntCode
-  override val costKind = FixedCost(25)
+  override val costKind = FixedCost(30)
   override def argInfos: Seq[ArgInfo] = ByteArrayToBigIntInfo.argInfos
 }
 
@@ -675,8 +678,33 @@ case class CalcBlake2b256(override val input: Value[SByteArray]) extends CalcHas
 }
 object CalcBlake2b256 extends SimpleTransformerCompanion {
   override def opCode: OpCode = OpCodes.CalcBlake2b256Code
-  /** 128 is the size of message chunk processed by Blake2b256 algorithm. */
-  override val costKind = PerItemCost(1, CostOf.CalcBlake2b256_PerBlock, 128)
+
+  /** Cost of: of hashing 1 block of data.
+    *
+    * This cost is used as a baseline to connect cost units with absolute time.
+    * The block validation have 1000000 of cost units budget, and we want this to
+    * correspond to 1 second. Thus we can assume 1 cost unit == 1 micro-second.
+    *
+    * It takes approximately 1 micro-seconds on average to compute hash of 128 bytes
+    * block on MacBook Pro (16-inch, 2019) 2.3 GHz 8-Core Intel Core i9.
+    *
+    * Thus per block cost of Blake2b256 hashing can be limited by 1 cost units.
+    * However, on a less powerful processor it may take much more time, so we add
+    * a factor of 3 for that. Additionally, the interpreter have an overhead so that
+    * performing 1000 of hashes in a tight loop is 3-4 times faster then doing the same
+    * via ErgoTreeEvaluator. Thus we should add another factor of 2 and this takes
+    * place for all operations. So we will use a total factor of 10 to convert
+    * actual operation micro-seconds time (obtained via benchmarking) to cost unit
+    * estimation (used for cost prediction).
+    *
+    * Cost_in_units = time_in_micro-seconds * 7 = 7
+    *
+    * NOTE, 128 is the size of message chunk processed by Blake2b256 algorithm.
+    *
+    * @see [[sigmastate.interpreter.ErgoTreeEvaluator.DataBlockSize]]
+    */
+  override val costKind = PerItemCost(baseCost = 20, perChunkCost = 7, chunkSize = 128)
+
   override def argInfos: Seq[ArgInfo] = CalcBlake2b256Info.argInfos
 }
 
@@ -695,7 +723,8 @@ case class CalcSha256(override val input: Value[SByteArray]) extends CalcHash {
 }
 object CalcSha256 extends SimpleTransformerCompanion {
   override def opCode: OpCode = OpCodes.CalcSha256Code
-  override val costKind = PerItemCost(1, CostOf.CalcSha256_PerBlock, 128)
+  /** perChunkCost - cost of hashing 64 bytes of data (see also CalcBlake2b256). */
+  override val costKind = PerItemCost(baseCost = 40, perChunkCost = 10, chunkSize = 64)
   override def argInfos: Seq[ArgInfo] = CalcSha256Info.argInfos
 }
 
@@ -1049,7 +1078,7 @@ object MultiplyGroup extends TwoArgumentOperationCompanion with FixedCostValueCo
   val OpType = SFunc(Array(SGroupElement, SGroupElement), SGroupElement)
   override def opCode: OpCode = MultiplyGroupCode
   /** Cost of: 1) calling EcPoint.add 2) wrapping in GroupElement */
-  override val costKind = FixedCost(35)
+  override val costKind = FixedCost(40)
   override def argInfos: Seq[ArgInfo] = MultiplyGroupInfo.argInfos
 }
 // Relation

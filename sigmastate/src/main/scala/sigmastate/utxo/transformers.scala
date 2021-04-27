@@ -73,7 +73,7 @@ case class Append[IV <: SType](input: Value[SCollection[IV]], col2: Value[SColle
 }
 object Append extends ValueCompanion {
   override def opCode: OpCode = OpCodes.AppendCode
-  override val costKind = PerItemCost(1, 1, 100)
+  override val costKind = PerItemCost(10, 2, 100)
 }
 
 /** Selects an interval of elements.  The returned collection is made up
@@ -607,7 +607,7 @@ case class OptionGetOrElse[V <: SType](input: Value[SOption[V]], default: Value[
 object OptionGetOrElse extends ValueCompanion {
   override def opCode: OpCode = OpCodes.OptionGetOrElseCode
   /** Cost of: 1) Calling Option.getOrElse Scala method. */
-  override val costKind = FixedCost(19)
+  override val costKind = FixedCost(20)
 }
 
 /** Returns false if the option is None, true otherwise. */
