@@ -332,7 +332,8 @@ object Values {
 
   object Constant extends FixedCostValueCompanion {
     override def opCode: OpCode = ConstantCode
-    override val costKind = FixedCost(CostOf.Constant)
+    /** Cost of: returning value from Constant node. */
+    override val costKind = FixedCost(5)
 
     /** Immutable empty array, can be used to save allocations in many places. */
     val EmptyArray = Array.empty[Constant[SType]]
@@ -428,8 +429,8 @@ object Values {
     override def companion: ValueCompanion = UnitConstant
   }
   object UnitConstant extends ValueCompanion {
-    override val opCode = UnitConstantCode
-    override def costKind: CostKind = FixedCost(CostOf.Constant)
+    override def opCode = UnitConstantCode
+    override def costKind = Constant.costKind
   }
 
   type BoolValue = Value[SBoolean.type]
@@ -876,7 +877,8 @@ object Values {
 
   object Tuple extends FixedCostValueCompanion {
     override def opCode: OpCode = TupleCode
-    override val costKind = FixedCost(CostOf.Tuple)
+    /** Cost of: 1) allocating a new tuple (of limited max size)*/
+    override val costKind = FixedCost(10)
     def apply(items: Value[SType]*): Tuple = Tuple(items.toIndexedSeq)
   }
 
@@ -946,7 +948,9 @@ object Values {
   }
   object ConcreteCollection extends ValueCompanion {
     override def opCode: OpCode = ConcreteCollectionCode
-    override val costKind = FixedCost(CostOf.ConcreteCollection)
+    /** Cost of: allocating new collection
+      * @see ConcreteCollection_PerItem */
+    override val costKind = FixedCost(17)
 
     def fromSeq[V <: SType](items: Seq[Value[V]])(implicit tV: V): ConcreteCollection[V] =
       ConcreteCollection(items, tV)
@@ -956,7 +960,7 @@ object Values {
   }
   object ConcreteCollectionBooleanConstant extends ValueCompanion {
     override def opCode: OpCode = ConcreteCollectionBooleanConstantCode
-    override val costKind = FixedCost(CostOf.ConcreteCollection)
+    override def costKind = ConcreteCollection.costKind
   }
 
   trait LazyCollection[V <: SType] extends NotReadyValue[SCollection[V]]
@@ -1060,7 +1064,8 @@ object Values {
   }
   object ValUse extends FixedCostValueCompanion {
     override def opCode: OpCode = ValUseCode
-    override val costKind = FixedCost(CostOf.ValUse)
+    /** Cost of: 1) Lookup in immutable HashMap by valId: Int 2) alloc of Some(v) */
+    override val costKind = FixedCost(5)
   }
 
   /** The order of ValDefs in the block is used to assign ids to ValUse(id) nodes
@@ -1153,7 +1158,9 @@ object Values {
     val AddToEnvironmentDesc = NamedDesc("AddToEnvironment")
     val AddToEnvironmentDesc_CostKind = FixedCost(CostOf.AddToEnvironment)
     override def opCode: OpCode = FuncValueCode
-    override val costKind = FixedCost(CostOf.FuncValue)
+    /** Cost of: 1) switch on the number of args 2) allocating a new Scala closure
+      * Old cost: ("Lambda", "() => (D1) => R", lambdaCost),*/
+    override val costKind = FixedCost(5)
     def apply(argId: Int, tArg: SType, body: SValue): FuncValue =
       FuncValue(IndexedSeq((argId,tArg)), body)
   }

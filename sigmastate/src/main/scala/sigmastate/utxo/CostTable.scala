@@ -307,40 +307,12 @@ object CostTable {
   val MaxExpressions = 300
 
   object CostOf {
-    /** Cost of: returning value from Constant node. */
-    def Constant = 2
-
     /** Cost of: accessing Constant in array by index. */
     def ConstantPlaceholder = 1
-
-    /** Cost of: 1) switch on the number of args 2) allocating a new Scala closure
-      * Old cost: ("Lambda", "() => (D1) => R", lambdaCost),*/
-    def FuncValue = 2
 
     /** Cost of: adding value to evaluator environment */
     def AddToEnvironment = 2
 
-    /** Cost of: 1) switch on the number of args 2) Scala method call 3) add args to env
-      * Old cost: lambdaInvoke == 30 */
-    def Apply = 15
-
-    /** Cost of: 1) Calling Option.get Scala method. */
-    def OptionGet = 5 // cf. selectField
-
-    /** Cost of: 1) Calling Option.getOrElse Scala method. */
-    def OptionGetOrElse = 5 // cf. selectField
-
-    /** Cost of: 1) Calling Option.isDefined Scala method. */
-    def OptionIsDefined = 1 // cf. selectField
-
-    /** Cost of: 1) Calling Context.OUTPUTS Scala method. */
-    def Outputs = 1 // cf. selectField
-
-    /** Cost of: 1) Calling Context.INPUTS Scala method. */
-    def Inputs = 1 // cf. selectField
-
-    /** Cost of: 1) Calling Context.HEIGHT Scala method. */
-    def Height = 1 // cf. selectField
 
     /** Cost of: 1) Calling Context.minerPubkey Scala method. */
     def MinerPubkey = 1
@@ -348,63 +320,26 @@ object CostTable {
     /** Cost of: 1) accessing global Context instance. */
     def Context = 1
 
-    /** Cost of: 1) accessing Global instance. */
-    def Global = 2
-
     /** Cost of: 1) Calling Context.LastBlockUtxoRootHash Scala method. */
     def LastBlockUtxoRootHash = 1
 
-    /** Cost of: 1) Calling Context.SELF Scala method. */
-    def Self = 1
-
-    /** Cost of: 1) Lookup in immutable HashMap by valId: Int 2) alloc of Some(v) */
-    def ValUse = 2
 
     /** Cost of: 1) packing args into Array 2) java.lang.reflect.Method.invoke */
     def MethodCall = 4
-
-    /** Cost of: allocating new collection
-      * @see ConcreteCollection_PerItem */
-    def ConcreteCollection = 6 // cf. collToColl
 
     def GroupGenerator = 3
 
 //    ("AccessAvlTree", "Context => AvlTree", constCost),
 
-    /** Cost of: 1) Calling Tuple2.{_1, _2} Scala methods.
-      * Old cost: ("SelectField", "() => Unit", selectField) */
-    def SelectField = 3 // cf. selectField
-
-    /** Cost of: 1) allocating a new tuple (of limited max size)*/
-    def Tuple = 5
-
 //    ("AccessKiloByteOfData", "() => Unit", extractCost),
 //    ("AccessBox", "Context => Box", accessBox),
-
-    /** Cost of: 1) accessing to array of context vars by index
-      * Old cost: ("GetVar", "(Context, Byte) => Option[T]", getVarCost) */
-    def GetVar = 3
 
 //    ("GetRegister", "(Box, Byte) => Option[T]", accessRegister),
 //    ("AccessRegister", "Box => Option[T]", accessRegister),
 
-    /** Cost of: 1) access `value` property of a [[special.sigma.Box]] */
-    def ExtractAmount = 3
 
 
-    /** CostOf: accessing ErgoBox.propositionBytes */
-    def ExtractScriptBytes = 3
-
-    def ExtractBytes = 3
-
-    /** CostOf: cost of computing hash from `ErgoBox.bytes` */
-    def ExtractId = 3
-
-    def ExtractBytesWithNoRef = 3
-
-    def ExtractCreationInfo = 7
 //    ("SBox$.tokens", "(Box) => Coll[(Coll[Byte],Long)]", extractCost),
-//
 
     /** Cost of: 1) serializing EcPointType to bytes 2) packing them in Coll. */
     def GroupElement_GetEncoded = 250
@@ -421,13 +356,6 @@ object CostTable {
 //    ("Slice", "(Coll[IV],Int,Int) => Coll[IV]", collToColl),
 //    ("Append", "(Coll[IV],Coll[IV]) => Coll[IV]", collToColl),
 //
-
-    /** Cost of: 1) calling Coll.length method (guaranteed to be O(1))
-      * Twice the cost of SelectField.
-      * Old cost: ("SizeOf", "(Coll[IV]) => Int", collLength) */
-    def SizeOf = 3  // cf. collLength
-
-    def ByIndex = 7
 
     /** Cost of: 1) obtain result RType 2) invoke map method 3) allocation of resulting
      * collection */
@@ -471,35 +399,14 @@ object CostTable {
 //    ("SCollection$.updateMany_per_kb", "(Coll[IV],Coll[Int],Coll[IV]) => Coll[IV]", collToColl),
 //    ("SCollection$.filter", "(Coll[IV],(IV) => Boolean) => Coll[IV]", collToColl),
 //
-    /** Cost of: conditional switching to the right branch (excluding the cost both
-     * condition itself and the branches) */
-    def If = 2 // cf. logicCost
-
-    def BoolToSigmaProp = 1
 
     def CreateProveDlog = 1
-    def CreateProveDHTuple = 9
 
     /** Cost of: serializing one node of SigmaBoolean proposition */
     def SigmaPropBytes = 1
 
     /** Cost of: serializing one node of SigmaBoolean proposition */
     def SigmaPropBytes_PerItem = 1
-
-    /** Cost of: scala `&&` operation
-      * Old cost: ("BinAnd", "(Boolean, Boolean) => Boolean", logicCost) */
-    def BinAnd = 2 // cf. logicCost
-
-    /** Cost of: scala `||` operation
-      * Old cost: ("BinOr", "(Boolean, Boolean) => Boolean", logicCost) */
-    def BinOr = 2 // cf. logicCost
-
-    /** Cost of: scala `^` operation
-      * Old cost: ("BinXor", "(Boolean, Boolean) => Boolean", logicCost) */
-    def BinXor = 6 // cf. logicCost
-
-    /** Cost of: scala `!` operation */
-    def LogicalNot = 2
 
     def BitOr = 1
     def BitAnd = 1
@@ -511,30 +418,6 @@ object CostTable {
 //    ("AND", "(Coll[Boolean]) => Boolean", logicCost),
 //    ("OR_per_item", "(Coll[Boolean]) => Boolean", logicCost),
 //    ("AND_per_item", "(Coll[Boolean]) => Boolean", logicCost),
-    /** Cost of: operations factored out of reduction loop.
-      * @see OR_PerItem,  */
-    def OR = 2
-    
-    /** Cost of: single scala `||` operation amortized over a loop of boolean values.
-      * @see OR */
-    def OR_PerItem = 2
-
-    /** Cost of: operations factored out of reduction loop.
-      * @see BinAnd */
-    def AND = 2
-
-    /** Cost of: single scala `&&` operation amortized over a loop of boolean values.
-      * @see OR */
-    def AND_PerItem = 2
-
-    /** Cost of: operations factored out of reduction loop.
-      * @see XOR_PerItem,  */
-    def XOR = 2
-
-    /** Cost of: single scala `^` operation amortized over a loop of boolean values.
-      * @see XOR */
-    def XOR_PerItem = 2
-
     /** Cost of: constructing new CSigmaProp and allocation collection
       * @see SigmaAnd_PerItem */
     def SigmaAnd = 2 // cf. logicCost
@@ -702,8 +585,6 @@ object CostTable {
       case _ => 5 // cf. logicCost
     }
 
-    def Negation = 1
-
 //    ("+_per_item", "(BigInt, BigInt) => BigInt", MinimalCost),
 //
 //    ("-_per_item", "(BigInt, BigInt) => BigInt", MinimalCost),
@@ -750,9 +631,6 @@ object CostTable {
 //    ("SAvlTree$.getMany_per_kb", "(AvlTree,Coll[Coll[Byte]],Coll[Byte]) => Coll[Option[Coll[Byte]]]", avlTreeOp),
 //    ("SAvlTree$.updateDigest", "(AvlTree,Coll[Byte]) => AvlTree", newAvlTreeCost),
 //    ("SAvlTree$.updateOperations", "(AvlTree,Byte) => AvlTree", newAvlTreeCost),
-
-    def LongToByteArray = 1
-    def ByteArrayToLong = 1
 
 //    ("ProveDlogEval", "(Unit) => SigmaProp", proveDlogEvalCost),
 //    ("ProveDHTuple", "(Unit) => SigmaProp", proveDHTupleEvalCost),

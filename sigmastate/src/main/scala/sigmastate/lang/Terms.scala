@@ -161,7 +161,9 @@ object Terms {
   }
   object Apply extends FixedCostValueCompanion {
     override def opCode: OpCode = OpCodes.FuncApplyCode
-    override val costKind = FixedCost(CostOf.Apply)
+    /** Cost of: 1) switch on the number of args 2) Scala method call 3) add args to env
+      * Old cost: lambdaInvoke == 30 */
+    override val costKind = FixedCost(20)
   }
 
   /** Apply types for type parameters of input value. */

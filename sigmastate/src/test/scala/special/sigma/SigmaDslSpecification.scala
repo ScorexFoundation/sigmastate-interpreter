@@ -56,7 +56,8 @@ class SigmaDslSpecification extends SigmaDslTesting
     isMeasureScriptTime = true,
     isLogEnabled = false, // don't commit the `true` value (travis log is too high)
     printTestVectors = false, // don't commit the `true` value (travis log is too high)
-    costTracingEnabled = true,  // should always be enabled in tests (and false by default)
+    costTracingEnabled = false,  // should always be enabled in tests (and false by default)
+                                 // should be disabled for cost profiling
     profilerOpt = Some(ErgoTreeEvaluator.DefaultProfiler),
     isTestRun = true
   )
@@ -74,9 +75,9 @@ class SigmaDslSpecification extends SigmaDslTesting
     }
   }
 
-  override val perTestWarmUpIters = 0
+  override val perTestWarmUpIters = 10
 
-  override val nBenchmarkIters = 1
+  override val nBenchmarkIters = 0
 
   override val okRunTestsWithoutMCLowering: Boolean = true
 

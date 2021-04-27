@@ -268,7 +268,7 @@ case class ByIndex[V <: SType](input: Value[SCollection[V]],
 }
 object ByIndex extends ValueCompanion {
   override def opCode: OpCode = OpCodes.ByIndexCode
-  override val costKind = FixedCost(CostOf.ByIndex)
+  override val costKind = FixedCost(30)
 }
 
 /** Select tuple field by its 1-based index. E.g. input._1 is transformed to
@@ -294,7 +294,9 @@ case class SelectField(input: Value[STuple], fieldIndex: Byte)
 }
 object SelectField extends FixedCostValueCompanion {
   override def opCode: OpCode = OpCodes.SelectFieldCode
-  override val costKind = FixedCost(CostOf.SelectField)
+  /** Cost of: 1) Calling Tuple2.{_1, _2} Scala methods.
+    * Old cost: ("SelectField", "() => Unit", selectField) */
+  override val costKind = FixedCost(7)
   def typed[T <: SValue](input: Value[STuple], fieldIndex: Byte): T = {
     SelectField(input, fieldIndex).asInstanceOf[T]
   }
@@ -347,7 +349,10 @@ case class SizeOf[V <: SType](input: Value[SCollection[V]])
 object SizeOf extends SimpleTransformerCompanion {
   val OpType = SFunc(SCollection(SType.tIV), SInt)
   override def opCode: OpCode = OpCodes.SizeOfCode
-  override val costKind = FixedCost(CostOf.SizeOf)
+  /** Cost of: 1) calling Coll.length method (guaranteed to be O(1))
+    * Twice the cost of SelectField.
+    * Old cost: ("SizeOf", "(Coll[IV]) => Int", collLength) */
+  override val costKind = FixedCost(14)
   override def argInfos: Seq[ArgInfo] = SizeOfInfo.argInfos
 }
 
@@ -367,7 +372,8 @@ case class ExtractAmount(input: Value[SBox.type]) extends Extract[SLong.type] wi
 object ExtractAmount extends SimpleTransformerCompanion {
   val OpType = SFunc(SBox, SLong)
   override def opCode: OpCode = OpCodes.ExtractAmountCode
-  override val costKind = FixedCost(CostOf.ExtractAmount)
+  /** Cost of: 1) access `value` property of a [[special.sigma.Box]] */
+  override val costKind = FixedCost(7)
   override def argInfos: Seq[ArgInfo] = ExtractAmountInfo.argInfos
 }
 
@@ -391,9 +397,10 @@ object ExtractScriptBytes extends SimpleTransformerCompanion {
   // TODO JITC: ensure the following is true
   /** The cost if fixed and doesn't include serialization of ErgoTree because
     * the ErgoTree is expected to be constructed with non-null propositionBytes.
-    * This is (and must be) guaranteed by ErgoTree deserializer. */
-  override val costKind = FixedCost(CostOf.ExtractScriptBytes)
-
+    * This is (and must be) guaranteed by ErgoTree deserializer.
+    * CostOf: accessing ErgoBox.propositionBytes
+    */
+  override val costKind = FixedCost(10)
   override def argInfos: Seq[ArgInfo] = ExtractScriptBytesInfo.argInfos
 }
 
@@ -410,10 +417,10 @@ case class ExtractBytes(input: Value[SBox.type]) extends Extract[SByteArray] wit
 object ExtractBytes extends SimpleTransformerCompanion {
   val OpType = SFunc(SBox, SByteArray)
   override def opCode: OpCode = OpCodes.ExtractBytesCode
-  /** The cost if fixed and doesn't include serialization of ErgoBox because
+  /** The cost is fixed and doesn't include serialization of ErgoBox because
     * the ErgoBox is expected to be constructed with non-null `bytes`.
     * TODO JITC: This is not, but must be guaranteed by ErgoBox deserializer. */
-  override val costKind = FixedCost(CostOf.ExtractBytes)
+  override val costKind = FixedCost(12)
   override def argInfos: Seq[ArgInfo] = ExtractBytesInfo.argInfos
 }
 
@@ -433,7 +440,7 @@ object ExtractBytesWithNoRef extends SimpleTransformerCompanion {
 
   /** The cost if fixed and doesn't include serialization of ErgoBox because
     * the ErgoBox is expected to be constructed with non-null `bytes`. */
-  override val costKind = FixedCost(CostOf.ExtractBytesWithNoRef)
+  override val costKind = FixedCost(12)
 
   override def argInfos: Seq[ArgInfo] = ExtractBytesWithNoRefInfo.argInfos
 }
@@ -451,7 +458,8 @@ case class ExtractId(input: Value[SBox.type]) extends Extract[SByteArray] with N
 object ExtractId extends SimpleTransformerCompanion {
   val OpType = SFunc(SBox, SByteArray)
   override def opCode: OpCode = OpCodes.ExtractIdCode
-  override val costKind = FixedCost(CostOf.ExtractId)
+  /** CostOf: cost of computing hash from `ErgoBox.bytes` */
+  override val costKind = FixedCost(12)
   override def argInfos: Seq[ArgInfo] = ExtractIdInfo.argInfos
 }
 
@@ -499,7 +507,7 @@ case class ExtractCreationInfo(input: Value[SBox.type]) extends Extract[STuple] 
 }
 object ExtractCreationInfo extends SimpleTransformerCompanion {
   override def opCode: OpCode = OpCodes.ExtractCreationInfoCode
-  override val costKind = FixedCost(CostOf.ExtractCreationInfo)
+  override val costKind = FixedCost(16)
   override def argInfos: Seq[ArgInfo] = ExtractCreationInfoInfo.argInfos
   val ResultType = STuple(SInt, SByteArray)
   val OpType = SFunc(SBox, ResultType)
@@ -548,7 +556,9 @@ case class GetVar[V <: SType](varId: Byte, override val tpe: SOption[V]) extends
 }
 object GetVar extends FixedCostValueCompanion {
   override def opCode: OpCode = OpCodes.GetVarCode
-  override val costKind = FixedCost(CostOf.GetVar)
+  /** Cost of: 1) accessing to array of context vars by index
+    * Old cost: ("GetVar", "(Context, Byte) => Option[T]", getVarCost) */
+  override val costKind = FixedCost(10)
   def apply[V <: SType](varId: Byte, innerTpe: V): GetVar[V] = GetVar[V](varId, SOption(innerTpe))
 }
 
@@ -570,7 +580,8 @@ case class OptionGet[V <: SType](input: Value[SOption[V]]) extends Transformer[S
 }
 object OptionGet extends SimpleTransformerCompanion with FixedCostValueCompanion {
   override def opCode: OpCode = OpCodes.OptionGetCode
-  override val costKind = FixedCost(CostOf.OptionGet)
+  /** Cost of: 1) Calling Option.get Scala method. */
+  override val costKind = FixedCost(10)
   override def argInfos: Seq[ArgInfo] = OptionGetInfo.argInfos
 }
 
@@ -595,7 +606,8 @@ case class OptionGetOrElse[V <: SType](input: Value[SOption[V]], default: Value[
 }
 object OptionGetOrElse extends ValueCompanion {
   override def opCode: OpCode = OpCodes.OptionGetOrElseCode
-  override val costKind = FixedCost(CostOf.OptionGetOrElse)
+  /** Cost of: 1) Calling Option.getOrElse Scala method. */
+  override val costKind = FixedCost(19)
 }
 
 /** Returns false if the option is None, true otherwise. */
@@ -612,6 +624,7 @@ case class OptionIsDefined[V <: SType](input: Value[SOption[V]])
 }
 object OptionIsDefined extends SimpleTransformerCompanion {
   override def opCode: OpCode = OpCodes.OptionIsDefinedCode
-  override val costKind = FixedCost(CostOf.OptionIsDefined)
+  /** Cost of: 1) Calling Option.isDefined Scala method. */
+  override val costKind = FixedCost(10)
   override def argInfos: Seq[ArgInfo] = OptionIsDefinedInfo.argInfos
 }

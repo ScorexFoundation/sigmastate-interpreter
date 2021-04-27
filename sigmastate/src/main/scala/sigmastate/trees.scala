@@ -171,7 +171,7 @@ case class BoolToSigmaProp(value: BoolValue) extends SigmaPropValue {
 }
 object BoolToSigmaProp extends ValueCompanion {
   override def opCode: OpCode = OpCodes.BoolToSigmaPropCode
-  override val costKind = FixedCost(CostOf.BoolToSigmaProp)
+  override val costKind = FixedCost(13)
   val OpType = SFunc(SBoolean, SSigmaProp)
 }
 
@@ -230,7 +230,7 @@ case class CreateProveDHTuple(gv: Value[SGroupElement.type],
 }
 object CreateProveDHTuple extends ValueCompanion {
   override def opCode: OpCode = OpCodes.ProveDiffieHellmanTupleCode
-  override val costKind = FixedCost(CostOf.CreateProveDHTuple)
+  override val costKind = FixedCost(16)
 }
 
 trait SigmaTransformer[IV <: SigmaPropValue, OV <: SigmaPropValue] extends SigmaPropValue {
@@ -325,7 +325,11 @@ case class OR(input: Value[SCollection[SBoolean.type]])
 
 object OR extends LogicalTransformerCompanion {
   override def opCode: OpCode = OrCode
-  override val costKind = PerItemCost(CostOf.OR, CostOf.OR_PerItem, 64 /*size of cache line in bytes*/)
+  /** Base cost: operations factored out of reduction loop.
+    * Per-chunk cost: cost of scala `||` operations amortized over a chunk of boolean values.
+    * @see BinOr
+    * @see AND */
+  override val costKind = PerItemCost(5, 5, 64/*size of cache line in bytes*/)
   override def argInfos: Seq[ArgInfo] = Operations.ORInfo.argInfos
 
   def apply(children: Seq[Value[SBoolean.type]]): OR =
@@ -364,7 +368,11 @@ case class XorOf(input: Value[SCollection[SBoolean.type]])
 
 object XorOf extends LogicalTransformerCompanion {
   override def opCode: OpCode = XorOfCode
-  override val costKind = PerItemCost(CostOf.XOR, CostOf.XOR_PerItem, 1)
+  /** Base cost: operations factored out of reduction loop.
+    * Per-chunk cost: cost of scala `||` operations amortized over a chunk of boolean values.
+    * @see BinOr
+    * @see AND */
+  override val costKind = PerItemCost(5, 5, 10)
   override def argInfos: Seq[ArgInfo] = Operations.XorOfInfo.argInfos
 
   def apply(children: Seq[Value[SBoolean.type]]): XorOf =
@@ -398,7 +406,11 @@ case class AND(input: Value[SCollection[SBoolean.type]])
 
 object AND extends LogicalTransformerCompanion {
   override def opCode: OpCode = AndCode
-  override val costKind = PerItemCost(CostOf.AND, CostOf.AND_PerItem, 64/*size of cache line in bytes*/)
+  /** Base cost: operations factored out of reduction loop.
+    * Per-chunk cost: cost of scala `&&` operations amortized over a chunk of boolean values.
+    * @see BinAnd
+    * @see OR */
+  override val costKind = PerItemCost(5, 5, 64/*size of cache line in bytes*/)
   override def argInfos: Seq[ArgInfo] = Operations.ANDInfo.argInfos
 
   def apply(children: Seq[Value[SBoolean.type]]): AND =
@@ -572,7 +584,7 @@ case class LongToByteArray(input: Value[SLong.type])
 object LongToByteArray extends SimpleTransformerCompanion {
   val OpType = SFunc(SLong, SByteArray)
   override def opCode: OpCode = OpCodes.LongToByteArrayCode
-  override val costKind = FixedCost(CostOf.LongToByteArray)
+  override val costKind = FixedCost(17)
   override def argInfos: Seq[ArgInfo] = LongToByteArrayInfo.argInfos
 }
 
@@ -592,7 +604,7 @@ case class ByteArrayToLong(input: Value[SByteArray])
 object ByteArrayToLong extends SimpleTransformerCompanion {
   val OpType = SFunc(SByteArray, SLong)
   override def opCode: OpCode = OpCodes.ByteArrayToLongCode
-  override val costKind = FixedCost(CostOf.ByteArrayToLong)
+  override val costKind = FixedCost(16)
   override def argInfos: Seq[ArgInfo] = ByteArrayToLongInfo.argInfos
 }
 
@@ -871,7 +883,7 @@ case class Negation[T <: SType](input: Value[T]) extends OneArgumentOperation[T,
 }
 object Negation extends OneArgumentOperationCompanion {
   override def opCode: OpCode = OpCodes.NegationCode
-  override val costKind = FixedCost(CostOf.Negation)
+  override val costKind = FixedCost(22)
   override def argInfos: Seq[ArgInfo] = NegationInfo.argInfos
 }
 
@@ -1037,7 +1049,7 @@ object MultiplyGroup extends TwoArgumentOperationCompanion with FixedCostValueCo
   val OpType = SFunc(Array(SGroupElement, SGroupElement), SGroupElement)
   override def opCode: OpCode = MultiplyGroupCode
   /** Cost of: 1) calling EcPoint.add 2) wrapping in GroupElement */
-  override val costKind = FixedCost(30)
+  override val costKind = FixedCost(35)
   override def argInfos: Seq[ArgInfo] = MultiplyGroupInfo.argInfos
 }
 // Relation
@@ -1193,7 +1205,9 @@ case class BinOr(override val left: BoolValue, override val right: BoolValue)
 object BinOr extends RelationCompanion with FixedCostValueCompanion {
   val OpType = SFunc(Array(SBoolean, SBoolean), SBoolean)
   override def opCode: OpCode = BinOrCode
-  override val costKind = FixedCost(CostOf.BinOr)
+  /** Cost of: scala `||` operation
+    * Old cost: ("BinOr", "(Boolean, Boolean) => Boolean", logicCost) */
+  override val costKind = FixedCost(20)
   override def argInfos: Seq[ArgInfo] = BinOrInfo.argInfos
 }
 
@@ -1214,7 +1228,9 @@ case class BinAnd(override val left: BoolValue, override val right: BoolValue)
 object BinAnd extends RelationCompanion with FixedCostValueCompanion {
   val OpType = SFunc(Array(SBoolean, SBoolean), SBoolean)
   override def opCode: OpCode = BinAndCode
-  override val costKind = FixedCost(CostOf.BinAnd)
+  /** Cost of: scala `&&` operation
+    * Old cost: ("BinAnd", "(Boolean, Boolean) => Boolean", logicCost) */
+  override val costKind = FixedCost(20)
   override def argInfos: Seq[ArgInfo] = BinAndInfo.argInfos
 }
 
@@ -1232,7 +1248,9 @@ case class BinXor(override val left: BoolValue, override val right: BoolValue)
 object BinXor extends RelationCompanion with FixedCostValueCompanion {
   val OpType = SFunc(Array(SBoolean, SBoolean), SBoolean)
   override def opCode: OpCode = BinXorCode
-  override val costKind = FixedCost(CostOf.BinXor)
+  /** Cost of: scala `^` operation
+    * Old cost: ("BinXor", "(Boolean, Boolean) => Boolean", logicCost) */
+  override val costKind = FixedCost(20)
   override def argInfos: Seq[ArgInfo] = BinXorInfo.argInfos
 }
 
@@ -1296,7 +1314,9 @@ case class If[T <: SType](condition: Value[SBoolean.type], trueBranch: Value[T],
 }
 object If extends QuadrupleCompanion {
   override def opCode: OpCode = OpCodes.IfCode
-  override val costKind = FixedCost(CostOf.If)
+  /** Cost of: conditional switching to the right branch (excluding the cost both
+    * condition itself and the branches) */
+  override val costKind = FixedCost(10)
   override def argInfos: Seq[ArgInfo] = IfInfo.argInfos
   val GenericOpType = SFunc(Array(SBoolean, SType.tT, SType.tT), SType.tT)
 }
@@ -1313,7 +1333,8 @@ case class LogicalNot(input: Value[SBoolean.type]) extends NotReadyValueBoolean 
 object LogicalNot extends FixedCostValueCompanion {
   val OpType = SFunc(Array(SBoolean), SBoolean)
   override def opCode: OpCode = OpCodes.LogicalNotCode
-  override val costKind = FixedCost(CostOf.LogicalNot)
+  /** Cost of: scala `!` operation */
+  override val costKind = FixedCost(8)
 }
 
 
