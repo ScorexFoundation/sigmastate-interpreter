@@ -50,7 +50,7 @@ class ErgoBoxCandidate(val value: Long,
   lazy val propositionBytes: Array[Byte] = ergoTree.bytes
 
   /** Serialized bytes of this Box without transaction reference data (transactionId and boxIndex). */
-  // TODO JITC: re-implement extracting directly from `ErgoBox.bytes` array
+  // TODO v5.0: re-implement extracting directly from `ErgoBox.bytes` array
   lazy val bytesWithNoRef: Array[Byte] = ErgoBoxCandidate.serializer.toBytes(this)
 
   /** Creates a new [[ErgoBox]] based on this candidate using the given transaction reference data.

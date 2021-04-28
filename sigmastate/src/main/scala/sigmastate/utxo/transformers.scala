@@ -394,8 +394,8 @@ object ExtractScriptBytes extends SimpleTransformerCompanion {
   val OpType = SFunc(SBox, SByteArray)
   override def opCode: OpCode = OpCodes.ExtractScriptBytesCode
 
-  // TODO JITC: ensure the following is true
-  /** The cost if fixed and doesn't include serialization of ErgoTree because
+  // TODO v5.0: ensure the following is true
+  /** The cost is fixed and doesn't include serialization of ErgoTree because
     * the ErgoTree is expected to be constructed with non-null propositionBytes.
     * This is (and must be) guaranteed by ErgoTree deserializer.
     * CostOf: accessing ErgoBox.propositionBytes
@@ -419,7 +419,7 @@ object ExtractBytes extends SimpleTransformerCompanion {
   override def opCode: OpCode = OpCodes.ExtractBytesCode
   /** The cost is fixed and doesn't include serialization of ErgoBox because
     * the ErgoBox is expected to be constructed with non-null `bytes`.
-    * TODO JITC: This is not, but must be guaranteed by ErgoBox deserializer. */
+    * TODO v5.0: This is not, but must be guaranteed by ErgoBox deserializer. */
   override val costKind = FixedCost(12)
   override def argInfos: Seq[ArgInfo] = ExtractBytesInfo.argInfos
 }

@@ -517,7 +517,7 @@ class SigmaDslTesting extends PropSpec
       }
       else {
         // new cost expectation is specified, compare it with the actual result
-// TODO JITC: uncomment to enable test vectors
+// TODO v5.0: uncomment to enable test vectors
 //        funcRes.foreach { case (_, newCost) =>
 //          if (newCost.trace != expectedTrace) {
 //            printCostDetails(script, newCost)
