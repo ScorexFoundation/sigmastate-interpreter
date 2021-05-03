@@ -4,10 +4,10 @@ import java.math.BigInteger
 
 import org.ergoplatform.ErgoBox
 import org.ergoplatform.ErgoBox.RegisterId
-import sigmastate.SCollection.{SByteArray, SIntArray}
+import sigmastate.SCollection.{SIntArray, SByteArray}
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.lang.Constraints.{TypeConstraint2, onlyNumeric2, sameType2}
+import sigmastate.lang.Constraints._
 import sigmastate.lang.Terms._
 import sigmastate.lang.exceptions.ConstraintFailed
 import sigmastate.serialization.OpCodes
@@ -19,7 +19,7 @@ import sigmastate.interpreter.CryptoConstants.EcPointType
 import special.collection.Coll
 import sigmastate.lang.SigmaTyper.STypeSubst
 import sigmastate.serialization.OpCodes.OpCode
-import special.sigma.{AvlTree, GroupElement, SigmaProp}
+import special.sigma.{AvlTree, SigmaProp, GroupElement}
 import spire.syntax.all.cfor
 
 import scala.util.DynamicVariable
@@ -679,28 +679,32 @@ trait TransformingSigmaBuilder extends StdSigmaBuilder with TypeConstraintCheck 
         (left, right)
     }
 
+  /** HOTSPOT: don't beautify the code. */
   override protected def equalityOp[T <: SType, R](left: Value[T],
                                                    right: Value[T],
                                                    cons: (Value[T], Value[T]) => R): R = {
-    val (l, r) = applyUpcast(left, right)
-    check2(l, r, Array(sameType2))
+    val t = applyUpcast(left, right)
+    val l = t._1; val r = t._2
+    check2(l, r, SameTypeConstrain)
     cons(l, r)
   }
 
+  /** HOTSPOT: don't beautify the code. */
   override protected def comparisonOp[T <: SType, R](left: Value[T],
                                                      right: Value[T],
                                                      cons: (Value[T], Value[T]) => R): R = {
-    check2(left, right, Array(onlyNumeric2))
-    val (l, r) = applyUpcast(left, right)
-    check2(l, r, Array(sameType2))
+    check2(left, right, OnlyNumericConstrain)
+    val t = applyUpcast(left, right)
+    val l = t._1; val r = t._2
+    check2(l, r, SameTypeConstrain)
     cons(l, r)
   }
 
   override protected def arithOp[T <: SNumericType, R](left: Value[T],
                                                        right: Value[T],
                                                        cons: (Value[T], Value[T]) => R): R = {
-    val (l, r) = applyUpcast(left, right)
-    cons(l, r)
+    val t = applyUpcast(left, right)
+    cons(t._1, t._2)
   }
 }
 
@@ -709,21 +713,21 @@ trait CheckingSigmaBuilder extends StdSigmaBuilder with TypeConstraintCheck {
   override protected def equalityOp[T <: SType, R](left: Value[T],
                                                    right: Value[T],
                                                    cons: (Value[T], Value[T]) => R): R = {
-    check2(left, right, Array(sameType2))
+    check2(left, right, SameTypeConstrain)
     cons(left, right)
   }
 
   override protected def comparisonOp[T <: SType, R](left: Value[T],
                                                      right: Value[T],
                                                      cons: (Value[T], Value[T]) => R): R = {
-    check2(left, right, Array(onlyNumeric2, sameType2))
+    check2(left, right, OnlyNumericAndSameTypeConstrain)
     cons(left, right)
   }
 
   override protected def arithOp[T <: SNumericType, R](left: Value[T],
                                                        right: Value[T],
                                                        cons: (Value[T], Value[T]) => R): R = {
-    check2(left, right, Array(sameType2))
+    check2(left, right, SameTypeConstrain)
     cons(left, right)
   }
 }
@@ -734,21 +738,30 @@ case object CheckingSigmaBuilder extends StdSigmaBuilder with CheckingSigmaBuild
 
 case object DefaultSigmaBuilder extends StdSigmaBuilder with CheckingSigmaBuilder
 case object TransformingSigmaBuilder extends StdSigmaBuilder with TransformingSigmaBuilder
+
+/** Builder of ErgoTree nodes which is used in deserializers. */
 case object DeserializationSigmaBuilder extends StdSigmaBuilder with TransformingSigmaBuilder
 
 object Constraints {
-  type Constraint2 = (SType.TypeCode, SType.TypeCode) => Boolean
-  type TypeConstraint2 = (SType, SType) => Boolean
-  type ConstraintN = Seq[SType.TypeCode] => Boolean
-
-  def onlyNumeric2: TypeConstraint2 = {
-    case (_: SNumericType, _: SNumericType) => true
-    case _ => false
+  abstract class TypeConstraint2 {
+    def apply(t1: SType, t2: SType): Boolean
   }
 
-  def sameType2: TypeConstraint2 = {
-    case (v1, v2) => v1.tpe == v2.tpe
+  object OnlyNumeric2 extends TypeConstraint2 {
+    override def apply(t1: SType, t2: SType): Boolean = t1 match {
+      case _: SNumericType => t2 match {
+        case _: SNumericType => true
+        case _ => false
+      }
+      case _ => false
+    }
   }
 
-  def sameTypeN: ConstraintN = { tcs => tcs.tail.forall(_ == tcs.head) }
+  object SameType2 extends TypeConstraint2 {
+    override def apply(t1: SType, t2: SType): Boolean = t1 == t2
+  }
+
+  val SameTypeConstrain: Seq[TypeConstraint2] = Array(SameType2)
+  val OnlyNumericConstrain: Seq[TypeConstraint2] = Array(OnlyNumeric2)
+  val OnlyNumericAndSameTypeConstrain: Seq[TypeConstraint2] = Array(OnlyNumeric2, SameType2)
 }
