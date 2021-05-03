@@ -222,6 +222,9 @@ object SType {
     case t: STuple =>
       if (t.items.length == 2) x.isInstanceOf[Tuple2[_,_]]
       else sys.error(s"Unsupported tuple type $t")
+    case tF: SFunc =>
+      if (tF.tDom.length == 1) x.isInstanceOf[Function1[_,_]]
+      else sys.error(s"Unsupported function type $tF")
     case SContext => x.isInstanceOf[Context]
     case SAvlTree => x.isInstanceOf[AvlTree]
     case SGlobal => x.isInstanceOf[SigmaDslBuilder]

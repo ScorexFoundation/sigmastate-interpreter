@@ -163,6 +163,14 @@ class TypesSpecification extends SigmaTestingData {
       exceptionLike[RuntimeException](s"Unsupported tuple type")
     )
 
+    assertTrue((x: Any) => x, SFunc(SInt, SLong))  // note, arg and result types not checked
+    assertFalse((x: Any) => x, STuple(SInt, SLong))
+    assertFalse(1, SFunc(SInt, SLong))
+    assertExceptionThrown(
+      assertTrue((x: Any) => x, SFunc(Array(SInt, SLong), SOption(SInt))),
+      exceptionLike[RuntimeException](s"Unsupported function type")
+    )
+
     assertExceptionThrown(
       assertTrue("", SString),
       exceptionLike[RuntimeException](s"Unknown type")
