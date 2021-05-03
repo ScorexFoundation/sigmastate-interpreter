@@ -10,6 +10,7 @@ import scalan.RType.GeneralType
 import sigmastate.SType.{TypeCode, AnyOps}
 import sigmastate.interpreter._
 import sigmastate.utils.Overloading.Overload1
+import sigmastate.utils.SparseArrayContainer
 import scalan.util.Extensions._
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.authds.avltree.batch.{Lookup, Insert, Update, Remove}
@@ -121,7 +122,8 @@ object SType {
   implicit val typeSigmaProp = SSigmaProp
   implicit val typeBox = SBox
 
-  implicit def typeCollection[V <: SType](implicit tV: V): SCollection[V] = SCollection[V]
+  /** Costructs a collection type with the given type of elements. */
+  implicit def typeCollection[V <: SType](implicit tV: V): SCollection[V] = SCollection[V](tV)
 
   implicit val SigmaBooleanRType: RType[SigmaBoolean] = RType.fromClassTag(classTag[SigmaBoolean])
   implicit val ErgoBoxRType: RType[ErgoBox] = RType.fromClassTag(classTag[ErgoBox])
@@ -176,8 +178,6 @@ object SType {
     SGlobal, SHeader, SPreHeader, SAvlTree, SGroupElement, SSigmaProp, SString, SBox,
     SUnit, SAny)
 
-  val typeCodeToType = allPredefTypes.map(t => t.typeCode -> t).toMap
-
   /** A mapping of object types supporting MethodCall operations. For each serialized
     * typeId this map contains a companion object which can be used to access the list of
     * corresponding methods.
@@ -196,13 +196,51 @@ object SType {
     * should be changed and SGlobal.typeId should be preserved. The regression tests in
     * `property("MethodCall Codes")` should pass.
     */
-  // TODO v5.0 (h4): should contain all numeric types (including also SNumericType)
+  // TODO v6.0 (h4): should contain all numeric types (including also SNumericType)
   //  to support method calls like 10.toByte which encoded as MethodCall with typeId = 4, methodId = 1
   //  see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/667
   lazy val types: Map[Byte, STypeCompanion] = Seq(
     SBoolean, SNumericType, SString, STuple, SGroupElement, SSigmaProp, SContext, SGlobal, SHeader, SPreHeader,
     SAvlTree, SBox, SOption, SCollection, SBigInt
   ).map { t => (t.typeId, t) }.toMap
+
+  /** Checks that the type of the value corresponds to the descriptor `tpe`.
+    * If the value has complex structure only root type constructor is checked.
+    * NOTE, this method is used in ErgoTree evaluation to systematically check that each
+    * tree node evaluates to a value of the expected type.
+    * Shallow runtime checks are enough if:
+    * 1) ErgoTree is well-typed, i.e. each sub-expression has correct types (agree with
+    *    the argument type).
+    * 2) `isValueOfType == true` for each tree leaf
+    * 3) `isValueOfType == true` for each sub-expression
+    *
+    * @param value value to check type
+    * @param tpe   type descriptor to check value against
+    * @return true if the given `value` is of type tpe`
+    */
+  def isValueOfType[T <: SType](x: Any, tpe: T): Boolean = tpe match {
+    case SBoolean => x.isInstanceOf[Boolean]
+    case SByte => x.isInstanceOf[Byte]
+    case SShort => x.isInstanceOf[Short]
+    case SInt => x.isInstanceOf[Int]
+    case SLong => x.isInstanceOf[Long]
+    case SBigInt => x.isInstanceOf[BigInt]
+    case SGroupElement => x.isInstanceOf[GroupElement]
+    case SSigmaProp => x.isInstanceOf[SigmaProp]
+    case SBox => x.isInstanceOf[Box]
+    case _: SCollectionType[_] => x.isInstanceOf[Coll[_]]
+    case _: SOption[_] => x.isInstanceOf[Option[_]]
+    case t: STuple =>
+      if (t.items.length == 2) x.isInstanceOf[Tuple2[_,_]]
+      else sys.error(s"Unsupported tuple type $t")
+    case SContext => x.isInstanceOf[Context]
+    case SAvlTree => x.isInstanceOf[AvlTree]
+    case SGlobal => x.isInstanceOf[SigmaDslBuilder]
+    case SHeader => x.isInstanceOf[Header]
+    case SPreHeader => x.isInstanceOf[PreHeader]
+    case SUnit => x.isInstanceOf[Unit]
+    case _ => sys.error(s"Unknown type $tpe")
+  }
 
   implicit class STypeOps(val tpe: SType) extends AnyVal {
     def isCollectionLike: Boolean = tpe.isInstanceOf[SCollection[_]]
@@ -214,15 +252,6 @@ object SType {
     def isAvlTree: Boolean = tpe.isInstanceOf[SAvlTree.type]
     def isFunc : Boolean = tpe.isInstanceOf[SFunc]
     def isTuple: Boolean = tpe.isInstanceOf[STuple]
-    def canBeTypedAs(expected: SType): Boolean = (tpe, expected) match {
-      case (NoType, _) => true
-      case (t1, t2) if t1 == t2 => true
-      case (f1: SFunc, f2: SFunc) =>
-        val okDom = f1.tDom.size == f2.tDom.size &&
-                     f1.tDom.zip(f2.tDom).forall { case (d1, d2) => d1.canBeTypedAs(d2) }
-        val okRange = f1.tRange.canBeTypedAs(f2.tRange)
-        okDom && okRange
-    }
 
     /** Returns true if this type is numeric (Byte, Short, etc.)
       * @see [[sigmastate.SNumericType]]

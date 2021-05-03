@@ -3,8 +3,10 @@ package sigmastate
 import com.typesafe.scalalogging.LazyLogging
 import gf2t.GF2_192_Poly
 import org.bouncycastle.util.BigIntegers
-import scorex.util.encode.Base16
 import sigmastate.Values.{FixedCost, PerItemCost, SigmaBoolean}
+import scorex.util.encode.Base16
+import sigmastate.SigSerializer.{logger, readBytesChecked}
+import sigmastate.Values.SigmaBoolean
 import sigmastate.basics.DLogProtocol.{ProveDlog, SecondDLogProverMessage}
 import sigmastate.basics.VerifierMessage.Challenge
 import sigmastate.basics.{ProveDHTuple, SecondDiffieHellmanTupleProverMessage}
@@ -143,6 +145,16 @@ object SigSerializer extends LazyLogging {
     bytes
   }
 
+  /** Helper method to read requested or remaining bytes from the reader. */
+  def readBytesChecked(r: SigmaByteReader, numRequestedBytes: Int, onError: String => Unit): Array[Byte] = {
+    val bytes = r.getBytesUnsafe(numRequestedBytes)
+    if (bytes.length != numRequestedBytes) {
+      val hex = Base16.encode(r.getAllBufferBytes)
+      onError(hex)
+    }
+    bytes
+  }
+
   /** Verifier Step 2: In a top-down traversal of the tree, obtain the challenges for the
     * children of every non-leaf node by reading them from the proof or computing them.
     * Verifier Step 3: For every leaf node, read the response z provided in the proof.
@@ -154,7 +166,7 @@ object SigSerializer extends LazyLogging {
     * @return An instance of [[UncheckedSigmaTree]]
     *
     * HOTSPOT: don't beautify the code
-    * Note, Nullable is used instead of Option to avoid allocations.
+    * Note, `null` is used instead of Option to avoid allocations.
     */
   def parseAndComputeChallenges(
         exp: SigmaBoolean,
@@ -238,7 +250,6 @@ object SigSerializer extends LazyLogging {
           children(i) = parseAndComputeChallenges(th.children(i), r, c)
         }
 
-        // Verifier doesn't need the polynomial anymore -- hence pass in None
         CThresholdUncheckedNode(challenge, children, th.k, Some(polynomial))
     }
   }
