@@ -145,16 +145,6 @@ object SigSerializer extends LazyLogging {
     bytes
   }
 
-  /** Helper method to read requested or remaining bytes from the reader. */
-  def readBytesChecked(r: SigmaByteReader, numRequestedBytes: Int, onError: String => Unit): Array[Byte] = {
-    val bytes = r.getBytesUnsafe(numRequestedBytes)
-    if (bytes.length != numRequestedBytes) {
-      val hex = Base16.encode(r.getAllBufferBytes)
-      onError(hex)
-    }
-    bytes
-  }
-
   /** Verifier Step 2: In a top-down traversal of the tree, obtain the challenges for the
     * children of every non-leaf node by reading them from the proof or computing them.
     * Verifier Step 3: For every leaf node, read the response z provided in the proof.
