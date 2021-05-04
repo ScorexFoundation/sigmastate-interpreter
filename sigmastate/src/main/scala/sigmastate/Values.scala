@@ -35,6 +35,7 @@ import sigmastate.serialization.transformers.ProveDHTupleSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import special.sigma.{AvlTree, Header, PreHeader, _}
 import sigmastate.lang.SourceContext
+import sigmastate.lang.exceptions.InterpreterException
 import special.collection.Coll
 import sigmastate.utxo.CostTable.CostOf
 
@@ -194,6 +195,35 @@ object Values {
       }
       val c = count(deserializeNode)(exp)
       c > 0
+    }
+
+    def typeError(node: SValue, evalResult: Any) = {
+      val tpe = node.tpe
+      throw new InterpreterException(
+        s"""Invalid type returned by evaluator:
+          |  expression: $node
+          |  expected type: $tpe
+          |  resulting value: $evalResult
+            """.stripMargin)
+    }
+
+    def typeError(tpe: SType, evalResult: Any) = {
+      throw new InterpreterException(
+        s"""Invalid type returned by evaluator:
+          |  expected type: $tpe
+          |  resulting value: $evalResult
+            """.stripMargin)
+    }
+
+    def checkType(node: SValue, evalResult: Any) = {
+      val tpe = node.tpe
+      if (!SType.isValueOfType(evalResult, tpe))
+        typeError(node, evalResult)
+    }
+
+    def checkType(tpe: SType, evalResult: Any) = {
+      if (!SType.isValueOfType(evalResult, tpe))
+        typeError(tpe, evalResult)
     }
   }
 
@@ -390,7 +420,9 @@ object Values {
     override protected def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
       val c = E.constants(id)
       addCost(ConstantPlaceholder.costKind)
-      c.value
+      val res = c.value
+      Value.checkType(c, res)
+      res
     }
   }
   object ConstantPlaceholder extends ValueCompanion {
@@ -859,12 +891,18 @@ object Values {
       Colls.fromArray(xs.toArray(SAny.classTag.asInstanceOf[ClassTag[SAny.WrappedType]]))(RType.AnyType)
     }
     protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
-      if (items.length < 2)
+      if (items.length != 2)
         error(s"Invalid tuple $this")
 
       val res: Any = if (items.length == 2) {
-        val x = items(0).evalTo[Any](env)
-        val y = items(1).evalTo[Any](env)
+        val item0 = items(0)
+        val x = item0.evalTo[Any](env)
+        Value.checkType(item0, x)
+
+        val item1 = items(1)
+        val y = item1.evalTo[Any](env)
+        Value.checkType(item1, y)
+
         (x, y) // special representation for pairs (to pass directly to Coll primitives)
       }
       else
@@ -941,7 +979,10 @@ object Values {
       addCost(ConcreteCollection.costKind)
       val is = Array.ofDim[V#WrappedType](len)(tElement.classTag)
       cfor(0)(_ < len, _ + 1) { i =>
-        is(i) = items(i).evalTo[V#WrappedType](env)
+        val item = items(i)
+        val itemV = item.evalTo[V#WrappedType](env)
+        Value.checkType(item, itemV) // necessary because cast to V#WrappedType is erased
+        is(i) = itemV
       }
       Colls.fromArray(is)
     }
@@ -1051,7 +1092,8 @@ object Values {
     }
   }
 
-  /** Special node which represents a reference to ValDef in was introduced as result of CSE. */
+  /** Special node which represents a reference to ValDef it was introduced as result of
+   * CSE. */
   case class ValUse[T <: SType](valId: Int, tpe: T) extends NotReadyValue[T] {
     override def companion = ValUse
     /** This is not used as operation, but rather to form a program structure */
@@ -1059,7 +1101,9 @@ object Values {
 
     protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
       addCost(ValUse.costKind)
-      env.getOrElse(valId, error(s"cannot resolve $this"))
+      val res = env.getOrElse(valId, error(s"cannot resolve $this"))
+      Value.checkType(this, res)
+      res
     }
   }
   object ValUse extends FixedCostValueCompanion {
@@ -1089,12 +1133,15 @@ object Values {
       cfor(0)(_ < len, _ + 1) { i =>
         val vd = items(i).asInstanceOf[ValDef]
         val v = vd.rhs.evalTo[Any](curEnv)
+        Value.checkType(vd, v)
         E.addFixedCost(FuncValue.AddToEnvironmentDesc_CostKind,
-                                 FuncValue.AddToEnvironmentDesc) {
+                       FuncValue.AddToEnvironmentDesc) {
           curEnv = curEnv + (vd.id -> v)
         }
       }
-      result.evalTo[Any](curEnv)
+      val res = result.evalTo[Any](curEnv)
+      Value.checkType(result, res)
+      res
     }
   }
   object BlockValue extends ValueCompanion {
@@ -1127,13 +1174,17 @@ object Values {
         }
       }
       else if (args.length == 1) {
+        val arg0 = args(0)
         (vArg: Any) => {
+          Value.checkType(arg0._2, vArg)
           var env1: DataEnv = null
           E.addFixedCost(FuncValue.AddToEnvironmentDesc_CostKind,
                                      FuncValue.AddToEnvironmentDesc) {
-            env1 = env + (args(0)._1 -> vArg)
+            env1 = env + (arg0._1 -> vArg)
           }
-          body.evalTo[Any](env1)
+          val res = body.evalTo[Any](env1)
+          Value.checkType(body, res)
+          res
         }
       }
       else {

@@ -75,7 +75,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     }
   }
 
-  override val perTestWarmUpIters = 20
+  override val perTestWarmUpIters = 0
 
   override val nBenchmarkIters = 0
 

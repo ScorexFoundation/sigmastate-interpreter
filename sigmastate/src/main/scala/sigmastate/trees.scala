@@ -1189,7 +1189,9 @@ case class EQ[S <: SType](
   override def companion = EQ
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val l = left.evalTo[S#WrappedType](env)
+    Value.checkType(left, l) // necessary because cast to S#WrappedType is erased
     val r = right.evalTo[S#WrappedType](env)
+    Value.checkType(right, r) // necessary because cast to S#WrappedType is erased
     DataValueComparer.equalDataValues(l, r)
   }
 }
@@ -1207,7 +1209,9 @@ case class NEQ[S <: SType](override val left: Value[S], override val right: Valu
   override def companion = NEQ
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val l = left.evalTo[S#WrappedType](env)
+    Value.checkType(left, l) // necessary because cast to S#WrappedType is erased
     val r = right.evalTo[S#WrappedType](env)
+    Value.checkType(right, r) // necessary because cast to S#WrappedType is erased
     !DataValueComparer.equalDataValues(l, r)
   }
 }
@@ -1337,8 +1341,15 @@ case class If[T <: SType](condition: Value[SBoolean.type], trueBranch: Value[T],
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val c = condition.evalTo[Boolean](env)
     addCost(If.costKind)
-    if (c) trueBranch.evalTo[T#WrappedType](env)
-    else   falseBranch.evalTo[T#WrappedType](env)
+    if (c) {
+      val res = trueBranch.evalTo[T#WrappedType](env)
+      Value.checkType(trueBranch, res) // necessary because cast to T#WrappedType is erased
+      res
+    } else {
+      val res = falseBranch.evalTo[T#WrappedType](env)
+      Value.checkType(falseBranch, res) // necessary because cast to T#WrappedType is erased
+      res
+    }
   }
 }
 object If extends QuadrupleCompanion {

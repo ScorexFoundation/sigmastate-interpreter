@@ -217,6 +217,7 @@ case class Fold[IV <: SType, OV <: SType](input: Value[SCollection[IV]],
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val inputV = input.evalTo[Coll[IV#WrappedType]](env)
     val zeroV = zero.evalTo[OV#WrappedType](env)
+    Value.checkType(zero, zeroV) // necessary because cast to OV#WrappedType is erased
     val foldOpV = foldOp.evalTo[((OV#WrappedType, IV#WrappedType)) => OV#WrappedType](env)
     addSeqCost(Fold.costKind, inputV.length)(null)
     inputV.foldLeft(zeroV, foldOpV)
@@ -258,6 +259,7 @@ case class ByIndex[V <: SType](input: Value[SCollection[V]],
     default match {
       case Some(d) =>
         val dV = d.evalTo[V#WrappedType](env)
+        Value.checkType(d, dV) // necessary because cast to V#WrappedType is erased
         addCost(ByIndex.costKind)
         inputV.getOrElse(indexV, dV)
       case _ =>
@@ -288,7 +290,8 @@ case class SelectField(input: Value[STuple], fieldIndex: Byte)
         if (fieldIndex == 1) p._1
         else if (fieldIndex == 2) p._2
         else error(s"Unknown fieldIndex $fieldIndex to select from $p: evaluating tree $this")
-      case xs: Seq[_] => xs(fieldIndex - 1)
+      case _ =>
+        Value.typeError(input, inputV)
     }
   }
 }
@@ -599,7 +602,8 @@ case class OptionGetOrElse[V <: SType](input: Value[SOption[V]], default: Value[
   override def tpe: V = input.tpe.elemType
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val inputV = input.evalTo[Option[V#WrappedType]](env)
-    val dV = default.evalTo[V#WrappedType](env)  // TODO soft-fork: execute lazily
+    val dV = default.evalTo[V#WrappedType](env)  // TODO v6.0: execute lazily
+    Value.checkType(default, dV) // necessary because cast to V#WrappedType is erased
     addCost(OptionGetOrElse.costKind)
     inputV.getOrElse(dV)
   }
