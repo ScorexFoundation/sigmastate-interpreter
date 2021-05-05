@@ -91,7 +91,7 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
 
     // Prover Step 8: compute the challenge for the root of the tree as the Fiat-Shamir hash of propBytes
     // and the message being signed.
-    val rootChallenge = Challenge @@ CryptoFunctions.hashFn(propBytes ++ message)
+    val rootChallenge = Challenge @@ CryptoFunctions.hashFn(Helpers.concatArrays(propBytes, message))
     val step8 = step6.withChallenge(rootChallenge)
 
     // Prover Step 9: complete the proof by computing challenges at real nodes and additionally responses at real leaves
@@ -143,7 +143,7 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
         prove(unprovenTree, message, hintsBag)
     }
     // Prover Step 10: output the right information into the proof
-    val proof = SigSerializer.toBytes(proofTree)
+    val proof = SigSerializer.toProofBytes(proofTree)
     proof
   }
   /**
@@ -599,7 +599,7 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
                   hintsBag: HintsBag): Try[Array[Byte]] = Try {
     val unprovenTree = convertToUnproven(sigmaTree)
     val proofTree = prove(unprovenTree, message, hintsBag)
-    SigSerializer.toBytes(proofTree)
+    SigSerializer.toProofBytes(proofTree)
   }
 
 }

@@ -63,8 +63,8 @@ class SigSerializerSpecification extends SigmaTestingCommons
 
 
   private def roundTrip(uncheckedTree: UncheckedTree, exp: SigmaBoolean): Assertion = {
-    val bytes = SigSerializer.toBytes(uncheckedTree)
-    val parsedUncheckedTree = SigSerializer.parseAndComputeChallenges(exp, bytes)
+    val proof = SigSerializer.toProofBytes(uncheckedTree)
+    val parsedUncheckedTree = SigSerializer.parseAndComputeChallenges(exp, proof)
     isEquivalent(uncheckedTree, parsedUncheckedTree) shouldBe true
   }
 
@@ -494,7 +494,7 @@ class SigSerializerSpecification extends SigmaTestingCommons
     )
 
     cases.zipWithIndex.foreach { case (c, iCase) =>
-      val sigBytes = SigSerializer.toBytes(c.uncheckedTree)
+      val sigBytes = SigSerializer.toProofBytes(c.uncheckedTree)
       sigBytes shouldBe c.proof
       val uncheckedTree = SigSerializer.parseAndComputeChallenges(c.prop, c.proof)
       uncheckedTree shouldBe c.uncheckedTree
@@ -511,6 +511,18 @@ class SigSerializerSpecification extends SigmaTestingCommons
       }
 
       hex shouldBe c.fiatShamirHex
+    }
+  }
+
+  property("Invalid signature parsing") {
+    forAll { bytes: Array[Byte] =>
+      val r = SigmaSerializer.startReader(bytes)
+      val readBytes = r.getBytesUnsafe(bytes.length + 1) // request more than present
+      readBytes shouldBe bytes
+
+      // we now at the limit position of reader, and still can get all buffer bytes
+      val allBytes = r.getAllBufferBytes
+      allBytes shouldBe bytes
     }
   }
 }

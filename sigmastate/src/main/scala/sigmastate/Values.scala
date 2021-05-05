@@ -585,34 +585,25 @@ object Values {
       case _: ProveDlog => CostTable.proveDlogEvalCost
       case _: ProveDHTuple => CostTable.proveDHTupleEvalCost
       case and: CAND =>
-        val children = and.children.toArray
-        val nChildren = children.length
-        var sum = 0
-        cfor(0)(_ < nChildren, _ + 1) { i =>
-          val c = estimateCost(children(i))
-          sum = Math.addExact(sum, c)
-        }
-        sum
-      case or: COR  =>
-        val children = or.children.toArray
-        val nChildren = children.length
-        var sum = 0
-        cfor(0)(_ < nChildren, _ + 1) { i =>
-          val c = estimateCost(children(i))
-          sum = Math.addExact(sum, c)
-        }
-        sum
+        childrenCost(and.children)
+      case or: COR =>
+        childrenCost(or.children)
       case th: CTHRESHOLD =>
-        val children = th.children.toArray
-        val nChildren = children.length
-        var sum = 0
-        cfor(0)(_ < nChildren, _ + 1) { i =>
-          val c = estimateCost(children(i))
-          sum = Math.addExact(sum, c)
-        }
-        sum
+        childrenCost(th.children)
       case _ =>
         CostTable.MinimalCost
+    }
+
+    /** Compute the total cost of the given children. */
+    private def childrenCost(children: Seq[SigmaBoolean]): Int = {
+      val childrenArr = children.toArray
+      val nChildren = childrenArr.length
+      var sum = 0
+      cfor(0)(_ < nChildren, _ + 1) { i =>
+        val c = estimateCost(childrenArr(i))
+        sum = Math.addExact(sum, c)
+      }
+      sum
     }
 
     /** HOTSPOT: don't beautify this code */
