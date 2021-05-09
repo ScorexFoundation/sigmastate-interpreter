@@ -885,8 +885,8 @@ trait SLogical extends SType {
   * @see `SGenericType`
   */
 trait SMonoType extends SType with STypeCompanion {
-  protected def property(name: String, tpeRes: SType, id: Byte): SMethod =
-    SMethod(this, name, SFunc(this, tpeRes), id, FixedCost(1))
+  protected def propertyCall(name: String, tpeRes: SType, id: Byte, costKind: CostKind): SMethod =
+    SMethod(this, name, SFunc(this, tpeRes), id, costKind)
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(PropertyCall, "")
 
@@ -1051,7 +1051,7 @@ case object SBigInt extends SPrimType with SEmbeddable with SNumericType with SM
   val MultModQMethod = SMethod(this, "multModQ", SFunc(IndexedSeq(this, SBigInt), SBigInt), 4, FixedCost(1))
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(MethodCall, "Multiply this number with \\lst{other} by module Q.", ArgInfo("other", "Number to multiply with this."))
-      
+
   protected override def getMethods() = super.getMethods() ++ Seq(
 //    ModQMethod,
 //    PlusModQMethod,
@@ -1101,8 +1101,11 @@ case object SGroupElement extends SProduct with SPrimType with SEmbeddable with 
     })
     .withInfo(MultiplyGroup, "Group operation.", ArgInfo("other", "other element of the group"))
 
+  /** Cost of: 1) calling EcPoint.negate 2) wrapping in GroupElement. */
+  val Negate_CostKind = FixedCost(45)
+
   lazy val NegateMethod: SMethod = SMethod(
-    this, "negate", SFunc(this, this), 5, FixedCost(CostOf.GroupElement_Negate))
+    this, "negate", SFunc(this, this), 5, Negate_CostKind)
     .withIRInfo(MethodCallIrBuilder)
     .withInfo(PropertyCall, "Inverse element of the group.")
 
@@ -1258,7 +1261,7 @@ object SOption extends STypeCompanion {
         ArgInfo("f", "the function to apply if nonempty"))
 
   val MapMethod = SMethod(this, "map",
-    SFunc(Array(ThisType, SFunc(tT, tR)), SOption(tR), Array(paramT, paramR)), 7, FixedCost(1))
+    SFunc(Array(ThisType, SFunc(tT, tR)), SOption(tR), Array(paramT, paramR)), 7, FixedCost(10))
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(MethodCall,
         """Returns a \lst{Some} containing the result of applying \lst{f} to this option's
@@ -1267,7 +1270,7 @@ object SOption extends STypeCompanion {
         """.stripMargin, ArgInfo("f", "the function to apply"))
 
   val FilterMethod = SMethod(this, "filter",
-    SFunc(Array(ThisType, SFunc(tT, SBoolean)), ThisType, Array(paramT)), 8, FixedCost(1))
+    SFunc(Array(ThisType, SFunc(tT, SBoolean)), ThisType, Array(paramT)), 8, FixedCost(10))
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(MethodCall,
         """Returns this option if it is nonempty and applying the predicate \lst{p} to
@@ -1428,17 +1431,35 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
          | Throws an exception if \lst{i < 0} or \lst{length <= i}
         """.stripMargin, ArgInfo("i", "the index"))
 
+  /** Cost of creating a collection of indices */
+  val IndicesMethod_CostKind = PerItemCost(baseCost = 10, perChunkCost = 2, chunkSize = 16)
+
   val IndicesMethod = SMethod(
-    this, "indices", SFunc(ThisType, SCollection(SInt)), 14, FixedCost(CostOf.Indices))
+    this, "indices", SFunc(ThisType, SCollection(SInt)), 14, IndicesMethod_CostKind)
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(PropertyCall,
         """Produces the range of all indices of this collection as a new collection
          | containing [0 .. length-1] values.
         """.stripMargin)
 
+  def indices_eval[A, B](mc: MethodCall, xs: Coll[A])
+                        (implicit E: ErgoTreeEvaluator): Coll[Int] = {
+    val m = mc.method
+    E.addSeqCost(m.costKind.asInstanceOf[PerItemCost], xs.length, m.opDesc) { () =>
+      xs.indices
+    }
+  }
+  /** BaseCost:
+    * 1) base cost of Coll.flatMap
+    * PerChunkCost:
+    * 1) cost of Coll.flatMap (per item)
+    * 2) new collection is allocated for each item
+    * 3) each collection is then appended to the resulting collection */
+  val FlatMapMethod_CostKind = PerItemCost(baseCost = 30, perChunkCost = 5, chunkSize = 8)
+
   val FlatMapMethod = SMethod(this, "flatMap",
     SFunc(Array(ThisType, SFunc(tIV, tOVColl)), tOVColl, Array(paramIV, paramOV)),
-    15, PerItemCost(CostOf.Flatmap, CostOf.Flatmap_PerItem, 1))
+    15, FlatMapMethod_CostKind)
       .withIRInfo(
         MethodCallIrBuilder,
         javaMethodOf[Coll[_], Function1[_,_], RType[_]]("flatMap"),
@@ -1531,16 +1552,19 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
                         (implicit E: ErgoTreeEvaluator): Coll[B] = {
     checkValidFlatmap(mc)
     val m = mc.method
-    E.addSeqCost(m.costKind.asInstanceOf[PerItemCost], xs.length, m.opDesc) { () =>
+    var res: Coll[B] = null
+    E.addSeqCost(m.costKind.asInstanceOf[PerItemCost], m.opDesc) { () =>
       val tpeB = mc.tpe.asInstanceOf[SCollection[SType]].elemType
       val tB = Evaluation.stypeToRType(tpeB).asInstanceOf[RType[B]]
-      xs.flatMap(f)(tB)
+      res = xs.flatMap(f)(tB)
+      res.length
     }
+    res
   }
 
   val PatchMethod = SMethod(this, "patch",
     SFunc(Array(ThisType, SInt, ThisType, SInt), ThisType, paramIVSeq),
-      19, PerItemCost(1, 1, 10))
+      19, PerItemCost(30, 2, 10))
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(MethodCall, "")
 
@@ -1555,21 +1579,22 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
 
   val UpdatedMethod = SMethod(this, "updated",
     SFunc(Array(ThisType, SInt, tIV), ThisType, paramIVSeq),
-    20, PerItemCost(1, 1, 10))
+    20, PerItemCost(10, 1, 10))
       .withIRInfo(MethodCallIrBuilder, javaMethodOf[Coll[_], Int, Any]("updated"))
       .withInfo(MethodCall, "")
 
   def updated_eval[A](mc: MethodCall, coll: Coll[A], index: Int, elem: A)
                      (implicit E: ErgoTreeEvaluator): Coll[A] = {
-    val costKind = mc.method.costKind.asInstanceOf[PerItemCost]
-    E.addSeqCost(costKind, coll.length, mc.method.opDesc) { () =>
+    val m = mc.method
+    val costKind = m.costKind.asInstanceOf[PerItemCost]
+    E.addSeqCost(costKind, coll.length, m.opDesc) { () =>
       coll.updated(index, elem)
     }
   }
 
   val UpdateManyMethod = SMethod(this, "updateMany",
     SFunc(Array(ThisType, SCollection(SInt), ThisType), ThisType, paramIVSeq),
-    21, PerItemCost(1, 1, 10))
+    21, PerItemCost(10, 1, 10))
       .withIRInfo(MethodCallIrBuilder).withInfo(MethodCall, "")
 
   def updateMany_eval[A](mc: MethodCall, coll: Coll[A], indexes: Coll[Int], values: Coll[A])
@@ -1581,7 +1606,7 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
   }
 
   val IndexOfMethod = SMethod(this, "indexOf",
-    SFunc(Array(ThisType, tIV, SInt), SInt, paramIVSeq), 26, PerItemCost(3, 3, 2))
+    SFunc(Array(ThisType, tIV, SInt), SInt, paramIVSeq), 26, PerItemCost(20, 10, 2))
       .withIRInfo(MethodCallIrBuilder, javaMethodOf[Coll[_], Any, Int]("indexOf"))
       .withInfo(MethodCall, "")
 
@@ -1608,9 +1633,11 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
     res
   }
 
+  val Zip_CostKind = PerItemCost(baseCost = 10, perChunkCost = 1, chunkSize = 10)
+
   val ZipMethod = SMethod(this, "zip",
     SFunc(Array(ThisType, tOVColl), SCollection(STuple(tIV, tOV)), Array[STypeParam](tIV, tOV)),
-    29, PerItemCost(CostOf.Zip, CostOf.Zip_PerItem, 10))
+    29, Zip_CostKind)
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(MethodCall, "")
 
@@ -1936,7 +1963,7 @@ case object SBox extends SProduct with SPredefType with SMonoType {
         ArgInfo("regId", "zero-based identifier of the register."))
 
   lazy val tokensMethod = SMethod(
-    this, "tokens", SFunc(SBox, ErgoBox.STokensRegType), 8, FixedCost(1))
+    this, "tokens", SFunc(SBox, ErgoBox.STokensRegType), 8, FixedCost(15))
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(PropertyCall, "Secondary tokens")
 
@@ -1968,7 +1995,7 @@ case object SAvlTree extends SProduct with SPredefType with SMonoType {
   lazy val TCollOptionCollByte = SCollection(SByteArrayOption)
   lazy val CollKeyValue = SCollection(STuple(SByteArray, SByteArray))
 
-  lazy val digestMethod = SMethod(this, "digest", SFunc(this, SByteArray), 1, FixedCost(1))
+  lazy val digestMethod = SMethod(this, "digest", SFunc(this, SByteArray), 1, FixedCost(15))
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(PropertyCall,
         """Returns digest of the state represented by this tree.
@@ -1981,7 +2008,7 @@ case object SAvlTree extends SProduct with SPredefType with SMonoType {
   }
 
   lazy val enabledOperationsMethod = SMethod(
-    this, "enabledOperations", SFunc(this, SByte), 2, FixedCost(1))
+    this, "enabledOperations", SFunc(this, SByte), 2, FixedCost(15))
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(PropertyCall,
         """ Flags of enabled operations packed in single byte.
@@ -1991,7 +2018,7 @@ case object SAvlTree extends SProduct with SPredefType with SMonoType {
         """.stripMargin)
 
   lazy val keyLengthMethod = SMethod(
-    this, "keyLength", SFunc(this, SInt), 3, FixedCost(1))
+    this, "keyLength", SFunc(this, SInt), 3, FixedCost(15))
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(PropertyCall,
         """
@@ -1999,7 +2026,7 @@ case object SAvlTree extends SProduct with SPredefType with SMonoType {
             """.stripMargin)
 
   lazy val valueLengthOptMethod = SMethod(
-    this, "valueLengthOpt", SFunc(this, SIntOption), 4, FixedCost(1))
+    this, "valueLengthOpt", SFunc(this, SIntOption), 4, FixedCost(15))
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(PropertyCall,
         """
@@ -2007,7 +2034,7 @@ case object SAvlTree extends SProduct with SPredefType with SMonoType {
         """.stripMargin)
 
   lazy val isInsertAllowedMethod = SMethod(
-    this, "isInsertAllowed", SFunc(this, SBoolean), 5, FixedCost(1))
+    this, "isInsertAllowed", SFunc(this, SBoolean), 5, FixedCost(15))
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(PropertyCall,
         """
@@ -2020,7 +2047,7 @@ case object SAvlTree extends SProduct with SPredefType with SMonoType {
   }
 
   lazy val isUpdateAllowedMethod = SMethod(
-    this, "isUpdateAllowed", SFunc(this, SBoolean), 6, FixedCost(1))
+    this, "isUpdateAllowed", SFunc(this, SBoolean), 6, FixedCost(15))
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(PropertyCall,
         """
@@ -2033,7 +2060,7 @@ case object SAvlTree extends SProduct with SPredefType with SMonoType {
   }
 
   lazy val isRemoveAllowedMethod = SMethod(
-    this, "isRemoveAllowed", SFunc(this, SBoolean), 7, FixedCost(1))
+    this, "isRemoveAllowed", SFunc(this, SBoolean), 7, FixedCost(15))
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(PropertyCall,
         """
@@ -2046,7 +2073,7 @@ case object SAvlTree extends SProduct with SPredefType with SMonoType {
   }
 
   lazy val updateOperationsMethod  = SMethod(this, "updateOperations",
-    SFunc(Array(SAvlTree, SByte), SAvlTree), 8, FixedCost(5))
+    SFunc(Array(SAvlTree, SByte), SAvlTree), 8, FixedCost(45))
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(MethodCall,
         """
@@ -2075,7 +2102,7 @@ case object SAvlTree extends SProduct with SPredefType with SMonoType {
     * So the following is an approximation of the proof parsing cost.
     */
   final val CreateAvlVerifier_Info = OperationCostInfo(
-    PerItemCost(100, 20, 64), NamedDesc("CreateAvlVerifier"))
+    PerItemCost(110, 16, 64), NamedDesc("CreateAvlVerifier"))
 
   final val LookupAvlTree_Info = OperationCostInfo(
     PerItemCost(40, 10, 1), NamedDesc("LookupAvlTree"))
@@ -2084,7 +2111,7 @@ case object SAvlTree extends SProduct with SPredefType with SMonoType {
     PerItemCost(40, 10, 1), NamedDesc("InsertIntoAvlTree"))
 
   final val UpdateAvlTree_Info = OperationCostInfo(
-    PerItemCost(4, 5, 1), NamedDesc("UpdateAvlTree"))
+    PerItemCost(120, 20, 1), NamedDesc("UpdateAvlTree"))
 
   final val RemoveAvlTree_Info = OperationCostInfo(
     PerItemCost(100, 15, 1), NamedDesc("RemoveAvlTree"))
@@ -2298,7 +2325,7 @@ case object SAvlTree extends SProduct with SPredefType with SMonoType {
          |
         """.stripMargin)
 
-  def remove_eval(mc: MethodCall, tree: AvlTree, 
+  def remove_eval(mc: MethodCall, tree: AvlTree,
                   operations: Coll[Coll[Byte]], proof: Coll[Byte])
                  (implicit E: ErgoTreeEvaluator): Option[AvlTree] = {
     E.addCost(isRemoveAllowed_Info)
@@ -2327,7 +2354,7 @@ case object SAvlTree extends SProduct with SPredefType with SMonoType {
   }
 
   lazy val updateDigestMethod = SMethod(this, "updateDigest",
-    SFunc(Array(SAvlTree, SByteArray), SAvlTree), 15, FixedCost(5))
+    SFunc(Array(SAvlTree, SByteArray), SAvlTree), 15, FixedCost(40))
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(MethodCall,
         """
@@ -2375,14 +2402,14 @@ case object SContext extends SProduct with SPredefType with SMonoType {
 
   import SType.{tT, paramT}
 
-  lazy val dataInputsMethod = property("dataInputs", SBoxArray, 1)
-  lazy val headersMethod    = property("headers", SHeaderArray, 2)
-  lazy val preHeaderMethod  = property("preHeader", SPreHeader, 3)
+  lazy val dataInputsMethod = propertyCall("dataInputs", SBoxArray, 1, FixedCost(15))
+  lazy val headersMethod    = propertyCall("headers", SHeaderArray, 2, FixedCost(15))
+  lazy val preHeaderMethod  = propertyCall("preHeader", SPreHeader, 3, FixedCost(15))
   lazy val inputsMethod     = property("INPUTS", SBoxArray, 4, Inputs)
   lazy val outputsMethod    = property("OUTPUTS", SBoxArray, 5, Outputs)
   lazy val heightMethod     = property("HEIGHT", SInt, 6, Height)
   lazy val selfMethod       = property("SELF", SBox, 7, Self)
-  lazy val selfBoxIndexMethod = property("selfBoxIndex", SInt, 8)
+  lazy val selfBoxIndexMethod = propertyCall("selfBoxIndex", SInt, 8, FixedCost(15))
   lazy val lastBlockUtxoRootHashMethod = property("LastBlockUtxoRootHash", SAvlTree, 9, LastBlockUtxoRootHash)
   lazy val minerPubKeyMethod = property("minerPubKey", SByteArray, 10, MinerPubkey)
   lazy val getVarMethod = SMethod(
@@ -2423,21 +2450,21 @@ case object SHeader extends SProduct with SPredefType with SMonoType {
   }
   override def isConstantSize = true
 
-  lazy val idMethod               = property("id", SByteArray, 1)
-  lazy val versionMethod          = property("version",  SByte,      2)
-  lazy val parentIdMethod         = property("parentId", SByteArray, 3)
-  lazy val ADProofsRootMethod     = property("ADProofsRoot", SByteArray, 4)
-  lazy val stateRootMethod        = property("stateRoot", SAvlTree, 5)
-  lazy val transactionsRootMethod = property("transactionsRoot", SByteArray, 6)
-  lazy val timestampMethod        = property("timestamp", SLong, 7)
-  lazy val nBitsMethod            = property("nBits", SLong, 8)
-  lazy val heightMethod           = property("height", SInt, 9)
-  lazy val extensionRootMethod    = property("extensionRoot", SByteArray, 10)
-  lazy val minerPkMethod          = property("minerPk", SGroupElement, 11)
-  lazy val powOnetimePkMethod     = property("powOnetimePk", SGroupElement, 12)
-  lazy val powNonceMethod         = property("powNonce", SByteArray, 13)
-  lazy val powDistanceMethod      = property("powDistance", SBigInt, 14)
-  lazy val votesMethod            = property("votes", SByteArray, 15)
+  lazy val idMethod               = propertyCall("id", SByteArray, 1, FixedCost(10))
+  lazy val versionMethod          = propertyCall("version",  SByte,      2, FixedCost(10))
+  lazy val parentIdMethod         = propertyCall("parentId", SByteArray, 3, FixedCost(10))
+  lazy val ADProofsRootMethod     = propertyCall("ADProofsRoot", SByteArray, 4, FixedCost(10))
+  lazy val stateRootMethod        = propertyCall("stateRoot", SAvlTree, 5, FixedCost(10))
+  lazy val transactionsRootMethod = propertyCall("transactionsRoot", SByteArray, 6, FixedCost(10))
+  lazy val timestampMethod        = propertyCall("timestamp", SLong, 7, FixedCost(10))
+  lazy val nBitsMethod            = propertyCall("nBits", SLong, 8, FixedCost(10))
+  lazy val heightMethod           = propertyCall("height", SInt, 9, FixedCost(10))
+  lazy val extensionRootMethod    = propertyCall("extensionRoot", SByteArray, 10, FixedCost(10))
+  lazy val minerPkMethod          = propertyCall("minerPk", SGroupElement, 11, FixedCost(10))
+  lazy val powOnetimePkMethod     = propertyCall("powOnetimePk", SGroupElement, 12, FixedCost(10))
+  lazy val powNonceMethod         = propertyCall("powNonce", SByteArray, 13, FixedCost(10))
+  lazy val powDistanceMethod      = propertyCall("powDistance", SBigInt, 14, FixedCost(10))
+  lazy val votesMethod            = propertyCall("votes", SByteArray, 15, FixedCost(10))
 
   protected override def getMethods() = super.getMethods() ++ Seq(
     idMethod, versionMethod, parentIdMethod, ADProofsRootMethod, stateRootMethod, transactionsRootMethod,
@@ -2466,13 +2493,13 @@ case object SPreHeader extends SProduct with SPredefType with SMonoType {
   }
   override def isConstantSize = true
 
-  lazy val versionMethod          = property("version",  SByte,      1)
-  lazy val parentIdMethod         = property("parentId", SByteArray, 2)
-  lazy val timestampMethod        = property("timestamp", SLong, 3)
-  lazy val nBitsMethod            = property("nBits", SLong, 4)
-  lazy val heightMethod           = property("height", SInt, 5)
-  lazy val minerPkMethod          = property("minerPk", SGroupElement, 6)
-  lazy val votesMethod            = property("votes", SByteArray, 7)
+  lazy val versionMethod          = propertyCall("version",  SByte,      1, FixedCost(10))
+  lazy val parentIdMethod         = propertyCall("parentId", SByteArray, 2, FixedCost(10))
+  lazy val timestampMethod        = propertyCall("timestamp", SLong, 3, FixedCost(10))
+  lazy val nBitsMethod            = propertyCall("nBits", SLong, 4, FixedCost(10))
+  lazy val heightMethod           = propertyCall("height", SInt, 5, FixedCost(10))
+  lazy val minerPkMethod          = propertyCall("minerPk", SGroupElement, 6, FixedCost(10))
+  lazy val votesMethod            = propertyCall("votes", SByteArray, 7, FixedCost(10))
 
   protected override def getMethods() = super.getMethods() ++ Seq(
     versionMethod, parentIdMethod, timestampMethod, nBitsMethod, heightMethod, minerPkMethod, votesMethod

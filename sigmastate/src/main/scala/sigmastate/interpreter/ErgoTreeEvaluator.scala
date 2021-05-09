@@ -239,8 +239,8 @@ class ErgoTreeEvaluator(
     * @param costKind the cost descriptor to be used to compute the cost based on the
     *                 actual number of items returned by the `block`
     * @param opDesc   the operation to associate the cost with (when costTracingEnabled)
-    * @param block    operation executed under the given cost descriptors, returns a number
-    *                 of items processed
+    * @param block    operation executed under the given cost descriptors, returns the
+    *                 actual number of items processed
     * @hotspot don't beautify the code
     */
   final def addSeqCost(costKind: PerItemCost, opDesc: OperationDesc)(block: () => Int): Unit = {

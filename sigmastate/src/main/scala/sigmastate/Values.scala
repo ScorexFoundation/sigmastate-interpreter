@@ -702,7 +702,7 @@ object Values {
 
   case object GroupGenerator extends EvaluatedValue[SGroupElement.type] with ValueCompanion {
     override def opCode: OpCode = OpCodes.GroupGeneratorCode
-    override val costKind = FixedCost(CostOf.GroupGenerator)
+    override val costKind = FixedCost(10)
     override def tpe = SGroupElement
     override val value = SigmaDsl.GroupElement(CryptoConstants.dlogGroup.generator)
     override def companion = this
@@ -916,7 +916,7 @@ object Values {
   object Tuple extends FixedCostValueCompanion {
     override def opCode: OpCode = TupleCode
     /** Cost of: 1) allocating a new tuple (of limited max size)*/
-    override val costKind = FixedCost(10)
+    override val costKind = FixedCost(15)
     def apply(items: Value[SType]*): Tuple = Tuple(items.toIndexedSeq)
   }
 
@@ -1208,7 +1208,7 @@ object Values {
   object FuncValue extends FixedCostValueCompanion {
     val AddToEnvironmentDesc = NamedDesc("AddToEnvironment")
     /** Cost of: adding value to evaluator environment */
-    val AddToEnvironmentDesc_CostKind = FixedCost(4)
+    val AddToEnvironmentDesc_CostKind = FixedCost(5)
     override def opCode: OpCode = FuncValueCode
     /** Cost of: 1) switch on the number of args 2) allocating a new Scala closure
       * Old cost: ("Lambda", "() => (D1) => R", lambdaCost),*/

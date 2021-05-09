@@ -2,29 +2,30 @@ package sigmastate
 
 import org.ergoplatform.SigmaConstants
 import org.ergoplatform.validation.SigmaValidationSettings
-import scalan.{ExactOrdering, ExactNumeric, ExactIntegral}
+import scalan.{ExactIntegral, ExactNumeric, ExactOrdering, Nullable}
 import scalan.OverloadHack.Overloaded1
-import scorex.crypto.hash.{Sha256, Blake2b256, CryptographicHash32}
+import scorex.crypto.hash.{Blake2b256, CryptographicHash32, Sha256}
 import sigmastate.Operations._
-import sigmastate.SCollection.{SIntArray, SByteArray}
+import sigmastate.SCollection.{SByteArray, SIntArray}
 import sigmastate.SOption.SIntOption
 import sigmastate.Values._
-import sigmastate.basics.{SigmaProtocol, SigmaProtocolPrivateInput, SigmaProtocolCommonInput}
+import sigmastate.basics.{SigmaProtocol, SigmaProtocolCommonInput, SigmaProtocolPrivateInput}
 import sigmastate.interpreter.ErgoTreeEvaluator
 import sigmastate.interpreter.ErgoTreeEvaluator.DataEnv
 import sigmastate.serialization.OpCodes._
 import sigmastate.serialization._
-import sigmastate.utxo.{Transformer, SimpleTransformerCompanion}
+import sigmastate.utxo.{SimpleTransformerCompanion, Transformer}
 import debox.{Map => DMap}
 import scalan.ExactIntegral._
 import scalan.ExactNumeric._
 import scalan.ExactOrdering._
 import sigmastate.ArithOp.OperationImpl
-import sigmastate.eval.NumericOps.{BigIntIsExactOrdering, BigIntIsExactIntegral, BigIntIsExactNumeric}
+import sigmastate.eval.NumericOps.{BigIntIsExactIntegral, BigIntIsExactNumeric, BigIntIsExactOrdering}
 import sigmastate.eval.{Colls, SigmaDsl}
+import sigmastate.lang.TransformingSigmaBuilder
 import sigmastate.utxo.CostTable.CostOf
 import special.collection.Coll
-import special.sigma.{SigmaProp, GroupElement}
+import special.sigma.{GroupElement, SigmaProp}
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -261,7 +262,11 @@ case class SigmaAnd(items: Seq[SigmaPropValue]) extends SigmaTransformer[SigmaPr
 object SigmaAnd extends SigmaTransformerCompanion {
   val OpType = SFunc(SCollection.SSigmaPropArray, SSigmaProp)
   override def opCode: OpCode = OpCodes.SigmaAndCode
-  override val costKind = PerItemCost(CostOf.SigmaAnd, CostOf.SigmaAnd_PerItem, 1)
+  /** BaseCost:
+    * - constructing new CSigmaProp and allocation collection
+    * - one iteration over collection of items
+    */
+  override val costKind = PerItemCost(baseCost = 10, perChunkCost = 2, chunkSize = 1)
   override def argInfos: Seq[ArgInfo] = SigmaAndInfo.argInfos
   def apply(first: SigmaPropValue, second: SigmaPropValue, tail: SigmaPropValue*): SigmaAnd = SigmaAnd(Array(first, second) ++ tail)
 }
@@ -288,7 +293,10 @@ case class SigmaOr(items: Seq[SigmaPropValue]) extends SigmaTransformer[SigmaPro
 object SigmaOr extends SigmaTransformerCompanion {
   val OpType = SFunc(SCollection.SSigmaPropArray, SSigmaProp)
   override def opCode: OpCode = OpCodes.SigmaOrCode
-  override val costKind = PerItemCost(CostOf.SigmaOr, CostOf.SigmaOr_PerItem, 1)
+  /** BaseCost:
+    * - constructing new CSigmaProp and allocation collection
+    * - one iteration over collection of items */
+  override val costKind = PerItemCost(baseCost = 10, perChunkCost = 2, chunkSize = 1)
   override def argInfos: Seq[ArgInfo] = SigmaOrInfo.argInfos
   def apply(head: SigmaPropValue, tail: SigmaPropValue*): SigmaOr = SigmaOr(head +: tail)
 }
@@ -372,7 +380,7 @@ object XorOf extends LogicalTransformerCompanion {
     * Per-chunk cost: cost of scala `||` operations amortized over a chunk of boolean values.
     * @see BinOr
     * @see AND */
-  override val costKind = PerItemCost(5, 5, 10)
+  override val costKind = PerItemCost(20, 5, 32)
   override def argInfos: Seq[ArgInfo] = Operations.XorOfInfo.argInfos
 
   def apply(children: Seq[Value[SBoolean.type]]): XorOf =
@@ -446,7 +454,7 @@ object AtLeast extends ValueCompanion {
   /** Base cost: constructing new CSigmaProp value
     * Per chunk cost: obtaining SigmaBooleans for each chunk in AtLeast
     */
-  override val costKind = PerItemCost(10, 5, 5)
+  override val costKind = PerItemCost(15, 3, 5)
   val OpType: SFunc = SFunc(Array(SInt, SCollection.SBooleanArray), SBoolean)
   val MaxChildrenCount: Int = SigmaConstants.MaxChildrenCountForAtLeastOp.value
 
@@ -724,7 +732,7 @@ case class CalcSha256(override val input: Value[SByteArray]) extends CalcHash {
 object CalcSha256 extends SimpleTransformerCompanion {
   override def opCode: OpCode = OpCodes.CalcSha256Code
   /** perChunkCost - cost of hashing 64 bytes of data (see also CalcBlake2b256). */
-  override val costKind = PerItemCost(baseCost = 40, perChunkCost = 10, chunkSize = 64)
+  override val costKind = PerItemCost(baseCost = 80, perChunkCost = 8, chunkSize = 64)
   override def argInfos: Seq[ArgInfo] = CalcSha256Info.argInfos
 }
 
@@ -750,20 +758,35 @@ case class SubstConstants[T <: SType](scriptBytes: Value[SByteArray], positions:
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val scriptBytesV = scriptBytes.evalTo[Coll[Byte]](env)
     val positionsV = positions.evalTo[Coll[Int]](env)
-    val newValuesV = newValues.evalTo[Coll[T]](env)
-    addSeqCost(SubstConstants.costKind, positionsV.length) { () =>
-      SigmaDsl.substConstants(scriptBytesV, positionsV, newValuesV)
+    val newValuesV = newValues.evalTo[Coll[T#WrappedType]](env)
+    var res: Coll[Byte] = null
+    E.addSeqCost(SubstConstants.costKind, SubstConstants.opDesc) { () =>
+      val typedNewVals: Array[SValue] = newValuesV.toArray.map { v =>
+        TransformingSigmaBuilder.liftAny(v) match {
+          case Nullable(v) => v
+          case _ => sys.error(s"Cannot evaluate substConstants($scriptBytesV, $positionsV, $newValuesV): cannot lift value $v")
+        }
+      }
+
+      val (newBytes, nConstants) = SubstConstants.eval(
+        scriptBytes = scriptBytesV.toArray,
+        positions = positionsV.toArray,
+        newVals = typedNewVals)(SigmaDsl.validationSettings)
+
+      res = Colls.fromArray(newBytes)
+      nConstants
     }
+    res
   }
 }
 
 object SubstConstants extends ValueCompanion {
   override def opCode: OpCode = OpCodes.SubstConstantsCode
-  override val costKind = PerItemCost(1, 1, 1)
+  override val costKind = PerItemCost(100, 10, 1)
 
   def eval(scriptBytes: Array[Byte],
            positions: Array[Int],
-           newVals: Array[Value[SType]])(implicit vs: SigmaValidationSettings): Array[Byte] =
+           newVals: Array[Value[SType]])(implicit vs: SigmaValidationSettings): (Array[Byte], Int) =
     ErgoTreeSerializer.DefaultSerializer.substituteConstants(scriptBytes, positions, newVals)
 }
 
@@ -912,7 +935,7 @@ case class Negation[T <: SType](input: Value[T]) extends OneArgumentOperation[T,
 }
 object Negation extends OneArgumentOperationCompanion {
   override def opCode: OpCode = OpCodes.NegationCode
-  override val costKind = FixedCost(22)
+  override val costKind = FixedCost(30)
   override def argInfos: Seq[ArgInfo] = NegationInfo.argInfos
 }
 
@@ -1036,7 +1059,7 @@ case class Xor(override val left: Value[SByteArray],
 object Xor extends TwoArgumentOperationCompanion {
   val OpType = SFunc(Array(SByteArray, SByteArray), SByteArray)
   override def opCode: OpCode = XorCode
-  override val costKind = PerItemCost(CostOf.Xor, CostOf.Xor_PerBlock, 512)
+  override val costKind = PerItemCost(10, 2, 128)
   override def argInfos: Seq[ArgInfo] = XorInfo.argInfos
 }
 
@@ -1374,7 +1397,7 @@ object LogicalNot extends FixedCostValueCompanion {
   val OpType = SFunc(Array(SBoolean), SBoolean)
   override def opCode: OpCode = OpCodes.LogicalNotCode
   /** Cost of: scala `!` operation */
-  override val costKind = FixedCost(8)
+  override val costKind = FixedCost(10)
 }
 
 

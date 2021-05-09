@@ -39,12 +39,12 @@ object DataValueComparer {
 
   /** Equals two Colls of non-primitive (boxed) types.
     */
-  final val CostKind_EQ_Coll = PerItemCost(3, 0, 1)    // case 2
+  final val CostKind_EQ_Coll = PerItemCost(10, 2, 1)    // case 2
   final val OpDesc_EQ_Coll = NamedDesc("EQ_Coll")
   final val EQ_Coll = OperationCostInfo(CostKind_EQ_Coll, OpDesc_EQ_Coll)
 
   /** NOTE: In the formula `(2 + 1)` the 1 corresponds to the second type match. */
-  final val CostKind_EQ_Tuple = FixedCost(3)  // case 3
+  final val CostKind_EQ_Tuple = FixedCost(4)  // case 3
   final val OpDesc_EQ_Tuple = NamedDesc("EQ_Tuple")
   final val EQ_Tuple = OperationCostInfo(CostKind_EQ_Tuple, OpDesc_EQ_Tuple)
 
@@ -53,7 +53,7 @@ object DataValueComparer {
   final val OpDesc_EQ_GroupElement = NamedDesc("EQ_GroupElement")
   final val EQ_GroupElement = OperationCostInfo(CostKind_EQ_GroupElement, OpDesc_EQ_GroupElement)
 
-  final val CostKind_EQ_BigInt = FixedCost(4)       // case 5
+  final val CostKind_EQ_BigInt = FixedCost(5)       // case 5
   final val OpDesc_EQ_BigInt = NamedDesc("EQ_BigInt")
   final val EQ_BigInt = OperationCostInfo(CostKind_EQ_BigInt, OpDesc_EQ_BigInt)
 
@@ -90,17 +90,17 @@ object DataValueComparer {
   final val EQ_COA_Byte = OperationCostInfo(CostKind_EQ_COA_Byte, OpDesc_EQ_COA_Byte)
 
   /** Equals two CollOverArray of Short type. */
-  final val CostKind_EQ_COA_Short = PerItemCost(1, 1, 96)
+  final val CostKind_EQ_COA_Short = PerItemCost(10, 2, 96)
   final val OpDesc_EQ_COA_Short = NamedDesc("EQ_COA_Short")
   final val EQ_COA_Short = OperationCostInfo(CostKind_EQ_COA_Short, OpDesc_EQ_COA_Short)
 
   /** Equals two CollOverArray of Int type. */
-  final val CostKind_EQ_COA_Int = PerItemCost(1, 1, 64)
+  final val CostKind_EQ_COA_Int = PerItemCost(10, 2, 64)
   final val OpDesc_EQ_COA_Int = NamedDesc("EQ_COA_Int")
   final val EQ_COA_Int = OperationCostInfo(CostKind_EQ_COA_Int, OpDesc_EQ_COA_Int)
 
   /** Equals two CollOverArray of Long type. */
-  final val CostKind_EQ_COA_Long = PerItemCost(1, 1, 48)
+  final val CostKind_EQ_COA_Long = PerItemCost(15, 2, 48)
   final val OpDesc_EQ_COA_Long = NamedDesc("EQ_COA_Long")
   final val EQ_COA_Long = OperationCostInfo(CostKind_EQ_COA_Long, OpDesc_EQ_COA_Long)
 
@@ -126,7 +126,7 @@ object DataValueComparer {
   final val EQ_COA_Box = OperationCostInfo(CostKind_EQ_COA_Box, OpDesc_EQ_COA_Box)
 
   /** Equals two CollOverArray of PreHeader type. */
-  final val CostKind_EQ_COA_PreHeader = PerItemCost(1, 2, 1)
+  final val CostKind_EQ_COA_PreHeader = PerItemCost(10, 3, 1)
   final val OpDesc_EQ_COA_PreHeader = NamedDesc("EQ_COA_PreHeader")
   final val EQ_COA_PreHeader = OperationCostInfo(CostKind_EQ_COA_PreHeader, OpDesc_EQ_COA_PreHeader)
 

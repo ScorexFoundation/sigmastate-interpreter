@@ -686,7 +686,7 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
       case _ => sys.error(s"Cannot evaluate substConstants($scriptBytes, $positions, $newValues): cannot lift value $v")
     })
 
-    val res = SubstConstants.eval(scriptBytes.toArray, positions.toArray, typedNewVals)(validationSettings)
+    val (res, _) = SubstConstants.eval(scriptBytes.toArray, positions.toArray, typedNewVals)(validationSettings)
     Colls.fromArray(res)
   }
 

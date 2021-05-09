@@ -104,7 +104,7 @@ case class Slice[IV <: SType](input: Value[SCollection[IV]], from: Value[SInt.ty
 }
 object Slice extends ValueCompanion {
   override def opCode: OpCode = OpCodes.SliceCode
-  override val costKind = PerItemCost(1, 1, 100)
+  override val costKind = PerItemCost(10, 2, 100)
 }
 
 /** Selects all elements of `input` collection which satisfy the condition.
@@ -299,7 +299,7 @@ object SelectField extends FixedCostValueCompanion {
   override def opCode: OpCode = OpCodes.SelectFieldCode
   /** Cost of: 1) Calling Tuple2.{_1, _2} Scala methods.
     * Old cost: ("SelectField", "() => Unit", selectField) */
-  override val costKind = FixedCost(7)
+  override val costKind = FixedCost(10)
   def typed[T <: SValue](input: Value[STuple], fieldIndex: Byte): T = {
     SelectField(input, fieldIndex).asInstanceOf[T]
   }
@@ -332,7 +332,9 @@ case class SigmaPropBytes(input: Value[SSigmaProp.type])
 }
 object SigmaPropBytes extends PerItemCostValueCompanion {
   override def opCode: OpCode = OpCodes.SigmaPropBytesCode
-  override val costKind = PerItemCost(CostOf.SigmaPropBytes, CostOf.SigmaPropBytes_PerItem, 1)
+  /** BaseCost: serializing one node of SigmaBoolean proposition
+    * PerChunkCost: serializing one node of SigmaBoolean proposition */
+  override val costKind = PerItemCost(baseCost = 35, perChunkCost = 6, chunkSize = 1)
 }
 trait SimpleTransformerCompanion extends ValueCompanion {
   def argInfos: Seq[ArgInfo]
@@ -584,7 +586,7 @@ case class OptionGet[V <: SType](input: Value[SOption[V]]) extends Transformer[S
 object OptionGet extends SimpleTransformerCompanion with FixedCostValueCompanion {
   override def opCode: OpCode = OpCodes.OptionGetCode
   /** Cost of: 1) Calling Option.get Scala method. */
-  override val costKind = FixedCost(10)
+  override val costKind = FixedCost(15)
   override def argInfos: Seq[ArgInfo] = OptionGetInfo.argInfos
 }
 

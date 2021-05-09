@@ -248,7 +248,7 @@ class ErgoTreeSerializer {
 
   def substituteConstants(scriptBytes: Array[Byte],
                           positions: Array[Int],
-                          newVals: Array[Value[SType]])(implicit vs: SigmaValidationSettings): Array[Byte] = {
+                          newVals: Array[Value[SType]])(implicit vs: SigmaValidationSettings): (Array[Byte], Int) = {
     require(positions.length == newVals.length,
       s"expected positions and newVals to have the same length, got: positions: ${positions.toSeq},\n newVals: ${newVals.toSeq}")
     val r = SigmaSerializer.startReader(scriptBytes)
@@ -276,7 +276,7 @@ class ErgoTreeSerializer {
     }
 
     w.putBytes(treeBytes)
-    w.toBytes
+    (w.toBytes, constants.length)
   }
 
 }

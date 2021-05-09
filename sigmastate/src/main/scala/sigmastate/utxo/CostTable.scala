@@ -311,20 +311,12 @@ object CostTable {
     def ConstantPlaceholder = 1
 
 
-    /** Cost of: 1) Calling Context.minerPubkey Scala method. */
-    def MinerPubkey = 1
-
     /** Cost of: 1) accessing global Context instance. */
     def Context = 1
-
-    /** Cost of: 1) Calling Context.LastBlockUtxoRootHash Scala method. */
-    def LastBlockUtxoRootHash = 1
 
 
     /** Cost of: 1) packing args into Array 2) java.lang.reflect.Method.invoke */
     def MethodCall = 4
-
-    def GroupGenerator = 3
 
 //    ("AccessAvlTree", "Context => AvlTree", constCost),
 
@@ -340,9 +332,6 @@ object CostTable {
 
     /** Cost of: 1) serializing EcPointType to bytes 2) packing them in Coll. */
     def GroupElement_GetEncoded = 250
-
-    /** Cost of: 1) calling EcPoint.negate 2) wrapping in GroupElement. */
-    def GroupElement_Negate = 2
 
     /** Cost of: 1) calling EcPoint.multiply 2) wrapping in GroupElement */
     def Exponentiate = 900 // cf. expCost
@@ -368,23 +357,6 @@ object CostTable {
      * collection */
     def Filter = 2
 
-    /** Cost of: 1) base cost of creating a collection of indices */
-    def Indices = 6
-
-    /** Cost of: 1) base cost of zipping two collections */
-    def Zip = 1
-
-    /** Cost of: 1) zipping two collections (per item) */
-    def Zip_PerItem = 1
-
-    /** Cost of: 1) base cost of Coll.flatMap */
-    def Flatmap = 6
-
-    /** Cost of: 1) cost of Coll.flatMap (per item)
-      * 2) new collection is allocated for each item
-      * 3) each collection is then appended to the resulting collection */
-    def Flatmap_PerItem = 5 // cf. collToColl
-
 //    ("ByIndex", "(Coll[IV],Int) => IV", collByIndex),
 //    ("SCollection$.exists", "(Coll[IV],(IV) => Boolean) => Boolean", collToColl),
 //    ("SCollection$.forall", "(Coll[IV],(IV) => Boolean) => Boolean", collToColl),
@@ -397,12 +369,6 @@ object CostTable {
 //    ("SCollection$.filter", "(Coll[IV],(IV) => Boolean) => Coll[IV]", collToColl),
 //
 
-    /** Cost of: serializing one node of SigmaBoolean proposition */
-    def SigmaPropBytes = 1
-
-    /** Cost of: serializing one node of SigmaBoolean proposition */
-    def SigmaPropBytes_PerItem = 1
-
     def BitOr = 1
     def BitAnd = 1
     def BitXor = 1
@@ -413,21 +379,6 @@ object CostTable {
 //    ("AND", "(Coll[Boolean]) => Boolean", logicCost),
 //    ("OR_per_item", "(Coll[Boolean]) => Boolean", logicCost),
 //    ("AND_per_item", "(Coll[Boolean]) => Boolean", logicCost),
-    /** Cost of: constructing new CSigmaProp and allocation collection
-      * @see SigmaAnd_PerItem */
-    def SigmaAnd = 2 // cf. logicCost
-
-    /** Cost of: one iteration over collection of items
-      * @see SigmaAnd */
-    def SigmaAnd_PerItem = 1 // cf. logicCost
-
-    /** Cost of: constructing new CSigmaProp and allocation collection
-      * @see SigmaOr_PerItem */
-    def SigmaOr = 2 // cf. logicCost
-
-    /** Cost of: one iteration over collection of items
-      * @see SigmaOr */
-    def SigmaOr_PerItem = 1 // cf. logicCost
 
 
     def Xor = 3

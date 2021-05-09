@@ -230,7 +230,8 @@ object ErgoLikeContext {
 /** When interpreted evaluates to a ByteArrayConstant built from Context.minerPubkey */
 case object MinerPubkey extends NotReadyValueByteArray with ValueCompanion {
   override def opCode: OpCode = OpCodes.MinerPubkeyCode
-  override val costKind = FixedCost(CostOf.MinerPubkey)
+  /** Cost of calling Context.minerPubkey Scala method. */
+  override val costKind = FixedCost(15)
   override val opType = SFunc(SContext, SCollection.SByteArray)
   override def companion = this
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
@@ -284,7 +285,10 @@ case object Outputs extends LazyCollection[SBox.type] with ValueCompanion {
 case object LastBlockUtxoRootHash extends NotReadyValueAvlTree with ValueCompanion {
   override def companion = this
   override def opCode: OpCode = OpCodes.LastBlockUtxoRootHashCode
-  override val costKind = FixedCost(CostOf.LastBlockUtxoRootHash)
+
+  /** Cost of: 1) Calling Context.LastBlockUtxoRootHash Scala method. */
+  override val costKind = FixedCost(15)
+
   override val opType = SFunc(SContext, tpe)
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     addCost(this.costKind)
