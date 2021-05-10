@@ -595,13 +595,15 @@ trait SNumericType extends SProduct {
   def isCastMethod (name: String): Boolean = castMethods.contains(name)
 
   /** Upcasts the given value of a smaller type to this larger type.
+    * Corresponds to section 5.1.2 Widening Primitive Conversion of Java Language Spec.
     * @param n numeric value to be converted
     * @return a value of WrappedType of this type descriptor's instance.
-    * @throw exception if `i` has actual type which is larger than this type.
+    * @throw exception if `n` has actual type which is larger than this type.
     */
   def upcast(n: AnyVal): WrappedType
 
   /** Downcasts the given value of a larger type to this smaller type.
+    * Corresponds to section 5.1.3 Narrowing Primitive Conversion of Java Language Spec.
     * @param n numeric value to be converted
     * @return a value of WrappedType of this type descriptor's instance.
     * @throw exception if the actual value of `i` cannot fit into this type.

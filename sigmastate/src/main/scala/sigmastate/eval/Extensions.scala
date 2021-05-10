@@ -3,12 +3,12 @@ package sigmastate.eval
 import java.math.BigInteger
 
 import scalan.RType
-import sigmastate.{SCollection, SType, SCollectionType}
+import sigmastate.{SCollectionType, SCollection, SType}
 import sigmastate.Values.{Constant, ConstantNode}
-import sigmastate.lang.DefaultSigmaBuilder
+import sigmastate.lang.CheckingSigmaBuilder
 import special.collection.Coll
 import special.sigma._
-import SType.AnyOps
+import sigmastate.SType.AnyOps
 import org.ergoplatform.ErgoBox
 import spire.syntax.all._
 
@@ -68,7 +68,7 @@ object Extensions {
 
   implicit class DslDataOps[A](data: A)(implicit tA: RType[A]) {
     def toTreeData: Constant[SType] = {
-      DefaultSigmaBuilder.mkConstant(data.asWrappedType, Evaluation.rtypeToSType(tA))
+      CheckingSigmaBuilder.mkConstant(data.asWrappedType, Evaluation.rtypeToSType(tA))
     }
   }
 

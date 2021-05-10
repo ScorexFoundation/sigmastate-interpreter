@@ -6,7 +6,6 @@ import sigmastate._
 import Values._
 import scalan.Nullable
 import sigmastate.lang.Terms._
-import sigmastate.SCollection.SByteArray
 import sigmastate.lang.syntax.Basic._
 import sigmastate.lang.syntax.{Core, Exprs}
 

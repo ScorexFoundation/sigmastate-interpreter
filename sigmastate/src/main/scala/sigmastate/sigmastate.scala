@@ -1,8 +1,8 @@
 import sigmastate.Values.Value
-import sigmastate.lang.DefaultSigmaBuilder
+import sigmastate.lang.CheckingSigmaBuilder
 
 package object sigmastate {
-  import DefaultSigmaBuilder._
+  import CheckingSigmaBuilder._
 
   /**
     * SInt addition

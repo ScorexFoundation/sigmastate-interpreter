@@ -376,13 +376,19 @@ object Interpreter {
   type VerificationResult = (Boolean, Long)
 
   /** Result of ErgoTree reduction procedure (see `reduceToCrypto` and friends).
-    * The first component is the value of SigmaProp type which represents a statement
-    * verifiable via sigma protocol.
-    * The second component is the estimated cost of consumed by the contract execution. */
+    *
+    * @param value the value of SigmaProp type which represents a logical statement
+    *              verifiable via sigma protocol.
+    * @param cost  the estimated cost of the contract execution. */
   case class ReductionResult(value: SigmaBoolean, cost: Long)
 
+  /** Represents properties of interpreter invocation. */
   type ScriptEnv = Map[String, Any]
+
+  /** Empty interpreter properties. */
   val emptyEnv: ScriptEnv = Map.empty[String, Any]
+
+  /** Property name used to store script name. */
   val ScriptNameProp = "ScriptName"
 
   /** Maximum version of ErgoTree supported by this interpreter release.
@@ -442,6 +448,7 @@ object Interpreter {
       throw new Error(s"Context-dependent pre-processing should produce tree of type Boolean or SigmaProp but was $x")
   }
 
+  /** Helper method to throw errors from Interpreter. */
   def error(msg: String) = throw new InterpreterException(msg)
 
 }
