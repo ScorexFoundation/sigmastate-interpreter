@@ -231,7 +231,7 @@ object ErgoLikeContext {
 case object MinerPubkey extends NotReadyValueByteArray with ValueCompanion {
   override def opCode: OpCode = OpCodes.MinerPubkeyCode
   /** Cost of calling Context.minerPubkey Scala method. */
-  override val costKind = FixedCost(15)
+  override val costKind = FixedCost(20)
   override val opType = SFunc(SContext, SCollection.SByteArray)
   override def companion = this
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {

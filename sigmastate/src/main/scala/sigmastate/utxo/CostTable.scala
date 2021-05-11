@@ -343,19 +343,12 @@ object CostTable {
 //    ("Append", "(Coll[IV],Coll[IV]) => Coll[IV]", collToColl),
 //
 
-    /** Cost of: 1) obtain result RType 2) invoke map method 3) allocation of resulting
-     * collection */
-    def MapCollection = 4 // cf. collToColl
-
     /** Cost of:  invoke exists method */
     def Exists = 3
 
     /** Cost of:  invoke forall method */
     def ForAll = 3
 
-    /** Cost of: 1) invoke Coll.filter method 2) allocation of resulting
-     * collection */
-    def Filter = 2
 
 //    ("ByIndex", "(Coll[IV],Int) => IV", collByIndex),
 //    ("SCollection$.exists", "(Coll[IV],(IV) => Boolean) => Boolean", collToColl),
@@ -404,7 +397,7 @@ object CostTable {
       */
     def GT(argTpe: SType) = argTpe match {
       case SBigInt => 20 // cf. comparisonBigInt
-      case _ => 15 // cf. comparisonCost
+      case _ => 20 // cf. comparisonCost
     }
 
     /** Cost of:
@@ -413,7 +406,7 @@ object CostTable {
       */
     def GE(argTpe: SType) = argTpe match {
       case SBigInt => 20 // cf. comparisonBigInt
-      case _ => 15 // cf. comparisonCost
+      case _ => 20 // cf. comparisonCost
     }
 
     /** Cost of:
@@ -422,7 +415,7 @@ object CostTable {
       */
     def LT(argTpe: SType) = argTpe match {
       case SBigInt => 20 // cf. comparisonBigInt
-      case _ => 15 // cf. comparisonCost
+      case _ => 20 // cf. comparisonCost
     }
 
     /** Cost of:
@@ -431,7 +424,7 @@ object CostTable {
       */
     def LE(argTpe: SType) = argTpe match {
       case SBigInt => 20 // cf. comparisonBigInt
-      case _ => 15 // cf. comparisonCost
+      case _ => 20 // cf. comparisonCost
     }
 
     /** Cost of:
@@ -439,8 +432,8 @@ object CostTable {
       * 2) calling method of Numeric
       */
     def Plus(argTpe: SType) = argTpe match {
-      case SBigInt => 15 // cf. plusMinusBigInt
-      case _ => 10 // cf. plusMinus
+      case SBigInt => 20 // cf. plusMinusBigInt
+      case _ => 15 // cf. plusMinus
     }
 
     /** Cost of:
@@ -448,8 +441,8 @@ object CostTable {
       * 2) calling method of Numeric
       */
     def Minus(argTpe: SType) = argTpe match {
-      case SBigInt => 15 // cf. plusMinusBigInt
-      case _ => 10 // cf. plusMinus
+      case SBigInt => 20 // cf. plusMinusBigInt
+      case _ => 15 // cf. plusMinus
     }
 
     /** Cost of:
@@ -497,26 +490,6 @@ object CostTable {
       case _ => 5 // cf. logicCost
     }
 
-//    ("+_per_item", "(BigInt, BigInt) => BigInt", MinimalCost),
-//
-//    ("-_per_item", "(BigInt, BigInt) => BigInt", MinimalCost),
-//
-//    ("*_per_item", "(BigInt, BigInt) => BigInt", MinimalCost),
-//
-//    ("/_per_item", "(BigInt, BigInt) => BigInt", MinimalCost),
-//
-//    ("%", "(BigInt, BigInt) => BigInt", multiplyBigInt),
-//    ("%_per_item", "(BigInt, BigInt) => BigInt", MinimalCost),
-//
-//    ("ModQ", "(BigInt) => BigInt", MinimalCost),
-//    ("ModQArithOp", "(BigInt, BigInt) => BigInt", MinimalCost),
-//
-//    ("Downcast", s"(${Downcast.tT}) => ${Downcast.tR}", castOp),
-//    ("Upcast", s"(${Upcast.tT}) => ${Upcast.tR}", castOp),
-
-//    ("Upcast", s"(${Upcast.tT}) => BigInt", castOpBigInt),
-//    ("Downcast", s"(BigInt) => ${Downcast.tR}", castOpBigInt),
-//
     /** Cost of: 1) converting numeric value to the numeric value of the given type, i.e. Byte -> Int
       * NOTE: the cost of BigInt casting is the same in JITC (comparing to AOTC) to simplify implementation. */
     def NumericCast(targetTpe: SType): Int = targetTpe match {
@@ -530,32 +503,6 @@ object CostTable {
     /** Cost of: 1) creating Boolean collection (one bool for each bit) from a numeric
      * value. */
     def NumericToBits = 5
-
-    //    ("min_per_item", "(BigInt, BigInt) => BigInt", comparisonCost),
-    //
-//    ("max_per_item", "(BigInt, BigInt) => BigInt", comparisonCost),
-//
-//    ("SAvlTree$.insert_per_kb", "(AvlTree, Coll[(Coll[Byte], Coll[Byte])], Coll[Byte]) => Option[AvlTree]", avlTreeOp),
-//    ("SAvlTree$.update_per_kb", "(AvlTree, Coll[(Coll[Byte], Coll[Byte])], Coll[Byte]) => Option[AvlTree]", avlTreeOp),
-//    ("SAvlTree$.remove_per_kb", "(AvlTree, Coll[Coll[Byte]], Coll[Byte]) => Option[AvlTree]", avlTreeOp),
-//    ("SAvlTree$.contains_per_kb", "(AvlTree,Coll[Byte],Coll[Byte]) => Boolean", avlTreeOp),
-//    ("SAvlTree$.get_per_kb", "(AvlTree,Coll[Byte],Coll[Byte]) => Option[Coll[Byte]]", avlTreeOp),
-//    ("SAvlTree$.getMany_per_kb", "(AvlTree,Coll[Coll[Byte]],Coll[Byte]) => Coll[Option[Coll[Byte]]]", avlTreeOp),
-//    ("SAvlTree$.updateDigest", "(AvlTree,Coll[Byte]) => AvlTree", newAvlTreeCost),
-//    ("SAvlTree$.updateOperations", "(AvlTree,Byte) => AvlTree", newAvlTreeCost),
-
-//    ("ProveDlogEval", "(Unit) => SigmaProp", proveDlogEvalCost),
-//    ("ProveDHTuple", "(Unit) => SigmaProp", proveDHTupleEvalCost),
-//
-//    ("SigmaAnd_per_item", "(Coll[SigmaProp]) => SigmaProp", sigmaAndCost),
-//    ("SigmaOr_per_item", "(Coll[SigmaProp]) => SigmaProp", sigmaOrCost),
-//
-//    ("SubstConstants_per_kb", "(Coll[Byte], Coll[Int], Coll[T]) => Coll[Byte]", MinimalCost),
-//
-//    ("DecodePoint", "(Coll[Byte]) => GroupElement", decodePointCost),
-//
-//    ("SOption$.map", "(Option[T],(T) => R) => Option[R]", OptionOp),
-//    ("SOption$.filter", "(Option[T],(T) => Boolean) => Option[T]", OptionOp)
 
   }
 }

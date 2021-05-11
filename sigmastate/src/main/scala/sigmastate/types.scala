@@ -1261,7 +1261,7 @@ object SOption extends STypeCompanion {
         ArgInfo("f", "the function to apply if nonempty"))
 
   val MapMethod = SMethod(this, "map",
-    SFunc(Array(ThisType, SFunc(tT, tR)), SOption(tR), Array(paramT, paramR)), 7, FixedCost(10))
+    SFunc(Array(ThisType, SFunc(tT, tR)), SOption(tR), Array(paramT, paramR)), 7, FixedCost(20))
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(MethodCall,
         """Returns a \lst{Some} containing the result of applying \lst{f} to this option's
@@ -1270,7 +1270,7 @@ object SOption extends STypeCompanion {
         """.stripMargin, ArgInfo("f", "the function to apply"))
 
   val FilterMethod = SMethod(this, "filter",
-    SFunc(Array(ThisType, SFunc(tT, SBoolean)), ThisType, Array(paramT)), 8, FixedCost(10))
+    SFunc(Array(ThisType, SFunc(tT, SBoolean)), ThisType, Array(paramT)), 8, FixedCost(20))
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(MethodCall,
         """Returns this option if it is nonempty and applying the predicate \lst{p} to
@@ -1432,7 +1432,7 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
         """.stripMargin, ArgInfo("i", "the index"))
 
   /** Cost of creating a collection of indices */
-  val IndicesMethod_CostKind = PerItemCost(baseCost = 10, perChunkCost = 2, chunkSize = 16)
+  val IndicesMethod_CostKind = PerItemCost(baseCost = 20, perChunkCost = 2, chunkSize = 16)
 
   val IndicesMethod = SMethod(
     this, "indices", SFunc(ThisType, SCollection(SInt)), 14, IndicesMethod_CostKind)
@@ -1579,7 +1579,7 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
 
   val UpdatedMethod = SMethod(this, "updated",
     SFunc(Array(ThisType, SInt, tIV), ThisType, paramIVSeq),
-    20, PerItemCost(10, 1, 10))
+    20, PerItemCost(20, 1, 10))
       .withIRInfo(MethodCallIrBuilder, javaMethodOf[Coll[_], Int, Any]("updated"))
       .withInfo(MethodCall, "")
 
@@ -1594,7 +1594,7 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
 
   val UpdateManyMethod = SMethod(this, "updateMany",
     SFunc(Array(ThisType, SCollection(SInt), ThisType), ThisType, paramIVSeq),
-    21, PerItemCost(10, 1, 10))
+    21, PerItemCost(20, 2, 10))
       .withIRInfo(MethodCallIrBuilder).withInfo(MethodCall, "")
 
   def updateMany_eval[A](mc: MethodCall, coll: Coll[A], indexes: Coll[Int], values: Coll[A])
@@ -2102,7 +2102,7 @@ case object SAvlTree extends SProduct with SPredefType with SMonoType {
     * So the following is an approximation of the proof parsing cost.
     */
   final val CreateAvlVerifier_Info = OperationCostInfo(
-    PerItemCost(110, 16, 64), NamedDesc("CreateAvlVerifier"))
+    PerItemCost(110, 20, 64), NamedDesc("CreateAvlVerifier"))
 
   final val LookupAvlTree_Info = OperationCostInfo(
     PerItemCost(40, 10, 1), NamedDesc("LookupAvlTree"))
@@ -2409,7 +2409,7 @@ case object SContext extends SProduct with SPredefType with SMonoType {
   lazy val outputsMethod    = property("OUTPUTS", SBoxArray, 5, Outputs)
   lazy val heightMethod     = property("HEIGHT", SInt, 6, Height)
   lazy val selfMethod       = property("SELF", SBox, 7, Self)
-  lazy val selfBoxIndexMethod = propertyCall("selfBoxIndex", SInt, 8, FixedCost(15))
+  lazy val selfBoxIndexMethod = propertyCall("selfBoxIndex", SInt, 8, FixedCost(20))
   lazy val lastBlockUtxoRootHashMethod = property("LastBlockUtxoRootHash", SAvlTree, 9, LastBlockUtxoRootHash)
   lazy val minerPubKeyMethod = property("minerPubKey", SByteArray, 10, MinerPubkey)
   lazy val getVarMethod = SMethod(

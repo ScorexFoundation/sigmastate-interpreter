@@ -124,16 +124,16 @@ object SigSerializer extends LazyLogging {
   }
 
   final val ParseChallenge_ProveDlog = OperationCostInfo(
-    FixedCost(4), NamedDesc("ParseChallenge_ProveDlog"))
+    FixedCost(10), NamedDesc("ParseChallenge_ProveDlog"))
 
   final val ParseChallenge_ProveDHT = OperationCostInfo(
-    FixedCost(9), NamedDesc("ParseChallenge_ProveDHT"))
+    FixedCost(10), NamedDesc("ParseChallenge_ProveDHT"))
 
   final val ParsePolynomial = OperationCostInfo(
-    PerItemCost(1, 10, 1), NamedDesc("ParsePolynomial"))
+    PerItemCost(10, 10, 1), NamedDesc("ParsePolynomial"))
 
   final val EvaluatePolynomial = OperationCostInfo(
-    PerItemCost(1, 3, 1), NamedDesc("EvaluatePolynomial"))
+    PerItemCost(3, 3, 1), NamedDesc("EvaluatePolynomial"))
 
   /** Helper method to read requested or remaining bytes from the reader. */
   def readBytesChecked(r: SigmaByteReader, numRequestedBytes: Int, onError: String => Unit): Array[Byte] = {

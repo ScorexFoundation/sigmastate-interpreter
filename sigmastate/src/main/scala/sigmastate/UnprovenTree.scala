@@ -208,13 +208,13 @@ object FiatShamirTree {
   val leafPrefix: Byte = 1
 
   final val ToBytes_Schnorr = OperationCostInfo(
-    FixedCost(550), NamedDesc("ToBytes_Schnorr"))
+    FixedCost(570), NamedDesc("ToBytes_Schnorr"))
 
   final val ToBytes_DHT = OperationCostInfo(
     FixedCost(680), NamedDesc("ToBytes_DHT"))
 
   final val ToBytes_ProofTreeConjecture = OperationCostInfo(
-    FixedCost(11), NamedDesc("ToBytes_ProofTreeConjecture"))
+    FixedCost(15), NamedDesc("ToBytes_ProofTreeConjecture"))
 
   /** Prover Step 7: Convert the tree to a byte array `s` for input to the Fiat-Shamir hash
     * function.

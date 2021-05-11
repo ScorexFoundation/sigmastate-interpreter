@@ -652,7 +652,7 @@ object Interpreter {
   def WhenSoftForkReductionResult(cost: Long): ReductionResult = ReductionResult(TrivialProp.TrueProp, cost)
 
   final val ComputeCommitments_Schnorr = OperationCostInfo(
-    FixedCost(3200), NamedDesc("ComputeCommitments_Schnorr"))
+    FixedCost(3400), NamedDesc("ComputeCommitments_Schnorr"))
 
   final val ComputeCommitments_DHT = OperationCostInfo(
     FixedCost(6450), NamedDesc("ComputeCommitments_DHT"))
@@ -662,7 +662,7 @@ object Interpreter {
     * It doesn't include cost of crypto verification.
     */
   final val Eval_SigmaPropConstant = OperationCostInfo(
-    FixedCost(10), NamedDesc("Eval_SigmaPropConstant"))
+    FixedCost(50), NamedDesc("Eval_SigmaPropConstant"))
 
   /** Computes the estimated cost of verification of sigma proposition.
     * The cost is estimated ahead of time, without actually performing expencive crypto

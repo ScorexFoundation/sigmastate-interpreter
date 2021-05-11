@@ -172,7 +172,7 @@ case class BoolToSigmaProp(value: BoolValue) extends SigmaPropValue {
 }
 object BoolToSigmaProp extends ValueCompanion {
   override def opCode: OpCode = OpCodes.BoolToSigmaPropCode
-  override val costKind = FixedCost(13)
+  override val costKind = FixedCost(15)
   val OpType = SFunc(SBoolean, SSigmaProp)
 }
 
@@ -231,7 +231,7 @@ case class CreateProveDHTuple(gv: Value[SGroupElement.type],
 }
 object CreateProveDHTuple extends ValueCompanion {
   override def opCode: OpCode = OpCodes.ProveDiffieHellmanTupleCode
-  override val costKind = FixedCost(16)
+  override val costKind = FixedCost(20)
 }
 
 trait SigmaTransformer[IV <: SigmaPropValue, OV <: SigmaPropValue] extends SigmaPropValue {
@@ -454,7 +454,7 @@ object AtLeast extends ValueCompanion {
   /** Base cost: constructing new CSigmaProp value
     * Per chunk cost: obtaining SigmaBooleans for each chunk in AtLeast
     */
-  override val costKind = PerItemCost(15, 3, 5)
+  override val costKind = PerItemCost(20, 3, 5)
   val OpType: SFunc = SFunc(Array(SInt, SCollection.SBooleanArray), SBoolean)
   val MaxChildrenCount: Int = SigmaConstants.MaxChildrenCountForAtLeastOp.value
 
@@ -782,7 +782,7 @@ case class SubstConstants[T <: SType](scriptBytes: Value[SByteArray], positions:
 
 object SubstConstants extends ValueCompanion {
   override def opCode: OpCode = OpCodes.SubstConstantsCode
-  override val costKind = PerItemCost(100, 10, 1)
+  override val costKind = PerItemCost(100, 100, 1)
 
   def eval(scriptBytes: Array[Byte],
            positions: Array[Int],
@@ -1397,7 +1397,7 @@ object LogicalNot extends FixedCostValueCompanion {
   val OpType = SFunc(Array(SBoolean), SBoolean)
   override def opCode: OpCode = OpCodes.LogicalNotCode
   /** Cost of: scala `!` operation */
-  override val costKind = FixedCost(10)
+  override val costKind = FixedCost(15)
 }
 
 

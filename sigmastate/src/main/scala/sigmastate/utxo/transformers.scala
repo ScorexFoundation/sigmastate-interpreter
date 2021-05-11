@@ -52,7 +52,9 @@ case class MapCollection[IV <: SType, OV <: SType](
 }
 object MapCollection extends ValueCompanion {
   override def opCode: OpCode = OpCodes.MapCollectionCode
-  override val costKind = PerItemCost(CostOf.MapCollection, 1, 10)
+  /** Cost of: 1) obtain result RType 2) invoke map method 3) allocation of resulting
+    * collection */
+  override val costKind = PerItemCost(20, 1, 10)
 }
 
 /** Puts the elements of other collection `col2` after the elements of `input` collection
@@ -129,7 +131,9 @@ case class Filter[IV <: SType](input: Value[SCollection[IV]],
 }
 object Filter extends ValueCompanion {
   override def opCode: OpCode = OpCodes.FilterCode
-  override val costKind = PerItemCost(CostOf.Filter, 1, 10)
+  /** Cost of: 1) invoke Coll.filter method 2) allocation of resulting
+    * collection */
+  override val costKind = PerItemCost(20, 1, 10)
 }
 
 /** Transforms a collection of values to a boolean (see [[Exists]], [[ForAll]]). */
@@ -378,7 +382,7 @@ object ExtractAmount extends SimpleTransformerCompanion {
   val OpType = SFunc(SBox, SLong)
   override def opCode: OpCode = OpCodes.ExtractAmountCode
   /** Cost of: 1) access `value` property of a [[special.sigma.Box]] */
-  override val costKind = FixedCost(7)
+  override val costKind = FixedCost(8)
   override def argInfos: Seq[ArgInfo] = ExtractAmountInfo.argInfos
 }
 
