@@ -9,6 +9,7 @@ import scalan.RType.GeneralType
 import sigmastate.SType.{TypeCode, AnyOps}
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.utils.Overloading.Overload1
+import sigmastate.utils.SparseArrayContainer
 import scalan.util.Extensions._
 import sigmastate.Values._
 import sigmastate.lang.Terms._
@@ -111,7 +112,8 @@ object SType {
   implicit val typeSigmaProp = SSigmaProp
   implicit val typeBox = SBox
 
-  implicit def typeCollection[V <: SType](implicit tV: V): SCollection[V] = SCollection[V]
+  /** Costructs a collection type with the given type of elements. */
+  implicit def typeCollection[V <: SType](implicit tV: V): SCollection[V] = SCollection[V](tV)
 
   implicit val SigmaBooleanRType: RType[SigmaBoolean] = RType.fromClassTag(classTag[SigmaBoolean])
   implicit val ErgoBoxRType: RType[ErgoBox] = RType.fromClassTag(classTag[ErgoBox])
@@ -165,8 +167,6 @@ object SType {
     SGlobal, SHeader, SPreHeader, SAvlTree, SGroupElement, SSigmaProp, SString, SBox,
     SUnit, SAny)
 
-  val typeCodeToType = allPredefTypes.map(t => t.typeCode -> t).toMap
-
   /** A mapping of object types supporting MethodCall operations. For each serialized
     * typeId this map contains a companion object which can be used to access the list of
     * corresponding methods.
@@ -185,13 +185,54 @@ object SType {
     * should be changed and SGlobal.typeId should be preserved. The regression tests in
     * `property("MethodCall Codes")` should pass.
     */
-  // TODO v5.0 (h4): should contain all numeric types (including also SNumericType)
+  // TODO v6.0 (h4): should contain all numeric types (including also SNumericType)
   //  to support method calls like 10.toByte which encoded as MethodCall with typeId = 4, methodId = 1
   //  see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/667
   lazy val types: Map[Byte, STypeCompanion] = Seq(
     SBoolean, SNumericType, SString, STuple, SGroupElement, SSigmaProp, SContext, SGlobal, SHeader, SPreHeader,
     SAvlTree, SBox, SOption, SCollection, SBigInt
   ).map { t => (t.typeId, t) }.toMap
+
+  /** Checks that the type of the value corresponds to the descriptor `tpe`.
+    * If the value has complex structure only root type constructor is checked.
+    * NOTE, this method is used in ErgoTree evaluation to systematically check that each
+    * tree node evaluates to a value of the expected type.
+    * Shallow runtime checks are enough if:
+    * 1) ErgoTree is well-typed, i.e. each sub-expression has correct types (agree with
+    *    the argument type).
+    * 2) `isValueOfType == true` for each tree leaf
+    * 3) `isValueOfType == true` for each sub-expression
+    *
+    * @param value value to check type
+    * @param tpe   type descriptor to check value against
+    * @return true if the given `value` is of type tpe`
+    */
+  def isValueOfType[T <: SType](x: Any, tpe: T): Boolean = tpe match {
+    case SBoolean => x.isInstanceOf[Boolean]
+    case SByte => x.isInstanceOf[Byte]
+    case SShort => x.isInstanceOf[Short]
+    case SInt => x.isInstanceOf[Int]
+    case SLong => x.isInstanceOf[Long]
+    case SBigInt => x.isInstanceOf[BigInt]
+    case SGroupElement => x.isInstanceOf[GroupElement]
+    case SSigmaProp => x.isInstanceOf[SigmaProp]
+    case SBox => x.isInstanceOf[Box]
+    case _: SCollectionType[_] => x.isInstanceOf[Coll[_]]
+    case _: SOption[_] => x.isInstanceOf[Option[_]]
+    case t: STuple =>
+      if (t.items.length == 2) x.isInstanceOf[Tuple2[_,_]]
+      else sys.error(s"Unsupported tuple type $t")
+    case tF: SFunc =>
+      if (tF.tDom.length == 1) x.isInstanceOf[Function1[_,_]]
+      else sys.error(s"Unsupported function type $tF")
+    case SContext => x.isInstanceOf[Context]
+    case SAvlTree => x.isInstanceOf[AvlTree]
+    case SGlobal => x.isInstanceOf[SigmaDslBuilder]
+    case SHeader => x.isInstanceOf[Header]
+    case SPreHeader => x.isInstanceOf[PreHeader]
+    case SUnit => x.isInstanceOf[Unit]
+    case _ => sys.error(s"Unknown type $tpe")
+  }
 
   implicit class STypeOps(val tpe: SType) extends AnyVal {
     def isCollectionLike: Boolean = tpe.isInstanceOf[SCollection[_]]
@@ -203,15 +244,6 @@ object SType {
     def isAvlTree: Boolean = tpe.isInstanceOf[SAvlTree.type]
     def isFunc : Boolean = tpe.isInstanceOf[SFunc]
     def isTuple: Boolean = tpe.isInstanceOf[STuple]
-    def canBeTypedAs(expected: SType): Boolean = (tpe, expected) match {
-      case (NoType, _) => true
-      case (t1, t2) if t1 == t2 => true
-      case (f1: SFunc, f2: SFunc) =>
-        val okDom = f1.tDom.size == f2.tDom.size &&
-                     f1.tDom.zip(f2.tDom).forall { case (d1, d2) => d1.canBeTypedAs(d2) }
-        val okRange = f1.tRange.canBeTypedAs(f2.tRange)
-        okDom && okRange
-    }
 
     /** Returns true if this type is numeric (Byte, Short, etc.)
       * @see [[sigmastate.SNumericType]]
@@ -563,13 +595,15 @@ trait SNumericType extends SProduct {
   def isCastMethod (name: String): Boolean = castMethods.contains(name)
 
   /** Upcasts the given value of a smaller type to this larger type.
+    * Corresponds to section 5.1.2 Widening Primitive Conversion of Java Language Spec.
     * @param n numeric value to be converted
     * @return a value of WrappedType of this type descriptor's instance.
-    * @throw exception if `i` has actual type which is larger than this type.
+    * @throw exception if `n` has actual type which is larger than this type.
     */
   def upcast(n: AnyVal): WrappedType
 
   /** Downcasts the given value of a larger type to this smaller type.
+    * Corresponds to section 5.1.3 Narrowing Primitive Conversion of Java Language Spec.
     * @param n numeric value to be converted
     * @return a value of WrappedType of this type descriptor's instance.
     * @throw exception if the actual value of `i` cannot fit into this type.
@@ -578,15 +612,18 @@ trait SNumericType extends SProduct {
 
   /** Returns a type which is larger. */
   @inline def max(that: SNumericType): SNumericType =
-    if (this.typeIndex > that.typeIndex) this else that
+    if (this.numericTypeIndex > that.numericTypeIndex) this else that
 
-  /** Number of bytes to store values of this type. */
-  @inline private def typeIndex: Int = allNumericTypes.indexOf(this)
+  /** Numeric types are ordered by the number of bytes to store the numeric values.
+    * @return index in the array of all numeric types. */
+  @inline protected def numericTypeIndex: Int
 
   override def toString: Idn = this.getClass.getSimpleName
 }
 object SNumericType extends STypeCompanion {
+  /** Array of all numeric types ordered by number of bytes in the representation. */
   final val allNumericTypes = Array(SByte, SShort, SInt, SLong, SBigInt)
+
   // TODO HF (4h): this typeId is now shadowed by SGlobal.typeId
   //  see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/667
   def typeId: TypeCode = 106: Byte
@@ -672,6 +709,7 @@ case object SByte extends SPrimType with SEmbeddable with SNumericType with SMon
   override def typeId = typeCode
   override def dataSize(v: SType#WrappedType): Long = 1
   override def isConstantSize = true
+  override protected def numericTypeIndex: Int = 0
   override def upcast(v: AnyVal): Byte = v match {
     case b: Byte => b
     case _ => sys.error(s"Cannot upcast value $v to the type $this")
@@ -691,6 +729,7 @@ case object SShort extends SPrimType with SEmbeddable with SNumericType with SMo
   override def typeId = typeCode
   override def dataSize(v: SType#WrappedType): Long = 2
   override def isConstantSize = true
+  override protected def numericTypeIndex: Int = 1
   override def upcast(v: AnyVal): Short = v match {
     case x: Byte => x.toShort
     case x: Short => x
@@ -710,6 +749,7 @@ case object SInt extends SPrimType with SEmbeddable with SNumericType with SMono
   override def typeId = typeCode
   override def dataSize(v: SType#WrappedType): Long = 4
   override def isConstantSize = true
+  override protected def numericTypeIndex: Int = 2
   override def upcast(v: AnyVal): Int = v match {
     case x: Byte => x.toInt
     case x: Short => x.toInt
@@ -731,6 +771,7 @@ case object SLong extends SPrimType with SEmbeddable with SNumericType with SMon
   override def typeId = typeCode
   override def dataSize(v: SType#WrappedType): Long = 8
   override def isConstantSize = true
+  override protected def numericTypeIndex: Int = 3
   override def upcast(v: AnyVal): Long = v match {
     case x: Byte => x.toLong
     case x: Short => x.toLong
@@ -766,6 +807,8 @@ case object SBigInt extends SPrimType with SEmbeddable with SNumericType with SM
   override def isConstantSize = true
 
   val Max: BigInt = SigmaDsl.BigInt(CryptoConstants.dlogGroup.order)
+
+  override protected def numericTypeIndex: Int = 4
 
   override def upcast(v: AnyVal): BigInt = {
     val bi = v match {

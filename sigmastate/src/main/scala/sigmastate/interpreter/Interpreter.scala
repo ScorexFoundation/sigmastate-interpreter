@@ -57,11 +57,7 @@ trait Interpreter extends ScorexLogging {
     val script = ValueSerializer.deserialize(r)  // Why ValueSerializer? read NOTE above
     val scriptComplexity = r.complexity
 
-    val currCost = JMath.addExact(context.initCost, scriptComplexity)
-    val remainingLimit = context.costLimit - currCost
-    if (remainingLimit <= 0) {
-      throw new CostLimitException(currCost, Evaluation.msgCostLimitError(currCost, context.costLimit), None)
-    }
+    val currCost = Evaluation.addCostChecked(context.initCost, scriptComplexity, context.costLimit)
     val ctx1 = context.withInitCost(currCost).asInstanceOf[CTX]
     (ctx1, script)
   }
@@ -133,7 +129,7 @@ trait Interpreter extends ScorexLogging {
     implicit val vs = context.validationSettings
     val maxCost = context.costLimit
     val initCost = context.initCost
-    trySoftForkable[ReductionResult](whenSoftFork = WhenSoftForkReductionResult) {
+    trySoftForkable[ReductionResult](whenSoftFork = WhenSoftForkReductionResult(initCost)) {
       val costingRes = doCostingEx(env, exp, true)
       val costF = costingRes.costF
       IR.onCostingResult(env, exp, costingRes)
@@ -150,7 +146,7 @@ trait Interpreter extends ScorexLogging {
       CheckCalcFunc(IR)(calcF)
       val calcCtx = context.toSigmaContext(isCost = false)
       val res = Interpreter.calcResult(IR)(calcCtx, calcF)
-      SigmaDsl.toSigmaBoolean(res) -> estimatedCost
+      ReductionResult(SigmaDsl.toSigmaBoolean(res), estimatedCost)
     }
   }
 
@@ -175,14 +171,14 @@ trait Interpreter extends ScorexLogging {
     */
   def fullReduction(ergoTree: ErgoTree,
                     context: CTX,
-                    env: ScriptEnv): (SigmaBoolean, Long) = {
+                    env: ScriptEnv): ReductionResult = {
     val prop = propositionFromErgoTree(ergoTree, context)
     prop match {
       case SigmaPropConstant(p) =>
         val sb = SigmaDsl.toSigmaBoolean(p)
         val cost = SigmaBoolean.estimateCost(sb)
         val resCost = Evaluation.addCostChecked(context.initCost, cost, context.costLimit)
-        (sb, resCost)
+        ReductionResult(sb, resCost)
       case _ if !ergoTree.hasDeserialize =>
         val r = precompiledScriptProcessor.getReducer(ergoTree, context.validationSettings)
         r.reduce(context)
@@ -251,22 +247,18 @@ trait Interpreter extends ScorexLogging {
         // else proceed normally
       }
 
-      val initCost = JMath.addExact(ergoTree.complexity.toLong, context.initCost)
-      val remainingLimit = context.costLimit - initCost
-      if (remainingLimit <= 0) {
-        // TODO cover with tests (2h)
-        throw new CostLimitException(initCost, Evaluation.msgCostLimitError(initCost, context.costLimit), None)
-      }
+      val complexityCost = ergoTree.complexity.toLong
+      val initCost = Evaluation.addCostChecked(context.initCost, complexityCost, context.costLimit)
       val contextWithCost = context.withInitCost(initCost).asInstanceOf[CTX]
 
-      val (cProp, cost) = fullReduction(ergoTree, contextWithCost, env)
+      val res = fullReduction(ergoTree, contextWithCost, env)
 
-      val checkingResult = cProp match {
+      val checkingResult = res.value match {
         case TrivialProp.TrueProp => true
         case TrivialProp.FalseProp => false
-        case _ => verifySignature(cProp, message, proof)
+        case cProp => verifySignature(cProp, message, proof)
       }
-      checkingResult -> cost
+      checkingResult -> res.cost
     })
     if (outputComputedResults) {
       res.foreach { case (_, cost) =>
@@ -384,13 +376,19 @@ object Interpreter {
   type VerificationResult = (Boolean, Long)
 
   /** Result of ErgoTree reduction procedure (see `reduceToCrypto` and friends).
-    * The first component is the value of SigmaProp type which represents a statement
-    * verifiable via sigma protocol.
-    * The second component is the estimated cost of consumed by the contract execution. */
-  type ReductionResult = (SigmaBoolean, Long)
+    *
+    * @param value the value of SigmaProp type which represents a logical statement
+    *              verifiable via sigma protocol.
+    * @param cost  the estimated cost of the contract execution. */
+  case class ReductionResult(value: SigmaBoolean, cost: Long)
 
+  /** Represents properties of interpreter invocation. */
   type ScriptEnv = Map[String, Any]
+
+  /** Empty interpreter properties. */
   val emptyEnv: ScriptEnv = Map.empty[String, Any]
+
+  /** Property name used to store script name. */
   val ScriptNameProp = "ScriptName"
 
   /** Maximum version of ErgoTree supported by this interpreter release.
@@ -407,7 +405,7 @@ object Interpreter {
   /** The result of script reduction when soft-fork condition is detected by the old node,
     * in which case the script is reduced to the trivial true proposition and takes up 0 cost.
     */
-  val WhenSoftForkReductionResult: ReductionResult = TrivialProp.TrueProp -> 0
+  def WhenSoftForkReductionResult(cost: Long): ReductionResult = ReductionResult(TrivialProp.TrueProp, cost)
 
   /** Executes the given `calcF` graph in the given context.
     * @param IR      container of the graph (see [[IRContext]])
@@ -450,6 +448,7 @@ object Interpreter {
       throw new Error(s"Context-dependent pre-processing should produce tree of type Boolean or SigmaProp but was $x")
   }
 
+  /** Helper method to throw errors from Interpreter. */
   def error(msg: String) = throw new InterpreterException(msg)
 
 }

@@ -391,7 +391,7 @@ class SoftForkabilitySpecification extends SigmaTestingData with BeforeAndAfterA
     r shouldBe WhenSoftForkReducer
 
     val ctx = createContext(blockHeight, txV2, v2vs)
-    r.reduce(ctx) shouldBe WhenSoftForkReductionResult
+    r.reduce(ctx) shouldBe WhenSoftForkReductionResult(0)
   }
 
   override protected def afterAll(): Unit = {

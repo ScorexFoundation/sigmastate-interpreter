@@ -28,7 +28,7 @@ import spire.syntax.all.cfor
 
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
-import sigmastate.lang.DefaultSigmaBuilder._
+import sigmastate.lang.CheckingSigmaBuilder._
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.serialization.transformers.ProveDHTupleSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
@@ -173,7 +173,7 @@ object Values {
   trait Constant[+S <: SType] extends EvaluatedValue[S] {}
 
   case class ConstantNode[S <: SType](value: S#WrappedType, tpe: S) extends Constant[S] {
-    assert(Constant.isCorrectType(value, tpe), s"Invalid type of constant value $value, expected type $tpe")
+    require(Constant.isCorrectType(value, tpe), s"Invalid type of constant value $value, expected type $tpe")
     override def companion: ValueCompanion = Constant
     override def opCode: OpCode = companion.opCode
     override def opName: String = s"Const"
