@@ -31,6 +31,15 @@ object BenchmarkUtil {
     (res, t - t0)
   }
 
+  /** Execute block and measure the time of its execution in nanoseconds. */
+  def measureTimeNano[T](block: => T): (T, Long) = {
+    val start = System.nanoTime()
+    val res = block
+    val end = System.nanoTime()
+    (res, end - start)
+  }
+
+  
   def runTasks(nTasks: Int)(block: Int => Unit) = {
     val (_, total) = measureTime {
       val tasks = (1 to nTasks).map(iTask => Future(block(iTask)))
