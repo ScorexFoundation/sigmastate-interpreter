@@ -21,6 +21,7 @@ import spire.syntax.all.cfor
 import scala.util.{Success, Failure}
 import scalan.{Nullable, RType}
 import scorex.crypto.hash.{Digest32, Sha256, Blake2b256}
+import sigmastate.Values.ErgoTree.EmptyConstants
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
 import sigmastate.lang.Terms.OperationId
@@ -70,7 +71,8 @@ case class CSigmaProp(sigmaTree: SigmaBoolean) extends SigmaProp with WrapperOf[
   override def propBytes: Coll[Byte] = {
     // in order to have comparisons like  `box.propositionBytes == pk.propBytes` we need to make sure
     // the same serialization method is used in both cases
-    val ergoTree = ErgoTree.fromSigmaBoolean(sigmaTree)
+    val root = sigmaTree.toSigmaProp
+    val ergoTree = new ErgoTree(ErgoTree.DefaultHeader, EmptyConstants, Right(root), 0, null, None)
     val bytes = DefaultSerializer.serializeErgoTree(ergoTree)
     Colls.fromArray(bytes)
   }
@@ -94,6 +96,19 @@ case class CSigmaProp(sigmaTree: SigmaBoolean) extends SigmaProp with WrapperOf[
     CSigmaProp(COR.normalized(Array(sigmaTree, TrivialProp(other))))
 
   override def toString: String = s"SigmaProp(${wrappedValue.showToString})"
+}
+
+class CAvlTreeVerifier(startingDigest: ADDigest,
+                       proof: SerializedAdProof,
+                       override val keyLength: Int,
+                       override val valueLengthOpt: Option[Int])
+    extends BatchAVLVerifier[Digest32, Blake2b256.type](
+      startingDigest, proof, keyLength, valueLengthOpt)
+        with AvlTreeVerifier {
+  override def treeHeight: Int = rootNodeHeight
+
+  /** Override default logging which outputs stack trace to the console. */
+  override protected def logError(t: Throwable): Unit = {}
 }
 
 /** A default implementation of [[AvlTree]] interface.
@@ -129,14 +144,10 @@ case class CAvlTree(treeData: AvlTreeData) extends AvlTree with WrapperOf[AvlTre
     this.copy(treeData = td)
   }
 
-  private def createVerifier(proof: Coll[Byte]): BatchAVLVerifier[Digest32, Blake2b256.type] = {
+  override def createVerifier(proof: Coll[Byte]): AvlTreeVerifier = {
     val adProof = SerializedAdProof @@ proof.toArray
-    val bv = new BatchAVLVerifier[Digest32, Blake2b256.type](
-      treeData.digest, adProof,
-      treeData.keyLength, treeData.valueLengthOpt) {
-      /** Override default logging which outputs stack trace to the console. */
-      override protected def logError(t: Throwable): Unit = {}
-    }
+    val bv = new CAvlTreeVerifier(
+      treeData.digest, adProof, treeData.keyLength, treeData.valueLengthOpt)
     bv
   }
 
@@ -334,6 +345,7 @@ case class CostingBox(isCost: Boolean, val ebox: ErgoBox) extends Box with Wrapp
 
   override def equals(obj: Any): Boolean = (this eq obj.asInstanceOf[AnyRef]) || (obj != null && ( obj match {
     case obj: Box => util.Arrays.equals(id.toArray, obj.id.toArray)
+    // TODO v5.0 HF: return false when obj in not Box instead of throwing an exception
   }))
 }
 
@@ -656,9 +668,8 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
     CSigmaProp(dht)
   }
 
-  override def groupGenerator: GroupElement = {
-    this.GroupElement(CryptoConstants.dlogGroup.generator)
-  }
+  private lazy val _generatorElement = this.GroupElement(CryptoConstants.dlogGroup.generator)
+  override def groupGenerator: GroupElement = _generatorElement
 
   /**
     * @return the identity of the Dlog group used in ErgoTree
@@ -669,8 +680,7 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
 
   override def substConstants[T](scriptBytes: Coll[Byte],
                                  positions: Coll[Int],
-                                 newValues: Coll[T])
-                                (implicit cT: RType[T]): Coll[Byte] = {
+                                 newValues: Coll[T]): Coll[Byte] = {
     val typedNewVals = newValues.toArray.map(v => TransformingSigmaBuilder.liftAny(v) match {
       case Nullable(v) => v
       case _ => sys.error(s"Cannot evaluate substConstants($scriptBytes, $positions, $newValues): cannot lift value $v")
@@ -705,6 +715,7 @@ case class CostingDataContext(
                                lastBlockUtxoRootHash: AvlTree,
                                _minerPubKey: Coll[Byte],
                                vars: Coll[AnyValue],
+                               override val activatedScriptVersion: Byte,
                                var isCost: Boolean)
   extends Context {
   @inline override def builder: SigmaDslBuilder = CostingSigmaDslBuilder
@@ -800,3 +811,4 @@ case class CostingDataContext(
     this.copy(vars = newVars)
   }
 }
+

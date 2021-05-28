@@ -3654,6 +3654,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
           .append(Coll[AnyValue](
             TestValue(Helpers.decodeBytes("00"), CollType(RType.ByteType)),
             TestValue(true, RType.BooleanType))),
+      activatedScriptVersion = activatedVersionInTests,
       false
     )
     val ctx2 = ctx.copy(vars = Coll[AnyValue](null, null, null))
@@ -6276,7 +6277,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
       },
       existingFeature(
         { (x: (Coll[Byte], Int)) =>
-          SigmaDsl.substConstants(x._1, Coll[Int](x._2), Coll[Any](SigmaDsl.sigmaProp(false))(RType.AnyType))(RType.AnyType)
+          SigmaDsl.substConstants(x._1, Coll[Int](x._2), Coll[Any](SigmaDsl.sigmaProp(false))(RType.AnyType))
         },
         "{ (x: (Coll[Byte], Int)) => substConstants[Any](x._1, Coll[Int](x._2), Coll[Any](sigmaProp(false))) }",
         FuncValue(
