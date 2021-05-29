@@ -787,10 +787,10 @@ trait SNumericType extends SProduct {
     if (this.numericTypeIndex > that.numericTypeIndex) this else that
 
   /** Returns true if this numeric type is larger than that. */
-  @inline def >(that: SNumericType): Boolean = this.typeIndex > that.typeIndex
+  @inline def >(that: SNumericType): Boolean = this.numericTypeIndex > that.numericTypeIndex
 
   /** Number of bytes to store values of this type. */
-  @inline private def typeIndex: Int = allNumericTypes.indexOf(this)
+  @inline protected def numericTypeIndex: Int = allNumericTypes.indexOf(this)
 
   override def toString: String = this.getClass.getSimpleName
 }
