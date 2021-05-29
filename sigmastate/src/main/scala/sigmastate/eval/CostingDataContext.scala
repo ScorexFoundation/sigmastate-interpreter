@@ -104,7 +104,7 @@ class CAvlTreeVerifier(startingDigest: ADDigest,
                        override val valueLengthOpt: Option[Int])
     extends BatchAVLVerifier[Digest32, Blake2b256.type](
       startingDigest, proof, keyLength, valueLengthOpt)
-    with AvlTreeVerifier {
+        with AvlTreeVerifier {
   override def treeHeight: Int = rootNodeHeight
 
   /** Override default logging which outputs stack trace to the console. */

@@ -106,7 +106,7 @@ trait Coll[@specialized A] {
   /** Applies a binary operator to a start value and all elements of this collection,
     *  going left to right.
     *
-    *  @param   z    the start value.
+    *  @param   zero    the start value.
     *  @param   op   the binary operator.
     *  @tparam  B    the result type of the binary operator.
     *  @return  the result of inserting `op` between consecutive elements of this collection,

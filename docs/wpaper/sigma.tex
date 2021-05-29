@@ -313,7 +313,7 @@ The same approach can be used to trade different assets on the same blockchain, 
 
 \subsection{Box Registers and Additional Tokens}
 \label{sec:box-registers}
-Together with its value and protecting script, a box can contain up to 10 numbered registers, \texttt{R0} through \texttt{R9}. The first four of these have fixed meaning, as follows. For a box \texttt{b}, \texttt{b.R0} is the same as \texttt{b.value} and \texttt{b.R1} is the same as \texttt{b.propositionBytes}.
+Context variables are passed at box spending time whereas registers at box creation time. Together with its value and protecting script, a box can contain up to 10 numbered registers, \texttt{R0} through \texttt{R9}. The first four of these have fixed meaning, as follows. For a box \texttt{b}, \texttt{b.R0} is the same as \texttt{b.value} and \texttt{b.R1} is the same as \texttt{b.propositionBytes}.
 
 
 The third register, \texttt{b.R2}, is for specifying additional, secondary tokens contained in the box (the primary token amount is specified in \texttt{b.value}). \texttt{b.R2} contains a collection of pairs, the first element of each pair specifying the token id (as a collection of 32 bytes) and the second element specifying the amount (as a long value). The maximum number of tokens in a box is set to 4. For every token id, the sum of amounts in inputs boxes must be no less than the sum of amounts in output boxes. There is one exception to this rule for the creation of new tokens. When a new token type gets created in a transaction, its id is equal to the id of the input box 0. Thus, the exception for the creation of new tokens is that if the token id in some output box is equal to the id of input box 0, then an arbitrary amount of this token can be output. Because each box has a unique id (see Section~\ref{sec:context}, this exception can be applied exactly once per token type. A newly created token can be emitted in a time-controlled fashion---see Section~\ref{sec:self-replicating}.
@@ -329,7 +329,7 @@ To access a register, the type of the register needs to be specified in brackets
 In addition to registers, scripts can access two serialized versions of the box: \texttt{b.bytes} is a serialization of the entire box including all its registers, and \texttt{b.bytesWithNoRef}, which the same but without the transaction identifier and the output index~(so that a box can be viewed independently of where it appeared.
 
 \paragraph{Example: atomic exchange on a single block chain}
-These box registers provide additional capabilities to \langname. Consider, for example, Alice and Bob who want to exchange tokens: they agree that  Alice will give Bob 60 tokens of type \texttt{token1} (this type is mapped to an actual token id in the environment map) in exchange for 100 Ergo tokens. Alice could create an output box with value 100 and protect it with the following script:
+These box registers provide additional capabilities to \langname. Consider, for example, Alice and Bob who want to exchange tokens: they agree that Bob will give Alice 60 tokens of type \texttt{token1} (this type is mapped to an actual token id in the environment map) in exchange for 100 Ergo tokens. Alice could create an output box with value 100 and protect it with the following script:
 
 \begin{verbatim}
   (HEIGHT > deadline && pkA) || {
@@ -360,7 +360,7 @@ Bob, similarly, could create an output box with value about 0 and 60 tokens of t
 A transaction containing these two boxes as inputs must produce two outputs: the first giving at least 60 tokens of type1 to Alice and the second giving at least 100 tokens of type2 to Bob. Once the two boxes are on the blockchain, anyone can create such a transaction using the two boxes as inputs, and thus effect the exchange between Alice and Bob. Unlike the cross-chain trading example above using hashing (which requires one side to go first), there are no potential problems with synchronization here, because the exchange will happen in a single transaction or will not happen at all.
 \subsection{Self-Replicating Code}
 \label{sec:self-replicating}
-Access to box registers allow us to create self-replicating boxes, because a script can check that an output box contains the same script as \texttt{SELF}. As shown in \cite{CKM18}, this powerful tool allows for Turing-completeness as computation evolves from box to box, even if each individual script is not Turing-complete. We will demonstrate two examples of complex behavior via self-replication.
+Access to box registers allows us to create self-replicating boxes, because a script can check that an output box contains the same script as \texttt{SELF}. As shown in \cite{CKM18}, this powerful tool allows for Turing-completeness as computation evolves from box to box, even if each individual script is not Turing-complete. We will demonstrate two examples of complex behavior via self-replication.
 
 \paragraph{Example: time-controlled coin emission}
 In this example, we will create a self-replicating box that emits new coins at each time step in order to add to the total amount of currency available. This box appears as an output in the genesis block (at height 0) of the blockchain; all "new" coins come from this box or its descendants, thus maintaining the invariant that for every transaction after the genesis block, the combined value of all inputs  is equal to the combined value of all outputs.
@@ -407,7 +407,7 @@ A script is converted to an abstract syntax tree using standard compilation tech
 
 \begin{itemize}
 \item We estimate the time required to process the script and, if it exceeds a certain bound, refuses to evaluate it in order to prevent a denial-of-service attack.
-\item The evaluation converts the script not to a Boolean value, but to a $\Sigma$-statement. This statement is a tree, with  \texttt{proveDlog} or \texttt{proveDHtuple} nodes for leaves, and $\andnode$ (\texttt{\&\&}), $\ornode$ (\texttt{||}), or $\tnode$ for  non-leaves. The prover (when trying to use in a transaction the box that is protected by the script) generates a proof this $\Sigma$-statement. The verifier verifies it, obtaining a Boolean value.
+\item The evaluation converts the script not to a Boolean value, but to a $\Sigma$-statement. This statement is a tree, with  \texttt{proveDlog} or \texttt{proveDHtuple} nodes for leaves, and $\andnode$ (\texttt{\&\&}), $\ornode$ (\texttt{||}), or $\tnode$ for  non-leaves. The prover (when trying to use in a transaction the box that is protected by the script) generates a proof for this $\Sigma$-statement. The verifier verifies it, obtaining a Boolean value.
 \end{itemize}
 
 We describe the latter non-standard step in Appendix \ref{app:crypto}, while the former will be described in a separate
@@ -420,9 +420,8 @@ The next steps we plan to do~(and have partially done) after releasing this docu
     \begin{enumerate}
         \item{} More examples, including non-interactive and fully on-chain tumbler for mixing the coins, cold wallets,
         oracles, initial coin offering scenario, multi-state contract defined as a finite state machine, and so on. We
-        already have code for such the examples done, and writing documentation about them at the moment.
-        \item{} Detailed description of used type system, cost estimation procedure, safety guarantees,
-        and abstract syntax tree format.
+        already have code for such examples done, and writing documentation about them at the moment.
+        \item{} Detailed description of used type system, cost estimation procedure, safety guarantees and abstract syntax tree format.
     \end{enumerate}
 \bibliographystyle{alpha}
 \bibliography{sigma.bib}

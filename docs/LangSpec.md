@@ -423,8 +423,8 @@ class Option[A] {
     *
     * @param default  the default expression.
     */
-  def getOrElse[B](default: B): B
-  
+  def getOrElse[B](default: B): B  
+
   /** Returns the option's value.
    *  @note The option must be nonempty.
    *  @throws InterpreterException if the option is empty.

@@ -767,13 +767,15 @@ trait SNumericType extends SProduct {
   def isCastMethod (name: String): Boolean = castMethods.contains(name)
 
   /** Upcasts the given value of a smaller type to this larger type.
+    * Corresponds to section 5.1.2 Widening Primitive Conversion of Java Language Spec.
     * @param n numeric value to be converted
     * @return a value of WrappedType of this type descriptor's instance.
-    * @throw exception if `i` has actual type which is larger than this type.
+    * @throw exception if `n` has actual type which is larger than this type.
     */
   def upcast(n: AnyVal): WrappedType
 
   /** Downcasts the given value of a larger type to this smaller type.
+    * Corresponds to section 5.1.3 Narrowing Primitive Conversion of Java Language Spec.
     * @param n numeric value to be converted
     * @return a value of WrappedType of this type descriptor's instance.
     * @throw exception if the actual value of `i` cannot fit into this type.
@@ -782,7 +784,7 @@ trait SNumericType extends SProduct {
 
   /** Returns a type which is larger. */
   @inline def max(that: SNumericType): SNumericType =
-    if (this.typeIndex > that.typeIndex) this else that
+    if (this.numericTypeIndex > that.numericTypeIndex) this else that
 
   /** Returns true if this numeric type is larger than that. */
   @inline def >(that: SNumericType): Boolean = this.typeIndex > that.typeIndex
@@ -793,7 +795,9 @@ trait SNumericType extends SProduct {
   override def toString: String = this.getClass.getSimpleName
 }
 object SNumericType extends STypeCompanion {
+  /** Array of all numeric types ordered by number of bytes in the representation. */
   final val allNumericTypes = Array(SByte, SShort, SInt, SLong, SBigInt)
+
   // TODO HF (4h): this typeId is now shadowed by SGlobal.typeId
   //  see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/667
   override def typeId: TypeCode = 106: Byte
@@ -921,6 +925,7 @@ case object SByte extends SPrimType with SEmbeddable with SNumericType with SMon
   override def typeId = typeCode
   override def dataSize(v: SType#WrappedType): Long = 1
   override def isConstantSize = true
+  override protected def numericTypeIndex: Int = 0
   override def upcast(v: AnyVal): Byte = v match {
     case b: Byte => b
     case _ => sys.error(s"Cannot upcast value $v to the type $this")
@@ -941,6 +946,7 @@ case object SShort extends SPrimType with SEmbeddable with SNumericType with SMo
   override def typeId = typeCode
   override def dataSize(v: SType#WrappedType): Long = 2
   override def isConstantSize = true
+  override protected def numericTypeIndex: Int = 1
   override def upcast(v: AnyVal): Short = v match {
     case x: Byte => x.toShort
     case x: Short => x
@@ -961,6 +967,7 @@ case object SInt extends SPrimType with SEmbeddable with SNumericType with SMono
   override def typeId = typeCode
   override def dataSize(v: SType#WrappedType): Long = 4
   override def isConstantSize = true
+  override protected def numericTypeIndex: Int = 2
   override def upcast(v: AnyVal): Int = v match {
     case x: Byte => x.toInt
     case x: Short => x.toInt
@@ -983,6 +990,7 @@ case object SLong extends SPrimType with SEmbeddable with SNumericType with SMon
   override def typeId = typeCode
   override def dataSize(v: SType#WrappedType): Long = 8
   override def isConstantSize = true
+  override protected def numericTypeIndex: Int = 3
   override def upcast(v: AnyVal): Long = v match {
     case x: Byte => x.toLong
     case x: Short => x.toLong
@@ -1020,6 +1028,8 @@ case object SBigInt extends SPrimType with SEmbeddable with SNumericType with SM
   override def isConstantSize = true
 
   val Max: BigInt = SigmaDsl.BigInt(CryptoConstants.dlogGroup.order)
+
+  override protected def numericTypeIndex: Int = 4
 
   override def upcast(v: AnyVal): BigInt = {
     val bi = v match {

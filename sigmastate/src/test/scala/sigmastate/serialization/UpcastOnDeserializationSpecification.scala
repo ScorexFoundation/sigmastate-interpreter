@@ -2,12 +2,12 @@ package sigmastate.serialization
 
 import org.ergoplatform.Outputs
 import sigmastate.Values.{ByteConstant, IntConstant, LongConstant}
-import sigmastate.lang.DefaultSigmaBuilder
+import sigmastate.lang.CheckingSigmaBuilder
 import sigmastate.utxo.ByIndex
 import sigmastate.{SInt, SLong, Upcast}
 
 class UpcastOnDeserializationSpecification extends SerializationSpecification {
-  import DefaultSigmaBuilder._
+  import CheckingSigmaBuilder._
 
   property("Upcast deserialization round trip") {
     forAll(comparisonExprTreeNodeGen, minSuccessful(500)) { tree =>
