@@ -46,7 +46,7 @@ trait ContractsTestkit {
   }
 
   def contextVars(m: Map[Byte, AnyValue]): Coll[AnyValue] = {
-    val maxKey = if (m.keys.isEmpty) 0 else m.keys.max
+    val maxKey = if (m.keys.isEmpty) 0 else m.keys.max  // TODO optimize: max takes 90% of this method
     val res = new Array[AnyValue](maxKey)
     for ((id, v) <- m) {
       val i = id - 1

@@ -76,6 +76,10 @@ object SigmaConstants {
     "size of nonce array from Autolykos POW solution in Header.powNonce array") {
   }
 
+  object MaxCollSize extends SizeConstant[Int](4 * 1024, 16,
+    "Maximum number of items in a collection") {
+  }
+
   val ConstTable: Seq[SizeConstant[_]] = {
     val rows = Seq(
       MaxBoxSize,
@@ -92,7 +96,8 @@ object SigmaConstants {
       ScriptCostLimit,
       MaxLoopLevelInCostFunction,
       VotesArraySize,
-      AutolykosPowSolutionNonceArraySize
+      AutolykosPowSolutionNonceArraySize,
+      MaxCollSize
     )
     require(rows.length == rows.distinctBy(_.id).length, s"Duplicate constant id in $rows")
     rows

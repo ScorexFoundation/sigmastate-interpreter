@@ -197,7 +197,7 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
       case OM.getOrElse(_, _) => OptionGetOrElseCode
       case OM.fold(_, _, _) => MethodCallCode
       case OM.isDefined(_) => OptionIsDefinedCode
-      case SDBM.substConstants(_, _, _, _, _) => SubstConstantsCode
+      case SDBM.substConstants(_, _, _, _) => SubstConstantsCode
       case SDBM.longToByteArray(_, _) => LongToByteArrayCode
       case SDBM.byteArrayToBigInt(_, _) => ByteArrayToBigIntCode
       case SDBM.byteArrayToLong(_, _) => ByteArrayToLongCode
@@ -572,7 +572,7 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
           case SDBM.substConstants(_,
             In(input: special.collection.Coll[Byte]@unchecked),
             In(positions: special.collection.Coll[Int]@unchecked),
-            In(newVals: special.collection.Coll[Any]@unchecked), _) =>
+            In(newVals: special.collection.Coll[Any]@unchecked)) =>
             // TODO refactor: call sigmaDslBuilderValue.substConstants
             val typedNewVals = newVals.toArray.map(v => builder.liftAny(v) match {
               case Nullable(v) => v

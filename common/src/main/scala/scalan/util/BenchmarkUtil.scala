@@ -39,7 +39,7 @@ object BenchmarkUtil {
     (res, end - start)
   }
 
-  
+
   def runTasks(nTasks: Int)(block: Int => Unit) = {
     val (_, total) = measureTime {
       val tasks = (1 to nTasks).map(iTask => Future(block(iTask)))
