@@ -547,9 +547,18 @@ trait AvlTree {
     */
   def remove(operations: Coll[Coll[Byte]], proof: Coll[Byte]): Option[AvlTree]
 
+  /** Creates a new instance of [[AvlTreeVerifier]] with the given `proof` and using
+    * properties of this AvlTree (digest, keyLength, valueLengthOpt) for constructor
+    * arguments.
+    *
+    * @param proof bytes of the serialized proof which is used to represent the tree.
+    */
   def createVerifier(proof: Coll[Byte]): AvlTreeVerifier
 }
 
+/** Represents operations of AVL tree verifier in an abstract (implementation independent)
+  * way which allows declaration of the [[AvlTree.createVerifier()]] method.
+  */
 trait AvlTreeVerifier {
   /**
     * If operation.key exists in the tree and the operation succeeds,
@@ -560,7 +569,7 @@ trait AvlTreeVerifier {
     * After one failure, all subsequent operations will fail and digest
     * is None.
     *
-    * @param operation
+    * @param operation an operation descriptor
     * @return - Success(Some(old value)), Success(None), or Failure
     */
   def performOneOperation(operation: Operation): Try[Option[ADValue]]
