@@ -98,6 +98,11 @@ case class CSigmaProp(sigmaTree: SigmaBoolean) extends SigmaProp with WrapperOf[
   override def toString: String = s"SigmaProp(${wrappedValue.showToString})"
 }
 
+/** Implementation of the [[special.sigma.AvlTreeVerifier]] trait based on
+  * [[scorex.crypto.authds.avltree.batch.BatchAVLVerifier]].
+  *
+  * @see BatchAVLVerifier, AvlTreeVerifier
+  */
 class CAvlTreeVerifier(startingDigest: ADDigest,
                        proof: SerializedAdProof,
                        override val keyLength: Int,
