@@ -2,28 +2,81 @@
 
 ### Introduction
 
-#### ErgoScript language features
+ErgoScript is a language to write contracts for [Ergo
+blockchain](https://ergoplatform.org). ErgoScript contracts can be compiled to
+[ErgoTrees](https://ergoplatform.org/docs/ErgoTree.pdf), serialized and stored
+in UTXOs.
+
+A good starting point to writing contracts is to use [ErgoScript by
+Example](https://github.com/ergoplatform/ergoscript-by-example) with [Ergo
+Playgrounds](https://github.com/ergoplatform/ergo-playgrounds) or
+[Appkit](https://github.com/ergoplatform/ergo-appkit).
+
+ErgoScript compiler is
+[published](https://mvnrepository.com/artifact/org.scorexfoundation/sigma-state)
+as a library which is cross compiled for Java 7 and Java 8+ and thus can be used
+from any JVM lanugage and also on Android and JavaFX platforms.
+
+The following example shows how source code of ErgoScript contract can be used
+to create new transaction using
+[Appkit](https://github.com/ergoplatform/ergo-appkit), see [full
+example](https://github.com/aslesarenko/ergo-appkit-examples/blob/master/java-examples/src/main/java/org/ergoplatform/appkit/examples/FreezeCoin.java)
+for details.
+
+```java
+// To create transaction we use a builder obtained from the context
+// the builder keeps relationship with the context to access necessary blockchain data.
+UnsignedTransactionBuilder txB = ctx.newTxBuilder();
+
+// create new box using new builder obtained from the transaction builder
+// in this case we compile new ErgoContract from source ErgoScript code
+OutBox newBox = txB.outBoxBuilder()
+        .value(amountToPay)
+        .contract(ctx.compileContract(
+                ConstantsBuilder.create()
+                        .item("freezeDeadline", ctx.getHeight() + newBoxDelay)
+                        .item("pkOwner", prover.getP2PKAddress().pubkey())
+                        .build(),
+                "{ " +
+                "  val deadlinePassed = sigmaProp(HEIGHT > freezeDeadline)" +
+                "  deadlinePassed && pkOwner " +
+                "}"))
+        .build();
+```
+
+The contract is given as the string literal which contains the block of `val`
+declarations followed by the logical expression. The expression defines the all
+possible conditions to spend the box. The contract can also contain _named
+constants_ (which cannot be represented as literals in the source code). 
+In the example `freezeDeadline` and `pkOwner` are named constants. The concrete
+values of named constants should be given to the compiler (see `compileContract`
+method)
+
+The following sections describe ErgoScript and its operations. 
+
+#### ErgoScript language features overview
 
 - syntax borrowed from Scala and Kotlin
 - standard syntax and semantics for well known constructs (operations, code blocks, if branches etc.)
-- high-order with first-class lambdas that are used in collection operations
+- high-order language with first-class lambdas which are used in collection operations
 - call-by-value (eager evaluation)
 - statically typed with local type inference
 - blocks are expressions 
 - semicolon inference in blocks
-- type constructors: Tuple, Coll, Option
+- type constructors: Pair, Coll, Option
 
-#### Operations and constructs
+#### Operations and constructs overview
 
-- Binary operations: `>, <, >=, <=, +, -, &&, ||, ==, !=, |, *, ^, ++`
+- Binary operations: `>, <, >=, <=, +, -, &&, ||, ==, !=, |, &, *, /, %, ^, ++`
 - predefined primitives: `blake2b256`, `byteArrayToBigInt`, `proveDlog` etc. 
 - val declarations: `val h = blake2b256(pubkey)`
 - if-then-else clause: `if (x > 0) 1 else 0`
 - collection literals: `Coll(1, 2, 3, 4)`
-- generic high-order collection operations: `map`, `fold`, `exists`, `forall`, etc.
-- accessing fields of any predefined structured objects: `box.value`
+- generic high-order collection operations: `map`, `filter`, `fold`, `exists`, `forall`, etc.
+- accessing fields of any predefined types: `box.value`
+- method invocation for predefined types: `coll.map({ x => x + 1 })`
 - function invocations (predefined and user defined): `proveDlog(pubkey)` 
-- user defined functions: `def isProven(pk: GroupElement) = proveDlog(pk).isProven`
+- user defined function declarations: `def isProven(pk: GroupElement) = proveDlog(pk).isProven`
 - lambdas and high-order methods: `OUTPUTS.exists { (out: Box) => out.value >= minToRaise }`
 
 #### Data types 
@@ -31,12 +84,12 @@
 In ErgoScript, everything is an object in the sense that we can call member functions and properties on any variable.
 Some of the types can have a special internal representation - for example, numbers and booleans can be
 represented as primitive values at runtime - but to the user they look like ordinary classes.
-NOTE: in ErgoScript we use *type* and *class* as synonyms, we prefer *type* when talking about primitive values and
-*class* when talking about methods.
+NOTE: in ErgoScript we use *type*, *class* and *trait* as synonyms, we prefer *type* when talking about primitive values and
+*trait* or *class* when talking about methods.
 
 Type Name        |   Description
 -----------------|------------------------------
-`Any`            | a supertype of any other type
+`Any`            | a supertype of any other type (not used directly in ErgoScript)
 `Unit`           | a type with a single value `()`
 `Boolean`        | a type with two logical values `true` and `false`
 `Byte`           | 8 bit signed integer
@@ -44,17 +97,27 @@ Type Name        |   Description
 `Int`            | 32 bit signed integer
 `Long`           | 64 bit signed integer
 `BigInt`         | 256 bit signed integer
-`SigmaProp`      | a type which represent a logical value which can be be obtained by executing a Sigma protocol with zero-knowledge proof of knowledge
-`AvlTree`        | authenticated dynamic dictionary
+`SigmaProp`      | a type representing a _sigma proposition_ which can be verified by executing a Sigma protocol with zero-knowledge proof of knowledge. Every contract should return a value of this type.
+`AvlTree`        | represents a digest of authenticated dynamic dictionary and can be used to verify proofs of operations performed on the dictionary
 `GroupElement`   | elliptic curve points
 `Box`            | a box containing a monetary value (in NanoErgs), tokens and registers along with a guarding proposition
 `Option[T]`      | a container which either have some value of type `T` or none.
 `Coll[T]`        | a collection of arbitrary length with all values of type `T` 
-`(T1,...,Tn)`    | tuples, a collection of element where T1, ..., Tn can be different types
+`(T1,T2)`        | a pair of values where T1, T2 can be different types
+
+The type constructors `Coll`, `Option`, `(_,_)` can be used to construct complex
+types as in the following example.
+```scala
+{
+  val keyValues = OUTPUTS(0).R4[Coll[(Int, Option[Int])]].get
+  ...
+}
+```
 
 #### Literal syntax and Constants
 
-Literals are used to introduce values of some types directly in program text like the following examples:
+Literals are used to introduce values of some types directly in program text
+like in the following example:
 ```
  val unit: Unit = ()       // unit constant
  val long: Int = 10        // interger value literal
@@ -71,14 +134,15 @@ a constant of any type by using Base64 encoded string (See [predefined function]
 
 #### Primitive Types
 
-```scala
-class Boolean {
-  /** Convert true to 1 and false to 0
-   * @since 2.0
-   */
-  def toByte: Byte
-}
+Below we specify methods of pre-defined types using Scala-like declaration of
+classes. Note, the `Boolean` type doesn't have pre-defined methods in addition
+to the standard operations.
 
+Note, ErgoScript doesn't allow to define new `class` types, however it has many
+pre-defined classes with methods defined below.
+
+Every numeric type has the following methods.
+```scala
 /** Base supertype for all numeric types. */
 class Numeric {
   /** Convert this Numeric value to Byte. 
@@ -96,79 +160,25 @@ class Numeric {
    */
   def toInt: Int
   
-  /** Convert this Numeric value to Int. 
+  /** Convert this Numeric value to Long. 
    * @throws ArithmeticException if overflow happens. 
    */
   def toLong: Long
   
-  /** Convert this Numeric value to Int. */
+  /** Convert this Numeric value to BigInt. */
   def toBigInt: BigInt
-  
-  /** Returns a big-endian representation of this numeric in a collection of bytes.
-   * For example, the long value {@code 0x1213141516171819L} would yield the
-   * byte array {@code {0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19}}.
-   * @since 2.0
-   */ 
-  def toBytes: Coll[Byte]
-  
-  /** Returns a big-endian representation of this numeric in a collection of Booleans.
-   * Each boolean corresponds to one bit.
-   * @since 2.0
-   */ 
-  def toBits: Coll[Boolean] 
-  
-   /** Absolute value of this numeric value. 
-    * @since 2.0
-    */  
-  def toAbs: Numeric 
-  
-  /** Compares this numeric with that numeric for order.  Returns a negative integer, zero, or a positive integer as the
-   * `this` is less than, equal to, or greater than `that`.
-   */
-  def compareTo(that: Numeric): Int 
-  
-  /** Returns least of the two (`this` or `that`). 
-   * @since 2.0
-   */
-  def min(that: Numeric): Numeric
-  
-  /** Returns max of the two (`this` or `that`). 
-   * @since 2.0
-   */
-  def max(that: Numeric): Numeric
 }
+```
 
+All the predefined numeric types inherit Numeric class and its method.
+Internally the are predefined like the following.
+
+```scala 
+class Byte extends Numeric
 class Short extends Numeric
 class Int extends Numeric
 class Long extends Numeric
-
-/**
-* All `modQ` operations assume that Q is a global constant (an order of the only one cryptographically strong group
-* which is used for all cryptographic operations). 
-* So it is globally and implicitly used in all methods.
-* */
-class BigInt extends Numeric {
-  /** Returns this `mod` Q, i.e. remainder of division by Q, where Q is an order of the cryprographic group.
-   * @since 2.0
-   */  
-  def modQ: BigInt 
-  /** Adds this number with `other` by module Q.
-   * @since 2.0
-   */  
-  def plusModQ(other: BigInt): BigInt // Testnet2
-  /** Subracts this number with `other` by module Q.
-   * @since 2.0
-   */  
-  def minusModQ(other: BigInt): BigInt // Testnet2
-  /** Multiply this number with `other` by module Q.
-   * @since 2.0
-   */  
-  def multModQ(other: BigInt): BigInt // Testnet2
-   /** Multiply this number with `other` by module Q.
-    * @since Mainnet
-    */   
-  def multInverseModQ: BigInt // ??? @kushti do we need it 
-}
+class BigInt extends Numeric
 ```
 
 #### Context Data 
