@@ -487,7 +487,7 @@ trait AvlTree {
     * Return `true` if a leaf with the key `key` exists
     * Return `false` if leaf with provided key does not exist.
     * @param key    a key of an element of this authenticated dictionary.
-    * @param proof
+    * @param proof data to reconstruct part of the tree enough to perform the check
     */
   def contains(key: Coll[Byte], proof: Coll[Byte]): Boolean
 
@@ -498,7 +498,8 @@ trait AvlTree {
     * Return Some(bytes) of leaf with key `key` if it exists
     * Return None if leaf with provided key does not exist.
     * @param key    a key of an element of this authenticated dictionary.
-    * @param proof
+    * @param proof data to reconstruct part of the tree enough to get the value
+    *              by the key
     */
   def get(key: Coll[Byte], proof: Coll[Byte]): Option[Coll[Byte]]
 
@@ -518,7 +519,7 @@ trait AvlTree {
     * Return Some(newTree) if successful
     * Return None if operations were not performed.
     * @param operations   collection of key-value pairs to insert in this authenticated dictionary.
-    * @param proof
+    * @param proof data to reconstruct part of the tree
     */
   def insert(operations: Coll[(Coll[Byte], Coll[Byte])], proof: Coll[Byte]): Option[AvlTree]
 
@@ -529,7 +530,7 @@ trait AvlTree {
     * Return Some(newTree) if successful
     * Return None if operations were not performed.
     * @param operations   collection of key-value pairs to update in this authenticated dictionary.
-    * @param proof
+    * @param proof data to reconstruct part of the tree
     */
   def update(operations: Coll[(Coll[Byte], Coll[Byte])], proof: Coll[Byte]): Option[AvlTree]
 
@@ -540,7 +541,7 @@ trait AvlTree {
     *
     * @note CAUTION! Keys must be ordered the same way they were in remove ops before proof was generated.
     * @param operations   collection of keys to remove from this authenticated dictionary.
-    * @param proof
+    * @param proof data to reconstruct part of the tree
     */
   def remove(operations: Coll[Coll[Byte]], proof: Coll[Byte]): Option[AvlTree]
 }
@@ -569,6 +570,7 @@ trait PreHeader { // Testnet2
   /** Miner public key. Should be used to collect block rewards. */
   def minerPk: GroupElement
 
+  /** Miner votes for changing system parameters. */
   def votes: Coll[Byte]
 }
 
@@ -622,6 +624,7 @@ trait Header {
     * corresponding to `minerPk`. The lower `powDistance` is, the harder it was to find this solution. */
   def powDistance: BigInt
 
+  /** Miner votes for changing system parameters. */
   def votes: Coll[Byte] //3 bytes
 }
 
