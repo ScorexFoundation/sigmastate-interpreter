@@ -923,4 +923,4 @@ def substConstants[T](scriptBytes: Coll[Byte], positions: Coll[Int], newValues: 
 
 ## Examples
 
-See [white paper for example](wpaper/sigma.tex)
+See [white paper for examples](https://ergoplatform.org/docs/ErgoScript.pdf)
