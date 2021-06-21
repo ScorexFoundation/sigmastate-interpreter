@@ -61,7 +61,6 @@ val debox              = "org.spire-math" %% "debox" % "0.8.0"
 val kiama              = "org.bitbucket.inkytonik.kiama" %% "kiama" % "2.1.0"
 val fastparse          = "com.lihaoyi" %% "fastparse" % "1.0.0"
 val commonsIo          = "commons-io" % "commons-io" % "2.5"
-val commonsMath3       = "org.apache.commons" % "commons-math3" % "3.2"
 
 val specialVersion = "0.6.1"
 val meta        = "io.github.scalan" %% "meta" % specialVersion
@@ -143,7 +142,7 @@ credentials ++= (for {
 pgpPublicRing := file("ci/pubring.asc")
 pgpSecretRing := file("ci/secring.asc")
 pgpPassphrase := sys.env.get("PGP_PASSPHRASE").map(_.toArray)
-usePgpKeyHex("28E27A67AEA38DA458C72228CA9254B5E0640FE4")
+usePgpKeyHex("C1FD62B4D44BDF702CDF2B726FF59DA944B150DD")
 
 def libraryDefSettings = commonSettings ++ testSettings ++ Seq(
   scalacOptions ++= Seq(
@@ -257,7 +256,7 @@ lazy val sigmastate = (project in file("sigmastate"))
   .dependsOn(sigmaimpl % allConfigDependency, sigmalibrary % allConfigDependency)
   .settings(libraryDefSettings)
   .settings(libraryDependencies ++= Seq(
-    scorexUtil, kiama, fastparse, commonsMath3,
+    scorexUtil, kiama, fastparse,
     if (scalaVersion.value == scala211) circeCore211 else circeCore,
     if (scalaVersion.value == scala211) circeGeneric211 else circeGeneric,
     if (scalaVersion.value == scala211) circeParser211 else circeParser

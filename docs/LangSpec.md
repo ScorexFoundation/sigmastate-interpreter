@@ -2,28 +2,81 @@
 
 ### Introduction
 
-#### ErgoScript language features
+ErgoScript is a language to write contracts for [Ergo
+blockchain](https://ergoplatform.org). ErgoScript contracts can be compiled to
+[ErgoTrees](https://ergoplatform.org/docs/ErgoTree.pdf), serialized and stored
+in UTXOs.
+
+A good starting point to writing contracts is to use [ErgoScript by
+Example](https://github.com/ergoplatform/ergoscript-by-example) with [Ergo
+Playgrounds](https://github.com/ergoplatform/ergo-playgrounds) or
+[Appkit](https://github.com/ergoplatform/ergo-appkit).
+
+ErgoScript compiler is
+[published](https://mvnrepository.com/artifact/org.scorexfoundation/sigma-state)
+as a library which is cross compiled for Java 7 and Java 8+ and thus can be used
+from any JVM lanugage and also on Android and JavaFX platforms.
+
+The following example shows how source code of ErgoScript contract can be used
+to create new transaction using
+[Appkit](https://github.com/ergoplatform/ergo-appkit), see [full
+example](https://github.com/aslesarenko/ergo-appkit-examples/blob/master/java-examples/src/main/java/org/ergoplatform/appkit/examples/FreezeCoin.java)
+for details.
+
+```java
+// To create transaction we use a builder obtained from the context
+// the builder keeps relationship with the context to access necessary blockchain data.
+UnsignedTransactionBuilder txB = ctx.newTxBuilder();
+
+// create new box using new builder obtained from the transaction builder
+// in this case we compile new ErgoContract from source ErgoScript code
+OutBox newBox = txB.outBoxBuilder()
+        .value(amountToPay)
+        .contract(ctx.compileContract(
+                ConstantsBuilder.create()
+                        .item("freezeDeadline", ctx.getHeight() + newBoxDelay)
+                        .item("pkOwner", prover.getP2PKAddress().pubkey())
+                        .build(),
+                "{ " +
+                "  val deadlinePassed = sigmaProp(HEIGHT > freezeDeadline)" +
+                "  deadlinePassed && pkOwner " +
+                "}"))
+        .build();
+```
+
+The contract is given as the string literal which contains the block of `val`
+declarations followed by the logical expression. The expression defines the all
+possible conditions to spend the box. The contract can also contain _named
+constants_ (which cannot be represented as literals in the source code). 
+In the example `freezeDeadline` and `pkOwner` are named constants. The concrete
+values of named constants should be given to the compiler (see `compileContract`
+method)
+
+The following sections describe ErgoScript and its operations. 
+
+#### ErgoScript language features overview
 
 - syntax borrowed from Scala and Kotlin
 - standard syntax and semantics for well known constructs (operations, code blocks, if branches etc.)
-- high-order with first-class lambdas that are used in collection operations
+- high-order language with first-class lambdas which are used in collection operations
 - call-by-value (eager evaluation)
 - statically typed with local type inference
 - blocks are expressions 
 - semicolon inference in blocks
-- type constructors: Tuple, Coll, Option
+- type constructors: Pair, Coll, Option
 
-#### Operations and constructs
+#### Operations and constructs overview
 
-- Binary operations: `>, <, >=, <=, +, -, &&, ||, ==, !=, |, *, ^, ++`
+- Binary operations: `>, <, >=, <=, +, -, &&, ||, ==, !=, |, &, *, /, %, ^, ++`
 - predefined primitives: `blake2b256`, `byteArrayToBigInt`, `proveDlog` etc. 
 - val declarations: `val h = blake2b256(pubkey)`
 - if-then-else clause: `if (x > 0) 1 else 0`
 - collection literals: `Coll(1, 2, 3, 4)`
-- generic high-order collection operations: `map`, `fold`, `exists`, `forall`, etc.
-- accessing fields of any predefined structured objects: `box.value`
+- generic high-order collection operations: `map`, `filter`, `fold`, `exists`, `forall`, etc.
+- accessing fields of any predefined types: `box.value`
+- method invocation for predefined types: `coll.map({ x => x + 1 })`
 - function invocations (predefined and user defined): `proveDlog(pubkey)` 
-- user defined functions: `def isProven(pk: GroupElement) = proveDlog(pk).isProven`
+- user defined function declarations: `def isProven(pk: GroupElement) = proveDlog(pk).isProven`
 - lambdas and high-order methods: `OUTPUTS.exists { (out: Box) => out.value >= minToRaise }`
 
 #### Data types 
@@ -31,12 +84,12 @@
 In ErgoScript, everything is an object in the sense that we can call member functions and properties on any variable.
 Some of the types can have a special internal representation - for example, numbers and booleans can be
 represented as primitive values at runtime - but to the user they look like ordinary classes.
-NOTE: in ErgoScript we use *type* and *class* as synonyms, we prefer *type* when talking about primitive values and
-*class* when talking about methods.
+NOTE: in ErgoScript we use *type*, *class* and *trait* as synonyms, we prefer *type* when talking about primitive values and
+*trait* or *class* when talking about methods.
 
 Type Name        |   Description
 -----------------|------------------------------
-`Any`            | a supertype of any other type
+`Any`            | a supertype of any other type (not used directly in ErgoScript)
 `Unit`           | a type with a single value `()`
 `Boolean`        | a type with two logical values `true` and `false`
 `Byte`           | 8 bit signed integer
@@ -44,17 +97,27 @@ Type Name        |   Description
 `Int`            | 32 bit signed integer
 `Long`           | 64 bit signed integer
 `BigInt`         | 256 bit signed integer
-`SigmaProp`      | a type which represent a logical value which can be be obtained by executing a Sigma protocol with zero-knowledge proof of knowledge
-`AvlTree`        | authenticated dynamic dictionary
+`SigmaProp`      | a type representing a _sigma proposition_ which can be verified by executing a Sigma protocol with zero-knowledge proof of knowledge. Every contract should return a value of this type.
+`AvlTree`        | represents a digest of authenticated dynamic dictionary and can be used to verify proofs of operations performed on the dictionary
 `GroupElement`   | elliptic curve points
 `Box`            | a box containing a monetary value (in NanoErgs), tokens and registers along with a guarding proposition
 `Option[T]`      | a container which either have some value of type `T` or none.
 `Coll[T]`        | a collection of arbitrary length with all values of type `T` 
-`(T1,...,Tn)`    | tuples, a collection of element where T1, ..., Tn can be different types
+`(T1,T2)`        | a pair of values where T1, T2 can be different types
+
+The type constructors `Coll`, `Option`, `(_,_)` can be used to construct complex
+types as in the following example.
+```scala
+{
+  val keyValues = OUTPUTS(0).R4[Coll[(Int, Option[Int])]].get
+  ...
+}
+```
 
 #### Literal syntax and Constants
 
-Literals are used to introduce values of some types directly in program text like the following examples:
+Literals are used to introduce values of some types directly in program text
+like in the following example:
 ```
  val unit: Unit = ()       // unit constant
  val long: Int = 10        // interger value literal
@@ -71,14 +134,15 @@ a constant of any type by using Base64 encoded string (See [predefined function]
 
 #### Primitive Types
 
-```scala
-class Boolean {
-  /** Convert true to 1 and false to 0
-   * @since 2.0
-   */
-  def toByte: Byte
-}
+Below we specify methods of pre-defined types using Scala-like declaration of
+classes. Note, the `Boolean` type doesn't have pre-defined methods in addition
+to the standard operations.
 
+Note, ErgoScript doesn't allow to define new `class` types, however it has many
+pre-defined classes with methods defined below.
+
+Every numeric type has the following methods.
+```scala
 /** Base supertype for all numeric types. */
 class Numeric {
   /** Convert this Numeric value to Byte. 
@@ -96,205 +160,204 @@ class Numeric {
    */
   def toInt: Int
   
-  /** Convert this Numeric value to Int. 
+  /** Convert this Numeric value to Long. 
    * @throws ArithmeticException if overflow happens. 
    */
   def toLong: Long
   
-  /** Convert this Numeric value to Int. */
+  /** Convert this Numeric value to BigInt. */
   def toBigInt: BigInt
-  
-  /** Returns a big-endian representation of this numeric in a collection of bytes.
-   * For example, the long value {@code 0x1213141516171819L} would yield the
-   * byte array {@code {0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19}}.
-   * @since 2.0
-   */ 
-  def toBytes: Coll[Byte]
-  
-  /** Returns a big-endian representation of this numeric in a collection of Booleans.
-   * Each boolean corresponds to one bit.
-   * @since 2.0
-   */ 
-  def toBits: Coll[Boolean] 
-  
-   /** Absolute value of this numeric value. 
-    * @since 2.0
-    */  
-  def toAbs: Numeric 
-  
-  /** Compares this numeric with that numeric for order.  Returns a negative integer, zero, or a positive integer as the
-   * `this` is less than, equal to, or greater than `that`.
-   */
-  def compareTo(that: Numeric): Int 
-  
-  /** Returns least of the two (`this` or `that`). 
-   * @since 2.0
-   */
-  def min(that: Numeric): Numeric
-  
-  /** Returns max of the two (`this` or `that`). 
-   * @since 2.0
-   */
-  def max(that: Numeric): Numeric
 }
+```
 
+All the predefined numeric types inherit Numeric class and its method.
+Internally they are pre-defined like the following.
+
+```scala 
+class Byte extends Numeric
 class Short extends Numeric
 class Int extends Numeric
 class Long extends Numeric
-
-/**
-* All `modQ` operations assume that Q is a global constant (an order of the only one cryptographically strong group
-* which is used for all cryptographic operations). 
-* So it is globally and implicitly used in all methods.
-* */
-class BigInt extends Numeric {
-  /** Returns this `mod` Q, i.e. remainder of division by Q, where Q is an order of the cryprographic group.
-   * @since 2.0
-   */  
-  def modQ: BigInt 
-  /** Adds this number with `other` by module Q.
-   * @since 2.0
-   */  
-  def plusModQ(other: BigInt): BigInt // Testnet2
-  /** Subracts this number with `other` by module Q.
-   * @since 2.0
-   */  
-  def minusModQ(other: BigInt): BigInt // Testnet2
-  /** Multiply this number with `other` by module Q.
-   * @since 2.0
-   */  
-  def multModQ(other: BigInt): BigInt // Testnet2
-   /** Multiply this number with `other` by module Q.
-    * @since Mainnet
-    */   
-  def multInverseModQ: BigInt // ??? @kushti do we need it 
-}
+class BigInt extends Numeric
 ```
 
 #### Context Data 
 
-Every script is executed in a context, which is a collection of data available for operations in the script.
-The context data is available using variable `CONTEXT` which is of class `Context` defined below.
-The following shortcut variables are available in every script to simplify access to the most commonly used context
-data.
+Every script is executed in a context, which is a collection of data available
+for operations in the script. The context data is available using the `CONTEXT`
+variable which is of pre-defined class `Context` which is shown below. 
+
+There are also shortcut variables which are available in every script to
+simplify access to the most commonly used context data.
 
 Variable          |  Type               | Shortcut for ...
 ------------------|---------------------|----------------------
-`HEIGHT`          | `Int`               | `CONTEXT.height`
-`SELF`            | `Box`               | `CONTEXT.selfBox` 
-`INPUTS`          | `Coll[Box]`         | `CONTEXT.inputs`  
-`OUTPUTS`         | `Coll[Box]`         | `CONTEXT.outputs` 
+`HEIGHT`          | `Int`               | `CONTEXT.HEIGHT`
+`SELF`            | `Box`               | `CONTEXT.SELF` 
+`INPUTS`          | `Coll[Box]`         | `CONTEXT.INPUTS`  
+`OUTPUTS`         | `Coll[Box]`         | `CONTEXT.OUTPUTS` 
+
+The following listing shows the methods of pre-defined `Context`, `Header`,
+`PreHeader` types.
 
 ```scala
-/**
-  * Represents data available in ErgoScript using `CONTEXT` global variable
-  * @since 2.0
-  */
+/** Represents data available in ErgoScript using `CONTEXT` global variable */
 class Context {
   /** Height (block number) of the block which is currently being validated. */
-  def height: Int
+  def HEIGHT: Int
   
   /** Box whose proposition is being currently executing */
-  def selfBox: Box
+  def SELF: Box
   
-  /** Zero based index in `inputs` of `selfBox`. */
-  def selfBoxIndex: Int
+  /** A collection of inputs of the current transaction, the transaction where
+    * selfBox is one of the inputs. 
+    */
+  def INPUTS: Coll[Box]
   
-  /** A collection of inputs of the current transaction, the transaction where selfBox is one of the inputs. */
-  def inputs: Coll[Box]
-  
-  /** A collection of data inputs of the current transaction. Data inputs are not going to be spent and thus don't
-   * participate in transaction validation as `inputs`, but data boxes are available in guarding propositions of 
-   * `inputs` and thus can be used in spending logic. 
-   * @since 2.0
-   */
+  /** A collection of data inputs of the current transaction. Data inputs are
+    * not going to be spent and thus don't participate in transaction validation
+    * as `INPUTS`, but data boxes are available in guarding propositions of
+    * `INPUTS` and thus can be used in spending logic.
+    */
   def dataInputs: Coll[Box]
   
   /** A collection of outputs of the current transaction. */
-  def outputs: Coll[Box]
+  def OUTPUTS: Coll[Box]
   
-  /** Authenticated dynamic dictionary digest representing Utxo state before current state. */
-  def lastBlockUtxoRoot: AvlTree
+  /** Authenticated dynamic dictionary digest representing Utxo state before
+    * current state. 
+    */
+  def LastBlockUtxoRootHash: AvlTree
   
-  /**
-    * @since 2.0
+  /** A fixed number of last block headers in descending order (first header is
+    * the newest one) 
     */
-  def headers: Coll[SHeader] 
-  /**
-    * @since 2.0
-    */
-  def preheader: SPreheader  
+  def headers: Coll[Header]
+
+  /** Header fields that are known before the block is mined. */
+  def preHeader: PreHeader  
 }
 
-/** Represents data of the block headers available in scripts.
- * @since 2.0
- */
+/** Represents data of the block headers available in scripts. */
 class Header {  
+  /** Bytes representation of ModifierId of this Header */
+  def id: Coll[Byte]
+
+  /** Block version, to be increased on every soft and hardfork. */
   def version: Byte
   
-  /** Bytes representation of ModifierId of the previous block in the blockchain */
+  /** Id of parent block (as bytes) */
   def parentId: Coll[Byte] // 
   
+  /** Hash of ADProofs for transactions in a block */
   def ADProofsRoot: Coll[Byte] // Digest32. Can we build AvlTree out of it? 
+
+  /** AvlTree) of a state after block application */
   def stateRoot: Coll[Byte]  // ADDigest  //33 bytes! extra byte with tree height here!
+
+  /** Root hash (for a Merkle tree) of transactions in a block. */
   def transactionsRoot: Coll[Byte]  // Digest32
-  def timestamp: Long
-  def nBits: Long  // actually it is unsigned Int 
-  def height: Int
-  def extensionRoot: Coll[Byte] // Digest32
-  def minerPk: GroupElement    // pk
-  def powOnetimePk: GroupElement  // w
-  def powNonce: Coll[Byte]        // n
-  def powDistance: BigInt        // d
-}
 
-/** Only header fields that can be predicted by a miner
- * @since 2.0
- */
-class PreHeader { // Testnet2
-  def version: Byte
-  def parentId: Coll[Byte] // ModifierId
+  /** Block timestamp (in milliseconds since beginning of Unix Epoch) */
   def timestamp: Long
+
+  /** Current difficulty in a compressed view.
+    * NOTE: actually it is unsigned Int*/
   def nBits: Long  // actually it is unsigned Int 
+
+  /** Block height */
   def height: Int
+
+  /** Root hash of extension section (Digest32) */
+  def extensionRoot: Coll[Byte]
+
+  /** Miner public key. Should be used to collect block rewards.
+    * Part of Autolykos solution (pk). 
+    */
   def minerPk: GroupElement
+
+  /** One-time public key. Prevents revealing of miners secret. 
+    * Part of Autolykos solution (w). 
+    */
+  def powOnetimePk: GroupElement
+
+  /** Nonce value found by the miner. Part of Autolykos solution (n). */
+  def powNonce: Coll[Byte]
+
+  /** Distance between pseudo-random number, corresponding to nonce `powNonce`
+    * and a secret, corresponding to `minerPk`. The lower `powDistance` is, the
+    * harder it was to find this solution. 
+    * Part of Autolykos solution (d).
+    */
+  def powDistance: BigInt
+
+  /** Miner votes for changing system parameters. */
+  def votes: Coll[Byte]
 }
 
-class AvlTree {
-  /** Returns digest of the state represent by this tree. 
-   * @since 2.0
-   */
-  def digest: Coll[Byte]
+/** Only header fields that can be predicted by a miner. */
+class PreHeader { 
+  /** Block version, to be increased on every soft and hardfork. */
+  def version: Byte
+
+  /** Id of parent block */
+  def parentId: Coll[Byte] // ModifierId
+
+  /** Block timestamp (in milliseconds since beginning of Unix Epoch) */
+  def timestamp: Long
+
+  /** Current difficulty in a compressed view.
+    * NOTE: actually it is 32-bit unsigned Int */
+  def nBits: Long
+
+  /** Block height */
+  def height: Int
+
+  /** Miner public key. Should be used to collect block rewards. */
+  def minerPk: GroupElement
+
+  /** Miner votes for changing system parameters. */
+  def votes: Coll[Byte]
 }
+
 ```
 
 #### Box type
 
+Box represents a unit of storage in Ergo blockchain. It contains 10 registers
+(indexed 0-9). First 4 are mandatory and the others are optional.
+
 ```scala
+/** Representation of Ergo boxes used during execution of ErgoTree operations. */
 class Box {
   /** Box monetary value in NanoErg */
   def value: Long 
   
-  /** Blake2b256 hash of this box's content, basically equals to `blake2b256(bytes)` */
+  /** Blake2b256 hash of this box's content, basically equals to
+    * `blake2b256(bytes)` 
+    */
   def id: Coll[Byte] 
 
-  /** Serialized bytes of guarding script, which should be evaluated to true in order to open this box. */
+  /** Serialized bytes of guarding script, which should be evaluated to true in
+    * order to open this box. 
+    */
   def propositionBytes: Coll[Byte] 
   
   /** Serialized bytes of this box's content, including proposition bytes. */
   def bytes: Coll[Byte] 
   
-  /** Serialized bytes of this box's content, excluding transactionId and index of output. */
+  /** Serialized bytes of this box's content, excluding transactionId and index
+    * of output. 
+    */
   def bytesWithoutRef: Coll[Byte]
     
-  /** If `tx` is a transaction which generated this box, then `creationInfo._1` is a height of the tx's block.
-   *  The `creationInfo._2` is a serialized transaction identifier followed by box index in the transaction outputs. 
-   */
+  /** If `tx` is a transaction which generated this box, then `creationInfo._1`
+    * is a height of the tx's block. The `creationInfo._2` is a serialized
+    * transaction identifier followed by box index in the transaction outputs.
+    */
   def creationInfo: (Int, Coll[Byte]) 
   
-  /** Synonym of R2 obligatory register
-   * @since 2.0
-   */
+  /** Synonym of R2 obligatory register */
   def tokens: Coll[(Coll[Byte], Long)] 
   
   /** Extracts register by id and type.
@@ -353,51 +416,171 @@ class Box {
     *         None otherwise
     * @throws special.sigma.InvalidType exception when the type of the register value is
     *                                   different from T.
-    * @since 2.0
     */
-  def getReg[T](i: Int): Option[T]
-
-  /** Extracts register as Coll[Byte], deserializes it to script and then executes this script in the current context. 
-    * The original Coll[Byte] of the script is available as getReg[Coll[Byte]](id)
-    * @param regId identifier of the register 
-    * @tparam T result type of the deserialized script. 
-    * @throws InterpreterException if the actual script type doesn't conform to T
-    * @return result of the script execution in the current context
-    * @since Mainnet
-    */
-  def executeFromRegister[T](regId: Byte): T
+  def Ri[T]: Option[T]
 }
 ```
 
 Besides properties, every box can have up to 10 numbered registers.
 The following syntax is supported to access registers on box objects:
 ```
-box.getReg[Int](3).get     // access R3 register, cast its value to Int and return it
-box.getReg[Int](3).isDefined  // check that value of R3  is defined and has type Int
-box.getReg[Int](3).isEmpty    // check that value of R3 is either undefined or have not Int type
-box.getReg[Int](3).getOrElse(def) // access R3 value if defined, otherwise return def
+box.R3[Int].get          // access R3 register, check that its value of type Int and return it
+box.R3[Int].isDefined    // check that value of R3 is defined and has type Int
+box.R3[Int].isEmpty      // check that value of R3 is undefined
+box.R3[Int].getOrElse(d) // access R3 value if defined, otherwise return `d`
 ```
 
 #### GroupElement
 ```scala
+/** Base class for points on elliptic curves. */
 class GroupElement {
-  // ...
-  /**
-  * // this should replace the currently used ^ 
-   * @since 2.0
-   */
-  def exp(n: BigInt): GroupElement // Testnet2 
+  /** Exponentiate this <code>GroupElement</code> to the given number.
+    * @param k The power.
+    * @return <code>this to the power of k</code>.
+    */
+  def exp(k: BigInt): GroupElement
+
+  /** Group operation. */
+  def multiply(that: GroupElement): GroupElement
+
+  /** Inverse element in the group. */
+  def negate: GroupElement
+
+  /** Get an encoding of the point value.
+    *
+    * @return the point encoding
+    */
+  def getEncoded: Coll[Byte]
 }
 ```
 
 #### AvlTree
 
 ```scala
+/** Type of data which efficiently authenticates potentially huge dataset having key-value dictionary interface.
+  * Only root hash of dynamic AVL+ tree, tree height, key length, optional value length, and access flags are stored
+  * in an instance of the datatype.
+  *
+  * Please note that standard hash function from `scorex.crypto.hash` is used, and height is stored along with root hash of
+  * the tree, thus `digest` size is always CryptoConstants.hashLength + 1 bytes.
+  */
 class AvlTree {
-  /**
-   * @since 2.0
-   */
+  /** Returns digest of the state represented by this tree.
+    * Authenticated tree digest = root hash bytes ++ tree height
+    */
   def digest: Coll[Byte]
+
+  /** Flags of enabled operations packed in single byte.
+    * isInsertAllowed == (enabledOperations & 0x01) != 0
+    * isUpdateAllowed == (enabledOperations & 0x02) != 0
+    * isRemoveAllowed == (enabledOperations & 0x04) != 0
+    */
+  def enabledOperations: Byte
+
+  /** All the elements under the tree have the same length of the keys */
+  def keyLength: Int
+  
+  /** If non-empty, all the values under the tree are of the same length. */
+  def valueLengthOpt: Option[Int]
+
+  /** Checks if Insert operation is allowed for this tree instance. */
+  def isInsertAllowed: Boolean
+
+  /** Checks if Update operation is allowed for this tree instance. */
+  def isUpdateAllowed: Boolean
+
+  /** Checks if Remove operation is allowed for this tree instance. */
+  def isRemoveAllowed: Boolean
+
+  /** Replace digest of this tree producing a new tree.
+    * Since AvlTree is immutable, this tree instance remains unchanged.
+    * @param newDigest   a new digest
+    * @return a copy of this AvlTree instance where `this.digest` replaced by
+    *         `newDigest`
+    */
+  def updateDigest(newDigest: Coll[Byte]): AvlTree
+
+  /** Enable/disable operations of this tree producing a new tree.
+    * Since AvlTree is immutable, `this` tree instance remains unchanged.
+    * @param newOperations a new flags which specify available operations on a
+    *                      new tree.
+    * @return              a copy of this AvlTree instance where
+    *                      `this.enabledOperations` replaced by `newOperations`
+    */
+  def updateOperations(newOperations: Byte): AvlTree
+
+  /** Checks if an entry with key `key` exists in this tree using proof `proof`.
+    * Throws exception if proof is incorrect.
+    *
+    * @note CAUTION! Does not support multiple keys check, use [[getMany]] instead.
+    * Return `true` if a leaf with the key `key` exists
+    * Return `false` if leaf with provided key does not exist.
+    * @param key    a key of an element of this authenticated dictionary.
+    * @param proof data to reconstruct part of the tree enough to perform the check
+    */
+  def contains(key: Coll[Byte], proof: Coll[Byte]): Boolean
+
+  /** Perform a lookup of key `key` in this tree using proof `proof`.
+    * Throws exception if proof is incorrect
+    *
+    * @note CAUTION! Does not support multiple keys check, use [[getMany]] instead.
+    * Return Some(bytes) of leaf with key `key` if it exists
+    * Return None if leaf with provided key does not exist.
+    * @param key    a key of an element of this authenticated dictionary.
+    * @param proof data to reconstruct part of the tree enough to get the value
+    *              by the key
+    */
+  def get(key: Coll[Byte], proof: Coll[Byte]): Option[Coll[Byte]]
+
+  /** Perform a lookup of many keys `keys` in this tree using proof `proof`.
+    *
+    * @note CAUTION! Keys must be ordered the same way they were in lookup
+    * before proof was generated.
+    * For each key return Some(bytes) of leaf if it exists and None if is doesn't.
+    * @param keys  keys of elements of this authenticated dictionary.
+    * @param proof data to reconstruct part of the tree enough to get the values
+    *              by the keys
+    */
+  def getMany(keys: Coll[Coll[Byte]], proof: Coll[Byte]): Coll[Option[Coll[Byte]]]
+
+  /** Perform insertions of key-value entries into this tree using proof `proof`.
+    * Throws exception if proof is incorrect
+    *
+    * @note CAUTION! Pairs must be ordered the same way they were in insert ops
+    * before proof was generated.
+    * Return Some(newTree) if successful
+    * Return None if operations were not performed.
+    * @param operations collection of key-value pairs to insert in this
+    *                   authenticated dictionary.
+    * @param proof data to reconstruct part of the tree
+    */
+  def insert(operations: Coll[(Coll[Byte], Coll[Byte])], proof: Coll[Byte]): Option[AvlTree]
+
+  /** Perform updates of key-value entries into this tree using proof `proof`.
+    * Throws exception if proof is incorrect
+    *
+    * @note CAUTION! Pairs must be ordered the same way they were in update ops
+    * before proof was generated.
+    * Return Some(newTree) if successful
+    * Return None if operations were not performed.
+    * @param operations collection of key-value pairs to update in this
+    *                   authenticated dictionary.
+    * @param proof      data to reconstruct part of the tree
+    */
+  def update(operations: Coll[(Coll[Byte], Coll[Byte])], proof: Coll[Byte]): Option[AvlTree]
+
+  /** Perform removal of entries into this tree using proof `proof`.
+    * Throws exception if proof is incorrect
+    * Return Some(newTree) if successful
+    * Return None if operations were not performed.
+    *
+    * @note CAUTION! Keys must be ordered the same way they were in remove ops
+    * before proof was generated.
+    * @param operations collection of keys to remove from this authenticated
+    *                   dictionary.
+    * @param proof      data to reconstruct part of the tree
+    */
+  def remove(operations: Coll[Coll[Byte]], proof: Coll[Byte]): Option[AvlTree]
 }
 ```
 
@@ -408,10 +591,6 @@ class AvlTree {
  *  are either an instance of `Some(x)` or the value `None`.
  */
 class Option[A] {
-  /** Returns true if the option is None, false otherwise. 
-   */  
-  def isEmpty: Boolean;
-  
   /** Returns true if the option is an instance of Some(value), false otherwise. 
    */
   def isDefined: Boolean;
@@ -431,12 +610,6 @@ class Option[A] {
    */
   def get: A
 
-  /** Returns a singleton collection containing the $option's value
-   * if it is nonempty, or the empty collection if the $option is empty.
-   * @since  2.0
-   */
-  def toColl: Coll[A]
-  
   /** Returns a Some containing the result of applying $f to this option's
    * value if this option is nonempty.
    * Otherwise return None.
@@ -457,18 +630,6 @@ class Option[A] {
    * @since  2.0
    */
   def filter(p: A => Boolean): Option[A]
-  
-  /** Returns the result of applying $f to this option's value if
-   * this option is nonempty.
-   * Returns None if this option is empty.
-   * Slightly different from `map` in that $f is expected to
-   * return an option (which could be None).
-   *
-   *  @param  f   the function to apply
-   *  @see map
-   *  @since 2.0
-   */
-  def flatMap[B](f: A => Option[B]): Option[B]
 }
 ```
 
@@ -476,13 +637,11 @@ class Option[A] {
 
 ```scala
 /** Indexed (zero-based) collection of elements of type `A` 
-  * @define Coll `Coll`
-  * @define coll collection
   * @tparam A the collection element type
   */
 class Coll[A] {
-  /** The length of the collection */
-  def length: Int
+  /** The number of elements in the collection */
+  def size: Int
   
   /** The element at given index.
    *  Indices start at `0`; `xs.apply(0)` is the first element of collection `xs`.
@@ -498,7 +657,6 @@ class Coll[A] {
    * If an index is out of bounds (`i < 0 || i >= length`) then `default` value is returned.
    *  @param    i   the index
    *  @return       the element at the given index or default value if index is out or bounds
-   *  @since 2.0
    */
   def getOrElse(i: Int, default: A): A
   
@@ -513,9 +671,8 @@ class Coll[A] {
 
   /** For this collection (x0, ..., xN) and other collection (y0, ..., yM)
    * produces a collection ((x0, y0), ..., (xK, yK)) where K = min(N, M) 
-   * @since 2.0
    */
-  def zip[B](ys: Coll[B]): PairColl[A, B]
+  def zip[B](ys: Coll[B]): Coll[(A, B)]
 
   /** Tests whether a predicate holds for at least one element of this collection.
    *  @param   p     the predicate used to test elements.
@@ -534,7 +691,6 @@ class Coll[A] {
    *  @param p     the predicate used to test elements.
    *  @return      a new collection consisting of all elements of this collection that satisfy the given
    *               predicate `p`. The order of the elements is preserved.
-   *  @since 2.0
    */
   def filter(p: A => Boolean): Coll[A]
   
@@ -552,11 +708,9 @@ class Coll[A] {
    *           where `x,,1,,, ..., x,,n,,` are the elements of this collection.
    *           Returns `z` if this collection is empty.
    */
-  def foldLeft[B](z: B)(op: (B, A) => B): B
+  def fold[B](z: B, op: (B, A) => B): B
 
-  /** Produces the range of all indices of this collection [0 .. size-1] 
-   *  @since 2.0
-   */
+  /** Produces the range of all indices of this collection [0 .. size-1] */
   def indices: Coll[Int]
 
   /**
@@ -570,48 +724,8 @@ class Coll[A] {
     * @tparam B the element type of the returned collection.
     * @return a new collection of type `Coll[B]` resulting from applying the given collection-valued function
     *         `f` to each element of this collection and concatenating the results.
-    * @since 2.0
     */
   def flatMap[B](f: A => Coll[B]): Coll[B]
-
-  /** Finds the first element of the $coll satisfying a predicate, if any.
-    *
-    *  @param p       the predicate used to test elements.
-    *  @return        an option value containing the first element in the $coll
-    *                 that satisfies `p`, or `None` if none exists.
-    */
-  def find(p: A => Boolean): Option[A]
-  
-  /** Finds index of the first element satisfying some predicate after or at some start index.
-    *
-    *  @param   p     the predicate used to test elements.
-    *  @param   from   the start index
-    *  @return  the index `>= from` of the first element of this collection that satisfies the predicate `p`,
-    *           or `-1`, if none exists.
-    *  @since 2.0
-    */
-  def indexWhere(p: A => Boolean, from: Int): Int
-
-  /** Finds index of last element satisfying some predicate before or at given end index.
-    *
-    *  @param   p     the predicate used to test elements.
-    *  @return  the index `<= end` of the last element of this collection that satisfies the predicate `p`,
-    *           or `-1`, if none exists.
-    *  @since 2.0
-    */
-  def lastIndexWhere(p: A => Boolean, end: Int): Int
-
-
-  /** Partitions this collection in two collectionss according to a predicate.
-    *
-    *  @param      pred the predicate on which to partition.
-    *  @return     a pair of collections: the first collection consists of all elements that
-    *              satisfy the predicate `p` and the second collection consists of all elements
-    *              that don't. The relative order of the elements in the resulting collections
-    *              will BE preserved (this is different from Scala's version of this method).
-    *  @since 2.0
-    */
-  def partition(pred: A => Boolean): (Coll[A], Coll[A])
 
   /** Produces a new collection where a slice of elements in this collection is replaced by another sequence.
     *
@@ -620,7 +734,6 @@ class Coll[A] {
     *  @param  replaced the number of elements to drop in the original collection
     *  @return          a new collection consisting of all elements of this collection
     *                   except that `replaced` elements starting from `from` are replaced by `patch`.
-    *  @since 2.0
     */
   def patch(from: Int, patch: Coll[A], replaced: Int): Coll[A]
 
@@ -629,95 +742,14 @@ class Coll[A] {
     *  @param  elem   the replacing element
     *  @return a new collection which is a copy of this collection with the element at position `index` replaced by `elem`.
     *  @throws IndexOutOfBoundsException if `index` does not satisfy `0 <= index < length`.
-    *  @since 2.0
     */
   def updated(index: Int, elem: A): Coll[A]
 
-  /** Returns a copy of this collection where elements at `indexes` are replaced with `values`. 
-   *  @since 2.0
-   */
+  /** Returns a copy of this collection where elements at `indexes` are replaced
+    * with `values`. 
+    */
   def updateMany(indexes: Coll[Int], values: Coll[A]): Coll[A]
 
-  /** Apply m for each element of this collection, group by key and reduce each group using r.
-   *  @returns one item for each group in a new collection of (K,V) pairs. 
-   *  @since 2.0
-   */
-  def mapReduce[K, V](m: A => (K,V), r: (V,V) => V): Coll[(K,V)]
-
-  /** Partitions this $coll into a map of ${coll}s according to some discriminator function.
-    *
-    *  @param key   the discriminator function.
-    *  @tparam K    the type of keys returned by the discriminator function.
-    *  @return      A map from keys to ${coll}s such that the following invariant holds:
-    *               {{{
-    *                 (xs groupBy key)(k) = xs filter (x => key(x) == k)
-    *               }}}
-    *               That is, every key `k` is bound to a $coll of those elements `x`
-    *               for which `key(x)` equals `k`.
-    */
-  def groupBy[K: RType](key: A => K): Coll[(K, Coll[A])]
-
-  /** Partitions this $coll into a map of ${coll}s according to some discriminator function.
-    * Additionally projecting each element to a new value.
-    *
-    *  @param key   the discriminator function.
-    *  @param proj  projection function to produce new value for each element of this $coll
-    *  @tparam K    the type of keys returned by the discriminator function.
-    *  @tparam V    the type of values returned by the projection function.
-    *  @return      A map from keys to ${coll}s such that the following invariant holds:
-    *               {{{
-    *                 (xs groupByProjecting (key, proj))(k) = xs filter (x => key(x) == k).map(proj)
-    *               }}}
-    *               That is, every key `k` is bound to projections of those elements `x`
-    *               for which `key(x)` equals `k`.
-    */
-  def groupByProjecting[K: RType, V: RType](key: A => K, proj: A => V): Coll[(K, Coll[V])]
-
-  /** Produces a new collection which contains all distinct elements of this collection and also all elements of
-   *  a given collection that are not in this collection.
-   *  This is order preserving operation considering only first occurrences of each distinct elements.
-   *  Any collection `xs` can be transformed to a sequence with distinct elements by using xs.unionSet(Coll()).
-   *
-   *  NOTE: Use append if you don't need set semantics.
-   *
-   *  @param that   the collection to add.
-   *  @since 2.0
-   */
-  def unionSets(that: Coll[A]): Coll[A]
-
-  /** Computes the multiset difference between this collection and another sequence.
-   *
-   *  @param that   the sequence of elements to remove
-   *  @tparam B     the element type of the returned collection.
-   *  @return       a new collection which contains all elements of this collection
-   *                except some of occurrences of elements that also appear in `that`.
-   *                If an element value `x` appears
-   *                ''n'' times in `that`, then the first ''n'' occurrences of `x` will not form
-   *                part of the result, but any following occurrences will.
-   *  @since 2.0
-   */
-  def diff(that: Coll[A]): Coll[A]
-
-  /** Computes the multiset intersection between this collection and another sequence.
-   *  @param that   the sequence of elements to intersect with.
-   *  @return       a new collection which contains all elements of this collection
-   *                which also appear in `that`.
-   *                If an element value `x` appears
-   *                ''n'' times in `that`, then the first ''n'' occurrences of `x` will be retained
-   *                in the result, but any following occurrences will be omitted.
-   *  @since 2.0
-   */
-  def intersect(that: Coll[A]): Coll[A]
-
-  /** Folding through all elements of this $coll starting from m.zero and applying m.plus to accumulate
-    * resulting value.
-    *
-    * @param m monoid object to use for summation
-    * @return  result of the following operations (m.zero `m.plus` x1 `m.plus` x2 `m.plus` ... xN)
-    * @since 2.0
-    */
-  def sum(m: Monoid[A]): A
-  
   /** Selects an interval of elements.  The returned collection is made up
    *  of all elements `x` which satisfy the invariant:
    *  {{{
@@ -728,71 +760,19 @@ class Coll[A] {
    */
   def slice(from: Int, until: Int): Coll[A]
   
-  /** Puts the elements of other collection after the elements of this collection (concatenation of 2 collections)
-   */
+  /** Puts the elements of other collection after the elements of this
+    * collection (concatenation of 2 collections).
+    */
   def append(other: Coll[A]): Coll[A]
   
-  /** Returns the length of the longest prefix whose elements all satisfy some predicate.
-   *  @param   p     the predicate used to test elements.
-   *  @return  the length of the longest prefix of this collection
-   *           such that every element of the segment satisfies the predicate `p`.
-   *  @since 2.0
-   */
-  def prefixLength(p: A => Boolean): Int
-
-  /** Finds index of first occurrence of some value in this collection after or at some start index.
-   *  @param   elem   the element value to search for.
-   *  @param   from   the start index
-   *  @return  the index `>= from` of the first element of this collection that is equal (as determined by `==`)
-   *           to `elem`, or `-1`, if none exists.
-   *  @since 2.0
-   */
-  def indexOf(elem: A, from: Int): Int
-
-  /** Finds index of last occurrence of some value in this collection before or at a given end index.
-   *
-   *  @param   elem   the element value to search for.
-   *  @param   end    the end index.
-   *  @return  the index `<= end` of the last element of this collection that is equal (as determined by `==`)
-   *           to `elem`, or `-1`, if none exists.
-   *  @since 2.0
-   */
-  def lastIndexOf(elem: A, end: Int): Int
-
-  /** Finds the first element of the collection satisfying a predicate, if any.
-   *  @param p       the predicate used to test elements.
-   *  @return        an option value containing the first element in the collection
-   *                 that satisfies `p`, or `None` if none exists.
-   *  @since 2.0
-   */
-  def find(p: A => Boolean): Option[A]
-
-  /** Builds a new collection from this collection without any duplicate elements.
-   *  @return  A new collection which contains the first occurrence of every element of this collection.
-   *  @since 2.0
-   */
-  def distinct: Coll[A]
-
-  /** Tests whether this collection contains the given sequence at a given index.
-   *
-   * '''Note''': If the both the receiver object `this` and the argument
-   * `that` are infinite sequences this method may not terminate.
-   *
-   * @param  that    the sequence to test
-   * @param  offset  the index where the sequence is searched.
-   * @return `true` if the sequence `that` is contained in this collection at
-   *         index `offset`, otherwise `false`.
-   * @since 2.0
-   */
-  def startsWith(that: Coll[A], offset: Int): Boolean
-
-  /** Tests whether this collection ends with the given collection.
-    *  @param  that   the collection to test
-    *  @return `true` if this collection has `that` as a suffix, `false` otherwise.
-    *  @since 2.0
+  /** Finds index of first occurrence of some value in this collection after or
+    * at some start index.
+    *  @param   elem   the element value to search for.
+    *  @param   from   the start index
+    *  @return  the index `>= from` of the first element of this collection that is equal (as determined by `==`)
+    *           to `elem`, or `-1`, if none exists.
     */
-  def endsWith(that: Coll[A]): Boolean
-
+  def indexOf(elem: A, from: Int): Int
 }
 ```
 
@@ -802,14 +782,15 @@ val myOutput = OUTPUTS(0)
 val myInput = INPUTS(0)
 ```
 
-Any collection have a `length` property which returns number of elements in a collection. 
+Any collection have the `size` property which returns the number of elements in
+the collection.
 
 ```
-val l = OUTPUTS.length
+val size = OUTPUTS.size
 ```
 
-The following script check an existence of some element in the collection satisfying some
-predicate (condition)
+The following script check an existence of some element in the collection
+satisfying some predicate (condition)
 
 ```
 val ok = OUTPUTS.exists { (box: Box) => box.value > 1000 }
@@ -830,9 +811,7 @@ def allOf(conditions: Coll[Boolean]): Boolean
 /** Returns true if at least on element of the conditions is true */
 def anyOf(conditions: Coll[Boolean]): Boolean
 
-/** Similar to allOf, but performing logical XOR operation instead of `&&` 
-  * @since 2.0
-  */
+/** Similar to allOf, but performing logical XOR operation instead of `&&` */
 def xorOf(conditions: Coll[Boolean]): Boolean 
 
 /** Returns SigmaProp value which can be ZK proven to be true 
@@ -850,13 +829,14 @@ def atLeast(k: Int, properties: Coll[SigmaProp]): SigmaProp
  *  - no boolean operations in the body, because otherwise the result may be disclosed
  *  - all the operations are over SigmaProp values
  *
- * For motivation and details see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/236
- * @since 1.9 
+ * For motivation and details see
+ * https://github.com/ScorexFoundation/sigmastate-interpreter/issues/236
  */
 def ZKProof(block: SSigmaProp): Boolean
 
-/** Embedding of Boolean values to SigmaProp values. As an example, this operation allows boolean experesions 
- * to be used as arguments of `atLeast(..., sigmaProp(myCondition), ...)` operation.
+/** Embedding of Boolean values to SigmaProp values. As an example, this
+ * operation allows boolean experesions to be used as arguments of
+ * `atLeast(..., sigmaProp(myCondition), ...)` operation.
  */
 def sigmaProp(condition: Boolean): SigmaProp
         
@@ -872,15 +852,12 @@ def byteArrayToBigInt(input: Coll[Byte]): BigInt
 /** Create Long from a collection of bytes. */
 def byteArrayToLong(input: Coll[Byte]): Long  
 
-/** Returns bytes representation of Long value. 
-  * @since 2.0
-  */
+/** Returns bytes representation of Long value. */
 def longToByteArray(input: Long): Coll[Byte]
 
-/**
-  * Convert bytes representation of group element (ECPoint) 
-  * to a new value of GroupElement (using org.bouncycastle.math.ec.ECCurve.decodePoint())
-  * @since 1.9 
+/** Convert bytes representation of group element (ECPoint) 
+  * to a new value of GroupElement (using
+  * org.bouncycastle.math.ec.ECCurve.decodePoint())
   */
 def decodePoint(bytes: Coll[Byte]): GroupElement 
 
@@ -943,104 +920,65 @@ def decodePoint(bytes: Coll[Byte]): GroupElement
   */
 def getVar[T](tag: Int): Option[T]
 
-/** Construct a new SigmaProp value representing public key of Diffie Hellman signature protocol. 
-  * When executed as part of Sigma protocol allow to provide for a verifier a zero-knowledge proof 
-  * of secret knowledge.
+/** Construct a new SigmaProp value representing public key of Diffie Hellman
+  * signature protocol. When executed as part of Sigma protocol allow to provide
+  * for a verifier a zero-knowledge proof of secret knowledge.
   */
 def proveDHTuple(g: GroupElement, h: GroupElement, 
                  u: GroupElement, v: GroupElement): SigmaProp
                  
-/** Construct a new SigmaProp value representing public key of discrete logarithm signature protocol. 
-  * When executed as part of Sigma protocol allow to provide for a verifier a zero-knowledge proof 
-  * of secret knowledge.
+/** Construct a new SigmaProp value representing public key of discrete
+  * logarithm signature protocol. When executed as part of Sigma protocol allow
+  * to provide for a verifier a zero-knowledge proof of secret knowledge.
   */
 def proveDlog(value: GroupElement): SigmaProp
 
-/** Predicate function which checks whether a key is in a tree, by using a membership proof. */
-def isMember(tree: AvlTree, key: Coll[Byte], proof: Coll[Byte]): Boolean
-
-/**
-  * Perform a lookup of key `key` in a tree with root `tree` using proof `proof`.
-  * Throws exception if proof is incorrect
-  * Return Some(bytes) of leaf with key `key` if it exists
-  * Return None if leaf with provided key does not exist.
-  */
-def treeLookup(tree: AvlTree, key: Coll[Byte], proof: Coll[Byte]): Option[Coll[Byte]]
-
-/** Perform modification of in the tree with root `tree` using proof `proof`.
-  * Return Some(newTree) if successfull
-  * Return None if the proof was not correct 
-  * @since 2.0
-  */
-def treeModifications(tree: AvlTree, ops: Coll[Byte], proof: Coll[Byte]): Option[AvlTree]
-
-/**
-  * Transforms Base58 encoded string litereal into constant of type Coll[Byte].
-  * It is a compile-time operation and only string literal (constant) can be its argument.
+/** Transforms Base58 encoded string litereal into constant of type Coll[Byte].
+  * It is a compile-time operation and only string literal (constant) can be its
+  * argument.
   */
 def fromBase58(input: String): Coll[Byte]
 
-/**
-  * Transforms Base64 encoded string litereal into constant of type Coll[Byte].
-  * It is a compile-time operation and only string literal (constant) can be its argument.
+/** Transforms Base64 encoded string litereal into constant of type Coll[Byte].
+  * It is a compile-time operation and only string literal (constant) can be its
+  * argument.
   */
 def fromBase64(input: String): Coll[Byte]
 
-/**
-  * It is executed in compile time.
-  * The compiler takes Base58 encoding of public key as String literal and create GroupElement constant. 
-  * Then the compiler used this constant to construct proveDlog public key out of it.
-  * @since 1.9
+/** It is executed in compile time. The compiler takes Base58 encoding of public
+  * key as String literal and create GroupElement constant. Then the compiler
+  * used this constant to construct proveDlog public key out of it.
   */
 def PK(input: String): SigmaProp
     
-/** Deserializes values from Base58 encoded binary data at compile time */
+/** Deserializes values from Base58 encoded binary data at compile time into a
+  * value of type T.
+  */
 def deserialize[T](string: String): T
 
-/** Extracts context variable as Coll[Byte], deserializes it to script and then executes this script in the current context. 
-  * The original `Coll[Byte]` of the script is available as `getVar[Coll[Byte]](id)`
-  * @param id identifier of the context variable
-  * @tparam T result type of the deserialized script. 
-  * @throws InterpreterException if the actual script type doesn't conform to T
-  * @return result of the script execution in the current context
-  * @since 2.0
-  */
-def executeFromVar[T](id: Byte): T
-
 /**
-  * Transforms serialized bytes of ErgoTree with segregated constants by replacing constants
-  * at given positions with new values. This operation allow to use serialized scripts as
-  * pre-defined templates.
-  * The typical usage is "check that output box have proposition equal to given script bytes,
-  * where minerPk (constants(0)) is replaced with currentMinerPk".
-  * Each constant in original scriptBytes have SType serialized before actual data (see ConstantSerializer).
-  * During substitution each value from newValues is checked to be an instance of the corresponding type.
-  * This means, the constants during substitution cannot change their types.
+  * Transforms serialized bytes of ErgoTree with segregated constants by
+  * replacing constants at given positions with new values. This operation allow
+  * to use serialized scripts as pre-defined templates.
+
+  * The typical usage is "check that output box have proposition equal to given
+  * script bytes, where minerPk (constants(0)) is replaced with currentMinerPk".
+  * Each constant in original scriptBytes have SType serialized before actual
+  * data (see ConstantSerializer). During substitution each value from newValues
+  * is checked to be an instance of the corresponding type. This means, the
+  * constants during substitution cannot change their types.
   *
   * @param scriptBytes serialized ErgoTree with ConstantSegregationFlag set to 1.
-  * @param positions zero based indexes in ErgoTree.constants array which should be replaced with new values
-  * @param newValues new values to be injected into the corresponding positions in ErgoTree.constants array
-  * @return original scriptBytes array where only specified constants are replaced and all other bytes remain exactly the same
-  * @since 1.9
+  * @param positions zero based indexes in ErgoTree.constants array which should
+  *                  be replaced with new values
+  * @param newValues new values to be injected into the corresponding positions
+  *                  in ErgoTree.constants array
+  * @return original scriptBytes array where only specified constants are
+  *         replaced and all other bytes remain exactly the same
   */
 def substConstants[T](scriptBytes: Coll[Byte], positions: Coll[Int], newValues: Coll[T]): Coll[Byte]
-      
-/** Performs outer join operation between left and right collections.
-  * This is a restricted version of relational join operation. 
-  * It expects `left` and `right` collections have distinct K values in pairs (otherwise exception is thrown). 
-  * Under this condition resulting collection has size <= left.size + right.size. 
-  * @param l projection function executed for each element of `left`
-  * @param r projection function executed for each element of `right`
-  * @param inner projection function which is executed for matching items (K, L) and (K, R) with the same K 
-  * @return collection of (K, O) pairs, where each key comes form either left or right collection and values are produced by projections
-  * @since 2.0
-  */
-def outerJoin[K, L, R, O]
-    (left: Coll[(K, L)], right: Coll[(K, R)])
-    (l: (K,L) => O, r: (K,R) => O, inner: (K,L,R) => O): Coll[(K,O)]  // Mainnet
-    
 ```
 
 ## Examples
 
-See [white paper for example](wpaper/sigma.tex)
+See [white paper for examples](https://ergoplatform.org/docs/ErgoScript.pdf)
