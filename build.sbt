@@ -142,7 +142,7 @@ credentials ++= (for {
 pgpPublicRing := file("ci/pubring.asc")
 pgpSecretRing := file("ci/secring.asc")
 pgpPassphrase := sys.env.get("PGP_PASSPHRASE").map(_.toArray)
-usePgpKeyHex("28E27A67AEA38DA458C72228CA9254B5E0640FE4")
+usePgpKeyHex("C1FD62B4D44BDF702CDF2B726FF59DA944B150DD")
 
 def libraryDefSettings = commonSettings ++ testSettings ++ Seq(
   scalacOptions ++= Seq(

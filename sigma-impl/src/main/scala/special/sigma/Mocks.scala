@@ -5,9 +5,10 @@ import scalan.{NeverInline, OverloadId}
 import special.collection.Builder.DefaultCollBuilder
 import special.collection.{Coll, Builder}
 
-/**NOTE: this should extend SigmaProp because semantically it subclass of SigmaProp
-  * and DefaultSigma is used just to mixin implementations. */
-
+// TODO refactor: remove this class
+/** NOTE: this should extend SigmaProp because semantically it subclass of SigmaProp
+  * and DefaultSigma is used just to mixin implementations.
+  */
 case class MockSigma(val _isValid: Boolean) extends SigmaProp {
 
   def propBytes: Coll[Byte] = DefaultCollBuilder.fromItems(if(isValid) 1 else 0)
@@ -25,7 +26,6 @@ case class MockSigma(val _isValid: Boolean) extends SigmaProp {
   @NeverInline
   @OverloadId("or_bool")
   def ||(other: Boolean): SigmaProp = MockSigma(isValid || other)
-
 }
 
 case class MockProveDlog(var isValid: Boolean, val propBytes: Coll[Byte]) extends SigmaProp {

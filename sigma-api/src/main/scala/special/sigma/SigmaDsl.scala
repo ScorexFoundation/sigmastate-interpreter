@@ -3,9 +3,12 @@ package special.sigma
 import java.math.BigInteger
 
 import org.bouncycastle.math.ec.ECPoint
-
 import special.collection._
 import scalan._
+import scorex.crypto.authds.{ADDigest, ADValue}
+import scorex.crypto.authds.avltree.batch.Operation
+
+import scala.util.Try
 
 @scalan.Liftable
 trait CostModel {
@@ -544,7 +547,48 @@ trait AvlTree {
     * @param proof data to reconstruct part of the tree
     */
   def remove(operations: Coll[Coll[Byte]], proof: Coll[Byte]): Option[AvlTree]
+
+  /** Creates a new instance of [[AvlTreeVerifier]] with the given `proof` and using
+    * properties of this AvlTree (digest, keyLength, valueLengthOpt) for constructor
+    * arguments.
+    *
+    * @param proof bytes of the serialized proof which is used to represent the tree.
+    */
+  def createVerifier(proof: Coll[Byte]): AvlTreeVerifier
 }
+
+/** Represents operations of AVL tree verifier in an abstract (implementation independent)
+  * way which allows declaration of the [[AvlTree.createVerifier()]] method.
+  */
+trait AvlTreeVerifier {
+  /**
+    * If operation.key exists in the tree and the operation succeeds,
+    * returns Success(Some(v)), where v is the value associated with operation.key
+    * before the operation.
+    * If operation.key does not exists in the tree and the operation succeeds, returns Success(None).
+    * Returns Failure if the operation fails or the proof does not verify.
+    * After one failure, all subsequent operations will fail and digest
+    * is None.
+    *
+    * @param operation an operation descriptor
+    * @return - Success(Some(old value)), Success(None), or Failure
+    */
+  def performOneOperation(operation: Operation): Try[Option[ADValue]]
+
+  /** Returns the max height of the tree extracted from the root digest. */
+  def treeHeight: Int
+
+  /**
+    * Returns Some[the current digest of the authenticated data structure],
+    * where the digest contains the root hash and the root height
+    * Returns None if the proof verification failed at construction
+    * or during any of the operations.
+    *
+    * @return - Some[digest] or None
+    */
+  def digest: Option[ADDigest]
+}
+
 
 /** Only header fields that can be predicted by a miner.
   * @since 2.0
@@ -668,8 +712,70 @@ trait Context {
   def preHeader: PreHeader
 
   def minerPubKey: Coll[Byte]
+
+  /** Extracts Context variable by id and type.
+    * ErgoScript is typed, so accessing a the variables is an operation which involves
+    * some expected type given in brackets. Thus `getVar[Int](id)` expression should
+    * evaluate to a valid value of the `Option[Int]` type.
+    *
+    * For example `val x = getVar[Int](10)` expects the variable, if it is present, to have
+    * type `Int`. At runtime the corresponding type descriptor is passed as `cT`
+    * parameter.
+    *
+    * There are three cases:
+    * 1) If the variable doesn't exist.
+    *   Then `val x = getVar[Int](id)` succeeds and returns the None value, which conforms to
+    *   any value of type `Option[T]` for any T. (In the example above T is equal to
+    *   `Int`). Calling `x.get` fails when x is equal to None, but `x.isDefined`
+    *   succeeds and returns `false`.
+    * 2) If the variable contains a value `v` of type `Int`.
+    *   Then `val x = getVar[Int](id)` succeeds and returns `Some(v)`, which is a valid value
+    *   of type `Option[Int]`. In this case, calling `x.get` succeeds and returns the
+    *   value `v` of type `Int`. Calling `x.isDefined` returns `true`.
+    * 3) If the variable contains a value `v` of type T other then `Int`.
+    *   Then `val x = getVar[Int](id)` fails, because there is no way to return a valid value
+    *   of type `Option[Int]`. The value of variable is present, so returning it as None
+    *   would break the typed semantics of variables collection.
+    *
+    * In some use cases one variable may have values of different types. To access such
+    * variable an additional variable can be used as a tag.
+    *
+    * <pre class="stHighlight">
+    *   val tagOpt = getVar[Int](id)
+    *   val res = if (tagOpt.isDefined) {
+    *     val tag = tagOpt.get
+    *     if (tag == 1) {
+    *       val x = getVar[Int](id2).get
+    *       // compute res using value x is of type Int
+    *     } else if (tag == 2) {
+    *       val x = getVar[GroupElement](id2).get
+    *       // compute res using value x is of type GroupElement
+    *     } else if (tag == 3) {
+    *       val x = getVar[ Array[Byte] ](id2).get
+    *       // compute res using value x of type Array[Byte]
+    *     } else {
+    *       // compute `res` when `tag` is not 1, 2 or 3
+    *     }
+    *   }
+    *   else {
+    *     // compute value of res when the variable is not present
+    *   }
+    * </pre>
+    *
+    * @param id zero-based identifier of the variable.
+    * @tparam T expected type of the variable.
+    * @return Some(value) if the variable is defined in the context AND has the given type.
+    *         None otherwise
+    * @throws special.sigma.InvalidType exception when the type of the variable value is
+    *                                   different from cT.
+    */
   def getVar[T](id: Byte)(implicit cT: RType[T]): Option[T]
+
   def vars: Coll[AnyValue]
+
+  /** Maximum version of ErgoTree currently activated on the network.
+    * See [[ErgoLikeContext]] class for details. */
+  def activatedScriptVersion: Byte
 }
 
 @scalan.Liftable
@@ -713,8 +819,7 @@ trait SigmaContract {
   @Reified("T")
   def substConstants[T](scriptBytes: Coll[Byte],
       positions: Coll[Int],
-      newValues: Coll[T])
-      (implicit cT: RType[T]): Coll[Byte] = this.builder.substConstants(scriptBytes, positions, newValues)
+      newValues: Coll[T]): Coll[Byte] = this.builder.substConstants(scriptBytes, positions, newValues)
 }
 
 /** Runtime representation of SGlobal ErgoTree type.
@@ -831,7 +936,7 @@ trait SigmaDslBuilder {
     * @return original scriptBytes array where only specified constants are replaced and all other bytes remain exactly the same
     */
   @Reified("T")
-  def substConstants[T](scriptBytes: Coll[Byte], positions: Coll[Int], newValues: Coll[T])(implicit cT: RType[T]): Coll[Byte]
+  def substConstants[T](scriptBytes: Coll[Byte], positions: Coll[Int], newValues: Coll[T]): Coll[Byte]
 
   /** Decodes the given bytes to the corresponding GroupElement using default serialization.
     * @param encoded serialized bytes of some GroupElement value
