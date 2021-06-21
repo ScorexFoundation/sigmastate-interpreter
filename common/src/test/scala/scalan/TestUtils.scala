@@ -3,6 +3,7 @@ package scalan
 import scalan.util.FileUtil
 import org.scalactic.TripleEquals
 import org.scalatest.{Inside, Matchers, TestSuite}
+import scalan.util.StringUtil.StringUtilExtensions
 
 /**
   * Created by slesarenko on 11/10/2017.
@@ -35,8 +36,8 @@ trait TestUtils extends TestSuite with Matchers with Inside with TripleEquals {
 
   protected def currentTestName: String = {
     val testName = _currentTestName.get()
-    assert(testName != null, "currentTestName called outside a test")
-    testName
+    if (testName.isNullOrEmpty) "_outside_tests_"
+    else testName
   }
 
   protected def currentTestNameAsFileName: String = FileUtil.cleanFileName(currentTestName)

@@ -11,7 +11,7 @@ import special.sigma.{SigmaProp, SigmaContract, Context, DslSyntaxExtensions, Si
 import scala.language.implicitConversions
 
 trait ContractSyntax { contract: SigmaContract =>
-  override def builder: SigmaDslBuilder = new CostingSigmaDslBuilder
+  override def builder: SigmaDslBuilder = CostingSigmaDslBuilder
   val spec: ContractSpec
   val syntax = new DslSyntaxExtensions(builder)
   def contractEnv: ScriptEnv
