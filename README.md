@@ -1,7 +1,7 @@
 # ErgoScript compiler and ErgoTree interpreter 
 
 This repository contains implementations of ErgoScript compiler and ErgoTree
-Interpreter for a family of Sigma-protocol authentication languages (or simply
+Interpreter for a family of Sigma-protocol based authentication languages (or simply
 Sigma language).
 
 This library is used internally in [Ergo
@@ -101,8 +101,8 @@ libraryDependencies += "org.scorexfoundation" %% "sigma-state" % "4.0.3"
 | core   | Implementation of graph-based intermediate representation of ErgoTree, which is used in cost estimation and interpretation |
 | docs   | Collection of documents |
 | library | Implementation of graph IR nodes for Coll, Size and other types  |
-| libaray-api | Declarations of interfaces   |
-| libaray-impl | Implementation of interfaces   |
+| library-api | Declarations of interfaces   |
+| library-impl | Implementation of interfaces   |
 | sigma-api | Declarations of runtime interfaces which are used in ErgoTree interpreter  |
 | sigma-impl | Implementation of sigma-api interfaces   |
 | sigma-library | Implementation of graph IR nodes for Sigma types   |
