@@ -50,6 +50,7 @@ class ErgoBoxCandidate(val value: Long,
   lazy val propositionBytes: Array[Byte] = ergoTree.bytes
 
   /** Serialized bytes of this Box without transaction reference data (transactionId and boxIndex). */
+  // TODO v5.0: re-implement extracting directly from `ErgoBox.bytes` array
   lazy val bytesWithNoRef: Array[Byte] = ErgoBoxCandidate.serializer.toBytes(this)
 
   /** Creates a new [[ErgoBox]] based on this candidate using the given transaction reference data.
@@ -93,7 +94,7 @@ class ErgoBoxCandidate(val value: Long,
     ScalaRunTime._hashCode((value, ergoTree, additionalTokens, additionalRegisters, creationHeight))
   }
 
-  override def toString: Idn = s"ErgoBoxCandidate($value, $ergoTree," +
+  override def toString: String = s"ErgoBoxCandidate($value, $ergoTree," +
     s"tokens: (${additionalTokens.map(t => ErgoAlgos.encode(t._1) + ":" + t._2).toArray.mkString(", ")}), " +
     s"$additionalRegisters, creationHeight: $creationHeight)"
 

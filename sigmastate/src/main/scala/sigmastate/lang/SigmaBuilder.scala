@@ -4,10 +4,10 @@ import java.math.BigInteger
 
 import org.ergoplatform.ErgoBox
 import org.ergoplatform.ErgoBox.RegisterId
-import sigmastate.SCollection.{SByteArray, SIntArray}
+import sigmastate.SCollection.{SIntArray, SByteArray}
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.lang.Constraints.{TypeConstraint2, onlyNumeric2, sameType2}
+import sigmastate.lang.Constraints._
 import sigmastate.lang.Terms._
 import sigmastate.lang.exceptions.ConstraintFailed
 import sigmastate.serialization.OpCodes
@@ -19,13 +19,20 @@ import sigmastate.interpreter.CryptoConstants.EcPointType
 import special.collection.Coll
 import sigmastate.lang.SigmaTyper.STypeSubst
 import sigmastate.serialization.OpCodes.OpCode
-import special.sigma.{AvlTree, GroupElement, SigmaProp}
+import special.sigma.{AvlTree, SigmaProp, GroupElement}
 import spire.syntax.all.cfor
 
 import scala.util.DynamicVariable
 
-trait SigmaBuilder {
+/** Abstract interface of ErgoTree node builders.
+  * Each method of the interface creates the corresponding ErgoTree node.
+  * The signatures of the methods reflect the constructors of the nodes.
+  * See the corresponding node classes for details.
+  */
+abstract class SigmaBuilder {
 
+  /** Dynamic variable used to pass SourceContext to the constructors of the node.
+    * Used in concrete implementations of this interface. */
   val currentSrcCtx = new DynamicVariable[Nullable[SourceContext]](Nullable.None)
 
   def mkEQ[T <: SType](left: Value[T], right: Value[T]): Value[SBoolean.type]
@@ -259,26 +266,68 @@ trait SigmaBuilder {
     case _ =>
       Nullable.None
   }
-
-  def unliftAny(value: SValue): Nullable[Any] = value match {
-    case Constant(v, _) => Nullable(v)
-    case _ => Nullable.None
-  }
 }
 
+/** Standard implementation of [[SigmaBuilder]] interface in which most of the operations
+  * delegate common logic to [[equalityOp]], [[comparisonOp]] and [[arithOp]] with default
+  * implementation.
+  * Note, each method of this class uses current value of `currentSrcCtx` dynamic variable
+  * to attach SourceContext to the created node. Thus, it is a responsibility of the
+  * caller to provide valid value of the `currentSrcCtx` variable. (See for example how
+  * this variable is used in [[SigmaParser]].)
+  */
 class StdSigmaBuilder extends SigmaBuilder {
 
+  /** Create equality operation using given operation arguments and the given node
+    * constructor.
+    * @param left operand of the operation (left sub-expression)
+    * @param right operand of the operation (right sub-expression)
+    * @param cons constructor of the node
+    */
   protected def equalityOp[T <: SType, R](left: Value[T],
                                           right: Value[T],
                                           cons: (Value[T], Value[T]) => R): R = cons(left, right)
 
+  /** Create comparison operation using given operation arguments and the given node
+    * constructor.
+    * @param left operand of the operation (left sub-expression)
+    * @param right operand of the operation (right sub-expression)
+    * @param cons constructor of the node
+    */
   protected def comparisonOp[T <: SType, R](left: Value[T],
                                             right: Value[T],
                                             cons: (Value[T], Value[T]) => R): R = cons(left, right)
 
+  /** Create arithmetic operation using given operation arguments and the given node
+    * constructor.
+    * @param left operand of the operation (left sub-expression)
+    * @param right operand of the operation (right sub-expression)
+    * @param cons constructor of the node
+    */
   protected def arithOp[T <: SNumericType, R](left: Value[T],
                                               right: Value[T],
                                               cons: (Value[T], Value[T]) => R): R = cons(left, right)
+
+  /** Helper method to check constraints on the arguments of the binary operation.
+    *
+    * @param left        operand of the operation (left sub-expression)
+    * @param right       operand of the operation (right sub-expression)
+    * @param constraints an array of constraints (should be WrappedArray (not List) for
+    *                    performance)
+    *
+    * HOTSPOT: called during script deserialization (don't beautify this code)
+    * @consensus
+    */
+  final def check2[T <: SType](left: Value[T],
+                         right: Value[T],
+                         constraints: Seq[TypeConstraint2]): Unit = {
+    val n = constraints.length
+    cfor(0)(_ < n, _ + 1) { i =>
+      val c = constraints(i)  // to be efficient constraints should be WrappedArray (not List)
+      if (!c(left.tpe, right.tpe))
+        throw new ConstraintFailed(s"Failed constraint $c for binary operation parameters ($left(tpe: ${left.tpe}), $right(tpe: ${right.tpe}))")
+    }
+  }
 
   override def mkEQ[T <: SType](left: Value[T], right: Value[T]): Value[SBoolean.type] =
     equalityOp(left, right, EQ.apply[T]).withSrcCtx(currentSrcCtx.value)
@@ -649,25 +698,18 @@ class StdSigmaBuilder extends SigmaBuilder {
   override def mkUnitConstant: Value[SUnit.type] = UnitConstant().withSrcCtx(currentSrcCtx.value)
 }
 
-trait TypeConstraintCheck {
+/** Builder which does automatic upcast of numeric arguments when necessary.
+  * The upcast is implemented by inserting additional Upcast nodes.
+  * It also performs checking of constrains.
+  * */
+class TransformingSigmaBuilder extends StdSigmaBuilder {
 
-  /** HOTSPOT: called during script deserialization (don't beautify this code)
-    * @consensus
+  /** Checks the types of left anf right arguments and if necessary inserts the upcast
+    * node.
+    * @param left operand of the operation (left sub-expression)
+    * @param right operand of the operation (right sub-expression)
+    * @return a pair (l,r) of the arguments appropriately upcasted.
     */
-  def check2[T <: SType](left: Value[T],
-                         right: Value[T],
-                         constraints: Seq[TypeConstraint2]): Unit = {
-    val n = constraints.length
-    cfor(0)(_ < n, _ + 1) { i =>
-      val c = constraints(i)  // to be efficient constraints should be WrappedArray (not List)
-      if (!c(left.tpe, right.tpe))
-        throw new ConstraintFailed(s"Failed constraint $c for binary operation parameters ($left(tpe: ${left.tpe}), $right(tpe: ${right.tpe}))")
-    }
-  }
-}
-
-trait TransformingSigmaBuilder extends StdSigmaBuilder with TypeConstraintCheck {
-
   private def applyUpcast[T <: SType](left: Value[T], right: Value[T]): (Value[T], Value[T]) =
     (left.tpe, right.tpe) match {
       case (t1: SNumericType, t2: SNumericType) if t1 != t2 =>
@@ -679,76 +721,98 @@ trait TransformingSigmaBuilder extends StdSigmaBuilder with TypeConstraintCheck 
         (left, right)
     }
 
+  /** HOTSPOT: don't beautify the code. */
   override protected def equalityOp[T <: SType, R](left: Value[T],
                                                    right: Value[T],
                                                    cons: (Value[T], Value[T]) => R): R = {
-    val (l, r) = applyUpcast(left, right)
-    check2(l, r, Array(sameType2))
+    val t = applyUpcast(left, right)
+    val l = t._1; val r = t._2
+    check2(l, r, SameTypeConstrain)
     cons(l, r)
+  }
+
+  /** HOTSPOT: don't beautify the code. */
+  override protected def comparisonOp[T <: SType, R](left: Value[T],
+                                                     right: Value[T],
+                                                     cons: (Value[T], Value[T]) => R): R = {
+    check2(left, right, OnlyNumericConstrain)
+    val t = applyUpcast(left, right)
+    val l = t._1; val r = t._2
+    check2(l, r, SameTypeConstrain)
+    cons(l, r)
+  }
+
+  /** HOTSPOT: don't beautify the code. */
+  override protected def arithOp[T <: SNumericType, R](left: Value[T],
+                                                       right: Value[T],
+                                                       cons: (Value[T], Value[T]) => R): R = {
+    val t = applyUpcast(left, right)
+    cons(t._1, t._2)
+  }
+}
+
+/** Builder which does checking of constraints on the numeric arguments of binary operations. */
+class CheckingSigmaBuilder extends StdSigmaBuilder {
+
+  override protected def equalityOp[T <: SType, R](left: Value[T],
+                                                   right: Value[T],
+                                                   cons: (Value[T], Value[T]) => R): R = {
+    check2(left, right, SameTypeConstrain)
+    cons(left, right)
   }
 
   override protected def comparisonOp[T <: SType, R](left: Value[T],
                                                      right: Value[T],
                                                      cons: (Value[T], Value[T]) => R): R = {
-    check2(left, right, Array(onlyNumeric2))
-    val (l, r) = applyUpcast(left, right)
-    check2(l, r, Array(sameType2))
-    cons(l, r)
-  }
-
-  override protected def arithOp[T <: SNumericType, R](left: Value[T],
-                                                       right: Value[T],
-                                                       cons: (Value[T], Value[T]) => R): R = {
-    val (l, r) = applyUpcast(left, right)
-    cons(l, r)
-  }
-}
-
-trait CheckingSigmaBuilder extends StdSigmaBuilder with TypeConstraintCheck {
-
-  override protected def equalityOp[T <: SType, R](left: Value[T],
-                                                   right: Value[T],
-                                                   cons: (Value[T], Value[T]) => R): R = {
-    check2(left, right, Array(sameType2))
-    cons(left, right)
-  }
-
-  override protected def comparisonOp[T <: SType, R](left: Value[T],
-                                                     right: Value[T],
-                                                     cons: (Value[T], Value[T]) => R): R = {
-    check2(left, right, Array(onlyNumeric2, sameType2))
+    check2(left, right, OnlyNumericAndSameTypeConstrain)
     cons(left, right)
   }
 
   override protected def arithOp[T <: SNumericType, R](left: Value[T],
                                                        right: Value[T],
                                                        cons: (Value[T], Value[T]) => R): R = {
-    check2(left, right, Array(sameType2))
+    check2(left, right, SameTypeConstrain)
     cons(left, right)
   }
 }
 
+/** Standard builder which don't perform any additional transformations and checking. */
 case object StdSigmaBuilder extends StdSigmaBuilder
 
-case object CheckingSigmaBuilder extends StdSigmaBuilder with CheckingSigmaBuilder
+/** Builder which performs checking of constraints on numeric operations. */
+case object CheckingSigmaBuilder extends CheckingSigmaBuilder
 
-case object DefaultSigmaBuilder extends StdSigmaBuilder with CheckingSigmaBuilder
-case object TransformingSigmaBuilder extends StdSigmaBuilder with TransformingSigmaBuilder
-case object DeserializationSigmaBuilder extends StdSigmaBuilder with TransformingSigmaBuilder
+/** Builder of ErgoTree nodes which is used in SigmaCompiler. */
+case object TransformingSigmaBuilder extends TransformingSigmaBuilder
+
+/** Builder of ErgoTree nodes which is used in deserializers. */
+case object DeserializationSigmaBuilder extends TransformingSigmaBuilder
 
 object Constraints {
-  type Constraint2 = (SType.TypeCode, SType.TypeCode) => Boolean
-  type TypeConstraint2 = (SType, SType) => Boolean
-  type ConstraintN = Seq[SType.TypeCode] => Boolean
-
-  def onlyNumeric2: TypeConstraint2 = {
-    case (_: SNumericType, _: SNumericType) => true
-    case _ => false
+  /** Represents a constraint on arguments of binary operation. */
+  abstract class TypeConstraint2 {
+    /** Returns true if the constraints is satisfied. */
+    def apply(t1: SType, t2: SType): Boolean
   }
 
-  def sameType2: TypeConstraint2 = {
-    case (v1, v2) => v1.tpe == v2.tpe
+  /** Checks that both arguments are numeric types. */
+  object OnlyNumeric2 extends TypeConstraint2 {
+    override def apply(t1: SType, t2: SType): Boolean = t1 match {
+      case _: SNumericType => t2 match {
+        case _: SNumericType => true
+        case _ => false
+      }
+      case _ => false
+    }
   }
 
-  def sameTypeN: ConstraintN = { tcs => tcs.tail.forall(_ == tcs.head) }
+  /** Checks that both arguments have the same type. */
+  object SameType2 extends TypeConstraint2 {
+    override def apply(t1: SType, t2: SType): Boolean = t1 == t2
+  }
+
+  /** These constraints sets are allocated once here and reused in different places. */
+  val SameTypeConstrain: Seq[TypeConstraint2] = Array(SameType2)
+  val OnlyNumericConstrain: Seq[TypeConstraint2] = Array(OnlyNumeric2)
+  val OnlyNumericAndSameTypeConstrain: Seq[TypeConstraint2] = Array(OnlyNumeric2, SameType2)
 }

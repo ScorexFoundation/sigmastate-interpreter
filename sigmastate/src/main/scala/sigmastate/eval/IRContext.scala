@@ -97,7 +97,7 @@ trait IRContext extends Evaluation with TreeBuilding {
     estimatedCost
   }
 
-  /** TODO soft-fork: Version Based Costing
+  /* TODO soft-fork: Version Based Costing
     * The following is based on ErgoTree.header checks performed during deserialization and
     * described in `ErgoTreeSerializer`
     * The next version should ensure that v2 node contained both old and new version of casting
@@ -115,6 +115,14 @@ trait IRContext extends Evaluation with TreeBuilding {
     * And taking into account the cleaning of the garbage and cutting the blockchain history,
     * the old scripts at some point will die out of the blockchain.
     */
+  /** Increase the cost using the given `costF` graph starting from `initCost`.
+    * The total cost is limited by `maxCost`
+    * @param ctx script execution context
+    * @param costF graph of cost formula which predicts script execution cost in the given ctx
+    * @param maxCost limit on the total cost
+    * @param initCost initial cost, which is increased by the additional cost computed by costF
+    * @return new total cost if Success, or exception wrapped in Failure
+    */
   def checkCostWithContext(ctx: SContext,
                 costF: Ref[((Context, (Int, Size[Context]))) => Int], maxCost: Long, initCost: Long): Try[Int] = Try {
     val costFun = compile[(SContext, (Int, SSize[SContext])), Int, (Context, (Int, Size[Context])), Int](
@@ -127,10 +135,7 @@ trait IRContext extends Evaluation with TreeBuilding {
     }
 
     val scaledCost = JMath.multiplyExact(estimatedCost.toLong, CostTable.costFactorIncrease.toLong) / CostTable.costFactorDecrease
-    val totalCost = JMath.addExact(initCost, scaledCost)
-    if (totalCost > maxCost) {
-      throw new CostLimitException(totalCost, Evaluation.msgCostLimitError(totalCost, maxCost), None)
-    }
+    val totalCost = Evaluation.addCostChecked(initCost, scaledCost, maxCost)
     totalCost.toInt
   }
 

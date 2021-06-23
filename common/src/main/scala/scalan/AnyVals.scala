@@ -43,6 +43,7 @@ class AVHashMap[K,V](val hashMap: HashMap[K,V]) extends AnyVal {
   @inline final def keySet: java.util.Set[K] = hashMap.keySet()
 }
 object AVHashMap {
+  /** Helper method to create a new map with the given capacity. */
   def apply[K,V](initialCapacity: Int) = new AVHashMap[K,V](new HashMap[K,V](initialCapacity))
 }
 

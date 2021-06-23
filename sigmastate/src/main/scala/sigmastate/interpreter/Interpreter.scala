@@ -1,27 +1,27 @@
 package sigmastate.interpreter
 
-import java.util
 import java.lang.{Math => JMath}
+import java.util
 
-import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{strategy, rule, everywherebu}
+import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, rule, strategy}
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
 import org.ergoplatform.validation.SigmaValidationSettings
-import sigmastate.basics.DLogProtocol.{FirstDLogProverMessage, DLogInteractiveProver}
+import org.ergoplatform.validation.ValidationRules._
+import scalan.util.BenchmarkUtil
 import scorex.util.ScorexLogging
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
-import sigmastate.eval.{IRContext, Evaluation}
-import sigmastate.lang.Terms.ValueOps
+import sigmastate.basics.DLogProtocol.{DLogInteractiveProver, FirstDLogProverMessage}
 import sigmastate.basics._
-import sigmastate.interpreter.Interpreter.{VerificationResult, ScriptEnv, WhenSoftForkReductionResult}
-import sigmastate.lang.exceptions.{InterpreterException, CostLimitException}
-import sigmastate.serialization.{ValueSerializer, SigmaSerializer}
+import sigmastate.eval.{Evaluation, IRContext}
+import sigmastate.interpreter.Interpreter.{ScriptEnv, VerificationResult, WhenSoftForkReductionResult}
+import sigmastate.lang.Terms.ValueOps
+import sigmastate.lang.exceptions.{CostLimitException, InterpreterException}
+import sigmastate.serialization.{SigmaSerializer, ValueSerializer}
+import sigmastate.utils.Helpers
+import sigmastate.utils.Helpers._
 import sigmastate.utxo.DeserializeContext
 import sigmastate.{SType, _}
-import org.ergoplatform.validation.ValidationRules._
-import scalan.{MutableLazy, Nullable}
-import scalan.util.BenchmarkUtil
-import sigmastate.utils.Helpers._
 
 import scala.util.{Success, Try}
 
@@ -57,11 +57,7 @@ trait Interpreter extends ScorexLogging {
     val script = ValueSerializer.deserialize(r)  // Why ValueSerializer? read NOTE above
     val scriptComplexity = r.complexity
 
-    val currCost = JMath.addExact(context.initCost, scriptComplexity)
-    val remainingLimit = context.costLimit - currCost
-    if (remainingLimit <= 0) {
-      throw new CostLimitException(currCost, Evaluation.msgCostLimitError(currCost, context.costLimit), None)
-    }
+    val currCost = Evaluation.addCostChecked(context.initCost, scriptComplexity, context.costLimit)
     val ctx1 = context.withInitCost(currCost).asInstanceOf[CTX]
     (ctx1, script)
   }
@@ -133,7 +129,7 @@ trait Interpreter extends ScorexLogging {
     implicit val vs = context.validationSettings
     val maxCost = context.costLimit
     val initCost = context.initCost
-    trySoftForkable[ReductionResult](whenSoftFork = WhenSoftForkReductionResult) {
+    trySoftForkable[ReductionResult](whenSoftFork = WhenSoftForkReductionResult(initCost)) {
       val costingRes = doCostingEx(env, exp, true)
       val costF = costingRes.costF
       IR.onCostingResult(env, exp, costingRes)
@@ -150,7 +146,7 @@ trait Interpreter extends ScorexLogging {
       CheckCalcFunc(IR)(calcF)
       val calcCtx = context.toSigmaContext(isCost = false)
       val res = Interpreter.calcResult(IR)(calcCtx, calcF)
-      SigmaDsl.toSigmaBoolean(res) -> estimatedCost
+      ReductionResult(SigmaDsl.toSigmaBoolean(res), estimatedCost)
     }
   }
 
@@ -175,14 +171,14 @@ trait Interpreter extends ScorexLogging {
     */
   def fullReduction(ergoTree: ErgoTree,
                     context: CTX,
-                    env: ScriptEnv): (SigmaBoolean, Long) = {
+                    env: ScriptEnv): ReductionResult = {
     val prop = propositionFromErgoTree(ergoTree, context)
     prop match {
       case SigmaPropConstant(p) =>
         val sb = SigmaDsl.toSigmaBoolean(p)
         val cost = SigmaBoolean.estimateCost(sb)
         val resCost = Evaluation.addCostChecked(context.initCost, cost, context.costLimit)
-        (sb, resCost)
+        ReductionResult(sb, resCost)
       case _ if !ergoTree.hasDeserialize =>
         val r = precompiledScriptProcessor.getReducer(ergoTree, context.validationSettings)
         r.reduce(context)
@@ -251,22 +247,18 @@ trait Interpreter extends ScorexLogging {
         // else proceed normally
       }
 
-      val initCost = JMath.addExact(ergoTree.complexity.toLong, context.initCost)
-      val remainingLimit = context.costLimit - initCost
-      if (remainingLimit <= 0) {
-        // TODO cover with tests (2h)
-        throw new CostLimitException(initCost, Evaluation.msgCostLimitError(initCost, context.costLimit), None)
-      }
+      val complexityCost = ergoTree.complexity.toLong
+      val initCost = Evaluation.addCostChecked(context.initCost, complexityCost, context.costLimit)
       val contextWithCost = context.withInitCost(initCost).asInstanceOf[CTX]
 
-      val (cProp, cost) = fullReduction(ergoTree, contextWithCost, env)
+      val res = fullReduction(ergoTree, contextWithCost, env)
 
-      val checkingResult = cProp match {
+      val checkingResult = res.value match {
         case TrivialProp.TrueProp => true
         case TrivialProp.FalseProp => false
-        case _ => verifySignature(cProp, message, proof)
+        case cProp => verifySignature(cProp, message, proof)
       }
-      checkingResult -> cost
+      checkingResult -> res.cost
     })
     if (outputComputedResults) {
       res.foreach { case (_, cost) =>
@@ -290,14 +282,14 @@ trait Interpreter extends ScorexLogging {
   private def checkCommitments(sp: UncheckedSigmaTree, message: Array[Byte]): Boolean = {
     // Perform Verifier Step 4
     val newRoot = computeCommitments(sp).get.asInstanceOf[UncheckedSigmaTree]
-
+    val bytes = Helpers.concatArrays(FiatShamirTree.toBytes(newRoot), message)
     /**
       * Verifier Steps 5-6: Convert the tree to a string `s` for input to the Fiat-Shamir hash function,
       * using the same conversion as the prover in 7
       * Accept the proof if the challenge at the root of the tree is equal to the Fiat-Shamir hash of `s`
       * (and, if applicable,  the associated data). Reject otherwise.
       */
-    val expectedChallenge = CryptoFunctions.hashFn(FiatShamirTree.toBytes(newRoot) ++ message)
+    val expectedChallenge = CryptoFunctions.hashFn(bytes)
     util.Arrays.equals(newRoot.challenge, expectedChallenge)
   }
 
@@ -342,7 +334,7 @@ trait Interpreter extends ScorexLogging {
              context: CTX,
              proof: ProofT,
              message: Array[Byte]): Try[VerificationResult] = {
-    verify(Interpreter.emptyEnv, ergoTree, context, SigSerializer.toBytes(proof), message)
+    verify(Interpreter.emptyEnv, ergoTree, context, SigSerializer.toProofBytes(proof), message)
   }
 
   /**
@@ -365,7 +357,12 @@ trait Interpreter extends ScorexLogging {
           checkCommitments(sp, message)
       }
     } catch {
-      case e: Exception => log.warn("Improper signature: ", e); false
+      case t: Throwable =>
+        // TODO coverage: property("handle improper signature") doesn't lead to exception
+        //  because the current implementation of parseAndComputeChallenges doesn't check
+        //  signature format
+        log.warn("Improper signature: ", t);
+        false
     }
   }
 
@@ -379,13 +376,19 @@ object Interpreter {
   type VerificationResult = (Boolean, Long)
 
   /** Result of ErgoTree reduction procedure (see `reduceToCrypto` and friends).
-    * The first component is the value of SigmaProp type which represents a statement
-    * verifiable via sigma protocol.
-    * The second component is the estimated cost of consumed by the contract execution. */
-  type ReductionResult = (SigmaBoolean, Long)
+    *
+    * @param value the value of SigmaProp type which represents a logical statement
+    *              verifiable via sigma protocol.
+    * @param cost  the estimated cost of the contract execution. */
+  case class ReductionResult(value: SigmaBoolean, cost: Long)
 
+  /** Represents properties of interpreter invocation. */
   type ScriptEnv = Map[String, Any]
+
+  /** Empty interpreter properties. */
   val emptyEnv: ScriptEnv = Map.empty[String, Any]
+
+  /** Property name used to store script name. */
   val ScriptNameProp = "ScriptName"
 
   /** Maximum version of ErgoTree supported by this interpreter release.
@@ -402,7 +405,7 @@ object Interpreter {
   /** The result of script reduction when soft-fork condition is detected by the old node,
     * in which case the script is reduced to the trivial true proposition and takes up 0 cost.
     */
-  val WhenSoftForkReductionResult: ReductionResult = TrivialProp.TrueProp -> 0
+  def WhenSoftForkReductionResult(cost: Long): ReductionResult = ReductionResult(TrivialProp.TrueProp, cost)
 
   /** Executes the given `calcF` graph in the given context.
     * @param IR      container of the graph (see [[IRContext]])
@@ -445,6 +448,7 @@ object Interpreter {
       throw new Error(s"Context-dependent pre-processing should produce tree of type Boolean or SigmaProp but was $x")
   }
 
+  /** Helper method to throw errors from Interpreter. */
   def error(msg: String) = throw new InterpreterException(msg)
 
 }

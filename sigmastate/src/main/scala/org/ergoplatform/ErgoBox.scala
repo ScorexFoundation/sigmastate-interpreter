@@ -120,8 +120,7 @@ object ErgoBox {
   trait RegisterId {
     val number: Byte
     def asIndex: Int = number.toInt
-
-    override def toString: Idn = "R" + number
+    override def toString: String = "R" + number
   }
 
   abstract class MandatoryRegisterId(override val number: Byte, val purpose: String) extends RegisterId
