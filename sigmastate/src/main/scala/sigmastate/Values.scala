@@ -694,11 +694,12 @@ object Values {
     def tpe = SBox
   }
 
+  // TODO refactor: only Constant make sense to inherit from EvaluatedValue
   case class Tuple(items: IndexedSeq[Value[SType]]) extends EvaluatedValue[STuple] with EvaluatedCollection[SAny.type, STuple] {
     override def companion = Tuple
     override def elementType = SAny
     lazy val tpe = STuple(items.map(_.tpe))
-    lazy val value = {
+    lazy val value = { // TODO coverage
       val xs = items.cast[EvaluatedValue[SAny.type]].map(_.value)
       Colls.fromArray(xs.toArray(SAny.classTag.asInstanceOf[ClassTag[SAny.WrappedType]]))(RType.AnyType)
     }
@@ -753,12 +754,12 @@ object Values {
       else ConcreteCollection
 
     val tpe = SCollection[V](elementType)
+    implicit lazy val tElement: RType[V#WrappedType] = Evaluation.stypeToRType(elementType)
 
     // TODO refactor: this method is not used and can be removed
     lazy val value = {
       val xs = items.cast[EvaluatedValue[V]].map(_.value)
-      val tElement = Evaluation.stypeToRType(elementType)
-      Colls.fromArray(xs.toArray(elementType.classTag.asInstanceOf[ClassTag[V#WrappedType]]))(tElement)
+      Colls.fromArray(xs.toArray(elementType.classTag.asInstanceOf[ClassTag[V#WrappedType]]))
     }
   }
   object ConcreteCollection extends ValueCompanion {
@@ -843,24 +844,25 @@ object Values {
                     override val rhs: SValue) extends BlockItem {
     require(id >= 0, "id must be >= 0")
     override def companion = if (tpeArgs.isEmpty) ValDef else FunDef
-    def tpe: SType = rhs.tpe
-    def isValDef: Boolean = tpeArgs.isEmpty
+    override def tpe: SType = rhs.tpe
+    override def isValDef: Boolean = tpeArgs.isEmpty
     /** This is not used as operation, but rather to form a program structure */
-    def opType: SFunc = Value.notSupportedError(this, "opType")
+    override def opType: SFunc = Value.notSupportedError(this, "opType")
   }
   object ValDef extends ValueCompanion {
-    def opCode: OpCode = ValDefCode
+    override def opCode: OpCode = ValDefCode
     def apply(id: Int, rhs: SValue): ValDef = ValDef(id, Nil, rhs)
   }
   object FunDef extends ValueCompanion {
-    def opCode: OpCode = FunDefCode
+    override def opCode: OpCode = FunDefCode
     def unapply(d: BlockItem): Option[(Int, Seq[STypeVar], SValue)] = d match {
       case ValDef(id, targs, rhs) if !d.isValDef => Some((id, targs, rhs))
       case _ => None
     }
   }
 
-  /** Special node which represents a reference to ValDef in was introduced as result of CSE. */
+  /** Special node which represents a reference to ValDef it was introduced as result of
+    * CSE. */
   case class ValUse[T <: SType](valId: Int, tpe: T) extends NotReadyValue[T] {
     override def companion = ValUse
     /** This is not used as operation, but rather to form a program structure */
@@ -880,6 +882,7 @@ object Values {
   case class BlockValue(items: IndexedSeq[BlockItem], result: SValue) extends NotReadyValue[SType] {
     override def companion = BlockValue
     def tpe: SType = result.tpe
+
     /** This is not used as operation, but rather to form a program structure */
     def opType: SFunc = Value.notSupportedError(this, "opType")
   }
