@@ -44,8 +44,13 @@ object Values {
   type SValue = Value[SType]
   type Idn = String
 
+  /** Base class for all ErgoTree expression nodes.
+    * @see [[sigmastate.Values.ErgoTree]]
+    */
   trait Value[+S <: SType] extends SigmaNode {
+    /** The companion node descriptor with opCode, cost and other metadata. */
     def companion: ValueCompanion
+
     /** Unique id of the node class used in serialization of ErgoTree. */
     def opCode: OpCode = companion.opCode
 
@@ -112,7 +117,7 @@ object Values {
     object Typed {
       def unapply(v: SValue): Option[(SValue, SType)] = Some((v, v.tpe))
     }
-    def notSupportedError(v: SValue, opName: String) =
+    def notSupportedError(v: Any, opName: String) =
       throw new IllegalArgumentException(s"Method $opName is not supported for node $v")
 
     /** Immutable empty array of values. Can be used to avoid allocation. */
@@ -133,12 +138,13 @@ object Values {
     }
   }
 
+  /** Base class for all companion objects which are used as operation descriptors. */
   trait ValueCompanion extends SigmaNodeCompanion {
     import ValueCompanion._
     /** Unique id of the node class used in serialization of ErgoTree. */
     def opCode: OpCode
 
-    override def toString: Idn = s"${this.getClass.getSimpleName}(${opCode.toUByte})"
+    override def toString: String = s"${this.getClass.getSimpleName}(${opCode.toUByte})"
 
     def typeName: String = this.getClass.getSimpleName.replace("$", "")
 
@@ -170,7 +176,7 @@ object Values {
     }
   }
 
-  trait Constant[+S <: SType] extends EvaluatedValue[S] {}
+  abstract class Constant[+S <: SType] extends EvaluatedValue[S] {}
 
   case class ConstantNode[S <: SType](value: S#WrappedType, tpe: S) extends Constant[S] {
     require(Constant.isCorrectType(value, tpe), s"Invalid type of constant value $value, expected type $tpe")
@@ -288,7 +294,7 @@ object Values {
     override def companion: ValueCompanion = UnitConstant
   }
   object UnitConstant extends ValueCompanion {
-    override val opCode = UnitConstantCode
+    override def opCode = UnitConstantCode
   }
 
   type BoolValue = Value[SBoolean.type]
@@ -581,29 +587,31 @@ object Values {
       *
       * HOTSPOT: don't beautify the code
       */
-    def estimateCost(sb: SigmaBoolean): Int = sb match {
-      case _: ProveDlog => CostTable.proveDlogEvalCost
-      case _: ProveDHTuple => CostTable.proveDHTupleEvalCost
-      case and: CAND =>
-        childrenCost(and.children)
-      case or: COR =>
-        childrenCost(or.children)
-      case th: CTHRESHOLD =>
-        childrenCost(th.children)
-      case _ =>
-        CostTable.MinimalCost
-    }
-
-    /** Compute the total cost of the given children. */
-    private def childrenCost(children: Seq[SigmaBoolean]): Int = {
-      val childrenArr = children.toArray
-      val nChildren = childrenArr.length
-      var sum = 0
-      cfor(0)(_ < nChildren, _ + 1) { i =>
-        val c = estimateCost(childrenArr(i))
-        sum = Math.addExact(sum, c)
+    def estimateCost(sb: SigmaBoolean): Int = {
+      /** Compute the total cost of the given children. */
+      def childrenCost(children: Seq[SigmaBoolean]): Int = {
+        val childrenArr = children.toArray
+        val nChildren = childrenArr.length
+        var sum = 0
+        cfor(0)(_ < nChildren, _ + 1) { i =>
+          val c = estimateCost(childrenArr(i))
+          sum = Math.addExact(sum, c)
+        }
+        sum
       }
-      sum
+
+      sb match {
+        case _: ProveDlog => CostTable.proveDlogEvalCost
+        case _: ProveDHTuple => CostTable.proveDHTupleEvalCost
+        case and: CAND =>
+          childrenCost(and.children)
+        case or: COR =>
+          childrenCost(or.children)
+        case th: CTHRESHOLD =>
+          childrenCost(th.children)
+        case _ =>
+          CostTable.MinimalCost
+      }
     }
 
     /** HOTSPOT: don't beautify this code */
