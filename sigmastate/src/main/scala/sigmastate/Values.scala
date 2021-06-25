@@ -1061,10 +1061,10 @@ object Values {
                     override val rhs: SValue) extends BlockItem {
     require(id >= 0, "id must be >= 0")
     override def companion = if (tpeArgs.isEmpty) ValDef else FunDef
-    def tpe: SType = rhs.tpe
-    def isValDef: Boolean = tpeArgs.isEmpty
+    override def tpe: SType = rhs.tpe
+    override def isValDef: Boolean = tpeArgs.isEmpty
     /** This is not used as operation, but rather to form a program structure */
-    def opType: SFunc = Value.notSupportedError(this, "opType")
+    override def opType: SFunc = Value.notSupportedError(this, "opType")
   }
   object ValDef extends ValueCompanion {
     override def opCode: OpCode = ValDefCode
