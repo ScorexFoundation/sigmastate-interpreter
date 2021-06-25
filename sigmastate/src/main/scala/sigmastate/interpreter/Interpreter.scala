@@ -51,16 +51,6 @@ trait Interpreter extends ScorexLogging {
   /** Evaluation settings used by [[ErgoTreeEvaluator]] */
   def evalSettings: EvalSettings = ErgoTreeEvaluator.DefaultEvalSettings
 
-  /** Specifies which cost to use as result of evaluation.
-    * Used only in tests when evalSettings.isDebug == true.
-    * The meaning of values:
-    * - when Some(true) return AOT based cost
-    * - when Some(false) return JIT based cost
-    * - when None return AOT cost (but in addition compare jit and aot costs e.g. (jitCost -
-    * treeComplexity) / 2 <= aotCost)
-    */
-  def returnAOTCost: Option[Boolean] = None
-
   /** Deserializes given script bytes using ValueSerializer (i.e. assuming expression tree format).
     * It also measures tree complexity adding to the total estimated cost of script execution.
     * The new returned context contains increased `initCost` and should be used for further processing.
