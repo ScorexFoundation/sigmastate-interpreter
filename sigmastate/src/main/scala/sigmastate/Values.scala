@@ -251,18 +251,6 @@ object Values {
     }
   }
 
-  /** Cost of operation over data of the known size.
-    * See for example [[CalcBlake2b256]], [[CalcSha256]].
-    *
-    * @param baseCost     cost of operation factored out of the loop iterations
-    * @param perBlockCost cost associated with each chunk of items
-    */
-  case class PerBlockCost(baseCost: Int, perBlockCost: Int) extends CostKind {
-    def cost(nBlocks: Int): Int = {
-      Math.addExact(baseCost, Math.multiplyExact(perBlockCost, nBlocks))
-    }
-  }
-
   /** Descriptor of the cost which depends on type. */
   abstract class TypeBasedCost extends CostKind {
     /** Returns cost value depending on the given type. */
