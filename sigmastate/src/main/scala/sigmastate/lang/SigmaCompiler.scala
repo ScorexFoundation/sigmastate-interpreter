@@ -17,9 +17,9 @@ import sigmastate.lang.syntax.ParserException
   *                         when [[sigmastate.SMethod.irInfo.irBuilder]] is defined
   */
 case class CompilerSettings(
-   networkPrefix: NetworkPrefix,
-   builder: SigmaBuilder,
-   lowerMethodCalls: Boolean
+    networkPrefix: NetworkPrefix,
+    builder: SigmaBuilder,
+    lowerMethodCalls: Boolean
 )
 
 class SigmaCompiler(settings: CompilerSettings) {
