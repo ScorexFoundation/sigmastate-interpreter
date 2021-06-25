@@ -45,31 +45,6 @@ object Sized extends SizedLowPriority {
     */
   def sizeOf[T: Sized](x: T): Size[T] = Sized[T].size(x)
 
-  /** Computes data size in bytes of the given Sized data value.
-    * @param  x  Sized data value
-    */
-  def dataSizeOf[T: Sized](x: T): Long = sizeOf[T](x).dataSize
-
-  /** Computes data size in bytes of the given data value which type is described by RType.
-    *
-    * @param  x  data value
-    * @param  ty RType descriptor of type T
-    */
-  def dataSizeOf[T](x: T, ty: RType[T]): Long = {
-    val sized = typeToSized(ty)
-    dataSizeOf[T](x)(sized)
-  }
-
-  /** Computes data size in bytes of the given data value which type is described by SType.
-    *
-    * @param  x     data value
-    * @param  stype SType descriptor of type T
-    */
-  def dataSizeOf[T <: SType](x: T#WrappedType, stype: T): Long = {
-    val sized = stypeToSized(stype)
-    dataSizeOf[T#WrappedType](x)(sized)
-  }
-
   /** Helper constructor to support Scala 2.11. */
   def instance[T](f: T => Size[T]): Sized[T] = new Sized[T] {
     override def size(x: T): Size[T] = f(x)
