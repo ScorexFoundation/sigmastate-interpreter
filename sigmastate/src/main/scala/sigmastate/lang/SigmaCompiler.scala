@@ -38,7 +38,7 @@ class SigmaCompiler(settings: CompilerSettings) {
     val predefinedFuncRegistry = new PredefinedFuncRegistry(builder)
     val binder = new SigmaBinder(env, builder, networkPrefix, predefinedFuncRegistry)
     val bound = binder.bind(parsed)
-    val typer = new SigmaTyper(builder, predefinedFuncRegistry)
+    val typer = new SigmaTyper(builder, predefinedFuncRegistry, settings.lowerMethodCalls)
     val typed = typer.typecheck(bound)
     typed
   }

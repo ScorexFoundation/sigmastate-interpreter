@@ -18,7 +18,9 @@ import scala.collection.mutable.ArrayBuffer
 /**
   * Type inference and analysis for Sigma expressions.
   */
-class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRegistry) {
+class SigmaTyper(val builder: SigmaBuilder,
+                 predefFuncRegistry: PredefinedFuncRegistry,
+                 lowerMethodCalls: Boolean) {
   import SigmaTyper._
   import builder._
   import predefFuncRegistry._
@@ -35,7 +37,7 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
                                   args: IndexedSeq[SValue]) = {
     val global = Global.withPropagatedSrcCtx(srcCtx)
     val node = for {
-      pf <- method.irInfo.irBuilder
+      pf <- method.irInfo.irBuilder if lowerMethodCalls
       res <- pf.lift((builder, global, method, args, EmptySubst))
     } yield res
     node.getOrElse(mkMethodCall(global, method, args, EmptySubst).withPropagatedSrcCtx(srcCtx))
@@ -105,8 +107,12 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
           if (method.irInfo.irBuilder.isDefined && !tRes.isFunc) {
             // this is MethodCall of parameter-less property, so invoke builder and/or fallback to just MethodCall
             val methodConcrType = method.withSType(SFunc(newObj.tpe, tRes))
-            methodConcrType.irInfo.irBuilder.flatMap(_.lift(builder, newObj, methodConcrType, IndexedSeq(), Map()))
-                .getOrElse(mkMethodCall(newObj, methodConcrType, IndexedSeq(), Map()))
+            val nodeOpt = methodConcrType.irInfo.irBuilder match {
+              case Some(b) if lowerMethodCalls =>
+                b.lift(builder, newObj, methodConcrType, IndexedSeq(), Map())
+              case _ => None
+            }
+            nodeOpt.getOrElse(mkMethodCall(newObj, methodConcrType, IndexedSeq(), Map()))
           } else {
             mkSelect(newObj, n, Some(tRes))
           }
@@ -142,7 +148,9 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
                 || !expectedArgs.zip(newArgTypes).forall { case (ea, na) => ea == SAny || ea == na })
                 error(s"For method $n expected args: $expectedArgs; actual: $newArgTypes", sel.sourceContext)
               if (method.irInfo.irBuilder.isDefined) {
-                method.irInfo.irBuilder.flatMap(_.lift(builder, newObj, method, newArgs, subst))
+                method.irInfo.irBuilder
+                  .filter(_ => lowerMethodCalls)
+                  .flatMap(_.lift(builder, newObj, method, newArgs, subst))
                   .getOrElse(mkMethodCall(newObj, method, newArgs, subst))
               } else {
                 val newSelect = mkSelect(newObj, n, Some(concrFunTpe)).withSrcCtx(sel.sourceContext)
@@ -175,7 +183,9 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
                     || !expectedArgs.zip(newArgTypes).forall { case (ea, na) => ea == SAny || ea == na })
                     error(s"For method $n expected args: $expectedArgs; actual: $newArgTypes", sel.sourceContext)
                   val methodConcrType = method.withSType(concrFunTpe.asFunc.withReceiverType(newObj.tpe))
-                  methodConcrType.irInfo.irBuilder.flatMap(_.lift(builder, newObj, methodConcrType, newArgs, Map()))
+                  methodConcrType.irInfo.irBuilder
+                    .filter(_ => lowerMethodCalls)
+                    .flatMap(_.lift(builder, newObj, methodConcrType, newArgs, Map()))
                     .getOrElse(mkMethodCall(newObj, methodConcrType, newArgs, Map()))
                 case _ =>
                   val newSelect = mkSelect(newObj, n, Some(concrFunTpe)).withSrcCtx(sel.sourceContext)
@@ -288,7 +298,9 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
                 }
               case _ => EmptySubst
             }
-            method.irInfo.irBuilder.flatMap(_.lift(builder, newObj, method, newArgs, typeSubst))
+            method.irInfo.irBuilder
+              .filter(_ => lowerMethodCalls)
+              .flatMap(_.lift(builder, newObj, method, newArgs, typeSubst))
               .getOrElse(mkMethodCall(newObj, method, newArgs, typeSubst))
 
           case _ =>
