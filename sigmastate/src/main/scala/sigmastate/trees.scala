@@ -392,6 +392,7 @@ object Upcast extends NumericCastCompanion {
   override def argInfos: Seq[ArgInfo] = UpcastInfo.argInfos
   def tT = SType.tT
   def tR = SType.tR
+  val BigIntOpType = SFunc(tT, SBigInt)
 }
 
 /**
@@ -409,6 +410,7 @@ object Downcast extends NumericCastCompanion {
   override def argInfos: Seq[ArgInfo] = DowncastInfo.argInfos
   def tT = SType.tT
   def tR = SType.tR
+  val BigIntOpType = SFunc(SBigInt, tR)
 }
 
 /**
