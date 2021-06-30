@@ -151,6 +151,7 @@ object SType {
   val paramR = STypeParam(tR)
   val paramIV = STypeParam(tIV)
   val paramOV = STypeParam(tOV)
+  val paramIVSeq: Seq[STypeParam] = Array(paramIV)
 
   val IndexedSeqOfT1: IndexedSeq[SType] = Array(SType.tT)
   val IndexedSeqOfT2: IndexedSeq[SType] = Array(SType.tT, SType.tT)
@@ -319,8 +320,10 @@ trait STypeCompanion {
 
   /** Lookup method by its id in this type. */
   @inline def getMethodById(methodId: Byte): Option[SMethod] =
-    _methodsMap.get(typeId)
-        .flatMap(ms => ms.get(methodId))
+    _methodsMap.get(typeId) match {
+      case Some(ms) => ms.get(methodId)
+      case None => None
+    }
 
   /** Lookup method in this type by method's id or throw ValidationException.
     * This method can be used in trySoftForkable section to either obtain valid method
@@ -614,11 +617,14 @@ trait SNumericType extends SProduct {
   @inline def max(that: SNumericType): SNumericType =
     if (this.numericTypeIndex > that.numericTypeIndex) this else that
 
+  /** Returns true if this numeric type is larger than that. */
+  @inline final def >(that: SNumericType): Boolean = this.numericTypeIndex > that.numericTypeIndex
+
   /** Numeric types are ordered by the number of bytes to store the numeric values.
     * @return index in the array of all numeric types. */
-  @inline protected def numericTypeIndex: Int
+  protected def numericTypeIndex: Int
 
-  override def toString: Idn = this.getClass.getSimpleName
+  override def toString: String = this.getClass.getSimpleName
 }
 object SNumericType extends STypeCompanion {
   /** Array of all numeric types ordered by number of bytes in the representation. */
@@ -626,7 +632,9 @@ object SNumericType extends STypeCompanion {
 
   // TODO HF (4h): this typeId is now shadowed by SGlobal.typeId
   //  see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/667
-  def typeId: TypeCode = 106: Byte
+  override def typeId: TypeCode = 106: Byte
+
+  /** Type variable used in generic signatures of method descriptors. */
   val tNum = STypeVar("TNum")
 
   val ToByteMethod: SMethod = SMethod(this, "toByte", SFunc(tNum, SByte), 1)
@@ -1177,13 +1185,6 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
          | Throws an exception if \lst{i < 0} or \lst{length <= i}
         """.stripMargin, ArgInfo("i", "the index"))
 
-  val BitShiftLeftMethod = SMethod(this, "<<",
-    SFunc(IndexedSeq(ThisType, SInt), ThisType, Seq(paramIV)), 11)
-  val BitShiftRightMethod = SMethod(this, ">>",
-    SFunc(IndexedSeq(ThisType, SInt), ThisType, Seq(paramIV)), 12)
-  val BitShiftRightZeroedMethod = SMethod(this, ">>>",
-    SFunc(IndexedSeq(SCollection(SBoolean), SInt), SCollection(SBoolean)), 13)
-
   val IndicesMethod = SMethod(this, "indices", SFunc(ThisType, SCollection(SInt)), 14)
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(PropertyCall,
@@ -1217,55 +1218,12 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
     SFunc(IndexedSeq(ThisType, SCollection(SInt), ThisType), ThisType, Seq(paramIV)), 21)
       .withIRInfo(MethodCallIrBuilder).withInfo(MethodCall, "")
 
-  val UnionSetsMethod = SMethod(this, "unionSets",
-    SFunc(IndexedSeq(ThisType, ThisType), ThisType, Seq(paramIV)), 22)
-      .withIRInfo(MethodCallIrBuilder).withInfo(MethodCall, "")
-
-  val DiffMethod = SMethod(this, "diff",
-    SFunc(IndexedSeq(ThisType, ThisType), ThisType, Seq(paramIV)), 23)
-      .withIRInfo(MethodCallIrBuilder).withInfo(MethodCall, "")
-  val IntersectMethod = SMethod(this, "intersect",
-    SFunc(IndexedSeq(ThisType, ThisType), ThisType, Seq(paramIV)), 24)
-      .withIRInfo(MethodCallIrBuilder).withInfo(MethodCall, "")
-
-  val PrefixLengthMethod = SMethod(this, "prefixLength",
-    SFunc(IndexedSeq(ThisType, tPredicate), SInt, Seq(paramIV)), 25)
-      .withIRInfo(MethodCallIrBuilder).withInfo(MethodCall, "")
-
   val IndexOfMethod = SMethod(this, "indexOf",
     SFunc(IndexedSeq(ThisType, tIV, SInt), SInt, Seq(paramIV)), 26)
       .withIRInfo(MethodCallIrBuilder).withInfo(MethodCall, "")
 
-  val LastIndexOfMethod = SMethod(this, "lastIndexOf",
-    SFunc(IndexedSeq(ThisType, tIV, SInt), SInt, Seq(paramIV)), 27)
-      .withIRInfo(MethodCallIrBuilder).withInfo(MethodCall, "")
-
-  // TODO HF (1h): related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
-  lazy val FindMethod = SMethod(this, "find",
-    SFunc(IndexedSeq(ThisType, tPredicate), SOption(tIV), Seq(paramIV)), 28)
-      .withIRInfo(MethodCallIrBuilder).withInfo(MethodCall, "")
-
   val ZipMethod = SMethod(this, "zip",
     SFunc(IndexedSeq(ThisType, tOVColl), SCollection(STuple(tIV, tOV)), Seq(tIV, tOV)), 29)
-      .withIRInfo(MethodCallIrBuilder).withInfo(MethodCall, "")
-
-  val DistinctMethod = SMethod(this, "distinct",
-    SFunc(IndexedSeq(ThisType), ThisType, Seq(tIV)), 30)
-      .withIRInfo(MethodCallIrBuilder).withInfo(PropertyCall, "")
-
-  val StartsWithMethod = SMethod(this, "startsWith",
-    SFunc(IndexedSeq(ThisType, ThisType, SInt), SBoolean, Seq(paramIV)), 31)
-      .withIRInfo(MethodCallIrBuilder).withInfo(MethodCall, "")
-
-  val EndsWithMethod = SMethod(this, "endsWith",
-    SFunc(IndexedSeq(ThisType, ThisType), SBoolean, Seq(paramIV)), 32)
-      .withIRInfo(MethodCallIrBuilder).withInfo(MethodCall, "")
-
-  val MapReduceMethod = SMethod(this, "mapReduce",
-    SFunc(
-      IndexedSeq(ThisType, SFunc(tIV, STuple(tK, tV)), SFunc(STuple(tV, tV), tV)),
-      SCollection(STuple(tK, tV)),
-      Seq(paramIV, STypeParam(tK), STypeParam(tV))), 34)
       .withIRInfo(MethodCallIrBuilder).withInfo(MethodCall, "")
 
   lazy val methods: Seq[SMethod] = Seq(
@@ -1279,34 +1237,13 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
     FilterMethod,
     AppendMethod,
     ApplyMethod,
-    /* TODO HF (1h): https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
-    BitShiftLeftMethod,
-    BitShiftRightMethod,
-    BitShiftRightZeroedMethod,
-    */
     IndicesMethod,
     FlatMapMethod,
     PatchMethod,
     UpdatedMethod,
     UpdateManyMethod,
-    /*TODO HF (1h): https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
-    UnionSetsMethod,
-    DiffMethod,
-    IntersectMethod,
-    PrefixLengthMethod,
-    */
     IndexOfMethod,
-    /* TODO HF (1h): https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
-    LastIndexOfMethod,
-    FindMethod,
-    */
     ZipMethod
-    /* TODO HF (1h): https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
-    DistinctMethod,
-    StartsWithMethod,
-    EndsWithMethod,
-    MapReduceMethod,
-    */
   )
   def apply[T <: SType](elemType: T): SCollection[T] = SCollectionType(elemType)
   def apply[T <: SType](implicit elemType: T, ov: Overload1): SCollection[T] = SCollectionType(elemType)
@@ -1544,6 +1481,7 @@ case object SBox extends SProduct with SPredefType with SMonoType {
       }
     }
   }
+
   val PropositionBytes = "propositionBytes"
   val Value = "value"
   val Id = "id"
@@ -1802,7 +1740,7 @@ case object SAvlTree extends SProduct with SPredefType with SMonoType {
 }
 
 case object SContext extends SProduct with SPredefType with SMonoType {
-  override type WrappedType = ErgoLikeContext
+  override type WrappedType = Context
   override val typeCode: TypeCode = 101: Byte
   override def typeId = typeCode
 
