@@ -26,7 +26,12 @@ case class ContextExtension(values: Map[Byte, EvaluatedValue[_ <: SType]]) {
 }
 
 object ContextExtension {
+  /** Immutable instance of empty ContextExtension, which can be shared to avoid
+    * allocations. */
   val empty = ContextExtension(Map())
+  type VarBinding = (Byte, EvaluatedValue[_ <: SType])
+
+  /** Type of context variable binding. */
   type VarBinding = (Byte, EvaluatedValue[_ <: SType])
 
   object serializer extends SigmaSerializer[ContextExtension, ContextExtension] {

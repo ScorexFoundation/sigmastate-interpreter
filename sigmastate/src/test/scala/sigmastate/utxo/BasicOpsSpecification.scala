@@ -555,12 +555,6 @@ class BasicOpsSpecification extends SigmaTestingCommons
     )
   }
 
-  //TODO soft-fork: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/236
-  ignore("ZKProof") {
-    test("zk1", env, ext, "ZKProof { sigmaProp(HEIGHT >= 0) }",
-      ZKProofBlock(BoolToSigmaProp(GE(Height, LongConstant(0)))), true)
-  }
-
   property("numeric cast") {
     test("downcast", env, ext,
       "{ getVar[Int](intVar2).get.toByte == 2.toByte }",

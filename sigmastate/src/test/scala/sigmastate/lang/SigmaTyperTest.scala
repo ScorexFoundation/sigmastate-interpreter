@@ -31,7 +31,7 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
       val predefinedFuncRegistry = new PredefinedFuncRegistry(builder)
       val binder = new SigmaBinder(env, builder, TestnetNetworkPrefix, predefinedFuncRegistry)
       val bound = binder.bind(parsed)
-      val typer = new SigmaTyper(builder, predefinedFuncRegistry, true)
+      val typer = new SigmaTyper(builder, predefinedFuncRegistry, lowerMethodCalls = true)
       val typed = typer.typecheck(bound)
       assertSrcCtxForAllNodes(typed)
       if (expected != null) typed shouldBe expected
@@ -612,30 +612,6 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
   property("BitShiftRightZeroed") {
     typecheck(env, "1 >>> 2") shouldBe SInt
     typefail(env, "true >>> false", 1, 1)
-  }
-
-  // TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
-  ignore("Collection.BitShiftLeft") {
-    typecheck(env, "Coll(1,2) << 2") shouldBe SCollection(SInt)
-    an [TyperException] should be thrownBy typecheck(env, "Coll(1,2) << true")
-    an [TyperException] should be thrownBy typecheck(env, "Coll(1,2) << 2L")
-    an [TyperException] should be thrownBy typecheck(env, "Coll(1,2) << (2L, 3)")
-  }
-
-  // TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
-  ignore("Collection.BitShiftRight") {
-    typecheck(env, "Coll(1,2) >> 2") shouldBe SCollection(SInt)
-    an [TyperException] should be thrownBy typecheck(env, "Coll(1,2) >> 2L")
-    an [TyperException] should be thrownBy typecheck(env, "Coll(1,2) >> true")
-    an [TyperException] should be thrownBy typecheck(env, "Coll(1,2) >> (2L, 3)")
-  }
-
-  // TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
-  ignore("Collection.BitShiftRightZeroed") {
-    typecheck(env, "Coll(true, false) >>> 2") shouldBe SCollection(SBoolean)
-    an [TyperException] should be thrownBy typecheck(env, "Coll(1,2) >>> 2")
-    an [TyperException] should be thrownBy typecheck(env, "Coll(true, false) >>> true")
-    an [TyperException] should be thrownBy typecheck(env, "Coll(true, false) >>> (2L, 3)")
   }
 
   property("SCollection.indices") {

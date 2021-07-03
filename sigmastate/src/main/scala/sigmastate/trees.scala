@@ -754,7 +754,7 @@ object CalcSha256 extends SimpleTransformerCompanion {
 case class SubstConstants[T <: SType](scriptBytes: Value[SByteArray], positions: Value[SIntArray], newValues: Value[SCollection[T]])
     extends NotReadyValueByteArray {
   override def companion = SubstConstants
-  override val opType = SFunc(Array(SByteArray, SIntArray, SCollection(SType.tT)), SByteArray) // TODO optimize: allocation
+  override val opType = SubstConstants.OpType
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val scriptBytesV = scriptBytes.evalTo[Coll[Byte]](env)
     val positionsV = positions.evalTo[Coll[Int]](env)
@@ -784,6 +784,7 @@ object SubstConstants extends ValueCompanion {
   override def opCode: OpCode = OpCodes.SubstConstantsCode
   override val costKind = PerItemCost(100, 100, 1)
 
+  val OpType = SFunc(Array(SByteArray, SIntArray, SCollection(SType.tT)), SByteArray)
   def eval(scriptBytes: Array[Byte],
            positions: Array[Int],
            newVals: Array[Value[SType]])(implicit vs: SigmaValidationSettings): (Array[Byte], Int) =
