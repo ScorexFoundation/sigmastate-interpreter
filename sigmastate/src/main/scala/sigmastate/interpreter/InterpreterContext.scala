@@ -3,6 +3,7 @@ package sigmastate.interpreter
 import org.ergoplatform.validation.SigmaValidationSettings
 import sigmastate.SType
 import sigmastate.Values.EvaluatedValue
+import sigmastate.interpreter.ContextExtension.VarBinding
 import sigmastate.serialization.SigmaSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import special.sigma
@@ -20,12 +21,17 @@ import special.sigma.AnyValue
   * @param values internal container of the key-value pairs
   */
 case class ContextExtension(values: Map[Byte, EvaluatedValue[_ <: SType]]) {
-  def add(bindings: (Byte, EvaluatedValue[_ <: SType])*): ContextExtension =
+  def add(bindings: VarBinding*): ContextExtension =
     ContextExtension(values ++ bindings)
 }
 
 object ContextExtension {
+  /** Immutable instance of empty ContextExtension, which can be shared to avoid
+    * allocations. */
   val empty = ContextExtension(Map())
+
+  /** Type of context variable binding. */
+  type VarBinding = (Byte, EvaluatedValue[_ <: SType])
 
   object serializer extends SigmaSerializer[ContextExtension, ContextExtension] {
 
@@ -91,7 +97,7 @@ trait InterpreterContext {
   def withExtension(newExtension: ContextExtension): InterpreterContext
 
   /** Creates a new instance with given bindings added to extension. */
-  def withBindings(bindings: (Byte, EvaluatedValue[_ <: SType])*): InterpreterContext = {
+  def withBindings(bindings: VarBinding*): InterpreterContext = {
     val ext = extension.add(bindings: _*)
     withExtension(ext)
   }
@@ -104,6 +110,13 @@ trait InterpreterContext {
     * These types are used internally by ErgoTree interpreter.
     * Thus, this method performs transformation from Ergo to internal Sigma representation
     * of all context data.
+    *
+    * @param isCost     == true if the resulting context will be used in AOT cost estimation
+    *                   otherwise it should be false
+    * @param extensions additional context variables which will be merged with those in the
+    *                   `extension` of this instance, overriding existing bindings in case
+    *                   variable ids overlap.
+    *
     * @see sigmastate.eval.Evaluation
     */
   def toSigmaContext(isCost: Boolean, extensions: Map[Byte, AnyValue] = Map()): sigma.Context

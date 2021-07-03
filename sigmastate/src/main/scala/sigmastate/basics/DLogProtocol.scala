@@ -72,7 +72,7 @@ object DLogProtocol {
       GroupElementSerializer.toBytes(ecData)
     }
 
-    override def toString: Idn = s"FirstDLogProverMessage(${Base16.encode(bytes)})"
+    override def toString = s"FirstDLogProverMessage(${Base16.encode(bytes)})"
   }
 
   case class SecondDLogProverMessage(z: BigInt) extends SecondProverMessage {

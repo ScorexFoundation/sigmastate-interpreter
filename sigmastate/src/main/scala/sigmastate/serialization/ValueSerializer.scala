@@ -197,7 +197,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     def name = s"Serializer of ${serializer.opDesc}"
     override def parent: Scope = null
     override def showInScope(v: String): String = name + "/" + v
-    override def toString: Idn = s"SerScope(${serializer.opDesc}, $children)"
+    override def toString: String = s"SerScope(${serializer.opDesc}, $children)"
   }
 
   case class DataScope(parent: Scope, data: DataInfo[_]) extends Scope {

@@ -15,6 +15,7 @@ import sigmastate.interpreter.Interpreter._
 import sigmastate.lang.Terms._
 import special.sigma.InvalidType
 import SType.AnyOps
+import sigmastate.interpreter.ContextExtension.VarBinding
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.utils.Helpers._
 
@@ -40,7 +41,7 @@ class BasicOpsSpecification extends SigmaTestingCommons
   val propVar2 = 11.toByte
   val lastExtVar = propVar2
 
-  val ext: Seq[(Byte, EvaluatedValue[_ <: SType])] = Seq(
+  val ext: Seq[VarBinding] = Seq(
     (intVar1, IntConstant(1)), (intVar2, IntConstant(2)),
     (byteVar1, ByteConstant(1)), (byteVar2, ByteConstant(2)),
     (bigIntVar1, BigIntConstant(BigInt(10).underlying())), (bigIntVar2, BigIntConstant(BigInt(20).underlying())),
@@ -55,7 +56,7 @@ class BasicOpsSpecification extends SigmaTestingCommons
     )
 
   def test(name: String, env: ScriptEnv,
-           ext: Seq[(Byte, EvaluatedValue[_ <: SType])],
+           ext: Seq[VarBinding],
            script: String, propExp: SValue,
       onlyPositive: Boolean = true) = {
     val prover = new ContextEnrichingTestProvingInterpreter() {
@@ -354,22 +355,6 @@ class BasicOpsSpecification extends SigmaTestingCommons
       rootCause(_).isInstanceOf[InvalidType])
   }
 
-  // TODO related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/416
-  ignore("Box.getReg") {
-    test("Extract1", env, ext,
-      "{ SELF.getReg[Int]( (getVar[Int](intVar1).get + 4)).get == 1}",
-      BoolToSigmaProp(
-        EQ(
-          MethodCall(Self, SBox.getRegMethod,
-            IndexedSeq(Plus(GetVarInt(1).get, IntConstant(4))), Map(SType.tT -> SInt)
-          ).asInstanceOf[Value[SOption[SType]]].get,
-          IntConstant(1)
-        )
-      ),
-      true
-    )
-  }
-
   property("OptionGet success (SomeValue)") {
     test("Opt1", env, ext,
       "{ getVar[Int](intVar2).get == 2 }",
@@ -522,12 +507,6 @@ class BasicOpsSpecification extends SigmaTestingCommons
     test("prop2", env, ext, "sigmaProp(HEIGHT >= 0) && getVar[SigmaProp](proofVar1).get",
       SigmaAnd(Vector(BoolToSigmaProp(GE(Height, IntConstant(0))), GetVarSigmaProp(propVar1).get)), true)
 //    println(CostTableStat.costTableString)
-  }
-
-  //TODO soft-fork: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/236
-  ignore("ZKProof") {
-    test("zk1", env, ext, "ZKProof { sigmaProp(HEIGHT >= 0) }",
-      ZKProofBlock(BoolToSigmaProp(GE(Height, LongConstant(0)))), true)
   }
 
   property("numeric cast") {

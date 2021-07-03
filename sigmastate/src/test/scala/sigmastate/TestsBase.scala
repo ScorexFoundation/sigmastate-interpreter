@@ -7,7 +7,7 @@ import sigmastate.Values.{SValue, Value, SigmaPropValue, ErgoTree, SigmaBoolean}
 import sigmastate.eval.IRContext
 import sigmastate.interpreter.Interpreter
 import sigmastate.interpreter.Interpreter.ScriptEnv
-import sigmastate.lang.{SigmaCompiler, TransformingSigmaBuilder}
+import sigmastate.lang.{TransformingSigmaBuilder, SigmaCompiler, CompilerSettings}
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.serialization.ValueSerializer
 
@@ -49,7 +49,28 @@ trait TestsBase extends Matchers {
   def mkTestErgoTree(prop: SigmaBoolean): ErgoTree =
     ErgoTree.fromSigmaBoolean(ergoTreeHeaderInTests, prop)
 
-  lazy val compiler = SigmaCompiler(TestnetNetworkPrefix, TransformingSigmaBuilder)
+  protected val _lowerMethodCalls = new DynamicVariable[Boolean](true)
+
+  /** Returns true if MethodCall nodes should be lowered by TypeChecker to the
+    * corresponding ErgoTree nodes. E.g. xs.map(f) -->  MapCollection(xs, f).
+    * NOTE: The value of the flag is assigned dynamically using _lowerMethodCalls
+    * DynamicVariable. */
+  def lowerMethodCallsInTests: Boolean = _lowerMethodCalls.value
+
+  /** If true, then all suite properties are executed with _lowerMethodCalls set to false.
+    * This allow to test execution of MethodCall nodes in ErgoTree.
+    */
+  val okRunTestsWithoutMCLowering: Boolean = false
+
+  val defaultCompilerSettings: CompilerSettings = CompilerSettings(
+    TestnetNetworkPrefix, TransformingSigmaBuilder,
+    lowerMethodCalls = true
+  )
+
+  def compilerSettingsInTests: CompilerSettings =
+    defaultCompilerSettings.copy(lowerMethodCalls = lowerMethodCallsInTests)
+
+  def compiler = SigmaCompiler(compilerSettingsInTests)
 
   def checkSerializationRoundTrip(v: SValue): Unit = {
     val compiledTreeBytes = ValueSerializer.serialize(v)

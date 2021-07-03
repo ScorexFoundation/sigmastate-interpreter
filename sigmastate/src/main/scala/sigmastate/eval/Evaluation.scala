@@ -347,10 +347,9 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
       case arr: Array[_] => s"Array(${trim(arr).mkString(",")})"
       case col: special.collection.Coll[_] => s"Coll(${trim(col.toArray).mkString(",")})"
       case p: SGroupElement => p.showToString
-      case ProveDlog(GroupElementConstant(g)) => s"ProveDlog(${g.showToString})"
-      case ProveDHTuple(
-              GroupElementConstant(g), GroupElementConstant(h), GroupElementConstant(u), GroupElementConstant(v)) =>
-        s"ProveDHT(${g.showToString},${h.showToString},${u.showToString},${v.showToString})"
+      case ProveDlog(g) => s"ProveDlog(${showECPoint(g)})"
+      case ProveDHTuple(g, h, u, v) =>
+        s"ProveDHT(${showECPoint(g)},${showECPoint(h)},${showECPoint(u)},${showECPoint(v)})"
       case _ => x.toString
     }
     sym match {
@@ -370,7 +369,7 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
     case _ => error(s"Cannot find value in environment for $s (dataEnv = $dataEnv)")
   }
 
-  /** Incapsulate simple monotonic (add only) counter with reset. */
+  /** Encapsulate simple monotonic (add only) counter with reset. */
   class CostCounter(val initialCost: Int) {
     private var _currentCost: Int = initialCost
 

@@ -164,7 +164,7 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons with CrossVersionProps {
     // collect coins during the fixed rate period
     forAll(Gen.choose(1, settings.fixedRatePeriod)) { height =>
       val currentRate = emission.minersRewardAtHeight(height)
-      createRewardTx(currentRate, height, minerProp) shouldBe 'success
+      createRewardTx(currentRate, height, minerProp).getOrThrow
       createRewardTx(currentRate + 1, height, minerProp) shouldBe 'failure
       createRewardTx(currentRate - 1, height, minerProp) shouldBe 'failure
     }

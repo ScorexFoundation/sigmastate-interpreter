@@ -9,7 +9,7 @@ import sigmastate.serialization.OpCodes
 import scala.collection.mutable
 
 object ComplexityTableStat {
-  // NOTE: make immutable before making public
+  // NOTE: this class is mutable so better to keep it private
   private class StatItem(
     /** How many times the operation has been executed */
     var count: Long,

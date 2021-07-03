@@ -126,14 +126,14 @@ class OracleExamplesSpecification extends SigmaTestingCommons
 
     def withinTimeframe(sinceHeight: Int,
                         timeoutHeight: Int,
-                        fallback: Value[SBoolean.type])(script: Value[SBoolean.type]) =
-      OR(AND(GE(Height, IntConstant(sinceHeight)), LT(Height, IntConstant(timeoutHeight)), script),
-        AND(GE(Height, IntConstant(timeoutHeight)), fallback))
+                        fallback: SigmaPropValue)(script: SigmaPropValue) =
+      SigmaOr(SigmaAnd(GE(Height, IntConstant(sinceHeight)), LT(Height, IntConstant(timeoutHeight)), script),
+        SigmaAnd(GE(Height, IntConstant(timeoutHeight)), fallback))
 
-    val contractLogic = OR(AND(GT(extract[SLong.type](reg1), LongConstant(15)), alicePubKey.isProven),
-      AND(LE(extract[SLong.type](reg1), LongConstant(15)), bobPubKey.isProven))
+    val contractLogic = SigmaOr(SigmaAnd(GT(extract[SLong.type](reg1), LongConstant(15)), alicePubKey),
+      SigmaAnd(LE(extract[SLong.type](reg1), LongConstant(15)), bobPubKey))
 
-    val oracleProp = AND(
+    val oracleProp = SigmaAnd(
       OptionIsDefined(IR.builder.mkMethodCall(
         LastBlockUtxoRootHash, SAvlTree.getMethod,
         IndexedSeq(ExtractId(GetVarBox(22: Byte).get), GetVarByteArray(23: Byte).get)).asOption[SByteArray]),
@@ -164,7 +164,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons
     val timeout = 60
 
     val propAlice = mkTestErgoTree(
-      withinTimeframe(sinceHeight, timeout, alicePubKey.isProven)(oracleProp).toSigmaProp)
+      withinTimeframe(sinceHeight, timeout, alicePubKey)(oracleProp))
 
     val sAlice = testBox(10, propAlice, 0, Seq(), Map(), boxIndex = 3)
 
@@ -173,7 +173,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons
       EQ(SizeOf(Inputs), IntConstant(2)),
       EQ(ExtractId(ByIndex(Inputs, 0)), ByteArrayConstant(sAlice.id)))
     val propBob = mkTestErgoTree(
-      withinTimeframe(sinceHeight, timeout, bobPubKey.isProven)(propAlong).toSigmaProp)
+      withinTimeframe(sinceHeight, timeout, bobPubKey)(propAlong))
     val sBob = testBox(10, propBob, 0, Seq(), Map(), boxIndex = 4)
 
    val ctx = ErgoLikeContextTesting(
@@ -236,26 +236,18 @@ class OracleExamplesSpecification extends SigmaTestingCommons
       additionalRegisters = Map(reg1 -> LongConstant(temperature))
     )
 
-    val contractLogic = OR(
-      AND(
-        GT(
-          ExtractRegisterAs[SLong.type](ByIndex(Inputs, 0), reg1).get,
-          LongConstant(15)),
-        alicePubKey.isProven),
-      AND(
-        LE(
-          ExtractRegisterAs[SLong.type](ByIndex(Inputs, 0), reg1).get,
-          LongConstant(15)),
-        bobPubKey.isProven)
+    val contractLogic = SigmaOr(
+      SigmaAnd(GT(ExtractRegisterAs[SLong.type](ByIndex(Inputs, 0), reg1).get, LongConstant(15)), alicePubKey),
+      SigmaAnd(LE(ExtractRegisterAs[SLong.type](ByIndex(Inputs, 0), reg1).get, LongConstant(15)), bobPubKey)
     )
 
-    val prop = mkTestErgoTree(AND(
+    val prop = SigmaOr(
       EQ(SizeOf(Inputs), IntConstant(3)),
       EQ(
         ExtractScriptBytes(ByIndex(Inputs, 0)),
         ByteArrayConstant(mkTestErgoTree(oraclePubKey).bytes)),
       contractLogic
-    ).toSigmaProp)
+    )
 
     val sOracle = oracleBox
     val sAlice = testBox(10, prop, 0, Seq(), Map())

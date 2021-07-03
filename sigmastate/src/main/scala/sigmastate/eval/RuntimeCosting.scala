@@ -191,18 +191,15 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
     constCost(tpe)
   }
 
-  val UpcastBigIntOpType = SFunc(sigmastate.Upcast.tT, SBigInt)
-  val DowncastBigIntOpType = SFunc(SBigInt, sigmastate.Upcast.tR)
-
   def costOf(v: SValue): Ref[Int] = v match {
     case l: Terms.Lambda =>
       constCost(l.tpe)
     case l: FuncValue =>
       constCost(l.tpe)
     case sigmastate.Upcast(_, SBigInt) =>
-      costOf("Upcast", UpcastBigIntOpType)
+      costOf("Upcast", sigmastate.Upcast.BigIntOpType)
     case sigmastate.Downcast(v, _) if v.tpe == SBigInt =>
-      costOf("Downcast", DowncastBigIntOpType)
+      costOf("Downcast", sigmastate.Downcast.BigIntOpType)
     case _ =>
       costOf(v.opName, v.opType)
   }
