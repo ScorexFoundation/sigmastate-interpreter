@@ -2,7 +2,7 @@ package sigmastate
 
 import scalan.{AVHashMap, Nullable, RType}
 import scalan.RType._
-import sigmastate.Values.{FixedCost, PerItemCost, SigmaBoolean}
+import sigmastate.Values.SigmaBoolean
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
 import sigmastate.eval.SigmaDsl

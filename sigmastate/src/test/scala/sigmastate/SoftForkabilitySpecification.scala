@@ -6,7 +6,7 @@ import org.ergoplatform.validation._
 import org.scalatest.BeforeAndAfterAll
 import sigmastate.SPrimType.MaxPrimTypeCode
 import sigmastate.Values.ErgoTree.EmptyConstants
-import sigmastate.Values.{UnparsedErgoTree, CostKind, NotReadyValueInt, FixedCost, ByteArrayConstant, Tuple, IntConstant, ErgoTree, ValueCompanion}
+import sigmastate.Values.{UnparsedErgoTree, NotReadyValueInt, ByteArrayConstant, Tuple, IntConstant, ErgoTree, ValueCompanion}
 import sigmastate.eval.Colls
 import sigmastate.helpers.{ErgoLikeContextTesting, ErgoLikeTestProvingInterpreter, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._

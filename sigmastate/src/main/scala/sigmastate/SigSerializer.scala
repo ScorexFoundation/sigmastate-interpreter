@@ -3,7 +3,7 @@ package sigmastate
 import com.typesafe.scalalogging.LazyLogging
 import gf2t.GF2_192_Poly
 import org.bouncycastle.util.BigIntegers
-import sigmastate.Values.{FixedCost, PerItemCost, SigmaBoolean}
+import sigmastate.Values.SigmaBoolean
 import scorex.util.encode.Base16
 import sigmastate.SigSerializer.{logger, readBytesChecked}
 import sigmastate.Values.SigmaBoolean

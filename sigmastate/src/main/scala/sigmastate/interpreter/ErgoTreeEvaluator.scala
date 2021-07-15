@@ -3,10 +3,10 @@ package sigmastate.interpreter
 import com.typesafe.scalalogging.LazyLogging
 import org.ergoplatform.ErgoLikeContext
 import org.ergoplatform.SigmaConstants.ScriptCostLimit
-import sigmastate.{SMethod, SType}
+import sigmastate.{FixedCost, PerItemCost, SMethod, SType, TypeBasedCost}
 import sigmastate.Values._
 import sigmastate.eval.Profiler
-import sigmastate.interpreter.ErgoTreeEvaluator.{DataEnv}
+import sigmastate.interpreter.ErgoTreeEvaluator.DataEnv
 import sigmastate.interpreter.Interpreter.ReductionResult
 import sigmastate.lang.exceptions.CostLimitException
 import special.sigma.{Context, SigmaProp}

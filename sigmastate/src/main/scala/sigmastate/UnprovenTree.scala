@@ -3,7 +3,7 @@ package sigmastate
 import java.math.BigInteger
 
 import gf2t.GF2_192_Poly
-import sigmastate.Values.{ErgoTree, FixedCost, SigmaBoolean, SigmaPropConstant}
+import sigmastate.Values.{ErgoTree, SigmaBoolean, SigmaPropConstant}
 import sigmastate.basics.DLogProtocol.{FirstDLogProverMessage, ProveDlog}
 import sigmastate.basics.VerifierMessage.Challenge
 import sigmastate.basics.{FirstDiffieHellmanTupleProverMessage, FirstProverMessage, ProveDHTuple}

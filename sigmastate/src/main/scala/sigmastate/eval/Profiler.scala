@@ -1,7 +1,7 @@
 package sigmastate.eval
 
-import sigmastate.SMethod
-import sigmastate.Values.{FixedCost, SValue}
+import sigmastate.{FixedCost, SMethod}
+import sigmastate.Values.SValue
 import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.ValueSerializer.getSerializer
