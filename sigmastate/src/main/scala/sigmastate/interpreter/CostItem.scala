@@ -4,13 +4,13 @@ import sigmastate.{FixedCost, PerItemCost, SMethod, SType, TypeBasedCost}
 import sigmastate.Values.{FixedCostValueCompanion, PerItemCostValueCompanion, ValueCompanion}
 import sigmastate.lang.Terms.MethodCall
 
-/** An item in the cost accumulation trace of a [[ErgoTreeEvaluator]]. */
+/** An item in the cost accumulation trace of a [[sigmastate.Values.ErgoTree]] evaluation. */
 abstract class CostItem {
   def opName: String
   def cost: Int
 }
 
-/** An item in the cost accumulation trace of a [[ErgoTreeEvaluator]].
+/** An item in the cost accumulation trace of a [[sigmastate.Values.ErgoTree]] evaluation.
   * Represents cost of simple operation.
   * Used for debugging, testing and profiling of costing.
   * @param opDesc   descriptor of the ErgoTree operation
@@ -29,7 +29,7 @@ object FixedCostItem {
   }
 }
 
-/** An item in the cost accumulation trace of a [[ErgoTreeEvaluator]].
+/** An item in the cost accumulation trace of a [[sigmastate.Values.ErgoTree]] evaluation.
   * Represents cost of an operation which depends on type (e.g. type of arguments).
   * Used for debugging, testing and profiling of costing.
   * @param opDesc   descriptor of the ErgoTree operation
@@ -60,7 +60,7 @@ object TypeBasedCostItem {
   }
 }
 
-/** An item in the cost accumulation trace of a [[ErgoTreeEvaluator]].
+/** An item in the cost accumulation trace of a [[sigmastate.Values.ErgoTree]] evaluation.
   * Represents cost of a sequence of operation.
   * Used for debugging, testing and profiling of costing.
   *
@@ -80,7 +80,7 @@ object SeqCostItem {
     SeqCostItem(companion.opDesc, companion.costKind, nItems)
 }
 
-/** An item in the cost accumulation trace of a [[ErgoTreeEvaluator]].
+/** An item in the cost accumulation trace of a [[sigmastate.Values.ErgoTree]] evaluation.
   * Represents cost of MethodCall operation.
   * Used for debugging, testing and profiling of costing.
   *
@@ -89,8 +89,6 @@ object SeqCostItem {
 case class MethodCallCostItem(items: CostDetails) extends CostItem {
   override def opName: String = MethodCall.typeName
   override def cost: Int = items.cost
-}
-object MethodCallCostItem {
 }
 
 
