@@ -10,8 +10,8 @@ import sigmastate.Values.SigmaBoolean
 import sigmastate.basics.DLogProtocol.{ProveDlog, SecondDLogProverMessage}
 import sigmastate.basics.VerifierMessage.Challenge
 import sigmastate.basics.{ProveDHTuple, SecondDiffieHellmanTupleProverMessage}
-import sigmastate.interpreter.ErgoTreeEvaluator.{NamedDesc, OperationCostInfo, fixedCostOp, perItemCostOp}
-import sigmastate.interpreter.{CryptoConstants, ErgoTreeEvaluator}
+import sigmastate.interpreter.ErgoTreeEvaluator.{fixedCostOp, perItemCostOp}
+import sigmastate.interpreter.{CryptoConstants, ErgoTreeEvaluator, NamedDesc, OperationCostInfo}
 import sigmastate.lang.exceptions.SerializerException
 import sigmastate.serialization.SigmaSerializer
 import sigmastate.utils.{Helpers, SigmaByteReader, SigmaByteWriter}

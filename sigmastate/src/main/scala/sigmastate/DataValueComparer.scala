@@ -2,16 +2,15 @@ package sigmastate
 
 import scalan.{AVHashMap, Nullable, RType}
 import scalan.RType._
-import sigmastate.Values.{SigmaBoolean, PerItemCost, FixedCost}
+import sigmastate.Values.{FixedCost, PerItemCost, SigmaBoolean}
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
 import sigmastate.eval.SigmaDsl
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import spire.sp
-import sigmastate.interpreter.ErgoTreeEvaluator
-import sigmastate.interpreter.ErgoTreeEvaluator.{OperationCostInfo, NamedDesc}
-import special.sigma.{Header, HeaderRType, Box, GroupElementRType, SigmaProp, GroupElement, AvlTreeRType, PreHeaderRType, BigInt, BoxRType, AvlTree, BigIntRType, PreHeader}
-import special.collection.{Coll, PairOfCols, CollOverArray}
+import sigmastate.interpreter.{ErgoTreeEvaluator, NamedDesc, OperationCostInfo}
+import special.sigma.{AvlTree, AvlTreeRType, BigInt, BigIntRType, Box, BoxRType, GroupElement, GroupElementRType, Header, HeaderRType, PreHeader, PreHeaderRType, SigmaProp}
+import special.collection.{Coll, CollOverArray, PairOfCols}
 import spire.syntax.all.cfor
 
 /** Implementation of data equality for two arbitrary ErgoTree data types.

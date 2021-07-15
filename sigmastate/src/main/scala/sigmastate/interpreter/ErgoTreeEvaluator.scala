@@ -6,7 +6,7 @@ import org.ergoplatform.SigmaConstants.ScriptCostLimit
 import sigmastate.{SMethod, SType}
 import sigmastate.Values._
 import sigmastate.eval.Profiler
-import sigmastate.interpreter.ErgoTreeEvaluator.{DataEnv, MethodDesc, OperationCostInfo, OperationDesc}
+import sigmastate.interpreter.ErgoTreeEvaluator.{DataEnv}
 import sigmastate.interpreter.Interpreter.ReductionResult
 import sigmastate.lang.exceptions.CostLimitException
 import special.sigma.{Context, SigmaProp}
@@ -274,7 +274,7 @@ class ErgoTreeEvaluator(
 
   final def addMethodCallCost[R](mc: MethodCall, obj: Any, args: Array[Any])
                                 (block: => R): R = {
-    val costDetails = MethodCallCostItem.calcCost(mc, obj, args)(this)
+    val costDetails = ErgoTreeEvaluator.calcCost(mc, obj, args)(this)
     if (settings.costTracingEnabled) {
       costTrace += MethodCallCostItem(costDetails)
     }
@@ -307,34 +307,6 @@ object ErgoTreeEvaluator {
   /** Immutable data environment used to assign data values to graph nodes. */
   type DataEnv = Map[Int, Any]
 
-  /** Each ErgoTree operation is described either using [[ValueCompanion]] or using
-   * [[SMethod]]. */
-  abstract class OperationDesc
-  case class CompanionDesc(companion: ValueCompanion) extends OperationDesc
-  case class MethodDesc(method: SMethod) extends OperationDesc {
-    override def toString: String = s"MethodDesc(${method.opName})"
-
-    override def hashCode(): Int = (method.objType.typeId << 8) | method.methodId
-
-    override def equals(obj: Any): Boolean =
-      this.eq(obj.asInstanceOf[AnyRef]) || (obj != null && (obj match {
-        case that: MethodDesc =>
-          method.objType.typeId == that.method.objType.typeId &&
-          method.methodId == that.method.methodId
-        case _ => false
-      }))
-  }
-  case class NamedDesc(name: String) extends OperationDesc
-
-  /** Operation costing descriptors combined together. */
-  case class OperationCostInfo[C <: CostKind](costKind: C, opDesc: OperationDesc)
-
-  def operationName(opDesc: OperationDesc): String = opDesc match {
-    case CompanionDesc(companion) => companion.typeName
-    case MethodDesc(method) => method.opName
-    case NamedDesc(name) => name
-  }
-
   /** Size of data block in bytes. Used in JIT cost calculations.
     * @see [[sigmastate.NEQ]],
     */
@@ -350,6 +322,17 @@ object ErgoTreeEvaluator {
   val DefaultEvalSettings = EvalSettings(
     isMeasureOperationTime = false,
     isMeasureScriptTime = false)
+
+  /** Helper method to compute cost details for the given method call. */
+  def calcCost(mc: MethodCall, obj: Any, args: Array[Any])
+              (implicit E: ErgoTreeEvaluator): CostDetails = {
+    // add approximated cost of invoked method (if specified)
+    val cost = mc.method.costFunc match {
+      case Some(costFunc) => costFunc(E, mc, obj, args)
+      case _ => CostDetails.ZeroCost // TODO v5.0: throw exception if not defined
+    }
+    cost
+  }
 
   /** Evaluator currently is being executed on the current thread.
     * This variable is set in a single place, specifically in the `eval` method of
@@ -487,81 +470,6 @@ object ErgoTreeEvaluator {
   }
 
   def error(msg: String) = sys.error(msg)
-
-  def msgCostLimitError(cost: Long, limit: Long) = s"Estimated execution cost $cost exceeds the limit $limit"
-
-}
-
-/** Encapsulate simple monotonic (add only) counter with reset. */
-class CostCounter(val initialCost: Int) {
-  private var _currentCost: Int = initialCost
-
-  @inline def += (n: Int) = {
-    this._currentCost = java.lang.Math.addExact(this._currentCost, n)
-  }
-  @inline def currentCost: Int = _currentCost
-  @inline def resetCost() = { _currentCost = initialCost }
-}
-
-/** Implements finite state machine with stack of graph blocks (scopes),
-  * which correspond to lambdas and thunks.
-  * It accepts messages: startScope(), endScope(), add(), reset()
-  * At any time `totalCost` is the currently accumulated cost. */
-class CostAccumulator(initialCost: Int, costLimit: Option[Long]) {
-
-  @inline private def initialStack() = List(new Scope(initialCost))
-  private var _scopeStack: List[Scope] = initialStack
-
-  @inline def currentScope: Scope = _scopeStack.head
-
-  /** Represents a single scope during execution of the graph.
-    * The lifetime of each instance is bound to scope execution.
-    * When the evaluation enters a new scope (e.g. calling a lambda) a new Scope instance is created and pushed
-    * to _scopeStack, then is starts receiving `add` method calls.
-    * When the evaluation leaves the scope, the top is popped off the stack. */
-  class Scope(initialCost: Int) extends CostCounter(initialCost) {
-
-
-    @inline def add(opCost: Int): Unit = {
-          this += opCost
-    }
-
-    /** Called by nested Scopes to communicate accumulated cost back to parent scope.
-      * When current scope terminates, it communicates accumulated cost up to its parent scope.
-      * This value is used at the root scope to obtain total accumulated scope.
-      */
-    private var _resultRegister: Int = 0
-    @inline def childScopeResult: Int = _resultRegister
-    @inline def childScopeResult_=(resultCost: Int): Unit = {
-      _resultRegister = resultCost
-    }
-
-  }
-
-  /** Called once for each operation of a scope (lambda or thunk).
-    */
-  def add(opCost: Int): Unit = {
-    currentScope.add(opCost)
-
-    // check that we are still withing the limit
-    if (costLimit.isDefined) {
-      val limit = costLimit.get
-      // the cost we accumulated so far
-      val accumulatedCost = currentScope.currentCost
-      if (accumulatedCost > limit) {
-        throw new CostLimitException(
-          accumulatedCost, ErgoTreeEvaluator.msgCostLimitError(accumulatedCost, limit), None)
-      }
-    }
-  }
-
-  /** Resets this accumulator into initial state to be ready for new graph execution. */
-  @inline def reset() = {
-    _scopeStack = initialStack()
-  }
-
-  /** Returns total accumulated cost */
-  @inline def totalCost: Int = currentScope.currentCost
 }
 
 /** An item in the cost accumulation trace of a [[ErgoTreeEvaluator]]. */
@@ -577,7 +485,7 @@ abstract class CostItem {
   * @param costKind kind of the cost to be added to accumulator
   */
 case class FixedCostItem(opDesc: OperationDesc, costKind: FixedCost) extends CostItem {
-  override def opName: String = ErgoTreeEvaluator.operationName(opDesc)
+  override def opName: String = opDesc.operationName
   override def cost: Int = costKind.cost
 }
 object FixedCostItem {
@@ -602,7 +510,7 @@ case class TypeBasedCostItem(
     costKind: TypeBasedCost,
     tpe: SType) extends CostItem {
   override def opName: String = {
-    val name = ErgoTreeEvaluator.operationName(opDesc)
+    val name = opDesc.operationName
     s"$name[$tpe]"
   }
   override def cost: Int = costKind.costFunc(tpe)
@@ -630,7 +538,7 @@ object TypeBasedCostItem {
   */
 case class SeqCostItem(opDesc: OperationDesc, costKind: PerItemCost, nItems: Int)
     extends CostItem {
-  override def opName: String = ErgoTreeEvaluator.operationName(opDesc)
+  override def opName: String = opDesc.operationName
   override def cost: Int = costKind.cost(nItems)
   /** How many data chunks in this cost item. */
   def chunks: Int = costKind.chunks(nItems)
@@ -651,16 +559,6 @@ case class MethodCallCostItem(items: CostDetails) extends CostItem {
   override def cost: Int = items.cost
 }
 object MethodCallCostItem {
-  /** Helper method to compute cost details for the given method call. */
-  def calcCost(mc: MethodCall, obj: Any, args: Array[Any])
-              (implicit E: ErgoTreeEvaluator): CostDetails = {
-    // add approximated cost of invoked method (if specified)
-    val cost = mc.method.costFunc match {
-      case Some(costFunc) => costFunc(E, mc, obj, args)
-      case _ => CostDetails.ZeroCost // TODO v5.0: throw exception if not defined
-    }
-    cost
-  }
 }
 
 /** Abstract representation of cost results obtained during evaluation. */

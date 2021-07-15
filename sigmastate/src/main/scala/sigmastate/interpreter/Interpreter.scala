@@ -24,7 +24,7 @@ import scalan.{MutableLazy, Nullable}
 import scalan.util.BenchmarkUtil
 import sigmastate.FiatShamirTree._
 import sigmastate.SigSerializer._
-import sigmastate.interpreter.ErgoTreeEvaluator.{NamedDesc, OperationCostInfo, fixedCostOp}
+import sigmastate.interpreter.ErgoTreeEvaluator.fixedCostOp
 import sigmastate.utils.Helpers._
 import sigmastate.lang.Terms.ValueOps
 import spire.syntax.all.cfor

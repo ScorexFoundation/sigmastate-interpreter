@@ -37,7 +37,6 @@ import org.scalatest.{BeforeAndAfterAll, Tag}
 import scalan.RType._
 import scorex.util.ModifierId
 import sigmastate.basics.ProveDHTuple
-import sigmastate.interpreter.ErgoTreeEvaluator.{MethodDesc, NamedDesc}
 import sigmastate.interpreter._
 import org.scalactic.source.Position
 

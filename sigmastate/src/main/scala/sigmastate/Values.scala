@@ -11,7 +11,7 @@ import scalan.{Nullable, RType}
 import scalan.util.CollectionUtil._
 import sigmastate.SCollection.{SByteArray, SIntArray}
 import sigmastate.interpreter.CryptoConstants.EcPointType
-import sigmastate.interpreter.{CryptoConstants, ErgoTreeEvaluator}
+import sigmastate.interpreter.{CompanionDesc, CryptoConstants, ErgoTreeEvaluator, NamedDesc}
 import sigmastate.serialization.{ConstantStore, OpCodes, _}
 import sigmastate.serialization.OpCodes._
 import sigmastate.TrivialProp.{FalseProp, TrueProp}

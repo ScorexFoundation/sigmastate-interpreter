@@ -7,7 +7,7 @@ import sigmastate.Values._
 import sigmastate.utils.Overloading.Overload1
 import sigmastate._
 import sigmastate.interpreter.ErgoTreeEvaluator
-import sigmastate.interpreter.ErgoTreeEvaluator.{DataEnv, MethodDesc}
+import sigmastate.interpreter.ErgoTreeEvaluator.DataEnv
 import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.lang.TransformingSigmaBuilder._

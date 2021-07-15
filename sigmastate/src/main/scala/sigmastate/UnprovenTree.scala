@@ -7,8 +7,8 @@ import sigmastate.Values.{ErgoTree, FixedCost, SigmaBoolean, SigmaPropConstant}
 import sigmastate.basics.DLogProtocol.{FirstDLogProverMessage, ProveDlog}
 import sigmastate.basics.VerifierMessage.Challenge
 import sigmastate.basics.{FirstDiffieHellmanTupleProverMessage, FirstProverMessage, ProveDHTuple}
-import sigmastate.interpreter.ErgoTreeEvaluator
-import sigmastate.interpreter.ErgoTreeEvaluator.{NamedDesc, OperationCostInfo, fixedCostOp}
+import sigmastate.interpreter.{ErgoTreeEvaluator, NamedDesc, OperationCostInfo}
+import sigmastate.interpreter.ErgoTreeEvaluator.fixedCostOp
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.serialization.SigmaSerializer
 import sigmastate.utils.SigmaByteWriter

@@ -35,7 +35,6 @@ import special.sigma.{Header, Box, SigmaProp, AvlTree, SigmaDslBuilder, PreHeade
 import sigmastate.lang.SigmaTyper.STypeSubst
 import sigmastate.eval.Evaluation.stypeToRType
 import sigmastate.eval._
-import sigmastate.interpreter.ErgoTreeEvaluator.{OperationCostInfo, NamedDesc, MethodDesc}
 import sigmastate.lang.exceptions.MethodNotFound
 import sigmastate.utxo.CostTable.CostOf
 import spire.syntax.all.cfor
