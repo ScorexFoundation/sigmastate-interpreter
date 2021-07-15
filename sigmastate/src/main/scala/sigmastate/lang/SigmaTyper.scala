@@ -139,7 +139,7 @@ class SigmaTyper(val builder: SigmaBuilder,
       obj.tpe match {
         case p: SProduct =>
           p.method(n) match {
-            case Some(method @ SMethod(_, _, genFunTpe @ SFunc(_, _, _), _, _, _)) =>
+            case Some(method @ SMethod(_, _, genFunTpe @ SFunc(_, _, _), _, _, _, _, _)) =>
               val subst = Map(genFunTpe.tpeParams.head.ident -> rangeTpe)
               val concrFunTpe = applySubst(genFunTpe, subst)
               val expectedArgs = concrFunTpe.asFunc.tDom.tail

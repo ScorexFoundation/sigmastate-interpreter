@@ -2,7 +2,7 @@ package sigmastate.eval
 
 import java.math.BigInteger
 
-import scalan.{ExactNumeric, ExactOrderingImpl}
+import scalan.{ExactNumeric, ExactOrderingImpl, ExactIntegral}
 
 import scala.math.{Integral, Ordering}
 import special.sigma._
@@ -41,7 +41,17 @@ object NumericOps {
 
   trait BigIntIsIntegral extends Integral[BigInt] {
     def quot(x: BigInt, y: BigInt): BigInt = x.divide(y)
-    def rem(x: BigInt, y: BigInt): BigInt = x.remainder(y)
+
+    /** This method is used in ErgoTreeEvaluator based interpreter, to implement '%' operation.
+      * Even though it is called `rem`, the semantics of ErgoTree language requires
+      * it to correspond to [[java.math.BigInteger]].mod method.
+      * Note also that there is no distinction between `mod` and `reminder` methods in
+      * [[scala.math.Integral]] trait the same way as it is in BigInteger class.
+      * For this reason we define implementation of this `rem` method using
+      * [[java.math.BigInteger]].mod.
+      */
+    def rem(x: BigInt, y: BigInt): BigInt = x.mod(y)
+
     def plus(x: BigInt, y: BigInt): BigInt = x.add(y)
     def minus(x: BigInt, y: BigInt): BigInt = x.subtract(y)
     def times(x: BigInt, y: BigInt): BigInt = x.multiply(y)
@@ -66,6 +76,13 @@ object NumericOps {
   implicit object BigIntIsIntegral extends BigIntIsIntegral with OrderingOps.BigIntOrdering
 
   implicit object BigIntIsExactNumeric extends ExactNumeric[BigInt] {
+    val n = BigIntIsIntegral
+    override def plus(x: BigInt, y: BigInt): BigInt = n.plus(x, y)
+    override def minus(x: BigInt, y: BigInt): BigInt = n.minus(x, y)
+    override def times(x: BigInt, y: BigInt): BigInt = n.times(x, y)
+  }
+
+  implicit object BigIntIsExactIntegral extends ExactIntegral[BigInt] {
     val n = BigIntIsIntegral
     override def plus(x: BigInt, y: BigInt): BigInt = n.plus(x, y)
     override def minus(x: BigInt, y: BigInt): BigInt = n.minus(x, y)

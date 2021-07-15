@@ -9,7 +9,7 @@ import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.hash.{Digest32, Blake2b256}
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.helpers.{ErgoLikeContextTesting, ErgoLikeTestInterpreter, ErgoLikeTestProvingInterpreter, SigmaTestingCommons, ContextEnrichingTestProvingInterpreter}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter.ScriptNameProp
 import sigmastate.lang.Terms._
@@ -17,7 +17,7 @@ import sigmastate.serialization.ErgoTreeSerializer
 import ErgoTreeSerializer.DefaultSerializer
 import org.scalatest.BeforeAndAfterAll
 import sigmastate.eval.{CompiletimeCosting, IRContext}
-import sigmastate.interpreter.{CryptoConstants, PrecompiledScriptProcessor}
+import sigmastate.interpreter.{CryptoConstants, Interpreter}
 
 import scala.util.Random
 import sigmastate.eval._
@@ -557,6 +557,8 @@ class IcoExample extends SigmaTestingCommons
     * We output statistics of how PrecompiledScriptProcessor cache was used. */
   override protected def afterAll(): Unit = {
     println(ErgoLikeTestInterpreter.DefaultProcessorInTests.getStats())
+    println("verifySignatureProfiler ==========================================")
+    println(Interpreter.verifySignatureProfiler.generateReport)
   }
 
 }

@@ -7,6 +7,8 @@ import org.ergoplatform._
 import org.ergoplatform.validation.ValidationRules.{CheckLoopLevelInCostFunction, CheckCostFuncOperation}
 import sigmastate._
 import sigmastate.Values.{Value, GroupElementConstant, SigmaBoolean, Constant}
+import sigmastate.lang.Terms.OperationId
+import sigmastate.utxo.CostTableStat
 
 import scala.reflect.ClassTag
 import scala.util.Try

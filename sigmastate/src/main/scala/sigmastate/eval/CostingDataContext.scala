@@ -14,7 +14,7 @@ import sigmastate.Values.{Constant, EvaluatedValue, SValue, ConstantNode, ErgoTr
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.interpreter.{CryptoConstants, Interpreter}
 import special.collection.{Size, CSizeOption, SizeColl, CCostedBuilder, CollType, SizeOption, CostedBuilder, Coll}
-import special.sigma._
+import special.sigma.{Box, _}
 import sigmastate.eval.Extensions._
 import spire.syntax.all.cfor
 
@@ -691,7 +691,7 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
       case _ => sys.error(s"Cannot evaluate substConstants($scriptBytes, $positions, $newValues): cannot lift value $v")
     })
 
-    val res = SubstConstants.eval(scriptBytes.toArray, positions.toArray, typedNewVals)(validationSettings)
+    val (res, _) = SubstConstants.eval(scriptBytes.toArray, positions.toArray, typedNewVals)(validationSettings)
     Colls.fromArray(res)
   }
 

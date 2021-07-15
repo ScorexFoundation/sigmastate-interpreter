@@ -65,6 +65,7 @@ case class SecondDiffieHellmanTupleProverMessage(z: BigInteger) extends SecondPr
 case class ProveDHTuple(gv: EcPointType, hv: EcPointType, uv: EcPointType, vv: EcPointType)
   extends SigmaProofOfKnowledgeLeaf[DiffieHellmanTupleProtocol, DiffieHellmanTupleProverInput] {
   override val opCode: OpCode = OpCodes.ProveDiffieHellmanTupleCode
+  override def size: Int = 4  // one node for each EcPoint
   lazy val g = gv
   lazy val h = hv
   lazy val u = uv
