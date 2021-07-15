@@ -36,3 +36,6 @@ class InterpreterException(message: String, source: Option[SourceContext] = None
 class CostLimitException(val estimatedCost: Long, message: String, cause: Option[Throwable] = None)
     extends SigmaException(message, None, cause)
 
+object CostLimitException {
+  def msgCostLimitError(cost: Long, limit: Long) = s"Estimated execution cost $cost exceeds the limit $limit"
+}

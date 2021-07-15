@@ -4,14 +4,13 @@ import java.math.BigInteger
 import java.util
 import java.util.Objects
 
-import org.bitbucket.inkytonik.kiama.relation.Tree
-import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{strategy, everywherebu, count}
+import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{strategy, count, everywherebu}
 import org.ergoplatform.validation.ValidationException
 import scalan.{Nullable, RType}
 import scalan.util.CollectionUtil._
 import sigmastate.SCollection.{SIntArray, SByteArray}
 import sigmastate.interpreter.CryptoConstants.EcPointType
-import sigmastate.interpreter.CryptoConstants
+import sigmastate.interpreter.{CryptoConstants, CompanionDesc}
 import sigmastate.serialization.{OpCodes, ConstantStore, _}
 import sigmastate.serialization.OpCodes._
 import sigmastate.TrivialProp.{FalseProp, TrueProp}
@@ -40,14 +39,12 @@ import scala.collection.mutable
 
 object Values {
 
-  type SigmaTree = Tree[SigmaNode, SValue]
   type SValue = Value[SType]
-  type Idn = String
 
   /** Base class for all ErgoTree expression nodes.
     * @see [[sigmastate.Values.ErgoTree]]
     */
-  trait Value[+S <: SType] extends SigmaNode {
+  abstract class Value[+S <: SType] extends SigmaNode {
     /** The companion node descriptor with opCode, cost and other metadata. */
     def companion: ValueCompanion
 
@@ -144,6 +141,9 @@ object Values {
     /** Unique id of the node class used in serialization of ErgoTree. */
     def opCode: OpCode
 
+    /** Returns cost descriptor of this operation. */
+    def costKind: CostKind = ???
+
     override def toString: String = s"${this.getClass.getSimpleName}(${opCode.toUByte})"
 
     def typeName: String = this.getClass.getSimpleName.replace("$", "")
@@ -156,13 +156,26 @@ object Values {
 
     init()
 
+    val opDesc = CompanionDesc(this)
   }
   object ValueCompanion {
     private val _allOperations: mutable.HashMap[Byte, ValueCompanion] = mutable.HashMap.empty
     lazy val allOperations = _allOperations.toMap
   }
 
-  trait EvaluatedValue[+S <: SType] extends Value[S] {
+  /** Should be inherited by companion objects of operations with fixed cost kind. */
+  trait FixedCostValueCompanion extends ValueCompanion {
+    /** Returns cost descriptor of this operation. */
+    override def costKind: FixedCost = ???
+  }
+
+  /** Should be inherited by companion objects of operations with per-item cost kind. */
+  trait PerItemCostValueCompanion extends ValueCompanion {
+    /** Returns cost descriptor of this operation. */
+    override def costKind: PerItemCost = ???
+  }
+
+  abstract class EvaluatedValue[+S <: SType] extends Value[S] {
     val value: S#WrappedType
     def opType: SFunc = {
       val resType = tpe match {
