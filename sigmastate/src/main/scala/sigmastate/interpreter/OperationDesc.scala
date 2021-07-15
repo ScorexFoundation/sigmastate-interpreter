@@ -36,9 +36,7 @@ case class MethodDesc(method: SMethod) extends OperationDesc {
 }
 
 /** Operation descriptor based on name. */
-case class NamedDesc(name: String) extends OperationDesc {
-  override def operationName: String = name
-}
+case class NamedDesc(operationName: String) extends OperationDesc
 
 /** Operation costing descriptors combined together. */
 case class OperationCostInfo[C <: CostKind](costKind: C, opDesc: OperationDesc)
