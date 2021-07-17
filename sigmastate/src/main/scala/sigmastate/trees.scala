@@ -392,6 +392,7 @@ object Upcast extends NumericCastCompanion {
   override def argInfos: Seq[ArgInfo] = UpcastInfo.argInfos
   def tT = SType.tT
   def tR = SType.tR
+  val BigIntOpType = SFunc(tT, SBigInt)
 }
 
 /**
@@ -409,6 +410,7 @@ object Downcast extends NumericCastCompanion {
   override def argInfos: Seq[ArgInfo] = DowncastInfo.argInfos
   def tT = SType.tT
   def tR = SType.tR
+  val BigIntOpType = SFunc(SBigInt, tR)
 }
 
 /**
@@ -517,12 +519,12 @@ object CalcSha256 extends SimpleTransformerCompanion {
 case class SubstConstants[T <: SType](scriptBytes: Value[SByteArray], positions: Value[SIntArray], newValues: Value[SCollection[T]])
     extends NotReadyValueByteArray {
   override def companion = SubstConstants
-  override val opType = SFunc(Array(SByteArray, SIntArray, SCollection(SType.tT)), SByteArray)
+  override val opType = SubstConstants.OpType
 }
 
 object SubstConstants extends ValueCompanion {
   override def opCode: OpCode = OpCodes.SubstConstantsCode
-
+  val OpType = SFunc(Array(SByteArray, SIntArray, SCollection(SType.tT)), SByteArray)
   def eval(scriptBytes: Array[Byte],
            positions: Array[Int],
            newVals: Array[Value[SType]])(implicit vs: SigmaValidationSettings): Array[Byte] =
@@ -555,7 +557,7 @@ trait TwoArgumentOperationCompanion extends ValueCompanion {
 
 case class ArithOp[T <: SType](left: Value[T], right: Value[T], override val opCode: OpCode)
   extends TwoArgumentsOperation[T, T, T] with NotReadyValue[T] {
-  override def companion: ValueCompanion = ArithOp.operations(opCode)
+  override def companion: ArithOpCompanion = ArithOp.operations(opCode)
   override def tpe: T = left.tpe
   override val opType = SFunc(Array[SType](left.tpe, right.tpe), tpe)
   override def opName: String = ArithOp.opcodeToArithOpName(opCode)

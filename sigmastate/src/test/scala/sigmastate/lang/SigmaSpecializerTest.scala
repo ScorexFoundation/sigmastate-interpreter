@@ -37,7 +37,7 @@ class SigmaSpecializerTest extends PropSpec
     val predefinedFuncRegistry = new PredefinedFuncRegistry(builder)
     val binder = new SigmaBinder(env, builder, TestnetNetworkPrefix, predefinedFuncRegistry)
     val bound = binder.bind(parsed)
-    val typer = new SigmaTyper(builder, predefinedFuncRegistry)
+    val typer = new SigmaTyper(builder, predefinedFuncRegistry, lowerMethodCalls = true)
     val typed = typer.typecheck(bound)
     typed
   }

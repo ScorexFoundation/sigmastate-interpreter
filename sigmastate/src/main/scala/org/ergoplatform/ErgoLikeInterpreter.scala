@@ -40,5 +40,5 @@ class ErgoLikeInterpreter(implicit val IR: IRContext) extends Interpreter {
         }.orElse(d.default)
       case _ => super.substDeserialize(context, updateContext, node)
     }
-    
+
 }

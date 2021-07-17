@@ -2,26 +2,27 @@ package org.ergoplatform
 
 import java.math.BigInteger
 
-import org.ergoplatform.ErgoAddressEncoder.{MainnetNetworkPrefix, TestnetNetworkPrefix, hash256}
+import org.ergoplatform.ErgoAddressEncoder.{hash256, MainnetNetworkPrefix, TestnetNetworkPrefix}
 import org.ergoplatform.SigmaConstants.ScriptCostLimit
 import org.ergoplatform.validation.{ValidationException, ValidationRules}
 import org.scalatest.{Assertion, TryValues}
 import scorex.crypto.hash.Blake2b256
 import sigmastate.basics.DLogProtocol
-import sigmastate.basics.DLogProtocol.{DLogProverInput, ProveDlog}
+import sigmastate.basics.DLogProtocol.{ProveDlog, DLogProverInput}
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
-import sigmastate.serialization.{GroupElementSerializer, ValueSerializer}
+import sigmastate.serialization.{ValueSerializer, GroupElementSerializer}
 import scorex.util.encode.Base58
-import sigmastate.{CrossVersionProps, SType, SigmaAnd}
-import sigmastate.Values.{ByteArrayConstant, Constant, ErgoTree, EvaluatedValue, IntConstant, UnparsedErgoTree}
+import sigmastate.{CrossVersionProps, SigmaAnd, SType}
+import sigmastate.Values.{UnparsedErgoTree, Constant, EvaluatedValue, ByteArrayConstant, IntConstant, ErgoTree}
 import sigmastate.eval.IRContext
 import sigmastate.helpers._
 import sigmastate.helpers.TestingHelpers._
+import sigmastate.interpreter.ContextExtension.VarBinding
 import sigmastate.interpreter.CryptoConstants.dlogGroup
 import sigmastate.interpreter.{ContextExtension, CostedProverResult}
-import sigmastate.interpreter.Interpreter.{ScriptEnv, ScriptNameProp}
+import sigmastate.interpreter.Interpreter.{ScriptNameProp, ScriptEnv}
 import sigmastate.lang.Terms.ValueOps
-import sigmastate.lang.exceptions.{CostLimitException, CosterException}
+import sigmastate.lang.exceptions.{CosterException, CostLimitException}
 import sigmastate.utils.Helpers._
 import special.sigma.SigmaDslTesting
 
@@ -259,7 +260,7 @@ class ErgoAddressSpecification extends SigmaDslTesting
   property("negative cases: deserialized script + costing exceptions") {
    implicit lazy val IR = new TestingIRContext
 
-    def testPay2SHAddress(address: Pay2SHAddress, script: (Byte, EvaluatedValue[_ <: SType]), costLimit: Int = ScriptCostLimit.value): CostedProverResult = {
+    def testPay2SHAddress(address: Pay2SHAddress, script: VarBinding, costLimit: Int = ScriptCostLimit.value): CostedProverResult = {
       val boxToSpend = testBox(10, address.script, creationHeight = 5)
       val ctx = copyContext(ErgoLikeContextTesting.dummy(boxToSpend, activatedVersionInTests)
           .withExtension(ContextExtension(Seq(
