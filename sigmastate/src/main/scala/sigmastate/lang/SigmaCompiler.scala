@@ -14,7 +14,11 @@ import sigmastate.lang.syntax.ParserException
   * @param networkPrefix    network prefix to decode an ergo address from string (PK op)
   * @param builder          used to create ErgoTree nodes
   * @param lowerMethodCalls if true, then MethodCall nodes are lowered to ErgoTree nodes
-  *                         when [[sigmastate.SMethod.irInfo.irBuilder]] is defined
+  *                         when [[sigmastate.SMethod.irInfo.irBuilder]] is defined. For
+  *                         example, in the `coll.map(x => x+1)` code, the `map` method
+  *                         call can be lowered to MapCollection node.
+  *                         The lowering if preferable, because it is more compact (1 byte
+  *                         for MapCollection instead of 3 bytes for MethodCall).
   */
 case class CompilerSettings(
     networkPrefix: NetworkPrefix,

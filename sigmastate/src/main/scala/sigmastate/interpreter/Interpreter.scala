@@ -145,9 +145,10 @@ trait Interpreter extends ScorexLogging {
     * If cost is above limit then exception is returned and `exp` is not executed
     * else `exp` is computed in the given context and the resulting SigmaBoolean returned.
     *
-    * @param context        the context in which `exp` should be executed
-    * @param env            environment of system variables used by the interpreter internally
-    * @param exp            expression to be executed in the given `context`
+    * @param context the context in which `exp` should be executed
+    * @param env     environment of variables used by the interpreter internally.
+    *                Note, this is not system environment variables.
+    * @param exp     expression to be executed in the given `context`
     * @return result of script reduction
     * @see `ReductionResult`
     */
@@ -177,7 +178,9 @@ trait Interpreter extends ScorexLogging {
     }
   }
 
-  /** Reduces `exp` to SigmaProp under the default (empty) environment. */
+  /** Helper convenience overload which uses empty environment.
+    * @see other overloads for details.
+    */
   def reduceToCrypto(context: CTX, exp: Value[SType]): Try[ReductionResult] =
     reduceToCrypto(context, Interpreter.emptyEnv, exp)
 
