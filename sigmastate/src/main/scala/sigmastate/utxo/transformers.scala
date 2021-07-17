@@ -11,9 +11,6 @@ import sigmastate.Operations._
 import sigmastate.lang.exceptions.InterpreterException
 import special.sigma.Box
 
-
-// TODO refactor: remove this trait as it doesn't have semantic meaning
-
 /** Every operation is a transformer of some kind.
   * This trait is used merely to simplify implementation and avoid copy-paste.
   */
