@@ -14,7 +14,7 @@ import sigmastate.Values.{Constant, EvaluatedValue, SValue, ConstantNode, ErgoTr
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.interpreter.{CryptoConstants, Interpreter}
 import special.collection.{Size, CSizeOption, SizeColl, CCostedBuilder, CollType, SizeOption, CostedBuilder, Coll}
-import special.sigma.{Box, _}
+import special.sigma._
 import sigmastate.eval.Extensions._
 import spire.syntax.all.cfor
 
