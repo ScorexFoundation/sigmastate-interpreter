@@ -36,7 +36,6 @@ import sigmastate.lang.SigmaTyper.STypeSubst
 import sigmastate.eval.Evaluation.stypeToRType
 import sigmastate.eval._
 import sigmastate.lang.exceptions.MethodNotFound
-import sigmastate.utxo.CostTable.CostOf
 import spire.syntax.all.cfor
 
 import scala.collection.mutable
@@ -838,16 +837,24 @@ object SNumericType extends STypeCompanion {
     .withCost(costOfNumericCast)
     .withInfo(PropertyCall, "Converts this numeric value to \\lst{BigInt}")
 
+  /** Cost of: 1) creating Byte collection from a numeric value */
+  val ToBytes_CostKind = FixedCost(5)
+
   val ToBytesMethod: SMethod = SMethod(
-    this, "toBytes", SFunc(tNum, SByteArray), 6, FixedCost(CostOf.NumericToBytes))
+    this, "toBytes", SFunc(tNum, SByteArray), 6, ToBytes_CostKind)
     .withIRInfo(MethodCallIrBuilder)
     .withInfo(PropertyCall,
       """ Returns a big-endian representation of this numeric value in a collection of bytes.
         | For example, the \lst{Int} value \lst{0x12131415} would yield the
         | collection of bytes \lst{[0x12, 0x13, 0x14, 0x15]}.
           """.stripMargin)
+
+  /** Cost of: 1) creating Boolean collection (one bool for each bit) from a numeric
+    * value. */
+  val ToBits_CostKind = FixedCost(5)
+
   val ToBitsMethod: SMethod = SMethod(
-    this, "toBits", SFunc(tNum, SBooleanArray), 7, FixedCost(CostOf.NumericToBits))
+    this, "toBits", SFunc(tNum, SBooleanArray), 7, ToBits_CostKind)
     .withIRInfo(MethodCallIrBuilder)
     .withInfo(PropertyCall,
       """ Returns a big-endian representation of this numeric in a collection of Booleans.
@@ -1090,8 +1097,11 @@ case object SGroupElement extends SProduct with SPrimType with SEmbeddable with 
   override def typeId = typeCode
   override def coster: Option[CosterFactory] = Some(Coster(_.GroupElementCoster))
 
+  /** Cost of: 1) serializing EcPointType to bytes 2) packing them in Coll. */
+  val GetEncodedCostKind = FixedCost(250)
+
   lazy val GetEncodedMethod: SMethod = SMethod(
-    this, "getEncoded", SFunc(Array(this), SByteArray), 2, FixedCost(CostOf.GroupElement_GetEncoded))
+    this, "getEncoded", SFunc(Array(this), SByteArray), 2, GetEncodedCostKind)
     .withIRInfo(MethodCallIrBuilder)
     .withInfo(PropertyCall, "Get an encoding of the point value.")
 

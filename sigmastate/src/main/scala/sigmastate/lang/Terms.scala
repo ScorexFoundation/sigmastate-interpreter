@@ -260,7 +260,8 @@ object Terms {
   
   object MethodCall extends ValueCompanion {
     override def opCode: OpCode = OpCodes.MethodCallCode
-    override val costKind = FixedCost(CostOf.MethodCall)
+    /** Cost of: 1) packing args into Array 2) java.lang.reflect.Method.invoke */
+    override val costKind = FixedCost(4)
 
     /** Helper constructor which allows to cast the resulting node to the specified
       * [[sigmastate.Values.Value]] type `T`.
@@ -275,7 +276,8 @@ object Terms {
   }
   object PropertyCall extends FixedCostValueCompanion {
     override def opCode: OpCode = OpCodes.PropertyCallCode
-    override val costKind = FixedCost(CostOf.MethodCall)
+    /** Cost of: 1) packing args into Array 2) java.lang.reflect.Method.invoke */
+    override val costKind = FixedCost(4)
   }
 
   case class STypeParam(ident: STypeVar, upperBound: Option[SType] = None, lowerBound: Option[SType] = None) {

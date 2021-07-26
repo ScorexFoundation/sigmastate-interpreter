@@ -23,7 +23,6 @@ import sigmastate.ArithOp.OperationImpl
 import sigmastate.eval.NumericOps.{BigIntIsExactIntegral, BigIntIsExactNumeric, BigIntIsExactOrdering}
 import sigmastate.eval.{Colls, SigmaDsl}
 import sigmastate.lang.TransformingSigmaBuilder
-import sigmastate.utxo.CostTable.CostOf
 import special.collection.Coll
 import special.sigma.{GroupElement, SigmaProp}
 
@@ -543,8 +542,16 @@ trait NumericCastCompanion extends ValueCompanion {
   def costKind: TypeBasedCost = NumericCastCostKind
 }
 
+/** Cost of:
+  * 1) converting numeric value to the numeric value of the given type, i.e. Byte -> Int
+  * NOTE: the cost of BigInt casting is the same in JITC (comparing to AOTC) to simplify
+  * implementation.
+  */
 object NumericCastCostKind extends TypeBasedCost {
-  override def costFunc(tpe: SType): Int = CostOf.NumericCast(targetTpe = tpe)
+  override def costFunc(targetTpe: SType): Int = targetTpe match {
+    case SBigInt => 30
+    case _ => 10
+  }
 }
 
 object Upcast extends NumericCastCompanion {
@@ -857,44 +864,93 @@ object ArithOp {
   import OpCodes._
   object Plus     extends ArithOpCompanion(PlusCode,     "+", PlusInfo.argInfos) {
     def eval(impl: OperationImpl, x: Any, y: Any): Any = impl.n.plus(x, y)
+    /** Cost of:
+      * 1) resolving ArithOpCompanion by typeCode
+      * 2) calling method of Numeric
+      */
     override val costKind = new TypeBasedCost {
-      override def costFunc(tpe: SType): Int = CostOf.Plus(tpe)
+      override def costFunc(tpe: SType): Int = tpe match {
+        case SBigInt => 20
+        case _ => 15
+      }
     }
   }
   object Minus    extends ArithOpCompanion(MinusCode,    "-", MinusInfo.argInfos) {
     def eval(impl: OperationImpl, x: Any, y: Any): Any = impl.n.minus(x, y)
+    /** Cost of:
+      * 1) resolving ArithOpCompanion by typeCode
+      * 2) calling method of Numeric
+      */
     override val costKind = new TypeBasedCost {
-      override def costFunc(tpe: SType): Int = CostOf.Minus(tpe)
+      override def costFunc(tpe: SType): Int = tpe match {
+        case SBigInt => 20
+        case _ => 15
+      }
     }
   }
   object Multiply extends ArithOpCompanion(MultiplyCode, "*", MultiplyInfo.argInfos) {
     def eval(impl: OperationImpl, x: Any, y: Any): Any = impl.n.times(x, y)
+    /** Cost of:
+      * 1) resolving ArithOpCompanion by typeCode
+      * 2) calling method of Numeric
+      */
     override val costKind = new TypeBasedCost {
-      override def costFunc(tpe: SType): Int = CostOf.Multiply(tpe)
+      override def costFunc(tpe: SType): Int = tpe match {
+        case SBigInt => 25
+        case _ => 15
+      }
     }
   }
   object Division extends ArithOpCompanion(DivisionCode, "/", DivisionInfo.argInfos) {
     def eval(impl: OperationImpl, x: Any, y: Any): Any = impl.i.quot(x, y)
+    /** Cost of:
+      * 1) resolving ArithOpCompanion by typeCode
+      * 2) calling method of Integral
+      */
     override val costKind = new TypeBasedCost {
-      override def costFunc(tpe: SType): Int = CostOf.Division(tpe)
+      override def costFunc(tpe: SType): Int = tpe match {
+        case SBigInt => 25
+        case _ => 15
+      }
     }
   }
   object Modulo   extends ArithOpCompanion(ModuloCode,   "%", ModuloInfo.argInfos) {
     def eval(impl: OperationImpl, x: Any, y: Any): Any = impl.i.rem(x, y)
+    /** Cost of:
+      * 1) resolving ArithOpCompanion by typeCode
+      * 2) calling method of Integral
+      */
     override val costKind = new TypeBasedCost {
-      override def costFunc(tpe: SType): Int = CostOf.Modulo(tpe)
+      override def costFunc(tpe: SType): Int = tpe match {
+        case SBigInt => 25
+        case _ => 15
+      }
     }
   }
   object Min      extends ArithOpCompanion(MinCode,      "min", MinInfo.argInfos) {
     def eval(impl: OperationImpl, x: Any, y: Any): Any = impl.o.min(x, y)
+    /** Cost of:
+      * 1) resolving ArithOpCompanion by typeCode
+      * 2) calling method of ExactOrdering
+      */
     override val costKind = new TypeBasedCost {
-      override def costFunc(tpe: SType): Int = CostOf.Min(tpe)
+      override def costFunc(tpe: SType): Int = tpe match {
+        case SBigInt => 10
+        case _ => 5
+      }
     }
   }
   object Max      extends ArithOpCompanion(MaxCode,      "max", MaxInfo.argInfos) {
     def eval(impl: OperationImpl, x: Any, y: Any): Any = impl.o.max(x, y)
+    /** Cost of:
+      * 1) resolving ArithOpCompanion by typeCode
+      * 2) calling method of ExactOrdering
+      */
     override val costKind = new TypeBasedCost {
-      override def costFunc(tpe: SType): Int = CostOf.Max(tpe)
+      override def costFunc(tpe: SType): Int = tpe match {
+        case SBigInt => 10
+        case _ => 5
+      }
     }
   }
 
@@ -966,22 +1022,22 @@ abstract class BitOpCompanion(val opCode: OpCode, val name: String, _argInfos: =
 object BitOp {
   import OpCodes._
   object BitOr     extends BitOpCompanion(BitOrCode,  "|", BitOrInfo.argInfos) {
-    override val costKind = FixedCost(CostOf.BitOr)
+    override val costKind = FixedCost(1)
   }
   object BitAnd    extends BitOpCompanion(BitAndCode, "&", BitAndInfo.argInfos) {
-    override val costKind = FixedCost(CostOf.BitAnd)
+    override val costKind = FixedCost(1)
   }
   object BitXor    extends BitOpCompanion(BitXorCode, "^", BitXorInfo.argInfos) {
-    override val costKind = FixedCost(CostOf.BitXor)
+    override val costKind = FixedCost(1)
   }
   object BitShiftRight extends BitOpCompanion(BitShiftRightCode, ">>", BitShiftRightInfo.argInfos) {
-    override val costKind = FixedCost(CostOf.BitShiftRight)
+    override val costKind = FixedCost(1)
   }
   object BitShiftLeft  extends BitOpCompanion(BitShiftLeftCode,   "<<", BitShiftLeftInfo.argInfos) {
-    override val costKind = FixedCost(CostOf.BitShiftLeft)
+    override val costKind = FixedCost(1)
   }
   object BitShiftRightZeroed extends BitOpCompanion(BitShiftRightZeroedCode, ">>>", BitShiftRightZeroedInfo.argInfos) {
-    override val costKind = FixedCost(CostOf.BitShiftRightZeroed)
+    override val costKind = FixedCost(1)
   }
 
   val operations: Map[Byte, BitOpCompanion] =
@@ -1081,7 +1137,8 @@ case class Exponentiate(override val left: Value[SGroupElement.type],
 object Exponentiate extends TwoArgumentOperationCompanion with FixedCostValueCompanion {
   val OpType = SFunc(Array(SGroupElement, SBigInt), SGroupElement)
   override def opCode: OpCode = ExponentiateCode
-  override val costKind = FixedCost(CostOf.Exponentiate)
+  /** Cost of: 1) calling EcPoint.multiply 2) wrapping in GroupElement */
+  override val costKind = FixedCost(900)
   override def argInfos: Seq[ArgInfo] = ExponentiateInfo.argInfos
 }
 
@@ -1137,8 +1194,15 @@ case class LT[T <: SType](override val left: Value[T], override val right: Value
 }
 object LT extends RelationCompanion {
   override def opCode: OpCode = LtCode
+  /** Cost of:
+    * 1) resolving ArithOpCompanion by typeCode
+    * 2) calling method of Numeric
+    */
   override val costKind = new TypeBasedCost {
-    override def costFunc(tpe: SType): Int = CostOf.LT(tpe)
+    override def costFunc(tpe: SType): Int = tpe match {
+      case SBigInt => 20
+      case _ => 20
+    }
   }
   override def argInfos: Seq[ArgInfo] = LTInfo.argInfos
 }
@@ -1157,8 +1221,15 @@ case class LE[T <: SType](override val left: Value[T], override val right: Value
 }
 object LE extends RelationCompanion {
   override def opCode: OpCode = LeCode
+  /** Cost of:
+    * 1) resolving ArithOpCompanion by typeCode
+    * 2) calling method of Numeric
+    */
   override val costKind = new TypeBasedCost {
-    override def costFunc(tpe: SType): Int = CostOf.LE(tpe)
+    override def costFunc(tpe: SType): Int = tpe match {
+      case SBigInt => 20 // cf. comparisonBigInt
+      case _ => 20 // cf. comparisonCost
+    }
   }
   override def argInfos: Seq[ArgInfo] = LEInfo.argInfos
 }
@@ -1177,8 +1248,15 @@ case class GT[T <: SType](override val left: Value[T], override val right: Value
 }
 object GT extends RelationCompanion {
   override def opCode: OpCode = GtCode
+  /** Cost of:
+    * 1) resolving ArithOpCompanion by typeCode
+    * 2) calling method of Numeric
+    */
   override val costKind = new TypeBasedCost {
-    override def costFunc(tpe: SType): Int = CostOf.GT(tpe)
+    override def costFunc(tpe: SType): Int = tpe match {
+      case SBigInt => 20 // cf. comparisonBigInt
+      case _ => 20 // cf. comparisonCost
+    }
   }
   override def argInfos: Seq[ArgInfo] = GTInfo.argInfos
 }
@@ -1197,8 +1275,15 @@ case class GE[T <: SType](override val left: Value[T], override val right: Value
 }
 object GE extends RelationCompanion {
   override def opCode: OpCode = GeCode
+  /** Cost of:
+    * 1) resolving ArithOpCompanion by typeCode
+    * 2) calling method of Numeric
+    */
   override val costKind = new TypeBasedCost {
-    override def costFunc(tpe: SType): Int = CostOf.GE(tpe)
+    override def costFunc(tpe: SType): Int = tpe match {
+      case SBigInt => 20
+      case _ => 20
+    }
   }
   override def argInfos: Seq[ArgInfo] = GEInfo.argInfos
 }

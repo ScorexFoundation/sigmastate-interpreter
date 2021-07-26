@@ -316,7 +316,10 @@ case object Self extends NotReadyValueBox with ValueCompanion {
 case object Context extends NotReadyValue[SContext.type] with ValueCompanion {
   override def companion = this
   override def opCode: OpCode = OpCodes.ContextCode
-  override val costKind = FixedCost(CostOf.Context)
+
+  /** Cost of: 1) accessing global Context instance. */
+  override val costKind = FixedCost(1)
+
   override def tpe: SContext.type = SContext
   override val opType: SFunc = SFunc(SUnit, SContext)
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {

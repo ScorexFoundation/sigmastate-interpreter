@@ -37,7 +37,6 @@ import special.sigma.{AvlTree, Header, PreHeader, _}
 import sigmastate.lang.SourceContext
 import sigmastate.lang.exceptions.InterpreterException
 import special.collection.Coll
-import sigmastate.utxo.CostTable.CostOf
 
 import scala.collection.mutable
 
@@ -234,7 +233,7 @@ object Values {
     def opCode: OpCode
 
     /** Returns cost descriptor of this operation. */
-    def costKind: CostKind = ??? // TODO v5.0: make abstract
+    def costKind: CostKind
 
     override def toString: String = s"${this.getClass.getSimpleName}(${opCode.toUByte})"
 
@@ -258,13 +257,13 @@ object Values {
   /** Should be inherited by companion objects of operations with fixed cost kind. */
   trait FixedCostValueCompanion extends ValueCompanion {
     /** Returns cost descriptor of this operation. */
-    override def costKind: FixedCost = ??? // TODO v5.0: make abstract
+    override def costKind: FixedCost
   }
 
   /** Should be inherited by companion objects of operations with per-item cost kind. */
   trait PerItemCostValueCompanion extends ValueCompanion {
     /** Returns cost descriptor of this operation. */
-    override def costKind: PerItemCost = ??? // TODO v5.0: make abstract
+    override def costKind: PerItemCost
   }
 
   abstract class EvaluatedValue[+S <: SType] extends Value[S] {
@@ -381,7 +380,8 @@ object Values {
   }
   object ConstantPlaceholder extends ValueCompanion {
     override def opCode: OpCode = ConstantPlaceholderCode
-    override val costKind = FixedCost(CostOf.ConstantPlaceholder)
+    /** Cost of: accessing Constant in array by index. */
+    override val costKind = FixedCost(1)
   }
 
   trait NotReadyValue[S <: SType] extends Value[S] {

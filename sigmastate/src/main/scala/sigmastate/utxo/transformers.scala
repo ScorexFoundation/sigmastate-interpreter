@@ -167,7 +167,8 @@ case class Exists[IV <: SType](override val input: Value[SCollection[IV]],
 }
 object Exists extends BooleanTransformerCompanion {
   override def opCode: OpCode = OpCodes.ExistsCode
-  override val costKind = PerItemCost(CostOf.Exists, 1, 10)
+  /** Cost of:  invoke exists method */
+  override val costKind = PerItemCost(3, 1, 10)
   override def argInfos: Seq[ArgInfo] = ExistsInfo.argInfos
 }
 
@@ -192,7 +193,8 @@ case class ForAll[IV <: SType](override val input: Value[SCollection[IV]],
 }
 object ForAll extends BooleanTransformerCompanion {
   override def opCode: OpCode = OpCodes.ForAllCode
-  override val costKind = PerItemCost(CostOf.ForAll, 1, 10)
+  /** Cost of:  invoke forall method */
+  override val costKind = PerItemCost(3, 1, 10)
   override def argInfos: Seq[ArgInfo] = ForAllInfo.argInfos
 }
 
