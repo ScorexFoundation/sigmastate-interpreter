@@ -11,7 +11,6 @@ import sigmastate.interpreter.ErgoTreeEvaluator.DataEnv
 import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.lang.TransformingSigmaBuilder._
-import sigmastate.utxo.CostTable.CostOf
 
 import scala.collection.mutable
 import scala.language.implicitConversions

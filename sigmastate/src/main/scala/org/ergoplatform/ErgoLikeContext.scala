@@ -12,7 +12,6 @@ import sigmastate.interpreter.ErgoTreeEvaluator.DataEnv
 import sigmastate.interpreter.{ContextExtension, InterpreterContext, ErgoTreeEvaluator}
 import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.OpCode
-import sigmastate.utxo.CostTable.CostOf
 import special.collection.Coll
 import special.sigma
 import special.sigma.{AnyValue, PreHeader, Header}
