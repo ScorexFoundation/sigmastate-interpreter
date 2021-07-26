@@ -142,7 +142,7 @@ object Values {
     def opCode: OpCode
 
     /** Returns cost descriptor of this operation. */
-    def costKind: CostKind = ???
+    def costKind: CostKind = ??? // TODO v5.0: make abstract
 
     override def toString: String = s"${this.getClass.getSimpleName}(${opCode.toUByte})"
 
@@ -166,13 +166,13 @@ object Values {
   /** Should be inherited by companion objects of operations with fixed cost kind. */
   trait FixedCostValueCompanion extends ValueCompanion {
     /** Returns cost descriptor of this operation. */
-    override def costKind: FixedCost = ???
+    override def costKind: FixedCost = ??? // TODO v5.0: make abstract
   }
 
   /** Should be inherited by companion objects of operations with per-item cost kind. */
   trait PerItemCostValueCompanion extends ValueCompanion {
     /** Returns cost descriptor of this operation. */
-    override def costKind: PerItemCost = ???
+    override def costKind: PerItemCost = ??? // TODO v5.0: make abstract
   }
 
   abstract class EvaluatedValue[+S <: SType] extends Value[S] {
