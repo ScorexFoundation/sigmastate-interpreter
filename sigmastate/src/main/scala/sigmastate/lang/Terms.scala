@@ -256,7 +256,7 @@ object Terms {
       }
     }
   }
-  
+
   object MethodCall extends ValueCompanion {
     override def opCode: OpCode = OpCodes.MethodCallCode
     /** Cost of: 1) packing args into Array 2) java.lang.reflect.Method.invoke */
