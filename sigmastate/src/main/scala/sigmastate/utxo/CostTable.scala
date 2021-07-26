@@ -304,7 +304,6 @@ object CostTable {
 
   //Maximum number of expressions in initial(non-reduced script)
   val MaxExpressions = 300
-
 }
 
 

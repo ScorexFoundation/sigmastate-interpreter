@@ -107,6 +107,7 @@ class SoftForkabilitySpecification extends SigmaTestingData with BeforeAndAfterA
     override def companion = this
     override val opCode: OpCode = Height2Code // use reserved code
     override val opType = SFunc(SContext, SInt)
+    override val costKind: CostKind = Height.costKind
   }
   val Height2Ser = CaseObjectSerialization(Height2, Height2)
 
