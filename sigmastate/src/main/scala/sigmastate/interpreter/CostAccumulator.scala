@@ -49,6 +49,7 @@ class CostAccumulator(initialCost: Int, costLimit: Option[Long]) {
   }
 
   /** Called once for each operation of a scope (lambda or thunk).
+    * @throws CostLimitException when current accumulated cost exceeds `costLimit`
     */
   def add(opCost: Int): Unit = {
     currentScope.add(opCost)
