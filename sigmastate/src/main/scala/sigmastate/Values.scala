@@ -595,7 +595,7 @@ object Values {
         var sum = 0
         cfor(0)(_ < nChildren, _ + 1) { i =>
           val c = estimateCost(childrenArr(i))
-          sum = Math.addExact(sum, c)
+          sum = java7.compat.Math.addExact(sum, c)
         }
         sum
       }
