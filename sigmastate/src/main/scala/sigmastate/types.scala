@@ -1,13 +1,14 @@
 package sigmastate
 
+import java.lang.reflect.Method
 import java.math.BigInteger
 
 import org.ergoplatform._
 import org.ergoplatform.validation._
-import scalan.{RType, Nullable}
+import scalan.{Nullable, RType}
 import scalan.RType.GeneralType
 import sigmastate.SType.{TypeCode, AnyOps}
-import sigmastate.interpreter.CryptoConstants
+import sigmastate.interpreter._
 import sigmastate.utils.Overloading.Overload1
 import sigmastate.utils.SparseArrayContainer
 import scalan.util.Extensions._
@@ -458,6 +459,8 @@ case class SMethod(
     * the given substitution. */
   def withConcreteTypes(subst: Map[STypeVar, SType]): SMethod =
     withSType(stype.withSubstTypes(subst).asFunc)
+
+  def opName = objType.getClass.getSimpleName + "." + name
 
   /** Returns [[OperationId]] for AOT costing. */
   def opId: OperationId = {
