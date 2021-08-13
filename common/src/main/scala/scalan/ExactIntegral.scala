@@ -43,15 +43,15 @@ object ExactIntegral {
 
   implicit object IntIsExactIntegral extends ExactIntegral[Int] {
     val n = IntIsIntegral
-    override def plus(x: Int, y: Int): Int = Math.addExact(x, y)
-    override def minus(x: Int, y: Int): Int = Math.subtractExact(x, y)
-    override def times(x: Int, y: Int): Int = Math.multiplyExact(x, y)
+    override def plus(x: Int, y: Int): Int = java7.compat.Math.addExact(x, y)
+    override def minus(x: Int, y: Int): Int = java7.compat.Math.subtractExact(x, y)
+    override def times(x: Int, y: Int): Int = java7.compat.Math.multiplyExact(x, y)
   }
 
   implicit object LongIsExactIntegral extends ExactIntegral[Long] {
     val n = LongIsIntegral
-    override def plus(x: Long, y: Long): Long = Math.addExact(x, y)
-    override def minus(x: Long, y: Long): Long = Math.subtractExact(x, y)
-    override def times(x: Long, y: Long): Long = Math.multiplyExact(x, y)
+    override def plus(x: Long, y: Long): Long = java7.compat.Math.addExact(x, y)
+    override def minus(x: Long, y: Long): Long = java7.compat.Math.subtractExact(x, y)
+    override def times(x: Long, y: Long): Long = java7.compat.Math.multiplyExact(x, y)
   }
 }
