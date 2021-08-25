@@ -145,6 +145,19 @@ object Values {
       *
       * @param costKind cost descriptor of the operation
       * @param nItems   number of operations known in advance (before loop execution)
+      */
+    @inline
+    final def addSeqCostNoOp(costKind: PerItemCost, nItems: Int)
+                                (implicit E: ErgoTreeEvaluator): Unit = {
+      E.addSeqCostNoOp(costKind, nItems, this.companion.opDesc)
+    }
+
+    /** Add the cost of a repeated operation to the accumulator and associate it with this
+      * operation. The number of items (loop iterations) is known in advance (like in
+      * Coll.map operation)
+      *
+      * @param costKind cost descriptor of the operation
+      * @param nItems   number of operations known in advance (before loop execution)
       * @param block    operation executed under the given cost
       * @tparam R result type of the operation
       */
@@ -1083,7 +1096,7 @@ object Values {
     protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
       var curEnv = env
       val len = items.length
-      addSeqCost(BlockValue.costKind, len)(null)
+      addSeqCostNoOp(BlockValue.costKind, len)
       cfor(0)(_ < len, _ + 1) { i =>
         val vd = items(i).asInstanceOf[ValDef]
         val v = vd.rhs.evalTo[Any](curEnv)

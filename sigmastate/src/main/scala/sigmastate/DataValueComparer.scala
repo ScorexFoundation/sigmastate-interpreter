@@ -24,7 +24,7 @@ object DataValueComparer {
     * OperationCost is the type specific cost.
     * For this reason reordering of cases may lead to divergence between an estimated and
     * the actual execution cost (time).
-    * The constants are part of the consensus procotol and cannot be changed without forking.
+    * The constants are part of the consensus protocol and cannot be changed without forking.
     */
   final val CostOf_MatchType = 1
   final val CostKind_MatchType = FixedCost(CostOf_MatchType)
@@ -42,7 +42,6 @@ object DataValueComparer {
   final val OpDesc_EQ_Coll = NamedDesc("EQ_Coll")
   final val EQ_Coll = OperationCostInfo(CostKind_EQ_Coll, OpDesc_EQ_Coll)
 
-  /** NOTE: In the formula `(2 + 1)` the 1 corresponds to the second type match. */
   final val CostKind_EQ_Tuple = FixedCost(4)  // case 3
   final val OpDesc_EQ_Tuple = NamedDesc("EQ_Tuple")
   final val EQ_Tuple = OperationCostInfo(CostKind_EQ_Tuple, OpDesc_EQ_Tuple)
@@ -172,6 +171,11 @@ object DataValueComparer {
     okEqual
   }
 
+  /** Compare two collections for equality. Used when the element type A is NOT known
+    * statically. When the type A is scalar, each collection item is boxed before
+    * comparison, which have significant performace overhead.
+    * For this reason, this method is used as a fallback case.
+    */
   def equalColls[A](c1: Coll[A], c2: Coll[A])(implicit E: ErgoTreeEvaluator): Boolean = {
     var okEqual = true
     E.addSeqCost(CostKind_EQ_Coll, OpDesc_EQ_Coll) { () =>
@@ -187,6 +191,9 @@ object DataValueComparer {
     okEqual
   }
 
+  /** Compares two collections by dispatching to the most efficient implementation
+    * depending on the actual type A.
+    * */
   def equalColls_Dispatch[A](coll1: Coll[A], coll2: Coll[A])(implicit E: ErgoTreeEvaluator): Boolean = {
     coll1.tItem match {
       case BooleanType =>
@@ -226,6 +233,7 @@ object DataValueComparer {
     }
   }
 
+  /** Compare equality of two sequences of SigmaBoolean trees. */
   def equalSigmaBooleans(xs: Seq[SigmaBoolean], ys: Seq[SigmaBoolean])
                         (implicit E: ErgoTreeEvaluator): Boolean = {
     val len = xs.length
@@ -237,6 +245,7 @@ object DataValueComparer {
     okEqual
   }
 
+  /** Compare equality of two SigmaBoolean trees. */
   def equalSigmaBoolean(l: SigmaBoolean, r: SigmaBoolean)
                         (implicit E: ErgoTreeEvaluator): Boolean = {
     E.addCost(MatchType) // once for every node of the SigmaBoolean tree
@@ -268,6 +277,7 @@ object DataValueComparer {
     }
   }
 
+  /** Returns true if the given GroupElement is equal to the given object. */
   def equalGroupElement(ge1: GroupElement, r: Any)(implicit E: ErgoTreeEvaluator): Boolean = {
     var okEqual = true
     E.addFixedCost(EQ_GroupElement) {
@@ -276,6 +286,7 @@ object DataValueComparer {
     okEqual
   }
 
+  /** Returns true if the given EcPointType is equal to the given object. */
   def equalECPoint(p1: EcPointType, r: Any)(implicit E: ErgoTreeEvaluator): Boolean = {
     var okEqual = true
     E.addFixedCost(EQ_GroupElement) {
@@ -285,6 +296,9 @@ object DataValueComparer {
   }
 
   // TODO v5.0: introduce a new limit on structural depth of data values
+  /** Generic comparison of any two data values. The method dispatches on a type of the
+    * left value and then performs the specific comparison.
+    */
   def equalDataValues(l: Any, r: Any)(implicit E: ErgoTreeEvaluator): Boolean = {
     var okEqual: Boolean = false
     l match {

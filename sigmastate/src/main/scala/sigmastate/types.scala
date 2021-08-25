@@ -1379,7 +1379,7 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
   def map_eval[A,B](mc: MethodCall, xs: Coll[A], f: A => B)(implicit E: ErgoTreeEvaluator): Coll[B] = {
     val tpeB = mc.tpe.asInstanceOf[SCollection[SType]].elemType
     val tB = Evaluation.stypeToRType(tpeB).asInstanceOf[RType[B]]
-    E.addSeqCost(MapCollection.costKind, xs.length, mc.method.opDesc)(null)
+    E.addSeqCostNoOp(MapCollection.costKind, xs.length, mc.method.opDesc)
     xs.map(f)(tB)
   }
 

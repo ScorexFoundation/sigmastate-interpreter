@@ -87,15 +87,19 @@ class ErgoTreeEvaluator(
     }
   }
 
-  /** Evaluates the given expression in the given data environment. */
+  /** Evaluates the given expression in the given data environment and accrue the cost
+    * into the `coster` of this evaluator.
+    * @return the value of the expression and the total accumulated cost in the coster.
+    *         The returned cost includes the initial cost accumulated in the `coster`
+    *         prior to calling this method. */
   def evalWithCost(env: DataEnv, exp: SValue): (Any, Int) = {
     val res = eval(env, exp)
     val cost = coster.totalCost
     (res, cost)
   }
 
-  /** Trace of cost items accumulated during execution of `eval` method.
-    * Call [[ArrayBuffer.clear()]] before each `eval` invocation. */
+  /** Trace of cost items accumulated during execution of `eval` method. Call
+    * [[scala.collection.mutable.ArrayBuffer.clear()]] before each `eval` invocation. */
   val costTrace = {
     val b = mutable.ArrayBuilder.make[CostItem]
     b.sizeHint(1000)
@@ -135,7 +139,7 @@ class ErgoTreeEvaluator(
       costItem = TypeBasedCostItem(opDesc, costKind, tpe)
       costTrace += costItem
     }
-    if (settings.isMeasureOperationTime && block != null) {
+    if (settings.isMeasureOperationTime) {
       if (costItem == null) {
         costItem = TypeBasedCostItem(opDesc, costKind, tpe)
       }
@@ -149,7 +153,7 @@ class ErgoTreeEvaluator(
     } else {
       val cost = costKind.costFunc(tpe)
       coster.add(cost)
-      if (block == null) null.asInstanceOf[R] else block()
+      block()
     }
   }
 
@@ -192,6 +196,24 @@ class ErgoTreeEvaluator(
     * @param costKind the cost to be added to `coster` for each item
     * @param nItems   the number of items
     * @param opDesc   the operation to associate the cost with (when costTracingEnabled)
+    * @hotspot don't beautify the code
+    */
+  final def addSeqCostNoOp(costKind: PerItemCost, nItems: Int, opDesc: OperationDesc): Unit = {
+    var costItem: SeqCostItem = null
+    if (settings.costTracingEnabled) {
+      costItem = SeqCostItem(opDesc, costKind, nItems)
+      costTrace += costItem
+    }
+    val cost = costKind.cost(nItems)
+    coster.add(cost)
+  }
+
+  /** Adds the given cost to the `coster`. If tracing is enabled, creates a new cost item
+    * with the given operation.
+    *
+    * @param costKind the cost to be added to `coster` for each item
+    * @param nItems   the number of items
+    * @param opDesc   the operation to associate the cost with (when costTracingEnabled)
     * @param block    operation executed under the given cost
     * @tparam R result type of the operation
     * @hotspot don't beautify the code
@@ -202,7 +224,7 @@ class ErgoTreeEvaluator(
       costItem = SeqCostItem(opDesc, costKind, nItems)
       costTrace += costItem
     }
-    if (settings.isMeasureOperationTime && block != null) {
+    if (settings.isMeasureOperationTime) {
       if (costItem == null) {
         costItem = SeqCostItem(opDesc, costKind, nItems)
       }
@@ -216,7 +238,7 @@ class ErgoTreeEvaluator(
     } else {
       val cost = costKind.cost(nItems)
       coster.add(cost)
-      if (block == null) null.asInstanceOf[R] else block()
+      block()
     }
   }
 
