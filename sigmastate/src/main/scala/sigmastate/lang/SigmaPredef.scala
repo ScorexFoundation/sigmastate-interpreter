@@ -3,7 +3,7 @@ package sigmastate.lang
 import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
 import org.ergoplatform.{ErgoAddressEncoder, P2PKAddress}
 import scalan.Nullable
-import scorex.util.encode.{Base64, Base58}
+import scorex.util.encode.{Base64, Base58, Base16}
 import sigmastate.SCollection.{SIntArray, SByteArray}
 import sigmastate.SOption._
 import sigmastate.Values.{StringConstant, Constant, EvaluatedValue, SValue, IntValue, SigmaPropConstant, ConstantPlaceholder, BoolValue, Value, ByteArrayConstant, SigmaPropValue, ValueCompanion}
@@ -178,6 +178,16 @@ object SigmaPredef {
       }),
       OperationInfo(Constant, "",
           Seq(ArgInfo("", "")))
+    )
+
+    val FromBase16Func = PredefinedFunc("fromBase16",
+      Lambda(Array("input" -> SString), SByteArray, None),
+      PredefFuncInfo(
+        { case (_, Seq(arg: EvaluatedValue[SString.type]@unchecked)) =>
+          ByteArrayConstant(Base16.decode(arg.value).get)
+        }),
+      OperationInfo(Constant, "",
+        Seq(ArgInfo("", "")))
     )
 
     val FromBase58Func = PredefinedFunc("fromBase58",
@@ -381,6 +391,7 @@ object SigmaPredef {
       SigmaPropFunc,
       GetVarFunc,
       DeserializeFunc,
+      FromBase16Func,
       FromBase64Func,
       FromBase58Func,
       Blake2b256Func,
