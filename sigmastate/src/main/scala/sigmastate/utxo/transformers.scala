@@ -74,7 +74,7 @@ case class Append[IV <: SType](input: Value[SCollection[IV]], col2: Value[SColle
 }
 object Append extends ValueCompanion {
   override def opCode: OpCode = OpCodes.AppendCode
-  override val costKind = PerItemCost(10, 2, 100)
+  override val costKind = PerItemCost(20, 2, 100)
 }
 
 /** Selects an interval of elements.  The returned collection is made up
