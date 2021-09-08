@@ -377,7 +377,7 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
 
     @inline def += (n: Int) = {
       // println(s"${_currentCost} + $n")
-      this._currentCost = java.lang.Math.addExact(this._currentCost, n)
+      this._currentCost = java7.compat.Math.addExact(this._currentCost, n)
     }
     @inline def currentCost: Int = _currentCost
   }
@@ -471,7 +471,7 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
       if (costLimit.isDefined) {
         val limit = costLimit.get
         val loopCost = if (_loopStack.isEmpty) 0 else _loopStack.head.accumulatedCost
-        val accumulatedCost = java.lang.Math.addExact(cost, loopCost)
+        val accumulatedCost = java7.compat.Math.addExact(cost, loopCost)
         if (accumulatedCost > limit) {
           throw new CostLimitException(accumulatedCost, Evaluation.msgCostLimitError(accumulatedCost, limit), None)
         }
@@ -498,7 +498,7 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
       if (_loopStack.nonEmpty && _loopStack.head.body == body) {
         // every time we exit the body of the loop we need to update accumulated cost
         val h = _loopStack.head
-        h.accumulatedCost = java.lang.Math.addExact(h.accumulatedCost, deltaCost)
+        h.accumulatedCost = java7.compat.Math.addExact(h.accumulatedCost, deltaCost)
       }
     }
 
@@ -867,7 +867,7 @@ object Evaluation {
     * @throws CostLimitException
     */
   def addCostChecked(current: Long, more: Long, limit: Long): Long = {
-    val newCost = Math.addExact(current, more)
+    val newCost = java7.compat.Math.addExact(current, more)
     if (newCost > limit) {
       throw new CostLimitException(
         estimatedCost = newCost,

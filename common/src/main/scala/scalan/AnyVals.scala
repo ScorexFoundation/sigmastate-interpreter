@@ -46,7 +46,7 @@ object AVHashMap {
   /** Helper method to create a new map with the given capacity. */
   def apply[K,V](initialCapacity: Int) = new AVHashMap[K,V](new HashMap[K,V](initialCapacity))
 
-  /** Helper method to create a new map form sequence of K, V pairs. */
+  /** Helper method to create a new map from the sequence of K, V pairs. */
   def fromSeq[K,V](items: Seq[(K, V)]): AVHashMap[K,V] = {
     val map = new AVHashMap[K,V](new HashMap[K,V](items.length))
     items.foreach { case (k, v) =>

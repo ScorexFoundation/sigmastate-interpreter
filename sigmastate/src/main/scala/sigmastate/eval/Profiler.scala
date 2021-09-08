@@ -14,8 +14,12 @@ import spire.{math, sp}
 
 import scala.reflect.ClassTag
 
-abstract class StatItem[@sp (Long, Double) V] {
-  /** How many data points has been collected */
+/** Holds a series of profile measurements associated with a key.
+  * Allows to compute simple statistic data.
+  * @tparam V type of the measured numeric value
+  */
+abstract class StatHolder[@sp (Long, Double) V] {
+  /** How many data points have been collected */
   def count: Int
 
   /** Sum of all data points */
@@ -29,6 +33,11 @@ abstract class StatItem[@sp (Long, Double) V] {
   def mean: (V, Int)
 }
 
+/** Collects profiler measured data points associated with keys.
+  * Group points by key into [[StatHolder]]s.
+  * @tparam K type of the mapping key
+  * @tparam V type of the measured numeric value
+  */
 class StatCollection[@sp(Int) K, @sp(Long, Double) V]
   (implicit n: math.Numeric[V], ctK: ClassTag[K], ctV: ClassTag[V]) {
 
@@ -37,12 +46,13 @@ class StatCollection[@sp(Int) K, @sp(Long, Double) V]
   }
 
   // NOTE: this class is mutable so better to keep it private
-  class StatItemImpl extends StatItem[V] {
+  private class StatHolderImpl extends StatHolder[V] {
     final val NumMaxPoints = 10000
 
     val dataPoints: DBuffer[V] = DBuffer.ofSize[V](256)
 
     def addPoint(point: V) = {
+      // collect data points until the threshold
       if (dataPoints.length < NumMaxPoints) {
         dataPoints += point
       }
@@ -67,23 +77,29 @@ class StatCollection[@sp(Int) K, @sp(Long, Double) V]
   }
 
   /** Timings of op codes. For performance debox.Map is used, which keeps keys unboxed. */
-  private val opStat = DMap[K, StatItemImpl]()
+  private val opStat = DMap[K, StatHolderImpl]()
 
+  /** Returns arithmetic mean value (excluding 10% of smallest and 10% of highest values)
+    * for the given key.
+    */
   final def getMean(key: K): Option[(V, Int)] = opStat.get(key).map(_.mean)
 
-  /** Update time measurement stats for a given operation. */
+  /** Update measurement stats for a given operation. */
   final def addPoint(key: K, point: V) = {
     val item = opStat.getOrElse(key, null)
     if (item != null) {
       item.addPoint(point)
     } else {
-      val item = new StatItemImpl
+      val item = new StatHolderImpl
       item.addPoint(point)
       opStat(key) = item
     }
   }
 
-  final def mapToArray[@sp C: ClassTag](f: (K, StatItem[V]) => C): Array[C] = {
+  /** Maps each entry of the collected mapping to a new array of values using the given
+    * function.
+    */
+  final def mapToArray[@sp C: ClassTag](f: (K, StatHolder[V]) => C): Array[C] = {
     opStat.mapToArray(f)
   }
 }
@@ -108,16 +124,16 @@ class Profiler {
     * recursive invocations of the evaluator. */
   private var opStack: List[OpStat] = Nil
 
-  /** Called from evaluator (like [[sigmastate.interpreter.ErgoTreeEvaluator]])
-    * immediately before the evaluator start recursive evaluation of the given node.
+  /** Called from evaluator immediately before the evaluator start recursive evaluation of
+    * the given node.
     */
   def onBeforeNode(node: SValue) = {
     val t = System.nanoTime()
     opStack = new OpStat(node, t, 0, t) :: opStack
   }
 
-  /** Called from evaluator (like [[sigmastate.interpreter.ErgoTreeEvaluator]])
-    * immediately after the evaluator finishes recursive evaluation of the given node.
+  /** Called from evaluator immediately after the evaluator finishes recursive evaluation
+    * of the given node.
     */
   def onAfterNode(node: SValue) = {
     val t = System.nanoTime()
@@ -159,7 +175,7 @@ class Profiler {
     mcStat.addPoint(key, time)
   }
 
-  /** Wrapper class which implementes special equality between CostItem instances,
+  /** Wrapper class which implements special equality between CostItem instances,
    * suitable for collecting of the statistics. */
   class CostItemKey(val costItem: CostItem) {
     override def hashCode(): Int = costItem match {

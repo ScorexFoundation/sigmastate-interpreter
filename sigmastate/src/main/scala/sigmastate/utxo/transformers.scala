@@ -45,7 +45,7 @@ case class MapCollection[IV <: SType, OV <: SType](
     val inputV = input.evalTo[Coll[Any]](env)
     val mapperV = mapper.evalTo[Any => Any](env)
     val tResItem = Evaluation.stypeToRType(mapper.tpe.tRange).asInstanceOf[RType[Any]]
-    addSeqCost(MapCollection.costKind, inputV.length)(null)
+    addSeqCostNoOp(MapCollection.costKind, inputV.length)
     inputV.map(mapperV)(tResItem)
   }
 }
@@ -124,7 +124,7 @@ case class Filter[IV <: SType](input: Value[SCollection[IV]],
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val inputV = input.evalTo[Coll[Any]](env)
     val conditionV = condition.evalTo[Any => Boolean](env)
-    addSeqCost(Filter.costKind, inputV.length)(null)
+    addSeqCostNoOp(Filter.costKind, inputV.length)
     inputV.filter(conditionV)
   }
 }
@@ -160,7 +160,7 @@ case class Exists[IV <: SType](override val input: Value[SCollection[IV]],
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val inputV = input.evalTo[Coll[Any]](env)
     val conditionV = condition.evalTo[Any => Boolean](env)
-    addSeqCost(Exists.costKind, inputV.length)(null)
+    addSeqCostNoOp(Exists.costKind, inputV.length)
     inputV.exists(conditionV)
   }
 }
@@ -186,7 +186,7 @@ case class ForAll[IV <: SType](override val input: Value[SCollection[IV]],
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val inputV = input.evalTo[Coll[Any]](env)
     val conditionV = condition.evalTo[Any => Boolean](env)
-    addSeqCost(ForAll.costKind, inputV.length)(null)
+    addSeqCostNoOp(ForAll.costKind, inputV.length)
     inputV.forall(conditionV)
   }
 }
@@ -224,7 +224,7 @@ case class Fold[IV <: SType, OV <: SType](input: Value[SCollection[IV]],
     val zeroV = zero.evalTo[OV#WrappedType](env)
     Value.checkType(zero, zeroV) // necessary because cast to OV#WrappedType is erased
     val foldOpV = foldOp.evalTo[((OV#WrappedType, IV#WrappedType)) => OV#WrappedType](env)
-    addSeqCost(Fold.costKind, inputV.length)(null)
+    addSeqCostNoOp(Fold.costKind, inputV.length)
     inputV.foldLeft(zeroV, foldOpV)
   }
 }
