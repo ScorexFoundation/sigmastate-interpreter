@@ -8,7 +8,7 @@ import org.bitbucket.inkytonik.kiama.rewriting.Strategy
 import org.ergoplatform.ErgoLikeContext
 import org.ergoplatform.validation.SigmaValidationSettings
 import org.ergoplatform.validation.ValidationRules._
-import sigmastate.basics.DLogProtocol.{DLogInteractiveProver, FirstDLogProverMessage, ProveDlog}
+import sigmastate.basics.DLogProtocol.ProveDlog
 import scorex.util.ScorexLogging
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
@@ -20,7 +20,6 @@ import sigmastate.serialization.{SigmaSerializer, ValueSerializer}
 import sigmastate.utxo.{CostTable, DeserializeContext}
 import sigmastate.{SType, _}
 import sigmastate.eval.{Evaluation, IRContext, Profiler}
-import scalan.{MutableLazy, Nullable}
 import scalan.util.BenchmarkUtil
 import sigmastate.FiatShamirTree._
 import sigmastate.SigSerializer._
@@ -306,8 +305,9 @@ trait Interpreter extends ScorexLogging {
       if (evalSettings.isTestRun) {
         error(msg)
       }
-      else
+      else if (evalSettings.isLogEnabled) {
         println(msg)
+      }
     }
     checkCosts(ergoTree, res.cost, jitRes.cost)
   }
@@ -325,8 +325,9 @@ trait Interpreter extends ScorexLogging {
       if (evalSettings.isTestRun) {
         error(msg)
       }
-      else
+      else if (evalSettings.isLogEnabled) {
         println(msg)
+      }
     }
   }
 
