@@ -893,7 +893,7 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
       """
         |
         |
-        |+1""".stripMargin, 4, 2)
+        |+1""".stripMargin, 3, 1)
   }
 
   property("unknown binary op") {
