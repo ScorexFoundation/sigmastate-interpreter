@@ -388,9 +388,12 @@ object ErgoTreeEvaluator {
     *
     * @param costInfo operation descriptor
     * @param block    block of code to be executed (given as lazy by-name argument)
-    * @param E        evaluator to be used (or null if it is not avaialble on the
-    *                 current thread)
+    * @param E        evaluator to be used (or null if it is not available on the
+    *                 current thread), in which case the method is equal to the
+    *                 `block` execution.
     * @return result of code block execution
+    * HOTSPOT: don't beautify the code
+    * Note, `null` is used instead of Option to avoid allocations.
     */
   def fixedCostOp[R <: AnyRef](costInfo: OperationCostInfo[FixedCost])
                               (block: => R)(implicit E: ErgoTreeEvaluator): R = {
@@ -414,9 +417,12 @@ object ErgoTreeEvaluator {
     * @param costInfo operation descriptor
     * @param nItems   number of data items in the operation
     * @param block    block of code to be executed (given as lazy by-name argument)
-    * @param E        evaluator to be used (or null if it is not avaialble on the
-    *                 current thread)
+    * @param E        evaluator to be used (or null if it is not available on the
+    *                 current thread), in which case the method is equal to the
+    *                 `block` execution.
     * @return result of code block execution
+    * HOTSPOT: don't beautify the code
+    * Note, `null` is used instead of Option to avoid allocations.
     */
   def perItemCostOp[R](costInfo: OperationCostInfo[PerItemCost], nItems: Int)
                       (block: () => R)(implicit E: ErgoTreeEvaluator): R = {

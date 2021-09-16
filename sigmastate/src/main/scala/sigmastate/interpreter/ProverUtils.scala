@@ -102,7 +102,7 @@ trait ProverUtils extends Interpreter {
                      realSecretsToExtract: Seq[SigmaBoolean],
                      simulatedSecretsToExtract: Seq[SigmaBoolean]): HintsBag = {
 
-    val ut = SigSerializer.parseAndComputeChallenges(sigmaTree, proof)
+    val ut = SigSerializer.parseAndComputeChallenges(sigmaTree, proof)(null)
     val proofTree = computeCommitments(ut).get.asInstanceOf[UncheckedSigmaTree]
 
     def traverseNode(tree: ProofTree,

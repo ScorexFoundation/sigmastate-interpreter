@@ -107,15 +107,17 @@ object SigSerializer extends LazyLogging {
     *
     * @param exp   sigma proposition which defines the structure of bytes from the reader
     * @param proof proof to extract challenges from
+    * @param E     optional evaluator (can be null) which is used for profiling of operations.
+    *              When `E` is `null`, then profiling is turned-off and has no effect on
+    *              the execution.
     * @return An instance of [[UncheckedTree]] i.e. either [[NoProof]] or [[UncheckedSigmaTree]]
     */
-  def parseAndComputeChallenges(exp: SigmaBoolean, proof: Array[Byte]): UncheckedTree = {
+  def parseAndComputeChallenges(exp: SigmaBoolean, proof: Array[Byte])(implicit E: ErgoTreeEvaluator): UncheckedTree = {
     if (proof.isEmpty)
       NoProof
     else {
       // Verifier step 1: Read the root challenge from the proof.
       val r = SigmaSerializer.startReader(proof)
-      val E = ErgoTreeEvaluator.getCurrentEvaluator
       val res = parseAndComputeChallenges(exp, r, null)(E)
       res
     }
@@ -151,10 +153,13 @@ object SigSerializer extends LazyLogging {
     * @param r            reader to extract challenges from
     * @param challengeOpt if non-empty, then the challenge has been computed for this node
     *                     by its parent; else it needs to be read from the proof (via reader)
+    * @param E            optional evaluator (can be null) which is used for profiling of operations.
+    *                     When `E` is `null`, then profiling is turned-off and has no effect on
+    *                     the execution.
     * @return An instance of [[UncheckedSigmaTree]]
     *
     * HOTSPOT: don't beautify the code
-    * Note, `null` is used instead of Option to avoid allocations.
+    * Note, null` is used instead of Option to avoid allocations.
     */
   def parseAndComputeChallenges(
         exp: SigmaBoolean,

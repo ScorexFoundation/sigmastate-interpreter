@@ -370,12 +370,6 @@ class SigmaDslTesting extends PropSpec
         verifier.verify(compiledTree, verificationCtx, pr, fakeMessage)
       }
 
-      val resNew = {
-//        val pr = prover.proveJit(compiledTree, ergoCtx, fakeMessage).getOrThrow
-//        val verificationCtx = ergoCtx.withExtension(pr.extension)
-//        verifier.verifyJit(compiledTree, verificationCtx, pr, fakeMessage)
-      }
-
       res match {
         case Success((ok, cost)) =>
           ok shouldBe true

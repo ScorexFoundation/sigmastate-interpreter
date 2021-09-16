@@ -15,9 +15,9 @@ import sigmastate.Values._
 import sigmastate.basics.DLogProtocol.{DLogInteractiveProver, FirstDLogProverMessage}
 import sigmastate.basics._
 import sigmastate.interpreter.Interpreter._
-import sigmastate.lang.exceptions.{CostLimitException, InterpreterException}
+import sigmastate.lang.exceptions.InterpreterException
 import sigmastate.serialization.{SigmaSerializer, ValueSerializer}
-import sigmastate.utxo.{CostTable, DeserializeContext}
+import sigmastate.utxo.DeserializeContext
 import sigmastate.{SType, _}
 import sigmastate.eval.{Evaluation, IRContext, Profiler}
 import scalan.util.BenchmarkUtil
@@ -193,8 +193,6 @@ trait Interpreter extends ScorexLogging {
     * @param context        the context in which `exp` should be executed
     * @param env            environment of system variables used by the interpreter internally
     * @param exp            expression to be executed in the given `context`
-    * @param treeComplexity amount of cost added to context.initCost as result of
-    *                       applyDeserializeContext
     * @return result of script reduction
     * @see `ReductionResult`
     */
@@ -423,80 +421,13 @@ trait Interpreter extends ScorexLogging {
           checkCosts(ergoTree, cost, fullJitCost)
 
           val ok = if (evalSettings.isMeasureOperationTime) {
-            val E = ErgoTreeEvaluator.forProfiling(
-              Interpreter.verifySignatureProfiler, evalSettings)
-            ErgoTreeEvaluator.currentEvaluator.withValue(E) {
-              verifySignature(cProp, message, proof)
-            }
+            val E = ErgoTreeEvaluator.forProfiling(verifySignatureProfiler, evalSettings)
+            verifySignature(cProp, message, proof)(E)
           } else
-            verifySignature(cProp, message, proof)
+            verifySignature(cProp, message, proof)(null)
           (ok, cost)
       }
       res
-    })
-    if (outputComputedResults) {
-      res.foreach { case (_, cost) =>
-        val scaledCost = cost * 1 // this is the scale factor of CostModel with respect to the concrete hardware
-        val timeMicro = t * 1000  // time in microseconds
-        val error = if (scaledCost > timeMicro) {
-          val error = ((scaledCost / timeMicro.toDouble - 1) * 100d).formatted(s"%10.3f")
-          error
-        } else {
-          val error = (-(timeMicro.toDouble / scaledCost.toDouble - 1) * 100d).formatted(s"%10.3f")
-          error
-        }
-        val name = "\"" + env.getOrElse(Interpreter.ScriptNameProp, "") + "\""
-        println(s"Name-Time-Cost-Error\t$name\t$timeMicro\t$scaledCost\t$error")
-      }
-    }
-    res
-  }
-
-  /** This is fast version of verification based on direct ErgoTree evaluator.
-    * It produces different costs and cannot be used in Ergo v3.x
-    */
-  def verifyJit(env: ScriptEnv,
-                ergoTree: ErgoTree,
-                context: CTX,
-                proof: Array[Byte],
-                message: Array[Byte]): Try[VerificationResult] = {
-    val (res, t) = BenchmarkUtil.measureTime(Try {
-
-      val initCost = context.initCost
-      val remainingLimit = context.costLimit - initCost
-      if (remainingLimit <= 0)
-        throw new CostLimitException(initCost, Evaluation.msgCostLimitError(initCost, context.costLimit), None)
-
-      val context1 = context.withInitCost(initCost).asInstanceOf[CTX]
-      val prop = propositionFromErgoTree(ergoTree, context1)
-
-      implicit val vs = context1.validationSettings
-      val (propTree, context2) = trySoftForkable[(SigmaPropValue, CTX)](whenSoftFork = (TrueLeaf, context1)) {
-        applyDeserializeContextJITC(context1, prop)
-      }
-
-      // here we assume that when `propTree` is TrueProp then `reduceToCrypto` always succeeds
-      // and the rest of the verification is also trivial
-      // new JIT costing with direct ErgoTree execution
-      val (cProp, cost) = {
-        val ctx = context2.asInstanceOf[ErgoLikeContext]
-        val (res, cost) = ErgoTreeEvaluator.eval(ctx, ErgoTree.EmptyConstants, propTree, evalSettings) match {
-          case (p: special.sigma.SigmaProp, c) => (p, c)
-          case (b: Boolean, c) => (SigmaDsl.sigmaProp(b), c)
-          case (res, _) => sys.error(s"Invalid result type of $res: expected Boolean or SigmaProp when evaluating $propTree")
-        }
-        val scaledCost = JMath.multiplyExact(cost, CostTable.costFactorIncrease) / CostTable.costFactorDecrease
-        val totalCost = JMath.addExact(initCost.toInt, scaledCost)
-        (SigmaDsl.toSigmaBoolean(res), totalCost.toLong)
-      }
-
-
-      val checkingResult = cProp match {
-        case TrivialProp.TrueProp => true
-        case TrivialProp.FalseProp => false
-        case cProp => verifySignature(cProp, message, proof)
-      }
-      checkingResult -> cost
     })
     if (outputComputedResults) {
       res.foreach { case (_, cost) =>
@@ -541,14 +472,14 @@ trait Interpreter extends ScorexLogging {
 
     case sn: UncheckedSchnorr =>
       implicit val E = ErgoTreeEvaluator.getCurrentEvaluator
-      fixedCostOp(Interpreter.ComputeCommitments_Schnorr) {
+      fixedCostOp(ComputeCommitments_Schnorr) {
         val a = DLogInteractiveProver.computeCommitment(sn.proposition, sn.challenge, sn.secondMessage)
         sn.copy(commitmentOpt = Some(FirstDLogProverMessage(a)))
       }
 
     case dh: UncheckedDiffieHellmanTuple =>
       implicit val E = ErgoTreeEvaluator.getCurrentEvaluator
-      fixedCostOp(Interpreter.ComputeCommitments_DHT) {
+      fixedCostOp(ComputeCommitments_DHT) {
         val (a, b) = DiffieHellmanTupleInteractiveProver.computeCommitment(dh.proposition, dh.challenge, dh.secondMessage)
         dh.copy(commitmentOpt = Some(FirstDiffieHellmanTupleProverMessage(a, b)))
       }
@@ -573,7 +504,6 @@ trait Interpreter extends ScorexLogging {
     verify(env, ergoTree, ctxv, proverResult.proof, message)
   }
 
-
   def verify(ergoTree: ErgoTree,
              context: CTX,
              proof: ProofT,
@@ -591,7 +521,7 @@ trait Interpreter extends ScorexLogging {
     */
   def verifySignature(sigmaTree: SigmaBoolean,
                       message: Array[Byte],
-                      signature: Array[Byte]): Boolean = {
+                      signature: Array[Byte])(implicit E: ErgoTreeEvaluator): Boolean = {
     // Perform Verifier Steps 1-3
     try {
       SigSerializer.parseAndComputeChallenges(sigmaTree, signature) match {
@@ -664,6 +594,18 @@ object Interpreter {
   final val Eval_SigmaPropConstant = OperationCostInfo(
     FixedCost(50), NamedDesc("Eval_SigmaPropConstant"))
 
+  /** Verification cost of each ProveDlog node of SigmaBoolean proposition tree. */
+  final val ProveDlogVerificationCost =
+    ParseChallenge_ProveDlog.costKind.cost +
+    ComputeCommitments_Schnorr.costKind.cost +
+    ToBytes_Schnorr.costKind.cost
+
+  /** Verification cost of each ProveDHTuple node of SigmaBoolean proposition tree. */
+  final val ProveDHTupleVerificationCost =
+    ParseChallenge_ProveDHT.costKind.cost +
+    ComputeCommitments_DHT.costKind.cost +
+    ToBytes_DHT.costKind.cost
+
   /** Computes the estimated cost of verification of sigma proposition.
     * The cost is estimated ahead of time, without actually performing expencive crypto
     * operations.
@@ -683,19 +625,8 @@ object Interpreter {
       sum
     }
     sb match {
-      case _: ProveDlog =>
-        Math.addExact(
-          Math.addExact(
-            ParseChallenge_ProveDlog.costKind.cost,
-            ComputeCommitments_Schnorr.costKind.cost),
-          ToBytes_Schnorr.costKind.cost)
-
-      case _: ProveDHTuple =>
-        Math.addExact(
-          Math.addExact(
-            ParseChallenge_ProveDHT.costKind.cost,
-            ComputeCommitments_DHT.costKind.cost),
-          ToBytes_DHT.costKind.cost)
+      case _: ProveDlog => ProveDlogVerificationCost
+      case _: ProveDHTuple => ProveDHTupleVerificationCost
 
       case and: CAND =>
         val nodeC = ToBytes_ProofTreeConjecture.costKind.cost
