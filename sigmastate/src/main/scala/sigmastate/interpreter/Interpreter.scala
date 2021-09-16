@@ -1,6 +1,5 @@
 package sigmastate.interpreter
 
-import java.lang.{Math => JMath}
 import java.util
 
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, rule, strategy}
@@ -30,6 +29,23 @@ import spire.syntax.all.cfor
 
 import scala.util.{Success, Try}
 
+/** Base (verifying) interpreter of ErgoTrees.
+  * Can perform:
+  * - ErgoTree evaluation (aka reduction) to sigma proposition (aka
+  *  SigmaBoolean) in the given context.
+  * - verification of ErgoTree in the given context.
+  *
+  * NOTE: In version v5.0 this interpreter contains two alternative implementations.
+  * 1) Old implementation from v4.x which is based on AOT costing
+  * 2) New implementation added in v5.0 which is based on JIT costin (see methods
+  *    with JITC suffix).
+  *
+  * Both implementations are equivalent in v5.0, but have different performance
+  * as result they produce different cost estimation.
+  *
+  * The interpreter has evaluationMode which defines how it should execute scripts.
+  * @see verify, fullReduction
+  */
 trait Interpreter extends ScorexLogging {
 
   import Interpreter.ReductionResult
@@ -47,7 +63,9 @@ trait Interpreter extends ScorexLogging {
     */
   def precompiledScriptProcessor: PrecompiledScriptProcessor
 
-  /** Evaluation settings used by [[ErgoTreeEvaluator]] */
+  /** Evaluation settings used by [[ErgoTreeEvaluator]] which is used by this
+    * interpreter to perform fullReduction.
+    */
   def evalSettings: EvalSettings = ErgoTreeEvaluator.DefaultEvalSettings
 
   /** Deserializes given script bytes using ValueSerializer (i.e. assuming expression tree format).
@@ -90,13 +108,7 @@ trait Interpreter extends ScorexLogging {
     case _ => None
   }
 
-  // TODO after HF: merge with old version (`toValidScriptType`)
-  private def toValidScriptTypeJITC(exp: SValue): SigmaPropValue = exp match {
-    case v: Value[SBoolean.type]@unchecked if v.tpe == SBoolean => v.toSigmaProp
-    case p: SValue if p.tpe == SSigmaProp => p.asSigmaProp
-    case x => throw new Error(s"Context-dependent pre-processing should produce tree of type Boolean or SigmaProp but was $x")
-  }
-
+  /** Helper class which encapsulates a mutable value. */
   class MutableCell[T](var value: T)
 
   /** Extracts proposition for ErgoTree handing soft-fork condition.
@@ -215,25 +227,6 @@ trait Interpreter extends ScorexLogging {
     }
   }
 
-  def compareResults(oldRes: Try[ReductionResult], newRes: Try[ReductionResult]) = {
-//    assert(resNew == res, s"The new Evaluator result differ from the old: $resNew != $res")
-//
-//    def costErr = s"The JIT cost differ from the AOT: $costNew != $cost"
-//
-//    val resCost = returnAOTCost match {
-//      case Some(true) => // AOT costing requested
-//        if (costNew != cost) println(s"WARNING: $costErr")
-//        cost
-//      case Some(false) => // JIT costing requested
-//        if (costNew != cost) println(s"WARNING: $costErr")
-//        costNew
-//      case None => // nothing special was requested
-//        assert((costNew - treeComplexity) / 2 <= cost, s"The JIT cost is larger than the AOT: $costNew > $cost")
-//        cost
-//    }
-//    resCost
-  }
-
   /** Transforms ErgoTree into Value by replacing placeholders with constants and then
    * delegates to the main implementation method.
    */
@@ -290,6 +283,9 @@ trait Interpreter extends ScorexLogging {
     res
   }
 
+  /** Checks that a jitRes is equal to res and also checks costs.
+    * Reports either error or warning to the console.
+    */
   private def checkResults(ergoTree: ErgoTree, res: ReductionResult, jitRes: ReductionResult) = {
     val oldValue = res.value
     val newValue = jitRes.value
@@ -310,9 +306,12 @@ trait Interpreter extends ScorexLogging {
     checkCosts(ergoTree, res.cost, jitRes.cost)
   }
 
-  protected def checkCosts(ergoTree: ErgoTree,
-                         oldCost: Long,
-                         newCost: Long) = {
+  /** Checks that newCost doesn't exceed oldCost.
+    * If it doesn't, then:
+    * - in test context - throws an error
+    * - in non-test context - prints warning to console.
+    */
+  protected def checkCosts(ergoTree: ErgoTree, oldCost: Long, newCost: Long) = {
     if (oldCost < newCost) {
       val msg =
         s"""Wrong JIT cost: -----------------------------------------
@@ -700,6 +699,13 @@ object Interpreter {
       // This case is not possible, due to exp is always of Boolean/SigmaProp type.
       // In case it will ever change, leave it here to throw an explaining message.
       throw new Error(s"Context-dependent pre-processing should produce tree of type Boolean or SigmaProp but was $x")
+  }
+
+  // TODO after HF: merge with old version (`toValidScriptType`)
+  private def toValidScriptTypeJITC(exp: SValue): SigmaPropValue = exp match {
+    case v: Value[SBoolean.type]@unchecked if v.tpe == SBoolean => v.toSigmaProp
+    case p: SValue if p.tpe == SSigmaProp => p.asSigmaProp
+    case x => throw new Error(s"Context-dependent pre-processing should produce tree of type Boolean or SigmaProp but was $x")
   }
 
   /** Helper method to throw errors from Interpreter. */
