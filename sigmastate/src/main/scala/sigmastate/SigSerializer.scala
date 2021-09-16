@@ -15,11 +15,17 @@ import sigmastate.serialization.SigmaSerializer
 import sigmastate.utils.{Helpers, SigmaByteReader, SigmaByteWriter}
 import spire.syntax.all.cfor
 
+/** Contains implementation of signature (aka proof) serialization.
+  * @see toProofBytes, parseAndComputeChallenges
+  */
 object SigSerializer extends LazyLogging {
   /** Log warning message using this class's logger. */
   def warn(msg: String) = logger.warn(msg)
 
+  /** A size of challenge in Sigma protocols, in bits. */
   val hashSize = CryptoConstants.soundnessBits / 8
+
+  /** Number of bytes to represent any group element as byte array */
   val order = CryptoConstants.groupSize
 
   /** Recursively traverses the given node and serializes challenges and prover messages
@@ -118,20 +124,28 @@ object SigSerializer extends LazyLogging {
     else {
       // Verifier step 1: Read the root challenge from the proof.
       val r = SigmaSerializer.startReader(proof)
-      val res = parseAndComputeChallenges(exp, r, null)(E)
+      val res = parseAndComputeChallenges(exp, r, null)
       res
     }
   }
 
+  /** Represents cost of parsing UncheckedSchnorr node from proof bytes. */
   final val ParseChallenge_ProveDlog = OperationCostInfo(
     FixedCost(10), NamedDesc("ParseChallenge_ProveDlog"))
 
+  /** Represents cost of parsing UncheckedDiffieHellmanTuple node from proof bytes. */
   final val ParseChallenge_ProveDHT = OperationCostInfo(
     FixedCost(10), NamedDesc("ParseChallenge_ProveDHT"))
 
+  /** Represents cost of parsing GF2_192_Poly from proof bytes. */
   final val ParsePolynomial = OperationCostInfo(
     PerItemCost(10, 10, 1), NamedDesc("ParsePolynomial"))
 
+  /** Represents cost of:
+    * 1) evaluating a polynomial
+    * 2) obtaining GF2_192 instance
+    * 3) converting it to array of bytes
+    */
   final val EvaluatePolynomial = OperationCostInfo(
     PerItemCost(3, 3, 1), NamedDesc("EvaluatePolynomial"))
 

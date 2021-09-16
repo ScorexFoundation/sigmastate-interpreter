@@ -581,9 +581,11 @@ object Interpreter {
     */
   def WhenSoftForkReductionResult(cost: Long): ReductionResult = ReductionResult(TrivialProp.TrueProp, cost)
 
+  /** Represents the cost of computing DLogInteractiveProver.computeCommitment. */
   final val ComputeCommitments_Schnorr = OperationCostInfo(
     FixedCost(3400), NamedDesc("ComputeCommitments_Schnorr"))
 
+  /** Represents the cost of computing DiffieHellmanTupleInteractiveProver.computeCommitment. */
   final val ComputeCommitments_DHT = OperationCostInfo(
     FixedCost(6450), NamedDesc("ComputeCommitments_DHT"))
 
