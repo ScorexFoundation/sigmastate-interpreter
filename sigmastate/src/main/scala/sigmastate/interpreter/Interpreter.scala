@@ -448,7 +448,7 @@ trait Interpreter extends ScorexLogging {
   }
 
   // Perform Verifier Steps 4-6
-  private def checkCommitments(sp: UncheckedSigmaTree, message: Array[Byte]): Boolean = {
+  private def checkCommitments(sp: UncheckedSigmaTree, message: Array[Byte])(implicit E: ErgoTreeEvaluator): Boolean = {
     // Perform Verifier Step 4
     val newRoot = computeCommitments(sp).get.asInstanceOf[UncheckedSigmaTree]
     val bytes = concatArrays(FiatShamirTree.toBytes(newRoot), message)
@@ -514,10 +514,13 @@ trait Interpreter extends ScorexLogging {
   /**
     * Verify a signature on given (arbitrary) message for a given public key.
     *
-    * @param sigmaTree - public key (represented as a tree)
-    * @param message - message
-    * @param signature - signature for the message
-    * @return - whether signature is valid or not
+    * @param sigmaTree public key (represented as a tree)
+    * @param message   message
+    * @param signature signature for the message
+    * @param E         optional evaluator (can be null) which is used for profiling of operations.
+    *                  When `E` is `null`, then profiling is turned-off and has no effect on
+    *                  the execution.
+    * @return whether signature is valid or not
     */
   def verifySignature(sigmaTree: SigmaBoolean,
                       message: Array[Byte],

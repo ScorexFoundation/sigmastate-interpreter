@@ -128,7 +128,7 @@ class SigSerializerSpecification extends SigmaTestingCommons
     * that code. */
   def getFiatShamirHex(uncheckedTree: UncheckedTree): String = {
     val newRoot = prover.computeCommitments(uncheckedTree).get.asInstanceOf[UncheckedSigmaTree]
-    val fiatShamirBytes = FiatShamirTree.toBytes(newRoot)
+    val fiatShamirBytes = FiatShamirTree.toBytes(newRoot)(null/* no profiling */)
     val hex = ErgoAlgos.encode(fiatShamirBytes)
     hex
   }

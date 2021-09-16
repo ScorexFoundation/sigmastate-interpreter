@@ -89,7 +89,7 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
     // This bitstring corresponding to a proposition to prove is needed for Strong Fiat-Shamir transformation.
     // See [BPW12] paper on Strong vs Weak Fiat-Shamir,
     // (https://link.springer.com/content/pdf/10.1007/978-3-642-34961-4_38.pdf)
-    val propBytes = FiatShamirTree.toBytes(step6)
+    val propBytes = FiatShamirTree.toBytes(step6)(null/* prove is not profiled */)
 
     // Prover Step 8: compute the challenge for the root of the tree as the Fiat-Shamir hash of propBytes
     // and the message being signed.

@@ -204,25 +204,32 @@ case class UnprovenDiffieHellmanTuple(override val proposition: ProveDHTuple,
 // TODO coverage (8h): write a test that restores the tree from this string and check that the result is equal,
 // in order to make sure this conversion is unambiguous
 object FiatShamirTree {
+  /** Prefix byte which is put before the other ProofTreeConjecture serialized bytes. */
   val internalNodePrefix: Byte = 0
+
+  /** Prefix byte which is put before the other ProofTreeLeaf serialized bytes. */
   val leafPrefix: Byte = 1
 
+  /** Represents cost of serializing UncheckedSchnorr or UnprovenSchnorr node of ProofTree. */
   final val ToBytes_Schnorr = OperationCostInfo(
     FixedCost(570), NamedDesc("ToBytes_Schnorr"))
 
+  /** Represents cost of serializing UncheckedDiffieHellmanTuple or
+    * UnprovenDiffieHellmanTuple node of ProofTree.
+    */
   final val ToBytes_DHT = OperationCostInfo(
     FixedCost(680), NamedDesc("ToBytes_DHT"))
 
+  /** Represents cost of serializing ProofTreeConjecture node of ProofTree. */
   final val ToBytes_ProofTreeConjecture = OperationCostInfo(
     FixedCost(15), NamedDesc("ToBytes_ProofTreeConjecture"))
 
   /** Prover Step 7: Convert the tree to a byte array `s` for input to the Fiat-Shamir hash
     * function.
-    * See the other overload for details. */
-  def toBytes(tree: ProofTree): Array[Byte] = {
+    * See the other overload for detailed docs. */
+  def toBytes(tree: ProofTree)(implicit E: ErgoTreeEvaluator): Array[Byte] = {
     val w = SigmaSerializer.startWriter()
-    val E = ErgoTreeEvaluator.getCurrentEvaluator
-    toBytes(tree, w)(E)
+    toBytes(tree, w)
     w.toBytes
   }
 
@@ -238,6 +245,9 @@ object FiatShamirTree {
     *
     * @param tree the tree to take commitments from
     * @param w    writer which is used for serialization
+    * @param E     optional evaluator (can be null) which is used for profiling of operations.
+    *              When `E` is `null`, then profiling is turned-off and has no effect on
+    *              the execution.
     *
     * HOTSPOT: don't beautify the code
     */
