@@ -42,13 +42,20 @@ object NumericOps {
   trait BigIntIsIntegral extends Integral[BigInt] {
     def quot(x: BigInt, y: BigInt): BigInt = x.divide(y)
 
-    /** This method is used in ErgoTreeEvaluator based interpreter, to implement '%' operation.
-      * Even though it is called `rem`, the semantics of ErgoTree language requires
-      * it to correspond to [[java.math.BigInteger]].mod method.
-      * Note also that there is no distinction between `mod` and `reminder` methods in
-      * [[scala.math.Integral]] trait the same way as it is in BigInteger class.
+    /** This method is used in ErgoTreeEvaluator based interpreter, to implement
+      * '%' operation of ErgoTree (i.e. `%: (T, T) => T` operation) for all
+      * numeric types T including BigInt.
+      *
+      * In the v4.x interpreter, however, the `%` operation is implemented using
+      * [[CBigInt]].mod method (see implementation in [[TestBigInt]], which
+      * delegates to [[java.math.BigInteger]].mod method.
+      *
+      * Even though this method is called `rem`, the semantics of ErgoTree
+      * language requires it to correspond to [[java.math.BigInteger]].mod
+      * method.
+      *
       * For this reason we define implementation of this `rem` method using
-      * [[java.math.BigInteger]].mod.
+      * [[BigInt]].mod.
       */
     def rem(x: BigInt, y: BigInt): BigInt = x.mod(y)
 
