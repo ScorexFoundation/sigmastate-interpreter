@@ -246,6 +246,19 @@ class ErgoTreeSerializer {
     (header, sizeOpt, constants, treeBytes)
   }
 
+  /** Transforms serialized bytes of ErgoTree with segregated constants by
+    * replacing constants at given positions with new values. This operation
+    * allow to use serialized scripts as pre-defined templates.
+    * See [[sigmastate.SubstConstants]] for details.
+    *
+    * @param scriptBytes serialized ErgoTree with ConstantSegregationFlag set to 1.
+    * @param positions   zero based indexes in ErgoTree.constants array which
+    *                    should be replaced with new values
+    * @param newVals     new values to be injected into the corresponding
+    *                    positions in ErgoTree.constants array
+    * @return original scriptBytes array where only specified constants are
+    *         replaced and all other bytes remain exactly the same
+    */
   def substituteConstants(scriptBytes: Array[Byte],
                           positions: Array[Int],
                           newVals: Array[Value[SType]])(implicit vs: SigmaValidationSettings): (Array[Byte], Int) = {
