@@ -37,11 +37,11 @@ import scala.util.{Success, Try}
   *
   * NOTE: In version v5.0 this interpreter contains two alternative implementations.
   * 1) Old implementation from v4.x which is based on AOT costing
-  * 2) New implementation added in v5.0 which is based on JIT costin (see methods
+  * 2) New implementation added in v5.0 which is based on JIT costing (see methods
   *    with JITC suffix).
   *
   * Both implementations are equivalent in v5.0, but have different performance
-  * as result they produce different cost estimation.
+  * as result they produce different cost estimations.
   *
   * The interpreter has evaluationMode which defines how it should execute scripts.
   * @see verify, fullReduction
@@ -67,6 +67,12 @@ trait Interpreter extends ScorexLogging {
     * interpreter to perform fullReduction.
     */
   def evalSettings: EvalSettings = ErgoTreeEvaluator.DefaultEvalSettings
+
+  /** Logs the given message string. Can be overridden in the derived interpreter classes
+    * to redefine the default behavior. */
+  protected def logMessage(msg: String) = {
+    println(msg)
+  }
 
   /** Deserializes given script bytes using ValueSerializer (i.e. assuming expression tree format).
     * It also measures tree complexity adding to the total estimated cost of script execution.
@@ -300,7 +306,7 @@ trait Interpreter extends ScorexLogging {
         error(msg)
       }
       else if (evalSettings.isLogEnabled) {
-        println(msg)
+        logMessage(msg)
       }
     }
     checkCosts(ergoTree, res.cost, jitRes.cost)
@@ -323,7 +329,7 @@ trait Interpreter extends ScorexLogging {
         error(msg)
       }
       else if (evalSettings.isLogEnabled) {
-        println(msg)
+        logMessage(msg)
       }
     }
   }
@@ -371,7 +377,7 @@ trait Interpreter extends ScorexLogging {
     * @return verification result or Exception.
     *         If if the estimated cost of execution of the `exp` exceeds the limit (given
     *         in `context`), then exception if thrown and packed in Try.
-    *         If left component is false, then:
+    *         If the first component is false, then:
     *         1) script executed to false or
     *         2) the given proof failed to validate resulting SigmaProp conditions.
     * @see `reduceToCrypto`
@@ -428,21 +434,6 @@ trait Interpreter extends ScorexLogging {
       }
       res
     })
-    if (outputComputedResults) {
-      res.foreach { case (_, cost) =>
-        val scaledCost = cost * 1 // this is the scale factor of CostModel with respect to the concrete hardware
-        val timeMicro = t * 1000  // time in microseconds
-        val error = if (scaledCost > timeMicro) {
-          val error = ((scaledCost / timeMicro.toDouble - 1) * 100d).formatted(s"%10.3f")
-          error
-        } else {
-          val error = (-(timeMicro.toDouble / scaledCost.toDouble - 1) * 100d).formatted(s"%10.3f")
-          error
-        }
-        val name = "\"" + env.getOrElse(Interpreter.ScriptNameProp, "") + "\""
-        println(s"Name-Time-Cost-Error\t$name\t$timeMicro\t$scaledCost\t$error")
-      }
-    }
     res
   }
 
