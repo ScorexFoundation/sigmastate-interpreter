@@ -23,6 +23,7 @@ import scalan.util.BenchmarkUtil
 import sigmastate.FiatShamirTree._
 import sigmastate.SigSerializer._
 import sigmastate.interpreter.ErgoTreeEvaluator.fixedCostOp
+import sigmastate.interpreter.EvalSettings._
 import sigmastate.utils.Helpers._
 import sigmastate.lang.Terms.ValueOps
 import spire.syntax.all.cfor
@@ -241,18 +242,19 @@ trait Interpreter extends ScorexLogging {
 
   /**
     * Full reduction of initial expression given in the ErgoTree form to a SigmaBoolean value
-    * (which encodes whether a sigma-protocol proposition or a boolean value, so true or false).
+    * which encodes either a sigma-protocol proposition or a boolean (true or false) value.
     *
     * Works as follows:
     * 1) parse ErgoTree instance into a typed AST
     * 2) go bottom-up the tree to replace DeserializeContext nodes only
-    * 3) estimate cost and reduce the AST to a SigmaBoolean instance (so sigma-tree or trivial boolean value)
+    * 3) estimate cost and reduce the AST to a SigmaBoolean instance (either sigma-tree or
+    * trivial boolean value)
     *
-    *
-    * @param ergoTree - input ErgoTree expression to reduce
-    * @param context - context used in reduction
-    * @param env - script environment
-    * @return reduction result as a pair of sigma boolean and the accumulated cost counter after reduction
+    * @param ergoTree input ErgoTree expression to reduce
+    * @param context  context used in reduction
+    * @param env      script environment
+    * @return reduction result as a pair of sigma boolean and the accumulated cost counter
+    *         after reduction
     */
   def fullReduction(ergoTree: ErgoTree,
                     context: CTX,
@@ -413,24 +415,54 @@ trait Interpreter extends ScorexLogging {
       val initCost = Evaluation.addCostChecked(context.initCost, complexityCost, context.costLimit)
       val contextWithCost = context.withInitCost(initCost).asInstanceOf[CTX]
 
-      val (ReductionResult(cProp, cost), jitRes) = fullReduction(ergoTree, contextWithCost, env)
+      val (aotReduced, jitReduced) = fullReduction(ergoTree, contextWithCost, env)
 
-      val res = cProp match {
-        case TrivialProp.TrueProp => (true, cost)
-        case TrivialProp.FalseProp => (false, cost)
-        case _ =>
-          val verificationC = estimateVerificationCost(cProp) / 10 // scale eval to tx cost
-          // Note, jitRes.cost is already scaled in fullReduction
-          val fullJitCost = Evaluation.addCostChecked(jitRes.cost, verificationC, context.costLimit)
+      // if necessary perform verification as v4.x (AOT based implementation)
+      var aotRes: VerificationResult = null
+      if (evalSettings.evaluationMode == AotEvaluationMode ||
+          evalSettings.evaluationMode == TestEvaluationMode) {
+          aotRes = aotReduced.value match {
+            case TrivialProp.TrueProp => (true, aotReduced.cost)
+            case TrivialProp.FalseProp => (false, aotReduced.cost)
+            case _ =>
+              val ok = if (evalSettings.isMeasureOperationTime) {
+                val E = ErgoTreeEvaluator.forProfiling(verifySignatureProfiler, evalSettings)
+                verifySignature(aotReduced.value, message, proof)(E)
+              } else {
+                verifySignature(aotReduced.value, message, proof)(null)
+              }
+              (ok, aotReduced.cost)
+          }
+      }
 
-          checkCosts(ergoTree, cost, fullJitCost)
+      // if necessary perform verification as v5.x (JIT based implementation)
+      var jitRes: VerificationResult = null
+      if (evalSettings.evaluationMode == AotEvaluationMode ||
+          evalSettings.evaluationMode == TestEvaluationMode) {
+          jitRes = jitReduced.value match {
+            case TrivialProp.TrueProp => (true, jitReduced.cost)
+            case TrivialProp.FalseProp => (false, jitReduced.cost)
+            case _ =>
+              val verificationC = estimateVerificationCost(jitReduced.value) / 10 // scale eval to tx cost
+              // Note, jitRes.cost is already scaled in fullReduction
+              val fullJitCost = Evaluation.addCostChecked(jitReduced.cost, verificationC, context.costLimit)
 
-          val ok = if (evalSettings.isMeasureOperationTime) {
-            val E = ErgoTreeEvaluator.forProfiling(verifySignatureProfiler, evalSettings)
-            verifySignature(cProp, message, proof)(E)
-          } else
-            verifySignature(cProp, message, proof)(null)
-          (ok, cost)
+              val ok = if (evalSettings.isMeasureOperationTime) {
+                val E = ErgoTreeEvaluator.forProfiling(verifySignatureProfiler, evalSettings)
+                verifySignature(jitReduced.value, message, proof)(E)
+              } else {
+                verifySignature(jitReduced.value, message, proof)(null)
+              }
+              (ok, fullJitCost)
+          }
+      }
+
+      val res = evalSettings.evaluationMode match {
+        case AotEvaluationMode => aotRes
+        case JitEvaluationMode => jitRes
+        case TestEvaluationMode =>
+          checkCosts(ergoTree, aotRes._2, jitRes._2)
+          aotRes
       }
       res
     })

@@ -2,15 +2,17 @@ package sigmastate.interpreter
 
 import org.ergoplatform.ErgoLikeContext
 import org.ergoplatform.SigmaConstants.ScriptCostLimit
-import sigmastate.{FixedCost, PerItemCost, SType, TypeBasedCost}
+import sigmastate.{PerItemCost, FixedCost, SType, TypeBasedCost}
 import sigmastate.Values._
 import sigmastate.eval.Profiler
 import sigmastate.interpreter.ErgoTreeEvaluator.DataEnv
 import sigmastate.interpreter.Interpreter.ReductionResult
 import special.sigma.{Context, SigmaProp}
 import scalan.util.Extensions._
+import sigmastate.interpreter.EvalSettings._
 import sigmastate.lang.Terms.MethodCall
 import spire.syntax.all.cfor
+import supertagged.TaggedType
 
 import scala.collection.mutable
 import scala.util.DynamicVariable
@@ -35,7 +37,31 @@ case class EvalSettings(
     * In such a case, additional operations may be performed (such as sanity checks). */
   isTestRun: Boolean = false,
   /** If true, then expected test vectors are pretty-printed. */
-  printTestVectors: Boolean = false)
+  printTestVectors: Boolean = false,
+  evaluationMode: EvaluationMode = AotEvaluationMode)
+
+object EvalSettings {
+  /** Enumeration type of evaluation modes of [[Interpreter]].
+    * This type can be removed in v5.x releases together with AOT implementation once v5.0
+    * protocol is activated.
+    */
+  object EvaluationMode extends TaggedType[Int]
+  type EvaluationMode = EvaluationMode.Type
+
+  /** Evaluation mode when the interpreter is executing using AOT costing implementation
+   * of v4.x protocol. */
+  val AotEvaluationMode: EvaluationMode = EvaluationMode @@ 1  // first bit
+
+  /** Evaluation mode when the interpreter is executing using JIT costing implementation
+    * of v5.x protocol. */
+  val JitEvaluationMode: EvaluationMode = EvaluationMode @@ 2  // second bit
+
+  /** Evaluation mode when the interpreter is executing using both AOT and JIT costing
+    * implementations and compare the results.
+    * This mode should be used in tests and not supposed to be used in production.
+    */
+  val TestEvaluationMode: EvaluationMode = EvaluationMode @@ 3 // both bits
+}
 
 /** Implements a simple and fast direct-style interpreter of ErgoTrees.
   *
