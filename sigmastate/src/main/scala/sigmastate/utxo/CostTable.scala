@@ -1,6 +1,5 @@
 package sigmastate.utxo
 
-import org.ergoplatform.SigmaConstants
 import sigmastate.{Downcast, Upcast}
 import sigmastate.lang.SigmaParser
 import sigmastate.lang.Terms.OperationId
@@ -298,12 +297,6 @@ object CostTable {
     }
     CostTable(parsed.toMap)
   }
-
-  //Maximum cost of a script
-  val ScriptLimit = SigmaConstants.ScriptCostLimit.value
-
-  //Maximum number of expressions in initial(non-reduced script)
-  val MaxExpressions = 300
 
 }
 
