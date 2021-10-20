@@ -186,6 +186,7 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests
 
         // check cost
         val costCtx = ergoCtx.get.toSigmaContext(isCost = true)
+        IR.checkCost(costCtx, tree, costF, SigmaConstants.ScriptCostLimit.value)
 
         // check size
         {
