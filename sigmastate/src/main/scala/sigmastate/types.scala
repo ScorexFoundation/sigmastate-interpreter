@@ -477,22 +477,6 @@ case class SMethod(
   /** Operation descriptor of this method. */
   lazy val opDesc = MethodDesc(this)
 
-  /** Do some checks the method descriptor is well configured and consistent. */
-  def checkWellDefined(): Boolean = {
-    docInfo match {
-      case Some(opInfo) =>
-        opInfo.opDesc match {
-          case Some(opDesc) if (opDesc == MethodCall || opDesc == PropertyCall) =>
-            if (costFunc.isEmpty)
-              throw new IllegalStateException(
-                s"Neither costKind not costFunc is defined for $this")
-            else true
-          case _ => true
-        }
-      case None => true
-    }
-  }
-
   /** Finds and keeps the [[Method]] instance which corresponds to this method descriptor.
     * The lazy value is forced only if irInfo.javaMethod == None
     */
@@ -884,7 +868,7 @@ object SNumericType extends STypeCompanion {
     ToBigIntMethod,  // see Downcast
     ToBytesMethod,
     ToBitsMethod
-  ) // TODO v5.0: .ensuring(_.forall { m => m.checkWellDefined() })
+  )
 
   /** Collection of names of numeric casting methods (like `toByte`, `toInt`, etc). */
   val castMethods: Array[String] =
