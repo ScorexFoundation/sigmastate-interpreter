@@ -1058,6 +1058,11 @@ case object SBigInt extends SPrimType with SEmbeddable with SNumericType with SM
     SigmaDsl.BigInt(bi)
   }
 
+  /** The following `modQ` methods are not fully implemented in v4.x and this descriptors.
+    * This descritors are remain here in the code and are waiting for full implementation
+    * is upcoming soft-forks at which point the cost parameters should be calculated and
+    * changed.
+    */
   val ModQMethod = SMethod(this, "modQ", SFunc(this, SBigInt), 1, FixedCost(1))
       .withInfo(ModQ, "Returns this \\lst{mod} Q, i.e. remainder of division by Q, where Q is an order of the cryprographic group.")
   val PlusModQMethod = SMethod(this, "plusModQ", SFunc(IndexedSeq(this, SBigInt), SBigInt), 2, FixedCost(1))
