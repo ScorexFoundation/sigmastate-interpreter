@@ -416,6 +416,7 @@ case class Coster(selector: RuntimeCosting => RuntimeCosting#CostingHandler[_]) 
 case class ArgInfo(name: String, description: String)
 
 /** Meta information which can be attached to SMethod.
+  * @param opDesc  optional operation descriptor
   * @param description  human readable description of the method
   * @param args         one item for each argument */
 case class OperationInfo(opDesc: Option[ValueCompanion], description: String, args: Seq[ArgInfo]) {
@@ -439,6 +440,9 @@ object OperationInfo {
   *                    (builder, obj, m, args, subst) it transforms it to a new ErgoTree
   *                    node, which is then used in the resuting ErgoTree coming out of
   *                    the ErgoScript compiler.
+  * @param javaMethod  Java [[Method]] which should be used to evaluate
+  *                    [[sigmastate.lang.Terms.MethodCall]] node of ErgoTree.
+  * @param invokeDescsBuilder optional builder of additional type descriptors (see extraDescriptors)
   */
 case class MethodIRInfo(
     irBuilder: Option[PartialFunction[(SigmaBuilder, SValue, SMethod, Seq[SValue], STypeSubst), SValue]],
@@ -454,8 +458,11 @@ case class MethodIRInfo(
   *                where `stype.tDom`` - argument type and
   *                `stype.tRange` - method result type.
   * @param methodId method code, it should be unique among methods of the same objType.
+  * @param costKind cost descriptor for this method
   * @param irInfo  meta information connecting SMethod with ErgoTree (see [[MethodIRInfo]])
   * @param docInfo optional human readable method description data
+  * @param costFunc optional specification of how the cost should be computed for the
+  *                 given method call (See ErgoTreeEvaluator.calcCost method).
   */
 case class SMethod(
     objType: STypeCompanion,
@@ -501,6 +508,10 @@ case class SMethod(
     }
   }
 
+  /** Additional type descriptors, which are necessary to perform invocation of Method
+    * associated with this instance.
+    * @see MethodCall.eval
+    */
   lazy val extraDescriptors: Seq[RType[_]] = {
     irInfo.invokeDescsBuilder match {
       case Some(builder) =>
@@ -522,7 +533,10 @@ case class SMethod(
     objType.getMethodById(methodId).get
   }
 
-  /** @hotspot don't beautify the code */
+  /** Returns Java refection [[Method]] which must be invoked to evaluate this method.
+    * The method is resolved by its name using `name + "_eval"` naming convention.
+    * @see `map_eval`, `flatMap_eval` and other `*_eval` methods.
+    * @hotspot don't beautify the code */
   lazy val evalMethod: Method = {
     val argTypes = stype.tDom
     val nArgs = argTypes.length
@@ -561,6 +575,7 @@ case class SMethod(
   def withConcreteTypes(subst: Map[STypeVar, SType]): SMethod =
     withSType(stype.withSubstTypes(subst).asFunc)
 
+  /** Name of a language operation represented by this method. */
   def opName = objType.getClass.getSimpleName + "." + name
 
   /** Returns [[OperationId]] for AOT costing. */
