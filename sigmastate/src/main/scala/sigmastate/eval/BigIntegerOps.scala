@@ -40,8 +40,8 @@ object NumericOps {
   implicit object BigIntegerIsIntegral extends BigIntegerIsIntegral with OrderingOps.BigIntegerOrdering
 
   trait BigIntIsIntegral extends Integral[BigInt] {
-    def quot(x: BigInt, y: BigInt): BigInt = x.divide(y)
-    def rem(x: BigInt, y: BigInt): BigInt = x.remainder(y)
+    def quot(x: BigInt, y: BigInt): BigInt = ??? // this method should not be used in v4.x
+    def rem(x: BigInt, y: BigInt): BigInt = ??? // this method should not be used in v4.x
     def plus(x: BigInt, y: BigInt): BigInt = x.add(y)
     def minus(x: BigInt, y: BigInt): BigInt = x.subtract(y)
     def times(x: BigInt, y: BigInt): BigInt = x.multiply(y)
