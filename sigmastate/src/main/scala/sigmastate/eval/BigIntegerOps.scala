@@ -26,6 +26,7 @@ object NumericOps {
 
   /** Base implementation of Integral methods for BigInt. */
   trait BigIntIsIntegral extends Integral[BigInt] {
+    /** This method should not be used in v4.x */
     def quot(x: BigInt, y: BigInt): BigInt = x.divide(y)
 
     /** This method is used in ErgoTreeEvaluator based interpreter, to implement
@@ -42,6 +43,8 @@ object NumericOps {
       *
       * For this reason we define implementation of this `rem` method using
       * [[BigInt]].mod.
+      *
+      * NOTE: This method should not be used in v4.x
       */
     def rem(x: BigInt, y: BigInt): BigInt = x.mod(y)
 

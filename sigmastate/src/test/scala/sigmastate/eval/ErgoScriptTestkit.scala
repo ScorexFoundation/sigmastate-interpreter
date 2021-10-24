@@ -14,7 +14,7 @@ import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeConte
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.ContextExtension
 import sigmastate.interpreter.Interpreter.ScriptEnv
-import special.sigma.{ContractsTestkit, Context => DContext, _}
+import special.sigma.{ContractsTestkit, Context => DContext}
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 
 import scala.language.implicitConversions
@@ -186,7 +186,7 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests
 
         // check cost
         val costCtx = ergoCtx.get.toSigmaContext(isCost = true)
-        val estimatedCost = IR.checkCost(costCtx, tree, costF, CostTable.ScriptLimit)
+        IR.checkCost(costCtx, tree, costF, SigmaConstants.ScriptCostLimit.value)
 
         // check size
         {
