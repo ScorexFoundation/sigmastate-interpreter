@@ -126,7 +126,7 @@ class ErgoTreeEvaluator(
 
   /** Trace of cost items accumulated during execution of `eval` method. Call
     * [[scala.collection.mutable.ArrayBuffer.clear()]] before each `eval` invocation. */
-  val costTrace = {
+  private lazy val costTrace = {
     val b = mutable.ArrayBuilder.make[CostItem]
     b.sizeHint(1000)
     b
@@ -268,6 +268,7 @@ class ErgoTreeEvaluator(
     }
   }
 
+  /** Adds the cost to the `coster`. See the other overload for details. */
   @inline
   final def addSeqCost[R](costInfo: OperationCostInfo[PerItemCost], nItems: Int)
                          (block: () => R): R = {
@@ -313,39 +314,9 @@ class ErgoTreeEvaluator(
     }
   }
 
+  /** Adds the cost to the `coster`. See the other overload for details. */
   final def addSeqCost(costInfo: OperationCostInfo[PerItemCost])(block: () => Int): Unit = {
     addSeqCost(costInfo.costKind, costInfo.opDesc)(block)
-  }
-
-
-  final def addMethodCallCost[R](mc: MethodCall, obj: Any, args: Array[Any])
-                                (block: => R): R = {
-    val costDetails = ErgoTreeEvaluator.calcCost(mc, obj, args)(this)
-    if (settings.costTracingEnabled) {
-      costTrace += MethodCallCostItem(costDetails)
-    }
-
-    if (settings.isMeasureOperationTime) {
-      coster.add(costDetails.cost)
-      // measure time
-      val start = System.nanoTime()
-      val res = block
-      val end = System.nanoTime()
-      val time = end - start
-
-      val len = costDetails.trace.length
-      val totalCost = costDetails.cost
-
-      // spread the measured time between individial cost items
-      cfor(0)(_ < len, _ + 1) { i =>
-        val costItem = costDetails.trace(i)
-        profiler.addCostItem(costItem, time * costItem.cost / totalCost)
-      }
-      res
-    } else {
-      coster.add(costDetails.cost)
-      block
-    }
   }
 }
 

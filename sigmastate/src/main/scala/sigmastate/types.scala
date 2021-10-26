@@ -123,6 +123,7 @@ object SType {
   /** Costructs a collection type with the given type of elements. */
   implicit def typeCollection[V <: SType](implicit tV: V): SCollection[V] = SCollection[V](tV)
 
+  /** RType descriptors for predefined types used in AOTC-based interpreter. */
   implicit val SigmaBooleanRType: RType[SigmaBoolean] = RType.fromClassTag(classTag[SigmaBoolean])
   implicit val ErgoBoxRType: RType[ErgoBox] = RType.fromClassTag(classTag[ErgoBox])
   implicit val ErgoBoxCandidateRType: RType[ErgoBoxCandidate] = RType.fromClassTag(classTag[ErgoBoxCandidate])
@@ -271,6 +272,8 @@ object SType {
     def asOption[T <: SType]: SOption[T] = tpe.asInstanceOf[SOption[T]]
     def whenFunc[T](action: SFunc => Unit) = if(tpe.isInstanceOf[SFunc]) action(tpe.asFunc)
     def asCollection[T <: SType] = tpe.asInstanceOf[SCollection[T]]
+
+    /** Returns the [[ClassTag]] for the given [[SType]]. */
     def classTag[T <: SType#WrappedType]: ClassTag[T] = (tpe match {
       case SBoolean => reflect.classTag[Boolean]
       case SByte => reflect.classTag[Byte]
@@ -295,6 +298,7 @@ object SType {
   }
 
   implicit class AnyOps(val x: Any) extends AnyVal {
+    /** Helper method to simplify type casts. */
     def asWrappedType: SType#WrappedType = x.asInstanceOf[SType#WrappedType]
   }
 }
@@ -310,6 +314,9 @@ trait STypeCompanion {
   /** Type identifier to use in method serialization */
   def typeId: Byte
 
+  /** If this is SType instance then returns the name of the corresponding RType.
+    * Otherwise returns the name of type companion object (e.g. SCollection).
+    */
   def typeName: String = {
     this match {
       case t: SType =>
@@ -416,6 +423,7 @@ case class Coster(selector: RuntimeCosting => RuntimeCosting#CostingHandler[_]) 
 case class ArgInfo(name: String, description: String)
 
 /** Meta information which can be attached to SMethod.
+  * @param opDesc  optional operation descriptor
   * @param description  human readable description of the method
   * @param args         one item for each argument */
 case class OperationInfo(opDesc: Option[ValueCompanion], description: String, args: Seq[ArgInfo]) {
@@ -439,6 +447,9 @@ object OperationInfo {
   *                    (builder, obj, m, args, subst) it transforms it to a new ErgoTree
   *                    node, which is then used in the resuting ErgoTree coming out of
   *                    the ErgoScript compiler.
+  * @param javaMethod  Java [[Method]] which should be used to evaluate
+  *                    [[sigmastate.lang.Terms.MethodCall]] node of ErgoTree.
+  * @param invokeDescsBuilder optional builder of additional type descriptors (see extraDescriptors)
   */
 case class MethodIRInfo(
     irBuilder: Option[PartialFunction[(SigmaBuilder, SValue, SMethod, Seq[SValue], STypeSubst), SValue]],
@@ -454,8 +465,11 @@ case class MethodIRInfo(
   *                where `stype.tDom`` - argument type and
   *                `stype.tRange` - method result type.
   * @param methodId method code, it should be unique among methods of the same objType.
+  * @param costKind cost descriptor for this method
   * @param irInfo  meta information connecting SMethod with ErgoTree (see [[MethodIRInfo]])
   * @param docInfo optional human readable method description data
+  * @param costFunc optional specification of how the cost should be computed for the
+  *                 given method call (See ErgoTreeEvaluator.calcCost method).
   */
 case class SMethod(
     objType: STypeCompanion,
@@ -469,22 +483,6 @@ case class SMethod(
 
   /** Operation descriptor of this method. */
   lazy val opDesc = MethodDesc(this)
-
-  /** Do some checks the method descriptor is well configured and consistent. */
-  def checkWellDefined(): Boolean = {
-    docInfo match {
-      case Some(opInfo) =>
-        opInfo.opDesc match {
-          case Some(opDesc) if (opDesc == MethodCall || opDesc == PropertyCall) =>
-            if (costFunc.isEmpty)
-              throw new IllegalStateException(
-                s"Neither costKind not costFunc is defined for $this")
-            else true
-          case _ => true
-        }
-      case None => true
-    }
-  }
 
   /** Finds and keeps the [[Method]] instance which corresponds to this method descriptor.
     * The lazy value is forced only if irInfo.javaMethod == None
@@ -501,6 +499,10 @@ case class SMethod(
     }
   }
 
+  /** Additional type descriptors, which are necessary to perform invocation of Method
+    * associated with this instance.
+    * @see MethodCall.eval
+    */
   lazy val extraDescriptors: Seq[RType[_]] = {
     irInfo.invokeDescsBuilder match {
       case Some(builder) =>
@@ -522,7 +524,10 @@ case class SMethod(
     objType.getMethodById(methodId).get
   }
 
-  /** @hotspot don't beautify the code */
+  /** Returns Java refection [[Method]] which must be invoked to evaluate this method.
+    * The method is resolved by its name using `name + "_eval"` naming convention.
+    * @see `map_eval`, `flatMap_eval` and other `*_eval` methods.
+    * @hotspot don't beautify the code */
   lazy val evalMethod: Method = {
     val argTypes = stype.tDom
     val nArgs = argTypes.length
@@ -561,6 +566,7 @@ case class SMethod(
   def withConcreteTypes(subst: Map[STypeVar, SType]): SMethod =
     withSType(stype.withSubstTypes(subst).asFunc)
 
+  /** Name of a language operation represented by this method. */
   def opName = objType.getClass.getSimpleName + "." + name
 
   /** Returns [[OperationId]] for AOT costing. */
@@ -665,12 +671,25 @@ object SMethod {
     */
   type InvokeDescBuilder = SFunc => Seq[SType]
 
-  def javaMethodOf[T, A1](methodName: String)(implicit cT: ClassTag[T], cA1: ClassTag[A1]) =
+  /** Return [[Method]] descriptor for the given `methodName` on the given `cT` type.
+    * @param methodName the name of the method to lookup
+    * @param cT the class where to search the methodName
+    * @param cA1 the class of the method argument
+    */
+  def javaMethodOf[T, A1](methodName: String)
+                         (implicit cT: ClassTag[T], cA1: ClassTag[A1]): Method =
     cT.runtimeClass.getMethod(methodName, cA1.runtimeClass)
 
-  def javaMethodOf[T, A1, A2](methodName: String)(implicit cT: ClassTag[T], cA1: ClassTag[A1], cA2: ClassTag[A2]) =
+  /** Return [[Method]] descriptor for the given `methodName` on the given `cT` type.
+    * @param methodName the name of the method to lookup
+    * @param cT the class where to search the methodName
+    * @param cA1 the class of the method's first argument
+    * @param cA2 the class of the method's second argument
+    */
+  def javaMethodOf[T, A1, A2]
+        (methodName: String)
+        (implicit cT: ClassTag[T], cA1: ClassTag[A1], cA2: ClassTag[A2]): Method =
     cT.runtimeClass.getMethod(methodName, cA1.runtimeClass, cA2.runtimeClass)
-
 
   /** Default fallback method call recognizer which builds MethodCall ErgoTree nodes. */
   val MethodCallIrBuilder: PartialFunction[(SigmaBuilder, SValue, SMethod, Seq[SValue], STypeSubst), SValue] = {
@@ -748,6 +767,8 @@ object SPrimType {
 
   /** Upper limit of the interval of valid type codes for primitive types */
   final val MaxPrimTypeCode: Byte = 11: Byte
+
+  /** Max possible number of primitive types. */
   final val PrimRange: Byte = (MaxPrimTypeCode + 1).toByte
 }
 
@@ -821,6 +842,10 @@ object SNumericType extends STypeCompanion {
     }
   }
 
+  /** The following SMethod instances are descriptors of methods available on all numeric
+    * types.
+    * @see `val methods` below
+    * */
   val ToByteMethod: SMethod = SMethod(this, "toByte", SFunc(tNum, SByte), 1, null)
     .withCost(costOfNumericCast)
     .withInfo(PropertyCall, "Converts this numeric value to \\lst{Byte}, throwing exception if overflow.")
@@ -869,7 +894,7 @@ object SNumericType extends STypeCompanion {
     ToBigIntMethod,  // see Downcast
     ToBytesMethod,
     ToBitsMethod
-  ) // TODO v5.0: .ensuring(_.forall { m => m.checkWellDefined() })
+  )
 
   /** Collection of names of numeric casting methods (like `toByte`, `toInt`, etc). */
   val castMethods: Array[String] =
@@ -889,6 +914,7 @@ object SNumericType extends STypeCompanion {
 
 }
 
+/** Base type for SBoolean and SSigmaProp. */
 trait SLogical extends SType {
 }
 
@@ -896,17 +922,20 @@ trait SLogical extends SType {
   * @see `SGenericType`
   */
 trait SMonoType extends SType with STypeCompanion {
+  /** Helper method to create method descriptors for properties (i.e. methods without args). */
   protected def propertyCall(name: String, tpeRes: SType, id: Byte, costKind: CostKind): SMethod =
     SMethod(this, name, SFunc(this, tpeRes), id, costKind)
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(PropertyCall, "")
 
+  /** Helper method to create method descriptors for properties (i.e. methods without args). */
   protected def property(name: String, tpeRes: SType, id: Byte, valueCompanion: ValueCompanion): SMethod =
     SMethod(this, name, SFunc(this, tpeRes), id, valueCompanion.costKind)
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(valueCompanion, "")
 }
 
+/** Descriptor of ErgoTree type `Boolean` holding `true` or `false` values. */
 case object SBoolean extends SPrimType with SEmbeddable with SLogical with SProduct with SMonoType {
   override type WrappedType = Boolean
   override val typeCode: TypeCode = 1: Byte
@@ -925,6 +954,7 @@ case object SBoolean extends SPrimType with SEmbeddable with SLogical with SProd
   override def isConstantSize = true
 }
 
+/** Descriptor of ErgoTree type `Byte` - 8-bit signed integer. */
 case object SByte extends SPrimType with SEmbeddable with SNumericType with SMonoType {
   override type WrappedType = Byte
   override val typeCode: TypeCode = 2: Byte
@@ -937,7 +967,7 @@ case object SByte extends SPrimType with SEmbeddable with SNumericType with SMon
     case b: Byte => b
     case _ => sys.error(s"Cannot upcast value $v to the type $this")
   }
-  def downcast(v: AnyVal): Byte = v match {
+  override def downcast(v: AnyVal): Byte = v match {
     case b: Byte => b
     case s: Short => s.toByteExact
     case i: Int => i.toByteExact
@@ -946,6 +976,7 @@ case object SByte extends SPrimType with SEmbeddable with SNumericType with SMon
   }
 }
 
+/** Descriptor of ErgoTree type `Short` - 16-bit signed integer. */
 case object SShort extends SPrimType with SEmbeddable with SNumericType with SMonoType {
   override type WrappedType = Short
   override val typeCode: TypeCode = 3: Byte
@@ -967,6 +998,7 @@ case object SShort extends SPrimType with SEmbeddable with SNumericType with SMo
   }
 }
 
+/** Descriptor of ErgoTree type `Int` - 32-bit signed integer. */
 case object SInt extends SPrimType with SEmbeddable with SNumericType with SMonoType {
   override type WrappedType = Int
   override val typeCode: TypeCode = 4: Byte
@@ -990,6 +1022,7 @@ case object SInt extends SPrimType with SEmbeddable with SNumericType with SMono
   }
 }
 
+/** Descriptor of ErgoTree type `Long` - 64-bit signed integer. */
 case object SLong extends SPrimType with SEmbeddable with SNumericType with SMonoType {
   override type WrappedType = Long
   override val typeCode: TypeCode = 5: Byte
@@ -1034,8 +1067,6 @@ case object SBigInt extends SPrimType with SEmbeddable with SNumericType with SM
     * In sigma we limit the size by the fixed constant and thus BigInt is a constant size type. */
   override def isConstantSize = true
 
-  val Max: BigInt = SigmaDsl.BigInt(CryptoConstants.dlogGroup.order)
-
   override protected def numericTypeIndex: Int = 4
 
   override def upcast(v: AnyVal): BigInt = {
@@ -1059,6 +1090,11 @@ case object SBigInt extends SPrimType with SEmbeddable with SNumericType with SM
     SigmaDsl.BigInt(bi)
   }
 
+  /** The following `modQ` methods are not fully implemented in v4.x and this descriptors.
+    * This descritors are remain here in the code and are waiting for full implementation
+    * is upcoming soft-forks at which point the cost parameters should be calculated and
+    * changed.
+    */
   val ModQMethod = SMethod(this, "modQ", SFunc(this, SBigInt), 1, FixedCost(1))
       .withInfo(ModQ, "Returns this \\lst{mod} Q, i.e. remainder of division by Q, where Q is an order of the cryprographic group.")
   val PlusModQMethod = SMethod(this, "plusModQ", SFunc(IndexedSeq(this, SBigInt), SBigInt), 2, FixedCost(1))
@@ -1078,7 +1114,8 @@ case object SBigInt extends SPrimType with SEmbeddable with SNumericType with SM
   )
 }
 
-/** NOTE: this descriptor both type and type companion */
+/** Descriptor of type `String` which is not used in ErgoTree, but used in ErgoScript.
+  * NOTE: this descriptor both type and type companion */
 case object SString extends SProduct with SMonoType {
   override type WrappedType = String
   override val typeCode: TypeCode = 102: Byte
@@ -1088,7 +1125,8 @@ case object SString extends SProduct with SMonoType {
   override def reprClass: Class[_] = classOf[String]
 }
 
-/** NOTE: this descriptor both type and type companion */
+/** Descriptor of ErgoTree type `GroupElement`.
+  * NOTE: this descriptor both type and type companion */
 case object SGroupElement extends SProduct with SPrimType with SEmbeddable with SMonoType {
   override type WrappedType = GroupElement
   override val typeCode: TypeCode = 7: Byte
@@ -1100,6 +1138,7 @@ case object SGroupElement extends SProduct with SPrimType with SEmbeddable with 
   /** Cost of: 1) serializing EcPointType to bytes 2) packing them in Coll. */
   val GetEncodedCostKind = FixedCost(250)
 
+  /** The following SMethod instances are descriptors of methods defined in `GroupElement` type. */
   lazy val GetEncodedMethod: SMethod = SMethod(
     this, "getEncoded", SFunc(Array(this), SByteArray), 2, GetEncodedCostKind)
     .withIRInfo(MethodCallIrBuilder)
@@ -1143,6 +1182,7 @@ case object SGroupElement extends SProduct with SPrimType with SEmbeddable with 
   override def isConstantSize = true
 }
 
+/** Descriptor of ErgoTree type `SigmaProp` which represent sigma-protocol propositions. */
 case object SSigmaProp extends SProduct with SPrimType with SEmbeddable with SLogical with SMonoType {
   import SType._
   override type WrappedType = SigmaProp
@@ -1200,22 +1240,20 @@ case class SOption[ElemType <: SType](elemType: ElemType) extends SProduct with 
   }
   override def isConstantSize = elemType.isConstantSize
   protected override def getMethods() = super.getMethods() ++ SOption.methods
-//  override lazy val methods: Seq[SMethod] = {
-//    val subst = Map(SOption.tT -> elemType)
-//    SOption.methods.map { method =>
-//      method.copy(stype = SigmaTyper.applySubst(method.stype, subst))
-//    }
-//  }
   override def toString = s"Option[$elemType]"
   override def toTermString: String = s"Option[${elemType.toTermString}]"
 
-  lazy val typeParams: Seq[STypeParam] = Array(SType.paramT)
+  override lazy val typeParams: Seq[STypeParam] = Array(SType.paramT)
 }
 
 object SOption extends STypeCompanion {
+  /** Code of `Option[_]` type constructor. */
   val OptionTypeConstrId = 3
+  /** Type code for `Option[T] for some T` type used in TypeSerializer. */
   val OptionTypeCode: TypeCode = ((SPrimType.MaxPrimTypeCode + 1) * OptionTypeConstrId).toByte
+  /** Code of `Option[Coll[_]]` type constructor. */
   val OptionCollectionTypeConstrId = 4
+  /** Type code for `Option[Coll[T]] for some T` type used in TypeSerializer. */
   val OptionCollectionTypeCode: TypeCode = ((SPrimType.MaxPrimTypeCode + 1) * OptionCollectionTypeConstrId).toByte
 
   override def typeId = OptionTypeCode
@@ -1233,6 +1271,7 @@ object SOption extends STypeCompanion {
   type SBoxOption          = SOption[SBox.type]
   type SAvlTreeOption      = SOption[SAvlTree.type]
 
+  /** This descriptors are instantiated once here and then reused. */
   implicit val SByteOption = SOption(SByte)
   implicit val SByteArrayOption = SOption(SByteArray)
   implicit val SShortOption = SOption(SShort)
@@ -1251,8 +1290,11 @@ object SOption extends STypeCompanion {
   val Fold = "fold"
 
   import SType.{tT, tR, paramT, paramR}
+
+  /** Type descriptor of `this` argument used in the methods below. */
   val ThisType = SOption(tT)
 
+  /** The following SMethod instances are descriptors of methods defined in `Option` type. */
   val IsDefinedMethod = SMethod(
     this, IsDefined, SFunc(ThisType, SBoolean), 2, OptionIsDefined.costKind)
       .withInfo(OptionIsDefined,
@@ -1269,16 +1311,17 @@ object SOption extends STypeCompanion {
          |return the result of evaluating \lst{default}.
         """.stripMargin, ArgInfo("default", "the default value"))
 
-  val FoldMethod = SMethod(
-    this, Fold, SFunc(Array(ThisType, tR, SFunc(tT, tR)), tR, Array[STypeParam](tT, tR)), 5, FixedCost(1))
-      .withInfo(MethodCall,
-        """Returns the result of applying \lst{f} to this option's
-         |  value if the option is nonempty.  Otherwise, evaluates
-         |  expression \lst{ifEmpty}.
-         |  This is equivalent to \lst{option map f getOrElse ifEmpty}.
-        """.stripMargin,
-        ArgInfo("ifEmpty", "the expression to evaluate if empty"),
-        ArgInfo("f", "the function to apply if nonempty"))
+// TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
+//  val FoldMethod = SMethod(
+//    this, Fold, SFunc(Array(ThisType, tR, SFunc(tT, tR)), tR, Array[STypeParam](tT, tR)), 5, FixedCost(1))
+//      .withInfo(MethodCall,
+//        """Returns the result of applying \lst{f} to this option's
+//         |  value if the option is nonempty.  Otherwise, evaluates
+//         |  expression \lst{ifEmpty}.
+//         |  This is equivalent to \lst{option map f getOrElse ifEmpty}.
+//        """.stripMargin,
+//        ArgInfo("ifEmpty", "the expression to evaluate if empty"),
+//        ArgInfo("f", "the function to apply if nonempty"))
 
   val MapMethod = SMethod(this, "map",
     SFunc(Array(ThisType, SFunc(tT, tR)), SOption(tR), Array(paramT, paramR)), 7, FixedCost(20))
@@ -1308,15 +1351,16 @@ object SOption extends STypeCompanion {
     FilterMethod
   )
   def apply[T <: SType](implicit elemType: T, ov: Overload1): SOption[T] = SOption(elemType)
-//  def unapply[T <: SType](tOpt: SOption[T]): Option[T] = Some(tOpt.elemType)
 }
 
+/** Base class for descriptors of `Coll[T]` ErgoTree type for some elemType T. */
 trait SCollection[T <: SType] extends SProduct with SGenericType {
   def elemType: T
   override type WrappedType = Coll[T#WrappedType]
   override def isConstantSize = false
 }
 
+/** Descriptor of `Coll[T]` ErgoTree type for some elemType T. */
 case class SCollectionType[T <: SType](elemType: T) extends SCollection[T] {
   override val typeCode: TypeCode = SCollectionType.CollectionTypeCode
 
@@ -1325,17 +1369,26 @@ case class SCollectionType[T <: SType](elemType: T) extends SCollection[T] {
     implicit val sT = Sized.typeToSized(Evaluation.stypeToRType(elemType))
     Sized.sizeOf(coll).dataSize
   }
-  def typeParams: Seq[STypeParam] = SCollectionType.typeParams
+  override def typeParams: Seq[STypeParam] = SCollectionType.typeParams
   protected override def getMethods() = super.getMethods() ++ SCollection.methods
   override def toString = s"Coll[$elemType]"
   override def toTermString = s"Coll[${elemType.toTermString}]"
 }
 
 object SCollectionType {
+  /** Code of `Coll[_]` type constructor. */
   val CollectionTypeConstrId = 1
+
+  /** Type code for `Coll[T] for some T` type used in TypeSerializer. */
   val CollectionTypeCode: TypeCode = ((SPrimType.MaxPrimTypeCode + 1) * CollectionTypeConstrId).toByte
+
+  /** Code of `Coll[Coll[_]]` type constructor. */
   val NestedCollectionTypeConstrId = 2
+
+  /** Type code for `Coll[Coll[T]] for some T` type used in TypeSerializer. */
   val NestedCollectionTypeCode: TypeCode = ((SPrimType.MaxPrimTypeCode + 1) * NestedCollectionTypeConstrId).toByte
+
+  /** Array of generic type parameters reused in all SCollectionType instances. */
   val typeParams: Seq[STypeParam] = Array(SType.paramIV)
 }
 
@@ -1346,13 +1399,16 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
 
   import SType.{tK, tV, paramIV, paramIVSeq, paramOV}
 
+  /** Helper descriptors reused across different method descriptors. */
   def tIV = SType.tIV
   def tOV = SType.tOV
 
+  /** This descriptors are instantiated once here and then reused. */
   val ThisType = SCollection(tIV)
   val tOVColl = SCollection(tOV)
   val tPredicate = SFunc(tIV, SBoolean)
 
+  /** The following SMethod instances are descriptors of methods defined in `Coll` type. */
   val SizeMethod = SMethod(this, "size", SFunc(ThisType, SInt), 1, SizeOf.costKind)
       .withInfo(SizeOf, "The size of the collection in elements.")
 
@@ -1376,6 +1432,10 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
         """.stripMargin,
         ArgInfo("f", "the function to apply to each element"))
 
+  /** Implements evaluation of Coll.map method call ErgoTree node.
+    * Called via reflection based on naming convention.
+    * @see SMethod.evalMethod
+    */
   def map_eval[A,B](mc: MethodCall, xs: Coll[A], f: A => B)(implicit E: ErgoTreeEvaluator): Coll[B] = {
     val tpeB = mc.tpe.asInstanceOf[SCollection[SType]].elemType
     val tB = Evaluation.stypeToRType(tpeB).asInstanceOf[RType[B]]
@@ -1462,6 +1522,10 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
          | containing [0 .. length-1] values.
         """.stripMargin)
 
+  /** Implements evaluation of Coll.indices method call ErgoTree node.
+    * Called via reflection based on naming convention.
+    * @see SMethod.evalMethod
+    */
   def indices_eval[A, B](mc: MethodCall, xs: Coll[A])
                         (implicit E: ErgoTreeEvaluator): Coll[Int] = {
     val m = mc.method
@@ -1537,9 +1601,11 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
     found
   }
 
+  /** Operation descriptor for matching `flatMap` method calls with valid lambdas. */
   final val MatchSingleArgMethodCall_Info = OperationCostInfo(
     FixedCost(30), NamedDesc("MatchSingleArgMethodCall"))
 
+  /** Recognizer of `flatMap` method calls with valid lambdas. */
   object IsSingleArgMethodCall {
     def unapply(mc:MethodCall)
                (implicit E: ErgoTreeEvaluator): Nullable[(Int, SValue)] = {
@@ -1557,6 +1623,7 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
     }
   }
 
+  /** Checks that the given [[MethodCall]] operation is valid flatMap. */
   def checkValidFlatmap(mc: MethodCall)(implicit E: ErgoTreeEvaluator) = {
     mc match {
       case IsSingleArgMethodCall(varId, lambdaBody)
@@ -1568,6 +1635,10 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
     }
   }
 
+  /** Implements evaluation of Coll.flatMap method call ErgoTree node.
+    * Called via reflection based on naming convention.
+    * @see SMethod.evalMethod
+    */
   def flatMap_eval[A, B](mc: MethodCall, xs: Coll[A], f: A => Coll[B])
                         (implicit E: ErgoTreeEvaluator): Coll[B] = {
     checkValidFlatmap(mc)
@@ -1586,8 +1657,13 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
     SFunc(Array(ThisType, SInt, ThisType, SInt), ThisType, paramIVSeq),
       19, PerItemCost(30, 2, 10))
       .withIRInfo(MethodCallIrBuilder)
-      .withInfo(MethodCall, "")
+      .withInfo(MethodCall,
+        "Produces a new Coll where a slice of elements in this Coll is replaced by another Coll.")
 
+  /** Implements evaluation of Coll.patch method call ErgoTree node.
+    * Called via reflection based on naming convention.
+    * @see SMethod.evalMethod
+    */
   def patch_eval[A](mc: MethodCall, xs: Coll[A], from: Int, patch: Coll[A], replaced: Int)
                    (implicit E: ErgoTreeEvaluator): Coll[A] = {
     val m = mc.method
@@ -1601,8 +1677,13 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
     SFunc(Array(ThisType, SInt, tIV), ThisType, paramIVSeq),
     20, PerItemCost(20, 1, 10))
       .withIRInfo(MethodCallIrBuilder, javaMethodOf[Coll[_], Int, Any]("updated"))
-      .withInfo(MethodCall, "")
+      .withInfo(MethodCall,
+        "A copy of this Coll with one single replaced element.")
 
+  /** Implements evaluation of Coll.updated method call ErgoTree node.
+    * Called via reflection based on naming convention.
+    * @see SMethod.evalMethod
+    */
   def updated_eval[A](mc: MethodCall, coll: Coll[A], index: Int, elem: A)
                      (implicit E: ErgoTreeEvaluator): Coll[A] = {
     val m = mc.method
@@ -1617,6 +1698,10 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
     21, PerItemCost(20, 2, 10))
       .withIRInfo(MethodCallIrBuilder).withInfo(MethodCall, "")
 
+  /** Implements evaluation of Coll.updateMany method call ErgoTree node.
+    * Called via reflection based on naming convention.
+    * @see SMethod.evalMethod
+    */
   def updateMany_eval[A](mc: MethodCall, coll: Coll[A], indexes: Coll[Int], values: Coll[A])
                         (implicit E: ErgoTreeEvaluator): Coll[A] = {
     val costKind = mc.method.costKind.asInstanceOf[PerItemCost]
@@ -1631,7 +1716,10 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
       .withInfo(MethodCall, "")
 
   // TODO v5.0: optimize using specialization for numeric and predefined types
-  /** This method is called via Reflection as part of evaluating the given MethodCall. */
+  /** Implements evaluation of Coll.indexOf method call ErgoTree node.
+    * Called via reflection based on naming convention.
+    * @see SMethod.evalMethod
+    */
   def indexOf_eval[A](mc: MethodCall, xs: Coll[A], elem: A, from: Int)
                      (implicit E: ErgoTreeEvaluator): Int = {
     val costKind = mc.method.costKind.asInstanceOf[PerItemCost]
@@ -1653,6 +1741,7 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
     res
   }
 
+  /** Cost descriptor of Coll.zip operation. */
   val Zip_CostKind = PerItemCost(baseCost = 10, perChunkCost = 1, chunkSize = 10)
 
   val ZipMethod = SMethod(this, "zip",
@@ -1661,6 +1750,10 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(MethodCall, "")
 
+  /** Implements evaluation of Coll.zip method call ErgoTree node.
+    * Called via reflection based on naming convention.
+    * @see SMethod.evalMethod
+    */
   def zip_eval[A, B](mc: MethodCall, xs: Coll[A], ys: Coll[B])
                     (implicit E: ErgoTreeEvaluator): Coll[(A,B)] = {
     val m = mc.method
@@ -1669,7 +1762,7 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
     }
   }
 
-  lazy val methods: Seq[SMethod] = Seq(
+  override lazy val methods: Seq[SMethod] = Seq(
     SizeMethod,
     GetOrElseMethod,
     MapMethod,
@@ -1688,6 +1781,8 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
     IndexOfMethod,
     ZipMethod
   )
+
+  /** Helper constructors. */
   def apply[T <: SType](elemType: T): SCollection[T] = SCollectionType(elemType)
   def apply[T <: SType](implicit elemType: T, ov: Overload1): SCollection[T] = SCollectionType(elemType)
 
@@ -1701,6 +1796,7 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
   type SBoxArray          = SCollection[SBox.type]
   type SAvlTreeArray      = SCollection[SAvlTree.type]
 
+  /** This descriptors are instantiated once here and then reused. */
   val SBooleanArray      = SCollection(SBoolean)
   val SByteArray         = SCollection(SByte)
   val SByteArray2        = SCollection(SCollection(SByte))
@@ -1715,6 +1811,7 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
   val SHeaderArray       = SCollection(SHeader)
 }
 
+/** Type descriptor of tuple type. */
 case class STuple(items: IndexedSeq[SType]) extends SCollection[SAny.type] {
   import STuple._
   override val typeCode = STuple.TupleTypeCode
@@ -1725,12 +1822,15 @@ case class STuple(items: IndexedSeq[SType]) extends SCollection[SAny.type] {
   @volatile
   private var _isConstantSizeCode: Byte = 0.toByte
 
-  /** use lazy pattern to support O(1) amortized complexity over n invocations. */
+  /** use lazy pattern to support O(1) amortized complexity over n invocations.
+    * Not thread safe!
+    */
   override def isConstantSize: Boolean = {
     val code = _isConstantSizeCode
     if (code == 0) {
       val len = items.length
       var isConst: Boolean = true
+      // looking for a first non-const item type, or run out of items
       cfor(0)(_ < len && isConst, _ + 1) { i =>
         val t = items(i)
         isConst = t.isConstantSize
@@ -1778,44 +1878,56 @@ case class STuple(items: IndexedSeq[SType]) extends SCollection[SAny.type] {
     colMethods ++ tupleMethods
   }
 
-  val typeParams = Nil
+  override val typeParams = Nil
 
   override def toTermString = s"(${items.map(_.toTermString).mkString(",")})"
   override def toString = s"(${items.mkString(",")})"
 }
 
 object STuple extends STypeCompanion {
+  /** Code of `(_, T) for some embeddable T` type constructor. */
   val Pair1TypeConstrId = 5
+  /** Type code for `(E, T) for some embeddable T` type used in TypeSerializer. */
   val Pair1TypeCode: TypeCode = ((SPrimType.MaxPrimTypeCode + 1) * Pair1TypeConstrId).toByte
 
+  /** Code of `(T, _) for some embeddable T` type constructor. */
   val Pair2TypeConstrId = 6
+  /** Type code for `(T, E) for some embeddable T` type used in TypeSerializer. */
   val Pair2TypeCode: TypeCode = ((SPrimType.MaxPrimTypeCode + 1) * Pair2TypeConstrId).toByte
   val TripleTypeCode: TypeCode = Pair2TypeCode
 
+  /** Type constructor code of symmetric pair `(T, T)` for some embeddable T. */
   val PairSymmetricTypeConstrId = 7
+  /** Type code of symmetric pair `(T, T)` for some embeddable T. */
   val PairSymmetricTypeCode: TypeCode = ((SPrimType.MaxPrimTypeCode + 1) * PairSymmetricTypeConstrId).toByte
   val QuadrupleTypeCode: TypeCode = PairSymmetricTypeCode
 
+  /** Type code of generic tuple type. */
   val TupleTypeCode = ((SPrimType.MaxPrimTypeCode + 1) * 8).toByte
 
-  def typeId = TupleTypeCode
+  override def typeId = TupleTypeCode
 
   override val reprClass: Class[_] = classOf[Product2[_,_]]
 
-  lazy val colMethods = {
+  /** A list of Coll methods inherited from Coll type and available as method of tuple. */
+  lazy val colMethods: Seq[SMethod] = {
     val subst = Map(SType.tIV -> SAny)
-    // TODO: implement other
-    val activeMethods = Set(1.toByte, 10.toByte)
+    // TODO: implement other methods
+    val activeMethods = Set(1.toByte /*Coll.size*/, 10.toByte /*Coll.apply*/)
     SCollection.methods.filter(m => activeMethods.contains(m.methodId)).map { m =>
       m.copy(stype = SigmaTyper.applySubst(m.stype, subst).asFunc)
     }
   }
 
-  def methods: Seq[SMethod] = sys.error(s"Shouldn't be called.")
+  override def methods: Seq[SMethod] = sys.error(s"Shouldn't be called.")
 
+  /** Helper factory method. */
   def apply(items: SType*): STuple = STuple(items.toArray)
-  val MaxTupleLength: Int = SigmaConstants.MaxTupleLength.value
+
+  private val MaxTupleLength: Int = SigmaConstants.MaxTupleLength.value
   private val componentNames = Array.tabulate(MaxTupleLength){ i => s"_${i + 1}" }
+
+  /** Returns method name for the tuple component accessor (i.e. `_1`, `_2`, etc.) */
   def componentNameByIndex(i: Int): String =
     try componentNames(i)
     catch {
@@ -1834,6 +1946,7 @@ object SPair {
   }
 }
 
+/** Type descriptor of lambda types. */
 case class SFunc(tDom: IndexedSeq[SType],  tRange: SType, tpeParams: Seq[STypeParam] = Nil)
       extends SType with SGenericType
 {
@@ -1850,14 +1963,19 @@ case class SFunc(tDom: IndexedSeq[SType],  tRange: SType, tpeParams: Seq[STypePa
   }
   override def dataSize(v: SType#WrappedType) = 8L
   import SFunc._
-  val typeParams: Seq[STypeParam] = tpeParams
+  override val typeParams: Seq[STypeParam] = tpeParams
 
+  /** Generalize this type and return a new descriptor. */
   def getGenericType: SFunc = {
     val typeParams: Seq[STypeParam] = tDom.zipWithIndex
       .map { case (_, i) => STypeParam(SType.tD.name + (i + 1)) } :+ STypeParam(SType.tR.name)
     val ts = typeParams.map(_.ident)
     SFunc(ts.init.toIndexedSeq, ts.last, Nil)
   }
+
+  /** Transform function into method type by adding the given `objType` as the first
+    * argument type (aka method receiver type).
+    */
   def withReceiverType(objType: SType) = this.copy(tDom = objType +: tDom)
 }
 
@@ -1867,7 +1985,9 @@ object SFunc {
   val identity = { x: Any => x }
 }
 
-
+/** Used by ErgoScript compiler IR and eliminated during compilation.
+  * It is not used in ErgoTree.
+  */
 case class STypeApply(name: String, args: IndexedSeq[SType] = IndexedSeq()) extends SType {
   override type WrappedType = Any
   override val typeCode = STypeApply.TypeCode
@@ -1879,7 +1999,10 @@ object STypeApply {
   val TypeCode = 94: Byte
 }
 
-/** Type variable which is used in generic method/func signatures. */
+/** Type variable which is used in generic method/func signatures.
+  * Used by ErgoScript compiler IR and eliminated during compilation.
+  * It is not used in ErgoTree.
+  */
 case class STypeVar(name: String) extends SType {
   require(name.length <= 255, "name is too long")
   override type WrappedType = Any
@@ -1901,6 +2024,7 @@ object STypeVar {
   val EmptySeq: IndexedSeq[STypeVar] = EmptyArray
 }
 
+/** Type descriptor of `Box` type of ErgoTree. */
 case object SBox extends SProduct with SPredefType with SMonoType {
   import ErgoBox._
   override type WrappedType = Box
@@ -1915,8 +2039,10 @@ case object SBox extends SProduct with SPredefType with SMonoType {
 
   import SType.{tT, paramT}
 
+  /** Defined once here and then reused in SMethod descriptors. */
   lazy val GetRegFuncType = SFunc(Array(SBox), SOption(tT), Array(paramT))
 
+  /** Creates a descriptor for the given register method. (i.e. R1, R2, etc) */
   def registers(idOfs: Int): Seq[SMethod] = {
     allRegisters.map { i =>
       i match {
@@ -2003,6 +2129,7 @@ case object SBox extends SProduct with SPredefType with SMonoType {
   override val coster = Some(Coster(_.BoxCoster))
 }
 
+/** Type descriptor of `AvlTree` type of ErgoTree. */
 case object SAvlTree extends SProduct with SPredefType with SMonoType {
   override type WrappedType = AvlTree
   override val typeCode: TypeCode = 100: Byte
@@ -2022,6 +2149,7 @@ case object SAvlTree extends SProduct with SPredefType with SMonoType {
          | Authenticated tree \lst{digest} = \lst{root hash bytes} ++ \lst{tree height}
         """.stripMargin)
 
+  /** Cost descriptor of `digest` method. */
   lazy val digest_Info = {
     val m = digestMethod
     OperationCostInfo(m.costKind.asInstanceOf[FixedCost], m.opDesc)
@@ -2136,6 +2264,7 @@ case object SAvlTree extends SProduct with SPredefType with SMonoType {
   final val RemoveAvlTree_Info = OperationCostInfo(
     PerItemCost(100, 15, 1), NamedDesc("RemoveAvlTree"))
 
+  /** Creates [[AvlTreeVerifier]] for the given tree and proof. */
   def createVerifier(tree: AvlTree, proof: Coll[Byte])(implicit E: ErgoTreeEvaluator) = {
     // the cost of tree reconstruction from proof is O(proof.length)
     E.addSeqCost(CreateAvlVerifier_Info, proof.length) { () =>
@@ -2143,6 +2272,10 @@ case object SAvlTree extends SProduct with SPredefType with SMonoType {
     }
   }
 
+  /** Implements evaluation of AvlTree.contains method call ErgoTree node.
+    * Called via reflection based on naming convention.
+    * @see SMethod.evalMethod
+    */
   def contains_eval(mc: MethodCall, tree: AvlTree, key: Coll[Byte], proof: Coll[Byte])
                    (implicit E: ErgoTreeEvaluator): Boolean = {
     val bv = createVerifier(tree, proof)
@@ -2179,6 +2312,10 @@ case object SAvlTree extends SProduct with SPredefType with SMonoType {
          |
         """.stripMargin)
 
+  /** Implements evaluation of AvlTree.get method call ErgoTree node.
+    * Called via reflection based on naming convention.
+    * @see SMethod.evalMethod
+    */
   def get_eval(mc: MethodCall, tree: AvlTree, key: Coll[Byte], proof: Coll[Byte])
               (implicit E: ErgoTreeEvaluator): Option[Coll[Byte]] = {
     val bv = createVerifier(tree, proof)
@@ -2211,6 +2348,10 @@ case object SAvlTree extends SProduct with SPredefType with SMonoType {
          |
         """.stripMargin)
 
+  /** Implements evaluation of AvlTree.getMany method call ErgoTree node.
+    * Called via reflection based on naming convention.
+    * @see SMethod.evalMethod
+    */
   def getMany_eval(mc: MethodCall, tree: AvlTree, keys: Coll[Coll[Byte]], proof: Coll[Byte])
                   (implicit E: ErgoTreeEvaluator): Coll[Option[Coll[Byte]]] = {
     val bv = createVerifier(tree, proof)
@@ -2246,6 +2387,10 @@ case object SAvlTree extends SProduct with SPredefType with SMonoType {
          |
         """.stripMargin)
 
+  /** Implements evaluation of AvlTree.insert method call ErgoTree node.
+    * Called via reflection based on naming convention.
+    * @see SMethod.evalMethod
+    */
   def insert_eval(mc: MethodCall, tree: AvlTree, entries: Coll[(Coll[Byte], Coll[Byte])], proof: Coll[Byte])
                  (implicit E: ErgoTreeEvaluator): Option[AvlTree] = {
     E.addCost(isInsertAllowed_Info)
@@ -2297,6 +2442,10 @@ case object SAvlTree extends SProduct with SPredefType with SMonoType {
          |
         """.stripMargin)
 
+  /** Implements evaluation of AvlTree.update method call ErgoTree node.
+    * Called via reflection based on naming convention.
+    * @see SMethod.evalMethod
+    */
   def update_eval(mc: MethodCall, tree: AvlTree,
                   operations: Coll[(Coll[Byte], Coll[Byte])], proof: Coll[Byte])
                  (implicit E: ErgoTreeEvaluator): Option[AvlTree] = {
@@ -2345,6 +2494,10 @@ case object SAvlTree extends SProduct with SPredefType with SMonoType {
          |
         """.stripMargin)
 
+  /** Implements evaluation of AvlTree.remove method call ErgoTree node.
+    * Called via reflection based on naming convention.
+    * @see SMethod.evalMethod
+    */
   def remove_eval(mc: MethodCall, tree: AvlTree,
                   operations: Coll[Coll[Byte]], proof: Coll[Byte])
                  (implicit E: ErgoTreeEvaluator): Option[AvlTree] = {
@@ -2406,6 +2559,7 @@ case object SAvlTree extends SProduct with SPredefType with SMonoType {
   override val coster = Some(Coster(_.AvlTreeCoster))
 }
 
+/** Type descriptor of `Context` type of ErgoTree. */
 case object SContext extends SProduct with SPredefType with SMonoType {
   override type WrappedType = Context
   override val typeCode: TypeCode = 101: Byte
@@ -2444,6 +2598,7 @@ case object SContext extends SProduct with SPredefType with SMonoType {
   override val coster = Some(Coster(_.ContextCoster))
 }
 
+/** Type descriptor of `Header` type of ErgoTree. */
 case object SHeader extends SProduct with SPredefType with SMonoType {
   override type WrappedType = Header
   override val typeCode: TypeCode = 104: Byte
@@ -2494,6 +2649,7 @@ case object SHeader extends SProduct with SPredefType with SMonoType {
   override val coster = Some(Coster(_.HeaderCoster))
 }
 
+/** Type descriptor of `PreHeader` type of ErgoTree. */
 case object SPreHeader extends SProduct with SPredefType with SMonoType {
   override type WrappedType = PreHeader
   override val typeCode: TypeCode = 105: Byte

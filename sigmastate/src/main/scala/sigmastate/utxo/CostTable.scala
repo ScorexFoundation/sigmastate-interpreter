@@ -300,11 +300,6 @@ object CostTable {
     CostTable(parsed.toMap)
   }
 
-  //Maximum cost of a script
-  val ScriptLimit = SigmaConstants.ScriptCostLimit.value
-
-  //Maximum number of expressions in initial(non-reduced script)
-  val MaxExpressions = 300
 }
 
 

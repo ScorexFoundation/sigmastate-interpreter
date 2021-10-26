@@ -858,22 +858,19 @@ object Values {
       Colls.fromArray(xs.toArray(SAny.classTag.asInstanceOf[ClassTag[SAny.WrappedType]]))(RType.AnyType)
     }
     protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
+      // in v5.0 version we support only tuples of 2 elements to be equivalent with v4.x
       if (items.length != 2)
         error(s"Invalid tuple $this")
 
-      val res: Any = if (items.length == 2) {
-        val item0 = items(0)
-        val x = item0.evalTo[Any](env)
-        Value.checkType(item0, x)
+      val item0 = items(0)
+      val x = item0.evalTo[Any](env)
+      Value.checkType(item0, x)
 
-        val item1 = items(1)
-        val y = item1.evalTo[Any](env)
-        Value.checkType(item1, y)
+      val item1 = items(1)
+      val y = item1.evalTo[Any](env)
+      Value.checkType(item1, y)
 
-        (x, y) // special representation for pairs (to pass directly to Coll primitives)
-      }
-      else
-        items.map(_.evalTo[Any](env)) // general case
+      val res = (x, y) // special representation for pairs (to pass directly to Coll primitives)
 
       addCost(Tuple.costKind)
       res
