@@ -276,7 +276,7 @@ trait SigmaTestingCommons extends PropSpec
       val ((res, cost), actualTime) = BenchmarkUtil.measureTimeNano(
         evaluator.evalWithCost(ErgoTreeEvaluator.EmptyDataEnv, compiledTree))
       val costDetails = if (evalSettings.costTracingEnabled) {
-        val trace: Seq[CostItem] = evaluator.costTrace.result()
+        val trace: Seq[CostItem] = evaluator.getCostTrace()
         val costDetails = TracedCost(trace, Some(actualTime))
         assert(cost == costDetails.cost)
         costDetails

@@ -13,7 +13,7 @@ import sigmastate.interpreter.EvalSettings._
 import sigmastate.lang.Terms.MethodCall
 import spire.syntax.all.cfor
 import supertagged.TaggedType
-
+import debox.{Buffer => DBuffer}
 import scala.collection.mutable
 import scala.util.DynamicVariable
 
@@ -125,11 +125,21 @@ class ErgoTreeEvaluator(
   }
 
   /** Trace of cost items accumulated during execution of `eval` method. Call
-    * [[scala.collection.mutable.ArrayBuffer.clear()]] before each `eval` invocation. */
-  private lazy val costTrace = {
-    val b = mutable.ArrayBuilder.make[CostItem]
-    b.sizeHint(1000)
-    b
+    * `clearTrace` method before each `eval` invocation. */
+  private lazy val costTrace: DBuffer[CostItem] = {
+    DBuffer.ofSize[CostItem](1000)
+  }
+
+  /** Returns the currently accumulated trace of cost items in this evaluator.
+    * A new array is allocated and returned, the evaluator state is unaffected.
+    */
+  def getCostTrace(): Seq[CostItem] = {
+    costTrace.toArray()
+  }
+
+  /** Clears the accumulated trace of this evaluator. */
+  def clearTrace() = {
+    costTrace.clear()
   }
 
   /** Adds the given cost to the `coster`. If tracing is enabled, associates the cost with

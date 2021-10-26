@@ -75,7 +75,7 @@ class DataValueComparerSpecification extends SigmaDslTesting
         Try(DataValueComparer.equalDataValues(fresh_x, fresh_y)(evaluator))
       }
       if (res.isSuccess) {
-        val costDetails = TracedCost(evaluator.costTrace.result(), Some(actualTime))
+        val costDetails = TracedCost(evaluator.getCostTrace(), Some(actualTime))
         val xStr = SigmaPPrint(fresh_x).plainText
         val yStr = SigmaPPrint(fresh_y).plainText
         val script = s"$xStr == $yStr"
