@@ -95,7 +95,7 @@ case class IntegralMod[T](i: ExactIntegral[T])(implicit elem: Elem[T]) extends D
       * numeric types.
       * @see sigmastate.eval.NumericOps.BigIntIsIntegral
       */
-    override def applySeq(x: T, y: T): T = i.rem(x, y)
+    override def applySeq(x: T, y: T): T = i.divisionRemainder(x, y)
   }
 
   /** Compares the given value with zero of the given ExactNumeric instance. */
