@@ -2,7 +2,7 @@ package sigmastate.eval
 
 import java.math.BigInteger
 
-import scalan.{ExactNumeric, ExactOrderingImpl}
+import scalan.{ExactNumeric, ExactOrderingImpl, ExactIntegral}
 
 import scala.math.{Integral, Ordering}
 import special.sigma._
@@ -24,21 +24,7 @@ object OrderingOps {
 
 object NumericOps {
 
-  trait BigIntegerIsIntegral extends Integral[BigInteger] {
-    def quot(x: BigInteger, y: BigInteger): BigInteger = x.divide(y)
-    def rem(x: BigInteger, y: BigInteger): BigInteger = x.remainder(y)
-    def plus(x: BigInteger, y: BigInteger): BigInteger = x.add(y)
-    def minus(x: BigInteger, y: BigInteger): BigInteger = x.subtract(y)
-    def times(x: BigInteger, y: BigInteger): BigInteger = x.multiply(y)
-    def negate(x: BigInteger): BigInteger = x.negate()
-    def fromInt(x: Int): BigInteger = BigInteger.valueOf(x)
-    def toInt(x: BigInteger): Int = x.intValueExact()
-    def toLong(x: BigInteger): Long = x.longValueExact()
-    def toFloat(x: BigInteger): Float = x.floatValue()
-    def toDouble(x: BigInteger): Double = x.doubleValue()
-  }
-  implicit object BigIntegerIsIntegral extends BigIntegerIsIntegral with OrderingOps.BigIntegerOrdering
-
+  /** Base implementation of Integral methods for BigInt. */
   trait BigIntIsIntegral extends Integral[BigInt] {
     def quot(x: BigInt, y: BigInt): BigInt = ??? // this method should not be used in v4.x
     def rem(x: BigInt, y: BigInt): BigInt = ??? // this method should not be used in v4.x
@@ -65,13 +51,23 @@ object NumericOps {
     */
   implicit object BigIntIsIntegral extends BigIntIsIntegral with OrderingOps.BigIntOrdering
 
-  implicit object BigIntIsExactNumeric extends ExactNumeric[BigInt] {
+  /** The instance of [[ExactIntegral]] typeclass for [[BigInt]]. */
+  implicit object BigIntIsExactIntegral extends ExactIntegral[BigInt] {
     val n = BigIntIsIntegral
     override def plus(x: BigInt, y: BigInt): BigInt = n.plus(x, y)
     override def minus(x: BigInt, y: BigInt): BigInt = n.minus(x, y)
     override def times(x: BigInt, y: BigInt): BigInt = n.times(x, y)
+
+    override def quot(x: BigInt, y: BigInt): BigInt =
+      ??? // this method should not be used in v4.x
+
+    override def divisionRemainder(x: BigInt, y: BigInt): BigInt =
+      ??? // this method should not be used in v4.x
   }
 
+  implicit val BigIntIsExactNumeric: ExactNumeric[BigInt] = BigIntIsExactIntegral
+
+  /** The instance of [[scalan.ExactOrdering]] typeclass for [[BigInt]]. */
   implicit object BigIntIsExactOrdering extends ExactOrderingImpl[BigInt](BigIntIsIntegral)
 }
 
