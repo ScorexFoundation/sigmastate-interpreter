@@ -2,31 +2,31 @@ package scalan
 
 import scalan.util.Extensions._
 
-import scala.math.Numeric.{ByteIsIntegral, LongIsIntegral, ShortIsIntegral, IntIsIntegral}
-
-/** Integral operations with overflow checks.
-  * Raise exception when overflow is detected.
-  * Each instance of this typeclass overrides three methods `plus`, `minus`, `times`.
-  * All other methods are implemented by delegating to the corresponding Integral instance from
-  * standard Scala library.
+/** Type-class which defines the operations on Integral types (Byte, Short, Int, Long)
+  * with overflow checks.
+  *
+  * An exception is raised when an overflow is detected.
+  * Each concrete instance of this type-class overrides three methods `plus`, `minus`,
+  * `times`.
+  *
+  * By default all the methods are implemented by delegating to the corresponding Integral
+  * instance from the standard Scala library.
+  *
   * This trait is used in core IR to avoid implicitly using standard scala implementations.
   */
-trait ExactIntegral[T] {
-  val n: Integral[T]
-  def zero = fromInt(0)
-  def one = fromInt(1)
-  def plus(x: T, y: T): T = n.plus(x, y)
-  def minus(x: T, y: T): T = n.minus(x, y)
-  def times(x: T, y: T): T = n.times(x, y)
+trait ExactIntegral[T] extends ExactNumeric[T] {
+  protected val n: Integral[T]
+
+  /** Integer division operation `x / y`. */
   def quot(x: T, y: T): T = n.quot(x, y)
+
+  /** Operation which returns reminder from dividing x by y.
+    * The exact rules are defined in the concrete instance of the type T.
+    * A default implementation delegates to Integral[T].rem method for the corresponding
+    * type T.
+    * The default implementation can be overridden for any concrete type T.
+    */
   def divisionRemainder(x: T, y: T): T = n.rem(x, y)
-  def negate(x: T): T = n.negate(x)
-  def fromInt(x: Int): T = n.fromInt(x)
-  def toInt(x: T): Int = n.toInt(x)
-  def toLong(x: T): Long = n.toLong(x)
-  def toFloat(x: T): Float = n.toFloat(x)
-  def toDouble(x: T): Double = n.toDouble(x)
-  def compare(x: T, y: T): Int = n.compare(x, y)
 }
 
 /** ExactIntegral instances for all types. */
