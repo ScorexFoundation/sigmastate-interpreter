@@ -145,11 +145,7 @@ pgpSecretRing := file("ci/secring.asc")
 pgpPassphrase := sys.env.get("PGP_PASSPHRASE").map(_.toArray)
 usePgpKeyHex("C1FD62B4D44BDF702CDF2B726FF59DA944B150DD")
 
-def libraryDefSettings = commonSettings ++ testSettings ++ Seq(
-  scalacOptions ++= Seq(
-//    s"-Xplugin:${file(".").absolutePath }/scalanizer/target/scala-2.12/scalanizer-assembly-core-opt-0d03a785-SNAPSHOT.jar"
-  )
-)
+def libraryDefSettings = commonSettings ++ testSettings 
 
 lazy val common = Project("common", file("common"))
   .settings(commonSettings ++ testSettings,
@@ -194,29 +190,6 @@ lazy val sigmaconf = Project("sigma-conf", file("sigma-conf"))
         Seq(plugin, libraryconf)
       ),
       skip in compile := scalaBinaryVersion.value == "2.11"
-  )
-  .settings(publish / skip := true)
-
-lazy val scalanizer = Project("scalanizer", file("scalanizer"))
-  .dependsOn(sigmaconf, libraryapi, libraryimpl)
-  .settings(commonSettings,
-    libraryDependencies ++= (
-      if(scalaBinaryVersion.value == "2.11")
-        Seq.empty
-      else
-        Seq(meta, plugin)
-      ),
-    skip in compile := scalaBinaryVersion.value == "2.11",
-    assemblyOption in assembly ~= { _.copy(includeScala = false, includeDependency = true) },
-    assemblyMergeStrategy in assembly := {
-      case PathList("scalan", xs @ _*) => MergeStrategy.first
-      case other => (assemblyMergeStrategy in assembly).value(other)
-    },
-    artifact in(Compile, assembly) := {
-      val art = (artifact in(Compile, assembly)).value
-      art.withClassifier(Some("assembly"))
-    },
-    addArtifact(artifact in(Compile, assembly), assembly)
   )
   .settings(publish / skip := true)
 
@@ -267,7 +240,7 @@ lazy val sigmastate = (project in file("sigmastate"))
 lazy val sigma = (project in file("."))
   .aggregate(
     sigmastate, common, core, libraryapi, libraryimpl, library,
-    sigmaapi, sigmaimpl, sigmalibrary, sigmaconf, scalanizer)
+    sigmaapi, sigmaimpl, sigmalibrary, sigmaconf)
   .settings(libraryDefSettings, rootSettings)
   .settings(publish / aggregate := false)
   .settings(publishLocal / aggregate := false)
