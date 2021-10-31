@@ -705,8 +705,8 @@ object CalcBlake2b256 extends SimpleTransformerCompanion {
     *
     * Thus per block cost of Blake2b256 hashing can be limited by 1 cost units.
     * However, on a less powerful processor it may take much more time, so we add
-    * a factor of 3 for that. Additionally, the interpreter have an overhead so that
-    * performing 1000 of hashes in a tight loop is 3-4 times faster then doing the same
+    * a factor of 3 for that. Additionally, the interpreter has overhead so that
+    * performing 1000 of hashes in a tight loop is 3-4 times faster than doing the same
     * via ErgoTreeEvaluator. Thus we should add another factor of 2 and this takes
     * place for all operations. So we will use a total factor of 10 to convert
     * actual operation micro-seconds time (obtained via benchmarking) to cost unit
