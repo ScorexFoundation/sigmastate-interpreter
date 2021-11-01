@@ -54,7 +54,6 @@ dynverSeparator in ThisBuild := "-"
 val bouncycastleBcprov = "org.bouncycastle" % "bcprov-jdk15on" % "1.64"
 val scrypto            = "org.scorexfoundation" %% "scrypto" % "2.1.10"
 val scorexUtil         = "org.scorexfoundation" %% "scorex-util" % "0.1.8"
-val macroCompat        = "org.typelevel" %% "macro-compat" % "1.1.1"
 val debox              = "org.spire-math" %% "debox" % "0.8.0"
 val kiama              = "org.bitbucket.inkytonik.kiama" %% "kiama" % "2.1.0"
 val fastparse          = "com.lihaoyi" %% "fastparse" % "1.0.0"
@@ -221,7 +220,7 @@ lazy val sigmaapi = Project("sigma-api", file("sigma-api"))
   .dependsOn(common, libraryapi)
   .settings(libraryDefSettings,
     libraryDependencies ++= Seq(
-      macroCompat, scrypto, bouncycastleBcprov
+      scrypto, bouncycastleBcprov
     ))
   .settings(publish / skip := true)
 
