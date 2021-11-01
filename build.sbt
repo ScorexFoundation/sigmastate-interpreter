@@ -1,5 +1,4 @@
 import scala.language.postfixOps
-import scala.util.Try
 import scala.sys.process._
 
 organization := "org.scorexfoundation"
@@ -56,7 +55,6 @@ val bouncycastleBcprov = "org.bouncycastle" % "bcprov-jdk15on" % "1.64"
 val scrypto            = "org.scorexfoundation" %% "scrypto" % "2.1.10"
 val scorexUtil         = "org.scorexfoundation" %% "scorex-util" % "0.1.8"
 val macroCompat        = "org.typelevel" %% "macro-compat" % "1.1.1"
-val paradise           = "org.scalamacros" %% "paradise" % "2.1.0" cross CrossVersion.full
 val debox              = "org.spire-math" %% "debox" % "0.8.0"
 val kiama              = "org.bitbucket.inkytonik.kiama" %% "kiama" % "2.1.0"
 val fastparse          = "com.lihaoyi" %% "fastparse" % "1.0.0"
@@ -161,9 +159,8 @@ lazy val common = Project("common", file("common"))
 
 lazy val libraryapi = Project("library-api", file("library-api"))
   .dependsOn(common % allConfigDependency)
-  .settings(libraryDefSettings :+ addCompilerPlugin(paradise),
-    libraryDependencies ++= Seq(
-    ))
+  .settings(libraryDefSettings, 
+    libraryDependencies ++= Seq())
   .settings(publish / skip := true)
 
 lazy val libraryimpl = Project("library-impl", file("library-impl"))
@@ -222,7 +219,7 @@ lazy val scalanizer = Project("scalanizer", file("scalanizer"))
 
 lazy val sigmaapi = Project("sigma-api", file("sigma-api"))
   .dependsOn(common, libraryapi)
-  .settings(libraryDefSettings :+ addCompilerPlugin(paradise),
+  .settings(libraryDefSettings,
     libraryDependencies ++= Seq(
       macroCompat, scrypto, bouncycastleBcprov
     ))
