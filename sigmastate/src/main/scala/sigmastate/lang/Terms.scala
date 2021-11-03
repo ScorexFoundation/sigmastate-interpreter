@@ -2,14 +2,17 @@ package sigmastate.lang
 
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter._
 import scalan.Nullable
-import sigmastate.SCollection.{SByteArray, SIntArray}
+import sigmastate.SCollection.{SIntArray, SByteArray}
 import sigmastate.Values._
 import sigmastate.utils.Overloading.Overload1
 import sigmastate._
+import sigmastate.interpreter.ErgoTreeEvaluator
+import sigmastate.interpreter.ErgoTreeEvaluator.DataEnv
 import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.lang.TransformingSigmaBuilder._
 
+import scala.collection.mutable
 import scala.language.implicitConversions
 import scala.collection.mutable.WrappedArray
 import spire.syntax.all.cfor
@@ -28,6 +31,7 @@ object Terms {
   }
   object Block extends ValueCompanion {
     override def opCode: OpCode = OpCodes.Undefined
+    override def costKind: CostKind = Value.notSupportedError(this, "costKind")
     def apply(let: Val, result: SValue)(implicit o1: Overload1): Block =
       Block(Seq(let), result)
   }
@@ -51,6 +55,7 @@ object Terms {
   }
   object ZKProofBlock extends ValueCompanion {
     override def opCode: OpCode = OpCodes.Undefined
+    override def costKind: CostKind = Value.notSupportedError(this, "costKind")
     val OpType = SFunc(SSigmaProp, SBoolean)
   }
 
@@ -78,6 +83,7 @@ object Terms {
   }
   object ValNode extends ValueCompanion {
     override def opCode: OpCode = OpCodes.Undefined
+    override def costKind: CostKind = Value.notSupportedError(this, "costKind")
   }
 
   /** Frontend node to select a field from an object. Should be transformed to SelectField*/
@@ -94,6 +100,7 @@ object Terms {
   }
   object Select extends ValueCompanion {
     override def opCode: OpCode = OpCodes.Undefined
+    override def costKind: CostKind = Value.notSupportedError(this, "costKind")
   }
 
   /** Frontend node to represent variable names parsed in a source code.
@@ -105,6 +112,7 @@ object Terms {
   }
   object Ident extends ValueCompanion {
     override def opCode: OpCode = OpCodes.Undefined
+    override def costKind: CostKind = Value.notSupportedError(this, "costKind")
     def apply(name: String): Ident = Ident(name, NoType)
   }
 
@@ -129,9 +137,32 @@ object Terms {
       }
       SFunc(argTypes, tpe)
     }
+
+    protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
+      addCost(Apply.costKind)
+      if (args.isEmpty) {
+        // TODO coverage
+        val fV = func.evalTo[() => Any](env)
+        fV()
+      }
+      else if (args.length == 1) {
+        val fV = func.evalTo[Any => Any](env)
+        val argV = args(0).evalTo[Any](env)
+        fV(argV)
+      }
+      else {
+        // TODO coverage
+        val f = func.evalTo[Seq[Any] => Any](env)
+        val argsV = args.map(a => a.evalTo[Any](env))
+        f(argsV)
+      }
+    }
   }
-  object Apply extends ValueCompanion {
+  object Apply extends FixedCostValueCompanion {
     override def opCode: OpCode = OpCodes.FuncApplyCode
+    /** Cost of: 1) switch on the number of args 2) Scala method call 3) add args to env
+      * Old cost: lambdaInvoke == 30 */
+    override val costKind = FixedCost(30)
   }
 
   /** Apply types for type parameters of input value. */
@@ -148,6 +179,7 @@ object Terms {
   }
   object ApplyTypes extends ValueCompanion {
     override def opCode: OpCode = OpCodes.Undefined
+    override def costKind: CostKind = Value.notSupportedError(this, "costKind")
   }
 
   /** Frontend node to represent potential method call in a source code.
@@ -159,6 +191,7 @@ object Terms {
   }
   object MethodCallLike extends ValueCompanion {
     override def opCode: OpCode = OpCodes.Undefined
+    override def costKind: CostKind = Value.notSupportedError(this, "costKind")
   }
 
   /** Represents in ErgoTree an invocation of method of the object `obj` with arguments `args`.
@@ -186,9 +219,48 @@ object Terms {
       case f: SFunc => f.tRange.withSubstTypes(typeSubst)
       case t => t.withSubstTypes(typeSubst)
     }
+
+    /** @hotspot don't beautify this code */
+    protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
+      val objV = obj.evalTo[Any](env)
+      addCost(MethodCall.costKind) // MethodCall overhead
+      method.costKind match {
+        case fixed: FixedCost =>
+          val extra = method.extraDescriptors
+          val extraLen = extra.length
+          val len = args.length
+          val argsBuf = new Array[Any](len + extraLen)
+          cfor(0)(_ < len, _ + 1) { i =>
+            argsBuf(i) = args(i).evalTo[Any](env)
+          }
+          cfor(0)(_ < extraLen, _ + 1) { i =>
+            argsBuf(len + i) = extra(i)
+          }
+          var res: Any = null
+          E.addFixedCost(fixed, method.opDesc) {
+            res = method.invokeFixed(objV, argsBuf)
+          }
+          res
+        case _ =>
+          val len = args.length
+          val argsBuf = new Array[Any](len + 3)
+          argsBuf(0) = this
+          argsBuf(1) = objV
+          cfor(0)(_ < len, _ + 1) { i =>
+            argsBuf(i + 2) = args(i).evalTo[Any](env)
+          }
+          argsBuf(argsBuf.length - 1) = E
+
+          val evalMethod = method.genericMethod.evalMethod
+          evalMethod.invoke(method.objType, argsBuf.asInstanceOf[Array[AnyRef]]:_*)
+      }
+    }
   }
+
   object MethodCall extends ValueCompanion {
     override def opCode: OpCode = OpCodes.MethodCallCode
+    /** Cost of: 1) packing args into Array 2) java.lang.reflect.Method.invoke */
+    override val costKind = FixedCost(4)
 
     /** Helper constructor which allows to cast the resulting node to the specified
       * [[sigmastate.Values.Value]] type `T`.
@@ -201,8 +273,10 @@ object Terms {
       MethodCall(obj, method, args, typeSubst).asInstanceOf[T]
     }
   }
-  object PropertyCall extends ValueCompanion {
+  object PropertyCall extends FixedCostValueCompanion {
     override def opCode: OpCode = OpCodes.PropertyCallCode
+    /** Cost of: 1) packing args into Array 2) java.lang.reflect.Method.invoke */
+    override val costKind = FixedCost(4)
   }
 
   case class STypeParam(ident: STypeVar, upperBound: Option[SType] = None, lowerBound: Option[SType] = None) {
@@ -231,6 +305,7 @@ object Terms {
   }
   object Lambda extends ValueCompanion {
     override def opCode: OpCode = OpCodes.Undefined
+    override def costKind: CostKind = Value.notSupportedError(this, "costKind")
     def apply(args: IndexedSeq[(String,SType)], resTpe: SType, body: Value[SType]): Lambda =
       Lambda(Nil, args, resTpe, Some(body))
     def apply(args: IndexedSeq[(String,SType)], resTpe: SType, body: Option[Value[SType]]): Lambda =
