@@ -256,8 +256,10 @@ class ErgoTreeSerializer {
     *                    should be replaced with new values
     * @param newVals     new values to be injected into the corresponding
     *                    positions in ErgoTree.constants array
-    * @return original scriptBytes array where only specified constants are
-    *         replaced and all other bytes remain exactly the same
+    * @return a pair (newBytes, len), where:
+    *         newBytes - the original array scriptBytes such that only specified constants
+    *                    are replaced and all other bytes remain exactly the same
+    *         len      - length of the `constants` array of the given ErgoTree bytes
     */
   def substituteConstants(scriptBytes: Array[Byte],
                           positions: Array[Int],
