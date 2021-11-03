@@ -141,10 +141,6 @@ class SigmaDslSpecification extends SigmaDslTesting
       (true, false) -> Expected(Success(true), 36518),
       (false, false) -> Expected(Success(false), 36518),
       (false, true) -> Expected(Success(true), 36518)
-//      (true, true) -> Expected(Success(false), 36518, newCost),
-//      (true, false) -> Expected(Success(true), 36518, newCost),
-//      (false, false) -> Expected(Success(false), 36518, newCost),
-//      (false, true) -> Expected(Success(true), 36518, newCost)
     )
     verifyCases(cases, binXor)
   }

@@ -13,6 +13,10 @@ import scala.reflect.ClassTag
 import scala.util.{Failure, Try, Either, Success, Right}
 
 object Helpers {
+
+  /** Helper class which encapsulates a mutable value. */
+  class MutableCell[T](var value: T)
+
   def xor(ba1: Array[Byte], ba2: Array[Byte]): Array[Byte] = ba1.zip(ba2).map(t => (t._1 ^ t._2).toByte)
 
   /** Same as `xor` but makes in-place update of the first argument (hence suffix `U`)

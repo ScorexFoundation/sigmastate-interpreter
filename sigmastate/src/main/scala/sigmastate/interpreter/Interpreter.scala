@@ -115,9 +115,6 @@ trait Interpreter extends ScorexLogging {
     case _ => None
   }
 
-  /** Helper class which encapsulates a mutable value. */
-  class MutableCell[T](var value: T)
-
   /** Extracts proposition for ErgoTree handing soft-fork condition.
     * @note soft-fork handler */
   def propositionFromErgoTree(ergoTree: ErgoTree, context: CTX): SigmaPropValue = {
@@ -146,8 +143,10 @@ trait Interpreter extends ScorexLogging {
     (res, currContext.value)
   }
 
-  // TODO after HF: merge with old version (`applyDeserializeContext`)
-  /** Same as applyDeserializeContext, but returns SigmaPropValue instead of BoolValue. */
+  /** Same as applyDeserializeContext, but returns SigmaPropValue instead of BoolValue.
+    * This is necessary because new interpreter, while ultimately produces the same
+    * results as the old interpreter, it is implemented differently internally.
+    */
   def applyDeserializeContextJITC(context: CTX, exp: Value[SType]): (SigmaPropValue, CTX) = {
     val currContext = new MutableCell(context)
     val substRule = strategy[Any] { case x: SValue =>

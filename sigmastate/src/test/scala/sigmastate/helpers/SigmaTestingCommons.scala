@@ -237,8 +237,6 @@ trait SigmaTestingCommons extends PropSpec
       val estimatedCost = IR.checkCostWithContext(costingCtx, costF, ScriptCostLimit.value, initialCostInTests.value).getOrThrow
 
       val (res, _) = valueFun(sigmaCtx)
-      //      val (resNew, _) = ErgoTreeEvaluator.eval(ctx.asInstanceOf[ErgoLikeContext], tree)
-      //      assert(resNew == res, s"The new Evaluator result differ from the old: $resNew != $res")
       (res.asInstanceOf[B], GivenCost(estimatedCost))
     }
     val Terms.Apply(funcVal, _) = compiledTree.asInstanceOf[SValue]
