@@ -264,14 +264,14 @@ trait Interpreter extends ScorexLogging {
       case SigmaPropConstant(p) =>
         val sb = SigmaDsl.toSigmaBoolean(p)
 
-        val cost = SigmaBoolean.estimateCost(sb)
-        val resCost = Evaluation.addCostChecked(context.initCost, cost, context.costLimit)
+        val aotCost = SigmaBoolean.estimateCost(sb)
+        val resAotCost = Evaluation.addCostChecked(context.initCost, aotCost, context.costLimit)
 
         // NOTE, evaluator cost unit is 10 times smaller then the cost unit of context
         val jitCost = Eval_SigmaPropConstant.costKind.cost / 10
 
         val resJitCost = Evaluation.addCostChecked(context.initCost, jitCost, context.costLimit)
-        (ReductionResult(sb, resCost), ReductionResult(sb, resJitCost))
+        (ReductionResult(sb, resAotCost), ReductionResult(sb, resJitCost))
       case _ if !ergoTree.hasDeserialize =>
         val r = precompiledScriptProcessor.getReducer(ergoTree, context.validationSettings)
         val aotRes = r.reduce(context)
