@@ -23,7 +23,8 @@ import sigmastate.eval.Extensions._
 import sigmastate.eval.{CompiletimeIRContext, CostingBox, CostingDataContext, Evaluation, IRContext, SigmaDsl}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.helpers.{ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaPPrint}
-import sigmastate.interpreter.Interpreter.ScriptEnv
+import sigmastate.interpreter.EvalSettings.EvaluationMode
+import sigmastate.interpreter.Interpreter.{ScriptEnv, VerificationResult}
 import sigmastate.interpreter._
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.serialization.ValueSerializer
@@ -278,9 +279,6 @@ class SigmaDslTesting extends PropSpec
       val tpeB = Evaluation.rtypeToSType(oldF.tB)
 
       val prover = new FeatureProvingInterpreter()
-      val verifier = new ErgoLikeTestInterpreter()(createIR()) {
-        override val evalSettings: EvalSettings = feature.evalSettings
-      }
 
       // Create synthetic ErgoTree which uses all main capabilities of evaluation machinery.
       // 1) first-class functions (lambdas); 2) Context variables; 3) Registers; 4) Equality
@@ -364,12 +362,56 @@ class SigmaDslTesting extends PropSpec
             .asInstanceOf[ErgoLikeContext]
       }
 
-      val res = {
-        val pr = prover.prove(compiledTree, ergoCtx, fakeMessage).getOrThrow
-        val verificationCtx = ergoCtx.withExtension(pr.extension)
-        verifier.verify(compiledTree, verificationCtx, pr, fakeMessage)
-      }
+      val pr = prover.prove(compiledTree, ergoCtx, fakeMessage).getOrThrow
+      val verificationCtx = ergoCtx.withExtension(pr.extension)
 
+      // run old v4.x interpreter
+      val aotVerifier = new ErgoLikeTestInterpreter()(createIR()) {
+        override val evalSettings: EvalSettings = feature.evalSettings.copy(
+          evaluationMode = EvalSettings.AotEvaluationMode
+        )
+      }
+      val aotRes = aotVerifier.verify(compiledTree, verificationCtx, pr, fakeMessage)
+      checkExpectedResult(aotVerifier.evalSettings.evaluationMode, aotRes, expected.cost)
+
+      // run new v5.x interpreter
+      val jitVerifier = new ErgoLikeTestInterpreter()(createIR()) {
+        override val evalSettings: EvalSettings = feature.evalSettings.copy(
+          evaluationMode = EvalSettings.JitEvaluationMode
+        )
+      }
+      val jitRes = jitVerifier.verify(compiledTree, verificationCtx, pr, fakeMessage)
+
+      checkEqualResults(aotRes, jitRes)
+
+      expected.newCost match {
+        case Some(c) =>
+          checkExpectedResult(jitVerifier.evalSettings.evaluationMode, jitRes, c)
+        case _ =>
+          val res = jitRes.getOrThrow
+          // new verification cost expectation is missing, print out actual cost results
+          if (jitVerifier.evalSettings.printTestVectors) {
+            println(
+              s"""------------------------
+                |Script: $script
+                |Actual New Verification Cost: ${res._2}
+                |""".stripMargin)
+          }
+      }
+    }
+
+    private def checkEqualResults(res1: Try[VerificationResult], res2: Try[VerificationResult]): Unit = {
+      (res1, res2) match {
+        case (Success((v1, c1)), Success((v2, c2))) =>
+          v1 shouldBe v2
+        case (Failure(t1), Failure(t2)) =>
+          rootCause(t1) shouldBe rootCause(t2)
+        case _ =>
+          res1 shouldBe res2
+      }
+    }
+
+    private def checkExpectedResult(evalMode: EvaluationMode, res: Try[VerificationResult], expectedCost: Int): Unit = {
       res match {
         case Success((ok, cost)) =>
           ok shouldBe true
@@ -380,12 +422,13 @@ class SigmaDslTesting extends PropSpec
           //            println(s"Script: $script")
           //            println(s"Cost: $verificationCost\n")
           //          }
-          assertResult(expected.cost,
-            s"Actual verify() cost $cost != expected ${expected.cost}")(verificationCost)
+          assertResult(expectedCost,
+            s"Evaluation Mode: ${evalMode.name}; Actual verify() cost $cost != expected ${expectedCost}")(verificationCost)
 
         case Failure(t) => throw t
       }
     }
+
   }
 
   /** A number of times the newF function in each test feature is repeated.
@@ -500,7 +543,7 @@ class SigmaDslTesting extends PropSpec
 
       checkResult(funcRes.map(_._1), expected.value, failOnTestVectors)
 
-      val expectedTrace = expected.newCost.trace
+      val expectedTrace = expected.details.trace
       if (expectedTrace.isEmpty) {
         // new cost expectation is missing, print out actual cost results
         if (evalSettings.printTestVectors) {
@@ -659,24 +702,34 @@ class SigmaDslTesting extends PropSpec
     */
   case class Expected[+A](value: Try[A], cost: Int) {
     def newValue: Try[A] = value
-    def newCost: CostDetails = GivenCost(cost)
+    def details: CostDetails = GivenCost(cost)
+    def newCost: Option[Int] = None
   }
 
   object Expected {
+    /** Used when exception is expected. */
     def apply[A](error: Throwable) = new Expected[A](Failure(error), 0)
 
     def apply[A](value: Try[A],
                  cost: Int,
-                 expectedNewCost: CostDetails): Expected[A] = new Expected(value, cost) {
-      override val newCost = expectedNewCost
+                 expectedDetails: CostDetails): Expected[A] = new Expected(value, cost) {
+      override val details = expectedDetails
+    }
+
+    def apply[A](value: Try[A],
+                 cost: Int,
+                 expectedDetails: CostDetails,
+                 expectedNewCost: Int): Expected[A] = new Expected(value, cost) {
+      override val details = expectedDetails
+      override val newCost: Option[Int] = Some(expectedNewCost)
     }
 
     def apply[A](value: Try[A],
                  cost: Int,
                  expectedNewValue: Try[A],
-                 expectedNewCost: CostDetails): Expected[A] = new Expected(value, cost) {
+                 expectedDetails: CostDetails): Expected[A] = new Expected(value, cost) {
       override val newValue = expectedNewValue
-      override val newCost = expectedNewCost
+      override val details = expectedDetails
     }
   }
 

@@ -43,7 +43,21 @@ import org.scalactic.source.Position
 import scala.collection.mutable
 
 /** This suite tests every method of every SigmaDsl type to be equivalent to
-  * the evaluation of the corresponding ErgoScript operation */
+  * the evaluation of the corresponding ErgoScript operation
+  *
+  * This suite can be used for Cost profiling, i.e. measurements of operations times and
+  * comparing them with cost parameteres of the operations.
+  *
+  * The following settings should be specified for profiling:
+  * isMeasureOperationTime = true
+  * isMeasureScriptTime = true
+  * isLogEnabled = false
+  * printTestVectors = false
+  * costTracingEnabled = false
+  * isTestRun = true
+  * perTestWarmUpIters = 1
+  * nBenchmarkIters = 1
+  */
 class SigmaDslSpecification extends SigmaDslTesting
   with CrossVersionProps
   with BeforeAndAfterAll { suite =>
@@ -55,8 +69,12 @@ class SigmaDslSpecification extends SigmaDslTesting
     isMeasureScriptTime = true,
     isLogEnabled = false, // don't commit the `true` value (travis log is too high)
     printTestVectors = false, // don't commit the `true` value (travis log is too high)
-    costTracingEnabled = false,  // should always be enabled in tests (and false by default)
-                                 // should be disabled for cost profiling
+
+    /** Should always be enabled in tests (and false by default)
+      * Should be disabled for cost profiling, which case the new costs are not checked.
+      */
+    costTracingEnabled = true,
+
     profilerOpt = Some(ErgoTreeEvaluator.DefaultProfiler),
     isTestRun = true
   )
@@ -122,7 +140,7 @@ class SigmaDslSpecification extends SigmaDslTesting
           SelectField.typed[BoolValue](ValUse(1, STuple(Vector(SBoolean, SBoolean))), 2.toByte)
         )
       ))
-    val newCost = CostDetails(
+    val trace = CostDetails(
       Array(
         FixedCostItem(Apply),
         FixedCostItem(FuncValue),
@@ -136,11 +154,12 @@ class SigmaDslSpecification extends SigmaDslTesting
         FixedCostItem(BinXor)
       )
     )
+    val newCost = 7633
     val cases = Seq(
-      (true, true) -> Expected(Success(false), 36518),
-      (true, false) -> Expected(Success(true), 36518),
-      (false, false) -> Expected(Success(false), 36518),
-      (false, true) -> Expected(Success(true), 36518)
+      (true, true) -> Expected(Success(false), 36518, trace, newCost),
+      (true, false) -> Expected(Success(true), 36518, trace, newCost),
+      (false, false) -> Expected(Success(false), 36518, trace, newCost),
+      (false, true) -> Expected(Success(true), 36518, trace, newCost)
     )
     verifyCases(cases, binXor)
   }
@@ -189,10 +208,11 @@ class SigmaDslSpecification extends SigmaDslTesting
         FixedCostItem(FuncValue),
         FixedCostItem(GetVar),
         FixedCostItem(OptionGet),
-        FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(5)),
         FixedCostItem(ValUse),
         FixedCostItem(SelectField),
         FixedCostItem(Constant),
+        FixedCostItem(NamedDesc("EQ_Prim"), FixedCost(3)),
         FixedCostItem(ValUse),
         FixedCostItem(SelectField),
         FixedCostItem(BinXor)
@@ -605,9 +625,11 @@ class SigmaDslSpecification extends SigmaDslTesting
         FixedCostItem(FuncValue),
         FixedCostItem(GetVar),
         FixedCostItem(OptionGet),
-        FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(5)),
+        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(1, 1, 10), 1),
         FixedCostItem(ValUse),
         FixedCostItem(LogicalNot),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(5)),
         FixedCostItem(ValUse),
         FixedCostItem(BinAnd),
         FixedCostItem(LogicalNot),
@@ -924,7 +946,7 @@ class SigmaDslSpecification extends SigmaDslTesting
   def newCasesFrom2[A, R](cases: Seq[(A, A)])
                         (getExpectedRes: (A, A) => R, cost: Int, newCost: CostDetails) =
     cases.map { case (x, y) =>
-      ((x, y), Expected(Success(getExpectedRes(x, y)), cost = cost, expectedNewCost = newCost))
+      ((x, y), Expected(Success(getExpectedRes(x, y)), cost = cost, expectedDetails = newCost))
     }
 
   def verifyOp[A: Ordering: Arbitrary]

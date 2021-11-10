@@ -45,7 +45,15 @@ object EvalSettings {
     * This type can be removed in v5.x releases together with AOT implementation once v5.0
     * protocol is activated.
     */
-  object EvaluationMode extends TaggedType[Int]
+  object EvaluationMode extends TaggedType[Int] {
+    implicit class EvaluationModeOps(val x: EvaluationMode) extends AnyVal {
+      def name: String = x match {
+        case AotEvaluationMode => "AotEvaluationMode"
+        case JitEvaluationMode => "JitEvaluationMode"
+        case TestEvaluationMode => "TestEvaluationMode"
+      }
+    }
+  }
   type EvaluationMode = EvaluationMode.Type
 
   /** Evaluation mode when the interpreter is executing using AOT costing implementation

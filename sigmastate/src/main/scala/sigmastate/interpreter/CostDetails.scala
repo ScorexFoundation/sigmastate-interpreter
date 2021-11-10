@@ -30,7 +30,7 @@ case class TracedCost(trace: Seq[CostItem],
   */
 case class GivenCost(cost: Int,
                      actualTimeNano: Option[Long] = None) extends CostDetails {
-  /** The trait is empty for this representation of CostDetails.
+  /** The trace is empty for this representation of CostDetails.
     */
   override def trace: Seq[CostItem] = mutable.WrappedArray.empty
 }

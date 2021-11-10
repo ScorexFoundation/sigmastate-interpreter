@@ -187,8 +187,8 @@ object SigmaPPrint extends PPrinter {
      .orElse(exceptionHandlers)
      .orElse(dataHandlers)
      .orElse {
-    case FixedCostItem(CompanionDesc(c), cost) =>
-      Tree.Apply("FixedCostItem", treeifySeq(Seq(c, cost)))
+    case FixedCostItem(CompanionDesc(c), _) =>
+      Tree.Apply("FixedCostItem", treeifySeq(Seq(c)))
     case FixedCostItem(MethodDesc(m), cost) =>
       Tree.Apply("FixedCostItem", Seq(methodLiteral(m)).iterator ++ treeifySeq(Seq(cost)))
     case FuncValue.AddToEnvironmentDesc =>
