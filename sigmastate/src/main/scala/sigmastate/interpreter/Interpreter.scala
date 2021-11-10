@@ -436,7 +436,7 @@ trait Interpreter extends ScorexLogging {
 
       // if necessary perform verification as v5.x (JIT based implementation)
       var jitRes: VerificationResult = null
-      if (evalSettings.evaluationMode == AotEvaluationMode ||
+      if (evalSettings.evaluationMode == JitEvaluationMode ||
           evalSettings.evaluationMode == TestEvaluationMode) {
           jitRes = jitReduced.value match {
             case TrivialProp.TrueProp => (true, jitReduced.cost)
