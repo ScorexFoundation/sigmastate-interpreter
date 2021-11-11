@@ -286,53 +286,8 @@ trait Interpreter extends ScorexLogging {
         reductionWithDeserialize(ergoTree, prop, context, env)
     }
 
-    checkResults(ergoTree, aotRes, jitRes)
+    CostingUtils.checkResults(ergoTree.bytesHex, aotRes, jitRes, logMessage(_))(evalSettings)
     res
-  }
-
-  /** Checks that a jitRes is equal to res and also checks costs.
-    * Reports either error or warning to the console.
-    */
-  private def checkResults(ergoTree: ErgoTree, res: ReductionResult, jitRes: ReductionResult) = {
-    val oldValue = res.value
-    val newValue = jitRes.value
-    if (oldValue != newValue) {
-      val msg =
-        s"""Wrong JIT result: -----------------------------------------
-          |ErgoTree: ${ergoTree.bytesHex}
-          |Old result: $oldValue
-          |New result: $newValue
-          |------------------------------------------------------------""".stripMargin
-      if (evalSettings.isTestRun) {
-        error(msg)
-      }
-      else if (evalSettings.isLogEnabled) {
-        logMessage(msg)
-      }
-    }
-    checkCosts(ergoTree, res.cost, jitRes.cost)
-  }
-
-  /** Checks that newCost doesn't exceed oldCost.
-    * If it doesn't, then:
-    * - in test context - throws an error
-    * - in non-test context - prints warning to console.
-    */
-  protected def checkCosts(ergoTree: ErgoTree, oldCost: Long, newCost: Long) = {
-    if (oldCost < newCost) {
-      val msg =
-        s"""Wrong JIT cost: -----------------------------------------
-          |ErgoTree: ${ergoTree.bytesHex}
-          |Old cost: $oldCost
-          |New cost: $newCost
-          |------------------------------------------------------------""".stripMargin
-      if (evalSettings.isTestRun) {
-        error(msg)
-      }
-      else if (evalSettings.isLogEnabled) {
-        logMessage(msg)
-      }
-    }
   }
 
   /** Performs reduction of proposition which contains deserialization operations. */
@@ -460,7 +415,7 @@ trait Interpreter extends ScorexLogging {
         case AotEvaluationMode => aotRes
         case JitEvaluationMode => jitRes
         case TestEvaluationMode =>
-          checkCosts(ergoTree, aotRes._2, jitRes._2)
+          CostingUtils.checkCosts(ergoTree.bytesHex, aotRes._2, jitRes._2, logMessage(_))(evalSettings)
           aotRes
       }
       res

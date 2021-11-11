@@ -18,7 +18,7 @@ import SType.AnyOps
 import sigmastate.interpreter.ContextExtension.VarBinding
 import sigmastate.interpreter.ErgoTreeEvaluator.DefaultEvalSettings
 import sigmastate.interpreter.{CryptoConstants, EvalSettings}
-import sigmastate.lang.exceptions.CosterException
+import sigmastate.lang.exceptions.SigmaException
 import sigmastate.utils.Helpers._
 
 class BasicOpsSpecification extends SigmaTestingCommons
@@ -125,7 +125,7 @@ class BasicOpsSpecification extends SigmaTestingCommons
       // test failing case when old cost is less then the new one
       assertExceptionThrown(
         testVerifier.verify(verifyEnv, tree, ctxExt, pr.proof, fakeMessage).get._1,
-        exceptionLike[CosterException]("Wrong JIT cost"))
+        exceptionLike[SigmaException]("Wrong JIT cost"))
     }
   }
 

@@ -128,7 +128,8 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
     // Note, jitRes.cost is already scaled in fullReduction
     val fullJitCost = addCostChecked(jitRes.cost, verificationC, ctxWithComplexity.costLimit)
 
-    checkCosts(ergoTree, res.cost, fullJitCost)
+    CostingUtils.checkCosts(ergoTree.bytesHex,
+      res.cost, fullJitCost, logger = logMessage)(evalSettings)
 
     val proof = generateProof(res.value, message, hintsBag)
 
