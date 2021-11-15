@@ -35,8 +35,6 @@ trait ExactNumeric[T] {
 
   /** A value of type T which corresponds to integer 1. */
   lazy val one: T = fromInt(1)
-  
-  def abs(x: T): T = n.abs(x)
 }
 
 object ExactNumeric {

@@ -11,7 +11,6 @@ trait NumericOps extends Base { self: Scalan =>
     def -(y: Ref[T]): Ref[T] = NumericMinus(n)(x.elem).apply(x, y)
     def *(y: Ref[T]): Ref[T] = NumericTimes(n)(x.elem).apply(x, y)
     def unary_- : Ref[T] = NumericNegate(n)(x.elem).apply(x)
-    def abs: Ref[T] = Abs(n)(x.elem).apply(x)
     def toInt: Ref[Int] = NumericToInt(n).apply(x)
     def toLong: Ref[Long] = NumericToLong(n).apply(x)
   }
@@ -64,11 +63,6 @@ trait NumericOps extends Base { self: Scalan =>
   /** Descriptor of unary `ToLong` conversion operation. */
   case class NumericToLong[T](n: ExactNumeric[T]) extends UnOp[T,Long]("ToLong") {
     override def applySeq(x: T): Long = n.toLong(x)
-  }
-
-  /** Descriptor of unary `abs` operation. */
-  case class Abs[T: Elem](n: ExactNumeric[T]) extends UnOp[T, T]("Abs") {
-    override def applySeq(x: T): T = n.abs(x)
   }
 
   /** Descriptor of binary `/` operation (integral division). */
