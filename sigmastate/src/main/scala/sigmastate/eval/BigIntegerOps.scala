@@ -26,8 +26,28 @@ object NumericOps {
 
   /** Base implementation of Integral methods for BigInt. */
   trait BigIntIsIntegral extends Integral[BigInt] {
-    def quot(x: BigInt, y: BigInt): BigInt = ??? // this method should not be used in v4.x
-    def rem(x: BigInt, y: BigInt): BigInt = ??? // this method should not be used in v4.x
+    /** This method should not be used in v4.x */
+    def quot(x: BigInt, y: BigInt): BigInt = x.divide(y)
+
+    /** This method is used in ErgoTreeEvaluator based interpreter, to implement
+      * '%' operation of ErgoTree (i.e. `%: (T, T) => T` operation) for all
+      * numeric types T including BigInt.
+      *
+      * In the v4.x interpreter, however, the `%` operation is implemented using
+      * [[CBigInt]].mod method (see implementation in [[TestBigInt]], which
+      * delegates to [[java.math.BigInteger]].mod method.
+      *
+      * Even though this method is called `rem`, the semantics of ErgoTree
+      * language requires it to correspond to [[java.math.BigInteger]].mod
+      * method.
+      *
+      * For this reason we define implementation of this `rem` method using
+      * [[BigInt]].mod.
+      *
+      * NOTE: This method should not be used in v4.x
+      */
+    def rem(x: BigInt, y: BigInt): BigInt = x.mod(y)
+
     def plus(x: BigInt, y: BigInt): BigInt = x.add(y)
     def minus(x: BigInt, y: BigInt): BigInt = x.subtract(y)
     def times(x: BigInt, y: BigInt): BigInt = x.multiply(y)
@@ -41,13 +61,14 @@ object NumericOps {
 
   /** The instance of Integral for BigInt.
     *
-    * Note: ExactIntegral is not defined for [[special.sigma.BigInt]].
-    * This is because arithmetic BigInt operations are handled specially
+    * Note: ExactIntegral was not defined for [[special.sigma.BigInt]] in v4.x.
+    * This is because arithmetic BigInt operations were handled in a special way
     * (see `case op: ArithOp[t] if op.tpe == SBigInt =>` in RuntimeCosting.scala).
-    * As result [[scalan.primitives.UnBinOps.ApplyBinOp]] nodes are not created for BigInt
-    * operations, and hence operation descriptors such as
+    * As result [[scalan.primitives.UnBinOps.ApplyBinOp]] nodes were not created for
+    * BigInt operations in v4.x., and hence operation descriptors such as
     * [[scalan.primitives.NumericOps.IntegralDivide]] and
-    * [[scalan.primitives.NumericOps.IntegralMod]] are not used for BigInt.
+    * [[scalan.primitives.NumericOps.IntegralMod]] were not used for BigInt.
+    * NOTE: this instance is used in the new v5.0 interpreter.
     */
   implicit object BigIntIsIntegral extends BigIntIsIntegral with OrderingOps.BigIntOrdering
 

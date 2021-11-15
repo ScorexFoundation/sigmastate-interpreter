@@ -8,7 +8,8 @@ import sigmastate.Values._
 import sigmastate._
 import sigmastate.eval.Extensions._
 import sigmastate.eval._
-import sigmastate.interpreter.{ContextExtension, InterpreterContext}
+import sigmastate.interpreter.ErgoTreeEvaluator.DataEnv
+import sigmastate.interpreter.{ContextExtension, InterpreterContext, ErgoTreeEvaluator}
 import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.OpCode
 import special.collection.Coll
@@ -228,38 +229,70 @@ object ErgoLikeContext {
 /** When interpreted evaluates to a ByteArrayConstant built from Context.minerPubkey */
 case object MinerPubkey extends NotReadyValueByteArray with ValueCompanion {
   override def opCode: OpCode = OpCodes.MinerPubkeyCode
+  /** Cost of calling Context.minerPubkey Scala method. */
+  override val costKind = FixedCost(20)
   override val opType = SFunc(SContext, SCollection.SByteArray)
   override def companion = this
+  protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
+    addCost(this.costKind)
+    E.context.minerPubKey
+  }
 }
 
 /** When interpreted evaluates to a IntConstant built from Context.currentHeight */
 case object Height extends NotReadyValueInt with ValueCompanion {
   override def companion = this
   override def opCode: OpCode = OpCodes.HeightCode
+  /** Cost of: 1) Calling Context.HEIGHT Scala method. */
+  override val costKind = FixedCost(26)
   override val opType = SFunc(SContext, SInt)
+  protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
+    addCost(this.costKind)
+    E.context.HEIGHT
+  }
 }
 
 /** When interpreted evaluates to a collection of BoxConstant built from Context.boxesToSpend */
 case object Inputs extends LazyCollection[SBox.type] with ValueCompanion {
   override def companion = this
   override def opCode: OpCode = OpCodes.InputsCode
+  /** Cost of: 1) Calling Context.INPUTS Scala method. */
+  override val costKind = FixedCost(10)
   override def tpe = SCollection.SBoxArray
   override val opType = SFunc(SContext, tpe)
+  protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
+    addCost(this.costKind)
+    E.context.INPUTS
+  }
 }
 
 /** When interpreted evaluates to a collection of BoxConstant built from Context.spendingTransaction.outputs */
 case object Outputs extends LazyCollection[SBox.type] with ValueCompanion {
   override def companion = this
   override def opCode: OpCode = OpCodes.OutputsCode
+  /** Cost of: 1) Calling Context.OUTPUTS Scala method. */
+  override val costKind = FixedCost(10)
   override def tpe = SCollection.SBoxArray
   override val opType = SFunc(SContext, tpe)
+  protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
+    addCost(this.costKind)
+    E.context.OUTPUTS
+  }
 }
 
 /** When interpreted evaluates to a AvlTreeConstant built from Context.lastBlockUtxoRoot */
 case object LastBlockUtxoRootHash extends NotReadyValueAvlTree with ValueCompanion {
   override def companion = this
   override def opCode: OpCode = OpCodes.LastBlockUtxoRootHashCode
+
+  /** Cost of: 1) Calling Context.LastBlockUtxoRootHash Scala method. */
+  override val costKind = FixedCost(15)
+
   override val opType = SFunc(SContext, tpe)
+  protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
+    addCost(this.costKind)
+    E.context.LastBlockUtxoRootHash
+  }
 }
 
 
@@ -267,7 +300,13 @@ case object LastBlockUtxoRootHash extends NotReadyValueAvlTree with ValueCompani
 case object Self extends NotReadyValueBox with ValueCompanion {
   override def companion = this
   override def opCode: OpCode = OpCodes.SelfCode
+  /** Cost of: 1) Calling Context.SELF Scala method. */
+  override val costKind = FixedCost(10)
   override val opType = SFunc(SContext, SBox)
+  protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
+    addCost(this.costKind)
+    E.context.SELF
+  }
 }
 
 /** When interpreted evaluates to the singleton instance of [[special.sigma.Context]].
@@ -276,8 +315,16 @@ case object Self extends NotReadyValueBox with ValueCompanion {
 case object Context extends NotReadyValue[SContext.type] with ValueCompanion {
   override def companion = this
   override def opCode: OpCode = OpCodes.ContextCode
+
+  /** Cost of: 1) accessing global Context instance. */
+  override val costKind = FixedCost(1)
+
   override def tpe: SContext.type = SContext
   override val opType: SFunc = SFunc(SUnit, SContext)
+  protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
+    addCost(this.costKind)
+    E.context
+  }
 }
 
 /** When interpreted evaluates to the singleton instance of [[special.sigma.SigmaDslBuilder]].
@@ -286,6 +333,12 @@ case object Context extends NotReadyValue[SContext.type] with ValueCompanion {
 case object Global extends NotReadyValue[SGlobal.type] with ValueCompanion {
   override def companion = this
   override def opCode: OpCode = OpCodes.GlobalCode
+  /** Cost of: 1) accessing Global instance. */
+  override val costKind = FixedCost(5)
   override def tpe: SGlobal.type = SGlobal
   override val opType: SFunc = SFunc(SUnit, SGlobal)
+  protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
+    addCost(this.costKind)
+    CostingSigmaDslBuilder
+  }
 }
