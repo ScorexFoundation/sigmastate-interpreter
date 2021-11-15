@@ -20,7 +20,7 @@ trait ExactIntegral[T] extends ExactNumeric[T] {
   /** Integer division operation `x / y`. */
   def quot(x: T, y: T): T = n.quot(x, y)
 
-  /** Operation which returns reminder from dividing x by y.
+  /** Operation which returns remainder from dividing x by y.
     * The exact rules are defined in the concrete instance of the type T.
     * A default implementation delegates to Integral[T].rem method for the corresponding
     * type T.

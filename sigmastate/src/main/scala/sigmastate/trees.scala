@@ -938,7 +938,7 @@ object ArithOp {
     }
   }
 
-  /** Operation which returns reminder from dividing x by y.
+  /** Operation which returns remainder from dividing x by y.
     * See ExactIntegral.divisionRemainder implementation for the concrete numeric type.
     */
   object Modulo extends ArithOpCompanion(ModuloCode,   "%", ModuloInfo.argInfos) {

@@ -70,7 +70,7 @@ trait NumericOps extends Base { self: Scalan =>
     override def applySeq(x: T, y: T): T = i.quot(x, y)
   }
 
-  /** Descriptor of binary `%` operation (reminder of integral division). */
+  /** Descriptor of binary `%` operation (remainder of integral division). */
 case class IntegralMod[T](i: ExactIntegral[T])(implicit elem: Elem[T]) extends DivOp[T]("%", i) {
     /** Note, this is implemented using `ExactIntegral.rem` method which delegates to
       * `scala.math.Integral.rem`. The later also implements `%` operator in Scala for
