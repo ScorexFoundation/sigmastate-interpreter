@@ -881,11 +881,11 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
 
   import NumericOps._
   private lazy val elemToExactNumericMap = Map[Elem[_], ExactNumeric[_]](
-    (ByteElement, ByteIsExactNumeric),
-    (ShortElement, ShortIsExactNumeric),
-    (IntElement, IntIsExactNumeric),
-    (LongElement, LongIsExactNumeric),
-    (bigIntElement, BigIntIsExactNumeric)
+    (ByteElement, ByteIsExactIntegral),
+    (ShortElement, ShortIsExactIntegral),
+    (IntElement, IntIsExactIntegral),
+    (LongElement, LongIsExactIntegral),
+    (bigIntElement, BigIntIsExactIntegral)
   )
   private lazy val elemToExactIntegralMap = Map[Elem[_], ExactIntegral[_]](
     (ByteElement,   ByteIsExactIntegral),

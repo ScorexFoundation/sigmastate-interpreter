@@ -71,12 +71,7 @@ trait NumericOps extends Base { self: Scalan =>
   }
 
   /** Descriptor of binary `%` operation (remainder of integral division). */
-case class IntegralMod[T](i: ExactIntegral[T])(implicit elem: Elem[T]) extends DivOp[T]("%", i) {
-    /** Note, this is implemented using `ExactIntegral.rem` method which delegates to
-      * `scala.math.Integral.rem`. The later also implements `%` operator in Scala for
-      * numeric types.
-      * @see sigmastate.eval.NumericOps.BigIntIsIntegral
-      */
+  case class IntegralMod[T](i: ExactIntegral[T])(implicit elem: Elem[T]) extends DivOp[T]("%", i) {
     override def applySeq(x: T, y: T): T = i.divisionRemainder(x, y)
   }
 

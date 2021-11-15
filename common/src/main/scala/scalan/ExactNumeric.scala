@@ -38,11 +38,9 @@ trait ExactNumeric[T] {
 }
 
 object ExactNumeric {
-  /** ExactNumeric instances for all types are the same as ExactIntegral.
-    * This values are implicitly used wherever ExactNumeric is needed.
+  /** ExactNumeric instances are the same as ExactIntegral.
+    * This values are implicitly used wherever ExactNumeric is needed (see usages).
     */
-  implicit val ByteIsExactNumeric: ExactNumeric[Byte] = ByteIsExactIntegral
-  implicit val ShortIsExactNumeric: ExactNumeric[Short] = ShortIsExactIntegral
-  implicit val IntIsExactNumeric: ExactNumeric[Int] = IntIsExactIntegral
-  implicit val LongIsExactNumeric: ExactNumeric[Long] = LongIsExactIntegral
+  implicit def IntIsExactNumeric: ExactNumeric[Int] = IntIsExactIntegral
+  implicit def LongIsExactNumeric: ExactNumeric[Long] = LongIsExactIntegral
 }

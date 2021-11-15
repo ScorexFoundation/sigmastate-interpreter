@@ -2,7 +2,7 @@ package scalan
 
 import scalan.util.Extensions._
 
-/** Type-class which defines the operations on Integral types (Byte, Short, Int, Long)
+/** Type-class which defines the operations on Integral types (Byte, Short, Int, Long, BigInt)
   * with overflow checks.
   *
   * An exception is raised when an overflow is detected.
@@ -15,7 +15,7 @@ import scalan.util.Extensions._
   * This trait is used in core IR to avoid implicitly using standard scala implementations.
   */
 trait ExactIntegral[T] extends ExactNumeric[T] {
-  protected val n: Integral[T]
+  protected val n: scala.math.Integral[T]
 
   /** Integer division operation `x / y`. */
   def quot(x: T, y: T): T = n.quot(x, y)

@@ -70,7 +70,7 @@ object NumericOps {
     * [[scalan.primitives.NumericOps.IntegralMod]] were not used for BigInt.
     * NOTE: this instance is used in the new v5.0 interpreter.
     */
-  implicit object BigIntIsIntegral extends BigIntIsIntegral with OrderingOps.BigIntOrdering
+  object BigIntIsIntegral extends BigIntIsIntegral with OrderingOps.BigIntOrdering
 
   /** The instance of [[ExactIntegral]] typeclass for [[BigInt]]. */
   implicit object BigIntIsExactIntegral extends ExactIntegral[BigInt] {
@@ -85,8 +85,6 @@ object NumericOps {
     override def divisionRemainder(x: BigInt, y: BigInt): BigInt =
       ??? // this method should not be used in v4.x
   }
-
-  implicit val BigIntIsExactNumeric: ExactNumeric[BigInt] = BigIntIsExactIntegral
 
   /** The instance of [[scalan.ExactOrdering]] typeclass for [[BigInt]]. */
   implicit object BigIntIsExactOrdering extends ExactOrderingImpl[BigInt](BigIntIsIntegral)
