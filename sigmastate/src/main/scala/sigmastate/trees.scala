@@ -1011,7 +1011,9 @@ object ArithOp {
   }
 }
 
-/** Negation operation on numeric type T. */
+/** Negation operation on numeric type T.
+  * See ExactNumeric instance for the corresponding type T.
+  */
 case class Negation[T <: SType](input: Value[T]) extends OneArgumentOperation[T, T] {
   require(input.tpe.isNumTypeOrNoType, s"invalid type ${input.tpe}")
   override def companion = Negation
@@ -1029,6 +1031,7 @@ object Negation extends OneArgumentOperationCompanion {
   override def argInfos: Seq[ArgInfo] = NegationInfo.argInfos
 }
 
+/** Not implemented in v4.x. */
 case class BitInversion[T <: SType](input: Value[T]) extends OneArgumentOperation[T, T] {
   require(input.tpe.isNumTypeOrNoType, s"invalid type ${input.tpe}")
   override def companion = BitInversion
@@ -1040,6 +1043,7 @@ object BitInversion extends OneArgumentOperationCompanion {
   override def argInfos: Seq[ArgInfo] = BitInversionInfo.argInfos
 }
 
+/** ErgoTree node which represents a binary bit-wise operation with the given opCode. */
 case class BitOp[T <: SType](left: Value[T], right: Value[T], override val opCode: OpCode)
   extends TwoArgumentsOperation[T, T, T] with NotReadyValue[T] {
   require(left.tpe.isNumTypeOrNoType && right.tpe.isNumTypeOrNoType, s"invalid types left:${left.tpe}, right:${right.tpe}")

@@ -29,8 +29,6 @@ trait ExactNumeric[T] {
 
   def toInt(x: T): Int = n.toInt(x)
   def toLong(x: T): Long = n.toLong(x)
-  def toFloat(x: T): Float = n.toFloat(x)
-  def toDouble(x: T): Double = n.toDouble(x)
 
   /** A value of type T which corresponds to integer 0. */
   lazy val zero: T = fromInt(0)
