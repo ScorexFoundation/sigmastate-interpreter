@@ -836,6 +836,7 @@ trait TwoArgumentOperationCompanion extends ValueCompanion {
   def argInfos: Seq[ArgInfo]
 }
 
+/** Represents binary operation with the given opCode. */
 case class ArithOp[T <: SType](left: Value[T], right: Value[T], override val opCode: OpCode)
   extends TwoArgumentsOperation[T, T, T] with NotReadyValue[T] {
   override def companion: ArithOpCompanion = ArithOp.operations(opCode)
@@ -876,8 +877,10 @@ abstract class ArithOpCompanion(val opCode: OpCode, val name: String, _argInfos:
 
 object ArithOp {
   import OpCodes._
+
+  /** Addition operation `x + y`. */
   object Plus     extends ArithOpCompanion(PlusCode,     "+", PlusInfo.argInfos) {
-    def eval(impl: OperationImpl, x: Any, y: Any): Any = impl.n.plus(x, y)
+    override def eval(impl: OperationImpl, x: Any, y: Any): Any = impl.n.plus(x, y)
     /** Cost of:
       * 1) resolving ArithOpCompanion by typeCode
       * 2) calling method of Numeric
@@ -889,8 +892,10 @@ object ArithOp {
       }
     }
   }
+
+  /** Subtraction operation `x - y`. */
   object Minus    extends ArithOpCompanion(MinusCode,    "-", MinusInfo.argInfos) {
-    def eval(impl: OperationImpl, x: Any, y: Any): Any = impl.n.minus(x, y)
+    override def eval(impl: OperationImpl, x: Any, y: Any): Any = impl.n.minus(x, y)
     /** Cost of:
       * 1) resolving ArithOpCompanion by typeCode
       * 2) calling method of Numeric
@@ -902,8 +907,10 @@ object ArithOp {
       }
     }
   }
+
+  /** Multiplication operation `x * y`. */
   object Multiply extends ArithOpCompanion(MultiplyCode, "*", MultiplyInfo.argInfos) {
-    def eval(impl: OperationImpl, x: Any, y: Any): Any = impl.n.times(x, y)
+    override def eval(impl: OperationImpl, x: Any, y: Any): Any = impl.n.times(x, y)
     /** Cost of:
       * 1) resolving ArithOpCompanion by typeCode
       * 2) calling method of Numeric
@@ -915,8 +922,10 @@ object ArithOp {
       }
     }
   }
+
+  /** Integer division operation `x / y`. */
   object Division extends ArithOpCompanion(DivisionCode, "/", DivisionInfo.argInfos) {
-    def eval(impl: OperationImpl, x: Any, y: Any): Any = impl.i.quot(x, y)
+    override def eval(impl: OperationImpl, x: Any, y: Any): Any = impl.i.quot(x, y)
     /** Cost of:
       * 1) resolving ArithOpCompanion by typeCode
       * 2) calling method of Integral
@@ -928,8 +937,12 @@ object ArithOp {
       }
     }
   }
-  object Modulo   extends ArithOpCompanion(ModuloCode,   "%", ModuloInfo.argInfos) {
-    def eval(impl: OperationImpl, x: Any, y: Any): Any = impl.i.rem(x, y)
+
+  /** Operation which returns reminder from dividing x by y.
+    * See ExactIntegral.divisionRemainder implementation for the concrete numeric type.
+    */
+  object Modulo extends ArithOpCompanion(ModuloCode,   "%", ModuloInfo.argInfos) {
+    override def eval(impl: OperationImpl, x: Any, y: Any): Any = impl.i.divisionRemainder(x, y)
     /** Cost of:
       * 1) resolving ArithOpCompanion by typeCode
       * 2) calling method of Integral
@@ -941,8 +954,10 @@ object ArithOp {
       }
     }
   }
-  object Min      extends ArithOpCompanion(MinCode,      "min", MinInfo.argInfos) {
-    def eval(impl: OperationImpl, x: Any, y: Any): Any = impl.o.min(x, y)
+
+  /** Return `x` if `x` <= `y`, otherwise `y`. */
+  object Min extends ArithOpCompanion(MinCode,      "min", MinInfo.argInfos) {
+    override def eval(impl: OperationImpl, x: Any, y: Any): Any = impl.o.min(x, y)
     /** Cost of:
       * 1) resolving ArithOpCompanion by typeCode
       * 2) calling method of ExactOrdering
@@ -954,8 +969,10 @@ object ArithOp {
       }
     }
   }
-  object Max      extends ArithOpCompanion(MaxCode,      "max", MaxInfo.argInfos) {
-    def eval(impl: OperationImpl, x: Any, y: Any): Any = impl.o.max(x, y)
+
+  /** Return `x` if `x` >= `y`, otherwise `y`. */
+  object Max extends ArithOpCompanion(MaxCode,      "max", MaxInfo.argInfos) {
+    override def eval(impl: OperationImpl, x: Any, y: Any): Any = impl.o.max(x, y)
     /** Cost of:
       * 1) resolving ArithOpCompanion by typeCode
       * 2) calling method of ExactOrdering
@@ -971,6 +988,7 @@ object ArithOp {
   private[sigmastate] val operations: DMap[Byte, ArithOpCompanion] =
     DMap.fromIterable(Seq(Plus, Minus, Multiply, Division, Modulo, Min, Max).map(o => (o.opCode, o)))
 
+  /** Represents implementation of numeric Arith operations for the given type argTpe. */
   class OperationImpl(_n: ExactNumeric[_], _i: ExactIntegral[_], _o: ExactOrdering[_], val argTpe: SType) {
     val n = _n.asInstanceOf[ExactNumeric[Any]]
     val i = _i.asInstanceOf[ExactIntegral[Any]]
@@ -986,6 +1004,7 @@ object ArithOp {
       SBigInt -> new OperationImpl(BigIntIsExactNumeric, BigIntIsExactIntegral, BigIntIsExactOrdering, SBigInt)
     ).map { case (t, n) => (t.typeCode, n) })
 
+  /** Returns operation name for the given opCode. */
   def opcodeToArithOpName(opCode: Byte): String = operations.get(opCode) match {
     case Some(c)  => c.name
     case _ => sys.error(s"Cannot find ArithOpName for opcode $opCode")
