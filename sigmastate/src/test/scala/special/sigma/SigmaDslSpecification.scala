@@ -6,7 +6,7 @@ import java.math.BigInteger
 import org.ergoplatform._
 import org.ergoplatform.settings.ErgoAlgos
 import org.scalacheck.{Arbitrary, Gen}
-import scalan.{ExactOrdering, ExactNumeric, RType}
+import scalan.{ExactOrdering, ExactNumeric, RType, ExactIntegral}
 import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.authds.{ADDigest, ADKey, ADValue}
 import scorex.crypto.hash.{Digest32, Blake2b256}
@@ -492,7 +492,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
         (x: Byte) => x.toBigInt, "{ (x: Byte) => x.toBigInt }",
         FuncValue(Vector((1, SByte)), Upcast(ValUse(1, SByte), SBigInt))))
 
-    val n = ExactNumeric.ByteIsExactNumeric
+    val n = ExactIntegral.ByteIsExactIntegral
     verifyCases(
       {
         def success[T](v: (T, (T, (T, (T, T))))) = Expected(Success(v), 39654)
@@ -833,7 +833,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
         "{ (x: Short) => x.toBigInt }",
         FuncValue(Vector((1, SShort)), Upcast(ValUse(1, SShort), SBigInt))))
 
-    val n = ExactNumeric.ShortIsExactNumeric
+    val n = ExactIntegral.ShortIsExactIntegral
     verifyCases(
       {
         def success[T](v: T) = Expected(Success(v), 39654)
@@ -1667,7 +1667,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
         "{ (x: BigInt) => x.toBigInt }",
         FuncValue(Vector((1, SBigInt)), ValUse(1, SBigInt))))
 
-    val n = NumericOps.BigIntIsExactNumeric
+    val n = NumericOps.BigIntIsExactIntegral
     verifyCases(
     {
       def success(v: (BigInt, (BigInt, (BigInt, (BigInt, BigInt))))) = Expected(Success(v), 39774)

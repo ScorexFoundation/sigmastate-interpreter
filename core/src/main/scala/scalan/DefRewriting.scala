@@ -60,10 +60,6 @@ trait DefRewriting { scalan: Scalan =>
       case NumericToInt(_) if x.elem == IntElement => x
       // (x: Long).toLong => x
       case NumericToLong(_) if x.elem == LongElement => x
-      // (x: Float).toFloat => x
-      case NumericToFloat(_) if x.elem == FloatElement => x
-      // (x: Double).toDouble => x
-      case NumericToDouble(_) if x.elem == DoubleElement => x
 
       case _ if op == Not => x.node match {
         // Rule: !(x op y) ==>

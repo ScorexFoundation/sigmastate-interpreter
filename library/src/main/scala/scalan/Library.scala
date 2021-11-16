@@ -4,7 +4,7 @@ import scala.language.implicitConversions
 import special.collection._
 import special.wrappers.{WrappersSpecModule, WrappersModule}
 import scalan.util.{MemoizedFunc}
-import scalan.ExactNumeric._
+import scalan.ExactIntegral._
 
 trait Library extends Scalan
   with WrappersModule
