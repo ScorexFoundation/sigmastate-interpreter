@@ -69,6 +69,18 @@ trait Interpreter extends ScorexLogging {
     */
   def evalSettings: EvalSettings = ErgoTreeEvaluator.DefaultEvalSettings
 
+  /** Returns true if AOT interpreter should be evaluated. */
+  def okEvaluateAot: Boolean = {
+    evalSettings.evaluationMode == AotEvaluationMode ||
+    evalSettings.evaluationMode == TestEvaluationMode
+  }
+
+  /** Returns true if JIT interpreter should be evaluated. */
+  def okEvaluateJit: Boolean = {
+    evalSettings.evaluationMode == JitEvaluationMode ||
+    evalSettings.evaluationMode == TestEvaluationMode
+  }
+
   /** Logs the given message string. Can be overridden in the derived interpreter classes
     * to redefine the default behavior. */
   protected def logMessage(msg: String) = {
@@ -264,29 +276,44 @@ trait Interpreter extends ScorexLogging {
       case SigmaPropConstant(p) =>
         val sb = SigmaDsl.toSigmaBoolean(p)
 
-        val aotCost = SigmaBoolean.estimateCost(sb)
-        val resAotCost = Evaluation.addCostChecked(context.initCost, aotCost, context.costLimit)
+        var aotRes: ReductionResult = null
+        if (okEvaluateAot) {
+          val aotCost = SigmaBoolean.estimateCost(sb)
+          val resAotCost = Evaluation.addCostChecked(context.initCost, aotCost, context.costLimit)
+          aotRes = ReductionResult(sb, resAotCost)
+        }
 
-        // NOTE, evaluator cost unit is 10 times smaller then the cost unit of context
-        val jitCost = Eval_SigmaPropConstant.costKind.cost / 10
-
-        val resJitCost = Evaluation.addCostChecked(context.initCost, jitCost, context.costLimit)
-        (ReductionResult(sb, resAotCost), ReductionResult(sb, resJitCost))
+        var jitRes: ReductionResult = null
+        if (okEvaluateJit) {
+          // NOTE, evaluator cost unit is 10 times smaller then the cost unit of context
+          val jitCost = Eval_SigmaPropConstant.costKind.cost / 10
+          val resJitCost = Evaluation.addCostChecked(context.initCost, jitCost, context.costLimit)
+          jitRes = ReductionResult(sb, resJitCost)
+        }
+        (aotRes, jitRes)
       case _ if !ergoTree.hasDeserialize =>
-        val r = precompiledScriptProcessor.getReducer(ergoTree, context.validationSettings)
-        val aotRes = r.reduce(context)
+        var aotRes: ReductionResult = null
+        if (okEvaluateAot) {
+          val r = precompiledScriptProcessor.getReducer(ergoTree, context.validationSettings)
+          aotRes = r.reduce(context)
+        }
 
-        val ctx = context.asInstanceOf[ErgoLikeContext]
-          .withInitCost(context.initCost * 10)    // adjust for Evaluator cost units scale
-          .withCostLimit(context.costLimit * 10)
-        val ReductionResult(v, c) = ErgoTreeEvaluator.evalToCrypto(ctx, ergoTree, evalSettings)
-        val jitRes = ReductionResult(v, c / 10) // scale cost back
+        var jitRes: ReductionResult = null
+        if (okEvaluateJit) {
+          val ctx = context.asInstanceOf[ErgoLikeContext]
+              .withInitCost(context.initCost * 10)    // adjust for Evaluator cost units scale
+              .withCostLimit(context.costLimit * 10)
+          val ReductionResult(v, c) = ErgoTreeEvaluator.evalToCrypto(ctx, ergoTree, evalSettings)
+          jitRes = ReductionResult(v, c / 10) // scale cost back
+        }
         (aotRes, jitRes)
       case _ =>
         reductionWithDeserialize(ergoTree, prop, context, env)
     }
 
-    CostingUtils.checkResults(ergoTree.bytesHex, aotRes, jitRes, logMessage(_))(evalSettings)
+    if (evalSettings.evaluationMode == TestEvaluationMode) {
+        CostingUtils.checkResults(ergoTree.bytesHex, aotRes, jitRes, logMessage(_))(evalSettings)
+    }
     res
   }
 
@@ -296,25 +323,29 @@ trait Interpreter extends ScorexLogging {
                                        context: CTX,
                                        env: ScriptEnv): (ReductionResult, ReductionResult) = {
     implicit val vs: SigmaValidationSettings = context.validationSettings
-    val res = {
+    var aotRes: ReductionResult = null
+    if (okEvaluateAot) {
       val (propTree, context2) = trySoftForkable[(BoolValue, CTX)](whenSoftFork = (TrueLeaf, context)) {
         applyDeserializeContext(context, prop)
       }
 
       // here we assume that when `propTree` is TrueProp then `reduceToCrypto` always succeeds
       // and the rest of the verification is also trivial
-      reduceToCrypto(context2, env, propTree).getOrThrow
+      aotRes = reduceToCrypto(context2, env, propTree).getOrThrow
     }
-    val jitRes = {
+
+    var jitRes: ReductionResult = null
+    if (okEvaluateJit) {
       val (propTree, context2) = trySoftForkable[(SigmaPropValue, CTX)](whenSoftFork = (TrueSigmaProp, context)) {
         applyDeserializeContextJITC(context, prop)
       }
 
       // here we assume that when `propTree` is TrueProp then `reduceToCrypto` always succeeds
       // and the rest of the verification is also trivial
-      reduceToCryptoJITC(context2, env, propTree).getOrThrow
+      jitRes = reduceToCryptoJITC(context2, env, propTree).getOrThrow
     }
-    (res, jitRes)
+
+    (aotRes, jitRes)
   }
 
   /** Executes the script in a given context.
@@ -373,8 +404,7 @@ trait Interpreter extends ScorexLogging {
 
       // if necessary perform verification as v4.x (AOT based implementation)
       var aotRes: VerificationResult = null
-      if (evalSettings.evaluationMode == AotEvaluationMode ||
-          evalSettings.evaluationMode == TestEvaluationMode) {
+      if (okEvaluateAot) {
           aotRes = aotReduced.value match {
             case TrivialProp.TrueProp => (true, aotReduced.cost)
             case TrivialProp.FalseProp => (false, aotReduced.cost)
@@ -391,8 +421,7 @@ trait Interpreter extends ScorexLogging {
 
       // if necessary perform verification as v5.x (JIT based implementation)
       var jitRes: VerificationResult = null
-      if (evalSettings.evaluationMode == JitEvaluationMode ||
-          evalSettings.evaluationMode == TestEvaluationMode) {
+      if (okEvaluateJit) {
           jitRes = jitReduced.value match {
             case TrivialProp.TrueProp => (true, jitReduced.cost)
             case TrivialProp.FalseProp => (false, jitReduced.cost)

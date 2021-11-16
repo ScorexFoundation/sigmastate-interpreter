@@ -71,7 +71,8 @@ class BasicOpsSpecification extends SigmaTestingCommons
       override val evalSettings: EvalSettings = DefaultEvalSettings.copy(
         isMeasureOperationTime = true,
         isDebug = true,
-        isTestRun = testExceededCost)
+        isTestRun = testExceededCost,
+        evaluationMode = EvalSettings.TestEvaluationMode)
     }
 
     val prop = compile(env, script).asBoolValue.toSigmaProp

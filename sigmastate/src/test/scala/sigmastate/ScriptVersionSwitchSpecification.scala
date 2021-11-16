@@ -23,7 +23,8 @@ class ScriptVersionSwitchSpecification extends SigmaDslTesting
   override implicit val generatorDrivenConfig = PropertyCheckConfiguration(minSuccessful = 30)
   override implicit val evalSettings: EvalSettings =
     ErgoTreeEvaluator.DefaultEvalSettings.copy(
-      costTracingEnabled = true  // should always be enabled in tests (and false by default)
+      costTracingEnabled = true,  // should always be enabled in tests (and false by default)
+      evaluationMode = EvalSettings.TestEvaluationMode
     )
 
   implicit def IR = createIR()

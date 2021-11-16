@@ -122,18 +122,18 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
 
     val costWithComplexity = addCostChecked(context.initCost, ergoTree.complexity, context.costLimit)
     val ctxWithComplexity = context.withInitCost(costWithComplexity).asInstanceOf[CTX]
-    val (res, jitRes) = fullReduction(ergoTree, ctxWithComplexity, env)
+    val (aotRes, jitRes) = fullReduction(ergoTree, ctxWithComplexity, env)
 
-    val verificationC = estimateVerificationCost(res.value) / 10 // scale eval to tx cost
+    val verificationC = estimateVerificationCost(aotRes.value) / 10 // scale eval to tx cost
     // Note, jitRes.cost is already scaled in fullReduction
     val fullJitCost = addCostChecked(jitRes.cost, verificationC, ctxWithComplexity.costLimit)
 
     CostingUtils.checkCosts(ergoTree.bytesHex,
-      res.cost, fullJitCost, logger = logMessage)(evalSettings)
+      aotRes.cost, fullJitCost, logger = logMessage)(evalSettings)
 
-    val proof = generateProof(res.value, message, hintsBag)
+    val proof = generateProof(aotRes.value, message, hintsBag)
 
-    CostedProverResult(proof, ctxWithComplexity.extension, res.cost)
+    CostedProverResult(proof, ctxWithComplexity.extension, aotRes.cost)
   }
 
   def generateProof(sb: SigmaBoolean,
