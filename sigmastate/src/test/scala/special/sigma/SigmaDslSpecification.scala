@@ -6,7 +6,7 @@ import java.math.BigInteger
 import org.ergoplatform._
 import org.ergoplatform.settings.ErgoAlgos
 import org.scalacheck.{Arbitrary, Gen}
-import scalan.{ExactOrdering, ExactNumeric, RType}
+import scalan.{ExactOrdering, ExactNumeric, RType, ExactIntegral}
 import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.authds.{ADDigest, ADKey, ADValue}
 import scorex.crypto.hash.{Digest32, Blake2b256}
@@ -833,7 +833,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         (x: Byte) => x.toBigInt, "{ (x: Byte) => x.toBigInt }",
         FuncValue(Vector((1, SByte)), Upcast(ValUse(1, SByte), SBigInt))))
 
-    val n = ExactNumeric.ByteIsExactNumeric
+    val n = ExactIntegral.ByteIsExactIntegral
     verifyCases(
       {
         def success[T](v: (T, (T, (T, (T, T))))) = Expected(Success(v), 39654, costArithOps(SByte))
@@ -1262,7 +1262,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         "{ (x: Short) => x.toBigInt }",
         FuncValue(Vector((1, SShort)), Upcast(ValUse(1, SShort), SBigInt))))
 
-    val n = ExactNumeric.ShortIsExactNumeric
+    val n = ExactIntegral.ShortIsExactIntegral
     verifyCases(
       {
         def success[T](v: T) = Expected(Success(v), 39654, costArithOps(SShort))
@@ -2106,7 +2106,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         "{ (x: BigInt) => x.toBigInt }",
         FuncValue(Vector((1, SBigInt)), ValUse(1, SBigInt))))
 
-    val n = NumericOps.BigIntIsExactNumeric
+    val n = NumericOps.BigIntIsExactIntegral
     verifyCases(
     {
       val costArithOps = CostDetails(

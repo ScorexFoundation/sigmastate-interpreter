@@ -11,9 +11,6 @@ trait NumericOps extends Base { self: Scalan =>
     def -(y: Ref[T]): Ref[T] = NumericMinus(n)(x.elem).apply(x, y)
     def *(y: Ref[T]): Ref[T] = NumericTimes(n)(x.elem).apply(x, y)
     def unary_- : Ref[T] = NumericNegate(n)(x.elem).apply(x)
-    def abs: Ref[T] = Abs(n)(x.elem).apply(x)
-    def toFloat: Ref[Float] = NumericToFloat(n).apply(x)
-    def toDouble: Ref[Double] = NumericToDouble(n).apply(x)
     def toInt: Ref[Int] = NumericToInt(n).apply(x)
     def toLong: Ref[Long] = NumericToLong(n).apply(x)
   }
@@ -58,16 +55,6 @@ trait NumericOps extends Base { self: Scalan =>
     override def applySeq(x: T): T = n.negate(x)
   }
 
-  /** Descriptor of unary `ToDouble` conversion operation. */
-  case class NumericToDouble[T](n: ExactNumeric[T]) extends UnOp[T,Double]("ToDouble") {
-    override def applySeq(x: T): Double = n.toDouble(x)
-  }
-
-  /** Descriptor of unary `ToFloat` conversion operation. */
-  case class NumericToFloat[T](n: ExactNumeric[T]) extends UnOp[T, Float]("ToFloat") {
-    override def applySeq(x: T): Float = n.toFloat(x)
-  }
-
   /** Descriptor of unary `ToInt` conversion operation. */
   case class NumericToInt[T](n: ExactNumeric[T]) extends UnOp[T,Int]("ToInt") {
     override def applySeq(x: T): Int = n.toInt(x)
@@ -78,24 +65,14 @@ trait NumericOps extends Base { self: Scalan =>
     override def applySeq(x: T): Long = n.toLong(x)
   }
 
-  /** Descriptor of unary `abs` operation. */
-  case class Abs[T: Elem](n: ExactNumeric[T]) extends UnOp[T, T]("Abs") {
-    override def applySeq(x: T): T = n.abs(x)
-  }
-
   /** Descriptor of binary `/` operation (integral division). */
   case class IntegralDivide[T](i: ExactIntegral[T])(implicit elem: Elem[T]) extends DivOp[T]("/", i) {
     override def applySeq(x: T, y: T): T = i.quot(x, y)
   }
 
-  /** Descriptor of binary `%` operation (reminder of integral division). */
-case class IntegralMod[T](i: ExactIntegral[T])(implicit elem: Elem[T]) extends DivOp[T]("%", i) {
-    /** Note, this is implemented using `ExactIntegral.rem` method which delegates to
-      * `scala.math.Integral.rem`. The later also implements `%` operator in Scala for
-      * numeric types.
-      * @see sigmastate.eval.NumericOps.BigIntIsIntegral
-      */
-    override def applySeq(x: T, y: T): T = i.rem(x, y)
+  /** Descriptor of binary `%` operation (remainder of integral division). */
+  case class IntegralMod[T](i: ExactIntegral[T])(implicit elem: Elem[T]) extends DivOp[T]("%", i) {
+    override def applySeq(x: T, y: T): T = i.divisionRemainder(x, y)
   }
 
   /** Compares the given value with zero of the given ExactNumeric instance. */

@@ -60,11 +60,6 @@ val fastparse          = "com.lihaoyi" %% "fastparse" % "1.0.0"
 val commonsIo          = "commons-io" % "commons-io" % "2.5"
 val commonsMath3       = "org.apache.commons" % "commons-math3" % "3.2"
 
-val specialVersion = "0.6.1"
-val meta        = "io.github.scalan" %% "meta" % specialVersion
-val plugin      = "io.github.scalan" %% "plugin" % specialVersion
-val libraryconf = "io.github.scalan" %% "library-conf" % specialVersion
-
 val testingDependencies = Seq(
   "org.scalatest" %% "scalatest" % "3.0.5" % "test",
   "org.scalactic" %% "scalactic" % "3.0.+" % "test",
@@ -177,18 +172,6 @@ lazy val library = Project("library", file("library"))
     libraryDependencies ++= Seq( debox ))
   .settings(publish / skip := true)
 
-lazy val sigmaconf = Project("sigma-conf", file("sigma-conf"))
-  .settings(commonSettings,
-    libraryDependencies ++= (
-      if(scalaBinaryVersion.value == "2.11")
-        Seq.empty
-      else
-        Seq(plugin, libraryconf)
-      ),
-      skip in compile := scalaBinaryVersion.value == "2.11"
-  )
-  .settings(publish / skip := true)
-
 lazy val sigmaapi = Project("sigma-api", file("sigma-api"))
   .dependsOn(common, libraryapi)
   .settings(libraryDefSettings,
@@ -236,7 +219,7 @@ lazy val sigmastate = (project in file("sigmastate"))
 lazy val sigma = (project in file("."))
   .aggregate(
     sigmastate, common, core, libraryapi, libraryimpl, library,
-    sigmaapi, sigmaimpl, sigmalibrary, sigmaconf)
+    sigmaapi, sigmaimpl, sigmalibrary)
   .settings(libraryDefSettings, rootSettings)
   .settings(publish / aggregate := false)
   .settings(publishLocal / aggregate := false)
@@ -312,7 +295,6 @@ commands += Command.command("ergoItTest") { state =>
 def runSpamTestTask(task: String, sigmastateVersion: String, log: Logger): Unit = {
   val spamBranch = "master"
   val envVars = Seq("SIGMASTATE_VERSION" -> sigmastateVersion,
-    "SPECIAL_VERSION" -> specialVersion,
     // SSH_SPAM_REPO_KEY should be set (see Jenkins Credentials Binding Plugin)
     "GIT_SSH_COMMAND" -> "ssh -i $SSH_SPAM_REPO_KEY")
 

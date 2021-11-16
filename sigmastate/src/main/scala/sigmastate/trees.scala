@@ -17,10 +17,9 @@ import sigmastate.serialization._
 import sigmastate.utxo.{SimpleTransformerCompanion, Transformer}
 import debox.{Map => DMap}
 import scalan.ExactIntegral._
-import scalan.ExactNumeric._
 import scalan.ExactOrdering._
 import sigmastate.ArithOp.OperationImpl
-import sigmastate.eval.NumericOps.{BigIntIsExactIntegral, BigIntIsExactNumeric, BigIntIsExactOrdering}
+import sigmastate.eval.NumericOps.{BigIntIsExactIntegral, BigIntIsExactOrdering}
 import sigmastate.eval.{Colls, SigmaDsl}
 import sigmastate.lang.TransformingSigmaBuilder
 import special.collection.Coll
@@ -836,6 +835,7 @@ trait TwoArgumentOperationCompanion extends ValueCompanion {
   def argInfos: Seq[ArgInfo]
 }
 
+/** Represents binary operation with the given opCode. */
 case class ArithOp[T <: SType](left: Value[T], right: Value[T], override val opCode: OpCode)
   extends TwoArgumentsOperation[T, T, T] with NotReadyValue[T] {
   override def companion: ArithOpCompanion = ArithOp.operations(opCode)
@@ -866,7 +866,7 @@ abstract class ArithOpCompanion(val opCode: OpCode, val name: String, _argInfos:
   override def argInfos: Seq[ArgInfo] = _argInfos
   override def costKind: TypeBasedCost
   @inline final def eval(node: SValue, typeCode: SType.TypeCode, x: Any, y: Any)(implicit E: ErgoTreeEvaluator): Any = {
-    val impl = ArithOp.numerics(typeCode)
+    val impl = ArithOp.impls(typeCode)
     node.addCost(costKind, impl.argTpe) { () =>
       eval(impl, x, y)
     }
@@ -876,8 +876,10 @@ abstract class ArithOpCompanion(val opCode: OpCode, val name: String, _argInfos:
 
 object ArithOp {
   import OpCodes._
+
+  /** Addition operation `x + y`. */
   object Plus     extends ArithOpCompanion(PlusCode,     "+", PlusInfo.argInfos) {
-    def eval(impl: OperationImpl, x: Any, y: Any): Any = impl.n.plus(x, y)
+    override def eval(impl: OperationImpl, x: Any, y: Any): Any = impl.i.plus(x, y)
     /** Cost of:
       * 1) resolving ArithOpCompanion by typeCode
       * 2) calling method of Numeric
@@ -889,8 +891,10 @@ object ArithOp {
       }
     }
   }
+
+  /** Subtraction operation `x - y`. */
   object Minus    extends ArithOpCompanion(MinusCode,    "-", MinusInfo.argInfos) {
-    def eval(impl: OperationImpl, x: Any, y: Any): Any = impl.n.minus(x, y)
+    override def eval(impl: OperationImpl, x: Any, y: Any): Any = impl.i.minus(x, y)
     /** Cost of:
       * 1) resolving ArithOpCompanion by typeCode
       * 2) calling method of Numeric
@@ -902,8 +906,10 @@ object ArithOp {
       }
     }
   }
+
+  /** Multiplication operation `x * y`. */
   object Multiply extends ArithOpCompanion(MultiplyCode, "*", MultiplyInfo.argInfos) {
-    def eval(impl: OperationImpl, x: Any, y: Any): Any = impl.n.times(x, y)
+    override def eval(impl: OperationImpl, x: Any, y: Any): Any = impl.i.times(x, y)
     /** Cost of:
       * 1) resolving ArithOpCompanion by typeCode
       * 2) calling method of Numeric
@@ -915,8 +921,10 @@ object ArithOp {
       }
     }
   }
+
+  /** Integer division operation `x / y`. */
   object Division extends ArithOpCompanion(DivisionCode, "/", DivisionInfo.argInfos) {
-    def eval(impl: OperationImpl, x: Any, y: Any): Any = impl.i.quot(x, y)
+    override def eval(impl: OperationImpl, x: Any, y: Any): Any = impl.i.quot(x, y)
     /** Cost of:
       * 1) resolving ArithOpCompanion by typeCode
       * 2) calling method of Integral
@@ -928,8 +936,12 @@ object ArithOp {
       }
     }
   }
-  object Modulo   extends ArithOpCompanion(ModuloCode,   "%", ModuloInfo.argInfos) {
-    def eval(impl: OperationImpl, x: Any, y: Any): Any = impl.i.rem(x, y)
+
+  /** Operation which returns remainder from dividing x by y.
+    * See ExactIntegral.divisionRemainder implementation for the concrete numeric type.
+    */
+  object Modulo extends ArithOpCompanion(ModuloCode,   "%", ModuloInfo.argInfos) {
+    override def eval(impl: OperationImpl, x: Any, y: Any): Any = impl.i.divisionRemainder(x, y)
     /** Cost of:
       * 1) resolving ArithOpCompanion by typeCode
       * 2) calling method of Integral
@@ -941,8 +953,10 @@ object ArithOp {
       }
     }
   }
-  object Min      extends ArithOpCompanion(MinCode,      "min", MinInfo.argInfos) {
-    def eval(impl: OperationImpl, x: Any, y: Any): Any = impl.o.min(x, y)
+
+  /** Return `x` if `x` <= `y`, otherwise `y`. */
+  object Min extends ArithOpCompanion(MinCode,      "min", MinInfo.argInfos) {
+    override def eval(impl: OperationImpl, x: Any, y: Any): Any = impl.o.min(x, y)
     /** Cost of:
       * 1) resolving ArithOpCompanion by typeCode
       * 2) calling method of ExactOrdering
@@ -954,8 +968,10 @@ object ArithOp {
       }
     }
   }
-  object Max      extends ArithOpCompanion(MaxCode,      "max", MaxInfo.argInfos) {
-    def eval(impl: OperationImpl, x: Any, y: Any): Any = impl.o.max(x, y)
+
+  /** Return `x` if `x` >= `y`, otherwise `y`. */
+  object Max extends ArithOpCompanion(MaxCode,      "max", MaxInfo.argInfos) {
+    override def eval(impl: OperationImpl, x: Any, y: Any): Any = impl.o.max(x, y)
     /** Cost of:
       * 1) resolving ArithOpCompanion by typeCode
       * 2) calling method of ExactOrdering
@@ -971,37 +987,40 @@ object ArithOp {
   private[sigmastate] val operations: DMap[Byte, ArithOpCompanion] =
     DMap.fromIterable(Seq(Plus, Minus, Multiply, Division, Modulo, Min, Max).map(o => (o.opCode, o)))
 
-  class OperationImpl(_n: ExactNumeric[_], _i: ExactIntegral[_], _o: ExactOrdering[_], val argTpe: SType) {
-    val n = _n.asInstanceOf[ExactNumeric[Any]]
+  /** Represents implementation of numeric Arith operations for the given type argTpe. */
+  class OperationImpl(_i: ExactIntegral[_], _o: ExactOrdering[_], val argTpe: SType) {
     val i = _i.asInstanceOf[ExactIntegral[Any]]
     val o = _o.asInstanceOf[ExactOrdering[Any]]
   }
 
-  private[sigmastate] val numerics: DMap[SType.TypeCode, OperationImpl] =
+  private[sigmastate] val impls: DMap[SType.TypeCode, OperationImpl] =
     DMap.fromIterable(Seq(
-      SByte   -> new OperationImpl(ByteIsExactNumeric,   ByteIsExactIntegral,   ByteIsExactOrdering,   SByte),
-      SShort  -> new OperationImpl(ShortIsExactNumeric,  ShortIsExactIntegral,  ShortIsExactOrdering,  SShort),
-      SInt    -> new OperationImpl(IntIsExactNumeric,    IntIsExactIntegral,    IntIsExactOrdering,    SInt),
-      SLong   -> new OperationImpl(LongIsExactNumeric,   LongIsExactIntegral,   LongIsExactOrdering,   SLong),
-      SBigInt -> new OperationImpl(BigIntIsExactNumeric, BigIntIsExactIntegral, BigIntIsExactOrdering, SBigInt)
+      SByte   -> new OperationImpl(ByteIsExactIntegral,   ByteIsExactOrdering,   SByte),
+      SShort  -> new OperationImpl(ShortIsExactIntegral,  ShortIsExactOrdering,  SShort),
+      SInt    -> new OperationImpl(IntIsExactIntegral,    IntIsExactOrdering,    SInt),
+      SLong   -> new OperationImpl(LongIsExactIntegral,   LongIsExactOrdering,   SLong),
+      SBigInt -> new OperationImpl(BigIntIsExactIntegral, BigIntIsExactOrdering, SBigInt)
     ).map { case (t, n) => (t.typeCode, n) })
 
+  /** Returns operation name for the given opCode. */
   def opcodeToArithOpName(opCode: Byte): String = operations.get(opCode) match {
     case Some(c)  => c.name
     case _ => sys.error(s"Cannot find ArithOpName for opcode $opCode")
   }
 }
 
-/** Negation operation on numeric type T. */
+/** Negation operation on numeric type T.
+  * See ExactNumeric instance for the corresponding type T.
+  */
 case class Negation[T <: SType](input: Value[T]) extends OneArgumentOperation[T, T] {
   require(input.tpe.isNumTypeOrNoType, s"invalid type ${input.tpe}")
   override def companion = Negation
   override def tpe: T = input.tpe
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val inputV = input.evalTo[AnyVal](env)
-    val n = ArithOp.numerics(input.tpe.typeCode).n
+    val i = ArithOp.impls(input.tpe.typeCode).i
     addCost(Negation.costKind)
-    n.negate(inputV)
+    i.negate(inputV)
   }
 }
 object Negation extends OneArgumentOperationCompanion {
@@ -1010,6 +1029,7 @@ object Negation extends OneArgumentOperationCompanion {
   override def argInfos: Seq[ArgInfo] = NegationInfo.argInfos
 }
 
+/** Not implemented in v4.x. */
 case class BitInversion[T <: SType](input: Value[T]) extends OneArgumentOperation[T, T] {
   require(input.tpe.isNumTypeOrNoType, s"invalid type ${input.tpe}")
   override def companion = BitInversion
@@ -1021,6 +1041,7 @@ object BitInversion extends OneArgumentOperationCompanion {
   override def argInfos: Seq[ArgInfo] = BitInversionInfo.argInfos
 }
 
+/** ErgoTree node which represents a binary bit-wise operation with the given opCode. */
 case class BitOp[T <: SType](left: Value[T], right: Value[T], override val opCode: OpCode)
   extends TwoArgumentsOperation[T, T, T] with NotReadyValue[T] {
   require(left.tpe.isNumTypeOrNoType && right.tpe.isNumTypeOrNoType, s"invalid types left:${left.tpe}, right:${right.tpe}")
@@ -1183,7 +1204,7 @@ sealed trait Relation[LIV <: SType, RIV <: SType] extends Triple[LIV, RIV, SBool
 
 trait SimpleRelation[T <: SType] extends Relation[T, T] {
   override def opType = SimpleRelation.GenericOpType
-  lazy val opImpl = ArithOp.numerics(left.tpe.typeCode)
+  lazy val opImpl = ArithOp.impls(left.tpe.typeCode)
 }
 object SimpleRelation {
   val GenericOpType = SFunc(SType.IndexedSeqOfT2, SBoolean)

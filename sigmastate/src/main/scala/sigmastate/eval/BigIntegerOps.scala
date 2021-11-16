@@ -70,15 +70,7 @@ object NumericOps {
     * [[scalan.primitives.NumericOps.IntegralMod]] were not used for BigInt.
     * NOTE: this instance is used in the new v5.0 interpreter.
     */
-  implicit object BigIntIsIntegral extends BigIntIsIntegral with OrderingOps.BigIntOrdering
-
-  /** The instance of [[ExactNumeric]] typeclass for [[BigInt]]. */
-  implicit object BigIntIsExactNumeric extends ExactNumeric[BigInt] {
-    val n = BigIntIsIntegral
-    override def plus(x: BigInt, y: BigInt): BigInt = n.plus(x, y)
-    override def minus(x: BigInt, y: BigInt): BigInt = n.minus(x, y)
-    override def times(x: BigInt, y: BigInt): BigInt = n.times(x, y)
-  }
+  object BigIntIsIntegral extends BigIntIsIntegral with OrderingOps.BigIntOrdering
 
   /** The instance of [[ExactIntegral]] typeclass for [[BigInt]]. */
   implicit object BigIntIsExactIntegral extends ExactIntegral[BigInt] {
@@ -86,6 +78,12 @@ object NumericOps {
     override def plus(x: BigInt, y: BigInt): BigInt = n.plus(x, y)
     override def minus(x: BigInt, y: BigInt): BigInt = n.minus(x, y)
     override def times(x: BigInt, y: BigInt): BigInt = n.times(x, y)
+
+    override def quot(x: BigInt, y: BigInt): BigInt =
+      ??? // this method should not be used in v4.x
+
+    override def divisionRemainder(x: BigInt, y: BigInt): BigInt =
+      ??? // this method should not be used in v4.x
   }
 
   /** The instance of [[scalan.ExactOrdering]] typeclass for [[BigInt]]. */
