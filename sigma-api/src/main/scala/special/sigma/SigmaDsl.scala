@@ -776,6 +776,10 @@ trait Context {
   /** Maximum version of ErgoTree currently activated on the network.
     * See [[ErgoLikeContext]] class for details. */
   def activatedScriptVersion: Byte
+
+  /** The version of ErgoTree currently executed by interpreter.
+    * See [[ErgoLikeContext]] class for details. */
+  def currentErgoTreeVersion: Byte
 }
 
 @scalan.Liftable

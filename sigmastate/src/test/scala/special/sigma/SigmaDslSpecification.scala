@@ -4245,6 +4245,7 @@ class SigmaDslSpecification extends SigmaDslTesting
             TestValue(Helpers.decodeBytes("00"), CollType(RType.ByteType)),
             TestValue(true, RType.BooleanType))),
       activatedScriptVersion = activatedVersionInTests,
+      currentErgoTreeVersion = ergoTreeVersionInTests,
       false
     )
     val ctx2 = ctx.copy(vars = Coll[AnyValue](null, null, null))

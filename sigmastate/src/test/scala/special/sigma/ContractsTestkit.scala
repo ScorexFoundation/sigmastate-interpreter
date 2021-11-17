@@ -66,16 +66,17 @@ trait ContractsTestkit {
 
 
   def testContext(inputs: Array[Box], outputs: Array[Box], height: Int, self: Box,
-                  tree: AvlTree, minerPk: Array[Byte], activatedScriptVersion: Byte, vars: Array[AnyValue]) =
+                  tree: AvlTree, minerPk: Array[Byte], activatedScriptVersion: Byte,
+                  currErgoTreeVersion: Byte, vars: Array[AnyValue]) =
     new CostingDataContext(
       noInputs.toColl, noHeaders, dummyPreHeader,
       inputs.toColl, outputs.toColl, height, self, tree,
-      minerPk.toColl, vars.toColl, activatedScriptVersion, false)
+      minerPk.toColl, vars.toColl, activatedScriptVersion, currErgoTreeVersion, false)
 
-  def newContext(height: Int, self: Box, activatedScriptVersion: Byte, vars: AnyValue*): CostingDataContext = {
+  def newContext(height: Int, self: Box, activatedScriptVersion: Byte, currErgoTreeVersion: Byte, vars: AnyValue*): CostingDataContext = {
     testContext(
       noInputs, noOutputs, height, self, emptyAvlTree, dummyPubkey,
-      activatedScriptVersion, vars.toArray)
+      activatedScriptVersion, currErgoTreeVersion, vars.toArray)
   }
 
   implicit class TestContextOps(ctx: CostingDataContext) {

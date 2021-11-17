@@ -268,9 +268,10 @@ trait Interpreter extends ScorexLogging {
     *         after reduction
     */
   def fullReduction(ergoTree: ErgoTree,
-                    context: CTX,
+                    ctx: CTX,
                     env: ScriptEnv): (ReductionResult, ReductionResult) = {
-    implicit val vs: SigmaValidationSettings = context.validationSettings
+    implicit val vs: SigmaValidationSettings = ctx.validationSettings
+    val context = ctx.withErgoTreeVersion(ergoTree.version).asInstanceOf[CTX]
     val prop = propositionFromErgoTree(ergoTree, context)
     val res @ (aotRes, jitRes) = prop match {
       case SigmaPropConstant(p) =>
@@ -582,7 +583,7 @@ object Interpreter {
     * - in v5.x must be 2
     * etc.
     */
-  val MaxSupportedScriptVersion: Byte = 1 // supported versions 0 and 1
+  val MaxSupportedScriptVersion: Byte = 2 // supported versions 0, 1, 2
 
   /** The result of script reduction when soft-fork condition is detected by the old node,
     * in which case the script is reduced to the trivial true proposition and takes up 0 cost.

@@ -15,7 +15,8 @@ import scala.util.DynamicVariable
 
 trait TestsBase extends Matchers {
 
-  val activatedVersions: Seq[Byte] = Array[Byte](0, 1)
+  val activatedVersions: Seq[Byte] =
+    (0 to Interpreter.MaxSupportedScriptVersion).map(_.toByte).toArray[Byte]
 
   private[sigmastate] val _currActivatedVersion = new DynamicVariable[Byte](0)
   def activatedVersionInTests: Byte = _currActivatedVersion.value

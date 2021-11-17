@@ -81,7 +81,7 @@ class CostingSpecification extends SigmaTestingData with CrossVersionProps {
       spendingTransaction = tx, selfIndex = 0, extension,
       ValidationRules.currentSettings, ScriptCostLimit.value,
       CostTable.interpreterInitCost, activatedVersionInTests
-    )
+    ).withErgoTreeVersion(ergoTreeVersionInTests)
 
     def cost(script: String)(expCost: Int): Unit = {
       val ergoTree = compiler.compile(env, script)

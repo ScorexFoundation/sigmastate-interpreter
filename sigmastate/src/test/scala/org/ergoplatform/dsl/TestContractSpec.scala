@@ -90,6 +90,7 @@ case class TestContractSpec(testSuite: SigmaTestingCommons)(implicit val IR: IRC
         spendingTransaction = createTransaction(dataBoxes, tx.outputs.map(_.ergoBox).toIndexedSeq),
         selfIndex = boxesToSpend.indexOf(utxoBox.ergoBox),
         activatedVersion = testSuite.activatedVersionInTests)
+              .withErgoTreeVersion(testSuite.ergoTreeVersionInTests)
       ctx
     }
     def runDsl(extensions: Map[Byte, AnyValue] = Map()): SigmaProp = {

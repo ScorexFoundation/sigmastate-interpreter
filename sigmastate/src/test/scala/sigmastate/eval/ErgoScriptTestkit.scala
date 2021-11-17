@@ -47,6 +47,7 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests
       spendingTransaction = tx1,
       self = boxToSpend, activatedVersionInTests,
       extension = ContextExtension(extension))
+            .withErgoTreeVersion(ergoTreeVersionInTests)
     ergoCtx
   }
 

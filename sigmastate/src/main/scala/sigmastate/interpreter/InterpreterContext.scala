@@ -87,6 +87,9 @@ trait InterpreterContext {
     */
   def activatedScriptVersion: Byte
 
+  /** Creates a new instance with currErgoTreeVersion updated with the given value. */
+  def withErgoTreeVersion(newVersion: Byte): InterpreterContext
+
   /** Creates a new instance with costLimit updated with given value. */
   def withCostLimit(newCostLimit: Long): InterpreterContext
 

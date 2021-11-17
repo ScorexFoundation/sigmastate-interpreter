@@ -43,6 +43,7 @@ class TestingInterpreterSpecification extends SigmaTestingCommons
       AvlTreeData.dummy, ErgoLikeContextTesting.dummyPubkey, IndexedSeq(fakeSelf),
       ErgoLikeTransaction(IndexedSeq.empty, IndexedSeq.empty),
       fakeSelf, activatedVersionInTests)
+        .withErgoTreeVersion(ergoTreeVersionInTests)
 
   property("Reduction to crypto #1") {
     forAll() { i: Int =>

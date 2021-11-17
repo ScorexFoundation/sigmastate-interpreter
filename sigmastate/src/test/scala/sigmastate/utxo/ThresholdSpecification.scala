@@ -40,6 +40,7 @@ class ThresholdSpecification extends SigmaTestingCommons
       boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction = ErgoLikeTransactionTesting.dummy,
       self = fakeSelf, activatedVersionInTests)
+        .withErgoTreeVersion(ergoTreeVersionInTests)
 
     val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "pubkeyC" -> pubkeyC)
 
@@ -115,6 +116,7 @@ class ThresholdSpecification extends SigmaTestingCommons
       boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction = ErgoLikeTransactionTesting.dummy,
       self = fakeSelf, activatedVersionInTests)
+        .withErgoTreeVersion(ergoTreeVersionInTests)
 
     case class TestCase(numTrue: Int, vector: Seq[SigmaPropValue], dlogOnlyVector: DlogOnlyVector)
     case class DlogOnlyVector(v: Seq[SigmaPropValue]) {

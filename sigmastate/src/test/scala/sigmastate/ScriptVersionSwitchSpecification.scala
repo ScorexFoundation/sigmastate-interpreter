@@ -203,10 +203,11 @@ class ScriptVersionSwitchSpecification extends SigmaDslTesting
     * 15   | active   | mined     | Script v2      | v4.0    | skip-accept (rely on majority)
     */
   property("Rule 11, 15 | active SF | candidate or mined block | Script v2") {
-    val headerFlags = ErgoTree.headerWithVersion( 2 /* Script v2 */)
+    val unsupportedVersion = Interpreter.MaxSupportedScriptVersion + 1
+    val headerFlags = ErgoTree.headerWithVersion(unsupportedVersion.toByte /* Script v2 */)
     val ergoTree = createErgoTree(headerFlags = headerFlags)
 
-    val activatedVersion = 2.toByte // SF Status: active
+    val activatedVersion = unsupportedVersion.toByte // SF Status: active
 
     // the prove is doing normal reduction and proof generation
     val pr = testProve(ergoTree, activatedScriptVersion = activatedVersion)
@@ -225,10 +226,12 @@ class ScriptVersionSwitchSpecification extends SigmaDslTesting
     * 13   | active   | mined     | Script v1      | v4.0    | skip-accept (rely on majority)
     */
   property("Rule 13 | active SF | mined block | Script v1") {
-    val headerFlags = ErgoTree.headerWithVersion( 1 /* Script v1 */)
+    val supportedVersion = Interpreter.MaxSupportedScriptVersion
+    val unsupportedVersion = supportedVersion + 1
+    val headerFlags = ErgoTree.headerWithVersion(supportedVersion /* Script v1 */)
     val ergoTree = createErgoTree(headerFlags = headerFlags)
 
-    val activatedVersion = 2.toByte // SF Status: active
+    val activatedVersion = unsupportedVersion.toByte // SF Status: active
 
     // the prove is doing normal reduction and proof generation
     val pr = testProve(ergoTree, activatedScriptVersion = activatedVersion)
