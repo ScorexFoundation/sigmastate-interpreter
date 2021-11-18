@@ -9,6 +9,16 @@ class CollectionUtilTests extends BaseTests {
   import scalan.util.CollectionUtil._
   import java.lang.{Byte => JByte, Integer}
 
+  test("updateMany") {
+    val xs: Seq[Byte] = Array[Byte](1,2,3)
+    xs.updateMany(Seq.empty) shouldBe xs
+    xs.updateMany(Seq(0 -> 2)) shouldBe Seq(2, 2, 3)
+    xs.updateMany(Seq(0 -> 2, 2 -> 2)) shouldBe Seq(2, 2, 2)
+    an[IndexOutOfBoundsException] should be thrownBy {
+      xs.updateMany(Seq(3 -> 2))
+    }
+  }
+
   test("concatArrays") {
     val xs = Array[Byte](1,2,3)
     val ys = Array[Byte](4,5,6)
