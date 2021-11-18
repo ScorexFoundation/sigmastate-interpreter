@@ -15,6 +15,7 @@ import scalan.RType
 import scalan.RType._
 import scalan.util.BenchmarkUtil
 import scalan.util.Extensions._
+import scalan.util.CollectionUtil._
 import sigmastate.SType.AnyOps
 import sigmastate.Values.{ByteArrayConstant, Constant, ConstantNode, ErgoTree, IntConstant, SValue}
 import sigmastate.basics.DLogProtocol.{DLogProverInput, ProveDlog}
@@ -270,15 +271,13 @@ class SigmaDslTesting extends PropSpec
     }
 
     /** Executes the default feature verification wrapper script for the specific ErgoTree
-      * version.
-      * @param input the given input
+      * version using both v4.x and v5.x interpreters.
+      * @param input the given test case input data
       * @param expected the given expected results (values and costs)
       */
     def checkVerify(input: A, expected: Expected[B]): Unit = {
       val tpeA = Evaluation.rtypeToSType(oldF.tA)
       val tpeB = Evaluation.rtypeToSType(oldF.tB)
-
-      val prover = new FeatureProvingInterpreter()
 
       // Create synthetic ErgoTree which uses all main capabilities of evaluation machinery.
       // 1) first-class functions (lambdas); 2) Context variables; 3) Registers; 4) Equality
@@ -286,7 +285,7 @@ class SigmaDslTesting extends PropSpec
       // 7) Deserialization from SELF and Context
       // Every language Feature is tested as part of this wrapper script.
       // Inclusion of all the features influences the expected cost estimation values
-      val compiledTree = {
+      def compiledTree(prover: FeatureProvingInterpreter) = {
         val code =
           s"""{
             |  val func = ${oldF.script}
@@ -315,79 +314,93 @@ class SigmaDslTesting extends PropSpec
         ErgoTree.withSegregation(header, sigmastate.SigmaOr(prop, multisig))
       }
 
-      val pkBobBytes = ValueSerializer.serialize(prover.pubKeys(1).toSigmaProp)
-      val pkCarolBytes = ValueSerializer.serialize(prover.pubKeys(2).toSigmaProp)
-      val newRegisters = Map(
-        ErgoBox.R4 -> Constant[SType](expected.value.get.asInstanceOf[SType#WrappedType], tpeB),
-        ErgoBox.R5 -> ByteArrayConstant(pkBobBytes)
-      )
+      def ergoCtx(prover: FeatureProvingInterpreter, compiledTree: ErgoTree, expectedValue: B) = {
+        val pkBobBytes = ValueSerializer.serialize(prover.pubKeys(1).toSigmaProp)
+        val pkCarolBytes = ValueSerializer.serialize(prover.pubKeys(2).toSigmaProp)
+        val newRegisters = Map(
+          ErgoBox.R4 -> Constant[SType](expectedValue.asInstanceOf[SType#WrappedType], tpeB),
+          ErgoBox.R5 -> ByteArrayConstant(pkBobBytes)
+        )
 
-      val ergoCtx = input match {
-        case ctx: CostingDataContext =>
-          // the context is passed as function argument (see func in the script)
-          // Since Context is singleton, we should use this instance as the basis
-          // for execution of verify instead of a new dummy context.
-          val self = ctx.selfBox.asInstanceOf[CostingBox]
-          val newSelf = self.copy(
-            ebox = updatedRegisters(self.ebox, newRegisters)
-          )
+        val ctx = input match {
+          case ctx: CostingDataContext =>
+            // the context is passed as function argument (see func in the script)
+            // Since Context is singleton, we should use this instance as the basis
+            // for execution of verify instead of a new dummy context.
+            val self = ctx.selfBox.asInstanceOf[CostingBox]
+            val newSelf = self.copy(
+              ebox = updatedRegisters(self.ebox, newRegisters)
+            )
 
-          // We add ctx as it's own variable with id = 1
-          val ctxVar = eval.Extensions.toAnyValue[special.sigma.Context](ctx)(special.sigma.ContextRType)
-          val carolVar = eval.Extensions.toAnyValue[Coll[Byte]](pkCarolBytes.toColl)(RType[Coll[Byte]])
-          val newCtx = ctx
-              .withUpdatedVars(1 -> ctxVar, 2 -> carolVar)
-              .copy(
-                selfBox = newSelf,
-                inputs = {
-                  val selfIndex = ctx.inputs.indexWhere(b => b.id == ctx.selfBox.id, 0)
-                  ctx.inputs.updated(selfIndex, newSelf)
-                })
+            // We add ctx as it's own variable with id = 1
+            val ctxVar = eval.Extensions.toAnyValue[special.sigma.Context](ctx)(special.sigma.ContextRType)
+            val carolVar = eval.Extensions.toAnyValue[Coll[Byte]](pkCarolBytes.toColl)(RType[Coll[Byte]])
+            val newCtx = ctx
+                .withUpdatedVars(1 -> ctxVar, 2 -> carolVar)
+                .copy(
+                  selfBox = newSelf,
+                  inputs = {
+                    val selfIndex = ctx.inputs.indexWhere(b => b.id == ctx.selfBox.id, 0)
+                    ctx.inputs.updated(selfIndex, newSelf)
+                  })
 
-          createErgoLikeContext(
-            newCtx,
-            ValidationRules.currentSettings,
-            ScriptCostLimit.value,
-            initCost = initialCostInTests.value
-          )
+            createErgoLikeContext(
+              newCtx,
+              ValidationRules.currentSettings,
+              ScriptCostLimit.value,
+              initCost = initialCostInTests.value
+            )
 
-        case _ =>
-          ErgoLikeContextTesting.dummy(
+          case _ =>
+            ErgoLikeContextTesting.dummy(
               createBox(0, compiledTree, additionalRegisters = newRegisters),
               activatedVersionInTests)
-            .withBindings(
-              1.toByte -> Constant[SType](input.asInstanceOf[SType#WrappedType], tpeA),
-              2.toByte -> ByteArrayConstant(pkCarolBytes))
-            .withInitCost(initialCostInTests.value)
-            .asInstanceOf[ErgoLikeContext]
+                .withBindings(
+                  1.toByte -> Constant[SType](input.asInstanceOf[SType#WrappedType], tpeA),
+                  2.toByte -> ByteArrayConstant(pkCarolBytes))
+                .withInitCost(initialCostInTests.value)
+                .asInstanceOf[ErgoLikeContext]
+        }
+        ctx
       }
 
-      val pr = prover.prove(compiledTree, ergoCtx, fakeMessage).getOrThrow
-      val verificationCtx = ergoCtx.withExtension(pr.extension)
+      if (expected.value.isSuccess) {
+        // check v4.x interpreter
+        val prover = new FeatureProvingInterpreter()
+        val tree = compiledTree(prover)
+        val ctx = ergoCtx(prover, tree, expected.value.get)
+        val pr = prover.prove(tree, ctx, fakeMessage).getOrThrow
+        val verificationCtx = ctx.withExtension(pr.extension)
 
-      // run old v4.x interpreter
-      val aotVerifier = new ErgoLikeTestInterpreter()(createIR()) {
-        override val evalSettings: EvalSettings = feature.evalSettings.copy(
-          evaluationMode = EvalSettings.AotEvaluationMode
-        )
+        // run old v4.x interpreter
+        val aotVerifier = new ErgoLikeTestInterpreter()(createIR()) {
+          override val evalSettings: EvalSettings = feature.evalSettings.copy(
+            evaluationMode = EvalSettings.AotEvaluationMode
+          )
+        }
+        val aotRes = aotVerifier.verify(tree, verificationCtx, pr, fakeMessage)
+        checkExpectedResult(aotVerifier.evalSettings.evaluationMode, aotRes, Some(expected.cost))
       }
-      val aotRes = aotVerifier.verify(compiledTree, verificationCtx, pr, fakeMessage)
-      checkExpectedResult(aotVerifier.evalSettings.evaluationMode, aotRes, expected.cost)
 
-      // run new v5.x interpreter
-      val jitVerifier = new ErgoLikeTestInterpreter()(createIR()) {
-        override val evalSettings: EvalSettings = feature.evalSettings.copy(
-          evaluationMode = EvalSettings.JitEvaluationMode
-        )
-      }
-      val jitRes = jitVerifier.verify(compiledTree, verificationCtx, pr, fakeMessage)
+      val newExpectedValue = expected.newValues(ergoTreeVersionInTests)
+      if (newExpectedValue.isSuccess) {
+        // check v4.x interpreter
+        val prover = new FeatureProvingInterpreter()
+        val tree = compiledTree(prover)
+        val ctx = ergoCtx(prover, tree, newExpectedValue.get)
+        val pr = prover.prove(tree, ctx, fakeMessage).getOrThrow
+        val verificationCtx = ctx.withExtension(pr.extension)
 
-      checkEqualResults(aotRes, jitRes)
+        // run new v5.x interpreter
+        val jitVerifier = new ErgoLikeTestInterpreter()(createIR()) {
+          override val evalSettings: EvalSettings = feature.evalSettings.copy(
+            evaluationMode = EvalSettings.JitEvaluationMode
+          )
+        }
+        val jitRes = jitVerifier.verify(tree, verificationCtx, pr, fakeMessage)
+        checkExpectedResult(jitVerifier.evalSettings.evaluationMode, jitRes, expected.newCost)
 
-      expected.newCost match {
-        case Some(c) =>
-          checkExpectedResult(jitVerifier.evalSettings.evaluationMode, jitRes, c)
-        case _ =>
+        if (expected.newCost.isEmpty) {
           val res = jitRes.getOrThrow
           // new verification cost expectation is missing, print out actual cost results
           if (jitVerifier.evalSettings.printTestVectors) {
@@ -397,6 +410,7 @@ class SigmaDslTesting extends PropSpec
                 |Actual New Verification Cost: ${res._2}
                 |""".stripMargin)
           }
+        }
       }
     }
 
@@ -411,7 +425,7 @@ class SigmaDslTesting extends PropSpec
       }
     }
 
-    private def checkExpectedResult(evalMode: EvaluationMode, res: Try[VerificationResult], expectedCost: Int): Unit = {
+    private def checkExpectedResult(evalMode: EvaluationMode, res: Try[VerificationResult], expectedCost: Option[Int]): Unit = {
       res match {
         case Success((ok, cost)) =>
           ok shouldBe true
@@ -422,8 +436,10 @@ class SigmaDslTesting extends PropSpec
           //            println(s"Script: $script")
           //            println(s"Cost: $verificationCost\n")
           //          }
-          assertResult(expectedCost,
-            s"Evaluation Mode: ${evalMode.name}; Actual verify() cost $cost != expected ${expectedCost}")(verificationCost)
+          if (expectedCost.isDefined) {
+            assertResult(expectedCost.get,
+              s"Evaluation Mode: ${evalMode.name}; Actual verify() cost $cost != expected ${expectedCost.get}")(verificationCost)
+          }
 
         case Failure(t) => throw t
       }
@@ -563,11 +579,7 @@ class SigmaDslTesting extends PropSpec
 //        }
       }
 
-      expected.value match {
-        case Success(y) =>
-          checkVerify(input, expected)
-        case _ =>
-      }
+      checkVerify(input, expected)
     }
   }
 
@@ -615,7 +627,7 @@ class SigmaDslTesting extends PropSpec
       if (!(newImpl eq oldImpl)) {
         // check the new implementation with Scala semantic
         val (newRes, _) = checkEq(scalaFuncNew)(newF)(input).get
-        newRes shouldBe expected.newValue.get
+        newRes shouldBe expected.newValues(ergoTreeVersionInTests).get
       }
     }
 
@@ -635,11 +647,7 @@ class SigmaDslTesting extends PropSpec
 
       checkResult(funcRes.map(_._1), expected.value, failOnTestVectors)
 
-      expected.value match {
-        case Success(y) =>
-          checkVerify(input, expected)
-        case _ =>
-      }
+      checkVerify(input, expected)
     }
   }
 
@@ -672,7 +680,7 @@ class SigmaDslTesting extends PropSpec
       Try(oldF(input)).isFailure shouldBe true
       if (!(newImpl eq oldImpl)) {
         val (newRes, _) = checkEq(scalaFuncNew)(newF)(input).get
-        newRes shouldBe expected.newValue.get
+        newRes shouldBe expected.newValues(ergoTreeVersionInTests).get
       }
     }
 
@@ -695,13 +703,18 @@ class SigmaDslTesting extends PropSpec
     }
   }
 
-  /** Represents expected result of successful feature test exectuion.
-    * @param value value returned by feature function (and the corresponding Scala function)
-    * @param cost  expected cost value of the verification execution
+  /** Represents expected result of successful feature test execution.
+    * @param value value returned by feature function v4.x (and the corresponding Scala function)
+    * @param cost  expected cost value of the verification execution (v4.x)
     * @see [[testCases]]
     */
   case class Expected[+A](value: Try[A], cost: Int) {
-    def newValue: Try[A] = value
+    /** One expected value for each supported ErgoTree version.
+      * This expectations are applied to v5.+ interpreter (i.e. new JITC based implementation).
+      * By default (and for most operations) the new values are equal to the old value for
+      * all versions, which means there are no changes in operation semantics.
+      */
+    def newValues: Seq[Try[A]] = Array.fill(Interpreter.MaxSupportedScriptVersion + 1)(value)
     def details: CostDetails = GivenCost(cost)
     def newCost: Option[Int] = None
   }
@@ -724,11 +737,20 @@ class SigmaDslTesting extends PropSpec
       override val newCost: Option[Int] = Some(expectedNewCost)
     }
 
+    /** Used when operation semantics changes in new versions. For those versions expected
+      * test vectors can be specified.
+      *
+      * @param value             value returned by feature function v4.x
+      * @param cost              expected cost value of the verification execution (v4.x)
+      * @param expectedNewValues new values returned by each changed feature function in
+      *                          v5.+ for each ErgoTree version.
+      * @param expectedDetails   expected cost details of the verification execution (v5.x)
+      */
     def apply[A](value: Try[A],
                  cost: Int,
-                 expectedNewValue: Try[A],
+                 expectedNewValues: Seq[(Int,Try[A])],
                  expectedDetails: CostDetails): Expected[A] = new Expected(value, cost) {
-      override val newValue = expectedNewValue
+      override val newValues = super.newValues.updateMany(expectedNewValues)
       override val details = expectedDetails
     }
   }

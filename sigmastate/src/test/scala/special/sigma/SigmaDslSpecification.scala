@@ -6454,7 +6454,7 @@ class SigmaDslSpecification extends SigmaDslTesting
       Seq(
         (None -> Expected(
           Failure(new NoSuchElementException("None.get")), 0,
-          expectedNewValue = Success(5L), CostDetails.ZeroCost)),
+          expectedNewValues = Seq(2 -> Success(5L)), CostDetails.ZeroCost)),
         (Some(0L) -> Expected(Success(1L), 39012)),
         (Some(Long.MaxValue) -> Expected(new ArithmeticException("long overflow")))
       ),
