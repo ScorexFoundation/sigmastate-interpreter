@@ -22,6 +22,7 @@ import sigmastate.eval.{Evaluation, IRContext, Profiler}
 import scalan.util.BenchmarkUtil
 import sigmastate.FiatShamirTree._
 import sigmastate.SigSerializer._
+import sigmastate.eval.Evaluation.addCostChecked
 import sigmastate.interpreter.ErgoTreeEvaluator.fixedCostOp
 import sigmastate.interpreter.EvalSettings._
 import sigmastate.utils.Helpers._
@@ -349,6 +350,22 @@ trait Interpreter extends ScorexLogging {
     (aotRes, jitRes)
   }
 
+  /** Adds the cost to verify sigma protocol proposition.
+    * This is AOT part of JITC-based interpreter, it predicts the cost of crypto
+    * verification, which is asymptotically much faster and protects from spam scripts.
+    *
+    * @param jitRes    result of JIT-based reduction
+    * @param costLimit total cost limit to check and raise exception if exceeded
+    * @return computed jitRes.cost + crypto verification cost
+    */
+  def addCryptoCost(jitRes: ReductionResult, costLimit: Long) = {
+    val cryptoCost = estimateCryptoVerifyCost(jitRes.value) / 10 // scale eval to tx cost
+
+    // Note, jitRes.cost is already scaled in fullReduction
+    val fullJitCost = addCostChecked(jitRes.cost, cryptoCost, costLimit)
+    fullJitCost
+  }
+
   /** Executes the script in a given context.
     * Step 1: Deserialize context variables
     * Step 2: Evaluate expression and produce SigmaProp value, which is zero-knowledge
@@ -427,9 +444,7 @@ trait Interpreter extends ScorexLogging {
             case TrivialProp.TrueProp => (true, jitReduced.cost)
             case TrivialProp.FalseProp => (false, jitReduced.cost)
             case _ =>
-              val verificationC = estimateVerificationCost(jitReduced.value) / 10 // scale eval to tx cost
-              // Note, jitRes.cost is already scaled in fullReduction
-              val fullJitCost = Evaluation.addCostChecked(jitReduced.cost, verificationC, context.costLimit)
+              val fullJitCost = addCryptoCost(jitReduced, context.costLimit)
 
               val ok = if (evalSettings.isMeasureOperationTime) {
                 val E = ErgoTreeEvaluator.forProfiling(verifySignatureProfiler, evalSettings)
@@ -623,14 +638,14 @@ object Interpreter {
     * @param sb sigma proposition
     * @return estimated cost of verification of the given proposition
     */
-  def estimateVerificationCost(sb: SigmaBoolean): Int = {
+  def estimateCryptoVerifyCost(sb: SigmaBoolean): Int = {
     /** Recursively compute the total cost of the given children. */
     def childrenCost(children: Seq[SigmaBoolean]): Int = {
       val childrenArr = children.toArray
       val nChildren = childrenArr.length
       var sum = 0
       cfor(0)(_ < nChildren, _ + 1) { i =>
-        val c = estimateVerificationCost(childrenArr(i))
+        val c = estimateCryptoVerifyCost(childrenArr(i))
         sum = Math.addExact(sum, c)
       }
       sum
