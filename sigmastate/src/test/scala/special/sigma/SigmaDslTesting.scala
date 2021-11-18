@@ -366,7 +366,11 @@ class SigmaDslTesting extends PropSpec
 
       if (expected.value.isSuccess) {
         // check v4.x interpreter
-        val prover = new FeatureProvingInterpreter()
+        val prover = new FeatureProvingInterpreter() {
+          override val evalSettings: EvalSettings = feature.evalSettings.copy(
+            evaluationMode = EvalSettings.AotEvaluationMode
+          )
+        }
         val tree = compiledTree(prover)
         val ctx = ergoCtx(prover, tree, expected.value.get)
         val pr = prover.prove(tree, ctx, fakeMessage).getOrThrow
@@ -385,7 +389,11 @@ class SigmaDslTesting extends PropSpec
       val newExpectedValue = expected.newValues(ergoTreeVersionInTests)
       if (newExpectedValue.isSuccess) {
         // check v4.x interpreter
-        val prover = new FeatureProvingInterpreter()
+        val prover = new FeatureProvingInterpreter() {
+          override val evalSettings: EvalSettings = feature.evalSettings.copy(
+            evaluationMode = EvalSettings.JitEvaluationMode
+          )
+        }
         val tree = compiledTree(prover)
         val ctx = ergoCtx(prover, tree, newExpectedValue.get)
         val pr = prover.prove(tree, ctx, fakeMessage).getOrThrow
