@@ -930,9 +930,6 @@ class SigmaDslSpecification extends SigmaDslTesting
       ))
   }
 
-  def swapArgs[A](cases: Seq[((A, A), Expected[Boolean])], cost: Int) =
-    cases.map { case ((x, y), res) => ((y, x), res.copy(cost = cost)) }
-
   def swapArgs[A](cases: Seq[((A, A), Expected[Boolean])], cost: Int, newCost: CostDetails) =
     cases.map { case ((x, y), res) =>
       ((y, x), Expected(res.value, cost, newCost))
@@ -6453,9 +6450,17 @@ class SigmaDslSpecification extends SigmaDslTesting
     verifyCases(
       Seq(
         (None -> Expected(
-          Failure(new NoSuchElementException("None.get")), 0,
-          expectedNewValues = Seq(2 -> Success(5L)), CostDetails.ZeroCost)),
-        (Some(0L) -> Expected(Success(1L), 39012)),
+            Failure(new NoSuchElementException("None.get")),
+            cost = 0,
+            newDetails = CostDetails.ZeroCost,
+            newCost = 10055,
+            newVersionedResults = Seq(
+              2 -> (ExpectedResult(Success(5L), Some(10055)) -> None)
+            )
+          )),
+        (Some(0L) -> Expected(Success(1L), cost = 39012,
+          expectedDetails = CostDetails.ZeroCost,
+          expectedNewCost = 10063)),
         (Some(Long.MaxValue) -> Expected(new ArithmeticException("long overflow")))
       ),
       changedFeature(

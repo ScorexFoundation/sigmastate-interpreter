@@ -383,10 +383,11 @@ class SigmaDslTesting extends PropSpec
           )
         }
         val aotRes = aotVerifier.verify(tree, verificationCtx, pr, fakeMessage)
-        checkExpectedResult(aotVerifier.evalSettings.evaluationMode, aotRes, Some(expected.cost))
+        checkExpectedResult(aotVerifier.evalSettings.evaluationMode, aotRes, expected.verificationCostOpt)
       }
 
-      val newExpectedValue = expected.newValues(ergoTreeVersionInTests)
+      val newExpectedRes = expected.newResults(ergoTreeVersionInTests)
+      val newExpectedValue = newExpectedRes._1.value
       if (newExpectedValue.isSuccess) {
         // check v4.x interpreter
         val prover = new FeatureProvingInterpreter() {
@@ -406,20 +407,29 @@ class SigmaDslTesting extends PropSpec
           )
         }
         val jitRes = jitVerifier.verify(tree, verificationCtx, pr, fakeMessage)
-        checkExpectedResult(jitVerifier.evalSettings.evaluationMode, jitRes, expected.newCost)
+        val mode = jitVerifier.evalSettings.evaluationMode
+        val newCost = newExpectedRes._1.verificationCost
+        checkExpectedResult(mode, jitRes, newCost)
 
-        if (expected.newCost.isEmpty) {
+        if (newCost.isEmpty) {
           val res = jitRes.getOrThrow
           // new verification cost expectation is missing, print out actual cost results
           if (jitVerifier.evalSettings.printTestVectors) {
-            println(
-              s"""------------------------
-                |Script: $script
-                |Actual New Verification Cost: ${res._2}
-                |""".stripMargin)
+            printCostTestVector("Missing New Cost", input, res._2.toInt)
           }
         }
       }
+    }
+
+    /** Prints the actual cost test vector (when it is not defined). */
+    private def printCostTestVector(title: String, input: Any, actualCost: Int) = {
+      println(
+        s"""--  $title  ----------------------
+          |ErgoTreeVersion: $ergoTreeVersionInTests
+          |Input: $input
+          |Script: $script
+          |Actual New Verification Cost: $actualCost
+          |""".stripMargin)
     }
 
     private def checkEqualResults(res1: Try[VerificationResult], res2: Try[VerificationResult]): Unit = {
@@ -433,17 +443,13 @@ class SigmaDslTesting extends PropSpec
       }
     }
 
-    private def checkExpectedResult(evalMode: EvaluationMode, res: Try[VerificationResult], expectedCost: Option[Int]): Unit = {
+    private def checkExpectedResult(
+          evalMode: EvaluationMode,
+          res: Try[VerificationResult], expectedCost: Option[Int]): Unit = {
       res match {
         case Success((ok, cost)) =>
           ok shouldBe true
           val verificationCost = cost.toIntExact
-          // NOTE: you can uncomment this line and comment the assertion in order to
-          // simplify adding new test vectors for cost estimation
-          //          if (expectedCost != verificationCost) {
-          //            println(s"Script: $script")
-          //            println(s"Cost: $verificationCost\n")
-          //          }
           if (expectedCost.isDefined) {
             assertResult(expectedCost.get,
               s"Evaluation Mode: ${evalMode.name}; Actual verify() cost $cost != expected ${expectedCost.get}")(verificationCost)
@@ -567,7 +573,8 @@ class SigmaDslTesting extends PropSpec
 
       checkResult(funcRes.map(_._1), expected.value, failOnTestVectors)
 
-      val expectedTrace = expected.details.trace
+      val newRes = expected.newResults(ergoTreeVersionInTests)
+      val expectedTrace = newRes._2.fold(Seq.empty[CostItem])(_.trace)
       if (expectedTrace.isEmpty) {
         // new cost expectation is missing, print out actual cost results
         if (evalSettings.printTestVectors) {
@@ -635,7 +642,8 @@ class SigmaDslTesting extends PropSpec
       if (!(newImpl eq oldImpl)) {
         // check the new implementation with Scala semantic
         val (newRes, _) = checkEq(scalaFuncNew)(newF)(input).get
-        newRes shouldBe expected.newValues(ergoTreeVersionInTests).get
+        val newExpectedRes = expected.newResults(ergoTreeVersionInTests)
+        newRes shouldBe newExpectedRes._1.value.get
       }
     }
 
@@ -688,7 +696,8 @@ class SigmaDslTesting extends PropSpec
       Try(oldF(input)).isFailure shouldBe true
       if (!(newImpl eq oldImpl)) {
         val (newRes, _) = checkEq(scalaFuncNew)(newF)(input).get
-        newRes shouldBe expected.newValues(ergoTreeVersionInTests).get
+        val newExpectedRes = expected.newResults(ergoTreeVersionInTests)
+        newRes shouldBe newExpectedRes._1.value.get
       }
     }
 
@@ -711,56 +720,110 @@ class SigmaDslTesting extends PropSpec
     }
   }
 
-  /** Represents expected result of successful feature test execution.
-    * @param value value returned by feature function v4.x (and the corresponding Scala function)
-    * @param cost  expected cost value of the verification execution (v4.x)
+  /** Represents expected result, verification cost and costing trace for a single
+    * interpreter run.
+    * @param value expected results returned by feature function (and the corresponding Scala function)
+    * @param verificationCost  expected cost value of the verification execution
+    */
+  case class ExpectedResult[+A](value: Try[A], verificationCost: Option[Int])
+
+  /** Represents expected results (aka test vectors) for a single feature test case.
+    * @param oldResult expected results returned by v4.x interpreter
     * @see [[testCases]]
     */
-  case class Expected[+A](value: Try[A], cost: Int) {
-    /** One expected value for each supported ErgoTree version.
-      * This expectations are applied to v5.+ interpreter (i.e. new JITC based implementation).
+  case class Expected[+A](oldResult: ExpectedResult[A]) {
+    /** Expected results returned by v4.x interpreter on the feature function. */
+    def value: Try[A] = oldResult.value
+
+    /** Expected verification cost returned by v4.x interpreter on the feature function. */
+    def verificationCostOpt: Option[Int] = oldResult.verificationCost
+
+    /** One expected result for each supported ErgoTree version.
       * By default (and for most operations) the new values are equal to the old value for
       * all versions, which means there are no changes in operation semantics.
+      * However, new verification costs are different for the old ones. To simplify
+      * augmentation of test cases with new test vectors, the default value of None
+      * signals that the test vectors should be defined. The test harness code can print
+      * suggestions for new test vectors.
       */
-    def newValues: Seq[Try[A]] = Array.fill(Interpreter.MaxSupportedScriptVersion + 1)(value)
-    def details: CostDetails = GivenCost(cost)
-    def newCost: Option[Int] = None
+    final def defaultNewResults: Seq[(ExpectedResult[A], Option[CostDetails])] = {
+      val n = Interpreter.MaxSupportedScriptVersion + 1
+      // NOTE: by default, tests vectors for both verification cost and cost details are not defined
+      val res = ExpectedResult(oldResult.value, None)
+      Array.fill(n)((res, None))
+    }
+
+    /** One expected result for each supported ErgoTree version.
+      * This expectations are applied to v5.+ interpreter (i.e. new JITC based implementation).
+      */
+    val newResults: Seq[(ExpectedResult[A], Option[CostDetails])] = defaultNewResults
   }
 
   object Expected {
-    /** Used when exception is expected. */
-    def apply[A](error: Throwable) = new Expected[A](Failure(error), 0)
+    /** Used when exception is expected.
+      * @param error expected during execution
+      */
+    def apply[A](error: Throwable) = new Expected[A](ExpectedResult(Failure(error), None))
 
-    def apply[A](value: Try[A],
-                 cost: Int,
-                 expectedDetails: CostDetails): Expected[A] = new Expected(value, cost) {
-      override val details = expectedDetails
-    }
+    /** Used when the old and new value and costs are the same for all versions.
+      * @param value expected result of tested function
+      * @param cost  expected verification cost
+      */
+    def apply[A](value: Try[A], cost: Int): Expected[A] =
+      new Expected(ExpectedResult(value, Some(cost)))
 
+    /** Used when the old and new value and costs are the same for all versions.
+      * @param value expected result of tested function
+      * @param cost  expected verification cost
+      * @param expectedDetails expected cost details for all versions
+      */
+    def apply[A](value: Try[A], cost: Int, expectedDetails: CostDetails): Expected[A] =
+      new Expected(ExpectedResult(value, Some(cost))) {
+        override val newResults = defaultNewResults.map { case (r, _) =>
+          (r, Some(expectedDetails))
+        }
+      }
+
+    /** Used when the old and new value and costs are the same for all versions.
+      *
+      * @param value           expected result of tested function
+      * @param cost            expected verification cost
+      * @param expectedDetails expected cost details for all versions
+      * @param expectedNewCost expected new verification cost for all versions
+      */
     def apply[A](value: Try[A],
                  cost: Int,
                  expectedDetails: CostDetails,
-                 expectedNewCost: Int): Expected[A] = new Expected(value, cost) {
-      override val details = expectedDetails
-      override val newCost: Option[Int] = Some(expectedNewCost)
-    }
+                 expectedNewCost: Int): Expected[A] =
+      new Expected(ExpectedResult(value, Some(cost))) {
+        override val newResults = defaultNewResults.map {
+          case (ExpectedResult(v, _), _) =>
+            (ExpectedResult(v, Some(expectedNewCost)), Some(expectedDetails))
+        }
+      }
 
     /** Used when operation semantics changes in new versions. For those versions expected
       * test vectors can be specified.
       *
-      * @param value             value returned by feature function v4.x
-      * @param cost              expected cost value of the verification execution (v4.x)
-      * @param expectedNewValues new values returned by each changed feature function in
-      *                          v5.+ for each ErgoTree version.
-      * @param expectedDetails   expected cost details of the verification execution (v5.x)
+      * @param value               value returned by feature function v4.x
+      * @param cost                expected cost value of the verification execution (v4.x)
+      * @param newDetails          expected cost details for all versions
+      * @param newCost             expected new verification cost for all versions
+      * @param newVersionedResults new results returned by each changed feature function in
+      *                            v5.+ for each ErgoTree version.
       */
-    def apply[A](value: Try[A],
-                 cost: Int,
-                 expectedNewValues: Seq[(Int,Try[A])],
-                 expectedDetails: CostDetails): Expected[A] = new Expected(value, cost) {
-      override val newValues = super.newValues.updateMany(expectedNewValues)
-      override val details = expectedDetails
-    }
+    def apply[A](value: Try[A], cost: Int,
+                 newDetails: CostDetails, newCost: Int,
+                 newVersionedResults: Seq[(Int, (ExpectedResult[A], Option[CostDetails]))]): Expected[A] =
+      new Expected[A](ExpectedResult(value, Some(cost))) {
+        override val newResults = {
+          val commonNewResults = defaultNewResults.map {
+            case (res, _) =>
+              (ExpectedResult(res.value, Some(newCost)), Option(newDetails))
+          }
+          commonNewResults.updateMany(newVersionedResults)
+        }
+      }
   }
 
   /** Describes existing language feature which should be equally supported in both
