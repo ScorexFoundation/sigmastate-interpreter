@@ -72,7 +72,7 @@ class BasicOpsSpecification extends SigmaTestingCommons
         isMeasureOperationTime = true,
         isDebug = true,
         isTestRun = testExceededCost,
-        evaluationMode = EvalSettings.TestEvaluationMode)
+        evaluationMode = Some(EvalSettings.TestEvaluationMode))
     }
 
     val prop = compile(env, script).asBoolValue.toSigmaProp

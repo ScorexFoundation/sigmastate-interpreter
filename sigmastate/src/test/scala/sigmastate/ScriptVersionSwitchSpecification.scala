@@ -24,7 +24,7 @@ class ScriptVersionSwitchSpecification extends SigmaDslTesting
   override implicit val evalSettings: EvalSettings =
     ErgoTreeEvaluator.DefaultEvalSettings.copy(
       costTracingEnabled = true,  // should always be enabled in tests (and false by default)
-      evaluationMode = EvalSettings.TestEvaluationMode
+      evaluationMode = Some(EvalSettings.TestEvaluationMode)
     )
 
   implicit def IR = createIR()

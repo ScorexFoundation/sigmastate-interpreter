@@ -70,18 +70,6 @@ trait Interpreter extends ScorexLogging {
     */
   def evalSettings: EvalSettings = ErgoTreeEvaluator.DefaultEvalSettings
 
-  /** Returns true if AOT interpreter should be evaluated. */
-  def okEvaluateAot: Boolean = {
-    evalSettings.evaluationMode == AotEvaluationMode ||
-    evalSettings.evaluationMode == TestEvaluationMode
-  }
-
-  /** Returns true if JIT interpreter should be evaluated. */
-  def okEvaluateJit: Boolean = {
-    evalSettings.evaluationMode == JitEvaluationMode ||
-    evalSettings.evaluationMode == TestEvaluationMode
-  }
-
   /** Logs the given message string. Can be overridden in the derived interpreter classes
     * to redefine the default behavior. */
   protected def logMessage(msg: String) = {
@@ -274,19 +262,21 @@ trait Interpreter extends ScorexLogging {
     implicit val vs: SigmaValidationSettings = ctx.validationSettings
     val context = ctx.withErgoTreeVersion(ergoTree.version).asInstanceOf[CTX]
     val prop = propositionFromErgoTree(ergoTree, context)
+    val evalMode = evalSettings.evaluationMode.get
+
     val res @ (aotRes, jitRes) = prop match {
       case SigmaPropConstant(p) =>
         val sb = SigmaDsl.toSigmaBoolean(p)
 
         var aotRes: ReductionResult = null
-        if (okEvaluateAot) {
+        if (evalMode.okEvaluateAot) {
           val aotCost = SigmaBoolean.estimateCost(sb)
           val resAotCost = Evaluation.addCostChecked(context.initCost, aotCost, context.costLimit)
           aotRes = ReductionResult(sb, resAotCost)
         }
 
         var jitRes: ReductionResult = null
-        if (okEvaluateJit) {
+        if (evalMode.okEvaluateJit) {
           // NOTE, evaluator cost unit is 10 times smaller then the cost unit of context
           val jitCost = Eval_SigmaPropConstant.costKind.cost / 10
           val resJitCost = Evaluation.addCostChecked(context.initCost, jitCost, context.costLimit)
@@ -295,13 +285,13 @@ trait Interpreter extends ScorexLogging {
         (aotRes, jitRes)
       case _ if !ergoTree.hasDeserialize =>
         var aotRes: ReductionResult = null
-        if (okEvaluateAot) {
+        if (evalMode.okEvaluateAot) {
           val r = precompiledScriptProcessor.getReducer(ergoTree, context.validationSettings)
           aotRes = r.reduce(context)
         }
 
         var jitRes: ReductionResult = null
-        if (okEvaluateJit) {
+        if (evalMode.okEvaluateJit) {
           val ctx = context.asInstanceOf[ErgoLikeContext]
               .withInitCost(context.initCost * 10)    // adjust for Evaluator cost units scale
               .withCostLimit(context.costLimit * 10)
@@ -310,10 +300,10 @@ trait Interpreter extends ScorexLogging {
         }
         (aotRes, jitRes)
       case _ =>
-        reductionWithDeserialize(ergoTree, prop, context, env)
+        reductionWithDeserialize(ergoTree, prop, context, env, evalMode)
     }
 
-    if (evalSettings.evaluationMode == TestEvaluationMode) {
+    if (evalMode == TestEvaluationMode) {
         CostingUtils.checkResults(ergoTree.bytesHex, aotRes, jitRes, logMessage(_))(evalSettings)
     }
     res
@@ -322,11 +312,11 @@ trait Interpreter extends ScorexLogging {
   /** Performs reduction of proposition which contains deserialization operations. */
   private def reductionWithDeserialize(ergoTree: ErgoTree,
                                        prop: SigmaPropValue,
-                                       context: CTX,
-                                       env: ScriptEnv): (ReductionResult, ReductionResult) = {
+                                       context: CTX, env: ScriptEnv,
+                                       evalMode: EvaluationMode): (ReductionResult, ReductionResult) = {
     implicit val vs: SigmaValidationSettings = context.validationSettings
     var aotRes: ReductionResult = null
-    if (okEvaluateAot) {
+    if (evalMode.okEvaluateAot) {
       val (propTree, context2) = trySoftForkable[(BoolValue, CTX)](whenSoftFork = (TrueLeaf, context)) {
         applyDeserializeContext(context, prop)
       }
@@ -337,7 +327,7 @@ trait Interpreter extends ScorexLogging {
     }
 
     var jitRes: ReductionResult = null
-    if (okEvaluateJit) {
+    if (evalMode.okEvaluateJit) {
       val (propTree, context2) = trySoftForkable[(SigmaPropValue, CTX)](whenSoftFork = (TrueSigmaProp, context)) {
         applyDeserializeContextJITC(context, prop)
       }
@@ -392,7 +382,7 @@ trait Interpreter extends ScorexLogging {
              context: CTX,
              proof: Array[Byte],
              message: Array[Byte]): Try[VerificationResult] = {
-    val (res, t) = BenchmarkUtil.measureTime(Try {
+    Try {
       // TODO v5.0: the condition below should be revised if necessary
       // The following conditions define behavior which depend on the version of ergoTree
       // This works in addition to more fine-grained soft-forkability mechanism implemented
@@ -420,9 +410,11 @@ trait Interpreter extends ScorexLogging {
 
       val (aotReduced, jitReduced) = fullReduction(ergoTree, contextWithCost, env)
 
+      val evalMode = evalSettings.evaluationMode.get
+
       // if necessary perform verification as v4.x (AOT based implementation)
       var aotRes: VerificationResult = null
-      if (okEvaluateAot) {
+      if (evalMode.okEvaluateAot) {
           aotRes = aotReduced.value match {
             case TrivialProp.TrueProp => (true, aotReduced.cost)
             case TrivialProp.FalseProp => (false, aotReduced.cost)
@@ -439,7 +431,7 @@ trait Interpreter extends ScorexLogging {
 
       // if necessary perform verification as v5.x (JIT based implementation)
       var jitRes: VerificationResult = null
-      if (okEvaluateJit) {
+      if (evalMode.okEvaluateJit) {
           jitRes = jitReduced.value match {
             case TrivialProp.TrueProp => (true, jitReduced.cost)
             case TrivialProp.FalseProp => (false, jitReduced.cost)
@@ -456,7 +448,7 @@ trait Interpreter extends ScorexLogging {
           }
       }
 
-      val res = evalSettings.evaluationMode match {
+      val res = evalMode match {
         case AotEvaluationMode => aotRes
         case JitEvaluationMode => jitRes
         case TestEvaluationMode =>
@@ -464,8 +456,7 @@ trait Interpreter extends ScorexLogging {
           aotRes
       }
       res
-    })
-    res
+    }
   }
 
   // Perform Verifier Steps 4-6

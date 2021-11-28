@@ -126,7 +126,9 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
     val contextWithCost = context.withInitCost(initCost).asInstanceOf[CTX]
     val (aotRes, jitRes) = fullReduction(ergoTree, contextWithCost, env)
 
-    val (resValue, resCost) = evalSettings.evaluationMode match {
+    val evalMode = evalSettings.evaluationMode.get
+
+    val (resValue, resCost) = evalMode match {
       case AotEvaluationMode =>
         (aotRes.value, aotRes.cost)
 

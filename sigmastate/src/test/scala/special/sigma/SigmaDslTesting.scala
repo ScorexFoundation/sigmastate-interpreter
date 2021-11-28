@@ -24,7 +24,7 @@ import sigmastate.eval.Extensions._
 import sigmastate.eval.{CompiletimeIRContext, CostingBox, CostingDataContext, Evaluation, IRContext, SigmaDsl}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.helpers.{ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaPPrint}
-import sigmastate.interpreter.EvalSettings.EvaluationMode
+import sigmastate.interpreter.EvalSettings.{AotEvaluationMode, EvaluationMode, JitEvaluationMode}
 import sigmastate.interpreter.Interpreter.{ScriptEnv, VerificationResult}
 import sigmastate.interpreter._
 import sigmastate.lang.Terms.ValueOps
@@ -368,7 +368,7 @@ class SigmaDslTesting extends PropSpec
         // check v4.x interpreter
         val prover = new FeatureProvingInterpreter() {
           override val evalSettings: EvalSettings = feature.evalSettings.copy(
-            evaluationMode = EvalSettings.AotEvaluationMode
+            evaluationMode = Some(AotEvaluationMode)
           )
         }
         val tree = compiledTree(prover)
@@ -379,11 +379,11 @@ class SigmaDslTesting extends PropSpec
         // run old v4.x interpreter
         val aotVerifier = new ErgoLikeTestInterpreter()(createIR()) {
           override val evalSettings: EvalSettings = feature.evalSettings.copy(
-            evaluationMode = EvalSettings.AotEvaluationMode
+            evaluationMode = Some(AotEvaluationMode)
           )
         }
         val aotRes = aotVerifier.verify(tree, verificationCtx, pr, fakeMessage)
-        checkExpectedResult(aotVerifier.evalSettings.evaluationMode, aotRes, expected.verificationCostOpt)
+        checkExpectedResult(AotEvaluationMode, aotRes, expected.verificationCostOpt)
       }
 
       val newExpectedRes = expected.newResults(ergoTreeVersionInTests)
@@ -392,7 +392,7 @@ class SigmaDslTesting extends PropSpec
         // check v4.x interpreter
         val prover = new FeatureProvingInterpreter() {
           override val evalSettings: EvalSettings = feature.evalSettings.copy(
-            evaluationMode = EvalSettings.JitEvaluationMode
+            evaluationMode = Some(JitEvaluationMode)
           )
         }
         val tree = compiledTree(prover)
@@ -403,13 +403,12 @@ class SigmaDslTesting extends PropSpec
         // run new v5.x interpreter
         val jitVerifier = new ErgoLikeTestInterpreter()(createIR()) {
           override val evalSettings: EvalSettings = feature.evalSettings.copy(
-            evaluationMode = EvalSettings.JitEvaluationMode
+            evaluationMode = Some(JitEvaluationMode)
           )
         }
         val jitRes = jitVerifier.verify(tree, verificationCtx, pr, fakeMessage)
-        val mode = jitVerifier.evalSettings.evaluationMode
         val newCost = newExpectedRes._1.verificationCost
-        checkExpectedResult(mode, jitRes, newCost)
+        checkExpectedResult(JitEvaluationMode, jitRes, newCost)
 
         if (newCost.isEmpty) {
           val res = jitRes.getOrThrow

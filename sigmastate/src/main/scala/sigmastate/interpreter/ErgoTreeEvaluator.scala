@@ -38,7 +38,12 @@ case class EvalSettings(
   isTestRun: Boolean = false,
   /** If true, then expected test vectors are pretty-printed. */
   printTestVectors: Boolean = false,
-  evaluationMode: EvaluationMode = AotEvaluationMode)
+  /** When Some(mode) is specified then it defines which version of the Interpreter.verify
+    * and Interpreter.prove methods should use.
+    * The default value is None, which means the version is defined by ErgoTree.version
+    * and Context.activatedScriptVersion.
+    */
+  evaluationMode: Option[EvaluationMode] = None)
 
 object EvalSettings {
   /** Enumeration type of evaluation modes of [[Interpreter]].
@@ -51,6 +56,16 @@ object EvalSettings {
         case AotEvaluationMode => "AotEvaluationMode"
         case JitEvaluationMode => "JitEvaluationMode"
         case TestEvaluationMode => "TestEvaluationMode"
+      }
+
+      /** Returns true if AOT interpreter should be evaluated. */
+      def okEvaluateAot: Boolean = {
+        x == AotEvaluationMode || x == TestEvaluationMode
+      }
+
+      /** Returns true if JIT interpreter should be evaluated. */
+      def okEvaluateJit: Boolean = {
+        x == JitEvaluationMode || x == TestEvaluationMode
       }
     }
   }
