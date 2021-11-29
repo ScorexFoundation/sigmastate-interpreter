@@ -18,7 +18,7 @@ case class SigmaTransformerSerializer[I <: SigmaPropValue, O <: SigmaPropValue]
 
   override def parse(r: SigmaByteReader): SigmaPropValue = {
     val itemsSize = r.getUInt().toInt
-    val res = new Array[SigmaPropValue](itemsSize)
+    val res = ValueSerializer.newArray[SigmaPropValue](itemsSize)
     cfor(0)(_ < itemsSize, _ + 1) { i =>
       res(i) = r.getValue().asInstanceOf[SigmaPropValue]
     }

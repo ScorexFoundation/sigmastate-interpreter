@@ -174,7 +174,7 @@ object TypeSerializer {
       c match {
         case STuple.TupleTypeCode => {
           val len = r.getUByte()
-          val items = new Array[SType](len)
+          val items = ValueSerializer.newArray[SType](len)
           cfor(0)(_ < len, _ + 1) { i =>
             items(i) = deserialize(r, depth + 1)
           }

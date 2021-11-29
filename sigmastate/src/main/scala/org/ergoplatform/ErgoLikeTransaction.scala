@@ -8,7 +8,7 @@ import sigmastate.SType._
 import sigmastate.eval.Extensions._
 import sigmastate.eval._
 import sigmastate.interpreter.ProverResult
-import sigmastate.serialization.SigmaSerializer
+import sigmastate.serialization.{SigmaSerializer, ValueSerializer}
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import special.collection.ExtensionMethods._
 import spire.syntax.all.cfor
@@ -147,28 +147,28 @@ object ErgoLikeTransactionSerializer extends SigmaSerializer[ErgoLikeTransaction
   override def parse(r: SigmaByteReader): ErgoLikeTransaction = {
     // parse transaction inputs
     val inputsCount = r.getUShort()
-    val inputs = new Array[Input](inputsCount)
+    val inputs = ValueSerializer.newArray[Input](inputsCount)
     cfor(0)(_ < inputsCount, _ + 1) { i =>
       inputs(i) = Input.serializer.parse(r)
     }
 
     // parse transaction data inputs
     val dataInputsCount = r.getUShort()
-    val dataInputs = new Array[DataInput](dataInputsCount)
+    val dataInputs = ValueSerializer.newArray[DataInput](dataInputsCount)
     cfor(0)(_ < dataInputsCount, _ + 1) { i =>
       dataInputs(i) = DataInput(ADKey @@ r.getBytes(ErgoBox.BoxId.size))
     }
 
     // parse distinct ids of tokens in transaction outputs
     val tokensCount = r.getUInt().toInt
-    val tokens = new Array[Array[Byte]](tokensCount)
+    val tokens = ValueSerializer.newArray[Array[Byte]](tokensCount)
     cfor(0)(_ < tokensCount, _ + 1) { i =>
       tokens(i) = r.getBytes(TokenId.size)
     }
 
     // parse outputs
     val outsCount = r.getUShort()
-    val outputCandidates = new Array[ErgoBoxCandidate](outsCount)
+    val outputCandidates = ValueSerializer.newArray[ErgoBoxCandidate](outsCount)
     cfor(0)(_ < outsCount, _ + 1) { i =>
       outputCandidates(i) = ErgoBoxCandidate.serializer.parseBodyWithIndexedDigests(tokens, r)
     }

@@ -817,14 +817,14 @@ object Values {
           case ProveDiffieHellmanTupleCode => dhtSerializer.parse(r)
           case AndCode =>
             val n = r.getUShort()
-            val children = new Array[SigmaBoolean](n)
+            val children = ValueSerializer.newArray[SigmaBoolean](n)
             cfor(0)(_ < n, _ + 1) { i =>
               children(i) = serializer.parse(r)
             }
             CAND(children)
           case OrCode =>
             val n = r.getUShort()
-            val children = new Array[SigmaBoolean](n)
+            val children = ValueSerializer.newArray[SigmaBoolean](n)
             cfor(0)(_ < n, _ + 1) { i =>
               children(i) = serializer.parse(r)
             }
@@ -832,7 +832,7 @@ object Values {
           case AtLeastCode =>
             val k = r.getUShort()
             val n = r.getUShort()
-            val children = new Array[SigmaBoolean](n)
+            val children = ValueSerializer.newArray[SigmaBoolean](n)
             cfor(0)(_ < n, _ + 1) { i =>
               children(i) = serializer.parse(r)
             }

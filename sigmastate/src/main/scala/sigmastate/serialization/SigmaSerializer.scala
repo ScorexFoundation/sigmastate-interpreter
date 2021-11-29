@@ -10,6 +10,8 @@ import sigmastate.utils._
 import scorex.util.serialization._
 import sigmastate.serialization.OpCodes.OpCode
 
+import scala.reflect.ClassTag
+
 object SigmaSerializer {
   type Position = Int
   type Consumed = Int
@@ -103,6 +105,17 @@ abstract class SigmaSerializer[TFamily, T <: TFamily] extends Serializer[TFamily
 }
 
 trait SigmaSerializerCompanion[TFamily] {
+
+  /** Maximum length of a serializable collection. */
+  val MaxArrayLength: Int = 100000
+
+  /** Allocates a new array with `len` items of type `A`. */
+  final def newArray[A](len: Int)(implicit tA: ClassTag[A]): Array[A] = {
+    if (len > MaxArrayLength)
+      throw new SerializerException(
+        s"Cannot allocate array of $tA with $len items: max limit is $MaxArrayLength")
+    new Array[A](len)
+  }
 
   def getSerializer(opCode: OpCode): SigmaSerializer[TFamily, _ <: TFamily]
   def deserialize(r: SigmaByteReader): TFamily
