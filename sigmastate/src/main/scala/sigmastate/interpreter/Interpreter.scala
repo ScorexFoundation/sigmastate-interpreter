@@ -262,7 +262,7 @@ trait Interpreter extends ScorexLogging {
     implicit val vs: SigmaValidationSettings = ctx.validationSettings
     val context = ctx.withErgoTreeVersion(ergoTree.version).asInstanceOf[CTX]
     val prop = propositionFromErgoTree(ergoTree, context)
-    val evalMode = evalSettings.evaluationMode.get
+    val evalMode = getEvaluationMode(context)
 
     val res @ (aotRes, jitRes) = prop match {
       case SigmaPropConstant(p) =>
@@ -356,6 +356,23 @@ trait Interpreter extends ScorexLogging {
     fullJitCost
   }
 
+  /** Returns evaluation mode used by this interpreter in the given context.
+    * By default evaluation mode is determined based on `context.activatedScriptVersion`
+    * so that the interpreter works either as v4.x of v5.0.
+    *
+    * Alternatively, the required evaluation mode can be specified by giving Some(mode)
+    * value in `evalSettings.evaluationMode`, in which case the interpreter works as
+    * spedified.
+    */
+  def getEvaluationMode(context: CTX): EvaluationMode = {
+    evalSettings.evaluationMode.getOrElse {
+      if (context.activatedScriptVersion < Interpreter.MaxSupportedScriptVersion)
+        AotEvaluationMode
+      else
+        JitEvaluationMode
+    }
+  }
+
   /** Executes the script in a given context.
     * Step 1: Deserialize context variables
     * Step 2: Evaluate expression and produce SigmaProp value, which is zero-knowledge
@@ -410,7 +427,7 @@ trait Interpreter extends ScorexLogging {
 
       val (aotReduced, jitReduced) = fullReduction(ergoTree, contextWithCost, env)
 
-      val evalMode = evalSettings.evaluationMode.get
+      val evalMode = getEvaluationMode(contextWithCost)
 
       // if necessary perform verification as v4.x (AOT based implementation)
       var aotRes: VerificationResult = null
