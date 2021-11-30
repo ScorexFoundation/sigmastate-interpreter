@@ -120,13 +120,6 @@ class BasicOpsSpecification extends SigmaTestingCommons
     }
     val verifyEnv = env + (ScriptNameProp -> s"${name}_verify_ext")
     flexVerifier.verify(verifyEnv, tree, ctxExt, pr.proof, fakeMessage).get._1 shouldBe true
-
-    if (!testExceededCost) {
-      // test failing case when old cost is less then the new one
-      assertExceptionThrown(
-        testVerifier.verify(verifyEnv, tree, ctxExt, pr.proof, fakeMessage).get._1,
-        exceptionLike[SigmaException]("Wrong JIT cost"))
-    }
   }
 
   property("Relation operations") {

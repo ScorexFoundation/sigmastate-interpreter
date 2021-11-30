@@ -19,8 +19,7 @@ class ErgoLikeTestInterpreter(implicit override val IR: IRContext) extends ErgoL
   override val evalSettings: EvalSettings = DefaultEvalSettings.copy(
     isMeasureOperationTime = true,
     isDebug = true,
-    isTestRun = true,
-    evaluationMode = Some(EvalSettings.TestEvaluationMode))
+    isTestRun = true)
   override val precompiledScriptProcessor = ErgoLikeTestInterpreter.DefaultProcessorInTests
 }
 object ErgoLikeTestInterpreter {
