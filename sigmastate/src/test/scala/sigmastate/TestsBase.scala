@@ -21,6 +21,9 @@ trait TestsBase extends Matchers {
   private[sigmastate] val _currActivatedVersion = new DynamicVariable[Byte](0)
   def activatedVersionInTests: Byte = _currActivatedVersion.value
 
+  /** Checks if the current activated script version used in tests corresponds to v4.x. */
+  def isActivatedVersion4: Boolean = activatedVersionInTests < 2
+
   val ergoTreeVersions: Seq[Byte] =
     (0 to Interpreter.MaxSupportedScriptVersion).map(_.toByte).toArray[Byte]
 

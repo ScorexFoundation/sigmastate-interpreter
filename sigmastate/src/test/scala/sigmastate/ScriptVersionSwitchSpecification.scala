@@ -8,7 +8,9 @@ import sigmastate.Values._
 import sigmastate.eval._
 import sigmastate.helpers.{ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers.createBox
-import sigmastate.interpreter.{ProverResult, EvalSettings, ErgoTreeEvaluator, Interpreter}
+import sigmastate.interpreter.ErgoTreeEvaluator.DefaultEvalSettings
+import sigmastate.interpreter.EvalSettings.EvaluationMode
+import sigmastate.interpreter.{ErgoTreeEvaluator, EvalSettings, Interpreter, ProverResult}
 import sigmastate.lang.exceptions.InterpreterException
 import sigmastate.utxo._
 import sigmastate.utils.Helpers._
@@ -68,7 +70,7 @@ class ScriptVersionSwitchSpecification extends SigmaDslTesting
     ErgoTree.withSegregation(headerFlags, compiledTree)
   }
 
-  def testProve(ergoTree: ErgoTree, activatedScriptVersion: Byte) = {
+  def testProve(ergoTree: ErgoTree, activatedScriptVersion: Byte, evalMode: Option[EvaluationMode] = None) = {
     val tpeA = SCollection(SBox)
     val input = Coll[Box](b1)
     val newRegisters: AdditionalRegisters = Map(
@@ -81,12 +83,18 @@ class ScriptVersionSwitchSpecification extends SigmaDslTesting
     ).withBindings(
       1.toByte -> Constant[SType](input.asInstanceOf[SType#WrappedType], tpeA)
     ).asInstanceOf[ErgoLikeContext]
-    val prover = new FeatureProvingInterpreter()
+    val prover = new FeatureProvingInterpreter() {
+      override val evalSettings: EvalSettings = DefaultEvalSettings.copy(
+        isMeasureOperationTime = true,
+        isDebug = true,
+        isTestRun = true,
+        evaluationMode = evalMode)
+    }
     val pr = prover.prove(ergoTree, ctx, fakeMessage).getOrThrow
     pr
   }
 
-  def testVerify(ergoTree: ErgoTree, activatedScriptVersion: Byte) = {
+  def testVerify(ergoTree: ErgoTree, activatedScriptVersion: Byte, evalMode: Option[EvaluationMode] = None) = {
     val tpeA = SCollection(SBox)
     val input = Coll[Box](b1)
     val newRegisters: AdditionalRegisters = Map(
@@ -100,7 +108,13 @@ class ScriptVersionSwitchSpecification extends SigmaDslTesting
       1.toByte -> Constant[SType](input.asInstanceOf[SType#WrappedType], tpeA)
     ).asInstanceOf[ErgoLikeContext]
 
-    val verifier = new ErgoLikeTestInterpreter()
+    val verifier = new ErgoLikeTestInterpreter() {
+      override val evalSettings: EvalSettings = DefaultEvalSettings.copy(
+        isMeasureOperationTime = true,
+        isDebug = true,
+        isTestRun = true,
+        evaluationMode = evalMode)
+    }
     val pr = ProverResult(ProverResult.empty.proof, ctx.extension)
 
     // NOTE: exactly this overload should also be called in Ergo
@@ -184,14 +198,16 @@ class ScriptVersionSwitchSpecification extends SigmaDslTesting
     val expectedCost = 5464L
     val pr = testProve(
       ergoTree,
-      activatedScriptVersion = Interpreter.MaxSupportedScriptVersion // special case for *candidate* block
+      activatedScriptVersion = Interpreter.MaxSupportedScriptVersion, // special case for *candidate* block
+      evalMode = Some(EvalSettings.AotEvaluationMode) // v4.x
     )
     pr.proof shouldBe Array.emptyByteArray
     pr.cost shouldBe expectedCost
     
     val (ok, cost) = testVerify(
       ergoTree,
-      activatedScriptVersion = Interpreter.MaxSupportedScriptVersion // special case for *candidate* block
+      activatedScriptVersion = Interpreter.MaxSupportedScriptVersion, // special case for *candidate* block
+      evalMode = Some(EvalSettings.AotEvaluationMode) // v4.x
     )
     ok shouldBe true
     cost shouldBe expectedCost
@@ -210,7 +226,9 @@ class ScriptVersionSwitchSpecification extends SigmaDslTesting
     val activatedVersion = unsupportedVersion.toByte // SF Status: active
 
     // the prove is doing normal reduction and proof generation
-    val pr = testProve(ergoTree, activatedScriptVersion = activatedVersion)
+    val pr = testProve(ergoTree,
+          activatedScriptVersion = activatedVersion,
+          evalMode = Some(EvalSettings.AotEvaluationMode))
     pr.proof shouldBe Array.emptyByteArray
     pr.cost shouldBe 5464
 
@@ -234,7 +252,9 @@ class ScriptVersionSwitchSpecification extends SigmaDslTesting
     val activatedVersion = unsupportedVersion.toByte // SF Status: active
 
     // the prove is doing normal reduction and proof generation
-    val pr = testProve(ergoTree, activatedScriptVersion = activatedVersion)
+    val pr = testProve(ergoTree,
+          activatedScriptVersion = activatedVersion,
+          evalMode = Some(EvalSettings.AotEvaluationMode))
     pr.proof shouldBe Array.emptyByteArray
     pr.cost shouldBe 5464
 

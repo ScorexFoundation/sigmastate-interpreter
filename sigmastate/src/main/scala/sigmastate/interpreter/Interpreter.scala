@@ -427,6 +427,7 @@ trait Interpreter extends ScorexLogging {
 
       val (aotReduced, jitReduced) = fullReduction(ergoTree, contextWithCost, env)
 
+      // assert(evalSettings.evaluationMode.isEmpty)
       val evalMode = getEvaluationMode(contextWithCost)
 
       // if necessary perform verification as v4.x (AOT based implementation)

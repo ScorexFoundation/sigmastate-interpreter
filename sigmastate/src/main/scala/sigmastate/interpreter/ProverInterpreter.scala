@@ -127,6 +127,7 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
 
     val (aotRes, jitRes) = fullReduction(ergoTree, contextWithCost, env)
 
+    // assert(evalSettings.evaluationMode.isEmpty)
     val evalMode = getEvaluationMode(contextWithCost)
 
     val (resValue, resCost) = evalMode match {
