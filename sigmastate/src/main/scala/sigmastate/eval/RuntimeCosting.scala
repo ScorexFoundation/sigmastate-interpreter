@@ -191,18 +191,15 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
     constCost(tpe)
   }
 
-  val UpcastBigIntOpType = SFunc(sigmastate.Upcast.tT, SBigInt)
-  val DowncastBigIntOpType = SFunc(SBigInt, sigmastate.Upcast.tR)
-
   def costOf(v: SValue): Ref[Int] = v match {
     case l: Terms.Lambda =>
       constCost(l.tpe)
     case l: FuncValue =>
       constCost(l.tpe)
     case sigmastate.Upcast(_, SBigInt) =>
-      costOf("Upcast", UpcastBigIntOpType)
+      costOf("Upcast", sigmastate.Upcast.BigIntOpType)
     case sigmastate.Downcast(v, _) if v.tpe == SBigInt =>
-      costOf("Downcast", DowncastBigIntOpType)
+      costOf("Downcast", sigmastate.Downcast.BigIntOpType)
     case _ =>
       costOf(v.opName, v.opType)
   }
@@ -884,11 +881,11 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
 
   import NumericOps._
   private lazy val elemToExactNumericMap = Map[Elem[_], ExactNumeric[_]](
-    (ByteElement, ByteIsExactNumeric),
-    (ShortElement, ShortIsExactNumeric),
-    (IntElement, IntIsExactNumeric),
-    (LongElement, LongIsExactNumeric),
-    (bigIntElement, BigIntIsExactNumeric)
+    (ByteElement, ByteIsExactIntegral),
+    (ShortElement, ShortIsExactIntegral),
+    (IntElement, IntIsExactIntegral),
+    (LongElement, LongIsExactIntegral),
+    (bigIntElement, BigIntIsExactIntegral)
   )
   private lazy val elemToExactIntegralMap = Map[Elem[_], ExactIntegral[_]](
     (ByteElement,   ByteIsExactIntegral),

@@ -224,7 +224,7 @@ class ErgoTreeSerializer {
         val nConsts = r.getUInt().toInt
         if (nConsts > 0) {
           // HOTSPOT:: allocate new array only if it is not empty
-          val res = new Array[Constant[SType]](nConsts)
+          val res = ValueSerializer.newArray[Constant[SType]](nConsts)
           cfor(0)(_ < nConsts, _ + 1) { i =>
             res(i) = constantSerializer.deserialize(r)
           }
@@ -246,9 +246,24 @@ class ErgoTreeSerializer {
     (header, sizeOpt, constants, treeBytes)
   }
 
+  /** Transforms serialized bytes of ErgoTree with segregated constants by
+    * replacing constants at given positions with new values. This operation
+    * allow to use serialized scripts as pre-defined templates.
+    * See [[sigmastate.SubstConstants]] for details.
+    *
+    * @param scriptBytes serialized ErgoTree with ConstantSegregationFlag set to 1.
+    * @param positions   zero based indexes in ErgoTree.constants array which
+    *                    should be replaced with new values
+    * @param newVals     new values to be injected into the corresponding
+    *                    positions in ErgoTree.constants array
+    * @return a pair (newBytes, len), where:
+    *         newBytes - the original array scriptBytes such that only specified constants
+    *                    are replaced and all other bytes remain exactly the same
+    *         len      - length of the `constants` array of the given ErgoTree bytes
+    */
   def substituteConstants(scriptBytes: Array[Byte],
                           positions: Array[Int],
-                          newVals: Array[Value[SType]])(implicit vs: SigmaValidationSettings): Array[Byte] = {
+                          newVals: Array[Value[SType]])(implicit vs: SigmaValidationSettings): (Array[Byte], Int) = {
     require(positions.length == newVals.length,
       s"expected positions and newVals to have the same length, got: positions: ${positions.toSeq},\n newVals: ${newVals.toSeq}")
     val r = SigmaSerializer.startReader(scriptBytes)
@@ -276,7 +291,7 @@ class ErgoTreeSerializer {
     }
 
     w.putBytes(treeBytes)
-    w.toBytes
+    (w.toBytes, constants.length)
   }
 
 }

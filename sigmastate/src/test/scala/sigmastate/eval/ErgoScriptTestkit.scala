@@ -4,17 +4,17 @@ import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
 import org.ergoplatform.validation.ValidationSpecification
 
 import scala.util.Success
-import sigmastate.{AvlTreeData, SType, TestsBase}
+import sigmastate.{AvlTreeData, TestsBase, SType}
 import sigmastate.Values.{EvaluatedValue, SValue, SigmaPropConstant, Value, BigIntArrayConstant}
 import org.ergoplatform.{Context => _, _}
 import sigmastate.utxo.CostTable
 import scalan.BaseCtxTests
-import sigmastate.lang.{LangTests, SigmaCompiler}
+import sigmastate.lang.{LangTests, SigmaCompiler, CompilerSettings}
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.ContextExtension
 import sigmastate.interpreter.Interpreter.ScriptEnv
-import special.sigma.{ContractsTestkit, Context => DContext, _}
+import special.sigma.{ContractsTestkit, Context => DContext}
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 
 import scala.language.implicitConversions
@@ -31,7 +31,11 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests
   import Size._
   import BigInt._
 
-  override lazy val compiler = new SigmaCompiler(TestnetNetworkPrefix, IR.builder)
+  override lazy val compiler = new SigmaCompiler(CompilerSettings(
+    TestnetNetworkPrefix,
+    IR.builder,
+    lowerMethodCalls = true
+  ))
 
   def newErgoContext(height: Int, boxToSpend: ErgoBox, extension: Map[Byte, EvaluatedValue[SType]] = Map()): ErgoLikeContext = {
     val tx1 = new ErgoLikeTransaction(IndexedSeq(), IndexedSeq(), IndexedSeq(boxToSpend))
@@ -182,7 +186,7 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests
 
         // check cost
         val costCtx = ergoCtx.get.toSigmaContext(isCost = true)
-        val estimatedCost = IR.checkCost(costCtx, tree, costF, CostTable.ScriptLimit)
+        IR.checkCost(costCtx, tree, costF, SigmaConstants.ScriptCostLimit.value)
 
         // check size
         {

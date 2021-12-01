@@ -33,7 +33,7 @@ case class ValDefSerializer(override val opDesc: ValueCompanion) extends ValueSe
     val tpeArgs: Seq[STypeVar] = opCode match {
       case FunDefCode =>
         val nTpeArgs = r.getByte()
-        val inputs = new Array[STypeVar](nTpeArgs)
+        val inputs = ValueSerializer.newArray[STypeVar](nTpeArgs)
         cfor(0)(_ < nTpeArgs, _ + 1) { i =>
           inputs(i) = r.getType().asInstanceOf[STypeVar]
         }

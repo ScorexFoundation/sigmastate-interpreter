@@ -25,7 +25,7 @@ object DLogProtocol {
   /** Construct a new SigmaBoolean value representing public key of discrete logarithm signature protocol. */
   case class ProveDlog(value: EcPointType)
     extends SigmaProofOfKnowledgeLeaf[DLogSigmaProtocol, DLogProverInput] {
-
+    override def size: Int = 1
     override val opCode: OpCode = OpCodes.ProveDlogCode
     lazy val h: EcPointType = value
     lazy val pkBytes: Array[Byte] = GroupElementSerializer.toBytes(h)
@@ -72,7 +72,7 @@ object DLogProtocol {
       GroupElementSerializer.toBytes(ecData)
     }
 
-    override def toString: Idn = s"FirstDLogProverMessage(${Base16.encode(bytes)})"
+    override def toString = s"FirstDLogProverMessage(${Base16.encode(bytes)})"
   }
 
   case class SecondDLogProverMessage(z: BigInt) extends SecondProverMessage {

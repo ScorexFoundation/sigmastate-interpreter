@@ -4,15 +4,14 @@ import com.typesafe.scalalogging.LazyLogging
 import gf2t.GF2_192_Poly
 import org.bouncycastle.util.BigIntegers
 import scorex.util.encode.Base16
-import sigmastate.SigSerializer.{logger, readBytesChecked}
 import sigmastate.Values.SigmaBoolean
 import sigmastate.basics.DLogProtocol.{ProveDlog, SecondDLogProverMessage}
 import sigmastate.basics.VerifierMessage.Challenge
 import sigmastate.basics.{ProveDHTuple, SecondDiffieHellmanTupleProverMessage}
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.lang.exceptions.SerializerException
-import sigmastate.serialization.SigmaSerializer
-import sigmastate.utils.{Helpers, SigmaByteReader, SigmaByteWriter}
+import sigmastate.serialization.{SigmaSerializer, ValueSerializer}
+import sigmastate.utils.{SigmaByteReader, SigmaByteWriter, Helpers}
 import spire.syntax.all.cfor
 
 object SigSerializer extends LazyLogging {
@@ -171,7 +170,7 @@ object SigSerializer extends LazyLogging {
       case and: CAND =>
         // Verifier Step 2: If the node is AND, then all of its children get e_0 as the challenge
         val nChildren = and.children.length
-        val children = new Array[UncheckedSigmaTree](nChildren)
+        val children = ValueSerializer.newArray[UncheckedSigmaTree](nChildren)
         cfor(0)(_ < nChildren, _ + 1) { i =>
           children(i) = parseAndComputeChallenges(and.children(i), r, challenge)
         }
@@ -184,7 +183,7 @@ object SigSerializer extends LazyLogging {
 
         // Read all the children but the last and compute the XOR of all the challenges including e_0
         val nChildren = or.children.length
-        val children = new Array[UncheckedSigmaTree](nChildren)
+        val children = ValueSerializer.newArray[UncheckedSigmaTree](nChildren)
         val xorBuf = challenge.clone()
         val iLastChild = nChildren - 1
         cfor(0)(_ < iLastChild, _ + 1) { i =>
@@ -211,7 +210,7 @@ object SigSerializer extends LazyLogging {
           hex => warn(s"Invalid coeffBytes for $th: $hex"))
         val polynomial = GF2_192_Poly.fromByteArray(challenge, coeffBytes)
 
-        val children = new Array[UncheckedSigmaTree](nChildren)
+        val children = ValueSerializer.newArray[UncheckedSigmaTree](nChildren)
         cfor(0)(_ < nChildren, _ + 1) { i =>
           val c = Challenge @@ polynomial.evaluate((i + 1).toByte).toByteArray
           children(i) = parseAndComputeChallenges(th.children(i), r, c)

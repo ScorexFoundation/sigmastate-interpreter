@@ -15,6 +15,7 @@ import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
 import sigmastate.helpers._
 import sigmastate.helpers.TestingHelpers._
+import sigmastate.interpreter.ContextExtension.VarBinding
 import sigmastate.interpreter.{ContextExtension, CostedProverResult}
 import sigmastate.lang.Terms._
 import sigmastate.serialization.{ValueSerializer, SerializationSpecification}
@@ -718,7 +719,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
   }
 
   property("DeserializeContext can return expression of non-Boolean/SigmaProp type") {
-    def prove(ergoTree: ErgoTree, script: (Byte, EvaluatedValue[_ <: SType])): CostedProverResult = {
+    def prove(ergoTree: ErgoTree, script: VarBinding): CostedProverResult = {
       val boxToSpend = testBox(10, ergoTree, creationHeight = 5)
       val ctx = ErgoLikeContextTesting.dummy(boxToSpend, activatedVersionInTests)
           .withExtension(

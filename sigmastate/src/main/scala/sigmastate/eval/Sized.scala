@@ -38,7 +38,14 @@ trait SizedLowPriority {
 
 object Sized extends SizedLowPriority {
   def apply[T](implicit sz: Sized[T]): Sized[T] = sz
+
+  /** Creates a size descriptor for a given data instance provided T is Sized.
+    * @param  x  data instance
+    * @tparam T  Sized data type
+    */
   def sizeOf[T: Sized](x: T): Size[T] = Sized[T].size(x)
+
+  /** Helper constructor to support Scala 2.11. */
   def instance[T](f: T => Size[T]) = new Sized[T] {
     override def size(x: T): Size[T] = f(x)
   }
@@ -63,6 +70,13 @@ object Sized extends SizedLowPriority {
   implicit val SigmaPropIsSized: Sized[SigmaProp] = Sized.instance((_: SigmaProp) => SizeSigmaProp)
   implicit val AvlTreeIsSized: Sized[AvlTree] = Sized.instance((_: AvlTree) => SizeAvlTree)
 
+  /** Constructs a new [[Sized]] instance for a given [[SType]] type descriptor. */
+  def stypeToSized[T <: SType](t: T): Sized[T#WrappedType] = {
+    val rtype = Evaluation.stypeToRType(t)
+    typeToSized[T#WrappedType](rtype)
+  }
+
+  /** Constructs a new [[Sized]] instance for a given [[RType]] type descriptor. */
   def typeToSized[T](t: RType[T]): Sized[T] = (t match {
     case BooleanType => BooleanIsSized
     case ByteType => ByteIsSized

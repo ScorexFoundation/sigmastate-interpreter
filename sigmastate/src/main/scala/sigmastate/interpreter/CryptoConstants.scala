@@ -29,11 +29,12 @@ object CryptoConstants {
 
   val hashLength: Int = hashLengthBits / 8
 
-  //size of challenge in Sigma protocols, in bits
-  //if this anything but 192, threshold won't work, because we have polynomials over GF(2^192) and no others
-  //so DO NOT change the value without implementing polynomials over GF(2^soundnessBits) first
-  //and changing code that calls on GF2_192 and GF2_192_Poly classes!!!
-  //we get the challenge by reducing hash function output to proper value
+  /** A size of challenge in Sigma protocols, in bits.
+    * If this anything but 192, threshold won't work, because we have polynomials over GF(2^192) and no others.
+    * So DO NOT change the value without implementing polynomials over GF(2^soundnessBits) first
+    * and changing code that calls on GF2_192 and GF2_192_Poly classes!!!
+    * We get the challenge by reducing hash function output to proper value.
+    */
   implicit val soundnessBits: Int = 192.ensuring(_ < groupSizeBits, "2^t < q condition is broken!")
 
   def secureRandomBytes(howMany: Int): Array[Byte] = {

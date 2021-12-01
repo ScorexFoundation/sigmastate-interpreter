@@ -114,14 +114,14 @@ trait Interpreter extends ScorexLogging {
 
   /** This method is used in both prover and verifier to compute SigmaBoolean value.
     * As the first step the cost of computing the `exp` expression in the given context is estimated.
-    * If cost is above limit
-    *   then exception is returned and `exp` is not executed
-    *   else `exp` is computed in the given context and the resulting SigmaBoolean returned.
+    * If cost is above limit then exception is returned and `exp` is not executed
+    * else `exp` is computed in the given context and the resulting SigmaBoolean returned.
     *
-    * @param context   the context in which `exp` should be executed
-    * @param env       environment of system variables used by the interpreter internally
-    * @param exp       expression to be executed in the given `context`
-    * @return          result of script reduction
+    * @param context the context in which `exp` should be executed
+    * @param env     environment of variables used by the interpreter internally.
+    *                Note, this is not system environment variables.
+    * @param exp     expression to be executed in the given `context`
+    * @return result of script reduction
     * @see `ReductionResult`
     */
   def reduceToCrypto(context: CTX, env: ScriptEnv, exp: Value[SType]): Try[ReductionResult] = Try {
@@ -150,9 +150,11 @@ trait Interpreter extends ScorexLogging {
     }
   }
 
+  /** Helper convenience overload which uses empty environment.
+    * @see other overloads for details.
+    */
   def reduceToCrypto(context: CTX, exp: Value[SType]): Try[ReductionResult] =
     reduceToCrypto(context, Interpreter.emptyEnv, exp)
-
 
   /**
     * Full reduction of initial expression given in the ErgoTree form to a SigmaBoolean value

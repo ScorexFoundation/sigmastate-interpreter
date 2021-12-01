@@ -16,7 +16,7 @@ import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.interpreter.{ProverResult, ContextExtension}
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.serialization.ValueSerializer
-import sigmastate.utxo.{CostTable, ExtractCreationInfo, ByIndex, SelectField}
+import sigmastate.utxo.{ExtractCreationInfo, ByIndex, SelectField}
 import scalan.util.BenchmarkUtil._
 import sigmastate.utils.Helpers._
 
@@ -164,7 +164,7 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons with CrossVersionProps {
     // collect coins during the fixed rate period
     forAll(Gen.choose(1, settings.fixedRatePeriod)) { height =>
       val currentRate = emission.minersRewardAtHeight(height)
-      createRewardTx(currentRate, height, minerProp) shouldBe 'success
+      createRewardTx(currentRate, height, minerProp).getOrThrow
       createRewardTx(currentRate + 1, height, minerProp) shouldBe 'failure
       createRewardTx(currentRate - 1, height, minerProp) shouldBe 'failure
     }
@@ -226,7 +226,7 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons with CrossVersionProps {
         boxesToSpend = inputBoxes,
         spendingTransaction,
         self = inputBoxes.head,
-        activatedVersionInTests).withCostLimit(CostTable.ScriptLimit * 10)
+        activatedVersionInTests).withCostLimit(SigmaConstants.ScriptCostLimit.value * 10)
 
       val pr = prover.prove(emptyEnv + (ScriptNameProp -> "tokenThresholdScript_prove"), prop, ctx, fakeMessage).getOrThrow
       verifier.verify(emptyEnv + (ScriptNameProp -> "tokenThresholdScript_verify"), prop, ctx, pr, fakeMessage).getOrThrow._1 shouldBe true

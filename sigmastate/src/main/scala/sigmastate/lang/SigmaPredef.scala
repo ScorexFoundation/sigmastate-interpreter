@@ -446,7 +446,7 @@ object SigmaPredef {
         Seq(ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))),
       binaryOp("/", ArithOp.Division, "Integer division of the first operand by the second operand.",
         Seq(ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))),
-      binaryOp("%", ArithOp.Modulo, "Reminder from division of the first operand by the second operand.",
+      binaryOp("%", ArithOp.Modulo, "Remainder from division of the first operand by the second operand.",
         Seq(ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))),
       binaryOp("min", ArithOp.Min, "Minimum value of two operands.",
         Seq(ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))),

@@ -29,7 +29,7 @@ case class ConcreteCollectionSerializer(cons: (IndexedSeq[Value[SType]], SType) 
       // reusing pre-allocated immutable instances
       Value.EmptySeq
     } else {
-      val values = new Array[SValue](size)
+      val values = ValueSerializer.newArray[SValue](size)
       cfor(0)(_ < size, _ + 1) { i =>
         val v = r.getValue() // READ
         values(i) = v

@@ -3,6 +3,8 @@ package sigmastate.helpers
 import org.scalatest.Matchers
 
 import scala.annotation.tailrec
+import scala.util.{Failure, Success, Try}
+import spire.syntax.all.cfor
 import scala.reflect.ClassTag
 
 trait NegativeTesting extends Matchers {
@@ -34,6 +36,12 @@ trait NegativeTesting extends Matchers {
     if (t.getCause == null) t
     else rootCause(t.getCause)
 
+  /** If error then maps it to the root cause, otherwise returns the original value. */
+  final def rootCause[A](x: Try[A]): Try[A] = x match {
+    case s: Success[_] => s
+    case Failure(t) => Failure(rootCause(t))
+  }
+
   /** Creates an assertion which checks the given type and message contents.
     *
     * @tparam E expected type of exception
@@ -41,9 +49,56 @@ trait NegativeTesting extends Matchers {
     * @return the assertion which can be used in assertExceptionThrown method
     */
   def exceptionLike[E <: Throwable : ClassTag]
-                   (msgParts: String*): Throwable => Boolean = {
+      (msgParts: String*): Throwable => Boolean = {
     case t: E => msgParts.forall(t.getMessage.contains(_))
     case _ => false
   }
 
+  /** Checks that both computations either succeed with the same value or fail with the same
+    * error. If this is not true, exception is thrown.
+    *
+    * @param f first computation
+    * @param g second computation
+    * @return result of the second computation `g`
+    */
+  def sameResultOrError[B](f: => B, g: => B): Try[B] = {
+    val b1 = Try(f); val b2 = Try(g)
+    (b1, b2) match {
+      case (Success(b1), res @ Success(b2)) =>
+        assert(b1 == b2)
+        res
+      case (Failure(t1), res @ Failure(t2)) =>
+        val c1 = rootCause(t1).getClass
+        val c2 = rootCause(t2).getClass
+        c1 shouldBe c2
+        res
+      case _ =>
+        val cause = if (b1.isFailure)
+          rootCause(b1.asInstanceOf[Failure[_]].exception)
+        else
+          rootCause(b2.asInstanceOf[Failure[_]].exception)
+
+        sys.error(
+          s"""Should succeed with the same value or fail with the same exception, but was:
+            |First result: $b1
+            |Second result: $b2
+            |Root cause: $cause
+            |""".stripMargin)
+    }
+  }
+
+  /** Repeat the given `block` computation `nIters` times.
+    *
+    * @param nIters number of iterations to repeat the computation
+    * @param block  the computation to execute on each iteration
+    * @return the result of the last iteration
+    */
+  def repeatAndReturnLast[A](nIters: Int)(block: => A): A = {
+    require(nIters > 0)
+    var res = block
+    cfor(1)(_ < nIters, _ + 1) { i =>
+      res = block
+    }
+    res
+  }
 }

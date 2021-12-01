@@ -36,7 +36,7 @@ case class ConcreteCollectionBooleanConstantSerializer(cons: (IndexedSeq[Value[S
       // reusing pre-allocated immutable instances
       Value.EmptySeq.asInstanceOf[IndexedSeq[Value[SBoolean.type]]]
     } else {
-      val items = new Array[BoolValue](size)
+      val items = ValueSerializer.newArray[BoolValue](size)
       cfor(0)(_ < size, _ + 1) { i =>
         items(i) = BooleanConstant.fromBoolean(bits(i))
       }

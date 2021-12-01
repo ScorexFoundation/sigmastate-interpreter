@@ -59,12 +59,12 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
     * https://ergoplatform.org/docs/ErgoScript.pdf , Appendix A
     *
     */
-  // todo: if we are concerned about timing attacks against the prover, we should make sure that this code
-  // todo: takes the same amount of time regardless of which nodes are real and which nodes are simulated
-  // todo: In particular, we should avoid the use of exists and forall, because they short-circuit the evaluation
-  // todo: once the right value is (or is not) found. We should also make all loops look similar, the same
-  // todo: amount of copying is done regardless of what's real or simulated,
-  // todo: real vs. simulated computations take the same time, etc.
+  // TODO: if we are concerned about timing attacks against the prover, we should make sure that this code
+  //  takes the same amount of time regardless of which nodes are real and which nodes are simulated
+  //  In particular, we should avoid the use of exists and forall, because they short-circuit the evaluation
+  //  once the right value is (or is not) found. We should also make all loops look similar, the same
+  //  amount of copying is done regardless of what's real or simulated,
+  //  real vs. simulated computations take the same time, etc.
   protected def prove(unprovenTree: UnprovenTree, message: Array[Byte], hintsBag: HintsBag): ProofT = {
 
     // Prover Step 1: Mark as real everything the prover can prove

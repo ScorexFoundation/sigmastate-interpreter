@@ -3,7 +3,6 @@ package sigmastate.interpreter
 import java.util
 
 import scorex.util.encode.Base16
-import sigmastate.Values.Idn
 import sigmastate.serialization.SigmaSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 
@@ -22,7 +21,7 @@ class ProverResult(val proof: Array[Byte], val extension: ContextExtension) {
     case _ => false
   }
 
-  override def toString: Idn = s"ProverResult(${Base16.encode(proof)},$extension)"
+  override def toString = s"ProverResult(${Base16.encode(proof)},$extension)"
 }
 
 object ProverResult {

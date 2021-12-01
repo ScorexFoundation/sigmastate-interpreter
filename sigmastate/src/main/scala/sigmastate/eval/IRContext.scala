@@ -134,7 +134,7 @@ trait IRContext extends Evaluation with TreeBuilding {
         !!!(s"Estimated cost $estimatedCost should be equal $accCost")
     }
 
-    val scaledCost = JMath.multiplyExact(estimatedCost.toLong, CostTable.costFactorIncrease.toLong) / CostTable.costFactorDecrease
+    val scaledCost = java7.compat.Math.multiplyExact(estimatedCost.toLong, CostTable.costFactorIncrease.toLong) / CostTable.costFactorDecrease
     val totalCost = Evaluation.addCostChecked(initCost, scaledCost, maxCost)
     totalCost.toInt
   }

@@ -8,7 +8,7 @@ import scorex.util.{bytesToId, ModifierId}
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.SType.AnyOps
-import sigmastate.serialization.SigmaSerializer
+import sigmastate.serialization.{SigmaSerializer, ValueSerializer}
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import special.collection.Coll
 import sigmastate.eval._
@@ -187,8 +187,8 @@ object ErgoBoxCandidate {
       val tree = DefaultSerializer.deserializeErgoTree(r, SigmaSerializer.MaxPropositionSize)  // READ
       val creationHeight = r.getUInt().toInt    // READ
       val nTokens = r.getUByte()                // READ
-      val tokenIds = new Array[Array[Byte]](nTokens)
-      val tokenAmounts = new Array[Long](nTokens)
+      val tokenIds = ValueSerializer.newArray[Array[Byte]](nTokens)
+      val tokenAmounts = ValueSerializer.newArray[Long](nTokens)
       if (digestsInTx != null) {
         val nDigests = digestsInTx.length
         cfor(0)(_ < nTokens, _ + 1) { i =>
