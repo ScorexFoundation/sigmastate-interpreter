@@ -10,6 +10,7 @@ import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.{TransformingSigmaBuilder, SigmaCompiler, CompilerSettings}
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.serialization.ValueSerializer
+import spire.syntax.all.cfor
 
 import scala.util.DynamicVariable
 
@@ -36,6 +37,27 @@ trait TestsBase extends Matchers {
     * ergoTreeVersionInTests.
     */
   def ergoTreeHeaderInTests: Byte = ErgoTree.headerWithVersion(ergoTreeVersionInTests)
+
+  /** Executes the given block for each combination of _currActivatedVersion and
+    * _currErgoTreeVersion assigned to dynamic variables.
+    */
+  def forEachScriptAndErgoTreeVersion(block: => Unit): Unit = {
+    cfor(0)(_ < activatedVersions.length, _ + 1) { i =>
+      val activatedVersion = activatedVersions(i)
+      // setup each activated version
+      _currActivatedVersion.withValue(activatedVersion) {
+
+        cfor(0)(
+          i => i < ergoTreeVersions.length && ergoTreeVersions(i) <= activatedVersion,
+          _ + 1) { j =>
+          val treeVersion = ergoTreeVersions(j)
+          // for each tree version up to currently activated, set it up and execute block
+          _currErgoTreeVersion.withValue(treeVersion)(block)
+        }
+
+      }
+    }
+  }
 
   /** Obtains [[ErgoTree]] which corresponds to True proposition using current
     * ergoTreeHeaderInTests. */
