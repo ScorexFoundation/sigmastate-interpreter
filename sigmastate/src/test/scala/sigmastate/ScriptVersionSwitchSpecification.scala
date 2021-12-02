@@ -10,23 +10,21 @@ import sigmastate.helpers.{ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers.createBox
 import sigmastate.interpreter.ErgoTreeEvaluator.DefaultEvalSettings
 import sigmastate.interpreter.EvalSettings.EvaluationMode
-import sigmastate.interpreter.{ErgoTreeEvaluator, EvalSettings, Interpreter, ProverResult}
+import sigmastate.interpreter.{CostedProverResult, ErgoTreeEvaluator, EvalSettings, Interpreter, ProverResult}
 import sigmastate.lang.exceptions.InterpreterException
-import sigmastate.utxo._
 import sigmastate.utils.Helpers._
-import special.collection._
 import special.sigma.{SigmaDslTesting, Box}
 
-import scala.util.Success
-
-/** Specification to verify that the interpreter behaves according to docs/aot-jit-switch.md. */
-class ScriptVersionSwitchSpecification extends SigmaDslTesting
-  with CrossVersionProps {
+/** Specification to verify that the interpreter behaves according to docs/aot-jit-switch.md.
+  *
+  * NOTE, this suite doesn't inherit CrossVersionProps because each test case require explicit
+  * setup of activatedScriptVersion and ErgoTree.version.
+  */
+class ScriptVersionSwitchSpecification extends SigmaDslTesting {
   override implicit val generatorDrivenConfig = PropertyCheckConfiguration(minSuccessful = 30)
   override implicit val evalSettings: EvalSettings =
     ErgoTreeEvaluator.DefaultEvalSettings.copy(
-      costTracingEnabled = true,  // should always be enabled in tests (and false by default)
-      evaluationMode = Some(EvalSettings.TestEvaluationMode)
+      costTracingEnabled = true  // should always be enabled in tests (and false by default)
     )
 
   implicit def IR = createIR()
@@ -48,6 +46,7 @@ class ScriptVersionSwitchSpecification extends SigmaDslTesting
     )
   )
 
+  /** Creates ErgoTree with segregated constants and also the given header flags. */
   def createErgoTree(headerFlags: Byte)(implicit IR: IRContext): ErgoTree = {
     val code =
       s"""{
@@ -70,7 +69,15 @@ class ScriptVersionSwitchSpecification extends SigmaDslTesting
     ErgoTree.withSegregation(headerFlags, compiledTree)
   }
 
-  def testProve(ergoTree: ErgoTree, activatedScriptVersion: Byte, evalMode: Option[EvaluationMode] = None) = {
+  /** Proves the given ergoTree in a dummy context with the given activatedScriptVersion.
+    * @param activatedScriptVersion used to create the context
+    * @param evalMode can be specified to force specific interpreter regardless of
+    *                 activatedScriptVersion
+    */
+  def testProve(
+        ergoTree: ErgoTree,
+        activatedScriptVersion: Byte,
+        evalMode: Option[EvaluationMode] = None): CostedProverResult = {
     val tpeA = SCollection(SBox)
     val input = Coll[Box](b1)
     val newRegisters: AdditionalRegisters = Map(
@@ -94,6 +101,12 @@ class ScriptVersionSwitchSpecification extends SigmaDslTesting
     pr
   }
 
+  /** Proves the given ergoTree in a dummy context with the given activatedScriptVersion
+    * and using empty proof.
+    * @param activatedScriptVersion used to create the context
+    * @param evalMode can be specified to force specific interpreter regardless of
+    *                 activatedScriptVersion
+    */
   def testVerify(ergoTree: ErgoTree, activatedScriptVersion: Byte, evalMode: Option[EvaluationMode] = None) = {
     val tpeA = SCollection(SBox)
     val input = Coll[Box](b1)
@@ -125,143 +138,183 @@ class ScriptVersionSwitchSpecification extends SigmaDslTesting
     (1 to 7).foreach { version =>
       assertExceptionThrown(
         createErgoTree(headerFlags = updateVersionBits(DefaultHeader, version.toByte)),
-        { t =>
-          t.isInstanceOf[IllegalArgumentException] &&
-              t.getMessage.contains("For newer version the size bit is required")
-        })
+        exceptionLike[IllegalArgumentException]("For newer version the size bit is required")
+      )
     }
   }
 
   /** Rule#| SF Status| Block Type| Script Version | Release | Validation Action
     * -----|----------|-----------|----------------|---------|--------
     * 1    | inactive | candidate | Script v1      | v4.0    | R4.0-AOT-cost, R4.0-AOT-verify
+    * 2    | inactive | candidate | Script v1      | v5.0    | R4.0-AOT-cost, R4.0-AOT-verify
     * 5    | inactive | mined     | Script v1      | v4.0    | R4.0-AOT-cost, R4.0-AOT-verify
+    * 6    | inactive | mined     | Script v1      | v5.0    | R4.0-AOT-cost, R4.0-AOT-verify
     */
-  property("Rules 1,5 | inactive SF | candidate or mined block | Script v1") {
-    val samples = genSamples[Coll[Box]](collOfN[Box](5), MinSuccessful(20))
+  property("Rules 1,2,5,6 | inactive SF | candidate or mined block | Script v1") {
+    // this test verifies the normal validation action (R4.0-AOT-cost, R4.0-AOT-verify)
+    // See SigmaDslSpecification for a full suite of v4.x vs. v5.0 equivalence tests
 
-    // this execution corresponds to the normal validation action (R4.0-AOT-cost, R4.0-AOT-verify)
-    verifyCases(
-      {
-        def success[T](v: T, c: Int) = Expected(Success(v), c)
-        Seq(
-          (Coll[Box](), success(Coll[Box](), 37297)),
-          (Coll[Box](b1), success(Coll[Box](), 37397))
-        )
-      },
-      existingFeature({ (x: Coll[Box]) => x.filter({ (b: Box) => b.value > 1 }) },
-      "{ (x: Coll[Box]) => x.filter({(b: Box) => b.value > 1 }) }",
-      FuncValue(
-        Vector((1, SCollectionType(SBox))),
-        Filter(
-          ValUse(1, SCollectionType(SBox)),
-          FuncValue(Vector((3, SBox)), GT(ExtractAmount(ValUse(3, SBox)), LongConstant(1L)))
-        )
-      )),
-      preGeneratedSamples = Some(samples))
+    forEachActivatedScriptVersion(activatedVers = Array[Byte](0, 1)) // versions for inactive SF
+    {
+      // tree versions that doesn't exceed activated
+      val treeVers = (0 to activatedVersionInTests).map(_.toByte).toArray[Byte]
+
+      forEachErgoTreeVersion(treeVers) {
+        // SF inactive: check cost vectors of v4.x interpreter
+        val headerFlags = ErgoTree.headerWithVersion(ergoTreeVersionInTests)
+        val ergoTree = createErgoTree(headerFlags)
+
+        // both prove and verify are accepting with full evaluation
+        val expectedCost = 5464L
+        val pr = testProve(ergoTree, activatedScriptVersion = activatedVersionInTests)
+        pr.proof shouldBe Array.emptyByteArray
+        pr.cost shouldBe expectedCost
+
+        val (ok, cost) = testVerify(ergoTree, activatedScriptVersion = activatedVersionInTests)
+        ok shouldBe true
+        cost shouldBe expectedCost
+      }
+    }
   }
 
   /** Rule#| SF Status| Block Type| Script Version | Release | Validation Action
     * -----|----------|-----------|----------------|---------|--------
     * 3    | inactive | candidate | Script v2      | v4.0    | skip-pool-tx (cannot handle)
+    * 4    | inactive | candidate | Script v2      | v5.0    | skip-pool-tx (wait activation)
     * 7    | inactive | mined     | Script v2      | v4.0    | skip-reject (cannot handle)
+    * 8    | inactive | mined     | Script v2      | v5.0    | skip-reject (wait activation)
     */
-  property("Rules 3, 7 | inactive SF | candidate or mined block | Script v2") {
-    val headerFlags = ErgoTree.headerWithVersion( 2 /* Script v2 */)
-    val ergoTree = createErgoTree(headerFlags = headerFlags)
+  property("Rules 3,4,7,8 | inactive SF | candidate or mined block | Script v2") {
+    forEachActivatedScriptVersion(Array[Byte](0, 1)) { // versions for SF Status: inactive
 
-    // the prove is successful (since it is not part of consensus)
-    testProve(ergoTree, activatedScriptVersion = 1 /* SF Status: inactive */)
+      forEachErgoTreeVersion(ergoTreeVers = Array[Byte](2)) { // only Script v2
+        val headerFlags = ErgoTree.headerWithVersion(ergoTreeVersionInTests /* Script v2 */)
+        val ergoTree = createErgoTree(headerFlags = headerFlags)
 
-    // and verify is rejecting
-    assertExceptionThrown(
-      testVerify(ergoTree, activatedScriptVersion = 1 /* SF Status: inactive */),
-      { t =>
-        t.isInstanceOf[InterpreterException] &&
-            t.getMessage.contains(s"ErgoTree version ${ergoTree.version} is higher than activated 1")
-      })
+        // the prove is successful (since it is not part of consensus)
+        testProve(ergoTree, activatedScriptVersion = activatedVersionInTests)
+
+        // and verify is rejecting
+        assertExceptionThrown(
+          testVerify(ergoTree, activatedScriptVersion = activatedVersionInTests),
+          exceptionLike[InterpreterException](s"ErgoTree version ${ergoTree.version} is higher than activated $activatedVersionInTests")
+        )
+      }
+    }
   }
 
   /** Rule#| SF Status| Block Type| Script Version | Release | Validation Action
     * -----|----------|-----------|----------------|---------|--------
-    * 9    | active   | candidate | Script v1      | v4.0    | R4.0-AOT-cost, R4.0-AOT-verify
+    * 10   | active   | candidate | Script v1      | v5.0    | R5.0-JIT-verify
+    * 12   | active   | candidate | Script v2      | v5.0    | R5.0-JIT-verify
+    * 14   | active   | mined     | Script v1      | v5.0    | R5.0-JIT-verify
+    * 16   | active   | mined     | Script v2      | v5.0    | R5.0-JIT-verify
     */
-  property("Rule 9 | active SF | candidate block | Script v1") {
-    val headerFlags = ErgoTree.headerWithVersion( 1 /* Script v1 */)
-    val ergoTree = createErgoTree(headerFlags = headerFlags)
+  property("Rules 10,12,14,16 | active SF | candidate or mined block | Script v1 or v2") {
+    // this test verifies the normal validation action (R5.0-JIT-verify)
+    // See SigmaDslSpecification for a full suite of v4.x vs. v5.0 equivalence tests
 
-    // Even though the SF is active and the v2 scripts can be accepted in `mined` blocks
-    // this test case is for `candidate` block, so we MUST use
-    // Interpreter.MaxSupportedScriptVersion
+    forEachActivatedScriptVersion(activatedVers = Array[Byte](2)) // version for active v5.0 SF
+    {
+      // tree versions that doesn't exceed activated
+      val treeVers = (0 to activatedVersionInTests).map(_.toByte).toArray[Byte]
 
-    // both prove and verify are accepting with full evaluation
-    val expectedCost = 5464L
-    val pr = testProve(
-      ergoTree,
-      activatedScriptVersion = Interpreter.MaxSupportedScriptVersion, // special case for *candidate* block
-      evalMode = Some(EvalSettings.AotEvaluationMode) // v4.x
-    )
-    pr.proof shouldBe Array.emptyByteArray
-    pr.cost shouldBe expectedCost
-    
-    val (ok, cost) = testVerify(
-      ergoTree,
-      activatedScriptVersion = Interpreter.MaxSupportedScriptVersion, // special case for *candidate* block
-      evalMode = Some(EvalSettings.AotEvaluationMode) // v4.x
-    )
-    ok shouldBe true
-    cost shouldBe expectedCost
+      forEachErgoTreeVersion(treeVers) {
+        // SF inactive: check cost vectors of v4.x interpreter
+        val headerFlags = ErgoTree.headerWithVersion(ergoTreeVersionInTests)
+        val ergoTree = createErgoTree(headerFlags)
+
+        // both prove and verify are accepting with full evaluation
+        val expectedCost = 5238L
+        val pr = testProve(ergoTree, activatedScriptVersion = activatedVersionInTests)
+        pr.proof shouldBe Array.emptyByteArray
+        pr.cost shouldBe expectedCost
+
+        val (ok, cost) = testVerify(ergoTree, activatedScriptVersion = activatedVersionInTests)
+        ok shouldBe true
+        cost shouldBe expectedCost
+      }
+    }
+  }
+
+  /** Rule#| BlockVer | Block Type| Script Version | Release | Validation Action
+    * -----|----------|-----------|----------------|---------|--------
+    * 17   | 3        | candidate | Script v3      | v5.0    | skip-reject (cannot handle)
+    * 18   | 3        | mined     | Script v3      | v5.0    | skip-reject (cannot handle)
+    */
+  property("Rules 17,18 | Block v3 | candidate or mined block | Script v3") {
+    forEachActivatedScriptVersion(activatedVers = Array[Byte](2)) // version for Block v3
+    {
+      forEachErgoTreeVersion(ergoTreeVers = Array[Byte](3, 4)) { // scripts >= v3
+        val headerFlags = ErgoTree.headerWithVersion(ergoTreeVersionInTests)
+        val ergoTree = createErgoTree(headerFlags)
+
+        // the prove is successful (since it is not part of consensus)
+        testProve(ergoTree, activatedScriptVersion = activatedVersionInTests)
+
+        // and verify is rejecting
+        assertExceptionThrown(
+          testVerify(ergoTree, activatedScriptVersion = activatedVersionInTests),
+          exceptionLike[InterpreterException](s"ErgoTree version ${ergoTree.version} is higher than activated $activatedVersionInTests")
+        )
+      }
+    }
   }
 
   /** Rule#| SF Status| Block Type| Script Version | Release | Validation Action
     * -----|----------|-----------|----------------|---------|--------
-    * 11   | active   | candidate | Script v2      | v4.0    | skip-pool-tx (cannot handle)
-    * 15   | active   | mined     | Script v2      | v4.0    | skip-accept (rely on majority)
+    * 19   | 4        | candidate | Script v3      | v5.0    | skip-accept (rely on majority)
+    * 20   | 4        | mined     | Script v3      | v5.0    | skip-accept (rely on majority)
     */
-  property("Rule 11, 15 | active SF | candidate or mined block | Script v2") {
-    val unsupportedVersion = Interpreter.MaxSupportedScriptVersion + 1
-    val headerFlags = ErgoTree.headerWithVersion(unsupportedVersion.toByte /* Script v2 */)
-    val ergoTree = createErgoTree(headerFlags = headerFlags)
+  property("Rules 19,20 | Block v4 | candidate or mined block | Script v3") {
+    forEachActivatedScriptVersion(activatedVers = Array[Byte](3)) // version for Block v4
+    {
+      forEachErgoTreeVersion(ergoTreeVers = Array[Byte](3, 4)) { // scripts >= v3
+        val headerFlags = ErgoTree.headerWithVersion(ergoTreeVersionInTests)
+        val ergoTree = createErgoTree(headerFlags)
 
-    val activatedVersion = unsupportedVersion.toByte // SF Status: active
+        // the prove is successful (since it is not part of consensus)
+        val pr = testProve(ergoTree, activatedScriptVersion = activatedVersionInTests)
+        pr.proof shouldBe Array.emptyByteArray
+        pr.cost shouldBe 5238L
 
-    // the prove is doing normal reduction and proof generation
-    val pr = testProve(ergoTree,
-          activatedScriptVersion = activatedVersion,
-          evalMode = Some(EvalSettings.AotEvaluationMode))
-    pr.proof shouldBe Array.emptyByteArray
-    pr.cost shouldBe 5464
-
-    // and verify is accepting without evaluation
-    val expectedCost = 0L
-    val (ok, cost) = testVerify(ergoTree, activatedScriptVersion = activatedVersion)
-    ok shouldBe true
-    cost shouldBe expectedCost
+        // and verify is accepting without evaluation
+        val (ok, cost) = testVerify(ergoTree, activatedScriptVersion = activatedVersionInTests)
+        ok shouldBe true
+        cost shouldBe 0L
+      }
+    }
   }
 
-  /** Rule#| SF Status| Block Type| Script Version | Release | Validation Action
+  /** Rule#| BlockVar | Block Type| Script Version | Release | Validation Action
     * -----|----------|-----------|----------------|---------|--------
-    * 13   | active   | mined     | Script v1      | v4.0    | skip-accept (rely on majority)
+    * 21   | 4        | candidate | Script v1      | v5.0    | R5.0-JIT-verify
+    * 22   | 4        | candidate | Script v2      | v5.0    | R5.0-JIT-verify
+    * 23   | 4        | mined     | Script v1      | v5.0    | R5.0-JIT-verify
+    * 24   | 4        | mined     | Script v2      | v5.0    | R5.0-JIT-verify
     */
-  property("Rule 13 | active SF | mined block | Script v1") {
-    val supportedVersion = Interpreter.MaxSupportedScriptVersion
-    val unsupportedVersion = supportedVersion + 1
-    val headerFlags = ErgoTree.headerWithVersion(supportedVersion /* Script v1 */)
-    val ergoTree = createErgoTree(headerFlags = headerFlags)
+  property("Rules 21,22,23,24 | Block v4 | candidate or mined block | Script v1 or v2") {
+    // this test verifies the normal validation action R5.0-JIT-verify of v5.x releases
+    // when Block v4 already activated, but the script is v0, v1 or v2.
 
-    val activatedVersion = unsupportedVersion.toByte // SF Status: active
+    forEachActivatedScriptVersion(activatedVers = Array[Byte](3)) // version for Block v4
+    {
+      forEachErgoTreeVersion(Array[Byte](0, 1, 2)) { // tree versions supported by v5.x
+        // SF inactive: check cost vectors of v4.x interpreter
+        val headerFlags = ErgoTree.headerWithVersion(ergoTreeVersionInTests)
+        val ergoTree = createErgoTree(headerFlags)
 
-    // the prove is doing normal reduction and proof generation
-    val pr = testProve(ergoTree,
-          activatedScriptVersion = activatedVersion,
-          evalMode = Some(EvalSettings.AotEvaluationMode))
-    pr.proof shouldBe Array.emptyByteArray
-    pr.cost shouldBe 5464
+        // both prove and verify are accepting with full evaluation
+        val expectedCost = 5238L
+        val pr = testProve(ergoTree, activatedScriptVersion = activatedVersionInTests)
+        pr.proof shouldBe Array.emptyByteArray
+        pr.cost shouldBe expectedCost
 
-    // and verify is accepting without evaluation
-    val (ok, cost) = testVerify(ergoTree, activatedScriptVersion = activatedVersion)
-    ok shouldBe true
-    cost shouldBe 0L
+        val (ok, cost) = testVerify(ergoTree, activatedScriptVersion = activatedVersionInTests)
+        ok shouldBe true
+        cost shouldBe expectedCost
+      }
+    }
   }
 
 }

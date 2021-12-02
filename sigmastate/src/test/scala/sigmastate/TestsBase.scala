@@ -41,21 +41,46 @@ trait TestsBase extends Matchers {
   /** Executes the given block for each combination of _currActivatedVersion and
     * _currErgoTreeVersion assigned to dynamic variables.
     */
-  def forEachScriptAndErgoTreeVersion(block: => Unit): Unit = {
-    cfor(0)(_ < activatedVersions.length, _ + 1) { i =>
-      val activatedVersion = activatedVersions(i)
+  def forEachScriptAndErgoTreeVersion
+        (activatedVers: Seq[Byte], ergoTreeVers: Seq[Byte])
+        (block: => Unit): Unit = {
+    cfor(0)(_ < activatedVers.length, _ + 1) { i =>
+      val activatedVersion = activatedVers(i)
       // setup each activated version
       _currActivatedVersion.withValue(activatedVersion) {
 
         cfor(0)(
-          i => i < ergoTreeVersions.length && ergoTreeVersions(i) <= activatedVersion,
+          i => i < ergoTreeVers.length && ergoTreeVers(i) <= activatedVersion,
           _ + 1) { j =>
-          val treeVersion = ergoTreeVersions(j)
+          val treeVersion = ergoTreeVers(j)
           // for each tree version up to currently activated, set it up and execute block
           _currErgoTreeVersion.withValue(treeVersion)(block)
         }
 
       }
+    }
+  }
+
+
+  /** Helper method which executes the given `block` once for each `activatedVers`.
+    * The method sets the dynamic variable activatedVersionInTests with is then available
+    * in the block.
+    */
+  def forEachActivatedScriptVersion(activatedVers: Seq[Byte])(block: => Unit): Unit = {
+    cfor(0)(_ < activatedVers.length, _ + 1) { i =>
+      val activatedVersion = activatedVers(i)
+      _currActivatedVersion.withValue(activatedVersion)(block)
+    }
+  }
+
+  /** Helper method which executes the given `block` once for each `ergoTreeVers`.
+    * The method sets the dynamic variable ergoTreeVersionInTests with is then available
+    * in the block.
+    */
+  def forEachErgoTreeVersion(ergoTreeVers: Seq[Byte])(block: => Unit): Unit = {
+    cfor(0)(_ < ergoTreeVers.length, _ + 1) { i =>
+      val version = ergoTreeVers(i)
+      _currErgoTreeVersion.withValue(version)(block)
     }
   }
 

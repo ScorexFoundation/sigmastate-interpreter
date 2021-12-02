@@ -12,8 +12,8 @@ necessary.
 
 Term             | Description
 -----------------|------------ 
- _ScriptV1_      | The current version of ErgoTree (3.x releases) used in ErgoBlock v1. Bits 0-2 == 0 in the ErgoTree header byte. (see ErgoTree class).
- _ScriptV2_      | The next version of ErgoTree (5.x releases) used after SF is activated. Bits 0-2 == 1 in the ErgoTree header byte. (see ErgoTree class).
+ _ScriptV1_      | The current version of ErgoTree (3.x, 4.x releases) used in ErgoBlock v1, v2. Bits `0-2 == 0 or 1` in the ErgoTree header byte. (see ErgoTree class).
+ _ScriptV2_      | The next version of ErgoTree (5.x releases) used after SF is activated (ErgoBlock v3). Bits 0-2 == 2 in the ErgoTree header byte. (see ErgoTree class).
  R4.0-AOT-cost   | cost estimation using v4.0 Ahead-Of-Time costing implementation
  R4.0-AOT-verify | spending condition verification using v4.0 Ahead-Of-Time interpreter implementation
  R5.0-JIT-verify | spending condition verification using v5.0 simplified interpreter with Just-In-Time costing of fullReduction and AOT sigma protocol costing.
@@ -35,39 +35,50 @@ Thus, we have 8 different validation contexts multiplied by 2 node versions
 having in total 16 validation rules as summarized in the following table, which 
 specifies the _validation action_ a node have to take in the given contexts.
 
-Rule#| SF Status| Block Type| Script Version | Release | Validation Action 
+Rule#| BlockVer | Block Type| Script Version | Release | Validation Action 
 -----|----------|-----------|----------------|---------|--------
-1    | inactive | candidate | Script v1 | v4.0 | R4.0-AOT-cost, R4.0-AOT-verify
-2    | inactive | candidate | Script v1 | v5.0 | R4.0-AOT-cost, R4.0-AOT-verify
-3    | inactive | candidate | Script v2 | v4.0 | skip-pool-tx (cannot handle)
-4    | inactive | candidate | Script v2 | v5.0 | skip-pool-tx (wait activation)
+1    | 1,2      | candidate | Script v1 | v4.0 | R4.0-AOT-cost, R4.0-AOT-verify
+2    | 1,2      | candidate | Script v1 | v5.0 | R4.0-AOT-cost, R4.0-AOT-verify
+3    | 1,2      | candidate | Script v2 | v4.0 | skip-pool-tx (cannot handle)
+4    | 1,2      | candidate | Script v2 | v5.0 | skip-pool-tx (wait activation)
 ||||
-5    | inactive | mined     | Script v1 | v4.0 | R4.0-AOT-cost, R4.0-AOT-verify 
-6    | inactive | mined     | Script v1 | v5.0 | R4.0-AOT-cost, R4.0-AOT-verify 
-7    | inactive | mined     | Script v2 | v4.0 | skip-reject (cannot handle)
-8    | inactive | mined     | Script v2 | v5.0 | skip-reject (wait activation)
+5    | 1,2      | mined     | Script v1 | v4.0 | R4.0-AOT-cost, R4.0-AOT-verify 
+6    | 1,2      | mined     | Script v1 | v5.0 | R4.0-AOT-cost, R4.0-AOT-verify 
+7    | 1,2      | mined     | Script v2 | v4.0 | skip-reject (cannot handle)
+8    | 1,2      | mined     | Script v2 | v5.0 | skip-reject (wait activation)
 ||||
-9    | active   | candidate | Script v1 | v4.0 | R4.0-AOT-cost, R4.0-AOT-verify
-10   | active   | candidate | Script v1 | v5.0 | R5.0-JIT-verify 
-11   | active   | candidate | Script v2 | v4.0 | skip-pool-tx (cannot handle)
-12   | active   | candidate | Script v2 | v5.0 | R5.0-JIT-verify 
+9    | 3        | candidate | Script v1 | v4.0 | skip-pool-tx (cannot handle) 
+10   | 3        | candidate | Script v1 | v5.0 | R5.0-JIT-verify 
+11   | 3        | candidate | Script v2 | v4.0 | skip-pool-tx (cannot handle)
+12   | 3        | candidate | Script v2 | v5.0 | R5.0-JIT-verify 
 ||||
-13   | active   | mined     | Script v1 | v4.0 | skip-accept (rely on majority)
-14   | active   | mined     | Script v1 | v5.0 | R5.0-JIT-verify 
-15   | active   | mined     | Script v2 | v4.0 | skip-accept (rely on majority)
-16   | active   | mined     | Script v2 | v5.0 | R5.0-JIT-verify 
+13   | 3        | mined     | Script v1 | v4.0 | skip-accept (rely on majority) 
+14   | 3        | mined     | Script v1 | v5.0 | R5.0-JIT-verify 
+15   | 3        | mined     | Script v2 | v4.0 | skip-accept (rely on majority)
+16   | 3        | mined     | Script v2 | v5.0 | R5.0-JIT-verify 
+||||
+17   | 3        | candidate | Script v3 | v5.0 | skip-reject (cannot handle)
+18   | 3        | mined     | Script v3 | v5.0 | skip-reject (cannot handle)
+||||
+19   | 4        | candidate | Script v3 | v5.0 | skip-accept (rely on majority) 
+20   | 4        | mined     | Script v3 | v5.0 | skip-accept (rely on majority) 
+||||
+21   | 4        | candidate | Script v1 | v5.0 | R5.0-JIT-verify 
+22   | 4        | candidate | Script v2 | v5.0 | R5.0-JIT-verify 
+23   | 4        | mined     | Script v1 | v5.0 | R5.0-JIT-verify 
+24   | 4        | mined     | Script v2 | v5.0 | R5.0-JIT-verify 
 
 Note the following properties of the validation rules.
 
 0. Please note that block creation is not a part of the Ergo consensus protocol, and
-miners can do whatever they want, in particulare completely custom block assembly. For
+miners can do whatever they want i.e. a completely custom block assembly. For
 this reason, the rules for `candidate` blocks are _reference implementation_ only, and
 nodes are not required to follow them exactly.
 
 1. Rules 1-4 specify creation of new candidate blocks _before_ soft-fork is activated. 
 They require that the behaviour of v4.0 and v5.0 nodes should be identical.
 
-2. Rules 9-10 specify creation of new candidate blocks _after_ soft-fork is activated.
+2. Rules 9-10, 13-14 specify validation of blocks _after_ soft-fork is activated.
 They are different for v4.0 and v5.0 nodes, but
 [equivalent](#equivalence-properties-of-validation-actions) with respect to preserving
 consensus (see also [Rule Descriptions](#rule-descriptions) for details).

@@ -46,7 +46,7 @@ trait CrossVersionProps extends PropSpecLike with TestsBase {
         Thread.sleep(100) // give it some time to finish warm-up
       }
 
-      forEachScriptAndErgoTreeVersion {
+      forEachScriptAndErgoTreeVersion(activatedVersions, ergoTreeVersions) {
         testFun_Run(testName, testFun)
       }
 
