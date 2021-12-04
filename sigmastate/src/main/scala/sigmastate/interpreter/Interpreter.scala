@@ -400,24 +400,37 @@ trait Interpreter extends ScorexLogging {
              proof: Array[Byte],
              message: Array[Byte]): Try[VerificationResult] = {
     Try {
-      // TODO v5.0: the condition below should be revised if necessary
       // The following conditions define behavior which depend on the version of ergoTree
       // This works in addition to more fine-grained soft-forkability mechanism implemented
       // using ValidationRules (see trySoftForkable method call here and in reduceToCrypto).
+
       if (context.activatedScriptVersion > Interpreter.MaxSupportedScriptVersion) {
-        // > 90% has already switched to higher version, accept without verification
+        // The activated protocol exceeds capabilities of this interpreter.
         // NOTE: this path should never be taken for validation of candidate blocks
         // in which case Ergo node should always pass Interpreter.MaxSupportedScriptVersion
         // as the value of ErgoLikeContext.activatedScriptVersion.
         // see also ErgoLikeContext ScalaDoc.
-        return Success(true -> context.initCost)
+
+        // Currently more than 90% of nodes has already switched to a higher version,
+        // thus we can accept without verification, but only if we cannot verify
+        // the given ergoTree
+        if (ergoTree.version > Interpreter.MaxSupportedScriptVersion) {
+          // We accept the box spending and rely on 90% of all the other nodes.
+          // Thus, the old node will stay in sync with the network.
+          return Success(true -> context.initCost)
+        }
+        // otherwise, we can verify the box spending
+        // thus, proceed normally
+
       } else {
         // activated version is within the supported range [0..MaxSupportedScriptVersion]
-        // however
+        // in addition, ErgoTree version should never exceed the currently activated protocol
+
         if (ergoTree.version > context.activatedScriptVersion) {
           throw new InterpreterException(
             s"ErgoTree version ${ergoTree.version} is higher than activated ${context.activatedScriptVersion}")
         }
+
         // else proceed normally
       }
 

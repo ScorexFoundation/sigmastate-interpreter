@@ -297,7 +297,7 @@ class ScriptVersionSwitchSpecification extends SigmaDslTesting {
     // this test verifies the normal validation action R5.0-JIT-verify of v5.x releases
     // when Block v4 already activated, but the script is v0, v1 or v2.
 
-    forEachActivatedScriptVersion(activatedVers = Array[Byte](3)) // version for Block v4
+    forEachActivatedScriptVersion(Array[Byte](3)) // version for Block v4
     {
       forEachErgoTreeVersion(Array[Byte](0, 1, 2)) { // tree versions supported by v5.x
         // SF inactive: check cost vectors of v4.x interpreter
