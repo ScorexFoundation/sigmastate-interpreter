@@ -143,18 +143,18 @@ class ScriptVersionSwitchSpecification extends SigmaDslTesting {
     }
   }
 
-  /** Rule#| SF Status| Block Type| Script Version | Release | Validation Action
+  /** Rule#| BlockVer | Block Type| Script Version | Release | Validation Action
     * -----|----------|-----------|----------------|---------|--------
-    * 1    | inactive | candidate | Script v1      | v4.0    | R4.0-AOT-cost, R4.0-AOT-verify
-    * 2    | inactive | candidate | Script v1      | v5.0    | R4.0-AOT-cost, R4.0-AOT-verify
-    * 5    | inactive | mined     | Script v1      | v4.0    | R4.0-AOT-cost, R4.0-AOT-verify
-    * 6    | inactive | mined     | Script v1      | v5.0    | R4.0-AOT-cost, R4.0-AOT-verify
+    * 1    | 1,2      | candidate | Script v0/v1   | v4.0    | R4.0-AOT-cost, R4.0-AOT-verify
+    * 2    | 1,2      | candidate | Script v0/v1   | v5.0    | R4.0-AOT-cost, R4.0-AOT-verify
+    * 5    | 1,2      | mined     | Script v0/v1   | v4.0    | R4.0-AOT-cost, R4.0-AOT-verify
+    * 6    | 1,2      | mined     | Script v0/v1   | v5.0    | R4.0-AOT-cost, R4.0-AOT-verify
     */
-  property("Rules 1,2,5,6 | inactive SF | candidate or mined block | Script v1") {
+  property("Rules 1,2,5,6 | BlockVer 1,2 | candidate or mined block | Script v0/v1") {
     // this test verifies the normal validation action (R4.0-AOT-cost, R4.0-AOT-verify)
     // See SigmaDslSpecification for a full suite of v4.x vs. v5.0 equivalence tests
 
-    forEachActivatedScriptVersion(activatedVers = Array[Byte](0, 1)) // versions for inactive SF
+    forEachActivatedScriptVersion(activatedVers = Array[Byte](0, 1)) // for BlockVersions 1,2
     {
       // tree versions that doesn't exceed activated
       val treeVers = (0 to activatedVersionInTests).map(_.toByte).toArray[Byte]
@@ -177,15 +177,15 @@ class ScriptVersionSwitchSpecification extends SigmaDslTesting {
     }
   }
 
-  /** Rule#| SF Status| Block Type| Script Version | Release | Validation Action
+  /** Rule#| BlockVer | Block Type| Script Version | Release | Validation Action
     * -----|----------|-----------|----------------|---------|--------
-    * 3    | inactive | candidate | Script v2      | v4.0    | skip-pool-tx (cannot handle)
-    * 4    | inactive | candidate | Script v2      | v5.0    | skip-pool-tx (wait activation)
-    * 7    | inactive | mined     | Script v2      | v4.0    | skip-reject (cannot handle)
-    * 8    | inactive | mined     | Script v2      | v5.0    | skip-reject (wait activation)
+    * 3    | 1,2      | candidate | Script v2      | v4.0    | skip-pool-tx (cannot handle)
+    * 4    | 1,2      | candidate | Script v2      | v5.0    | skip-pool-tx (wait activation)
+    * 7    | 1,2      | mined     | Script v2      | v4.0    | skip-reject (cannot handle)
+    * 8    | 1,2      | mined     | Script v2      | v5.0    | skip-reject (wait activation)
     */
-  property("Rules 3,4,7,8 | inactive SF | candidate or mined block | Script v2") {
-    forEachActivatedScriptVersion(Array[Byte](0, 1)) { // versions for SF Status: inactive
+  property("Rules 3,4,7,8 | Block Version 1,2 | candidate or mined block | Script v2") {
+    forEachActivatedScriptVersion(Array[Byte](0, 1)) { // Block Versions 1, 2
 
       forEachErgoTreeVersion(ergoTreeVers = Array[Byte](2)) { // only Script v2
         val headerFlags = ErgoTree.headerWithVersion(ergoTreeVersionInTests /* Script v2 */)
@@ -203,18 +203,18 @@ class ScriptVersionSwitchSpecification extends SigmaDslTesting {
     }
   }
 
-  /** Rule#| SF Status| Block Type| Script Version | Release | Validation Action
+  /** Rule#| BlockVer | Block Type| Script Version | Release | Validation Action
     * -----|----------|-----------|----------------|---------|--------
-    * 10   | active   | candidate | Script v1      | v5.0    | R5.0-JIT-verify
-    * 12   | active   | candidate | Script v2      | v5.0    | R5.0-JIT-verify
-    * 14   | active   | mined     | Script v1      | v5.0    | R5.0-JIT-verify
-    * 16   | active   | mined     | Script v2      | v5.0    | R5.0-JIT-verify
+    * 10   | 3        | candidate | Script v0/v1   | v5.0    | R5.0-JIT-verify
+    * 12   | 3        | candidate | Script v2      | v5.0    | R5.0-JIT-verify
+    * 14   | 3        | mined     | Script v0/v1   | v5.0    | R5.0-JIT-verify
+    * 16   | 3        | mined     | Script v2      | v5.0    | R5.0-JIT-verify
     */
-  property("Rules 10,12,14,16 | active SF | candidate or mined block | Script v1 or v2") {
+  property("Rules 10,12,14,16 | BlockVer 3 | candidate or mined block | Script v0/v1/v2") {
     // this test verifies the normal validation action (R5.0-JIT-verify)
     // See SigmaDslSpecification for a full suite of v4.x vs. v5.0 equivalence tests
 
-    forEachActivatedScriptVersion(activatedVers = Array[Byte](2)) // version for active v5.0 SF
+    forEachActivatedScriptVersion(activatedVers = Array[Byte](2)) // Block version 3
     {
       // tree versions that doesn't exceed activated
       val treeVers = (0 to activatedVersionInTests).map(_.toByte).toArray[Byte]
@@ -261,7 +261,7 @@ class ScriptVersionSwitchSpecification extends SigmaDslTesting {
     }
   }
 
-  /** Rule#| SF Status| Block Type| Script Version | Release | Validation Action
+  /** Rule#| BlockVer | Block Type| Script Version | Release | Validation Action
     * -----|----------|-----------|----------------|---------|--------
     * 19   | 4        | candidate | Script v3      | v5.0    | skip-accept (rely on majority)
     * 20   | 4        | mined     | Script v3      | v5.0    | skip-accept (rely on majority)
@@ -286,14 +286,14 @@ class ScriptVersionSwitchSpecification extends SigmaDslTesting {
     }
   }
 
-  /** Rule#| BlockVar | Block Type| Script Version | Release | Validation Action
+  /** Rule#| BlockVer | Block Type| Script Version | Release | Validation Action
     * -----|----------|-----------|----------------|---------|--------
-    * 21   | 4        | candidate | Script v1      | v5.0    | R5.0-JIT-verify
+    * 21   | 4        | candidate | Script v0/v1   | v5.0    | R5.0-JIT-verify
     * 22   | 4        | candidate | Script v2      | v5.0    | R5.0-JIT-verify
-    * 23   | 4        | mined     | Script v1      | v5.0    | R5.0-JIT-verify
+    * 23   | 4        | mined     | Script v0/v1   | v5.0    | R5.0-JIT-verify
     * 24   | 4        | mined     | Script v2      | v5.0    | R5.0-JIT-verify
     */
-  property("Rules 21,22,23,24 | Block v4 | candidate or mined block | Script v1 or v2") {
+  property("Rules 21,22,23,24 | Block v4 | candidate or mined block | Script v0/v1/v2") {
     // this test verifies the normal validation action R5.0-JIT-verify of v5.x releases
     // when Block v4 already activated, but the script is v0, v1 or v2.
 
