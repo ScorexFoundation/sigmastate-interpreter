@@ -362,11 +362,11 @@ trait Interpreter extends ScorexLogging {
     *
     * Alternatively, the required evaluation mode can be specified by giving Some(mode)
     * value in `evalSettings.evaluationMode`, in which case the interpreter works as
-    * spedified.
+    * specified.
     */
   def getEvaluationMode(context: CTX): EvaluationMode = {
     evalSettings.evaluationMode.getOrElse {
-      if (context.activatedScriptVersion < Interpreter.MaxSupportedScriptVersion)
+      if (context.activatedScriptVersion < Interpreter.JitActivationVersion)
         AotEvaluationMode
       else
         JitEvaluationMode
@@ -620,6 +620,11 @@ object Interpreter {
     * etc.
     */
   val MaxSupportedScriptVersion: Byte = 2 // supported versions 0, 1, 2
+
+  /** The first version of ErgoTree starting from which the JIT costing interpreter must be used.
+    * It must also be used for all subsequent versions (3, 4, etc).
+    */
+  val JitActivationVersion: Byte = 2
 
   /** The result of script reduction when soft-fork condition is detected by the old node,
     * in which case the script is reduced to the trivial true proposition and takes up 0 cost.
