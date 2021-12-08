@@ -124,9 +124,12 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
     val complexityCost = ergoTree.complexity.toLong
     val initCost = addCostChecked(context.initCost, complexityCost, context.costLimit)
     val contextWithCost = context.withInitCost(initCost).asInstanceOf[CTX]
+
     val (aotRes, jitRes) = fullReduction(ergoTree, contextWithCost, env)
 
-    val (resValue, resCost) = evalSettings.evaluationMode match {
+    val evalMode = getEvaluationMode(contextWithCost)
+
+    val (resValue, resCost) = evalMode match {
       case AotEvaluationMode =>
         (aotRes.value, aotRes.cost)
 

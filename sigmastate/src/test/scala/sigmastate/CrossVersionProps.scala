@@ -46,20 +46,8 @@ trait CrossVersionProps extends PropSpecLike with TestsBase {
         Thread.sleep(100) // give it some time to finish warm-up
       }
 
-      cfor(0)(_ < activatedVersions.length, _ + 1) { i =>
-        val activatedVersion = activatedVersions(i)
-        _currActivatedVersion.withValue(activatedVersion) {
-
-          cfor(0)(
-            i => i < ergoTreeVersions.length && ergoTreeVersions(i) <= activatedVersion,
-            _ + 1) { j =>
-            val treeVersion = ergoTreeVersions(j)
-            _currErgoTreeVersion.withValue(treeVersion) {
-              testFun_Run(testName, testFun)
-            }
-          }
-
-        }
+      forEachScriptAndErgoTreeVersion(activatedVersions, ergoTreeVersions) {
+        testFun_Run(testName, testFun)
       }
 
       if (okRunTestsWithoutMCLowering) {

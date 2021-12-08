@@ -70,18 +70,6 @@ trait Interpreter extends ScorexLogging {
     */
   def evalSettings: EvalSettings = ErgoTreeEvaluator.DefaultEvalSettings
 
-  /** Returns true if AOT interpreter should be evaluated. */
-  def okEvaluateAot: Boolean = {
-    evalSettings.evaluationMode == AotEvaluationMode ||
-    evalSettings.evaluationMode == TestEvaluationMode
-  }
-
-  /** Returns true if JIT interpreter should be evaluated. */
-  def okEvaluateJit: Boolean = {
-    evalSettings.evaluationMode == JitEvaluationMode ||
-    evalSettings.evaluationMode == TestEvaluationMode
-  }
-
   /** Logs the given message string. Can be overridden in the derived interpreter classes
     * to redefine the default behavior. */
   protected def logMessage(msg: String) = {
@@ -274,19 +262,21 @@ trait Interpreter extends ScorexLogging {
     implicit val vs: SigmaValidationSettings = ctx.validationSettings
     val context = ctx.withErgoTreeVersion(ergoTree.version).asInstanceOf[CTX]
     val prop = propositionFromErgoTree(ergoTree, context)
+    val evalMode = getEvaluationMode(context)
+
     val res @ (aotRes, jitRes) = prop match {
       case SigmaPropConstant(p) =>
         val sb = SigmaDsl.toSigmaBoolean(p)
 
         var aotRes: ReductionResult = null
-        if (okEvaluateAot) {
+        if (evalMode.okEvaluateAot) {
           val aotCost = SigmaBoolean.estimateCost(sb)
           val resAotCost = Evaluation.addCostChecked(context.initCost, aotCost, context.costLimit)
           aotRes = ReductionResult(sb, resAotCost)
         }
 
         var jitRes: ReductionResult = null
-        if (okEvaluateJit) {
+        if (evalMode.okEvaluateJit) {
           // NOTE, evaluator cost unit is 10 times smaller then the cost unit of context
           val jitCost = Eval_SigmaPropConstant.costKind.cost / 10
           val resJitCost = Evaluation.addCostChecked(context.initCost, jitCost, context.costLimit)
@@ -295,13 +285,13 @@ trait Interpreter extends ScorexLogging {
         (aotRes, jitRes)
       case _ if !ergoTree.hasDeserialize =>
         var aotRes: ReductionResult = null
-        if (okEvaluateAot) {
+        if (evalMode.okEvaluateAot) {
           val r = precompiledScriptProcessor.getReducer(ergoTree, context.validationSettings)
           aotRes = r.reduce(context)
         }
 
         var jitRes: ReductionResult = null
-        if (okEvaluateJit) {
+        if (evalMode.okEvaluateJit) {
           val ctx = context.asInstanceOf[ErgoLikeContext]
               .withInitCost(context.initCost * 10)    // adjust for Evaluator cost units scale
               .withCostLimit(context.costLimit * 10)
@@ -310,10 +300,10 @@ trait Interpreter extends ScorexLogging {
         }
         (aotRes, jitRes)
       case _ =>
-        reductionWithDeserialize(ergoTree, prop, context, env)
+        reductionWithDeserialize(ergoTree, prop, context, env, evalMode)
     }
 
-    if (evalSettings.evaluationMode == TestEvaluationMode) {
+    if (evalMode == TestEvaluationMode) {
         CostingUtils.checkResults(ergoTree.bytesHex, aotRes, jitRes, logMessage(_))(evalSettings)
     }
     res
@@ -322,11 +312,11 @@ trait Interpreter extends ScorexLogging {
   /** Performs reduction of proposition which contains deserialization operations. */
   private def reductionWithDeserialize(ergoTree: ErgoTree,
                                        prop: SigmaPropValue,
-                                       context: CTX,
-                                       env: ScriptEnv): (ReductionResult, ReductionResult) = {
+                                       context: CTX, env: ScriptEnv,
+                                       evalMode: EvaluationMode): (ReductionResult, ReductionResult) = {
     implicit val vs: SigmaValidationSettings = context.validationSettings
     var aotRes: ReductionResult = null
-    if (okEvaluateAot) {
+    if (evalMode.okEvaluateAot) {
       val (propTree, context2) = trySoftForkable[(BoolValue, CTX)](whenSoftFork = (TrueLeaf, context)) {
         applyDeserializeContext(context, prop)
       }
@@ -337,7 +327,7 @@ trait Interpreter extends ScorexLogging {
     }
 
     var jitRes: ReductionResult = null
-    if (okEvaluateJit) {
+    if (evalMode.okEvaluateJit) {
       val (propTree, context2) = trySoftForkable[(SigmaPropValue, CTX)](whenSoftFork = (TrueSigmaProp, context)) {
         applyDeserializeContextJITC(context, prop)
       }
@@ -366,6 +356,23 @@ trait Interpreter extends ScorexLogging {
     fullJitCost
   }
 
+  /** Returns evaluation mode used by this interpreter in the given context.
+    * By default evaluation mode is determined based on `context.activatedScriptVersion`
+    * so that the interpreter works either as v4.x of v5.0.
+    *
+    * Alternatively, the required evaluation mode can be specified by giving Some(mode)
+    * value in `evalSettings.evaluationMode`, in which case the interpreter works as
+    * specified.
+    */
+  def getEvaluationMode(context: CTX): EvaluationMode = {
+    evalSettings.evaluationMode.getOrElse {
+      if (context.activatedScriptVersion < Interpreter.JitActivationVersion)
+        AotEvaluationMode
+      else
+        JitEvaluationMode
+    }
+  }
+
   /** Executes the script in a given context.
     * Step 1: Deserialize context variables
     * Step 2: Evaluate expression and produce SigmaProp value, which is zero-knowledge
@@ -392,25 +399,38 @@ trait Interpreter extends ScorexLogging {
              context: CTX,
              proof: Array[Byte],
              message: Array[Byte]): Try[VerificationResult] = {
-    val (res, t) = BenchmarkUtil.measureTime(Try {
-      // TODO v5.0: the condition below should be revised if necessary
+    Try {
       // The following conditions define behavior which depend on the version of ergoTree
       // This works in addition to more fine-grained soft-forkability mechanism implemented
       // using ValidationRules (see trySoftForkable method call here and in reduceToCrypto).
+
       if (context.activatedScriptVersion > Interpreter.MaxSupportedScriptVersion) {
-        // > 90% has already switched to higher version, accept without verification
+        // The activated protocol exceeds capabilities of this interpreter.
         // NOTE: this path should never be taken for validation of candidate blocks
         // in which case Ergo node should always pass Interpreter.MaxSupportedScriptVersion
         // as the value of ErgoLikeContext.activatedScriptVersion.
         // see also ErgoLikeContext ScalaDoc.
-        return Success(true -> context.initCost)
+
+        // Currently more than 90% of nodes has already switched to a higher version,
+        // thus we can accept without verification, but only if we cannot verify
+        // the given ergoTree
+        if (ergoTree.version > Interpreter.MaxSupportedScriptVersion) {
+          // We accept the box spending and rely on 90% of all the other nodes.
+          // Thus, the old node will stay in sync with the network.
+          return Success(true -> context.initCost)
+        }
+        // otherwise, we can verify the box spending
+        // thus, proceed normally
+
       } else {
         // activated version is within the supported range [0..MaxSupportedScriptVersion]
-        // however
+        // in addition, ErgoTree version should never exceed the currently activated protocol
+
         if (ergoTree.version > context.activatedScriptVersion) {
           throw new InterpreterException(
             s"ErgoTree version ${ergoTree.version} is higher than activated ${context.activatedScriptVersion}")
         }
+
         // else proceed normally
       }
 
@@ -420,9 +440,11 @@ trait Interpreter extends ScorexLogging {
 
       val (aotReduced, jitReduced) = fullReduction(ergoTree, contextWithCost, env)
 
+      val evalMode = getEvaluationMode(contextWithCost)
+
       // if necessary perform verification as v4.x (AOT based implementation)
       var aotRes: VerificationResult = null
-      if (okEvaluateAot) {
+      if (evalMode.okEvaluateAot) {
           aotRes = aotReduced.value match {
             case TrivialProp.TrueProp => (true, aotReduced.cost)
             case TrivialProp.FalseProp => (false, aotReduced.cost)
@@ -439,7 +461,7 @@ trait Interpreter extends ScorexLogging {
 
       // if necessary perform verification as v5.x (JIT based implementation)
       var jitRes: VerificationResult = null
-      if (okEvaluateJit) {
+      if (evalMode.okEvaluateJit) {
           jitRes = jitReduced.value match {
             case TrivialProp.TrueProp => (true, jitReduced.cost)
             case TrivialProp.FalseProp => (false, jitReduced.cost)
@@ -456,7 +478,7 @@ trait Interpreter extends ScorexLogging {
           }
       }
 
-      val res = evalSettings.evaluationMode match {
+      val res = evalMode match {
         case AotEvaluationMode => aotRes
         case JitEvaluationMode => jitRes
         case TestEvaluationMode =>
@@ -464,8 +486,7 @@ trait Interpreter extends ScorexLogging {
           aotRes
       }
       res
-    })
-    res
+    }
   }
 
   // Perform Verifier Steps 4-6
@@ -599,6 +620,11 @@ object Interpreter {
     * etc.
     */
   val MaxSupportedScriptVersion: Byte = 2 // supported versions 0, 1, 2
+
+  /** The first version of ErgoTree starting from which the JIT costing interpreter must be used.
+    * It must also be used for all subsequent versions (3, 4, etc).
+    */
+  val JitActivationVersion: Byte = 2
 
   /** The result of script reduction when soft-fork condition is detected by the old node,
     * in which case the script is reduced to the trivial true proposition and takes up 0 cost.
