@@ -273,24 +273,24 @@ trait SigmaTestingCommons extends PropSpec
         constants = ErgoTree.EmptyConstants,
         coster = accumulator, evalSettings.profilerOpt.getOrElse(DefaultProfiler), evalSettings)
 
-      val ((res, cost), actualTime) = BenchmarkUtil.measureTimeNano(
-        evaluator.evalWithCost(ErgoTreeEvaluator.EmptyDataEnv, compiledTree))
+      val (res, actualTime) = BenchmarkUtil.measureTimeNano(
+        evaluator.evalWithCost[B](ErgoTreeEvaluator.EmptyDataEnv, compiledTree))
       val costDetails = if (evalSettings.costTracingEnabled) {
         val trace: Seq[CostItem] = evaluator.getCostTrace()
         val costDetails = TracedCost(trace, Some(actualTime))
-        assert(cost == costDetails.cost)
+        assert(res.cost == costDetails.cost)
         costDetails
       } else
-        GivenCost(cost, Some(actualTime))
+        GivenCost(res.cost, Some(actualTime))
 
       if (evalSettings.isMeasureScriptTime) {
-        evaluator.profiler.addJitEstimation(funcScript, cost, actualTime)
+        evaluator.profiler.addJitEstimation(funcScript, res.cost, actualTime)
       }
 
       if (evalSettings.isLogEnabled) {
         printCostDetails(funcScript, costDetails)
       }
-      (res.asInstanceOf[B], costDetails)
+      (res.value, costDetails)
     }
     val Terms.Apply(funcVal, _) = compiledTree.asInstanceOf[SValue]
     CompiledFunc(funcScript, bindings, funcVal, compiledTree, f)
@@ -325,9 +325,9 @@ trait SigmaTestingCommons extends PropSpec
         constants = ErgoTree.EmptyConstants,
         coster = accumulator, DefaultProfiler, evalSettings)
 
-      val ((res, cost), actualTime) = BenchmarkUtil.measureTimeNano(
-        evaluator.evalWithCost(ErgoTreeEvaluator.EmptyDataEnv, compiledTree))
-      (res.asInstanceOf[B], GivenCost(cost, Some(actualTime)))
+      val (res, actualTime) = BenchmarkUtil.measureTimeNano(
+        evaluator.evalWithCost[B](ErgoTreeEvaluator.EmptyDataEnv, compiledTree))
+      (res.value, GivenCost(res.cost, Some(actualTime)))
     }
     val Terms.Apply(funcVal, _) = compiledTree.asInstanceOf[SValue]
     CompiledFunc(funcScript, bindings, funcVal, compiledTree, f)

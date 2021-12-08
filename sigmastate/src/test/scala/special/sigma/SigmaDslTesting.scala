@@ -474,10 +474,12 @@ class SigmaDslTesting extends PropSpec
       })(input)
 
       (oldRes, newRes) match {
-        case (Success((oldRes, CostDetails(oldCost, _))),
-              Success((newRes, CostDetails(newCost, _)))) =>
+        case (Success((oldRes, oldDetails)),
+              Success((newRes, newDetails))) =>
           newRes shouldBe oldRes
-          if (newCost != oldCost) {
+          val oldCost = oldDetails.cost
+          val newCost = newDetails.cost
+          if (newDetails.cost != oldDetails.cost) {
             assertResult(true,
               s"""
                 |New cost should not exceed old cost: (new: $newCost, old:$oldCost)

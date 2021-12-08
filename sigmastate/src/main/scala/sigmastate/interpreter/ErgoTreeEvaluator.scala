@@ -70,6 +70,9 @@ object EvalSettings {
   val TestEvaluationMode: EvaluationMode = EvaluationMode @@ 3 // both bits
 }
 
+/** Result of JITC evaluation with costing. */
+case class JitEvalResult[A](value: A, cost: JitCost)
+
 /** Implements a simple and fast direct-style interpreter of ErgoTrees.
   *
   * ### Motivation
@@ -125,10 +128,10 @@ class ErgoTreeEvaluator(
     * @return the value of the expression and the total accumulated cost in the coster.
     *         The returned cost includes the initial cost accumulated in the `coster`
     *         prior to calling this method. */
-  def evalWithCost(env: DataEnv, exp: SValue): (Any, JitCost) = {
+  def evalWithCost[A](env: DataEnv, exp: SValue): JitEvalResult[A] = {
     val res = eval(env, exp)
     val cost = coster.totalCost
-    (res, cost)
+    JitEvalResult(res.asInstanceOf[A], cost)
   }
 
   /** Trace of cost items accumulated during execution of `eval` method. Call

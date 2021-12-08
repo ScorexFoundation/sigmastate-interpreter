@@ -22,7 +22,7 @@ class JitCostSpecification extends SigmaTestingData {
 
   property("JitCost.$plus") {
     forAll(MinSuccessful(1000)) { (x: Int, y: Int) =>
-      testBinary(x, y, java7.compat.Math.addExact, _ + _)
+      testBinary(x, y, java7.compat.Math.addExact, (c1, c2) => c1 + c2)
     }
   }
 
