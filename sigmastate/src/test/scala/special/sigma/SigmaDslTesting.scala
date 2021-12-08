@@ -1,7 +1,6 @@
 package special.sigma
 
 import java.util
-
 import org.ergoplatform.SigmaConstants.ScriptCostLimit
 import org.ergoplatform.dsl.{ContractSpec, SigmaContractSyntax, TestContractSpec}
 import org.ergoplatform.validation.{SigmaValidationSettings, ValidationRules}
@@ -31,7 +30,7 @@ import sigmastate.serialization.ValueSerializer
 import sigmastate.serialization.generators.ObjectGenerators
 import sigmastate.utils.Helpers._
 import sigmastate.utxo.{DeserializeContext, DeserializeRegister}
-import sigmastate.{SSigmaProp, SType, eval}
+import sigmastate.{JitCost, SSigmaProp, SType, eval}
 import special.collection.{Coll, CollType}
 import spire.syntax.all.cfor
 
@@ -487,7 +486,7 @@ class SigmaDslTesting extends PropSpec
                 |  compiledTree = "${SigmaPPrint(newF.compiledTree, height = 550, width = 150)}"
                 |)
                 |""".stripMargin
-            )(newCost / 20 <= oldCost)
+            )(oldCost >= newCost / 20)
 
             if (evalSettings.isLogEnabled) {
               println(
@@ -702,7 +701,7 @@ class SigmaDslTesting extends PropSpec
     */
   case class Expected[+A](value: Try[A], cost: Int) {
     def newValue: Try[A] = value
-    def details: CostDetails = GivenCost(cost)
+    def details: CostDetails = GivenCost(JitCost(cost))
     def newCost: Option[Int] = None
   }
 

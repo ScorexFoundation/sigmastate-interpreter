@@ -8,10 +8,24 @@ package object sigmastate {
     * The JITC costs use 10x more accurate scale comparing to block cost values.
     * @see toBlockCost
     */
-  class JitCost private[sigmastate] (private[sigmastate] val value: Int) extends AnyVal {
+  case class JitCost private[sigmastate] (private[sigmastate] val value: Int) extends AnyVal {
     /** Adds two cost values. */
     def + (y: JitCost): JitCost =
       new JitCost(java7.compat.Math.addExact(value, y.value))
+
+    /** Multiplies this cost to the given integer. */
+    def * (n: Int): JitCost =
+      new JitCost(java7.compat.Math.multiplyExact(value, n))
+
+    /** Divides this cost by the given integer. */
+    def / (n: Int): JitCost =
+      new JitCost(value / n)
+
+    /** Return true if this value > y.value in the normal Int ordering. */
+    def > (y: JitCost): Boolean = value > y.value
+
+    /** Return true if this value >= y.value in the normal Int ordering. */
+    def >= (y: JitCost): Boolean = value >= y.value
 
     /** Scales JitCost back to block cost value. */
     def toBlockCost: Int = value / 10

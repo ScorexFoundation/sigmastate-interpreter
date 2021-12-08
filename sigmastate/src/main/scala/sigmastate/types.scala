@@ -1512,7 +1512,7 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
         """.stripMargin, ArgInfo("i", "the index"))
 
   /** Cost of creating a collection of indices */
-  val IndicesMethod_CostKind = PerItemCost(baseCost = 20, perChunkCost = 2, chunkSize = 16)
+  val IndicesMethod_CostKind = PerItemCost(baseJitCost = 20, perChunkJitCost = 2, chunkSize = 16)
 
   val IndicesMethod = SMethod(
     this, "indices", SFunc(ThisType, SCollection(SInt)), 14, IndicesMethod_CostKind)
@@ -1539,7 +1539,7 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
     * 1) cost of Coll.flatMap (per item)
     * 2) new collection is allocated for each item
     * 3) each collection is then appended to the resulting collection */
-  val FlatMapMethod_CostKind = PerItemCost(baseCost = 30, perChunkCost = 5, chunkSize = 8)
+  val FlatMapMethod_CostKind = PerItemCost(baseJitCost = 30, perChunkJitCost = 5, chunkSize = 8)
 
   val FlatMapMethod = SMethod(this, "flatMap",
     SFunc(Array(ThisType, SFunc(tIV, tOVColl)), tOVColl, Array(paramIV, paramOV)),
@@ -1742,7 +1742,7 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
   }
 
   /** Cost descriptor of Coll.zip operation. */
-  val Zip_CostKind = PerItemCost(baseCost = 10, perChunkCost = 1, chunkSize = 10)
+  val Zip_CostKind = PerItemCost(baseJitCost = 10, perChunkJitCost = 1, chunkSize = 10)
 
   val ZipMethod = SMethod(this, "zip",
     SFunc(Array(ThisType, tOVColl), SCollection(STuple(tIV, tOV)), Array[STypeParam](tIV, tOV)),

@@ -339,7 +339,7 @@ object SigmaPropBytes extends PerItemCostValueCompanion {
   override def opCode: OpCode = OpCodes.SigmaPropBytesCode
   /** BaseCost: serializing one node of SigmaBoolean proposition
     * PerChunkCost: serializing one node of SigmaBoolean proposition */
-  override val costKind = PerItemCost(baseCost = 35, perChunkCost = 6, chunkSize = 1)
+  override val costKind = PerItemCost(baseJitCost = 35, perChunkJitCost = 6, chunkSize = 1)
 }
 trait SimpleTransformerCompanion extends ValueCompanion {
   def argInfos: Seq[ArgInfo]

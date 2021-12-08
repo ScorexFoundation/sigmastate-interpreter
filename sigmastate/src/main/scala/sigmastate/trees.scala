@@ -264,7 +264,7 @@ object SigmaAnd extends SigmaTransformerCompanion {
     * - constructing new CSigmaProp and allocation collection
     * - one iteration over collection of items
     */
-  override val costKind = PerItemCost(baseCost = 10, perChunkCost = 2, chunkSize = 1)
+  override val costKind = PerItemCost(baseJitCost = 10, perChunkJitCost = 2, chunkSize = 1)
   override def argInfos: Seq[ArgInfo] = SigmaAndInfo.argInfos
   def apply(first: SigmaPropValue, second: SigmaPropValue, tail: SigmaPropValue*): SigmaAnd = SigmaAnd(Array(first, second) ++ tail)
 }
@@ -294,7 +294,7 @@ object SigmaOr extends SigmaTransformerCompanion {
   /** BaseCost:
     * - constructing new CSigmaProp and allocation collection
     * - one iteration over collection of items */
-  override val costKind = PerItemCost(baseCost = 10, perChunkCost = 2, chunkSize = 1)
+  override val costKind = PerItemCost(baseJitCost = 10, perChunkJitCost = 2, chunkSize = 1)
   override def argInfos: Seq[ArgInfo] = SigmaOrInfo.argInfos
   def apply(head: SigmaPropValue, tail: SigmaPropValue*): SigmaOr = SigmaOr(head +: tail)
 }
@@ -547,9 +547,9 @@ trait NumericCastCompanion extends ValueCompanion {
   * implementation.
   */
 object NumericCastCostKind extends TypeBasedCost {
-  override def costFunc(targetTpe: SType): Int = targetTpe match {
-    case SBigInt => 30
-    case _ => 10
+  override def costFunc(targetTpe: SType): JitCost = targetTpe match {
+    case SBigInt => JitCost(30)
+    case _ => JitCost(10)
   }
 }
 
@@ -717,7 +717,7 @@ object CalcBlake2b256 extends SimpleTransformerCompanion {
     *
     * @see [[sigmastate.interpreter.ErgoTreeEvaluator.DataBlockSize]]
     */
-  override val costKind = PerItemCost(baseCost = 20, perChunkCost = 7, chunkSize = 128)
+  override val costKind = PerItemCost(baseJitCost = 20, perChunkJitCost = 7, chunkSize = 128)
 
   override def argInfos: Seq[ArgInfo] = CalcBlake2b256Info.argInfos
 }
@@ -738,7 +738,7 @@ case class CalcSha256(override val input: Value[SByteArray]) extends CalcHash {
 object CalcSha256 extends SimpleTransformerCompanion {
   override def opCode: OpCode = OpCodes.CalcSha256Code
   /** perChunkCost - cost of hashing 64 bytes of data (see also CalcBlake2b256). */
-  override val costKind = PerItemCost(baseCost = 80, perChunkCost = 8, chunkSize = 64)
+  override val costKind = PerItemCost(baseJitCost = 80, perChunkJitCost = 8, chunkSize = 64)
   override def argInfos: Seq[ArgInfo] = CalcSha256Info.argInfos
 }
 
@@ -885,9 +885,9 @@ object ArithOp {
       * 2) calling method of Numeric
       */
     override val costKind = new TypeBasedCost {
-      override def costFunc(tpe: SType): Int = tpe match {
-        case SBigInt => 20
-        case _ => 15
+      override def costFunc(tpe: SType): JitCost = tpe match {
+        case SBigInt => JitCost(20)
+        case _ => JitCost(15)
       }
     }
   }
@@ -900,9 +900,9 @@ object ArithOp {
       * 2) calling method of Numeric
       */
     override val costKind = new TypeBasedCost {
-      override def costFunc(tpe: SType): Int = tpe match {
-        case SBigInt => 20
-        case _ => 15
+      override def costFunc(tpe: SType): JitCost = tpe match {
+        case SBigInt => JitCost(20)
+        case _ => JitCost(15)
       }
     }
   }
@@ -915,9 +915,9 @@ object ArithOp {
       * 2) calling method of Numeric
       */
     override val costKind = new TypeBasedCost {
-      override def costFunc(tpe: SType): Int = tpe match {
-        case SBigInt => 25
-        case _ => 15
+      override def costFunc(tpe: SType): JitCost = tpe match {
+        case SBigInt => JitCost(25)
+        case _ => JitCost(15)
       }
     }
   }
@@ -930,9 +930,9 @@ object ArithOp {
       * 2) calling method of Integral
       */
     override val costKind = new TypeBasedCost {
-      override def costFunc(tpe: SType): Int = tpe match {
-        case SBigInt => 25
-        case _ => 15
+      override def costFunc(tpe: SType): JitCost = tpe match {
+        case SBigInt => JitCost(25)
+        case _ => JitCost(15)
       }
     }
   }
@@ -947,9 +947,9 @@ object ArithOp {
       * 2) calling method of Integral
       */
     override val costKind = new TypeBasedCost {
-      override def costFunc(tpe: SType): Int = tpe match {
-        case SBigInt => 25
-        case _ => 15
+      override def costFunc(tpe: SType): JitCost = tpe match {
+        case SBigInt => JitCost(25)
+        case _ => JitCost(15)
       }
     }
   }
@@ -962,9 +962,9 @@ object ArithOp {
       * 2) calling method of ExactOrdering
       */
     override val costKind = new TypeBasedCost {
-      override def costFunc(tpe: SType): Int = tpe match {
-        case SBigInt => 10
-        case _ => 5
+      override def costFunc(tpe: SType): JitCost = tpe match {
+        case SBigInt => JitCost(10)
+        case _ => JitCost(5)
       }
     }
   }
@@ -977,9 +977,9 @@ object ArithOp {
       * 2) calling method of ExactOrdering
       */
     override val costKind = new TypeBasedCost {
-      override def costFunc(tpe: SType): Int = tpe match {
-        case SBigInt => 10
-        case _ => 5
+      override def costFunc(tpe: SType): JitCost = tpe match {
+        case SBigInt => JitCost(10)
+        case _ => JitCost(5)
       }
     }
   }
@@ -1234,9 +1234,9 @@ object LT extends RelationCompanion {
     * 2) calling method of Numeric
     */
   override val costKind = new TypeBasedCost {
-    override def costFunc(tpe: SType): Int = tpe match {
-      case SBigInt => 20
-      case _ => 20
+    override def costFunc(tpe: SType): JitCost = tpe match {
+      case SBigInt => JitCost(20)
+      case _ => JitCost(20)
     }
   }
   override def argInfos: Seq[ArgInfo] = LTInfo.argInfos
@@ -1261,9 +1261,9 @@ object LE extends RelationCompanion {
     * 2) calling method of Numeric
     */
   override val costKind = new TypeBasedCost {
-    override def costFunc(tpe: SType): Int = tpe match {
-      case SBigInt => 20 // cf. comparisonBigInt
-      case _ => 20 // cf. comparisonCost
+    override def costFunc(tpe: SType): JitCost = tpe match {
+      case SBigInt => JitCost(20) // cf. comparisonBigInt
+      case _ => JitCost(20) // cf. comparisonCost
     }
   }
   override def argInfos: Seq[ArgInfo] = LEInfo.argInfos
@@ -1288,9 +1288,9 @@ object GT extends RelationCompanion {
     * 2) calling method of Numeric
     */
   override val costKind = new TypeBasedCost {
-    override def costFunc(tpe: SType): Int = tpe match {
-      case SBigInt => 20 // cf. comparisonBigInt
-      case _ => 20 // cf. comparisonCost
+    override def costFunc(tpe: SType): JitCost = tpe match {
+      case SBigInt => JitCost(20) // cf. comparisonBigInt
+      case _ => JitCost(20) // cf. comparisonCost
     }
   }
   override def argInfos: Seq[ArgInfo] = GTInfo.argInfos
@@ -1315,9 +1315,9 @@ object GE extends RelationCompanion {
     * 2) calling method of Numeric
     */
   override val costKind = new TypeBasedCost {
-    override def costFunc(tpe: SType): Int = tpe match {
-      case SBigInt => 20
-      case _ => 20
+    override def costFunc(tpe: SType): JitCost = tpe match {
+      case SBigInt => JitCost(20)
+      case _ => JitCost(20)
     }
   }
   override def argInfos: Seq[ArgInfo] = GEInfo.argInfos

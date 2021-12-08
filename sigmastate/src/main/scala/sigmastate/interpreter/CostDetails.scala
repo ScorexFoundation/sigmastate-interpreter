@@ -1,11 +1,13 @@
 package sigmastate.interpreter
 
+import sigmastate.JitCost
+
 import scala.collection.mutable
 
 /** Abstract representation of cost results obtained during evaluation. */
 abstract class CostDetails {
   /** The total cost of evaluation. */
-  def cost: Int
+  def cost: JitCost
   /** The trace of costed operations performed during evaluation. */
   def trace: Seq[CostItem]
   /** Actual execution time (in nanoseconds) if defined. */
@@ -20,7 +22,7 @@ abstract class CostDetails {
 case class TracedCost(trace: Seq[CostItem],
                       actualTimeNano: Option[Long] = None) extends CostDetails {
   /** Total cost of all cost items. */
-  def cost: Int = trace.foldLeft(0)(_ + _.cost)
+  def cost: JitCost = trace.foldLeft(JitCost(0))(_ + _.cost)
 }
 
 /** Result of cost evaluation represented using simple given value.
@@ -28,7 +30,7 @@ case class TracedCost(trace: Seq[CostItem],
   * @param cost the given value of the total cost
   * @param actualTimeNano measured time of execution (if some)
   */
-case class GivenCost(cost: Int,
+case class GivenCost(cost: JitCost,
                      actualTimeNano: Option[Long] = None) extends CostDetails {
   /** The trace is empty for this representation of CostDetails.
     */
@@ -48,7 +50,7 @@ object CostDetails {
   /** Helper recognizer to work with different representations of costs in patterns
     * uniformly.
     */
-  def unapply(d: CostDetails): Option[(Int, Seq[CostItem])] = d match {
+  def unapply(d: CostDetails): Option[(JitCost, Seq[CostItem])] = d match {
     case TracedCost(t, _) => Some((d.cost, t))
     case GivenCost(c, _) => Some((c, EmptyTrace))
     case _ => None

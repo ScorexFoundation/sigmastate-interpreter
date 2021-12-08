@@ -1110,7 +1110,7 @@ object Values {
   }
   object BlockValue extends ValueCompanion {
     override def opCode: OpCode = BlockValueCode
-    override val costKind = PerItemCost(1, 1, 10)
+    override val costKind = PerItemCost(JitCost(1), JitCost(1), 10)
   }
   /**
     * @param args parameters list, where each parameter has an id and a type.
