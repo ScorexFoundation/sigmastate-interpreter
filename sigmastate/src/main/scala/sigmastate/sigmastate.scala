@@ -27,11 +27,11 @@ package object sigmastate {
     /** Return true if this value >= y.value in the normal Int ordering. */
     def >= (y: JitCost): Boolean = value >= y.value
 
-    /** Scales JitCost back to block cost value. */
+    /** Scales JitCost back to block cost value. This is inverse to JitCost.fromBlockCost. */
     def toBlockCost: Int = value / 10
   }
   object JitCost {
-    /** Scales the given block cost to the JitCost scale. */
+    /** Scales the given block cost to the JitCost scale. This is inverse to toBlockCost*/
     def fromBlockCost(blockCost: Int): JitCost =
       new JitCost(java7.compat.Math.multiplyExact(blockCost, 10))
   }
