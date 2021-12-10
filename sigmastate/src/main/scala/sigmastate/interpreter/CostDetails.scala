@@ -1,7 +1,7 @@
 package sigmastate.interpreter
 
 import sigmastate.JitCost
-
+import spire.syntax.all.cfor
 import scala.collection.mutable
 
 /** Abstract representation of cost results obtained during evaluation. */
@@ -22,7 +22,14 @@ abstract class CostDetails {
 case class TracedCost(trace: Seq[CostItem],
                       actualTimeNano: Option[Long] = None) extends CostDetails {
   /** Total cost of all cost items. */
-  def cost: JitCost = trace.foldLeft(JitCost(0))(_ + _.cost)
+  def cost: JitCost = {
+    val n = trace.length
+    var res = JitCost(0)
+    cfor(0)(_ < n, _ + 1) { i =>
+      res += trace(i).cost
+    }
+    res
+  }
 }
 
 /** Result of cost evaluation represented using simple given value.
