@@ -601,18 +601,18 @@ object Interpreter {
 
   /** Represents the cost of computing DLogInteractiveProver.computeCommitment. */
   final val ComputeCommitments_Schnorr = OperationCostInfo(
-    FixedCost(3400), NamedDesc("ComputeCommitments_Schnorr"))
+    FixedCost(JitCost(3400)), NamedDesc("ComputeCommitments_Schnorr"))
 
   /** Represents the cost of computing DiffieHellmanTupleInteractiveProver.computeCommitment. */
   final val ComputeCommitments_DHT = OperationCostInfo(
-    FixedCost(6450), NamedDesc("ComputeCommitments_DHT"))
+    FixedCost(JitCost(6450)), NamedDesc("ComputeCommitments_DHT"))
 
   /** Represents the cost spent by JIT evaluator on a simple ErgoTree containing
     * SigmaPropConstant.
     * It doesn't include cost of crypto verification.
     */
   final val Eval_SigmaPropConstant = OperationCostInfo(
-    FixedCost(50), NamedDesc("Eval_SigmaPropConstant"))
+    FixedCost(JitCost(50)), NamedDesc("Eval_SigmaPropConstant"))
 
   /** Verification cost of each ProveDlog node of SigmaBoolean proposition tree. */
   final val ProveDlogVerificationCost =

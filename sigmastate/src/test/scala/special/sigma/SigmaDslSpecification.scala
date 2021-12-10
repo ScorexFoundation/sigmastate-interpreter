@@ -208,11 +208,11 @@ class SigmaDslSpecification extends SigmaDslTesting
         FixedCostItem(FuncValue),
         FixedCostItem(GetVar),
         FixedCostItem(OptionGet),
-        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(5)),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
         FixedCostItem(ValUse),
         FixedCostItem(SelectField),
         FixedCostItem(Constant),
-        FixedCostItem(NamedDesc("EQ_Prim"), FixedCost(3)),
+        FixedCostItem(NamedDesc("EQ_Prim"), FixedCost(JitCost(3))),
         FixedCostItem(ValUse),
         FixedCostItem(SelectField),
         FixedCostItem(BinXor)
@@ -625,11 +625,11 @@ class SigmaDslSpecification extends SigmaDslTesting
         FixedCostItem(FuncValue),
         FixedCostItem(GetVar),
         FixedCostItem(OptionGet),
-        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(5)),
-        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(1, 1, 10), 1),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
         FixedCostItem(ValUse),
         FixedCostItem(LogicalNot),
-        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(5)),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
         FixedCostItem(ValUse),
         FixedCostItem(BinAnd),
         FixedCostItem(LogicalNot),
@@ -2582,7 +2582,7 @@ class SigmaDslSpecification extends SigmaDslTesting
             FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
             FixedCostItem(ValUse),
             FixedCostItem(PropertyCall),
-            MethodCallCostItem(TracedCost(Array(FixedCostItem(SGroupElement.GetEncodedMethod, FixedCost(3)))))
+            MethodCallCostItem(TracedCost(Array(FixedCostItem(SGroupElement.GetEncodedMethod, FixedCost(JitCost(3))))))
           )
         )
         def success[T](v: T) = Expected(Success(v), 37905, cost)
@@ -2614,7 +2614,7 @@ class SigmaDslSpecification extends SigmaDslTesting
             FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
             FixedCostItem(ValUse),
             FixedCostItem(PropertyCall),
-            MethodCallCostItem(TracedCost(Array(FixedCostItem(MethodDesc(SGroupElement.GetEncodedMethod), FixedCost(3))))),
+            MethodCallCostItem(TracedCost(Array(FixedCostItem(MethodDesc(SGroupElement.GetEncodedMethod), FixedCost(JitCost(3)))))),
             FixedCostItem(DecodePoint),
             FixedCostItem(ValUse)
           )
@@ -2656,7 +2656,7 @@ class SigmaDslSpecification extends SigmaDslTesting
             FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
             FixedCostItem(ValUse),
             FixedCostItem(PropertyCall),
-            MethodCallCostItem(TracedCost(Array(FixedCostItem(MethodDesc(SGroupElement.NegateMethod), FixedCost(1)))))
+            MethodCallCostItem(TracedCost(Array(FixedCostItem(MethodDesc(SGroupElement.NegateMethod), FixedCost(JitCost(1))))))
           )
         )
         def success[T](v: T) = Expected(Success(v), 36292, cost)

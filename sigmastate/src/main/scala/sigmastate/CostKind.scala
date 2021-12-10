@@ -1,6 +1,6 @@
 package sigmastate
 
-import scalan.OverloadHack.Overloaded1
+import scala.runtime.Statics
 
 /** Cost descriptor of a single operation, usually associated with
   * [[sigmastate.interpreter.OperationDesc]].
@@ -9,9 +9,8 @@ sealed abstract class CostKind
 
 /** Descriptor of the simple fixed cost.
   * @param cost  given cost of the operation */
-case class FixedCost(cost: JitCost) extends CostKind
-object FixedCost {
-  def apply(jitCost: Int)(implicit o: Overloaded1): FixedCost = FixedCost(JitCost(jitCost))
+case class FixedCost(cost: JitCost) extends CostKind {
+  override def hashCode(): Int = cost.value
 }
 
 /** Cost of operation over collection of the known length.
@@ -29,11 +28,17 @@ case class PerItemCost(baseCost: JitCost, perChunkCost: JitCost, chunkSize: Int)
     val nChunks = chunks(nItems)
     baseCost + (perChunkCost * nChunks)
   }
-}
-object PerItemCost {
-  def apply(baseJitCost: Int, perChunkJitCost: Int, chunkSize: Int)
-           (implicit o: Overloaded1): PerItemCost =
-    PerItemCost(JitCost(baseJitCost), JitCost(perChunkJitCost), chunkSize)
+
+  /** This override is necessary to avoid JitCost instances allocation in the default
+    * generated code for case class.
+    */
+  override def hashCode(): Int = {
+    var var1 = -889275714
+    var1 = Statics.mix(var1, this.baseCost.value)
+    var1 = Statics.mix(var1, this.perChunkCost.value)
+    var1 = Statics.mix(var1, this.chunkSize)
+    Statics.finalizeHash(var1, 3)
+  }
 }
 
 /** Descriptor of the cost which depends on type. */

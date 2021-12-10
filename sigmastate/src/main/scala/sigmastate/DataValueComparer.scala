@@ -27,109 +27,121 @@ object DataValueComparer {
     * The constants are part of the consensus protocol and cannot be changed without forking.
     */
   final val CostOf_MatchType = 1
-  final val CostKind_MatchType = FixedCost(CostOf_MatchType)
+  final val CostKind_MatchType = FixedCost(JitCost(CostOf_MatchType))
   final val OpDesc_MatchType = NamedDesc("MatchType")
   final val MatchType = OperationCostInfo(CostKind_MatchType, OpDesc_MatchType)
 
-  final val CostKind_EQ_Prim = FixedCost(3)         // case 1
+  final val CostKind_EQ_Prim = FixedCost(JitCost(3))         // case 1
   final val OpDesc_EQ_Prim = NamedDesc("EQ_Prim")
   final val EQ_Prim = OperationCostInfo(CostKind_EQ_Prim, OpDesc_EQ_Prim)
 
 
   /** Equals two Colls of non-primitive (boxed) types.
     */
-  final val CostKind_EQ_Coll = PerItemCost(10, 2, 1)    // case 2
+  final val CostKind_EQ_Coll = PerItemCost(
+    baseCost = JitCost(10), perChunkCost = JitCost(2), chunkSize = 1) // case 2
   final val OpDesc_EQ_Coll = NamedDesc("EQ_Coll")
   final val EQ_Coll = OperationCostInfo(CostKind_EQ_Coll, OpDesc_EQ_Coll)
 
-  final val CostKind_EQ_Tuple = FixedCost(4)  // case 3
+  final val CostKind_EQ_Tuple = FixedCost(JitCost(4))  // case 3
   final val OpDesc_EQ_Tuple = NamedDesc("EQ_Tuple")
   final val EQ_Tuple = OperationCostInfo(CostKind_EQ_Tuple, OpDesc_EQ_Tuple)
 
   /** NOTE: the value is set based on benchmarking of SigmaDslSpecification. */
-  final val CostKind_EQ_GroupElement = FixedCost(172) // case 4
+  final val CostKind_EQ_GroupElement = FixedCost(JitCost(172)) // case 4
   final val OpDesc_EQ_GroupElement = NamedDesc("EQ_GroupElement")
   final val EQ_GroupElement = OperationCostInfo(CostKind_EQ_GroupElement, OpDesc_EQ_GroupElement)
 
-  final val CostKind_EQ_BigInt = FixedCost(5)       // case 5
+  final val CostKind_EQ_BigInt = FixedCost(JitCost(5))       // case 5
   final val OpDesc_EQ_BigInt = NamedDesc("EQ_BigInt")
   final val EQ_BigInt = OperationCostInfo(CostKind_EQ_BigInt, OpDesc_EQ_BigInt)
 
-  final val CostKind_EQ_AvlTree = FixedCost(3 + (6 * CostOf_MatchType) / 2)      // case 6
+  final val CostKind_EQ_AvlTree = FixedCost(JitCost(3 + (6 * CostOf_MatchType) / 2))      // case 6
   final val OpDesc_EQ_AvlTree = NamedDesc("EQ_AvlTree")
   final val EQ_AvlTree = OperationCostInfo(CostKind_EQ_AvlTree, OpDesc_EQ_AvlTree)
 
   // TODO v5.0: update value after serialization is avoided to compute ErgoBox.id
-  final val CostKind_EQ_Box = FixedCost(6)          // case 7
+  final val CostKind_EQ_Box = FixedCost(JitCost(6))          // case 7
   final val OpDesc_EQ_Box = NamedDesc("EQ_Box")
   final val EQ_Box = OperationCostInfo(CostKind_EQ_Box, OpDesc_EQ_Box)
 
   /** NOTE: In the formula `(7 + 1)` the 1 corresponds to the second type match. */
-  final val CostKind_EQ_Option = FixedCost(1 + (7 + 1) * CostOf_MatchType / 2 - 1) // case 8
+  final val CostKind_EQ_Option = FixedCost(JitCost(1 + (7 + 1) * CostOf_MatchType / 2 - 1)) // case 8
   final val OpDesc_EQ_Option = NamedDesc("EQ_Option")
   final val EQ_Option = OperationCostInfo(CostKind_EQ_Option, OpDesc_EQ_Option)
 
-  final val CostKind_EQ_PreHeader = FixedCost(4) // case 9
+  final val CostKind_EQ_PreHeader = FixedCost(JitCost(4)) // case 9
   final val OpDesc_EQ_PreHeader = NamedDesc("EQ_PreHeader")
   final val EQ_PreHeader = OperationCostInfo(CostKind_EQ_PreHeader, OpDesc_EQ_PreHeader)
 
-  final val CostKind_EQ_Header = FixedCost(6) // case 10
+  final val CostKind_EQ_Header = FixedCost(JitCost(6)) // case 10
   final val OpDesc_EQ_Header = NamedDesc("EQ_Header")
   final val EQ_Header = OperationCostInfo(CostKind_EQ_Header, OpDesc_EQ_Header)
 
   /** Equals two CollOverArray of Boolean type. */
-  final val CostKind_EQ_COA_Boolean = PerItemCost(15, 2, 128)
+  final val CostKind_EQ_COA_Boolean = PerItemCost(
+    baseCost = JitCost(15), perChunkCost = JitCost(2), chunkSize = 128)
   final val OpDesc_EQ_COA_Boolean = NamedDesc("EQ_COA_Boolean")
   final val EQ_COA_Boolean = OperationCostInfo(CostKind_EQ_COA_Boolean, OpDesc_EQ_COA_Boolean)
 
   /** Equals two CollOverArray of Byte type. */
-  final val CostKind_EQ_COA_Byte = PerItemCost(15, 2, 128)
+  final val CostKind_EQ_COA_Byte = PerItemCost(
+    baseCost = JitCost(15), perChunkCost = JitCost(2), chunkSize = 128)
   final val OpDesc_EQ_COA_Byte = NamedDesc("EQ_COA_Byte")
   final val EQ_COA_Byte = OperationCostInfo(CostKind_EQ_COA_Byte, OpDesc_EQ_COA_Byte)
 
   /** Equals two CollOverArray of Short type. */
-  final val CostKind_EQ_COA_Short = PerItemCost(15, 2, 96)
+  final val CostKind_EQ_COA_Short = PerItemCost(
+    baseCost = JitCost(15), perChunkCost = JitCost(2), chunkSize = 96)
   final val OpDesc_EQ_COA_Short = NamedDesc("EQ_COA_Short")
   final val EQ_COA_Short = OperationCostInfo(CostKind_EQ_COA_Short, OpDesc_EQ_COA_Short)
 
   /** Equals two CollOverArray of Int type. */
-  final val CostKind_EQ_COA_Int = PerItemCost(15, 2, 64)
+  final val CostKind_EQ_COA_Int = PerItemCost(
+    baseCost = JitCost(15), perChunkCost = JitCost(2), chunkSize = 64)
   final val OpDesc_EQ_COA_Int = NamedDesc("EQ_COA_Int")
   final val EQ_COA_Int = OperationCostInfo(CostKind_EQ_COA_Int, OpDesc_EQ_COA_Int)
 
   /** Equals two CollOverArray of Long type. */
-  final val CostKind_EQ_COA_Long = PerItemCost(15, 2, 48)
+  final val CostKind_EQ_COA_Long = PerItemCost(
+    baseCost = JitCost(15), perChunkCost = JitCost(2), chunkSize = 48)
   final val OpDesc_EQ_COA_Long = NamedDesc("EQ_COA_Long")
   final val EQ_COA_Long = OperationCostInfo(CostKind_EQ_COA_Long, OpDesc_EQ_COA_Long)
 
   /** Equals two CollOverArray of GroupElement type. */
-  final val CostKind_EQ_COA_GroupElement = PerItemCost(15, 5, 1)
+  final val CostKind_EQ_COA_GroupElement = PerItemCost(
+    baseCost = JitCost(15), perChunkCost = JitCost(5), chunkSize = 1)
   final val OpDesc_EQ_COA_GroupElement = NamedDesc("EQ_COA_GroupElement")
   final val EQ_COA_GroupElement = OperationCostInfo(CostKind_EQ_COA_GroupElement, OpDesc_EQ_COA_GroupElement)
 
   /** Equals two CollOverArray of BigInt type. */
-  final val CostKind_EQ_COA_BigInt = PerItemCost(15, 7, 5)
+  final val CostKind_EQ_COA_BigInt = PerItemCost(
+    baseCost = JitCost(15), perChunkCost = JitCost(7), chunkSize = 5)
   final val OpDesc_EQ_COA_BigInt = NamedDesc("EQ_COA_BigInt")
   final val EQ_COA_BigInt = OperationCostInfo(CostKind_EQ_COA_BigInt, OpDesc_EQ_COA_BigInt)
 
   /** Equals two CollOverArray of AvlTree type. */
-  final val CostKind_EQ_COA_AvlTree = PerItemCost(15, 5, 2)
+  final val CostKind_EQ_COA_AvlTree = PerItemCost(
+    baseCost = JitCost(15), perChunkCost = JitCost(5), chunkSize = 2)
   final val OpDesc_EQ_COA_AvlTree = NamedDesc("EQ_COA_AvlTree")
   final val EQ_COA_AvlTree = OperationCostInfo(CostKind_EQ_COA_AvlTree, OpDesc_EQ_COA_AvlTree)
 
   // TODO v5.0: update value after serialization is avoided to compute ErgoBox.id
   /** Equals two CollOverArray of Box type. */
-  final val CostKind_EQ_COA_Box = PerItemCost(15, 5, 1)
+  final val CostKind_EQ_COA_Box = PerItemCost(
+    baseCost = JitCost(15), perChunkCost = JitCost(5), chunkSize = 1)
   final val OpDesc_EQ_COA_Box = NamedDesc("EQ_COA_Box")
   final val EQ_COA_Box = OperationCostInfo(CostKind_EQ_COA_Box, OpDesc_EQ_COA_Box)
 
   /** Equals two CollOverArray of PreHeader type. */
-  final val CostKind_EQ_COA_PreHeader = PerItemCost(15, 3, 1)
+  final val CostKind_EQ_COA_PreHeader = PerItemCost(
+    baseCost = JitCost(15), perChunkCost = JitCost(3), chunkSize = 1)
   final val OpDesc_EQ_COA_PreHeader = NamedDesc("EQ_COA_PreHeader")
   final val EQ_COA_PreHeader = OperationCostInfo(CostKind_EQ_COA_PreHeader, OpDesc_EQ_COA_PreHeader)
 
   /** Equals two CollOverArray of Header type. */
-  final val CostKind_EQ_COA_Header = PerItemCost(15, 5, 1)
+  final val CostKind_EQ_COA_Header = PerItemCost(
+    baseCost = JitCost(15), perChunkCost = JitCost(5), chunkSize = 1)
   final val OpDesc_EQ_COA_Header = NamedDesc("EQ_COA_Header")
   final val EQ_COA_Header = OperationCostInfo(CostKind_EQ_COA_Header, OpDesc_EQ_COA_Header)
 

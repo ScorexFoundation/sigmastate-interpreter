@@ -329,7 +329,7 @@ object Values {
   object Constant extends FixedCostValueCompanion {
     override def opCode: OpCode = ConstantCode
     /** Cost of: returning value from Constant node. */
-    override val costKind = FixedCost(5)
+    override val costKind = FixedCost(JitCost(5))
 
     /** Immutable empty array, can be used to save allocations in many places. */
     val EmptyArray = Array.empty[Constant[SType]]
@@ -394,7 +394,7 @@ object Values {
   object ConstantPlaceholder extends ValueCompanion {
     override def opCode: OpCode = ConstantPlaceholderCode
     /** Cost of: accessing Constant in array by index. */
-    override val costKind = FixedCost(1)
+    override val costKind = FixedCost(JitCost(1))
   }
 
   trait NotReadyValue[S <: SType] extends Value[S] {
@@ -417,7 +417,7 @@ object Values {
 
   object TaggedVariable extends ValueCompanion {
     override def opCode: OpCode = TaggedVariableCode
-    override def costKind: CostKind = FixedCost(1)
+    override def costKind: CostKind = FixedCost(JitCost(1))
     def apply[T <: SType](varId: Byte, tpe: T): TaggedVariable[T] =
       TaggedVariableNode(varId, tpe)
   }
@@ -669,7 +669,7 @@ object Values {
 
   case object GroupGenerator extends EvaluatedValue[SGroupElement.type] with ValueCompanion {
     override def opCode: OpCode = OpCodes.GroupGeneratorCode
-    override val costKind = FixedCost(10)
+    override val costKind = FixedCost(JitCost(10))
     override def tpe = SGroupElement
     override val value = SigmaDsl.GroupElement(CryptoConstants.dlogGroup.generator)
     override def companion = this
@@ -880,7 +880,7 @@ object Values {
   object Tuple extends FixedCostValueCompanion {
     override def opCode: OpCode = TupleCode
     /** Cost of: 1) allocating a new tuple (of limited max size)*/
-    override val costKind = FixedCost(15)
+    override val costKind = FixedCost(JitCost(15))
     def apply(items: Value[SType]*): Tuple = Tuple(items.toIndexedSeq)
   }
 
@@ -955,7 +955,7 @@ object Values {
     override def opCode: OpCode = ConcreteCollectionCode
     /** Cost of: allocating new collection
       * @see ConcreteCollection_PerItem */
-    override val costKind = FixedCost(20)
+    override val costKind = FixedCost(JitCost(20))
 
     def fromSeq[V <: SType](items: Seq[Value[V]])(implicit tV: V): ConcreteCollection[V] =
       ConcreteCollection(items, tV)
@@ -1073,7 +1073,7 @@ object Values {
   object ValUse extends FixedCostValueCompanion {
     override def opCode: OpCode = ValUseCode
     /** Cost of: 1) Lookup in immutable HashMap by valId: Int 2) alloc of Some(v) */
-    override val costKind = FixedCost(5)
+    override val costKind = FixedCost(JitCost(5))
   }
 
   /** The order of ValDefs in the block is used to assign ids to ValUse(id) nodes
@@ -1110,7 +1110,8 @@ object Values {
   }
   object BlockValue extends ValueCompanion {
     override def opCode: OpCode = BlockValueCode
-    override val costKind = PerItemCost(JitCost(1), JitCost(1), 10)
+    override val costKind = PerItemCost(
+      baseCost = JitCost(1), perChunkCost = JitCost(1), chunkSize = 10)
   }
   /**
     * @param args parameters list, where each parameter has an id and a type.
@@ -1172,11 +1173,11 @@ object Values {
   object FuncValue extends FixedCostValueCompanion {
     val AddToEnvironmentDesc = NamedDesc("AddToEnvironment")
     /** Cost of: adding value to evaluator environment */
-    val AddToEnvironmentDesc_CostKind = FixedCost(5)
+    val AddToEnvironmentDesc_CostKind = FixedCost(JitCost(5))
     override def opCode: OpCode = FuncValueCode
     /** Cost of: 1) switch on the number of args 2) allocating a new Scala closure
       * Old cost: ("Lambda", "() => (D1) => R", lambdaCost),*/
-    override val costKind = FixedCost(5)
+    override val costKind = FixedCost(JitCost(5))
     def apply(argId: Int, tArg: SType, body: SValue): FuncValue =
       FuncValue(IndexedSeq((argId,tArg)), body)
   }

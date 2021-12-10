@@ -212,17 +212,17 @@ object FiatShamirTree {
 
   /** Represents cost of serializing UncheckedSchnorr or UnprovenSchnorr node of ProofTree. */
   final val ToBytes_Schnorr = OperationCostInfo(
-    FixedCost(570), NamedDesc("ToBytes_Schnorr"))
+    FixedCost(JitCost(570)), NamedDesc("ToBytes_Schnorr"))
 
   /** Represents cost of serializing UncheckedDiffieHellmanTuple or
     * UnprovenDiffieHellmanTuple node of ProofTree.
     */
   final val ToBytes_DHT = OperationCostInfo(
-    FixedCost(680), NamedDesc("ToBytes_DHT"))
+    FixedCost(JitCost(680)), NamedDesc("ToBytes_DHT"))
 
   /** Represents cost of serializing ProofTreeConjecture node of ProofTree. */
   final val ToBytes_ProofTreeConjecture = OperationCostInfo(
-    FixedCost(15), NamedDesc("ToBytes_ProofTreeConjecture"))
+    FixedCost(JitCost(15)), NamedDesc("ToBytes_ProofTreeConjecture"))
 
   /** Prover Step 7: Convert the tree to a byte array `s` for input to the Fiat-Shamir hash
     * function.
