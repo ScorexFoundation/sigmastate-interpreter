@@ -1,13 +1,13 @@
 package sigmastate.interpreter
 
-import sigmastate.{FixedCost, PerItemCost, SMethod, SType, TypeBasedCost}
+import sigmastate.{FixedCost, JitCost, PerItemCost, SMethod, SType, TypeBasedCost}
 import sigmastate.Values.{FixedCostValueCompanion, PerItemCostValueCompanion, ValueCompanion}
 import sigmastate.lang.Terms.MethodCall
 
 /** An item in the cost accumulation trace of a [[sigmastate.Values.ErgoTree]] evaluation. */
 abstract class CostItem {
   def opName: String
-  def cost: Int
+  def cost: JitCost
 }
 
 /** An item in the cost accumulation trace of a [[sigmastate.Values.ErgoTree]] evaluation.
@@ -18,7 +18,7 @@ abstract class CostItem {
   */
 case class FixedCostItem(opDesc: OperationDesc, costKind: FixedCost) extends CostItem {
   override def opName: String = opDesc.operationName
-  override def cost: Int = costKind.cost
+  override def cost: JitCost = costKind.cost
 }
 object FixedCostItem {
   def apply(companion: FixedCostValueCompanion): FixedCostItem = {
@@ -45,7 +45,7 @@ case class TypeBasedCostItem(
     val name = opDesc.operationName
     s"$name[$tpe]"
   }
-  override def cost: Int = costKind.costFunc(tpe)
+  override def cost: JitCost = costKind.costFunc(tpe)
   override def equals(obj: Any): Boolean =
     (this eq obj.asInstanceOf[AnyRef]) || (obj != null && (obj match {
       case that: TypeBasedCostItem =>
@@ -71,7 +71,7 @@ object TypeBasedCostItem {
 case class SeqCostItem(opDesc: OperationDesc, costKind: PerItemCost, nItems: Int)
     extends CostItem {
   override def opName: String = opDesc.operationName
-  override def cost: Int = costKind.cost(nItems)
+  override def cost: JitCost = costKind.cost(nItems)
   /** How many data chunks in this cost item. */
   def chunks: Int = costKind.chunks(nItems)
 }
@@ -88,7 +88,7 @@ object SeqCostItem {
   */
 case class MethodCallCostItem(items: CostDetails) extends CostItem {
   override def opName: String = MethodCall.typeName
-  override def cost: Int = items.cost
+  override def cost: JitCost = items.cost
 }
 
 

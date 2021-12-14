@@ -2,16 +2,15 @@ package sigmastate.interpreter
 
 import org.ergoplatform.ErgoLikeContext
 import org.ergoplatform.SigmaConstants.ScriptCostLimit
-import sigmastate.{PerItemCost, FixedCost, SType, TypeBasedCost}
+import sigmastate.{FixedCost, JitCost, PerItemCost, SType, TypeBasedCost}
 import sigmastate.Values._
 import sigmastate.eval.Profiler
 import sigmastate.interpreter.ErgoTreeEvaluator.DataEnv
-import sigmastate.interpreter.Interpreter.ReductionResult
+import sigmastate.interpreter.Interpreter.JitReductionResult
 import special.sigma.{Context, SigmaProp}
 import scalan.util.Extensions._
 import sigmastate.interpreter.EvalSettings._
 import sigmastate.lang.Terms.MethodCall
-import spire.syntax.all.cfor
 import supertagged.TaggedType
 import debox.{Buffer => DBuffer}
 import scala.collection.mutable
@@ -71,6 +70,9 @@ object EvalSettings {
   val TestEvaluationMode: EvaluationMode = EvaluationMode @@ 3 // both bits
 }
 
+/** Result of JITC evaluation with costing. */
+case class JitEvalResult[A](value: A, cost: JitCost)
+
 /** Implements a simple and fast direct-style interpreter of ErgoTrees.
   *
   * ### Motivation
@@ -126,10 +128,10 @@ class ErgoTreeEvaluator(
     * @return the value of the expression and the total accumulated cost in the coster.
     *         The returned cost includes the initial cost accumulated in the `coster`
     *         prior to calling this method. */
-  def evalWithCost(env: DataEnv, exp: SValue): (Any, Int) = {
+  def evalWithCost[A](env: DataEnv, exp: SValue): JitEvalResult[A] = {
     val res = eval(env, exp)
     val cost = coster.totalCost
-    (res, cost)
+    JitEvalResult(res.asInstanceOf[A], cost)
   }
 
   /** Trace of cost items accumulated during execution of `eval` method. Call
@@ -387,7 +389,9 @@ object ErgoTreeEvaluator {
     * [[sigmastate.FiatShamirTree]] where cost-aware code blocks are used.
     */
   def forProfiling(profiler: Profiler, evalSettings: EvalSettings): ErgoTreeEvaluator = {
-    val acc = new CostAccumulator(0, Some(ScriptCostLimit.value))
+    val acc = new CostAccumulator(
+      initialCost = JitCost(0),
+      costLimit = Some(JitCost.fromBlockCost(ScriptCostLimit.value)))
     new ErgoTreeEvaluator(
       context = null,
       constants = mutable.WrappedArray.empty,
@@ -455,7 +459,7 @@ object ErgoTreeEvaluator {
     * @param evalSettings evaluation settings
     * @return a sigma protocol proposition (as [[SigmaBoolean]]) and accumulated JIT cost estimation.
     */
-  def evalToCrypto(context: ErgoLikeContext, ergoTree: ErgoTree, evalSettings: EvalSettings): ReductionResult = {
+  def evalToCrypto(context: ErgoLikeContext, ergoTree: ErgoTree, evalSettings: EvalSettings): JitReductionResult = {
     val (res, cost) = eval(context, ergoTree.constants, ergoTree.toProposition(replaceConstants = false), evalSettings)
     val sb = res match {
       case sp: SigmaProp =>
@@ -463,7 +467,7 @@ object ErgoTreeEvaluator {
       case sb: SigmaBoolean => sb
       case _ => error(s"Expected SigmaBoolean but was: $res")
     }
-    ReductionResult(sb, cost)
+    JitReductionResult(sb, cost)
   }
 
   /** Evaluate the given expression in the given Ergo context using the given settings.
@@ -481,7 +485,9 @@ object ErgoTreeEvaluator {
            constants: Seq[Constant[SType]],
            exp: SValue,
            evalSettings: EvalSettings): (Any, Int) = {
-    val costAccumulator = new CostAccumulator(context.initCost.toIntExact, Some(context.costLimit))
+    val costAccumulator = new CostAccumulator(
+      initialCost = JitCost.fromBlockCost(context.initCost.toIntExact),
+      costLimit = Some(JitCost.fromBlockCost(context.costLimit.toIntExact)))
     val sigmaContext = context.toSigmaContext(isCost = false)
     eval(sigmaContext, costAccumulator, constants, exp, evalSettings)
   }
@@ -506,7 +512,7 @@ object ErgoTreeEvaluator {
     val evaluator = new ErgoTreeEvaluator(
       sigmaContext, constants, costAccumulator, DefaultProfiler, evalSettings)
     val res = evaluator.eval(Map(), exp)
-    val cost = costAccumulator.totalCost
+    val cost = costAccumulator.totalCost.toBlockCost // scale to block cost
     (res, cost)
   }
 

@@ -60,12 +60,12 @@ object Values {
 
     /** Every value represents an operation and that operation can be associated with a function type,
       * describing functional meaning of the operation, kind of operation signature.
-      * Thus we can obtain global operation identifiers by combining Value.opName with Value.opType,
+      * Thus, we can obtain global operation identifiers by combining Value.opName with Value.opType,
       * so that if (v1.opName == v2.opName) && (v1.opType == v2.opType) then v1 and v2 are functionally
       * point-wise equivalent.
       * This in particular means that if two _different_ ops have the same opType they _should_ have
       * different opNames.
-      * Thus defined op ids are used in a Cost Model - a table of all existing primitives coupled with
+      * Thus defined op ids are used in a v4.x Cost Model - a table of all existing primitives coupled with
       * performance parameters.
       * */
     def opType: SFunc
@@ -279,9 +279,16 @@ object Values {
     override def costKind: PerItemCost
   }
 
+  /** Base class for ErgoTree nodes which represents a data value which has already been
+    * evaluated and no further evaluation (aka reduction) is necessary by the interpreter.
+    *
+    * @see Constant, ConcreteCollection, Tuple
+    */
   abstract class EvaluatedValue[+S <: SType] extends Value[S] {
+    /** The evaluated data value of the corresponding underlying data type. */
     val value: S#WrappedType
-    def opType: SFunc = {
+
+    override def opType: SFunc = {
       val resType = tpe match {
         case ct : SCollection[_] =>
           SCollection(ct.typeParams.head.ident)
@@ -293,8 +300,20 @@ object Values {
     }
   }
 
-  abstract class Constant[+S <: SType] extends EvaluatedValue[S] {}
+  /** Base class for all constant literals whose data value is already known and never
+    * changes.
+    * @see ConstantNode
+    */
+  abstract class Constant[+S <: SType] extends EvaluatedValue[S]
 
+  /** ErgoTree node which represents data literals, i.e. data values embedded in an
+    * expression.
+    *
+    * @param value data value of the underlying Scala type
+    * @param tpe   type descriptor of the data value and also the type of the value
+    *              represented by this node.
+    * @see Constant
+    */
   case class ConstantNode[S <: SType](value: S#WrappedType, tpe: S) extends Constant[S] {
     require(Constant.isCorrectType(value, tpe), s"Invalid type of constant value $value, expected type $tpe")
     override def companion: ValueCompanion = Constant
@@ -329,7 +348,7 @@ object Values {
   object Constant extends FixedCostValueCompanion {
     override def opCode: OpCode = ConstantCode
     /** Cost of: returning value from Constant node. */
-    override val costKind = FixedCost(5)
+    override val costKind = FixedCost(JitCost(5))
 
     /** Immutable empty array, can be used to save allocations in many places. */
     val EmptyArray = Array.empty[Constant[SType]]
@@ -394,7 +413,7 @@ object Values {
   object ConstantPlaceholder extends ValueCompanion {
     override def opCode: OpCode = ConstantPlaceholderCode
     /** Cost of: accessing Constant in array by index. */
-    override val costKind = FixedCost(1)
+    override val costKind = FixedCost(JitCost(1))
   }
 
   trait NotReadyValue[S <: SType] extends Value[S] {
@@ -417,11 +436,12 @@ object Values {
 
   object TaggedVariable extends ValueCompanion {
     override def opCode: OpCode = TaggedVariableCode
-    override def costKind: CostKind = FixedCost(1)
+    override def costKind: CostKind = FixedCost(JitCost(1))
     def apply[T <: SType](varId: Byte, tpe: T): TaggedVariable[T] =
       TaggedVariableNode(varId, tpe)
   }
 
+  /** ErgoTree node that represent a literal of Unit type. */
   case class UnitConstant() extends EvaluatedValue[SUnit.type] {
     override def tpe = SUnit
     val value = ()
@@ -565,7 +585,9 @@ object Values {
   def TaggedBox(id: Byte): Value[SBox.type] = mkTaggedVariable(id, SBox)
   def TaggedAvlTree(id: Byte): Value[SAvlTree.type] = mkTaggedVariable(id, SAvlTree)
 
+  /** Base type for evaluated tree nodes of Coll type. */
   trait EvaluatedCollection[T <: SType, C <: SCollection[T]] extends EvaluatedValue[C] {
+    /** Type descriptor of the collection elements. */
     def elementType: T
   }
 
@@ -667,9 +689,13 @@ object Values {
     override def tpe = SAvlTree
   }
 
+  /** ErgoTree node that represents the operation of obtaining the generator of elliptic curve group.
+    * The generator g of the group is an element of the group such that, when written
+    * multiplicative form, every element of the group is a power of g.
+    */
   case object GroupGenerator extends EvaluatedValue[SGroupElement.type] with ValueCompanion {
     override def opCode: OpCode = OpCodes.GroupGeneratorCode
-    override val costKind = FixedCost(10)
+    override val costKind = FixedCost(JitCost(10))
     override def tpe = SGroupElement
     override val value = SigmaDsl.GroupElement(CryptoConstants.dlogGroup.generator)
     override def companion = this
@@ -695,12 +721,14 @@ object Values {
     }
   }
 
+  /** ErgoTree node which represents `true` literal. */
   object TrueLeaf extends ConstantNode[SBoolean.type](true, SBoolean) with ValueCompanion {
     override def companion = this
     override def opCode: OpCode = TrueCode
     override def costKind: FixedCost = Constant.costKind
   }
 
+  /** ErgoTree node which represents `false` literal. */
   object FalseLeaf extends ConstantNode[SBoolean.type](false, SBoolean) with ValueCompanion {
     override def companion = this
     override def opCode: OpCode = FalseCode
@@ -849,11 +877,19 @@ object Values {
   }
 
   // TODO refactor: only Constant make sense to inherit from EvaluatedValue
+
+  /** ErgoTree node which converts a collection of expressions into a tuple of data values
+    * of different types. Each data value of the resulting collection is obtained by
+    * evaluating the corresponding expression in `items`. All items may have different
+    * types.
+    *
+    * @param items source collection of expressions
+    */
   case class Tuple(items: IndexedSeq[Value[SType]]) extends EvaluatedValue[STuple] with EvaluatedCollection[SAny.type, STuple] {
     override def companion = Tuple
     override def elementType = SAny
-    lazy val tpe = STuple(items.map(_.tpe))
-    lazy val value = { // TODO coverage
+    override lazy val tpe = STuple(items.map(_.tpe))
+    override lazy val value = { // TODO coverage
       val xs = items.cast[EvaluatedValue[SAny.type]].map(_.value)
       Colls.fromArray(xs.toArray(SAny.classTag.asInstanceOf[ClassTag[SAny.WrappedType]]))(RType.AnyType)
     }
@@ -880,7 +916,7 @@ object Values {
   object Tuple extends FixedCostValueCompanion {
     override def opCode: OpCode = TupleCode
     /** Cost of: 1) allocating a new tuple (of limited max size)*/
-    override val costKind = FixedCost(15)
+    override val costKind = FixedCost(JitCost(15))
     def apply(items: Value[SType]*): Tuple = Tuple(items.toIndexedSeq)
   }
 
@@ -909,6 +945,13 @@ object Values {
     override def costKind: CostKind = Constant.costKind
   }
 
+  /** ErgoTree node which converts a collection of expressions into a collection of data
+    * values. Each data value of the resulting collection is obtained by evaluating the
+    * corresponding expression in `items`. All items must have the same type.
+    *
+    * @param items       source collection of expressions
+    * @param elementType type descriptor of elements in the resulting collection
+    */
   case class ConcreteCollection[V <: SType](items: Seq[Value[V]], elementType: V)
     extends EvaluatedCollection[V, SCollection[V]] {
 // TODO uncomment and make sure Ergo works with it, i.e. complex data types are never used for `items`.
@@ -955,7 +998,7 @@ object Values {
     override def opCode: OpCode = ConcreteCollectionCode
     /** Cost of: allocating new collection
       * @see ConcreteCollection_PerItem */
-    override val costKind = FixedCost(20)
+    override val costKind = FixedCost(JitCost(20))
 
     def fromSeq[V <: SType](items: Seq[Value[V]])(implicit tV: V): ConcreteCollection[V] =
       ConcreteCollection(items, tV)
@@ -1073,7 +1116,7 @@ object Values {
   object ValUse extends FixedCostValueCompanion {
     override def opCode: OpCode = ValUseCode
     /** Cost of: 1) Lookup in immutable HashMap by valId: Int 2) alloc of Some(v) */
-    override val costKind = FixedCost(5)
+    override val costKind = FixedCost(JitCost(5))
   }
 
   /** The order of ValDefs in the block is used to assign ids to ValUse(id) nodes
@@ -1110,7 +1153,8 @@ object Values {
   }
   object BlockValue extends ValueCompanion {
     override def opCode: OpCode = BlockValueCode
-    override val costKind = PerItemCost(1, 1, 10)
+    override val costKind = PerItemCost(
+      baseCost = JitCost(1), perChunkCost = JitCost(1), chunkSize = 10)
   }
   /**
     * @param args parameters list, where each parameter has an id and a type.
@@ -1172,11 +1216,11 @@ object Values {
   object FuncValue extends FixedCostValueCompanion {
     val AddToEnvironmentDesc = NamedDesc("AddToEnvironment")
     /** Cost of: adding value to evaluator environment */
-    val AddToEnvironmentDesc_CostKind = FixedCost(5)
+    val AddToEnvironmentDesc_CostKind = FixedCost(JitCost(5))
     override def opCode: OpCode = FuncValueCode
     /** Cost of: 1) switch on the number of args 2) allocating a new Scala closure
       * Old cost: ("Lambda", "() => (D1) => R", lambdaCost),*/
-    override val costKind = FixedCost(5)
+    override val costKind = FixedCost(JitCost(5))
     def apply(argId: Int, tArg: SType, body: SValue): FuncValue =
       FuncValue(IndexedSeq((argId,tArg)), body)
   }

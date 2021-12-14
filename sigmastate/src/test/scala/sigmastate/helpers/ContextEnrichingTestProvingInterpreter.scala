@@ -44,14 +44,4 @@ class ContextEnrichingTestProvingInterpreter(implicit override val IR: IRContext
       override lazy val contextExtenders: Map[Byte, EvaluatedValue[_ <: SType]] = ce
     }
   }
-
-  def withJitCost(returnJitCost: Option[Boolean]): ContextEnrichingTestProvingInterpreter = {
-    val ce = contextExtenders
-    val s = secrets
-
-    new ContextEnrichingTestProvingInterpreter {
-      override lazy val secrets = s
-      override lazy val contextExtenders: Map[Byte, EvaluatedValue[_ <: SType]] = ce
-    }
-  }
 }

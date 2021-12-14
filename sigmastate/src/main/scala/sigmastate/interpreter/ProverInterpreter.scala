@@ -124,7 +124,7 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
     val ctxWithComplexity = context.withInitCost(costWithComplexity).asInstanceOf[CTX]
     val (aotRes, jitRes) = fullReduction(ergoTree, ctxWithComplexity, env)
 
-    val verificationC = estimateVerificationCost(aotRes.value) / 10 // scale eval to tx cost
+    val verificationC = estimateVerificationCost(aotRes.value).toBlockCost // scale JitCost to tx cost
     // Note, jitRes.cost is already scaled in fullReduction
     val fullJitCost = addCostChecked(jitRes.cost, verificationC, ctxWithComplexity.costLimit)
 

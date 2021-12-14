@@ -23,7 +23,7 @@ import sigmastate.interpreter.{CryptoConstants, Interpreter, _}
 import sigmastate.lang.{CompilerSettings, SigmaCompiler, Terms}
 import sigmastate.serialization.SigmaSerializer
 import sigmastate.utils.Helpers._
-import sigmastate.{SGroupElement, SType, TestsBase}
+import sigmastate.{JitCost, SGroupElement, SType, TestsBase}
 import special.sigma
 
 import scala.language.implicitConversions
@@ -237,7 +237,7 @@ trait SigmaTestingCommons extends PropSpec
       val estimatedCost = IR.checkCostWithContext(costingCtx, costF, ScriptCostLimit.value, initialCostInTests.value).getOrThrow
 
       val (res, _) = valueFun(sigmaCtx)
-      (res.asInstanceOf[B], GivenCost(estimatedCost))
+      (res.asInstanceOf[B], GivenCost(JitCost(estimatedCost)))
     }
     val Terms.Apply(funcVal, _) = compiledTree.asInstanceOf[SValue]
     CompiledFunc(funcScript, bindings, funcVal, compiledTree, f)
@@ -265,30 +265,32 @@ trait SigmaTestingCommons extends PropSpec
     val f = (in: A) => {
       implicit val cA: ClassTag[A] = tA.classTag
       val (_, sigmaCtx) = createContexts(in, bindings)
-      val accumulator = new CostAccumulator(initialCost = 0, Some(ScriptCostLimit.value))
+      val accumulator = new CostAccumulator(
+        initialCost = JitCost(0),
+        costLimit = Some(JitCost.fromBlockCost(ScriptCostLimit.value)))
       val evaluator = new ErgoTreeEvaluator(
         context = sigmaCtx,
         constants = ErgoTree.EmptyConstants,
         coster = accumulator, evalSettings.profilerOpt.getOrElse(DefaultProfiler), evalSettings)
 
-      val ((res, cost), actualTime) = BenchmarkUtil.measureTimeNano(
-        evaluator.evalWithCost(ErgoTreeEvaluator.EmptyDataEnv, compiledTree))
+      val (res, actualTime) = BenchmarkUtil.measureTimeNano(
+        evaluator.evalWithCost[B](ErgoTreeEvaluator.EmptyDataEnv, compiledTree))
       val costDetails = if (evalSettings.costTracingEnabled) {
         val trace: Seq[CostItem] = evaluator.getCostTrace()
         val costDetails = TracedCost(trace, Some(actualTime))
-        assert(cost == costDetails.cost)
+        assert(res.cost == costDetails.cost)
         costDetails
       } else
-        GivenCost(cost, Some(actualTime))
+        GivenCost(res.cost, Some(actualTime))
 
       if (evalSettings.isMeasureScriptTime) {
-        evaluator.profiler.addEstimation(funcScript, cost, actualTime)
+        evaluator.profiler.addJitEstimation(funcScript, res.cost, actualTime)
       }
 
       if (evalSettings.isLogEnabled) {
         printCostDetails(funcScript, costDetails)
       }
-      (res.asInstanceOf[B], costDetails)
+      (res.value, costDetails)
     }
     val Terms.Apply(funcVal, _) = compiledTree.asInstanceOf[SValue]
     CompiledFunc(funcScript, bindings, funcVal, compiledTree, f)
@@ -315,15 +317,17 @@ trait SigmaTestingCommons extends PropSpec
           .withBindings(1.toByte -> Constant[SType](x.asInstanceOf[SType#WrappedType], tpeA))
       val sigmaCtx = ergoCtx.toSigmaContext(isCost = false).asInstanceOf[CostingDataContext]
 
-      val accumulator = new CostAccumulator(initialCost = 0, Some(ScriptCostLimit.value))
+      val accumulator = new CostAccumulator(
+        initialCost = JitCost(0),
+        costLimit = Some(JitCost.fromBlockCost(ScriptCostLimit.value)))
       val evaluator = new ErgoTreeEvaluator(
         context = sigmaCtx,
         constants = ErgoTree.EmptyConstants,
         coster = accumulator, DefaultProfiler, evalSettings)
 
-      val ((res, cost), actualTime) = BenchmarkUtil.measureTimeNano(
-        evaluator.evalWithCost(ErgoTreeEvaluator.EmptyDataEnv, compiledTree))
-      (res.asInstanceOf[B], GivenCost(cost, Some(actualTime)))
+      val (res, actualTime) = BenchmarkUtil.measureTimeNano(
+        evaluator.evalWithCost[B](ErgoTreeEvaluator.EmptyDataEnv, compiledTree))
+      (res.value, GivenCost(res.cost, Some(actualTime)))
     }
     val Terms.Apply(funcVal, _) = compiledTree.asInstanceOf[SValue]
     CompiledFunc(funcScript, bindings, funcVal, compiledTree, f)

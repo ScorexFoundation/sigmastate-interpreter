@@ -1,6 +1,6 @@
 package sigmastate.interpreter
 
-import sigmastate.interpreter.Interpreter.ReductionResult
+import sigmastate.interpreter.Interpreter.{JitReductionResult, ReductionResult}
 
 object CostingUtils {
   /** Checks that a jitRes is equal to res and also checks costs.
@@ -11,7 +11,7 @@ object CostingUtils {
     */
   def checkResults(
         ergoTreeHex: String,
-        aotRes: ReductionResult, jitRes: ReductionResult,
+        aotRes: ReductionResult, jitRes: JitReductionResult,
         logger: String => Unit)(implicit es: EvalSettings): Unit = {
     val aotValue = aotRes.value
     val jitValue = jitRes.value
