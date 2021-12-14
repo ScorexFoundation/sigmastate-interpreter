@@ -62,7 +62,11 @@ trait SigmaNodeCompanion
   * Collection of non-primitive type is serialized as (CollectionTypeCode, serialize(elementType))
   * */
 sealed trait SType extends SigmaNode {
+  /** The underlying Scala type of data values described by this type descriptor.
+    * E.g. scala.Int for SInt descriptor.
+    */
   type WrappedType
+
   /** Type code used in serialization of SType values.
     * @see TypeSerializer
     */
