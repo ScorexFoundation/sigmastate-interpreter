@@ -274,7 +274,7 @@ trait Interpreter extends ScorexLogging {
         }
 
         var jitRes: JitReductionResult = null
-        if (okEvaluateJit) {
+        if (evalMode.okEvaluateJit) {
           // NOTE, evaluator cost unit needs to be scaled to the cost unit of context
           val jitCost = Eval_SigmaPropConstant.costKind.cost.toBlockCost
           val resJitCost = Evaluation.addCostChecked(context.initCost, jitCost, context.costLimit)
@@ -289,7 +289,7 @@ trait Interpreter extends ScorexLogging {
         }
 
         var jitRes: JitReductionResult = null
-        if (okEvaluateJit) {
+        if (evalMode.okEvaluateJit) {
           val ctx = context.asInstanceOf[ErgoLikeContext]
           jitRes = ErgoTreeEvaluator.evalToCrypto(ctx, ergoTree, evalSettings)
         }
@@ -322,7 +322,7 @@ trait Interpreter extends ScorexLogging {
     }
 
     var jitRes: JitReductionResult = null
-    if (okEvaluateJit) {
+    if (evalMode.okEvaluateJit) {
       val (propTree, context2) = trySoftForkable[(SigmaPropValue, CTX)](whenSoftFork = (TrueSigmaProp, context)) {
         applyDeserializeContextJITC(context, prop)
       }
@@ -343,7 +343,7 @@ trait Interpreter extends ScorexLogging {
     * @param costLimit total cost limit to check and raise exception if exceeded
     * @return computed jitRes.cost + crypto verification cost
     */
-  def addCryptoCost(jitRes: ReductionResult, costLimit: Long) = {
+  def addCryptoCost(jitRes: JitReductionResult, costLimit: Long) = {
     val cryptoCost = estimateCryptoVerifyCost(jitRes.value).toBlockCost // scale JitCost to tx cost
 
     // Note, jitRes.cost is already scaled in fullReduction
