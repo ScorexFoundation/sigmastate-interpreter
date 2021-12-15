@@ -4,11 +4,11 @@ import org.ergoplatform.SigmaConstants.ScriptCostLimit
 import org.scalatest.BeforeAndAfterAll
 import scalan.RType
 import scalan.util.BenchmarkUtil
-import sigmastate.{DataValueComparer, TrivialProp}
+import sigmastate.{DataValueComparer, JitCost, TrivialProp}
 import sigmastate.Values.ErgoTree
 import sigmastate.eval.{CSigmaProp, Profiler, SigmaDsl}
 import sigmastate.helpers.SigmaPPrint
-import sigmastate.interpreter.{EvalSettings, TracedCost, CostAccumulator, ErgoTreeEvaluator}
+import sigmastate.interpreter.{CostAccumulator, ErgoTreeEvaluator, EvalSettings, TracedCost}
 import special.collection.Coll
 
 import scala.util.{Success, Try}
@@ -34,7 +34,9 @@ class DataValueComparerSpecification extends SigmaDslTesting
   import TestData._
 
   def createEvaluator(settings: EvalSettings, profiler: Profiler): ErgoTreeEvaluator = {
-    val accumulator = new CostAccumulator(initialCost = 0, Some(ScriptCostLimit.value * 10))
+    val accumulator = new CostAccumulator(
+      initialCost = JitCost(0),
+      costLimit = Some(JitCost.fromBlockCost(ScriptCostLimit.value)))
     val evaluator = new ErgoTreeEvaluator(
       context = null,
       constants = ErgoTree.EmptyConstants,
@@ -79,7 +81,7 @@ class DataValueComparerSpecification extends SigmaDslTesting
         val xStr = SigmaPPrint(fresh_x).plainText
         val yStr = SigmaPPrint(fresh_y).plainText
         val script = s"$xStr == $yStr"
-        evaluator.profiler.addEstimation(script, costDetails.cost, actualTime)
+        evaluator.profiler.addJitEstimation(script, costDetails.cost, actualTime)
       }
     }
 

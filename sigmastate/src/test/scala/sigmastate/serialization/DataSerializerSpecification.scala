@@ -30,7 +30,9 @@ class DataSerializerSpecification extends SerializationSpecification {
     val res = DataSerializer.deserialize(tpe, r)
     res shouldBe obj
 
-    val accumulator = new CostAccumulator(initialCost = 0, Some(ScriptCostLimit.value))
+    val accumulator = new CostAccumulator(
+      initialCost = JitCost(0),
+      costLimit = Some(JitCost.fromBlockCost(ScriptCostLimit.value)))
     val evaluator = new ErgoTreeEvaluator(
       context = null,
       constants = ErgoTree.EmptyConstants,

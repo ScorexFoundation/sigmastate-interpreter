@@ -131,15 +131,16 @@ object SigSerializer extends LazyLogging {
 
   /** Represents cost of parsing UncheckedSchnorr node from proof bytes. */
   final val ParseChallenge_ProveDlog = OperationCostInfo(
-    FixedCost(10), NamedDesc("ParseChallenge_ProveDlog"))
+    FixedCost(JitCost(10)), NamedDesc("ParseChallenge_ProveDlog"))
 
   /** Represents cost of parsing UncheckedDiffieHellmanTuple node from proof bytes. */
   final val ParseChallenge_ProveDHT = OperationCostInfo(
-    FixedCost(10), NamedDesc("ParseChallenge_ProveDHT"))
+    FixedCost(JitCost(10)), NamedDesc("ParseChallenge_ProveDHT"))
 
   /** Represents cost of parsing GF2_192_Poly from proof bytes. */
   final val ParsePolynomial = OperationCostInfo(
-    PerItemCost(10, 10, 1), NamedDesc("ParsePolynomial"))
+    PerItemCost(baseCost = JitCost(10), perChunkCost = JitCost(10), chunkSize = 1),
+    NamedDesc("ParsePolynomial"))
 
   /** Represents cost of:
     * 1) evaluating a polynomial
@@ -147,7 +148,8 @@ object SigSerializer extends LazyLogging {
     * 3) converting it to array of bytes
     */
   final val EvaluatePolynomial = OperationCostInfo(
-    PerItemCost(3, 3, 1), NamedDesc("EvaluatePolynomial"))
+    PerItemCost(baseCost = JitCost(3), perChunkCost = JitCost(3), chunkSize = 1),
+    NamedDesc("EvaluatePolynomial"))
 
   /** Helper method to read requested or remaining bytes from the reader. */
   def readBytesChecked(r: SigmaByteReader, numRequestedBytes: Int, onError: String => Unit): Array[Byte] = {

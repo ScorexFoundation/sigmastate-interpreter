@@ -215,14 +215,12 @@ trait Interpreter extends ScorexLogging {
     * @return result of script reduction
     * @see `ReductionResult`
     */
-  def reduceToCryptoJITC(context: CTX, env: ScriptEnv, exp: SigmaPropValue): Try[ReductionResult] = Try {
+  def reduceToCryptoJITC(context: CTX, env: ScriptEnv, exp: SigmaPropValue): Try[JitReductionResult] = Try {
     implicit val vs = context.validationSettings
-    trySoftForkable[ReductionResult](whenSoftFork = WhenSoftForkReductionResult(context.initCost)) {
+    trySoftForkable[JitReductionResult](whenSoftFork = WhenSoftForkJitReductionResult(context.initCost)) {
 
       val (resProp, cost) = {
         val ctx = context.asInstanceOf[ErgoLikeContext]
-          .withInitCost(context.initCost * 10)   // adjust for Evaluator cost units scale
-          .withCostLimit(context.costLimit * 10)
         ErgoTreeEvaluator.eval(ctx, ErgoTree.EmptyConstants, exp, evalSettings) match {
           case (p: special.sigma.SigmaProp, c) => (p, c)
           case (res, _) =>
@@ -230,14 +228,14 @@ trait Interpreter extends ScorexLogging {
         }
       }
 
-      ReductionResult(SigmaDsl.toSigmaBoolean(resProp), cost.toLong / 10)  // scale back
+      JitReductionResult(SigmaDsl.toSigmaBoolean(resProp), cost.toLong)
     }
   }
 
   /** Transforms ErgoTree into Value by replacing placeholders with constants and then
    * delegates to the main implementation method.
    */
-  def reduceToCryptoJITC(context: CTX, tree: ErgoTree): Try[ReductionResult] =
+  def reduceToCryptoJITC(context: CTX, tree: ErgoTree): Try[JitReductionResult] =
     reduceToCryptoJITC(context, Interpreter.emptyEnv, tree.toProposition(tree.isConstantSegregation))
 
   /**
@@ -258,7 +256,7 @@ trait Interpreter extends ScorexLogging {
     */
   def fullReduction(ergoTree: ErgoTree,
                     ctx: CTX,
-                    env: ScriptEnv): (ReductionResult, ReductionResult) = {
+                    env: ScriptEnv): (ReductionResult, JitReductionResult) = {
     implicit val vs: SigmaValidationSettings = ctx.validationSettings
     val context = ctx.withErgoTreeVersion(ergoTree.version).asInstanceOf[CTX]
     val prop = propositionFromErgoTree(ergoTree, context)
@@ -275,12 +273,12 @@ trait Interpreter extends ScorexLogging {
           aotRes = ReductionResult(sb, resAotCost)
         }
 
-        var jitRes: ReductionResult = null
-        if (evalMode.okEvaluateJit) {
-          // NOTE, evaluator cost unit is 10 times smaller then the cost unit of context
-          val jitCost = Eval_SigmaPropConstant.costKind.cost / 10
+        var jitRes: JitReductionResult = null
+        if (okEvaluateJit) {
+          // NOTE, evaluator cost unit needs to be scaled to the cost unit of context
+          val jitCost = Eval_SigmaPropConstant.costKind.cost.toBlockCost
           val resJitCost = Evaluation.addCostChecked(context.initCost, jitCost, context.costLimit)
-          jitRes = ReductionResult(sb, resJitCost)
+          jitRes = JitReductionResult(sb, resJitCost)
         }
         (aotRes, jitRes)
       case _ if !ergoTree.hasDeserialize =>
@@ -290,13 +288,10 @@ trait Interpreter extends ScorexLogging {
           aotRes = r.reduce(context)
         }
 
-        var jitRes: ReductionResult = null
-        if (evalMode.okEvaluateJit) {
+        var jitRes: JitReductionResult = null
+        if (okEvaluateJit) {
           val ctx = context.asInstanceOf[ErgoLikeContext]
-              .withInitCost(context.initCost * 10)    // adjust for Evaluator cost units scale
-              .withCostLimit(context.costLimit * 10)
-          val ReductionResult(v, c) = ErgoTreeEvaluator.evalToCrypto(ctx, ergoTree, evalSettings)
-          jitRes = ReductionResult(v, c / 10) // scale cost back
+          jitRes = ErgoTreeEvaluator.evalToCrypto(ctx, ergoTree, evalSettings)
         }
         (aotRes, jitRes)
       case _ =>
@@ -313,7 +308,7 @@ trait Interpreter extends ScorexLogging {
   private def reductionWithDeserialize(ergoTree: ErgoTree,
                                        prop: SigmaPropValue,
                                        context: CTX, env: ScriptEnv,
-                                       evalMode: EvaluationMode): (ReductionResult, ReductionResult) = {
+                                       evalMode: EvaluationMode): (ReductionResult, JitReductionResult) = {
     implicit val vs: SigmaValidationSettings = context.validationSettings
     var aotRes: ReductionResult = null
     if (evalMode.okEvaluateAot) {
@@ -326,8 +321,8 @@ trait Interpreter extends ScorexLogging {
       aotRes = reduceToCrypto(context2, env, propTree).getOrThrow
     }
 
-    var jitRes: ReductionResult = null
-    if (evalMode.okEvaluateJit) {
+    var jitRes: JitReductionResult = null
+    if (okEvaluateJit) {
       val (propTree, context2) = trySoftForkable[(SigmaPropValue, CTX)](whenSoftFork = (TrueSigmaProp, context)) {
         applyDeserializeContextJITC(context, prop)
       }
@@ -349,7 +344,7 @@ trait Interpreter extends ScorexLogging {
     * @return computed jitRes.cost + crypto verification cost
     */
   def addCryptoCost(jitRes: ReductionResult, costLimit: Long) = {
-    val cryptoCost = estimateCryptoVerifyCost(jitRes.value) / 10 // scale eval to tx cost
+    val cryptoCost = estimateCryptoVerifyCost(jitRes.value).toBlockCost // scale JitCost to tx cost
 
     // Note, jitRes.cost is already scaled in fullReduction
     val fullJitCost = addCostChecked(jitRes.cost, cryptoCost, costLimit)
@@ -399,7 +394,8 @@ trait Interpreter extends ScorexLogging {
              context: CTX,
              proof: Array[Byte],
              message: Array[Byte]): Try[VerificationResult] = {
-    Try {
+    val res = Try {
+      // TODO v5.0: the condition below should be revised if necessary
       // The following conditions define behavior which depend on the version of ergoTree
       // This works in addition to more fine-grained soft-forkability mechanism implemented
       // using ValidationRules (see trySoftForkable method call here and in reduceToCrypto).
@@ -487,6 +483,7 @@ trait Interpreter extends ScorexLogging {
       }
       res
     }
+    res
   }
 
   // Perform Verifier Steps 4-6
@@ -598,8 +595,18 @@ object Interpreter {
     *
     * @param value the value of SigmaProp type which represents a logical statement
     *              verifiable via sigma protocol.
-    * @param cost  the estimated cost of the contract execution. */
+    * @param cost  the estimated cost of the contract execution.
+    */
   case class ReductionResult(value: SigmaBoolean, cost: Long)
+
+  /** Result of ErgoTree reduction procedure by JIT-based interpreter (see
+    * `reduceToCrypto` and friends).
+    *
+    * @param value the value of SigmaProp type which represents a logical statement
+    *              verifiable via sigma protocol.
+    * @param cost  the estimated cost of the contract execution (in block's scale).
+    */
+  case class JitReductionResult(value: SigmaBoolean, cost: Long)
 
   /** Represents properties of interpreter invocation. */
   type ScriptEnv = Map[String, Any]
@@ -631,20 +638,25 @@ object Interpreter {
     */
   def WhenSoftForkReductionResult(cost: Long): ReductionResult = ReductionResult(TrivialProp.TrueProp, cost)
 
+  /** The result of script reduction when soft-fork condition is detected by the old node,
+    * in which case the script is reduced to the trivial true proposition and takes up 0 cost.
+    */
+  def WhenSoftForkJitReductionResult(cost: Long): JitReductionResult = JitReductionResult(TrivialProp.TrueProp, cost)
+
   /** Represents the cost of computing DLogInteractiveProver.computeCommitment. */
   final val ComputeCommitments_Schnorr = OperationCostInfo(
-    FixedCost(3400), NamedDesc("ComputeCommitments_Schnorr"))
+    FixedCost(JitCost(3400)), NamedDesc("ComputeCommitments_Schnorr"))
 
   /** Represents the cost of computing DiffieHellmanTupleInteractiveProver.computeCommitment. */
   final val ComputeCommitments_DHT = OperationCostInfo(
-    FixedCost(6450), NamedDesc("ComputeCommitments_DHT"))
+    FixedCost(JitCost(6450)), NamedDesc("ComputeCommitments_DHT"))
 
   /** Represents the cost spent by JIT evaluator on a simple ErgoTree containing
     * SigmaPropConstant.
     * It doesn't include cost of crypto verification.
     */
   final val Eval_SigmaPropConstant = OperationCostInfo(
-    FixedCost(50), NamedDesc("Eval_SigmaPropConstant"))
+    FixedCost(JitCost(50)), NamedDesc("Eval_SigmaPropConstant"))
 
   /** Verification cost of each ProveDlog node of SigmaBoolean proposition tree. */
   final val ProveDlogVerificationCost =
@@ -662,17 +674,17 @@ object Interpreter {
     * The cost is estimated ahead of time, without actually performing expencive crypto
     * operations.
     * @param sb sigma proposition
-    * @return estimated cost of verification of the given proposition
+    * @return estimated cost of verification of the given proposition in JIT scale
     */
-  def estimateCryptoVerifyCost(sb: SigmaBoolean): Int = {
+  def estimateCryptoVerifyCost(sb: SigmaBoolean): JitCost = {
     /** Recursively compute the total cost of the given children. */
-    def childrenCost(children: Seq[SigmaBoolean]): Int = {
+    def childrenCost(children: Seq[SigmaBoolean]): JitCost = {
       val childrenArr = children.toArray
       val nChildren = childrenArr.length
-      var sum = 0
+      var sum = JitCost(0)
       cfor(0)(_ < nChildren, _ + 1) { i =>
         val c = estimateCryptoVerifyCost(childrenArr(i))
-        sum = Math.addExact(sum, c)
+        sum = sum + c
       }
       sum
     }
@@ -683,12 +695,12 @@ object Interpreter {
       case and: CAND =>
         val nodeC = ToBytes_ProofTreeConjecture.costKind.cost
         val childrenC = childrenCost(and.children)
-        Math.addExact(nodeC, childrenC)
+        nodeC + childrenC
 
       case or: COR =>
         val nodeC = ToBytes_ProofTreeConjecture.costKind.cost
         val childrenC = childrenCost(or.children)
-        Math.addExact(nodeC, childrenC)
+        nodeC + childrenC
 
       case th: CTHRESHOLD =>
         val nChildren = th.children.length
@@ -697,9 +709,9 @@ object Interpreter {
         val evalC = EvaluatePolynomial.costKind.cost(nCoefs) * nChildren
         val nodeC = ToBytes_ProofTreeConjecture.costKind.cost
         val childernC = childrenCost(th.children)
-        Math.addExact(Math.addExact(Math.addExact(parseC, evalC), nodeC), childernC)
+        parseC + evalC + nodeC + childernC
       case _ =>
-        0  // the cost of trivial proposition
+        JitCost(0)  // the cost of trivial proposition
     }
   }
 

@@ -1,7 +1,6 @@
 package special.sigma
 
 import java.util
-
 import org.ergoplatform.SigmaConstants.ScriptCostLimit
 import org.ergoplatform.dsl.{ContractSpec, SigmaContractSyntax, TestContractSpec}
 import org.ergoplatform.validation.{SigmaValidationSettings, ValidationRules}
@@ -32,7 +31,7 @@ import sigmastate.serialization.ValueSerializer
 import sigmastate.serialization.generators.ObjectGenerators
 import sigmastate.utils.Helpers._
 import sigmastate.utxo.{DeserializeContext, DeserializeRegister}
-import sigmastate.{SSigmaProp, SType, eval}
+import sigmastate.{JitCost, SSigmaProp, SType, eval}
 import special.collection.{Coll, CollType}
 import spire.syntax.all.cfor
 
@@ -504,10 +503,12 @@ class SigmaDslTesting extends PropSpec
       })(input)
 
       (oldRes, newRes) match {
-        case (Success((oldRes, CostDetails(oldCost, _))),
-              Success((newRes, CostDetails(newCost, _)))) =>
+        case (Success((oldRes, oldDetails)),
+              Success((newRes, newDetails))) =>
           newRes shouldBe oldRes
-          if (newCost != oldCost) {
+          val oldCost = oldDetails.cost
+          val newCost = newDetails.cost
+          if (newDetails.cost != oldDetails.cost) {
             assertResult(true,
               s"""
                 |New cost should not exceed old cost: (new: $newCost, old:$oldCost)
@@ -516,7 +517,7 @@ class SigmaDslTesting extends PropSpec
                 |  compiledTree = "${SigmaPPrint(newF.compiledTree, height = 550, width = 150)}"
                 |)
                 |""".stripMargin
-            )(newCost / 20 <= oldCost)
+            )(oldCost >= newCost / 20)
 
             if (evalSettings.isLogEnabled) {
               println(
