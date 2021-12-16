@@ -249,7 +249,7 @@ trait Interpreter extends ScorexLogging {
     * trivial boolean value)
     *
     * @param ergoTree input ErgoTree expression to reduce
-    * @param context  context used in reduction
+    * @param ctx      context used in reduction
     * @param env      script environment
     * @return reduction result as a pair of sigma boolean and the accumulated cost counter
     *         after reduction
@@ -307,7 +307,8 @@ trait Interpreter extends ScorexLogging {
   /** Performs reduction of proposition which contains deserialization operations. */
   private def reductionWithDeserialize(ergoTree: ErgoTree,
                                        prop: SigmaPropValue,
-                                       context: CTX, env: ScriptEnv,
+                                       context: CTX,
+                                       env: ScriptEnv,
                                        evalMode: EvaluationMode): (ReductionResult, JitReductionResult) = {
     implicit val vs: SigmaValidationSettings = context.validationSettings
     var aotRes: ReductionResult = null
