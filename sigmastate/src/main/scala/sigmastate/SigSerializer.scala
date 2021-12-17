@@ -11,8 +11,8 @@ import sigmastate.basics.{ProveDHTuple, SecondDiffieHellmanTupleProverMessage}
 import sigmastate.interpreter.ErgoTreeEvaluator.{fixedCostOp, perItemCostOp}
 import sigmastate.interpreter.{CryptoConstants, ErgoTreeEvaluator, NamedDesc, OperationCostInfo}
 import sigmastate.lang.exceptions.SerializerException
-import sigmastate.serialization.SigmaSerializer
-import sigmastate.utils.{Helpers, SigmaByteReader, SigmaByteWriter}
+import sigmastate.serialization.{SigmaSerializer, ValueSerializer}
+import sigmastate.utils.{SigmaByteReader, SigmaByteWriter, Helpers}
 import spire.syntax.all.cfor
 
 /** Contains implementation of signature (aka proof) serialization.
@@ -209,7 +209,7 @@ object SigSerializer extends LazyLogging {
       case and: CAND =>
         // Verifier Step 2: If the node is AND, then all of its children get e_0 as the challenge
         val nChildren = and.children.length
-        val children = new Array[UncheckedSigmaTree](nChildren)
+        val children = ValueSerializer.newArray[UncheckedSigmaTree](nChildren)
         cfor(0)(_ < nChildren, _ + 1) { i =>
           children(i) = parseAndComputeChallenges(and.children(i), r, challenge)
         }
@@ -222,7 +222,7 @@ object SigSerializer extends LazyLogging {
 
         // Read all the children but the last and compute the XOR of all the challenges including e_0
         val nChildren = or.children.length
-        val children = new Array[UncheckedSigmaTree](nChildren)
+        val children = ValueSerializer.newArray[UncheckedSigmaTree](nChildren)
         val xorBuf = challenge.clone()
         val iLastChild = nChildren - 1
         cfor(0)(_ < iLastChild, _ + 1) { i =>
@@ -251,7 +251,7 @@ object SigSerializer extends LazyLogging {
           GF2_192_Poly.fromByteArray(challenge, coeffBytes)
         }
 
-        val children = new Array[UncheckedSigmaTree](nChildren)
+        val children = ValueSerializer.newArray[UncheckedSigmaTree](nChildren)
         cfor(0)(_ < nChildren, _ + 1) { i =>
           val c = perItemCostOp(EvaluatePolynomial, nCoefs) { () =>
             Challenge @@ polynomial.evaluate((i + 1).toByte).toByteArray

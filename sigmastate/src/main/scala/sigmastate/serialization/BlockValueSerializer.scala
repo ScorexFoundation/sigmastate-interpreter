@@ -29,7 +29,7 @@ case class BlockValueSerializer(cons: (IndexedSeq[BlockItem], Value[SType]) => V
       BlockItem.EmptySeq
     else {
       // HOTSPOT:: allocate new array only if it is not empty
-      val buf = new Array[BlockItem](itemsSize)
+      val buf = ValueSerializer.newArray[BlockItem](itemsSize)
       cfor(0)(_ < itemsSize, _ + 1) { i =>
         buf(i) = r.getValue().asInstanceOf[BlockItem]
       }

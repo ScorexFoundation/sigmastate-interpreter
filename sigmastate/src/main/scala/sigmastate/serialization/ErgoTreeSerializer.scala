@@ -224,7 +224,7 @@ class ErgoTreeSerializer {
         val nConsts = r.getUInt().toInt
         if (nConsts > 0) {
           // HOTSPOT:: allocate new array only if it is not empty
-          val res = new Array[Constant[SType]](nConsts)
+          val res = ValueSerializer.newArray[Constant[SType]](nConsts)
           cfor(0)(_ < nConsts, _ + 1) { i =>
             res(i) = constantSerializer.deserialize(r)
           }

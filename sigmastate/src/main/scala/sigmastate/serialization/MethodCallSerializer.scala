@@ -53,7 +53,7 @@ case class MethodCallSerializer(cons: (Value[SType], SMethod, IndexedSeq[Value[S
     val types: Seq[SType] =
       if (nArgs == 0) SType.EmptySeq
       else {
-        val types = new Array[SType](nArgs)
+        val types = ValueSerializer.newArray[SType](nArgs)
         cfor(0)(_ < nArgs, _ + 1) { i =>
           types(i) = args(i).tpe
         }

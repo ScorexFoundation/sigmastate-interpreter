@@ -27,6 +27,10 @@ case class CompilerSettings(
 )
 
 class SigmaCompiler(settings: CompilerSettings) {
+  def this(networkPrefix: Byte) = this(
+    CompilerSettings(networkPrefix, TransformingSigmaBuilder, lowerMethodCalls = true)
+  )
+
   @inline final def builder = settings.builder
   @inline final def networkPrefix = settings.networkPrefix
 
