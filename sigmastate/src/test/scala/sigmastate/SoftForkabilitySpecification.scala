@@ -11,7 +11,7 @@ import sigmastate.eval.Colls
 import sigmastate.helpers.{ErgoLikeContextTesting, ErgoLikeTestProvingInterpreter, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv, WhenSoftForkReductionResult}
-import sigmastate.interpreter.{ProverResult, Interpreter, WhenSoftForkReducer, ContextExtension, CacheKey}
+import sigmastate.interpreter.{ProverResult, WhenSoftForkReducer, ContextExtension, CacheKey}
 import sigmastate.lang.Terms._
 import sigmastate.lang.exceptions.{SerializerException, SigmaException, InterpreterException, CosterException}
 import sigmastate.serialization.OpCodes.{OpCodeExtra, LastConstantCode, OpCode}

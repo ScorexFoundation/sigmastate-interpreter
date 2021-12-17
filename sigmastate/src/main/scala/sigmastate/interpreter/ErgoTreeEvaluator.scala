@@ -2,16 +2,17 @@ package sigmastate.interpreter
 
 import org.ergoplatform.ErgoLikeContext
 import org.ergoplatform.SigmaConstants.ScriptCostLimit
-import sigmastate.{FixedCost, PerItemCost, SType, TypeBasedCost}
+import sigmastate.{FixedCost, JitCost, PerItemCost, SType, TypeBasedCost}
 import sigmastate.Values._
 import sigmastate.eval.Profiler
 import sigmastate.interpreter.ErgoTreeEvaluator.DataEnv
-import sigmastate.interpreter.Interpreter.ReductionResult
+import sigmastate.interpreter.Interpreter.JitReductionResult
 import special.sigma.{Context, SigmaProp}
 import scalan.util.Extensions._
+import sigmastate.interpreter.EvalSettings._
 import sigmastate.lang.Terms.MethodCall
-import spire.syntax.all.cfor
-
+import supertagged.TaggedType
+import debox.{Buffer => DBuffer}
 import scala.collection.mutable
 import scala.util.DynamicVariable
 
@@ -35,7 +36,42 @@ case class EvalSettings(
     * In such a case, additional operations may be performed (such as sanity checks). */
   isTestRun: Boolean = false,
   /** If true, then expected test vectors are pretty-printed. */
-  printTestVectors: Boolean = false)
+  printTestVectors: Boolean = false,
+  evaluationMode: EvaluationMode = AotEvaluationMode)
+
+object EvalSettings {
+  /** Enumeration type of evaluation modes of [[Interpreter]].
+    * This type can be removed in v5.x releases together with AOT implementation once v5.0
+    * protocol is activated.
+    */
+  object EvaluationMode extends TaggedType[Int] {
+    implicit class EvaluationModeOps(val x: EvaluationMode) extends AnyVal {
+      def name: String = x match {
+        case AotEvaluationMode => "AotEvaluationMode"
+        case JitEvaluationMode => "JitEvaluationMode"
+        case TestEvaluationMode => "TestEvaluationMode"
+      }
+    }
+  }
+  type EvaluationMode = EvaluationMode.Type
+
+  /** Evaluation mode when the interpreter is executing using AOT costing implementation
+   * of v4.x protocol. */
+  val AotEvaluationMode: EvaluationMode = EvaluationMode @@ 1  // first bit
+
+  /** Evaluation mode when the interpreter is executing using JIT costing implementation
+    * of v5.x protocol. */
+  val JitEvaluationMode: EvaluationMode = EvaluationMode @@ 2  // second bit
+
+  /** Evaluation mode when the interpreter is executing using both AOT and JIT costing
+    * implementations and compare the results.
+    * This mode should be used in tests and not supposed to be used in production.
+    */
+  val TestEvaluationMode: EvaluationMode = EvaluationMode @@ 3 // both bits
+}
+
+/** Result of JITC evaluation with costing. */
+case class JitEvalResult[A](value: A, cost: JitCost)
 
 /** Implements a simple and fast direct-style interpreter of ErgoTrees.
   *
@@ -92,18 +128,28 @@ class ErgoTreeEvaluator(
     * @return the value of the expression and the total accumulated cost in the coster.
     *         The returned cost includes the initial cost accumulated in the `coster`
     *         prior to calling this method. */
-  def evalWithCost(env: DataEnv, exp: SValue): (Any, Int) = {
+  def evalWithCost[A](env: DataEnv, exp: SValue): JitEvalResult[A] = {
     val res = eval(env, exp)
     val cost = coster.totalCost
-    (res, cost)
+    JitEvalResult(res.asInstanceOf[A], cost)
   }
 
   /** Trace of cost items accumulated during execution of `eval` method. Call
-    * [[scala.collection.mutable.ArrayBuffer.clear()]] before each `eval` invocation. */
-  private lazy val costTrace = {
-    val b = mutable.ArrayBuilder.make[CostItem]
-    b.sizeHint(1000)
-    b
+    * `clearTrace` method before each `eval` invocation. */
+  private lazy val costTrace: DBuffer[CostItem] = {
+    DBuffer.ofSize[CostItem](1000)
+  }
+
+  /** Returns the currently accumulated trace of cost items in this evaluator.
+    * A new array is allocated and returned, the evaluator state is unaffected.
+    */
+  def getCostTrace(): Seq[CostItem] = {
+    costTrace.toArray()
+  }
+
+  /** Clears the accumulated trace of this evaluator. */
+  def clearTrace() = {
+    costTrace.clear()
   }
 
   /** Adds the given cost to the `coster`. If tracing is enabled, associates the cost with
@@ -343,11 +389,66 @@ object ErgoTreeEvaluator {
     * [[sigmastate.FiatShamirTree]] where cost-aware code blocks are used.
     */
   def forProfiling(profiler: Profiler, evalSettings: EvalSettings): ErgoTreeEvaluator = {
-    val acc = new CostAccumulator(0, Some(ScriptCostLimit.value))
+    val acc = new CostAccumulator(
+      initialCost = JitCost(0),
+      costLimit = Some(JitCost.fromBlockCost(ScriptCostLimit.value)))
     new ErgoTreeEvaluator(
       context = null,
       constants = mutable.WrappedArray.empty,
       acc, profiler, evalSettings.copy(profilerOpt = Some(profiler)))
+  }
+
+  /** Executes [[FixedCost]] code `block` and use the given evaluator `E` to perform
+    * profiling and cost tracing.
+    * This helper method allows implementation of cost-aware code blocks by using
+    * thread-local instance of [[ErgoTreeEvaluator]].
+    * If the `currentEvaluator` [[DynamicVariable]] is not initialized (equals to null),
+    * then the block is executed with minimal overhead.
+    *
+    * @param costInfo operation descriptor
+    * @param block    block of code to be executed (given as lazy by-name argument)
+    * @param E        evaluator to be used (or null if it is not available on the
+    *                 current thread), in which case the method is equal to the
+    *                 `block` execution.
+    * @return result of code block execution
+    * HOTSPOT: don't beautify the code
+    * Note, `null` is used instead of Option to avoid allocations.
+    */
+  def fixedCostOp[R <: AnyRef](costInfo: OperationCostInfo[FixedCost])
+                              (block: => R)(implicit E: ErgoTreeEvaluator): R = {
+    if (E != null) {
+      var res: R = null.asInstanceOf[R]
+      E.addFixedCost(costInfo) {
+        res = block
+      }
+      res
+    } else
+      block
+  }
+
+  /** Executes [[PerItemCost]] code `block` and use the given evaluator `E` to perform
+    * profiling and cost tracing.
+    * This helper method allows implementation of cost-aware code blocks by using
+    * thread-local instance of [[ErgoTreeEvaluator]].
+    * If the `currentEvaluator` [[DynamicVariable]] is not initialized (equals to null),
+    * then the block is executed with minimal overhead.
+    *
+    * @param costInfo operation descriptor
+    * @param nItems   number of data items in the operation
+    * @param block    block of code to be executed (given as lazy by-name argument)
+    * @param E        evaluator to be used (or null if it is not available on the
+    *                 current thread), in which case the method is equal to the
+    *                 `block` execution.
+    * @return result of code block execution
+    * HOTSPOT: don't beautify the code
+    * Note, `null` is used instead of Option to avoid allocations.
+    */
+  def perItemCostOp[R](costInfo: OperationCostInfo[PerItemCost], nItems: Int)
+                      (block: () => R)(implicit E: ErgoTreeEvaluator): R = {
+    if (E != null) {
+      E.addSeqCost(costInfo, nItems)(block)
+    } else
+      block()
   }
 
   /** Evaluate the given [[ErgoTree]] in the given Ergo context using the given settings.
@@ -358,7 +459,7 @@ object ErgoTreeEvaluator {
     * @param evalSettings evaluation settings
     * @return a sigma protocol proposition (as [[SigmaBoolean]]) and accumulated JIT cost estimation.
     */
-  def evalToCrypto(context: ErgoLikeContext, ergoTree: ErgoTree, evalSettings: EvalSettings): ReductionResult = {
+  def evalToCrypto(context: ErgoLikeContext, ergoTree: ErgoTree, evalSettings: EvalSettings): JitReductionResult = {
     val (res, cost) = eval(context, ergoTree.constants, ergoTree.toProposition(replaceConstants = false), evalSettings)
     val sb = res match {
       case sp: SigmaProp =>
@@ -366,7 +467,7 @@ object ErgoTreeEvaluator {
       case sb: SigmaBoolean => sb
       case _ => error(s"Expected SigmaBoolean but was: $res")
     }
-    ReductionResult(sb, cost)
+    JitReductionResult(sb, cost)
   }
 
   /** Evaluate the given expression in the given Ergo context using the given settings.
@@ -384,7 +485,9 @@ object ErgoTreeEvaluator {
            constants: Seq[Constant[SType]],
            exp: SValue,
            evalSettings: EvalSettings): (Any, Int) = {
-    val costAccumulator = new CostAccumulator(context.initCost.toIntExact, Some(context.costLimit))
+    val costAccumulator = new CostAccumulator(
+      initialCost = JitCost.fromBlockCost(context.initCost.toIntExact),
+      costLimit = Some(JitCost.fromBlockCost(context.costLimit.toIntExact)))
     val sigmaContext = context.toSigmaContext(isCost = false)
     eval(sigmaContext, costAccumulator, constants, exp, evalSettings)
   }
@@ -409,7 +512,7 @@ object ErgoTreeEvaluator {
     val evaluator = new ErgoTreeEvaluator(
       sigmaContext, constants, costAccumulator, DefaultProfiler, evalSettings)
     val res = evaluator.eval(Map(), exp)
-    val cost = costAccumulator.totalCost
+    val cost = costAccumulator.totalCost.toBlockCost // scale to block cost
     (res, cost)
   }
 

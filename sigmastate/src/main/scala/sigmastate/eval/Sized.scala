@@ -46,7 +46,7 @@ object Sized extends SizedLowPriority {
   def sizeOf[T: Sized](x: T): Size[T] = Sized[T].size(x)
 
   /** Helper constructor to support Scala 2.11. */
-  def instance[T](f: T => Size[T]) = new Sized[T] {
+  def instance[T](f: T => Size[T]): Sized[T] = new Sized[T] {
     override def size(x: T): Size[T] = f(x)
   }
 

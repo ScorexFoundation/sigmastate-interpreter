@@ -16,7 +16,9 @@ import sigmastate.lang.Terms._
 import special.sigma.InvalidType
 import SType.AnyOps
 import sigmastate.interpreter.ContextExtension.VarBinding
-import sigmastate.interpreter.CryptoConstants
+import sigmastate.interpreter.ErgoTreeEvaluator.DefaultEvalSettings
+import sigmastate.interpreter.{CryptoConstants, EvalSettings}
+import sigmastate.lang.exceptions.SigmaException
 import sigmastate.utils.Helpers._
 
 class BasicOpsSpecification extends SigmaTestingCommons
@@ -58,13 +60,19 @@ class BasicOpsSpecification extends SigmaTestingCommons
   def test(name: String, env: ScriptEnv,
            ext: Seq[VarBinding],
            script: String, propExp: SValue,
-      onlyPositive: Boolean = true) = {
+           onlyPositive: Boolean = true,
+           testExceededCost: Boolean = true) = {
     val prover = new ContextEnrichingTestProvingInterpreter() {
       override lazy val contextExtenders: Map[Byte, EvaluatedValue[_ <: SType]] = {
         val p1 = dlogSecrets(0).publicImage
         val p2 = dlogSecrets(1).publicImage
         (ext ++ Seq(propVar1 -> SigmaPropConstant(p1), propVar2 -> SigmaPropConstant(p2))).toMap
       }
+      override val evalSettings: EvalSettings = DefaultEvalSettings.copy(
+        isMeasureOperationTime = true,
+        isDebug = true,
+        isTestRun = testExceededCost,
+        evaluationMode = EvalSettings.TestEvaluationMode)
     }
 
     val prop = compile(env, script).asBoolValue.toSigmaProp
@@ -91,10 +99,35 @@ class BasicOpsSpecification extends SigmaTestingCommons
 
     val ctxExt = ctx.withExtension(pr.extension)
 
-    val verifier = new ErgoLikeTestInterpreter
-    if (!onlyPositive)
-      verifier.verify(env + (ScriptNameProp -> s"${name}_verify"), tree, ctx, pr.proof, fakeMessage).map(_._1).getOrElse(false) shouldBe false //context w/out extensions
-    verifier.verify(env + (ScriptNameProp -> s"${name}_verify_ext"), tree, ctxExt, pr.proof, fakeMessage).get._1 shouldBe true
+    val testVerifier = new ErgoLikeTestInterpreter
+
+    if (!onlyPositive) {
+      // test negative case
+      testVerifier.verify(
+          env + (ScriptNameProp -> s"${name}_verify"),
+          tree, ctx, pr.proof, fakeMessage)
+        .map(_._1)
+        .getOrElse(false) shouldBe false //context w/out extensions
+    }
+
+    // this is helper verifier which respects the requested parameter testExceededCost for
+    // some test cases (when testExceededCost == false) it emit message in the console
+    // instead of failing the test and the failing case is tested separately in that case
+    val flexVerifier = new ErgoLikeTestInterpreter {
+      override val evalSettings: EvalSettings = DefaultEvalSettings.copy(
+        isMeasureOperationTime = true,
+        isDebug = true,
+        isTestRun = testExceededCost)
+    }
+    val verifyEnv = env + (ScriptNameProp -> s"${name}_verify_ext")
+    flexVerifier.verify(verifyEnv, tree, ctxExt, pr.proof, fakeMessage).get._1 shouldBe true
+
+    if (!testExceededCost) {
+      // test failing case when old cost is less then the new one
+      assertExceptionThrown(
+        testVerifier.verify(verifyEnv, tree, ctxExt, pr.proof, fakeMessage).get._1,
+        exceptionLike[SigmaException]("Wrong JIT cost"))
+    }
   }
 
   property("Relation operations") {
@@ -147,23 +180,28 @@ class BasicOpsSpecification extends SigmaTestingCommons
   property("SigmaProp operations") {
     test("Prop1", env, ext,
       "{ getVar[SigmaProp](proofVar1).get.isProven }",
-      GetVarSigmaProp(propVar1).get
+      GetVarSigmaProp(propVar1).get,
+      testExceededCost = false
     )
     test("Prop2", env, ext,
       "{ getVar[SigmaProp](proofVar1).get || getVar[SigmaProp](proofVar2).get }",
-      SigmaOr(Seq(GetVarSigmaProp(propVar1).get, GetVarSigmaProp(propVar2).get))
+      SigmaOr(Seq(GetVarSigmaProp(propVar1).get, GetVarSigmaProp(propVar2).get)),
+      testExceededCost = false
     )
     test("Prop3", env, ext,
       "{ getVar[SigmaProp](proofVar1).get && getVar[SigmaProp](proofVar2).get }",
-      SigmaAnd(Seq(GetVarSigmaProp(propVar1).get, GetVarSigmaProp(propVar2).get))
+      SigmaAnd(Seq(GetVarSigmaProp(propVar1).get, GetVarSigmaProp(propVar2).get)),
+      testExceededCost = false
     )
     test("Prop4", env, ext,
       "{ getVar[SigmaProp](proofVar1).get.isProven && getVar[SigmaProp](proofVar2).get }",
-      SigmaAnd(Seq(GetVarSigmaProp(propVar1).get, GetVarSigmaProp(propVar2).get))
+      SigmaAnd(Seq(GetVarSigmaProp(propVar1).get, GetVarSigmaProp(propVar2).get)),
+      testExceededCost = false
     )
     test("Prop5", env, ext,
       "{ getVar[SigmaProp](proofVar1).get && getVar[Int](intVar1).get == 1 }",
-      SigmaAnd(Seq(GetVarSigmaProp(propVar1).get, BoolToSigmaProp(EQ(GetVarInt(intVar1).get, 1))))
+      SigmaAnd(Seq(GetVarSigmaProp(propVar1).get, BoolToSigmaProp(EQ(GetVarInt(intVar1).get, 1)))),
+      testExceededCost = false
     )
     test("Prop6", env, ext,
       "{ getVar[Int](intVar1).get == 1 || getVar[SigmaProp](proofVar1).get }",
@@ -172,32 +210,38 @@ class BasicOpsSpecification extends SigmaTestingCommons
     test("Prop7", env, ext,
       "{ SELF.R4[SigmaProp].get.isProven }",
       ExtractRegisterAs[SSigmaProp.type](Self, reg1).get,
-      true
+      onlyPositive = true,
+      testExceededCost = false
     )
     test("Prop8", env, ext,
       "{ SELF.R4[SigmaProp].get && getVar[SigmaProp](proofVar1).get}",
       SigmaAnd(Seq(ExtractRegisterAs[SSigmaProp.type](Self, reg1).get, GetVarSigmaProp(propVar1).get)),
-      true
+      onlyPositive = true,
+      testExceededCost = false
     )
     test("Prop9", env, ext,
       "{ allOf(Coll(SELF.R4[SigmaProp].get, getVar[SigmaProp](proofVar1).get))}",
       SigmaAnd(Seq(ExtractRegisterAs[SSigmaProp.type](Self, reg1).get, GetVarSigmaProp(propVar1).get)),
-      true
+      onlyPositive = true,
+      testExceededCost = false
     )
     test("Prop10", env, ext,
       "{ anyOf(Coll(SELF.R4[SigmaProp].get, getVar[SigmaProp](proofVar1).get))}",
       SigmaOr(Seq(ExtractRegisterAs[SSigmaProp.type](Self, reg1).get, GetVarSigmaProp(propVar1).get)),
-      true
+      onlyPositive = true,
+      testExceededCost = false
     )
     test("Prop11", env, ext,
-        "{ Coll(SELF.R4[SigmaProp].get, getVar[SigmaProp](proofVar1).get).forall({ (p: SigmaProp) => p.isProven }) }",
+      "{ Coll(SELF.R4[SigmaProp].get, getVar[SigmaProp](proofVar1).get).forall({ (p: SigmaProp) => p.isProven }) }",
       SigmaAnd(Seq(ExtractRegisterAs[SSigmaProp.type](Self, reg1).get , GetVarSigmaProp(propVar1).get)),
-        true
-        )
+      onlyPositive = true,
+      testExceededCost = false
+    )
     test("Prop12", env, ext,
       "{ Coll(SELF.R4[SigmaProp].get, getVar[SigmaProp](proofVar1).get).exists({ (p: SigmaProp) => p.isProven }) }",
       SigmaOr(Seq(ExtractRegisterAs[SSigmaProp.type](Self, reg1).get, GetVarSigmaProp(propVar1).get)),
-      true
+      onlyPositive = true,
+      testExceededCost = false
     )
     test("Prop13", env, ext,
       "{ SELF.R4[SigmaProp].get.propBytes != getVar[SigmaProp](proofVar1).get.propBytes }",
@@ -343,7 +387,8 @@ class BasicOpsSpecification extends SigmaTestingCommons
     test("Extract1", env, ext,
       "{ SELF.R4[SigmaProp].get.isProven }",
       ExtractRegisterAs[SSigmaProp.type](Self, reg1).get,
-      true
+      onlyPositive = true,
+      testExceededCost = false
     )
     // wrong type
     assertExceptionThrown(
@@ -505,8 +550,10 @@ class BasicOpsSpecification extends SigmaTestingCommons
     test("prop1", env, ext, "sigmaProp(HEIGHT >= 0)",
       BoolToSigmaProp(GE(Height, IntConstant(0))), true)
     test("prop2", env, ext, "sigmaProp(HEIGHT >= 0) && getVar[SigmaProp](proofVar1).get",
-      SigmaAnd(Vector(BoolToSigmaProp(GE(Height, IntConstant(0))), GetVarSigmaProp(propVar1).get)), true)
-//    println(CostTableStat.costTableString)
+      SigmaAnd(Vector(BoolToSigmaProp(GE(Height, IntConstant(0))), GetVarSigmaProp(propVar1).get)),
+      onlyPositive = true,
+      testExceededCost = false
+    )
   }
 
   property("numeric cast") {

@@ -13,12 +13,14 @@ import sigmastate._
 import sigmastate.basics.DLogProtocol._
 import sigmastate.basics.VerifierMessage.Challenge
 import sigmastate.basics._
+import sigmastate.eval.Evaluation
+import sigmastate.eval.Evaluation.addCostChecked
 import sigmastate.lang.exceptions.CostLimitException
 import sigmastate.utils.Helpers
 
 import scala.util.Try
 
-
+// TODO ProverResult was moved from here, compare with new-eval after merge
 /**
   * Interpreter with enhanced functionality to prove statements.
   */
@@ -87,7 +89,7 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
     // This bitstring corresponding to a proposition to prove is needed for Strong Fiat-Shamir transformation.
     // See [BPW12] paper on Strong vs Weak Fiat-Shamir,
     // (https://link.springer.com/content/pdf/10.1007/978-3-642-34961-4_38.pdf)
-    val propBytes = FiatShamirTree.toBytes(step6)
+    val propBytes = FiatShamirTree.toBytes(step6)(null/* prove is not profiled */)
 
     // Prover Step 8: compute the challenge for the root of the tree as the Fiat-Shamir hash of propBytes
     // and the message being signed.
@@ -118,18 +120,20 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
             message: Array[Byte],
             hintsBag: HintsBag = HintsBag.empty): Try[CostedProverResult] = Try {
 
-    val initCost = ergoTree.complexity + context.initCost
-    val remainingLimit = context.costLimit - initCost
-    if (remainingLimit <= 0)
-      throw new CostLimitException(initCost,
-        s"Estimated execution cost $initCost exceeds the limit ${context.costLimit}", None)
+    val costWithComplexity = addCostChecked(context.initCost, ergoTree.complexity, context.costLimit)
+    val ctxWithComplexity = context.withInitCost(costWithComplexity).asInstanceOf[CTX]
+    val (aotRes, jitRes) = fullReduction(ergoTree, ctxWithComplexity, env)
 
-    val ctxUpdInitCost = context.withInitCost(initCost).asInstanceOf[CTX]
+    val verificationC = estimateVerificationCost(aotRes.value).toBlockCost // scale JitCost to tx cost
+    // Note, jitRes.cost is already scaled in fullReduction
+    val fullJitCost = addCostChecked(jitRes.cost, verificationC, ctxWithComplexity.costLimit)
 
-    val res = fullReduction(ergoTree, ctxUpdInitCost, env)
-    val proof = generateProof(res.value, message, hintsBag)
+    CostingUtils.checkCosts(ergoTree.bytesHex,
+      aotRes.cost, fullJitCost, logger = logMessage)(evalSettings)
 
-    CostedProverResult(proof, ctxUpdInitCost.extension, res.cost)
+    val proof = generateProof(aotRes.value, message, hintsBag)
+
+    CostedProverResult(proof, ctxWithComplexity.extension, aotRes.cost)
   }
 
   def generateProof(sb: SigmaBoolean,

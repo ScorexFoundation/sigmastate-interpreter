@@ -1,6 +1,9 @@
 package sigmastate.helpers
 
 import org.ergoplatform._
+import sigmastate.eval.IRContext
+import sigmastate.interpreter.ErgoTreeEvaluator.DefaultEvalSettings
+import sigmastate.interpreter.EvalSettings
 import org.ergoplatform.settings.ErgoAlgos
 import org.ergoplatform.validation.{ValidationRules, SigmaValidationSettings}
 import sigmastate.eval.{IRContext, CompiletimeIRContext}
@@ -13,6 +16,11 @@ import scala.util.{Success, Failure}
   * @see derived classes */
 class ErgoLikeTestInterpreter(implicit override val IR: IRContext) extends ErgoLikeInterpreter {
   override type CTX = ErgoLikeContext
+  override val evalSettings: EvalSettings = DefaultEvalSettings.copy(
+    isMeasureOperationTime = true,
+    isDebug = true,
+    isTestRun = true,
+    evaluationMode = EvalSettings.TestEvaluationMode)
   override val precompiledScriptProcessor = ErgoLikeTestInterpreter.DefaultProcessorInTests
 }
 object ErgoLikeTestInterpreter {

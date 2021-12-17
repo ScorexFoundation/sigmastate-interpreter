@@ -20,7 +20,7 @@ import sigmastate.Values._
 import sigmastate.lang.Terms.Apply
 import sigmastate.eval.Extensions._
 import sigmastate.eval._
-import sigmastate.lang.Terms.MethodCall
+import sigmastate.lang.Terms.{PropertyCall, MethodCall}
 import sigmastate.utxo._
 import special.collection._
 import sigmastate.serialization.OpCodes.OpCode
@@ -33,18 +33,70 @@ import OrderingOps._
 import org.ergoplatform.ErgoBox.AdditionalRegisters
 import org.scalacheck.Arbitrary._
 import org.scalacheck.Gen.frequency
+import org.scalatest.{BeforeAndAfterAll, Tag}
 import scalan.RType._
 import scorex.util.ModifierId
 import sigmastate.basics.ProveDHTuple
+import sigmastate.interpreter._
+import org.scalactic.source.Position
 
 import scala.collection.mutable
 
-
 /** This suite tests every method of every SigmaDsl type to be equivalent to
-  * the evaluation of the corresponding ErgoScript operation */
-class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { suite =>
+  * the evaluation of the corresponding ErgoScript operation
+  *
+  * This suite can be used for Cost profiling, i.e. measurements of operations times and
+  * comparing them with cost parameteres of the operations.
+  *
+  * The following settings should be specified for profiling:
+  * isMeasureOperationTime = true
+  * isMeasureScriptTime = true
+  * isLogEnabled = false
+  * printTestVectors = false
+  * costTracingEnabled = false
+  * isTestRun = true
+  * perTestWarmUpIters = 1
+  * nBenchmarkIters = 1
+  */
+class SigmaDslSpecification extends SigmaDslTesting
+  with CrossVersionProps
+  with BeforeAndAfterAll { suite =>
 
-  override implicit val generatorDrivenConfig = PropertyCheckConfiguration(minSuccessful = 30)
+  implicit override val generatorDrivenConfig = PropertyCheckConfiguration(minSuccessful = 30)
+
+  val evalSettingsInTests = ErgoTreeEvaluator.DefaultEvalSettings.copy(
+    isMeasureOperationTime = true,
+    isMeasureScriptTime = true,
+    isLogEnabled = false, // don't commit the `true` value (travis log is too high)
+    printTestVectors = false, // don't commit the `true` value (travis log is too high)
+
+    /** Should always be enabled in tests (and false by default)
+      * Should be disabled for cost profiling, which case the new costs are not checked.
+      */
+    costTracingEnabled = true,
+
+    profilerOpt = Some(ErgoTreeEvaluator.DefaultProfiler),
+    isTestRun = true
+  )
+
+  def warmupSettings(p: Profiler) = evalSettingsInTests.copy(
+    isLogEnabled = false,
+    printTestVectors = false,
+    profilerOpt = Some(p)
+  )
+
+  implicit override def evalSettings: EvalSettings = {
+    warmupProfiler match {
+      case Some(p) => warmupSettings(p)
+      case _ => evalSettingsInTests
+    }
+  }
+
+  override val perTestWarmUpIters = 0
+
+  override val nBenchmarkIters = 0
+
+  override val okRunTestsWithoutMCLowering: Boolean = true
 
   implicit def IR = createIR()
 
@@ -88,11 +140,26 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
           SelectField.typed[BoolValue](ValUse(1, STuple(Vector(SBoolean, SBoolean))), 2.toByte)
         )
       ))
+    val trace = CostDetails(
+      Array(
+        FixedCostItem(Apply),
+        FixedCostItem(FuncValue),
+        FixedCostItem(GetVar),
+        FixedCostItem(OptionGet),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        FixedCostItem(BinXor)
+      )
+    )
+    val newCost = 7633
     val cases = Seq(
-      (true, true) -> Expected(Success(false), 36518),
-      (true, false) -> Expected(Success(true), 36518),
-      (false, false) -> Expected(Success(false), 36518),
-      (false, true) -> Expected(Success(true), 36518)
+      (true, true) -> Expected(Success(false), 36518, trace, newCost),
+      (true, false) -> Expected(Success(true), 36518, trace, newCost),
+      (false, false) -> Expected(Success(false), 36518, trace, newCost),
+      (false, true) -> Expected(Success(true), 36518, trace, newCost)
     )
     verifyCases(cases, binXor)
   }
@@ -135,13 +202,29 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
           SelectField.typed[BoolValue](ValUse(1, STuple(Vector(SInt, SBoolean))), 2.toByte)
         )
       ))
+    val newCost = CostDetails(
+      Array(
+        FixedCostItem(Apply),
+        FixedCostItem(FuncValue),
+        FixedCostItem(GetVar),
+        FixedCostItem(OptionGet),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        FixedCostItem(Constant),
+        FixedCostItem(NamedDesc("EQ_Prim"), FixedCost(JitCost(3))),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        FixedCostItem(BinXor)
+      )
+    )
     val cases = Seq(
-      (1095564593, true) -> Expected(Success(true), 36865),
-      (-901834021, true) -> Expected(Success(true), 36865),
-      (595045530, false) -> Expected(Success(false), 36865),
-      (-1157998227, false) -> Expected(Success(false), 36865),
-      (0, true) -> Expected(Success(false), 36865),
-      (0, false) -> Expected(Success(true), 36865)
+      (1095564593, true) -> Expected(Success(true), 36865, newCost),
+      (-901834021, true) -> Expected(Success(true), 36865, newCost),
+      (595045530, false) -> Expected(Success(false), 36865, newCost),
+      (-1157998227, false) -> Expected(Success(false), 36865, newCost),
+      (0, true) -> Expected(Success(false), 36865, newCost),
+      (0, false) -> Expected(Success(true), 36865, newCost)
     )
     verifyCases(cases, xor)
   }
@@ -156,11 +239,35 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
           SelectField.typed[BoolValue](ValUse(1, STuple(Vector(SBoolean, SBoolean))), 2.toByte)
         )
       ))
+    val cost1 = CostDetails(
+      Array(
+        FixedCostItem(Apply),
+        FixedCostItem(FuncValue),
+        FixedCostItem(GetVar),
+        FixedCostItem(OptionGet), FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        FixedCostItem(BinAnd)
+      )
+    )
+    val cost2 = CostDetails(
+      Array(
+        FixedCostItem(Apply),
+        FixedCostItem(FuncValue),
+        FixedCostItem(GetVar),
+        FixedCostItem(OptionGet), FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        FixedCostItem(BinAnd),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField)
+      )
+    )
     val cases = Seq(
-      (false, true) -> Expected(Success(false), 38241),
-      (false, false) -> Expected(Success(false), 38241),
-      (true, true) -> Expected(Success(true), 38241),
-      (true, false) -> Expected(Success(false), 38241)
+      (false, true) -> Expected(Success(false), 38241, cost1),
+      (false, false) -> Expected(Success(false), 38241, cost1),
+      (true, true) -> Expected(Success(true), 38241, cost2),
+      (true, false) -> Expected(Success(false), 38241, cost2)
     )
     verifyCases(cases, eq)
   }
@@ -175,19 +282,105 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
           SelectField.typed[BoolValue](ValUse(1, STuple(Vector(SBoolean, SBoolean))), 2.toByte)
         )
       ))
+    val cost1 = CostDetails(
+      Array(
+        FixedCostItem(Apply),
+        FixedCostItem(FuncValue),
+        FixedCostItem(GetVar),
+        FixedCostItem(OptionGet), FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        FixedCostItem(BinOr)
+      )
+    )
+    val cost2 = CostDetails(
+      Array(
+        FixedCostItem(Apply),
+        FixedCostItem(FuncValue),
+        FixedCostItem(GetVar),
+        FixedCostItem(OptionGet), FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        FixedCostItem(BinOr),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField)
+      )
+    )
     val cases = Seq(
-      (true, false) -> Expected(Success(true), 38241),
-      (true, true) -> Expected(Success(true), 38241),
-      (false, false) -> Expected(Success(false), 38241),
-      (false, true) -> Expected(Success(true), 38241)
+      (true, false) -> Expected(Success(true), 38241, cost1),
+      (true, true) -> Expected(Success(true), 38241, cost1),
+      (false, false) -> Expected(Success(false), 38241, cost2),
+      (false, true) -> Expected(Success(true), 38241, cost2)
     )
     verifyCases(cases, eq)
   }
 
-  property("lazy || and && boolean equivalence") {
+  def runLazy_And_Or_BooleanEquivalence(implicit evalSettings: EvalSettings) = {
+    val cost1 = CostDetails(
+      Array(
+        FixedCostItem(Apply),
+        FixedCostItem(FuncValue),
+        FixedCostItem(GetVar),
+        FixedCostItem(OptionGet), FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
+        FixedCostItem(ValUse),
+        FixedCostItem(BinOr)
+      )
+    )
+    val cost2 = CostDetails(
+      Array(
+        FixedCostItem(Apply),
+        FixedCostItem(FuncValue),
+        FixedCostItem(GetVar),
+        FixedCostItem(OptionGet), FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
+        FixedCostItem(ValUse),
+        FixedCostItem(BinAnd)
+      )
+    )
+    val cost3 = CostDetails(
+      Array(
+        FixedCostItem(Apply),
+        FixedCostItem(FuncValue),
+        FixedCostItem(GetVar),
+        FixedCostItem(OptionGet), FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
+        FixedCostItem(ValUse),
+        FixedCostItem(BinAnd),
+        FixedCostItem(ValUse),
+        FixedCostItem(BinOr)
+      )
+    )
+    val cost4 = CostDetails(
+      Array(
+        FixedCostItem(Apply),
+        FixedCostItem(FuncValue),
+        FixedCostItem(GetVar),
+        FixedCostItem(OptionGet), FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
+        FixedCostItem(ValUse),
+        FixedCostItem(BinAnd),
+        FixedCostItem(ValUse),
+        FixedCostItem(BinAnd),
+        FixedCostItem(ValUse),
+        FixedCostItem(BinOr)
+      )
+    )
+    val cost5 = CostDetails(
+      Array(
+        FixedCostItem(Apply),
+        FixedCostItem(FuncValue),
+        FixedCostItem(GetVar),
+        FixedCostItem(OptionGet), FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
+        FixedCostItem(ValUse),
+        FixedCostItem(BinAnd),
+        FixedCostItem(ValUse),
+        FixedCostItem(BinAnd),
+        FixedCostItem(ValUse),
+        FixedCostItem(BinAnd),
+        FixedCostItem(ValUse),
+        FixedCostItem(BinOr)
+      )
+    )
     verifyCases(
       Seq(
-        (true, Expected(Success(true), 38467)),
+        (true, Expected(Success(true), 38467, cost1)),
         (false, Expected(new ArithmeticException("/ by zero")))
       ),
       existingFeature((x: Boolean) => x || (1 / 0 == 1),
@@ -203,7 +396,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
     verifyCases(
       Seq(
         (true, Expected(new ArithmeticException("/ by zero"))),
-        (false, Expected(Success(false), 38467))
+        (false, Expected(Success(false), 38467, cost2))
       ),
       existingFeature((x: Boolean) => x && (1 / 0 == 1),
         "{ (x: Boolean) => x && (1 / 0 == 1) }",
@@ -217,8 +410,8 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
     verifyCases(
       Seq(
-        (false, Expected(Success(false), 40480)),
-        (true, Expected(Success(true), 40480))
+        (false, Expected(Success(false), 40480, cost2)),
+        (true, Expected(Success(true), 40480, cost3))
       ),
       existingFeature((x: Boolean) => x && (x || (1 / 0 == 1)),
         "{ (x: Boolean) => x && (x || (1 / 0 == 1)) }",
@@ -235,8 +428,8 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
     verifyCases(
       Seq(
-        (false, Expected(Success(false), 42493)),
-        (true, Expected(Success(true), 42493))
+        (false, Expected(Success(false), 42493, cost2)),
+        (true, Expected(Success(true), 42493, cost4))
       ),
       existingFeature((x: Boolean) => x && (x && (x || (1 / 0 == 1))),
         "{ (x: Boolean) => x && (x && (x || (1 / 0 == 1))) }",
@@ -256,8 +449,8 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
     verifyCases(
       Seq(
-        (false, Expected(Success(false), 44506)),
-        (true, Expected(Success(true), 44506))
+        (false, Expected(Success(false), 44506, cost2)),
+        (true, Expected(Success(true), 44506, cost5))
       ),
       existingFeature((x: Boolean) => x && (x && (x && (x || (1 / 0 == 1)))),
         "{ (x: Boolean) => x && (x && (x && (x || (1 / 0 == 1)))) }",
@@ -278,10 +471,25 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
           )
         )))
 
+    val cost6 = CostDetails(
+      Array(
+        FixedCostItem(Apply),
+        FixedCostItem(FuncValue),
+        FixedCostItem(GetVar),
+        FixedCostItem(OptionGet), FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
+        FixedCostItem(ValUse),
+        FixedCostItem(LogicalNot),
+        FixedCostItem(BinAnd),
+        FixedCostItem(LogicalNot),
+        FixedCostItem(BinAnd),
+        FixedCostItem(ValUse),
+        FixedCostItem(BinOr)
+      )
+    )
     verifyCases(
       Seq(
         (false, Expected(new ArithmeticException("/ by zero"))),
-        (true, Expected(Success(true), 43281))
+        (true, Expected(Success(true), 43281, cost6))
       ),
       existingFeature((x: Boolean) => !(!x && (1 / 0 == 1)) && (x || (1 / 0 == 1)),
         "{ (x: Boolean) => !(!x && (1 / 0 == 1)) && (x || (1 / 0 == 1)) }",
@@ -301,9 +509,22 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
           )
         )))
 
+    val cost7 = CostDetails(
+      Array(
+        FixedCostItem(Apply),
+        FixedCostItem(FuncValue),
+        FixedCostItem(GetVar),
+        FixedCostItem(OptionGet),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
+        FixedCostItem(ValUse),
+        FixedCostItem(BinOr),
+        FixedCostItem(BinAnd),
+        FixedCostItem(ValUse)
+      )
+    )
     verifyCases(
       Seq(
-        (true, Expected(Success(true), 40480)),
+        (true, Expected(Success(true), 40480, cost7)),
         (false, Expected(new ArithmeticException("/ by zero")))
       ),
       existingFeature((x: Boolean) => (x || (1 / 0 == 1)) && x,
@@ -319,9 +540,23 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
           )
         )))
 
+    val cost8 = CostDetails(
+      Array(
+        FixedCostItem(Apply),
+        FixedCostItem(FuncValue),
+        FixedCostItem(GetVar),
+        FixedCostItem(OptionGet),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
+        FixedCostItem(ValUse),
+        FixedCostItem(BinOr),
+        FixedCostItem(BinAnd),
+        FixedCostItem(ValUse),
+        FixedCostItem(BinOr)
+      )
+    )
     verifyCases(
       Seq(
-        (true, Expected(Success(true), 43149)),
+        (true, Expected(Success(true), 43149, cost8)),
         (false, Expected(new ArithmeticException("/ by zero")))
       ),
       existingFeature((x: Boolean) => (x || (1 / 0 == 1)) && (x || (1 / 0 == 1)),
@@ -340,9 +575,26 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
           )
         )))
 
+    val cost9 = CostDetails(
+      Array(
+        FixedCostItem(Apply),
+        FixedCostItem(FuncValue),
+        FixedCostItem(GetVar),
+        FixedCostItem(OptionGet),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
+        FixedCostItem(ValUse),
+        FixedCostItem(LogicalNot),
+        FixedCostItem(BinAnd),
+        FixedCostItem(LogicalNot),
+        FixedCostItem(BinOr),
+        FixedCostItem(BinAnd),
+        FixedCostItem(ValUse),
+        FixedCostItem(BinOr)
+      )
+    )
     verifyCases(
       Seq(
-        (true, Expected(Success(true), 45950)),
+        (true, Expected(Success(true), 45950, cost9)),
         (false, Expected(new ArithmeticException("/ by zero")))
       ),
       existingFeature(
@@ -367,10 +619,32 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
           )
         )))
 
+    val cost10 = CostDetails(
+      Array(
+        FixedCostItem(Apply),
+        FixedCostItem(FuncValue),
+        FixedCostItem(GetVar),
+        FixedCostItem(OptionGet),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+        FixedCostItem(ValUse),
+        FixedCostItem(LogicalNot),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(BinAnd),
+        FixedCostItem(LogicalNot),
+        FixedCostItem(BinOr),
+        FixedCostItem(BinAnd),
+        FixedCostItem(ValUse),
+        FixedCostItem(BinAnd),
+        FixedCostItem(LogicalNot),
+        FixedCostItem(BinOr)
+      )
+    )
     verifyCases(
       Seq(
         (false, Expected(new ArithmeticException("/ by zero"))),
-        (true, Expected(Success(true), 48862))
+        (true, Expected(Success(true), 48862, cost10))
       ),
       existingFeature(
         (x: Boolean) => (!(!x && (1 / 0 == 1)) || (1 / 0 == 0)) && (!(!x && (1 / 0 == 1)) || (1 / 0 == 1)),
@@ -403,13 +677,80 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
         )))
   }
 
+  property("lazy || and && boolean equivalence") {
+    runLazy_And_Or_BooleanEquivalence(evalSettings)
+  }
+
+  val costIdentity = CostDetails(
+    Array(
+      FixedCostItem(Apply),
+      FixedCostItem(FuncValue),
+      FixedCostItem(GetVar),
+      FixedCostItem(OptionGet),
+      FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
+      FixedCostItem(ValUse)
+    )
+  )
+  val costUpcast = CostDetails(
+    Array(
+      FixedCostItem(Apply),
+      FixedCostItem(FuncValue),
+      FixedCostItem(GetVar),
+      FixedCostItem(OptionGet),
+      FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
+      FixedCostItem(ValUse)
+    )
+  )
+  val costDowncast = CostDetails(
+    Array(
+      FixedCostItem(Apply),
+      FixedCostItem(FuncValue),
+      FixedCostItem(GetVar),
+      FixedCostItem(OptionGet),
+      FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
+      FixedCostItem(ValUse)
+    )
+  )
+  def costArithOps(tpe: SType) = CostDetails(
+    Array(
+      FixedCostItem(Apply),
+      FixedCostItem(FuncValue),
+      FixedCostItem(GetVar),
+      FixedCostItem(OptionGet),
+      FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
+      FixedCostItem(ValUse),
+      FixedCostItem(SelectField),
+      FixedCostItem(ValUse),
+      FixedCostItem(SelectField),
+      FixedCostItem(ValUse),
+      FixedCostItem(ValUse),
+      TypeBasedCostItem(ArithOp.Plus, tpe),
+      FixedCostItem(ValUse),
+      FixedCostItem(ValUse),
+      TypeBasedCostItem(ArithOp.Minus, tpe),
+      FixedCostItem(ValUse),
+      FixedCostItem(ValUse),
+      TypeBasedCostItem(ArithOp.Multiply, tpe),
+      FixedCostItem(ValUse),
+      FixedCostItem(ValUse),
+      TypeBasedCostItem(ArithOp.Division, tpe),
+      FixedCostItem(ValUse),
+      FixedCostItem(ValUse),
+      TypeBasedCostItem(ArithOp.Modulo, tpe),
+      FixedCostItem(Tuple),
+      FixedCostItem(Tuple),
+      FixedCostItem(Tuple),
+      FixedCostItem(Tuple)
+    )
+  )
+
   property("Byte methods equivalence") {
     SByte.upcast(0.toByte) shouldBe 0.toByte  // boundary test case
     SByte.downcast(0.toByte) shouldBe 0.toByte  // boundary test case
 
     verifyCases(
       {
-        def expect(v: Byte) = Expected(Success(v), 35798)
+        def expect(v: Byte) = Expected(Success(v), 35798, costIdentity)
         Seq(
           (0.toByte, expect(0.toByte)),
           (1.toByte, expect(1.toByte)),
@@ -426,7 +767,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
     verifyCases(
       {
-        def expected(v: Short) = Expected(Success(v), 35902)
+        def expected(v: Short) = Expected(Success(v), 35902, costUpcast)
         Seq(
           (0.toByte, expected(0.toShort)),
           (1.toByte, expected(1.toShort)),
@@ -443,7 +784,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
     verifyCases(
       {
-        def expected(v: Int) = Expected(Success(v), 35902)
+        def expected(v: Int) = Expected(Success(v), 35902, costUpcast)
         Seq(
           (0.toByte, expected(0)),
           (1.toByte, expected(1)),
@@ -460,7 +801,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
     verifyCases(
       {
-        def expected(v: Long) = Expected(Success(v), 35902)
+        def expected(v: Long) = Expected(Success(v), 35902, costUpcast)
         Seq(
           (0.toByte, expected(0L)),
           (1.toByte, expected(1L)),
@@ -477,7 +818,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
     verifyCases(
       {
-        def expected(v: BigInt) = Expected(Success(v), 35932)
+        def expected(v: BigInt) = Expected(Success(v), 35932, costUpcast)
         Seq(
           (0.toByte, expected(CBigInt(new BigInteger("0", 16)))),
           (1.toByte, expected(CBigInt(new BigInteger("1", 16)))),
@@ -495,7 +836,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
     val n = ExactIntegral.ByteIsExactIntegral
     verifyCases(
       {
-        def success[T](v: (T, (T, (T, (T, T))))) = Expected(Success(v), 39654)
+        def success[T](v: (T, (T, (T, (T, T))))) = Expected(Success(v), 39654, costArithOps(SByte))
         Seq(
           ((-128.toByte, -128.toByte), Expected(new ArithmeticException("Byte overflow"))),
           ((-128.toByte, 0.toByte), Expected(new ArithmeticException("/ by zero"))),
@@ -592,17 +933,28 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
   def swapArgs[A](cases: Seq[((A, A), Expected[Boolean])], cost: Int) =
     cases.map { case ((x, y), res) => ((y, x), res.copy(cost = cost)) }
 
+  def swapArgs[A](cases: Seq[((A, A), Expected[Boolean])], cost: Int, newCost: CostDetails) =
+    cases.map { case ((x, y), res) =>
+      ((y, x), Expected(res.value, cost, newCost))
+    }
+
   def newCasesFrom[A, R](cases: Seq[(A, A)])(getExpectedRes: (A, A) => R, cost: Int) =
     cases.map { case (x, y) =>
       ((x, y), Expected(Success(getExpectedRes(x, y)), cost = cost))
     }    
+
+  def newCasesFrom2[A, R](cases: Seq[(A, A)])
+                        (getExpectedRes: (A, A) => R, cost: Int, newCost: CostDetails) =
+    cases.map { case (x, y) =>
+      ((x, y), Expected(Success(getExpectedRes(x, y)), cost = cost, expectedDetails = newCost))
+    }
 
   def verifyOp[A: Ordering: Arbitrary]
               (cases: Seq[((A, A), Expected[Boolean])],
                opName: String,
                op: (SValue, SValue) => SValue)
               (expectedFunc: (A, A) => Boolean, generateCases: Boolean = true)
-              (implicit tA: RType[A], sampled: Sampled[(A, A)]) = {
+              (implicit tA: RType[A], sampled: Sampled[(A, A)], evalSettings: EvalSettings) = {
     val nameA = RType[A].name
     val tpeA = Evaluation.rtypeToSType(tA)
     verifyCases(cases,
@@ -623,9 +975,82 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
       preGeneratedSamples = Some(sampled.samples))
   }
 
+  def costLT(tpe: SType) = CostDetails(
+    Array(
+      FixedCostItem(Apply),
+      FixedCostItem(FuncValue),
+      FixedCostItem(GetVar),
+      FixedCostItem(OptionGet),
+      FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
+      FixedCostItem(ValUse),
+      FixedCostItem(SelectField),
+      FixedCostItem(ValUse),
+      FixedCostItem(SelectField),
+      TypeBasedCostItem(LT, tpe)
+    )
+  )
+  def costGT(tpe: SType) = CostDetails(
+    Array(
+      FixedCostItem(Apply),
+      FixedCostItem(FuncValue),
+      FixedCostItem(GetVar),
+      FixedCostItem(OptionGet),
+      FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
+      FixedCostItem(ValUse),
+      FixedCostItem(SelectField),
+      FixedCostItem(ValUse),
+      FixedCostItem(SelectField),
+      TypeBasedCostItem(GT, tpe)
+    )
+  )
+  def costNEQ(neqCost: Seq[CostItem]) = {
+    val trace = Array(
+      FixedCostItem(Apply),
+      FixedCostItem(FuncValue),
+      FixedCostItem(GetVar),
+      FixedCostItem(OptionGet),
+      FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
+      FixedCostItem(ValUse),
+      FixedCostItem(SelectField),
+      FixedCostItem(ValUse),
+      FixedCostItem(SelectField)
+    ) ++ neqCost
+    CostDetails(trace)
+  }
+  val constNeqCost: Seq[CostItem] = Array[CostItem]()
+
+  def costLE(tpe: SType) = CostDetails(
+    Array(
+      FixedCostItem(Apply),
+      FixedCostItem(FuncValue),
+      FixedCostItem(GetVar),
+      FixedCostItem(OptionGet),
+      FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
+      FixedCostItem(ValUse),
+      FixedCostItem(SelectField),
+      FixedCostItem(ValUse),
+      FixedCostItem(SelectField),
+      TypeBasedCostItem(LE, tpe)
+    )
+  )
+  def costGE(tpe: SType) = CostDetails(
+    Array(
+      FixedCostItem(Apply),
+      FixedCostItem(FuncValue),
+      FixedCostItem(GetVar),
+      FixedCostItem(OptionGet),
+      FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
+      FixedCostItem(ValUse),
+      FixedCostItem(SelectField),
+      FixedCostItem(ValUse),
+      FixedCostItem(SelectField),
+      TypeBasedCostItem(GE, tpe)
+    )
+  )
+
   property("Byte LT, GT, NEQ") {
     val o = ExactOrdering.ByteIsExactOrdering
-    def expect(v: Boolean) = Expected(Success(v), 36328)
+    def expect(v: Boolean) = Expected(Success(v), 36328, costLT(SByte))
     val LT_cases: Seq[((Byte, Byte), Expected[Boolean])] = Seq(
       (-128.toByte, -128.toByte) -> expect(false),
       (-128.toByte, -127.toByte) -> expect(true),
@@ -665,15 +1090,17 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
     verifyOp(LT_cases, "<", LT.apply)(_ < _)
 
-    verifyOp(swapArgs(LT_cases, cost = 36342), ">", GT.apply)(_ > _)
+    verifyOp(
+      swapArgs(LT_cases, cost = 36342, newCost = costGT(SByte)),
+      ">", GT.apply)(_ > _)
 
-    val neqCases = newCasesFrom(LT_cases.map(_._1))(_ != _, cost = 36337)
+    val neqCases = newCasesFrom2(LT_cases.map(_._1))(_ != _, cost = 36337, newCost = costNEQ(constNeqCost))
     verifyOp(neqCases, "!=", NEQ.apply)(_ != _)
   }
 
   property("Byte LE, GE") {
     val o = ExactOrdering.ByteIsExactOrdering
-    def expect(v: Boolean) = Expected(Success(v), 36337)
+    def expect(v: Boolean) = Expected(Success(v), 36337, costLE(SByte))
     val LE_cases: Seq[((Byte, Byte), Expected[Boolean])] = Seq(
       (-128.toByte, -128.toByte) -> expect(true),
       (-128.toByte, -127.toByte) -> expect(true),
@@ -714,7 +1141,9 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
     verifyOp(LE_cases, "<=", LE.apply)(_ <= _)
 
-    verifyOp(swapArgs(LE_cases, cost = 36336), ">=", GE.apply)(_ >= _)
+    verifyOp(
+      swapArgs(LE_cases, cost = 36336, newCost = costGE(SByte)),
+      ">=", GE.apply)(_ >= _)
   }
 
   property("Byte methods equivalence (new features)") {
@@ -748,7 +1177,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 35976)
+        def success[T](v: T) = Expected(Success(v), 35976, costDowncast)
         Seq(
           (Short.MinValue, Expected(new ArithmeticException("Byte overflow"))),
           (-21626.toShort, Expected(new ArithmeticException("Byte overflow"))),
@@ -767,7 +1196,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 35798)
+        def success[T](v: T) = Expected(Success(v), 35798, costIdentity)
         Seq(
           (-32768.toShort, success(-32768.toShort)),
           (-27798.toShort, success(-27798.toShort)),
@@ -784,7 +1213,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 35902)
+        def success[T](v: T) = Expected(Success(v), 35902, costUpcast)
         Seq(
           (-32768.toShort, success(-32768)),
           (-21064.toShort, success(-21064)),
@@ -801,7 +1230,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 35902)
+        def success[T](v: T) = Expected(Success(v), 35902, costUpcast)
         Seq(
           (-32768.toShort, success(-32768L)),
           (-23408.toShort, success(-23408L)),
@@ -818,7 +1247,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
     verifyCases(
       {
-        def success(v: BigInt) = Expected(Success(v), 35932)
+        def success(v: BigInt) = Expected(Success(v), 35932, costUpcast)
         Seq(
           (-32768.toShort, success(CBigInt(new BigInteger("-8000", 16)))),
           (-26248.toShort, success(CBigInt(new BigInteger("-6688", 16)))),
@@ -836,7 +1265,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
     val n = ExactIntegral.ShortIsExactIntegral
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 39654)
+        def success[T](v: T) = Expected(Success(v), 39654, costArithOps(SShort))
         Seq(
           ((-32768.toShort, 1.toShort), Expected(new ArithmeticException("Short overflow"))),
           ((-32768.toShort, 4006.toShort), Expected(new ArithmeticException("Short overflow"))),
@@ -928,7 +1357,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
   property("Short LT, GT, NEQ") {
     val o = ExactOrdering.ShortIsExactOrdering
-    def expect(v: Boolean) = Expected(Success(v), 36328)
+    def expect(v: Boolean) = Expected(Success(v), 36328, costLT(SShort))
     val LT_cases: Seq[((Short, Short), Expected[Boolean])] = Seq(
       (Short.MinValue, Short.MinValue) -> expect(false),
       (Short.MinValue, (Short.MinValue + 1).toShort) -> expect(true),
@@ -968,15 +1397,15 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
     verifyOp(LT_cases, "<", LT.apply)(_ < _)
 
-    verifyOp(swapArgs(LT_cases, cost = 36342), ">", GT.apply)(_ > _)
+    verifyOp(swapArgs(LT_cases, cost = 36342, costGT(SShort)), ">", GT.apply)(_ > _)
 
-    val neqCases = newCasesFrom(LT_cases.map(_._1))(_ != _, cost = 36337)
+    val neqCases = newCasesFrom2(LT_cases.map(_._1))(_ != _, cost = 36337, newCost = costNEQ(constNeqCost))
     verifyOp(neqCases, "!=", NEQ.apply)(_ != _)
   }
 
   property("Short LE, GE") {
     val o = ExactOrdering.ShortIsExactOrdering
-    def expect(v: Boolean) = Expected(Success(v), 36337)
+    def expect(v: Boolean) = Expected(Success(v), 36337, costLE(SShort))
     val LE_cases: Seq[((Short, Short), Expected[Boolean])] = Seq(
       (Short.MinValue, Short.MinValue) -> expect(true),
       (Short.MinValue, (Short.MinValue + 1).toShort) -> expect(true),
@@ -1017,7 +1446,9 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
     verifyOp(LE_cases, "<=", LE.apply)(_ <= _)
 
-    verifyOp(swapArgs(LE_cases, cost = 36336), ">=", GE.apply)(_ >= _)
+    verifyOp(
+      swapArgs(LE_cases, cost = 36336, newCost = costGE(SShort)),
+      ">=", GE.apply)(_ >= _)
   }
 
   property("Short methods equivalence (new features)") {
@@ -1050,7 +1481,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 35976)
+        def success[T](v: T) = Expected(Success(v), 35976, costDowncast)
         Seq(
           (Int.MinValue, Expected(new ArithmeticException("Byte overflow"))),
           (-2014394379, Expected(new ArithmeticException("Byte overflow"))),
@@ -1069,7 +1500,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 35976)
+        def success[T](v: T) = Expected(Success(v), 35976, costDowncast)
         Seq(
           (Int.MinValue, Expected(new ArithmeticException("Short overflow"))),
           (Short.MinValue - 1, Expected(new ArithmeticException("Short overflow"))),
@@ -1088,7 +1519,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 35798)
+        def success[T](v: T) = Expected(Success(v), 35798, costIdentity)
         Seq(
           (Int.MinValue, success(Int.MinValue)),
           (-1, success(-1)),
@@ -1103,7 +1534,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 35902)
+        def success[T](v: T) = Expected(Success(v), 35902, costUpcast)
         Seq(
           (Int.MinValue, success(Int.MinValue.toLong)),
           (-1, success(-1L)),
@@ -1118,7 +1549,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
     verifyCases(
       {
-        def success(v: BigInt) = Expected(Success(v), 35932)
+        def success(v: BigInt) = Expected(Success(v), 35932, costUpcast)
         Seq(
           (Int.MinValue, success(CBigInt(new BigInteger("-80000000", 16)))),
           (-1937187314, success(CBigInt(new BigInteger("-737721f2", 16)))),
@@ -1136,7 +1567,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
     val n = ExactNumeric.IntIsExactNumeric
     verifyCases(
     {
-      def success[T](v: T) = Expected(Success(v), 39654)
+      def success[T](v: T) = Expected(Success(v), 39654, costArithOps(SInt))
       Seq(
         ((Int.MinValue, 449583993), Expected(new ArithmeticException("integer overflow"))),
         ((-1589633733, 2147483647), Expected(new ArithmeticException("integer overflow"))),
@@ -1228,7 +1659,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
   property("Int LT, GT, NEQ") {
     val o = ExactOrdering.IntIsExactOrdering
-    def expect(v: Boolean) = Expected(Success(v), 36328)
+    def expect(v: Boolean) = Expected(Success(v), 36328, costLT(SInt))
     val LT_cases: Seq[((Int, Int), Expected[Boolean])] = Seq(
       (Int.MinValue, Int.MinValue) -> expect(false),
       (Int.MinValue, (Int.MinValue + 1).toInt) -> expect(true),
@@ -1268,15 +1699,17 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
     verifyOp(LT_cases, "<", LT.apply)(_ < _)
 
-    verifyOp(swapArgs(LT_cases, cost = 36342), ">", GT.apply)(_ > _)
+    verifyOp(
+      swapArgs(LT_cases, cost = 36342, newCost = costGT(SInt)),
+      ">", GT.apply)(_ > _)
 
-    val neqCases = newCasesFrom(LT_cases.map(_._1))(_ != _, cost = 36337)
+    val neqCases = newCasesFrom2(LT_cases.map(_._1))(_ != _, cost = 36337, newCost = costNEQ(constNeqCost))
     verifyOp(neqCases, "!=", NEQ.apply)(_ != _)
   }
 
   property("Int LE, GE") {
     val o = ExactOrdering.IntIsExactOrdering
-    def expect(v: Boolean) = Expected(Success(v), 36337)
+    def expect(v: Boolean) = Expected(Success(v), 36337, costLE(SInt))
     val LE_cases: Seq[((Int, Int), Expected[Boolean])] = Seq(
       (Int.MinValue, Int.MinValue) -> expect(true),
       (Int.MinValue, (Int.MinValue + 1).toInt) -> expect(true),
@@ -1317,7 +1750,9 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
     verifyOp(LE_cases, "<=", LE.apply)(_ <= _)
 
-    verifyOp(swapArgs(LE_cases, cost = 36336), ">=", GE.apply)(_ >= _)
+    verifyOp(
+      swapArgs(LE_cases, cost = 36336, newCost = costGE(SInt)),
+      ">=", GE.apply)(_ >= _)
   }
 
   property("Int methods equivalence (new features)") {
@@ -1349,7 +1784,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 35976)
+        def success[T](v: T) = Expected(Success(v), 35976, costDowncast)
         Seq(
           (Long.MinValue, Expected(new ArithmeticException("Byte overflow"))),
           (Byte.MinValue.toLong - 1, Expected(new ArithmeticException("Byte overflow"))),
@@ -1368,7 +1803,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 35976)
+        def success[T](v: T) = Expected(Success(v), 35976, costDowncast)
         Seq(
           (Long.MinValue, Expected(new ArithmeticException("Short overflow"))),
           (Short.MinValue.toLong - 1, Expected(new ArithmeticException("Short overflow"))),
@@ -1387,7 +1822,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 35976)
+        def success[T](v: T) = Expected(Success(v), 35976, costDowncast)
         Seq(
           (Long.MinValue, Expected(new ArithmeticException("Int overflow"))),
           (Int.MinValue.toLong - 1, Expected(new ArithmeticException("Int overflow"))),
@@ -1406,7 +1841,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 35798)
+        def success[T](v: T) = Expected(Success(v), 35798, costIdentity)
         Seq(
           (Long.MinValue, success(Long.MinValue)),
           (-1L, success(-1L)),
@@ -1421,7 +1856,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
     verifyCases(
       {
-        def success(v: BigInt) = Expected(Success(v), 35932)
+        def success(v: BigInt) = Expected(Success(v), 35932, costUpcast)
         Seq(
           (Long.MinValue, success(CBigInt(new BigInteger("-8000000000000000", 16)))),
           (-1074651039980347209L, success(CBigInt(new BigInteger("-ee9ed6d57885f49", 16)))),
@@ -1439,7 +1874,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
     val n = ExactNumeric.LongIsExactNumeric
     verifyCases(
     {
-      def success[T](v: T) = Expected(Success(v), 39654)
+      def success[T](v: T) = Expected(Success(v), 39654, costArithOps(SLong))
       Seq(
         ((Long.MinValue, -4677100190307931395L), Expected(new ArithmeticException("long overflow"))),
         ((Long.MinValue, -1L), Expected(new ArithmeticException("long overflow"))),
@@ -1529,7 +1964,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
   property("Long LT, GT, NEQ") {
     val o = ExactOrdering.LongIsExactOrdering
-    def expect(v: Boolean) = Expected(Success(v), 36328)
+    def expect(v: Boolean) = Expected(Success(v), 36328, costLT(SLong))
     val LT_cases: Seq[((Long, Long), Expected[Boolean])] = Seq(
       (Long.MinValue, Long.MinValue) -> expect(false),
       (Long.MinValue, (Long.MinValue + 1).toLong) -> expect(true),
@@ -1569,15 +2004,17 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
     verifyOp(LT_cases, "<", LT.apply)(_ < _)
 
-    verifyOp(swapArgs(LT_cases, cost = 36342), ">", GT.apply)(_ > _)
+    verifyOp(
+      swapArgs(LT_cases, cost = 36342, newCost = costGT(SLong)),
+      ">", GT.apply)(_ > _)
 
-    val neqCases = newCasesFrom(LT_cases.map(_._1))(_ != _, cost = 36337)
+    val neqCases = newCasesFrom2(LT_cases.map(_._1))(_ != _, cost = 36337, newCost = costNEQ(constNeqCost))
     verifyOp(neqCases, "!=", NEQ.apply)(_ != _)
   }
 
   property("Long LE, GE") {
     val o = ExactOrdering.LongIsExactOrdering
-    def expect(v: Boolean) = Expected(Success(v), 36337)
+    def expect(v: Boolean) = Expected(Success(v), 36337, costLE(SLong))
     val LE_cases: Seq[((Long, Long), Expected[Boolean])] = Seq(
       (Long.MinValue, Long.MinValue) -> expect(true),
       (Long.MinValue, (Long.MinValue + 1).toLong) -> expect(true),
@@ -1618,7 +2055,9 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
     verifyOp(LE_cases, "<=", LE.apply)(_ <= _)
 
-    verifyOp(swapArgs(LE_cases, cost = 36336), ">=", GE.apply)(_ >= _)
+    verifyOp(
+      swapArgs(LE_cases, cost = 36336, newCost = costGE(SLong)),
+      ">=", GE.apply)(_ >= _)
   }
 
   property("Long methods equivalence (new features)") {
@@ -1648,7 +2087,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
   property("BigInt methods equivalence") {
     verifyCases(
       {
-        def success(v: BigInt) = Expected(Success(v), 35798)
+        def success(v: BigInt) = Expected(Success(v), 35798, costIdentity)
         Seq(
           (CBigInt(new BigInteger("-85102d7f884ca0e8f56193b46133acaf7e4681e1757d03f191ae4f445c8e0", 16)), success(
             CBigInt(new BigInteger("-85102d7f884ca0e8f56193b46133acaf7e4681e1757d03f191ae4f445c8e0", 16))
@@ -1670,7 +2109,40 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
     val n = NumericOps.BigIntIsExactIntegral
     verifyCases(
     {
-      def success(v: (BigInt, (BigInt, (BigInt, (BigInt, BigInt))))) = Expected(Success(v), 39774)
+      val costArithOps = CostDetails(
+        Array(
+          FixedCostItem(Apply),
+          FixedCostItem(FuncValue),
+          FixedCostItem(GetVar),
+          FixedCostItem(OptionGet),
+          FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
+          FixedCostItem(ValUse),
+          FixedCostItem(SelectField),
+          FixedCostItem(ValUse),
+          FixedCostItem(SelectField),
+          FixedCostItem(ValUse),
+          FixedCostItem(ValUse),
+          TypeBasedCostItem(ArithOp.Plus, SBigInt),
+          FixedCostItem(ValUse),
+          FixedCostItem(ValUse),
+          TypeBasedCostItem(ArithOp.Minus, SBigInt),
+          FixedCostItem(ValUse),
+          FixedCostItem(ValUse),
+          TypeBasedCostItem(ArithOp.Multiply, SBigInt),
+          FixedCostItem(ValUse),
+          FixedCostItem(ValUse),
+          TypeBasedCostItem(ArithOp.Division, SBigInt),
+          FixedCostItem(ValUse),
+          FixedCostItem(ValUse),
+          TypeBasedCostItem(ArithOp.Modulo, SBigInt),
+          FixedCostItem(Tuple),
+          FixedCostItem(Tuple),
+          FixedCostItem(Tuple),
+          FixedCostItem(Tuple)
+        )
+      )
+      def success(v: (BigInt, (BigInt, (BigInt, (BigInt, BigInt))))) =
+        Expected(Success(v), 39774, costArithOps)
       Seq(
         ((CBigInt(new BigInteger("-8683d1cd99d5fcf0e6eff6295c285c36526190e13dbde008c49e5ae6fddc1c", 16)),
             CBigInt(new BigInteger("-2ef55db3f245feddacf0182e299dd", 16))),
@@ -1793,12 +2265,8 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
   property("BigInt LT, GT, NEQ") {
     val o = NumericOps.BigIntIsExactOrdering
-    // TODO HF: this values have bitCount == 255 (see to256BitValueExact)
-    val BigIntMinValue = CBigInt(new BigInteger("-7F" + "ff" * 31, 16))
-    val BigIntMaxValue = CBigInt(new BigInteger("7F" + "ff" * 31, 16))
-    val BigIntOverlimit = CBigInt(new BigInteger("7F" + "ff" * 33, 16))
 
-    def expect(v: Boolean) = Expected(Success(v), 36328)
+    def expect(v: Boolean) = Expected(Success(v), 36328, costLT(SBigInt))
     
     val LT_cases: Seq[((BigInt, BigInt), Expected[Boolean])] = Seq(
       (BigIntMinValue, BigIntMinValue) -> expect(false),
@@ -1841,9 +2309,11 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
     verifyOp(LT_cases, "<", LT.apply)(o.lt(_, _))
 
-    verifyOp(swapArgs(LT_cases, cost = 36342), ">", GT.apply)(o.gt(_, _))
+    verifyOp(
+      swapArgs(LT_cases, cost = 36342, newCost = costGT(SBigInt)),
+      ">", GT.apply)(o.gt(_, _))
 
-    val neqCases = newCasesFrom(LT_cases.map(_._1))(_ != _, cost = 36337)
+    val neqCases = newCasesFrom2(LT_cases.map(_._1))(_ != _, cost = 36337, newCost = costNEQ(constNeqCost))
     verifyOp(neqCases, "!=", NEQ.apply)(_ != _)
   }
 
@@ -1854,7 +2324,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
     val BigIntMaxValue = CBigInt(new BigInteger("7F" + "ff" * 31, 16))
     val BigIntOverlimit = CBigInt(new BigInteger("7F" + "ff" * 33, 16))
 
-    def expect(v: Boolean) = Expected(Success(v), 36337)
+    def expect(v: Boolean) = Expected(Success(v), 36337, costLE(SBigInt))
     
     val LE_cases: Seq[((BigInt, BigInt), Expected[Boolean])] = Seq(
       (BigIntMinValue, BigIntMinValue) -> expect(true),
@@ -1898,7 +2368,9 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
     verifyOp(LE_cases, "<=", LE.apply)(o.lteq(_, _))
 
-    verifyOp(swapArgs(LE_cases, cost = 36336), ">=", GE.apply)(o.gteq(_, _))
+    verifyOp(
+      swapArgs(LE_cases, cost = 36336, newCost = costGE(SBigInt)),
+      ">=", GE.apply)(o.gteq(_, _))
   }
 
   property("BigInt methods equivalence (new features)") {
@@ -1960,42 +2432,48 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
     * @param cost the expected cost of `verify` (the same for all cases)
     */
   def verifyNeq[A: Ordering: Arbitrary: RType]
-      (x: A, y: A, cost: Int)
+      (x: A, y: A, cost: Int, neqCost: Seq[CostItem] = mutable.WrappedArray.empty)
       (copy: A => A, generateCases: Boolean = true)
-      (implicit sampled: Sampled[(A, A)]) = {
+      (implicit sampled: Sampled[(A, A)], evalSettings: EvalSettings) = {
     val copied_x = copy(x)
+    val newCost = if (neqCost.isEmpty) CostDetails.ZeroCost else costNEQ(neqCost)
+    def expected(v: Boolean) = Expected(Success(v), cost, newCost)
     verifyOp(Seq(
-        (x, x) -> Expected(Success(false), cost),
-        (x, copied_x) -> Expected(Success(false), cost),
-        (copied_x, x) -> Expected(Success(false), cost),
-        (x, y) -> Expected(Success(true), cost),
-        (y, x) -> Expected(Success(true), cost)
+        (x, x) -> expected(false),
+        (x, copied_x) -> expected(false),
+        (copied_x, x) -> expected(false),
+        (x, y) -> expected(true),
+        (y, x) -> expected(true)
       ),
       "!=", NEQ.apply)(_ != _, generateCases)
   }
 
   property("NEQ of pre-defined types") {
-    verifyNeq(ge1, ge2, 36337)(_.asInstanceOf[CGroupElement].copy())
-    verifyNeq(t1, t2, 36337)(_.asInstanceOf[CAvlTree].copy())
-    verifyNeq(b1, b2, 36417)(_.asInstanceOf[CostingBox].copy())
-    verifyNeq(preH1, preH2, 36337)(_.asInstanceOf[CPreHeader].copy())
-    verifyNeq(h1, h2, 36337)(_.asInstanceOf[CHeader].copy())
+    verifyNeq(ge1, ge2, 36337, constNeqCost)(_.asInstanceOf[CGroupElement].copy())
+    verifyNeq(t1, t2, 36337, constNeqCost)(_.asInstanceOf[CAvlTree].copy())
+    verifyNeq(b1, b2, 36417,
+      Array[CostItem]())(_.asInstanceOf[CostingBox].copy())
+    verifyNeq(preH1, preH2, 36337, constNeqCost)(_.asInstanceOf[CPreHeader].copy())
+    verifyNeq(h1, h2, 36337, constNeqCost)(_.asInstanceOf[CHeader].copy())
   }
 
   property("NEQ of tuples of numerics") {
-    verifyNeq((0.toByte, 1.toByte), (1.toByte, 1.toByte), 36337)(_.copy())
-    verifyNeq((0.toShort, 1.toByte), (1.toShort, 1.toByte), 36337)(_.copy())
-    verifyNeq((0, 1.toByte), (1, 1.toByte), 36337)(_.copy())
-    verifyNeq((0.toLong, 1.toByte), (1.toLong, 1.toByte), 36337)(_.copy())
-    verifyNeq((0.toBigInt, 1.toByte), (1.toBigInt, 1.toByte), 36337)(_.copy())
+    verifyNeq((0.toByte, 1.toByte), (1.toByte, 1.toByte), 36337, constNeqCost)(_.copy())
+    verifyNeq((0.toShort, 1.toByte), (1.toShort, 1.toByte), 36337, constNeqCost)(_.copy())
+    verifyNeq((0, 1.toByte), (1, 1.toByte), 36337, constNeqCost)(_.copy())
+    verifyNeq((0.toLong, 1.toByte), (1.toLong, 1.toByte), 36337, constNeqCost)(_.copy())
+    verifyNeq((0.toBigInt, 1.toByte), (1.toBigInt, 1.toByte), 36337, constNeqCost)(_.copy())
   }
 
   property("NEQ of tuples of pre-defined types") {
-    verifyNeq((ge1, ge1), (ge1, ge2), 36337)(_.copy())
-    verifyNeq((t1, t1), (t1, t2), 36337)(_.copy())
-    verifyNeq((b1, b1), (b1, b2), 36497)(_.copy())
-    verifyNeq((preH1, preH1), (preH1, preH2), 36337)(_.copy())
-    verifyNeq((h1, h1), (h1, h2), 36337)(_.copy())
+    verifyNeq((ge1, ge1), (ge1, ge2), 36337, constNeqCost)(_.copy())
+    verifyNeq((t1, t1), (t1, t2), 36337, constNeqCost)(_.copy())
+    verifyNeq((b1, b1), (b1, b2),
+      cost = 36497,
+      neqCost = Array[CostItem]()
+      )(_.copy())
+    verifyNeq((preH1, preH1), (preH1, preH2), 36337, constNeqCost)(_.copy())
+    verifyNeq((h1, h1), (h1, h2), 36337, constNeqCost)(_.copy())
   }
 
   property("NEQ of nested tuples") {
@@ -2011,6 +2489,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
   }
 
   property("NEQ of collections of pre-defined types") {
+    implicit val evalSettings = suite.evalSettings.copy(isMeasureOperationTime = false)
     verifyNeq(Coll[Byte](), Coll(1.toByte), 36337)(cloneColl(_))
     verifyNeq(Coll[Byte](0, 1), Coll(1.toByte, 1.toByte), 36337)(cloneColl(_))
 
@@ -2062,6 +2541,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
   }
 
   property("NEQ of nested collections and tuples") {
+    implicit val evalSettings = suite.evalSettings.copy(isMeasureOperationTime = false)
     prepareSamples[Coll[Int]]
     prepareSamples[Coll[Coll[Int]]]
     prepareSamples[Coll[Coll[Int]]]
@@ -2091,10 +2571,21 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
   }
 
   property("GroupElement methods equivalence") {
-
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 37905)
+        val cost = TracedCost(
+          Array(
+            FixedCostItem(Apply),
+            FixedCostItem(FuncValue),
+            FixedCostItem(GetVar),
+            FixedCostItem(OptionGet),
+            FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
+            FixedCostItem(ValUse),
+            FixedCostItem(PropertyCall),
+            MethodCallCostItem(TracedCost(Array(FixedCostItem(SGroupElement.GetEncodedMethod, FixedCost(JitCost(3))))))
+          )
+        )
+        def success[T](v: T) = Expected(Success(v), 37905, cost)
         Seq(
           (ge1, success(Helpers.decodeBytes(ge1str))),
           (ge2, success(Helpers.decodeBytes(ge2str))),
@@ -2114,7 +2605,21 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 38340)
+        val cost = TracedCost(
+          Array(
+            FixedCostItem(Apply),
+            FixedCostItem(FuncValue),
+            FixedCostItem(GetVar),
+            FixedCostItem(OptionGet),
+            FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
+            FixedCostItem(ValUse),
+            FixedCostItem(PropertyCall),
+            MethodCallCostItem(TracedCost(Array(FixedCostItem(MethodDesc(SGroupElement.GetEncodedMethod), FixedCost(JitCost(3)))))),
+            FixedCostItem(DecodePoint),
+            FixedCostItem(ValUse)
+          )
+        )
+        def success[T](v: T) = Expected(Success(v), 38340, cost)
         Seq(
           (ge1, success(true)),
           (ge2, success(true)),
@@ -2142,7 +2647,19 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 36292)
+        val cost = TracedCost(
+          Array(
+            FixedCostItem(Apply),
+            FixedCostItem(FuncValue),
+            FixedCostItem(GetVar),
+            FixedCostItem(OptionGet),
+            FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
+            FixedCostItem(ValUse),
+            FixedCostItem(PropertyCall),
+            MethodCallCostItem(TracedCost(Array(FixedCostItem(MethodDesc(SGroupElement.NegateMethod), FixedCost(JitCost(1))))))
+          )
+        )
+        def success[T](v: T) = Expected(Success(v), 36292, cost)
         Seq(
           (ge1, success(Helpers.decodeGroupElement("02358d53f01276211f92d0aefbd278805121d4ff6eb534b777af1ee8abae5b2056"))),
           (ge2, success(Helpers.decodeGroupElement("03dba7b94b111f3894e2f9120b577da595ec7d58d488485adf73bf4e153af63575"))),
@@ -2162,9 +2679,24 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
     // val isIdentity = existingFeature({ (x: GroupElement) => x.isIdentity },
     //   "{ (x: GroupElement) => x.isIdentity }")
 
-    verifyCases(
+    if (lowerMethodCallsInTests) {
+      verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 41484)
+        val cost = TracedCost(
+          Array(
+            FixedCostItem(Apply),
+            FixedCostItem(FuncValue),
+            FixedCostItem(GetVar),
+            FixedCostItem(OptionGet),
+            FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
+            FixedCostItem(ValUse),
+            FixedCostItem(SelectField),
+            FixedCostItem(ValUse),
+            FixedCostItem(SelectField),
+            FixedCostItem(Exponentiate)
+          )
+        )
+        def success[T](v: T) = Expected(Success(v), 41484, cost)
         Seq(
           ((ge1, CBigInt(new BigInteger("-25c80b560dd7844e2efd10f80f7ee57d", 16))),
               success(Helpers.decodeGroupElement("023a850181b7b73f92a5bbfa0bfc78f5bbb6ff00645ddde501037017e1a2251e2e"))),
@@ -2176,7 +2708,8 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
               success(ge3))
         )
       },
-      existingFeature({ (x: (GroupElement, BigInt)) => x._1.exp(x._2) },
+      existingFeature(
+        { (x: (GroupElement, BigInt)) => x._1.exp(x._2) },
         "{ (x: (GroupElement, BigInt)) => x._1.exp(x._2) }",
         FuncValue(
           Vector((1, STuple(Vector(SGroupElement, SBigInt)))),
@@ -2191,10 +2724,28 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
             )
           )
         )))
+    } else {
+      // TODO v5.0: add test case with `exp` MethodCall
+    }
 
-    verifyCases(
+    if (lowerMethodCallsInTests) {
+      verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 36457)
+        val cost = TracedCost(
+          Array(
+            FixedCostItem(Apply),
+            FixedCostItem(FuncValue),
+            FixedCostItem(GetVar),
+            FixedCostItem(OptionGet),
+            FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
+            FixedCostItem(ValUse),
+            FixedCostItem(SelectField),
+            FixedCostItem(ValUse),
+            FixedCostItem(SelectField),
+            FixedCostItem(MultiplyGroup)
+          )
+        )
+        def success[T](v: T) = Expected(Success(v), 36457, cost)
         Seq(
           ((ge1, Helpers.decodeGroupElement("03e132ca090614bd6c9f811e91f6daae61f16968a1e6c694ed65aacd1b1092320e")),
               success(Helpers.decodeGroupElement("02bc48937b4a66f249a32dfb4d2efd0743dc88d46d770b8c5d39fd03325ba211df"))),
@@ -2221,6 +2772,9 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
             )
           )
         )))
+    } else {
+      //TODO v5.0: add test case with `exp` MethodCall
+    }
   }
 
   property("AvlTree properties equivalence") {
@@ -2515,15 +3069,33 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
         )
       ))
 
-    val (key, value, _, avlProver) = sampleAvlProver
+    def success[T](v: T) = Expected(Success(v), 0)
+
+    { // getMany with a bunch of existing keys
+      val (keysArr, valuesArr, _, avlProver) = sampleAvlProver
+      val keys = Colls.fromArray(keysArr.slice(0, 20))
+      val expRes = Colls.fromArray(valuesArr.slice(0, 20).map(Option(_)))
+
+      keys.foreach { key =>
+        avlProver.performOneOperation(Lookup(ADKey @@ key.toArray))
+      }
+      val proof = avlProver.generateProof().toColl
+      val digest = avlProver.digest.toColl
+      val tree = SigmaDsl.avlTree(AvlTreeFlags.ReadOnly.serializeToByte, digest, 32, None)
+
+      val input = (tree, (keys, proof))
+      getMany.checkExpected(input, success(expRes))
+    }
+
+    val (keysArr, valuesArr, _, avlProver) = sampleAvlProver
+    val key = keysArr(0)
+    val value = valuesArr(0)
     val otherKey = key.map(x => (-x).toByte) // any other different from key
 
     val table = Table(("key", "contains", "valueOpt"),
       (key, true, Some(value)),
       (otherKey, false, None)
     )
-
-    def success[T](v: T) = Expected(Success(v), 0)
 
     forAll(table) { (key, okContains, valueOpt) =>
       avlProver.performOneOperation(Lookup(ADKey @@ key.toArray))
@@ -2602,8 +3174,10 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
     proof
   }
 
-  def performRemove(avlProver: BatchProver, key: Coll[Byte]) = {
-    avlProver.performOneOperation(Remove(ADKey @@ key.toArray))
+  def performRemove(avlProver: BatchProver, keys: Seq[Coll[Byte]]) = {
+    keys.foreach { key =>
+      avlProver.performOneOperation(Remove(ADKey @@ key.toArray))
+    }
     val proof = avlProver.generateProof().toColl
     proof
   }
@@ -2899,10 +3473,26 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
     def success[T](v: T) = Expected(Success(v), 0)
 
+    { // positive test with many keys in the tree and to remove
+      val keys = arrayOfN(100, keyCollGen).sample.get
+      val values = arrayOfN(100, bytesCollGen).sample.get
+      val (_, avlProver) = createAvlTreeAndProver(keys.zip(values):_*)
+      val preRemoveDigest = avlProver.digest.toColl
+      val keysToRemove = keys.zipWithIndex.collect { case (k, i) if i % 2 != 0 => k }
+      val removeProof = performRemove(avlProver, keysToRemove)
+      val endDigest = avlProver.digest.toColl
+
+      val preRemoveTree = createTree(preRemoveDigest, removeAllowed = true)
+      val endTree = preRemoveTree.updateDigest(endDigest)
+      val input = (preRemoveTree, (Colls.fromArray(keysToRemove), removeProof))
+      val res = Some(endTree)
+      remove.checkExpected(input, success(res))
+    }
+
     forAll(keyCollGen, bytesCollGen) { (key, value) =>
       val (_, avlProver) = createAvlTreeAndProver(key -> value)
       val preRemoveDigest = avlProver.digest.toColl
-      val removeProof = performRemove(avlProver, key)
+      val removeProof = performRemove(avlProver, Array(key))
       val endDigest = avlProver.digest.toColl
       val keys = Colls.fromItems(key)
       val cost = 38270
@@ -3746,7 +4336,8 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
       existingPropTest("headers", { (x: Context) => x.headers }),
       preGeneratedSamples = Some(samples))
 
-    // TODO: testCases2 doesn't work because of equality (check the reason)
+    // TODO: verifyCases doesn't work because of equality (check the reason)
+
     testCases(
       Seq(ctx -> Success(ctx.OUTPUTS)),
       existingFeature(
@@ -3755,7 +4346,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
         FuncValue(Vector((1, SContext)), Outputs)),
       preGeneratedSamples = Some(samples))
 
-    // NOTE: testCases2 is not supported because SELF modified to pass input
+    // NOTE: verifyCases is not supported because SELF modified to pass input
     test(samples, existingFeature({ (x: Context) => x.INPUTS },
       "{ (x: Context) => x.INPUTS }", FuncValue(Vector((1, SContext)), Inputs)))
 
@@ -4620,7 +5211,8 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
           )
         )))
 
-    verifyCases(
+    if (lowerMethodCallsInTests) {
+      verifyCases(
       {
         def success[T](v: T) = Expected(Success(v), 41237)
         Seq(
@@ -4639,22 +5231,26 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
           (CBigInt(new BigInteger("102bb404f5e36bdba004fdefa34df8cfa02e7912f3caf79", 16)), success(Helpers.decodeGroupElement("03ce82f431d115d45ad555084f8b2861ce5c4561d154e931e9f778594896e46a25"))))
       },
       existingFeature({ (n: BigInt) => SigmaDsl.groupGenerator.exp(n) },
-        "{ (n: BigInt) => groupGenerator.exp(n) }",
-        FuncValue(
-          Vector((1, SBigInt)),
-          Exponentiate(
-            MethodCall.typed[Value[SGroupElement.type]](
-              Global,
-              SGlobal.getMethodByName("groupGenerator"),
-              Vector(),
-              Map()
-            ),
-            ValUse(1, SBigInt)
-          )
-        )))
+      "{ (n: BigInt) => groupGenerator.exp(n) }",
+      FuncValue(
+        Vector((1, SBigInt)),
+        Exponentiate(
+          MethodCall.typed[Value[SGroupElement.type]](
+            Global,
+            SGlobal.getMethodByName("groupGenerator"),
+            Vector(),
+            Map()
+          ),
+          ValUse(1, SBigInt)
+        )
+      )))
+    } else {
+      // TODO v5.0: add test case with `exp` MethodCall
+    }
 
     // TODO HF (2h): fix semantics when the left collection is longer
-    verifyCases(
+    if (lowerMethodCallsInTests) {
+      verifyCases(
       {
         def success[T](v: T) = Expected(Success(v), 36903)
         Seq(
@@ -4683,6 +5279,9 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
             )
           )
         )))
+    } else {
+      // TODO v5.0: add test case with `SGlobal.xor` MethodCall
+    }
   }
 
   property("Coll[Box] methods equivalence") {
@@ -5012,7 +5611,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
     val f = existingFeature(
       { (x: Coll[GroupElement]) => x.flatMap({ (b: GroupElement) => b.getEncoded.append(b.getEncoded) }) },
-      "{ (x: Coll[GroupElement]) => x.flatMap({ (b: GroupElement) => b.getEncoded.append(b.getEncoded) }) }" )
+      "{ (x: Coll[GroupElement]) => x.flatMap({ (b: GroupElement) => b.getEncoded.indices }) }" )
     assertExceptionThrown(
       f.oldF,
       t => t match {
@@ -5387,7 +5986,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
               Map()
             )
           )
-        )))
+        )), preGeneratedSamples = Some(Seq()))
   }
 
   property("Coll apply method equivalence") {
@@ -5422,7 +6021,8 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
   property("Coll getOrElse method equivalence") {
     val default = 10
-    verifyCases(
+    if (lowerMethodCallsInTests) {
+      verifyCases(
       // (coll, (index, default))
       {
         def success[T](v: T) = Expected(Success(v), 37020)
@@ -5463,6 +6063,9 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
             )
           )
         )))
+    } else {
+      // TODO v5.0: add test case with `SCollection.getOrElse` MethodCall
+    }
   }
 
   property("Tuple size method equivalence") {
@@ -5657,9 +6260,12 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
   }
 
   property("Coll append method equivalence") {
-    verifyCases(
+    if (lowerMethodCallsInTests) {
+      verifyCases(
       {
         def success[T](v: T) = Expected(Success(v), 37765)
+        val arr1 = Gen.listOfN(10000, arbitrary[Int]).map(_.toArray).sample.get
+        val arr2 = Gen.listOfN(20000, arbitrary[Int]).map(_.toArray).sample.get
         Seq(
           (Coll[Int](), Coll[Int]()) -> success(Coll[Int]()),
           (Coll[Int](), Coll[Int](1)) -> success(Coll[Int](1)),
@@ -5667,7 +6273,8 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
           (Coll[Int](1), Coll[Int](2)) -> success(Coll[Int](1, 2)),
           (Coll[Int](1), Coll[Int](2, 3)) -> success(Coll[Int](1, 2, 3)),
           (Coll[Int](1, 2), Coll[Int](3)) -> success(Coll[Int](1, 2, 3)),
-          (Coll[Int](1, 2), Coll[Int](3, 4)) -> success(Coll[Int](1, 2, 3, 4))
+          (Coll[Int](1, 2), Coll[Int](3, 4)) -> success(Coll[Int](1, 2, 3, 4)),
+          (Coll[Int](arr1:_*), Coll[Int](arr2:_*)) -> Expected(Success(Coll[Int](arr1 ++ arr2:_*)), 40105)
         )
       },
       existingFeature(
@@ -5686,6 +6293,9 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
             )
           )
         )))
+    } else {
+      // TODO v5.0: add test case with `SCollection.append` MethodCall
+    }
   }
 
   property("Option methods equivalence") {
@@ -5843,7 +6453,7 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
       Seq(
         (None -> Expected(
           Failure(new NoSuchElementException("None.get")), 0,
-          expectedNewValue = Success(5L), expectedNewCost = 39012)),
+          expectedNewValue = Success(5L), CostDetails.ZeroCost)),
         (Some(0L) -> Expected(Success(1L), 39012)),
         (Some(Long.MaxValue) -> Expected(new ArithmeticException("long overflow")))
       ),
@@ -5880,6 +6490,26 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
         )))
   }
 
+  def formatter(costKind: PerItemCost) = (info: MeasureInfo[Coll[Byte]]) => {
+    val numChunks = costKind.chunks(info.input.length)
+    val timeUs = info.measuredTime / 1000
+    val timePerBlock = info.measuredTime / info.nIters / numChunks
+    s"case ${info.iteration}: ${timeUs} usec; numChunks: $numChunks; timePerBlock: $timePerBlock"
+  }
+
+  property("blake2b256 benchmark: to estimate timeout") {
+    val cases = (1 to 10).map { i =>
+      val block = Colls.fromArray(Array.fill(ErgoTreeEvaluator.DataBlockSize * i)(0.toByte))
+      block
+    }
+    benchmarkCases(cases,
+      existingFeature((x: Coll[Byte]) => SigmaDsl.blake2b256(x),
+        "{ (x: Coll[Byte]) => blake2b256(x) }",
+        FuncValue(Vector((1, SByteArray)), CalcBlake2b256(ValUse(1, SByteArray)))),
+      nIters = 1000,
+      formatter(CalcBlake2b256.costKind))
+  }
+
   property("blake2b256, sha256 equivalence") {
     def success[T](v: T, c: Int) = Expected(Success(v), c)
 
@@ -5892,7 +6522,11 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
         Helpers.decodeBytes("e0ff0105ffffac31010017ff33") ->
           success(
             Helpers.decodeBytes("33707eed9aab64874ff2daa6d6a378f61e7da36398fb36c194c7562c9ff846b5"),
-            36269)
+            36269),
+        Colls.replicate(1024, 1.toByte) ->
+          success(
+            Helpers.decodeBytes("45d8456fc5d41d1ec1124cb92e41192c1c3ec88f0bf7ae2dc6e9cf75bec22045"),
+            36369)
       ),
       existingFeature((x: Coll[Byte]) => SigmaDsl.blake2b256(x),
         "{ (x: Coll[Byte]) => blake2b256(x) }",
@@ -5907,15 +6541,15 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
         Helpers.decodeBytes("e0ff0105ffffac31010017ff33") ->
           success(
             Helpers.decodeBytes("367d0ec2cdc14aac29d5beb60c2bfc86d5a44a246308659af61c1b85fa2ca2cc"),
-            36393)
+            36393),
+        Colls.replicate(1024, 1.toByte) ->
+          success(
+            Helpers.decodeBytes("5a648d8015900d89664e00e125df179636301a2d8fa191c1aa2bd9358ea53a69"),
+            36493)
       ),
       existingFeature((x: Coll[Byte]) => SigmaDsl.sha256(x),
         "{ (x: Coll[Byte]) => sha256(x) }",
         FuncValue(Vector((1, SByteArray)), CalcSha256(ValUse(1, SByteArray)))))
-  }
-
-  property("print") {
-    println(ComplexityTableStat.complexityTableString)
   }
 
   property("sigmaProp equivalence") {
@@ -6127,15 +6761,58 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
 
   property("SigmaProp.propBytes equivalence") {
     verifyCases(
-      Seq(
-        CSigmaProp(ProveDlog(Helpers.decodeECPoint("039d0b1e46c21540d033143440d2fb7dd5d650cf89981c99ee53c6e0374d2b1b6f")))
-          -> Expected(Success(
+      {
+        def newCost(nItems: Int) = TracedCost(
+          Array(
+            FixedCostItem(Apply),
+            FixedCostItem(FuncValue),
+            FixedCostItem(GetVar),
+            FixedCostItem(OptionGet),
+            FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
+            FixedCostItem(ValUse),
+            SeqCostItem(SigmaPropBytes, nItems)
+          )
+        )
+        def pk = ProveDlog(Helpers.decodeECPoint("039d0b1e46c21540d033143440d2fb7dd5d650cf89981c99ee53c6e0374d2b1b6f"))
+        def dht = ProveDHTuple(
+          Helpers.decodeECPoint("03c046fccb95549910767d0543f5e8ce41d66ae6a8720a46f4049cac3b3d26dafb"),
+          Helpers.decodeECPoint("023479c9c3b86a0d3c8be3db0a2d186788e9af1db76d55f3dad127d15185d83d03"),
+          Helpers.decodeECPoint("03d7898641cb6653585a8e1dabfa7f665e61e0498963e329e6e3744bd764db2d72"),
+          Helpers.decodeECPoint("037ae057d89ec0b46ff8e9ff4c37e85c12acddb611c3f636421bef1542c11b0441")
+        )
+        def and = CAND(Array(pk, dht))
+        def or = COR(Array(pk, dht))
+        def threshold = CTHRESHOLD(2, Array(pk, dht, or, and))
+        Seq(
+          CSigmaProp(dht) -> Expected(Success(
+            Helpers.decodeBytes(
+              "0008ce03c046fccb95549910767d0543f5e8ce41d66ae6a8720a46f4049cac3b3d26dafb023479c9c3b86a0d3c8be3db0a2d186788e9af1db76d55f3dad127d15185d83d0303d7898641cb6653585a8e1dabfa7f665e61e0498963e329e6e3744bd764db2d72037ae057d89ec0b46ff8e9ff4c37e85c12acddb611c3f636421bef1542c11b0441"
+            )
+          ), cost = 35902, newCost(4)),
+          CSigmaProp(pk) -> Expected(Success(
             Helpers.decodeBytes("0008cd039d0b1e46c21540d033143440d2fb7dd5d650cf89981c99ee53c6e0374d2b1b6f")),
-            cost = 35902)
-      ),
+            cost = 35902, newCost(1)),
+          CSigmaProp(and) -> Expected(Success(
+            Helpers.decodeBytes(
+              "00089602cd039d0b1e46c21540d033143440d2fb7dd5d650cf89981c99ee53c6e0374d2b1b6fce03c046fccb95549910767d0543f5e8ce41d66ae6a8720a46f4049cac3b3d26dafb023479c9c3b86a0d3c8be3db0a2d186788e9af1db76d55f3dad127d15185d83d0303d7898641cb6653585a8e1dabfa7f665e61e0498963e329e6e3744bd764db2d72037ae057d89ec0b46ff8e9ff4c37e85c12acddb611c3f636421bef1542c11b0441"
+            )
+          ), cost = 35902, newCost(6)),
+          CSigmaProp(threshold) -> Expected(Success(
+            Helpers.decodeBytes(
+              "0008980204cd039d0b1e46c21540d033143440d2fb7dd5d650cf89981c99ee53c6e0374d2b1b6fce03c046fccb95549910767d0543f5e8ce41d66ae6a8720a46f4049cac3b3d26dafb023479c9c3b86a0d3c8be3db0a2d186788e9af1db76d55f3dad127d15185d83d0303d7898641cb6653585a8e1dabfa7f665e61e0498963e329e6e3744bd764db2d72037ae057d89ec0b46ff8e9ff4c37e85c12acddb611c3f636421bef1542c11b04419702cd039d0b1e46c21540d033143440d2fb7dd5d650cf89981c99ee53c6e0374d2b1b6fce03c046fccb95549910767d0543f5e8ce41d66ae6a8720a46f4049cac3b3d26dafb023479c9c3b86a0d3c8be3db0a2d186788e9af1db76d55f3dad127d15185d83d0303d7898641cb6653585a8e1dabfa7f665e61e0498963e329e6e3744bd764db2d72037ae057d89ec0b46ff8e9ff4c37e85c12acddb611c3f636421bef1542c11b04419602cd039d0b1e46c21540d033143440d2fb7dd5d650cf89981c99ee53c6e0374d2b1b6fce03c046fccb95549910767d0543f5e8ce41d66ae6a8720a46f4049cac3b3d26dafb023479c9c3b86a0d3c8be3db0a2d186788e9af1db76d55f3dad127d15185d83d0303d7898641cb6653585a8e1dabfa7f665e61e0498963e329e6e3744bd764db2d72037ae057d89ec0b46ff8e9ff4c37e85c12acddb611c3f636421bef1542c11b0441"
+            )
+          ), cost = 35902, newCost(18)),
+          CSigmaProp(COR(Array(pk, dht, and, or, threshold))) -> Expected(Success(
+            Helpers.decodeBytes(
+              "00089705cd039d0b1e46c21540d033143440d2fb7dd5d650cf89981c99ee53c6e0374d2b1b6fce03c046fccb95549910767d0543f5e8ce41d66ae6a8720a46f4049cac3b3d26dafb023479c9c3b86a0d3c8be3db0a2d186788e9af1db76d55f3dad127d15185d83d0303d7898641cb6653585a8e1dabfa7f665e61e0498963e329e6e3744bd764db2d72037ae057d89ec0b46ff8e9ff4c37e85c12acddb611c3f636421bef1542c11b04419602cd039d0b1e46c21540d033143440d2fb7dd5d650cf89981c99ee53c6e0374d2b1b6fce03c046fccb95549910767d0543f5e8ce41d66ae6a8720a46f4049cac3b3d26dafb023479c9c3b86a0d3c8be3db0a2d186788e9af1db76d55f3dad127d15185d83d0303d7898641cb6653585a8e1dabfa7f665e61e0498963e329e6e3744bd764db2d72037ae057d89ec0b46ff8e9ff4c37e85c12acddb611c3f636421bef1542c11b04419702cd039d0b1e46c21540d033143440d2fb7dd5d650cf89981c99ee53c6e0374d2b1b6fce03c046fccb95549910767d0543f5e8ce41d66ae6a8720a46f4049cac3b3d26dafb023479c9c3b86a0d3c8be3db0a2d186788e9af1db76d55f3dad127d15185d83d0303d7898641cb6653585a8e1dabfa7f665e61e0498963e329e6e3744bd764db2d72037ae057d89ec0b46ff8e9ff4c37e85c12acddb611c3f636421bef1542c11b0441980204cd039d0b1e46c21540d033143440d2fb7dd5d650cf89981c99ee53c6e0374d2b1b6fce03c046fccb95549910767d0543f5e8ce41d66ae6a8720a46f4049cac3b3d26dafb023479c9c3b86a0d3c8be3db0a2d186788e9af1db76d55f3dad127d15185d83d0303d7898641cb6653585a8e1dabfa7f665e61e0498963e329e6e3744bd764db2d72037ae057d89ec0b46ff8e9ff4c37e85c12acddb611c3f636421bef1542c11b04419702cd039d0b1e46c21540d033143440d2fb7dd5d650cf89981c99ee53c6e0374d2b1b6fce03c046fccb95549910767d0543f5e8ce41d66ae6a8720a46f4049cac3b3d26dafb023479c9c3b86a0d3c8be3db0a2d186788e9af1db76d55f3dad127d15185d83d0303d7898641cb6653585a8e1dabfa7f665e61e0498963e329e6e3744bd764db2d72037ae057d89ec0b46ff8e9ff4c37e85c12acddb611c3f636421bef1542c11b04419602cd039d0b1e46c21540d033143440d2fb7dd5d650cf89981c99ee53c6e0374d2b1b6fce03c046fccb95549910767d0543f5e8ce41d66ae6a8720a46f4049cac3b3d26dafb023479c9c3b86a0d3c8be3db0a2d186788e9af1db76d55f3dad127d15185d83d0303d7898641cb6653585a8e1dabfa7f665e61e0498963e329e6e3744bd764db2d72037ae057d89ec0b46ff8e9ff4c37e85c12acddb611c3f636421bef1542c11b0441"
+            )
+          ), cost = 35902, newCost(36))
+        )
+      },
       existingFeature((x: SigmaProp) => x.propBytes,
         "{ (x: SigmaProp) => x.propBytes }",
-        FuncValue(Vector((1, SSigmaProp)), SigmaPropBytes(ValUse(1, SSigmaProp)))))
+        FuncValue(Vector((1, SSigmaProp)), SigmaPropBytes(ValUse(1, SSigmaProp)))),
+      preGeneratedSamples = Some(Seq()))
   }
 
   // TODO HF (3h): implement allZK func https://github.com/ScorexFoundation/sigmastate-interpreter/issues/543
@@ -6293,4 +6970,9 @@ class SigmaDslSpecification extends SigmaDslTesting with CrossVersionProps { sui
         )))
   }
 
+  override protected def afterAll(): Unit = {
+    println(ErgoTreeEvaluator.DefaultProfiler.generateReport)
+    println("==========================================================")
+    println(Interpreter.verifySignatureProfiler.generateReport)
+  }
 }

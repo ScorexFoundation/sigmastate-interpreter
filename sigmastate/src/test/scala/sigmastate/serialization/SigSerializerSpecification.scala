@@ -64,7 +64,7 @@ class SigSerializerSpecification extends SigmaTestingCommons
 
   private def roundTrip(uncheckedTree: UncheckedTree, exp: SigmaBoolean): Assertion = {
     val proof = SigSerializer.toProofBytes(uncheckedTree)
-    val parsedUncheckedTree = SigSerializer.parseAndComputeChallenges(exp, proof)
+    val parsedUncheckedTree = SigSerializer.parseAndComputeChallenges(exp, proof)(null)
     isEquivalent(uncheckedTree, parsedUncheckedTree) shouldBe true
   }
 
@@ -89,10 +89,10 @@ class SigSerializerSpecification extends SigmaTestingCommons
       try {
         // get sigma conjectures out of transformers
         val tree = mkTestErgoTree(expr)
-        val prop = prover.fullReduction(tree, ctx, Interpreter.emptyEnv).value
+        val prop = prover.fullReduction(tree, ctx, Interpreter.emptyEnv)._1.value
 
         val proof = prover.prove(tree, ctx, challenge).get.proof
-        val uncheckedTree = SigSerializer.parseAndComputeChallenges(prop, proof)
+        val uncheckedTree = SigSerializer.parseAndComputeChallenges(prop, proof)(null)
         roundTrip(uncheckedTree, prop)
 
 // uncomment the following lines to print test cases with test vectors
@@ -128,7 +128,7 @@ class SigSerializerSpecification extends SigmaTestingCommons
     * that code. */
   def getFiatShamirHex(uncheckedTree: UncheckedTree): String = {
     val newRoot = prover.computeCommitments(uncheckedTree).get.asInstanceOf[UncheckedSigmaTree]
-    val fiatShamirBytes = FiatShamirTree.toBytes(newRoot)
+    val fiatShamirBytes = FiatShamirTree.toBytes(newRoot)(null/* no profiling */)
     val hex = ErgoAlgos.encode(fiatShamirBytes)
     hex
   }
@@ -496,7 +496,7 @@ class SigSerializerSpecification extends SigmaTestingCommons
     cases.zipWithIndex.foreach { case (c, iCase) =>
       val sigBytes = SigSerializer.toProofBytes(c.uncheckedTree)
       sigBytes shouldBe c.proof
-      val uncheckedTree = SigSerializer.parseAndComputeChallenges(c.prop, c.proof)
+      val uncheckedTree = SigSerializer.parseAndComputeChallenges(c.prop, c.proof)(null)
       uncheckedTree shouldBe c.uncheckedTree
 
       val hex = getFiatShamirHex(c.uncheckedTree)

@@ -34,7 +34,6 @@ trait CrossVersionProps extends PropSpecLike with TestsBase {
   override protected def property(testName: String, testTags: Tag*)
                                  (testFun: => Any)
                                  (implicit pos: Position): Unit = {
-
     super.property(testName, testTags:_*) {
       // do warmup if necessary
       if (perTestWarmUpIters > 0) {

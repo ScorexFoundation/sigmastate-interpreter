@@ -6,9 +6,9 @@ import scorex.util.ModifierId
 import sigmastate.Values.ErgoTree.{DefaultHeader, updateVersionBits}
 import sigmastate.Values._
 import sigmastate.eval._
-import sigmastate.helpers.ErgoLikeContextTesting
+import sigmastate.helpers.{ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers.createBox
-import sigmastate.interpreter.{Interpreter, ProverResult}
+import sigmastate.interpreter.{ProverResult, EvalSettings, ErgoTreeEvaluator, Interpreter}
 import sigmastate.lang.exceptions.InterpreterException
 import sigmastate.utxo._
 import sigmastate.utils.Helpers._
@@ -21,6 +21,12 @@ import scala.util.Success
 class ScriptVersionSwitchSpecification extends SigmaDslTesting
   with CrossVersionProps {
   override implicit val generatorDrivenConfig = PropertyCheckConfiguration(minSuccessful = 30)
+  override implicit val evalSettings: EvalSettings =
+    ErgoTreeEvaluator.DefaultEvalSettings.copy(
+      costTracingEnabled = true,  // should always be enabled in tests (and false by default)
+      evaluationMode = EvalSettings.TestEvaluationMode
+    )
+
   implicit def IR = createIR()
 
   val b1 = CostingBox(
@@ -94,7 +100,7 @@ class ScriptVersionSwitchSpecification extends SigmaDslTesting
       1.toByte -> Constant[SType](input.asInstanceOf[SType#WrappedType], tpeA)
     ).asInstanceOf[ErgoLikeContext]
 
-    val verifier = new ErgoLikeInterpreter() { type CTX = ErgoLikeContext }
+    val verifier = new ErgoLikeTestInterpreter()
     val pr = ProverResult(ProverResult.empty.proof, ctx.extension)
 
     // NOTE: exactly this overload should also be called in Ergo
