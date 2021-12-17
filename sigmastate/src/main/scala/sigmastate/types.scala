@@ -2588,6 +2588,10 @@ case object SContext extends SProduct with SPredefType with SMonoType {
   }
   override def isConstantSize = false
 
+  /** Arguments on context operation such as getVar, DeserializeContext etc.
+    * This value can be reused where necessary to avoid allocations. */
+  val ContextFuncDom: IndexedSeq[SType] = Array(SContext, SByte)
+
   import SType.{tT, paramT}
 
   lazy val dataInputsMethod = propertyCall("dataInputs", SBoxArray, 1, FixedCost(JitCost(15)))
@@ -2601,7 +2605,7 @@ case object SContext extends SProduct with SPredefType with SMonoType {
   lazy val lastBlockUtxoRootHashMethod = property("LastBlockUtxoRootHash", SAvlTree, 9, LastBlockUtxoRootHash)
   lazy val minerPubKeyMethod = property("minerPubKey", SByteArray, 10, MinerPubkey)
   lazy val getVarMethod = SMethod(
-    this, "getVar", SFunc(Array(SContext, SByte), SOption(tT), Array(paramT)), 11, GetVar.costKind)
+    this, "getVar", SFunc(ContextFuncDom, SOption(tT), Array(paramT)), 11, GetVar.costKind)
     .withInfo(GetVar, "Get context variable with given \\lst{varId} and type.",
       ArgInfo("varId", "\\lst{Byte} identifier of context variable"))
 

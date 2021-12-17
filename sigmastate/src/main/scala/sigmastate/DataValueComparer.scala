@@ -60,7 +60,6 @@ object DataValueComparer {
   final val OpDesc_EQ_AvlTree = NamedDesc("EQ_AvlTree")
   final val EQ_AvlTree = OperationCostInfo(CostKind_EQ_AvlTree, OpDesc_EQ_AvlTree)
 
-  // TODO v5.0: update value after serialization is avoided to compute ErgoBox.id
   final val CostKind_EQ_Box = FixedCost(JitCost(6))          // case 7
   final val OpDesc_EQ_Box = NamedDesc("EQ_Box")
   final val EQ_Box = OperationCostInfo(CostKind_EQ_Box, OpDesc_EQ_Box)

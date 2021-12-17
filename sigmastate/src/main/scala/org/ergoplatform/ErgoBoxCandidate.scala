@@ -50,7 +50,7 @@ class ErgoBoxCandidate(val value: Long,
   lazy val propositionBytes: Array[Byte] = ergoTree.bytes
 
   /** Serialized bytes of this Box without transaction reference data (transactionId and boxIndex). */
-  // TODO v5.0: re-implement extracting directly from `ErgoBox.bytes` array
+  // TODO optimize: re-implement extracting directly from `ErgoBox.bytes` array
   lazy val bytesWithNoRef: Array[Byte] = ErgoBoxCandidate.serializer.toBytes(this)
 
   /** Creates a new [[ErgoBox]] based on this candidate using the given transaction reference data.
@@ -71,7 +71,9 @@ class ErgoBoxCandidate(val value: Long,
       case ValueRegId => Some(LongConstant(value))
       case ScriptRegId => Some(ByteArrayConstant(propositionBytes))
       case TokensRegId =>
-        Some(Constant(additionalTokens.map { case (id, v) => (id.toColl, v) }.asWrappedType, STokensRegType))  // TODO optimize using mapFirst
+        // TODO optimize using mapFirst
+        //  However this requires fixing Coll equality (see property("ErgoBox test vectors"))
+        Some(Constant(additionalTokens.map { case (id, v) => (id.toColl, v) }.asWrappedType, STokensRegType))
       case ReferenceRegId =>
         val tupleVal = (creationHeight, ErgoBoxCandidate.UndefinedBoxRef)
         Some(Constant(tupleVal.asWrappedType, SReferenceRegType))

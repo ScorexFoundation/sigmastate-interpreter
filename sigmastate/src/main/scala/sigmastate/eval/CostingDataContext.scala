@@ -1,5 +1,7 @@
 package sigmastate.eval
 
+import com.google.common.primitives.Ints
+
 import java.math.BigInteger
 import java.util
 
@@ -346,7 +348,7 @@ case class CostingBox(isCost: Boolean, val ebox: ErgoBox) extends Box with Wrapp
 
   override def executeFromRegister[T](regId: Byte)(implicit cT: RType[T]): T = ??? // TODO implement
 
-  override def hashCode(): Int = id.toArray.hashCode()  // TODO optimize using just 4 bytes of id (since it is already hash)
+  override def hashCode(): Int = Ints.fromByteArray(id.toArray)
 
   override def equals(obj: Any): Boolean = (this eq obj.asInstanceOf[AnyRef]) || (obj != null && ( obj match {
     case obj: Box => util.Arrays.equals(id.toArray, obj.id.toArray)
@@ -520,10 +522,10 @@ object CCostModel {
   private val AccessAvlTreeOpType: SFunc = SFunc(SContext, SAvlTree)
   private lazy val AccessAvlTreeCost: Int = costOf("AccessAvlTree", AccessAvlTreeOpType)
 
-  private val GetVarOpType: SFunc = SFunc(Array(SContext, SByte), SOption.ThisType)
+  private val GetVarOpType: SFunc = SFunc(SContext.ContextFuncDom, SOption.ThisType)
   private lazy val GetVarCost: Int = costOf("GetVar", GetVarOpType)
 
-  private val DeserializeVarOpType: SFunc = SFunc(Array(SContext, SByte), SOption.ThisType)
+  private val DeserializeVarOpType: SFunc = SFunc(SContext.ContextFuncDom, SOption.ThisType)
   private lazy val DeserializeVarCost: Int = costOf("DeserializeVar", DeserializeVarOpType)
 
   private val GetRegisterOpType: SFunc = SFunc(Array(SBox, SByte), SOption.ThisType)

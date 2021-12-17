@@ -114,11 +114,9 @@ class ErgoTreeSerializer {
           val w = SigmaSerializer.startWriter()
           val header = bytes(0)
           val contentLength = bytes.length - 1
-          val contentBytes = new Array[Byte](contentLength)
-          Array.copy(bytes, 1, contentBytes, 0, contentLength)  // TODO optimize: avoid new array by implementing putSlice(arr, from, len)
           w.put(header)
           w.putUInt(contentLength)
-          w.putBytes(contentBytes)
+          w.putBytes(bytes, 1, contentLength)
           w.toBytes
         }
         else bytes

@@ -543,7 +543,7 @@ trait Deserialize[V <: SType] extends NotReadyValue[V]
   */
 case class DeserializeContext[V <: SType](id: Byte, tpe: V) extends Deserialize[V] {
   override def companion = DeserializeContext
-  override val opType = SFunc(Array(SContext, SByte), tpe)
+  override val opType = SFunc(SContext.ContextFuncDom, tpe)
 }
 object DeserializeContext extends ValueCompanion {
   override def opCode: OpCode = OpCodes.DeserializeContextCode
@@ -567,7 +567,7 @@ object DeserializeRegister extends ValueCompanion {
 /** See [[special.sigma.Context.getVar()]] for detailed description. */
 case class GetVar[V <: SType](varId: Byte, override val tpe: SOption[V]) extends NotReadyValue[SOption[V]] {
   override def companion = GetVar
-  override val opType = SFunc(Array(SContext, SByte), tpe) // TODO optimize: avoid Array allocation
+  override val opType = SFunc(SContext.ContextFuncDom, tpe)
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val t = Evaluation.stypeToRType(tpe.elemType)
     addCost(GetVar.costKind)
