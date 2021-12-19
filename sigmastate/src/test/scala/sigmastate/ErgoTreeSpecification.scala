@@ -8,6 +8,7 @@ import sigmastate.Values._
 import sigmastate.lang.SourceContext
 import special.sigma.SigmaTestingData
 import sigmastate.lang.Terms._
+import sigmastate.lang.exceptions.{CosterException, InterpreterException}
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.utxo.{DeserializeContext, DeserializeRegister}
 
@@ -438,5 +439,79 @@ class ErgoTreeSpecification extends SigmaTestingData {
         )
       }
     }
+  }
+
+  implicit def IR = new TestingIRContext
+  implicit def cs = compilerSettingsInTests
+  implicit def es = evalSettings
+
+  property("lambda with 0 arguments") {
+    val expr = Apply(FuncValue(Vector(), IntConstant(1)), IndexedSeq())
+
+    // old v4.x interpreter
+    assertExceptionThrown(
+      {
+        val oldF = funcFromExpr[Int, Int]("({ (x: Int) => 1 })()", expr)
+      },
+      exceptionLike[CosterException]("Don't know how to evalNode")
+    )
+
+    // new v5.0 interpreter
+    val newF = funcJitFromExpr[Int, Int]("({ (x: Int) => 1 })()", expr)
+    assertExceptionThrown(
+      {
+        val x = 100 // any value which is not used anyway
+        val (y, _) = newF.apply(x)
+      },
+      exceptionLike[InterpreterException]("Function must have 1 argument, but was:")
+    )
+  }
+
+
+  property("lambda with one argument") {
+    val expr = Apply(
+      FuncValue(Vector((1, SInt)), Negation(ValUse(1, SInt))),
+      IndexedSeq(IntConstant(1)))
+    val script = "({ (x: Int) => -x })(1)"
+
+    val x = 1
+
+    { // old v4.x interpreter
+      val oldF = funcFromExpr[Int, Int](script, expr)
+      val (y, _) = oldF.apply(x)
+      y shouldBe -1
+    }
+
+    { // new v5.0 interpreter
+      val newF = funcJitFromExpr[Int, Int](script, expr)
+      val (y, _) = newF.apply(x)
+      y shouldBe -1
+    }
+  }
+
+  property("lambda with 2 and more arguments") {
+    val expr = Apply(
+      FuncValue(Vector((1, SInt), (2, SInt)), Plus(ValUse(1, SInt), ValUse(2, SInt))),
+      IndexedSeq(IntConstant(1), IntConstant(1))
+    )
+    val script = "{ (x: Int, y: Int) => x + y }"
+
+    // old v4.x interpreter
+    assertExceptionThrown(
+      {
+       val oldF = funcFromExpr[(Int, Int), Int](script, expr)
+      },
+      exceptionLike[CosterException]("Don't know how to evalNode")
+    )
+
+    // ndw v5.0 interpreter
+    val newF = funcJitFromExpr[(Int, Int), Int](script, expr)
+    assertExceptionThrown(
+      {
+        val (y, _) = newF.apply((1, 1))
+      },
+      exceptionLike[InterpreterException]("Function must have 1 argument, but was:")
+    )
+
   }
 }

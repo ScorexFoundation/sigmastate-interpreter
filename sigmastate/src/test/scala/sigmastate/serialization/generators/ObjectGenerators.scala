@@ -617,7 +617,7 @@ trait ObjectGenerators extends TypeGenerators
   } yield ValUse(id, tpe)
 
   val blockValueGen: Gen[BlockValue] = for {
-    items <- Gen.nonEmptyListOf(valDefGen)
+    items <- Gen.listOf(valDefGen)
   } yield BlockValue(items.toIndexedSeq,
     EQ(
       SizeOf(Tuple(items.toIndexedSeq.map(valDef => ValUse(valDef.id, valDef.tpe)))),

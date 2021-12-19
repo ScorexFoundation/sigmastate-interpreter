@@ -2,12 +2,12 @@ package sigmastate.lang
 
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter._
 import scalan.Nullable
-import sigmastate.SCollection.{SIntArray, SByteArray}
+import sigmastate.SCollection.{SByteArray, SIntArray}
 import sigmastate.Values._
 import sigmastate.utils.Overloading.Overload1
 import sigmastate._
-import sigmastate.interpreter.ErgoTreeEvaluator
-import sigmastate.interpreter.ErgoTreeEvaluator.DataEnv
+import sigmastate.interpreter.{ErgoTreeEvaluator, Interpreter}
+import sigmastate.interpreter.ErgoTreeEvaluator.{DataEnv, error}
 import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.lang.TransformingSigmaBuilder._
@@ -140,21 +140,12 @@ object Terms {
 
     protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
       addCost(Apply.costKind)
-      if (args.isEmpty) {
-        // TODO coverage
-        val fV = func.evalTo[() => Any](env)
-        fV()
-      }
-      else if (args.length == 1) {
+      if (args.length == 1) {
         val fV = func.evalTo[Any => Any](env)
         val argV = args(0).evalTo[Any](env)
         fV(argV)
-      }
-      else {
-        // TODO coverage
-        val f = func.evalTo[Seq[Any] => Any](env)
-        val argsV = args.map(a => a.evalTo[Any](env))
-        f(argsV)
+      } else {
+        Interpreter.error(s"Function must have 1 argument, but was: $this")
       }
     }
   }
