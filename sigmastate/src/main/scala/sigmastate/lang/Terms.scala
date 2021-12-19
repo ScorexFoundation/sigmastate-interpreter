@@ -145,7 +145,7 @@ object Terms {
         val argV = args(0).evalTo[Any](env)
         fV(argV)
       } else {
-        Interpreter.error(s"Function must have 1 argument, but was: $this")
+        Interpreter.error(s"Function application must have 1 argument, but was: $this")
       }
     }
   }

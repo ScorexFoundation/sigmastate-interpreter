@@ -3,7 +3,6 @@ package sigmastate
 import java.math.BigInteger
 import java.util
 import java.util.Objects
-
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{count, everywherebu, strategy}
 import org.ergoplatform.settings.ErgoAlgos
 import org.ergoplatform.validation.ValidationException
@@ -11,7 +10,7 @@ import scalan.{Nullable, RType}
 import scalan.util.CollectionUtil._
 import sigmastate.SCollection.{SByteArray, SIntArray}
 import sigmastate.interpreter.CryptoConstants.EcPointType
-import sigmastate.interpreter.{CompanionDesc, CryptoConstants, ErgoTreeEvaluator, NamedDesc}
+import sigmastate.interpreter.{CompanionDesc, CryptoConstants, ErgoTreeEvaluator, Interpreter, NamedDesc}
 import sigmastate.serialization.{ConstantStore, OpCodes, _}
 import sigmastate.serialization.OpCodes._
 import sigmastate.TrivialProp.{FalseProp, TrueProp}
@@ -885,18 +884,14 @@ object Values {
     *
     * @param items source collection of expressions
     */
-  case class Tuple(items: IndexedSeq[Value[SType]]) extends EvaluatedValue[STuple] with EvaluatedCollection[SAny.type, STuple] {
+  case class Tuple(items: IndexedSeq[Value[SType]]) extends Value[STuple] {
     override def companion = Tuple
-    override def elementType = SAny
     override lazy val tpe = STuple(items.map(_.tpe))
-    override lazy val value = { // TODO coverage
-      val xs = items.cast[EvaluatedValue[SAny.type]].map(_.value)
-      Colls.fromArray(xs.toArray(SAny.classTag.asInstanceOf[ClassTag[SAny.WrappedType]]))(RType.AnyType)
-    }
+    override def opType: SFunc = ???
     protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
       // in v5.0 version we support only tuples of 2 elements to be equivalent with v4.x
       if (items.length != 2)
-        error(s"Invalid tuple $this")
+        Interpreter.error(s"Invalid tuple $this")
 
       val item0 = items(0)
       val x = item0.evalTo[Any](env)
@@ -1175,13 +1170,7 @@ object Values {
 
     protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
       addCost(FuncValue.costKind)
-      if (args.length == 0) {
-        // TODO coverage
-        () => {
-          body.evalTo[Any](env)
-        }
-      }
-      else if (args.length == 1) {
+      if (args.length == 1) {
         val arg0 = args(0)
         (vArg: Any) => {
           Value.checkType(arg0._2, vArg)
@@ -1194,22 +1183,8 @@ object Values {
           Value.checkType(body, res)
           res
         }
-      }
-      else {
-        // TODO coverage
-        (vArgs: Seq[Any]) => {
-          var env1 = env
-          val len = args.length
-          cfor(0)(_ < len, _ + 1) { i =>
-            val id = args(i)._1
-            val v = vArgs(i)
-            E.addFixedCost(FuncValue.AddToEnvironmentDesc_CostKind,
-                                   FuncValue.AddToEnvironmentDesc) {
-              env1 = env1 + (id -> v)
-            }
-          }
-          body.evalTo[Any](env1)
-        }
+      } else {
+        Interpreter.error(s"Function must have 1 argument, but was: $this")
       }
     }
   }

@@ -445,7 +445,7 @@ class ErgoTreeSpecification extends SigmaTestingData {
   implicit def cs = compilerSettingsInTests
   implicit def es = evalSettings
 
-  property("lambda with 0 arguments") {
+  property("Apply with 0 arguments") {
     val expr = Apply(FuncValue(Vector(), IntConstant(1)), IndexedSeq())
 
     // old v4.x interpreter
@@ -463,12 +463,12 @@ class ErgoTreeSpecification extends SigmaTestingData {
         val x = 100 // any value which is not used anyway
         val (y, _) = newF.apply(x)
       },
-      exceptionLike[InterpreterException]("Function must have 1 argument, but was:")
+      exceptionLike[InterpreterException]("Function application must have 1 argument, but was:")
     )
   }
 
 
-  property("lambda with one argument") {
+  property("Apply with one argument") {
     val expr = Apply(
       FuncValue(Vector((1, SInt)), Negation(ValUse(1, SInt))),
       IndexedSeq(IntConstant(1)))
@@ -489,7 +489,7 @@ class ErgoTreeSpecification extends SigmaTestingData {
     }
   }
 
-  property("lambda with 2 and more arguments") {
+  property("Apply with 2 and more arguments") {
     val expr = Apply(
       FuncValue(Vector((1, SInt), (2, SInt)), Plus(ValUse(1, SInt), ValUse(2, SInt))),
       IndexedSeq(IntConstant(1), IntConstant(1))
@@ -510,7 +510,7 @@ class ErgoTreeSpecification extends SigmaTestingData {
       {
         val (y, _) = newF.apply((1, 1))
       },
-      exceptionLike[InterpreterException]("Function must have 1 argument, but was:")
+      exceptionLike[InterpreterException]("Function application must have 1 argument, but was:")
     )
 
   }

@@ -201,8 +201,6 @@ case class UnprovenDiffieHellmanTuple(override val proposition: ProveDHTuple,
   override def withPosition(updatedPosition: NodePosition) = this.copy(position = updatedPosition)
 }
 
-// TODO coverage (8h): write a test that restores the tree from this string and check that the result is equal,
-// in order to make sure this conversion is unambiguous
 object FiatShamirTree {
   /** Prefix byte which is put before the other ProofTreeConjecture serialized bytes. */
   val internalNodePrefix: Byte = 0
