@@ -70,6 +70,8 @@ class TypeSerializerSpecification extends SerializationSpecification {
   }
 
   property("Specific types serialization roundtrip") {
+    roundtrip(SAny, Array[Byte](SAny.typeCode))
+    roundtrip(SGlobal, Array[Byte](SGlobal.typeCode))
     roundtrip(STuple(SCollection(SLong), SCollection(SLong)),
       Array[Byte](Pair1TypeCode, SLong.embedIn(CollectionTypeCode), SLong.embedIn(CollectionTypeCode)))
     roundtrip(STuple(SCollection(SLong), SOption(SLong)),
