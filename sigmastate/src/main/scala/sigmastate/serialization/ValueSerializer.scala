@@ -50,7 +50,6 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     Relation2Serializer(LE, mkLE[SType]),
     Relation2Serializer(EQ, mkEQ[SType]),
     Relation2Serializer(NEQ, mkNEQ[SType]),
-    CreateAvlTreeSerializer(mkCreateAvlTree),
     QuadrupleSerializer(TreeLookup, mkTreeLookup),
     Relation2Serializer(BinOr, mkBinOr),
     Relation2Serializer(BinAnd, mkBinAnd),
