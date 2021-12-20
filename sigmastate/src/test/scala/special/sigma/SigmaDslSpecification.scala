@@ -3865,6 +3865,13 @@ class SigmaDslSpecification extends SigmaDslTesting
       ErgoBox.R4 -> ByteArrayConstant(Coll(1.toByte))
     )))
 
+    val box3 = SigmaDsl.Box(testBox(20, TrueTree, 0, Seq(), Map(
+      ErgoBox.R4 -> Constant((10, 20L).asInstanceOf[SType#WrappedType], STuple(SInt, SLong)),
+      ErgoBox.R5 -> Constant((10, Some(20L)).asInstanceOf[SType#WrappedType], STuple(SInt, SOption(SLong)))
+      // TODO HF (1h): uncomment after DataSerializer support of Option type
+      //  ErgoBox.R6 -> Constant[SOption[SInt.type]](Option(10), SOption(SInt)),
+    )))
+
     verifyCases(
       Seq(
         (box1, Expected(Success(1.toByte), cost = 36253)),
@@ -3941,6 +3948,52 @@ class SigmaDslSpecification extends SigmaDslTesting
           Vector((1, SBox)),
           OptionGet(ExtractRegisterAs(ValUse(1, SBox), ErgoBox.R9, SOption(SAvlTree)))
         )))
+
+    verifyCases(
+      Seq(
+        (box3, Expected(Success(10), cost = 36468))
+      ),
+      existingFeature((x: Box) => x.R4[(Int, Long)].get._1,
+        "{ (x: Box) => x.R4[(Int, Long)].get._1 }",
+        FuncValue(
+          Array((1, SBox)),
+          SelectField.typed[Value[SInt.type]](
+            OptionGet(ExtractRegisterAs(ValUse(1, SBox), ErgoBox.R4, SOption(SPair(SInt, SLong)))),
+            1.toByte
+          )
+        )))
+
+    verifyCases(
+      Seq(
+        (box3, Expected(Success(10), cost = 36468))
+      ),
+      existingFeature((x: Box) => x.R5[(Int, Option[Long])].get._1,
+        "{ (x: Box) => x.R5[(Int, Option[Long])].get._1 }",
+        FuncValue(
+          Array((1, SBox)),
+          SelectField.typed[Value[SInt.type]](
+            OptionGet(ExtractRegisterAs(ValUse(1, SBox), ErgoBox.R5, SOption(SPair(SInt, SOption(SLong))))),
+            1.toByte
+          )
+        )))
+
+    // TODO HF (1h): uncomment after DataSerializer support of Option type
+    //    verifyCases(
+    //      Seq(
+    //        (box3, Expected(Success(20L), cost = 36468))
+    //      ),
+    //      existingFeature((x: Box) => x.R5[(Int, Option[Long])].get._2.get,
+    //        "{ (x: Box) => x.R5[(Int, Option[Long])].get._2.get }",
+    //        FuncValue(
+    //          Array((1, SBox)),
+    //          OptionGet(
+    //            SelectField.typed[Value[SOption[SLong.type]]](
+    //              OptionGet(
+    //                ExtractRegisterAs(ValUse(1, SBox), ErgoBox.R5, SOption(SPair(SInt, SOption(SLong))))
+    //              ),
+    //              2.toByte
+    //            ))
+    //        )))
   }
 
   def existingPropTest[A: RType, B: RType](propName: String, scalaFunc: A => B) = {

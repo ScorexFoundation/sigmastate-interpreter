@@ -98,7 +98,6 @@ object DataSerializer {
         new String(bytes, StandardCharsets.UTF_8)
       case SBigInt =>
         val size: Short = r.getUShort().toShort
-        // TODO HF (2h): replace with validation rule to enable soft-forkability
         if (size > SBigInt.MaxSizeInBytes) {
           throw new SerializerException(s"BigInt value doesn't not fit into ${SBigInt.MaxSizeInBytes} bytes: $size")
         }
