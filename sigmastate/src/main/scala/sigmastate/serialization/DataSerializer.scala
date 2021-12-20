@@ -76,7 +76,7 @@ object DataSerializer {
         i += 1
       }
 
-    // TODO HF (3h): support Option[T] (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/659)
+    // TODO v6.0 (3h): support Option[T] (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/659)
     case _ => sys.error(s"Don't know how to serialize ($v, $tpe)")
   }
 

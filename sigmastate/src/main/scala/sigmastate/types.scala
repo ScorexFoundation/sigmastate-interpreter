@@ -822,7 +822,7 @@ object SNumericType extends STypeCompanion {
   /** Array of all numeric types ordered by number of bytes in the representation. */
   final val allNumericTypes = Array(SByte, SShort, SInt, SLong, SBigInt)
 
-  // TODO HF (4h): this typeId is now shadowed by SGlobal.typeId
+  // TODO v6.0 (4h): this typeId is now shadowed by SGlobal.typeId
   //  see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/667
   override def typeId: TypeCode = 106: Byte
 
@@ -1723,7 +1723,7 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
       .withIRInfo(MethodCallIrBuilder, javaMethodOf[Coll[_], Any, Int]("indexOf"))
       .withInfo(MethodCall, "")
 
-  // TODO v5.0: optimize using specialization for numeric and predefined types
+  // TODO mainnet v5.0: optimize using specialization for numeric and predefined types
   /** Implements evaluation of Coll.indexOf method call ErgoTree node.
     * Called via reflection based on naming convention.
     * @see SMethod.evalMethod
@@ -2421,7 +2421,7 @@ case object SAvlTree extends SProduct with SPredefType with SMonoType {
         E.addSeqCost(InsertIntoAvlTree_Info, nItems) { () =>
           val insert = Insert(ADKey @@ key.toArray, ADValue @@ value.toArray)
           val insertRes = bv.performOneOperation(insert)
-          // TODO v5.0: throwing exception is not consistent with update semantics
+          // TODO v6.0: throwing exception is not consistent with update semantics
           //  however it preserves v4.0 semantics
           if (insertRes.isFailure) {
             Interpreter.error(s"Incorrect insert for $tree (key: $key, value: $value, digest: ${tree.digest}): ${insertRes.failed.get}}")

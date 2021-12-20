@@ -271,7 +271,7 @@ class ErgoTreeSpecification extends SigmaTestingData {
     { import SSigmaProp._
       (SSigmaProp.typeId,  Seq(
         MInfo(1, PropBytesMethod),
-        MInfo(2, IsProvenMethod)  // TODO HF (3h): this method must be removed
+        MInfo(2, IsProvenMethod)  // TODO v5.x (3h): this method must be removed
       ), true)
     },
     { import SBox._

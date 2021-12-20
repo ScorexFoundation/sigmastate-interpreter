@@ -585,7 +585,7 @@ class SigmaDslTesting extends PropSpec
       }
       else {
         // new cost expectation is specified, compare it with the actual result
-// TODO v5.0: uncomment to enable test vectors
+// TODO mainnet v5.0: uncomment to enable test vectors
 //        funcRes.foreach { case (_, newCost) =>
 //          if (newCost.trace != expectedTrace) {
 //            printCostDetails(script, newCost)
@@ -681,8 +681,9 @@ class SigmaDslTesting extends PropSpec
     implicit val cs = compilerSettingsInTests
 
     val oldImpl = () => func[A, B](script)
-    val newImpl = oldImpl // funcJit[A, B](script) // TODO HF (16h): use actual new implementation here
+    val newImpl = oldImpl // funcJit[A, B](script) // TODO v6.0 (16h): use actual new implementation here
 
+    /** In v5.x this method just checks the old implementations fails on the new feature. */
     override def checkEquality(input: A, logInputOutput: Boolean = false): Try[(B, CostDetails)] = {
       val oldRes = Try(oldF(input))
       oldRes.isFailure shouldBe true

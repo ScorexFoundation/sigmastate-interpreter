@@ -128,7 +128,7 @@ trait SigmaTestingData extends SigmaTestingCommons with ObjectGenerators {
 
     def createBigIntMaxValue(): BigInt = BigIntMaxValue_instances.getNext
 
-    // TODO HF: this values have bitCount == 255 (see to256BitValueExact)
+    // TODO v6.0: this values have bitCount == 255 (see to256BitValueExact)
     val BigIntMinValue = CBigInt(new BigInteger("-7F" + "ff" * 31, 16))
     val BigIntMaxValue = createBigIntMaxValue()
     val BigIntOverlimit = CBigInt(new BigInteger("7F" + "ff" * 33, 16))

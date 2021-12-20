@@ -396,7 +396,7 @@ trait Interpreter extends ScorexLogging {
              proof: Array[Byte],
              message: Array[Byte]): Try[VerificationResult] = {
     val res = Try {
-      // TODO v5.0: the condition below should be revised if necessary
+      // TODO v6.0: the condition below should be revised if necessary
       // The following conditions define behavior which depend on the version of ergoTree
       // This works in addition to more fine-grained soft-forkability mechanism implemented
       // using ValidationRules (see trySoftForkable method call here and in reduceToCrypto).

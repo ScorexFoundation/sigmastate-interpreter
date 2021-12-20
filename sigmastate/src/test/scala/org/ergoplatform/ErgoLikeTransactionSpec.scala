@@ -95,7 +95,7 @@ class ErgoLikeTransactionSpec extends SigmaDslTesting {
         ErgoAlgos.decodeUnsafe(token1).toColl -> 10000000L,
         ErgoAlgos.decodeUnsafe(token2).toColl -> 500L
       ).map(identity).toConstant
-      // TODO HF (16h): fix collections equality and remove map(identity)
+      // TODO v6.0 (16h): fix collections equality and remove map(identity)
       //  (PairOfColl should be equal CollOverArray but now it is not)
       res shouldBe exp
     }

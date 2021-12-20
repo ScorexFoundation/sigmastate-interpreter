@@ -918,8 +918,8 @@ object Values {
   trait OptionValue[T <: SType] extends Value[SOption[T]] {
   }
 
-  // TODO HF (4h): SomeValue and NoneValue are not used in ErgoTree and can be
-  //  either removed or implemented in v4.x
+  // TODO v6.0 (4h): SomeValue and NoneValue are not used in ErgoTree and can be
+  //  either removed or implemented in v6.0
   case class SomeValue[T <: SType](x: Value[T]) extends OptionValue[T] {
     override def companion = SomeValue
     val tpe = SOption(x.tpe)
