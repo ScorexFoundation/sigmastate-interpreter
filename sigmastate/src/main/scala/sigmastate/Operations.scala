@@ -153,15 +153,6 @@ object Operations {
     val argInfos: Seq[ArgInfo] = Array(indexArg)
   }
 
-  object CreateAvlTreeInfo extends InfoObject {
-    private val func = predefinedOps.funcs("avlTree")
-    val operationFlagsArg: ArgInfo = func.argInfo("operationFlags")
-    val digestArg: ArgInfo = func.argInfo("digest")
-    val keyLengthArg: ArgInfo = func.argInfo("keyLength")
-    val valueLengthOptArg: ArgInfo = func.argInfo("valueLengthOpt")
-    val argInfos: Seq[ArgInfo] = Array(operationFlagsArg, digestArg, keyLengthArg, valueLengthOptArg)
-  }
-
   object CreateProveDHTupleInfo extends InfoObject {
     private val func = predefinedOps.funcs("proveDHTuple")
     val gArg: ArgInfo = func.argInfo("g")
