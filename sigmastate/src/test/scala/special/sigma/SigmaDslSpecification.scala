@@ -7009,7 +7009,7 @@ class SigmaDslSpecification extends SigmaDslTesting
           (Coll(t3.bytes:_*), 0) -> success(Helpers.decodeBytes("100108d27300")),
           (Helpers.decodeBytes("100108d37300"), 0) -> success(Helpers.decodeBytes("100108d27300")),
           (Coll(t3.bytes:_*), 1) -> success(Helpers.decodeBytes("100108d37300")),
-          (Coll(t4.bytes:_*), 0) -> Expected(new AssertionError("assertion failed: expected new constant to have the same SInt$ tpe, got SSigmaProp"))
+          (Coll(t4.bytes:_*), 0) -> Expected(new IllegalArgumentException("requirement failed: expected new constant to have the same SInt$ tpe, got SSigmaProp"))
         )
       },
       existingFeature(
