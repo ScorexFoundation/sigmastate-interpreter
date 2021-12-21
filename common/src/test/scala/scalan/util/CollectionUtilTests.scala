@@ -38,6 +38,30 @@ class CollectionUtilTests extends BaseTests {
   def joinPairs(l: Seq[(String,Int)], r: Seq[(String,Int)]) =
     outerJoinSeqs(l, r)(l => l._1, r => r._1)((_,l) => l._2, (_,r) => r._2, (k,l,r) => l._2 + r._2)
 
+  test("joinSeqs") {
+    def key(p : (Int, String)): Int = p._1
+
+    {
+      val res = CollectionUtil.joinSeqs(
+        outer = Seq(1 -> "o1", 1 -> "o1"),
+        inner = Seq(1 -> "i1", 2 -> "i2"))(key, key)
+      res shouldBe Seq(
+        (1 -> "o1") -> (1 -> "i1"),
+        (1 -> "o1") -> (1 -> "i1")
+      )
+    }
+
+    { // same as above, but swapping inner and outer
+      val res = CollectionUtil.joinSeqs(
+        outer = Seq(1 -> "o1", 2 -> "o2"),
+        inner = Seq(1 -> "i1", 1 -> "i1"))(key, key)
+      res shouldBe Seq(
+        (1 -> "o1") -> (1 -> "i1"),
+        (1 -> "o1") -> (1 -> "i1")
+      )
+    }
+  }
+
   test("outerJoin maps") {
     val left = Map(1 -> 1, 2 -> 2, 3 -> 3)
     val right = Map(2 -> 2, 3 -> 3, 4 -> 4)

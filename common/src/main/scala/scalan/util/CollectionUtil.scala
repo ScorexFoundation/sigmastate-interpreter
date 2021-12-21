@@ -50,6 +50,10 @@ object CollectionUtil {
       }
     }
 
+  /** Group the given sequence of pairs by first values as keys.
+    * @param kvs sequence of values which is traversed once
+    * @return a multimap with ArrayBuffer of values for each key.
+    */
   def createMultiMap[K,V](kvs: GenIterable[(K,V)]): Map[K, ArrayBuffer[V]] = {
     val res = HashMap.empty[K, ArrayBuffer[V]]
     kvs.foreach { case (k, v) =>
@@ -62,12 +66,17 @@ object CollectionUtil {
     res.toMap
   }
 
-  // TODO optimize: using cfor and avoiding allocations
+  /** Perform relational inner join of two sequences using the given key projections. */
   def joinSeqs[O, I, K](outer: GenIterable[O], inner: GenIterable[I])(outKey: O=>K, inKey: I=>K): GenIterable[(O,I)] = {
     val kvs = createMultiMap(inner.map(i => (inKey(i), i)))
     val res = outer.flatMap(o => {
       val ko = outKey(o)
-      kvs(ko).map(i => (o,i))
+      kvs.get(ko) match {
+        case Some(inners) =>
+          inners.map(i => (o,i))
+        case None =>
+          Nil
+      }
     })
     res
   }
