@@ -1,12 +1,13 @@
 package special.collections
 
-import scala.language.{existentials,implicitConversions}
-import special.collection.{Coll, PairOfCols, CollOverArray, CReplColl}
+import scala.language.{existentials, implicitConversions}
+import special.collection.{CReplColl, Coll, CollOverArray, PairOfCols}
 import org.scalacheck.Gen
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.{Matchers, PropSpec}
 import org.scalatest.prop.PropertyChecks
 import scalan.RType
+import sigmastate.Versions
 
 class CollsTests extends PropSpec with PropertyChecks with Matchers with CollGens { testSuite =>
   import Gen._
@@ -24,8 +25,6 @@ class CollsTests extends PropSpec with PropertyChecks with Matchers with CollGen
     }
   }
 
-  // TODO v6.0: make sure forall: T, col: Coll[T] => col.length shouldBe col.toArray.length
-  //  The above equality should hold for all possible collection instances
   property("Coll.length") {
     def equalLength[A: RType](xs: Coll[A]) = {
       val arr = xs.toArray
@@ -46,6 +45,9 @@ class CollsTests extends PropSpec with PropertyChecks with Matchers with CollGen
       equalLength(ys.append(xs))
     }
 
+    // make sure forall: T, col: Coll[T] => col.length shouldBe col.toArray.length
+    // The above equality should hold for all possible collection instances
+
     forAll(MinSuccessful(100)) { xs: Coll[Int] =>
       val arr = xs.toArray
       equalLength(xs)
@@ -56,13 +58,23 @@ class CollsTests extends PropSpec with PropertyChecks with Matchers with CollGen
 
       val pairs = xs.zip(xs)
       equalLength(pairs)
+
       an[ClassCastException] should be thrownBy {
         equalLengthMapped(pairs, squared(inc))  // due to problem with append
       }
+      Versions.withErgoTreeVersion(Versions.JitActivationVersion) {
+// TODO v5.0: make it work
+//        equalLengthMapped(pairs, squared(inc))  // problem fixed in v5.0
+      }
 
       equalLength(pairs.append(pairs))
+
       an[ClassCastException] should be thrownBy {
         equalLengthMapped(pairs.append(pairs), squared(inc)) // due to problem with append
+      }
+      Versions.withErgoTreeVersion(Versions.JitActivationVersion) {
+// TODO v5.0: make it work
+//        equalLengthMapped(pairs.append(pairs), squared(inc)) // problem fixed in v5.0
       }
     }
   }
@@ -246,8 +258,14 @@ class CollsTests extends PropSpec with PropertyChecks with Matchers with CollGen
       val xs = builder.fromItems(1, 2)
       val pairs = xs.zip(xs)
       val ys = pairs.map(squared(inc)) // this map transforms PairOfCols to CollOverArray
+
       // due to the problem with concatArrays
       an[ClassCastException] should be thrownBy (ys.append(ys))
+
+      Versions.withErgoTreeVersion(Versions.JitActivationVersion) {
+        // TODO v5.0: make it work
+        //  ys.append(ys).toArray shouldBe ys.toArray ++ ys.toArray // problem fixed in v5.0
+      }
     }
 
     {
