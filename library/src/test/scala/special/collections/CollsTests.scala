@@ -5,10 +5,13 @@ import special.collection.{Coll, PairOfCols, CollOverArray, CReplColl}
 import org.scalacheck.Gen
 import org.scalatest.{PropSpec, Matchers}
 import org.scalatest.prop.PropertyChecks
+import scalan.RType
 
 class CollsTests extends PropSpec with PropertyChecks with Matchers with CollGens { testSuite =>
   import Gen._
   import special.collection.ExtensionMethods._
+
+  def squared[A](f: A => A): ((A, A)) => (A, A) = (p: (A, A)) => (f(p._1), f(p._2))
 
   property("Coll.indices") {
     val minSuccess = MinSuccessful(30)
@@ -20,8 +23,47 @@ class CollsTests extends PropSpec with PropertyChecks with Matchers with CollGen
     }
   }
 
-  // TODO col1.zip(col2).length shouldBe col1.arr.zip(col2.arr).length
-  property("Coll.zip") {
+  // TODO v6.0: make sure forall: T, col: Coll[T] => col.length shouldBe col.toArray.length
+  //  The above equality should hold for all possible collection instances
+  property("Coll.length") {
+    def equalLength[A: RType](xs: Coll[A]) = {
+      val arr = xs.toArray
+      xs.length shouldBe arr.length
+      xs.zip(xs).length shouldBe arr.zip(arr).length
+      xs.zip(xs.append(xs)).length shouldBe arr.zip(arr ++ arr).length
+      xs.append(xs).zip(xs).length shouldBe (arr ++ arr).zip(arr).length
+    }
+
+    def equalLengthMapped[A: RType](xs: Coll[A], f: A => A) = {
+      val arr = xs.toArray
+      val ys = xs.map(f)
+      ys.length shouldBe xs.length
+      ys.length shouldBe arr.map(f).length
+
+      equalLength(ys)
+      equalLength(xs.append(ys))
+      equalLength(ys.append(xs))
+    }
+
+    forAll(MinSuccessful(100)) { xs: Coll[Int] =>
+      val arr = xs.toArray
+      equalLength(xs)
+      equalLengthMapped(xs, inc)
+
+      equalLength(xs.append(xs))
+      equalLengthMapped(xs.append(xs), inc)
+
+      val pairs = xs.zip(xs)
+      equalLength(pairs)
+      an[ClassCastException] should be thrownBy {
+        equalLengthMapped(pairs, squared(inc))  // due to problem with append
+      }
+
+      equalLength(pairs.append(pairs))
+      an[ClassCastException] should be thrownBy {
+        equalLengthMapped(pairs.append(pairs), squared(inc)) // due to problem with append
+      }
+    }
   }
 
   property("Coll.flatMap") {
@@ -198,6 +240,15 @@ class CollsTests extends PropSpec with PropertyChecks with Matchers with CollGen
   }
 
   property("Coll.append") {
+
+    { // this shows how the problem with CollectionUtil.concatArrays manifests itself in Coll.append
+      val xs = builder.fromItems(1, 2)
+      val pairs = xs.zip(xs)
+      val ys = pairs.map(squared(inc)) // this map transforms PairOfCols to CollOverArray
+      // due to the problem with concatArrays
+      an[ClassCastException] should be thrownBy (ys.append(ys))
+    }
+    
     forAll(collGen, collGen, valGen, MinSuccessful(50)) { (col1, col2, v) =>
 
       {
@@ -212,13 +263,18 @@ class CollsTests extends PropSpec with PropertyChecks with Matchers with CollGen
       {
         val repl1 = builder.replicate(col1.length, v)
         val repl2 = builder.replicate(col2.length, v)
+        assert(repl1.isInstanceOf[CReplColl[Int]])
+
         val arepl = repl1.append(repl2)
         assert(arepl.isInstanceOf[CReplColl[Int]])
         arepl.toArray shouldBe (repl1.toArray ++ repl2.toArray)
         
         val pairs1 = repl1.zip(repl1)
+        assert(pairs1.isInstanceOf[PairOfCols[Int, Int]])
+
         val pairs2 = repl2.zip(repl2)
         val apairs = pairs1.append(pairs2)
+        assert(apairs.isInstanceOf[PairOfCols[Int, Int]])
         apairs.toArray shouldBe (pairs1.toArray ++ pairs2.toArray)
 
         apairs match {
@@ -266,10 +322,6 @@ class CollsTests extends PropSpec with PropertyChecks with Matchers with CollGen
       res.toArray shouldBe col.toArray.reverse
       val pairs = col.zip(col)
       pairs.reverse.toArray shouldBe pairs.toArray.reverse
-// TODO should work
-//      val c1 = col.asInstanceOf[Coll[Any]]
-//      val appended = c1.append(c1)
-//      appended.toArray shouldBe (c1.toArray ++ c1.toArray)
     }
   }
 

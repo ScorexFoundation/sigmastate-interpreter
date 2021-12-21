@@ -12,10 +12,11 @@ import scala.reflect.ClassTag
 
 object CollectionUtil {
 
+  /** @deprecated shouldn't be used other than for backwards compatibility with v3.x, v4.x. */
   def concatArrays[T](xs: Array[T], ys: Array[T]): Array[T] = {
     val len = xs.length + ys.length
     val result = (xs match {
-      case arr: Array[AnyRef] => new Array[AnyRef](len)
+      case arr: Array[AnyRef] => new Array[AnyRef](len) // creates an array with invalid type descriptor (i.e. when T == Tuple2)
       case arr: Array[Byte] => new Array[Byte](len)
       case arr: Array[Short] => new Array[Short](len)
       case arr: Array[Int] => new Array[Int](len)
@@ -27,6 +28,21 @@ object CollectionUtil {
     }).asInstanceOf[Array[T]]
     Array.copy(xs, 0, result, 0, xs.length)
     Array.copy(ys, 0, result, xs.length, ys.length)
+    result
+  }
+
+  /** Concatenates two arrays into a new resulting array.
+    * All items of both arrays are copied to the result using System.arraycopy.
+    * This method takes ClassTag to create proper resulting array.
+    * Can be used in v5.0 and above.
+    */
+  def concatArrays_v5[T:ClassTag](arr1: Array[T], arr2: Array[T]): Array[T] = {
+    val l1 = arr1.length
+    val l2 = arr2.length
+    val length: Int = l1 + l2
+    val result: Array[T] = new Array[T](length)
+    System.arraycopy(arr1, 0, result, 0, l1)
+    System.arraycopy(arr2, 0, result, l1, l2)
     result
   }
 
