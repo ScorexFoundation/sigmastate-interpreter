@@ -3,7 +3,8 @@ package special.collections
 import scala.language.{existentials,implicitConversions}
 import special.collection.{Coll, PairOfCols, CollOverArray, CReplColl}
 import org.scalacheck.Gen
-import org.scalatest.{PropSpec, Matchers}
+import org.scalatest.exceptions.TestFailedException
+import org.scalatest.{Matchers, PropSpec}
 import org.scalatest.prop.PropertyChecks
 import scalan.RType
 
@@ -248,7 +249,28 @@ class CollsTests extends PropSpec with PropertyChecks with Matchers with CollGen
       // due to the problem with concatArrays
       an[ClassCastException] should be thrownBy (ys.append(ys))
     }
-    
+
+    {
+      val col1 = builder.fromItems(1, 2, 3)
+      val col2 = builder.fromItems(10, 20, 30, 40)
+      val pairs = col1.zip(col2)
+      assert(pairs.isInstanceOf[PairOfCols[_,_]])
+      
+      val pairsArr = pairs.toArray
+      pairsArr shouldBe Array((1, 10), (2, 20), (3, 30))
+
+      // here is the problem with append
+      val appended = pairs.append(pairs)
+
+      an[TestFailedException] should be thrownBy(
+          appended.toArray shouldBe (pairsArr ++ pairsArr)
+      )
+      // Note, the last element of col2 (40) is zipped with 1
+      // this is because PairOfCols keeps ls and rs separated and zip doesn't do truncation
+      // the they are of different length
+      appended.toArray shouldBe Array((1, 10), (2, 20), (3, 30), (1, 40), (2, 10), (3, 20))
+    }
+
     forAll(collGen, collGen, valGen, MinSuccessful(50)) { (col1, col2, v) =>
 
       {
@@ -286,6 +308,16 @@ class CollsTests extends PropSpec with PropertyChecks with Matchers with CollGen
         }
       }
     }
+  }
+
+  property("Coll.zip") {
+    val col1 = builder.fromItems(1, 2, 3)
+    val col2 = builder.fromItems(10, 20, 30, 40)
+    val pairs = col1.zip(col2)
+    assert(pairs.isInstanceOf[PairOfCols[Int, Int]])
+    pairs.length shouldBe col1.length
+    pairs.length shouldNot be(col2.length)
+    pairs.length shouldBe col2.zip(col1).length
   }
 
   property("Coll.mapReduce") {
