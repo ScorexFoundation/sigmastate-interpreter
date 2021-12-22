@@ -24,7 +24,7 @@ case class BlockValueSerializer(cons: (IndexedSeq[BlockItem], Value[SType]) => V
   }
 
   override def parse(r: SigmaByteReader): Value[SType] = {
-    val itemsSize = r.getUInt().toIntExact
+    val itemsSize = r.getUIntExact
     val values: IndexedSeq[BlockItem] = if (itemsSize == 0)
       BlockItem.EmptySeq
     else {

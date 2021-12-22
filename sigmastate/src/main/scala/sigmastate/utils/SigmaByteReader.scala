@@ -81,6 +81,8 @@ class SigmaByteReader(val r: Reader,
     r.getUInt()
   }
 
+  @inline def getUIntExact: Int = getUInt().toIntExact
+
   @inline override def getLong(): Long = {
     checkPositionLimit()
     r.getLong()
@@ -155,7 +157,7 @@ class SigmaByteReader(val r: Reader,
     * @return a sequence of zero of more values read
     */
   @inline def getValues(): IndexedSeq[SValue] = {
-    val size = getUInt().toIntExact
+    val size = getUIntExact
     if (size == 0) Value.EmptySeq // quick short-cut when there is nothing to read
     else {
       val xs = ValueSerializer.newArray[SValue](size)
