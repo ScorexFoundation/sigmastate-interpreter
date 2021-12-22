@@ -2,17 +2,17 @@ package sigmastate.interpreter
 
 import org.ergoplatform.ErgoLikeContext
 import org.ergoplatform.SigmaConstants.ScriptCostLimit
-import sigmastate.{FixedCost, JitCost, PerItemCost, SType, TypeBasedCost}
+import sigmastate.{FixedCost, JitCost, PerItemCost, SType, TypeBasedCost, Versions}
 import sigmastate.Values._
 import sigmastate.eval.Profiler
 import sigmastate.interpreter.ErgoTreeEvaluator.DataEnv
-import sigmastate.interpreter.Interpreter.JitReductionResult
+import sigmastate.interpreter.Interpreter.{JitReductionResult, error}
 import special.sigma.{Context, SigmaProp}
 import scalan.util.Extensions._
 import sigmastate.interpreter.EvalSettings._
-import sigmastate.lang.Terms.MethodCall
 import supertagged.TaggedType
 import debox.{Buffer => DBuffer}
+
 import scala.collection.mutable
 import scala.util.DynamicVariable
 
@@ -133,6 +133,9 @@ class ErgoTreeEvaluator(
   
   /** Evaluates the given expression in the given data environment. */
   def eval(env: DataEnv, exp: SValue): Any = {
+    if (Versions.currentErgoTreeVersion != context.currentErgoTreeVersion) {
+      error(s"Global Versions.currentErgoTreeVersion = ${Versions.currentErgoTreeVersion} while context.currentErgoTreeVersion = ${context.currentErgoTreeVersion}.")
+    }
     ErgoTreeEvaluator.currentEvaluator.withValue(this) {
       exp.evalTo[Any](env)(this)
     }

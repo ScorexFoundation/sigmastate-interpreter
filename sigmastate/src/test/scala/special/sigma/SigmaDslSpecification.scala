@@ -5123,7 +5123,9 @@ class SigmaDslSpecification extends SigmaDslTesting
           (Coll[Boolean](false, false, true, true), successNew(true, 37101, newV = false,  newC = 8214))
         )
       },
-      existingFeature((x: Coll[Boolean]) => SigmaDsl.xorOf(x),
+      changedFeature(
+        (x: Coll[Boolean]) => SigmaDsl.xorOf(x),
+        (x: Coll[Boolean]) => SigmaDsl.xorOf(x),
         "{ (x: Coll[Boolean]) => xorOf(x) }",
         FuncValue(Vector((1, SBooleanArray)), XorOf(ValUse(1, SBooleanArray)))))
   }
