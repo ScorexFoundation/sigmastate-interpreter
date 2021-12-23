@@ -135,7 +135,19 @@ class SigmaDslTesting extends PropSpec
 
   val predefScripts = Seq[String]()
 
-  /** Descriptor of the language feature. */
+  /** Descriptor of the language feature.
+    * Each language feature is described by so called feature-function which exercises
+    * some specific operation under test.
+    *
+    * For example, the following feature-function exercises binary `+` operation for `Int` type.
+    * `{ (in: (Int, Int)) => in._1 + in._2 }`
+    *
+    * Feature function script is compiled into expression and then executed on a series of
+    * test cases. The outputs if each test case is compared with expected values.
+    *
+    * Test cases are specified for all supported versions.
+    * @see ExistingFeature, ChangedFeature
+    */
   trait Feature[A, B] { feature =>
 
     /** Script containing this feature. */
@@ -448,6 +460,20 @@ class SigmaDslTesting extends PropSpec
     Thread.sleep(1000) // let GC to its job before running the tests
   }
 
+  /** Derived class ExistingFeature is used to describe features which don't change from
+    * v4.x to v5.0.
+    *
+    * @tparam A type of an input test data
+    * @tparam B type of an output of the feature function
+    * @param script            script of the feature function (see Feature trait)
+    * @param scalaFunc         feature function written in Scala and used to simulate the behavior
+    *                          of the script
+    * @param expectedExpr      expected ErgoTree expression to be produced by ErgoScript
+    *                          compiler for the given feature-function
+    * @param printExpectedExpr if true, print test vectors for expectedExpr
+    * @param logScript         if true, log scripts to console
+    * @param requireMCLowering if true, MethodCall lowering is performed by ErgoScript compiler
+    */
   case class ExistingFeature[A, B](
     script: String,
     scalaFunc: A => B,
@@ -576,6 +602,28 @@ class SigmaDslTesting extends PropSpec
     }
   }
 
+  /** Descriptor of a language feature which is changed in v5.0.
+    *
+    * @tparam A type of an input test data
+    * @tparam B type of an output of the feature function
+    * @param script            script of the feature function (see Feature trait)
+    * @param scalaFunc         feature function written in Scala and used to simulate the behavior
+    *                          of the script
+    * @param scalaFuncNew      function in Scala to simulate the behavior of the script in v5.0
+    * @param expectedExpr      expected ErgoTree expression to be produced by ErgoScript
+    *                          compiler for the given feature-function
+    * @param printExpectedExpr if true, print test vectors for expectedExpr
+    * @param logScript         if true, log scripts to console
+    * @param requireMCLowering if true, MethodCall lowering is performed by ErgoScript compiler
+    * @param allowNewToSucceed if true, we allow some scripts which fail in v4.x to pass in v5.0.
+    *                          Before activation, all ErgoTrees with version < JitActivationVersion are
+    *                          processed by v4.x interpreter, so this difference is not a problem.
+    *                          After activation, all ErgoTrees with version < JitActivationVersion are
+    *                          processed by v5.0 interpreter (which is 90% of nodes) and the rest are
+    *                          accepting without check.
+    *                          This approach allows to fix bugs in the implementation of
+    *                          some of v4.x operations.
+    */
   case class ChangedFeature[A: RType, B: RType](
     script: String,
     scalaFunc: A => B,
@@ -583,7 +631,8 @@ class SigmaDslTesting extends PropSpec
     expectedExpr: Option[SValue],
     printExpectedExpr: Boolean = true,
     logScript: Boolean = LogScriptDefault,
-    requireMCLowering: Boolean = false
+    requireMCLowering: Boolean = false,
+    allowNewToSucceed: Boolean = false
   )(implicit IR: IRContext, override val evalSettings: EvalSettings)
     extends Feature[A, B] {
 
@@ -605,18 +654,16 @@ class SigmaDslTesting extends PropSpec
         }
         if (ergoTreeVersionInTests < Versions.JitActivationVersion) {
           (oldRes, newRes) match {
-            case (o: Failure[_], n: Success[_]) =>
+            case (_: Failure[_], _: Success[_]) if allowNewToSucceed =>
               // NOTE, we are in ChangedFeature (compare with ExistingFeature)
               // this is the case when old v4.x version fails with exception (e.g. due to AOT costing),
               // but the new v5.0 produces result. (See property("Option fold workaround method"))
               // Thus, we allow some scripts which fail in v4.x to pass in v5.0.
-              // Before activation, all ErgoTrees with version < JitActivationVersion are
-              // processed by v4.x interpreter, so this difference is not a problem
-              // After activation, all ErgoTrees with version < JitActivationVersion are
-              // processed by v5.0 interpreter (which is 90% of nodes) and the rest are
-              // accepting without check.
+              // see ScalaDoc for allowNewToSucceed
             case _ =>
-              checkResult(oldRes.map(_._1), newRes.map(_._1), true)
+              val inputStr = SigmaPPrint(input, height = 550, width = 150)
+              checkResult(oldRes.map(_._1), newRes.map(_._1), true,
+                s"ChangedFeature.checkEquality($inputStr): use allowNewToSucceed=true to allow v5.0 to succeed when v4.x fails")
           }
         }
         newRes
@@ -665,6 +712,12 @@ class SigmaDslTesting extends PropSpec
     }
   }
 
+  /** Derived class NewFeature is used to describe features which should be introduced
+    * from specific version.
+    * This in not yet implemented and will be finished in v6.0.
+    * In v5.0 is only checks that some features are NOT implemented, i.e. work for
+    * negative tests.
+    */
   case class NewFeature[A: RType, B: RType](
     script: String,
     override val scalaFuncNew: A => B,
@@ -836,6 +889,7 @@ class SigmaDslTesting extends PropSpec
     * @param scalaFunc    semantic function for both v1 and v2 script interpretations
     * @param script       the script to be tested against semantic function
     * @param expectedExpr expected ErgoTree expression which corresponds to the given script
+    * @param requireMCLowering if true, MethodCall lowering is performed by ErgoScript compiler
     * @return feature test descriptor object which can be used to execute this test case in
     *         various ways
     */
@@ -860,9 +914,14 @@ class SigmaDslTesting extends PropSpec
     *         various ways
     */
   def changedFeature[A: RType, B: RType]
-      (scalaFunc: A => B, scalaFuncNew: A => B, script: String, expectedExpr: SValue = null)
+      (scalaFunc: A => B,
+       scalaFuncNew: A => B,
+       script: String,
+       expectedExpr: SValue = null,
+       allowNewToSucceed: Boolean = false)
       (implicit IR: IRContext, evalSettings: EvalSettings): Feature[A, B] = {
-    ChangedFeature(script, scalaFunc, scalaFuncNew, Option(expectedExpr))
+    ChangedFeature(script, scalaFunc, scalaFuncNew, Option(expectedExpr),
+      allowNewToSucceed = allowNewToSucceed)
   }
 
   /** Describes a NEW language feature which must NOT be supported in v4 and
@@ -889,7 +948,7 @@ class SigmaDslTesting extends PropSpec
   val PrintTestCasesDefault: Boolean = false // true
   val FailOnTestVectorsDefault: Boolean = true
 
-  private def checkResult[B](res: Try[B], expectedRes: Try[B], failOnTestVectors: Boolean): Unit = {
+  private def checkResult[B](res: Try[B], expectedRes: Try[B], failOnTestVectors: Boolean, hint: String = ""): Unit = {
     (res, expectedRes) match {
       case (Failure(exception), Failure(expectedException)) =>
         rootCause(exception).getClass shouldBe expectedException.getClass
@@ -899,7 +958,7 @@ class SigmaDslTesting extends PropSpec
           if (expectedRes != actual) {
             val actualPrinted = SigmaPPrint(actual, height = 150).plainText
             val expectedPrinted = SigmaPPrint(expectedRes, height = 150).plainText
-            assert(false, s"\nActual: $actualPrinted;\nExpected: $expectedPrinted\n")
+            assert(false, s"$hint\nActual: $actualPrinted;\nExpected: $expectedPrinted\n")
           }
         }
         else {
