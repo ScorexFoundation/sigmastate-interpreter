@@ -6,6 +6,7 @@ import sigmastate.Values.{SValue, Value}
 import sigmastate.lang.exceptions.{InputSizeLimitExceeded, DeserializeCallDepthExceeded}
 import sigmastate.serialization._
 import scorex.util.Extensions._
+import sigmastate.util.safeNewArray
 import spire.syntax.all.cfor
 
 /** Reader used in the concrete implementations of [[SigmaSerializer]].
@@ -158,7 +159,7 @@ class SigmaByteReader(val r: Reader,
     val size = getUInt().toIntExact
     if (size == 0) Value.EmptySeq // quick short-cut when there is nothing to read
     else {
-      val xs = ValueSerializer.newArray[SValue](size)
+      val xs = safeNewArray[SValue](size)
       cfor(0)(_ < size, _ + 1) { i =>
         xs(i) = getValue()
       }

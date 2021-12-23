@@ -1,7 +1,6 @@
 package org.ergoplatform
 
 import java.util
-
 import org.ergoplatform.ErgoBox._
 import org.ergoplatform.settings.ErgoAlgos
 import scorex.util.{bytesToId, ModifierId}
@@ -14,6 +13,7 @@ import special.collection.Coll
 import sigmastate.eval._
 import sigmastate.eval.Extensions._
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
+import sigmastate.util.safeNewArray
 import spire.syntax.all.cfor
 
 import scala.collection.immutable
@@ -189,8 +189,8 @@ object ErgoBoxCandidate {
       val tree = DefaultSerializer.deserializeErgoTree(r, SigmaSerializer.MaxPropositionSize)  // READ
       val creationHeight = r.getUInt().toInt    // READ
       val nTokens = r.getUByte()                // READ
-      val tokenIds = ValueSerializer.newArray[Array[Byte]](nTokens)
-      val tokenAmounts = ValueSerializer.newArray[Long](nTokens)
+      val tokenIds = safeNewArray[Array[Byte]](nTokens)
+      val tokenAmounts = safeNewArray[Long](nTokens)
       if (digestsInTx != null) {
         val nDigests = digestsInTx.length
         cfor(0)(_ < nTokens, _ + 1) { i =>

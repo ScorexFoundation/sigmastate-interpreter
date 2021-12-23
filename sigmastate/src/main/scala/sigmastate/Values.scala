@@ -1,8 +1,7 @@
 package sigmastate
 
 import java.math.BigInteger
-import java.util
-import java.util.Objects
+import java.util.{Arrays, Objects}
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{count, everywherebu, strategy}
 import org.ergoplatform.settings.ErgoAlgos
 import org.ergoplatform.validation.ValidationException
@@ -35,6 +34,7 @@ import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import special.sigma.{AvlTree, Header, PreHeader, _}
 import sigmastate.lang.SourceContext
 import sigmastate.lang.exceptions.InterpreterException
+import sigmastate.util.safeNewArray
 import special.collection.Coll
 
 import scala.collection.mutable
@@ -329,7 +329,7 @@ object Values {
       case _ => false
     }))
 
-    override def hashCode(): Int = util.Arrays.deepHashCode(Array(value.asInstanceOf[AnyRef], tpe))
+    override def hashCode(): Int = Arrays.deepHashCode(Array(value.asInstanceOf[AnyRef], tpe))
 
     override def toString: String = tpe.asInstanceOf[SType] match {
       case SGroupElement if value.isInstanceOf[GroupElement] =>
@@ -844,14 +844,14 @@ object Values {
           case ProveDiffieHellmanTupleCode => dhtSerializer.parse(r)
           case AndCode =>
             val n = r.getUShort()
-            val children = ValueSerializer.newArray[SigmaBoolean](n)
+            val children = safeNewArray[SigmaBoolean](n)
             cfor(0)(_ < n, _ + 1) { i =>
               children(i) = serializer.parse(r)
             }
             CAND(children)
           case OrCode =>
             val n = r.getUShort()
-            val children = ValueSerializer.newArray[SigmaBoolean](n)
+            val children = safeNewArray[SigmaBoolean](n)
             cfor(0)(_ < n, _ + 1) { i =>
               children(i) = serializer.parse(r)
             }
@@ -859,7 +859,7 @@ object Values {
           case AtLeastCode =>
             val k = r.getUShort()
             val n = r.getUShort()
-            val children = ValueSerializer.newArray[SigmaBoolean](n)
+            val children = safeNewArray[SigmaBoolean](n)
             cfor(0)(_ < n, _ + 1) { i =>
               children(i) = serializer.parse(r)
             }

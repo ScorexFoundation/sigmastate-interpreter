@@ -10,6 +10,7 @@ import sigmastate.lang.exceptions.{SerializerException, InputSizeLimitExceeded}
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import scalan.util.Extensions._
 import sigmastate.Values.ErgoTree.EmptyConstants
+import sigmastate.util.safeNewArray
 import sigmastate.utxo.ComplexityTable
 import spire.syntax.all.cfor
 
@@ -222,7 +223,7 @@ class ErgoTreeSerializer {
         val nConsts = r.getUInt().toInt
         if (nConsts > 0) {
           // HOTSPOT:: allocate new array only if it is not empty
-          val res = ValueSerializer.newArray[Constant[SType]](nConsts)
+          val res = safeNewArray[Constant[SType]](nConsts)
           cfor(0)(_ < nConsts, _ + 1) { i =>
             res(i) = constantSerializer.deserialize(r)
           }

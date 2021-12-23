@@ -2,21 +2,24 @@ package special.collection
 
 import java.util
 import java.util.Objects
-
 import special.SpecialPredef
 
 import scala.reflect.ClassTag
 import scalan._
 import scalan.util.CollectionUtil
-import scalan.{Internal, NeverInline, Reified, RType}
+import scalan.{Internal, NeverInline, RType, Reified}
 import Helpers._
 import debox.Buffer
 import scalan.RType._
+import sigmastate.util.{MaxArrayLength, safeNewArray}
 import spire.syntax.all._
 
 import scala.runtime.RichInt
 
 class CollOverArray[@specialized A](val toArray: Array[A])(implicit tA: RType[A]) extends Coll[A] {
+  require(toArray.length <= MaxArrayLength,
+    s"Cannot create collection with size ${toArray.length} greater than $MaxArrayLength")
+
   @Internal
   override def tItem: RType[A] = tA
   def builder: CollBuilder = new CollOverArrayBuilder
@@ -586,7 +589,7 @@ class CReplColl[@specialized A](val value: A, val length: Int)(implicit tA: RTyp
   @Internal
   lazy val _toArray: Array[A] = {
     implicit val cT: ClassTag[A] = tA.classTag
-    val res = new Array[A](length)
+    val res = safeNewArray[A](length)
     val v = value
     cfor(0)(_ < length, _ + 1) { i => res(i) = v }
     res

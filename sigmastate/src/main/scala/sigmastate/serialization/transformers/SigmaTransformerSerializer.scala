@@ -3,6 +3,7 @@ package sigmastate.serialization.transformers
 import sigmastate.{SigmaTransformerCompanion, SigmaTransformer}
 import sigmastate.Values.{SigmaPropValue, SValue}
 import sigmastate.serialization.ValueSerializer
+import sigmastate.util.safeNewArray
 import sigmastate.utils.SigmaByteWriter.{DataInfo, valuesItemInfo}
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import spire.syntax.all.cfor
@@ -18,7 +19,7 @@ case class SigmaTransformerSerializer[I <: SigmaPropValue, O <: SigmaPropValue]
 
   override def parse(r: SigmaByteReader): SigmaPropValue = {
     val itemsSize = r.getUInt().toInt
-    val res = ValueSerializer.newArray[SigmaPropValue](itemsSize)
+    val res = safeNewArray[SigmaPropValue](itemsSize)
     cfor(0)(_ < itemsSize, _ + 1) { i =>
       res(i) = r.getValue().asInstanceOf[SigmaPropValue]
     }

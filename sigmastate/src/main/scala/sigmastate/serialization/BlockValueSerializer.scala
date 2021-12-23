@@ -5,7 +5,8 @@ import sigmastate._
 import scorex.util.Extensions._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import ValueSerializer._
-import sigmastate.utils.SigmaByteWriter.{Vlq, U, DataInfo}
+import sigmastate.util.safeNewArray
+import sigmastate.utils.SigmaByteWriter.{DataInfo, U, Vlq}
 import spire.syntax.all.cfor
 
 case class BlockValueSerializer(cons: (IndexedSeq[BlockItem], Value[SType]) => Value[SType])
@@ -29,7 +30,7 @@ case class BlockValueSerializer(cons: (IndexedSeq[BlockItem], Value[SType]) => V
       BlockItem.EmptySeq
     else {
       // HOTSPOT:: allocate new array only if it is not empty
-      val buf = ValueSerializer.newArray[BlockItem](itemsSize)
+      val buf = safeNewArray[BlockItem](itemsSize)
       cfor(0)(_ < itemsSize, _ + 1) { i =>
         buf(i) = r.getValue().asInstanceOf[BlockItem]
       }

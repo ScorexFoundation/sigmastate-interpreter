@@ -11,15 +11,15 @@ import org.scalacheck.{Arbitrary, Gen}
 import scalan.RType
 import scorex.crypto.authds.{ADDigest, ADKey}
 import scorex.crypto.hash.Digest32
-import scorex.util.encode.{Base64, Base58}
-import scorex.util.{bytesToId, ModifierId}
+import scorex.util.encode.{Base58, Base64}
+import scorex.util.{ModifierId, Random, bytesToId}
 import sigmastate.Values._
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
 import sigmastate.eval.Extensions._
 import sigmastate.eval.{CostingBox, SigmaDsl, _}
 import sigmastate.interpreter.CryptoConstants.EcPointType
-import sigmastate.interpreter.{ProverResult, ContextExtension, CryptoConstants, Interpreter}
+import sigmastate.interpreter.{ContextExtension, CryptoConstants, Interpreter, ProverResult}
 import sigmastate.lang.TransformingSigmaBuilder._
 import sigmastate._
 import sigmastate.utxo._
@@ -175,7 +175,7 @@ trait ObjectGenerators extends TypeGenerators
     Gen.oneOf(booleanConstGen.asInstanceOf[Gen[EvaluatedValue[SType]]], byteArrayConstGen, longConstGen)
 
   def additionalRegistersGen(cnt: Byte): Seq[Gen[(NonMandatoryRegisterId, EvaluatedValue[SType])]] = {
-    util.Random.shuffle((0 until cnt).toList)
+    scala.util.Random.shuffle((0 until cnt).toList)
       .map(_ + ErgoBox.startingNonMandatoryIndex)
       .map(rI => ErgoBox.registerByIndex(rI).asInstanceOf[NonMandatoryRegisterId])
       .map { r =>
