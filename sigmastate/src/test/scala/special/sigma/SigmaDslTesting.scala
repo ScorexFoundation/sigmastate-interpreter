@@ -472,7 +472,6 @@ class SigmaDslTesting extends PropSpec
     *                          compiler for the given feature-function
     * @param printExpectedExpr if true, print test vectors for expectedExpr
     * @param logScript         if true, log scripts to console
-    * @param requireMCLowering if true, MethodCall lowering is performed by ErgoScript compiler
     */
   case class ExistingFeature[A, B](
     script: String,
@@ -480,7 +479,6 @@ class SigmaDslTesting extends PropSpec
     expectedExpr: Option[SValue],
     printExpectedExpr: Boolean = true,
     logScript: Boolean = LogScriptDefault,
-    requireMCLowering: Boolean = false
   )(implicit IR: IRContext, tA: RType[A], tB: RType[B],
              override val evalSettings: EvalSettings) extends Feature[A, B] {
 
@@ -614,7 +612,6 @@ class SigmaDslTesting extends PropSpec
     *                          compiler for the given feature-function
     * @param printExpectedExpr if true, print test vectors for expectedExpr
     * @param logScript         if true, log scripts to console
-    * @param requireMCLowering if true, MethodCall lowering is performed by ErgoScript compiler
     * @param allowNewToSucceed if true, we allow some scripts which fail in v4.x to pass in v5.0.
     *                          Before activation, all ErgoTrees with version < JitActivationVersion are
     *                          processed by v4.x interpreter, so this difference is not a problem.
@@ -631,7 +628,6 @@ class SigmaDslTesting extends PropSpec
     expectedExpr: Option[SValue],
     printExpectedExpr: Boolean = true,
     logScript: Boolean = LogScriptDefault,
-    requireMCLowering: Boolean = false,
     allowNewToSucceed: Boolean = false
   )(implicit IR: IRContext, override val evalSettings: EvalSettings)
     extends Feature[A, B] {
@@ -889,17 +885,15 @@ class SigmaDslTesting extends PropSpec
     * @param scalaFunc    semantic function for both v1 and v2 script interpretations
     * @param script       the script to be tested against semantic function
     * @param expectedExpr expected ErgoTree expression which corresponds to the given script
-    * @param requireMCLowering if true, MethodCall lowering is performed by ErgoScript compiler
     * @return feature test descriptor object which can be used to execute this test case in
     *         various ways
     */
   def existingFeature[A: RType, B: RType]
       (scalaFunc: A => B, script: String,
-       expectedExpr: SValue = null, requireMCLowering: Boolean = false)
+       expectedExpr: SValue = null)
       (implicit IR: IRContext, evalSettings: EvalSettings): Feature[A, B] = {
     ExistingFeature(
-      script, scalaFunc, Option(expectedExpr),
-      requireMCLowering = requireMCLowering)
+      script, scalaFunc, Option(expectedExpr))
   }
 
   /** Describes existing language feature which should be differently supported in both
