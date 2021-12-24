@@ -286,10 +286,6 @@ trait Interpreter extends ScorexLogging {
       case _ =>
         reductionWithDeserialize(ergoTree, prop, context, env, evalMode)
     }
-
-    if (evalMode == TestEvaluationMode) {
-        CostingUtils.checkResults(ergoTree.bytesHex, res.aotRes, res.jitRes, logMessage(_))(evalSettings)
-    }
     res
   }
 
@@ -479,9 +475,6 @@ trait Interpreter extends ScorexLogging {
       val res = evalMode match {
         case AotEvaluationMode => aotRes
         case JitEvaluationMode => jitRes
-        case TestEvaluationMode =>
-          CostingUtils.checkCosts(ergoTree.bytesHex, aotRes._2, jitRes._2, logMessage(_))(evalSettings)
-          aotRes
       }
       res
     }

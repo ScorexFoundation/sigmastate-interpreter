@@ -54,17 +54,16 @@ object EvalSettings {
       def name: String = x match {
         case AotEvaluationMode => "AotEvaluationMode"
         case JitEvaluationMode => "JitEvaluationMode"
-        case TestEvaluationMode => "TestEvaluationMode"
       }
 
       /** Returns true if AOT interpreter should be evaluated. */
       def okEvaluateAot: Boolean = {
-        x == AotEvaluationMode || x == TestEvaluationMode
+        x == AotEvaluationMode
       }
 
       /** Returns true if JIT interpreter should be evaluated. */
       def okEvaluateJit: Boolean = {
-        x == JitEvaluationMode || x == TestEvaluationMode
+        x == JitEvaluationMode
       }
     }
   }
@@ -77,12 +76,6 @@ object EvalSettings {
   /** Evaluation mode when the interpreter is executing using JIT costing implementation
     * of v5.x protocol. */
   val JitEvaluationMode: EvaluationMode = EvaluationMode @@ 2  // second bit
-
-  /** Evaluation mode when the interpreter is executing using both AOT and JIT costing
-    * implementations and compare the results.
-    * This mode should be used in tests and not supposed to be used in production.
-    */
-  val TestEvaluationMode: EvaluationMode = EvaluationMode @@ 3 // both bits
 }
 
 /** Result of JITC evaluation with costing. */

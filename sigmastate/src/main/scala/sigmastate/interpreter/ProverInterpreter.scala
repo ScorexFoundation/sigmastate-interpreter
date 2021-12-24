@@ -137,13 +137,6 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
       case JitEvaluationMode =>
         val fullCost = addCryptoCost(reduced.jitRes, contextWithCost.costLimit)
         (reduced.jitRes.value, fullCost)
-
-//      case TestEvaluationMode =>
-//        val fullCost = addCryptoCost(jitRes, contextWithCost.costLimit)
-//        CostingUtils.checkCosts(ergoTree.bytesHex,
-//          aotRes.cost, fullCost, logger = logMessage)(evalSettings)
-//
-//        (aotRes.value, aotRes.cost)
     }
 
     val proof = generateProof(resValue, message, hintsBag)
