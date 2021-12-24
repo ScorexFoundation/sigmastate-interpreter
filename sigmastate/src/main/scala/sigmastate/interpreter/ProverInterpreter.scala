@@ -125,24 +125,25 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
     val initCost = addCostChecked(context.initCost, complexityCost, context.costLimit)
     val contextWithCost = context.withInitCost(initCost).asInstanceOf[CTX]
 
-    val (aotRes, jitRes) = fullReduction(ergoTree, contextWithCost, env)
-
+    val reduced = fullReduction(ergoTree, contextWithCost, env)
+    val reducedValue = reduced.value
+    val reducedCost = reduced.cost
     val evalMode = getEvaluationMode(contextWithCost)
 
     val (resValue, resCost) = evalMode match {
       case AotEvaluationMode =>
-        (aotRes.value, aotRes.cost)
+        (reducedValue, reducedCost)
 
       case JitEvaluationMode =>
-        val fullCost = addCryptoCost(jitRes, contextWithCost.costLimit)
-        (jitRes.value, fullCost)
+        val fullCost = addCryptoCost(reduced.jitRes, contextWithCost.costLimit)
+        (reduced.jitRes.value, fullCost)
 
-      case TestEvaluationMode =>
-        val fullCost = addCryptoCost(jitRes, contextWithCost.costLimit)
-        CostingUtils.checkCosts(ergoTree.bytesHex,
-          aotRes.cost, fullCost, logger = logMessage)(evalSettings)
-
-        (aotRes.value, aotRes.cost)
+//      case TestEvaluationMode =>
+//        val fullCost = addCryptoCost(jitRes, contextWithCost.costLimit)
+//        CostingUtils.checkCosts(ergoTree.bytesHex,
+//          aotRes.cost, fullCost, logger = logMessage)(evalSettings)
+//
+//        (aotRes.value, aotRes.cost)
     }
 
     val proof = generateProof(resValue, message, hintsBag)
