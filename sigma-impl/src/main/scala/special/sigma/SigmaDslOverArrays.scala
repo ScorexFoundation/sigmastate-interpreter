@@ -11,8 +11,8 @@ import scorex.crypto.hash.{Sha256, Blake2b256}
 import special.SpecialPredef
 import special.collection._
 import scalan.util.Extensions.BigIntegerOps
-import sigmastate.Versions
-import sigmastate.Versions.JitActivationVersion
+import sigmastate.VersionContext
+import sigmastate.VersionContext.JitActivationVersion
 import spire.syntax.all.cfor
 
 // TODO refactor: this class is not necessary and can be removed
@@ -42,7 +42,7 @@ class TestSigmaDslBuilder extends SigmaDslBuilder {
 
   @NeverInline
   override def xorOf(conditions: Coll[Boolean]): Boolean = {
-    if (Versions.currentErgoTreeVersion >= JitActivationVersion) {
+    if (VersionContext.current.ergoTreeVersion >= JitActivationVersion) {
       val len = conditions.length
       if (len == 0) false
       else if (len == 1) conditions(0)

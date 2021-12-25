@@ -31,7 +31,7 @@ import sigmastate.serialization.ValueSerializer
 import sigmastate.serialization.generators.ObjectGenerators
 import sigmastate.utils.Helpers._
 import sigmastate.utxo.{DeserializeContext, DeserializeRegister}
-import sigmastate.{SSigmaProp, SType, Versions, eval}
+import sigmastate.{SSigmaProp, SType, VersionContext, eval}
 import special.collection.{Coll, CollType}
 import spire.syntax.all.cfor
 
@@ -799,7 +799,7 @@ class SigmaDslTesting extends PropSpec
       * suggestions for new test vectors.
       */
     final def defaultNewResults: Seq[(ExpectedResult[A], Option[CostDetails])] = {
-      val n = Versions.MaxSupportedScriptVersion + 1
+      val n = VersionContext.MaxSupportedScriptVersion + 1
       // NOTE: by default, tests vectors for both verification cost and cost details are not defined
       val res = ExpectedResult(oldResult.value, None)
       Array.fill(n)((res, None))

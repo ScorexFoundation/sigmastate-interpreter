@@ -17,7 +17,7 @@ import scala.util.DynamicVariable
 trait TestsBase extends Matchers {
 
   val activatedVersions: Seq[Byte] =
-    (0 to Versions.MaxSupportedScriptVersion).map(_.toByte).toArray[Byte]
+    (0 to VersionContext.MaxSupportedScriptVersion).map(_.toByte).toArray[Byte]
 
   private[sigmastate] val _currActivatedVersion = new DynamicVariable[Byte](0)
   def activatedVersionInTests: Byte = _currActivatedVersion.value
@@ -26,7 +26,7 @@ trait TestsBase extends Matchers {
   def isActivatedVersion4: Boolean = activatedVersionInTests < Versions.JitActivationVersion
 
   val ergoTreeVersions: Seq[Byte] =
-    (0 to Versions.MaxSupportedScriptVersion).map(_.toByte).toArray[Byte]
+    (0 to VersionContext.MaxSupportedScriptVersion).map(_.toByte).toArray[Byte]
 
   private[sigmastate] val _currErgoTreeVersion = new DynamicVariable[Byte](0)
 
