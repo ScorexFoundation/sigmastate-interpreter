@@ -10,15 +10,20 @@ import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.{TransformingSigmaBuilder, SigmaCompiler, CompilerSettings}
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.serialization.ValueSerializer
+import spire.syntax.all.cfor
 
 import scala.util.DynamicVariable
 
 trait TestsBase extends Matchers {
 
-  val activatedVersions: Seq[Byte] = Array[Byte](0, 1)
+  val activatedVersions: Seq[Byte] =
+    (0 to Interpreter.MaxSupportedScriptVersion).map(_.toByte).toArray[Byte]
 
   private[sigmastate] val _currActivatedVersion = new DynamicVariable[Byte](0)
   def activatedVersionInTests: Byte = _currActivatedVersion.value
+
+  /** Checks if the current activated script version used in tests corresponds to v4.x. */
+  def isActivatedVersion4: Boolean = activatedVersionInTests < 2
 
   val ergoTreeVersions: Seq[Byte] =
     (0 to Interpreter.MaxSupportedScriptVersion).map(_.toByte).toArray[Byte]
@@ -32,6 +37,52 @@ trait TestsBase extends Matchers {
     * ergoTreeVersionInTests.
     */
   def ergoTreeHeaderInTests: Byte = ErgoTree.headerWithVersion(ergoTreeVersionInTests)
+
+  /** Executes the given block for each combination of _currActivatedVersion and
+    * _currErgoTreeVersion assigned to dynamic variables.
+    */
+  def forEachScriptAndErgoTreeVersion
+        (activatedVers: Seq[Byte], ergoTreeVers: Seq[Byte])
+        (block: => Unit): Unit = {
+    cfor(0)(_ < activatedVers.length, _ + 1) { i =>
+      val activatedVersion = activatedVers(i)
+      // setup each activated version
+      _currActivatedVersion.withValue(activatedVersion) {
+
+        cfor(0)(
+          i => i < ergoTreeVers.length && ergoTreeVers(i) <= activatedVersion,
+          _ + 1) { j =>
+          val treeVersion = ergoTreeVers(j)
+          // for each tree version up to currently activated, set it up and execute block
+          _currErgoTreeVersion.withValue(treeVersion)(block)
+        }
+
+      }
+    }
+  }
+
+
+  /** Helper method which executes the given `block` once for each `activatedVers`.
+    * The method sets the dynamic variable activatedVersionInTests with is then available
+    * in the block.
+    */
+  def forEachActivatedScriptVersion(activatedVers: Seq[Byte])(block: => Unit): Unit = {
+    cfor(0)(_ < activatedVers.length, _ + 1) { i =>
+      val activatedVersion = activatedVers(i)
+      _currActivatedVersion.withValue(activatedVersion)(block)
+    }
+  }
+
+  /** Helper method which executes the given `block` once for each `ergoTreeVers`.
+    * The method sets the dynamic variable ergoTreeVersionInTests with is then available
+    * in the block.
+    */
+  def forEachErgoTreeVersion(ergoTreeVers: Seq[Byte])(block: => Unit): Unit = {
+    cfor(0)(_ < ergoTreeVers.length, _ + 1) { i =>
+      val version = ergoTreeVers(i)
+      _currErgoTreeVersion.withValue(version)(block)
+    }
+  }
 
   /** Obtains [[ErgoTree]] which corresponds to True proposition using current
     * ergoTreeHeaderInTests. */

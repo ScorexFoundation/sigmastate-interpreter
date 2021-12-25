@@ -791,6 +791,6 @@ trait ObjectGenerators extends TypeGenerators
     costLimit = costLimit,
     initCost = initCost,
     activatedScriptVersion = activatedVersionInTests
-  )
+  ).withErgoTreeVersion(ergoTreeVersionInTests)
 
 }

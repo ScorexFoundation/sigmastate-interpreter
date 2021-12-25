@@ -38,6 +38,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
     val h2 = SigmaPropConstant(prover2.dlogSecrets.head.publicImage)
 
     val ctx = ErgoLikeContextTesting.dummy(fakeSelf, activatedVersionInTests)
+        .withErgoTreeVersion(ergoTreeVersionInTests)
 
     val e = compile(Map(
       "h1" -> h1.treeWithSegregation(ergoTreeHeaderInTests).bytes,

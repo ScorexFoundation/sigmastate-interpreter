@@ -1,7 +1,6 @@
 package org.ergoplatform
 
 import java.util
-
 import org.ergoplatform.validation.SigmaValidationSettings
 import sigmastate.SType._
 import sigmastate.Values._
@@ -9,12 +8,13 @@ import sigmastate._
 import sigmastate.eval.Extensions._
 import sigmastate.eval._
 import sigmastate.interpreter.ErgoTreeEvaluator.DataEnv
-import sigmastate.interpreter.{ContextExtension, InterpreterContext, ErgoTreeEvaluator}
+import sigmastate.interpreter.{ContextExtension, ErgoTreeEvaluator, Interpreter, InterpreterContext}
+import sigmastate.lang.exceptions.InterpreterException
 import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.OpCode
 import special.collection.Coll
 import special.sigma
-import special.sigma.{AnyValue, PreHeader, Header}
+import special.sigma.{AnyValue, Header, PreHeader}
 import spire.syntax.all.cfor
 
 /** Represents a script evaluation context to be passed to a prover and a verifier to execute and
@@ -111,6 +111,18 @@ class ErgoLikeContext(val lastBlockUtxoRoot: AvlTreeData,
   */
   val self: ErgoBox = boxesToSpend(selfIndex)
 
+  /** Current version of the ErgoTree executed by the interpreter.
+    * This property is used to implement version dependent operations and passed to
+    * interpreter via [[specia.sigma.Context]].
+    * The value cannot be assigned on [[ErgoLikeContext]] construction and must be
+    * attached using [[withErgoTreeVersion()]] method.
+    * When the value is None, the [[InterpreterException]] is thrown by the interpreter.
+    */
+  val currentErgoTreeVersion: Option[Byte] = None
+
+  override def withErgoTreeVersion(newVersion: Byte): ErgoLikeContext =
+    ErgoLikeContext.copy(this)(currErgoTreeVersion = Some(newVersion))
+
   override def withCostLimit(newCostLimit: Long): ErgoLikeContext =
     ErgoLikeContext.copy(this)(costLimit = newCostLimit)
 
@@ -154,9 +166,11 @@ class ErgoLikeContext(val lastBlockUtxoRoot: AvlTreeData,
     val vars = contextVars(varMap ++ extensions)
     val avlTree = CAvlTree(lastBlockUtxoRoot)
     val selfBox = boxesToSpend(selfIndex).toTestBox(isCost)
+    val ergoTreeVersion = currentErgoTreeVersion.getOrElse(
+        Interpreter.error(s"Undefined context property: currentErgoTreeVersion"))
     CostingDataContext(
       dataInputs, headers, preHeader, inputs, outputs, preHeader.height, selfBox, avlTree,
-      preHeader.minerPk.getEncoded, vars, activatedScriptVersion, isCost)
+      preHeader.minerPk.getEncoded, vars, activatedScriptVersion, ergoTreeVersion, isCost)
   }
 
 
@@ -218,11 +232,14 @@ object ErgoLikeContext {
       validationSettings: SigmaValidationSettings = ctx.validationSettings,
       costLimit: Long = ctx.costLimit,
       initCost: Long = ctx.initCost,
-      activatedScriptVersion: Byte = ctx.activatedScriptVersion): ErgoLikeContext = {
+      activatedScriptVersion: Byte = ctx.activatedScriptVersion,
+      currErgoTreeVersion: Option[Byte] = ctx.currentErgoTreeVersion): ErgoLikeContext = {
     new ErgoLikeContext(
       lastBlockUtxoRoot, headers, preHeader, dataBoxes, boxesToSpend,
       spendingTransaction, selfIndex, extension, validationSettings, costLimit, initCost,
-      activatedScriptVersion)
+      activatedScriptVersion) {
+      override val currentErgoTreeVersion: Option[TypeCode] = currErgoTreeVersion
+    }
   }
 }
 

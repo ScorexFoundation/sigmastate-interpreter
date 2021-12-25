@@ -15,6 +15,7 @@ import sigmastate.basics.VerifierMessage.Challenge
 import sigmastate.basics._
 import sigmastate.eval.Evaluation
 import sigmastate.eval.Evaluation.addCostChecked
+import sigmastate.interpreter.EvalSettings._
 import sigmastate.lang.exceptions.CostLimitException
 import sigmastate.utils.Helpers
 
@@ -120,20 +121,32 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
             message: Array[Byte],
             hintsBag: HintsBag = HintsBag.empty): Try[CostedProverResult] = Try {
 
-    val costWithComplexity = addCostChecked(context.initCost, ergoTree.complexity, context.costLimit)
-    val ctxWithComplexity = context.withInitCost(costWithComplexity).asInstanceOf[CTX]
-    val (aotRes, jitRes) = fullReduction(ergoTree, ctxWithComplexity, env)
+    val complexityCost = ergoTree.complexity.toLong
+    val initCost = addCostChecked(context.initCost, complexityCost, context.costLimit)
+    val contextWithCost = context.withInitCost(initCost).asInstanceOf[CTX]
 
-    val verificationC = estimateVerificationCost(aotRes.value).toBlockCost // scale JitCost to tx cost
-    // Note, jitRes.cost is already scaled in fullReduction
-    val fullJitCost = addCostChecked(jitRes.cost, verificationC, ctxWithComplexity.costLimit)
+    val (aotRes, jitRes) = fullReduction(ergoTree, contextWithCost, env)
 
-    CostingUtils.checkCosts(ergoTree.bytesHex,
-      aotRes.cost, fullJitCost, logger = logMessage)(evalSettings)
+    val evalMode = getEvaluationMode(contextWithCost)
 
-    val proof = generateProof(aotRes.value, message, hintsBag)
+    val (resValue, resCost) = evalMode match {
+      case AotEvaluationMode =>
+        (aotRes.value, aotRes.cost)
 
-    CostedProverResult(proof, ctxWithComplexity.extension, aotRes.cost)
+      case JitEvaluationMode =>
+        val fullCost = addCryptoCost(jitRes, contextWithCost.costLimit)
+        (jitRes.value, fullCost)
+
+      case TestEvaluationMode =>
+        val fullCost = addCryptoCost(jitRes, contextWithCost.costLimit)
+        CostingUtils.checkCosts(ergoTree.bytesHex,
+          aotRes.cost, fullCost, logger = logMessage)(evalSettings)
+
+        (aotRes.value, aotRes.cost)
+    }
+
+    val proof = generateProof(resValue, message, hintsBag)
+    CostedProverResult(proof, contextWithCost.extension, resCost)
   }
 
   def generateProof(sb: SigmaBoolean,

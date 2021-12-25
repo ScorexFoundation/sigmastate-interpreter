@@ -41,6 +41,7 @@ trait SigmaTestingCommons extends PropSpec
 
   def fakeContext: ErgoLikeContext =
     ErgoLikeContextTesting.dummy(fakeSelf, activatedVersionInTests)
+        .withErgoTreeVersion(ergoTreeVersionInTests)
 
   //fake message, in a real-life a message is to be derived from a spending transaction
   val fakeMessage = Blake2b256("Hello World")
@@ -148,6 +149,7 @@ trait SigmaTestingCommons extends PropSpec
       case _ =>
         val ergoCtx = ErgoLikeContextTesting.dummy(
           createBox(0, TrueTree), activatedVersionInTests)
+            .withErgoTreeVersion(ergoTreeVersionInTests)
             .withBindings(1.toByte -> Constant[SType](x.asInstanceOf[SType#WrappedType], tpeA))
             .withBindings(bindings: _*)
         val calcCtx = ergoCtx.toSigmaContext(isCost = false).asInstanceOf[CostingDataContext]
@@ -309,6 +311,7 @@ trait SigmaTestingCommons extends PropSpec
     val tpeA = Evaluation.rtypeToSType(tA)
     val ergoCtxTemp = ErgoLikeContextTesting.dummy(
       createBox(0, TrueTree), activatedVersionInTests)
+        .withErgoTreeVersion(ergoTreeVersionInTests)
         .withBindings(bindings: _*)
 
     val f = (in: A) => {

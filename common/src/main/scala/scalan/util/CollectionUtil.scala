@@ -182,6 +182,21 @@ object CollectionUtil {
 
   implicit class TraversableOps[A, Source[X] <: GenIterable[X]](val xs: Source[A]) extends AnyVal {
 
+    /** Returns a copy of this collection where elements at `items(i)._1` are replaced
+      * with `items(i)._2` for each i.
+      */
+    def updateMany(items: Seq[(Int, A)])(implicit tA: ClassTag[A]): Seq[A] = {
+      val res = xs.toArray
+      val nItems = items.length
+      var i = 0
+      while (i < nItems) {
+        val item = items(i)
+        res(item._1) = item._2
+        i += 1
+      }
+      res
+    }
+
     def filterCast[B:ClassTag](implicit cbf: CanBuildFrom[Source[A], B, Source[B]]): Source[B] = {
       val b = cbf()
       for (x <- xs) {

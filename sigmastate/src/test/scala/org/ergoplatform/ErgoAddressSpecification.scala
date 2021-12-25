@@ -24,7 +24,7 @@ import sigmastate.interpreter.Interpreter.{ScriptNameProp, ScriptEnv}
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.lang.exceptions.{CosterException, CostLimitException}
 import sigmastate.utils.Helpers._
-import special.sigma.SigmaDslTesting
+import special.sigma.{InvalidType, SigmaDslTesting}
 
 class ErgoAddressSpecification extends SigmaDslTesting
   with TryValues with CrossVersionProps {
@@ -282,21 +282,27 @@ class ErgoAddressSpecification extends SigmaDslTesting
 
     // when limit is low
     {
-      // choose limit less than total cost:
-      // totalCost(2671) = addr.script.complexity(2277) + prop complexity(164) + scaledCost(230)
-      val deliberatelySmallLimit = 2600
-
-      assertExceptionThrown(
-      {
-        testPay2SHAddress(addr,
-          script = scriptVarId -> ByteArrayConstant(scriptBytes),
-          costLimit = deliberatelySmallLimit)
-      },
-      { t =>
-        t.isInstanceOf[CostLimitException] &&
-            t.getMessage.contains(
-              s"Estimated execution cost 2671 exceeds the limit $deliberatelySmallLimit")}
-      )
+      if (isActivatedVersion4) {
+        // choose limit less than total cost:
+        // totalCost(2671) = addr.script.complexity(2277) + prop complexity(164) + scaledCost(230)
+        val deliberatelySmallLimit = 2600
+        assertExceptionThrown(
+          testPay2SHAddress(addr,
+            script = scriptVarId -> ByteArrayConstant(scriptBytes),
+            costLimit = deliberatelySmallLimit),
+          rootCauseLike[CostLimitException](
+            s"Estimated execution cost 2671 exceeds the limit $deliberatelySmallLimit")
+        )
+      } else {
+        val deliberatelySmallLimit = 2400
+        assertExceptionThrown(
+          testPay2SHAddress(addr,
+            script = scriptVarId -> ByteArrayConstant(scriptBytes),
+            costLimit = deliberatelySmallLimit),
+          rootCauseLike[CostLimitException](
+            s"Estimated execution cost 2441 exceeds the limit $deliberatelySmallLimit")
+        )
+      }
     }
 
     // when limit is low
@@ -305,15 +311,13 @@ class ErgoAddressSpecification extends SigmaDslTesting
       val deliberatelySmallLimit = 2300
 
       assertExceptionThrown(
-      {
-        testPay2SHAddress(addr,
-          script = scriptVarId -> ByteArrayConstant(scriptBytes),
-          costLimit = deliberatelySmallLimit)
-      },
-      { t =>
-        t.isInstanceOf[CostLimitException] &&
-            t.getMessage.contains(
-              s"Estimated execution cost 2441 exceeds the limit $deliberatelySmallLimit")}
+        {
+          testPay2SHAddress(addr,
+            script = scriptVarId -> ByteArrayConstant(scriptBytes),
+            costLimit = deliberatelySmallLimit)
+        },
+        rootCauseLike[CostLimitException](
+          s"Estimated execution cost 2441 exceeds the limit $deliberatelySmallLimit")
       )
     }
 
@@ -323,34 +327,42 @@ class ErgoAddressSpecification extends SigmaDslTesting
       val deliberatelySmallLimit = 2000
 
       assertExceptionThrown(
-      {
-        testPay2SHAddress(addr,
-          script = scriptVarId -> ByteArrayConstant(scriptBytes),
-          costLimit = deliberatelySmallLimit)
-      },
-      { t =>
-        t.isInstanceOf[CostLimitException] &&
-            t.getMessage.contains(
-              s"Estimated execution cost 2277 exceeds the limit $deliberatelySmallLimit")}
+        {
+          testPay2SHAddress(addr,
+            script = scriptVarId -> ByteArrayConstant(scriptBytes),
+            costLimit = deliberatelySmallLimit)
+        },
+        rootCauseLike[CostLimitException](
+          s"Estimated execution cost 2277 exceeds the limit $deliberatelySmallLimit")
       )
     }
 
     // when script var have invalid type
-    assertExceptionThrown(
-      testPay2SHAddress(addr, script = scriptVarId -> IntConstant(10)),
-      { t =>
-        t.isInstanceOf[CosterException] &&
-        t.getMessage.contains(s"Don't know how to evalNode(DeserializeContext(")}
-    )
+    if (isActivatedVersion4) {
+      assertExceptionThrown(
+        testPay2SHAddress(addr, script = scriptVarId -> IntConstant(10)),
+        rootCauseLike[CosterException](s"Don't know how to evalNode(DeserializeContext(")
+      )
+    } else {
+      assertExceptionThrown(
+        testPay2SHAddress(addr, script = scriptVarId -> IntConstant(10)),
+        rootCauseLike[InvalidType](s"invalid type of value")
+      )
+    }
 
     // when script var have invalid id
     val invalidId: Byte = 2
-    assertExceptionThrown(
-      testPay2SHAddress(addr, script = invalidId -> IntConstant(10)),
-      { t =>
-        t.isInstanceOf[CosterException] &&
-        t.getMessage.contains(s"Don't know how to evalNode(DeserializeContext(")}
-    )
+    if (isActivatedVersion4) {
+      assertExceptionThrown(
+        testPay2SHAddress(addr, script = invalidId -> IntConstant(10)),
+        rootCauseLike[CosterException](s"Don't know how to evalNode(DeserializeContext(")
+      )
+    } else {
+      assertExceptionThrown(
+        testPay2SHAddress(addr, script = invalidId -> IntConstant(10)),
+        rootCauseLike[NoSuchElementException]("None.get")
+      )
+    }
   }
 
 }

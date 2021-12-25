@@ -17,7 +17,9 @@ trait ProverUtils extends Interpreter {
   def generateCommitmentsFor(ergoTree: ErgoTree,
                              context: CTX,
                              generateFor: Seq[SigmaBoolean]): HintsBag = {
-    val reducedTree = fullReduction(ergoTree, context, Interpreter.emptyEnv)._1.value
+    val (aotRes, jitRes) = fullReduction(ergoTree, context, Interpreter.emptyEnv)
+    val evalMode = getEvaluationMode(context)
+    val reducedTree = if (evalMode.okEvaluateAot) aotRes.value else jitRes.value
     generateCommitmentsFor(reducedTree, generateFor)
   }
 
@@ -79,7 +81,9 @@ trait ProverUtils extends Interpreter {
                      proof: Array[Byte],
                      realSecretsToExtract: Seq[SigmaBoolean],
                      simulatedSecretsToExtract: Seq[SigmaBoolean] = Seq.empty): HintsBag = {
-    val reducedTree = fullReduction(ergoTree, context, Interpreter.emptyEnv)._1.value
+    val (aotRes, jitRes) = fullReduction(ergoTree, context, Interpreter.emptyEnv)
+    val evalMode = getEvaluationMode(context)
+    val reducedTree = if (evalMode.okEvaluateAot) aotRes.value else jitRes.value
     bagForMultisig(context, reducedTree, proof, realSecretsToExtract, simulatedSecretsToExtract)
   }
 
