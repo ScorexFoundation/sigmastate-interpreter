@@ -21,6 +21,12 @@ import sigmastate.lang.Terms.ValueOps
 import sigmastate.lang.exceptions.CostLimitException
 
 class CostingSpecification extends SigmaTestingData with CrossVersionProps {
+
+  /** This specification only make sense for ErgoTree v0, v1 and hence v4.x interpreter.
+    * So we redefine the range of applicable activated versions.
+    */
+  override val activatedVersions: Seq[Byte] = (0 until Versions.JitActivationVersion).map(_.toByte).toArray[Byte]
+
   implicit lazy val IR = new TestingIRContext {
 //    override val okPrintEvaluatedEntries = true
     substFromCostTable = false
@@ -84,11 +90,18 @@ class CostingSpecification extends SigmaTestingData with CrossVersionProps {
     ).withErgoTreeVersion(ergoTreeVersionInTests)
 
     def cost(script: String)(expCost: Int): Unit = {
-      val ergoTree = compiler.compile(env, script)
-      val res = interpreter.reduceToCrypto(context, env, ergoTree).get.cost
+      val exp = compiler.compile(env, script)
+      val ergoTree = mkTestErgoTree(exp.toSigmaProp)
+      val res = interpreter.fullReduction(ergoTree, context).cost
+
       if (printCosts)
         println(script + s" --> cost $res")
-      res shouldBe ((expCost * CostTable.costFactorIncrease / CostTable.costFactorDecrease) + CostTable.interpreterInitCost).toLong
+
+      // compute expected cost based on how the exp is compiled
+      val costOfBoolToSigmaProp = if (exp.tpe == SBoolean) CostTable.logicCost else 0
+      val expectedCost = (expCost + CostTable.logicCost + costOfBoolToSigmaProp + CostTable.interpreterInitCost).toLong
+
+      res shouldBe expectedCost
     }
 
     val ContextVarAccess = getVarCost + selectField  // `getVar(id)` + `.get`
