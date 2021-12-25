@@ -428,57 +428,47 @@ trait Interpreter extends ScorexLogging {
         // else proceed normally
       }
 
-      val complexityCost = ergoTree.complexity.toLong
-      val initCost = Evaluation.addCostChecked(context.initCost, complexityCost, context.costLimit)
-      val contextWithCost = context.withInitCost(initCost).asInstanceOf[CTX]
+      VersionContext.withVersions(context.activatedScriptVersion, ergoTree.version) {
+        val evalMode = getEvaluationMode(context)
+        evalMode match {
+          case AotEvaluationMode =>
+            val complexityCost = ergoTree.complexity.toLong
+            val initCost = Evaluation.addCostChecked(context.initCost, complexityCost, context.costLimit)
+            val contextWithCost = context.withInitCost(initCost).asInstanceOf[CTX]
 
-      val reduced = fullReduction(ergoTree, contextWithCost, env)
-      val reducedValue = reduced.value
-      val reducedCost = reduced.cost
+            val reduced = fullReduction(ergoTree, contextWithCost, env)
+            reduced.value match {
+              case TrivialProp.TrueProp => (true, reduced.cost)
+              case TrivialProp.FalseProp => (false, reduced.cost)
+              case _ =>
+                val ok = if (evalSettings.isMeasureOperationTime) {
+                  val E = ErgoTreeEvaluator.forProfiling(verifySignatureProfiler, evalSettings)
+                  verifySignature(reduced.value, message, proof)(E)
+                } else {
+                  verifySignature(reduced.value, message, proof)(null)
+                }
+                (ok, reduced.cost)
+            }
 
-      val evalMode = getEvaluationMode(contextWithCost)
+          case JitEvaluationMode =>
+            // NOTE, ergoTree.complexity is not acrued to the cost in v5.0
+            val reduced = fullReduction(ergoTree, context, env)
+            reduced.value match {
+              case TrivialProp.TrueProp => (true, reduced.cost)
+              case TrivialProp.FalseProp => (false, reduced.cost)
+              case _ =>
+                val fullJitCost = addCryptoCost(reduced.jitRes, context.costLimit)
 
-      // if necessary perform verification as v4.x (AOT based implementation)
-      var aotRes: VerificationResult = null
-      if (evalMode.okEvaluateAot) {
-          aotRes = reducedValue match {
-            case TrivialProp.TrueProp => (true, reducedCost)
-            case TrivialProp.FalseProp => (false, reducedCost)
-            case _ =>
-              val ok = if (evalSettings.isMeasureOperationTime) {
-                val E = ErgoTreeEvaluator.forProfiling(verifySignatureProfiler, evalSettings)
-                verifySignature(reducedValue, message, proof)(E)
-              } else {
-                verifySignature(reducedValue, message, proof)(null)
-              }
-              (ok, reducedCost)
-          }
+                val ok = if (evalSettings.isMeasureOperationTime) {
+                  val E = ErgoTreeEvaluator.forProfiling(verifySignatureProfiler, evalSettings)
+                  verifySignature(reduced.value, message, proof)(E)
+                } else {
+                  verifySignature(reduced.value, message, proof)(null)
+                }
+                (ok, fullJitCost)
+            }
+        }
       }
-
-      // if necessary perform verification as v5.x (JIT based implementation)
-      var jitRes: VerificationResult = null
-      if (evalMode.okEvaluateJit) {
-          jitRes = reducedValue match {
-            case TrivialProp.TrueProp => (true, reducedCost)
-            case TrivialProp.FalseProp => (false, reducedCost)
-            case _ =>
-              val fullJitCost = addCryptoCost(reduced.jitRes, context.costLimit)
-
-              val ok = if (evalSettings.isMeasureOperationTime) {
-                val E = ErgoTreeEvaluator.forProfiling(verifySignatureProfiler, evalSettings)
-                verifySignature(reducedValue, message, proof)(E)
-              } else {
-                verifySignature(reducedValue, message, proof)(null)
-              }
-              (ok, fullJitCost)
-          }
-      }
-
-      val res = evalMode match {
-        case AotEvaluationMode => aotRes
-        case JitEvaluationMode => jitRes
-      }
-      res
     }
     res
   }

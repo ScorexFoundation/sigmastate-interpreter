@@ -221,18 +221,16 @@ class ScriptVersionSwitchSpecification extends SigmaDslTesting {
 
       forEachErgoTreeVersion(treeVers) {
         // SF inactive: check cost vectors of v4.x interpreter
-        val headerFlags = ErgoTree.headerWithVersion(ergoTreeVersionInTests)
-        val ergoTree = createErgoTree(headerFlags)
+        val ergoTree = createErgoTree(ergoTreeHeaderInTests)
 
         // both prove and verify are accepting with full evaluation
-        val expectedCost = 5238L
         val pr = testProve(ergoTree, activatedScriptVersion = activatedVersionInTests)
         pr.proof shouldBe Array.emptyByteArray
-        pr.cost shouldBe expectedCost
+        pr.cost shouldBe 24L
 
         val (ok, cost) = testVerify(ergoTree, activatedScriptVersion = activatedVersionInTests)
         ok shouldBe true
-        cost shouldBe expectedCost
+        cost shouldBe 24L
       }
     }
   }
@@ -276,7 +274,7 @@ class ScriptVersionSwitchSpecification extends SigmaDslTesting {
         // the prove is successful (since it is not part of consensus)
         val pr = testProve(ergoTree, activatedScriptVersion = activatedVersionInTests)
         pr.proof shouldBe Array.emptyByteArray
-        pr.cost shouldBe 5238L
+        pr.cost shouldBe 24L
 
         // and verify is accepting without evaluation
         val (ok, cost) = testVerify(ergoTree, activatedScriptVersion = activatedVersionInTests)
@@ -305,14 +303,13 @@ class ScriptVersionSwitchSpecification extends SigmaDslTesting {
         val ergoTree = createErgoTree(headerFlags)
 
         // both prove and verify are accepting with full evaluation
-        val expectedCost = 5238L
         val pr = testProve(ergoTree, activatedScriptVersion = activatedVersionInTests)
         pr.proof shouldBe Array.emptyByteArray
-        pr.cost shouldBe expectedCost
+        pr.cost shouldBe 24L
 
         val (ok, cost) = testVerify(ergoTree, activatedScriptVersion = activatedVersionInTests)
         ok shouldBe true
-        cost shouldBe expectedCost
+        cost shouldBe 24L
       }
     }
   }

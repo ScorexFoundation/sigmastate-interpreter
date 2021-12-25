@@ -249,7 +249,7 @@ class DeserializationResilience extends SerializationSpecification
     Vector(
       ValDef(1, Plus(GetVarInt(4).get, ValUse(2, SInt))),
       ValDef(2, Plus(GetVarInt(5).get, ValUse(1, SInt)))),
-    GE(Minus(ValUse(1, SInt), ValUse(2, SInt)), 0)).asBoolValue.toSigmaProp
+    GE(Minus(ValUse(1, SInt), ValUse(2, SInt)), 0)).toSigmaProp
 
   property("recursion caught during deserialization") {
     assertExceptionThrown({
@@ -264,16 +264,17 @@ class DeserializationResilience extends SerializationSpecification
   property("recursion caught during verify") {
     assertExceptionThrown({
       val verifier = new ErgoLikeTestInterpreter
-      val pr = CostedProverResult(Array[Byte](), ContextExtension(Map()), 0L)
+      val pr = CostedProverResult(Array[Byte](),
+        ContextExtension(Map(4.toByte -> IntConstant(1), 5.toByte -> IntConstant(2))), 0L)
       val ctx = ErgoLikeContextTesting.dummy(fakeSelf, activatedVersionInTests)
-      val (res, calcTime) = BenchmarkUtil.measureTime {
-        verifier.verify(emptyEnv + (ScriptNameProp -> "verify"),
-          ErgoTree(ErgoTree.DefaultHeader, IndexedSeq(), recursiveScript), ctx, pr, fakeMessage)
+      val (res, _) = BenchmarkUtil.measureTime {
+        verifier.verify(mkTestErgoTree(recursiveScript), ctx, pr, fakeMessage)
       }
       res.getOrThrow
     }, {
       case e: NoSuchElementException =>
-        // this is expected because of deserialization is forced when ErgoTree.complexity is accessed in verify
+        // in v4.x this is expected because of deserialization is forced when ErgoTree.complexity is accessed in verify
+        // in v5.0 this is expected because ValUse(2, SInt) will not be resolved in env: DataEnv
         e.getMessage.contains("key not found: 2")
       case _ => false
     })

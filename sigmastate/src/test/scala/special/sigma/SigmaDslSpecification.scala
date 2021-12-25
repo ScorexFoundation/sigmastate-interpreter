@@ -154,7 +154,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         FixedCostItem(BinXor)
       )
     )
-    val newCost = 7633
+    val newCost = 1788 
     val cases = Seq(
       (true, true) -> Expected(Success(false), 36518, trace, newCost),
       (true, false) -> Expected(Success(true), 36518, trace, newCost),
@@ -5103,26 +5103,27 @@ class SigmaDslSpecification extends SigmaDslTesting
           newVersionedResults = Seq(
             2 -> (ExpectedResult(Success(newV), Some(newC)) -> None)
           ))
+        val newCost = 1786
         Seq(
-          (Coll[Boolean](), successNew(false, 37061, newV = false,  newC = 8214)),
-          (Coll[Boolean](false), successNew(false, 37071, newV = false, newC = 8214)),
-          (Coll[Boolean](true), successNew(false, 37071, newV = true, newC = 8214)),
-          (Coll[Boolean](false, false), successNew(false, 37081, newV = false, newC = 8214)),
-          (Coll[Boolean](false, true), successNew(true, 37081, newV = true, newC = 8214)),
-          (Coll[Boolean](true, false), successNew(true, 37081, newV = true, newC = 8214)),
-          (Coll[Boolean](true, true), successNew(false, 37081, newV = false, newC = 8214)),
-          (Coll[Boolean](false, false, false), successNew(false, 37091, newV = false, newC = 8214)),
-          (Coll[Boolean](false, false, true), successNew(true, 37091, newV = true, newC = 8214)),
-          (Coll[Boolean](false, true, false), successNew(true, 37091, newV = true, newC = 8214)),
-          (Coll[Boolean](false, true, true), successNew(true, 37091, newV = false, newC = 8214)),
-          (Coll[Boolean](true, false, false), successNew(true, 37091, newV = true, newC = 8214)),
-          (Coll[Boolean](true, false, true), successNew(true, 37091, newV = false,  newC = 8214)),
-          (Coll[Boolean](true, true, false), successNew(true, 37091, newV = false,  newC = 8214)),
-          (Coll[Boolean](true, true, true), successNew(false, 37091, newV = true,  newC = 8214)),
-          (Coll[Boolean](false, false, false, false), successNew(false, 37101, newV = false,  newC = 8214)),
-          (Coll[Boolean](false, false, false, true), successNew(true, 37101, newV = true,  newC = 8214)),
-          (Coll[Boolean](false, false, true, false), successNew(true, 37101, newV = true,  newC = 8214)),
-          (Coll[Boolean](false, false, true, true), successNew(true, 37101, newV = false,  newC = 8214))
+          (Coll[Boolean](), successNew(false, 37061, newV = false,  newCost)),
+          (Coll[Boolean](false), successNew(false, 37071, newV = false, newCost)),
+          (Coll[Boolean](true), successNew(false, 37071, newV = true, newCost)),
+          (Coll[Boolean](false, false), successNew(false, 37081, newV = false, newCost)),
+          (Coll[Boolean](false, true), successNew(true, 37081, newV = true, newCost)),
+          (Coll[Boolean](true, false), successNew(true, 37081, newV = true, newCost)),
+          (Coll[Boolean](true, true), successNew(false, 37081, newV = false, newCost)),
+          (Coll[Boolean](false, false, false), successNew(false, 37091, newV = false, newCost)),
+          (Coll[Boolean](false, false, true), successNew(true, 37091, newV = true, newCost)),
+          (Coll[Boolean](false, true, false), successNew(true, 37091, newV = true, newCost)),
+          (Coll[Boolean](false, true, true), successNew(true, 37091, newV = false, newCost)),
+          (Coll[Boolean](true, false, false), successNew(true, 37091, newV = true, newCost)),
+          (Coll[Boolean](true, false, true), successNew(true, 37091, newV = false,  newCost)),
+          (Coll[Boolean](true, true, false), successNew(true, 37091, newV = false,  newCost)),
+          (Coll[Boolean](true, true, true), successNew(false, 37091, newV = true,  newCost)),
+          (Coll[Boolean](false, false, false, false), successNew(false, 37101, newV = false,  newCost)),
+          (Coll[Boolean](false, false, false, true), successNew(true, 37101, newV = true,  newCost)),
+          (Coll[Boolean](false, false, true, false), successNew(true, 37101, newV = true,  newCost)),
+          (Coll[Boolean](false, false, true, true), successNew(true, 37101, newV = false,  newCost))
         )
       },
       changedFeature(
@@ -6519,14 +6520,14 @@ class SigmaDslSpecification extends SigmaDslTesting
             value = Failure(new NoSuchElementException("None.get")),
             cost = 0,
             newDetails = CostDetails.ZeroCost,
-            newCost = 10055,
+            newCost = 1786,
             newVersionedResults = Seq(
-              2 -> (ExpectedResult(Success(5L), Some(10055)) -> None)
+              2 -> (ExpectedResult(Success(5L), Some(1786)) -> None)
             )
           )),
         (Some(0L) -> Expected(Success(1L), cost = 39012,
           expectedDetails = CostDetails.ZeroCost,
-          expectedNewCost = 10063)),
+          expectedNewCost = 1794)),
         (Some(Long.MaxValue) -> Expected(new ArithmeticException("long overflow")))
       ),
       changedFeature(
