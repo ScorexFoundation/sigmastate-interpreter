@@ -25,7 +25,7 @@ class CostingSpecification extends SigmaTestingData with CrossVersionProps {
   /** This specification only make sense for ErgoTree v0, v1 and hence v4.x interpreter.
     * So we redefine the range of applicable activated versions.
     */
-  override val activatedVersions: Seq[Byte] = (0 until Versions.JitActivationVersion).map(_.toByte).toArray[Byte]
+  override val activatedVersions: Seq[Byte] = (0 until VersionContext.JitActivationVersion).map(_.toByte).toArray[Byte]
 
   implicit lazy val IR = new TestingIRContext {
 //    override val okPrintEvaluatedEntries = true
