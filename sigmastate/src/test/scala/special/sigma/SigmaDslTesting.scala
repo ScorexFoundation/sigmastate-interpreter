@@ -641,7 +641,9 @@ class SigmaDslTesting extends PropSpec
       // check the old implementation against Scala semantic function
       var oldRes: Try[(B, CostDetails)] = null
       if (ergoTreeVersionInTests < VersionContext.JitActivationVersion)
-        oldRes = checkEq(scalaFunc)(oldF)(input)
+        oldRes = VersionContext.withVersions(activatedVersionInTests, ergoTreeVersionInTests) {
+          checkEq(scalaFunc)(oldF)(input)
+        }
 
       val newRes = {
         // check the new implementation against Scala semantic function

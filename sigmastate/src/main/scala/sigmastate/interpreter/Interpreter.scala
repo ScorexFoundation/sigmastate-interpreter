@@ -246,47 +246,49 @@ trait Interpreter extends ScorexLogging {
                     env: ScriptEnv): FullReductionResult = {
     implicit val vs: SigmaValidationSettings = ctx.validationSettings
     val context = ctx.withErgoTreeVersion(ergoTree.version).asInstanceOf[CTX]
-    val prop = propositionFromErgoTree(ergoTree, context)
-    val evalMode = getEvaluationMode(context)
+    VersionContext.withVersions(context.activatedScriptVersion, ergoTree.version) {
+      val prop = propositionFromErgoTree(ergoTree, context)
+      val evalMode = getEvaluationMode(context)
 
-    val res = prop match {
-      case SigmaPropConstant(p) =>
-        val sb = SigmaDsl.toSigmaBoolean(p)
+      val res = prop match {
+        case SigmaPropConstant(p) =>
+          val sb = SigmaDsl.toSigmaBoolean(p)
 
-        var aotRes: AotReductionResult = null
-        if (evalMode.okEvaluateAot) {
-          val aotCost = SigmaBoolean.estimateCost(sb)
-          val resAotCost = Evaluation.addCostChecked(context.initCost, aotCost, context.costLimit)
-          aotRes = AotReductionResult(sb, resAotCost)
-        }
-
-        var jitRes: JitReductionResult = null
-        if (evalMode.okEvaluateJit) {
-          // NOTE, evaluator cost unit needs to be scaled to the cost unit of context
-          val jitCost = Eval_SigmaPropConstant.costKind.cost.toBlockCost
-          val resJitCost = Evaluation.addCostChecked(context.initCost, jitCost, context.costLimit)
-          jitRes = JitReductionResult(sb, resJitCost)
-        }
-        FullReductionResult(aotRes, jitRes)
-      case _ if !ergoTree.hasDeserialize =>
-        var aotRes: AotReductionResult = null
-        if (evalMode.okEvaluateAot) {
-          val r = precompiledScriptProcessor.getReducer(ergoTree, context.validationSettings)
-          aotRes = r.reduce(context)
-        }
-
-        var jitRes: JitReductionResult = null
-        if (evalMode.okEvaluateJit) {
-          val ctx = context.asInstanceOf[ErgoLikeContext]
-          jitRes = VersionContext.withVersions(ctx.activatedScriptVersion, ergoTree.version) {
-            ErgoTreeEvaluator.evalToCrypto(ctx, ergoTree, evalSettings)
+          var aotRes: AotReductionResult = null
+          if (evalMode.okEvaluateAot) {
+            val aotCost = SigmaBoolean.estimateCost(sb)
+            val resAotCost = Evaluation.addCostChecked(context.initCost, aotCost, context.costLimit)
+            aotRes = AotReductionResult(sb, resAotCost)
           }
-        }
-        FullReductionResult(aotRes, jitRes)
-      case _ =>
-        reductionWithDeserialize(ergoTree, prop, context, env, evalMode)
+
+          var jitRes: JitReductionResult = null
+          if (evalMode.okEvaluateJit) {
+            // NOTE, evaluator cost unit needs to be scaled to the cost unit of context
+            val jitCost = Eval_SigmaPropConstant.costKind.cost.toBlockCost
+            val resJitCost = Evaluation.addCostChecked(context.initCost, jitCost, context.costLimit)
+            jitRes = JitReductionResult(sb, resJitCost)
+          }
+          FullReductionResult(aotRes, jitRes)
+        case _ if !ergoTree.hasDeserialize =>
+          var aotRes: AotReductionResult = null
+          if (evalMode.okEvaluateAot) {
+            val r = precompiledScriptProcessor.getReducer(ergoTree, context.validationSettings)
+            aotRes = r.reduce(context)
+          }
+
+          var jitRes: JitReductionResult = null
+          if (evalMode.okEvaluateJit) {
+            val ctx = context.asInstanceOf[ErgoLikeContext]
+            jitRes = VersionContext.withVersions(ctx.activatedScriptVersion, ergoTree.version) {
+              ErgoTreeEvaluator.evalToCrypto(ctx, ergoTree, evalSettings)
+            }
+          }
+          FullReductionResult(aotRes, jitRes)
+        case _ =>
+          reductionWithDeserialize(ergoTree, prop, context, env, evalMode)
+      }
+      res
     }
-    res
   }
 
   /** Full reduction of contract proposition given in the ErgoTree form to a SigmaBoolean value
