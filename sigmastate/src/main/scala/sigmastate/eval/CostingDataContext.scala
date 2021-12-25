@@ -3,8 +3,7 @@ package sigmastate.eval
 import com.google.common.primitives.Ints
 
 import java.math.BigInteger
-import java.util
-
+import java.util.Arrays
 import org.bouncycastle.math.ec.ECPoint
 import org.ergoplatform.{ErgoBox, SigmaConstants}
 import org.ergoplatform.validation.ValidationRules
@@ -352,7 +351,7 @@ case class CostingBox(isCost: Boolean, val ebox: ErgoBox) extends Box with Wrapp
 
   override def equals(obj: Any): Boolean = (this eq obj.asInstanceOf[AnyRef]) || (obj != null && {
     obj match {
-      case obj: Box => util.Arrays.equals(id.toArray, obj.id.toArray)
+      case obj: Box => Arrays.equals(id.toArray, obj.id.toArray)
       case _ =>
         // this case was missing in v4.x, however has never been a problem
         // Thus, v5.0 interpreter will not fail (while v4.x would fail here)
