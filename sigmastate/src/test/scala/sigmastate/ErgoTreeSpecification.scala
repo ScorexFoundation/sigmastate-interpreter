@@ -448,25 +448,29 @@ class ErgoTreeSpecification extends SigmaTestingData {
   property("Apply with 0 arguments") {
     val expr = Apply(FuncValue(Vector(), IntConstant(1)), IndexedSeq())
 
-    // old v4.x interpreter
-    assertExceptionThrown(
-      {
-        val oldF = funcFromExpr[Int, Int]("({ (x: Int) => 1 })()", expr)
-      },
-      exceptionLike[CosterException]("Don't know how to evalNode")
-    )
+    forEachScriptAndErgoTreeVersion(activatedVersions, ergoTreeVersions) {
+      VersionContext.withVersions(activatedVersionInTests, ergoTreeVersionInTests) {
+        // old v4.x interpreter
+        assertExceptionThrown(
+          {
+            val oldF = funcFromExpr[Int, Int]("({ (x: Int) => 1 })()", expr)
+          },
+          exceptionLike[CosterException]("Don't know how to evalNode")
+        )
 
-    // new v5.0 interpreter
-    val newF = funcJitFromExpr[Int, Int]("({ (x: Int) => 1 })()", expr)
-    assertExceptionThrown(
-      {
-        val x = 100 // any value which is not used anyway
-        val (y, _) = newF.apply(x)
-      },
-      exceptionLike[InterpreterException]("Function application must have 1 argument, but was:")
-    )
+        // new v5.0 interpreter
+        val newF = funcJitFromExpr[Int, Int]("({ (x: Int) => 1 })()", expr)
+        assertExceptionThrown(
+          {
+            val x = 100 // any value which is not used anyway
+            val (y, _) = newF.apply(x)
+          },
+          exceptionLike[InterpreterException]("Function application must have 1 argument, but was:")
+        )
+      }
+    }
+    
   }
-
 
   property("Apply with one argument") {
     val expr = Apply(
@@ -476,16 +480,22 @@ class ErgoTreeSpecification extends SigmaTestingData {
 
     val x = 1
 
-    { // old v4.x interpreter
-      val oldF = funcFromExpr[Int, Int](script, expr)
-      val (y, _) = oldF.apply(x)
-      y shouldBe -1
-    }
+    forEachScriptAndErgoTreeVersion(activatedVersions, ergoTreeVersions) {
+      VersionContext.withVersions(activatedVersionInTests, ergoTreeVersionInTests) {
 
-    { // new v5.0 interpreter
-      val newF = funcJitFromExpr[Int, Int](script, expr)
-      val (y, _) = newF.apply(x)
-      y shouldBe -1
+        { // old v4.x interpreter
+          val oldF = funcFromExpr[Int, Int](script, expr)
+          val (y, _) = oldF.apply(x)
+          y shouldBe -1
+        }
+
+        { // new v5.0 interpreter
+          val newF = funcJitFromExpr[Int, Int](script, expr)
+          val (y, _) = newF.apply(x)
+          y shouldBe -1
+        }
+
+      }
     }
   }
 
@@ -496,22 +506,27 @@ class ErgoTreeSpecification extends SigmaTestingData {
     )
     val script = "{ (x: Int, y: Int) => x + y }"
 
-    // old v4.x interpreter
-    assertExceptionThrown(
-      {
-       val oldF = funcFromExpr[(Int, Int), Int](script, expr)
-      },
-      exceptionLike[CosterException]("Don't know how to evalNode")
-    )
+    forEachScriptAndErgoTreeVersion(activatedVersions, ergoTreeVersions) {
+      VersionContext.withVersions(activatedVersionInTests, ergoTreeVersionInTests) {
 
-    // ndw v5.0 interpreter
-    val newF = funcJitFromExpr[(Int, Int), Int](script, expr)
-    assertExceptionThrown(
-      {
-        val (y, _) = newF.apply((1, 1))
-      },
-      exceptionLike[InterpreterException]("Function application must have 1 argument, but was:")
-    )
+        // old v4.x interpreter
+        assertExceptionThrown(
+          {
+            val oldF = funcFromExpr[(Int, Int), Int](script, expr)
+          },
+          exceptionLike[CosterException]("Don't know how to evalNode")
+        )
+
+        // ndw v5.0 interpreter
+        val newF = funcJitFromExpr[(Int, Int), Int](script, expr)
+          assertExceptionThrown(
+          {
+            val (y, _) = newF.apply((1, 1))
+          },
+          exceptionLike[InterpreterException]("Function application must have 1 argument, but was:")
+        )
+      }
+    }
 
   }
 }

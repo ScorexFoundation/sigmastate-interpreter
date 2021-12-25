@@ -72,4 +72,15 @@ object VersionContext {
     */
   def withVersions[T](activatedVersion: Byte, ergoTreeVersion: Byte)(block: => T): T =
     _versionContext.withValue(VersionContext(activatedVersion, ergoTreeVersion))(block)
+
+  /** Checks the version context has the given versions*/
+  def checkVersions(activatedVersion: Byte, ergoTreeVersion: Byte) = {
+    val ctx = VersionContext.current
+    if (ctx.activatedVersion != activatedVersion || ctx.ergoTreeVersion != ergoTreeVersion) {
+      val expected = VersionContext(activatedVersion, ergoTreeVersion)
+      throw new IllegalStateException(
+        s"Global VersionContext.current = ${ctx} while expected $expected.")
+    }
+  }
+
 }
