@@ -204,13 +204,17 @@ object ValidationRules {
   object CheckSerializableTypeCode extends ValidationRule(1009,
     "Check the data values of the type (given by type code) can be serialized")
       with SoftForkWhenReplaced {
+
+    /** Creates an exception which is used as a cause when throwing a ValidationException. */
+    def createException(typeCode: Byte) =
+      new SerializerException(
+        s"Data value of the type with the code ${toUByte(typeCode)} cannot be deserialized.")
+
     final def apply[T](typeCode: Byte): Unit = {
       checkRule()
       val ucode = toUByte(typeCode)
       if (ucode > toUByte(OpCodes.LastDataType)) {
-        throwValidationException(
-          new SerializerException(s"Data value of the type with the code $ucode cannot be deserialized."),
-          Array(typeCode))
+        throwValidationException(createException(typeCode), Array(typeCode))
       }
     }
   }

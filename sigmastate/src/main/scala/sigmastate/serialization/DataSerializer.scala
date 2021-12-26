@@ -63,7 +63,10 @@ object DataSerializer {
             serialize(x, tColl.elemType, w)
           }
       }
-
+    case tOpt: SOption[a] if VersionContext.current.isJitActivated =>
+      w.putOption(v.asInstanceOf[tOpt.WrappedType])((w, v) =>
+        serialize(v, tOpt.elemType, w)
+      )
     case t: STuple =>
       val arr = Evaluation.fromDslTuple(v, t).asInstanceOf[t.WrappedType]
       val len = arr.length
@@ -114,6 +117,13 @@ object DataSerializer {
       case tColl: SCollectionType[a] =>
         val len = r.getUShort()
         deserializeColl(len, tColl.elemType, r)
+      case tOpt: SOption[a] =>
+        if (VersionContext.current.isJitActivated)
+          r.getOption(deserialize(tOpt.elemType, r))
+        else
+          CheckSerializableTypeCode.throwValidationException(
+            CheckSerializableTypeCode.createException(tOpt.typeCode),
+            Array(tOpt.typeCode))
       case tuple: STuple =>
         val arr = tuple.items.map { t =>
           deserialize(t, r)
