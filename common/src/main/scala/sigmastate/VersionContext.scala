@@ -1,5 +1,7 @@
 package sigmastate
 
+import sigmastate.VersionContext.JitActivationVersion
+
 import scala.util.DynamicVariable
 
 /** Represent currently activated protocol version and currently executed ErgoTree version.
@@ -12,7 +14,10 @@ import scala.util.DynamicVariable
   *
   * @see
   */
-case class VersionContext(activatedVersion: Byte, ergoTreeVersion: Byte)
+case class VersionContext(activatedVersion: Byte, ergoTreeVersion: Byte) {
+  /** @return true, if JIT version of Ergo protocol was activated. */
+  def isJitActivated: Boolean = activatedVersion >= JitActivationVersion
+}
 
 object VersionContext {
   /** Maximum version of ErgoTree supported by this interpreter release.
