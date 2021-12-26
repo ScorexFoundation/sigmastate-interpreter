@@ -6329,8 +6329,8 @@ class SigmaDslSpecification extends SigmaDslTesting
       verifyCases(
       {
         def success[T](v: T) = Expected(Success(v), 37765)
-        val arr1 = Gen.listOfN(10000, arbitrary[Int]).map(_.toArray).sample.get
-        val arr2 = Gen.listOfN(20000, arbitrary[Int]).map(_.toArray).sample.get
+        val arr1 = Gen.listOfN(100, arbitrary[Int]).map(_.toArray).sample.get
+        val arr2 = Gen.listOfN(200, arbitrary[Int]).map(_.toArray).sample.get
         Seq(
           (Coll[Int](), Coll[Int]()) -> success(Coll[Int]()),
           (Coll[Int](), Coll[Int](1)) -> success(Coll[Int](1)),
@@ -6339,7 +6339,7 @@ class SigmaDslSpecification extends SigmaDslTesting
           (Coll[Int](1), Coll[Int](2, 3)) -> success(Coll[Int](1, 2, 3)),
           (Coll[Int](1, 2), Coll[Int](3)) -> success(Coll[Int](1, 2, 3)),
           (Coll[Int](1, 2), Coll[Int](3, 4)) -> success(Coll[Int](1, 2, 3, 4)),
-          (Coll[Int](arr1:_*), Coll[Int](arr2:_*)) -> Expected(Success(Coll[Int](arr1 ++ arr2:_*)), 40105)
+          (Coll[Int](arr1:_*), Coll[Int](arr2:_*)) -> Expected(Success(Coll[Int](arr1 ++ arr2:_*)), 37785)
         )
       },
       existingFeature(

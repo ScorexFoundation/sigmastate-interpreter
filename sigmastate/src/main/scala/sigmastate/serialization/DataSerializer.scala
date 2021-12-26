@@ -77,7 +77,9 @@ object DataSerializer {
       }
 
     // TODO v6.0 (3h): support Option[T] (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/659)
-    case _ => sys.error(s"Don't know how to serialize ($v, $tpe)")
+    case _ =>
+      CheckSerializableTypeCode(tpe.typeCode)
+      throw new SerializerException(s"Don't know how to serialize ($v, $tpe)")
   }
 
   /** Reads a data value from Reader. The data value bytes is expected to confirm

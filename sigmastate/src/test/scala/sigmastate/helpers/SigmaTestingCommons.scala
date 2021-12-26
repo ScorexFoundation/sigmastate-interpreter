@@ -2,8 +2,8 @@ package sigmastate.helpers
 
 import org.ergoplatform.SigmaConstants.ScriptCostLimit
 import org.ergoplatform._
-import org.ergoplatform.validation.ValidationRules.{CheckCalcFunc, CheckCostFunc}
-import org.ergoplatform.validation.ValidationSpecification
+import org.ergoplatform.validation.ValidationRules.{CheckCalcFunc, CheckCostFunc, CheckSerializableTypeCode}
+import org.ergoplatform.validation.{ValidationException, ValidationSpecification}
 import org.scalacheck.Arbitrary.arbByte
 import org.scalacheck.Gen
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
@@ -23,7 +23,7 @@ import sigmastate.interpreter.{CryptoConstants, Interpreter, _}
 import sigmastate.lang.{CompilerSettings, SigmaCompiler, Terms}
 import sigmastate.serialization.SigmaSerializer
 import sigmastate.utils.Helpers._
-import sigmastate.{JitCost, SGroupElement, SType, TestsBase}
+import sigmastate.{JitCost, SGroupElement, SOption, SType, TestsBase}
 import special.sigma
 
 import scala.language.implicitConversions
@@ -147,11 +147,19 @@ trait SigmaTestingCommons extends PropSpec
         val costCtx = calcCtx.copy(isCost = true)
         (costCtx, calcCtx)
       case _ =>
-        val ergoCtx = ErgoLikeContextTesting.dummy(
-          createBox(0, TrueTree), activatedVersionInTests)
-            .withErgoTreeVersion(ergoTreeVersionInTests)
-            .withBindings(1.toByte -> Constant[SType](x.asInstanceOf[SType#WrappedType], tpeA))
-            .withBindings(bindings: _*)
+        val box = createBox(0, TrueTree)
+
+        // make sure we are doing tests with the box with is actually serializable
+        try roundTripTest(box)(ErgoBox.sigmaSerializer)
+        catch {
+          case ValidationException(_, r: CheckSerializableTypeCode.type, Seq(SOption.OptionTypeCode), _) =>
+          // ignore the problem with Option serialization, but test all the other cases
+        }
+
+        val ergoCtx = ErgoLikeContextTesting.dummy(box, activatedVersionInTests)
+          .withErgoTreeVersion(ergoTreeVersionInTests)
+          .withBindings(1.toByte -> Constant[SType](x.asInstanceOf[SType#WrappedType], tpeA))
+          .withBindings(bindings: _*)
         val calcCtx = ergoCtx.toSigmaContext(isCost = false).asInstanceOf[CostingDataContext]
         val costCtx = calcCtx.copy(isCost = true)
         (costCtx, calcCtx)
