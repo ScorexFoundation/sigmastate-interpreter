@@ -149,6 +149,9 @@ class ErgoTreeEvaluator(
     DBuffer.ofSize[CostItem](1000)
   }
 
+  /** Returns currently accumulated JIT cost in this evaluator. */
+  def getAccumulatedCost: JitCost = coster.totalCost
+
   /** Returns the currently accumulated trace of cost items in this evaluator.
     * A new array is allocated and returned, the evaluator state is unaffected.
     */

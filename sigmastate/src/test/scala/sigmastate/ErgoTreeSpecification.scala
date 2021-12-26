@@ -3,19 +3,25 @@ package sigmastate
 import org.ergoplatform.ErgoBox
 import org.ergoplatform.settings.ErgoAlgos
 import org.ergoplatform.validation.{ValidationException, ValidationRules}
-import scalan.Nullable
+import scalan.RType.asType
+import scalan.{Nullable, RType}
+import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
+import sigmastate.VersionContext._
+import sigmastate.eval.Evaluation
 import sigmastate.lang.SourceContext
-import special.sigma.SigmaTestingData
 import sigmastate.lang.Terms._
-import sigmastate.lang.exceptions.{CosterException, InterpreterException}
+import sigmastate.lang.exceptions.{CostLimitException, CosterException, InterpreterException}
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
-import sigmastate.utxo.{DeserializeContext, DeserializeRegister}
+import sigmastate.utxo._
+import special.collection._
+import special.sigma.SigmaDslTesting
+
 
 /** Regression tests with ErgoTree related test vectors.
   * This test vectors verify various constants which are consensus critical and should not change.
   */
-class ErgoTreeSpecification extends SigmaTestingData {
+class ErgoTreeSpecification extends SigmaDslTesting {
 
   property("Value.sourceContext") {
     val srcCtx = SourceContext.fromParserIndex(0, "")
@@ -527,6 +533,120 @@ class ErgoTreeSpecification extends SigmaTestingData {
         )
       }
     }
-
   }
+
+  /** Deeply nested maps which creates deeply nested collections. */
+  def mkFuncValue(nDepth: Int, level: Int): SValue = {
+    def mkCollection(nDepth: Int, level: Int): SValue = {
+      if (level < nDepth)
+        MapCollection(
+          ValUse(1, SByteArray),
+          FuncValue(
+            Array((level + 1, SByte)),
+            mkCollection(nDepth, level + 1)
+          )
+        )
+      else
+        ValUse(1, SByteArray)
+    }
+
+    FuncValue(
+      Array((1, SByteArray)),
+      mkCollection(nDepth, level))
+  }
+
+  property("Building deeply nested expression") {
+
+    mkFuncValue(1, 1) shouldBe
+      FuncValue(
+        Array((1, SByteArray)),
+        ValUse(1, SByteArray))
+
+    mkFuncValue(2, 1) shouldBe
+      FuncValue(
+        Array((1, SByteArray)),
+        MapCollection(
+          ValUse(1, SByteArray),
+          FuncValue(
+            Array((2, SByte)),
+            ValUse(1, SByteArray)
+          )
+        ))
+
+    mkFuncValue(3, 1) shouldBe
+      FuncValue(
+        Array((1, SByteArray)),
+        MapCollection(
+          ValUse(1, SByteArray),
+          FuncValue(
+            Array((2, SByte)),
+            MapCollection(
+              ValUse(1, SByteArray),
+              FuncValue(
+                Array((3, SByte)),
+                ValUse(1, SByteArray)
+              )
+            )
+          )
+        ))
+  }
+
+  def exprCostForSize(size: Int, oldF: CompiledFunc[Coll[Byte], AnyRef], expected: Option[Coll[Byte] => AnyRef]) = {
+    val xs = Coll(Array.tabulate[Byte](size)(i => i.toByte):_*)
+
+    val (y, details) = oldF(xs)
+    assert(details.actualTimeNano.get < 10000000)
+
+    if (expected.isDefined) {
+      val e = expected.get(xs)
+      y shouldBe e
+    }
+    details.cost
+  }
+
+  def mkCompiledFunc(depth: Int): CompiledFunc[Coll[Byte], AnyRef] = {
+    val expr = Apply(
+      mkFuncValue(depth, 1),
+      Array(OptionGet(GetVar(1.toByte, SOption(SByteArray))))
+    )
+    val script = "{ just any string }"
+    implicit val tRes: RType[AnyRef] = asType[AnyRef](Evaluation.stypeToRType(expr.tpe))
+    val oldF = funcJitFromExpr[Coll[Byte], AnyRef](script, expr)
+    oldF
+  }
+
+  property("Spam: Building large nested collection") {
+
+    forEachScriptAndErgoTreeVersion(
+       activatedVers = Array(JitActivationVersion),
+       ergoTreeVers = ergoTreeVersions) {
+      VersionContext.withVersions(activatedVersionInTests, ergoTreeVersionInTests) {
+
+        { // depth 3
+          val cf = mkCompiledFunc(3)
+          val expected = (xs: Coll[Byte]) => xs.map(_ => xs.map(_ => xs))
+          exprCostForSize(10, cf, Some(expected)) shouldBe JitCost(1456)
+          exprCostForSize(100, cf, Some(expected)) shouldBe JitCost(104605)
+
+          assertExceptionThrown(
+            exprCostForSize(1000, cf, Some(expected)),
+            exceptionLike[CostLimitException]("Estimated execution cost JitCost(10000005) exceeds the limit JitCost(10000000)")
+          )
+        }
+
+        { // depth 60
+          val cf = mkCompiledFunc(60)
+          val expected = (xs: Coll[Byte]) => xs.map(_ => xs.map(_ => xs))
+          exprCostForSize(1, cf, None) shouldBe JitCost(2194)
+
+          assertExceptionThrown(
+            exprCostForSize(2, cf, None),
+            exceptionLike[CostLimitException]("Estimated execution cost JitCost(10000001) exceeds the limit JitCost(10000000)")
+          )
+        }
+
+      }
+    }
+  }
+
 }

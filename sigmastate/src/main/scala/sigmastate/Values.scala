@@ -1156,6 +1156,7 @@ object Values {
     * @param body expression, which refers function parameters with ValUse.
     */
   case class FuncValue(args: IndexedSeq[(Int,SType)], body: Value[SType]) extends NotReadyValue[SFunc] {
+    import FuncValue._
     override def companion = FuncValue
     lazy val tpe: SFunc = {
       val nArgs = args.length
@@ -1175,8 +1176,7 @@ object Values {
         (vArg: Any) => {
           Value.checkType(arg0._2, vArg)
           var env1: DataEnv = null
-          E.addFixedCost(FuncValue.AddToEnvironmentDesc_CostKind,
-                                     FuncValue.AddToEnvironmentDesc) {
+          E.addFixedCost(AddToEnvironmentDesc_CostKind, AddToEnvironmentDesc) {
             env1 = env + (arg0._1 -> vArg)
           }
           val res = body.evalTo[Any](env1)
