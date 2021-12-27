@@ -808,6 +808,7 @@ object Values {
       val dhtSerializer = ProveDHTupleSerializer(ProveDHTuple.apply)
       val dlogSerializer = ProveDlogSerializer(ProveDlog.apply)
 
+      // TODO mainnet v5.0: control maxTreeDepth same as in deserialize
       override def serialize(data: SigmaBoolean, w: SigmaByteWriter): Unit = {
         w.put(data.opCode)
         data match {

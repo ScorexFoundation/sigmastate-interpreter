@@ -1732,7 +1732,7 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
     val costKind = mc.method.costKind.asInstanceOf[PerItemCost]
     var res: Int = -1
     E.addSeqCost(costKind, mc.method.opDesc) { () =>
-      // TODO v5.0: this loop is bounded when MaxCollSize limit is enforced
+      // this loop is bounded because MaxArrayLength limit is enforced
       val len = xs.length
       val start = math.max(from, 0)
       var i = start
