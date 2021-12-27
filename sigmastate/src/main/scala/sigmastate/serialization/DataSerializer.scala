@@ -83,7 +83,10 @@ object DataSerializer {
   }
 
   /** Reads a data value from Reader. The data value bytes is expected to confirm
-    * to the type descriptor `tpe`. */
+    * to the type descriptor `tpe`.
+    * The data structure depth is limited by r.maxTreeDepth which is
+    * SigmaSerializer.MaxTreeDepth by default.
+    */
   def deserialize[T <: SType](tpe: T, r: SigmaByteReader): T#WrappedType = {
     val depth = r.level
     r.level = depth + 1

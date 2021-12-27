@@ -6,7 +6,7 @@ import sigmastate.SType
 import sigmastate.Values.{Value, ErgoTree, Constant, UnparsedErgoTree}
 import sigmastate.lang.DeserializationSigmaBuilder
 import sigmastate.lang.Terms.ValueOps
-import sigmastate.lang.exceptions.{SerializerException, InputSizeLimitExceeded}
+import sigmastate.lang.exceptions.{SerializerException, ReaderPositionLimitExceeded}
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import scalan.util.Extensions._
 import sigmastate.Values.ErgoTree.EmptyConstants
@@ -175,8 +175,8 @@ class ErgoTreeSerializer {
           propositionBytes, Some(hasDeserialize))
       }
       catch {
-        case e: InputSizeLimitExceeded =>
-          throw ValidationException(s"Data size check failed", CheckPositionLimit, Nil, Some(e))
+        case e: ReaderPositionLimitExceeded =>
+          CheckPositionLimit.throwValidationException(e)
       }
     }
     catch {

@@ -320,10 +320,32 @@ object ValidationRules {
     }
   }
 
-  /** This rule doesn't have it's own validation logic, however it is used in creation of
-    * ValidationExceptions, which in turn can be checked for soft-fork condition using `this.isSoftFork`. */
+  /** This rule it is used in creation of ValidationExceptions, which in turn can be
+    * checked for soft-fork condition using `this.isSoftFork`. Thus, this rule can be
+    * replaced with a new rule and the limit can be increased.
+    */
   object CheckPositionLimit extends ValidationRule(1014,
     "Check that the Reader has not exceeded the position limit.") with SoftForkWhenReplaced {
+
+    /** Wraps the given cause into [[ValidationException]] and throws it. */
+    def throwValidationException(cause: ReaderPositionLimitExceeded): Nothing = {
+      throwValidationException(cause, args = Nil)
+    }
+
+    /** Throws a [[ValidationException]] with the given parameters. */
+    def throwValidationException(position: Int, positionLimit: Int): Nothing = {
+      throwValidationException(
+        new ReaderPositionLimitExceeded(
+          s"SigmaByteReader position limit $positionLimit is reached at position $position",
+          position, positionLimit))
+    }
+
+    final def apply(position: Int, positionLimit: Int): Unit = {
+      checkRule()
+      if (position > positionLimit) {
+        throwValidationException(position, positionLimit)
+      }
+    }
   }
 
   object CheckLoopLevelInCostFunction extends ValidationRule(1015,

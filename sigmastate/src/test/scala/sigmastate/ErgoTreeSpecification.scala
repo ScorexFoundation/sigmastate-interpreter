@@ -535,7 +535,9 @@ class ErgoTreeSpecification extends SigmaDslTesting {
     }
   }
 
-  /** Deeply nested maps which creates deeply nested collections. */
+  /** Deeply nested maps which creates deeply nested collections.
+    * @return lambda like `(xs: Coll[Byte]) => xs.map(_ => xs.map(... xs.map(_ => xs)...))`
+    */
   def mkFuncValue(nDepth: Int, level: Int): SValue = {
     def mkCollection(nDepth: Int, level: Int): SValue = {
       if (level < nDepth)

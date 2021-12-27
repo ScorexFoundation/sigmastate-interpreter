@@ -1,11 +1,12 @@
 package sigmastate.utils
 
+import org.ergoplatform.validation.ValidationRules.CheckPositionLimit
+import scorex.util.Extensions._
 import scorex.util.serialization.Reader
 import sigmastate.SType
 import sigmastate.Values.{SValue, Value}
-import sigmastate.lang.exceptions.{InputSizeLimitExceeded, DeserializeCallDepthExceeded}
+import sigmastate.lang.exceptions.DeserializeCallDepthExceeded
 import sigmastate.serialization._
-import scorex.util.Extensions._
 import sigmastate.util.safeNewArray
 import spire.syntax.all.cfor
 
@@ -27,9 +28,10 @@ class SigmaByteReader(val r: Reader,
                       val maxTreeDepth: Int = SigmaSerializer.MaxTreeDepth)
   extends Reader {
 
-  @inline private def checkPositionLimit(): Unit =
-    if (position > positionLimit)
-      throw new InputSizeLimitExceeded(s"SigmaByteReader position limit $positionLimit is reached at position $position")
+  /** Checks that the current reader position is <= positionLimit. */
+  @inline private def checkPositionLimit(): Unit = {
+    CheckPositionLimit(position, positionLimit)
+  }
 
   /** The reader should be lightweight to create. In most cases ErgoTrees don't have
     * ValDef nodes hence the store is not necessary and it's initialization dominates the

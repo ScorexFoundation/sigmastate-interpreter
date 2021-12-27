@@ -7,7 +7,7 @@ import sigmastate.Values.{ShortConstant, BigIntConstant, ConstantPlaceholder, Va
 import sigmastate._
 import sigmastate.eval.{IRContext, CBigInt}
 import sigmastate.helpers.SigmaTestingCommons
-import sigmastate.lang.exceptions.{SerializerException, InputSizeLimitExceeded}
+import sigmastate.lang.exceptions.{SerializerException, ReaderPositionLimitExceeded}
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.utxo.{DeserializeContext, DeserializeRegister}
 
@@ -106,7 +106,7 @@ class ErgoTreeSerializerSpecification extends SerializationSpecification
     assertExceptionThrown({
       DefaultSerializer.deserializeErgoTree(r, 1)
     }, {
-      case e: SerializerException => rootCause(e).isInstanceOf[InputSizeLimitExceeded]
+      case e: SerializerException => rootCause(e).isInstanceOf[ReaderPositionLimitExceeded]
     })
   }
 
