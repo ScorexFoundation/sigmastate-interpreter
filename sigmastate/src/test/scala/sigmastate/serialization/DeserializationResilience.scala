@@ -85,9 +85,9 @@ class DeserializationResilience extends SerializationSpecification
   }
 
   property("ergo box propositionBytes max size check") {
-    val bigTree = new SigmaAnd(
+    val bigTree = mkTestErgoTree(SigmaAnd(
       Gen.listOfN((SigmaSerializer.MaxPropositionSize / 2) / CryptoConstants.groupSize,
-        proveDlogGen.map(_.toSigmaProp)).sample.get).treeWithSegregation
+        proveDlogGen.map(_.toSigmaProp)).sample.get))
     val b = new ErgoBoxCandidate(1L, bigTree, 1)
     val w = SigmaSerializer.startWriter()
     ErgoBoxCandidate.serializer.serialize(b, w)
