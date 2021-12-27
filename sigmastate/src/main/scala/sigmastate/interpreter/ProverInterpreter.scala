@@ -1,7 +1,5 @@
 package sigmastate.interpreter
 
-import java.math.BigInteger
-
 import gf2t.{GF2_192, GF2_192_Poly}
 import org.bitbucket.inkytonik.kiama.attribution.AttributionCore
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, everywheretd, rule}
@@ -9,16 +7,17 @@ import org.bitbucket.inkytonik.kiama.rewriting.Strategy
 import scalan.util.CollectionUtil._
 import sigmastate.TrivialProp.{FalseProp, TrueProp}
 import sigmastate.Values._
+import sigmastate.VersionContext.MaxSupportedScriptVersion
 import sigmastate._
 import sigmastate.basics.DLogProtocol._
 import sigmastate.basics.VerifierMessage.Challenge
 import sigmastate.basics._
-import sigmastate.eval.Evaluation
 import sigmastate.eval.Evaluation.addCostChecked
 import sigmastate.interpreter.EvalSettings._
-import sigmastate.lang.exceptions.CostLimitException
+import sigmastate.lang.exceptions.InterpreterException
 import sigmastate.utils.Helpers
 
+import java.math.BigInteger
 import scala.util.Try
 
 // TODO ProverResult was moved from here, compare with new-eval after merge
@@ -120,6 +119,15 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
             context: CTX,
             message: Array[Byte],
             hintsBag: HintsBag = HintsBag.empty): Try[CostedProverResult] = Try {
+    checkSoftForkCondition(ergoTree, context) match {
+      case Some(_) =>
+        throw new InterpreterException(
+          s"Both ErgoTree version ${ergoTree.version} and activated version " +
+            s"${context.activatedScriptVersion} is greater than MaxSupportedScriptVersion $MaxSupportedScriptVersion")
+
+      case None => // proceed normally
+    }
+
     VersionContext.withVersions(context.activatedScriptVersion, ergoTree.version) {
       val evalMode = getEvaluationMode(context)
       val (resValue, resCost) = evalMode match {
