@@ -597,7 +597,7 @@ class ErgoTreeSpecification extends SigmaDslTesting {
     val xs = Coll(Array.tabulate[Byte](size)(i => i.toByte):_*)
 
     val (y, details) = oldF(xs)
-    assert(details.actualTimeNano.get < 10000000)
+    assert(details.actualTimeNano.get < 1000000000 /* 1 sec */)
 
     if (expected.isDefined) {
       val e = expected.get(xs)
