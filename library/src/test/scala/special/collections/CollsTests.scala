@@ -1,15 +1,16 @@
 package special.collections
 
-import scala.language.{existentials, implicitConversions}
-import special.collection.{CReplColl, Coll, CollOverArray, PairOfCols}
 import org.scalacheck.Gen
 import org.scalatest.exceptions.TestFailedException
-import org.scalatest.{Matchers, PropSpec}
 import org.scalatest.prop.PropertyChecks
+import org.scalatest.{Matchers, PropSpec}
 import scalan.RType
-import sigmastate.VersionContext
+import sigmastate.{VersionContext, VersionTestingProperty}
+import special.collection.{CReplColl, Coll, CollOverArray, PairOfCols}
 
-class CollsTests extends PropSpec with PropertyChecks with Matchers with CollGens { testSuite =>
+import scala.language.{existentials, implicitConversions}
+
+class CollsTests extends PropSpec with PropertyChecks with Matchers with CollGens with VersionTestingProperty { testSuite =>
   import Gen._
   import special.collection.ExtensionMethods._
 
@@ -277,16 +278,23 @@ class CollsTests extends PropSpec with PropertyChecks with Matchers with CollGen
       val pairsArr = pairs.toArray
       pairsArr shouldBe Array((1, 10), (2, 20), (3, 30))
 
-      // here is the problem with append
       val appended = pairs.append(pairs)
 
-      an[TestFailedException] should be thrownBy(
+      // here is the problem with append which is fixed in v5.0
+      if (VersionContext.current.isEvaluateErgoTreeUsingJIT) {
+        // the issue is fixed starting from v5.0
+        appended.toArray shouldBe (pairsArr ++ pairsArr)
+        appended.toArray shouldBe Array((1, 10), (2, 20), (3, 30), (1, 10), (2, 20), (3, 30))
+      } else {
+        // Append should fail for ErgoTree v0, v1 regardless of the activated version
+        an[TestFailedException] should be thrownBy(
           appended.toArray shouldBe (pairsArr ++ pairsArr)
-      )
-      // Note, the last element of col2 (40) is zipped with 1
-      // this is because PairOfCols keeps ls and rs separated and zip doesn't do truncation
-      // the they are of different length
-      appended.toArray shouldBe Array((1, 10), (2, 20), (3, 30), (1, 40), (2, 10), (3, 20))
+        )
+        // Note, the last element of col2 (40) is zipped with 1
+        // this is because PairOfCols keeps ls and rs separated and zip doesn't do truncation
+        // the they are of different length
+        appended.toArray shouldBe Array((1, 10), (2, 20), (3, 30), (1, 40), (2, 10), (3, 20))
+      }
     }
 
     forAll(collGen, collGen, valGen, MinSuccessful(50)) { (col1, col2, v) =>
@@ -332,10 +340,17 @@ class CollsTests extends PropSpec with PropertyChecks with Matchers with CollGen
     val col1 = builder.fromItems(1, 2, 3)
     val col2 = builder.fromItems(10, 20, 30, 40)
     val pairs = col1.zip(col2)
-    assert(pairs.isInstanceOf[PairOfCols[Int, Int]])
     pairs.length shouldBe col1.length
     pairs.length shouldNot be(col2.length)
     pairs.length shouldBe col2.zip(col1).length
+
+    val pairOfColls = pairs.asInstanceOf[PairOfCols[Int, Int]]
+    // here is problem with zip which is fixed in v5.0
+    if (VersionContext.current.isEvaluateErgoTreeUsingJIT) {
+      pairOfColls.ls.length shouldBe pairOfColls.rs.length
+    } else {
+      pairOfColls.ls.length should not be(pairOfColls.rs.length)
+    }
   }
 
   property("Coll.mapReduce") {
