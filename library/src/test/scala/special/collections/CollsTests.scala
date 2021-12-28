@@ -257,17 +257,17 @@ class CollsTests extends PropSpec with PropertyChecks with Matchers with CollGen
 
   property("Coll.append") {
 
-    { // this shows how the problem with CollectionUtil.concatArrays manifests itself in Coll.append
+    { // this shows how the problem with CollectionUtil.concatArrays manifests itself in Coll.append (v4.x)
       val xs = builder.fromItems(1, 2)
       val pairs = xs.zip(xs)
       val ys = pairs.map(squared(inc)) // this map transforms PairOfCols to CollOverArray
 
-      // due to the problem with concatArrays
-      an[ClassCastException] should be thrownBy (ys.append(ys))
-
-      VersionContext.withVersions(VersionContext.JitActivationVersion, VersionContext.JitActivationVersion) {
-        // TODO v5.0: make it work
-        //  ys.append(ys).toArray shouldBe ys.toArray ++ ys.toArray // problem fixed in v5.0
+      if (VersionContext.current.isEvaluateErgoTreeUsingJIT) {
+        // problem fixed in v5.0
+        ys.append(ys).toArray shouldBe ys.toArray ++ ys.toArray
+      } else {
+        // due to the problem with CollectionUtil.concatArrays
+        an[ClassCastException] should be thrownBy (ys.append(ys))
       }
     }
 

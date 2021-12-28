@@ -12,7 +12,7 @@ import Helpers._
 import debox.Buffer
 import scalan.RType._
 import sigmastate.VersionContext
-import sigmastate.util.{MaxArrayLength, safeNewArray}
+import sigmastate.util.{MaxArrayLength, safeConcatArrays_v5, safeNewArray}
 import spire.syntax.all._
 
 import scala.runtime.RichInt
@@ -60,7 +60,12 @@ class CollOverArray[@specialized A](val toArray: Array[A])(implicit tA: RType[A]
   @NeverInline
   def append(other: Coll[A]): Coll[A] = {
     if (toArray.length <= 0) return other
-    val result = CollectionUtil.concatArrays(toArray, other.toArray)
+    val result = if (VersionContext.current.isEvaluateErgoTreeUsingJIT) {
+      // in v5.0 and above this fixes the ClassCastException problem
+      safeConcatArrays_v5(toArray, other.toArray)(tA.classTag)
+    } else {
+      CollectionUtil.concatArrays(toArray, other.toArray)
+    }
     builder.fromArray(result)
   }
 
@@ -302,8 +307,8 @@ class CollOverArrayBuilder extends CollBuilder {
       val limit = xs.length
       implicit val tA = xs.tItem.tFst
       implicit val tB = xs.tItem.tSnd
-      val ls = new Array[A](limit)
-      val rs = new Array[B](limit)
+      val ls = Array.ofDim[A](limit)(tA.classTag)
+      val rs = Array.ofDim[B](limit)(tB.classTag)
       cfor(0)(_ < limit, _ + 1) { i =>
         val p = xs(i)
         ls(i) = p._1
