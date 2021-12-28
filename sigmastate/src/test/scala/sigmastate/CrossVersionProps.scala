@@ -9,27 +9,11 @@ import scala.util.DynamicVariable
 
 trait CrossVersionProps extends PropSpecLike with TestsBase {
 
-  val printVersions: Boolean = false
-
   /** Number of times each test property is warmed up (i.e. executed before final execution). */
   def perTestWarmUpIters: Int = 0
 
   private[sigmastate] val _warmupProfiler = new DynamicVariable[Option[Profiler]](None)
   def warmupProfiler: Option[Profiler] = _warmupProfiler.value
-
-  protected def testFun_Run(testName: String, testFun: => Any): Unit = {
-    def msg = s"""property("$testName")(ActivatedVersion = $activatedVersionInTests; ErgoTree version = $ergoTreeVersionInTests)"""
-    if (printVersions) println(msg)
-    try testFun
-    catch {
-      case t: Throwable =>
-        if (!printVersions) {
-          // wasn't printed, print it now
-          println(msg)
-        }
-        throw t
-    }
-  }
 
   override protected def property(testName: String, testTags: Tag*)
                                  (testFun: => Any)
