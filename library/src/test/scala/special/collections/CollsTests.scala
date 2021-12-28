@@ -61,11 +61,13 @@ class CollsTests extends PropSpec with PropertyChecks with Matchers with CollGen
       equalLength(pairs)
 
       // TODO v5.0: make it work
-//      an[ClassCastException] should be thrownBy {
-//        equalLengthMapped(pairs, squared(inc))  // due to problem with append
-//      }
-      VersionContext.withVersions(VersionContext.JitActivationVersion, VersionContext.JitActivationVersion) {
-//        equalLengthMapped(pairs, squared(inc))  // problem fixed in v5.0
+      if (VersionContext.current.isEvaluateErgoTreeUsingJIT) {
+        // problem fixed in v5.0
+//        equalLengthMapped(pairs, squared(inc))
+      } else {
+        //      an[ClassCastException] should be thrownBy {
+        //        equalLengthMapped(pairs, squared(inc))  // due to problem with append
+        //      }
       }
 
       equalLength(pairs.append(pairs))
@@ -273,27 +275,40 @@ class CollsTests extends PropSpec with PropertyChecks with Matchers with CollGen
       val col1 = builder.fromItems(1, 2, 3)
       val col2 = builder.fromItems(10, 20, 30, 40)
       val pairs = col1.zip(col2)
+      val pairsSwap = col2.zip(col1)
       assert(pairs.isInstanceOf[PairOfCols[_,_]])
-      
+      assert(pairsSwap.isInstanceOf[PairOfCols[_,_]])
+
       val pairsArr = pairs.toArray
       pairsArr shouldBe Array((1, 10), (2, 20), (3, 30))
 
+      val pairsArrSwap = pairsSwap.toArray
+      pairsArr shouldBe Array((1, 10), (2, 20), (3, 30))
+      pairsArrSwap shouldBe Array((10, 1), (20, 2), (30, 3))
+
       val appended = pairs.append(pairs)
+      val appendedSwap = pairsSwap.append(pairsSwap)
 
       // here is the problem with append which is fixed in v5.0
       if (VersionContext.current.isEvaluateErgoTreeUsingJIT) {
         // the issue is fixed starting from v5.0
         appended.toArray shouldBe (pairsArr ++ pairsArr)
         appended.toArray shouldBe Array((1, 10), (2, 20), (3, 30), (1, 10), (2, 20), (3, 30))
+        appendedSwap.toArray shouldBe (pairsArrSwap ++ pairsArrSwap)
+        appendedSwap.toArray shouldBe Array((10, 1), (20, 2), (30, 3), (10, 1), (20, 2), (30, 3))
       } else {
         // Append should fail for ErgoTree v0, v1 regardless of the activated version
         an[TestFailedException] should be thrownBy(
           appended.toArray shouldBe (pairsArr ++ pairsArr)
         )
+        an[TestFailedException] should be thrownBy(
+          appendedSwap.toArray shouldBe (pairsArrSwap ++ pairsArrSwap)
+        )
         // Note, the last element of col2 (40) is zipped with 1
         // this is because PairOfCols keeps ls and rs separated and zip doesn't do truncation
         // the they are of different length
         appended.toArray shouldBe Array((1, 10), (2, 20), (3, 30), (1, 40), (2, 10), (3, 20))
+        appendedSwap.toArray shouldBe Array((10, 1), (20, 2), (30, 3), (40, 1), (10, 2), (20, 3))
       }
     }
 
@@ -345,10 +360,13 @@ class CollsTests extends PropSpec with PropertyChecks with Matchers with CollGen
     pairs.length shouldBe col2.zip(col1).length
 
     val pairOfColls = pairs.asInstanceOf[PairOfCols[Int, Int]]
-    // here is problem with zip which is fixed in v5.0
+
+    // here is problem with zip
     if (VersionContext.current.isEvaluateErgoTreeUsingJIT) {
+      // which is fixed in v5.0
       pairOfColls.ls.length shouldBe pairOfColls.rs.length
     } else {
+      // not fixed in v4.x
       pairOfColls.ls.length should not be(pairOfColls.rs.length)
     }
   }
