@@ -20,6 +20,10 @@ case class VersionContext(activatedVersion: Byte, ergoTreeVersion: Byte) {
 
   /** @return true, if JIT version of Ergo protocol was activated. */
   def isJitActivated: Boolean = activatedVersion >= JitActivationVersion
+
+  /** @return true, if ErgoTree version >= JitActivationVersion. */
+  def isEvaluateErgoTreeUsingJIT: Boolean =
+    ergoTreeVersion >= JitActivationVersion
 }
 
 object VersionContext {
@@ -39,16 +43,18 @@ object VersionContext {
     */
   val JitActivationVersion: Byte = 2
 
+  private val _defaultContext = VersionContext(
+    activatedVersion = 1/* v4.x */,
+    ergoTreeVersion = 1
+  )
+
   /** Universally accessible version context which is used to version the code
     * across the whole repository.
     *
     * The default value represent activated Ergo protocol and highest ErgoTree version.
     */
   private val _versionContext: DynamicVariable[VersionContext] =
-    new DynamicVariable[VersionContext](VersionContext(
-      activatedVersion = 1/* v4.x */,
-      ergoTreeVersion = 1
-    ))
+    new DynamicVariable[VersionContext](_defaultContext)
 
   /** Returns the current VersionContext attached to the current thread.
     * Each thread can have only one current version context at any time, which can be
