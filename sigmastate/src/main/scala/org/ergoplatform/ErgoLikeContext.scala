@@ -71,33 +71,33 @@ class ErgoLikeContext(val lastBlockUtxoRoot: AvlTreeData,
   Examined ergo code: all that leads to ErgoLikeContext creation.
   Fixed some cases in ergo where PreHeader might be null.
    */
-  assert(preHeader != null, "preHeader cannot be null")
+  require(preHeader != null, "preHeader cannot be null")
   /* NOHF PROOF:
   Added: assert(spendingTransaction != null)
   Motivation: to fail early
   Safety: According to ergo design spendingTransaction should always exist.
   Examined ergo code: all that leads to ErgoLikeContext creation.
    */
-  assert(spendingTransaction != null, "spendingTransaction cannot be null")
+  require(spendingTransaction != null, "spendingTransaction cannot be null")
   /* NOHF PROOF:
   Added: assert that box with `selfIndex` exist in boxesToSpend
   Motivation: to fail early, rather than when going into evaluation
   Safety: ergo itself uses index to identify the box
   Examined ergo code: all that leads to ErgoLikeContext creation.
  */
-  assert(boxesToSpend.isDefinedAt(selfIndex), s"Self box if defined should be among boxesToSpend")
-  assert(headers.toArray.headOption.forall(h => java.util.Arrays.equals(h.stateRoot.digest.toArray, lastBlockUtxoRoot.digest)), "Incorrect lastBlockUtxoRoot")
+  require(boxesToSpend.isDefinedAt(selfIndex), s"Self box if defined should be among boxesToSpend")
+  require(headers.toArray.headOption.forall(h => java.util.Arrays.equals(h.stateRoot.digest.toArray, lastBlockUtxoRoot.digest)), "Incorrect lastBlockUtxoRoot")
   cfor(0)(_ < headers.length, _ + 1) { i =>
-    if (i > 0) assert(headers(i - 1).parentId == headers(i).id, s"Incorrect chain: ${headers(i - 1).parentId},${headers(i).id}")
+    if (i > 0) require(headers(i - 1).parentId == headers(i).id, s"Incorrect chain: ${headers(i - 1).parentId},${headers(i).id}")
   }
-  assert(headers.toArray.headOption.forall(_.id == preHeader.parentId), s"preHeader.parentId should be id of the best header")
+  require(headers.toArray.headOption.forall(_.id == preHeader.parentId), s"preHeader.parentId should be id of the best header")
   /* NOHF PROOF:
   Added: assert that dataBoxes corresponds to spendingTransaction.dataInputs
   Motivation: to fail early, rather than when going into evaluation
   Safety: dataBoxes and spendingTransaction are supplied separately in ergo. No checks in ergo.
   Examined ergo code: all that leads to ErgoLikeContext creation.
  */
-  assert(spendingTransaction.dataInputs.length == dataBoxes.length &&
+  require(spendingTransaction.dataInputs.length == dataBoxes.length &&
     spendingTransaction.dataInputs.forall(dataInput => dataBoxes.exists(b => util.Arrays.equals(b.id, dataInput.boxId))),
     "dataBoxes do not correspond to spendingTransaction.dataInputs")
 
@@ -171,7 +171,7 @@ class ErgoLikeContext(val lastBlockUtxoRoot: AvlTreeData,
     val ergoTreeVersion = currentErgoTreeVersion.getOrElse(
         Interpreter.error(s"Undefined context property: currentErgoTreeVersion"))
     CostingDataContext(
-      dataInputs, headers, preHeader, inputs, outputs, preHeader.height, selfBox, avlTree,
+      dataInputs, headers, preHeader, inputs, outputs, preHeader.height, selfBox, selfIndex, avlTree,
       preHeader.minerPk.getEncoded, vars, activatedScriptVersion, ergoTreeVersion, isCost)
   }
 

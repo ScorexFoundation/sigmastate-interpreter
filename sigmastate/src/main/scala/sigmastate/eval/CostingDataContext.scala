@@ -723,6 +723,7 @@ case class CostingDataContext(
                                outputs: Coll[Box],
                                height: Int,
                                selfBox: Box,
+                               private val selfIndex: Int,
                                lastBlockUtxoRootHash: AvlTree,
                                _minerPubKey: Coll[Byte],
                                vars: Coll[AnyValue],
@@ -746,17 +747,15 @@ case class CostingDataContext(
 
   @inline override def minerPubKey = _minerPubKey
 
-
-  private def findSelfBoxIndex: Int = {
-    var i = 0
-    while (i < inputs.length) {
-      if (inputs(i) eq selfBox) return i
-      i += 1
+  override def selfBoxIndex: Int = {
+    if (VersionContext.current.isEvaluateErgoTreeUsingJIT) {
+      // starting from v5.0 this is fixed
+      selfIndex
+    } else {
+      // this used to be a bug in v4.x (https://github.com/ScorexFoundation/sigmastate-interpreter/issues/603)
+      -1
     }
-    -1
   }
-
-  override val selfBoxIndex: Int = findSelfBoxIndex
 
   override def getVar[T](id: Byte)(implicit tT: RType[T]): Option[T] = {
     if (isCost) {
