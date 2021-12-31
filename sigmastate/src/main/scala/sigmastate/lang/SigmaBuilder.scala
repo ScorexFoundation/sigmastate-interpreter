@@ -226,6 +226,14 @@ abstract class SigmaBuilder {
     */
   def liftAny(obj: Any): Nullable[SValue] = obj match {
     case v: SValue => Nullable(v)
+    case _ =>
+      liftToConstant(obj)
+  }
+
+  /** Created a new Constant instance with an appropriate type derived from the given data `obj`.
+    * Uses scalan.Nullable instead of scala.Option to avoid allocation on consensus hot path.
+    */
+  def liftToConstant(obj: Any): Nullable[Constant[SType]] = obj match {
     case arr: Array[Boolean] => Nullable(mkCollectionConstant[SBoolean.type](arr, SBoolean))
     case arr: Array[Byte] => Nullable(mkCollectionConstant[SByte.type](arr, SByte))
     case arr: Array[Short] => Nullable(mkCollectionConstant[SShort.type](arr, SShort))
@@ -246,7 +254,20 @@ abstract class SigmaBuilder {
 
     case b: Boolean => Nullable(if(b) TrueLeaf else FalseLeaf)
     case v: String => Nullable(mkConstant[SString.type](v, SString))
-    case b: ErgoBox => Nullable(mkConstant[SBox.type](b, SBox))
+
+    // The Box lifiting was broken in v4.x. `SigmaDsl.Box(b)` was missing which means the
+    // isCorrectType requirement would fail in ConstantNode constructor.
+    case b: ErgoBox =>
+      if (VersionContext.current.isEvaluateErgoTreeUsingJIT)
+        Nullable(mkConstant[SBox.type](SigmaDsl.Box(b), SBox))  // fixed in v5.0
+      else
+        Nullable(mkConstant[SBox.type](b, SBox))  // broken in v4.x
+
+    case b: special.sigma.Box =>   // this case is added in v5.0
+      if (VersionContext.current.isEvaluateErgoTreeUsingJIT)
+        Nullable(mkConstant[SBox.type](b, SBox))
+      else
+        Nullable.None  // return the same result as in v4.x when there was no this case
 
     case avl: AvlTreeData => Nullable(mkConstant[SAvlTree.type](SigmaDsl.avlTree(avl), SAvlTree))
     case avl: AvlTree => Nullable(mkConstant[SAvlTree.type](avl, SAvlTree))

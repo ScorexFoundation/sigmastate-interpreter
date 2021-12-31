@@ -746,8 +746,8 @@ case class SubstConstants[T <: SType](scriptBytes: Value[SByteArray], positions:
     val newValuesV = newValues.evalTo[Coll[T#WrappedType]](env)
     var res: Coll[Byte] = null
     E.addSeqCost(SubstConstants.costKind, SubstConstants.opDesc) { () =>
-      val typedNewVals: Array[SValue] = newValuesV.toArray.map { v =>
-        TransformingSigmaBuilder.liftAny(v) match {
+      val typedNewVals: Array[Constant[SType]] = newValuesV.toArray.map { v =>
+        TransformingSigmaBuilder.liftToConstant(v) match {
           case Nullable(v) => v
           case _ => sys.error(s"Cannot evaluate substConstants($scriptBytesV, $positionsV, $newValuesV): cannot lift value $v")
         }
@@ -787,7 +787,7 @@ object SubstConstants extends ValueCompanion {
     */
   def eval(scriptBytes: Array[Byte],
            positions: Array[Int],
-           newVals: Array[Value[SType]])(implicit vs: SigmaValidationSettings): (Array[Byte], Int) =
+           newVals: Array[Constant[SType]])(implicit vs: SigmaValidationSettings): (Array[Byte], Int) =
     ErgoTreeSerializer.DefaultSerializer.substituteConstants(scriptBytes, positions, newVals)
 }
 

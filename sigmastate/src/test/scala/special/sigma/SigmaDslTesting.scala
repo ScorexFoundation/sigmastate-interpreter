@@ -955,7 +955,7 @@ class SigmaDslTesting extends PropSpec
   private def checkResult[B](res: Try[B], expectedRes: Try[B], failOnTestVectors: Boolean, hint: String = ""): Unit = {
     (res, expectedRes) match {
       case (Failure(exception), Failure(expectedException)) =>
-        rootCause(exception).getClass shouldBe expectedException.getClass
+        rootCause(exception).getClass shouldBe rootCause(expectedException).getClass
       case _ =>
         if (failOnTestVectors) {
           val actual = rootCause(res)
