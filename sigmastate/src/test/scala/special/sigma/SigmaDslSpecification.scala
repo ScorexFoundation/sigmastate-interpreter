@@ -2,7 +2,6 @@ package special.sigma
 
 import java.lang.reflect.InvocationTargetException
 import java.math.BigInteger
-
 import org.ergoplatform._
 import org.ergoplatform.settings.ErgoAlgos
 import org.scalacheck.{Arbitrary, Gen}
@@ -39,6 +38,7 @@ import scorex.util.ModifierId
 import sigmastate.basics.ProveDHTuple
 import sigmastate.interpreter._
 import org.scalactic.source.Position
+import sigmastate.helpers.SigmaPPrint
 
 import scala.collection.mutable
 
@@ -5712,8 +5712,76 @@ class SigmaDslSpecification extends SigmaDslTesting
           )
         )))
 
+    { // changed behavior of flatMap in v5.0
+      val cases = Seq(
+        Coll[GroupElement](
+          Helpers.decodeGroupElement("02d65904820f8330218cf7318b3810d0c9ab9df86f1ee6100882683f23c0aee587"),
+          Helpers.decodeGroupElement("0390e9daa9916f30d0bc61a8e381c6005edfb7938aee5bb4fc9e8a759c7748ffaa")
+        ) -> Expected(Try(SCollection.throwInvalidFlatmap(null)), 0,
+              newDetails = CostDetails.ZeroCost,
+              newCost = 0,
+              newVersionedResults = Seq(
+                2 -> (ExpectedResult(Success({
+                         val is = Coll((0 to 32):_*)
+                         is.append(is)
+                       }),
+                       verificationCost = Some(817)) -> None)
+              ))
+      )
+      val f = changedFeature(
+        { (x: Coll[GroupElement]) => x.flatMap({ (b: GroupElement) => b.getEncoded.indices }) },
+        { (x: Coll[GroupElement]) =>
+          if (VersionContext.current.isEvaluateErgoTreeUsingJIT)
+            x.flatMap({ (b: GroupElement) => b.getEncoded.indices })
+          else
+            SCollection.throwInvalidFlatmap(null)
+        },
+        "", // NOTE, the script for this test case cannot be compiled
+        FuncValue(
+          Vector((1, SCollectionType(SGroupElement))),
+          MethodCall.typed[Value[SCollection[SInt.type]]](
+            ValUse(1, SCollectionType(SGroupElement)),
+            SCollection.getMethodByName("flatMap").withConcreteTypes(
+              Map(STypeVar("IV") -> SGroupElement, STypeVar("OV") -> SInt)
+            ),
+            Vector(
+              FuncValue(
+                Vector((3, SGroupElement)),
+                MethodCall.typed[Value[SCollection[SInt.type]]](
+                  MethodCall.typed[Value[SCollection[SByte.type]]](
+                    ValUse(3, SGroupElement),
+                    SGroupElement.getMethodByName("getEncoded"),
+                    Vector(),
+                    Map()
+                  ),
+                  SCollection.getMethodByName("indices").withConcreteTypes(
+                    Map(STypeVar("IV") -> SByte)
+                  ),
+                  Vector(),
+                  Map()
+                )
+              )
+            ),
+            Map()
+          )
+        ),
+        allowDifferentErrors = true
+      )
+
+      val table = Table(("x", "y"), cases:_*)
+      forAll(table) { (x, expectedRes) =>
+        val res = f.checkEquality(x)
+        val resValue = res.map(_._1)
+        val expected = expectedRes.newResults(ergoTreeVersionInTests)._1
+        checkResult(resValue, expected.value, failOnTestVectors = true)
+        if (res.isSuccess) {
+          res.get._2.cost shouldBe JitCost(expected.verificationCost.get)
+        }
+      }
+    }
+
     val f = existingFeature(
-      { (x: Coll[GroupElement]) => x.flatMap({ (b: GroupElement) => b.getEncoded.append(b.getEncoded) }) },
+      { (x: Coll[GroupElement]) => x.flatMap({ (b: GroupElement) => b.getEncoded.indices }) },
       "{ (x: Coll[GroupElement]) => x.flatMap({ (b: GroupElement) => b.getEncoded.indices }) }" )
     assertExceptionThrown(
       f.oldF,
