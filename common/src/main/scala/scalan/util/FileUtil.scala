@@ -1,19 +1,19 @@
 package scalan.util
 
+import scalan.util.CollectionUtil.AnyOps
+import scalan.util.StringUtil.StringUtilExtensions
+
 import java.io._
 import java.net.{JarURLConnection, URL}
 import java.nio.charset.Charset
 import java.nio.file._
 import java.nio.file.attribute.BasicFileAttributes
 import java.util.jar.JarFile
-import org.apache.commons.io.{FileUtils, IOUtils}
-import scala.Console
 import scala.collection.JavaConverters._
-import scalan.util.StringUtil.StringUtilExtensions
-import scalan.util.CollectionUtil.AnyOps
+import scala.io.Source
 
 object FileUtil {
-  def read(file: File): String = FileUtils.readFileToString(file, Charset.defaultCharset())
+  def read(file: File): String = new String(Files.readAllBytes(file.toPath), Charset.defaultCharset())
 
   def withFile(file: File)(f: PrintWriter => Unit): Unit = {
     if (file.isDirectory && !file.delete()) {
@@ -55,9 +55,25 @@ object FileUtil {
 
   def copy(source: File, target: File): Unit =
     if (source.isFile)
-      FileUtils.copyFile(source, target, false)
+      Files.copy(source.toPath, target.toPath, StandardCopyOption.REPLACE_EXISTING)
     else
-      FileUtils.copyDirectory(source, target, false)
+      copyDirectory(source, target)
+
+  private def copyDirectory(sourceDirectory: File, targetDirectory: File): Unit = {
+    if (targetDirectory.exists) {
+      if (!targetDirectory.isDirectory)
+        throw new IOException("Target '" + targetDirectory + "' exists but is not a directory")
+    } else {
+        if (!targetDirectory.mkdirs && !targetDirectory.isDirectory)
+          throw new IOException("Target '" + targetDirectory + "' directory cannot be created")
+    }
+    val sourceFiles = sourceDirectory.listFiles
+    for (sourceFile <- sourceFiles) {
+      val targetFile = new File(targetDirectory, sourceFile.getName)
+      if (sourceFile.isDirectory) copyDirectory(sourceFile, targetFile)
+      else Files.copy(sourceFile.toPath, targetFile.toPath, StandardCopyOption.REPLACE_EXISTING)
+    }
+  }
 
   def copyFromClassPath(source: String, target: File, classLoader: ClassLoader = getClass.getClassLoader): Unit = {
     target.getParentFile.mkdirs()
@@ -67,7 +83,7 @@ object FileUtil {
         urls.asScala.foreach { url =>
           url.getProtocol match {
             case "file" =>
-              FileUtils.copyDirectory(urlToFile(url), target, false)
+              copyDirectory(urlToFile(url), target)
             case "jar" =>
               val jarFile = new JarFile(jarUrlToJarFile(url))
               jarFile.entries().asScala.foreach { entry =>
@@ -78,7 +94,7 @@ object FileUtil {
                     entryTarget.mkdirs()
                   else {
                     // copyInputStreamToFile closes stream
-                    FileUtils.copyInputStreamToFile(jarFile.getInputStream(entry), entryTarget)
+                    Files.copy(jarFile.getInputStream(entry), entryTarget.toPath, StandardCopyOption.REPLACE_EXISTING)
                   }
                 }
               }
@@ -90,7 +106,7 @@ object FileUtil {
           throw new IllegalArgumentException(s"Multiple $source resources found on classpath")
         } else {
           // copyInputStreamToFile closes stream
-          FileUtils.copyInputStreamToFile(url.openStream(), target)
+          Files.copy(url.openStream(), target.toPath, StandardCopyOption.REPLACE_EXISTING)
         }
       }
     } else
@@ -147,9 +163,11 @@ object FileUtil {
 
   def move(source: File, target: File): Unit =
     if (source.isFile)
-      FileUtils.moveFile(source, target)
-    else
-      FileUtils.moveDirectory(source, target)
+      Files.move(source.toPath, target.toPath, StandardCopyOption.REPLACE_EXISTING)
+    else {
+      copyDirectory(source, target)
+      delete(source)
+    }
 
   /**
     * Add header into the file
@@ -230,9 +248,12 @@ object FileUtil {
 
   def readAndCloseStream(stream: InputStream) = {
     try {
-      IOUtils.toString(stream, Charset.defaultCharset())
+      Source.fromInputStream(stream)(Charset.defaultCharset()).mkString
     } finally {
-      IOUtils.closeQuietly(stream)
+      scala.util.control.Exception.ignoring(classOf[IOException]) {
+        if (stream != null)
+          stream.close()
+      }
     }
   }
 

@@ -13,7 +13,6 @@ These dependencies can be removed with simple refactoring
 | - dsinfo_2.12-0.4.0.jar  |  15       |
 | - jsr305-3.0.2.jar  |  20        |
 | com.typesafe.config:config-1.3.3.jar  |  286     |
-| commons-io-2.5.jar  |  209          |
 | cats-core_2.12-1.4.0.jar  |  4400   |
 | - cats-kernel_2.12-1.4.0.jar  |  3200   |
 | spire_2.12-0.14.1.jar  |  7700   |
