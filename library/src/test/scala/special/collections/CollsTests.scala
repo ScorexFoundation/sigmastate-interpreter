@@ -59,8 +59,10 @@ class CollsTests extends PropSpec with PropertyChecks with Matchers with CollGen
       val pairs = xs.zip(xs)
       equalLength(pairs)
 
-      an[ClassCastException] should be thrownBy {
-        equalLengthMapped(pairs, squared(inc))  // due to problem with append
+      if (!xs.isInstanceOf[CReplColl[_]]) {
+        an[ClassCastException] should be thrownBy {
+          equalLengthMapped(pairs, squared(inc))  // due to problem with append
+        }
       }
       VersionContext.withVersions(VersionContext.JitActivationVersion, VersionContext.JitActivationVersion) {
 // TODO v5.0: make it work
@@ -69,8 +71,10 @@ class CollsTests extends PropSpec with PropertyChecks with Matchers with CollGen
 
       equalLength(pairs.append(pairs))
 
-      an[ClassCastException] should be thrownBy {
-        equalLengthMapped(pairs.append(pairs), squared(inc)) // due to problem with append
+      if (!xs.isInstanceOf[CReplColl[_]]) {
+        an[ClassCastException] should be thrownBy {
+          equalLengthMapped(pairs.append(pairs), squared(inc)) // due to problem with append
+        }
       }
       VersionContext.withVersions(VersionContext.JitActivationVersion, VersionContext.JitActivationVersion) {
 // TODO v5.0: make it work
