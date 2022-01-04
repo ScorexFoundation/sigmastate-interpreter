@@ -5127,6 +5127,8 @@ class SigmaDslSpecification extends SigmaDslTesting
           newDetails = CostDetails.ZeroCost,
           newCost = newC,
           newVersionedResults = Seq(
+            0 -> (ExpectedResult(Success(newV), Some(newC)) -> None),
+            1 -> (ExpectedResult(Success(newV), Some(newC)) -> None),
             2 -> (ExpectedResult(Success(newV), Some(newC)) -> None)
           ))
         val newCost = 1786

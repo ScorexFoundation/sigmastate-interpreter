@@ -42,7 +42,7 @@ class TestSigmaDslBuilder extends SigmaDslBuilder {
 
   @NeverInline
   override def xorOf(conditions: Coll[Boolean]): Boolean = {
-    if (VersionContext.current.ergoTreeVersion >= JitActivationVersion) {
+    if (VersionContext.current.activatedVersion >= JitActivationVersion) {
       val len = conditions.length
       if (len == 0) false
       else if (len == 1) conditions(0)
