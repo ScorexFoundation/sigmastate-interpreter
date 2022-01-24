@@ -478,7 +478,7 @@ class SigmaDslTesting extends PropSpec
     scalaFunc: A => B,
     expectedExpr: Option[SValue],
     printExpectedExpr: Boolean = true,
-    logScript: Boolean = LogScriptDefault,
+    logScript: Boolean = LogScriptDefault
   )(implicit IR: IRContext, tA: RType[A], tB: RType[B],
              override val evalSettings: EvalSettings) extends Feature[A, B] {
 
