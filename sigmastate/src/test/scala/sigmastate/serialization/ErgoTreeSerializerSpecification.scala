@@ -2,11 +2,13 @@ package sigmastate.serialization
 
 import java.math.BigInteger
 import org.ergoplatform.ErgoBox
-import sigmastate.Values.{ShortConstant, BigIntConstant, ConstantPlaceholder, SigmaPropValue, IntConstant, ErgoTree, ByteConstant}
+import org.ergoplatform.validation.ValidationException
+import org.ergoplatform.validation.ValidationRules.CheckDeserializedScriptIsSigmaProp
+import sigmastate.Values.{BigIntConstant, ByteConstant, ConstantPlaceholder, ErgoTree, IntConstant, ShortConstant, SigmaPropValue, UnparsedErgoTree}
 import sigmastate._
-import sigmastate.eval.{IRContext, CBigInt}
+import sigmastate.eval.{CBigInt, IRContext}
 import sigmastate.helpers.SigmaTestingCommons
-import sigmastate.lang.exceptions.{SerializerException, ReaderPositionLimitExceeded}
+import sigmastate.lang.exceptions.{ReaderPositionLimitExceeded, SerializerException}
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.utxo.{DeserializeContext, DeserializeRegister}
 
@@ -17,55 +19,78 @@ class ErgoTreeSerializerSpecification extends SerializationSpecification
     beginPass(noConstPropagationPass)
   }
 
-  // TODO mainnet v5.0: return two trees with and without constants and ergoTreeVersionInTests
-  private def extractConstants(tree: SigmaPropValue)(implicit IR: IRContext): ErgoTree = {
+  private def extractConstants(prop: SigmaPropValue)(implicit IR: IRContext): Seq[ErgoTree] = {
     import ErgoTree._
     val env = Map[String, Any]()
-    val IR.Pair(calcF, _) = IR.doCosting(env, tree)
-    val extractConstants = new ConstantStore()
-    val outExpr = IR.buildTree(calcF, Some(extractConstants))
-    val constants = extractConstants.getAll
-    val header = if (constants.isEmpty) DefaultHeader else ConstantSegregationHeader
-    val ergoTree = ErgoTree(header, constants, outExpr)
-    ergoTree
+    val IR.Pair(calcF, _) = IR.doCosting(env, prop)
+    val constantsStore = new ConstantStore()
+    val outExpr = IR.buildTree(calcF, Some(constantsStore))
+    val constants = constantsStore.getAll
+    val trees = if (constants.isEmpty) {
+      Seq(ErgoTree(ergoTreeHeaderInTests, constants, outExpr))
+    } else {
+      Seq(
+        ErgoTree((ConstantSegregationHeader | ergoTreeHeaderInTests).toByte, constants, outExpr),
+        ErgoTree(ergoTreeHeaderInTests, EmptyConstants, prop)
+      )
+    }
+    trees
   }
 
   property("(de)serialization round trip using treeBytes()") {
-    val trees = Seq(
+    val exprs = Seq(
       EQ(Plus(10.toByte, 20.toByte), ByteConstant(30)).toSigmaProp,
       EQ(Plus(10.toShort, 20.toShort), ShortConstant(30)).toSigmaProp,
       EQ(Plus(10, 20), IntConstant(30)).toSigmaProp,
       EQ(Plus(CBigInt(BigInteger.valueOf(10L)), BigIntConstant(20L)), BigIntConstant(30L)).toSigmaProp
     )
-    trees.foreach { tree =>
-      val ergoTree = extractConstants(tree)
-      val bytes = DefaultSerializer.serializeErgoTree(ergoTree)
-      val (_, _, deserializedConstants, treeBytes) = DefaultSerializer
-        .deserializeHeaderWithTreeBytes(SigmaSerializer.startReader(bytes))
-      deserializedConstants shouldEqual ergoTree.constants
-      val r = SigmaSerializer.startReader(
-        treeBytes,
-        new ConstantStore(deserializedConstants),
-        resolvePlaceholdersToConstants = true)
-      val deserializedTree = ValueSerializer.deserialize(r)
-      deserializedTree shouldEqual tree
+    exprs.foreach { expr =>
+      extractConstants(expr).foreach { ergoTree =>
+        val bytes = DefaultSerializer.serializeErgoTree(ergoTree)
+        val (_, _, deserializedConstants, treeBytes) = DefaultSerializer
+          .deserializeHeaderWithTreeBytes(SigmaSerializer.startReader(bytes))
+        deserializedConstants shouldEqual ergoTree.constants
+        val r = SigmaSerializer.startReader(
+          treeBytes,
+          new ConstantStore(deserializedConstants),
+          resolvePlaceholdersToConstants = true)
+        val deserializedTree = ValueSerializer.deserialize(r)
+        deserializedTree shouldEqual expr
+      }
     }
   }
 
   property("Constant extraction via compiler pass: (de)serialization round trip") {
     val prop = EQ(Plus(10, 20), IntConstant(30)).toSigmaProp
-    val ergoTree = extractConstants(prop)
-    val bytes = DefaultSerializer.serializeErgoTree(ergoTree)
-    val deserializedTree = DefaultSerializer.deserializeErgoTree(bytes)
-    deserializedTree shouldEqual ergoTree
+    extractConstants(prop).foreach { ergoTree =>
+      val bytes = DefaultSerializer.serializeErgoTree(ergoTree)
+      val deserializedTree = DefaultSerializer.deserializeErgoTree(bytes)
+      deserializedTree shouldEqual ergoTree
+    }
   }
 
   property("failed type check on tree deserialization") {
     forAll(numExprTreeNodeGen) { numProp =>
-      val bytes = DefaultSerializer.serializeErgoTree(extractConstants(numProp.asInstanceOf[SigmaPropValue]))
-      // TODO mainnet v5.0: more precise tests using assertExceptionThrown
-      an[SerializerException] should be thrownBy DefaultSerializer.deserializeErgoTree(bytes)
-      an[SerializerException] should be thrownBy DefaultSerializer.deserializeErgoTree(bytes)
+      val prop = numProp.asInstanceOf[SigmaPropValue] // this typecast doesn't check the actual type
+      extractConstants(prop).foreach { ergoTree =>
+        val bytes = DefaultSerializer.serializeErgoTree(ergoTree)
+
+        if (ergoTreeVersionInTests == 0) {
+          assertExceptionThrown(
+            DefaultSerializer.deserializeErgoTree(bytes),
+            rootCauseLike[SerializerException]("Failed deserialization, expected deserialized script to have type SigmaProp;"))
+        } else {
+          val tree = DefaultSerializer.deserializeErgoTree(bytes)
+          tree.root match {
+            case Left(UnparsedErgoTree(unparsedBytes,
+                ValidationException(_, CheckDeserializedScriptIsSigmaProp, _, Some(cause)))) =>
+              unparsedBytes shouldBe bytes
+              rootCauseLike[SerializerException](
+                "Failed deserialization, expected deserialized script to have type SigmaProp;")
+                .apply(cause) shouldBe true
+          }
+        }
+      }
     }
   }
 
