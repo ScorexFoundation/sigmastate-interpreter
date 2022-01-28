@@ -165,6 +165,8 @@ class ErgoLikeContext(val lastBlockUtxoRoot: AvlTreeData,
     }
     val vars = contextVars(varMap ++ extensions)
     val avlTree = CAvlTree(lastBlockUtxoRoot)
+    // so selfBox is never one of the `inputs` instances
+    // as result selfBoxIndex is always (erroneously) returns -1 in ErgoTree v0, v1
     val selfBox = boxesToSpend(selfIndex).toTestBox(isCost)
     val ergoTreeVersion = currentErgoTreeVersion.getOrElse(
         Interpreter.error(s"Undefined context property: currentErgoTreeVersion"))

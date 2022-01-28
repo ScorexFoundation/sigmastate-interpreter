@@ -125,7 +125,6 @@ object DataValueComparer {
   final val OpDesc_EQ_COA_AvlTree = NamedDesc("EQ_COA_AvlTree")
   final val EQ_COA_AvlTree = OperationCostInfo(CostKind_EQ_COA_AvlTree, OpDesc_EQ_COA_AvlTree)
 
-  // TODO v5.0: update value after serialization is avoided to compute ErgoBox.id
   /** Equals two CollOverArray of Box type. */
   final val CostKind_EQ_COA_Box = PerItemCost(
     baseCost = JitCost(15), perChunkCost = JitCost(5), chunkSize = 1)

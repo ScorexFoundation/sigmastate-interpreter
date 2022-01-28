@@ -76,7 +76,7 @@ object DataSerializer {
         i += 1
       }
 
-    // TODO HF (3h): support Option[T] (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/659)
+    // TODO v6.0 (3h): support Option[T] (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/659)
     case _ => sys.error(s"Don't know how to serialize ($v, $tpe)")
   }
 
@@ -98,7 +98,6 @@ object DataSerializer {
         new String(bytes, StandardCharsets.UTF_8)
       case SBigInt =>
         val size: Short = r.getUShort().toShort
-        // TODO HF (2h): replace with validation rule to enable soft-forkability
         if (size > SBigInt.MaxSizeInBytes) {
           throw new SerializerException(s"BigInt value doesn't not fit into ${SBigInt.MaxSizeInBytes} bytes: $size")
         }

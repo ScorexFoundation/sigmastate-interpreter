@@ -268,7 +268,15 @@ class ErgoTreeSerializer {
     val (header, _, constants, treeBytes) = deserializeHeaderWithTreeBytes(r)
     val w = SigmaSerializer.startWriter()
     w.put(header)
-    w.putUInt(constants.length) // TODO HF (3h): this should not be serialized when segregation is off
+
+    // TODO v5.0 (3h): the following `constants.length` should not be serialized when
+    //  segregation is off in the `header`, because in this case there is no `constants`
+    //  section in the ErgoTree serialization format. Thus, applying this
+    //  `substituteConstants` for non-segregated trees will return non-parsable ErgoTree
+    //  bytes. This can be fixed in v5.0 based on using context.currentErgoTreeVersion,
+    //  when this method is executed as part of SubstConstants operation.
+    w.putUInt(constants.length)
+
     val constantSerializer = ConstantSerializer(DeserializationSigmaBuilder)
 
     constants.zipWithIndex.foreach {
@@ -279,10 +287,9 @@ class ErgoTreeSerializer {
         val valW = SigmaSerializer.startWriter(constantStore)
         valW.putValue(newVal)
         val newConsts = constantStore.getAll
-        assert(newConsts.length == 1)
+        require(newConsts.length == 1)
         val newConst = newConsts.head
-        // TODO HF (1h): replace assert with require
-        assert(c.tpe == newConst.tpe, s"expected new constant to have the same ${c.tpe} tpe, got ${newConst.tpe}")
+        require(c.tpe == newConst.tpe, s"expected new constant to have the same ${c.tpe} tpe, got ${newConst.tpe}")
         constantSerializer.serialize(newConst, w)
       case (c, _) =>
         constantSerializer.serialize(c, w)

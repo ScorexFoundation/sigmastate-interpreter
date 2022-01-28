@@ -194,8 +194,8 @@ trait SigmaTestingCommons extends PropSpec
     * @param funcScript source code of the function
     * @param bindings additional context variables
     */
-  def func[A: RType, B: RType]
-      (funcScript: String, bindings: VarBinding*)
+  def funcFromExpr[A: RType, B: RType]
+      (funcScript: String, expr: SValue, bindings: VarBinding*)
       (implicit IR: IRContext,
                 compilerSettings: CompilerSettings): CompiledFunc[A, B] = {
     import IR._
@@ -203,23 +203,21 @@ trait SigmaTestingCommons extends PropSpec
     val tA = RType[A]
     val env = Interpreter.emptyEnv
 
-    val compiledTree = compileTestScript[A](env, funcScript)
-
     // The following is done as part of Interpreter.verify()
     val (costF, valueFun) = {
-      val costingRes = getCostingResult(env, compiledTree)
+      val costingRes = getCostingResult(env, expr)
       val calcF = costingRes.calcF
       val tree = IR.buildTree(calcF)
 
       // sanity check that buildTree is reverse to buildGraph (see doCostingEx)
       if (tA != special.sigma.ContextRType) {
-        if (tree != compiledTree) {
+        if (tree != expr) {
           println(s"Result of buildTree:")
           val prettyTree = SigmaPPrint(tree, height = 150)
           println(prettyTree)
 
           println(s"compiledTree:")
-          val prettyCompiledTree = SigmaPPrint(compiledTree, height = 150)
+          val prettyCompiledTree = SigmaPPrint(expr, height = 150)
           println(prettyCompiledTree)
 
           assert(prettyTree.plainText == prettyCompiledTree.plainText, "Failed sanity check that buildTree is reverse to buildGraph")
@@ -241,8 +239,25 @@ trait SigmaTestingCommons extends PropSpec
       val (res, _) = valueFun(sigmaCtx)
       (res.asInstanceOf[B], GivenCost(JitCost(estimatedCost)))
     }
-    val Terms.Apply(funcVal, _) = compiledTree.asInstanceOf[SValue]
-    CompiledFunc(funcScript, bindings, funcVal, compiledTree, f)
+    val Terms.Apply(funcVal, _) = expr.asInstanceOf[SValue]
+    CompiledFunc(funcScript, bindings, funcVal, expr, f)
+  }
+
+  /** Returns a Scala function which is equivalent to the given function script.
+    * The script is embedded into valid ErgoScript which is then compiled to
+    * [[sigmastate.Values.Value]] tree.
+    * Limitations:
+    * 1) DeserializeContext, ConstantPlaceholder is not supported
+    * @param funcScript source code of the function
+    * @param bindings additional context variables
+    */
+  def func[A: RType, B: RType]
+      (funcScript: String, bindings: VarBinding*)
+      (implicit IR: IRContext,
+                compilerSettings: CompilerSettings): CompiledFunc[A, B] = {
+    val env = Interpreter.emptyEnv
+    val compiledTree = compileTestScript[A](env, funcScript)
+    funcFromExpr[A, B](funcScript, compiledTree, bindings:_*)
   }
 
   def evalSettings = ErgoTreeEvaluator.DefaultEvalSettings
@@ -256,14 +271,12 @@ trait SigmaTestingCommons extends PropSpec
         |""".stripMargin)
   }
 
-  def funcJit[A: RType, B: RType]
-      (funcScript: String, bindings: VarBinding*)
+  def funcJitFromExpr[A: RType, B: RType]
+      (funcScript: String, expr: SValue, bindings: VarBinding*)
       (implicit IR: IRContext,
                 evalSettings: EvalSettings,
                 compilerSettings: CompilerSettings): CompiledFunc[A, B] = {
     val tA = RType[A]
-    val compiledTree = compileTestScript[A](Interpreter.emptyEnv, funcScript)
-
     val f = (in: A) => {
       implicit val cA: ClassTag[A] = tA.classTag
       val (_, sigmaCtx) = createContexts(in, bindings)
@@ -276,7 +289,7 @@ trait SigmaTestingCommons extends PropSpec
         coster = accumulator, evalSettings.profilerOpt.getOrElse(DefaultProfiler), evalSettings)
 
       val (res, actualTime) = BenchmarkUtil.measureTimeNano(
-        evaluator.evalWithCost[B](ErgoTreeEvaluator.EmptyDataEnv, compiledTree))
+        evaluator.evalWithCost[B](ErgoTreeEvaluator.EmptyDataEnv, expr))
       val costDetails = if (evalSettings.costTracingEnabled) {
         val trace: Seq[CostItem] = evaluator.getCostTrace()
         val costDetails = TracedCost(trace, Some(actualTime))
@@ -294,8 +307,17 @@ trait SigmaTestingCommons extends PropSpec
       }
       (res.value, costDetails)
     }
-    val Terms.Apply(funcVal, _) = compiledTree.asInstanceOf[SValue]
-    CompiledFunc(funcScript, bindings, funcVal, compiledTree, f)
+    val Terms.Apply(funcVal, _) = expr.asInstanceOf[SValue]
+    CompiledFunc(funcScript, bindings, funcVal, expr, f)
+  }
+
+  def funcJit[A: RType, B: RType]
+      (funcScript: String, bindings: VarBinding*)
+      (implicit IR: IRContext,
+                evalSettings: EvalSettings,
+                compilerSettings: CompilerSettings): CompiledFunc[A, B] = {
+    val compiledTree = compileTestScript[A](Interpreter.emptyEnv, funcScript)
+    funcJitFromExpr(funcScript, compiledTree, bindings:_*)
   }
 
   /** Creates a specialized (faster) version which can be used to benchmark performance of

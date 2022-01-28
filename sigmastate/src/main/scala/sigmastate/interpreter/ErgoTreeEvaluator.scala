@@ -375,17 +375,6 @@ object ErgoTreeEvaluator {
     isMeasureOperationTime = false,
     isMeasureScriptTime = false)
 
-  /** Helper method to compute cost details for the given method call. */
-  def calcCost(mc: MethodCall, obj: Any, args: Array[Any])
-              (implicit E: ErgoTreeEvaluator): CostDetails = {
-    // add approximated cost of invoked method (if specified)
-    val cost = mc.method.costFunc match {
-      case Some(costFunc) => costFunc(E, mc, obj, args)
-      case _ => CostDetails.ZeroCost // TODO v5.0: throw exception if not defined
-    }
-    cost
-  }
-
   /** Evaluator currently is being executed on the current thread.
     * This variable is set in a single place, specifically in the `eval` method of
     * [[ErgoTreeEvaluator]].

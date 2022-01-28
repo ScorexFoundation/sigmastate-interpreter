@@ -12,6 +12,7 @@ import sigmastate.Operations._
 import sigmastate.eval.{Evaluation, SigmaDsl}
 import sigmastate.interpreter.ErgoTreeEvaluator
 import sigmastate.interpreter.ErgoTreeEvaluator.{DataEnv, error}
+import sigmastate.interpreter.Interpreter.JitActivationVersion
 import sigmastate.lang.exceptions.InterpreterException
 import special.collection.Coll
 import special.sigma.{Box, SigmaProp}
@@ -69,7 +70,7 @@ case class Append[IV <: SType](input: Value[SCollection[IV]], col2: Value[SColle
     val inputV = input.evalTo[Coll[IV#WrappedType]](env)
     val col2V = col2.evalTo[Coll[IV#WrappedType]](env)
     addSeqCost(Append.costKind, inputV.length + col2V.length) { () =>
-      inputV.append(col2V)
+        inputV.append(col2V)
     }
   }
 }
@@ -412,7 +413,7 @@ object ExtractScriptBytes extends SimpleTransformerCompanion {
   val OpType = SFunc(SBox, SByteArray)
   override def opCode: OpCode = OpCodes.ExtractScriptBytesCode
 
-  // TODO v5.0: ensure the following is true
+  // TODO v5.x: ensure the following is true
   /** The cost is fixed and doesn't include serialization of ErgoTree because
     * the ErgoTree is expected to be constructed with non-null propositionBytes.
     * This is (and must be) guaranteed by ErgoTree deserializer.
@@ -437,7 +438,7 @@ object ExtractBytes extends SimpleTransformerCompanion {
   override def opCode: OpCode = OpCodes.ExtractBytesCode
   /** The cost is fixed and doesn't include serialization of ErgoBox because
     * the ErgoBox is expected to be constructed with non-null `bytes`.
-    * TODO v5.0: This is not, but must be guaranteed by ErgoBox deserializer. */
+    * TODO v5.x: This is not currently, but must be guaranteed by lazy ErgoBox deserializer. */
   override val costKind = FixedCost(JitCost(12))
   override def argInfos: Seq[ArgInfo] = ExtractBytesInfo.argInfos
 }

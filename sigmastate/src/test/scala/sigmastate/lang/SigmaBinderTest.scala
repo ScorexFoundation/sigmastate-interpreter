@@ -142,7 +142,7 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
         If(EQ(IntConstant(10), IntConstant(11)), IntConstant(2), IntConstant(3)))
   }
 
-  // TODO HF (4h): SomeValue and NoneValue are not used in ErgoTree and can be
+  // TODO v6.0 (4h): SomeValue and NoneValue are not used in ErgoTree and can be
   //  either removed or implemented in v4.x
   property("Option constructors") {
     bind(env, "None") shouldBe NoneValue(NoType)

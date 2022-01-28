@@ -2300,7 +2300,7 @@ class SigmaDslSpecification extends SigmaDslTesting
       (BigIntMaxValue, BigIntMinValue) -> expect(false),
       (BigIntMaxValue, -47.toBigInt) -> expect(false),
       (BigIntMaxValue, BigIntMaxValue) -> expect(false),
-      (BigIntMaxValue, BigIntOverlimit) -> expect(true),  // TODO v5.0: reject this overlimit cases
+      (BigIntMaxValue, BigIntOverlimit) -> expect(true),  // TODO v6.0: reject this overlimit cases
       (BigIntOverlimit, BigIntOverlimit) -> expect(false)
     )
 
@@ -2316,7 +2316,7 @@ class SigmaDslSpecification extends SigmaDslTesting
 
   property("BigInt LE, GE") {
     val o = NumericOps.BigIntIsExactOrdering
-    // TODO HF: this values have bitCount == 255 (see to256BitValueExact)
+    // TODO v6.0: this values have bitCount == 255 (see to256BitValueExact)
     val BigIntMinValue = CBigInt(new BigInteger("-7F" + "ff" * 31, 16))
     val BigIntMaxValue = CBigInt(new BigInteger("7F" + "ff" * 31, 16))
     val BigIntOverlimit = CBigInt(new BigInteger("7F" + "ff" * 33, 16))
@@ -2359,7 +2359,7 @@ class SigmaDslSpecification extends SigmaDslTesting
       (BigIntMaxValue, BigIntMinValue) -> expect(false),
       (BigIntMaxValue, -47.toBigInt) -> expect(false),
       (BigIntMaxValue, BigIntMaxValue) -> expect(true),
-      (BigIntMaxValue, BigIntOverlimit) -> expect(true), // TODO v5.0: reject this overlimit cases
+      (BigIntMaxValue, BigIntOverlimit) -> expect(true), // TODO v6.0: reject this overlimit cases
       (BigIntOverlimit, BigIntOverlimit) -> expect(true)
     )
 
@@ -2371,15 +2371,15 @@ class SigmaDslSpecification extends SigmaDslTesting
   }
 
   property("BigInt methods equivalence (new features)") {
-    // TODO HF (2h): the behavior of `upcast` for BigInt is different from all other Numeric types
+    // TODO v6.0 (2h): the behavior of `upcast` for BigInt is different from all other Numeric types
     // The `Upcast(bigInt, SBigInt)` node is never produced by ErgoScript compiler, but is still valid ErgoTree.
-    // It makes sense to fix this inconsistency as part of HF
+    // It makes sense to fix this inconsistency as part of upcoming forks
     assertExceptionThrown(
       SBigInt.upcast(CBigInt(new BigInteger("0", 16)).asInstanceOf[AnyVal]),
       _.getMessage.contains("Cannot upcast value")
     )
 
-    // TODO HF (2h): the behavior of `downcast` for BigInt is different from all other Numeric types
+    // TODO v6.0 (2h): the behavior of `downcast` for BigInt is different from all other Numeric types
     // The `Downcast(bigInt, SBigInt)` node is never produced by ErgoScript compiler, but is still valid ErgoTree.
     // It makes sense to fix this inconsistency as part of HF
     assertExceptionThrown(
@@ -2672,7 +2672,7 @@ class SigmaDslSpecification extends SigmaDslTesting
           MethodCall(ValUse(1, SGroupElement), SGroupElement.getMethodByName("negate"), Vector(), Map())
         )))
 
-    // TODO HF (3h): related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
+    // TODO v6.0 (3h): related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
     // val isIdentity = existingFeature({ (x: GroupElement) => x.isIdentity },
     //   "{ (x: GroupElement) => x.isIdentity }")
 
@@ -2722,7 +2722,7 @@ class SigmaDslSpecification extends SigmaDslTesting
           )
         )))
     } else {
-      // TODO v5.0: add test case with `exp` MethodCall
+      // TODO mainnet v5.0: add test case with `exp` MethodCall
     }
 
     if (lowerMethodCallsInTests) {
@@ -2770,7 +2770,7 @@ class SigmaDslSpecification extends SigmaDslTesting
           )
         )))
     } else {
-      //TODO v5.0: add test case with `exp` MethodCall
+      //TODO mainnet v5.0: add test case with `exp` MethodCall
     }
   }
 
@@ -3284,7 +3284,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         val invalidKvs = Colls.fromItems((invalidKey -> value)) // NOTE, insertProof is based on `key`
         val input = (tree, (invalidKvs, insertProof))
         val (res, _) = insert.checkEquality(input).getOrThrow
-        res.isDefined shouldBe true // TODO HF: should it really be true? (looks like a bug)
+        res.isDefined shouldBe true // TODO v6.0: should it really be true? (looks like a bug)
         insert.checkVerify(input, Expected(value = Success(res), cost = 38501))
       }
 
@@ -3417,7 +3417,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         val invalidKvs = Colls.fromItems((key -> invalidValue))
         val input = (tree, (invalidKvs, updateProof))
         val (res, _) = update.checkEquality(input).getOrThrow
-        res.isDefined shouldBe true  // TODO HF: should it really be true? (looks like a bug)
+        res.isDefined shouldBe true  // TODO v6.0: should it really be true? (looks like a bug)
         update.checkVerify(input, Expected(value = Success(res), cost = cost))
       }
 
@@ -3694,7 +3694,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         "{ (x: Box) => x.creationInfo }",
         FuncValue(Vector((1, SBox)), ExtractCreationInfo(ValUse(1, SBox)))))
 
-    // TODO HF (2h): fix collections equality and remove map(identity)
+    // TODO v6.0 (2h): fix collections equality and remove map(identity)
     //  (PairOfColl should be equal CollOverArray)
     verifyCases(
       Seq(
@@ -3718,7 +3718,7 @@ class SigmaDslSpecification extends SigmaDslTesting
   }
 
   property("Box properties equivalence (new features)") {
-    // TODO HF (4h): related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/416
+    // TODO v6.0 (4h): related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/416
     val getReg = newFeature((x: Box) => x.getReg[Int](1).get,
       "{ (x: Box) => x.getReg[Int](1).get }")
 
@@ -3865,6 +3865,13 @@ class SigmaDslSpecification extends SigmaDslTesting
       ErgoBox.R4 -> ByteArrayConstant(Coll(1.toByte))
     )))
 
+    val box3 = SigmaDsl.Box(testBox(20, TrueTree, 0, Seq(), Map(
+      ErgoBox.R4 -> Constant((10, 20L).asInstanceOf[SType#WrappedType], STuple(SInt, SLong)),
+      ErgoBox.R5 -> Constant((10, Some(20L)).asInstanceOf[SType#WrappedType], STuple(SInt, SOption(SLong)))
+      // TODO v6.0 (1h): uncomment after DataSerializer support of Option type
+      //  ErgoBox.R6 -> Constant[SOption[SInt.type]](Option(10), SOption(SInt)),
+    )))
+
     verifyCases(
       Seq(
         (box1, Expected(Success(1.toByte), cost = 36253)),
@@ -3941,6 +3948,52 @@ class SigmaDslSpecification extends SigmaDslTesting
           Vector((1, SBox)),
           OptionGet(ExtractRegisterAs(ValUse(1, SBox), ErgoBox.R9, SOption(SAvlTree)))
         )))
+
+    verifyCases(
+      Seq(
+        (box3, Expected(Success(10), cost = 36468))
+      ),
+      existingFeature((x: Box) => x.R4[(Int, Long)].get._1,
+        "{ (x: Box) => x.R4[(Int, Long)].get._1 }",
+        FuncValue(
+          Array((1, SBox)),
+          SelectField.typed[Value[SInt.type]](
+            OptionGet(ExtractRegisterAs(ValUse(1, SBox), ErgoBox.R4, SOption(SPair(SInt, SLong)))),
+            1.toByte
+          )
+        )))
+
+    verifyCases(
+      Seq(
+        (box3, Expected(Success(10), cost = 36468))
+      ),
+      existingFeature((x: Box) => x.R5[(Int, Option[Long])].get._1,
+        "{ (x: Box) => x.R5[(Int, Option[Long])].get._1 }",
+        FuncValue(
+          Array((1, SBox)),
+          SelectField.typed[Value[SInt.type]](
+            OptionGet(ExtractRegisterAs(ValUse(1, SBox), ErgoBox.R5, SOption(SPair(SInt, SOption(SLong))))),
+            1.toByte
+          )
+        )))
+
+    // TODO v6.0 (1h): uncomment after DataSerializer support of Option type
+    //    verifyCases(
+    //      Seq(
+    //        (box3, Expected(Success(20L), cost = 36468))
+    //      ),
+    //      existingFeature((x: Box) => x.R5[(Int, Option[Long])].get._2.get,
+    //        "{ (x: Box) => x.R5[(Int, Option[Long])].get._2.get }",
+    //        FuncValue(
+    //          Array((1, SBox)),
+    //          OptionGet(
+    //            SelectField.typed[Value[SOption[SLong.type]]](
+    //              OptionGet(
+    //                ExtractRegisterAs(ValUse(1, SBox), ErgoBox.R5, SOption(SPair(SInt, SOption(SLong))))
+    //              ),
+    //              2.toByte
+    //            ))
+    //        )))
   }
 
   def existingPropTest[A: RType, B: RType](propName: String, scalaFunc: A => B) = {
@@ -4226,7 +4279,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         )
       ),
       height = 11,
-      selfBox = input.copy(),  // TODO HF (2h): in 3.x implementation selfBox is never the same instance as input (see toSigmaContext)
+      selfBox = input.copy(),  // in 3.x, 4.x implementation selfBox is never the same instance as input (see toSigmaContext)
       lastBlockUtxoRootHash = CAvlTree(
         AvlTreeData(
           ADDigest @@ (ErgoAlgos.decodeUnsafe("54d23dd080006bdb56800100356080935a80ffb77e90b800057f00661601807f17")),
@@ -4426,6 +4479,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         )),
       preGeneratedSamples = Some(samples))
 
+    // TODO v5.0: fix selfBoxIndex for ET v2
     verifyCases(
       Seq((ctx, Expected(Success(-1), cost = 36318))),
       existingFeature({ (x: Context) => x.selfBoxIndex },
@@ -4441,7 +4495,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         )),
       preGeneratedSamples = Some(samples))
 
-    // TODO HF (2h): see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/603
+    // TODO v5.0 (2h): see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/603
     samples.foreach { c =>
       ctx.selfBoxIndex shouldBe -1
     }
@@ -4477,7 +4531,7 @@ class SigmaDslSpecification extends SigmaDslTesting
       existingPropTest("minerPubKey", { (x: Context) => x.minerPubKey }),
       preGeneratedSamples = Some(samples))
 
-// TODO HF (2h): implement support of Option[T] in DataSerializer
+// TODO v6.0 (2h): implement support of Option[T] in DataSerializer
 //  this will allow passing optional values in registers and also in constants
 //    testCases2(
 //      Seq(
@@ -4584,7 +4638,7 @@ class SigmaDslSpecification extends SigmaDslTesting
           throw expectedError
         },
         scalaFuncNew = { (x: Context) =>
-          // TODO HF: this is expected in v5.0
+          // TODO v5.0: this is expected in v5.0
           val dataBox = x.dataInputs(0)
           val ok = if (x.OUTPUTS(0).R5[Long].get == 1L) {
             dataBox.R4[Long].get <= x.SELF.value
@@ -5036,7 +5090,7 @@ class SigmaDslSpecification extends SigmaDslTesting
   }
 
   property("xorOf equivalence") {
-    // TODO HF (3h): see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/640
+    // TODO v5.0 (3h): see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/640
     verifyCases(
       {
         def success[T](v: T, c: Int) = Expected(Success(v), c)
@@ -5243,10 +5297,10 @@ class SigmaDslSpecification extends SigmaDslTesting
         )
       )))
     } else {
-      // TODO v5.0: add test case with `exp` MethodCall
+      // TODO mainnet v5.0: add test case with `exp` MethodCall
     }
 
-    // TODO HF (2h): fix semantics when the left collection is longer
+    // TODO v6.0 (2h): fix semantics when the left collection is longer
     if (lowerMethodCallsInTests) {
       verifyCases(
       {
@@ -5278,7 +5332,7 @@ class SigmaDslSpecification extends SigmaDslTesting
           )
         )))
     } else {
-      // TODO v5.0: add test case with `SGlobal.xor` MethodCall
+      // TODO mainnet v5.0: add test case with `SGlobal.xor` MethodCall
     }
   }
 
@@ -5809,7 +5863,7 @@ class SigmaDslSpecification extends SigmaDslTesting
       preGeneratedSamples = Some(samples))
   }
 
-  // TODO HF (3h): https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
+  // TODO v6.0 (3h): https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
   property("Coll find method equivalence") {
     val find = newFeature((x: Coll[Int]) => x.find({ (v: Int) => v > 0 }),
       "{ (x: Coll[Int]) => x.find({ (v: Int) => v > 0} ) }")
@@ -5818,7 +5872,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     }
   }
 
-  // TODO HF (3h): https://github.com/ScorexFoundation/sigmastate-interpreter/issues/418
+  // TODO v6.0 (3h): https://github.com/ScorexFoundation/sigmastate-interpreter/issues/418
   property("Coll bitwise methods equivalence") {
     val shiftRight = newFeature(
       { (x: Coll[Boolean]) =>
@@ -5830,7 +5884,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     }
   }
 
-  // TODO HF (3h): https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
+  // TODO v6.0 (3h): https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
   property("Coll diff methods equivalence") {
     val diff = newFeature((x: (Coll[Int], Coll[Int])) => x._1.diff(x._2),
       "{ (x: (Coll[Int], Coll[Int])) => x._1.diff(x._2) }")
@@ -6062,7 +6116,7 @@ class SigmaDslSpecification extends SigmaDslTesting
           )
         )))
     } else {
-      // TODO v5.0: add test case with `SCollection.getOrElse` MethodCall
+      // TODO mainnet v5.0: add test case with `SCollection.getOrElse` MethodCall
     }
   }
 
@@ -6292,7 +6346,7 @@ class SigmaDslSpecification extends SigmaDslTesting
           )
         )))
     } else {
-      // TODO v5.0: add test case with `SCollection.append` MethodCall
+      // TODO mainnet v5.0: add test case with `SCollection.append` MethodCall
     }
   }
 
@@ -6431,7 +6485,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         ) ))
   }
 
-  // TODO HF (3h): implement Option.fold
+  // TODO v6.0 (3h): implement Option.fold
   property("Option new methods") {
     val isEmpty = newFeature({ (x: Option[Long]) => x.isEmpty },
     "{ (x: Option[Long]) => x.isEmpty }")
@@ -6821,7 +6875,7 @@ class SigmaDslSpecification extends SigmaDslTesting
       preGeneratedSamples = Some(Seq()))
   }
 
-  // TODO HF (3h): implement allZK func https://github.com/ScorexFoundation/sigmastate-interpreter/issues/543
+  // TODO v6.0 (3h): implement allZK func https://github.com/ScorexFoundation/sigmastate-interpreter/issues/543
   property("allZK equivalence") {
     lazy val allZK = newFeature((x: Coll[SigmaProp]) => SigmaDsl.allZK(x),
       "{ (x: Coll[SigmaProp]) => allZK(x) }")
@@ -6830,7 +6884,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     }
   }
 
-  // TODO HF (3h): implement anyZK func https://github.com/ScorexFoundation/sigmastate-interpreter/issues/543
+  // TODO v6.0 (3h): implement anyZK func https://github.com/ScorexFoundation/sigmastate-interpreter/issues/543
   property("anyZK equivalence") {
     lazy val anyZK = newFeature((x: Coll[SigmaProp]) => SigmaDsl.anyZK(x),
       "{ (x: Coll[SigmaProp]) => anyZK(x) }")
@@ -6944,7 +6998,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         Seq(
           (Helpers.decodeBytes(""), 0) -> Expected(new java.nio.BufferUnderflowException()),
 
-          // TODO HF (2h): fix for trees without segregation flag
+          // TODO v5.0 (2h): fix for trees without segregation flag
           // NOTE: constants count is serialized erroneously in the following 2 cases
           (Coll(t1.bytes:_*), 0) -> success(Helpers.decodeBytes("000008d3")),
           (Helpers.decodeBytes("000008d3"), 0) -> success(Helpers.decodeBytes("00000008d3")),
@@ -6955,7 +7009,7 @@ class SigmaDslSpecification extends SigmaDslTesting
           (Coll(t3.bytes:_*), 0) -> success(Helpers.decodeBytes("100108d27300")),
           (Helpers.decodeBytes("100108d37300"), 0) -> success(Helpers.decodeBytes("100108d27300")),
           (Coll(t3.bytes:_*), 1) -> success(Helpers.decodeBytes("100108d37300")),
-          (Coll(t4.bytes:_*), 0) -> Expected(new AssertionError("assertion failed: expected new constant to have the same SInt$ tpe, got SSigmaProp"))
+          (Coll(t4.bytes:_*), 0) -> Expected(new IllegalArgumentException("requirement failed: expected new constant to have the same SInt$ tpe, got SSigmaProp"))
         )
       },
       existingFeature(
