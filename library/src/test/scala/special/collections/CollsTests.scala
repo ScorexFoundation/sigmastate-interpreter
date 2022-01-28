@@ -277,7 +277,7 @@ class CollsTests extends PropSpec with PropertyChecks with Matchers with CollGen
       val col2 = builder.fromItems(10, 20, 30, 40)
       val pairs = col1.zip(col2)
       assert(pairs.isInstanceOf[PairOfCols[_,_]])
-      
+
       val pairsArr = pairs.toArray
       pairsArr shouldBe Array((1, 10), (2, 20), (3, 30))
 
