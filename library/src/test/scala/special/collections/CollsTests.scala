@@ -55,14 +55,8 @@ class CollsTests extends PropSpec with PropertyChecks with Matchers with CollGen
 
       val pairs = xs.zip(xs)
       equalLength(pairs)
-      an[ClassCastException] should be thrownBy {
-        equalLengthMapped(pairs, squared(inc))  // due to problem with append
-      }
 
       equalLength(pairs.append(pairs))
-      an[ClassCastException] should be thrownBy {
-        equalLengthMapped(pairs.append(pairs), squared(inc)) // due to problem with append
-      }
     }
   }
 
