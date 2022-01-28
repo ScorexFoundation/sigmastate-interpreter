@@ -2,7 +2,7 @@ package sigmastate.interpreter
 
 import org.ergoplatform.ErgoLikeContext
 import org.ergoplatform.SigmaConstants.ScriptCostLimit
-import sigmastate.{FixedCost, JitCost, PerItemCost, SType, TypeBasedCost, Versions}
+import sigmastate.{FixedCost, JitCost, PerItemCost, SType, TypeBasedCost, VersionContext}
 import sigmastate.Values._
 import sigmastate.eval.Profiler
 import sigmastate.interpreter.ErgoTreeEvaluator.DataEnv
@@ -133,8 +133,8 @@ class ErgoTreeEvaluator(
   
   /** Evaluates the given expression in the given data environment. */
   def eval(env: DataEnv, exp: SValue): Any = {
-    if (Versions.currentErgoTreeVersion != context.currentErgoTreeVersion) {
-      error(s"Global Versions.currentErgoTreeVersion = ${Versions.currentErgoTreeVersion} while context.currentErgoTreeVersion = ${context.currentErgoTreeVersion}.")
+    if (VersionContext.current.ergoTreeVersion != context.currentErgoTreeVersion) {
+      error(s"Global VersionContext.current.ergoTreeVersion = ${VersionContext.current.ergoTreeVersion} while context.currentErgoTreeVersion = ${context.currentErgoTreeVersion}.")
     }
     ErgoTreeEvaluator.currentEvaluator.withValue(this) {
       exp.evalTo[Any](env)(this)

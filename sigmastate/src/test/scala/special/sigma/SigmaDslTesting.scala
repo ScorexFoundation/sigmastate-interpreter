@@ -376,7 +376,7 @@ class SigmaDslTesting extends PropSpec
         ctx
       }
 
-      val (evalMode, expectedResult, expectedCost) = if (activatedVersionInTests < Versions.JitActivationVersion)
+      val (evalMode, expectedResult, expectedCost) = if (activatedVersionInTests < VersionContext.JitActivationVersion)
         (AotEvaluationMode, expected.oldResult, expected.verificationCostOpt)
       else {
         val res = expected.newResults(ergoTreeVersionInTests)
@@ -491,7 +491,7 @@ class SigmaDslTesting extends PropSpec
       // check the old implementation against Scala semantic function
       val oldRes = checkEq(scalaFunc)(oldF)(input)
 
-      val newRes = Versions.withErgoTreeVersion(ergoTreeVersionInTests) {
+      val newRes = VersionContext.withVersions(activatedVersionInTests, ergoTreeVersionInTests) {
         checkEq(scalaFunc)({ x =>
           var y: (B, CostDetails) = null
           val N = nBenchmarkIters + 1
@@ -552,7 +552,7 @@ class SigmaDslTesting extends PropSpec
 
       if (!(newImpl eq oldImpl)) {
         // check the new implementation with Scala semantic
-        val (newRes, _) = Versions.withErgoTreeVersion(ergoTreeVersionInTests) {
+        val (newRes, _) = VersionContext.withVersions(activatedVersionInTests, ergoTreeVersionInTests) {
           checkEq(scalaFunc)(newF)(input).get
         }
         newRes shouldBe expected.value.get
@@ -640,15 +640,15 @@ class SigmaDslTesting extends PropSpec
     def checkEquality(input: A, logInputOutput: Boolean = false): Try[(B, CostDetails)] = {
       // check the old implementation against Scala semantic function
       var oldRes: Try[(B, CostDetails)] = null
-      if (ergoTreeVersionInTests < Versions.JitActivationVersion)
+      if (ergoTreeVersionInTests < VersionContext.JitActivationVersion)
         oldRes = checkEq(scalaFunc)(oldF)(input)
 
       val newRes = {
         // check the new implementation against Scala semantic function
-        val newRes = Versions.withErgoTreeVersion(ergoTreeVersionInTests) {
+        val newRes = VersionContext.withVersions(activatedVersionInTests, ergoTreeVersionInTests) {
           checkEq(scalaFuncNew)(newF)(input)
         }
-        if (ergoTreeVersionInTests < Versions.JitActivationVersion) {
+        if (ergoTreeVersionInTests < VersionContext.JitActivationVersion) {
           (oldRes, newRes) match {
             case (_: Failure[_], _: Success[_]) if allowNewToSucceed =>
               // NOTE, we are in ChangedFeature (compare with ExistingFeature)
@@ -683,7 +683,7 @@ class SigmaDslTesting extends PropSpec
 
       if (!(newImpl eq oldImpl)) {
         // check the new implementation with Scala semantic
-        val (newRes, _) = Versions.withErgoTreeVersion(ergoTreeVersionInTests) {
+        val (newRes, _) = VersionContext.withVersions(activatedVersionInTests, ergoTreeVersionInTests) {
           checkEq(scalaFuncNew)(newF)(input).get
         }
         val newExpectedRes = expected.newResults(ergoTreeVersionInTests)
@@ -735,7 +735,7 @@ class SigmaDslTesting extends PropSpec
       val oldRes = Try(oldF(input))
       oldRes.isFailure shouldBe true
       if (!(newImpl eq oldImpl)) {
-        val newRes = Versions.withErgoTreeVersion(ergoTreeVersionInTests) {
+        val newRes = VersionContext.withVersions(activatedVersionInTests, ergoTreeVersionInTests) {
           checkEq(scalaFuncNew)(newF)(input)
         }
       }
@@ -745,7 +745,7 @@ class SigmaDslTesting extends PropSpec
     override def checkExpected(input: A, expected: Expected[B]): Unit = {
       Try(oldF(input)).isFailure shouldBe true
       if (!(newImpl eq oldImpl)) {
-        val (newRes, _) = Versions.withErgoTreeVersion(ergoTreeVersionInTests) {
+        val (newRes, _) = VersionContext.withVersions(activatedVersionInTests, ergoTreeVersionInTests) {
           checkEq(scalaFuncNew)(newF)(input).get
         }
         val newExpectedRes = expected.newResults(ergoTreeVersionInTests)
@@ -1036,7 +1036,7 @@ class SigmaDslTesting extends PropSpec
     val funcNoTrace = funcJitFast[A, B](f.script)(tA, tB, IR, noTraceSettings, cs)
     var iCase = 0
     val (res, total) = BenchmarkUtil.measureTimeNano {
-      Versions.withErgoTreeVersion(ergoTreeVersionInTests) {
+      VersionContext.withVersions(activatedVersionInTests, ergoTreeVersionInTests) {
         cases.map { x =>
           assert(func(x)._1 == f.newF(x)._1)
           iCase += 1

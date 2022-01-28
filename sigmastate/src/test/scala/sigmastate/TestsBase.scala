@@ -23,7 +23,7 @@ trait TestsBase extends Matchers {
   def activatedVersionInTests: Byte = _currActivatedVersion.value
 
   /** Checks if the current activated script version used in tests corresponds to v4.x. */
-  def isActivatedVersion4: Boolean = activatedVersionInTests < Versions.JitActivationVersion
+  def isActivatedVersion4: Boolean = activatedVersionInTests < VersionContext.JitActivationVersion
 
   val ergoTreeVersions: Seq[Byte] =
     (0 to VersionContext.MaxSupportedScriptVersion).map(_.toByte).toArray[Byte]
