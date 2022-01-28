@@ -4634,11 +4634,12 @@ class SigmaDslSpecification extends SigmaDslTesting
       ),
       changedFeature(
         scalaFunc = { (x: Context) =>
-          // this error is expected in v3.x
+          // this error is expected in v3.x, v4.x
           throw expectedError
         },
         scalaFuncNew = { (x: Context) =>
-          // TODO v5.0: this is expected in v5.0
+          // this is expected in v5.0, so the semantics of the script should correspond
+          // to this Scala code
           val dataBox = x.dataInputs(0)
           val ok = if (x.OUTPUTS(0).R5[Long].get == 1L) {
             dataBox.R4[Long].get <= x.SELF.value
@@ -4647,53 +4648,54 @@ class SigmaDslSpecification extends SigmaDslTesting
           }
           ok
         },
-      s"""{ (x: Context) =>
-        |  val dataBox = x.dataInputs(0)
-        |  val ok = if (x.OUTPUTS(0).R5[Long].get == 1L) {
-        |    dataBox.R4[Long].get <= x.SELF.value
-        |  } else {
-        |    dataBox.R4[Coll[Byte]].get != x.SELF.propositionBytes
-        |  }
-        |  ok
-        |}
-        |""".stripMargin,
-      FuncValue(
-        Array((1, SContext)),
-        BlockValue(
-          Array(
-            ValDef(
-              3,
-              List(),
-              ByIndex(
-                MethodCall.typed[Value[SCollection[SBox.type]]](
-                  ValUse(1, SContext),
-                  SContext.getMethodByName("dataInputs"),
-                  Vector(),
-                  Map()
+        s"""{ (x: Context) =>
+          |  val dataBox = x.dataInputs(0)
+          |  val ok = if (x.OUTPUTS(0).R5[Long].get == 1L) {
+          |    dataBox.R4[Long].get <= x.SELF.value
+          |  } else {
+          |    dataBox.R4[Coll[Byte]].get != x.SELF.propositionBytes
+          |  }
+          |  ok
+          |}
+          |""".stripMargin,
+        FuncValue(
+          Array((1, SContext)),
+          BlockValue(
+            Array(
+              ValDef(
+                3,
+                List(),
+                ByIndex(
+                  MethodCall.typed[Value[SCollection[SBox.type]]](
+                    ValUse(1, SContext),
+                    SContext.getMethodByName("dataInputs"),
+                    Vector(),
+                    Map()
+                  ),
+                  IntConstant(0),
+                  None
+                )
+              )
+            ),
+            If(
+              EQ(
+                OptionGet(
+                  ExtractRegisterAs(ByIndex(Outputs, IntConstant(0), None), ErgoBox.R5, SOption(SLong))
                 ),
-                IntConstant(0),
-                None
+                LongConstant(1L)
+              ),
+              LE(
+                OptionGet(ExtractRegisterAs(ValUse(3, SBox), ErgoBox.R4, SOption(SLong))),
+                ExtractAmount(Self)
+              ),
+              NEQ(
+                OptionGet(ExtractRegisterAs(ValUse(3, SBox), ErgoBox.R4, SOption(SByteArray))),
+                ExtractScriptBytes(Self)
               )
             )
-          ),
-          If(
-            EQ(
-              OptionGet(
-                ExtractRegisterAs(ByIndex(Outputs, IntConstant(0), None), ErgoBox.R5, SOption(SLong))
-              ),
-              LongConstant(1L)
-            ),
-            LE(
-              OptionGet(ExtractRegisterAs(ValUse(3, SBox), ErgoBox.R4, SOption(SLong))),
-              ExtractAmount(Self)
-            ),
-            NEQ(
-              OptionGet(ExtractRegisterAs(ValUse(3, SBox), ErgoBox.R4, SOption(SByteArray))),
-              ExtractScriptBytes(Self)
-            )
           )
-        )
-      )
+        ),
+        allowNewToSucceed = true
       ),
       preGeneratedSamples = Some(mutable.WrappedArray.empty))
   }
@@ -5123,7 +5125,9 @@ class SigmaDslSpecification extends SigmaDslTesting
           (Coll[Boolean](false, false, true, true), successNew(true, 37101, newV = false,  newC = 8214))
         )
       },
-      existingFeature((x: Coll[Boolean]) => SigmaDsl.xorOf(x),
+      changedFeature(
+        (x: Coll[Boolean]) => SigmaDsl.xorOf(x),
+        (x: Coll[Boolean]) => SigmaDsl.xorOf(x),
         "{ (x: Coll[Boolean]) => xorOf(x) }",
         FuncValue(Vector((1, SBooleanArray)), XorOf(ValUse(1, SBooleanArray)))))
   }
@@ -6555,7 +6559,8 @@ class SigmaDslSpecification extends SigmaDslTesting
             ),
             LongConstant(5L)
           )
-        )))
+        ),
+        allowNewToSucceed = true))
   }
 
   def formatter(costKind: PerItemCost) = (info: MeasureInfo[Coll[Byte]]) => {

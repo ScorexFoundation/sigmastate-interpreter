@@ -57,7 +57,8 @@ class SigmaDslTesting extends PropSpec
   }
 
   def checkEq[A,B](scalaFunc: A => B)(g: A => (B, CostDetails)): A => Try[(B, CostDetails)] = { x: A =>
-    val b1 = Try(scalaFunc(x)); val b2 = Try(g(x))
+    val b1 = Try(scalaFunc(x))
+    val b2 = Try(g(x))
     (b1, b2) match {
       case (Success(b1), res @ Success((b2, _))) =>
         assert(b1 == b2)
@@ -134,7 +135,19 @@ class SigmaDslTesting extends PropSpec
 
   val predefScripts = Seq[String]()
 
-  /** Descriptor of the language feature. */
+  /** Descriptor of the language feature.
+    * Each language feature is described by so called feature-function which exercises
+    * some specific operation under test.
+    *
+    * For example, the following feature-function exercises binary `+` operation for `Int` type.
+    * `{ (in: (Int, Int)) => in._1 + in._2 }`
+    *
+    * Feature function script is compiled into expression and then executed on a series of
+    * test cases. The outputs if each test case is compared with expected values.
+    *
+    * Test cases are specified for all supported versions.
+    * @see ExistingFeature, ChangedFeature
+    */
   trait Feature[A, B] { feature =>
 
     /** Script containing this feature. */
@@ -363,57 +376,29 @@ class SigmaDslTesting extends PropSpec
         ctx
       }
 
-      if (expected.value.isSuccess) {
-        // check v4.x interpreter
-        val prover = new FeatureProvingInterpreter() {
-          override val evalSettings: EvalSettings = feature.evalSettings.copy(
-            evaluationMode = Some(AotEvaluationMode)
-          )
-        }
-        val tree = compiledTree(prover)
-        val ctx = ergoCtx(prover, tree, expected.value.get)
-        val pr = prover.prove(tree, ctx, fakeMessage).getOrThrow
-        val verificationCtx = ctx.withExtension(pr.extension)
-
-        // run old v4.x interpreter
-        val aotVerifier = new ErgoLikeTestInterpreter()(createIR()) {
-          override val evalSettings: EvalSettings = feature.evalSettings.copy(
-            evaluationMode = Some(AotEvaluationMode)
-          )
-        }
-        val aotRes = aotVerifier.verify(tree, verificationCtx, pr, fakeMessage)
-        checkExpectedResult(AotEvaluationMode, aotRes, expected.verificationCostOpt)
+      val (evalMode, expectedResult, expectedCost) = if (activatedVersionInTests < Versions.JitActivationVersion)
+        (AotEvaluationMode, expected.oldResult, expected.verificationCostOpt)
+      else {
+        val res = expected.newResults(ergoTreeVersionInTests)
+        (JitEvaluationMode, res._1, res._1.verificationCost)
       }
 
-      val newExpectedRes = expected.newResults(ergoTreeVersionInTests)
-      val newExpectedValue = newExpectedRes._1.value
-      if (newExpectedValue.isSuccess) {
-        // check v5.0 interpreter
-        val prover = new FeatureProvingInterpreter() {
-          override val evalSettings: EvalSettings = feature.evalSettings.copy(
-            evaluationMode = Some(JitEvaluationMode)
-          )
-        }
+      if (expectedResult.value.isSuccess) {
+        // we can run both proving and verification
+        val prover = new FeatureProvingInterpreter()
         val tree = compiledTree(prover)
-        val ctx = ergoCtx(prover, tree, newExpectedValue.get)
+        val ctx = ergoCtx(prover, tree, expectedResult.value.get)
         val pr = prover.prove(tree, ctx, fakeMessage).getOrThrow
         val verificationCtx = ctx.withExtension(pr.extension)
+        val verifier = new ErgoLikeTestInterpreter()(createIR())
+        val res = verifier.verify(tree, verificationCtx, pr, fakeMessage)
+        checkExpectedResult(evalMode, res, expectedCost)
 
-        // run new v5.0 interpreter
-        val jitVerifier = new ErgoLikeTestInterpreter()(createIR()) {
-          override val evalSettings: EvalSettings = feature.evalSettings.copy(
-            evaluationMode = Some(JitEvaluationMode)
-          )
-        }
-        val jitRes = jitVerifier.verify(tree, verificationCtx, pr, fakeMessage)
-        val newCost = newExpectedRes._1.verificationCost
-        checkExpectedResult(JitEvaluationMode, jitRes, newCost)
-
-        if (newCost.isEmpty) {
-          val res = jitRes.getOrThrow
+        if (expectedCost.isEmpty) {
+          val (_, cost) = res.getOrThrow
           // new verification cost expectation is missing, print out actual cost results
-          if (jitVerifier.evalSettings.printTestVectors) {
-            printCostTestVector("Missing New Cost", input, res._2.toInt)
+          if (feature.evalSettings.printTestVectors) {
+            printCostTestVector("Missing New Cost", input, cost.toInt)
           }
         }
       }
@@ -423,6 +408,7 @@ class SigmaDslTesting extends PropSpec
     private def printCostTestVector(title: String, input: Any, actualCost: Int) = {
       println(
         s"""--  $title  ----------------------
+          |ActivatedVersion: $activatedVersionInTests
           |ErgoTreeVersion: $ergoTreeVersionInTests
           |Input: $input
           |Script: $script
@@ -474,13 +460,25 @@ class SigmaDslTesting extends PropSpec
     Thread.sleep(1000) // let GC to its job before running the tests
   }
 
+  /** Derived class ExistingFeature is used to describe features which don't change from
+    * v4.x to v5.0.
+    *
+    * @tparam A type of an input test data
+    * @tparam B type of an output of the feature function
+    * @param script            script of the feature function (see Feature trait)
+    * @param scalaFunc         feature function written in Scala and used to simulate the behavior
+    *                          of the script
+    * @param expectedExpr      expected ErgoTree expression to be produced by ErgoScript
+    *                          compiler for the given feature-function
+    * @param printExpectedExpr if true, print test vectors for expectedExpr
+    * @param logScript         if true, log scripts to console
+    */
   case class ExistingFeature[A, B](
     script: String,
     scalaFunc: A => B,
     expectedExpr: Option[SValue],
     printExpectedExpr: Boolean = true,
-    logScript: Boolean = LogScriptDefault,
-    requireMCLowering: Boolean = false
+    logScript: Boolean = LogScriptDefault
   )(implicit IR: IRContext, tA: RType[A], tB: RType[B],
              override val evalSettings: EvalSettings) extends Feature[A, B] {
 
@@ -493,14 +491,16 @@ class SigmaDslTesting extends PropSpec
       // check the old implementation against Scala semantic function
       val oldRes = checkEq(scalaFunc)(oldF)(input)
 
-      val newRes = checkEq(scalaFunc)({ x =>
-        var y: (B, CostDetails) = null
-        val N = nBenchmarkIters + 1
-        cfor(0)(_ < N, _ + 1) { _ =>
-          y = newF(x)
-        }
-        y
-      })(input)
+      val newRes = Versions.withErgoTreeVersion(ergoTreeVersionInTests) {
+        checkEq(scalaFunc)({ x =>
+          var y: (B, CostDetails) = null
+          val N = nBenchmarkIters + 1
+          cfor(0)(_ < N, _ + 1) { _ =>
+            y = newF(x)
+          }
+          y
+        })(input)
+      }
 
       (oldRes, newRes) match {
         case (Success((oldRes, oldDetails)),
@@ -552,7 +552,9 @@ class SigmaDslTesting extends PropSpec
 
       if (!(newImpl eq oldImpl)) {
         // check the new implementation with Scala semantic
-        val (newRes, _) = checkEq(scalaFunc)(newF)(input).get
+        val (newRes, _) = Versions.withErgoTreeVersion(ergoTreeVersionInTests) {
+          checkEq(scalaFunc)(newF)(input).get
+        }
         newRes shouldBe expected.value.get
       }
     }
@@ -598,6 +600,27 @@ class SigmaDslTesting extends PropSpec
     }
   }
 
+  /** Descriptor of a language feature which is changed in v5.0.
+    *
+    * @tparam A type of an input test data
+    * @tparam B type of an output of the feature function
+    * @param script            script of the feature function (see Feature trait)
+    * @param scalaFunc         feature function written in Scala and used to simulate the behavior
+    *                          of the script
+    * @param scalaFuncNew      function in Scala to simulate the behavior of the script in v5.0
+    * @param expectedExpr      expected ErgoTree expression to be produced by ErgoScript
+    *                          compiler for the given feature-function
+    * @param printExpectedExpr if true, print test vectors for expectedExpr
+    * @param logScript         if true, log scripts to console
+    * @param allowNewToSucceed if true, we allow some scripts which fail in v4.x to pass in v5.0.
+    *                          Before activation, all ErgoTrees with version < JitActivationVersion are
+    *                          processed by v4.x interpreter, so this difference is not a problem.
+    *                          After activation, all ErgoTrees with version < JitActivationVersion are
+    *                          processed by v5.0 interpreter (which is 90% of nodes) and the rest are
+    *                          accepting without check.
+    *                          This approach allows to fix bugs in the implementation of
+    *                          some of v4.x operations.
+    */
   case class ChangedFeature[A: RType, B: RType](
     script: String,
     scalaFunc: A => B,
@@ -605,7 +628,7 @@ class SigmaDslTesting extends PropSpec
     expectedExpr: Option[SValue],
     printExpectedExpr: Boolean = true,
     logScript: Boolean = LogScriptDefault,
-    requireMCLowering: Boolean = false
+    allowNewToSucceed: Boolean = false
   )(implicit IR: IRContext, override val evalSettings: EvalSettings)
     extends Feature[A, B] {
 
@@ -616,19 +639,38 @@ class SigmaDslTesting extends PropSpec
 
     def checkEquality(input: A, logInputOutput: Boolean = false): Try[(B, CostDetails)] = {
       // check the old implementation against Scala semantic function
-      val oldRes = checkEq(scalaFunc)(oldF)(input)
+      var oldRes: Try[(B, CostDetails)] = null
+      if (ergoTreeVersionInTests < Versions.JitActivationVersion)
+        oldRes = checkEq(scalaFunc)(oldF)(input)
 
-      if (!(newImpl eq oldImpl)) {
+      val newRes = {
         // check the new implementation against Scala semantic function
-        val newRes = checkEq(scalaFuncNew)(newF)(input)
+        val newRes = Versions.withErgoTreeVersion(ergoTreeVersionInTests) {
+          checkEq(scalaFuncNew)(newF)(input)
+        }
+        if (ergoTreeVersionInTests < Versions.JitActivationVersion) {
+          (oldRes, newRes) match {
+            case (_: Failure[_], _: Success[_]) if allowNewToSucceed =>
+              // NOTE, we are in ChangedFeature (compare with ExistingFeature)
+              // this is the case when old v4.x version fails with exception (e.g. due to AOT costing),
+              // but the new v5.0 produces result. (See property("Option fold workaround method"))
+              // Thus, we allow some scripts which fail in v4.x to pass in v5.0.
+              // see ScalaDoc for allowNewToSucceed
+            case _ =>
+              val inputStr = SigmaPPrint(input, height = 550, width = 150)
+              checkResult(oldRes.map(_._1), newRes.map(_._1), true,
+                s"ChangedFeature.checkEquality($inputStr): use allowNewToSucceed=true to allow v5.0 to succeed when v4.x fails")
+          }
+        }
+        newRes
       }
-      if (logInputOutput) {
+      if (logInputOutput && oldRes != null) {
         val inputStr = SigmaPPrint(input, height = 550, width = 150)
         val oldResStr = SigmaPPrint(oldRes, height = 550, width = 150)
         val scriptComment = if (logScript) " // " + script else ""
         println(s"($inputStr, $oldResStr),$scriptComment")
       }
-      oldRes
+      newRes
     }
 
     /** compares the old and new implementations against
@@ -641,7 +683,9 @@ class SigmaDslTesting extends PropSpec
 
       if (!(newImpl eq oldImpl)) {
         // check the new implementation with Scala semantic
-        val (newRes, _) = checkEq(scalaFuncNew)(newF)(input).get
+        val (newRes, _) = Versions.withErgoTreeVersion(ergoTreeVersionInTests) {
+          checkEq(scalaFuncNew)(newF)(input).get
+        }
         val newExpectedRes = expected.newResults(ergoTreeVersionInTests)
         newRes shouldBe newExpectedRes._1.value.get
       }
@@ -659,14 +703,17 @@ class SigmaDslTesting extends PropSpec
                             expected: Expected[B],
                             printTestCases: Boolean,
                             failOnTestVectors: Boolean): Unit = {
-      val funcRes = checkEquality(input, printTestCases)
-
-      checkResult(funcRes.map(_._1), expected.value, failOnTestVectors)
-
+      checkEquality(input, printTestCases)
       checkVerify(input, expected)
     }
   }
 
+  /** Derived class NewFeature is used to describe features which should be introduced
+    * from specific version.
+    * This in not yet implemented and will be finished in v6.0.
+    * In v5.0 is only checks that some features are NOT implemented, i.e. work for
+    * negative tests.
+    */
   case class NewFeature[A: RType, B: RType](
     script: String,
     override val scalaFuncNew: A => B,
@@ -688,7 +735,9 @@ class SigmaDslTesting extends PropSpec
       val oldRes = Try(oldF(input))
       oldRes.isFailure shouldBe true
       if (!(newImpl eq oldImpl)) {
-        val newRes = checkEq(scalaFuncNew)(newF)(input)
+        val newRes = Versions.withErgoTreeVersion(ergoTreeVersionInTests) {
+          checkEq(scalaFuncNew)(newF)(input)
+        }
       }
       oldRes
     }
@@ -696,7 +745,9 @@ class SigmaDslTesting extends PropSpec
     override def checkExpected(input: A, expected: Expected[B]): Unit = {
       Try(oldF(input)).isFailure shouldBe true
       if (!(newImpl eq oldImpl)) {
-        val (newRes, _) = checkEq(scalaFuncNew)(newF)(input).get
+        val (newRes, _) = Versions.withErgoTreeVersion(ergoTreeVersionInTests) {
+          checkEq(scalaFuncNew)(newF)(input).get
+        }
         val newExpectedRes = expected.newResults(ergoTreeVersionInTests)
         newRes shouldBe newExpectedRes._1.value.get
       }
@@ -839,11 +890,10 @@ class SigmaDslTesting extends PropSpec
     */
   def existingFeature[A: RType, B: RType]
       (scalaFunc: A => B, script: String,
-       expectedExpr: SValue = null, requireMCLowering: Boolean = false)
+       expectedExpr: SValue = null)
       (implicit IR: IRContext, evalSettings: EvalSettings): Feature[A, B] = {
     ExistingFeature(
-      script, scalaFunc, Option(expectedExpr),
-      requireMCLowering = requireMCLowering)
+      script, scalaFunc, Option(expectedExpr))
   }
 
   /** Describes existing language feature which should be differently supported in both
@@ -858,9 +908,14 @@ class SigmaDslTesting extends PropSpec
     *         various ways
     */
   def changedFeature[A: RType, B: RType]
-      (scalaFunc: A => B, scalaFuncNew: A => B, script: String, expectedExpr: SValue = null)
+      (scalaFunc: A => B,
+       scalaFuncNew: A => B,
+       script: String,
+       expectedExpr: SValue = null,
+       allowNewToSucceed: Boolean = false)
       (implicit IR: IRContext, evalSettings: EvalSettings): Feature[A, B] = {
-    ChangedFeature(script, scalaFunc, scalaFuncNew, Option(expectedExpr))
+    ChangedFeature(script, scalaFunc, scalaFuncNew, Option(expectedExpr),
+      allowNewToSucceed = allowNewToSucceed)
   }
 
   /** Describes a NEW language feature which must NOT be supported in v4 and
@@ -887,7 +942,7 @@ class SigmaDslTesting extends PropSpec
   val PrintTestCasesDefault: Boolean = false // true
   val FailOnTestVectorsDefault: Boolean = true
 
-  private def checkResult[B](res: Try[B], expectedRes: Try[B], failOnTestVectors: Boolean): Unit = {
+  private def checkResult[B](res: Try[B], expectedRes: Try[B], failOnTestVectors: Boolean, hint: String = ""): Unit = {
     (res, expectedRes) match {
       case (Failure(exception), Failure(expectedException)) =>
         rootCause(exception).getClass shouldBe expectedException.getClass
@@ -896,7 +951,8 @@ class SigmaDslTesting extends PropSpec
           val actual = rootCause(res)
           if (expectedRes != actual) {
             val actualPrinted = SigmaPPrint(actual, height = 150).plainText
-            assert(false, s"Actual: $actualPrinted")
+            val expectedPrinted = SigmaPPrint(expectedRes, height = 150).plainText
+            assert(false, s"$hint\nActual: $actualPrinted;\nExpected: $expectedPrinted\n")
           }
         }
         else {
@@ -980,24 +1036,26 @@ class SigmaDslTesting extends PropSpec
     val funcNoTrace = funcJitFast[A, B](f.script)(tA, tB, IR, noTraceSettings, cs)
     var iCase = 0
     val (res, total) = BenchmarkUtil.measureTimeNano {
-      cases.map { x =>
-        assert(func(x)._1 == f.newF(x)._1)
-        iCase += 1
-        def benchmarkCase(func: CompiledFunc[A,B], printOut: Boolean) = {
-          val (_, t) = BenchmarkUtil.measureTimeNano {
-            cfor(0)(_ < nIters, _ + 1) { i =>
-              val res = func(x)
+      Versions.withErgoTreeVersion(ergoTreeVersionInTests) {
+        cases.map { x =>
+          assert(func(x)._1 == f.newF(x)._1)
+          iCase += 1
+          def benchmarkCase(func: CompiledFunc[A,B], printOut: Boolean) = {
+            val (_, t) = BenchmarkUtil.measureTimeNano {
+              cfor(0)(_ < nIters, _ + 1) { i =>
+                val res = func(x)
+              }
             }
+            if (printOut) {
+              val info = MeasureInfo(x, iCase, nIters, t)
+              val out = formatter(info)
+              println(out)
+            }
+            t
           }
-          if (printOut) {
-            val info = MeasureInfo(x, iCase, nIters, t)
-            val out = formatter(info)
-            println(out)
-          }
-          t
+          benchmarkCase(func, printOut = false)
+          benchmarkCase(funcNoTrace, printOut = true)
         }
-        benchmarkCase(func, printOut = false)
-        benchmarkCase(funcNoTrace, printOut = true)
       }
     }
     println(s"Total time: ${total / 1000000} msec")
