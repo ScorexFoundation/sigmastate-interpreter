@@ -56,19 +56,19 @@ trait Interpreter extends ScorexLogging {
 
   type ProofT = UncheckedTree
 
-  val IR: IRContext
+  protected val IR: IRContext
   import IR._
 
   /** Processor instance which is used by this interpreter to execute ErgoTrees that
     * contain neither [[DeserializeContext]] nor [[sigmastate.utxo.DeserializeRegister]]
     * operations.
     */
-  def precompiledScriptProcessor: PrecompiledScriptProcessor
+  protected def precompiledScriptProcessor: PrecompiledScriptProcessor
 
   /** Evaluation settings used by [[ErgoTreeEvaluator]] which is used by this
     * interpreter to perform fullReduction.
     */
-  def evalSettings: EvalSettings = ErgoTreeEvaluator.DefaultEvalSettings
+  protected def evalSettings: EvalSettings = ErgoTreeEvaluator.DefaultEvalSettings
 
   /** Logs the given message string. Can be overridden in the derived interpreter classes
     * to redefine the default behavior. */
@@ -85,7 +85,7 @@ trait Interpreter extends ScorexLogging {
     * NOTE: While ErgoTree is always of type SigmaProp, ValueSerializer can serialize expression of any type.
     * So it cannot be replaced with ErgoTreeSerializer here.
     */
-  def deserializeMeasured(context: CTX, scriptBytes: Array[Byte]): (CTX, Value[SType]) = {
+  protected def deserializeMeasured(context: CTX, scriptBytes: Array[Byte]): (CTX, Value[SType]) = {
     val r = SigmaSerializer.startReader(scriptBytes)
     r.complexity = 0
     val script = ValueSerializer.deserialize(r)  // Why ValueSerializer? read NOTE above
@@ -134,7 +134,7 @@ trait Interpreter extends ScorexLogging {
 
   /** Substitute Deserialize* nodes with deserialized subtrees
     * We can estimate cost of the tree evaluation only after this step.*/
-  def applyDeserializeContext(context: CTX, exp: Value[SType]): (BoolValue, CTX) = {
+  private def applyDeserializeContext(context: CTX, exp: Value[SType]): (BoolValue, CTX) = {
     val currContext = new MutableCell(context)
     val substRule = strategy[Any] { case x: SValue =>
       substDeserialize(currContext.value, { ctx: CTX => currContext.value = ctx }, x)
@@ -148,7 +148,7 @@ trait Interpreter extends ScorexLogging {
     * This is necessary because new interpreter, while ultimately produces the same
     * results as the old interpreter, it is implemented differently internally.
     */
-  def applyDeserializeContextJITC(context: CTX, exp: Value[SType]): (SigmaPropValue, CTX) = {
+  private def applyDeserializeContextJITC(context: CTX, exp: Value[SType]): (SigmaPropValue, CTX) = {
     val currContext = new MutableCell(context)
     val substRule = strategy[Any] { case x: SValue =>
       substDeserialize(currContext.value, { ctx: CTX => currContext.value = ctx }, x)
@@ -291,7 +291,9 @@ trait Interpreter extends ScorexLogging {
         var jitRes: JitReductionResult = null
         if (evalMode.okEvaluateJit) {
           val ctx = context.asInstanceOf[ErgoLikeContext]
-          jitRes = ErgoTreeEvaluator.evalToCrypto(ctx, ergoTree, evalSettings)
+          jitRes = VersionContext.withVersions(ctx.activatedScriptVersion, ergoTree.version) {
+            ErgoTreeEvaluator.evalToCrypto(ctx, ergoTree, evalSettings)
+          }
         }
         (aotRes, jitRes)
       case _ =>
@@ -324,13 +326,15 @@ trait Interpreter extends ScorexLogging {
 
     var jitRes: JitReductionResult = null
     if (evalMode.okEvaluateJit) {
-      val (propTree, context2) = trySoftForkable[(SigmaPropValue, CTX)](whenSoftFork = (TrueSigmaProp, context)) {
-        applyDeserializeContextJITC(context, prop)
-      }
+      jitRes = VersionContext.withVersions(context.activatedScriptVersion, ergoTree.version) {
+        val (propTree, context2) = trySoftForkable[(SigmaPropValue, CTX)](whenSoftFork = (TrueSigmaProp, context)) {
+          applyDeserializeContextJITC(context, prop)
+        }
 
-      // here we assume that when `propTree` is TrueProp then `reduceToCrypto` always succeeds
-      // and the rest of the verification is also trivial
-      jitRes = reduceToCryptoJITC(context2, env, propTree).getOrThrow
+        // here we assume that when `propTree` is TrueProp then `reduceToCrypto` always succeeds
+        // and the rest of the verification is also trivial
+        reduceToCryptoJITC(context2, env, propTree).getOrThrow
+      }
     }
 
     (aotRes, jitRes)
@@ -344,7 +348,7 @@ trait Interpreter extends ScorexLogging {
     * @param costLimit total cost limit to check and raise exception if exceeded
     * @return computed jitRes.cost + crypto verification cost
     */
-  def addCryptoCost(jitRes: JitReductionResult, costLimit: Long) = {
+  protected def addCryptoCost(jitRes: JitReductionResult, costLimit: Long) = {
     val cryptoCost = estimateCryptoVerifyCost(jitRes.value).toBlockCost // scale JitCost to tx cost
 
     // Note, jitRes.cost is already scaled in fullReduction
@@ -362,7 +366,7 @@ trait Interpreter extends ScorexLogging {
     */
   def getEvaluationMode(context: CTX): EvaluationMode = {
     evalSettings.evaluationMode.getOrElse {
-      if (context.activatedScriptVersion < Interpreter.JitActivationVersion)
+      if (context.activatedScriptVersion < VersionContext.JitActivationVersion)
         AotEvaluationMode
       else
         JitEvaluationMode
@@ -401,7 +405,7 @@ trait Interpreter extends ScorexLogging {
       // This works in addition to more fine-grained soft-forkability mechanism implemented
       // using ValidationRules (see trySoftForkable method call here and in reduceToCrypto).
 
-      if (context.activatedScriptVersion > Interpreter.MaxSupportedScriptVersion) {
+      if (context.activatedScriptVersion > VersionContext.MaxSupportedScriptVersion) {
         // The activated protocol exceeds capabilities of this interpreter.
         // NOTE: this path should never be taken for validation of candidate blocks
         // in which case Ergo node should always pass Interpreter.MaxSupportedScriptVersion
@@ -411,7 +415,7 @@ trait Interpreter extends ScorexLogging {
         // Currently more than 90% of nodes has already switched to a higher version,
         // thus we can accept without verification, but only if we cannot verify
         // the given ergoTree
-        if (ergoTree.version > Interpreter.MaxSupportedScriptVersion) {
+        if (ergoTree.version > VersionContext.MaxSupportedScriptVersion) {
           // We accept the box spending and rely on 90% of all the other nodes.
           // Thus, the old node will stay in sync with the network.
           return Success(true -> context.initCost)
@@ -507,7 +511,7 @@ trait Interpreter extends ScorexLogging {
     * per the verifier algorithm of the leaf's Sigma-protocol.
     * If the verifier algorithm of the Sigma-protocol for any of the leaves rejects, then reject the entire proof.
     */
-  val computeCommitments: Strategy = everywherebu(rule[Any] {
+  private[sigmastate] val computeCommitments: Strategy = everywherebu(rule[Any] {
     case c: UncheckedConjecture => c // Do nothing for internal nodes
 
     case sn: UncheckedSchnorr =>
@@ -618,22 +622,6 @@ object Interpreter {
 
   /** Property name used to store script name. */
   val ScriptNameProp = "ScriptName"
-
-  /** Maximum version of ErgoTree supported by this interpreter release.
-    * See version bits in `ErgoTree.header` for more details.
-    * This value should be increased with each new protocol update via soft-fork.
-    * The following values are used for current and upcoming forks:
-    * - version 3.x this value must be 0
-    * - in v4.0 must be 1
-    * - in v5.x must be 2
-    * etc.
-    */
-  val MaxSupportedScriptVersion: Byte = 2 // supported versions 0, 1, 2
-
-  /** The first version of ErgoTree starting from which the JIT costing interpreter must be used.
-    * It must also be used for all subsequent versions (3, 4, etc).
-    */
-  val JitActivationVersion: Byte = 2
 
   /** The result of script reduction when soft-fork condition is detected by the old node,
     * in which case the script is reduced to the trivial true proposition and takes up 0 cost.

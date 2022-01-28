@@ -357,20 +357,7 @@ case class XorOf(input: Value[SCollection[SBoolean.type]])
     val inputV = input.evalTo[Coll[Boolean]](env)
     val len = inputV.length
     addSeqCost(XorOf.costKind, len) { () =>
-      val res = if (E.context.currentErgoTreeVersion >= 3) {
-        if (len == 0) false
-        else if (len == 1) inputV(0)
-        else {
-          var res = inputV(0)
-          cfor(1)(_ < len, _ + 1) { i =>
-            res ^= inputV(i)
-          }
-          res
-        }
-      } else {
-        SigmaDsl.xorOf(inputV)
-      }
-      res
+      SigmaDsl.xorOf(inputV)
     }
   }
 }

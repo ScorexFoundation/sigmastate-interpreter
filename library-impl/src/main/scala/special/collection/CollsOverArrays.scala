@@ -211,7 +211,7 @@ class CollOverArrayBuilder extends CollBuilder {
   override def Monoids: MonoidBuilder = new MonoidBuilderInst
 
   @inline override def pairColl[@specialized A, @specialized B](as: Coll[A], bs: Coll[B]): PairColl[A, B] = {
-    // TODO v6.0 (2h): use minimal length and slice longer collection
+    // TODO v5.0 (2h): use minimal length and slice longer collection
     // The current implementation doesn't check the case when `as` and `bs` have different lengths.
     // in which case the implementation of `PairOfCols` has inconsistent semantics of `map`, `exists` etc methods.
     // To fix the problem, the longer collection have to be truncated (which is consistent

@@ -1,11 +1,13 @@
 package special.collections
 
-import scala.language.{existentials,implicitConversions}
-import special.collection.{Coll, PairOfCols, CollOverArray, CReplColl}
+import scala.language.{existentials, implicitConversions}
+import special.collection.{CReplColl, Coll, CollOverArray, PairOfCols}
 import org.scalacheck.Gen
-import org.scalatest.{PropSpec, Matchers}
+import org.scalatest.exceptions.TestFailedException
+import org.scalatest.{Matchers, PropSpec}
 import org.scalatest.prop.PropertyChecks
 import scalan.RType
+import sigmastate.VersionContext
 
 class CollsTests extends PropSpec with PropertyChecks with Matchers with CollGens { testSuite =>
   import Gen._
@@ -23,8 +25,6 @@ class CollsTests extends PropSpec with PropertyChecks with Matchers with CollGen
     }
   }
 
-  // TODO v6.0: make sure forall: T, col: Coll[T] => col.length shouldBe col.toArray.length
-  //  The above equality should hold for all possible collection instances
   property("Coll.length") {
     def equalLength[A: RType](xs: Coll[A]) = {
       val arr = xs.toArray
@@ -45,6 +45,9 @@ class CollsTests extends PropSpec with PropertyChecks with Matchers with CollGen
       equalLength(ys.append(xs))
     }
 
+    // make sure forall: T, col: Coll[T] => col.length shouldBe col.toArray.length
+    // The above equality should hold for all possible collection instances
+
     forAll(MinSuccessful(100)) { xs: Coll[Int] =>
       val arr = xs.toArray
       equalLength(xs)
@@ -56,7 +59,27 @@ class CollsTests extends PropSpec with PropertyChecks with Matchers with CollGen
       val pairs = xs.zip(xs)
       equalLength(pairs)
 
+      if (!xs.isInstanceOf[CReplColl[_]]) {
+        an[ClassCastException] should be thrownBy {
+          equalLengthMapped(pairs, squared(inc))  // due to problem with append
+        }
+      }
+      VersionContext.withVersions(VersionContext.JitActivationVersion, VersionContext.JitActivationVersion) {
+// TODO v5.0: make it work
+//        equalLengthMapped(pairs, squared(inc))  // problem fixed in v5.0
+      }
+
       equalLength(pairs.append(pairs))
+
+      if (!xs.isInstanceOf[CReplColl[_]]) {
+        an[ClassCastException] should be thrownBy {
+          equalLengthMapped(pairs.append(pairs), squared(inc)) // due to problem with append
+        }
+      }
+      VersionContext.withVersions(VersionContext.JitActivationVersion, VersionContext.JitActivationVersion) {
+// TODO v5.0: make it work
+//        equalLengthMapped(pairs.append(pairs), squared(inc)) // problem fixed in v5.0
+      }
     }
   }
 
@@ -239,10 +262,37 @@ class CollsTests extends PropSpec with PropertyChecks with Matchers with CollGen
       val xs = builder.fromItems(1, 2)
       val pairs = xs.zip(xs)
       val ys = pairs.map(squared(inc)) // this map transforms PairOfCols to CollOverArray
+
       // due to the problem with concatArrays
       an[ClassCastException] should be thrownBy (ys.append(ys))
+
+      VersionContext.withVersions(VersionContext.JitActivationVersion, VersionContext.JitActivationVersion) {
+        // TODO v5.0: make it work
+        //  ys.append(ys).toArray shouldBe ys.toArray ++ ys.toArray // problem fixed in v5.0
+      }
     }
-    
+
+    {
+      val col1 = builder.fromItems(1, 2, 3)
+      val col2 = builder.fromItems(10, 20, 30, 40)
+      val pairs = col1.zip(col2)
+      assert(pairs.isInstanceOf[PairOfCols[_,_]])
+
+      val pairsArr = pairs.toArray
+      pairsArr shouldBe Array((1, 10), (2, 20), (3, 30))
+
+      // here is the problem with append
+      val appended = pairs.append(pairs)
+
+      an[TestFailedException] should be thrownBy(
+          appended.toArray shouldBe (pairsArr ++ pairsArr)
+      )
+      // Note, the last element of col2 (40) is zipped with 1
+      // this is because PairOfCols keeps ls and rs separated and zip doesn't do truncation
+      // the they are of different length
+      appended.toArray shouldBe Array((1, 10), (2, 20), (3, 30), (1, 40), (2, 10), (3, 20))
+    }
+
     forAll(collGen, collGen, valGen, MinSuccessful(50)) { (col1, col2, v) =>
 
       {
@@ -280,6 +330,16 @@ class CollsTests extends PropSpec with PropertyChecks with Matchers with CollGen
         }
       }
     }
+  }
+
+  property("Coll.zip") {
+    val col1 = builder.fromItems(1, 2, 3)
+    val col2 = builder.fromItems(10, 20, 30, 40)
+    val pairs = col1.zip(col2)
+    assert(pairs.isInstanceOf[PairOfCols[Int, Int]])
+    pairs.length shouldBe col1.length
+    pairs.length shouldNot be(col2.length)
+    pairs.length shouldBe col2.zip(col1).length
   }
 
   property("Coll.mapReduce") {

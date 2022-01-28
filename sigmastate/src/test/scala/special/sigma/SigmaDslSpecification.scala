@@ -5090,29 +5090,37 @@ class SigmaDslSpecification extends SigmaDslTesting
   }
 
   property("xorOf equivalence") {
-    // TODO v5.0 (3h): see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/640
     verifyCases(
       {
         def success[T](v: T, c: Int) = Expected(Success(v), c)
+        def successNew[T](v: T, c: Int, newV: T, newC: Int) = Expected(
+          value = Success(v),
+          cost = c,
+          newDetails = CostDetails.ZeroCost,
+          newCost = newC,
+          newVersionedResults = Seq(
+            2 -> (ExpectedResult(Success(newV), Some(newC)) -> None)
+          ))
         Seq(
-          (Coll[Boolean](false), success(false, 37071)),
-          (Coll[Boolean](true), success(false, 37071)),
-          (Coll[Boolean](false, false), success(false, 37081)),
-          (Coll[Boolean](false, true), success(true, 37081)),
-          (Coll[Boolean](true, false), success(true, 37081)),
-          (Coll[Boolean](true, true), success(false, 37081)),
-          (Coll[Boolean](false, false, false), success(false, 37091)),
-          (Coll[Boolean](false, false, true), success(true, 37091)),
-          (Coll[Boolean](false, true, false), success(true, 37091)),
-          (Coll[Boolean](false, true, true), success(true, 37091)),
-          (Coll[Boolean](true, false, false), success(true, 37091)),
-          (Coll[Boolean](true, false, true), success(true, 37091)),
-          (Coll[Boolean](true, true, false), success(true, 37091)),
-          (Coll[Boolean](true, true, true), success(false, 37091)),
-          (Coll[Boolean](false, false, false, false), success(false, 37101)),
-          (Coll[Boolean](false, false, false, true), success(true, 37101)),
-          (Coll[Boolean](false, false, true, false), success(true, 37101)),
-          (Coll[Boolean](false, false, true, true), success(true, 37101))
+          (Coll[Boolean](), successNew(false, 37061, newV = false,  newC = 8214)),
+          (Coll[Boolean](false), successNew(false, 37071, newV = false, newC = 8214)),
+          (Coll[Boolean](true), successNew(false, 37071, newV = true, newC = 8214)),
+          (Coll[Boolean](false, false), successNew(false, 37081, newV = false, newC = 8214)),
+          (Coll[Boolean](false, true), successNew(true, 37081, newV = true, newC = 8214)),
+          (Coll[Boolean](true, false), successNew(true, 37081, newV = true, newC = 8214)),
+          (Coll[Boolean](true, true), successNew(false, 37081, newV = false, newC = 8214)),
+          (Coll[Boolean](false, false, false), successNew(false, 37091, newV = false, newC = 8214)),
+          (Coll[Boolean](false, false, true), successNew(true, 37091, newV = true, newC = 8214)),
+          (Coll[Boolean](false, true, false), successNew(true, 37091, newV = true, newC = 8214)),
+          (Coll[Boolean](false, true, true), successNew(true, 37091, newV = false, newC = 8214)),
+          (Coll[Boolean](true, false, false), successNew(true, 37091, newV = true, newC = 8214)),
+          (Coll[Boolean](true, false, true), successNew(true, 37091, newV = false,  newC = 8214)),
+          (Coll[Boolean](true, true, false), successNew(true, 37091, newV = false,  newC = 8214)),
+          (Coll[Boolean](true, true, true), successNew(false, 37091, newV = true,  newC = 8214)),
+          (Coll[Boolean](false, false, false, false), successNew(false, 37101, newV = false,  newC = 8214)),
+          (Coll[Boolean](false, false, false, true), successNew(true, 37101, newV = true,  newC = 8214)),
+          (Coll[Boolean](false, false, true, false), successNew(true, 37101, newV = true,  newC = 8214)),
+          (Coll[Boolean](false, false, true, true), successNew(true, 37101, newV = false,  newC = 8214))
         )
       },
       existingFeature((x: Coll[Boolean]) => SigmaDsl.xorOf(x),
@@ -6504,7 +6512,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     verifyCases(
       Seq(
         (None -> Expected(
-            Failure(new NoSuchElementException("None.get")),
+            value = Failure(new NoSuchElementException("None.get")),
             cost = 0,
             newDetails = CostDetails.ZeroCost,
             newCost = 10055,

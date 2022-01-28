@@ -12,7 +12,6 @@ import sigmastate.Operations._
 import sigmastate.eval.{Evaluation, SigmaDsl}
 import sigmastate.interpreter.ErgoTreeEvaluator
 import sigmastate.interpreter.ErgoTreeEvaluator.{DataEnv, error}
-import sigmastate.interpreter.Interpreter.JitActivationVersion
 import sigmastate.lang.exceptions.InterpreterException
 import special.collection.Coll
 import special.sigma.{Box, SigmaProp}
@@ -70,7 +69,7 @@ case class Append[IV <: SType](input: Value[SCollection[IV]], col2: Value[SColle
     val inputV = input.evalTo[Coll[IV#WrappedType]](env)
     val col2V = col2.evalTo[Coll[IV#WrappedType]](env)
     addSeqCost(Append.costKind, inputV.length + col2V.length) { () =>
-        inputV.append(col2V)
+      inputV.append(col2V)
     }
   }
 }

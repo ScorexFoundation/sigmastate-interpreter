@@ -1,7 +1,6 @@
 package special.sigma
 
 import java.math.BigInteger
-
 import com.google.common.primitives.Longs
 import org.bouncycastle.crypto.ec.CustomNamedCurves
 import org.bouncycastle.math.ec.ECPoint
@@ -12,6 +11,9 @@ import scorex.crypto.hash.{Sha256, Blake2b256}
 import special.SpecialPredef
 import special.collection._
 import scalan.util.Extensions.BigIntegerOps
+import sigmastate.VersionContext
+import sigmastate.VersionContext.JitActivationVersion
+import spire.syntax.all.cfor
 
 // TODO refactor: this class is not necessary and can be removed
 class TestSigmaDslBuilder extends SigmaDslBuilder {
@@ -40,8 +42,21 @@ class TestSigmaDslBuilder extends SigmaDslBuilder {
 
   @NeverInline
   override def xorOf(conditions: Coll[Boolean]): Boolean = {
-    // This is buggy version used in v4.x interpreter (for ErgoTrees v0, v1)
-    conditions.toArray.distinct.length == 2
+    if (VersionContext.current.ergoTreeVersion >= JitActivationVersion) {
+      val len = conditions.length
+      if (len == 0) false
+      else if (len == 1) conditions(0)
+      else {
+        var res = conditions(0)
+        cfor(1)(_ < len, _ + 1) { i =>
+          res ^= conditions(i)
+        }
+        res
+      }
+    } else {
+      // This is buggy version used in v4.x interpreter (for ErgoTrees v0, v1)
+      conditions.toArray.distinct.length == 2
+    }
   }
 
   @NeverInline
