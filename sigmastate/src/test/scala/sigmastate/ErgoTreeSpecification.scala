@@ -461,7 +461,9 @@ class ErgoTreeSpecification extends SigmaTestingData {
     assertExceptionThrown(
       {
         val x = 100 // any value which is not used anyway
-        val (y, _) = newF.apply(x)
+        val (y, _) = VersionContext.withVersions(activatedVersionInTests, ergoTreeVersionInTests) {
+          newF.apply(x)
+        }
       },
       exceptionLike[InterpreterException]("Function application must have 1 argument, but was:")
     )
@@ -484,7 +486,9 @@ class ErgoTreeSpecification extends SigmaTestingData {
 
     { // new v5.0 interpreter
       val newF = funcJitFromExpr[Int, Int](script, expr)
-      val (y, _) = newF.apply(x)
+      val (y, _) = VersionContext.withVersions(activatedVersionInTests, ergoTreeVersionInTests) {
+        newF.apply(x)
+      }
       y shouldBe -1
     }
   }
@@ -508,7 +512,9 @@ class ErgoTreeSpecification extends SigmaTestingData {
     val newF = funcJitFromExpr[(Int, Int), Int](script, expr)
     assertExceptionThrown(
       {
-        val (y, _) = newF.apply((1, 1))
+        val (y, _) = VersionContext.withVersions(activatedVersionInTests, ergoTreeVersionInTests) {
+          newF.apply((1, 1))
+        }
       },
       exceptionLike[InterpreterException]("Function application must have 1 argument, but was:")
     )

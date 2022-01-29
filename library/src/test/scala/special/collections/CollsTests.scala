@@ -7,7 +7,7 @@ import org.scalatest.exceptions.TestFailedException
 import org.scalatest.{Matchers, PropSpec}
 import org.scalatest.prop.PropertyChecks
 import scalan.RType
-import sigmastate.Versions
+import sigmastate.VersionContext
 
 class CollsTests extends PropSpec with PropertyChecks with Matchers with CollGens { testSuite =>
   import Gen._
@@ -59,20 +59,24 @@ class CollsTests extends PropSpec with PropertyChecks with Matchers with CollGen
       val pairs = xs.zip(xs)
       equalLength(pairs)
 
-      an[ClassCastException] should be thrownBy {
-        equalLengthMapped(pairs, squared(inc))  // due to problem with append
+      if (!xs.isInstanceOf[CReplColl[_]]) {
+        an[ClassCastException] should be thrownBy {
+          equalLengthMapped(pairs, squared(inc))  // due to problem with append
+        }
       }
-      Versions.withErgoTreeVersion(Versions.JitActivationVersion) {
+      VersionContext.withVersions(VersionContext.JitActivationVersion, VersionContext.JitActivationVersion) {
 // TODO v5.0: make it work
 //        equalLengthMapped(pairs, squared(inc))  // problem fixed in v5.0
       }
 
       equalLength(pairs.append(pairs))
 
-      an[ClassCastException] should be thrownBy {
-        equalLengthMapped(pairs.append(pairs), squared(inc)) // due to problem with append
+      if (!xs.isInstanceOf[CReplColl[_]]) {
+        an[ClassCastException] should be thrownBy {
+          equalLengthMapped(pairs.append(pairs), squared(inc)) // due to problem with append
+        }
       }
-      Versions.withErgoTreeVersion(Versions.JitActivationVersion) {
+      VersionContext.withVersions(VersionContext.JitActivationVersion, VersionContext.JitActivationVersion) {
 // TODO v5.0: make it work
 //        equalLengthMapped(pairs.append(pairs), squared(inc)) // problem fixed in v5.0
       }
@@ -262,7 +266,7 @@ class CollsTests extends PropSpec with PropertyChecks with Matchers with CollGen
       // due to the problem with concatArrays
       an[ClassCastException] should be thrownBy (ys.append(ys))
 
-      Versions.withErgoTreeVersion(Versions.JitActivationVersion) {
+      VersionContext.withVersions(VersionContext.JitActivationVersion, VersionContext.JitActivationVersion) {
         // TODO v5.0: make it work
         //  ys.append(ys).toArray shouldBe ys.toArray ++ ys.toArray // problem fixed in v5.0
       }
@@ -273,7 +277,7 @@ class CollsTests extends PropSpec with PropertyChecks with Matchers with CollGen
       val col2 = builder.fromItems(10, 20, 30, 40)
       val pairs = col1.zip(col2)
       assert(pairs.isInstanceOf[PairOfCols[_,_]])
-      
+
       val pairsArr = pairs.toArray
       pairsArr shouldBe Array((1, 10), (2, 20), (3, 30))
 

@@ -278,7 +278,7 @@ trait Interpreter extends ScorexLogging {
         var jitRes: JitReductionResult = null
         if (evalMode.okEvaluateJit) {
           val ctx = context.asInstanceOf[ErgoLikeContext]
-          jitRes = Versions.withErgoTreeVersion(ergoTree.version) {
+          jitRes = VersionContext.withVersions(ctx.activatedScriptVersion, ergoTree.version) {
             ErgoTreeEvaluator.evalToCrypto(ctx, ergoTree, evalSettings)
           }
         }
@@ -317,7 +317,7 @@ trait Interpreter extends ScorexLogging {
 
     var jitRes: JitReductionResult = null
     if (evalMode.okEvaluateJit) {
-      jitRes = Versions.withErgoTreeVersion(ergoTree.version) {
+      jitRes = VersionContext.withVersions(context.activatedScriptVersion, ergoTree.version) {
         val (propTree, context2) = trySoftForkable[(SigmaPropValue, CTX)](whenSoftFork = (TrueSigmaProp, context)) {
           applyDeserializeContextJITC(context, prop)
         }
@@ -357,7 +357,7 @@ trait Interpreter extends ScorexLogging {
     */
   protected def getEvaluationMode(context: CTX): EvaluationMode = {
     evalSettings.evaluationMode.getOrElse {
-      if (context.activatedScriptVersion < Versions.JitActivationVersion)
+      if (context.activatedScriptVersion < VersionContext.JitActivationVersion)
         AotEvaluationMode
       else
         JitEvaluationMode
@@ -396,7 +396,7 @@ trait Interpreter extends ScorexLogging {
       // This works in addition to more fine-grained soft-forkability mechanism implemented
       // using ValidationRules (see trySoftForkable method call here and in reduceToCrypto).
 
-      if (context.activatedScriptVersion > Versions.MaxSupportedScriptVersion) {
+      if (context.activatedScriptVersion > VersionContext.MaxSupportedScriptVersion) {
         // The activated protocol exceeds capabilities of this interpreter.
         // NOTE: this path should never be taken for validation of candidate blocks
         // in which case Ergo node should always pass Interpreter.MaxSupportedScriptVersion
@@ -406,7 +406,7 @@ trait Interpreter extends ScorexLogging {
         // Currently more than 90% of nodes has already switched to a higher version,
         // thus we can accept without verification, but only if we cannot verify
         // the given ergoTree
-        if (ergoTree.version > Versions.MaxSupportedScriptVersion) {
+        if (ergoTree.version > VersionContext.MaxSupportedScriptVersion) {
           // We accept the box spending and rely on 90% of all the other nodes.
           // Thus, the old node will stay in sync with the network.
           return Success(true -> context.initCost)
