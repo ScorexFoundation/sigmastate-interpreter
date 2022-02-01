@@ -1,18 +1,21 @@
 package sigmastate.interpreter
 
-import sigmastate.interpreter.Interpreter.{JitReductionResult, ReductionResult}
+import sigmastate.interpreter.Interpreter.{JitReductionResult, AotReductionResult}
 
 object CostingUtils {
   /** Checks that a jitRes is equal to res and also checks costs.
     * Reports either error or warning to the console.
     *
     * @param ergoTreeHex used to compose the error message
+    * @param aotRes      reduction result produced by AOT interpreter
+    * @param jitRes      reduction result produced by JIT interpreter
+    * @param logger      logger function
     * @param es          evaluation settings currently used by the interpreter
     */
   def checkResults(
-        ergoTreeHex: String,
-        aotRes: ReductionResult, jitRes: JitReductionResult,
-        logger: String => Unit)(implicit es: EvalSettings): Unit = {
+    ergoTreeHex: String,
+    aotRes: AotReductionResult, jitRes: JitReductionResult,
+    logger: String => Unit)(implicit es: EvalSettings): Unit = {
     val aotValue = aotRes.value
     val jitValue = jitRes.value
     if (aotValue != jitValue) {

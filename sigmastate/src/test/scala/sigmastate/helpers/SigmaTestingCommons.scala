@@ -12,7 +12,7 @@ import scalan.util.BenchmarkUtil
 import scalan.{RType, TestContexts, TestUtils}
 import scorex.crypto.hash.Blake2b256
 import sigma.types.IsPrimView
-import sigmastate.Values.{Constant, ErgoTree, GroupElementConstant, SValue, Value}
+import sigmastate.Values.{Constant, ErgoTree, GroupElementConstant, SValue, SigmaBoolean, SigmaPropValue, Value}
 import sigmastate.eval.{CompiletimeCosting, Evaluation, IRContext, _}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.ContextExtension.VarBinding
@@ -374,6 +374,11 @@ trait SigmaTestingCommons extends PropSpec
     val bytes = serializer.toBytes(v)
     serializer.parse(SigmaSerializer.startReader(bytes)) shouldBe v
     serializer.parse(SigmaSerializer.startReader(randomBytes ++ bytes, randomBytesCount)) shouldBe v
+  }
+
+  def testReduce(I: Interpreter)(ctx: I.CTX, prop: SigmaPropValue): SigmaBoolean = {
+    val ergoTree = ErgoTree.fromProposition(ergoTreeHeaderInTests, prop)
+    I.fullReduction(ergoTree, ctx).value
   }
 
 }

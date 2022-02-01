@@ -8,10 +8,9 @@ import org.ergoplatform.settings.ErgoAlgos
 import org.ergoplatform.validation.SigmaValidationSettings
 import org.ergoplatform.validation.ValidationRules.{CheckCostFunc, CheckCalcFunc, trySoftForkable}
 import scalan.{AVHashMap, Nullable}
-import sigmastate.Values
 import sigmastate.Values.ErgoTree
 import sigmastate.eval.{RuntimeIRContext, IRContext}
-import sigmastate.interpreter.Interpreter.{ReductionResult, WhenSoftForkReductionResult}
+import sigmastate.interpreter.Interpreter.{AotReductionResult, WhenSoftForkReductionResult}
 import sigmastate.serialization.ErgoTreeSerializer
 import sigmastate.utils.Helpers._
 import spire.syntax.all.cfor
@@ -19,7 +18,7 @@ import spire.syntax.all.cfor
 import scala.collection.mutable
 
 /** A reducer which represents precompiled script reduction function.
-  * The function takes script execution context and produces the [[ReductionResult]],
+  * The function takes script execution context and produces the [[AotReductionResult]],
   * which contains both sigma proposition and the approximation of the cost taken by the
   * reduction.
   */
@@ -28,12 +27,12 @@ trait ScriptReducer {
     * This is equivalent to reduceToCrypto, except that graph construction is
     * completely avoided.
     */
-  def reduce(context: InterpreterContext): ReductionResult
+  def reduce(context: InterpreterContext): AotReductionResult
 }
 
 /** Used as a fallback reducer when precompilation failed due to soft-fork condition. */
 case object WhenSoftForkReducer extends ScriptReducer {
-  override def reduce(context: InterpreterContext): ReductionResult = {
+  override def reduce(context: InterpreterContext): AotReductionResult = {
     WhenSoftForkReductionResult(context.initCost)
   }
 }
@@ -73,12 +72,12 @@ case class PrecompiledScriptReducer(scriptBytes: Seq[Byte])(implicit val IR: IRC
     * This is equivalent to reduceToCrypto, except that graph construction is
     * completely avoided.
     */
-  def reduce(context: InterpreterContext): ReductionResult = {
+  def reduce(context: InterpreterContext): AotReductionResult = {
     import IR._
     implicit val vs = context.validationSettings
     val maxCost = context.costLimit
     val initCost = context.initCost
-    trySoftForkable[ReductionResult](whenSoftFork = WhenSoftForkReductionResult(initCost)) {
+    trySoftForkable[AotReductionResult](whenSoftFork = WhenSoftForkReductionResult(initCost)) {
       val costF = costingRes.costF
       val costingCtx = context.toSigmaContext(isCost = true)
       val estimatedCost = IR.checkCostWithContext(costingCtx, costF, maxCost, initCost).getOrThrow
@@ -87,7 +86,7 @@ case class PrecompiledScriptReducer(scriptBytes: Seq[Byte])(implicit val IR: IRC
       val calcF = costingRes.calcF
       val calcCtx = context.toSigmaContext(isCost = false)
       val res = Interpreter.calcResult(IR)(calcCtx, calcF)
-      ReductionResult(SigmaDsl.toSigmaBoolean(res), estimatedCost)
+      AotReductionResult(SigmaDsl.toSigmaBoolean(res), estimatedCost)
     }
   }
 }
