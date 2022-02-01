@@ -144,6 +144,11 @@ abstract class SigmaBuilder {
 
   def mkCreateProveDlog(value: Value[SGroupElement.type]): SigmaPropValue
 
+  def mkCreateAvlTree(operationFlags: ByteValue,
+                      digest: Value[SByteArray],
+                      keyLength: IntValue,
+                      valueLengthOpt: Value[SIntOption]): AvlTreeValue
+
   /** Logically inverse to mkSigmaPropIsProven */
   def mkBoolToSigmaProp(value: BoolValue): SigmaPropValue
   /** Logically inverse to mkBoolToSigmaProp */
@@ -525,6 +530,13 @@ class StdSigmaBuilder extends SigmaBuilder {
 
   override def mkCreateProveDlog(value: Value[SGroupElement.type]): SigmaPropValue =
     CreateProveDlog(value)
+
+  override def mkCreateAvlTree(operationFlags: ByteValue,
+      digest: Value[SByteArray],
+      keyLength: IntValue,
+      valueLengthOpt: Value[SIntOption]): AvlTreeValue = {
+    CreateAvlTree(operationFlags, digest, keyLength, valueLengthOpt)
+  }
 
   override def mkBoolToSigmaProp(value: BoolValue): SigmaPropValue =
     BoolToSigmaProp(value).withSrcCtx(currentSrcCtx.value)

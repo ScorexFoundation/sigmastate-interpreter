@@ -59,21 +59,25 @@ class CollsTests extends PropSpec with PropertyChecks with Matchers with CollGen
       val pairs = xs.zip(xs)
       equalLength(pairs)
 
-      // TODO v5.0: make it work
-//      an[ClassCastException] should be thrownBy {
-//        equalLengthMapped(pairs, squared(inc))  // due to problem with append
-//      }
+      if (!xs.isInstanceOf[CReplColl[_]]) {
+        an[ClassCastException] should be thrownBy {
+          equalLengthMapped(pairs, squared(inc))  // due to problem with append
+        }
+      }
       VersionContext.withVersions(VersionContext.JitActivationVersion, VersionContext.JitActivationVersion) {
+// TODO v5.0: make it work
 //        equalLengthMapped(pairs, squared(inc))  // problem fixed in v5.0
       }
 
       equalLength(pairs.append(pairs))
 
-      // TODO v5.0: make it work
-//      an[ClassCastException] should be thrownBy {
-//        equalLengthMapped(pairs.append(pairs), squared(inc)) // due to problem with append
-//      }
+      if (!xs.isInstanceOf[CReplColl[_]]) {
+        an[ClassCastException] should be thrownBy {
+          equalLengthMapped(pairs.append(pairs), squared(inc)) // due to problem with append
+        }
+      }
       VersionContext.withVersions(VersionContext.JitActivationVersion, VersionContext.JitActivationVersion) {
+// TODO v5.0: make it work
 //        equalLengthMapped(pairs.append(pairs), squared(inc)) // problem fixed in v5.0
       }
     }
@@ -273,7 +277,7 @@ class CollsTests extends PropSpec with PropertyChecks with Matchers with CollGen
       val col2 = builder.fromItems(10, 20, 30, 40)
       val pairs = col1.zip(col2)
       assert(pairs.isInstanceOf[PairOfCols[_,_]])
-      
+
       val pairsArr = pairs.toArray
       pairsArr shouldBe Array((1, 10), (2, 20), (3, 30))
 
