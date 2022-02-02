@@ -95,7 +95,7 @@ class ErgoTreeSerializerSpecification extends SerializationSpecification
   }
 
   property("Constant extraction during serialization: (de)serialization round trip") {
-    val tree = EQ(Plus(10, 20), IntConstant(30)).toSigmaProp.treeWithSegregation
+    val tree = mkTestErgoTree(EQ(Plus(10, 20), IntConstant(30)).toSigmaProp)
     val bytes = DefaultSerializer.serializeErgoTree(tree)
     val (_, _, deserializedConstants, _) = DefaultSerializer.
       deserializeHeaderWithTreeBytes(SigmaSerializer.startReader(bytes))
@@ -105,8 +105,8 @@ class ErgoTreeSerializerSpecification extends SerializationSpecification
   }
 
   property("tree with placeholders bytes should be equal if only constants are different") {
-    val tree1 = EQ(Plus(10, 20), IntConstant(30)).toSigmaProp.treeWithSegregation
-    val tree2 = EQ(Plus(30, 40), IntConstant(70)).toSigmaProp.treeWithSegregation
+    val tree1 = mkTestErgoTree(EQ(Plus(10, 20), IntConstant(30)).toSigmaProp)
+    val tree2 = mkTestErgoTree(EQ(Plus(30, 40), IntConstant(70)).toSigmaProp)
     val bytes1 = DefaultSerializer.serializeErgoTree(tree1)
     val bytes2 = DefaultSerializer.serializeErgoTree(tree2)
     val (_, _, _, treeBytes1) = DefaultSerializer
@@ -127,17 +127,25 @@ class ErgoTreeSerializerSpecification extends SerializationSpecification
   }
 
   property("max ergo tree byte size check") {
-    val tree = EQ(Plus(10, 20), IntConstant(30)).toSigmaProp.treeWithSegregation
+    val tree = mkTestErgoTree(EQ(Plus(10, 20), IntConstant(30)).toSigmaProp)
     val r = SigmaSerializer.startReader(DefaultSerializer.serializeErgoTree(tree))
-    assertExceptionThrown({
-      DefaultSerializer.deserializeErgoTree(r, 1)
-    }, {
-      case e: SerializerException => rootCause(e).isInstanceOf[ReaderPositionLimitExceeded]
-    })
+    if (ergoTreeVersionInTests == 0) {
+      assertExceptionThrown({
+        DefaultSerializer.deserializeErgoTree(r, 1)
+      }, {
+        case e: SerializerException => rootCause(e).isInstanceOf[ReaderPositionLimitExceeded]
+      })
+    } else {
+      val tree = DefaultSerializer.deserializeErgoTree(r, 1)
+      tree.root match {
+        case Left(UnparsedErgoTree(_, ve: ValidationException)) =>
+          rootCauseLike[ReaderPositionLimitExceeded]().apply(ve.cause.get) shouldBe true
+      }
+    }
   }
 
   property("restore reader's positionLimit") {
-    val tree = EQ(Plus(10, 20), IntConstant(30)).toSigmaProp.treeWithSegregation
+    val tree = mkTestErgoTree(EQ(Plus(10, 20), IntConstant(30)).toSigmaProp)
     val r = SigmaSerializer.startReader(DefaultSerializer.serializeErgoTree(tree))
     r.positionLimit = 1
     DefaultSerializer.deserializeErgoTree(r, SigmaSerializer.MaxPropositionSize) shouldEqual tree
