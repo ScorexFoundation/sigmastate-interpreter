@@ -660,15 +660,7 @@ class SigmaDslTesting extends PropSpec
         val funcValue = expectedExpr.getOrElse(
           sys.error("When `script` is not defined, the expectedExpr is used for CompiledFunc"))
         val expr = getApplyExpr(funcValue)
-//        try
-          funcFromExpr[A, B]("not defined", expr)
-//        catch { case t: Throwable =>
-//          // when the function cannot be compiled for whatever reason we create a stub
-//          // function which just throws that error
-//          CompiledFunc[A,B](
-//            script, Nil, funcValue, expr,
-//            func = x => (throw t, CostDetails.ZeroCost))
-//        }
+        funcFromExpr[A, B]("not defined", expr)
       } else {
         func[A, B](script)
       }
