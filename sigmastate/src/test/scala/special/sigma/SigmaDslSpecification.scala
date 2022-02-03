@@ -2578,163 +2578,217 @@ class SigmaDslSpecification extends SigmaDslTesting
       36337)(x => (cloneColl(x._1), x._2))
   }
 
-  property("GroupElement methods equivalence") {
+  property("GroupElement.getEncoded equivalence") {
     verifyCases(
-      {
-        val cost = TracedCost(
-          Array(
-            FixedCostItem(Apply),
-            FixedCostItem(FuncValue),
-            FixedCostItem(GetVar),
-            FixedCostItem(OptionGet),
-            FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
-            FixedCostItem(ValUse),
-            FixedCostItem(PropertyCall),
-            MethodCallCostItem(TracedCost(Array(FixedCostItem(SGroupElement.GetEncodedMethod, FixedCost(JitCost(3))))))
-          )
+    {
+      val cost = TracedCost(
+        Array(
+          FixedCostItem(Apply),
+          FixedCostItem(FuncValue),
+          FixedCostItem(GetVar),
+          FixedCostItem(OptionGet),
+          FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
+          FixedCostItem(ValUse),
+          FixedCostItem(PropertyCall),
+          MethodCallCostItem(TracedCost(Array(FixedCostItem(SGroupElement.GetEncodedMethod, FixedCost(JitCost(3))))))
         )
-        def success[T](v: T) = Expected(Success(v), 37905, cost)
-        Seq(
-          (ge1, success(Helpers.decodeBytes(ge1str))),
-          (ge2, success(Helpers.decodeBytes(ge2str))),
-          (ge3, success(Helpers.decodeBytes(ge3str))),
-          (SigmaDsl.groupGenerator,
-              success(Helpers.decodeBytes("0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798"))),
-          (SigmaDsl.groupIdentity,
-              success(Helpers.decodeBytes("000000000000000000000000000000000000000000000000000000000000000000")))
-        )
-      },
-      existingFeature((x: GroupElement) => x.getEncoded,
-        "{ (x: GroupElement) => x.getEncoded }",
-        FuncValue(
-          Vector((1, SGroupElement)),
-          MethodCall(ValUse(1, SGroupElement), SGroupElement.getMethodByName("getEncoded"), Vector(), Map())
-        )))
+      )
+      def success[T](v: T) = Expected(Success(v), 37905, cost)
+      Seq(
+        (ge1, success(Helpers.decodeBytes(ge1str))),
+        (ge2, success(Helpers.decodeBytes(ge2str))),
+        (ge3, success(Helpers.decodeBytes(ge3str))),
+        (SigmaDsl.groupGenerator,
+          success(Helpers.decodeBytes("0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798"))),
+        (SigmaDsl.groupIdentity,
+          success(Helpers.decodeBytes("000000000000000000000000000000000000000000000000000000000000000000")))
+      )
+    },
+    existingFeature((x: GroupElement) => x.getEncoded,
+      "{ (x: GroupElement) => x.getEncoded }",
+      FuncValue(
+        Vector((1, SGroupElement)),
+        MethodCall(ValUse(1, SGroupElement), SGroupElement.getMethodByName("getEncoded"), Vector(), Map())
+      )))
+  }
 
+  property("decodePoint(GroupElement.getEncoded) equivalence") {
     verifyCases(
-      {
-        val cost = TracedCost(
-          Array(
-            FixedCostItem(Apply),
-            FixedCostItem(FuncValue),
-            FixedCostItem(GetVar),
-            FixedCostItem(OptionGet),
-            FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
-            FixedCostItem(ValUse),
-            FixedCostItem(PropertyCall),
-            MethodCallCostItem(TracedCost(Array(FixedCostItem(MethodDesc(SGroupElement.GetEncodedMethod), FixedCost(JitCost(3)))))),
-            FixedCostItem(DecodePoint),
-            FixedCostItem(ValUse)
+    {
+      val cost = TracedCost(
+        Array(
+          FixedCostItem(Apply),
+          FixedCostItem(FuncValue),
+          FixedCostItem(GetVar),
+          FixedCostItem(OptionGet),
+          FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
+          FixedCostItem(ValUse),
+          FixedCostItem(PropertyCall),
+          MethodCallCostItem(TracedCost(Array(FixedCostItem(MethodDesc(SGroupElement.GetEncodedMethod), FixedCost(JitCost(3)))))),
+          FixedCostItem(DecodePoint),
+          FixedCostItem(ValUse)
+        )
+      )
+      def success[T](v: T) = Expected(Success(v), 38340, cost)
+      Seq(
+        (ge1, success(true)),
+        (ge2, success(true)),
+        (ge3, success(true)),
+        (SigmaDsl.groupGenerator, success(true)),
+        (SigmaDsl.groupIdentity, success(true))
+      )
+    },
+    existingFeature({ (x: GroupElement) => decodePoint(x.getEncoded) == x },
+    "{ (x: GroupElement) => decodePoint(x.getEncoded) == x }",
+    FuncValue(
+      Vector((1, SGroupElement)),
+      EQ(
+        DecodePoint(
+          MethodCall.typed[Value[SCollection[SByte.type]]](
+            ValUse(1, SGroupElement),
+            SGroupElement.getMethodByName("getEncoded"),
+            Vector(),
+            Map()
           )
+        ),
+        ValUse(1, SGroupElement)
+      )
+    )))
+  }
+
+  property("GroupElement.negate equivalence") {
+    verifyCases(
+    {
+      val cost = TracedCost(
+        Array(
+          FixedCostItem(Apply),
+          FixedCostItem(FuncValue),
+          FixedCostItem(GetVar),
+          FixedCostItem(OptionGet),
+          FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
+          FixedCostItem(ValUse),
+          FixedCostItem(PropertyCall),
+          MethodCallCostItem(TracedCost(Array(FixedCostItem(MethodDesc(SGroupElement.NegateMethod), FixedCost(JitCost(1))))))
         )
-        def success[T](v: T) = Expected(Success(v), 38340, cost)
-        Seq(
-          (ge1, success(true)),
-          (ge2, success(true)),
-          (ge3, success(true)),
-          (SigmaDsl.groupGenerator, success(true)),
-          (SigmaDsl.groupIdentity, success(true))
+      )
+      def success[T](v: T) = Expected(Success(v), 36292, cost)
+      Seq(
+        (ge1, success(Helpers.decodeGroupElement("02358d53f01276211f92d0aefbd278805121d4ff6eb534b777af1ee8abae5b2056"))),
+        (ge2, success(Helpers.decodeGroupElement("03dba7b94b111f3894e2f9120b577da595ec7d58d488485adf73bf4e153af63575"))),
+        (ge3, success(Helpers.decodeGroupElement("0390449814f5671172dd696a61b8aa49aaa4c87013f56165e27d49944e98bc414d"))),
+        (SigmaDsl.groupGenerator, success(Helpers.decodeGroupElement("0379be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798"))),
+        (SigmaDsl.groupIdentity, success(Helpers.decodeGroupElement("000000000000000000000000000000000000000000000000000000000000000000")))
+      )
+    },
+    existingFeature({ (x: GroupElement) => x.negate },
+    "{ (x: GroupElement) => x.negate }",
+    FuncValue(
+      Vector((1, SGroupElement)),
+      MethodCall(ValUse(1, SGroupElement), SGroupElement.getMethodByName("negate"), Vector(), Map())
+    )))
+  }
+
+  property("GroupElement.exp equivalence") {
+    val cases = {
+      val cost = TracedCost(
+        Array(
+          FixedCostItem(Apply),
+          FixedCostItem(FuncValue),
+          FixedCostItem(GetVar),
+          FixedCostItem(OptionGet),
+          FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
+          FixedCostItem(ValUse),
+          FixedCostItem(SelectField),
+          FixedCostItem(ValUse),
+          FixedCostItem(SelectField),
+          FixedCostItem(Exponentiate)
         )
-      },
-      existingFeature({ (x: GroupElement) => decodePoint(x.getEncoded) == x },
-        "{ (x: GroupElement) => decodePoint(x.getEncoded) == x }",
-        FuncValue(
-          Vector((1, SGroupElement)),
-          EQ(
-            DecodePoint(
-              MethodCall.typed[Value[SCollection[SByte.type]]](
-                ValUse(1, SGroupElement),
-                SGroupElement.getMethodByName("getEncoded"),
-                Vector(),
-                Map()
+      )
+      def success[T](v: T) = Expected(Success(v), 41484, cost)
+      Seq(
+        ((ge1, CBigInt(new BigInteger("-25c80b560dd7844e2efd10f80f7ee57d", 16))),
+          success(Helpers.decodeGroupElement("023a850181b7b73f92a5bbfa0bfc78f5bbb6ff00645ddde501037017e1a2251e2e"))),
+        ((ge2, CBigInt(new BigInteger("2488741265082fb02b09f992be3dd8d60d2bbe80d9e2630", 16))),
+          success(Helpers.decodeGroupElement("032045b928fb7774a4cd9ef5fa8209f4e493cd4cc5bd536b52746a53871bf73431"))),
+        ((ge3, CBigInt(new BigInteger("-33e8fbdb13d2982e92583445e1fdcb5901a178a7aa1e100", 16))),
+          success(Helpers.decodeGroupElement("036128efaf14d8ac2812a662f6494dc617b87986a3dc6b4a59440048a7ac7d2729"))),
+        ((ge3, CBigInt(new BigInteger("1", 16))),
+          success(ge3))
+      )
+    }
+    val scalaFunc = { (x: (GroupElement, BigInt)) => x._1.exp(x._2) }
+    val script = "{ (x: (GroupElement, BigInt)) => x._1.exp(x._2) }"
+    if (lowerMethodCallsInTests) {
+      verifyCases(cases,
+        existingFeature(
+          scalaFunc, script,
+          FuncValue(
+            Vector((1, STuple(Vector(SGroupElement, SBigInt)))),
+            Exponentiate(
+              SelectField.typed[Value[SGroupElement.type]](
+                ValUse(1, STuple(Vector(SGroupElement, SBigInt))),
+                1.toByte
+              ),
+              SelectField.typed[Value[SBigInt.type]](
+                ValUse(1, STuple(Vector(SGroupElement, SBigInt))),
+                2.toByte
               )
-            ),
-            ValUse(1, SGroupElement)
-          )
-        )))
-
-    verifyCases(
-      {
-        val cost = TracedCost(
-          Array(
-            FixedCostItem(Apply),
-            FixedCostItem(FuncValue),
-            FixedCostItem(GetVar),
-            FixedCostItem(OptionGet),
-            FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
-            FixedCostItem(ValUse),
-            FixedCostItem(PropertyCall),
-            MethodCallCostItem(TracedCost(Array(FixedCostItem(MethodDesc(SGroupElement.NegateMethod), FixedCost(JitCost(1))))))
-          )
-        )
-        def success[T](v: T) = Expected(Success(v), 36292, cost)
+            )
+          )))
+    } else {
+      verifyCases(
         Seq(
-          (ge1, success(Helpers.decodeGroupElement("02358d53f01276211f92d0aefbd278805121d4ff6eb534b777af1ee8abae5b2056"))),
-          (ge2, success(Helpers.decodeGroupElement("03dba7b94b111f3894e2f9120b577da595ec7d58d488485adf73bf4e153af63575"))),
-          (ge3, success(Helpers.decodeGroupElement("0390449814f5671172dd696a61b8aa49aaa4c87013f56165e27d49944e98bc414d"))),
-          (SigmaDsl.groupGenerator, success(Helpers.decodeGroupElement("0379be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798"))),
-          (SigmaDsl.groupIdentity, success(Helpers.decodeGroupElement("000000000000000000000000000000000000000000000000000000000000000000")))
-        )
-      },
-      existingFeature({ (x: GroupElement) => x.negate },
-        "{ (x: GroupElement) => x.negate }",
-        FuncValue(
-          Vector((1, SGroupElement)),
-          MethodCall(ValUse(1, SGroupElement), SGroupElement.getMethodByName("negate"), Vector(), Map())
-        )))
+          ((ge1, CBigInt(new BigInteger("-25c80b560dd7844e2efd10f80f7ee57d", 16))),
+            Expected(
+              // in v4.x exp method cannot be called via MethodCall ErgoTree node
+              Failure(new NoSuchMethodException("sigmastate.eval.CostingRules$GroupElementCoster.exp(scalan.Base$Ref)")),
+              cost = 41484,
+              CostDetails.ZeroCost,
+              newCost = 0,
+              newVersionedResults = {
+                // in v5.0 MethodCall ErgoTree node is allowed
+                val res = ExpectedResult(
+                  Success(Helpers.decodeGroupElement("023a850181b7b73f92a5bbfa0bfc78f5bbb6ff00645ddde501037017e1a2251e2e")),
+                  Some(1786)
+                )
+                Seq( // expected result for each version
+                  0 -> ( res -> None ),
+                  1 -> ( res -> None ),
+                  2 -> ( res -> None )
+                )
+              }
+            )
+            )
+        ),
+        changedFeature(
+          scalaFunc, scalaFunc, ""/*can't be compiled in v4.x*/,
+          FuncValue(
+            Vector((1, STuple(Vector(SGroupElement, SBigInt)))),
+            MethodCall(
+              SelectField.typed[Value[SGroupElement.type]](
+                ValUse(1, STuple(Vector(SGroupElement, SBigInt))),
+                1.toByte
+              ),
+              SGroupElement.getMethodByName("exp"),
+              Vector(
+                SelectField.typed[Value[SBigInt.type]](
+                  ValUse(1, STuple(Vector(SGroupElement, SBigInt))),
+                  2.toByte
+                )
+              ),
+              Map()
+            )
+          ),
+          allowNewToSucceed = true,
+          allowDifferentErrors = true
+        ))
+    }
+  }
 
+  property("GroupElement.multiply equivalence") {
     // TODO v6.0 (3h): related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
     // val isIdentity = existingFeature({ (x: GroupElement) => x.isIdentity },
     //   "{ (x: GroupElement) => x.isIdentity }")
-
-    if (lowerMethodCallsInTests) {
-      verifyCases(
-      {
-        val cost = TracedCost(
-          Array(
-            FixedCostItem(Apply),
-            FixedCostItem(FuncValue),
-            FixedCostItem(GetVar),
-            FixedCostItem(OptionGet),
-            FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
-            FixedCostItem(ValUse),
-            FixedCostItem(SelectField),
-            FixedCostItem(ValUse),
-            FixedCostItem(SelectField),
-            FixedCostItem(Exponentiate)
-          )
-        )
-        def success[T](v: T) = Expected(Success(v), 41484, cost)
-        Seq(
-          ((ge1, CBigInt(new BigInteger("-25c80b560dd7844e2efd10f80f7ee57d", 16))),
-              success(Helpers.decodeGroupElement("023a850181b7b73f92a5bbfa0bfc78f5bbb6ff00645ddde501037017e1a2251e2e"))),
-          ((ge2, CBigInt(new BigInteger("2488741265082fb02b09f992be3dd8d60d2bbe80d9e2630", 16))),
-              success(Helpers.decodeGroupElement("032045b928fb7774a4cd9ef5fa8209f4e493cd4cc5bd536b52746a53871bf73431"))),
-          ((ge3, CBigInt(new BigInteger("-33e8fbdb13d2982e92583445e1fdcb5901a178a7aa1e100", 16))),
-              success(Helpers.decodeGroupElement("036128efaf14d8ac2812a662f6494dc617b87986a3dc6b4a59440048a7ac7d2729"))),
-          ((ge3, CBigInt(new BigInteger("1", 16))),
-              success(ge3))
-        )
-      },
-      existingFeature(
-        { (x: (GroupElement, BigInt)) => x._1.exp(x._2) },
-        "{ (x: (GroupElement, BigInt)) => x._1.exp(x._2) }",
-        FuncValue(
-          Vector((1, STuple(Vector(SGroupElement, SBigInt)))),
-          Exponentiate(
-            SelectField.typed[Value[SGroupElement.type]](
-              ValUse(1, STuple(Vector(SGroupElement, SBigInt))),
-              1.toByte
-            ),
-            SelectField.typed[Value[SBigInt.type]](
-              ValUse(1, STuple(Vector(SGroupElement, SBigInt))),
-              2.toByte
-            )
-          )
-        )))
-    } else {
-      // TODO mainnet v5.0: add test case with `exp` MethodCall
-    }
 
     if (lowerMethodCallsInTests) {
       verifyCases(
