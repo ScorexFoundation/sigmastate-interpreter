@@ -109,6 +109,19 @@ class SigmaDslSpecification extends SigmaDslTesting
 
   implicit def IR = createIR()
 
+  def testCases[A, B](cases: Seq[(A, Expected[B])], f: Feature[A, B]) = {
+    val table = Table(("x", "y"), cases:_*)
+    forAll(table) { (x, expectedRes) =>
+      val res = f.checkEquality(x)
+      val resValue = res.map(_._1)
+      val expected = expectedRes.newResults(ergoTreeVersionInTests)._1
+      checkResult(resValue, expected.value, failOnTestVectors = true)
+      if (res.isSuccess) {
+        res.get._2.cost shouldBe JitCost(expected.verificationCost.get)
+      }
+    }
+  }
+
   import TestData._
 
   override protected def beforeAll(): Unit = {
@@ -2736,60 +2749,61 @@ class SigmaDslSpecification extends SigmaDslTesting
             )
           )))
     } else {
-      verifyCases(
-        Seq(
-          ((ge1, CBigInt(new BigInteger("-25c80b560dd7844e2efd10f80f7ee57d", 16))),
-            Expected(
-              // in v4.x exp method cannot be called via MethodCall ErgoTree node
-              Failure(new NoSuchMethodException("sigmastate.eval.CostingRules$GroupElementCoster.exp(scalan.Base$Ref)")),
-              cost = 41484,
-              CostDetails.ZeroCost,
-              newCost = 0,
-              newVersionedResults = {
-                // in v5.0 MethodCall ErgoTree node is allowed
-                val res = ExpectedResult(
-                  Success(Helpers.decodeGroupElement("023a850181b7b73f92a5bbfa0bfc78f5bbb6ff00645ddde501037017e1a2251e2e")),
-                  Some(1786)
-                )
-                Seq( // expected result for each version
-                  0 -> ( res -> None ),
-                  1 -> ( res -> None ),
-                  2 -> ( res -> None )
-                )
-              }
-            )
-            )
-        ),
-        changedFeature(
-          scalaFunc, scalaFunc, ""/*can't be compiled in v4.x*/,
-          FuncValue(
-            Vector((1, STuple(Vector(SGroupElement, SBigInt)))),
-            MethodCall(
-              SelectField.typed[Value[SGroupElement.type]](
-                ValUse(1, STuple(Vector(SGroupElement, SBigInt))),
-                1.toByte
-              ),
-              SGroupElement.getMethodByName("exp"),
-              Vector(
-                SelectField.typed[Value[SBigInt.type]](
-                  ValUse(1, STuple(Vector(SGroupElement, SBigInt))),
-                  2.toByte
-                )
-              ),
-              Map()
-            )
+      forEachScriptAndErgoTreeVersion(activatedVersions, ergoTreeVersions) {
+        testCases(
+          Seq(
+            ((ge1, CBigInt(new BigInteger("-25c80b560dd7844e2efd10f80f7ee57d", 16))),
+              Expected(
+                // in v4.x exp method cannot be called via MethodCall ErgoTree node
+                Failure(new NoSuchMethodException("sigmastate.eval.CostingRules$GroupElementCoster.exp(scalan.Base$Ref)")),
+                cost = 41484,
+                CostDetails.ZeroCost,
+                newCost = 0,
+                newVersionedResults = {
+                  // in v5.0 MethodCall ErgoTree node is allowed
+                  val res = ExpectedResult(
+                    Success(Helpers.decodeGroupElement("023a850181b7b73f92a5bbfa0bfc78f5bbb6ff00645ddde501037017e1a2251e2e")),
+                    Some(999)
+                  )
+                  Seq( // expected result for each version
+                    0 -> ( res -> None ),
+                    1 -> ( res -> None ),
+                    2 -> ( res -> None )
+                  )
+                }
+              )
+              )
           ),
-          allowNewToSucceed = true,
-          allowDifferentErrors = true
-        ))
+          changedFeature(
+            (x: (GroupElement, BigInt)) =>
+              throw new NoSuchMethodException("sigmastate.eval.CostingRules$GroupElementCoster.exp(scalan.Base$Ref)"),
+            scalaFunc, ""/*can't be compiled in v4.x*/,
+            FuncValue(
+              Vector((1, STuple(Vector(SGroupElement, SBigInt)))),
+              MethodCall(
+                SelectField.typed[Value[SGroupElement.type]](
+                  ValUse(1, STuple(Vector(SGroupElement, SBigInt))),
+                  1.toByte
+                ),
+                SGroupElement.getMethodByName("exp"),
+                Vector(
+                  SelectField.typed[Value[SBigInt.type]](
+                    ValUse(1, STuple(Vector(SGroupElement, SBigInt))),
+                    2.toByte
+                  )
+                ),
+                Map()
+              )
+            ),
+            allowNewToSucceed = true,
+            allowDifferentErrors = true
+          ))
+      }
     }
   }
 
   property("GroupElement.multiply equivalence") {
-    // TODO v6.0 (3h): related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
-    // val isIdentity = existingFeature({ (x: GroupElement) => x.isIdentity },
-    //   "{ (x: GroupElement) => x.isIdentity }")
-
+    val scalaFunc = { (x: (GroupElement, GroupElement)) => x._1.multiply(x._2) }
     if (lowerMethodCallsInTests) {
       verifyCases(
       {
@@ -2819,7 +2833,7 @@ class SigmaDslSpecification extends SigmaDslTesting
               success(ge3))
         )
       },
-      existingFeature({ (x: (GroupElement, GroupElement)) => x._1.multiply(x._2) },
+      existingFeature(scalaFunc,
         "{ (x: (GroupElement, GroupElement)) => x._1.multiply(x._2) }",
         FuncValue(
           Vector((1, STuple(Vector(SGroupElement, SGroupElement)))),
@@ -2835,9 +2849,65 @@ class SigmaDslSpecification extends SigmaDslTesting
           )
         )))
     } else {
-      //TODO mainnet v5.0: add test case with `exp` MethodCall
+      val cases = Seq(
+        ((ge1, Helpers.decodeGroupElement("03e132ca090614bd6c9f811e91f6daae61f16968a1e6c694ed65aacd1b1092320e")),
+          Expected(
+            // in v4.x exp method cannot be called via MethodCall ErgoTree node
+            Failure(new NoSuchMethodException("sigmastate.eval.CostingRules$GroupElementCoster.multiply(scalan.Base$Ref)")),
+            cost = 41484,
+            CostDetails.ZeroCost,
+            newCost = 0,
+            newVersionedResults = {
+              // in v5.0 MethodCall ErgoTree node is allowed
+              val res = ExpectedResult(
+                Success(Helpers.decodeGroupElement("02bc48937b4a66f249a32dfb4d2efd0743dc88d46d770b8c5d39fd03325ba211df")),
+                Some(139)
+              )
+              Seq( // expected result for each version
+                0 -> ( res -> None ),
+                1 -> ( res -> None ),
+                2 -> ( res -> None )
+              )
+            }
+          )
+          )
+      )
+      forEachScriptAndErgoTreeVersion(activatedVersions, ergoTreeVersions) {
+        testCases(
+          cases,
+          changedFeature(
+            (_: (GroupElement, GroupElement)) =>
+              throw new NoSuchMethodException("java.lang.NoSuchMethodException: sigmastate.eval.CostingRules$GroupElementCoster.multiply(scalan.Base$Ref)"),
+            scalaFunc, ""/*can't be compiled in v4.x*/,
+            FuncValue(
+              Vector((1, STuple(Vector(SGroupElement, SGroupElement)))),
+              MethodCall(
+                SelectField.typed[Value[SGroupElement.type]](
+                  ValUse(1, STuple(Vector(SGroupElement, SGroupElement))),
+                  1.toByte
+                ),
+                SGroupElement.getMethodByName("multiply"),
+                Vector(
+                  SelectField.typed[Value[SGroupElement.type]](
+                    ValUse(1, STuple(Vector(SGroupElement, SGroupElement))),
+                    2.toByte
+                  )
+                ),
+                Map()
+              )
+            ),
+            allowNewToSucceed = true,
+            allowDifferentErrors = true
+          ))
+      }
     }
   }
+
+  // TODO v6.0 (3h): related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
+  //  property("GroupElement.isIdentity equivalence") {
+  //    // val isIdentity = existingFeature({ (x: GroupElement) => x.isIdentity },
+  //    //   "{ (x: GroupElement) => x.isIdentity }")
+  //  }
 
   property("AvlTree properties equivalence") {
     def expectedExprFor(propName: String) = {
@@ -5391,8 +5461,6 @@ class SigmaDslSpecification extends SigmaDslTesting
           ValUse(1, SBigInt)
         )
       )))
-    } else {
-      // TODO mainnet v5.0: add test case with `exp` MethodCall
     }
 
     // TODO v6.0 (2h): fix semantics when the left collection is longer
@@ -5785,7 +5853,7 @@ class SigmaDslSpecification extends SigmaDslTesting
               ))
       )
       val f = changedFeature(
-        { (x: Coll[GroupElement]) => x.flatMap({ (b: GroupElement) => b.getEncoded.indices }) },
+        { (x: Coll[GroupElement]) => SCollection.throwInvalidFlatmap(null) },
         { (x: Coll[GroupElement]) =>
           if (VersionContext.current.isEvaluateErgoTreeUsingJIT)
             x.flatMap({ (b: GroupElement) => b.getEncoded.indices })
@@ -5823,17 +5891,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         ),
         allowDifferentErrors = true
       )
-
-      val table = Table(("x", "y"), cases:_*)
-      forAll(table) { (x, expectedRes) =>
-        val res = f.checkEquality(x)
-        val resValue = res.map(_._1)
-        val expected = expectedRes.newResults(ergoTreeVersionInTests)._1
-        checkResult(resValue, expected.value, failOnTestVectors = true)
-        if (res.isSuccess) {
-          res.get._2.cost shouldBe JitCost(expected.verificationCost.get)
-        }
-      }
+      testCases(cases, f)
     }
 
     val f = existingFeature(
