@@ -5388,8 +5388,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         FuncValue(Vector((1, SBigInt)), Negation(ValUse(1, SBigInt)))))
   }
 
-  property("global functions equivalence") {
-
+  property("groupGenerator equivalence") {
     verifyCases(
       {
         def success[T](v: T) = Expected(Success(v), 35981)
@@ -5398,16 +5397,16 @@ class SigmaDslSpecification extends SigmaDslTesting
           (1, success(Helpers.decodeGroupElement("0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798"))))
       },
       existingFeature({ (x: Int) => SigmaDsl.groupGenerator },
-        "{ (x: Int) => groupGenerator }",
-        FuncValue(
-          Vector((1, SInt)),
-          MethodCall.typed[Value[SGroupElement.type]](
-            Global,
-            SGlobal.getMethodByName("groupGenerator"),
-            Vector(),
-            Map()
-          )
-        )))
+      "{ (x: Int) => groupGenerator }",
+      FuncValue(
+        Vector((1, SInt)),
+        MethodCall.typed[Value[SGroupElement.type]](
+          Global,
+          SGlobal.getMethodByName("groupGenerator"),
+          Vector(),
+          Map()
+        )
+      )))
 
     verifyCases(
       {
@@ -5462,8 +5461,10 @@ class SigmaDslSpecification extends SigmaDslTesting
         )
       )))
     }
+  }
 
-    // TODO v6.0 (2h): fix semantics when the left collection is longer
+  property("Global.xor equivalence") {
+
     if (lowerMethodCallsInTests) {
       verifyCases(
       {
@@ -5507,7 +5508,58 @@ class SigmaDslSpecification extends SigmaDslTesting
           )
         )))
     } else {
-      // TODO mainnet v5.0: add test case with `SGlobal.xor` MethodCall
+      val cases = Seq(
+        ((Helpers.decodeBytes("01"), Helpers.decodeBytes("01")) ->
+          Expected(
+            // in v4.x exp method cannot be called via MethodCall ErgoTree node
+//            Failure(new NoSuchMethodException("")),
+            Success(Helpers.decodeBytes("00")),
+            cost = 41484,
+            CostDetails.ZeroCost,
+            newCost = 0,
+            newVersionedResults = {
+              // in v5.0 MethodCall ErgoTree node is allowed
+              val res = ExpectedResult(
+                Success(Helpers.decodeBytes("00")),
+                Some(116)
+              )
+              Seq( // expected result for each version
+                0 -> ( res -> None ),
+                1 -> ( res -> None ),
+                2 -> ( res -> None )
+              )
+            }
+          )
+        )
+      )
+      forEachScriptAndErgoTreeVersion(activatedVersions, ergoTreeVersions) {
+        testCases(
+          cases,
+          changedFeature(
+            (x: (Coll[Byte], Coll[Byte])) => SigmaDsl.xor(x._1, x._2),
+            (x: (Coll[Byte], Coll[Byte])) => SigmaDsl.xor(x._1, x._2),
+            "", // NOTE, the script for this test case cannot be compiled, thus expectedExpr is used
+            expectedExpr = FuncValue(
+              Vector((1, STuple(Vector(SByteArray, SByteArray)))),
+              MethodCall(
+                Global,
+                SGlobal.getMethodByName("xor"),
+                Vector(
+                  SelectField.typed[Value[SCollection[SByte.type]]](
+                    ValUse(1, STuple(Vector(SByteArray, SByteArray))),
+                    1.toByte
+                  ),
+                  SelectField.typed[Value[SCollection[SByte.type]]](
+                    ValUse(1, STuple(Vector(SByteArray, SByteArray))),
+                    2.toByte
+                  )),
+                Map()
+              )
+            ),
+            allowNewToSucceed = true,
+            allowDifferentErrors = false
+          ))
+      }
     }
   }
 

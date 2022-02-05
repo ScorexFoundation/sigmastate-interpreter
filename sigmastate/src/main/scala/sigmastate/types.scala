@@ -2746,6 +2746,15 @@ case object SGlobal extends SProduct with SPredefType with SMonoType {
     .withInfo(Xor, "Byte-wise XOR of two collections of bytes",
       ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))
 
+  /** Implements evaluation of Global.xor method call ErgoTree node.
+    * Called via reflection based on naming convention.
+    * @see SMethod.evalMethod, Xor.eval, Xor.xorWithCosting
+    */
+  def xor_eval(mc: MethodCall, G: SigmaDslBuilder, ls: Coll[Byte], rs: Coll[Byte])
+              (implicit E: ErgoTreeEvaluator): Coll[Byte] = {
+    Xor.xorWithCosting(ls, rs)
+  }
+
   protected override def getMethods() = super.getMethods() ++ Seq(
     groupGeneratorMethod,
     xorMethod

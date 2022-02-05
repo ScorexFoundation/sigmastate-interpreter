@@ -1123,9 +1123,7 @@ case class Xor(override val left: Value[SByteArray],
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val lV = left.evalTo[Coll[Byte]](env)
     val rV = right.evalTo[Coll[Byte]](env)
-    addSeqCost(Xor.costKind, lV.length) { () =>
-      Colls.xor(lV, rV)
-    }
+    Xor.xorWithCosting(lV, rV)
   }
 }
 object Xor extends TwoArgumentOperationCompanion {
@@ -1134,6 +1132,13 @@ object Xor extends TwoArgumentOperationCompanion {
   override val costKind = PerItemCost(
     baseCost = JitCost(10), perChunkCost = JitCost(2), chunkSize = 128)
   override def argInfos: Seq[ArgInfo] = XorInfo.argInfos
+
+  /** Helper method which compute xor with correct costing accumulation */
+  def xorWithCosting(ls: Coll[Byte], rs: Coll[Byte])(implicit E: ErgoTreeEvaluator): Coll[Byte] = {
+    E.addSeqCost(Xor.costKind, math.min(ls.length, rs.length), Xor.opDesc) { () =>
+      Colls.xor(ls, rs)
+    }
+  }
 }
 
 case class Exponentiate(override val left: Value[SGroupElement.type],

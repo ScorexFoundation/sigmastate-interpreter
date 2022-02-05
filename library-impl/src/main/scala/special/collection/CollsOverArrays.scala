@@ -318,7 +318,8 @@ class CollOverArrayBuilder extends CollBuilder {
   }
 
   @NeverInline
-  override def xor(left: Coll[Byte], right: Coll[Byte]): Coll[Byte] = left.zip(right).map { case (l, r) => (l ^ r).toByte }
+  override def xor(left: Coll[Byte], right: Coll[Byte]): Coll[Byte] =
+    left.zip(right).map { case (l, r) => (l ^ r).toByte }
 
   @NeverInline
   override def emptyColl[T](implicit cT: RType[T]): Coll[T] = cT match {
