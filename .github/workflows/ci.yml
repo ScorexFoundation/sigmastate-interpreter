@@ -59,6 +59,7 @@ jobs:
           fail_ci_if_error: true
 
       - name: Publish a snapshot ${{ github.ref }}
+        if: env.HAS_SECRETS == 'true'
         run: sbt ++${{ matrix.scala }} publish
         env:
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}

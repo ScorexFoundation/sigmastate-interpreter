@@ -99,7 +99,7 @@ object DataSerializer {
       case SInt => r.getInt()
       case SLong => r.getLong()
       case SString =>
-        val size = r.getUInt().toInt
+        val size = r.getUIntExact
         val bytes = r.getBytes(size)
         new String(bytes, StandardCharsets.UTF_8)
       case SBigInt =>

@@ -27,10 +27,10 @@ case class FuncValueSerializer(cons: (IndexedSeq[(Int, SType)], Value[SType]) =>
   }
 
   override def parse(r: SigmaByteReader): Value[SType] = {
-    val argsSize = r.getUInt().toIntExact
+    val argsSize = r.getUIntExact
     val args = safeNewArray[(Int, SType)](argsSize)
     cfor(0)(_ < argsSize, _ + 1) { i =>
-      val id = r.getUInt().toInt
+      val id = r.getUIntExact
       val tpe = r.getType()
       r.valDefTypeStore(id) = tpe
       args(i) = (id, tpe)

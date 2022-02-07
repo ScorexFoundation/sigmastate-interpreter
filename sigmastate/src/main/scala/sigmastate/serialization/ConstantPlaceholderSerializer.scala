@@ -14,7 +14,7 @@ case class ConstantPlaceholderSerializer(cons: (Int, SType) => Value[SType])
   }
 
   override def parse(r: SigmaByteReader): Value[SType] = {
-    val id = r.getUInt().toInt
+    val id = r.getUIntExact
     val constant = r.constantStore.get(id)
     if (r.resolvePlaceholdersToConstants)
       constant

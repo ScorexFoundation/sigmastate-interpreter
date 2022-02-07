@@ -19,7 +19,7 @@ object SigmaValidationSettingsSerializer extends SigmaSerializer[SigmaValidation
   }
 
   override def parse(r: SigmaByteReader): SigmaValidationSettings = {
-    val nRules = r.getUInt().toIntExact
+    val nRules = r.getUIntExact
     val parsed = (0 until nRules).map { _ =>
       val ruleId = r.getUShort().toShortExact
       val status = RuleStatusSerializer.parse(r)

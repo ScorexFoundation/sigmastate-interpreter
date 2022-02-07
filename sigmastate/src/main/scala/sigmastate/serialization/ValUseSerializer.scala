@@ -12,7 +12,7 @@ case class ValUseSerializer(cons: (Int, SType) => Value[SType]) extends ValueSer
   }
 
   override def parse(r: SigmaByteReader): Value[SType] = {
-    val id = r.getUInt().toInt
+    val id = r.getUIntExact
     val tpe = r.valDefTypeStore(id)
     cons(id, tpe)
   }

@@ -207,8 +207,7 @@ class ErgoTreeSerializer {
     val header = r.getByte()
     CheckHeaderSizeBit(header)
     val sizeOpt = if (ErgoTree.hasSize(header)) {
-      val size = r.getUInt().toIntExact
-      Some(size)
+      Some(r.getUIntExact)
     } else
       None
     (header, sizeOpt)
@@ -222,7 +221,7 @@ class ErgoTreeSerializer {
   private def deserializeConstants(header: Byte, r: SigmaByteReader): IndexedSeq[Constant[SType]] = {
     val constants: IndexedSeq[Constant[SType]] =
       if (ErgoTree.isConstantSegregation(header)) {
-        val nConsts = r.getUInt().toInt
+        val nConsts = r.getUIntExact
         if (nConsts > 0) {
           // HOTSPOT:: allocate new array only if it is not empty
           val res = safeNewArray[Constant[SType]](nConsts)
