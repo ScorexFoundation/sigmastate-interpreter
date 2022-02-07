@@ -1417,7 +1417,7 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
       .withInfo(SizeOf, "The size of the collection in elements.")
 
   val GetOrElseMethod = SMethod(
-    this, "getOrElse", SFunc(Array(ThisType, SInt, tIV), tIV, paramIVSeq), 2, ByIndex.costKind)
+    this, "getOrElse", SFunc(Array(ThisType, SInt, tIV), tIV, paramIVSeq), 2, DynamicCost)
       .withIRInfo({ case (builder, obj, _, Seq(index, defaultValue), _) =>
         val index1 = index.asValue[SInt.type]
         val defaultValue1 = defaultValue.asValue[SType]
@@ -1426,6 +1426,17 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
       .withInfo(ByIndex, "Return the element of collection if \\lst{index} is in range \\lst{0 .. size-1}",
         ArgInfo("index", "index of the element of this collection"),
         ArgInfo("default", "value to return when \\lst{index} is out of range"))
+
+  /** Implements evaluation of Coll.map method call ErgoTree node.
+    * Called via reflection based on naming convention.
+    * @see SMethod.evalMethod
+    */
+  def getOrElse_eval[A](mc: MethodCall, xs: Coll[A], i: Int, default: A)(implicit E: ErgoTreeEvaluator): A = {
+    E.addCost(ByIndex.costKind, mc.method.opDesc)
+    // the following lines should be semantically the same as in ByIndex.eval
+    Value.checkType(mc.args.last.tpe, default)
+    xs.getOrElse(i, default)
+  }
 
   val MapMethod = SMethod(this, "map",
     SFunc(Array(ThisType, SFunc(tIV, tOV)), tOVColl, Array(paramIV, paramOV)), 3, MapCollection.costKind)

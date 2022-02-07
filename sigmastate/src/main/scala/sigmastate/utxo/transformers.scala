@@ -271,7 +271,7 @@ case class ByIndex[V <: SType](input: Value[SCollection[V]],
     default match {
       case Some(d) =>
         val dV = d.evalTo[V#WrappedType](env)
-        Value.checkType(d, dV) // necessary because cast to V#WrappedType is erased
+        Value.checkType(d.tpe, dV) // necessary because cast to V#WrappedType is erased
         addCost(ByIndex.costKind)
         inputV.getOrElse(indexV, dV)
       case _ =>

@@ -6401,7 +6401,66 @@ class SigmaDslSpecification extends SigmaDslTesting
           )
         )))
     } else {
-      // TODO mainnet v5.0: add test case with `SCollection.getOrElse` MethodCall
+      forEachScriptAndErgoTreeVersion(activatedVersions, ergoTreeVersions) {
+        testCases(
+          Seq(
+            ((Coll[Int](1, 2), (0, default)),
+              Expected(
+                // in v4.x exp method cannot be called via MethodCall ErgoTree node
+                Failure(new NoSuchMethodException("")),
+                cost = 41484,
+                CostDetails.ZeroCost,
+                newCost = 0,
+                newVersionedResults = {
+                  // in v5.0 MethodCall ErgoTree node is allowed
+                  val res = ExpectedResult( Success(1), Some(166) )
+                  Seq( // expected result for each version
+                    0 -> ( res -> None ),
+                    1 -> ( res -> None ),
+                    2 -> ( res -> None )
+                  )
+                }
+              )
+            )
+          ),
+          changedFeature(
+            (x: (Coll[Int], (Int, Int))) =>
+              throw new NoSuchMethodException(""),
+            (x: (Coll[Int], (Int, Int))) => x._1.getOrElse(x._2._1, x._2._2),
+            ""/*can't be compiled in v4.x*/,
+            FuncValue(
+              Vector((1, SPair(SCollectionType(SInt), SPair(SInt, SInt)))),
+              BlockValue(
+                Vector(
+                  ValDef(
+                    3,
+                    List(),
+                    SelectField.typed[Value[STuple]](
+                      ValUse(1, SPair(SCollectionType(SInt), SPair(SInt, SInt))),
+                      2.toByte
+                    )
+                  )
+                ),
+                MethodCall(
+                  SelectField.typed[Value[SCollection[SInt.type]]](
+                    ValUse(1, SPair(SCollectionType(SInt), SPair(SInt, SInt))),
+                    1.toByte
+                  ),
+                  SCollection.getMethodByName("getOrElse").withConcreteTypes(
+                    Map(STypeVar("IV") -> SInt)
+                  ),
+                  Vector(
+                    SelectField.typed[Value[SInt.type]](ValUse(3, SPair(SInt, SInt)), 1.toByte),
+                    SelectField.typed[Value[SInt.type]](ValUse(3, SPair(SInt, SInt)), 2.toByte)
+                  ),
+                  Map()
+                )
+              )
+            ),
+            allowNewToSucceed = true,
+            allowDifferentErrors = false
+          ))
+      }
     }
   }
 
