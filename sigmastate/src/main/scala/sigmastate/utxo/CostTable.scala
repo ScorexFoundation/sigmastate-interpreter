@@ -174,6 +174,8 @@ object CostTable {
     ("Xor_per_kb", "(Coll[Byte],Coll[Byte]) => Coll[Byte]", hashPerKb / 2),
     ("XorOf_per_item", "(Coll[Boolean]) => Boolean", logicCost),
     ("LogicalNot", "(Boolean) => Boolean", logicCost),
+    // uncommenting evaluate cost for BitwiseXor, but fails to invoke zip method.
+    //("BitOp", "(Byte, Byte)", logicCost),
 
     ("GT", "(T,T) => Boolean", comparisonCost),
     ("GE", "(T,T) => Boolean", comparisonCost),

@@ -7680,6 +7680,55 @@ class SigmaDslSpecification extends SigmaDslTesting
     }
   }
 
+  property("nested loops") {
+    val (keysArr, valuesArr, _, avlProver) = sampleAvlProver
+    val keys = Colls.fromArray(keysArr.slice(0, 20))
+    val proof = avlProver.generateProof().toColl
+
+    verifyCases(
+      Seq(
+        // using exception as v4 doesn't support the test
+        (keys, proof) -> Expected(Failure(new NoSuchElementException("None.get")), cost = 35905)
+          // Expected(
+          //   Failure(new NoSuchElementException("None.get")),
+          //   cost = 35905,
+          //   newDetails = CostDetails.ZeroCost,
+          //   newCost = 1796,
+          //   newVersionedResults = Seq(
+          //     0 -> (ExpectedResult(Success(true), Some(1796)) -> None),
+          //     1 -> (ExpectedResult(Success(true), Some(1796)) -> None),
+          //     2 -> (ExpectedResult(Success(true), Some(1796)) -> None)
+          //   )
+          // )
+      ),
+      changedFeature(
+        { (x: (Coll[Coll[Byte]], Coll[Byte])) =>
+          // val foo = x._1.foldLeft(x._2, { (a: (Coll[Byte], Coll[Byte])) =>
+          //   a._1.zip(a._2).map({ (c: (Byte, Byte)) => (c._1 ^ c._2).toByte })
+          // })
+          Option.empty[Int].get
+          true
+        },
+        { (x: (Coll[Coll[Byte]], Coll[Byte])) =>
+          val foo = x._1.foldLeft(x._2, { (a: (Coll[Byte], Coll[Byte])) =>
+            a._1.zip(a._2).map({ (c: (Byte, Byte)) => (c._1 ^ c._2).toByte })
+          })
+          true
+        },
+        """{
+          | (x: (Coll[Coll[Byte]], Coll[Byte])) =>
+          |  val foo = x._1.fold(x._2, {(a: Coll[Byte], b: Coll[Byte]) =>
+          |    a.zip(b).map({ (c: (Byte, Byte)) => (c._1 ^ c._2).toByte })
+          |  })
+          |  true
+          |}""".stripMargin,
+        null,
+        allowDifferentErrors = true,
+        allowNewToSucceed = true,
+      )
+    )
+  }
+
   override protected def afterAll(): Unit = {
     println(ErgoTreeEvaluator.DefaultProfiler.generateReport)
     println("==========================================================")

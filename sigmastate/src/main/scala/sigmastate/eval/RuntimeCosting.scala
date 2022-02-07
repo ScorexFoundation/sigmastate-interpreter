@@ -1146,7 +1146,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
       val t = System.nanoTime()
       ruleStack = new CostingRuleStat(node, t, 0, t) :: ruleStack
     }
-
+    println(s"going to eval node $node")
     val res: Ref[Any] = node match {
       case c @ Constant(v, tpe) => v match {
         case p: SSigmaProp =>
@@ -1853,9 +1853,16 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
           }
         method.objType.coster.get(IR)(objC, method, argsC, elems)
 
+      case BitOp(left, right, code) =>
+        val x = asRep[Costed[Coll[Byte]]](evalNode(ctx, env, left))
+        val y = asRep[Costed[Coll[Byte]]](evalNode(ctx, env, right))
+        val value = sigmaDslBuilder.xor(x.value, y.value)
+        withConstantSize(value, opCost(value, Array(x.cost, y.cost), costOf(node)))
+
       case _ =>
         error(s"Don't know how to evalNode($node)", node.sourceContext.toOption)
     }
+    println(s"after eval node $node")
 
     if (okMeasureOperationTime) {
       val t = System.nanoTime()
