@@ -323,9 +323,9 @@ object ValidationRules {
     }
   }
 
-  /** This rule it is used in creation of ValidationExceptions, which in turn can be
-    * checked for soft-fork condition using `this.isSoftFork`. Thus, this rule can be
-    * replaced with a new rule and the limit can be increased.
+  /** Introduced in v5.0, this rule it is used in creation of ValidationExceptions, which
+    * in turn can be checked for soft-fork condition using `this.isSoftFork`. Thus, this
+    * rule can be replaced with a new rule and the limit can be increased.
     */
   object CheckPositionLimit extends ValidationRule(1014,
     "Check that the Reader has not exceeded the position limit.") with SoftForkWhenReplaced {
