@@ -216,11 +216,14 @@ object ValidationRules {
       checkRule()
       val ucode = toUByte(typeCode)
       if (typeCode == SOption.OptionTypeCode || ucode > toUByte(OpCodes.LastDataType)) {
-        // the Option condition is added in v5.0 and we throw ValidationException for
-        // Option type as well in order to be able to add Option serialization in
-        // DataSerializer via v6.0 soft-fork
+        // the `typeCode == SOption.OptionTypeCode` condition is added in v5.0 and we
+        // throw ValidationException for Option type as well in order to be able to
+        // interpret it as soft-fork condition.
+        // This will allow to add Option serialization in DataSerializer via v6.0 soft-fork.
         // This is in contrast to v4.x of this rule where Option type is not checked and
-        // ordinary SigmaSerializer exception is thrown by the fallback case of DataSerializer
+        // ordinary SigmaSerializer exception is thrown by the fallback case of DataSerializer.
+        // This change is consensus-safe as v4.x and v5.x nodes will both throw exceptions
+        // (albeit different ones) while attempting deserialization of an Option value.
         throwValidationException(typeCode)
       }
     }
