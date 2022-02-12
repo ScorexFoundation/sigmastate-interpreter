@@ -60,7 +60,7 @@ class CollsTests extends PropSpec with PropertyChecks with Matchers with CollGen
       val pairs = xs.zip(xs)
       equalLength(pairs)
 
-      if (!xs.isInstanceOf[CReplColl[_]]) {
+      if (!xs.isInstanceOf[CReplColl[_]] && !VersionContext.current.isEvaluateErgoTreeUsingJIT) {
         an[ClassCastException] should be thrownBy {
           equalLengthMapped(pairs, squared(inc))  // due to problem with append
         }
@@ -72,7 +72,7 @@ class CollsTests extends PropSpec with PropertyChecks with Matchers with CollGen
 
       equalLength(pairs.append(pairs))
 
-      if (!xs.isInstanceOf[CReplColl[_]]) {
+      if (!xs.isInstanceOf[CReplColl[_]] && !VersionContext.current.isEvaluateErgoTreeUsingJIT) {
         an[ClassCastException] should be thrownBy {
           equalLengthMapped(pairs.append(pairs), squared(inc)) // due to problem with append
         }
