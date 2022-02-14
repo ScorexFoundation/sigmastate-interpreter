@@ -5354,11 +5354,10 @@ class SigmaDslSpecification extends SigmaDslTesting
               cost = 0,
               newDetails = CostDetails.ZeroCost,
               newCost = 1789,
-              newVersionedResults = Seq(
-                VersionContext.JitActivationVersion.toInt -> (
-                  ExpectedResult(Success(Helpers.decodeBytes("00")), Some(1789)),
-                  None)
-              )
+              newVersionedResults =  {
+                val res = (ExpectedResult(Success(Helpers.decodeBytes("00")), Some(1789)), None)
+                Seq(0, 1, 2).map(version => version -> res)
+              }
             )),
           ((Helpers.decodeBytes("800136fe89afff802acea67128a0ff007fffe3498c8001806080012b"),
               Helpers.decodeBytes("648018010a5d5800f5b400a580e7b4809b0cd273ff1230bfa800017f7fdb002749b3ac2b86ff")),
