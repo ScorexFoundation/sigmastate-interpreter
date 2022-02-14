@@ -4497,9 +4497,10 @@ class SigmaDslSpecification extends SigmaDslTesting
           Success(-1), cost = 36318,
           newDetails = CostDetails.ZeroCost,
           newCost = 1786,
-          newVersionedResults = Seq(
-            2 -> (ExpectedResult(Success(0), Some(1786)) -> None)
-          )))
+          newVersionedResults = {
+            val res = (ExpectedResult(Success(0), Some(1786)) -> None)
+            Seq(0, 1, 2).map(version => version -> res)
+          }))
       ),
       changedFeature({ (x: Context) => x.selfBoxIndex },
         { (x: Context) => x.selfBoxIndex }, // see versioning in selfBoxIndex implementation
@@ -4517,7 +4518,7 @@ class SigmaDslSpecification extends SigmaDslTesting
 
     // test vectors to reproduce v4.x bug (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/603)
     samples.foreach { c =>
-      if (VersionContext.current.isEvaluateErgoTreeUsingJIT) {
+      if (VersionContext.current.isActivatedVersionGreaterV1) {
         // fixed in v5.0
         c.selfBoxIndex should not be(-1)
       } else {
