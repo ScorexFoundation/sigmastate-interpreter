@@ -7057,19 +7057,21 @@ class SigmaDslSpecification extends SigmaDslTesting
             cost = 37694,
             newDetails = CostDetails.ZeroCost,
             newCost = 1803,
-            newVersionedResults = Seq(
-              2 -> (ExpectedResult(Success(Helpers.decodeBytes("0008d3")), Some(1803)) -> None)
-            )),
+            newVersionedResults = {
+              val res = (ExpectedResult(Success(Helpers.decodeBytes("0008d3")), Some(1803)) -> None)
+              Seq(0, 1, 2).map(version => version -> res)
+            }),
 
           (Helpers.decodeBytes("000008d3"), 0) -> Expected(
             Success(Helpers.decodeBytes("00000008d3")),
             cost = 37694,
             newDetails = CostDetails.ZeroCost,
             newCost = 1803,
-            newVersionedResults = Seq(
+            newVersionedResults = {
               // since the tree without constant segregation, substitution has no effect
-              2 -> (ExpectedResult(Success(Helpers.decodeBytes("000008d3")), Some(1803)) -> None)
-            )),
+              val res = (ExpectedResult(Success(Helpers.decodeBytes("000008d3")), Some(1803)) -> None)
+              Seq(0, 1, 2).map(version => version -> res)
+            }),
           // tree with segregation flag, empty constants array
           (Coll(t2.bytes:_*), 0) -> success(Helpers.decodeBytes("100008d3")),
           (Helpers.decodeBytes("100008d3"), 0) -> success(Helpers.decodeBytes("100008d3")),
