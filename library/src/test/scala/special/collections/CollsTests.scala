@@ -721,13 +721,6 @@ class CollsTests extends PropSpec with PropertyChecks with Matchers with CollGen
       assert(c2.x == c1.x)
 //      println(s"c1=$c1; c2=$c2")
     }
-
-// TODO the following test fails because equality of Seq is not deep, and nested arrays are shallow compared
-//    forAll(tokensGen, minSuccess) { c1 =>
-//      println(s"c1=${c1.x.toArray.toSeq.map { case (id, v) => (id.toSeq, v) }}")
-//      val tokens = c1.x
-//      assert(tokens.toArray.toSeq == tokensArr.toSeq)
-//    }
   }
 
 }
