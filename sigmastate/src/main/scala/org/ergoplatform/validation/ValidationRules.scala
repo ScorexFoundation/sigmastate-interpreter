@@ -49,7 +49,7 @@ case class ValidationRule(
     * Should be used in all validation rules to unify ValidationException instances
     * which can be thrown (to simplify handling).
     */
-  def throwValidationException(cause: Throwable, args: Seq[Any]) = {
+  def throwValidationException(cause: Throwable, args: Seq[Any]): Nothing = {
     if (cause.isInstanceOf[ValidationException]) {
       throw cause
     }
@@ -204,13 +204,27 @@ object ValidationRules {
   object CheckSerializableTypeCode extends ValidationRule(1009,
     "Check the data values of the type (given by type code) can be serialized")
       with SoftForkWhenReplaced {
+
+    /** Creates an exception which is used as a cause when throwing a ValidationException. */
+    def throwValidationException(typeCode: Byte): Nothing = {
+      val ex = new SerializerException(
+        s"Data value of the type with the code ${toUByte(typeCode)} cannot be deserialized.")
+      throwValidationException(ex, Array(typeCode))
+    }
+
     final def apply[T](typeCode: Byte): Unit = {
       checkRule()
       val ucode = toUByte(typeCode)
-      if (ucode > toUByte(OpCodes.LastDataType)) {
-        throwValidationException(
-          new SerializerException(s"Data value of the type with the code $ucode cannot be deserialized."),
-          Array(typeCode))
+      if (typeCode == SOption.OptionTypeCode || ucode > toUByte(OpCodes.LastDataType)) {
+        // the `typeCode == SOption.OptionTypeCode` condition is added in v5.0 and we
+        // throw ValidationException for Option type as well in order to be able to
+        // interpret it as soft-fork condition.
+        // This will allow to add Option serialization in DataSerializer via v6.0 soft-fork.
+        // This is in contrast to v4.x of this rule where Option type is not checked and
+        // ordinary SigmaSerializer exception is thrown by the fallback case of DataSerializer.
+        // This change is consensus-safe as v4.x and v5.x nodes will both throw exceptions
+        // (albeit different ones) while attempting deserialization of an Option value.
+        throwValidationException(typeCode)
       }
     }
   }
@@ -309,10 +323,32 @@ object ValidationRules {
     }
   }
 
-  /** This rule doesn't have it's own validation logic, however it is used in creation of
-    * ValidationExceptions, which in turn can be checked for soft-fork condition using `this.isSoftFork`. */
+  /** Introduced in v5.0, this rule it is used in creation of ValidationExceptions, which
+    * in turn can be checked for soft-fork condition using `this.isSoftFork`. Thus, this
+    * rule can be replaced with a new rule and the limit can be increased.
+    */
   object CheckPositionLimit extends ValidationRule(1014,
     "Check that the Reader has not exceeded the position limit.") with SoftForkWhenReplaced {
+
+    /** Wraps the given cause into [[ValidationException]] and throws it. */
+    def throwValidationException(cause: ReaderPositionLimitExceeded): Nothing = {
+      throwValidationException(cause, args = Nil)
+    }
+
+    /** Throws a [[ValidationException]] with the given parameters. */
+    def throwValidationException(position: Int, positionLimit: Int): Nothing = {
+      throwValidationException(
+        new ReaderPositionLimitExceeded(
+          s"SigmaByteReader position limit $positionLimit is reached at position $position",
+          position, positionLimit))
+    }
+
+    final def apply(position: Int, positionLimit: Int): Unit = {
+      checkRule()
+      if (position > positionLimit) {
+        throwValidationException(position, positionLimit)
+      }
+    }
   }
 
   object CheckLoopLevelInCostFunction extends ValidationRule(1015,

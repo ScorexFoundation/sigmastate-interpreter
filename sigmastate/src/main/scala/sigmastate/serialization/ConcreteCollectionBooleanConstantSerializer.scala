@@ -4,6 +4,7 @@ import sigmastate.{SCollection, SBoolean, ArgInfo}
 import sigmastate.Values._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import SigmaByteWriter._
+import sigmastate.util.safeNewArray
 import spire.syntax.all.cfor
 
 case class ConcreteCollectionBooleanConstantSerializer(cons: (IndexedSeq[Value[SBoolean.type]], SBoolean.type) => Value[SCollection[SBoolean.type]])
@@ -36,7 +37,7 @@ case class ConcreteCollectionBooleanConstantSerializer(cons: (IndexedSeq[Value[S
       // reusing pre-allocated immutable instances
       Value.EmptySeq.asInstanceOf[IndexedSeq[Value[SBoolean.type]]]
     } else {
-      val items = ValueSerializer.newArray[BoolValue](size)
+      val items = safeNewArray[BoolValue](size)
       cfor(0)(_ < size, _ + 1) { i =>
         items(i) = BooleanConstant.fromBoolean(bits(i))
       }

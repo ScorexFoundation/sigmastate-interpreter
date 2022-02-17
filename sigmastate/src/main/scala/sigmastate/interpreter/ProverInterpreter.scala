@@ -1,7 +1,5 @@
 package sigmastate.interpreter
 
-import java.math.BigInteger
-
 import gf2t.{GF2_192, GF2_192_Poly}
 import org.bitbucket.inkytonik.kiama.attribution.AttributionCore
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, everywheretd, rule}
@@ -9,16 +7,17 @@ import org.bitbucket.inkytonik.kiama.rewriting.Strategy
 import scalan.util.CollectionUtil._
 import sigmastate.TrivialProp.{FalseProp, TrueProp}
 import sigmastate.Values._
+import sigmastate.VersionContext.MaxSupportedScriptVersion
 import sigmastate._
 import sigmastate.basics.DLogProtocol._
 import sigmastate.basics.VerifierMessage.Challenge
 import sigmastate.basics._
-import sigmastate.eval.Evaluation
 import sigmastate.eval.Evaluation.addCostChecked
 import sigmastate.interpreter.EvalSettings._
-import sigmastate.lang.exceptions.CostLimitException
+import sigmastate.lang.exceptions.InterpreterException
 import sigmastate.utils.Helpers
 
+import java.math.BigInteger
 import scala.util.Try
 
 // TODO ProverResult was moved from here, compare with new-eval after merge
@@ -120,27 +119,34 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
             context: CTX,
             message: Array[Byte],
             hintsBag: HintsBag = HintsBag.empty): Try[CostedProverResult] = Try {
+    checkSoftForkCondition(ergoTree, context) match {
+      case Some(_) =>
+        throw new InterpreterException(
+          s"Both ErgoTree version ${ergoTree.version} and activated version " +
+            s"${context.activatedScriptVersion} is greater than MaxSupportedScriptVersion $MaxSupportedScriptVersion")
 
-    val complexityCost = ergoTree.complexity.toLong
-    val initCost = addCostChecked(context.initCost, complexityCost, context.costLimit)
-    val contextWithCost = context.withInitCost(initCost).asInstanceOf[CTX]
-
-    val reduced = fullReduction(ergoTree, contextWithCost, env)
-    val reducedValue = reduced.value
-    val reducedCost = reduced.cost
-    val evalMode = getEvaluationMode(contextWithCost)
-
-    val (resValue, resCost) = evalMode match {
-      case AotEvaluationMode =>
-        (reducedValue, reducedCost)
-
-      case JitEvaluationMode =>
-        val fullCost = addCryptoCost(reduced.jitRes, contextWithCost.costLimit)
-        (reduced.jitRes.value, fullCost)
+      case None => // proceed normally
     }
 
-    val proof = generateProof(resValue, message, hintsBag)
-    CostedProverResult(proof, contextWithCost.extension, resCost)
+    VersionContext.withVersions(context.activatedScriptVersion, ergoTree.version) {
+      val evalMode = getEvaluationMode(context)
+      val (resValue, resCost) = evalMode match {
+        case AotEvaluationMode =>
+          val complexityCost = ergoTree.complexity.toLong
+          val initCost = addCostChecked(context.initCost, complexityCost, context.costLimit)
+          val contextWithCost = context.withInitCost(initCost).asInstanceOf[CTX]
+          val reduced = fullReduction(ergoTree, contextWithCost, env)
+          (reduced.value, reduced.cost)
+
+        case JitEvaluationMode =>
+          val reduced = fullReduction(ergoTree, context, env)
+          val fullCost = addCryptoCost(reduced.jitRes, context.costLimit)
+          (reduced.value, fullCost)
+      }
+
+      val proof = generateProof(resValue, message, hintsBag)
+      CostedProverResult(proof, context.extension, resCost)
+    }
   }
 
   def generateProof(sb: SigmaBoolean,

@@ -181,7 +181,7 @@ class SigningSpecification extends SigmaTestingCommons {
 
     val sk = proverA.dlogSecrets.head
     val prop = sk.publicImage
-    val tree = prop.toSigmaProp.treeWithSegregation
+    val tree = mkTestErgoTree(prop)
     val prove = proverA.prove(tree, fakeContext, msg).get
 
     println(s"Message: ${Base16.encode(msg)}")
@@ -191,7 +191,6 @@ class SigningSpecification extends SigmaTestingCommons {
     println(s"treeBytes: ${Base16.encode(tree.bytes)}")
     println(s"Signature: ${Base16.encode(prove.proof)}")
   }
-
 
   private def printThresholdSignature(msg: Array[Byte]) {
     val proverA = new ErgoLikeTestProvingInterpreter

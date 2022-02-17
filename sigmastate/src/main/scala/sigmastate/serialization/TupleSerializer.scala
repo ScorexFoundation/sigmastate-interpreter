@@ -4,6 +4,7 @@ import sigmastate.{ArgInfo, SType}
 import sigmastate.Values._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import ValueSerializer._
+import sigmastate.util.safeNewArray
 import sigmastate.utils.SigmaByteWriter.{DataInfo, U}
 import spire.syntax.all.cfor
 
@@ -24,7 +25,7 @@ case class TupleSerializer(cons: Seq[Value[SType]] => Value[SType])
 
   override def parse(r: SigmaByteReader): Value[SType] = {
     val size = r.getByte()
-    val values = ValueSerializer.newArray[SValue](size) // assume size > 0 so always create a new array
+    val values = safeNewArray[SValue](size) // assume size > 0 so always create a new array
     cfor(0)(_ < size, _ + 1) { i =>
       values(i) = r.getValue()
     }

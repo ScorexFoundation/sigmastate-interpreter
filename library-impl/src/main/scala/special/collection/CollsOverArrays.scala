@@ -2,21 +2,24 @@ package special.collection
 
 import java.util
 import java.util.Objects
-
 import special.SpecialPredef
 
 import scala.reflect.ClassTag
 import scalan._
 import scalan.util.CollectionUtil
-import scalan.{Internal, NeverInline, Reified, RType}
+import scalan.{Internal, NeverInline, RType, Reified}
 import Helpers._
 import debox.Buffer
 import scalan.RType._
+import sigmastate.util.{MaxArrayLength, safeNewArray}
 import spire.syntax.all._
 
 import scala.runtime.RichInt
 
 class CollOverArray[@specialized A](val toArray: Array[A])(implicit tA: RType[A]) extends Coll[A] {
+  require(toArray.length <= MaxArrayLength,
+    s"Cannot create collection with size ${toArray.length} greater than $MaxArrayLength")
+
   @Internal
   override def tItem: RType[A] = tA
   def builder: CollBuilder = new CollOverArrayBuilder
@@ -93,7 +96,7 @@ class CollOverArray[@specialized A](val toArray: Array[A])(implicit tA: RType[A]
     if (n <= 0) builder.emptyColl
     else if (n >= length) this
     else {
-      val res = Array.ofDim[A](n)
+      val res = new Array[A](n)
       Array.copy(toArray, 0, res, 0, n)
       builder.fromArray(res)
     }
@@ -285,8 +288,8 @@ class CollOverArrayBuilder extends CollBuilder {
       val limit = xs.length
       implicit val tA = xs.tItem.tFst
       implicit val tB = xs.tItem.tSnd
-      val ls = Array.ofDim[A](limit)
-      val rs = Array.ofDim[B](limit)
+      val ls = new Array[A](limit)
+      val rs = new Array[B](limit)
       cfor(0)(_ < limit, _ + 1) { i =>
         val p = xs(i)
         ls(i) = p._1
@@ -578,6 +581,9 @@ class PairOfCols[@specialized L, @specialized R](val ls: Coll[L], val rs: Coll[R
 }
 
 class CReplColl[@specialized A](val value: A, val length: Int)(implicit tA: RType[A]) extends ReplColl[A] {
+  require(length <= MaxArrayLength,
+    s"Cannot create CReplColl with size ${length} greater than $MaxArrayLength")
+
   @Internal
   override def tItem: RType[A] = tA
 
@@ -586,7 +592,7 @@ class CReplColl[@specialized A](val value: A, val length: Int)(implicit tA: RTyp
   @Internal
   lazy val _toArray: Array[A] = {
     implicit val cT: ClassTag[A] = tA.classTag
-    val res = new Array[A](length)
+    val res = safeNewArray[A](length)
     val v = value
     cfor(0)(_ < length, _ + 1) { i => res(i) = v }
     res

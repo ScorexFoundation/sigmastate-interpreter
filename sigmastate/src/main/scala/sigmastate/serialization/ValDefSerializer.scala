@@ -6,6 +6,7 @@ import sigmastate.serialization.OpCodes._
 import scorex.util.Extensions._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import ValueSerializer._
+import sigmastate.util.safeNewArray
 import spire.syntax.all.cfor
 
 case class ValDefSerializer(override val opDesc: ValueCompanion) extends ValueSerializer[ValDef] {
@@ -33,7 +34,7 @@ case class ValDefSerializer(override val opDesc: ValueCompanion) extends ValueSe
     val tpeArgs: Seq[STypeVar] = opCode match {
       case FunDefCode =>
         val nTpeArgs = r.getByte()
-        val inputs = ValueSerializer.newArray[STypeVar](nTpeArgs)
+        val inputs = safeNewArray[STypeVar](nTpeArgs)
         cfor(0)(_ < nTpeArgs, _ + 1) { i =>
           inputs(i) = r.getType().asInstanceOf[STypeVar]
         }

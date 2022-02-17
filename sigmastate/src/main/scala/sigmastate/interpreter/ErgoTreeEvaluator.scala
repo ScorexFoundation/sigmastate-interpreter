@@ -6,7 +6,7 @@ import sigmastate.{FixedCost, JitCost, PerItemCost, SType, TypeBasedCost, Versio
 import sigmastate.Values._
 import sigmastate.eval.Profiler
 import sigmastate.interpreter.ErgoTreeEvaluator.DataEnv
-import sigmastate.interpreter.Interpreter.{JitReductionResult, error}
+import sigmastate.interpreter.Interpreter.JitReductionResult
 import special.sigma.{Context, SigmaProp}
 import scalan.util.Extensions._
 import sigmastate.interpreter.EvalSettings._
@@ -126,9 +126,7 @@ class ErgoTreeEvaluator(
   
   /** Evaluates the given expression in the given data environment. */
   def eval(env: DataEnv, exp: SValue): Any = {
-    if (VersionContext.current.ergoTreeVersion != context.currentErgoTreeVersion) {
-      error(s"Global VersionContext.current.ergoTreeVersion = ${VersionContext.current.ergoTreeVersion} while context.currentErgoTreeVersion = ${context.currentErgoTreeVersion}.")
-    }
+    VersionContext.checkVersions(context.activatedScriptVersion, context.currentErgoTreeVersion)
     ErgoTreeEvaluator.currentEvaluator.withValue(this) {
       exp.evalTo[Any](env)(this)
     }
@@ -150,6 +148,9 @@ class ErgoTreeEvaluator(
   private lazy val costTrace: DBuffer[CostItem] = {
     DBuffer.ofSize[CostItem](1000)
   }
+
+  /** Returns currently accumulated JIT cost in this evaluator. */
+  def getAccumulatedCost: JitCost = coster.totalCost
 
   /** Returns the currently accumulated trace of cost items in this evaluator.
     * A new array is allocated and returned, the evaluator state is unaffected.

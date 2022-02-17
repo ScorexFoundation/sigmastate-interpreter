@@ -19,6 +19,7 @@ import scala.collection.mutable
 /** This works in tandem with ConstantSerializer, if you change one make sure to check the other.*/
 object DataSerializer {
 
+  // TODO mainnet v5.0: control maxTreeDepth same as in deserialize
   /** Use type descriptor `tpe` to deconstruct type structure and recursively serialize subcomponents.
     * Primitive types are leaves of the type tree, and they are served as basis of recursion.
     * The data value `v` is expected to conform to the type described by `tpe`.
@@ -77,11 +78,16 @@ object DataSerializer {
       }
 
     // TODO v6.0 (3h): support Option[T] (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/659)
-    case _ => sys.error(s"Don't know how to serialize ($v, $tpe)")
+    case _ =>
+      CheckSerializableTypeCode(tpe.typeCode)
+      throw new SerializerException(s"Don't know how to serialize ($v, $tpe)")
   }
 
   /** Reads a data value from Reader. The data value bytes is expected to confirm
-    * to the type descriptor `tpe`. */
+    * to the type descriptor `tpe`.
+    * The data structure depth is limited by r.maxTreeDepth which is
+    * SigmaSerializer.MaxTreeDepth by default.
+    */
   def deserialize[T <: SType](tpe: T, r: SigmaByteReader): T#WrappedType = {
     val depth = r.level
     r.level = depth + 1

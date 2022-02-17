@@ -22,7 +22,10 @@ class TyperException(message: String, source: Option[SourceContext] = None)
 class SpecializerException(message: String, source: Option[SourceContext] = None)
     extends SigmaException(message, source)
 
-class SerializerException(message: String, source: Option[SourceContext] = None, cause: Option[Throwable] = None)
+case class SerializerException(
+  override val message: String,
+  override val source: Option[SourceContext] = None,
+  override val cause: Option[Throwable] = None)
   extends SigmaException(message, source, cause)
 
 class BuilderException(message: String, source: Option[SourceContext] = None)

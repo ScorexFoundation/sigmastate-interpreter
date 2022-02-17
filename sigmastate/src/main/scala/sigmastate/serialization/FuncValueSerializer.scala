@@ -5,6 +5,7 @@ import sigmastate._
 import scorex.util.Extensions._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import ValueSerializer._
+import sigmastate.util.safeNewArray
 import sigmastate.utils.SigmaByteWriter.{DataInfo, U, Vlq}
 import spire.syntax.all.cfor
 
@@ -27,7 +28,7 @@ case class FuncValueSerializer(cons: (IndexedSeq[(Int, SType)], Value[SType]) =>
 
   override def parse(r: SigmaByteReader): Value[SType] = {
     val argsSize = r.getUInt().toIntExact
-    val args = ValueSerializer.newArray[(Int, SType)](argsSize)
+    val args = safeNewArray[(Int, SType)](argsSize)
     cfor(0)(_ < argsSize, _ + 1) { i =>
       val id = r.getUInt().toInt
       val tpe = r.getType()

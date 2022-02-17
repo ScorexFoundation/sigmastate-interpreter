@@ -5,6 +5,7 @@ import org.ergoplatform._
 import scorex.util.ModifierId
 import sigmastate.Values.ErgoTree.{DefaultHeader, updateVersionBits}
 import sigmastate.Values._
+import sigmastate.VersionContext.MaxSupportedScriptVersion
 import sigmastate.eval._
 import sigmastate.helpers.{ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers.createBox
@@ -191,10 +192,13 @@ class ScriptVersionSwitchSpecification extends SigmaDslTesting {
         val headerFlags = ErgoTree.headerWithVersion(ergoTreeVersionInTests /* Script v2 */)
         val ergoTree = createErgoTree(headerFlags = headerFlags)
 
-        // the prove is successful (since it is not part of consensus)
-        testProve(ergoTree, activatedScriptVersion = activatedVersionInTests)
+        // prover is rejecting ErgoTree versions higher than activated
+        assertExceptionThrown(
+          testProve(ergoTree, activatedScriptVersion = activatedVersionInTests),
+          exceptionLike[InterpreterException](s"ErgoTree version ${ergoTree.version} is higher than activated $activatedVersionInTests")
+        )
 
-        // and verify is rejecting
+        // verifier is rejecting ErgoTree versions higher than activated
         assertExceptionThrown(
           testVerify(ergoTree, activatedScriptVersion = activatedVersionInTests),
           exceptionLike[InterpreterException](s"ErgoTree version ${ergoTree.version} is higher than activated $activatedVersionInTests")
@@ -221,18 +225,16 @@ class ScriptVersionSwitchSpecification extends SigmaDslTesting {
 
       forEachErgoTreeVersion(treeVers) {
         // SF inactive: check cost vectors of v4.x interpreter
-        val headerFlags = ErgoTree.headerWithVersion(ergoTreeVersionInTests)
-        val ergoTree = createErgoTree(headerFlags)
+        val ergoTree = createErgoTree(ergoTreeHeaderInTests)
 
         // both prove and verify are accepting with full evaluation
-        val expectedCost = 5238L
         val pr = testProve(ergoTree, activatedScriptVersion = activatedVersionInTests)
         pr.proof shouldBe Array.emptyByteArray
-        pr.cost shouldBe expectedCost
+        pr.cost shouldBe 24L
 
         val (ok, cost) = testVerify(ergoTree, activatedScriptVersion = activatedVersionInTests)
         ok shouldBe true
-        cost shouldBe expectedCost
+        cost shouldBe 24L
       }
     }
   }
@@ -249,10 +251,13 @@ class ScriptVersionSwitchSpecification extends SigmaDslTesting {
         val headerFlags = ErgoTree.headerWithVersion(ergoTreeVersionInTests)
         val ergoTree = createErgoTree(headerFlags)
 
-        // the prove is successful (since it is not part of consensus)
-        testProve(ergoTree, activatedScriptVersion = activatedVersionInTests)
+        // prover is rejecting ErgoTree versions higher than activated
+        assertExceptionThrown(
+          testProve(ergoTree, activatedScriptVersion = activatedVersionInTests),
+          exceptionLike[InterpreterException](s"ErgoTree version ${ergoTree.version} is higher than activated $activatedVersionInTests")
+        )
 
-        // and verify is rejecting
+        // verifier is rejecting ErgoTree versions higher than activated
         assertExceptionThrown(
           testVerify(ergoTree, activatedScriptVersion = activatedVersionInTests),
           exceptionLike[InterpreterException](s"ErgoTree version ${ergoTree.version} is higher than activated $activatedVersionInTests")
@@ -273,10 +278,11 @@ class ScriptVersionSwitchSpecification extends SigmaDslTesting {
         val headerFlags = ErgoTree.headerWithVersion(ergoTreeVersionInTests)
         val ergoTree = createErgoTree(headerFlags)
 
-        // the prove is successful (since it is not part of consensus)
-        val pr = testProve(ergoTree, activatedScriptVersion = activatedVersionInTests)
-        pr.proof shouldBe Array.emptyByteArray
-        pr.cost shouldBe 5238L
+        // prover is rejecting, because such context parameters doesn't make sense
+        assertExceptionThrown(
+          testProve(ergoTree, activatedScriptVersion = activatedVersionInTests),
+          exceptionLike[InterpreterException](s"Both ErgoTree version ${ergoTree.version} and activated version $activatedVersionInTests is greater than MaxSupportedScriptVersion $MaxSupportedScriptVersion")
+        )
 
         // and verify is accepting without evaluation
         val (ok, cost) = testVerify(ergoTree, activatedScriptVersion = activatedVersionInTests)
@@ -305,14 +311,13 @@ class ScriptVersionSwitchSpecification extends SigmaDslTesting {
         val ergoTree = createErgoTree(headerFlags)
 
         // both prove and verify are accepting with full evaluation
-        val expectedCost = 5238L
         val pr = testProve(ergoTree, activatedScriptVersion = activatedVersionInTests)
         pr.proof shouldBe Array.emptyByteArray
-        pr.cost shouldBe expectedCost
+        pr.cost shouldBe 24L
 
         val (ok, cost) = testVerify(ergoTree, activatedScriptVersion = activatedVersionInTests)
         ok shouldBe true
-        cost shouldBe expectedCost
+        cost shouldBe 24L
       }
     }
   }

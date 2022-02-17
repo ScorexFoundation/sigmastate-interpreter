@@ -1,10 +1,10 @@
 package sigmastate.serialization
 
 import java.nio.charset.StandardCharsets
-
 import org.ergoplatform.validation.ValidationRules.{CheckPrimitiveTypeCode, CheckTypeCode}
 import sigmastate._
 import sigmastate.lang.exceptions.InvalidTypePrefix
+import sigmastate.util.safeNewArray
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import spire.syntax.all.cfor
 
@@ -174,7 +174,7 @@ object TypeSerializer {
       c match {
         case STuple.TupleTypeCode => {
           val len = r.getUByte()
-          val items = ValueSerializer.newArray[SType](len)
+          val items = safeNewArray[SType](len)
           cfor(0)(_ < len, _ + 1) { i =>
             items(i) = deserialize(r, depth + 1)
           }

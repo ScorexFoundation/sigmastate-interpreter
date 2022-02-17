@@ -3,8 +3,9 @@ package special.sigma
 import java.util
 import org.ergoplatform.SigmaConstants.ScriptCostLimit
 import org.ergoplatform.dsl.{ContractSpec, SigmaContractSyntax, TestContractSpec}
-import org.ergoplatform.validation.{SigmaValidationSettings, ValidationRules}
+import org.ergoplatform.validation.{SigmaValidationSettings, ValidationException, ValidationRules}
 import org.ergoplatform._
+import org.ergoplatform.validation.ValidationRules.CheckSerializableTypeCode
 import org.scalacheck.Arbitrary._
 import org.scalacheck.Gen.frequency
 import org.scalacheck.{Arbitrary, Gen}
@@ -31,7 +32,7 @@ import sigmastate.serialization.ValueSerializer
 import sigmastate.serialization.generators.ObjectGenerators
 import sigmastate.utils.Helpers._
 import sigmastate.utxo.{DeserializeContext, DeserializeRegister}
-import sigmastate.{SSigmaProp, SType, VersionContext, eval}
+import sigmastate.{SOption, SSigmaProp, SType, VersionContext, eval}
 import special.collection.{Coll, CollType}
 import spire.syntax.all.cfor
 
@@ -364,14 +365,21 @@ class SigmaDslTesting extends PropSpec
             )
 
           case _ =>
-            ErgoLikeContextTesting.dummy(
-              createBox(0, compiledTree, additionalRegisters = newRegisters),
-              activatedVersionInTests)
-                .withBindings(
-                  1.toByte -> Constant[SType](input.asInstanceOf[SType#WrappedType], tpeA),
-                  2.toByte -> ByteArrayConstant(pkCarolBytes))
-                .withInitCost(initialCostInTests.value)
-                .asInstanceOf[ErgoLikeContext]
+            val box = createBox(0, compiledTree, additionalRegisters = newRegisters)
+
+            // make sure we are doing tests with the box with is actually serializable
+            try roundTripTest(box)(ErgoBox.sigmaSerializer)
+            catch {
+              case ValidationException(_, r: CheckSerializableTypeCode.type, Seq(SOption.OptionTypeCode), _) =>
+                // ignore the problem with Option serialization, but test all the other cases
+            }
+
+            ErgoLikeContextTesting.dummy(box, activatedVersionInTests)
+              .withBindings(
+                1.toByte -> Constant[SType](input.asInstanceOf[SType#WrappedType], tpeA),
+                2.toByte -> ByteArrayConstant(pkCarolBytes))
+              .withInitCost(initialCostInTests.value)
+              .asInstanceOf[ErgoLikeContext]
         }
         ctx
       }
@@ -641,7 +649,9 @@ class SigmaDslTesting extends PropSpec
       // check the old implementation against Scala semantic function
       var oldRes: Try[(B, CostDetails)] = null
       if (ergoTreeVersionInTests < VersionContext.JitActivationVersion)
-        oldRes = checkEq(scalaFunc)(oldF)(input)
+        oldRes = VersionContext.withVersions(activatedVersionInTests, ergoTreeVersionInTests) {
+          checkEq(scalaFunc)(oldF)(input)
+        }
 
       val newRes = {
         // check the new implementation against Scala semantic function

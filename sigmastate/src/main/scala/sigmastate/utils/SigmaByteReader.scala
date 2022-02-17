@@ -1,11 +1,13 @@
 package sigmastate.utils
 
+import org.ergoplatform.validation.ValidationRules.CheckPositionLimit
+import scorex.util.Extensions._
 import scorex.util.serialization.Reader
 import sigmastate.SType
 import sigmastate.Values.{SValue, Value}
-import sigmastate.lang.exceptions.{InputSizeLimitExceeded, DeserializeCallDepthExceeded}
+import sigmastate.lang.exceptions.DeserializeCallDepthExceeded
 import sigmastate.serialization._
-import scorex.util.Extensions._
+import sigmastate.util.safeNewArray
 import spire.syntax.all.cfor
 
 /** Reader used in the concrete implementations of [[SigmaSerializer]].
@@ -26,9 +28,15 @@ class SigmaByteReader(val r: Reader,
                       val maxTreeDepth: Int = SigmaSerializer.MaxTreeDepth)
   extends Reader {
 
-  @inline private def checkPositionLimit(): Unit =
-    if (position > positionLimit)
-      throw new InputSizeLimitExceeded(s"SigmaByteReader position limit $positionLimit is reached at position $position")
+  /** Checks that the current reader position is <= positionLimit.
+    * NOTE, since v5.0 the same check is done via validation rule, which wraps the
+    * original exception into ValidationException. This makes this condition soft-forkable,
+    * other than that both v4.x and v5.x will work and fail at the same time, so the
+    * change is consensus-safe.
+    */
+  @inline private def checkPositionLimit(): Unit = {
+    CheckPositionLimit(position, positionLimit)
+  }
 
   /** The reader should be lightweight to create. In most cases ErgoTrees don't have
     * ValDef nodes hence the store is not necessary and it's initialization dominates the
@@ -158,7 +166,7 @@ class SigmaByteReader(val r: Reader,
     val size = getUInt().toIntExact
     if (size == 0) Value.EmptySeq // quick short-cut when there is nothing to read
     else {
-      val xs = ValueSerializer.newArray[SValue](size)
+      val xs = safeNewArray[SValue](size)
       cfor(0)(_ < size, _ + 1) { i =>
         xs(i) = getValue()
       }

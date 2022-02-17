@@ -7,26 +7,27 @@ import sigmastate.Values.{ShortConstant, BigIntConstant, ConstantPlaceholder, Va
 import sigmastate._
 import sigmastate.eval.{IRContext, CBigInt}
 import sigmastate.helpers.SigmaTestingCommons
-import sigmastate.lang.exceptions.{SerializerException, InputSizeLimitExceeded}
+import sigmastate.lang.exceptions.{SerializerException, ReaderPositionLimitExceeded}
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.utxo.{DeserializeContext, DeserializeRegister}
 
 class ErgoTreeSerializerSpecification extends SerializationSpecification
-  with SigmaTestingCommons {
+  with SigmaTestingCommons with CrossVersionProps {
 
   implicit lazy val IR: TestingIRContext = new TestingIRContext {
     beginPass(noConstPropagationPass)
   }
 
+  // TODO mainnet v5.0: return two trees with and without constants and ergoTreeVersionInTests
   private def extractConstants(tree: SigmaPropValue)(implicit IR: IRContext): ErgoTree = {
     import ErgoTree._
     val env = Map[String, Any]()
     val IR.Pair(calcF, _) = IR.doCosting(env, tree)
     val extractConstants = new ConstantStore()
-    val outTree = IR.buildTree(calcF, Some(extractConstants))
+    val outExpr = IR.buildTree(calcF, Some(extractConstants))
     val constants = extractConstants.getAll
     val header = if (constants.isEmpty) DefaultHeader else ConstantSegregationHeader
-    val ergoTree = ErgoTree(header, constants, outTree)
+    val ergoTree = ErgoTree(header, constants, outExpr)
     ergoTree
   }
 
@@ -63,6 +64,7 @@ class ErgoTreeSerializerSpecification extends SerializationSpecification
   property("failed type check on tree deserialization") {
     forAll(numExprTreeNodeGen) { numProp =>
       val bytes = DefaultSerializer.serializeErgoTree(extractConstants(numProp.asInstanceOf[SigmaPropValue]))
+      // TODO mainnet v5.0: more precise tests using assertExceptionThrown
       an[SerializerException] should be thrownBy DefaultSerializer.deserializeErgoTree(bytes)
       an[SerializerException] should be thrownBy DefaultSerializer.deserializeErgoTree(bytes)
     }
@@ -106,7 +108,7 @@ class ErgoTreeSerializerSpecification extends SerializationSpecification
     assertExceptionThrown({
       DefaultSerializer.deserializeErgoTree(r, 1)
     }, {
-      case e: SerializerException => rootCause(e).isInstanceOf[InputSizeLimitExceeded]
+      case e: SerializerException => rootCause(e).isInstanceOf[ReaderPositionLimitExceeded]
     })
   }
 
