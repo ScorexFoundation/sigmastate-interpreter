@@ -102,18 +102,20 @@ class SigmaDslSpecification extends SigmaDslTesting
 
   import TestData._
 
-  prepareSamples[BigInt]
-  prepareSamples[GroupElement]
-  prepareSamples[AvlTree]
-  prepareSamples[Box]
-  prepareSamples[PreHeader]
-  prepareSamples[Header]
-  prepareSamples[(BigInt, BigInt)]
-  prepareSamples[(GroupElement, GroupElement)]
-  prepareSamples[(AvlTree, AvlTree)]
-  prepareSamples[(Box, Box)]
-  prepareSamples[(PreHeader, PreHeader)]
-  prepareSamples[(Header, Header)]
+  override protected def beforeAll(): Unit = {
+    prepareSamples[BigInt]
+    prepareSamples[GroupElement]
+    prepareSamples[AvlTree]
+    prepareSamples[Box]
+    prepareSamples[PreHeader]
+    prepareSamples[Header]
+    prepareSamples[(BigInt, BigInt)]
+    prepareSamples[(GroupElement, GroupElement)]
+    prepareSamples[(AvlTree, AvlTree)]
+    prepareSamples[(Box, Box)]
+    prepareSamples[(PreHeader, PreHeader)]
+    prepareSamples[(Header, Header)]
+  }
 
   ///=====================================================
   ///              Boolean type operations
@@ -5323,13 +5325,24 @@ class SigmaDslSpecification extends SigmaDslTesting
           ((Helpers.decodeBytes("01"), Helpers.decodeBytes("01")), success(Helpers.decodeBytes("00"))),
           ((Helpers.decodeBytes("0100"), Helpers.decodeBytes("0101")), success(Helpers.decodeBytes("0001"))),
           ((Helpers.decodeBytes("01"), Helpers.decodeBytes("0101")), success(Helpers.decodeBytes("00"))),
-          ((Helpers.decodeBytes("0100"), Helpers.decodeBytes("01")), Expected(new ArrayIndexOutOfBoundsException("1"))),
+          ((Helpers.decodeBytes("0100"), Helpers.decodeBytes("01")) ->
+            Expected(Failure(new ArrayIndexOutOfBoundsException("1")),
+              cost = 0,
+              newDetails = CostDetails.ZeroCost,
+              newCost = 1789,
+              newVersionedResults =  {
+                val res = (ExpectedResult(Success(Helpers.decodeBytes("00")), Some(1789)), None)
+                Seq(0, 1, 2).map(version => version -> res)
+              }
+            )),
           ((Helpers.decodeBytes("800136fe89afff802acea67128a0ff007fffe3498c8001806080012b"),
               Helpers.decodeBytes("648018010a5d5800f5b400a580e7b4809b0cd273ff1230bfa800017f7fdb002749b3ac2b86ff")),
               success(Helpers.decodeBytes("e4812eff83f2a780df7aa6d4a8474b80e4f3313a7392313fc8800054")))
         )
       },
-      existingFeature((x: (Coll[Byte], Coll[Byte])) => SigmaDsl.xor(x._1, x._2),
+      changedFeature(
+        (x: (Coll[Byte], Coll[Byte])) => SigmaDsl.xor(x._1, x._2),
+        (x: (Coll[Byte], Coll[Byte])) => SigmaDsl.xor(x._1, x._2),
         "{ (x: (Coll[Byte], Coll[Byte])) => xor(x._1, x._2) }",
         FuncValue(
           Vector((1, STuple(Vector(SByteArray, SByteArray)))),

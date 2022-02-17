@@ -11,7 +11,8 @@ import scalan.{Internal, NeverInline, RType, Reified}
 import Helpers._
 import debox.Buffer
 import scalan.RType._
-import sigmastate.util.{MaxArrayLength, safeNewArray}
+import sigmastate.VersionContext
+import sigmastate.util.{MaxArrayLength, safeConcatArrays_v5, safeNewArray}
 import spire.syntax.all._
 
 import scala.runtime.RichInt
@@ -59,7 +60,12 @@ class CollOverArray[@specialized A](val toArray: Array[A])(implicit tA: RType[A]
   @NeverInline
   def append(other: Coll[A]): Coll[A] = {
     if (toArray.length <= 0) return other
-    val result = CollectionUtil.concatArrays(toArray, other.toArray)
+    val result = if (VersionContext.current.isActivatedVersionGreaterV1) {
+      // in v5.0 and above this fixes the ClassCastException problem
+      safeConcatArrays_v5(toArray, other.toArray)(tA.classTag)
+    } else {
+      CollectionUtil.concatArrays(toArray, other.toArray)
+    }
     builder.fromArray(result)
   }
 
@@ -214,12 +220,25 @@ class CollOverArrayBuilder extends CollBuilder {
   override def Monoids: MonoidBuilder = new MonoidBuilderInst
 
   @inline override def pairColl[@specialized A, @specialized B](as: Coll[A], bs: Coll[B]): PairColl[A, B] = {
-    // TODO v5.0 (2h): use minimal length and slice longer collection
-    // The current implementation doesn't check the case when `as` and `bs` have different lengths.
-    // in which case the implementation of `PairOfCols` has inconsistent semantics of `map`, `exists` etc methods.
-    // To fix the problem, the longer collection have to be truncated (which is consistent
-    // with how zip is implemented for Arrays)
-    new PairOfCols(as, bs)
+    if (VersionContext.current.isActivatedVersionGreaterV1) {
+      // v5.0 and above
+      val asLen = as.length
+      val bsLen = bs.length
+      // if necessary, use minimal length and slice longer collection
+      if (asLen == bsLen)
+        new PairOfCols(as, bs)
+      else if (asLen < bsLen) {
+        new PairOfCols(as, bs.slice(0, asLen))
+      } else {
+        new PairOfCols(as.slice(0, bsLen), bs)
+      }
+    } else {
+      // The v4.x implementation doesn't check the case when `as` and `bs` have different lengths.
+      // In which case appending two `PairOfCols` leads to invalid pairing of elements.
+      // To fix the problem, the longer collection have to be truncated (which is consistent
+      // with how zip is implemented for Arrays)
+      new PairOfCols(as, bs)
+    }
   }
 
   @Internal
@@ -288,8 +307,8 @@ class CollOverArrayBuilder extends CollBuilder {
       val limit = xs.length
       implicit val tA = xs.tItem.tFst
       implicit val tB = xs.tItem.tSnd
-      val ls = new Array[A](limit)
-      val rs = new Array[B](limit)
+      val ls = Array.ofDim[A](limit)(tA.classTag)
+      val rs = Array.ofDim[B](limit)(tB.classTag)
       cfor(0)(_ < limit, _ + 1) { i =>
         val p = xs(i)
         ls(i) = p._1
