@@ -417,6 +417,8 @@ trait Interpreter extends ScorexLogging {
     *         statement (see also `SigmaBoolean`).
     * Step 3: Verify that the proof is presented to satisfy SigmaProp conditions.
     *
+    * NOTE, ergoTree.complexity is not added to the cost when v5.0 is activated
+    *
     * @param env      environment of system variables used by the interpreter internally
     * @param ergoTree ErgoTree expression to execute in the given context and verify its
     *                 result
