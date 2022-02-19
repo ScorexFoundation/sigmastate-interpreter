@@ -426,7 +426,6 @@ The following syntax is supported to access registers on box objects:
 ```
 box.R3[Int].get          // access R3 register, check that its value of type Int and return it
 box.R3[Int].isDefined    // check that value of R3 is defined and has type Int
-box.R3[Int].isEmpty      // check that value of R3 is undefined
 box.R3[Int].getOrElse(d) // access R3 value if defined, otherwise return `d`
 ```
 
