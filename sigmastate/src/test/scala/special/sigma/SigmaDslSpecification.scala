@@ -6622,7 +6622,8 @@ class SigmaDslSpecification extends SigmaDslTesting
 
   property("Coll slice method equivalence") {
     val samples = genSamples(collWithRangeGen, DefaultMinSuccessful)
-    verifyCases(
+    if (lowerMethodCallsInTests) {
+      verifyCases(
       // (coll, (from, until))
       {
         def success[T](v: T) = Expected(Success(v), 36964)
@@ -6664,7 +6665,17 @@ class SigmaDslSpecification extends SigmaDslTesting
             )
           )
         )),
-      preGeneratedSamples = Some(samples))
+        preGeneratedSamples = Some(samples))
+    } else {
+      assertExceptionThrown(
+        verifyCases(
+          Seq( (Coll[Int](), (-1, 0)) -> Expected(Success(Coll[Int]()), 37765) ),
+          existingFeature((x: (Coll[Int], (Int, Int))) => x._1.slice(x._2._1, x._2._2),
+            "{ (x: (Coll[Int], (Int, Int))) => x._1.slice(x._2._1, x._2._2) }"
+          )),
+        rootCauseLike[NoSuchMethodException]("sigmastate.eval.CostingRules$CollCoster.slice(scalan.Base$Ref,scalan.Base$Ref)")
+      )
+    }
   }
 
   property("Coll.append equivalence") {

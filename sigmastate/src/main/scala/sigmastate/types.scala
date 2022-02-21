@@ -1485,6 +1485,10 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
 
   val SliceMethod = SMethod(this, "slice",
     SFunc(Array(ThisType, SInt, SInt), ThisType, paramIVSeq), 7, Slice.costKind)
+      .withIRInfo({
+        case (builder, obj, _, Seq(from, until), _) =>
+          builder.mkSlice(obj.asCollection[SType], from.asIntValue, until.asIntValue)
+      })
       .withInfo(Slice,
         """Selects an interval of elements.  The returned collection is made up
          |  of all elements \lst{x} which satisfy the invariant:

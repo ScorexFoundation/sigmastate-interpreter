@@ -112,9 +112,6 @@ trait CompiletimeCosting extends RuntimeCosting { IR: IRContext =>
         else
           eval(mkUpcast(numValue, tRes))
 
-      case Terms.Apply(Select(col, SliceMethod.name, _), Seq(from, until)) =>
-        eval(mkSlice(col.asValue[SCollection[SType]], from.asIntValue, until.asIntValue))
-
       case Terms.Apply(Select(col, ExistsMethod.name, _), Seq(l)) if l.tpe.isFunc =>
         eval(mkExists(col.asValue[SCollection[SType]], l.asFunc))
 
