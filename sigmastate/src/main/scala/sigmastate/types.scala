@@ -1460,6 +1460,9 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
 
   val ExistsMethod = SMethod(this, "exists",
     SFunc(Array(ThisType, tPredicate), SBoolean, paramIVSeq), 4, Exists.costKind)
+      .withIRInfo({
+        case (builder, obj, _, Seq(c), _) => builder.mkExists(obj.asValue[SCollection[SType]], c.asFunc)
+      })
       .withInfo(Exists,
         """Tests whether a predicate holds for at least one element of this collection.
          |Returns \lst{true} if the given predicate \lst{p} is satisfied by at least one element of this collection, otherwise \lst{false}
@@ -1476,6 +1479,9 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
 
   val ForallMethod = SMethod(this, "forall",
     SFunc(Array(ThisType, tPredicate), SBoolean, paramIVSeq), 6, ForAll.costKind)
+      .withIRInfo({
+        case (builder, obj, _, Seq(c), _) => builder.mkForAll(obj.asValue[SCollection[SType]], c.asFunc)
+      })
       .withInfo(ForAll,
         """Tests whether a predicate holds for all elements of this collection.
          |Returns \lst{true} if this collection is empty or the given predicate \lst{p}

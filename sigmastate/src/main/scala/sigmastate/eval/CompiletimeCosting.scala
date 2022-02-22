@@ -112,12 +112,6 @@ trait CompiletimeCosting extends RuntimeCosting { IR: IRContext =>
         else
           eval(mkUpcast(numValue, tRes))
 
-      case Terms.Apply(Select(col, ExistsMethod.name, _), Seq(l)) if l.tpe.isFunc =>
-        eval(mkExists(col.asValue[SCollection[SType]], l.asFunc))
-
-      case Terms.Apply(Select(col, ForallMethod.name, _), Seq(l)) if l.tpe.isFunc =>
-        eval(mkForAll(col.asValue[SCollection[SType]], l.asFunc))
-
       case Terms.Apply(Select(col, MapMethod.name, _), Seq(l)) if l.tpe.isFunc =>
         eval(mkMapCollection(col.asValue[SCollection[SType]], l.asFunc))
 

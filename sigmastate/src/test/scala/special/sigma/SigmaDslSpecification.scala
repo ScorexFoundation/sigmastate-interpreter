@@ -5645,7 +5645,7 @@ class SigmaDslSpecification extends SigmaDslTesting
       preGeneratedSamples = Some(samples))
   }
 
-  property("Coll[Box] methods equivalence") {
+  property("Coll.flatMap equivalence") {
     val samples = sampleCollBoxes
     val b1 = create_b1
     val b2 = create_b2
@@ -5664,19 +5664,25 @@ class SigmaDslSpecification extends SigmaDslTesting
         )
       },
       existingFeature({ (x: Coll[Box]) => x.flatMap({ (b: Box) => b.propositionBytes }) },
-        "{ (x: Coll[Box]) => x.flatMap({(b: Box) => b.propositionBytes }) }",
-        FuncValue(
-          Vector((1, SCollectionType(SBox))),
-          MethodCall.typed[Value[SCollection[SByte.type]]](
-            ValUse(1, SCollectionType(SBox)),
-            SCollection.getMethodByName("flatMap").withConcreteTypes(
-              Map(STypeVar("IV") -> SBox, STypeVar("OV") -> SByte)
-            ),
-            Vector(FuncValue(Vector((3, SBox)), ExtractScriptBytes(ValUse(3, SBox)))),
-            Map()
-          )
-        )),
+      "{ (x: Coll[Box]) => x.flatMap({(b: Box) => b.propositionBytes }) }",
+      FuncValue(
+        Vector((1, SCollectionType(SBox))),
+        MethodCall.typed[Value[SCollection[SByte.type]]](
+          ValUse(1, SCollectionType(SBox)),
+          SCollection.getMethodByName("flatMap").withConcreteTypes(
+            Map(STypeVar("IV") -> SBox, STypeVar("OV") -> SByte)
+          ),
+          Vector(FuncValue(Vector((3, SBox)), ExtractScriptBytes(ValUse(3, SBox)))),
+          Map()
+        )
+      )),
       preGeneratedSamples = Some(samples))
+  }
+
+  property("Coll.zip equivalence") {
+    val samples = sampleCollBoxes
+    val b1 = create_b1
+    val b2 = create_b2
 
     verifyCases(
       {
@@ -5688,20 +5694,25 @@ class SigmaDslSpecification extends SigmaDslTesting
         )
       },
       existingFeature({ (x: Coll[Box]) => x.zip(x) },
-        "{ (x: Coll[Box]) => x.zip(x) }",
-        FuncValue(
-          Vector((1, SCollectionType(SBox))),
-          MethodCall.typed[Value[SCollection[STuple]]](
-            ValUse(1, SCollectionType(SBox)),
-            SCollection.getMethodByName("zip").withConcreteTypes(
-              Map(STypeVar("IV") -> SBox, STypeVar("OV") -> SBox)
-            ),
-            Vector(ValUse(1, SCollectionType(SBox))),
-            Map()
-          )
-        )),
+      "{ (x: Coll[Box]) => x.zip(x) }",
+      FuncValue(
+        Vector((1, SCollectionType(SBox))),
+        MethodCall.typed[Value[SCollection[STuple]]](
+          ValUse(1, SCollectionType(SBox)),
+          SCollection.getMethodByName("zip").withConcreteTypes(
+            Map(STypeVar("IV") -> SBox, STypeVar("OV") -> SBox)
+          ),
+          Vector(ValUse(1, SCollectionType(SBox))),
+          Map()
+        )
+      )),
       preGeneratedSamples = Some(samples))
+  }
 
+  property("Coll.size equivalence") {
+    val samples = sampleCollBoxes
+    val b1 = create_b1
+    val b2 = create_b2
     verifyCases(
       {
         def success[T](v: T) = Expected(Success(v), 35954)
@@ -5712,10 +5723,15 @@ class SigmaDslSpecification extends SigmaDslTesting
         )
       },
       existingFeature({ (x: Coll[Box]) => x.size },
-        "{ (x: Coll[Box]) => x.size }",
-        FuncValue(Vector((1, SCollectionType(SBox))), SizeOf(ValUse(1, SCollectionType(SBox))))),
+      "{ (x: Coll[Box]) => x.size }",
+      FuncValue(Vector((1, SCollectionType(SBox))), SizeOf(ValUse(1, SCollectionType(SBox))))),
       preGeneratedSamples = Some(samples))
+  }
 
+  property("Coll.indices equivalence") {
+    val samples = sampleCollBoxes
+    val b1 = create_b1
+    val b2 = create_b2
     verifyCases(
       {
         def success[T](v: T) = Expected(Success(v), 36036)
@@ -5726,28 +5742,36 @@ class SigmaDslSpecification extends SigmaDslTesting
         )
       },
       existingFeature({ (x: Coll[Box]) => x.indices },
-        "{ (x: Coll[Box]) => x.indices }",
-        FuncValue(
-          Vector((1, SCollectionType(SBox))),
-          MethodCall.typed[Value[SCollection[SInt.type]]](
-            ValUse(1, SCollectionType(SBox)),
-            SCollection.getMethodByName("indices").withConcreteTypes(Map(STypeVar("IV") -> SBox)),
-            Vector(),
-            Map()
-          )
-        )),
+      "{ (x: Coll[Box]) => x.indices }",
+      FuncValue(
+        Vector((1, SCollectionType(SBox))),
+        MethodCall.typed[Value[SCollection[SInt.type]]](
+          ValUse(1, SCollectionType(SBox)),
+          SCollection.getMethodByName("indices").withConcreteTypes(Map(STypeVar("IV") -> SBox)),
+          Vector(),
+          Map()
+        )
+      )),
       preGeneratedSamples = Some(samples))
 
-    verifyCases(
-      {
-        def success[T](v: T, c: Int) = Expected(Success(v), c)
-        Seq(
-          (Coll[Box](), success(true, 37909)),
-          (Coll[Box](b1), success(false, 37969)),
-          (Coll[Box](b1, b2), success(false, 38029))
-        )
-      },
-      existingFeature({ (x: Coll[Box]) => x.forall({ (b: Box) => b.value > 1 }) },
+  }
+
+  property("Coll.forall equivalence") {
+    val samples = sampleCollBoxes
+    val b1 = create_b1
+    val b2 = create_b2
+
+    def success[T](v: T, c: Int) = Expected(Success(v), c)
+    if (lowerMethodCallsInTests) {
+      verifyCases(
+        {
+          Seq(
+            (Coll[Box](), success(true, 37909)),
+            (Coll[Box](b1), success(false, 37969)),
+            (Coll[Box](b1, b2), success(false, 38029))
+          )
+        },
+        existingFeature({ (x: Coll[Box]) => x.forall({ (b: Box) => b.value > 1 }) },
         "{ (x: Coll[Box]) => x.forall({(b: Box) => b.value > 1 }) }",
         FuncValue(
           Vector((1, SCollectionType(SBox))),
@@ -5756,18 +5780,36 @@ class SigmaDslSpecification extends SigmaDslTesting
             FuncValue(Vector((3, SBox)), GT(ExtractAmount(ValUse(3, SBox)), LongConstant(1L)))
           )
         )),
-      preGeneratedSamples = Some(samples))
+        preGeneratedSamples = Some(samples))
+    } else {
+      assertExceptionThrown(
+        verifyCases(
+          Seq( (Coll[Box](), success(true, 37909)) ),
+          existingFeature(
+            { (x: Coll[Box]) => x.forall({ (b: Box) => b.value > 1 }) },
+            "{ (x: Coll[Box]) => x.forall({(b: Box) => b.value > 1 }) }"
+          )),
+        rootCauseLike[NoSuchMethodException]("sigmastate.eval.CostingRules$CollCoster.forall(scalan.Base$Ref)")
+      )
+    }
+  }
+  
+  property("Coll.exists equivalence") {
+    val samples = sampleCollBoxes
+    val b1 = create_b1
+    val b2 = create_b2
 
-    verifyCases(
-      {
-        def success[T](v: T, c: Int) = Expected(Success(v), c)
-        Seq(
-          (Coll[Box](), success(false, 38455)),
-          (Coll[Box](b1), success(false, 38515)),
-          (Coll[Box](b1, b2), success(true, 38575))
-        )
-      },
-      existingFeature({ (x: Coll[Box]) => x.exists({ (b: Box) => b.value > 1 }) },
+    def success[T](v: T, c: Int) = Expected(Success(v), c)
+    if (lowerMethodCallsInTests) {
+      verifyCases(
+        {
+          Seq(
+            (Coll[Box](), success(false, 38455)),
+            (Coll[Box](b1), success(false, 38515)),
+            (Coll[Box](b1, b2), success(true, 38575))
+          )
+        },
+        existingFeature({ (x: Coll[Box]) => x.exists({ (b: Box) => b.value > 1 }) },
         "{ (x: Coll[Box]) => x.exists({(b: Box) => b.value > 1 }) }",
         FuncValue(
           Vector((1, SCollectionType(SBox))),
@@ -5776,77 +5818,119 @@ class SigmaDslSpecification extends SigmaDslTesting
             FuncValue(Vector((3, SBox)), GT(ExtractAmount(ValUse(3, SBox)), LongConstant(1L)))
           )
         )),
-      preGeneratedSamples = Some(samples))
+        preGeneratedSamples = Some(samples))
+    } else {
+      assertExceptionThrown(
+        verifyCases(
+          Seq( (Coll[Box](), success(false, 38455)) ),
+          existingFeature(
+            { (x: Coll[Box]) => x.exists({ (b: Box) => b.value > 1 }) },
+            "{ (x: Coll[Box]) => x.exists({(b: Box) => b.value > 1 }) }"
+          )),
+        rootCauseLike[NoSuchMethodException]("sigmastate.eval.CostingRules$CollCoster.exists(scalan.Base$Ref)")
+      )
+    }
   }
 
   property("Coll exists with nested If") {
     val o = NumericOps.BigIntIsExactOrdering
-    verifyCases(
-    {
-      def success[T](v: T, c: Int) = Expected(Success(v), c)
-      Seq(
-        (Coll[BigInt](), success(false, 38955)),
-        (Coll[BigInt](BigIntZero), success(false, 39045)),
-        (Coll[BigInt](BigIntOne), success(true, 39045)),
-        (Coll[BigInt](BigIntZero, BigIntOne), success(true, 39135)),
-        (Coll[BigInt](BigIntZero, BigInt10), success(false, 39135))
-      )
-    },
-    existingFeature(
-      { (x: Coll[BigInt]) => x.exists({ (b: BigInt) =>
-          if (o.gt(b, BigIntZero)) o.lt(b, BigInt10) else false
-        })
-      },
-      "{ (x: Coll[BigInt]) => x.exists({(b: BigInt) => if (b > 0) b < 10 else false }) }",
-      FuncValue(
-        Array((1, SCollectionType(SBigInt))),
-        Exists(
-          ValUse(1, SCollectionType(SBigInt)),
-          FuncValue(
-            Array((3, SBigInt)),
-            If(
-              GT(ValUse(3, SBigInt), BigIntConstant(CBigInt(new BigInteger("0", 16)))),
-              LT(ValUse(3, SBigInt), BigIntConstant(CBigInt(new BigInteger("a", 16)))),
-              FalseLeaf
-            )
+    def success[T](v: T, c: Int) = Expected(Success(v), c)
+    if (lowerMethodCallsInTests) {
+      verifyCases(
+        {
+          Seq(
+            (Coll[BigInt](), success(false, 38955)),
+            (Coll[BigInt](BigIntZero), success(false, 39045)),
+            (Coll[BigInt](BigIntOne), success(true, 39045)),
+            (Coll[BigInt](BigIntZero, BigIntOne), success(true, 39135)),
+            (Coll[BigInt](BigIntZero, BigInt10), success(false, 39135))
           )
-        )
-      )))
+        },
+        existingFeature(
+          { (x: Coll[BigInt]) => x.exists({ (b: BigInt) =>
+              if (o.gt(b, BigIntZero)) o.lt(b, BigInt10) else false
+            })
+          },
+          "{ (x: Coll[BigInt]) => x.exists({(b: BigInt) => if (b > 0) b < 10 else false }) }",
+          FuncValue(
+            Array((1, SCollectionType(SBigInt))),
+            Exists(
+              ValUse(1, SCollectionType(SBigInt)),
+              FuncValue(
+                Array((3, SBigInt)),
+                If(
+                  GT(ValUse(3, SBigInt), BigIntConstant(CBigInt(new BigInteger("0", 16)))),
+                  LT(ValUse(3, SBigInt), BigIntConstant(CBigInt(new BigInteger("a", 16)))),
+                  FalseLeaf
+                )
+              )
+            )
+          )))
+    } else {
+      assertExceptionThrown(
+        verifyCases(
+          Seq( (Coll[BigInt](), success(false, 38955)) ),
+          existingFeature(
+            { (x: Coll[BigInt]) => x.exists({ (b: BigInt) =>
+              if (o.gt(b, BigIntZero)) o.lt(b, BigInt10) else false
+            })
+            },
+            "{ (x: Coll[BigInt]) => x.exists({(b: BigInt) => if (b > 0) b < 10 else false }) }"
+          )),
+        rootCauseLike[NoSuchMethodException]("sigmastate.eval.CostingRules$CollCoster.exists(scalan.Base$Ref)")
+      )
+    }
   }
 
   property("Coll forall with nested If") {
     val o = NumericOps.BigIntIsExactOrdering
-    verifyCases(
-    {
-      def success[T](v: T, c: Int) = Expected(Success(v), c)
-      Seq(
-        (Coll[BigInt](), success(true, 38412)),
-        (Coll[BigInt](BigIntMinusOne), success(false, 38502)),
-        (Coll[BigInt](BigIntOne), success(true, 38502)),
-        (Coll[BigInt](BigIntZero, BigIntOne), success(true, 38592)),
-        (Coll[BigInt](BigIntZero, BigInt11), success(false, 38592))
-      )
-    },
-    existingFeature(
-      { (x: Coll[BigInt]) => x.forall({ (b: BigInt) =>
-          if (o.gteq(b, BigIntZero)) o.lteq(b, BigInt10) else false
-        })
-      },
-      "{ (x: Coll[BigInt]) => x.forall({(b: BigInt) => if (b >= 0) b <= 10 else false }) }",
-      FuncValue(
-        Array((1, SCollectionType(SBigInt))),
-        ForAll(
-          ValUse(1, SCollectionType(SBigInt)),
-          FuncValue(
-            Array((3, SBigInt)),
-            If(
-              GE(ValUse(3, SBigInt), BigIntConstant(CBigInt(new BigInteger("0", 16)))),
-              LE(ValUse(3, SBigInt), BigIntConstant(CBigInt(new BigInteger("a", 16)))),
-              FalseLeaf
+    def success[T](v: T, c: Int) = Expected(Success(v), c)
+    if (lowerMethodCallsInTests) {
+      verifyCases(
+        {
+          Seq(
+            (Coll[BigInt](), success(true, 38412)),
+            (Coll[BigInt](BigIntMinusOne), success(false, 38502)),
+            (Coll[BigInt](BigIntOne), success(true, 38502)),
+            (Coll[BigInt](BigIntZero, BigIntOne), success(true, 38592)),
+            (Coll[BigInt](BigIntZero, BigInt11), success(false, 38592))
+          )
+        },
+        existingFeature(
+          { (x: Coll[BigInt]) => x.forall({ (b: BigInt) =>
+            if (o.gteq(b, BigIntZero)) o.lteq(b, BigInt10) else false
+          })
+          },
+          "{ (x: Coll[BigInt]) => x.forall({(b: BigInt) => if (b >= 0) b <= 10 else false }) }",
+        FuncValue(
+          Array((1, SCollectionType(SBigInt))),
+          ForAll(
+            ValUse(1, SCollectionType(SBigInt)),
+            FuncValue(
+              Array((3, SBigInt)),
+              If(
+                GE(ValUse(3, SBigInt), BigIntConstant(CBigInt(new BigInteger("0", 16)))),
+                LE(ValUse(3, SBigInt), BigIntConstant(CBigInt(new BigInteger("a", 16)))),
+                FalseLeaf
+              )
             )
           )
-        )
-      )))
+        )))
+    } else {
+      assertExceptionThrown(
+        verifyCases(
+          Seq( (Coll[BigInt](), success(true, 38412)) ),
+          existingFeature(
+            { (x: Coll[BigInt]) => x.forall({ (b: BigInt) =>
+              if (o.gteq(b, BigIntZero)) o.lteq(b, BigInt10) else false
+            })
+            },
+            "{ (x: Coll[BigInt]) => x.forall({(b: BigInt) => if (b >= 0) b <= 10 else false }) }"
+          )),
+        rootCauseLike[NoSuchMethodException]("sigmastate.eval.CostingRules$CollCoster.forall(scalan.Base$Ref)")
+      )
+    }
+
   }
 
   val collWithRangeGen = for {
