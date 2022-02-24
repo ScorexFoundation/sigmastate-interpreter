@@ -1440,6 +1440,9 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
 
   val MapMethod = SMethod(this, "map",
     SFunc(Array(ThisType, SFunc(tIV, tOV)), tOVColl, Array(paramIV, paramOV)), 3, MapCollection.costKind)
+      .withIRInfo({
+        case (builder, obj, _, Seq(mapper), _) => builder.mkMapCollection(obj.asValue[SCollection[SType]], mapper.asFunc)
+      })
       .withInfo(MapCollection,
         """ Builds a new collection by applying a function to all elements of this collection.
          | Returns a new collection of type \lst{Coll[B]} resulting from applying the given function
@@ -1473,6 +1476,9 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
     this, "fold",
     SFunc(Array(ThisType, tOV, SFunc(Array(tOV, tIV), tOV)), tOV, Array(paramIV, paramOV)),
     5, Fold.costKind)
+      .withIRInfo({
+        case (builder, obj, _, Seq(z, op), _) => builder.mkFold(obj.asValue[SCollection[SType]], z, op.asFunc)
+      })
       .withInfo(Fold, "Applies a binary operator to a start value and all elements of this collection, going left to right.",
         ArgInfo("zero", "a starting value"),
         ArgInfo("op", "the binary operator"))

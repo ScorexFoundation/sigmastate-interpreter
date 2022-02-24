@@ -112,22 +112,14 @@ trait CompiletimeCosting extends RuntimeCosting { IR: IRContext =>
         else
           eval(mkUpcast(numValue, tRes))
 
-      case Terms.Apply(Select(col, MapMethod.name, _), Seq(l)) if l.tpe.isFunc =>
-        eval(mkMapCollection(col.asValue[SCollection[SType]], l.asFunc))
+//      case Terms.Apply(Select(col, MapMethod.name, _), Seq(l)) if l.tpe.isFunc =>
+//        eval(mkMapCollection(col.asValue[SCollection[SType]], l.asFunc))
 
-      case Terms.Apply(Select(col, FoldMethod.name, _), Seq(zero, l @ Terms.Lambda(_, _, _, _))) =>
-        eval(mkFold(col.asValue[SCollection[SType]], zero, l))
+//      case Terms.Apply(Select(col, FoldMethod.name, _), Seq(zero, l @ Terms.Lambda(_, _, _, _))) =>
+//        eval(mkFold(col.asValue[SCollection[SType]], zero, l))
 
       case Terms.Apply(col, Seq(index)) if col.tpe.isCollection =>
         eval(mkByIndex(col.asCollection[SType], index.asValue[SInt.type], None))
-
-      case Select(input, ModQMethod.name, _) =>
-        eval(mkModQ(input.asBigInt))
-
-      case Terms.Apply(Select(l, PlusModQMethod.name, _), Seq(r)) =>
-        eval(mkPlusModQ(l.asBigInt, r.asBigInt))
-      case Terms.Apply(Select(l, MinusModQMethod.name, _), Seq(r)) =>
-        eval(mkMinusModQ(l.asBigInt, r.asBigInt))
 
       case _ =>
         super.evalNode(ctx, env, node)
