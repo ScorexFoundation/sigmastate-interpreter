@@ -260,7 +260,7 @@ abstract class SigmaBuilder {
     case b: Boolean => Nullable(if(b) TrueLeaf else FalseLeaf)
     case v: String => Nullable(mkConstant[SString.type](v, SString))
 
-    // The Box lifiting was broken in v4.x. `SigmaDsl.Box(b)` was missing which means the
+    // The Box lifting was broken in v4.x. `SigmaDsl.Box(b)` was missing which means the
     // isCorrectType requirement would fail in ConstantNode constructor.
     // This method is used as part of consensus in SubstConstants operation, however
     // ErgoBox cannot be passed as argument as it is never valid value during evaluation.
