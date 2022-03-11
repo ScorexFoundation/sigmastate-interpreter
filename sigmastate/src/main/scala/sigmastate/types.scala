@@ -1652,7 +1652,7 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
     */
   def flatMap_eval[A, B](mc: MethodCall, xs: Coll[A], f: A => Coll[B])
                         (implicit E: ErgoTreeEvaluator): Coll[B] = {
-    if (!VersionContext.current.isEvaluateErgoTreeUsingJIT) {
+    if (!VersionContext.current.isErgoTreeVersionGreaterV1) {
       checkValidFlatmap(mc)
     }
     val m = mc.method

@@ -5731,7 +5731,7 @@ class SigmaDslSpecification extends SigmaDslTesting
       val f = changedFeature(
         { (x: Coll[GroupElement]) => x.flatMap({ (b: GroupElement) => b.getEncoded.indices }) },
         { (x: Coll[GroupElement]) =>
-          if (VersionContext.current.isEvaluateErgoTreeUsingJIT)
+          if (VersionContext.current.isErgoTreeVersionGreaterV1)
             x.flatMap({ (b: GroupElement) => b.getEncoded.indices })
           else
             SCollection.throwInvalidFlatmap(null)
