@@ -290,6 +290,21 @@ object SigmaPredef {
           Seq(ArgInfo("value", "element of elliptic curve group")))
     )
 
+    val AvlTreeFunc = PredefinedFunc("avlTree",
+      Lambda(Array("operationFlags" -> SByte, "digest" -> SByteArray, "keyLength" -> SInt, "valueLengthOpt" -> SIntOption), SAvlTree, None),
+      PredefFuncInfo(
+        { case (_, Seq(flags, digest, keyLength, valueLength)) =>
+          mkCreateAvlTree(flags.asByteValue, digest.asByteArray, keyLength.asIntValue, valueLength.asOption[SInt.type])
+        }),
+      OperationInfo(CreateAvlTree,
+        "Construct a new authenticated dictionary with given parameters and tree root digest.",
+        Seq(
+          ArgInfo("operationFlags", "flags of available operations"),
+          ArgInfo("digest", "hash of merkle tree root"),
+          ArgInfo("keyLength", "length of dictionary keys in bytes"),
+          ArgInfo("valueLengthOpt", "optional width of dictionary values in bytes")))
+    )
+
     val SubstConstantsFunc = PredefinedFunc("substConstants",
       Lambda(
         Seq(paramT),
@@ -376,6 +391,7 @@ object SigmaPredef {
       LongToByteArrayFunc,
       ProveDHTupleFunc,
       ProveDlogFunc,
+      AvlTreeFunc,
       SubstConstantsFunc,
       ExecuteFromVarFunc,
       ExecuteFromSelfRegFunc

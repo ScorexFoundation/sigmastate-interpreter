@@ -144,6 +144,11 @@ abstract class SigmaBuilder {
 
   def mkCreateProveDlog(value: Value[SGroupElement.type]): SigmaPropValue
 
+  def mkCreateAvlTree(operationFlags: ByteValue,
+                      digest: Value[SByteArray],
+                      keyLength: IntValue,
+                      valueLengthOpt: Value[SIntOption]): AvlTreeValue
+
   /** Logically inverse to mkSigmaPropIsProven */
   def mkBoolToSigmaProp(value: BoolValue): SigmaPropValue
   /** Logically inverse to mkBoolToSigmaProp */
@@ -255,16 +260,21 @@ abstract class SigmaBuilder {
     case b: Boolean => Nullable(if(b) TrueLeaf else FalseLeaf)
     case v: String => Nullable(mkConstant[SString.type](v, SString))
 
-    // The Box lifiting was broken in v4.x. `SigmaDsl.Box(b)` was missing which means the
+    // The Box lifting was broken in v4.x. `SigmaDsl.Box(b)` was missing which means the
     // isCorrectType requirement would fail in ConstantNode constructor.
+    // This method is used as part of consensus in SubstConstants operation, however
+    // ErgoBox cannot be passed as argument as it is never valid value during evaluation.
+    // Thus we can use activation-based versioning and fix this code when v5.0 is activated.
     case b: ErgoBox =>
-      if (VersionContext.current.isEvaluateErgoTreeUsingJIT)
+      if (VersionContext.current.isActivatedVersionGreaterV1)
         Nullable(mkConstant[SBox.type](SigmaDsl.Box(b), SBox))  // fixed in v5.0
       else
-        Nullable(mkConstant[SBox.type](b, SBox))  // broken in v4.x
+        Nullable(mkConstant[SBox.type](b, SBox))  // same as in v4.x, i.e. broken
 
-    case b: special.sigma.Box =>   // this case is added in v5.0
-      if (VersionContext.current.isEvaluateErgoTreeUsingJIT)
+    // this case is added in v5.0 and it can be useful when the box value comes from a
+    // register or a context variable is passed to SubstConstants.
+    case b: special.sigma.Box =>
+      if (VersionContext.current.isActivatedVersionGreaterV1)
         Nullable(mkConstant[SBox.type](b, SBox))
       else
         Nullable.None  // return the same result as in v4.x when there was no this case
@@ -546,6 +556,13 @@ class StdSigmaBuilder extends SigmaBuilder {
 
   override def mkCreateProveDlog(value: Value[SGroupElement.type]): SigmaPropValue =
     CreateProveDlog(value)
+
+  override def mkCreateAvlTree(operationFlags: ByteValue,
+      digest: Value[SByteArray],
+      keyLength: IntValue,
+      valueLengthOpt: Value[SIntOption]): AvlTreeValue = {
+    CreateAvlTree(operationFlags, digest, keyLength, valueLengthOpt)
+  }
 
   override def mkBoolToSigmaProp(value: BoolValue): SigmaPropValue =
     BoolToSigmaProp(value).withSrcCtx(currentSrcCtx.value)

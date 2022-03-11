@@ -4497,9 +4497,10 @@ class SigmaDslSpecification extends SigmaDslTesting
           Success(-1), cost = 36318,
           newDetails = CostDetails.ZeroCost,
           newCost = 1786,
-          newVersionedResults = Seq(
-            2 -> (ExpectedResult(Success(0), Some(1786)) -> None)
-          )))
+          newVersionedResults = {
+            val res = (ExpectedResult(Success(0), Some(1786)) -> None)
+            Seq(0, 1, 2).map(version => version -> res)
+          }))
       ),
       changedFeature({ (x: Context) => x.selfBoxIndex },
         { (x: Context) => x.selfBoxIndex }, // see versioning in selfBoxIndex implementation
@@ -4517,7 +4518,7 @@ class SigmaDslSpecification extends SigmaDslTesting
 
     // test vectors to reproduce v4.x bug (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/603)
     samples.foreach { c =>
-      if (VersionContext.current.isEvaluateErgoTreeUsingJIT) {
+      if (VersionContext.current.isActivatedVersionGreaterV1) {
         // fixed in v5.0
         c.selfBoxIndex should not be(-1)
       } else {
@@ -5354,11 +5355,10 @@ class SigmaDslSpecification extends SigmaDslTesting
               cost = 0,
               newDetails = CostDetails.ZeroCost,
               newCost = 1789,
-              newVersionedResults = Seq(
-                VersionContext.JitActivationVersion.toInt -> (
-                  ExpectedResult(Success(Helpers.decodeBytes("00")), Some(1789)),
-                  None)
-              )
+              newVersionedResults =  {
+                val res = (ExpectedResult(Success(Helpers.decodeBytes("00")), Some(1789)), None)
+                Seq(0, 1, 2).map(version => version -> res)
+              }
             )),
           ((Helpers.decodeBytes("800136fe89afff802acea67128a0ff007fffe3498c8001806080012b"),
               Helpers.decodeBytes("648018010a5d5800f5b400a580e7b4809b0cd273ff1230bfa800017f7fdb002749b3ac2b86ff")),
@@ -7125,19 +7125,21 @@ class SigmaDslSpecification extends SigmaDslTesting
             cost = 37694,
             newDetails = CostDetails.ZeroCost,
             newCost = 1803,
-            newVersionedResults = Seq(
-              2 -> (ExpectedResult(Success(Helpers.decodeBytes("0008d3")), Some(1803)) -> None)
-            )),
+            newVersionedResults = {
+              val res = (ExpectedResult(Success(Helpers.decodeBytes("0008d3")), Some(1803)) -> None)
+              Seq(0, 1, 2).map(version => version -> res)
+            }),
 
           (Helpers.decodeBytes("000008d3"), 0) -> Expected(
             Success(Helpers.decodeBytes("00000008d3")),
             cost = 37694,
             newDetails = CostDetails.ZeroCost,
             newCost = 1803,
-            newVersionedResults = Seq(
+            newVersionedResults = {
               // since the tree without constant segregation, substitution has no effect
-              2 -> (ExpectedResult(Success(Helpers.decodeBytes("000008d3")), Some(1803)) -> None)
-            )),
+              val res = (ExpectedResult(Success(Helpers.decodeBytes("000008d3")), Some(1803)) -> None)
+              Seq(0, 1, 2).map(version => version -> res)
+            }),
           // tree with segregation flag, empty constants array
           (Coll(t2.bytes:_*), 0) -> success(Helpers.decodeBytes("100008d3")),
           (Helpers.decodeBytes("100008d3"), 0) -> success(Helpers.decodeBytes("100008d3")),
