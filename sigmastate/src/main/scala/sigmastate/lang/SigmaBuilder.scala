@@ -231,6 +231,14 @@ abstract class SigmaBuilder {
     */
   def liftAny(obj: Any): Nullable[SValue] = obj match {
     case v: SValue => Nullable(v)
+    case _ =>
+      liftToConstant(obj)
+  }
+
+  /** Created a new Constant instance with an appropriate type derived from the given data `obj`.
+    * Uses scalan.Nullable instead of scala.Option to avoid allocation on consensus hot path.
+    */
+  def liftToConstant(obj: Any): Nullable[Constant[SType]] = obj match {
     case arr: Array[Boolean] => Nullable(mkCollectionConstant[SBoolean.type](arr, SBoolean))
     case arr: Array[Byte] => Nullable(mkCollectionConstant[SByte.type](arr, SByte))
     case arr: Array[Short] => Nullable(mkCollectionConstant[SShort.type](arr, SShort))
@@ -251,7 +259,25 @@ abstract class SigmaBuilder {
 
     case b: Boolean => Nullable(if(b) TrueLeaf else FalseLeaf)
     case v: String => Nullable(mkConstant[SString.type](v, SString))
-    case b: ErgoBox => Nullable(mkConstant[SBox.type](b, SBox))
+
+    // The Box lifting was broken in v4.x. `SigmaDsl.Box(b)` was missing which means the
+    // isCorrectType requirement would fail in ConstantNode constructor.
+    // This method is used as part of consensus in SubstConstants operation, however
+    // ErgoBox cannot be passed as argument as it is never valid value during evaluation.
+    // Thus we can use activation-based versioning and fix this code when v5.0 is activated.
+    case b: ErgoBox =>
+      if (VersionContext.current.isActivatedVersionGreaterV1)
+        Nullable(mkConstant[SBox.type](SigmaDsl.Box(b), SBox))  // fixed in v5.0
+      else
+        Nullable(mkConstant[SBox.type](b, SBox))  // same as in v4.x, i.e. broken
+
+    // this case is added in v5.0 and it can be useful when the box value comes from a
+    // register or a context variable is passed to SubstConstants.
+    case b: special.sigma.Box =>
+      if (VersionContext.current.isActivatedVersionGreaterV1)
+        Nullable(mkConstant[SBox.type](b, SBox))
+      else
+        Nullable.None  // return the same result as in v4.x when there was no this case
 
     case avl: AvlTreeData => Nullable(mkConstant[SAvlTree.type](SigmaDsl.avlTree(avl), SAvlTree))
     case avl: AvlTree => Nullable(mkConstant[SAvlTree.type](avl, SAvlTree))

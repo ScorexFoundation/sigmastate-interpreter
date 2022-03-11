@@ -1,9 +1,8 @@
 package sigmastate.serialization
 
 import java.math.BigInteger
-
 import org.ergoplatform.ErgoBox
-import sigmastate.Values.{ShortConstant, BigIntConstant, ConstantPlaceholder, Value, SigmaPropValue, IntConstant, ErgoTree, ByteConstant}
+import sigmastate.Values.{ShortConstant, BigIntConstant, ConstantPlaceholder, SigmaPropValue, IntConstant, ErgoTree, ByteConstant}
 import sigmastate._
 import sigmastate.eval.{IRContext, CBigInt}
 import sigmastate.helpers.SigmaTestingCommons
@@ -146,5 +145,29 @@ class ErgoTreeSerializerSpecification extends SerializationSpecification
       parsedTree._hasDeserialize.isDefined shouldBe true
       parsedTree.hasDeserialize shouldBe hasDeserialize
     }
+  }
+
+  property("getPositionsBackref") {
+    def test(positions: Array[Int], expected: Array[Int]) = {
+      val backrefs = ErgoTreeSerializer.DefaultSerializer.getPositionsBackref(positions, expected.length)
+      backrefs shouldBe expected
+    }
+
+    test(positions = Array(), expected = Array()) // no positions, no constants
+    test(positions = Array(), expected = Array(-1)) // no positions, 1 constant
+    test(positions = Array(0), expected = Array())  // 1 position, no constants
+    test(positions = Array(1), expected = Array(-1)) // 1 position, but out of range
+    test(positions = Array(0), expected = Array(0))  // 1 position, 1 constant
+    test(positions = Array(-1), expected = Array())  // 1 invalid (out of range) position, no constants
+    test(positions = Array(-2), expected = Array(-1))  // 1 invalid position, 1 constants
+
+    test(positions = Array(0, 0), expected = Array(0))  // duplicate positions, 1 constant
+    test(positions = Array(-1, 0), expected = Array(1))  // invalid positions ignored
+    test(positions = Array(-1, 0, 0), expected = Array(1))  // only first of the duplicates used
+     
+    test(positions = Array(), expected = Array(-1, -1, -1, -1, -1))  // no positions => no backrefs
+
+    test(positions = Array(1, 2), expected = Array(-1, 0, 1, -1, -1))
+    test(positions = Array(1, 2, 4), expected = Array(-1, 0, 1, -1, 2))
   }
 }

@@ -7050,10 +7050,28 @@ class SigmaDslSpecification extends SigmaDslTesting
         Seq(
           (Helpers.decodeBytes(""), 0) -> Expected(new java.nio.BufferUnderflowException()),
 
-          // TODO v5.0 (2h): fix for trees without segregation flag
-          // NOTE: constants count is serialized erroneously in the following 2 cases
-          (Coll(t1.bytes:_*), 0) -> success(Helpers.decodeBytes("000008d3")),
-          (Helpers.decodeBytes("000008d3"), 0) -> success(Helpers.decodeBytes("00000008d3")),
+          // NOTE: in v4.x the constants count is serialized erroneously in the following 2 cases
+          // in v5.0 (i.e. ET v2) the bug is fixed https://github.com/ScorexFoundation/sigmastate-interpreter/issues/769
+          (Coll(t1.bytes:_*), 0) -> Expected(
+            Success(Helpers.decodeBytes("000008d3")),
+            cost = 37694,
+            newDetails = CostDetails.ZeroCost,
+            newCost = 1803,
+            newVersionedResults = {
+              val res = (ExpectedResult(Success(Helpers.decodeBytes("0008d3")), Some(1803)) -> None)
+              Seq(0, 1, 2).map(version => version -> res)
+            }),
+
+          (Helpers.decodeBytes("000008d3"), 0) -> Expected(
+            Success(Helpers.decodeBytes("00000008d3")),
+            cost = 37694,
+            newDetails = CostDetails.ZeroCost,
+            newCost = 1803,
+            newVersionedResults = {
+              // since the tree without constant segregation, substitution has no effect
+              val res = (ExpectedResult(Success(Helpers.decodeBytes("000008d3")), Some(1803)) -> None)
+              Seq(0, 1, 2).map(version => version -> res)
+            }),
           // tree with segregation flag, empty constants array
           (Coll(t2.bytes:_*), 0) -> success(Helpers.decodeBytes("100008d3")),
           (Helpers.decodeBytes("100008d3"), 0) -> success(Helpers.decodeBytes("100008d3")),
@@ -7064,7 +7082,10 @@ class SigmaDslSpecification extends SigmaDslTesting
           (Coll(t4.bytes:_*), 0) -> Expected(new IllegalArgumentException("requirement failed: expected new constant to have the same SInt$ tpe, got SSigmaProp"))
         )
       },
-      existingFeature(
+      changedFeature(
+        { (x: (Coll[Byte], Int)) =>
+          SigmaDsl.substConstants(x._1, Coll[Int](x._2), Coll[Any](SigmaDsl.sigmaProp(false))(RType.AnyType))
+        },
         { (x: (Coll[Byte], Int)) =>
           SigmaDsl.substConstants(x._1, Coll[Int](x._2), Coll[Any](SigmaDsl.sigmaProp(false))(RType.AnyType))
         },
