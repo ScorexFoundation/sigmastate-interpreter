@@ -62,6 +62,15 @@ class SigmaDslSpecification extends SigmaDslTesting
   with CrossVersionProps
   with BeforeAndAfterAll { suite =>
 
+  /** Use VersionContext so that each property in this suite runs under correct
+    * parameters.
+    */
+  protected override def testFun_Run(testName: String, testFun: => Any): Unit = {
+    VersionContext.withVersions(activatedVersionInTests, ergoTreeVersionInTests) {
+      super.testFun_Run(testName, testFun)
+    }
+  }
+
   implicit override val generatorDrivenConfig = PropertyCheckConfiguration(minSuccessful = 30)
 
   val evalSettingsInTests = ErgoTreeEvaluator.DefaultEvalSettings.copy(
@@ -4282,6 +4291,7 @@ class SigmaDslSpecification extends SigmaDslTesting
       ),
       height = 11,
       selfBox = input.copy(),  // in 3.x, 4.x implementation selfBox is never the same instance as input (see toSigmaContext)
+      selfIndex = 0,
       lastBlockUtxoRootHash = CAvlTree(
         AvlTreeData(
           ADDigest @@ (ErgoAlgos.decodeUnsafe("54d23dd080006bdb56800100356080935a80ffb77e90b800057f00661601807f17")),
@@ -4481,10 +4491,19 @@ class SigmaDslSpecification extends SigmaDslTesting
         )),
       preGeneratedSamples = Some(samples))
 
-    // TODO v5.0: fix selfBoxIndex for ET v2
     verifyCases(
-      Seq((ctx, Expected(Success(-1), cost = 36318))),
-      existingFeature({ (x: Context) => x.selfBoxIndex },
+      Seq(
+        (ctx, Expected(
+          Success(-1), cost = 36318,
+          newDetails = CostDetails.ZeroCost,
+          newCost = 1786,
+          newVersionedResults = {
+            val res = (ExpectedResult(Success(0), Some(1786)) -> None)
+            Seq(0, 1, 2).map(version => version -> res)
+          }))
+      ),
+      changedFeature({ (x: Context) => x.selfBoxIndex },
+        { (x: Context) => x.selfBoxIndex }, // see versioning in selfBoxIndex implementation
         "{ (x: Context) => x.selfBoxIndex }",
         FuncValue(
           Vector((1, SContext)),
@@ -4497,9 +4516,15 @@ class SigmaDslSpecification extends SigmaDslTesting
         )),
       preGeneratedSamples = Some(samples))
 
-    // TODO v5.0 (2h): see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/603
+    // test vectors to reproduce v4.x bug (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/603)
     samples.foreach { c =>
-      ctx.selfBoxIndex shouldBe -1
+      if (VersionContext.current.isActivatedVersionGreaterV1) {
+        // fixed in v5.0
+        c.selfBoxIndex should not be(-1)
+      } else {
+        // should be reproduced in v4.x
+        c.selfBoxIndex shouldBe -1
+      }
     }
 
     verifyCases(
