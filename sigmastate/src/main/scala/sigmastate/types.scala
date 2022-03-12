@@ -1301,15 +1301,24 @@ object SOption extends STypeCompanion {
   /** The following SMethod instances are descriptors of methods defined in `Option` type. */
   val IsDefinedMethod = SMethod(
     this, IsDefined, SFunc(ThisType, SBoolean), 2, OptionIsDefined.costKind)
+      .withIRInfo({
+        case (builder, obj, _, args, _) if args.isEmpty => builder.mkOptionIsDefined(obj.asValue[SOption[SType]])
+      })
       .withInfo(OptionIsDefined,
         "Returns \\lst{true} if the option is an instance of \\lst{Some}, \\lst{false} otherwise.")
 
   val GetMethod = SMethod(this, Get, SFunc(ThisType, tT), 3, OptionGet.costKind)
+      .withIRInfo({
+        case (builder, obj, _, args, _) if args.isEmpty => builder.mkOptionGet(obj.asValue[SOption[SType]])
+      })
       .withInfo(OptionGet,
       """Returns the option's value. The option must be nonempty. Throws exception if the option is empty.""")
 
   lazy val GetOrElseMethod = SMethod(
     this, GetOrElse, SFunc(Array(ThisType, tT), tT, Array[STypeParam](tT)), 4, OptionGetOrElse.costKind)
+      .withIRInfo(irBuilder = {
+        case (builder, obj, _, Seq(d), _) => builder.mkOptionGetOrElse(obj.asValue[SOption[SType]], d)
+      })
       .withInfo(OptionGetOrElse,
         """Returns the option's value if the option is nonempty, otherwise
          |return the result of evaluating \lst{default}.
