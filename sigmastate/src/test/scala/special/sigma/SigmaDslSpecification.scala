@@ -4518,7 +4518,7 @@ class SigmaDslSpecification extends SigmaDslTesting
 
     // test vectors to reproduce v4.x bug (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/603)
     samples.foreach { c =>
-      if (VersionContext.current.isActivatedVersionGreaterV1) {
+      if (VersionContext.current.isJitActivated) {
         // fixed in v5.0
         c.selfBoxIndex should not be(-1)
       } else {

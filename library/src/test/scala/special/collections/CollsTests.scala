@@ -60,7 +60,7 @@ class CollsTests extends PropSpec with PropertyChecks with Matchers with CollGen
       val pairs = xs.zip(xs)
       equalLength(pairs)
 
-      if (!xs.isInstanceOf[CReplColl[_]] && !VersionContext.current.isActivatedVersionGreaterV1) {
+      if (!xs.isInstanceOf[CReplColl[_]] && !VersionContext.current.isJitActivated) {
         an[ClassCastException] should be thrownBy {
           equalLengthMapped(pairs, squared(inc))  // due to problem with append
         }
@@ -72,7 +72,7 @@ class CollsTests extends PropSpec with PropertyChecks with Matchers with CollGen
 
       equalLength(pairs.append(pairs))
 
-      if (!xs.isInstanceOf[CReplColl[_]] && !VersionContext.current.isActivatedVersionGreaterV1) {
+      if (!xs.isInstanceOf[CReplColl[_]] && !VersionContext.current.isJitActivated) {
         an[ClassCastException] should be thrownBy {
           equalLengthMapped(pairs.append(pairs), squared(inc)) // due to problem with append
         }
@@ -264,7 +264,7 @@ class CollsTests extends PropSpec with PropertyChecks with Matchers with CollGen
       val pairs = xs.zip(xs)
       val ys = pairs.map(squared(inc)) // this map transforms PairOfCols to CollOverArray
 
-      if (VersionContext.current.isActivatedVersionGreaterV1) {
+      if (VersionContext.current.isJitActivated) {
         // problem fixed in v5.0
         ys.append(ys).toArray shouldBe ys.toArray ++ ys.toArray
       } else {
@@ -291,7 +291,7 @@ class CollsTests extends PropSpec with PropertyChecks with Matchers with CollGen
       val appendedSwap = pairsSwap.append(pairsSwap)
 
       // here is the problem with append which is fixed in v5.0
-      if (VersionContext.current.isActivatedVersionGreaterV1) {
+      if (VersionContext.current.isJitActivated) {
         // the issue is fixed starting from v5.0
         appended.toArray shouldBe (pairsArr ++ pairsArr)
         appended.toArray shouldBe Array((1, 10), (2, 20), (3, 30), (1, 10), (2, 20), (3, 30))
@@ -363,7 +363,7 @@ class CollsTests extends PropSpec with PropertyChecks with Matchers with CollGen
     val pairOfColls = pairs.asInstanceOf[PairOfCols[Int, Int]]
 
     // here is problem with zip
-    if (VersionContext.current.isActivatedVersionGreaterV1) {
+    if (VersionContext.current.isJitActivated) {
       // which is fixed in v5.0
       pairOfColls.ls.length shouldBe pairOfColls.rs.length
     } else {

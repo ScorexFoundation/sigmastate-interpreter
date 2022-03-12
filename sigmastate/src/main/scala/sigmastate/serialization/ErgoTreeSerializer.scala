@@ -298,7 +298,7 @@ class ErgoTreeSerializer {
     val w = SigmaSerializer.startWriter()
     w.put(header)
 
-    if (VersionContext.current.isActivatedVersionGreaterV1) {
+    if (VersionContext.current.isJitActivated) {
       // The following `constants.length` should not be serialized when segregation is off
       // in the `header`, because in this case there is no `constants` section in the
       // ErgoTree serialization format. Thus, applying this `substituteConstants` for
