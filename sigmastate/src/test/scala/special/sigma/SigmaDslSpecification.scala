@@ -6782,7 +6782,7 @@ class SigmaDslSpecification extends SigmaDslTesting
           existingFeature((x: (Coll[Int], (Int, Int))) => x._1.slice(x._2._1, x._2._2),
             "{ (x: (Coll[Int], (Int, Int))) => x._1.slice(x._2._1, x._2._2) }"
           )),
-        rootCauseLike[NoSuchMethodException]("sigmastate.eval.CostingRules$CollCoster.slice(scalan.Base$Ref,scalan.Base$Ref)")
+        rootCauseLike[NoSuchMethodException]("sigmastate.eval.CostingRules$CollCoster.slice")
       )
     }
   }
