@@ -7534,6 +7534,134 @@ class SigmaDslSpecification extends SigmaDslTesting
         )))
   }
 
+  /* Original issue: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/604
+   *
+   * Test fails for v4.x with
+   * `new StagingException("Don't know how to evaluate(s1252 -> Placeholder(BaseElemLiftable<Int>))")`
+   * but that cannot be explicitly stated in cases. Therefore we use different exception (None.get)
+   * and also `allowDifferentErrors` flag.
+   * Test passes for v5.x so we use flag `allowNewToSucceed`.
+   */
+  property("Random headers access and comparison (originaly from spam tests)") {
+    val (_, _, _, ctx, _, _) = contextData()
+
+    verifyCases(
+      Seq(
+        ctx -> Expected(
+          Failure(new NoSuchElementException("None.get")),
+          cost = 37694,
+          newDetails = CostDetails.ZeroCost,
+          newCost = 1796,
+          newVersionedResults = Seq(
+            0 -> (ExpectedResult(Success(true), Some(1796)) -> None),
+            1 -> (ExpectedResult(Success(true), Some(1796)) -> None),
+            2 -> (ExpectedResult(Success(true), Some(1796)) -> None)
+          )
+        )
+      ),
+      changedFeature(
+        { (x: Context) =>
+          Option.empty[Int].get
+          true
+        },
+        { (x: Context) =>
+          val headers = x.headers
+          val ids = headers.map({(h: Header) => h.id })
+          val parentIds = headers.map({(h: Header) => h.parentId })
+          headers.indices.slice(0, headers.size - 1).forall({ (i: Int) =>
+            val parentId = parentIds(i)
+            val id = ids(i + 1)
+            parentId == id
+          })
+        },
+        """{
+          |(x: Context) =>
+          |  val headers = x.headers
+          |  val ids = headers.map({(h: Header) => h.id })
+          |  val parentIds = headers.map({(h: Header) => h.parentId })
+          |  headers.indices.slice(0, headers.size - 1).forall({ (i: Int) =>
+          |    val parentId = parentIds(i)
+          |    val id = ids(i + 1)
+          |    parentId == id
+          |  })
+          |}""".stripMargin,
+        FuncValue(
+          Array((1, SContext)),
+          BlockValue(
+            Array(
+              ValDef(
+                3,
+                List(),
+                MethodCall.typed[Value[SCollection[SHeader.type]]](
+                  ValUse(1, SContext),
+                  SContext.getMethodByName("headers"),
+                  Vector(),
+                  Map()
+                )
+              )
+            ),
+            ForAll(
+              Slice(
+                MethodCall.typed[Value[SCollection[SInt.type]]](
+                  ValUse(3, SCollectionType(SHeader)),
+                  SCollection.getMethodByName("indices").withConcreteTypes(Map(STypeVar("IV") -> SHeader)),
+                  Vector(),
+                  Map()
+                ),
+                IntConstant(0),
+                ArithOp(
+                  SizeOf(ValUse(3, SCollectionType(SHeader))),
+                  IntConstant(1),
+                  OpCode @@ (-103.toByte)
+                )
+              ),
+              FuncValue(
+                Array((4, SInt)),
+                EQ(
+                  ByIndex(
+                    MapCollection(
+                      ValUse(3, SCollectionType(SHeader)),
+                      FuncValue(
+                        Array((6, SHeader)),
+                        MethodCall.typed[Value[SCollection[SByte.type]]](
+                          ValUse(6, SHeader),
+                          SHeader.getMethodByName("parentId"),
+                          Vector(),
+                          Map()
+                        )
+                      )
+                    ),
+                    ValUse(4, SInt),
+                    None
+                  ),
+                  ByIndex(
+                    MapCollection(
+                      ValUse(3, SCollectionType(SHeader)),
+                      FuncValue(
+                        Array((6, SHeader)),
+                        MethodCall.typed[Value[SCollection[SByte.type]]](
+                          ValUse(6, SHeader),
+                          SHeader.getMethodByName("id"),
+                          Vector(),
+                          Map()
+                        )
+                      )
+                    ),
+                    ArithOp(ValUse(4, SInt), IntConstant(1), OpCode @@ (-102.toByte)),
+                    None
+                  )
+                )
+              )
+            )
+          )
+        ),
+        allowDifferentErrors = true,
+        allowNewToSucceed = true
+      ),
+      preGeneratedSamples = Some(mutable.WrappedArray.empty)
+    )
+  }
+
   override protected def afterAll(): Unit = {
     println(ErgoTreeEvaluator.DefaultProfiler.generateReport)
     println("==========================================================")
