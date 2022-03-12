@@ -5,10 +5,10 @@ import java.math.BigInteger
 import org.ergoplatform._
 import org.ergoplatform.settings.ErgoAlgos
 import org.scalacheck.{Arbitrary, Gen}
-import scalan.{ExactOrdering, ExactNumeric, RType, ExactIntegral}
+import scalan.{ExactIntegral, ExactNumeric, ExactOrdering, RType}
 import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.authds.{ADDigest, ADKey, ADValue}
-import scorex.crypto.hash.{Digest32, Blake2b256}
+import scorex.crypto.hash.{Blake2b256, Digest32}
 import scalan.util.Extensions._
 import sigma.util.Extensions._
 import sigmastate.SCollection._
@@ -19,7 +19,7 @@ import sigmastate.Values._
 import sigmastate.lang.Terms.Apply
 import sigmastate.eval.Extensions._
 import sigmastate.eval._
-import sigmastate.lang.Terms.{PropertyCall, MethodCall}
+import sigmastate.lang.Terms.{MethodCall, PropertyCall}
 import sigmastate.utxo._
 import special.collection._
 import sigmastate.serialization.OpCodes.OpCode
@@ -27,7 +27,7 @@ import sigmastate.utils.Helpers
 import sigmastate.utils.Helpers._
 import sigmastate.helpers.TestingHelpers._
 
-import scala.util.{Success, Failure, Try}
+import scala.util.{Failure, Success, Try}
 import OrderingOps._
 import org.ergoplatform.ErgoBox.AdditionalRegisters
 import org.scalacheck.Arbitrary._
@@ -39,6 +39,7 @@ import sigmastate.basics.ProveDHTuple
 import sigmastate.interpreter._
 import org.scalactic.source.Position
 import sigmastate.helpers.SigmaPPrint
+import sigmastate.lang.exceptions.CosterException
 
 import scala.collection.mutable
 
@@ -6276,95 +6277,119 @@ class SigmaDslSpecification extends SigmaDslTesting
 
   property("Coll fold method equivalence") {
     val n = ExactNumeric.IntIsExactNumeric
-    verifyCases(
-      // (coll, initState)
-      {
-        def success[T](v: T, c: Int) = Expected(Success(v), c)
-        Seq(
-          ((Coll[Byte](),  0), success(0, 41266)),
-          ((Coll[Byte](),  Int.MaxValue), success(Int.MaxValue, 41266)),
-          ((Coll[Byte](1),  Int.MaxValue - 1), success(Int.MaxValue, 41396)),
-          ((Coll[Byte](1),  Int.MaxValue), Expected(new ArithmeticException("integer overflow"))),
-          ((Coll[Byte](-1),  Int.MinValue + 1), success(Int.MinValue, 41396)),
-          ((Coll[Byte](-1),  Int.MinValue), Expected(new ArithmeticException("integer overflow"))),
-          ((Coll[Byte](1, 2), 0), success(3, 41526)),
-          ((Coll[Byte](1, -1), 0), success(0, 41526)),
-          ((Coll[Byte](1, -1, 1), 0), success(1, 41656))
-        )
-      },
-      existingFeature(
-        { (x: (Coll[Byte], Int)) => x._1.foldLeft(x._2, { i: (Int, Byte) => n.plus(i._1, i._2) }) },
-        "{ (x: (Coll[Byte], Int)) => x._1.fold(x._2, { (i1: Int, i2: Byte) => i1 + i2 }) }",
-        FuncValue(
-          Vector((1, SPair(SByteArray, SInt))),
-          Fold(
-            SelectField.typed[Value[SCollection[SByte.type]]](ValUse(1, SPair(SByteArray, SInt)), 1.toByte),
-            SelectField.typed[Value[SInt.type]](ValUse(1, SPair(SByteArray, SInt)), 2.toByte),
-            FuncValue(
-              Vector((3, SPair(SInt, SByte))),
-              ArithOp(
-                SelectField.typed[Value[SInt.type]](ValUse(3, SPair(SInt, SByte)), 1.toByte),
-                Upcast(SelectField.typed[Value[SByte.type]](ValUse(3, SPair(SInt, SByte)), 2.toByte), SInt),
-                OpCode @@ (-102.toByte)
+    def success[T](v: T, c: Int) = Expected(Success(v), c)
+    if (lowerMethodCallsInTests) {
+      verifyCases(
+        // (coll, initState)
+        {
+          Seq(
+            ((Coll[Byte](),  0), success(0, 41266)),
+            ((Coll[Byte](),  Int.MaxValue), success(Int.MaxValue, 41266)),
+            ((Coll[Byte](1),  Int.MaxValue - 1), success(Int.MaxValue, 41396)),
+            ((Coll[Byte](1),  Int.MaxValue), Expected(new ArithmeticException("integer overflow"))),
+            ((Coll[Byte](-1),  Int.MinValue + 1), success(Int.MinValue, 41396)),
+            ((Coll[Byte](-1),  Int.MinValue), Expected(new ArithmeticException("integer overflow"))),
+            ((Coll[Byte](1, 2), 0), success(3, 41526)),
+            ((Coll[Byte](1, -1), 0), success(0, 41526)),
+            ((Coll[Byte](1, -1, 1), 0), success(1, 41656))
+          )
+        },
+        existingFeature(
+          { (x: (Coll[Byte], Int)) => x._1.foldLeft(x._2, { i: (Int, Byte) => n.plus(i._1, i._2) }) },
+          "{ (x: (Coll[Byte], Int)) => x._1.fold(x._2, { (i1: Int, i2: Byte) => i1 + i2 }) }",
+          FuncValue(
+            Vector((1, SPair(SByteArray, SInt))),
+            Fold(
+              SelectField.typed[Value[SCollection[SByte.type]]](ValUse(1, SPair(SByteArray, SInt)), 1.toByte),
+              SelectField.typed[Value[SInt.type]](ValUse(1, SPair(SByteArray, SInt)), 2.toByte),
+              FuncValue(
+                Vector((3, SPair(SInt, SByte))),
+                ArithOp(
+                  SelectField.typed[Value[SInt.type]](ValUse(3, SPair(SInt, SByte)), 1.toByte),
+                  Upcast(SelectField.typed[Value[SByte.type]](ValUse(3, SPair(SInt, SByte)), 2.toByte), SInt),
+                  OpCode @@ (-102.toByte)
+                )
               )
             )
-          )
-        )))
+          )))
+    } else {
+      assertExceptionThrown(
+        verifyCases(
+          Seq( ((Coll[Byte](),  0), success(0, 41266)) ),
+          existingFeature(
+            { (x: (Coll[Byte], Int)) => x._1.foldLeft(x._2, { i: (Int, Byte) => n.plus(i._1, i._2) }) },
+            "{ (x: (Coll[Byte], Int)) => x._1.fold(x._2, { (i1: Int, i2: Byte) => i1 + i2 }) }"
+          )),
+        rootCauseLike[CosterException]("Don't know how to evalNode(Lambda(List()")
+      )
+    }
   }
 
   property("Coll fold with nested If") {
     val n = ExactNumeric.IntIsExactNumeric
-    verifyCases(
-      // (coll, initState)
-      {
-        def success[T](v: T, c: Int) = Expected(Success(v), c)
-        Seq(
-          ((Coll[Byte](),  0), success(0, 42037)),
-          ((Coll[Byte](),  Int.MaxValue), success(Int.MaxValue, 42037)),
-          ((Coll[Byte](1),  Int.MaxValue - 1), success(Int.MaxValue, 42197)),
-          ((Coll[Byte](1),  Int.MaxValue), Expected(new ArithmeticException("integer overflow"))),
-          ((Coll[Byte](-1),  Int.MinValue + 1), success(Int.MinValue + 1, 42197)),
-          ((Coll[Byte](-1),  Int.MinValue), success(Int.MinValue, 42197)),
-          ((Coll[Byte](1, 2), 0), success(3, 42357)),
-          ((Coll[Byte](1, -1), 0), success(1, 42357)),
-          ((Coll[Byte](1, -1, 1), 0), success(2, 42517))
-        )
-      },
-      existingFeature(
-        { (x: (Coll[Byte], Int)) => x._1.foldLeft(x._2, { i: (Int, Byte) => if (i._2 > 0) n.plus(i._1, i._2) else i._1 }) },
-        "{ (x: (Coll[Byte], Int)) => x._1.fold(x._2, { (i1: Int, i2: Byte) => if (i2 > 0) i1 + i2 else i1 }) }",
-        FuncValue(
-          Array((1, SPair(SByteArray, SInt))),
-          Fold(
-            SelectField.typed[Value[SCollection[SByte.type]]](ValUse(1, SPair(SByteArray, SInt)), 1.toByte),
-            SelectField.typed[Value[SInt.type]](ValUse(1, SPair(SByteArray, SInt)), 2.toByte),
-            FuncValue(
-              Array((3, SPair(SInt, SByte))),
-              BlockValue(
-                Array(
-                  ValDef(
-                    5,
-                    List(),
-                    Upcast(
-                      SelectField.typed[Value[SByte.type]](ValUse(3, SPair(SInt, SByte)), 2.toByte),
-                      SInt
+    def success[T](v: T, c: Int) = Expected(Success(v), c)
+    if (lowerMethodCallsInTests) {
+      verifyCases(
+        // (coll, initState)
+        {
+          Seq(
+            ((Coll[Byte](),  0), success(0, 42037)),
+            ((Coll[Byte](),  Int.MaxValue), success(Int.MaxValue, 42037)),
+            ((Coll[Byte](1),  Int.MaxValue - 1), success(Int.MaxValue, 42197)),
+            ((Coll[Byte](1),  Int.MaxValue), Expected(new ArithmeticException("integer overflow"))),
+            ((Coll[Byte](-1),  Int.MinValue + 1), success(Int.MinValue + 1, 42197)),
+            ((Coll[Byte](-1),  Int.MinValue), success(Int.MinValue, 42197)),
+            ((Coll[Byte](1, 2), 0), success(3, 42357)),
+            ((Coll[Byte](1, -1), 0), success(1, 42357)),
+            ((Coll[Byte](1, -1, 1), 0), success(2, 42517))
+          )
+        },
+        existingFeature(
+          { (x: (Coll[Byte], Int)) => x._1.foldLeft(x._2, { i: (Int, Byte) => if (i._2 > 0) n.plus(i._1, i._2) else i._1 }) },
+          "{ (x: (Coll[Byte], Int)) => x._1.fold(x._2, { (i1: Int, i2: Byte) => if (i2 > 0) i1 + i2 else i1 }) }",
+          FuncValue(
+            Array((1, SPair(SByteArray, SInt))),
+            Fold(
+              SelectField.typed[Value[SCollection[SByte.type]]](ValUse(1, SPair(SByteArray, SInt)), 1.toByte),
+              SelectField.typed[Value[SInt.type]](ValUse(1, SPair(SByteArray, SInt)), 2.toByte),
+              FuncValue(
+                Array((3, SPair(SInt, SByte))),
+                BlockValue(
+                  Array(
+                    ValDef(
+                      5,
+                      List(),
+                      Upcast(
+                        SelectField.typed[Value[SByte.type]](ValUse(3, SPair(SInt, SByte)), 2.toByte),
+                        SInt
+                      )
+                    ),
+                    ValDef(
+                      6,
+                      List(),
+                      SelectField.typed[Value[SInt.type]](ValUse(3, SPair(SInt, SByte)), 1.toByte)
                     )
                   ),
-                  ValDef(
-                    6,
-                    List(),
-                    SelectField.typed[Value[SInt.type]](ValUse(3, SPair(SInt, SByte)), 1.toByte)
+                  If(
+                    GT(ValUse(5, SInt), IntConstant(0)),
+                    ArithOp(ValUse(6, SInt), ValUse(5, SInt), OpCode @@ (-102.toByte)),
+                    ValUse(6, SInt)
                   )
-                ),
-                If(
-                  GT(ValUse(5, SInt), IntConstant(0)),
-                  ArithOp(ValUse(6, SInt), ValUse(5, SInt), OpCode @@ (-102.toByte)),
-                  ValUse(6, SInt)
                 )
               )
             )
-          )
-        ) ))
+          ) ))
+    } else {
+      assertExceptionThrown(
+        verifyCases(
+          Seq( ((Coll[Byte](),  0), success(0, 42037)) ),
+          existingFeature(
+            { (x: (Coll[Byte], Int)) => x._1.foldLeft(x._2, { i: (Int, Byte) => if (i._2 > 0) n.plus(i._1, i._2) else i._1 }) },
+            "{ (x: (Coll[Byte], Int)) => x._1.fold(x._2, { (i1: Int, i2: Byte) => if (i2 > 0) i1 + i2 else i1 }) }"
+          )),
+        rootCauseLike[CosterException]("Don't know how to evalNode(Lambda(List()")
+      )
+    }
   }
 
   property("Coll indexOf method equivalence") {
