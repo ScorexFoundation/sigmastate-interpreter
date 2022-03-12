@@ -7545,29 +7545,30 @@ class SigmaDslSpecification extends SigmaDslTesting
   property("Random headers access and comparison (originaly from spam tests)") {
     val (_, _, _, ctx, _, _) = contextData()
 
-    verifyCases(
-      Seq(
-        ctx -> Expected(
-          Failure(new NoSuchElementException("None.get")),
-          cost = 37694,
-          newDetails = CostDetails.ZeroCost,
-          newCost = 1796,
-          newVersionedResults = Seq(
-            0 -> (ExpectedResult(Success(true), Some(1796)) -> None),
-            1 -> (ExpectedResult(Success(true), Some(1796)) -> None),
-            2 -> (ExpectedResult(Success(true), Some(1796)) -> None)
+    if (lowerMethodCallsInTests) {
+      verifyCases(
+        Seq(
+          ctx -> Expected(
+            Failure(new NoSuchElementException("None.get")),
+            cost = 37694,
+            newDetails = CostDetails.ZeroCost,
+            newCost = 1796,
+            newVersionedResults = Seq(
+              0 -> (ExpectedResult(Success(true), Some(1796)) -> None),
+              1 -> (ExpectedResult(Success(true), Some(1796)) -> None),
+              2 -> (ExpectedResult(Success(true), Some(1796)) -> None)
+            )
           )
-        )
-      ),
-      changedFeature(
+        ),
+        changedFeature(
         { (x: Context) =>
           Option.empty[Int].get
           true
         },
         { (x: Context) =>
           val headers = x.headers
-          val ids = headers.map({(h: Header) => h.id })
-          val parentIds = headers.map({(h: Header) => h.parentId })
+          val ids = headers.map({ (h: Header) => h.id })
+          val parentIds = headers.map({ (h: Header) => h.parentId })
           headers.indices.slice(0, headers.size - 1).forall({ (i: Int) =>
             val parentId = parentIds(i)
             val id = ids(i + 1)
@@ -7575,16 +7576,16 @@ class SigmaDslSpecification extends SigmaDslTesting
           })
         },
         """{
-          |(x: Context) =>
-          |  val headers = x.headers
-          |  val ids = headers.map({(h: Header) => h.id })
-          |  val parentIds = headers.map({(h: Header) => h.parentId })
-          |  headers.indices.slice(0, headers.size - 1).forall({ (i: Int) =>
-          |    val parentId = parentIds(i)
-          |    val id = ids(i + 1)
-          |    parentId == id
-          |  })
-          |}""".stripMargin,
+         |(x: Context) =>
+         |  val headers = x.headers
+         |  val ids = headers.map({(h: Header) => h.id })
+         |  val parentIds = headers.map({(h: Header) => h.parentId })
+         |  headers.indices.slice(0, headers.size - 1).forall({ (i: Int) =>
+         |    val parentId = parentIds(i)
+         |    val id = ids(i + 1)
+         |    parentId == id
+         |  })
+         |}""".stripMargin,
         FuncValue(
           Array((1, SContext)),
           BlockValue(
@@ -7657,9 +7658,10 @@ class SigmaDslSpecification extends SigmaDslTesting
         ),
         allowDifferentErrors = true,
         allowNewToSucceed = true
-      ),
-      preGeneratedSamples = Some(mutable.WrappedArray.empty)
-    )
+        ),
+        preGeneratedSamples = Some(mutable.WrappedArray.empty)
+      )
+    }
   }
 
   override protected def afterAll(): Unit = {
