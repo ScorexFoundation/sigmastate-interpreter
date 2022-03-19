@@ -737,31 +737,24 @@ class SigmaDslSpecification extends SigmaDslTesting
       FixedCostItem(ValUse)
     )
   )
-  // jozi: not needed - same as costIdentity above, is identity == upcast?
-  val costUpcast = CostDetails(
-    Array(
-      FixedCostItem(Apply),
-      FixedCostItem(FuncValue),
-      FixedCostItem(GetVar),
-      FixedCostItem(OptionGet),
-      FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
-      FixedCostItem(ValUse)
-    )
-  )
+
   val costShortUpcast = CostDetails(costIdentity.trace :+ TypeBasedCostItem(Upcast, SShort))
   val costIntUpcast = CostDetails(costIdentity.trace :+ TypeBasedCostItem(Upcast, SInt))
   val costLongUpcast = CostDetails(costIdentity.trace :+ TypeBasedCostItem(Upcast, SLong))
   val costBigIntUpcast = CostDetails(costIdentity.trace :+ TypeBasedCostItem(Upcast, SBigInt))
-  val costDowncast = CostDetails(
+
+  def costDowncast(tpe: SType) = TracedCost(
     Array(
       FixedCostItem(Apply),
       FixedCostItem(FuncValue),
       FixedCostItem(GetVar),
       FixedCostItem(OptionGet),
-      FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
-      FixedCostItem(ValUse)
-    )
-  )
+      FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+      FixedCostItem(ValUse),
+      TypeBasedCostItem(CompanionDesc(Downcast), Downcast.costKind, tpe)
+    ),
+    None)
+
   val costByteDowncast = CostDetails(costIdentity.trace :+ TypeBasedCostItem(Downcast, SByte))
   val costShortDowncast = CostDetails(costIdentity.trace :+ TypeBasedCostItem(Downcast, SShort))
   def costArithOps(tpe: SType) = CostDetails(
@@ -1833,13 +1826,17 @@ class SigmaDslSpecification extends SigmaDslTesting
     }
   }
 
-  property("Long methods equivalence") {
-    SLong.upcast(0L) shouldBe 0L  // boundary test case
-    SLong.downcast(0L) shouldBe 0L  // boundary test case
+  property("Long downcast and upcast identity") {
+    forAll { x: Long =>
+      SLong.upcast(x) shouldBe x  // boundary test case
+      SLong.downcast(x) shouldBe x  // boundary test case
+    }
+  }
 
+  property("Long.toByte method") {
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 35976, costDowncast)
+        def success[T](v: T) = Expected(Success(v), 35976, costDowncast(SByte))
         Seq(
           (Long.MinValue, Expected(new ArithmeticException("Byte overflow"))),
           (Byte.MinValue.toLong - 1, Expected(new ArithmeticException("Byte overflow"))),
@@ -1855,10 +1852,12 @@ class SigmaDslSpecification extends SigmaDslTesting
       existingFeature((x: Long) => x.toByteExact,
         "{ (x: Long) => x.toByte }",
         FuncValue(Vector((1, SLong)), Downcast(ValUse(1, SLong), SByte))))
+  }
 
+  property("Long.toShort method") {
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 35976, costDowncast)
+        def success[T](v: T) = Expected(Success(v), 35976, costDowncast(SShort))
         Seq(
           (Long.MinValue, Expected(new ArithmeticException("Short overflow"))),
           (Short.MinValue.toLong - 1, Expected(new ArithmeticException("Short overflow"))),
@@ -1874,10 +1873,12 @@ class SigmaDslSpecification extends SigmaDslTesting
       existingFeature((x: Long) => x.toShortExact,
         "{ (x: Long) => x.toShort }",
         FuncValue(Vector((1, SLong)), Downcast(ValUse(1, SLong), SShort))))
+  }
 
+  property("Long.toInt method") {
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 35976, costDowncast)
+        def success[T](v: T) = Expected(Success(v), 35976, costDowncast(SInt))
         Seq(
           (Long.MinValue, Expected(new ArithmeticException("Int overflow"))),
           (Int.MinValue.toLong - 1, Expected(new ArithmeticException("Int overflow"))),
@@ -1893,7 +1894,9 @@ class SigmaDslSpecification extends SigmaDslTesting
       existingFeature((x: Long) => x.toIntExact,
         "{ (x: Long) => x.toInt }",
         FuncValue(Vector((1, SLong)), Downcast(ValUse(1, SLong), SInt))))
+  }
 
+  property("Long.toLong method") {
     verifyCases(
       {
         def success[T](v: T) = Expected(Success(v), 35798, costIdentity)
@@ -1908,10 +1911,12 @@ class SigmaDslSpecification extends SigmaDslTesting
       existingFeature((x: Long) => x.toLong,
         "{ (x: Long) => x.toLong }",
         FuncValue(Vector((1, SLong)), ValUse(1, SLong))))
+  }
 
+  property("Long.toBigInt method") {
     verifyCases(
       {
-        def success(v: BigInt) = Expected(Success(v), 35932, costUpcast)
+        def success(v: BigInt) = Expected(Success(v), 35932, costBigIntUpcast)
         Seq(
           (Long.MinValue, success(CBigInt(new BigInteger("-8000000000000000", 16)))),
           (-1074651039980347209L, success(CBigInt(new BigInteger("-ee9ed6d57885f49", 16)))),
@@ -1925,6 +1930,9 @@ class SigmaDslSpecification extends SigmaDslTesting
       existingFeature((x: Long) => x.toBigInt,
         "{ (x: Long) => x.toBigInt }",
         FuncValue(Vector((1, SLong)), Upcast(ValUse(1, SLong), SBigInt))))
+  }
+
+  property("Long methods equivalence") {
 
     val n = ExactNumeric.LongIsExactNumeric
     verifyCases(
