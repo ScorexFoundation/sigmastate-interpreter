@@ -2666,33 +2666,60 @@ class SigmaDslSpecification extends SigmaDslTesting
   // jozi: Cyclic fail again. 
   val collNeqCost1 = Array(
     FixedCostItem(NamedDesc("MatchType"), FixedCost(JitCost(1))),
-    SeqCostItem(NamedDesc("EQ_COA_Byte"), PerItemCost(JitCost(15), JitCost(2), 128), 0)
   )
   property("NEQ of collections of pre-defined types") {
     implicit val evalSettings = suite.evalSettings.copy(isMeasureOperationTime = false)
     verifyNeq(Coll[Byte](), Coll(1.toByte), 36337, collNeqCost1)(cloneColl(_))
-    verifyNeq(Coll[Byte](0, 1), Coll(1.toByte, 1.toByte), 36337)(cloneColl(_))
+    verifyNeq(Coll[Byte](0, 1), Coll(1.toByte, 1.toByte), 36337,
+      Array(
+        FixedCostItem(NamedDesc("MatchType"), FixedCost(JitCost(1))),
+        SeqCostItem(NamedDesc("EQ_COA_Byte"), PerItemCost(JitCost(15), JitCost(2), 128), 1))
+    )(cloneColl(_))
 
-    verifyNeq(Coll[Short](), Coll(1.toShort), 36337)(cloneColl(_))
-    verifyNeq(Coll[Short](0), Coll(1.toShort), 36337)(cloneColl(_))
+    verifyNeq(Coll[Short](), Coll(1.toShort), 36337, collNeqCost1)(cloneColl(_))
+    verifyNeq(Coll[Short](0), Coll(1.toShort), 36337,
+      Array(
+        FixedCostItem(NamedDesc("MatchType"), FixedCost(JitCost(1))),
+        SeqCostItem(NamedDesc("EQ_COA_Short"), PerItemCost(JitCost(15), JitCost(2), 96), 1))
+    )(cloneColl(_))
 
-    verifyNeq(Coll[Int](), Coll(1), 36337)(cloneColl(_))
-    verifyNeq(Coll[Int](0), Coll(1), 36337)(cloneColl(_))
+    verifyNeq(Coll[Int](), Coll(1), 36337, collNeqCost1)(cloneColl(_))
+    verifyNeq(Coll[Int](0), Coll(1), 36337,
+      Array(
+        FixedCostItem(NamedDesc("MatchType"), FixedCost(JitCost(1))),
+        SeqCostItem(NamedDesc("EQ_COA_Int"), PerItemCost(JitCost(15), JitCost(2), 64), 1))
+    )(cloneColl(_))
 
-    verifyNeq(Coll[Long](), Coll(1.toLong), 36337)(cloneColl(_))
-    verifyNeq(Coll[Long](0), Coll(1.toLong), 36337)(cloneColl(_))
+    verifyNeq(Coll[Long](), Coll(1.toLong), 36337, collNeqCost1)(cloneColl(_))
+    verifyNeq(Coll[Long](0), Coll(1.toLong), 36337,
+      Array(
+        FixedCostItem(NamedDesc("MatchType"), FixedCost(JitCost(1))),
+        SeqCostItem(NamedDesc("EQ_COA_Long"), PerItemCost(JitCost(15), JitCost(2), 48), 1))
+    )(cloneColl(_))
 
     prepareSamples[Coll[BigInt]]
-    verifyNeq(Coll[BigInt](), Coll(1.toBigInt), 36337)(cloneColl(_))
-    verifyNeq(Coll[BigInt](0.toBigInt), Coll(1.toBigInt), 36337)(cloneColl(_))
+    verifyNeq(Coll[BigInt](), Coll(1.toBigInt), 36337, collNeqCost1)(cloneColl(_))
+    verifyNeq(Coll[BigInt](0.toBigInt), Coll(1.toBigInt), 36337,
+      Array(
+        FixedCostItem(NamedDesc("MatchType"), FixedCost(JitCost(1))),
+        SeqCostItem(NamedDesc("EQ_COA_BigInt"), PerItemCost(JitCost(15), JitCost(7), 5), 1))
+    )(cloneColl(_))
 
     prepareSamples[Coll[GroupElement]]
-    verifyNeq(Coll[GroupElement](), Coll(ge1), 36337)(cloneColl(_))
-    verifyNeq(Coll[GroupElement](ge1), Coll(ge2), 36337)(cloneColl(_))
+    verifyNeq(Coll[GroupElement](), Coll(ge1), 36337, collNeqCost1)(cloneColl(_))
+    verifyNeq(Coll[GroupElement](ge1), Coll(ge2), 36337,
+      Array(
+        FixedCostItem(NamedDesc("MatchType"), FixedCost(JitCost(1))),
+        SeqCostItem(NamedDesc("EQ_COA_GroupElement"), PerItemCost(JitCost(15), JitCost(5), 1), 1))
+    )(cloneColl(_))
 
     prepareSamples[Coll[AvlTree]]
-    verifyNeq(Coll[AvlTree](), Coll(t1), 36337)(cloneColl(_))
-    verifyNeq(Coll[AvlTree](t1), Coll(t2), 36337)(cloneColl(_))
+    verifyNeq(Coll[AvlTree](), Coll(t1), 36337, collNeqCost1)(cloneColl(_))
+    verifyNeq(Coll[AvlTree](t1), Coll(t2), 36337,
+      Array(
+        FixedCostItem(NamedDesc("MatchType"), FixedCost(JitCost(1))),
+        SeqCostItem(NamedDesc("EQ_COA_AvlTree"), PerItemCost(JitCost(15), JitCost(5), 2), 1))
+    )(cloneColl(_))
 
     { // since SBox.isConstantSize = false, the cost is different among cases
       prepareSamples[Coll[AvlTree]]
@@ -2703,21 +2730,33 @@ class SigmaDslSpecification extends SigmaDslTesting
           (x, x) -> Expected(Success(false), 36337),
           (x, copied_x) -> Expected(Success(false), 36337),
           (copied_x, x) -> Expected(Success(false), 36337),
-          (x, y) -> Expected(Success(true), 36377),
+          (x, y) -> Expected(Success(true), 36377, costNEQ(collNeqCost1)),
           (y, x) -> Expected(Success(true), 36377)
         ),
         "!=", NEQ.apply)(_ != _, generateCases = false)
 
-      verifyNeq(Coll[Box](b1), Coll(b2), 36417)(cloneColl(_), generateCases = false)
+      verifyNeq(Coll[Box](b1), Coll(b2), 36417,
+        Array(
+          FixedCostItem(NamedDesc("MatchType"), FixedCost(JitCost(1))),
+          SeqCostItem(NamedDesc("EQ_COA_Box"), PerItemCost(JitCost(15), JitCost(5), 1), 1))
+      )(cloneColl(_), generateCases = false)
     }
 
     prepareSamples[Coll[PreHeader]]
-    verifyNeq(Coll[PreHeader](), Coll(preH1), 36337)(cloneColl(_))
-    verifyNeq(Coll[PreHeader](preH1), Coll(preH2), 36337)(cloneColl(_))
+    verifyNeq(Coll[PreHeader](), Coll(preH1), 36337, collNeqCost1)(cloneColl(_))
+    verifyNeq(Coll[PreHeader](preH1), Coll(preH2), 36337,
+      Array(
+        FixedCostItem(NamedDesc("MatchType"), FixedCost(JitCost(1))),
+        SeqCostItem(NamedDesc("EQ_COA_PreHeader"), PerItemCost(JitCost(15), JitCost(3), 1), 1))
+    )(cloneColl(_))
 
     prepareSamples[Coll[Header]]
-    verifyNeq(Coll[Header](), Coll(h1), 36337)(cloneColl(_))
-    verifyNeq(Coll[Header](h1), Coll(h2), 36337)(cloneColl(_))
+    verifyNeq(Coll[Header](), Coll(h1), 36337, collNeqCost1)(cloneColl(_))
+    verifyNeq(Coll[Header](h1), Coll(h2), 36337,
+      Array(
+        FixedCostItem(NamedDesc("MatchType"), FixedCost(JitCost(1))),
+        SeqCostItem(NamedDesc("EQ_COA_Header"), PerItemCost(JitCost(15), JitCost(5), 1), 1))
+    )(cloneColl(_))
   }
 
   property("NEQ of nested collections and tuples") {
