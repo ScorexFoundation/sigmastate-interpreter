@@ -2505,12 +2505,13 @@ class SigmaDslSpecification extends SigmaDslTesting
     val copied_x = copy(x)
     val newCost = if (neqCost.isEmpty) CostDetails.ZeroCost else costNEQ(neqCost)
     def expected(v: Boolean) = Expected(Success(v), cost, newCost)
+    def expectedNoCost(v: Boolean) = Expected(Success(v), cost, CostDetails.ZeroCost)
     verifyOp(Seq(
-        (x, x) -> expected(false),
-        (x, copied_x) -> expected(false),
-        (copied_x, x) -> expected(false),
-        (x, y) -> expected(true),
-        (y, x) -> expected(true)
+        (x, y) -> expected(true), // check cost only for this test case, because the trace depends in x and y
+        (x, x) -> expectedNoCost(false), // and don't check for others
+        (x, copied_x) -> expectedNoCost(false),
+        (copied_x, x) -> expectedNoCost(false),
+        (y, x) -> expectedNoCost(true)
       ),
       "!=", NEQ.apply)(_ != _, generateCases)
   }
@@ -2527,14 +2528,16 @@ class SigmaDslSpecification extends SigmaDslTesting
   val tuplesNeqCost = Array(
     FixedCostItem(NamedDesc("EQ_Tuple"), FixedCost(JitCost(4))),
     FixedCostItem(NamedDesc("EQ_Prim"), FixedCost(JitCost(3))),
-    FixedCostItem(NamedDesc("EQ_Prim"), FixedCost(JitCost(3)))
   )
   property("NEQ of tuples of numerics") {
     verifyNeq((0.toByte, 1.toByte), (1.toByte, 1.toByte), 36337, tuplesNeqCost)(_.copy())
-    // verifyNeq((0.toShort, 1.toByte), (1.toShort, 1.toByte), 36337, tuplesNeqCost)(_.copy())
-    // verifyNeq((0, 1.toByte), (1, 1.toByte), 36337, tuplesNeqCost)(_.copy())
-    // verifyNeq((0.toLong, 1.toByte), (1.toLong, 1.toByte), 36337, tuplesNeqCost)(_.copy())
-    // verifyNeq((0.toBigInt, 1.toByte), (1.toBigInt, 1.toByte), 36337, tuplesNeqCost)(_.copy())
+    verifyNeq((0.toShort, 1.toByte), (1.toShort, 1.toByte), 36337, tuplesNeqCost)(_.copy())
+    verifyNeq((0, 1.toByte), (1, 1.toByte), 36337, tuplesNeqCost)(_.copy())
+    verifyNeq((0.toLong, 1.toByte), (1.toLong, 1.toByte), 36337, tuplesNeqCost)(_.copy())
+    verifyNeq((0.toBigInt, 1.toByte), (1.toBigInt, 1.toByte), 36337, Array(
+      FixedCostItem(NamedDesc("EQ_Tuple"), FixedCost(JitCost(4))),
+      FixedCostItem(NamedDesc("EQ_BigInt"), FixedCost(JitCost(5))),
+    ))(_.copy())
   }
 
   val groupNeqCost = Array(
