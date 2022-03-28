@@ -18,11 +18,12 @@ case class VersionContext(activatedVersion: Byte, ergoTreeVersion: Byte) {
   require(ergoTreeVersion <= activatedVersion,
     s"In a valid VersionContext ergoTreeVersion must never exceed activatedVersion: $this")
 
-  /** @return true, if JIT version of Ergo protocol was activated. */
+  /** @return true, if the activated script version of Ergo protocol on the network is
+   * greater than v1. */
   def isJitActivated: Boolean = activatedVersion >= JitActivationVersion
 
-  /** @return true, if ErgoTree version >= JitActivationVersion. */
-  def isEvaluateErgoTreeUsingJIT: Boolean =
+  /** @return true, if the version of ErgoTree being executed greater than v1. */
+  def isErgoTreeVersionGreaterV1: Boolean =
     ergoTreeVersion >= JitActivationVersion
 }
 

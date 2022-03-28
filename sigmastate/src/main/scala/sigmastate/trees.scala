@@ -192,6 +192,22 @@ object CreateProveDlog extends ValueCompanion {
   val OpType = SFunc(SGroupElement, SSigmaProp)
 }
 
+// TODO refactor: remove not used class
+/** Construct a new authenticated dictionary with given parameters and tree root digest.*/
+case class CreateAvlTree(operationFlags: ByteValue,
+    digest: Value[SByteArray],
+    keyLength: IntValue,
+    valueLengthOpt: Value[SIntOption]) extends AvlTreeValue {
+  override def companion = CreateAvlTree
+  override def tpe = SAvlTree
+  override def opType = CreateAvlTree.OpType
+}
+object CreateAvlTree extends ValueCompanion {
+  override def opCode: OpCode = OpCodes.AvlTreeCode
+  override def costKind: CostKind = Value.notSupportedError(this, "costKind")
+  val OpType = SFunc(Array(SByte, SByteArray, SInt, SIntOption), SAvlTree)
+}
+
 /** ErgoTree operation to create a new SigmaProp value representing public key
   * of Diffie Hellman signature protocol.
   * Common input: (g,h,u,v)*/
