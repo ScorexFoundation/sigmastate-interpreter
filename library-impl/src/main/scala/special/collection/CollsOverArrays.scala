@@ -60,7 +60,7 @@ class CollOverArray[@specialized A](val toArray: Array[A])(implicit tA: RType[A]
   @NeverInline
   def append(other: Coll[A]): Coll[A] = {
     if (toArray.length <= 0) return other
-    val result = if (VersionContext.current.isActivatedVersionGreaterV1) {
+    val result = if (VersionContext.current.isJitActivated) {
       // in v5.0 and above this fixes the ClassCastException problem
       safeConcatArrays_v5(toArray, other.toArray)(tA.classTag)
     } else {
@@ -220,7 +220,7 @@ class CollOverArrayBuilder extends CollBuilder {
   override def Monoids: MonoidBuilder = new MonoidBuilderInst
 
   @inline override def pairColl[@specialized A, @specialized B](as: Coll[A], bs: Coll[B]): PairColl[A, B] = {
-    if (VersionContext.current.isActivatedVersionGreaterV1) {
+    if (VersionContext.current.isJitActivated) {
       // v5.0 and above
       val asLen = as.length
       val bsLen = bs.length

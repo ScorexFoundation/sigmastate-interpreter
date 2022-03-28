@@ -748,7 +748,7 @@ case class CostingDataContext(
   @inline override def minerPubKey = _minerPubKey
 
   override def selfBoxIndex: Int = {
-    if (VersionContext.current.isActivatedVersionGreaterV1) {
+    if (VersionContext.current.isJitActivated) {
       // starting from v5.0 this is fixed
       selfIndex
     } else {

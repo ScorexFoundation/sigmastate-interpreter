@@ -1545,7 +1545,7 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
     * 2) new collection is allocated for each item
     * 3) each collection is then appended to the resulting collection */
   val FlatMapMethod_CostKind = PerItemCost(
-    baseCost = JitCost(30), perChunkCost = JitCost(5), chunkSize = 8)
+    baseCost = JitCost(60), perChunkCost = JitCost(10), chunkSize = 8)
 
   val FlatMapMethod = SMethod(this, "flatMap",
     SFunc(Array(ThisType, SFunc(tIV, tOVColl)), tOVColl, Array(paramIV, paramOV)),
@@ -1637,9 +1637,13 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
             if isValidPropertyAccess(varId, lambdaBody) =>
         // ok, do nothing
       case _ =>
-        ErgoTreeEvaluator.error(
-          s"Unsupported lambda in flatMap: allowed usage `xs.flatMap(x => x.property)`: $mc")
+        throwInvalidFlatmap(mc)
     }
+  }
+
+  def throwInvalidFlatmap(mc: MethodCall) = {
+    ErgoTreeEvaluator.error(
+      s"Unsupported lambda in flatMap: allowed usage `xs.flatMap(x => x.property)`: $mc")
   }
 
   /** Implements evaluation of Coll.flatMap method call ErgoTree node.
@@ -1648,7 +1652,9 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
     */
   def flatMap_eval[A, B](mc: MethodCall, xs: Coll[A], f: A => Coll[B])
                         (implicit E: ErgoTreeEvaluator): Coll[B] = {
-    checkValidFlatmap(mc)
+    if (!VersionContext.current.isJitActivated) {
+      checkValidFlatmap(mc)
+    }
     val m = mc.method
     var res: Coll[B] = null
     E.addSeqCost(m.costKind.asInstanceOf[PerItemCost], m.opDesc) { () =>

@@ -16,6 +16,7 @@ import scalan.RType._
 import scalan.util.BenchmarkUtil
 import scalan.util.Extensions._
 import scalan.util.CollectionUtil._
+import scalan.util.StringUtil.StringUtilExtensions
 import sigmastate.SType.AnyOps
 import sigmastate.Values.{ByteArrayConstant, Constant, ConstantNode, ErgoTree, IntConstant, SValue}
 import sigmastate.basics.DLogProtocol.{DLogProverInput, ProveDlog}
@@ -27,11 +28,11 @@ import sigmastate.helpers.{ErgoLikeContextTesting, ErgoLikeTestInterpreter, Sigm
 import sigmastate.interpreter.EvalSettings.{AotEvaluationMode, EvaluationMode, JitEvaluationMode}
 import sigmastate.interpreter.Interpreter.{ScriptEnv, VerificationResult}
 import sigmastate.interpreter._
-import sigmastate.lang.Terms.ValueOps
+import sigmastate.lang.Terms.{Apply, ValueOps}
 import sigmastate.serialization.ValueSerializer
 import sigmastate.serialization.generators.ObjectGenerators
 import sigmastate.utils.Helpers._
-import sigmastate.utxo.{DeserializeContext, DeserializeRegister}
+import sigmastate.utxo.{DeserializeContext, DeserializeRegister, GetVar, OptionGet}
 import sigmastate.{SOption, SSigmaProp, SType, VersionContext, eval}
 import special.collection.{Coll, CollType}
 import spire.syntax.all.cfor
@@ -150,6 +151,10 @@ class SigmaDslTesting extends PropSpec
     * @see ExistingFeature, ChangedFeature
     */
   trait Feature[A, B] { feature =>
+    /** Type descriptor for type A. */
+    def tA: RType[A]
+    /** Type descriptor for type B. */
+    def tB: RType[B]
 
     /** Script containing this feature. */
     def script: String
@@ -289,8 +294,8 @@ class SigmaDslTesting extends PropSpec
       * @param expected the given expected results (values and costs)
       */
     def checkVerify(input: A, expected: Expected[B]): Unit = {
-      val tpeA = Evaluation.rtypeToSType(oldF.tA)
-      val tpeB = Evaluation.rtypeToSType(oldF.tB)
+      val tpeA = Evaluation.rtypeToSType(tA)
+      val tpeB = Evaluation.rtypeToSType(tB)
 
       // Create synthetic ErgoTree which uses all main capabilities of evaluation machinery.
       // 1) first-class functions (lambdas); 2) Context variables; 3) Registers; 4) Equality
@@ -487,7 +492,7 @@ class SigmaDslTesting extends PropSpec
     expectedExpr: Option[SValue],
     printExpectedExpr: Boolean = true,
     logScript: Boolean = LogScriptDefault
-  )(implicit IR: IRContext, tA: RType[A], tB: RType[B],
+  )(implicit IR: IRContext, val tA: RType[A], val tB: RType[B],
              override val evalSettings: EvalSettings) extends Feature[A, B] {
 
     implicit val cs = compilerSettingsInTests
@@ -629,28 +634,57 @@ class SigmaDslTesting extends PropSpec
     *                          This approach allows to fix bugs in the implementation of
     *                          some of v4.x operations.
     */
-  case class ChangedFeature[A: RType, B: RType](
+  case class ChangedFeature[A, B](
     script: String,
     scalaFunc: A => B,
     override val scalaFuncNew: A => B,
     expectedExpr: Option[SValue],
     printExpectedExpr: Boolean = true,
     logScript: Boolean = LogScriptDefault,
-    allowNewToSucceed: Boolean = false
-  )(implicit IR: IRContext, override val evalSettings: EvalSettings)
+    allowNewToSucceed: Boolean = false,
+    allowDifferentErrors: Boolean = false
+  )(implicit IR: IRContext, override val evalSettings: EvalSettings, val tA: RType[A], val tB: RType[B])
     extends Feature[A, B] {
 
     implicit val cs = compilerSettingsInTests
 
-    val oldImpl = () => func[A, B](script)
-    val newImpl = () => funcJit[A, B](script)
+    private def getApplyExpr(funcValue: SValue) = {
+      val sType = Evaluation.rtypeToSType(RType[A])
+      Apply(funcValue, IndexedSeq(OptionGet(GetVar[SType](1.toByte, sType))))
+    }
+
+    val oldImpl = () => {
+      if (script.isNullOrEmpty) {
+        val funcValue = expectedExpr.getOrElse(
+          sys.error("When `script` is not defined, the expectedExpr is used for CompiledFunc"))
+        val expr = getApplyExpr(funcValue)
+        funcFromExpr[A, B]("not defined", expr)
+      } else {
+        func[A, B](script)
+      }
+    }
+
+    val newImpl = () => {
+      if (script.isNullOrEmpty) {
+        val funcValue = expectedExpr.getOrElse(
+          sys.error("When `script` is not defined, the expectedExpr is used for CompiledFunc"))
+        val expr = getApplyExpr(funcValue)
+        funcJitFromExpr[A, B]("not defined", expr)
+      } else {
+        funcJit[A, B](script)
+      }
+    }
 
     def checkEquality(input: A, logInputOutput: Boolean = false): Try[(B, CostDetails)] = {
       // check the old implementation against Scala semantic function
       var oldRes: Try[(B, CostDetails)] = null
       if (ergoTreeVersionInTests < VersionContext.JitActivationVersion)
         oldRes = VersionContext.withVersions(activatedVersionInTests, ergoTreeVersionInTests) {
-          checkEq(scalaFunc)(oldF)(input)
+          try checkEq(scalaFunc)(oldF)(input)
+          catch {
+            case t: Throwable =>
+              Failure(t)
+          }
         }
 
       val newRes = {
@@ -666,6 +700,9 @@ class SigmaDslTesting extends PropSpec
               // but the new v5.0 produces result. (See property("Option fold workaround method"))
               // Thus, we allow some scripts which fail in v4.x to pass in v5.0.
               // see ScalaDoc for allowNewToSucceed
+            case (_: Failure[_], _: Failure[_]) if allowDifferentErrors =>
+              // this is the case when old v4.x version fails with one exception (e.g. due to AOT costing),
+              // but the new v5.0 fails with another exception.
             case _ =>
               val inputStr = SigmaPPrint(input, height = 550, width = 150)
               checkResult(oldRes.map(_._1), newRes.map(_._1), true,
@@ -724,13 +761,13 @@ class SigmaDslTesting extends PropSpec
     * In v5.0 is only checks that some features are NOT implemented, i.e. work for
     * negative tests.
     */
-  case class NewFeature[A: RType, B: RType](
+  case class NewFeature[A, B](
     script: String,
     override val scalaFuncNew: A => B,
     expectedExpr: Option[SValue],
     printExpectedExpr: Boolean = true,
     logScript: Boolean = LogScriptDefault
-  )(implicit IR: IRContext, override val evalSettings: EvalSettings)
+  )(implicit IR: IRContext, override val evalSettings: EvalSettings, val tA: RType[A], val tB: RType[B])
     extends Feature[A, B] {
     override def scalaFunc: A => B = { x =>
       sys.error(s"Semantic Scala function is not defined for old implementation: $this")
@@ -922,10 +959,12 @@ class SigmaDslTesting extends PropSpec
        scalaFuncNew: A => B,
        script: String,
        expectedExpr: SValue = null,
-       allowNewToSucceed: Boolean = false)
+       allowNewToSucceed: Boolean = false,
+       allowDifferentErrors: Boolean = false)
       (implicit IR: IRContext, evalSettings: EvalSettings): Feature[A, B] = {
     ChangedFeature(script, scalaFunc, scalaFuncNew, Option(expectedExpr),
-      allowNewToSucceed = allowNewToSucceed)
+      allowNewToSucceed = allowNewToSucceed,
+      allowDifferentErrors = allowDifferentErrors)
   }
 
   /** Describes a NEW language feature which must NOT be supported in v4 and
@@ -952,7 +991,7 @@ class SigmaDslTesting extends PropSpec
   val PrintTestCasesDefault: Boolean = false // true
   val FailOnTestVectorsDefault: Boolean = true
 
-  private def checkResult[B](res: Try[B], expectedRes: Try[B], failOnTestVectors: Boolean, hint: String = ""): Unit = {
+  protected def checkResult[B](res: Try[B], expectedRes: Try[B], failOnTestVectors: Boolean, hint: String = ""): Unit = {
     (res, expectedRes) match {
       case (Failure(exception), Failure(expectedException)) =>
         rootCause(exception).getClass shouldBe rootCause(expectedException).getClass
