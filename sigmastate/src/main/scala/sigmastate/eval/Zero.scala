@@ -19,7 +19,7 @@ case class CZero[T](zero: T) extends Zero[T]
 
 trait ZeroLowPriority {
   implicit def collIsZero[T: Zero: RType]: Zero[Coll[T]] = CZero(Colls.emptyColl[T])
-  implicit def optionIsZero[T: Zero]: Zero[Option[T]] = CZero(None)
+  implicit def optionIsZero[T: Zero]: Zero[Option[T]] = CZero(Some(Zero.zeroOf[T]))
   implicit def pairIsZero[A: Zero, B: Zero]: Zero[(A,B)] = CZero(Zero[A].zero, Zero[B].zero)
 }
 object Zero extends ZeroLowPriority {

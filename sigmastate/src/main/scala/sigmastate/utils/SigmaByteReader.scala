@@ -28,7 +28,12 @@ class SigmaByteReader(val r: Reader,
                       val maxTreeDepth: Int = SigmaSerializer.MaxTreeDepth)
   extends Reader {
 
-  /** Checks that the current reader position is <= positionLimit. */
+  /** Checks that the current reader position is <= positionLimit.
+    * NOTE, since v5.0 the same check is done via validation rule, which wraps the
+    * original exception into ValidationException. This makes this condition soft-forkable,
+    * other than that both v4.x and v5.x will work and fail at the same time, so the
+    * change is consensus-safe.
+    */
   @inline private def checkPositionLimit(): Unit = {
     CheckPositionLimit(position, positionLimit)
   }
