@@ -5720,8 +5720,9 @@ class SigmaDslSpecification extends SigmaDslTesting
         ) -> Expected(Try(SCollection.throwInvalidFlatmap(null)), 0,
               newDetails = CostDetails.ZeroCost,
               newCost = 0,
-              newVersionedResults = Seq(
-                2 -> (ExpectedResult(Success({
+              newVersionedResults = (0 to 2).map(version =>
+                // successful result for each version
+                version -> (ExpectedResult(Success({
                          val is = Coll((0 to 32):_*)
                          is.append(is)
                        }),
@@ -5731,7 +5732,7 @@ class SigmaDslSpecification extends SigmaDslTesting
       val f = changedFeature(
         { (x: Coll[GroupElement]) => x.flatMap({ (b: GroupElement) => b.getEncoded.indices }) },
         { (x: Coll[GroupElement]) =>
-          if (VersionContext.current.isErgoTreeVersionGreaterV1)
+          if (VersionContext.current.isJitActivated)
             x.flatMap({ (b: GroupElement) => b.getEncoded.indices })
           else
             SCollection.throwInvalidFlatmap(null)
@@ -5765,6 +5766,7 @@ class SigmaDslSpecification extends SigmaDslTesting
             Map()
           )
         ),
+        allowNewToSucceed = true, // the new 5.0 interpreter can succeed (after activation) when v4.0 fails
         allowDifferentErrors = true
       )
 
@@ -5772,10 +5774,12 @@ class SigmaDslSpecification extends SigmaDslTesting
       forAll(table) { (x, expectedRes) =>
         val res = f.checkEquality(x)
         val resValue = res.map(_._1)
-        val expected = expectedRes.newResults(ergoTreeVersionInTests)._1
-        checkResult(resValue, expected.value, failOnTestVectors = true)
-        if (res.isSuccess) {
-          res.get._2.cost shouldBe JitCost(expected.verificationCost.get)
+        if (activatedVersionInTests >= VersionContext.JitActivationVersion) {
+          val expected = expectedRes.newResults(ergoTreeVersionInTests)._1
+          checkResult(resValue, expected.value, failOnTestVectors = true)
+          if (res.isSuccess) {
+            res.get._2.cost shouldBe JitCost(expected.verificationCost.get)
+          }
         }
       }
     }
