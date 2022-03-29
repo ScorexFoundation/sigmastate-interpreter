@@ -259,7 +259,7 @@ case object MinerPubkey extends NotReadyValueByteArray with ValueCompanion {
 }
 
 /** When interpreted evaluates to a IntConstant built from Context.currentHeight */
-case object Height extends NotReadyValueInt with ValueCompanion {
+case object Height extends NotReadyValueInt with FixedCostValueCompanion {
   override def companion = this
   override def opCode: OpCode = OpCodes.HeightCode
   /** Cost of: 1) Calling Context.HEIGHT Scala method. */
@@ -272,7 +272,7 @@ case object Height extends NotReadyValueInt with ValueCompanion {
 }
 
 /** When interpreted evaluates to a collection of BoxConstant built from Context.boxesToSpend */
-case object Inputs extends LazyCollection[SBox.type] with ValueCompanion {
+case object Inputs extends LazyCollection[SBox.type] with FixedCostValueCompanion {
   override def companion = this
   override def opCode: OpCode = OpCodes.InputsCode
   /** Cost of: 1) Calling Context.INPUTS Scala method. */
@@ -286,7 +286,7 @@ case object Inputs extends LazyCollection[SBox.type] with ValueCompanion {
 }
 
 /** When interpreted evaluates to a collection of BoxConstant built from Context.spendingTransaction.outputs */
-case object Outputs extends LazyCollection[SBox.type] with ValueCompanion {
+case object Outputs extends LazyCollection[SBox.type] with FixedCostValueCompanion {
   override def companion = this
   override def opCode: OpCode = OpCodes.OutputsCode
   /** Cost of: 1) Calling Context.OUTPUTS Scala method. */
@@ -316,7 +316,7 @@ case object LastBlockUtxoRootHash extends NotReadyValueAvlTree with ValueCompani
 
 
 /** When interpreted evaluates to a BoxConstant built from context.boxesToSpend(context.selfIndex) */
-case object Self extends NotReadyValueBox with ValueCompanion {
+case object Self extends NotReadyValueBox with FixedCostValueCompanion {
   override def companion = this
   override def opCode: OpCode = OpCodes.SelfCode
   /** Cost of: 1) Calling Context.SELF Scala method. */
@@ -349,7 +349,7 @@ case object Context extends NotReadyValue[SContext.type] with ValueCompanion {
 /** When interpreted evaluates to the singleton instance of [[special.sigma.SigmaDslBuilder]].
   * Corresponds to `Global` variable in ErgoScript which can be used like `Global.groupGenerator`.
   */
-case object Global extends NotReadyValue[SGlobal.type] with ValueCompanion {
+case object Global extends NotReadyValue[SGlobal.type] with FixedCostValueCompanion {
   override def companion = this
   override def opCode: OpCode = OpCodes.GlobalCode
   /** Cost of: 1) accessing Global instance. */

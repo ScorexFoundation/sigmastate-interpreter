@@ -676,7 +676,7 @@ class SigmaDslTesting extends PropSpec
       }
     }
 
-    def checkEquality(input: A, logInputOutput: Boolean = false): Try[(B, CostDetails)] = {
+    override def checkEquality(input: A, logInputOutput: Boolean = false): Try[(B, CostDetails)] = {
       // check the old implementation against Scala semantic function
       var oldRes: Try[(B, CostDetails)] = null
       if (ergoTreeVersionInTests < VersionContext.JitActivationVersion)
