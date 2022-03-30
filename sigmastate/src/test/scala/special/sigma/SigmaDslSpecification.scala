@@ -2343,7 +2343,7 @@ class SigmaDslSpecification extends SigmaDslTesting
   property("NEQ of tuples of numerics") {
     val tuplesNeqCost = Array(
       FixedCostItem(NamedDesc("EQ_Tuple"), FixedCost(JitCost(4))),
-      FixedCostItem(NamedDesc("EQ_Prim"), FixedCost(JitCost(3))),
+      FixedCostItem(NamedDesc("EQ_Prim"), FixedCost(JitCost(3)))
     )
     verifyNeq((0.toByte, 1.toByte), (1.toByte, 1.toByte), 36337, tuplesNeqCost, 1787)(_.copy())
     verifyNeq((0.toShort, 1.toByte), (1.toShort, 1.toByte), 36337, tuplesNeqCost, 1787)(_.copy())
@@ -2351,7 +2351,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     verifyNeq((0.toLong, 1.toByte), (1.toLong, 1.toByte), 36337, tuplesNeqCost, 1787)(_.copy())
     verifyNeq((0.toBigInt, 1.toByte), (1.toBigInt, 1.toByte), 36337, Array(
       FixedCostItem(NamedDesc("EQ_Tuple"), FixedCost(JitCost(4))),
-      FixedCostItem(NamedDesc("EQ_BigInt"), FixedCost(JitCost(5))),
+      FixedCostItem(NamedDesc("EQ_BigInt"), FixedCost(JitCost(5)))
     ), 1787)(_.copy())
   }
 
@@ -2481,7 +2481,7 @@ class SigmaDslSpecification extends SigmaDslTesting
 
   property("NEQ of collections of pre-defined types") {
     val collNeqCost1 = Array(
-      FixedCostItem(NamedDesc("MatchType"), FixedCost(JitCost(1))),
+      FixedCostItem(NamedDesc("MatchType"), FixedCost(JitCost(1)))
     )
     val collNeqCost2 = Array(
       FixedCostItem(NamedDesc("MatchType"), FixedCost(JitCost(1))),
@@ -2595,7 +2595,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     prepareSamples[Coll[Coll[Int]]]
 
     val nestedNeq1 = Array(
-      FixedCostItem(NamedDesc("MatchType"), FixedCost(JitCost(1))),
+      FixedCostItem(NamedDesc("MatchType"), FixedCost(JitCost(1)))
     )
     val nestedNeq2 = Array(
       FixedCostItem(NamedDesc("MatchType"), FixedCost(JitCost(1))),
@@ -3003,12 +3003,11 @@ class SigmaDslSpecification extends SigmaDslTesting
 
     verifyCases(
       {
-        // TODO mainnet v5.0: This test isn't using JITC. Cyclic failing for newCost: 1785 vs 1786
-        def success[T](v: T) = Expected(Success(v), 37151)//, methodCostDetails(SAvlTree.valueLengthOptMethod, 15), 1786)
+        def success[T](v: T, newCost: Int) = Expected(Success(v), 37151, methodCostDetails(SAvlTree.valueLengthOptMethod, 15), newCost)
         Seq(
-          (t1, success(Some(1))),
-          (t2, success(Some(64))),
-          (t3, success(None))
+          (t1, success(Some(1), 1786)),
+          (t2, success(Some(64), 1786)),
+          (t3, success(None, 1785))
         )
       },
       existingFeature((t: AvlTree) => t.valueLengthOpt,
@@ -6487,7 +6486,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         FixedCostItem(NamedDesc("MatchSingleArgMethodCall"), FixedCost(JitCost(30))),
         SeqCostItem(NamedDesc("CheckFlatmapBody"), PerItemCost(JitCost(20), JitCost(20), 1), 2),
         SeqCostItem(MethodDesc(SCollection.FlatMapMethod), PerItemCost(JitCost(60), JitCost(10), 8), 0)
-      ),
+      )
     )
     val costDetails3 = TracedCost(
       traceBase ++ Array(
