@@ -3283,8 +3283,9 @@ class SigmaDslSpecification extends SigmaDslTesting
         contains.checkExpected(input, success(okContains))
         get.checkExpected(input, success(valueOpt))
 
-        // TODO mainnet v5.0: Cyclic newCost here (1823/1825), also costDetails are ignored
-        contains.checkVerify(input, Expected(Success(okContains), 37850))//, TracedCost(traceBase), 1823))
+        // TODO mainnet v5.0: Cyclic newCost here (1823/1825/1827), even for same Activated/ErgoTree version combination
+        // Also, costDetails are ignored.
+        contains.checkVerify(input, Expected(Success(okContains), 37850, TracedCost(traceBase), 1823))
         get.checkVerify(input, Expected(value = Success(valueOpt), cost = 38372))
       }
 
