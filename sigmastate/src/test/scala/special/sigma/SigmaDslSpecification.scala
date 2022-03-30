@@ -7758,6 +7758,11 @@ class SigmaDslSpecification extends SigmaDslTesting
                         SelectField.typed[Value[SByte.type]](ValUse(3, SPair(SInt, SByte)), 2.toByte),
                         SInt
                       )
+                    ),
+                    ValDef(
+                      6,
+                      List(),
+                      SelectField.typed[Value[SInt.type]](ValUse(3, SPair(SInt, SByte)), 1.toByte)
                     )
                   ),
                   If(
