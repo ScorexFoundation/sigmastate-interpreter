@@ -6500,12 +6500,12 @@ class SigmaDslSpecification extends SigmaDslTesting
         SeqCostItem(MethodDesc(SCollection.FlatMapMethod), PerItemCost(JitCost(60), JitCost(10), 8), 135)
       )
     )
-    // TODO mainnet v5.0: Failing test with cyclic results
     verifyCases(
       {
         def success[T](v: T, c: Int) = Expected(Success(v), c)
         Seq(
-          (Coll[Box](), success(Coll[Byte](), 38126)),
+          // TODO mainnet v5.0: ActivatedVersion = 2; ErgoTree version = 0 requres costDetails1.
+          (Coll[Box](), Expected(Success(Coll[Byte]()), 38126, costDetails2, 1798)),
           (Coll[Box](b1), success(Helpers.decodeBytes(
             "0008ce02c1a9311ecf1e76c787ba4b1c0e10157b4f6d1e4db3ef0d84f411c99f2d4d2c5b027d1bd9a437e73726ceddecc162e5c85f79aee4798505bc826b8ad1813148e4190257cff6d06fe15d1004596eeb97a7f67755188501e36adc49bd807fe65e9d8281033c6021cff6ba5fdfc4f1742486030d2ebbffd9c9c09e488792f3102b2dcdabd5"
           ), 38206)),
