@@ -58,7 +58,6 @@ trait CostingRules extends SigmaLibrary { IR: IRContext =>
       val costerClass = coster.getClass
       val parameterTypes = Array.fill(costedArgs.length + args.length)(classOf[Sym])
       val costerMethod = costerClass.getMethod(method.name, parameterTypes:_*)
-      println(s"invoking $costerMethod with coster $coster and args: ${costedArgs ++ args}")
       val res = costerMethod.invoke(coster, costedArgs ++ args:_*)
       res.asInstanceOf[RCosted[_]]
     }

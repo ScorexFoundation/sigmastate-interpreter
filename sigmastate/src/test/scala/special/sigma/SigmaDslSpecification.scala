@@ -7680,53 +7680,76 @@ class SigmaDslSpecification extends SigmaDslTesting
     }
   }
 
-  property("nested loops") {
-    val (keysArr, valuesArr, _, avlProver) = sampleAvlProver
-    val keys = Colls.fromArray(keysArr.slice(0, 20))
-    val proof = avlProver.generateProof().toColl
-
-    verifyCases(
-      Seq(
-        // using exception as v4 doesn't support the test
-        (keys, proof) -> Expected(Failure(new NoSuchElementException("None.get")), cost = 35905)
-          // Expected(
-          //   Failure(new NoSuchElementException("None.get")),
-          //   cost = 35905,
-          //   newDetails = CostDetails.ZeroCost,
-          //   newCost = 1796,
-          //   newVersionedResults = Seq(
-          //     0 -> (ExpectedResult(Success(true), Some(1796)) -> None),
-          //     1 -> (ExpectedResult(Success(true), Some(1796)) -> None),
-          //     2 -> (ExpectedResult(Success(true), Some(1796)) -> None)
-          //   )
-          // )
-      ),
-      changedFeature(
-        { (x: (Coll[Coll[Byte]], Coll[Byte])) =>
-          // val foo = x._1.foldLeft(x._2, { (a: (Coll[Byte], Coll[Byte])) =>
-          //   a._1.zip(a._2).map({ (c: (Byte, Byte)) => (c._1 ^ c._2).toByte })
-          // })
-          Option.empty[Int].get
-          true
-        },
-        { (x: (Coll[Coll[Byte]], Coll[Byte])) =>
-          val foo = x._1.foldLeft(x._2, { (a: (Coll[Byte], Coll[Byte])) =>
-            a._1.zip(a._2).map({ (c: (Byte, Byte)) => (c._1 ^ c._2).toByte })
-          })
-          true
-        },
-        """{
-          | (x: (Coll[Coll[Byte]], Coll[Byte])) =>
-          |  val foo = x._1.fold(x._2, {(a: Coll[Byte], b: Coll[Byte]) =>
-          |    a.zip(b).map({ (c: (Byte, Byte)) => (c._1 ^ c._2).toByte })
-          |  })
-          |  true
-          |}""".stripMargin,
-        null,
-        allowDifferentErrors = true,
-        allowNewToSucceed = true,
+  // related issue https://github.com/ScorexFoundation/sigmastate-interpreter/issues/464
+  property("nested loops: map inside fold") {
+    val keys = Colls.fromArray(Array(Coll[Byte](1, 2, 3, 4, 5)))
+    val initial = Coll[Byte](0, 0, 0, 0, 0)
+    if (lowerMethodCallsInTests) {
+      verifyCases(
+        Seq(
+          // using exception as v4 doesn't support the test
+          (keys, initial) -> Expected(Success(Coll[Byte](1, 2, 3, 4, 5)), cost = 46522, expectedDetails = CostDetails.ZeroCost, 1821)
+        ),
+        existingFeature(
+          { (x: (Coll[Coll[Byte]], Coll[Byte])) =>
+            val foo = x._1.foldLeft(x._2, { (a: (Coll[Byte], Coll[Byte])) =>
+              a._1.zip(a._2).map({ (c: (Byte, Byte)) => (c._1 + c._2).toByte })
+            })
+            foo
+          },
+          """{
+           | (x: (Coll[Coll[Byte]], Coll[Byte])) =>
+           |  val foo = x._1.fold(x._2, { (a: Coll[Byte], b: Coll[Byte]) =>
+           |    a.zip(b).map({ (c: (Byte, Byte)) => (c._1 + c._2).toByte })
+           |  })
+           |  foo
+           |}""".stripMargin,
+          FuncValue(
+            Array((1, SPair(SByteArray2, SByteArray))),
+            Fold(
+              SelectField.typed[Value[SCollection[SCollection[SByte.type]]]](
+                ValUse(1, SPair(SByteArray2, SByteArray)),
+                1.toByte
+              ),
+              SelectField.typed[Value[SCollection[SByte.type]]](
+                ValUse(1, SPair(SByteArray2, SByteArray)),
+                2.toByte
+              ),
+              FuncValue(
+                Array((3, SPair(SByteArray, SByteArray))),
+                MapCollection(
+                  MethodCall.typed[Value[SCollection[STuple]]](
+                    SelectField.typed[Value[SCollection[SByte.type]]](
+                      ValUse(3, SPair(SByteArray, SByteArray)),
+                      1.toByte
+                    ),
+                    SCollection.getMethodByName("zip").withConcreteTypes(
+                      Map(STypeVar("IV") -> SByte, STypeVar("OV") -> SByte)
+                    ),
+                    Vector(
+                      SelectField.typed[Value[SCollection[SByte.type]]](
+                        ValUse(3, SPair(SByteArray, SByteArray)),
+                        2.toByte
+                      )
+                    ),
+                    Map()
+                  ),
+                  FuncValue(
+                    Array((5, SPair(SByte, SByte))),
+                    ArithOp(
+                      SelectField.typed[Value[SByte.type]](ValUse(5, SPair(SByte, SByte)), 1.toByte),
+                      SelectField.typed[Value[SByte.type]](ValUse(5, SPair(SByte, SByte)), 2.toByte),
+                      OpCode @@ (-102.toByte)
+                    )
+                  )
+                )
+              )
+            )
+          )
+        ),
+        preGeneratedSamples = Some(Seq.empty)
       )
-    )
+    }
   }
 
   override protected def afterAll(): Unit = {
