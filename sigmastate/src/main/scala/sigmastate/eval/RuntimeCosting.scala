@@ -1852,12 +1852,6 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
           }
         method.objType.coster.get(IR)(objC, method, argsC, elems)
 
-      case BitOp(left, right, code) =>
-        val x = asRep[Costed[Coll[Byte]]](evalNode(ctx, env, left))
-        val y = asRep[Costed[Coll[Byte]]](evalNode(ctx, env, right))
-        val value = sigmaDslBuilder.xor(x.value, y.value)
-        withConstantSize(value, opCost(value, Array(x.cost, y.cost), costOf(node)))
-
       case _ =>
         error(s"Don't know how to evalNode($node)", node.sourceContext.toOption)
     }
