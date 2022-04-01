@@ -908,19 +908,19 @@ class SigmaDslTesting extends PropSpec
       *
       * @param value               value returned by feature function v4.x
       * @param cost                expected cost value of the verification execution (v4.x)
-      * @param newDetails          expected cost details for all versions
+      * @param expectedDetails          expected cost details for all versions
       * @param newCost             expected new verification cost for all versions
       * @param newVersionedResults new results returned by each changed feature function in
       *                            v5.+ for each ErgoTree version.
       */
     def apply[A](value: Try[A], cost: Int,
-                 newDetails: CostDetails, newCost: Int,
+                 expectedDetails: CostDetails, newCost: Int,
                  newVersionedResults: Seq[(Int, (ExpectedResult[A], Option[CostDetails]))]): Expected[A] =
       new Expected[A](ExpectedResult(value, Some(cost))) {
         override val newResults = {
           val commonNewResults = defaultNewResults.map {
             case (res, _) =>
-              (ExpectedResult(res.value, Some(newCost)), Option(newDetails))
+              (ExpectedResult(res.value, Some(newCost)), Option(expectedDetails))
           }
           commonNewResults.updateMany(newVersionedResults)
         }

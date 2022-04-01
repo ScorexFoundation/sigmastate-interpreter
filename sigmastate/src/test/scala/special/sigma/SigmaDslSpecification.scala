@@ -382,12 +382,12 @@ class SigmaDslSpecification extends SigmaDslTesting
         FixedCostItem(SelectField)
       )
     )
-    val newCost = 38241
+    val cost = 38241
     val cases = Seq(
-      (true, false) -> Expected(Success(true), newCost, newDetails1, 1786),
-      (true, true) -> Expected(Success(true), newCost, newDetails1, 1786),
-      (false, false) -> Expected(Success(false), newCost, newDetails2, 1788),
-      (false, true) -> Expected(Success(true), newCost, newDetails2, 1788)
+      (true, false) -> Expected(Success(true), cost, newDetails1, 1786),
+      (true, true) -> Expected(Success(true), cost, newDetails1, 1786),
+      (false, false) -> Expected(Success(false), cost, newDetails2, 1788),
+      (false, true) -> Expected(Success(true), cost, newDetails2, 1788)
     )
     verifyCases(cases, eq)
   }
@@ -4866,7 +4866,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         (ctx, Expected(
           Success(-1), cost = 36318,
           // TODO mainnet v5.0: Change to concrete details does not change test result
-          newDetails = CostDetails.ZeroCost,
+          expectedDetails = CostDetails.ZeroCost,
           newCost = 1786,
           newVersionedResults = {
             val res = (ExpectedResult(Success(0), Some(1786)) -> None)
@@ -5382,7 +5382,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         TypeBasedCostItem(ArithOp.Plus, SLong)
       )
     )
-     val tagRegisterCostDetails3 = TracedCost(
+    val tagRegisterCostDetails3 = TracedCost(
       Array(
         FixedCostItem(Apply),
         FixedCostItem(FuncValue),
@@ -6015,7 +6015,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         def successNew[T](v: T, c: Int, newV: T, newC: Int) = Expected(
           value = Success(v),
           cost = c,
-          newDetails = CostDetails.ZeroCost,
+          expectedDetails = CostDetails.ZeroCost,
           newCost = newC,
           newVersionedResults = Seq(
             0 -> (ExpectedResult(Success(newV), Some(newC)) -> None),
@@ -6267,7 +6267,7 @@ class SigmaDslSpecification extends SigmaDslTesting
           ((Helpers.decodeBytes("0100"), Helpers.decodeBytes("01")) ->
             Expected(Failure(new ArrayIndexOutOfBoundsException("1")),
               cost = 0,
-              newDetails = CostDetails.ZeroCost,
+              expectedDetails = CostDetails.ZeroCost,
               newCost = 1789,
               newVersionedResults =  {
                 val res = (ExpectedResult(Success(Helpers.decodeBytes("00")), Some(1789)), None)
@@ -7036,7 +7036,7 @@ class SigmaDslSpecification extends SigmaDslTesting
           Helpers.decodeGroupElement("02d65904820f8330218cf7318b3810d0c9ab9df86f1ee6100882683f23c0aee587"),
           Helpers.decodeGroupElement("0390e9daa9916f30d0bc61a8e381c6005edfb7938aee5bb4fc9e8a759c7748ffaa")
         ) -> Expected(Try(SCollection.throwInvalidFlatmap(null)), 0,
-              newDetails = CostDetails.ZeroCost,
+              expectedDetails = CostDetails.ZeroCost,
               newCost = 0,
               newVersionedResults = (0 to 2).map(version =>
                 // successful result for each version
@@ -8722,7 +8722,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         (None -> Expected(
             value = Failure(new NoSuchElementException("None.get")),
             cost = 0,
-            newDetails = CostDetails.ZeroCost,
+            expectedDetails = CostDetails.ZeroCost,
             newCost = 1786,
             newVersionedResults = Seq(
               2 -> (ExpectedResult(Success(5L), Some(1786)) -> None)
@@ -9267,7 +9267,7 @@ class SigmaDslSpecification extends SigmaDslTesting
           (Coll(t1.bytes:_*), 0) -> Expected(
             Success(Helpers.decodeBytes("000008d3")),
             cost = 37694,
-            newDetails = CostDetails.ZeroCost,
+            expectedDetails = CostDetails.ZeroCost,
             newCost = 1803,
             newVersionedResults = {
               val res = (ExpectedResult(Success(Helpers.decodeBytes("0008d3")), Some(1803)) -> None)
@@ -9277,7 +9277,7 @@ class SigmaDslSpecification extends SigmaDslTesting
           (Helpers.decodeBytes("000008d3"), 0) -> Expected(
             Success(Helpers.decodeBytes("00000008d3")),
             cost = 37694,
-            newDetails = CostDetails.ZeroCost,
+            expectedDetails = CostDetails.ZeroCost,
             newCost = 1803,
             newVersionedResults = {
               // since the tree without constant segregation, substitution has no effect
@@ -9332,7 +9332,7 @@ class SigmaDslSpecification extends SigmaDslTesting
           ctx -> Expected(
             Failure(new NoSuchElementException("None.get")),
             cost = 37694,
-            newDetails = CostDetails.ZeroCost,
+            expectedDetails = CostDetails.ZeroCost,
             newCost = 1796,
             newVersionedResults = Seq(
               0 -> (ExpectedResult(Success(true), Some(1796)) -> None),
