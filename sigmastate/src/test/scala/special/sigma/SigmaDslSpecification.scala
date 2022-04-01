@@ -7684,26 +7684,26 @@ class SigmaDslSpecification extends SigmaDslTesting
   property("nested loops: map inside fold") {
     val keys = Colls.fromArray(Array(Coll[Byte](1, 2, 3, 4, 5)))
     val initial = Coll[Byte](0, 0, 0, 0, 0)
+    val cases =  Seq(
+      (keys, initial) -> Expected(Success(Coll[Byte](1, 2, 3, 4, 5)), cost = 46522, expectedDetails = CostDetails.ZeroCost, 1821)
+    )
+    val scalaFunc = { (x: (Coll[Coll[Byte]], Coll[Byte])) =>
+      val foo = x._1.foldLeft(x._2, { (a: (Coll[Byte], Coll[Byte])) =>
+        a._1.zip(a._2).map({ (c: (Byte, Byte)) => (c._1 + c._2).toByte })
+      })
+      foo
+    }
+    val script =
+      """{
+       | (x: (Coll[Coll[Byte]], Coll[Byte])) =>
+       |  val foo = x._1.fold(x._2, { (a: Coll[Byte], b: Coll[Byte]) =>
+       |    a.zip(b).map({ (c: (Byte, Byte)) => (c._1 + c._2).toByte })
+       |  })
+       |  foo
+       |}""".stripMargin
     if (lowerMethodCallsInTests) {
-      verifyCases(
-        Seq(
-          // using exception as v4 doesn't support the test
-          (keys, initial) -> Expected(Success(Coll[Byte](1, 2, 3, 4, 5)), cost = 46522, expectedDetails = CostDetails.ZeroCost, 1821)
-        ),
-        existingFeature(
-          { (x: (Coll[Coll[Byte]], Coll[Byte])) =>
-            val foo = x._1.foldLeft(x._2, { (a: (Coll[Byte], Coll[Byte])) =>
-              a._1.zip(a._2).map({ (c: (Byte, Byte)) => (c._1 + c._2).toByte })
-            })
-            foo
-          },
-          """{
-           | (x: (Coll[Coll[Byte]], Coll[Byte])) =>
-           |  val foo = x._1.fold(x._2, { (a: Coll[Byte], b: Coll[Byte]) =>
-           |    a.zip(b).map({ (c: (Byte, Byte)) => (c._1 + c._2).toByte })
-           |  })
-           |  foo
-           |}""".stripMargin,
+      verifyCases(cases,
+        existingFeature(scalaFunc, script,
           FuncValue(
             Array((1, SPair(SByteArray2, SByteArray))),
             Fold(
@@ -7748,6 +7748,13 @@ class SigmaDslSpecification extends SigmaDslTesting
           )
         ),
         preGeneratedSamples = Some(Seq.empty)
+      )
+    } else {
+      assertExceptionThrown(
+        verifyCases(cases,
+          existingFeature(scalaFunc, script)
+        ),
+        rootCauseLike[CosterException]("Don't know how to evalNode(Lambda(List(),Vector((a,Coll[SByte$]), ")
       )
     }
   }
