@@ -1146,6 +1146,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
       val t = System.nanoTime()
       ruleStack = new CostingRuleStat(node, t, 0, t) :: ruleStack
     }
+
     val res: Ref[Any] = node match {
       case c @ Constant(v, tpe) => v match {
         case p: SSigmaProp =>

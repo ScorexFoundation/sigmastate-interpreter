@@ -7688,18 +7688,16 @@ class SigmaDslSpecification extends SigmaDslTesting
       (keys, initial) -> Expected(Success(Coll[Byte](1, 2, 3, 4, 5)), cost = 46522, expectedDetails = CostDetails.ZeroCost, 1821)
     )
     val scalaFunc = { (x: (Coll[Coll[Byte]], Coll[Byte])) =>
-      val foo = x._1.foldLeft(x._2, { (a: (Coll[Byte], Coll[Byte])) =>
+      x._1.foldLeft(x._2, { (a: (Coll[Byte], Coll[Byte])) =>
         a._1.zip(a._2).map({ (c: (Byte, Byte)) => (c._1 + c._2).toByte })
       })
-      foo
     }
     val script =
       """{
        | (x: (Coll[Coll[Byte]], Coll[Byte])) =>
-       |  val foo = x._1.fold(x._2, { (a: Coll[Byte], b: Coll[Byte]) =>
+       |  x._1.fold(x._2, { (a: Coll[Byte], b: Coll[Byte]) =>
        |    a.zip(b).map({ (c: (Byte, Byte)) => (c._1 + c._2).toByte })
        |  })
-       |  foo
        |}""".stripMargin
     if (lowerMethodCallsInTests) {
       verifyCases(cases,
