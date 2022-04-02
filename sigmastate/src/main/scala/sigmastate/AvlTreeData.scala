@@ -2,6 +2,7 @@ package sigmastate
 
 import java.util.{Arrays, Objects}
 
+import com.google.common.primitives.Ints
 import scorex.crypto.authds.ADDigest
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.serialization.SigmaSerializer
@@ -66,7 +67,7 @@ case class AvlTreeData(digest: ADDigest,
   }
 
   override def hashCode(): Int =
-    (Arrays.hashCode(digest) * 31 +
+    (Ints.fromByteArray(digest) * 31 +
         keyLength.hashCode()) * 31 + Objects.hash(valueLengthOpt, treeFlags)
 }
 
