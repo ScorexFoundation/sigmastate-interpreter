@@ -354,18 +354,6 @@ object CollectionUtil {
       val i2: Iterator[Any] = flattenIter(that.iterator)
       i1.sameElements(i2)
     }
-
-    def deepHashCode: Int = {
-      var result: Int = 1
-      for (x <- xs) {
-        val elementHash = x match {
-          case arr: Array[_] => CollectionUtil.deepHashCode(arr)
-          case _ => Objects.hashCode(x)
-        }
-        result = 31 * result + elementHash;
-      }
-      result
-    }
   }
 
   private def sameLengthErrorMsg[A,B](xs: Seq[A], ys: Seq[B]) = {
