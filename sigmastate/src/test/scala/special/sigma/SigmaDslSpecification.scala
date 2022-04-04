@@ -6483,21 +6483,23 @@ class SigmaDslSpecification extends SigmaDslTesting
       traceBase ++ Array(
         FixedCostItem(MethodCall),
         FixedCostItem(FuncValue),
-        FixedCostItem(NamedDesc("MatchSingleArgMethodCall"), FixedCost(JitCost(30))),
-        SeqCostItem(NamedDesc("CheckFlatmapBody"), PerItemCost(JitCost(20), JitCost(20), 1), 2),
-        SeqCostItem(MethodDesc(SCollection.FlatMapMethod), PerItemCost(JitCost(60), JitCost(10), 8), 0)
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(ExtractScriptBytes),
+        SeqCostItem(MethodDesc(SCollection.FlatMapMethod), PerItemCost(JitCost(60), JitCost(10), 8), 135)
       )
     )
     val costDetails3 = TracedCost(
       traceBase ++ Array(
         FixedCostItem(MethodCall),
         FixedCostItem(FuncValue),
-        FixedCostItem(NamedDesc("MatchSingleArgMethodCall"), FixedCost(JitCost(30))),
-        SeqCostItem(NamedDesc("CheckFlatmapBody"), PerItemCost(JitCost(20), JitCost(20), 1), 2),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
         FixedCostItem(ValUse),
         FixedCostItem(ExtractScriptBytes),
-        SeqCostItem(MethodDesc(SCollection.FlatMapMethod), PerItemCost(JitCost(60), JitCost(10), 8), 135)
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(ExtractScriptBytes),
+        SeqCostItem(MethodDesc(SCollection.FlatMapMethod), PerItemCost(JitCost(60), JitCost(10), 8), 147)
       )
     )
     verifyCases(
@@ -6505,13 +6507,13 @@ class SigmaDslSpecification extends SigmaDslTesting
         def success[T](v: T, c: Int) = Expected(Success(v), c)
         Seq(
           // TODO mainnet v5.0: ActivatedVersion = 2; ErgoTree version = 0 requres costDetails1.
-          (Coll[Box](), Expected(Success(Coll[Byte]()), 38126, costDetails2, 1798)),
-          (Coll[Box](b1), success(Helpers.decodeBytes(
+          (Coll[Box](), Expected(Success(Coll[Byte]()), 38126, costDetails1, 1793)),
+          (Coll[Box](b1), Expected(Success(Helpers.decodeBytes(
             "0008ce02c1a9311ecf1e76c787ba4b1c0e10157b4f6d1e4db3ef0d84f411c99f2d4d2c5b027d1bd9a437e73726ceddecc162e5c85f79aee4798505bc826b8ad1813148e4190257cff6d06fe15d1004596eeb97a7f67755188501e36adc49bd807fe65e9d8281033c6021cff6ba5fdfc4f1742486030d2ebbffd9c9c09e488792f3102b2dcdabd5"
-          ), 38206)),
-          (Coll[Box](b1, b2), success(Helpers.decodeBytes(
+          )), 38206, costDetails2, 1811)),
+          (Coll[Box](b1, b2), Expected(Success(Helpers.decodeBytes(
             "0008ce02c1a9311ecf1e76c787ba4b1c0e10157b4f6d1e4db3ef0d84f411c99f2d4d2c5b027d1bd9a437e73726ceddecc162e5c85f79aee4798505bc826b8ad1813148e4190257cff6d06fe15d1004596eeb97a7f67755188501e36adc49bd807fe65e9d8281033c6021cff6ba5fdfc4f1742486030d2ebbffd9c9c09e488792f3102b2dcdabd500d197830201010096850200"
-          ), 38286))
+          )), 38286, costDetails3, 1815))
         )
       },
       existingFeature({ (x: Coll[Box]) => x.flatMap({ (b: Box) => b.propositionBytes }) },
