@@ -6005,10 +6005,7 @@ class SigmaDslSpecification extends SigmaDslTesting
       val f = changedFeature(
         { (x: Coll[GroupElement]) => SCollection.throwInvalidFlatmap(null) },
         { (x: Coll[GroupElement]) =>
-          if (VersionContext.current.isJitActivated)
             x.flatMap({ (b: GroupElement) => b.getEncoded.indices })
-          else
-            SCollection.throwInvalidFlatmap(null)
         },
         "", // NOTE, the script for this test case cannot be compiled
         FuncValue(

@@ -1688,9 +1688,6 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
     */
   def flatMap_eval[A, B](mc: MethodCall, xs: Coll[A], f: A => Coll[B])
                         (implicit E: ErgoTreeEvaluator): Coll[B] = {
-    if (!VersionContext.current.isJitActivated) {
-      checkValidFlatmap(mc)
-    }
     val m = mc.method
     var res: Coll[B] = null
     E.addSeqCost(m.costKind.asInstanceOf[PerItemCost], m.opDesc) { () =>
