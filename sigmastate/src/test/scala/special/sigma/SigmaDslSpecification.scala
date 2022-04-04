@@ -6003,9 +6003,10 @@ class SigmaDslSpecification extends SigmaDslTesting
               ))
       )
       val f = changedFeature(
-        { (x: Coll[GroupElement]) => SCollection.throwInvalidFlatmap(null) },
-        { (x: Coll[GroupElement]) =>
-            x.flatMap({ (b: GroupElement) => b.getEncoded.indices })
+        scalaFunc = { (x: Coll[GroupElement]) => SCollection.throwInvalidFlatmap(null) },
+        scalaFuncNew = { (x: Coll[GroupElement]) =>
+          // NOTE, v5.0 interpreter accepts any lambda in flatMap
+          x.flatMap({ (b: GroupElement) => b.getEncoded.indices })
         },
         "", // NOTE, the script for this test case cannot be compiled
         FuncValue(
