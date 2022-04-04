@@ -7048,12 +7048,10 @@ class SigmaDslSpecification extends SigmaDslTesting
               ))
       )
       val f = changedFeature(
-        { (x: Coll[GroupElement]) => SCollection.throwInvalidFlatmap(null) },
-        { (x: Coll[GroupElement]) =>
-          if (VersionContext.current.isJitActivated)
-            x.flatMap({ (b: GroupElement) => b.getEncoded.indices })
-          else
-            SCollection.throwInvalidFlatmap(null)
+        scalaFunc = { (x: Coll[GroupElement]) => SCollection.throwInvalidFlatmap(null) },
+        scalaFuncNew = { (x: Coll[GroupElement]) =>
+          // NOTE, v5.0 interpreter accepts any lambda in flatMap
+          x.flatMap({ (b: GroupElement) => b.getEncoded.indices })
         },
         "", // NOTE, the script for this test case cannot be compiled
         FuncValue(
@@ -9441,6 +9439,83 @@ class SigmaDslSpecification extends SigmaDslTesting
         allowNewToSucceed = true
         ),
         preGeneratedSamples = Some(mutable.WrappedArray.empty)
+      )
+    }
+  }
+
+  // related issue https://github.com/ScorexFoundation/sigmastate-interpreter/issues/464
+  property("nested loops: map inside fold") {
+    val keys = Colls.fromArray(Array(Coll[Byte](1, 2, 3, 4, 5)))
+    val initial = Coll[Byte](0, 0, 0, 0, 0)
+    val cases =  Seq(
+      (keys, initial) -> Expected(Success(Coll[Byte](1, 2, 3, 4, 5)), cost = 46522, expectedDetails = CostDetails.ZeroCost, 1821)
+    )
+    val scalaFunc = { (x: (Coll[Coll[Byte]], Coll[Byte])) =>
+      x._1.foldLeft(x._2, { (a: (Coll[Byte], Coll[Byte])) =>
+        a._1.zip(a._2).map({ (c: (Byte, Byte)) => (c._1 + c._2).toByte })
+      })
+    }
+    val script =
+      """{
+       | (x: (Coll[Coll[Byte]], Coll[Byte])) =>
+       |  x._1.fold(x._2, { (a: Coll[Byte], b: Coll[Byte]) =>
+       |    a.zip(b).map({ (c: (Byte, Byte)) => (c._1 + c._2).toByte })
+       |  })
+       |}""".stripMargin
+    if (lowerMethodCallsInTests) {
+      verifyCases(cases,
+        existingFeature(scalaFunc, script,
+          FuncValue(
+            Array((1, SPair(SByteArray2, SByteArray))),
+            Fold(
+              SelectField.typed[Value[SCollection[SCollection[SByte.type]]]](
+                ValUse(1, SPair(SByteArray2, SByteArray)),
+                1.toByte
+              ),
+              SelectField.typed[Value[SCollection[SByte.type]]](
+                ValUse(1, SPair(SByteArray2, SByteArray)),
+                2.toByte
+              ),
+              FuncValue(
+                Array((3, SPair(SByteArray, SByteArray))),
+                MapCollection(
+                  MethodCall.typed[Value[SCollection[STuple]]](
+                    SelectField.typed[Value[SCollection[SByte.type]]](
+                      ValUse(3, SPair(SByteArray, SByteArray)),
+                      1.toByte
+                    ),
+                    SCollection.getMethodByName("zip").withConcreteTypes(
+                      Map(STypeVar("IV") -> SByte, STypeVar("OV") -> SByte)
+                    ),
+                    Vector(
+                      SelectField.typed[Value[SCollection[SByte.type]]](
+                        ValUse(3, SPair(SByteArray, SByteArray)),
+                        2.toByte
+                      )
+                    ),
+                    Map()
+                  ),
+                  FuncValue(
+                    Array((5, SPair(SByte, SByte))),
+                    ArithOp(
+                      SelectField.typed[Value[SByte.type]](ValUse(5, SPair(SByte, SByte)), 1.toByte),
+                      SelectField.typed[Value[SByte.type]](ValUse(5, SPair(SByte, SByte)), 2.toByte),
+                      OpCode @@ (-102.toByte)
+                    )
+                  )
+                )
+              )
+            )
+          )
+        ),
+        preGeneratedSamples = Some(Seq.empty)
+      )
+    } else {
+      assertExceptionThrown(
+        verifyCases(cases,
+          existingFeature(scalaFunc, script)
+        ),
+        rootCauseLike[CosterException]("Don't know how to evalNode(Lambda(List(),Vector((a,Coll[SByte$]), ")
       )
     }
   }
