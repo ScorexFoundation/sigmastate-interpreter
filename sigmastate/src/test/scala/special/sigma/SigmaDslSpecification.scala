@@ -6016,39 +6016,36 @@ class SigmaDslSpecification extends SigmaDslTesting
   }
 
   property("xorOf equivalence") {
+    def costDetails(i: Int) = TracedCost(traceBase :+ SeqCostItem(CompanionDesc(XorOf), PerItemCost(JitCost(20), JitCost(5), 32), i))
     verifyCases(
       {
-        def successNew[T](v: T, c: Int, newV: T, newC: Int) = Expected(
+        def successNew[T](v: T, c: Int, newV: T, cd: CostDetails) = Expected(
           value = Success(v),
           cost = c,
           expectedDetails = CostDetails.ZeroCost,
-          newCost = newC,
-          newVersionedResults = Seq(
-            0 -> (ExpectedResult(Success(newV), Some(newC)) -> None),
-            1 -> (ExpectedResult(Success(newV), Some(newC)) -> None),
-            2 -> (ExpectedResult(Success(newV), Some(newC)) -> None)
-          ))
-        val newCost = 1786
+          newCost = 1786,
+          newVersionedResults = Seq(0, 1, 2).map(i => i -> (ExpectedResult(Success(newV), Some(1786)) -> Some(cd)))
+        )
         Seq(
-          (Coll[Boolean](), successNew(false, 37061, newV = false,  newCost)),
-          (Coll[Boolean](false), successNew(false, 37071, newV = false, newCost)),
-          (Coll[Boolean](true), successNew(false, 37071, newV = true, newCost)),
-          (Coll[Boolean](false, false), successNew(false, 37081, newV = false, newCost)),
-          (Coll[Boolean](false, true), successNew(true, 37081, newV = true, newCost)),
-          (Coll[Boolean](true, false), successNew(true, 37081, newV = true, newCost)),
-          (Coll[Boolean](true, true), successNew(false, 37081, newV = false, newCost)),
-          (Coll[Boolean](false, false, false), successNew(false, 37091, newV = false, newCost)),
-          (Coll[Boolean](false, false, true), successNew(true, 37091, newV = true, newCost)),
-          (Coll[Boolean](false, true, false), successNew(true, 37091, newV = true, newCost)),
-          (Coll[Boolean](false, true, true), successNew(true, 37091, newV = false, newCost)),
-          (Coll[Boolean](true, false, false), successNew(true, 37091, newV = true, newCost)),
-          (Coll[Boolean](true, false, true), successNew(true, 37091, newV = false,  newCost)),
-          (Coll[Boolean](true, true, false), successNew(true, 37091, newV = false,  newCost)),
-          (Coll[Boolean](true, true, true), successNew(false, 37091, newV = true,  newCost)),
-          (Coll[Boolean](false, false, false, false), successNew(false, 37101, newV = false,  newCost)),
-          (Coll[Boolean](false, false, false, true), successNew(true, 37101, newV = true,  newCost)),
-          (Coll[Boolean](false, false, true, false), successNew(true, 37101, newV = true,  newCost)),
-          (Coll[Boolean](false, false, true, true), successNew(true, 37101, newV = false,  newCost))
+          (Coll[Boolean](), successNew(false, 37061, newV = false, costDetails(0))),
+          (Coll[Boolean](false), successNew(false, 37071, newV = false, costDetails(1))),
+          (Coll[Boolean](true), successNew(false, 37071, newV = true, costDetails(1))),
+          (Coll[Boolean](false, false), successNew(false, 37081, newV = false, costDetails(2))),
+          (Coll[Boolean](false, true), successNew(true, 37081, newV = true, costDetails(2))),
+          (Coll[Boolean](true, false), successNew(true, 37081, newV = true, costDetails(2))),
+          (Coll[Boolean](true, true), successNew(false, 37081, newV = false, costDetails(2))),
+          (Coll[Boolean](false, false, false), successNew(false, 37091, newV = false, costDetails(3))),
+          (Coll[Boolean](false, false, true), successNew(true, 37091, newV = true, costDetails(3))),
+          (Coll[Boolean](false, true, false), successNew(true, 37091, newV = true, costDetails(3))),
+          (Coll[Boolean](false, true, true), successNew(true, 37091, newV = false, costDetails(3))),
+          (Coll[Boolean](true, false, false), successNew(true, 37091, newV = true, costDetails(3))),
+          (Coll[Boolean](true, false, true), successNew(true, 37091, newV = false, costDetails(3))),
+          (Coll[Boolean](true, true, false), successNew(true, 37091, newV = false, costDetails(3))),
+          (Coll[Boolean](true, true, true), successNew(false, 37091, newV = true, costDetails(3))),
+          (Coll[Boolean](false, false, false, false), successNew(false, 37101, newV = false, costDetails(4))),
+          (Coll[Boolean](false, false, false, true), successNew(true, 37101, newV = true, costDetails(4))),
+          (Coll[Boolean](false, false, true, false), successNew(true, 37101, newV = true, costDetails(4))),
+          (Coll[Boolean](false, false, true, true), successNew(true, 37101, newV = false, costDetails(4)))
         )
       },
       changedFeature(
