@@ -6261,35 +6261,35 @@ class SigmaDslSpecification extends SigmaDslTesting
 
   property("Global.xor equivalence") {
     if (lowerMethodCallsInTests) {
-      val costDetails = TracedCost(
+      def costDetails(i: Int) = TracedCost(
         traceBase ++ Array(
           FixedCostItem(SelectField),
           FixedCostItem(ValUse),
           FixedCostItem(SelectField),
-          SeqCostItem(CompanionDesc(Xor), PerItemCost(JitCost(10), JitCost(2), 128), 1)
+          SeqCostItem(CompanionDesc(Xor), PerItemCost(JitCost(10), JitCost(2), 128), i)
         )
       )
       verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 36903)
+        def success[T](v: T, cd: CostDetails) = Expected(Success(v), 36903, cd, 1789)
         Seq(
-          ((Helpers.decodeBytes(""), Helpers.decodeBytes("")), success(Helpers.decodeBytes(""))),
-          ((Helpers.decodeBytes("01"), Helpers.decodeBytes("01")), success(Helpers.decodeBytes("00"))),
-          ((Helpers.decodeBytes("0100"), Helpers.decodeBytes("0101")), success(Helpers.decodeBytes("0001"))),
-          ((Helpers.decodeBytes("01"), Helpers.decodeBytes("0101")), success(Helpers.decodeBytes("00"))),
+          ((Helpers.decodeBytes(""), Helpers.decodeBytes("")), success(Helpers.decodeBytes(""), costDetails(0))),
+          ((Helpers.decodeBytes("01"), Helpers.decodeBytes("01")), success(Helpers.decodeBytes("00"), costDetails(1))),
+          ((Helpers.decodeBytes("0100"), Helpers.decodeBytes("0101")), success(Helpers.decodeBytes("0001"), costDetails(2))),
+          ((Helpers.decodeBytes("01"), Helpers.decodeBytes("0101")), success(Helpers.decodeBytes("00"), costDetails(1))),
           ((Helpers.decodeBytes("0100"), Helpers.decodeBytes("01")) ->
             Expected(Failure(new ArrayIndexOutOfBoundsException("1")),
               cost = 0,
               expectedDetails = CostDetails.ZeroCost,
               newCost = 1789,
               newVersionedResults =  {
-                val res = (ExpectedResult(Success(Helpers.decodeBytes("00")), Some(1789)), Some(costDetails))
+                val res = (ExpectedResult(Success(Helpers.decodeBytes("00")), Some(1789)), Some(costDetails(1)))
                 Seq(0, 1, 2).map(version => version -> res)
               }
             )),
           ((Helpers.decodeBytes("800136fe89afff802acea67128a0ff007fffe3498c8001806080012b"),
               Helpers.decodeBytes("648018010a5d5800f5b400a580e7b4809b0cd273ff1230bfa800017f7fdb002749b3ac2b86ff")),
-              success(Helpers.decodeBytes("e4812eff83f2a780df7aa6d4a8474b80e4f3313a7392313fc8800054")))
+              success(Helpers.decodeBytes("e4812eff83f2a780df7aa6d4a8474b80e4f3313a7392313fc8800054"), costDetails(28)))
         )
       },
       changedFeature(
