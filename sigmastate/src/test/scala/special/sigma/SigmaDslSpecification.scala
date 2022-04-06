@@ -8720,9 +8720,23 @@ class SigmaDslSpecification extends SigmaDslTesting
   property("Option fold workaround method") {
     val costDetails1 = TracedCost(
       traceBase ++ Array(
-        FixedCostItem(MethodCall),
+        FixedCostItem(OptionIsDefined),
+        FixedCostItem(If),
+        FixedCostItem(Constant)
+      )
+    )
+    val costDetails2 = TracedCost(
+      traceBase ++ Array(
+        FixedCostItem(OptionIsDefined),
+        FixedCostItem(If),
+        FixedCostItem(Apply),
         FixedCostItem(FuncValue),
-        FixedCostItem(SOption.FilterMethod, FixedCost(JitCost(20)))
+        FixedCostItem(ValUse),
+        FixedCostItem(OptionGet),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(Constant),
+        TypeBasedCostItem(ArithOp.Plus, SLong)
       )
     )
     val n = ExactNumeric.LongIsExactNumeric
@@ -8734,11 +8748,11 @@ class SigmaDslSpecification extends SigmaDslTesting
             expectedDetails = CostDetails.ZeroCost,
             newCost = 1786,
             newVersionedResults = Seq(
-              2 -> (ExpectedResult(Success(5L), Some(1786)) -> None)
+              2 -> (ExpectedResult(Success(5L), Some(1786)) -> Some(costDetails1))
             )
           )),
         (Some(0L) -> Expected(Success(1L), cost = 39012,
-          expectedDetails = CostDetails.ZeroCost,
+          expectedDetails = costDetails2,
           expectedNewCost = 1794)),
         (Some(Long.MaxValue) -> Expected(new ArithmeticException("long overflow")))
       ),
