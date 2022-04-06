@@ -752,7 +752,27 @@ class SigmaDslTesting extends PropSpec
                             expected: Expected[B],
                             printTestCases: Boolean,
                             failOnTestVectors: Boolean): Unit = {
-      checkEquality(input, printTestCases)
+      val funcRes = checkEquality(input, printTestCases)
+      val newRes = expected.newResults(ergoTreeVersionInTests)
+      val expectedTrace = newRes._2.fold(Seq.empty[CostItem])(_.trace)
+      println(s"expected trace: $expectedTrace")
+      if (expectedTrace.isEmpty) {
+        // new cost expectation is missing, print out actual cost results
+        if (evalSettings.printTestVectors) {
+          funcRes.foreach { case (_, newCost) =>
+            printCostDetails(script, newCost)
+          }
+        }
+      }
+      else {
+        // new cost expectation is specified, compare it with the actual result
+        funcRes.foreach { case (_, newCost) =>
+          if (newCost.trace != expectedTrace) {
+            printCostDetails(script, newCost)
+            newCost.trace shouldBe expectedTrace
+          }
+        }
+      }
       checkVerify(input, expected)
     }
   }
