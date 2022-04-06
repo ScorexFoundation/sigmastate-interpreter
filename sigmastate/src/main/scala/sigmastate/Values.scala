@@ -998,7 +998,7 @@ object Values {
       Colls.fromArray(is)
     }
   }
-  object ConcreteCollection extends ValueCompanion {
+  object ConcreteCollection extends FixedCostValueCompanion {
     override def opCode: OpCode = ConcreteCollectionCode
     /** Cost of: allocating new collection
       * @see ConcreteCollection_PerItem */

@@ -9278,10 +9278,21 @@ class SigmaDslSpecification extends SigmaDslTesting
       ErgoTree.ConstantSegregationHeader,
       Vector(IntConstant(10)),
       BoolToSigmaProp(EQ(ConstantPlaceholder(0, SInt), IntConstant(20))))
-    
+    def costDetails(i: Int) = TracedCost(
+      traceBase ++ Array(
+        FixedCostItem(SelectField),
+        FixedCostItem(ConcreteCollection),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        FixedCostItem(ConcreteCollection),
+        FixedCostItem(Constant),
+        FixedCostItem(BoolToSigmaProp),
+        SeqCostItem(CompanionDesc(SubstConstants), PerItemCost(JitCost(100), JitCost(100), 1), i)
+      )
+    )
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 37694)
+        def success[T](v: T, cd: CostDetails, cost: Int) = Expected(Success(v), 37694, cd, cost)
         Seq(
           (Helpers.decodeBytes(""), 0) -> Expected(new java.nio.BufferUnderflowException()),
 
@@ -9293,7 +9304,7 @@ class SigmaDslSpecification extends SigmaDslTesting
             expectedDetails = CostDetails.ZeroCost,
             newCost = 1803,
             newVersionedResults = {
-              val res = (ExpectedResult(Success(Helpers.decodeBytes("0008d3")), Some(1803)) -> None)
+              val res = (ExpectedResult(Success(Helpers.decodeBytes("0008d3")), Some(1803)) -> Some(costDetails(0)))
               Seq(0, 1, 2).map(version => version -> res)
             }),
 
@@ -9304,16 +9315,16 @@ class SigmaDslSpecification extends SigmaDslTesting
             newCost = 1803,
             newVersionedResults = {
               // since the tree without constant segregation, substitution has no effect
-              val res = (ExpectedResult(Success(Helpers.decodeBytes("000008d3")), Some(1803)) -> None)
+              val res = (ExpectedResult(Success(Helpers.decodeBytes("000008d3")), Some(1803)) -> Some(costDetails(0)))
               Seq(0, 1, 2).map(version => version -> res)
             }),
           // tree with segregation flag, empty constants array
-          (Coll(t2.bytes:_*), 0) -> success(Helpers.decodeBytes("100008d3")),
-          (Helpers.decodeBytes("100008d3"), 0) -> success(Helpers.decodeBytes("100008d3")),
+          (Coll(t2.bytes:_*), 0) -> success(Helpers.decodeBytes("100008d3"), costDetails(0), 1803),
+          (Helpers.decodeBytes("100008d3"), 0) -> success(Helpers.decodeBytes("100008d3"), costDetails(0), 1803),
           // tree with one segregated constant
-          (Coll(t3.bytes:_*), 0) -> success(Helpers.decodeBytes("100108d27300")),
-          (Helpers.decodeBytes("100108d37300"), 0) -> success(Helpers.decodeBytes("100108d27300")),
-          (Coll(t3.bytes:_*), 1) -> success(Helpers.decodeBytes("100108d37300")),
+          (Coll(t3.bytes:_*), 0) -> success(Helpers.decodeBytes("100108d27300"), costDetails(1), 1813),
+          (Helpers.decodeBytes("100108d37300"), 0) -> success(Helpers.decodeBytes("100108d27300"), costDetails(1), 1813),
+          (Coll(t3.bytes:_*), 1) -> success(Helpers.decodeBytes("100108d37300"), costDetails(1), 1813),
           (Coll(t4.bytes:_*), 0) -> Expected(new IllegalArgumentException("requirement failed: expected new constant to have the same SInt$ tpe, got SSigmaProp"))
         )
       },
