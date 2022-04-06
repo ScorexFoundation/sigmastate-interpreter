@@ -4861,6 +4861,12 @@ class SigmaDslSpecification extends SigmaDslTesting
         )),
       preGeneratedSamples = Some(samples))
 
+    val selfCostDetails = TracedCost(
+      traceBase ++ Array(
+        FixedCostItem(PropertyCall),
+        FixedCostItem(SContext.selfBoxIndexMethod, FixedCost(JitCost(20)))
+      )
+    )
     verifyCases(
       Seq(
         (ctx, Expected(
@@ -4869,7 +4875,7 @@ class SigmaDslSpecification extends SigmaDslTesting
           expectedDetails = CostDetails.ZeroCost,
           newCost = 1786,
           newVersionedResults = {
-            val res = (ExpectedResult(Success(0), Some(1786)) -> None)
+            val res = (ExpectedResult(Success(0), Some(1786)) -> Some(selfCostDetails))
             Seq(0, 1, 2).map(version => version -> res)
           }))
       ),
