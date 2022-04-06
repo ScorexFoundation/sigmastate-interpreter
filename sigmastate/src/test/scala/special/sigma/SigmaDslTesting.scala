@@ -753,6 +753,9 @@ class SigmaDslTesting extends PropSpec
                             printTestCases: Boolean,
                             failOnTestVectors: Boolean): Unit = {
       val funcRes = checkEquality(input, printTestCases)
+      // TODO mainnet v5: How to handle different results (for features that changed behaviour)
+      // uncomment to see failing tests
+      // checkResult(funcRes.map(_._1), expected.value, failOnTestVectors)
       val newRes = expected.newResults(ergoTreeVersionInTests)
       val expectedTrace = newRes._2.fold(Seq.empty[CostItem])(_.trace)
       if (expectedTrace.isEmpty) {
