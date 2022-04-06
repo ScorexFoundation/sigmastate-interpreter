@@ -9323,6 +9323,31 @@ class SigmaDslSpecification extends SigmaDslTesting
    */
   property("Random headers access and comparison (originaly from spam tests)") {
     val (_, _, _, ctx, _, _) = contextData()
+    val costDetails = TracedCost(
+      Array(
+        FixedCostItem(Apply),
+        FixedCostItem(FuncValue),
+        FixedCostItem(GetVar),
+        FixedCostItem(OptionGet),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+        FixedCostItem(ValUse),
+        FixedCostItem(PropertyCall),
+        FixedCostItem(SContext.headersMethod, FixedCost(JitCost(15))),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(PropertyCall),
+        SeqCostItem(MethodDesc(SCollection.IndicesMethod), PerItemCost(JitCost(20), JitCost(2), 16), 1),
+        FixedCostItem(Constant),
+        FixedCostItem(ValUse),
+        FixedCostItem(SizeOf),
+        FixedCostItem(Constant),
+        TypeBasedCostItem(ArithOp.Minus, SInt),
+        SeqCostItem(CompanionDesc(Slice), PerItemCost(JitCost(10), JitCost(2), 100), 0),
+        FixedCostItem(FuncValue),
+        SeqCostItem(CompanionDesc(ForAll), PerItemCost(JitCost(3), JitCost(1), 10), 0)
+      )
+    )
 
     if (lowerMethodCallsInTests) {
       verifyCases(
@@ -9332,11 +9357,7 @@ class SigmaDslSpecification extends SigmaDslTesting
             cost = 37694,
             expectedDetails = CostDetails.ZeroCost,
             newCost = 1796,
-            newVersionedResults = Seq(
-              0 -> (ExpectedResult(Success(true), Some(1796)) -> None),
-              1 -> (ExpectedResult(Success(true), Some(1796)) -> None),
-              2 -> (ExpectedResult(Success(true), Some(1796)) -> None)
-            )
+            newVersionedResults = (0 to 2).map(i => i -> (ExpectedResult(Success(true), Some(1796)) -> Some(costDetails)))
           )
         ),
         changedFeature(
