@@ -6259,6 +6259,14 @@ class SigmaDslSpecification extends SigmaDslTesting
 
   property("Global.xor equivalence") {
     if (lowerMethodCallsInTests) {
+      val costDetails = TracedCost(
+        traceBase ++ Array(
+          FixedCostItem(SelectField),
+          FixedCostItem(ValUse),
+          FixedCostItem(SelectField),
+          SeqCostItem(CompanionDesc(Xor), PerItemCost(JitCost(10), JitCost(2), 128), 1)
+        )
+      )
       verifyCases(
       {
         def success[T](v: T) = Expected(Success(v), 36903)
@@ -6273,7 +6281,7 @@ class SigmaDslSpecification extends SigmaDslTesting
               expectedDetails = CostDetails.ZeroCost,
               newCost = 1789,
               newVersionedResults =  {
-                val res = (ExpectedResult(Success(Helpers.decodeBytes("00")), Some(1789)), None)
+                val res = (ExpectedResult(Success(Helpers.decodeBytes("00")), Some(1789)), Some(costDetails))
                 Seq(0, 1, 2).map(version => version -> res)
               }
             )),
