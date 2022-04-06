@@ -2755,15 +2755,15 @@ class SigmaDslSpecification extends SigmaDslTesting
   }
 
   property("GroupElement.exp equivalence") {
-    val cases = {
-      val costDetails = TracedCost(
-        traceBase ++ Array(
-          FixedCostItem(SelectField),
-          FixedCostItem(ValUse),
-          FixedCostItem(SelectField),
-          FixedCostItem(Exponentiate)
-        )
+    val costDetails = TracedCost(
+      traceBase ++ Array(
+        FixedCostItem(SelectField),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        FixedCostItem(Exponentiate)
       )
+    )
+    val cases = {  
       def success[T](v: T) = Expected(Success(v), 41484, costDetails, 1893)
       Seq(
         ((ge1, CBigInt(new BigInteger("-25c80b560dd7844e2efd10f80f7ee57d", 16))),
@@ -2781,7 +2781,8 @@ class SigmaDslSpecification extends SigmaDslTesting
     if (lowerMethodCallsInTests) {
       verifyCases(cases,
         existingFeature(
-          scalaFunc, script,
+          scalaFunc,
+          script,
           FuncValue(
             Vector((1, STuple(Vector(SGroupElement, SBigInt)))),
             Exponentiate(
@@ -2813,9 +2814,10 @@ class SigmaDslSpecification extends SigmaDslTesting
                     Some(999)
                   )
                   Seq( // expected result for each version
-                    0 -> ( res -> None ),
-                    1 -> ( res -> None ),
-                    2 -> ( res -> None )
+                    // TODO mainnet v5: costDetails comparison is ignored
+                    0 -> ( res -> Some(costDetails) ),
+                    1 -> ( res -> Some(TracedCost(traceBase)) ),
+                    2 -> ( res -> Some(TracedCost(traceBase)) )
                   )
                 }
               )
@@ -2904,8 +2906,9 @@ class SigmaDslSpecification extends SigmaDslTesting
                 Success(Helpers.decodeGroupElement("02bc48937b4a66f249a32dfb4d2efd0743dc88d46d770b8c5d39fd03325ba211df")),
                 Some(139)
               )
+              // TODO mainnet v5: costDetails are not compared, is that ok?
               Seq( // expected result for each version
-                0 -> ( res -> None ),
+                0 -> ( res -> Some(TracedCost(traceBase)) ),
                 1 -> ( res -> None ),
                 2 -> ( res -> None )
               )
@@ -4871,7 +4874,6 @@ class SigmaDslSpecification extends SigmaDslTesting
       Seq(
         (ctx, Expected(
           Success(-1), cost = 36318,
-          // TODO mainnet v5.0: Change to concrete details does not change test result
           expectedDetails = CostDetails.ZeroCost,
           newCost = 1786,
           newVersionedResults = {
@@ -6323,8 +6325,9 @@ class SigmaDslSpecification extends SigmaDslTesting
                 Success(Helpers.decodeBytes("00")),
                 Some(116)
               )
+              // TODO mainnet v5: costDetails are not compared, is that ok?
               Seq( // expected result for each version
-                0 -> ( res -> None ),
+                0 -> ( res -> Some(TracedCost(traceBase)) ),
                 1 -> ( res -> None ),
                 2 -> ( res -> None )
               )
@@ -7993,8 +7996,9 @@ class SigmaDslSpecification extends SigmaDslTesting
                 newVersionedResults = {
                   // in v5.0 MethodCall ErgoTree node is allowed
                   val res = ExpectedResult( Success(1), Some(166) )
+                  // TODO mainnet v5: costDetails are not compared, is that ok?
                   Seq( // expected result for each version
-                    0 -> ( res -> None ),
+                    0 -> ( res -> Some(TracedCost(traceBase)) ),
                     1 -> ( res -> None ),
                     2 -> ( res -> None )
                   )

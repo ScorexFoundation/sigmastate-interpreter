@@ -755,7 +755,6 @@ class SigmaDslTesting extends PropSpec
       val funcRes = checkEquality(input, printTestCases)
       val newRes = expected.newResults(ergoTreeVersionInTests)
       val expectedTrace = newRes._2.fold(Seq.empty[CostItem])(_.trace)
-      println(s"expected trace: $expectedTrace")
       if (expectedTrace.isEmpty) {
         // new cost expectation is missing, print out actual cost results
         if (evalSettings.printTestVectors) {
