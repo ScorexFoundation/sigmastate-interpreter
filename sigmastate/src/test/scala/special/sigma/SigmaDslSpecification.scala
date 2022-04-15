@@ -5092,7 +5092,11 @@ class SigmaDslSpecification extends SigmaDslTesting
 
     verifyCases(
       Seq(
-        ctx -> Expected(expectedError)
+        ctx -> Expected(Failure(expectedError), 0, CostDetails.ZeroCost, 1813,
+          newVersionedResults = {
+            Seq.tabulate(3)(v => v -> (ExpectedResult(Success(true), Some(1813)) -> None))
+          }
+        )
       ),
       changedFeature(
         scalaFunc = { (x: Context) =>
