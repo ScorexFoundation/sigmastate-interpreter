@@ -3277,8 +3277,8 @@ class SigmaDslSpecification extends SigmaDslTesting
       val tree = SigmaDsl.avlTree(AvlTreeFlags.ReadOnly.serializeToByte, digest, 32, None)
 
       val input = (tree, (keys, proof))
-      // TODO mainnet v5.0: checkExpected is ignoring newCost/costDetails. Is that correct behaviour?
-      getMany.checkExpected(input, Expected(Success(expRes), 0))//, TracedCost(traceBase), 1700))
+      // TODO mainnet v5.0: use stable (not random) input
+      getMany.checkExpected(input, Expected(Success(expRes), 0/*, costTrace, 1700*/))
     }
 
     val (keysArr, valuesArr, _, avlProver) = sampleAvlProver
@@ -3303,7 +3303,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         contains.checkExpected(input, success(okContains))
         get.checkExpected(input, success(valueOpt))
 
-        // TODO mainnet v5.0: Cyclic newCost here (1823/1825), also costDetails are ignored
+        // TODO mainnet v5.0: use stable (not random) input
         contains.checkVerify(input, Expected(Success(okContains), 37850))//, TracedCost(traceBase), 1823))
         get.checkVerify(input, Expected(value = Success(valueOpt), cost = 38372))
       }

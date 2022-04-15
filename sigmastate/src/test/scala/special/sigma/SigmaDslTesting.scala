@@ -567,10 +567,16 @@ class SigmaDslTesting extends PropSpec
 
       if (!(newImpl eq oldImpl)) {
         // check the new implementation with Scala semantic
-        val (newRes, _) = VersionContext.withVersions(activatedVersionInTests, ergoTreeVersionInTests) {
+        val (newRes, newDetails) = VersionContext.withVersions(activatedVersionInTests, ergoTreeVersionInTests) {
           checkEq(scalaFunc)(newF)(input).get
         }
         newRes shouldBe expected.value.get
+        expected.newResults(ergoTreeVersionInTests)._2.foreach { expDetails =>
+          if (newDetails.trace != expDetails.trace) {
+            printCostDetails(script, newDetails)
+            newDetails.trace shouldBe expDetails.trace
+          }
+        }
       }
     }
 
@@ -737,13 +743,12 @@ class SigmaDslTesting extends PropSpec
         }
         val newExpectedRes = expected.newResults(ergoTreeVersionInTests)
         newRes shouldBe newExpectedRes._1.value.get
-//        newExpectedRes._2.foreach(expDetails =>
-//          if (newDetails != expDetails) {
-//        printCostDetails(script, newCost)
-//        newCost.trace shouldBe expectedTrace
-
-        //          }
-//        )
+        newExpectedRes._2.foreach { expDetails =>
+          if (newDetails.trace != expDetails.trace) {
+            printCostDetails(script, newDetails)
+            newDetails.trace shouldBe expDetails.trace
+          }
+        }
       }
     }
 
