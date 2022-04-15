@@ -7030,8 +7030,17 @@ class SigmaDslSpecification extends SigmaDslTesting
       {
         def success[T](v: T, c: Int) = Expected(Success(v), c)
         Seq(
-          // TODO mainnet v5.0: different results - costDetails1(Copy) and cost 1793/1800 (problematic version 2/2 ?)
-          // Coll[GroupElement]() -> Expected(Success(Coll[Byte]()), 40133, CostDetails.ZeroCost, 1793),
+           Coll[GroupElement]() -> Expected(Success(Coll[Byte]()), 40133, CostDetails.ZeroCost, 1794,
+             newVersionedResults = {
+               val res = ExpectedResult(Success(Coll[Byte]()), Some(1793))
+               Seq.tabulate(3)(v =>
+                 v -> (res -> Some(TracedCost(traceBase ++ Array(
+                   FixedCostItem(MethodCall),
+                   FixedCostItem(FuncValue),
+                   SeqCostItem(MethodDesc(SCollection.FlatMapMethod), PerItemCost(JitCost(60), JitCost(10), 8), 0)
+                 ))))
+               )
+             }),
           Coll[GroupElement](
             Helpers.decodeGroupElement("02d65904820f8330218cf7318b3810d0c9ab9df86f1ee6100882683f23c0aee587"),
             Helpers.decodeGroupElement("0390e9daa9916f30d0bc61a8e381c6005edfb7938aee5bb4fc9e8a759c7748ffaa")) ->
