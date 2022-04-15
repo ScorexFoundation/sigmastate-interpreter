@@ -115,10 +115,17 @@ class SigmaDslSpecification extends SigmaDslTesting
     forAll(table) { (x, expectedRes) =>
       val res = f.checkEquality(x)
       val resValue = res.map(_._1)
-      val expected = expectedRes.newResults(ergoTreeVersionInTests)._1
+      val (expected, expDetailsOpt) = expectedRes.newResults(ergoTreeVersionInTests)
       checkResult(resValue, expected.value, failOnTestVectors = true)
-      if (res.isSuccess) {
-        res.get._2.cost shouldBe JitCost(expected.verificationCost.get)
+      res match {
+        case Success((value, details)) =>
+          details.cost shouldBe JitCost(expected.verificationCost.get)
+          expDetailsOpt.foreach(expDetails =>
+            if (details.trace != expDetails.trace) {
+              printCostDetails(f.script, details)
+              details.trace shouldBe expDetails.trace
+            }
+          )
       }
     }
   }
@@ -2813,11 +2820,19 @@ class SigmaDslSpecification extends SigmaDslTesting
                     Success(Helpers.decodeGroupElement("023a850181b7b73f92a5bbfa0bfc78f5bbb6ff00645ddde501037017e1a2251e2e")),
                     Some(999)
                   )
+                  val details = TracedCost(
+                    traceBase ++ Array(
+                      FixedCostItem(SelectField),
+                      FixedCostItem(MethodCall),
+                      FixedCostItem(ValUse),
+                      FixedCostItem(SelectField),
+                      FixedCostItem(SGroupElement.ExponentiateMethod, FixedCost(JitCost(900)))
+                    )
+                  )
                   Seq( // expected result for each version
-                    // TODO mainnet v5: costDetails comparison is ignored
-                    0 -> ( res -> Some(costDetails) ),
-                    1 -> ( res -> Some(TracedCost(traceBase)) ),
-                    2 -> ( res -> Some(TracedCost(traceBase)) )
+                    0 -> ( res -> Some(details) ),
+                    1 -> ( res -> Some(details) ),
+                    2 -> ( res -> Some(details) )
                   )
                 }
               )
@@ -2906,12 +2921,14 @@ class SigmaDslSpecification extends SigmaDslTesting
                 Success(Helpers.decodeGroupElement("02bc48937b4a66f249a32dfb4d2efd0743dc88d46d770b8c5d39fd03325ba211df")),
                 Some(139)
               )
-              // TODO mainnet v5: costDetails are not compared, is that ok?
-              Seq( // expected result for each version
-                0 -> ( res -> Some(TracedCost(traceBase)) ),
-                1 -> ( res -> None ),
-                2 -> ( res -> None )
-              )
+              val details = TracedCost(traceBase ++ Array(
+                FixedCostItem(SelectField),
+                FixedCostItem(MethodCall),
+                FixedCostItem(ValUse),
+                FixedCostItem(SelectField),
+                FixedCostItem(SGroupElement.MultiplyMethod, FixedCost(JitCost(40)))
+              ))
+              Seq.tabulate(3)(_ -> ( res -> Some(details) )) // expected result for each version
             }
           )
           )
@@ -6325,12 +6342,23 @@ class SigmaDslSpecification extends SigmaDslTesting
                 Success(Helpers.decodeBytes("00")),
                 Some(116)
               )
-              // TODO mainnet v5: costDetails are not compared, is that ok?
-              Seq( // expected result for each version
-                0 -> ( res -> Some(TracedCost(traceBase)) ),
-                1 -> ( res -> None ),
-                2 -> ( res -> None )
+              val details = TracedCost(
+                Array(
+                  FixedCostItem(Apply),
+                  FixedCostItem(FuncValue),
+                  FixedCostItem(GetVar),
+                  FixedCostItem(OptionGet),
+                  FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+                  FixedCostItem(Global),
+                  FixedCostItem(MethodCall),
+                  FixedCostItem(ValUse),
+                  FixedCostItem(SelectField),
+                  FixedCostItem(ValUse),
+                  FixedCostItem(SelectField),
+                  SeqCostItem(CompanionDesc(Xor), PerItemCost(JitCost(10), JitCost(2), 128), 1)
+                )
               )
+              Seq.tabulate(3)(v => v -> ( res -> Some(details) )) // expected result for each version
             }
           )
         )
@@ -7996,12 +8024,28 @@ class SigmaDslSpecification extends SigmaDslTesting
                 newVersionedResults = {
                   // in v5.0 MethodCall ErgoTree node is allowed
                   val res = ExpectedResult( Success(1), Some(166) )
-                  // TODO mainnet v5: costDetails are not compared, is that ok?
-                  Seq( // expected result for each version
-                    0 -> ( res -> Some(TracedCost(traceBase)) ),
-                    1 -> ( res -> None ),
-                    2 -> ( res -> None )
+                  val details = TracedCost(
+                    Array(
+                      FixedCostItem(Apply),
+                      FixedCostItem(FuncValue),
+                      FixedCostItem(GetVar),
+                      FixedCostItem(OptionGet),
+                      FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+                      SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+                      FixedCostItem(ValUse),
+                      FixedCostItem(SelectField),
+                      FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+                      FixedCostItem(ValUse),
+                      FixedCostItem(SelectField),
+                      FixedCostItem(MethodCall),
+                      FixedCostItem(ValUse),
+                      FixedCostItem(SelectField),
+                      FixedCostItem(ValUse),
+                      FixedCostItem(SelectField),
+                      FixedCostItem(SCollection.GetOrElseMethod, FixedCost(JitCost(30)))
+                    )
                   )
+                  Seq.tabulate(3)(v => v -> ( res -> Some(details) )) // expected result for each version
                 }
               )
             )
