@@ -8840,11 +8840,11 @@ class SigmaDslSpecification extends SigmaDslTesting
             cost = 0,
             expectedDetails = CostDetails.ZeroCost,
             newCost = 1786,
-            newVersionedResults = Seq(
-              2 -> (ExpectedResult(Success(5L), Some(1786)) -> Some(costDetails1))
-            )
+            newVersionedResults = Seq.tabulate(3)(v => v -> (ExpectedResult(Success(5L), Some(1786)) -> Some(costDetails1)))
           )),
-        (Some(0L) -> Expected(Success(1L), cost = 39012,
+        (Some(0L) -> Expected(
+          Success(1L),
+          cost = 39012,
           expectedDetails = costDetails2,
           expectedNewCost = 1794)),
         (Some(Long.MaxValue) -> Expected(new ArithmeticException("long overflow")))
