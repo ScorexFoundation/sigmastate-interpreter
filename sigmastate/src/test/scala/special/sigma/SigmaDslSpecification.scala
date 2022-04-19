@@ -7064,6 +7064,25 @@ class SigmaDslSpecification extends SigmaDslTesting
         SeqCostItem(MethodDesc(SCollection.FlatMapMethod), PerItemCost(JitCost(60), JitCost(10), 8), 99)
       )
     )
+    val costDetails4 = TracedCost(
+      traceBase ++ Array(
+        FixedCostItem(MethodCall),
+        FixedCostItem(FuncValue),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(PropertyCall),
+        FixedCostItem(SGroupElement.GetEncodedMethod, FixedCost(JitCost(250))),
+        FixedCostItem(PropertyCall),
+        SeqCostItem(MethodDesc(SCollection.IndicesMethod), PerItemCost(JitCost(20), JitCost(2), 16), 33),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(PropertyCall),
+        FixedCostItem(SGroupElement.GetEncodedMethod, FixedCost(JitCost(250))),
+        FixedCostItem(PropertyCall),
+        SeqCostItem(MethodDesc(SCollection.IndicesMethod), PerItemCost(JitCost(20), JitCost(2), 16), 33),
+        SeqCostItem(MethodDesc(SCollection.FlatMapMethod), PerItemCost(JitCost(60), JitCost(10), 8), 66)
+      )
+    )
     
     verifyCases(
       {
@@ -7130,8 +7149,7 @@ class SigmaDslSpecification extends SigmaDslTesting
                          val is = Coll((0 to 32):_*)
                          is.append(is)
                        }),
-                       // TODO mainnet v5.0: Ignored cost details comparison.
-                       verificationCost = Some(817)) -> Some(TracedCost(traceBase)))
+                       verificationCost = Some(817)) -> Some(costDetails4))
               ))
       )
       val f = changedFeature(
@@ -7173,18 +7191,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         allowDifferentErrors = true
       )
 
-      val table = Table(("x", "y"), cases:_*)
-      forAll(table) { (x, expectedRes) =>
-        val res = f.checkEquality(x)
-        val resValue = res.map(_._1)
-        if (activatedVersionInTests >= VersionContext.JitActivationVersion) {
-          val expected = expectedRes.newResults(ergoTreeVersionInTests)._1
-          checkResult(resValue, expected.value, failOnTestVectors = true)
-          if (res.isSuccess) {
-            res.get._2.cost shouldBe JitCost(expected.verificationCost.get)
-          }
-        }
-      }
+      testCases(cases, f)
     }
 
     val f = existingFeature(
