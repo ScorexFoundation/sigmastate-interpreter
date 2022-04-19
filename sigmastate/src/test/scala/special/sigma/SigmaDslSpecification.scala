@@ -3262,13 +3262,26 @@ class SigmaDslSpecification extends SigmaDslTesting
         )
       ))
 
-    def success[T](v: T) = Expected(Success(v), 0)
-
-    { // getMany with a bunch of existing keys
-      val (keysArr, valuesArr, _, avlProver) = sampleAvlProver
-      val keys = Colls.fromArray(keysArr.slice(0, 20))
-      val expRes = Colls.fromArray(valuesArr.slice(0, 20).map(Option(_)))
-
+    {
+      val keysArr =
+        Array(
+          Colls.fromArray(Array[Byte](0,14,54,-1,-128,-61,-89,72,27,34,1,-1,62,-48,0,8,74,1,82,-48,-41,100,-66,64,127,45,1,-1,0,-128,-16,-57)),
+          Colls.fromArray(Array[Byte](127,-128,-1,127,-96,-1,-63,1,25,43,127,-122,127,-43,0,-1,-57,113,-6,1,1,0,15,1,-104,-1,-55,101,115,-94,-128,94)),
+          Colls.fromArray(Array[Byte](-60,-26,117,124,-92,104,106,-1,-1,-1,-29,121,-98,54,10,-105,127,13,-1,0,-90,0,-125,-13,-1,-79,-87,127,0,127,0,0)),
+          Colls.fromArray(Array[Byte](84,127,-44,-65,1,-77,39,-128,113,14,1,-128,127,48,-53,60,-5,-19,123,0,-128,127,-28,0,104,-1,0,1,-51,124,-78,67)),
+          Colls.fromArray(Array[Byte](12,56,-25,-128,1,-128,-128,70,19,37,0,-1,1,87,-20,-128,80,127,-66,-1,83,-1,111,0,-34,0,49,-77,1,0,61,-1))
+        )
+      val valuesArr =
+        Array(
+          Colls.fromArray(Array[Byte](-87,0,-102,88,-128,-54,66,1,-128,-16,0,1,-44,0,35,-32,-23,40,127,-97,49,-1,127,1,-84,115,127,61,-84,-63,-104,-9,-116,-26,9,-93,-128,0,11,127,0,-128,-1,-128,-1,127,-110,-128,0,0,90,-126,28,0,42,-71,-1,37,-26,0,124,-72,68,26,14)),
+          Colls.fromArray(Array[Byte](84,106,-48,-17,-1,44,127,-128,0,86,-1)),
+          Colls.fromArray(Array[Byte](127,-128,-60,1,118,-32,-72,-9,101,0,0,-68,-51,8,95,127)),
+          Colls.fromArray(Array[Byte](127,-88,127,-101,-128,77,-25,-72,-86,127,127,127,-88,0,-128)),
+          Colls.fromArray(Array[Byte](2,5,-128,127,46,0,1,127,-9,64,-13,0,19,-112,124,1,20,52,65,-31,-112,114,0,18,-1,-88,-128,118,-126,-1,0,112,119,-1,20,84,11,-23,113,-1,71,-77,127,11,1,-128,63,-23,0,127,-55,42,8,127,126,115,59,70,127,102,-109,-128,127,41,-128,127,127,15,1,127,80,-29,0,8,-127,-96,-1,37,106,76,0,-128,-128,-128,-102,52,0,-11,1,-1,71))
+        )
+      val (_, avlProver) = createAvlTreeAndProver(keysArr.zip(valuesArr):_*)
+      val keys = Colls.fromArray(keysArr)
+      val expRes = Colls.fromArray(valuesArr).map(Option(_))
       keys.foreach { key =>
         avlProver.performOneOperation(Lookup(ADKey @@ key.toArray))
       }
@@ -3277,8 +3290,34 @@ class SigmaDslSpecification extends SigmaDslTesting
       val tree = SigmaDsl.avlTree(AvlTreeFlags.ReadOnly.serializeToByte, digest, 32, None)
 
       val input = (tree, (keys, proof))
-      // TODO mainnet v5.0: use stable (not random) input
-      getMany.checkExpected(input, Expected(Success(expRes), 0/*, costTrace, 1700*/))
+      val costDetails = TracedCost(
+        Array(
+          FixedCostItem(Apply),
+          FixedCostItem(FuncValue),
+          FixedCostItem(GetVar),
+          FixedCostItem(OptionGet),
+          FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+          SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+          FixedCostItem(ValUse),
+          FixedCostItem(SelectField),
+          FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+          FixedCostItem(ValUse),
+          FixedCostItem(SelectField),
+          FixedCostItem(MethodCall),
+          FixedCostItem(ValUse),
+          FixedCostItem(SelectField),
+          FixedCostItem(ValUse),
+          FixedCostItem(SelectField),
+          SeqCostItem(NamedDesc("CreateAvlVerifier"), PerItemCost(JitCost(110), JitCost(20), 64), 456),
+          SeqCostItem(NamedDesc("LookupAvlTree"), PerItemCost(JitCost(40), JitCost(10), 1), 3),
+          SeqCostItem(NamedDesc("LookupAvlTree"), PerItemCost(JitCost(40), JitCost(10), 1), 3),
+          SeqCostItem(NamedDesc("LookupAvlTree"), PerItemCost(JitCost(40), JitCost(10), 1), 3),
+          SeqCostItem(NamedDesc("LookupAvlTree"), PerItemCost(JitCost(40), JitCost(10), 1), 3),
+          SeqCostItem(NamedDesc("LookupAvlTree"), PerItemCost(JitCost(40), JitCost(10), 1), 3)
+        )
+      )
+
+      getMany.checkExpected(input, Expected(Success(expRes), 38991, costDetails, 1865))
     }
 
     val key = Colls.fromArray(Array[Byte](-16,-128,99,86,1,-128,-36,-83,109,72,-124,-114,1,-32,15,127,-30,125,127,1,-102,-53,-53,-128,-107,0,64,8,1,127,22,1))
@@ -3287,22 +3326,45 @@ class SigmaDslSpecification extends SigmaDslTesting
     val otherKey = key.map(x => (-x).toByte) // any other different from key
 
     // Final cost is baseCost + additionalCost, baseCost is specified in test scenario below
-    val table = Table(("key", "contains", "valueOpt", "additionalCost"),
-      (key, true, Some(value), 2),
-      (otherKey, false, None, 0)
+    val table = Table(("key", "contains", "valueOpt", "additionalCost", "additionalCostDetails"),
+      (key, true, Some(value), 2, 23),
+      (otherKey, false, None, 0, 0)
     )
 
-    forAll(table) { (key, okContains, valueOpt, additionalCost) =>
+    forAll(table) { (key, okContains, valueOpt, additionalCost, additionalDetails) =>
       avlProver.performOneOperation(Lookup(ADKey @@ key.toArray))
       val proof = avlProver.generateProof().toColl
       val digest = avlProver.digest.toColl
       val tree = SigmaDsl.avlTree(AvlTreeFlags.ReadOnly.serializeToByte, digest, 32, None)
 
+      def costDetails(i: Int) = TracedCost(
+        Array(
+          FixedCostItem(Apply),
+          FixedCostItem(FuncValue),
+          FixedCostItem(GetVar),
+          FixedCostItem(OptionGet),
+          FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+          SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+          FixedCostItem(ValUse),
+          FixedCostItem(SelectField),
+          FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+          FixedCostItem(ValUse),
+          FixedCostItem(SelectField),
+          FixedCostItem(MethodCall),
+          FixedCostItem(ValUse),
+          FixedCostItem(SelectField),
+          FixedCostItem(ValUse),
+          FixedCostItem(SelectField),
+          SeqCostItem(NamedDesc("CreateAvlVerifier"), PerItemCost(JitCost(110), JitCost(20), 64), i),
+          SeqCostItem(NamedDesc("LookupAvlTree"), PerItemCost(JitCost(40), JitCost(10), 1), 1)
+        )
+      )
+
       // positive test
       {
         val input = (tree, (key, proof))
-        contains.checkExpected(input, success(okContains))
-        get.checkExpected(input, success(valueOpt))
+        contains.checkExpected(input, Expected(Success(okContains), 37850, costDetails(105 + additionalDetails), 1810))
+        get.checkExpected(input, Expected(Success(valueOpt), 38372, costDetails(105 + additionalDetails), 1810 + additionalCost))
 
         contains.checkVerify(input, Expected(Success(okContains), 37850, CostDetails.ZeroCost, 1810))
         get.checkVerify(input, Expected(value = Success(valueOpt), cost = 38372, CostDetails.ZeroCost, 1810 + additionalCost))
@@ -3313,7 +3375,7 @@ class SigmaDslSpecification extends SigmaDslTesting
 
       {
         val input = (tree, (keys, proof))
-        getMany.checkExpected(input, success(expRes))
+        getMany.checkExpected(input, Expected(Success(expRes), 38991, costDetails(105 + additionalDetails), 1811 + additionalCost))
         getMany.checkVerify(input, Expected(value = Success(expRes), cost = 38991, CostDetails.ZeroCost, 1811 + additionalCost))
       }
 

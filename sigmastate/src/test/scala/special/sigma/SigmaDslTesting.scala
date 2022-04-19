@@ -578,6 +578,7 @@ class SigmaDslTesting extends PropSpec
           }
         }
       }
+      checkVerify(input, expected)
     }
 
     override def testCase(input: A,
