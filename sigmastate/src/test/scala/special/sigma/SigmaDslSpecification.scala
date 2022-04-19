@@ -7014,6 +7014,13 @@ class SigmaDslSpecification extends SigmaDslTesting
     r <- Gen.choose(l, arr.length - 1) } yield (arr, (l, r))
 
   property("Coll flatMap method equivalence") {
+    val costDetails0 = TracedCost(
+      traceBase ++ Array(
+        FixedCostItem(MethodCall),
+        FixedCostItem(FuncValue),
+        SeqCostItem(MethodDesc(SCollection.FlatMapMethod), PerItemCost(JitCost(60), JitCost(10), 8), 0)
+      )
+    )
     val costDetails1 = TracedCost(
       traceBase ++ Array(
         FixedCostItem(MethodCall),
@@ -7023,26 +7030,50 @@ class SigmaDslSpecification extends SigmaDslTesting
         SeqCostItem(MethodDesc(SCollection.FlatMapMethod), PerItemCost(JitCost(60), JitCost(10), 8), 0)
       )
     )
-    val costDetails1Copy = TracedCost(
+    val costDetails2 = TracedCost(
       traceBase ++ Array(
         FixedCostItem(MethodCall),
         FixedCostItem(FuncValue),
-        SeqCostItem(MethodDesc(SCollection.FlatMapMethod), PerItemCost(JitCost(60), JitCost(10), 8), 0)
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(PropertyCall),
+        FixedCostItem(SGroupElement.GetEncodedMethod, FixedCost(JitCost(250))),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(PropertyCall),
+        FixedCostItem(SGroupElement.GetEncodedMethod, FixedCost(JitCost(250))),
+        SeqCostItem(MethodDesc(SCollection.FlatMapMethod), PerItemCost(JitCost(60), JitCost(10), 8), 66)
       )
     )
+    val costDetails3 = TracedCost(
+      traceBase ++ Array(
+        FixedCostItem(MethodCall),
+        FixedCostItem(FuncValue),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(PropertyCall),
+        FixedCostItem(SGroupElement.GetEncodedMethod, FixedCost(JitCost(250))),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(PropertyCall),
+        FixedCostItem(SGroupElement.GetEncodedMethod, FixedCost(JitCost(250))),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(PropertyCall),
+        FixedCostItem(SGroupElement.GetEncodedMethod, FixedCost(JitCost(250))),
+        SeqCostItem(MethodDesc(SCollection.FlatMapMethod), PerItemCost(JitCost(60), JitCost(10), 8), 99)
+      )
+    )
+    
     verifyCases(
       {
-        def success[T](v: T, c: Int) = Expected(Success(v), c)
+        def success[T](v: T, c: Int, cd: CostDetails, newCost: Int) = Expected(Success(v), c, cd, newCost)
         Seq(
            Coll[GroupElement]() -> Expected(Success(Coll[Byte]()), 40133, CostDetails.ZeroCost, 1794,
              newVersionedResults = {
                val res = ExpectedResult(Success(Coll[Byte]()), Some(1793))
                Seq.tabulate(3)(v =>
-                 v -> (res -> Some(TracedCost(traceBase ++ Array(
-                   FixedCostItem(MethodCall),
-                   FixedCostItem(FuncValue),
-                   SeqCostItem(MethodDesc(SCollection.FlatMapMethod), PerItemCost(JitCost(60), JitCost(10), 8), 0)
-                 ))))
+                 v -> (res -> Some(costDetails0))
                )
              }),
           Coll[GroupElement](
@@ -7050,14 +7081,14 @@ class SigmaDslSpecification extends SigmaDslTesting
             Helpers.decodeGroupElement("0390e9daa9916f30d0bc61a8e381c6005edfb7938aee5bb4fc9e8a759c7748ffaa")) ->
               success(Helpers.decodeBytes(
                 "02d65904820f8330218cf7318b3810d0c9ab9df86f1ee6100882683f23c0aee5870390e9daa9916f30d0bc61a8e381c6005edfb7938aee5bb4fc9e8a759c7748ffaa"
-              ), 40213),
+              ), 40213, costDetails2, 1854),
           Coll[GroupElement](
             Helpers.decodeGroupElement("02d65904820f8330218cf7318b3810d0c9ab9df86f1ee6100882683f23c0aee587"),
             Helpers.decodeGroupElement("0390e9daa9916f30d0bc61a8e381c6005edfb7938aee5bb4fc9e8a759c7748ffaa"),
             Helpers.decodeGroupElement("03bd839b969b02d218fd1192f2c80cbda9c6ce9c7ddb765f31b748f4666203df85")) ->
               success(Helpers.decodeBytes(
                 "02d65904820f8330218cf7318b3810d0c9ab9df86f1ee6100882683f23c0aee5870390e9daa9916f30d0bc61a8e381c6005edfb7938aee5bb4fc9e8a759c7748ffaa03bd839b969b02d218fd1192f2c80cbda9c6ce9c7ddb765f31b748f4666203df85"
-              ), 40253)
+              ), 40253, costDetails3, 1884)
         )
       },
       existingFeature(
@@ -7099,7 +7130,8 @@ class SigmaDslSpecification extends SigmaDslTesting
                          val is = Coll((0 to 32):_*)
                          is.append(is)
                        }),
-                       verificationCost = Some(817)) -> None)
+                       // TODO mainnet v5.0: Ignored cost details comparison.
+                       verificationCost = Some(817)) -> Some(TracedCost(traceBase)))
               ))
       )
       val f = changedFeature(
