@@ -1,6 +1,5 @@
 package sigmastate.utils
 
-import java.util
 import io.circe.Decoder
 import org.ergoplatform.settings.ErgoAlgos
 import sigmastate.eval.{Colls, SigmaDsl}
@@ -8,7 +7,8 @@ import sigmastate.interpreter.CryptoConstants.EcPointType
 import special.collection.Coll
 import special.sigma.GroupElement
 
-import java.util.concurrent.locks.{Lock, ReentrantLock}
+import java.util
+import java.util.concurrent.locks.Lock
 import scala.reflect.ClassTag
 import scala.util.{Either, Failure, Right, Success, Try}
 
