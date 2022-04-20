@@ -3768,11 +3768,66 @@ class SigmaDslSpecification extends SigmaDslTesting
         )
       ))
 
-    def success[T](v: T) = Expected(Success(v), 0)
+    val testTraceBase = Array(
+      FixedCostItem(Apply),
+      FixedCostItem(FuncValue),
+      FixedCostItem(GetVar),
+      FixedCostItem(OptionGet),
+      FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+      SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+      FixedCostItem(ValUse),
+      FixedCostItem(SelectField),
+      FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+      FixedCostItem(ValUse),
+      FixedCostItem(SelectField),
+      FixedCostItem(MethodCall),
+      FixedCostItem(ValUse),
+      FixedCostItem(SelectField),
+      FixedCostItem(ValUse),
+      FixedCostItem(SelectField),
+      FixedCostItem(SAvlTree.isRemoveAllowedMethod, FixedCost(JitCost(15)))
+    )
+    val costDetails1 = TracedCost(
+      testTraceBase ++ Array(
+        SeqCostItem(NamedDesc("CreateAvlVerifier"), PerItemCost(JitCost(110), JitCost(20), 64), 436),
+        SeqCostItem(NamedDesc("RemoveAvlTree"), PerItemCost(JitCost(100), JitCost(15), 1), 3),
+        SeqCostItem(NamedDesc("RemoveAvlTree"), PerItemCost(JitCost(100), JitCost(15), 1), 3),
+        FixedCostItem(SAvlTree.digestMethod, FixedCost(JitCost(15))),
+        FixedCostItem(SAvlTree.updateDigestMethod, FixedCost(JitCost(40)))
+      )
+    )
+    val costDetails2 = TracedCost(
+      testTraceBase ++ Array(
+        SeqCostItem(NamedDesc("CreateAvlVerifier"), PerItemCost(JitCost(110), JitCost(20), 64), 140),
+        SeqCostItem(NamedDesc("RemoveAvlTree"), PerItemCost(JitCost(100), JitCost(15), 1), 1),
+        FixedCostItem(SAvlTree.digestMethod, FixedCost(JitCost(15))),
+        FixedCostItem(SAvlTree.updateDigestMethod, FixedCost(JitCost(40)))
+      )
+    )
+    val costDetails3 = TracedCost(testTraceBase)
+    val costDetails4 = TracedCost(
+      testTraceBase ++ Array(
+        SeqCostItem(NamedDesc("CreateAvlVerifier"), PerItemCost(JitCost(110), JitCost(20), 64), 140),
+        SeqCostItem(NamedDesc("RemoveAvlTree"), PerItemCost(JitCost(100), JitCost(15), 1), 1),
+        FixedCostItem(SAvlTree.digestMethod, FixedCost(JitCost(15)))
+      )
+    )
 
-    { // positive test with many keys in the tree and to remove
-      val keys = arrayOfN(100, keyCollGen).sample.get
-      val values = arrayOfN(100, bytesCollGen).sample.get
+    {
+      val keys = Array(
+        Colls.fromArray(Array[Byte](6,71,1,-123,-1,17,-1,-1,-128,-1,-99,127,2,-37,-1,-17,-1,-90,-33,-50,-122,127,1,127,-81,1,-57,118,-38,-36,-2,1)),
+        Colls.fromArray(Array[Byte](-84,-128,1,0,30,0,73,127,71,1,0,39,127,-1,-109,66,0,1,-128,-43,-1,-95,-55,-97,12,1,-1,0,-128,-1,5,0)),
+        Colls.fromArray(Array[Byte](0,-84,1,-1,-128,93,-21,0,-128,0,-128,-128,85,-128,-123,-1,-70,0,38,-1,123,-1,1,21,0,-11,-59,122,-108,-64,1,124)),
+        Colls.fromArray(Array[Byte](1,-29,-1,0,-1,0,0,0,1,44,0,2,0,17,1,-36,50,58,118,-125,108,-93,3,65,-128,77,127,109,-121,-61,-128,-128)),
+        Colls.fromArray(Array[Byte](127,0,0,70,127,1,-109,60,-128,-106,-77,-1,-1,0,127,-108,-128,0,0,-27,-9,-128,89,127,107,68,-76,3,-102,127,4,0))
+      )
+      val values = Array(
+        Colls.fromArray(Array[Byte](-1,91,0,31,-86,-1,39,127,76,78,-1,0,0,-112,36,-16,55,-9,-21,45,0,-128,23,-1,1,-128,63,-33,-60,117,116,-53,-19,-1,0,1,-128,0,127,127,16,127,-84,-128,0,1,-5,1,-128,-103,114,-128,-105,-128,79,62,-1,46,0,-128,-40,-1,89,40,103,1,44,-128,97,-107,111,-1,0,-8,1,42,-38,88,127,127,118,127,127,127,-6,-1,20,32,-128,-1,69,1,127,1,127,22,-128,127)),
+        Colls.fromArray(Array[Byte](-75,-38,-1,0,-127,-104,-128,-128,-47,113,98,-128,-120,101,1,-128,1,-128,19,1,0,10,88,90,-1,-49,-13,127,26,82,-1,-1,-1,1,-1,-62,-128,-128)),
+        Colls.fromArray(Array[Byte](-95,-76,-128,-128,127,16,0,-1,-18,1,-93,1,127,-128,1,-92,111,-128,59,-1,-128,-1,96,-87,127,101,14,73,-9,-128,-1,1,-128,-1,127,-72,6,127,1,67,-1,-128,3,111,1,1,127,-118,127,43,-99,1,-128,0,127,-128,1,-128,-128,100,1,73,0,127,1,-121,1,104,-50,0,0,-1,119,127,80,-69,-128,23,-128,1,-1,127,18,-128,124,-128)),
+        Colls.fromArray(Array[Byte](-65,-128,127,0,-7,35,-128,-127,-120,-128,-8,64,-128,16)),
+        Colls.fromArray(Array[Byte](127,100,8,-128,1,56,113,-35,-50,53,-128,-61,-1))
+      )
       val (_, avlProver) = createAvlTreeAndProver(keys.zip(values):_*)
       val preRemoveDigest = avlProver.digest.toColl
       val keysToRemove = keys.zipWithIndex.collect { case (k, i) if i % 2 != 0 => k }
@@ -3783,10 +3838,12 @@ class SigmaDslSpecification extends SigmaDslTesting
       val endTree = preRemoveTree.updateDigest(endDigest)
       val input = (preRemoveTree, (Colls.fromArray(keysToRemove), removeProof))
       val res = Some(endTree)
-      remove.checkExpected(input, success(res))
+      remove.checkExpected(input, Expected(Success(res), 38270, costDetails1, 1852))
     }
 
-    forAll(keyCollGen, bytesCollGen) { (key, value) =>
+    {
+      val key = Colls.fromArray(Array[Byte](-60,42,60,-1,-128,-122,107,-1,-1,-128,47,24,-1,-13,-40,-58,-1,127,-41,-12,100,0,15,-108,-41,127,-7,-1,126,-1,-1,115))
+      val value = Colls.fromArray(Array[Byte](0,-40,1,1,-60,-119,-68,0,-128,-128,127,-3,5,54,-1,49,47,33,126,-82,-115,1,0,-123,1,15,-1,-49,-107,73,-1))
       val (_, avlProver) = createAvlTreeAndProver(key -> value)
       val preRemoveDigest = avlProver.digest.toColl
       val removeProof = performRemove(avlProver, Array(key))
@@ -3799,14 +3856,14 @@ class SigmaDslSpecification extends SigmaDslTesting
         val endTree = preRemoveTree.updateDigest(endDigest)
         val input = (preRemoveTree, (keys, removeProof))
         val res = Some(endTree)
-        remove.checkExpected(input, success(res))
+        remove.checkExpected(input, Expected(Success(res), cost, costDetails2, 1826))
         remove.checkVerify(input, Expected(value = Success(res), cost = cost))
       }
 
       { // negative: readonly tree
         val readonlyTree = createTree(preRemoveDigest)
         val input = (readonlyTree, (keys, removeProof))
-        remove.checkExpected(input, success(None))
+        remove.checkExpected(input, Expected(Success(None), cost, costDetails3, 1792))
         remove.checkVerify(input, Expected(value = Success(None), cost = cost))
       }
 
@@ -3815,7 +3872,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         val invalidKey = key.map(x => (-x).toByte) // any other different from `key`
         val invalidKeys = Colls.fromItems(invalidKey)
         val input = (tree, (invalidKeys, removeProof))
-        remove.checkExpected(input, success(None))
+        remove.checkExpected(input, Expected(Success(None), cost, costDetails4, 1822))
         remove.checkVerify(input, Expected(value = Success(None), cost = cost))
       }
 
@@ -3823,7 +3880,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         val tree = createTree(preRemoveDigest, removeAllowed = true)
         val invalidProof = removeProof.map(x => (-x).toByte) // any other different from `removeProof`
         val input = (tree, (keys, invalidProof))
-        remove.checkExpected(input, success(None))
+        remove.checkExpected(input, Expected(Success(None), cost, costDetails4, 1822))
         remove.checkVerify(input, Expected(value = Success(None), cost = cost))
       }
     }
