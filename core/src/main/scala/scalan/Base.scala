@@ -709,7 +709,14 @@ abstract class Base { scalan: Scalan =>
       cfor(0)(_ < delta, _ + 1) { _ => tab.append(null) }
       val sym = if (s == null) new SingleRef(d) else s
       tab += sym
-      assert(tab.length == id + 1)
+      assert(tab.length == id + 1,
+        s"""tab.length == id + 1:
+          |tab.length = ${tab.length}
+          |id = $id
+          |s = $s
+          |d = $d
+          |sym = $sym
+          |""".stripMargin)
       sym
     }
   }
