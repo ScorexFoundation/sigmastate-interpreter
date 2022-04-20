@@ -3633,67 +3633,101 @@ class SigmaDslSpecification extends SigmaDslTesting
       ))
     val cost = 40952
 
-    def success[T](v: T) = Expected(Success(v), 0)
+    val testTraceBase = Array(
+      FixedCostItem(Apply),
+      FixedCostItem(FuncValue),
+      FixedCostItem(GetVar),
+      FixedCostItem(OptionGet),
+      FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+      SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+      FixedCostItem(ValUse),
+      FixedCostItem(SelectField),
+      FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+      FixedCostItem(ValUse),
+      FixedCostItem(SelectField),
+      FixedCostItem(MethodCall),
+      FixedCostItem(ValUse),
+      FixedCostItem(SelectField),
+      FixedCostItem(ValUse),
+      FixedCostItem(SelectField),
+      FixedCostItem(SAvlTree.isUpdateAllowedMethod, FixedCost(JitCost(15)))
+    )
+    val costDetails1 = TracedCost(testTraceBase)
+    val costDetails2 = TracedCost(
+      testTraceBase ++ Array(
+        SeqCostItem(NamedDesc("CreateAvlVerifier"), PerItemCost(JitCost(110), JitCost(20), 64), 111),
+        SeqCostItem(NamedDesc("UpdateAvlTree"), PerItemCost(JitCost(120), JitCost(20), 1), 1),
+        FixedCostItem(SAvlTree.updateDigestMethod, FixedCost(JitCost(40)))
+      )
+    )
+    val costDetails3 = TracedCost(
+      testTraceBase ++ Array(
+        SeqCostItem(NamedDesc("CreateAvlVerifier"), PerItemCost(JitCost(110), JitCost(20), 64), 111),
+        SeqCostItem(NamedDesc("UpdateAvlTree"), PerItemCost(JitCost(120), JitCost(20), 1), 1)
+      )
+    )
 
-    forAll(keyCollGen, bytesCollGen) { (key, value) =>
-      val (_, avlProver) = createAvlTreeAndProver(key -> value)
-      val preUpdateDigest = avlProver.digest.toColl
-      val newValue = bytesCollGen.sample.get
-      val updateProof = performUpdate(avlProver, key, newValue)
-      val kvs = Colls.fromItems((key -> newValue))
-      val endDigest = avlProver.digest.toColl
+    val key = Colls.fromArray(Array[Byte](1,0,1,1,73,-67,-128,1,1,0,93,0,127,87,95,51,1,127,1,-3,74,-66,-128,1,89,-18,1,-1,-62,0,-33,51))
+    val value = Colls.fromArray(Array[Byte](1,-50,1,-128,120,1))
+    val (_, avlProver) = createAvlTreeAndProver(key -> value)
+    val preUpdateDigest = avlProver.digest.toColl
+    // val newValue = bytesCollGen.sample.get
+    val newValue = Colls.fromArray(Array[Byte](2,-1,127,91,0,-1,-128,-1,38,-128,-105,-68,-128,-128,127,127,127,-74,88,127,127,127,-81,-30,-89,121,127,-1,-1,-34,127,1,-12,-128,108,75,127,-14,-63,-128,-103,127,1,-57,0,1,-128,127,-85,23,0,-128,70,-110,127,-85,-30,15,-1,-71,0,127,1,42,127,-118,-1,0,-53,126,42,0,127,127,0,-10,-1,127,19,-4,-1,-88,-128,-96,61,-116,127,-111,6,-128,-1,-86,-39,114,0,127,-92,40))
+    val updateProof = performUpdate(avlProver, key, newValue)
+    val kvs = Colls.fromItems((key -> newValue))
+    val endDigest = avlProver.digest.toColl
 
-      { // positive: update to newValue
-        val preUpdateTree = createTree(preUpdateDigest, updateAllowed = true)
-        val endTree = preUpdateTree.updateDigest(endDigest)
-        val input = (preUpdateTree, (kvs, updateProof))
-        val res = Some(endTree)
-        update.checkExpected(input, success(res))
-        update.checkVerify(input, Expected(Success(res), cost))
-      }
+    { // positive: update to newValue
+      val preUpdateTree = createTree(preUpdateDigest, updateAllowed = true)
+      val endTree = preUpdateTree.updateDigest(endDigest)
+      val input = (preUpdateTree, (kvs, updateProof))
+      val res = Some(endTree)
+      // TODO mainnet v5: Possible duplication of tests.
+      update.checkExpected(input, Expected(Success(res), cost, costDetails2, 1825))
+      update.checkVerify(input, Expected(Success(res), cost))
+    }
 
-      { // positive: update to the same value (identity operation)
-        val tree = createTree(preUpdateDigest, updateAllowed = true)
-        val keys = Colls.fromItems((key -> value))
-        val input = (tree, (keys, updateProof))
-        val res = Some(tree)
-        update.checkExpected(input, success(res))
-        update.checkVerify(input, Expected(value = Success(res), cost = cost))
-      }
+    { // positive: update to the same value (identity operation)
+      val tree = createTree(preUpdateDigest, updateAllowed = true)
+      val keys = Colls.fromItems((key -> value))
+      val input = (tree, (keys, updateProof))
+      val res = Some(tree)
+      update.checkExpected(input, Expected(Success(res), cost, costDetails2, 1825))
+      update.checkVerify(input, Expected(Success(res), cost))
+    }
 
-      { // negative: readonly tree
-        val readonlyTree = createTree(preUpdateDigest)
-        val input = (readonlyTree, (kvs, updateProof))
-        update.checkExpected(input, success(None))
-        update.checkVerify(input, Expected(value = Success(None), cost = cost))
-      }
+    { // negative: readonly tree
+      val readonlyTree = createTree(preUpdateDigest)
+      val input = (readonlyTree, (kvs, updateProof))
+      update.checkExpected(input, Expected(Success(None), cost, costDetails1, 1792))
+      update.checkVerify(input, Expected(Success(None), cost))
+    }
 
-      { // negative: invalid key
-        val tree = createTree(preUpdateDigest, updateAllowed = true)
-        val invalidKey = key.map(x => (-x).toByte) // any other different from key
-        val invalidKvs = Colls.fromItems((invalidKey -> newValue))
-        val input = (tree, (invalidKvs, updateProof))
-        update.checkExpected(input, success(None))
-        update.checkVerify(input, Expected(value = Success(None), cost = cost))
-      }
+    { // negative: invalid key
+      val tree = createTree(preUpdateDigest, updateAllowed = true)
+      val invalidKey = key.map(x => (-x).toByte) // any other different from key
+      val invalidKvs = Colls.fromItems((invalidKey -> newValue))
+      val input = (tree, (invalidKvs, updateProof))
+      update.checkExpected(input, Expected(Success(None), cost, costDetails3, 1821))
+      update.checkVerify(input, Expected(Success(None), cost))
+    }
 
-      { // negative: invalid value (different from the value in the proof)
-        val tree = createTree(preUpdateDigest, updateAllowed = true)
-        val invalidValue = newValue.map(x => (-x).toByte)
-        val invalidKvs = Colls.fromItems((key -> invalidValue))
-        val input = (tree, (invalidKvs, updateProof))
-        val (res, _) = update.checkEquality(input).getOrThrow
-        res.isDefined shouldBe true  // TODO v6.0: should it really be true? (looks like a bug)
-        update.checkVerify(input, Expected(value = Success(res), cost = cost))
-      }
+    { // negative: invalid value (different from the value in the proof)
+      val tree = createTree(preUpdateDigest, updateAllowed = true)
+      val invalidValue = newValue.map(x => (-x).toByte)
+      val invalidKvs = Colls.fromItems((key -> invalidValue))
+      val input = (tree, (invalidKvs, updateProof))
+      val (res, _) = update.checkEquality(input).getOrThrow
+      res.isDefined shouldBe true  // TODO v6.0: should it really be true? (looks like a bug)
+      update.checkVerify(input, Expected(Success(res), cost))
+    }
 
-      { // negative: invalid proof
-        val tree = createTree(preUpdateDigest, updateAllowed = true)
-        val invalidProof = updateProof.map(x => (-x).toByte) // any other different from proof
-        val input = (tree, (kvs, invalidProof))
-        update.checkExpected(input, success(None))
-        update.checkVerify(input, Expected(value = Success(None), cost = cost))
-      }
+    { // negative: invalid proof
+      val tree = createTree(preUpdateDigest, updateAllowed = true)
+      val invalidProof = updateProof.map(x => (-x).toByte) // any other different from proof
+      val input = (tree, (kvs, invalidProof))
+      update.checkExpected(input, Expected(Success(None), cost, costDetails3, 1821))
+      update.checkVerify(input, Expected(Success(None), cost))
     }
   }
 
