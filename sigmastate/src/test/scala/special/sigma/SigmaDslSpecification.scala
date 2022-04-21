@@ -3732,9 +3732,7 @@ class SigmaDslSpecification extends SigmaDslTesting
       val endTree = preUpdateTree.updateDigest(endDigest)
       val input = (preUpdateTree, (kvs, updateProof))
       val res = Some(endTree)
-      // TODO mainnet v5: Possible duplication of tests.
       update.checkExpected(input, Expected(Success(res), cost, costDetails2, 1825))
-      update.checkVerify(input, Expected(Success(res), cost))
     }
 
     { // positive: update to the same value (identity operation)
@@ -3743,14 +3741,12 @@ class SigmaDslSpecification extends SigmaDslTesting
       val input = (tree, (keys, updateProof))
       val res = Some(tree)
       update.checkExpected(input, Expected(Success(res), cost, costDetails2, 1825))
-      update.checkVerify(input, Expected(Success(res), cost))
     }
 
     { // negative: readonly tree
       val readonlyTree = createTree(preUpdateDigest)
       val input = (readonlyTree, (kvs, updateProof))
       update.checkExpected(input, Expected(Success(None), cost, costDetails1, 1792))
-      update.checkVerify(input, Expected(Success(None), cost))
     }
 
     { // negative: invalid key
@@ -3759,7 +3755,6 @@ class SigmaDslSpecification extends SigmaDslTesting
       val invalidKvs = Colls.fromItems((invalidKey -> newValue))
       val input = (tree, (invalidKvs, updateProof))
       update.checkExpected(input, Expected(Success(None), cost, costDetails3, 1821))
-      update.checkVerify(input, Expected(Success(None), cost))
     }
 
     { // negative: invalid value (different from the value in the proof)
@@ -3769,7 +3764,7 @@ class SigmaDslSpecification extends SigmaDslTesting
       val input = (tree, (invalidKvs, updateProof))
       val (res, _) = update.checkEquality(input).getOrThrow
       res.isDefined shouldBe true  // TODO v6.0: should it really be true? (looks like a bug)
-      update.checkVerify(input, Expected(Success(res), cost))
+      update.checkExpected(input, Expected(Success(res), cost, costDetails2, 1825))
     }
 
     { // negative: invalid proof
@@ -3777,7 +3772,6 @@ class SigmaDslSpecification extends SigmaDslTesting
       val invalidProof = updateProof.map(x => (-x).toByte) // any other different from proof
       val input = (tree, (kvs, invalidProof))
       update.checkExpected(input, Expected(Success(None), cost, costDetails3, 1821))
-      update.checkVerify(input, Expected(Success(None), cost))
     }
   }
 
