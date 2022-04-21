@@ -751,6 +751,7 @@ class SigmaDslTesting extends PropSpec
           }
         }
       }
+      checkVerify(input, expected)
     }
 
     override def testCase(input: A,
@@ -835,6 +836,7 @@ class SigmaDslTesting extends PropSpec
         val newExpectedRes = expected.newResults(ergoTreeVersionInTests)
         newRes shouldBe newExpectedRes._1.value.get
       }
+      checkVerify(input, expected)
     }
 
     override def testCase(input: A,

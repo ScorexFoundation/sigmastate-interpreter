@@ -3360,14 +3360,43 @@ class SigmaDslSpecification extends SigmaDslTesting
         )
       )
 
+      val updateDigestCostDetails = TracedCost(
+        Array(
+          FixedCostItem(Apply),
+          FixedCostItem(FuncValue),
+          FixedCostItem(GetVar),
+          FixedCostItem(OptionGet),
+          FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+          FixedCostItem(ValUse),
+          FixedCostItem(SelectField),
+          FixedCostItem(MethodCall),
+          FixedCostItem(ValUse),
+          FixedCostItem(SelectField),
+          FixedCostItem(SAvlTree.updateDigestMethod, FixedCost(JitCost(40)))
+        )
+      )
+
+      val updateOperationsCostDetails = TracedCost(
+        Array(
+          FixedCostItem(Apply),
+          FixedCostItem(FuncValue),
+          FixedCostItem(GetVar),
+          FixedCostItem(OptionGet),
+          FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+          FixedCostItem(ValUse),
+          FixedCostItem(SelectField),
+          FixedCostItem(MethodCall),
+          FixedCostItem(ValUse),
+          FixedCostItem(SelectField),
+          FixedCostItem(SAvlTree.updateOperationsMethod, FixedCost(JitCost(45)))
+        )
+      )
+
       // positive test
       {
         val input = (tree, (key, proof))
         contains.checkExpected(input, Expected(Success(okContains), 37850, costDetails(105 + additionalDetails), 1810))
         get.checkExpected(input, Expected(Success(valueOpt), 38372, costDetails(105 + additionalDetails), 1810 + additionalCost))
-
-        contains.checkVerify(input, Expected(Success(okContains), 37850, CostDetails.ZeroCost, 1810))
-        get.checkVerify(input, Expected(value = Success(valueOpt), cost = 38372, CostDetails.ZeroCost, 1810 + additionalCost))
       }
 
       val keys = Colls.fromItems(key)
@@ -3376,14 +3405,13 @@ class SigmaDslSpecification extends SigmaDslTesting
       {
         val input = (tree, (keys, proof))
         getMany.checkExpected(input, Expected(Success(expRes), 38991, costDetails(105 + additionalDetails), 1811 + additionalCost))
-        getMany.checkVerify(input, Expected(value = Success(expRes), cost = 38991, CostDetails.ZeroCost, 1811 + additionalCost))
       }
 
       {
         val input = (tree, digest)
         val (res, _) = updateDigest.checkEquality(input).getOrThrow
         res.digest shouldBe digest
-        updateDigest.checkVerify(input, Expected(value = Success(res), cost = 36341, CostDetails.ZeroCost, 1791))
+        updateDigest.checkExpected(input, Expected(Success(res), 36341, updateDigestCostDetails, 1791))
       }
 
       val newOps = 1.toByte
@@ -3392,7 +3420,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         val input = (tree, newOps)
         val (res,_) = updateOperations.checkEquality(input).getOrThrow
         res.enabledOperations shouldBe newOps
-        updateOperations.checkVerify(input, Expected(value = Success(res), cost = 36341, CostDetails.ZeroCost, 1791))
+        updateOperations.checkExpected(input, Expected(Success(res), 36341, updateOperationsCostDetails, 1791))
       }
 
       // negative tests: invalid proof
@@ -3402,7 +3430,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         val input = (tree, (key, invalidProof))
         val (res, _) = contains.checkEquality(input).getOrThrow
         res shouldBe false
-        contains.checkVerify(input, Expected(value = Success(res), cost = 37850, CostDetails.ZeroCost, 1810))
+        contains.checkExpected(input, Expected(Success(res), 37850, costDetails(105 + additionalDetails), 1810))
       }
 
       {
