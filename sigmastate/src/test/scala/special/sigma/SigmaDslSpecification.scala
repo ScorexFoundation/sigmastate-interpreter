@@ -3544,9 +3544,31 @@ class SigmaDslSpecification extends SigmaDslTesting
         )
       ))
 
-    val newCostDetails = TracedCost(
-      traceBase ++ Array(
-        FixedCostItem(PropertyCall)
+    val testTraceBase = Array(
+      FixedCostItem(Apply),
+      FixedCostItem(FuncValue),
+      FixedCostItem(GetVar),
+      FixedCostItem(OptionGet),
+      FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+      SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+      FixedCostItem(ValUse),
+      FixedCostItem(SelectField),
+      FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+      FixedCostItem(ValUse),
+      FixedCostItem(SelectField),
+      FixedCostItem(MethodCall),
+      FixedCostItem(ValUse),
+      FixedCostItem(SelectField),
+      FixedCostItem(ValUse),
+      FixedCostItem(SelectField),
+      FixedCostItem(SAvlTree.isInsertAllowedMethod, FixedCost(JitCost(15)))
+    )
+    val costDetails1 = TracedCost(testTraceBase)
+    val costDetails2 = TracedCost(
+      testTraceBase ++ Array(
+        SeqCostItem(NamedDesc("CreateAvlVerifier"), PerItemCost(JitCost(110), JitCost(20), 64), 70),
+        SeqCostItem(NamedDesc("InsertIntoAvlTree"), PerItemCost(JitCost(40), JitCost(10), 1), 1),
+        FixedCostItem(SAvlTree.updateDigestMethod, FixedCost(JitCost(40)))
       )
     )
 
@@ -3561,7 +3583,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         val input = (preInsertTree, (kvs, insertProof))
         val (res, _) = insert.checkEquality(input).getOrThrow
         res.isDefined shouldBe true
-        insert.checkVerify(input, Expected(Success(res), 38501, newCostDetails, 1816))
+        insert.checkExpected(input, Expected(Success(res), 38501, costDetails2, 1816))
       }
 
       { // negative: readonly tree
@@ -3569,7 +3591,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         val input = (readonlyTree, (kvs, insertProof))
         val (res, _) = insert.checkEquality(input).getOrThrow
         res.isDefined shouldBe false
-        insert.checkVerify(input, Expected(value = Success(res), cost = 38501))
+        insert.checkExpected(input, Expected(Success(res), 38501, costDetails1, 1792))
       }
 
       { // negative: invalid key
@@ -3579,7 +3601,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         val input = (tree, (invalidKvs, insertProof))
         val (res, _) = insert.checkEquality(input).getOrThrow
         res.isDefined shouldBe true // TODO v6.0: should it really be true? (looks like a bug)
-        insert.checkVerify(input, Expected(value = Success(res), cost = 38501))
+        insert.checkExpected(input, Expected(Success(res), 38501, costDetails2, 1816))
       }
 
       { // negative: invalid proof
