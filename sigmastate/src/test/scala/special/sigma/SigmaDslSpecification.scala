@@ -3901,14 +3901,12 @@ class SigmaDslSpecification extends SigmaDslTesting
         val input = (preRemoveTree, (keys, removeProof))
         val res = Some(endTree)
         remove.checkExpected(input, Expected(Success(res), cost, costDetails2, 1826))
-        remove.checkVerify(input, Expected(value = Success(res), cost = cost))
       }
 
       { // negative: readonly tree
         val readonlyTree = createTree(preRemoveDigest)
         val input = (readonlyTree, (keys, removeProof))
         remove.checkExpected(input, Expected(Success(None), cost, costDetails3, 1792))
-        remove.checkVerify(input, Expected(value = Success(None), cost = cost))
       }
 
       { // negative: invalid key
@@ -3917,7 +3915,6 @@ class SigmaDslSpecification extends SigmaDslTesting
         val invalidKeys = Colls.fromItems(invalidKey)
         val input = (tree, (invalidKeys, removeProof))
         remove.checkExpected(input, Expected(Success(None), cost, costDetails4, 1822))
-        remove.checkVerify(input, Expected(value = Success(None), cost = cost))
       }
 
       { // negative: invalid proof
@@ -3925,7 +3922,6 @@ class SigmaDslSpecification extends SigmaDslTesting
         val invalidProof = removeProof.map(x => (-x).toByte) // any other different from `removeProof`
         val input = (tree, (keys, invalidProof))
         remove.checkExpected(input, Expected(Success(None), cost, costDetails4, 1822))
-        remove.checkVerify(input, Expected(value = Success(None), cost = cost))
       }
     }
   }
