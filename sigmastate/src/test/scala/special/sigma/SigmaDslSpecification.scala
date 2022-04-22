@@ -8635,7 +8635,6 @@ class SigmaDslSpecification extends SigmaDslTesting
       )))
   }
 
-  // TODO mainnet v5.0: NoSuchMethodException thrown inside the test.
   property("Coll slice method equivalence") {
     val samples = genSamples(collWithRangeGen, DefaultMinSuccessful)
     if (lowerMethodCallsInTests) {
@@ -9679,10 +9678,12 @@ class SigmaDslSpecification extends SigmaDslTesting
     )
 
     if (lowerMethodCallsInTests) {
+      val ir = IR
+      val error = new ir.StagingException("Don't know how to evaluate(s2034 -> Placeholder(BaseElemLiftable<Int>))", Nil)
       verifyCases(
         Seq(
           ctx -> Expected(
-            Failure(new NoSuchElementException("None.get")),
+            Failure(error),
             cost = 37694,
             expectedDetails = CostDetails.ZeroCost,
             newCost = 1796,
@@ -9691,7 +9692,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         ),
         changedFeature(
         { (x: Context) =>
-          Option.empty[Int].get
+          throw error
           true
         },
         { (x: Context) =>

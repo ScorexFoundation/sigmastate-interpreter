@@ -729,26 +729,51 @@ class SigmaDslTesting extends PropSpec
       newRes
     }
 
-    /** compares the old and new implementations against
-      * semantic function (scalaFunc) on the given input, also checking the given expected result.
+    /** compares the old and new implementations against semantic functions (scalaFunc and
+      * scalaFuncNew) on the given input, also checking the given expected result.
       */
     override def checkExpected(input: A, expected: Expected[B]): Unit = {
-      // check the old implementation with Scala semantic
-      val (oldRes, _) = checkEq(scalaFunc)(oldF)(input).get
-      oldRes shouldBe expected.value.get
+      // check the new implementation with Scala semantic
+      val newRes = VersionContext.withVersions(activatedVersionInTests, ergoTreeVersionInTests) {
+        checkEq(scalaFuncNew)(newF)(input)
+      }
 
-      if (!(newImpl eq oldImpl)) {
-        // check the new implementation with Scala semantic
-        val (newRes, newDetails) = VersionContext.withVersions(activatedVersionInTests, ergoTreeVersionInTests) {
-          checkEq(scalaFuncNew)(newF)(input).get
+      if (!VersionContext.current.isJitActivated) {
+        // check the old implementation with Scala semantic
+        val expectedOldRes = expected.value
+        val oldRes = checkEq(scalaFunc)(oldF)(input)
+        checkResult(oldRes.map(_._1), expectedOldRes, failOnTestVectors = true,
+          "Comparing oldRes with expected: !isJitActivated: ")
+
+        val newValue = newRes.map(_._1)
+        (expectedOldRes, newValue) match {
+          case (_: Failure[_], _: Success[_]) if allowNewToSucceed =>
+            // NOTE, we are in ChangedFeature (compare with ExistingFeature)
+            // this is the case when old v4.x version fails with exception (e.g. due to AOT costing),
+            // but the new v5.0 produces result. (See property("Option fold workaround method"))
+            // Thus, we allow some scripts which fail in v4.x to pass in v5.0.
+            // see ScalaDoc for allowNewToSucceed
+          case (_: Failure[_], _: Failure[_]) if allowDifferentErrors =>
+            // this is the case when old v4.x version fails with one exception (e.g. due to AOT costing),
+            // but the new v5.0 fails with another exception.
+          case _ =>
+            checkResult(newValue, expectedOldRes, failOnTestVectors = true,
+              "Comparing newRes with expected old result: !isJitActivated: ")
         }
-        val newExpectedRes = expected.newResults(ergoTreeVersionInTests)
-        newRes shouldBe newExpectedRes._1.value.get
-        newExpectedRes._2.foreach { expDetails =>
-          if (newDetails.trace != expDetails.trace) {
-            printCostDetails(script, newDetails)
-            newDetails.trace shouldBe expDetails.trace
-          }
+      } else {
+        val (newExpectedRes, newExpectedDetailsOpt) = expected.newResults(ergoTreeVersionInTests)
+        newRes match {
+          case Success((newValue, newDetails)) =>
+            newValue shouldBe newExpectedRes.value.get
+            newExpectedDetailsOpt.foreach { expDetails =>
+              if (newDetails.trace != expDetails.trace) {
+                printCostDetails(script, newDetails)
+                newDetails.trace shouldBe expDetails.trace
+              }
+            }
+          case _ =>
+            checkResult(newRes.map(_._1), newExpectedRes.value, failOnTestVectors = true,
+              "Comparing newRes with new expected: isJitActivated: ")
         }
       }
       checkVerify(input, expected)
@@ -766,29 +791,7 @@ class SigmaDslTesting extends PropSpec
                             expected: Expected[B],
                             printTestCases: Boolean,
                             failOnTestVectors: Boolean): Unit = {
-      val funcRes = checkEquality(input, printTestCases)
-      // TODO mainnet v5: How to handle different results (for features that changed behaviour)
-      // uncomment to see failing tests
-      // checkResult(funcRes.map(_._1), expected.value, failOnTestVectors)
-      val newRes = expected.newResults(ergoTreeVersionInTests)
-      val expectedTrace = newRes._2.fold(Seq.empty[CostItem])(_.trace)
-      if (expectedTrace.isEmpty) {
-        // new cost expectation is missing, print out actual cost results
-        if (evalSettings.printTestVectors) {
-          funcRes.foreach { case (_, newCost) =>
-            printCostDetails(script, newCost)
-          }
-        }
-      }
-      else {
-        // new cost expectation is specified, compare it with the actual result
-        funcRes.foreach { case (_, newCost) =>
-          if (newCost.trace != expectedTrace) {
-            printCostDetails(script, newCost)
-            newCost.trace shouldBe expectedTrace
-          }
-        }
-      }
+      checkExpected(input, expected)
       checkVerify(input, expected)
     }
   }
@@ -1033,7 +1036,9 @@ class SigmaDslTesting extends PropSpec
   protected def checkResult[B](res: Try[B], expectedRes: Try[B], failOnTestVectors: Boolean, hint: String = ""): Unit = {
     (res, expectedRes) match {
       case (Failure(exception), Failure(expectedException)) =>
-        rootCause(exception).getClass shouldBe rootCause(expectedException).getClass
+        withClue(hint) {
+          rootCause(exception).getClass shouldBe rootCause(expectedException).getClass
+        }
       case _ =>
         if (failOnTestVectors) {
           val actual = rootCause(res)
