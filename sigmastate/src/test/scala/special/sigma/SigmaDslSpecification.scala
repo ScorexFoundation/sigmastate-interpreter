@@ -8331,25 +8331,45 @@ class SigmaDslSpecification extends SigmaDslTesting
       )))
   }
 
-  // TODO mainnet v5.0: NoSuchMethodException thrown inside the test.
   property("Coll slice method equivalence") {
+    def costDetails(i: Int) = TracedCost(
+      Array(
+        FixedCostItem(Apply),
+        FixedCostItem(FuncValue),
+        FixedCostItem(GetVar),
+        FixedCostItem(OptionGet),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        SeqCostItem(CompanionDesc(Slice), PerItemCost(JitCost(10), JitCost(2), 100), i)
+      )
+    )
     val samples = genSamples(collWithRangeGen, DefaultMinSuccessful)
     if (lowerMethodCallsInTests) {
       verifyCases(
-      // (coll, (from, until))
       {
-        def success[T](v: T) = Expected(Success(v), 36964)
+        val cost = 36964
+        val newCost = 1792
         Seq(
-          ((Coll[Int](), (-1, 0)), success(Coll[Int]())),
-          ((Coll[Int](), (0, 0)), success(Coll[Int]())),
-          ((Coll[Int](1), (0, 0)), success(Coll[Int]())),
-          ((Coll[Int](1), (0, -1)), success(Coll[Int]())),
-          ((Coll[Int](1), (1, 1)), success(Coll[Int]())),
-          ((Coll[Int](1), (-1, 1)), success(Coll[Int](1))),
-          ((Coll[Int](1, 2), (1, 1)), success(Coll[Int]())),
-          ((Coll[Int](1, 2), (1, 0)), success(Coll[Int]())),
-          ((Coll[Int](1, 2), (1, 2)), success(Coll[Int](2))),
-          ((Coll[Int](1, 2, 3, 4), (1, 3)), success(Coll[Int](2, 3)))
+          // (coll, (from, until))
+          ((Coll[Int](), (-1, 0)), Expected(Success(Coll[Int]()), cost, costDetails(1), newCost)),
+          ((Coll[Int](), (0, 0)), Expected(Success(Coll[Int]()), cost, costDetails(0), newCost)),
+          ((Coll[Int](1), (0, 0)), Expected(Success(Coll[Int]()), cost, costDetails(0), newCost)),
+          ((Coll[Int](1), (0, -1)), Expected(Success(Coll[Int]()), cost, costDetails(0), newCost)),
+          ((Coll[Int](1), (1, 1)), Expected(Success(Coll[Int]()), cost, costDetails(0), newCost)),
+          ((Coll[Int](1), (-1, 1)), Expected(Success(Coll[Int](1)), cost, costDetails(2), newCost)),
+          ((Coll[Int](1, 2), (1, 1)), Expected(Success(Coll[Int]()), cost, costDetails(0), newCost)),
+          ((Coll[Int](1, 2), (1, 0)), Expected(Success(Coll[Int]()), cost, costDetails(0), newCost)),
+          ((Coll[Int](1, 2), (1, 2)), Expected(Success(Coll[Int](2)), cost, costDetails(1), newCost)),
+          ((Coll[Int](1, 2, 3, 4), (1, 3)), Expected(Success(Coll[Int](2, 3)), cost, costDetails(2), newCost))
         )
       },
       existingFeature((x: (Coll[Int], (Int, Int))) => x._1.slice(x._2._1, x._2._2),
@@ -8381,7 +8401,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     } else {
       assertExceptionThrown(
         verifyCases(
-          Seq( (Coll[Int](), (-1, 0)) -> Expected(Success(Coll[Int]()), 37765) ),
+          Seq( (Coll[Int](), (-1, 0)) -> Expected(Success(Coll[Int]()), 0, CostDetails.ZeroCost, 0) ),
           existingFeature((x: (Coll[Int], (Int, Int))) => x._1.slice(x._2._1, x._2._2),
             "{ (x: (Coll[Int], (Int, Int))) => x._1.slice(x._2._1, x._2._2) }"
           )),
