@@ -115,10 +115,18 @@ class SigmaDslSpecification extends SigmaDslTesting
     forAll(table) { (x, expectedRes) =>
       val res = f.checkEquality(x)
       val resValue = res.map(_._1)
-      val expected = expectedRes.newResults(ergoTreeVersionInTests)._1
-      checkResult(resValue, expected.value, failOnTestVectors = true)
-      if (res.isSuccess) {
-        res.get._2.cost shouldBe JitCost(expected.verificationCost.get)
+      val (expected, expDetailsOpt) = expectedRes.newResults(ergoTreeVersionInTests)
+      checkResult(resValue, expected.value, failOnTestVectors = true,
+        "SigmaDslSpecifiction#testCases: compare expected new result with res = f.checkEquality(x)")
+      res match {
+        case Success((value, details)) =>
+          details.cost shouldBe JitCost(expected.verificationCost.get)
+          expDetailsOpt.foreach(expDetails =>
+            if (details.trace != expDetails.trace) {
+              printCostDetails(f.script, details)
+              details.trace shouldBe expDetails.trace
+            }
+          )
       }
     }
   }
@@ -2755,15 +2763,15 @@ class SigmaDslSpecification extends SigmaDslTesting
   }
 
   property("GroupElement.exp equivalence") {
-    val cases = {
-      val costDetails = TracedCost(
-        traceBase ++ Array(
-          FixedCostItem(SelectField),
-          FixedCostItem(ValUse),
-          FixedCostItem(SelectField),
-          FixedCostItem(Exponentiate)
-        )
+    val costDetails = TracedCost(
+      traceBase ++ Array(
+        FixedCostItem(SelectField),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        FixedCostItem(Exponentiate)
       )
+    )
+    val cases = {  
       def success[T](v: T) = Expected(Success(v), 41484, costDetails, 1893)
       Seq(
         ((ge1, CBigInt(new BigInteger("-25c80b560dd7844e2efd10f80f7ee57d", 16))),
@@ -2781,7 +2789,8 @@ class SigmaDslSpecification extends SigmaDslTesting
     if (lowerMethodCallsInTests) {
       verifyCases(cases,
         existingFeature(
-          scalaFunc, script,
+          scalaFunc,
+          script,
           FuncValue(
             Vector((1, STuple(Vector(SGroupElement, SBigInt)))),
             Exponentiate(
@@ -2812,10 +2821,19 @@ class SigmaDslSpecification extends SigmaDslTesting
                     Success(Helpers.decodeGroupElement("023a850181b7b73f92a5bbfa0bfc78f5bbb6ff00645ddde501037017e1a2251e2e")),
                     Some(999)
                   )
+                  val details = TracedCost(
+                    traceBase ++ Array(
+                      FixedCostItem(SelectField),
+                      FixedCostItem(MethodCall),
+                      FixedCostItem(ValUse),
+                      FixedCostItem(SelectField),
+                      FixedCostItem(SGroupElement.ExponentiateMethod, FixedCost(JitCost(900)))
+                    )
+                  )
                   Seq( // expected result for each version
-                    0 -> ( res -> None ),
-                    1 -> ( res -> None ),
-                    2 -> ( res -> None )
+                    0 -> ( res -> Some(details) ),
+                    1 -> ( res -> Some(details) ),
+                    2 -> ( res -> Some(details) )
                   )
                 }
               )
@@ -2904,11 +2922,14 @@ class SigmaDslSpecification extends SigmaDslTesting
                 Success(Helpers.decodeGroupElement("02bc48937b4a66f249a32dfb4d2efd0743dc88d46d770b8c5d39fd03325ba211df")),
                 Some(139)
               )
-              Seq( // expected result for each version
-                0 -> ( res -> None ),
-                1 -> ( res -> None ),
-                2 -> ( res -> None )
-              )
+              val details = TracedCost(traceBase ++ Array(
+                FixedCostItem(SelectField),
+                FixedCostItem(MethodCall),
+                FixedCostItem(ValUse),
+                FixedCostItem(SelectField),
+                FixedCostItem(SGroupElement.MultiplyMethod, FixedCost(JitCost(40)))
+              ))
+              Seq.tabulate(3)(_ -> ( res -> Some(details) )) // expected result for each version
             }
           )
           )
@@ -3242,13 +3263,26 @@ class SigmaDslSpecification extends SigmaDslTesting
         )
       ))
 
-    def success[T](v: T) = Expected(Success(v), 0)
-
-    { // getMany with a bunch of existing keys
-      val (keysArr, valuesArr, _, avlProver) = sampleAvlProver
-      val keys = Colls.fromArray(keysArr.slice(0, 20))
-      val expRes = Colls.fromArray(valuesArr.slice(0, 20).map(Option(_)))
-
+    {
+      val keysArr =
+        Array(
+          Colls.fromArray(Array[Byte](0,14,54,-1,-128,-61,-89,72,27,34,1,-1,62,-48,0,8,74,1,82,-48,-41,100,-66,64,127,45,1,-1,0,-128,-16,-57)),
+          Colls.fromArray(Array[Byte](127,-128,-1,127,-96,-1,-63,1,25,43,127,-122,127,-43,0,-1,-57,113,-6,1,1,0,15,1,-104,-1,-55,101,115,-94,-128,94)),
+          Colls.fromArray(Array[Byte](-60,-26,117,124,-92,104,106,-1,-1,-1,-29,121,-98,54,10,-105,127,13,-1,0,-90,0,-125,-13,-1,-79,-87,127,0,127,0,0)),
+          Colls.fromArray(Array[Byte](84,127,-44,-65,1,-77,39,-128,113,14,1,-128,127,48,-53,60,-5,-19,123,0,-128,127,-28,0,104,-1,0,1,-51,124,-78,67)),
+          Colls.fromArray(Array[Byte](12,56,-25,-128,1,-128,-128,70,19,37,0,-1,1,87,-20,-128,80,127,-66,-1,83,-1,111,0,-34,0,49,-77,1,0,61,-1))
+        )
+      val valuesArr =
+        Array(
+          Colls.fromArray(Array[Byte](-87,0,-102,88,-128,-54,66,1,-128,-16,0,1,-44,0,35,-32,-23,40,127,-97,49,-1,127,1,-84,115,127,61,-84,-63,-104,-9,-116,-26,9,-93,-128,0,11,127,0,-128,-1,-128,-1,127,-110,-128,0,0,90,-126,28,0,42,-71,-1,37,-26,0,124,-72,68,26,14)),
+          Colls.fromArray(Array[Byte](84,106,-48,-17,-1,44,127,-128,0,86,-1)),
+          Colls.fromArray(Array[Byte](127,-128,-60,1,118,-32,-72,-9,101,0,0,-68,-51,8,95,127)),
+          Colls.fromArray(Array[Byte](127,-88,127,-101,-128,77,-25,-72,-86,127,127,127,-88,0,-128)),
+          Colls.fromArray(Array[Byte](2,5,-128,127,46,0,1,127,-9,64,-13,0,19,-112,124,1,20,52,65,-31,-112,114,0,18,-1,-88,-128,118,-126,-1,0,112,119,-1,20,84,11,-23,113,-1,71,-77,127,11,1,-128,63,-23,0,127,-55,42,8,127,126,115,59,70,127,102,-109,-128,127,41,-128,127,127,15,1,127,80,-29,0,8,-127,-96,-1,37,106,76,0,-128,-128,-128,-102,52,0,-11,1,-1,71))
+        )
+      val (_, avlProver) = createAvlTreeAndProver(keysArr.zip(valuesArr):_*)
+      val keys = Colls.fromArray(keysArr)
+      val expRes = Colls.fromArray(valuesArr).map(Option(_))
       keys.foreach { key =>
         avlProver.performOneOperation(Lookup(ADKey @@ key.toArray))
       }
@@ -3257,8 +3291,34 @@ class SigmaDslSpecification extends SigmaDslTesting
       val tree = SigmaDsl.avlTree(AvlTreeFlags.ReadOnly.serializeToByte, digest, 32, None)
 
       val input = (tree, (keys, proof))
-      // TODO mainnet v5.0: checkExpected is ignoring newCost/costDetails. Is that correct behaviour?
-      getMany.checkExpected(input, Expected(Success(expRes), 0))//, TracedCost(traceBase), 1700))
+      val costDetails = TracedCost(
+        Array(
+          FixedCostItem(Apply),
+          FixedCostItem(FuncValue),
+          FixedCostItem(GetVar),
+          FixedCostItem(OptionGet),
+          FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+          SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+          FixedCostItem(ValUse),
+          FixedCostItem(SelectField),
+          FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+          FixedCostItem(ValUse),
+          FixedCostItem(SelectField),
+          FixedCostItem(MethodCall),
+          FixedCostItem(ValUse),
+          FixedCostItem(SelectField),
+          FixedCostItem(ValUse),
+          FixedCostItem(SelectField),
+          SeqCostItem(NamedDesc("CreateAvlVerifier"), PerItemCost(JitCost(110), JitCost(20), 64), 456),
+          SeqCostItem(NamedDesc("LookupAvlTree"), PerItemCost(JitCost(40), JitCost(10), 1), 3),
+          SeqCostItem(NamedDesc("LookupAvlTree"), PerItemCost(JitCost(40), JitCost(10), 1), 3),
+          SeqCostItem(NamedDesc("LookupAvlTree"), PerItemCost(JitCost(40), JitCost(10), 1), 3),
+          SeqCostItem(NamedDesc("LookupAvlTree"), PerItemCost(JitCost(40), JitCost(10), 1), 3),
+          SeqCostItem(NamedDesc("LookupAvlTree"), PerItemCost(JitCost(40), JitCost(10), 1), 3)
+        )
+      )
+
+      getMany.checkExpected(input, Expected(Success(expRes), 38991, costDetails, 1865))
     }
 
     val key = Colls.fromArray(Array[Byte](-16,-128,99,86,1,-128,-36,-83,109,72,-124,-114,1,-32,15,127,-30,125,127,1,-102,-53,-53,-128,-107,0,64,8,1,127,22,1))
@@ -3267,25 +3327,77 @@ class SigmaDslSpecification extends SigmaDslTesting
     val otherKey = key.map(x => (-x).toByte) // any other different from key
 
     // Final cost is baseCost + additionalCost, baseCost is specified in test scenario below
-    val table = Table(("key", "contains", "valueOpt", "additionalCost"),
-      (key, true, Some(value), 2),
-      (otherKey, false, None, 0)
+    val table = Table(("key", "contains", "valueOpt", "additionalCost", "additionalCostDetails"),
+      (key, true, Some(value), 2, 23),
+      (otherKey, false, None, 0, 0)
     )
 
-    forAll(table) { (key, okContains, valueOpt, additionalCost) =>
+    forAll(table) { (key, okContains, valueOpt, additionalCost, additionalDetails) =>
       avlProver.performOneOperation(Lookup(ADKey @@ key.toArray))
       val proof = avlProver.generateProof().toColl
       val digest = avlProver.digest.toColl
       val tree = SigmaDsl.avlTree(AvlTreeFlags.ReadOnly.serializeToByte, digest, 32, None)
 
+      def costDetails(i: Int) = TracedCost(
+        Array(
+          FixedCostItem(Apply),
+          FixedCostItem(FuncValue),
+          FixedCostItem(GetVar),
+          FixedCostItem(OptionGet),
+          FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+          SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+          FixedCostItem(ValUse),
+          FixedCostItem(SelectField),
+          FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+          FixedCostItem(ValUse),
+          FixedCostItem(SelectField),
+          FixedCostItem(MethodCall),
+          FixedCostItem(ValUse),
+          FixedCostItem(SelectField),
+          FixedCostItem(ValUse),
+          FixedCostItem(SelectField),
+          SeqCostItem(NamedDesc("CreateAvlVerifier"), PerItemCost(JitCost(110), JitCost(20), 64), i),
+          SeqCostItem(NamedDesc("LookupAvlTree"), PerItemCost(JitCost(40), JitCost(10), 1), 1)
+        )
+      )
+
+      val updateDigestCostDetails = TracedCost(
+        Array(
+          FixedCostItem(Apply),
+          FixedCostItem(FuncValue),
+          FixedCostItem(GetVar),
+          FixedCostItem(OptionGet),
+          FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+          FixedCostItem(ValUse),
+          FixedCostItem(SelectField),
+          FixedCostItem(MethodCall),
+          FixedCostItem(ValUse),
+          FixedCostItem(SelectField),
+          FixedCostItem(SAvlTree.updateDigestMethod, FixedCost(JitCost(40)))
+        )
+      )
+
+      val updateOperationsCostDetails = TracedCost(
+        Array(
+          FixedCostItem(Apply),
+          FixedCostItem(FuncValue),
+          FixedCostItem(GetVar),
+          FixedCostItem(OptionGet),
+          FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+          FixedCostItem(ValUse),
+          FixedCostItem(SelectField),
+          FixedCostItem(MethodCall),
+          FixedCostItem(ValUse),
+          FixedCostItem(SelectField),
+          FixedCostItem(SAvlTree.updateOperationsMethod, FixedCost(JitCost(45)))
+        )
+      )
+
       // positive test
       {
         val input = (tree, (key, proof))
-        contains.checkExpected(input, success(okContains))
-        get.checkExpected(input, success(valueOpt))
-
-        contains.checkVerify(input, Expected(Success(okContains), 37850, CostDetails.ZeroCost, 1810))
-        get.checkVerify(input, Expected(value = Success(valueOpt), cost = 38372, CostDetails.ZeroCost, 1810 + additionalCost))
+        contains.checkExpected(input, Expected(Success(okContains), 37850, costDetails(105 + additionalDetails), 1810))
+        get.checkExpected(input, Expected(Success(valueOpt), 38372, costDetails(105 + additionalDetails), 1810 + additionalCost))
       }
 
       val keys = Colls.fromItems(key)
@@ -3293,15 +3405,14 @@ class SigmaDslSpecification extends SigmaDslTesting
 
       {
         val input = (tree, (keys, proof))
-        getMany.checkExpected(input, success(expRes))
-        getMany.checkVerify(input, Expected(value = Success(expRes), cost = 38991, CostDetails.ZeroCost, 1811 + additionalCost))
+        getMany.checkExpected(input, Expected(Success(expRes), 38991, costDetails(105 + additionalDetails), 1811 + additionalCost))
       }
 
       {
         val input = (tree, digest)
         val (res, _) = updateDigest.checkEquality(input).getOrThrow
         res.digest shouldBe digest
-        updateDigest.checkVerify(input, Expected(value = Success(res), cost = 36341, CostDetails.ZeroCost, 1791))
+        updateDigest.checkExpected(input, Expected(Success(res), 36341, updateDigestCostDetails, 1791))
       }
 
       val newOps = 1.toByte
@@ -3310,7 +3421,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         val input = (tree, newOps)
         val (res,_) = updateOperations.checkEquality(input).getOrThrow
         res.enabledOperations shouldBe newOps
-        updateOperations.checkVerify(input, Expected(value = Success(res), cost = 36341, CostDetails.ZeroCost, 1791))
+        updateOperations.checkExpected(input, Expected(Success(res), 36341, updateOperationsCostDetails, 1791))
       }
 
       // negative tests: invalid proof
@@ -3320,7 +3431,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         val input = (tree, (key, invalidProof))
         val (res, _) = contains.checkEquality(input).getOrThrow
         res shouldBe false
-        contains.checkVerify(input, Expected(value = Success(res), cost = 37850, CostDetails.ZeroCost, 1810))
+        contains.checkExpected(input, Expected(Success(res), 37850, costDetails(105 + additionalDetails), 1810))
       }
 
       {
@@ -3434,9 +3545,31 @@ class SigmaDslSpecification extends SigmaDslTesting
         )
       ))
 
-    val newCostDetails = TracedCost(
-      traceBase ++ Array(
-        FixedCostItem(PropertyCall)
+    val testTraceBase = Array(
+      FixedCostItem(Apply),
+      FixedCostItem(FuncValue),
+      FixedCostItem(GetVar),
+      FixedCostItem(OptionGet),
+      FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+      SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+      FixedCostItem(ValUse),
+      FixedCostItem(SelectField),
+      FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+      FixedCostItem(ValUse),
+      FixedCostItem(SelectField),
+      FixedCostItem(MethodCall),
+      FixedCostItem(ValUse),
+      FixedCostItem(SelectField),
+      FixedCostItem(ValUse),
+      FixedCostItem(SelectField),
+      FixedCostItem(SAvlTree.isInsertAllowedMethod, FixedCost(JitCost(15)))
+    )
+    val costDetails1 = TracedCost(testTraceBase)
+    val costDetails2 = TracedCost(
+      testTraceBase ++ Array(
+        SeqCostItem(NamedDesc("CreateAvlVerifier"), PerItemCost(JitCost(110), JitCost(20), 64), 70),
+        SeqCostItem(NamedDesc("InsertIntoAvlTree"), PerItemCost(JitCost(40), JitCost(10), 1), 1),
+        FixedCostItem(SAvlTree.updateDigestMethod, FixedCost(JitCost(40)))
       )
     )
 
@@ -3451,7 +3584,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         val input = (preInsertTree, (kvs, insertProof))
         val (res, _) = insert.checkEquality(input).getOrThrow
         res.isDefined shouldBe true
-        insert.checkVerify(input, Expected(Success(res), 38501, newCostDetails, 1816))
+        insert.checkExpected(input, Expected(Success(res), 38501, costDetails2, 1816))
       }
 
       { // negative: readonly tree
@@ -3459,7 +3592,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         val input = (readonlyTree, (kvs, insertProof))
         val (res, _) = insert.checkEquality(input).getOrThrow
         res.isDefined shouldBe false
-        insert.checkVerify(input, Expected(value = Success(res), cost = 38501))
+        insert.checkExpected(input, Expected(Success(res), 38501, costDetails1, 1792))
       }
 
       { // negative: invalid key
@@ -3469,7 +3602,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         val input = (tree, (invalidKvs, insertProof))
         val (res, _) = insert.checkEquality(input).getOrThrow
         res.isDefined shouldBe true // TODO v6.0: should it really be true? (looks like a bug)
-        insert.checkVerify(input, Expected(value = Success(res), cost = 38501))
+        insert.checkExpected(input, Expected(Success(res), 38501, costDetails2, 1816))
       }
 
       { // negative: invalid proof
@@ -3551,67 +3684,95 @@ class SigmaDslSpecification extends SigmaDslTesting
       ))
     val cost = 40952
 
-    def success[T](v: T) = Expected(Success(v), 0)
+    val testTraceBase = Array(
+      FixedCostItem(Apply),
+      FixedCostItem(FuncValue),
+      FixedCostItem(GetVar),
+      FixedCostItem(OptionGet),
+      FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+      SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+      FixedCostItem(ValUse),
+      FixedCostItem(SelectField),
+      FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+      FixedCostItem(ValUse),
+      FixedCostItem(SelectField),
+      FixedCostItem(MethodCall),
+      FixedCostItem(ValUse),
+      FixedCostItem(SelectField),
+      FixedCostItem(ValUse),
+      FixedCostItem(SelectField),
+      FixedCostItem(SAvlTree.isUpdateAllowedMethod, FixedCost(JitCost(15)))
+    )
+    val costDetails1 = TracedCost(testTraceBase)
+    val costDetails2 = TracedCost(
+      testTraceBase ++ Array(
+        SeqCostItem(NamedDesc("CreateAvlVerifier"), PerItemCost(JitCost(110), JitCost(20), 64), 111),
+        SeqCostItem(NamedDesc("UpdateAvlTree"), PerItemCost(JitCost(120), JitCost(20), 1), 1),
+        FixedCostItem(SAvlTree.updateDigestMethod, FixedCost(JitCost(40)))
+      )
+    )
+    val costDetails3 = TracedCost(
+      testTraceBase ++ Array(
+        SeqCostItem(NamedDesc("CreateAvlVerifier"), PerItemCost(JitCost(110), JitCost(20), 64), 111),
+        SeqCostItem(NamedDesc("UpdateAvlTree"), PerItemCost(JitCost(120), JitCost(20), 1), 1)
+      )
+    )
 
-    forAll(keyCollGen, bytesCollGen) { (key, value) =>
-      val (_, avlProver) = createAvlTreeAndProver(key -> value)
-      val preUpdateDigest = avlProver.digest.toColl
-      val newValue = bytesCollGen.sample.get
-      val updateProof = performUpdate(avlProver, key, newValue)
-      val kvs = Colls.fromItems((key -> newValue))
-      val endDigest = avlProver.digest.toColl
+    val key = Colls.fromArray(Array[Byte](1,0,1,1,73,-67,-128,1,1,0,93,0,127,87,95,51,1,127,1,-3,74,-66,-128,1,89,-18,1,-1,-62,0,-33,51))
+    val value = Colls.fromArray(Array[Byte](1,-50,1,-128,120,1))
+    val (_, avlProver) = createAvlTreeAndProver(key -> value)
+    val preUpdateDigest = avlProver.digest.toColl
+    // val newValue = bytesCollGen.sample.get
+    val newValue = Colls.fromArray(Array[Byte](2,-1,127,91,0,-1,-128,-1,38,-128,-105,-68,-128,-128,127,127,127,-74,88,127,127,127,-81,-30,-89,121,127,-1,-1,-34,127,1,-12,-128,108,75,127,-14,-63,-128,-103,127,1,-57,0,1,-128,127,-85,23,0,-128,70,-110,127,-85,-30,15,-1,-71,0,127,1,42,127,-118,-1,0,-53,126,42,0,127,127,0,-10,-1,127,19,-4,-1,-88,-128,-96,61,-116,127,-111,6,-128,-1,-86,-39,114,0,127,-92,40))
+    val updateProof = performUpdate(avlProver, key, newValue)
+    val kvs = Colls.fromItems((key -> newValue))
+    val endDigest = avlProver.digest.toColl
 
-      { // positive: update to newValue
-        val preUpdateTree = createTree(preUpdateDigest, updateAllowed = true)
-        val endTree = preUpdateTree.updateDigest(endDigest)
-        val input = (preUpdateTree, (kvs, updateProof))
-        val res = Some(endTree)
-        update.checkExpected(input, success(res))
-        update.checkVerify(input, Expected(Success(res), cost))
-      }
+    { // positive: update to newValue
+      val preUpdateTree = createTree(preUpdateDigest, updateAllowed = true)
+      val endTree = preUpdateTree.updateDigest(endDigest)
+      val input = (preUpdateTree, (kvs, updateProof))
+      val res = Some(endTree)
+      update.checkExpected(input, Expected(Success(res), cost, costDetails2, 1825))
+    }
 
-      { // positive: update to the same value (identity operation)
-        val tree = createTree(preUpdateDigest, updateAllowed = true)
-        val keys = Colls.fromItems((key -> value))
-        val input = (tree, (keys, updateProof))
-        val res = Some(tree)
-        update.checkExpected(input, success(res))
-        update.checkVerify(input, Expected(value = Success(res), cost = cost))
-      }
+    { // positive: update to the same value (identity operation)
+      val tree = createTree(preUpdateDigest, updateAllowed = true)
+      val keys = Colls.fromItems((key -> value))
+      val input = (tree, (keys, updateProof))
+      val res = Some(tree)
+      update.checkExpected(input, Expected(Success(res), cost, costDetails2, 1825))
+    }
 
-      { // negative: readonly tree
-        val readonlyTree = createTree(preUpdateDigest)
-        val input = (readonlyTree, (kvs, updateProof))
-        update.checkExpected(input, success(None))
-        update.checkVerify(input, Expected(value = Success(None), cost = cost))
-      }
+    { // negative: readonly tree
+      val readonlyTree = createTree(preUpdateDigest)
+      val input = (readonlyTree, (kvs, updateProof))
+      update.checkExpected(input, Expected(Success(None), cost, costDetails1, 1792))
+    }
 
-      { // negative: invalid key
-        val tree = createTree(preUpdateDigest, updateAllowed = true)
-        val invalidKey = key.map(x => (-x).toByte) // any other different from key
-        val invalidKvs = Colls.fromItems((invalidKey -> newValue))
-        val input = (tree, (invalidKvs, updateProof))
-        update.checkExpected(input, success(None))
-        update.checkVerify(input, Expected(value = Success(None), cost = cost))
-      }
+    { // negative: invalid key
+      val tree = createTree(preUpdateDigest, updateAllowed = true)
+      val invalidKey = key.map(x => (-x).toByte) // any other different from key
+      val invalidKvs = Colls.fromItems((invalidKey -> newValue))
+      val input = (tree, (invalidKvs, updateProof))
+      update.checkExpected(input, Expected(Success(None), cost, costDetails3, 1821))
+    }
 
-      { // negative: invalid value (different from the value in the proof)
-        val tree = createTree(preUpdateDigest, updateAllowed = true)
-        val invalidValue = newValue.map(x => (-x).toByte)
-        val invalidKvs = Colls.fromItems((key -> invalidValue))
-        val input = (tree, (invalidKvs, updateProof))
-        val (res, _) = update.checkEquality(input).getOrThrow
-        res.isDefined shouldBe true  // TODO v6.0: should it really be true? (looks like a bug)
-        update.checkVerify(input, Expected(value = Success(res), cost = cost))
-      }
+    { // negative: invalid value (different from the value in the proof)
+      val tree = createTree(preUpdateDigest, updateAllowed = true)
+      val invalidValue = newValue.map(x => (-x).toByte)
+      val invalidKvs = Colls.fromItems((key -> invalidValue))
+      val input = (tree, (invalidKvs, updateProof))
+      val (res, _) = update.checkEquality(input).getOrThrow
+      res.isDefined shouldBe true  // TODO v6.0: should it really be true? (looks like a bug)
+      update.checkExpected(input, Expected(Success(res), cost, costDetails2, 1825))
+    }
 
-      { // negative: invalid proof
-        val tree = createTree(preUpdateDigest, updateAllowed = true)
-        val invalidProof = updateProof.map(x => (-x).toByte) // any other different from proof
-        val input = (tree, (kvs, invalidProof))
-        update.checkExpected(input, success(None))
-        update.checkVerify(input, Expected(value = Success(None), cost = cost))
-      }
+    { // negative: invalid proof
+      val tree = createTree(preUpdateDigest, updateAllowed = true)
+      val invalidProof = updateProof.map(x => (-x).toByte) // any other different from proof
+      val input = (tree, (kvs, invalidProof))
+      update.checkExpected(input, Expected(Success(None), cost, costDetails3, 1821))
     }
   }
 
@@ -3652,11 +3813,66 @@ class SigmaDslSpecification extends SigmaDslTesting
         )
       ))
 
-    def success[T](v: T) = Expected(Success(v), 0)
+    val testTraceBase = Array(
+      FixedCostItem(Apply),
+      FixedCostItem(FuncValue),
+      FixedCostItem(GetVar),
+      FixedCostItem(OptionGet),
+      FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+      SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+      FixedCostItem(ValUse),
+      FixedCostItem(SelectField),
+      FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+      FixedCostItem(ValUse),
+      FixedCostItem(SelectField),
+      FixedCostItem(MethodCall),
+      FixedCostItem(ValUse),
+      FixedCostItem(SelectField),
+      FixedCostItem(ValUse),
+      FixedCostItem(SelectField),
+      FixedCostItem(SAvlTree.isRemoveAllowedMethod, FixedCost(JitCost(15)))
+    )
+    val costDetails1 = TracedCost(
+      testTraceBase ++ Array(
+        SeqCostItem(NamedDesc("CreateAvlVerifier"), PerItemCost(JitCost(110), JitCost(20), 64), 436),
+        SeqCostItem(NamedDesc("RemoveAvlTree"), PerItemCost(JitCost(100), JitCost(15), 1), 3),
+        SeqCostItem(NamedDesc("RemoveAvlTree"), PerItemCost(JitCost(100), JitCost(15), 1), 3),
+        FixedCostItem(SAvlTree.digestMethod, FixedCost(JitCost(15))),
+        FixedCostItem(SAvlTree.updateDigestMethod, FixedCost(JitCost(40)))
+      )
+    )
+    val costDetails2 = TracedCost(
+      testTraceBase ++ Array(
+        SeqCostItem(NamedDesc("CreateAvlVerifier"), PerItemCost(JitCost(110), JitCost(20), 64), 140),
+        SeqCostItem(NamedDesc("RemoveAvlTree"), PerItemCost(JitCost(100), JitCost(15), 1), 1),
+        FixedCostItem(SAvlTree.digestMethod, FixedCost(JitCost(15))),
+        FixedCostItem(SAvlTree.updateDigestMethod, FixedCost(JitCost(40)))
+      )
+    )
+    val costDetails3 = TracedCost(testTraceBase)
+    val costDetails4 = TracedCost(
+      testTraceBase ++ Array(
+        SeqCostItem(NamedDesc("CreateAvlVerifier"), PerItemCost(JitCost(110), JitCost(20), 64), 140),
+        SeqCostItem(NamedDesc("RemoveAvlTree"), PerItemCost(JitCost(100), JitCost(15), 1), 1),
+        FixedCostItem(SAvlTree.digestMethod, FixedCost(JitCost(15)))
+      )
+    )
 
-    { // positive test with many keys in the tree and to remove
-      val keys = arrayOfN(100, keyCollGen).sample.get
-      val values = arrayOfN(100, bytesCollGen).sample.get
+    {
+      val keys = Array(
+        Colls.fromArray(Array[Byte](6,71,1,-123,-1,17,-1,-1,-128,-1,-99,127,2,-37,-1,-17,-1,-90,-33,-50,-122,127,1,127,-81,1,-57,118,-38,-36,-2,1)),
+        Colls.fromArray(Array[Byte](-84,-128,1,0,30,0,73,127,71,1,0,39,127,-1,-109,66,0,1,-128,-43,-1,-95,-55,-97,12,1,-1,0,-128,-1,5,0)),
+        Colls.fromArray(Array[Byte](0,-84,1,-1,-128,93,-21,0,-128,0,-128,-128,85,-128,-123,-1,-70,0,38,-1,123,-1,1,21,0,-11,-59,122,-108,-64,1,124)),
+        Colls.fromArray(Array[Byte](1,-29,-1,0,-1,0,0,0,1,44,0,2,0,17,1,-36,50,58,118,-125,108,-93,3,65,-128,77,127,109,-121,-61,-128,-128)),
+        Colls.fromArray(Array[Byte](127,0,0,70,127,1,-109,60,-128,-106,-77,-1,-1,0,127,-108,-128,0,0,-27,-9,-128,89,127,107,68,-76,3,-102,127,4,0))
+      )
+      val values = Array(
+        Colls.fromArray(Array[Byte](-1,91,0,31,-86,-1,39,127,76,78,-1,0,0,-112,36,-16,55,-9,-21,45,0,-128,23,-1,1,-128,63,-33,-60,117,116,-53,-19,-1,0,1,-128,0,127,127,16,127,-84,-128,0,1,-5,1,-128,-103,114,-128,-105,-128,79,62,-1,46,0,-128,-40,-1,89,40,103,1,44,-128,97,-107,111,-1,0,-8,1,42,-38,88,127,127,118,127,127,127,-6,-1,20,32,-128,-1,69,1,127,1,127,22,-128,127)),
+        Colls.fromArray(Array[Byte](-75,-38,-1,0,-127,-104,-128,-128,-47,113,98,-128,-120,101,1,-128,1,-128,19,1,0,10,88,90,-1,-49,-13,127,26,82,-1,-1,-1,1,-1,-62,-128,-128)),
+        Colls.fromArray(Array[Byte](-95,-76,-128,-128,127,16,0,-1,-18,1,-93,1,127,-128,1,-92,111,-128,59,-1,-128,-1,96,-87,127,101,14,73,-9,-128,-1,1,-128,-1,127,-72,6,127,1,67,-1,-128,3,111,1,1,127,-118,127,43,-99,1,-128,0,127,-128,1,-128,-128,100,1,73,0,127,1,-121,1,104,-50,0,0,-1,119,127,80,-69,-128,23,-128,1,-1,127,18,-128,124,-128)),
+        Colls.fromArray(Array[Byte](-65,-128,127,0,-7,35,-128,-127,-120,-128,-8,64,-128,16)),
+        Colls.fromArray(Array[Byte](127,100,8,-128,1,56,113,-35,-50,53,-128,-61,-1))
+      )
       val (_, avlProver) = createAvlTreeAndProver(keys.zip(values):_*)
       val preRemoveDigest = avlProver.digest.toColl
       val keysToRemove = keys.zipWithIndex.collect { case (k, i) if i % 2 != 0 => k }
@@ -3667,10 +3883,12 @@ class SigmaDslSpecification extends SigmaDslTesting
       val endTree = preRemoveTree.updateDigest(endDigest)
       val input = (preRemoveTree, (Colls.fromArray(keysToRemove), removeProof))
       val res = Some(endTree)
-      remove.checkExpected(input, success(res))
+      remove.checkExpected(input, Expected(Success(res), 38270, costDetails1, 1852))
     }
 
-    forAll(keyCollGen, bytesCollGen) { (key, value) =>
+    {
+      val key = Colls.fromArray(Array[Byte](-60,42,60,-1,-128,-122,107,-1,-1,-128,47,24,-1,-13,-40,-58,-1,127,-41,-12,100,0,15,-108,-41,127,-7,-1,126,-1,-1,115))
+      val value = Colls.fromArray(Array[Byte](0,-40,1,1,-60,-119,-68,0,-128,-128,127,-3,5,54,-1,49,47,33,126,-82,-115,1,0,-123,1,15,-1,-49,-107,73,-1))
       val (_, avlProver) = createAvlTreeAndProver(key -> value)
       val preRemoveDigest = avlProver.digest.toColl
       val removeProof = performRemove(avlProver, Array(key))
@@ -3683,15 +3901,13 @@ class SigmaDslSpecification extends SigmaDslTesting
         val endTree = preRemoveTree.updateDigest(endDigest)
         val input = (preRemoveTree, (keys, removeProof))
         val res = Some(endTree)
-        remove.checkExpected(input, success(res))
-        remove.checkVerify(input, Expected(value = Success(res), cost = cost))
+        remove.checkExpected(input, Expected(Success(res), cost, costDetails2, 1826))
       }
 
       { // negative: readonly tree
         val readonlyTree = createTree(preRemoveDigest)
         val input = (readonlyTree, (keys, removeProof))
-        remove.checkExpected(input, success(None))
-        remove.checkVerify(input, Expected(value = Success(None), cost = cost))
+        remove.checkExpected(input, Expected(Success(None), cost, costDetails3, 1792))
       }
 
       { // negative: invalid key
@@ -3699,16 +3915,14 @@ class SigmaDslSpecification extends SigmaDslTesting
         val invalidKey = key.map(x => (-x).toByte) // any other different from `key`
         val invalidKeys = Colls.fromItems(invalidKey)
         val input = (tree, (invalidKeys, removeProof))
-        remove.checkExpected(input, success(None))
-        remove.checkVerify(input, Expected(value = Success(None), cost = cost))
+        remove.checkExpected(input, Expected(Success(None), cost, costDetails4, 1822))
       }
 
       { // negative: invalid proof
         val tree = createTree(preRemoveDigest, removeAllowed = true)
         val invalidProof = removeProof.map(x => (-x).toByte) // any other different from `removeProof`
         val input = (tree, (keys, invalidProof))
-        remove.checkExpected(input, success(None))
-        remove.checkVerify(input, Expected(value = Success(None), cost = cost))
+        remove.checkExpected(input, Expected(Success(None), cost, costDetails4, 1822))
       }
     }
   }
@@ -4861,15 +5075,20 @@ class SigmaDslSpecification extends SigmaDslTesting
         )),
       preGeneratedSamples = Some(samples))
 
+    val selfCostDetails = TracedCost(
+      traceBase ++ Array(
+        FixedCostItem(PropertyCall),
+        FixedCostItem(SContext.selfBoxIndexMethod, FixedCost(JitCost(20)))
+      )
+    )
     verifyCases(
       Seq(
         (ctx, Expected(
           Success(-1), cost = 36318,
-          // TODO mainnet v5.0: Change to concrete details does not change test result
           expectedDetails = CostDetails.ZeroCost,
           newCost = 1786,
           newVersionedResults = {
-            val res = (ExpectedResult(Success(0), Some(1786)) -> None)
+            val res = (ExpectedResult(Success(0), Some(1786)) -> Some(selfCostDetails))
             Seq(0, 1, 2).map(version => version -> res)
           }))
       ),
@@ -5067,7 +5286,11 @@ class SigmaDslSpecification extends SigmaDslTesting
 
     verifyCases(
       Seq(
-        ctx -> Expected(expectedError)
+        ctx -> Expected(Failure(expectedError), 0, CostDetails.ZeroCost, 1813,
+          newVersionedResults = {
+            Seq.tabulate(3)(v => v -> (ExpectedResult(Success(true), Some(1813)) -> None))
+          }
+        )
       ),
       changedFeature(
         scalaFunc = { (x: Context) =>
@@ -6010,39 +6233,36 @@ class SigmaDslSpecification extends SigmaDslTesting
   }
 
   property("xorOf equivalence") {
+    def costDetails(i: Int) = TracedCost(traceBase :+ SeqCostItem(CompanionDesc(XorOf), PerItemCost(JitCost(20), JitCost(5), 32), i))
     verifyCases(
       {
-        def successNew[T](v: T, c: Int, newV: T, newC: Int) = Expected(
+        def successNew[T](v: T, c: Int, newV: T, cd: CostDetails) = Expected(
           value = Success(v),
           cost = c,
           expectedDetails = CostDetails.ZeroCost,
-          newCost = newC,
-          newVersionedResults = Seq(
-            0 -> (ExpectedResult(Success(newV), Some(newC)) -> None),
-            1 -> (ExpectedResult(Success(newV), Some(newC)) -> None),
-            2 -> (ExpectedResult(Success(newV), Some(newC)) -> None)
-          ))
-        val newCost = 1786
+          newCost = 1786,
+          newVersionedResults = Seq(0, 1, 2).map(i => i -> (ExpectedResult(Success(newV), Some(1786)) -> Some(cd)))
+        )
         Seq(
-          (Coll[Boolean](), successNew(false, 37061, newV = false,  newCost)),
-          (Coll[Boolean](false), successNew(false, 37071, newV = false, newCost)),
-          (Coll[Boolean](true), successNew(false, 37071, newV = true, newCost)),
-          (Coll[Boolean](false, false), successNew(false, 37081, newV = false, newCost)),
-          (Coll[Boolean](false, true), successNew(true, 37081, newV = true, newCost)),
-          (Coll[Boolean](true, false), successNew(true, 37081, newV = true, newCost)),
-          (Coll[Boolean](true, true), successNew(false, 37081, newV = false, newCost)),
-          (Coll[Boolean](false, false, false), successNew(false, 37091, newV = false, newCost)),
-          (Coll[Boolean](false, false, true), successNew(true, 37091, newV = true, newCost)),
-          (Coll[Boolean](false, true, false), successNew(true, 37091, newV = true, newCost)),
-          (Coll[Boolean](false, true, true), successNew(true, 37091, newV = false, newCost)),
-          (Coll[Boolean](true, false, false), successNew(true, 37091, newV = true, newCost)),
-          (Coll[Boolean](true, false, true), successNew(true, 37091, newV = false,  newCost)),
-          (Coll[Boolean](true, true, false), successNew(true, 37091, newV = false,  newCost)),
-          (Coll[Boolean](true, true, true), successNew(false, 37091, newV = true,  newCost)),
-          (Coll[Boolean](false, false, false, false), successNew(false, 37101, newV = false,  newCost)),
-          (Coll[Boolean](false, false, false, true), successNew(true, 37101, newV = true,  newCost)),
-          (Coll[Boolean](false, false, true, false), successNew(true, 37101, newV = true,  newCost)),
-          (Coll[Boolean](false, false, true, true), successNew(true, 37101, newV = false,  newCost))
+          (Coll[Boolean](), successNew(false, 37061, newV = false, costDetails(0))),
+          (Coll[Boolean](false), successNew(false, 37071, newV = false, costDetails(1))),
+          (Coll[Boolean](true), successNew(false, 37071, newV = true, costDetails(1))),
+          (Coll[Boolean](false, false), successNew(false, 37081, newV = false, costDetails(2))),
+          (Coll[Boolean](false, true), successNew(true, 37081, newV = true, costDetails(2))),
+          (Coll[Boolean](true, false), successNew(true, 37081, newV = true, costDetails(2))),
+          (Coll[Boolean](true, true), successNew(false, 37081, newV = false, costDetails(2))),
+          (Coll[Boolean](false, false, false), successNew(false, 37091, newV = false, costDetails(3))),
+          (Coll[Boolean](false, false, true), successNew(true, 37091, newV = true, costDetails(3))),
+          (Coll[Boolean](false, true, false), successNew(true, 37091, newV = true, costDetails(3))),
+          (Coll[Boolean](false, true, true), successNew(true, 37091, newV = false, costDetails(3))),
+          (Coll[Boolean](true, false, false), successNew(true, 37091, newV = true, costDetails(3))),
+          (Coll[Boolean](true, false, true), successNew(true, 37091, newV = false, costDetails(3))),
+          (Coll[Boolean](true, true, false), successNew(true, 37091, newV = false, costDetails(3))),
+          (Coll[Boolean](true, true, true), successNew(false, 37091, newV = true, costDetails(3))),
+          (Coll[Boolean](false, false, false, false), successNew(false, 37101, newV = false, costDetails(4))),
+          (Coll[Boolean](false, false, false, true), successNew(true, 37101, newV = true, costDetails(4))),
+          (Coll[Boolean](false, false, true, false), successNew(true, 37101, newV = true, costDetails(4))),
+          (Coll[Boolean](false, false, true, true), successNew(true, 37101, newV = false, costDetails(4)))
         )
       },
       changedFeature(
@@ -6256,27 +6476,35 @@ class SigmaDslSpecification extends SigmaDslTesting
 
   property("Global.xor equivalence") {
     if (lowerMethodCallsInTests) {
+      def costDetails(i: Int) = TracedCost(
+        traceBase ++ Array(
+          FixedCostItem(SelectField),
+          FixedCostItem(ValUse),
+          FixedCostItem(SelectField),
+          SeqCostItem(CompanionDesc(Xor), PerItemCost(JitCost(10), JitCost(2), 128), i)
+        )
+      )
       verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 36903)
+        def success[T](v: T, cd: CostDetails) = Expected(Success(v), 36903, cd, 1789)
         Seq(
-          ((Helpers.decodeBytes(""), Helpers.decodeBytes("")), success(Helpers.decodeBytes(""))),
-          ((Helpers.decodeBytes("01"), Helpers.decodeBytes("01")), success(Helpers.decodeBytes("00"))),
-          ((Helpers.decodeBytes("0100"), Helpers.decodeBytes("0101")), success(Helpers.decodeBytes("0001"))),
-          ((Helpers.decodeBytes("01"), Helpers.decodeBytes("0101")), success(Helpers.decodeBytes("00"))),
+          ((Helpers.decodeBytes(""), Helpers.decodeBytes("")), success(Helpers.decodeBytes(""), costDetails(0))),
+          ((Helpers.decodeBytes("01"), Helpers.decodeBytes("01")), success(Helpers.decodeBytes("00"), costDetails(1))),
+          ((Helpers.decodeBytes("0100"), Helpers.decodeBytes("0101")), success(Helpers.decodeBytes("0001"), costDetails(2))),
+          ((Helpers.decodeBytes("01"), Helpers.decodeBytes("0101")), success(Helpers.decodeBytes("00"), costDetails(1))),
           ((Helpers.decodeBytes("0100"), Helpers.decodeBytes("01")) ->
             Expected(Failure(new ArrayIndexOutOfBoundsException("1")),
               cost = 0,
               expectedDetails = CostDetails.ZeroCost,
               newCost = 1789,
               newVersionedResults =  {
-                val res = (ExpectedResult(Success(Helpers.decodeBytes("00")), Some(1789)), None)
+                val res = (ExpectedResult(Success(Helpers.decodeBytes("00")), Some(1789)), Some(costDetails(1)))
                 Seq(0, 1, 2).map(version => version -> res)
               }
             )),
           ((Helpers.decodeBytes("800136fe89afff802acea67128a0ff007fffe3498c8001806080012b"),
               Helpers.decodeBytes("648018010a5d5800f5b400a580e7b4809b0cd273ff1230bfa800017f7fdb002749b3ac2b86ff")),
-              success(Helpers.decodeBytes("e4812eff83f2a780df7aa6d4a8474b80e4f3313a7392313fc8800054")))
+              success(Helpers.decodeBytes("e4812eff83f2a780df7aa6d4a8474b80e4f3313a7392313fc8800054"), costDetails(28)))
         )
       },
       changedFeature(
@@ -6312,11 +6540,23 @@ class SigmaDslSpecification extends SigmaDslTesting
                 Success(Helpers.decodeBytes("00")),
                 Some(116)
               )
-              Seq( // expected result for each version
-                0 -> ( res -> None ),
-                1 -> ( res -> None ),
-                2 -> ( res -> None )
+              val details = TracedCost(
+                Array(
+                  FixedCostItem(Apply),
+                  FixedCostItem(FuncValue),
+                  FixedCostItem(GetVar),
+                  FixedCostItem(OptionGet),
+                  FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+                  FixedCostItem(Global),
+                  FixedCostItem(MethodCall),
+                  FixedCostItem(ValUse),
+                  FixedCostItem(SelectField),
+                  FixedCostItem(ValUse),
+                  FixedCostItem(SelectField),
+                  SeqCostItem(CompanionDesc(Xor), PerItemCost(JitCost(10), JitCost(2), 128), 1)
+                )
               )
+              Seq.tabulate(3)(v => v -> ( res -> Some(details) )) // expected result for each version
             }
           )
         )
@@ -6968,6 +7208,13 @@ class SigmaDslSpecification extends SigmaDslTesting
     r <- Gen.choose(l, arr.length - 1) } yield (arr, (l, r))
 
   property("Coll flatMap method equivalence") {
+    val costDetails0 = TracedCost(
+      traceBase ++ Array(
+        FixedCostItem(MethodCall),
+        FixedCostItem(FuncValue),
+        SeqCostItem(MethodDesc(SCollection.FlatMapMethod), PerItemCost(JitCost(60), JitCost(10), 8), 0)
+      )
+    )
     val costDetails1 = TracedCost(
       traceBase ++ Array(
         FixedCostItem(MethodCall),
@@ -6977,32 +7224,84 @@ class SigmaDslSpecification extends SigmaDslTesting
         SeqCostItem(MethodDesc(SCollection.FlatMapMethod), PerItemCost(JitCost(60), JitCost(10), 8), 0)
       )
     )
-    val costDetails1Copy = TracedCost(
+    val costDetails2 = TracedCost(
       traceBase ++ Array(
         FixedCostItem(MethodCall),
         FixedCostItem(FuncValue),
-        SeqCostItem(MethodDesc(SCollection.FlatMapMethod), PerItemCost(JitCost(60), JitCost(10), 8), 0)
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(PropertyCall),
+        FixedCostItem(SGroupElement.GetEncodedMethod, FixedCost(JitCost(250))),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(PropertyCall),
+        FixedCostItem(SGroupElement.GetEncodedMethod, FixedCost(JitCost(250))),
+        SeqCostItem(MethodDesc(SCollection.FlatMapMethod), PerItemCost(JitCost(60), JitCost(10), 8), 66)
       )
     )
+    val costDetails3 = TracedCost(
+      traceBase ++ Array(
+        FixedCostItem(MethodCall),
+        FixedCostItem(FuncValue),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(PropertyCall),
+        FixedCostItem(SGroupElement.GetEncodedMethod, FixedCost(JitCost(250))),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(PropertyCall),
+        FixedCostItem(SGroupElement.GetEncodedMethod, FixedCost(JitCost(250))),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(PropertyCall),
+        FixedCostItem(SGroupElement.GetEncodedMethod, FixedCost(JitCost(250))),
+        SeqCostItem(MethodDesc(SCollection.FlatMapMethod), PerItemCost(JitCost(60), JitCost(10), 8), 99)
+      )
+    )
+    val costDetails4 = TracedCost(
+      traceBase ++ Array(
+        FixedCostItem(MethodCall),
+        FixedCostItem(FuncValue),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(PropertyCall),
+        FixedCostItem(SGroupElement.GetEncodedMethod, FixedCost(JitCost(250))),
+        FixedCostItem(PropertyCall),
+        SeqCostItem(MethodDesc(SCollection.IndicesMethod), PerItemCost(JitCost(20), JitCost(2), 16), 33),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(PropertyCall),
+        FixedCostItem(SGroupElement.GetEncodedMethod, FixedCost(JitCost(250))),
+        FixedCostItem(PropertyCall),
+        SeqCostItem(MethodDesc(SCollection.IndicesMethod), PerItemCost(JitCost(20), JitCost(2), 16), 33),
+        SeqCostItem(MethodDesc(SCollection.FlatMapMethod), PerItemCost(JitCost(60), JitCost(10), 8), 66)
+      )
+    )
+    
     verifyCases(
       {
-        def success[T](v: T, c: Int) = Expected(Success(v), c)
+        def success[T](v: T, c: Int, cd: CostDetails, newCost: Int) = Expected(Success(v), c, cd, newCost)
         Seq(
-          // TODO mainnet v5.0: different results - costDetails1(Copy) and cost 1793/1800 (problematic version 2/2 ?)
-          // Coll[GroupElement]() -> Expected(Success(Coll[Byte]()), 40133, CostDetails.ZeroCost, 1793),
+           Coll[GroupElement]() -> Expected(Success(Coll[Byte]()), 40133, CostDetails.ZeroCost, 1794,
+             newVersionedResults = {
+               val res = ExpectedResult(Success(Coll[Byte]()), Some(1793))
+               Seq.tabulate(3)(v =>
+                 v -> (res -> Some(costDetails0))
+               )
+             }),
           Coll[GroupElement](
             Helpers.decodeGroupElement("02d65904820f8330218cf7318b3810d0c9ab9df86f1ee6100882683f23c0aee587"),
             Helpers.decodeGroupElement("0390e9daa9916f30d0bc61a8e381c6005edfb7938aee5bb4fc9e8a759c7748ffaa")) ->
               success(Helpers.decodeBytes(
                 "02d65904820f8330218cf7318b3810d0c9ab9df86f1ee6100882683f23c0aee5870390e9daa9916f30d0bc61a8e381c6005edfb7938aee5bb4fc9e8a759c7748ffaa"
-              ), 40213),
+              ), 40213, costDetails2, 1854),
           Coll[GroupElement](
             Helpers.decodeGroupElement("02d65904820f8330218cf7318b3810d0c9ab9df86f1ee6100882683f23c0aee587"),
             Helpers.decodeGroupElement("0390e9daa9916f30d0bc61a8e381c6005edfb7938aee5bb4fc9e8a759c7748ffaa"),
             Helpers.decodeGroupElement("03bd839b969b02d218fd1192f2c80cbda9c6ce9c7ddb765f31b748f4666203df85")) ->
               success(Helpers.decodeBytes(
                 "02d65904820f8330218cf7318b3810d0c9ab9df86f1ee6100882683f23c0aee5870390e9daa9916f30d0bc61a8e381c6005edfb7938aee5bb4fc9e8a759c7748ffaa03bd839b969b02d218fd1192f2c80cbda9c6ce9c7ddb765f31b748f4666203df85"
-              ), 40253)
+              ), 40253, costDetails3, 1884)
         )
       },
       existingFeature(
@@ -7044,7 +7343,7 @@ class SigmaDslSpecification extends SigmaDslTesting
                          val is = Coll((0 to 32):_*)
                          is.append(is)
                        }),
-                       verificationCost = Some(817)) -> None)
+                       verificationCost = Some(817)) -> Some(costDetails4))
               ))
       )
       val f = changedFeature(
@@ -7086,18 +7385,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         allowDifferentErrors = true
       )
 
-      val table = Table(("x", "y"), cases:_*)
-      forAll(table) { (x, expectedRes) =>
-        val res = f.checkEquality(x)
-        val resValue = res.map(_._1)
-        if (activatedVersionInTests >= VersionContext.JitActivationVersion) {
-          val expected = expectedRes.newResults(ergoTreeVersionInTests)._1
-          checkResult(resValue, expected.value, failOnTestVectors = true)
-          if (res.isSuccess) {
-            res.get._2.cost shouldBe JitCost(expected.verificationCost.get)
-          }
-        }
-      }
+      testCases(cases, f)
     }
 
     val f = existingFeature(
@@ -7982,11 +8270,28 @@ class SigmaDslSpecification extends SigmaDslTesting
                 newVersionedResults = {
                   // in v5.0 MethodCall ErgoTree node is allowed
                   val res = ExpectedResult( Success(1), Some(166) )
-                  Seq( // expected result for each version
-                    0 -> ( res -> None ),
-                    1 -> ( res -> None ),
-                    2 -> ( res -> None )
+                  val details = TracedCost(
+                    Array(
+                      FixedCostItem(Apply),
+                      FixedCostItem(FuncValue),
+                      FixedCostItem(GetVar),
+                      FixedCostItem(OptionGet),
+                      FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+                      SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+                      FixedCostItem(ValUse),
+                      FixedCostItem(SelectField),
+                      FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+                      FixedCostItem(ValUse),
+                      FixedCostItem(SelectField),
+                      FixedCostItem(MethodCall),
+                      FixedCostItem(ValUse),
+                      FixedCostItem(SelectField),
+                      FixedCostItem(ValUse),
+                      FixedCostItem(SelectField),
+                      FixedCostItem(SCollection.GetOrElseMethod, FixedCost(JitCost(30)))
+                    )
                   )
+                  Seq.tabulate(3)(v => v -> ( res -> Some(details) )) // expected result for each version
                 }
               )
             )
@@ -8729,9 +9034,23 @@ class SigmaDslSpecification extends SigmaDslTesting
   property("Option fold workaround method") {
     val costDetails1 = TracedCost(
       traceBase ++ Array(
-        FixedCostItem(MethodCall),
+        FixedCostItem(OptionIsDefined),
+        FixedCostItem(If),
+        FixedCostItem(Constant)
+      )
+    )
+    val costDetails2 = TracedCost(
+      traceBase ++ Array(
+        FixedCostItem(OptionIsDefined),
+        FixedCostItem(If),
+        FixedCostItem(Apply),
         FixedCostItem(FuncValue),
-        FixedCostItem(SOption.FilterMethod, FixedCost(JitCost(20)))
+        FixedCostItem(ValUse),
+        FixedCostItem(OptionGet),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(Constant),
+        TypeBasedCostItem(ArithOp.Plus, SLong)
       )
     )
     val n = ExactNumeric.LongIsExactNumeric
@@ -8742,12 +9061,12 @@ class SigmaDslSpecification extends SigmaDslTesting
             cost = 0,
             expectedDetails = CostDetails.ZeroCost,
             newCost = 1786,
-            newVersionedResults = Seq(
-              2 -> (ExpectedResult(Success(5L), Some(1786)) -> None)
-            )
+            newVersionedResults = Seq.tabulate(3)(v => v -> (ExpectedResult(Success(5L), Some(1786)) -> Some(costDetails1)))
           )),
-        (Some(0L) -> Expected(Success(1L), cost = 39012,
-          expectedDetails = CostDetails.ZeroCost,
+        (Some(0L) -> Expected(
+          Success(1L),
+          cost = 39012,
+          expectedDetails = costDetails2,
           expectedNewCost = 1794)),
         (Some(Long.MaxValue) -> Expected(new ArithmeticException("long overflow")))
       ),
@@ -9273,10 +9592,21 @@ class SigmaDslSpecification extends SigmaDslTesting
       ErgoTree.ConstantSegregationHeader,
       Vector(IntConstant(10)),
       BoolToSigmaProp(EQ(ConstantPlaceholder(0, SInt), IntConstant(20))))
-    
+    def costDetails(i: Int) = TracedCost(
+      traceBase ++ Array(
+        FixedCostItem(SelectField),
+        FixedCostItem(ConcreteCollection),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        FixedCostItem(ConcreteCollection),
+        FixedCostItem(Constant),
+        FixedCostItem(BoolToSigmaProp),
+        SeqCostItem(CompanionDesc(SubstConstants), PerItemCost(JitCost(100), JitCost(100), 1), i)
+      )
+    )
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 37694)
+        def success[T](v: T, cd: CostDetails, cost: Int) = Expected(Success(v), 37694, cd, cost)
         Seq(
           (Helpers.decodeBytes(""), 0) -> Expected(new java.nio.BufferUnderflowException()),
 
@@ -9288,7 +9618,7 @@ class SigmaDslSpecification extends SigmaDslTesting
             expectedDetails = CostDetails.ZeroCost,
             newCost = 1803,
             newVersionedResults = {
-              val res = (ExpectedResult(Success(Helpers.decodeBytes("0008d3")), Some(1803)) -> None)
+              val res = (ExpectedResult(Success(Helpers.decodeBytes("0008d3")), Some(1803)) -> Some(costDetails(0)))
               Seq(0, 1, 2).map(version => version -> res)
             }),
 
@@ -9299,16 +9629,16 @@ class SigmaDslSpecification extends SigmaDslTesting
             newCost = 1803,
             newVersionedResults = {
               // since the tree without constant segregation, substitution has no effect
-              val res = (ExpectedResult(Success(Helpers.decodeBytes("000008d3")), Some(1803)) -> None)
+              val res = (ExpectedResult(Success(Helpers.decodeBytes("000008d3")), Some(1803)) -> Some(costDetails(0)))
               Seq(0, 1, 2).map(version => version -> res)
             }),
           // tree with segregation flag, empty constants array
-          (Coll(t2.bytes:_*), 0) -> success(Helpers.decodeBytes("100008d3")),
-          (Helpers.decodeBytes("100008d3"), 0) -> success(Helpers.decodeBytes("100008d3")),
+          (Coll(t2.bytes:_*), 0) -> success(Helpers.decodeBytes("100008d3"), costDetails(0), 1803),
+          (Helpers.decodeBytes("100008d3"), 0) -> success(Helpers.decodeBytes("100008d3"), costDetails(0), 1803),
           // tree with one segregated constant
-          (Coll(t3.bytes:_*), 0) -> success(Helpers.decodeBytes("100108d27300")),
-          (Helpers.decodeBytes("100108d37300"), 0) -> success(Helpers.decodeBytes("100108d27300")),
-          (Coll(t3.bytes:_*), 1) -> success(Helpers.decodeBytes("100108d37300")),
+          (Coll(t3.bytes:_*), 0) -> success(Helpers.decodeBytes("100108d27300"), costDetails(1), 1813),
+          (Helpers.decodeBytes("100108d37300"), 0) -> success(Helpers.decodeBytes("100108d27300"), costDetails(1), 1813),
+          (Coll(t3.bytes:_*), 1) -> success(Helpers.decodeBytes("100108d37300"), costDetails(1), 1813),
           (Coll(t4.bytes:_*), 0) -> Expected(new IllegalArgumentException("requirement failed: expected new constant to have the same SInt$ tpe, got SSigmaProp"))
         )
       },
@@ -9333,35 +9663,51 @@ class SigmaDslSpecification extends SigmaDslTesting
         )))
   }
 
-  /* Original issue: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/604
-   *
-   * Test fails for v4.x with
-   * `new StagingException("Don't know how to evaluate(s1252 -> Placeholder(BaseElemLiftable<Int>))")`
-   * but that cannot be explicitly stated in cases. Therefore we use different exception (None.get)
-   * and also `allowDifferentErrors` flag.
-   * Test passes for v5.x so we use flag `allowNewToSucceed`.
-   */
+  // Original issue: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/604
   property("Random headers access and comparison (originaly from spam tests)") {
     val (_, _, _, ctx, _, _) = contextData()
+    val costDetails = TracedCost(
+      Array(
+        FixedCostItem(Apply),
+        FixedCostItem(FuncValue),
+        FixedCostItem(GetVar),
+        FixedCostItem(OptionGet),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+        FixedCostItem(ValUse),
+        FixedCostItem(PropertyCall),
+        FixedCostItem(SContext.headersMethod, FixedCost(JitCost(15))),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(PropertyCall),
+        SeqCostItem(MethodDesc(SCollection.IndicesMethod), PerItemCost(JitCost(20), JitCost(2), 16), 1),
+        FixedCostItem(Constant),
+        FixedCostItem(ValUse),
+        FixedCostItem(SizeOf),
+        FixedCostItem(Constant),
+        TypeBasedCostItem(ArithOp.Minus, SInt),
+        SeqCostItem(CompanionDesc(Slice), PerItemCost(JitCost(10), JitCost(2), 100), 0),
+        FixedCostItem(FuncValue),
+        SeqCostItem(CompanionDesc(ForAll), PerItemCost(JitCost(3), JitCost(1), 10), 0)
+      )
+    )
 
     if (lowerMethodCallsInTests) {
+      val ir = IR
+      val error = new ir.StagingException("Don't know how to evaluate(s2034 -> Placeholder(BaseElemLiftable<Int>))", Nil)
       verifyCases(
         Seq(
           ctx -> Expected(
-            Failure(new NoSuchElementException("None.get")),
+            Failure(error),
             cost = 37694,
             expectedDetails = CostDetails.ZeroCost,
             newCost = 1796,
-            newVersionedResults = Seq(
-              0 -> (ExpectedResult(Success(true), Some(1796)) -> None),
-              1 -> (ExpectedResult(Success(true), Some(1796)) -> None),
-              2 -> (ExpectedResult(Success(true), Some(1796)) -> None)
-            )
+            newVersionedResults = (0 to 2).map(i => i -> (ExpectedResult(Success(true), Some(1796)) -> Some(costDetails)))
           )
         ),
         changedFeature(
         { (x: Context) =>
-          Option.empty[Int].get
+          throw error
           true
         },
         { (x: Context) =>
