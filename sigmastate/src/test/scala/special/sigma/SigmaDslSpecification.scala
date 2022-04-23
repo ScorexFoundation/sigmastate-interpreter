@@ -116,7 +116,8 @@ class SigmaDslSpecification extends SigmaDslTesting
       val res = f.checkEquality(x)
       val resValue = res.map(_._1)
       val (expected, expDetailsOpt) = expectedRes.newResults(ergoTreeVersionInTests)
-      checkResult(resValue, expected.value, failOnTestVectors = true)
+      checkResult(resValue, expected.value, failOnTestVectors = true,
+        "SigmaDslSpecifiction#testCases: compare expected new result with res = f.checkEquality(x)")
       res match {
         case Success((value, details)) =>
           details.cost shouldBe JitCost(expected.verificationCost.get)
@@ -9641,14 +9642,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         )))
   }
 
-  /* Original issue: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/604
-   *
-   * Test fails for v4.x with
-   * `new StagingException("Don't know how to evaluate(s1252 -> Placeholder(BaseElemLiftable<Int>))")`
-   * but that cannot be explicitly stated in cases. Therefore we use different exception (None.get)
-   * and also `allowDifferentErrors` flag.
-   * Test passes for v5.x so we use flag `allowNewToSucceed`.
-   */
+  // Original issue: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/604
   property("Random headers access and comparison (originaly from spam tests)") {
     val (_, _, _, ctx, _, _) = contextData()
     val costDetails = TracedCost(
