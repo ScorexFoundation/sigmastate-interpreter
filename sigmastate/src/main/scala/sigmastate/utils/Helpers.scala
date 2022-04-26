@@ -100,6 +100,13 @@ object Helpers {
     case arr: Array[Boolean] => util.Arrays.hashCode(arr)
   }
 
+  def optionArrayEquals[A](maybeA1: Option[Array[A]], maybeA2: Option[Array[A]]): Boolean =
+    (maybeA1, maybeA2) match {
+      case (None, None) => true
+      case (Some(a1), Some(a2)) => deepHashCode(a1) == deepHashCode(a2)
+      case _ => false
+    }
+
   implicit class TryOps[+A](val source: Try[A]) extends AnyVal {
     def fold[B](onError: Throwable => B, onSuccess: A => B) = source match {
       case Success(value) => onSuccess(value)

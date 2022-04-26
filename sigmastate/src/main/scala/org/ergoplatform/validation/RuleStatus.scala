@@ -45,7 +45,6 @@ case class  ReplacedRule(newRuleId: Short) extends RuleStatus {
 case class ChangedRule(newValue: Array[Byte]) extends RuleStatus {
   val statusCode: Byte = RuleStatus.ChangedRuleCode
 
-  // Usage of Ints.fromByteArray isn't allowed, as `newValue` can be empty array
   override def hashCode(): Int = util.Arrays.hashCode(newValue)
 
   override def canEqual(that: Any): Boolean = that.isInstanceOf[ChangedRule]

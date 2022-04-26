@@ -13,7 +13,6 @@ import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
   * @param extension - user-defined variables to be put into context
   */
 class ProverResult(val proof: Array[Byte], val extension: ContextExtension) {
-  // Usage of Ints.fromByteArray isn't allowed, as `proof` can be empty array
   override def hashCode(): Int = util.Arrays.hashCode(proof) * 31 + extension.hashCode()
 
   override def equals(obj: scala.Any): Boolean =

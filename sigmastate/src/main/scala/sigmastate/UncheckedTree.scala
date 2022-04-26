@@ -15,6 +15,9 @@ case object NoProof extends UncheckedTree
 
 sealed trait UncheckedSigmaTree extends UncheckedTree {
   val challenge: Array[Byte]
+  lazy val challengeOptimizedHash =
+    if (challenge.size > 4) Ints.fromByteArray(challenge)
+    else Arrays.hashCode(challenge)
 }
 
 trait UncheckedConjecture extends UncheckedSigmaTree with ProofTreeConjecture {
@@ -26,7 +29,7 @@ trait UncheckedConjecture extends UncheckedSigmaTree with ProofTreeConjecture {
   })
 
   override def hashCode(): Int =
-    31 * Ints.fromByteArray(challenge) + children.hashCode()
+    31 * challengeOptimizedHash + children.hashCode()
 }
 
 trait UncheckedLeaf[SP <: SigmaBoolean] extends UncheckedSigmaTree with ProofTreeLeaf {
@@ -51,7 +54,7 @@ case class UncheckedSchnorr(override val proposition: ProveDlog,
 
   override def hashCode(): Int = {
     var h = commitmentOpt.hashCode()
-    h = 31 * h + Ints.fromByteArray(challenge)
+    h = 31 * h + challengeOptimizedHash
     h = 31 * h + secondMessage.hashCode()
     h
   }
@@ -76,7 +79,7 @@ case class UncheckedDiffieHellmanTuple(override val proposition: ProveDHTuple,
 
   override def hashCode(): Int = {
     var h = commitmentOpt.hashCode()
-    h = 31 * h + Ints.fromByteArray(challenge)
+    h = 31 * h + challengeOptimizedHash
     h = 31 * h + secondMessage.hashCode()
     h
   }
@@ -118,7 +121,7 @@ case class CThresholdUncheckedNode(override val challenge: Challenge,
   })
 
   override def hashCode(): Int = {
-    var h = Ints.fromByteArray(challenge)
+    var h = challengeOptimizedHash
     h = 31 * h + children.hashCode
     h = 31 * h + k.hashCode()
     h = 31 * h + polynomialOpt.hashCode()
