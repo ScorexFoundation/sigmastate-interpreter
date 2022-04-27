@@ -15,7 +15,7 @@ case object NoProof extends UncheckedTree
 
 sealed trait UncheckedSigmaTree extends UncheckedTree {
   val challenge: Array[Byte]
-  def challengeOptimizedHash: Integer =
+  def challengeOptimizedHash: Int =
     if (challenge.size > 4) Ints.fromByteArray(challenge)
     else Arrays.hashCode(challenge)
 }
@@ -102,7 +102,7 @@ case class COrUncheckedNode(override val challenge: Challenge,
 
 case class CThresholdUncheckedNode(override val challenge: Challenge,
                                    override val children: Seq[UncheckedSigmaTree],
-                                   k: Integer,
+                                   k: Int,
                                    polynomialOpt: Option[GF2_192_Poly]) extends UncheckedConjecture {
   require(children.length <= 255) // Our polynomial arithmetic can take only byte inputs
   require(k >= 0 && k <= children.length)
