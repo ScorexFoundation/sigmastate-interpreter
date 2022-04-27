@@ -15,7 +15,7 @@ case object NoProof extends UncheckedTree
 
 sealed trait UncheckedSigmaTree extends UncheckedTree {
   val challenge: Array[Byte]
-  lazy val challengeOptimizedHash =
+  def challengeOptimizedHash: Integer =
     if (challenge.size > 4) Ints.fromByteArray(challenge)
     else Arrays.hashCode(challenge)
 }
