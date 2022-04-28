@@ -16,8 +16,8 @@ case object NoProof extends UncheckedTree
 sealed trait UncheckedSigmaTree extends UncheckedTree {
   val challenge: Array[Byte]
   def challengeOptimizedHash: Int =
-    if (challenge.size > 4) Ints.fromByteArray(challenge)
-    else Arrays.hashCode(challenge)
+    if (challenge.size < 4) Arrays.hashCode(challenge)
+    else Ints.fromByteArray(challenge)
 }
 
 trait UncheckedConjecture extends UncheckedSigmaTree with ProofTreeConjecture {
