@@ -2,6 +2,7 @@ package sigmastate
 
 import com.google.common.primitives.Ints
 import org.ergoplatform.settings.ErgoAlgos
+import org.scalacheck.Gen
 import sigmastate.basics.DLogProtocol.{ProveDlog, SecondDLogProverMessage}
 import sigmastate.basics.{SecondDiffieHellmanTupleProverMessage, ProveDHTuple}
 import sigmastate.basics.VerifierMessage.Challenge
@@ -35,42 +36,40 @@ class UncheckedTreeSpecification extends SigmaTestingCommons {
     val size3Challenge = Challenge @@ ErgoAlgos.decodeUnsafe("010203")
     val size4Challenge = Challenge @@ ErgoAlgos.decodeUnsafe("01020304")
     val bigChallenge = Challenge @@ ErgoAlgos.decodeUnsafe("c6429b70f4926a3ba1454f1aec116075f9e9fbe8a8f72114")
-
-    val smallSizeExamples =
-      Table(
-        "uncheckedTree",
-        uncheckedSchnorr(emptyChallenge),
-        uncheckedSchnorr(size3Challenge),
-        uncheckedDiffieHellmanTuple(emptyChallenge),
-        uncheckedDiffieHellmanTuple(size3Challenge),
-        cAndUncheckedNode(emptyChallenge),
-        cAndUncheckedNode(size3Challenge),
-        cOrUncheckedNode(emptyChallenge),
-        cOrUncheckedNode(size3Challenge),
-        cThresholdUncheckedNode(emptyChallenge),
-        cThresholdUncheckedNode(size3Challenge)
-      )
+    val challenges = Array(emptyChallenge, size3Challenge, size4Challenge, bigChallenge)
+    val constructors: Array[Challenge => UncheckedSigmaTree] = 
+      Array(uncheckedSchnorr, uncheckedDiffieHellmanTuple, cAndUncheckedNode, cOrUncheckedNode, cThresholdUncheckedNode)
+    
+    val smallSizeExamples = for {
+      challenge <- Gen.oneOf(Iterable(emptyChallenge, size3Challenge))
+      f <- Gen.oneOf(constructors)
+    } yield f(challenge)
 
     forAll(smallSizeExamples) { uncheckedTree =>
       uncheckedTree.challengeOptimizedHash shouldBe Arrays.hashCode(uncheckedTree.challenge)
     }
 
-    val bigSizeExamples = Table(
-      "uncheckedTree",
-      uncheckedSchnorr(size4Challenge),
-      uncheckedSchnorr(bigChallenge),
-      uncheckedDiffieHellmanTuple(size4Challenge),
-      uncheckedDiffieHellmanTuple(bigChallenge),
-      cAndUncheckedNode(size4Challenge),
-      cAndUncheckedNode(bigChallenge),
-      cOrUncheckedNode(size4Challenge),
-      cOrUncheckedNode(bigChallenge),
-      cThresholdUncheckedNode(size4Challenge),
-      cThresholdUncheckedNode(bigChallenge)
-    )
+    val bigSizeExamples = for {
+      challenge <- Gen.oneOf(Iterable(size4Challenge, bigChallenge))
+      f <- Gen.oneOf(constructors)
+    } yield f(challenge)
 
     forAll(bigSizeExamples) { uncheckedTree =>
       uncheckedTree.challengeOptimizedHash shouldBe Ints.fromByteArray(uncheckedTree.challenge)
+    }
+
+    val mixedExamples = for {
+      challenge1 <- Gen.oneOf(challenges)
+      challenge2 <- Gen.oneOf(challenges)
+      f <- Gen.oneOf(constructors)
+    } yield (f(challenge1), f(challenge2))
+
+    forAll(mixedExamples) { case (uncheckedTree1, uncheckedTree2) =>
+      if (uncheckedTree1 == uncheckedTree2) {
+        uncheckedTree1.hashCode shouldBe uncheckedTree2.hashCode
+      } else {
+        uncheckedTree1.hashCode() should not be uncheckedTree2.hashCode()
+      }
     }
   }
 }
