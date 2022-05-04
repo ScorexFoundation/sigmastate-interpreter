@@ -709,7 +709,14 @@ abstract class Base { scalan: Scalan =>
       cfor(0)(_ < delta, _ + 1) { _ => tab.append(null) }
       val sym = if (s == null) new SingleRef(d) else s
       tab += sym
-      assert(tab.length == id + 1)
+      assert(tab.length == id + 1,
+        s"""tab.length == id + 1:
+          |tab.length = ${tab.length}
+          |id = $id
+          |s = $s
+          |d = $d
+          |sym = $sym
+          |""".stripMargin)
       sym
     }
   }
@@ -781,7 +788,6 @@ abstract class Base { scalan: Scalan =>
     if (sym == null) {
       sym = createDefinition(optScope, newSym, d)
     }
-//    assert(te.rhs == d, s"${if (te !) "Found" else "Created"} unequal definition ${te.rhs} with symbol ${te.sym.toStringWithType} for $d")
     sym
   }
 
@@ -792,15 +798,36 @@ abstract class Base { scalan: Scalan =>
     * @return  reference to `d` (which is `s`)
     */
   protected def createDefinition[T](optScope: Nullable[ThunkScope], s: Ref[T], d: Def[T]): Ref[T] = {
-    assert(_symbolTable(d.nodeId).node.nodeId == d.nodeId)
-    assert(s.node eq d, s"Inconsistent Sym -> Def pair $s -> $d")
-    optScope match {
-      case Nullable(scope) =>
-        scope += s
-      case _ =>
-        _globalDefs.put(d, d)
+    try {
+      val nodeId = d.nodeId
+      val tableSym = _symbolTable(nodeId)
+      assert(tableSym.node.nodeId == nodeId)
+      assert(s.node eq d, s"Inconsistent Sym -> Def pair $s -> $d")
+      optScope match {
+        case Nullable(scope) =>
+          scope += s
+        case _ =>
+          _globalDefs.put(d, d)
+      }
+      s
+    } catch { case t: Throwable =>
+      val msg = new mutable.StringBuilder(
+        s"""optScope = $optScope
+        |s = $s
+        |d = $d""".stripMargin)
+      if (d != null) {
+        msg ++= s"\nd.nodeId = ${d.nodeId}"
+        val tableSym = _symbolTable(d.nodeId)
+        msg ++= s"\n_symbolTable(d.nodeId) = $tableSym"
+        if (tableSym != null) {
+          msg ++= s"\ntableSym.node = ${tableSym.node}"
+          if (tableSym.node != null) {
+            msg ++= s"\ntableSym.node.nodeId = ${tableSym.node.nodeId}"
+          }
+        }
+      }
+      throw new RuntimeException(msg.result(), t)
     }
-    s
   }
 
   /**
