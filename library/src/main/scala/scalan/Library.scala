@@ -12,6 +12,7 @@ trait Library extends Scalan
   with CollsModule
   with SizesModule
   with CostsModule
+  with CalcsModule
   with ConcreteSizesModule
   with ConcreteCostsModule
   with MonoidsModule

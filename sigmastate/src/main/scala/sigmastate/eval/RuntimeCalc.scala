@@ -32,7 +32,7 @@ import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
 
-trait RuntimeCosting extends CostingRules { IR: IRContext =>
+trait RuntimeCalc extends CostingRules { IR: IRContext =>
   import Context._;
   import Header._;
   import PreHeader._;
@@ -55,6 +55,9 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
   import CSizeColl._
   import Costed._;
   import CCostedPrim._;
+
+  import CCalcPrim._
+
   import CostedPair._;
   import CCostedPair._;
   import CostedFunc._;
@@ -103,30 +106,30 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
 /**  To enable specific configuration uncomment one of the lines above and use it in the beginPass below. */
 //  beginPass(costPass)
 
-  case class CostOf(opName: String, opType: SFunc) extends BaseDef[Int] {
-    override def mirror(t: Transformer): Ref[Int] = self // TODO no HF proof
+  // case class CostOf(opName: String, opType: SFunc) extends BaseDef[Int] {
+  //   override def mirror(t: Transformer): Ref[Int] = self // TODO no HF proof
 
-    def eval: Int = {
-      val operId = OperationId(opName, opType)
-      val cost = CostTable.DefaultCosts(operId)
-      cost
-    }
-  }
+  //   def eval: Int = {
+  //     val operId = OperationId(opName, opType)
+  //     val cost = CostTable.DefaultCosts(operId)
+  //     cost
+  //   }
+  // }
 
   /** Graph node which represents cost of operation, which depends on size of the data.
     * @param operId   id of the operation in CostTable
     * @param size     size of the data which is used to compute operation cost
     */
-  case class PerKbCostOf(operId: OperationId, size: Ref[Long]) extends BaseDef[Int] {
-    override def transform(t: Transformer): Def[Int] = PerKbCostOf(operId, t(size))
-    /** Cost rule which is used to compute operation cost, depending on dataSize.
-      * Per kilobite cost of the oparation is obtained from CostTable and multiplied on
-      * the data size in Kb. */
-    def eval(dataSize: Long): Int = {
-      val cost = CostTable.DefaultCosts(operId)
-      ((dataSize / 1024L).toInt + 1) * cost
-    }
-  }
+  // case class PerKbCostOf(operId: OperationId, size: Ref[Long]) extends BaseDef[Int] {
+  //   override def transform(t: Transformer): Def[Int] = PerKbCostOf(operId, t(size))
+  //   /** Cost rule which is used to compute operation cost, depending on dataSize.
+  //     * Per kilobite cost of the oparation is obtained from CostTable and multiplied on
+  //     * the data size in Kb. */
+  //   def eval(dataSize: Long): Int = {
+  //     val cost = CostTable.DefaultCosts(operId)
+  //     ((dataSize / 1024L).toInt + 1) * cost
+  //   }
+  // }
 
   def costOf(costOp: CostOf, doEval: Boolean): Ref[Int] = {
     val res = if (doEval) {
@@ -311,7 +314,8 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
   type RFuncCosted[A,B] = Ref[Costed[A] => Costed[B]]
 
   implicit class RFuncCostedOps[A,B](f: RFuncCosted[A,B]) {
-    implicit val eA = f.elem.eDom.eVal
+    //TODO mainnet v5.x: Had to provide explicit type, but not in RuntimeCosting.
+    implicit val eA: Elem[A] = f.elem.eDom.eVal
     /**NOTE: when removeIsValid == true the resulting type B may change from Boolean to SigmaProp
       * This should be kept in mind at call site */
     def sliceCalc(okRemoveIsProven: Boolean): Ref[A => Any] = {
@@ -353,7 +357,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
   type RCostedOptionFunc[A,B] = Ref[CostedOptionFunc[A, B]]
 
   implicit class RCostedCollFuncOps[A,B](f: RCostedCollFunc[A,B]) {
-    implicit val eA = f.elem.eDom.eVal
+    implicit val eA: Elem[A] = f.elem.eDom.eVal
     def sliceValues: Ref[A => Coll[B]] = fun { x: Ref[A] => f(RCCostedPrim(x, IntZero, zeroSize(x.elem))).values }
     def sliceCosts: Ref[((Int,Size[A])) => (Coll[Int], Int)] = fun { in: Ref[(Int, Size[A])] =>
       val Pair(c, s) = in
@@ -442,7 +446,14 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
     def apply[T](prop: Ref[T] => Elem[_]): ElemAccessor[T] = new ElemAccessor(prop)
   }
 
-  val EValOfSizeColl = ElemAccessor[Coll[Size[Any]]](_.elem.eItem.eVal)
+  // Original from RuntimeCosting
+  // val EValOfSizeColl = ElemAccessor[Coll[Size[Any]]](_.elem.eItem.eVal)
+  // TODO Mainnet v5.x: Failing to compile.
+  // val EValOfSizeColl = ElemAccessor[Coll[Size[Any]]]((foo: Ref[Coll[Size[Any]]]) => {
+  //   val bar: Elem[Size[Any]] = foo.elem.eItem
+  //   val baz: Elem[Any] = bar.eVal
+  //   baz
+  // })
 
   private val CBM      = CollBuilderMethods
   private val SigmaM   = SigmaPropMethods
@@ -525,7 +536,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
       case SM.dataSize(size) => size.node match {
         case CSizeCollCtor(sizes) => sizes match {
           case CBM.replicate(_, n, s: RSize[a]@unchecked) => s.dataSize * n.toLong
-          case EValOfSizeColl(eVal) if eVal.isConstantSize => sizes.length.toLong * typeSize(eVal)
+          // case EValOfSizeColl(eVal) if eVal.isConstantSize => sizes.length.toLong * typeSize(eVal)
           case _ => super.rewriteDef(d)
         }
         case _ => super.rewriteDef(d)
@@ -1155,7 +1166,8 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
         case p: SSigmaProp =>
           assert(tpe == SSigmaProp)
           val resV = liftConst(p)
-          RCCostedPrim(resV, opCost(resV, Nil, SigmaBoolean.estimateCost(p)), SizeSigmaProposition)
+          // RCCostedPrim(resV, opCost(resV, Nil, SigmaBoolean.estimateCost(p)), SizeSigmaProposition)
+          RCCalcPrim(resV, SizeSigmaProposition)
         case bi: SBigInt =>
           assert(tpe == SBigInt)
           val resV = liftConst(bi)
