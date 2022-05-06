@@ -118,7 +118,7 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests
       case Code(code) => compiler.typecheck(env, code)
       case Tree(t) => t
     }
-    lazy val expectedCalcF = expectedCalc.map(f => fun(removeIsProven(f)))
+    lazy val expectedCalcF = expectedCalc.map(f => fun(removeIsValid(f)))
     lazy val expectedCostF = expectedCost.map(fun(_))
     lazy val expectedSizeF = expectedSize.map(fun(_))
 
@@ -166,7 +166,7 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests
     def doReduce(): Unit = {
       val Pair(calcF, Pair(costF, sizeF)) = doCosting
       verifyCostFunc(asRep[Any => Int](costF)) shouldBe Success(())
-      verifyIsProven(calcF) shouldBe Success(())
+      verifyIsValid(calcF) shouldBe Success(())
 
       if (expectedTree.isDefined) {
         val compiledProp = IR.buildTree(asRep[Context => SType#WrappedType](calcF))
@@ -279,7 +279,7 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests
     
     emit(name, valueF, costF, sizeF)
     verifyCostFunc(asRep[Any => Int](costF)) shouldBe(Success(()))
-    verifyIsProven(valueF) shouldBe(Success(()))
+    verifyIsValid(valueF) shouldBe(Success(()))
     IR.buildTree(valueF) shouldBe expected
   }
 

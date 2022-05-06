@@ -152,7 +152,7 @@ object ValidationRules {
     "If SigmaProp.isProven method calls exists in the given function,\n then it is the last operation") {
     final def apply[Ctx <: IRContext, T](ctx: Ctx)(calcF: ctx.Ref[ctx.Context => Any]): Unit = {
       checkRule()
-      val verification = ctx.verifyIsProven(calcF)
+      val verification = ctx.verifyIsValid(calcF)
       if (!verification.isSuccess) {
         throwValidationException(verification.toEither.left.get, Array(calcF))
       }

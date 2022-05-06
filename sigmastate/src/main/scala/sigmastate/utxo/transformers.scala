@@ -317,17 +317,6 @@ object SelectField extends FixedCostValueCompanion {
   }
 }
 
-/** Represents execution of Sigma protocol that validates the given input SigmaProp. */
-case class SigmaPropIsProven(input: Value[SSigmaProp.type])
-  extends Transformer[SSigmaProp.type, SBoolean.type] with NotReadyValueBoolean {
-  override def companion = SigmaPropIsProven
-  override val opType = SFunc(input.tpe, SBoolean)
-}
-object SigmaPropIsProven extends ValueCompanion {
-  override def opCode: OpCode = OpCodes.SigmaPropIsProvenCode
-  override def costKind: CostKind = Value.notSupportedError(this, "costKind")
-}
-
 /** Extract serialized bytes of a SigmaProp value */
 case class SigmaPropBytes(input: Value[SSigmaProp.type])
   extends Transformer[SSigmaProp.type, SByteArray] with NotReadyValue[SByteArray] {

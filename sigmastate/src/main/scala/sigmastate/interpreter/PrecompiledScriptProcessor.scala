@@ -60,7 +60,7 @@ case class PrecompiledScriptReducer(scriptBytes: Seq[Byte])(implicit val IR: IRC
     val tree = ErgoTreeSerializer.DefaultSerializer.deserializeErgoTree(scriptBytes.toArray)
     val prop = tree.toProposition(tree.isConstantSegregation)
     val validProp = Interpreter.toValidScriptType(prop)
-    val res = IR.doCostingEx(Interpreter.emptyEnv, validProp, true)
+    val res = IR.doCostingEx(Interpreter.emptyEnv, validProp)
     val costF = res.costF
     CheckCostFunc(IR)(IR.asRep[Any => Int](costF))
     val calcF = res.calcF

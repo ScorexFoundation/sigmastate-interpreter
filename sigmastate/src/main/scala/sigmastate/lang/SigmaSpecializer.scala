@@ -62,10 +62,6 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
       else
         error(s"The type of $obj is expected to be Collection to select 'size' property")
 
-    // Rule: proof.isProven --> IsValid(proof)
-    case Select(p, SSigmaProp.IsProven, _) if p.tpe == SSigmaProp =>
-      Some(SigmaPropIsProven(p.asSigmaProp))
-
     // Rule: proof.propBytes --> ProofBytes(proof)
     case Select(p, SSigmaProp.PropBytes, _) if p.tpe == SSigmaProp =>
       Some(SigmaPropBytes(p.asSigmaProp))

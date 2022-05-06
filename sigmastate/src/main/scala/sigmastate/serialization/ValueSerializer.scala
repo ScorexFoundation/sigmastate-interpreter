@@ -72,7 +72,6 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     TwoArgumentsSerializer(BitOp.BitShiftLeft, mkBitShiftLeft[SNumericType]),
     TwoArgumentsSerializer(BitOp.BitShiftRight, mkBitShiftRight[SNumericType]),
     TwoArgumentsSerializer(BitOp.BitShiftRightZeroed, mkBitShiftRightZeroed[SNumericType]),
-    SigmaPropIsProvenSerializer,
     SigmaPropBytesSerializer,
     ConcreteCollectionBooleanConstantSerializer(mkConcreteCollection),
     CaseObjectSerialization(TrueLeaf, TrueLeaf),

@@ -156,7 +156,7 @@ object OpCodes extends ValueCodes {
   val CalcSha256Code             : OpCode = newOpCode(92)
   val ProveDlogCode              : OpCode = newOpCode(93)
   val ProveDiffieHellmanTupleCode: OpCode = newOpCode(94)
-  val SigmaPropIsProvenCode      : OpCode = newOpCode(95)
+  // 95 reserved for deprecated SigmaPropIsProvenCode
   val SigmaPropBytesCode         : OpCode = newOpCode(96)
   val BoolToSigmaPropCode        : OpCode = newOpCode(97)
   // we don't rely on this yet but it's nice to have TrivialPropFalseCode.toUByte < TrivialPropTrueCode.toUByte

@@ -159,7 +159,7 @@ object CostTable {
 
     ("If", "(Boolean, T, T) => T", logicCost),
 
-    ("SigmaPropIsProven", "SigmaProp => Boolean", logicCost),
+    // ("SigmaPropIsProven", "SigmaProp => Boolean", logicCost),
     ("BoolToSigmaProp", "Boolean => SigmaProp", logicCost),
     ("SigmaPropBytes", "SigmaProp => Coll[Byte]", logicCost),
     ("BinAnd", "(Boolean, Boolean) => Boolean", logicCost),

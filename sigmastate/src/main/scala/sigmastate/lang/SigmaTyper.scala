@@ -335,6 +335,7 @@ class SigmaTyper(val builder: SigmaBuilder,
         case SSigmaProp => (m, newArgs) match {
           case ("||" | "&&" | "^", Seq(r)) => r.tpe match {
             case SBoolean =>
+              // TODO mainnet v5.x: "isProven" doesn't exist
               val (a, b) = (Select(newObj, SSigmaProp.IsProven, Some(SBoolean)).asBoolValue, r.asBoolValue)
               val res = m match {
                 case "||" => mkBinOr(a, b)
@@ -364,6 +365,7 @@ class SigmaTyper(val builder: SigmaBuilder,
               case "^" => mkBinXor(newObj.asBoolValue, r.asBoolValue)
             }
             case SSigmaProp =>
+              // TODO mainnet v5.x: "isProven" doesn't exist
               val (a, b) = (newObj.asBoolValue, Select(r, SSigmaProp.IsProven, Some(SBoolean)).asBoolValue)
               val res = m match {
                 case "||" => mkBinOr(a, b)
@@ -481,12 +483,6 @@ class SigmaTyper(val builder: SigmaBuilder,
         error(s"Invalid operation SizeOf: expected argument types ($SCollection); actual: (${col.tpe})", col.sourceContext)
       mkSizeOf(c1)
 
-    case SigmaPropIsProven(p) =>
-      val p1 = assignType(env, p)
-      if (!p1.tpe.isSigmaProp)
-        error(s"Invalid operation IsValid: expected argument types ($SSigmaProp); actual: (${p.tpe})", p.sourceContext)
-      SigmaPropIsProven(p1.asSigmaProp)
-
     case SigmaPropBytes(p) =>
       val p1 = assignType(env, p)
       if (!p1.tpe.isSigmaProp)
@@ -540,7 +536,6 @@ class SigmaTyper(val builder: SigmaBuilder,
       case (cc: ConcreteCollection[SType]@unchecked, SBooleanArray) =>
         val items = adaptSigmaPropToBoolean(cc.items, Array.fill(cc.items.length)(SBoolean))
         assignConcreteCollection(cc, items)
-      case (it, SBoolean) if it.tpe == SSigmaProp => SigmaPropIsProven(it.asSigmaProp)
       case (it,_) => it
     }
     res.toArray[SValue]

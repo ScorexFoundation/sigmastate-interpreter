@@ -276,10 +276,7 @@ class ErgoTreeSpecification extends SigmaDslTesting {
       ), true)
     },
     { import SSigmaProp._
-      (SSigmaProp.typeId,  Seq(
-        MInfo(1, PropBytesMethod),
-        MInfo(2, IsProvenMethod)  // TODO v5.x (3h): this method must be removed
-      ), true)
+      (SSigmaProp.typeId, Seq(MInfo(1, PropBytesMethod)), true)
     },
     { import SBox._
       (SBox.typeId,  Seq(

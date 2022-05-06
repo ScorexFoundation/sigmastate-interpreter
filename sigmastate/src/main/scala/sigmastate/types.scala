@@ -1201,18 +1201,13 @@ case object SSigmaProp extends SProduct with SPrimType with SEmbeddable with SLo
 
   override def isConstantSize = true
   val PropBytes = "propBytes"
+  //TODO: Shall be deleted but has 2 usages.
   val IsProven = "isProven"
   lazy val PropBytesMethod = SMethod(
     this, PropBytes, SFunc(this, SByteArray), 1, SigmaPropBytes.costKind)
     .withInfo(SigmaPropBytes, "Serialized bytes of this sigma proposition taken as ErgoTree.")
 
-  lazy val IsProvenMethod = SMethod(this, IsProven, SFunc(this, SBoolean), 2, null)
-      .withInfo(// available only at frontend of ErgoScript
-        "Verify that sigma proposition is proven.")
-
-  protected override def getMethods() = super.getMethods() ++ Seq(
-    PropBytesMethod, IsProvenMethod
-  )
+  protected override def getMethods() = super.getMethods() ++ Seq(PropBytesMethod)
 }
 
 /** Any other type is implicitly subtype of this type. */

@@ -406,6 +406,7 @@ class CostingSpecification extends SigmaTestingData with CrossVersionProps {
     val pr = interpreter.prove(tree, context, fakeMessage).get
     val expressionCost =
       constCost +
+      //TODO mainnet v5.x: Should be removed?
       logicCost + // SigmaPropIsProven
       logicCost // BoolToSigmaProp
 

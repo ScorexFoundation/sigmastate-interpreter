@@ -88,7 +88,7 @@ object ComplexityTable {
     FalseLeaf.opCode               -> 80,  // count = 4825
     Height.opCode                  -> 80,  // count = 30856
     Constant.opCode                -> 80,  // count = 251669
-    SigmaPropIsProven.opCode       -> 78,  // count = 20566
+    // SigmaPropIsProven.opCode       -> 78,  // count = 20566
     CreateProveDlog.opCode         -> 76,  // count = 147
     BlockValue.opCode              -> 74,  // count = 895
     ExtractAmount.opCode           -> 74,  // count = 14650

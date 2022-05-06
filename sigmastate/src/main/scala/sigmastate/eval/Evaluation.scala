@@ -174,7 +174,8 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
       case ContextM.HEIGHT(_) => HeightCode
       case ContextM.minerPubKey(_) => MinerPubkeyCode
       case SigmaM.propBytes(_) => SigmaPropBytesCode
-      case SigmaM.isValid(_) => SigmaPropIsProvenCode
+      // TODO mainnet v5.x: Shall we create new SigmaPropIsValidCode?
+      // case SigmaM.isValid(_) => SigmaPropIsProvenCode
       case CollM.length(_) => SizeOfCode
       case CollM.apply(_, _) => ByIndexCode
       case CollM.map(_, _) => MapCollectionCode
@@ -294,8 +295,8 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
     }
   }
 
-  /** Finds SigmaProp.isProven method calls in the given Lambda `f` */
-  def findIsProven[T](f: Ref[Context => T]): Option[Sym] = {
+  /** Finds SigmaM.isValid method calls in the given Lambda `f` */
+  def findIsValid[T](f: Ref[Context => T]): Option[Sym] = {
     val Def(Lambda(lam,_,_,_)) = f
     val s = lam.flatSchedule.find(sym => sym.node match {
       case SigmaM.isValid(_) => true
@@ -304,14 +305,14 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
     s
   }
 
-  /** Checks that if SigmaProp.isProven method calls exists in the given Lambda's schedule,
+  /** Checks that if SigmaM.isValid method calls exists in the given Lambda's schedule,
     * then it is the last operation. */
-  def verifyIsProven[T](f: Ref[Context => T]): Try[Unit] = {
-    val isProvenOpt = findIsProven(f)
+  def verifyIsValid[T](f: Ref[Context => T]): Try[Unit] = {
+    val isValidOpt = findIsValid(f)
     Try {
-      isProvenOpt match {
+      isValidOpt match {
         case Some(s) =>
-          if (f.getLambda.y != s) !!!(s"Sigma.isProven found in none-root position", s)
+          if (f.getLambda.y != s) !!!(s"Sigma.isValid found in none-root position", s)
         case None =>
       }
     }

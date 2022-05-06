@@ -149,10 +149,9 @@ abstract class SigmaBuilder {
                       keyLength: IntValue,
                       valueLengthOpt: Value[SIntOption]): AvlTreeValue
 
+  //TODO mainnet v5.x: Consider removing as inverse does not exist anymore. Or maybe leave it as invariant?
   /** Logically inverse to mkSigmaPropIsProven */
   def mkBoolToSigmaProp(value: BoolValue): SigmaPropValue
-  /** Logically inverse to mkBoolToSigmaProp */
-  def mkSigmaPropIsProven(value: Value[SSigmaProp.type]): BoolValue
 
   def mkSigmaPropBytes(value: Value[SSigmaProp.type]): Value[SByteArray]
   def mkSigmaAnd(items: Seq[SigmaPropValue]): SigmaPropValue
@@ -566,9 +565,6 @@ class StdSigmaBuilder extends SigmaBuilder {
 
   override def mkBoolToSigmaProp(value: BoolValue): SigmaPropValue =
     BoolToSigmaProp(value).withSrcCtx(currentSrcCtx.value)
-
-  override def mkSigmaPropIsProven(value: Value[SSigmaProp.type]): BoolValue =
-    SigmaPropIsProven(value).withSrcCtx(currentSrcCtx.value)
 
   override def mkSigmaPropBytes(value: Value[SSigmaProp.type]): Value[SByteArray] =
     SigmaPropBytes(value).withSrcCtx(currentSrcCtx.value)

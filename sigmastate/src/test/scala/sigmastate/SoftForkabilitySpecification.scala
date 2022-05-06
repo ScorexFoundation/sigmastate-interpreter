@@ -354,7 +354,7 @@ class SoftForkabilitySpecification extends SigmaTestingData with BeforeAndAfterA
       CheckCostFuncOperation.id,
       ChangedRule(CheckCostFuncOperation.encodeVLQUShort(Seq(OpCodes.toExtra(Height.opCode)))))
     checkRule(CheckCostFuncOperation, v2vs, {
-      val costingRes = IR.doCostingEx(emptyEnv, exp, okRemoveIsProven = false)
+      val costingRes = IR.doCostingEx(emptyEnv, exp)
       // We need to exercise CheckCostFunc rule.
       // The calcF graph have Height operation in it, which is not allowed to be in cost graph.
       // This leads to a ValidationException to be thrown with the CheckCostFunc rule in it.

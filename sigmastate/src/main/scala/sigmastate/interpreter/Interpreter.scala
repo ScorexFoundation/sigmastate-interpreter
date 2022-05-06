@@ -176,7 +176,7 @@ trait Interpreter extends ScorexLogging {
     val maxCost = context.costLimit
     val initCost = context.initCost
     trySoftForkable[AotReductionResult](whenSoftFork = WhenSoftForkReductionResult(initCost)) {
-      val costingRes = doCostingEx(env, exp, true)
+      val costingRes = doCostingEx(env, exp)
       val costF = costingRes.costF
       IR.onCostingResult(env, exp, costingRes)
 
@@ -763,7 +763,7 @@ object Interpreter {
     * boolean or throws an exception if the conversion is not defined. */
   def toValidScriptType(exp: SValue): BoolValue = exp match {
     case v: Value[SBoolean.type]@unchecked if v.tpe == SBoolean => v
-    case p: SValue if p.tpe == SSigmaProp => p.asSigmaProp.isProven
+    case p: SValue if p.tpe == SSigmaProp => p.asBoolValue
     case x =>
       // This case is not possible, due to exp is always of Boolean/SigmaProp type.
       // In case it will ever change, leave it here to throw an explaining message.

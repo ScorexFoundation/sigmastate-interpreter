@@ -646,7 +646,7 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
 
   property("substConst") {
     def script(pk: ProveDlog): SigmaPropValue =
-      AND(EQ(IntConstant(1), IntConstant(1)), SigmaPropConstant(pk).isProven).toSigmaProp
+      AND(EQ(IntConstant(1), IntConstant(1))).toSigmaProp
 
     val pk1 = DLogProverInput.random().publicImage
     val pk2 = DLogProverInput.random().publicImage

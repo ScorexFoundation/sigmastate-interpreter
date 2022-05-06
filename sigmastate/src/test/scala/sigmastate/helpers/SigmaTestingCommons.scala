@@ -104,7 +104,7 @@ trait SigmaTestingCommons extends PropSpec
 
   /** The same operations are executed as part of Interpreter.verify() */
   def getCostingResult(env: ScriptEnv, exp: SValue)(implicit IR: IRContext): IR.RCostingResultEx[Any] = {
-    val costingRes = IR.doCostingEx(env, exp, true)
+    val costingRes = IR.doCostingEx(env, exp)
     val costF = costingRes.costF
     CheckCostFunc(IR)(IR.asRep[Any => Int](costF))
 

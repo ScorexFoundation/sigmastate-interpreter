@@ -314,9 +314,9 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
     implicit val eA = f.elem.eDom.eVal
     /**NOTE: when removeIsValid == true the resulting type B may change from Boolean to SigmaProp
       * This should be kept in mind at call site */
-    def sliceCalc(okRemoveIsProven: Boolean): Ref[A => Any] = {
+    def sliceCalc(okRemoveIsValid: Boolean): Ref[A => Any] = {
       val _f = { x: Ref[A] => f(RCCostedPrim(x, IntZero, zeroSize(x.elem))).value }
-      val res = if (okRemoveIsProven) fun(removeIsProven(_f)) else fun(_f)
+      val res = if (okRemoveIsValid) fun(removeIsValid(_f)) else fun(_f)
       res
     }
 
@@ -786,7 +786,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
     _contextDependantNodes = debox.Set.ofSize[Int](InitDependantNodes)
   }
 
-  def removeIsProven[T,R](f: Ref[T] => Ref[Any]): Ref[T] => Ref[Any] = { x: Ref[T] =>
+  def removeIsValid[T,R](f: Ref[T] => Ref[Any]): Ref[T] => Ref[Any] = { x: Ref[T] =>
     val y = f(x);
     val res = y match {
       case SigmaPropMethods.isValid(p) => p
@@ -927,7 +927,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
   }
 
   def adaptSigmaBoolean(v: BoolValue) = v match {
-    case sb: SigmaBoolean => sb.isProven
+    case sb: SigmaBoolean => sb.asBoolValue
     case _ => v
   }
 
@@ -1478,11 +1478,6 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
             RCCostedPrim(value, opCost(value, Array(xsC.cost, iC.cost), costOf(node)), size)
         }
 
-      case SigmaPropIsProven(p) =>
-        val pC = asRep[Costed[SigmaProp]](eval(p))
-        val v = pC.value.isValid
-        val c = opCost(v, Array(pC.cost), costOf(node))
-        RCCostedPrim(v, c, SizeBoolean)
       case SigmaPropBytes(p) =>
         val pC = asRep[Costed[SigmaProp]](eval(p))
         val v = pC.value.propBytes
