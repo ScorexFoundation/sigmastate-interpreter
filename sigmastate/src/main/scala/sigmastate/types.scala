@@ -1436,7 +1436,7 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
         ArgInfo("index", "index of the element of this collection"),
         ArgInfo("default", "value to return when \\lst{index} is out of range"))
 
-  /** Implements evaluation of Coll.map method call ErgoTree node.
+  /** Implements evaluation of Coll.getOrElse method call ErgoTree node.
     * Called via reflection based on naming convention.
     * @see SMethod.evalMethod
     */
