@@ -1311,7 +1311,7 @@ class SigmaDslSpecification extends SigmaDslTesting
 
   property("Short LE, GE") {
     val o = ExactOrdering.ShortIsExactOrdering
-    def expect(v: Boolean) = Expected(Success(v), 36337, binaryRelationCostDetails(LE, SShort), 1788)
+    def expect(v: Boolean) = Expected(Success(v), 1788, binaryRelationCostDetails(LE, SShort), 1788)
     val LE_cases: Seq[((Short, Short), Expected[Boolean])] = Seq(
       (Short.MinValue, Short.MinValue) -> expect(true),
       (Short.MinValue, (Short.MinValue + 1).toShort) -> expect(true),
@@ -1353,7 +1353,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     verifyOp(LE_cases, "<=", LE.apply)(_ <= _)
 
     verifyOp(
-      swapArgs(LE_cases, cost = 36336, newCostDetails = binaryRelationCostDetails(GE, SShort)),
+      swapArgs(LE_cases, cost = 1788, newCostDetails = binaryRelationCostDetails(GE, SShort)),
       ">=", GE.apply)(_ >= _)
   }
 
@@ -1387,7 +1387,7 @@ class SigmaDslSpecification extends SigmaDslTesting
 
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 35976, downcastCostDetails(SByte), 1784)
+        def success[T](v: T) = Expected(Success(v), 1784, downcastCostDetails(SByte), 1784)
         Seq(
           (Int.MinValue, Expected(new ArithmeticException("Byte overflow"))),
           (-2014394379, Expected(new ArithmeticException("Byte overflow"))),
@@ -1406,7 +1406,7 @@ class SigmaDslSpecification extends SigmaDslTesting
 
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 35976, downcastCostDetails(SShort), 1784)
+        def success[T](v: T) = Expected(Success(v), 1784, downcastCostDetails(SShort), 1784)
         Seq(
           (Int.MinValue, Expected(new ArithmeticException("Short overflow"))),
           (Short.MinValue - 1, Expected(new ArithmeticException("Short overflow"))),
@@ -1425,7 +1425,7 @@ class SigmaDslSpecification extends SigmaDslTesting
 
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 35798, TracedCost(traceBase), 1783)
+        def success[T](v: T) = Expected(Success(v), 1783, TracedCost(traceBase), 1783)
         Seq(
           (Int.MinValue, success(Int.MinValue)),
           (-1, success(-1)),
@@ -1440,7 +1440,7 @@ class SigmaDslSpecification extends SigmaDslTesting
 
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 35902, upcastCostDetails(SLong), 1784)
+        def success[T](v: T) = Expected(Success(v), 1784, upcastCostDetails(SLong), 1784)
         Seq(
           (Int.MinValue, success(Int.MinValue.toLong)),
           (-1, success(-1L)),
@@ -1455,7 +1455,7 @@ class SigmaDslSpecification extends SigmaDslTesting
 
     verifyCases(
       {
-        def success(v: BigInt) = Expected(Success(v), 35932, upcastCostDetails(SBigInt), 1787)
+        def success(v: BigInt) = Expected(Success(v), 1787, upcastCostDetails(SBigInt), 1787)
         Seq(
           (Int.MinValue, success(CBigInt(new BigInteger("-80000000", 16)))),
           (-1937187314, success(CBigInt(new BigInteger("-737721f2", 16)))),
@@ -1473,7 +1473,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     val n = ExactNumeric.IntIsExactNumeric
     verifyCases(
     {
-      def success[T](v: T) = Expected(Success(v), 39654, arithOpsCostDetails(SInt), 1808)
+      def success[T](v: T) = Expected(Success(v), 1808, arithOpsCostDetails(SInt), 1808)
       Seq(
         ((Int.MinValue, 449583993), Expected(new ArithmeticException("integer overflow"))),
         ((-1589633733, 2147483647), Expected(new ArithmeticException("integer overflow"))),
@@ -1565,7 +1565,7 @@ class SigmaDslSpecification extends SigmaDslTesting
 
   property("Int LT, GT, NEQ") {
     val o = ExactOrdering.IntIsExactOrdering
-    def expect(v: Boolean) = Expected(Success(v), 36328, binaryRelationCostDetails(LT, SInt), 1788)
+    def expect(v: Boolean) = Expected(Success(v), 1788, binaryRelationCostDetails(LT, SInt), 1788)
     val LT_cases: Seq[((Int, Int), Expected[Boolean])] = Seq(
       (Int.MinValue, Int.MinValue) -> expect(false),
       (Int.MinValue, (Int.MinValue + 1).toInt) -> expect(true),
@@ -1606,10 +1606,10 @@ class SigmaDslSpecification extends SigmaDslTesting
     verifyOp(LT_cases, "<", LT.apply)(_ < _)
 
     verifyOp(
-      swapArgs(LT_cases, cost = 36342, newCostDetails = binaryRelationCostDetails(GT, SInt)),
+      swapArgs(LT_cases, cost = 1788, newCostDetails = binaryRelationCostDetails(GT, SInt)),
       ">", GT.apply)(_ > _)
 
-    val neqCases = newCasesFrom2(LT_cases.map(_._1))(_ != _, cost = 36337, newCostDetails = costNEQ(constNeqCost))
+    val neqCases = newCasesFrom2(LT_cases.map(_._1))(_ != _, cost = 1786, newCostDetails = costNEQ(constNeqCost))
     verifyOp(neqCases, "!=", NEQ.apply)(_ != _)
   }
 
