@@ -7,7 +7,7 @@ import scala.util.DynamicVariable
 trait VersionTesting {
 
   protected val activatedVersions: Seq[Byte] =
-    (0 to VersionContext.MaxSupportedScriptVersion).map(_.toByte).toArray[Byte]
+    Array(VersionContext.MaxSupportedScriptVersion)
 
   private[sigmastate] val _currActivatedVersion = new DynamicVariable[Byte](0)
   def activatedVersionInTests: Byte = _currActivatedVersion.value

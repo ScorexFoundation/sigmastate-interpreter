@@ -1,20 +1,22 @@
 package sigmastate
 
+import org.ergoplatform.Height.addCost
 import org.ergoplatform._
 import org.ergoplatform.validation.ValidationRules._
 import org.ergoplatform.validation._
 import org.scalatest.BeforeAndAfterAll
 import sigmastate.SPrimType.MaxPrimTypeCode
 import sigmastate.Values.ErgoTree.EmptyConstants
-import sigmastate.Values.{UnparsedErgoTree, NotReadyValueInt, ByteArrayConstant, Tuple, IntConstant, ErgoTree, ValueCompanion}
+import sigmastate.Values.{ByteArrayConstant, ErgoTree, IntConstant, NotReadyValueInt, Tuple, UnparsedErgoTree, ValueCompanion}
 import sigmastate.eval.Colls
-import sigmastate.helpers.{ErgoLikeContextTesting, ErgoLikeTestProvingInterpreter, ErgoLikeTestInterpreter}
+import sigmastate.helpers.{ErgoLikeContextTesting, ErgoLikeTestInterpreter, ErgoLikeTestProvingInterpreter}
 import sigmastate.helpers.TestingHelpers._
-import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv, WhenSoftForkReductionResult}
-import sigmastate.interpreter.{ProverResult, WhenSoftForkReducer, ContextExtension, CacheKey}
+import sigmastate.interpreter.ErgoTreeEvaluator.DataEnv
+import sigmastate.interpreter.Interpreter.{ScriptNameProp, WhenSoftForkReductionResult, emptyEnv}
+import sigmastate.interpreter.{CacheKey, ContextExtension, ErgoTreeEvaluator, ProverResult, WhenSoftForkReducer}
 import sigmastate.lang.Terms._
-import sigmastate.lang.exceptions.{SerializerException, SigmaException, InterpreterException, CosterException}
-import sigmastate.serialization.OpCodes.{OpCodeExtra, LastConstantCode, OpCode}
+import sigmastate.lang.exceptions.{CosterException, InterpreterException, SerializerException, SigmaException}
+import sigmastate.serialization.OpCodes.{LastConstantCode, OpCode, OpCodeExtra}
 import sigmastate.serialization.SigmaSerializer.startReader
 import sigmastate.serialization._
 import sigmastate.utxo.{DeserializeContext, SelectField}
@@ -107,7 +109,11 @@ class SoftForkabilitySpecification extends SigmaTestingData with BeforeAndAfterA
     override def companion = this
     override val opCode: OpCode = Height2Code // use reserved code
     override val opType = SFunc(SContext, SInt)
-    override val costKind: CostKind = Height.costKind
+    override val costKind = Height.costKind
+    protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
+      addCost(this.costKind)
+      E.context.HEIGHT
+    }
   }
   val Height2Ser = CaseObjectSerialization(Height2, Height2)
 
@@ -247,7 +253,7 @@ class SoftForkabilitySpecification extends SigmaTestingData with BeforeAndAfterA
       assertExceptionThrown({
         proveAndVerifyTx("propV2", tx, v2vs)
       },{
-        case _: CosterException => true
+        case _: Exception => true
         case _ => false
       })
     }

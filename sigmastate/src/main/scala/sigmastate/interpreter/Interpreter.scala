@@ -248,44 +248,24 @@ trait Interpreter extends ScorexLogging {
     val context = ctx.withErgoTreeVersion(ergoTree.version).asInstanceOf[CTX]
     VersionContext.withVersions(context.activatedScriptVersion, ergoTree.version) {
       val prop = propositionFromErgoTree(ergoTree, context)
-      val evalMode = getEvaluationMode(context)
 
       val res = prop match {
         case SigmaPropConstant(p) =>
           val sb = SigmaDsl.toSigmaBoolean(p)
 
-          var aotRes: AotReductionResult = null
-          if (evalMode.okEvaluateAot) {
-            val aotCost = SigmaBoolean.estimateCost(sb)
-            val resAotCost = Evaluation.addCostChecked(context.initCost, aotCost, context.costLimit)
-            aotRes = AotReductionResult(sb, resAotCost)
-          }
-
-          var jitRes: JitReductionResult = null
-          if (evalMode.okEvaluateJit) {
-            // NOTE, evaluator cost unit needs to be scaled to the cost unit of context
-            val jitCost = Eval_SigmaPropConstant.costKind.cost.toBlockCost
-            val resJitCost = Evaluation.addCostChecked(context.initCost, jitCost, context.costLimit)
-            jitRes = JitReductionResult(sb, resJitCost)
-          }
-          FullReductionResult(aotRes, jitRes)
+          // NOTE, evaluator cost unit needs to be scaled to the cost unit of context
+          val evalCost = Eval_SigmaPropConstant.costKind.cost.toBlockCost
+          val resCost = Evaluation.addCostChecked(context.initCost, evalCost, context.costLimit)
+          val jitRes = JitReductionResult(sb, resCost)
+          FullReductionResult(null, jitRes)
         case _ if !ergoTree.hasDeserialize =>
-          var aotRes: AotReductionResult = null
-          if (evalMode.okEvaluateAot) {
-            val r = precompiledScriptProcessor.getReducer(ergoTree, context.validationSettings)
-            aotRes = r.reduce(context)
+          val ctx = context.asInstanceOf[ErgoLikeContext]
+          val jitRes = VersionContext.withVersions(ctx.activatedScriptVersion, ergoTree.version) {
+            ErgoTreeEvaluator.evalToCrypto(ctx, ergoTree, evalSettings)
           }
-
-          var jitRes: JitReductionResult = null
-          if (evalMode.okEvaluateJit) {
-            val ctx = context.asInstanceOf[ErgoLikeContext]
-            jitRes = VersionContext.withVersions(ctx.activatedScriptVersion, ergoTree.version) {
-              ErgoTreeEvaluator.evalToCrypto(ctx, ergoTree, evalSettings)
-            }
-          }
-          FullReductionResult(aotRes, jitRes)
+          FullReductionResult(null, jitRes)
         case _ =>
-          reductionWithDeserialize(ergoTree, prop, context, env, evalMode)
+          reductionWithDeserialize(ergoTree, prop, context, env)
       }
       res
     }
@@ -303,34 +283,19 @@ trait Interpreter extends ScorexLogging {
   private def reductionWithDeserialize(ergoTree: ErgoTree,
                                        prop: SigmaPropValue,
                                        context: CTX,
-                                       env: ScriptEnv,
-                                       evalMode: EvaluationMode): FullReductionResult = {
+                                       env: ScriptEnv): FullReductionResult = {
     implicit val vs: SigmaValidationSettings = context.validationSettings
-    var aotRes: AotReductionResult = null
-    if (evalMode.okEvaluateAot) {
-      val (propTree, context2) = trySoftForkable[(BoolValue, CTX)](whenSoftFork = (TrueLeaf, context)) {
-        applyDeserializeContext(context, prop)
+    val jitRes = VersionContext.withVersions(context.activatedScriptVersion, ergoTree.version) {
+      val (propTree, context2) = trySoftForkable[(SigmaPropValue, CTX)](whenSoftFork = (TrueSigmaProp, context)) {
+        applyDeserializeContextJITC(context, prop)
       }
 
       // here we assume that when `propTree` is TrueProp then `reduceToCrypto` always succeeds
       // and the rest of the verification is also trivial
-      aotRes = reduceToCrypto(context2, env, propTree).getOrThrow
+      reduceToCryptoJITC(context2, env, propTree).getOrThrow
     }
 
-    var jitRes: JitReductionResult = null
-    if (evalMode.okEvaluateJit) {
-      jitRes = VersionContext.withVersions(context.activatedScriptVersion, ergoTree.version) {
-        val (propTree, context2) = trySoftForkable[(SigmaPropValue, CTX)](whenSoftFork = (TrueSigmaProp, context)) {
-          applyDeserializeContextJITC(context, prop)
-        }
-
-        // here we assume that when `propTree` is TrueProp then `reduceToCrypto` always succeeds
-        // and the rest of the verification is also trivial
-        reduceToCryptoJITC(context2, env, propTree).getOrThrow
-      }
-    }
-
-    FullReductionResult(aotRes, jitRes)
+    FullReductionResult(null, jitRes)
   }
 
   /** Adds the cost to verify sigma protocol proposition.
@@ -445,44 +410,21 @@ trait Interpreter extends ScorexLogging {
         case None => // proceed normally
       }
       VersionContext.withVersions(context.activatedScriptVersion, ergoTree.version) {
-        val evalMode = getEvaluationMode(context)
-        evalMode match {
-          case AotEvaluationMode =>
-            val complexityCost = ergoTree.complexity.toLong
-            val initCost = Evaluation.addCostChecked(context.initCost, complexityCost, context.costLimit)
-            val contextWithCost = context.withInitCost(initCost).asInstanceOf[CTX]
+        // NOTE, ergoTree.complexity is not acrued to the cost in v5.0
+        val reduced = fullReduction(ergoTree, context, env)
+        reduced.value match {
+          case TrivialProp.TrueProp => (true, reduced.cost)
+          case TrivialProp.FalseProp => (false, reduced.cost)
+          case _ =>
+            val fullJitCost = addCryptoCost(reduced.jitRes, context.costLimit)
 
-            val reduced = fullReduction(ergoTree, contextWithCost, env)
-            reduced.value match {
-              case TrivialProp.TrueProp => (true, reduced.cost)
-              case TrivialProp.FalseProp => (false, reduced.cost)
-              case _ =>
-                val ok = if (evalSettings.isMeasureOperationTime) {
-                  val E = ErgoTreeEvaluator.forProfiling(verifySignatureProfiler, evalSettings)
-                  verifySignature(reduced.value, message, proof)(E)
-                } else {
-                  verifySignature(reduced.value, message, proof)(null)
-                }
-                (ok, reduced.cost)
+            val ok = if (evalSettings.isMeasureOperationTime) {
+              val E = ErgoTreeEvaluator.forProfiling(verifySignatureProfiler, evalSettings)
+              verifySignature(reduced.value, message, proof)(E)
+            } else {
+              verifySignature(reduced.value, message, proof)(null)
             }
-
-          case JitEvaluationMode =>
-            // NOTE, ergoTree.complexity is not acrued to the cost in v5.0
-            val reduced = fullReduction(ergoTree, context, env)
-            reduced.value match {
-              case TrivialProp.TrueProp => (true, reduced.cost)
-              case TrivialProp.FalseProp => (false, reduced.cost)
-              case _ =>
-                val fullJitCost = addCryptoCost(reduced.jitRes, context.costLimit)
-
-                val ok = if (evalSettings.isMeasureOperationTime) {
-                  val E = ErgoTreeEvaluator.forProfiling(verifySignatureProfiler, evalSettings)
-                  verifySignature(reduced.value, message, proof)(E)
-                } else {
-                  verifySignature(reduced.value, message, proof)(null)
-                }
-                (ok, fullJitCost)
-            }
+            (ok, fullJitCost)
         }
       }
     }
