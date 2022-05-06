@@ -135,7 +135,7 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ObjectGe
   }
 
   property("fromBaseX") {
-    comp(""" fromBase16("f") """) shouldBe ByteArrayConstant(Array[Byte](49))
+    comp(""" fromBase16("31") """) shouldBe ByteArrayConstant(Array[Byte](49))
     comp(""" fromBase58("r") """) shouldBe ByteArrayConstant(Array[Byte](49))
     comp(""" fromBase64("MQ") """) shouldBe ByteArrayConstant(Array[Byte](49))
     comp(""" fromBase64("M" + "Q") """) shouldBe ByteArrayConstant(Array[Byte](49))
