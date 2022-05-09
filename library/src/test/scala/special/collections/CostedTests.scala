@@ -27,7 +27,7 @@ class CostedTests extends BaseCostedTests {
   import WSpecialPredef._
   import Liftables._
 
-  def buildGraph[T](nIters: Int, name: String)(action: Int => Ref[T]) = {
+  def measureGraph[T](nIters: Int, name: String)(action: Int => Ref[T]) = {
     val buf = mutable.ArrayBuilder.make[Ref[T]]()
     measure(nIters) { i =>
       buf += action(i)

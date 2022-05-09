@@ -68,6 +68,16 @@ class SigmaCompiler(settings: CompilerSettings) {
     val IR.Pair(calcF, _) = IR.doCosting(env, interProp, true)
     IR.buildTree(calcF)
   }
+
+  /** TODO v5.x: remove after AOT costing is removed */
+  def compile2(env: ScriptEnv, code: String)(implicit IR: IRContext): Value[SType] = {
+    val interProp = typecheck(env, code)
+    val IR.Pair(calcF, _) = IR.doCosting(env, interProp, true)
+    val compiledGraph = IR.doBuild(env, interProp, true)
+    val okEqual = IR.alphaEqual(calcF, compiledGraph)
+    assert(okEqual, s"Different graphs for $code")
+    IR.buildTree(calcF)
+  }
 }
 
 object SigmaCompiler {

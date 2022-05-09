@@ -10,7 +10,7 @@ import sigmastate.utxo.CostTable
 
 import scala.util.Try
 
-trait IRContext extends Evaluation with TreeBuilding {
+trait IRContext extends Evaluation with TreeBuilding with GraphBuilding {
 
   override val builder = TransformingSigmaBuilder
 

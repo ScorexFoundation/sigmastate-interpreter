@@ -19,8 +19,8 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ObjectGe
     beginPass(noConstPropagationPass)
   }
 
-  private def comp(env: ScriptEnv, x: String): Value[SType] = compile(env, x)
-  private def comp(x: String): Value[SType] = compile(env, x)
+  private def comp(env: ScriptEnv, x: String): Value[SType] = compile2(env, x)
+  private def comp(x: String): Value[SType] = compile2(env, x)
   private def compWOCosting(x: String): Value[SType] = compileWithoutCosting(env, x)
 
   private def testMissingCosting(script: String, expected: SValue): Unit = {
