@@ -347,39 +347,43 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     }
   }
 
-  // TODO v5.x: control maxTreeDepth same as in deserialize
-  override def serialize(v: Value[SType], w: SigmaByteWriter): Unit = serializable(v) match {
-    case c: Constant[SType] =>
-      w.constantExtractionStore match {
-        case Some(constantStore) =>
-          val ph = constantStore.put(c)(DeserializationSigmaBuilder)
-          w.put(ph.opCode)
-          constantPlaceholderSerializer.serialize(ph, w)
-        case None =>
-          constantSerializer.serialize(c, w)
-      }
-    case _ =>
-      val opCode = v.opCode
-      // help compiler recognize the type
-      val ser = getSerializer(opCode).asInstanceOf[ValueSerializer[v.type]]
-      if (collectSerInfo) {
-        val scope = serializerInfo.get(opCode) match {
+  override def serialize(v: Value[SType], w: SigmaByteWriter): Unit = {
+    val depth = w.level
+    w.level = depth + 1
+    serializable(v) match {
+      case c: Constant[SType] =>
+        w.constantExtractionStore match {
+          case Some(constantStore) =>
+            val ph = constantStore.put(c)(DeserializationSigmaBuilder)
+            w.put(ph.opCode)
+            constantPlaceholderSerializer.serialize(ph, w)
           case None =>
-            val newScope = SerScope(opCode, mutable.ArrayBuffer.empty)
-            serializerInfo += (opCode -> newScope)
-            println(s"Added: ${ser.opDesc}")
-            newScope
-          case Some(scope) => scope
+            constantSerializer.serialize(c, w)
         }
-        w.put(opCode)
+      case _ =>
+        val opCode = v.opCode
+        // help compiler recognize the type
+        val ser = getSerializer(opCode).asInstanceOf[ValueSerializer[v.type]]
+        if (collectSerInfo) {
+          val scope = serializerInfo.get(opCode) match {
+            case None =>
+              val newScope = SerScope(opCode, mutable.ArrayBuffer.empty)
+              serializerInfo += (opCode -> newScope)
+              println(s"Added: ${ser.opDesc}")
+              newScope
+            case Some(scope) => scope
+          }
+          w.put(opCode)
 
-        scopeStack ::= scope
-        ser.serialize(v, w)
-        scopeStack = scopeStack.tail
-      } else {
-        w.put(opCode)
-        ser.serialize(v, w)
-      }
+          scopeStack ::= scope
+          ser.serialize(v, w)
+          scopeStack = scopeStack.tail
+        } else {
+          w.put(opCode)
+          ser.serialize(v, w)
+        }
+    }
+    w.level = depth
   }
 
   override def deserialize(r: SigmaByteReader): Value[SType] = {

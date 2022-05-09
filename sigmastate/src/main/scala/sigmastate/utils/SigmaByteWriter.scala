@@ -4,10 +4,21 @@ import scorex.util.serialization.{VLQByteBufferWriter, Writer}
 import scorex.util.serialization.Writer.Aux
 import sigmastate.{ArgInfo, SType}
 import sigmastate.Values.{Value, SValue}
-import sigmastate.serialization.{TypeSerializer, ValueSerializer, ConstantStore}
+import sigmastate.lang.exceptions.SerializeCallDepthExceeded
+import sigmastate.serialization.{SigmaSerializer, TypeSerializer, ValueSerializer, ConstantStore}
 
-class SigmaByteWriter(val w: Writer,
-                      val constantExtractionStore: Option[ConstantStore]) extends Writer {
+/** Writer used in the concrete implementations of [[SigmaSerializer]].
+  * It decorates the given writer, delegates most of the methods to it, but also adds new methods.
+  *
+  * @param w                       the underlying writer this writer writes to
+  * @param constantExtractionStore the store of constants which is used to resolve
+  * @param maxTreeDepth            limit on the tree depth (recursive invocations) of the serializer
+  */
+class SigmaByteWriter(
+  val w: Writer,
+  val constantExtractionStore: Option[ConstantStore],
+  val maxTreeDepth: Int = SigmaSerializer.MaxTreeDepth
+) extends Writer {
   import SigmaByteWriter._
   import ValueSerializer._
   type CH = w.CH
@@ -138,6 +149,14 @@ class SigmaByteWriter(val w: Writer,
       putValue(x, itemInfo)
     }
     this
+  }
+
+  private var lvl: Int = 0
+  @inline def level: Int = lvl
+  @inline def level_=(v: Int): Unit = {
+    if (v > maxTreeDepth)
+      throw new SerializeCallDepthExceeded(s"nested value deserialization call depth($v) exceeds allowed maximum $maxTreeDepth")
+    lvl = v
   }
 }
 

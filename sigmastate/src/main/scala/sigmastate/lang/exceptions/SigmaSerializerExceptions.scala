@@ -21,6 +21,10 @@ final class ReaderPositionLimitExceeded(
 final class DeserializeCallDepthExceeded(message: String, source: Option[SourceContext] = None, cause: Option[Throwable] = None)
   extends SerializerException(message, source, cause)
 
+/** Thrown when the current depth level > maxDepthLevel which is set in the Writer. */
+final class SerializeCallDepthExceeded(message: String, source: Option[SourceContext] = None, cause: Option[Throwable] = None)
+  extends SerializerException(message, source, cause)
+
 /** Thrown by [[org.ergoplatform.validation.ValidationRules.CheckValidOpCode]] validation rule. */
 final class InvalidOpCode(message: String, source: Option[SourceContext] = None, cause: Option[Throwable] = None)
   extends SerializerException(message, source, cause)
