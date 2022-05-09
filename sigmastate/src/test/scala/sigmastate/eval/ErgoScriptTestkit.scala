@@ -172,7 +172,7 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests
         val compiledProp = IR.buildTree(asRep[Context => SType#WrappedType](calcF))
         checkExpected(compiledProp, expectedTree, "Compiled Tree actual: %s, expected: %s")
 
-        val ergoTree = compiledProp.treeWithSegregation
+        val ergoTree = mkTestErgoTree(compiledProp)
         val compiledTreeBytes = DefaultSerializer.serializeErgoTree(ergoTree)
         checkExpected(DefaultSerializer.deserializeErgoTree(compiledTreeBytes), Some(ergoTree),
           "(de)serialization round trip actual: %s, expected: %s")

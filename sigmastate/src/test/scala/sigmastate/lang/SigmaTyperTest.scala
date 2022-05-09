@@ -652,11 +652,11 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     val pk2 = DLogProverInput.random().publicImage
     val script1 = script(pk1)
     val script2 = script(pk2)
-    val inputBytes = ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(script1.treeWithSegregation)
+    val inputBytes = ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(mkTestErgoTree(script1))
     val positions = IntArrayConstant(Array[Int](2))
     val newVals = ConcreteCollection(Array[SigmaPropValue](SigmaPropConstant(pk2)), SSigmaProp)
 
-    val expectedBytes = ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(script2.treeWithSegregation)
+    val expectedBytes = ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(mkTestErgoTree(script2))
 
     val customEnv: ScriptEnv = Map(
       "scriptBytes" -> Colls.fromArray(inputBytes),

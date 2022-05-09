@@ -19,7 +19,7 @@ import scala.collection.mutable
 /** This works in tandem with ConstantSerializer, if you change one make sure to check the other.*/
 object DataSerializer {
 
-  // TODO mainnet v5.0: control maxTreeDepth same as in deserialize
+  // TODO v5.x: control maxTreeDepth same as in deserialize
   /** Use type descriptor `tpe` to deconstruct type structure and recursively serialize subcomponents.
     * Primitive types are leaves of the type tree, and they are served as basis of recursion.
     * The data value `v` is expected to conform to the type described by `tpe`.
@@ -99,7 +99,7 @@ object DataSerializer {
       case SInt => r.getInt()
       case SLong => r.getLong()
       case SString =>
-        val size = r.getUInt().toInt
+        val size = r.getUIntExact
         val bytes = r.getBytes(size)
         new String(bytes, StandardCharsets.UTF_8)
       case SBigInt =>

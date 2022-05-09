@@ -1301,15 +1301,24 @@ object SOption extends STypeCompanion {
   /** The following SMethod instances are descriptors of methods defined in `Option` type. */
   val IsDefinedMethod = SMethod(
     this, IsDefined, SFunc(ThisType, SBoolean), 2, OptionIsDefined.costKind)
+      .withIRInfo({
+        case (builder, obj, _, args, _) if args.isEmpty => builder.mkOptionIsDefined(obj.asValue[SOption[SType]])
+      })
       .withInfo(OptionIsDefined,
         "Returns \\lst{true} if the option is an instance of \\lst{Some}, \\lst{false} otherwise.")
 
   val GetMethod = SMethod(this, Get, SFunc(ThisType, tT), 3, OptionGet.costKind)
+      .withIRInfo({
+        case (builder, obj, _, args, _) if args.isEmpty => builder.mkOptionGet(obj.asValue[SOption[SType]])
+      })
       .withInfo(OptionGet,
       """Returns the option's value. The option must be nonempty. Throws exception if the option is empty.""")
 
   lazy val GetOrElseMethod = SMethod(
     this, GetOrElse, SFunc(Array(ThisType, tT), tT, Array[STypeParam](tT)), 4, OptionGetOrElse.costKind)
+      .withIRInfo(irBuilder = {
+        case (builder, obj, _, Seq(d), _) => builder.mkOptionGetOrElse(obj.asValue[SOption[SType]], d)
+      })
       .withInfo(OptionGetOrElse,
         """Returns the option's value if the option is nonempty, otherwise
          |return the result of evaluating \lst{default}.
@@ -1417,7 +1426,7 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
       .withInfo(SizeOf, "The size of the collection in elements.")
 
   val GetOrElseMethod = SMethod(
-    this, "getOrElse", SFunc(Array(ThisType, SInt, tIV), tIV, paramIVSeq), 2, ByIndex.costKind)
+    this, "getOrElse", SFunc(Array(ThisType, SInt, tIV), tIV, paramIVSeq), 2, DynamicCost)
       .withIRInfo({ case (builder, obj, _, Seq(index, defaultValue), _) =>
         val index1 = index.asValue[SInt.type]
         val defaultValue1 = defaultValue.asValue[SType]
@@ -1427,8 +1436,22 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
         ArgInfo("index", "index of the element of this collection"),
         ArgInfo("default", "value to return when \\lst{index} is out of range"))
 
+  /** Implements evaluation of Coll.getOrElse method call ErgoTree node.
+    * Called via reflection based on naming convention.
+    * @see SMethod.evalMethod
+    */
+  def getOrElse_eval[A](mc: MethodCall, xs: Coll[A], i: Int, default: A)(implicit E: ErgoTreeEvaluator): A = {
+    E.addCost(ByIndex.costKind, mc.method.opDesc)
+    // the following lines should be semantically the same as in ByIndex.eval
+    Value.checkType(mc.args.last.tpe, default)
+    xs.getOrElse(i, default)
+  }
+
   val MapMethod = SMethod(this, "map",
     SFunc(Array(ThisType, SFunc(tIV, tOV)), tOVColl, Array(paramIV, paramOV)), 3, MapCollection.costKind)
+      .withIRInfo({
+        case (builder, obj, _, Seq(mapper), _) => builder.mkMapCollection(obj.asValue[SCollection[SType]], mapper.asFunc)
+      })
       .withInfo(MapCollection,
         """ Builds a new collection by applying a function to all elements of this collection.
          | Returns a new collection of type \lst{Coll[B]} resulting from applying the given function
@@ -1449,6 +1472,9 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
 
   val ExistsMethod = SMethod(this, "exists",
     SFunc(Array(ThisType, tPredicate), SBoolean, paramIVSeq), 4, Exists.costKind)
+      .withIRInfo({
+        case (builder, obj, _, Seq(c), _) => builder.mkExists(obj.asValue[SCollection[SType]], c.asFunc)
+      })
       .withInfo(Exists,
         """Tests whether a predicate holds for at least one element of this collection.
          |Returns \lst{true} if the given predicate \lst{p} is satisfied by at least one element of this collection, otherwise \lst{false}
@@ -1459,12 +1485,18 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
     this, "fold",
     SFunc(Array(ThisType, tOV, SFunc(Array(tOV, tIV), tOV)), tOV, Array(paramIV, paramOV)),
     5, Fold.costKind)
+      .withIRInfo({
+        case (builder, obj, _, Seq(z, op), _) => builder.mkFold(obj.asValue[SCollection[SType]], z, op.asFunc)
+      })
       .withInfo(Fold, "Applies a binary operator to a start value and all elements of this collection, going left to right.",
         ArgInfo("zero", "a starting value"),
         ArgInfo("op", "the binary operator"))
 
   val ForallMethod = SMethod(this, "forall",
     SFunc(Array(ThisType, tPredicate), SBoolean, paramIVSeq), 6, ForAll.costKind)
+      .withIRInfo({
+        case (builder, obj, _, Seq(c), _) => builder.mkForAll(obj.asValue[SCollection[SType]], c.asFunc)
+      })
       .withInfo(ForAll,
         """Tests whether a predicate holds for all elements of this collection.
          |Returns \lst{true} if this collection is empty or the given predicate \lst{p}
@@ -1474,6 +1506,10 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
 
   val SliceMethod = SMethod(this, "slice",
     SFunc(Array(ThisType, SInt, SInt), ThisType, paramIVSeq), 7, Slice.costKind)
+      .withIRInfo({
+        case (builder, obj, _, Seq(from, until), _) =>
+          builder.mkSlice(obj.asCollection[SType], from.asIntValue, until.asIntValue)
+      })
       .withInfo(Slice,
         """Selects an interval of elements.  The returned collection is made up
          |  of all elements \lst{x} which satisfy the invariant:
@@ -2745,6 +2781,15 @@ case object SGlobal extends SProduct with SPredefType with SMonoType {
     })
     .withInfo(Xor, "Byte-wise XOR of two collections of bytes",
       ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))
+
+  /** Implements evaluation of Global.xor method call ErgoTree node.
+    * Called via reflection based on naming convention.
+    * @see SMethod.evalMethod, Xor.eval, Xor.xorWithCosting
+    */
+  def xor_eval(mc: MethodCall, G: SigmaDslBuilder, ls: Coll[Byte], rs: Coll[Byte])
+              (implicit E: ErgoTreeEvaluator): Coll[Byte] = {
+    Xor.xorWithCosting(ls, rs)
+  }
 
   protected override def getMethods() = super.getMethods() ++ Seq(
     groupGeneratorMethod,

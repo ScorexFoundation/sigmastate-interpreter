@@ -5,10 +5,10 @@ import java.math.BigInteger
 import org.ergoplatform._
 import org.ergoplatform.settings.ErgoAlgos
 import org.scalacheck.{Arbitrary, Gen}
-import scalan.{ExactOrdering, ExactNumeric, RType, ExactIntegral}
+import scalan.{ExactIntegral, ExactNumeric, ExactOrdering, RType}
 import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.authds.{ADDigest, ADKey, ADValue}
-import scorex.crypto.hash.{Digest32, Blake2b256}
+import scorex.crypto.hash.{Blake2b256, Digest32}
 import scalan.util.Extensions._
 import sigma.util.Extensions._
 import sigmastate.SCollection._
@@ -19,7 +19,7 @@ import sigmastate.Values._
 import sigmastate.lang.Terms.Apply
 import sigmastate.eval.Extensions._
 import sigmastate.eval._
-import sigmastate.lang.Terms.{PropertyCall, MethodCall}
+import sigmastate.lang.Terms.{MethodCall, PropertyCall}
 import sigmastate.utxo._
 import special.collection._
 import sigmastate.serialization.OpCodes.OpCode
@@ -27,7 +27,7 @@ import sigmastate.utils.Helpers
 import sigmastate.utils.Helpers._
 import sigmastate.helpers.TestingHelpers._
 
-import scala.util.{Success, Failure, Try}
+import scala.util.{Failure, Success, Try}
 import OrderingOps._
 import org.ergoplatform.ErgoBox.AdditionalRegisters
 import org.scalacheck.Arbitrary._
@@ -39,6 +39,7 @@ import sigmastate.basics.ProveDHTuple
 import sigmastate.interpreter._
 import org.scalactic.source.Position
 import sigmastate.helpers.SigmaPPrint
+import sigmastate.lang.exceptions.CosterException
 
 import scala.collection.mutable
 
@@ -108,6 +109,19 @@ class SigmaDslSpecification extends SigmaDslTesting
   override val okRunTestsWithoutMCLowering: Boolean = true
 
   implicit def IR = createIR()
+
+  def testCases[A, B](cases: Seq[(A, Expected[B])], f: Feature[A, B]) = {
+    val table = Table(("x", "y"), cases:_*)
+    forAll(table) { (x, expectedRes) =>
+      val res = f.checkEquality(x)
+      val resValue = res.map(_._1)
+      val expected = expectedRes.newResults(ergoTreeVersionInTests)._1
+      checkResult(resValue, expected.value, failOnTestVectors = true)
+      if (res.isSuccess) {
+        res.get._2.cost shouldBe JitCost(expected.verificationCost.get)
+      }
+    }
+  }
 
   import TestData._
 
@@ -2578,164 +2592,219 @@ class SigmaDslSpecification extends SigmaDslTesting
       36337)(x => (cloneColl(x._1), x._2))
   }
 
-  property("GroupElement methods equivalence") {
+  property("GroupElement.getEncoded equivalence") {
     verifyCases(
-      {
-        val cost = TracedCost(
-          Array(
-            FixedCostItem(Apply),
-            FixedCostItem(FuncValue),
-            FixedCostItem(GetVar),
-            FixedCostItem(OptionGet),
-            FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
-            FixedCostItem(ValUse),
-            FixedCostItem(PropertyCall),
-            MethodCallCostItem(TracedCost(Array(FixedCostItem(SGroupElement.GetEncodedMethod, FixedCost(JitCost(3))))))
-          )
+    {
+      val cost = TracedCost(
+        Array(
+          FixedCostItem(Apply),
+          FixedCostItem(FuncValue),
+          FixedCostItem(GetVar),
+          FixedCostItem(OptionGet),
+          FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
+          FixedCostItem(ValUse),
+          FixedCostItem(PropertyCall),
+          MethodCallCostItem(TracedCost(Array(FixedCostItem(SGroupElement.GetEncodedMethod, FixedCost(JitCost(3))))))
         )
-        def success[T](v: T) = Expected(Success(v), 37905, cost)
-        Seq(
-          (ge1, success(Helpers.decodeBytes(ge1str))),
-          (ge2, success(Helpers.decodeBytes(ge2str))),
-          (ge3, success(Helpers.decodeBytes(ge3str))),
-          (SigmaDsl.groupGenerator,
-              success(Helpers.decodeBytes("0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798"))),
-          (SigmaDsl.groupIdentity,
-              success(Helpers.decodeBytes("000000000000000000000000000000000000000000000000000000000000000000")))
-        )
-      },
-      existingFeature((x: GroupElement) => x.getEncoded,
-        "{ (x: GroupElement) => x.getEncoded }",
-        FuncValue(
-          Vector((1, SGroupElement)),
-          MethodCall(ValUse(1, SGroupElement), SGroupElement.getMethodByName("getEncoded"), Vector(), Map())
-        )))
+      )
+      def success[T](v: T) = Expected(Success(v), 37905, cost)
+      Seq(
+        (ge1, success(Helpers.decodeBytes(ge1str))),
+        (ge2, success(Helpers.decodeBytes(ge2str))),
+        (ge3, success(Helpers.decodeBytes(ge3str))),
+        (SigmaDsl.groupGenerator,
+          success(Helpers.decodeBytes("0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798"))),
+        (SigmaDsl.groupIdentity,
+          success(Helpers.decodeBytes("000000000000000000000000000000000000000000000000000000000000000000")))
+      )
+    },
+    existingFeature((x: GroupElement) => x.getEncoded,
+      "{ (x: GroupElement) => x.getEncoded }",
+      FuncValue(
+        Vector((1, SGroupElement)),
+        MethodCall(ValUse(1, SGroupElement), SGroupElement.getMethodByName("getEncoded"), Vector(), Map())
+      )))
+  }
 
+  property("decodePoint(GroupElement.getEncoded) equivalence") {
     verifyCases(
-      {
-        val cost = TracedCost(
-          Array(
-            FixedCostItem(Apply),
-            FixedCostItem(FuncValue),
-            FixedCostItem(GetVar),
-            FixedCostItem(OptionGet),
-            FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
-            FixedCostItem(ValUse),
-            FixedCostItem(PropertyCall),
-            MethodCallCostItem(TracedCost(Array(FixedCostItem(MethodDesc(SGroupElement.GetEncodedMethod), FixedCost(JitCost(3)))))),
-            FixedCostItem(DecodePoint),
-            FixedCostItem(ValUse)
+    {
+      val cost = TracedCost(
+        Array(
+          FixedCostItem(Apply),
+          FixedCostItem(FuncValue),
+          FixedCostItem(GetVar),
+          FixedCostItem(OptionGet),
+          FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
+          FixedCostItem(ValUse),
+          FixedCostItem(PropertyCall),
+          MethodCallCostItem(TracedCost(Array(FixedCostItem(MethodDesc(SGroupElement.GetEncodedMethod), FixedCost(JitCost(3)))))),
+          FixedCostItem(DecodePoint),
+          FixedCostItem(ValUse)
+        )
+      )
+      def success[T](v: T) = Expected(Success(v), 38340, cost)
+      Seq(
+        (ge1, success(true)),
+        (ge2, success(true)),
+        (ge3, success(true)),
+        (SigmaDsl.groupGenerator, success(true)),
+        (SigmaDsl.groupIdentity, success(true))
+      )
+    },
+    existingFeature({ (x: GroupElement) => decodePoint(x.getEncoded) == x },
+    "{ (x: GroupElement) => decodePoint(x.getEncoded) == x }",
+    FuncValue(
+      Vector((1, SGroupElement)),
+      EQ(
+        DecodePoint(
+          MethodCall.typed[Value[SCollection[SByte.type]]](
+            ValUse(1, SGroupElement),
+            SGroupElement.getMethodByName("getEncoded"),
+            Vector(),
+            Map()
           )
+        ),
+        ValUse(1, SGroupElement)
+      )
+    )))
+  }
+
+  property("GroupElement.negate equivalence") {
+    verifyCases(
+    {
+      val cost = TracedCost(
+        Array(
+          FixedCostItem(Apply),
+          FixedCostItem(FuncValue),
+          FixedCostItem(GetVar),
+          FixedCostItem(OptionGet),
+          FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
+          FixedCostItem(ValUse),
+          FixedCostItem(PropertyCall),
+          MethodCallCostItem(TracedCost(Array(FixedCostItem(MethodDesc(SGroupElement.NegateMethod), FixedCost(JitCost(1))))))
         )
-        def success[T](v: T) = Expected(Success(v), 38340, cost)
-        Seq(
-          (ge1, success(true)),
-          (ge2, success(true)),
-          (ge3, success(true)),
-          (SigmaDsl.groupGenerator, success(true)),
-          (SigmaDsl.groupIdentity, success(true))
+      )
+      def success[T](v: T) = Expected(Success(v), 36292, cost)
+      Seq(
+        (ge1, success(Helpers.decodeGroupElement("02358d53f01276211f92d0aefbd278805121d4ff6eb534b777af1ee8abae5b2056"))),
+        (ge2, success(Helpers.decodeGroupElement("03dba7b94b111f3894e2f9120b577da595ec7d58d488485adf73bf4e153af63575"))),
+        (ge3, success(Helpers.decodeGroupElement("0390449814f5671172dd696a61b8aa49aaa4c87013f56165e27d49944e98bc414d"))),
+        (SigmaDsl.groupGenerator, success(Helpers.decodeGroupElement("0379be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798"))),
+        (SigmaDsl.groupIdentity, success(Helpers.decodeGroupElement("000000000000000000000000000000000000000000000000000000000000000000")))
+      )
+    },
+    existingFeature({ (x: GroupElement) => x.negate },
+    "{ (x: GroupElement) => x.negate }",
+    FuncValue(
+      Vector((1, SGroupElement)),
+      MethodCall(ValUse(1, SGroupElement), SGroupElement.getMethodByName("negate"), Vector(), Map())
+    )))
+  }
+
+  property("GroupElement.exp equivalence") {
+    val cases = {
+      val cost = TracedCost(
+        Array(
+          FixedCostItem(Apply),
+          FixedCostItem(FuncValue),
+          FixedCostItem(GetVar),
+          FixedCostItem(OptionGet),
+          FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
+          FixedCostItem(ValUse),
+          FixedCostItem(SelectField),
+          FixedCostItem(ValUse),
+          FixedCostItem(SelectField),
+          FixedCostItem(Exponentiate)
         )
-      },
-      existingFeature({ (x: GroupElement) => decodePoint(x.getEncoded) == x },
-        "{ (x: GroupElement) => decodePoint(x.getEncoded) == x }",
-        FuncValue(
-          Vector((1, SGroupElement)),
-          EQ(
-            DecodePoint(
-              MethodCall.typed[Value[SCollection[SByte.type]]](
-                ValUse(1, SGroupElement),
-                SGroupElement.getMethodByName("getEncoded"),
-                Vector(),
+      )
+      def success[T](v: T) = Expected(Success(v), 41484, cost)
+      Seq(
+        ((ge1, CBigInt(new BigInteger("-25c80b560dd7844e2efd10f80f7ee57d", 16))),
+          success(Helpers.decodeGroupElement("023a850181b7b73f92a5bbfa0bfc78f5bbb6ff00645ddde501037017e1a2251e2e"))),
+        ((ge2, CBigInt(new BigInteger("2488741265082fb02b09f992be3dd8d60d2bbe80d9e2630", 16))),
+          success(Helpers.decodeGroupElement("032045b928fb7774a4cd9ef5fa8209f4e493cd4cc5bd536b52746a53871bf73431"))),
+        ((ge3, CBigInt(new BigInteger("-33e8fbdb13d2982e92583445e1fdcb5901a178a7aa1e100", 16))),
+          success(Helpers.decodeGroupElement("036128efaf14d8ac2812a662f6494dc617b87986a3dc6b4a59440048a7ac7d2729"))),
+        ((ge3, CBigInt(new BigInteger("1", 16))),
+          success(ge3))
+      )
+    }
+    val scalaFunc = { (x: (GroupElement, BigInt)) => x._1.exp(x._2) }
+    val script = "{ (x: (GroupElement, BigInt)) => x._1.exp(x._2) }"
+    if (lowerMethodCallsInTests) {
+      verifyCases(cases,
+        existingFeature(
+          scalaFunc, script,
+          FuncValue(
+            Vector((1, STuple(Vector(SGroupElement, SBigInt)))),
+            Exponentiate(
+              SelectField.typed[Value[SGroupElement.type]](
+                ValUse(1, STuple(Vector(SGroupElement, SBigInt))),
+                1.toByte
+              ),
+              SelectField.typed[Value[SBigInt.type]](
+                ValUse(1, STuple(Vector(SGroupElement, SBigInt))),
+                2.toByte
+              )
+            )
+          )))
+    } else {
+      forEachScriptAndErgoTreeVersion(activatedVersions, ergoTreeVersions) {
+        testCases(
+          Seq(
+            ((ge1, CBigInt(new BigInteger("-25c80b560dd7844e2efd10f80f7ee57d", 16))),
+              Expected(
+                // in v4.x exp method cannot be called via MethodCall ErgoTree node
+                Failure(new NoSuchMethodException("sigmastate.eval.CostingRules$GroupElementCoster.exp(scalan.Base$Ref)")),
+                cost = 41484,
+                CostDetails.ZeroCost,
+                newCost = 0,
+                newVersionedResults = {
+                  // in v5.0 MethodCall ErgoTree node is allowed
+                  val res = ExpectedResult(
+                    Success(Helpers.decodeGroupElement("023a850181b7b73f92a5bbfa0bfc78f5bbb6ff00645ddde501037017e1a2251e2e")),
+                    Some(999)
+                  )
+                  Seq( // expected result for each version
+                    0 -> ( res -> None ),
+                    1 -> ( res -> None ),
+                    2 -> ( res -> None )
+                  )
+                }
+              )
+              )
+          ),
+          changedFeature(
+            (x: (GroupElement, BigInt)) =>
+              throw new NoSuchMethodException("sigmastate.eval.CostingRules$GroupElementCoster.exp(scalan.Base$Ref)"),
+            scalaFunc, ""/*can't be compiled in v4.x*/,
+            FuncValue(
+              Vector((1, STuple(Vector(SGroupElement, SBigInt)))),
+              MethodCall(
+                SelectField.typed[Value[SGroupElement.type]](
+                  ValUse(1, STuple(Vector(SGroupElement, SBigInt))),
+                  1.toByte
+                ),
+                SGroupElement.getMethodByName("exp"),
+                Vector(
+                  SelectField.typed[Value[SBigInt.type]](
+                    ValUse(1, STuple(Vector(SGroupElement, SBigInt))),
+                    2.toByte
+                  )
+                ),
                 Map()
               )
             ),
-            ValUse(1, SGroupElement)
-          )
-        )))
-
-    verifyCases(
-      {
-        val cost = TracedCost(
-          Array(
-            FixedCostItem(Apply),
-            FixedCostItem(FuncValue),
-            FixedCostItem(GetVar),
-            FixedCostItem(OptionGet),
-            FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
-            FixedCostItem(ValUse),
-            FixedCostItem(PropertyCall),
-            MethodCallCostItem(TracedCost(Array(FixedCostItem(MethodDesc(SGroupElement.NegateMethod), FixedCost(JitCost(1))))))
-          )
-        )
-        def success[T](v: T) = Expected(Success(v), 36292, cost)
-        Seq(
-          (ge1, success(Helpers.decodeGroupElement("02358d53f01276211f92d0aefbd278805121d4ff6eb534b777af1ee8abae5b2056"))),
-          (ge2, success(Helpers.decodeGroupElement("03dba7b94b111f3894e2f9120b577da595ec7d58d488485adf73bf4e153af63575"))),
-          (ge3, success(Helpers.decodeGroupElement("0390449814f5671172dd696a61b8aa49aaa4c87013f56165e27d49944e98bc414d"))),
-          (SigmaDsl.groupGenerator, success(Helpers.decodeGroupElement("0379be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798"))),
-          (SigmaDsl.groupIdentity, success(Helpers.decodeGroupElement("000000000000000000000000000000000000000000000000000000000000000000")))
-        )
-      },
-      existingFeature({ (x: GroupElement) => x.negate },
-        "{ (x: GroupElement) => x.negate }",
-        FuncValue(
-          Vector((1, SGroupElement)),
-          MethodCall(ValUse(1, SGroupElement), SGroupElement.getMethodByName("negate"), Vector(), Map())
-        )))
-
-    // TODO v6.0 (3h): related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
-    // val isIdentity = existingFeature({ (x: GroupElement) => x.isIdentity },
-    //   "{ (x: GroupElement) => x.isIdentity }")
-
-    if (lowerMethodCallsInTests) {
-      verifyCases(
-      {
-        val cost = TracedCost(
-          Array(
-            FixedCostItem(Apply),
-            FixedCostItem(FuncValue),
-            FixedCostItem(GetVar),
-            FixedCostItem(OptionGet),
-            FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
-            FixedCostItem(ValUse),
-            FixedCostItem(SelectField),
-            FixedCostItem(ValUse),
-            FixedCostItem(SelectField),
-            FixedCostItem(Exponentiate)
-          )
-        )
-        def success[T](v: T) = Expected(Success(v), 41484, cost)
-        Seq(
-          ((ge1, CBigInt(new BigInteger("-25c80b560dd7844e2efd10f80f7ee57d", 16))),
-              success(Helpers.decodeGroupElement("023a850181b7b73f92a5bbfa0bfc78f5bbb6ff00645ddde501037017e1a2251e2e"))),
-          ((ge2, CBigInt(new BigInteger("2488741265082fb02b09f992be3dd8d60d2bbe80d9e2630", 16))),
-              success(Helpers.decodeGroupElement("032045b928fb7774a4cd9ef5fa8209f4e493cd4cc5bd536b52746a53871bf73431"))),
-          ((ge3, CBigInt(new BigInteger("-33e8fbdb13d2982e92583445e1fdcb5901a178a7aa1e100", 16))),
-              success(Helpers.decodeGroupElement("036128efaf14d8ac2812a662f6494dc617b87986a3dc6b4a59440048a7ac7d2729"))),
-          ((ge3, CBigInt(new BigInteger("1", 16))),
-              success(ge3))
-        )
-      },
-      existingFeature(
-        { (x: (GroupElement, BigInt)) => x._1.exp(x._2) },
-        "{ (x: (GroupElement, BigInt)) => x._1.exp(x._2) }",
-        FuncValue(
-          Vector((1, STuple(Vector(SGroupElement, SBigInt)))),
-          Exponentiate(
-            SelectField.typed[Value[SGroupElement.type]](
-              ValUse(1, STuple(Vector(SGroupElement, SBigInt))),
-              1.toByte
-            ),
-            SelectField.typed[Value[SBigInt.type]](
-              ValUse(1, STuple(Vector(SGroupElement, SBigInt))),
-              2.toByte
-            )
-          )
-        )))
-    } else {
-      // TODO mainnet v5.0: add test case with `exp` MethodCall
+            allowNewToSucceed = true,
+            allowDifferentErrors = true
+          ))
+      }
     }
+  }
 
+  property("GroupElement.multiply equivalence") {
+    val scalaFunc = { (x: (GroupElement, GroupElement)) => x._1.multiply(x._2) }
     if (lowerMethodCallsInTests) {
       verifyCases(
       {
@@ -2765,7 +2834,7 @@ class SigmaDslSpecification extends SigmaDslTesting
               success(ge3))
         )
       },
-      existingFeature({ (x: (GroupElement, GroupElement)) => x._1.multiply(x._2) },
+      existingFeature(scalaFunc,
         "{ (x: (GroupElement, GroupElement)) => x._1.multiply(x._2) }",
         FuncValue(
           Vector((1, STuple(Vector(SGroupElement, SGroupElement)))),
@@ -2781,9 +2850,65 @@ class SigmaDslSpecification extends SigmaDslTesting
           )
         )))
     } else {
-      //TODO mainnet v5.0: add test case with `exp` MethodCall
+      val cases = Seq(
+        ((ge1, Helpers.decodeGroupElement("03e132ca090614bd6c9f811e91f6daae61f16968a1e6c694ed65aacd1b1092320e")),
+          Expected(
+            // in v4.x exp method cannot be called via MethodCall ErgoTree node
+            Failure(new NoSuchMethodException("sigmastate.eval.CostingRules$GroupElementCoster.multiply(scalan.Base$Ref)")),
+            cost = 41484,
+            CostDetails.ZeroCost,
+            newCost = 0,
+            newVersionedResults = {
+              // in v5.0 MethodCall ErgoTree node is allowed
+              val res = ExpectedResult(
+                Success(Helpers.decodeGroupElement("02bc48937b4a66f249a32dfb4d2efd0743dc88d46d770b8c5d39fd03325ba211df")),
+                Some(139)
+              )
+              Seq( // expected result for each version
+                0 -> ( res -> None ),
+                1 -> ( res -> None ),
+                2 -> ( res -> None )
+              )
+            }
+          )
+          )
+      )
+      forEachScriptAndErgoTreeVersion(activatedVersions, ergoTreeVersions) {
+        testCases(
+          cases,
+          changedFeature(
+            (_: (GroupElement, GroupElement)) =>
+              throw new NoSuchMethodException("java.lang.NoSuchMethodException: sigmastate.eval.CostingRules$GroupElementCoster.multiply(scalan.Base$Ref)"),
+            scalaFunc, ""/*can't be compiled in v4.x*/,
+            FuncValue(
+              Vector((1, STuple(Vector(SGroupElement, SGroupElement)))),
+              MethodCall(
+                SelectField.typed[Value[SGroupElement.type]](
+                  ValUse(1, STuple(Vector(SGroupElement, SGroupElement))),
+                  1.toByte
+                ),
+                SGroupElement.getMethodByName("multiply"),
+                Vector(
+                  SelectField.typed[Value[SGroupElement.type]](
+                    ValUse(1, STuple(Vector(SGroupElement, SGroupElement))),
+                    2.toByte
+                  )
+                ),
+                Map()
+              )
+            ),
+            allowNewToSucceed = true,
+            allowDifferentErrors = true
+          ))
+      }
     }
   }
+
+  // TODO v6.0 (3h): related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
+  //  property("GroupElement.isIdentity equivalence") {
+  //    // val isIdentity = existingFeature({ (x: GroupElement) => x.isIdentity },
+  //    //   "{ (x: GroupElement) => x.isIdentity }")
+  //  }
 
   property("AvlTree properties equivalence") {
     def expectedExprFor(propName: String) = {
@@ -5265,8 +5390,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         FuncValue(Vector((1, SBigInt)), Negation(ValUse(1, SBigInt)))))
   }
 
-  property("global functions equivalence") {
-
+  property("groupGenerator equivalence") {
     verifyCases(
       {
         def success[T](v: T) = Expected(Success(v), 35981)
@@ -5275,16 +5399,16 @@ class SigmaDslSpecification extends SigmaDslTesting
           (1, success(Helpers.decodeGroupElement("0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798"))))
       },
       existingFeature({ (x: Int) => SigmaDsl.groupGenerator },
-        "{ (x: Int) => groupGenerator }",
-        FuncValue(
-          Vector((1, SInt)),
-          MethodCall.typed[Value[SGroupElement.type]](
-            Global,
-            SGlobal.getMethodByName("groupGenerator"),
-            Vector(),
-            Map()
-          )
-        )))
+      "{ (x: Int) => groupGenerator }",
+      FuncValue(
+        Vector((1, SInt)),
+        MethodCall.typed[Value[SGroupElement.type]](
+          Global,
+          SGlobal.getMethodByName("groupGenerator"),
+          Vector(),
+          Map()
+        )
+      )))
 
     verifyCases(
       {
@@ -5338,11 +5462,11 @@ class SigmaDslSpecification extends SigmaDslTesting
           ValUse(1, SBigInt)
         )
       )))
-    } else {
-      // TODO mainnet v5.0: add test case with `exp` MethodCall
     }
+  }
 
-    // TODO v6.0 (2h): fix semantics when the left collection is longer
+  property("Global.xor equivalence") {
+
     if (lowerMethodCallsInTests) {
       verifyCases(
       {
@@ -5385,64 +5509,121 @@ class SigmaDslSpecification extends SigmaDslTesting
           )
         )))
     } else {
-      // TODO mainnet v5.0: add test case with `SGlobal.xor` MethodCall
+      val cases = Seq(
+        ((Helpers.decodeBytes("01"), Helpers.decodeBytes("01")) ->
+          Expected(
+            // in v4.x exp method cannot be called via MethodCall ErgoTree node
+//            Failure(new NoSuchMethodException("")),
+            Success(Helpers.decodeBytes("00")),
+            cost = 41484,
+            CostDetails.ZeroCost,
+            newCost = 0,
+            newVersionedResults = {
+              // in v5.0 MethodCall ErgoTree node is allowed
+              val res = ExpectedResult(
+                Success(Helpers.decodeBytes("00")),
+                Some(116)
+              )
+              Seq( // expected result for each version
+                0 -> ( res -> None ),
+                1 -> ( res -> None ),
+                2 -> ( res -> None )
+              )
+            }
+          )
+        )
+      )
+      forEachScriptAndErgoTreeVersion(activatedVersions, ergoTreeVersions) {
+        testCases(
+          cases,
+          changedFeature(
+            (x: (Coll[Byte], Coll[Byte])) => SigmaDsl.xor(x._1, x._2),
+            (x: (Coll[Byte], Coll[Byte])) => SigmaDsl.xor(x._1, x._2),
+            "", // NOTE, the script for this test case cannot be compiled, thus expectedExpr is used
+            expectedExpr = FuncValue(
+              Vector((1, STuple(Vector(SByteArray, SByteArray)))),
+              MethodCall(
+                Global,
+                SGlobal.getMethodByName("xor"),
+                Vector(
+                  SelectField.typed[Value[SCollection[SByte.type]]](
+                    ValUse(1, STuple(Vector(SByteArray, SByteArray))),
+                    1.toByte
+                  ),
+                  SelectField.typed[Value[SCollection[SByte.type]]](
+                    ValUse(1, STuple(Vector(SByteArray, SByteArray))),
+                    2.toByte
+                  )),
+                Map()
+              )
+            ),
+            allowNewToSucceed = true,
+            allowDifferentErrors = false
+          ))
+      }
     }
   }
 
-  property("Coll[Box] methods equivalence") {
-    val samples = genSamples[Coll[Box]](collOfN[Box](5), MinSuccessful(20))
-    val b1 = CostingBox(
-      false,
-      new ErgoBox(
-        1L,
-        new ErgoTree(
-          0.toByte,
-          Vector(),
-          Right(
-            SigmaPropConstant(
-              CSigmaProp(
-                ProveDHTuple(
-                  Helpers.decodeECPoint("02c1a9311ecf1e76c787ba4b1c0e10157b4f6d1e4db3ef0d84f411c99f2d4d2c5b"),
-                  Helpers.decodeECPoint("027d1bd9a437e73726ceddecc162e5c85f79aee4798505bc826b8ad1813148e419"),
-                  Helpers.decodeECPoint("0257cff6d06fe15d1004596eeb97a7f67755188501e36adc49bd807fe65e9d8281"),
-                  Helpers.decodeECPoint("033c6021cff6ba5fdfc4f1742486030d2ebbffd9c9c09e488792f3102b2dcdabd5")
-                )
+  def sampleCollBoxes = genSamples[Coll[Box]](collOfN[Box](5), MinSuccessful(20))
+
+  def create_b1 = CostingBox(
+    false,
+    new ErgoBox(
+      1L,
+      new ErgoTree(
+        0.toByte,
+        Vector(),
+        Right(
+          SigmaPropConstant(
+            CSigmaProp(
+              ProveDHTuple(
+                Helpers.decodeECPoint("02c1a9311ecf1e76c787ba4b1c0e10157b4f6d1e4db3ef0d84f411c99f2d4d2c5b"),
+                Helpers.decodeECPoint("027d1bd9a437e73726ceddecc162e5c85f79aee4798505bc826b8ad1813148e419"),
+                Helpers.decodeECPoint("0257cff6d06fe15d1004596eeb97a7f67755188501e36adc49bd807fe65e9d8281"),
+                Helpers.decodeECPoint("033c6021cff6ba5fdfc4f1742486030d2ebbffd9c9c09e488792f3102b2dcdabd5")
               )
             )
           )
+        )
+      ),
+      Coll(),
+      Map(
+        ErgoBox.R4 -> ByteArrayConstant(
+          Helpers.decodeBytes(
+            "7200004cccdac3008001bc80ffc7ff9633bca3e501801380ff007900019d7f0001a8c9dfff5600d964011617ca00583f989c7f80007fee7f99b07f7f870067dc315180828080307fbdf400"
+          )
         ),
-        Coll(),
-        Map(
-          ErgoBox.R4 -> ByteArrayConstant(
-            Helpers.decodeBytes(
-              "7200004cccdac3008001bc80ffc7ff9633bca3e501801380ff007900019d7f0001a8c9dfff5600d964011617ca00583f989c7f80007fee7f99b07f7f870067dc315180828080307fbdf400"
-            )
-          ),
-          ErgoBox.R7 -> LongConstant(0L),
-          ErgoBox.R6 -> FalseLeaf,
-          ErgoBox.R5 -> ByteArrayConstant(Helpers.decodeBytes("7f"))
-        ),
-        ModifierId @@ ("7dffff48ab0000c101a2eac9ff17017f6180aa7fc6f2178000800179499380a5"),
-        21591.toShort,
-        638768
-      )
+        ErgoBox.R7 -> LongConstant(0L),
+        ErgoBox.R6 -> FalseLeaf,
+        ErgoBox.R5 -> ByteArrayConstant(Helpers.decodeBytes("7f"))
+      ),
+      ModifierId @@ ("7dffff48ab0000c101a2eac9ff17017f6180aa7fc6f2178000800179499380a5"),
+      21591.toShort,
+      638768
     )
-    val b2 = CostingBox(
-      false,
-      new ErgoBox(
-        1000000000L,
-        new ErgoTree(
-          0.toByte,
-          Vector(),
-          Right(BoolToSigmaProp(OR(ConcreteCollection(Array(FalseLeaf, AND(ConcreteCollection(Array(FalseLeaf, FalseLeaf), SBoolean))), SBoolean))))
-        ),
-        Coll(),
-        Map(),
-        ModifierId @@ ("008677ffff7ff36dff00f68031140400007689ff014c9201ce8000a9ffe6ceff"),
-        32767.toShort,
-        32827
-      )
+  )
+
+  def create_b2 = CostingBox(
+    false,
+    new ErgoBox(
+      1000000000L,
+      new ErgoTree(
+        0.toByte,
+        Vector(),
+        Right(BoolToSigmaProp(OR(ConcreteCollection(Array(FalseLeaf, AND(ConcreteCollection(Array(FalseLeaf, FalseLeaf), SBoolean))), SBoolean))))
+      ),
+      Coll(),
+      Map(),
+      ModifierId @@ ("008677ffff7ff36dff00f68031140400007689ff014c9201ce8000a9ffe6ceff"),
+      32767.toShort,
+      32827
     )
+  )
+
+  property("Coll.filter equivalence") {
+    val samples = sampleCollBoxes
+    val b1 = create_b1
+    val b2 = create_b2
 
     verifyCases(
       {
@@ -5454,15 +5635,21 @@ class SigmaDslSpecification extends SigmaDslTesting
         )
       },
       existingFeature({ (x: Coll[Box]) => x.filter({ (b: Box) => b.value > 1 }) },
-        "{ (x: Coll[Box]) => x.filter({(b: Box) => b.value > 1 }) }",
-        FuncValue(
-          Vector((1, SCollectionType(SBox))),
-          Filter(
-            ValUse(1, SCollectionType(SBox)),
-            FuncValue(Vector((3, SBox)), GT(ExtractAmount(ValUse(3, SBox)), LongConstant(1L)))
-          )
-        )),
+      "{ (x: Coll[Box]) => x.filter({(b: Box) => b.value > 1 }) }",
+      FuncValue(
+        Vector((1, SCollectionType(SBox))),
+        Filter(
+          ValUse(1, SCollectionType(SBox)),
+          FuncValue(Vector((3, SBox)), GT(ExtractAmount(ValUse(3, SBox)), LongConstant(1L)))
+        )
+      )),
       preGeneratedSamples = Some(samples))
+  }
+
+  property("Coll.flatMap equivalence") {
+    val samples = sampleCollBoxes
+    val b1 = create_b1
+    val b2 = create_b2
 
     verifyCases(
       {
@@ -5478,19 +5665,25 @@ class SigmaDslSpecification extends SigmaDslTesting
         )
       },
       existingFeature({ (x: Coll[Box]) => x.flatMap({ (b: Box) => b.propositionBytes }) },
-        "{ (x: Coll[Box]) => x.flatMap({(b: Box) => b.propositionBytes }) }",
-        FuncValue(
-          Vector((1, SCollectionType(SBox))),
-          MethodCall.typed[Value[SCollection[SByte.type]]](
-            ValUse(1, SCollectionType(SBox)),
-            SCollection.getMethodByName("flatMap").withConcreteTypes(
-              Map(STypeVar("IV") -> SBox, STypeVar("OV") -> SByte)
-            ),
-            Vector(FuncValue(Vector((3, SBox)), ExtractScriptBytes(ValUse(3, SBox)))),
-            Map()
-          )
-        )),
+      "{ (x: Coll[Box]) => x.flatMap({(b: Box) => b.propositionBytes }) }",
+      FuncValue(
+        Vector((1, SCollectionType(SBox))),
+        MethodCall.typed[Value[SCollection[SByte.type]]](
+          ValUse(1, SCollectionType(SBox)),
+          SCollection.getMethodByName("flatMap").withConcreteTypes(
+            Map(STypeVar("IV") -> SBox, STypeVar("OV") -> SByte)
+          ),
+          Vector(FuncValue(Vector((3, SBox)), ExtractScriptBytes(ValUse(3, SBox)))),
+          Map()
+        )
+      )),
       preGeneratedSamples = Some(samples))
+  }
+
+  property("Coll.zip equivalence") {
+    val samples = sampleCollBoxes
+    val b1 = create_b1
+    val b2 = create_b2
 
     verifyCases(
       {
@@ -5502,20 +5695,25 @@ class SigmaDslSpecification extends SigmaDslTesting
         )
       },
       existingFeature({ (x: Coll[Box]) => x.zip(x) },
-        "{ (x: Coll[Box]) => x.zip(x) }",
-        FuncValue(
-          Vector((1, SCollectionType(SBox))),
-          MethodCall.typed[Value[SCollection[STuple]]](
-            ValUse(1, SCollectionType(SBox)),
-            SCollection.getMethodByName("zip").withConcreteTypes(
-              Map(STypeVar("IV") -> SBox, STypeVar("OV") -> SBox)
-            ),
-            Vector(ValUse(1, SCollectionType(SBox))),
-            Map()
-          )
-        )),
+      "{ (x: Coll[Box]) => x.zip(x) }",
+      FuncValue(
+        Vector((1, SCollectionType(SBox))),
+        MethodCall.typed[Value[SCollection[STuple]]](
+          ValUse(1, SCollectionType(SBox)),
+          SCollection.getMethodByName("zip").withConcreteTypes(
+            Map(STypeVar("IV") -> SBox, STypeVar("OV") -> SBox)
+          ),
+          Vector(ValUse(1, SCollectionType(SBox))),
+          Map()
+        )
+      )),
       preGeneratedSamples = Some(samples))
+  }
 
+  property("Coll.size equivalence") {
+    val samples = sampleCollBoxes
+    val b1 = create_b1
+    val b2 = create_b2
     verifyCases(
       {
         def success[T](v: T) = Expected(Success(v), 35954)
@@ -5526,10 +5724,15 @@ class SigmaDslSpecification extends SigmaDslTesting
         )
       },
       existingFeature({ (x: Coll[Box]) => x.size },
-        "{ (x: Coll[Box]) => x.size }",
-        FuncValue(Vector((1, SCollectionType(SBox))), SizeOf(ValUse(1, SCollectionType(SBox))))),
+      "{ (x: Coll[Box]) => x.size }",
+      FuncValue(Vector((1, SCollectionType(SBox))), SizeOf(ValUse(1, SCollectionType(SBox))))),
       preGeneratedSamples = Some(samples))
+  }
 
+  property("Coll.indices equivalence") {
+    val samples = sampleCollBoxes
+    val b1 = create_b1
+    val b2 = create_b2
     verifyCases(
       {
         def success[T](v: T) = Expected(Success(v), 36036)
@@ -5540,28 +5743,36 @@ class SigmaDslSpecification extends SigmaDslTesting
         )
       },
       existingFeature({ (x: Coll[Box]) => x.indices },
-        "{ (x: Coll[Box]) => x.indices }",
-        FuncValue(
-          Vector((1, SCollectionType(SBox))),
-          MethodCall.typed[Value[SCollection[SInt.type]]](
-            ValUse(1, SCollectionType(SBox)),
-            SCollection.getMethodByName("indices").withConcreteTypes(Map(STypeVar("IV") -> SBox)),
-            Vector(),
-            Map()
-          )
-        )),
+      "{ (x: Coll[Box]) => x.indices }",
+      FuncValue(
+        Vector((1, SCollectionType(SBox))),
+        MethodCall.typed[Value[SCollection[SInt.type]]](
+          ValUse(1, SCollectionType(SBox)),
+          SCollection.getMethodByName("indices").withConcreteTypes(Map(STypeVar("IV") -> SBox)),
+          Vector(),
+          Map()
+        )
+      )),
       preGeneratedSamples = Some(samples))
 
-    verifyCases(
-      {
-        def success[T](v: T, c: Int) = Expected(Success(v), c)
-        Seq(
-          (Coll[Box](), success(true, 37909)),
-          (Coll[Box](b1), success(false, 37969)),
-          (Coll[Box](b1, b2), success(false, 38029))
-        )
-      },
-      existingFeature({ (x: Coll[Box]) => x.forall({ (b: Box) => b.value > 1 }) },
+  }
+
+  property("Coll.forall equivalence") {
+    val samples = sampleCollBoxes
+    val b1 = create_b1
+    val b2 = create_b2
+
+    def success[T](v: T, c: Int) = Expected(Success(v), c)
+    if (lowerMethodCallsInTests) {
+      verifyCases(
+        {
+          Seq(
+            (Coll[Box](), success(true, 37909)),
+            (Coll[Box](b1), success(false, 37969)),
+            (Coll[Box](b1, b2), success(false, 38029))
+          )
+        },
+        existingFeature({ (x: Coll[Box]) => x.forall({ (b: Box) => b.value > 1 }) },
         "{ (x: Coll[Box]) => x.forall({(b: Box) => b.value > 1 }) }",
         FuncValue(
           Vector((1, SCollectionType(SBox))),
@@ -5570,18 +5781,36 @@ class SigmaDslSpecification extends SigmaDslTesting
             FuncValue(Vector((3, SBox)), GT(ExtractAmount(ValUse(3, SBox)), LongConstant(1L)))
           )
         )),
-      preGeneratedSamples = Some(samples))
+        preGeneratedSamples = Some(samples))
+    } else {
+      assertExceptionThrown(
+        verifyCases(
+          Seq( (Coll[Box](), success(true, 37909)) ),
+          existingFeature(
+            { (x: Coll[Box]) => x.forall({ (b: Box) => b.value > 1 }) },
+            "{ (x: Coll[Box]) => x.forall({(b: Box) => b.value > 1 }) }"
+          )),
+        rootCauseLike[NoSuchMethodException]("sigmastate.eval.CostingRules$CollCoster.forall(scalan.Base$Ref)")
+      )
+    }
+  }
 
-    verifyCases(
-      {
-        def success[T](v: T, c: Int) = Expected(Success(v), c)
-        Seq(
-          (Coll[Box](), success(false, 38455)),
-          (Coll[Box](b1), success(false, 38515)),
-          (Coll[Box](b1, b2), success(true, 38575))
-        )
-      },
-      existingFeature({ (x: Coll[Box]) => x.exists({ (b: Box) => b.value > 1 }) },
+  property("Coll.exists equivalence") {
+    val samples = sampleCollBoxes
+    val b1 = create_b1
+    val b2 = create_b2
+
+    def success[T](v: T, c: Int) = Expected(Success(v), c)
+    if (lowerMethodCallsInTests) {
+      verifyCases(
+        {
+          Seq(
+            (Coll[Box](), success(false, 38455)),
+            (Coll[Box](b1), success(false, 38515)),
+            (Coll[Box](b1, b2), success(true, 38575))
+          )
+        },
+        existingFeature({ (x: Coll[Box]) => x.exists({ (b: Box) => b.value > 1 }) },
         "{ (x: Coll[Box]) => x.exists({(b: Box) => b.value > 1 }) }",
         FuncValue(
           Vector((1, SCollectionType(SBox))),
@@ -5590,77 +5819,119 @@ class SigmaDslSpecification extends SigmaDslTesting
             FuncValue(Vector((3, SBox)), GT(ExtractAmount(ValUse(3, SBox)), LongConstant(1L)))
           )
         )),
-      preGeneratedSamples = Some(samples))
+        preGeneratedSamples = Some(samples))
+    } else {
+      assertExceptionThrown(
+        verifyCases(
+          Seq( (Coll[Box](), success(false, 38455)) ),
+          existingFeature(
+            { (x: Coll[Box]) => x.exists({ (b: Box) => b.value > 1 }) },
+            "{ (x: Coll[Box]) => x.exists({(b: Box) => b.value > 1 }) }"
+          )),
+        rootCauseLike[NoSuchMethodException]("sigmastate.eval.CostingRules$CollCoster.exists(scalan.Base$Ref)")
+      )
+    }
   }
 
   property("Coll exists with nested If") {
     val o = NumericOps.BigIntIsExactOrdering
-    verifyCases(
-    {
-      def success[T](v: T, c: Int) = Expected(Success(v), c)
-      Seq(
-        (Coll[BigInt](), success(false, 38955)),
-        (Coll[BigInt](BigIntZero), success(false, 39045)),
-        (Coll[BigInt](BigIntOne), success(true, 39045)),
-        (Coll[BigInt](BigIntZero, BigIntOne), success(true, 39135)),
-        (Coll[BigInt](BigIntZero, BigInt10), success(false, 39135))
-      )
-    },
-    existingFeature(
-      { (x: Coll[BigInt]) => x.exists({ (b: BigInt) =>
-          if (o.gt(b, BigIntZero)) o.lt(b, BigInt10) else false
-        })
-      },
-      "{ (x: Coll[BigInt]) => x.exists({(b: BigInt) => if (b > 0) b < 10 else false }) }",
-      FuncValue(
-        Array((1, SCollectionType(SBigInt))),
-        Exists(
-          ValUse(1, SCollectionType(SBigInt)),
-          FuncValue(
-            Array((3, SBigInt)),
-            If(
-              GT(ValUse(3, SBigInt), BigIntConstant(CBigInt(new BigInteger("0", 16)))),
-              LT(ValUse(3, SBigInt), BigIntConstant(CBigInt(new BigInteger("a", 16)))),
-              FalseLeaf
-            )
+    def success[T](v: T, c: Int) = Expected(Success(v), c)
+    if (lowerMethodCallsInTests) {
+      verifyCases(
+        {
+          Seq(
+            (Coll[BigInt](), success(false, 38955)),
+            (Coll[BigInt](BigIntZero), success(false, 39045)),
+            (Coll[BigInt](BigIntOne), success(true, 39045)),
+            (Coll[BigInt](BigIntZero, BigIntOne), success(true, 39135)),
+            (Coll[BigInt](BigIntZero, BigInt10), success(false, 39135))
           )
-        )
-      )))
+        },
+        existingFeature(
+          { (x: Coll[BigInt]) => x.exists({ (b: BigInt) =>
+              if (o.gt(b, BigIntZero)) o.lt(b, BigInt10) else false
+            })
+          },
+          "{ (x: Coll[BigInt]) => x.exists({(b: BigInt) => if (b > 0) b < 10 else false }) }",
+          FuncValue(
+            Array((1, SCollectionType(SBigInt))),
+            Exists(
+              ValUse(1, SCollectionType(SBigInt)),
+              FuncValue(
+                Array((3, SBigInt)),
+                If(
+                  GT(ValUse(3, SBigInt), BigIntConstant(CBigInt(new BigInteger("0", 16)))),
+                  LT(ValUse(3, SBigInt), BigIntConstant(CBigInt(new BigInteger("a", 16)))),
+                  FalseLeaf
+                )
+              )
+            )
+          )))
+    } else {
+      assertExceptionThrown(
+        verifyCases(
+          Seq( (Coll[BigInt](), success(false, 38955)) ),
+          existingFeature(
+            { (x: Coll[BigInt]) => x.exists({ (b: BigInt) =>
+              if (o.gt(b, BigIntZero)) o.lt(b, BigInt10) else false
+            })
+            },
+            "{ (x: Coll[BigInt]) => x.exists({(b: BigInt) => if (b > 0) b < 10 else false }) }"
+          )),
+        rootCauseLike[NoSuchMethodException]("sigmastate.eval.CostingRules$CollCoster.exists(scalan.Base$Ref)")
+      )
+    }
   }
 
   property("Coll forall with nested If") {
     val o = NumericOps.BigIntIsExactOrdering
-    verifyCases(
-    {
-      def success[T](v: T, c: Int) = Expected(Success(v), c)
-      Seq(
-        (Coll[BigInt](), success(true, 38412)),
-        (Coll[BigInt](BigIntMinusOne), success(false, 38502)),
-        (Coll[BigInt](BigIntOne), success(true, 38502)),
-        (Coll[BigInt](BigIntZero, BigIntOne), success(true, 38592)),
-        (Coll[BigInt](BigIntZero, BigInt11), success(false, 38592))
-      )
-    },
-    existingFeature(
-      { (x: Coll[BigInt]) => x.forall({ (b: BigInt) =>
-          if (o.gteq(b, BigIntZero)) o.lteq(b, BigInt10) else false
-        })
-      },
-      "{ (x: Coll[BigInt]) => x.forall({(b: BigInt) => if (b >= 0) b <= 10 else false }) }",
-      FuncValue(
-        Array((1, SCollectionType(SBigInt))),
-        ForAll(
-          ValUse(1, SCollectionType(SBigInt)),
-          FuncValue(
-            Array((3, SBigInt)),
-            If(
-              GE(ValUse(3, SBigInt), BigIntConstant(CBigInt(new BigInteger("0", 16)))),
-              LE(ValUse(3, SBigInt), BigIntConstant(CBigInt(new BigInteger("a", 16)))),
-              FalseLeaf
+    def success[T](v: T, c: Int) = Expected(Success(v), c)
+    if (lowerMethodCallsInTests) {
+      verifyCases(
+        {
+          Seq(
+            (Coll[BigInt](), success(true, 38412)),
+            (Coll[BigInt](BigIntMinusOne), success(false, 38502)),
+            (Coll[BigInt](BigIntOne), success(true, 38502)),
+            (Coll[BigInt](BigIntZero, BigIntOne), success(true, 38592)),
+            (Coll[BigInt](BigIntZero, BigInt11), success(false, 38592))
+          )
+        },
+        existingFeature(
+          { (x: Coll[BigInt]) => x.forall({ (b: BigInt) =>
+            if (o.gteq(b, BigIntZero)) o.lteq(b, BigInt10) else false
+          })
+          },
+          "{ (x: Coll[BigInt]) => x.forall({(b: BigInt) => if (b >= 0) b <= 10 else false }) }",
+        FuncValue(
+          Array((1, SCollectionType(SBigInt))),
+          ForAll(
+            ValUse(1, SCollectionType(SBigInt)),
+            FuncValue(
+              Array((3, SBigInt)),
+              If(
+                GE(ValUse(3, SBigInt), BigIntConstant(CBigInt(new BigInteger("0", 16)))),
+                LE(ValUse(3, SBigInt), BigIntConstant(CBigInt(new BigInteger("a", 16)))),
+                FalseLeaf
+              )
             )
           )
-        )
-      )))
+        )))
+    } else {
+      assertExceptionThrown(
+        verifyCases(
+          Seq( (Coll[BigInt](), success(true, 38412)) ),
+          existingFeature(
+            { (x: Coll[BigInt]) => x.forall({ (b: BigInt) =>
+              if (o.gteq(b, BigIntZero)) o.lteq(b, BigInt10) else false
+            })
+            },
+            "{ (x: Coll[BigInt]) => x.forall({(b: BigInt) => if (b >= 0) b <= 10 else false }) }"
+          )),
+        rootCauseLike[NoSuchMethodException]("sigmastate.eval.CostingRules$CollCoster.forall(scalan.Base$Ref)")
+      )
+    }
+
   }
 
   val collWithRangeGen = for {
@@ -5732,7 +6003,7 @@ class SigmaDslSpecification extends SigmaDslTesting
               ))
       )
       val f = changedFeature(
-        { (x: Coll[GroupElement]) => x.flatMap({ (b: GroupElement) => b.getEncoded.indices }) },
+        { (x: Coll[GroupElement]) => SCollection.throwInvalidFlatmap(null) },
         { (x: Coll[GroupElement]) =>
           if (VersionContext.current.isJitActivated)
             x.flatMap({ (b: GroupElement) => b.getEncoded.indices })
@@ -6020,95 +6291,119 @@ class SigmaDslSpecification extends SigmaDslTesting
 
   property("Coll fold method equivalence") {
     val n = ExactNumeric.IntIsExactNumeric
-    verifyCases(
-      // (coll, initState)
-      {
-        def success[T](v: T, c: Int) = Expected(Success(v), c)
-        Seq(
-          ((Coll[Byte](),  0), success(0, 41266)),
-          ((Coll[Byte](),  Int.MaxValue), success(Int.MaxValue, 41266)),
-          ((Coll[Byte](1),  Int.MaxValue - 1), success(Int.MaxValue, 41396)),
-          ((Coll[Byte](1),  Int.MaxValue), Expected(new ArithmeticException("integer overflow"))),
-          ((Coll[Byte](-1),  Int.MinValue + 1), success(Int.MinValue, 41396)),
-          ((Coll[Byte](-1),  Int.MinValue), Expected(new ArithmeticException("integer overflow"))),
-          ((Coll[Byte](1, 2), 0), success(3, 41526)),
-          ((Coll[Byte](1, -1), 0), success(0, 41526)),
-          ((Coll[Byte](1, -1, 1), 0), success(1, 41656))
-        )
-      },
-      existingFeature(
-        { (x: (Coll[Byte], Int)) => x._1.foldLeft(x._2, { i: (Int, Byte) => n.plus(i._1, i._2) }) },
-        "{ (x: (Coll[Byte], Int)) => x._1.fold(x._2, { (i1: Int, i2: Byte) => i1 + i2 }) }",
-        FuncValue(
-          Vector((1, SPair(SByteArray, SInt))),
-          Fold(
-            SelectField.typed[Value[SCollection[SByte.type]]](ValUse(1, SPair(SByteArray, SInt)), 1.toByte),
-            SelectField.typed[Value[SInt.type]](ValUse(1, SPair(SByteArray, SInt)), 2.toByte),
-            FuncValue(
-              Vector((3, SPair(SInt, SByte))),
-              ArithOp(
-                SelectField.typed[Value[SInt.type]](ValUse(3, SPair(SInt, SByte)), 1.toByte),
-                Upcast(SelectField.typed[Value[SByte.type]](ValUse(3, SPair(SInt, SByte)), 2.toByte), SInt),
-                OpCode @@ (-102.toByte)
+    def success[T](v: T, c: Int) = Expected(Success(v), c)
+    if (lowerMethodCallsInTests) {
+      verifyCases(
+        // (coll, initState)
+        {
+          Seq(
+            ((Coll[Byte](),  0), success(0, 41266)),
+            ((Coll[Byte](),  Int.MaxValue), success(Int.MaxValue, 41266)),
+            ((Coll[Byte](1),  Int.MaxValue - 1), success(Int.MaxValue, 41396)),
+            ((Coll[Byte](1),  Int.MaxValue), Expected(new ArithmeticException("integer overflow"))),
+            ((Coll[Byte](-1),  Int.MinValue + 1), success(Int.MinValue, 41396)),
+            ((Coll[Byte](-1),  Int.MinValue), Expected(new ArithmeticException("integer overflow"))),
+            ((Coll[Byte](1, 2), 0), success(3, 41526)),
+            ((Coll[Byte](1, -1), 0), success(0, 41526)),
+            ((Coll[Byte](1, -1, 1), 0), success(1, 41656))
+          )
+        },
+        existingFeature(
+          { (x: (Coll[Byte], Int)) => x._1.foldLeft(x._2, { i: (Int, Byte) => n.plus(i._1, i._2) }) },
+          "{ (x: (Coll[Byte], Int)) => x._1.fold(x._2, { (i1: Int, i2: Byte) => i1 + i2 }) }",
+          FuncValue(
+            Vector((1, SPair(SByteArray, SInt))),
+            Fold(
+              SelectField.typed[Value[SCollection[SByte.type]]](ValUse(1, SPair(SByteArray, SInt)), 1.toByte),
+              SelectField.typed[Value[SInt.type]](ValUse(1, SPair(SByteArray, SInt)), 2.toByte),
+              FuncValue(
+                Vector((3, SPair(SInt, SByte))),
+                ArithOp(
+                  SelectField.typed[Value[SInt.type]](ValUse(3, SPair(SInt, SByte)), 1.toByte),
+                  Upcast(SelectField.typed[Value[SByte.type]](ValUse(3, SPair(SInt, SByte)), 2.toByte), SInt),
+                  OpCode @@ (-102.toByte)
+                )
               )
             )
-          )
-        )))
+          )))
+    } else {
+      assertExceptionThrown(
+        verifyCases(
+          Seq( ((Coll[Byte](),  0), success(0, 41266)) ),
+          existingFeature(
+            { (x: (Coll[Byte], Int)) => x._1.foldLeft(x._2, { i: (Int, Byte) => n.plus(i._1, i._2) }) },
+            "{ (x: (Coll[Byte], Int)) => x._1.fold(x._2, { (i1: Int, i2: Byte) => i1 + i2 }) }"
+          )),
+        rootCauseLike[CosterException]("Don't know how to evalNode(Lambda(List()")
+      )
+    }
   }
 
   property("Coll fold with nested If") {
     val n = ExactNumeric.IntIsExactNumeric
-    verifyCases(
-      // (coll, initState)
-      {
-        def success[T](v: T, c: Int) = Expected(Success(v), c)
-        Seq(
-          ((Coll[Byte](),  0), success(0, 42037)),
-          ((Coll[Byte](),  Int.MaxValue), success(Int.MaxValue, 42037)),
-          ((Coll[Byte](1),  Int.MaxValue - 1), success(Int.MaxValue, 42197)),
-          ((Coll[Byte](1),  Int.MaxValue), Expected(new ArithmeticException("integer overflow"))),
-          ((Coll[Byte](-1),  Int.MinValue + 1), success(Int.MinValue + 1, 42197)),
-          ((Coll[Byte](-1),  Int.MinValue), success(Int.MinValue, 42197)),
-          ((Coll[Byte](1, 2), 0), success(3, 42357)),
-          ((Coll[Byte](1, -1), 0), success(1, 42357)),
-          ((Coll[Byte](1, -1, 1), 0), success(2, 42517))
-        )
-      },
-      existingFeature(
-        { (x: (Coll[Byte], Int)) => x._1.foldLeft(x._2, { i: (Int, Byte) => if (i._2 > 0) n.plus(i._1, i._2) else i._1 }) },
-        "{ (x: (Coll[Byte], Int)) => x._1.fold(x._2, { (i1: Int, i2: Byte) => if (i2 > 0) i1 + i2 else i1 }) }",
-        FuncValue(
-          Array((1, SPair(SByteArray, SInt))),
-          Fold(
-            SelectField.typed[Value[SCollection[SByte.type]]](ValUse(1, SPair(SByteArray, SInt)), 1.toByte),
-            SelectField.typed[Value[SInt.type]](ValUse(1, SPair(SByteArray, SInt)), 2.toByte),
-            FuncValue(
-              Array((3, SPair(SInt, SByte))),
-              BlockValue(
-                Array(
-                  ValDef(
-                    5,
-                    List(),
-                    Upcast(
-                      SelectField.typed[Value[SByte.type]](ValUse(3, SPair(SInt, SByte)), 2.toByte),
-                      SInt
+    def success[T](v: T, c: Int) = Expected(Success(v), c)
+    if (lowerMethodCallsInTests) {
+      verifyCases(
+        // (coll, initState)
+        {
+          Seq(
+            ((Coll[Byte](),  0), success(0, 42037)),
+            ((Coll[Byte](),  Int.MaxValue), success(Int.MaxValue, 42037)),
+            ((Coll[Byte](1),  Int.MaxValue - 1), success(Int.MaxValue, 42197)),
+            ((Coll[Byte](1),  Int.MaxValue), Expected(new ArithmeticException("integer overflow"))),
+            ((Coll[Byte](-1),  Int.MinValue + 1), success(Int.MinValue + 1, 42197)),
+            ((Coll[Byte](-1),  Int.MinValue), success(Int.MinValue, 42197)),
+            ((Coll[Byte](1, 2), 0), success(3, 42357)),
+            ((Coll[Byte](1, -1), 0), success(1, 42357)),
+            ((Coll[Byte](1, -1, 1), 0), success(2, 42517))
+          )
+        },
+        existingFeature(
+          { (x: (Coll[Byte], Int)) => x._1.foldLeft(x._2, { i: (Int, Byte) => if (i._2 > 0) n.plus(i._1, i._2) else i._1 }) },
+          "{ (x: (Coll[Byte], Int)) => x._1.fold(x._2, { (i1: Int, i2: Byte) => if (i2 > 0) i1 + i2 else i1 }) }",
+          FuncValue(
+            Array((1, SPair(SByteArray, SInt))),
+            Fold(
+              SelectField.typed[Value[SCollection[SByte.type]]](ValUse(1, SPair(SByteArray, SInt)), 1.toByte),
+              SelectField.typed[Value[SInt.type]](ValUse(1, SPair(SByteArray, SInt)), 2.toByte),
+              FuncValue(
+                Array((3, SPair(SInt, SByte))),
+                BlockValue(
+                  Array(
+                    ValDef(
+                      5,
+                      List(),
+                      Upcast(
+                        SelectField.typed[Value[SByte.type]](ValUse(3, SPair(SInt, SByte)), 2.toByte),
+                        SInt
+                      )
+                    ),
+                    ValDef(
+                      6,
+                      List(),
+                      SelectField.typed[Value[SInt.type]](ValUse(3, SPair(SInt, SByte)), 1.toByte)
                     )
                   ),
-                  ValDef(
-                    6,
-                    List(),
-                    SelectField.typed[Value[SInt.type]](ValUse(3, SPair(SInt, SByte)), 1.toByte)
+                  If(
+                    GT(ValUse(5, SInt), IntConstant(0)),
+                    ArithOp(ValUse(6, SInt), ValUse(5, SInt), OpCode @@ (-102.toByte)),
+                    ValUse(6, SInt)
                   )
-                ),
-                If(
-                  GT(ValUse(5, SInt), IntConstant(0)),
-                  ArithOp(ValUse(6, SInt), ValUse(5, SInt), OpCode @@ (-102.toByte)),
-                  ValUse(6, SInt)
                 )
               )
             )
-          )
-        ) ))
+          ) ))
+    } else {
+      assertExceptionThrown(
+        verifyCases(
+          Seq( ((Coll[Byte](),  0), success(0, 42037)) ),
+          existingFeature(
+            { (x: (Coll[Byte], Int)) => x._1.foldLeft(x._2, { i: (Int, Byte) => if (i._2 > 0) n.plus(i._1, i._2) else i._1 }) },
+            "{ (x: (Coll[Byte], Int)) => x._1.fold(x._2, { (i1: Int, i2: Byte) => if (i2 > 0) i1 + i2 else i1 }) }"
+          )),
+        rootCauseLike[CosterException]("Don't know how to evalNode(Lambda(List()")
+      )
+    }
   }
 
   property("Coll indexOf method equivalence") {
@@ -6241,7 +6536,66 @@ class SigmaDslSpecification extends SigmaDslTesting
           )
         )))
     } else {
-      // TODO mainnet v5.0: add test case with `SCollection.getOrElse` MethodCall
+      forEachScriptAndErgoTreeVersion(activatedVersions, ergoTreeVersions) {
+        testCases(
+          Seq(
+            ((Coll[Int](1, 2), (0, default)),
+              Expected(
+                // in v4.x exp method cannot be called via MethodCall ErgoTree node
+                Failure(new NoSuchMethodException("")),
+                cost = 41484,
+                CostDetails.ZeroCost,
+                newCost = 0,
+                newVersionedResults = {
+                  // in v5.0 MethodCall ErgoTree node is allowed
+                  val res = ExpectedResult( Success(1), Some(166) )
+                  Seq( // expected result for each version
+                    0 -> ( res -> None ),
+                    1 -> ( res -> None ),
+                    2 -> ( res -> None )
+                  )
+                }
+              )
+            )
+          ),
+          changedFeature(
+            (x: (Coll[Int], (Int, Int))) =>
+              throw new NoSuchMethodException(""),
+            (x: (Coll[Int], (Int, Int))) => x._1.getOrElse(x._2._1, x._2._2),
+            ""/*can't be compiled in v4.x*/,
+            FuncValue(
+              Vector((1, SPair(SCollectionType(SInt), SPair(SInt, SInt)))),
+              BlockValue(
+                Vector(
+                  ValDef(
+                    3,
+                    List(),
+                    SelectField.typed[Value[STuple]](
+                      ValUse(1, SPair(SCollectionType(SInt), SPair(SInt, SInt))),
+                      2.toByte
+                    )
+                  )
+                ),
+                MethodCall(
+                  SelectField.typed[Value[SCollection[SInt.type]]](
+                    ValUse(1, SPair(SCollectionType(SInt), SPair(SInt, SInt))),
+                    1.toByte
+                  ),
+                  SCollection.getMethodByName("getOrElse").withConcreteTypes(
+                    Map(STypeVar("IV") -> SInt)
+                  ),
+                  Vector(
+                    SelectField.typed[Value[SInt.type]](ValUse(3, SPair(SInt, SInt)), 1.toByte),
+                    SelectField.typed[Value[SInt.type]](ValUse(3, SPair(SInt, SInt)), 2.toByte)
+                  ),
+                  Map()
+                )
+              )
+            ),
+            allowNewToSucceed = true,
+            allowDifferentErrors = false
+          ))
+      }
     }
   }
 
@@ -6391,7 +6745,8 @@ class SigmaDslSpecification extends SigmaDslTesting
 
   property("Coll slice method equivalence") {
     val samples = genSamples(collWithRangeGen, DefaultMinSuccessful)
-    verifyCases(
+    if (lowerMethodCallsInTests) {
+      verifyCases(
       // (coll, (from, until))
       {
         def success[T](v: T) = Expected(Success(v), 36964)
@@ -6433,10 +6788,20 @@ class SigmaDslSpecification extends SigmaDslTesting
             )
           )
         )),
-      preGeneratedSamples = Some(samples))
+        preGeneratedSamples = Some(samples))
+    } else {
+      assertExceptionThrown(
+        verifyCases(
+          Seq( (Coll[Int](), (-1, 0)) -> Expected(Success(Coll[Int]()), 37765) ),
+          existingFeature((x: (Coll[Int], (Int, Int))) => x._1.slice(x._2._1, x._2._2),
+            "{ (x: (Coll[Int], (Int, Int))) => x._1.slice(x._2._1, x._2._2) }"
+          )),
+        rootCauseLike[NoSuchMethodException]("sigmastate.eval.CostingRules$CollCoster.slice")
+      )
+    }
   }
 
-  property("Coll append method equivalence") {
+  property("Coll.append equivalence") {
     if (lowerMethodCallsInTests) {
       verifyCases(
       {
@@ -6471,7 +6836,15 @@ class SigmaDslSpecification extends SigmaDslTesting
           )
         )))
     } else {
-      // TODO mainnet v5.0: add test case with `SCollection.append` MethodCall
+      assertExceptionThrown(
+        verifyCases(
+          Seq( (Coll[Int](), Coll[Int]()) -> Expected(Success(Coll[Int]()), 37765) ),
+          existingFeature(
+            { (x: (Coll[Int], Coll[Int])) => x._1.append(x._2) },
+            "{ (x: (Coll[Int], Coll[Int])) => x._1.append(x._2) }"
+            )),
+        rootCauseLike[NoSuchMethodException]("sigmastate.eval.CostingRules$CollCoster.append(scalan.Base$Ref)")
+      )
     }
   }
 
@@ -7175,6 +7548,213 @@ class SigmaDslSpecification extends SigmaDslTesting
             ConcreteCollection(Array(BoolToSigmaProp(FalseLeaf)), SSigmaProp)
           )
         )))
+  }
+
+  /* Original issue: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/604
+   *
+   * Test fails for v4.x with
+   * `new StagingException("Don't know how to evaluate(s1252 -> Placeholder(BaseElemLiftable<Int>))")`
+   * but that cannot be explicitly stated in cases. Therefore we use different exception (None.get)
+   * and also `allowDifferentErrors` flag.
+   * Test passes for v5.x so we use flag `allowNewToSucceed`.
+   */
+  property("Random headers access and comparison (originaly from spam tests)") {
+    val (_, _, _, ctx, _, _) = contextData()
+
+    if (lowerMethodCallsInTests) {
+      verifyCases(
+        Seq(
+          ctx -> Expected(
+            Failure(new NoSuchElementException("None.get")),
+            cost = 37694,
+            newDetails = CostDetails.ZeroCost,
+            newCost = 1796,
+            newVersionedResults = Seq(
+              0 -> (ExpectedResult(Success(true), Some(1796)) -> None),
+              1 -> (ExpectedResult(Success(true), Some(1796)) -> None),
+              2 -> (ExpectedResult(Success(true), Some(1796)) -> None)
+            )
+          )
+        ),
+        changedFeature(
+        { (x: Context) =>
+          Option.empty[Int].get
+          true
+        },
+        { (x: Context) =>
+          val headers = x.headers
+          val ids = headers.map({ (h: Header) => h.id })
+          val parentIds = headers.map({ (h: Header) => h.parentId })
+          headers.indices.slice(0, headers.size - 1).forall({ (i: Int) =>
+            val parentId = parentIds(i)
+            val id = ids(i + 1)
+            parentId == id
+          })
+        },
+        """{
+         |(x: Context) =>
+         |  val headers = x.headers
+         |  val ids = headers.map({(h: Header) => h.id })
+         |  val parentIds = headers.map({(h: Header) => h.parentId })
+         |  headers.indices.slice(0, headers.size - 1).forall({ (i: Int) =>
+         |    val parentId = parentIds(i)
+         |    val id = ids(i + 1)
+         |    parentId == id
+         |  })
+         |}""".stripMargin,
+        FuncValue(
+          Array((1, SContext)),
+          BlockValue(
+            Array(
+              ValDef(
+                3,
+                List(),
+                MethodCall.typed[Value[SCollection[SHeader.type]]](
+                  ValUse(1, SContext),
+                  SContext.getMethodByName("headers"),
+                  Vector(),
+                  Map()
+                )
+              )
+            ),
+            ForAll(
+              Slice(
+                MethodCall.typed[Value[SCollection[SInt.type]]](
+                  ValUse(3, SCollectionType(SHeader)),
+                  SCollection.getMethodByName("indices").withConcreteTypes(Map(STypeVar("IV") -> SHeader)),
+                  Vector(),
+                  Map()
+                ),
+                IntConstant(0),
+                ArithOp(
+                  SizeOf(ValUse(3, SCollectionType(SHeader))),
+                  IntConstant(1),
+                  OpCode @@ (-103.toByte)
+                )
+              ),
+              FuncValue(
+                Array((4, SInt)),
+                EQ(
+                  ByIndex(
+                    MapCollection(
+                      ValUse(3, SCollectionType(SHeader)),
+                      FuncValue(
+                        Array((6, SHeader)),
+                        MethodCall.typed[Value[SCollection[SByte.type]]](
+                          ValUse(6, SHeader),
+                          SHeader.getMethodByName("parentId"),
+                          Vector(),
+                          Map()
+                        )
+                      )
+                    ),
+                    ValUse(4, SInt),
+                    None
+                  ),
+                  ByIndex(
+                    MapCollection(
+                      ValUse(3, SCollectionType(SHeader)),
+                      FuncValue(
+                        Array((6, SHeader)),
+                        MethodCall.typed[Value[SCollection[SByte.type]]](
+                          ValUse(6, SHeader),
+                          SHeader.getMethodByName("id"),
+                          Vector(),
+                          Map()
+                        )
+                      )
+                    ),
+                    ArithOp(ValUse(4, SInt), IntConstant(1), OpCode @@ (-102.toByte)),
+                    None
+                  )
+                )
+              )
+            )
+          )
+        ),
+        allowDifferentErrors = true,
+        allowNewToSucceed = true
+        ),
+        preGeneratedSamples = Some(mutable.WrappedArray.empty)
+      )
+    }
+  }
+
+  // related issue https://github.com/ScorexFoundation/sigmastate-interpreter/issues/464
+  property("nested loops: map inside fold") {
+    val keys = Colls.fromArray(Array(Coll[Byte](1, 2, 3, 4, 5)))
+    val initial = Coll[Byte](0, 0, 0, 0, 0)
+    val cases =  Seq(
+      (keys, initial) -> Expected(Success(Coll[Byte](1, 2, 3, 4, 5)), cost = 46522, expectedDetails = CostDetails.ZeroCost, 1821)
+    )
+    val scalaFunc = { (x: (Coll[Coll[Byte]], Coll[Byte])) =>
+      x._1.foldLeft(x._2, { (a: (Coll[Byte], Coll[Byte])) =>
+        a._1.zip(a._2).map({ (c: (Byte, Byte)) => (c._1 + c._2).toByte })
+      })
+    }
+    val script =
+      """{
+       | (x: (Coll[Coll[Byte]], Coll[Byte])) =>
+       |  x._1.fold(x._2, { (a: Coll[Byte], b: Coll[Byte]) =>
+       |    a.zip(b).map({ (c: (Byte, Byte)) => (c._1 + c._2).toByte })
+       |  })
+       |}""".stripMargin
+    if (lowerMethodCallsInTests) {
+      verifyCases(cases,
+        existingFeature(scalaFunc, script,
+          FuncValue(
+            Array((1, SPair(SByteArray2, SByteArray))),
+            Fold(
+              SelectField.typed[Value[SCollection[SCollection[SByte.type]]]](
+                ValUse(1, SPair(SByteArray2, SByteArray)),
+                1.toByte
+              ),
+              SelectField.typed[Value[SCollection[SByte.type]]](
+                ValUse(1, SPair(SByteArray2, SByteArray)),
+                2.toByte
+              ),
+              FuncValue(
+                Array((3, SPair(SByteArray, SByteArray))),
+                MapCollection(
+                  MethodCall.typed[Value[SCollection[STuple]]](
+                    SelectField.typed[Value[SCollection[SByte.type]]](
+                      ValUse(3, SPair(SByteArray, SByteArray)),
+                      1.toByte
+                    ),
+                    SCollection.getMethodByName("zip").withConcreteTypes(
+                      Map(STypeVar("IV") -> SByte, STypeVar("OV") -> SByte)
+                    ),
+                    Vector(
+                      SelectField.typed[Value[SCollection[SByte.type]]](
+                        ValUse(3, SPair(SByteArray, SByteArray)),
+                        2.toByte
+                      )
+                    ),
+                    Map()
+                  ),
+                  FuncValue(
+                    Array((5, SPair(SByte, SByte))),
+                    ArithOp(
+                      SelectField.typed[Value[SByte.type]](ValUse(5, SPair(SByte, SByte)), 1.toByte),
+                      SelectField.typed[Value[SByte.type]](ValUse(5, SPair(SByte, SByte)), 2.toByte),
+                      OpCode @@ (-102.toByte)
+                    )
+                  )
+                )
+              )
+            )
+          )
+        ),
+        preGeneratedSamples = Some(Seq.empty)
+      )
+    } else {
+      assertExceptionThrown(
+        verifyCases(cases,
+          existingFeature(scalaFunc, script)
+        ),
+        rootCauseLike[CosterException]("Don't know how to evalNode(Lambda(List(),Vector((a,Coll[SByte$]), ")
+      )
+    }
   }
 
   override protected def afterAll(): Unit = {

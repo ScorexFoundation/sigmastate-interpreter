@@ -187,14 +187,14 @@ object ErgoBoxCandidate {
       r.positionLimit = r.position + ErgoBox.MaxBoxSize
       val value = r.getULong()                  // READ
       val tree = DefaultSerializer.deserializeErgoTree(r, SigmaSerializer.MaxPropositionSize)  // READ
-      val creationHeight = r.getUInt().toInt    // READ
+      val creationHeight = r.getUIntExact       // READ
       val nTokens = r.getUByte()                // READ
       val tokenIds = safeNewArray[Array[Byte]](nTokens)
       val tokenAmounts = safeNewArray[Long](nTokens)
       if (digestsInTx != null) {
         val nDigests = digestsInTx.length
         cfor(0)(_ < nTokens, _ + 1) { i =>
-          val digestIndex = r.getUInt().toInt // READ
+          val digestIndex = r.getUIntExact    // READ
           if (digestIndex < 0 || digestIndex >= nDigests)
             sys.error(s"failed to find token id with index $digestIndex")
           val amount = r.getULong()           // READ

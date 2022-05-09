@@ -104,12 +104,12 @@ class EvaluationTest extends BaseCtxTests
     val pk2 = DLogProverInput.random().publicImage
     val script1 = script(pk1)
     val script2 = script(pk2)
-    val inputBytes = DefaultSerializer.serializeErgoTree(script1.treeWithSegregation)
+    val inputBytes = DefaultSerializer.serializeErgoTree(mkTestErgoTree(script1))
     val positions = IntArrayConstant(Array[Int](2))
     // in ergo we have only byte array of a serialized group element
     val newVals = ConcreteCollection(Array[SigmaPropValue](CreateProveDlog(DecodePoint(pk2.pkBytes))), SSigmaProp)
 
-    val expectedBytes = DefaultSerializer.serializeErgoTree(script2.treeWithSegregation)
+    val expectedBytes = DefaultSerializer.serializeErgoTree(mkTestErgoTree(script2))
     val ctx = newErgoContext(height = 1, boxToSpend)
     reduce(emptyEnv, "SubstConst",
       EQ(SubstConstants(inputBytes, positions, newVals), expectedBytes),

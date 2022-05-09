@@ -9,6 +9,7 @@ import org.ergoplatform.validation.ValidationRules.CheckSerializableTypeCode
 import org.scalacheck.Arbitrary._
 import org.scalacheck.Gen.frequency
 import org.scalacheck.{Arbitrary, Gen}
+import org.scalatest.exceptions.TestFailedException
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{Matchers, PropSpec}
 import scalan.RType
@@ -56,40 +57,6 @@ class SigmaDslTesting extends PropSpec
   def createIR(): IRContext = new TestingIRContext {
     override val okPrintEvaluatedEntries: Boolean = false
     override val okMeasureOperationTime: Boolean = true
-  }
-
-  def checkEq[A,B](scalaFunc: A => B)(g: A => (B, CostDetails)): A => Try[(B, CostDetails)] = { x: A =>
-    val b1 = Try(scalaFunc(x))
-    val b2 = Try(g(x))
-    (b1, b2) match {
-      case (Success(b1), res @ Success((b2, _))) =>
-        assert(b1 == b2)
-        res
-      case (Failure(t1), res @ Failure(t2)) =>
-        val c1 = rootCause(t1).getClass
-        val c2 = rootCause(t2).getClass
-        if (c1 != c2) {
-          assert(c1 == c2,
-            s"""Different errors:
-              |First result: $t1
-              |Second result: $t2
-              |""".stripMargin)
-        }
-        res
-      case _ =>
-        val cause = if (b1.isFailure)
-          rootCause(b1.asInstanceOf[Failure[_]].exception)
-        else
-          rootCause(b2.asInstanceOf[Failure[_]].exception)
-
-        sys.error(
-          s"""Should succeed with the same value or fail with the same exception, but was:
-            |First result: $b1
-            |Second result: $b2
-            |Root cause: $cause
-            |""".stripMargin)
-    }
-
   }
 
   def checkEq2[A,B,R](f: (A, B) => R)(g: (A, B) => R): (A,B) => Unit = { (x: A, y: B) =>
@@ -176,6 +143,8 @@ class SigmaDslTesting extends PropSpec
 
     def evalSettings: EvalSettings
 
+    def allowDifferentErrors: Boolean = false
+
     def printExpectedExpr: Boolean
     def logScript: Boolean
 
@@ -254,6 +223,39 @@ class SigmaDslTesting extends PropSpec
     def verifyCase(input: A, expectedResult: Expected[B],
                    printTestCases: Boolean = PrintTestCasesDefault,
                    failOnTestVectors: Boolean = FailOnTestVectorsDefault): Unit
+
+    def checkEq[A,B](scalaFunc: A => B)(g: A => (B, CostDetails)): A => Try[(B, CostDetails)] = { x: A =>
+      val b1 = Try(scalaFunc(x))
+      val b2 = Try(g(x))
+      (b1, b2) match {
+        case (Success(b1), res @ Success((b2, _))) =>
+          assert(b1 == b2)
+          res
+        case (Failure(t1), res @ Failure(t2)) =>
+          val c1 = rootCause(t1).getClass
+          val c2 = rootCause(t2).getClass
+          if (c1 != c2 && !allowDifferentErrors) {
+            assert(c1 == c2,
+              s"""Different errors:
+                |First result: $t1
+                |Second result: $t2
+                |""".stripMargin)
+          }
+          res
+        case _ =>
+          val cause = if (b1.isFailure)
+            rootCause(b1.asInstanceOf[Failure[_]].exception)
+          else
+            rootCause(b2.asInstanceOf[Failure[_]].exception)
+
+          fail(
+            s"""Should succeed with the same value or fail with the same exception, but was:
+              |First result: $b1
+              |Second result: $b2
+              |Root cause: $cause
+              |""".stripMargin)
+      }
+    }
 
     /** Creates a new ErgoLikeContext using given [[CostingDataContext]] as template.
       * Copies most of the data from ctx and the missing data is taken from the args.
@@ -642,7 +644,7 @@ class SigmaDslTesting extends PropSpec
     printExpectedExpr: Boolean = true,
     logScript: Boolean = LogScriptDefault,
     allowNewToSucceed: Boolean = false,
-    allowDifferentErrors: Boolean = false
+    override val allowDifferentErrors: Boolean = false
   )(implicit IR: IRContext, override val evalSettings: EvalSettings, val tA: RType[A], val tB: RType[B])
     extends Feature[A, B] {
 
@@ -682,6 +684,7 @@ class SigmaDslTesting extends PropSpec
         oldRes = VersionContext.withVersions(activatedVersionInTests, ergoTreeVersionInTests) {
           try checkEq(scalaFunc)(oldF)(input)
           catch {
+            case e: TestFailedException => throw e
             case t: Throwable =>
               Failure(t)
           }

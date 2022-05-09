@@ -161,7 +161,7 @@ object ErgoLikeTransactionSerializer extends SigmaSerializer[ErgoLikeTransaction
     }
 
     // parse distinct ids of tokens in transaction outputs
-    val tokensCount = r.getUInt().toInt
+    val tokensCount = r.getUIntExact
     val tokens = safeNewArray[Array[Byte]](tokensCount)
     cfor(0)(_ < tokensCount, _ + 1) { i =>
       tokens(i) = r.getBytes(TokenId.size)

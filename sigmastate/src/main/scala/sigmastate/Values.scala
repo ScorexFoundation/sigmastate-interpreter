@@ -808,7 +808,7 @@ object Values {
       val dhtSerializer = ProveDHTupleSerializer(ProveDHTuple.apply)
       val dlogSerializer = ProveDlogSerializer(ProveDlog.apply)
 
-      // TODO mainnet v5.0: control maxTreeDepth same as in deserialize
+      // TODO v5.x: control maxTreeDepth same as in deserialize
       override def serialize(data: SigmaBoolean, w: SigmaByteWriter): Unit = {
         w.put(data.opCode)
         data match {
@@ -1037,7 +1037,6 @@ object Values {
   implicit class SigmaPropValueOps(val p: Value[SSigmaProp.type]) extends AnyVal {
     def isProven: Value[SBoolean.type] = SigmaPropIsProven(p)
     def propBytes: Value[SByteArray] = SigmaPropBytes(p)
-    // TODO mainnet v5.0: replace usages in tests with mkTestErgoTree
     def treeWithSegregation: ErgoTree = ErgoTree.withSegregation(p)
     def treeWithSegregation(headerFlags: Byte): ErgoTree =
       ErgoTree.withSegregation(headerFlags, p)
