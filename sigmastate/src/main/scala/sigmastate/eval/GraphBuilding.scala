@@ -3,11 +3,12 @@ package sigmastate.eval
 import org.ergoplatform._
 import org.ergoplatform.validation.ValidationRules.{CheckIsSupportedIndexExpression, CheckTupleType}
 import scalan.{Lazy, MutableLazy, Nullable, SigmaLibrary}
-import sigmastate.{AND, ArithOp, AtLeast, BinAnd, BinOr, BinXor, BoolToSigmaProp, ByteArrayToLong, CalcBlake2b256, CalcSha256, CreateProveDHTuple, CreateProveDlog, DecodePoint, If, LogicalNot, ModQ, ModQArithOp, Negation, OR, Relation, SBigInt, SBox, SCollection, SCollectionType, SGlobal, SGroupElement, SNumericType, SOption, SSigmaProp, SType, SigmaAnd, SigmaOr, SubstConstants, Values, Xor, XorOf, utxo}
+import sigmastate.Values.Value.Typed
+import sigmastate.{AND, ArithOp, AtLeast, BinAnd, BinOr, BinXor, BoolToSigmaProp, ByteArrayToLong, CalcBlake2b256, CalcSha256, CreateProveDHTuple, CreateProveDlog, DecodePoint, If, LogicalNot, ModQ, ModQArithOp, Negation, OR, Relation, SBigInt, SBox, SCollection, SCollectionType, SGlobal, SGroupElement, SInt, SNumericType, SOption, SSigmaProp, SType, SigmaAnd, SigmaOr, SubstConstants, Values, Xor, XorOf, utxo}
 import sigmastate.Values._
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.Terms
-import sigmastate.lang.Terms.Val
+import sigmastate.lang.Terms.{Ident, Select, Val, ValueOps}
 import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.{DivisionCode, MaxCode, MinCode, MinusCode, ModuloCode, MultiplyCode, PlusCode}
 import sigmastate.utxo.{Append, BooleanTransformer, ByIndex, CostTable, Filter, Fold, GetVar, MapCollection, SelectField, SigmaPropBytes, SigmaPropIsProven, Slice}
@@ -16,6 +17,7 @@ import spire.syntax.all.cfor
 import scala.collection.mutable
 
 trait GraphBuilding extends SigmaLibrary { this: IRContext =>
+  import builder._
   import Liftables._
   import Context._;
   import Header._;
@@ -114,7 +116,66 @@ trait GraphBuilding extends SigmaLibrary { this: IRContext =>
       case LastBlockUtxoRootHash => ctx.LastBlockUtxoRootHash
       case MinerPubkey => ctx.minerPubKey
 
-//      case op @ GetVar(id, optTpe) =>
+      case Ident(n, _) =>
+        env.getOrElse(n, !!!(s"Variable $n not found in environment $env"))
+
+      case sigmastate.Upcast(Constant(value, _), toTpe: SNumericType) =>
+        eval(mkConstant(toTpe.upcast(value.asInstanceOf[AnyVal]), toTpe))
+
+      case sigmastate.Downcast(Constant(value, _), toTpe: SNumericType) =>
+        eval(mkConstant(toTpe.downcast(value.asInstanceOf[AnyVal]), toTpe))
+
+      // Rule: col.size --> SizeOf(col)
+      case Select(obj, "size", _) =>
+        if (obj.tpe.isCollectionLike)
+          eval(mkSizeOf(obj.asValue[SCollection[SType]]))
+        else
+          error(s"The type of $obj is expected to be Collection to select 'size' property", obj.sourceContext.toOption)
+
+      // Rule: proof.isProven --> IsValid(proof)
+      case Select(p, SSigmaProp.IsProven, _) if p.tpe == SSigmaProp =>
+        eval(SigmaPropIsProven(p.asSigmaProp))
+
+      // Rule: prop.propBytes --> SigmaProofBytes(prop)
+      case Select(p, SSigmaProp.PropBytes, _) if p.tpe == SSigmaProp =>
+        eval(SigmaPropBytes(p.asSigmaProp))
+
+      // box.R$i[valType] =>
+      case sel @ Select(Typed(box, SBox), regName, Some(SOption(valType))) if regName.startsWith("R") =>
+        val reg = ErgoBox.registerByName.getOrElse(regName,
+          error(s"Invalid register name $regName in expression $sel", sel.sourceContext.toOption))
+        eval(mkExtractRegisterAs(box.asBox, reg, SOption(valType)).asValue[SOption[valType.type]])
+
+      case sel @ Select(obj, field, _) if obj.tpe == SBox =>
+        (obj.asValue[SBox.type], field) match {
+          case (box, SBox.Value) => eval(mkExtractAmount(box))
+          case (box, SBox.PropositionBytes) => eval(mkExtractScriptBytes(box))
+          case (box, SBox.Id) => eval(mkExtractId(box))
+          case (box, SBox.Bytes) => eval(mkExtractBytes(box))
+          case (box, SBox.BytesWithoutRef) => eval(mkExtractBytesWithNoRef(box))
+          case (box, SBox.CreationInfo) => eval(mkExtractCreationInfo(box))
+          case _ => error(s"Invalid access to Box property in $sel: field $field is not found", sel.sourceContext.toOption)
+        }
+
+      case Select(tuple, fn, _) if tuple.tpe.isTuple && fn.startsWith("_") =>
+        val index = fn.substring(1).toByte
+        eval(mkSelectField(tuple.asTuple, index))
+
+      case Select(obj, method, Some(tRes: SNumericType))
+        if obj.tpe.isNumType && obj.asNumValue.tpe.isCastMethod(method) =>
+        val numValue = obj.asNumValue
+        if (numValue.tpe == tRes)
+          eval(numValue)
+        else if ((numValue.tpe max tRes) == numValue.tpe)
+          eval(mkDowncast(numValue, tRes))
+        else
+          eval(mkUpcast(numValue, tRes))
+
+      case Terms.Apply(col, Seq(index)) if col.tpe.isCollection =>
+        eval(mkByIndex(col.asCollection[SType], index.asValue[SInt.type], None))
+
+
+      //      case op @ GetVar(id, optTpe) =>
 //        stypeToElem(optTpe.elemType) match { case e: Elem[t] =>
 //          val v = ctx.value.getVar[t](id)(e)
 //          val s = tryCast[SizeContext](ctx.size).getVar(id)(e)
