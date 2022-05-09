@@ -2,7 +2,7 @@ package sigmastate.eval
 
 import sigmastate.{FixedCost, JitCost, SMethod}
 import sigmastate.Values.SValue
-import sigmastate.serialization.OpCodes
+import sigmastate.serialization.{OpCodes, ValueSerializer}
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.ValueSerializer.getSerializer
 import scalan.util.Extensions.ByteOps
@@ -247,6 +247,9 @@ class Profiler {
     val opCodeLines = opStat.mapToArray { case (key, stat) =>
       val (time, count) = stat.mean
       val opCode = OpCode @@ key.toByte
+      if (ValueSerializer.serializers.get(opCode).isEmpty)
+        return null // SoftForkabilitySpecification contain tests with unsupported operations
+
       val ser = getSerializer(opCode)
       val opDesc = ser.opDesc
       val (opName, cost) = opDesc.costKind match {
@@ -258,7 +261,8 @@ class Profiler {
       val warn = if (suggestedCost > cost) "!!!" else ""
       val comment = s"count: $count, suggestedCost: $suggestedCost, actualCost: $cost$warn"
       (opName, (opCode.toUByte - OpCodes.LastConstantCode).toString, time, comment)
-    }.filter(_._1.nonEmpty).sortBy(_._3)(Ordering[Long].reverse)
+    }.filter(line => line != null && line._1.nonEmpty)
+      .sortBy(_._3)(Ordering[Long].reverse)
 
     val mcLines = mcStat.mapToArray { case (key, stat) =>
       val methodId = (key & 0xFF).toByte
