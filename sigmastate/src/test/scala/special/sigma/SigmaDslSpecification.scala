@@ -1615,7 +1615,7 @@ class SigmaDslSpecification extends SigmaDslTesting
 
   property("Int LE, GE") {
     val o = ExactOrdering.IntIsExactOrdering
-    def expect(v: Boolean) = Expected(Success(v), 36337, binaryRelationCostDetails(LE, SInt), 1788)
+    def expect(v: Boolean) = Expected(Success(v), 1788, binaryRelationCostDetails(LE, SInt), 1788)
     val LE_cases: Seq[((Int, Int), Expected[Boolean])] = Seq(
       (Int.MinValue, Int.MinValue) -> expect(true),
       (Int.MinValue, (Int.MinValue + 1).toInt) -> expect(true),
@@ -1657,7 +1657,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     verifyOp(LE_cases, "<=", LE.apply)(_ <= _)
 
     verifyOp(
-      swapArgs(LE_cases, cost = 36336, newCostDetails = binaryRelationCostDetails(GE, SInt)),
+      swapArgs(LE_cases, cost = 1788, newCostDetails = binaryRelationCostDetails(GE, SInt)),
       ">=", GE.apply)(_ >= _)
   }
 
@@ -1694,7 +1694,7 @@ class SigmaDslSpecification extends SigmaDslTesting
   property("Long.toByte method") {
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 35976, downcastCostDetails(SByte), 1784)
+        def success[T](v: T) = Expected(Success(v), 1784, downcastCostDetails(SByte), 1784)
         Seq(
           (Long.MinValue, Expected(new ArithmeticException("Byte overflow"))),
           (Byte.MinValue.toLong - 1, Expected(new ArithmeticException("Byte overflow"))),
@@ -1715,7 +1715,7 @@ class SigmaDslSpecification extends SigmaDslTesting
   property("Long.toShort method") {
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 35976, downcastCostDetails(SShort), 1784)
+        def success[T](v: T) = Expected(Success(v), 1784, downcastCostDetails(SShort), 1784)
         Seq(
           (Long.MinValue, Expected(new ArithmeticException("Short overflow"))),
           (Short.MinValue.toLong - 1, Expected(new ArithmeticException("Short overflow"))),
@@ -1736,7 +1736,7 @@ class SigmaDslSpecification extends SigmaDslTesting
   property("Long.toInt method") {
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 35976, downcastCostDetails(SInt), 1784)
+        def success[T](v: T) = Expected(Success(v), 1784, downcastCostDetails(SInt), 1784)
         Seq(
           (Long.MinValue, Expected(new ArithmeticException("Int overflow"))),
           (Int.MinValue.toLong - 1, Expected(new ArithmeticException("Int overflow"))),
@@ -1757,7 +1757,7 @@ class SigmaDslSpecification extends SigmaDslTesting
   property("Long.toLong method") {
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 35798, TracedCost(traceBase), 1783)
+        def success[T](v: T) = Expected(Success(v), 1783, TracedCost(traceBase), 1783)
         Seq(
           (Long.MinValue, success(Long.MinValue)),
           (-1L, success(-1L)),
@@ -1774,7 +1774,7 @@ class SigmaDslSpecification extends SigmaDslTesting
   property("Long.toBigInt method") {
     verifyCases(
       {
-        def success(v: BigInt) = Expected(Success(v), 35932, upcastCostDetails(SBigInt), 1787)
+        def success(v: BigInt) = Expected(Success(v), 1787, upcastCostDetails(SBigInt), 1787)
         Seq(
           (Long.MinValue, success(CBigInt(new BigInteger("-8000000000000000", 16)))),
           (-1074651039980347209L, success(CBigInt(new BigInteger("-ee9ed6d57885f49", 16)))),
@@ -1795,7 +1795,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     val n = ExactNumeric.LongIsExactNumeric
     verifyCases(
     {
-      def success[T](v: T) = Expected(Success(v), 39654, arithOpsCostDetails(SLong), 1808)
+      def success[T](v: T) = Expected(Success(v), 1808, arithOpsCostDetails(SLong), 1808)
       Seq(
         ((Long.MinValue, -4677100190307931395L), Expected(new ArithmeticException("long overflow"))),
         ((Long.MinValue, -1L), Expected(new ArithmeticException("long overflow"))),
@@ -1885,7 +1885,7 @@ class SigmaDslSpecification extends SigmaDslTesting
 
   property("Long LT, GT, NEQ") {
     val o = ExactOrdering.LongIsExactOrdering
-    def expect(v: Boolean) = Expected(Success(v), 36328, binaryRelationCostDetails(LT, SLong), 1788)
+    def expect(v: Boolean) = Expected(Success(v), 1788, binaryRelationCostDetails(LT, SLong), 1788)
     val LT_cases: Seq[((Long, Long), Expected[Boolean])] = Seq(
       (Long.MinValue, Long.MinValue) -> expect(false),
       (Long.MinValue, (Long.MinValue + 1).toLong) -> expect(true),
@@ -1926,16 +1926,16 @@ class SigmaDslSpecification extends SigmaDslTesting
     verifyOp(LT_cases, "<", LT.apply)(_ < _)
 
     verifyOp(
-      swapArgs(LT_cases, cost = 36342, newCostDetails = binaryRelationCostDetails(GT, SLong)),
+      swapArgs(LT_cases, cost = 1788, newCostDetails = binaryRelationCostDetails(GT, SLong)),
       ">", GT.apply)(_ > _)
 
-    val neqCases = newCasesFrom2(LT_cases.map(_._1))(_ != _, cost = 36337, newCostDetails = costNEQ(constNeqCost))
+    val neqCases = newCasesFrom2(LT_cases.map(_._1))(_ != _, cost = 1786, newCostDetails = costNEQ(constNeqCost))
     verifyOp(neqCases, "!=", NEQ.apply)(_ != _)
   }
 
   property("Long LE, GE") {
     val o = ExactOrdering.LongIsExactOrdering
-    def expect(v: Boolean) = Expected(Success(v), 36337, binaryRelationCostDetails(LE, SLong), 1788)
+    def expect(v: Boolean) = Expected(Success(v), 1788, binaryRelationCostDetails(LE, SLong), 1788)
     val LE_cases: Seq[((Long, Long), Expected[Boolean])] = Seq(
       (Long.MinValue, Long.MinValue) -> expect(true),
       (Long.MinValue, (Long.MinValue + 1).toLong) -> expect(true),
@@ -1977,7 +1977,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     verifyOp(LE_cases, "<=", LE.apply)(_ <= _)
 
     verifyOp(
-      swapArgs(LE_cases, cost = 36336, newCostDetails = binaryRelationCostDetails(GE, SLong)),
+      swapArgs(LE_cases, cost = 1788, newCostDetails = binaryRelationCostDetails(GE, SLong)),
       ">=", GE.apply)(_ >= _)
   }
 
@@ -2008,7 +2008,7 @@ class SigmaDslSpecification extends SigmaDslTesting
   property("BigInt methods equivalence") {
     verifyCases(
       {
-        def success(v: BigInt) = Expected(Success(v), 35798, TracedCost(traceBase), 1784)
+        def success(v: BigInt) = Expected(Success(v), 1784, TracedCost(traceBase), 1784)
         Seq(
           (CBigInt(new BigInteger("-85102d7f884ca0e8f56193b46133acaf7e4681e1757d03f191ae4f445c8e0", 16)), success(
             CBigInt(new BigInteger("-85102d7f884ca0e8f56193b46133acaf7e4681e1757d03f191ae4f445c8e0", 16))
@@ -2031,7 +2031,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     verifyCases(
     {
       def success(v: (BigInt, (BigInt, (BigInt, (BigInt, BigInt))))) =
-        Expected(Success(v), 39774, arithOpsCostDetails(SBigInt), 1813)
+        Expected(Success(v), 1813, arithOpsCostDetails(SBigInt), 1813)
       Seq(
         ((CBigInt(new BigInteger("-8683d1cd99d5fcf0e6eff6295c285c36526190e13dbde008c49e5ae6fddc1c", 16)),
             CBigInt(new BigInteger("-2ef55db3f245feddacf0182e299dd", 16))),
@@ -2155,7 +2155,7 @@ class SigmaDslSpecification extends SigmaDslTesting
   property("BigInt LT, GT, NEQ") {
     val o = NumericOps.BigIntIsExactOrdering
 
-    def expect(v: Boolean) = Expected(Success(v), 36328, binaryRelationCostDetails(LT, SBigInt), 1788)
+    def expect(v: Boolean) = Expected(Success(v), 1788, binaryRelationCostDetails(LT, SBigInt), 1788)
     
     val LT_cases: Seq[((BigInt, BigInt), Expected[Boolean])] = Seq(
       (BigIntMinValue, BigIntMinValue) -> expect(false),
@@ -2199,11 +2199,11 @@ class SigmaDslSpecification extends SigmaDslTesting
     verifyOp(LT_cases, "<", LT.apply)(o.lt(_, _))
 
     verifyOp(
-      swapArgs(LT_cases, cost = 36342, newCostDetails = binaryRelationCostDetails(GT, SBigInt)),
+      swapArgs(LT_cases, cost = 1788, newCostDetails = binaryRelationCostDetails(GT, SBigInt)),
       ">", GT.apply)(o.gt(_, _))
 
     val constBigIntCost = Array[CostItem](FixedCostItem(NamedDesc("EQ_BigInt"), FixedCost(JitCost(5))))
-    val neqCases = newCasesFrom2(LT_cases.map(_._1))(_ != _, cost = 36337, newCostDetails = costNEQ(constBigIntCost))
+    val neqCases = newCasesFrom2(LT_cases.map(_._1))(_ != _, cost = 1786, newCostDetails = costNEQ(constBigIntCost))
     verifyOp(neqCases, "!=", NEQ.apply)(_ != _)
   }
 
@@ -2214,7 +2214,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     val BigIntMaxValue = CBigInt(new BigInteger("7F" + "ff" * 31, 16))
     val BigIntOverlimit = CBigInt(new BigInteger("7F" + "ff" * 33, 16))
 
-    def expect(v: Boolean) = Expected(Success(v), 36337, binaryRelationCostDetails(LE, SBigInt), 1788)
+    def expect(v: Boolean) = Expected(Success(v), 1788, binaryRelationCostDetails(LE, SBigInt), 1788)
     
     val LE_cases: Seq[((BigInt, BigInt), Expected[Boolean])] = Seq(
       (BigIntMinValue, BigIntMinValue) -> expect(true),
@@ -2259,7 +2259,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     verifyOp(LE_cases, "<=", LE.apply)(o.lteq(_, _))
 
     verifyOp(
-      swapArgs(LE_cases, cost = 36336, newCostDetails = binaryRelationCostDetails(GE, SBigInt)),
+      swapArgs(LE_cases, cost = 1788, newCostDetails = binaryRelationCostDetails(GE, SBigInt)),
       ">=", GE.apply)(o.gteq(_, _))
   }
 
@@ -2328,7 +2328,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     val copied_x = copy(x)
     val newCostDetails = if (neqCost.isEmpty) CostDetails.ZeroCost else costNEQ(neqCost)
     def expected(v: Boolean) = Expected(Success(v), cost, newCostDetails, newCost)
-    def expectedNoCost(v: Boolean) = Expected(Success(v), cost, CostDetails.ZeroCost)
+    def expectedNoCost(v: Boolean) = new Expected(ExpectedResult(Success(v), None))
     verifyOp(Seq(
         (x, y) -> expected(true), // check cost only for this test case, because the trace depends in x and y
         (x, x) -> expectedNoCost(false), // and don't check for others
@@ -2340,11 +2340,11 @@ class SigmaDslSpecification extends SigmaDslTesting
   }
 
   property("NEQ of pre-defined types") {
-    verifyNeq(ge1, ge2, 36337, Array[CostItem](FixedCostItem(NamedDesc("EQ_GroupElement"), FixedCost(JitCost(172)))), 1803)(_.asInstanceOf[CGroupElement].copy())
-    verifyNeq(t1, t2, 36337, Array[CostItem](FixedCostItem(NamedDesc("EQ_AvlTree"), FixedCost(JitCost(6)))), 1787)(_.asInstanceOf[CAvlTree].copy())
-    verifyNeq(b1, b2, 36417, Array[CostItem](), 1787)(_.asInstanceOf[CostingBox].copy())
-    verifyNeq(preH1, preH2, 36337, Array[CostItem](FixedCostItem(NamedDesc("EQ_PreHeader"), FixedCost(JitCost(4)))), 1786)(_.asInstanceOf[CPreHeader].copy())
-    verifyNeq(h1, h2, 36337, Array[CostItem](FixedCostItem(NamedDesc("EQ_Header"), FixedCost(JitCost(6)))), 1787)(_.asInstanceOf[CHeader].copy())
+    verifyNeq(ge1, ge2, 1803, Array[CostItem](FixedCostItem(NamedDesc("EQ_GroupElement"), FixedCost(JitCost(172)))), 1803)(_.asInstanceOf[CGroupElement].copy())
+    verifyNeq(t1, t2, 1787, Array[CostItem](FixedCostItem(NamedDesc("EQ_AvlTree"), FixedCost(JitCost(6)))), 1787)(_.asInstanceOf[CAvlTree].copy())
+    verifyNeq(b1, b2, 1787, Array[CostItem](), 1787)(_.asInstanceOf[CostingBox].copy())
+    verifyNeq(preH1, preH2, 1786, Array[CostItem](FixedCostItem(NamedDesc("EQ_PreHeader"), FixedCost(JitCost(4)))), 1786)(_.asInstanceOf[CPreHeader].copy())
+    verifyNeq(h1, h2, 1787, Array[CostItem](FixedCostItem(NamedDesc("EQ_Header"), FixedCost(JitCost(6)))), 1787)(_.asInstanceOf[CHeader].copy())
   }
 
   property("NEQ of tuples of numerics") {
@@ -2352,11 +2352,11 @@ class SigmaDslSpecification extends SigmaDslTesting
       FixedCostItem(NamedDesc("EQ_Tuple"), FixedCost(JitCost(4))),
       FixedCostItem(NamedDesc("EQ_Prim"), FixedCost(JitCost(3)))
     )
-    verifyNeq((0.toByte, 1.toByte), (1.toByte, 1.toByte), 36337, tuplesNeqCost, 1787)(_.copy())
-    verifyNeq((0.toShort, 1.toByte), (1.toShort, 1.toByte), 36337, tuplesNeqCost, 1787)(_.copy())
-    verifyNeq((0, 1.toByte), (1, 1.toByte), 36337, tuplesNeqCost, 1787)(_.copy())
-    verifyNeq((0.toLong, 1.toByte), (1.toLong, 1.toByte), 36337, tuplesNeqCost, 1787)(_.copy())
-    verifyNeq((0.toBigInt, 1.toByte), (1.toBigInt, 1.toByte), 36337, Array(
+    verifyNeq((0.toByte, 1.toByte), (1.toByte, 1.toByte), 1787, tuplesNeqCost, 1787)(_.copy())
+    verifyNeq((0.toShort, 1.toByte), (1.toShort, 1.toByte), 1787, tuplesNeqCost, 1787)(_.copy())
+    verifyNeq((0, 1.toByte), (1, 1.toByte), 1787, tuplesNeqCost, 1787)(_.copy())
+    verifyNeq((0.toLong, 1.toByte), (1.toLong, 1.toByte), 1787, tuplesNeqCost, 1787)(_.copy())
+    verifyNeq((0.toBigInt, 1.toByte), (1.toBigInt, 1.toByte), 1787, Array(
       FixedCostItem(NamedDesc("EQ_Tuple"), FixedCost(JitCost(4))),
       FixedCostItem(NamedDesc("EQ_BigInt"), FixedCost(JitCost(5)))
     ), 1787)(_.copy())
@@ -2368,30 +2368,30 @@ class SigmaDslSpecification extends SigmaDslTesting
       FixedCostItem(NamedDesc("EQ_GroupElement"), FixedCost(JitCost(172))),
       FixedCostItem(NamedDesc("EQ_GroupElement"), FixedCost(JitCost(172)))
     )
-    verifyNeq((ge1, ge1), (ge1, ge2), 36337, groupNeqCost, 1821)(_.copy())
+    verifyNeq((ge1, ge1), (ge1, ge2), 1821, groupNeqCost, 1821)(_.copy())
 
     val treeNeqCost = Array(
       FixedCostItem(NamedDesc("EQ_Tuple"), FixedCost(JitCost(4))),
       FixedCostItem(NamedDesc("EQ_AvlTree"), FixedCost(JitCost(6))),
       FixedCostItem(NamedDesc("EQ_AvlTree"), FixedCost(JitCost(6)))
     )
-    verifyNeq((t1, t1), (t1, t2), 36337, treeNeqCost, 1788)(_.copy())
+    verifyNeq((t1, t1), (t1, t2), 1788, treeNeqCost, 1788)(_.copy())
 
-    verifyNeq((b1, b1), (b1, b2), 36497, Array[CostItem](), 1788)(_.copy())
+    verifyNeq((b1, b1), (b1, b2), 1788, Array[CostItem](), 1788)(_.copy())
 
     val preHeaderNeqCost = Array(
       FixedCostItem(NamedDesc("EQ_Tuple"), FixedCost(JitCost(4))),
       FixedCostItem(NamedDesc("EQ_PreHeader"), FixedCost(JitCost(4))),
       FixedCostItem(NamedDesc("EQ_PreHeader"), FixedCost(JitCost(4)))
     )
-    verifyNeq((preH1, preH1), (preH1, preH2), 36337, preHeaderNeqCost, 1787)(_.copy())
+    verifyNeq((preH1, preH1), (preH1, preH2), 1787, preHeaderNeqCost, 1787)(_.copy())
 
     val headerNeqCost = Array(
       FixedCostItem(NamedDesc("EQ_Tuple"), FixedCost(JitCost(4))),
       FixedCostItem(NamedDesc("EQ_Header"), FixedCost(JitCost(6))),
       FixedCostItem(NamedDesc("EQ_Header"), FixedCost(JitCost(6)))
     )
-    verifyNeq((h1, h1), (h1, h2), 36337, headerNeqCost, 1788)(_.copy())
+    verifyNeq((h1, h1), (h1, h2), 1788, headerNeqCost, 1788)(_.copy())
   }
 
   property("NEQ of nested tuples") {
@@ -2475,15 +2475,15 @@ class SigmaDslSpecification extends SigmaDslTesting
       FixedCostItem(NamedDesc("EQ_Header"), FixedCost(JitCost(6))),
       FixedCostItem(NamedDesc("EQ_Header"), FixedCost(JitCost(6)))
     )
-    verifyNeq((ge1, (t1, t1)), (ge1, (t1, t2)), 36337, nestedTuplesNeqCost1, 1805)(_.copy())
-    verifyNeq((ge1, (t1, (b1, b1))), (ge1, (t1, (b1, b2))), 36497, nestedTuplesNeqCost2, 1806)(_.copy())
-    verifyNeq((ge1, (t1, (b1, (preH1, preH1)))), (ge1, (t1, (b1, (preH1, preH2)))), 36417, nestedTuplesNeqCost3, 1807)(_.copy())
-    verifyNeq((ge1, (t1, (b1, (preH1, (h1, h1))))), (ge1, (t1, (b1, (preH1, (h1, h2))))), 36427, nestedTuplesNeqCost4, 1808)(_.copy())
+    verifyNeq((ge1, (t1, t1)), (ge1, (t1, t2)), 1805, nestedTuplesNeqCost1, 1805)(_.copy())
+    verifyNeq((ge1, (t1, (b1, b1))), (ge1, (t1, (b1, b2))), 1806, nestedTuplesNeqCost2, 1806)(_.copy())
+    verifyNeq((ge1, (t1, (b1, (preH1, preH1)))), (ge1, (t1, (b1, (preH1, preH2)))), 1807, nestedTuplesNeqCost3, 1807)(_.copy())
+    verifyNeq((ge1, (t1, (b1, (preH1, (h1, h1))))), (ge1, (t1, (b1, (preH1, (h1, h2))))), 1808, nestedTuplesNeqCost4, 1808)(_.copy())
 
-    verifyNeq(((ge1, t1), t1), ((ge1, t1), t2), 36337, nestedTuplesNeqCost5, 1805)(_.copy())
-    verifyNeq((((ge1, t1), b1), b1), (((ge1, t1), b1), b2), 36497, nestedTuplesNeqCost6, 1806)(_.copy())
-    verifyNeq((((ge1, t1), b1), (preH1, preH1)), (((ge1, t1), b1), (preH1, preH2)), 36417, nestedTuplesNeqCost7, 1807)(_.copy())
-    verifyNeq((((ge1, t1), b1), (preH1, (h1, h1))), (((ge1, t1), b1), (preH1, (h1, h2))), 36427, nestedTuplesNeqCost8, 1808)(_.copy())
+    verifyNeq(((ge1, t1), t1), ((ge1, t1), t2), 1805, nestedTuplesNeqCost5, 1805)(_.copy())
+    verifyNeq((((ge1, t1), b1), b1), (((ge1, t1), b1), b2), 1806, nestedTuplesNeqCost6, 1806)(_.copy())
+    verifyNeq((((ge1, t1), b1), (preH1, preH1)), (((ge1, t1), b1), (preH1, preH2)), 1807, nestedTuplesNeqCost7, 1807)(_.copy())
+    verifyNeq((((ge1, t1), b1), (preH1, (h1, h1))), (((ge1, t1), b1), (preH1, (h1, h2))), 1808, nestedTuplesNeqCost8, 1808)(_.copy())
   }
 
   property("NEQ of collections of pre-defined types") {
@@ -2495,32 +2495,32 @@ class SigmaDslSpecification extends SigmaDslTesting
       SeqCostItem(NamedDesc("EQ_COA_Box"), PerItemCost(JitCost(15), JitCost(5), 1), 0)
     )
     implicit val evalSettings = suite.evalSettings.copy(isMeasureOperationTime = false)
-    verifyNeq(Coll[Byte](), Coll(1.toByte), 36337, collNeqCost1, 1786)(cloneColl(_))
-    verifyNeq(Coll[Byte](0, 1), Coll(1.toByte, 1.toByte), 36337,
+    verifyNeq(Coll[Byte](), Coll(1.toByte), 1786, collNeqCost1, 1786)(cloneColl(_))
+    verifyNeq(Coll[Byte](0, 1), Coll(1.toByte, 1.toByte), 1788,
       Array(
         FixedCostItem(NamedDesc("MatchType"), FixedCost(JitCost(1))),
         SeqCostItem(NamedDesc("EQ_COA_Byte"), PerItemCost(JitCost(15), JitCost(2), 128), 1)),
       1788
     )(cloneColl(_))
 
-    verifyNeq(Coll[Short](), Coll(1.toShort), 36337, collNeqCost1, 1786)(cloneColl(_))
-    verifyNeq(Coll[Short](0), Coll(1.toShort), 36337,
+    verifyNeq(Coll[Short](), Coll(1.toShort), 1786, collNeqCost1, 1786)(cloneColl(_))
+    verifyNeq(Coll[Short](0), Coll(1.toShort), 1788,
       Array(
         FixedCostItem(NamedDesc("MatchType"), FixedCost(JitCost(1))),
         SeqCostItem(NamedDesc("EQ_COA_Short"), PerItemCost(JitCost(15), JitCost(2), 96), 1)),
       1788
     )(cloneColl(_))
 
-    verifyNeq(Coll[Int](), Coll(1), 36337, collNeqCost1, 1786)(cloneColl(_))
-    verifyNeq(Coll[Int](0), Coll(1), 36337,
+    verifyNeq(Coll[Int](), Coll(1), 1786, collNeqCost1, 1786)(cloneColl(_))
+    verifyNeq(Coll[Int](0), Coll(1), 1788,
       Array(
         FixedCostItem(NamedDesc("MatchType"), FixedCost(JitCost(1))),
         SeqCostItem(NamedDesc("EQ_COA_Int"), PerItemCost(JitCost(15), JitCost(2), 64), 1)),
       1788
     )(cloneColl(_))
 
-    verifyNeq(Coll[Long](), Coll(1.toLong), 36337, collNeqCost1, 1786)(cloneColl(_))
-    verifyNeq(Coll[Long](0), Coll(1.toLong), 36337,
+    verifyNeq(Coll[Long](), Coll(1.toLong), 1786, collNeqCost1, 1786)(cloneColl(_))
+    verifyNeq(Coll[Long](0), Coll(1.toLong), 1788,
       Array(
         FixedCostItem(NamedDesc("MatchType"), FixedCost(JitCost(1))),
         SeqCostItem(NamedDesc("EQ_COA_Long"), PerItemCost(JitCost(15), JitCost(2), 48), 1)),
@@ -2528,8 +2528,8 @@ class SigmaDslSpecification extends SigmaDslTesting
     )(cloneColl(_))
 
     prepareSamples[Coll[BigInt]]
-    verifyNeq(Coll[BigInt](), Coll(1.toBigInt), 36337, collNeqCost1, 1786)(cloneColl(_))
-    verifyNeq(Coll[BigInt](0.toBigInt), Coll(1.toBigInt), 36337,
+    verifyNeq(Coll[BigInt](), Coll(1.toBigInt), 1786, collNeqCost1, 1786)(cloneColl(_))
+    verifyNeq(Coll[BigInt](0.toBigInt), Coll(1.toBigInt), 1788,
       Array(
         FixedCostItem(NamedDesc("MatchType"), FixedCost(JitCost(1))),
         SeqCostItem(NamedDesc("EQ_COA_BigInt"), PerItemCost(JitCost(15), JitCost(7), 5), 1)),
@@ -2537,8 +2537,8 @@ class SigmaDslSpecification extends SigmaDslTesting
     )(cloneColl(_))
 
     prepareSamples[Coll[GroupElement]]
-    verifyNeq(Coll[GroupElement](), Coll(ge1), 36337, collNeqCost1, 1786)(cloneColl(_))
-    verifyNeq(Coll[GroupElement](ge1), Coll(ge2), 36337,
+    verifyNeq(Coll[GroupElement](), Coll(ge1), 1786, collNeqCost1, 1786)(cloneColl(_))
+    verifyNeq(Coll[GroupElement](ge1), Coll(ge2), 1788,
       Array(
         FixedCostItem(NamedDesc("MatchType"), FixedCost(JitCost(1))),
         SeqCostItem(NamedDesc("EQ_COA_GroupElement"), PerItemCost(JitCost(15), JitCost(5), 1), 1)),
@@ -2546,8 +2546,8 @@ class SigmaDslSpecification extends SigmaDslTesting
     )(cloneColl(_))
 
     prepareSamples[Coll[AvlTree]]
-    verifyNeq(Coll[AvlTree](), Coll(t1), 36337, collNeqCost1, 1786)(cloneColl(_))
-    verifyNeq(Coll[AvlTree](t1), Coll(t2), 36337,
+    verifyNeq(Coll[AvlTree](), Coll(t1), 1786, collNeqCost1, 1786)(cloneColl(_))
+    verifyNeq(Coll[AvlTree](t1), Coll(t2), 1788,
       Array(
         FixedCostItem(NamedDesc("MatchType"), FixedCost(JitCost(1))),
         SeqCostItem(NamedDesc("EQ_COA_AvlTree"), PerItemCost(JitCost(15), JitCost(5), 2), 1)),
@@ -2560,15 +2560,15 @@ class SigmaDslSpecification extends SigmaDslTesting
       val y = Coll(b1)
       val copied_x = cloneColl(x)
       verifyOp(Seq(
-          (x, x) -> Expected(Success(false), 36337, costNEQ(collNeqCost2), 1788),
-          (x, copied_x) -> Expected(Success(false), 36337, costNEQ(collNeqCost2), 1788),
-          (copied_x, x) -> Expected(Success(false), 36337, costNEQ(collNeqCost2), 1788),
-          (x, y) -> Expected(Success(true), 36377, costNEQ(collNeqCost1), 1786),
-          (y, x) -> Expected(Success(true), 36377, costNEQ(collNeqCost1), 1786)
+          (x, x) -> Expected(Success(false), 1788, costNEQ(collNeqCost2), 1788),
+          (x, copied_x) -> Expected(Success(false), 1788, costNEQ(collNeqCost2), 1788),
+          (copied_x, x) -> Expected(Success(false), 1788, costNEQ(collNeqCost2), 1788),
+          (x, y) -> Expected(Success(true), 1786, costNEQ(collNeqCost1), 1786),
+          (y, x) -> Expected(Success(true), 1786, costNEQ(collNeqCost1), 1786)
         ),
         "!=", NEQ.apply)(_ != _, generateCases = false)
 
-      verifyNeq(Coll[Box](b1), Coll(b2), 36417,
+      verifyNeq(Coll[Box](b1), Coll(b2), 1788,
         Array(
           FixedCostItem(NamedDesc("MatchType"), FixedCost(JitCost(1))),
           SeqCostItem(NamedDesc("EQ_COA_Box"), PerItemCost(JitCost(15), JitCost(5), 1), 1)),
@@ -2577,8 +2577,8 @@ class SigmaDslSpecification extends SigmaDslTesting
     }
 
     prepareSamples[Coll[PreHeader]]
-    verifyNeq(Coll[PreHeader](), Coll(preH1), 36337, collNeqCost1, 1786)(cloneColl(_))
-    verifyNeq(Coll[PreHeader](preH1), Coll(preH2), 36337,
+    verifyNeq(Coll[PreHeader](), Coll(preH1), 1786, collNeqCost1, 1786)(cloneColl(_))
+    verifyNeq(Coll[PreHeader](preH1), Coll(preH2), 1788,
       Array(
         FixedCostItem(NamedDesc("MatchType"), FixedCost(JitCost(1))),
         SeqCostItem(NamedDesc("EQ_COA_PreHeader"), PerItemCost(JitCost(15), JitCost(3), 1), 1)),
@@ -2586,8 +2586,8 @@ class SigmaDslSpecification extends SigmaDslTesting
     )(cloneColl(_))
 
     prepareSamples[Coll[Header]]
-    verifyNeq(Coll[Header](), Coll(h1), 36337, collNeqCost1, 1786)(cloneColl(_))
-    verifyNeq(Coll[Header](h1), Coll(h2), 36337,
+    verifyNeq(Coll[Header](), Coll(h1), 1786, collNeqCost1, 1786)(cloneColl(_))
+    verifyNeq(Coll[Header](h1), Coll(h2), 1788,
       Array(
         FixedCostItem(NamedDesc("MatchType"), FixedCost(JitCost(1))),
         SeqCostItem(NamedDesc("EQ_COA_Header"), PerItemCost(JitCost(15), JitCost(5), 1), 1)),
@@ -2615,10 +2615,10 @@ class SigmaDslSpecification extends SigmaDslTesting
       SeqCostItem(NamedDesc("EQ_COA_Int"), PerItemCost(JitCost(15), JitCost(2), 64), 1),
       SeqCostItem(NamedDesc("EQ_Coll"), PerItemCost(JitCost(10), JitCost(2), 1), 1)
     )
-    verifyNeq(Coll[Coll[Int]](), Coll(Coll[Int]()), 36337, nestedNeq1, 1786)(cloneColl(_))
-    verifyNeq(Coll(Coll[Int]()), Coll(Coll[Int](1)), 36337, nestedNeq2, 1787)(cloneColl(_))
-    verifyNeq(Coll(Coll[Int](1)), Coll(Coll[Int](2)), 36337, nestedNeq3, 1789)(cloneColl(_))
-    verifyNeq(Coll(Coll[Int](1)), Coll(Coll[Int](1, 2)), 36337, nestedNeq2, 1787)(cloneColl(_))
+    verifyNeq(Coll[Coll[Int]](), Coll(Coll[Int]()), 1786, nestedNeq1, 1786)(cloneColl(_))
+    verifyNeq(Coll(Coll[Int]()), Coll(Coll[Int](1)), 1787, nestedNeq2, 1787)(cloneColl(_))
+    verifyNeq(Coll(Coll[Int](1)), Coll(Coll[Int](2)), 1789, nestedNeq3, 1789)(cloneColl(_))
+    verifyNeq(Coll(Coll[Int](1)), Coll(Coll[Int](1, 2)), 1787, nestedNeq2, 1787)(cloneColl(_))
 
     prepareSamples[Coll[(Int, BigInt)]]
     prepareSamples[Coll[Coll[(Int, BigInt)]]]
@@ -2661,8 +2661,8 @@ class SigmaDslSpecification extends SigmaDslTesting
       SeqCostItem(NamedDesc("EQ_Coll"), PerItemCost(JitCost(10), JitCost(2), 1), 1),
       SeqCostItem(NamedDesc("EQ_Coll"), PerItemCost(JitCost(10), JitCost(2), 1), 1)
     )
-    verifyNeq(Coll(Coll((1, 10.toBigInt))), Coll(Coll((1, 11.toBigInt))), 36337, nestedNeq4, 1790)(cloneColl(_))
-    verifyNeq(Coll(Coll(Coll((1, 10.toBigInt)))), Coll(Coll(Coll((1, 11.toBigInt)))), 36337, nestedNeq5, 1791)(cloneColl(_))
+    verifyNeq(Coll(Coll((1, 10.toBigInt))), Coll(Coll((1, 11.toBigInt))), 1790, nestedNeq4, 1790)(cloneColl(_))
+    verifyNeq(Coll(Coll(Coll((1, 10.toBigInt)))), Coll(Coll(Coll((1, 11.toBigInt)))), 1791, nestedNeq5, 1791)(cloneColl(_))
     verifyNeq(
       (Coll(
          (Coll(
@@ -2674,7 +2674,7 @@ class SigmaDslSpecification extends SigmaDslTesting
            (t1, Coll((1, 10.toBigInt), (1, 11.toBigInt)))
           ), ge1)
        ), preH1),
-      36337,
+      1794,
       nestedNeq6,
       1794
     )(x => (cloneColl(x._1), x._2))
@@ -2683,7 +2683,7 @@ class SigmaDslSpecification extends SigmaDslTesting
   property("GroupElement.getEncoded equivalence") {
     verifyCases(
     {
-      def success[T](v: T) = Expected(Success(v), 37905, methodCostDetails(SGroupElement.GetEncodedMethod, 250), 1810)
+      def success[T](v: T) = Expected(Success(v), 1810, methodCostDetails(SGroupElement.GetEncodedMethod, 250), 1810)
       Seq(
         (ge1, success(Helpers.decodeBytes(ge1str))),
         (ge2, success(Helpers.decodeBytes(ge2str))),
@@ -2714,7 +2714,7 @@ class SigmaDslSpecification extends SigmaDslTesting
           FixedCostItem(NamedDesc("EQ_GroupElement"), FixedCost(JitCost(172)))
         )
       )
-      def success[T](v: T) = Expected(Success(v), 38340, costDetails, 1857)
+      def success[T](v: T) = Expected(Success(v), 1857, costDetails, 1857)
       Seq(
         (ge1, success(true)),
         (ge2, success(true)),
@@ -2744,7 +2744,7 @@ class SigmaDslSpecification extends SigmaDslTesting
   property("GroupElement.negate equivalence") {
     verifyCases(
     {
-      def success[T](v: T) = Expected(Success(v), 36292, methodCostDetails(SGroupElement.NegateMethod, 45), 1805)
+      def success[T](v: T) = Expected(Success(v), 1805, methodCostDetails(SGroupElement.NegateMethod, 45), 1805)
       Seq(
         (ge1, success(Helpers.decodeGroupElement("02358d53f01276211f92d0aefbd278805121d4ff6eb534b777af1ee8abae5b2056"))),
         (ge2, success(Helpers.decodeGroupElement("03dba7b94b111f3894e2f9120b577da595ec7d58d488485adf73bf4e153af63575"))),
@@ -2771,7 +2771,7 @@ class SigmaDslSpecification extends SigmaDslTesting
       )
     )
     val cases = {
-      def success[T](v: T) = Expected(Success(v), 41484, costDetails, 1893)
+      def success[T](v: T) = Expected(Success(v), 1893, costDetails, 1893)
       Seq(
         ((ge1, CBigInt(new BigInteger("-25c80b560dd7844e2efd10f80f7ee57d", 16))),
           success(Helpers.decodeGroupElement("023a850181b7b73f92a5bbfa0bfc78f5bbb6ff00645ddde501037017e1a2251e2e"))),
@@ -2879,7 +2879,7 @@ class SigmaDslSpecification extends SigmaDslTesting
             FixedCostItem(MultiplyGroup)
           )
         )
-        def success[T](v: T) = Expected(Success(v), 36457, costDetails, 1807)
+        def success[T](v: T) = Expected(Success(v), 1807, costDetails, 1807)
         Seq(
           ((ge1, Helpers.decodeGroupElement("03e132ca090614bd6c9f811e91f6daae61f16968a1e6c694ed65aacd1b1092320e")),
               success(Helpers.decodeGroupElement("02bc48937b4a66f249a32dfb4d2efd0743dc88d46d770b8c5d39fd03325ba211df"))),
@@ -2984,7 +2984,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     }
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 36182, methodCostDetails(SAvlTree.digestMethod, 15), 1787)
+        def success[T](v: T) = Expected(Success(v), 1787, methodCostDetails(SAvlTree.digestMethod, 15), 1787)
         Seq(
           (t1, success(Helpers.decodeBytes("000183807f66b301530120ff7fc6bd6601ff01ff7f7d2bedbbffff00187fe89094"))),
           (t2, success(Helpers.decodeBytes("ff000d937f80ffd731ed802d24358001ff8080ff71007f00ad37e0a7ae43fff95b"))),
@@ -2997,7 +2997,7 @@ class SigmaDslSpecification extends SigmaDslTesting
 
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 36260, methodCostDetails(SAvlTree.enabledOperationsMethod, 15), 1785)
+        def success[T](v: T) = Expected(Success(v), 1785, methodCostDetails(SAvlTree.enabledOperationsMethod, 15), 1785)
         Seq(
           (t1, success(6.toByte)),
           (t2, success(0.toByte)),
@@ -3010,7 +3010,7 @@ class SigmaDslSpecification extends SigmaDslTesting
 
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 36136, methodCostDetails(SAvlTree.keyLengthMethod, 15), 1785)
+        def success[T](v: T) = Expected(Success(v), 1785, methodCostDetails(SAvlTree.keyLengthMethod, 15), 1785)
         Seq(
           (t1, success(1)),
           (t2, success(32)),
@@ -3023,7 +3023,7 @@ class SigmaDslSpecification extends SigmaDslTesting
 
     verifyCases(
       {
-        def success[T](v: T, newCost: Int) = Expected(Success(v), 37151, methodCostDetails(SAvlTree.valueLengthOptMethod, 15), newCost)
+        def success[T](v: T, newCost: Int) = Expected(Success(v), newCost, methodCostDetails(SAvlTree.valueLengthOptMethod, 15), newCost)
         Seq(
           (t1, success(Some(1), 1786)),
           (t2, success(Some(64), 1786)),
@@ -3036,7 +3036,7 @@ class SigmaDslSpecification extends SigmaDslTesting
 
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 36479, methodCostDetails(SAvlTree.isInsertAllowedMethod, 15), 1785)
+        def success[T](v: T) = Expected(Success(v), 1785, methodCostDetails(SAvlTree.isInsertAllowedMethod, 15), 1785)
         Seq(
           (t1, success(false)),
           (t2, success(false)),
@@ -3049,7 +3049,7 @@ class SigmaDslSpecification extends SigmaDslTesting
 
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 36096, methodCostDetails(SAvlTree.isUpdateAllowedMethod, 15), 1785)
+        def success[T](v: T) = Expected(Success(v), 1785, methodCostDetails(SAvlTree.isUpdateAllowedMethod, 15), 1785)
         Seq(
           (t1, success(true)),
           (t2, success(false)),
@@ -3062,7 +3062,7 @@ class SigmaDslSpecification extends SigmaDslTesting
 
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 36502, methodCostDetails(SAvlTree.isRemoveAllowedMethod, 15), 1785)
+        def success[T](v: T) = Expected(Success(v), 1785, methodCostDetails(SAvlTree.isRemoveAllowedMethod, 15), 1785)
         Seq(
           (t1, success(true)),
           (t2, success(false)),
@@ -3317,7 +3317,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         )
       )
 
-      getMany.checkExpected(input, Expected(Success(expRes), 38991, costDetails, 1865))
+      getMany.checkExpected(input, Expected(Success(expRes), 1865, costDetails, 1865))
     }
 
     val key = Colls.fromArray(Array[Byte](-16,-128,99,86,1,-128,-36,-83,109,72,-124,-114,1,-32,15,127,-30,125,127,1,-102,-53,-53,-128,-107,0,64,8,1,127,22,1))
@@ -3395,8 +3395,8 @@ class SigmaDslSpecification extends SigmaDslTesting
       // positive test
       {
         val input = (tree, (key, proof))
-        contains.checkExpected(input, Expected(Success(okContains), 37850, costDetails(105 + additionalDetails), 1810))
-        get.checkExpected(input, Expected(Success(valueOpt), 38372, costDetails(105 + additionalDetails), 1810 + additionalCost))
+        contains.checkExpected(input, Expected(Success(okContains), 1810, costDetails(105 + additionalDetails), 1810))
+        get.checkExpected(input, Expected(Success(valueOpt), 1810 + additionalCost, costDetails(105 + additionalDetails), 1810 + additionalCost))
       }
 
       val keys = Colls.fromItems(key)
@@ -3404,14 +3404,14 @@ class SigmaDslSpecification extends SigmaDslTesting
 
       {
         val input = (tree, (keys, proof))
-        getMany.checkExpected(input, Expected(Success(expRes), 38991, costDetails(105 + additionalDetails), 1811 + additionalCost))
+        getMany.checkExpected(input, Expected(Success(expRes), 1811 + additionalCost, costDetails(105 + additionalDetails), 1811 + additionalCost))
       }
 
       {
         val input = (tree, digest)
         val (res, _) = updateDigest.checkEquality(input).getOrThrow
         res.digest shouldBe digest
-        updateDigest.checkExpected(input, Expected(Success(res), 36341, updateDigestCostDetails, 1791))
+        updateDigest.checkExpected(input, Expected(Success(res), 1791, updateDigestCostDetails, 1791))
       }
 
       val newOps = 1.toByte
@@ -3420,7 +3420,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         val input = (tree, newOps)
         val (res,_) = updateOperations.checkEquality(input).getOrThrow
         res.enabledOperations shouldBe newOps
-        updateOperations.checkExpected(input, Expected(Success(res), 36341, updateOperationsCostDetails, 1791))
+        updateOperations.checkExpected(input, Expected(Success(res), 1791, updateOperationsCostDetails, 1791))
       }
 
       // negative tests: invalid proof
@@ -3430,7 +3430,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         val input = (tree, (key, invalidProof))
         val (res, _) = contains.checkEquality(input).getOrThrow
         res shouldBe false
-        contains.checkExpected(input, Expected(Success(res), 37850, costDetails(105 + additionalDetails), 1810))
+        contains.checkExpected(input, Expected(Success(res), 1810, costDetails(105 + additionalDetails), 1810))
       }
 
       {
