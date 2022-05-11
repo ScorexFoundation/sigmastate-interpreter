@@ -49,8 +49,6 @@ import scala.util.{Success, Try}
   */
 trait Interpreter extends ScorexLogging {
 
-  import Interpreter.AotReductionResult
-
   type CTX <: InterpreterContext
 
   type ProofT = UncheckedTree
@@ -471,14 +469,6 @@ object Interpreter {
     def cost: Long
   }
 
-  /** Result of ErgoTree reduction procedure (see `fullReduction`).
-    *
-    * @param value the value of SigmaProp type which represents a logical statement
-    *              verifiable via sigma protocol.
-    * @param cost  the estimated cost of the contract execution.
-    */
-  case class AotReductionResult(value: SigmaBoolean, cost: Long) extends ReductionResult
-
   /** Result of ErgoTree reduction procedure by JIT-based interpreter (see
     * `reduceToCrypto` and friends).
     *
@@ -505,11 +495,6 @@ object Interpreter {
 
   /** Property name used to store script name. */
   val ScriptNameProp = "ScriptName"
-
-  /** The result of script reduction when soft-fork condition is detected by the old node,
-    * in which case the script is reduced to the trivial true proposition and takes up 0 cost.
-    */
-  def WhenSoftForkReductionResult(cost: Long): AotReductionResult = AotReductionResult(TrivialProp.TrueProp, cost)
 
   /** The result of script reduction when soft-fork condition is detected by the old node,
     * in which case the script is reduced to the trivial true proposition and takes up 0 cost.
