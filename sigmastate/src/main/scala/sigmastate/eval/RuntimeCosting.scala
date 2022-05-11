@@ -926,12 +926,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
     case _ => error(s"Cannot find BinOp for opcode $opCode")
   }
 
-  def adaptSigmaBoolean(v: BoolValue) = v match {
-    case sb: SigmaBoolean => sb.isProven
-    case _ => v
-  }
-
-    /** Helper to create costed collection of some constant size type T */
+  /** Helper to create costed collection of some constant size type T */
   def mkCostedColl[T](col: Ref[Coll[T]], len: Ref[Int], cost: Ref[Int]): Ref[CostedColl[T]] = {
     // TODO optimize: the method should be specialized on T so that mkSizePrim is not used
     val eT = col.elem.eItem
@@ -1598,7 +1593,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
           val costs = new Array[Ref[Int]](len)
           cfor(0)(_ < len, _ + 1) { i =>
             val item = items(i)
-            val itemC = eval(adaptSigmaBoolean(item))
+            val itemC = eval(item)
             values(i) = itemC.value
             costs(i) = itemC.cost
           }
@@ -1621,7 +1616,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
           val costs = new Array[Ref[Int]](len)
           cfor(0)(_ < len, _ + 1) { i =>
             val item = items(i)
-            val itemC = eval(adaptSigmaBoolean(item))
+            val itemC = eval(item)
             values(i) = itemC.value
             costs(i) = itemC.cost
           }
@@ -1644,7 +1639,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
           val costs = new Array[Ref[Int]](len)
           cfor(0)(_ < len, _ + 1) { i =>
             val item = items(i)
-            val itemC = eval(adaptSigmaBoolean(item))
+            val itemC = eval(item)
             values(i) = itemC.value
             costs(i) = itemC.cost
           }

@@ -1035,7 +1035,6 @@ object Values {
   }
 
   implicit class SigmaPropValueOps(val p: Value[SSigmaProp.type]) extends AnyVal {
-    def isProven: Value[SBoolean.type] = SigmaPropIsProven(p)
     def propBytes: Value[SByteArray] = SigmaPropBytes(p)
     def treeWithSegregation: ErgoTree = ErgoTree.withSegregation(p)
     def treeWithSegregation(headerFlags: Byte): ErgoTree =
