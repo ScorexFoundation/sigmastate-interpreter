@@ -23,11 +23,6 @@ class TestingInterpreterSpecification extends SigmaTestingCommons
   with CrossVersionProps with BeforeAndAfterAll {
   implicit lazy val IR = new TestingIRContext
 
-  lazy val processor = new PrecompiledScriptProcessor(
-    ScriptProcessorSettings(mutable.WrappedArray.empty)) {
-    override protected def createIR(): IRContext = new TestingIRContext
-  }
-
   lazy val prover = new ErgoLikeTestProvingInterpreter() {
   }
 
@@ -379,7 +374,6 @@ class TestingInterpreterSpecification extends SigmaTestingCommons
   }
 
   override protected def afterAll(): Unit = {
-    println(processor.getStats())
   }
 
 }

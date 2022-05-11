@@ -1,6 +1,5 @@
 package sigmastate
 
-import org.ergoplatform.Height.addCost
 import org.ergoplatform._
 import org.ergoplatform.validation.ValidationRules._
 import org.ergoplatform.validation._
@@ -9,19 +8,19 @@ import sigmastate.SPrimType.MaxPrimTypeCode
 import sigmastate.Values.ErgoTree.EmptyConstants
 import sigmastate.Values.{ByteArrayConstant, ErgoTree, IntConstant, NotReadyValueInt, Tuple, UnparsedErgoTree, ValueCompanion}
 import sigmastate.eval.Colls
-import sigmastate.helpers.{ErgoLikeContextTesting, ErgoLikeTestInterpreter, ErgoLikeTestProvingInterpreter}
 import sigmastate.helpers.TestingHelpers._
+import sigmastate.helpers.{ErgoLikeContextTesting, ErgoLikeTestInterpreter, ErgoLikeTestProvingInterpreter}
 import sigmastate.interpreter.ErgoTreeEvaluator.DataEnv
-import sigmastate.interpreter.Interpreter.{ScriptNameProp, WhenSoftForkReductionResult, emptyEnv}
-import sigmastate.interpreter.{CacheKey, ContextExtension, ErgoTreeEvaluator, ProverResult, WhenSoftForkReducer}
+import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
+import sigmastate.interpreter.{ContextExtension, ErgoTreeEvaluator, ProverResult}
 import sigmastate.lang.Terms._
-import sigmastate.lang.exceptions.{CosterException, InterpreterException, SerializerException, SigmaException}
+import sigmastate.lang.exceptions.{InterpreterException, SerializerException, SigmaException}
 import sigmastate.serialization.OpCodes.{LastConstantCode, OpCode, OpCodeExtra}
 import sigmastate.serialization.SigmaSerializer.startReader
 import sigmastate.serialization._
+import sigmastate.utils.Helpers._
 import sigmastate.utxo.{DeserializeContext, SelectField}
 import special.sigma.SigmaTestingData
-import sigmastate.utils.Helpers._
 
 class SoftForkabilitySpecification extends SigmaTestingData with BeforeAndAfterAll {
 
@@ -386,23 +385,7 @@ class SoftForkabilitySpecification extends SigmaTestingData with BeforeAndAfterA
     })
   }
 
-  property("PrecompiledScriptProcessor is soft-forkable") {
-    val p = ErgoLikeTestInterpreter.DefaultProcessorInTests
-    val v1key = CacheKey(propV2treeBytes, vs)
-    checkRule(CheckValidOpCode, v2vs, {
-      p.getReducer(v1key)
-    })
-
-    val v2key = CacheKey(propV2treeBytes, v2vs)
-    val r = p.getReducer(v2key)
-    r shouldBe WhenSoftForkReducer
-
-    val ctx = createContext(blockHeight, txV2, v2vs)
-    r.reduce(ctx) shouldBe WhenSoftForkReductionResult(0)
-  }
-
   override protected def afterAll(): Unit = {
-    println(ErgoLikeTestInterpreter.DefaultProcessorInTests.getStats())
   }
 
 }
