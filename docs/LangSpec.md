@@ -76,7 +76,7 @@ The following sections describe ErgoScript and its operations.
 - accessing fields of any predefined types: `box.value`
 - method invocation for predefined types: `coll.map({ x => x + 1 })`
 - function invocations (predefined and user defined): `proveDlog(pubkey)` 
-- user defined function declarations: `def isProven(pk: GroupElement) = proveDlog(pk).isProven`
+- user defined function declarations: `def enoughFunds(b: Box) = b.value >= minToRaise`
 - lambdas and high-order methods: `OUTPUTS.exists { (out: Box) => out.value >= minToRaise }`
 
 #### Data types 

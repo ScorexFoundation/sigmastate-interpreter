@@ -56,7 +56,6 @@ digraph conversions {
     Bits -> Boolean [label=" xorOf(...) " color=red ]
 
     SigmaProp -> Boolean [label=" ZKProof {...} "]
-    SigmaProp -> Boolean [label=" .isProven "]
     SigmaProp -> Bytes [label=" .propBytes "]
     Boolean -> SigmaProp [label=" sigmaProp(...) "]
 

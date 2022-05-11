@@ -5,12 +5,13 @@ import org.ergoplatform.ErgoBox.R4
 import org.ergoplatform._
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{Matchers, PropSpec}
+import sigmastate.TrivialProp.TrueProp
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.lang.SigmaPredef.PredefinedFuncRegistry
 import sigmastate.lang.Terms.{Ident, ZKProofBlock}
 import sigmastate.lang.exceptions.SpecializerException
-import sigmastate.serialization.generators.{ConcreteCollectionGenerators, TransformerGenerators, ObjectGenerators}
+import sigmastate.serialization.generators.{ConcreteCollectionGenerators, ObjectGenerators, TransformerGenerators}
 import sigmastate.utxo._
 import sigmastate.lang.Terms._
 
@@ -132,9 +133,14 @@ class SigmaSpecializerTest extends PropSpec
   }
 
   property("AND flattening, CAND/COR untouched") {
-    val sigmaBooleans1 = AND(Array(TrueLeaf, CAND(Array(proveDlogGen.sample.get, proveDHTGen.sample.get)).toSigmaProp.isProven))
+    val sigmaBooleans1 = SigmaAnd(
+      TrueProp,
+      CAND(Array(proveDlogGen.sample.get, proveDHTGen.sample.get)))
     spec(Map(), sigmaBooleans1) shouldBe sigmaBooleans1
-    val sigmaBooleans2 = AND(Array(TrueLeaf, COR(Array(proveDlogGen.sample.get, proveDHTGen.sample.get)).toSigmaProp.isProven))
+
+    val sigmaBooleans2 = SigmaAnd(
+      TrueProp,
+      COR(Array(proveDlogGen.sample.get, proveDHTGen.sample.get)).toSigmaProp)
     spec(Map(), sigmaBooleans2) shouldBe sigmaBooleans2
   }
 
@@ -159,9 +165,12 @@ class SigmaSpecializerTest extends PropSpec
   }
 
   property("OR flattening, CAND/COR untouched") {
-    val sigmaBooleans1 = OR(Array(TrueLeaf, CAND(Array(proveDlogGen.sample.get, proveDHTGen.sample.get)).toSigmaProp.isProven))
+    val sigmaBooleans1 = SigmaOr(
+      TrueProp, CAND(Array(proveDlogGen.sample.get, proveDHTGen.sample.get)))
     spec(Map(), sigmaBooleans1) shouldBe sigmaBooleans1
-    val sigmaBooleans2 = OR(Array(TrueLeaf, COR(Array(proveDlogGen.sample.get, proveDHTGen.sample.get)).toSigmaProp.isProven))
+    val sigmaBooleans2 = SigmaOr(
+      TrueProp,
+      COR(Array(proveDlogGen.sample.get, proveDHTGen.sample.get)))
     spec(Map(), sigmaBooleans2) shouldBe sigmaBooleans2
   }
 
