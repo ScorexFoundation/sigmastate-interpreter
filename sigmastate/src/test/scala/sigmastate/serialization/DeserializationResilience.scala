@@ -255,7 +255,7 @@ class DeserializationResilience extends SerializationSpecification
   property("max recursive call depth is checked in writer.level for DataSerializer calls") {
     val expr = IntConstant(1)
     an[SerializeCallDepthExceeded] should be thrownBy
-      ValueSerializer.serialize(expr, writer(maxTreeDepth = 2))
+      ValueSerializer.serialize(expr, writer(maxTreeDepth = 1))
   }
 
   property("reader.level is updated in SigmaBoolean.serializer.parse") {
