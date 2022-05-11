@@ -10,7 +10,7 @@ import scala.util.{Failure, Success}
 
 /** Base class for interpreters used in tests.
   * @see derived classes */
-class ErgoLikeTestInterpreter(implicit override val IR: IRContext) extends ErgoLikeInterpreter {
+class ErgoLikeTestInterpreter extends ErgoLikeInterpreter {
   override type CTX = ErgoLikeContext
   override val evalSettings: EvalSettings = DefaultEvalSettings.copy(
     isMeasureOperationTime = true,
@@ -18,7 +18,7 @@ class ErgoLikeTestInterpreter(implicit override val IR: IRContext) extends ErgoL
     isTestRun = true)
 }
 
-class ErgoTransactionValidator(activatedVersion: Byte)(implicit IR: IRContext) {
+class ErgoTransactionValidator(activatedVersion: Byte) {
   val verifier = new ErgoLikeTestInterpreter()
 
   def validate(tx: ErgoLikeTransaction,

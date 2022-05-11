@@ -11,7 +11,7 @@ import sigmastate.utxo._
   * verify method.
   * It implements deserialization of register of SELF box.
   */
-class ErgoLikeInterpreter(implicit val IR: IRContext) extends Interpreter {
+class ErgoLikeInterpreter extends Interpreter {
 
   override type CTX <: ErgoLikeContext
 
