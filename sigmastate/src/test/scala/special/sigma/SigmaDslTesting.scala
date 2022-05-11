@@ -39,7 +39,6 @@ import special.collection.{Coll, CollType}
 import spire.syntax.all.cfor
 
 import scala.collection.mutable
-import scala.math.Ordering
 import scala.reflect.ClassTag
 import scala.util.{Failure, Success, Try}
 
@@ -78,7 +77,7 @@ class SigmaDslTesting extends PropSpec
     indices <- Gen.containerOfN[Array, Int](nIndexes, Gen.choose(0, arrLength - 1))
   } yield indices
 
-  class FeatureProvingInterpreter extends ErgoLikeTestInterpreter()(new TestingIRContext) with ProverInterpreter {
+  class FeatureProvingInterpreter extends ErgoLikeTestInterpreter() with ProverInterpreter {
 
     def decodeSecretInput(decimalStr: String): DLogProverInput = DLogProverInput(BigInt(decimalStr).bigInteger)
 
@@ -405,7 +404,7 @@ class SigmaDslTesting extends PropSpec
         val ctx = ergoCtx(prover, tree, expectedResult.value.get)
         val pr = prover.prove(tree, ctx, fakeMessage).getOrThrow
         val verificationCtx = ctx.withExtension(pr.extension)
-        val verifier = new ErgoLikeTestInterpreter()(createIR())
+        val verifier = new ErgoLikeTestInterpreter()
         val res = verifier.verify(tree, verificationCtx, pr, fakeMessage)
         checkExpectedResult(evalMode, res, expectedCost)
 
