@@ -247,9 +247,11 @@ class Profiler {
     val opCodeLines = opStat.mapToArray { case (key, stat) =>
       val (time, count) = stat.mean
       val opCode = OpCode @@ key.toByte
-      if (ValueSerializer.serializers.get(opCode).isEmpty)
-        return null // SoftForkabilitySpecification contain tests with unsupported operations
-
+      if (ValueSerializer.serializers.get(opCode).isEmpty) {
+        // SoftForkabilitySpecification contain tests with unsupported operations
+        // so return null here and then filter it out
+        return null
+      }
       val ser = getSerializer(opCode)
       val opDesc = ser.opDesc
       val (opName, cost) = opDesc.costKind match {
