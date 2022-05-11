@@ -12,13 +12,10 @@ trait VersionTesting {
   protected val activatedVersions: Seq[Byte] =
     Array(VersionContext.MaxSupportedScriptVersion)
 
-  private[sigmastate] val _currActivatedVersion = new DynamicVariable[Byte](0)
+  private[sigmastate] val _currActivatedVersion = new DynamicVariable[Byte](2) // v5.x by default
 
   /** Current activated version used in tests. */
   def activatedVersionInTests: Byte = _currActivatedVersion.value
-
-  /** Checks if the current activated script version used in tests corresponds to v4.x. */
-  def isActivatedVersion4: Boolean = activatedVersionInTests < VersionContext.JitActivationVersion
 
   val ergoTreeVersions: Seq[Byte] =
     (0 to VersionContext.MaxSupportedScriptVersion).map(_.toByte).toArray[Byte]
