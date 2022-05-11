@@ -20,6 +20,7 @@ import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate.utxo.SizeOf
 import sigmastate.utils.Helpers._
 
+import scala.annotation.tailrec
 import scala.collection.mutable
 
 class DeserializationResilience extends SerializationSpecification
@@ -45,10 +46,11 @@ class DeserializationResilience extends SerializationSpecification
   private def writer(maxTreeDepth: Int): SigmaByteWriter = {
     val b = new ByteArrayBuilder()
     val writer = new VLQByteBufferWriter(b)
-    val r = new SigmaByteWriter(writer, Some(new ConstantStore()), maxTreeDepth)
+    val r = new SigmaByteWriter(writer, None, maxTreeDepth)
     r
   }
 
+  @tailrec
   private def nestedTuple(i: Int, expr: Values.Value[SType]): Values.Value[SType] = 
     if (i == 0) expr
     else nestedTuple(i - 1, Tuple(expr))
@@ -253,7 +255,7 @@ class DeserializationResilience extends SerializationSpecification
   property("max recursive call depth is checked in writer.level for DataSerializer calls") {
     val expr = IntConstant(1)
     an[SerializeCallDepthExceeded] should be thrownBy
-      ValueSerializer.serialize(expr, writer(maxTreeDepth = 0))
+      ValueSerializer.serialize(expr, writer(maxTreeDepth = 2))
   }
 
   property("reader.level is updated in SigmaBoolean.serializer.parse") {
@@ -272,7 +274,7 @@ class DeserializationResilience extends SerializationSpecification
   property("max recursive call depth is checked in writer.level for SigmaBoolean.serializer calls") {
     val expr = CAND(Seq(proveDlogGen.sample.get, proveDHTGen.sample.get))
     an[SerializeCallDepthExceeded] should be thrownBy
-      ValueSerializer.serialize(expr, writer(maxTreeDepth = 0))
+      ValueSerializer.serialize(expr, writer(maxTreeDepth = 3))
   }
 
   property("reader.level is updated in TypeSerializer") {

@@ -155,7 +155,7 @@ class SigmaByteWriter(
   @inline def level: Int = lvl
   @inline def level_=(v: Int): Unit = {
     if (v > maxTreeDepth)
-      throw new SerializeCallDepthExceeded(s"nested value deserialization call depth($v) exceeds allowed maximum $maxTreeDepth")
+      throw new SerializeCallDepthExceeded(s"nested value serialization call depth($v) exceeds allowed maximum $maxTreeDepth")
     lvl = v
   }
 }
