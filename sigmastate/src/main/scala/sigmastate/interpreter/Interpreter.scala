@@ -578,48 +578,6 @@ object Interpreter {
     */
   val verifySignatureProfiler = new Profiler
 
-  /** Executes the given `calcF` graph in the given context.
-    * @param IR      container of the graph (see [[IRContext]])
-    * @param context script execution context (built from [[org.ergoplatform.ErgoLikeContext]])
-    * @param calcF   graph which represents a reduction function from Context to SigmaProp.
-    * @return a reduction result
-    */
-  def calcResult(IR: IRContext)
-                (context: special.sigma.Context,
-                 calcF: IR.Ref[IR.Context => Any]): special.sigma.SigmaProp = {
-    import IR._
-    import IR.Context._
-    import IR.SigmaProp._
-    import IR.Liftables._
-    val res = calcF.elem.eRange.asInstanceOf[Any] match {
-      case _: SigmaPropElem[_] =>
-        val valueFun = compile[IR.Context.SContext, IR.SigmaProp.SSigmaProp, IR.Context, IR.SigmaProp](
-          getDataEnv,
-          IR.asRep[IR.Context => IR.SigmaProp](calcF))(LiftableContext, LiftableSigmaProp)
-        val (sp, _) = valueFun(context)
-        sp
-      case BooleanElement =>
-        val valueFun = compile[SContext, Boolean, IR.Context, Boolean](
-          IR.getDataEnv,
-          asRep[IR.Context => Boolean](calcF))(LiftableContext, BooleanIsLiftable)
-        val (b, _) = valueFun(context)
-        sigmaDslBuilderValue.sigmaProp(b)
-    }
-    res
-  }
-
-  /** Special helper function which converts the given expression to expression returning
-    * boolean or throws an exception if the conversion is not defined. */
-  def toValidScriptType(exp: SValue): BoolValue = exp match {
-    case v: Value[SBoolean.type]@unchecked if v.tpe == SBoolean => v
-    case p: SValue if p.tpe == SSigmaProp => p.asSigmaProp.isProven
-    case x =>
-      // This case is not possible, due to exp is always of Boolean/SigmaProp type.
-      // In case it will ever change, leave it here to throw an explaining message.
-      throw new Error(s"Context-dependent pre-processing should produce tree of type Boolean or SigmaProp but was $x")
-  }
-
-  // TODO after HF: merge with old version (`toValidScriptType`)
   private def toValidScriptTypeJITC(exp: SValue): SigmaPropValue = exp match {
     case v: Value[SBoolean.type]@unchecked if v.tpe == SBoolean => v.toSigmaProp
     case p: SValue if p.tpe == SSigmaProp => p.asSigmaProp
