@@ -1,7 +1,6 @@
 package sigmastate.interpreter
 
 import java.util
-
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, rule, strategy}
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
 import org.ergoplatform.ErgoLikeContext
@@ -17,8 +16,8 @@ import sigmastate.interpreter.Interpreter._
 import sigmastate.lang.exceptions.InterpreterException
 import sigmastate.serialization.{SigmaSerializer, ValueSerializer}
 import sigmastate.utxo.DeserializeContext
-import sigmastate.{SType, _}
-import sigmastate.eval.{Evaluation, IRContext, Profiler}
+import sigmastate.{SType, eval, _}
+import sigmastate.eval.{Evaluation, IRContext, Profiler, SigmaDsl}
 import scalan.util.BenchmarkUtil
 import sigmastate.FiatShamirTree._
 import sigmastate.SigSerializer._
@@ -55,15 +54,6 @@ trait Interpreter extends ScorexLogging {
   type CTX <: InterpreterContext
 
   type ProofT = UncheckedTree
-
-  protected val IR: IRContext
-  import IR._
-
-  /** Processor instance which is used by this interpreter to execute ErgoTrees that
-    * contain neither [[DeserializeContext]] nor [[sigmastate.utxo.DeserializeRegister]]
-    * operations.
-    */
-  protected def precompiledScriptProcessor: PrecompiledScriptProcessor
 
   /** Evaluation settings used by [[ErgoTreeEvaluator]] which is used by this
     * interpreter to perform fullReduction.
@@ -132,18 +122,6 @@ trait Interpreter extends ScorexLogging {
     prop
   }
 
-  /** Substitute Deserialize* nodes with deserialized subtrees
-    * We can estimate cost of the tree evaluation only after this step.*/
-  private def applyDeserializeContext(context: CTX, exp: Value[SType]): (BoolValue, CTX) = {
-    val currContext = new MutableCell(context)
-    val substRule = strategy[Any] { case x: SValue =>
-      substDeserialize(currContext.value, { ctx: CTX => currContext.value = ctx }, x)
-    }
-    val Some(substTree: SValue) = everywherebu(substRule)(exp)
-    val res = Interpreter.toValidScriptType(substTree)
-    (res, currContext.value)
-  }
-
   /** Same as applyDeserializeContext, but returns SigmaPropValue instead of BoolValue.
     * This is necessary because new interpreter, while ultimately produces the same
     * results as the old interpreter, it is implemented differently internally.
@@ -156,44 +134,6 @@ trait Interpreter extends ScorexLogging {
     val Some(substTree: SValue) = everywherebu(substRule)(exp)
     val res = toValidScriptTypeJITC(substTree)
     (res, currContext.value)
-  }
-
-  /** This method is used in both prover and verifier to compute SigmaBoolean value.
-    * As the first step the cost of computing the `exp` expression in the given context is estimated.
-    * If cost is above limit then exception is returned and `exp` is not executed
-    * else `exp` is computed in the given context and the resulting SigmaBoolean returned.
-    *
-    * @param context the context in which `exp` should be executed
-    * @param env     environment of variables used by the interpreter internally.
-    *                Note, this is not system environment variables.
-    * @param exp     expression to be executed in the given `context`
-    * @return result of script reduction
-    * @see `ReductionResult`
-    */
-  protected def reduceToCrypto(context: CTX, env: ScriptEnv, exp: Value[SType]): Try[AotReductionResult] = Try {
-    import IR._
-    implicit val vs = context.validationSettings
-    val maxCost = context.costLimit
-    val initCost = context.initCost
-    trySoftForkable[AotReductionResult](whenSoftFork = WhenSoftForkReductionResult(initCost)) {
-      val costingRes = doCostingEx(env, exp, true)
-      val costF = costingRes.costF
-      IR.onCostingResult(env, exp, costingRes)
-
-      CheckCostFunc(IR)(asRep[Any => Int](costF))
-
-      val costingCtx = context.toSigmaContext(isCost = true)
-      val estimatedCost = IR.checkCostWithContext(costingCtx, costF, maxCost, initCost).getOrThrow
-
-      IR.onEstimatedCost(env, exp, costingRes, costingCtx, estimatedCost)
-
-      // check calc
-      val calcF = costingRes.calcF
-      CheckCalcFunc(IR)(calcF)
-      val calcCtx = context.toSigmaContext(isCost = false)
-      val res = Interpreter.calcResult(IR)(calcCtx, calcF)
-      AotReductionResult(SigmaDsl.toSigmaBoolean(res), estimatedCost)
-    }
   }
 
   /** This method uses the new JIT costing with direct ErgoTree execution. It is used in
@@ -257,13 +197,13 @@ trait Interpreter extends ScorexLogging {
           val evalCost = Eval_SigmaPropConstant.costKind.cost.toBlockCost
           val resCost = Evaluation.addCostChecked(context.initCost, evalCost, context.costLimit)
           val jitRes = JitReductionResult(sb, resCost)
-          FullReductionResult(null, jitRes)
+          FullReductionResult(jitRes)
         case _ if !ergoTree.hasDeserialize =>
           val ctx = context.asInstanceOf[ErgoLikeContext]
           val jitRes = VersionContext.withVersions(ctx.activatedScriptVersion, ergoTree.version) {
             ErgoTreeEvaluator.evalToCrypto(ctx, ergoTree, evalSettings)
           }
-          FullReductionResult(null, jitRes)
+          FullReductionResult(jitRes)
         case _ =>
           reductionWithDeserialize(ergoTree, prop, context, env)
       }
@@ -295,7 +235,7 @@ trait Interpreter extends ScorexLogging {
       reduceToCryptoJITC(context2, env, propTree).getOrThrow
     }
 
-    FullReductionResult(null, jitRes)
+    FullReductionResult(jitRes)
   }
 
   /** Adds the cost to verify sigma protocol proposition.
@@ -312,23 +252,6 @@ trait Interpreter extends ScorexLogging {
     // Note, jitRes.cost is already scaled in fullReduction
     val fullJitCost = addCostChecked(jitRes.cost, cryptoCost, costLimit)
     fullJitCost
-  }
-
-  /** Returns evaluation mode used by this interpreter in the given context.
-    * By default evaluation mode is determined based on `context.activatedScriptVersion`
-    * so that the interpreter works either as v4.x of v5.0.
-    *
-    * Alternatively, the required evaluation mode can be specified by giving Some(mode)
-    * value in `evalSettings.evaluationMode`, in which case the interpreter works as
-    * specified.
-    */
-  protected def getEvaluationMode(context: CTX): EvaluationMode = {
-    evalSettings.evaluationMode.getOrElse {
-      if (context.activatedScriptVersion < VersionContext.JitActivationVersion)
-        AotEvaluationMode
-      else
-        JitEvaluationMode
-    }
   }
 
   /** Checks the possible soft-fork condition.
@@ -567,12 +490,11 @@ object Interpreter {
 
   /** Result of fullReduction to sigma tree with costing. */
   case class FullReductionResult(
-    private[sigmastate] val aotRes: AotReductionResult,
     private[sigmastate] val jitRes: JitReductionResult
   ) extends ReductionResult {
-    require(aotRes != null ^ jitRes != null, s"Either AOT or JIT result must be defined, but not both: $this")
-    override def value: SigmaBoolean = if (aotRes != null) aotRes.value else jitRes.value
-    override def cost: Long = if (aotRes != null) aotRes.cost else jitRes.cost
+    require(jitRes != null, s"JIT result must be defined: $this")
+    override def value: SigmaBoolean = jitRes.value
+    override def cost: Long = jitRes.cost
   }
 
   /** Represents properties of interpreter invocation. */

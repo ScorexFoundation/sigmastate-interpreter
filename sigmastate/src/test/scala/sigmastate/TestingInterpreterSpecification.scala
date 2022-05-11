@@ -29,11 +29,9 @@ class TestingInterpreterSpecification extends SigmaTestingCommons
   }
 
   lazy val prover = new ErgoLikeTestProvingInterpreter() {
-    override val precompiledScriptProcessor = processor
   }
 
   lazy val verifier = new ErgoLikeTestInterpreter {
-    override val precompiledScriptProcessor = processor
   }
 
   implicit val soundness = CryptoConstants.soundnessBits
