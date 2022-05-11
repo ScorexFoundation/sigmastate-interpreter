@@ -12,8 +12,6 @@ import sigmastate._
 import sigmastate.basics.DLogProtocol._
 import sigmastate.basics.VerifierMessage.Challenge
 import sigmastate.basics._
-import sigmastate.eval.Evaluation.addCostChecked
-import sigmastate.interpreter.EvalSettings._
 import sigmastate.lang.exceptions.InterpreterException
 import sigmastate.utils.Helpers
 
@@ -26,8 +24,8 @@ import scala.util.Try
   */
 trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCore {
 
-  import Interpreter._
   import CryptoConstants.secureRandomBytes
+  import Interpreter._
 
   override type ProofT = UncheckedTree
 

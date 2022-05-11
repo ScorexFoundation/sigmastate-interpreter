@@ -10,13 +10,11 @@ import sigmastate.lang.Terms._
 import org.ergoplatform._
 import org.scalatest.BeforeAndAfterAll
 import scorex.util.encode.Base58
-import sigmastate.eval.IRContext
 import sigmastate.helpers.{ErgoLikeContextTesting, ErgoLikeTestProvingInterpreter, SigmaTestingCommons, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utils.Helpers._
 
-import scala.collection.mutable
 import scala.util.Random
 
 class TestingInterpreterSpecification extends SigmaTestingCommons

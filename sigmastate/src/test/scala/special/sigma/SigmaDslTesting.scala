@@ -39,7 +39,6 @@ import special.collection.{Coll, CollType}
 import spire.syntax.all.cfor
 
 import scala.collection.mutable
-import scala.math.Ordering
 import scala.reflect.ClassTag
 import scala.util.{Failure, Success, Try}
 
