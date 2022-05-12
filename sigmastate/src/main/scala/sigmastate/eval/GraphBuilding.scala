@@ -395,29 +395,25 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
         val pV = asRep[SigmaProp](eval(p))
         pV.propBytes
 
-//      case utxo.ExtractId(In(box)) =>
-//        val boxC = asRep[Costed[Box]](box)
-//        val id = boxC.value.id
-//        HashInfo.mkCostedColl(id, opCost(id, Array(boxC.cost), costOf(node)))
-//      case utxo.ExtractBytesWithNoRef(In(box)) =>
-//        val boxC = asRep[Costed[Box]](box)
-//        val v = boxC.value.bytesWithoutRef
-//        BoxBytesWithoutRefsInfo.mkCostedColl(v, opCost(v, Array(boxC.cost), costOf(node)))
+      case utxo.ExtractId(In(box: Ref[Box]@unchecked)) =>
+        box.id
+
+      case utxo.ExtractBytesWithNoRef(In(box: Ref[Box]@unchecked)) =>
+        box.bytesWithoutRef
 
       case utxo.ExtractAmount(In(box)) =>
         val boxV = asRep[Box](box)
         boxV.value
 
-//      case utxo.ExtractScriptBytes(In(box)) =>
-//        val boxC = asRep[Costed[Box]](box)
-//        val bytes = boxC.value.propositionBytes
-//        BoxPropositionBytesInfo.mkCostedColl(bytes, opCost(bytes, Array(boxC.cost), costOf(node)))
-//      case utxo.ExtractBytes(In(box)) =>
-//        val boxC = asRep[Costed[Box]](box)
-//        val bytes = boxC.value.bytes
-//        BoxBytesInfo.mkCostedColl(bytes, opCost(bytes, Array(boxC.cost), costOf(node)))
-//      case utxo.ExtractCreationInfo(In(box)) =>
-//        BoxCoster(box, SBox.creationInfoMethod, Nil)
+      case utxo.ExtractScriptBytes(In(box: Ref[Box]@unchecked)) =>
+        box.propositionBytes
+
+      case utxo.ExtractBytes(In(box: Ref[Box]@unchecked)) =>
+        box.bytes
+
+      case utxo.ExtractCreationInfo(In(box: Ref[Box]@unchecked)) =>
+        box.creationInfo
+
       case utxo.ExtractRegisterAs(In(box: Ref[Box]@unchecked), regId, optTpe) =>
         val elem = stypeToElem(optTpe.elemType).asInstanceOf[Elem[Any]]
         val i: Ref[Int] = regId.number.toInt
