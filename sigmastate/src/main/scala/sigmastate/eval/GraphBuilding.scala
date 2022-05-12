@@ -537,41 +537,20 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
         val x = buildNode(ctx, env, neg.input)
         ApplyUnOp(op, x)
 
-//      case SigmaAnd(items) =>
-//        val len = items.length
-//        val values = new Array[Ref[SigmaProp]](len)
-//        val costs = new Array[Ref[Int]](len)
-//        cfor(0)(_ < len, _ + 1) { i =>
-//          val item = items(i)
-//          val itemC = eval(item)
-//          values(i) = asRep[SigmaProp](itemC.value)
-//          costs(i) = itemC.cost
-//        }
-//        val res = sigmaDslBuilder.allZK(colBuilder.fromItems(values: _*))
-//        val cost = opCost(res, costs, perItemCostOf(node, costs.length))
-//        RCCostedPrim(res, cost, SizeSigmaProposition)
-//
-//      case SigmaOr(items) =>
-//        val len = items.length
-//        val values = new Array[Ref[SigmaProp]](len)
-//        val costs = new Array[Ref[Int]](len)
-//        cfor(0)(_ < len, _ + 1) { i =>
-//          val item = items(i)
-//          val itemC = eval(item)
-//          values(i) = asRep[SigmaProp](itemC.value)
-//          costs(i) = itemC.cost
-//        }
-//        val res = sigmaDslBuilder.anyZK(colBuilder.fromItems(values: _*))
-//        val cost = opCost(res, costs, perItemCostOf(node, costs.length))
-//        RCCostedPrim(res, cost, SizeSigmaProposition)
-//
-//      case If(c, t, e) =>
-//        val cC = evalNode(ctx, env, c)
-//        def tC = evalNode(ctx, env, t)
-//        def eC = evalNode(ctx, env, e)
-//        val resV = IF (cC.value) THEN tC.value ELSE eC.value
-//        val resCost = opCost(resV, Array(cC.cost, tC.cost, eC.cost), costOf("If", If.GenericOpType))
-//        RCCostedPrim(resV, resCost, tC.size) // TODO costing: implement tC.size max eC.size
+      case SigmaAnd(items) =>
+        val itemsV = items.map(item => asRep[SigmaProp](eval(item)))
+        sigmaDslBuilder.allZK(colBuilder.fromItems(itemsV: _*))
+
+      case SigmaOr(items) =>
+        val itemsV = items.map(item => asRep[SigmaProp](eval(item)))
+        sigmaDslBuilder.anyZK(colBuilder.fromItems(itemsV: _*))
+        
+      case If(c, t, e) =>
+        val cV = eval(c)
+        def tV = eval(t)
+        def eV = eval(e)
+        val resV = IF (cV) THEN tV ELSE eV
+        resV
 
       case rel: Relation[t, _] =>
         val tpe = rel.left.tpe
