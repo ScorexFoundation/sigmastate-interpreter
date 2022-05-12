@@ -487,19 +487,17 @@ trait GraphBuilding extends SigmaLibrary { this: IRContext =>
 //        val value = sigmaDslBuilder.sigmaProp(boolC.value)
 //        val cost = opCost(value, Array(boolC.cost), costOf(node))
 //        RCCostedPrim(value, cost, SizeSigmaProposition)
-//
-//      case AtLeast(bound, input) =>
-//        val inputC = asRep[CostedColl[SigmaProp]](evalNode(ctx, env, input))
-//        if (inputC.values.length.isConst) {
-//          val inputCount = valueFromRep(inputC.values.length)
-//          if (inputCount > AtLeast.MaxChildrenCount)
-//            error(s"Expected input elements count should not exceed ${AtLeast.MaxChildrenCount}, actual: $inputCount", node.sourceContext.toOption)
-//        }
-//        val boundC = eval(bound)
-//        val res = sigmaDslBuilder.atLeast(boundC.value, inputC.values)
-//        val cost = opCost(res, Array(boundC.cost, inputC.cost), costOf(node))
-//        RCCostedPrim(res, cost, SizeSigmaProposition)
-//
+
+     case AtLeast(bound, input) =>
+       val evalInput = asRep[Coll[SigmaProp]](buildNode(ctx, env, input))
+       if (evalInput.length.isConst) {
+         val inputCount = valueFromRep(evalInput.length)
+         if (inputCount > AtLeast.MaxChildrenCount)
+           error(s"Expected input elements count should not exceed ${AtLeast.MaxChildrenCount}, actual: $inputCount", node.sourceContext.toOption)
+       }
+       val evalBound = eval(bound)
+       sigmaDslBuilder.atLeast(evalBound, evalInput)
+
 //      case op: ArithOp[t] if op.tpe == SBigInt =>
 //        import OpCodes._
 //        val xC = asRep[Costed[BigInt]](eval(op.left))
