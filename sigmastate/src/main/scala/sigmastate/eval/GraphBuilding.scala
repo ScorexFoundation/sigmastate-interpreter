@@ -271,13 +271,11 @@ trait GraphBuilding extends SigmaLibrary { this: IRContext =>
 //        val size = arrC.size.dataSize
 //        val cost = opCost(value, Array(arrC.cost), costOf(node) + costOf("new_BigInteger_per_item", node.opType) * size.toInt)
 //        RCCostedPrim(value, cost, SizeBigInt)
-//
-//      case sigmastate.LongToByteArray(In(_x)) =>
-//        val xC = asRep[Costed[Long]](_x)
-//        val col = sigmaDslBuilder.longToByteArray(xC.value) // below we assume col.length == typeSize[Long]
-//        val cost = opCost(col, Array(xC.cost), costOf(node))
-//        LongBytesInfo.mkCostedColl(col, cost)
-//
+
+    case sigmastate.LongToByteArray(In(_x)) =>
+      val xLong = asRep[Long](_x)
+      sigmaDslBuilder.longToByteArray(xLong)
+
 //      // opt.get =>
 //      case utxo.OptionGet(In(_opt)) =>
 //        OptionCoster(_opt, SOption.GetMethod, Nil)
@@ -598,29 +596,20 @@ trait GraphBuilding extends SigmaLibrary { this: IRContext =>
        case _ => eval(input)
      }
 
-//      case XorOf(input) => input match {
-//        case ConcreteCollection(items, _) =>
-//          val len = items.length
-//          val values = new Array[Ref[Boolean]](len)
-//          val costs = new Array[Ref[Int]](len)
-//          cfor(0)(_ < len, _ + 1) { i =>
-//            val item = items(i)
-//            val itemC = eval(adaptSigmaBoolean(item))
-//            values(i) = itemC.value
-//            costs(i) = itemC.cost
-//          }
-//          val res = sigmaDslBuilder.xorOf(colBuilder.fromItems(values: _*))
-//          val nOps = costs.length - 1
-//          val cost = opCost(res, costs, perItemCostOf(node, nOps))
-//          withConstantSize(res, cost)
-//        case _ =>
-//          val inputC = tryCast[CostedColl[Boolean]](eval(input))
-//          val res = sigmaDslBuilder.xorOf(inputC.value)
-//          val nOps = inputC.sizes.length - 1
-//          val cost = opCost(res, Array(inputC.cost), perItemCostOf(node, nOps))
-//          withConstantSize(res, cost)
-//      }
-//
+    case XorOf(input) => input match {
+      case ConcreteCollection(items, _) =>
+        val len = items.length
+        val values = new Array[Ref[Boolean]](len)
+        cfor(0)(_ < len, _ + 1) { i =>
+          val item = items(i)
+          values(i) = eval(adaptSigmaBoolean(item))
+        }
+        sigmaDslBuilder.xorOf(colBuilder.fromItems(values: _*))
+      case _ =>
+        val evalInput = asRep[Coll[Boolean]](eval(input))
+        sigmaDslBuilder.xorOf(evalInput)
+    }
+
 //      case BinOr(l, r) =>
 //        val lC = evalNode(ctx, env, l)
 //        val rC = RCostedThunk(Thunk(evalNode(ctx, env, r)), IntZero)
@@ -728,13 +717,11 @@ trait GraphBuilding extends SigmaLibrary { this: IRContext =>
 //        val elem = stypeToElem(tpe.asNumType)
 //        val res = downcast(inputC.value)(elem)
 //        withConstantSize(res, opCost(res, Array(inputC.cost), costOf(node)))
-//
-//      case ByteArrayToLong(In(arr)) =>
-//        val arrC = asRep[Costed[Coll[Byte]]](arr)
-//        val value = sigmaDslBuilder.byteArrayToLong(arrC.value)
-//        val cost = opCost(value, Array(arrC.cost), costOf(node))
-//        RCCostedPrim(value, cost, SizeLong)
-//
+
+    case ByteArrayToLong(In(arr)) =>
+      val coll = asRep[Coll[Byte]](arr)
+      sigmaDslBuilder.byteArrayToLong(coll)
+
 //      case Xor(InCollByte(l), InCollByte(r)) =>
 //        val values = colBuilder.xor(l.value, r.value)
 //        val sizes = r.sizes
