@@ -246,14 +246,12 @@ trait GraphBuilding extends SigmaLibrary { this: IRContext =>
 //        val resV: Ref[SigmaProp] = sigmaDslBuilder.proveDHTuple(gvC.value, hvC.value, uvC.value, vvC.value)
 //        val cost = opCost(resV, Array(gvC.cost, hvC.cost, uvC.cost, vvC.cost), CostOfDHTuple)
 //        RCCostedPrim(resV, cost, SizeSigmaProposition)
-//
-//      case sigmastate.Exponentiate(In(_l), In(_r)) =>
-//        val l = asRep[Costed[GroupElement]](_l)
-//        val r = asRep[Costed[BigInt]](_r)
-//        val value = l.value.exp(r.value)
-//        val cost = opCost(value, Array(l.cost, r.cost), costOf(node))
-//        RCCostedPrim(value, cost, SizeGroupElement)
-//
+
+    case sigmastate.Exponentiate(In(_l), In(_r)) =>
+      val l = asRep[GroupElement](_l)
+      val r = asRep[BigInt](_r)
+      l.exp(r)
+
 //      case sigmastate.MultiplyGroup(In(_l), In(_r)) =>
 //        val l = asRep[Costed[GroupElement]](_l)
 //        val r = asRep[Costed[GroupElement]](_r)
@@ -263,14 +261,10 @@ trait GraphBuilding extends SigmaLibrary { this: IRContext =>
 //
 //      case Values.GroupGenerator =>
 //        SigmaDslBuilderCoster(costedGlobal, SGlobal.groupGeneratorMethod, Nil)
-//
-//      case sigmastate.ByteArrayToBigInt(In(_arr)) =>
-//        val arrC = asRep[Costed[Coll[Byte]]](_arr)
-//        val arr = arrC.value
-//        val value = sigmaDslBuilder.byteArrayToBigInt(arr)
-//        val size = arrC.size.dataSize
-//        val cost = opCost(value, Array(arrC.cost), costOf(node) + costOf("new_BigInteger_per_item", node.opType) * size.toInt)
-//        RCCostedPrim(value, cost, SizeBigInt)
+
+    case sigmastate.ByteArrayToBigInt(In(_arr)) =>
+      val coll = asRep[Coll[Byte]](_arr)
+      sigmaDslBuilder.byteArrayToBigInt(coll)
 
     case sigmastate.LongToByteArray(In(_x)) =>
       val xLong = asRep[Long](_x)
@@ -311,13 +305,10 @@ trait GraphBuilding extends SigmaLibrary { this: IRContext =>
 //          //            val s: RSize[Any] = ???
 //          //            RCCostedPrim(v, c, s)
 //        }
-//
-//      case Values.Tuple(InSeq(Seq(x, y))) =>
-//        val v = Pair(x, y)
-//        val costs = Array(x.cost, y.cost, CostTable.newPairValueCost: Ref[Int])
-//        val c = mkNormalizedOpCost(v, costs)
-//        RCCostedPair(x, y, c)
-//
+
+    case Values.Tuple(InSeq(Seq(x, y))) =>
+      Pair(x, y)
+
 //      case node: BooleanTransformer[_] =>
 //        val tpeIn = node.input.tpe.elemType
 //        val eIn = stypeToElem(tpeIn)
@@ -735,11 +726,10 @@ trait GraphBuilding extends SigmaLibrary { this: IRContext =>
 //        val len = bytes.size.dataSize + newValues.size.dataSize
 //        val cost = opCost(values, Array(bytes.cost, positions.cost, newValues.cost), perKbCostOf(node, len))
 //        mkCostedColl(values, len.toInt, cost)
-//
-//      case DecodePoint(InCollByte(bytes)) =>
-//        val res = sigmaDslBuilder.decodePoint(bytes.values)
-//        RCCostedPrim(res, opCost(res, Array(bytes.cost), costOf(node)), SizeGroupElement)
-//
+
+    case DecodePoint(InCollByte(bytes)) =>
+      sigmaDslBuilder.decodePoint(bytes)
+
 //      // fallback rule for MethodCall, should be the last case in the list
 //      case Terms.MethodCall(obj, method, args, typeSubst) if method.objType.coster.isDefined =>
 //        val objC = eval(obj)
