@@ -35,40 +35,6 @@ trait GraphBuilding extends SigmaLibrary { this: IRContext =>
   import AvlTree._
   import WSpecialPredef._
 
-  private lazy val elemToExactOrderingMap = Map[Elem[_], ExactOrdering[_]](
-    (ByteElement,   ByteIsExactOrdering),
-    (ShortElement,  ShortIsExactOrdering),
-    (IntElement,    IntIsExactOrdering),
-    (LongElement,   LongIsExactOrdering),
-    (bigIntElement, NumericOps.BigIntIsExactOrdering)
-  )
-
-  // TODO v5.x - Remove *Graph suffix when RuntimeCosting is dropped.
-  def elemToExactOrderingGraph[T](e: Elem[T]): ExactOrdering[T] = elemToExactOrderingMap(e).asInstanceOf[ExactOrdering[T]]
-
-  // TODO v5.x - Remove *Graph suffix when RuntimeCosting is dropped.
-  def opcodeToEndoBinOpGraph[T](opCode: Byte, eT: Elem[T]): EndoBinOp[T] = opCode match {
-    case OpCodes.PlusCode => NumericPlus(elemToExactNumeric(eT))(eT)
-    case OpCodes.MinusCode => NumericMinus(elemToExactNumeric(eT))(eT)
-    case OpCodes.MultiplyCode => NumericTimes(elemToExactNumeric(eT))(eT)
-    case OpCodes.DivisionCode => IntegralDivide(elemToExactIntegral(eT))(eT)
-    case OpCodes.ModuloCode => IntegralMod(elemToExactIntegral(eT))(eT)
-    case OpCodes.MinCode => OrderingMin(elemToExactOrdering(eT))(eT)
-    case OpCodes.MaxCode => OrderingMax(elemToExactOrdering(eT))(eT)
-    case _ => error(s"Cannot find EndoBinOp for opcode $opCode")
-  }
-
-  // TODO v5.x - Remove *Graph suffix when RuntimeCosting is dropped.
-  def opcodeToBinOpGraph[A](opCode: Byte, eA: Elem[A]): BinOp[A,_] = opCode match {
-    case OpCodes.EqCode  => Equals[A]()(eA)
-    case OpCodes.NeqCode => NotEquals[A]()(eA)
-    case OpCodes.GtCode  => OrderingGT[A](elemToExactOrderingGraph(eA))
-    case OpCodes.LtCode  => OrderingLT[A](elemToExactOrderingGraph(eA))
-    case OpCodes.GeCode  => OrderingGTEQ[A](elemToExactOrderingGraph(eA))
-    case OpCodes.LeCode  => OrderingLTEQ[A](elemToExactOrderingGraph(eA))
-    case _ => error(s"Cannot find BinOp for opcode $opCode")
-  }
-
   def doBuild(env: ScriptEnv, typed: SValue, okRemoveIsProven: Boolean): Ref[Context => Any] = {
     val g = buildGraph[Any](env.map { case (k, v) => (k: Any, builder.liftAny(v).get) }, typed)
     g
@@ -508,7 +474,7 @@ trait GraphBuilding extends SigmaLibrary { this: IRContext =>
     case op: ArithOp[t] =>
       val tpe = op.left.tpe
       val et = stypeToElem(tpe)
-      val binop = opcodeToEndoBinOpGraph(op.opCode, et)
+      val binop = opcodeToEndoBinOp(op.opCode, et)
       val x = eval(op.left)
       val y = eval(op.right)
       ApplyBinOp(binop, x, y)
@@ -638,7 +604,7 @@ trait GraphBuilding extends SigmaLibrary { this: IRContext =>
     case rel: Relation[t, _] =>
       val tpe = rel.left.tpe
       val et = stypeToElem(tpe)
-      val binop = opcodeToBinOpGraph(rel.opCode, et)
+      val binop = opcodeToBinOp(rel.opCode, et)
       val x = eval(rel.left)
       val y = eval(rel.right)
       binop.apply(x, asRep[t#WrappedType](y))
@@ -679,11 +645,8 @@ trait GraphBuilding extends SigmaLibrary { this: IRContext =>
       case Xor(InCollByte(l), InCollByte(r)) =>
         colBuilder.xor(l, r)
 
-//      case SubstConstants(InCollByte(bytes), InCollInt(positions), InCollAny(newValues)) =>
-//        val values = sigmaDslBuilder.substConstants(bytes.values, positions.values, newValues.values)
-//        val len = bytes.size.dataSize + newValues.size.dataSize
-//        val cost = opCost(values, Array(bytes.cost, positions.cost, newValues.cost), perKbCostOf(node, len))
-//        mkCostedColl(values, len.toInt, cost)
+      case SubstConstants(InCollByte(bytes), InCollInt(positions), InCollAny(newValues)) =>
+        sigmaDslBuilder.substConstants(bytes, positions, newValues)
 
       case DecodePoint(InCollByte(bytes)) =>
         sigmaDslBuilder.decodePoint(bytes)
