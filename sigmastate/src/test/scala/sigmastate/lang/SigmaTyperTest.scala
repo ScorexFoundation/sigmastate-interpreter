@@ -104,7 +104,7 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     typecheck(env, "p1 && getVar[SigmaProp](10).get") shouldBe SSigmaProp
     typecheck(env, "getVar[SigmaProp](10).get || p2") shouldBe SSigmaProp
     typecheck(env, "getVar[SigmaProp](10).get && getVar[SigmaProp](11).get") shouldBe SSigmaProp
-    typecheck(env, "Coll(true, getVar[SigmaProp](11).get)") shouldBe SCollection(SBoolean)
+    typecheck(env, "Coll(sigmaProp(true), getVar[SigmaProp](11).get)") shouldBe SCollection(SSigmaProp)
     typecheck(env, "min(1, 2)") shouldBe SInt
     typecheck(env, "min(1L, 2)") shouldBe SLong
     typecheck(env, "min(HEIGHT, INPUTS.size)") shouldBe SInt

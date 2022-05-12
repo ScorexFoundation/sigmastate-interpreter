@@ -1043,7 +1043,6 @@ object Values {
 
   implicit class SigmaBooleanOps(val sb: SigmaBoolean) extends AnyVal {
     def toSigmaProp: SigmaPropValue = SigmaPropConstant(sb)
-    def isProven: Value[SBoolean.type] = SigmaPropIsProven(SigmaPropConstant(sb))
     def showToString: String = sb match {
       case ProveDlog(v) =>
         s"ProveDlog(${showECPoint(v)})"
