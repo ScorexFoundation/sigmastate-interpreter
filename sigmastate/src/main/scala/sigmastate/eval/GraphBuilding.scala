@@ -2,7 +2,8 @@ package sigmastate.eval
 
 import org.ergoplatform._
 import org.ergoplatform.validation.ValidationRules.{CheckIsSupportedIndexExpression, CheckTupleType}
-import scalan.{Lazy, MutableLazy, Nullable, SigmaLibrary}
+import scalan.{ExactOrdering, Lazy, MutableLazy, Nullable, SigmaLibrary}
+import scalan.ExactOrdering.{ShortIsExactOrdering, ByteIsExactOrdering, IntIsExactOrdering, LongIsExactOrdering}
 import sigmastate.Values.Value.Typed
 import sigmastate.{AND, ArithOp, AtLeast, BinAnd, BinOr, BinXor, BoolToSigmaProp, ByteArrayToLong, CalcBlake2b256, CalcSha256, CreateProveDHTuple, CreateProveDlog, DecodePoint, If, LogicalNot, ModQ, ModQArithOp, Negation, OR, Relation, SBigInt, SBox, SCollection, SCollectionType, SGlobal, SGroupElement, SInt, SNumericType, SOption, SSigmaProp, SType, SigmaAnd, SigmaOr, SubstConstants, Values, Xor, XorOf, utxo}
 import sigmastate.Values._
@@ -33,6 +34,28 @@ trait GraphBuilding extends SigmaLibrary { this: IRContext =>
   import MonoidBuilder._
   import AvlTree._
   import WSpecialPredef._
+
+  private lazy val elemToExactOrderingMap = Map[Elem[_], ExactOrdering[_]](
+    (ByteElement,   ByteIsExactOrdering),
+    (ShortElement,  ShortIsExactOrdering),
+    (IntElement,    IntIsExactOrdering),
+    (LongElement,   LongIsExactOrdering),
+    (bigIntElement, NumericOps.BigIntIsExactOrdering)
+  )
+
+  // TODO v5.x - Remove *Graph suffix when RuntimeCosting is dropped.
+  def elemToExactOrderingGraph[T](e: Elem[T]): ExactOrdering[T] = elemToExactOrderingMap(e).asInstanceOf[ExactOrdering[T]]
+
+  // TODO v5.x - Remove *Graph suffix when RuntimeCosting is dropped.
+  def opcodeToBinOpGraph[A](opCode: Byte, eA: Elem[A]): BinOp[A,_] = opCode match {
+    case OpCodes.EqCode  => Equals[A]()(eA)
+    case OpCodes.NeqCode => NotEquals[A]()(eA)
+    case OpCodes.GtCode  => OrderingGT[A](elemToExactOrderingGraph(eA))
+    case OpCodes.LtCode  => OrderingLT[A](elemToExactOrderingGraph(eA))
+    case OpCodes.GeCode  => OrderingGTEQ[A](elemToExactOrderingGraph(eA))
+    case OpCodes.LeCode  => OrderingLTEQ[A](elemToExactOrderingGraph(eA))
+    case _ => error(s"Cannot find BinOp for opcode $opCode")
+  }
 
   def doBuild(env: ScriptEnv, typed: SValue, okRemoveIsProven: Boolean): Ref[Context => Any] = {
     val g = buildGraph[Any](env.map { case (k, v) => (k: Any, builder.liftAny(v).get) }, typed)
@@ -481,12 +504,9 @@ trait GraphBuilding extends SigmaLibrary { this: IRContext =>
 //        implicit val elem = stypeToElem(optTpe.elemType).asInstanceOf[Elem[Any]]
 //        val i: RCosted[Int] = RCCostedPrim(regId.number.toInt, IntZero, SizeInt)
 //        BoxCoster(box, SBox.getRegMethod, Array(i), Array(liftElem(elem)))
-//
-//      case BoolToSigmaProp(bool) =>
-//        val boolC = eval(bool)
-//        val value = sigmaDslBuilder.sigmaProp(boolC.value)
-//        val cost = opCost(value, Array(boolC.cost), costOf(node))
-//        RCCostedPrim(value, cost, SizeSigmaProposition)
+
+    case BoolToSigmaProp(bool) =>
+      sigmaDslBuilder.sigmaProp(eval(bool))
 
      case AtLeast(bound, input) =>
        val evalInput = asRep[Coll[SigmaProp]](buildNode(ctx, env, input))
@@ -664,28 +684,18 @@ trait GraphBuilding extends SigmaLibrary { this: IRContext =>
 //        val resV = IF (cC.value) THEN tC.value ELSE eC.value
 //        val resCost = opCost(resV, Array(cC.cost, tC.cost, eC.cost), costOf("If", If.GenericOpType))
 //        RCCostedPrim(resV, resCost, tC.size) // TODO costing: implement tC.size max eC.size
-//
-//      case rel: Relation[t, _] =>
-//        val tpe = rel.left.tpe
-//        val et = stypeToElem(tpe)
-//        val binop = opcodeToBinOp(rel.opCode, et)
-//        val x = eval(rel.left)
-//        val y = eval(rel.right)
-//        (x, y) match { case (x: RCosted[a], y: RCosted[b]) =>
-//          val value = binop.apply(x.value, asRep[t#WrappedType](y.value))
-//          val cost =
-//            if (tpe.isConstantSize) {
-//              val opcost = if (tpe == SBigInt) {
-//                costOf(rel.opName, SBigInt.RelationOpType)
-//              } else
-//                costOf(rel)
-//              opCost(value, Array(x.cost, y.cost), opcost)
-//            }
-//            else opCost(value, Array(x.cost, y.cost), perKbCostOf(node, x.size.dataSize + y.size.dataSize))
-//          val res = withConstantSize(value, cost)
-//          res
-//        }
-//
+
+     case rel: Relation[t, _] =>
+       val tpe = rel.left.tpe
+       val et = stypeToElem(tpe)
+       val binop = opcodeToBinOpGraph(rel.opCode, et)
+       val x = eval(rel.left)
+       val y = eval(rel.right)
+       // TODO v5.x - Any reason why not to use binop.apply(x, y)?
+       (x, y) match { case (x: Ref[a], y: Ref[b]) =>
+         binop.apply(x, asRep[t#WrappedType](y))
+       }
+
 //      case l @ Terms.Lambda(_, Seq((n, argTpe)), tpe, Some(body)) =>
 //        val eArg = stypeToElem(argTpe).asInstanceOf[Elem[Any]]
 //        val eCostedArg = elemToCostedElem(eArg)
