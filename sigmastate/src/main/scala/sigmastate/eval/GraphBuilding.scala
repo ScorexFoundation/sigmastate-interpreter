@@ -488,43 +488,41 @@ trait GraphBuilding extends SigmaLibrary { this: IRContext =>
       sigmaDslBuilder.sigmaProp(eval(bool))
 
     case AtLeast(bound, input) =>
-      val evalInput = asRep[Coll[SigmaProp]](buildNode(ctx, env, input))
-      if (evalInput.length.isConst) {
-        val inputCount = valueFromRep(evalInput.length)
+      val inputV = asRep[Coll[SigmaProp]](eval(input))
+      if (inputV.length.isConst) {
+        val inputCount = valueFromRep(inputV.length)
         if (inputCount > AtLeast.MaxChildrenCount)
           error(s"Expected input elements count should not exceed ${AtLeast.MaxChildrenCount}, actual: $inputCount", node.sourceContext.toOption)
       }
-      val evalBound = eval(bound)
-      sigmaDslBuilder.atLeast(evalBound, evalInput)
+      val boundV = eval(bound)
+      sigmaDslBuilder.atLeast(boundV, inputV)
 
     case op: ArithOp[t] if op.tpe == SBigInt =>
       import OpCodes._
-      val leftEval = asRep[BigInt](eval(op.left))
-      val rightEval = asRep[BigInt](eval(op.right))
+      val xV = asRep[BigInt](eval(op.left))
+      val yV = asRep[BigInt](eval(op.right))
       op.opCode match {
-        case PlusCode     => leftEval.add(rightEval)
-        case MinusCode    => leftEval.subtract(rightEval)
-        case MultiplyCode => leftEval.multiply(rightEval)
-        case DivisionCode => leftEval.divide(rightEval)
-        case ModuloCode   => leftEval.mod(rightEval)
-        case MinCode      => leftEval.min(rightEval)
-        case MaxCode      => leftEval.max(rightEval)
-        case code         => error(s"Cannot perform ArithOp for BigInt ($op): unknown opCode ${code}", op.sourceContext.toOption)
+        case PlusCode     => xV.add(yV)
+        case MinusCode    => xV.subtract(yV)
+        case MultiplyCode => xV.multiply(yV)
+        case DivisionCode => xV.divide(yV)
+        case ModuloCode   => xV.mod(yV)
+        case MinCode      => xV.min(yV)
+        case MaxCode      => xV.max(yV)
+        case code         => error(s"Cannot perform buildNode($op): unknown opCode ${code}", op.sourceContext.toOption)
       }
 
     case op: ArithOp[t] =>
       val tpe = op.left.tpe
       val et = stypeToElem(tpe)
       val binop = opcodeToEndoBinOpGraph(op.opCode, et)
-      val x = buildNode(ctx, env, op.left)
-      val y = buildNode(ctx, env, op.right)
-      (x, y) match { case (x: Ref[a], y: Ref[b]) =>
-        ApplyBinOp(binop, x, y)
-      }
+      val x = eval(op.left)
+      val y = eval(op.right)
+      ApplyBinOp(binop, x, y)
 
     case LogicalNot(input) =>
-      val evalInput = buildNode(ctx, env, input)
-      ApplyUnOp(Not, evalInput)
+      val inputV = eval(input)
+      ApplyUnOp(Not, inputV)
 
 //      case ModQ(input) =>
 //        val inputC = asRep[Costed[BigInt]](eval(input))
@@ -547,10 +545,12 @@ trait GraphBuilding extends SigmaLibrary { this: IRContext =>
         val values = new Array[Ref[Boolean]](len)
         cfor(0)(_ < len, _ + 1) { i =>
           val item = items(i)
-          values(i) = eval(adaptSigmaBoolean(item))
+          values(i) = eval(item)
         }
         sigmaDslBuilder.anyOf(colBuilder.fromItems(values: _*))
-      case _ => eval(input)
+      case _ =>
+        val inputV = asRep[Coll[Boolean]](eval(input))
+        sigmaDslBuilder.anyOf(inputV)
     }
 
     case AND(input) => input match {
@@ -559,10 +559,12 @@ trait GraphBuilding extends SigmaLibrary { this: IRContext =>
         val values = new Array[Ref[Boolean]](len)
         cfor(0)(_ < len, _ + 1) { i =>
           val item = items(i)
-          values(i) = eval(adaptSigmaBoolean(item))
+          values(i) = eval(item)
         }
         sigmaDslBuilder.allOf(colBuilder.fromItems(values: _*))
-      case _ => eval(input)
+      case _ =>
+        val inputV = asRep[Coll[Boolean]](eval(input))
+        sigmaDslBuilder.allOf(inputV)
     }
 
     case XorOf(input) => input match {
@@ -571,12 +573,12 @@ trait GraphBuilding extends SigmaLibrary { this: IRContext =>
         val values = new Array[Ref[Boolean]](len)
         cfor(0)(_ < len, _ + 1) { i =>
           val item = items(i)
-          values(i) = eval(adaptSigmaBoolean(item))
+          values(i) = eval(item)
         }
         sigmaDslBuilder.xorOf(colBuilder.fromItems(values: _*))
       case _ =>
-        val evalInput = asRep[Coll[Boolean]](eval(input))
-        sigmaDslBuilder.xorOf(evalInput)
+        val inputV = asRep[Coll[Boolean]](eval(input))
+        sigmaDslBuilder.xorOf(inputV)
     }
 
 //      case BinOr(l, r) =>
@@ -594,16 +596,15 @@ trait GraphBuilding extends SigmaLibrary { this: IRContext =>
 //        withConstantSize(v, c)
 
     case BinXor(l, r) =>
-      val evalLeft = buildNode(ctx, env, l)
-      val evalRight = buildNode(ctx, env, r)
-      BinaryXorOp.apply(evalLeft, evalRight)
+      val lV = buildNode(ctx, env, l)
+      val rV = buildNode(ctx, env, r)
+      BinaryXorOp.apply(lV, rV)
 
      case neg: Negation[SNumericType]@unchecked =>
        val et = stypeToElem(neg.input.tpe)
        val op = NumericNegate(elemToExactNumeric(et))(et)
-       val evalInput = buildNode(ctx, env, neg.input)
-       // TODO v5.x - any reason for not using ApplyUnOp(op, evalInput)?
-       evalInput match { case x: Ref[a] => ApplyUnOp(op, x) }
+       val x = buildNode(ctx, env, neg.input)
+       ApplyUnOp(op, x)
 
 //      case SigmaAnd(items) =>
 //        val len = items.length
@@ -647,10 +648,7 @@ trait GraphBuilding extends SigmaLibrary { this: IRContext =>
       val binop = opcodeToBinOpGraph(rel.opCode, et)
       val x = eval(rel.left)
       val y = eval(rel.right)
-      // TODO v5.x - Any reason why not to use binop.apply(x, y)?
-      (x, y) match { case (x: Ref[a], y: Ref[b]) =>
-        binop.apply(x, asRep[t#WrappedType](y))
-      }
+      binop.apply(x, asRep[t#WrappedType](y))
 
     case l @ Terms.Lambda(_, Seq((n, argTpe)), tpe, Some(body)) =>
       val eArg = stypeToElem(argTpe).asInstanceOf[Elem[Any]]
