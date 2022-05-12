@@ -4,6 +4,7 @@ import scala.language.implicitConversions
 import scala.language.existentials
 import scalan.{ExactIntegral, ExactOrdering, Nullable, MutableLazy, Lazy, ExactNumeric, RType}
 import scalan.util.CollectionUtil.TraversableOps
+import scalan.util.Extensions.ByteOps
 import org.ergoplatform._
 import sigmastate._
 import sigmastate.Values._
@@ -923,7 +924,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
     case OpCodes.LtCode  => OrderingLT[A](elemToExactOrdering(eA))
     case OpCodes.GeCode  => OrderingGTEQ[A](elemToExactOrdering(eA))
     case OpCodes.LeCode  => OrderingLTEQ[A](elemToExactOrdering(eA))
-    case _ => error(s"Cannot find BinOp for opcode $opCode")
+    case _ => error(s"Cannot find BinOp for opcode newOpCode(${opCode.toUByte-OpCodes.LastConstantCode}) and type $eA")
   }
 
   def adaptSigmaBoolean(v: BoolValue) = v match {

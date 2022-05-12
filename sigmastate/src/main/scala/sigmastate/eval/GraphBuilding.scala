@@ -283,8 +283,8 @@ trait GraphBuilding extends SigmaLibrary { this: IRContext =>
 //          //            RCCostedPrim(v, c, s)
 //        }
 
-    case Values.Tuple(InSeq(Seq(x, y))) =>
-      Pair(x, y)
+      case Values.Tuple(InSeq(Seq(x, y))) =>
+        Pair(x, y)
 
 //      case node: BooleanTransformer[_] =>
 //        val tpeIn = node.input.tpe.elemType
@@ -358,15 +358,15 @@ trait GraphBuilding extends SigmaLibrary { this: IRContext =>
 //        val sizes = col1.sizes.append(col2.sizes)
 //        RCCostedColl(values, costs, sizes, opCost(values, Array(col1.cost, col2.cost), costOf(node)))
 
-    case Filter(input, p) =>
-      val inputV = asRep[Coll[Any]](eval(input))
-      val pV = asRep[Any => Boolean](eval(p))
-      inputV.filter(pV)
+      case Filter(input, p) =>
+        val inputV = asRep[Coll[Any]](eval(input))
+        val pV = asRep[Any => Boolean](eval(p))
+        inputV.filter(pV)
 
-    case Terms.Apply(f, Seq(x)) if f.tpe.isFunc =>
-      val fV = asRep[Any => Coll[Any]](eval(f))
-      val xV = asRep[Any](eval(x))
-      Apply(fV, xV, mayInline = false)
+      case Terms.Apply(f, Seq(x)) if f.tpe.isFunc =>
+        val fV = asRep[Any => Coll[Any]](eval(f))
+        val xV = asRep[Any](eval(x))
+        Apply(fV, xV, mayInline = false)
 
 //      case opt: OptionValue[_] =>
 //        error(s"Option constructors are not supported: $opt", opt.sourceContext.toOption)
@@ -380,18 +380,16 @@ trait GraphBuilding extends SigmaLibrary { this: IRContext =>
         val inputV = asRep[Coll[Byte]](input)
         val res = sigmaDslBuilder.sha256(inputV)
         res
-//
-//      case utxo.SizeOf(In(xs)) =>
-//        xs.elem.eVal.asInstanceOf[Any] match {
-//          case ce: CollElem[a,_] =>
-//            val xsC = asRep[Costed[Coll[a]]](xs)
-//            val v = xsC.value.length
-//            RCCostedPrim(v, opCost(v, Array(xsC.cost), costOf(node)), SizeInt)
-//          case pe: PairElem[a,b] =>
-//            val xsC = asRep[Costed[(a,b)]](xs)
-//            val v: Ref[Int] = 2
-//            RCCostedPrim(v, opCost(v, Array(xsC.cost), costOf(node)), SizeInt)
-//        }
+
+      case utxo.SizeOf(In(xs)) =>
+        xs.elem.asInstanceOf[Any] match {
+          case ce: CollElem[a,_] =>
+            val xsV = asRep[Coll[a]](xs)
+            xsV.length
+          case pe: PairElem[a,b] =>
+            val v: Ref[Int] = 2
+            v
+        }
 
       case ByIndex(xs, i, defaultOpt) =>
         val xsV = asRep[Coll[Any]](eval(xs))
@@ -425,9 +423,11 @@ trait GraphBuilding extends SigmaLibrary { this: IRContext =>
 //        val boxC = asRep[Costed[Box]](box)
 //        val v = boxC.value.bytesWithoutRef
 //        BoxBytesWithoutRefsInfo.mkCostedColl(v, opCost(v, Array(boxC.cost), costOf(node)))
-     case utxo.ExtractAmount(In(box)) =>
-       val boxV = asRep[Box](box)
-       boxV.value
+
+      case utxo.ExtractAmount(In(box)) =>
+        val boxV = asRep[Box](box)
+        boxV.value
+
 //      case utxo.ExtractScriptBytes(In(box)) =>
 //        val boxC = asRep[Costed[Box]](box)
 //        val bytes = boxC.value.propositionBytes
@@ -443,45 +443,45 @@ trait GraphBuilding extends SigmaLibrary { this: IRContext =>
 //        val i: RCosted[Int] = RCCostedPrim(regId.number.toInt, IntZero, SizeInt)
 //        BoxCoster(box, SBox.getRegMethod, Array(i), Array(liftElem(elem)))
 
-    case BoolToSigmaProp(bool) =>
-      sigmaDslBuilder.sigmaProp(eval(bool))
+      case BoolToSigmaProp(bool) =>
+        sigmaDslBuilder.sigmaProp(eval(bool))
 
-    case AtLeast(bound, input) =>
-      val inputV = asRep[Coll[SigmaProp]](eval(input))
-      if (inputV.length.isConst) {
-        val inputCount = valueFromRep(inputV.length)
-        if (inputCount > AtLeast.MaxChildrenCount)
-          error(s"Expected input elements count should not exceed ${AtLeast.MaxChildrenCount}, actual: $inputCount", node.sourceContext.toOption)
-      }
-      val boundV = eval(bound)
-      sigmaDslBuilder.atLeast(boundV, inputV)
+      case AtLeast(bound, input) =>
+        val inputV = asRep[Coll[SigmaProp]](eval(input))
+        if (inputV.length.isConst) {
+          val inputCount = valueFromRep(inputV.length)
+          if (inputCount > AtLeast.MaxChildrenCount)
+            error(s"Expected input elements count should not exceed ${AtLeast.MaxChildrenCount}, actual: $inputCount", node.sourceContext.toOption)
+        }
+        val boundV = eval(bound)
+        sigmaDslBuilder.atLeast(boundV, inputV)
 
-    case op: ArithOp[t] if op.tpe == SBigInt =>
-      import OpCodes._
-      val xV = asRep[BigInt](eval(op.left))
-      val yV = asRep[BigInt](eval(op.right))
-      op.opCode match {
-        case PlusCode     => xV.add(yV)
-        case MinusCode    => xV.subtract(yV)
-        case MultiplyCode => xV.multiply(yV)
-        case DivisionCode => xV.divide(yV)
-        case ModuloCode   => xV.mod(yV)
-        case MinCode      => xV.min(yV)
-        case MaxCode      => xV.max(yV)
-        case code         => error(s"Cannot perform buildNode($op): unknown opCode ${code}", op.sourceContext.toOption)
-      }
+      case op: ArithOp[t] if op.tpe == SBigInt =>
+        import OpCodes._
+        val xV = asRep[BigInt](eval(op.left))
+        val yV = asRep[BigInt](eval(op.right))
+        op.opCode match {
+          case PlusCode     => xV.add(yV)
+          case MinusCode    => xV.subtract(yV)
+          case MultiplyCode => xV.multiply(yV)
+          case DivisionCode => xV.divide(yV)
+          case ModuloCode   => xV.mod(yV)
+          case MinCode      => xV.min(yV)
+          case MaxCode      => xV.max(yV)
+          case code         => error(s"Cannot perform buildNode($op): unknown opCode ${code}", op.sourceContext.toOption)
+        }
 
-    case op: ArithOp[t] =>
-      val tpe = op.left.tpe
-      val et = stypeToElem(tpe)
-      val binop = opcodeToEndoBinOp(op.opCode, et)
-      val x = eval(op.left)
-      val y = eval(op.right)
-      ApplyBinOp(binop, x, y)
+      case op: ArithOp[t] =>
+        val tpe = op.left.tpe
+        val et = stypeToElem(tpe)
+        val binop = opcodeToEndoBinOp(op.opCode, et)
+        val x = eval(op.left)
+        val y = eval(op.right)
+        ApplyBinOp(binop, x, y)
 
-    case LogicalNot(input) =>
-      val inputV = eval(input)
-      ApplyUnOp(Not, inputV)
+      case LogicalNot(input) =>
+        val inputV = eval(input)
+        ApplyUnOp(Not, inputV)
 
 //      case ModQ(input) =>
 //        val inputC = asRep[Costed[BigInt]](eval(input))
@@ -498,72 +498,68 @@ trait GraphBuilding extends SigmaLibrary { this: IRContext =>
 //        }
 //        RCCostedPrim(v, opCost(v, Array(lC.cost, rC.cost), costOf(node)), SizeBigInt)
 
-    case OR(input) => input match {
-      case ConcreteCollection(items, _) =>
-        val len = items.length
-        val values = new Array[Ref[Boolean]](len)
-        cfor(0)(_ < len, _ + 1) { i =>
-          val item = items(i)
-          values(i) = eval(item)
-        }
-        sigmaDslBuilder.anyOf(colBuilder.fromItems(values: _*))
-      case _ =>
-        val inputV = asRep[Coll[Boolean]](eval(input))
-        sigmaDslBuilder.anyOf(inputV)
-    }
+      case OR(input) => input match {
+        case ConcreteCollection(items, _) =>
+          val len = items.length
+          val values = new Array[Ref[Boolean]](len)
+          cfor(0)(_ < len, _ + 1) { i =>
+            val item = items(i)
+            values(i) = eval(item)
+          }
+          sigmaDslBuilder.anyOf(colBuilder.fromItems(values: _*))
+        case _ =>
+          val inputV = asRep[Coll[Boolean]](eval(input))
+          sigmaDslBuilder.anyOf(inputV)
+      }
 
-    case AND(input) => input match {
-      case ConcreteCollection(items, _) =>
-        val len = items.length
-        val values = new Array[Ref[Boolean]](len)
-        cfor(0)(_ < len, _ + 1) { i =>
-          val item = items(i)
-          values(i) = eval(item)
-        }
-        sigmaDslBuilder.allOf(colBuilder.fromItems(values: _*))
-      case _ =>
-        val inputV = asRep[Coll[Boolean]](eval(input))
-        sigmaDslBuilder.allOf(inputV)
-    }
+      case AND(input) => input match {
+        case ConcreteCollection(items, _) =>
+          val len = items.length
+          val values = new Array[Ref[Boolean]](len)
+          cfor(0)(_ < len, _ + 1) { i =>
+            val item = items(i)
+            values(i) = eval(item)
+          }
+          sigmaDslBuilder.allOf(colBuilder.fromItems(values: _*))
+        case _ =>
+          val inputV = asRep[Coll[Boolean]](eval(input))
+          sigmaDslBuilder.allOf(inputV)
+      }
 
-    case XorOf(input) => input match {
-      case ConcreteCollection(items, _) =>
-        val len = items.length
-        val values = new Array[Ref[Boolean]](len)
-        cfor(0)(_ < len, _ + 1) { i =>
-          val item = items(i)
-          values(i) = eval(item)
-        }
-        sigmaDslBuilder.xorOf(colBuilder.fromItems(values: _*))
-      case _ =>
-        val inputV = asRep[Coll[Boolean]](eval(input))
-        sigmaDslBuilder.xorOf(inputV)
-    }
+      case XorOf(input) => input match {
+        case ConcreteCollection(items, _) =>
+          val len = items.length
+          val values = new Array[Ref[Boolean]](len)
+          cfor(0)(_ < len, _ + 1) { i =>
+            val item = items(i)
+            values(i) = eval(item)
+          }
+          sigmaDslBuilder.xorOf(colBuilder.fromItems(values: _*))
+        case _ =>
+          val inputV = asRep[Coll[Boolean]](eval(input))
+          sigmaDslBuilder.xorOf(inputV)
+      }
 
-//      case BinOr(l, r) =>
-//        val lC = evalNode(ctx, env, l)
-//        val rC = RCostedThunk(Thunk(evalNode(ctx, env, r)), IntZero)
-//        val v = Or.applyLazy(lC.value, rC.value)
-//        val c = opCost(v, Array(lC.cost, rC.cost), costOf(node))
-//        withConstantSize(v, c)
-//
-//      case BinAnd(l, r) =>
-//        val lC = evalNode(ctx, env, l)
-//        val rC = RCostedThunk(Thunk(evalNode(ctx, env, r)), IntZero)
-//        val v = And.applyLazy(lC.value, rC.value)
-//        val c = opCost(v, Array(lC.cost, rC.cost), costOf(node))
-//        withConstantSize(v, c)
+      case BinOr(l, r) =>
+        val lV = eval(l)
+        val rV = Thunk(eval(r))
+        Or.applyLazy(lV, rV)
 
-    case BinXor(l, r) =>
-      val lV = buildNode(ctx, env, l)
-      val rV = buildNode(ctx, env, r)
-      BinaryXorOp.apply(lV, rV)
+      case BinAnd(l, r) =>
+        val lV = eval(l)
+        val rV = Thunk(eval(r))
+        And.applyLazy(lV, rV)
 
-     case neg: Negation[SNumericType]@unchecked =>
-       val et = stypeToElem(neg.input.tpe)
-       val op = NumericNegate(elemToExactNumeric(et))(et)
-       val x = buildNode(ctx, env, neg.input)
-       ApplyUnOp(op, x)
+      case BinXor(l, r) =>
+        val lV = eval(l)
+        val rV = eval(r)
+        BinaryXorOp.apply(lV, rV)
+
+      case neg: Negation[SNumericType]@unchecked =>
+        val et = stypeToElem(neg.input.tpe)
+        val op = NumericNegate(elemToExactNumeric(et))(et)
+        val x = buildNode(ctx, env, neg.input)
+        ApplyUnOp(op, x)
 
 //      case SigmaAnd(items) =>
 //        val len = items.length
@@ -601,20 +597,20 @@ trait GraphBuilding extends SigmaLibrary { this: IRContext =>
 //        val resCost = opCost(resV, Array(cC.cost, tC.cost, eC.cost), costOf("If", If.GenericOpType))
 //        RCCostedPrim(resV, resCost, tC.size) // TODO costing: implement tC.size max eC.size
 
-    case rel: Relation[t, _] =>
-      val tpe = rel.left.tpe
-      val et = stypeToElem(tpe)
-      val binop = opcodeToBinOp(rel.opCode, et)
-      val x = eval(rel.left)
-      val y = eval(rel.right)
-      binop.apply(x, asRep[t#WrappedType](y))
+      case rel: Relation[t, _] =>
+        val tpe = rel.left.tpe
+        val et = stypeToElem(tpe)
+        val binop = opcodeToBinOp(rel.opCode, et)
+        val x = eval(rel.left)
+        val y = eval(rel.right)
+        binop.apply(x, asRep[t#WrappedType](y))
 
-    case l @ Terms.Lambda(_, Seq((n, argTpe)), tpe, Some(body)) =>
-      val eArg = stypeToElem(argTpe).asInstanceOf[Elem[Any]]
-      val f = fun { x: Ref[Any] =>
-        buildNode(ctx, env + (n -> x), body)
-      }(Lazy(eArg))
-      f
+      case l @ Terms.Lambda(_, Seq((n, argTpe)), tpe, Some(body)) =>
+        val eArg = stypeToElem(argTpe).asInstanceOf[Elem[Any]]
+        val f = fun { x: Ref[Any] =>
+          buildNode(ctx, env + (n -> x), body)
+        }(Lazy(eArg))
+        f
 
 //      case l @ FuncValue(Seq((n, argTpe)), body) =>
 //        val eArg = stypeToElem(argTpe).asInstanceOf[Elem[Any]]
