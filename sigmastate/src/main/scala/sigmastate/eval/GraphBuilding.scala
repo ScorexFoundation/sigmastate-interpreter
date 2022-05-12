@@ -391,12 +391,11 @@ trait GraphBuilding extends SigmaLibrary { this: IRContext =>
 //        val costs = col1.costs.append(col2.costs)
 //        val sizes = col1.sizes.append(col2.sizes)
 //        RCCostedColl(values, costs, sizes, opCost(values, Array(col1.cost, col2.cost), costOf(node)))
-//
-//      case Filter(input, p) =>
-//        val inputC = evalNode(ctx, env, input)
-//        val pC = evalNode(ctx, env, p)
-//        val res = CollCoster(inputC, SCollection.FilterMethod, Array(pC))
-//        res
+
+    case Filter(input, p) =>
+      val inputEval = asRep[Coll[Any]](buildNode(ctx, env, input))
+      val predicateEval = asRep[Any => Boolean](buildNode(ctx, env, p))
+      inputEval.filter(predicateEval)
 
     case Terms.Apply(f, Seq(x)) if f.tpe.isFunc =>
       val evalFunc = asRep[Any => Coll[Any]](buildNode(ctx, env, f))
@@ -467,11 +466,9 @@ trait GraphBuilding extends SigmaLibrary { this: IRContext =>
 //        val boxC = asRep[Costed[Box]](box)
 //        val v = boxC.value.bytesWithoutRef
 //        BoxBytesWithoutRefsInfo.mkCostedColl(v, opCost(v, Array(boxC.cost), costOf(node)))
-//      case utxo.ExtractAmount(In(box)) =>
-//        val boxC = asRep[Costed[Box]](box)
-//        val v = boxC.value.value
-//        val c = opCost(v, Array(boxC.cost), costOf(node))
-//        RCCostedPrim(v, c, SizeLong)
+     case utxo.ExtractAmount(In(box)) =>
+       val boxEval = asRep[Box](box)
+       boxEval.value
 //      case utxo.ExtractScriptBytes(In(box)) =>
 //        val boxC = asRep[Costed[Box]](box)
 //        val bytes = boxC.value.propositionBytes
