@@ -210,17 +210,23 @@ class BasicOpsSpecification extends SigmaTestingCommons
       onlyPositive = true,
       testExceededCost = false
     )
-    test("Prop9", env, ext,
-      "{ allOf(Coll(SELF.R4[SigmaProp].get, getVar[SigmaProp](proofVar1).get))}",
-      SigmaAnd(Seq(ExtractRegisterAs[SSigmaProp.type](Self, reg1).get, GetVarSigmaProp(propVar1).get)),
-      onlyPositive = true,
-      testExceededCost = false
+    assertExceptionThrown(
+      test("Prop9", env, ext,
+        "{ allOf(Coll(SELF.R4[SigmaProp].get, getVar[SigmaProp](proofVar1).get))}",
+        SigmaAnd(Seq(ExtractRegisterAs[SSigmaProp.type](Self, reg1).get, GetVarSigmaProp(propVar1).get)),
+        onlyPositive = true,
+        testExceededCost = false
+      ),
+      exceptionLike[IllegalArgumentException]("Invalid type of collection value", "expected SBoolean")
     )
-    test("Prop10", env, ext,
-      "{ anyOf(Coll(SELF.R4[SigmaProp].get, getVar[SigmaProp](proofVar1).get))}",
-      SigmaOr(Seq(ExtractRegisterAs[SSigmaProp.type](Self, reg1).get, GetVarSigmaProp(propVar1).get)),
-      onlyPositive = true,
-      testExceededCost = false
+    assertExceptionThrown(
+      test("Prop10", env, ext,
+        "{ anyOf(Coll(SELF.R4[SigmaProp].get, getVar[SigmaProp](proofVar1).get))}",
+        SigmaOr(Seq(ExtractRegisterAs[SSigmaProp.type](Self, reg1).get, GetVarSigmaProp(propVar1).get)),
+        onlyPositive = true,
+        testExceededCost = false
+      ),
+      exceptionLike[IllegalArgumentException]("Invalid type of collection value", "expected SBoolean")
     )
     test("Prop11", env, ext,
       "{ Coll(SELF.R4[SigmaProp].get, getVar[SigmaProp](proofVar1).get).forall({ (p: SigmaProp) => p.isProven }) }",

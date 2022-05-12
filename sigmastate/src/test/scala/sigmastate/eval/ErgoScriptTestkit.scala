@@ -280,7 +280,9 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests
     emit(name, valueF, costF, sizeF)
     verifyCostFunc(asRep[Any => Int](costF)) shouldBe(Success(()))
     verifyIsProven(valueF) shouldBe(Success(()))
-    IR.buildTree(valueF) shouldBe expected
+    val tree = IR.buildTree(valueF)
+    SigmaPPrint.pprintln(tree, 150, 250)
+    tree shouldBe expected
   }
 
 }
