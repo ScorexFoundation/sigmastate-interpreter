@@ -534,12 +534,11 @@ trait GraphBuilding extends SigmaLibrary { this: IRContext =>
 //          val v = ApplyBinOp(binop, x.value, y.value)
 //          withConstantSize(v, opCost(v, Array(x.cost, y.cost), costOf(op)))
 //        }
-//
-//      case LogicalNot(input) =>
-//        val inputC = evalNode(ctx, env, input)
-//        val v = ApplyUnOp(Not, inputC.value)
-//        withConstantSize(v, opCost(v, Array(inputC.cost), costOf(node)))
-//
+
+     case LogicalNot(input) =>
+       val evalInput = buildNode(ctx, env, input)
+       ApplyUnOp(Not, evalInput)
+
 //      case ModQ(input) =>
 //        val inputC = asRep[Costed[BigInt]](eval(input))
 //        val v = inputC.value.modQ
@@ -622,17 +621,14 @@ trait GraphBuilding extends SigmaLibrary { this: IRContext =>
 //        val v = BinaryXorOp.apply(lC.value, rC.value)
 //        val c = opCost(v, Array(lC.cost, rC.cost), costOf(node))
 //        withConstantSize(v, c)
-//
-//      case neg: Negation[SNumericType]@unchecked =>
-//        val tpe = neg.input.tpe
-//        val et = stypeToElem(tpe)
-//        val op = NumericNegate(elemToExactNumeric(et))(et)
-//        val inputC = evalNode(ctx, env, neg.input)
-//        inputC match { case x: RCosted[a] =>
-//          val v = ApplyUnOp(op, x.value)
-//          withConstantSize(v, opCost(v, Array(x.cost), costOf(neg)))
-//        }
-//
+
+     case neg: Negation[SNumericType]@unchecked =>
+       val et = stypeToElem(neg.input.tpe)
+       val op = NumericNegate(elemToExactNumeric(et))(et)
+       val evalInput = buildNode(ctx, env, neg.input)
+       // TODO v5.x - any reason for not using ApplyUnOp(op, evalInput)?
+       evalInput match { case x: Ref[a] => ApplyUnOp(op, x) }
+
 //      case SigmaAnd(items) =>
 //        val len = items.length
 //        val values = new Array[Ref[SigmaProp]](len)
