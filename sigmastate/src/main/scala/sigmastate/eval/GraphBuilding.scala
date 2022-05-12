@@ -17,7 +17,7 @@ import spire.syntax.all.cfor
 
 import scala.collection.mutable
 
-trait GraphBuilding extends SigmaLibrary { this: IRContext =>
+trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
   import builder._
   import Liftables._
   import Context._;
@@ -251,37 +251,26 @@ trait GraphBuilding extends SigmaLibrary { this: IRContext =>
       case utxo.OptionGet(In(opt: ROption[_]@unchecked)) =>
         opt.get
 
-//      // opt.isDefined =>
-//      case utxo.OptionIsDefined(In(_opt)) =>
-//        OptionCoster(_opt, SOption.IsDefinedMethod, Nil)
-//
-//      // opt.getOrElse =>
-//      case utxo.OptionGetOrElse(In(_opt), In(_default)) =>
-//        OptionCoster(_opt, SOption.GetOrElseMethod, Array(_default))
-//
-//      case SelectField(In(_tup), fieldIndex) =>
-//        val eTuple = _tup.elem.eVal.asInstanceOf[Elem[_]]
-//        CheckTupleType(IR)(eTuple)
-//        eTuple match {
-//          case pe: PairElem[a,b] =>
-//            assert(fieldIndex == 1 || fieldIndex == 2, s"Invalid field index $fieldIndex of the pair ${_tup}: $pe")
-//            implicit val ea = pe.eFst
-//            implicit val eb = pe.eSnd
-//            val pair = tryCast[CostedPair[a,b]](_tup)
-//            val res = if (fieldIndex == 1)
-//              attachCost(pair.l, pair.accCost, selectFieldCost)
-//            else
-//              attachCost(pair.r, pair.accCost, selectFieldCost)
-//            res
-//          // TODO soft-fork: implement similar to Pair case
-//          //          case se: StructElem[_] =>
-//          //            val tup = asRep[Costed[Struct]](_tup)
-//          //            val fn = STuple.componentNameByIndex(fieldIndex - 1)
-//          //            val v = tup.value.getUntyped(fn)
-//          //            val c = opCost(v, Seq(tup.cost), costedBuilder.SelectFieldCost)
-//          //            val s: RSize[Any] = ???
-//          //            RCCostedPrim(v, c, s)
-//        }
+      // opt.isDefined =>
+      case utxo.OptionIsDefined(In(opt: ROption[_]@unchecked)) =>
+        opt.isDefined
+
+      // opt.getOrElse =>
+      case utxo.OptionGetOrElse(In(opt: ROption[a]@unchecked), In(default)) =>
+        opt.getOrElse(asRep[a](default))
+
+      case SelectField(In(tup), fieldIndex) =>
+        val eTuple = tup.elem.asInstanceOf[Elem[_]]
+        CheckTupleType(IR)(eTuple)
+        eTuple match {
+          case pe: PairElem[a,b] =>
+            assert(fieldIndex == 1 || fieldIndex == 2, s"Invalid field index $fieldIndex of the pair ${tup}: $pe")
+            implicit val ea = pe.eFst
+            implicit val eb = pe.eSnd
+            val pair = asRep[(a,b)](tup)
+            val res = if (fieldIndex == 1) pair._1 else pair._2
+            res
+        }
 
       case Values.Tuple(InSeq(Seq(x, y))) =>
         Pair(x, y)
@@ -398,16 +387,14 @@ trait GraphBuilding extends SigmaLibrary { this: IRContext =>
             value
         }
 
-//      case SigmaPropIsProven(p) =>
-//        val pC = asRep[Costed[SigmaProp]](eval(p))
-//        val v = pC.value.isValid
-//        val c = opCost(v, Array(pC.cost), costOf(node))
-//        RCCostedPrim(v, c, SizeBoolean)
-//      case SigmaPropBytes(p) =>
-//        val pC = asRep[Costed[SigmaProp]](eval(p))
-//        val v = pC.value.propBytes
-//        SigmaPropBytesInfo.mkCostedColl(v, opCost(v, Array(pC.cost), costOf(node)))
-//
+      case SigmaPropIsProven(p) =>
+        val pV = asRep[SigmaProp](eval(p))
+        pV.isValid
+
+      case SigmaPropBytes(p) =>
+        val pV = asRep[SigmaProp](eval(p))
+        pV.propBytes
+
 //      case utxo.ExtractId(In(box)) =>
 //        val boxC = asRep[Costed[Box]](box)
 //        val id = boxC.value.id
@@ -690,6 +677,26 @@ trait GraphBuilding extends SigmaLibrary { this: IRContext =>
           case (tree: Ref[AvlTree]@unchecked, SAvlTree) => method.name match {
             case SAvlTree.digestMethod.name =>
               tree.digest
+            case SAvlTree.getMethod.name =>
+              val key = asRep[Coll[Byte]](argsV(0))
+              val proof = asRep[Coll[Byte]](argsV(1))
+              tree.get(key, proof)
+            case SAvlTree.getManyMethod.name =>
+              val keys = asRep[Coll[Coll[Byte]]](argsV(0))
+              val proof = asRep[Coll[Byte]](argsV(1))
+              tree.getMany(keys, proof)
+            case SAvlTree.containsMethod.name =>
+              val key = asRep[Coll[Byte]](argsV(0))
+              val proof = asRep[Coll[Byte]](argsV(1))
+              tree.contains(key, proof)
+            case SAvlTree.insertMethod.name =>
+              val operations = asRep[Coll[(Coll[Byte], Coll[Byte])]](argsV(0))
+              val proof = asRep[Coll[Byte]](argsV(1))
+              tree.insert(operations, proof)
+            case SAvlTree.removeMethod.name =>
+              val operations = asRep[Coll[Coll[Byte]]](argsV(0))
+              val proof = asRep[Coll[Byte]](argsV(1))
+              tree.remove(operations, proof)
             case _ => throwError
           }
           case _ => throwError
