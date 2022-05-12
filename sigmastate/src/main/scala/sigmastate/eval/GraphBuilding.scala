@@ -3,9 +3,9 @@ package sigmastate.eval
 import org.ergoplatform._
 import org.ergoplatform.validation.ValidationRules.{CheckIsSupportedIndexExpression, CheckTupleType}
 import scalan.{ExactOrdering, Lazy, MutableLazy, Nullable, SigmaLibrary}
-import scalan.ExactOrdering.{ShortIsExactOrdering, ByteIsExactOrdering, IntIsExactOrdering, LongIsExactOrdering}
+import scalan.ExactOrdering.{ByteIsExactOrdering, IntIsExactOrdering, LongIsExactOrdering, ShortIsExactOrdering}
 import sigmastate.Values.Value.Typed
-import sigmastate.{AND, ArithOp, AtLeast, BinAnd, BinOr, BinXor, BoolToSigmaProp, ByteArrayToLong, CalcBlake2b256, CalcSha256, CreateProveDHTuple, CreateProveDlog, DecodePoint, If, LogicalNot, ModQ, ModQArithOp, Negation, OR, Relation, SBigInt, SBox, SCollection, SCollectionType, SGlobal, SGroupElement, SInt, SNumericType, SOption, SSigmaProp, SType, SigmaAnd, SigmaOr, SubstConstants, Values, Xor, XorOf, utxo}
+import sigmastate.{AND, ArithOp, AtLeast, BinAnd, BinOr, BinXor, BoolToSigmaProp, ByteArrayToLong, CalcBlake2b256, CalcSha256, CreateProveDHTuple, CreateProveDlog, DecodePoint, If, LogicalNot, ModQ, ModQArithOp, Negation, OR, Relation, SAvlTree, SBigInt, SBox, SCollection, SCollectionType, SContext, SGlobal, SGroupElement, SInt, SNumericType, SOption, SSigmaProp, SType, SigmaAnd, SigmaOr, SubstConstants, Values, Xor, XorOf, utxo}
 import sigmastate.Values._
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.Terms
@@ -106,6 +106,8 @@ trait GraphBuilding extends SigmaLibrary { this: IRContext =>
       }
       Nullable(res)
     }}
+    def throwError =
+      error(s"Don't know how to buildNode($node)", node.sourceContext.toOption)
 
     val res: Ref[Any] = node match {
       case c @ Constant(v, tpe) => v match {
@@ -209,22 +211,20 @@ trait GraphBuilding extends SigmaLibrary { this: IRContext =>
       case Terms.Apply(col, Seq(index)) if col.tpe.isCollection =>
         eval(mkByIndex(col.asCollection[SType], index.asValue[SInt.type], None))
 
+      case op @ GetVar(id, optTpe) =>
+        val e = stypeToElem(optTpe.elemType)
+        ctx.getVar(id)(e)
 
-      //      case op @ GetVar(id, optTpe) =>
-//        stypeToElem(optTpe.elemType) match { case e: Elem[t] =>
-//          val v = ctx.value.getVar[t](id)(e)
-//          val s = tryCast[SizeContext](ctx.size).getVar(id)(e)
-//          RCCostedPrim(v, opCost(v, Nil, sigmaDslBuilder.CostModel.GetVar), s)
-//        }
-
-    case Terms.Block(binds, res) =>
-      var curEnv = env
-      for (v @ Val(n, _, b) <- binds) {
-        if (curEnv.contains(n)) error(s"Variable $n already defined ($n = ${curEnv(n)}", v.sourceContext.toOption)
-        val bC = buildNode(ctx, curEnv, b)
-        curEnv = curEnv + (n -> bC)
-      }
-      buildNode(ctx, curEnv, res)
+      case Terms.Block(binds, res) =>
+        var curEnv = env
+        for (v @ Val(n, _, b) <- binds) {
+          if (curEnv.contains(n))
+            error(s"Variable $n already defined ($n = ${curEnv(n)}", v.sourceContext.toOption)
+          val bV = buildNode(ctx, curEnv, b)
+          curEnv = curEnv + (n -> bV)
+        }
+        val resV = buildNode(ctx, curEnv, res)
+        resV
 
 //      case BlockValue(binds, res) =>
 //        var curEnv = env
@@ -258,10 +258,10 @@ trait GraphBuilding extends SigmaLibrary { this: IRContext =>
 //        val cost = opCost(resV, Array(gvC.cost, hvC.cost, uvC.cost, vvC.cost), CostOfDHTuple)
 //        RCCostedPrim(resV, cost, SizeSigmaProposition)
 
-    case sigmastate.Exponentiate(In(_l), In(_r)) =>
-      val l = asRep[GroupElement](_l)
-      val r = asRep[BigInt](_r)
-      l.exp(r)
+      case sigmastate.Exponentiate(In(l), In(r)) =>
+        val lV = asRep[GroupElement](l)
+        val rV = asRep[BigInt](r)
+        lV.exp(rV)
 
 //      case sigmastate.MultiplyGroup(In(_l), In(_r)) =>
 //        val l = asRep[Costed[GroupElement]](_l)
@@ -270,21 +270,21 @@ trait GraphBuilding extends SigmaLibrary { this: IRContext =>
 //        val cost = opCost(value, Array(l.cost, r.cost), costOf(node))
 //        RCCostedPrim(value, cost, SizeGroupElement)
 //
-//      case Values.GroupGenerator =>
-//        SigmaDslBuilderCoster(costedGlobal, SGlobal.groupGeneratorMethod, Nil)
+      case Values.GroupGenerator =>
+        sigmaDslBuilder.groupGenerator
 
-    case sigmastate.ByteArrayToBigInt(In(_arr)) =>
-      val coll = asRep[Coll[Byte]](_arr)
-      sigmaDslBuilder.byteArrayToBigInt(coll)
+      case sigmastate.ByteArrayToBigInt(In(arr)) =>
+        val arrV = asRep[Coll[Byte]](arr)
+        sigmaDslBuilder.byteArrayToBigInt(arrV)
 
-    case sigmastate.LongToByteArray(In(_x)) =>
-      val xLong = asRep[Long](_x)
-      sigmaDslBuilder.longToByteArray(xLong)
+      case sigmastate.LongToByteArray(In(x)) =>
+        val xV = asRep[Long](x)
+        sigmaDslBuilder.longToByteArray(xV)
 
-//      // opt.get =>
-//      case utxo.OptionGet(In(_opt)) =>
-//        OptionCoster(_opt, SOption.GetMethod, Nil)
-//
+      // opt.get =>
+      case utxo.OptionGet(In(opt: ROption[_]@unchecked)) =>
+        opt.get
+
 //      // opt.isDefined =>
 //      case utxo.OptionIsDefined(In(_opt)) =>
 //        OptionCoster(_opt, SOption.IsDefinedMethod, Nil)
@@ -393,34 +393,27 @@ trait GraphBuilding extends SigmaLibrary { this: IRContext =>
 //        RCCostedColl(values, costs, sizes, opCost(values, Array(col1.cost, col2.cost), costOf(node)))
 
     case Filter(input, p) =>
-      val inputEval = asRep[Coll[Any]](buildNode(ctx, env, input))
-      val predicateEval = asRep[Any => Boolean](buildNode(ctx, env, p))
-      inputEval.filter(predicateEval)
+      val inputV = asRep[Coll[Any]](eval(input))
+      val pV = asRep[Any => Boolean](eval(p))
+      inputV.filter(pV)
 
     case Terms.Apply(f, Seq(x)) if f.tpe.isFunc =>
-      val evalFunc = asRep[Any => Coll[Any]](buildNode(ctx, env, f))
-      val evalArgs = asRep[Any](buildNode(ctx, env, x))
-      f.tpe.asFunc.tRange match {
-        case _: SCollectionType[_] => Apply(evalFunc, evalArgs, false)
-        //          case optTpe: SOption[_] =>
-        //            val values: Ref[WOption[Any]] = Apply(evalFunc, evalArgs, false)
-        //            values
-        case _ => Apply(evalFunc, evalArgs, false)
-      }
+      val fV = asRep[Any => Coll[Any]](eval(f))
+      val xV = asRep[Any](eval(x))
+      Apply(fV, xV, mayInline = false)
 
 //      case opt: OptionValue[_] =>
 //        error(s"Option constructors are not supported: $opt", opt.sourceContext.toOption)
 //
-//      case CalcBlake2b256(In(input)) =>
-//        val bytesC = asRep[Costed[Coll[Byte]]](input)
-//        val res = sigmaDslBuilder.blake2b256(bytesC.value)
-//        val cost = opCost(res, Array(bytesC.cost), perKbCostOf(node, bytesC.size.dataSize))
-//        HashInfo.mkCostedColl(res, cost)
-//      case CalcSha256(In(input)) =>
-//        val bytesC = asRep[Costed[Coll[Byte]]](input)
-//        val res = sigmaDslBuilder.sha256(bytesC.value)
-//        val cost = opCost(res, Array(bytesC.cost), perKbCostOf(node, bytesC.size.dataSize))
-//        HashInfo.mkCostedColl(res, cost)
+      case CalcBlake2b256(In(input)) =>
+        val inputV = asRep[Coll[Byte]](input)
+        val res = sigmaDslBuilder.blake2b256(inputV)
+        res
+
+      case CalcSha256(In(input)) =>
+        val inputV = asRep[Coll[Byte]](input)
+        val res = sigmaDslBuilder.sha256(inputV)
+        res
 //
 //      case utxo.SizeOf(In(xs)) =>
 //        xs.elem.eVal.asInstanceOf[Any] match {
@@ -467,8 +460,8 @@ trait GraphBuilding extends SigmaLibrary { this: IRContext =>
 //        val v = boxC.value.bytesWithoutRef
 //        BoxBytesWithoutRefsInfo.mkCostedColl(v, opCost(v, Array(boxC.cost), costOf(node)))
      case utxo.ExtractAmount(In(box)) =>
-       val boxEval = asRep[Box](box)
-       boxEval.value
+       val boxV = asRep[Box](box)
+       boxV.value
 //      case utxo.ExtractScriptBytes(In(box)) =>
 //        val boxC = asRep[Costed[Box]](box)
 //        val bytes = boxC.value.propositionBytes
@@ -671,69 +664,90 @@ trait GraphBuilding extends SigmaLibrary { this: IRContext =>
         val values = colBuilder.fromItems(vs: _*)(eAny)
         values
 
-//      case sigmastate.Upcast(In(inputC), tpe) =>
-//        val elem = stypeToElem(tpe.asNumType)
-//        val res = upcast(inputC.value)(elem)
-//        withConstantSize(res, opCost(res, Array(inputC.cost), costOf(node)))
-//
-//      case sigmastate.Downcast(In(inputC), tpe) =>
-//        val elem = stypeToElem(tpe.asNumType)
-//        val res = downcast(inputC.value)(elem)
-//        withConstantSize(res, opCost(res, Array(inputC.cost), costOf(node)))
+      case sigmastate.Upcast(In(input), tpe) =>
+        val elem = stypeToElem(tpe.asNumType)
+        upcast(input)(elem)
 
-    case ByteArrayToLong(In(arr)) =>
-      val coll = asRep[Coll[Byte]](arr)
-      sigmaDslBuilder.byteArrayToLong(coll)
+      case sigmastate.Downcast(In(input), tpe) =>
+        val elem = stypeToElem(tpe.asNumType)
+        downcast(input)(elem)
 
-//      case Xor(InCollByte(l), InCollByte(r)) =>
-//        val values = colBuilder.xor(l.value, r.value)
-//        val sizes = r.sizes
-//        val len = sizes.length
-//        val costs = colBuilder.replicate(len, IntZero)
-//        val cost = opCost(values, Array(l.cost, r.cost), perKbCostOf(node, len.toLong))
-//        RCCostedColl(values, costs, sizes, cost)
-//
+      case ByteArrayToLong(In(arr)) =>
+        val coll = asRep[Coll[Byte]](arr)
+        sigmaDslBuilder.byteArrayToLong(coll)
+
+      case Xor(InCollByte(l), InCollByte(r)) =>
+        colBuilder.xor(l, r)
+
 //      case SubstConstants(InCollByte(bytes), InCollInt(positions), InCollAny(newValues)) =>
 //        val values = sigmaDslBuilder.substConstants(bytes.values, positions.values, newValues.values)
 //        val len = bytes.size.dataSize + newValues.size.dataSize
 //        val cost = opCost(values, Array(bytes.cost, positions.cost, newValues.cost), perKbCostOf(node, len))
 //        mkCostedColl(values, len.toInt, cost)
 
-    case DecodePoint(InCollByte(bytes)) =>
-      sigmaDslBuilder.decodePoint(bytes)
+      case DecodePoint(InCollByte(bytes)) =>
+        sigmaDslBuilder.decodePoint(bytes)
 
-//      // fallback rule for MethodCall, should be the last case in the list
-//      case Terms.MethodCall(obj, method, args, typeSubst) if method.objType.coster.isDefined =>
-//        val objC = eval(obj)
-//        val argsC: Seq[RCosted[SType#WrappedType]] =
-//          if (args.isEmpty)
-//            EmptySeqOfSym.asInstanceOf[Seq[RCosted[SType#WrappedType]]]
-//          else {
-//            val len = args.length
-//            val res = new Array[RCosted[SType#WrappedType]](len)
-//            cfor(0)(_ < len, _ + 1) { i =>
-//              res(i) = eval(args(i))
-//            }
-//            res
-//          }
-//        val elems: Seq[Sym] =
-//          if (typeSubst.isEmpty)
-//            EmptySeqOfSym
-//          else {
-//            val ts = typeSubst.values.toArray
-//            val len = ts.length
-//            val res = new Array[Sym](len)
-//            cfor(0)(_ < len, _ + 1) { i =>
-//              res(i) = liftElem(stypeToElem(ts(i)).asInstanceOf[Elem[Any]])
-//            }
-//            res
-//          }
-//        method.objType.coster.get(IR)(objC, method, argsC, elems)
+      // fallback rule for MethodCall, should be the last case in the list
+      case Terms.MethodCall(obj, method, args, typeSubst) if method.objType.coster.isDefined =>
+        val objV = eval(obj)
+        val argsV = args.map(eval)
+        (objV, method.objType) match {
+          case (xs: RColl[t]@unchecked, SCollection) => method.name match {
+            case SCollection.IndicesMethod.name =>
+              xs.indices
+            case SCollection.PatchMethod.name =>
+              val from = asRep[Int](argsV(0))
+              val patch = asRep[Coll[t]](argsV(1))
+              val replaced = asRep[Int](argsV(2))
+              xs.patch(from, patch, replaced)
+            case SCollection.UpdatedMethod.name =>
+              val index = asRep[Int](argsV(0))
+              val value = asRep[t](argsV(1))
+              xs.updated(index, value)
+            case SCollection.UpdateManyMethod.name =>
+              val indexes = asRep[Coll[Int]](argsV(0))
+              val values = asRep[Coll[t]](argsV(1))
+              xs.updateMany(indexes, values)
+            case SCollection.IndexOfMethod.name =>
+              val elem = asRep[t](argsV(0))
+              val from = asRep[Int](argsV(1))
+              xs.indexOf(elem, from)
+            case SCollection.ZipMethod.name =>
+              val ys = asRep[Coll[Any]](argsV(0))
+              xs.zip(ys)
+            case _ => throwError
+          }
+          case (opt: ROption[t]@unchecked, SOption) => method.name match {
+            case SOption.MapMethod.name =>
+              opt.map(asRep[t => Any](argsV(0)))
+            case SOption.FilterMethod.name =>
+              opt.filter(asRep[t => Boolean](argsV(0)))
+            case _ => throwError
+          }
+          case (box: Ref[Box]@unchecked, SBox) => method.name match {
+            case SBox.tokensMethod.name =>
+              box.tokens
+            case _ => throwError
+          }
+          case (ctx: Ref[Context]@unchecked, SContext) => method.name match {
+            case SContext.dataInputsMethod.name =>
+              asRep[Context](objV).dataInputs
+            case _ => throwError
+          }
+          case (tree: Ref[AvlTree]@unchecked, SAvlTree) => method.name match {
+            case SAvlTree.digestMethod.name =>
+              tree.digest
+            case _ => throwError
+          }
+          case _ => throwError
+        }
 
       case _ =>
-        error(s"Don't know how to buildNode($node)", node.sourceContext.toOption)
+        throwError
     }
     val resC = asRep[T#WrappedType](res)
     resC
   }
+
 }
