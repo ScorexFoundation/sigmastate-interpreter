@@ -614,13 +614,11 @@ trait GraphBuilding extends SigmaLibrary { this: IRContext =>
 //        val v = And.applyLazy(lC.value, rC.value)
 //        val c = opCost(v, Array(lC.cost, rC.cost), costOf(node))
 //        withConstantSize(v, c)
-//
-//      case BinXor(l, r) =>
-//        val lC = evalNode(ctx, env, l)
-//        val rC = evalNode(ctx, env, r)
-//        val v = BinaryXorOp.apply(lC.value, rC.value)
-//        val c = opCost(v, Array(lC.cost, rC.cost), costOf(node))
-//        withConstantSize(v, c)
+
+    case BinXor(l, r) =>
+      val evalLeft = buildNode(ctx, env, l)
+      val evalRight = buildNode(ctx, env, r)
+      BinaryXorOp.apply(evalLeft, evalRight)
 
      case neg: Negation[SNumericType]@unchecked =>
        val et = stypeToElem(neg.input.tpe)
