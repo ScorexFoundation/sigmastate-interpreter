@@ -556,53 +556,31 @@ trait GraphBuilding extends SigmaLibrary { this: IRContext =>
 //          case code => error(s"unknown code for modular arithmetic op: $code")
 //        }
 //        RCCostedPrim(v, opCost(v, Array(lC.cost, rC.cost), costOf(node)), SizeBigInt)
-//
-//      case OR(input) => input match {
-//        case ConcreteCollection(items, _) =>
-//          val len = items.length
-//          val values = new Array[Ref[Boolean]](len)
-//          val costs = new Array[Ref[Int]](len)
-//          cfor(0)(_ < len, _ + 1) { i =>
-//            val item = items(i)
-//            val itemC = eval(adaptSigmaBoolean(item))
-//            values(i) = itemC.value
-//            costs(i) = itemC.cost
-//          }
-//          val res = sigmaDslBuilder.anyOf(colBuilder.fromItems(values: _*))
-//          val nOps = costs.length - 1
-//          val cost = opCost(res, costs, perItemCostOf(node, nOps))
-//          withConstantSize(res, cost)
-//        case _ =>
-//          val inputC = asRep[CostedColl[Boolean]](eval(input))
-//          val res = sigmaDslBuilder.anyOf(inputC.value)
-//          val nOps = inputC.sizes.length - 1
-//          val cost = opCost(res, Array(inputC.cost), perItemCostOf(node, nOps))
-//          withConstantSize(res, cost)
-//      }
-//
-//      case AND(input) => input match {
-//        case ConcreteCollection(items, _) =>
-//          val len = items.length
-//          val values = new Array[Ref[Boolean]](len)
-//          val costs = new Array[Ref[Int]](len)
-//          cfor(0)(_ < len, _ + 1) { i =>
-//            val item = items(i)
-//            val itemC = eval(adaptSigmaBoolean(item))
-//            values(i) = itemC.value
-//            costs(i) = itemC.cost
-//          }
-//          val res = sigmaDslBuilder.allOf(colBuilder.fromItems(values: _*))
-//          val nOps = costs.length - 1
-//          val cost = opCost(res, costs, perItemCostOf(node, nOps))
-//          withConstantSize(res, cost)
-//        case _ =>
-//          val inputC = tryCast[CostedColl[Boolean]](eval(input))
-//          val res = sigmaDslBuilder.allOf(inputC.value)
-//          val nOps = inputC.sizes.length - 1
-//          val cost = opCost(res, Array(inputC.cost), perItemCostOf(node, nOps))
-//          withConstantSize(res, cost)
-//      }
-//
+
+     case OR(input) => input match {
+       case ConcreteCollection(items, _) =>
+         val len = items.length
+         val values = new Array[Ref[Boolean]](len)
+         cfor(0)(_ < len, _ + 1) { i =>
+           val item = items(i)
+           values(i) = eval(adaptSigmaBoolean(item))
+         }
+         sigmaDslBuilder.anyOf(colBuilder.fromItems(values: _*))
+       case _ => eval(input)
+     }
+
+     case AND(input) => input match {
+       case ConcreteCollection(items, _) =>
+         val len = items.length
+         val values = new Array[Ref[Boolean]](len)
+         cfor(0)(_ < len, _ + 1) { i =>
+           val item = items(i)
+           values(i) = eval(adaptSigmaBoolean(item))
+         }
+         sigmaDslBuilder.allOf(colBuilder.fromItems(values: _*))
+       case _ => eval(input)
+     }
+
 //      case XorOf(input) => input match {
 //        case ConcreteCollection(items, _) =>
 //          val len = items.length
