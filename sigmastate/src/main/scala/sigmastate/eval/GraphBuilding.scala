@@ -12,7 +12,7 @@ import sigmastate.lang.Terms
 import sigmastate.lang.Terms.{Ident, Select, Val, ValueOps}
 import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.{DivisionCode, MaxCode, MinCode, MinusCode, ModuloCode, MultiplyCode, PlusCode}
-import sigmastate.utxo.{Append, BooleanTransformer, ByIndex, CostTable, Filter, Fold, GetVar, MapCollection, SelectField, SigmaPropBytes, SigmaPropIsProven, Slice}
+import sigmastate.utxo.{Append, BooleanTransformer, ByIndex, CostTable, Exists, Filter, Fold, ForAll, GetVar, MapCollection, SelectField, SigmaPropBytes, SigmaPropIsProven, Slice}
 import spire.syntax.all.cfor
 
 import scala.collection.mutable
@@ -286,33 +286,37 @@ trait GraphBuilding extends SigmaLibrary { this: IRContext =>
       case Values.Tuple(InSeq(Seq(x, y))) =>
         Pair(x, y)
 
-//      case node: BooleanTransformer[_] =>
-//        val tpeIn = node.input.tpe.elemType
-//        val eIn = stypeToElem(tpeIn)
-//        val xs = asRep[CostedColl[Any]](eval(node.input))
-//        val eAny = xs.elem.asInstanceOf[CostedElem[Coll[Any],_]].eVal.eA
-//        assert(eIn == eAny, s"Types should be equal: but $eIn != $eAny")
-//        val conditionC = asRep[CostedFunc[Unit, Any, SType#WrappedType]](evalNode(ctx, env, node.condition))
-//        val condC = conditionC.func
-//        val (calcF, costF) = splitCostedFunc2(condC, okRemoveIsValid = true)
-//        val sizeF = condC.sliceSize
-//        val sizes = xs.sizes
-//        val len = sizes.length
-//        val cost = if (tpeIn.isConstantSize) {
-//          val predicateCost: Ref[Int] = Apply(costF, Pair(IntZero, constantTypeSize(eAny)), false)
-//          len * (predicateCost + CostTable.lambdaInvoke)
-//        } else {
-//          colBuilder.replicate(len, IntZero).zip(sizes).map(costF).sum(intPlusMonoid) + len * CostTable.lambdaInvoke
-//        }
-//        val res = costedBooleanTransformer[Any](node, xs, conditionC, calcF, cost)
-//        res
-//
-//      case MapCollection(input, sfunc) =>
-//        val inputC = evalNode(ctx, env, input)
-//        val mapper = evalNode(ctx, env, sfunc)
-//        val res = CollCoster(inputC, SCollection.MapMethod, Array(mapper))
-//        res
-//
+      case node: BooleanTransformer[_] =>
+        val tpeIn = node.input.tpe.elemType
+        val eIn = stypeToElem(tpeIn)
+        val xs = asRep[Coll[Any]](eval(node.input))
+        val eAny = xs.elem.asInstanceOf[CollElem[Any,_]].eItem
+        assert(eIn == eAny, s"Types should be equal: but $eIn != $eAny")
+        val conditionC = asRep[Any => SType#WrappedType](eval(node.condition))
+        val res = conditionC.elem.eRange.asInstanceOf[Elem[_]] match {
+          case BooleanElement =>
+            node match {
+              case _: ForAll[_] =>
+                xs.forall(asRep[Any => Boolean](conditionC))
+              case _: Exists[_] =>
+                xs.exists(asRep[Any => Boolean](conditionC))
+            }
+          case _: SigmaPropElem[_] =>
+            val children = xs.map(asRep[Any => SigmaProp](conditionC))
+            val size = SizeSigmaProposition
+            node match {
+              case _: ForAll[_] =>
+                sigmaDslBuilder.allZK(children)
+              case _: Exists[_] =>
+                sigmaDslBuilder.anyZK(children)
+            }
+        }
+        res
+
+      case MapCollection(InCollAny(inputV), sfunc) =>
+        val mapper = asRep[Any => Any](eval(sfunc))
+        inputV.map(mapper)
+
 //      case Fold(input, zero, sfunc) =>
 //        val eItem = stypeToElem(input.tpe.elemType)
 //        val eState = stypeToElem(zero.tpe)
@@ -339,24 +343,13 @@ trait GraphBuilding extends SigmaLibrary { this: IRContext =>
 //          res
 //        }
 //
-//      case op @ Slice(In(input), In(from), In(until)) =>
-//        val inputC = asRep[CostedColl[Any]](input)
-//        val fromC = asRep[Costed[Int]](from)
-//        val untilC = asRep[Costed[Int]](until)
-//        val f = fromC.value
-//        val u = untilC.value
-//        val vals = inputC.values.slice(f, u)
-//        val costs = inputC.costs
-//        val sizes = inputC.sizes
-//        RCCostedColl(vals, costs, sizes, opCost(vals, Array(inputC.valuesCost), costOf(op)))
-//
-//      case Append(In(_col1), In(_col2)) =>
-//        val col1 = asRep[CostedColl[Any]](_col1)
-//        val col2 = asRep[CostedColl[Any]](_col2)
-//        val values = col1.values.append(col2.values)
-//        val costs = col1.costs.append(col2.costs)
-//        val sizes = col1.sizes.append(col2.sizes)
-//        RCCostedColl(values, costs, sizes, opCost(values, Array(col1.cost, col2.cost), costOf(node)))
+      case op @ Slice(InCollAny(inputV), In(from), In(until)) =>
+        val fromV = asRep[Int](from)
+        val untilV = asRep[Int](until)
+        inputV.slice(fromV, untilV)
+
+      case Append(InCollAny(col1), InCollAny(col2)) =>
+        col1.append(col2)
 
       case Filter(input, p) =>
         val inputV = asRep[Coll[Any]](eval(input))
