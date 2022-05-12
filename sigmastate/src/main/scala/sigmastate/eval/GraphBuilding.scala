@@ -431,10 +431,10 @@ trait GraphBuilding extends SigmaLibrary { this: IRContext =>
 //        BoxBytesInfo.mkCostedColl(bytes, opCost(bytes, Array(boxC.cost), costOf(node)))
 //      case utxo.ExtractCreationInfo(In(box)) =>
 //        BoxCoster(box, SBox.creationInfoMethod, Nil)
-//      case utxo.ExtractRegisterAs(In(box), regId, optTpe) =>
-//        implicit val elem = stypeToElem(optTpe.elemType).asInstanceOf[Elem[Any]]
-//        val i: RCosted[Int] = RCCostedPrim(regId.number.toInt, IntZero, SizeInt)
-//        BoxCoster(box, SBox.getRegMethod, Array(i), Array(liftElem(elem)))
+      case utxo.ExtractRegisterAs(In(box: Ref[Box]@unchecked), regId, optTpe) =>
+        val elem = stypeToElem(optTpe.elemType).asInstanceOf[Elem[Any]]
+        val i: Ref[Int] = regId.number.toInt
+        box.getReg(i)(elem)
 
       case BoolToSigmaProp(bool) =>
         sigmaDslBuilder.sigmaProp(eval(bool))
