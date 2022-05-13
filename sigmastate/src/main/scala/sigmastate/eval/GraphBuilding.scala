@@ -209,20 +209,16 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
 //      case ValUse(valId, _) =>
 //        env.getOrElse(valId, !!!(s"ValUse $valId not found in environment $env"))
 //
-//      case CreateProveDlog(In(_v)) =>
-//        val vC = asRep[Costed[GroupElement]](_v)
-//        val resV: Ref[SigmaProp] = sigmaDslBuilder.proveDlog(vC.value)
-//        val cost = opCost(resV, Array(vC.cost), CostOfProveDlog)
-//        RCCostedPrim(resV, cost, SizeSigmaProposition)
-//
-//      case CreateProveDHTuple(In(_gv), In(_hv), In(_uv), In(_vv)) =>
-//        val gvC = asRep[Costed[GroupElement]](_gv)
-//        val hvC = asRep[Costed[GroupElement]](_hv)
-//        val uvC = asRep[Costed[GroupElement]](_uv)
-//        val vvC = asRep[Costed[GroupElement]](_vv)
-//        val resV: Ref[SigmaProp] = sigmaDslBuilder.proveDHTuple(gvC.value, hvC.value, uvC.value, vvC.value)
-//        val cost = opCost(resV, Array(gvC.cost, hvC.cost, uvC.cost, vvC.cost), CostOfDHTuple)
-//        RCCostedPrim(resV, cost, SizeSigmaProposition)
+      case CreateProveDlog(In(_v)) =>
+        val v = asRep[GroupElement](_v)
+        sigmaDslBuilder.proveDlog(v)
+
+      case CreateProveDHTuple(In(_gv), In(_hv), In(_uv), In(_vv)) =>
+        val gv = asRep[GroupElement](_gv)
+        val hv = asRep[GroupElement](_hv)
+        val uv = asRep[GroupElement](_uv)
+        val vv = asRep[GroupElement](_vv)
+        sigmaDslBuilder.proveDHTuple(gv, hv, uv, vv)
 
       case sigmastate.Exponentiate(In(l), In(r)) =>
         val lV = asRep[GroupElement](l)
@@ -306,32 +302,23 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
         val mapper = asRep[Any => Any](eval(sfunc))
         inputV.map(mapper)
 
-//      case Fold(input, zero, sfunc) =>
-//        val eItem = stypeToElem(input.tpe.elemType)
-//        val eState = stypeToElem(zero.tpe)
-//        (eState, eItem) match { case (eState: Elem[s], eItem: Elem[a]) =>
-//          val inputC = asRep[CostedColl[a]](eval(input))
-//          implicit val eA = inputC.elem.asInstanceOf[CostedElem[Coll[a],_]].eVal.eA
-//          assert(eItem == eA, s"Types should be equal: but $eItem != $eA")
-//
-//          val zeroC = asRep[Costed[s]](eval(zero))
-//          implicit val eS = zeroC.elem.eVal
-//          assert(eState == eS, s"Types should be equal: but $eState != $eS")
-//
-//          val foldOpC = fun { in: Ref[CostedPair[s, a]] =>
-//            val acc = in.l; val item = in.r
-//            val out = sfunc match {
-//              case Terms.Lambda(_, Seq((accN, _), (n, _)), _, Some(op)) =>
-//                evalNode(ctx, env + (accN -> acc, n -> item), op)
-//              case FuncValue(Seq((tpl, _)), op) =>
-//                evalNode(ctx, env + (tpl -> in), op)
-//            }
-//            asRep[Costed[s]](out)
-//          }
-//          val res = inputC.foldCosted(zeroC, asRep[Costed[(s,a)] => Costed[s]](foldOpC))
-//          res
-//        }
-//
+      case Fold(input, zero, sfunc) =>
+        val eItem = stypeToElem(input.tpe.elemType)
+        val eState = stypeToElem(zero.tpe)
+        (eState, eItem) match { case (eState: Elem[s], eItem: Elem[a]) =>
+          val inputV = asRep[Coll[a]](eval(input))
+          implicit val eA = inputV.elem.asInstanceOf[CollElem[a,_]].eItem
+          assert(eItem == eA, s"Types should be equal: but $eItem != $eA")
+
+          val zeroV = asRep[s](eval(zero))
+          implicit val eS = zeroV.elem
+          assert(eState == eS, s"Types should be equal: but $eState != $eS")
+
+          val op = asRep[((s,a)) => s](eval(sfunc))
+          val res = inputV.foldLeft(zeroV, op)
+          res
+        }
+
       case op @ Slice(InCollAny(inputV), In(from), In(until)) =>
         val fromV = asRep[Int](from)
         val untilV = asRep[Int](until)
@@ -567,6 +554,15 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
         }(Lazy(eArg))
         f
 
+      case Terms.Lambda(_, Seq((accN, accTpe), (n, tpe)), _, Some(body)) =>
+        (stypeToElem(accTpe), stypeToElem(tpe)) match { case (eAcc: Elem[s], eA: Elem[a]) =>
+          val eArg = pairElement(eAcc, eA)
+          val f = fun { x: Ref[(s, a)] =>
+            buildNode(ctx, env + (accN -> x._1) + (n -> x._2), body)
+          }(Lazy(eArg))
+          f
+        }
+
 //      case l @ FuncValue(Seq((n, argTpe)), body) =>
 //        val eArg = stypeToElem(argTpe).asInstanceOf[Elem[Any]]
 //        val xElem = elemToCostedElem(eArg)
@@ -630,6 +626,9 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
             case SCollection.ZipMethod.name =>
               val ys = asRep[Coll[Any]](argsV(0))
               xs.zip(ys)
+            case SCollection.FlatMapMethod.name =>
+              val ys = asRep[Any => Coll[Any]](argsV(0))
+              xs.flatMap(ys)
             case _ => throwError
           }
           case (opt: ROption[t]@unchecked, SOption) => method.name match {
