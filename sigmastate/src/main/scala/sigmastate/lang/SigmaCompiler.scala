@@ -2,9 +2,10 @@ package sigmastate.lang
 
 import fastparse.core.Parsed
 import fastparse.core.Parsed.Success
+import org.ergoplatform.Context
 import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
 import sigmastate.SType
-import sigmastate.Values.{Value, SValue}
+import sigmastate.Values.{SValue, Value}
 import sigmastate.eval.IRContext
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.SigmaPredef.PredefinedFuncRegistry
@@ -69,14 +70,23 @@ class SigmaCompiler(settings: CompilerSettings) {
     IR.buildTree(calcF)
   }
 
+  case class CompilerResult[Ctx <: IRContext](
+    calcF: Ctx#Ref[Ctx#Context => Any],
+    compiledGraph: Ctx#Ref[Ctx#Context => Any],
+    /** Tree obtained from calcF graph. */
+    calcTree: SValue,
+    /** Tree obtained from graph created by GraphBuilding */
+    buildTree: SValue
+  )
+
   /** TODO v5.x: remove after AOT costing is removed */
-  def compile2(env: ScriptEnv, code: String)(implicit IR: IRContext): Value[SType] = {
+  def compile2(env: ScriptEnv, code: String)(implicit IR: IRContext): CompilerResult[IR.type] = {
     val interProp = typecheck(env, code)
     val IR.Pair(calcF, _) = IR.doCosting(env, interProp, true)
     val compiledGraph = IR.doBuild(env, interProp, true)
-    val okEqual = IR.alphaEqual(calcF, compiledGraph)
-    assert(okEqual, s"Different graphs for $code")
-    IR.buildTree(calcF)
+    val calcTree = IR.buildTree(calcF)
+    val compiledTree = IR.buildTree(compiledGraph)
+    CompilerResult(calcF, compiledGraph, calcTree, compiledTree)
   }
 }
 

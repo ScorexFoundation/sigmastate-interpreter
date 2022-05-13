@@ -41,11 +41,11 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
   }
 
   def buildGraph[T](envVals: Map[Any, SValue], tree: SValue): Ref[Context => T] = {
-    fun { ctxC: Ref[Context] =>
+    fun(removeIsProven({ ctxC: Ref[Context] =>
       val env = envVals.mapValues(v => buildNode(ctxC, Map.empty, v))
       val res = asRep[T](buildNode(ctxC, env, tree))
       res
-    }
+    }))
   }
 
   type CompilingEnv = Map[Any, Ref[_]]
@@ -651,6 +651,12 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
           case (tree: Ref[AvlTree]@unchecked, SAvlTree) => method.name match {
             case SAvlTree.digestMethod.name =>
               tree.digest
+            case SAvlTree.keyLengthMethod.name =>
+              tree.keyLength
+            case SAvlTree.valueLengthOptMethod.name =>
+              tree.valueLengthOpt
+            case SAvlTree.enabledOperationsMethod.name =>
+              tree.enabledOperations
             case SAvlTree.getMethod.name =>
               val key = asRep[Coll[Byte]](argsV(0))
               val proof = asRep[Coll[Byte]](argsV(1))

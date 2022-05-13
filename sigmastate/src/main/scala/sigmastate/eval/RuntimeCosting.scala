@@ -787,13 +787,13 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
     _contextDependantNodes = debox.Set.ofSize[Int](InitDependantNodes)
   }
 
-  def removeIsProven[T,R](f: Ref[T] => Ref[Any]): Ref[T] => Ref[Any] = { x: Ref[T] =>
+  def removeIsProven[T,R](f: Ref[T] => Ref[R]): Ref[T] => Ref[R] = { x: Ref[T] =>
     val y = f(x);
     val res = y match {
       case SigmaPropMethods.isValid(p) => p
       case v => v
     }
-    res
+    asRep[R](res)
   }
 
   private[sigmastate] var funUnderCosting: Sym = null

@@ -70,9 +70,15 @@ trait TestsBase extends Matchers with VersionTesting {
     compiler.compileWithoutCosting(env, code)
 
   def compile(env: ScriptEnv, code: String)(implicit IR: IRContext): Value[SType] = {
-    val tree = compiler.compile2(env, code)
-    checkSerializationRoundTrip(tree)
-    tree
+    val res = compiler.compile2(env, code)
+    val okEqual = IR.alphaEqual(res.calcF.asInstanceOf[IR.Sym], res.compiledGraph.asInstanceOf[IR.Sym])
+    if (!okEqual) {
+      res.calcTree shouldBe res.buildTree
+//      assert(okEqual, s"Different graphs for $code")
+    }
+
+    checkSerializationRoundTrip(res.calcTree)
+    res.calcTree
   }
 
 //  /** TODO v5.x: remove after AOT costing is removed */
