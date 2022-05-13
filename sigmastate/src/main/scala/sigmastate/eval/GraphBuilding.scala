@@ -278,7 +278,7 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
         val eAny = xs.elem.asInstanceOf[CollElem[Any,_]].eItem
         assert(eIn == eAny, s"Types should be equal: but $eIn != $eAny")
         val conditionC = asRep[Any => SType#WrappedType](eval(node.condition))
-        val res = conditionC.elem.eRange.asInstanceOf[Elem[_]] match {
+        val res = conditionC.elem.eRange match {
           case BooleanElement =>
             node match {
               case _: ForAll[_] =>
@@ -288,7 +288,6 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
             }
           case _: SigmaPropElem[_] =>
             val children = xs.map(asRep[Any => SigmaProp](conditionC))
-            val size = SizeSigmaProposition
             node match {
               case _: ForAll[_] =>
                 sigmaDslBuilder.allZK(children)
@@ -549,9 +548,9 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
 
       case l @ Terms.Lambda(_, Seq((n, argTpe)), tpe, Some(body)) =>
         val eArg = stypeToElem(argTpe).asInstanceOf[Elem[Any]]
-        val f = fun { x: Ref[Any] =>
+        val f = fun(removeIsProven({ x: Ref[Any] =>
           buildNode(ctx, env + (n -> x), body)
-        }(Lazy(eArg))
+        }))(Lazy(eArg))
         f
 
       case Terms.Lambda(_, Seq((accN, accTpe), (n, tpe)), _, Some(body)) =>

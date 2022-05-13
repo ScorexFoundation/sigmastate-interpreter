@@ -107,7 +107,12 @@ class ReversibleTxExampleSpecification extends SigmaTestingCommons
         |  val isWithdraw = {(b:Box) => b.R5[Int].get >= HEIGHT + blocksIn24h &&
         |                               blake2b256(b.propositionBytes) == withdrawScriptHash}
         |  val isFee = {(b:Box) => b.propositionBytes == feePropositionBytes}
-        |  val isValidOut = {(b:Box) => isChange(b) || isWithdraw(b) || isFee(b)}
+        |  val isValidOut = { (b:Box) =>
+        |    isChange(b) ||
+        |    isWithdraw(b) ||
+        |    b.propositionBytes == feePropositionBytes // this is inlined isFee to make GraphBuilding equivalent to calcTree
+        |                                              // see TestsBase.compile
+        |  }
         |
         |  val totalFeeAlt = OUTPUTS.fold(0L, {(acc:Long, b:Box) => if (isFee(b)) acc + b.value else acc })
         |

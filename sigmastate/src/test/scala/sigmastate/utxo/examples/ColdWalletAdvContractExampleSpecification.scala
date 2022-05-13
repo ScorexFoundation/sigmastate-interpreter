@@ -59,33 +59,34 @@ class ColdWalletAdvContractExampleSpecification extends SigmaTestingCommons
         |
         |  val notExpired = HEIGHT - start <= blocksIn24h
         |  val newStart:Int = if (notExpired) start else HEIGHT
-        |
+        |  val selfValue = SELF.value
+        |  val selfR6 = SELF.R6[Long].get
         |  // available for one user to spend in this period
         |  val avbl1Key = if (notExpired)
         |                  SELF.R5[Long].get
         |                else
-        |                  max(SELF.value * percent1Key / 100, minSpend)
+        |                  max(selfValue * percent1Key / 100, minSpend)
         |
         |  // available for two users to spend in this period
         |  val avbl2Key = if (notExpired)
-        |                  SELF.R6[Long].get
+        |                  selfR6
         |                else
-        |                  max(SELF.value * percent2Key / 100, minSpend)
+        |                  max(selfValue * percent2Key / 100, minSpend)
         |
         |  val out = OUTPUTS(0) // change output
         |
         |  // to do: double check if negatives values of avbl1Key create any problem
         |  val isValid1Key = INPUTS.size == 1 && out.propositionBytes == SELF.propositionBytes &&
-        |    out.R4[Int].get >= newStart && out.value >= SELF.value - avbl1Key &&
-        |    out.value - out.R5[Long].get == SELF.value - avbl1Key && out.R6[Long].get == SELF.R6[Long].get
+        |    out.R4[Int].get >= newStart && out.value >= selfValue - avbl1Key &&
+        |    out.value - out.R5[Long].get == selfValue - avbl1Key && out.R6[Long].get == selfR6
         |
         |  val isValid2Key = INPUTS.size == 1 && out.propositionBytes == SELF.propositionBytes &&
-        |    out.R4[Int].get >= newStart && out.value >= SELF.value - avbl2Key &&
-        |    out.value - out.R6[Long].get == SELF.value - avbl2Key && out.R5[Long].get == SELF.R5[Long].get
+        |    out.R4[Int].get >= newStart && out.value >= selfValue - avbl2Key &&
+        |    out.value - out.R6[Long].get == selfValue - avbl2Key && out.R5[Long].get == SELF.R5[Long].get
         |
         |  allOf(Coll(user1, user2, user3)) || (
-        |    (anyOf(Coll(user1, user2, user3)) && (SELF.value <= avbl1Key || isValid1Key)) ||
-        |    (atLeast(2, Coll(user1, user2, user3)) && (SELF.value <= avbl2Key || isValid2Key))
+        |    (anyOf(Coll(user1, user2, user3)) && (selfValue <= avbl1Key || isValid1Key)) ||
+        |    (atLeast(2, Coll(user1, user2, user3)) && (selfValue <= avbl2Key || isValid2Key))
         |  )
         |}""".stripMargin).asSigmaProp
 

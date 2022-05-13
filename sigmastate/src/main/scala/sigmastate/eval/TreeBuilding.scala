@@ -257,8 +257,8 @@ trait TreeBuilding extends RuntimeCosting { IR: IRContext =>
         val specMethod = method.withConcreteTypes(typeSubst + (SCollection.tIV -> colTpe.elemType))
         builder.mkMethodCall(col, specMethod, args.toIndexedSeq, Map())
 
-      case BoxM.value(box) =>
-        mkExtractAmount(recurse[SBox.type](box))
+      case BoxM.value(In(box)) =>
+        mkExtractAmount(box.asBox)
       case BoxM.propositionBytes(In(box)) =>
         mkExtractScriptBytes(box.asBox)
       case BoxM.getReg(In(box), regId, _) =>

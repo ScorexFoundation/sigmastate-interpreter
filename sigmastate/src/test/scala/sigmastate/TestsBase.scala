@@ -5,12 +5,11 @@ import org.ergoplatform.ErgoScriptPredef
 import org.scalatest.Matchers
 import sigmastate.Values.{SValue, Value, SigmaPropValue, ErgoTree, SigmaBoolean}
 import sigmastate.eval.IRContext
-import sigmastate.interpreter.Interpreter
+import sigmastate.helpers.SigmaPPrint
 import sigmastate.interpreter.Interpreter.ScriptEnv
-import sigmastate.lang.{TransformingSigmaBuilder, SigmaCompiler, CompilerSettings}
 import sigmastate.lang.Terms.ValueOps
+import sigmastate.lang.{CompilerSettings, SigmaCompiler, TransformingSigmaBuilder}
 import sigmastate.serialization.ValueSerializer
-import spire.syntax.all.cfor
 
 import scala.util.DynamicVariable
 
@@ -73,12 +72,21 @@ trait TestsBase extends Matchers with VersionTesting {
     val res = compiler.compile2(env, code)
     val okEqual = IR.alphaEqual(res.calcF.asInstanceOf[IR.Sym], res.compiledGraph.asInstanceOf[IR.Sym])
     if (!okEqual) {
-      res.calcTree shouldBe res.buildTree
-//      assert(okEqual, s"Different graphs for $code")
+      println(s"Different graphs for $code")
     }
-
+    if (res.calcTree != res.buildTree) {
+      println(
+        s"""
+          |Script: $code
+          |OldTree: ------------
+          |${SigmaPPrint(res.calcTree, 150, 250)}
+          |NewTree: ------------
+          |${SigmaPPrint(res.buildTree, 150, 250)}
+          |""".stripMargin)
+      res.calcTree shouldBe res.buildTree
+    }
     checkSerializationRoundTrip(res.calcTree)
-    res.calcTree
+    res.buildTree
   }
 
 //  /** TODO v5.x: remove after AOT costing is removed */
