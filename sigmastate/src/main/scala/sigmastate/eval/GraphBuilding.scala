@@ -624,13 +624,22 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
               val ys = asRep[Coll[Any]](argsV(0))
               xs.zip(ys)
             case SCollection.FlatMapMethod.name =>
-              val ys = asRep[Any => Coll[Any]](argsV(0))
-              xs.flatMap(ys)
+              val f = asRep[Any => Coll[Any]](argsV(0))
+              xs.flatMap(f)
+            case SCollection.MapMethod.name =>
+              val f = asRep[Any => Any](argsV(0))
+              xs.map(f)
+            case SCollection.FilterMethod.name =>
+              val p = asRep[Any => Boolean](argsV(0))
+              xs.filter(p)
             case _ => throwError
           }
           case (opt: ROption[t]@unchecked, SOption) => method.name match {
             case SOption.GetMethod.name =>
               opt.get
+            case SOption.GetOrElseMethod.name =>
+              val defaultTh = asRep[t](argsV(0))
+              opt.getOrElse(Thunk(defaultTh))
             case SOption.IsDefinedMethod.name =>
               opt.isDefined
             case SOption.MapMethod.name =>
@@ -653,7 +662,25 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
           }
           case (ctx: Ref[Context]@unchecked, SContext) => method.name match {
             case SContext.dataInputsMethod.name =>
-              asRep[Context](objV).dataInputs
+              ctx.dataInputs
+            case SContext.headersMethod.name =>
+              ctx.headers
+            case SContext.preHeaderMethod.name =>
+              ctx.preHeader
+            case SContext.inputsMethod.name =>
+              ctx.INPUTS
+            case SContext.outputsMethod.name =>
+              ctx.OUTPUTS
+            case SContext.heightMethod.name =>
+              ctx.HEIGHT
+            case SContext.selfMethod.name =>
+              ctx.SELF
+            case SContext.selfBoxIndexMethod.name =>
+              ctx.selfBoxIndex
+            case SContext.lastBlockUtxoRootHashMethod.name =>
+              ctx.LastBlockUtxoRootHash
+            case SContext.minerPubKeyMethod.name =>
+              ctx.minerPubKey
             case _ => throwError
           }
           case (tree: Ref[AvlTree]@unchecked, SAvlTree) => method.name match {
@@ -751,6 +778,11 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
               h.powDistance
             case SHeader.votesMethod.name =>
               h.votes
+            case _ => throwError
+          }
+          case (g: Ref[SigmaDslBuilder]@unchecked, SGlobal) => method.name match {
+            case SGlobal.groupGeneratorMethod.name =>
+              g.groupGenerator
             case _ => throwError
           }
           case _ => throwError
