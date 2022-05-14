@@ -59,8 +59,8 @@ class ColdWalletAdvContractExampleSpecification extends SigmaTestingCommons
         |
         |  val notExpired = HEIGHT - start <= blocksIn24h
         |  val newStart:Int = if (notExpired) start else HEIGHT
-        |  val selfValue = SELF.value
-        |  val selfR6 = SELF.R6[Long].get
+        |  val selfValue = SELF.value      // this declarations necessary to make GraphBuilding equivalent to calcTree
+        |  val selfR6 = SELF.R6[Long].get  // see see TestsBase.compile
         |  // available for one user to spend in this period
         |  val avbl1Key = if (notExpired)
         |                  SELF.R5[Long].get

@@ -64,12 +64,6 @@ class SigmaCompiler(settings: CompilerSettings) {
     ir
   }
 
-  def compile(env: ScriptEnv, code: String)(implicit IR: IRContext): Value[SType] = {
-    val interProp = typecheck(env, code)
-    val IR.Pair(calcF, _) = IR.doCosting(env, interProp, true)
-    IR.buildTree(calcF)
-  }
-
   case class CompilerResult[Ctx <: IRContext](
     calcF: Ctx#Ref[Ctx#Context => Any],
     compiledGraph: Ctx#Ref[Ctx#Context => Any],
@@ -80,7 +74,7 @@ class SigmaCompiler(settings: CompilerSettings) {
   )
 
   /** TODO v5.x: remove after AOT costing is removed */
-  def compile2(env: ScriptEnv, code: String)(implicit IR: IRContext): CompilerResult[IR.type] = {
+  def compile(env: ScriptEnv, code: String)(implicit IR: IRContext): CompilerResult[IR.type] = {
     val interProp = typecheck(env, code)
     val IR.Pair(calcF, _) = IR.doCosting(env, interProp, true)
     val compiledGraph = IR.doBuild(env, interProp, true)

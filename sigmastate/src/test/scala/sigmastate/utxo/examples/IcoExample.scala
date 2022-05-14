@@ -250,8 +250,7 @@ class IcoExample extends SigmaTestingCommons
     "feeBytes" -> feeBytes,
     "projectPubKey" -> project.secrets.head.publicImage
   )
-
-  lazy val withdrawalScript: SigmaPropValue = compiler.compile(env,
+  lazy val withdrawalScript: SigmaPropValue = compile(env,
     """{
       |  val removeProof = getVar[Coll[Byte]](2).get
       |  val lookupProof = getVar[Coll[Byte]](3).get

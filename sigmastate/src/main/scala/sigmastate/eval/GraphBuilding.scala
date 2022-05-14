@@ -5,7 +5,7 @@ import org.ergoplatform.validation.ValidationRules.{CheckIsSupportedIndexExpress
 import scalan.{ExactOrdering, Lazy, MutableLazy, Nullable, SigmaLibrary}
 import scalan.ExactOrdering.{ByteIsExactOrdering, IntIsExactOrdering, LongIsExactOrdering, ShortIsExactOrdering}
 import sigmastate.Values.Value.Typed
-import sigmastate.{AND, ArithOp, AtLeast, BinAnd, BinOr, BinXor, BoolToSigmaProp, ByteArrayToLong, CalcBlake2b256, CalcSha256, CreateProveDHTuple, CreateProveDlog, DecodePoint, If, LogicalNot, ModQ, ModQArithOp, Negation, OR, Relation, SAvlTree, SBigInt, SBox, SCollection, SCollectionType, SContext, SGlobal, SGroupElement, SInt, SNumericType, SOption, SSigmaProp, SType, SigmaAnd, SigmaOr, SubstConstants, Values, Xor, XorOf, utxo}
+import sigmastate.{AND, ArithOp, AtLeast, BinAnd, BinOr, BinXor, BoolToSigmaProp, ByteArrayToLong, CalcBlake2b256, CalcSha256, CreateProveDHTuple, CreateProveDlog, DecodePoint, If, LogicalNot, ModQ, ModQArithOp, Negation, OR, Relation, SAvlTree, SBigInt, SBox, SCollection, SCollectionType, SContext, SGlobal, SGroupElement, SHeader, SInt, SNumericType, SOption, SPreHeader, SSigmaProp, SType, SigmaAnd, SigmaOr, SubstConstants, Values, Xor, XorOf, utxo}
 import sigmastate.Values._
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.Terms
@@ -225,13 +225,11 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
         val rV = asRep[BigInt](r)
         lV.exp(rV)
 
-//      case sigmastate.MultiplyGroup(In(_l), In(_r)) =>
-//        val l = asRep[Costed[GroupElement]](_l)
-//        val r = asRep[Costed[GroupElement]](_r)
-//        val value = l.value.multiply(r.value)
-//        val cost = opCost(value, Array(l.cost, r.cost), costOf(node))
-//        RCCostedPrim(value, cost, SizeGroupElement)
-//
+      case sigmastate.MultiplyGroup(In(_l), In(_r)) =>
+        val l = asRep[GroupElement](_l)
+        val r = asRep[GroupElement](_r)
+        l.multiply(r)
+
       case Values.GroupGenerator =>
         sigmaDslBuilder.groupGenerator
 
@@ -631,10 +629,21 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
             case _ => throwError
           }
           case (opt: ROption[t]@unchecked, SOption) => method.name match {
+            case SOption.GetMethod.name =>
+              opt.get
+            case SOption.IsDefinedMethod.name =>
+              opt.isDefined
             case SOption.MapMethod.name =>
               opt.map(asRep[t => Any](argsV(0)))
             case SOption.FilterMethod.name =>
               opt.filter(asRep[t => Boolean](argsV(0)))
+            case _ => throwError
+          }
+          case (ge: Ref[GroupElement]@unchecked, SGroupElement) => method.name match {
+            case SGroupElement.GetEncodedMethod.name =>
+              ge.getEncoded
+            case SGroupElement.NegateMethod.name =>
+              ge.negate
             case _ => throwError
           }
           case (box: Ref[Box]@unchecked, SBox) => method.name match {
@@ -656,6 +665,18 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
               tree.valueLengthOpt
             case SAvlTree.enabledOperationsMethod.name =>
               tree.enabledOperations
+            case SAvlTree.isInsertAllowedMethod.name =>
+              tree.isInsertAllowed
+            case SAvlTree.isRemoveAllowedMethod.name =>
+              tree.isRemoveAllowed
+            case SAvlTree.isUpdateAllowedMethod.name =>
+              tree.isUpdateAllowed
+            case SAvlTree.updateDigestMethod.name =>
+              val digest = asRep[Coll[Byte]](argsV(0))
+              tree.updateDigest(digest)
+            case SAvlTree.updateOperationsMethod.name =>
+              val operations = asRep[Byte](argsV(0))
+              tree.updateOperations(operations)
             case SAvlTree.getMethod.name =>
               val key = asRep[Coll[Byte]](argsV(0))
               val proof = asRep[Coll[Byte]](argsV(1))
@@ -676,6 +697,60 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
               val operations = asRep[Coll[Coll[Byte]]](argsV(0))
               val proof = asRep[Coll[Byte]](argsV(1))
               tree.remove(operations, proof)
+            case SAvlTree.updateMethod.name =>
+              val operations = asRep[Coll[(Coll[Byte], Coll[Byte])]](argsV(0))
+              val proof = asRep[Coll[Byte]](argsV(1))
+              tree.update(operations, proof)
+            case _ => throwError
+          }
+          case (ph: Ref[PreHeader]@unchecked, SPreHeader) => method.name match {
+            case SPreHeader.versionMethod.name =>
+              ph.version
+            case SPreHeader.parentIdMethod.name =>
+              ph.parentId
+            case SPreHeader.timestampMethod.name =>
+              ph.timestamp
+            case SPreHeader.nBitsMethod.name =>
+              ph.nBits
+            case SPreHeader.heightMethod.name =>
+              ph.height
+            case SPreHeader.minerPkMethod.name =>
+              ph.minerPk
+            case SPreHeader.votesMethod.name =>
+              ph.votes
+            case _ => throwError
+          }
+          case (h: Ref[Header]@unchecked, SHeader) => method.name match {
+            case SHeader.idMethod.name =>
+              h.id
+            case SHeader.versionMethod.name =>
+              h.version
+            case SHeader.parentIdMethod.name =>
+              h.parentId
+            case SHeader.ADProofsRootMethod.name =>
+              h.ADProofsRoot
+            case SHeader.stateRootMethod.name =>
+              h.stateRoot
+            case SHeader.transactionsRootMethod.name =>
+              h.transactionsRoot
+            case SHeader.timestampMethod.name =>
+              h.timestamp
+            case SHeader.nBitsMethod.name =>
+              h.nBits
+            case SHeader.heightMethod.name =>
+              h.height
+            case SHeader.extensionRootMethod.name =>
+              h.extensionRoot
+            case SHeader.minerPkMethod.name =>
+              h.minerPk
+            case SHeader.powOnetimePkMethod.name =>
+              h.powOnetimePk
+            case SHeader.powNonceMethod.name =>
+              h.powNonce
+            case SHeader.powDistanceMethod.name =>
+              h.powDistance
+            case SHeader.votesMethod.name =>
+              h.votes
             case _ => throwError
           }
           case _ => throwError

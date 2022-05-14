@@ -179,7 +179,7 @@ class LetsSpecification extends SigmaTestingCommons with CrossVersionProps { sui
   private val miningRewardsDelay = 720
   private val feeProp = ErgoScriptPredef.feeProposition(miningRewardsDelay) // create ErgoTree v0
 
-  lazy val exchangeScript = compiler.compile(env,
+  lazy val exchangeScript = compile(env,
     """{
       |
       |  // Minimal balance allowed for LETS trader
@@ -231,7 +231,7 @@ class LetsSpecification extends SigmaTestingCommons with CrossVersionProps { sui
 
   def userContractHash = Blake2b256(ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(exchangeTree))
 
-  def managementScript = compiler.compile(env.updated("userContractHash", userContractHash),
+  def managementScript = compile(env.updated("userContractHash", userContractHash),
     """{
       |
       | val selfOut = OUTPUTS(0)

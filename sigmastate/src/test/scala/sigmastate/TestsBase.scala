@@ -69,7 +69,7 @@ trait TestsBase extends Matchers with VersionTesting {
     compiler.compileWithoutCosting(env, code)
 
   def compile(env: ScriptEnv, code: String)(implicit IR: IRContext): Value[SType] = {
-    val res = compiler.compile2(env, code)
+    val res = compiler.compile(env, code)
     val okEqual = IR.alphaEqual(res.calcF.asInstanceOf[IR.Sym], res.compiledGraph.asInstanceOf[IR.Sym])
     if (!okEqual) {
       println(s"Different graphs for $code")
