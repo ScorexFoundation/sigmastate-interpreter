@@ -217,6 +217,5 @@ block 1600 in 1622 ms, 30000000000 coins remain, defs: 61661
     chainGen(genesisState, initialBox, 0, 1000000)
 
     println(s"Emission Tree: ${ErgoAlgos.encode(tree.bytes)}")
-    println(prover.precompiledScriptProcessor.getStats())
   }
 }

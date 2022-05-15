@@ -6,14 +6,16 @@ import scala.util.DynamicVariable
 
 trait VersionTesting {
 
+  /** In v5.x we run test for only one activated version on the network (== 2).
+    * In the branch for v6.0 the new version 3 should be added so that the tests run for both.
+    */
   protected val activatedVersions: Seq[Byte] =
     Array(VersionContext.MaxSupportedScriptVersion)
 
-  private[sigmastate] val _currActivatedVersion = new DynamicVariable[Byte](0)
-  def activatedVersionInTests: Byte = _currActivatedVersion.value
+  private[sigmastate] val _currActivatedVersion = new DynamicVariable[Byte](2) // v5.x by default
 
-  /** Checks if the current activated script version used in tests corresponds to v4.x. */
-  def isActivatedVersion4: Boolean = activatedVersionInTests < VersionContext.JitActivationVersion
+  /** Current activated version used in tests. */
+  def activatedVersionInTests: Byte = _currActivatedVersion.value
 
   val ergoTreeVersions: Seq[Byte] =
     (0 to VersionContext.MaxSupportedScriptVersion).map(_.toByte).toArray[Byte]

@@ -18,7 +18,6 @@ import SType.AnyOps
 import sigmastate.interpreter.ContextExtension.VarBinding
 import sigmastate.interpreter.ErgoTreeEvaluator.DefaultEvalSettings
 import sigmastate.interpreter.{CryptoConstants, EvalSettings}
-import sigmastate.lang.exceptions.SigmaException
 import sigmastate.utils.Helpers._
 
 class BasicOpsSpecification extends SigmaTestingCommons

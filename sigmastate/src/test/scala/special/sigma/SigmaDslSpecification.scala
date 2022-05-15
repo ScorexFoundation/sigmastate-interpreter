@@ -4397,7 +4397,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     )))
 
     val box3 = SigmaDsl.Box(testBox(20, TrueTree, 0, Seq(), Map(
-      ErgoBox.R4 -> Constant((10, 20L).asInstanceOf[SType#WrappedType], STuple(SInt, SLong)),
+      ErgoBox.R4 -> Constant((10, 20L).asInstanceOf[SType#WrappedType], STuple(SInt, SLong))
       // TODO v6.0 (1h): uncomment after DataSerializer support of Option type
       //  ErgoBox.R5 -> Constant((10, Some(20L)).asInstanceOf[SType#WrappedType], STuple(SInt, SOption(SLong)))
       //  ErgoBox.R6 -> Constant[SOption[SInt.type]](Option(10), SOption(SInt)),
