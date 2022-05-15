@@ -22,7 +22,9 @@ class ErgoTreeSerializerSpecification extends SerializationSpecification
   private def extractConstants(prop: SigmaPropValue)(implicit IR: IRContext): Seq[ErgoTree] = {
     import ErgoTree._
     val env = Map[String, Any]()
-    val IR.Pair(calcF, _) = IR.doCosting(env, prop)
+    val res = compiler.compileTyped(env, prop)
+    checkCompilerResult(res)
+    val calcF = res.compiledGraph
     val constantsStore = new ConstantStore()
     val outExpr = IR.buildTree(calcF, Some(constantsStore))
     val constants = constantsStore.getAll
