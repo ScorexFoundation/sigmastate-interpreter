@@ -79,7 +79,7 @@ class SigmaCompiler(settings: CompilerSettings) {
   def compile(env: ScriptEnv, code: String)(implicit IR: IRContext): CompilerResult[IR.type] = {
     val interProp = typecheck(env, code)
     val IR.Pair(calcF, _) = IR.doCosting(env, interProp, true)
-    val compiledGraph = IR.doBuild(env, interProp, true)
+    val compiledGraph = IR.buildGraph(env, interProp)
     val calcTree = IR.buildTree(calcF)
     val compiledTree = IR.buildTree(compiledGraph)
     CompilerResult(env, code, calcF, compiledGraph, calcTree, compiledTree)

@@ -1,55 +1,57 @@
 package sigmastate.eval
 
 import org.ergoplatform._
-import org.ergoplatform.validation.ValidationRules.{CheckIsSupportedIndexExpression, CheckTupleType}
-import scalan.{ExactOrdering, Lazy, MutableLazy, Nullable, SigmaLibrary}
-import scalan.ExactOrdering.{ByteIsExactOrdering, IntIsExactOrdering, LongIsExactOrdering, ShortIsExactOrdering}
+import org.ergoplatform.validation.ValidationRules.CheckTupleType
+import scalan.{Lazy, Nullable, SigmaLibrary}
 import sigmastate.Values.Value.Typed
-import sigmastate.{AND, ArithOp, AtLeast, BinAnd, BinOr, BinXor, BoolToSigmaProp, ByteArrayToLong, CalcBlake2b256, CalcSha256, CreateProveDHTuple, CreateProveDlog, DecodePoint, If, LogicalNot, ModQ, ModQArithOp, Negation, OR, Relation, SAvlTree, SBigInt, SBox, SCollection, SCollectionType, SContext, SGlobal, SGroupElement, SHeader, SInt, SNumericType, SOption, SPreHeader, SSigmaProp, SType, SigmaAnd, SigmaOr, SubstConstants, Values, Xor, XorOf, utxo}
 import sigmastate.Values._
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.Terms
 import sigmastate.lang.Terms.{Ident, Select, Val, ValueOps}
 import sigmastate.serialization.OpCodes
-import sigmastate.serialization.OpCodes.{DivisionCode, MaxCode, MinCode, MinusCode, ModuloCode, MultiplyCode, PlusCode}
-import sigmastate.utxo.{Append, BooleanTransformer, ByIndex, CostTable, Exists, Filter, Fold, ForAll, GetVar, MapCollection, SelectField, SigmaPropBytes, SigmaPropIsProven, Slice}
+import sigmastate.utxo._
+import sigmastate._
 import spire.syntax.all.cfor
 
-import scala.collection.mutable
-
+/** Perform translation of typed expression given by [[Value]] to a graph in IRContext.
+  * Which be than be translated to [[ErgoTree]] by using [[TreeBuilding]].
+  *
+  * Common Sub-expression Elimination (CSE) optimization is performed which reduces
+  * serialized size of the resulting ErgoTree.
+  * CSE however means the original structure of source code may not be preserved in the
+  * resulting ErgoTree.
+  * */
 trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
-  import builder._
-  import Liftables._
-  import Context._;
-  import Header._;
-  import PreHeader._;
-  import GroupElement._;
-  import BigInt._;
-  import WOption._
-  import Coll._;
-  import CollBuilder._;
-  import SigmaProp._;
-  import Box._
-  import SigmaDslBuilder._
-  import MonoidBuilder._
   import AvlTree._
-  import WSpecialPredef._
+  import BigInt._
+  import Box._
+  import Coll._
+  import CollBuilder._
+  import Context._
+  import GroupElement._
+  import Header._
+  import Liftables._
+  import PreHeader._
+  import SigmaDslBuilder._
+  import SigmaProp._
+  import WOption._
+  import builder._
 
-  def doBuild(env: ScriptEnv, typed: SValue, okRemoveIsProven: Boolean): Ref[Context => Any] = {
-    val g = buildGraph[Any](env.map { case (k, v) => (k: Any, builder.liftAny(v).get) }, typed)
-    g
-  }
-
-  def buildGraph[T](envVals: Map[Any, SValue], tree: SValue): Ref[Context => T] = {
+  /** Translates the given typed expression to IR graph representing a function from
+    * Context to some type T.
+    * @param env contains values for each named constant used
+    */
+  def buildGraph[T](env: ScriptEnv, typed: SValue): Ref[Context => T] = {
+    val envVals = env.map { case (name, v) => (name: Any, builder.liftAny(v).get) }
     fun(removeIsProven({ ctxC: Ref[Context] =>
-      val env = envVals.mapValues(v => buildNode(ctxC, Map.empty, v))
-      val res = asRep[T](buildNode(ctxC, env, tree))
+//      val env = envVals.mapValues(v => buildNode(ctxC, Map.empty, v))
+      val res = asRep[T](buildNode(ctxC, Map.empty, typed))
       res
     }))
   }
 
-  type CompilingEnv = Map[Any, Ref[_]]
-
+  /** Helper type synonym used internally */
+  protected type CompilingEnv = Map[Any, Ref[_]]
 
   protected def buildNode[T <: SType](ctx: Ref[Context], env: CompilingEnv, node: Value[T]): Ref[T#WrappedType] = {
     def eval[T <: SType](node: Value[T]): Ref[T#WrappedType] = buildNode(ctx, env, node)
@@ -61,9 +63,6 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
       }
     }
     val InCollByte = new InColl[Byte]; val InCollAny = new InColl[Any]()(AnyElement); val InCollInt = new InColl[Int]
-
-    val InCollCollByte = new InColl[Coll[Byte]]()(eCollByte)
-    val InPairCollByte = new InColl[(Coll[Byte], Coll[Byte])]()(ePairOfCollByte)
 
     object InSeq { def unapply(items: Seq[SValue]): Nullable[Seq[Ref[Any]]] = {
       val res = items.map { x: SValue =>
@@ -177,7 +176,7 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
       case Terms.Apply(col, Seq(index)) if col.tpe.isCollection =>
         eval(mkByIndex(col.asCollection[SType], index.asValue[SInt.type], None))
 
-      case op @ GetVar(id, optTpe) =>
+      case GetVar(id, optTpe) =>
         val e = stypeToElem(optTpe.elemType)
         ctx.getVar(id)(e)
 
@@ -192,23 +191,6 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
         val resV = buildNode(ctx, curEnv, res)
         resV
 
-//      case BlockValue(binds, res) =>
-//        var curEnv = env
-//        val len = binds.length
-//        cfor(0)(_ < len, _ + 1) { i =>
-//          val vd = binds(i).asInstanceOf[ValDef]
-//          val n = vd.id
-//          val b = vd.rhs
-//          if (curEnv.contains(n)) error(s"Variable $n already defined ($n = ${curEnv(n)}", vd.sourceContext.toOption)
-//          val bC = evalNode(ctx, curEnv, b)
-//          curEnv = curEnv + (n -> bC)
-//        }
-//        val res1 = evalNode(ctx, curEnv, res)
-//        res1
-//
-//      case ValUse(valId, _) =>
-//        env.getOrElse(valId, !!!(s"ValUse $valId not found in environment $env"))
-//
       case CreateProveDlog(In(_v)) =>
         val v = asRep[GroupElement](_v)
         sigmaDslBuilder.proveDlog(v)
@@ -241,18 +223,19 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
         val xV = asRep[Long](x)
         sigmaDslBuilder.longToByteArray(xV)
 
-      // opt.get =>
+      // opt.get
       case utxo.OptionGet(In(opt: ROption[_]@unchecked)) =>
         opt.get
 
-      // opt.isDefined =>
+      // opt.isDefined
       case utxo.OptionIsDefined(In(opt: ROption[_]@unchecked)) =>
         opt.isDefined
 
-      // opt.getOrElse =>
+      // opt.getOrElse(default)
       case utxo.OptionGetOrElse(In(opt: ROption[a]@unchecked), In(default)) =>
         opt.getOrElse(asRep[a](default))
 
+      // tup._1 or tup._2
       case SelectField(In(tup), fieldIndex) =>
         val eTuple = tup.elem.asInstanceOf[Elem[_]]
         CheckTupleType(IR)(eTuple)
@@ -266,26 +249,28 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
             res
         }
 
+      // (x, y)
       case Values.Tuple(InSeq(Seq(x, y))) =>
         Pair(x, y)
 
+      // xs.exists(predicate) or xs.forall(predicate)
       case node: BooleanTransformer[_] =>
         val tpeIn = node.input.tpe.elemType
         val eIn = stypeToElem(tpeIn)
         val xs = asRep[Coll[Any]](eval(node.input))
         val eAny = xs.elem.asInstanceOf[CollElem[Any,_]].eItem
         assert(eIn == eAny, s"Types should be equal: but $eIn != $eAny")
-        val conditionC = asRep[Any => SType#WrappedType](eval(node.condition))
-        val res = conditionC.elem.eRange match {
+        val predicate = asRep[Any => SType#WrappedType](eval(node.condition))
+        val res = predicate.elem.eRange match {
           case BooleanElement =>
             node match {
               case _: ForAll[_] =>
-                xs.forall(asRep[Any => Boolean](conditionC))
+                xs.forall(asRep[Any => Boolean](predicate))
               case _: Exists[_] =>
-                xs.exists(asRep[Any => Boolean](conditionC))
+                xs.exists(asRep[Any => Boolean](predicate))
             }
           case _: SigmaPropElem[_] =>
-            val children = xs.map(asRep[Any => SigmaProp](conditionC))
+            val children = xs.map(asRep[Any => SigmaProp](predicate))
             node match {
               case _: ForAll[_] =>
                 sigmaDslBuilder.allZK(children)
@@ -295,20 +280,22 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
         }
         res
 
+      // input.map(mapper)
       case MapCollection(InCollAny(inputV), sfunc) =>
         val mapper = asRep[Any => Any](eval(sfunc))
         inputV.map(mapper)
 
+      // input.fold(zero, (acc, x) => op)
       case Fold(input, zero, sfunc) =>
         val eItem = stypeToElem(input.tpe.elemType)
         val eState = stypeToElem(zero.tpe)
         (eState, eItem) match { case (eState: Elem[s], eItem: Elem[a]) =>
           val inputV = asRep[Coll[a]](eval(input))
-          implicit val eA = inputV.elem.asInstanceOf[CollElem[a,_]].eItem
+          implicit val eA: Elem[a] = inputV.elem.asInstanceOf[CollElem[a,_]].eItem
           assert(eItem == eA, s"Types should be equal: but $eItem != $eA")
 
           val zeroV = asRep[s](eval(zero))
-          implicit val eS = zeroV.elem
+          implicit val eS: Elem[s] = zeroV.elem
           assert(eState == eS, s"Types should be equal: but $eState != $eS")
 
           val op = asRep[((s,a)) => s](eval(sfunc))
@@ -316,7 +303,7 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
           res
         }
 
-      case op @ Slice(InCollAny(inputV), In(from), In(until)) =>
+      case Slice(InCollAny(inputV), In(from), In(until)) =>
         val fromV = asRep[Int](from)
         val untilV = asRep[Int](until)
         inputV.slice(fromV, untilV)
@@ -334,9 +321,6 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
         val xV = asRep[Any](eval(x))
         Apply(fV, xV, mayInline = false)
 
-//      case opt: OptionValue[_] =>
-//        error(s"Option constructors are not supported: $opt", opt.sourceContext.toOption)
-//
       case CalcBlake2b256(In(input)) =>
         val inputV = asRep[Coll[Byte]](input)
         val res = sigmaDslBuilder.blake2b256(inputV)
@@ -349,27 +333,24 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
 
       case utxo.SizeOf(In(xs)) =>
         xs.elem.asInstanceOf[Any] match {
-          case ce: CollElem[a,_] =>
+          case _: CollElem[a,_] =>
             val xsV = asRep[Coll[a]](xs)
             xsV.length
-          case pe: PairElem[a,b] =>
-            val v: Ref[Int] = 2
-            v
+          case _: PairElem[_,_] =>
+            2: Ref[Int]
         }
 
       case ByIndex(xs, i, defaultOpt) =>
         val xsV = asRep[Coll[Any]](eval(xs))
         val iV = asRep[Int](eval(i))
-
-        defaultOpt match {
+        val res = defaultOpt match {
           case Some(defaultValue) =>
             val defaultV = asRep[Any](eval(defaultValue))
-            val value = xsV.getOrElse(iV, defaultV)
-            value
+            xsV.getOrElse(iV, defaultV)
           case None =>
-            val value = xsV(iV)
-            value
+            xsV(iV)
         }
+        res
 
       case SigmaPropIsProven(p) =>
         val pV = asRep[SigmaProp](eval(p))
@@ -416,7 +397,7 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
         val boundV = eval(bound)
         sigmaDslBuilder.atLeast(boundV, inputV)
 
-      case op: ArithOp[t] if op.tpe == SBigInt =>
+      case op: ArithOp[_] if op.tpe == SBigInt =>
         import OpCodes._
         val xV = asRep[BigInt](eval(op.left))
         val yV = asRep[BigInt](eval(op.right))
@@ -431,7 +412,7 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
           case code         => error(s"Cannot perform buildNode($op): unknown opCode ${code}", op.sourceContext.toOption)
         }
 
-      case op: ArithOp[t] =>
+      case op: ArithOp[_] =>
         val tpe = op.left.tpe
         val et = stypeToElem(tpe)
         val binop = opcodeToEndoBinOp(op.opCode, et)
@@ -443,29 +424,9 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
         val inputV = eval(input)
         ApplyUnOp(Not, inputV)
 
-//      case ModQ(input) =>
-//        val inputC = asRep[Costed[BigInt]](eval(input))
-//        val v = inputC.value.modQ
-//        RCCostedPrim(v, opCost(v, Array(inputC.cost), costOf(node)), SizeBigInt)
-//
-//      case ModQArithOp(l, r, code) =>
-//        val lC = asRep[Costed[BigInt]](eval(l))
-//        val rC = asRep[Costed[BigInt]](eval(r))
-//        val v = code match {
-//          case OpCodes.PlusModQCode => lC.value.plusModQ(rC.value)
-//          case OpCodes.MinusModQCode => lC.value.minusModQ(rC.value)
-//          case code => error(s"unknown code for modular arithmetic op: $code")
-//        }
-//        RCCostedPrim(v, opCost(v, Array(lC.cost, rC.cost), costOf(node)), SizeBigInt)
-
       case OR(input) => input match {
         case ConcreteCollection(items, _) =>
-          val len = items.length
-          val values = new Array[Ref[Boolean]](len)
-          cfor(0)(_ < len, _ + 1) { i =>
-            val item = items(i)
-            values(i) = eval(item)
-          }
+          val values = items.map(eval)
           sigmaDslBuilder.anyOf(colBuilder.fromItems(values: _*))
         case _ =>
           val inputV = asRep[Coll[Boolean]](eval(input))
@@ -474,12 +435,7 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
 
       case AND(input) => input match {
         case ConcreteCollection(items, _) =>
-          val len = items.length
-          val values = new Array[Ref[Boolean]](len)
-          cfor(0)(_ < len, _ + 1) { i =>
-            val item = items(i)
-            values(i) = eval(item)
-          }
+          val values = items.map(eval)
           sigmaDslBuilder.allOf(colBuilder.fromItems(values: _*))
         case _ =>
           val inputV = asRep[Coll[Boolean]](eval(input))
@@ -488,12 +444,7 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
 
       case XorOf(input) => input match {
         case ConcreteCollection(items, _) =>
-          val len = items.length
-          val values = new Array[Ref[Boolean]](len)
-          cfor(0)(_ < len, _ + 1) { i =>
-            val item = items(i)
-            values(i) = eval(item)
-          }
+          val values = items.map(eval)
           sigmaDslBuilder.xorOf(colBuilder.fromItems(values: _*))
         case _ =>
           val inputV = asRep[Coll[Boolean]](eval(input))
@@ -531,9 +482,11 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
         
       case If(c, t, e) =>
         val cV = eval(c)
-        def tV = eval(t)
-        def eV = eval(e)
-        val resV = IF (cV) THEN tV ELSE eV
+        val resV = IF (cV) THEN {
+          eval(t)
+        } ELSE {
+          eval(e)
+        }
         resV
 
       case rel: Relation[t, _] =>
@@ -544,7 +497,7 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
         val y = eval(rel.right)
         binop.apply(x, asRep[t#WrappedType](y))
 
-      case l @ Terms.Lambda(_, Seq((n, argTpe)), tpe, Some(body)) =>
+      case Terms.Lambda(_, Seq((n, argTpe)), _, Some(body)) =>
         val eArg = stypeToElem(argTpe).asInstanceOf[Elem[Any]]
         val f = fun(removeIsProven({ x: Ref[Any] =>
           buildNode(ctx, env + (n -> x), body)
@@ -560,17 +513,8 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
           f
         }
 
-//      case l @ FuncValue(Seq((n, argTpe)), body) =>
-//        val eArg = stypeToElem(argTpe).asInstanceOf[Elem[Any]]
-//        val xElem = elemToCostedElem(eArg)
-//        val f = fun { x: Ref[Costed[Any]] =>
-//          evalNode(ctx, env + (n -> x), body)
-//        }(Lazy(xElem))
-//        val eRes = f.elem.eRange.eVal
-//        mkCostedFunc(f, opCost(f, Nil, costOf(node)), l.tpe.dataSize(SType.DummyValue), eArg, eRes)
-
-      case col @ ConcreteCollection(InSeq(vs), elemType) =>
-        implicit val eAny = stypeToElem(elemType).asInstanceOf[Elem[Any]]
+      case ConcreteCollection(InSeq(vs), elemType) =>
+        val eAny = stypeToElem(elemType).asInstanceOf[Elem[Any]]
         val values = colBuilder.fromItems(vs: _*)(eAny)
         values
 
@@ -596,7 +540,7 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
         sigmaDslBuilder.decodePoint(bytes)
 
       // fallback rule for MethodCall, should be the last case in the list
-      case Terms.MethodCall(obj, method, args, typeSubst) if method.objType.coster.isDefined =>
+      case Terms.MethodCall(obj, method, args, _) =>
         val objV = eval(obj)
         val argsV = args.map(eval)
         (objV, method.objType) match {
