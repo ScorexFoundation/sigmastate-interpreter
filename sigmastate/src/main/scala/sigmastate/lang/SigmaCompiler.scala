@@ -86,7 +86,7 @@ class SigmaCompiler(settings: CompilerSettings) {
 
   /** Compiles the given typed expression. */
   def compileTyped(env: ScriptEnv, typedExpr: SValue)(implicit IR: IRContext): CompilerResult[IR.type] = {
-    val IR.Pair(calcF, _) = IR.doCosting(env, typedExpr, true)
+    val IR.Pair(calcF, costF) = IR.doCosting(env, typedExpr, true)
     val compiledGraph = IR.buildGraph(env, typedExpr)
     val calcTree = IR.buildTree(calcF)
     val compiledTree = IR.buildTree(compiledGraph)

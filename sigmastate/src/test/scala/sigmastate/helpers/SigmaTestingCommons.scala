@@ -211,8 +211,9 @@ trait SigmaTestingCommons extends PropSpec
     // The following is done as part of Interpreter.verify()
     val (costF, valueFun) = {
       val costingRes = getCostingResult(env, expr)
-      val calcF = costingRes.calcF
-      val tree = IR.buildTree(calcF)
+      val res = compiler.compileTyped(env, expr)
+      val calcF = res.compiledGraph
+      val tree = res.buildTree
 
       // sanity check that buildTree is reverse to buildGraph (see doCostingEx)
       if (tA != special.sigma.ContextRType) {
