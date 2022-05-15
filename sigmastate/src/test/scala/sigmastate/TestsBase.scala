@@ -75,30 +75,8 @@ trait TestsBase extends Matchers with VersionTesting {
   }
 
   def checkCompilerResult[Ctx <: IRContext](res: CompilerResult[Ctx])(implicit IR: IRContext): Unit = {
-    val okEqual = IR.alphaEqual(res.calcF.asInstanceOf[IR.Sym], res.compiledGraph.asInstanceOf[IR.Sym])
-    if (!okEqual) {
-      println(s"Different graphs for ${res.code}")
-    }
-    if (res.calcTree != res.buildTree) {
-      println(
-        s"""
-          |Script: ${res.code}
-          |OldTree: ------------
-          |${SigmaPPrint(res.calcTree, 150, 250)}
-          |NewTree: ------------
-          |${SigmaPPrint(res.buildTree, 150, 250)}
-          |""".stripMargin)
-      res.calcTree shouldBe res.buildTree
-    }
-    checkSerializationRoundTrip(res.calcTree)
+    checkSerializationRoundTrip(res.buildTree)
   }
-
-//  /** TODO v5.x: remove after AOT costing is removed */
-//  def compile(env: ScriptEnv, code: String)(implicit IR: IRContext): Value[SType] = {
-//    val tree = compiler.compile2(env, code)
-//    checkSerializationRoundTrip(tree)
-//    tree
-//  }
 
   def compileAndCheck(env: ScriptEnv, code: String, expected: SValue)
                      (implicit IR: IRContext): (ErgoTree, SigmaPropValue) = {

@@ -30,10 +30,7 @@ case class CompilerSettings(
 case class CompilerResult[Ctx <: IRContext](
   env: ScriptEnv,
   code: String,
-  calcF: Ctx#Ref[Ctx#Context => Any],
   compiledGraph: Ctx#Ref[Ctx#Context => Any],
-  /** Tree obtained from calcF graph. */
-  calcTree: SValue,
   /** Tree obtained from graph created by GraphBuilding */
   buildTree: SValue
 )
@@ -78,11 +75,9 @@ class SigmaCompiler(settings: CompilerSettings) {
   /** TODO v5.x: remove AOT costing part */
   def compile(env: ScriptEnv, code: String)(implicit IR: IRContext): CompilerResult[IR.type] = {
     val interProp = typecheck(env, code)
-    val IR.Pair(calcF, _) = IR.doCosting(env, interProp, true)
     val compiledGraph = IR.buildGraph(env, interProp)
-    val calcTree = IR.buildTree(calcF)
     val compiledTree = IR.buildTree(compiledGraph)
-    CompilerResult(env, code, calcF, compiledGraph, calcTree, compiledTree)
+    CompilerResult(env, code, compiledGraph, compiledTree)
   }
 }
 

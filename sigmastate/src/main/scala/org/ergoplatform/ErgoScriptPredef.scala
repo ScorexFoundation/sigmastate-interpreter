@@ -20,7 +20,6 @@ object ErgoScriptPredef {
   def compileWithCosting(env: ScriptEnv, code: String, networkPrefix: NetworkPrefix)(implicit IR: IRContext): Value[SType] = {
     val compiler = new SigmaCompiler(networkPrefix)
     val res = compiler.compile(env, code)
-    assert(res.calcTree == res.buildTree)
     res.buildTree
   }
 
