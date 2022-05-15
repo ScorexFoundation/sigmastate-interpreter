@@ -150,10 +150,10 @@ class SigmaDslTesting extends PropSpec
 
     /** Called to print test case expression (when it is not given).
       * Can be used to create regression test cases. */
-    def printSuggestion(cf: CompiledFunc[_,_]): Unit = {
-      print(s"No expectedExpr for ")
+    def printSuggestion(title: String, cf: CompiledFunc[_,_]): Unit = {
+      print(title)
       SigmaPPrint.pprintln(cf.script, height = 150)
-      print("Use ")
+      println("---")
       SigmaPPrint.pprintln(cf.expr, height = 150)
       println()
     }
@@ -165,11 +165,13 @@ class SigmaDslTesting extends PropSpec
       expectedExpr match {
         case Some(e) =>
           if (cf.expr != null && cf.expr != e) {
-            printSuggestion(cf)
+            printSuggestion("Unexpected expression for ", cf)
+            println("Expected:")
+            SigmaPPrint.pprintln(e, height = 150)
             cf.expr shouldBe e
           }
         case None if printExpectedExpr =>
-          printSuggestion(cf)
+          printSuggestion("No expectedExpr for ", cf)
       }
       true
     }
@@ -389,11 +391,9 @@ class SigmaDslTesting extends PropSpec
         ctx
       }
 
-      val (evalMode, expectedResult, expectedCost) = if (activatedVersionInTests < VersionContext.JitActivationVersion)
-        (AotEvaluationMode, expected.oldResult, expected.verificationCostOpt)
-      else {
+      val (expectedResult, expectedCost) = {
         val res = expected.newResults(ergoTreeVersionInTests)
-        (JitEvaluationMode, res._1, res._1.verificationCost)
+        (res._1, res._1.verificationCost)
       }
 
       if (expectedResult.value.isSuccess) {
@@ -405,7 +405,7 @@ class SigmaDslTesting extends PropSpec
         val verificationCtx = ctx.withExtension(pr.extension)
         val verifier = new ErgoLikeTestInterpreter()
         val res = verifier.verify(tree, verificationCtx, pr, fakeMessage)
-        checkExpectedResult(evalMode, res, expectedCost)
+        checkExpectedResult(res, expectedCost)
 
         if (expectedCost.isEmpty) {
           val (_, cost) = res.getOrThrow
@@ -441,7 +441,6 @@ class SigmaDslTesting extends PropSpec
     }
 
     private def checkExpectedResult(
-          evalMode: EvaluationMode,
           res: Try[VerificationResult], expectedCost: Option[Int]): Unit = {
       res match {
         case Success((ok, cost)) =>
@@ -449,7 +448,7 @@ class SigmaDslTesting extends PropSpec
           val verificationCost = cost.toIntExact
           if (expectedCost.isDefined) {
             assertResult(expectedCost.get,
-              s"Evaluation Mode: ${evalMode.name}; Actual verify() cost $cost != expected ${expectedCost.get}")(verificationCost)
+              s"Actual verify() cost $cost != expected ${expectedCost.get}")(verificationCost)
           }
 
         case Failure(t) => throw t
@@ -497,12 +496,14 @@ class SigmaDslTesting extends PropSpec
 
     implicit val cs = compilerSettingsInTests
 
-    val oldImpl = () => func[A, B](script)
+    val oldImpl = () => funcJit[A, B](script)
     val newImpl = () => funcJit[A, B](script)
 
     def checkEquality(input: A, logInputOutput: Boolean = false): Try[(B, CostDetails)] = {
       // check the old implementation against Scala semantic function
-      val oldRes = checkEq(scalaFunc)(oldF)(input)
+      val oldRes = VersionContext.withVersions(activatedVersionInTests, ergoTreeVersionInTests) {
+        checkEq(scalaFunc)(oldF)(input)
+      }
 
       val newRes = VersionContext.withVersions(activatedVersionInTests, ergoTreeVersionInTests) {
         checkEq(scalaFunc)({ x =>
@@ -561,7 +562,9 @@ class SigmaDslTesting extends PropSpec
       */
     override def checkExpected(input: A, expected: Expected[B]): Unit = {
       // check the old implementation with Scala semantic
-      val (oldRes, _) = checkEq(scalaFunc)(oldF)(input).get
+      val (oldRes, _) = VersionContext.withVersions(activatedVersionInTests, ergoTreeVersionInTests) {
+        checkEq(scalaFunc)(oldF)(input).get
+      }
       oldRes shouldBe expected.value.get
 
       // check the new implementation with Scala semantic
@@ -817,7 +820,7 @@ class SigmaDslTesting extends PropSpec
     }
     implicit val cs = compilerSettingsInTests
 
-    val oldImpl = () => func[A, B](script)
+    val oldImpl = () => funcJit[A, B](script)
     val newImpl = oldImpl // funcJit[A, B](script) // TODO v6.0 (16h): use actual new implementation here
 
     /** In v5.x this method just checks the old implementations fails on the new feature. */

@@ -44,8 +44,8 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
   def buildGraph[T](env: ScriptEnv, typed: SValue): Ref[Context => T] = {
     val envVals = env.map { case (name, v) => (name: Any, builder.liftAny(v).get) }
     fun(removeIsProven({ ctxC: Ref[Context] =>
-//      val env = envVals.mapValues(v => buildNode(ctxC, Map.empty, v))
-      val res = asRep[T](buildNode(ctxC, Map.empty, typed))
+      val env = envVals.mapValues(v => buildNode(ctxC, Map.empty, v))
+      val res = asRep[T](buildNode(ctxC, env, typed))
       res
     }))
   }
@@ -577,6 +577,13 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
               val index = asRep[Int](argsV(0))
               val value = asRep[t](argsV(1))
               xs.updated(index, value)
+            case SCollection.AppendMethod.name =>
+              val ys = asRep[Coll[t]](argsV(0))
+              xs.append(ys)
+            case SCollection.SliceMethod.name =>
+              val from = asRep[Int](argsV(0))
+              val until = asRep[Int](argsV(1))
+              xs.slice(from, until)
             case SCollection.UpdateManyMethod.name =>
               val indexes = asRep[Coll[Int]](argsV(0))
               val values = asRep[Coll[t]](argsV(1))
@@ -597,6 +604,16 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
             case SCollection.FilterMethod.name =>
               val p = asRep[Any => Boolean](argsV(0))
               xs.filter(p)
+            case SCollection.ForallMethod.name =>
+              val p = asRep[Any => Boolean](argsV(0))
+              xs.forall(p)
+            case SCollection.ExistsMethod.name =>
+              val p = asRep[Any => Boolean](argsV(0))
+              xs.exists(p)
+            case SCollection.FoldMethod.name =>
+              val zero = asRep[Any](argsV(0))
+              val op = asRep[((Any, Any)) => Any](argsV(1))
+              xs.foldLeft(zero, op)
             case _ => throwError
           }
           case (opt: ROption[t]@unchecked, SOption) => method.name match {
@@ -618,6 +635,9 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
               ge.getEncoded
             case SGroupElement.NegateMethod.name =>
               ge.negate
+            case SGroupElement.ExponentiateMethod.name =>
+              val k = asRep[BigInt](argsV(0))
+              ge.exp(k)
             case _ => throwError
           }
           case (box: Ref[Box]@unchecked, SBox) => method.name match {

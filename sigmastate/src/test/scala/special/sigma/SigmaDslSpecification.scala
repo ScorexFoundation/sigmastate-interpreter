@@ -2804,65 +2804,18 @@ class SigmaDslSpecification extends SigmaDslTesting
             )
           )))
     } else {
-      forEachScriptAndErgoTreeVersion(activatedVersions, ergoTreeVersions) {
-        testCases(
-          Seq(
-            ((ge1, CBigInt(new BigInteger("-25c80b560dd7844e2efd10f80f7ee57d", 16))),
-              Expected(
-                // in v4.x exp method cannot be called via MethodCall ErgoTree node
-                Failure(new NoSuchMethodException("sigmastate.eval.CostingRules$GroupElementCoster.exp(scalan.Base$Ref)")),
-                cost = 41484,
-                CostDetails.ZeroCost,
-                newCost = 0,
-                newVersionedResults = {
-                  // in v5.0 MethodCall ErgoTree node is allowed
-                  val res = ExpectedResult(
-                    Success(Helpers.decodeGroupElement("023a850181b7b73f92a5bbfa0bfc78f5bbb6ff00645ddde501037017e1a2251e2e")),
-                    Some(999)
-                  )
-                  val details = TracedCost(
-                    traceBase ++ Array(
-                      FixedCostItem(SelectField),
-                      FixedCostItem(MethodCall),
-                      FixedCostItem(ValUse),
-                      FixedCostItem(SelectField),
-                      FixedCostItem(SGroupElement.ExponentiateMethod, FixedCost(JitCost(900)))
-                    )
-                  )
-                  Seq( // expected result for each version
-                    0 -> ( res -> Some(details) ),
-                    1 -> ( res -> Some(details) ),
-                    2 -> ( res -> Some(details) )
-                  )
-                }
-              )
-              )
-          ),
-          changedFeature(
-            (x: (GroupElement, BigInt)) =>
-              throw new NoSuchMethodException("sigmastate.eval.CostingRules$GroupElementCoster.exp(scalan.Base$Ref)"),
-            scalaFunc, ""/*can't be compiled in v4.x*/,
-            FuncValue(
-              Vector((1, STuple(Vector(SGroupElement, SBigInt)))),
-              MethodCall(
-                SelectField.typed[Value[SGroupElement.type]](
-                  ValUse(1, STuple(Vector(SGroupElement, SBigInt))),
-                  1.toByte
-                ),
-                SGroupElement.getMethodByName("exp"),
-                Vector(
-                  SelectField.typed[Value[SBigInt.type]](
-                    ValUse(1, STuple(Vector(SGroupElement, SBigInt))),
-                    2.toByte
-                  )
-                ),
-                Map()
-              )
-            ),
-            allowNewToSucceed = true,
-            allowDifferentErrors = true
-          ))
-      }
+      // TODO v5.x: test when exp represented by MethodCall
+      verifyCases(cases,
+        existingFeature(
+          scalaFunc,
+          script,
+          FuncValue(
+            Array((1, SPair(SGroupElement, SBigInt))),
+            Exponentiate(
+              SelectField.typed[Value[SGroupElement.type]](ValUse(1, SPair(SGroupElement, SBigInt)), 1.toByte),
+              SelectField.typed[Value[SBigInt.type]](ValUse(1, SPair(SGroupElement, SBigInt)), 2.toByte)
+            )
+          )))
     }
   }
 
