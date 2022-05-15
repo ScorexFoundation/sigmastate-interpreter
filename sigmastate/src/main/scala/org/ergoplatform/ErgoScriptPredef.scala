@@ -19,9 +19,9 @@ object ErgoScriptPredef {
 
   def compileWithCosting(env: ScriptEnv, code: String, networkPrefix: NetworkPrefix)(implicit IR: IRContext): Value[SType] = {
     val compiler = new SigmaCompiler(networkPrefix)
-    val interProp = compiler.typecheck(env, code)
-    val IR.Pair(calcF, _) = IR.doCosting(env, interProp)
-    IR.buildTree(calcF)
+    val res = compiler.compile(env, code)
+    assert(res.calcTree == res.buildTree)
+    res.buildTree
   }
 
   /** Create ErgoTree with `false` proposition, which is never true.

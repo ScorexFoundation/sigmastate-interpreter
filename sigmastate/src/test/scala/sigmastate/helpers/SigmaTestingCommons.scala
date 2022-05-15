@@ -184,12 +184,9 @@ trait SigmaTestingCommons extends PropSpec
     // The resulting tree should be serializable
     val compiledTree = {
       val compiler = SigmaCompiler(compilerSettings)
-      val internalProp = compiler.typecheck(env, code)
-      val costingRes = getCostingResult(env, internalProp)
-      val calcF = costingRes.calcF
-      val tree = IR.buildTree(calcF)
-      checkSerializationRoundTrip(tree)
-      tree
+      val res = compiler.compile(env, code)
+      checkCompilerResult(res)
+      res.buildTree
     }
     compiledTree
   }
