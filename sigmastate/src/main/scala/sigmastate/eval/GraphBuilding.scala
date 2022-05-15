@@ -180,6 +180,9 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
         val e = stypeToElem(optTpe.elemType)
         ctx.getVar(id)(e)
 
+      case ValUse(valId, _) =>
+        env.getOrElse(valId, !!!(s"ValUse $valId not found in environment $env"))
+
       case Terms.Block(binds, res) =>
         var curEnv = env
         for (v @ Val(n, _, b) <- binds) {
@@ -187,6 +190,17 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
             error(s"Variable $n already defined ($n = ${curEnv(n)}", v.sourceContext.toOption)
           val bV = buildNode(ctx, curEnv, b)
           curEnv = curEnv + (n -> bV)
+        }
+        val resV = buildNode(ctx, curEnv, res)
+        resV
+
+      case BlockValue(binds, res) =>
+        var curEnv = env
+        for (v @ ValDef(id, _, b) <- binds) {
+          if (curEnv.contains(id))
+            error(s"Variable $id already defined ($id = ${curEnv(id)}", v.sourceContext.toOption)
+          val bV = buildNode(ctx, curEnv, b)
+          curEnv = curEnv + (id -> bV)
         }
         val resV = buildNode(ctx, curEnv, res)
         resV
@@ -512,6 +526,13 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
           }(Lazy(eArg))
           f
         }
+
+      case l @ FuncValue(Seq((n, argTpe)), body) =>
+        val eArg = stypeToElem(argTpe).asInstanceOf[Elem[Any]]
+        val f = fun { x: Ref[Any] =>
+          buildNode(ctx, env + (n -> x), body)
+        }(Lazy(eArg))
+        f
 
       case ConcreteCollection(InSeq(vs), elemType) =>
         val eAny = stypeToElem(elemType).asInstanceOf[Elem[Any]]
