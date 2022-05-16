@@ -103,6 +103,10 @@ class SigmaCompiler(settings: CompilerSettings) {
         MethodCall(xs,
           SCollection.FoldMethod.withConcreteTypes(Map(tIV -> xs.tpe.elemType, tOV -> z.tpe)),
           Vector(z, op), Map())
+      case Slice(xs, from, until) =>
+        MethodCall(xs,
+          SCollection.SliceMethod.withConcreteTypes(Map(tIV -> xs.tpe.elemType)),
+          Vector(from, until), Map())
     })
     rewrite(everywherebu(r))(expr)
   }

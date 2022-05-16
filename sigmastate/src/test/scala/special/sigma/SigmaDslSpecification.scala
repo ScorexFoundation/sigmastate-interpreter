@@ -8708,14 +8708,39 @@ class SigmaDslSpecification extends SigmaDslTesting
         )),
         preGeneratedSamples = Some(samples))
     } else {
-      assertExceptionThrown(
-        verifyCases(
-          Seq( (Coll[Int](), (-1, 0)) -> Expected(Success(Coll[Int]()), 0, CostDetails.ZeroCost, 0) ),
-          existingFeature((x: (Coll[Int], (Int, Int))) => x._1.slice(x._2._1, x._2._2),
-            "{ (x: (Coll[Int], (Int, Int))) => x._1.slice(x._2._1, x._2._2) }"
-          )),
-        rootCauseLike[NoSuchMethodException]("sigmastate.eval.CostingRules$CollCoster.slice")
-      )
+      def error = new java.lang.NoSuchMethodException("sigmastate.SCollection$.slice_eval(sigmastate.lang.Terms$MethodCall,special.collection.Coll,int,int,sigmastate.interpreter.ErgoTreeEvaluator))")
+      verifyCases(
+        Seq( (Coll[Int](), (-1, 0)) -> Expected(error) ),
+        existingFeature({ (x: (Coll[Int], (Int, Int))) => throw error; x._1.slice(x._2._1, x._2._2) },
+          "{ (x: (Coll[Int], (Int, Int))) => x._1.slice(x._2._1, x._2._2) }",
+          FuncValue(
+            Array((1, SPair(SCollectionType(SInt), SPair(SInt, SInt)))),
+            BlockValue(
+              Array(
+                ValDef(
+                  3,
+                  List(),
+                  SelectField.typed[Value[STuple]](
+                    ValUse(1, SPair(SCollectionType(SInt), SPair(SInt, SInt))),
+                    2.toByte
+                  )
+                )
+              ),
+              MethodCall.typed[Value[SCollection[SInt.type]]](
+                SelectField.typed[Value[SCollection[SInt.type]]](
+                  ValUse(1, SPair(SCollectionType(SInt), SPair(SInt, SInt))),
+                  1.toByte
+                ),
+                SCollection.getMethodByName("slice").withConcreteTypes(Map(STypeVar("IV") -> SInt)),
+                Vector(
+                  SelectField.typed[Value[SInt.type]](ValUse(3, SPair(SInt, SInt)), 1.toByte),
+                  SelectField.typed[Value[SInt.type]](ValUse(3, SPair(SInt, SInt)), 2.toByte)
+                ),
+                Map()
+              )
+            )
+          )
+        ))
     }
   }
 
