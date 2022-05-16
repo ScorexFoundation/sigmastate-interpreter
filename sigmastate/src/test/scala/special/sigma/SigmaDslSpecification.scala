@@ -8065,15 +8065,49 @@ class SigmaDslSpecification extends SigmaDslTesting
             )
           ) ))
     } else {
-      assertExceptionThrown(
-        verifyCases(
-          Seq( ((Coll[Byte](),  0), Expected(Success(0), 42037)) ),
-          existingFeature(
-            { (x: (Coll[Byte], Int)) => x._1.foldLeft(x._2, { i: (Int, Byte) => if (i._2 > 0) n.plus(i._1, i._2) else i._1 }) },
-            "{ (x: (Coll[Byte], Int)) => x._1.fold(x._2, { (i1: Int, i2: Byte) => if (i2 > 0) i1 + i2 else i1 }) }"
-          )),
-        rootCauseLike[CosterException]("Don't know how to evalNode(Lambda(List()")
-      )
+      def error = new java.lang.NoSuchMethodException("sigmastate.SCollection$.fold_eval(sigmastate.lang.Terms$MethodCall,special.collection.Coll,int,int,sigmastate.interpreter.ErgoTreeEvaluator))")
+      verifyCases(
+        Seq( ((Coll[Byte](),  0), Expected(error)) ),
+        existingFeature(
+          { (x: (Coll[Byte], Int)) => throw error; x._1.foldLeft(x._2, { i: (Int, Byte) => if (i._2 > 0) n.plus(i._1, i._2) else i._1 }) },
+          "{ (x: (Coll[Byte], Int)) => x._1.fold(x._2, { (i1: Int, i2: Byte) => if (i2 > 0) i1 + i2 else i1 }) }",
+          FuncValue(
+            Array((1, SPair(SByteArray, SInt))),
+            MethodCall.typed[Value[SInt.type]](
+              SelectField.typed[Value[SCollection[SByte.type]]](ValUse(1, SPair(SByteArray, SInt)), 1.toByte),
+              SCollection.getMethodByName("fold").withConcreteTypes(Map(STypeVar("IV") -> SByte, STypeVar("OV") -> SInt)),
+              Vector(
+                SelectField.typed[Value[SInt.type]](ValUse(1, SPair(SByteArray, SInt)), 2.toByte),
+                FuncValue(
+                  Array((3, SPair(SInt, SByte))),
+                  BlockValue(
+                    Array(
+                      ValDef(
+                        5,
+                        List(),
+                        Upcast(
+                          SelectField.typed[Value[SByte.type]](ValUse(3, SPair(SInt, SByte)), 2.toByte),
+                          SInt
+                        )
+                      ),
+                      ValDef(
+                        6,
+                        List(),
+                        SelectField.typed[Value[SInt.type]](ValUse(3, SPair(SInt, SByte)), 1.toByte)
+                      )
+                    ),
+                    If(
+                      GT(ValUse(5, SInt), IntConstant(0)),
+                      ArithOp(ValUse(6, SInt), ValUse(5, SInt), OpCode @@ (-102.toByte)),
+                      ValUse(6, SInt)
+                    )
+                  )
+                )
+              ),
+              Map()
+            )
+          )
+        ))
     }
   }
 
