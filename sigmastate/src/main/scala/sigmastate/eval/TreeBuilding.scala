@@ -180,6 +180,8 @@ trait TreeBuilding extends RuntimeCosting { IR: IRContext =>
         mkConcreteCollection[elemTpe.type](col.toArray[Value[elemTpe.type]], elemTpe)
       case CBM.xor(_, colSym1, colSym2) =>
         mkXor(recurse(colSym1), recurse(colSym2))
+      case SDBM.xor(_, colSym1, colSym2) =>
+        mkXor(recurse(colSym1), recurse(colSym2))
 
       case ContextM.getVar(_, Def(Const(id: Byte)), eVar) =>
         val tpe = elemToSType(eVar)

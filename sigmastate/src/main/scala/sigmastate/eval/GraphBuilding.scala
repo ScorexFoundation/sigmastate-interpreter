@@ -614,6 +614,10 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
               val zero = asRep[Any](argsV(0))
               val op = asRep[((Any, Any)) => Any](argsV(1))
               xs.foldLeft(zero, op)
+            case SCollection.GetOrElseMethod.name =>
+              val i = asRep[Int](argsV(0))
+              val d = asRep[t](argsV(1))
+              xs.getOrElse(i, d)
             case _ => throwError
           }
           case (opt: ROption[t]@unchecked, SOption) => method.name match {
@@ -635,6 +639,9 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
               ge.getEncoded
             case SGroupElement.NegateMethod.name =>
               ge.negate
+            case SGroupElement.MultiplyMethod.name =>
+              val g2 = asRep[GroupElement](argsV(0))
+              ge.multiply(g2)
             case SGroupElement.ExponentiateMethod.name =>
               val k = asRep[BigInt](argsV(0))
               ge.exp(k)
@@ -768,6 +775,10 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
           case (g: Ref[SigmaDslBuilder]@unchecked, SGlobal) => method.name match {
             case SGlobal.groupGeneratorMethod.name =>
               g.groupGenerator
+            case SGlobal.xorMethod.name =>
+              val c1 = asRep[Coll[Byte]](argsV(0))
+              val c2 = asRep[Coll[Byte]](argsV(1))
+              g.xor(c1, c2)
             case _ => throwError
           }
           case _ => throwError
