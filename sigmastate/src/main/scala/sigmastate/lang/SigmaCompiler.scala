@@ -2,14 +2,16 @@ package sigmastate.lang
 
 import fastparse.core.Parsed
 import fastparse.core.Parsed.Success
-import org.ergoplatform.Context
+import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, rewrite, rule}
 import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
-import sigmastate.SType
 import sigmastate.Values.{SValue, Value}
 import sigmastate.eval.IRContext
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.SigmaPredef.PredefinedFuncRegistry
+import sigmastate.lang.Terms.MethodCall
 import sigmastate.lang.syntax.ParserException
+import sigmastate.utxo._
+import sigmastate.{Exponentiate, SCollection, SGroupElement, SType, STypeVar}
 
 /**
   * @param networkPrefix    network prefix to decode an ergo address from string (PK op)
@@ -86,6 +88,18 @@ class SigmaCompiler(settings: CompilerSettings) {
     val compiledGraph = IR.buildGraph(env, typedExpr)
     val compiledTree = IR.buildTree(compiledGraph)
     CompilerResult(env, "<no source code>", compiledGraph, compiledTree)
+  }
+
+  def unlowerMethodCalls(expr: SValue): SValue = {
+    val r = rule[Any]({
+      case Exponentiate(l, r) =>
+        MethodCall(l, SGroupElement.ExponentiateMethod, Vector(r), Map())
+      case ForAll(xs, p) =>
+        MethodCall(xs, SCollection.ForallMethod.withConcreteTypes(Map(SCollection.tIV -> xs.tpe.elemType)), Vector(p), Map())
+      case Exists(xs, p) =>
+        MethodCall(xs, SCollection.ExistsMethod.withConcreteTypes(Map(SCollection.tIV -> xs.tpe.elemType)), Vector(p), Map())
+    })
+    rewrite(everywherebu(r))(expr)
   }
 }
 

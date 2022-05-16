@@ -2762,16 +2762,8 @@ class SigmaDslSpecification extends SigmaDslTesting
   }
 
   property("GroupElement.exp equivalence") {
-    val costDetails = TracedCost(
-      traceBase ++ Array(
-        FixedCostItem(SelectField),
-        FixedCostItem(ValUse),
-        FixedCostItem(SelectField),
-        FixedCostItem(Exponentiate)
-      )
-    )
-    val cases = {
-      def success[T](v: T) = Expected(Success(v), 1893, costDetails, 1893)
+    def cases(cost: Int, details: CostDetails) = {
+      def success[T](v: T) = Expected(Success(v), cost, details, cost)
       Seq(
         ((ge1, CBigInt(new BigInteger("-25c80b560dd7844e2efd10f80f7ee57d", 16))),
           success(Helpers.decodeGroupElement("023a850181b7b73f92a5bbfa0bfc78f5bbb6ff00645ddde501037017e1a2251e2e"))),
@@ -2786,7 +2778,15 @@ class SigmaDslSpecification extends SigmaDslTesting
     val scalaFunc = { (x: (GroupElement, BigInt)) => x._1.exp(x._2) }
     val script = "{ (x: (GroupElement, BigInt)) => x._1.exp(x._2) }"
     if (lowerMethodCallsInTests) {
-      verifyCases(cases,
+      val costDetails = TracedCost(
+        traceBase ++ Array(
+          FixedCostItem(SelectField),
+          FixedCostItem(ValUse),
+          FixedCostItem(SelectField),
+          FixedCostItem(Exponentiate)
+        )
+      )
+      verifyCases(cases(1893, costDetails),
         existingFeature(
           scalaFunc,
           script,
@@ -2804,16 +2804,34 @@ class SigmaDslSpecification extends SigmaDslTesting
             )
           )))
     } else {
-      // TODO v5.x: test when exp represented by MethodCall
-      verifyCases(cases,
+      val costDetails = TracedCost(
+        traceBase ++ Array(
+          FixedCostItem(SelectField),
+          FixedCostItem(MethodCall),
+          FixedCostItem(ValUse),
+          FixedCostItem(SelectField),
+          FixedCostItem(SGroupElement.ExponentiateMethod, FixedCost(JitCost(900)))
+        )
+      )
+      verifyCases(cases(1893, costDetails),
         existingFeature(
           scalaFunc,
           script,
           FuncValue(
-            Array((1, SPair(SGroupElement, SBigInt))),
-            Exponentiate(
-              SelectField.typed[Value[SGroupElement.type]](ValUse(1, SPair(SGroupElement, SBigInt)), 1.toByte),
-              SelectField.typed[Value[SBigInt.type]](ValUse(1, SPair(SGroupElement, SBigInt)), 2.toByte)
+            Vector((1, STuple(Vector(SGroupElement, SBigInt)))),
+            MethodCall(
+              SelectField.typed[Value[SGroupElement.type]](
+                ValUse(1, STuple(Vector(SGroupElement, SBigInt))),
+                1.toByte
+              ),
+              SGroupElement.getMethodByName("exp"),
+              Vector(
+                SelectField.typed[Value[SBigInt.type]](
+                  ValUse(1, STuple(Vector(SGroupElement, SBigInt))),
+                  2.toByte
+                )
+              ),
+              Map()
             )
           )))
     }
@@ -6844,16 +6862,16 @@ class SigmaDslSpecification extends SigmaDslTesting
         TypeBasedCostItem(GT, SLong)
       )
     )
-
+    def cases = {
+      Seq(
+        (Coll[Box](), Expected(Success(true), 1784, costDetails1, 1784)),
+        (Coll[Box](b1), Expected(Success(false), 1789, costDetails2, 1789)),
+        (Coll[Box](b1, b2), Expected(Success(false), 1789, costDetails3, 1789))
+      )
+    }
     if (lowerMethodCallsInTests) {
       verifyCases(
-        {
-          Seq(
-            (Coll[Box](), Expected(Success(true), 1784, costDetails1, 1784)),
-            (Coll[Box](b1), Expected(Success(false), 1789, costDetails2, 1789)),
-            (Coll[Box](b1, b2), Expected(Success(false), 1789, costDetails3, 1789))
-          )
-        },
+        cases,
         existingFeature({ (x: Coll[Box]) => x.forall({ (b: Box) => b.value > 1 }) },
         "{ (x: Coll[Box]) => x.forall({(b: Box) => b.value > 1 }) }",
         FuncValue(
@@ -6865,15 +6883,21 @@ class SigmaDslSpecification extends SigmaDslTesting
         )),
         preGeneratedSamples = Some(samples))
     } else {
-      assertExceptionThrown(
-        verifyCases(
-          Seq( (Coll[Box](), Expected(Success(true), 37909)) ),
-          existingFeature(
-            { (x: Coll[Box]) => x.forall({ (b: Box) => b.value > 1 }) },
-            "{ (x: Coll[Box]) => x.forall({(b: Box) => b.value > 1 }) }"
-          )),
-        rootCauseLike[NoSuchMethodException]("sigmastate.eval.CostingRules$CollCoster.forall(scalan.Base$Ref)")
-      )
+      def error = new java.lang.NoSuchMethodException("sigmastate.SCollection$.forall_eval(sigmastate.lang.Terms$MethodCall,special.collection.Coll,scala.Function1,sigmastate.interpreter.ErgoTreeEvaluator))")
+      verifyCases(
+        Seq((Coll[Box](), Expected(error))),
+        existingFeature[Coll[Box], Boolean]({ (x: Coll[Box]) => throw error },
+        "{ (x: Coll[Box]) => x.forall({(b: Box) => b.value > 1 }) }",
+        FuncValue(
+          Array((1, SCollectionType(SBox))),
+          MethodCall.typed[Value[SBoolean.type]](
+            ValUse(1, SCollectionType(SBox)),
+            SCollection.getMethodByName("forall").withConcreteTypes(Map(STypeVar("IV") -> SBox)),
+            Vector(FuncValue(Array((3, SBox)), GT(ExtractAmount(ValUse(3, SBox)), LongConstant(1L)))),
+            Map()
+          )
+        )),
+        preGeneratedSamples = Some(samples))
     }
   }
 
@@ -6935,15 +6959,21 @@ class SigmaDslSpecification extends SigmaDslTesting
         )),
         preGeneratedSamples = Some(samples))
     } else {
-      assertExceptionThrown(
-        verifyCases(
-          Seq( (Coll[Box](), Expected(Success(false), 38455)) ),
-          existingFeature(
-            { (x: Coll[Box]) => x.exists({ (b: Box) => b.value > 1 }) },
-            "{ (x: Coll[Box]) => x.exists({(b: Box) => b.value > 1 }) }"
-          )),
-        rootCauseLike[NoSuchMethodException]("sigmastate.eval.CostingRules$CollCoster.exists(scalan.Base$Ref)")
-      )
+      def error = new java.lang.NoSuchMethodException("sigmastate.SCollection$.exist_eval(sigmastate.lang.Terms$MethodCall,special.collection.Coll,scala.Function1,sigmastate.interpreter.ErgoTreeEvaluator))")
+      verifyCases(
+        Seq((Coll[Box](), Expected(error))),
+        existingFeature[Coll[Box], Boolean]({ (x: Coll[Box]) => throw error },
+        "{ (x: Coll[Box]) => x.exists({(b: Box) => b.value > 1 }) }",
+        FuncValue(
+          Array((1, SCollectionType(SBox))),
+          MethodCall.typed[Value[SBoolean.type]](
+            ValUse(1, SCollectionType(SBox)),
+            SCollection.getMethodByName("exists").withConcreteTypes(Map(STypeVar("IV") -> SBox)),
+            Vector(FuncValue(Array((3, SBox)), GT(ExtractAmount(ValUse(3, SBox)), LongConstant(1L)))),
+            Map()
+          )
+        )),
+        preGeneratedSamples = Some(samples))
     }
   }
 

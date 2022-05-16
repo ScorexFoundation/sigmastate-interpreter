@@ -186,7 +186,10 @@ trait SigmaTestingCommons extends PropSpec
       val compiler = SigmaCompiler(compilerSettings)
       val res = compiler.compile(env, code)
       checkCompilerResult(res)
-      res.buildTree
+      if (lowerMethodCallsInTests) res.buildTree
+      else {
+        compiler.unlowerMethodCalls(res.buildTree)
+      }
     }
     compiledTree
   }
