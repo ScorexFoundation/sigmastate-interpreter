@@ -7064,18 +7064,30 @@ class SigmaDslSpecification extends SigmaDslTesting
             )
           )))
     } else {
-      assertExceptionThrown(
-        verifyCases(
-          Seq( (Coll[BigInt](), Expected(Success(false), 38955)) ),
-          existingFeature(
-            { (x: Coll[BigInt]) => x.exists({ (b: BigInt) =>
-              if (o.gt(b, BigIntZero)) o.lt(b, BigInt10) else false
-            })
-            },
-            "{ (x: Coll[BigInt]) => x.exists({(b: BigInt) => if (b > 0) b < 10 else false }) }"
-          )),
-        rootCauseLike[NoSuchMethodException]("sigmastate.eval.CostingRules$CollCoster.exists(scalan.Base$Ref)")
-      )
+      def error = new java.lang.NoSuchMethodException("sigmastate.SCollection$.exist_eval(sigmastate.lang.Terms$MethodCall,special.collection.Coll,scala.Function1,sigmastate.interpreter.ErgoTreeEvaluator))")
+      verifyCases(
+        Seq( (Coll[BigInt](), Expected(error)) ),
+        existingFeature[Coll[BigInt], Boolean](
+          { (x: Coll[BigInt]) => throw error },
+          "{ (x: Coll[BigInt]) => x.exists({(b: BigInt) => if (b > 0) b < 10 else false }) }",
+        FuncValue(
+          Array((1, SCollectionType(SBigInt))),
+          MethodCall.typed[Value[SBoolean.type]](
+            ValUse(1, SCollectionType(SBigInt)),
+            SCollection.getMethodByName("exists").withConcreteTypes(Map(STypeVar("IV") -> SBigInt)),
+            Vector(
+              FuncValue(
+                Array((3, SBigInt)),
+                If(
+                  GT(ValUse(3, SBigInt), BigIntConstant(CBigInt(new BigInteger("0", 16)))),
+                  LT(ValUse(3, SBigInt), BigIntConstant(CBigInt(new BigInteger("a", 16)))),
+                  FalseLeaf
+                )
+              )
+            ),
+            Map()
+          )
+        )))
     }
   }
 
@@ -7167,18 +7179,30 @@ class SigmaDslSpecification extends SigmaDslTesting
           )
         )))
     } else {
-      assertExceptionThrown(
-        verifyCases(
-          Seq( (Coll[BigInt](), Expected(Success(true), 38412)) ),
-          existingFeature(
-            { (x: Coll[BigInt]) => x.forall({ (b: BigInt) =>
-              if (o.gteq(b, BigIntZero)) o.lteq(b, BigInt10) else false
-            })
-            },
-            "{ (x: Coll[BigInt]) => x.forall({(b: BigInt) => if (b >= 0) b <= 10 else false }) }"
-          )),
-        rootCauseLike[NoSuchMethodException]("sigmastate.eval.CostingRules$CollCoster.forall(scalan.Base$Ref)")
-      )
+      def error = new java.lang.NoSuchMethodException("sigmastate.SCollection$.exist_eval(sigmastate.lang.Terms$MethodCall,special.collection.Coll,scala.Function1,sigmastate.interpreter.ErgoTreeEvaluator))")
+      verifyCases(
+        Seq( (Coll[BigInt](), Expected(error)) ),
+        existingFeature[Coll[BigInt], Boolean](
+          { (x: Coll[BigInt]) => throw error },
+          "{ (x: Coll[BigInt]) => x.forall({(b: BigInt) => if (b >= 0) b <= 10 else false }) }",
+          FuncValue(
+            Array((1, SCollectionType(SBigInt))),
+            MethodCall.typed[Value[SBoolean.type]](
+              ValUse(1, SCollectionType(SBigInt)),
+              SCollection.getMethodByName("forall").withConcreteTypes(Map(STypeVar("IV") -> SBigInt)),
+              Vector(
+                FuncValue(
+                  Array((3, SBigInt)),
+                  If(
+                    GE(ValUse(3, SBigInt), BigIntConstant(CBigInt(new BigInteger("0", 16)))),
+                    LE(ValUse(3, SBigInt), BigIntConstant(CBigInt(new BigInteger("a", 16)))),
+                    FalseLeaf
+                  )
+                )
+              ),
+              Map()
+            )
+          )))
     }
 
   }
@@ -7311,31 +7335,27 @@ class SigmaDslSpecification extends SigmaDslTesting
         )))
 
     { // changed behavior of flatMap in v5.0
-      val cases = Seq(
-        Coll[GroupElement](
-          Helpers.decodeGroupElement("02d65904820f8330218cf7318b3810d0c9ab9df86f1ee6100882683f23c0aee587"),
-          Helpers.decodeGroupElement("0390e9daa9916f30d0bc61a8e381c6005edfb7938aee5bb4fc9e8a759c7748ffaa")
-        ) -> Expected(Try(SCollection.throwInvalidFlatmap(null)), 0,
-              expectedDetails = CostDetails.ZeroCost,
-              newCost = 0,
-              newVersionedResults = (0 to 2).map(version =>
-                // successful result for each version
-                version -> (ExpectedResult(Success({
-                         val is = Coll((0 to 32):_*)
-                         is.append(is)
-                       }),
-                       verificationCost = Some(817)) -> Some(costDetails4))
-              ))
-      )
-      val f = changedFeature(
-        scalaFunc = { (x: Coll[GroupElement]) => SCollection.throwInvalidFlatmap(null) },
-        scalaFuncNew = { (x: Coll[GroupElement]) =>
-          // NOTE, v5.0 interpreter accepts any lambda in flatMap
-          x.flatMap({ (b: GroupElement) => b.getEncoded.indices })
-        },
-        "", // NOTE, the script for this test case cannot be compiled
+      val cases = {
+        val res = Success({ val is = Coll((0 to 32):_*); is.append(is) })
+        Seq(
+          Coll[GroupElement](
+            Helpers.decodeGroupElement("02d65904820f8330218cf7318b3810d0c9ab9df86f1ee6100882683f23c0aee587"),
+            Helpers.decodeGroupElement("0390e9daa9916f30d0bc61a8e381c6005edfb7938aee5bb4fc9e8a759c7748ffaa")
+          ) -> Expected(res, 0,
+            expectedDetails = CostDetails.ZeroCost,
+            newCost = 0,
+            newVersionedResults = (0 to 2).map(version =>
+              // successful result for each version
+              version -> (ExpectedResult(res,
+                verificationCost = Some(1860)) -> Some(costDetails4))
+            ))
+        )
+      }
+      val f = existingFeature(
+        scalaFunc = { (x: Coll[GroupElement]) => x.flatMap({ (b: GroupElement) => b.getEncoded.indices }) },
+        "{ (x: Coll[GroupElement]) => x.flatMap({ (b: GroupElement) => b.getEncoded.indices }) }",
         FuncValue(
-          Vector((1, SCollectionType(SGroupElement))),
+          Array((1, SCollectionType(SGroupElement))),
           MethodCall.typed[Value[SCollection[SInt.type]]](
             ValUse(1, SCollectionType(SGroupElement)),
             SCollection.getMethodByName("flatMap").withConcreteTypes(
@@ -7343,7 +7363,7 @@ class SigmaDslSpecification extends SigmaDslTesting
             ),
             Vector(
               FuncValue(
-                Vector((3, SGroupElement)),
+                Array((3, SGroupElement)),
                 MethodCall.typed[Value[SCollection[SInt.type]]](
                   MethodCall.typed[Value[SCollection[SByte.type]]](
                     ValUse(3, SGroupElement),
@@ -7351,9 +7371,7 @@ class SigmaDslSpecification extends SigmaDslTesting
                     Vector(),
                     Map()
                   ),
-                  SCollection.getMethodByName("indices").withConcreteTypes(
-                    Map(STypeVar("IV") -> SByte)
-                  ),
+                  SCollection.getMethodByName("indices").withConcreteTypes(Map(STypeVar("IV") -> SByte)),
                   Vector(),
                   Map()
                 )
@@ -7361,24 +7379,10 @@ class SigmaDslSpecification extends SigmaDslTesting
             ),
             Map()
           )
-        ),
-        allowNewToSucceed = true, // the new 5.0 interpreter can succeed (after activation) when v4.0 fails
-        allowDifferentErrors = true
+        )
       )
-
-      testCases(cases, f)
+      verifyCases(cases, f)
     }
-
-    val f = existingFeature(
-      { (x: Coll[GroupElement]) => x.flatMap({ (b: GroupElement) => b.getEncoded.indices }) },
-      "{ (x: Coll[GroupElement]) => x.flatMap({ (b: GroupElement) => b.getEncoded.indices }) }" )
-    assertExceptionThrown(
-      f.oldF,
-      t => t match {
-        case e: InvocationTargetException =>
-          e.getTargetException.getMessage.contains("Unsupported lambda in flatMap")
-      }
-    )
   }
 
   property("Coll patch method equivalence") {
@@ -7783,15 +7787,35 @@ class SigmaDslSpecification extends SigmaDslTesting
             )
           )))
     } else {
-      assertExceptionThrown(
-        verifyCases(
-          Seq( ((Coll[Byte](),  0), Expected(Success(0), 41266)) ),
-          existingFeature(
-            { (x: (Coll[Byte], Int)) => x._1.foldLeft(x._2, { i: (Int, Byte) => n.plus(i._1, i._2) }) },
-            "{ (x: (Coll[Byte], Int)) => x._1.fold(x._2, { (i1: Int, i2: Byte) => i1 + i2 }) }"
-          )),
-        rootCauseLike[CosterException]("Don't know how to evalNode(Lambda(List()")
-      )
+      def error = new java.lang.NoSuchMethodException("sigmastate.SCollection$.fold_eval(sigmastate.lang.Terms$MethodCall,special.collection.Coll,java.lang.Object,scala.Function1,sigmastate.interpreter.ErgoTreeEvaluator))")
+      verifyCases(
+        Seq( ((Coll[Byte](),  0), Expected(error)) ),
+        existingFeature[(Coll[Byte], Int), Int](
+          { (x: (Coll[Byte], Int)) => throw error },
+          "{ (x: (Coll[Byte], Int)) => x._1.fold(x._2, { (i1: Int, i2: Byte) => i1 + i2 }) }",
+          FuncValue(
+            Array((1, SPair(SByteArray, SInt))),
+            MethodCall.typed[Value[SInt.type]](
+              SelectField.typed[Value[SCollection[SByte.type]]](ValUse(1, SPair(SByteArray, SInt)), 1.toByte),
+              SCollection.getMethodByName("fold").withConcreteTypes(Map(STypeVar("IV") -> SByte, STypeVar("OV") -> SInt)),
+              Vector(
+                SelectField.typed[Value[SInt.type]](ValUse(1, SPair(SByteArray, SInt)), 2.toByte),
+                FuncValue(
+                  Array((3, SPair(SInt, SByte))),
+                  ArithOp(
+                    SelectField.typed[Value[SInt.type]](ValUse(3, SPair(SInt, SByte)), 1.toByte),
+                    Upcast(
+                      SelectField.typed[Value[SByte.type]](ValUse(3, SPair(SInt, SByte)), 2.toByte),
+                      SInt
+                    ),
+                    OpCode @@ (-102.toByte)
+                  )
+                )
+              ),
+              Map()
+            )
+          )
+        ))
     }
   }
 

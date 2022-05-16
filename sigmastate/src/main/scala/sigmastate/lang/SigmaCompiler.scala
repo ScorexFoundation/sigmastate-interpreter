@@ -91,13 +91,18 @@ class SigmaCompiler(settings: CompilerSettings) {
   }
 
   def unlowerMethodCalls(expr: SValue): SValue = {
+    import SCollection._
     val r = rule[Any]({
       case Exponentiate(l, r) =>
         MethodCall(l, SGroupElement.ExponentiateMethod, Vector(r), Map())
       case ForAll(xs, p) =>
-        MethodCall(xs, SCollection.ForallMethod.withConcreteTypes(Map(SCollection.tIV -> xs.tpe.elemType)), Vector(p), Map())
+        MethodCall(xs, ForallMethod.withConcreteTypes(Map(tIV -> xs.tpe.elemType)), Vector(p), Map())
       case Exists(xs, p) =>
-        MethodCall(xs, SCollection.ExistsMethod.withConcreteTypes(Map(SCollection.tIV -> xs.tpe.elemType)), Vector(p), Map())
+        MethodCall(xs, ExistsMethod.withConcreteTypes(Map(tIV -> xs.tpe.elemType)), Vector(p), Map())
+      case Fold(xs, z, op) =>
+        MethodCall(xs,
+          SCollection.FoldMethod.withConcreteTypes(Map(tIV -> xs.tpe.elemType, tOV -> z.tpe)),
+          Vector(z, op), Map())
     })
     rewrite(everywherebu(r))(expr)
   }
