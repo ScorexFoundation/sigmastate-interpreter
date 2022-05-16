@@ -99,6 +99,10 @@ class SigmaCompiler(settings: CompilerSettings) {
         MethodCall(xs, ForallMethod.withConcreteTypes(Map(tIV -> xs.tpe.elemType)), Vector(p), Map())
       case Exists(xs, p) =>
         MethodCall(xs, ExistsMethod.withConcreteTypes(Map(tIV -> xs.tpe.elemType)), Vector(p), Map())
+      case MapCollection(xs, f) =>
+        MethodCall(xs,
+          MapMethod.withConcreteTypes(Map(tIV -> xs.tpe.elemType, tOV -> f.tpe.tRange)),
+          Vector(f), Map())
       case Fold(xs, z, op) =>
         MethodCall(xs,
           SCollection.FoldMethod.withConcreteTypes(Map(tIV -> xs.tpe.elemType, tOV -> z.tpe)),
@@ -107,6 +111,10 @@ class SigmaCompiler(settings: CompilerSettings) {
         MethodCall(xs,
           SCollection.SliceMethod.withConcreteTypes(Map(tIV -> xs.tpe.elemType)),
           Vector(from, until), Map())
+      case Append(xs, ys) =>
+        MethodCall(xs,
+          SCollection.AppendMethod.withConcreteTypes(Map(tIV -> xs.tpe.elemType)),
+          Vector(ys), Map())
     })
     rewrite(everywherebu(r))(expr)
   }
