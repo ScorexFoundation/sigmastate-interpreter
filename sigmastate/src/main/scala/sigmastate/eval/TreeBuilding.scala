@@ -94,6 +94,7 @@ trait TreeBuilding extends RuntimeCosting { IR: IRContext =>
       case ContextM.INPUTS(_) => Some(Inputs)
       case ContextM.OUTPUTS(_) => Some(Outputs)
       case ContextM.SELF(_) => Some(Self)
+      case ContextM.LastBlockUtxoRootHash(_) => Some(LastBlockUtxoRootHash)
       case _ => None
     }
   }

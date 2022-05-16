@@ -5137,8 +5137,12 @@ class SigmaDslSpecification extends SigmaDslTesting
       preGeneratedSamples = Some(samples))
 
     val isUpdateAllowedCostDetails = TracedCost(
-      traceBase ++ Array(
-        FixedCostItem(PropertyCall),
+      Array(
+        FixedCostItem(Apply),
+        FixedCostItem(FuncValue),
+        FixedCostItem(GetVar),
+        FixedCostItem(OptionGet),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
         FixedCostItem(SContext.lastBlockUtxoRootHashMethod, FixedCost(JitCost(15))),
         FixedCostItem(PropertyCall),
         FixedCostItem(SAvlTree.isUpdateAllowedMethod, FixedCost(JitCost(15)))
@@ -5150,14 +5154,9 @@ class SigmaDslSpecification extends SigmaDslTesting
         { (x: Context) => x.LastBlockUtxoRootHash.isUpdateAllowed },
         "{ (x: Context) => x.LastBlockUtxoRootHash.isUpdateAllowed }",
         FuncValue(
-          Vector((1, SContext)),
+          Array((1, SContext)),
           MethodCall.typed[Value[SBoolean.type]](
-            MethodCall.typed[Value[SAvlTree.type]](
-              ValUse(1, SContext),
-              SContext.getMethodByName("LastBlockUtxoRootHash"),
-              Vector(),
-              Map()
-            ),
+            LastBlockUtxoRootHash,
             SAvlTree.getMethodByName("isUpdateAllowed"),
             Vector(),
             Map()
