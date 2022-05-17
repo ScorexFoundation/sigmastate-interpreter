@@ -60,6 +60,17 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
     case _ => super.rewriteDef(d)
   }
 
+  case class Cast[To](eTo: Elem[To], x: Ref[Def[_]]) extends BaseDef[To]()(eTo) {
+    override def transform(t: Transformer) = Cast(eTo, t(x))
+  }
+
+  def tryCast[To](x: Ref[Def[_]])(implicit eTo: Elem[To]): Ref[To] = {
+    if (eTo.getClass.isAssignableFrom(x.elem.getClass))
+      asRep[To](x)
+    else
+      Cast(eTo, x)
+  }
+
 
   /** Translates the given typed expression to IR graph representing a function from
     * Context to some type T.

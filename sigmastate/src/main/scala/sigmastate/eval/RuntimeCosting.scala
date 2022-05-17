@@ -2,7 +2,7 @@ package sigmastate.eval
 
 import scala.language.implicitConversions
 import scala.language.existentials
-import scalan.{ExactIntegral, ExactOrdering, Nullable, MutableLazy, Lazy, ExactNumeric, RType}
+import scalan.{ExactIntegral, ExactNumeric, ExactOrdering, Lazy, MutableLazy, Nullable, RType, SigmaLibrary}
 import scalan.util.CollectionUtil.TraversableOps
 import scalan.util.Extensions.ByteOps
 import org.ergoplatform._
@@ -16,24 +16,24 @@ import scalan.compilation.GraphVizConfig
 import SType._
 import scalan.RType._
 import sigmastate.interpreter.Interpreter.ScriptEnv
-import sigmastate.lang.{Terms, SourceContext}
+import sigmastate.lang.{SourceContext, Terms}
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import special.collection.CollType
-import special.sigma.{GroupElementRType, AvlTreeRType, BoxRType, BigIntRType, SigmaPropRType}
+import special.sigma.{AvlTreeRType, BigIntRType, BoxRType, GroupElementRType, SigmaPropRType}
 import special.sigma.Extensions._
 import org.ergoplatform.validation.ValidationRules._
 import scalan.ExactIntegral._
 import scalan.ExactNumeric._
-import scalan.ExactOrdering.{ShortIsExactOrdering, ByteIsExactOrdering, IntIsExactOrdering, LongIsExactOrdering}
+import scalan.ExactOrdering.{ByteIsExactOrdering, IntIsExactOrdering, LongIsExactOrdering, ShortIsExactOrdering}
 import spire.syntax.all.cfor
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
 
-trait RuntimeCosting extends CostingRules { IR: IRContext =>
+trait RuntimeCosting extends SigmaLibrary { IR: IRContext =>
   import Context._;
   import Header._;
   import PreHeader._;
@@ -319,35 +319,6 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
         else
           super.rewriteDef(d)
     }
-  }
-
-  def costedPrimToColl[A](coll: Ref[Coll[A]], c: Ref[Int], s: RSize[Coll[A]]): RCostedColl[A] = s.elem.asInstanceOf[Any] match {
-    case se: SizeElem[_,_] if se.eVal.isInstanceOf[CollElem[_,_]] =>
-      val sizes = asSizeColl(s).sizes
-      val costs = colBuilder.replicate(sizes.length, IntZero)
-      mkCostedColl(coll, costs, sizes, c)
-    case _ =>
-      !!!(s"Expected Size[Coll[A]] node but was $s -> ${s.node}")
-  }
-
-  def costedPrimToOption[A](opt: Ref[WOption[A]], c: Ref[Int], s: RSize[WOption[A]]) = s.elem.asInstanceOf[Any] match {
-    case se: SizeElem[_,_] if se.eVal.isInstanceOf[WOptionElem[_,_]] =>
-      val sizeOpt = asSizeOption(s).sizeOpt
-      mkCostedOption(opt, SomeIntZero, sizeOpt, c)
-    case _ =>
-      !!!(s"Expected RCSizeOption node but was $s -> ${s.node}")
-  }
-
-  def costedPrimToPair[A,B](p: Ref[(A,B)], c: Ref[Int], s: RSize[(A,B)]) = s.elem.asInstanceOf[Any] match {
-    case se: SizeElem[_,_] if se.eVal.isInstanceOf[PairElem[_,_]] =>
-      val sPair = asSizePair(s)
-      val zero = IntZero
-      val l = RCCostedPrim(p._1, zero, sPair.l)
-      val r = RCCostedPrim(p._2, zero, sPair.r)
-      val newCost = if (c == zero) zero else opCost(Pair(l, r), Array(c), zero)
-      RCCostedPair(l, r, newCost)
-    case _ =>
-      !!!(s"Expected RCSizePair node but was $s -> ${s.node}")
   }
 
   /** Should be specified in the final cake */

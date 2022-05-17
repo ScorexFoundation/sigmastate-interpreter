@@ -357,9 +357,6 @@ trait STypeCompanion {
   /** Looks up the method descriptor by the method name. */
   def getMethodByName(name: String): SMethod = methods.find(_.name == name).get
 
-  /** CosterFactory associated with this type. */
-  def coster: Option[CosterFactory] = None
-
   /** Class which represents values of this type. When method call is executed, the corresponding method
     * of this class is invoked via reflection [[java.lang.reflect.Method]].invoke(). */
   def reprClass: Class[_]
@@ -404,21 +401,6 @@ trait SProduct extends SType {
 trait SGenericType {
   /** Type parameters of this generic type. */
   def typeParams: Seq[STypeParam]
-}
-
-/** Special interface to access CostingHandler.
-  * Each `STypeCompanion.coster` property optionally defines an instance of this interface to provide
-  * access to Coster for its methods. If not specified (which is default) then generic costing mechanism
-  * is not used for methods of the corresponding type. (e.g. SInt, SLong)*/
-trait CosterFactory {
-  def apply[Ctx <: RuntimeCosting](IR: Ctx): IR.CostingHandler[_]
-}
-
-/** An instance of this class is created in each `STypeCompaion.coster` property implementation.
-  * @see SBox, SContext
-  */
-case class Coster(selector: RuntimeCosting => RuntimeCosting#CostingHandler[_]) extends CosterFactory {
-   def apply[Ctx <: RuntimeCosting](IR: Ctx): IR.CostingHandler[_] = selector(IR).asInstanceOf[IR.CostingHandler[_]]
 }
 
 /** Meta information which can be attached to each argument of SMethod.
@@ -1137,7 +1119,6 @@ case object SGroupElement extends SProduct with SPrimType with SEmbeddable with 
   override val reprClass: Class[_] = classOf[GroupElement]
 
   override def typeId = typeCode
-  override def coster: Option[CosterFactory] = Some(Coster(_.GroupElementCoster))
 
   /** Cost of: 1) serializing EcPointType to bytes 2) packing them in Coll. */
   val GetEncodedCostKind = FixedCost(JitCost(250))
@@ -1262,7 +1243,6 @@ object SOption extends STypeCompanion {
 
   override def typeId = OptionTypeCode
 
-  override val coster: Option[CosterFactory] = Some(Coster(_.OptionCoster))
   override val reprClass: Class[_] = classOf[Option[_]]
 
   type SBooleanOption      = SOption[SBoolean.type]
@@ -1408,7 +1388,6 @@ object SCollectionType {
 object SCollection extends STypeCompanion with MethodByNameUnapply {
   override val reprClass: Class[_] = classOf[Coll[_]]
   override def typeId = SCollectionType.CollectionTypeCode
-  override def coster: Option[CosterFactory] = Some(Coster(_.CollCoster))
 
   import SType.{tK, tV, paramIV, paramIVSeq, paramOV}
 
@@ -2172,8 +2151,6 @@ case object SBox extends SProduct with SPredefType with SMonoType {
     getRegMethod,
     tokensMethod
   ) ++ registers(8)
-
-  override val coster = Some(Coster(_.BoxCoster))
 }
 
 /** Type descriptor of `AvlTree` type of ErgoTree. */
@@ -2608,7 +2585,6 @@ case object SAvlTree extends SProduct with SPredefType with SMonoType {
     removeMethod,
     updateDigestMethod
   )
-  override val coster = Some(Coster(_.AvlTreeCoster))
 }
 
 /** Type descriptor of `Context` type of ErgoTree. */
@@ -2651,7 +2627,6 @@ case object SContext extends SProduct with SPredefType with SMonoType {
     dataInputsMethod, headersMethod, preHeaderMethod, inputsMethod, outputsMethod, heightMethod, selfMethod,
     selfBoxIndexMethod, lastBlockUtxoRootHashMethod, minerPubKeyMethod, getVarMethod
   )
-  override val coster = Some(Coster(_.ContextCoster))
 }
 
 /** Type descriptor of `Header` type of ErgoTree. */
@@ -2702,7 +2677,6 @@ case object SHeader extends SProduct with SPredefType with SMonoType {
     timestampMethod, nBitsMethod, heightMethod, extensionRootMethod, minerPkMethod, powOnetimePkMethod,
     powNonceMethod, powDistanceMethod, votesMethod
   )
-  override val coster = Some(Coster(_.HeaderCoster))
 }
 
 /** Type descriptor of `PreHeader` type of ErgoTree. */
@@ -2736,7 +2710,6 @@ case object SPreHeader extends SProduct with SPredefType with SMonoType {
   protected override def getMethods() = super.getMethods() ++ Seq(
     versionMethod, parentIdMethod, timestampMethod, nBitsMethod, heightMethod, minerPkMethod, votesMethod
   )
-  override val coster = Some(Coster(_.PreHeaderCoster))
 }
 
 /** This type is introduced to unify handling of global and non-global (i.e. methods) operations.
@@ -2792,6 +2765,5 @@ case object SGlobal extends SProduct with SPredefType with SMonoType {
     groupGeneratorMethod,
     xorMethod
   )
-  override val coster = Some(Coster(_.SigmaDslBuilderCoster))
 }
 
