@@ -353,38 +353,6 @@ class SoftForkabilitySpecification extends SigmaTestingData with BeforeAndAfterA
     })
   }
 
-  property("CheckCostFuncOperation rule") {
-    val exp = Height
-    val v2vs = vs.updated(
-      CheckCostFuncOperation.id,
-      ChangedRule(CheckCostFuncOperation.encodeVLQUShort(Seq(OpCodes.toExtra(Height.opCode)))))
-    checkRule(CheckCostFuncOperation, v2vs, {
-      val costingRes = IR.doCostingEx(emptyEnv, exp, okRemoveIsProven = false)
-      // We need to exercise CheckCostFunc rule.
-      // The calcF graph have Height operation in it, which is not allowed to be in cost graph.
-      // This leads to a ValidationException to be thrown with the CheckCostFunc rule in it.
-      // And the rule is changed in v2vs, so Height is allowed, which is interpreted as
-      // soft-fork condition
-      CheckCostFunc(IR)(IR.asRep[Any => Int](costingRes.calcF))
-    })
-  }
-
-  property("CheckCostFuncOperation rule (OpCodeExtra") {
-    class TestingIRContextEmptyCodes extends TestingIRContext {
-      override def isAllowedOpCodeInCosting(opCode: OpCodeExtra): Boolean = false
-    }
-    val tIR = new TestingIRContextEmptyCodes
-    import tIR._
-    val v2vs = vs.updated(CheckCostFuncOperation.id,
-      ChangedRule(CheckCostFuncOperation.encodeVLQUShort(Seq(OpCodes.OpCostCode))))
-    checkRule(CheckCostFuncOperation, v2vs, {
-      implicit val anyType = AnyElement
-      val v1 = variable[Int]
-      val costF = fun[Any, Int] {_ => opCost(v1, Seq(1), 2) }
-      CheckCostFunc(tIR)(asRep[Any => Int](costF))
-    })
-  }
-
   override protected def afterAll(): Unit = {
   }
 

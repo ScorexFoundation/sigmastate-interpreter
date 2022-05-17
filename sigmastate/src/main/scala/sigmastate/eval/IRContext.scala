@@ -33,34 +33,6 @@ trait IRContext extends Evaluation with TreeBuilding with GraphBuilding {
     lazy val calcF: Ref[Context => Any] = costedGraph.sliceCalc(true)
   }
 
-  def doCosting[T](env: ScriptEnv, typed: SValue): RCostingResult[T] = {
-    val costed = buildCostedGraph[SType](env.map { case (k, v) => (k: Any, builder.liftAny(v).get) }, typed)
-    val f = asRep[Costed[Context] => Costed[T]](costed)
-    val calcF = f.sliceCalc
-    val costF = f.sliceCost
-    Pair(calcF, costF)
-  }
-
-  def doCosting(env: ScriptEnv, typed: SValue, okRemoveIsProven: Boolean): RCostingResult[Any] = {
-    val costed = buildCostedGraph[SType](env.map { case (k, v) => (k: Any, builder.liftAny(v).get) }, typed)
-    val f = asRep[Costed[Context] => Costed[Any]](costed)
-    val calcF = f.sliceCalc(okRemoveIsProven)
-    val costF = f.sliceCost
-    Pair(calcF, costF)
-  }
-
-  def doCostingEx(env: ScriptEnv,
-                  typed: SValue,
-                  okRemoveIsProven: Boolean): RCostingResultEx[Any] = {
-    def buildGraph(env: ScriptEnv, exp: SValue) = {
-      val costed = buildCostedGraph[SType](env.map { case (k, v) => (k: Any, builder.liftAny(v).get) }, exp)
-      asRep[Costed[Context] => Costed[Any]](costed)
-    }
-    val g = buildGraph(env, typed)
-    val costF = g.sliceCostEx
-    RCostingResultEx(g, costF)
-  }
-
   /** Can be overriden to to do for example logging or saving of graphs */
   private[sigmastate] def onCostingResult[T](env: ScriptEnv, tree: SValue, result: RCostingResultEx[T]) {
   }
