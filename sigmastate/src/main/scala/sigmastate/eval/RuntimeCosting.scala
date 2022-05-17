@@ -1890,26 +1890,6 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
     resC
   }
 
-  def buildCostedGraph[T](envVals: Map[Any, SValue], tree: SValue): Ref[Costed[Context] => Costed[T]] = {
-    try {
-      assert(ruleStack.isEmpty)
-      fun { ctxC: RCosted[Context] =>
-        val env = envVals.mapValues(v => evalNode(ctxC, Map.empty, v))
-        val res = asCosted[T](evalNode(ctxC, env, tree))
-        res
-      }
-    }
-    finally {
-      // ensure leaving it in initial state
-      ruleStack = Nil
-    }
-  }
-
-  def cost[T](env: ScriptEnv, typed: SValue): Ref[Costed[Context] => Costed[T]] = {
-    val cg = buildCostedGraph[T](env.map { case (k, v) => (k: Any, builder.liftAny(v).get) }, typed)
-    cg
-  }
-
   def error(msg: String) = throw new CosterException(msg, None)
   def error(msg: String, srcCtx: Option[SourceContext]) = throw new CosterException(msg, srcCtx)
 }

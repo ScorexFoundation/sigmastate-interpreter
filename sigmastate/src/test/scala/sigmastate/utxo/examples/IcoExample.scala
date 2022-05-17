@@ -2,26 +2,25 @@ package sigmastate.utxo.examples
 
 import com.google.common.primitives.Longs
 import org.ergoplatform.ErgoBox.{R4, R5}
-import org.ergoplatform.dsl.TestContractSpec
 import org.ergoplatform._
-import scorex.crypto.authds.{ADKey, ADValue}
+import org.ergoplatform.dsl.TestContractSpec
+import org.scalatest.BeforeAndAfterAll
 import scorex.crypto.authds.avltree.batch._
-import scorex.crypto.hash.{Digest32, Blake2b256}
+import scorex.crypto.authds.{ADKey, ADValue}
+import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
+import sigmastate.eval.{IRContext, _}
 import sigmastate.helpers.TestingHelpers._
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.Interpreter.ScriptNameProp
+import sigmastate.interpreter.{CryptoConstants, Interpreter}
 import sigmastate.lang.Terms._
 import sigmastate.serialization.ErgoTreeSerializer
-import ErgoTreeSerializer.DefaultSerializer
-import org.scalatest.BeforeAndAfterAll
-import sigmastate.eval.{CompiletimeCosting, IRContext}
-import sigmastate.interpreter.{CryptoConstants, Interpreter}
+import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
+import sigmastate.utxo.ComplexityTableStat
 
 import scala.util.Random
-import sigmastate.eval._
-import sigmastate.utxo.ComplexityTableStat
 
 /**
   *
@@ -236,7 +235,7 @@ class IcoExample extends SigmaTestingCommons
   with CrossVersionProps with BeforeAndAfterAll { suite =>
 
   // Not mixed with TestContext since it is not possible to call commpiler.compile outside tests if mixed
-  implicit lazy val IR: IRContext = new IRContext with CompiletimeCosting
+  implicit lazy val IR: IRContext = new IRContext {}
 
   lazy val spec = TestContractSpec(suite)
   lazy val project = new ErgoLikeTestProvingInterpreter()

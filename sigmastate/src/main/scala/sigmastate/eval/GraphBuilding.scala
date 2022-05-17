@@ -37,6 +37,30 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
   import WOption._
   import builder._
 
+  override def rewriteDef[T](d: Def[T]): Ref[_] = d match {
+    case AllOf(b, HasSigmas(bools, sigmas), _) =>
+      val zkAll = sigmaDslBuilder.allZK(b.fromItems(sigmas:_*))
+      if (bools.isEmpty)
+        zkAll.isValid
+      else
+        (sigmaDslBuilder.sigmaProp(sigmaDslBuilder.allOf(b.fromItems(bools:_*))) && zkAll).isValid
+
+    case AnyOf(b, HasSigmas(bs, ss), _) =>
+      val zkAny = sigmaDslBuilder.anyZK(b.fromItems(ss:_*))
+      if (bs.isEmpty)
+        zkAny.isValid
+      else
+        (sigmaDslBuilder.sigmaProp(sigmaDslBuilder.anyOf(b.fromItems(bs:_*))) || zkAny).isValid
+
+    case AllOf(_,items,_) if items.length == 1 => items(0)
+    case AnyOf(_,items,_) if items.length == 1 => items(0)
+    case AllZk(_,items,_) if items.length == 1 => items(0)
+    case AnyZk(_,items,_) if items.length == 1 => items(0)
+
+    case _ => super.rewriteDef(d)
+  }
+
+
   /** Translates the given typed expression to IR graph representing a function from
     * Context to some type T.
     * @param env contains values for each named constant used

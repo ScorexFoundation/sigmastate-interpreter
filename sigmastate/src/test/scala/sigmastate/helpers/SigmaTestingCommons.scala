@@ -2,7 +2,7 @@ package sigmastate.helpers
 
 import org.ergoplatform.SigmaConstants.ScriptCostLimit
 import org.ergoplatform._
-import org.ergoplatform.validation.ValidationRules.{CheckCalcFunc, CheckCostFunc, CheckSerializableTypeCode}
+import org.ergoplatform.validation.ValidationRules.CheckSerializableTypeCode
 import org.ergoplatform.validation.{ValidationException, ValidationSpecification}
 import org.scalacheck.Arbitrary.arbByte
 import org.scalacheck.Gen
@@ -12,19 +12,17 @@ import scalan.util.BenchmarkUtil
 import scalan.{RType, TestContexts, TestUtils}
 import scorex.crypto.hash.Blake2b256
 import sigma.types.IsPrimView
-import sigmastate.Values.{Constant, ErgoTree, GroupElementConstant, SValue, SigmaBoolean, SigmaPropValue, Value}
-import sigmastate.eval.{CompiletimeCosting, Evaluation, IRContext, _}
+import sigmastate.Values.{Constant, ErgoTree, GroupElementConstant, SValue, SigmaBoolean, SigmaPropValue}
+import sigmastate.eval.{Evaluation, IRContext, _}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.ContextExtension.VarBinding
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.interpreter.ErgoTreeEvaluator.DefaultProfiler
-import sigmastate.interpreter.Interpreter.{ScriptEnv, ScriptNameProp}
-import sigmastate.interpreter.{CryptoConstants, Interpreter, _}
+import sigmastate.interpreter.Interpreter.ScriptEnv
+import sigmastate.interpreter._
 import sigmastate.lang.{CompilerSettings, SigmaCompiler, Terms}
 import sigmastate.serialization.SigmaSerializer
-import sigmastate.utils.Helpers._
-import sigmastate.{JitCost, SGroupElement, SOption, SType, TestsBase}
-import special.sigma
+import sigmastate.{JitCost, SOption, SType, TestsBase}
 
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
@@ -49,7 +47,7 @@ trait SigmaTestingCommons extends PropSpec
   implicit def grElemConvert(leafConstant: GroupElementConstant): EcPointType =
     SigmaDsl.toECPoint(leafConstant.value).asInstanceOf[EcPointType]
 
-  class TestingIRContext extends TestContext with IRContext with CompiletimeCosting {
+  class TestingIRContext extends TestContext with IRContext {
   }
 
   private def fromPrimView[A](in: A) = {

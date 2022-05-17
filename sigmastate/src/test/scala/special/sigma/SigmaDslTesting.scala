@@ -1,11 +1,10 @@
 package special.sigma
 
-import java.util
 import org.ergoplatform.SigmaConstants.ScriptCostLimit
-import org.ergoplatform.dsl.{ContractSpec, SigmaContractSyntax, TestContractSpec}
-import org.ergoplatform.validation.{SigmaValidationSettings, ValidationException, ValidationRules}
 import org.ergoplatform._
+import org.ergoplatform.dsl.{ContractSpec, SigmaContractSyntax, TestContractSpec}
 import org.ergoplatform.validation.ValidationRules.CheckSerializableTypeCode
+import org.ergoplatform.validation.{SigmaValidationSettings, ValidationException, ValidationRules}
 import org.scalacheck.Arbitrary._
 import org.scalacheck.Gen.frequency
 import org.scalacheck.{Arbitrary, Gen}
@@ -15,8 +14,8 @@ import org.scalatest.{Matchers, PropSpec}
 import scalan.RType
 import scalan.RType._
 import scalan.util.BenchmarkUtil
-import scalan.util.Extensions._
 import scalan.util.CollectionUtil._
+import scalan.util.Extensions._
 import scalan.util.StringUtil.StringUtilExtensions
 import sigmastate.SType.AnyOps
 import sigmastate.Values.{ByteArrayConstant, Constant, ConstantNode, ErgoTree, IntConstant, SValue}
@@ -26,10 +25,8 @@ import sigmastate.eval.Extensions._
 import sigmastate.eval.{CompiletimeIRContext, CostingBox, CostingDataContext, Evaluation, IRContext, SigmaDsl}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.helpers.{ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaPPrint}
-import sigmastate.interpreter.EvalSettings.{AotEvaluationMode, EvaluationMode, JitEvaluationMode}
 import sigmastate.interpreter.Interpreter.{ScriptEnv, VerificationResult}
 import sigmastate.interpreter._
-import sigmastate.lang.SigmaCompiler
 import sigmastate.lang.Terms.{Apply, ValueOps}
 import sigmastate.serialization.ValueSerializer
 import sigmastate.serialization.generators.ObjectGenerators
@@ -39,6 +36,7 @@ import sigmastate.{SOption, SSigmaProp, SType, VersionContext, eval}
 import special.collection.{Coll, CollType}
 import spire.syntax.all.cfor
 
+import java.util
 import scala.collection.mutable
 import scala.reflect.ClassTag
 import scala.util.{Failure, Success, Try}

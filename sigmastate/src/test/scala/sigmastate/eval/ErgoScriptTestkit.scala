@@ -24,7 +24,7 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests
     with ValidationSpecification with TestsBase { self: BaseCtxTests =>
 
   implicit lazy val IR: TestContext with IRContext =
-    new TestContext with IRContext with CompiletimeCosting
+    new TestContext with IRContext
 
   import IR._
   import Liftables._
