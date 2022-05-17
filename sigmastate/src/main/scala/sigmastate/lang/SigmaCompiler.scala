@@ -2,14 +2,17 @@ package sigmastate.lang
 
 import fastparse.core.Parsed
 import fastparse.core.Parsed.Success
-import org.ergoplatform.Context
+import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, rewrite, rule}
 import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
-import sigmastate.SType
+import org.ergoplatform.Global
 import sigmastate.Values.{SValue, Value}
 import sigmastate.eval.IRContext
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.SigmaPredef.PredefinedFuncRegistry
+import sigmastate.lang.Terms.MethodCall
 import sigmastate.lang.syntax.ParserException
+import sigmastate.utxo._
+import sigmastate.{Exponentiate, MultiplyGroup, SCollection, SGlobal, SGroupElement, SType, STypeVar, Xor}
 
 /**
   * @param networkPrefix    network prefix to decode an ergo address from string (PK op)
@@ -85,7 +88,44 @@ class SigmaCompiler(settings: CompilerSettings) {
   def compileTyped(env: ScriptEnv, typedExpr: SValue)(implicit IR: IRContext): CompilerResult[IR.type] = {
     val compiledGraph = IR.buildGraph(env, typedExpr)
     val compiledTree = IR.buildTree(compiledGraph)
-    CompilerResult(env, "<no source code>", compiledGraph,compiledTree)
+    CompilerResult(env, "<no source code>", compiledGraph, compiledTree)
+  }
+
+  def unlowerMethodCalls(expr: SValue): SValue = {
+    import SCollection._
+    val r = rule[Any]({
+      case MultiplyGroup(l, r) =>
+        MethodCall(l, SGroupElement.MultiplyMethod, Vector(r), Map())
+      case Exponentiate(l, r) =>
+        MethodCall(l, SGroupElement.ExponentiateMethod, Vector(r), Map())
+      case ForAll(xs, p) =>
+        MethodCall(xs, ForallMethod.withConcreteTypes(Map(tIV -> xs.tpe.elemType)), Vector(p), Map())
+      case Exists(xs, p) =>
+        MethodCall(xs, ExistsMethod.withConcreteTypes(Map(tIV -> xs.tpe.elemType)), Vector(p), Map())
+      case MapCollection(xs, f) =>
+        MethodCall(xs,
+          MapMethod.withConcreteTypes(Map(tIV -> xs.tpe.elemType, tOV -> f.tpe.tRange)),
+          Vector(f), Map())
+      case Fold(xs, z, op) =>
+        MethodCall(xs,
+          SCollection.FoldMethod.withConcreteTypes(Map(tIV -> xs.tpe.elemType, tOV -> z.tpe)),
+          Vector(z, op), Map())
+      case Slice(xs, from, until) =>
+        MethodCall(xs,
+          SCollection.SliceMethod.withConcreteTypes(Map(tIV -> xs.tpe.elemType)),
+          Vector(from, until), Map())
+      case Append(xs, ys) =>
+        MethodCall(xs,
+          SCollection.AppendMethod.withConcreteTypes(Map(tIV -> xs.tpe.elemType)),
+          Vector(ys), Map())
+      case Xor(l, r) =>
+        MethodCall(Global, SGlobal.xorMethod, Vector(l, r), Map())
+      case ByIndex(xs, index, Some(default)) =>
+        MethodCall(xs,
+          SCollection.GetOrElseMethod.withConcreteTypes(Map(tIV -> xs.tpe.elemType)),
+          Vector(index, default), Map())
+    })
+    rewrite(everywherebu(r))(expr)
   }
 }
 

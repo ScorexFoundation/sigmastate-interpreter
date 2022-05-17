@@ -1,16 +1,13 @@
 package sigmastate.eval
 
-import java.lang.{Math => JMath}
-import sigmastate.SType
-import sigmastate.Values.{Value, SValue}
-import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.TransformingSigmaBuilder
-import sigmastate.lang.exceptions.CostLimitException
-import sigmastate.utxo.CostTable
 
 import scala.util.Try
 
-trait IRContext extends Evaluation with TreeBuilding with GraphBuilding {
+trait IRContext extends TreeBuilding with GraphBuilding {
+  import SigmaProp._
+
+  private val SigmaM = SigmaPropMethods
 
   override val builder = TransformingSigmaBuilder
 
@@ -20,109 +17,32 @@ trait IRContext extends Evaluation with TreeBuilding with GraphBuilding {
     "noCostPropagationPass",
     Pass.defaultPassConfig.copy(constantPropagation = false))
 
-  override val sigmaDslBuilderValue = CostingSigmaDslBuilder
-  override val costedBuilderValue = sigmaDslBuilderValue.Costing
-  override val monoidBuilderValue = sigmaDslBuilderValue.Monoids
+  val sigmaDslBuilderValue = CostingSigmaDslBuilder
+  val costedBuilderValue = sigmaDslBuilderValue.Costing
+  val monoidBuilderValue = sigmaDslBuilderValue.Monoids
 
-  type RCostingResult[T] = Ref[(Context => T, ((Int, Size[Context])) => Int)]
-
-  case class RCostingResultEx[T](
-    costedGraph: Ref[Costed[Context] => Costed[T]],
-    costF: Ref[((Context, (Int, Size[Context]))) => Int]
-  ) {
-    lazy val calcF: Ref[Context => Any] = costedGraph.sliceCalc(true)
+  /** Finds SigmaProp.isProven method calls in the given Lambda `f` */
+  def findIsProven[T](f: Ref[Context => T]): Option[Sym] = {
+    val Def(Lambda(lam,_,_,_)) = f
+    val s = lam.flatSchedule.find(sym => sym.node match {
+      case SigmaM.isValid(_) => true
+      case _ => false
+    })
+    s
   }
 
-  def doCostingEx(env: ScriptEnv,
-                  typed: SValue,
-                  okRemoveIsProven: Boolean): RCostingResultEx[Any] = {
-    def buildGraph(env: ScriptEnv, exp: SValue) = {
-      val costed = buildCostedGraph[SType](env.map { case (k, v) => (k: Any, builder.liftAny(v).get) }, exp)
-      asRep[Costed[Context] => Costed[Any]](costed)
+  /** Checks that if SigmaProp.isProven method calls exists in the given Lambda's schedule,
+    * then it is the last operation. */
+  def verifyIsProven[T](f: Ref[Context => T]): Try[Unit] = {
+    val isProvenOpt = findIsProven(f)
+    Try {
+      isProvenOpt match {
+        case Some(s) =>
+          if (f.getLambda.y != s) !!!(s"Sigma.isProven found in none-root position", s)
+        case None =>
+      }
     }
-    val g = buildGraph(env, typed)
-    val costF = g.sliceCostEx
-    RCostingResultEx(g, costF)
   }
-
-  /** Can be overriden to to do for example logging or saving of graphs */
-  private[sigmastate] def onCostingResult[T](env: ScriptEnv, tree: SValue, result: RCostingResultEx[T]) {
-  }
-
-  /** Can be overriden to to do for example logging of computed costs */
-  private[sigmastate] def onEstimatedCost[T](env: ScriptEnv,
-                                             tree: SValue,
-                                             result: RCostingResultEx[T],
-                                             ctx: special.sigma.Context,
-                                             estimatedCost: Int): Unit = {
-  }
-
-  /** Can be overriden to to do for example logging of computed results */
-  private[sigmastate] def onResult[T](env: ScriptEnv,
-                                      tree: SValue,
-                                      result: RCostingResultEx[T],
-                                      ctx: special.sigma.Context,
-                                      estimatedCost: Int,
-                                      calcCtx: special.sigma.Context,
-                                      executedResult: special.sigma.SigmaProp,
-                                      executionTime: Long): Unit = {
-  }
-
-  import Size._
-  import Context._;
-
-  def checkCost(ctx: SContext, exp: Value[SType],
-                costF: Ref[Size[Context] => Int], maxCost: Long): Int = {
-    val costFun = compile[SSize[SContext], Int, Size[Context], Int](getDataEnv, costF, Some(maxCost))
-    val (_, estimatedCost) = costFun(Sized.sizeOf(ctx))
-    if (estimatedCost > maxCost) {
-      throw new CostLimitException(estimatedCost, s"Estimated execution cost $estimatedCost exceeds the limit $maxCost in $exp")
-    }
-    estimatedCost
-  }
-
-  /* TODO soft-fork: Version Based Costing
-    * The following is based on ErgoTree.header checks performed during deserialization and
-    * described in `ErgoTreeSerializer`
-    * The next version should ensure that v2 node contained both old and new version of casting
-    * component (Coster).
-    *
-    * Then v2 node during chain validation will use version in the ErgoTree header,
-    * 1) if version = 1 then execute the old CosterV1
-    * 2) if version = 2 then execute CosterV2.
-    * Thus v2 protocol will apply the new costing for only new versions.
-    *
-    * With this scheme changing the parameters will not have negative effects,
-    * the old scripts will be validated according to the old parameter values,
-    * and the new ones according to the new values.
-    *
-    * And taking into account the cleaning of the garbage and cutting the blockchain history,
-    * the old scripts at some point will die out of the blockchain.
-    */
-  /** Increase the cost using the given `costF` graph starting from `initCost`.
-    * The total cost is limited by `maxCost`
-    * @param ctx script execution context
-    * @param costF graph of cost formula which predicts script execution cost in the given ctx
-    * @param maxCost limit on the total cost
-    * @param initCost initial cost, which is increased by the additional cost computed by costF
-    * @return new total cost if Success, or exception wrapped in Failure
-    */
-  def checkCostWithContext(ctx: SContext,
-                costF: Ref[((Context, (Int, Size[Context]))) => Int], maxCost: Long, initCost: Long): Try[Int] = Try {
-    val costFun = compile[(SContext, (Int, SSize[SContext])), Int, (Context, (Int, Size[Context])), Int](
-                    getDataEnv, costF, Some(maxCost))
-    val (estimatedCost, accCost) = costFun((ctx, (0, Sized.sizeOf(ctx))))
-
-    if (debugModeSanityChecks) {
-      if (estimatedCost != accCost)
-        !!!(s"Estimated cost $estimatedCost should be equal $accCost")
-    }
-
-    val scaledCost = java7.compat.Math.multiplyExact(estimatedCost.toLong, CostTable.costFactorIncrease.toLong) / CostTable.costFactorDecrease
-    val totalCost = Evaluation.addCostChecked(initCost, scaledCost, maxCost)
-    totalCost.toInt
-  }
-
 }
 
 /** IR context to be used by blockchain nodes to validate transactions. */
@@ -130,6 +50,6 @@ class RuntimeIRContext extends IRContext {
 }
 
 /** IR context to be used by script development tools to compile ErgoScript into ErgoTree bytecode. */
-class CompiletimeIRContext extends IRContext with CompiletimeCosting {
+class CompiletimeIRContext extends IRContext {
 }
 

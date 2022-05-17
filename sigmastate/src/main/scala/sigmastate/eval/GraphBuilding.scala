@@ -37,6 +37,30 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
   import WOption._
   import builder._
 
+  override def rewriteDef[T](d: Def[T]): Ref[_] = d match {
+    case AllOf(b, HasSigmas(bools, sigmas), _) =>
+      val zkAll = sigmaDslBuilder.allZK(b.fromItems(sigmas:_*))
+      if (bools.isEmpty)
+        zkAll.isValid
+      else
+        (sigmaDslBuilder.sigmaProp(sigmaDslBuilder.allOf(b.fromItems(bools:_*))) && zkAll).isValid
+
+    case AnyOf(b, HasSigmas(bs, ss), _) =>
+      val zkAny = sigmaDslBuilder.anyZK(b.fromItems(ss:_*))
+      if (bs.isEmpty)
+        zkAny.isValid
+      else
+        (sigmaDslBuilder.sigmaProp(sigmaDslBuilder.anyOf(b.fromItems(bs:_*))) || zkAny).isValid
+
+    case AllOf(_,items,_) if items.length == 1 => items(0)
+    case AnyOf(_,items,_) if items.length == 1 => items(0)
+    case AllZk(_,items,_) if items.length == 1 => items(0)
+    case AnyZk(_,items,_) if items.length == 1 => items(0)
+
+    case _ => super.rewriteDef(d)
+  }
+
+
   /** Translates the given typed expression to IR graph representing a function from
     * Context to some type T.
     * @param env contains values for each named constant used
@@ -44,8 +68,8 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
   def buildGraph[T](env: ScriptEnv, typed: SValue): Ref[Context => T] = {
     val envVals = env.map { case (name, v) => (name: Any, builder.liftAny(v).get) }
     fun(removeIsProven({ ctxC: Ref[Context] =>
-//      val env = envVals.mapValues(v => buildNode(ctxC, Map.empty, v))
-      val res = asRep[T](buildNode(ctxC, Map.empty, typed))
+      val env = envVals.mapValues(v => buildNode(ctxC, Map.empty, v))
+      val res = asRep[T](buildNode(ctxC, env, typed))
       res
     }))
   }
@@ -577,6 +601,13 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
               val index = asRep[Int](argsV(0))
               val value = asRep[t](argsV(1))
               xs.updated(index, value)
+            case SCollection.AppendMethod.name =>
+              val ys = asRep[Coll[t]](argsV(0))
+              xs.append(ys)
+            case SCollection.SliceMethod.name =>
+              val from = asRep[Int](argsV(0))
+              val until = asRep[Int](argsV(1))
+              xs.slice(from, until)
             case SCollection.UpdateManyMethod.name =>
               val indexes = asRep[Coll[Int]](argsV(0))
               val values = asRep[Coll[t]](argsV(1))
@@ -597,6 +628,20 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
             case SCollection.FilterMethod.name =>
               val p = asRep[Any => Boolean](argsV(0))
               xs.filter(p)
+            case SCollection.ForallMethod.name =>
+              val p = asRep[Any => Boolean](argsV(0))
+              xs.forall(p)
+            case SCollection.ExistsMethod.name =>
+              val p = asRep[Any => Boolean](argsV(0))
+              xs.exists(p)
+            case SCollection.FoldMethod.name =>
+              val zero = asRep[Any](argsV(0))
+              val op = asRep[((Any, Any)) => Any](argsV(1))
+              xs.foldLeft(zero, op)
+            case SCollection.GetOrElseMethod.name =>
+              val i = asRep[Int](argsV(0))
+              val d = asRep[t](argsV(1))
+              xs.getOrElse(i, d)
             case _ => throwError
           }
           case (opt: ROption[t]@unchecked, SOption) => method.name match {
@@ -618,6 +663,12 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
               ge.getEncoded
             case SGroupElement.NegateMethod.name =>
               ge.negate
+            case SGroupElement.MultiplyMethod.name =>
+              val g2 = asRep[GroupElement](argsV(0))
+              ge.multiply(g2)
+            case SGroupElement.ExponentiateMethod.name =>
+              val k = asRep[BigInt](argsV(0))
+              ge.exp(k)
             case _ => throwError
           }
           case (box: Ref[Box]@unchecked, SBox) => method.name match {
@@ -748,6 +799,10 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
           case (g: Ref[SigmaDslBuilder]@unchecked, SGlobal) => method.name match {
             case SGlobal.groupGeneratorMethod.name =>
               g.groupGenerator
+            case SGlobal.xorMethod.name =>
+              val c1 = asRep[Coll[Byte]](argsV(0))
+              val c2 = asRep[Coll[Byte]](argsV(1))
+              g.xor(c1, c2)
             case _ => throwError
           }
           case _ => throwError
