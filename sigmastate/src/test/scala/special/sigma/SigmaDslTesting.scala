@@ -655,7 +655,7 @@ class SigmaDslTesting extends PropSpec
     allowNewToSucceed: Boolean = false,
     override val allowDifferentErrors: Boolean = false
   )(implicit IR: IRContext, override val evalSettings: EvalSettings, val tA: RType[A], val tB: RType[B])
-    extends Feature[A, B] {
+    extends Feature[A, B] { feature =>
 
     implicit val cs = compilerSettingsInTests
 
@@ -668,23 +668,17 @@ class SigmaDslTesting extends PropSpec
     val oldImpl = () => {
       if (script.isNullOrEmpty) {
         val funcValue = expectedExpr.getOrElse(
-          sys.error("When `script` is not defined, the expectedExpr is used for CompiledFunc"))
-        val expr = getApplyExpr(funcValue)
-        funcFromExpr[A, B]("not defined", expr)
-      } else {
-        func[A, B](script)
-      }
-    }
-
-    val newImpl = () => {
-      if (script.isNullOrEmpty) {
-        val funcValue = expectedExpr.getOrElse(
-          sys.error("When `script` is not defined, the expectedExpr is used for CompiledFunc"))
+          sys.error(s"${feature.getClass.getName}.oldImpl: When `script` is not defined, the expectedExpr is used for CompiledFunc"))
         val expr = getApplyExpr(funcValue)
         funcJitFromExpr[A, B]("not defined", expr)
       } else {
         funcJit[A, B](script)
       }
+    }
+
+    val newImpl = () => {
+      // TODO 6.0: change as necessary to reflect interpreter changes
+      oldImpl()
     }
 
     override def checkEquality(input: A, logInputOutput: Boolean = false): Try[(B, CostDetails)] = {
@@ -1128,11 +1122,11 @@ class SigmaDslTesting extends PropSpec
     implicit val tA = fNew.tA
     implicit val tB = fNew.tB
     implicit val cs = defaultCompilerSettings
-    val func = funcJitFast[A, B](f.script)
+    val func = funcJit[A, B](f.script)
     val noTraceSettings = evalSettings.copy(
       isMeasureOperationTime = false,
       costTracingEnabled = false)
-    val funcNoTrace = funcJitFast[A, B](f.script)(tA, tB, IR, noTraceSettings, cs)
+    val funcNoTrace = funcJit[A, B](f.script)(tA, tB, IR, noTraceSettings, cs)
     var iCase = 0
     val (res, total) = BenchmarkUtil.measureTimeNano {
       VersionContext.withVersions(activatedVersionInTests, ergoTreeVersionInTests) {

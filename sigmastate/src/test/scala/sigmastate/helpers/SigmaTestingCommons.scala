@@ -49,8 +49,6 @@ trait SigmaTestingCommons extends PropSpec
   implicit def grElemConvert(leafConstant: GroupElementConstant): EcPointType =
     SigmaDsl.toECPoint(leafConstant.value).asInstanceOf[EcPointType]
 
-  implicit def grLeafConvert(elem: CryptoConstants.EcPointType): Value[SGroupElement.type] = GroupElementConstant(elem)
-
   class TestingIRContext extends TestContext with IRContext with CompiletimeCosting {
     override def onCostingResult[T](env: ScriptEnv, tree: SValue, res: RCostingResultEx[T]): Unit = {
       env.get(ScriptNameProp) match {
@@ -100,17 +98,6 @@ trait SigmaTestingCommons extends PropSpec
     (script: String, bindings: Seq[VarBinding], expr: SValue, compiledTree: SValue, func: A => (B, CostDetails))
     (implicit val tA: RType[A], val tB: RType[B]) extends Function1[A, (B, CostDetails)] {
     override def apply(x: A): (B, CostDetails) = func(x)
-  }
-
-  /** The same operations are executed as part of Interpreter.verify() */
-  def getCostingResult(env: ScriptEnv, exp: SValue)(implicit IR: IRContext): IR.RCostingResultEx[Any] = {
-    val costingRes = IR.doCostingEx(env, exp, true)
-    val costF = costingRes.costF
-    CheckCostFunc(IR)(IR.asRep[Any => Int](costF))
-
-    val calcF = costingRes.calcF
-    CheckCalcFunc(IR)(calcF)
-    costingRes
   }
 
   /** This value is used as Context.initCost value. The default value is used for most
@@ -194,81 +181,6 @@ trait SigmaTestingCommons extends PropSpec
     compiledTree
   }
 
-  /** Returns a Scala function which is equivalent to the given function script.
-    * The script is embedded into valid ErgoScript which is then compiled to
-    * [[sigmastate.Values.Value]] tree.
-    * Limitations:
-    * 1) DeserializeContext, ConstantPlaceholder is not supported
-    * @param funcScript source code of the function
-    * @param bindings additional context variables
-    */
-  def funcFromExpr[A: RType, B: RType]
-      (funcScript: String, expr: SValue, bindings: VarBinding*)
-      (implicit IR: IRContext,
-                compilerSettings: CompilerSettings): CompiledFunc[A, B] = {
-    import IR._
-    import IR.Context._
-    val tA = RType[A]
-    val env = Interpreter.emptyEnv
-
-    // The following is done as part of Interpreter.verify()
-    val (costF, valueFun) = {
-      val costingRes = getCostingResult(env, expr)
-      val res = compiler.compileTyped(env, expr)
-      val calcF = res.compiledGraph
-      val tree = res.buildTree
-
-      // sanity check that buildTree is reverse to buildGraph (see doCostingEx)
-      if (tA != special.sigma.ContextRType) {
-        if (tree != expr) {
-          println(s"Result of buildTree:")
-          val prettyTree = SigmaPPrint(tree, height = 150)
-          println(prettyTree)
-
-          println(s"compiledTree:")
-          val prettyCompiledTree = SigmaPPrint(expr, height = 150)
-          println(prettyCompiledTree)
-
-          assert(prettyTree.plainText == prettyCompiledTree.plainText, "Failed sanity check that buildTree is reverse to buildGraph")
-        }
-      }
-
-      val lA = Liftables.asLiftable[SContext, IR.Context](calcF.elem.eDom.liftable)
-      val lB = Liftables.asLiftable[Any, Any](calcF.elem.eRange.liftable)
-      val vf = IR.compile[SContext, Any, IR.Context, Any](IR.getDataEnv, calcF)(lA, lB)
-      (costingRes.costF, vf)
-    }
-
-    val f = (in: A) => {
-      implicit val cA: ClassTag[A] = tA.classTag
-      val (costingCtx, sigmaCtx) = createContexts(in, bindings)
-
-      val estimatedCost = IR.checkCostWithContext(costingCtx, costF, ScriptCostLimit.value, initialCostInTests.value).getOrThrow
-
-      val (res, _) = valueFun(sigmaCtx)
-      (res.asInstanceOf[B], GivenCost(JitCost(estimatedCost)))
-    }
-    val Terms.Apply(funcVal, _) = expr.asInstanceOf[SValue]
-    CompiledFunc(funcScript, bindings, funcVal, expr, f)
-  }
-
-  /** Returns a Scala function which is equivalent to the given function script.
-    * The script is embedded into valid ErgoScript which is then compiled to
-    * [[sigmastate.Values.Value]] tree.
-    * Limitations:
-    * 1) DeserializeContext, ConstantPlaceholder is not supported
-    * @param funcScript source code of the function
-    * @param bindings additional context variables
-    */
-  def func[A: RType, B: RType]
-      (funcScript: String, bindings: VarBinding*)
-      (implicit IR: IRContext,
-                compilerSettings: CompilerSettings): CompiledFunc[A, B] = {
-    val env = Interpreter.emptyEnv
-    val compiledTree = compileTestScript[A](env, funcScript)
-    funcFromExpr[A, B](funcScript, compiledTree, bindings:_*)
-  }
-
   def evalSettings = ErgoTreeEvaluator.DefaultEvalSettings
 
   def printCostDetails(script: String, details: CostDetails) = {
@@ -327,44 +239,6 @@ trait SigmaTestingCommons extends PropSpec
                 compilerSettings: CompilerSettings): CompiledFunc[A, B] = {
     val compiledTree = compileTestScript[A](Interpreter.emptyEnv, funcScript)
     funcJitFromExpr(funcScript, compiledTree, bindings:_*)
-  }
-
-  /** Creates a specialized (faster) version which can be used to benchmark performance of
-   * various scripts. */
-  def funcJitFast[A: RType, B: RType]
-      (funcScript: String, bindings: VarBinding*)
-      (implicit IR: IRContext,
-                evalSettings: EvalSettings,
-                compilerSettings: CompilerSettings): CompiledFunc[A, B] = {
-    val tA = RType[A]
-    val compiledTree = compileTestScript[A](Interpreter.emptyEnv, funcScript)
-    implicit val cA: ClassTag[A] = tA.classTag
-    val tpeA = Evaluation.rtypeToSType(tA)
-    val ergoCtxTemp = ErgoLikeContextTesting.dummy(
-      createBox(0, TrueTree), activatedVersionInTests)
-        .withErgoTreeVersion(ergoTreeVersionInTests)
-        .withBindings(bindings: _*)
-
-    val f = (in: A) => {
-      val x = fromPrimView(in)
-      val ergoCtx = ergoCtxTemp
-          .withBindings(1.toByte -> Constant[SType](x.asInstanceOf[SType#WrappedType], tpeA))
-      val sigmaCtx = ergoCtx.toSigmaContext(isCost = false).asInstanceOf[CostingDataContext]
-
-      val accumulator = new CostAccumulator(
-        initialCost = JitCost(0),
-        costLimit = Some(JitCost.fromBlockCost(ScriptCostLimit.value)))
-      val evaluator = new ErgoTreeEvaluator(
-        context = sigmaCtx,
-        constants = ErgoTree.EmptyConstants,
-        coster = accumulator, DefaultProfiler, evalSettings)
-
-      val (res, actualTime) = BenchmarkUtil.measureTimeNano(
-        evaluator.evalWithCost[B](ErgoTreeEvaluator.EmptyDataEnv, compiledTree))
-      (res.value, GivenCost(res.cost, Some(actualTime)))
-    }
-    val Terms.Apply(funcVal, _) = compiledTree.asInstanceOf[SValue]
-    CompiledFunc(funcScript, bindings, funcVal, compiledTree, f)
   }
 
   protected def roundTripTest[T](v: T)(implicit serializer: SigmaSerializer[T, T]): Assertion = {

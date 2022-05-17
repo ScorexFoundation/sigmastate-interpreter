@@ -140,7 +140,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons
       EQ(extract[SByteArray](ErgoBox.ScriptRegId), ByteArrayConstant(ErgoTree.fromSigmaBoolean(oraclePubKey).bytes)),
       EQ(Exponentiate(GroupGenerator, extract[SBigInt.type](reg3)),
         MultiplyGroup(extract[SGroupElement.type](reg2),
-          Exponentiate(oraclePubImage.value,
+          Exponentiate(GroupElementConstant(oraclePubImage.value),
             ByteArrayToBigInt(
               Slice(
                 CalcBlake2b256(

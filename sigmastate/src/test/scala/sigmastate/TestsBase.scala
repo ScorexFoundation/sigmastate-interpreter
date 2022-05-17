@@ -78,13 +78,6 @@ trait TestsBase extends Matchers with VersionTesting {
     checkSerializationRoundTrip(res.buildTree)
   }
 
-//  /** TODO v5.x: remove after AOT costing is removed */
-//  def compile(env: ScriptEnv, code: String)(implicit IR: IRContext): Value[SType] = {
-//    val tree = compiler.compile2(env, code)
-//    checkSerializationRoundTrip(tree)
-//    tree
-//  }
-
   def compileAndCheck(env: ScriptEnv, code: String, expected: SValue)
                      (implicit IR: IRContext): (ErgoTree, SigmaPropValue) = {
     val prop = compile(env, code).asSigmaProp
