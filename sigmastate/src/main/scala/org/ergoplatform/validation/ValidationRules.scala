@@ -137,14 +137,11 @@ object ValidationRules {
     }
   }
 
+  /** Removed since v5.0.1. */
   object CheckCostFunc extends ValidationRule(1004,
     "Cost function should contain only operations from specified list.") {
     final def apply[Ctx <: IRContext, T](ctx: Ctx)(costF: ctx.Ref[Any => Int]): Unit = {
-      checkRule()
-      val verification = ctx.verifyCostFunc(ctx.asRep[Any => Int](costF))
-      if (!verification.isSuccess) {
-        throwValidationException(verification.toEither.left.get, Array(costF))
-      }
+      // do nothing
     }
   }
 
@@ -280,46 +277,11 @@ object ValidationRules {
     }
   }
 
-  /** For CheckCostFuncOperation we use 1-511 range op codes. Thus
-   * `ChangedRule.newValue` should be parsed as a sequence of `getUShort`
-   * values and then the exOpCode should be checked against that parsed
-   * sequence.
-   * Note, we don't need to store a number of items in a sequence,
-   * because at the time of parsing we may assume that `ChangedRule.newValue`
-   * has correct length, so we just parse it until end of bytes (of cause
-   * checking consistency). */
+  /** Not used since v5.0.1  */
   object CheckCostFuncOperation extends ValidationRule(1013,
-    "Check the opcode is allowed in cost function") with SoftForkWhenCodeAdded {
+    "Check the opcode is allowed in cost function") {
     final def apply[Ctx <: IRContext, T](ctx: Ctx)(opCode: OpCodeExtra): Unit = {
-      checkRule()
-      if (!ctx.isAllowedOpCodeInCosting(opCode)) {
-        throwValidationException(
-          new CosterException(s"Not allowed opCode $opCode in cost function", None),
-          Array(opCode))
-      }
-    }
-
-    override def isSoftFork(vs: SigmaValidationSettings,
-                            ruleId: Short,
-                            status: RuleStatus, args: Seq[Any]): Boolean = (status, args) match {
-      case (ChangedRule(newValue), Seq(code: Short)) =>
-        decodeVLQUShort(newValue).contains(code)
-      case _ => false
-    }
-
-    def encodeVLQUShort(opCodes: Seq[OpCodeExtra]): Array[Byte] = {
-      val w = new VLQByteBufferWriter(new ByteArrayBuilder())
-      opCodes.foreach(w.putUShort(_))
-      w.toBytes
-    }
-
-    def decodeVLQUShort(bytes: Array[Byte]): Seq[OpCodeExtra] = {
-      val r = new VLQByteBufferReader(ByteBuffer.wrap(bytes))
-      val builder = mutable.ArrayBuilder.make[OpCodeExtra]()
-      while(r.remaining > 0) {
-        builder += OpCodeExtra @@ r.getUShort().toShort
-      }
-      builder.result()
+      // do nothing
     }
   }
 

@@ -56,9 +56,6 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests
   lazy val boxA1 = newAliceBox(1, 100)
   lazy val boxA2 = newAliceBox(2, 200)
 
-  lazy val dsl = sigmaDslBuilder
-  lazy val dslValue = sigmaDslBuilderValue
-  lazy val bigSym = liftConst(dslValue.BigInt(big))
   lazy val n1Sym = liftConst(n1)
 
   val timeout = 100

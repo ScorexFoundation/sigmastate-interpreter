@@ -50,41 +50,6 @@ trait SigmaTestingCommons extends PropSpec
     SigmaDsl.toECPoint(leafConstant.value).asInstanceOf[EcPointType]
 
   class TestingIRContext extends TestContext with IRContext with CompiletimeCosting {
-    override def onCostingResult[T](env: ScriptEnv, tree: SValue, res: RCostingResultEx[T]): Unit = {
-      env.get(ScriptNameProp) match {
-        case Some(name: String) if saveGraphsInFile =>
-          emit(name, Pair(res.calcF, res.costF))
-        case _ =>
-      }
-    }
-
-    override def onEstimatedCost[T](env: ScriptEnv,
-                                    tree: SValue,
-                                    result: RCostingResultEx[T],
-                                    ctx: special.sigma.Context,
-                                    estimatedCost: Int): Unit = {
-      if (outputEstimatedCost) {
-        env.get(Interpreter.ScriptNameProp) match {
-          case Some(name: String) =>
-            println(s"Cost of $name = $estimatedCost")
-          case _ =>
-        }
-      }
-    }
-
-    override private[sigmastate] def onResult[T](env: ScriptEnv,
-                                     tree: SValue,
-                                     result: RCostingResultEx[T],
-                                     ctx: sigma.Context,
-                                     estimatedCost: Int,
-                                     calcCtx: sigma.Context,
-                                     executedResult: sigma.SigmaProp,
-                                     executionTime: Long): Unit = {
-      if (outputComputedResults) {
-        val name = env.get(Interpreter.ScriptNameProp).getOrElse("")
-        println(s"ScriptName: $name, EstimatedCost: $estimatedCost, ExecutionTime: $executionTime")
-      }
-    }
   }
 
   private def fromPrimView[A](in: A) = {
