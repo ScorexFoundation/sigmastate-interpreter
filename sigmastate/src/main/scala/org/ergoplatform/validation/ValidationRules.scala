@@ -124,20 +124,15 @@ object ValidationRules {
     }
   }
 
+  /** Not used since v5.0.1. */
   object CheckIsSupportedIndexExpression extends ValidationRule(1003,
     "Check the index expression for accessing collection element is supported.") {
     final def apply[Ctx <: IRContext, T](ctx: Ctx)(coll: Value[SCollection[_]], i: IntValue, iSym: ctx.Ref[Int]): Unit = {
-      checkRule()
-      if (!ctx.isSupportedIndexExpression(iSym)) {
-        // TODO consensus: cover with tests
-        throwValidationException(
-          new SigmaException(s"Unsupported index expression $i when accessing collection $coll", i.sourceContext.toOption),
-          Array(coll, i))
-      }
+      // do nothing
     }
   }
 
-  /** Removed since v5.0.1. */
+  /** Not used since v5.0.1. */
   object CheckCostFunc extends ValidationRule(1004,
     "Cost function should contain only operations from specified list.") {
     final def apply[Ctx <: IRContext, T](ctx: Ctx)(costF: ctx.Ref[Any => Int]): Unit = {
