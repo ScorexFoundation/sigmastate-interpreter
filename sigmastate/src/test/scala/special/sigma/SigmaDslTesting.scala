@@ -53,7 +53,6 @@ class SigmaDslTesting extends PropSpec
   override def contractEnv: ScriptEnv = Map()
 
   def createIR(): IRContext = new TestingIRContext {
-    override val okPrintEvaluatedEntries: Boolean = false
     override val okMeasureOperationTime: Boolean = true
   }
 

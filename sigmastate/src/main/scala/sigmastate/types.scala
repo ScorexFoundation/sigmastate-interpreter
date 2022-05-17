@@ -16,15 +16,13 @@ import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.authds.avltree.batch.{Lookup, Insert, Update, Remove}
 import scorex.crypto.hash.Blake2b256
 import sigmastate.Values._
-import sigmastate.lang.Terms.{MethodCall, _}
+import sigmastate.lang.Terms._
 import sigmastate.lang.{SigmaBuilder, SigmaTyper}
 import sigmastate.SCollection._
 import sigmastate.interpreter.CryptoConstants.{EcPointType, hashLength}
 import sigmastate.serialization.OpCodes
 import special.collection.Coll
 import special.sigma._
-import sigmastate.eval.RuntimeCosting
-
 import scala.language.implicitConversions
 import scala.reflect.{ClassTag, classTag}
 import sigmastate.SMethod.{InvokeDescBuilder, MethodCostFunc, givenCost, javaMethodOf, MethodCallIrBuilder}
@@ -605,7 +603,7 @@ case class SMethod(
 
 
 object SMethod {
-  type RCosted[A] = RuntimeCosting#RCosted[A]
+  type RCosted[A] = GraphBuilding#RCosted[A]
 
   /** Type of functions used to assign cost to method call nodes.
     * For a function `f: (mc, obj, args) => cost` it is called before the evaluation of

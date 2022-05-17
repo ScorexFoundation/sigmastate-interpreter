@@ -24,7 +24,6 @@ import scala.util.Try
 
 class ErgoScriptPredefSpec extends SigmaTestingCommons with CrossVersionProps {
   private implicit lazy val IR: TestingIRContext = new TestingIRContext {
-    override val okPrintEvaluatedEntries: Boolean = false
   }
 
   private val emptyProverResult: ProverResult = ProverResult(Array.emptyByteArray, ContextExtension.empty)

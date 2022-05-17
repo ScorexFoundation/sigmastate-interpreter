@@ -10,7 +10,6 @@ import sigmastate.lang.exceptions.CosterException
 class ThresholdSpecification extends SigmaTestingCommons
   with CrossVersionProps {
   implicit lazy val IR = new TestingIRContext {
-    override val okPrintEvaluatedEntries: Boolean = false
   }
 
   property("basic threshold compilation/execution") {

@@ -24,7 +24,6 @@ class BasicOpsSpecification extends SigmaTestingCommons
   with CrossVersionProps {
   override val printVersions: Boolean = false
   implicit lazy val IR = new TestingIRContext {
-    override val okPrintEvaluatedEntries: Boolean = false
   }
 
   private val reg1 = ErgoBox.nonMandatoryRegisters.head
