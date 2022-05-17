@@ -9481,6 +9481,35 @@ class SigmaDslSpecification extends SigmaDslTesting
     forAll { x: Coll[SigmaProp] =>
       anyZK.checkEquality(x)
     }
+
+    val pkA = ProveDlog(Helpers.decodeECPoint("03f7eacae7476a9ef082513a6a70ed6b208aafad0ade5f614ac6cfa2176edd0d69"))
+    val pkB = ProveDlog(Helpers.decodeECPoint("039d0b1e46c21540d033143440d2fb7dd5d650cf89981c99ee53c6e0374d2b1b6d"))
+
+    verifyCases(
+      Seq(
+        // TODO: add CSigmaProp representing "false" (pkX), add multiple combination of anyZK for true (pkA, pkB, etc.) and false (pkX)
+        Coll[SigmaProp](CSigmaProp(pkA)) -> Expected(Success(CSigmaProp(pkA)), 30),
+        // (Coll[SigmaProp](CSigmaProp(pkA)), Boolean) -> Expected(Success(CSigmaProp(pkA)), 30)
+      ),
+      newFeature(
+        (x: Coll[SigmaProp]) => SigmaDsl.anyZK(x) && sigmaProp(true),
+        "{ (x: Coll[SigmaProp]) => anyZk(x) && sigmaProp(true) }",
+        // (x: (Coll[SigmaProp], Boolean)) => SigmaDsl.anyZK(x._1) && sigmaProp(x._2),
+        // "{ (x: (Coll[SigmaProp], Boolean)) => anyZk(x._1) && sigmaProp(x._2) }",
+        // FuncValue(
+        //   Vector((1, SPair(SSigmaPropArray, SBoolean))),
+        //   SigmaAnd(
+        //     Seq(
+        //       // anyZK representation involving OR - wrap the below SigmaProp
+        //       SelectField.typed[Value[SSigmaProp.type]](ValUse(1, SPair(SSigmaProp, SBoolean)), 1.toByte),
+        //       BoolToSigmaProp(
+        //         SelectField.typed[Value[SBoolean.type]](ValUse(1, SPair(SSigmaProp, SBoolean)), 2.toByte)
+        //       )
+        //     )
+        //   )
+        // )
+      )
+    )
   }
 
   property("allOf equivalence") {
