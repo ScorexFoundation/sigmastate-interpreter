@@ -85,10 +85,10 @@ trait Interpreter extends ScorexLogging {
 
   /** The cost of substituting [[DeserializeContext]] and
     * [[sigmastate.utxo.DeserializeRegister]] nodes with the deserialized expression is
-    * O(n), where n is the number of nodes in ErgoTree.
-    * The following is the cost added for each tree node.
+    * O(n), where n is the number of bytes in ErgoTree.
+    * The following is the cost added for each ErgoTree.bytes.
     */
-  val CostPerTreeNode = 2
+  val CostPerTreeByte = 2
 
   /** Deserializes given script bytes using ValueSerializer (i.e. assuming expression tree format).
     * It also measures tree complexity adding to the total estimated cost of script execution.
@@ -340,7 +340,7 @@ trait Interpreter extends ScorexLogging {
     var jitRes: JitReductionResult = null
     if (evalMode.okEvaluateJit) {
       jitRes = VersionContext.withVersions(context.activatedScriptVersion, ergoTree.version) {
-        val deserializeSubstitutionCost = java7.compat.Math.multiplyExact(ergoTree.bytes.length, CostPerTreeNode)
+        val deserializeSubstitutionCost = java7.compat.Math.multiplyExact(ergoTree.bytes.length, CostPerTreeByte)
         val currCost = Evaluation.addCostChecked(context.initCost, deserializeSubstitutionCost, context.costLimit)
         val context1 = context.withInitCost(currCost).asInstanceOf[CTX]
 
