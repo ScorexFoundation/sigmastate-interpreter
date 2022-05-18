@@ -849,9 +849,6 @@ trait SigmaDslBuilder {
   /** Access to operations used in cost computation. */
   def Costing: CostedBuilder
 
-  /** Access to cost model (aka CostTable) parameters. */
-  def CostModel: CostModel
-
   def verifyZK(cond: => SigmaProp): Boolean  // TODO refactor: can be removed after TestSigmaDslBuilder is removed
 
   /**

@@ -18,10 +18,8 @@ import sigmastate._
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.lang.exceptions.CosterException
 import special.sigma.Extensions.GroupElementOps
-import spire.syntax.all.cfor
 
 import scala.collection.mutable.ArrayBuffer
-import scala.math.BigInt
 
 /** Perform translation of typed expression given by [[Value]] to a graph in IRContext.
   * Which be than be translated to [[ErgoTree]] by using [[TreeBuilding]].
@@ -48,6 +46,11 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
   import CCostedBuilder._
   import CostedBuilder._;
   import MonoidBuilder._
+
+  /** Should be specified in the final cake */
+  val builder: sigmastate.lang.SigmaBuilder
+  import builder._
+
 
   val okMeasureOperationTime: Boolean = false
 
@@ -80,14 +83,6 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
 
   type RColl[T] = Ref[Coll[T]]
   type ROption[T] = Ref[WOption[T]]
-  type RCostedColl[T] = Ref[CostedColl[T]]
-  type RCostedOption[T] = Ref[CostedOption[T]]
-  type RFuncCosted[A,B] = Ref[Costed[A] => Costed[B]]
-
-  type CostedCollFunc[A,B] = Costed[A] => CostedColl[B]
-  type CostedOptionFunc[A,B] = Costed[A] => CostedOption[B]
-  type RCostedCollFunc[A,B] = Ref[CostedCollFunc[A, B]]
-  type RCostedOptionFunc[A,B] = Ref[CostedOptionFunc[A, B]]
 
   private val CBM      = CollBuilderMethods
   private val SigmaM   = SigmaPropMethods
@@ -216,10 +211,6 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
           super.rewriteDef(d)
     }
   }
-
-  /** Should be specified in the final cake */
-  val builder: sigmastate.lang.SigmaBuilder
-  import builder._
 
   /** Lazy values, which are immutable, but can be reset, so that the next time they are accessed
     * the expression is re-evaluated. Each value should be reset in onReset() method. */

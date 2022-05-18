@@ -757,42 +757,6 @@ object Values {
   }
 
   object SigmaBoolean {
-    /** Computes the estimated cost of verifying the given sigma proposition.
-      * This method should be O(nNodes), where nNodes is the number of the nodes in the
-      * tree.
-      *
-      * @param sb sigma proposition to estimate
-      * @return the value of estimated cost
-      *
-      * HOTSPOT: don't beautify the code
-      */
-    def estimateCost(sb: SigmaBoolean): Int = {
-      /** Compute the total cost of the given children. */
-      def childrenCost(children: Seq[SigmaBoolean]): Int = {
-        val childrenArr = children.toArray
-        val nChildren = childrenArr.length
-        var sum = 0
-        cfor(0)(_ < nChildren, _ + 1) { i =>
-          val c = estimateCost(childrenArr(i))
-          sum = java7.compat.Math.addExact(sum, c)
-        }
-        sum
-      }
-
-      sb match {
-        case _: ProveDlog => CostTable.proveDlogEvalCost
-        case _: ProveDHTuple => CostTable.proveDHTupleEvalCost
-        case and: CAND =>
-          childrenCost(and.children)
-        case or: COR =>
-          childrenCost(or.children)
-        case th: CTHRESHOLD =>
-          childrenCost(th.children)
-        case _ =>
-          CostTable.MinimalCost
-      }
-    }
-
     /** Compute total size of the trees in the collection of children. */
     def totalSize(children: Seq[SigmaBoolean]): Int = {
       var res = 0

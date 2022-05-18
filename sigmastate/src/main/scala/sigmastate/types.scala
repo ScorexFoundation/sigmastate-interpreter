@@ -603,8 +603,6 @@ case class SMethod(
 
 
 object SMethod {
-  type RCosted[A] = GraphBuilding#RCosted[A]
-
   /** Type of functions used to assign cost to method call nodes.
     * For a function `f: (mc, obj, args) => cost` it is called before the evaluation of
     * the `mc` node with the given `obj` as method receiver and `args` as method

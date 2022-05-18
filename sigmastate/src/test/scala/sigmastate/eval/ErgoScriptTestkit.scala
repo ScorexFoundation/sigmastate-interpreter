@@ -7,7 +7,6 @@ import scala.util.Success
 import sigmastate.{AvlTreeData, SType, TestsBase, VersionContext}
 import sigmastate.Values.{BigIntArrayConstant, EvaluatedValue, SValue, SigmaPropConstant, Value}
 import org.ergoplatform.{Context => _, _}
-import sigmastate.utxo.CostTable
 import scalan.BaseCtxTests
 import sigmastate.lang.{CompilerResult, CompilerSettings, LangTests, SigmaCompiler}
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting}

@@ -26,7 +26,6 @@ trait Library extends Scalan
   import WSpecialPredef._
 
   type RSize[Val] = Ref[Size[Val]]
-  type RCosted[A] = Ref[Costed[A]]
   type LazyRep[T] = MutableLazy[Ref[T]]
 
   private val _liftElemMemo = new MemoizedFunc({

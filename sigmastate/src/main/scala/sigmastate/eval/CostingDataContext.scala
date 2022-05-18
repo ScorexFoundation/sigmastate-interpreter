@@ -481,73 +481,6 @@ object CHeader {
   val NonceSize: Int = SigmaConstants.AutolykosPowSolutionNonceArraySize.value
 }
 
-/** A default implementation of [[CostModel]] interface.
-  * @see [[CostModel]] for detailed descriptions
-  */
-class CCostModel extends CostModel {
-  import CCostModel._
-
-  override def AccessBox: Int = AccessBoxCost
-
-  override def AccessAvlTree: Int = AccessAvlTreeCost
-
-  override def GetVar: Int = GetVarCost
-
-  def DeserializeVar: Int = DeserializeVarCost
-
-  def GetRegister: Int = GetRegisterCost
-
-  def DeserializeRegister: Int = DeserializeRegisterCost
-
-  def SelectField: Int = SelectFieldCost
-
-  def CollectionConst: Int = CollectionConstCost
-
-  def AccessKiloByteOfData: Int = AccessKiloByteOfDataCost
-
-  def PubKeySize: Long = CryptoConstants.EncodedGroupElementLength
-}
-object CCostModel {
-  private def costOf(opName: String, opType: SFunc): Int = {
-    val operId = OperationId(opName, opType)
-    costOf(operId)
-  }
-
-  @inline private def costOf(operId: OperationId): Int = {
-    val cost = sigmastate.utxo.CostTable.DefaultCosts(operId)
-    cost
-  }
-
-  // NOTE: lazy vals are necessary to avoid initialization exception
-
-  private val AccessBoxOpType: SFunc = SFunc(SContext, SBox)
-  private lazy val AccessBoxCost: Int = costOf("AccessBox", AccessBoxOpType)
-
-  private val AccessAvlTreeOpType: SFunc = SFunc(SContext, SAvlTree)
-  private lazy val AccessAvlTreeCost: Int = costOf("AccessAvlTree", AccessAvlTreeOpType)
-
-  private val GetVarOpType: SFunc = SFunc(SContext.ContextFuncDom, SOption.ThisType)
-  private lazy val GetVarCost: Int = costOf("GetVar", GetVarOpType)
-
-  private val DeserializeVarOpType: SFunc = SFunc(SContext.ContextFuncDom, SOption.ThisType)
-  private lazy val DeserializeVarCost: Int = costOf("DeserializeVar", DeserializeVarOpType)
-
-  private val GetRegisterOpType: SFunc = SFunc(Array(SBox, SByte), SOption.ThisType)
-  private lazy val GetRegisterCost: Int = costOf("GetRegister", GetRegisterOpType)
-
-  private val DeserializeRegisterOpType: SFunc = SFunc(Array(SBox, SByte), SOption.ThisType)
-  private lazy val DeserializeRegisterCost: Int = costOf("DeserializeRegister", DeserializeRegisterOpType)
-
-  private val SelectFieldOpType: SFunc = SFunc(mutable.WrappedArray.empty, SUnit)
-  private lazy val SelectFieldCost: Int = costOf("SelectField", SelectFieldOpType)
-
-  private val CollectionConstOpType: SFunc = SFunc(mutable.WrappedArray.empty, SCollection.ThisType)
-  private lazy val CollectionConstCost: Int = costOf("Const", CollectionConstOpType)
-
-  private val AccessKiloByteOfDataOpType: SFunc = SFunc(mutable.WrappedArray.empty, SUnit)
-  private lazy val AccessKiloByteOfDataCost: Int = costOf("AccessKiloByteOfData", AccessKiloByteOfDataOpType)
-}
-
 /** A default implementation of [[SigmaDslBuilder]] interface.
   * @see [[SigmaDslBuilder]] for detailed descriptions
   */
@@ -583,8 +516,6 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
       case _ => sys.error(s"Cannot create defaultValue($valueType)")
     }).asInstanceOf[T]
   }
-
-  override def CostModel: CostModel = new CCostModel
 
   override def BigInt(n: BigInteger): BigInt = new CBigInt(n)
 
