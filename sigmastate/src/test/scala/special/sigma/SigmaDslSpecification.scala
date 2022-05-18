@@ -5137,32 +5137,54 @@ class SigmaDslSpecification extends SigmaDslTesting
       preGeneratedSamples = Some(samples))
 
     val isUpdateAllowedCostDetails = TracedCost(
-      Array(
-        FixedCostItem(Apply),
-        FixedCostItem(FuncValue),
-        FixedCostItem(GetVar),
-        FixedCostItem(OptionGet),
-        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+      traceBase ++ Array(
+        FixedCostItem(PropertyCall),
         FixedCostItem(SContext.lastBlockUtxoRootHashMethod, FixedCost(JitCost(15))),
         FixedCostItem(PropertyCall),
         FixedCostItem(SAvlTree.isUpdateAllowedMethod, FixedCost(JitCost(15)))
       )
     )
-    verifyCases(
-      Seq(ctx -> Expected(Success(ctx.LastBlockUtxoRootHash.isUpdateAllowed), cost = 1787, isUpdateAllowedCostDetails, 1787)),
-      existingFeature(
-        { (x: Context) => x.LastBlockUtxoRootHash.isUpdateAllowed },
-        "{ (x: Context) => x.LastBlockUtxoRootHash.isUpdateAllowed }",
-        FuncValue(
-          Array((1, SContext)),
-          MethodCall.typed[Value[SBoolean.type]](
-            LastBlockUtxoRootHash,
-            SAvlTree.getMethodByName("isUpdateAllowed"),
-            Vector(),
-            Map()
+
+    if (lowerMethodCallsInTests){
+      verifyCases(
+        Seq(ctx -> Expected(Success(ctx.LastBlockUtxoRootHash.isUpdateAllowed), cost = 1787, isUpdateAllowedCostDetails, 1787)),
+        existingFeature(
+          { (x: Context) => x.LastBlockUtxoRootHash.isUpdateAllowed },
+          "{ (x: Context) => x.LastBlockUtxoRootHash.isUpdateAllowed }",
+          FuncValue(
+            Vector((1, SContext)),
+            MethodCall.typed[Value[SBoolean.type]](
+              LastBlockUtxoRootHash,
+              SAvlTree.getMethodByName("isUpdateAllowed"),
+              Vector(),
+              Map()
+            )
           )
-        )),
-      preGeneratedSamples = Some(samples))
+        ),
+        preGeneratedSamples = Some(samples)
+      )
+    } else {
+      verifyCases(
+        Seq(ctx -> Expected(Success(ctx.LastBlockUtxoRootHash.isUpdateAllowed), cost = 1787, isUpdateAllowedCostDetails, 1787)),
+        existingFeature(
+          { (x: Context) => x.LastBlockUtxoRootHash.isUpdateAllowed },
+          "{ (x: Context) => x.LastBlockUtxoRootHash.isUpdateAllowed }",
+          FuncValue(
+            Vector((1, SContext)),
+            MethodCall.typed[Value[SBoolean.type]](
+              MethodCall.typed[Value[SAvlTree.type]](
+                ValUse(1, SContext),
+                SContext.getMethodByName("LastBlockUtxoRootHash"),
+                Vector(),
+                Map()
+              ),
+              SAvlTree.getMethodByName("isUpdateAllowed"),
+              Vector(),
+              Map()
+            )
+          )),
+        preGeneratedSamples = Some(samples))
+    }
 
     verifyCases(
       Seq(ctx -> Expected(Success(ctx.minerPubKey), cost = 1787, methodCostDetails(SContext.minerPubKeyMethod, 20), 1787)),

@@ -5,6 +5,7 @@ import fastparse.core.Parsed.Success
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, rewrite, rule}
 import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
 import org.ergoplatform.Global
+import org.ergoplatform.LastBlockUtxoRootHash
 import sigmastate.Values.{SValue, Value}
 import sigmastate.eval.IRContext
 import sigmastate.interpreter.Interpreter.ScriptEnv
@@ -124,6 +125,10 @@ class SigmaCompiler(settings: CompilerSettings) {
         MethodCall(xs,
           SCollection.GetOrElseMethod.withConcreteTypes(Map(tIV -> xs.tpe.elemType)),
           Vector(index, default), Map())
+      case LastBlockUtxoRootHash =>
+        // Dummy implementation to satisfy compiler, current one is commented below:
+        MethodCall(Global, SGroupElement.MultiplyMethod, Vector(), Map())
+        // MethodCall.typed[Value[SAvlTree.type]]( ValUse(1, SContext), SContext.lastBlockUtxoRootHashMethod, Vector(), Map())
     })
     rewrite(everywherebu(r))(expr)
   }
