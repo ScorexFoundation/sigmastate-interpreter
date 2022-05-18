@@ -76,6 +76,20 @@ trait Interpreter extends ScorexLogging {
     println(msg)
   }
 
+  /** The cost of Value[T] deserialization is O(n), where n is the length of its bytes
+    * array. To evaluate [[DeserializeContext]] and
+    * [[sigmastate.utxo.DeserializeRegister]] we add the following cost of deserialization
+    * for each byte.
+    */
+  val CostPerByteDeserialized = 2
+
+  /** The cost of substituting [[DeserializeContext]] and
+    * [[sigmastate.utxo.DeserializeRegister]] nodes with the deserialized expression is
+    * O(n), where n is the number of nodes in ErgoTree.
+    * The following is the cost added for each tree node.
+    */
+  val CostPerTreeNode = 2
+
   /** Deserializes given script bytes using ValueSerializer (i.e. assuming expression tree format).
     * It also measures tree complexity adding to the total estimated cost of script execution.
     * The new returned context contains increased `initCost` and should be used for further processing.
@@ -87,9 +101,15 @@ trait Interpreter extends ScorexLogging {
     */
   protected def deserializeMeasured(context: CTX, scriptBytes: Array[Byte]): (CTX, Value[SType]) = {
     val r = SigmaSerializer.startReader(scriptBytes)
-    r.complexity = 0
-    val script = ValueSerializer.deserialize(r)  // Why ValueSerializer? read NOTE above
-    val scriptComplexity = r.complexity
+    val (script, scriptComplexity) = if (VersionContext.current.isJitActivated) {
+      val script = ValueSerializer.deserialize(r)  // Why ValueSerializer? read NOTE above
+      val cost = java7.compat.Math.multiplyExact(scriptBytes.length, CostPerByteDeserialized)
+      (script, cost)
+    } else {
+      r.complexity = 0
+      val script = ValueSerializer.deserialize(r)  // Why ValueSerializer? read NOTE above
+      (script, r.complexity)
+    }
 
     val currCost = Evaluation.addCostChecked(context.initCost, scriptComplexity, context.costLimit)
     val ctx1 = context.withInitCost(currCost).asInstanceOf[CTX]
@@ -320,7 +340,11 @@ trait Interpreter extends ScorexLogging {
     var jitRes: JitReductionResult = null
     if (evalMode.okEvaluateJit) {
       jitRes = VersionContext.withVersions(context.activatedScriptVersion, ergoTree.version) {
-        val (propTree, context2) = trySoftForkable[(SigmaPropValue, CTX)](whenSoftFork = (TrueSigmaProp, context)) {
+        val deserializeSubstitutionCost = java7.compat.Math.multiplyExact(ergoTree.bytes.length, CostPerTreeNode)
+        val currCost = Evaluation.addCostChecked(context.initCost, deserializeSubstitutionCost, context.costLimit)
+        val context1 = context.withInitCost(currCost).asInstanceOf[CTX]
+
+        val (propTree, context2) = trySoftForkable[(SigmaPropValue, CTX)](whenSoftFork = (TrueSigmaProp, context1)) {
           applyDeserializeContextJITC(context, prop)
         }
 
