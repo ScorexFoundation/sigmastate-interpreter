@@ -2,7 +2,6 @@ package sigmastate.utils
 
 import sigmastate._
 import sigmastate.eval.Evaluation._
-import sigmastate.eval.{Zero}
 import scalan.util.Extensions.ByteOps
 import scalan.util.CollectionUtil
 import scalan.util.PrintExtensions._
