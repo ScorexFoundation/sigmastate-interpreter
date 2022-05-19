@@ -10,40 +10,6 @@ import scorex.crypto.authds.avltree.batch.Operation
 
 import scala.util.Try
 
-@scalan.Liftable
-trait CostModel {
-  /** Cost of accessing SELF box and/or each item in INPUTS, OUTPUTS, dataInputs. */
-  def AccessBox: Int // costOf("AccessBox: Context => Box")
-
-  // TODO refactor: remove not used
-  def AccessAvlTree: Int // costOf("AccessAvlTree: Context => AvlTree")
-
-  /** Cost of accessing context variable (`getVar` operation in ErgoScript). */
-  def GetVar: Int // costOf("ContextVar: (Context, Byte) => Option[T]")
-
-  // TODO refactor: remove not used
-  def DeserializeVar: Int // costOf("DeserializeVar: (Context, Byte) => Option[T]")
-
-  /** Cost of accessing register in a box (e.g. `R4[Int]` operation in ErgoScript). */
-  def GetRegister: Int // costOf("AccessRegister: (Box,Byte) => Option[T]")
-
-  // TODO refactor: remove not used
-  def DeserializeRegister: Int // costOf("DeserializeRegister: (Box,Byte) => Option[T]")
-
-  /** Cost of accessing a property of an object like Header or AvlTree. */
-  def SelectField: Int // costOf("SelectField")
-
-  // TODO refactor: remove not used
-  def CollectionConst: Int // costOf("Const: () => Array[IV]")
-
-  // TODO refactor: remove not used
-  def AccessKiloByteOfData: Int // costOf("AccessKiloByteOfData")
-
-  // TODO refactor: remove not used
-  /** Size of public key in bytes */
-  def PubKeySize: Long
-}
-
 /**
   * All `modQ` operations assume that Q is a global constant (an order of the only one cryptographically strong group
   * which is used for all cryptographic operations).

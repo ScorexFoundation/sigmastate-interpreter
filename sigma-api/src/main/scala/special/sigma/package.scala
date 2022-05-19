@@ -37,8 +37,6 @@ package object sigma {
   }
 
   implicit val AnyValueRType: RType[AnyValue] = RType.fromClassTag(classTag[AnyValue])
-  implicit val CostModelRType: RType[CostModel] = RType.fromClassTag(classTag[CostModel])
-
 
   implicit val SigmaContractRType: RType[SigmaContract] = RType.fromClassTag(classTag[SigmaContract])
   implicit val SigmaDslBuilderRType: RType[SigmaDslBuilder] = RType.fromClassTag(classTag[SigmaDslBuilder])
