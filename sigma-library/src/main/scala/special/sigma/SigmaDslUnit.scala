@@ -10,29 +10,15 @@ package special.sigma {
     import Coll._;
     import CollBuilder._;
     import Context._;
-    import CostModel._;
     import CostedBuilder._;
     import GroupElement._;
     import Header._;
     import MonoidBuilder._;
     import PreHeader._;
-    import SigmaContract._;
     import SigmaDslBuilder._;
     import SigmaProp._;
     import WOption._;
     import WRType._;
-    @Liftable trait CostModel extends Def[CostModel] {
-      def AccessBox: Ref[Int];
-      def AccessAvlTree: Ref[Int];
-      def GetVar: Ref[Int];
-      def DeserializeVar: Ref[Int];
-      def GetRegister: Ref[Int];
-      def DeserializeRegister: Ref[Int];
-      def SelectField: Ref[Int];
-      def CollectionConst: Ref[Int];
-      def AccessKiloByteOfData: Ref[Int];
-      def PubKeySize: Ref[Long]
-    };
     @Liftable @WithMethodCallRecognizers trait BigInt extends Def[BigInt] {
       def toByte: Ref[Byte];
       def toShort: Ref[Short];
@@ -159,33 +145,9 @@ package special.sigma {
       def getVar[T](id: Ref[Byte])(implicit cT: Elem[T]): Ref[WOption[T]];
       def vars: Ref[Coll[AnyValue]]
     };
-    @Liftable trait SigmaContract extends Def[SigmaContract] {
-      def builder: Ref[SigmaDslBuilder];
-      @NeverInline @Reified(value = "T") def Collection[T](items: Ref[T]*)(implicit cT: Elem[T]): Ref[Coll[T]] = delayInvoke;
-      def verifyZK(cond: Ref[Thunk[SigmaProp]]): Ref[Boolean] = this.builder.verifyZK(cond);
-      def atLeast(bound: Ref[Int], props: Ref[Coll[SigmaProp]]): Ref[SigmaProp] = this.builder.atLeast(bound, props);
-      def allOf(conditions: Ref[Coll[Boolean]]): Ref[Boolean] = this.builder.allOf(conditions);
-      def allZK(conditions: Ref[Coll[SigmaProp]]): Ref[SigmaProp] = this.builder.allZK(conditions);
-      def anyOf(conditions: Ref[Coll[Boolean]]): Ref[Boolean] = this.builder.anyOf(conditions);
-      def anyZK(conditions: Ref[Coll[SigmaProp]]): Ref[SigmaProp] = this.builder.anyZK(conditions);
-      def xorOf(conditions: Ref[Coll[Boolean]]): Ref[Boolean] = this.builder.xorOf(conditions);
-      def sigmaProp(b: Ref[Boolean]): Ref[SigmaProp] = this.builder.sigmaProp(b);
-      def blake2b256(bytes: Ref[Coll[Byte]]): Ref[Coll[Byte]] = this.builder.blake2b256(bytes);
-      def sha256(bytes: Ref[Coll[Byte]]): Ref[Coll[Byte]] = this.builder.sha256(bytes);
-      def byteArrayToBigInt(bytes: Ref[Coll[Byte]]): Ref[BigInt] = this.builder.byteArrayToBigInt(bytes);
-      def longToByteArray(l: Ref[Long]): Ref[Coll[Byte]] = this.builder.longToByteArray(l);
-      def byteArrayToLong(bytes: Ref[Coll[Byte]]): Ref[Long] = this.builder.byteArrayToLong(bytes);
-      def proveDlog(g: Ref[GroupElement]): Ref[SigmaProp] = this.builder.proveDlog(g);
-      def proveDHTuple(g: Ref[GroupElement], h: Ref[GroupElement], u: Ref[GroupElement], v: Ref[GroupElement]): Ref[SigmaProp] = this.builder.proveDHTuple(g, h, u, v);
-      def groupGenerator: Ref[GroupElement] = this.builder.groupGenerator;
-      def decodePoint(encoded: Ref[Coll[Byte]]): Ref[GroupElement] = this.builder.decodePoint(encoded);
-      @Reified(value = "T") def substConstants[T](scriptBytes: Ref[Coll[Byte]], positions: Ref[Coll[Int]], newValues: Ref[Coll[T]]): Ref[Coll[Byte]] = this.builder.substConstants[T](scriptBytes, positions, newValues)
-    };
     @Liftable @WithMethodCallRecognizers trait SigmaDslBuilder extends Def[SigmaDslBuilder] {
       def Colls: Ref[CollBuilder];
       def Monoids: Ref[MonoidBuilder];
-      def Costing: Ref[CostedBuilder];
-      def CostModel: Ref[CostModel];
       def verifyZK(cond: Ref[Thunk[SigmaProp]]): Ref[Boolean];
       def atLeast(bound: Ref[Int], props: Ref[Coll[SigmaProp]]): Ref[SigmaProp];
       def allOf(conditions: Ref[Coll[Boolean]]): Ref[Boolean];

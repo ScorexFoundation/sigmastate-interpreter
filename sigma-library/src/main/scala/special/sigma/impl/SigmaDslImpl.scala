@@ -19,237 +19,15 @@ import Box._
 import Coll._
 import CollBuilder._
 import Context._
-import CostModel._
 import CostedBuilder._
 import GroupElement._
 import Header._
 import MonoidBuilder._
 import PreHeader._
-import SigmaContract._
 import SigmaDslBuilder._
 import SigmaProp._
 import WOption._
 import WRType._
-
-object CostModel extends EntityObject("CostModel") {
-  // entityConst: single const for each entity
-  import Liftables._
-  import scala.reflect.{ClassTag, classTag}
-  type SCostModel = special.sigma.CostModel
-  case class CostModelConst(
-        constValue: SCostModel
-      ) extends LiftedConst[SCostModel, CostModel] with CostModel
-        with Def[CostModel] with CostModelConstMethods {
-    val liftable: Liftable[SCostModel, CostModel] = LiftableCostModel
-    val resultType: Elem[CostModel] = liftable.eW
-  }
-
-  trait CostModelConstMethods extends CostModel  { thisConst: Def[_] =>
-
-    private val CostModelClass = classOf[CostModel]
-
-    override def AccessBox: Ref[Int] = {
-      asRep[Int](mkMethodCall(self,
-        CostModelClass.getMethod("AccessBox"),
-        WrappedArray.empty,
-        true, false, element[Int]))
-    }
-
-    override def AccessAvlTree: Ref[Int] = {
-      asRep[Int](mkMethodCall(self,
-        CostModelClass.getMethod("AccessAvlTree"),
-        WrappedArray.empty,
-        true, false, element[Int]))
-    }
-
-    override def GetVar: Ref[Int] = {
-      asRep[Int](mkMethodCall(self,
-        CostModelClass.getMethod("GetVar"),
-        WrappedArray.empty,
-        true, false, element[Int]))
-    }
-
-    override def DeserializeVar: Ref[Int] = {
-      asRep[Int](mkMethodCall(self,
-        CostModelClass.getMethod("DeserializeVar"),
-        WrappedArray.empty,
-        true, false, element[Int]))
-    }
-
-    override def GetRegister: Ref[Int] = {
-      asRep[Int](mkMethodCall(self,
-        CostModelClass.getMethod("GetRegister"),
-        WrappedArray.empty,
-        true, false, element[Int]))
-    }
-
-    override def DeserializeRegister: Ref[Int] = {
-      asRep[Int](mkMethodCall(self,
-        CostModelClass.getMethod("DeserializeRegister"),
-        WrappedArray.empty,
-        true, false, element[Int]))
-    }
-
-    override def SelectField: Ref[Int] = {
-      asRep[Int](mkMethodCall(self,
-        CostModelClass.getMethod("SelectField"),
-        WrappedArray.empty,
-        true, false, element[Int]))
-    }
-
-    override def CollectionConst: Ref[Int] = {
-      asRep[Int](mkMethodCall(self,
-        CostModelClass.getMethod("CollectionConst"),
-        WrappedArray.empty,
-        true, false, element[Int]))
-    }
-
-    override def AccessKiloByteOfData: Ref[Int] = {
-      asRep[Int](mkMethodCall(self,
-        CostModelClass.getMethod("AccessKiloByteOfData"),
-        WrappedArray.empty,
-        true, false, element[Int]))
-    }
-
-    override def PubKeySize: Ref[Long] = {
-      asRep[Long](mkMethodCall(self,
-        CostModelClass.getMethod("PubKeySize"),
-        WrappedArray.empty,
-        true, false, element[Long]))
-    }
-  }
-
-  implicit object LiftableCostModel
-    extends Liftable[SCostModel, CostModel] {
-    lazy val eW: Elem[CostModel] = costModelElement
-    lazy val sourceType: RType[SCostModel] = {
-      RType[SCostModel]
-    }
-    def lift(x: SCostModel): Ref[CostModel] = CostModelConst(x)
-    def unlift(w: Ref[CostModel]): SCostModel = w match {
-      case Def(CostModelConst(x: SCostModel))
-            => x.asInstanceOf[SCostModel]
-      case _ => unliftError(w)
-    }
-  }
-
-  private val CostModelClass = classOf[CostModel]
-
-  // entityAdapter for CostModel trait
-  case class CostModelAdapter(source: Ref[CostModel])
-      extends Node with CostModel
-      with Def[CostModel] {
-    val resultType: Elem[CostModel] = element[CostModel]
-    override def transform(t: Transformer) = CostModelAdapter(t(source))
-
-    def AccessBox: Ref[Int] = {
-      asRep[Int](mkMethodCall(source,
-        CostModelClass.getMethod("AccessBox"),
-        WrappedArray.empty,
-        true, true, element[Int]))
-    }
-
-    def AccessAvlTree: Ref[Int] = {
-      asRep[Int](mkMethodCall(source,
-        CostModelClass.getMethod("AccessAvlTree"),
-        WrappedArray.empty,
-        true, true, element[Int]))
-    }
-
-    def GetVar: Ref[Int] = {
-      asRep[Int](mkMethodCall(source,
-        CostModelClass.getMethod("GetVar"),
-        WrappedArray.empty,
-        true, true, element[Int]))
-    }
-
-    def DeserializeVar: Ref[Int] = {
-      asRep[Int](mkMethodCall(source,
-        CostModelClass.getMethod("DeserializeVar"),
-        WrappedArray.empty,
-        true, true, element[Int]))
-    }
-
-    def GetRegister: Ref[Int] = {
-      asRep[Int](mkMethodCall(source,
-        CostModelClass.getMethod("GetRegister"),
-        WrappedArray.empty,
-        true, true, element[Int]))
-    }
-
-    def DeserializeRegister: Ref[Int] = {
-      asRep[Int](mkMethodCall(source,
-        CostModelClass.getMethod("DeserializeRegister"),
-        WrappedArray.empty,
-        true, true, element[Int]))
-    }
-
-    def SelectField: Ref[Int] = {
-      asRep[Int](mkMethodCall(source,
-        CostModelClass.getMethod("SelectField"),
-        WrappedArray.empty,
-        true, true, element[Int]))
-    }
-
-    def CollectionConst: Ref[Int] = {
-      asRep[Int](mkMethodCall(source,
-        CostModelClass.getMethod("CollectionConst"),
-        WrappedArray.empty,
-        true, true, element[Int]))
-    }
-
-    def AccessKiloByteOfData: Ref[Int] = {
-      asRep[Int](mkMethodCall(source,
-        CostModelClass.getMethod("AccessKiloByteOfData"),
-        WrappedArray.empty,
-        true, true, element[Int]))
-    }
-
-    def PubKeySize: Ref[Long] = {
-      asRep[Long](mkMethodCall(source,
-        CostModelClass.getMethod("PubKeySize"),
-        WrappedArray.empty,
-        true, true, element[Long]))
-    }
-  }
-
-  // entityUnref: single unref method for each type family
-  implicit final def unrefCostModel(p: Ref[CostModel]): CostModel = {
-    if (p.node.isInstanceOf[CostModel]) p.node.asInstanceOf[CostModel]
-    else
-      CostModelAdapter(p)
-  }
-
-  // familyElem
-  class CostModelElem[To <: CostModel]
-    extends EntityElem[To] {
-    override val liftable: Liftables.Liftable[_, To] = asLiftable[SCostModel, To](LiftableCostModel)
-
-    override protected def collectMethods: Map[java.lang.reflect.Method, MethodDesc] = {
-      super.collectMethods ++
-        Elem.declaredMethods(classOf[CostModel], classOf[SCostModel], Set(
-        "AccessBox", "AccessAvlTree", "GetVar", "DeserializeVar", "GetRegister", "DeserializeRegister", "SelectField", "CollectionConst", "AccessKiloByteOfData", "PubKeySize"
-        ))
-    }
-  }
-
-  implicit lazy val costModelElement: Elem[CostModel] =
-    new CostModelElem[CostModel]
-
-  implicit case object CostModelCompanionElem extends CompanionElem[CostModelCompanionCtor]
-
-  abstract class CostModelCompanionCtor extends CompanionDef[CostModelCompanionCtor] with CostModelCompanion {
-    def resultType = CostModelCompanionElem
-    override def toString = "CostModel"
-  }
-  implicit final def unrefCostModelCompanionCtor(p: Ref[CostModelCompanionCtor]): CostModelCompanionCtor =
-    p.node.asInstanceOf[CostModelCompanionCtor]
-
-  lazy val RCostModel: MutableLazy[CostModelCompanionCtor] = MutableLazy(new CostModelCompanionCtor {
-    private val thisClass = classOf[CostModelCompanion]
-  })
-} // of object CostModel
-  registerEntityObject("CostModel", CostModel)
 
 object BigInt extends EntityObject("BigInt") {
   // entityConst: single const for each entity
@@ -3067,114 +2845,6 @@ object Context extends EntityObject("Context") {
 } // of object Context
   registerEntityObject("Context", Context)
 
-object SigmaContract extends EntityObject("SigmaContract") {
-  // entityConst: single const for each entity
-  import Liftables._
-  import scala.reflect.{ClassTag, classTag}
-  type SSigmaContract = special.sigma.SigmaContract
-  case class SigmaContractConst(
-        constValue: SSigmaContract
-      ) extends LiftedConst[SSigmaContract, SigmaContract] with SigmaContract
-        with Def[SigmaContract] with SigmaContractConstMethods {
-    val liftable: Liftable[SSigmaContract, SigmaContract] = LiftableSigmaContract
-    val resultType: Elem[SigmaContract] = liftable.eW
-  }
-
-  trait SigmaContractConstMethods extends SigmaContract  { thisConst: Def[_] =>
-
-    private val SigmaContractClass = classOf[SigmaContract]
-
-    override def builder: Ref[SigmaDslBuilder] = {
-      asRep[SigmaDslBuilder](mkMethodCall(self,
-        SigmaContractClass.getMethod("builder"),
-        WrappedArray.empty,
-        true, false, element[SigmaDslBuilder]))
-    }
-
-    override def Collection[T](items: Ref[T]*)(implicit cT: Elem[T]): Ref[Coll[T]] = {
-      asRep[Coll[T]](mkMethodCall(self,
-        SigmaContractClass.getMethod("Collection", classOf[Seq[_]], classOf[Elem[_]]),
-        Array[AnyRef](items, cT),
-        true, false, element[Coll[T]]))
-    }
-  }
-
-  implicit object LiftableSigmaContract
-    extends Liftable[SSigmaContract, SigmaContract] {
-    lazy val eW: Elem[SigmaContract] = sigmaContractElement
-    lazy val sourceType: RType[SSigmaContract] = {
-      RType[SSigmaContract]
-    }
-    def lift(x: SSigmaContract): Ref[SigmaContract] = SigmaContractConst(x)
-    def unlift(w: Ref[SigmaContract]): SSigmaContract = w match {
-      case Def(SigmaContractConst(x: SSigmaContract))
-            => x.asInstanceOf[SSigmaContract]
-      case _ => unliftError(w)
-    }
-  }
-
-  private val SigmaContractClass = classOf[SigmaContract]
-
-  // entityAdapter for SigmaContract trait
-  case class SigmaContractAdapter(source: Ref[SigmaContract])
-      extends Node with SigmaContract
-      with Def[SigmaContract] {
-    val resultType: Elem[SigmaContract] = element[SigmaContract]
-    override def transform(t: Transformer) = SigmaContractAdapter(t(source))
-
-    def builder: Ref[SigmaDslBuilder] = {
-      asRep[SigmaDslBuilder](mkMethodCall(source,
-        SigmaContractClass.getMethod("builder"),
-        WrappedArray.empty,
-        true, true, element[SigmaDslBuilder]))
-    }
-
-    override def Collection[T](items: Ref[T]*)(implicit cT: Elem[T]): Ref[Coll[T]] = {
-      asRep[Coll[T]](mkMethodCall(source,
-        SigmaContractClass.getMethod("Collection", classOf[Seq[_]], classOf[Elem[_]]),
-        Array[AnyRef](items, cT),
-        true, true, element[Coll[T]]))
-    }
-  }
-
-  // entityUnref: single unref method for each type family
-  implicit final def unrefSigmaContract(p: Ref[SigmaContract]): SigmaContract = {
-    if (p.node.isInstanceOf[SigmaContract]) p.node.asInstanceOf[SigmaContract]
-    else
-      SigmaContractAdapter(p)
-  }
-
-  // familyElem
-  class SigmaContractElem[To <: SigmaContract]
-    extends EntityElem[To] {
-    override val liftable: Liftables.Liftable[_, To] = asLiftable[SSigmaContract, To](LiftableSigmaContract)
-
-    override protected def collectMethods: Map[java.lang.reflect.Method, MethodDesc] = {
-      super.collectMethods ++
-        Elem.declaredMethods(classOf[SigmaContract], classOf[SSigmaContract], Set(
-        "builder", "Collection", "verifyZK", "atLeast", "allOf", "allZK", "anyOf", "anyZK", "xorOf", "sigmaProp", "blake2b256", "sha256", "byteArrayToBigInt", "longToByteArray", "byteArrayToLong", "proveDlog", "proveDHTuple", "groupGenerator", "decodePoint", "substConstants"
-        ))
-    }
-  }
-
-  implicit lazy val sigmaContractElement: Elem[SigmaContract] =
-    new SigmaContractElem[SigmaContract]
-
-  implicit case object SigmaContractCompanionElem extends CompanionElem[SigmaContractCompanionCtor]
-
-  abstract class SigmaContractCompanionCtor extends CompanionDef[SigmaContractCompanionCtor] with SigmaContractCompanion {
-    def resultType = SigmaContractCompanionElem
-    override def toString = "SigmaContract"
-  }
-  implicit final def unrefSigmaContractCompanionCtor(p: Ref[SigmaContractCompanionCtor]): SigmaContractCompanionCtor =
-    p.node.asInstanceOf[SigmaContractCompanionCtor]
-
-  lazy val RSigmaContract: MutableLazy[SigmaContractCompanionCtor] = MutableLazy(new SigmaContractCompanionCtor {
-    private val thisClass = classOf[SigmaContractCompanion]
-  })
-} // of object SigmaContract
-  registerEntityObject("SigmaContract", SigmaContract)
-
 object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
   // entityConst: single const for each entity
   import Liftables._
@@ -3204,20 +2874,6 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
         SigmaDslBuilderClass.getMethod("Monoids"),
         WrappedArray.empty,
         true, false, element[MonoidBuilder]))
-    }
-
-    override def Costing: Ref[CostedBuilder] = {
-      asRep[CostedBuilder](mkMethodCall(self,
-        SigmaDslBuilderClass.getMethod("Costing"),
-        WrappedArray.empty,
-        true, false, element[CostedBuilder]))
-    }
-
-    override def CostModel: Ref[CostModel] = {
-      asRep[CostModel](mkMethodCall(self,
-        SigmaDslBuilderClass.getMethod("CostModel"),
-        WrappedArray.empty,
-        true, false, element[CostModel]))
     }
 
     override def verifyZK(cond: Ref[Thunk[SigmaProp]]): Ref[Boolean] = {
@@ -3397,20 +3053,6 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
         SigmaDslBuilderClass.getMethod("Monoids"),
         WrappedArray.empty,
         true, true, element[MonoidBuilder]))
-    }
-
-    def Costing: Ref[CostedBuilder] = {
-      asRep[CostedBuilder](mkMethodCall(source,
-        SigmaDslBuilderClass.getMethod("Costing"),
-        WrappedArray.empty,
-        true, true, element[CostedBuilder]))
-    }
-
-    def CostModel: Ref[CostModel] = {
-      asRep[CostModel](mkMethodCall(source,
-        SigmaDslBuilderClass.getMethod("CostModel"),
-        WrappedArray.empty,
-        true, true, element[CostModel]))
     }
 
     def verifyZK(cond: Ref[Thunk[SigmaProp]]): Ref[Boolean] = {
@@ -3840,7 +3482,6 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
 
   override def resetContext(): Unit = {
     super.resetContext()
-    RCostModel.reset()
     RBigInt.reset()
     RGroupElement.reset()
     RSigmaProp.reset()
@@ -3850,7 +3491,6 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
     RPreHeader.reset()
     RHeader.reset()
     RContext.reset()
-    RSigmaContract.reset()
     RSigmaDslBuilder.reset()
   }
 
