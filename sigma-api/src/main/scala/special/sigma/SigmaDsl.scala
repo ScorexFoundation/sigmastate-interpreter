@@ -812,9 +812,6 @@ trait SigmaDslBuilder {
   /** Access to Monoid operations */
   def Monoids: MonoidBuilder
 
-  /** Access to operations used in cost computation. */
-  def Costing: CostedBuilder
-
   def verifyZK(cond: => SigmaProp): Boolean  // TODO refactor: can be removed after TestSigmaDslBuilder is removed
 
   /**

@@ -20,7 +20,6 @@ class TestSigmaDslBuilder extends SigmaDslBuilder {
   // manual fix
   def Colls: CollBuilder = new CollOverArrayBuilder
   def Monoids: MonoidBuilder = new MonoidBuilderInst
-  def Costing: CostedBuilder = new CCostedBuilder
 
   @NeverInline
   def verifyZK(proof: => SigmaProp): Boolean = proof.isValid

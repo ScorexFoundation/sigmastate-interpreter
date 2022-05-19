@@ -19,7 +19,6 @@ import Box._
 import Coll._
 import CollBuilder._
 import Context._
-import CostedBuilder._
 import GroupElement._
 import Header._
 import MonoidBuilder._

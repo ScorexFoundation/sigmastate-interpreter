@@ -14,7 +14,7 @@ import sigmastate.{TrivialProp, _}
 import sigmastate.Values.{Constant, EvaluatedValue, SValue, ConstantNode, ErgoTree, SigmaBoolean}
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.interpreter.{CryptoConstants, Interpreter}
-import special.collection.{Size, CSizeOption, SizeColl, CCostedBuilder, CollType, SizeOption, CostedBuilder, Coll}
+import special.collection._
 import special.sigma._
 import sigmastate.eval.Extensions._
 import spire.syntax.all.cfor
@@ -25,13 +25,11 @@ import scorex.crypto.hash.{Digest32, Sha256, Blake2b256}
 import sigmastate.Values.ErgoTree.EmptyConstants
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
-import sigmastate.lang.Terms.OperationId
 import sigmastate.lang.TransformingSigmaBuilder
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.serialization.{SigmaSerializer, GroupElementSerializer}
 import special.Types.TupleType
 
-import scala.collection.mutable
 import scala.reflect.ClassTag
 
 /** Interface implmented by wrappers to provide access to the underlying wrapped value. */
@@ -262,42 +260,19 @@ case class CostingBox(isCost: Boolean, val ebox: ErgoBox) extends Box with Wrapp
 
   override def wrappedValue: ErgoBox = ebox
 
-  override def getReg[T](i: Int)(implicit tT: RType[T]): Option[T] =
-    if (isCost) {  // TODO refactor: remove isCost branch (it was added before Sizes and now is never executed)
-      val optV =
-        if (i < 0 || i >= registers.length) None
-        else {
-          val value = registers(i)
-          if (value != null) {
-            // once the value is not null it should be of the right type
-            value match {
-              case value: TestValue[_] if value.value != null =>
-                Some(value.value.asInstanceOf[T])
-              case _ =>
-                None
-            }
-          } else None
-        }
-
-      optV.orElse {
-        val tpe = Evaluation.rtypeToSType(tT)
-        val default = builder.Costing.defaultValue(tT).asInstanceOf[SType#WrappedType]
-        Some(Constant[SType](default, tpe).asInstanceOf[T])
+  override def getReg[T](i: Int)(implicit tT: RType[T]): Option[T] = {
+    if (i < 0 || i >= registers.length) return None
+    val value = registers(i)
+    if (value != null ) {
+      // once the value is not null it should be of the right type
+      value match {
+        case value: TestValue[_] if value.value != null && value.tA == tT =>
+          Some(value.value.asInstanceOf[T])
+        case _ =>
+          throw new InvalidType(s"Cannot getReg[${tT.name}]($i): invalid type of value $value at id=$i")
       }
-    } else {
-      if (i < 0 || i >= registers.length) return None
-      val value = registers(i)
-      if (value != null ) {
-        // once the value is not null it should be of the right type
-        value match {
-          case value: TestValue[_] if value.value != null && value.tA == tT =>
-            Some(value.value.asInstanceOf[T])
-          case _ =>
-            throw new InvalidType(s"Cannot getReg[${tT.name}]($i): invalid type of value $value at id=$i")
-        }
-      } else None
-    }
-
+    } else None
+  }
 
   override def creationInfo: (Int, Coll[Byte]) = {
     this.getReg[(Int, Coll[Byte])](3).get.asInstanceOf[Any] match {
@@ -454,36 +429,6 @@ object CHeader {
   */
 class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
   implicit val validationSettings = ValidationRules.currentSettings
-
-  override val Costing: CostedBuilder = new CCostedBuilder {
-
-    import RType._
-
-    override def defaultValue[T](valueType: RType[T]): T = (valueType match {
-      case BooleanType => false
-      case ByteType => 0.toByte
-      case ShortType => 0.toShort
-      case IntType => 0
-      case LongType => 0L
-      case StringType => ""
-      case CharType => 0.toChar
-      case FloatType => 0.0f
-      case DoubleType => 0.0d
-      case p: PairType[a, b] => (defaultValue(p.tFst), defaultValue(p.tSnd))
-      case col: CollType[a] => dsl.Colls.emptyColl(col.tItem)
-      case tup: TupleType => tup.items.map(t => defaultValue(t))
-      case SType.AvlTreeDataRType => AvlTreeData.dummy
-      case AvlTreeRType => CAvlTree(AvlTreeData.dummy)
-
-      case SType.SigmaBooleanRType => TrivialProp.FalseProp
-      case SigmaPropRType => sigmaProp(false)
-
-      case ECPointRType => CryptoConstants.dlogGroup.generator
-      case GroupElementRType => groupGenerator
-
-      case _ => sys.error(s"Cannot create defaultValue($valueType)")
-    }).asInstanceOf[T]
-  }
 
   override def BigInt(n: BigInteger): BigInt = new CBigInt(n)
 
@@ -657,39 +602,18 @@ case class CostingDataContext(
   }
 
   override def getVar[T](id: Byte)(implicit tT: RType[T]): Option[T] = {
-    if (isCost) {
-      val optV =
-        if (id < 0 || id >= vars.length) None
-        else {
-          val value = vars(id)
-          if (value != null) {
-            // once the value is not null it should be of the right type
-            value match {
-              case value: TestValue[_] if value.value != null =>
-                Some(value.value.asInstanceOf[T])
-              case _ => None
-            }
-          } else None
-        }
-      optV.orElse {
-        val tpe = Evaluation.rtypeToSType(tT)
-        val default = builder.Costing.defaultValue(tT).asInstanceOf[SType#WrappedType]
-        Some(Constant[SType](default, tpe).asInstanceOf[T])
+    implicit val tag: ClassTag[T] = tT.classTag
+    if (id < 0 || id >= vars.length) return None
+    val value = vars(id)
+    if (value != null) {
+      // once the value is not null it should be of the right type
+      value match {
+        case value: TestValue[_] if value.value != null && value.tA == tT =>
+          Some(value.value.asInstanceOf[T])
+        case _ =>
+          throw new InvalidType(s"Cannot getVar[${tT.name}]($id): invalid type of value $value at id=$id")
       }
-    } else {
-      implicit val tag: ClassTag[T] = tT.classTag
-      if (id < 0 || id >= vars.length) return None
-      val value = vars(id)
-      if (value != null) {
-        // once the value is not null it should be of the right type
-        value match {
-          case value: TestValue[_] if value.value != null && value.tA == tT =>
-            Some(value.value.asInstanceOf[T])
-          case _ =>
-            throw new InvalidType(s"Cannot getVar[${tT.name}]($id): invalid type of value $value at id=$id")
-        }
-      } else None
-    }
+    } else None
   }
 
   /** Return a new context instance with variables collection updated.

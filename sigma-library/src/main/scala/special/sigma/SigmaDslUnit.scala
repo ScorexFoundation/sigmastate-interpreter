@@ -3,22 +3,6 @@ package special.sigma {
   import scalan._
 
   trait SigmaDsl extends Base { self: SigmaLibrary =>
-    import AnyValue._;
-    import AvlTree._;
-    import BigInt._;
-    import Box._;
-    import Coll._;
-    import CollBuilder._;
-    import Context._;
-    import CostedBuilder._;
-    import GroupElement._;
-    import Header._;
-    import MonoidBuilder._;
-    import PreHeader._;
-    import SigmaDslBuilder._;
-    import SigmaProp._;
-    import WOption._;
-    import WRType._;
     @Liftable @WithMethodCallRecognizers trait BigInt extends Def[BigInt] {
       def toByte: Ref[Byte];
       def toShort: Ref[Short];

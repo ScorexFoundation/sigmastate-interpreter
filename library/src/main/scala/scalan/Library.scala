@@ -10,22 +10,14 @@ trait Library extends Scalan
   with WrappersModule
   with WrappersSpecModule
   with CollsModule
-  with SizesModule
-  with CostsModule
-  with ConcreteSizesModule
-  with ConcreteCostsModule
   with MonoidsModule
   with MonoidInstancesModule
-  with CostedOptionsModule {
+{
   import WOption._
   import WRType._
   import Coll._; import CollBuilder._;
-  import Size._
-  import Costed._; import CostedBuilder._
-  import CostedFunc._;
   import WSpecialPredef._
 
-  type RSize[Val] = Ref[Size[Val]]
   type LazyRep[T] = MutableLazy[Ref[T]]
 
   private val _liftElemMemo = new MemoizedFunc({
@@ -46,23 +38,12 @@ trait Library extends Scalan
     super.onReset()
   }
 
-  def zeroSize[V](eVal: Elem[V]): RSize[V] = asRep[Size[V]](eVal match {
-    case pe: PairElem[a,b] => costedBuilder.mkSizePair(zeroSize[a](pe.eFst), zeroSize[b](pe.eSnd))
-    case ce: CollElem[_,_] =>
-      implicit val eItem = ce.eItem
-      costedBuilder.mkSizeColl(colBuilder.fromItems(zeroSize(eItem)))
-    case oe: WOptionElem[_,_] => costedBuilder.mkSizeOption(specialPredef.some(zeroSize(oe.eItem)))
-    case _: BaseElem[_] | _: EntityElem[_] => costedBuilder.mkSizePrim(0L, eVal)
-    case _ => !!!(s"Cannot create zeroSize($eVal)")
-  })
-
   val CM = CollMethods
   private val CBM = CollBuilderMethods
   private val WOptionM = WOptionMethods
   private val SPCM = WSpecialPredefCompanionMethods
 
   def colBuilder: Ref[CollBuilder]
-  def costedBuilder: Ref[CostedBuilder]
   def intPlusMonoid: Ref[Monoid[Int]]
   def longPlusMonoid: Ref[Monoid[Long]]
 

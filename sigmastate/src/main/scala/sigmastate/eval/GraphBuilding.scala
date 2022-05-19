@@ -43,8 +43,6 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
   import SigmaDslBuilder._
   import SigmaProp._
   import WOption._
-  import CCostedBuilder._
-  import CostedBuilder._;
   import MonoidBuilder._
 
   /** Should be specified in the final cake */
@@ -220,10 +218,7 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
   private val _colBuilder: LazyRep[CollBuilder] = MutableLazy(variable[CollBuilder])
   @inline def colBuilder: Ref[CollBuilder] = _colBuilder.value
 
-  private val _costedBuilder: LazyRep[CostedBuilder] = MutableLazy(RCCostedBuilder())
-  @inline def costedBuilder: Ref[CostedBuilder] = _costedBuilder.value
-
-  private val _monoidBuilder: LazyRep[MonoidBuilder] = MutableLazy(costedBuilder.monoidBuilder)
+  private val _monoidBuilder: LazyRep[MonoidBuilder] = MutableLazy(sigmaDslBuilder.Monoids)
   @inline def monoidBuilder: Ref[MonoidBuilder] = _monoidBuilder.value
 
   private val _intPlusMonoid: LazyRep[Monoid[Int]] = MutableLazy(monoidBuilder.intPlusMonoid)
@@ -235,7 +230,7 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
   protected override def onReset(): Unit = {
     super.onReset()
     // WARNING: every lazy value should be listed here, otherwise bevavior after resetContext is undefined and may throw.
-    Array(_sigmaDslBuilder, _colBuilder, _costedBuilder,
+    Array(_sigmaDslBuilder, _colBuilder,
       _monoidBuilder, _intPlusMonoid, _longPlusMonoid)
       .foreach(_.reset())
   }

@@ -18,7 +18,6 @@ trait IRContext extends TreeBuilding with GraphBuilding {
     Pass.defaultPassConfig.copy(constantPropagation = false))
 
   val sigmaDslBuilderValue = CostingSigmaDslBuilder
-  val costedBuilderValue = sigmaDslBuilderValue.Costing
   val monoidBuilderValue = sigmaDslBuilderValue.Monoids
 
   /** Finds SigmaProp.isProven method calls in the given Lambda `f` */

@@ -28,7 +28,6 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests
   import IR._
   import Liftables._
   import Context._
-  import Size._
   import BigInt._
 
   override lazy val compiler = new SigmaCompiler(CompilerSettings(
