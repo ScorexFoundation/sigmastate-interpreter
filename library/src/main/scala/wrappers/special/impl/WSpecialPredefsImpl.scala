@@ -2,12 +2,7 @@ package wrappers.special
 
 import scala.language.{existentials,implicitConversions}
 import scalan._
-import impl._
 import special.wrappers.WrappersModule
-import special.wrappers.SpecialPredefWrapSpec
-import scala.collection.mutable.WrappedArray
-import scala.reflect.runtime.universe._
-import scala.reflect._
 
 package impl {
 // Abs -----------------------------------

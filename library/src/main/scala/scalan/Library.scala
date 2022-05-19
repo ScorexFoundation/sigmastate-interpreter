@@ -2,13 +2,12 @@ package scalan
 
 import scala.language.implicitConversions
 import special.collection._
-import special.wrappers.{WrappersSpecModule, WrappersModule}
-import scalan.util.{MemoizedFunc}
+import special.wrappers.WrappersModule
+import scalan.util.MemoizedFunc
 import scalan.ExactIntegral._
 
 trait Library extends Scalan
   with WrappersModule
-  with WrappersSpecModule
   with CollsModule
   with MonoidsModule
   with MonoidInstancesModule
