@@ -7,13 +7,7 @@ import scala.collection.mutable.ArrayBuffer
 trait SigmaLibrary extends Library
     with special.sigma.wrappers.WrappersModule
     with SigmaDslModule
-    with CostedObjectsModule
 {
-  import Coll._
-  import CollBuilder._
-  import SigmaProp._
-  import SigmaContract._
-  import SigmaDslBuilder._
   import WRType._
   import Size._
 
