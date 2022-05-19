@@ -271,13 +271,6 @@ class EvalSizeBox(
     new CSizeOption[T](Some(regSize))
   }
 }
-class EvalSizeBuilder extends CSizeBuilder {
-  override def mkSizeBox(propositionBytes: Size[Coll[Byte]], bytes: Size[Coll[Byte]],
-      bytesWithoutRef: Size[Coll[Byte]], registers: Size[Coll[Option[AnyValue]]],
-      tokens: Size[Coll[(Coll[Byte], Long)]]): SizeBox = {
-    new EvalSizeBox(propositionBytes, bytes, bytesWithoutRef, registers, tokens)
-  }
-}
 
 /** A default implementation of [[Box]] interface.
   * @see [[Box]] for detailed descriptions

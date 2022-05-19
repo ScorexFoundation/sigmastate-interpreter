@@ -153,10 +153,10 @@ object Sized extends SizedLowPriority {
       )
   })
 
-  val SizeHeader = new CSizePrim(SHeader.dataSize(0.asWrappedType), HeaderRType)
+  lazy val SizeHeader = ??? ///new CSizePrim(SHeader.dataSize(0.asWrappedType), HeaderRType)
   implicit val headerIsSized: Sized[Header] = Sized.instance((_: Header) => SizeHeader)
 
-  val SizePreHeader = new CSizePrim(SPreHeader.dataSize(0.asWrappedType), PreHeaderRType)
+  lazy val SizePreHeader = ??? ///new CSizePrim(SPreHeader.dataSize(0.asWrappedType), PreHeaderRType)
   implicit val preHeaderIsSized: Sized[PreHeader] = Sized.instance((_: PreHeader) => SizePreHeader)
 
   implicit val contextIsSized: Sized[Context] = Sized.instance((ctx: Context) => {
