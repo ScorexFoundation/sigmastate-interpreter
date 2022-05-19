@@ -49,12 +49,4 @@ package object sigma {
   implicit val ECPointRType: RType[ECPoint] = new GeneralType(classTag[ECPoint]) {
     override def isConstantSize: Boolean = true
   }
-
-
-  implicit val SizeAnyValueRType: RType[SizeAnyValue] = RType.fromClassTag(classTag[SizeAnyValue])
-  implicit val SizeSigmaPropRType: RType[SizeSigmaProp] = RType.fromClassTag(classTag[SizeSigmaProp])
-  implicit val SizeBoxRType: RType[SizeBox] = RType.fromClassTag(classTag[SizeBox])
-  implicit val SizeContextRType: RType[SizeContext] = RType.fromClassTag(classTag[SizeContext])
-  implicit val SizeBuilderRType: RType[SizeBuilder] = RType.fromClassTag(classTag[SizeBuilder])
-
 }
