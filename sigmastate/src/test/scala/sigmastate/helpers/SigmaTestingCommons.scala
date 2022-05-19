@@ -11,7 +11,6 @@ import org.scalatest.{Assertion, Matchers, PropSpec}
 import scalan.util.BenchmarkUtil
 import scalan.{RType, TestContexts, TestUtils}
 import scorex.crypto.hash.Blake2b256
-import sigma.types.IsPrimView
 import sigmastate.Values.{Constant, ErgoTree, GroupElementConstant, SValue, SigmaBoolean, SigmaPropValue}
 import sigmastate.eval.{Evaluation, IRContext, _}
 import sigmastate.helpers.TestingHelpers._
@@ -50,13 +49,6 @@ trait SigmaTestingCommons extends PropSpec
   class TestingIRContext extends TestContext with IRContext {
   }
 
-  private def fromPrimView[A](in: A) = {
-    in match {
-      case IsPrimView(v) => v
-      case _ => in
-    }
-  }
-
   case class CompiledFunc[A,B]
     (script: String, bindings: Seq[VarBinding], expr: SValue, compiledTree: SValue, func: A => (B, CostDetails))
     (implicit val tA: RType[A], val tB: RType[B]) extends Function1[A, (B, CostDetails)] {
@@ -71,7 +63,6 @@ trait SigmaTestingCommons extends PropSpec
   protected val initialCostInTests = new DynamicVariable[Long](0)
 
   def createContexts[A](in: A, bindings: Seq[VarBinding])(implicit tA: RType[A]) = {
-    val x = fromPrimView(in)
     val tpeA = Evaluation.rtypeToSType(tA)
     in match {
       case ctx: CostingDataContext =>
@@ -108,7 +99,7 @@ trait SigmaTestingCommons extends PropSpec
 
         val ergoCtx = ErgoLikeContextTesting.dummy(box, activatedVersionInTests)
           .withErgoTreeVersion(ergoTreeVersionInTests)
-          .withBindings(1.toByte -> Constant[SType](x.asInstanceOf[SType#WrappedType], tpeA))
+          .withBindings(1.toByte -> Constant[SType](in.asInstanceOf[SType#WrappedType], tpeA))
           .withBindings(bindings: _*)
         val calcCtx = ergoCtx.toSigmaContext(isCost = false).asInstanceOf[CostingDataContext]
         val costCtx = calcCtx.copy(isCost = true)
