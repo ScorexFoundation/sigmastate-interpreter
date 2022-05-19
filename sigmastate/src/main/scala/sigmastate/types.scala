@@ -787,7 +787,7 @@ trait SNumericType extends SProduct {
 
   /** Numeric types are ordered by the number of bytes to store the numeric values.
     * @return index in the array of all numeric types. */
-  protected def numericTypeIndex: Int
+  def numericTypeIndex: Int
 
   override def toString: String = this.getClass.getSimpleName
 }
@@ -937,7 +937,7 @@ case object SByte extends SPrimType with SEmbeddable with SNumericType with SMon
   override val reprClass: Class[_] = classOf[Byte]
   override def typeId = typeCode
   override def isConstantSize = true
-  override protected def numericTypeIndex: Int = 0
+  override def numericTypeIndex: Int = 0
   override def upcast(v: AnyVal): Byte = v match {
     case b: Byte => b
     case _ => sys.error(s"Cannot upcast value $v to the type $this")
@@ -958,7 +958,7 @@ case object SShort extends SPrimType with SEmbeddable with SNumericType with SMo
   override val reprClass: Class[_] = classOf[Short]
   override def typeId = typeCode
   override def isConstantSize = true
-  override protected def numericTypeIndex: Int = 1
+  override def numericTypeIndex: Int = 1
   override def upcast(v: AnyVal): Short = v match {
     case x: Byte => x.toShort
     case x: Short => x
@@ -979,7 +979,7 @@ case object SInt extends SPrimType with SEmbeddable with SNumericType with SMono
   override val reprClass: Class[_] = classOf[Int]
   override def typeId = typeCode
   override def isConstantSize = true
-  override protected def numericTypeIndex: Int = 2
+  override def numericTypeIndex: Int = 2
   override def upcast(v: AnyVal): Int = v match {
     case x: Byte => x.toInt
     case x: Short => x.toInt
@@ -1002,7 +1002,7 @@ case object SLong extends SPrimType with SEmbeddable with SNumericType with SMon
   override val reprClass: Class[_] = classOf[Long]
   override def typeId = typeCode
   override def isConstantSize = true
-  override protected def numericTypeIndex: Int = 3
+  override def numericTypeIndex: Int = 3
   override def upcast(v: AnyVal): Long = v match {
     case x: Byte => x.toLong
     case x: Short => x.toLong
@@ -1037,7 +1037,7 @@ case object SBigInt extends SPrimType with SEmbeddable with SNumericType with SM
     * In sigma we limit the size by the fixed constant and thus BigInt is a constant size type. */
   override def isConstantSize = true
 
-  override protected def numericTypeIndex: Int = 4
+  override def numericTypeIndex: Int = 4
 
   override def upcast(v: AnyVal): BigInt = {
     val bi = v match {

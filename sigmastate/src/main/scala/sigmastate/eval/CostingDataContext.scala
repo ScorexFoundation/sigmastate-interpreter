@@ -247,31 +247,6 @@ case class CAvlTree(treeData: AvlTreeData) extends AvlTree with WrapperOf[AvlTre
 
 import sigmastate.eval.CostingBox._
 
-class EvalSizeBox(
-    propositionBytes: Size[Coll[Byte]],
-    bytes: Size[Coll[Byte]],
-    bytesWithoutRef: Size[Coll[Byte]],
-    registers: Size[Coll[Option[AnyValue]]],
-    tokens: Size[Coll[(Coll[Byte], Long)]]
-) extends CSizeBox(propositionBytes, bytes, bytesWithoutRef, registers, tokens) {
-  override def getReg[T](id: Byte)(implicit tT: RType[T]): Size[Option[T]] = {
-    val varSize = registers.asInstanceOf[SizeColl[Option[AnyValue]]].sizes(id.toInt)
-    val foundSize = varSize.asInstanceOf[SizeOption[AnyValue]].sizeOpt
-    val regSize = foundSize match {
-      case Some(varSize: SizeAnyValue) =>
-        require(varSize.tVal == tT, s"Unexpected register type found at register #$id: ${varSize.tVal}, expected $tT")
-        val regSize = varSize.valueSize.asInstanceOf[Size[T]]
-        regSize
-      case _ =>
-        val z = Zero.typeToZero(tT)
-        val zeroVal = z.zero
-        val sized = Sized.typeToSized(tT)
-        sized.size(zeroVal)
-    }
-    new CSizeOption[T](Some(regSize))
-  }
-}
-
 /** A default implementation of [[Box]] interface.
   * @see [[Box]] for detailed descriptions
   */

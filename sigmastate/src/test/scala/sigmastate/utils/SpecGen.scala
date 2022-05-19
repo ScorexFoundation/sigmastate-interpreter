@@ -2,7 +2,7 @@ package sigmastate.utils
 
 import sigmastate._
 import sigmastate.eval.Evaluation._
-import sigmastate.eval.{Zero, Sized}
+import sigmastate.eval.{Zero}
 import scalan.util.Extensions.ByteOps
 import scalan.util.CollectionUtil
 import scalan.util.PrintExtensions._
@@ -120,9 +120,8 @@ trait SpecGen {
       val valRange = t match {
         case SBoolean => s"$$\\Set{\\lst{true}, \\lst{false}}$$"
         case n: SNumericType =>
-          val s = Sized.typeToSized(rtype)
-          val z = Zero.typeToZero(rtype).zero
-          val bits = s.size(z).dataSize * 8 - 1
+          val s = if (n.isInstanceOf[SBigInt.type]) 32 else 1 << n.numericTypeIndex
+          val bits = s * 8 - 1 // non-sign bits
           s"$$\\Set{-2^{$bits} \\dots 2^{$bits}-1}$$~\\ref{sec:type:${name}}"
         case SGroupElement => s"$$\\Set{p \\in \\lst{SecP256K1Point}}$$"
         case _ => s"Sec.~\\ref{sec:type:${name}}"

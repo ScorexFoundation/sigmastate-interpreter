@@ -1,7 +1,7 @@
 package org.ergoplatform
 
 import scalan.util.CollectionUtil._
-import sigmastate.eval.Sized
+import sigmastate.interpreter.CryptoConstants
 
 case class SizeConstant[T: Numeric](value: T, id: Short, description: String)
 
@@ -32,11 +32,11 @@ object SigmaConstants {
     "Registers count should not be greater than provided value") {
   }
 
-  object MaxPropositionBytes extends SizeConstant[Int](Sized.SizePropositionBytesMax.dataSize.toInt, 5,
+  object MaxPropositionBytes extends SizeConstant[Int](4096 /*4K*/, 5,
     "Max length of Box.propositionBytes collection") {
   }
 
-  object MaxBoxSizeWithoutRefs extends SizeConstant[Int](Sized.SizeBoxBytesWithoutRefsMax.dataSize.toInt, 6,
+  object MaxBoxSizeWithoutRefs extends SizeConstant[Int](MaxBoxSize.value - (CryptoConstants.hashLength + 2/*size of Short*/), 6,
     "Box size should not be greater than provided value") {
   }
 
