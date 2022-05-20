@@ -188,9 +188,6 @@ class CollsTests extends PropSpec with PropertyChecks with Matchers with CollGen
       {
         val res = col.sum(monoid)
         res shouldBe col.toArray.sum
-        val pairs = col.zip(col)
-        val pairMonoid = builder.Monoids.pairMonoid(monoid, monoid)
-        pairs.sum(pairMonoid) shouldBe ((res, res))
       }
       {
         val res = col.map(inc)

@@ -217,7 +217,7 @@ class CollOverArray[@specialized A](val toArray: Array[A])(implicit tA: RType[A]
 }
 
 class CollOverArrayBuilder extends CollBuilder {
-  override def Monoids: MonoidBuilder = new MonoidBuilderInst
+  override val Monoids: MonoidBuilder = new MonoidBuilderInst
 
   @inline override def pairColl[@specialized A, @specialized B](as: Coll[A], bs: Coll[B]): PairColl[A, B] = {
     if (VersionContext.current.isJitActivated) {
