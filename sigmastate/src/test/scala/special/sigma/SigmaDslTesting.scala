@@ -388,7 +388,9 @@ class SigmaDslTesting extends PropSpec
         ctx
       }
 
-      val (expectedResult, expectedCost) = {
+      val (expectedResult, expectedCost) = if (activatedVersionInTests < VersionContext.JitActivationVersion)
+        (expected.oldResult, expected.verificationCostOpt)
+      else {
         val res = expected.newResults(ergoTreeVersionInTests)
         (res._1, res._1.verificationCost)
       }
@@ -736,9 +738,30 @@ class SigmaDslTesting extends PropSpec
       if (!VersionContext.current.isJitActivated) {
         // check the old implementation with Scala semantic
         val expectedOldRes = expected.value
-        val oldRes = checkEq(scalaFunc)(oldF)(input)
-        checkResult(oldRes.map(_._1), expectedOldRes, failOnTestVectors = true,
-          "Comparing oldRes with expected: !isJitActivated: ")
+
+        if (!allowNewToSucceed) {
+          // In v5.x the oldF is actually implemented using new JIT interpreter.
+          // Some exceptions of old v4.x interpreter are not reproducible in v5.0+.
+          // If allowNewToSucceed == false then we need to check equivalence with the old
+          // semantic function (scalaFunc)
+          val oldRes = checkEq(scalaFunc)(oldF)(input)
+          checkResult(oldRes.map(_._1), expectedOldRes, failOnTestVectors = true,
+            "Comparing oldRes with expected: !isJitActivated: ")
+        } else {
+          // when allowNewToSucceed == true then check depending on the results
+          val expRes = newRes.map(_._1)
+          (Try(scalaFunc(input)), Try(oldF(input)._1)) match {
+            case (Success(s), Success(old)) =>
+              s shouldBe old
+            case (Failure(e), oldRes @ Success(_)) =>
+              // allow this because of allowNewToSucceed
+              oldRes shouldBe expRes
+            case (Success(s), Failure(e)) =>
+              fail(s"Old version fail while scalaFunc succeeds: $s <+++> $e")
+            case (Failure(e), Failure(old)) =>
+              e.getClass shouldBe old.getClass
+          }
+        }
 
         val newValue = newRes.map(_._1)
         (expectedOldRes, newValue) match {
