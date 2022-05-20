@@ -13,38 +13,22 @@ import scala.reflect.classTag
   */
 package object sigma {
 
-  implicit val BigIntRType: RType[BigInt] = new GeneralType(classTag[BigInt]) {
-    override def isConstantSize: Boolean = true
-  }
-  implicit val GroupElementRType: RType[GroupElement] = new GeneralType(classTag[GroupElement]) {
-    override def isConstantSize: Boolean = true
-  }
-  implicit val SigmaPropRType: RType[SigmaProp] = new GeneralType(classTag[SigmaProp]) {
-    override def isConstantSize: Boolean = true
-  }
-  implicit val AvlTreeRType:   RType[AvlTree]   = new GeneralType(classTag[AvlTree]) {
-    override def isConstantSize: Boolean = true
-  }
+  implicit val BigIntRType: RType[BigInt] = GeneralType(classTag[BigInt])
+  implicit val GroupElementRType: RType[GroupElement] = GeneralType(classTag[GroupElement])
+  implicit val SigmaPropRType: RType[SigmaProp] = GeneralType(classTag[SigmaProp])
+  implicit val AvlTreeRType:   RType[AvlTree]   = GeneralType(classTag[AvlTree])
 
   implicit val BoxRType:       RType[Box]       = GeneralType(classTag[Box])
   implicit val ContextRType:   RType[Context]   = GeneralType(classTag[Context])
 
-  implicit val HeaderRType: RType[Header] = new GeneralType(classTag[Header]) {
-    override def isConstantSize: Boolean = true
-  }
-  implicit val PreHeaderRType: RType[PreHeader] = new GeneralType(classTag[PreHeader]) {
-    override def isConstantSize: Boolean = true
-  }
+  implicit val HeaderRType: RType[Header] = GeneralType(classTag[Header])
+  implicit val PreHeaderRType: RType[PreHeader] = GeneralType(classTag[PreHeader])
 
   implicit val AnyValueRType: RType[AnyValue] = RType.fromClassTag(classTag[AnyValue])
 
   implicit val SigmaContractRType: RType[SigmaContract] = RType.fromClassTag(classTag[SigmaContract])
   implicit val SigmaDslBuilderRType: RType[SigmaDslBuilder] = RType.fromClassTag(classTag[SigmaDslBuilder])
 
-  implicit val BigIntegerRType: RType[BigInteger] = new GeneralType(classTag[BigInteger]) {
-    override def isConstantSize: Boolean = true
-  }
-  implicit val ECPointRType: RType[ECPoint] = new GeneralType(classTag[ECPoint]) {
-    override def isConstantSize: Boolean = true
-  }
+  implicit val BigIntegerRType: RType[BigInteger] = GeneralType(classTag[BigInteger])
+  implicit val ECPointRType: RType[ECPoint] = GeneralType(classTag[ECPoint])
 }

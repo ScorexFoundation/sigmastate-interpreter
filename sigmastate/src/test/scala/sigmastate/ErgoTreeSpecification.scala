@@ -187,44 +187,12 @@ class ErgoTreeSpecification extends SigmaDslTesting {
     forAll(types) { (t, code, isConst, isPrim, isEmbed, isNum) =>
       t.typeCode shouldBe code
       t.typeId shouldBe code
-      t.isConstantSize shouldBe isConst
       t.isInstanceOf[SPrimType] shouldBe isPrim
       t.isEmbeddable shouldBe isEmbed
       t.isNumType shouldBe isNum
       whenever(isPrim) {
         t.typeCode should be <= SPrimType.LastPrimTypeCode
       }
-    }
-    forAll(Table(("type", "isConstantSize"),
-      (NoType, true),
-      (SString, false),
-      (SAny, false),
-      (SUnit, true),
-      (SFunc(SInt, SAny), false),
-      (STypeApply("T"), false),
-      (SType.tT, false)
-    )) { (t, isConst) =>
-      t.isConstantSize shouldBe isConst
-    }
-  }
-
-  property("Tuple Types") {
-    val constSizeTuple = STuple(SByte, SInt, SBigInt)
-    val dynSizeTuple = STuple(SByte, SInt, SBox, SBigInt)
-    forAll(Table(("type", "isConstantSize"),
-      (STuple(SByte), true),
-      (STuple(SByte, SInt), true),
-      (STuple(SByte, SInt, SAvlTree), true),
-      (STuple(SBox), false),
-      (STuple(SByte, SBox), false),
-      (STuple(SByte, SInt, SBox), false),
-      (STuple(SBox, SByte, SInt), false),
-      (constSizeTuple, true),
-      (constSizeTuple, true), // should avoid re-computation
-      (dynSizeTuple, false),
-      (dynSizeTuple, false)   // should avoid re-computation
-    )) { (t, isConst) =>
-      t.isConstantSize shouldBe isConst
     }
   }
 

@@ -112,7 +112,6 @@ trait SpecGen {
       }
       val rtype = stypeToRType(t)
       val name = t match { case SGlobal => "Global" case _ => rtype.name }
-      val isConst = t.isConstantSize
       val isPrim = t.isInstanceOf[SPrimType]
       val isEmbed = t.isInstanceOf[SEmbeddable]
       val isNum = t.isInstanceOf[SNumericType]
@@ -126,7 +125,7 @@ trait SpecGen {
         case _ => s"Sec.~\\ref{sec:type:${name}}"
       }
       val line =
-        s"""\\lst{$name}	&	$$${tc.typeId}$$	&	\\lst{$isConst}	& \\lst{$isPrim}	&	\\lst{$isEmbed} &	\\lst{$isNum}	& $valRange \\\\"""
+        s"""\\lst{$name}	&	$$${tc.typeId}$$	&	\\lst{isConst}	& \\lst{$isPrim}	&	\\lst{$isEmbed} &	\\lst{$isNum}	& $valRange \\\\"""
       line
     }
     val table = lines.mkString("\n\\hline\n")
