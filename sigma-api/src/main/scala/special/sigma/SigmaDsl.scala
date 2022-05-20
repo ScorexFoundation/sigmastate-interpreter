@@ -18,8 +18,6 @@ import scala.util.Try
 @scalan.Liftable
 @WithMethodCallRecognizers
 trait BigInt {
-  @Internal
-  private[sigma] def value: BigInteger
   /** Convert this BigInt value to Byte.
     * @throws ArithmeticException if overflow happens.
     */
@@ -202,9 +200,6 @@ trait BigInt {
 @scalan.Liftable
 @WithMethodCallRecognizers
 trait GroupElement {
-  @Internal
-  private[sigma] def value: ECPoint
-
   def isInfinity: Boolean
 
   /** Exponentiate this <code>GroupElement</code> to the given number.

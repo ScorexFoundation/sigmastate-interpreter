@@ -16,7 +16,7 @@ import sigmastate.VersionContext.JitActivationVersion
 import spire.syntax.all.cfor
 
 // TODO refactor: this class is not necessary and can be removed
-class TestSigmaDslBuilder extends SigmaDslBuilder {
+abstract class TestSigmaDslBuilder extends SigmaDslBuilder {
   // manual fix
   def Colls: CollBuilder = new CollOverArrayBuilder
   def Monoids: MonoidBuilder = new MonoidBuilderInst
@@ -99,19 +99,10 @@ class TestSigmaDslBuilder extends SigmaDslBuilder {
   @Internal
   override def BigInt(n: BigInteger): BigInt = SpecialPredef.rewritableMethod
 
-  @NeverInline
-  @Internal
-  override def toBigInteger(n: BigInt): BigInteger = n.asInstanceOf[TestBigInt].value
-
   /** Create DSL's group element from existing `org.bouncycastle.math.ec.ECPoint`. */
   @NeverInline
   @Internal
   def GroupElement(p: ECPoint): GroupElement = SpecialPredef.rewritableMethod
-
-  /** Extract `org.bouncycastle.math.ec.ECPoint` from DSL's `GroupElement` type. */
-  @NeverInline
-  @Internal
-  def toECPoint(ge: GroupElement): ECPoint = ge.value
 
   @NeverInline
   override def avlTree(operationFlags: Byte, digest: Coll[Byte], keyLength: Int, valueLengthOpt: Option[Int]): AvlTree = SpecialPredef.rewritableMethod

@@ -11,7 +11,7 @@ import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.authds.{ADDigest, ADKey, SerializedAdProof, ADValue}
 import sigmastate.SCollection.SByteArray
 import sigmastate.{TrivialProp, _}
-import sigmastate.Values.{Constant, EvaluatedValue, SValue, ConstantNode, ErgoTree, SigmaBoolean}
+import sigmastate.Values.{Constant, ConstantNode, ErgoTree, EvaluatedValue, SValue, SigmaBoolean}
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.interpreter.{CryptoConstants, Interpreter}
 import special.collection._
@@ -19,15 +19,16 @@ import special.sigma._
 import sigmastate.eval.Extensions._
 import spire.syntax.all.cfor
 
-import scala.util.{Success, Failure}
-import scalan.{Nullable, RType}
-import scorex.crypto.hash.{Digest32, Sha256, Blake2b256}
+import scala.util.{Failure, Success}
+import scalan.util.Extensions.BigIntegerOps
+import scalan.{Internal, NeverInline, Nullable, RType}
+import scorex.crypto.hash.{Blake2b256, Digest32, Sha256}
 import sigmastate.Values.ErgoTree.EmptyConstants
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
 import sigmastate.lang.TransformingSigmaBuilder
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
-import sigmastate.serialization.{SigmaSerializer, GroupElementSerializer}
+import sigmastate.serialization.{GroupElementSerializer, SigmaSerializer}
 
 import scala.reflect.ClassTag
 
@@ -40,18 +41,78 @@ trait WrapperOf[T] {
 /** A default implementation of [[BigInt]] interface.
   * @see [[BigInt]] for detailed descriptions
   */
-case class CBigInt(override val wrappedValue: BigInteger) extends TestBigInt(wrappedValue) with WrapperOf[BigInteger] {
-  override val dsl = CostingSigmaDslBuilder
+case class CBigInt(override val wrappedValue: BigInteger) extends BigInt with WrapperOf[BigInteger] {
+  val dsl = CostingSigmaDslBuilder
+  override def toByte : Byte  = wrappedValue.byteValueExact()
+  override def toShort: Short = wrappedValue.shortValueExact()
+  override def toInt  : Int   = wrappedValue.intValueExact()
+  override def toLong : Long  = wrappedValue.longValueExact()
+
+  override def toBytes: Coll[Byte] = dsl.Colls.fromArray(wrappedValue.toByteArray)
+
+  override def toAbs: BigInt = dsl.BigInt(wrappedValue.abs())
+
+  override def compareTo(that: BigInt): Int =
+    wrappedValue.compareTo(that.asInstanceOf[CBigInt].wrappedValue)
+
+  override def toBits: Coll[Boolean] = ???
+
+  override def modQ: BigInt = ???
+
+  override def plusModQ(other: BigInt): BigInt = ???
+
+  override def minusModQ(other: BigInt): BigInt = ???
+
+  override def multModQ(other: BigInt): BigInt = ???
+
+  override def inverseModQ: BigInt = ???
+
+  override def signum: Int = wrappedValue.signum()
+
+  override def add(that: BigInt): BigInt = dsl.BigInt(wrappedValue.add(that.asInstanceOf[CBigInt].wrappedValue).to256BitValueExact)
+
+  override def subtract(that: BigInt): BigInt = dsl.BigInt(wrappedValue.subtract(that.asInstanceOf[CBigInt].wrappedValue).to256BitValueExact)
+
+  override def multiply(that: BigInt): BigInt = dsl.BigInt(wrappedValue.multiply(that.asInstanceOf[CBigInt].wrappedValue).to256BitValueExact)
+
+  override def divide(that: BigInt): BigInt = dsl.BigInt(wrappedValue.divide(that.asInstanceOf[CBigInt].wrappedValue))
+
+  override def mod(m: BigInt): BigInt = dsl.BigInt(wrappedValue.mod(m.asInstanceOf[CBigInt].wrappedValue))
+
+  override def remainder(that: BigInt): BigInt = dsl.BigInt(wrappedValue.remainder(that.asInstanceOf[CBigInt].wrappedValue))
+
+  override def min(that: BigInt): BigInt = dsl.BigInt(wrappedValue.min(that.asInstanceOf[CBigInt].wrappedValue))
+
+  override def max(that: BigInt): BigInt = dsl.BigInt(wrappedValue.max(that.asInstanceOf[CBigInt].wrappedValue))
+
+  override def negate(): BigInt = dsl.BigInt(wrappedValue.negate().to256BitValueExact)
+
+  override def and(that: BigInt): BigInt = dsl.BigInt(wrappedValue.and(that.asInstanceOf[CBigInt].wrappedValue))
+
+  override def or(that: BigInt): BigInt = dsl.BigInt(wrappedValue.or(that.asInstanceOf[CBigInt].wrappedValue))
 }
 
 /** A default implementation of [[GroupElement]] interface.
   * @see [[GroupElement]] for detailed descriptions
   */
-case class CGroupElement(override val wrappedValue: EcPointType) extends TestGroupElement(wrappedValue) with WrapperOf[ECPoint] {
-  override val dsl = CostingSigmaDslBuilder
+case class CGroupElement(override val wrappedValue: EcPointType) extends GroupElement with WrapperOf[ECPoint] {
+  val dsl = CostingSigmaDslBuilder
+  
+  override def toString: String = s"GroupElement(${Extensions.showECPoint(wrappedValue)})"
 
-  override def getEncoded: Coll[Byte] = dsl.Colls.fromArray(GroupElementSerializer.toBytes(wrappedValue))
+  override def getEncoded: Coll[Byte] =
+    dsl.Colls.fromArray(GroupElementSerializer.toBytes(wrappedValue))
 
+  override def isInfinity: Boolean = wrappedValue.isInfinity
+
+  override def exp(k: BigInt): GroupElement =
+    dsl.GroupElement(wrappedValue.multiply(k.asInstanceOf[CBigInt].wrappedValue))
+
+  override def multiply(that: GroupElement): GroupElement =
+    dsl.GroupElement(wrappedValue.add(that.asInstanceOf[CGroupElement].wrappedValue))
+
+  override def negate: GroupElement =
+    dsl.GroupElement(wrappedValue.negate())
 }
 
 /** A default implementation of [[SigmaProp]] interface.
@@ -431,6 +492,8 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
 
   override def BigInt(n: BigInteger): BigInt = new CBigInt(n)
 
+  override def toBigInteger(n: BigInt): BigInteger = n.asInstanceOf[CBigInt].wrappedValue
+
   override def GroupElement(p: ECPoint): GroupElement = p match {
     case ept: EcPointType => CGroupElement(ept)
     case m => sys.error(s"Point of type ${m.getClass} is not supported")
@@ -444,6 +507,9 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
 
   /** Extract `sigmastate.AvlTreeData` from DSL's `AvlTree` type. */
   def toAvlTreeData(p: AvlTree): AvlTreeData = p.asInstanceOf[CAvlTree].treeData
+
+  /** Extract `org.bouncycastle.math.ec.ECPoint` from DSL's `GroupElement` type. */
+  def toECPoint(ge: GroupElement): ECPoint = ge.asInstanceOf[CGroupElement].wrappedValue
 
   override def avlTree(operationFlags: Byte, digest: Coll[Byte], keyLength: Int, valueLengthOpt: Option[Int]): CAvlTree = {
     val treeData = AvlTreeData(ADDigest @@ digest.toArray, AvlTreeFlags(operationFlags), keyLength, valueLengthOpt)

@@ -15,9 +15,9 @@ import sigmastate.lang.Terms.{Ident, Select, Val, ValueOps}
 import sigmastate.serialization.OpCodes
 import sigmastate.utxo._
 import sigmastate._
+import sigmastate.eval.Extensions.GroupElementOps
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.lang.exceptions.CosterException
-import special.sigma.Extensions.GroupElementOps
 
 import scala.collection.mutable.ArrayBuffer
 

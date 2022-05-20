@@ -1,9 +1,10 @@
 package sigmastate.eval
 
-import java.math.BigInteger
+import org.bouncycastle.math.ec.ECPoint
 
+import java.math.BigInteger
 import scalan.RType
-import sigmastate.{SCollectionType, SCollection, SType}
+import sigmastate.{SCollection, SCollectionType, SType}
 import sigmastate.Values.{Constant, ConstantNode}
 import sigmastate.lang.CheckingSigmaBuilder
 import special.collection.Coll
@@ -85,5 +86,21 @@ object Extensions {
       CostingBox(isCost, ebox)
     }
   }
+
+  def showECPoint(p: ECPoint): String = {
+    if (p.isInfinity) {
+      "INF"
+    }
+    else {
+      val rawX = p.getRawXCoord.toString.substring(0, 6)
+      val rawY = p.getRawYCoord.toString.substring(0, 6)
+      s"ECPoint($rawX,$rawY,...)"
+    }
+  }
+
+  implicit class GroupElementOps(val source: GroupElement) extends AnyVal {
+    def showToString: String = showECPoint(source.asInstanceOf[CGroupElement].wrappedValue)
+  }
+
 
 }

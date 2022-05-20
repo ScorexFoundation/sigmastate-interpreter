@@ -34,8 +34,7 @@ object NumericOps {
       * numeric types T including BigInt.
       *
       * In the v4.x interpreter, however, the `%` operation is implemented using
-      * [[CBigInt]].mod method (see implementation in [[TestBigInt]], which
-      * delegates to [[java.math.BigInteger]].mod method.
+      * [[CBigInt]].mod method , which delegates to [[java.math.BigInteger]].mod method.
       *
       * Even though this method is called `rem`, the semantics of ErgoTree
       * language requires it to correspond to [[java.math.BigInteger]].mod
@@ -86,8 +85,7 @@ object NumericOps {
       * numeric types T including BigInt.
       *
       * In the v4.x interpreter, however, the `%` operation is implemented using
-      * [[CBigInt]].mod method (see implementation in [[TestBigInt]], which
-      * delegates to [[java.math.BigInteger]].mod method.
+      * [[CBigInt]].mod method, which delegates to [[java.math.BigInteger]].mod method.
       *
       * Even though this method is called `divisionRemainder`, the semantics of ErgoTree
       * language requires it to correspond to [[java.math.BigInteger]].mod method.
