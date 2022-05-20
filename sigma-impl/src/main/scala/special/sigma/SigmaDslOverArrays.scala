@@ -22,9 +22,6 @@ class TestSigmaDslBuilder extends SigmaDslBuilder {
   def Monoids: MonoidBuilder = new MonoidBuilderInst
 
   @NeverInline
-  def verifyZK(proof: => SigmaProp): Boolean = proof.isValid
-
-  @NeverInline
   def atLeast(bound: Int, props: Coll[SigmaProp]): SigmaProp = ???
 
   @NeverInline
@@ -33,9 +30,9 @@ class TestSigmaDslBuilder extends SigmaDslBuilder {
   def anyOf(conditions: Coll[Boolean]): Boolean = conditions.exists(c => c)
 
   @NeverInline
-  def allZK(props: Coll[SigmaProp]): SigmaProp = MockSigma(props.forall(p => p.isValid))
+  def allZK(props: Coll[SigmaProp]): SigmaProp = ???
   @NeverInline
-  def anyZK(props: Coll[SigmaProp]): SigmaProp = MockSigma(props.exists(p => p.isValid))
+  def anyZK(props: Coll[SigmaProp]): SigmaProp = ???
 
   @NeverInline
   override def xorOf(conditions: Coll[Boolean]): Boolean = {
@@ -57,7 +54,7 @@ class TestSigmaDslBuilder extends SigmaDslBuilder {
   }
 
   @NeverInline
-  def sigmaProp(b: Boolean): SigmaProp = MockSigma(b)
+  def sigmaProp(b: Boolean): SigmaProp = ???
 
   @NeverInline
   def blake2b256(bytes: Coll[Byte]): Coll[Byte] = Colls.fromArray(Blake2b256.hash(bytes.toArray))
@@ -77,7 +74,7 @@ class TestSigmaDslBuilder extends SigmaDslBuilder {
   def byteArrayToLong(bytes: Coll[Byte]): Long = Longs.fromByteArray(bytes.toArray)
 
   @NeverInline
-  def proveDlog(g: GroupElement): SigmaProp = MockProveDlog(true, Colls.emptyColl[Byte])
+  def proveDlog(g: GroupElement): SigmaProp = ???
 
   @NeverInline
   def proveDHTuple(g: GroupElement, h: GroupElement, u: GroupElement, v: GroupElement): SigmaProp = ???

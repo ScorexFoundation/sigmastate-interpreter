@@ -757,8 +757,6 @@ trait SigmaContract {
   def Collection[T](items: T*)(implicit cT: RType[T]): Coll[T] = this.builder.Colls.fromItems[T](items:_*)
 
   /** !!! all methods should delegate to builder */
-
-  def verifyZK(cond: => SigmaProp): Boolean = this.builder.verifyZK(cond)
   def atLeast(bound: Int, props: Coll[SigmaProp]): SigmaProp = this.builder.atLeast(bound, props)
 
   def allOf(conditions: Coll[Boolean]): Boolean = this.builder.allOf(conditions)
@@ -811,8 +809,6 @@ trait SigmaDslBuilder {
 
   /** Access to Monoid operations */
   def Monoids: MonoidBuilder
-
-  def verifyZK(cond: => SigmaProp): Boolean  // TODO refactor: can be removed after TestSigmaDslBuilder is removed
 
   /**
     * Logical threshold operation.

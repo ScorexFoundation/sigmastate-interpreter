@@ -28,7 +28,6 @@ import sigmastate.basics.ProveDHTuple
 import sigmastate.lang.TransformingSigmaBuilder
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.serialization.{SigmaSerializer, GroupElementSerializer}
-import special.Types.TupleType
 
 import scala.reflect.ClassTag
 
@@ -441,7 +440,7 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
   def SigmaProp(sigmaTree: SigmaBoolean): SigmaProp = new CSigmaProp(sigmaTree)
 
   /** Extract `sigmastate.Values.SigmaBoolean` from DSL's `SigmaProp` type. */
-  def toSigmaBoolean(p: SigmaProp): SigmaBoolean = p.asInstanceOf[CSigmaProp].sigmaTree
+  @inline def toSigmaBoolean(p: SigmaProp): SigmaBoolean = p.asInstanceOf[CSigmaProp].sigmaTree
 
   /** Extract `sigmastate.AvlTreeData` from DSL's `AvlTree` type. */
   def toAvlTreeData(p: AvlTree): AvlTreeData = p.asInstanceOf[CAvlTree].treeData
@@ -470,10 +469,7 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
     val len = props.length
     val res = new Array[SigmaBoolean](len)
     cfor(0)(_ < len, _ + 1) { i =>
-      res(i) = props(i) match {
-        case csp: CSigmaProp => csp.sigmaTree
-        case m: MockSigma => TrivialProp(m.isValid) //needed for tests, e.g. "atLeast" test
-      }
+      res(i) = toSigmaBoolean(props(i))
     }
     res
   }
