@@ -1,6 +1,6 @@
 package sigmastate.eval
 
-import com.google.common.primitives.Ints
+import com.google.common.primitives.{Ints, Longs}
 
 import java.math.BigInteger
 import java.util.Arrays
@@ -8,10 +8,10 @@ import org.bouncycastle.math.ec.ECPoint
 import org.ergoplatform.{ErgoBox, SigmaConstants}
 import org.ergoplatform.validation.ValidationRules
 import scorex.crypto.authds.avltree.batch._
-import scorex.crypto.authds.{ADDigest, ADKey, SerializedAdProof, ADValue}
+import scorex.crypto.authds.{ADDigest, ADKey, ADValue, SerializedAdProof}
 import sigmastate.SCollection.SByteArray
 import sigmastate.{TrivialProp, _}
-import sigmastate.Values.{Constant, ConstantNode, ErgoTree, EvaluatedValue, SValue, SigmaBoolean}
+import sigmastate.Values.{ConstantNode, ErgoTree, EvaluatedValue, SValue, SigmaBoolean}
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.interpreter.{CryptoConstants, Interpreter}
 import special.collection._
@@ -21,7 +21,7 @@ import spire.syntax.all.cfor
 
 import scala.util.{Failure, Success}
 import scalan.util.Extensions.BigIntegerOps
-import scalan.{Internal, NeverInline, Nullable, RType}
+import scalan.{Nullable, RType}
 import scorex.crypto.hash.{Blake2b256, Digest32, Sha256}
 import sigmastate.Values.ErgoTree.EmptyConstants
 import sigmastate.basics.DLogProtocol.ProveDlog
@@ -487,14 +487,18 @@ object CHeader {
 /** A default implementation of [[SigmaDslBuilder]] interface.
   * @see [[SigmaDslBuilder]] for detailed descriptions
   */
-class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
+class CostingSigmaDslBuilder extends SigmaDslBuilder { dsl =>
   implicit val validationSettings = ValidationRules.currentSettings
 
-  override def BigInt(n: BigInteger): BigInt = new CBigInt(n)
+  // manual fix
+  override def Colls: CollBuilder = new CollOverArrayBuilder
+  override def Monoids: MonoidBuilder = new MonoidBuilderInst
+
+  override def BigInt(n: BigInteger): BigInt = CBigInt(n)
 
   override def toBigInteger(n: BigInt): BigInteger = n.asInstanceOf[CBigInt].wrappedValue
 
-  override def GroupElement(p: ECPoint): GroupElement = p match {
+  def GroupElement(p: ECPoint): GroupElement = p match {
     case ept: EcPointType => CGroupElement(ept)
     case m => sys.error(s"Point of type ${m.getClass} is not supported")
   }
@@ -551,6 +555,30 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
     CSigmaProp(tree)
   }
 
+  override def allOf(conditions: Coll[Boolean]): Boolean =
+    conditions.forall(c => c)
+
+  override def anyOf(conditions: Coll[Boolean]): Boolean =
+    conditions.exists(c => c)
+
+  override def xorOf(conditions: Coll[Boolean]): Boolean = {
+    if (VersionContext.current.isJitActivated) {
+      val len = conditions.length
+      if (len == 0) false
+      else if (len == 1) conditions(0)
+      else {
+        var res = conditions(0)
+        cfor(1)(_ < len, _ + 1) { i =>
+          res ^= conditions(i)
+        }
+        res
+      }
+    } else {
+      // This is buggy version used in v4.x interpreter (for ErgoTrees v0, v1)
+      conditions.toArray.distinct.length == 2
+    }
+  }
+
   override def allZK(props: Coll[SigmaProp]): SigmaProp = {
     val sigmaTrees = toSigmaTrees(props.toArray)
     val tree = CAND.normalized(sigmaTrees)
@@ -562,6 +590,9 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
     val tree = COR.normalized(sigmaTrees)
     CSigmaProp(tree)
   }
+
+  override def xor(l: Coll[Byte], r: Coll[Byte]): Coll[Byte] =
+    Colls.xor(l, r)
 
   override def sigmaProp(b: Boolean): SigmaProp = {
     CSigmaProp(TrivialProp(b))
@@ -576,6 +607,17 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
     val h = Sha256.hash(bytes.toArray)
     Colls.fromArray(h)
   }
+
+  override def byteArrayToBigInt(bytes: Coll[Byte]): BigInt = {
+    val bi = new BigInteger(bytes.toArray).to256BitValueExact
+    this.BigInt(bi)
+  }
+
+  override def longToByteArray(l: Long): Coll[Byte] =
+    Colls.fromArray(Longs.toByteArray(l))
+
+  override def byteArrayToLong(bytes: Coll[Byte]): Long =
+    Longs.fromByteArray(bytes.toArray)
 
   override def proveDlog(ge: GroupElement): SigmaProp =
     CSigmaProp(ProveDlog(toECPoint(ge).asInstanceOf[EcPointType]))
