@@ -18,7 +18,6 @@ import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
 import sigmastate.lang.Terms._
 import sigmastate.utxo._
-import special.sigma.Extensions._
 import sigmastate.eval._
 import sigmastate.eval.Extensions._
 import scalan.util.Extensions.ByteOps
