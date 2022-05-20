@@ -1,12 +1,9 @@
-package sigma.util
+package sigmastate.utils
 
-import special.collection.{Coll, Builder}
-import com.google.common.primitives.{Ints, Shorts, Longs}
-
-import scala.language.higherKinds
+import com.google.common.primitives.{Ints, Longs, Shorts}
+import special.collection.{Builder, Coll}
 
 object Extensions {
-
   implicit class ByteOpsForSigma(val b: Byte) extends AnyVal {
     /** Returns a big-endian representation of this Byte in a collection of bytes.
       * For example, the Byte value {@code 0x12} would yield the
@@ -55,6 +52,7 @@ object Extensions {
 
     /** Returns a big-endian representation of this numeric in a collection of Booleans.
       * Each boolean corresponds to one bit.
+      *
       * @since 2.0
       */
     def toBits: Coll[Boolean] = ???

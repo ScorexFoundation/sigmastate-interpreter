@@ -10,7 +10,7 @@ import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.authds.{ADDigest, ADKey, ADValue}
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import scalan.util.Extensions._
-import sigma.util.Extensions._
+import sigmastate.utils.Extensions._
 import sigmastate.SCollection._
 import sigmastate.Values.IntConstant
 import sigmastate._
