@@ -168,7 +168,7 @@ class CViewColl[@specialized A, @specialized B](val source: Coll[A], val f: A =>
       val newLength = patch.length + length - math.min(trueReplace, length - start)
 
       // At first we copy all items at [0, start), since they are kept unchanged
-      var itemsCopy = Array.ofDim[B](newLength)(tItem.classTag)
+      val itemsCopy = Array.ofDim[B](newLength)(tItem.classTag)
       Array.copy(items, 0, itemsCopy, 0, start)
       // There we put patch items after unchanged items from [0, start)
       Array.copy(patch.toArray, 0, itemsCopy, start, patch.length)
@@ -178,7 +178,7 @@ class CViewColl[@specialized A, @specialized B](val source: Coll[A], val f: A =>
         Array.copy(items, start + trueReplace, itemsCopy, start + patch.length, length - start - trueReplace)
 
       // Here's the same procedure as was with items
-      var calcCopy = Array.ofDim[Boolean](newLength)(RType.BooleanType.classTag)
+      val calcCopy = Array.ofDim[Boolean](newLength)(RType.BooleanType.classTag)
       Array.copy(isCalculated, 0, calcCopy, 0, start)
       if (start + trueReplace < length)
         Array.copy(isCalculated, start + trueReplace, calcCopy, start + patch.length, length - start - trueReplace)
@@ -204,9 +204,8 @@ class CViewColl[@specialized A, @specialized B](val source: Coll[A], val f: A =>
   override def updated(index: Int, elem: B): Coll[B] = {
     if (!isDefinedAt(index))
       throw new IndexOutOfBoundsException()
-
-    var itemsCopy = items.clone()
-    var calcCopy = isCalculated.clone()
+    val itemsCopy = items.clone()
+    val calcCopy = isCalculated.clone()
 
     calcCopy(index) = true
     itemsCopy(index) = elem
@@ -217,8 +216,8 @@ class CViewColl[@specialized A, @specialized B](val source: Coll[A], val f: A =>
   override def updateMany(indexes: Coll[Int],
                           values: Coll[B]): Coll[B] = {
     // here we copy items and information about which items have been calculated already
-    var itemsCopy = items.clone()
-    var calcCopy = isCalculated.clone()
+    val itemsCopy = items.clone()
+    val calcCopy = isCalculated.clone()
 
     // here we update items with new ones from values at indexes from indexes collection
     cfor(0)(_ < indexes.length, _ + 1) { i =>

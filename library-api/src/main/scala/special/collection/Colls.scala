@@ -393,6 +393,13 @@ trait Coll[@specialized A] {
     unionSetByKey(builder.emptyColl[A](tItem))
   }
 
+  /** Builds a new $coll from this $coll without any duplicate elements.
+    *
+    *  @return  A new $coll which contains the first occurrence of every element of this $coll.
+    */
+  def distinct: Coll[A] = {
+    unionSet(builder.emptyColl[A])
+  }
 
   @Internal
   def unionSetByKey[T, U](that: Coll[A])(implicit ev: A <:< (T, U)): Coll[A] = {
