@@ -3,7 +3,7 @@ package org.ergoplatform.dsl
 import sigmastate.interpreter.Interpreter.ScriptNameProp
 
 import scala.collection.mutable
-import sigmastate.interpreter.{ProverResult, CostedProverResult}
+import sigmastate.interpreter.{CostedProverResult, ProverResult}
 
 import scala.collection.mutable.ArrayBuffer
 import org.ergoplatform.ErgoBox.NonMandatoryRegisterId
@@ -11,15 +11,15 @@ import scalan.Nullable
 import scorex.crypto.hash.Digest32
 
 import scala.util.Try
-import org.ergoplatform.{ErgoLikeContext, ErgoBox}
-import org.ergoplatform.dsl.ContractSyntax.{Token, TokenId, ErgoScript, Proposition}
+import org.ergoplatform.{ErgoBox, ErgoLikeContext}
+import org.ergoplatform.dsl.ContractSyntax.{ErgoScript, Proposition, Token, TokenId}
 import sigmastate.{AvlTreeData, SType}
 import sigmastate.Values.{ErgoTree, EvaluatedValue}
-import sigmastate.eval.{IRContext, CSigmaProp, Evaluation}
-import sigmastate.helpers.{ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaTestingCommons, ContextEnrichingTestProvingInterpreter}
+import sigmastate.eval.{CSigmaProp, Evaluation, IRContext, CAnyValue}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaTestingCommons}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.lang.Terms.ValueOps
-import special.sigma.{AnyValue, TestValue, SigmaProp}
+import special.sigma.{AnyValue, SigmaProp}
 
 case class TestContractSpec(testSuite: SigmaTestingCommons)(implicit val IR: IRContext) extends ContractSpec {
 
@@ -48,7 +48,7 @@ case class TestContractSpec(testSuite: SigmaTestingCommons)(implicit val IR: IRC
     def prove(inBox: InputBox, extensions: Map[Byte, AnyValue] = Map()): Try[CostedProverResult] = {
       val boxToSpend = inBox.utxoBox
       val propSpec: PropositionSpec = boxToSpend.propSpec
-      val bindings = extensions.mapValues { case v: TestValue[a] =>
+      val bindings = extensions.mapValues { case v: CAnyValue[a] =>
         IR.builder.mkConstant(v.value.asWrappedType, Evaluation.rtypeToSType(v.tA))
       }
       val ctx = inBox.toErgoContext

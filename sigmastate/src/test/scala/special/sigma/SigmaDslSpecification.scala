@@ -4781,8 +4781,8 @@ class SigmaDslSpecification extends SigmaDslTesting
       vars = Colls
           .replicate[AnyValue](10, null) // reserve 10 vars
           .append(Coll[AnyValue](
-            TestValue(Helpers.decodeBytes("00"), CollType(RType.ByteType)),
-            TestValue(true, RType.BooleanType))),
+            CAnyValue(Helpers.decodeBytes("00"), CollType(RType.ByteType)),
+            CAnyValue(true, RType.BooleanType))),
       activatedScriptVersion = activatedVersionInTests,
       currentErgoTreeVersion = ergoTreeVersionInTests,
       false

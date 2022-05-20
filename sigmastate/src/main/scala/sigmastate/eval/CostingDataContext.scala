@@ -7,6 +7,7 @@ import java.util.Arrays
 import org.bouncycastle.math.ec.ECPoint
 import org.ergoplatform.{ErgoBox, SigmaConstants}
 import org.ergoplatform.validation.ValidationRules
+import scalan.OverloadHack.Overloaded1
 import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.authds.{ADDigest, ADKey, ADValue, SerializedAdProof}
 import sigmastate.SCollection.SByteArray
@@ -303,6 +304,17 @@ case class CAvlTree(treeData: AvlTreeData) extends AvlTree with WrapperOf[AvlTre
   }
 }
 
+/** Default implementation of AnyValue interface. */
+case class CAnyValue[A](value: A, tVal: RType[Any]) extends AnyValue {
+  def tA: RType[A] = tVal.asInstanceOf[RType[A]]
+  override def toString = s"TestValue($value)"
+}
+
+object CAnyValue {
+  def apply[A](value: A, t: RType[A])(implicit o: Overloaded1): CAnyValue[A] =
+    new CAnyValue(value, t.asInstanceOf[RType[Any]])
+}
+
 import sigmastate.eval.CostingBox._
 
 /** A default implementation of [[Box]] interface.
@@ -326,7 +338,7 @@ case class CostingBox(isCost: Boolean, val ebox: ErgoBox) extends Box with Wrapp
     if (value != null ) {
       // once the value is not null it should be of the right type
       value match {
-        case value: TestValue[_] if value.value != null && value.tA == tT =>
+        case value: CAnyValue[_] if value.value != null && value.tA == tT =>
           Some(value.value.asInstanceOf[T])
         case _ =>
           throw new InvalidType(s"Cannot getReg[${tT.name}]($i): invalid type of value $value at id=$i")
@@ -712,7 +724,7 @@ case class CostingDataContext(
     if (value != null) {
       // once the value is not null it should be of the right type
       value match {
-        case value: TestValue[_] if value.value != null && value.tA == tT =>
+        case value: CAnyValue[_] if value.value != null && value.tA == tT =>
           Some(value.value.asInstanceOf[T])
         case _ =>
           throw new InvalidType(s"Cannot getVar[${tT.name}]($id): invalid type of value $value at id=$id")

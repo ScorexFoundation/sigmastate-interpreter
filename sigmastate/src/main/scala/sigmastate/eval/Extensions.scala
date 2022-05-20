@@ -73,7 +73,7 @@ object Extensions {
     }
   }
 
-  def toAnyValue[A:RType](x: A) = new TestValue(x, RType[A].asInstanceOf[RType[Any]])
+  def toAnyValue[A:RType](x: A) = new CAnyValue(x, RType[A].asInstanceOf[RType[Any]])
 
   implicit class ErgoBoxOps(val ebox: ErgoBox) extends AnyVal {
     def toTestBox(isCost: Boolean): Box = {
