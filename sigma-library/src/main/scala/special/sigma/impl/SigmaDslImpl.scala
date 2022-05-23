@@ -21,7 +21,6 @@ import CollBuilder._
 import Context._
 import GroupElement._
 import Header._
-import MonoidBuilder._
 import PreHeader._
 import SigmaDslBuilder._
 import SigmaProp._
@@ -2868,13 +2867,6 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
         true, false, element[CollBuilder]))
     }
 
-    override def Monoids: Ref[MonoidBuilder] = {
-      asRep[MonoidBuilder](mkMethodCall(self,
-        SigmaDslBuilderClass.getMethod("Monoids"),
-        WrappedArray.empty,
-        true, false, element[MonoidBuilder]))
-    }
-
     override def verifyZK(cond: Ref[Thunk[SigmaProp]]): Ref[Boolean] = {
       asRep[Boolean](mkMethodCall(self,
         SigmaDslBuilderClass.getMethod("verifyZK", classOf[Sym]),
@@ -3047,13 +3039,6 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
         true, true, element[CollBuilder]))
     }
 
-    def Monoids: Ref[MonoidBuilder] = {
-      asRep[MonoidBuilder](mkMethodCall(source,
-        SigmaDslBuilderClass.getMethod("Monoids"),
-        WrappedArray.empty,
-        true, true, element[MonoidBuilder]))
-    }
-
     def verifyZK(cond: Ref[Thunk[SigmaProp]]): Ref[Boolean] = {
       asRep[Boolean](mkMethodCall(source,
         SigmaDslBuilderClass.getMethod("verifyZK", classOf[Sym]),
@@ -3211,7 +3196,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
     override protected def collectMethods: Map[java.lang.reflect.Method, MethodDesc] = {
       super.collectMethods ++
         Elem.declaredMethods(classOf[SigmaDslBuilder], classOf[SSigmaDslBuilder], Set(
-        "Colls", "Monoids", "Costing", "CostModel", "verifyZK", "atLeast", "allOf", "allZK", "anyOf", "anyZK", "xorOf", "sigmaProp", "blake2b256", "sha256", "byteArrayToBigInt", "longToByteArray", "byteArrayToLong", "proveDlog", "proveDHTuple", "groupGenerator", "substConstants", "decodePoint", "avlTree", "xor"
+        "Colls", "verifyZK", "atLeast", "allOf", "allZK", "anyOf", "anyZK", "xorOf", "sigmaProp", "blake2b256", "sha256", "byteArrayToBigInt", "longToByteArray", "byteArrayToLong", "proveDlog", "proveDHTuple", "groupGenerator", "substConstants", "decodePoint", "avlTree", "xor"
         ))
     }
   }
@@ -3236,36 +3221,6 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
     object Colls {
       def unapply(d: Def[_]): Nullable[Ref[SigmaDslBuilder]] = d match {
         case MethodCall(receiver, method, _, _) if method.getName == "Colls" && receiver.elem.isInstanceOf[SigmaDslBuilderElem[_]] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Ref[SigmaDslBuilder]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Ref[SigmaDslBuilder]] = unapply(exp.node)
-    }
-
-    object Monoids {
-      def unapply(d: Def[_]): Nullable[Ref[SigmaDslBuilder]] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "Monoids" && receiver.elem.isInstanceOf[SigmaDslBuilderElem[_]] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Ref[SigmaDslBuilder]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Ref[SigmaDslBuilder]] = unapply(exp.node)
-    }
-
-    object Costing {
-      def unapply(d: Def[_]): Nullable[Ref[SigmaDslBuilder]] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "Costing" && receiver.elem.isInstanceOf[SigmaDslBuilderElem[_]] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Ref[SigmaDslBuilder]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Ref[SigmaDslBuilder]] = unapply(exp.node)
-    }
-
-    object CostModel {
-      def unapply(d: Def[_]): Nullable[Ref[SigmaDslBuilder]] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "CostModel" && receiver.elem.isInstanceOf[SigmaDslBuilderElem[_]] =>
           val res = receiver
           Nullable(res).asInstanceOf[Nullable[Ref[SigmaDslBuilder]]]
         case _ => Nullable.None

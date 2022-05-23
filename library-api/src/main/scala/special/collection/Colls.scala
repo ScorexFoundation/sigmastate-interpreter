@@ -258,15 +258,6 @@ abstract class Coll[@specialized A] {
     builder.fromArray(res)
   }
 
-  /** Folding through all elements of this $coll starting from m.zero and applying m.plus to accumulate
-    * resulting value.
-    *
-    *  @param m monoid object to use for summation
-    *  @return  result of the following operations (m.zero `m.plus` x1 `m.plus` x2 `m.plus` ... xN)
-    *  @since 2.0
-    */
-  def sum(m: Monoid[A]): A
-
   /** Selects an interval of elements.  The returned collection is made up
     *  of all elements `x` which satisfy the invariant:
     *  {{{
@@ -310,11 +301,6 @@ abstract class PairColl[@specialized L, @specialized R] extends Coll[(L,R)] {
   * See default implementation in CollOverArrayBuilder.
   */
 trait CollBuilder {
-  /** Monoid builder associated with this collections builder.
-    * It should be used to create monoids which are required by some of the Coll methods.
-    */
-  def Monoids: MonoidBuilder
-
   /** Constructs a new collection of pairs out of the pair of collections by zipping them.
     * The resulting collection is semantically equivalent to `as.zip(bs)`.
     * @param as collection of first items

@@ -12,7 +12,6 @@ import scala.language.{existentials, implicitConversions}
 trait CollGens { testSuite =>
   import Gen._
   val builder: CollBuilder = new CollOverArrayBuilder
-  val monoid = builder.Monoids.intPlusMonoid
   val valGen = choose(-100, 100)
   val byteGen = choose[Byte](-100, 100)
   val indexGen = choose(0, 100)

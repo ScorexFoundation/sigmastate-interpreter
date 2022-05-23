@@ -802,9 +802,6 @@ trait SigmaDslBuilder {
   /** Access to collection operations. */
   def Colls: CollBuilder
 
-  /** Access to Monoid operations */
-  def Monoids: MonoidBuilder
-
   /**
     * Logical threshold operation.
     * AtLeast has two inputs: integer `bound`` and a collection of `props` same as in anyZK/allZK.

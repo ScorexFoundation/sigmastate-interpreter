@@ -131,7 +131,6 @@ package special.sigma {
     };
     @Liftable @WithMethodCallRecognizers trait SigmaDslBuilder extends Def[SigmaDslBuilder] {
       def Colls: Ref[CollBuilder];
-      def Monoids: Ref[MonoidBuilder];
       def verifyZK(cond: Ref[Thunk[SigmaProp]]): Ref[Boolean];
       def atLeast(bound: Ref[Int], props: Ref[Coll[SigmaProp]]): Ref[SigmaProp];
       def allOf(conditions: Ref[Coll[Boolean]]): Ref[Boolean];

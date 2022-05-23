@@ -4,8 +4,6 @@ package special.collection {
   trait Colls extends Base { self: Library =>
     import Coll._;
     import CollBuilder._;
-    import Monoid._;
-    import MonoidBuilder._;
     import PairColl._;
     import WOption._;
     @ContainerType @FunctorType @Liftable @WithMethodCallRecognizers trait Coll[A] extends Def[Coll[A]] {
@@ -38,7 +36,6 @@ package special.collection {
       def unionSet(that: Ref[Coll[A]]): Ref[Coll[A]];
       @NeverInline def diff(that: Ref[Coll[A]]): Ref[Coll[A]] = delayInvoke;
       @NeverInline def intersect(that: Ref[Coll[A]]): Ref[Coll[A]] = delayInvoke;
-      def sum(m: Ref[Monoid[A]]): Ref[A];
       def slice(from: Ref[Int], until: Ref[Int]): Ref[Coll[A]];
       def append(other: Ref[Coll[A]]): Ref[Coll[A]];
       def reverse: Ref[Coll[A]]
@@ -52,7 +49,6 @@ package special.collection {
       def mapSecond[T1](f: Ref[scala.Function1[R, T1]]): Ref[Coll[scala.Tuple2[L, T1]]]
     };
     @Liftable @WithMethodCallRecognizers trait CollBuilder extends Def[CollBuilder] {
-      def Monoids: Ref[MonoidBuilder];
       def pairColl[A, B](as: Ref[Coll[A]], bs: Ref[Coll[B]]): Ref[PairColl[A, B]];
       @Reified(value = "T") def fromItems[T](items: Ref[T]*)(implicit cT: Elem[T]): Ref[Coll[T]];
       def unzip[A, B](xs: Ref[Coll[scala.Tuple2[A, B]]]): Ref[scala.Tuple2[Coll[A], Coll[B]]];

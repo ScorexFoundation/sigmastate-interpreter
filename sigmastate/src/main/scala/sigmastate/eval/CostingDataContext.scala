@@ -504,7 +504,6 @@ class CostingSigmaDslBuilder extends SigmaDslBuilder { dsl =>
 
   // manual fix
   override val Colls: CollBuilder = new CollOverArrayBuilder
-  override def Monoids: MonoidBuilder = Colls.Monoids
 
   override def BigInt(n: BigInteger): BigInt = CBigInt(n)
 
@@ -688,7 +687,7 @@ case class CostingDataContext(
                                _minerPubKey: Coll[Byte],
                                vars: Coll[AnyValue],
                                override val activatedScriptVersion: Byte,
-                               override val currentErgoTreeVersion: Byte,
+                               override val currentErgoTreeVersion: Byte
                                )
   extends Context {
   @inline override def builder: SigmaDslBuilder = CostingSigmaDslBuilder

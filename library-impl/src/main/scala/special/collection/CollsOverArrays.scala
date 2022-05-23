@@ -47,7 +47,7 @@ class CollOverArray[@specialized A](val toArray: Array[A], val builder: CollBuil
   def foldLeft[B](zero: B, op: ((B, A)) => B): B = toArray.foldLeft(zero)((b, a) => op((b, a)))
 
   def slice(from: Int, until: Int): Coll[A] = builder.fromArray(toArray.slice(from, until))
-  def sum(m: Monoid[A]): A = toArray.foldLeft(m.zero)((b, a) => m.plus(b, a))
+
   @inline def zip[@specialized B](ys: Coll[B]): PairColl[A, B] = builder.pairColl(this, ys)
 
   def append(other: Coll[A]): Coll[A] = {
@@ -151,7 +151,6 @@ class CollOverArray[@specialized A](val toArray: Array[A], val builder: CollBuil
 }
 
 class CollOverArrayBuilder extends CollBuilder { builder =>
-  override val Monoids: MonoidBuilder = new MonoidBuilderInst
 
   @inline override def pairColl[@specialized A, @specialized B](as: Coll[A], bs: Coll[B]): PairColl[A, B] = {
     if (VersionContext.current.isJitActivated) {
@@ -356,17 +355,6 @@ class PairOfCols[@specialized L, @specialized R](val ls: Coll[L], val rs: Coll[R
     } else {
       builder.pairColl(ls.slice(0, rLen).reverse, rs.reverse)
     }
-  }
-
-  override def sum(m: Monoid[(L, R)]): (L, R) = {
-    val limit = length
-    var state = m.zero
-    cfor(0)(_ < limit, _ + 1) { i =>
-      val l = ls.apply(i)
-      val r = rs.apply(i)
-      state = m.plus(state, (l, r))
-    }
-    state
   }
 
   def zip[@specialized B](ys: Coll[B]): PairColl[(L,R), B] = builder.pairColl(this, ys)

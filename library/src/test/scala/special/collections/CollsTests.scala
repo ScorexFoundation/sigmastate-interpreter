@@ -172,10 +172,6 @@ class CollsTests extends PropSpec with PropertyChecks with Matchers with CollGen
   property("Coll methods") {
     forAll(collGen, indexGen) { (col, index) =>
       {
-        val res = col.sum(monoid)
-        res shouldBe col.toArray.sum
-      }
-      {
         val res = col.map(inc)
         res.toArray shouldBe col.toArray.map(inc)
         val pairs = col.zip(col)

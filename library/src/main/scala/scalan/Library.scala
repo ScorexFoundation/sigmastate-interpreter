@@ -9,7 +9,6 @@ import scalan.ExactIntegral._
 trait Library extends Scalan
   with WrappersModule
   with CollsModule
-  with MonoidsModule
 {
   import WOption._
   import WRType._

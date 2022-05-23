@@ -12,8 +12,6 @@ trait CollsDefs extends scalan.Scalan with Colls {
   self: Library =>
 import Coll._
 import CollBuilder._
-import Monoid._
-import MonoidBuilder._
 import PairColl._
 import WOption._
 
@@ -228,13 +226,6 @@ object Coll extends EntityObject("Coll") {
         CollClass.getMethod("intersect", classOf[Sym]),
         Array[AnyRef](that),
         true, false, element[Coll[A]]))
-    }
-
-    override def sum(m: Ref[Monoid[A]]): Ref[A] = {
-      asRep[A](mkMethodCall(self,
-        CollClass.getMethod("sum", classOf[Sym]),
-        Array[AnyRef](m),
-        true, false, element[A]))
     }
 
     override def slice(from: Ref[Int], until: Ref[Int]): Ref[Coll[A]] = {
@@ -480,13 +471,6 @@ object Coll extends EntityObject("Coll") {
         true, true, element[Coll[A]]))
     }
 
-    def sum(m: Ref[Monoid[A]]): Ref[A] = {
-      asRep[A](mkMethodCall(source,
-        CollClass.getMethod("sum", classOf[Sym]),
-        Array[AnyRef](m),
-        true, true, element[A]))
-    }
-
     def slice(from: Ref[Int], until: Ref[Int]): Ref[Coll[A]] = {
       asRep[Coll[A]](mkMethodCall(source,
         CollClass.getMethod("slice", classOf[Sym], classOf[Sym]),
@@ -545,7 +529,7 @@ object Coll extends EntityObject("Coll") {
     override protected def collectMethods: Map[java.lang.reflect.Method, MethodDesc] = {
       super.collectMethods ++
         Elem.declaredMethods(classOf[Coll[A]], classOf[SColl[_]], Set(
-        "builder", "length", "size", "isEmpty", "nonEmpty", "apply", "isDefinedAt", "getOrElse", "map", "zip", "exists", "forall", "filter", "foldLeft", "indices", "flatMap", "segmentLength", "find", "indexWhere", "indexOf", "lastIndexWhere", "take", "partition", "patch", "updated", "updateMany", "mapReduce", "groupBy", "groupByProjecting", "unionSet", "diff", "intersect", "sum", "slice", "append", "reverse"
+        "builder", "length", "size", "isEmpty", "nonEmpty", "apply", "isDefinedAt", "getOrElse", "map", "zip", "exists", "forall", "filter", "foldLeft", "indices", "flatMap", "segmentLength", "find", "indexWhere", "indexOf", "lastIndexWhere", "take", "patch", "updated", "updateMany", "unionSet", "diff", "intersect", "slice", "append", "reverse"
         ))
     }
 
@@ -851,16 +835,6 @@ object Coll extends EntityObject("Coll") {
       def unapply(exp: Sym): Nullable[(Ref[Coll[A]], Ref[Coll[A]]) forSome {type A}] = unapply(exp.node)
     }
 
-    object sum {
-      def unapply(d: Def[_]): Nullable[(Ref[Coll[A]], Ref[Monoid[A]]) forSome {type A}] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "sum" && receiver.elem.isInstanceOf[CollElem[_, _]] =>
-          val res = (receiver, args(0))
-          Nullable(res).asInstanceOf[Nullable[(Ref[Coll[A]], Ref[Monoid[A]]) forSome {type A}]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Ref[Coll[A]], Ref[Monoid[A]]) forSome {type A}] = unapply(exp.node)
-    }
-
     object slice {
       def unapply(d: Def[_]): Nullable[(Ref[Coll[A]], Ref[Int], Ref[Int]) forSome {type A}] = d match {
         case MethodCall(receiver, method, args, _) if method.getName == "slice" && receiver.elem.isInstanceOf[CollElem[_, _]] =>
@@ -896,11 +870,6 @@ object Coll extends EntityObject("Coll") {
   }
 } // of object Coll
   registerEntityObject("Coll", Coll)
-
-  // manual fix: UserTypeColl removed
-  // manual fix: unapplyViews removed
-  // manual fix: RepColl removed
-  // manual fix: rewriteDef removed
 
 object PairColl extends EntityObject("PairColl") {
   private val PairCollClass = classOf[PairColl[_, _]]
@@ -1139,13 +1108,6 @@ implicit lazy val eR = source.elem.typeArgs("R")._1.asInstanceOf[Elem[R]]
         true, true, element[Coll[(L, R)]]))
     }
 
-    def sum(m: Ref[Monoid[(L, R)]]): Ref[(L, R)] = {
-      asRep[(L, R)](mkMethodCall(source,
-        PairCollClass.getMethod("sum", classOf[Sym]),
-        Array[AnyRef](m),
-        true, true, element[(L, R)]))
-    }
-
     def slice(from: Ref[Int], until: Ref[Int]): Ref[Coll[(L, R)]] = {
       asRep[Coll[(L, R)]](mkMethodCall(source,
         PairCollClass.getMethod("slice", classOf[Sym], classOf[Sym]),
@@ -1265,13 +1227,6 @@ object CollBuilder extends EntityObject("CollBuilder") {
 
     private val CollBuilderClass = classOf[CollBuilder]
 
-    override def Monoids: Ref[MonoidBuilder] = {
-      asRep[MonoidBuilder](mkMethodCall(self,
-        CollBuilderClass.getMethod("Monoids"),
-        WrappedArray.empty,
-        true, false, element[MonoidBuilder]))
-    }
-
     override def pairColl[A, B](as: Ref[Coll[A]], bs: Ref[Coll[B]]): Ref[PairColl[A, B]] = {
       implicit val eA = as.eA
 implicit val eB = bs.eA
@@ -1343,13 +1298,6 @@ implicit val eB = xs.eA.eSnd
     val resultType: Elem[CollBuilder] = element[CollBuilder]
     override def transform(t: Transformer) = CollBuilderAdapter(t(source))
 
-    def Monoids: Ref[MonoidBuilder] = {
-      asRep[MonoidBuilder](mkMethodCall(source,
-        CollBuilderClass.getMethod("Monoids"),
-        WrappedArray.empty,
-        true, true, element[MonoidBuilder]))
-    }
-
     def pairColl[A, B](as: Ref[Coll[A]], bs: Ref[Coll[B]]): Ref[PairColl[A, B]] = {
       implicit val eA = as.eA
 implicit val eB = bs.eA
@@ -1414,7 +1362,7 @@ implicit val eB = xs.eA.eSnd
     override protected def collectMethods: Map[java.lang.reflect.Method, MethodDesc] = {
       super.collectMethods ++
         Elem.declaredMethods(classOf[CollBuilder], classOf[SCollBuilder], Set(
-        "Monoids", "pairColl", "fromItems", "unzip", "xor", "replicate", "emptyColl"
+        "pairColl", "fromItems", "unzip", "xor", "replicate", "emptyColl"
         ))
     }
   }
@@ -1436,16 +1384,6 @@ implicit val eB = xs.eA.eSnd
   })
 
   object CollBuilderMethods {
-    object Monoids {
-      def unapply(d: Def[_]): Nullable[Ref[CollBuilder]] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "Monoids" && receiver.elem.isInstanceOf[CollBuilderElem[_]] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Ref[CollBuilder]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Ref[CollBuilder]] = unapply(exp.node)
-    }
-
     object pairColl {
       def unapply(d: Def[_]): Nullable[(Ref[CollBuilder], Ref[Coll[A]], Ref[Coll[B]]) forSome {type A; type B}] = d match {
         case MethodCall(receiver, method, args, _) if method.getName == "pairColl" && receiver.elem.isInstanceOf[CollBuilderElem[_]] =>
