@@ -4,8 +4,7 @@ import fastparse.core.Parsed
 import fastparse.core.Parsed.Success
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, rewrite, rule}
 import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
-import org.ergoplatform.Global
-import org.ergoplatform.LastBlockUtxoRootHash
+import org.ergoplatform.{Context, Global, LastBlockUtxoRootHash}
 import sigmastate.Values.{SValue, Value}
 import sigmastate.eval.IRContext
 import sigmastate.interpreter.Interpreter.ScriptEnv
@@ -13,7 +12,7 @@ import sigmastate.lang.SigmaPredef.PredefinedFuncRegistry
 import sigmastate.lang.Terms.MethodCall
 import sigmastate.lang.syntax.ParserException
 import sigmastate.utxo._
-import sigmastate.{Exponentiate, MultiplyGroup, SCollection, SGlobal, SGroupElement, SType, STypeVar, Xor}
+import sigmastate.{Exponentiate, MultiplyGroup, SCollection, SContext, SGlobal, SGroupElement, SType, STypeVar, Xor}
 
 /**
   * @param networkPrefix    network prefix to decode an ergo address from string (PK op)
@@ -126,9 +125,7 @@ class SigmaCompiler(settings: CompilerSettings) {
           SCollection.GetOrElseMethod.withConcreteTypes(Map(tIV -> xs.tpe.elemType)),
           Vector(index, default), Map())
       case LastBlockUtxoRootHash =>
-        // Dummy implementation to satisfy compiler, current one is commented below:
-        MethodCall(Global, SGroupElement.MultiplyMethod, Vector(), Map())
-        // MethodCall.typed[Value[SAvlTree.type]]( ValUse(1, SContext), SContext.lastBlockUtxoRootHashMethod, Vector(), Map())
+        MethodCall(Context, SContext.lastBlockUtxoRootHashMethod, Vector(), Map())
     })
     rewrite(everywherebu(r))(expr)
   }
