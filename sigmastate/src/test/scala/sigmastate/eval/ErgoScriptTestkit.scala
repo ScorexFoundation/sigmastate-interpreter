@@ -157,7 +157,7 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests
       if (ergoCtx.isDefined) {
         val ectx = ergoCtx.get.withErgoTreeVersion(ergoTreeVersionInTests)
         VersionContext.withVersions(ectx.activatedScriptVersion, ergoTreeVersionInTests) {
-          val calcCtx = ectx.toSigmaContext(isCost = false)
+          val calcCtx = ectx.toSigmaContext()
           val testContractRes = testContract.map(_(calcCtx))
           testContractRes.foreach { res =>
             checkExpected(res, expectedResult.calc, "Test Contract actual: %s, expected: %s")

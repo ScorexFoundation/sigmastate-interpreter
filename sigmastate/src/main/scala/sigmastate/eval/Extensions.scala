@@ -76,14 +76,14 @@ object Extensions {
   def toAnyValue[A:RType](x: A) = new CAnyValue(x, RType[A].asInstanceOf[RType[Any]])
 
   implicit class ErgoBoxOps(val ebox: ErgoBox) extends AnyVal {
-    def toTestBox(isCost: Boolean): Box = {
+    def toTestBox: Box = {
       /* NOHF PROOF:
       Changed: removed check for ebox == null
       Motivation: box cannot be null
       Safety: used in ErgoLikeContext where boxes cannot be null
       Examined ergo code: all that leads to ErgoLikeContext creation.
       */
-      CostingBox(isCost, ebox)
+      CostingBox(ebox)
     }
   }
 

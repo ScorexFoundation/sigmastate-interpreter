@@ -79,9 +79,6 @@ object RType {
   implicit val DoubleType  : RType[Double]   = PrimitiveType[Double]  (ClassTag.Double, Array.emptyDoubleArray)
   implicit val UnitType    : RType[Unit]     = PrimitiveType[Unit]    (ClassTag.Unit, Array[Unit]()(ClassTag.Unit))
 
-  /** Descriptor of the type A narrowed to the single inhabitant `value`. */
-  case class SingletonType[A](value: A, classTag: ClassTag[A])() extends RType[A]
-
   implicit case object StringType extends RType[String] {
     override def classTag: ClassTag[String] = ClassTag[String](classOf[String])
     override def name: String = "String"
@@ -104,13 +101,6 @@ object RType {
     override def name: String = s"(${tFst.name}, ${tSnd.name})"
   }
   implicit def extendPairType[A,B](pt: RType[(A,B)]): PairType[A,B] = pt.asInstanceOf[PairType[A,B]]
-
-  implicit def eitherRType[A,B](implicit tA: RType[A], tB: RType[B]): RType[Either[A,B]] = EitherType(tA, tB)
-
-  case class EitherType[A,B](tLeft: RType[A], tRight: RType[B]) extends RType[Either[A,B]] {
-    val classTag: ClassTag[Either[A, B]] = scala.reflect.classTag[Either[A,B]]
-    override def name: String = s"(${tLeft.name} | ${tRight.name})"
-  }
 
   implicit def funcRType[A,B](implicit tDom: RType[A], tRange: RType[B]): RType[A => B] = FuncType(tDom, tRange)
 

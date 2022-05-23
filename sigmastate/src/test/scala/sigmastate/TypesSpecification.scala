@@ -78,7 +78,7 @@ class TypesSpecification extends SigmaTestingData {
     assertFalse(None, SShort)
     assertFalse(Some(10), SShort)
 
-    val ctx = fakeContext.toSigmaContext(false)
+    val ctx = fakeContext.toSigmaContext()
     assertTrue(ctx, SContext)
     assertFalse(ctx, SShort)
 

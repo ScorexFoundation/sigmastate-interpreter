@@ -4614,7 +4614,6 @@ class SigmaDslSpecification extends SigmaDslTesting
 
   def contextData() = {
     val input = CostingBox(
-      false,
       new ErgoBox(
         80946L,
         new ErgoTree(
@@ -4645,7 +4644,6 @@ class SigmaDslSpecification extends SigmaDslTesting
     )
 
     val dataBox = CostingBox(
-      false,
       new ErgoBox(
         -1L,
         new ErgoTree(
@@ -4712,7 +4710,6 @@ class SigmaDslSpecification extends SigmaDslTesting
       inputs = Coll[Box](input),
       outputs = Coll[Box](
         CostingBox(
-          false,
           new ErgoBox(
             1000000L,
             new ErgoTree(
@@ -4750,7 +4747,6 @@ class SigmaDslSpecification extends SigmaDslTesting
           )
         ),
         CostingBox(
-          false,
           new ErgoBox(
             2769336982721999022L,
             new ErgoTree(
@@ -4784,8 +4780,7 @@ class SigmaDslSpecification extends SigmaDslTesting
             CAnyValue(Helpers.decodeBytes("00"), CollType(RType.ByteType)),
             CAnyValue(true, RType.BooleanType))),
       activatedScriptVersion = activatedVersionInTests,
-      currentErgoTreeVersion = ergoTreeVersionInTests,
-      false
+      currentErgoTreeVersion = ergoTreeVersionInTests
     )
     val ctx2 = ctx.copy(vars = Coll[AnyValue](null, null, null))
     val ctx3 = ctx.copy(vars = Coll[AnyValue]())
@@ -6584,7 +6579,6 @@ class SigmaDslSpecification extends SigmaDslTesting
   def sampleCollBoxes = genSamples[Coll[Box]](collOfN[Box](5), MinSuccessful(20))
 
   def create_b1 = CostingBox(
-    false,
     new ErgoBox(
       1L,
       new ErgoTree(
@@ -6621,7 +6615,6 @@ class SigmaDslSpecification extends SigmaDslTesting
   )
 
   def create_b2 = CostingBox(
-    false,
     new ErgoBox(
       1000000000L,
       new ErgoTree(

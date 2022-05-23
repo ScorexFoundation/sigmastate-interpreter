@@ -1043,7 +1043,7 @@ class SigmaDslTesting extends PropSpec
     NewFeature(script, scalaFunc, Option(expectedExpr))
   }
 
-  val contextGen: Gen[Context] = ergoLikeContextGen.map(c => c.toSigmaContext(isCost = false))
+  val contextGen: Gen[Context] = ergoLikeContextGen.map(c => c.toSigmaContext())
   implicit val arbContext: Arbitrary[Context] = Arbitrary(contextGen)
 
   /** NOTE, this should be `def` to allow overriding of generatorDrivenConfig in derived Spec classes. */

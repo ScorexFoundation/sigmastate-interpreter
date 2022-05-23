@@ -138,7 +138,7 @@ class ErgoLikeContext(val lastBlockUtxoRoot: AvlTreeData,
   def withTransaction(newSpendingTransaction: ErgoLikeTransactionTemplate[_ <: UnsignedInput]): ErgoLikeContext =
     ErgoLikeContext.copy(this)(spendingTransaction = newSpendingTransaction)
 
-  override def toSigmaContext(isCost: Boolean, extensions: Map[Byte, AnyValue] = Map()): sigma.Context = {
+  override def toSigmaContext(extensions: Map[Byte, AnyValue] = Map()): sigma.Context = {
     import Evaluation._
 
     def contextVars(m: Map[Byte, AnyValue]): Coll[AnyValue] = {
@@ -150,15 +150,15 @@ class ErgoLikeContext(val lastBlockUtxoRoot: AvlTreeData,
       CostingSigmaDslBuilder.Colls.fromArray(res)
     }
 
-    val dataInputs = this.dataBoxes.toArray.map(_.toTestBox(isCost)).toColl
-    val inputs = boxesToSpend.toArray.map(_.toTestBox(isCost)).toColl
+    val dataInputs = this.dataBoxes.toArray.map(_.toTestBox).toColl
+    val inputs = boxesToSpend.toArray.map(_.toTestBox).toColl
     /* NOHF PROOF:
     Changed: removed check for spendingTransaction == null
     Motivation: spendingTransaction cannot be null
     Safety: in ergo spendingTransaction cannot be null
     Examined ergo code: all that leads to ErgoLikeContext creation.
     */
-    val outputs = spendingTransaction.outputs.toArray.map(_.toTestBox(isCost)).toColl
+    val outputs = spendingTransaction.outputs.toArray.map(_.toTestBox).toColl
     val varMap = extension.values.mapValues { case v: EvaluatedValue[_] =>
       val tVal = stypeToRType[SType](v.tpe)
       toAnyValue(v.value.asWrappedType)(tVal)
@@ -167,12 +167,12 @@ class ErgoLikeContext(val lastBlockUtxoRoot: AvlTreeData,
     val avlTree = CAvlTree(lastBlockUtxoRoot)
     // so selfBox is never one of the `inputs` instances
     // as result selfBoxIndex is always (erroneously) returns -1 in ErgoTree v0, v1
-    val selfBox = boxesToSpend(selfIndex).toTestBox(isCost)
+    val selfBox = boxesToSpend(selfIndex).toTestBox
     val ergoTreeVersion = currentErgoTreeVersion.getOrElse(
         Interpreter.error(s"Undefined context property: currentErgoTreeVersion"))
     CostingDataContext(
       dataInputs, headers, preHeader, inputs, outputs, preHeader.height, selfBox, selfIndex, avlTree,
-      preHeader.minerPk.getEncoded, vars, activatedScriptVersion, ergoTreeVersion, isCost)
+      preHeader.minerPk.getEncoded, vars, activatedScriptVersion, ergoTreeVersion)
   }
 
 

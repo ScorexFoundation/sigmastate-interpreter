@@ -85,8 +85,7 @@ trait SigmaTestingCommons extends PropSpec
           ctx.vars.updated(1, ctxVar)
         }
         val calcCtx = ctx.copy(vars = newVars)
-        val costCtx = calcCtx.copy(isCost = true)
-        (costCtx, calcCtx)
+        calcCtx
       case _ =>
         val box = createBox(0, TrueTree)
 
@@ -101,9 +100,8 @@ trait SigmaTestingCommons extends PropSpec
           .withErgoTreeVersion(ergoTreeVersionInTests)
           .withBindings(1.toByte -> Constant[SType](in.asInstanceOf[SType#WrappedType], tpeA))
           .withBindings(bindings: _*)
-        val calcCtx = ergoCtx.toSigmaContext(isCost = false).asInstanceOf[CostingDataContext]
-        val costCtx = calcCtx.copy(isCost = true)
-        (costCtx, calcCtx)
+        val calcCtx = ergoCtx.toSigmaContext().asInstanceOf[CostingDataContext]
+        calcCtx
     }
   }
 
@@ -154,7 +152,7 @@ trait SigmaTestingCommons extends PropSpec
     val tA = RType[A]
     val f = (in: A) => {
       implicit val cA: ClassTag[A] = tA.classTag
-      val (_, sigmaCtx) = createContexts(in, bindings)
+      val sigmaCtx = createContexts(in, bindings)
       val accumulator = new CostAccumulator(
         initialCost = JitCost(0),
         costLimit = Some(JitCost.fromBlockCost(ScriptCostLimit.value)))

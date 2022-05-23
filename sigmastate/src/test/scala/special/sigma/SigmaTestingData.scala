@@ -195,7 +195,6 @@ trait SigmaTestingData extends SigmaTestingCommons with ObjectGenerators {
     )
 
     val b1_instances = new CloneSet(1000, CostingBox(
-      false,
       new ErgoBox(
         9223372036854775807L,
         new ErgoTree(
@@ -234,7 +233,6 @@ trait SigmaTestingData extends SigmaTestingCommons with ObjectGenerators {
     val b1: Box = create_b1()
 
     val b2: Box = CostingBox(
-      false,
       new ErgoBox(
         12345L,
         new ErgoTree(

@@ -122,6 +122,6 @@ trait InterpreterContext {
     *
     * @see sigmastate.eval.Evaluation
     */
-  def toSigmaContext(isCost: Boolean, extensions: Map[Byte, AnyValue] = Map()): sigma.Context
+  def toSigmaContext(extensions: Map[Byte, AnyValue] = Map()): sigma.Context
 }
 

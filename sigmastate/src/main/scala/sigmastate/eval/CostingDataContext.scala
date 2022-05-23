@@ -320,7 +320,7 @@ import sigmastate.eval.CostingBox._
 /** A default implementation of [[Box]] interface.
   * @see [[Box]] for detailed descriptions
   */
-case class CostingBox(isCost: Boolean, val ebox: ErgoBox) extends Box with WrapperOf[ErgoBox] {
+case class CostingBox(val ebox: ErgoBox) extends Box with WrapperOf[ErgoBox] {
   val builder = CostingSigmaDslBuilder
 
   val value = ebox.value
@@ -541,7 +541,7 @@ class CostingSigmaDslBuilder extends SigmaDslBuilder { dsl =>
     * @param ebox  the value to be wrapped
     * @see [[sigmastate.SBox]], [[special.sigma.Box]]
     */
-  def Box(ebox: ErgoBox): Box = CostingBox(false, ebox)
+  def Box(ebox: ErgoBox): Box = CostingBox(ebox)
 
   /** Extracts [[ErgoBox]] from the given [[Box]] instance. This is inverse to the Box method. */
   def toErgoBox(b: Box): ErgoBox = b.asInstanceOf[CostingBox].ebox
@@ -689,7 +689,7 @@ case class CostingDataContext(
                                vars: Coll[AnyValue],
                                override val activatedScriptVersion: Byte,
                                override val currentErgoTreeVersion: Byte,
-                               var isCost: Boolean)
+                               )
   extends Context {
   @inline override def builder: SigmaDslBuilder = CostingSigmaDslBuilder
 
