@@ -503,8 +503,8 @@ class CostingSigmaDslBuilder extends SigmaDslBuilder { dsl =>
   implicit val validationSettings = ValidationRules.currentSettings
 
   // manual fix
-  override def Colls: CollBuilder = new CollOverArrayBuilder
-  override def Monoids: MonoidBuilder = new MonoidBuilderInst
+  override val Colls: CollBuilder = new CollOverArrayBuilder
+  override def Monoids: MonoidBuilder = Colls.Monoids
 
   override def BigInt(n: BigInteger): BigInt = CBigInt(n)
 
