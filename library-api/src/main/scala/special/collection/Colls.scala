@@ -15,7 +15,7 @@ import scala.collection.immutable
 @FunctorType
 @scalan.Liftable
 @WithMethodCallRecognizers
-trait Coll[@specialized A] {
+abstract class Coll[@specialized A] {
   def builder: CollBuilder
   @Internal
   def toArray: Array[A]
@@ -201,17 +201,6 @@ trait Coll[@specialized A] {
     */
   def take(n: Int): Coll[A]
 
-  /** Partitions this $coll in two $colls according to a predicate.
-    *
-    *  @param pred the predicate on which to partition.
-    *  @return     a pair of $colls: the first $coll consists of all elements that
-    *              satisfy the predicate `p` and the second $coll consists of all elements
-    *              that don't. The relative order of the elements in the resulting ${coll}s
-    *              will BE preserved (this is different from Scala's version of this method).
-    *  @since 2.0
-    */
-  def partition(pred: A => Boolean): (Coll[A], Coll[A])
-
   /** Produces a new $coll where a slice of elements in this $coll is replaced by another sequence.
     *
     *  @param  from     the index of the first replaced element
@@ -236,52 +225,6 @@ trait Coll[@specialized A] {
     * @since 2.0
     */
   def updateMany(indexes: Coll[Int], values: Coll[A]): Coll[A]
-
-  /** Apply m for each element of this collection, group by key and reduce each group using r.
-    * @returns one item for each group in a new collection of (K,V) pairs.
-    * @since 2.0
-    */
-  def mapReduce[K: RType, V: RType](m: A => (K,V), r: ((V,V)) => V): Coll[(K,V)]
-
-  /** Partitions this $coll into a map of ${coll}s according to some discriminator function.
-    *
-    *  @param key   the discriminator function.
-    *  @tparam K    the type of keys returned by the discriminator function.
-    *  @return      A map from keys to ${coll}s such that the following invariant holds:
-    *               {{{
-    *                 (xs groupBy key)(k) = xs filter (x => key(x) == k)
-    *               }}}
-    *               That is, every key `k` is bound to a $coll of those elements `x`
-    *               for which `key(x)` equals `k`.
-    *  @since 2.0
-    */
-  @NeverInline
-  def groupBy[K: RType](key: A => K): Coll[(K, Coll[A])] = {
-    val res = toArray.groupBy(key).mapValues(builder.fromArray(_))
-    builder.fromMap(res)
-  }
-
-  /** Partitions this $coll into a map of ${coll}s according to some discriminator function.
-    * Additionally projecting each element to a new value.
-    *
-    *  @param key   the discriminator function.
-    *  @param proj  projection function to produce new value for each element of this $coll
-    *  @tparam K    the type of keys returned by the discriminator function.
-    *  @tparam V    the type of values returned by the projection function.
-    *  @return      A map from keys to ${coll}s such that the following invariant holds:
-    *               {{{
-    *                 (xs groupByProjecting (key, proj))(k) = xs filter (x => key(x) == k).map(proj)
-    *               }}}
-    *               That is, every key `k` is bound to projections of those elements `x`
-    *               for which `key(x)` equals `k`.
-    *  @since 2.0
-    */
-  @NeverInline
-  def groupByProjecting[K: RType, V: RType](key: A => K, proj: A => V): Coll[(K, Coll[V])] = {
-    implicit val ctV: ClassTag[V] = RType[V].classTag
-    val res = toArray.groupBy(key).mapValues(arr => builder.fromArray(arr.map(proj)))
-    builder.fromMap(res)
-  }
 
   /** Produces a new collection which contains all distinct elements of this $coll and also all elements of
     *  a given collection that are not in this collection.
@@ -356,15 +299,6 @@ trait Coll[@specialized A] {
     */
   def reverse: Coll[A]
 
-  /** Checks if this collection is a replication of the given value a given number of times.
-    *
-    * @param len   how many times the `value` is replicated
-    * @param value the replicated value
-    * @return true if this collection is element-wise equal to a collection of replicated values.
-    */
-  @Internal
-  private[collection] def isReplArray(len: Int, value: A): Boolean
-
   @Internal
   private def trim[T](arr: Array[T]) = arr.take(arr.length min 100)
   @Internal
@@ -373,26 +307,6 @@ trait Coll[@specialized A] {
   @Internal
   implicit def tItem: RType[A]
 
-  @Internal
-  def toMap[T, U](implicit ev: A <:< (T, U)): immutable.Map[T, U] = {
-    var b = immutable.Map.empty[T,U]
-    var i = 0
-    val len = length
-    while (i < len) {
-      val kv = this(i)
-      if (b.contains(kv._1))
-        throw new IllegalArgumentException(s"Cannot transform collection $this to Map: duplicate key in entry $kv")
-      b = b + kv
-      i += 1
-    }
-    b
-  }
-
-  @Internal
-  def distinctByKey[T, U](implicit ev: A <:< (T, U)): Coll[A] = {
-    unionSetByKey(builder.emptyColl[A](tItem))
-  }
-
   /** Builds a new $coll from this $coll without any duplicate elements.
     *
     *  @return  A new $coll which contains the first occurrence of every element of this $coll.
@@ -400,30 +314,14 @@ trait Coll[@specialized A] {
   def distinct: Coll[A] = {
     unionSet(builder.emptyColl[A])
   }
-
-  @Internal
-  def unionSetByKey[T, U](that: Coll[A])(implicit ev: A <:< (T, U)): Coll[A] = {
-    import scalan.util.CollectionUtil._
-    // TODO optimize representation-wise
-    val res = append(that).toArray.toIterable.distinctBy(_._1)
-    builder.fromArray(res.toArray(tItem.classTag))
-  }
 }
 
 @WithMethodCallRecognizers
-trait PairColl[@specialized L, @specialized R] extends Coll[(L,R)] {
+abstract class PairColl[@specialized L, @specialized R] extends Coll[(L,R)] {
   def ls: Coll[L]
   def rs: Coll[R]
   def mapFirst[T1: RType](f: L => T1): Coll[(T1, R)]
   def mapSecond[T1: RType](f: R => T1): Coll[(L, T1)]
-}
-
-@Liftable
-@WithMethodCallRecognizers
-trait ReplColl[@specialized A] extends Coll[A] {
-  def value: A
-  def length: Int
-  def append(other: Coll[A]): Coll[A]
 }
 
 /** Interface to access global collection methods.
@@ -456,11 +354,6 @@ trait CollBuilder {
   def pairCollFromArrays[A: RType, B: RType](as: Array[A], bs: Array[B]): PairColl[A,B] =
     pairColl(fromArray(as), fromArray(bs))
 
-  /** Construct a collection of (K,V) pairs using PairColl representation,
-    * in which keys and values are stored as separate unboxed arrays. */
-  @Internal
-  def fromMap[K: RType, V: RType](m: Map[K,V]): Coll[(K,V)]
-
   /** Construct a new collection from the given list of arguments.
     * The arguments should be of the same type for which there should be
     * an implicit type descriptor at the call site. */
@@ -486,13 +379,5 @@ trait CollBuilder {
   /** Create an empty collection with items of the given type.
     * Even though there are no items, the type of them is specified. */
   def emptyColl[T](implicit tT: RType[T]): Coll[T]
-
-  /** Flattens a two-dimensional collection by concatenating all its rows
-    * into a single collection.
-    *
-    *  @tparam A        Type of row elements.
-    *  @return          An array obtained by concatenating rows of this array.
-    */
-  def flattenColl[A:RType](coll: Coll[Coll[A]]): Coll[A]
 }
 

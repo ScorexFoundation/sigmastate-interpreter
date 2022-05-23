@@ -96,11 +96,6 @@ class CollsTests extends PropSpec with PropertyChecks with Matchers with CollGen
     forAll(collGen, indexGen) { (col, from) =>
       col.segmentLength(lt0, from) shouldBe col.toArray.segmentLength(lt0, from)
     }
-
-    val minSuccess = minSuccessful(30)
-    forAll(superGen, indexGen, minSuccess) { (col, from) =>
-      col.segmentLength(collMatchRepl, from) shouldBe col.toArray.segmentLength(collMatchRepl, from)
-    }
   }
 
   property("Coll.indexWhere") {
@@ -123,15 +118,6 @@ class CollsTests extends PropSpec with PropertyChecks with Matchers with CollGen
       col.lastIndexWhere(eq0, end) shouldBe col.lastIndexWhere(eq0, end)
       def p2(ab: (Int, Int)) = eq0(ab._1) && eq0(ab._2)
       col.zip(col).lastIndexWhere(p2, end) shouldBe col.toArray.zip(col.toArray).lastIndexWhere(p2, end)
-    }
-  }
-
-  property("Coll.partition") {
-    forAll(collGen) { col =>
-      val (lsC, rsC) = col.partition(lt0)
-      val (ls, rs) = col.toArray.partition(lt0)
-      lsC.toArray shouldBe ls
-      rsC.toArray shouldBe rs
     }
   }
 
@@ -366,33 +352,6 @@ class CollsTests extends PropSpec with PropertyChecks with Matchers with CollGen
     } else {
       // not fixed in v4.x
       pairOfColls.ls.length should not be(pairOfColls.rs.length)
-    }
-  }
-
-  property("Coll.mapReduce") {
-    import scalan.util.CollectionUtil.TraversableOps
-    def m(x: Int) = (math.abs(x) % 10, x)
-    forAll(collGen) { col =>
-      val res = col.mapReduce(m, plusF)
-      val (ks, vs) = builder.unzip(res)
-      vs.toArray.sum shouldBe col.toArray.sum
-      ks.length <= 10 shouldBe true
-      res.toArray shouldBe col.toArray.toIterable.mapReduce(m)(plus).toArray
-    }
-  }
-
-  property("Coll.groupBy") {
-    def key(x: Int) = math.abs(x) % 10
-    forAll(collGen) { col =>
-      val res = col.groupBy(key)
-      val (ks, vs) = builder.unzip(res)
-      vs.flatten.toArray.sum shouldBe col.toArray.sum
-      ks.length <= 10 shouldBe true
-      val pairs = col.map(x => (key(x), x))
-      val res2 = pairs.groupByKey
-      val (ks2, vs2) = builder.unzip(res)
-      ks shouldBe ks2
-      vs shouldBe vs2
     }
   }
 

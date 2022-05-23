@@ -55,12 +55,6 @@ package special.collection {
       def mapFirst[T1](f: Ref[scala.Function1[L, T1]]): Ref[Coll[scala.Tuple2[T1, R]]];
       def mapSecond[T1](f: Ref[scala.Function1[R, T1]]): Ref[Coll[scala.Tuple2[L, T1]]]
     };
-    @Liftable @WithMethodCallRecognizers trait ReplColl[A] extends Coll[A] {
-      implicit def eA: Elem[A];
-      def value: Ref[A];
-      def length: Ref[Int];
-      def append(other: Ref[Coll[A]]): Ref[Coll[A]]
-    };
     @Liftable @WithMethodCallRecognizers trait CollBuilder extends Def[CollBuilder] {
       def Monoids: Ref[MonoidBuilder];
       def pairColl[A, B](as: Ref[Coll[A]], bs: Ref[Coll[B]]): Ref[PairColl[A, B]];
@@ -74,7 +68,6 @@ package special.collection {
     };
     trait CollCompanion;
     trait PairCollCompanion;
-    trait ReplCollCompanion;
     trait CollBuilderCompanion
   }
 }

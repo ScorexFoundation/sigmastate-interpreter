@@ -1,16 +1,13 @@
 package special.collections
 
-import scala.language.{existentials,implicitConversions}
-import scala.collection.mutable.ArrayBuffer
 import org.scalacheck.util.Buildable
-
-import scala.collection.mutable
 import org.scalacheck.{Arbitrary, Gen}
 import scalan._
-import special.collection.{Coll, CollBuilder, CollOverArray, CollOverArrayBuilder, PairColl, ReplColl}
+import special.collection.{Coll, CollBuilder, CollOverArrayBuilder, PairColl}
 
-import scala.reflect.ClassTag
-import scala.util.Random
+import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
+import scala.language.{existentials, implicitConversions}
 
 trait CollGens { testSuite =>
   import Gen._
@@ -120,11 +117,6 @@ trait CollGens { testSuite =>
   val plusF = (p: (Int,Int)) => plus(p._1, p._2)
   val predF = (p: (Int,Int)) => plus(p._1, p._2) > 0
   def inc(x: Int) = x + 1
-
-  def collMatchRepl[B](coll: B): Boolean = coll match {
-    case _ : ReplColl[_] => true
-    case _ => false
-  }
 
   def complexFunction(arg: Int): Int = {
     var i = 0
