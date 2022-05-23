@@ -10,7 +10,6 @@ trait Library extends Scalan
   with WrappersModule
   with CollsModule
   with MonoidsModule
-  with MonoidInstancesModule
 {
   import WOption._
   import WRType._
