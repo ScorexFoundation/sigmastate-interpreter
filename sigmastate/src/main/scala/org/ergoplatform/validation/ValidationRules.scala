@@ -1,22 +1,14 @@
 package org.ergoplatform.validation
 
-import java.nio.ByteBuffer
-import java.util
-
-import org.ergoplatform.SigmaConstants.MaxLoopLevelInCostFunction
-import scorex.util.ByteArrayBuilder
-import scorex.util.serialization.{VLQByteBufferReader, VLQByteBufferWriter}
 import scalan.util.Extensions.toUByte
-import sigmastate.Values.{ErgoTree, IntValue, SValue, Value}
+import sigmastate.Values.{ErgoTree, SValue}
 import sigmastate._
 import sigmastate.eval.IRContext
 import sigmastate.lang.exceptions._
-import sigmastate.serialization.OpCodes.{OpCode, OpCodeExtra}
+import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.TypeSerializer.embeddableIdToType
 import sigmastate.serialization.{OpCodes, ValueSerializer}
 import sigmastate.utxo.DeserializeContext
-import sigmastate.utils.Helpers._  // required for Scala 2.11
-import scala.collection.mutable
 
 /** Base class for different validation rules registered in ValidationRules.currentSettings.
   * Each rule is identified by `id` and have a description.
@@ -126,30 +118,14 @@ object ValidationRules {
 
   /** Not used since v5.0.1. */
   object CheckIsSupportedIndexExpression extends ValidationRule(1003,
-    "Check the index expression for accessing collection element is supported.") {
-    final def apply[Ctx <: IRContext, T](ctx: Ctx)(coll: Value[SCollection[_]], i: IntValue, iSym: ctx.Ref[Int]): Unit = {
-      // do nothing
-    }
-  }
+    "Check the index expression for accessing collection element is supported.")
 
   /** Not used since v5.0.1. */
   object CheckCostFunc extends ValidationRule(1004,
-    "Cost function should contain only operations from specified list.") {
-    final def apply[Ctx <: IRContext, T](ctx: Ctx)(costF: ctx.Ref[Any => Int]): Unit = {
-      // do nothing
-    }
-  }
+    "Cost function should contain only operations from specified list.")
 
   object CheckCalcFunc extends ValidationRule(1005,
-    "If SigmaProp.isProven method calls exists in the given function,\n then it is the last operation") {
-    final def apply[Ctx <: IRContext, T](ctx: Ctx)(calcF: ctx.Ref[ctx.Context => Any]): Unit = {
-      checkRule()
-      val verification = ctx.verifyIsProven(calcF)
-      if (!verification.isSuccess) {
-        throwValidationException(verification.toEither.left.get, Array(calcF))
-      }
-    }
-  }
+    "If SigmaProp.isProven method calls exists in the given function,\n then it is the last operation")
 
   object CheckTupleType extends ValidationRule(1006,
     "Supported tuple type.") with SoftForkWhenReplaced {
@@ -254,7 +230,7 @@ object ValidationRules {
                             args: Seq[Any]): Boolean = (status, args) match {
       case (ChangedRule(newValue), Seq(objType: STypeCompanion, methodId: Byte)) =>
         val key = Array(objType.typeId, methodId)
-        newValue.grouped(2).exists(util.Arrays.equals(_, key))
+        newValue.grouped(2).exists(java.util.Arrays.equals(_, key))
       case _ => false
     }
   }
@@ -274,11 +250,7 @@ object ValidationRules {
 
   /** Not used since v5.0.1  */
   object CheckCostFuncOperation extends ValidationRule(1013,
-    "Check the opcode is allowed in cost function") {
-    final def apply[Ctx <: IRContext, T](ctx: Ctx)(opCode: OpCodeExtra): Unit = {
-      // do nothing
-    }
-  }
+    "Check the opcode is allowed in cost function")
 
   /** Introduced in v5.0, this rule it is used in creation of ValidationExceptions, which
     * in turn can be checked for soft-fork condition using `this.isSoftFork`. Thus, this
@@ -308,18 +280,9 @@ object ValidationRules {
     }
   }
 
+  /** Not used since v5.0.1  */
   object CheckLoopLevelInCostFunction extends ValidationRule(1015,
-    "Check that loop level is not exceeded.") with SoftForkWhenReplaced {
-    final def apply(level: Int): Unit = {
-      checkRule()
-      val max = MaxLoopLevelInCostFunction.value
-      if (level > max) {
-        throwValidationException(
-          new CosterException(s"The loop level $level exceeds maximum $max", None),
-          Array(level))
-      }
-    }
-  }
+    "Check that loop level is not exceeded.")
 
   val ruleSpecs: Seq[ValidationRule] = Seq(
     CheckDeserializedScriptType,

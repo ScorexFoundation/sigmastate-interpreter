@@ -43,7 +43,6 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
   import SigmaDslBuilder._
   import SigmaProp._
   import WOption._
-  import MonoidBuilder._
 
   /** Should be specified in the final cake */
   val builder: sigmastate.lang.SigmaBuilder
@@ -141,10 +140,6 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
     // On each branching level each node type should be matched exactly once,
     // for the rewriting to be sound.
     d match {
-      // Rule: cast(eTo, x) if x.elem <:< eTo  ==>  x
-      case Cast(eTo: Elem[to], x) if eTo.getClass.isAssignableFrom(x.elem.getClass) =>
-        x
-
       // Rule: ThunkDef(x, Nil).force => x
       case ThunkForce(Def(ThunkDef(root, sch))) if sch.isEmpty => root
 
@@ -218,20 +213,10 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
   private val _colBuilder: LazyRep[CollBuilder] = MutableLazy(variable[CollBuilder])
   @inline def colBuilder: Ref[CollBuilder] = _colBuilder.value
 
-  private val _monoidBuilder: LazyRep[MonoidBuilder] = MutableLazy(sigmaDslBuilder.Monoids)
-  @inline def monoidBuilder: Ref[MonoidBuilder] = _monoidBuilder.value
-
-  private val _intPlusMonoid: LazyRep[Monoid[Int]] = MutableLazy(monoidBuilder.intPlusMonoid)
-  @inline def intPlusMonoid: Ref[Monoid[Int]] = _intPlusMonoid.value
-
-  private val _longPlusMonoid: LazyRep[Monoid[Long]] = MutableLazy(monoidBuilder.longPlusMonoid)
-  @inline def longPlusMonoid: Ref[Monoid[Long]] = _longPlusMonoid.value
-
   protected override def onReset(): Unit = {
     super.onReset()
     // WARNING: every lazy value should be listed here, otherwise bevavior after resetContext is undefined and may throw.
-    Array(_sigmaDslBuilder, _colBuilder,
-      _monoidBuilder, _intPlusMonoid, _longPlusMonoid)
+    Array(_sigmaDslBuilder, _colBuilder)
       .foreach(_.reset())
   }
 
@@ -373,17 +358,6 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
   def error(msg: String) = throw new CosterException(msg, None)
   def error(msg: String, srcCtx: Option[SourceContext]) = throw new CosterException(msg, srcCtx)
 
-  case class Cast[To](eTo: Elem[To], x: Ref[Def[_]]) extends BaseDef[To]()(eTo) {
-    override def transform(t: Transformer) = Cast(eTo, t(x))
-  }
-
-  def tryCast[To](x: Ref[Def[_]])(implicit eTo: Elem[To]): Ref[To] = {
-    if (eTo.getClass.isAssignableFrom(x.elem.getClass))
-      asRep[To](x)
-    else
-      Cast(eTo, x)
-  }
-
   /** Translates the given typed expression to IR graph representing a function from
     * Context to some type T.
     * @param env contains values for each named constant used
@@ -405,8 +379,8 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
     object In { def unapply(v: SValue): Nullable[Ref[Any]] = Nullable(asRep[Any](buildNode(ctx, env, v))) }
     class InColl[T: Elem] {
       def unapply(v: SValue): Nullable[Ref[Coll[T]]] = {
-        val res = asRep[Def[_]](buildNode(ctx, env, v))
-        Nullable(tryCast[Coll[T]](res))
+        val res = asRep[Coll[T]](buildNode(ctx, env, v))
+        Nullable(res)
       }
     }
     val InCollByte = new InColl[Byte]; val InCollAny = new InColl[Any]()(AnyElement); val InCollInt = new InColl[Int]

@@ -42,11 +42,6 @@ trait Library extends Scalan
   private val SPCM = WSpecialPredefCompanionMethods
 
   def colBuilder: Ref[CollBuilder]
-  def intPlusMonoid: Ref[Monoid[Int]]
-  def longPlusMonoid: Ref[Monoid[Long]]
-
-  val intPlusMonoidValue = new special.collection.MonoidBuilderInst().intPlusMonoid
-  val longPlusMonoidValue = new special.collection.MonoidBuilderInst().longPlusMonoid
 
   object IsNumericToInt {
     def unapply(d: Def[_]): Nullable[Ref[A] forSome {type A}] = d match {
@@ -78,8 +73,6 @@ trait Library extends Scalan
       case _ => super.rewriteDef(d)
     }
 
-    case IsNumericToLong(Def(IsNumericToInt(x))) if x.elem == LongElement => x
-
     // Rule: replicate(l, x).zip(replicate(l, y)) ==> replicate(l, (x,y))
     case CM.zip(CBM.replicate(b1, l1, v1), CBM.replicate(b2, l2, v2)) if b1 == b2 && l1 == l2 =>
       b1.replicate(l1, Pair(v1, v2))
@@ -103,25 +96,6 @@ trait Library extends Scalan
       }
     }
 
-
-    case CM.sum(xs, m) => m.node match {
-      case _: IntPlusMonoid => xs.node match {
-        case CollConst(coll, lA) if lA.eW == IntElement =>
-          coll.asInstanceOf[SColl[Int]].sum(intPlusMonoidValue)
-        case CBM.replicate(_, n, x: Ref[Int] @unchecked) =>
-          x * n
-        case _ => super.rewriteDef(d)
-      }
-      case _: LongPlusMonoid => xs.node match {
-        case CollConst(coll, lA) if lA.eW == LongElement =>
-          coll.asInstanceOf[SColl[Long]].sum(longPlusMonoidValue)
-        case CBM.replicate(_, n, x: Ref[Long] @unchecked) =>
-          x * n.toLong
-        case _ => super.rewriteDef(d)
-      }
-      case _ => super.rewriteDef(d)
-    }
-
     // Rule: opt.fold(None, x => Some(x)) ==> opt
     case WOptionM.fold(opt, Def(ThunkDef(SPCM.none(_), _)), Def(Lambda(_, _, x, SPCM.some(y)))) if x == y => opt
 
@@ -133,18 +107,6 @@ trait Library extends Scalan
     }
 
     case _ => super.rewriteDef(d)
-  }
-
-  override def invokeUnlifted(e: Elem[_], mc: MethodCall, dataEnv: DataEnv): AnyRef = e match {
-    case _: CollElem[_,_] => mc match {
-      case CollMethods.map(xs, f) =>
-        val newMC = mc.copy(args = mc.args :+ f.elem.eRange)(mc.resultType, mc.isAdapterCall)
-        super.invokeUnlifted(e, newMC, dataEnv)
-      case _ =>
-        super.invokeUnlifted(e, mc, dataEnv)
-    }
-    case _ =>
-      super.invokeUnlifted(e, mc, dataEnv)
   }
 
 }

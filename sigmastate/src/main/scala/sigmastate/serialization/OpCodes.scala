@@ -1,6 +1,5 @@
 package sigmastate.serialization
 
-import scalan.util.Extensions.ByteOps
 import sigmastate.serialization.OpCodes.OpCode
 import supertagged.TaggedType
 
@@ -58,10 +57,6 @@ object OpCodes extends ValueCodes {
   object OpCode extends TaggedType[Byte]
   type OpCode = OpCode.Type
 
-  object OpCodeExtra extends TaggedType[Short]
-  type OpCodeExtra = OpCodeExtra.Type
-
-  def toExtra(oc: OpCode): OpCodeExtra = OpCodeExtra @@ oc.toUByte.toShort
   private def newOpCode(shift: Short): OpCode = OpCode @@ (LastConstantCode + shift).toByte
 
   // serialization is not required
@@ -218,51 +213,4 @@ object OpCodes extends ValueCodes {
   val ContextCode             : OpCode = newOpCode(142)
   val XorOfCode               : OpCode = newOpCode(143) // equals to 255
 
-  // OpCodesExtra (range of 256-511)
-  private def newOpCodeExtra(shift: Short): OpCodeExtra = OpCodeExtra @@ (256 + shift).toShort
-
-  val OpCostCode: OpCodeExtra         = newOpCodeExtra(1)
-  val PerKbCostOfCode: OpCodeExtra    = newOpCodeExtra(2)
-  val CastCode: OpCodeExtra           = newOpCodeExtra(3)
-  val IntPlusMonoidCode: OpCodeExtra  = newOpCodeExtra(4)
-  val ThunkDefCode: OpCodeExtra       = newOpCodeExtra(5)
-  val SCMInputsCode: OpCodeExtra      = newOpCodeExtra(6)
-  val SCMOutputsCode: OpCodeExtra     = newOpCodeExtra(7)
-  val SCMDataInputsCode: OpCodeExtra  = newOpCodeExtra(8)
-  val SCMSelfBoxCode: OpCodeExtra     = newOpCodeExtra(9)
-  val SCMLastBlockUtxoRootHashCode: OpCodeExtra = newOpCodeExtra(10)
-  val SCMHeadersCode: OpCodeExtra     = newOpCodeExtra(11)
-  val SCMPreHeaderCode: OpCodeExtra   = newOpCodeExtra(12)
-  val SCMGetVarCode: OpCodeExtra      = newOpCodeExtra(13)
-  val SBMPropositionBytesCode: OpCodeExtra = newOpCodeExtra(14)
-  val SBMBytesCode: OpCodeExtra       = newOpCodeExtra(15)
-  val SBMBytesWithoutRefCode: OpCodeExtra = newOpCodeExtra(16)
-  val SBMRegistersCode: OpCodeExtra   = newOpCodeExtra(17)
-  val SBMGetRegCode: OpCodeExtra      = newOpCodeExtra(18)
-  val SBMTokensCode: OpCodeExtra      = newOpCodeExtra(19)
-  val SSPMPropBytesCode: OpCodeExtra  = newOpCodeExtra(20)
-  val SAVMTValCode: OpCodeExtra       = newOpCodeExtra(21)
-  val SAVMValueSizeCode: OpCodeExtra  = newOpCodeExtra(22)
-  val SizeMDataSizeCode: OpCodeExtra  = newOpCodeExtra(23)
-  val SPairLCode: OpCodeExtra         = newOpCodeExtra(24)
-  val SPairRCode: OpCodeExtra         = newOpCodeExtra(25)
-  val SCollMSizesCode: OpCodeExtra    = newOpCodeExtra(26)
-  val SOptMSizeOptCode: OpCodeExtra   = newOpCodeExtra(27)
-  val SFuncMSizeEnvCode: OpCodeExtra  = newOpCodeExtra(28)
-  val CSizePairCtorCode: OpCodeExtra  = newOpCodeExtra(29)
-  val CSizeFuncCtorCode: OpCodeExtra  = newOpCodeExtra(30)
-  val CSizeOptionCtorCode: OpCodeExtra = newOpCodeExtra(31)
-  val CSizeCollCtorCode: OpCodeExtra  = newOpCodeExtra(32)
-  val CSizeBoxCtorCode: OpCodeExtra   = newOpCodeExtra(33)
-  val CSizeContextCtorCode: OpCodeExtra = newOpCodeExtra(34)
-  val CSizeAnyValueCtorCode: OpCodeExtra = newOpCodeExtra(35)
-  val CReplCollCtorCode: OpCodeExtra  = newOpCodeExtra(36)
-  val CollMSumCode: OpCodeExtra       = newOpCodeExtra(37)
-  val PairOfColsCtorCode: OpCodeExtra = newOpCodeExtra(37)
-  val CBMReplicateCode: OpCodeExtra   = newOpCodeExtra(38)
-  val CBMFromItemsCode: OpCodeExtra   = newOpCodeExtra(39)
-  val CostOfCode: OpCodeExtra         = newOpCodeExtra(40)
-  val UOSizeOfCode: OpCodeExtra       = newOpCodeExtra(41)
-  val SPCMSomeCode: OpCodeExtra       = newOpCodeExtra(42)
-  val ThunkForceCode: OpCodeExtra     = newOpCodeExtra(43)
 }
