@@ -293,14 +293,6 @@ class CollOverArrayBuilder extends CollBuilder {
   }
 
   @NeverInline
-  override def makeView[@specialized A, @specialized B: RType](source: Coll[A], f: A => B): Coll[B] = new CViewColl(source, f)
-
-  @NeverInline
-  override def makePartialView[@specialized A, @specialized B: RType](source: Coll[A], f: A => B, calculated: Array[Boolean], calculatedItems: Array[B]): Coll[B] = {
-    new CViewColl(source, f).fromPartialCalculation(calculated, calculatedItems)
-  }
-
-  @NeverInline
   override def unzip[@specialized A, @specialized B](xs: Coll[(A,B)]): (Coll[A], Coll[B]) = xs match {
     case pa: PairColl[_,_] => (pa.ls, pa.rs)
     case _ =>
@@ -329,17 +321,6 @@ class CollOverArrayBuilder extends CollBuilder {
       asColl[T](pairColl(ls, rs))
     case _ =>
       new CollOverArray[T](cT.emptyArray)
-  }
-
-  @NeverInline
-  override def outerJoin[K: RType, L, R, O: RType]
-      (left: Coll[(K, L)], right: Coll[(K, R)])
-      (l: ((K, L)) => O, r: ((K, R)) => O, inner: ((K, (L, R))) => O): Coll[(K, O)] = {
-    val res = CollectionUtil.outerJoin[K,L,R,O](left.toMap, right.toMap)(
-      (k,lv) => l((k,lv)),
-      (k,rv) => r((k,rv)),
-      (k, lv, rv) => inner((k, (lv, rv))))
-    fromMap(res)
   }
 
   @NeverInline

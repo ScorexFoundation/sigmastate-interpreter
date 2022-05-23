@@ -483,46 +483,9 @@ trait CollBuilder {
     * @return    collection of the form (v, v, v, ... v) of n elements.*/
   def replicate[@specialized T: RType](n: Int, v: T): Coll[T]
 
-  /** Create a new collection in which every item is executed lazily
-    * form the corresponding item of the `source` collection.
-    * @param  source  collection which is used as the source of items
-    * @param  f       function to compute each item of this collection from the source item
-    * This is O(1) operation, all executions of `f` are delayed until the corresponding
-    * item of this collection is needed in some operation.
-    */
-  @Internal
-  def makeView[@specialized A, @specialized B: RType](source: Coll[A], f: A => B): Coll[B]
-
-  /** Create a new view using pre-calculated results of `f`.
-    *
-    * @param source          the collection the view is based on.
-    * @param f               view function, which transforms each pre-image element to the
-    *                        corresponding `image` element of the resulting collection
-    * @param calculated      array of flags marking which element where pre-calculated
-    * @param calculatedItems pre-calculated images to be used in the resulting collection
-    *                        so that `calculated.length == calculatedItems.length`
-    * @return collection of images of `f`
-    */
-  @Internal
-  def makePartialView[@specialized A, @specialized B: RType](source: Coll[A], f: A => B, calculated: Array[Boolean], calculatedItems: Array[B]): Coll[B]
-
   /** Create an empty collection with items of the given type.
     * Even though there are no items, the type of them is specified. */
   def emptyColl[T](implicit tT: RType[T]): Coll[T]
-
-  /** Performs outer join operation between left and right collections.
-    * This is a restricted version of relational join operation.
-    * It expects `left` and `right` collections have distinct K values in pairs (otherwise exception is thrown).
-    * Under this condition resulting collection has size <= left.size + right.size.
-    * @param l projection function executed for each element of `left`
-    * @param r projection function executed for each element of `right`
-    * @param inner projection function which is executed for matching items (K, L) and (K, R) with the same K
-    * @return collection of (K, O) pairs, where each key comes form either left or right collection and values are produced by projections
-    * @since 2.0
-    */
-  def outerJoin[K: RType, L, R, O: RType]
-      (left: Coll[(K, L)], right: Coll[(K, R)])
-      (l: ((K,L)) => O, r: ((K,R)) => O, inner: ((K,(L,R))) => O): Coll[(K,O)]
 
   /** Flattens a two-dimensional collection by concatenating all its rows
     * into a single collection.

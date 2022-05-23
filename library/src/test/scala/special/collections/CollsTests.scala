@@ -608,40 +608,6 @@ class CollsTests extends PropSpec with PropertyChecks with Matchers with CollGen
     }
   }
 
-  property("CollBuilder.outerJoin") {
-    def test(col: Coll[Int]) = {
-      val inner = col.indices
-      val rightOnly = inner.map(i => i + col.length)
-      val leftOnly = rightOnly.map(i => -i)
-
-      val leftKeys = inner.append(leftOnly)
-      val leftValues = col.append(col.map(x => x + 2))
-
-      val rightKeys = inner.append(rightOnly)
-      val rightValues = col.append(col.map(x => x + 3))
-
-      val left  = builder.pairColl(leftKeys, leftValues)
-      val right = builder.pairColl(rightKeys, rightValues)
-      val res = builder.outerJoin(left, right)(l => l._2 - 2, r => r._2 - 3, i => i._2._1 + 5)
-      val (ks, vs) = builder.unzip(res)
-      vs.sum(monoid) shouldBe (col.sum(monoid) * 2 + col.map(_ + 5).sum(monoid))
-    }
-//    test(builder.fromItems(0))
-//    val gen = containerOfN[Array, Int](100, choose(20, 100))
-//        .map(xs => builder.fromArray(xs.distinct))
-    forAll(collGen) { col =>
-      test(col)
-    }
-  }
-
-  property("CViewColl.correctWork") {
-    forAll(collGen) { coll =>
-      val view = builder.makeView(coll, complexFunction)
-      val usual = coll.map(complexFunction)
-      view.toArray shouldBe usual.toArray
-    }
-  }
-
   property("Coll equality") {
     val arr1 = Array[Int](1, 2, 3)
     val arr2 = Array[Int](1, 2, 3)
