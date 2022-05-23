@@ -188,13 +188,6 @@ object Coll extends EntityObject("Coll") {
         true, false, element[Coll[A]]))
     }
 
-    override def partition(pred: Ref[A => Boolean]): Ref[(Coll[A], Coll[A])] = {
-      asRep[(Coll[A], Coll[A])](mkMethodCall(self,
-        CollClass.getMethod("partition", classOf[Sym]),
-        Array[AnyRef](pred),
-        true, false, element[(Coll[A], Coll[A])]))
-    }
-
     override def patch(from: Ref[Int], patch: Ref[Coll[A]], replaced: Ref[Int]): Ref[Coll[A]] = {
       asRep[Coll[A]](mkMethodCall(self,
         CollClass.getMethod("patch", classOf[Sym], classOf[Sym], classOf[Sym]),
@@ -214,32 +207,6 @@ object Coll extends EntityObject("Coll") {
         CollClass.getMethod("updateMany", classOf[Sym], classOf[Sym]),
         Array[AnyRef](indexes, values),
         true, false, element[Coll[A]]))
-    }
-
-    override def mapReduce[K, V](m: Ref[A => (K, V)], r: Ref[((V, V)) => V]): Ref[Coll[(K, V)]] = {
-      implicit val eK = m.elem.eRange.eFst
-implicit val eV = m.elem.eRange.eSnd
-      asRep[Coll[(K, V)]](mkMethodCall(self,
-        CollClass.getMethod("mapReduce", classOf[Sym], classOf[Sym]),
-        Array[AnyRef](m, r),
-        true, false, element[Coll[(K, V)]]))
-    }
-
-    override def groupBy[K](key: Ref[A => K]): Ref[Coll[(K, Coll[A])]] = {
-      implicit val eK = key.elem.eRange
-      asRep[Coll[(K, Coll[A])]](mkMethodCall(self,
-        CollClass.getMethod("groupBy", classOf[Sym]),
-        Array[AnyRef](key),
-        true, false, element[Coll[(K, Coll[A])]]))
-    }
-
-    override def groupByProjecting[K, V](key: Ref[A => K], proj: Ref[A => V]): Ref[Coll[(K, Coll[V])]] = {
-      implicit val eK = key.elem.eRange
-implicit val eV = proj.elem.eRange
-      asRep[Coll[(K, Coll[V])]](mkMethodCall(self,
-        CollClass.getMethod("groupByProjecting", classOf[Sym], classOf[Sym]),
-        Array[AnyRef](key, proj),
-        true, false, element[Coll[(K, Coll[V])]]))
     }
 
     override def unionSet(that: Ref[Coll[A]]): Ref[Coll[A]] = {
@@ -471,13 +438,6 @@ implicit val eV = proj.elem.eRange
         true, true, element[Coll[A]]))
     }
 
-    def partition(pred: Ref[A => Boolean]): Ref[(Coll[A], Coll[A])] = {
-      asRep[(Coll[A], Coll[A])](mkMethodCall(source,
-        CollClass.getMethod("partition", classOf[Sym]),
-        Array[AnyRef](pred),
-        true, true, element[(Coll[A], Coll[A])]))
-    }
-
     def patch(from: Ref[Int], patch: Ref[Coll[A]], replaced: Ref[Int]): Ref[Coll[A]] = {
       asRep[Coll[A]](mkMethodCall(source,
         CollClass.getMethod("patch", classOf[Sym], classOf[Sym], classOf[Sym]),
@@ -497,32 +457,6 @@ implicit val eV = proj.elem.eRange
         CollClass.getMethod("updateMany", classOf[Sym], classOf[Sym]),
         Array[AnyRef](indexes, values),
         true, true, element[Coll[A]]))
-    }
-
-    def mapReduce[K, V](m: Ref[A => (K, V)], r: Ref[((V, V)) => V]): Ref[Coll[(K, V)]] = {
-      implicit val eK = m.elem.eRange.eFst
-implicit val eV = m.elem.eRange.eSnd
-      asRep[Coll[(K, V)]](mkMethodCall(source,
-        CollClass.getMethod("mapReduce", classOf[Sym], classOf[Sym]),
-        Array[AnyRef](m, r),
-        true, true, element[Coll[(K, V)]]))
-    }
-
-    override def groupBy[K](key: Ref[A => K]): Ref[Coll[(K, Coll[A])]] = {
-      implicit val eK = key.elem.eRange
-      asRep[Coll[(K, Coll[A])]](mkMethodCall(source,
-        CollClass.getMethod("groupBy", classOf[Sym]),
-        Array[AnyRef](key),
-        true, true, element[Coll[(K, Coll[A])]]))
-    }
-
-    override def groupByProjecting[K, V](key: Ref[A => K], proj: Ref[A => V]): Ref[Coll[(K, Coll[V])]] = {
-      implicit val eK = key.elem.eRange
-implicit val eV = proj.elem.eRange
-      asRep[Coll[(K, Coll[V])]](mkMethodCall(source,
-        CollClass.getMethod("groupByProjecting", classOf[Sym], classOf[Sym]),
-        Array[AnyRef](key, proj),
-        true, true, element[Coll[(K, Coll[V])]]))
     }
 
     def unionSet(that: Ref[Coll[A]]): Ref[Coll[A]] = {
@@ -857,16 +791,6 @@ implicit val eV = proj.elem.eRange
       def unapply(exp: Sym): Nullable[(Ref[Coll[A]], Ref[Int]) forSome {type A}] = unapply(exp.node)
     }
 
-    object partition {
-      def unapply(d: Def[_]): Nullable[(Ref[Coll[A]], Ref[A => Boolean]) forSome {type A}] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "partition" && receiver.elem.isInstanceOf[CollElem[_, _]] =>
-          val res = (receiver, args(0))
-          Nullable(res).asInstanceOf[Nullable[(Ref[Coll[A]], Ref[A => Boolean]) forSome {type A}]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Ref[Coll[A]], Ref[A => Boolean]) forSome {type A}] = unapply(exp.node)
-    }
-
     object patch {
       def unapply(d: Def[_]): Nullable[(Ref[Coll[A]], Ref[Int], Ref[Coll[A]], Ref[Int]) forSome {type A}] = d match {
         case MethodCall(receiver, method, args, _) if method.getName == "patch" && receiver.elem.isInstanceOf[CollElem[_, _]] =>
@@ -895,36 +819,6 @@ implicit val eV = proj.elem.eRange
         case _ => Nullable.None
       }
       def unapply(exp: Sym): Nullable[(Ref[Coll[A]], Ref[Coll[Int]], Ref[Coll[A]]) forSome {type A}] = unapply(exp.node)
-    }
-
-    object mapReduce {
-      def unapply(d: Def[_]): Nullable[(Ref[Coll[A]], Ref[A => (K, V)], Ref[((V, V)) => V]) forSome {type A; type K; type V}] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "mapReduce" && receiver.elem.isInstanceOf[CollElem[_, _]] =>
-          val res = (receiver, args(0), args(1))
-          Nullable(res).asInstanceOf[Nullable[(Ref[Coll[A]], Ref[A => (K, V)], Ref[((V, V)) => V]) forSome {type A; type K; type V}]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Ref[Coll[A]], Ref[A => (K, V)], Ref[((V, V)) => V]) forSome {type A; type K; type V}] = unapply(exp.node)
-    }
-
-    object groupBy {
-      def unapply(d: Def[_]): Nullable[(Ref[Coll[A]], Ref[A => K]) forSome {type A; type K}] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "groupBy" && receiver.elem.isInstanceOf[CollElem[_, _]] =>
-          val res = (receiver, args(0))
-          Nullable(res).asInstanceOf[Nullable[(Ref[Coll[A]], Ref[A => K]) forSome {type A; type K}]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Ref[Coll[A]], Ref[A => K]) forSome {type A; type K}] = unapply(exp.node)
-    }
-
-    object groupByProjecting {
-      def unapply(d: Def[_]): Nullable[(Ref[Coll[A]], Ref[A => K], Ref[A => V]) forSome {type A; type K; type V}] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "groupByProjecting" && receiver.elem.isInstanceOf[CollElem[_, _]] =>
-          val res = (receiver, args(0), args(1))
-          Nullable(res).asInstanceOf[Nullable[(Ref[Coll[A]], Ref[A => K], Ref[A => V]) forSome {type A; type K; type V}]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Ref[Coll[A]], Ref[A => K], Ref[A => V]) forSome {type A; type K; type V}] = unapply(exp.node)
     }
 
     object unionSet {
@@ -1203,14 +1097,6 @@ implicit lazy val eR = source.elem.typeArgs("R")._1.asInstanceOf[Elem[R]]
         true, true, element[Coll[(L, R)]]))
     }
 
-    // manual fix
-    def partition(pred: Ref[((L, R)) => Boolean]): Ref[(Coll[(L, R)], Coll[(L, R)])] = {
-      asRep[(Coll[(L, R)], Coll[(L, R)])](mkMethodCall(source,
-        PairCollClass.getMethod("partition", classOf[Sym]),
-        Array[AnyRef](pred),
-        true, true, element[(Coll[(L, R)], Coll[(L, R)])](pairElement(collElement(pairElement(eL,eR)), collElement(pairElement(eL,eR))))))
-    }
-
     def patch(from: Ref[Int], patch: Ref[Coll[(L, R)]], replaced: Ref[Int]): Ref[Coll[(L, R)]] = {
       asRep[Coll[(L, R)]](mkMethodCall(source,
         PairCollClass.getMethod("patch", classOf[Sym], classOf[Sym], classOf[Sym]),
@@ -1230,33 +1116,6 @@ implicit lazy val eR = source.elem.typeArgs("R")._1.asInstanceOf[Elem[R]]
         PairCollClass.getMethod("updateMany", classOf[Sym], classOf[Sym]),
         Array[AnyRef](indexes, values),
         true, true, element[Coll[(L, R)]]))
-    }
-
-    def mapReduce[K, V](m: Ref[((L, R)) => (K, V)], r: Ref[((V, V)) => V]): Ref[Coll[(K, V)]] = {
-      implicit val eK = m.elem.eRange.eFst
-implicit val eV = m.elem.eRange.eSnd
-      asRep[Coll[(K, V)]](mkMethodCall(source,
-        PairCollClass.getMethod("mapReduce", classOf[Sym], classOf[Sym]),
-        Array[AnyRef](m, r),
-        true, true, element[Coll[(K, V)]]))
-    }
-
-    // manual fix
-    override def groupBy[K](key: Ref[((L, R)) => K]): Ref[Coll[(K, Coll[(L, R)])]] = {
-      implicit val eK = key.elem.eRange
-      asRep[Coll[(K, Coll[(L, R)])]](mkMethodCall(source,
-        PairCollClass.getMethod("groupBy", classOf[Sym]),
-        Array[AnyRef](key),
-        true, true, element[Coll[(K, Coll[(L, R)])]](collElement(pairElement(eK, collElement(pairElement(eL, eR)))))))
-    }
-
-    override def groupByProjecting[K, V](key: Ref[((L, R)) => K], proj: Ref[((L, R)) => V]): Ref[Coll[(K, Coll[V])]] = {
-      implicit val eK = key.elem.eRange
-implicit val eV = proj.elem.eRange
-      asRep[Coll[(K, Coll[V])]](mkMethodCall(source,
-        PairCollClass.getMethod("groupByProjecting", classOf[Sym], classOf[Sym]),
-        Array[AnyRef](key, proj),
-        true, true, element[Coll[(K, Coll[V])]]))
     }
 
     def unionSet(that: Ref[Coll[(L, R)]]): Ref[Coll[(L, R)]] = {
@@ -1459,25 +1318,6 @@ implicit val eB = xs.eA.eSnd
         Array[AnyRef](tT),
         true, false, element[Coll[T]]))
     }
-
-    override def outerJoin[K, L, R, O](left: Ref[Coll[(K, L)]], right: Ref[Coll[(K, R)]])(l: Ref[((K, L)) => O], r: Ref[((K, R)) => O], inner: Ref[((K, (L, R))) => O]): Ref[Coll[(K, O)]] = {
-      implicit val eK = left.eA.eFst
-implicit val eL = left.eA.eSnd
-implicit val eR = right.eA.eSnd
-implicit val eO = l.elem.eRange
-      asRep[Coll[(K, O)]](mkMethodCall(self,
-        CollBuilderClass.getMethod("outerJoin", classOf[Sym], classOf[Sym], classOf[Sym], classOf[Sym], classOf[Sym]),
-        Array[AnyRef](left, right, l, r, inner),
-        true, false, element[Coll[(K, O)]]))
-    }
-
-    override def flattenColl[A](coll: Ref[Coll[Coll[A]]]): Ref[Coll[A]] = {
-      implicit val eA = coll.eA.typeArgs("A")._1.asInstanceOf[Elem[A]]
-      asRep[Coll[A]](mkMethodCall(self,
-        CollBuilderClass.getMethod("flattenColl", classOf[Sym]),
-        Array[AnyRef](coll),
-        true, false, element[Coll[A]]))
-    }
   }
 
   implicit object LiftableCollBuilder
@@ -1556,25 +1396,6 @@ implicit val eB = xs.eA.eSnd
         Array[AnyRef](tT),
         true, true, element[Coll[T]]))
     }
-
-    def outerJoin[K, L, R, O](left: Ref[Coll[(K, L)]], right: Ref[Coll[(K, R)]])(l: Ref[((K, L)) => O], r: Ref[((K, R)) => O], inner: Ref[((K, (L, R))) => O]): Ref[Coll[(K, O)]] = {
-      implicit val eK = left.eA.eFst
-implicit val eL = left.eA.eSnd
-implicit val eR = right.eA.eSnd
-implicit val eO = l.elem.eRange
-      asRep[Coll[(K, O)]](mkMethodCall(source,
-        CollBuilderClass.getMethod("outerJoin", classOf[Sym], classOf[Sym], classOf[Sym], classOf[Sym], classOf[Sym]),
-        Array[AnyRef](left, right, l, r, inner),
-        true, true, element[Coll[(K, O)]]))
-    }
-
-    def flattenColl[A](coll: Ref[Coll[Coll[A]]]): Ref[Coll[A]] = {
-      implicit val eA = coll.eA.typeArgs("A")._1.asInstanceOf[Elem[A]]
-      asRep[Coll[A]](mkMethodCall(source,
-        CollBuilderClass.getMethod("flattenColl", classOf[Sym]),
-        Array[AnyRef](coll),
-        true, true, element[Coll[A]]))
-    }
   }
 
   // entityUnref: single unref method for each type family
@@ -1593,7 +1414,7 @@ implicit val eO = l.elem.eRange
     override protected def collectMethods: Map[java.lang.reflect.Method, MethodDesc] = {
       super.collectMethods ++
         Elem.declaredMethods(classOf[CollBuilder], classOf[SCollBuilder], Set(
-        "Monoids", "pairColl", "fromItems", "unzip", "xor", "replicate", "emptyColl", "outerJoin", "flattenColl"
+        "Monoids", "pairColl", "fromItems", "unzip", "xor", "replicate", "emptyColl"
         ))
     }
   }
@@ -1683,26 +1504,6 @@ implicit val eO = l.elem.eRange
         case _ => Nullable.None
       }
       def unapply(exp: Sym): Nullable[(Ref[CollBuilder], Elem[T]) forSome {type T}] = unapply(exp.node)
-    }
-
-    object outerJoin {
-      def unapply(d: Def[_]): Nullable[(Ref[CollBuilder], Ref[Coll[(K, L)]], Ref[Coll[(K, R)]], Ref[((K, L)) => O], Ref[((K, R)) => O], Ref[((K, (L, R))) => O]) forSome {type K; type L; type R; type O}] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "outerJoin" && receiver.elem.isInstanceOf[CollBuilderElem[_]] =>
-          val res = (receiver, args(0), args(1), args(2), args(3), args(4))
-          Nullable(res).asInstanceOf[Nullable[(Ref[CollBuilder], Ref[Coll[(K, L)]], Ref[Coll[(K, R)]], Ref[((K, L)) => O], Ref[((K, R)) => O], Ref[((K, (L, R))) => O]) forSome {type K; type L; type R; type O}]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Ref[CollBuilder], Ref[Coll[(K, L)]], Ref[Coll[(K, R)]], Ref[((K, L)) => O], Ref[((K, R)) => O], Ref[((K, (L, R))) => O]) forSome {type K; type L; type R; type O}] = unapply(exp.node)
-    }
-
-    object flattenColl {
-      def unapply(d: Def[_]): Nullable[(Ref[CollBuilder], Ref[Coll[Coll[A]]]) forSome {type A}] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "flattenColl" && receiver.elem.isInstanceOf[CollBuilderElem[_]] =>
-          val res = (receiver, args(0))
-          Nullable(res).asInstanceOf[Nullable[(Ref[CollBuilder], Ref[Coll[Coll[A]]]) forSome {type A}]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Ref[CollBuilder], Ref[Coll[Coll[A]]]) forSome {type A}] = unapply(exp.node)
     }
   }
 

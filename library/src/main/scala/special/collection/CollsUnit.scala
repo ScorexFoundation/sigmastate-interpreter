@@ -32,13 +32,9 @@ package special.collection {
       @NeverInline def indexOf(elem: Ref[A], from: Ref[Int]): Ref[Int] = delayInvoke;
       def lastIndexWhere(p: Ref[scala.Function1[A, Boolean]], end: Ref[Int]): Ref[Int];
       def take(n: Ref[Int]): Ref[Coll[A]];
-      def partition(pred: Ref[scala.Function1[A, Boolean]]): Ref[scala.Tuple2[Coll[A], Coll[A]]];
       def patch(from: Ref[Int], patch: Ref[Coll[A]], replaced: Ref[Int]): Ref[Coll[A]];
       def updated(index: Ref[Int], elem: Ref[A]): Ref[Coll[A]];
       def updateMany(indexes: Ref[Coll[Int]], values: Ref[Coll[A]]): Ref[Coll[A]];
-      def mapReduce[K, V](m: Ref[scala.Function1[A, scala.Tuple2[K, V]]], r: Ref[scala.Function1[scala.Tuple2[V, V], V]]): Ref[Coll[scala.Tuple2[K, V]]];
-      @NeverInline def groupBy[K](key: Ref[scala.Function1[A, K]]): Ref[Coll[scala.Tuple2[K, Coll[A]]]] = delayInvoke;
-      @NeverInline def groupByProjecting[K, V](key: Ref[scala.Function1[A, K]], proj: Ref[scala.Function1[A, V]]): Ref[Coll[scala.Tuple2[K, Coll[V]]]] = delayInvoke;
       def unionSet(that: Ref[Coll[A]]): Ref[Coll[A]];
       @NeverInline def diff(that: Ref[Coll[A]]): Ref[Coll[A]] = delayInvoke;
       @NeverInline def intersect(that: Ref[Coll[A]]): Ref[Coll[A]] = delayInvoke;
@@ -63,8 +59,6 @@ package special.collection {
       def xor(left: Ref[Coll[Byte]], right: Ref[Coll[Byte]]): Ref[Coll[Byte]];
       def replicate[T](n: Ref[Int], v: Ref[T]): Ref[Coll[T]];
       def emptyColl[T](implicit tT: Elem[T]): Ref[Coll[T]];
-      def outerJoin[K, L, R, O](left: Ref[Coll[scala.Tuple2[K, L]]], right: Ref[Coll[scala.Tuple2[K, R]]])(l: Ref[scala.Function1[scala.Tuple2[K, L], O]], r: Ref[scala.Function1[scala.Tuple2[K, R], O]], inner: Ref[scala.Function1[scala.Tuple2[K, scala.Tuple2[L, R]], O]]): Ref[Coll[scala.Tuple2[K, O]]];
-      def flattenColl[A](coll: Ref[Coll[Coll[A]]]): Ref[Coll[A]]
     };
     trait CollCompanion;
     trait PairCollCompanion;

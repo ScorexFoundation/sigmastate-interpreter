@@ -1,9 +1,6 @@
 package special.collection
 
-import scala.reflect.ClassTag
 import scalan._
-
-import scala.collection.immutable
 
 /** Indexed (zero-based) collection of elements of type `A`
   * @define Coll `Coll`
@@ -11,13 +8,8 @@ import scala.collection.immutable
   * @define colls collections
   * @tparam A the collection element type
   */
-@ContainerType
-@FunctorType
-@scalan.Liftable
-@WithMethodCallRecognizers
 abstract class Coll[@specialized A] {
   def builder: CollBuilder
-  @Internal
   def toArray: Array[A]
 
   /** The length of the collection. */
@@ -38,7 +30,6 @@ abstract class Coll[@specialized A] {
 
   /** Returns true if the index in the valid range.
     * @param  i  index of an element of this collection */
-  @Internal
   final def isValidIndex(i: Int): Boolean = 0 <= i && i < this.length
 
   /** The element at given index.
@@ -157,7 +148,6 @@ abstract class Coll[@specialized A] {
     *                 that satisfies `p`, or `None` if none exists.
     *  @since 2.0
     */
-  @NeverInline
   def find(p: A => Boolean): Option[A] = {
     val i = segmentLength(!p(_), 0)
     if (i < length) Some(this(i)) else None
@@ -181,7 +171,6 @@ abstract class Coll[@specialized A] {
     *           to `elem`, or `-1`, if none exists.
     *  @since 2.0
     */
-  @NeverInline
   def indexOf(elem: A, from: Int): Int = this.indexWhere(x => elem == x, from)
 
   /** Finds index of last element satisfying some predicate before or at given end index.
@@ -249,7 +238,6 @@ abstract class Coll[@specialized A] {
     *                part of the result, but any following occurrences will.
     *  @since 2.0
     */
-  @NeverInline
   def diff(that: Coll[A]): Coll[A] = {
     val res = toArray.diff(that.toArray)
     builder.fromArray(res)
@@ -265,7 +253,6 @@ abstract class Coll[@specialized A] {
     *                in the result, but any following occurrences will be omitted.
     *  @since 2.0
     */
-  @NeverInline
   def intersect(that: Coll[A]): Coll[A] = {
     val res = toArray.intersect(that.toArray)
     builder.fromArray(res)
@@ -299,12 +286,8 @@ abstract class Coll[@specialized A] {
     */
   def reverse: Coll[A]
 
-  @Internal
   private def trim[T](arr: Array[T]) = arr.take(arr.length min 100)
-  @Internal
   override def toString = s"Coll(${trim(toArray).mkString(",")})"
-
-  @Internal
   implicit def tItem: RType[A]
 
   /** Builds a new $coll from this $coll without any duplicate elements.
@@ -316,7 +299,6 @@ abstract class Coll[@specialized A] {
   }
 }
 
-@WithMethodCallRecognizers
 abstract class PairColl[@specialized L, @specialized R] extends Coll[(L,R)] {
   def ls: Coll[L]
   def rs: Coll[R]
@@ -327,8 +309,6 @@ abstract class PairColl[@specialized L, @specialized R] extends Coll[(L,R)] {
 /** Interface to access global collection methods.
   * See default implementation in CollOverArrayBuilder.
   */
-@scalan.Liftable
-@WithMethodCallRecognizers
 trait CollBuilder {
   /** Monoid builder associated with this collections builder.
     * It should be used to create monoids which are required by some of the Coll methods.
@@ -350,7 +330,6 @@ trait CollBuilder {
     * @param bs collection of second items
     * @return an instance of [[PairColl]] interface with represents the resulting collection of pairs.
     */
-  @Internal
   def pairCollFromArrays[A: RType, B: RType](as: Array[A], bs: Array[B]): PairColl[A,B] =
     pairColl(fromArray(as), fromArray(bs))
 
@@ -367,7 +346,6 @@ trait CollBuilder {
   def xor(left: Coll[Byte], right: Coll[Byte]): Coll[Byte]
 
   /** Wrap array into collection. */
-  @Internal
   def fromArray[@specialized T: RType](arr: Array[T]): Coll[T]
 
   /** Creates a new collection by replicating value `v`.

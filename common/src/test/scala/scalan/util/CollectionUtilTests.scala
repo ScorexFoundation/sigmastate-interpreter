@@ -198,15 +198,6 @@ class CollectionUtilTests extends BaseTests {
     }
   }
 
-  test("partitionByType") {
-    val xs: List[Any] = List(1, "a", "b", 2, 3, 1.0, 2.0)
-    val (ints, others) = xs.partitionByType[Integer, Any]
-    ints shouldBe(List(1,2,3))
-    val (strs, doubles) = others.partitionByType[String, Double]
-    strs shouldBe(List("a", "b"))
-    doubles shouldBe(List(1.0, 2.0))
-  }
-
   test("mapConserve") {
     class A(val x: Int)
     val x = new A(10)
