@@ -299,6 +299,7 @@ case object Outputs extends LazyCollection[SBox.type] with FixedCostValueCompani
   }
 }
 
+// TODO: Should be copied to trees.scala?
 /** When interpreted evaluates to a AvlTreeConstant built from Context.lastBlockUtxoRoot */
 case object LastBlockUtxoRootHash extends NotReadyValueAvlTree with ValueCompanion {
   override def companion = this
