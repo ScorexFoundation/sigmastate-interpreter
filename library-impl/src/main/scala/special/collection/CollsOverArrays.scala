@@ -204,13 +204,11 @@ class CollOverArray[@specialized A](val toArray: Array[A])(implicit tA: RType[A]
   }
 
   @Internal
-  override def equals(obj: scala.Any): Boolean = obj match {
+  override def equals(obj: scala.Any): Boolean = (this eq obj.asInstanceOf[AnyRef]) || (obj match {
     case obj: CollOverArray[_] if obj.tItem == this.tItem =>
       util.Objects.deepEquals(obj.toArray, toArray)
-    case repl: CReplColl[A]@unchecked if repl.tItem == this.tItem =>
-      isReplArray(repl.length, repl.value)
     case _ => false
-  }
+  })
 
   @Internal
   override def hashCode() = CollectionUtil.deepHashCode(toArray)
@@ -289,7 +287,7 @@ class CollOverArrayBuilder extends CollBuilder {
       val tuple = v.asInstanceOf[(a, b)]
       new PairOfCols(replicate(n, tuple._1)(tA), replicate(n, tuple._2)(tB))
     case _ =>
-      new CReplColl(v, n)
+      fromArray(Array.fill(n)(v))
   }
 
   @NeverInline
@@ -579,220 +577,4 @@ class PairOfCols[@specialized L, @specialized R](val ls: Coll[L], val rs: Coll[R
   override def mapSecond[T1: RType](f: R => T1): Coll[(L, T1)] = {
     builder.pairColl(ls, rs.map(f))
   }
-}
-
-class CReplColl[@specialized A](val value: A, val length: Int)(implicit tA: RType[A]) extends ReplColl[A] {
-  require(length <= MaxArrayLength,
-    s"Cannot create CReplColl with size ${length} greater than $MaxArrayLength")
-
-  @Internal
-  override def tItem: RType[A] = tA
-
-  def builder: CollBuilder = new CollOverArrayBuilder
-
-  @Internal
-  lazy val _toArray: Array[A] = {
-    implicit val cT: ClassTag[A] = tA.classTag
-    val res = safeNewArray[A](length)
-    val v = value
-    cfor(0)(_ < length, _ + 1) { i => res(i) = v }
-    res
-  }
-  @NeverInline
-  def toArray = _toArray
-
-  @NeverInline
-  @inline def apply(i: Int): A = if (i >= 0 && i < this.length) value else throw new IndexOutOfBoundsException(i.toString)
-
-  @NeverInline
-  override def isEmpty: Boolean = length == 0
-
-  @NeverInline
-  override def nonEmpty: Boolean = length > 0
-
-  @NeverInline
-  override def isDefinedAt(idx: Int): Boolean = (idx >= 0 && idx < this.length)
-
-  @NeverInline
-  def getOrElse(i: Int, default: A): A = if (i >= 0 && i < this.length) value else default
-  def map[@specialized B: RType](f: A => B): Coll[B] = new CReplColl(f(value), length)
-  @NeverInline
-  def foreach(f: A => Unit): Unit = (0 until length).foreach(_ => f(value))
-  @NeverInline
-  def exists(p: A => Boolean): Boolean = if (length == 0) false else p(value)
-  @NeverInline
-  def forall(p: A => Boolean): Boolean = if (length == 0) true else p(value)
-  @NeverInline
-  def filter(p: A => Boolean): Coll[A] =
-    if (length == 0) this
-    else
-    if (p(value)) this
-    else new CReplColl(value, 0)
-
-  @NeverInline
-  def foldLeft[B](zero: B, op: ((B, A)) => B): B =
-    SpecialPredef.loopUntil[(B, Int)]((zero,0),
-      p => p._2 >= length,
-      p => (op((p._1, value)), p._2 + 1)
-    )._1
-
-  def zip[@specialized B](ys: Coll[B]): PairColl[A, B] = builder.pairColl(this, ys)
-
-  @NeverInline
-  def slice(from: Int, until: Int): Coll[A] = {
-    val lo = math.max(from, 0)
-    val hi = math.min(math.max(until, 0), length)
-    val size = math.max(hi - lo, 0)
-    new CReplColl(value, size)
-  }
-
-  @NeverInline
-  def append(other: Coll[A]): Coll[A] = other match {
-    case repl: ReplColl[A@unchecked] if this.value == repl.value =>
-      new CReplColl(value, this.length + repl.length)
-    case _ =>
-      builder.fromArray(toArray).append(builder.fromArray(other.toArray))
-  }
-
-  override def reverse: Coll[A] = this
-
-  def sum(m: Monoid[A]): A = m.power(value, length)
-
-  @NeverInline
-  override def indices: Coll[Int] = builder.fromArray((0 until length).toArray)
-
-  @NeverInline
-  override def flatMap[B: RType](f: A => Coll[B]): Coll[B] = {
-    val seg = f(value).toArray
-    val xs = Range(0, length).flatMap(_ => seg).toArray
-    builder.fromArray(xs)
-  }
-
-  @NeverInline
-  override def segmentLength(p: A => Boolean, from: Int): Int = {
-    if (from >= length) 0
-    else
-    if (p(value)) length - from
-    else 0
-  }
-
-  @NeverInline
-  override def indexWhere(p: A => Boolean, from: Int): Int = {
-    if (from >= length) -1
-    else
-    if (p(value)) math.max(from, 0)
-    else -1
-  }
-
-  @NeverInline
-  override def lastIndexWhere(p: A => Boolean, end: Int): Int = {
-    var i = math.min(end, length - 1)
-    if (i < 0) i
-    else if (p(value)) i
-    else -1
-  }
-
-  @NeverInline
-  override def take(n: Int): Coll[A] =
-    if (n <= 0) builder.emptyColl
-    else {
-      val m = new RichInt(n).min(length)
-      new CReplColl(value, m)
-    }
-
-  @NeverInline
-  override def partition(pred: A => Boolean): (Coll[A], Coll[A]) = {
-    if (pred(value)) (this, builder.emptyColl[A])
-    else (builder.emptyColl, this)
-  }
-
-  @NeverInline
-  override def patch(from: Int, patch: Coll[A], replaced: Int): Coll[A] = {
-    builder.fromArray(toArray.patch(from, patch.toArray, replaced))
-  }
-
-  @NeverInline
-  override def updated(index: Int, elem: A): Coll[A] = {
-    if (elem == value) this
-    else {
-      // TODO optimize: avoid using `updated` as it do boxing
-      val res = toArray.updated(index, elem)
-      builder.fromArray(res)
-    }
-  }
-
-  @NeverInline
-  override def updateMany(indexes: Coll[Int], values: Coll[A]): Coll[A] = {
-    requireSameLength(indexes, values)
-    val resArr = toArray.clone()
-    var i = 0
-    while (i < indexes.length) {
-      val pos = indexes(i)
-      if (pos < 0 || pos >= length) throw new IndexOutOfBoundsException(pos.toString)
-      resArr(pos) = values(i)
-      i += 1
-    }
-    builder.fromArray(resArr)
-  }
-
-  @NeverInline
-  override def mapReduce[K: RType, V: RType](m: A => (K, V), r: ((V, V)) => V): Coll[(K, V)] = {
-    if (length <= 0) return builder.pairColl(builder.emptyColl[K], builder.emptyColl[V])
-    val (k, v) = m(value)
-    var reducedV = v
-    var i = 1
-    while (i < length) {
-      reducedV = r((reducedV, v))
-      i += 1
-    }
-    builder.pairColl(builder.fromItems(k), builder.fromItems(reducedV))
-  }
-
-  @NeverInline
-  override def unionSet(that: Coll[A]): Coll[A] = that match {
-    case repl: ReplColl[A@unchecked] =>
-      if (this.length > 0) {
-        if (repl.length > 0) {
-          if (value == repl.value) {
-            // both replications have the same element `value`, just return it in a singleton set
-            new CReplColl(value, 1)
-          }
-          else {
-            builder.fromItems(value, repl.value)
-          }
-        }
-        else
-          new CReplColl(value, 1)
-      } else {
-        if (repl.length > 0) {
-          new CReplColl(repl.value, 1)
-        } else
-          new CReplColl(value, 0)  // empty set
-      }
-    case _ =>
-      if (this.length > 0)
-        builder.fromItems(value).unionSet(that)
-      else
-        builder.emptyColl[A].unionSet(that)
-  }
-
-  @Internal
-  override private[collection] def isReplArray(len: Int, value: A): Boolean = {
-    this.length == len && this.value == value
-  }
-
-  @Internal
-  override def equals(obj: scala.Any): Boolean = obj != null && (obj match {
-    case repl: CReplColl[A]@unchecked if repl.tItem == this.tItem =>
-      this.length == repl.length && this.value == repl.value
-    case obj: Coll[A] if obj.tItem == this.tItem =>
-      obj.isReplArray(this.length, this.value)
-    case _ => false
-  })
-
-  @Internal
-  override def hashCode() = CollectionUtil.deepHashCode(toArray)
-
-  @Internal
-  override def toString = s"ReplColl($value, $length)"
 }
