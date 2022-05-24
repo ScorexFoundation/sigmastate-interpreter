@@ -1,6 +1,6 @@
 package sigmastate.lang.syntax
 
-import fastparse._; import ScalaWhitespace._
+import fastparse._; import NoWhitespace._
 import fastparse.CharPredicates._
 import scalan.Nullable
 import sigmastate.lang.SourceContext
@@ -14,8 +14,8 @@ object Basic {
   def UnicodeEscape[_:P]: P[Unit] = P( "u" ~ HexDigit ~ HexDigit ~ HexDigit ~ HexDigit )
 
   //Numbers and digits
-  def HexNum[_:P]: P[Unit] = P( "0x" ~ CharsWhile(hexDigits.contains(_), 0) )
-  def DecNum[_:P]: P[Unit] = P( CharsWhile(digits.contains(_), 0) )
+  def HexNum[_:P]: P[Unit] = P( "0x" ~ CharsWhile(hexDigits.contains(_), 1) )
+  def DecNum[_:P]: P[Unit] = P( CharsWhile(digits.contains(_), 1) )
   def Exp[_:P]: P[Unit] = P( CharPred("Ee".contains(_)) ~ CharPred("+-".contains(_)).? ~ DecNum )
   def FloatType[_:P]: P[Unit] = P( CharIn("fFdD") )
 

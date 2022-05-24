@@ -1,6 +1,6 @@
 package sigmastate.lang.syntax
 
-import fastparse._; import ScalaWhitespace._
+import fastparse._; import NoWhitespace._
 import Identifiers._
 import sigmastate._
 import Values._
@@ -14,6 +14,7 @@ trait Literals { l =>
   import builder._
   def atSrcPos[A](parserIndex: Int)(thunk: => A): A
   def srcCtx(parserIndex: Int): SourceContext
+  
   def Block[_:P]: P[Value[SType]]
   def Pattern[_:P]: P0
 
@@ -61,7 +62,10 @@ trait Literals { l =>
 
     def Bool[_:P]: P[BooleanConstant] =
       P( (Index ~ (Key.W("true").! | Key.W("false").!)).map {
-        case (i, lit) => atSrcPos(i) { mkConstant[SBoolean.type](if (lit == "true") true else false, SBoolean) }
+        case (i, lit) =>
+          atSrcPos(i) {
+            mkConstant[SBoolean.type](if (lit == "true") true else false, SBoolean)
+          }
       })
 
     // Comments cannot have cuts in them, because they appear before every

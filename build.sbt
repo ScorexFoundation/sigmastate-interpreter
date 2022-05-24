@@ -56,7 +56,7 @@ val scrypto            = "org.scorexfoundation" %% "scrypto" % "2.1.10"
 val scorexUtil         = "org.scorexfoundation" %% "scorex-util" % "0.1.8"
 val debox              = "org.spire-math" %% "debox" % "0.8.0"
 val kiama              = "org.bitbucket.inkytonik.kiama" %% "kiama" % "2.5.0"
-val fastparse          = "com.lihaoyi" %% "fastparse" % "2.0.0"
+val fastparse          = "com.lihaoyi" %% "fastparse" % "2.3.3"
 val commonsIo          = "commons-io" % "commons-io" % "2.5"
 val commonsMath3       = "org.apache.commons" % "commons-math3" % "3.2"
 

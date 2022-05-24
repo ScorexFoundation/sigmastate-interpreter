@@ -2,7 +2,7 @@ package sigmastate.lang.syntax
 
 import fastparse.CharPredicates.{isDigit, isLetter}
 import fastparse._
-import ScalaWhitespace._
+import NoWhitespace._
 import sigmastate.lang.syntax.Basic._
 
 //noinspection ForwardReference
@@ -22,7 +22,11 @@ object Identifiers {
   def VarId[_:P]: P[Unit] = VarId0(true)
 
   def VarId0[_:P](dollar: Boolean): P[Unit] = P( !Keywords ~ Lower ~ IdRest(dollar) )
-  def PlainId[_:P]: P[Unit] = P( !Keywords ~ Upper ~ IdRest(true) | VarId | Operator ~ (!OpChar | &("/*" | "//")) )
+
+  def UppercaseId[_: P](dollar: Boolean) = P( !Keywords ~ Upper ~ IdRest(dollar) )
+  def PlainId[_:P]: P[Unit] = P( UppercaseId(true) | VarId | Operator ~ (!OpChar | &("/*" | "//")) )
+    .opaque("plain-id")
+
   def PlainIdNoDollar[_:P]: P[Unit] = P( !Keywords ~ Upper ~ IdRest(false) | VarId0(false) | Operator )
   def BacktickId[_:P]: P[Unit] = P( "`" ~ CharsWhile(NotBackTick) ~ "`" )
   def Id[_:P]: P0 = P( BacktickId | PlainId )
@@ -33,22 +37,24 @@ object Identifiers {
       if(allowDollar) NamedFunction(c => c == '$' || isLetter(c) || isDigit(c))
       else NamedFunction(c => isLetter(c) || isDigit(c))
 
-    def IdUnderscoreChunk = P( CharsWhile("_".contains(_), min = 0) ~ CharsWhile(IdCharacter) )
-    P( IdUnderscoreChunk.rep ~ (CharsWhileIn("_") ~ CharsWhile(isOpChar, min = 0)).? )
+    def IdUnderscoreChunk = P( CharsWhileIn("_", 0) ~ CharsWhile(IdCharacter) )
+    P( IdUnderscoreChunk.rep ~ (CharsWhileIn("_") ~ CharsWhile(isOpChar, 0)).? )
   }
 
   final val alphaKeywords = Seq(
     "case", "else", "false", "function", "if", "match", "return", "then", "true"
   )
   def AlphabetKeywords[_:P]: P[Unit] = P {
-    StringIn("case", "else", "false", "function", "if", "match", "return", "then", "true") ~ !Letter
+    StringIn("case", "else", "false", "function", "if", "match", "return", "then", "true") ~
+//    ("case" | "else" | "false" | "function" | "if" | "match" | "return" | "then" | "true") ~
+      !Basic.LetterDigitDollarUnderscore
   }
 
   val symbolKeywords = Seq(
     ":", ";", "=>", "=", "#", "@"
   )
   def SymbolicKeywords[_:P]: P[Unit] = P{
-    StringIn(":", ";", "=>", "=", "#", "@") ~ !OpChar
+    (":" | ";" | "=>" | "=" | "#" | "@") ~ !OpChar
   }
 
 //  val keywords: Seq[String] = alphaKeywords ++ symbolKeywords

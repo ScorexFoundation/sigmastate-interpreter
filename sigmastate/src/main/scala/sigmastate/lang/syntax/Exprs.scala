@@ -93,7 +93,9 @@ trait Exprs extends Core with Types {
         (op, rhs)
     }
     def PostFix[_:P] = P( NoSemis ~~ WL ~~ (Index ~ Id.!) ~ Newline.? )
-      .map{ case (i, s) => atSrcPos(i) { mkIdent(s, NoType)} }
+      .map{ case (i, s) =>
+        atSrcPos(i) { mkIdent(s, NoType)}
+      }
 
     def PostfixSuffix[_:P] = P( InfixSuffix.repX ~~ PostFix.?)
 
