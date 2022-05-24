@@ -1,7 +1,8 @@
 package sigmastate.lang.syntax
 
 import fastparse.CharPredicates.{isDigit, isLetter}
-import fastparse.all._
+import fastparse._
+import ScalaWhitespace._
 import sigmastate.lang.syntax.Basic._
 
 //noinspection ForwardReference
@@ -14,43 +15,43 @@ object Identifiers {
   val OpCharNotSlash = NamedFunction(x => isOpChar(x) && x != '/')
   val NotBackTick = NamedFunction(_ != '`')
 
-  val Operator: Parser[Unit] = P(
+  def Operator[_:P]: P[Unit] = P(
     !Keywords ~ (!("/*" | "//") ~ (CharsWhile(OpCharNotSlash) | "/")).rep(1)
   )
 
-  val VarId: Parser[Unit] = VarId0(true)
+  def VarId[_:P]: P[Unit] = VarId0(true)
 
-  def VarId0(dollar: Boolean): Parser[Unit] = P( !Keywords ~ Lower ~ IdRest(dollar) )
-  val PlainId: Parser[Unit] = P( !Keywords ~ Upper ~ IdRest(true) | VarId | Operator ~ (!OpChar | &("/*" | "//")) )
-  val PlainIdNoDollar: Parser[Unit] = P( !Keywords ~ Upper ~ IdRest(false) | VarId0(false) | Operator )
-  val BacktickId: Parser[Unit] = P( "`" ~ CharsWhile(NotBackTick) ~ "`" )
-  val Id: P0 = P( BacktickId | PlainId )
+  def VarId0[_:P](dollar: Boolean): P[Unit] = P( !Keywords ~ Lower ~ IdRest(dollar) )
+  def PlainId[_:P]: P[Unit] = P( !Keywords ~ Upper ~ IdRest(true) | VarId | Operator ~ (!OpChar | &("/*" | "//")) )
+  def PlainIdNoDollar[_:P]: P[Unit] = P( !Keywords ~ Upper ~ IdRest(false) | VarId0(false) | Operator )
+  def BacktickId[_:P]: P[Unit] = P( "`" ~ CharsWhile(NotBackTick) ~ "`" )
+  def Id[_:P]: P0 = P( BacktickId | PlainId )
 
-  def IdRest(allowDollar: Boolean): Parser[Unit] = {
+  def IdRest[_:P](allowDollar: Boolean): P[Unit] = {
 
-    val IdCharacter =
+    def IdCharacter =
       if(allowDollar) NamedFunction(c => c == '$' || isLetter(c) || isDigit(c))
       else NamedFunction(c => isLetter(c) || isDigit(c))
 
-    val IdUnderscoreChunk = P( CharsWhileIn("_", min = 0) ~ CharsWhile(IdCharacter) )
+    def IdUnderscoreChunk = P( CharsWhile("_".contains(_), min = 0) ~ CharsWhile(IdCharacter) )
     P( IdUnderscoreChunk.rep ~ (CharsWhileIn("_") ~ CharsWhile(isOpChar, min = 0)).? )
   }
 
-  val alphaKeywords = Seq(
+  final val alphaKeywords = Seq(
     "case", "else", "false", "function", "if", "match", "return", "then", "true"
   )
-  val AlphabetKeywords: Parser[Unit] = P {
-    StringIn(alphaKeywords:_*) ~ !Letter
+  def AlphabetKeywords[_:P]: P[Unit] = P {
+    StringIn("case", "else", "false", "function", "if", "match", "return", "then", "true") ~ !Letter
   }
 
   val symbolKeywords = Seq(
     ":", ";", "=>", "=", "#", "@"
   )
-  val SymbolicKeywords: Parser[Unit] = P{
-    StringIn(symbolKeywords:_*) ~ !OpChar
+  def SymbolicKeywords[_:P]: P[Unit] = P{
+    StringIn(":", ";", "=>", "=", "#", "@") ~ !OpChar
   }
 
-  val keywords: Seq[String] = alphaKeywords ++ symbolKeywords
+//  val keywords: Seq[String] = alphaKeywords ++ symbolKeywords
 
-  val Keywords: Parser[Unit] = P( AlphabetKeywords | SymbolicKeywords )
+  def Keywords[_:P]: P[Unit] = P( AlphabetKeywords | SymbolicKeywords )
 }

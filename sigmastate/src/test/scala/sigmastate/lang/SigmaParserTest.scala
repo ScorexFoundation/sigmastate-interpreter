@@ -1,6 +1,6 @@
 package sigmastate.lang
 
-import fastparse.core.Parsed
+import fastparse.Parsed
 import org.ergoplatform.{ErgoAddressEncoder, ErgoBox}
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{PropSpec, Matchers}
@@ -27,7 +27,7 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
       case f@Parsed.Failure(_, _, extra) =>
         val traced = extra.traced
         println(s"\nTRACE: ${traced.trace}")
-        f.get.value // force show error diagnostics
+        f.get // force show error diagnostics
     }
   }
 

@@ -1,6 +1,6 @@
 package sigmastate.lang.syntax
 
-import fastparse.all._
+import fastparse._; import ScalaWhitespace._
 import fastparse.CharPredicates._
 import scalan.Nullable
 import sigmastate.lang.SourceContext
@@ -8,35 +8,33 @@ import sigmastate.lang.exceptions.SigmaException
 
 object Basic {
   val digits = "0123456789"
-  val Digit: Parser[Unit] = P( CharIn(digits) )
+  def Digit[_:P]: P[Unit] = P( CharPred(digits.contains(_)) )
   val hexDigits: String = digits + "abcdefABCDEF"
-  val HexDigit: Parser[Unit] = P( CharIn(hexDigits) )
-  val UnicodeEscape: Parser[Unit] = P( "u" ~ HexDigit ~ HexDigit ~ HexDigit ~ HexDigit )
+  def HexDigit[_:P]: P[Unit] = P( CharPred(hexDigits.contains(_)) )
+  def UnicodeEscape[_:P]: P[Unit] = P( "u" ~ HexDigit ~ HexDigit ~ HexDigit ~ HexDigit )
 
   //Numbers and digits
+  def HexNum[_:P]: P[Unit] = P( "0x" ~ CharsWhile(hexDigits.contains(_), 0) )
+  def DecNum[_:P]: P[Unit] = P( CharsWhile(digits.contains(_), 0) )
+  def Exp[_:P]: P[Unit] = P( CharPred("Ee".contains(_)) ~ CharPred("+-".contains(_)).? ~ DecNum )
+  def FloatType[_:P]: P[Unit] = P( CharIn("fFdD") )
 
-
-  val HexNum: Parser[Unit] = P( "0x" ~ CharsWhileIn(hexDigits) )
-  val DecNum: Parser[Unit] = P( CharsWhileIn(digits) )
-  val Exp: Parser[Unit] = P( CharIn("Ee") ~ CharIn("+-").? ~ DecNum )
-  val FloatType: Parser[Unit] = P( CharIn("fFdD") )
-
-  val WSChars: Parser[Unit] = P( CharsWhileIn("\u0020\u0009") )
-  val Newline: Parser[Unit] = P( StringIn("\r\n", "\n") )
-  val Semi: Parser[Unit] = P( ";" | Newline.rep(1) )
-  val OpChar: Parser[Unit] = P ( CharPred(isOpChar) )
+  def WSChars[_:P]: P[Unit] = P( CharsWhileIn("\u0020\u0009") )
+  def Newline[_:P]: P[Unit] = P( StringIn("\r\n", "\n") )
+  def Semi[_:P]: P[Unit] = P( ";" | Newline.rep(1) )
+  def OpChar[_:P]: P[Unit] = P ( CharPred(isOpChar) )
 
   def isOpChar(c: Char): Boolean = c match{
     case '!' | '#' | '%' | '&' | '*' | '+' | '-' | '/' |
          ':' | '<' | '=' | '>' | '?' | '@' | '\\' | '^' | '|' | '~' => true
     case _ => isOtherSymbol(c) || isMathSymbol(c)
   }
-  val Letter: Parser[Unit] = P( CharPred(c => isLetter(c) | isDigit(c) | c == '$' | c == '_' ) )
-  val LetterDigitDollarUnderscore: Parser[Unit] =  P(
+  def Letter[_:P]: P[Unit] = P( CharPred(c => isLetter(c) | isDigit(c) | c == '$' | c == '_' ) )
+  def LetterDigitDollarUnderscore[_:P]: P[Unit] =  P(
     CharPred(c => isLetter(c) | isDigit(c) | c == '$' | c == '_' )
   )
-  val Lower: Parser[Unit] = P( CharPred(c => isLower(c) || c == '$' | c == '_') )
-  val Upper: Parser[Unit] = P( CharPred(isUpper) )
+  def Lower[_:P]: P[Unit] = P( CharPred(c => isLower(c) || c == '$' | c == '_') )
+  def Upper[_:P]: P[Unit] = P( CharPred(isUpper) )
 
   def error(msg: String, srcCtx: Option[SourceContext]) = throw new ParserException(msg, srcCtx)
   def error(msg: String, srcCtx: Nullable[SourceContext]) = throw new ParserException(msg, srcCtx.toOption)
@@ -52,7 +50,7 @@ class ParserException(message: String, source: Option[SourceContext])
   * (W) and key-operators (O) which have different non-match criteria.
   */
 object Key {
-  def W(s: String) = P( s ~ !Basic.LetterDigitDollarUnderscore )(sourcecode.Name(s"`$s`"))
+  def W[_:P](s: String) = P( s ~ !Basic.LetterDigitDollarUnderscore )(sourcecode.Name(s"`$s`"), implicitly[P[_]])
   // If the operator is followed by a comment, stop early so we can parse the comment
-  def O(s: String) = P( s ~ (!Basic.OpChar | &("/*" | "//")) )(sourcecode.Name(s"`$s`"))
+  def O[_:P](s: String) = P( s ~ (!Basic.OpChar | &("/*" | "//")) )(sourcecode.Name(s"`$s`"), implicitly[P[_]])
 }
