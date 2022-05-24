@@ -589,7 +589,11 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
     // triple double quotes
     parse("\"\"\"hello\"\"\"") shouldBe StringConstant("hello")
     // triple double quotes with newline and a backslash
-    parse("\"\"\"h\\el\nlo\"\"\"") shouldBe StringConstant("h\\el\nlo")
+    parse("\"\"\"hel\nlo\"\"\"") shouldBe StringConstant("hel\nlo")
+    assertExceptionThrown(
+      parse("\"\"\"h\\el\nlo\"\"\""),
+      exceptionLike[Exception]("Parse Error, Position 1:5")
+    )
     // in expression
     parse(""" "hello" == "hello" """) shouldBe EQ(StringConstant("hello"), StringConstant("hello"))
   }

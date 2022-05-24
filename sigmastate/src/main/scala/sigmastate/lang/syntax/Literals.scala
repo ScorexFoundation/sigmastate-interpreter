@@ -92,7 +92,7 @@ trait Literals { l =>
       P( (Escape | PrintableChar) ~ "'" )
     }
 
-    class InterpCtx(interp: Option[P[_] => P0]){
+    class InterpCtx(interp: Option[() => P0]){
       //noinspection TypeAnnotation
       def Literal[_:P] = P(
         ("-".!.? ~ Index ~ ( /*Float |*/ Int.!)).map {
@@ -118,7 +118,7 @@ trait Literals { l =>
 
       def Interp[_:P]: P[Unit] = interp match{
         case None => P ( Fail )
-        case Some(p) => P( "$" ~ Identifiers.PlainIdNoDollar | ("${" ~ p(implicitly[P[_]]) ~ WL ~ "}") | "$$" )
+        case Some(p) => P( "$" ~ Identifiers.PlainIdNoDollar | ("${" ~ p() ~ WL ~ "}") | "$$" )
       }
 
 
@@ -149,8 +149,8 @@ trait Literals { l =>
 
     }
     object NoInterp extends InterpCtx(None)
-    object Pat extends InterpCtx(Some(l.Pattern(_)))
-    object Expr extends InterpCtx(Some(Block(_).ignore))
+    def Pat[_:P] = new InterpCtx(Some(() => l.Pattern))
+    def Expr[_:P] = new InterpCtx(Some(() => Block))
   }
 }
 
