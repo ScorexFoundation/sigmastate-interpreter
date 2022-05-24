@@ -19,12 +19,7 @@ class CollsStagingTests extends WrappersTests {
   }
 
   test("Coll methods") {
-    val ctx = new Ctx {
-      def test() = {
-//        { val Def(Lambda(_, _, x, RColOverArray(M.map(in, _)))) = t2; assert(in == x) }
-      }
-    }
-    ctx.test()
+    val ctx = new Ctx
     ctx.emit("t2", ctx.t2)
     ctx.emit("t3", ctx.t3)
   }
@@ -36,16 +31,13 @@ class CollsStagingTests extends WrappersTests {
     import ctx._
     import Coll._
     import CollBuilder._
-//    import CollOverArrayBuilder._
 
     var res: Sym = null
     val nIters = 10
     measure(nIters) { i =>
-      var sum: Int = 0
-      for (j <- 0 until 3000) {
+      for (j <- 0 until 1000) {
         val col = colBuilder.replicate(i*j, 0)
         res = col.map(fun {x => x + 1})
-        sum += ctx.defCount
       }
       println(s"Defs: ${ctx.defCount}")
       if (i == nIters - 1) emit("res", res)
@@ -56,7 +48,7 @@ class CollsStagingTests extends WrappersTests {
   test("measure: build graph with new context") {
     measure(10) { i =>
       var sum: Int = 0
-      for (j <- 0 until 3000) {
+      for (j <- 0 until 1000) {
         val ctx = new Ctx {
           useAlphaEquality = false
         }
