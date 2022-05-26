@@ -3,7 +3,7 @@ package sigmastate
 import org.scalatest.{PropSpecLike, Tag}
 import org.scalactic.source.Position
 import sigmastate.eval.Profiler
-import spire.syntax.all.cfor
+import scalan.cfor
 
 import scala.util.DynamicVariable
 

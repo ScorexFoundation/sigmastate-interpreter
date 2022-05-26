@@ -15,7 +15,7 @@ import sigmastate.serialization.OpCodes.OpCode
 import special.collection.Coll
 import special.sigma
 import special.sigma.{AnyValue, Header, PreHeader}
-import spire.syntax.all.cfor
+import scalan.cfor
 
 /** Represents a script evaluation context to be passed to a prover and a verifier to execute and
   * validate guarding proposition of input boxes of a transaction.

@@ -12,10 +12,9 @@ import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.lang.TransformingSigmaBuilder._
 
-import scala.collection.mutable
 import scala.language.implicitConversions
 import scala.collection.mutable.WrappedArray
-import spire.syntax.all.cfor
+import scalan.cfor
 
 object Terms {
 

@@ -8,7 +8,6 @@ import sigmastate.helpers.SigmaTestingCommons
 import sigmastate.interpreter.{ProverResult, ContextExtension}
 import sigmastate.serialization.generators.ObjectGenerators
 import debox.{Buffer => DBuffer}
-import sigmastate.lang.exceptions.SerializerException
 import sigmastate.util.{MaxArrayLength, safeNewArray}
 import spire.algebra._
 import spire.std.int._

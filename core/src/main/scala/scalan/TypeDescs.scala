@@ -4,12 +4,9 @@ import java.lang.reflect.{InvocationTargetException, Method}
 import scala.language.{implicitConversions, higherKinds}
 import scala.annotation.implicitNotFound
 import scala.collection.immutable.ListMap
-import scala.reflect.runtime.universe._
-import scala.reflect.{ClassTag}
 import scalan.util._
 import scalan.RType._
 import scalan.util.ReflectionUtil.ClassOps
-import spire.syntax.all._
 import scala.collection.mutable
 
 abstract class TypeDescs extends Base { self: Scalan =>

@@ -55,6 +55,7 @@ val bouncycastleBcprov = "org.bouncycastle" % "bcprov-jdk15on" % "1.64"
 val scrypto            = "org.scorexfoundation" %% "scrypto" % "2.1.10"
 val scorexUtil         = "org.scorexfoundation" %% "scorex-util" % "0.1.8"
 val debox              = "org.spire-math" %% "debox" % "0.8.0"
+val spireMacros        = "org.typelevel" %% "spire-macros" % "0.14.1"
 val kiama              = "org.bitbucket.inkytonik.kiama" %% "kiama" % "2.5.0"
 val fastparse          = "com.lihaoyi" %% "fastparse" % "2.3.3"
 val commonsIo          = "commons-io" % "commons-io" % "2.5"
@@ -83,7 +84,7 @@ libraryDependencies ++= Seq(
   scrypto,
   scorexUtil,
   "org.bouncycastle" % "bcprov-jdk15on" % "1.+",
-  kiama, fastparse, debox
+  kiama, fastparse, debox, spireMacros
 ) ++ testingDependencies
 
 lazy val circeCore211 = "io.circe" %% "circe-core" % "0.10.0"

@@ -34,7 +34,7 @@ import sigmastate.utils.Helpers._
 import sigmastate.utxo.{DeserializeContext, DeserializeRegister, GetVar, OptionGet}
 import sigmastate.{SOption, SSigmaProp, SType, VersionContext, eval}
 import special.collection.{Coll, CollType}
-import spire.syntax.all.cfor
+import scalan.cfor
 
 import java.util
 import scala.collection.mutable

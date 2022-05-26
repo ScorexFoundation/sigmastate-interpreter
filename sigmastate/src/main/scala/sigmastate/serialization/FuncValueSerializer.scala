@@ -2,12 +2,11 @@ package sigmastate.serialization
 
 import sigmastate.Values._
 import sigmastate._
-import scorex.util.Extensions._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import ValueSerializer._
 import sigmastate.util.safeNewArray
 import sigmastate.utils.SigmaByteWriter.{DataInfo, U, Vlq}
-import spire.syntax.all.cfor
+import scalan.cfor
 
 case class FuncValueSerializer(cons: (IndexedSeq[(Int, SType)], Value[SType]) => Value[SType])
   extends ValueSerializer[FuncValue] {

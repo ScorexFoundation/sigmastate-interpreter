@@ -26,7 +26,7 @@ import sigmastate.interpreter.ErgoTreeEvaluator.fixedCostOp
 import sigmastate.interpreter.EvalSettings._
 import sigmastate.utils.Helpers._
 import sigmastate.lang.Terms.ValueOps
-import spire.syntax.all.cfor
+import scalan.cfor
 
 import scala.util.{Success, Try}
 

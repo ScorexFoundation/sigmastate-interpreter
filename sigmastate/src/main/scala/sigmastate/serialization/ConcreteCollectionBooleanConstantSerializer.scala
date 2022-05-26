@@ -5,7 +5,7 @@ import sigmastate.Values._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import SigmaByteWriter._
 import sigmastate.util.safeNewArray
-import spire.syntax.all.cfor
+import scalan.cfor
 
 case class ConcreteCollectionBooleanConstantSerializer(cons: (IndexedSeq[Value[SBoolean.type]], SBoolean.type) => Value[SCollection[SBoolean.type]])
   extends ValueSerializer[ConcreteCollection[SBoolean.type]] {

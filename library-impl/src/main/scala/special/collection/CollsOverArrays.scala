@@ -7,15 +7,13 @@ import special.SpecialPredef
 import scala.reflect.ClassTag
 import scalan._
 import scalan.util.CollectionUtil
-import scalan.{Internal, NeverInline, RType, Reified}
+import scalan.{RType, Reified}
 import Helpers._
 import debox.Buffer
 import scalan.RType._
 import sigmastate.VersionContext
 import sigmastate.util.{MaxArrayLength, safeConcatArrays_v5, safeNewArray}
-import spire.syntax.all._
-
-import scala.runtime.RichInt
+import scalan.cfor
 
 class CollOverArray[@specialized A](val toArray: Array[A], val builder: CollBuilder)
                                    (implicit tA: RType[A]) extends Coll[A] {

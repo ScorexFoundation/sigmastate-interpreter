@@ -1,7 +1,7 @@
 package special.collections
 
 import debox.Buffer
-import spire.syntax.all.cfor
+import scalan.cfor
 import org.scalameter.api.Bench
 
 import scala.collection.mutable

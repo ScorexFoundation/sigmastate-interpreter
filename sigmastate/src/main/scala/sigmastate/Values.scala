@@ -22,7 +22,7 @@ import sigmastate.eval._
 import sigmastate.eval.Extensions._
 import scalan.util.Extensions.ByteOps
 import sigmastate.interpreter.ErgoTreeEvaluator._
-import spire.syntax.all.cfor
+import scalan.cfor
 
 import scala.language.implicitConversions
 import scala.reflect.ClassTag

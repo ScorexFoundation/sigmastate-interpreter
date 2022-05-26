@@ -18,7 +18,7 @@ import sigmastate.interpreter.{CryptoConstants, Interpreter}
 import special.collection._
 import special.sigma._
 import sigmastate.eval.Extensions._
-import spire.syntax.all.cfor
+import scalan.cfor
 
 import scala.util.{Failure, Success}
 import scalan.util.Extensions.BigIntegerOps

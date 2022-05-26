@@ -1,6 +1,13 @@
+import spire.macros.Syntax
+
+import scala.language.experimental.macros
 import scala.reflect.ClassTag
 
 package object scalan {
+  type sp          = scala.specialized
+
+  def cfor[A](init:A)(test:A => Boolean, next:A => A)(body:A => Unit): Unit =
+    macro Syntax.cforMacro[A]
 
   /** Allows implicit resolution to find appropriate instance of ClassTag in
     * the scope where RType is implicitly available. */

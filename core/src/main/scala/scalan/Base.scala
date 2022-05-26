@@ -9,7 +9,7 @@ import scala.annotation.unchecked.uncheckedVariance
 import scalan.compilation.GraphVizConfig
 import scalan.util.StringUtil
 import debox.{Buffer => DBuffer}
-import spire.syntax.all.cfor
+import scalan.cfor
 import scala.collection.mutable
 
 /**

@@ -3,7 +3,7 @@ package scalan.staged
 import scalan.{DFunc, Nullable, Scalan}
 import debox.{Buffer => DBuffer}
 import scalan.util.GraphUtil
-import spire.syntax.all.cfor
+import scalan.cfor
 
 import scala.collection.mutable
 

@@ -1,6 +1,6 @@
 package sigmastate
 
-import spire.syntax.all.cfor
+import scalan.cfor
 
 import scala.util.DynamicVariable
 

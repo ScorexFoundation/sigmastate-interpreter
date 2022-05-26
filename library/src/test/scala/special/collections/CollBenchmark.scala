@@ -5,7 +5,7 @@ import org.scalameter.api._
 import org.scalameter.picklers.Implicits._
 import special.collection.Coll
 import special.collection.ExtensionMethods._
-import spire.syntax.all._
+import scalan.cfor
 
 
 trait CollBenchmarkCases extends BenchmarkGens { suite: Bench[Double] =>

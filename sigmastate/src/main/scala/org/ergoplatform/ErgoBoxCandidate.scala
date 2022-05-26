@@ -14,7 +14,7 @@ import sigmastate.eval._
 import sigmastate.eval.Extensions._
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.util.safeNewArray
-import spire.syntax.all.cfor
+import scalan.cfor
 
 import scala.collection.immutable
 import scala.runtime.ScalaRunTime

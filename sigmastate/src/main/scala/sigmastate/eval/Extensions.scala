@@ -11,7 +11,7 @@ import special.collection.Coll
 import special.sigma._
 import sigmastate.SType.AnyOps
 import org.ergoplatform.ErgoBox
-import spire.syntax.all._
+import scalan.cfor
 
 object Extensions {
   private val Colls = CostingSigmaDslBuilder.Colls

@@ -2,7 +2,7 @@ package scalan.util
 
 import scalan.DFunc
 import debox.{Set => DSet, Buffer => DBuffer}
-import spire.syntax.all.cfor
+import scalan.cfor
 import scala.reflect.ClassTag
 
 object GraphUtil {

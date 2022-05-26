@@ -3,7 +3,7 @@ package scalan.staged
 import scala.collection._
 import scalan.{Base, Scalan, emptyDBufferOfInt}
 import scalan.compilation.GraphVizConfig
-import spire.syntax.all.cfor
+import scalan.cfor
 import debox.{Set => DSet, Buffer => DBuffer, Map => DMap}
 
 

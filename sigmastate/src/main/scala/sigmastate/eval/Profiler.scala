@@ -8,9 +8,10 @@ import sigmastate.serialization.ValueSerializer.getSerializer
 import scalan.util.Extensions.ByteOps
 import debox.{Buffer => DBuffer, Map => DMap}
 import org.apache.commons.math3.util.Precision
+import scalan.sp
 import sigmastate.interpreter.{CostItem, FixedCostItem, SeqCostItem, TypeBasedCostItem}
 import sigmastate.lang.Terms.{MethodCall, PropertyCall}
-import spire.{math, sp}
+import spire.math
 
 import scala.reflect.ClassTag
 

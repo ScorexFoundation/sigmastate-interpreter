@@ -8,11 +8,10 @@ import sigmastate.lang.DeserializationSigmaBuilder
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.lang.exceptions.{SerializerException, ReaderPositionLimitExceeded}
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import scalan.util.Extensions._
 import sigmastate.Values.ErgoTree.EmptyConstants
 import sigmastate.util.safeNewArray
 import sigmastate.utxo.ComplexityTable
-import spire.syntax.all.cfor
+import scalan.cfor
 
 import java.util
 

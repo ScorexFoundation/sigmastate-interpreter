@@ -8,7 +8,7 @@ import scalan.{Nullable, emptyDBufferOfInt, Base, Lazy, Scalan}
 import debox.{Buffer => DBuffer}
 
 import scala.language.implicitConversions
-import spire.syntax.all.cfor
+import scalan.cfor
 
 import scala.collection.Seq
 

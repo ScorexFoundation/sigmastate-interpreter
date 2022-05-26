@@ -1,7 +1,7 @@
 package special.collections
 
 import org.scalameter.api._
-import spire.syntax.all.cfor
+import scalan.cfor
 
 trait BasicBenchmarkCases extends BenchmarkGens { suite: Bench[Double] =>
 
