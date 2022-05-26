@@ -61,13 +61,13 @@ val commonsIo          = "commons-io" % "commons-io" % "2.5"
 val commonsMath3       = "org.apache.commons" % "commons-math3" % "3.2"
 
 val testingDependencies = Seq(
-  "org.scalatest" %% "scalatest" % "3.0.9" % "test",
-  "org.scalactic" %% "scalactic" % "3.0.9" % "test",
-  "org.scalacheck" %% "scalacheck" % "1.14.3" % "test",
-  "com.lihaoyi" %% "pprint" % "0.6.3" % "test",
-  "com.storm-enroute" %% "scalameter" % "0.8.2" % Test,
-  "junit" % "junit" % "4.12" % "test",
-  "com.novocode" % "junit-interface" % "0.11" % "test"
+  "org.scalatest" %% "scalatest" % "3.0.9" % Test,
+  "org.scalactic" %% "scalactic" % "3.0.9" % Test,
+  "org.scalacheck" %% "scalacheck" % "1.14.3" % Test,
+  "com.lihaoyi" %% "pprint" % "0.6.3" % Test,
+  "com.storm-enroute" %% "scalameter" % "0.19" % Test,
+  "junit" % "junit" % "4.12" % Test,
+  "com.novocode" % "junit-interface" % "0.11" % Test
 )
 
 lazy val testSettings = Seq(
