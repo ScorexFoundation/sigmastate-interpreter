@@ -11,6 +11,7 @@ import special.collection.Coll
 import special.sigma._
 import sigmastate.SType.AnyOps
 import org.ergoplatform.ErgoBox
+import debox.{Buffer => DBuffer}
 import scalan.cfor
 
 object Extensions {
@@ -102,5 +103,14 @@ object Extensions {
     def showToString: String = showECPoint(source.asInstanceOf[CGroupElement].wrappedValue)
   }
 
-
+  implicit class DBufferOps[A](val buf: DBuffer[A]) extends AnyVal {
+    def sumAll(implicit n: Numeric[A]): A = {
+      val limit = buf.length
+      var result: A = n.zero
+      cfor(0)(_ < limit, _ + 1) { i =>
+        result = n.plus(result, buf.elems(i))
+      }
+      result
+    }
+  }
 }
