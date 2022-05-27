@@ -90,6 +90,7 @@ class ErgoTreeSerializerSpecification extends SerializationSpecification
               rootCauseLike[SerializerException](
                 "Failed deserialization, expected deserialized script to have type SigmaProp;")
                 .apply(cause) shouldBe true
+            case _ => fail()
           }
         }
       }
@@ -142,6 +143,7 @@ class ErgoTreeSerializerSpecification extends SerializationSpecification
       tree.root match {
         case Left(UnparsedErgoTree(_, ve: ValidationException)) =>
           rootCauseLike[ReaderPositionLimitExceeded]().apply(ve.cause.get) shouldBe true
+        case _ => fail()
       }
     }
   }

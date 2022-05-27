@@ -3,7 +3,7 @@ package special.collections
 import debox.{Set => DSet, Map => DMap}
 import scalan.TestLibrary
 import org.scalameter.api.Bench
-import scalan.cfor
+import debox.cfor
 
 trait SymBenchmarkCases extends BenchmarkGens { suite: Bench[Double] =>
   val obj = new Object()

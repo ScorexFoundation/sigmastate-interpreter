@@ -2,7 +2,7 @@ package special.collections
 
 import org.scalameter.api.Bench
 import scalan.{AVHashMap, Nullable}
-import scalan.cfor
+import debox.cfor
 
 trait MapBenchmarkCases extends BenchmarkGens { suite: Bench[Double] =>
   val obj = new Object()

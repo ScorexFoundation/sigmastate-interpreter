@@ -17,7 +17,7 @@ import sigmastate.lang.SigmaParser
 import sigmastate.lang.exceptions.SerializerException
 import special.collection.{Coll, collRType}
 import special.sigma._
-import scalan.cfor
+import debox.cfor
 
 import scala.collection.mutable
 

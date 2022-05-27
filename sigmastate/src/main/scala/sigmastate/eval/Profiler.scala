@@ -8,7 +8,7 @@ import sigmastate.serialization.ValueSerializer.getSerializer
 import scalan.util.Extensions.ByteOps
 import debox.{Buffer => DBuffer, Map => DMap}
 import org.apache.commons.math3.util.Precision
-import scalan.sp
+import debox.sp
 import sigmastate.eval.Extensions.DBufferOps
 import sigmastate.interpreter.{CostItem, FixedCostItem, SeqCostItem, TypeBasedCostItem}
 import sigmastate.lang.Terms.{MethodCall, PropertyCall}

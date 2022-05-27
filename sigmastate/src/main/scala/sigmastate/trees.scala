@@ -27,7 +27,7 @@ import special.sigma.{GroupElement, SigmaProp}
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
-import scalan.cfor
+import debox.cfor
 
 /**
   * Basic trait for inner nodes of crypto-trees, so AND/OR/THRESHOLD sigma-protocol connectives

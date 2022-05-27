@@ -1,6 +1,6 @@
 package sigmastate
 
-import scalan.cfor
+import debox.cfor
 
 import scala.util.DynamicVariable
 

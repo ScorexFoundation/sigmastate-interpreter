@@ -1,7 +1,7 @@
 
 ## Approximate sizes of different dependencies
 
-These dependencies can be removed with simple refactoring
+These dependencies can be removed with refactoring
 
 | Jar           | Size, Kb  |
 |---------------|---------------|
@@ -16,7 +16,6 @@ These dependencies can be removed with simple refactoring
 | commons-io-2.5.jar  |  209          |
 | cats-core_2.12-1.4.0.jar  |  4400   |
 | - cats-kernel_2.12-1.4.0.jar  |  3200   |
-| spire_2.12-0.14.1.jar  |  7700   |
 | - algebra_2.12-0.7.0.jar  |  1100   |
 | - spire-macros_2.12-0.14.1.jar | 73 |
 

@@ -14,7 +14,7 @@ import sigmastate.lang.TransformingSigmaBuilder._
 
 import scala.language.implicitConversions
 import scala.collection.mutable.WrappedArray
-import scalan.cfor
+import debox.cfor
 
 object Terms {
 

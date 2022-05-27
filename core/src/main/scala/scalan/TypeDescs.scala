@@ -8,6 +8,7 @@ import scalan.util._
 import scalan.RType._
 import scalan.util.ReflectionUtil.ClassOps
 import scala.collection.mutable
+import debox.cfor
 
 abstract class TypeDescs extends Base { self: Scalan =>
 

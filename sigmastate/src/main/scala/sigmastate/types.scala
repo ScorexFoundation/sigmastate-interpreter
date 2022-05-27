@@ -34,7 +34,7 @@ import sigmastate.lang.SigmaTyper.STypeSubst
 import sigmastate.eval.Evaluation.stypeToRType
 import sigmastate.eval._
 import sigmastate.lang.exceptions.MethodNotFound
-import scalan.cfor
+import debox.cfor
 
 import scala.collection.mutable
 import scala.util.{Success, Failure}

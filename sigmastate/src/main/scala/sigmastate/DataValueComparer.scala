@@ -1,6 +1,7 @@
 package sigmastate
 
-import scalan.{AVHashMap, Nullable, RType, sp, cfor}
+import scalan.{AVHashMap, Nullable, RType}
+import debox.{cfor, sp}
 import scalan.RType._
 import sigmastate.Values.SigmaBoolean
 import sigmastate.basics.DLogProtocol.ProveDlog

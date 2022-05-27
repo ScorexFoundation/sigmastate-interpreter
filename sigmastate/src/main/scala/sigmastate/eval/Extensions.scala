@@ -12,7 +12,7 @@ import special.sigma._
 import sigmastate.SType.AnyOps
 import org.ergoplatform.ErgoBox
 import debox.{Buffer => DBuffer}
-import scalan.cfor
+import debox.cfor
 
 object Extensions {
   private val Colls = CostingSigmaDslBuilder.Colls

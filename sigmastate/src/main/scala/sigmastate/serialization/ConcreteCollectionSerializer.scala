@@ -6,7 +6,7 @@ import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import ValueSerializer._
 import sigmastate.util.safeNewArray
 import sigmastate.utils.SigmaByteWriter.{DataInfo, U, Vlq}
-import scalan.cfor
+import debox.cfor
 
 case class ConcreteCollectionSerializer(cons: (IndexedSeq[Value[SType]], SType) => Value[SCollection[SType]])
   extends ValueSerializer[ConcreteCollection[_ <: SType]] {

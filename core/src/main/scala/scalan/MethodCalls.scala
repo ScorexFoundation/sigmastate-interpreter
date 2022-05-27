@@ -6,7 +6,7 @@ import scala.reflect.ClassTag
 import scalan.compilation.{GraphVizConfig, GraphVizExport}
 import scalan.util.ScalaNameUtil
 import debox.{Buffer => DBuffer}
-import scalan.cfor
+import debox.cfor
 
 trait MethodCalls extends Base with GraphVizExport { self: Scalan =>
 

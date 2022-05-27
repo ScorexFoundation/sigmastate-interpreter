@@ -11,7 +11,7 @@ import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate.Values.ErgoTree.EmptyConstants
 import sigmastate.util.safeNewArray
 import sigmastate.utxo.ComplexityTable
-import scalan.cfor
+import debox.cfor
 
 import java.util
 

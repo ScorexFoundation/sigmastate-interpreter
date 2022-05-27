@@ -13,7 +13,7 @@ import debox.Buffer
 import scalan.RType._
 import sigmastate.VersionContext
 import sigmastate.util.{MaxArrayLength, safeConcatArrays_v5, safeNewArray}
-import scalan.cfor
+import debox.cfor
 
 class CollOverArray[@specialized A](val toArray: Array[A], val builder: CollBuilder)
                                    (implicit tA: RType[A]) extends Coll[A] {

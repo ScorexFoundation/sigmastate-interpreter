@@ -5,6 +5,7 @@ organization := "org.scorexfoundation"
 
 name := "sigma-state"
 
+lazy val scala213 = "2.13.8"
 lazy val scala212 = "2.12.10"
 lazy val scala211 = "2.11.12"
 
@@ -12,7 +13,7 @@ lazy val allConfigDependency = "compile->compile;test->test"
 
 lazy val commonSettings = Seq(
   organization := "org.scorexfoundation",
-  crossScalaVersions := Seq(scala212, scala211),
+  crossScalaVersions := Seq(scala213, scala212, scala211),
   scalaVersion := scala212,
   resolvers += Resolver.sonatypeRepo("public"),
   licenses := Seq("CC0" -> url("https://creativecommons.org/publicdomain/zero/1.0/legalcode")),
@@ -54,8 +55,8 @@ dynverSeparator in ThisBuild := "-"
 val bouncycastleBcprov = "org.bouncycastle" % "bcprov-jdk15on" % "1.64"
 val scrypto            = "org.scorexfoundation" %% "scrypto" % "2.1.10"
 val scorexUtil         = "org.scorexfoundation" %% "scorex-util" % "0.1.8"
-val debox              = "org.spire-math" %% "debox" % "0.8.0"
-val spireMacros        = "org.typelevel" %% "spire-macros" % "0.14.1"
+val debox              = "org.scorexfoundation" %% "debox" % "0.9.0"
+val spireMacros        = "org.typelevel" %% "spire-macros" % "0.17.0-M1"
 val kiama              = "org.bitbucket.inkytonik.kiama" %% "kiama" % "2.5.0"
 val fastparse          = "com.lihaoyi" %% "fastparse" % "2.3.3"
 val commonsIo          = "commons-io" % "commons-io" % "2.5"

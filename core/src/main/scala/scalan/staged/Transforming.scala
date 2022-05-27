@@ -6,7 +6,7 @@ import java.util
 import scala.language.existentials
 import scalan.{Nullable, DelayInvokeException, Lazy, Scalan, AVHashMap}
 import debox.{Buffer => DBuffer}
-import scalan.cfor
+import debox.cfor
 
 trait Transforming { self: Scalan =>
 

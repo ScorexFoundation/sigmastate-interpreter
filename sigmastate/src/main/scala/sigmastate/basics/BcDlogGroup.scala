@@ -7,7 +7,7 @@ import org.bouncycastle.crypto.ec.CustomNamedCurves
 import org.bouncycastle.math.ec.custom.sec.SecP256K1Point
 import org.bouncycastle.math.ec.ECPoint
 import org.bouncycastle.util.BigIntegers
-import scalan.cfor
+import debox.cfor
 import scala.collection.mutable
 import scala.util.Try
 

@@ -13,7 +13,7 @@ import sigmastate.eval.{Evaluation, _}
 import sigmastate.lang.exceptions.SerializerException
 import special.collection._
 import special.sigma._
-import scalan.cfor
+import debox.cfor
 import scala.collection.mutable
 
 /** This works in tandem with ConstantSerializer, if you change one make sure to check the other.*/

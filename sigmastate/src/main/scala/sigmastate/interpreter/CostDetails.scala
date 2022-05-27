@@ -1,7 +1,7 @@
 package sigmastate.interpreter
 
 import sigmastate.JitCost
-import scalan.cfor
+import debox.cfor
 import scala.collection.mutable
 
 /** Abstract representation of cost results obtained during evaluation. */

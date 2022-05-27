@@ -12,7 +12,7 @@ import sigmastate.interpreter.ErgoTreeEvaluator.fixedCostOp
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.serialization.SigmaSerializer
 import sigmastate.utils.SigmaByteWriter
-import scalan.cfor
+import debox.cfor
 
 import scala.language.existentials
 
