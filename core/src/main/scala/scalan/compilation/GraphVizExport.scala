@@ -131,7 +131,7 @@ trait GraphVizExport extends Base { self: Scalan =>
     case l: Long => s"${l}l"
     case arr: Array[_] => s"Array(${arr.toSeq.map(formatConst).mkString(", ")})"
     case seq: Seq[_] =>
-      s"${seq.stringPrefix}(${seq.map(formatConst).mkString(", ")})"
+      s"${seq.toString()}(${seq.map(formatConst).mkString(", ")})"
     case null => "null"
     case _ => x.toString
   }

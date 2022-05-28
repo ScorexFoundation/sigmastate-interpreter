@@ -10,8 +10,6 @@ import debox.{Buffer => DBuffer}
 import scala.language.implicitConversions
 import debox.cfor
 
-import scala.collection.Seq
-
 trait Functions extends Base with ProgramGraphs { self: Scalan =>
 
   implicit class LambdaOps[A,B](f: Ref[A => B]) {

@@ -24,7 +24,7 @@ object TestingHelpers {
   def testBox(value: Long,
               ergoTree: ErgoTree,
               creationHeight: Int,
-              additionalTokens: Seq[(TokenId, Long)] = WrappedArray.empty,
+              additionalTokens: Seq[(TokenId, Long)] = Seq.empty,
               additionalRegisters: AdditionalRegisters = Map.empty,
               transactionId: ModifierId = allZerosModifierId,
               boxIndex: Short = 0): ErgoBox =
@@ -35,7 +35,7 @@ object TestingHelpers {
 
   def createBox(value: Long,
                 proposition: ErgoTree,
-                additionalTokens: Seq[(Digest32, Long)] = WrappedArray.empty,
+                additionalTokens: Seq[(Digest32, Long)] = Seq.empty,
                 additionalRegisters: AdditionalRegisters = Map.empty)
   = testBox(value, proposition, 0, additionalTokens, additionalRegisters)
 
@@ -43,7 +43,7 @@ object TestingHelpers {
   def createBox(value: Long,
                 proposition: ErgoTree,
                 creationHeight: Int)
-  = testBox(value, proposition, creationHeight, WrappedArray.empty, Map.empty, ErgoBox.allZerosModifierId)
+  = testBox(value, proposition, creationHeight, Seq.empty, Map.empty, ErgoBox.allZerosModifierId)
 
   /** Creates a clone instance of the given collection by recursively cloning all the underlying
     * sub-collections.
@@ -112,13 +112,13 @@ object TestingHelpers {
     * in our test cases
     */
   def createTransaction(outputCandidates: IndexedSeq[ErgoBoxCandidate]): ErgoLikeTransaction = {
-    new ErgoLikeTransaction(WrappedArray.empty, WrappedArray.empty, outputCandidates)
+    new ErgoLikeTransaction(IndexedSeq.empty, IndexedSeq.empty, outputCandidates)
   }
 
   def createTransaction(box: ErgoBoxCandidate): ErgoLikeTransaction = createTransaction(Array(box))
 
   def createTransaction(dataInputs: IndexedSeq[ErgoBox],
                         outputCandidates: IndexedSeq[ErgoBoxCandidate]): ErgoLikeTransaction =
-    new ErgoLikeTransaction(WrappedArray.empty, dataInputs.map(b => DataInput(b.id)), outputCandidates)
+    new ErgoLikeTransaction(IndexedSeq.empty, dataInputs.map(b => DataInput(b.id)), outputCandidates)
 
 }
