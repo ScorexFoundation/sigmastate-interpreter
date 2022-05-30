@@ -3,14 +3,15 @@ package scalan
 import java.lang.reflect.{Constructor => Constr}
 import java.util.Arrays
 import scalan.OverloadHack.Overloaded1
+
 import scala.language.implicitConversions
 import scala.annotation.implicitNotFound
 import scala.annotation.unchecked.uncheckedVariance
 import scalan.compilation.GraphVizConfig
 import scalan.util.StringUtil
-import debox.{Buffer => DBuffer}
-import debox.cfor
-import scala.collection.mutable
+import debox.{cfor, Buffer => DBuffer}
+
+import scala.collection.compat.immutable.ArraySeq
 
 /**
   * The Base trait houses common AST nodes. It also manages a list of encountered definitions which
@@ -467,7 +468,7 @@ abstract class Base { scalan: Scalan =>
       * and leave non-Ref items unchanged. */
     final def apply(xs: Seq[Any])(implicit o: Overloaded1): Seq[Any] = {
       val len = xs.length
-      if (len == 0) mutable.WrappedArray.empty
+      if (len == 0) ArraySeq.empty
       else {
         val res = new Array[Any](len)
         cfor(0)(_ < len, _ + 1) { i =>

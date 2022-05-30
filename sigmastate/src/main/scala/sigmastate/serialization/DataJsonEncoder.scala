@@ -1,7 +1,6 @@
 package sigmastate.serialization
 
 import java.math.BigInteger
-
 import io.circe._
 import io.circe.syntax._
 import org.ergoplatform.ErgoBox
@@ -10,15 +9,16 @@ import org.ergoplatform.settings.ErgoAlgos
 import scalan.RType
 import scorex.crypto.hash.Digest32
 import scorex.util._
-import sigmastate.Values.{Constant, EvaluatedValue}
+import sigmastate.Values.{EvaluatedValue, Constant}
 import sigmastate._
 import sigmastate.eval._
 import sigmastate.lang.SigmaParser
 import sigmastate.lang.exceptions.SerializerException
-import special.collection.{Coll, collRType}
+import special.collection.{collRType, Coll}
 import special.sigma._
 import debox.cfor
 
+import scala.collection.compat.immutable.ArraySeq
 import scala.collection.mutable
 
 object DataJsonEncoder {
@@ -45,7 +45,7 @@ object DataJsonEncoder {
   }
 
   private def encodeData[T <: SType](v: T#WrappedType, tpe: T): Json = tpe match {
-    case SUnit => Json.fromFields(mutable.WrappedArray.empty)
+    case SUnit => Json.fromFields(ArraySeq.empty)
     case SBoolean => v.asInstanceOf[Boolean].asJson
     case SByte => v.asInstanceOf[Byte].asJson
     case SShort => v.asInstanceOf[Short].asJson
