@@ -6,7 +6,7 @@ organization := "org.scorexfoundation"
 name := "sigma-state"
 
 lazy val scala213 = "2.13.8"
-lazy val scala212 = "2.12.10"
+lazy val scala212 = "2.12.15"
 lazy val scala211 = "2.11.12"
 
 lazy val allConfigDependency = "compile->compile;test->test"
@@ -61,6 +61,7 @@ val kiama              = "org.bitbucket.inkytonik.kiama" %% "kiama" % "2.5.0"
 val fastparse          = "com.lihaoyi" %% "fastparse" % "2.3.3"
 val commonsIo          = "commons-io" % "commons-io" % "2.5"
 val commonsMath3       = "org.apache.commons" % "commons-math3" % "3.2"
+val scalaCompat        = "org.scala-lang.modules" %% "scala-collection-compat" % "2.7.0"
 
 val testingDependencies = Seq(
   "org.scalatest" %% "scalatest" % "3.0.9" % Test,
@@ -85,7 +86,7 @@ libraryDependencies ++= Seq(
   scrypto,
   scorexUtil,
   "org.bouncycastle" % "bcprov-jdk15on" % "1.+",
-  kiama, fastparse, debox, spireMacros
+  kiama, fastparse, debox, spireMacros, scalaCompat
 ) ++ testingDependencies
 
 lazy val circeCore211 = "io.circe" %% "circe-core" % "0.10.0"
@@ -145,7 +146,7 @@ lazy val common = Project("common", file("common"))
   .settings(commonSettings ++ testSettings,
     libraryDependencies ++= Seq(
       "org.scala-lang" % "scala-reflect" % scalaVersion.value,
-      debox, commonsIo
+      debox, commonsIo, scalaCompat
     ))
   .settings(publish / skip := true)
 
