@@ -168,7 +168,7 @@ case class BoolToSigmaProp(value: BoolValue) extends SigmaPropValue {
     SigmaDsl.sigmaProp(v)
   }
 }
-object BoolToSigmaProp extends ValueCompanion {
+object BoolToSigmaProp extends FixedCostValueCompanion {
   override def opCode: OpCode = OpCodes.BoolToSigmaPropCode
   override val costKind = FixedCost(JitCost(15))
   val OpType = SFunc(SBoolean, SSigmaProp)
@@ -186,7 +186,7 @@ case class CreateProveDlog(value: Value[SGroupElement.type]) extends SigmaPropVa
     SigmaDsl.proveDlog(v)
   }
 }
-object CreateProveDlog extends ValueCompanion {
+object CreateProveDlog extends FixedCostValueCompanion {
   override def opCode: OpCode = OpCodes.ProveDlogCode
   override val costKind = FixedCost(JitCost(10))
   val OpType = SFunc(SGroupElement, SSigmaProp)
@@ -227,7 +227,7 @@ case class CreateProveDHTuple(gv: Value[SGroupElement.type],
     SigmaDsl.proveDHTuple(g, h, u, v)
   }
 }
-object CreateProveDHTuple extends ValueCompanion {
+object CreateProveDHTuple extends FixedCostValueCompanion {
   override def opCode: OpCode = OpCodes.ProveDiffieHellmanTupleCode
   override val costKind = FixedCost(JitCost(20))
 }
@@ -1019,7 +1019,7 @@ case class Negation[T <: SType](input: Value[T]) extends OneArgumentOperation[T,
     i.negate(inputV)
   }
 }
-object Negation extends OneArgumentOperationCompanion {
+object Negation extends OneArgumentOperationCompanion with FixedCostValueCompanion {
   override def opCode: OpCode = OpCodes.NegationCode
   override val costKind = FixedCost(JitCost(30))
   override def argInfos: Seq[ArgInfo] = NegationInfo.argInfos
@@ -1498,7 +1498,7 @@ case class If[T <: SType](condition: Value[SBoolean.type], trueBranch: Value[T],
     }
   }
 }
-object If extends QuadrupleCompanion {
+object If extends QuadrupleCompanion with FixedCostValueCompanion {
   override def opCode: OpCode = OpCodes.IfCode
   /** Cost of: conditional switching to the right branch (excluding the cost both
     * condition itself and the branches) */

@@ -248,7 +248,7 @@ object Terms {
     }
   }
 
-  object MethodCall extends ValueCompanion {
+  object MethodCall extends FixedCostValueCompanion {
     override def opCode: OpCode = OpCodes.MethodCallCode
     /** Cost of: 1) packing args into Array 2) java.lang.reflect.Method.invoke */
     override val costKind = FixedCost(JitCost(4))
