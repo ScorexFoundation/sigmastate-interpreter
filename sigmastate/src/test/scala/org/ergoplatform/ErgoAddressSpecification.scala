@@ -300,7 +300,7 @@ class ErgoAddressSpecification extends SigmaDslTesting
             script = scriptVarId -> ByteArrayConstant(scriptBytes),
             costLimit = deliberatelySmallLimit),
           rootCauseLike[CostLimitException](
-            s"Estimated execution cost 164 exceeds the limit $deliberatelySmallLimit")
+            s"Estimated execution cost 88 exceeds the limit $deliberatelySmallLimit")
         )
       }
     }
@@ -308,37 +308,7 @@ class ErgoAddressSpecification extends SigmaDslTesting
     // when limit is low
     if (isActivatedVersion4) {
       // choose limit less than addr.script.complexity == 2277 + script complexity == 164
-      val deliberatelySmallLimit = 2300
-
-      assertExceptionThrown(
-        {
-          testPay2SHAddress(addr,
-            script = scriptVarId -> ByteArrayConstant(scriptBytes),
-            costLimit = deliberatelySmallLimit)
-        },
-        rootCauseLike[CostLimitException](
-          s"Estimated execution cost 2441 exceeds the limit $deliberatelySmallLimit")
-      )
-    } else {
-      // v5.0
-      val deliberatelySmallLimit = 100
-
-      assertExceptionThrown(
-      {
-        testPay2SHAddress(addr,
-          script = scriptVarId -> ByteArrayConstant(scriptBytes),
-          costLimit = deliberatelySmallLimit)
-      },
-      rootCauseLike[CostLimitException](
-        s"Estimated execution cost 164 exceeds the limit $deliberatelySmallLimit")
-      )
-
-    }
-
-    // when limit is even lower than tree complexity
-    if (isActivatedVersion4) {
-      // choose limit less than addr.script.complexity == 2277
-      val deliberatelySmallLimit = 2000
+      val deliberatelySmallLimit = 1000
 
       assertExceptionThrown(
         {
@@ -351,7 +321,7 @@ class ErgoAddressSpecification extends SigmaDslTesting
       )
     } else {
       // v5.0
-      val deliberatelySmallLimit = 100
+      val deliberatelySmallLimit = 10
 
       assertExceptionThrown(
       {
@@ -360,7 +330,37 @@ class ErgoAddressSpecification extends SigmaDslTesting
           costLimit = deliberatelySmallLimit)
       },
       rootCauseLike[CostLimitException](
-        s"Estimated execution cost 164 exceeds the limit $deliberatelySmallLimit")
+        s"Estimated execution cost 88 exceeds the limit $deliberatelySmallLimit")
+      )
+
+    }
+
+    // when limit is even lower than tree complexity
+    if (isActivatedVersion4) {
+      // choose limit less than addr.script.complexity == 2277
+      val deliberatelySmallLimit = 1000
+
+      assertExceptionThrown(
+        {
+          testPay2SHAddress(addr,
+            script = scriptVarId -> ByteArrayConstant(scriptBytes),
+            costLimit = deliberatelySmallLimit)
+        },
+        rootCauseLike[CostLimitException](
+          s"Estimated execution cost 2277 exceeds the limit $deliberatelySmallLimit")
+      )
+    } else {
+      // v5.0
+      val deliberatelySmallLimit = 10
+
+      assertExceptionThrown(
+      {
+        testPay2SHAddress(addr,
+          script = scriptVarId -> ByteArrayConstant(scriptBytes),
+          costLimit = deliberatelySmallLimit)
+      },
+      rootCauseLike[CostLimitException](
+        s"Estimated execution cost 88 exceeds the limit $deliberatelySmallLimit")
       )
 
     }
