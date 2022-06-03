@@ -10,7 +10,7 @@ trait VersionTesting {
     * In the branch for v6.0 the new version 3 should be added so that the tests run for both.
     */
   protected val activatedVersions: Seq[Byte] =
-    (0 to VersionContext.MaxSupportedScriptVersion).map(_.toByte).toArray
+    (0 to VersionContext.MaxSupportedScriptVersion).map(_.toByte).toArray[Byte]
 
   private[sigmastate] val _currActivatedVersion = new DynamicVariable[Byte](2) // v5.x by default
 

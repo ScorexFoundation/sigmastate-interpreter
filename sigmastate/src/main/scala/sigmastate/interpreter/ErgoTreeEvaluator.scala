@@ -2,7 +2,7 @@ package sigmastate.interpreter
 
 import org.ergoplatform.ErgoLikeContext
 import org.ergoplatform.SigmaConstants.ScriptCostLimit
-import sigmastate.{FixedCost, JitCost, PerItemCost, SType, TypeBasedCost, VersionContext}
+import sigmastate.{PerItemCost, VersionContext, TypeBasedCost, FixedCost, SType, JitCost}
 import sigmastate.Values._
 import sigmastate.eval.Profiler
 import sigmastate.interpreter.ErgoTreeEvaluator.DataEnv
@@ -13,7 +13,7 @@ import sigmastate.interpreter.EvalSettings._
 import supertagged.TaggedType
 import debox.{Buffer => DBuffer}
 
-import scala.collection.mutable
+import scala.collection.compat.immutable.ArraySeq
 import scala.util.DynamicVariable
 
 /** Configuration parameters of the evaluation run. */
@@ -395,7 +395,7 @@ object ErgoTreeEvaluator {
       costLimit = Some(JitCost.fromBlockCost(ScriptCostLimit.value)))
     new ErgoTreeEvaluator(
       context = null,
-      constants = mutable.WrappedArray.empty,
+      constants = ArraySeq.empty,
       acc, profiler, evalSettings.copy(profilerOpt = Some(profiler)))
   }
 

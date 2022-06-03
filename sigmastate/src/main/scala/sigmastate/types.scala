@@ -25,6 +25,7 @@ import special.collection.Coll
 import special.sigma._
 import scala.language.implicitConversions
 import scala.reflect.{ClassTag, classTag}
+import scala.collection.compat.immutable.ArraySeq
 import sigmastate.SMethod.{InvokeDescBuilder, MethodCostFunc, givenCost, javaMethodOf, MethodCallIrBuilder}
 import sigmastate.utxo.ByIndex
 import sigmastate.utxo.ExtractCreationInfo
@@ -480,7 +481,7 @@ case class SMethod(
       case Some(builder) =>
         builder(stype).map(Evaluation.stypeToRType)
       case None =>
-        mutable.WrappedArray.empty[RType[_]]
+        ArraySeq.empty[RType[_]]
     }
   }
 

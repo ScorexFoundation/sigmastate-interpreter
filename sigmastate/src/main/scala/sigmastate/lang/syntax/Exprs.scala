@@ -4,13 +4,13 @@ import fastparse._
 import ScalaWhitespace._
 import sigmastate._
 import sigmastate.Values._
-import sigmastate.lang.Terms.{ValueOps, Ident, Val}
+import sigmastate.lang.Terms.{Val, Ident, ValueOps}
 import sigmastate.lang._
 import sigmastate.lang.SigmaPredef._
 import sigmastate.lang.syntax.Basic._
 
 import scala.annotation.tailrec
-import scala.collection.mutable
+import scala.collection.compat.immutable.ArraySeq
 
 //noinspection ForwardReference,TypeAnnotation
 trait Exprs extends Core with Types {
@@ -187,7 +187,7 @@ trait Exprs extends Core with Types {
     builder.currentSrcCtx.withValue(f.sourceContext) {
       val rhs = args.foldLeft(f)((acc, arg) => arg match {
         case Ident(name, _) => mkSelect(acc, name)
-        case UnitConstant() => mkApply(acc, mutable.WrappedArray.empty)
+        case UnitConstant() => mkApply(acc, ArraySeq.empty)
         case Tuple(xs) => mkApply(acc, xs.toArray[SValue])
         case STypeApply("", targs) => mkApplyTypes(acc, targs)
         case arg: SValue => acc match {
