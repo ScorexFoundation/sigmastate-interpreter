@@ -1,13 +1,12 @@
 package scalan
 
 import java.lang.reflect.{InvocationTargetException, Method}
-import scala.language.{higherKinds, implicitConversions}
+import scala.language.{implicitConversions, higherKinds}
 import scala.annotation.implicitNotFound
 import scala.collection.immutable.ListMap
 import scalan.util._
 import scalan.RType._
 import scalan.util.ReflectionUtil.ClassOps
-
 import scala.collection.mutable
 import debox.cfor
 
@@ -84,7 +83,7 @@ abstract class TypeDescs extends Base { self: Scalan =>
   final def getSourceValues(dataEnv: DataEnv, forWrapper: Boolean, stagedValues: AnyRef*): Seq[AnyRef] = {
     import OverloadHack._
     val limit = stagedValues.length
-    val res = mutable.ArrayBuilder.make[AnyRef]
+    val res = mutable.ArrayBuilder.make[AnyRef]()
     res.sizeHint(limit)
     cfor(0)(_ < limit, _ + 1) { i =>
       val v = stagedValues.apply(i)
@@ -122,7 +121,7 @@ abstract class TypeDescs extends Base { self: Scalan =>
     def buildTypeArgs: ListMap[String, (TypeDesc, Variance)] = EmptyTypeArgs
     lazy val typeArgs: ListMap[String, (TypeDesc, Variance)] = buildTypeArgs
     lazy val typeArgsDescs: Seq[TypeDesc] = {
-      val b = mutable.ArrayBuilder.make[TypeDesc]
+      val b = mutable.ArrayBuilder.make[TypeDesc]()
       for (v <- typeArgs.valuesIterator) {
         b += v._1
       }
@@ -259,7 +258,7 @@ abstract class TypeDescs extends Base { self: Scalan =>
       val mapping = CollectionUtil.joinSeqs(rmethods, smethods)(methodKey, methodKey)
       mapping.map { case (rm, sm) =>
         (rm, RMethodDesc(sm))
-      }.toSeq
+      }.to[Seq]
     }
 
     /** Build a mapping between methods of staged wrapper and the corresponding methods of wrapper spec class.
@@ -277,7 +276,7 @@ abstract class TypeDescs extends Base { self: Scalan =>
       val mapping = CollectionUtil.joinSeqs(wMethods, specMethods)(methodKey, methodKey)
       mapping.map { case (wm, sm) =>
         (wm, WMethodDesc(wrapSpec, sm))
-      }.toSeq
+      }.to[Seq]
     }
 
   }

@@ -467,7 +467,7 @@ abstract class Base { scalan: Scalan =>
       * and leave non-Ref items unchanged. */
     final def apply(xs: Seq[Any])(implicit o: Overloaded1): Seq[Any] = {
       val len = xs.length
-      if (len == 0) Seq[Any]()
+      if (len == 0) mutable.WrappedArray.empty
       else {
         val res = new Array[Any](len)
         cfor(0)(_ < len, _ + 1) { i =>

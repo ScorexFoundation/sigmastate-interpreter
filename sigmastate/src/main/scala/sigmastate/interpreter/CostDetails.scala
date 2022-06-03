@@ -41,12 +41,12 @@ case class GivenCost(cost: JitCost,
                      actualTimeNano: Option[Long] = None) extends CostDetails {
   /** The trace is empty for this representation of CostDetails.
     */
-  override def trace: Seq[CostItem] = mutable.Seq.empty
+  override def trace: Seq[CostItem] = mutable.WrappedArray.empty
 }
 
 object CostDetails {
   /** Empty sequence of cost items. Should be used whenever possible to avoid allocations. */
-  val EmptyTrace: Seq[CostItem] = mutable.Seq.empty
+  val EmptyTrace: Seq[CostItem] = mutable.WrappedArray.empty
 
   /** CostDetails with empty trace have also zero total cost. */
   val ZeroCost = TracedCost(EmptyTrace)

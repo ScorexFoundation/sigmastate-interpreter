@@ -5,6 +5,7 @@ import scalan._
 import scalan.RType
 import special.wrappers.WrappersModule
 import special.wrappers.RTypeWrapSpec
+import scala.collection.mutable.WrappedArray
 
 package impl {
 // Abs -----------------------------------
@@ -34,7 +35,7 @@ object WRType extends EntityObject("WRType") {
     override def name: Ref[String] = {
       asRep[String](mkMethodCall(self,
         WRTypeClass.getMethod("name"),
-        Seq.empty,
+        WrappedArray.empty,
         true, false, element[String]))
     }
   }
@@ -72,7 +73,7 @@ object WRType extends EntityObject("WRType") {
     def name: Ref[String] = {
       asRep[String](mkMethodCall(source,
         WRTypeClass.getMethod("name"),
-        Seq.empty,
+        WrappedArray.empty,
         true, true, element[String]))
     }
   }

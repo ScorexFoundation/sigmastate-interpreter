@@ -31,7 +31,7 @@ trait ProgramGraphs extends AstGraphs { self: Scalan =>
 
     override def boundVars = Nil
     override def isIdentity: Boolean = false
-    override def freeVars = Seq[Sym]()
+    override def freeVars = mutable.WrappedArray.empty[Sym]
     override lazy val scheduleIds = {
       val neighbours: DFunc[Int, DBuffer[Int]] = filterNode match {
         case Nullable(pred) =>

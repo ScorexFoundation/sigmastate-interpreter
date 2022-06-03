@@ -4,8 +4,9 @@ import scala.language.higherKinds
 import java.util
 import java.util.Objects
 import java.util.function.BiConsumer
-import scala.collection.{BuildFrom, Factory, GenIterable, Seq, mutable}
-import scala.collection.mutable.{ArrayBuffer, HashMap}
+
+import scala.collection.{Seq, mutable, GenIterable}
+import scala.collection.mutable.{HashMap, ArrayBuffer}
 import scala.collection.generic.CanBuildFrom
 import scala.reflect.ClassTag
 
@@ -221,8 +222,8 @@ object CollectionUtil {
       res
     }
 
-    def filterCast[B:ClassTag](implicit cbf: Factory[B, Source[B]]): Source[B] = {
-      val b = cbf.newBuilder
+    def filterCast[B:ClassTag](implicit cbf: CanBuildFrom[Source[A], B, Source[B]]): Source[B] = {
+      val b = cbf()
       for (x <- xs) {
         x match {
           case y: B =>
@@ -233,7 +234,7 @@ object CollectionUtil {
       b.result()
     }
 
-    def cast[B:ClassTag](implicit cbf: Factory[B, Source[B]]): Source[B] = {
+    def cast[B:ClassTag](implicit cbf: CanBuildFrom[Source[A], B, Source[B]]): Source[B] = {
       for (x <- xs) {
         assert(x match { case _: B => true case _ => false}, s"Value $x doesn't conform to type ${reflect.classTag[B]}")
       }
@@ -251,8 +252,8 @@ object CollectionUtil {
       return None
     }
 
-    def filterMap[B](f: A => Option[B])(implicit cbf: Factory[B, Source[B]]): Source[B] = {
-       val b = cbf.newBuilder
+    def filterMap[B](f: A => Option[B])(implicit cbf: CanBuildFrom[Source[A], B, Source[B]]): Source[B] = {
+       val b = cbf()
        for (x <- xs) {
          f(x) match {
            case Some(y) =>
@@ -264,11 +265,11 @@ object CollectionUtil {
     }
 
     def mapUnzip[B1, B2](f: A => (B1,B2))
-        (implicit cbf1: Factory[B1, Source[B1]],
-            cbf2: Factory[B2, Source[B2]]): (Source[B1], Source[B2]) =
+        (implicit cbf1: CanBuildFrom[Source[A], B1, Source[B1]],
+            cbf2: CanBuildFrom[Source[A], B2, Source[B2]]): (Source[B1], Source[B2]) =
     {
-      val b1 = cbf1.newBuilder
-      val b2 = cbf2.newBuilder
+      val b1 = cbf1()
+      val b2 = cbf2()
       for (x <- xs) {
         val (y1, y2) = f(x)
         b1 += y1; b2 += y2
@@ -277,13 +278,13 @@ object CollectionUtil {
     }
 
     def mapUnzip[B1, B2, B3](f: A => (B1,B2,B3))
-        (implicit cbf1: Factory[B1, Source[B1]],
-            cbf2: Factory[B2, Source[B2]],
-            cbf3: Factory[B3, Source[B3]]): (Source[B1], Source[B2], Source[B3]) =
+        (implicit cbf1: CanBuildFrom[Source[A], B1, Source[B1]],
+            cbf2: CanBuildFrom[Source[A], B2, Source[B2]],
+            cbf3: CanBuildFrom[Source[A], B3, Source[B3]]): (Source[B1], Source[B2], Source[B3]) =
     {
-      val b1 = cbf1.newBuilder
-      val b2 = cbf2.newBuilder
-      val b3 = cbf3.newBuilder
+      val b1 = cbf1()
+      val b2 = cbf2()
+      val b3 = cbf3()
       for (x <- xs) {
         val (y1, y2, y3) = f(x)
         b1 += y1; b2 += y2; b3 += y3
@@ -291,9 +292,9 @@ object CollectionUtil {
       (b1.result(), b2.result(), b3.result())
     }
 
-    def distinctBy[K](key: A => K)(implicit cbf: Factory[A, Source[A]]): Source[A] = {
+    def distinctBy[K](key: A => K)(implicit cbf: CanBuildFrom[Source[A], A, Source[A]]): Source[A] = {
       val keys = mutable.Set[K]()
-      val b = cbf.newBuilder
+      val b = cbf()
       for (x <- xs) {
         val k = key(x)
         if (!keys.contains(k)) {
@@ -307,22 +308,22 @@ object CollectionUtil {
     /** Apply m for each element of this collection, group by key and reduce each group using r.
       * @returns one item for each group in a new collection of (K,V) pairs. */
     def mapReduce[K, V](map: A => (K, V))(reduce: (V, V) => V)
-                       (implicit cbf: Factory[(K,V), Source[(K,V)]]): Source[(K, V)] = {
+                       (implicit cbf: CanBuildFrom[Source[A], (K,V), Source[(K,V)]]): Source[(K, V)] = {
       val result = scala.collection.mutable.LinkedHashMap.empty[K, V]
       xs.foldLeft(result)((r, x) => {
         val (key, value) = map(x)
         result.update(key, if (result.contains(key)) reduce(result(key), value) else value)
         result
       })
-      val b = cbf.newBuilder
+      val b = cbf()
       for (kv <- result) b += kv
       b.result()
     }
 
     def mergeWith[K]
           (ys: Source[A], key: A => K, merge: (A,A) => A)
-          (implicit cbf: Factory[A, Source[A]]): Source[A] = {
-      val b = cbf.newBuilder
+          (implicit cbf: CanBuildFrom[Source[A], A, Source[A]]): Source[A] = {
+      val b = cbf()
       for (v <- (xs ++ ys).mapReduce(x => (key(x), x))(merge))
         b += v._2
       b.result()

@@ -4,6 +4,7 @@ import scala.language.{existentials,implicitConversions}
 import scalan._
 import scala.reflect.runtime.universe._
 import scala.reflect._
+import scala.collection.mutable.WrappedArray
 
 package impl {
   import scalan.OverloadHack.Overloaded1 // manual fix
@@ -46,49 +47,49 @@ object BigInt extends EntityObject("BigInt") {
     override def toByte: Ref[Byte] = {
       asRep[Byte](mkMethodCall(self,
         BigIntClass.getMethod("toByte"),
-        Seq.empty,
+        WrappedArray.empty,
         true, false, element[Byte]))
     }
 
     override def toShort: Ref[Short] = {
       asRep[Short](mkMethodCall(self,
         BigIntClass.getMethod("toShort"),
-        Seq.empty,
+        WrappedArray.empty,
         true, false, element[Short]))
     }
 
     override def toInt: Ref[Int] = {
       asRep[Int](mkMethodCall(self,
         BigIntClass.getMethod("toInt"),
-        Seq.empty,
+        WrappedArray.empty,
         true, false, element[Int]))
     }
 
     override def toLong: Ref[Long] = {
       asRep[Long](mkMethodCall(self,
         BigIntClass.getMethod("toLong"),
-        Seq.empty,
+        WrappedArray.empty,
         true, false, element[Long]))
     }
 
     override def toBytes: Ref[Coll[Byte]] = {
       asRep[Coll[Byte]](mkMethodCall(self,
         BigIntClass.getMethod("toBytes"),
-        Seq.empty,
+        WrappedArray.empty,
         true, false, element[Coll[Byte]]))
     }
 
     override def toBits: Ref[Coll[Boolean]] = {
       asRep[Coll[Boolean]](mkMethodCall(self,
         BigIntClass.getMethod("toBits"),
-        Seq.empty,
+        WrappedArray.empty,
         true, false, element[Coll[Boolean]]))
     }
 
     override def toAbs: Ref[BigInt] = {
       asRep[BigInt](mkMethodCall(self,
         BigIntClass.getMethod("toAbs"),
-        Seq.empty,
+        WrappedArray.empty,
         true, false, element[BigInt]))
     }
 
@@ -102,7 +103,7 @@ object BigInt extends EntityObject("BigInt") {
     override def modQ: Ref[BigInt] = {
       asRep[BigInt](mkMethodCall(self,
         BigIntClass.getMethod("modQ"),
-        Seq.empty,
+        WrappedArray.empty,
         true, false, element[BigInt]))
     }
 
@@ -130,14 +131,14 @@ object BigInt extends EntityObject("BigInt") {
     override def inverseModQ: Ref[BigInt] = {
       asRep[BigInt](mkMethodCall(self,
         BigIntClass.getMethod("inverseModQ"),
-        Seq.empty,
+        WrappedArray.empty,
         true, false, element[BigInt]))
     }
 
     override def signum: Ref[Int] = {
       asRep[Int](mkMethodCall(self,
         BigIntClass.getMethod("signum"),
-        Seq.empty,
+        WrappedArray.empty,
         true, false, element[Int]))
     }
 
@@ -200,7 +201,7 @@ object BigInt extends EntityObject("BigInt") {
     override def negate: Ref[BigInt] = {
       asRep[BigInt](mkMethodCall(self,
         BigIntClass.getMethod("negate"),
-        Seq.empty,
+        WrappedArray.empty,
         true, false, element[BigInt]))
     }
   }
@@ -231,49 +232,49 @@ object BigInt extends EntityObject("BigInt") {
     def toByte: Ref[Byte] = {
       asRep[Byte](mkMethodCall(source,
         BigIntClass.getMethod("toByte"),
-        Seq.empty,
+        WrappedArray.empty,
         true, true, element[Byte]))
     }
 
     def toShort: Ref[Short] = {
       asRep[Short](mkMethodCall(source,
         BigIntClass.getMethod("toShort"),
-        Seq.empty,
+        WrappedArray.empty,
         true, true, element[Short]))
     }
 
     def toInt: Ref[Int] = {
       asRep[Int](mkMethodCall(source,
         BigIntClass.getMethod("toInt"),
-        Seq.empty,
+        WrappedArray.empty,
         true, true, element[Int]))
     }
 
     def toLong: Ref[Long] = {
       asRep[Long](mkMethodCall(source,
         BigIntClass.getMethod("toLong"),
-        Seq.empty,
+        WrappedArray.empty,
         true, true, element[Long]))
     }
 
     def toBytes: Ref[Coll[Byte]] = {
       asRep[Coll[Byte]](mkMethodCall(source,
         BigIntClass.getMethod("toBytes"),
-        Seq.empty,
+        WrappedArray.empty,
         true, true, element[Coll[Byte]]))
     }
 
     def toBits: Ref[Coll[Boolean]] = {
       asRep[Coll[Boolean]](mkMethodCall(source,
         BigIntClass.getMethod("toBits"),
-        Seq.empty,
+        WrappedArray.empty,
         true, true, element[Coll[Boolean]]))
     }
 
     def toAbs: Ref[BigInt] = {
       asRep[BigInt](mkMethodCall(source,
         BigIntClass.getMethod("toAbs"),
-        Seq.empty,
+        WrappedArray.empty,
         true, true, element[BigInt]))
     }
 
@@ -287,7 +288,7 @@ object BigInt extends EntityObject("BigInt") {
     def modQ: Ref[BigInt] = {
       asRep[BigInt](mkMethodCall(source,
         BigIntClass.getMethod("modQ"),
-        Seq.empty,
+        WrappedArray.empty,
         true, true, element[BigInt]))
     }
 
@@ -315,14 +316,14 @@ object BigInt extends EntityObject("BigInt") {
     def inverseModQ: Ref[BigInt] = {
       asRep[BigInt](mkMethodCall(source,
         BigIntClass.getMethod("inverseModQ"),
-        Seq.empty,
+        WrappedArray.empty,
         true, true, element[BigInt]))
     }
 
     def signum: Ref[Int] = {
       asRep[Int](mkMethodCall(source,
         BigIntClass.getMethod("signum"),
-        Seq.empty,
+        WrappedArray.empty,
         true, true, element[Int]))
     }
 
@@ -385,7 +386,7 @@ object BigInt extends EntityObject("BigInt") {
     def negate: Ref[BigInt] = {
       asRep[BigInt](mkMethodCall(source,
         BigIntClass.getMethod("negate"),
-        Seq.empty,
+        WrappedArray.empty,
         true, true, element[BigInt]))
     }
   }
@@ -683,7 +684,7 @@ object GroupElement extends EntityObject("GroupElement") {
     override def isInfinity: Ref[Boolean] = {
       asRep[Boolean](mkMethodCall(self,
         GroupElementClass.getMethod("isInfinity"),
-        Seq.empty,
+        WrappedArray.empty,
         true, false, element[Boolean]))
     }
 
@@ -704,14 +705,14 @@ object GroupElement extends EntityObject("GroupElement") {
     override def negate: Ref[GroupElement] = {
       asRep[GroupElement](mkMethodCall(self,
         GroupElementClass.getMethod("negate"),
-        Seq.empty,
+        WrappedArray.empty,
         true, false, element[GroupElement]))
     }
 
     override def getEncoded: Ref[Coll[Byte]] = {
       asRep[Coll[Byte]](mkMethodCall(self,
         GroupElementClass.getMethod("getEncoded"),
-        Seq.empty,
+        WrappedArray.empty,
         true, false, element[Coll[Byte]]))
     }
   }
@@ -742,7 +743,7 @@ object GroupElement extends EntityObject("GroupElement") {
     def isInfinity: Ref[Boolean] = {
       asRep[Boolean](mkMethodCall(source,
         GroupElementClass.getMethod("isInfinity"),
-        Seq.empty,
+        WrappedArray.empty,
         true, true, element[Boolean]))
     }
 
@@ -763,14 +764,14 @@ object GroupElement extends EntityObject("GroupElement") {
     def negate: Ref[GroupElement] = {
       asRep[GroupElement](mkMethodCall(source,
         GroupElementClass.getMethod("negate"),
-        Seq.empty,
+        WrappedArray.empty,
         true, true, element[GroupElement]))
     }
 
     def getEncoded: Ref[Coll[Byte]] = {
       asRep[Coll[Byte]](mkMethodCall(source,
         GroupElementClass.getMethod("getEncoded"),
-        Seq.empty,
+        WrappedArray.empty,
         true, true, element[Coll[Byte]]))
     }
   }
@@ -888,14 +889,14 @@ object SigmaProp extends EntityObject("SigmaProp") {
     override def isValid: Ref[Boolean] = {
       asRep[Boolean](mkMethodCall(self,
         SigmaPropClass.getMethod("isValid"),
-        Seq.empty,
+        WrappedArray.empty,
         true, false, element[Boolean]))
     }
 
     override def propBytes: Ref[Coll[Byte]] = {
       asRep[Coll[Byte]](mkMethodCall(self,
         SigmaPropClass.getMethod("propBytes"),
-        Seq.empty,
+        WrappedArray.empty,
         true, false, element[Coll[Byte]]))
     }
 
@@ -958,14 +959,14 @@ object SigmaProp extends EntityObject("SigmaProp") {
     def isValid: Ref[Boolean] = {
       asRep[Boolean](mkMethodCall(source,
         SigmaPropClass.getMethod("isValid"),
-        Seq.empty,
+        WrappedArray.empty,
         true, true, element[Boolean]))
     }
 
     def propBytes: Ref[Coll[Byte]] = {
       asRep[Coll[Byte]](mkMethodCall(source,
         SigmaPropClass.getMethod("propBytes"),
-        Seq.empty,
+        WrappedArray.empty,
         true, true, element[Coll[Byte]]))
     }
 
@@ -1148,14 +1149,14 @@ object AnyValue extends EntityObject("AnyValue") {
     override def value: Ref[Any] = {
       asRep[Any](mkMethodCall(self,
         AnyValueClass.getMethod("value"),
-        Seq.empty,
+        WrappedArray.empty,
         true, false, AnyElement))
     }
 
     override def tVal: Ref[WRType[Any]] = {
       asRep[WRType[Any]](mkMethodCall(self,
         AnyValueClass.getMethod("tVal"),
-        Seq.empty,
+        WrappedArray.empty,
         true, false, element[WRType[Any]]))
     }
   }
@@ -1187,14 +1188,14 @@ object AnyValue extends EntityObject("AnyValue") {
     def value: Ref[Any] = {
       asRep[Any](mkMethodCall(source,
         AnyValueClass.getMethod("value"),
-        Seq.empty,
+        WrappedArray.empty,
         true, true, AnyElement))
     }
 
     def tVal: Ref[WRType[Any]] = {
       asRep[WRType[Any]](mkMethodCall(source,
         AnyValueClass.getMethod("tVal"),
-        Seq.empty,
+        WrappedArray.empty,
         true, true, element[WRType[Any]]))
     }
   }
@@ -1282,42 +1283,42 @@ object Box extends EntityObject("Box") {
     override def id: Ref[Coll[Byte]] = {
       asRep[Coll[Byte]](mkMethodCall(self,
         BoxClass.getMethod("id"),
-        Seq.empty,
+        WrappedArray.empty,
         true, false, element[Coll[Byte]]))
     }
 
     override def value: Ref[Long] = {
       asRep[Long](mkMethodCall(self,
         BoxClass.getMethod("value"),
-        Seq.empty,
+        WrappedArray.empty,
         true, false, element[Long]))
     }
 
     override def propositionBytes: Ref[Coll[Byte]] = {
       asRep[Coll[Byte]](mkMethodCall(self,
         BoxClass.getMethod("propositionBytes"),
-        Seq.empty,
+        WrappedArray.empty,
         true, false, element[Coll[Byte]]))
     }
 
     override def bytes: Ref[Coll[Byte]] = {
       asRep[Coll[Byte]](mkMethodCall(self,
         BoxClass.getMethod("bytes"),
-        Seq.empty,
+        WrappedArray.empty,
         true, false, element[Coll[Byte]]))
     }
 
     override def bytesWithoutRef: Ref[Coll[Byte]] = {
       asRep[Coll[Byte]](mkMethodCall(self,
         BoxClass.getMethod("bytesWithoutRef"),
-        Seq.empty,
+        WrappedArray.empty,
         true, false, element[Coll[Byte]]))
     }
 
     override def registers: Ref[Coll[AnyValue]] = {
       asRep[Coll[AnyValue]](mkMethodCall(self,
         BoxClass.getMethod("registers"),
-        Seq.empty,
+        WrappedArray.empty,
         true, false, element[Coll[AnyValue]]))
     }
 
@@ -1331,14 +1332,14 @@ object Box extends EntityObject("Box") {
     override def tokens: Ref[Coll[(Coll[Byte], Long)]] = {
       asRep[Coll[(Coll[Byte], Long)]](mkMethodCall(self,
         BoxClass.getMethod("tokens"),
-        Seq.empty,
+        WrappedArray.empty,
         true, false, element[Coll[(Coll[Byte], Long)]]))
     }
 
     override def creationInfo: Ref[(Int, Coll[Byte])] = {
       asRep[(Int, Coll[Byte])](mkMethodCall(self,
         BoxClass.getMethod("creationInfo"),
-        Seq.empty,
+        WrappedArray.empty,
         true, false, element[(Int, Coll[Byte])]))
     }
 
@@ -1376,42 +1377,42 @@ object Box extends EntityObject("Box") {
     def id: Ref[Coll[Byte]] = {
       asRep[Coll[Byte]](mkMethodCall(source,
         BoxClass.getMethod("id"),
-        Seq.empty,
+        WrappedArray.empty,
         true, true, element[Coll[Byte]]))
     }
 
     def value: Ref[Long] = {
       asRep[Long](mkMethodCall(source,
         BoxClass.getMethod("value"),
-        Seq.empty,
+        WrappedArray.empty,
         true, true, element[Long]))
     }
 
     def propositionBytes: Ref[Coll[Byte]] = {
       asRep[Coll[Byte]](mkMethodCall(source,
         BoxClass.getMethod("propositionBytes"),
-        Seq.empty,
+        WrappedArray.empty,
         true, true, element[Coll[Byte]]))
     }
 
     def bytes: Ref[Coll[Byte]] = {
       asRep[Coll[Byte]](mkMethodCall(source,
         BoxClass.getMethod("bytes"),
-        Seq.empty,
+        WrappedArray.empty,
         true, true, element[Coll[Byte]]))
     }
 
     def bytesWithoutRef: Ref[Coll[Byte]] = {
       asRep[Coll[Byte]](mkMethodCall(source,
         BoxClass.getMethod("bytesWithoutRef"),
-        Seq.empty,
+        WrappedArray.empty,
         true, true, element[Coll[Byte]]))
     }
 
     def registers: Ref[Coll[AnyValue]] = {
       asRep[Coll[AnyValue]](mkMethodCall(source,
         BoxClass.getMethod("registers"),
-        Seq.empty,
+        WrappedArray.empty,
         true, true, element[Coll[AnyValue]]))
     }
 
@@ -1425,14 +1426,14 @@ object Box extends EntityObject("Box") {
     def tokens: Ref[Coll[(Coll[Byte], Long)]] = {
       asRep[Coll[(Coll[Byte], Long)]](mkMethodCall(source,
         BoxClass.getMethod("tokens"),
-        Seq.empty,
+        WrappedArray.empty,
         true, true, element[Coll[(Coll[Byte], Long)]]))
     }
 
     def creationInfo: Ref[(Int, Coll[Byte])] = {
       asRep[(Int, Coll[Byte])](mkMethodCall(source,
         BoxClass.getMethod("creationInfo"),
-        Seq.empty,
+        WrappedArray.empty,
         true, true, element[(Int, Coll[Byte])]))
     }
 
@@ -1707,49 +1708,49 @@ object AvlTree extends EntityObject("AvlTree") {
     override def digest: Ref[Coll[Byte]] = {
       asRep[Coll[Byte]](mkMethodCall(self,
         AvlTreeClass.getMethod("digest"),
-        Seq.empty,
+        WrappedArray.empty,
         true, false, element[Coll[Byte]]))
     }
 
     override def enabledOperations: Ref[Byte] = {
       asRep[Byte](mkMethodCall(self,
         AvlTreeClass.getMethod("enabledOperations"),
-        Seq.empty,
+        WrappedArray.empty,
         true, false, element[Byte]))
     }
 
     override def keyLength: Ref[Int] = {
       asRep[Int](mkMethodCall(self,
         AvlTreeClass.getMethod("keyLength"),
-        Seq.empty,
+        WrappedArray.empty,
         true, false, element[Int]))
     }
 
     override def valueLengthOpt: Ref[WOption[Int]] = {
       asRep[WOption[Int]](mkMethodCall(self,
         AvlTreeClass.getMethod("valueLengthOpt"),
-        Seq.empty,
+        WrappedArray.empty,
         true, false, element[WOption[Int]]))
     }
 
     override def isInsertAllowed: Ref[Boolean] = {
       asRep[Boolean](mkMethodCall(self,
         AvlTreeClass.getMethod("isInsertAllowed"),
-        Seq.empty,
+        WrappedArray.empty,
         true, false, element[Boolean]))
     }
 
     override def isUpdateAllowed: Ref[Boolean] = {
       asRep[Boolean](mkMethodCall(self,
         AvlTreeClass.getMethod("isUpdateAllowed"),
-        Seq.empty,
+        WrappedArray.empty,
         true, false, element[Boolean]))
     }
 
     override def isRemoveAllowed: Ref[Boolean] = {
       asRep[Boolean](mkMethodCall(self,
         AvlTreeClass.getMethod("isRemoveAllowed"),
-        Seq.empty,
+        WrappedArray.empty,
         true, false, element[Boolean]))
     }
 
@@ -1836,49 +1837,49 @@ object AvlTree extends EntityObject("AvlTree") {
     def digest: Ref[Coll[Byte]] = {
       asRep[Coll[Byte]](mkMethodCall(source,
         AvlTreeClass.getMethod("digest"),
-        Seq.empty,
+        WrappedArray.empty,
         true, true, element[Coll[Byte]]))
     }
 
     def enabledOperations: Ref[Byte] = {
       asRep[Byte](mkMethodCall(source,
         AvlTreeClass.getMethod("enabledOperations"),
-        Seq.empty,
+        WrappedArray.empty,
         true, true, element[Byte]))
     }
 
     def keyLength: Ref[Int] = {
       asRep[Int](mkMethodCall(source,
         AvlTreeClass.getMethod("keyLength"),
-        Seq.empty,
+        WrappedArray.empty,
         true, true, element[Int]))
     }
 
     def valueLengthOpt: Ref[WOption[Int]] = {
       asRep[WOption[Int]](mkMethodCall(source,
         AvlTreeClass.getMethod("valueLengthOpt"),
-        Seq.empty,
+        WrappedArray.empty,
         true, true, element[WOption[Int]]))
     }
 
     def isInsertAllowed: Ref[Boolean] = {
       asRep[Boolean](mkMethodCall(source,
         AvlTreeClass.getMethod("isInsertAllowed"),
-        Seq.empty,
+        WrappedArray.empty,
         true, true, element[Boolean]))
     }
 
     def isUpdateAllowed: Ref[Boolean] = {
       asRep[Boolean](mkMethodCall(source,
         AvlTreeClass.getMethod("isUpdateAllowed"),
-        Seq.empty,
+        WrappedArray.empty,
         true, true, element[Boolean]))
     }
 
     def isRemoveAllowed: Ref[Boolean] = {
       asRep[Boolean](mkMethodCall(source,
         AvlTreeClass.getMethod("isRemoveAllowed"),
-        Seq.empty,
+        WrappedArray.empty,
         true, true, element[Boolean]))
     }
 
@@ -1997,49 +1998,49 @@ object PreHeader extends EntityObject("PreHeader") {
     override def version: Ref[Byte] = {
       asRep[Byte](mkMethodCall(self,
         PreHeaderClass.getMethod("version"),
-        Seq.empty,
+        WrappedArray.empty,
         true, false, element[Byte]))
     }
 
     override def parentId: Ref[Coll[Byte]] = {
       asRep[Coll[Byte]](mkMethodCall(self,
         PreHeaderClass.getMethod("parentId"),
-        Seq.empty,
+        WrappedArray.empty,
         true, false, element[Coll[Byte]]))
     }
 
     override def timestamp: Ref[Long] = {
       asRep[Long](mkMethodCall(self,
         PreHeaderClass.getMethod("timestamp"),
-        Seq.empty,
+        WrappedArray.empty,
         true, false, element[Long]))
     }
 
     override def nBits: Ref[Long] = {
       asRep[Long](mkMethodCall(self,
         PreHeaderClass.getMethod("nBits"),
-        Seq.empty,
+        WrappedArray.empty,
         true, false, element[Long]))
     }
 
     override def height: Ref[Int] = {
       asRep[Int](mkMethodCall(self,
         PreHeaderClass.getMethod("height"),
-        Seq.empty,
+        WrappedArray.empty,
         true, false, element[Int]))
     }
 
     override def minerPk: Ref[GroupElement] = {
       asRep[GroupElement](mkMethodCall(self,
         PreHeaderClass.getMethod("minerPk"),
-        Seq.empty,
+        WrappedArray.empty,
         true, false, element[GroupElement]))
     }
 
     override def votes: Ref[Coll[Byte]] = {
       asRep[Coll[Byte]](mkMethodCall(self,
         PreHeaderClass.getMethod("votes"),
-        Seq.empty,
+        WrappedArray.empty,
         true, false, element[Coll[Byte]]))
     }
   }
@@ -2070,49 +2071,49 @@ object PreHeader extends EntityObject("PreHeader") {
     def version: Ref[Byte] = {
       asRep[Byte](mkMethodCall(source,
         PreHeaderClass.getMethod("version"),
-        Seq.empty,
+        WrappedArray.empty,
         true, true, element[Byte]))
     }
 
     def parentId: Ref[Coll[Byte]] = {
       asRep[Coll[Byte]](mkMethodCall(source,
         PreHeaderClass.getMethod("parentId"),
-        Seq.empty,
+        WrappedArray.empty,
         true, true, element[Coll[Byte]]))
     }
 
     def timestamp: Ref[Long] = {
       asRep[Long](mkMethodCall(source,
         PreHeaderClass.getMethod("timestamp"),
-        Seq.empty,
+        WrappedArray.empty,
         true, true, element[Long]))
     }
 
     def nBits: Ref[Long] = {
       asRep[Long](mkMethodCall(source,
         PreHeaderClass.getMethod("nBits"),
-        Seq.empty,
+        WrappedArray.empty,
         true, true, element[Long]))
     }
 
     def height: Ref[Int] = {
       asRep[Int](mkMethodCall(source,
         PreHeaderClass.getMethod("height"),
-        Seq.empty,
+        WrappedArray.empty,
         true, true, element[Int]))
     }
 
     def minerPk: Ref[GroupElement] = {
       asRep[GroupElement](mkMethodCall(source,
         PreHeaderClass.getMethod("minerPk"),
-        Seq.empty,
+        WrappedArray.empty,
         true, true, element[GroupElement]))
     }
 
     def votes: Ref[Coll[Byte]] = {
       asRep[Coll[Byte]](mkMethodCall(source,
         PreHeaderClass.getMethod("votes"),
-        Seq.empty,
+        WrappedArray.empty,
         true, true, element[Coll[Byte]]))
     }
   }
@@ -2175,105 +2176,105 @@ object Header extends EntityObject("Header") {
     override def id: Ref[Coll[Byte]] = {
       asRep[Coll[Byte]](mkMethodCall(self,
         HeaderClass.getMethod("id"),
-        Seq.empty,
+        WrappedArray.empty,
         true, false, element[Coll[Byte]]))
     }
 
     override def version: Ref[Byte] = {
       asRep[Byte](mkMethodCall(self,
         HeaderClass.getMethod("version"),
-        Seq.empty,
+        WrappedArray.empty,
         true, false, element[Byte]))
     }
 
     override def parentId: Ref[Coll[Byte]] = {
       asRep[Coll[Byte]](mkMethodCall(self,
         HeaderClass.getMethod("parentId"),
-        Seq.empty,
+        WrappedArray.empty,
         true, false, element[Coll[Byte]]))
     }
 
     override def ADProofsRoot: Ref[Coll[Byte]] = {
       asRep[Coll[Byte]](mkMethodCall(self,
         HeaderClass.getMethod("ADProofsRoot"),
-        Seq.empty,
+        WrappedArray.empty,
         true, false, element[Coll[Byte]]))
     }
 
     override def stateRoot: Ref[AvlTree] = {
       asRep[AvlTree](mkMethodCall(self,
         HeaderClass.getMethod("stateRoot"),
-        Seq.empty,
+        WrappedArray.empty,
         true, false, element[AvlTree]))
     }
 
     override def transactionsRoot: Ref[Coll[Byte]] = {
       asRep[Coll[Byte]](mkMethodCall(self,
         HeaderClass.getMethod("transactionsRoot"),
-        Seq.empty,
+        WrappedArray.empty,
         true, false, element[Coll[Byte]]))
     }
 
     override def timestamp: Ref[Long] = {
       asRep[Long](mkMethodCall(self,
         HeaderClass.getMethod("timestamp"),
-        Seq.empty,
+        WrappedArray.empty,
         true, false, element[Long]))
     }
 
     override def nBits: Ref[Long] = {
       asRep[Long](mkMethodCall(self,
         HeaderClass.getMethod("nBits"),
-        Seq.empty,
+        WrappedArray.empty,
         true, false, element[Long]))
     }
 
     override def height: Ref[Int] = {
       asRep[Int](mkMethodCall(self,
         HeaderClass.getMethod("height"),
-        Seq.empty,
+        WrappedArray.empty,
         true, false, element[Int]))
     }
 
     override def extensionRoot: Ref[Coll[Byte]] = {
       asRep[Coll[Byte]](mkMethodCall(self,
         HeaderClass.getMethod("extensionRoot"),
-        Seq.empty,
+        WrappedArray.empty,
         true, false, element[Coll[Byte]]))
     }
 
     override def minerPk: Ref[GroupElement] = {
       asRep[GroupElement](mkMethodCall(self,
         HeaderClass.getMethod("minerPk"),
-        Seq.empty,
+        WrappedArray.empty,
         true, false, element[GroupElement]))
     }
 
     override def powOnetimePk: Ref[GroupElement] = {
       asRep[GroupElement](mkMethodCall(self,
         HeaderClass.getMethod("powOnetimePk"),
-        Seq.empty,
+        WrappedArray.empty,
         true, false, element[GroupElement]))
     }
 
     override def powNonce: Ref[Coll[Byte]] = {
       asRep[Coll[Byte]](mkMethodCall(self,
         HeaderClass.getMethod("powNonce"),
-        Seq.empty,
+        WrappedArray.empty,
         true, false, element[Coll[Byte]]))
     }
 
     override def powDistance: Ref[BigInt] = {
       asRep[BigInt](mkMethodCall(self,
         HeaderClass.getMethod("powDistance"),
-        Seq.empty,
+        WrappedArray.empty,
         true, false, element[BigInt]))
     }
 
     override def votes: Ref[Coll[Byte]] = {
       asRep[Coll[Byte]](mkMethodCall(self,
         HeaderClass.getMethod("votes"),
-        Seq.empty,
+        WrappedArray.empty,
         true, false, element[Coll[Byte]]))
     }
   }
@@ -2304,105 +2305,105 @@ object Header extends EntityObject("Header") {
     def id: Ref[Coll[Byte]] = {
       asRep[Coll[Byte]](mkMethodCall(source,
         HeaderClass.getMethod("id"),
-        Seq.empty,
+        WrappedArray.empty,
         true, true, element[Coll[Byte]]))
     }
 
     def version: Ref[Byte] = {
       asRep[Byte](mkMethodCall(source,
         HeaderClass.getMethod("version"),
-        Seq.empty,
+        WrappedArray.empty,
         true, true, element[Byte]))
     }
 
     def parentId: Ref[Coll[Byte]] = {
       asRep[Coll[Byte]](mkMethodCall(source,
         HeaderClass.getMethod("parentId"),
-        Seq.empty,
+        WrappedArray.empty,
         true, true, element[Coll[Byte]]))
     }
 
     def ADProofsRoot: Ref[Coll[Byte]] = {
       asRep[Coll[Byte]](mkMethodCall(source,
         HeaderClass.getMethod("ADProofsRoot"),
-        Seq.empty,
+        WrappedArray.empty,
         true, true, element[Coll[Byte]]))
     }
 
     def stateRoot: Ref[AvlTree] = {
       asRep[AvlTree](mkMethodCall(source,
         HeaderClass.getMethod("stateRoot"),
-        Seq.empty,
+        WrappedArray.empty,
         true, true, element[AvlTree]))
     }
 
     def transactionsRoot: Ref[Coll[Byte]] = {
       asRep[Coll[Byte]](mkMethodCall(source,
         HeaderClass.getMethod("transactionsRoot"),
-        Seq.empty,
+        WrappedArray.empty,
         true, true, element[Coll[Byte]]))
     }
 
     def timestamp: Ref[Long] = {
       asRep[Long](mkMethodCall(source,
         HeaderClass.getMethod("timestamp"),
-        Seq.empty,
+        WrappedArray.empty,
         true, true, element[Long]))
     }
 
     def nBits: Ref[Long] = {
       asRep[Long](mkMethodCall(source,
         HeaderClass.getMethod("nBits"),
-        Seq.empty,
+        WrappedArray.empty,
         true, true, element[Long]))
     }
 
     def height: Ref[Int] = {
       asRep[Int](mkMethodCall(source,
         HeaderClass.getMethod("height"),
-        Seq.empty,
+        WrappedArray.empty,
         true, true, element[Int]))
     }
 
     def extensionRoot: Ref[Coll[Byte]] = {
       asRep[Coll[Byte]](mkMethodCall(source,
         HeaderClass.getMethod("extensionRoot"),
-        Seq.empty,
+        WrappedArray.empty,
         true, true, element[Coll[Byte]]))
     }
 
     def minerPk: Ref[GroupElement] = {
       asRep[GroupElement](mkMethodCall(source,
         HeaderClass.getMethod("minerPk"),
-        Seq.empty,
+        WrappedArray.empty,
         true, true, element[GroupElement]))
     }
 
     def powOnetimePk: Ref[GroupElement] = {
       asRep[GroupElement](mkMethodCall(source,
         HeaderClass.getMethod("powOnetimePk"),
-        Seq.empty,
+        WrappedArray.empty,
         true, true, element[GroupElement]))
     }
 
     def powNonce: Ref[Coll[Byte]] = {
       asRep[Coll[Byte]](mkMethodCall(source,
         HeaderClass.getMethod("powNonce"),
-        Seq.empty,
+        WrappedArray.empty,
         true, true, element[Coll[Byte]]))
     }
 
     def powDistance: Ref[BigInt] = {
       asRep[BigInt](mkMethodCall(source,
         HeaderClass.getMethod("powDistance"),
-        Seq.empty,
+        WrappedArray.empty,
         true, true, element[BigInt]))
     }
 
     def votes: Ref[Coll[Byte]] = {
       asRep[Coll[Byte]](mkMethodCall(source,
         HeaderClass.getMethod("votes"),
-        Seq.empty,
+        WrappedArray.empty,
         true, true, element[Coll[Byte]]))
     }
   }
@@ -2465,77 +2466,77 @@ object Context extends EntityObject("Context") {
     override def builder: Ref[SigmaDslBuilder] = {
       asRep[SigmaDslBuilder](mkMethodCall(self,
         ContextClass.getMethod("builder"),
-        Seq.empty,
+        WrappedArray.empty,
         true, false, element[SigmaDslBuilder]))
     }
 
     override def OUTPUTS: Ref[Coll[Box]] = {
       asRep[Coll[Box]](mkMethodCall(self,
         ContextClass.getMethod("OUTPUTS"),
-        Seq.empty,
+        WrappedArray.empty,
         true, false, element[Coll[Box]]))
     }
 
     override def INPUTS: Ref[Coll[Box]] = {
       asRep[Coll[Box]](mkMethodCall(self,
         ContextClass.getMethod("INPUTS"),
-        Seq.empty,
+        WrappedArray.empty,
         true, false, element[Coll[Box]]))
     }
 
     override def dataInputs: Ref[Coll[Box]] = {
       asRep[Coll[Box]](mkMethodCall(self,
         ContextClass.getMethod("dataInputs"),
-        Seq.empty,
+        WrappedArray.empty,
         true, false, element[Coll[Box]]))
     }
 
     override def HEIGHT: Ref[Int] = {
       asRep[Int](mkMethodCall(self,
         ContextClass.getMethod("HEIGHT"),
-        Seq.empty,
+        WrappedArray.empty,
         true, false, element[Int]))
     }
 
     override def SELF: Ref[Box] = {
       asRep[Box](mkMethodCall(self,
         ContextClass.getMethod("SELF"),
-        Seq.empty,
+        WrappedArray.empty,
         true, false, element[Box]))
     }
 
     override def selfBoxIndex: Ref[Int] = {
       asRep[Int](mkMethodCall(self,
         ContextClass.getMethod("selfBoxIndex"),
-        Seq.empty,
+        WrappedArray.empty,
         true, false, element[Int]))
     }
 
     override def LastBlockUtxoRootHash: Ref[AvlTree] = {
       asRep[AvlTree](mkMethodCall(self,
         ContextClass.getMethod("LastBlockUtxoRootHash"),
-        Seq.empty,
+        WrappedArray.empty,
         true, false, element[AvlTree]))
     }
 
     override def headers: Ref[Coll[Header]] = {
       asRep[Coll[Header]](mkMethodCall(self,
         ContextClass.getMethod("headers"),
-        Seq.empty,
+        WrappedArray.empty,
         true, false, element[Coll[Header]]))
     }
 
     override def preHeader: Ref[PreHeader] = {
       asRep[PreHeader](mkMethodCall(self,
         ContextClass.getMethod("preHeader"),
-        Seq.empty,
+        WrappedArray.empty,
         true, false, element[PreHeader]))
     }
 
     override def minerPubKey: Ref[Coll[Byte]] = {
       asRep[Coll[Byte]](mkMethodCall(self,
         ContextClass.getMethod("minerPubKey"),
-        Seq.empty,
+        WrappedArray.empty,
         true, false, element[Coll[Byte]]))
     }
 
@@ -2549,7 +2550,7 @@ object Context extends EntityObject("Context") {
     override def vars: Ref[Coll[AnyValue]] = {
       asRep[Coll[AnyValue]](mkMethodCall(self,
         ContextClass.getMethod("vars"),
-        Seq.empty,
+        WrappedArray.empty,
         true, false, element[Coll[AnyValue]]))
     }
   }
@@ -2580,77 +2581,77 @@ object Context extends EntityObject("Context") {
     def builder: Ref[SigmaDslBuilder] = {
       asRep[SigmaDslBuilder](mkMethodCall(source,
         ContextClass.getMethod("builder"),
-        Seq.empty,
+        WrappedArray.empty,
         true, true, element[SigmaDslBuilder]))
     }
 
     def OUTPUTS: Ref[Coll[Box]] = {
       asRep[Coll[Box]](mkMethodCall(source,
         ContextClass.getMethod("OUTPUTS"),
-        Seq.empty,
+        WrappedArray.empty,
         true, true, element[Coll[Box]]))
     }
 
     def INPUTS: Ref[Coll[Box]] = {
       asRep[Coll[Box]](mkMethodCall(source,
         ContextClass.getMethod("INPUTS"),
-        Seq.empty,
+        WrappedArray.empty,
         true, true, element[Coll[Box]]))
     }
 
     def dataInputs: Ref[Coll[Box]] = {
       asRep[Coll[Box]](mkMethodCall(source,
         ContextClass.getMethod("dataInputs"),
-        Seq.empty,
+        WrappedArray.empty,
         true, true, element[Coll[Box]]))
     }
 
     def HEIGHT: Ref[Int] = {
       asRep[Int](mkMethodCall(source,
         ContextClass.getMethod("HEIGHT"),
-        Seq.empty,
+        WrappedArray.empty,
         true, true, element[Int]))
     }
 
     def SELF: Ref[Box] = {
       asRep[Box](mkMethodCall(source,
         ContextClass.getMethod("SELF"),
-        Seq.empty,
+        WrappedArray.empty,
         true, true, element[Box]))
     }
 
     def selfBoxIndex: Ref[Int] = {
       asRep[Int](mkMethodCall(source,
         ContextClass.getMethod("selfBoxIndex"),
-        Seq.empty,
+        WrappedArray.empty,
         true, true, element[Int]))
     }
 
     def LastBlockUtxoRootHash: Ref[AvlTree] = {
       asRep[AvlTree](mkMethodCall(source,
         ContextClass.getMethod("LastBlockUtxoRootHash"),
-        Seq.empty,
+        WrappedArray.empty,
         true, true, element[AvlTree]))
     }
 
     def headers: Ref[Coll[Header]] = {
       asRep[Coll[Header]](mkMethodCall(source,
         ContextClass.getMethod("headers"),
-        Seq.empty,
+        WrappedArray.empty,
         true, true, element[Coll[Header]]))
     }
 
     def preHeader: Ref[PreHeader] = {
       asRep[PreHeader](mkMethodCall(source,
         ContextClass.getMethod("preHeader"),
-        Seq.empty,
+        WrappedArray.empty,
         true, true, element[PreHeader]))
     }
 
     def minerPubKey: Ref[Coll[Byte]] = {
       asRep[Coll[Byte]](mkMethodCall(source,
         ContextClass.getMethod("minerPubKey"),
-        Seq.empty,
+        WrappedArray.empty,
         true, true, element[Coll[Byte]]))
     }
 
@@ -2664,7 +2665,7 @@ object Context extends EntityObject("Context") {
     def vars: Ref[Coll[AnyValue]] = {
       asRep[Coll[AnyValue]](mkMethodCall(source,
         ContextClass.getMethod("vars"),
-        Seq.empty,
+        WrappedArray.empty,
         true, true, element[Coll[AnyValue]]))
     }
   }
@@ -2862,7 +2863,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
     override def Colls: Ref[CollBuilder] = {
       asRep[CollBuilder](mkMethodCall(self,
         SigmaDslBuilderClass.getMethod("Colls"),
-        Seq.empty,
+        WrappedArray.empty,
         true, false, element[CollBuilder]))
     }
 
@@ -2974,7 +2975,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
     override def groupGenerator: Ref[GroupElement] = {
       asRep[GroupElement](mkMethodCall(self,
         SigmaDslBuilderClass.getMethod("groupGenerator"),
-        Seq.empty,
+        WrappedArray.empty,
         true, false, element[GroupElement]))
     }
 
@@ -3034,7 +3035,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
     def Colls: Ref[CollBuilder] = {
       asRep[CollBuilder](mkMethodCall(source,
         SigmaDslBuilderClass.getMethod("Colls"),
-        Seq.empty,
+        WrappedArray.empty,
         true, true, element[CollBuilder]))
     }
 
@@ -3146,7 +3147,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
     def groupGenerator: Ref[GroupElement] = {
       asRep[GroupElement](mkMethodCall(source,
         SigmaDslBuilderClass.getMethod("groupGenerator"),
-        Seq.empty,
+        WrappedArray.empty,
         true, true, element[GroupElement]))
     }
 
