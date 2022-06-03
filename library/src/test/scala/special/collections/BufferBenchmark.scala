@@ -6,6 +6,7 @@ import org.scalameter.api.Bench
 
 import scala.collection.mutable
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
+import scala.collection.compat.immutable.ArraySeq
 
 trait BufferBenchmarkCases extends BenchmarkGens { suite: Bench[Double] =>
   val obj = new Object()
@@ -22,7 +23,7 @@ trait BufferBenchmarkCases extends BenchmarkGens { suite: Bench[Double] =>
     }
     measure method "of ArrayBuilder" in {
       using(arrays) in { case (arr, n) =>
-        val buf = mutable.ArrayBuilder.make[Int]()
+        val buf = mutable.ArrayBuilder.make[Int]
         val limit = arr.length
         cfor(0)(_ < limit, _ + 1) { i =>
           buf += (arr(i))
@@ -64,7 +65,7 @@ trait BufferBenchmarkCases extends BenchmarkGens { suite: Bench[Double] =>
     }
     measure method "of ArrayBuilder" in {
       using(arrays) in { case (arr, n) =>
-        val buf = mutable.ArrayBuilder.make[Object]()
+        val buf = mutable.ArrayBuilder.make[Object]
         val limit = arr.length
         cfor(0)(_ < limit, _ + 1) { i =>
           buf += (obj)

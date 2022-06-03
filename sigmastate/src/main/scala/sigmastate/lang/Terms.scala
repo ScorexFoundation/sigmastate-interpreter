@@ -13,7 +13,7 @@ import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.lang.TransformingSigmaBuilder._
 
 import scala.language.implicitConversions
-import scala.collection.mutable.WrappedArray
+import scala.collection.compat.immutable.ArraySeq
 import debox.cfor
 
 object Terms {
@@ -107,7 +107,7 @@ object Terms {
     * compilation environment value. */
   case class Ident(name: String, tpe: SType = NoType) extends Value[SType] {
     override def companion = Ident
-    override def opType: SFunc = SFunc(WrappedArray.empty, tpe)
+    override def opType: SFunc = SFunc(ArraySeq.empty, tpe)
   }
   object Ident extends ValueCompanion {
     override def opCode: OpCode = OpCodes.Undefined

@@ -10,7 +10,7 @@ import debox.{Buffer => DBuffer}
 import scala.language.implicitConversions
 import debox.cfor
 
-import scala.collection.Seq
+import scala.collection.immutable.Seq
 
 trait Functions extends Base with ProgramGraphs { self: Scalan =>
 

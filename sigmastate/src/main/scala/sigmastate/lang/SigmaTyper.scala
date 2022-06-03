@@ -13,7 +13,7 @@ import sigmastate.lang.SigmaPredef._
 import sigmastate.serialization.OpCodes
 import sigmastate.utxo._
 
-import scala.collection.mutable.ArrayBuffer
+import scala.collection.compat.immutable.ArraySeq
 
 /**
   * Type inference and analysis for Sigma expressions.
@@ -30,7 +30,7 @@ class SigmaTyper(val builder: SigmaBuilder,
   import SType.tT
 
   private val predefinedEnv: Map[String, SType] =
-      predefFuncRegistry.funcs.mapValues(f => f.declaration.tpe)
+      predefFuncRegistry.funcs.view.mapValues(f => f.declaration.tpe).toMap
 
   private def processGlobalMethod(srcCtx: Nullable[SourceContext],
                                   method: SMethod,
@@ -51,13 +51,13 @@ class SigmaTyper(val builder: SigmaBuilder,
                  expected: Option[SType] = None): SValue = ( bound match {
     case Block(bs, res) =>
       var curEnv = env
-      val bs1 = ArrayBuffer[Val]()
+      val bs1 = ArraySeq[Val]()
       for (v @ Val(n, _, b) <- bs) {
         if (curEnv.contains(n)) error(s"Variable $n already defined ($n = ${curEnv(n)}", v.sourceContext)
         val b1 = assignType(curEnv, b)
         curEnv = curEnv + (n -> b1.tpe)
         builder.currentSrcCtx.withValue(v.sourceContext) {
-          bs1 += mkVal(n, b1.tpe, b1)
+          bs1 prepended mkVal(n, b1.tpe, b1)
         }
       }
       val res1 = assignType(curEnv, res)

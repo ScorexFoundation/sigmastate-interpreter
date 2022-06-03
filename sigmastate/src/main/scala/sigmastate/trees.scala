@@ -27,6 +27,7 @@ import special.sigma.{GroupElement, SigmaProp}
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
+import scala.collection.compat.immutable.ArraySeq
 import debox.cfor
 
 /**
@@ -63,14 +64,14 @@ object CAND {
     */
   def normalized(items: Seq[SigmaBoolean]): SigmaBoolean = {
     require(items.nonEmpty)
-    val res = new ArrayBuffer[SigmaBoolean]()
+    val res = ArraySeq[SigmaBoolean]()
     val nItems = items.length
     cfor(0)(_ < nItems, _ + 1) { i =>
       val x = items(i)
       x match {
         case FalseProp => return FalseProp
         case TrueProp => // skip
-        case _ => res += x
+        case _ => res prepended x
       }
     }
     if (res.isEmpty) TrueProp
@@ -99,14 +100,14 @@ object COR {
     */
   def normalized(items: Seq[SigmaBoolean]): SigmaBoolean = {
     require(items.nonEmpty)
-    val res = new ArrayBuffer[SigmaBoolean]()
+    val res = ArraySeq[SigmaBoolean]()
     val nItems = items.length
     cfor(0)(_ < nItems, _ + 1) { i =>
       val x = items(i)
       x match {
         case FalseProp => // skip
         case TrueProp => return TrueProp
-        case _ => res += x
+        case _ => res prepended x
       }
     }
     if (res.isEmpty) FalseProp

@@ -109,7 +109,7 @@ class ErgoTreeSerializer {
     * structure after deserialization. */
   def serializeErgoTree(ergoTree: ErgoTree): Array[Byte] = {
     val res = ergoTree.root match {
-      case Left(UnparsedErgoTree(bytes, _)) => bytes.array
+      case Left(UnparsedErgoTree(bytes, _)) => bytes.toArray
       case _ =>
         val bytes = serializeWithoutSize(ergoTree)
         if (ergoTree.hasSize) {

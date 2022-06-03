@@ -149,7 +149,7 @@ object DataSerializer {
           case _ =>
             Evaluation.stypeToRType(tpeElem)
         }).asInstanceOf[RType[T#WrappedType]]
-        val b = mutable.ArrayBuilder.make[T#WrappedType]()(tItem.classTag)
+        val b = mutable.ArrayBuilder.make[T#WrappedType](tItem.classTag)
         for (_ <- 0 until len) {
           b += deserialize(tpeElem, r)
         }

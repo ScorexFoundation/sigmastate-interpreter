@@ -98,7 +98,7 @@ object ValidationRules {
       if (!root.tpe.isSigmaProp) {
         throwValidationException(
           new SerializerException(s"Failed deserialization, expected deserialized script to have type SigmaProp; got ${root.tpe}"),
-          Array(root))
+          Array(root.tpe.typeCode))
       }
     }
   }
@@ -220,7 +220,7 @@ object ValidationRules {
       else {
         throwValidationException(
           new SerializerException(s"The method with code $methodId doesn't declared in the type $objType."),
-          Array(objType, methodId))
+          Array(objType.typeId, methodId))
       }
     }
 

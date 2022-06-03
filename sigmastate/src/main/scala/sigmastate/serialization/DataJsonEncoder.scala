@@ -65,8 +65,8 @@ object DataJsonEncoder {
           }
           val rtypeArr = tArr.map(x => Evaluation.stypeToRType(x))
 
-          val leftSource = mutable.ArrayBuilder.make[SType#WrappedType]()(rtypeArr(0).classTag)
-          val rightSource = mutable.ArrayBuilder.make[SType#WrappedType]()(rtypeArr(1).classTag)
+          val leftSource = mutable.ArrayBuilder.make[SType#WrappedType](rtypeArr(0).classTag)
+          val rightSource = mutable.ArrayBuilder.make[SType#WrappedType](rtypeArr(1).classTag)
           cfor(0)(_ < coll.length, _ + 1) { i =>
             val arr = Evaluation.fromDslTuple(coll(i), tup).asInstanceOf[tup.WrappedType]
             leftSource += arr(0)
@@ -82,10 +82,10 @@ object DataJsonEncoder {
             "_2" -> encodeData[SType](right, rightType)
           ))
         case _ =>
-          var jsons = mutable.MutableList.empty[Json]
+          var jsons = ArraySeq.empty[Json]
           cfor(0)(_ < coll.length, _ + 1) { i =>
             val x = coll(i)
-            jsons += encodeData(x, tColl.elemType)
+            jsons prepended encodeData(x, tColl.elemType)
           }
           Json.fromValues(jsons.toList)
       }
@@ -107,9 +107,9 @@ object DataJsonEncoder {
       }
       val len = arr.length
       assert(len == tArr.length, s"Type $t doesn't correspond to value $arr")
-      var obj = mutable.MutableList.empty[(String, Json)]
+      var obj = ArraySeq.empty[(String, Json)]
       cfor(0)(_ < len, _ + 1) { i =>
-        obj += (s"_${i + 1}" -> encodeData[SType](arr(i), tArr(i)))
+        obj prepended (s"_${i + 1}" -> encodeData[SType](arr(i), tArr(i)))
       }
       Json.fromFields(obj.toList)
     case SGroupElement =>
@@ -126,18 +126,18 @@ object DataJsonEncoder {
       encodeBytes(w.toBytes)
     case SBox =>
       val ergoBox = v.asInstanceOf[Box]
-      var obj = mutable.MutableList.empty[(String, Json)]
-      obj += ("value" -> encodeData(ergoBox.value.asInstanceOf[SType#WrappedType], SLong))
-      obj += ("ergoTree" -> encodeBytes(ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(ergoBox.ergoTree)))
-      obj += "tokens" -> encodeData(ergoBox.additionalTokens.map { case (id, amount) =>
+      var obj = ArraySeq.empty[(String, Json)]
+      obj prepended ("value" -> encodeData(ergoBox.value.asInstanceOf[SType#WrappedType], SLong))
+      obj prepended ("ergoTree" -> encodeBytes(ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(ergoBox.ergoTree)))
+      obj prepended "tokens" -> encodeData(ergoBox.additionalTokens.map { case (id, amount) =>
         (Colls.fromArray(id), amount)
       }.asInstanceOf[SType#WrappedType], SCollectionType(STuple(SCollectionType(SByte), SLong)))
       ergoBox.additionalRegisters.foreach { case (id, value) =>
-        obj += (s"r${id.number}" -> encode[SType](value.value, value.tpe))
+        obj prepended (s"r${id.number}" -> encode[SType](value.value, value.tpe))
       }
-      obj += ("txId" -> encodeBytes(ergoBox.transactionId.toBytes))
-      obj += ("index" -> encodeData(ergoBox.index.asInstanceOf[SType#WrappedType], SShort))
-      obj += ("creationHeight" -> encodeData(ergoBox.creationHeight.asInstanceOf[SType#WrappedType], SInt))
+      obj prepended ("txId" -> encodeBytes(ergoBox.transactionId.toBytes))
+      obj prepended ("index" -> encodeData(ergoBox.index.asInstanceOf[SType#WrappedType], SShort))
+      obj prepended ("creationHeight" -> encodeData(ergoBox.creationHeight.asInstanceOf[SType#WrappedType], SInt))
       Json.fromFields(obj)
     case t => throw new SerializerException(s"Not defined DataSerializer for type $t")
   }
@@ -178,7 +178,7 @@ object DataJsonEncoder {
         if (tArr.length != 2) {
           throw new SerializerException("Tuples with length not equal to 2 are not supported")
         }
-        val collSource = mutable.ArrayBuilder.make[Any]()
+        val collSource = mutable.ArrayBuilder.make[Any]
         cfor(1)(_ <= tArr.length, _ + 1) { i =>
           collSource += decodeData(json.hcursor.downField(s"_${i}").focus.get, tArr(i - 1))
         }
@@ -207,12 +207,12 @@ object DataJsonEncoder {
         val txId = decodeBytes(json.hcursor.downField(s"txId").focus.get).toModifierId
         val index = decodeData(json.hcursor.downField(s"index").focus.get, SShort)
         val creationHeight = decodeData(json.hcursor.downField(s"creationHeight").focus.get, SInt)
-        val additionalRegisters = mutable.MutableList.empty[(NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType])]
+        val additionalRegisters = ArraySeq.empty[(NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType])]
         for (register <- ErgoBox.nonMandatoryRegisters) {
           val opt = json.hcursor.downField(s"r${register.number}").focus
           if (opt.isDefined && !opt.get.isNull) {
             val (decoded, tpe) = decodeWithTpe(opt.get)
-            additionalRegisters += (register -> Constant(decoded, tpe))
+            additionalRegisters prepended (register -> Constant(decoded, tpe))
           }
         }
         SigmaDsl.Box(new ErgoBox(value, tree, tokens, additionalRegisters.toMap, txId, index, creationHeight))
@@ -235,7 +235,7 @@ object DataJsonEncoder {
     tpe match {
       case tup: STuple =>
         val tArr = tup.items.toArray
-        val collSource = mutable.ArrayBuilder.make[T#WrappedType]()(tItem.classTag)
+        val collSource = mutable.ArrayBuilder.make[T#WrappedType](tItem.classTag)
         val leftColl = decodeColl(json.hcursor.downField(s"_1").focus.get, tArr(0))
         val rightColl = decodeColl(json.hcursor.downField(s"_2").focus.get, tArr(1))
         assert(leftColl.length == rightColl.length)
@@ -244,7 +244,7 @@ object DataJsonEncoder {
         val jsonList = json.as[List[Json]]
         jsonList match {
           case Right(jsonList) =>
-            val collSource = mutable.ArrayBuilder.make[T#WrappedType]()(tItem.classTag)
+            val collSource = mutable.ArrayBuilder.make[T#WrappedType](tItem.classTag)
             for (i <- jsonList) {
               collSource += decodeData(i, tpe).asInstanceOf[T#WrappedType]
             }

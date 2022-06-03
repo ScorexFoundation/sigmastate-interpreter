@@ -10,6 +10,7 @@ import org.bouncycastle.util.BigIntegers
 import debox.cfor
 import scala.collection.mutable
 import scala.util.Try
+import scala.collection.compat.immutable.ArraySeq
 
 
 abstract class BcDlogGroup[ElemType <: ECPoint](val x9params: X9ECParameters) extends DlogGroup[ElemType] {
@@ -348,7 +349,7 @@ abstract class BcDlogGroup[ElemType <: ECPoint](val x9params: X9ECParameters) ex
   private def createLLPreCompTable(groupElements: Array[ElemType], w: Int, h: Int) = {
     val twoPowW = Math.pow(2, w).toInt
     //create the pre-computation table of size h*(2^(w))
-    val preComp: Seq[mutable.Seq[ElemType]] = Seq.fill(h)(mutable.Seq.fill(twoPowW)(identity))
+    val preComp: Seq[ArraySeq[ElemType]] = Seq.fill(h)(ArraySeq.fill(twoPowW)(identity))
 
     cfor(0)(_ < h, _ + 1) { k =>
       cfor(0)(_ < twoPowW, _ + 1) { e =>
