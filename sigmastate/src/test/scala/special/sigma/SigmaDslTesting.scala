@@ -40,6 +40,7 @@ import java.util
 import scala.collection.mutable
 import scala.reflect.ClassTag
 import scala.util.{Failure, Success, Try}
+import scala.collection.compat.immutable.ArraySeq
 
 class SigmaDslTesting extends PropSpec
     with PropertyChecks
@@ -974,14 +975,14 @@ class SigmaDslTesting extends PropSpec
       */
     def apply[A](value: Try[A], cost: Int,
                  expectedDetails: CostDetails, newCost: Int,
-                 newVersionedResults: Seq[(Int, (ExpectedResult[A], Option[CostDetails]))]): Expected[A] =
+                 newVersionedResults: ArraySeq[(Int, (ExpectedResult[A], Option[CostDetails]))]): Expected[A] =
       new Expected[A](ExpectedResult(value, Some(cost))) {
         override val newResults = {
           val commonNewResults = defaultNewResults.map {
             case (res, _) =>
               (ExpectedResult(res.value, Some(newCost)), Option(expectedDetails))
           }
-          commonNewResults.updateMany(newVersionedResults)
+          commonNewResults.updateMany(newVersionedResults).toSeq
         }
       }
   }
@@ -1199,7 +1200,7 @@ class SigmaDslTesting extends PropSpec
     * @return array-backed ordered sequence of samples
     */
   def genSamples[A: Arbitrary: ClassTag](config: PropertyCheckConfigParam, optOrd: Option[Ordering[A]]): Seq[A] = {
-    val inputs = scala.collection.mutable.ArrayBuilder.make[A]()
+    val inputs = scala.collection.mutable.ArrayBuilder.make[A]
     forAll(config) { x: A =>
       inputs += x
     }

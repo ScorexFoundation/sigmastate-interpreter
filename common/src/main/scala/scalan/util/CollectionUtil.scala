@@ -9,6 +9,7 @@ import scala.collection.{Seq, mutable, GenIterable}
 import scala.collection.mutable.{HashMap, ArrayBuffer}
 import scala.reflect.ClassTag
 import scala.collection.compat._
+import scala.collection.compat.immutable.ArraySeq
 
 object CollectionUtil {
 
@@ -210,7 +211,7 @@ object CollectionUtil {
     /** Returns a copy of this collection where elements at `items(i)._1` are replaced
       * with `items(i)._2` for each i.
       */
-    def updateMany(items: Seq[(Int, A)])(implicit tA: ClassTag[A]): Seq[A] = {
+    def updateMany(items: ArraySeq[(Int, A)])(implicit tA: ClassTag[A]): ArraySeq[A] = {
       val res = xs.toArray
       val nItems = items.length
       var i = 0
@@ -219,7 +220,7 @@ object CollectionUtil {
         res(item._1) = item._2
         i += 1
       }
-      res
+      ArraySeq.unsafeWrapArray(res)
     }
 
     def filterCast[B:ClassTag](implicit cbf: BuildFrom[Source[A], B, Source[B]]): Source[B] = {

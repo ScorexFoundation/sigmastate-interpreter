@@ -279,7 +279,7 @@ abstract class BcDlogGroup[ElemType <: ECPoint](val x9params: X9ECParameters) ex
   /*
 	 * Computes the simultaneousMultiplyExponentiate using a naive algorithm
 	 */
-  protected def computeNaive(groupElements: Array[ElemType], exponentiations: Array[BigInteger]): ElemType =
+  protected def computeNaive(groupElements: ArraySeq[ElemType], exponentiations: ArraySeq[BigInteger]): ElemType =
     groupElements.zip(exponentiations)
       .map { case (base, exp) => exponentiate(base, exp) }
       .foldLeft(identity) { case (r, elem) => multiplyGroupElements(elem, r) }
@@ -326,7 +326,7 @@ abstract class BcDlogGroup[ElemType <: ECPoint](val x9params: X9ECParameters) ex
    *		result = result *preComp[k][e]
    *
    */
-  private def computeLoop(exponentiations: Array[BigInteger], w: Int, h: Int, preComp: Seq[Seq[ElemType]], result: ElemType, bitIndex: Int) = {
+  private def computeLoop(exponentiations: Array[BigInteger], w: Int, h: Int, preComp: Seq[mutable.Seq[ElemType]], result: ElemType, bitIndex: Int) = {
     var res = result
     cfor(0)(_ < h, _ + 1) { k =>
       var e = 0
@@ -349,7 +349,7 @@ abstract class BcDlogGroup[ElemType <: ECPoint](val x9params: X9ECParameters) ex
   private def createLLPreCompTable(groupElements: Array[ElemType], w: Int, h: Int) = {
     val twoPowW = Math.pow(2, w).toInt
     //create the pre-computation table of size h*(2^(w))
-    val preComp: Seq[ArraySeq[ElemType]] = Seq.fill(h)(ArraySeq.fill(twoPowW)(identity))
+    val preComp: Seq[mutable.Seq[ElemType]] = Seq.fill(h)(mutable.Seq.fill(twoPowW)(identity))
 
     cfor(0)(_ < h, _ + 1) { k =>
       cfor(0)(_ < twoPowW, _ + 1) { e =>

@@ -5,7 +5,7 @@ import sigmastate.interpreter.Interpreter.ScriptNameProp
 import scala.collection.mutable
 import sigmastate.interpreter.{CostedProverResult, ProverResult}
 
-import scala.collection.mutable.ArrayBuffer
+import scala.collection.compat.immutable.ArraySeq
 import org.ergoplatform.ErgoBox.NonMandatoryRegisterId
 import scalan.Nullable
 import scorex.crypto.hash.Digest32
@@ -130,30 +130,30 @@ case class TestContractSpec(testSuite: SigmaTestingCommons)(implicit val IR: IRC
   }
 
   case class MockTransaction(block: BlockCandidate) extends TransactionCandidate {
-    private val _inputs: ArrayBuffer[InputBox] = mutable.ArrayBuffer.empty[InputBox]
+    private var _inputs: ArraySeq[InputBox] = ArraySeq.empty[InputBox]
     def inputs: Seq[InputBox] = _inputs
 
-    private val _dataInputs: ArrayBuffer[InputBox] = mutable.ArrayBuffer.empty[InputBox]
+    private var _dataInputs: ArraySeq[InputBox] = ArraySeq.empty[InputBox]
     def dataInputs: Seq[InputBox] = _dataInputs
 
-    private val _outputs = mutable.ArrayBuffer.empty[OutBox]
+    private var _outputs = ArraySeq.empty[OutBox]
     def outputs: Seq[OutBox] = _outputs
 
     def inBox(utxoBox: OutBox) = {
       val box = TestInputBox(this, utxoBox)
-      _inputs += box
+      _inputs = _inputs prepended box
       box
     }
 
     def dataBox(dataBox: OutBox) = {
       val box = TestInputBox(this, dataBox)
-      _dataInputs += box
+      _dataInputs = _dataInputs prepended box
       box
     }
 
     def outBox(value: Long, propSpec: PropositionSpec) = {
       val box = TestOutBox(this, _outputs.size, value, propSpec)
-      _outputs += box
+      _outputs = _outputs prepended box
       box
     }
 

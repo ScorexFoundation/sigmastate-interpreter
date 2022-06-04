@@ -21,9 +21,8 @@ import sigmastate.interpreter.{CompanionDesc, ErgoTreeEvaluator, FixedCostItem, 
 import special.collection.Coll
 import special.sigma.GroupElement
 
-import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
+import scala.collection.compat.immutable.ArraySeq
 
 /** Pretty-printer customized to print [[sigmastate.Values.Value]] instances
   * into a valid Scala code (can be cut-and-pasted).*/
@@ -76,7 +75,7 @@ object SigmaPPrint extends PPrinter {
     case SBooleanArray =>
       Tree.Literal("SBooleanArray")
     case SPair(l, r) =>
-      Tree.Apply("SPair", treeifySeq(Array(l, r)))
+      Tree.Apply("SPair", treeifySeq(Array[SType](l, r)))
     case t: PrimitiveType[_] =>
       Tree.Literal(s"RType.${t.name}Type")
   }
@@ -112,10 +111,10 @@ object SigmaPPrint extends PPrinter {
       val others = poly.toByteArray(false) // don't output
       Tree.Apply("GF2_192_Poly.fromByteArray", treeifyMany(c0, others))
 
-    case wa: mutable.WrappedArray[Byte @unchecked] if wa.elemTag == ClassTag.Byte =>
-      treeifyByteArray(wa.array)
+    case wa: Array[Byte @unchecked] if wa.elemTag == ClassTag.Byte =>
+      treeifyByteArray(wa.toArray)
 
-    case wa: mutable.WrappedArray[_] =>
+    case wa: Array[_] =>
       Tree.Apply("Array", treeifySeq(wa))
 
     case arr: Array[Byte @unchecked] if arr.elemTag == ClassTag.Byte =>
@@ -124,7 +123,7 @@ object SigmaPPrint extends PPrinter {
     case arr: Array[_] =>
       Tree.Apply("Array", treeifySeq(arr))
 
-    case buf: ArrayBuffer[_] =>
+    case buf: Array[_] =>
       Tree.Apply("Seq", treeifySeq(buf))
 
     case ecp: EcPointType =>
@@ -210,7 +209,7 @@ object SigmaPPrint extends PPrinter {
     case sf: SelectField =>
       val resTpe = sf.input.tpe.items(sf.fieldIndex - 1)
       val resTpeName = valueType(resTpe)
-      Tree.Apply(s"SelectField.typed[$resTpeName]", treeifySeq(Array(sf.input, sf.fieldIndex)))
+      Tree.Apply(s"SelectField.typed[$resTpeName]", treeifySeq(Seq(sf.input, sf.fieldIndex)))
 
     case ConstantNode(v, SCollectionType(elemType)) if elemType.isInstanceOf[SPredefType] =>
       Tree.Apply(tpeName(elemType) + "ArrayConstant", treeifySeq(Seq(v)))

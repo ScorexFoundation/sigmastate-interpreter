@@ -130,7 +130,7 @@ trait CollGens { testSuite =>
   implicit def buildableColl[T:RType] = new Buildable[T,Coll[T]] {
     def builder = new mutable.Builder[T,Coll[T]] {
       val al = new ArrayBuffer[T]
-      def +=(x: T) = {
+      def addOne(x: T) = {
         al += x
         this
       }

@@ -258,7 +258,7 @@ abstract class TypeDescs extends Base { self: Scalan =>
       val mapping = CollectionUtil.joinSeqs(rmethods, smethods)(methodKey, methodKey)
       mapping.map { case (rm, sm) =>
         (rm, RMethodDesc(sm))
-      }.toSeq
+      }.toSeq.seq
     }
 
     /** Build a mapping between methods of staged wrapper and the corresponding methods of wrapper spec class.
@@ -276,7 +276,7 @@ abstract class TypeDescs extends Base { self: Scalan =>
       val mapping = CollectionUtil.joinSeqs(wMethods, specMethods)(methodKey, methodKey)
       mapping.map { case (wm, sm) =>
         (wm, WMethodDesc(wrapSpec, sm))
-      }.toSeq
+      }.toSeq.seq
     }
 
   }

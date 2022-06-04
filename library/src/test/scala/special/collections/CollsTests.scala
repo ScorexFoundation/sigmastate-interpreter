@@ -31,12 +31,12 @@ class CollsTests extends PropSpec with ScalaCheckPropertyChecks with Matchers wi
       val arr = xs.toArray
       xs.length shouldBe arr.length
       xs.zip(xs).length shouldBe arr.zip(arr).length
-      xs.zip(xs.append(xs)).length shouldBe arr.zip(arr ++ arr).length
-      xs.append(xs).zip(xs).length shouldBe (arr ++ arr).zip(arr).length
+      xs.zip(xs.append(xs)).length shouldBe arr.zip(arr appended  arr).length
+      xs.append(xs).zip(xs).length shouldBe (arr appended  arr).zip(arr).length
     }
 
     def equalLengthMapped[A: RType](xs: Coll[A], f: A => A) = {
-      val arr = xs.toArray
+      val arr = xs.toSeq
       val ys = xs.map(f)
       ys.length shouldBe xs.length
       ys.length shouldBe arr.map(f).length

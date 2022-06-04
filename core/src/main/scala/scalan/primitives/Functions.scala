@@ -106,9 +106,9 @@ trait Functions extends Base with ProgramGraphs { self: Scalan =>
     def productArity: Int = 2
 
     // AstGraph implementation
-    val boundVars: Seq[Sym] = Array[Sym](x)
+    val boundVars: Seq[Sym] = Seq[Sym](x)
     val boundVarId = x.node._nodeId
-    val roots: Seq[Sym] = Array(y)
+    val roots: Seq[Sym] = Seq(y)
 
     override lazy val rootIds: DBuffer[Int] = super.rootIds
 

@@ -4,6 +4,7 @@ import scalan.BaseTests
 
 import scala.collection.{Seq, mutable}
 import scala.reflect.ClassTag
+import scala.collection.compat.immutable.ArraySeq
 
 class CollectionUtilTests extends BaseTests {
   import scalan.util.CollectionUtil._
@@ -11,11 +12,11 @@ class CollectionUtilTests extends BaseTests {
 
   test("updateMany") {
     val xs: Seq[Byte] = Array[Byte](1,2,3)
-    xs.updateMany(Seq.empty) shouldBe xs
-    xs.updateMany(Seq(0 -> 2)) shouldBe Seq(2, 2, 3)
-    xs.updateMany(Seq(0 -> 2, 2 -> 2)) shouldBe Seq(2, 2, 2)
+    xs.updateMany(ArraySeq.empty) shouldBe xs
+    xs.updateMany(ArraySeq(0 -> 2)) shouldBe Seq(2, 2, 3)
+    xs.updateMany(ArraySeq(0 -> 2, 2 -> 2)) shouldBe Seq(2, 2, 2)
     an[IndexOutOfBoundsException] should be thrownBy {
-      xs.updateMany(Seq(3 -> 2))
+      xs.updateMany(ArraySeq(3 -> 2))
     }
   }
 

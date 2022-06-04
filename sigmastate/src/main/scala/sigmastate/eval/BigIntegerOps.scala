@@ -70,6 +70,9 @@ object NumericOps {
     * NOTE: this instance is used in the new v5.0 interpreter.
     */
   object BigIntIsIntegral extends BigIntIsIntegral with OrderingOps.BigIntOrdering
+  {
+    override def parseString(str: String): Option[BigInt] = ???
+  }
 
   /** The instance of [[ExactIntegral]] typeclass for [[BigInt]]. */
   implicit object BigIntIsExactIntegral extends ExactIntegral[BigInt] {
