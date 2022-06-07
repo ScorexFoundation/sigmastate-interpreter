@@ -351,37 +351,37 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     val depth = w.level
     w.level = depth + 1
     serializable(v) match {
-      case c: Constant[SType] =>
-        w.constantExtractionStore match {
-          case Some(constantStore) =>
-            val ph = constantStore.put(c)(DeserializationSigmaBuilder)
-            w.put(ph.opCode)
-            constantPlaceholderSerializer.serialize(ph, w)
+    case c: Constant[SType] =>
+      w.constantExtractionStore match {
+        case Some(constantStore) =>
+          val ph = constantStore.put(c)(DeserializationSigmaBuilder)
+          w.put(ph.opCode)
+          constantPlaceholderSerializer.serialize(ph, w)
+        case None =>
+          constantSerializer.serialize(c, w)
+      }
+    case _ =>
+      val opCode = v.opCode
+      // help compiler recognize the type
+      val ser = getSerializer(opCode).asInstanceOf[ValueSerializer[v.type]]
+      if (collectSerInfo) {
+        val scope = serializerInfo.get(opCode) match {
           case None =>
-            constantSerializer.serialize(c, w)
+            val newScope = SerScope(opCode, mutable.ArrayBuffer.empty)
+            serializerInfo += (opCode -> newScope)
+            println(s"Added: ${ser.opDesc}")
+            newScope
+          case Some(scope) => scope
         }
-      case _ =>
-        val opCode = v.opCode
-        // help compiler recognize the type
-        val ser = getSerializer(opCode).asInstanceOf[ValueSerializer[v.type]]
-        if (collectSerInfo) {
-          val scope = serializerInfo.get(opCode) match {
-            case None =>
-              val newScope = SerScope(opCode, mutable.ArrayBuffer.empty)
-              serializerInfo += (opCode -> newScope)
-              println(s"Added: ${ser.opDesc}")
-              newScope
-            case Some(scope) => scope
-          }
-          w.put(opCode)
+        w.put(opCode)
 
-          scopeStack ::= scope
-          ser.serialize(v, w)
-          scopeStack = scopeStack.tail
-        } else {
-          w.put(opCode)
-          ser.serialize(v, w)
-        }
+        scopeStack ::= scope
+        ser.serialize(v, w)
+        scopeStack = scopeStack.tail
+      } else {
+        w.put(opCode)
+        ser.serialize(v, w)
+      }
     }
     w.level = depth
   }

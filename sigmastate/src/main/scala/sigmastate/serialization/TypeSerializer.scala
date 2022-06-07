@@ -23,7 +23,10 @@ object TypeSerializer {
     embeddableIdToType(code)
   }
 
-  def serialize(tpe: SType, w: SigmaByteWriter): Unit = tpe match {
+  def serialize(tpe: SType, w: SigmaByteWriter): Unit = {
+    val depth = w.level
+    w.level = depth + 1
+    tpe match {
     case p: SEmbeddable => w.put(p.typeCode)
     case SString => w.put(SString.typeCode)
     case SAny => w.put(SAny.typeCode)
@@ -112,6 +115,8 @@ object TypeSerializer {
       w.putUByte(bytes.length)
         .putBytes(bytes)
     }
+    }
+    w.level = depth
   }
 
   def deserialize(r: SigmaByteReader): SType = deserialize(r, 0)
