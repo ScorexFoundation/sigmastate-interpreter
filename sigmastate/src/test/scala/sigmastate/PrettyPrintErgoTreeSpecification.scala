@@ -18,7 +18,6 @@ class PrettyPrintErgoTreeSpecification extends SigmaDslTesting {
   property("booleans"){
     val code = "false || true"
     val compiledTree = compile(code)
-    println(compiledTree)
     PrettyPrintErgoTree.prettyPrint(compiledTree) shouldBe code
   }
 
@@ -43,9 +42,9 @@ class PrettyPrintErgoTreeSpecification extends SigmaDslTesting {
     val compiledTree = compile(code)
     PrettyPrintErgoTree.prettyPrint(compiledTree) shouldBe
       """($1: (Short,Short)) => {
-        |val $3 = $1._1
-        |val $4 = $1._2
-        |($3 + $4, ($3 - $4, ($3 * $4, ($3 / $4, $3 % $4))))
+        |  val $3 = $1._1
+        |  val $4 = $1._2
+        |  ($3 + $4, ($3 - $4, ($3 * $4, ($3 / $4, $3 % $4))))
         |}""".stripMargin
   }
 
@@ -60,14 +59,14 @@ class PrettyPrintErgoTreeSpecification extends SigmaDslTesting {
         |  }
         |}""".stripMargin
     val compiledTree = compile(code)
-    PrettyPrintErgoTree.prettyPrint(compiledTree) shouldBe
+    PrettyPrintErgoTree.prettyPrint(compiledTree, 4) shouldBe
       """($1: Box) => {
-        |val $3 = $1.R5[Short]
-        |if ($3.isDefined) {
-        |$3.get
-        |} else {
-        |0.toShort
-        |}
+        |    val $3 = $1.R5[Short]
+        |    if ($3.isDefined) {
+        |        $3.get
+        |    } else {
+        |        0.toShort
+        |    }
         |}""".stripMargin
   }
 }
