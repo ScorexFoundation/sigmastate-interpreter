@@ -982,8 +982,6 @@ case object SShort extends SPrimType with SEmbeddable with SNumericType with SMo
   override val typeCode: TypeCode = 3: Byte
   override val reprClass: Class[_] = classOf[Short]
   override def typeId = typeCode
-  // TODO: Consider something like `show` instead of renaming compiler generated name.
-  override def toString: String = "Short"
   override def dataSize(v: SType#WrappedType): Long = 2
   override def isConstantSize = true
   override protected def numericTypeIndex: Int = 1
@@ -2033,7 +2031,6 @@ case object SBox extends SProduct with SPredefType with SMonoType {
   override val typeCode: TypeCode = 99: Byte
   override val reprClass: Class[_] = classOf[Box]
   override def typeId = typeCode
-  override def toString: String = "Box"
   override def dataSize(v: SType#WrappedType): Long = {
     val box = v.asInstanceOf[this.WrappedType]
     Sized.sizeOf(box).dataSize

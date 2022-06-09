@@ -41,7 +41,7 @@ class PrettyPrintErgoTreeSpecification extends SigmaDslTesting {
         |}""".stripMargin
     val compiledTree = compile(code)
     PrettyPrintErgoTree.prettyPrint(compiledTree) shouldBe
-      """($1: (Short,Short)) => {
+      """{ ($1: (Short, Short)) =>
         |  val $3 = $1._1
         |  val $4 = $1._2
         |  ($3 + $4, ($3 - $4, ($3 * $4, ($3 / $4, $3 % $4))))
@@ -60,7 +60,7 @@ class PrettyPrintErgoTreeSpecification extends SigmaDslTesting {
         |}""".stripMargin
     val compiledTree = compile(code)
     PrettyPrintErgoTree.prettyPrint(compiledTree, 4) shouldBe
-      """($1: Box) => {
+      """{ ($1: Box) =>
         |    val $3 = $1.R5[Short]
         |    if ($3.isDefined) {
         |        $3.get
@@ -68,5 +68,23 @@ class PrettyPrintErgoTreeSpecification extends SigmaDslTesting {
         |        0.toShort
         |    }
         |}""".stripMargin
+  }
+
+  property("group generator"){
+    val code = "{ (x: Int) => groupGenerator }"
+    val compiledTree = compile(code)
+    PrettyPrintErgoTree.prettyPrint(compiledTree) shouldBe
+      """{ ($1: Int) =>
+        |  Global.groupGenerator
+        |}""".stripMargin
+  }
+
+  property("OUTPUTS"){
+    val code = "OUTPUTS.exists({ (box: Box) => box.value + 5 > 10 })"
+    val compiledTree = compile(code)
+    PrettyPrintErgoTree.prettyPrint(compiledTree) shouldBe
+      """OUTPUTS.exists({ ($1: Box) =>
+        |  $1.value + 5.toLong > 10.toLong
+        |})""".stripMargin
   }
 }
