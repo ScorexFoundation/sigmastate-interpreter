@@ -59,16 +59,21 @@ object PrettyPrintErgoTree {
         Doc.text("} else {") + Doc.line +
         createDoc(falseBranch).indent(i) + Doc.line +
         Doc.char('}')
-    case BinOr(l, r) => createDoc(l) + Doc.text(" || ") + createDoc(r)
+    case BinOr(l, r) => binaryOperationWithParens(createDoc(l), createDoc(r), Doc.text(" || "))
+    case BinXor(l, r) => wrapWithParens(createDoc(l)) + Doc.text(" ^ ") + wrapWithParens(createDoc(r))
     case ArithOp(left, right, OpCodes.PlusCode) => createDoc(left) + Doc.text(" + ") + createDoc(right)
     case ArithOp(left, right, OpCodes.MinusCode) => createDoc(left) + Doc.text(" - ") + createDoc(right)
     case ArithOp(left, right, OpCodes.MultiplyCode) => createDoc(left) + Doc.text(" * ") + createDoc(right)
     case ArithOp(left, right, OpCodes.DivisionCode) => createDoc(left) + Doc.text(" / ") + createDoc(right)
     case ArithOp(left, right, OpCodes.ModuloCode) => createDoc(left) + Doc.text(" % ") + createDoc(right)
-    case GT(left, right) => createDoc(left) + Doc.text(" > ") + createDoc(right)
+    case GT(l, r) => wrapWithParens(createDoc(l)) + Doc.text(" > ") + wrapWithParens(createDoc(r))
+    case EQ(l, r) => wrapWithParens(createDoc(l)) + Doc.text(" == ") + wrapWithParens(createDoc(r))
     // TODO: not covered by test
-    case LT(left, right) => createDoc(left) + Doc.text(" < ") + createDoc(right)
+    case LT(left, right) => wrapWithParens(createDoc(left)) + Doc.text(" < ") + wrapWithParens(createDoc(right))
   }
+
+  private def binaryOperationWithParens(l: Doc, r: Doc, sep: Doc) = wrapWithParens(l) + sep + wrapWithParens(r)
+  private def wrapWithParens(d: Doc): Doc = d.tightBracketBy(Doc.char('('), Doc.char(')'))
 
   /* Create argument representation enclosed in brackets with types, e.g. `($5: String, $1: Int)` */
   private def argsDoc(args: Seq[(Int, SType)]): Doc = {
@@ -77,6 +82,7 @@ object PrettyPrintErgoTree {
   }
 
   private def STypeDoc(tpe: SType): Doc = tpe match {
+    case SBoolean => Doc.text("Boolean")
     case SShort => Doc.text("Short")
     case SInt => Doc.text("Int")
     case SLong => Doc.text("Long")
