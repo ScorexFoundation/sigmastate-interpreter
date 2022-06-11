@@ -14,9 +14,8 @@ class PrettyPrintErgoTreeSpecification extends SigmaDslTesting {
     res.buildTree.asSigmaProp
   }
 
-  // TODO: Add explicit braces for priority
   property("booleans"){
-    val code = "false || true"
+    val code = "(false) || (true)"
     val compiledTree = compile(code)
     PrettyPrintErgoTree.prettyPrint(compiledTree) shouldBe code
   }
@@ -84,7 +83,17 @@ class PrettyPrintErgoTreeSpecification extends SigmaDslTesting {
     val compiledTree = compile(code)
     PrettyPrintErgoTree.prettyPrint(compiledTree) shouldBe
       """OUTPUTS.exists({ ($1: Box) =>
-        |  $1.value + 5.toLong > 10.toLong
+        |  ($1.value + 5.toLong) > (10.toLong)
         |})""".stripMargin
+  }
+
+  property("constants"){
+    val code = "{ (x: (Int, Boolean)) => (x._1 == 0) ^ x._2 }"
+    val compiledTree = compile(code)
+    println(compiledTree)
+    PrettyPrintErgoTree.prettyPrint(compiledTree) shouldBe
+      """{ ($1: (Int, Boolean)) =>
+        |  (($1._1) == (0.toInt)) ^ ($1._2)
+        |}""".stripMargin
   }
 }
