@@ -59,7 +59,7 @@ val kiama              = "org.bitbucket.inkytonik.kiama" %% "kiama" % "2.1.0"
 val fastparse          = "com.lihaoyi" %% "fastparse" % "1.0.0"
 val commonsIo          = "commons-io" % "commons-io" % "2.5"
 val commonsMath3       = "org.apache.commons" % "commons-math3" % "3.2"
-val paiges             = "org.typelevel" %% "paiges-core" % "0.4.2"
+val paiges             = "org.typelevel" %% "paiges-core" % "0.3.0"
 
 val testingDependencies = Seq(
   "org.scalatest" %% "scalatest" % "3.0.5" % "test",
