@@ -9,7 +9,7 @@ import sigmastate.lang.Terms.MethodCall
 
 /**
  * TODO: Docs - arguments/values naming $i
- * Brainstorm ideas: create configuration for printer (explicit types, curly/normal brackets)
+ * Brainstorm ideas: create configuration for printer (explicit types, curly/normal brackets, `to{$tpe}` explicit casting)
  */
 object PrettyPrintErgoTree {
 
@@ -17,12 +17,28 @@ object PrettyPrintErgoTree {
 
   private def createDoc(t: SValue)(implicit i: Int): Doc = t match {
     // Values
-    case FalseLeaf => Doc.text("false")
-    case TrueLeaf => Doc.text("true")
+    case ev: EvaluatedValue[SType] => ev match {
+      case c: Constant[SType] => c match {
+        case FalseLeaf => Doc.text("false")
+        case TrueLeaf => Doc.text("true")
+        case ConstantNode(value, tpe) => Doc.text(s"$value.to") + STypeDoc(tpe)
+      }
+      case UnitConstant() => ??? // TODO: Only used in parser?
+      case GroupGenerator => ??? // TODO: What is that?
+      case ec: EvaluatedCollection[_, _] => ec match {
+        case ConcreteCollection(items, elemType) =>
+          Doc.text(s"Coll[") + STypeDoc(elemType) + Doc.char(']') +
+          wrapWithParens(Doc.intercalate(Doc.comma + Doc.space, items.map(createDoc)))
+      }
+    }
+    case bi: BlockItem => bi match {
+      case ValDef(id, _, rhs) => Doc.text(s"val $$$id = ") + createDoc(rhs)
+    } 
     case Tuple(items) => nTupleDoc(items.map(createDoc))
-    case ValDef(id, _, rhs) => Doc.text(s"val $$$id = ") + createDoc(rhs)
     case ValUse(id, tpe) => Doc.text(s"$$$id")
-    case ConstantNode(value, tpe) => Doc.text(s"$value.to") + STypeDoc(tpe)
+    case ConstantPlaceholder(id, tpe) => ??? // TODO: See unfinished test
+    case TaggedVariableNode(varId, tpe) => ??? // TODO: Does not make sense for printer?
+    case FalseSigmaProp | TrueSigmaProp => ??? // TODO: Does not make sense for printer?
     case FuncValue(args, body) =>
       Doc.char('{') + Doc.space + argsDoc(args) + Doc.text(" =>") + Doc.line +
         createDoc(body).indent(i) + Doc.line +
@@ -31,6 +47,7 @@ object PrettyPrintErgoTree {
       val prettyItems = items.map(item => createDoc(item))
       Doc.intercalate(Doc.line, prettyItems)+ Doc.line +
         createDoc(result)
+    case SomeValue(_) | NoneValue(_) => ??? // Not implemented in ErgoTree (as of v5.0)
 
     // ErgoLike
     case Self => Doc.text("SELF")
@@ -60,16 +77,26 @@ object PrettyPrintErgoTree {
         createDoc(falseBranch).indent(i) + Doc.line +
         Doc.char('}')
     case BinOr(l, r) => binaryOperationWithParens(createDoc(l), createDoc(r), Doc.text(" || "))
-    case BinXor(l, r) => wrapWithParens(createDoc(l)) + Doc.text(" ^ ") + wrapWithParens(createDoc(r))
+    case BinAnd(l, r) => binaryOperationWithParens(createDoc(l), createDoc(r), Doc.text(" && "))
+    case BinXor(l, r) => binaryOperationWithParens(createDoc(l), createDoc(r), Doc.text(" ^ "))
     case ArithOp(left, right, OpCodes.PlusCode) => createDoc(left) + Doc.text(" + ") + createDoc(right)
     case ArithOp(left, right, OpCodes.MinusCode) => createDoc(left) + Doc.text(" - ") + createDoc(right)
     case ArithOp(left, right, OpCodes.MultiplyCode) => createDoc(left) + Doc.text(" * ") + createDoc(right)
     case ArithOp(left, right, OpCodes.DivisionCode) => createDoc(left) + Doc.text(" / ") + createDoc(right)
     case ArithOp(left, right, OpCodes.ModuloCode) => createDoc(left) + Doc.text(" % ") + createDoc(right)
-    case GT(l, r) => wrapWithParens(createDoc(l)) + Doc.text(" > ") + wrapWithParens(createDoc(r))
-    case EQ(l, r) => wrapWithParens(createDoc(l)) + Doc.text(" == ") + wrapWithParens(createDoc(r))
+    case GT(l, r) => binaryOperationWithParens(createDoc(l), createDoc(r), Doc.text(" > "))
+    case EQ(l, r) => binaryOperationWithParens(createDoc(l), createDoc(r), Doc.text(" == "))
+    case SubstConstants(scriptBytes, positions, newValues) =>
+      val body = Doc.intercalate(Doc.comma + Doc.space, List(createDoc(scriptBytes), createDoc(positions), createDoc(newValues)))
+      Doc.text("substConstants") + wrapWithParens(body)
+    case BoolToSigmaProp(value) => Doc.text("sigmaProp") + wrapWithParens(createDoc(value))
     // TODO: not covered by test
     case LT(left, right) => wrapWithParens(createDoc(left)) + Doc.text(" < ") + wrapWithParens(createDoc(right))
+    case nr: NotReadyValueGroupElement => nr match {
+      case DecodePoint(input) => ???
+      case Exponentiate(left, right) => ???
+      case MultiplyGroup(left, right) => ???
+    }
   }
 
   private def binaryOperationWithParens(l: Doc, r: Doc, sep: Doc) = wrapWithParens(l) + sep + wrapWithParens(r)
@@ -83,10 +110,14 @@ object PrettyPrintErgoTree {
 
   private def STypeDoc(tpe: SType): Doc = tpe match {
     case SBoolean => Doc.text("Boolean")
+    case SByte => Doc.text("Byte")
     case SShort => Doc.text("Short")
     case SInt => Doc.text("Int")
     case SLong => Doc.text("Long")
+    case SBigInt => Doc.text("BigInt")
     case SBox => Doc.text("Box")
+    // TODO: Shouldn't be Boolean?
+    case SSigmaProp => Doc.text("Any")
     case SCollectionType(elemType) => Doc.text("Coll[") + STypeDoc(elemType) + Doc.char(']')
     case STuple(items) => nTupleDoc(items.map(STypeDoc))
   }
