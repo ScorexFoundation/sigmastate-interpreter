@@ -4,6 +4,7 @@ import sigmastate.eval.IRContext
 import sigmastate.interpreter.Interpreter
 import sigmastate.lang.Terms.ValueOps
 import special.sigma.SigmaDslTesting
+import org.scalacheck.util.Pretty
 
 class PrettyPrintErgoTreeSpecification extends SigmaDslTesting {
   implicit def IR: IRContext = createIR()
@@ -15,9 +16,12 @@ class PrettyPrintErgoTreeSpecification extends SigmaDslTesting {
   }
 
   property("booleans"){
-    val code = "(false) || (true)"
+    val code = "{ (x: (Int, Boolean)) => ((x._1 == 0) ^ x._2) && (false || true) }"
     val compiledTree = compile(code)
-    PrettyPrintErgoTree.prettyPrint(compiledTree) shouldBe code
+    PrettyPrintErgoTree.prettyPrint(compiledTree) shouldBe
+      """{ ($1: (Int, Boolean)) =>
+        |  ((($1._1) == (0.toInt)) ^ ($1._2)) && ((false) || (true))
+        |}""".stripMargin
   }
 
   property("reading context of register as typed value"){
@@ -87,13 +91,28 @@ class PrettyPrintErgoTreeSpecification extends SigmaDslTesting {
         |})""".stripMargin
   }
 
-  property("constants"){
-    val code = "{ (x: (Int, Boolean)) => (x._1 == 0) ^ x._2 }"
+  // TODO: Should be with type param, i.e. `substConstants[Any](...)`?
+  property("substConstants"){
+    val code = "{ (x: (Coll[Byte], Int)) => substConstants[Any](x._1, Coll[Int](x._2), Coll[Any](sigmaProp(false), sigmaProp(true))) }"
     val compiledTree = compile(code)
-    println(compiledTree)
-    PrettyPrintErgoTree.prettyPrint(compiledTree) shouldBe
-      """{ ($1: (Int, Boolean)) =>
-        |  (($1._1) == (0.toInt)) ^ ($1._2)
+    PrettyPrintErgoTree.prettyPrint(compiledTree, 2, 84) shouldBe
+      """{ ($1: (Coll[Byte], Int)) =>
+        |  substConstants(
+        |    $1._1, Coll[Int]($1._2), Coll[Any](sigmaProp(false), sigmaProp(true))
+        |  )
         |}""".stripMargin
+  }
+
+  property("constant placeholder"){
+    import Values.CollectionConstant
+    import Values.ByteArrayConstant
+    import scorex.util.encode.Base16
+    def stringToByteConstant(in: String): CollectionConstant[SByte.type] = ByteArrayConstant(in.getBytes("UTF-8"))
+    def decodeString(in: String): CollectionConstant[SByte.type] = ByteArrayConstant(Base16.decode(in).get)
+
+    val expectedResult = decodeString("ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad")
+    val calcSha256 = EQ(CalcSha256(stringToByteConstant("abc")), expectedResult)
+    val ergoTree = mkTestErgoTree(calcSha256.toSigmaProp)
+    // TODO: prettyPrint have to be updated as constant placeholders are not part of ErgoTree root
   }
 }

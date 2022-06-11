@@ -279,7 +279,7 @@ object Values {
     override def costKind: PerItemCost
   }
 
-  abstract class EvaluatedValue[+S <: SType] extends Value[S] {
+  sealed abstract class EvaluatedValue[+S <: SType] extends Value[S] {
     val value: S#WrappedType
     def opType: SFunc = {
       val resType = tpe match {
@@ -680,6 +680,7 @@ object Values {
   }
 
 
+  // TODO: Consider moving to trees.scala
   trait NotReadyValueGroupElement extends NotReadyValue[SGroupElement.type] {
     override def tpe = SGroupElement
   }
@@ -707,6 +708,7 @@ object Values {
     override def costKind: FixedCost = Constant.costKind
   }
 
+  // TODO: Consider moving to trees.scala and make it sealed
   trait NotReadyValueBoolean extends NotReadyValue[SBoolean.type] {
     override def tpe = SBoolean
   }
@@ -968,6 +970,7 @@ object Values {
     override def costKind = ConcreteCollection.costKind
   }
 
+  // TODO: Make sense to move to ErgoLikeContext?
   trait LazyCollection[V <: SType] extends NotReadyValue[SCollection[V]]
 
   implicit class CollectionOps[T <: SType](val coll: Value[SCollection[T]]) extends AnyVal {
