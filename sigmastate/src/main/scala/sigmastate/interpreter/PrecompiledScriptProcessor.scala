@@ -9,7 +9,7 @@ import org.ergoplatform.validation.ValidationRules.{CheckCalcFunc, CheckCostFunc
 import scalan.{AVHashMap, Nullable}
 import sigmastate.Values.ErgoTree
 import sigmastate.eval.{IRContext, RuntimeIRContext}
-import sigmastate.interpreter.Interpreter.{ReductionResult, WhenSoftForkReductionResult}
+import sigmastate.interpreter.Interpreter.{AotReductionResult, WhenSoftForkReductionResult}
 import sigmastate.serialization.ErgoTreeSerializer
 import sigmastate.utils.Helpers
 import sigmastate.utils.Helpers._
