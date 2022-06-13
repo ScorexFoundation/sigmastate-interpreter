@@ -82,15 +82,6 @@ class PrettyPrintErgoTreeSpecification extends SigmaDslTesting {
         |}""".stripMargin
   }
 
-  property("OUTPUTS"){
-    val code = "OUTPUTS.exists({ (box: Box) => box.value + 5 > 10 })"
-    val compiledTree = compile(code)
-    PrettyPrintErgoTree.prettyPrint(compiledTree) shouldBe
-      """OUTPUTS.exists({ ($1: Box) =>
-        |  ($1.value + 5.toLong) > (10.toLong)
-        |})""".stripMargin
-  }
-
   // TODO: Should be with type param, i.e. `substConstants[Any](...)`?
   property("substConstants"){
     val code = "{ (x: (Coll[Byte], Int)) => substConstants[Any](x._1, Coll[Int](x._2), Coll[Any](sigmaProp(false), sigmaProp(true))) }"
@@ -114,5 +105,34 @@ class PrettyPrintErgoTreeSpecification extends SigmaDslTesting {
     val calcSha256 = EQ(CalcSha256(stringToByteConstant("abc")), expectedResult)
     val ergoTree = mkTestErgoTree(calcSha256.toSigmaProp)
     // TODO: prettyPrint have to be updated as constant placeholders are not part of ErgoTree root
+  }
+
+  property("ergolike nodes"){
+    val code = 
+      """{ (x: Context) =>
+        |  val a = x.OUTPUTS.exists({ (box: Box) => box.value + 5 > 10 })
+        |  val b = x.INPUTS.map { (b: Box) => b.value }.getOrElse(5, 0L)
+        |  val c = x.HEIGHT
+        |  val d = x.LastBlockUtxoRootHash
+        |  val e = CONTEXT.dataInputs(0).tokens(0)
+        |  (a, (b, (c, (d, e))))
+        |}""".stripMargin
+    val compiledTree = compile(code)
+    PrettyPrintErgoTree.prettyPrint(compiledTree) shouldBe
+      """{ ($1: Context) =>
+        |  (
+        |    OUTPUTS.exists({ ($3: Box) =>
+        |      ($3.value + 5.toLong) > (10.toLong)
+        |    }), (
+        |      INPUTS.map({ ($3: Box) =>
+        |        $3.value
+        |      }).getOrElse(5.toInt, 0.toLong), (
+        |        HEIGHT, (
+        |          $1.LastBlockUtxoRootHash, CONTEXT.dataInputs(0.toInt).tokens(0.toInt)
+        |        )
+        |      )
+        |    )
+        |  )
+        |}""".stripMargin
   }
 }
