@@ -89,7 +89,7 @@ class PrettyPrintErgoTreeSpecification extends SigmaDslTesting {
     PrettyPrintErgoTree.prettyPrint(compiledTree, 2, 84) shouldBe
       """{ ($1: (Coll[Byte], Int)) =>
         |  substConstants(
-        |    $1._1, Coll[Int]($1._2), Coll[Any](sigmaProp(false), sigmaProp(true))
+        |    $1._1, Coll[Int]($1._2), Coll[SigmaProp](sigmaProp(false), sigmaProp(true))
         |  )
         |}""".stripMargin
   }
@@ -121,9 +121,7 @@ class PrettyPrintErgoTreeSpecification extends SigmaDslTesting {
     PrettyPrintErgoTree.prettyPrint(compiledTree) shouldBe
       """{ ($1: Context) =>
         |  (
-        |    OUTPUTS.exists({ ($3: Box) =>
-        |      ($3.value + 5.toLong) > (10.toLong)
-        |    }), (
+        |    OUTPUTS.exists({ ($3: Box) =>   ($3.value + 5.toLong) > (10.toLong) }), (
         |      INPUTS.map({ ($3: Box) =>
         |        $3.value
         |      }).getOrElse(5.toInt, 0.toLong), (
@@ -165,6 +163,119 @@ class PrettyPrintErgoTreeSpecification extends SigmaDslTesting {
         |    $1.value
         |  }).updateMany(Coll[Int](0.toInt), Coll[Long](3.toLong))(0.toInt)
         |) == (3.toLong)""".stripMargin
+  }
+
+  property("append"){
+    val code = "{ (x: (Coll[Int], Coll[Int])) => x._1.append(x._2) }"
+    PrettyPrintErgoTree.prettyPrint(compile(code)) shouldBe
+      """{ ($1: (Coll[Int], Coll[Int])) =>
+        |  $1._1.append($1._2)
+        |}""".stripMargin
+  }
+
+  property("slice"){
+    val code = "{ (x: (Coll[Int], (Int, Int))) => x._1.slice(x._2._1, x._2._2) }"
+    PrettyPrintErgoTree.prettyPrint(compile(code)) shouldBe
+      """{ ($1: (Coll[Int], (Int, Int))) =>
+        |  val $3 = $1._2
+        |  $1._1.slice($3._1, $3._2)
+        |}""".stripMargin
+  }
+
+  property("filter"){
+    val code = "{ (x: Coll[Int]) => x.filter({ (v: Int) => v < 0 }) }"
+    PrettyPrintErgoTree.prettyPrint(compile(code)) shouldBe
+      """{ ($1: Coll[Int]) =>
+        |  $1.filter({ ($3: Int) =>   ($3) < (0.toInt) })
+        |}""".stripMargin
+  }
+
+  property("forall"){
+    val code = "{ (x: Coll[Box]) => x.forall({(b: Box) => b.value <= 1 }) }"
+    PrettyPrintErgoTree.prettyPrint(compile(code)) shouldBe
+      """{ ($1: Coll[Box]) =>
+        |  $1.forall({ ($3: Box) =>   ($3.value) <= (1.toLong) })
+        |}""".stripMargin
+  }
+
+  property("fold"){
+    val code = "{ (x: (Coll[Byte], Int)) => x._1.fold(x._2, { (i1: Int, i2: Byte) => i1 + i2 }) }"
+    PrettyPrintErgoTree.prettyPrint(compile(code)) shouldBe
+      """{ ($1: (Coll[Byte], Int)) =>
+        |  $1._1.fold($1._2, { ($3: (Int, Byte)) =>   $3._1 + $3._2.toInt })
+        |}""".stripMargin
+  }
+
+  property("propBytes"){
+    val code = "{ (x: SigmaProp) => x.propBytes }"
+    PrettyPrintErgoTree.prettyPrint(compile(code)) shouldBe
+      """{ ($1: SigmaProp) =>
+        |  $1.propBytes
+        |}""".stripMargin
+  }
+
+  property("size of"){
+    val code = "{ (x: Coll[Box]) => x.size }"
+    PrettyPrintErgoTree.prettyPrint(compile(code)) shouldBe
+      """{ ($1: Coll[Box]) =>
+        |  $1.size
+        |}""".stripMargin
+  }
+
+  property("extract script bytes"){
+    val code = "{ (x: Box) => x.propositionBytes }"
+    PrettyPrintErgoTree.prettyPrint(compile(code)) shouldBe
+      """{ ($1: Box) =>
+        |  $1.propositionBytes
+        |}""".stripMargin
+  }
+
+  property("extract bytes"){
+    val code = "{ (x: Box) => x.bytes }"
+    PrettyPrintErgoTree.prettyPrint(compile(code)) shouldBe
+      """{ ($1: Box) =>
+        |  $1.bytes
+        |}""".stripMargin
+  }
+
+  property("extract bytes with no ref"){
+    val code = "{ (x: Box) => x.bytesWithoutRef }"
+    PrettyPrintErgoTree.prettyPrint(compile(code)) shouldBe
+      """{ ($1: Box) =>
+        |  $1.bytesWithoutRef
+        |}""".stripMargin
+  }
+
+  property("extract id"){
+    val code = "{ (x: Box) => x.id }"
+    PrettyPrintErgoTree.prettyPrint(compile(code)) shouldBe
+      """{ ($1: Box) =>
+        |  $1.id
+        |}""".stripMargin
+  }
+
+  property("extract creation info"){
+    val code = "{ (x: Box) => x.creationInfo }"
+    PrettyPrintErgoTree.prettyPrint(compile(code)) shouldBe
+      """{ ($1: Box) =>
+        |  $1.creationInfo
+        |}""".stripMargin
+  }
+
+  property("getVar"){
+    val code = "{ (x: Context) => getVar[Boolean](11) }"
+    PrettyPrintErgoTree.prettyPrint(compile(code)) shouldBe
+      """{ ($1: Context) =>
+        |  getVar[Boolean](11.toByte)
+        |}""".stripMargin
+  }
+
+  property("getOrElse"){
+    val code = "{ (x: Option[Long]) => x.getOrElse(1L) }"
+    PrettyPrintErgoTree.prettyPrint(compile(code)) shouldBe
+      """{ ($1: Option[Long]) =>
+        |  $1.getOrElse(1.toLong)
+        |}""".stripMargin
   }
 
   property("zip nested"){
