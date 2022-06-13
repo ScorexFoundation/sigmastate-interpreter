@@ -1,10 +1,10 @@
 package sigmastate
 
 import Values._
-import org.ergoplatform.{Global, Outputs, Self}
+import org.ergoplatform.{Context, Global, Inputs, Height, LastBlockUtxoRootHash, MinerPubkey, Outputs, Self}
 import org.typelevel.paiges.Doc
 import sigmastate.serialization.OpCodes
-import sigmastate.utxo.{Exists, ExtractAmount, ExtractRegisterAs, OptionGet, OptionIsDefined, SelectField}
+import sigmastate.utxo.{ByIndex, Exists, ExtractAmount, ExtractRegisterAs, MapCollection, OptionGet, OptionIsDefined, SelectField}
 import sigmastate.lang.Terms.MethodCall
 
 /**
@@ -50,12 +50,19 @@ object PrettyPrintErgoTree {
     case SomeValue(_) | NoneValue(_) => ??? // Not implemented in ErgoTree (as of v5.0)
 
     // ErgoLike
-    case Self => Doc.text("SELF")
-    case Global => Doc.text("Global")
+    case Height => Doc.text("HEIGHT")
+    case Inputs => Doc.text("INPUTS")
     case Outputs => Doc.text("OUTPUTS")
+    case Self => Doc.text("SELF")
+    case Context => Doc.text("CONTEXT")
+    case Global => Doc.text("Global")
+    // TODO: Not possible to reach following 2 cases until https://github.com/ScorexFoundation/sigmastate-interpreter/issues/799
+    case MinerPubkey => Doc.text("minerPubKey")
+    case LastBlockUtxoRootHash => Doc.text("LastBlockUtxoRootHash") 
 
     // Transformers
     case Exists(input, condition) => createDoc(input) + Doc.text(".exists(") + createDoc(condition) + Doc.char(')')
+    case MapCollection(input, mapper) => createDoc(input) + Doc.text(".map(") + createDoc(mapper) + Doc.char(')')
     case OptionGet(x) => createDoc(x) + Doc.text(".get")
     case OptionIsDefined(x) => createDoc(x) + Doc.text(".isDefined")
     case SelectField(input, idx) => createDoc(input) + Doc.text(s"._$idx")
@@ -63,6 +70,12 @@ object PrettyPrintErgoTree {
     case ExtractRegisterAs(input, registerId, maybeTpe) =>
       createDoc(input) + Doc.text(s".$registerId[") + STypeDoc(maybeTpe.elemType) + Doc.char(']')
     case ExtractAmount(input) => createDoc(input) + Doc.text(".value")
+    case ByIndex(input, index, defaultIndex) =>
+      val body = defaultIndex match {
+        case Some(v) => Doc.text(".getOrElse") + nTupleDoc(List(index, v).map(createDoc))
+        case None => wrapWithParens(createDoc(index))
+      }
+      createDoc(input) + body
 
     // Terms
     case MethodCall(obj, method, args, map) =>
@@ -120,11 +133,13 @@ object PrettyPrintErgoTree {
     case SSigmaProp => Doc.text("Any")
     case SCollectionType(elemType) => Doc.text("Coll[") + STypeDoc(elemType) + Doc.char(']')
     case STuple(items) => nTupleDoc(items.map(STypeDoc))
+    case SContext => Doc.text("Context")
   }
 
   private def nTupleDoc(items: Seq[Doc]): Doc =
-    Doc
-      .intercalate(Doc.comma + Doc.space, items)
-      .tightBracketBy(Doc.char('('), Doc.char(')'))
+    wrapWithParens(
+      Doc.intercalate(
+        Doc.comma + Doc.space,
+        items))
 
 }
