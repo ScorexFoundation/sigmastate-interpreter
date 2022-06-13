@@ -4,7 +4,7 @@ import Values._
 import org.ergoplatform.{Context, Global, Inputs, Height, LastBlockUtxoRootHash, MinerPubkey, Outputs, Self}
 import org.typelevel.paiges.Doc
 import sigmastate.serialization.OpCodes
-import sigmastate.utxo.{ByIndex, Exists, ExtractAmount, ExtractRegisterAs, MapCollection, OptionGet, OptionIsDefined, SelectField}
+import sigmastate.utxo._
 import sigmastate.lang.Terms.{Apply, ApplyTypes, Block, Ident, Lambda, MethodCall, MethodCallLike, Select, ValNode}
 
 /**
@@ -61,21 +61,46 @@ object PrettyPrintErgoTree {
     case LastBlockUtxoRootHash => Doc.text("LastBlockUtxoRootHash") 
 
     // Transformers
-    case Exists(input, condition) => createDoc(input) + Doc.text(".exists(") + createDoc(condition) + Doc.char(')')
     case MapCollection(input, mapper) => createDoc(input) + Doc.text(".map(") + createDoc(mapper) + Doc.char(')')
-    case OptionGet(x) => createDoc(x) + Doc.text(".get")
-    case OptionIsDefined(x) => createDoc(x) + Doc.text(".isDefined")
+    case Append(coll1, coll2) => createDoc(coll1) + Doc.text(".append") + wrapWithParens(createDoc(coll2))
+    case Slice(input, from, until) => createDoc(input) + Doc.text(".slice") + nTupleDoc(List(from, until).map(createDoc))
+    case Filter(input, condition) => createDoc(input) + Doc.text(".filter") + wrapWithParens(createDoc(condition))
+    case bt: BooleanTransformer[_] => bt match {
+      case Exists(input, condition) => createDoc(input) + Doc.text(".exists") + wrapWithParens(createDoc(condition))
+      case ForAll(input, condition) => createDoc(input) + Doc.text(".forall") + wrapWithParens(createDoc(condition))
+    }
+    case Fold(input, zero, foldOp) => createDoc(input) + Doc.text(".fold") + nTupleDoc(List(zero, foldOp).map(createDoc))
     case SelectField(input, idx) => createDoc(input) + Doc.text(s"._$idx")
-    // TODO: Check what is returned inside elemType when maybeTpe is None?
-    case ExtractRegisterAs(input, registerId, maybeTpe) =>
-      createDoc(input) + Doc.text(s".$registerId[") + STypeDoc(maybeTpe.elemType) + Doc.char(']')
-    case ExtractAmount(input) => createDoc(input) + Doc.text(".value")
     case ByIndex(input, index, defaultIndex) =>
       val body = defaultIndex match {
         case Some(v) => Doc.text(".getOrElse") + nTupleDoc(List(index, v).map(createDoc))
         case None => wrapWithParens(createDoc(index))
       }
       createDoc(input) + body
+    // TODO: Not used in final ErgoTree representation.
+    case SigmaPropIsProven(input) => ???
+    case SigmaPropBytes(input) => createDoc(input) + Doc.text(".propBytes")
+    case SizeOf(input) => createDoc(input) + Doc.text(".size")
+    case ExtractAmount(input) => createDoc(input) + Doc.text(".value")
+    case ExtractScriptBytes(input) => createDoc(input) + Doc.text(".propositionBytes")
+    case ExtractBytes(input) => createDoc(input) + Doc.text(".bytes")
+    case ExtractBytesWithNoRef(input) => createDoc(input) + Doc.text(".bytesWithoutRef")
+    case ExtractId(input) => createDoc(input) + Doc.text(".id")
+    // TODO: Check what is returned inside elemType when maybeTpe is None?
+    case ExtractRegisterAs(input, registerId, maybeTpe) =>
+      createDoc(input) + Doc.text(s".$registerId") + wrapWithBrackets(STypeDoc(maybeTpe.elemType))
+    case ExtractCreationInfo(input) => createDoc(input) + Doc.text(".creationInfo")
+    // TODO: Can be part of final ErgoTree?
+    case d: Deserialize[_] => d match {
+      case DeserializeContext(id, tpe) => ???
+      case DeserializeRegister(reg, tpe, default) => ???
+    }
+    // TODO: Check how to handle None inside maybeTpe
+    case GetVar(varId, maybeTpe) =>
+      Doc.text("getVar") + wrapWithBrackets(STypeDoc(maybeTpe.elemType)) + wrapWithParens(createDoc(varId))
+    case OptionGet(input) => createDoc(input) + Doc.text(".get")
+    case OptionGetOrElse(input, default) => createDoc(input) + Doc.text(".getOrElse") + wrapWithParens(createDoc(default))
+    case OptionIsDefined(x) => createDoc(x) + Doc.text(".isDefined")
 
     // Terms
     // Following nodes are not part of final ErgoTree
@@ -109,12 +134,14 @@ object PrettyPrintErgoTree {
     case ArithOp(left, right, OpCodes.ModuloCode) => createDoc(left) + Doc.text(" % ") + createDoc(right)
     case GT(l, r) => binaryOperationWithParens(createDoc(l), createDoc(r), Doc.text(" > "))
     case EQ(l, r) => binaryOperationWithParens(createDoc(l), createDoc(r), Doc.text(" == "))
+    case LT(l, r) => binaryOperationWithParens(createDoc(l), createDoc(r), Doc.text(" < "))
+    case LE(l, r) => binaryOperationWithParens(createDoc(l), createDoc(r), Doc.text(" <= "))
     case SubstConstants(scriptBytes, positions, newValues) =>
       val body = Doc.intercalate(Doc.comma + Doc.space, List(createDoc(scriptBytes), createDoc(positions), createDoc(newValues)))
       Doc.text("substConstants") + wrapWithParens(body)
     case BoolToSigmaProp(value) => Doc.text("sigmaProp") + wrapWithParens(createDoc(value))
+    case Upcast(input, tpe) => createDoc(input) + Doc.text(".to") + STypeDoc(tpe)
     // TODO: not covered by test
-    case LT(left, right) => wrapWithParens(createDoc(left)) + Doc.text(" < ") + wrapWithParens(createDoc(right))
     case nr: NotReadyValueGroupElement => nr match {
       case DecodePoint(input) => ???
       case Exponentiate(left, right) => ???
@@ -140,8 +167,7 @@ object PrettyPrintErgoTree {
     case SLong => Doc.text("Long")
     case SBigInt => Doc.text("BigInt")
     case SBox => Doc.text("Box")
-    // TODO: Shouldn't be Boolean?
-    case SSigmaProp => Doc.text("Any")
+    case SSigmaProp => Doc.text("SigmaProp")
     case SCollectionType(elemType) => Doc.text("Coll") + wrapWithBrackets(STypeDoc(elemType))
     case STuple(items) => nTupleDoc(items.map(STypeDoc))
     case SContext => Doc.text("Context")
