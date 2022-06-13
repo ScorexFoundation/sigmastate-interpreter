@@ -2,16 +2,16 @@ package sigmastate.interpreter
 
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.atomic.AtomicInteger
-
-import com.google.common.cache.{CacheBuilder, RemovalNotification, RemovalListener, LoadingCache, CacheLoader, CacheStats}
+import com.google.common.cache.{CacheBuilder, CacheLoader, CacheStats, LoadingCache, RemovalListener, RemovalNotification}
 import org.ergoplatform.settings.ErgoAlgos
 import org.ergoplatform.validation.SigmaValidationSettings
-import org.ergoplatform.validation.ValidationRules.{CheckCostFunc, CheckCalcFunc, trySoftForkable}
+import org.ergoplatform.validation.ValidationRules.{CheckCalcFunc, CheckCostFunc, trySoftForkable}
 import scalan.{AVHashMap, Nullable}
 import sigmastate.Values.ErgoTree
-import sigmastate.eval.{RuntimeIRContext, IRContext}
-import sigmastate.interpreter.Interpreter.{AotReductionResult, WhenSoftForkReductionResult}
+import sigmastate.eval.{IRContext, RuntimeIRContext}
+import sigmastate.interpreter.Interpreter.{ReductionResult, WhenSoftForkReductionResult}
 import sigmastate.serialization.ErgoTreeSerializer
+import sigmastate.utils.Helpers
 import sigmastate.utils.Helpers._
 import spire.syntax.all.cfor
 
@@ -83,9 +83,11 @@ case class PrecompiledScriptReducer(scriptBytes: Seq[Byte])(implicit val IR: IRC
       val estimatedCost = IR.checkCostWithContext(costingCtx, costF, maxCost, initCost).getOrThrow
 
       // check calc
-      val calcF = costingRes.calcF
       val calcCtx = context.toSigmaContext(isCost = false)
-      val res = Interpreter.calcResult(IR)(calcCtx, calcF)
+      val res = Helpers.withReentrantLock(IR.lock) { // protecting mutable access to IR instance
+        val calcF = costingRes.calcF
+        Interpreter.calcResult(IR)(calcCtx, calcF)
+      }
       AotReductionResult(SigmaDsl.toSigmaBoolean(res), estimatedCost)
     }
   }
