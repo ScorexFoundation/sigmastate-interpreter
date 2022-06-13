@@ -135,4 +135,43 @@ class PrettyPrintErgoTreeSpecification extends SigmaDslTesting {
         |  )
         |}""".stripMargin
   }
+
+  property("function application term"){
+    val code = 
+      """{(x: Option[Long]) =>
+        |  def f(opt: Long): Long = opt + 3
+        |  if (x.isDefined) f(x.get) else f(5L)
+        |}""".stripMargin
+    val compiledTree = compile(code)
+    PrettyPrintErgoTree.prettyPrint(compiledTree) shouldBe
+      """val $1 = { ($1: Long) =>
+        |  $1 + 3.toLong
+        |}
+        |{ ($2: Option[Long]) =>
+        |  if ($2.isDefined) {
+        |    $1($2.get)
+        |  } else {
+        |    $1(5.toLong)
+        |  }
+        |}""".stripMargin
+  }
+
+  property("method call with non empty arguments"){
+    val code = "OUTPUTS.map({ (b: Box) => b.value }).updateMany(Coll(0), Coll(3L))(0) == 3L"
+    val compiledTree = compile(code)
+    PrettyPrintErgoTree.prettyPrint(compiledTree) shouldBe
+      """(
+        |  OUTPUTS.map({ ($1: Box) =>
+        |    $1.value
+        |  }).updateMany(Coll[Int](0.toInt), Coll[Long](3.toLong))(0.toInt)
+        |) == (3.toLong)""".stripMargin
+  }
+
+  property("zip nested"){
+    val code = 
+      """OUTPUTS.zip(INPUTS).zip(OUTPUTS).zip(INPUTS)
+        | .map({ (t: (((Box, Box), Box), Box)) =>
+        | t._1._2.value + t._2.value
+        | }).fold(0L, { (a: Long, v: Long) => a + v }) == 10""".stripMargin
+  }
 }

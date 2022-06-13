@@ -5,7 +5,7 @@ import org.ergoplatform.{Context, Global, Inputs, Height, LastBlockUtxoRootHash,
 import org.typelevel.paiges.Doc
 import sigmastate.serialization.OpCodes
 import sigmastate.utxo.{ByIndex, Exists, ExtractAmount, ExtractRegisterAs, MapCollection, OptionGet, OptionIsDefined, SelectField}
-import sigmastate.lang.Terms.MethodCall
+import sigmastate.lang.Terms.{Apply, ApplyTypes, Block, Ident, Lambda, MethodCall, MethodCallLike, Select, ValNode}
 
 /**
  * TODO: Docs - arguments/values naming $i
@@ -40,7 +40,7 @@ object PrettyPrintErgoTree {
     case TaggedVariableNode(varId, tpe) => ??? // TODO: Does not make sense for printer?
     case FalseSigmaProp | TrueSigmaProp => ??? // TODO: Does not make sense for printer?
     case FuncValue(args, body) =>
-      Doc.char('{') + Doc.space + argsDoc(args) + Doc.text(" =>") + Doc.line +
+      Doc.char('{') + Doc.space + argsWithTypesDoc(args) + Doc.text(" =>") + Doc.line +
         createDoc(body).indent(i) + Doc.line +
         Doc.char('}')
     case BlockValue(items, result) =>
@@ -78,9 +78,19 @@ object PrettyPrintErgoTree {
       createDoc(input) + body
 
     // Terms
+    // Following nodes are not part of final ErgoTree
+    case Block(_, _) => ???
+    case ValNode(_, _, _) => ???
+    case Select(_, _, _) => ???
+    case Ident(_, _) => ???
+    case ApplyTypes(_, _) => ???
+    case MethodCallLike(_, _, _, _) => ???
+    case Lambda(_, _, _, _) => ???
+
+    case Apply(func, args) => createDoc(func) + nTupleDoc(args.map(createDoc))
     case MethodCall(obj, method, args, map) =>
-      val argS = if (args.nonEmpty) Doc.intercalate(Doc.comma + Doc.space, args.map(createDoc)) else Doc.empty
-      createDoc(obj) + Doc.char('.') + Doc.text(method.name) + argS
+      val argsDoc = if (args.nonEmpty) nTupleDoc(args.map(createDoc)) else Doc.empty
+      createDoc(obj) + Doc.char('.') + Doc.text(method.name) + argsDoc
 
     // Trees
     case If(condition, trueBranch, falseBranch) =>
@@ -114,9 +124,10 @@ object PrettyPrintErgoTree {
 
   private def binaryOperationWithParens(l: Doc, r: Doc, sep: Doc) = wrapWithParens(l) + sep + wrapWithParens(r)
   private def wrapWithParens(d: Doc): Doc = d.tightBracketBy(Doc.char('('), Doc.char(')'))
+  private def wrapWithBrackets(d: Doc): Doc = d.tightBracketBy(Doc.char('['), Doc.char(']'))
 
   /* Create argument representation enclosed in brackets with types, e.g. `($5: String, $1: Int)` */
-  private def argsDoc(args: Seq[(Int, SType)]): Doc = {
+  private def argsWithTypesDoc(args: Seq[(Int, SType)]): Doc = {
     val argsWithTypes = args.map { case (i, tpe) => Doc.text(s"$$$i:") + Doc.space + STypeDoc(tpe) }
     nTupleDoc(argsWithTypes)
   }
@@ -131,9 +142,10 @@ object PrettyPrintErgoTree {
     case SBox => Doc.text("Box")
     // TODO: Shouldn't be Boolean?
     case SSigmaProp => Doc.text("Any")
-    case SCollectionType(elemType) => Doc.text("Coll[") + STypeDoc(elemType) + Doc.char(']')
+    case SCollectionType(elemType) => Doc.text("Coll") + wrapWithBrackets(STypeDoc(elemType))
     case STuple(items) => nTupleDoc(items.map(STypeDoc))
     case SContext => Doc.text("Context")
+    case SOption(elemType) => Doc.text("Option") + wrapWithBrackets(STypeDoc(elemType))
   }
 
   private def nTupleDoc(items: Seq[Doc]): Doc =
