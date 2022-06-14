@@ -118,35 +118,86 @@ object PrettyPrintErgoTree {
       createDoc(obj) + Doc.char('.') + Doc.text(method.name) + argsDoc
 
     // Trees
-    case If(condition, trueBranch, falseBranch) =>
-      Doc.text("if (") + createDoc(condition) + Doc.text(") {") + Doc.line +
+    case BoolToSigmaProp(value) => Doc.text("sigmaProp") + wrapWithParens(createDoc(value))
+    case CreateProveDlog(value) => Doc.text("proveDlog") + wrapWithParens(createDoc(value))
+    // TODO: Can be removed as it isn't used anymore.
+    case CreateAvlTree(_, _, _, _) => ???
+    case CreateProveDHTuple(gv, hv, uv, vv) => Doc.text("proveDHTuple") + nTupleDoc(List(gv, hv, uv, vv).map(createDoc))
+    case st: SigmaTransformer[_, _] => st match {
+      // TODO: Test with more than 2 elements inside items
+      case SigmaAnd(items) => Doc.intercalate(Doc.text(" && "), items.map(createDoc))
+      case SigmaOr(items) => Doc.intercalate(Doc.text(" || "), items.map(createDoc))
+    }
+    case OR(input) => Doc.text("anyOf") + wrapWithParens(createDoc(input))
+    case XorOf(input) => Doc.text("xorOf") + wrapWithParens(createDoc(input))
+    case AND(input) => Doc.text("allOf") + wrapWithParens(createDoc(input))
+    case AtLeast(bound, input) => Doc.text("atLeast") + nTupleDoc(List(bound, input).map(createDoc))
+    case Upcast(input, tpe) => createDoc(input) + Doc.text(".to") + STypeDoc(tpe)
+    case Downcast(input, tpe) => createDoc(input) + Doc.text(".to") + STypeDoc(tpe)
+    case LongToByteArray(input) => Doc.text("longToByteArray") + wrapWithParens(createDoc(input))
+    case ByteArrayToLong(input) => Doc.text("byteArrayToLong") + wrapWithParens(createDoc(input))
+    case ByteArrayToBigInt(input) => Doc.text("byteArrayToBigInt") + wrapWithParens(createDoc(input))
+    case nr: NotReadyValueGroupElement => nr match {
+      case DecodePoint(input) => Doc.text("decodePoint") + wrapWithParens(createDoc(input))
+      case Exponentiate(l, r) => createDoc(l) + Doc.text(".exp") + wrapWithParens(createDoc(r))
+      case MultiplyGroup(l, r) => createDoc(l) + Doc.text(".multiply") + wrapWithParens(createDoc(r))
+    }
+    case ch: CalcHash => ch match {
+      case CalcBlake2b256(input) => Doc.text("blake2b256") + wrapWithParens(createDoc(input))
+      case CalcSha256(input) => Doc.text("sha256") + wrapWithParens(createDoc(input))
+    }
+    case SubstConstants(scriptBytes, positions, newValues) =>
+      val body = Doc.intercalate(Doc.comma + Doc.space, List(createDoc(scriptBytes), createDoc(positions), createDoc(newValues)))
+      Doc.text("substConstants") + wrapWithParens(body)
+
+    case t: Triple[_, _, _] => t match {
+      case ArithOp(l, r, OpCodes.PlusCode) => createDoc(l) + Doc.text(" + ") + createDoc(r)
+      case ArithOp(l, r, OpCodes.MinusCode) => createDoc(l) + Doc.text(" - ") + createDoc(r)
+      case ArithOp(l, r, OpCodes.MultiplyCode) => createDoc(l) + Doc.text(" * ") + createDoc(r)
+      case ArithOp(l, r, OpCodes.DivisionCode) => createDoc(l) + Doc.text(" / ") + createDoc(r)
+      case ArithOp(l, r, OpCodes.ModuloCode) => createDoc(l) + Doc.text(" % ") + createDoc(r)
+      // TODO: min/max usage in script code
+      case ArithOp(l, r, OpCodes.MinCode) => ???
+      case ArithOp(l, r, OpCodes.MaxCode) => ???
+      case ArithOp(l, r, _) => ???
+      // TODO: Implement after https://github.com/ScorexFoundation/sigmastate-interpreter/issues/474
+      case BitOp(l, r, OpCodes.BitOrCode) => binaryOperationWithParens(createDoc(l), createDoc(r), Doc.char('|'))
+      case BitOp(l, r, OpCodes.BitAndCode) => binaryOperationWithParens(createDoc(l), createDoc(r), Doc.char('&'))
+      // Possible xor clash with BinXor?
+      case BitOp(_, _, _) => ???
+      case Xor(l, r) => Doc.text("xor") + nTupleDoc(List(l, r).map(createDoc))
+      case sr: SimpleRelation[_] => sr match {
+        case GT(l, r) => binaryOperationWithParens(createDoc(l), createDoc(r), Doc.text(" > "))
+        case GE(l, r) => binaryOperationWithParens(createDoc(l), createDoc(r), Doc.text(" >= "))
+        case EQ(l, r) => binaryOperationWithParens(createDoc(l), createDoc(r), Doc.text(" == "))
+        case NEQ(l, r) => binaryOperationWithParens(createDoc(l), createDoc(r), Doc.text(" != "))
+        case LT(l, r) => binaryOperationWithParens(createDoc(l), createDoc(r), Doc.text(" < "))
+        case LE(l, r) => binaryOperationWithParens(createDoc(l), createDoc(r), Doc.text(" <= "))
+      }
+      case BinOr(l, r) => binaryOperationWithParens(createDoc(l), createDoc(r), Doc.text(" || "))
+      case BinAnd(l, r) => binaryOperationWithParens(createDoc(l), createDoc(r), Doc.text(" && "))
+      case BinXor(l, r) => binaryOperationWithParens(createDoc(l), createDoc(r), Doc.text(" ^ "))
+    }
+    case oneArgOp: OneArgumentOperation[_, _] => oneArgOp match {
+      // TODO: Only used in parser?
+      case BitInversion(input) => Doc.char('~') + createDoc(input)
+      case Negation(input) => Doc.char('!') + createDoc(input)
+    }
+    // TODO: How are ModQs used in ergo script?
+    case ModQ(input) => ???
+    case ModQArithOp(l, r, opCode) => ???
+
+    case quad: Quadruple[_, _, _, _] => quad match {
+      case If(condition, trueBranch, falseBranch) =>
+        Doc.text("if (") + createDoc(condition) + Doc.text(") {") + Doc.line +
         createDoc(trueBranch).indent(i) + Doc.line +
         Doc.text("} else {") + Doc.line +
         createDoc(falseBranch).indent(i) + Doc.line +
         Doc.char('}')
-    case BinOr(l, r) => binaryOperationWithParens(createDoc(l), createDoc(r), Doc.text(" || "))
-    case BinAnd(l, r) => binaryOperationWithParens(createDoc(l), createDoc(r), Doc.text(" && "))
-    case BinXor(l, r) => binaryOperationWithParens(createDoc(l), createDoc(r), Doc.text(" ^ "))
-    case ArithOp(left, right, OpCodes.PlusCode) => createDoc(left) + Doc.text(" + ") + createDoc(right)
-    case ArithOp(left, right, OpCodes.MinusCode) => createDoc(left) + Doc.text(" - ") + createDoc(right)
-    case ArithOp(left, right, OpCodes.MultiplyCode) => createDoc(left) + Doc.text(" * ") + createDoc(right)
-    case ArithOp(left, right, OpCodes.DivisionCode) => createDoc(left) + Doc.text(" / ") + createDoc(right)
-    case ArithOp(left, right, OpCodes.ModuloCode) => createDoc(left) + Doc.text(" % ") + createDoc(right)
-    case GT(l, r) => binaryOperationWithParens(createDoc(l), createDoc(r), Doc.text(" > "))
-    case EQ(l, r) => binaryOperationWithParens(createDoc(l), createDoc(r), Doc.text(" == "))
-    case LT(l, r) => binaryOperationWithParens(createDoc(l), createDoc(r), Doc.text(" < "))
-    case LE(l, r) => binaryOperationWithParens(createDoc(l), createDoc(r), Doc.text(" <= "))
-    case SubstConstants(scriptBytes, positions, newValues) =>
-      val body = Doc.intercalate(Doc.comma + Doc.space, List(createDoc(scriptBytes), createDoc(positions), createDoc(newValues)))
-      Doc.text("substConstants") + wrapWithParens(body)
-    case BoolToSigmaProp(value) => Doc.text("sigmaProp") + wrapWithParens(createDoc(value))
-    case Upcast(input, tpe) => createDoc(input) + Doc.text(".to") + STypeDoc(tpe)
-    // TODO: not covered by test
-    case nr: NotReadyValueGroupElement => nr match {
-      case DecodePoint(input) => ???
-      case Exponentiate(left, right) => ???
-      case MultiplyGroup(left, right) => ???
+      // TODO: How it can be used in ergo script?
+      case TreeLookup(tree, key, proof) => ???
     }
+    case LogicalNot(input) => Doc.char('!') + createDoc(input)
   }
 
   private def binaryOperationWithParens(l: Doc, r: Doc, sep: Doc) = wrapWithParens(l) + sep + wrapWithParens(r)
@@ -172,6 +223,20 @@ object PrettyPrintErgoTree {
     case STuple(items) => nTupleDoc(items.map(STypeDoc))
     case SContext => Doc.text("Context")
     case SOption(elemType) => Doc.text("Option") + wrapWithBrackets(STypeDoc(elemType))
+    case SGroupElement => Doc.text("GroupElement")
+    case SPreHeader => Doc.text("PreHeader")
+    // TODO: Not tested
+    case NoType => Doc.empty
+    case SString => Doc.text("String")
+    case SAny => Doc.text("Any")
+    case SUnit => Doc.text("Unit")
+    case SFunc(tDom, tRange, tpeParams) => nTupleDoc(tDom.map(STypeDoc)) + Doc.text(" => ") + STypeDoc(tRange)
+    case SAvlTree => Doc.text("AvlTree")
+    case SHeader => Doc.text("Header")
+    case SGlobal => Doc.text("Global")
+    // Not used in final ergo tree
+    case STypeApply(name, args) => ???
+    case STypeVar(name) => ???
   }
 
   private def nTupleDoc(items: Seq[Doc]): Doc =
