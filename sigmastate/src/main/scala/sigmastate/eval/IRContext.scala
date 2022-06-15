@@ -1,12 +1,6 @@
 package sigmastate.eval
 
-import sigmastate.SType
-import sigmastate.Values.{SValue, Value}
-import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.TransformingSigmaBuilder
-import sigmastate.lang.exceptions.CostLimitException
-import sigmastate.utils.Helpers
-import sigmastate.utxo.CostTable
 
 import java.util.concurrent.locks.ReentrantLock
 import scala.util.Try
