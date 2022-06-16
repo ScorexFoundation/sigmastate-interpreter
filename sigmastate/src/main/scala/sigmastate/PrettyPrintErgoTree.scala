@@ -40,13 +40,12 @@ object PrettyPrintErgoTree {
     case TaggedVariableNode(varId, tpe) => ??? // TODO: Does not make sense for printer?
     case FalseSigmaProp | TrueSigmaProp => ??? // TODO: Does not make sense for printer?
     case FuncValue(args, body) =>
-      Doc.char('{') + Doc.space + argsWithTypesDoc(args) + Doc.text(" =>") + Doc.line +
-        createDoc(body).indent(i) + Doc.line +
-        Doc.char('}')
+      Doc.char('{') + Doc.space + argsWithTypesDoc(args) + Doc.space + Doc.text("=>") +
+      createDoc(body).bracketBy(Doc.empty, Doc.empty) + Doc.char('}')
     case BlockValue(items, result) =>
       val prettyItems = items.map(item => createDoc(item))
-      Doc.intercalate(Doc.line, prettyItems)+ Doc.line +
-        createDoc(result)
+      Doc.intercalate(Doc.lineOr(Doc.text("; ")), prettyItems).tightBracketBy(Doc.empty, Doc.text("; ")) +
+      createDoc(result)
     case SomeValue(_) | NoneValue(_) => ??? // Not implemented in ErgoTree (as of v5.0)
 
     // ErgoLike
@@ -189,11 +188,12 @@ object PrettyPrintErgoTree {
 
     case quad: Quadruple[_, _, _, _] => quad match {
       case If(condition, trueBranch, falseBranch) =>
-        Doc.text("if (") + createDoc(condition) + Doc.text(") {") + Doc.line +
-        createDoc(trueBranch).indent(i) + Doc.line +
-        Doc.text("} else {") + Doc.line +
-        createDoc(falseBranch).indent(i) + Doc.line +
-        Doc.char('}')
+        val res = Doc.text("if (") + createDoc(condition) + Doc.text(") {") +
+          createDoc(trueBranch).bracketBy(Doc.empty, Doc.empty) +
+          Doc.text("} else {") +
+          createDoc(falseBranch).bracketBy(Doc.empty, Doc.empty) +
+          Doc.char('}')
+        res.tightBracketBy(Doc.empty, Doc.empty)
       // TODO: How it can be used in ergo script?
       case TreeLookup(tree, key, proof) => ???
     }
