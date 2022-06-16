@@ -40,13 +40,15 @@ class PrettyPrintErgoTreeSpecification extends SigmaDslTesting {
         |  val mul = a * b
         |  val div = a / b
         |  val mod = a % b
-        |  (plus, (minus, (mul, (div, mod))))
+        |  val minimum = min(a, b)
+        |  val maximum = max(a, b)
+        |  (plus, (minus, (mul, (div, (mod, (minimum, maximum))))))
         |}""".stripMargin
     val compiledTree = compile(code)
-    PrettyPrintErgoTree.prettyPrint(compiledTree) shouldBe
+    PrettyPrintErgoTree.prettyPrint(compiledTree, 100) shouldBe
       """{ ($1: (Short, Short)) =>
         |  val $3 = $1._1; val $4 = $1._2; (
-        |    $3 + $4, ($3 - $4, ($3 * $4, ($3 / $4, $3 % $4)))
+        |    $3 + $4, ($3 - $4, ($3 * $4, ($3 / $4, ($3 % $4, (min($3, $4), max($3, $4))))))
         |  )
         |}""".stripMargin
     
@@ -415,5 +417,14 @@ class PrettyPrintErgoTreeSpecification extends SigmaDslTesting {
          |    { ($1: (((Box, Box), Box), Box)) => $1._1._2.value + $1._2.value }
          |  ).fold(0.toLong, { ($1: (Long, Long)) => $1._1 + $1._2 })
          |) == (10.toLong)""".stripMargin
+  }
+
+  property("various types in function definition"){
+    val code =
+      """{ (x: (String, (Any, (AvlTree, Header)))) =>
+         |  false
+         |}""".stripMargin
+    PrettyPrintErgoTree.prettyPrint(compile(code)) shouldBe
+      "{ ($1: (String, (Any, (AvlTree, Header)))) => false }"
   }
 }
