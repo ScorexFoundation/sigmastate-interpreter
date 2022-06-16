@@ -80,7 +80,7 @@ class PrettyPrintErgoTreeSpecification extends SigmaDslTesting {
   property("substConstants"){
     val code = "{ (x: (Coll[Byte], Int)) => substConstants[Any](x._1, Coll[Int](x._2), Coll[Any](sigmaProp(false), sigmaProp(true))) }"
     val compiledTree = compile(code)
-    PrettyPrintErgoTree.prettyPrint(compiledTree, 2, 84) shouldBe
+    PrettyPrintErgoTree.prettyPrint(compiledTree, 84) shouldBe
       """{ ($1: (Coll[Byte], Int)) =>
         |  substConstants(
         |    $1._1, Coll[Int]($1._2), Coll[SigmaProp](sigmaProp(false), sigmaProp(true))
@@ -163,9 +163,9 @@ class PrettyPrintErgoTreeSpecification extends SigmaDslTesting {
   }
 
   property("filter"){
-    val code = "{ (x: Coll[Int]) => x.filter({ (v: Int) => v < 0 }) }"
+    val code = "{ (x: Coll[Int]) => x.filter({ (v: Int) => v >= 0 }) }"
     PrettyPrintErgoTree.prettyPrint(compile(code)) shouldBe
-      "{ ($1: Coll[Int]) => $1.filter({ ($3: Int) => ($3) < (0.toInt) }) }"
+      "{ ($1: Coll[Int]) => $1.filter({ ($3: Int) => ($3) >= (0.toInt) }) }"
   }
 
   property("forall"){
@@ -411,11 +411,9 @@ class PrettyPrintErgoTreeSpecification extends SigmaDslTesting {
     // TODO: $1 is shadowed, look closer to fold: possible problem with clash for Long/Box values, consider having unique global variable table?
     PrettyPrintErgoTree.prettyPrint(compile(code)) shouldBe
       """|(
-         |  OUTPUTS.zip(INPUTS).zip(OUTPUTS).zip(INPUTS).map({ (
-         |    $1: (((Box, Box), Box), Box)
-         |  ) => $1._1._2.value + $1._2.value }).fold(
-         |    0.toLong, { ($1: (Long, Long)) => $1._1 + $1._2 }
-         |  )
+         |  OUTPUTS.zip(INPUTS).zip(OUTPUTS).zip(INPUTS).map(
+         |    { ($1: (((Box, Box), Box), Box)) => $1._1._2.value + $1._2.value }
+         |  ).fold(0.toLong, { ($1: (Long, Long)) => $1._1 + $1._2 })
          |) == (10.toLong)""".stripMargin
   }
 }

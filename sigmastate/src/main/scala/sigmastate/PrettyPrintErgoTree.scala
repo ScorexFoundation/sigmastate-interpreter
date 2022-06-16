@@ -13,9 +13,9 @@ import sigmastate.lang.Terms.{Apply, ApplyTypes, Block, Ident, Lambda, MethodCal
  */
 object PrettyPrintErgoTree {
 
-  def prettyPrint(t: SValue, indentation: Int = 2, width: Int = 80): String = createDoc(t)(indentation).render(width)
+  def prettyPrint(t: SValue, width: Int = 80): String = createDoc(t).render(width)
 
-  private def createDoc(t: SValue)(implicit i: Int): Doc = t match {
+  private def createDoc(t: SValue): Doc = t match {
     // Values
     case ev: EvaluatedValue[SType] => ev match {
       case c: Constant[SType] => c match {
@@ -27,8 +27,7 @@ object PrettyPrintErgoTree {
       case GroupGenerator => ??? // TODO: What is that?
       case ec: EvaluatedCollection[_, _] => ec match {
         case ConcreteCollection(items, elemType) =>
-          Doc.text(s"Coll[") + STypeDoc(elemType) + Doc.char(']') +
-          wrapWithParens(Doc.intercalate(Doc.comma + Doc.space, items.map(createDoc)))
+          Doc.text(s"Coll") + wrapWithBrackets(STypeDoc(elemType)) + nTupleDoc(items.map(createDoc))
       }
     }
     case bi: BlockItem => bi match {
@@ -60,35 +59,34 @@ object PrettyPrintErgoTree {
     case LastBlockUtxoRootHash => Doc.text("LastBlockUtxoRootHash") 
 
     // Transformers
-    case MapCollection(input, mapper) => createDoc(input) + Doc.text(".map(") + createDoc(mapper) + Doc.char(')')
-    case Append(coll1, coll2) => createDoc(coll1) + Doc.text(".append") + wrapWithParens(createDoc(coll2))
-    case Slice(input, from, until) => createDoc(input) + Doc.text(".slice") + nTupleDoc(List(from, until).map(createDoc))
-    case Filter(input, condition) => createDoc(input) + Doc.text(".filter") + wrapWithParens(createDoc(condition))
+    case MapCollection(input, mapper) => methodDoc(input, "map", List(mapper))
+    case Append(coll1, coll2) => methodDoc(coll1, "append", List(coll2))
+    case Slice(input, from, until) => methodDoc(input, "slice", List(from, until))
+    case Filter(input, condition) => methodDoc(input, "filter", List(condition))
     case bt: BooleanTransformer[_] => bt match {
-      case Exists(input, condition) => createDoc(input) + Doc.text(".exists") + wrapWithParens(createDoc(condition))
-      case ForAll(input, condition) => createDoc(input) + Doc.text(".forall") + wrapWithParens(createDoc(condition))
+      case Exists(input, condition) => methodDoc(input, "exists", List(condition))
+      case ForAll(input, condition) => methodDoc(input, "forall", List(condition))
     }
-    case Fold(input, zero, foldOp) => createDoc(input) + Doc.text(".fold") + nTupleDoc(List(zero, foldOp).map(createDoc))
-    case SelectField(input, idx) => createDoc(input) + Doc.text(s"._$idx")
+    case Fold(input, zero, foldOp) => methodDoc(input, "fold", List(zero, foldOp))
+    case SelectField(input, idx) => methodDoc(input, s"_$idx")
     case ByIndex(input, index, defaultIndex) =>
-      val body = defaultIndex match {
-        case Some(v) => Doc.text(".getOrElse") + nTupleDoc(List(index, v).map(createDoc))
-        case None => wrapWithParens(createDoc(index))
+      defaultIndex match {
+        case Some(v) => methodDoc(input, "getOrElse", List(index, v))
+        case None => createDoc(input) + wrapWithParens(createDoc(index))
       }
-      createDoc(input) + body
     // TODO: Not used in final ErgoTree representation.
     case SigmaPropIsProven(input) => ???
-    case SigmaPropBytes(input) => createDoc(input) + Doc.text(".propBytes")
-    case SizeOf(input) => createDoc(input) + Doc.text(".size")
-    case ExtractAmount(input) => createDoc(input) + Doc.text(".value")
-    case ExtractScriptBytes(input) => createDoc(input) + Doc.text(".propositionBytes")
-    case ExtractBytes(input) => createDoc(input) + Doc.text(".bytes")
-    case ExtractBytesWithNoRef(input) => createDoc(input) + Doc.text(".bytesWithoutRef")
-    case ExtractId(input) => createDoc(input) + Doc.text(".id")
+    case SigmaPropBytes(input) => methodDoc(input, "propBytes")
+    case SizeOf(input) => methodDoc(input, "size")
+    case ExtractAmount(input) => methodDoc(input, "value")
+    case ExtractScriptBytes(input) => methodDoc(input, "propositionBytes")
+    case ExtractBytes(input) => methodDoc(input, "bytes")
+    case ExtractBytesWithNoRef(input) => methodDoc(input, "bytesWithoutRef")
+    case ExtractId(input) => methodDoc(input, "id")
     // TODO: Check what is returned inside elemType when maybeTpe is None?
     case ExtractRegisterAs(input, registerId, maybeTpe) =>
       createDoc(input) + Doc.text(s".$registerId") + wrapWithBrackets(STypeDoc(maybeTpe.elemType))
-    case ExtractCreationInfo(input) => createDoc(input) + Doc.text(".creationInfo")
+    case ExtractCreationInfo(input) => methodDoc(input, "creationInfo")
     // TODO: Can be part of final ErgoTree?
     case d: Deserialize[_] => d match {
       case DeserializeContext(id, tpe) => ???
@@ -97,9 +95,9 @@ object PrettyPrintErgoTree {
     // TODO: Check how to handle None inside maybeTpe
     case GetVar(varId, maybeTpe) =>
       Doc.text("getVar") + wrapWithBrackets(STypeDoc(maybeTpe.elemType)) + wrapWithParens(createDoc(varId))
-    case OptionGet(input) => createDoc(input) + Doc.text(".get")
-    case OptionGetOrElse(input, default) => createDoc(input) + Doc.text(".getOrElse") + wrapWithParens(createDoc(default))
-    case OptionIsDefined(x) => createDoc(x) + Doc.text(".isDefined")
+    case OptionGet(input) => methodDoc(input, "get")
+    case OptionGetOrElse(input, default) => methodDoc(input, "getOrElse", List(default))
+    case OptionIsDefined(x) => methodDoc(x, "isDefined")
 
     // Terms
     // Following nodes are not part of final ErgoTree
@@ -112,9 +110,7 @@ object PrettyPrintErgoTree {
     case Lambda(_, _, _, _) => ???
 
     case Apply(func, args) => createDoc(func) + nTupleDoc(args.map(createDoc))
-    case MethodCall(obj, method, args, map) =>
-      val argsDoc = if (args.nonEmpty) nTupleDoc(args.map(createDoc)) else Doc.empty
-      createDoc(obj) + Doc.char('.') + Doc.text(method.name) + argsDoc
+    case MethodCall(obj, method, args, map) => methodDoc(obj, method.name, args.toList)
 
     // Trees
     case BoolToSigmaProp(value) => Doc.text("sigmaProp") + wrapWithParens(createDoc(value))
@@ -138,16 +134,15 @@ object PrettyPrintErgoTree {
     case ByteArrayToBigInt(input) => Doc.text("byteArrayToBigInt") + wrapWithParens(createDoc(input))
     case nr: NotReadyValueGroupElement => nr match {
       case DecodePoint(input) => Doc.text("decodePoint") + wrapWithParens(createDoc(input))
-      case Exponentiate(l, r) => createDoc(l) + Doc.text(".exp") + wrapWithParens(createDoc(r))
-      case MultiplyGroup(l, r) => createDoc(l) + Doc.text(".multiply") + wrapWithParens(createDoc(r))
+      case Exponentiate(l, r) => methodDoc(l, "exp", List(r))
+      case MultiplyGroup(l, r) => methodDoc(l, "multiply", List(r))
     }
     case ch: CalcHash => ch match {
       case CalcBlake2b256(input) => Doc.text("blake2b256") + wrapWithParens(createDoc(input))
       case CalcSha256(input) => Doc.text("sha256") + wrapWithParens(createDoc(input))
     }
     case SubstConstants(scriptBytes, positions, newValues) =>
-      val body = Doc.intercalate(Doc.comma + Doc.space, List(createDoc(scriptBytes), createDoc(positions), createDoc(newValues)))
-      Doc.text("substConstants") + wrapWithParens(body)
+      Doc.text("substConstants") + nTupleDoc(List(scriptBytes, positions, newValues).map(createDoc))
 
     case t: Triple[_, _, _] => t match {
       case ArithOp(l, r, OpCodes.PlusCode) => createDoc(l) + Doc.text(" + ") + createDoc(r)
@@ -200,6 +195,12 @@ object PrettyPrintErgoTree {
     case LogicalNot(input) => Doc.char('!') + createDoc(input)
   }
 
+  // empty args list returns just `name` suffix
+  private def methodDoc(input: SValue, name: String, args: List[SValue] = Nil): Doc = {
+    val argsDoc = if (args.nonEmpty) nTupleDoc(args.map(createDoc)) else Doc.empty
+    createDoc(input) + Doc.text(s".$name") + argsDoc
+  }
+
   private def binaryOperationWithParens(l: Doc, r: Doc, sep: Doc) = wrapWithParens(l) + sep + wrapWithParens(r)
   private def wrapWithParens(d: Doc): Doc = d.tightBracketBy(Doc.char('('), Doc.char(')'))
   private def wrapWithBrackets(d: Doc): Doc = d.tightBracketBy(Doc.char('['), Doc.char(']'))
@@ -239,10 +240,9 @@ object PrettyPrintErgoTree {
     case STypeVar(name) => ???
   }
 
+  // Create (item1, item2, ...)
   private def nTupleDoc(items: Seq[Doc]): Doc =
     wrapWithParens(
-      Doc.intercalate(
-        Doc.comma + Doc.space,
-        items))
+      Doc.intercalate(Doc.text(", "), items))
 
 }
