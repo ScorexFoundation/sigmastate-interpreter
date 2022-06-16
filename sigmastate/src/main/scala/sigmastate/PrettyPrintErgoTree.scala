@@ -21,10 +21,11 @@ object PrettyPrintErgoTree {
       case c: Constant[SType] => c match {
         case FalseLeaf => Doc.text("false")
         case TrueLeaf => Doc.text("true")
+        // TODO: explicit type isn't needed 99% of times 
         case ConstantNode(value, tpe) => Doc.text(s"$value.to") + STypeDoc(tpe)
       }
       case UnitConstant() => ??? // TODO: Only used in parser?
-      case GroupGenerator => ??? // TODO: What is that?
+      case GroupGenerator => ??? // TODO: What is difference between Global.groupGenerator Smethod and this?
       case ec: EvaluatedCollection[_, _] => ec match {
         case ConcreteCollection(items, elemType) =>
           Doc.text(s"Coll") + wrapWithBrackets(STypeDoc(elemType)) + nTupleDoc(items.map(createDoc))
@@ -150,10 +151,8 @@ object PrettyPrintErgoTree {
       case ArithOp(l, r, OpCodes.MultiplyCode) => createDoc(l) + Doc.text(" * ") + createDoc(r)
       case ArithOp(l, r, OpCodes.DivisionCode) => createDoc(l) + Doc.text(" / ") + createDoc(r)
       case ArithOp(l, r, OpCodes.ModuloCode) => createDoc(l) + Doc.text(" % ") + createDoc(r)
-      // TODO: min/max usage in script code
-      case ArithOp(l, r, OpCodes.MinCode) => ???
-      case ArithOp(l, r, OpCodes.MaxCode) => ???
-      case ArithOp(l, r, _) => ???
+      case ArithOp(l, r, OpCodes.MinCode) => Doc.text("min") + nTupleDoc(List(l, r).map(createDoc))
+      case ArithOp(l, r, OpCodes.MaxCode) => Doc.text("max") + nTupleDoc(List(l, r).map(createDoc))
       // TODO: Implement after https://github.com/ScorexFoundation/sigmastate-interpreter/issues/474
       case BitOp(l, r, OpCodes.BitOrCode) => binaryOperationWithParens(createDoc(l), createDoc(r), Doc.char('|'))
       case BitOp(l, r, OpCodes.BitAndCode) => binaryOperationWithParens(createDoc(l), createDoc(r), Doc.char('&'))
@@ -226,21 +225,21 @@ object PrettyPrintErgoTree {
     case SOption(elemType) => Doc.text("Option") + wrapWithBrackets(STypeDoc(elemType))
     case SGroupElement => Doc.text("GroupElement")
     case SPreHeader => Doc.text("PreHeader")
-    // TODO: Not tested
-    case NoType => Doc.empty
     case SString => Doc.text("String")
     case SAny => Doc.text("Any")
+    case SAvlTree => Doc.text("AvlTree")
+    case SGlobal => Doc.text("Global")
+    // TODO: Not tested
+    case NoType => Doc.empty
     case SUnit => Doc.text("Unit")
     case SFunc(tDom, tRange, tpeParams) => nTupleDoc(tDom.map(STypeDoc)) + Doc.text(" => ") + STypeDoc(tRange)
-    case SAvlTree => Doc.text("AvlTree")
     case SHeader => Doc.text("Header")
-    case SGlobal => Doc.text("Global")
     // Not used in final ergo tree
     case STypeApply(name, args) => ???
     case STypeVar(name) => ???
   }
 
-  // Create (item1, item2, ...)
+  // Create `(item1, item2, ...)`
   private def nTupleDoc(items: Seq[Doc]): Doc =
     wrapWithParens(
       Doc.intercalate(Doc.text(", "), items))
