@@ -259,6 +259,7 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
   }
 
   def stypeToElem[T <: SType](t: T): Elem[T#WrappedType] = (t match {
+    case SUnit => UnitElement
     case SBoolean => BooleanElement
     case SByte => ByteElement
     case SShort => ShortElement
@@ -283,6 +284,7 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
   }).asInstanceOf[Elem[T#WrappedType]]
 
   def elemToSType[T](e: Elem[T]): SType = e match {
+    case UnitElement => SUnit
     case BooleanElement => SBoolean
     case ByteElement => SByte
     case ShortElement => SShort
