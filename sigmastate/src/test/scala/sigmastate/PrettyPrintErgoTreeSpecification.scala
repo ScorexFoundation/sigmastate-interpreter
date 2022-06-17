@@ -46,11 +46,10 @@ class PrettyPrintErgoTreeSpecification extends SigmaDslTesting {
         |}""".stripMargin
     val compiledTree = compile(code)
     PrettyPrintErgoTree.prettyPrint(compiledTree, 100) shouldBe
-      """{ ($1: (Short, Short)) =>
-        |  val $3 = $1._1; val $4 = $1._2; (
-        |    $3 + $4, ($3 - $4, ($3 * $4, ($3 / $4, ($3 % $4, (min($3, $4), max($3, $4))))))
-        |  )
-        |}""".stripMargin
+      """{ ($1: (Short, Short)) => 
+        |  val $3 = $1._1
+        |  val $4 = $1._2
+        |  ($3 + $4, ($3 - $4, ($3 * $4, ($3 / $4, ($3 % $4, (min($3, $4), max($3, $4))))))) }""".stripMargin
     
   }
 
@@ -66,9 +65,9 @@ class PrettyPrintErgoTreeSpecification extends SigmaDslTesting {
         |}""".stripMargin
     val compiledTree = compile(code)
     PrettyPrintErgoTree.prettyPrint(compiledTree) shouldBe
-      """{ ($1: Box) =>
-        |  val $3 = $1.R5[Short]; if ($3.isDefined) { $3.get } else { 0.toShort }
-        |}""".stripMargin
+      """{ ($1: Box) => 
+        |  val $3 = $1.R5[Short]
+        |  if ($3.isDefined) { $3.get } else { 0.toShort } }""".stripMargin
   }
 
   property("group generator"){
@@ -136,9 +135,9 @@ class PrettyPrintErgoTreeSpecification extends SigmaDslTesting {
         |}""".stripMargin
     val compiledTree = compile(code)
     PrettyPrintErgoTree.prettyPrint(compiledTree) shouldBe
-      """val $1 = { ($1: Long) => $1 + 3.toLong }; { ($2: Option[Long]) =>
-        |  if ($2.isDefined) { $1($2.get) } else { $1(5.toLong) }
-        |}""".stripMargin
+      """
+        |val $1 = { ($1: Long) => $1 + 3.toLong }
+        |{ ($2: Option[Long]) => if ($2.isDefined) { $1($2.get) } else { $1(5.toLong) } }""".stripMargin
   }
 
   property("method call with non empty arguments"){
@@ -158,10 +157,12 @@ class PrettyPrintErgoTreeSpecification extends SigmaDslTesting {
       "{ ($1: (Coll[Int], Coll[Int])) => $1._1.append($1._2) }"
   }
 
-  property("slice"){
+  property("slice"){ 
     val code = "{ (x: (Coll[Int], (Int, Int))) => x._1.slice(x._2._1, x._2._2) }"
     PrettyPrintErgoTree.prettyPrint(compile(code)) shouldBe
-      "{ ($1: (Coll[Int], (Int, Int))) => val $3 = $1._2; $1._1.slice($3._1, $3._2) }"
+      """{ ($1: (Coll[Int], (Int, Int))) => 
+        |  val $3 = $1._2
+        |  $1._1.slice($3._1, $3._2) }""".stripMargin
   }
 
   property("filter"){

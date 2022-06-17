@@ -13,9 +13,9 @@ import sigmastate.lang.Terms.{Apply, ApplyTypes, Block, Ident, Lambda, MethodCal
  */
 object PrettyPrintErgoTree {
 
-  def prettyPrint(t: SValue, width: Int = 80): String = createDoc(t).render(width)
+  def prettyPrint(t: SValue, width: Int = 80, indent: Int = 2): String = createDoc(t)(indent).render(width)
 
-  private def createDoc(t: SValue): Doc = t match {
+  private def createDoc(t: SValue)(implicit indent: Int): Doc = t match {
     // Values
     case ev: EvaluatedValue[SType] => ev match {
       case c: Constant[SType] => c match {
@@ -42,12 +42,15 @@ object PrettyPrintErgoTree {
     case TaggedVariableNode(varId, tpe) => ??? // TODO: Does not make sense for printer?
     case FalseSigmaProp | TrueSigmaProp => ??? // TODO: Does not make sense for printer?
     case FuncValue(args, body) =>
-      Doc.char('{') + Doc.space + argsWithTypesDoc(args) + Doc.space + Doc.text("=>") +
-      createDoc(body).bracketBy(Doc.empty, Doc.empty) + Doc.char('}')
+      val prefix = Doc.char('{') + Doc.space + argsWithTypesDoc(args) + Doc.space + Doc.text("=>")
+      val suffix = Doc.char('}')
+      prefix + createDoc(body).bracketBy(Doc.empty, Doc.empty) + suffix
     case BlockValue(items, result) =>
       val prettyItems = items.map(item => createDoc(item))
-      Doc.intercalate(Doc.lineOr(Doc.text("; ")), prettyItems).tightBracketBy(Doc.empty, Doc.text("; ")) +
-      createDoc(result)
+      Doc.hardLine +
+        Doc.intercalate(Doc.hardLine, prettyItems) +
+        Doc.hardLine +
+        createDoc(result)
     // Not implemented yet - https://github.com/ScorexFoundation/sigmastate-interpreter/issues/462
     case SomeValue(_) | NoneValue(_) => ???
 
@@ -207,7 +210,7 @@ object PrettyPrintErgoTree {
   }
 
   // empty args list returns just `name` suffix
-  private def methodDoc(input: SValue, name: String, args: List[SValue] = Nil): Doc = {
+  private def methodDoc(input: SValue, name: String, args: List[SValue] = Nil)(implicit indent: Int): Doc = {
     val argsDoc = if (args.nonEmpty) nTupleDoc(args.map(createDoc)) else Doc.empty
     createDoc(input) + Doc.text(s".$name") + argsDoc
   }
