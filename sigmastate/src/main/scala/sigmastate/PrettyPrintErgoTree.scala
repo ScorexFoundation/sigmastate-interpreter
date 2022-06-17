@@ -240,12 +240,13 @@ object PrettyPrintErgoTree {
     case SString => Doc.text("String")
     case SAny => Doc.text("Any")
     case SAvlTree => Doc.text("AvlTree")
-    case SGlobal => Doc.text("Global")
-    // TODO: Not tested
-    case NoType => Doc.empty
     case SUnit => Doc.text("Unit")
-    case SFunc(tDom, tRange, tpeParams) => nTupleDoc(tDom.map(STypeDoc)) + Doc.text(" => ") + STypeDoc(tRange)
     case SHeader => Doc.text("Header")
+    // TODO: Not tested
+    case SGlobal => Doc.text("Global")
+    case SFunc(tDom, tRange, tpeParams) => nTupleDoc(tDom.map(STypeDoc)) + Doc.text(" => ") + STypeDoc(tRange)
+    // TODO: Are all nodes replaced after bind/typing phase? So it cannot be part of final tree?
+    case NoType => Doc.empty
     // Not used in final ergo tree
     case STypeApply(name, args) => ???
     case STypeVar(name) => ???

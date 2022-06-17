@@ -422,11 +422,11 @@ class PrettyPrintErgoTreeSpecification extends SigmaDslTesting {
 
   property("various types in function definition"){
     val code =
-      """{ (x: (String, (Any, (AvlTree, Header)))) =>
+      """{ (x: (String, (Any, (AvlTree, (Header, Unit))))) =>
          |  false
          |}""".stripMargin
     PrettyPrintErgoTree.prettyPrint(compile(code)) shouldBe
-      "{ ($1: (String, (Any, (AvlTree, Header)))) => false }"
+      "{ ($1: (String, (Any, (AvlTree, (Header, Unit))))) => false }"
   }
 
   // TODO: This doesn't look right
