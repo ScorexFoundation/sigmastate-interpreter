@@ -328,6 +328,13 @@ class PrettyPrintErgoTreeSpecification extends SigmaDslTesting {
       "{ ($1: Coll[Byte]) => sha256($1) }"
   }
 
+  // TODO: Related to test below?
+  ignore("bit inversion"){
+    val code = "{ (x: Int) => ~x }"
+    PrettyPrintErgoTree.prettyPrint(compile(code)) shouldBe
+      "{ ($1: Int) => ~$1 }"
+  }
+
   // TODO: Uncomment after https://github.com/ScorexFoundation/sigmastate-interpreter/issues/474
   ignore("bitwise operations"){
     val code =
@@ -386,12 +393,6 @@ class PrettyPrintErgoTreeSpecification extends SigmaDslTesting {
       "{ ($1: Boolean) => !$1 }"
   }
 
-  ignore("bit inversion"){
-    val code = "{ (x: Int) => ~x }"
-    PrettyPrintErgoTree.prettyPrint(compile(code)) shouldBe
-      "{ ($1: Int) => ~$1 }"
-  }
-
   property("negation"){
     val code = "{ (x: Byte) => -x }"
     PrettyPrintErgoTree.prettyPrint(compile(code)) shouldBe
@@ -426,5 +427,17 @@ class PrettyPrintErgoTreeSpecification extends SigmaDslTesting {
          |}""".stripMargin
     PrettyPrintErgoTree.prettyPrint(compile(code)) shouldBe
       "{ ($1: (String, (Any, (AvlTree, Header)))) => false }"
+  }
+
+  // TODO: This doesn't look right
+  property("deserialize"){
+    import scorex.util.encode.Base58
+    import sigmastate.serialization.ValueSerializer
+    import sigmastate.Values.ByteArrayConstant
+
+    val str = Base58.encode(ValueSerializer.serialize(ByteArrayConstant(Array[Byte](2))))
+    val code = s"""deserialize[Coll[Byte]]("$str")(0) == 2"""
+    PrettyPrintErgoTree.prettyPrint(compile(code)) shouldBe
+      """(Coll(2).toColl[Byte](0.toInt).toInt) == (2.toInt)"""
   }
 }

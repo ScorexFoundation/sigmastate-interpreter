@@ -21,11 +21,13 @@ object PrettyPrintErgoTree {
       case c: Constant[SType] => c match {
         case FalseLeaf => Doc.text("false")
         case TrueLeaf => Doc.text("true")
-        // TODO: explicit type isn't needed 99% of times 
+        // TODO: explicit type isn't needed 99% of times, making printer too verbose.
         case ConstantNode(value, tpe) => Doc.text(s"$value.to") + STypeDoc(tpe)
       }
-      case UnitConstant() => ??? // TODO: Only used in parser?
-      case GroupGenerator => ??? // TODO: What is difference between Global.groupGenerator Smethod and this?
+      // TODO: Only used in parser?
+      case UnitConstant() => ???
+      // TODO: What is difference between Global.groupGenerator Smethod and this?
+      case GroupGenerator => ??? 
       case ec: EvaluatedCollection[_, _] => ec match {
         case ConcreteCollection(items, elemType) =>
           Doc.text(s"Coll") + wrapWithBrackets(STypeDoc(elemType)) + nTupleDoc(items.map(createDoc))
@@ -46,7 +48,8 @@ object PrettyPrintErgoTree {
       val prettyItems = items.map(item => createDoc(item))
       Doc.intercalate(Doc.lineOr(Doc.text("; ")), prettyItems).tightBracketBy(Doc.empty, Doc.text("; ")) +
       createDoc(result)
-    case SomeValue(_) | NoneValue(_) => ??? // Not implemented in ErgoTree (as of v5.0)
+    // Not implemented yet - https://github.com/ScorexFoundation/sigmastate-interpreter/issues/462
+    case SomeValue(_) | NoneValue(_) => ???
 
     // ErgoLike
     case Height => Doc.text("HEIGHT")
@@ -75,7 +78,7 @@ object PrettyPrintErgoTree {
         case Some(v) => methodDoc(input, "getOrElse", List(index, v))
         case None => createDoc(input) + wrapWithParens(createDoc(index))
       }
-    // TODO: Not used in final ErgoTree representation.
+    // TODO: Not used in final ErgoTree representation, will be deleted in the future.
     case SigmaPropIsProven(input) => ???
     case SigmaPropBytes(input) => methodDoc(input, "propBytes")
     case SizeOf(input) => methodDoc(input, "size")
@@ -84,11 +87,11 @@ object PrettyPrintErgoTree {
     case ExtractBytes(input) => methodDoc(input, "bytes")
     case ExtractBytesWithNoRef(input) => methodDoc(input, "bytesWithoutRef")
     case ExtractId(input) => methodDoc(input, "id")
-    // TODO: Check what is returned inside elemType when maybeTpe is None?
+    // TODO: Is it possible to have `None` inside maybeTpe?
     case ExtractRegisterAs(input, registerId, maybeTpe) =>
       createDoc(input) + Doc.text(s".$registerId") + wrapWithBrackets(STypeDoc(maybeTpe.elemType))
     case ExtractCreationInfo(input) => methodDoc(input, "creationInfo")
-    // TODO: Can be part of final ErgoTree?
+    // Not implemented by compiler
     case d: Deserialize[_] => d match {
       case DeserializeContext(id, tpe) => ???
       case DeserializeRegister(reg, tpe, default) => ???
@@ -116,11 +119,11 @@ object PrettyPrintErgoTree {
     // Trees
     case BoolToSigmaProp(value) => Doc.text("sigmaProp") + wrapWithParens(createDoc(value))
     case CreateProveDlog(value) => Doc.text("proveDlog") + wrapWithParens(createDoc(value))
-    // TODO: Can be removed as it isn't used anymore.
+    // TODO: Comment says it can be removed as it isn't used anymore. But there is issue to implement it:
+    // https://github.com/ScorexFoundation/sigmastate-interpreter/issues/605
     case CreateAvlTree(_, _, _, _) => ???
     case CreateProveDHTuple(gv, hv, uv, vv) => Doc.text("proveDHTuple") + nTupleDoc(List(gv, hv, uv, vv).map(createDoc))
     case st: SigmaTransformer[_, _] => st match {
-      // TODO: Test with more than 2 elements inside items
       case SigmaAnd(items) => Doc.intercalate(Doc.text(" && "), items.map(createDoc))
       case SigmaOr(items) => Doc.intercalate(Doc.text(" || "), items.map(createDoc))
     }
@@ -153,11 +156,17 @@ object PrettyPrintErgoTree {
       case ArithOp(l, r, OpCodes.ModuloCode) => createDoc(l) + Doc.text(" % ") + createDoc(r)
       case ArithOp(l, r, OpCodes.MinCode) => Doc.text("min") + nTupleDoc(List(l, r).map(createDoc))
       case ArithOp(l, r, OpCodes.MaxCode) => Doc.text("max") + nTupleDoc(List(l, r).map(createDoc))
-      // TODO: Implement after https://github.com/ScorexFoundation/sigmastate-interpreter/issues/474
+      // TODO: Implement bitwise operations tests after 
+      // https://github.com/ScorexFoundation/sigmastate-interpreter/issues/474
+      // https://github.com/ScorexFoundation/sigmastate-interpreter/issues/418
       case BitOp(l, r, OpCodes.BitOrCode) => binaryOperationWithParens(createDoc(l), createDoc(r), Doc.char('|'))
       case BitOp(l, r, OpCodes.BitAndCode) => binaryOperationWithParens(createDoc(l), createDoc(r), Doc.char('&'))
-      // Possible xor clash with BinXor?
-      case BitOp(_, _, _) => ???
+      // Possible clash with BinXor?
+      case BitOp(l, r, OpCodes.BitXorCode) => binaryOperationWithParens(createDoc(l), createDoc(r), Doc.char('^'))
+      case BitOp(l, r, OpCodes.BitInversionCode) => binaryOperationWithParens(createDoc(l), createDoc(r), Doc.char('~'))
+      case BitOp(l, r, OpCodes.BitShiftLeftCode) => binaryOperationWithParens(createDoc(l), createDoc(r), Doc.text("<<"))
+      case BitOp(l, r, OpCodes.BitShiftRightCode) => binaryOperationWithParens(createDoc(l), createDoc(r), Doc.text(">>"))
+      case BitOp(l, r, OpCodes.BitShiftRightZeroedCode) => binaryOperationWithParens(createDoc(l), createDoc(r), Doc.text(">>>"))
       case Xor(l, r) => Doc.text("xor") + nTupleDoc(List(l, r).map(createDoc))
       case sr: SimpleRelation[_] => sr match {
         case GT(l, r) => binaryOperationWithParens(createDoc(l), createDoc(r), Doc.text(" > "))
@@ -172,11 +181,13 @@ object PrettyPrintErgoTree {
       case BinXor(l, r) => binaryOperationWithParens(createDoc(l), createDoc(r), Doc.text(" ^ "))
     }
     case oneArgOp: OneArgumentOperation[_, _] => oneArgOp match {
-      // TODO: Only used in parser?
+      // TODO: Only used in parser. Missing implementation for buildNode. Related to BitOp case above?
       case BitInversion(input) => Doc.char('~') + createDoc(input)
       case Negation(input) => Doc.char('!') + createDoc(input)
     }
-    // TODO: How are ModQs used in ergo script?
+    // ModQs + operations are not implemented:
+    // https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
+    // https://github.com/ScorexFoundation/sigmastate-interpreter/issues/327
     case ModQ(input) => ???
     case ModQArithOp(l, r, opCode) => ???
 
@@ -188,7 +199,8 @@ object PrettyPrintErgoTree {
           createDoc(falseBranch).bracketBy(Doc.empty, Doc.empty) +
           Doc.char('}')
         res.tightBracketBy(Doc.empty, Doc.empty)
-      // TODO: How it can be used in ergo script?
+      // Will be removed in the future:
+      // https://github.com/ScorexFoundation/sigmastate-interpreter/issues/645
       case TreeLookup(tree, key, proof) => ???
     }
     case LogicalNot(input) => Doc.char('!') + createDoc(input)
