@@ -13,9 +13,9 @@ import sigmastate.lang.Terms.{Apply, ApplyTypes, Block, Ident, Lambda, MethodCal
  */
 object PrettyPrintErgoTree {
 
-  def prettyPrint(t: SValue, width: Int = 80, indent: Int = 2): String = createDoc(t).render(width)
+  def prettyPrint(t: SValue, width: Int = 80, indent: Int = 2): String = createDoc(t)(indent).render(width)
 
-  private def createDoc(t: SValue): Doc = t match {
+  private def createDoc(t: SValue)(implicit indent: Int): Doc = t match {
     // Values
     case ev: EvaluatedValue[SType] => ev match {
       case c: Constant[SType] => c match {
@@ -40,12 +40,12 @@ object PrettyPrintErgoTree {
     }
     case bi: BlockItem => bi match {
       case ValDef(id, _, rhs) =>
-        val valName = nameGuessFromType(rhs.tpe)
+        val valName = inferNameFromType(rhs.tpe)
         Doc.text(s"val $valName$id = ") + createDoc(rhs)
-    } 
+    }
     case Tuple(items) => nTupleDoc(items.map(createDoc))
     case ValUse(id, tpe) =>
-      val valName = nameGuessFromType(tpe)
+      val valName = inferNameFromType(tpe)
       Doc.text(s"$valName$id")
     case ConstantPlaceholder(id, tpe) => ??? // TODO: See unfinished test
     case TaggedVariableNode(varId, tpe) => ??? // TODO: Does not make sense for printer?
@@ -53,10 +53,15 @@ object PrettyPrintErgoTree {
     case FuncValue(args, body) =>
       val prefix = Doc.char('{') + Doc.space + argsWithTypesDoc(args) + Doc.space + Doc.text("=>")
       val suffix = Doc.char('}')
-      prefix + createDoc(body).bracketBy(Doc.empty, Doc.empty) + suffix
+      // if function contains block then hardlines/indentation are needed as bracketBy handles indentation based on
+      // width, and we must have newline for block `val foo = ...` items
+      val bodyDoc = body match {
+        case b: BlockValue => Doc.hardLine + createDoc(b).indent(indent) + Doc.hardLine
+        case _ => createDoc(body).bracketBy(Doc.empty, Doc.empty, indent)
+      }
+      prefix + bodyDoc + suffix
     case BlockValue(items, result) =>
       val prettyItems = items.map(item => createDoc(item))
-      Doc.hardLine +
         Doc.intercalate(Doc.hardLine, prettyItems) +
         Doc.hardLine +
         createDoc(result)
@@ -205,12 +210,11 @@ object PrettyPrintErgoTree {
 
     case quad: Quadruple[_, _, _, _] => quad match {
       case If(condition, trueBranch, falseBranch) =>
-        val res = Doc.text("if (") + createDoc(condition) + Doc.text(") {") +
-          createDoc(trueBranch).bracketBy(Doc.empty, Doc.empty) +
+        Doc.text("if (") + createDoc(condition) + Doc.text(") {") +
+          createDoc(trueBranch).bracketBy(Doc.empty, Doc.empty, indent) +
           Doc.text("} else {") +
-          createDoc(falseBranch).bracketBy(Doc.empty, Doc.empty) +
+          createDoc(falseBranch).bracketBy(Doc.empty, Doc.empty, indent) +
           Doc.char('}')
-        res.tightBracketBy(Doc.empty, Doc.empty)
       // Will be removed in the future:
       // https://github.com/ScorexFoundation/sigmastate-interpreter/issues/645
       case TreeLookup(tree, key, proof) => ???
@@ -219,33 +223,33 @@ object PrettyPrintErgoTree {
   }
 
   // empty args list returns just `name` suffix
-  private def methodDoc(input: SValue, name: String, args: List[SValue] = Nil): Doc = {
+  private def methodDoc(input: SValue, name: String, args: List[SValue] = Nil)(implicit indent: Int): Doc = {
     val argsDoc = if (args.nonEmpty) nTupleDoc(args.map(createDoc)) else Doc.empty
     createDoc(input) + Doc.text(s".$name") + argsDoc
   }
   
-  private def nodeWithPriorityParens(v: SValue): Doc = v match {
+  private def nodeWithPriorityParens(v: SValue)(implicit indent: Int): Doc = v match {
     case _:BinAnd | _:BinOr | _:BinXor | _:SimpleRelation[_] | _:LogicalNot => wrapWithParens(createDoc(v))
     case _ => createDoc(v)
   }
 
-  private def binOpWithPriorityParens(l: SValue, r: SValue, sep: Doc): Doc =
+  private def binOpWithPriorityParens(l: SValue, r: SValue, sep: Doc)(implicit indent: Int): Doc =
     nodeWithPriorityParens(l) + sep + nodeWithPriorityParens(r)
 
-  private def wrapWithParens(d: Doc): Doc = d.tightBracketBy(Doc.char('('), Doc.char(')'))
-  private def wrapWithBrackets(d: Doc): Doc = d.tightBracketBy(Doc.char('['), Doc.char(']'))
+  private def wrapWithParens(d: Doc)(implicit indent: Int): Doc = d.tightBracketBy(Doc.char('('), Doc.char(')'), indent)
+  private def wrapWithBrackets(d: Doc)(implicit indent: Int): Doc = d.tightBracketBy(Doc.char('['), Doc.char(']'), indent)
 
   /* Create argument representation enclosed in brackets with types, e.g. `(str5: String, i1: Int)` */
-  private def argsWithTypesDoc(args: Seq[(Int, SType)]): Doc = {
+  private def argsWithTypesDoc(args: Seq[(Int, SType)])(implicit indent: Int): Doc = {
     val argsWithTypes = args.map { 
       case (i, tpe) => 
-        val argName = nameGuessFromType(tpe)
+        val argName = inferNameFromType(tpe)
         Doc.text(s"$argName$i: ") + STypeDoc(tpe)
     }
     nTupleDoc(argsWithTypes)
   }
 
-  private def STypeDoc(tpe: SType): Doc = tpe match {
+  private def STypeDoc(tpe: SType)(implicit indent: Int): Doc = tpe match {
     case SBoolean => Doc.text("Boolean")
     case SByte => Doc.text("Byte")
     case SShort => Doc.text("Short")
@@ -276,11 +280,11 @@ object PrettyPrintErgoTree {
   }
 
   // Create `(item1, item2, ...)`
-  private def nTupleDoc(items: Seq[Doc]): Doc =
+  private def nTupleDoc(items: Seq[Doc])(implicit indent: Int): Doc =
     wrapWithParens(
       Doc.intercalate(Doc.text(", "), items))
 
-  private def nameGuessFromType(tpe: SType): String = tpe match {
+  private def inferNameFromType(tpe: SType): String = tpe match {
     case SBoolean => "bool"
     case SByte => "b"
     case SShort => "s"
