@@ -46,10 +46,11 @@ class PrettyPrintErgoTreeSpecification extends SigmaDslTesting {
         |}""".stripMargin
     val compiledTree = compile(code)
     PrettyPrintErgoTree.prettyPrint(compiledTree, 100) shouldBe
-      """{ (tuple1: (Short, Short)) => 
+      """{ (tuple1: (Short, Short)) =>
         |  val s3 = tuple1._1
         |  val s4 = tuple1._2
-        |  (s3 + s4, (s3 - s4, (s3 * s4, (s3 / s4, (s3 % s4, (min(s3, s4), max(s3, s4))))))) }""".stripMargin
+        |  (s3 + s4, (s3 - s4, (s3 * s4, (s3 / s4, (s3 % s4, (min(s3, s4), max(s3, s4)))))))
+        |}""".stripMargin
     
   }
 
@@ -64,10 +65,11 @@ class PrettyPrintErgoTreeSpecification extends SigmaDslTesting {
         |  }
         |}""".stripMargin
     val compiledTree = compile(code)
-    PrettyPrintErgoTree.prettyPrint(compiledTree) shouldBe
-      """{ (box1: Box) => 
-        |  val opt3 = box1.R5[Short]
-        |  if (opt3.isDefined) { opt3.get } else { 0.toShort } }""".stripMargin
+    PrettyPrintErgoTree.prettyPrint(compiledTree, 80, 4) shouldBe
+      """{ (box1: Box) =>
+        |    val opt3 = box1.R5[Short]
+        |    if (opt3.isDefined) { opt3.get } else { 0.toShort }
+        |}""".stripMargin
   }
 
   property("group generator"){
@@ -134,8 +136,7 @@ class PrettyPrintErgoTreeSpecification extends SigmaDslTesting {
         |}""".stripMargin
     val compiledTree = compile(code)
     PrettyPrintErgoTree.prettyPrint(compiledTree) shouldBe
-      """
-        |val func1 = { (l1: Long) => l1 + 3L }
+      """val func1 = { (l1: Long) => l1 + 3L }
         |{ (opt2: Option[Long]) =>
         |  if (opt2.isDefined) { func1(opt2.get) } else { func1(5L) }
         |}""".stripMargin
@@ -159,9 +160,10 @@ class PrettyPrintErgoTreeSpecification extends SigmaDslTesting {
   property("slice"){ 
     val code = "{ (x: (Coll[Int], (Int, Int))) => x._1.slice(x._2._1, x._2._2) }"
     PrettyPrintErgoTree.prettyPrint(compile(code)) shouldBe
-      """{ (tuple1: (Coll[Int], (Int, Int))) => 
+      """{ (tuple1: (Coll[Int], (Int, Int))) =>
         |  val tuple3 = tuple1._2
-        |  tuple1._1.slice(tuple3._1, tuple3._2) }""".stripMargin
+        |  tuple1._1.slice(tuple3._1, tuple3._2)
+        |}""".stripMargin
   }
 
   property("filter"){
@@ -172,7 +174,6 @@ class PrettyPrintErgoTreeSpecification extends SigmaDslTesting {
 
   property("forall"){
     val code = "{ (x: Coll[Box]) => x.forall({(b: Box) => b.value <= 1 }) }"
-    println(compile(code))
     PrettyPrintErgoTree.prettyPrint(compile(code)) shouldBe
       "{ (coll1: Coll[Box]) => coll1.forall({ (box3: Box) => box3.value <= 1L }) }"
   }
@@ -443,7 +444,6 @@ class PrettyPrintErgoTreeSpecification extends SigmaDslTesting {
 
   property("explicit parenthesis for boolean operations"){
     val code = "{ (x: Boolean) => !(x && (true || !true)) }"
-    println(compile(code))
     PrettyPrintErgoTree.prettyPrint(compile(code)) shouldBe
       "{ (bool1: Boolean) => !(bool1 && (true || false)) }"
   }
