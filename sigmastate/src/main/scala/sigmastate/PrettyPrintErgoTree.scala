@@ -215,7 +215,7 @@ object PrettyPrintErgoTree {
       // https://github.com/ScorexFoundation/sigmastate-interpreter/issues/645
       case TreeLookup(tree, key, proof) => ???
     }
-    case LogicalNot(input) => Doc.char('!') + createDoc(input)
+    case LogicalNot(input) => Doc.char('!') + nodeWithPriorityParens(input)
   }
 
   // empty args list returns just `name` suffix
@@ -223,14 +223,15 @@ object PrettyPrintErgoTree {
     val argsDoc = if (args.nonEmpty) nTupleDoc(args.map(createDoc)) else Doc.empty
     createDoc(input) + Doc.text(s".$name") + argsDoc
   }
-
-  private def binOpWithPriorityParens(l: SValue, r: SValue, sep: Doc): Doc = {
-    def nodeWithPriorityParens(v: SValue): Doc = v match {
-      case _:BinAnd | _:BinOr | _:BinXor | _:SimpleRelation[_] => wrapWithParens(createDoc(v))
-      case _ => createDoc(v)
-    }
-    nodeWithPriorityParens(l) + sep + nodeWithPriorityParens(r)
+  
+  private def nodeWithPriorityParens(v: SValue): Doc = v match {
+    case _:BinAnd | _:BinOr | _:BinXor | _:SimpleRelation[_] | _:LogicalNot => wrapWithParens(createDoc(v))
+    case _ => createDoc(v)
   }
+
+  private def binOpWithPriorityParens(l: SValue, r: SValue, sep: Doc): Doc =
+    nodeWithPriorityParens(l) + sep + nodeWithPriorityParens(r)
+
   private def wrapWithParens(d: Doc): Doc = d.tightBracketBy(Doc.char('('), Doc.char(')'))
   private def wrapWithBrackets(d: Doc): Doc = d.tightBracketBy(Doc.char('['), Doc.char(']'))
 
