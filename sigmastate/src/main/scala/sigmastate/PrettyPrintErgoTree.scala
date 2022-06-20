@@ -9,20 +9,25 @@ import sigmastate.lang.Terms.{Apply, ApplyTypes, Block, Ident, Lambda, MethodCal
 
 /**
  * TODO: Docs - arguments/values naming $i
- * Brainstorm ideas: create configuration for printer (explicit types, curly/normal brackets, `to{$tpe}` explicit casting)
+ * Brainstorm ideas: create configuration for printer (explicit types for vals/methods, curly/normal brackets)
  */
 object PrettyPrintErgoTree {
 
-  def prettyPrint(t: SValue, width: Int = 80, indent: Int = 2): String = createDoc(t)(indent).render(width)
+  def prettyPrint(t: SValue, width: Int = 80, indent: Int = 2): String = createDoc(t).render(width)
 
-  private def createDoc(t: SValue)(implicit indent: Int): Doc = t match {
+  private def createDoc(t: SValue): Doc = t match {
     // Values
     case ev: EvaluatedValue[SType] => ev match {
       case c: Constant[SType] => c match {
         case FalseLeaf => Doc.text("false")
         case TrueLeaf => Doc.text("true")
-        // TODO: explicit type isn't needed 99% of times, making printer too verbose.
-        case ConstantNode(value, tpe) => Doc.text(s"$value.to") + STypeDoc(tpe)
+        case ConstantNode(value, tpe) => 
+          val suffix = tpe match {
+            case SInt => Doc.empty
+            case SLong => Doc.char('L')
+            case other => Doc.text(".to") + STypeDoc(other)
+          }
+          Doc.text(s"$value") + suffix
       }
       // TODO: Only used in parser?
       case UnitConstant() => ???
@@ -34,10 +39,14 @@ object PrettyPrintErgoTree {
       }
     }
     case bi: BlockItem => bi match {
-      case ValDef(id, _, rhs) => Doc.text(s"val $$$id = ") + createDoc(rhs)
+      case ValDef(id, _, rhs) =>
+        val valName = nameGuessFromType(rhs.tpe)
+        Doc.text(s"val $valName$id = ") + createDoc(rhs)
     } 
     case Tuple(items) => nTupleDoc(items.map(createDoc))
-    case ValUse(id, tpe) => Doc.text(s"$$$id")
+    case ValUse(id, tpe) =>
+      val valName = nameGuessFromType(tpe)
+      Doc.text(s"$valName$id")
     case ConstantPlaceholder(id, tpe) => ??? // TODO: See unfinished test
     case TaggedVariableNode(varId, tpe) => ??? // TODO: Does not make sense for printer?
     case FalseSigmaProp | TrueSigmaProp => ??? // TODO: Does not make sense for printer?
@@ -162,26 +171,26 @@ object PrettyPrintErgoTree {
       // TODO: Implement bitwise operations tests after 
       // https://github.com/ScorexFoundation/sigmastate-interpreter/issues/474
       // https://github.com/ScorexFoundation/sigmastate-interpreter/issues/418
-      case BitOp(l, r, OpCodes.BitOrCode) => binaryOperationWithParens(createDoc(l), createDoc(r), Doc.char('|'))
-      case BitOp(l, r, OpCodes.BitAndCode) => binaryOperationWithParens(createDoc(l), createDoc(r), Doc.char('&'))
+      case BitOp(l, r, OpCodes.BitOrCode) => binOpWithPriorityParens(l, r, Doc.char('|'))
+      case BitOp(l, r, OpCodes.BitAndCode) => binOpWithPriorityParens(l, r, Doc.char('&'))
       // Possible clash with BinXor?
-      case BitOp(l, r, OpCodes.BitXorCode) => binaryOperationWithParens(createDoc(l), createDoc(r), Doc.char('^'))
-      case BitOp(l, r, OpCodes.BitInversionCode) => binaryOperationWithParens(createDoc(l), createDoc(r), Doc.char('~'))
-      case BitOp(l, r, OpCodes.BitShiftLeftCode) => binaryOperationWithParens(createDoc(l), createDoc(r), Doc.text("<<"))
-      case BitOp(l, r, OpCodes.BitShiftRightCode) => binaryOperationWithParens(createDoc(l), createDoc(r), Doc.text(">>"))
-      case BitOp(l, r, OpCodes.BitShiftRightZeroedCode) => binaryOperationWithParens(createDoc(l), createDoc(r), Doc.text(">>>"))
+      case BitOp(l, r, OpCodes.BitXorCode) => binOpWithPriorityParens(l, r, Doc.char('^'))
+      case BitOp(l, r, OpCodes.BitInversionCode) => binOpWithPriorityParens(l, r, Doc.char('~'))
+      case BitOp(l, r, OpCodes.BitShiftLeftCode) => binOpWithPriorityParens(l, r, Doc.text("<<"))
+      case BitOp(l, r, OpCodes.BitShiftRightCode) => binOpWithPriorityParens(l, r, Doc.text(">>"))
+      case BitOp(l, r, OpCodes.BitShiftRightZeroedCode) => binOpWithPriorityParens(l, r, Doc.text(">>>"))
       case Xor(l, r) => Doc.text("xor") + nTupleDoc(List(l, r).map(createDoc))
       case sr: SimpleRelation[_] => sr match {
-        case GT(l, r) => binaryOperationWithParens(createDoc(l), createDoc(r), Doc.text(" > "))
-        case GE(l, r) => binaryOperationWithParens(createDoc(l), createDoc(r), Doc.text(" >= "))
-        case EQ(l, r) => binaryOperationWithParens(createDoc(l), createDoc(r), Doc.text(" == "))
-        case NEQ(l, r) => binaryOperationWithParens(createDoc(l), createDoc(r), Doc.text(" != "))
-        case LT(l, r) => binaryOperationWithParens(createDoc(l), createDoc(r), Doc.text(" < "))
-        case LE(l, r) => binaryOperationWithParens(createDoc(l), createDoc(r), Doc.text(" <= "))
+        case GT(l, r) => binOpWithPriorityParens(l, r, Doc.text(" > "))
+        case GE(l, r) => binOpWithPriorityParens(l, r, Doc.text(" >= "))
+        case EQ(l, r) => binOpWithPriorityParens(l, r, Doc.text(" == "))
+        case NEQ(l, r) => binOpWithPriorityParens(l, r, Doc.text(" != "))
+        case LT(l, r) => binOpWithPriorityParens(l, r, Doc.text(" < "))
+        case LE(l, r) => binOpWithPriorityParens(l, r, Doc.text(" <= "))
       }
-      case BinOr(l, r) => binaryOperationWithParens(createDoc(l), createDoc(r), Doc.text(" || "))
-      case BinAnd(l, r) => binaryOperationWithParens(createDoc(l), createDoc(r), Doc.text(" && "))
-      case BinXor(l, r) => binaryOperationWithParens(createDoc(l), createDoc(r), Doc.text(" ^ "))
+      case BinOr(l, r) => binOpWithPriorityParens(l, r, Doc.text(" || "))
+      case BinAnd(l, r) => binOpWithPriorityParens(l, r, Doc.text(" && "))
+      case BinXor(l, r) => binOpWithPriorityParens(l, r, Doc.text(" ^ "))
     }
     case oneArgOp: OneArgumentOperation[_, _] => oneArgOp match {
       // TODO: Only used in parser. Missing implementation for buildNode. Related to BitOp case above?
@@ -210,18 +219,28 @@ object PrettyPrintErgoTree {
   }
 
   // empty args list returns just `name` suffix
-  private def methodDoc(input: SValue, name: String, args: List[SValue] = Nil)(implicit indent: Int): Doc = {
+  private def methodDoc(input: SValue, name: String, args: List[SValue] = Nil): Doc = {
     val argsDoc = if (args.nonEmpty) nTupleDoc(args.map(createDoc)) else Doc.empty
     createDoc(input) + Doc.text(s".$name") + argsDoc
   }
 
-  private def binaryOperationWithParens(l: Doc, r: Doc, sep: Doc) = wrapWithParens(l) + sep + wrapWithParens(r)
+  private def binOpWithPriorityParens(l: SValue, r: SValue, sep: Doc): Doc = {
+    def nodeWithPriorityParens(v: SValue): Doc = v match {
+      case _:BinAnd | _:BinOr | _:BinXor | _:SimpleRelation[_] => wrapWithParens(createDoc(v))
+      case _ => createDoc(v)
+    }
+    nodeWithPriorityParens(l) + sep + nodeWithPriorityParens(r)
+  }
   private def wrapWithParens(d: Doc): Doc = d.tightBracketBy(Doc.char('('), Doc.char(')'))
   private def wrapWithBrackets(d: Doc): Doc = d.tightBracketBy(Doc.char('['), Doc.char(']'))
 
-  /* Create argument representation enclosed in brackets with types, e.g. `($5: String, $1: Int)` */
+  /* Create argument representation enclosed in brackets with types, e.g. `(str5: String, i1: Int)` */
   private def argsWithTypesDoc(args: Seq[(Int, SType)]): Doc = {
-    val argsWithTypes = args.map { case (i, tpe) => Doc.text(s"$$$i:") + Doc.space + STypeDoc(tpe) }
+    val argsWithTypes = args.map { 
+      case (i, tpe) => 
+        val argName = nameGuessFromType(tpe)
+        Doc.text(s"$argName$i: ") + STypeDoc(tpe)
+    }
     nTupleDoc(argsWithTypes)
   }
 
@@ -259,5 +278,34 @@ object PrettyPrintErgoTree {
   private def nTupleDoc(items: Seq[Doc]): Doc =
     wrapWithParens(
       Doc.intercalate(Doc.text(", "), items))
+
+  private def nameGuessFromType(tpe: SType): String = tpe match {
+    case SBoolean => "bool"
+    case SByte => "b"
+    case SShort => "s"
+    case SInt => "i"
+    case SLong => "l"
+    case SBigInt => "bi"
+    case SBox => "box"
+    case SSigmaProp => "prop"
+    case SCollectionType(elemType) => "coll"
+    case STuple(items) => "tuple"
+    case SContext => "ctx"
+    case SOption(elemType) => "opt"
+    case SGroupElement => "ge"
+    case SPreHeader => "preHeader"
+    case SString => "str"
+    case SAny => "any"
+    case SAvlTree => "avlTree"
+    case SUnit => "unit"
+    case SHeader => "header"
+    case SGlobal => "global"
+    case SFunc(tDom, tRange, tpeParams) => "func"
+    // TODO: Are all nodes replaced after bind/typing phase? So it cannot be part of final tree?
+    case NoType => ???
+    // Not used in final ergo tree
+    case STypeApply(name, args) => ???
+    case STypeVar(name) => ???
+  }
 
 }
