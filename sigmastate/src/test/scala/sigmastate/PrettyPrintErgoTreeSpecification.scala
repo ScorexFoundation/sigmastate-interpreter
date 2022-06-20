@@ -440,4 +440,11 @@ class PrettyPrintErgoTreeSpecification extends SigmaDslTesting {
     PrettyPrintErgoTree.prettyPrint(compile(code)) shouldBe
       """Coll(2).toColl[Byte](0).toInt == 2"""
   }
+
+  property("explicit parenthesis for boolean operations"){
+    val code = "{ (x: Boolean) => !(x && (true || !true)) }"
+    println(compile(code))
+    PrettyPrintErgoTree.prettyPrint(compile(code)) shouldBe
+      "{ (bool1: Boolean) => !(bool1 && (true || false)) }"
+  }
 }
