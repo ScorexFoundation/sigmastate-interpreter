@@ -8,8 +8,7 @@ import sigmastate.utxo._
 import sigmastate.lang.Terms.{Apply, ApplyTypes, Block, Ident, Lambda, MethodCall, MethodCallLike, Select, ValNode}
 
 /**
- * TODO: Docs - arguments/values naming $i
- * Brainstorm ideas: create configuration for printer (explicit types for vals/methods, curly/normal brackets)
+ * Brainstorm ideas: create configuration for printer (explicit types for vals/methods)
  */
 object PrettyPrintErgoTree {
 
@@ -31,7 +30,7 @@ object PrettyPrintErgoTree {
       }
       // TODO: Only used in parser?
       case UnitConstant() => ???
-      // TODO: What is difference between Global.groupGenerator Smethod and this?
+      // TODO: Converted to SGlobal.groupGeneratorMethod
       case GroupGenerator => ??? 
       case ec: EvaluatedCollection[_, _] => ec match {
         case ConcreteCollection(items, elemType) =>
@@ -47,9 +46,12 @@ object PrettyPrintErgoTree {
     case ValUse(id, tpe) =>
       val valName = inferNameFromType(tpe)
       Doc.text(s"$valName$id")
-    case ConstantPlaceholder(id, tpe) => ??? // TODO: See unfinished test
-    case TaggedVariableNode(varId, tpe) => ??? // TODO: Does not make sense for printer?
-    case FalseSigmaProp | TrueSigmaProp => ??? // TODO: Does not make sense for printer?
+    // TODO: See unfinished test
+    case ConstantPlaceholder(id, tpe) => ???
+    // TODO: Does not make sense for printer?
+    case TaggedVariableNode(varId, tpe) => ???
+    // TODO: Does not make sense for printer?
+    case FalseSigmaProp | TrueSigmaProp => ???
     case FuncValue(args, body) =>
       val prefix = Doc.char('{') + Doc.space + argsWithTypesDoc(args) + Doc.space + Doc.text("=>")
       val suffix = Doc.char('}')
@@ -113,7 +115,7 @@ object PrettyPrintErgoTree {
       case DeserializeContext(id, tpe) => ???
       case DeserializeRegister(reg, tpe, default) => ???
     }
-    // TODO: Check how to handle None inside maybeTpe
+    // TODO: Looks like we always have Some(...) in maybeTpe, consider dropping Option wrapper from GetVar definition
     case GetVar(varId, maybeTpe) =>
       Doc.text("getVar") + wrapWithBrackets(STypeDoc(maybeTpe.elemType)) + wrapWithParens(createDoc(varId))
     case OptionGet(input) => methodDoc(input, "get")

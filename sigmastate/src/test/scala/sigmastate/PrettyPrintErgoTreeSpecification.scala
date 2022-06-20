@@ -3,17 +3,13 @@ package sigmastate
 import sigmastate.eval.IRContext
 import sigmastate.interpreter.Interpreter
 import sigmastate.lang.Terms.ValueOps
+import sigmastate.Values.SValue
 import special.sigma.SigmaDslTesting
 import org.scalacheck.util.Pretty
 
 class PrettyPrintErgoTreeSpecification extends SigmaDslTesting {
   implicit def IR: IRContext = createIR()
-
-  private def compile(code: String, env: Interpreter.ScriptEnv = Interpreter.emptyEnv) = {
-    val res = compiler.compile(env, code)
-    checkCompilerResult(res)
-    res.buildTree.asSigmaProp
-  }
+  private def compile(code: String, env: Interpreter.ScriptEnv = Interpreter.emptyEnv): SValue = compile(env, code)
 
   property("booleans"){
     val code = "{ (x: (Int, Boolean)) => ((x._1 == 0) ^ x._2) && (false || true) }"
