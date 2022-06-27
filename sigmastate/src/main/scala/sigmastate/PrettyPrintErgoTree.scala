@@ -24,7 +24,9 @@ object PrettyPrintErgoTree {
           val suffix = tpe match {
             case SInt => Doc.empty
             case SLong => Doc.char('L')
-            case other => Doc.text(".to") + STypeDoc(other)
+            case SByte | SShort | SBigInt | SBoolean => Doc.text(".to") + STypeDoc(tpe)
+            // Implement this fallback with base16 after https://github.com/ScorexFoundation/sigmastate-interpreter/issues/814
+            case other => ???
           }
           Doc.text(s"$value") + suffix
       }
@@ -46,9 +48,8 @@ object PrettyPrintErgoTree {
     case ValUse(id, tpe) =>
       val valName = inferNameFromType(tpe)
       Doc.text(s"$valName$id")
-    // TODO: See unfinished test
-    case ConstantPlaceholder(id, tpe) => ???
-    // TODO: Does not make sense for printer?
+    case ConstantPlaceholder(id, tpe) => Doc.text("placeholder") + wrapWithBrackets(STypeDoc(tpe)) + wrapWithParens(Doc.str(id))
+    // Not used in ErgoTree.
     case TaggedVariableNode(varId, tpe) => ???
     // TODO: Does not make sense for printer?
     case FalseSigmaProp | TrueSigmaProp => ???
@@ -67,7 +68,7 @@ object PrettyPrintErgoTree {
         Doc.intercalate(Doc.hardLine, prettyItems) +
         Doc.hardLine +
         createDoc(result)
-    // Not implemented yet - https://github.com/ScorexFoundation/sigmastate-interpreter/issues/462
+    // Not part of ErgoTree (yet) - https://github.com/ScorexFoundation/sigmastate-interpreter/issues/462
     case SomeValue(_) | NoneValue(_) => ???
 
     // ErgoLike
@@ -175,7 +176,7 @@ object PrettyPrintErgoTree {
       case ArithOp(l, r, OpCodes.ModuloCode) => createDoc(l) + Doc.text(" % ") + createDoc(r)
       case ArithOp(l, r, OpCodes.MinCode) => Doc.text("min") + nTupleDoc(List(l, r).map(createDoc))
       case ArithOp(l, r, OpCodes.MaxCode) => Doc.text("max") + nTupleDoc(List(l, r).map(createDoc))
-      // TODO: Implement bitwise operations tests after 
+      // Implement bitwise operations tests after 
       // https://github.com/ScorexFoundation/sigmastate-interpreter/issues/474
       // https://github.com/ScorexFoundation/sigmastate-interpreter/issues/418
       case BitOp(l, r, OpCodes.BitOrCode) => binOpWithPriorityParens(l, r, Doc.char('|'))
@@ -274,8 +275,7 @@ object PrettyPrintErgoTree {
     // TODO: Not tested
     case SGlobal => Doc.text("Global")
     case SFunc(tDom, tRange, tpeParams) => nTupleDoc(tDom.map(STypeDoc)) + Doc.text(" => ") + STypeDoc(tRange)
-    // TODO: Are all nodes replaced after bind/typing phase? So it cannot be part of final tree?
-    case NoType => Doc.empty
+    case NoType => Doc.text("NoType")
     // Not used in final ergo tree
     case STypeApply(name, args) => ???
     case STypeVar(name) => ???
@@ -295,10 +295,10 @@ object PrettyPrintErgoTree {
     case SBigInt => "bi"
     case SBox => "box"
     case SSigmaProp => "prop"
-    case SCollectionType(elemType) => "coll"
-    case STuple(items) => "tuple"
+    case SCollectionType(_) => "coll"
+    case STuple(_) => "tuple"
     case SContext => "ctx"
-    case SOption(elemType) => "opt"
+    case SOption(_) => "opt"
     case SGroupElement => "ge"
     case SPreHeader => "preHeader"
     case SString => "str"
@@ -307,12 +307,11 @@ object PrettyPrintErgoTree {
     case SUnit => "unit"
     case SHeader => "header"
     case SGlobal => "global"
-    case SFunc(tDom, tRange, tpeParams) => "func"
-    // TODO: Are all nodes replaced after bind/typing phase? So it cannot be part of final tree?
+    case SFunc(_, _, _) => "func"
     case NoType => ???
     // Not used in final ergo tree
-    case STypeApply(name, args) => ???
-    case STypeVar(name) => ???
+    case STypeApply(_, _) => ???
+    case STypeVar(_) => ???
   }
 
 }
