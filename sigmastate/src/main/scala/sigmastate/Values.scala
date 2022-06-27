@@ -887,7 +887,6 @@ object Values {
   }
 
   // TODO refactor: only Constant make sense to inherit from EvaluatedValue
-  // TODO: What about other? What is the correct model?
 
   /** ErgoTree node which converts a collection of expressions into a tuple of data values
     * of different types. Each data value of the resulting collection is obtained by

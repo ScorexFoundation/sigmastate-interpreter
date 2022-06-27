@@ -98,7 +98,14 @@ class PrettyPrintErgoTreeSpecification extends SigmaDslTesting {
     val expectedResult = decodeString("ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad")
     val calcSha256 = EQ(CalcSha256(stringToByteConstant("abc")), expectedResult)
     val ergoTree = mkTestErgoTree(calcSha256.toSigmaProp)
-    // TODO: prettyPrint have to be updated as constant placeholders are not part of ErgoTree root
+    ergoTree.root match {
+      case Left(value) => ???
+      case Right(value) =>
+        PrettyPrintErgoTree.prettyPrint(value, 70) shouldBe 
+          """sigmaProp(
+            |  sha256(placeholder[Coll[Byte]](0)) == placeholder[Coll[Byte]](1)
+            |)""".stripMargin
+    }
   }
 
   property("ergolike nodes"){
