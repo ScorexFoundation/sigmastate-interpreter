@@ -20,6 +20,7 @@ import sigmastate.interpreter.{CompanionDesc, ErgoTreeEvaluator, FixedCostItem, 
 import special.collection.{Coll, CollType}
 import special.sigma.GroupElement
 
+import scala.collection.compat.immutable.ArraySeq
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
@@ -27,7 +28,8 @@ import scala.reflect.ClassTag
 /** Pretty-printer customized to print [[sigmastate.Values.Value]] instances
   * into a valid Scala code (can be cut-and-pasted).*/
 object SigmaPPrint extends PPrinter {
-
+  override def showFieldNames = false
+  
   /** Apply [[treeify]] for each element of the given sequence producing the iterator of resulting trees. */
   protected def treeifySeq(xs: Seq[Any]): Iterator[Tree] = {
     xs.iterator.map(_ match {
@@ -116,8 +118,14 @@ object SigmaPPrint extends PPrinter {
     case wa: mutable.WrappedArray[Byte @unchecked] if wa.elemTag == ClassTag.Byte =>
       treeifyByteArray(wa.array.asInstanceOf[Array[Byte]])
 
+    case wa: ArraySeq[Byte @unchecked] if wa.unsafeArray.elemTag == ClassTag.Byte =>
+      treeifyByteArray(wa.toArray[Byte])
+
     case wa: mutable.WrappedArray[_] =>
       Tree.Apply("Array", treeifySeq(wa.toSeq))
+
+    case wa: ArraySeq[_] =>
+      Tree.Apply("Array", treeifySeq(wa))
 
     case arr: Array[Byte @unchecked] if arr.elemTag == ClassTag.Byte =>
       treeifyByteArray(arr)
@@ -136,6 +144,9 @@ object SigmaPPrint extends PPrinter {
       val hexString = ErgoAlgos.encode(ge.getEncoded)
       Tree.Apply("Helpers.decodeGroupElement", treeifyMany(hexString))
 
+    case Some(v) =>
+      Tree.Apply("Some", treeifyMany(v))
+
     case coll: Coll[Byte @unchecked] if coll.tItem == RType.ByteType =>
       val hexString = ErgoAlgos.encode(coll)
       Tree.Apply("Helpers.decodeBytes", treeifyMany(hexString))
@@ -146,6 +157,12 @@ object SigmaPPrint extends PPrinter {
 
     case tp: TrivialProp =>
       Tree.Literal(s"TrivialProp.${if (tp.condition) "True" else "False"}Prop")
+
+    case f: AvlTreeFlags =>
+      Tree.Apply("AvlTreeFlags", treeifyMany(
+        f.insertAllowed,
+        f.updateAllowed,
+        f.removeAllowed))
 
     case t: AvlTreeData =>
       Tree.Apply("AvlTreeData", treeifyMany(
