@@ -1,14 +1,14 @@
 package sigmastate.basics
 
 import java.math.BigInteger
-
 import org.bouncycastle.asn1.x9.X9ECParameters
 import org.bouncycastle.crypto.ec.CustomNamedCurves
 import org.bouncycastle.math.ec.custom.sec.SecP256K1Point
 import org.bouncycastle.math.ec.ECPoint
 import org.bouncycastle.util.BigIntegers
 import debox.cfor
-import scala.collection.mutable
+
+import scala.collection.{Seq, mutable}
 import scala.util.Try
 import scala.collection.compat.immutable.ArraySeq
 
@@ -349,7 +349,7 @@ abstract class BcDlogGroup[ElemType <: ECPoint](val x9params: X9ECParameters) ex
   private def createLLPreCompTable(groupElements: Array[ElemType], w: Int, h: Int) = {
     val twoPowW = Math.pow(2, w).toInt
     //create the pre-computation table of size h*(2^(w))
-    val preComp: Seq[ArraySeq[ElemType]] = Seq.fill(h)(ArraySeq.fill(twoPowW)(identity))
+    val preComp: Seq[mutable.Seq[ElemType]] = Seq.fill(h)(mutable.Seq.fill(twoPowW)(identity))
 
     cfor(0)(_ < h, _ + 1) { k =>
       cfor(0)(_ < twoPowW, _ + 1) { e =>

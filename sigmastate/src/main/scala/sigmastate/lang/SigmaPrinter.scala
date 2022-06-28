@@ -34,10 +34,10 @@ class SigmaPrinter extends org.bitbucket.inkytonik.kiama.output.PrettyPrinter {
       case LongConstant(d) => value(d)
       case Ident(i,_) => i
       case Lambda(_, args, tLam, Some(e)) =>
-        parens('\\' <> parens(lsep(args.map { case (n, targ) => n <+> ": " <+> typedeclToDoc(targ) }.toSeq, comma)) <>
+        parens('\\' <> parens(lsep(args.map { case (n, targ) => n <+> ": " <+> typedeclToDoc(targ) }, comma)) <>
           typedeclToDoc(tLam) <+> '.' <+>
           group(nest(toDoc(e))))
-      case Apply(e, args)        => parens(toDoc(e) <+> parens(lsep(args.map(toDoc).toSeq, comma)))
+      case Apply(e, args)        => parens(toDoc(e) <+> parens(lsep(args.map(toDoc), comma)))
 
 //      case Opn(l, AddOp(), r) => binToDoc(l, "+", r)
 //      case Opn(l, SubOp(), r) => binToDoc(l, "-", r)
@@ -68,7 +68,7 @@ class SigmaPrinter extends org.bitbucket.inkytonik.kiama.output.PrettyPrinter {
   def typeToDoc(t : SType) : Doc =
     t match {
       case SLong       => "Int"
-      case SFunc(dom, t2, _) => parens(lsep(dom.map(typeToDoc).toSeq, comma)) <+> "->" <+> typeToDoc(t2)
+      case SFunc(dom, t2, _) => parens(lsep(dom.map(typeToDoc), comma)) <+> "->" <+> typeToDoc(t2)
       case NoType        => "NoType" // Not used
       case _ => s"<unknown type $t>"
     }

@@ -116,12 +116,12 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
   }
   object HasSigmas {
     def unapply(items: Seq[Sym]): Option[(Seq[Ref[Boolean]], Seq[Ref[SigmaProp]])] = {
-      var bs = ArraySeq.empty[Ref[Boolean]]
-      var ss = ArraySeq.empty[Ref[SigmaProp]]
+      val bs = ArrayBuffer.empty[Ref[Boolean]]
+      val ss = ArrayBuffer.empty[Ref[SigmaProp]]
       for (i <- items) {
         i match {
-          case SigmaM.isValid(s) => ss prepended s
-          case b => bs prepended asRep[Boolean](b)
+          case SigmaM.isValid(s) => ss += s
+          case b => bs += asRep[Boolean](b)
         }
       }
       assert(items.length == bs.length + ss.length)
@@ -366,7 +366,7 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
   def buildGraph[T](env: ScriptEnv, typed: SValue): Ref[Context => T] = {
     val envVals = env.map { case (name, v) => (name: Any, builder.liftAny(v).get) }
     fun(removeIsProven({ ctxC: Ref[Context] =>
-      val env = envVals.view.mapValues(v => buildNode(ctxC, Map.empty, v)).toMap
+      val env = envVals.mapValues(v => buildNode(ctxC, Map.empty, v))
       val res = asRep[T](buildNode(ctxC, env, typed))
       res
     }))
