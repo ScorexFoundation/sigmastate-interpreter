@@ -77,7 +77,10 @@ class CollOverArray[@specialized A](val toArray: Array[A], val builder: CollBuil
 
   override def segmentLength(p: A => Boolean, from: Int): Int = toArray.segmentLength(p, from)
 
-  override def indexWhere(p: A => Boolean, from: Int): Int = toArray.indexWhere(p, from)
+  override def indexWhere(p: A => Boolean, from: Int): Int = {
+    val start = math.max(from, 0) // This is necessary for Scala 2.13 as indexWhere is implemented differently
+    toArray.indexWhere(p, start)
+  }
 
   override def lastIndexWhere(p: A => Boolean, end: Int): Int = toArray.lastIndexWhere(p, end)
 

@@ -3,16 +3,17 @@ package sigmastate.helpers
 import scorex.crypto.hash.Digest32
 import special.collection.{Coll, CollOverArray, PairOfCols}
 import scorex.util.ModifierId
-import org.ergoplatform.{ErgoLikeTransactionTemplate, ErgoLikeTransaction, ErgoLikeContext, UnsignedInput, Input, ErgoBox, DataInput, ErgoBoxCandidate}
+import org.ergoplatform.{DataInput, ErgoBox, ErgoBoxCandidate, ErgoLikeContext, ErgoLikeTransaction, ErgoLikeTransactionTemplate, Input, UnsignedInput}
 import sigmastate.Values.ErgoTree
-import org.ergoplatform.ErgoBox.{AdditionalRegisters, allZerosModifierId, TokenId}
+import org.ergoplatform.ErgoBox.{AdditionalRegisters, TokenId, allZerosModifierId}
 import org.ergoplatform.validation.SigmaValidationSettings
 import sigmastate.AvlTreeData
 import sigmastate.eval.CostingSigmaDslBuilder
 import sigmastate.eval._
 import sigmastate.interpreter.ContextExtension
-import special.sigma.{PreHeader, Header}
+import special.sigma.{Header, PreHeader}
 
+import scala.collection.compat.immutable.ArraySeq
 import scala.collection.mutable.WrappedArray
 
 // TODO refactor: unification is required between two hierarchies of tests
@@ -24,7 +25,7 @@ object TestingHelpers {
   def testBox(value: Long,
               ergoTree: ErgoTree,
               creationHeight: Int,
-              additionalTokens: Seq[(TokenId, Long)] = WrappedArray.empty,
+              additionalTokens: Seq[(TokenId, Long)] = ArraySeq.empty,
               additionalRegisters: AdditionalRegisters = Map.empty,
               transactionId: ModifierId = allZerosModifierId,
               boxIndex: Short = 0): ErgoBox =
@@ -35,7 +36,7 @@ object TestingHelpers {
 
   def createBox(value: Long,
                 proposition: ErgoTree,
-                additionalTokens: Seq[(Digest32, Long)] = WrappedArray.empty,
+                additionalTokens: Seq[(Digest32, Long)] = ArraySeq.empty,
                 additionalRegisters: AdditionalRegisters = Map.empty)
   = testBox(value, proposition, 0, additionalTokens, additionalRegisters)
 
@@ -43,7 +44,7 @@ object TestingHelpers {
   def createBox(value: Long,
                 proposition: ErgoTree,
                 creationHeight: Int)
-  = testBox(value, proposition, creationHeight, WrappedArray.empty, Map.empty, ErgoBox.allZerosModifierId)
+  = testBox(value, proposition, creationHeight, ArraySeq.empty, Map.empty, ErgoBox.allZerosModifierId)
 
   /** Creates a clone instance of the given collection by recursively cloning all the underlying
     * sub-collections.
@@ -112,13 +113,13 @@ object TestingHelpers {
     * in our test cases
     */
   def createTransaction(outputCandidates: IndexedSeq[ErgoBoxCandidate]): ErgoLikeTransaction = {
-    new ErgoLikeTransaction(WrappedArray.empty, WrappedArray.empty, outputCandidates)
+    new ErgoLikeTransaction(ArraySeq.empty, ArraySeq.empty, outputCandidates)
   }
 
   def createTransaction(box: ErgoBoxCandidate): ErgoLikeTransaction = createTransaction(Array(box))
 
   def createTransaction(dataInputs: IndexedSeq[ErgoBox],
                         outputCandidates: IndexedSeq[ErgoBoxCandidate]): ErgoLikeTransaction =
-    new ErgoLikeTransaction(WrappedArray.empty, dataInputs.map(b => DataInput(b.id)), outputCandidates)
+    new ErgoLikeTransaction(ArraySeq.empty, dataInputs.map(b => DataInput(b.id)), outputCandidates)
 
 }

@@ -126,7 +126,7 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
       }
       assert(items.length == bs.length + ss.length)
       if (ss.isEmpty) None
-      else Some((bs,ss))
+      else Some((bs.toSeq, ss.toSeq))
     }
   }
 
@@ -366,7 +366,7 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
   def buildGraph[T](env: ScriptEnv, typed: SValue): Ref[Context => T] = {
     val envVals = env.map { case (name, v) => (name: Any, builder.liftAny(v).get) }
     fun(removeIsProven({ ctxC: Ref[Context] =>
-      val env = envVals.mapValues(v => buildNode(ctxC, Map.empty, v))
+      val env = envVals.view.mapValues(v => buildNode(ctxC, Map.empty, v)).toMap
       val res = asRep[T](buildNode(ctxC, env, typed))
       res
     }))

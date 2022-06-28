@@ -421,7 +421,7 @@ trait TreeBuilding extends SigmaLibrary { IR: IRContext =>
         valdefs += vd
       }
     }
-    val Seq(root) = subG.roots
+    val root = subG.roots(0)
     val rhs = buildValue(ctx, mainG, curEnv, root, curId, constantsProcessing)
     val res = if (valdefs.nonEmpty) {
       (valdefs.toArray[BlockItem], rhs) match {

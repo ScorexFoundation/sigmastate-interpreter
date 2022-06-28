@@ -316,7 +316,7 @@ trait ObjectGenerators extends TypeGenerators
     boxId <- unsignedShortGen
     tokensCount <- Gen.chooseNum[Int](0, MaxTokens)
     tokens <- Gen.sequence(additionalTokensGen(tokensCount)).map(_.asScala.map(_._1))
-    candidate <- ergoBoxCandidateGen(tokens)
+    candidate <- ergoBoxCandidateGen(tokens.toSeq)
   } yield candidate.toBox(tId, boxId)
 
   val additionalRegistersGen: Gen[Map[NonMandatoryRegisterId, EvaluatedValue[SType]]] = for {

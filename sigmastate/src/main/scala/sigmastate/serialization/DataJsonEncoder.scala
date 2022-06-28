@@ -82,12 +82,12 @@ object DataJsonEncoder {
             "_2" -> encodeData[SType](right, rightType)
           ))
         case _ =>
-          var jsons = mutable.MutableList.empty[Json]
+          val jsons = mutable.ArrayBuffer.empty[Json]
           cfor(0)(_ < coll.length, _ + 1) { i =>
             val x = coll(i)
             jsons += encodeData(x, tColl.elemType)
           }
-          Json.fromValues(jsons.toList)
+          Json.fromValues(jsons.toSeq)
       }
 
     case tOpt: SOption[a] =>
@@ -107,11 +107,11 @@ object DataJsonEncoder {
       }
       val len = arr.length
       assert(len == tArr.length, s"Type $t doesn't correspond to value $arr")
-      var obj = mutable.MutableList.empty[(String, Json)]
+      val obj = mutable.ArrayBuffer.empty[(String, Json)]
       cfor(0)(_ < len, _ + 1) { i =>
         obj += (s"_${i + 1}" -> encodeData[SType](arr(i), tArr(i)))
       }
-      Json.fromFields(obj.toList)
+      Json.fromFields(obj)
     case SGroupElement =>
       val w = SigmaSerializer.startWriter()
       DataSerializer.serialize(v, tpe, w)
@@ -126,7 +126,7 @@ object DataJsonEncoder {
       encodeBytes(w.toBytes)
     case SBox =>
       val ergoBox = v.asInstanceOf[Box]
-      var obj = mutable.MutableList.empty[(String, Json)]
+      val obj = mutable.ArrayBuffer.empty[(String, Json)]
       obj += ("value" -> encodeData(ergoBox.value.asInstanceOf[SType#WrappedType], SLong))
       obj += ("ergoTree" -> encodeBytes(ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(ergoBox.ergoTree)))
       obj += "tokens" -> encodeData(ergoBox.additionalTokens.map { case (id, amount) =>
@@ -207,7 +207,7 @@ object DataJsonEncoder {
         val txId = decodeBytes(json.hcursor.downField(s"txId").focus.get).toModifierId
         val index = decodeData(json.hcursor.downField(s"index").focus.get, SShort)
         val creationHeight = decodeData(json.hcursor.downField(s"creationHeight").focus.get, SInt)
-        val additionalRegisters = mutable.MutableList.empty[(NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType])]
+        val additionalRegisters = mutable.ArrayBuffer.empty[(NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType])]
         for (register <- ErgoBox.nonMandatoryRegisters) {
           val opt = json.hcursor.downField(s"r${register.number}").focus
           if (opt.isDefined && !opt.get.isNull) {

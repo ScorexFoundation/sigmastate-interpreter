@@ -281,6 +281,7 @@ abstract class BcDlogGroup[ElemType <: ECPoint](val x9params: X9ECParameters) ex
 	 */
   protected def computeNaive(groupElements: Array[ElemType], exponentiations: Array[BigInteger]): ElemType =
     groupElements.zip(exponentiations)
+      .iterator
       .map { case (base, exp) => exponentiate(base, exp) }
       .foldLeft(identity) { case (r, elem) => multiplyGroupElements(elem, r) }
 

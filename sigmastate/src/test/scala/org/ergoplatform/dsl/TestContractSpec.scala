@@ -131,13 +131,13 @@ case class TestContractSpec(testSuite: SigmaTestingCommons)(implicit val IR: IRC
 
   case class MockTransaction(block: BlockCandidate) extends TransactionCandidate {
     private val _inputs: ArrayBuffer[InputBox] = mutable.ArrayBuffer.empty[InputBox]
-    def inputs: Seq[InputBox] = _inputs
+    def inputs: Seq[InputBox] = _inputs.toSeq
 
     private val _dataInputs: ArrayBuffer[InputBox] = mutable.ArrayBuffer.empty[InputBox]
-    def dataInputs: Seq[InputBox] = _dataInputs
+    def dataInputs: Seq[InputBox] = _dataInputs.toSeq
 
     private val _outputs = mutable.ArrayBuffer.empty[OutBox]
-    def outputs: Seq[OutBox] = _outputs
+    def outputs: Seq[OutBox] = _outputs.toSeq
 
     def inBox(utxoBox: OutBox) = {
       val box = TestInputBox(this, utxoBox)

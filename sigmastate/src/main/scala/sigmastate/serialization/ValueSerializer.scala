@@ -204,7 +204,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
 
   case class DataScope(parent: Scope, data: DataInfo[_]) extends Scope {
     def name = data.info.name
-    override def children = ArraySeq.empty
+    override def children = mutable.ArrayBuffer.empty
     override def showInScope(v: String): String = parent.showInScope(s"DataInfo($data)")
     override def toString = s"DataScope($data)"
   }
@@ -219,7 +219,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     def cases: Seq[WhenScope] = children.map {
       case (_, when: WhenScope) => when
       case s => sys.error(s"Invalid child scope $s in $this")
-    }.sortBy(_.pos)
+    }.sortBy(_.pos).toSeq
     override def showInScope(v: String): String = parent.showInScope(s"/cases[$name]/$v")
     override def toString = s"CasesScope($name, $children)"
   }

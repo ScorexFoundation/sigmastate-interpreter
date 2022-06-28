@@ -4,7 +4,7 @@ import org.scalacheck.Gen
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.{Matchers, PropSpec}
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
-import scalan.RType
+import scalan._
 import sigmastate.{VersionContext, VersionTestingProperty}
 import special.collection.{Coll, CollOverArray, PairOfCols}
 

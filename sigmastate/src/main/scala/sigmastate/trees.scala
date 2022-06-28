@@ -76,7 +76,7 @@ object CAND {
     }
     if (res.isEmpty) TrueProp
     else if (res.length == 1) res(0)
-    else CAND(res)
+    else CAND(res.toSeq)
   }
 }
 
@@ -112,7 +112,7 @@ object COR {
     }
     if (res.isEmpty) FalseProp
     else if (res.length == 1) res(0)
-    else COR(res)
+    else COR(res.toSeq)
   }
 }
 
