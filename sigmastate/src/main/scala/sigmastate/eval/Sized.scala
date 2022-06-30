@@ -50,6 +50,7 @@ object Sized extends SizedLowPriority {
     override def size(x: T): Size[T] = f(x)
   }
 
+  val SizeUnit: Size[Unit] = new CSizePrim(1L, UnitType)
   val SizeBoolean: Size[Boolean] = new CSizePrim(1L, BooleanType)
   val SizeByte: Size[Byte] = new CSizePrim(1L, ByteType)
   val SizeShort: Size[Short] = new CSizePrim(2L, ShortType)
@@ -60,6 +61,7 @@ object Sized extends SizedLowPriority {
   val SizeSigmaProp: Size[SigmaProp] = new CSizePrim(SSigmaProp.MaxSizeInBytes, SigmaPropRType)
   val SizeAvlTree: Size[AvlTree] = new CSizePrim(AvlTreeData.TreeDataSize, AvlTreeRType)
 
+  implicit val UnitIsSized: Sized[Unit] = Sized.instance((_: Unit) => SizeUnit)
   implicit val BooleanIsSized: Sized[Boolean] = Sized.instance((_: Boolean) => SizeBoolean)
   implicit val ByteIsSized: Sized[Byte] = Sized.instance((_: Byte) => SizeByte)
   implicit val ShortIsSized: Sized[Short] = Sized.instance((_: Short) => SizeShort)
@@ -92,6 +94,7 @@ object Sized extends SizedLowPriority {
     case HeaderRType => headerIsSized
     case PreHeaderRType => preHeaderIsSized
     case ContextRType => contextIsSized
+    case UnitType => UnitIsSized
     case ct: CollType[a] => collIsSized(typeToSized(ct.tItem))
     case ct: OptionType[a] => optionIsSized(typeToSized(ct.tA))
     case ct: PairType[a, b] => pairIsSized(typeToSized(ct.tFst), typeToSized(ct.tSnd))
