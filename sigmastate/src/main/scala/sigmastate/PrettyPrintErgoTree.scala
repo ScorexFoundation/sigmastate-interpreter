@@ -6,6 +6,8 @@ import org.typelevel.paiges.Doc
 import sigmastate.serialization.OpCodes
 import sigmastate.utxo._
 import sigmastate.lang.Terms.{Apply, ApplyTypes, Block, Ident, Lambda, MethodCall, MethodCallLike, Select, ValNode}
+import sigmastate.eval.CBigInt
+import special.collection.Coll
 
 /**
  * Brainstorm ideas: create configuration for printer (explicit types for vals/methods)
@@ -25,15 +27,23 @@ object PrettyPrintErgoTree {
             case SInt => Doc.empty
             case SLong => Doc.char('L')
             case SByte | SShort | SBigInt | SBoolean => Doc.text(".to") + STypeDoc(tpe)
+            case _: SCollection[_] => Doc.empty
             // Implement this fallback with base16 after https://github.com/ScorexFoundation/sigmastate-interpreter/issues/814
             case other => ???
           }
-          Doc.text(s"$value") + suffix
+          val res = value match {
+            case CBigInt(bi) => Doc.str(bi)
+            case coll: Coll[_] => 
+              // Drop Coll, keep (2,3,4,5,5,...)
+              val elems = coll.toString().drop(4)
+              STypeDoc(tpe) + Doc.str(elems)
+            case other => Doc.str(other)
+          }
+          res + suffix
       }
-      // TODO: Only used in parser?
+      // Missing serializer for UnitConstantCode
       case UnitConstant() => ???
-      // TODO: Converted to SGlobal.groupGeneratorMethod
-      case GroupGenerator => ??? 
+      case GroupGenerator => Doc.text("groupGenerator")
       case ec: EvaluatedCollection[_, _] => ec match {
         case ConcreteCollection(items, elemType) =>
           Doc.text(s"Coll") + wrapWithBrackets(STypeDoc(elemType)) + nTupleDoc(items.map(createDoc))
@@ -51,8 +61,6 @@ object PrettyPrintErgoTree {
     case ConstantPlaceholder(id, tpe) => Doc.text("placeholder") + wrapWithBrackets(STypeDoc(tpe)) + wrapWithParens(Doc.str(id))
     // Not used in ErgoTree.
     case TaggedVariableNode(varId, tpe) => ???
-    // TODO: Does not make sense for printer?
-    case FalseSigmaProp | TrueSigmaProp => ???
     case FuncValue(args, body) =>
       val prefix = Doc.char('{') + Doc.space + argsWithTypesDoc(args) + Doc.space + Doc.text("=>")
       val suffix = Doc.char('}')
@@ -68,7 +76,7 @@ object PrettyPrintErgoTree {
         Doc.intercalate(Doc.hardLine, prettyItems) +
         Doc.hardLine +
         createDoc(result)
-    // Not part of ErgoTree (yet) - https://github.com/ScorexFoundation/sigmastate-interpreter/issues/462
+    // Not part of ErgoTree (yet) - https://github.com/ScorexFoundation/sigmastate-interpreter/issues/462 - might be deleted
     case SomeValue(_) | NoneValue(_) => ???
 
     // ErgoLike
@@ -78,7 +86,6 @@ object PrettyPrintErgoTree {
     case Self => Doc.text("SELF")
     case Context => Doc.text("CONTEXT")
     case Global => Doc.text("Global")
-    // TODO: Not possible to reach following 2 cases until https://github.com/ScorexFoundation/sigmastate-interpreter/issues/799
     case MinerPubkey => Doc.text("minerPubKey")
     case LastBlockUtxoRootHash => Doc.text("LastBlockUtxoRootHash") 
 
@@ -107,7 +114,6 @@ object PrettyPrintErgoTree {
     case ExtractBytes(input) => methodDoc(input, "bytes")
     case ExtractBytesWithNoRef(input) => methodDoc(input, "bytesWithoutRef")
     case ExtractId(input) => methodDoc(input, "id")
-    // TODO: Is it possible to have `None` inside maybeTpe?
     case ExtractRegisterAs(input, registerId, maybeTpe) =>
       createDoc(input) + Doc.text(s".$registerId") + wrapWithBrackets(STypeDoc(maybeTpe.elemType))
     case ExtractCreationInfo(input) => methodDoc(input, "creationInfo")
@@ -116,7 +122,6 @@ object PrettyPrintErgoTree {
       case DeserializeContext(id, tpe) => ???
       case DeserializeRegister(reg, tpe, default) => ???
     }
-    // TODO: Looks like we always have Some(...) in maybeTpe, consider dropping Option wrapper from GetVar definition
     case GetVar(varId, maybeTpe) =>
       Doc.text("getVar") + wrapWithBrackets(STypeDoc(maybeTpe.elemType)) + wrapWithParens(createDoc(varId))
     case OptionGet(input) => methodDoc(input, "get")
@@ -183,10 +188,10 @@ object PrettyPrintErgoTree {
       case BitOp(l, r, OpCodes.BitAndCode) => binOpWithPriorityParens(l, r, Doc.char('&'))
       // Possible clash with BinXor?
       case BitOp(l, r, OpCodes.BitXorCode) => binOpWithPriorityParens(l, r, Doc.char('^'))
-      case BitOp(l, r, OpCodes.BitInversionCode) => binOpWithPriorityParens(l, r, Doc.char('~'))
       case BitOp(l, r, OpCodes.BitShiftLeftCode) => binOpWithPriorityParens(l, r, Doc.text("<<"))
       case BitOp(l, r, OpCodes.BitShiftRightCode) => binOpWithPriorityParens(l, r, Doc.text(">>"))
       case BitOp(l, r, OpCodes.BitShiftRightZeroedCode) => binOpWithPriorityParens(l, r, Doc.text(">>>"))
+
       case Xor(l, r) => Doc.text("xor") + nTupleDoc(List(l, r).map(createDoc))
       case sr: SimpleRelation[_] => sr match {
         case GT(l, r) => binOpWithPriorityParens(l, r, Doc.text(" > "))
@@ -201,7 +206,7 @@ object PrettyPrintErgoTree {
       case BinXor(l, r) => binOpWithPriorityParens(l, r, Doc.text(" ^ "))
     }
     case oneArgOp: OneArgumentOperation[_, _] => oneArgOp match {
-      // TODO: Only used in parser. Missing implementation for buildNode. Related to BitOp case above?
+      // Only used in parser. Missing implementation for buildNode.
       case BitInversion(input) => Doc.char('~') + createDoc(input)
       case Negation(input) => Doc.char('!') + createDoc(input)
     }
@@ -308,7 +313,7 @@ object PrettyPrintErgoTree {
     case SHeader => "header"
     case SGlobal => "global"
     case SFunc(_, _, _) => "func"
-    case NoType => ???
+    case NoType => "noType"
     // Not used in final ergo tree
     case STypeApply(_, _) => ???
     case STypeVar(_) => ???
