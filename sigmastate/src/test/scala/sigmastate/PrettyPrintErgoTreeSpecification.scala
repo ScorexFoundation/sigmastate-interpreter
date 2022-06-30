@@ -3,8 +3,9 @@ package sigmastate
 import sigmastate.eval.IRContext
 import sigmastate.interpreter.Interpreter
 import sigmastate.lang.Terms.ValueOps
-import sigmastate.Values.SValue
+import sigmastate.Values.{BigIntConstant, ByteArrayConstant, GroupGenerator, SValue}
 import special.sigma.SigmaDslTesting
+import org.ergoplatform.MinerPubkey
 import org.scalacheck.util.Pretty
 
 class PrettyPrintErgoTreeSpecification extends SigmaDslTesting {
@@ -335,14 +336,14 @@ class PrettyPrintErgoTreeSpecification extends SigmaDslTesting {
       "{ (coll1: Coll[Byte]) => sha256(coll1) }"
   }
 
-  // TODO: Related to test below?
+  // Related to test below - where binary operations are tested
   ignore("bit inversion"){
     val code = "{ (x: Int) => ~x }"
     PrettyPrintErgoTree.prettyPrint(compile(code)) shouldBe
       "{ (i1: Int) => ~i1 }"
   }
 
-  // TODO: Uncomment after https://github.com/ScorexFoundation/sigmastate-interpreter/issues/474
+  // Uncomment after https://github.com/ScorexFoundation/sigmastate-interpreter/issues/474
   ignore("bitwise operations"){
     val code =
       """{ (x: (Int, Int)) =>
@@ -437,17 +438,42 @@ class PrettyPrintErgoTreeSpecification extends SigmaDslTesting {
   property("deserialize"){
     import scorex.util.encode.Base58
     import sigmastate.serialization.ValueSerializer
-    import sigmastate.Values.ByteArrayConstant
 
     val str = Base58.encode(ValueSerializer.serialize(ByteArrayConstant(Array[Byte](2))))
     val code = s"""deserialize[Coll[Byte]]("$str")(0) == 2"""
     PrettyPrintErgoTree.prettyPrint(compile(code)) shouldBe
-      """Coll(2).toColl[Byte](0).toInt == 2"""
+      """Coll[Byte](2)(0).toInt == 2"""
   }
 
   property("explicit parenthesis for boolean operations"){
     val code = "{ (x: Boolean) => !(x && (true || !true)) }"
     PrettyPrintErgoTree.prettyPrint(compile(code)) shouldBe
       "{ (bool1: Boolean) => !(bool1 && (true || false)) }"
+  }
+
+  property("group generator created explicitly with ErgoTree"){
+    val equalNode = EQ(
+      Exponentiate(GroupGenerator, BigIntConstant(1)),
+      Exponentiate(GroupGenerator, BigIntConstant(6))
+    )
+    val ergoTree = Values.ErgoTree.withoutSegregation(equalNode.toSigmaProp)
+    ergoTree.root match {
+      case Left(value) => ???
+      case Right(value) => PrettyPrintErgoTree.prettyPrint(value, 70) shouldBe
+        """sigmaProp(
+          |  groupGenerator.exp(1.toBigInt) == groupGenerator.exp(6.toBigInt)
+          |)""".stripMargin
+    }
+  }
+
+  // TODO: How to create byte array in ergoscript so output produces Coll[Byte]? Now the ouptput doesn't compile.
+  property("minerPubKey"){
+    val equalNode = EQ(MinerPubkey, ByteArrayConstant(Array[Byte](2, 10)))
+    val ergoTree = Values.ErgoTree.withoutSegregation(equalNode.toSigmaProp)
+    ergoTree.root match {
+      case Left(value) => ???
+      case Right(value) => PrettyPrintErgoTree.prettyPrint(value) shouldBe
+        """sigmaProp(minerPubKey == Coll[Byte](2,10))"""
+    }
   }
 }
