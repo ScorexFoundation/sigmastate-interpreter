@@ -73,7 +73,7 @@ object PrettyPrintErgoTree {
       prefix + bodyDoc + suffix
     case BlockValue(items, result) =>
       val prettyItems = items.map(item => createDoc(item))
-        Doc.intercalate(Doc.hardLine, prettyItems) +
+      Doc.intercalate(Doc.hardLine, prettyItems) +
         Doc.hardLine +
         createDoc(result)
     // Not part of ErgoTree (yet) - https://github.com/ScorexFoundation/sigmastate-interpreter/issues/462 - might be deleted
@@ -277,8 +277,8 @@ object PrettyPrintErgoTree {
     case SAvlTree => Doc.text("AvlTree")
     case SUnit => Doc.text("Unit")
     case SHeader => Doc.text("Header")
-    // TODO: Not tested
     case SGlobal => Doc.text("Global")
+    // Cannot be serialized
     case SFunc(tDom, tRange, tpeParams) => nTupleDoc(tDom.map(STypeDoc)) + Doc.text(" => ") + STypeDoc(tRange)
     case NoType => Doc.text("NoType")
     // Not used in final ergo tree
