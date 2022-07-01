@@ -476,4 +476,42 @@ class PrettyPrintErgoTreeSpecification extends SigmaDslTesting {
         """sigmaProp(minerPubKey == Coll[Byte](2,10))"""
     }
   }
+
+  property("global created explicitly with ErgoTree"){
+    val node = 
+      Values.BlockValue(
+        Array(Values.ValDef(1, List(), Values.FuncValue(Array((1,SGlobal)), Values.FalseLeaf))),
+        BinAnd(Values.TrueLeaf, Values.FalseLeaf)
+      )
+    val ergoTree = Values.ErgoTree.withoutSegregation(node.toSigmaProp)
+    ergoTree.root match {
+      case Left(value) => ???
+      case Right(value) => PrettyPrintErgoTree.prettyPrint(value) shouldBe 
+        """sigmaProp(val func1 = { (global1: Global) => false }
+          |  true && false)""".stripMargin 
+    }      
+  }
+
+  ignore("func created explicitly with ErgoTree"){
+    val code = 
+      """{
+        |  val f = { (x: Int) => 1 }
+        |  true && false
+        |}""".stripMargin
+
+    val node = 
+      Values.BlockValue(
+        Array(Values.ValDef(1, List(), Values.FuncValue(Array((4,SFunc(IndexedSeq(SInt), SBoolean, List()))), Values.FalseLeaf))),
+        BinAnd(Values.TrueLeaf, Values.FalseLeaf)
+      )
+    val ergoTree = Values.ErgoTree.withoutSegregation(node.toSigmaProp)
+    ergoTree.root match {
+      case Left(value) => ???
+      case Right(value) => PrettyPrintErgoTree.prettyPrint(value) shouldBe 
+        """sigmaProp({
+          |  val func1 = { (func4: Int => Boolean) => false }
+          |  true && false
+          |})""".stripMargin
+    }      
+  }
 }
