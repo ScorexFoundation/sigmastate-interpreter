@@ -448,6 +448,7 @@ object Values {
       TaggedVariableNode(varId, tpe)
   }
 
+  // TODO Refactor: Should be removed and use ConstantNode with SUnit and `()` literal
   /** ErgoTree node that represent a literal of Unit type. */
   case class UnitConstant() extends EvaluatedValue[SUnit.type] {
     override def tpe = SUnit
