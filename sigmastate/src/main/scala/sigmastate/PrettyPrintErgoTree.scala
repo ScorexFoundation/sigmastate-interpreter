@@ -10,7 +10,7 @@ import sigmastate.eval.CBigInt
 import special.collection.Coll
 
 /**
- * Brainstorm ideas: create configuration for printer (explicit types for vals/methods)
+ * Brainstorm ideas: create configuration for printer (explicit types for vals/methods), simple/verbose output
  */
 object PrettyPrintErgoTree {
 
@@ -42,7 +42,7 @@ object PrettyPrintErgoTree {
           res + suffix
       }
       // Missing serializer for UnitConstantCode
-      case UnitConstant() => ???
+      case UnitConstant() => Doc.text("UnitConstant is currently not implemented")
       case GroupGenerator => Doc.text("groupGenerator")
       case ec: EvaluatedCollection[_, _] => ec match {
         case ConcreteCollection(items, elemType) =>
@@ -59,8 +59,6 @@ object PrettyPrintErgoTree {
       val valName = inferNameFromType(tpe)
       Doc.text(s"$valName$id")
     case ConstantPlaceholder(id, tpe) => Doc.text("placeholder") + wrapWithBrackets(STypeDoc(tpe)) + wrapWithParens(Doc.str(id))
-    // Not used in ErgoTree.
-    case TaggedVariableNode(varId, tpe) => ???
     case FuncValue(args, body) =>
       val prefix = Doc.char('{') + Doc.space + argsWithTypesDoc(args) + Doc.space + Doc.text("=>")
       val suffix = Doc.char('}')
@@ -76,8 +74,6 @@ object PrettyPrintErgoTree {
       Doc.intercalate(Doc.hardLine, prettyItems) +
         Doc.hardLine +
         createDoc(result)
-    // Not part of ErgoTree (yet) - https://github.com/ScorexFoundation/sigmastate-interpreter/issues/462 - might be deleted
-    case SomeValue(_) | NoneValue(_) => ???
 
     // ErgoLike
     case Height => Doc.text("HEIGHT")
@@ -105,8 +101,6 @@ object PrettyPrintErgoTree {
         case Some(v) => methodDoc(input, "getOrElse", List(index, v))
         case None => createDoc(input) + wrapWithParens(createDoc(index))
       }
-    // TODO: Not used in final ErgoTree representation, will be deleted in the future.
-    case SigmaPropIsProven(input) => ???
     case SigmaPropBytes(input) => methodDoc(input, "propBytes")
     case SizeOf(input) => methodDoc(input, "size")
     case ExtractAmount(input) => methodDoc(input, "value")
@@ -117,11 +111,6 @@ object PrettyPrintErgoTree {
     case ExtractRegisterAs(input, registerId, maybeTpe) =>
       createDoc(input) + Doc.text(s".$registerId") + wrapWithBrackets(STypeDoc(maybeTpe.elemType))
     case ExtractCreationInfo(input) => methodDoc(input, "creationInfo")
-    // Not implemented by compiler
-    case d: Deserialize[_] => d match {
-      case DeserializeContext(id, tpe) => ???
-      case DeserializeRegister(reg, tpe, default) => ???
-    }
     case GetVar(varId, maybeTpe) =>
       Doc.text("getVar") + wrapWithBrackets(STypeDoc(maybeTpe.elemType)) + wrapWithParens(createDoc(varId))
     case OptionGet(input) => methodDoc(input, "get")
@@ -129,24 +118,12 @@ object PrettyPrintErgoTree {
     case OptionIsDefined(x) => methodDoc(x, "isDefined")
 
     // Terms
-    // Following nodes are not part of final ErgoTree
-    case Block(_, _) => ???
-    case ValNode(_, _, _) => ???
-    case Select(_, _, _) => ???
-    case Ident(_, _) => ???
-    case ApplyTypes(_, _) => ???
-    case MethodCallLike(_, _, _, _) => ???
-    case Lambda(_, _, _, _) => ???
-
     case Apply(func, args) => createDoc(func) + nTupleDoc(args.map(createDoc))
     case MethodCall(obj, method, args, map) => methodDoc(obj, method.name, args.toList)
 
     // Trees
     case BoolToSigmaProp(value) => Doc.text("sigmaProp") + wrapWithParens(createDoc(value))
     case CreateProveDlog(value) => Doc.text("proveDlog") + wrapWithParens(createDoc(value))
-    // TODO: Comment says it can be removed as it isn't used anymore. But there is issue to implement it:
-    // https://github.com/ScorexFoundation/sigmastate-interpreter/issues/605
-    case CreateAvlTree(_, _, _, _) => ???
     case CreateProveDHTuple(gv, hv, uv, vv) => Doc.text("proveDHTuple") + nTupleDoc(List(gv, hv, uv, vv).map(createDoc))
     case st: SigmaTransformer[_, _] => st match {
       case SigmaAnd(items) => Doc.intercalate(Doc.text(" && "), items.map(createDoc))
@@ -184,13 +161,13 @@ object PrettyPrintErgoTree {
       // Implement bitwise operations tests after 
       // https://github.com/ScorexFoundation/sigmastate-interpreter/issues/474
       // https://github.com/ScorexFoundation/sigmastate-interpreter/issues/418
-      case BitOp(l, r, OpCodes.BitOrCode) => binOpWithPriorityParens(l, r, Doc.char('|'))
-      case BitOp(l, r, OpCodes.BitAndCode) => binOpWithPriorityParens(l, r, Doc.char('&'))
+      case BitOp(l, r, OpCodes.BitOrCode) => Doc.text("Bitwise or is currently not implemented")
+      case BitOp(l, r, OpCodes.BitAndCode) => Doc.text("Bitwise and is currently not implemented")
       // Possible clash with BinXor?
-      case BitOp(l, r, OpCodes.BitXorCode) => binOpWithPriorityParens(l, r, Doc.char('^'))
-      case BitOp(l, r, OpCodes.BitShiftLeftCode) => binOpWithPriorityParens(l, r, Doc.text("<<"))
-      case BitOp(l, r, OpCodes.BitShiftRightCode) => binOpWithPriorityParens(l, r, Doc.text(">>"))
-      case BitOp(l, r, OpCodes.BitShiftRightZeroedCode) => binOpWithPriorityParens(l, r, Doc.text(">>>"))
+      case BitOp(l, r, OpCodes.BitXorCode) => Doc.text("Bitwise xor is currently not implemented")
+      case BitOp(l, r, OpCodes.BitShiftLeftCode) => Doc.text("Bitwise shift left is currently not implemented")
+      case BitOp(l, r, OpCodes.BitShiftRightCode) => Doc.text("Bitwise shift right is currently not implemented")
+      case BitOp(l, r, OpCodes.BitShiftRightZeroedCode) => Doc.text("Bitwise shift right zeroed is currently not implemented")
 
       case Xor(l, r) => Doc.text("xor") + nTupleDoc(List(l, r).map(createDoc))
       case sr: SimpleRelation[_] => sr match {
@@ -207,15 +184,9 @@ object PrettyPrintErgoTree {
     }
     case oneArgOp: OneArgumentOperation[_, _] => oneArgOp match {
       // Only used in parser. Missing implementation for buildNode.
-      case BitInversion(input) => Doc.char('~') + createDoc(input)
+      case BitInversion(input) => Doc.text("Bit inversion is currently not implemented")
       case Negation(input) => Doc.char('!') + createDoc(input)
     }
-    // ModQs + operations are not implemented:
-    // https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
-    // https://github.com/ScorexFoundation/sigmastate-interpreter/issues/327
-    case ModQ(input) => ???
-    case ModQArithOp(l, r, opCode) => ???
-
     case quad: Quadruple[_, _, _, _] => quad match {
       case If(condition, trueBranch, falseBranch) =>
         Doc.text("if (") + createDoc(condition) + Doc.text(") {") +
@@ -225,9 +196,34 @@ object PrettyPrintErgoTree {
           Doc.char('}')
       // Will be removed in the future:
       // https://github.com/ScorexFoundation/sigmastate-interpreter/issues/645
-      case TreeLookup(tree, key, proof) => ???
+      case TreeLookup(tree, key, proof) => Doc.text("TreeLookup is not implemented and also deprecated.")
     }
     case LogicalNot(input) => Doc.char('!') + nodeWithPriorityParens(input)
+
+    // Not implemented, deprecated (to be removed) nodes
+    case CreateAvlTree(_, _, _, _) => Doc.text("CreateAvlTree is not implemented and also deprecated.")
+    case SomeValue(_) | NoneValue(_) => Doc.text("None/SomeValue is not implemented and also deprecated.")
+    // Not implemented by compiler
+    case d: Deserialize[_] => d match {
+      case DeserializeContext(_, _) => Doc.text("DeserializeContext is currently not implemented")
+      case DeserializeRegister(_, _, _) => Doc.text("DeserializeRegister is currently not implemented")
+    }
+    // Not used in final ErgoTree representation, will be deleted in the future.
+    case SigmaPropIsProven(_) => Doc.text("SigmaPropIsProven is not implemented and also deprecated.")
+    // ModQs + operations are not implemented:
+    // https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
+    // https://github.com/ScorexFoundation/sigmastate-interpreter/issues/327
+    case ModQ(input) => Doc.text("ModQ is currently not implemented")
+    case ModQArithOp(l, r, opCode) => Doc.text("ModQArithOp is currently not implemented")
+    // Following nodes are not part of final ErgoTree
+    case TaggedVariableNode(_, _) => Doc.text("TaggedVariableNode is not part of final ErgoTree")
+    case Block(_, _) => Doc.text("Block is not part of final ErgoTree")
+    case ValNode(_, _, _) => Doc.text("ValNode is not part of final ErgoTree")
+    case Select(_, _, _) => Doc.text("Select is not part of final ErgoTree")
+    case Ident(_, _) => Doc.text("Ident is not part of final ErgoTree")
+    case ApplyTypes(_, _) => Doc.text("ApplyTypes is not part of final ErgoTree")
+    case MethodCallLike(_, _, _, _) => Doc.text("MethodCallLike is not part of final ErgoTree")
+    case Lambda(_, _, _, _) => Doc.text("Lambda is not part of final ErgoTree")
   }
 
   // empty args list returns just `name` suffix
@@ -278,12 +274,13 @@ object PrettyPrintErgoTree {
     case SUnit => Doc.text("Unit")
     case SHeader => Doc.text("Header")
     case SGlobal => Doc.text("Global")
-    // Cannot be serialized
+    // Missing serializer
     case SFunc(tDom, tRange, tpeParams) => nTupleDoc(tDom.map(STypeDoc)) + Doc.text(" => ") + STypeDoc(tRange)
+    // Missing serializer, not part of final ErgoTree, must be assigned some type during typing phase.
     case NoType => Doc.text("NoType")
     // Not used in final ergo tree
-    case STypeApply(name, args) => ???
-    case STypeVar(name) => ???
+    case STypeApply(name, args) => Doc.text("Error: STypeApply node should be eliminated during compilation.")
+    case STypeVar(name) => Doc.text("Error: STypeVar node should be eliminated during compilation.")
   }
 
   // Create `(item1, item2, ...)`
@@ -315,8 +312,8 @@ object PrettyPrintErgoTree {
     case SFunc(_, _, _) => "func"
     case NoType => "noType"
     // Not used in final ergo tree
-    case STypeApply(_, _) => ???
-    case STypeVar(_) => ???
+    case STypeApply(_, _) => "STypeApply (should be eliminated during compilation)"
+    case STypeVar(_) => "STypeVar (should be eliminated during compilation)"
   }
 
 }

@@ -2,11 +2,9 @@ package sigmastate
 
 import sigmastate.eval.IRContext
 import sigmastate.interpreter.Interpreter
-import sigmastate.lang.Terms.ValueOps
 import sigmastate.Values.{BigIntConstant, ByteArrayConstant, GroupGenerator, SValue}
 import special.sigma.SigmaDslTesting
 import org.ergoplatform.MinerPubkey
-import org.scalacheck.util.Pretty
 
 class PrettyPrintErgoTreeSpecification extends SigmaDslTesting {
   implicit def IR: IRContext = createIR()
