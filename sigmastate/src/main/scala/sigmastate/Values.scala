@@ -449,14 +449,13 @@ object Values {
   }
 
   /** ErgoTree node that represent a literal of Unit type. */
-  case class UnitConstant() extends EvaluatedValue[SUnit.type] {
-    override def tpe = SUnit
-    val value = ()
-    override def companion: ValueCompanion = UnitConstant
-  }
-  object UnitConstant extends ValueCompanion {
-    override def opCode = UnitConstantCode
-    override def costKind = Constant.costKind
+  object UnitConstant  {
+    val instance = apply()
+    def apply() = Constant[SUnit.type]((), SUnit)
+    def unapply(node: SValue): Boolean = node match {
+      case ConstantNode(_, SUnit) => true
+      case _ => false
+    }
   }
 
   type BoolValue = Value[SBoolean.type]
