@@ -1,8 +1,7 @@
 package sigmastate.utxo
 
 import java.math.BigInteger
-
-import org.ergoplatform.ErgoBox.{R6, R8}
+import org.ergoplatform.ErgoBox.{AdditionalRegisters, R6, R8}
 import org.ergoplatform._
 import scalan.RType
 import sigmastate.SCollection.SByteArray
@@ -61,7 +60,8 @@ class BasicOpsSpecification extends SigmaTestingCommons
            ext: Seq[VarBinding],
            script: String, propExp: SValue,
            onlyPositive: Boolean = true,
-           testExceededCost: Boolean = true) = {
+           testExceededCost: Boolean = true,
+           additionalRegistersOpt: Option[AdditionalRegisters] = None) = {
     val prover = new ContextEnrichingTestProvingInterpreter() {
       override lazy val contextExtenders: Map[Byte, EvaluatedValue[_ <: SType]] = {
         val p1 = dlogSecrets(0).publicImage
@@ -80,9 +80,11 @@ class BasicOpsSpecification extends SigmaTestingCommons
 
     val tree = ErgoTree.fromProposition(ergoTreeHeaderInTests, prop)
     val p3 = prover.dlogSecrets(2).publicImage
-    val boxToSpend = testBox(10, tree, additionalRegisters = Map(
-      reg1 -> SigmaPropConstant(p3),
-      reg2 -> IntConstant(1)),
+    val boxToSpend = testBox(10, tree,
+      additionalRegisters = additionalRegistersOpt.getOrElse(Map(
+        reg1 -> SigmaPropConstant(p3),
+        reg2 -> IntConstant(1))
+      ),
       creationHeight = 5)
 
     val newBox1 = testBox(10, tree, creationHeight = 0, boxIndex = 0, additionalRegisters = Map(
@@ -120,6 +122,41 @@ class BasicOpsSpecification extends SigmaTestingCommons
     }
     val verifyEnv = env + (ScriptNameProp -> s"${name}_verify_ext")
     flexVerifier.verify(verifyEnv, tree, ctxExt, pr.proof, fakeMessage).get._1 shouldBe true
+  }
+
+  property("Unit register") {
+    val unitConstant = Constant[SUnit.type]((), SUnit)
+    VersionContext.withVersions(activatedVersionInTests, ergoTreeVersionInTests) {
+      if (VersionContext.current.isJitActivated) {
+        test("R1", env, ext,
+          "{ SELF.R4[Unit].isDefined }",
+          ExtractRegisterAs[SUnit.type](Self, reg1)(SUnit).isDefined.toSigmaProp,
+          additionalRegistersOpt = Some(Map(
+            reg1 -> unitConstant,
+          ))
+        )
+
+//        test("R2", env, ext,
+//          "{ SELF.R4[Unit].get == () }",
+//          EQ(ExtractRegisterAs[SUnit.type](Self, reg1)(SUnit).get, unitConstant).toSigmaProp,
+//          additionalRegistersOpt = Some(Map(
+//            reg1 -> unitConstant,
+//          ))
+//        )
+      } else {
+        assertExceptionThrown(
+          test("R1", env, ext,
+            "{ SELF.R4[Unit].isDefined }",
+            ExtractRegisterAs[SUnit.type](Self, reg1)(SUnit).isDefined.toSigmaProp,
+            additionalRegistersOpt = Some(Map(
+              reg1 -> unitConstant,
+            ))
+          ),
+          rootCauseLike[RuntimeException]("Don't know how to compute Sized for type PrimitiveType(Unit,")
+        )
+      }
+    }
+
   }
 
   property("Relation operations") {
