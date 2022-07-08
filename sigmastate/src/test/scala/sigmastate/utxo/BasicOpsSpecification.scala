@@ -139,17 +139,17 @@ class BasicOpsSpecification extends SigmaTestingCommons
           "{ SELF.R4[Unit].isDefined }",
           ExtractRegisterAs[SUnit.type](Self, reg1)(SUnit).isDefined.toSigmaProp,
           additionalRegistersOpt = Some(Map(
-            reg1 -> UnitConstant.instance,
+            reg1 -> UnitConstant.instance
           ))
         )
 
         // TODO frontend: implement missing Unit support in compiler
         test("R2", env, ext,
-          script = "" /* means cannot be compiled
-                       the corresponding script is "{ SELF.R4[Unit].get == () }" */,
+          script = "", /* means cannot be compiled
+                       the corresponding script is "{ SELF.R4[Unit].get == () }" */
           EQ(ExtractRegisterAs[SUnit.type](Self, reg1)(SUnit).get, UnitConstant.instance).toSigmaProp,
           additionalRegistersOpt = Some(Map(
-            reg1 -> UnitConstant.instance,
+            reg1 -> UnitConstant.instance
           ))
         )
       } else {
@@ -158,7 +158,7 @@ class BasicOpsSpecification extends SigmaTestingCommons
             "{ SELF.R4[Unit].isDefined }",
             ExtractRegisterAs[SUnit.type](Self, reg1)(SUnit).isDefined.toSigmaProp,
             additionalRegistersOpt = Some(Map(
-              reg1 -> UnitConstant.instance,
+              reg1 -> UnitConstant.instance
             ))
           ),
           rootCauseLike[RuntimeException]("Don't know how to compute Sized for type PrimitiveType(Unit,")
