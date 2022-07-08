@@ -19,6 +19,8 @@ import sigmastate.interpreter.ErgoTreeEvaluator.DefaultEvalSettings
 import sigmastate.interpreter.{CryptoConstants, EvalSettings}
 import sigmastate.utils.Helpers._
 import scalan.util.StringUtil._
+import sigmastate.basics.DLogProtocol.DLogProverInput
+import sigmastate.lang.exceptions.CosterException
 
 class BasicOpsSpecification extends SigmaTestingCommons
   with CrossVersionProps {
@@ -155,13 +157,26 @@ class BasicOpsSpecification extends SigmaTestingCommons
       } else {
         assertExceptionThrown(
           test("R1", env, ext,
-            "{ SELF.R4[Unit].isDefined }",
+            "{ SELF.R4[SigmaProp].get }",
+            ExtractRegisterAs[SSigmaProp.type](Self, reg1).get,
+            additionalRegistersOpt = Some(Map(
+              reg1 -> SigmaPropConstant(DLogProverInput.random().publicImage),
+              reg2 -> UnitConstant.instance
+            ))
+          ),
+          rootCauseLike[RuntimeException]("Don't know how to compute Sized for type PrimitiveType(Unit,")
+        )
+        assertExceptionThrown(
+          test("R2", env, ext,
+            "", /* the test script "{ SELF.R4[Unit].isDefined }" cannot be compiled with SigmaCompiler,
+                          but we nevertheless want to test how interpreter process the tree,
+                          so we use the explicitly given tree below */
             ExtractRegisterAs[SUnit.type](Self, reg1)(SUnit).isDefined.toSigmaProp,
             additionalRegistersOpt = Some(Map(
               reg1 -> UnitConstant.instance
             ))
           ),
-          rootCauseLike[RuntimeException]("Don't know how to compute Sized for type PrimitiveType(Unit,")
+          rootCauseLike[CosterException]("Don't know how to convert SType SUnit to Elem")
         )
       }
     }

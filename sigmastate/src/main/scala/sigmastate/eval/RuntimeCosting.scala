@@ -805,7 +805,6 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
     case SInt => IntElement
     case SLong => LongElement
     case SString => StringElement
-    case SUnit => UnitElement
     case SAny => AnyElement
     case SBigInt => bigIntElement
     case SBox => boxElement
@@ -820,6 +819,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
     case c: SCollectionType[a] => collElement(stypeToElem(c.elemType))
     case o: SOption[a] => wOptionElement(stypeToElem(o.elemType))
     case SFunc(Seq(tpeArg), tpeRange, Nil) => funcElement(stypeToElem(tpeArg), stypeToElem(tpeRange))
+    case SUnit if VersionContext.current.isJitActivated => UnitElement
     case _ => error(s"Don't know how to convert SType $t to Elem")
   }).asInstanceOf[Elem[T#WrappedType]]
 
@@ -830,7 +830,6 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
     case IntElement => SInt
     case LongElement => SLong
     case StringElement => SString
-    case UnitElement => SUnit
     case AnyElement => SAny
     case _: BigIntElem[_] => SBigInt
     case _: GroupElementElem[_] => SGroupElement
@@ -845,6 +844,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
     case ce: CollElem[_, _] => SCollection(elemToSType(ce.eItem))
     case fe: FuncElem[_, _] => SFunc(elemToSType(fe.eDom), elemToSType(fe.eRange))
     case pe: PairElem[_, _] => STuple(elemToSType(pe.eFst), elemToSType(pe.eSnd))
+    case UnitElement if VersionContext.current.isJitActivated => SUnit
     case _ => error(s"Don't know how to convert Elem $e to SType")
   }
 
