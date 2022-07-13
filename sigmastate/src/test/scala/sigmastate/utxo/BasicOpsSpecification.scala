@@ -138,7 +138,8 @@ class BasicOpsSpecification extends SigmaTestingCommons
     VersionContext.withVersions(activatedVersionInTests, ergoTreeVersionInTests) {
       if (VersionContext.current.isJitActivated) {
         test("R1", env, ext,
-          "{ SELF.R4[Unit].isDefined }",
+          script = "", /* means cannot be compiled
+                         the corresponding script is { SELF.R4[Unit].isDefined } */
           ExtractRegisterAs[SUnit.type](Self, reg1)(SUnit).isDefined.toSigmaProp,
           additionalRegistersOpt = Some(Map(
             reg1 -> UnitConstant.instance
