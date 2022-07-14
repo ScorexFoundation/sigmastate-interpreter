@@ -137,6 +137,9 @@ class BasicOpsSpecification extends SigmaTestingCommons
   property("Unit register") {
     VersionContext.withVersions(activatedVersionInTests, ergoTreeVersionInTests) {
       if (VersionContext.current.isJitActivated) {
+
+        // TODO frontend: implement missing Unit support in compiler
+        //  https://github.com/ScorexFoundation/sigmastate-interpreter/issues/820
         test("R1", env, ext,
           script = "", /* means cannot be compiled
                          the corresponding script is { SELF.R4[Unit].isDefined } */
@@ -146,7 +149,6 @@ class BasicOpsSpecification extends SigmaTestingCommons
           ))
         )
 
-        // TODO frontend: implement missing Unit support in compiler
         test("R2", env, ext,
           script = "", /* means cannot be compiled
                        the corresponding script is "{ SELF.R4[Unit].get == () }" */
