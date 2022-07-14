@@ -10,7 +10,7 @@ import sigmastate.Values.{StringConstant, Constant, EvaluatedValue, SValue, IntV
 import sigmastate._
 import sigmastate.lang.Terms._
 import sigmastate.lang.exceptions.InvalidArguments
-import sigmastate.serialization.ValueSerializer
+import sigmastate.serialization.{ConstantSerializer, ValueSerializer, SigmaSerializer}
 import sigmastate.utxo.{GetVar, DeserializeContext, DeserializeRegister, SelectField}
 
 object SigmaPredef {
@@ -185,10 +185,11 @@ object SigmaPredef {
       PredefFuncInfo(
         { case (Ident(_, SFunc(_, tpe, _)), Seq(arg: EvaluatedValue[SString.type]@unchecked)) =>
           val bytes = Base16.decode(arg.value).get
-          tpe match {
-            case SByteArray => ByteArrayConstant(bytes)
-            case other => ???
-          }
+          val r = SigmaSerializer.startReader(bytes)
+          val ser = ConstantSerializer(DeserializationSigmaBuilder)
+          val res = ser.parse(r)
+          if (res.tpe != tpe) throw new InvalidArguments(s"Types doesn't match: declared $tpe, actual: ${res.tpe}")
+          res.asInstanceOf[Values.ConstantNode[SType]]
         }),
       OperationInfo(Constant, "",
         Seq(ArgInfo("", "")))

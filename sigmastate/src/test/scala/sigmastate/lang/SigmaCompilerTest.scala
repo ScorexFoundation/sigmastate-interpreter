@@ -135,7 +135,12 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ObjectGe
   }
 
   property("fromBaseX") {
-    comp(""" fromBase16[Coll[Byte]]("31") """) shouldBe ByteArrayConstant(Array[Byte](49))
+    comp(""" fromBase16[Coll[Byte]]("0e0131") """) shouldBe ByteArrayConstant(Array[Byte](49))
+    // no type specified
+    an[InvalidArguments] should be thrownBy comp(""" fromBase16("0e0131") """)
+    // declared type != parsed type
+    an[InvalidArguments] should be thrownBy comp(""" fromBase16[Int]("0e0131") """)
+
     comp(""" fromBase58("r") """) shouldBe ByteArrayConstant(Array[Byte](49))
     comp(""" fromBase64("MQ") """) shouldBe ByteArrayConstant(Array[Byte](49))
     comp(""" fromBase64("M" + "Q") """) shouldBe ByteArrayConstant(Array[Byte](49))
