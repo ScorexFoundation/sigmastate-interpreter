@@ -181,10 +181,14 @@ object SigmaPredef {
     )
 
     val FromBase16Func = PredefinedFunc("fromBase16",
-      Lambda(Array("input" -> SString), SByteArray, None),
+      Lambda(Array(paramT), Array("input" -> SString), tT, None),
       PredefFuncInfo(
-        { case (_, Seq(arg: EvaluatedValue[SString.type]@unchecked)) =>
-          ByteArrayConstant(Base16.decode(arg.value).get)
+        { case (Ident(_, SFunc(_, tpe, _)), Seq(arg: EvaluatedValue[SString.type]@unchecked)) =>
+          val bytes = Base16.decode(arg.value).get
+          tpe match {
+            case SByteArray => ByteArrayConstant(bytes)
+            case other => ???
+          }
         }),
       OperationInfo(Constant, "",
         Seq(ArgInfo("", "")))
