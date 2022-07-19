@@ -7,11 +7,11 @@ import sigmastate.Values._
 import sigmastate._
 import sigmastate.helpers.SigmaTestingCommons
 import sigmastate.interpreter.Interpreter.ScriptEnv
-import sigmastate.lang.Terms.{Apply, Ident, Lambda, MethodCall, ZKProofBlock}
+import sigmastate.lang.Terms.{Apply, MethodCall, ZKProofBlock}
 import sigmastate.lang.exceptions.{CosterException, InvalidArguments, TyperException}
 import sigmastate.serialization.ValueSerializer
 import sigmastate.serialization.generators.ObjectGenerators
-import sigmastate.utxo.{ByIndex, ExtractAmount, GetVar, SelectField}
+import sigmastate.utxo.{ByIndex, ExtractAmount, GetVar}
 
 class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ObjectGenerators {
   import CheckingSigmaBuilder._
@@ -136,6 +136,7 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ObjectGe
 
   property("fromBaseX") {
     comp(""" fromBase16[Coll[Byte]]("0e0131") """) shouldBe ByteArrayConstant(Array[Byte](49))
+    comp(""" fromBase16[Int]("04ae11") """) shouldBe IntConstant(1111)
     // no type specified
     an[InvalidArguments] should be thrownBy comp(""" fromBase16("0e0131") """)
     // declared type != parsed type

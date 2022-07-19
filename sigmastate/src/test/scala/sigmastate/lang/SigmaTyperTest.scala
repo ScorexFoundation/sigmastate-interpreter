@@ -110,7 +110,8 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     typecheck(env, "min(HEIGHT, INPUTS.size)") shouldBe SInt
     typecheck(env, "max(1, 2)") shouldBe SInt
     typecheck(env, "max(1L, 2)") shouldBe SLong
-    typecheck(env, """fromBase16("1111")""") shouldBe SByteArray
+    typecheck(env, """fromBase16[Coll[Byte]]("0e0131")""") shouldBe SByteArray
+    typecheck(env, """fromBase16[Int]("04ae11")""") shouldBe SInt
     typecheck(env, """fromBase58("111")""") shouldBe SByteArray
     typecheck(env, """fromBase64("111")""") shouldBe SByteArray
 
