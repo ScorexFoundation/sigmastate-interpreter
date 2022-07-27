@@ -2,14 +2,14 @@ package sigmastate.lang
 
 import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
 import org.ergoplatform._
-import scorex.util.encode.Base58
+import scorex.util.encode.{Base16, Base58}
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.helpers.SigmaTestingCommons
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.Terms.{Apply, MethodCall, ZKProofBlock}
 import sigmastate.lang.exceptions.{CosterException, InvalidArguments, TyperException}
-import sigmastate.serialization.ValueSerializer
+import sigmastate.serialization.{ConstantSerializer, SigmaSerializer, ValueSerializer}
 import sigmastate.serialization.generators.ObjectGenerators
 import sigmastate.utxo.{ByIndex, ExtractAmount, GetVar}
 
@@ -135,12 +135,32 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ObjectGe
   }
 
   property("fromBaseX") {
-    comp(""" fromBase16[Coll[Byte]]("0e0131") """) shouldBe ByteArrayConstant(Array[Byte](49))
-    comp(""" fromBase16[Int]("04ae11") """) shouldBe IntConstant(1111)
-    // no type specified
-    an[InvalidArguments] should be thrownBy comp(""" fromBase16("0e0131") """)
-    // declared type != parsed type
-    an[InvalidArguments] should be thrownBy comp(""" fromBase16[Int]("0e0131") """)
+    val constants = listOfConstantNodeGen.sample.get
+    val table = Table("constant", constants: _*)
+    forAll(table) { const =>
+      val humanSType = SType.stringRepr(const.tpe)
+      val w = SigmaSerializer.startWriter()
+      val ser = ConstantSerializer(DeserializationSigmaBuilder)
+      ser.serialize(const, w)
+      val encodedConstant = Base16.encode(w.toBytes)
+
+      // declared type equals parsed type
+      comp(s""" fromBase16[$humanSType]("$encodedConstant") """) shouldBe const
+
+      // no declared type specified as type parameter
+      assertExceptionThrown(
+        comp(s""" fromBase16("$encodedConstant") """),
+        e => e.isInstanceOf[InvalidArguments] && e.getMessage.contains(s"Types doesn't match: declared T, actual: ${const.tpe}")
+      )
+
+      // declared type differs from parsed type
+      val tpe = primTypeGen.retryUntil(_.tpe != const.tpe).sample.get
+      val declaredSType = SType.stringRepr(tpe)
+      assertExceptionThrown(
+        comp(s""" fromBase16[$declaredSType]("$encodedConstant") """),
+        e => e.isInstanceOf[InvalidArguments] && e.getMessage.contains(s"Types doesn't match: declared $tpe, actual: ${const.tpe}")
+      )
+    }
 
     comp(""" fromBase58("r") """) shouldBe ByteArrayConstant(Array[Byte](49))
     comp(""" fromBase64("MQ") """) shouldBe ByteArrayConstant(Array[Byte](49))
