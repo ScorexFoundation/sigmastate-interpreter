@@ -3,7 +3,7 @@ package sigmastate.lang
 import fastparse.core.Parsed
 import org.ergoplatform.{ErgoAddressEncoder, ErgoBox}
 import org.scalatest.prop.PropertyChecks
-import org.scalatest.{PropSpec, Matchers}
+import org.scalatest.{Matchers, PropSpec}
 import sigmastate.SCollection._
 import sigmastate.Values._
 import sigmastate._
@@ -11,8 +11,9 @@ import sigmastate.lang.SigmaPredef.PredefinedFuncRegistry
 import sigmastate.lang.Terms._
 import sigmastate.lang.syntax.ParserException
 import sigmastate.serialization.OpCodes
+import sigmastate.serialization.generators.ObjectGenerators
 
-class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with LangTests {
+class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with LangTests with ObjectGenerators {
   import StdSigmaBuilder._
 
   private val predefFuncRegistry = new PredefinedFuncRegistry(StdSigmaBuilder)
@@ -600,11 +601,15 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
   }
 
   property("fromBaseX string decoding") {
-    parse("""fromBase16("1111")""") shouldBe Apply(FromBase16Func.symNoType, IndexedSeq(StringConstant("1111")))
-    parse("""fromBase16[Int]("04ae11")""") shouldBe
-      Apply(ApplyTypes(FromBase16Func.symNoType, Seq(SInt)), IndexedSeq(StringConstant("04ae11")))
-    parse("""fromBase16[Coll[Byte]]("0e0131")""") shouldBe
-      Apply(ApplyTypes(FromBase16Func.symNoType, Seq(SCollection(SByte))), IndexedSeq(StringConstant("0e0131")))
+    val constants = listOfConstantNodeGen.sample.get
+    val table = Table("Constants", constants: _*)
+    forAll(table) { const =>
+      val stringConst = stringConstGen.sample.get
+      parse(s"""fromBase16("${stringConst.value}")""") shouldBe Apply(FromBase16Func.symNoType, IndexedSeq(stringConst))
+      val declaredType = SType.stringRepr(const.tpe)
+      parse(s"""fromBase16[$declaredType]("${stringConst.value}")""") shouldBe
+        Apply(ApplyTypes(FromBase16Func.symNoType, Seq(const.tpe)), IndexedSeq(stringConst))
+    }
     parse("""fromBase58("111")""") shouldBe Apply(FromBase58Func.symNoType, IndexedSeq(StringConstant("111")))
     parse("""fromBase64("111")""") shouldBe Apply(FromBase64Func.symNoType, IndexedSeq(StringConstant("111")))
   }

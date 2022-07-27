@@ -4,6 +4,7 @@ import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
 import org.ergoplatform._
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{Matchers, PropSpec}
+import scorex.util.encode.Base16
 import sigmastate.SCollection._
 import sigmastate.Values._
 import sigmastate._
@@ -13,9 +14,9 @@ import sigmastate.interpreter.CryptoConstants
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.SigmaPredef._
 import sigmastate.lang.Terms.Select
-import sigmastate.lang.exceptions.TyperException
+import sigmastate.lang.exceptions.{InvalidArguments, TyperException}
 import sigmastate.lang.syntax.ParserException
-import sigmastate.serialization.ErgoTreeSerializer
+import sigmastate.serialization.{ConstantSerializer, ErgoTreeSerializer, SigmaSerializer}
 import sigmastate.serialization.generators.ObjectGenerators
 import sigmastate.utxo.{Append, ExtractCreationInfo}
 
@@ -110,8 +111,6 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     typecheck(env, "min(HEIGHT, INPUTS.size)") shouldBe SInt
     typecheck(env, "max(1, 2)") shouldBe SInt
     typecheck(env, "max(1L, 2)") shouldBe SLong
-    typecheck(env, """fromBase16[Coll[Byte]]("0e0131")""") shouldBe SByteArray
-    typecheck(env, """fromBase16[Int]("04ae11")""") shouldBe SInt
     typecheck(env, """fromBase58("111")""") shouldBe SByteArray
     typecheck(env, """fromBase64("111")""") shouldBe SByteArray
 
@@ -125,6 +124,32 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
 
     typecheck(env, "sigmaProp(HEIGHT > 1000)") shouldBe SSigmaProp
     typecheck(env, "ZKProof { sigmaProp(HEIGHT > 1000) }") shouldBe SBoolean
+  }
+
+  property("fromBase16") {
+    val constants = listOfConstantNodeGen.sample.get
+    val table = Table("Constants", constants: _*)
+    forAll(table){ const =>
+      val humanSType = SType.stringRepr(const.tpe)
+      val w = SigmaSerializer.startWriter()
+      val ser = ConstantSerializer(DeserializationSigmaBuilder)
+      ser.serialize(const, w)
+      val encodedConstant = Base16.encode(w.toBytes)
+      // successful case
+      typecheck(env, s"""fromBase16[$humanSType]("$encodedConstant")""") shouldBe const.tpe
+      // no declared type specified as type parameter
+      assertExceptionThrown(
+        typecheck(env, s"""fromBase16("$encodedConstant")"""),
+        e => e.isInstanceOf[InvalidArguments] && e.getMessage.contains(s"Types doesn't match: declared T, actual: ${const.tpe}")
+      )
+      // declared type differs from parsed type
+      val tpe = primTypeGen.retryUntil(_.tpe != const.tpe).sample.get
+      val declaredSType = SType.stringRepr(tpe)
+      assertExceptionThrown(
+        typecheck(env, s""" fromBase16[$declaredSType]("$encodedConstant") """),
+        e => e.isInstanceOf[InvalidArguments] && e.getMessage.contains(s"Types doesn't match: declared $tpe, actual: ${const.tpe}")
+      )
+    }
   }
 
   property("val constructs") {
