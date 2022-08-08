@@ -140,6 +140,10 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ObjectGe
     comp(""" fromBase64("M" + "Q") """) shouldBe ByteArrayConstant(Array[Byte](49))
   }
 
+  property("placeholder") {
+    comp("placeholder[String](0)") shouldBe ConstantPlaceholder(0, SString)
+  }
+
   property("deserialize") {
     def roundtrip[T <: SType](c: Value[T], typeSig: String) = {
       val bytes = ValueSerializer.serialize(c)

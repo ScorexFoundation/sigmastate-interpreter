@@ -180,6 +180,21 @@ object SigmaPredef {
           Seq(ArgInfo("", "")))
     )
 
+    val PlaceholderFunc = PredefinedFunc("placeholder",
+        Lambda(Array(paramT), Array("index" -> SInt), tT, None),
+        PredefFuncInfo(
+          { case (Ident(_, SFunc(_, tpe, _)), Seq(arg: EvaluatedValue[SInt.type]@unchecked)) =>
+            if (tpe == tT) throw new InvalidArguments(s"Expected one type parameter, got $tpe")
+            else mkConstantPlaceholder(arg.value, tpe)
+          }
+        ),
+        OperationInfo(
+          ConstantPlaceholder,
+          "Create special ErgoTree node which can be replaced by constant with given id.",
+          Seq(ArgInfo("index", "index of the constant in ErgoTree header"))
+        )
+      )
+
     val FromBase58Func = PredefinedFunc("fromBase58",
       Lambda(Array("input" -> SString), SByteArray, None),
       PredefFuncInfo(
@@ -394,7 +409,8 @@ object SigmaPredef {
       AvlTreeFunc,
       SubstConstantsFunc,
       ExecuteFromVarFunc,
-      ExecuteFromSelfRegFunc
+      ExecuteFromSelfRegFunc,
+      PlaceholderFunc
     ).map(f => f.name -> f).toMap
 
     def comparisonOp(symbolName: String, opDesc: ValueCompanion, desc: String, args: Seq[ArgInfo]) = {
@@ -558,13 +574,6 @@ object SigmaPredef {
           "Apply the function to the arguments. ",
           Seq(ArgInfo("func", "function which is applied"),
             ArgInfo("args", "list of arguments")))
-      ),
-      PredefinedFunc("placeholder",
-        Lambda(Array(paramT), Array("id" -> SInt), tT, None),
-        PredefFuncInfo(undefined),
-        OperationInfo(ConstantPlaceholder,
-          "Create special ErgoTree node which can be replaced by constant with given id.",
-          Seq(ArgInfo("index", "index of the constant in ErgoTree header")))
       )
     ).map(f => f.name -> f).toMap
 

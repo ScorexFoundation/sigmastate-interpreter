@@ -430,6 +430,9 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
           val resV = toRep(v)(stypeToElem(tpe))
           resV
       }
+      case ConstantPlaceholder(id, tpe) => {
+        ???
+      }
       case org.ergoplatform.Context => ctx
       case Global => sigmaDslBuilder
       case Height => ctx.HEIGHT
