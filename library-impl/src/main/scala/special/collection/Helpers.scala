@@ -27,7 +27,11 @@ object Helpers {
     var nValues = 0
     while (i < arr.length) {
       val (key, value) = m(arr(i))
-      val pos = keyPositions.getOrDefault(key, 0)
+      val pos = {
+        val p: Integer = keyPositions.get(key)
+        if (p == null) 0 else p.intValue()
+      }
+
       if (pos == 0) {
         keyPositions.put(key, nValues + 1)
         keys += key
