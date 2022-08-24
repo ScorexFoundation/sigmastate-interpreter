@@ -374,6 +374,13 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
   /** Helper type synonym used internally */
   protected type CompilingEnv = Map[Any, Ref[_]]
 
+  /** Represents [[ConstantPlaceholder]] in graph IR. */
+  case class ConstPlaceholder[T](id: Int, resultType: Elem[T]) extends Def[T]
+
+  /** Constructs a new placeholder graph node and returns its symbol. */
+  @inline def constPlaceholder[T](id: Int)(implicit eT: Elem[T]): Ref[T] =
+    ConstPlaceholder(id, eT)
+
   protected def buildNode[T <: SType](ctx: Ref[Context], env: CompilingEnv, node: Value[T]): Ref[T#WrappedType] = {
     def eval[T <: SType](node: Value[T]): Ref[T#WrappedType] = buildNode(ctx, env, node)
     object In { def unapply(v: SValue): Nullable[Ref[Any]] = Nullable(asRep[Any](buildNode(ctx, env, v))) }
@@ -430,9 +437,11 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
           val resV = toRep(v)(stypeToElem(tpe))
           resV
       }
-      case ConstantPlaceholder(id, tpe) => {
-        ???
-      }
+
+      case ConstantPlaceholder(id, tpe) =>
+        val eT = stypeToElem(tpe)
+        constPlaceholder(id)(eT)
+        
       case org.ergoplatform.Context => ctx
       case Global => sigmaDslBuilder
       case Height => ctx.HEIGHT
