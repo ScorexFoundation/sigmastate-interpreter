@@ -157,6 +157,10 @@ trait TreeBuilding extends SigmaLibrary { IR: IRContext =>
         val tpe = elemToSType(s.elem)
         mkConstant[tpe.type](wc.constValue.asInstanceOf[tpe.WrappedType], tpe)
 
+      case Def(ConstPlaceholder(id, resultType)) =>
+        val tpe = elemToSType(resultType)
+        mkConstantPlaceholder(id, tpe)
+
       case Def(IsContextProperty(v)) => v
       case s if s == sigmaDslBuilder => Global
 

@@ -18,6 +18,7 @@ import sigmastate.lang.syntax.ParserException
 import sigmastate.serialization.ErgoTreeSerializer
 import sigmastate.serialization.generators.ObjectGenerators
 import sigmastate.utxo.{Append, ExtractCreationInfo}
+import sigmastate.lang.exceptions.InvalidArguments
 
 class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with LangTests with ObjectGenerators {
 
@@ -123,6 +124,13 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
 
     typecheck(env, "sigmaProp(HEIGHT > 1000)") shouldBe SSigmaProp
     typecheck(env, "ZKProof { sigmaProp(HEIGHT > 1000) }") shouldBe SBoolean
+  }
+
+  property("placeholder") {
+    typecheck(env, """placeholder[String](0)""") shouldBe SString
+    // TODO: use assertExceptionThrown
+    an[InvalidArguments] should be thrownBy typecheck(env, """placeholder(0)""")
+    // typecheck(env, """placeholder[String](0)""") - type param doesn't match index type: can this info be available during typer phase?
   }
 
   property("val constructs") {

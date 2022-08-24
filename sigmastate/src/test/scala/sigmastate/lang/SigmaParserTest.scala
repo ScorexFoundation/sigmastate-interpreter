@@ -614,6 +614,13 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
     parse("""deserialize[(GroupElement, Coll[(Int, Byte)])]("12345")""") shouldBe
       Apply(ApplyTypes(DeserializeFunc.symNoType, Seq(STuple(SGroupElement, SCollection(STuple(SInt, SByte))))), IndexedSeq(StringConstant("12345")))
   }
+  
+  property("placeholder") {
+    parse("""placeholder[Int](0)""") shouldBe
+      Apply(ApplyTypes(PlaceholderFunc.symNoType, Seq(SInt)), IndexedSeq(IntConstant(0)))
+    // TODO: make it more prone and use ParserException
+    parse("placeholder(1)") shouldBe Apply(PlaceholderFunc.symNoType, IndexedSeq(IntConstant(1)))
+  }
 
   property("ZKProof") {
     parse("ZKProof { condition }") shouldBe Apply(ZKProofFunc.sym, IndexedSeq(Ident("condition")))
