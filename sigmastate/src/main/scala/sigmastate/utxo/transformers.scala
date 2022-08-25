@@ -140,7 +140,7 @@ object Filter extends ValueCompanion {
 }
 
 /** Transforms a collection of values to a boolean (see [[Exists]], [[ForAll]]). */
-trait BooleanTransformer[IV <: SType] extends Transformer[SCollection[IV], SBoolean.type] {
+sealed trait BooleanTransformer[IV <: SType] extends Transformer[SCollection[IV], SBoolean.type] {
   override val input: Value[SCollection[IV]]
   val condition: Value[SFunc]
   override def tpe = SBoolean
@@ -442,6 +442,7 @@ object ExtractBytes extends SimpleTransformerCompanion {
   override def argInfos: Seq[ArgInfo] = ExtractBytesInfo.argInfos
 }
 
+// TODO: Rename to WithoutRef to be consistent with script
 /** Extracts serialized bytes of this box's content, excluding transactionId and index of output. */
 case class ExtractBytesWithNoRef(input: Value[SBox.type]) extends Extract[SByteArray] with NotReadyValueByteArray {
   override def companion = ExtractBytesWithNoRef
@@ -531,7 +532,7 @@ object ExtractCreationInfo extends SimpleTransformerCompanion {
   val OpType = SFunc(SBox, ResultType)
 }
 
-trait Deserialize[V <: SType] extends NotReadyValue[V]
+sealed trait Deserialize[V <: SType] extends NotReadyValue[V]
 
 /** Extracts context variable as Coll[Byte], deserializes it to script and then executes this script in the current context.
   * The original `Coll[Byte]` of the script is available as `getVar[Coll[Byte]](id)`

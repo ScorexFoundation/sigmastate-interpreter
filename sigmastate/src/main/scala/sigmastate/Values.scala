@@ -290,7 +290,7 @@ object Values {
     *
     * @see Constant, ConcreteCollection, Tuple
     */
-  abstract class EvaluatedValue[+S <: SType] extends Value[S] {
+  sealed abstract class EvaluatedValue[+S <: SType] extends Value[S] {
     /** The evaluated data value of the corresponding underlying data type. */
     val value: S#WrappedType
 
@@ -447,6 +447,7 @@ object Values {
       TaggedVariableNode(varId, tpe)
   }
 
+  // TODO Refactor: Should be removed and use ConstantNode with SUnit and `()` literal
   /** ErgoTree node that represent a literal of Unit type. */
   case class UnitConstant() extends EvaluatedValue[SUnit.type] {
     override def tpe = SUnit
@@ -712,6 +713,7 @@ object Values {
   }
 
 
+  // TODO: Consider moving to trees.scala
   trait NotReadyValueGroupElement extends NotReadyValue[SGroupElement.type] {
     override def tpe = SGroupElement
   }
@@ -741,6 +743,7 @@ object Values {
     override def costKind: FixedCost = Constant.costKind
   }
 
+  // TODO: Consider moving to trees.scala and make it sealed
   trait NotReadyValueBoolean extends NotReadyValue[SBoolean.type] {
     override def tpe = SBoolean
   }
@@ -978,6 +981,7 @@ object Values {
     override def costKind = ConcreteCollection.costKind
   }
 
+  // TODO: Make sense to move to ErgoLikeContext?
   trait LazyCollection[V <: SType] extends NotReadyValue[SCollection[V]]
 
   implicit class CollectionOps[T <: SType](val coll: Value[SCollection[T]]) extends AnyVal {
