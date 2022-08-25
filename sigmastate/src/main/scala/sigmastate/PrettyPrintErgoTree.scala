@@ -29,8 +29,8 @@ object PrettyPrintErgoTree {
             case SLong => Doc.char('L')
             case SByte | SShort | SBigInt | SBoolean => Doc.text(".to") + STypeDoc(tpe)
             case _: SCollection[_] => Doc.empty
-            // Implement this fallback with base16 after https://github.com/ScorexFoundation/sigmastate-interpreter/issues/814
-            case other => ???
+            // Change this fallback to use base16 after https://github.com/ScorexFoundation/sigmastate-interpreter/issues/814
+            case other => Doc.empty
           }
           val res = value match {
             case CBigInt(bi) => Doc.str(bi)
@@ -226,6 +226,7 @@ object PrettyPrintErgoTree {
     case ApplyTypes(_, _) => Doc.text("ApplyTypes is not part of final ErgoTree")
     case MethodCallLike(_, _, _, _) => Doc.text("MethodCallLike is not part of final ErgoTree")
     case Lambda(_, _, _, _) => Doc.text("Lambda is not part of final ErgoTree")
+  case other => Doc.text(s"Don't know how to match node: $other")
   }
 
   // empty args list returns just `name` suffix

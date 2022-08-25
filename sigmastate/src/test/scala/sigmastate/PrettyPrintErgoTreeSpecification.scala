@@ -1,11 +1,13 @@
 package sigmastate
 
+import org.ergoplatform.MinerPubkey
+import org.ergoplatform.settings.ErgoAlgos
 import sigmastate.eval.IRContext
 import sigmastate.interpreter.Interpreter
+import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
+import sigmastate.utxo.SelectField
 import sigmastate.Values.{BigIntConstant, BlockValue, ByteArrayConstant, GroupGenerator, SValue, Tuple, ValDef, ValUse}
 import special.sigma.SigmaDslTesting
-import org.ergoplatform.MinerPubkey
-import sigmastate.utxo.SelectField
 
 class PrettyPrintErgoTreeSpecification extends SigmaDslTesting {
   implicit def IR: IRContext = createIR()
@@ -534,6 +536,19 @@ class PrettyPrintErgoTreeSpecification extends SigmaDslTesting {
           |  val func1 = { (func4: Int => Boolean) => false }
           |  true && false
           |})}""".stripMargin
-    }      
+    }
+  }
+
+  ignore("ergotree from bytes - constants usage"){
+    val bytes = ErgoAlgos.decodeUnsafe("0008cd03c828caa4185b1d8efededfc5b766d19151a703c0e99223747c3487ea445c3a74")
+    val ergoTree = DefaultSerializer.deserializeErgoTree(bytes)
+    ergoTree.root match {
+      case Left(value) => ???
+      case Right(value) =>
+        PrettyPrintErgoTree.prettyPrint(value) shouldBe "{SigmaProp(ProveDlog(ECPoint(c828ca,d655c0,...)))}"
+        // Can ergotree above be produced by ergoscript?
+        val compiledTree = compile("{SigmaProp(ProveDlog(GroupElement(c828ca,d655c0)))}")
+        compiledTree shouldBe value
+    }
   }
 }
