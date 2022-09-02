@@ -556,7 +556,6 @@ class IcoExample extends SigmaTestingCommons
   /** This is the last executed test suite, so this method is executed after all tests.
     * We output statistics of how PrecompiledScriptProcessor cache was used. */
   override protected def afterAll(): Unit = {
-    println(ErgoLikeTestInterpreter.DefaultProcessorInTests.getStats())
     println("verifySignatureProfiler ==========================================")
     println(Interpreter.verifySignatureProfiler.generateReport)
   }

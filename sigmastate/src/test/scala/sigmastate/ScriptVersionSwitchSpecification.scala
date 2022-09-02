@@ -166,7 +166,7 @@ class ScriptVersionSwitchSpecification extends SigmaDslTesting {
         val ergoTree = createErgoTree(headerFlags)
 
         // both prove and verify are accepting with full evaluation
-        val expectedCost = 5464L
+        val expectedCost = 24L
         val pr = testProve(ergoTree, activatedScriptVersion = activatedVersionInTests)
         pr.proof shouldBe Array.emptyByteArray
         pr.cost shouldBe expectedCost

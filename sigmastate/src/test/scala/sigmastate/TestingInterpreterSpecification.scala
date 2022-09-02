@@ -10,30 +10,21 @@ import sigmastate.lang.Terms._
 import org.ergoplatform._
 import org.scalatest.BeforeAndAfterAll
 import scorex.util.encode.Base58
-import sigmastate.eval.IRContext
 import sigmastate.helpers.{ErgoLikeContextTesting, ErgoLikeTestProvingInterpreter, SigmaTestingCommons, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utils.Helpers._
 
-import scala.collection.mutable
 import scala.util.Random
 
 class TestingInterpreterSpecification extends SigmaTestingCommons
   with CrossVersionProps with BeforeAndAfterAll {
   implicit lazy val IR = new TestingIRContext
 
-  lazy val processor = new PrecompiledScriptProcessor(
-    ScriptProcessorSettings(mutable.WrappedArray.empty)) {
-    override protected def createIR(): IRContext = new TestingIRContext
-  }
-
   lazy val prover = new ErgoLikeTestProvingInterpreter() {
-    override val precompiledScriptProcessor = processor
   }
 
   lazy val verifier = new ErgoLikeTestInterpreter {
-    override val precompiledScriptProcessor = processor
   }
 
   implicit val soundness = CryptoConstants.soundnessBits
@@ -381,7 +372,6 @@ class TestingInterpreterSpecification extends SigmaTestingCommons
   }
 
   override protected def afterAll(): Unit = {
-    println(processor.getStats())
   }
 
 }

@@ -8,8 +8,6 @@ import sigmastate.Values.{Constant, Value}
 import sigmastate.lang.Terms._
 import sigmastate.utxo._
 import sigmastate.SType._
-import sigmastate.SCollection._
-import sigmastate.SBigInt._
 import sigmastate.Values.Value.Typed
 import sigmastate.lang.Terms
 

@@ -2,7 +2,7 @@ package sigmastate.eval
 
 import scala.language.implicitConversions
 import scala.language.existentials
-import scalan.{ExactIntegral, ExactOrdering, Nullable, MutableLazy, Lazy, ExactNumeric, RType}
+import scalan.{ExactIntegral, ExactOrdering, Nullable, MutableLazy, Lazy, ExactNumeric}
 import scalan.util.CollectionUtil.TraversableOps
 import org.ergoplatform._
 import sigmastate._
@@ -16,15 +16,12 @@ import SType._
 import scalan.RType._
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.{Terms, SourceContext}
-import sigmastate.basics.DLogProtocol.ProveDlog
-import sigmastate.basics.ProveDHTuple
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import special.collection.CollType
 import special.sigma.{GroupElementRType, AvlTreeRType, BoxRType, BigIntRType, SigmaPropRType}
 import special.sigma.Extensions._
 import org.ergoplatform.validation.ValidationRules._
 import scalan.ExactIntegral._
-import scalan.ExactNumeric._
 import scalan.ExactOrdering.{ShortIsExactOrdering, ByteIsExactOrdering, IntIsExactOrdering, LongIsExactOrdering}
 import spire.syntax.all.cfor
 
