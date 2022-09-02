@@ -65,9 +65,9 @@ object DataJsonEncoder {
           }
           val rtypeArr = tArr.map(x => Evaluation.stypeToRType(x))
 
-          val leftSource = {
+          val leftSource = { // this code works both for Scala 2.12 and 2.13
             implicit val ct = rtypeArr(0).classTag
-            mutable.ArrayBuilder.make[SType#WrappedType]
+            mutable.ArrayBuilder.make[SType#WrappedType] // make's signature is changed in 2.13
           }
           val rightSource = {
             implicit val ct = rtypeArr(1).classTag
@@ -241,7 +241,7 @@ object DataJsonEncoder {
     tpe match {
       case tup: STuple =>
         val tArr = tup.items.toArray
-        val collSource = {
+        val collSource = { // this code works both for Scala 2.12 and 2.13
           implicit val ct = tItem.classTag
           mutable.ArrayBuilder.make[T#WrappedType]
         }
@@ -253,7 +253,7 @@ object DataJsonEncoder {
         val jsonList = json.as[List[Json]]
         jsonList match {
           case Right(jsonList) =>
-            val collSource = {
+            val collSource = { // this code works both for Scala 2.12 and 2.13
               implicit val ct = tItem.classTag
               mutable.ArrayBuilder.make[T#WrappedType]
             }

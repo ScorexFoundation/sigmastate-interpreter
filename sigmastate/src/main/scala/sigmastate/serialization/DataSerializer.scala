@@ -149,7 +149,7 @@ object DataSerializer {
           case _ =>
             Evaluation.stypeToRType(tpeElem)
         }).asInstanceOf[RType[T#WrappedType]]
-        val b = {
+        val b = { // this code works both for Scala 2.12 and 2.13
           implicit val ct = tItem.classTag
           mutable.ArrayBuilder.make[T#WrappedType]
         }
