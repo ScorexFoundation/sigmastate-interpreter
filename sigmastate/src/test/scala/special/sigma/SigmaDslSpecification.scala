@@ -44,7 +44,18 @@ import sigmastate.lang.exceptions.CosterException
 import scala.collection.mutable
 
 /** This suite tests every method of every SigmaDsl type to be equivalent to
-  * the evaluation of the corresponding ErgoScript operation
+  * the evaluation of the corresponding ErgoScript operation.
+  *
+  * The properties of this suite excercise two interpreters: the current (aka `old`
+  * interpreter) and the new interpreter for a next soft-fork. After the soft-fork is
+  * released, the new interpreter becomes current at which point the `old` and `new`
+  * interpreters in this suite should be equivalent. This change is reflected in this
+  * suite by commiting changes in expected values.
+  * The `old` and `new` interpreters are compared like the following:
+  * 1) for existingFeature the interpreters should be equivalent
+  * 2) for changedFeature the test cases contain different expected values
+  * 3) for newFeature the old interpreter should throw and the new interpreter is checked
+  * against expected values.
   *
   * This suite can be used for Cost profiling, i.e. measurements of operations times and
   * comparing them with cost parameteres of the operations.
