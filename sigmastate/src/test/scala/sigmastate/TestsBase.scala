@@ -68,12 +68,14 @@ trait TestsBase extends Matchers with VersionTesting {
   def compileWithoutCosting(env: ScriptEnv, code: String): Value[SType] =
     compiler.compileWithoutCosting(env, code)
 
+  /** Compile the given code to ErgoTree expression. */
   def compile(env: ScriptEnv, code: String)(implicit IR: IRContext): Value[SType] = {
     val res = compiler.compile(env, code)
     checkCompilerResult(res)
     res.buildTree
   }
 
+  /** Check the given [[CompilerResult]] meets equality and sanity requirements. */
   def checkCompilerResult[Ctx <: IRContext](res: CompilerResult[Ctx])(implicit IR: IRContext): Unit = {
     val okEqual = IR.alphaEqual(res.calcF.asInstanceOf[IR.Sym], res.compiledGraph.asInstanceOf[IR.Sym])
     if (!okEqual) {
@@ -100,6 +102,7 @@ trait TestsBase extends Matchers with VersionTesting {
 //    tree
 //  }
 
+  /** Compiles the given code and checks the resulting `prop` against `expected`. */
   def compileAndCheck(env: ScriptEnv, code: String, expected: SValue)
                      (implicit IR: IRContext): (ErgoTree, SigmaPropValue) = {
     val prop = compile(env, code).asSigmaProp

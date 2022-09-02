@@ -27,14 +27,20 @@ case class CompilerSettings(
     lowerMethodCalls: Boolean
 )
 
+/** Result of ErgoScript source code compilation.
+  * @param env compiler environment used to compile the code
+  * @param code ErgoScript source code
+  * @param calcF  graph obtained by using old AOT costing based compiler
+  * @param compiledGraph graph obtained by using new [[GraphBuilding]]
+  * @param calcTree ErgoTree expression obtained from calcF graph.
+  * @param buildTree ErgoTree expression obtained from graph created by [[GraphBuilding]]
+  */
 case class CompilerResult[Ctx <: IRContext](
   env: ScriptEnv,
   code: String,
   calcF: Ctx#Ref[Ctx#Context => Any],
   compiledGraph: Ctx#Ref[Ctx#Context => Any],
-  /** Tree obtained from calcF graph. */
   calcTree: SValue,
-  /** Tree obtained from graph created by GraphBuilding */
   buildTree: SValue
 )
 
