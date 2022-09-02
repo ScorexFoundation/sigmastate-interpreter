@@ -65,8 +65,14 @@ object DataJsonEncoder {
           }
           val rtypeArr = tArr.map(x => Evaluation.stypeToRType(x))
 
-          val leftSource = mutable.ArrayBuilder.make[SType#WrappedType](rtypeArr(0).classTag)
-          val rightSource = mutable.ArrayBuilder.make[SType#WrappedType](rtypeArr(1).classTag)
+          val leftSource = {
+            implicit val ct = rtypeArr(0).classTag
+            mutable.ArrayBuilder.make[SType#WrappedType]
+          }
+          val rightSource = {
+            implicit val ct = rtypeArr(1).classTag
+            mutable.ArrayBuilder.make[SType#WrappedType]
+          }
           cfor(0)(_ < coll.length, _ + 1) { i =>
             val arr = Evaluation.fromDslTuple(coll(i), tup).asInstanceOf[tup.WrappedType]
             leftSource += arr(0)
@@ -235,7 +241,10 @@ object DataJsonEncoder {
     tpe match {
       case tup: STuple =>
         val tArr = tup.items.toArray
-        val collSource = mutable.ArrayBuilder.make[T#WrappedType](tItem.classTag)
+        val collSource = {
+          implicit val ct = tItem.classTag
+          mutable.ArrayBuilder.make[T#WrappedType]
+        }
         val leftColl = decodeColl(json.hcursor.downField(s"_1").focus.get, tArr(0))
         val rightColl = decodeColl(json.hcursor.downField(s"_2").focus.get, tArr(1))
         assert(leftColl.length == rightColl.length)
@@ -244,7 +253,10 @@ object DataJsonEncoder {
         val jsonList = json.as[List[Json]]
         jsonList match {
           case Right(jsonList) =>
-            val collSource = mutable.ArrayBuilder.make[T#WrappedType](tItem.classTag)
+            val collSource = {
+              implicit val ct = tItem.classTag
+              mutable.ArrayBuilder.make[T#WrappedType]
+            }
             for (i <- jsonList) {
               collSource += decodeData(i, tpe).asInstanceOf[T#WrappedType]
             }

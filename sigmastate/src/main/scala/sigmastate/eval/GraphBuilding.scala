@@ -366,7 +366,7 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
   def buildGraph[T](env: ScriptEnv, typed: SValue): Ref[Context => T] = {
     val envVals = env.map { case (name, v) => (name: Any, builder.liftAny(v).get) }
     fun(removeIsProven({ ctxC: Ref[Context] =>
-      val env = envVals.view.mapValues(v => buildNode(ctxC, Map.empty, v)).toMap
+      val env = envVals.map { case (k, v) => k -> buildNode(ctxC, Map.empty, v) }.toMap
       val res = asRep[T](buildNode(ctxC, env, typed))
       res
     }))

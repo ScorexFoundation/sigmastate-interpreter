@@ -31,7 +31,7 @@ class SigmaTyper(val builder: SigmaBuilder,
   import SType.tT
 
   private val predefinedEnv: Map[String, SType] =
-      predefFuncRegistry.funcs.view.mapValues(f => f.declaration.tpe).toMap
+      predefFuncRegistry.funcs.map { case (k, f) => k -> f.declaration.tpe }.toMap
 
   private def processGlobalMethod(srcCtx: Nullable[SourceContext],
                                   method: SMethod,

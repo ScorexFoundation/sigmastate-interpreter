@@ -83,7 +83,7 @@ object CollectionUtil {
   }
 
   /** Perform relational inner join of two sequences using the given key projections. */
-  def joinSeqs[O, I, K](outer: GenIterable[O], inner: GenIterable[I])(outKey: O=>K, inKey: I=>K): GenIterable[(O,I)] = {
+  def joinSeqs[O, I, K](outer: Iterable[O], inner: Iterable[I])(outKey: O=>K, inKey: I=>K): Iterable[(O,I)] = {
     val kvs = createMultiMap(inner.map(i => (inKey(i), i)))
     val res = outer.flatMap(o => {
       val ko = outKey(o)

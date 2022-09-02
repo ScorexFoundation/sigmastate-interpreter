@@ -25,10 +25,10 @@ trait ContractSyntax { contract: SigmaContract =>
                   dslSpec: Proposition,
                   scriptCode: String,
                   scriptVersion: Option[Byte] = None): spec.PropositionSpec = {
-    val env = contractEnv.view.mapValues { v =>
+    val env = contractEnv.map { case (k, v) =>
       val tV = Evaluation.rtypeOf(v).get
       val elemTpe = Evaluation.rtypeToSType(tV)
-      spec.IR.builder.mkConstant[SType](v.asWrappedType, elemTpe)
+      k -> spec.IR.builder.mkConstant[SType](v.asWrappedType, elemTpe)
     }.toMap
     spec.mkPropositionSpec(name, dslSpec, ErgoScript(env, scriptCode, scriptVersion))
   }
