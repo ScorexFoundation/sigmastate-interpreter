@@ -16,6 +16,8 @@ env:
 jobs:
   build:
     name: Test and publish a snapshot
+    env:
+      HAS_SECRETS: ${{ secrets.SONATYPE_PASSWORD != '' }}
     strategy:
       matrix:
         os: [ubuntu-latest]
