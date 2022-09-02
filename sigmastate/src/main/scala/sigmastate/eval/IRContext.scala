@@ -1,6 +1,5 @@
 package sigmastate.eval
 
-import java.lang.{Math => JMath}
 import sigmastate.SType
 import sigmastate.Values.{Value, SValue}
 import sigmastate.interpreter.Interpreter.ScriptEnv
