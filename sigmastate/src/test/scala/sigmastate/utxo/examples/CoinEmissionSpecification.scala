@@ -3,8 +3,8 @@ package sigmastate.utxo.examples
 import org.ergoplatform._
 import org.ergoplatform.settings.ErgoAlgos
 import scorex.util.ScorexLogging
-import sigmastate.Values.{ErgoTree, IntConstant}
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, SigmaTestingCommons}
+import sigmastate.Values.{BlockValue, ErgoTree, IntConstant, LongConstant, ValDef, ValUse}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, SigmaPPrint, SigmaTestingCommons}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.ContextExtension
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
@@ -90,7 +90,7 @@ block 1600 in 1622 ms, 30000000000 coins remain, defs: 61661
     val register = reg1
     val prover = new ContextEnrichingTestProvingInterpreter()
 
-    val rewardOut = ByIndex(Outputs, IntConstant(0))
+    val rewardOut = ValUse(1, SBox)
 
     val epoch =
       Upcast(
@@ -103,14 +103,24 @@ block 1600 in 1622 ms, 30000000000 coins remain, defs: 61661
     )
     val sameScriptRule = EQ(ExtractScriptBytes(Self), ExtractScriptBytes(rewardOut))
     val heightCorrect = EQ(ExtractRegisterAs[SInt.type](rewardOut, register).get, Height)
-    val heightIncreased = GT(Height, ExtractRegisterAs[SInt.type](Self, register).get)
-    val correctCoinsConsumed = EQ(coinsToIssue, Minus(ExtractAmount(Self), ExtractAmount(rewardOut)))
-    val lastCoins = LE(ExtractAmount(Self), s.oneEpochReduction)
+    val correctCoinsConsumed = EQ(
+      coinsToIssue,
+      Minus(ValUse(3, SLong), ExtractAmount(rewardOut))
+    )
 
-    val prop = BinOr(
-      AND(heightCorrect, heightIncreased, sameScriptRule, correctCoinsConsumed),
-      BinAnd(heightIncreased, lastCoins)
-    ).toSigmaProp
+    val prop = BlockValue(
+      Array(
+        ValDef(1, List(), ByIndex(Outputs, IntConstant(0), None)),
+        ValDef(2, List(), GT(Height, OptionGet(ExtractRegisterAs(Self, ErgoBox.R4, SOption(SInt))))),
+        ValDef(3, List(), ExtractAmount(Self))
+      ),
+      BoolToSigmaProp(BinOr(
+        AND(heightCorrect, ValUse(2, SBoolean), sameScriptRule, correctCoinsConsumed),
+        BinAnd(
+          ValUse(2, SBoolean),
+          LE(ValUse(3, SLong), LongConstant(s.oneEpochReduction)))
+      ))
+    ).asSigmaProp
     val tree = mkTestErgoTree(prop)
 
     val env = Map("fixedRatePeriod" -> s.fixedRatePeriod,
@@ -118,7 +128,7 @@ block 1600 in 1622 ms, 30000000000 coins remain, defs: 61661
       "fixedRate" -> s.fixedRate,
       "oneEpochReduction" -> s.oneEpochReduction)
 
-    val prop1 = compileWithoutCosting(env,
+    val prop1 = compile(env,
       """{
         |    val epoch = 1 + ((HEIGHT - fixedRatePeriod) / epochLength)
         |    val out = OUTPUTS(0)
