@@ -129,7 +129,7 @@ trait ProverInterpreter extends Interpreter with ProverUtils {
     VersionContext.withVersions(context.activatedScriptVersion, ergoTree.version) {
       val (resValue, resCost) = {
         val reduced = fullReduction(ergoTree, context, env)
-        val fullCost = addCryptoCost(reduced.jitRes, context.costLimit)
+        val fullCost = addCryptoCost(reduced, context.costLimit)
         (reduced.value, fullCost)
       }
 
