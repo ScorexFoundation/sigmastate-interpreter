@@ -67,8 +67,7 @@ val testingDependencies = Seq(
   "org.scalacheck" %% "scalacheck" % "1.14.3" % Test,
   "com.lihaoyi" %% "pprint" % "0.6.3" % Test,
   "com.storm-enroute" %% "scalameter" % "0.19" % Test,
-  "junit" % "junit" % "4.12" % Test,
-  "com.novocode" % "junit-interface" % "0.11" % Test
+  "junit" % "junit" % "4.12" % Test
 )
 
 lazy val testSettings = Seq(
