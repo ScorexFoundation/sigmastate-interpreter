@@ -21,20 +21,12 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ObjectGe
 
   private def comp(env: ScriptEnv, x: String): Value[SType] = compile(env, x)
   private def comp(x: String): Value[SType] = compile(env, x)
-  private def compWOCosting(x: String): Value[SType] = compileWithoutCosting(env, x)
 
   private def testMissingCosting(script: String, expected: SValue): Unit = {
-    val tree = compWOCosting(script)
-    tree shouldBe expected
-    checkSerializationRoundTrip(tree)
-    // when implemented in coster this should be changed to a positive expectation
     an [CosterException] should be thrownBy comp(env, script)
   }
 
   private def testMissingCostingWOSerialization(script: String, expected: SValue): Unit = {
-    val tree = compWOCosting(script)
-    tree shouldBe expected
-    // when implemented in coster this should be changed to a positive expectation
     an [CosterException] should be thrownBy comp(env, script)
   }
 

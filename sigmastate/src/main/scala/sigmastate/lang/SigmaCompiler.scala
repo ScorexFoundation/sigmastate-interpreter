@@ -70,13 +70,6 @@ class SigmaCompiler(settings: CompilerSettings) {
     typecheck(env, parsed)
   }
 
-  private[sigmastate] def compileWithoutCosting(env: ScriptEnv, code: String): Value[SType] = {
-    val typed = typecheck(env, code)
-    val spec = new SigmaSpecializer(builder)
-    val ir = spec.specialize(typed)
-    ir
-  }
-
   /** Compiles the given ErgoScript source code. */
   def compile(env: ScriptEnv, code: String)(implicit IR: IRContext): CompilerResult[IR.type] = {
     val typed = typecheck(env, code)
