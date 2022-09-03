@@ -7,13 +7,13 @@ import sigmastate.Values._
 import sigmastate._
 import SCollection.SBooleanArray
 import scalan.Nullable
+import scalan.util.Extensions.Ensuring
 import sigmastate.lang.Terms._
 import sigmastate.lang.exceptions._
 import sigmastate.lang.SigmaPredef._
 import sigmastate.serialization.OpCodes
 import sigmastate.utxo._
 
-import scala.collection.compat.immutable.ArraySeq
 import scala.collection.mutable.ArrayBuffer
 
 /**
@@ -521,7 +521,9 @@ class SigmaTyper(val builder: SigmaBuilder,
     case v @ Select(_, _, Some(_)) => v
     case v =>
       error(s"Don't know how to assignType($v)", v.sourceContext)
-  }).withEnsuredSrcCtx(bound.sourceContext)
+  }).ensuring(v => v.tpe != NoType,
+    v => s"Errors found while assigning types to expression $bound: $v assigned NoType")
+    .withEnsuredSrcCtx(bound.sourceContext)
 
   def assignConcreteCollection(cc: ConcreteCollection[SType], newItems: Seq[Value[SType]]) = {
     val types = newItems.map(_.tpe).distinct
@@ -608,17 +610,6 @@ class SigmaTyper(val builder: SigmaBuilder,
     val assigned = assignType(predefinedEnv, bound)
     if (assigned.tpe == NoType)
       error(s"No type can be assigned to expression $assigned", bound.sourceContext)
-
-    // traverse the tree bottom-up checking that all the nodes have a type
-    var untyped: SValue = null
-    rewrite(everywherebu(rule[Any]{
-      case v: SValue =>
-        if (v.tpe == NoType) untyped = v
-        v
-    }))(assigned)
-
-    if (untyped != null)
-      error(s"Errors found in $bound while assigning types to expression: $untyped assigned NoType", untyped.sourceContext)
 
     assigned
   }

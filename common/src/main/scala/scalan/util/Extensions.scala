@@ -2,7 +2,6 @@ package scalan.util
 
 import java.math.BigInteger
 import java.nio.ByteBuffer
-
 import scala.language.higherKinds
 
 object Extensions {
@@ -214,6 +213,13 @@ object Extensions {
         Some(getValue)
       else
         None
+    }
+  }
+
+  implicit final class Ensuring[A](private val self: A) extends AnyVal {
+    def ensuring(cond: A => Boolean, msg: A => Any): A = {
+      assert(cond(self), msg(self))
+      self
     }
   }
 }
