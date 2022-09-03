@@ -2,11 +2,8 @@ package scalan.util
 
 import java.io._
 import java.net.{JarURLConnection, URL}
-import java.nio.charset.Charset
 import java.nio.file._
 import java.nio.file.attribute.BasicFileAttributes
-import java.util.jar.JarFile
-//import org.apache.commons.io.{FileUtils, IOUtils}
 import scala.Console
 import scala.collection.JavaConverters._
 import scalan.util.StringUtil.StringUtilExtensions

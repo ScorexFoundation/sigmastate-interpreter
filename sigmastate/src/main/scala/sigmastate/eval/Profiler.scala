@@ -7,7 +7,6 @@ import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.ValueSerializer.getSerializer
 import scalan.util.Extensions.ByteOps
 import debox.{Buffer => DBuffer, Map => DMap}
-import org.apache.commons.math3.util.Precision
 import debox.sp
 import sigmastate.eval.Extensions.DBufferOps
 import sigmastate.interpreter.{CostItem, FixedCostItem, SeqCostItem, TypeBasedCostItem}
@@ -335,7 +334,7 @@ class Profiler {
         .map { case (opName, error, cost, time, count) =>
           val key = s"$opName".padTo(30, ' ')
           val warn = if (cost < time) "!!!" else ""
-          val err = Precision.round(error, 4)
+          val err = f"$error%4.4f"
           s"$key -> ($err, $cost$warn, $time),  // count = $count "
         }
         .mkString("\n")

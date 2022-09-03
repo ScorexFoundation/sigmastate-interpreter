@@ -59,7 +59,6 @@ val debox              = "org.scorexfoundation" %% "debox" % "0.9.0"
 val spireMacros        = "org.typelevel" %% "spire-macros" % "0.17.0-M1"
 val kiama              = "org.bitbucket.inkytonik.kiama" %% "kiama" % "2.5.0"
 val fastparse          = "com.lihaoyi" %% "fastparse" % "2.3.3"
-val commonsMath3       = "org.apache.commons" % "commons-math3" % "3.2"
 val scalaCompat        = "org.scala-lang.modules" %% "scala-collection-compat" % "2.7.0"
 
 val testingDependencies = Seq(
@@ -201,7 +200,7 @@ lazy val sigmastate = (project in file("sigmastate"))
   .dependsOn(sigmalibrary % allConfigDependency)
   .settings(libraryDefSettings)
   .settings(libraryDependencies ++= Seq(
-    scorexUtil, kiama, fastparse, commonsMath3,
+    scorexUtil, kiama, fastparse,
     if (scalaVersion.value == scala211) circeCore211 else circeCore,
     if (scalaVersion.value == scala211) circeGeneric211 else circeGeneric,
     if (scalaVersion.value == scala211) circeParser211 else circeParser
