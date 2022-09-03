@@ -6,15 +6,13 @@ import java.nio.charset.Charset
 import java.nio.file._
 import java.nio.file.attribute.BasicFileAttributes
 import java.util.jar.JarFile
-import org.apache.commons.io.{FileUtils, IOUtils}
+//import org.apache.commons.io.{FileUtils, IOUtils}
 import scala.Console
 import scala.collection.JavaConverters._
 import scalan.util.StringUtil.StringUtilExtensions
 import scalan.util.CollectionUtil.AnyOps
 
 object FileUtil {
-  def read(file: File): String = FileUtils.readFileToString(file, Charset.defaultCharset())
-
   def withFile(file: File)(f: PrintWriter => Unit): Unit = {
     if (file.isDirectory && !file.delete()) {
       throw new RuntimeException(s"File $file is a non-empty directory")
@@ -51,50 +49,6 @@ object FileUtil {
     try {withStdOutAndErr(ps)(func)}
     finally {ps.close() }
     out.toString
-  }
-
-  def copy(source: File, target: File): Unit =
-    if (source.isFile)
-      FileUtils.copyFile(source, target, false)
-    else
-      FileUtils.copyDirectory(source, target, false)
-
-  def copyFromClassPath(source: String, target: File, classLoader: ClassLoader = getClass.getClassLoader): Unit = {
-    target.getParentFile.mkdirs()
-    val urls = classLoader.getResources(source)
-    if (urls.hasMoreElements) {
-      if (source.endsWith("/")) {
-        urls.asScala.foreach { url =>
-          url.getProtocol match {
-            case "file" =>
-              FileUtils.copyDirectory(urlToFile(url), target, false)
-            case "jar" =>
-              val jarFile = new JarFile(jarUrlToJarFile(url))
-              jarFile.entries().asScala.foreach { entry =>
-                val entryPath = entry.getName
-                if (entryPath.startsWith(source)) {
-                  val entryTarget = new File(target, entryPath.stripPrefix(source))
-                  if (entry.isDirectory)
-                    entryTarget.mkdirs()
-                  else {
-                    // copyInputStreamToFile closes stream
-                    FileUtils.copyInputStreamToFile(jarFile.getInputStream(entry), entryTarget)
-                  }
-                }
-              }
-          }
-        }
-      } else {
-        val url = urls.nextElement()
-        if (urls.hasMoreElements) {
-          throw new IllegalArgumentException(s"Multiple $source resources found on classpath")
-        } else {
-          // copyInputStreamToFile closes stream
-          FileUtils.copyInputStreamToFile(url.openStream(), target)
-        }
-      }
-    } else
-      throw new IllegalArgumentException(s"Resource $source not found on classpath")
   }
 
   def classPathLastModified(source: String, classLoader: ClassLoader = getClass.getClassLoader) = {
@@ -138,23 +92,6 @@ object FileUtil {
     val jarFileUrl = url.openConnection().asInstanceOf[JarURLConnection].getJarFileURL
     urlToFile(jarFileUrl)
   }
-
-  /**
-    * Copy file source to targetDir, keeping the original file name
-    */
-  def copyToDir(source: File, targetDir: File): Unit =
-    copy(source, new File(targetDir, source.getName))
-
-  def move(source: File, target: File): Unit =
-    if (source.isFile)
-      FileUtils.moveFile(source, target)
-    else
-      FileUtils.moveDirectory(source, target)
-
-  /**
-    * Add header into the file
-    */
-  def addHeader(file: File, header: String): Unit = write(file, header + "\n" + read(file))
 
   /**
     * Like fileOrDirectory.delete() but works for non-empty directories
@@ -226,14 +163,6 @@ object FileUtil {
   def listFilesRecursive(dir: File): Array[File] = {
     val dirs = listDirectoriesRecursive(dir)
     for {d <- dirs; f <- listFiles(d)} yield f
-  }
-
-  def readAndCloseStream(stream: InputStream) = {
-    try {
-      IOUtils.toString(stream, Charset.defaultCharset())
-    } finally {
-      IOUtils.closeQuietly(stream)
-    }
   }
 
   def stripExtension(fileName: String) =

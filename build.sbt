@@ -59,7 +59,6 @@ val debox              = "org.scorexfoundation" %% "debox" % "0.9.0"
 val spireMacros        = "org.typelevel" %% "spire-macros" % "0.17.0-M1"
 val kiama              = "org.bitbucket.inkytonik.kiama" %% "kiama" % "2.5.0"
 val fastparse          = "com.lihaoyi" %% "fastparse" % "2.3.3"
-val commonsIo          = "commons-io" % "commons-io" % "2.5"
 val commonsMath3       = "org.apache.commons" % "commons-math3" % "3.2"
 val scalaCompat        = "org.scala-lang.modules" %% "scala-collection-compat" % "2.7.0"
 
@@ -146,7 +145,7 @@ lazy val common = Project("common", file("common"))
   .settings(commonSettings ++ testSettings,
     libraryDependencies ++= Seq(
       "org.scala-lang" % "scala-reflect" % scalaVersion.value,
-      debox, commonsIo, scalaCompat
+      debox, scalaCompat
     ))
   .settings(publish / skip := true)
 
