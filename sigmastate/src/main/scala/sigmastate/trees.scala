@@ -163,9 +163,13 @@ case class BoolToSigmaProp(value: BoolValue) extends SigmaPropValue {
   override def tpe = SSigmaProp
   override def opType = BoolToSigmaProp.OpType
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
-    val v = value.evalTo[Boolean](env)
+    val v = value.evalTo[Any](env)
     addCost(BoolToSigmaProp.costKind)
-    SigmaDsl.sigmaProp(v)
+    v match {
+      case sp: SigmaProp => sp
+      case _ =>
+        SigmaDsl.sigmaProp(v.asInstanceOf[Boolean])
+    }
   }
 }
 object BoolToSigmaProp extends FixedCostValueCompanion {

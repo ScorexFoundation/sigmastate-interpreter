@@ -1,28 +1,31 @@
 package sigmastate
 
-import org.ergoplatform.ErgoBox
 import org.ergoplatform.settings.ErgoAlgos
 import org.ergoplatform.validation.{ValidationException, ValidationRules}
+import org.ergoplatform.{ErgoAddressEncoder, ErgoBox}
 import scalan.RType.asType
 import scalan.{Nullable, RType}
-import sigmastate.SCollection.{SByteArray, SByteArray2, checkValidFlatmap}
+import sigmastate.SCollection.{SByteArray, checkValidFlatmap}
 import sigmastate.Values._
 import sigmastate.VersionContext._
-import sigmastate.eval.{Evaluation, Profiler}
+import sigmastate.eval.{CostingBox, Evaluation, Profiler}
+import sigmastate.helpers.{ErgoLikeContextTesting, SigmaPPrint}
 import sigmastate.interpreter.ErgoTreeEvaluator
+import sigmastate.interpreter.Interpreter.JitReductionResult
 import sigmastate.lang.SourceContext
 import sigmastate.lang.Terms._
 import sigmastate.lang.exceptions.{CostLimitException, CosterException, InterpreterException}
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
+import sigmastate.utils.Helpers.TryOps
 import sigmastate.utxo._
 import special.collection._
-import special.sigma.SigmaDslTesting
+import special.sigma.{ContractsTestkit, SigmaDslTesting}
 
 
 /** Regression tests with ErgoTree related test vectors.
   * This test vectors verify various constants which are consensus critical and should not change.
   */
-class ErgoTreeSpecification extends SigmaDslTesting {
+class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
 
   property("Value.sourceContext") {
     val srcCtx = SourceContext.fromParserIndex(0, "")
@@ -720,5 +723,25 @@ class ErgoTreeSpecification extends SigmaDslTesting {
       )
     }
 
+  }
+
+  // Test vectors for https://github.com/ScorexFoundation/sigmastate-interpreter/issues/828
+  property("nested BoolToSigmaProp") {
+    val addr = ErgoAddressEncoder.Mainnet.fromString("Fo6oijFP2JM87ac7w").getOrThrow
+    val tree = addr.script
+    tree shouldBe new ErgoTree(
+      16.toByte,
+      Vector(TrueLeaf),
+      Right(BoolToSigmaProp(BoolToSigmaProp(ConstantPlaceholder(0, SBoolean)).asBoolValue))
+    )
+
+    val ctx = ErgoLikeContextTesting
+      .dummy(CostingBox(false, fakeSelf), 1)
+      .withErgoTreeVersion(tree.version)
+
+    VersionContext.withVersions(1, tree.version) {
+      val res = ErgoTreeEvaluator.evalToCrypto(ctx, tree, evalSettings)
+      res shouldBe JitReductionResult(TrivialProp(true), 3)
+    }
   }
 }
