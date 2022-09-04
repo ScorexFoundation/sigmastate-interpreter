@@ -2,7 +2,7 @@ package sigmastate
 
 import java.math.BigInteger
 import java.util.{Arrays, Objects}
-import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{count, everywherebu, strategy}
+import sigmastate.kiama.rewriting.Rewriter.{count, everywherebu, strategy}
 import org.ergoplatform.settings.ErgoAlgos
 import org.ergoplatform.validation.ValidationException
 import scalan.{Nullable, RType}

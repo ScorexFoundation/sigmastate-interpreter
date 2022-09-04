@@ -57,8 +57,8 @@ val scrypto            = "org.scorexfoundation" %% "scrypto" % "2.1.10"
 val scorexUtil         = "org.scorexfoundation" %% "scorex-util" % "0.1.8"
 val debox              = "org.scorexfoundation" %% "debox" % "0.9.0"
 val spireMacros        = "org.typelevel" %% "spire-macros" % "0.17.0-M1"
-val kiama              = "org.bitbucket.inkytonik.kiama" %% "kiama" % "2.5.0"
 val fastparse          = "com.lihaoyi" %% "fastparse" % "2.3.3"
+val guava              = "com.google.guava" % "guava" % "30.1.1-jre"
 val scalaCompat        = "org.scala-lang.modules" %% "scala-collection-compat" % "2.7.0"
 
 val testingDependencies = Seq(
@@ -83,7 +83,7 @@ libraryDependencies ++= Seq(
   scrypto,
   scorexUtil,
   "org.bouncycastle" % "bcprov-jdk15on" % "1.+",
-  kiama, fastparse, debox, spireMacros, scalaCompat
+  fastparse, debox, spireMacros, scalaCompat
 ) ++ testingDependencies
 
 lazy val circeCore211 = "io.circe" %% "circe-core" % "0.10.0"
@@ -143,7 +143,7 @@ lazy val common = Project("common", file("common"))
   .settings(commonSettings ++ testSettings,
     libraryDependencies ++= Seq(
       "org.scala-lang" % "scala-reflect" % scalaVersion.value,
-      debox, scalaCompat
+      debox, scalaCompat, guava
     ))
   .settings(publish / skip := true)
 
@@ -199,7 +199,7 @@ lazy val sigmastate = (project in file("sigmastate"))
   .dependsOn(sigmalibrary % allConfigDependency)
   .settings(libraryDefSettings)
   .settings(libraryDependencies ++= Seq(
-    scorexUtil, kiama, fastparse,
+    scorexUtil, fastparse,
     if (scalaVersion.value == scala211) circeCore211 else circeCore,
     if (scalaVersion.value == scala211) circeGeneric211 else circeGeneric,
     if (scalaVersion.value == scala211) circeParser211 else circeParser

@@ -1,8 +1,8 @@
 package sigmastate.interpreter
 
 import java.util
-import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, rule, strategy}
-import org.bitbucket.inkytonik.kiama.rewriting.Strategy
+import sigmastate.kiama.rewriting.Rewriter.{everywherebu, rule, strategy}
+import sigmastate.kiama.rewriting.Strategy
 import org.ergoplatform.ErgoLikeContext
 import org.ergoplatform.validation.SigmaValidationSettings
 import org.ergoplatform.validation.ValidationRules._

@@ -1,8 +1,8 @@
 package sigmastate.interpreter
 
 import gf2t.{GF2_192, GF2_192_Poly}
-import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, everywheretd, rule}
-import org.bitbucket.inkytonik.kiama.rewriting.Strategy
+import sigmastate.kiama.rewriting.Rewriter.{everywherebu, everywheretd, rule}
+import sigmastate.kiama.rewriting.Strategy
 import scalan.util.CollectionUtil._
 import sigmastate.TrivialProp.{FalseProp, TrueProp}
 import sigmastate.Values._

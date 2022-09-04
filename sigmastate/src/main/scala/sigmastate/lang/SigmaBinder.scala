@@ -2,7 +2,7 @@ package sigmastate.lang
 
 import java.lang.reflect.InvocationTargetException
 
-import org.bitbucket.inkytonik.kiama.rewriting.CallbackRewriter
+import sigmastate.kiama.rewriting.CallbackRewriter
 import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
 import org.ergoplatform._
 import scalan.Nullable

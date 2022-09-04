@@ -2,7 +2,7 @@ package sigmastate.lang
 
 import fastparse.Parsed
 import fastparse.Parsed.Success
-import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, rewrite, rule}
+import sigmastate.kiama.rewriting.Rewriter.{everywherebu, rewrite, rule}
 import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
 import org.ergoplatform.Global
 import sigmastate.Values.{SValue, Value}
