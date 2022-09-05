@@ -21,11 +21,8 @@ package rewriting
   */
 trait Rewriter {
 
-//  import org.bitbucket.inkytonik.kiama.relation.{EnsureTree, Tree, TreeShape}
-  import sigmastate.kiama.util.Collections.{CanBuildFrom, Factory, newBuilder}
   import sigmastate.kiama.util.Comparison.same
-//  import org.bitbucket.inkytonik.kiama.util.{Emitter, OutputEmitter}
-  import scala.collection.immutable.Seq
+  import sigmastate.kiama.util.Collections.{CanBuildFrom, Factory, newBuilder}
 
   /**
     * Rewrite a term.  Apply the strategy `s` to a term returning the result term
@@ -1605,8 +1602,8 @@ trait Rewriter {
     * produced by the function in a list and return the final value of
     * the list.
     */
-  def collectl[U](f : Any ==> U) : Any => List[U] =
-    collect[List, U](f)
+//  def collectl[U](f : Any ==> U) : Any => List[U] =
+//    collect[List, U](f)
 
   /**
     * Collect query results in a set.  Run the function `f` as a top-down
@@ -1614,8 +1611,8 @@ trait Rewriter {
     * produced by the function in a set and return the final value of
     * the set.
     */
-  def collects[U](f : Any ==> U) : Any => Set[U] =
-    collect[Set, U](f)
+//  def collects[U](f : Any ==> U) : Any => Set[U] =
+//    collect[Set, U](f)
 
   /**
     * Count function results.  Run the function `f` as a top-down query on
