@@ -37,24 +37,6 @@ trait Rewriter {
     }
   }
 
-  /**
-    * Rewrite a tree.  Apply the strategy `s` to the root of a tree returning the
-    * a tree formed from the result term if `s` succeeds, otherwise return the
-    * original tree.
-    *
-    * The `shape` parameter specifies the tree shape that should be used
-    * when creating the new tree. The default is `EnsureTree` since it is
-    * likely that rewrites will result in node sharing that should be removed.
-    */
-//  def rewriteTree[T <: AnyRef with Product, U <: T](s : Strategy)(t : Tree[T, U], shape : TreeShape = EnsureTree) : Tree[T, U] = {
-//    s(t.root) match {
-//      case Some(t1) =>
-//        new Tree[T, U](t1.asInstanceOf[U], shape)
-//      case None =>
-//        t
-//    }
-//  }
-
   // Strategy creation
 
   /**
@@ -76,15 +58,6 @@ trait Rewriter {
     rulef(_ => t)
 
   /**
-    * A strategy that always succeeds with the subject term unchanged (i.e.,
-    * this is the identity strategy) with the side-effect that the subject
-    * term is printed to the given emitter, prefixed by the string `s`.  The
-    * emitter defaults to one that writes to standard output.
-    */
-//  def debug(msg : String, emitter : Emitter = new OutputEmitter) : Strategy =
-//    strategyf(t => { emitter.emitln(msg + t); Some(t) })
-
-  /**
     * A strategy that always fails.
     */
   val fail : Strategy =
@@ -95,88 +68,6 @@ trait Rewriter {
     */
   val id : Strategy =
     mkStrategy(Some(_))
-
-  /**
-    * Create a logging strategy based on a strategy `s`. The returned strategy
-    * succeeds or fails exactly as `s` does, but also prints the provided message,
-    * the subject term, the success or failure status, and on success, the result
-    * term, to the provided emitter. `s` is evaluated at most once.
-    */
-//  def log(s : Strategy, msg : String, emitter : Emitter) : Strategy = {
-//    lazy val strat = s
-//    mkStrategy(
-//      t1 => {
-//        emitter.emit(msg + t1)
-//        val r = strat(t1)
-//        r match {
-//          case Some(t2) =>
-//            emitter.emitln(s" succeeded with $t2")
-//          case None =>
-//            emitter.emitln(" failed")
-//        }
-//        r
-//      }
-//    )
-//  }
-
-  /**
-    * Create a logging strategy based on a strategy `s`.  The returned strategy
-    * succeeds or fails exactly as `s` does, but if `s` fails, also prints the
-    * provided message and the subject term to the provided emitter. `s` is
-    * evaluated at most once.
-    */
-//  def logfail[T](s : Strategy, msg : String, emitter : Emitter) : Strategy = {
-//    lazy val strat = s
-//    mkStrategy(
-//      t1 => {
-//        val r = strat(t1)
-//        r match {
-//          case Some(t2) =>
-//          // Do nothing
-//          case None =>
-//            emitter.emitln(s"$msg$t1 failed")
-//        }
-//        r
-//      }
-//    )
-//  }
-
-  /**
-    * Return a strategy that behaves as `s` does, but memoises its arguments and
-    * results.  In other words, if `memo(s)` is called on a term `t` twice, the
-    * second time will return the same result as the first, without having to
-    * invoke `s`.  For best results, it is important that `s` should have no side
-    * effects. `s` is evaluated at most once.
-    */
-//  def memo(s : Strategy) : Strategy = {
-//
-//    import com.google.common.base.Function
-//    import com.google.common.cache.{CacheBuilder, CacheLoader}
-//
-//    lazy val strat = s
-//
-//    val cache =
-//      CacheBuilder.newBuilder.build[AnyRef, Option[Any]](
-//        CacheLoader.from(
-//          new Function[AnyRef, Option[Any]] {
-//            def apply(t : AnyRef) : Option[Any] =
-//              strat(t)
-//          }
-//        )
-//      )
-//
-//    mkStrategy(t => cache.get(t.asInstanceOf[AnyRef]))
-//
-//  }
-
-  /**
-    * Construct a strategy from an option value `o`. The strategy succeeds
-    * or fails depending on whether `o` is a Some or None, respectively.
-    * If `o` is a `Some`, then the subject term is changed to the term that
-    * is wrapped by the `Some`. `o` is evaluated at most once.
-    */
-  def option(o : Option[Any]) : Strategy =
-    strategyf(_ => o)
 
   /**
     * Perform a paramorphism over a value. This is a fold in which the
@@ -217,20 +108,6 @@ trait Rewriter {
       }
     )
   }
-
-  /**
-    * Define a term query by a function `f`. The query always succeeds with
-    * no effect on the subject term but applies the given (possibly partial)
-    * function `f` to the subject term.  In other words, the strategy runs
-    * `f` for its side-effects.
-    */
-  def queryf(f : Any => Unit) : Strategy =
-    mkStrategy(
-      t => {
-        f(t)
-        Some(t)
-      }
-    )
 
   /**
     * Define a rewrite rule using a partial function `f` defined on the type
@@ -341,7 +218,6 @@ trait Rewriter {
 
     import com.google.common.base.Function
     import com.google.common.cache.{CacheBuilder, CacheLoader}
-    import java.lang.{Class, IllegalArgumentException, NoSuchFieldException}
     import java.lang.reflect.Constructor
 
     type Duper = (Any, Array[AnyRef]) => Any
@@ -534,8 +410,6 @@ trait Rewriter {
       lazy val strat = s
       t =>
         t match {
-//          case r : Rewritable =>
-//            allRewritable(strat, r)
           case p : Product =>
             allProduct(strat, p)
           case m : Map[_, _] =>
@@ -546,33 +420,6 @@ trait Rewriter {
             Some(t)
         }
     })
-
-  /**
-    * Implementation of `all` for `Rewritable` values.
-    */
-//  def allRewritable(s : Strategy, r : Rewritable) : Option[Any] = {
-//    val numchildren = r.arity
-//    if (numchildren == 0)
-//      Some(r)
-//    else {
-//      val newchildren = Seq.newBuilder[Any]
-//      val changed =
-//        r.deconstruct.foldLeft(false) {
-//          case (changed, ct) =>
-//            s(ct) match {
-//              case Some(ti) =>
-//                newchildren += makechild(ti)
-//                changed || !same(ct, ti)
-//              case None =>
-//                return None
-//            }
-//        }
-//      if (changed)
-//        Some(r.reconstruct(newchildren.result()))
-//      else
-//        Some(r)
-//    }
-//  }
 
   /**
     * Implementation of `all` for `Product` values.
@@ -675,8 +522,6 @@ trait Rewriter {
       lazy val strat = s
       t =>
         t match {
-//          case r : Rewritable =>
-//            oneRewritable(strat, r)
           case p : Product =>
             oneProduct(strat, p)
           case m : Map[_, _] =>
@@ -687,26 +532,6 @@ trait Rewriter {
             None
         }
     })
-
-  /**
-    * Implementation of `one` for `Rewritable` values.
-    */
-//  def oneRewritable(s : Strategy, r : Rewritable) : Option[Any] = {
-//    val children = r.deconstruct
-//    children.foldLeft(0) {
-//      case (i, ct) =>
-//        s(ct) match {
-//          case Some(ti) if same(ct, ti) =>
-//            return Some(r)
-//          case Some(ti) =>
-//            val newchildren = children.updated(i, ti)
-//            return Some(r.reconstruct(newchildren))
-//          case None =>
-//            i + 1
-//        }
-//    }
-//    None
-//  }
 
   /**
     * Implementation of `one` for `Product` values.
@@ -814,8 +639,6 @@ trait Rewriter {
       lazy val strat = s
       t =>
         t match {
-//          case r : Rewritable =>
-//            someRewritable(strat, r)
           case p : Product =>
             someProduct(strat, p)
           case m : Map[_, _] =>
@@ -826,37 +649,6 @@ trait Rewriter {
             None
         }
     })
-
-  /**
-    * Implementation of `some` for `Rewritable` values.
-    */
-//  def someRewritable(s : Strategy, r : Rewritable) : Option[Any] = {
-//    val numchildren = r.arity
-//    if (numchildren == 0)
-//      None
-//    else {
-//      val newchildren = Seq.newBuilder[Any]
-//      val (success, changed) =
-//        r.deconstruct.foldLeft((false, false)) {
-//          case ((success, changed), ct) =>
-//            s(ct) match {
-//              case Some(ti) =>
-//                newchildren += makechild(ti)
-//                (true, changed || !same(ct, ti))
-//              case None =>
-//                newchildren += makechild(ct)
-//                (success, changed)
-//            }
-//        }
-//      if (success)
-//        if (changed)
-//          Some(r.reconstruct(newchildren.result()))
-//        else
-//          Some(r)
-//      else
-//        None
-//    }
-//  }
 
   /**
     * Implementation of `some` for `Product` values.
@@ -950,29 +742,6 @@ trait Rewriter {
     }
 
   /**
-    * Make a strategy that applies the elements of ss pairwise to the
-    * children of the subject term, returning a new term if all of the
-    * strategies succeed, otherwise failing.  The constructor of the new
-    * term is the same as that of the original term and the children
-    * are the results of the strategies.  If the length of `ss` is not
-    * the same as the number of children, then `congruence(ss)` fails.
-    * If the argument strategies succeed on children producing the same
-    * terms (by `eq` for references and by `==` for other values), then the
-    * overall strategy returns the subject term.
-    * This operation works on instances of `Product` values.
-    */
-  def congruence(ss : Strategy*) : Strategy =
-    mkStrategy(
-      t =>
-        t match {
-          case p : Product =>
-            congruenceProduct(p, ss : _*)
-          case _ =>
-            Some(t)
-        }
-    )
-
-  /**
     * Implementation of `congruence` for `Product` values.
     */
   def congruenceProduct(p : Product, ss : Strategy*) : Option[Any] = {
@@ -1029,44 +798,6 @@ trait Rewriter {
   // Library combinators
 
   /**
-    * Construct a strategy that applies `s` in a bottom-up fashion to all
-    * subterms at each level, stopping at a frontier where s succeeds.
-    */
-  def allbu(s : Strategy) : Strategy = {
-    lazy val result : Strategy = all(result) <+ s
-    mkStrategy(result)
-  }
-
-  /**
-    * Construct a strategy that applies `s` in a top-down fashion, stopping
-    * at a frontier where s succeeds.
-    */
-  def alltd(s : Strategy) : Strategy = {
-    lazy val result : Strategy = s <+ all(result)
-    mkStrategy(result)
-  }
-
-  /**
-    * Construct a strategy that applies `s1` in a top-down, prefix fashion
-    * stopping at a frontier where `s1` succeeds.  `s2` is applied in a bottom-up,
-    * postfix fashion to the result.
-    */
-  def alldownup2(s1 : Strategy, s2 : Strategy) : Strategy = {
-    lazy val result : Strategy = (s1 <+ all(result)) <* s2
-    mkStrategy(result)
-  }
-
-  /**
-    * Construct a strategy that applies `s1` in a top-down, prefix fashion
-    * stopping at a frontier where `s1` succeeds.  `s2` is applied in a bottom-up,
-    * postfix fashion to the results of the recursive calls.
-    */
-  def alltdfold(s1 : Strategy, s2 : Strategy) : Strategy = {
-    lazy val result : Strategy = s1 <+ (all(result) <* s2)
-    mkStrategy(result)
-  }
-
-  /**
     * `and(s1, s2)` applies `s1` and `s2` to the subject
     * term and succeeds if both succeed. `s2` will always
     * be applied, i.e., and is ''not'' a short-circuit
@@ -1089,86 +820,6 @@ trait Rewriter {
     */
   def bottomup(s : Strategy) : Strategy =
     all(bottomup(s)) <* s
-
-  /**
-    * Construct a strategy that applies `s` in a bottom-up, postfix fashion
-    * to the subject term but stops when the strategy produced by `stop`
-    * succeeds. `stop` is given the whole strategy itself as its argument.
-    */
-  def bottomupS(s : Strategy, stop : (=> Strategy) => Strategy) : Strategy = {
-    lazy val result : Strategy = (stop(result) <+ all(result)) <* s
-    mkStrategy(result)
-  }
-
-  /**
-    * Construct a strategy that applies `s` in breadth first order. This
-    * strategy does not apply `s` to the root of the subject term.
-    *
-    * It is called `breadthfirst` to follow Stratego's library, but is not
-    * really conducting a breadth-first traversal since all of the
-    * descendants of the first child of a term are visited before any of
-    * the descendants of the second child of a term.
-    */
-  def breadthfirst(s : Strategy) : Strategy = {
-    lazy val result : Strategy = all(s) <* all(result)
-    mkStrategy(result)
-  }
-
-  /**
-    * Construct a strategy that applies `s` at least once and then repeats `s`
-    * while `r` succeeds.  This operator is called `do-while` in the Stratego
-    * library.
-    */
-  def doloop(s : Strategy, r : Strategy) : Strategy =
-    s <* (loop(r, s))
-
-  /**
-    * A unit for `topdownS`, `bottomupS` and `downupS`.  For example, `topdown(s)`
-    * is equivalent to `topdownS(s, dontstop)`.
-    */
-  def dontstop(s : => Strategy) : Strategy =
-    fail
-
-  /**
-    * Construct a strategy that applies `s` in a combined top-down and
-    * bottom-up fashion (i.e., both prefix and postfix) to the subject
-    * term.
-    */
-  def downup(s : Strategy) : Strategy = {
-    lazy val result : Strategy = s <* all(result) <* s
-    mkStrategy(result)
-  }
-
-  /**
-    * Construct a strategy that applies `s1` in a top-down, prefix fashion
-    * and `s2` in a bottom-up, postfix fashion to the subject term.
-    */
-  def downup(s1 : Strategy, s2 : Strategy) : Strategy = {
-    lazy val result : Strategy = s1 <* all(result) <* s2
-    mkStrategy(result)
-  }
-
-  /**
-    * Construct a strategy that applies `s` in a combined top-down and
-    * bottom-up fashion (i.e., both prefix and postfix) to the subject
-    * but stops when the strategy produced by `stop` succeeds. `stop` is
-    * given the whole strategy itself as its argument.
-    */
-  def downupS(s : Strategy, stop : (=> Strategy) => Strategy) : Strategy = {
-    lazy val result : Strategy = s <* (stop(result) <+ all(result) <* s)
-    mkStrategy(result)
-  }
-
-  /**
-    * Construct a strategy that applies `s1` in a top-down, prefix fashion
-    * and `s2` in a bottom-up, postfix fashion to the subject term but stops
-    * when the strategy produced by `stop` succeeds. `stop` is given the whole
-    * strategy itself as its argument.
-    */
-  def downupS(s1 : Strategy, s2 : Strategy, stop : (=> Strategy) => Strategy) : Strategy = {
-    lazy val result : Strategy = s1 <* (stop(result) <+ all(result) <* s2)
-    mkStrategy(result)
-  }
 
   /**
     * A strategy that tests whether the two sub-terms of a pair of terms are equal.
@@ -1208,52 +859,6 @@ trait Rewriter {
     topdown(attempt(s))
 
   /**
-    * Construct a strategy that applies `s` repeatedly to the innermost
-    * (i.e., lowest and left-most) (sub-)term to which it applies.
-    * Stop with the subject term if `s` doesn't apply anywhere.
-    */
-  def innermost(s : Strategy) : Strategy = {
-    lazy val result : Strategy = bottomup(attempt(s <* result))
-    mkStrategy(result)
-  }
-
-  /**
-    * An alternative version of `innermost`.
-    */
-  def innermost2(s : Strategy) : Strategy =
-    repeat(oncebu(s))
-
-  /**
-    * `ior(s1, s2)` implements inclusive OR, that is, the
-    * inclusive choice of `s1` and `s2`. It first tries `s1`. If
-    * that fails it applies `s2` (just like `s1 <+ s2`). However,
-    * when `s1` succeeds it also tries to apply `s2`.
-    */
-  def ior(s1 : Strategy, s2 : Strategy) : Strategy =
-    (s1 <* attempt(s2)) <+ s2
-
-  /**
-    * Construct a strategy that succeeds if the current term has at
-    * least one direct subterm.
-    */
-  val isinnernode : Strategy =
-    mkStrategy(one(id))
-
-  /**
-    * Construct a strategy that succeeds if the current term has no
-    * direct subterms.
-    */
-  val isleaf : Strategy =
-    mkStrategy(all(fail))
-
-  /**
-    * Construct a strategy that succeeds when applied to a pair `(x,y)`
-    * if `x` is a sub-term of `y` but is not equal to `y`.
-    */
-  val ispropersubterm : Strategy =
-    mkStrategy(not(eq) <* issubterm)
-
-  /**
     * Construct a strategy that succeeds when applied to a pair `(x,y)`
     * if `x` is a sub-term of `y`.
     */
@@ -1266,51 +871,6 @@ trait Rewriter {
     })
 
   /**
-    * Construct a strategy that succeeds when applied to a pair `(x,y)`
-    * if `x` is a superterm of `y`.
-    */
-  val issuperterm : Strategy =
-    mkStrategy({
-      case (x, y) =>
-        issubterm((y, x))
-      case _ =>
-        None
-    })
-
-  /**
-    * Construct a strategy that succeeds when applied to a pair `(x,y)`
-    * if `x` is a super-term of `y` but is not equal to `y`.
-    */
-  val ispropersuperterm : Strategy =
-    mkStrategy(not(eq) <* issuperterm)
-
-  /**
-    * Applies `s` followed by `f` whether `s` failed or not.
-    * This operator is called `finally` in the Stratego library.
-    */
-  def lastly(s : Strategy, f : Strategy) : Strategy =
-    s < (where(f) + (where(f) <* fail))
-
-  /**
-    * Construct a strategy that applies to all of the leaves of the
-    * subject term, using `isleaf` as the leaf predicate.
-    */
-  def leaves(s : Strategy, isleaf : Strategy) : Strategy = {
-    lazy val result : Strategy = (isleaf <* s) <+ all(result)
-    mkStrategy(result)
-  }
-
-  /**
-    * Construct a strategy that applies to all of the leaves of the
-    * subject term, using `isleaf` as the leaf predicate, skipping
-    * subterms for which `skip` when applied to the result succeeds.
-    */
-  def leaves(s : Strategy, isleaf : Strategy, skip : Strategy => Strategy) : Strategy = {
-    lazy val result : Strategy = (isleaf <* s) <+ skip(result) <+ all(result)
-    mkStrategy(result)
-  }
-
-  /**
     * Construct a strategy that while `r` succeeds applies `s`.  This operator
     * is called `while` in the Stratego library.
     */
@@ -1318,14 +878,6 @@ trait Rewriter {
     lazy val result : Strategy = attempt(c <* s <* result)
     mkStrategy(result)
   }
-
-  /**
-    * Construct a strategy that repeats application of `s` while `r` fails, after
-    * initialization with `i`.  This operator is called `for` in the Stratego
-    * library.
-    */
-  def loopiter(i : Strategy, r : Strategy, s : Strategy) : Strategy =
-    i <* loopnot(r, s)
 
   /**
     * Construct a strategy that applies `s(i)` for each integer `i` from `low` to
@@ -1360,24 +912,6 @@ trait Rewriter {
       case l : Seq[_] =>
         allIterable[Seq](s, l)
     })
-
-  /**
-    * Construct a strategy that applies `s` as many times as possible, but
-    * at least once, in bottom up order.
-    */
-  def manybu(s : Strategy) : Strategy = {
-    lazy val result : Strategy = some(result) <* attempt(s) <+ s
-    mkStrategy(result)
-  }
-
-  /**
-    * Construct a strategy that applies `s` as many times as possible, but
-    * at least once, in top down order.
-    */
-  def manytd(s : Strategy) : Strategy = {
-    lazy val result : Strategy = s <* all(attempt(result)) <+ some(result)
-    mkStrategy(result)
-  }
 
   /**
     * Construct a strategy that applies `s`, then fails if `s` succeeded or, if `s`
@@ -1415,14 +949,6 @@ trait Rewriter {
     where(s1) < (attempt(test(s2)) + test(s2))
 
   /**
-    * Construct a strategy that applies `s` repeatedly in a top-down fashion
-    * stopping each time as soon as it succeeds once (at any level). The
-    * outermost fails when `s` fails to apply to any (sub-)term.
-    */
-  def outermost(s : Strategy) : Strategy =
-    repeat(oncetd(s))
-
-  /**
     * Construct a strategy that applies `s` repeatedly to subterms
     * until it fails on all of them.
     */
@@ -1440,15 +966,6 @@ trait Rewriter {
   }
 
   /**
-    * Construct a strategy that repeatedly applies `s` until it fails and
-    * then terminates with application of `r`.
-    */
-  def repeat(s : Strategy, r : Strategy) : Strategy = {
-    lazy val result : Strategy = (s <* result) <+ r
-    mkStrategy(result)
-  }
-
-  /**
     * Construct a strategy that applies `s` repeatedly exactly `n` times. If
     * `s` fails at some point during the n applications, the entire strategy
     * fails. The result of the strategy is that of the ''nth'' application of
@@ -1460,74 +977,11 @@ trait Rewriter {
   }
 
   /**
-    * Construct a strategy that repeatedly applies `s` (at least once).
-    */
-  def repeat1(s : Strategy) : Strategy =
-    repeat1(s, id)
-
-  /**
     * Construct a strategy that repeatedly applies `s` (at least once) and
     * terminates with application of `c`.
     */
   def repeat1(s : Strategy, r : Strategy) : Strategy = {
     lazy val result : Strategy = s <* (result <+ r)
-    mkStrategy(result)
-  }
-
-  /**
-    * Construct a strategy that repeatedly applies `s` until `c` succeeds.
-    */
-  def repeatuntil(s : Strategy, r : Strategy) : Strategy = {
-    lazy val result : Strategy = s <* (r <+ result)
-    mkStrategy(result)
-  }
-
-  /**
-    * Construct a strategy that applies `s`, then applies the restoring action
-    * `rest` if `s` fails (and then fail). Otherwise, let the result of `s` stand.
-    * Typically useful if `s` performs side effects that should be restored or
-    * undone when `s` fails.
-    */
-  def restore(s : Strategy, rest : Strategy) : Strategy =
-    s <+ (rest <* fail)
-
-  /**
-    * Construct a strategy that applies `s`, then applies the restoring action
-    * `rest` regardless of the success or failure of `s`. The whole strategy
-    * preserves the success or failure of `s`. Typically useful if `s` performs
-    * side effects that should be restored always, e.g., when maintaining scope
-    * information.
-    */
-  def restorealways(s : Strategy, rest : Strategy) : Strategy =
-    s < (rest + (rest <* fail))
-
-  /**
-    * Construct a strategy that applies `s` in a bottom-up fashion to some
-    * subterms at each level, stopping as soon as it succeeds once (at
-    * any level).
-    */
-  def somebu(s : Strategy) : Strategy = {
-    lazy val result : Strategy = some(result) <+ s
-    mkStrategy(result)
-  }
-
-  /**
-    * Construct a strategy that applies `s` in a top-down, prefix fashion
-    * stopping at a frontier where `s` succeeds on some children.  `s` is then
-    * applied in a bottom-up, postfix fashion to the result.
-    */
-  def somedownup(s : Strategy) : Strategy = {
-    lazy val result : Strategy = (s <* all(result) <* (attempt(s))) <+ some(result) <+ attempt(s)
-    mkStrategy(result)
-  }
-
-  /**
-    * Construct a strategy that applies `s` in a top-down fashion to some
-    * subterms at each level, stopping as soon as it succeeds once (at
-    * any level).
-    */
-  def sometd(s : Strategy) : Strategy = {
-    lazy val result : Strategy = s <+ some(result)
     mkStrategy(result)
   }
 
@@ -1544,16 +998,6 @@ trait Rewriter {
     */
   def topdown(s : Strategy) : Strategy = {
     lazy val result : Strategy = s <* all(result)
-    mkStrategy(result)
-  }
-
-  /**
-    * Construct a strategy that applies `s` in a top-down, prefix fashion
-    * to the subject term but stops when the strategy produced by `stop`
-    * succeeds. `stop` is given the whole strategy itself as its argument.
-    */
-  def topdownS(s : Strategy, stop : (=> Strategy) => Strategy) : Strategy = {
-    lazy val result : Strategy = s <* (stop(result) <+ all(result))
     mkStrategy(result)
   }
 
@@ -1581,38 +1025,6 @@ trait Rewriter {
       (everywhere(query(f andThen add)))(t)
       b.result()
     }
-
-  /**
-    * Collect query results in a Iterable collection.  Run the function
-    * `f` as a top-down left-to-right query on the subject term.  Each
-    * application of `f` returns a collection of values. All of these values
-    * are accumulated in the collection.
-    */
-  def collectall[CC[X] <: Iterable[X], U](f : Any ==> CC[U])(implicit cbf : Factory[U, CC[U]]) : Any => CC[U] =
-    (t : Any) => {
-      val b = newBuilder(cbf)
-      val addall = (us : CC[U]) => { b ++= us; () }
-      (everywhere(query(f andThen addall)))(t)
-      b.result()
-    }
-
-  /**
-    * Collect query results in a list.  Run the function `f` as a top-down
-    * left-to-right query on the subject term.  Accumulate the values
-    * produced by the function in a list and return the final value of
-    * the list.
-    */
-//  def collectl[U](f : Any ==> U) : Any => List[U] =
-//    collect[List, U](f)
-
-  /**
-    * Collect query results in a set.  Run the function `f` as a top-down
-    * left-to-right query on the subject term.  Accumulate the values
-    * produced by the function in a set and return the final value of
-    * the set.
-    */
-//  def collects[U](f : Any ==> U) : Any => Set[U] =
-//    collect[Set, U](f)
 
   /**
     * Count function results.  Run the function `f` as a top-down query on
