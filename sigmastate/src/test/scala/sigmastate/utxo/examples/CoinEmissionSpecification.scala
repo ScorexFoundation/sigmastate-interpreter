@@ -2,7 +2,6 @@ package sigmastate.utxo.examples
 
 import org.ergoplatform._
 import org.ergoplatform.settings.ErgoAlgos
-import scorex.util.ScorexLogging
 import sigmastate.Values.{BlockValue, ErgoTree, IntConstant, LongConstant, ValDef, ValUse}
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, SigmaPPrint, SigmaTestingCommons}
 import sigmastate.helpers.TestingHelpers._
@@ -22,12 +21,16 @@ import sigmastate.eval._
   * defined in ErgoScriptPredef.
   */
 class CoinEmissionSpecification extends SigmaTestingCommons
-  with ScorexLogging with CrossVersionProps {
+  with CrossVersionProps {
   // don't use TestingIRContext, this suite also serves the purpose of testing the RuntimeIRContext
   implicit lazy val IR: TestingIRContext = new TestingIRContext {
     // uncomment if you want to log script evaluation
     // override val okPrintEvaluatedEntries = true
     saveGraphsInFile = false
+  }
+
+  protected def logMessage(msg: String) = {
+    println(msg)
   }
 
   private val reg1 = ErgoBox.nonMandatoryRegisters.head
@@ -218,7 +221,7 @@ block 1600 in 1622 ms, 30000000000 coins remain, defs: 61661
         val newEmissionBox = newState.boxesReader.byId(tx.outputs.head.id).get
         chainGen(newState, newEmissionBox, height + 1, hLimit)
       } else {
-        log.debug(s"Emission box is consumed at height $height")
+        logMessage(s"Emission box is consumed at height $height")
       }
     }
 

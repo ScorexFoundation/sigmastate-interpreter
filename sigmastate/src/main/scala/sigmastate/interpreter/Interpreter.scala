@@ -7,7 +7,6 @@ import org.ergoplatform.ErgoLikeContext
 import org.ergoplatform.validation.SigmaValidationSettings
 import org.ergoplatform.validation.ValidationRules._
 import sigmastate.basics.DLogProtocol.ProveDlog
-import scorex.util.ScorexLogging
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate.basics.DLogProtocol.{DLogInteractiveProver, FirstDLogProverMessage}
@@ -47,7 +46,7 @@ import scala.util.{Success, Try}
   * The interpreter has evaluationMode which defines how it should execute scripts.
   * @see verify, fullReduction
   */
-trait Interpreter extends ScorexLogging {
+trait Interpreter {
 
   type CTX <: InterpreterContext
 
@@ -62,6 +61,11 @@ trait Interpreter extends ScorexLogging {
     * to redefine the default behavior. */
   protected def logMessage(msg: String) = {
     println(msg)
+  }
+
+  protected def logMessage(msg: String, t: Throwable) = {
+    println(msg)
+    t.printStackTrace(System.out)
   }
 
   /** Deserializes given script bytes using ValueSerializer (i.e. assuming expression tree format).
@@ -443,7 +447,7 @@ trait Interpreter extends ScorexLogging {
         //  NOTE, property("handle improper signature") doesn't lead to exception
         //  because the current implementation of parseAndComputeChallenges doesn't throw
         //  an exception
-        log.warn("Improper signature: ", t);
+        logMessage("Improper signature: ", t);
         false
     }
   }

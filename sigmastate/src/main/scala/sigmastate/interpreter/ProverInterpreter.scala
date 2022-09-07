@@ -555,7 +555,7 @@ trait ProverInterpreter extends Interpreter with ProverUtils {
     case ut: UnprovenTree => ut
 
     case t: ProofTree =>
-      log.warn("Wrong input in prove(): ", t);
+      logMessage(s"Wrong input in prove(): $t");
       ???
   })
 
