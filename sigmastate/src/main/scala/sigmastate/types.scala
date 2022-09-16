@@ -248,6 +248,36 @@ object SType {
     case _ => sys.error(s"Unknown type $tpe")
   }
 
+  def stringRepr(tpe: SType): String = tpe match {
+    case SBoolean => "Boolean"
+    case SByte => "Byte"
+    case SShort => "Short"
+    case SInt => "Int"
+    case SLong => "Long"
+    case SBigInt => "BigInt"
+    case SBox => "Box"
+    case SSigmaProp => "SigmaProp"
+    case SCollectionType(elemType) => "Coll[" + stringRepr(elemType) + "]"
+    case STuple(items) => items.map(stringRepr).mkString("(", ", ", ")")
+    case SContext => "Context"
+    case SOption(elemType) => "Option[" + stringRepr(elemType) + "]"
+    case SGroupElement => "GroupElement"
+    case SPreHeader => "PreHeader"
+    case SString => "String"
+    case SAny => "Any"
+    case SAvlTree => "AvlTree"
+    case SUnit => "Unit"
+    case SHeader => "Header"
+    case SGlobal => "Global"
+    // Missing serializer
+    case SFunc(tDom, tRange, tpeParams) => tDom.map(stringRepr).mkString("(", ", ", ")") + " => " + stringRepr(tRange)
+    // Missing serializer, not part of final ErgoTree, must be assigned some type during typing phase.
+    case NoType => "Error: NoType"
+    // Not used in final ergo tree
+    case STypeApply(_, _) => "Error: STypeApply node should be eliminated during compilation."
+    case STypeVar(_) => "Error: STypeVar node should be eliminated during compilation."
+  }
+
   implicit class STypeOps(val tpe: SType) extends AnyVal {
     def isCollectionLike: Boolean = tpe.isInstanceOf[SCollection[_]]
     def isCollection: Boolean = tpe.isInstanceOf[SCollectionType[_]]

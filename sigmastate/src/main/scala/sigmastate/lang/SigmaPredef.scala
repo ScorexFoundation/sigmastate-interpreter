@@ -3,15 +3,15 @@ package sigmastate.lang
 import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
 import org.ergoplatform.{ErgoAddressEncoder, P2PKAddress}
 import scalan.Nullable
-import scorex.util.encode.{Base64, Base58, Base16}
-import sigmastate.SCollection.{SIntArray, SByteArray}
+import scorex.util.encode.{Base16, Base58, Base64}
+import sigmastate.SCollection.{SByteArray, SIntArray}
 import sigmastate.SOption._
-import sigmastate.Values.{StringConstant, Constant, EvaluatedValue, SValue, IntValue, SigmaPropConstant, ConstantPlaceholder, BoolValue, Value, ByteArrayConstant, SigmaPropValue, ValueCompanion}
+import sigmastate.Values.{BoolValue, ByteArrayConstant, Constant, ConstantPlaceholder, EvaluatedValue, IntValue, SValue, SigmaPropConstant, SigmaPropValue, StringConstant, Value, ValueCompanion}
 import sigmastate._
 import sigmastate.lang.Terms._
 import sigmastate.lang.exceptions.InvalidArguments
-import sigmastate.serialization.ValueSerializer
-import sigmastate.utxo.{GetVar, DeserializeContext, DeserializeRegister, SelectField}
+import sigmastate.serialization.{ConstantSerializer, SigmaSerializer, ValueSerializer}
+import sigmastate.utxo.{DeserializeContext, DeserializeRegister, GetVar, SelectField}
 
 object SigmaPredef {
 
@@ -181,10 +181,15 @@ object SigmaPredef {
     )
 
     val FromBase16Func = PredefinedFunc("fromBase16",
-      Lambda(Array("input" -> SString), SByteArray, None),
+      Lambda(Array(paramT), Array("input" -> SString), tT, None),
       PredefFuncInfo(
-        { case (_, Seq(arg: EvaluatedValue[SString.type]@unchecked)) =>
-          ByteArrayConstant(Base16.decode(arg.value).get)
+        { case (Ident(_, SFunc(_, tpe, _)), Seq(arg: EvaluatedValue[SString.type]@unchecked)) =>
+          val bytes = Base16.decode(arg.value).get
+          val r = SigmaSerializer.startReader(bytes)
+          val ser = ConstantSerializer(DeserializationSigmaBuilder)
+          val res = ser.parse(r)
+          if (res.tpe != tpe) throw new InvalidArguments(s"Types doesn't match: declared $tpe, actual: ${res.tpe}")
+          res.asInstanceOf[Values.ConstantNode[SType]]
         }),
       OperationInfo(Constant, "",
         Seq(ArgInfo("", "")))

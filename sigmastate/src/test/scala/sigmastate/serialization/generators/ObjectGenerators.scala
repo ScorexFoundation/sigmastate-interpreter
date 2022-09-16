@@ -67,7 +67,7 @@ trait ObjectGenerators extends TypeGenerators
   implicit lazy val arbByteArrayConstant: Arbitrary[CollectionConstant[SByte.type]] = Arbitrary(byteArrayConstGen)
   implicit lazy val arbGroupElementConstant: Arbitrary[GroupElementConstant] = Arbitrary(groupElementConstGen)
   implicit lazy val arbBoxConstant: Arbitrary[BoxConstant] = Arbitrary(boxConstantGen)
-  implicit lazy val arbAvlTreeConstant: Arbitrary[AvlTreeConstant] = Arbitrary(avlTreeConstantGen)
+  implicit lazy val arbAvlTreeConstant: Arbitrary[AvlTreeConstant] = Arbitrary(avlTreeConstGen)
   implicit lazy val arbBigIntConstant: Arbitrary[BigIntConstant] = Arbitrary(bigIntConstGen)
   implicit lazy val arbTaggedInt: Arbitrary[TaggedInt] = Arbitrary(taggedVar[SInt.type])
   implicit lazy val arbTaggedLong: Arbitrary[TaggedLong] = Arbitrary(taggedVar[SLong.type])
@@ -111,10 +111,26 @@ trait ObjectGenerators extends TypeGenerators
     length <- Gen.chooseNum(1, 100)
     bytes <- Gen.listOfN(length, arbByte.arbitrary)
   } yield mkCollectionConstant[SByte.type](bytes.toArray, SByte)
+  val shortArrayConstGen: Gen[CollectionConstant[SShort.type]] = for {
+    length <- Gen.chooseNum(1, 100)
+    shorts <- Gen.listOfN(length, arbShort.arbitrary)
+  } yield mkCollectionConstant[SShort.type](shorts.toArray, SShort)
   val intArrayConstGen: Gen[CollectionConstant[SInt.type]] = for {
     length <- Gen.chooseNum(1, 100)
     ints <- Gen.listOfN(length, arbInt.arbitrary)
   } yield mkCollectionConstant[SInt.type](ints.toArray, SInt)
+  val longArrayConstGen: Gen[CollectionConstant[SLong.type]] = for {
+    length <- Gen.chooseNum(1, 100)
+    longs <- Gen.listOfN(length, arbLong.arbitrary)
+  } yield mkCollectionConstant[SLong.type](longs.toArray, SLong)
+  val bigIntArrayConstGen: Gen[CollectionConstant[SBigInt.type]] = for {
+    length <- Gen.chooseNum(1, 100)
+    bigInts <- Gen.listOfN(length, arbBigInt.arbitrary)
+  } yield mkCollectionConstant[SBigInt.type](bigInts.toArray, SBigInt)
+  val boolArrayConstGen: Gen[CollectionConstant[SBoolean.type]] = for {
+    length <- Gen.chooseNum(1, 100)
+    bools <- Gen.listOfN(length, arbBool.arbitrary)
+  } yield mkCollectionConstant[SBoolean.type](bools.toArray, SBoolean)
 
   val heightGen: Gen[Int] = Gen.chooseNum(0, 1000000)
 
@@ -165,6 +181,10 @@ trait ObjectGenerators extends TypeGenerators
   val sigmaPropGen: Gen[SigmaProp] = sigmaBooleanGen.map(SigmaDsl.SigmaProp)
   val sigmaPropValueGen: Gen[SigmaPropValue] =
     Gen.oneOf(proveDlogGen.map(SigmaPropConstant(_)), proveDHTGen.map(SigmaPropConstant(_)))
+
+  val sigmaPropConstGen: Gen[SigmaPropConstant] = for {
+    p <- sigmaPropGen
+  } yield mkConstant[SSigmaProp.type](p, SSigmaProp)
 
   val registerIdentifierGen: Gen[RegisterId] = Gen.oneOf(R0, R1, R2, R3, R4, R5, R6, R7, R8, R9)
 
@@ -256,7 +276,7 @@ trait ObjectGenerators extends TypeGenerators
 
   def avlTreeGen: Gen[AvlTree] = avlTreeDataGen.map(SigmaDsl.avlTree)
 
-  def avlTreeConstantGen: Gen[AvlTreeConstant] = avlTreeGen.map { v => AvlTreeConstant(v) }
+  def avlTreeConstGen: Gen[AvlTreeConstant] = avlTreeGen.map { v => AvlTreeConstant(v) }
 
   implicit def arrayGen[T: Arbitrary : ClassTag]: Gen[Array[T]] = for {
     length <- Gen.chooseNum(1, 100)
@@ -698,6 +718,10 @@ trait ObjectGenerators extends TypeGenerators
 
   implicit val arbHeader = Arbitrary(headerGen)
 
+  val headerConstantGen: Gen[Constant[SHeader.type]] = for {
+    h <- headerGen
+  } yield HeaderConstant(h)
+
   val MaxHeaders = 2
   def headersGen(stateRoot: AvlTree): Gen[Seq[Header]] = for {
     size <- Gen.chooseNum(0, MaxHeaders)
@@ -722,6 +746,10 @@ trait ObjectGenerators extends TypeGenerators
   } yield preHeader
 
   implicit val arbPreHeader = Arbitrary(preHeaderGen)
+
+  val preHeaderConstGen: Gen[Constant[SPreHeader.type]] = for {
+    ph <- preHeaderGen
+  } yield PreHeaderConstant(ph)
 
   val ergoLikeTransactionGen: Gen[ErgoLikeTransaction] = for {
     inputBoxesIds <- Gen.nonEmptyListOf(boxIdGen)
@@ -793,4 +821,28 @@ trait ObjectGenerators extends TypeGenerators
     activatedScriptVersion = activatedVersionInTests
   ).withErgoTreeVersion(ergoTreeVersionInTests)
 
+  val constantGen: Gen[Constant[SType]] =
+    Gen.oneOf(
+      booleanConstGen,
+      shortConstGen,
+      intConstGen,
+      longConstGen,
+      bigIntConstGen,
+      boxConstantGen,
+      sigmaPropConstGen,
+      groupElementConstGen,
+      stringConstGen,
+      avlTreeConstGen,
+      byteArrayConstGen,
+      shortArrayConstGen,
+      intArrayConstGen,
+      bigIntArrayConstGen,
+      longArrayConstGen,
+      boolArrayConstGen
+      // missing serializer
+      // headerConstGen,
+      // preHeaderConstGen,
+    ).map(_.asInstanceOf[Constant[SType]])
+
+  val listOfConstantNodeGen: Gen[List[Constant[SType]]] = Gen.listOf(constantGen)
 }
