@@ -96,7 +96,6 @@ object Evaluation {
     case BigIntegerRType => SBigInt
     case BigIntRType => SBigInt
 
-    case ECPointRType => SGroupElement
     case GroupElementRType => SGroupElement
 
     case AvlTreeRType => SAvlTree
@@ -144,7 +143,6 @@ object Evaluation {
     case _: BigInteger => BigIntegerRType
     case _: special.sigma.BigInt => BigIntRType
 
-    case _: ECPoint => ECPointRType
     case _: GroupElement => GroupElementRType
 
     case _: ErgoBox => ErgoBoxRType

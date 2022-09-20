@@ -2,7 +2,6 @@ package special.sigma
 
 import java.math.BigInteger
 
-import org.bouncycastle.math.ec.ECPoint
 import special.collection._
 import scalan._
 import scorex.crypto.authds.{ADDigest, ADValue}
