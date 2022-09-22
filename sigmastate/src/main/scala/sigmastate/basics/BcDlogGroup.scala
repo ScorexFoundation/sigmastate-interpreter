@@ -7,21 +7,20 @@ import org.bouncycastle.math.ec.custom.sec.SecP256K1Point
 import org.bouncycastle.math.ec.ECPoint
 import org.bouncycastle.util.BigIntegers
 import debox.cfor
+import sigmastate.crypto.{CryptoContext, CryptoFacade}
 
 import scala.collection.{Seq, mutable}
 import scala.util.Try
 import scala.collection.compat.immutable.ArraySeq
 
 
-abstract class BcDlogGroup[ElemType <: ECPoint](val x9params: X9ECParameters) extends DlogGroup[ElemType] {
-
-  lazy val curve = x9params.getCurve
+abstract class BcDlogGroup[ElemType <: ECPoint](val ctx: CryptoContext) extends DlogGroup[ElemType] {
 
   //modulus of the field
-  lazy val p: BigInteger = curve.getField.getCharacteristic
+  lazy val p: BigInteger = ctx.getModulus
 
   //order of the group
-  lazy val q = x9params.getN
+  lazy val q: BigInteger = ctx.getOrder
 
   //Now that we have p, we can calculate k which is the maximum length in bytes
   // of a string to be converted to a Group Element of this group.
@@ -33,15 +32,15 @@ abstract class BcDlogGroup[ElemType <: ECPoint](val x9params: X9ECParameters) ex
     * It is composed of two main elements. The group element for which the optimized computations
     * are built for, called the base and a vector of group elements that are the result of
     * exponentiations of order 1,2,4,8,
-    */
-  private class GroupElementsExponentiations(base: ElemType) //group element for which the optimized computations are built for
-  /**
+    *
     * The constructor creates a map structure in memory.
     * Then calculates the exponentiations of order 1,2,4,8 for the given base and save them in the map.
     *
-    * @param base
+    * @param base group element for which the optimized computations are built for
     * @throws IllegalArgumentException
-    */ { // build new vector of exponentiations
+    *
+    */
+  private class GroupElementsExponentiations(base: ElemType) {
 
     private val exponentiations = new mutable.ListBuffer[ElemType]()
 
@@ -103,7 +102,7 @@ abstract class BcDlogGroup[ElemType <: ECPoint](val x9params: X9ECParameters) ex
 
   //Create the generator
   //Assume that (x,y) are the coordinates of a point that is indeed a generator but check that (x,y) are the coordinates of a point.
-  override lazy val generator: ElemType = x9params.getG.asInstanceOf[ElemType]
+  override lazy val generator: ElemType = ctx.getGenerator.asInstanceOf[ElemType]
 
   /**
     * Checks if the given x and y represent a valid point on the given curve,
@@ -114,7 +113,7 @@ abstract class BcDlogGroup[ElemType <: ECPoint](val x9params: X9ECParameters) ex
     * @return true if the given x and y represented a valid point on the given curve
     */
   def checkCurveMembership(x: BigInteger, y: BigInteger): Boolean = {
-    Try(curve.validatePoint(x, y)).isSuccess
+    Try(ctx.validatePoint(x, y)).isSuccess
   }
 
 
@@ -137,13 +136,13 @@ abstract class BcDlogGroup[ElemType <: ECPoint](val x9params: X9ECParameters) ex
     *
     * @return the order of this Dlog group
     */
-  override lazy val order: BigInteger = x9params.getN
+  override lazy val order: BigInteger = ctx.getOrder
 
   /**
     *
     * @return the identity of this Dlog group
     */
-  override lazy val identity: ElemType = curve.getInfinity.asInstanceOf[ElemType]
+  override lazy val identity: ElemType = ctx.getInfinity.asInstanceOf[ElemType]
 
   /**
     * Calculates the inverse of the given GroupElement.
@@ -188,7 +187,7 @@ abstract class BcDlogGroup[ElemType <: ECPoint](val x9params: X9ECParameters) ex
     //However, if a specific Dlog Group has a more efficient implementation then is it advised to override this function in that concrete
     //Dlog group. For example we do so in CryptoPpDlogZpSafePrime.
     val one = BigInteger.ONE
-    val qMinusOne = x9params.getN.subtract(one)
+    val qMinusOne = ctx.getOrder.subtract(one)
     // choose a random number x in Zq*
     val randNum = BigIntegers.createRandomInRange(one, qMinusOne, secureRandom)
     // compute g^x to get a new element
@@ -384,4 +383,4 @@ abstract class BcDlogGroup[ElemType <: ECPoint](val x9params: X9ECParameters) ex
   }
 }
 
-object SecP256K1 extends BcDlogGroup[SecP256K1Point](CustomNamedCurves.getByName("secp256k1"))
+object SecP256K1 extends BcDlogGroup[SecP256K1Point](CryptoFacade.createCryptoContext())
