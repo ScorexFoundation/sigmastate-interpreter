@@ -1,5 +1,6 @@
 package sigmastate.serialization
 
+import sigmastate.crypto.CryptoFacade
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.eval._
 
@@ -20,8 +21,10 @@ class GroupElementSerializerSpecification extends SerializationSpecification {
       val bytes = GroupElementSerializer.toBytes(ge.value)
       bytes.length shouldBe CryptoConstants.EncodedGroupElementLength
       val restored = GroupElementSerializer.parse(SigmaSerializer.startReader(bytes, 0))
-      restored.normalize().getAffineXCoord shouldBe ge.value.normalize().getAffineXCoord
-      restored.normalize().getAffineYCoord shouldBe ge.value.normalize().getAffineYCoord
+      CryptoFacade.getAffineXCoord(CryptoFacade.normalizePoint(restored)) shouldBe
+        CryptoFacade.getAffineXCoord(CryptoFacade.normalizePoint(ge.value))
+      CryptoFacade.getAffineYCoord(CryptoFacade.normalizePoint(restored)) shouldBe
+        CryptoFacade.getAffineYCoord(CryptoFacade.normalizePoint(ge.value))
     }
   }
 }

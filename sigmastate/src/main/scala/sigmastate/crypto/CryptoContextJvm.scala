@@ -10,18 +10,18 @@ class CryptoContextJvm(x9params: X9ECParameters) extends CryptoContext {
 
   override def getModulus: BigInteger = curve.getField.getCharacteristic
   override def getOrder: BigInteger = x9params.getN
-  override def getGenerator: ECPoint = {
-    x9params.getG
+  override def getGenerator: Ecp = {
+    Platform.Ecp(x9params.getG)
   }
-  override def validatePoint(x: BigInteger, y: BigInteger): ECPoint = {
-    curve.validatePoint(x, y)
-  }
-
-  override def getInfinity(): ECPoint = {
-    curve.getInfinity
+  override def validatePoint(x: BigInteger, y: BigInteger): Ecp = {
+    Platform.Ecp(curve.validatePoint(x, y))
   }
 
-  override def decodePoint(encoded: Array[Byte]): ECPoint = {
-    curve.decodePoint(encoded)
+  override def getInfinity(): Ecp = {
+    Platform.Ecp(curve.getInfinity)
+  }
+
+  override def decodePoint(encoded: Array[Byte]): Ecp = {
+    Platform.Ecp(curve.decodePoint(encoded))
   }
 }

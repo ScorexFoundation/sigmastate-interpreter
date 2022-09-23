@@ -147,7 +147,7 @@ abstract class BcDlogGroup(val ctx: CryptoContext) extends DlogGroup {
     * @throws IllegalArgumentException
     **/
   override def inverseOf(groupElement: ElemType): ElemType =
-    groupElement.negate().asInstanceOf[ElemType]
+    CryptoFacade.negatePoint(groupElement)
 
   /**
     * Raises the base GroupElement to the exponent. The result is another GroupElement.
@@ -159,7 +159,7 @@ abstract class BcDlogGroup(val ctx: CryptoContext) extends DlogGroup {
     */
   override def exponentiate(base: ElemType, exponent: BigInteger): ElemType = {
     //infinity remains the same after any exponentiate
-    if (base.isInfinity) return base
+    if (CryptoFacade.isInfinityPoint(base)) return base
 
     //If the exponent is negative, convert it to be the exponent modulus q.
     val exp = if (exponent.compareTo(BigInteger.ZERO) < 0) exponent.mod(order) else exponent
@@ -168,7 +168,7 @@ abstract class BcDlogGroup(val ctx: CryptoContext) extends DlogGroup {
      * BC treats EC as additive group while we treat that as multiplicative group.
      * Therefore, exponentiate point is multiply.
      */
-    base.multiply(exp).asInstanceOf[ElemType]
+    CryptoFacade.multiplyPoint(base, exp)
   }
 
 
@@ -209,7 +209,7 @@ abstract class BcDlogGroup(val ctx: CryptoContext) extends DlogGroup {
     * @throws IllegalArgumentException
     */
   override def multiplyGroupElements(groupElement1: ElemType, groupElement2: ElemType): ElemType =
-    groupElement1.add(groupElement2).asInstanceOf[ElemType]
+    CryptoFacade.addPoint(groupElement1, groupElement2)
 
 
   /**

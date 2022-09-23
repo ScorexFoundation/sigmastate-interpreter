@@ -11,7 +11,7 @@ import sigmastate.SType.AnyOps
 import org.ergoplatform.ErgoBox
 import debox.{Buffer => DBuffer}
 import debox.cfor
-import sigmastate.crypto.Ecp
+import sigmastate.crypto.{CryptoFacade, Ecp}
 
 object Extensions {
   private val Colls = CostingSigmaDslBuilder.Colls
@@ -92,9 +92,7 @@ object Extensions {
       "INF"
     }
     else {
-      val rawX = p.getRawXCoord.toString.substring(0, 6)
-      val rawY = p.getRawYCoord.toString.substring(0, 6)
-      s"ECPoint($rawX,$rawY,...)"
+      CryptoFacade.showPoint(p)
     }
   }
 

@@ -2,7 +2,7 @@ package sigmastate.basics
 
 import java.math.BigInteger
 import java.security.SecureRandom
-import sigmastate.crypto.Ecp
+import sigmastate.crypto.{CryptoFacade, Ecp}
 
 
 /**
@@ -96,7 +96,7 @@ trait DlogGroup {
 
     // if the given element is the identity, get a new random element
     while ( {
-      randGen.isInfinity
+      CryptoFacade.isInfinityPoint(randGen)
     }) randGen = createRandomElement()
 
     randGen

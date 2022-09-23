@@ -26,7 +26,7 @@ import scorex.crypto.hash.{Blake2b256, Digest32, Sha256}
 import sigmastate.Values.ErgoTree.EmptyConstants
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
-import sigmastate.crypto.Ecp
+import sigmastate.crypto.{CryptoFacade, Ecp}
 import sigmastate.lang.TransformingSigmaBuilder
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.serialization.{GroupElementSerializer, SigmaSerializer}
@@ -104,16 +104,16 @@ case class CGroupElement(override val wrappedValue: Ecp) extends GroupElement wi
   override def getEncoded: Coll[Byte] =
     dsl.Colls.fromArray(GroupElementSerializer.toBytes(wrappedValue))
 
-  override def isInfinity: Boolean = wrappedValue.isInfinity
+  override def isInfinity: Boolean = CryptoFacade.isInfinityPoint(wrappedValue)
 
   override def exp(k: BigInt): GroupElement =
-    dsl.GroupElement(wrappedValue.multiply(k.asInstanceOf[CBigInt].wrappedValue))
+    dsl.GroupElement(CryptoFacade.multiplyPoint(wrappedValue, k.asInstanceOf[CBigInt].wrappedValue))
 
   override def multiply(that: GroupElement): GroupElement =
-    dsl.GroupElement(wrappedValue.add(that.asInstanceOf[CGroupElement].wrappedValue))
+    dsl.GroupElement(CryptoFacade.addPoint(wrappedValue, that.asInstanceOf[CGroupElement].wrappedValue))
 
   override def negate: GroupElement =
-    dsl.GroupElement(wrappedValue.negate())
+    dsl.GroupElement(CryptoFacade.negatePoint(wrappedValue))
 }
 
 /** A default implementation of [[SigmaProp]] interface.
