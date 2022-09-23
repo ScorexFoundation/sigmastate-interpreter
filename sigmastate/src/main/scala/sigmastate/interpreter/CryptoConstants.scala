@@ -2,16 +2,15 @@ package sigmastate.interpreter
 
 import java.math.BigInteger
 import java.security.SecureRandom
-
-import org.bouncycastle.math.ec.custom.sec.SecP256K1Point
-import sigmastate.basics.{BcDlogGroup, SecP256K1}
+import sigmastate.basics.{BcDlogGroup, SecP256K1Group}
+import sigmastate.crypto.Ecp
 
 object CryptoConstants {
-  type EcPointType = SecP256K1Point
+  type EcPointType = Ecp
 
   val EncodedGroupElementLength: Byte = 33
 
-  val dlogGroup: BcDlogGroup[EcPointType] = SecP256K1
+  val dlogGroup: BcDlogGroup = SecP256K1Group
 
   val secureRandom: SecureRandom = dlogGroup.secureRandom
 

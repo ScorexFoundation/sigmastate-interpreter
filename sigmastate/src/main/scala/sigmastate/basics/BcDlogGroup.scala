@@ -1,11 +1,7 @@
 package sigmastate.basics
 
 import java.math.BigInteger
-import org.bouncycastle.asn1.x9.X9ECParameters
-import org.bouncycastle.crypto.ec.CustomNamedCurves
-import org.bouncycastle.math.ec.custom.sec.SecP256K1Point
-import org.bouncycastle.math.ec.ECPoint
-import org.bouncycastle.util.BigIntegers
+import sigmastate.crypto.BigIntegers
 import debox.cfor
 import sigmastate.crypto.{CryptoContext, CryptoFacade}
 
@@ -14,8 +10,7 @@ import scala.util.Try
 import scala.collection.compat.immutable.ArraySeq
 
 
-abstract class BcDlogGroup[ElemType <: ECPoint](val ctx: CryptoContext) extends DlogGroup[ElemType] {
-
+abstract class BcDlogGroup(val ctx: CryptoContext) extends DlogGroup {
   //modulus of the field
   lazy val p: BigInteger = ctx.getModulus
 
@@ -102,7 +97,7 @@ abstract class BcDlogGroup[ElemType <: ECPoint](val ctx: CryptoContext) extends 
 
   //Create the generator
   //Assume that (x,y) are the coordinates of a point that is indeed a generator but check that (x,y) are the coordinates of a point.
-  override lazy val generator: ElemType = ctx.getGenerator.asInstanceOf[ElemType]
+  override lazy val generator: ElemType = ctx.getGenerator
 
   /**
     * Checks if the given x and y represent a valid point on the given curve,
@@ -383,4 +378,4 @@ abstract class BcDlogGroup[ElemType <: ECPoint](val ctx: CryptoContext) extends 
   }
 }
 
-object SecP256K1 extends BcDlogGroup[SecP256K1Point](CryptoFacade.createCryptoContext())
+object SecP256K1Group extends BcDlogGroup(CryptoFacade.createCryptoContext())

@@ -2,7 +2,7 @@ package sigmastate.basics
 
 import java.math.BigInteger
 import java.security.SecureRandom
-import org.bouncycastle.math.ec.ECPoint
+import sigmastate.crypto.Ecp
 
 
 /**
@@ -19,7 +19,8 @@ import org.bouncycastle.math.ec.ECPoint
   *
   *  @tparam ElemType is concrete type
   */
-trait DlogGroup[ElemType <: ECPoint] {
+trait DlogGroup {
+  type ElemType = Ecp
 
   val secureRandom = new SecureRandom()
 
