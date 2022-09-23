@@ -1,7 +1,5 @@
 package sigmastate.eval
 
-import org.bouncycastle.math.ec.ECPoint
-
 import java.math.BigInteger
 import scalan.RType
 import sigmastate.{SCollection, SCollectionType, SType}
@@ -13,6 +11,7 @@ import sigmastate.SType.AnyOps
 import org.ergoplatform.ErgoBox
 import debox.{Buffer => DBuffer}
 import debox.cfor
+import sigmastate.crypto.Ecp
 
 object Extensions {
   private val Colls = CostingSigmaDslBuilder.Colls
@@ -88,7 +87,7 @@ object Extensions {
     }
   }
 
-  def showECPoint(p: ECPoint): String = {
+  def showECPoint(p: Ecp): String = {
     if (p.isInfinity) {
       "INF"
     }

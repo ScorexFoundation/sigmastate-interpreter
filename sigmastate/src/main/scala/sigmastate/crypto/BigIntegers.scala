@@ -63,4 +63,28 @@ object BigIntegers {
     // fall back to a faster (restricted) method
     createRandomBigInteger(max.subtract(min).bitLength - 1, random).add(min)
   }
+
+  /**
+    * Return the passed in value as an unsigned byte array of the specified length, padded with
+    * leading zeros as necessary..
+    *
+    * @param length the fixed length of the result
+    * @param value  the value to be converted.
+    * @return a byte array padded to a fixed length with leading zeros.
+    */
+  def asUnsignedByteArray(length: Int, value: BigInteger): Array[Byte] = {
+    val bytes = value.toByteArray
+    if (bytes.length == length) return bytes
+    val start = if (bytes(0) == 0) 1 else 0
+
+    val count = bytes.length - start
+    if (count > length)
+      throw new IllegalArgumentException("standard length exceeded for value")
+
+    val tmp = new Array[Byte](length)
+    System.arraycopy(bytes, start, tmp, tmp.length - count, count)
+    tmp
+  }
+
+  def fromUnsignedByteArray(buf: Array[Byte]) = new BigInteger(1, buf)
 }

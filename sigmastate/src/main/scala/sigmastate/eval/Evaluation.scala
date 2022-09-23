@@ -1,6 +1,5 @@
 package sigmastate.eval
 
-import org.bouncycastle.math.ec.ECPoint
 import org.ergoplatform._
 import scalan.RType
 import scalan.RType._

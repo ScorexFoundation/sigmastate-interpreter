@@ -4,7 +4,6 @@ import com.google.common.primitives.{Ints, Longs}
 
 import java.math.BigInteger
 import java.util.Arrays
-import org.bouncycastle.math.ec.ECPoint
 import org.ergoplatform.{ErgoBox, SigmaConstants}
 import org.ergoplatform.validation.ValidationRules
 import scalan.OverloadHack.Overloaded1
@@ -27,6 +26,7 @@ import scorex.crypto.hash.{Blake2b256, Digest32, Sha256}
 import sigmastate.Values.ErgoTree.EmptyConstants
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
+import sigmastate.crypto.Ecp
 import sigmastate.lang.TransformingSigmaBuilder
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.serialization.{GroupElementSerializer, SigmaSerializer}
@@ -96,7 +96,7 @@ case class CBigInt(override val wrappedValue: BigInteger) extends BigInt with Wr
 /** A default implementation of [[GroupElement]] interface.
   * @see [[GroupElement]] for detailed descriptions
   */
-case class CGroupElement(override val wrappedValue: EcPointType) extends GroupElement with WrapperOf[ECPoint] {
+case class CGroupElement(override val wrappedValue: Ecp) extends GroupElement with WrapperOf[Ecp] {
   val dsl = CostingSigmaDslBuilder
   
   override def toString: String = s"GroupElement(${Extensions.showECPoint(wrappedValue)})"
@@ -510,7 +510,7 @@ class CostingSigmaDslBuilder extends SigmaDslBuilder { dsl =>
 
   override def toBigInteger(n: BigInt): BigInteger = n.asInstanceOf[CBigInt].wrappedValue
 
-  def GroupElement(p: ECPoint): GroupElement = p match {
+  def GroupElement(p: Ecp): GroupElement = p match {
     case ept: EcPointType => CGroupElement(ept)
     case m => sys.error(s"Point of type ${m.getClass} is not supported")
   }
@@ -524,8 +524,8 @@ class CostingSigmaDslBuilder extends SigmaDslBuilder { dsl =>
   /** Extract `sigmastate.AvlTreeData` from DSL's `AvlTree` type. */
   def toAvlTreeData(p: AvlTree): AvlTreeData = p.asInstanceOf[CAvlTree].treeData
 
-  /** Extract `org.bouncycastle.math.ec.ECPoint` from DSL's `GroupElement` type. */
-  def toECPoint(ge: GroupElement): ECPoint = ge.asInstanceOf[CGroupElement].wrappedValue
+  /** Extract `sigmastate.crypto.Ecp` from DSL's `GroupElement` type. */
+  def toECPoint(ge: GroupElement): Ecp = ge.asInstanceOf[CGroupElement].wrappedValue
 
   override def avlTree(operationFlags: Byte, digest: Coll[Byte], keyLength: Int, valueLengthOpt: Option[Int]): CAvlTree = {
     val treeData = AvlTreeData(ADDigest @@ digest.toArray, AvlTreeFlags(operationFlags), keyLength, valueLengthOpt)
