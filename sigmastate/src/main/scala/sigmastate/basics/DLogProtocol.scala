@@ -27,8 +27,7 @@ object DLogProtocol {
     extends SigmaProofOfKnowledgeLeaf[DLogSigmaProtocol, DLogProverInput] {
     override def size: Int = 1
     override val opCode: OpCode = OpCodes.ProveDlogCode
-    lazy val h: EcPointType = value
-    lazy val pkBytes: Array[Byte] = GroupElementSerializer.toBytes(h)
+    lazy val pkBytes: Array[Byte] = GroupElementSerializer.toBytes(value)
   }
 
   object ProveDlog {
@@ -111,7 +110,7 @@ object DLogProtocol {
       //COMPUTE a = g^z*h^(-e)  (where -e here means -e mod q)
       val e: BigInteger = new BigInteger(1, challenge)
       val minusE = dlogGroup.order.subtract(e)
-      val hToE = dlogGroup.exponentiate(publicInput.h, minusE)
+      val hToE = dlogGroup.exponentiate(publicInput.value, minusE)
       val gToZ = dlogGroup.exponentiate(dlogGroup.generator, z)
       val a = dlogGroup.multiplyGroupElements(gToZ, hToE)
       FirstDLogProverMessage(a) -> SecondDLogProverMessage(z)
@@ -133,7 +132,7 @@ object DLogProtocol {
                           challenge: Challenge,
                           secondMessage: SecondDLogProverMessage): EcPointType = {
       val g = dlogGroup.generator
-      val h = proposition.h
+      val h = proposition.value
 
       dlogGroup.multiplyGroupElements(
         dlogGroup.exponentiate(g, secondMessage.z.underlying()),

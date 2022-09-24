@@ -30,7 +30,7 @@ class MixExampleSpecification extends SigmaTestingCommons
 
     val x: BigInteger = alice.dlogSecrets.head.w // x is Alice's private key
 
-    val gX = alicePubKey.h // g_x is Alice's public key (g_x = g^x)
+    val gX = alicePubKey.value // g_x is Alice's public key (g_x = g^x)
     // Alternative 1:
     //      val g_x = alicePubKey.value
     // Alternative 2:
@@ -118,7 +118,7 @@ class MixExampleSpecification extends SigmaTestingCommons
 
     val y: BigInteger = bob.dlogSecrets.head.w // y is Bob's private key
 
-    val gY = GroupElementConstant(bobPubKey.h) // g^y
+    val gY = GroupElementConstant(bobPubKey.value) // g^y
     val gY_alt = GroupElementConstant(dlogGroup.exponentiate(g, y))
 
     gY shouldBe gY_alt
