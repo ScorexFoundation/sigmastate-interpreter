@@ -164,11 +164,7 @@ abstract class BcDlogGroup(val ctx: CryptoContext) extends DlogGroup {
     //If the exponent is negative, convert it to be the exponent modulus q.
     val exp = if (exponent.compareTo(BigInteger.ZERO) < 0) exponent.mod(order) else exponent
 
-    /*
-     * BC treats EC as additive group while we treat that as multiplicative group.
-     * Therefore, exponentiate point is multiply.
-     */
-    CryptoFacade.multiplyPoint(base, exp)
+    CryptoFacade.exponentiatePoint(base, exp)
   }
 
 
@@ -209,7 +205,7 @@ abstract class BcDlogGroup(val ctx: CryptoContext) extends DlogGroup {
     * @throws IllegalArgumentException
     */
   override def multiplyGroupElements(groupElement1: ElemType, groupElement2: ElemType): ElemType =
-    CryptoFacade.addPoint(groupElement1, groupElement2)
+    CryptoFacade.multiplyPoints(groupElement1, groupElement2)
 
 
   /**

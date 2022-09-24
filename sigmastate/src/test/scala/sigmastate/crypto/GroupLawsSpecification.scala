@@ -82,21 +82,21 @@ class GroupLawsSpecification extends SigmaTestingCommons {
       "p1" -> p1,
       "p2" -> p2,
       "p3" -> p3,
-      "p1.add(p2)" -> CryptoFacade.addPoint(p1, p2),
-      "p1.multiply(order)" -> CryptoFacade.multiplyPoint(p1, group.order),
-      "p1.multiply(order + 1)" -> CryptoFacade.multiplyPoint(p1, group.order.add(BigInteger.ONE)),
+      "p1.add(p2)" -> CryptoFacade.multiplyPoints(p1, p2),
+      "p1.multiply(order)" -> CryptoFacade.exponentiatePoint(p1, group.order),
+      "p1.multiply(order + 1)" -> CryptoFacade.exponentiatePoint(p1, group.order.add(BigInteger.ONE)),
       "p1.inverse" -> CryptoFacade.negatePoint(p1)
     ))
   }
 
   property("check test vectors") {
-    CryptoFacade.addPoint(p1, p2) shouldBe
+    CryptoFacade.multiplyPoints(p1, p2) shouldBe
       Helpers.decodeECPoint("03de5e9c2806c05cd45a57d18c469743f42a0d2c84370b6662eb39d8a2990abed8")
 
-    CryptoFacade.multiplyPoint(p1, group.order) shouldBe
+    CryptoFacade.exponentiatePoint(p1, group.order) shouldBe
       Helpers.decodeECPoint("000000000000000000000000000000000000000000000000000000000000000000")
 
-    CryptoFacade.multiplyPoint(p1, group.order.add(BigInteger.ONE)) shouldBe
+    CryptoFacade.exponentiatePoint(p1, group.order.add(BigInteger.ONE)) shouldBe
       Helpers.decodeECPoint("0381c5275b1d50c39a0c36c4561c3a37bff1d87e37a9ad69eab029e426c0b1a8ac")
 
     CryptoFacade.negatePoint(p1) shouldBe

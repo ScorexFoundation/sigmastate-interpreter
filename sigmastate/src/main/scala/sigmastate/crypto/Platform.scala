@@ -25,9 +25,20 @@ object Platform {
     s"ECPoint($rawX,$rawY,...)"
   }
 
-  def addPoint(p1: Ecp, p2: Ecp): Ecp = Ecp(p1.value.add(p2.value))
+  def multiplyPoints(p1: Ecp, p2: Ecp): Ecp = {
+    /*
+     * BC treats EC as additive group while we treat that as multiplicative group.
+     */
+    Ecp(p1.value.add(p2.value))
+  }
 
-  def multiplyPoint(p: Ecp, n: BigInteger): Ecp = Ecp(p.value.multiply(n))
+  def exponentiatePoint(p: Ecp, n: BigInteger): Ecp = {
+    /*
+     * BC treats EC as additive group while we treat that as multiplicative group.
+     * Therefore, exponentiate point is multiply.
+     */
+    Ecp(p.value.multiply(n))
+  }
 
   def isInfinityPoint(p: Ecp): Boolean = p.value.isInfinity
 
