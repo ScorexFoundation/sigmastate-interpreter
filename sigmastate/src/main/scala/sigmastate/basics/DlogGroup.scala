@@ -103,17 +103,6 @@ trait DlogGroup {
   }
 
   /**
-    * Computes the product of several exponentiations with distinct bases
-    * and distinct exponents.
-    * Instead of computing each part separately, an optimization is used to
-    * compute it simultaneously.
-    * @param groupElements
-    * @param exponentiations
-    * @return the exponentiation result
-    */
-  def simultaneousMultipleExponentiations(groupElements: Array[ElemType], exponentiations: Array[BigInteger]): ElemType
-
-  /**
     * Computes the product of several exponentiations of the same base
     * and distinct exponents.
     * An optimization is used to compute it more quickly by keeping in memory

@@ -5,8 +5,7 @@ import sigmastate.crypto.BigIntegers
 import debox.cfor
 import sigmastate.crypto.{CryptoContext, CryptoFacade}
 
-import scala.collection.{Seq, mutable}
-import scala.util.Try
+import scala.collection.mutable
 import scala.collection.compat.immutable.ArraySeq
 
 
@@ -98,19 +97,6 @@ abstract class BcDlogGroup(val ctx: CryptoContext) extends DlogGroup {
   //Create the generator
   //Assume that (x,y) are the coordinates of a point that is indeed a generator but check that (x,y) are the coordinates of a point.
   override lazy val generator: ElemType = ctx.getGenerator
-
-  /**
-    * Checks if the given x and y represent a valid point on the given curve,
-    * i.e. if the point (x, y) is a solution of the curves equation.
-    *
-    * @param x coefficient of the point
-    * @param y coefficient of the point
-    * @return true if the given x and y represented a valid point on the given curve
-    */
-  def checkCurveMembership(x: BigInteger, y: BigInteger): Boolean = {
-    Try(ctx.validatePoint(x, y)).isSuccess
-  }
-
 
   /**
     * This function calculates k, the maximum length in bytes of a string to be converted to a Group Element of this group.
@@ -207,21 +193,6 @@ abstract class BcDlogGroup(val ctx: CryptoContext) extends DlogGroup {
   override def multiplyGroupElements(groupElement1: ElemType, groupElement2: ElemType): ElemType =
     CryptoFacade.multiplyPoints(groupElement1, groupElement2)
 
-
-  /**
-    * Computes the product of several exponentiations with distinct bases
-    * and distinct exponents.
-    * Instead of computing each part separately, an optimization is used to
-    * compute it simultaneously.
-    *
-    * @param groupElements
-    * @param exponentiations
-    * @return the exponentiation result
-    */
-  override def simultaneousMultipleExponentiations(groupElements: Array[ElemType],
-                                                   exponentiations: Array[BigInteger]): ElemType =
-    computeLL(groupElements, exponentiations)
-
   /**
     * Computes the product of several exponentiations of the same base
     * and distinct exponents.
@@ -265,113 +236,6 @@ abstract class BcDlogGroup(val ctx: CryptoContext) extends DlogGroup {
     */
   override lazy val maxLengthOfByteArrayForEncoding: Int = k
 
-
-  /*
-	 * Computes the simultaneousMultiplyExponentiate using a naive algorithm
-	 */
-  protected def computeNaive(groupElements: Array[ElemType], exponentiations: Array[BigInteger]): ElemType =
-    groupElements.zip(exponentiations)
-      .iterator
-      .map { case (base, exp) => exponentiate(base, exp) }
-      .foldLeft(identity) { case (r, elem) => multiplyGroupElements(elem, r) }
-
-
-  /*
-   * Compute the simultaneousMultiplyExponentiate by LL algorithm.
-   * The code is taken from the pseudo code of LL algorithm in http://dasan.sejong.ac.kr/~chlim/pub/multi_exp.ps.
-   */
-  protected def computeLL(groupElements: Array[ElemType], exponentiations: Array[BigInteger]): ElemType = {
-    val n = groupElements.length
-    //get the biggest exponent
-    val bigExp = exponentiations.max
-    val t = bigExp.bitLength //num bits of the biggest exponent.
-    val w = getLLW(t) //window size, choose it according to the value of t
-
-    //h = n/w
-    val h = if ((n % w) == 0) n / w else (n / w) + 1
-
-    //create pre computation table
-    val preComp = createLLPreCompTable(groupElements, w, h)
-
-    //holds the computation result
-    var result: ElemType = computeLoop(exponentiations, w, h, preComp, identity, t - 1)
-    //computes the first loop of the algorithm. This loop returns in the next part of the algorithm with one single tiny change.
-
-    //computes the third part of the algorithm
-    (t - 2).to(0, -1).foreach { j =>
-      //Y = Y^2
-      result = exponentiate(result, new BigInteger("2"))
-      //computes the inner loop
-      result = computeLoop(exponentiations, w, h, preComp, result, j)
-    }
-    result
-  }
-
-  /*
-   * Computes the loop the repeats in the algorithm.
-   * for k=0 to h-1
-   * 		e=0
-   * 		for i=kw to kw+w-1
-   *			if the bitIndex bit in ci is set:
-   *			calculate e += 2^(i-kw)
-   *		result = result *preComp[k][e]
-   *
-   */
-  private def computeLoop(exponentiations: Array[BigInteger], w: Int, h: Int, preComp: Seq[Seq[ElemType]], result: ElemType, bitIndex: Int) = {
-    var res = result
-    cfor(0)(_ < h, _ + 1) { k =>
-      var e = 0
-      cfor(k * w)(_ < (k * w + w), _ + 1) { i =>
-        if (i < exponentiations.length) { //if the bit is set, change the e value
-          if (exponentiations(i).testBit(bitIndex)) {
-            val twoPow = Math.pow(2, i - k * w).toInt
-            e += twoPow
-          }
-        }
-      }
-      res = multiplyGroupElements(res, preComp(k)(e))
-    }
-    res
-  }
-
-  /*
-   * Creates the preComputation table.
-   */
-  private def createLLPreCompTable(groupElements: Array[ElemType], w: Int, h: Int) = {
-    val twoPowW = Math.pow(2, w).toInt
-    //create the pre-computation table of size h*(2^(w))
-    val preComp: Seq[mutable.Seq[ElemType]] = Seq.fill(h)(mutable.Seq.fill(twoPowW)(identity))
-
-    cfor(0)(_ < h, _ + 1) { k =>
-      cfor(0)(_ < twoPowW, _ + 1) { e =>
-        cfor(0)(_ < w, _ + 1) { i =>
-          val baseIndex = k * w + i
-          if (baseIndex < groupElements.length) {
-            val base = groupElements(baseIndex)
-            //if bit i in e is set, change preComp[k][e]
-            if ((e & (1 << i)) != 0) { //bit i is set
-              preComp(k)(e) = multiplyGroupElements(preComp(k)(e), base)
-            }
-          }
-        }
-      }
-    }
-    preComp
-  }
-
-  /*
-   * returns the w value according to the given t
-   */
-  private def getLLW(t: Int): Int = {
-    if (t <= 10) 2
-    else if (t <= 24) 3
-    else if (t <= 60) 4
-    else if (t <= 144) 5
-    else if (t <= 342) 6
-    else if (t <= 797) 7
-    else if (t <= 1828) 8
-    else 9
-  }
 }
 
 object SecP256K1Group extends BcDlogGroup(CryptoFacade.createCryptoContext())
