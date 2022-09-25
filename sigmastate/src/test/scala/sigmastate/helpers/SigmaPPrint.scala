@@ -111,7 +111,7 @@ object SigmaPPrint extends PPrinter {
       Tree.Apply("BigInt", treeifyMany(v.toString(16), 16))
 
     case poly: GF2_192_Poly =>
-      val c0 = poly.coeff0Bytes()
+      val c0 = poly.coeff0Bytes
       val others = poly.toByteArray(false) // don't output
       Tree.Apply("GF2_192_Poly.fromByteArray", treeifyMany(c0, others))
 

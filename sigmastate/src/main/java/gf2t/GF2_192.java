@@ -31,7 +31,7 @@ package gf2t;
 import java.util.Arrays;
 
 public class GF2_192 {
-    private final long [] word = new long[3];
+    public final long [] word = new long[3];
 
     /**
      *

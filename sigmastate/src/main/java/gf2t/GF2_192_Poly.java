@@ -32,9 +32,9 @@ package gf2t;
 import java.util.Arrays;
 
 public class GF2_192_Poly {
-    private final GF2_192 [] c; // must be not null and of length at least 1
+    public final GF2_192 [] c; // must be not null and of length at least 1
 
-    private int deg; // must be >=0. actual degree is <= deg. c[deg+1]...c[c.length-1] must be 0 or null
+    public int deg; // must be >=0. actual degree is <= deg. c[deg+1]...c[c.length-1] must be 0 or null
     // deg of the 0 polynomial is 0
 
     /**
