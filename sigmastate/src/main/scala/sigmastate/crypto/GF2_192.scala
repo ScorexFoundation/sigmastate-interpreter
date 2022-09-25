@@ -35,6 +35,10 @@ import java.util
 class GF2_192 extends AnyRef {
   private[crypto] val word: Array[Long] = new Array[Long](3)
 
+  def toOld: gf2t.GF2_192 = new gf2t.GF2_192(word.clone())
+
+  def equalsOld(old: gf2t.GF2_192) = util.Arrays.equals(word, old.word)
+
   /**
     * returns a copy of the field element
     *

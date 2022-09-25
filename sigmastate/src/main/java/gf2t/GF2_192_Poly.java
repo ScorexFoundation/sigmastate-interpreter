@@ -37,6 +37,11 @@ public class GF2_192_Poly {
     public int deg; // must be >=0. actual degree is <= deg. c[deg+1]...c[c.length-1] must be 0 or null
     // deg of the 0 polynomial is 0
 
+    public GF2_192_Poly(GF2_192[] _c, int _deg) {
+        c = _c;
+        deg = _deg;
+    }
+
     /**
      * Constructs the polynomial given the byte array representation of the coefficients.
      * Coefficient of degree zero is given separately. Each coefficient should be given
@@ -141,7 +146,7 @@ public class GF2_192_Poly {
      * @param p the monic polynomial being added to this
      * @param r the constant by which p is multiplied before being added
      */
-    private void addMonicTimesConstantTo (GF2_192_Poly p, GF2_192 r) {
+    public void addMonicTimesConstantTo (GF2_192_Poly p, GF2_192 r) {
         GF2_192 t = new GF2_192();
         for (int i = 0; i<p.deg; i++) {
             GF2_192.mul (t, p.c[i], r);
@@ -156,7 +161,7 @@ public class GF2_192_Poly {
      * multiplies this by (x+r), assuming this is monic of degree deg (i.e. assumed c[deg]==1)
      * @param r the constant term of the monomial
      */
-    private void monicTimesMonomial (byte r) {
+    public void monicTimesMonomial (byte r) {
         deg++;
         c[deg] = new GF2_192(1);
         for (int i = deg - 1; i > 0; i--) {
