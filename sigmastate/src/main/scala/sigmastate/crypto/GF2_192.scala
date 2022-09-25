@@ -258,10 +258,9 @@ class GF2_192 {
     *
     * @return bits of this in hexadecimal notation, most significant on the left
     */
-  override def toString: String =
-    String.format("%016X", word(2)) +
-      String.format("%016X", word(1)) +
-      String.format("%016X", word(0))
+  override def toString: String = {
+    f"${word(2)}%016X${word(1)}%016X${word(0)}%016X"
+  }
 }
 
 object GF2_192 {
