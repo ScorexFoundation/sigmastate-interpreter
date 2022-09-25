@@ -1,6 +1,5 @@
 package sigmastate.interpreter
 
-import gf2t.{GF2_192, GF2_192_Poly}
 import sigmastate.kiama.rewriting.Rewriter.{everywherebu, everywheretd, rule}
 import sigmastate.kiama.rewriting.Strategy
 import scalan.util.CollectionUtil._
@@ -11,6 +10,7 @@ import sigmastate._
 import sigmastate.basics.DLogProtocol._
 import sigmastate.basics.VerifierMessage.Challenge
 import sigmastate.basics._
+import sigmastate.crypto.{GF2_192, GF2_192_Poly}
 import sigmastate.lang.exceptions.InterpreterException
 import sigmastate.utils.Helpers
 
@@ -469,7 +469,7 @@ trait ProverInterpreter extends Interpreter with ProverUtils {
       val newChildren = t.children.foldLeft(Seq[ProofTree](), 1) {
         case ((s, count), child) =>
           val newChild = child match {
-            case r: UnprovenTree if r.real => r.withChallenge(Challenge @@ q.evaluate(count.toByte).toByteArray())
+            case r: UnprovenTree if r.real => r.withChallenge(Challenge @@ q.evaluate(count.toByte).toByteArray)
             case p: ProofTree => p
           }
           (s :+ newChild, count + 1)

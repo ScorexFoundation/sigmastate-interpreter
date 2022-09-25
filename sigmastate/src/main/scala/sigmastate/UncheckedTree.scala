@@ -4,8 +4,8 @@ import java.util.Arrays
 import sigmastate.basics.DLogProtocol.{FirstDLogProverMessage, ProveDlog, SecondDLogProverMessage}
 import sigmastate.basics.VerifierMessage.Challenge
 import sigmastate.Values.SigmaBoolean
-import gf2t.GF2_192_Poly
 import sigmastate.basics.{FirstDiffieHellmanTupleProverMessage, ProveDHTuple, SecondDiffieHellmanTupleProverMessage}
+import sigmastate.crypto.GF2_192_Poly
 
 sealed trait UncheckedTree extends ProofTree
 

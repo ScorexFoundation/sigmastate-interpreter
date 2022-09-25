@@ -1,8 +1,6 @@
 package sigmastate
 
 import java.math.BigInteger
-
-import gf2t.GF2_192_Poly
 import sigmastate.Values.{ErgoTree, SigmaBoolean, SigmaPropConstant}
 import sigmastate.basics.DLogProtocol.{FirstDLogProverMessage, ProveDlog}
 import sigmastate.basics.VerifierMessage.Challenge
@@ -13,7 +11,7 @@ import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.serialization.SigmaSerializer
 import sigmastate.utils.SigmaByteWriter
 import debox.cfor
-
+import sigmastate.crypto.GF2_192_Poly
 import scala.language.existentials
 
 object ConjectureType extends Enumeration {
