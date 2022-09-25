@@ -40,8 +40,6 @@ class GF2_192_Poly {
   private var deg: Int = 0 // must be >=0. actual degree is <= deg. c[deg+1]...c[c.length-1] must be 0 or null
   // deg of the 0 polynomial is 0
 
-  def toOld: gf2t.GF2_192_Poly = new gf2t.GF2_192_Poly(c.map(gf => if (gf == null) null else gf.toOld), deg)
-
   /**
     * Constructs the polynomial given the byte array representation of the coefficients.
     * Coefficient of degree zero is given separately. Each coefficient should be given
@@ -74,8 +72,6 @@ class GF2_192_Poly {
       GF2_192.mul(res, res, x)
       GF2_192.add(res, res, c(d))
     }
-    val resOld = this.toOld.evaluate(x)
-    assert(res.equalsOld(resOld))
     res
   }
 
@@ -86,7 +82,6 @@ class GF2_192_Poly {
     * @param r the constant by which p is multiplied before being added
     */
   private def addMonicTimesConstantTo(p: GF2_192_Poly, r: GF2_192): Unit = {
-    val old = this.toOld
     val t: GF2_192 = new GF2_192
     cfor(0)(_ < p.deg, _ + 1) { i =>
       GF2_192.mul(t, p.c(i), r)
@@ -94,10 +89,6 @@ class GF2_192_Poly {
     }
     deg = p.deg
     c(deg) = new GF2_192(r)
-
-    // TODO remove after committed and tests pass
-    old.addMonicTimesConstantTo(p.toOld, r.toOld)
-    assert(this.equalsOld(old))
   }
 
   /**
@@ -106,7 +97,6 @@ class GF2_192_Poly {
     * @param r the constant term of the monomial
     */
   private def monicTimesMonomial(r: Byte): Unit = {
-    val old = this.toOld
     deg += 1
     c(deg) = new GF2_192(1)
     cfor(deg - 1)(_ > 0, _ - 1) { i =>
@@ -115,10 +105,6 @@ class GF2_192_Poly {
       GF2_192.add(c(i), c(i), c(i - 1))
     }
     GF2_192.mul(c(0), c(0), r)
-
-    // TODO remove after committed and tests pass
-    old.monicTimesMonomial(r)
-    assert(this.equalsOld(old))
   }
 
   /**
@@ -170,10 +156,6 @@ class GF2_192_Poly {
     cfor(c0)(_ <= deg, _ + 1) { i =>
       c(i).toByteArray(ret, (i - c0) * 24)
     }
-
-    // TODO remove after committed and tests pass
-    assert(Arrays.equals(ret, this.toOld.toByteArray(coeff0)))
-
     ret
   }
 
@@ -195,12 +177,6 @@ class GF2_192_Poly {
       case _ => false
     }
   }
-
-  def equalsOld(old: gf2t.GF2_192_Poly): Boolean = {
-    deg == old.deg &&
-      c.length == old.c.length &&
-      c.zip(old.c).forall { case (x, y) => if (x == null) y == null else x.equalsOld(y) }
-  }
 }
 
 object GF2_192_Poly {
@@ -215,8 +191,6 @@ object GF2_192_Poly {
   // deg of the 0 polynomial is 0
   def fromByteArray(coeff0: Array[Byte], moreCoeffs: Array[Byte]): GF2_192_Poly = {
     val res = new GF2_192_Poly(coeff0, moreCoeffs)
-    val resOld = new gf2t.GF2_192_Poly(coeff0, moreCoeffs)
-    assert(res.equalsOld(resOld))
     res
   }
 
@@ -275,12 +249,6 @@ object GF2_192_Poly {
       GF2_192.mul(t, t, s)
       result.addMonicTimesConstantTo(vanishingPoly, t)
     }
-
-    // TODO remove after committed and tests pass
-    val resOld =  gf2t.GF2_192_Poly.interpolate(points,
-      values.map(_.toOld),
-      if (valueAt0 == null) null else valueAt0.toOld)
-    assert(result.equalsOld(resOld))
 
     result
   }
