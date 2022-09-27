@@ -45,7 +45,7 @@ class AvlTreeSpecification extends SerializationSpecification {
 
     val k = Blake2b256.hash("1")
     val v = k
-    avlProver.performOneOperation(Insert(ADKey @@ k, ADValue @@ v))
+    avlProver.performOneOperation(Insert(ADKey @@@ k, ADValue @@@ v))
     val proof = avlProver.generateProof()
 
     val resTree = tree.insert(Array(k.toColl -> v.toColl).toColl, proof.toColl).get

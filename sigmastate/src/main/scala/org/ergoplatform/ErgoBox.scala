@@ -61,7 +61,7 @@ class ErgoBox(
   import ErgoBox._
 
   /** Blake2b256 hash of the serialized `bytes`. */
-  lazy val id: BoxId = ADKey @@ Blake2b256.hash(bytes)
+  lazy val id: BoxId = ADKey @@@ Blake2b256.hash(bytes)
 
   override def get(identifier: RegisterId): Option[Value[SType]] = {
     identifier match {

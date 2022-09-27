@@ -440,7 +440,7 @@ class IcoExample extends SigmaTestingCommons
     val projectBoxBeforeClosing = testBox(10, issuanceTree, 0, Seq(),
       Map(R4 -> ByteArrayConstant(Array.emptyByteArray), R5 -> AvlTreeConstant(openTreeData)))
 
-    val tokenId = Digest32 @@ projectBoxBeforeClosing.id
+    val tokenId = Digest32 @@@ projectBoxBeforeClosing.id
     val closedTreeData = SigmaDsl.avlTree(new AvlTreeData(digest, AvlTreeFlags.RemoveOnly, 32, None))
 
     val projectBoxAfterClosing = testBox(1, withdrawalTree, 0,
@@ -481,7 +481,7 @@ class IcoExample extends SigmaTestingCommons
     }
 
     funderKvs.foreach { case (k, v) =>
-      avlProver.performOneOperation(Insert(ADKey @@ k, ADValue @@ v))
+      avlProver.performOneOperation(Insert(ADKey @@@ k, ADValue @@ v))
     }
     val digest = avlProver.digest
     val fundersTree = new AvlTreeData(digest, AvlTreeFlags.RemoveOnly, 32, None)
@@ -492,12 +492,12 @@ class IcoExample extends SigmaTestingCommons
     avlProver.generateProof()
 
     withdrawals.foreach { case (k, _) =>
-      avlProver.performOneOperation(Lookup(ADKey @@ k))
+      avlProver.performOneOperation(Lookup(ADKey @@@ k))
     }
     val lookupProof = avlProver.generateProof()
 
     withdrawals.foreach { case (k, _) =>
-      avlProver.performOneOperation(Remove(ADKey @@ k))
+      avlProver.performOneOperation(Remove(ADKey @@@ k))
     }
     val removalProof = avlProver.generateProof()
 

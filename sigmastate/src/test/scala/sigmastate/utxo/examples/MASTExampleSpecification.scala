@@ -83,7 +83,7 @@ class MASTExampleSpecification extends SigmaTestingCommons
     val allSecrets = (0 until 5).map(_ => Random.nextString(32).getBytes("UTF-8"))
     val scriptBranches = allSecrets.map(s => EQ(ByteArrayConstant(s), GetVarByteArray(secretId).get))
     val scriptBranchesBytes = scriptBranches.map(b => ValueSerializer.serialize(b))
-    val treeElements: Seq[(ADKey, ADValue)] = scriptBranchesBytes.map(s => (ADKey @@ Blake2b256(s), ADValue @@ s))
+    val treeElements: Seq[(ADKey, ADValue)] = scriptBranchesBytes.map(s => (ADKey @@@ Blake2b256(s), ADValue @@ s))
     val knownSecretTreeKey = treeElements.head._1
     val knownSecret = ByteArrayConstant(allSecrets.head)
 
