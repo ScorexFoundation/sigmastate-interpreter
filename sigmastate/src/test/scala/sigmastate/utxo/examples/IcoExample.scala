@@ -1,6 +1,6 @@
 package sigmastate.utxo.examples
 
-import com.google.common.primitives.Longs
+import scorex.utils.Longs
 import org.ergoplatform.ErgoBox.{R4, R5}
 import org.ergoplatform._
 import org.ergoplatform.dsl.TestContractSpec

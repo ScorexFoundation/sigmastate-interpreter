@@ -1,6 +1,6 @@
 package sigmastate.eval
 
-import com.google.common.primitives.{Ints, Longs}
+import scorex.utils.{Ints, Longs}
 
 import java.math.BigInteger
 import java.util.Arrays

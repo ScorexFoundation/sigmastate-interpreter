@@ -1,6 +1,6 @@
 package sigmastate.utxo
 
-import com.google.common.primitives.Bytes
+import scorex.utils.Bytes
 import org.ergoplatform.ErgoBox.R4
 import org.ergoplatform._
 import org.ergoplatform.validation.ValidationException

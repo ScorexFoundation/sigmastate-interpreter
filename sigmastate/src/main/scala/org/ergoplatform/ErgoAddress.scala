@@ -2,7 +2,7 @@ package org.ergoplatform
 
 import java.util
 
-import com.google.common.primitives.Ints
+import scorex.utils.Ints
 import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
 import scorex.crypto.hash.{Digest32, Blake2b256}
 import scorex.util.encode.Base58
