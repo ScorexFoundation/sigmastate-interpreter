@@ -145,7 +145,7 @@ lazy val common = Project("common", file("common"))
   .settings(commonSettings ++ testSettings,
     libraryDependencies ++= Seq(
       "org.scala-lang" % "scala-reflect" % scalaVersion.value,
-      debox, scalaCompat, guava
+      debox, scalaCompat
     ))
   .settings(publish / skip := true)
 
