@@ -6,7 +6,6 @@ import scala.annotation.implicitNotFound
 import scala.collection.immutable.ListMap
 import scalan.util._
 import scalan.RType._
-import scalan.util.ReflectionUtil.ClassOps
 import scala.collection.mutable
 import debox.cfor
 
@@ -108,7 +107,7 @@ abstract class TypeDescs extends Base { self: Scalan =>
     lazy val name: String = getName(_.name)
 
     // <> to delimit because: [] is used inside name; {} looks bad with structs.
-    override def toString = s"${getClass.safeSimpleName}<$name>"
+    override def toString = s"${getClass.getSimpleName}<$name>"
   }
 
   /** Type descriptor of staged types, which correspond to source (unstaged) RTypes
@@ -134,7 +133,7 @@ abstract class TypeDescs extends Base { self: Scalan =>
           be.sourceType.name
         case e =>
           val cl = e.getClass
-          val name = cl.safeSimpleName.stripSuffix("Elem")
+          val name = cl.getSimpleName.stripSuffix("Elem")
           name
       }
       if (typeArgs.isEmpty)
