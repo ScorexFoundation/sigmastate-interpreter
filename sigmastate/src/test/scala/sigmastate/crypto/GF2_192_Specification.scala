@@ -1,13 +1,14 @@
 package sigmastate.crypto
 
 import org.junit.Assert.assertFalse
-import org.scalatest.{Matchers, PropSpec}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.propspec.AnyPropSpec
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 
 import java.util
 import java.util.{Arrays, Random}
 
-class GF2_192_Specification extends PropSpec
+class GF2_192_Specification extends AnyPropSpec
   with ScalaCheckDrivenPropertyChecks
   with Matchers {
 

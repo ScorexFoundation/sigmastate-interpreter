@@ -2,7 +2,7 @@ package sigmastate
 
 import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
 import org.ergoplatform.ErgoScriptPredef
-import org.scalatest.Matchers
+import org.scalatest.matchers.should.Matchers
 import sigmastate.Values.{ErgoTree, SValue, SigmaBoolean, SigmaPropValue, Value}
 import sigmastate.eval.IRContext
 import sigmastate.helpers.SigmaPPrint

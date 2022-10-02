@@ -2,8 +2,9 @@ package sigmastate.lang
 
 import fastparse.Parsed
 import org.ergoplatform.{ErgoAddressEncoder, ErgoBox}
-import org.scalatest.prop.PropertyChecks
-import org.scalatest.{PropSpec, Matchers}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.propspec.AnyPropSpec
+import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import sigmastate.SCollection._
 import sigmastate.Values._
 import sigmastate._
@@ -12,7 +13,7 @@ import sigmastate.lang.Terms._
 import sigmastate.lang.syntax.ParserException
 import sigmastate.serialization.OpCodes
 
-class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with LangTests {
+class SigmaParserTest extends AnyPropSpec with ScalaCheckPropertyChecks with Matchers with LangTests {
   import StdSigmaBuilder._
 
   private val predefFuncRegistry = new PredefinedFuncRegistry(StdSigmaBuilder)

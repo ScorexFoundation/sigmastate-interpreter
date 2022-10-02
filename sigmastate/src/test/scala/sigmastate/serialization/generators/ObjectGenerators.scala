@@ -202,8 +202,8 @@ trait ObjectGenerators extends TypeGenerators
   val unsignedShortGen: Gen[Short] = Gen.chooseNum(0, Short.MaxValue).map(_.toShort)
 
   val contextExtensionGen: Gen[ContextExtension] = for {
-    values <- Gen.sequence(contextExtensionValuesGen(0, 5))
-  } yield ContextExtension(values.asScala.toMap)
+    values <- Gen.sequence(contextExtensionValuesGen(0, 5))(Buildable.buildableSeq)
+  } yield ContextExtension(values.toMap)
 
   val serializedProverResultGen: Gen[ProverResult] = for {
     length <- Gen.chooseNum(1, 100)
@@ -315,14 +315,14 @@ trait ObjectGenerators extends TypeGenerators
     tId <- modifierIdGen
     boxId <- unsignedShortGen
     tokensCount <- Gen.chooseNum[Int](0, MaxTokens)
-    tokens <- Gen.sequence(additionalTokensGen(tokensCount)).map(_.asScala.map(_._1))
+    tokens <- Gen.sequence(additionalTokensGen(tokensCount))(Buildable.buildableSeq).map(_.map(_._1))
     candidate <- ergoBoxCandidateGen(tokens.toSeq)
   } yield candidate.toBox(tId, boxId)
 
   val additionalRegistersGen: Gen[Map[NonMandatoryRegisterId, EvaluatedValue[SType]]] = for {
     regNum <- Gen.chooseNum[Byte](0, ErgoBox.nonMandatoryRegistersCount)
-    regs <- Gen.sequence(additionalRegistersGen(regNum))
-  } yield regs.asScala.toMap
+    regs <- Gen.sequence(additionalRegistersGen(regNum))(Buildable.buildableSeq)
+  } yield regs.toMap
 
   def arrayOfN[T](n: Int, g: Gen[T])(implicit evb: Buildable[T,Array[T]]): Gen[Array[T]] = {
     Gen.containerOfN[Array, T](n, g)

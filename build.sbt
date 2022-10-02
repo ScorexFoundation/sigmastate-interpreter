@@ -63,9 +63,10 @@ val fastparse          = "com.lihaoyi" %% "fastparse" % "2.3.3"
 val scalaCompat        = "org.scala-lang.modules" %% "scala-collection-compat" % "2.7.0"
 
 val testingDependencies = Seq(
-  "org.scalatest" %% "scalatest" % "3.0.9" % Test,
-  "org.scalactic" %% "scalactic" % "3.0.9" % Test,
-  "org.scalacheck" %% "scalacheck" % "1.14.3" % Test,
+  "org.scalatest" %% "scalatest" % "3.2.14" % Test,
+  "org.scalactic" %% "scalactic" % "3.2.14" % Test,
+  "org.scalacheck" %% "scalacheck" % "1.15.2" % Test,          // last supporting Scala 2.11
+  "org.scalatestplus" %% "scalacheck-1-15" % "3.2.3.0" % Test, // last supporting Scala 2.11
   "com.lihaoyi" %% "pprint" % "0.6.3" % Test,
   "com.storm-enroute" %% "scalameter" % "0.19" % Test,
   "junit" % "junit" % "4.12" % Test
