@@ -1,7 +1,7 @@
 package special
 
 import scala.reflect.ClassTag
-import scalan.{Reified, RType}
+import scalan.RType
 
 object SpecialPredef {
   def loopUntil[A](s1: A, isMatch: A => Boolean, step: A => A): A = {
@@ -15,7 +15,7 @@ object SpecialPredef {
 
   def some[A](x: A): Option[A] = Some(x)
 
-  @Reified("A") def none[A](implicit tA: RType[A]): Option[A] = Option.empty[A]
+  def none[A](implicit tA: RType[A]): Option[A] = Option.empty[A]
 
   def optionGetOrElse[A](opt: Option[A], default: A): A = opt.getOrElse(default)
 

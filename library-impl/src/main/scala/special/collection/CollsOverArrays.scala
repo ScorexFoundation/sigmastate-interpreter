@@ -1,13 +1,9 @@
 package special.collection
 
 import java.util
-import java.util.Objects
-import special.SpecialPredef
-
-import scala.reflect.ClassTag
 import scalan._
 import scalan.util.CollectionUtil
-import scalan.{RType, Reified}
+import scalan.RType
 import Helpers._
 import debox.Buffer
 import scalan.RType._
@@ -187,7 +183,6 @@ class CollOverArrayBuilder extends CollBuilder { builder =>
     pairCollFromArrays(resA, resB)(tA, tB)
   }
 
-  @Reified("T")
   override def fromItems[T](items: T*)(implicit cT: RType[T]): Coll[T] = cT match {
     case pt: PairType[a,b] =>
       val tA = pt.tFst

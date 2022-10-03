@@ -6,7 +6,7 @@ package special.collection {
     import CollBuilder._;
     import PairColl._;
     import WOption._;
-    @ContainerType @FunctorType @Liftable @WithMethodCallRecognizers trait Coll[A] extends Def[Coll[A]] {
+    trait Coll[A] extends Def[Coll[A]] {
       implicit def eA: Elem[A];
       def builder: Ref[CollBuilder];
       def length: Ref[Int];
@@ -25,22 +25,22 @@ package special.collection {
       def indices: Ref[Coll[Int]];
       def flatMap[B](f: Ref[scala.Function1[A, Coll[B]]]): Ref[Coll[B]];
       def segmentLength(p: Ref[scala.Function1[A, Boolean]], from: Ref[Int]): Ref[Int];
-      @NeverInline def find(p: Ref[scala.Function1[A, Boolean]]): Ref[WOption[A]] = delayInvoke;
+      def find(p: Ref[scala.Function1[A, Boolean]]): Ref[WOption[A]] = delayInvoke;
       def indexWhere(p: Ref[scala.Function1[A, Boolean]], from: Ref[Int]): Ref[Int];
-      @NeverInline def indexOf(elem: Ref[A], from: Ref[Int]): Ref[Int] = delayInvoke;
+      def indexOf(elem: Ref[A], from: Ref[Int]): Ref[Int] = delayInvoke;
       def lastIndexWhere(p: Ref[scala.Function1[A, Boolean]], end: Ref[Int]): Ref[Int];
       def take(n: Ref[Int]): Ref[Coll[A]];
       def patch(from: Ref[Int], patch: Ref[Coll[A]], replaced: Ref[Int]): Ref[Coll[A]];
       def updated(index: Ref[Int], elem: Ref[A]): Ref[Coll[A]];
       def updateMany(indexes: Ref[Coll[Int]], values: Ref[Coll[A]]): Ref[Coll[A]];
       def unionSet(that: Ref[Coll[A]]): Ref[Coll[A]];
-      @NeverInline def diff(that: Ref[Coll[A]]): Ref[Coll[A]] = delayInvoke;
-      @NeverInline def intersect(that: Ref[Coll[A]]): Ref[Coll[A]] = delayInvoke;
+      def diff(that: Ref[Coll[A]]): Ref[Coll[A]] = delayInvoke;
+      def intersect(that: Ref[Coll[A]]): Ref[Coll[A]] = delayInvoke;
       def slice(from: Ref[Int], until: Ref[Int]): Ref[Coll[A]];
       def append(other: Ref[Coll[A]]): Ref[Coll[A]];
       def reverse: Ref[Coll[A]]
     };
-    @WithMethodCallRecognizers trait PairColl[L, R] extends Coll[scala.Tuple2[L, R]] {
+    trait PairColl[L, R] extends Coll[scala.Tuple2[L, R]] {
       implicit def eL: Elem[L];
       implicit def eR: Elem[R];
       def ls: Ref[Coll[L]];
@@ -48,9 +48,9 @@ package special.collection {
       def mapFirst[T1](f: Ref[scala.Function1[L, T1]]): Ref[Coll[scala.Tuple2[T1, R]]];
       def mapSecond[T1](f: Ref[scala.Function1[R, T1]]): Ref[Coll[scala.Tuple2[L, T1]]]
     };
-    @Liftable @WithMethodCallRecognizers trait CollBuilder extends Def[CollBuilder] {
+    trait CollBuilder extends Def[CollBuilder] {
       def pairColl[A, B](as: Ref[Coll[A]], bs: Ref[Coll[B]]): Ref[PairColl[A, B]];
-      @Reified(value = "T") def fromItems[T](items: Ref[T]*)(implicit cT: Elem[T]): Ref[Coll[T]];
+      def fromItems[T](items: Ref[T]*)(implicit cT: Elem[T]): Ref[Coll[T]];
       def unzip[A, B](xs: Ref[Coll[scala.Tuple2[A, B]]]): Ref[scala.Tuple2[Coll[A], Coll[B]]];
       def xor(left: Ref[Coll[Byte]], right: Ref[Coll[Byte]]): Ref[Coll[Byte]];
       def replicate[T](n: Ref[Int], v: Ref[T]): Ref[Coll[T]];

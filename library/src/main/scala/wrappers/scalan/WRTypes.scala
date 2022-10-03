@@ -13,7 +13,7 @@ package wrappers.scalan {
 
   trait WRTypes extends Base { self: WrappersModule =>
     import WRType._;
-    @External("RType") @Liftable @WithMethodCallRecognizers trait WRType[A] extends Def[WRType[A]] {
+    @External("RType") trait WRType[A] extends Def[WRType[A]] {
       implicit def eA: Elem[A];
       @External def name: Ref[String]
     };
