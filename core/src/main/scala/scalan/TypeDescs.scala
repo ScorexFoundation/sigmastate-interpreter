@@ -1,13 +1,15 @@
 package scalan
 
-import java.lang.reflect.{InvocationTargetException, Method}
-import scala.language.{implicitConversions, higherKinds}
+import java.lang.reflect.InvocationTargetException
+import scala.language.{higherKinds, implicitConversions}
 import scala.annotation.implicitNotFound
 import scala.collection.immutable.ListMap
 import scalan.util._
 import scalan.RType._
+
 import scala.collection.mutable
 import debox.cfor
+import scalan.reflection.{RClass, RConstructor, RMethod}
 
 abstract class TypeDescs extends Base { self: Scalan =>
 
@@ -47,10 +49,10 @@ abstract class TypeDescs extends Base { self: Scalan =>
   }
 
   sealed abstract class MethodDesc {
-    def method: Method
+    def method: RMethod
   }
-  case class RMethodDesc(method: Method) extends MethodDesc
-  case class WMethodDesc(wrapSpec: WrapSpec, method: Method) extends MethodDesc
+  case class RMethodDesc(method: RMethod) extends MethodDesc
+  case class WMethodDesc(wrapSpec: WrapSpec, method: RMethod) extends MethodDesc
 
 // TODO optimize: benchmark this version agains the version below
 //  def getSourceValues(dataEnv: DataEnv, forWrapper: Boolean, stagedValue: AnyRef, out: DBuffer[AnyRef]): Unit = {
@@ -148,8 +150,8 @@ abstract class TypeDescs extends Base { self: Scalan =>
       !!!(s"Cannot get Liftable instance for $this")
 
     final lazy val sourceType: RType[_] = liftable.sourceType
-    protected def collectMethods: Map[Method, MethodDesc] = Map() // TODO optimize: all implementations
-    protected lazy val methods: Map[Method, MethodDesc] = collectMethods
+    protected def collectMethods: Map[RMethod, MethodDesc] = Map() // TODO optimize: all implementations
+    protected lazy val methods: Map[RMethod, MethodDesc] = collectMethods
 
     // TODO optimize: benchamrk against the version below it
     //    def invokeUnlifted(mc: MethodCall, dataEnv: DataEnv): AnyRef = {
@@ -242,7 +244,7 @@ abstract class TypeDescs extends Base { self: Scalan =>
       * @return  a sequence of pairs relating for each staged method the corresponding method from
       *          source classes.
       */
-    def declaredMethods(cls: Class[_], srcCls: Class[_], methodNames: Set[String]): Seq[(Method, MethodDesc)] = {
+    def declaredMethods(cls: RClass[_], srcCls: RClass[_], methodNames: Set[String]): Seq[(RMethod, MethodDesc)] = {
       val rmethods = cls.getDeclaredMethods.filter(m => methodNames.contains(m.getName))
       val smethods = srcCls.getDeclaredMethods.filter(m => methodNames.contains(m.getName))
       val mapping = CollectionUtil.joinSeqs(rmethods, smethods)(_.getName, _.getName)
@@ -259,8 +261,8 @@ abstract class TypeDescs extends Base { self: Scalan =>
       * @return  a sequence of pairs relating for each wrapper method the corresponding method from
       *          source classes.
       */
-    def declaredWrapperMethods(wrapSpec: WrapSpec, wcls: Class[_], methodNames: Set[String]): Seq[(Method, MethodDesc)] = {
-      val specCls = wrapSpec.getClass
+    def declaredWrapperMethods(wrapSpec: WrapSpec, wcls: RClass[_], methodNames: Set[String]): Seq[(RMethod, MethodDesc)] = {
+      val specCls = RClass(wrapSpec.getClass)
       val wMethods = wcls.getDeclaredMethods.filter(m => methodNames.contains(m.getName))
       val specMethods = specCls.getDeclaredMethods.filter(m => methodNames.contains(m.getName))
       val mapping = CollectionUtil.joinSeqs(wMethods, specMethods)(_.getName, _.getName)
@@ -282,7 +284,7 @@ abstract class TypeDescs extends Base { self: Scalan =>
     e.invokeUnlifted(mc, dataEnv)
 
   /** Get first (and the only) constructor of the `clazz`. */
-  private[scalan] final def getConstructor(clazz: Class[_]) = {
+  private[scalan] final def getConstructor(clazz: RClass[_]): RConstructor[_] = {
     val constructors = clazz.getDeclaredConstructors()
     if (constructors.length != 1)
       !!!(s"Element class $clazz has ${constructors.length} constructors, 1 expected")
@@ -296,23 +298,23 @@ abstract class TypeDescs extends Base { self: Scalan =>
     * @param args  arguments of Elem class constructor
     * @param clazz Elem class
     */
-  final def cachedElemByClass[E <: Elem[_]](args: AnyRef*)(implicit clazz: Class[E]) = {
-    cachedElem0(clazz, Nullable.None, args).asInstanceOf[E]
+  final def cachedElemByClass[E <: Elem[_]](args: AnyRef*)(implicit clazz: RClass[E]) = {
+    cachedElem0(clazz, Nullable.None.asInstanceOf[Nullable[RConstructor[_]]], args).asInstanceOf[E]
   }
 
   /** Elements cache information for each Elem class. */
   class ElemCacheEntry(
     /** Constructor of the class to create new instances. */
-    val constructor: java.lang.reflect.Constructor[_],
+    val constructor: RConstructor[_],
     /** Whether owner argument of constructor exists and of which kind. */
     val ownerType: OwnerKind,
     /** Created instances of elements, one for each unique collection of args. */
     val elements: AVHashMap[Seq[AnyRef], AnyRef]
   )
     
-  protected val elemCache = AVHashMap[Class[_], ElemCacheEntry](1000)
+  protected val elemCache = AVHashMap[RClass[_], ElemCacheEntry](1000)
 
-  private[scalan] final def cachedElem0(clazz: Class[_], optConstructor: Nullable[java.lang.reflect.Constructor[_]], args: Seq[AnyRef]) = {
+  private[scalan] final def cachedElem0(clazz: RClass[_], optConstructor: Nullable[RConstructor[_]], args: Seq[AnyRef]): Elem[_] = {
     val entry = elemCache.get(clazz) match {
       case Nullable(entry) => entry
       case _ =>
@@ -402,11 +404,11 @@ abstract class TypeDescs extends Base { self: Scalan =>
   implicit val CharElement: Elem[Char] = new BaseElemLiftable('\u0000', CharType)
 
   implicit final def pairElement[A, B](implicit ea: Elem[A], eb: Elem[B]): Elem[(A, B)] =
-    cachedElemByClass[PairElem[A, B]](ea, eb)(classOf[PairElem[A, B]])
+    cachedElemByClass[PairElem[A, B]](ea, eb)(RClass(classOf[PairElem[A, B]]))
   implicit final def sumElement[A, B](implicit ea: Elem[A], eb: Elem[B]): Elem[A | B] =
-    cachedElemByClass[SumElem[A, B]](ea, eb)(classOf[SumElem[A, B]])
+    cachedElemByClass[SumElem[A, B]](ea, eb)(RClass(classOf[SumElem[A, B]]))
   implicit final def funcElement[A, B](implicit ea: Elem[A], eb: Elem[B]): Elem[A => B] =
-    cachedElemByClass[FuncElem[A, B]](ea, eb)(classOf[FuncElem[A, B]])
+    cachedElemByClass[FuncElem[A, B]](ea, eb)(RClass(classOf[FuncElem[A, B]]))
 
   implicit final def PairElemExtensions[A, B](eAB: Elem[(A, B)]): PairElem[A, B] = eAB.asInstanceOf[PairElem[A, B]]
   implicit final def SumElemExtensions[A, B](eAB: Elem[A | B]): SumElem[A, B] = eAB.asInstanceOf[SumElem[A, B]]

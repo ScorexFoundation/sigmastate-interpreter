@@ -7,7 +7,9 @@ import special.wrappers.OptionWrapSpec
 import scala.collection.compat.immutable.ArraySeq
 
 package impl {
-// Abs -----------------------------------
+  import scalan.reflection.{RClass, RMethod}
+
+  // Abs -----------------------------------
 trait WOptionsDefs extends scalan.Scalan with WOptions {
   self: WrappersModule =>
 
@@ -28,7 +30,7 @@ object WOption extends EntityObject("WOption") {
 
   trait WOptionConstMethods[A] extends WOption[A]  { thisConst: Def[_] =>
     implicit def eA: Elem[A]
-    private val WOptionClass = classOf[WOption[A]]
+    private val WOptionClass = RClass(classOf[WOption[A]])
 
     override def fold[B](ifEmpty: Ref[Thunk[B]], f: Ref[A => B]): Ref[B] = {
       implicit val eB = ifEmpty.elem.eItem
@@ -110,7 +112,7 @@ object WOption extends EntityObject("WOption") {
 
   private val _OptionWrapSpec = new OptionWrapSpec {}
 
-  private val WOptionClass = classOf[WOption[_]]
+  private val WOptionClass = RClass(classOf[WOption[_]])
 
   // entityAdapter for WOption trait
   case class WOptionAdapter[A](source: Ref[WOption[A]])
@@ -212,9 +214,9 @@ object WOption extends EntityObject("WOption") {
 
     override val liftable: Liftables.Liftable[_, To] = asLiftable[Option[_], To](liftableOption(_eA.liftable))
 
-    override protected def collectMethods: Map[java.lang.reflect.Method, MethodDesc] = {
+    override protected def collectMethods: Map[RMethod, MethodDesc] = {
       super.collectMethods ++
-        Elem.declaredWrapperMethods(_OptionWrapSpec, classOf[WOption[A]], Set(
+        Elem.declaredWrapperMethods(_OptionWrapSpec, RClass(classOf[WOption[A]]), Set(
         "fold", "isEmpty", "isDefined", "filter", "flatMap", "map", "getOrElse", "get"
         ))
     }
@@ -223,7 +225,7 @@ object WOption extends EntityObject("WOption") {
   }
 
   implicit final def wOptionElement[A](implicit eA: Elem[A]): Elem[WOption[A]] =
-    cachedElemByClass(eA)(classOf[WOptionElem[A, WOption[A]]])
+    cachedElemByClass(eA)(RClass(classOf[WOptionElem[A, WOption[A]]]))
 
   implicit case object WOptionCompanionElem extends CompanionElem[WOptionCompanionCtor]
 

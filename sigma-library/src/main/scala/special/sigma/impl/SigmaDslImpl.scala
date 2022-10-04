@@ -7,7 +7,8 @@ import scala.reflect._
 import scala.collection.compat.immutable.ArraySeq
 
 package impl {
-  import scalan.OverloadHack.Overloaded1 // manual fix
+  import scalan.OverloadHack.Overloaded1
+  import scalan.reflection.{RClass, RMethod} // manual fix
 
   // Abs -----------------------------------
 trait SigmaDslDefs extends scalan.Scalan with SigmaDsl {
@@ -42,7 +43,7 @@ object BigInt extends EntityObject("BigInt") {
 
   trait BigIntConstMethods extends BigInt  { thisConst: Def[_] =>
 
-    private val BigIntClass = classOf[BigInt]
+    private val BigIntClass = RClass(classOf[BigInt])
 
     override def toByte: Ref[Byte] = {
       asRep[Byte](mkMethodCall(self,
@@ -220,7 +221,7 @@ object BigInt extends EntityObject("BigInt") {
     }
   }
 
-  private val BigIntClass = classOf[BigInt]
+  private val BigIntClass = RClass(classOf[BigInt])
 
   // entityAdapter for BigInt trait
   case class BigIntAdapter(source: Ref[BigInt])
@@ -403,9 +404,9 @@ object BigInt extends EntityObject("BigInt") {
     extends EntityElem[To] {
     override val liftable: Liftables.Liftable[_, To] = asLiftable[SBigInt, To](LiftableBigInt)
 
-    override protected def collectMethods: Map[java.lang.reflect.Method, MethodDesc] = {
+    override protected def collectMethods: Map[RMethod, MethodDesc] = {
       super.collectMethods ++
-        Elem.declaredMethods(classOf[BigInt], classOf[SBigInt], Set(
+        Elem.declaredMethods(RClass(classOf[BigInt]), RClass(classOf[SBigInt]), Set(
         "toByte", "toShort", "toInt", "toLong", "toBytes", "toBits", "toAbs", "compareTo", "modQ", "plusModQ", "minusModQ", "multModQ", "inverseModQ", "signum", "add", "subtract", "multiply", "divide", "mod", "remainder", "min", "max", "negate"
         ))
     }
@@ -679,7 +680,7 @@ object GroupElement extends EntityObject("GroupElement") {
 
   trait GroupElementConstMethods extends GroupElement  { thisConst: Def[_] =>
 
-    private val GroupElementClass = classOf[GroupElement]
+    private val GroupElementClass = RClass(classOf[GroupElement])
 
     override def isInfinity: Ref[Boolean] = {
       asRep[Boolean](mkMethodCall(self,
@@ -731,7 +732,7 @@ object GroupElement extends EntityObject("GroupElement") {
     }
   }
 
-  private val GroupElementClass = classOf[GroupElement]
+  private val GroupElementClass = RClass(classOf[GroupElement])
 
   // entityAdapter for GroupElement trait
   case class GroupElementAdapter(source: Ref[GroupElement])
@@ -788,9 +789,9 @@ object GroupElement extends EntityObject("GroupElement") {
     extends EntityElem[To] {
     override val liftable: Liftables.Liftable[_, To] = asLiftable[SGroupElement, To](LiftableGroupElement)
 
-    override protected def collectMethods: Map[java.lang.reflect.Method, MethodDesc] = {
+    override protected def collectMethods: Map[RMethod, MethodDesc] = {
       super.collectMethods ++
-        Elem.declaredMethods(classOf[GroupElement], classOf[SGroupElement], Set(
+        Elem.declaredMethods(RClass(classOf[GroupElement]), RClass(classOf[SGroupElement]), Set(
         "isInfinity", "exp", "multiply", "negate", "getEncoded"
         ))
     }
@@ -884,7 +885,7 @@ object SigmaProp extends EntityObject("SigmaProp") {
 
   trait SigmaPropConstMethods extends SigmaProp  { thisConst: Def[_] =>
 
-    private val SigmaPropClass = classOf[SigmaProp]
+    private val SigmaPropClass = RClass(classOf[SigmaProp])
 
     override def isValid: Ref[Boolean] = {
       asRep[Boolean](mkMethodCall(self,
@@ -931,7 +932,7 @@ object SigmaProp extends EntityObject("SigmaProp") {
     }
   }
 
-  private val SigmaPropClass = classOf[SigmaProp]
+  private val SigmaPropClass = RClass(classOf[SigmaProp])
 
   // entityAdapter for SigmaProp trait
   case class SigmaPropAdapter(source: Ref[SigmaProp])
@@ -1013,9 +1014,9 @@ object SigmaProp extends EntityObject("SigmaProp") {
     extends EntityElem[To] {
     override val liftable: Liftables.Liftable[_, To] = asLiftable[SSigmaProp, To](LiftableSigmaProp)
 
-    override protected def collectMethods: Map[java.lang.reflect.Method, MethodDesc] = {
+    override protected def collectMethods: Map[RMethod, MethodDesc] = {
       super.collectMethods ++
-        Elem.declaredMethods(classOf[SigmaProp], classOf[SSigmaProp], Set(
+        Elem.declaredMethods(RClass(classOf[SigmaProp]), RClass(classOf[SSigmaProp]), Set(
         "isValid", "propBytes", "$amp$amp", "$amp$amp", "$bar$bar", "$bar$bar"
         ))
     }
@@ -1099,7 +1100,7 @@ object AnyValue extends EntityObject("AnyValue") {
 
   trait AnyValueConstMethods extends AnyValue  { thisConst: Def[_] =>
 
-    private val AnyValueClass = classOf[AnyValue]
+    private val AnyValueClass = RClass(classOf[AnyValue])
 
     // manual fix
     override def value: Ref[Any] = {
@@ -1131,7 +1132,7 @@ object AnyValue extends EntityObject("AnyValue") {
     }
   }
 
-  private val AnyValueClass = classOf[AnyValue]
+  private val AnyValueClass = RClass(classOf[AnyValue])
 
   // entityAdapter for AnyValue trait
   case class AnyValueAdapter(source: Ref[AnyValue])
@@ -1168,9 +1169,9 @@ object AnyValue extends EntityObject("AnyValue") {
     extends EntityElem[To] {
     override val liftable: Liftables.Liftable[_, To] = asLiftable[SAnyValue, To](LiftableAnyValue)
 
-    override protected def collectMethods: Map[java.lang.reflect.Method, MethodDesc] = {
+    override protected def collectMethods: Map[RMethod, MethodDesc] = {
       super.collectMethods ++
-        Elem.declaredMethods(classOf[AnyValue], classOf[SAnyValue], Set(
+        Elem.declaredMethods(RClass(classOf[AnyValue]), RClass(classOf[SAnyValue]), Set(
         "value", "tVal"
         ))
     }
@@ -1234,7 +1235,7 @@ object Box extends EntityObject("Box") {
 
   trait BoxConstMethods extends Box  { thisConst: Def[_] =>
 
-    private val BoxClass = classOf[Box]
+    private val BoxClass = RClass(classOf[Box])
 
     override def id: Ref[Coll[Byte]] = {
       asRep[Coll[Byte]](mkMethodCall(self,
@@ -1321,7 +1322,7 @@ object Box extends EntityObject("Box") {
     }
   }
 
-  private val BoxClass = classOf[Box]
+  private val BoxClass = RClass(classOf[Box])
 
   // entityAdapter for Box trait
   case class BoxAdapter(source: Ref[Box])
@@ -1413,9 +1414,9 @@ object Box extends EntityObject("Box") {
     extends EntityElem[To] {
     override val liftable: Liftables.Liftable[_, To] = asLiftable[SBox, To](LiftableBox)
 
-    override protected def collectMethods: Map[java.lang.reflect.Method, MethodDesc] = {
+    override protected def collectMethods: Map[RMethod, MethodDesc] = {
       super.collectMethods ++
-        Elem.declaredMethods(classOf[Box], classOf[SBox], Set(
+        Elem.declaredMethods(RClass(classOf[Box]), RClass(classOf[SBox]), Set(
         "id", "value", "propositionBytes", "bytes", "bytesWithoutRef", "registers", "getReg", "R0", "R1", "R2", "R3", "R4", "R5", "R6", "R7", "R8", "R9", "tokens", "creationInfo", "executeFromRegister"
         ))
     }
@@ -1659,7 +1660,7 @@ object AvlTree extends EntityObject("AvlTree") {
 
   trait AvlTreeConstMethods extends AvlTree  { thisConst: Def[_] =>
 
-    private val AvlTreeClass = classOf[AvlTree]
+    private val AvlTreeClass = RClass(classOf[AvlTree])
 
     override def digest: Ref[Coll[Byte]] = {
       asRep[Coll[Byte]](mkMethodCall(self,
@@ -1781,7 +1782,7 @@ object AvlTree extends EntityObject("AvlTree") {
     }
   }
 
-  private val AvlTreeClass = classOf[AvlTree]
+  private val AvlTreeClass = RClass(classOf[AvlTree])
 
   // entityAdapter for AvlTree trait
   case class AvlTreeAdapter(source: Ref[AvlTree])
@@ -1908,9 +1909,9 @@ object AvlTree extends EntityObject("AvlTree") {
     extends EntityElem[To] {
     override val liftable: Liftables.Liftable[_, To] = asLiftable[SAvlTree, To](LiftableAvlTree)
 
-    override protected def collectMethods: Map[java.lang.reflect.Method, MethodDesc] = {
+    override protected def collectMethods: Map[RMethod, MethodDesc] = {
       super.collectMethods ++
-        Elem.declaredMethods(classOf[AvlTree], classOf[SAvlTree], Set(
+        Elem.declaredMethods(RClass(classOf[AvlTree]), RClass(classOf[SAvlTree]), Set(
         "digest", "enabledOperations", "keyLength", "valueLengthOpt", "isInsertAllowed", "isUpdateAllowed", "isRemoveAllowed", "updateDigest", "updateOperations", "contains", "get", "getMany", "insert", "update", "remove"
         ))
     }
@@ -1949,7 +1950,7 @@ object PreHeader extends EntityObject("PreHeader") {
 
   trait PreHeaderConstMethods extends PreHeader  { thisConst: Def[_] =>
 
-    private val PreHeaderClass = classOf[PreHeader]
+    private val PreHeaderClass = RClass(classOf[PreHeader])
 
     override def version: Ref[Byte] = {
       asRep[Byte](mkMethodCall(self,
@@ -2015,7 +2016,7 @@ object PreHeader extends EntityObject("PreHeader") {
     }
   }
 
-  private val PreHeaderClass = classOf[PreHeader]
+  private val PreHeaderClass = RClass(classOf[PreHeader])
 
   // entityAdapter for PreHeader trait
   case class PreHeaderAdapter(source: Ref[PreHeader])
@@ -2086,9 +2087,9 @@ object PreHeader extends EntityObject("PreHeader") {
     extends EntityElem[To] {
     override val liftable: Liftables.Liftable[_, To] = asLiftable[SPreHeader, To](LiftablePreHeader)
 
-    override protected def collectMethods: Map[java.lang.reflect.Method, MethodDesc] = {
+    override protected def collectMethods: Map[RMethod, MethodDesc] = {
       super.collectMethods ++
-        Elem.declaredMethods(classOf[PreHeader], classOf[SPreHeader], Set(
+        Elem.declaredMethods(RClass(classOf[PreHeader]), RClass(classOf[SPreHeader]), Set(
         "version", "parentId", "timestamp", "nBits", "height", "minerPk", "votes"
         ))
     }
@@ -2127,7 +2128,7 @@ object Header extends EntityObject("Header") {
 
   trait HeaderConstMethods extends Header  { thisConst: Def[_] =>
 
-    private val HeaderClass = classOf[Header]
+    private val HeaderClass = RClass(classOf[Header])
 
     override def id: Ref[Coll[Byte]] = {
       asRep[Coll[Byte]](mkMethodCall(self,
@@ -2249,7 +2250,7 @@ object Header extends EntityObject("Header") {
     }
   }
 
-  private val HeaderClass = classOf[Header]
+  private val HeaderClass = RClass(classOf[Header])
 
   // entityAdapter for Header trait
   case class HeaderAdapter(source: Ref[Header])
@@ -2376,9 +2377,9 @@ object Header extends EntityObject("Header") {
     extends EntityElem[To] {
     override val liftable: Liftables.Liftable[_, To] = asLiftable[SHeader, To](LiftableHeader)
 
-    override protected def collectMethods: Map[java.lang.reflect.Method, MethodDesc] = {
+    override protected def collectMethods: Map[RMethod, MethodDesc] = {
       super.collectMethods ++
-        Elem.declaredMethods(classOf[Header], classOf[SHeader], Set(
+        Elem.declaredMethods(RClass(classOf[Header]), RClass(classOf[SHeader]), Set(
         "id", "version", "parentId", "ADProofsRoot", "stateRoot", "transactionsRoot", "timestamp", "nBits", "height", "extensionRoot", "minerPk", "powOnetimePk", "powNonce", "powDistance", "votes"
         ))
     }
@@ -2417,7 +2418,7 @@ object Context extends EntityObject("Context") {
 
   trait ContextConstMethods extends Context  { thisConst: Def[_] =>
 
-    private val ContextClass = classOf[Context]
+    private val ContextClass = RClass(classOf[Context])
 
     override def builder: Ref[SigmaDslBuilder] = {
       asRep[SigmaDslBuilder](mkMethodCall(self,
@@ -2525,7 +2526,7 @@ object Context extends EntityObject("Context") {
     }
   }
 
-  private val ContextClass = classOf[Context]
+  private val ContextClass = RClass(classOf[Context])
 
   // entityAdapter for Context trait
   case class ContextAdapter(source: Ref[Context])
@@ -2638,9 +2639,9 @@ object Context extends EntityObject("Context") {
     extends EntityElem[To] {
     override val liftable: Liftables.Liftable[_, To] = asLiftable[SContext, To](LiftableContext)
 
-    override protected def collectMethods: Map[java.lang.reflect.Method, MethodDesc] = {
+    override protected def collectMethods: Map[RMethod, MethodDesc] = {
       super.collectMethods ++
-        Elem.declaredMethods(classOf[Context], classOf[SContext], Set(
+        Elem.declaredMethods(RClass(classOf[Context]), RClass(classOf[SContext]), Set(
         "builder", "OUTPUTS", "INPUTS", "dataInputs", "HEIGHT", "SELF", "selfBoxIndex", "LastBlockUtxoRootHash", "headers", "preHeader", "minerPubKey", "getVar", "vars"
         ))
     }
@@ -2814,7 +2815,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
 
   trait SigmaDslBuilderConstMethods extends SigmaDslBuilder  { thisConst: Def[_] =>
 
-    private val SigmaDslBuilderClass = classOf[SigmaDslBuilder]
+    private val SigmaDslBuilderClass = RClass(classOf[SigmaDslBuilder])
 
     override def Colls: Ref[CollBuilder] = {
       asRep[CollBuilder](mkMethodCall(self,
@@ -2979,7 +2980,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
     }
   }
 
-  private val SigmaDslBuilderClass = classOf[SigmaDslBuilder]
+  private val SigmaDslBuilderClass = RClass(classOf[SigmaDslBuilder])
 
   // entityAdapter for SigmaDslBuilder trait
   case class SigmaDslBuilderAdapter(source: Ref[SigmaDslBuilder])
@@ -3149,9 +3150,9 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
     extends EntityElem[To] {
     override val liftable: Liftables.Liftable[_, To] = asLiftable[SSigmaDslBuilder, To](LiftableSigmaDslBuilder)
 
-    override protected def collectMethods: Map[java.lang.reflect.Method, MethodDesc] = {
+    override protected def collectMethods: Map[RMethod, MethodDesc] = {
       super.collectMethods ++
-        Elem.declaredMethods(classOf[SigmaDslBuilder], classOf[SSigmaDslBuilder], Set(
+        Elem.declaredMethods(RClass(classOf[SigmaDslBuilder]), RClass(classOf[SSigmaDslBuilder]), Set(
         "Colls", "verifyZK", "atLeast", "allOf", "allZK", "anyOf", "anyZK", "xorOf", "sigmaProp", "blake2b256", "sha256", "byteArrayToBigInt", "longToByteArray", "byteArrayToLong", "proveDlog", "proveDHTuple", "groupGenerator", "substConstants", "decodePoint", "avlTree", "xor"
         ))
     }

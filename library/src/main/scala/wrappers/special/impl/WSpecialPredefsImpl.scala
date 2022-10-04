@@ -5,7 +5,9 @@ import scalan._
 import special.wrappers.WrappersModule
 
 package impl {
-// Abs -----------------------------------
+  import scalan.reflection.RClass
+
+  // Abs -----------------------------------
 trait WSpecialPredefsDefs extends scalan.Scalan with WSpecialPredefs {
   self: WrappersModule =>
 import WOption._
@@ -47,7 +49,7 @@ object WSpecialPredef extends EntityObject("WSpecialPredef") {
     p.node.asInstanceOf[WSpecialPredefCompanionCtor]
 
   lazy val RWSpecialPredef: MutableLazy[WSpecialPredefCompanionCtor] = MutableLazy(new WSpecialPredefCompanionCtor {
-    private val thisClass = classOf[WSpecialPredefCompanion]
+    private val thisClass = RClass(classOf[WSpecialPredefCompanion])
 
     def optionGetOrElse[A](opt: Ref[WOption[A]], default: Ref[A]): Ref[A] = {
       implicit val eA = opt.eA

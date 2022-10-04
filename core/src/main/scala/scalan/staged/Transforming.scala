@@ -1,12 +1,11 @@
 package scalan.staged
 
-import java.lang.reflect.Method
 import java.util
-
 import scala.language.existentials
-import scalan.{Nullable, DelayInvokeException, Lazy, Scalan, AVHashMap}
+import scalan.{AVHashMap, DelayInvokeException, Lazy, Nullable, Scalan}
 import debox.{Buffer => DBuffer}
 import debox.cfor
+import scalan.reflection.RMethod
 
 trait Transforming { self: Scalan =>
 
@@ -27,7 +26,7 @@ trait Transforming { self: Scalan =>
       * @param m method to invoke
       * @return Some(decision) if some this Pass defines some logic, None - then core behavior is used
       */
-    def isInvokeEnabled(d: Def[_], m: Method): Option[Boolean] = None
+    def isInvokeEnabled(d: Def[_], m: RMethod): Option[Boolean] = None
   }
   object Pass {
     val defaultPassName = "default"

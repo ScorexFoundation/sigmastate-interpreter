@@ -1,8 +1,6 @@
 package scalan
 
-import java.lang.reflect.Method
-
-import scalan.compilation.GraphVizConfig
+import scalan.reflection.RMethod
 import scalan.util.FileUtil
 
 trait TestContexts extends TestUtils {
@@ -26,7 +24,7 @@ trait TestContexts extends TestUtils {
 
   trait TestContextApi { scalan: Scalan =>
     def invokeAll: Boolean
-    def isInvokeEnabled(d: Def[_], m: Method): Boolean
+    def isInvokeEnabled(d: Def[_], m: RMethod): Boolean
     def shouldUnpack(e: Elem[_]): Boolean
     def testName: String
     def emitF(name: String, sfs: (() => Sym)*): Unit
@@ -43,7 +41,7 @@ trait TestContexts extends TestUtils {
     def this() = this(currentTestNameAsFileName)
 
     override val invokeAll = true
-    override def isInvokeEnabled(d: Def[_], m: Method) = invokeAll
+    override def isInvokeEnabled(d: Def[_], m: RMethod) = invokeAll
     override def shouldUnpack(e: Elem[_]) = true
 
     // workaround for non-existence of by-name repeated parameters

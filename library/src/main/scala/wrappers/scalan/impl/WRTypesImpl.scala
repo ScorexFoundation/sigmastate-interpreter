@@ -8,7 +8,9 @@ import special.wrappers.RTypeWrapSpec
 import scala.collection.compat.immutable.ArraySeq
 
 package impl {
-// Abs -----------------------------------
+  import scalan.reflection.{RClass, RMethod}
+
+  // Abs -----------------------------------
 trait WRTypesDefs extends scalan.Scalan with WRTypes {
   self: WrappersModule =>
 import WRType._
@@ -30,7 +32,7 @@ object WRType extends EntityObject("WRType") {
 
   trait WRTypeConstMethods[A] extends WRType[A]  { thisConst: Def[_] =>
     implicit def eA: Elem[A]
-    private val WRTypeClass = classOf[WRType[A]]
+    private val WRTypeClass = RClass(classOf[WRType[A]])
 
     override def name: Ref[String] = {
       asRep[String](mkMethodCall(self,
@@ -59,7 +61,7 @@ object WRType extends EntityObject("WRType") {
 
   private val _RTypeWrapSpec = new RTypeWrapSpec {}
 
-  private val WRTypeClass = classOf[WRType[_]]
+  private val WRTypeClass = RClass(classOf[WRType[_]])
 
   // entityAdapter for WRType trait
   case class WRTypeAdapter[A](source: Ref[WRType[A]])
@@ -92,9 +94,9 @@ object WRType extends EntityObject("WRType") {
 
     override val liftable: Liftables.Liftable[_, To] = asLiftable[RType[_], To](liftableRType(_eA.liftable))
 
-    override protected def collectMethods: Map[java.lang.reflect.Method, MethodDesc] = {
+    override protected def collectMethods: Map[RMethod, MethodDesc] = {
       super.collectMethods ++
-        Elem.declaredWrapperMethods(_RTypeWrapSpec, classOf[WRType[A]], Set(
+        Elem.declaredWrapperMethods(_RTypeWrapSpec, RClass(classOf[WRType[A]]), Set(
         "name"
         ))
     }
@@ -103,7 +105,7 @@ object WRType extends EntityObject("WRType") {
   }
 
   implicit final def wRTypeElement[A](implicit eA: Elem[A]): Elem[WRType[A]] =
-    cachedElemByClass(eA)(classOf[WRTypeElem[A, WRType[A]]])
+    cachedElemByClass(eA)(RClass(classOf[WRTypeElem[A, WRType[A]]]))
 
   implicit case object WRTypeCompanionElem extends CompanionElem[WRTypeCompanionCtor]
 

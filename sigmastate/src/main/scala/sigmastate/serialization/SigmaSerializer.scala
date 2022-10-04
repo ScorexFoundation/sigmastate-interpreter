@@ -10,11 +10,8 @@ import sigmastate.utils._
 import scorex.util.serialization._
 import sigmastate.serialization.OpCodes.OpCode
 
-import scala.reflect.ClassTag
-
 object SigmaSerializer {
   type Position = Int
-  type Consumed = Int
 
   val MaxPropositionSize: Int = SigmaConstants.MaxPropositionBytes.value
   val MaxTreeDepth: Int = SigmaConstants.MaxTreeDepth.value
@@ -72,24 +69,6 @@ object SigmaSerializer {
 }
 
 abstract class SigmaSerializer[TFamily, T <: TFamily] extends Serializer[TFamily, T, SigmaByteReader, SigmaByteWriter] {
-
-  /** Wraps the given writer in SigmaByteWriter and delegates to [[serialize]].
-    * NOTE: it is used in spam tests.
-    */
-  def serializeWithGenericWriter(obj: T, w: Writer): Unit = {
-    serialize(obj, new SigmaByteWriter(w, None))
-  }
-
-  /** Wraps the given reader in SigmaByteReader and delegates to [[parse]].
-    * NOTE: it is used in spam tests.
-    */
-  def parseWithGenericReader(r: Reader)(implicit vs: SigmaValidationSettings): TFamily = {
-    val sigmaByteReader = new SigmaByteReader(r,
-      new ConstantStore(),
-      resolvePlaceholdersToConstants = false,
-      maxTreeDepth = SigmaSerializer.MaxTreeDepth)
-    parse(sigmaByteReader)
-  }
 
   def error(msg: String) = throw new SerializerException(msg, None)
 

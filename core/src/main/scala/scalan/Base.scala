@@ -1,6 +1,5 @@
 package scalan
 
-import java.lang.reflect.{Constructor => Constr}
 import java.util.Arrays
 import scalan.OverloadHack.Overloaded1
 
@@ -10,6 +9,7 @@ import scala.annotation.unchecked.uncheckedVariance
 import scalan.compilation.GraphVizConfig
 import scalan.util.StringUtil
 import debox.{cfor, Buffer => DBuffer}
+import scalan.reflection.{RClass, RConstructor}
 
 import scala.collection.compat.immutable.ArraySeq
 
@@ -513,14 +513,14 @@ abstract class Base { scalan: Scalan =>
   case class  EntityObjectOwner(obj: EntityObject) extends OwnerKind
 
   /** Returns OwnerKind for the given constructor, using its first parameter. */
-  protected def getOwnerKind(constructor: Constr[_]): OwnerKind = {
+  protected def getOwnerKind(constructor: RConstructor[_]): OwnerKind = {
     val paramTypes = constructor.getParameterTypes
     val ownerParam =
       if (paramTypes.length == 0)
         NoOwner
       else {
         val firstParamClazz = paramTypes(0)
-        if (firstParamClazz.getSuperclass == classOf[EntityObject]) {
+        if (firstParamClazz.getSuperclass == RClass(classOf[EntityObject])) {
           val className = firstParamClazz.getSimpleName
           val entityName = className.substring(0, className.length - 1)
           getEntityObject(entityName) match {

@@ -3,8 +3,9 @@ package scalan.primitives
 import scala.language.{existentials, implicitConversions}
 import scalan.compilation.{GraphVizConfig, GraphVizExport}
 import scalan._
-import debox.{Set => DSet, Buffer => DBuffer}
+import debox.{Buffer => DBuffer, Set => DSet}
 import debox.cfor
+import scalan.reflection.RClass
 
 import scala.reflect.runtime.universe._
 import scalan.util.{Covariant, GraphUtil}
@@ -107,7 +108,7 @@ trait Thunks extends Functions with GraphVizExport { self: Scalan =>
   }
 
   implicit def thunkElement[T](implicit eItem: Elem[T]): Elem[Thunk[T]] =
-    cachedElemByClass(eItem)(classOf[ThunkElem[T]])
+    cachedElemByClass(eItem)(RClass(classOf[ThunkElem[T]]))
 
   /** Implicit conversion (downcast) to access `ThunkElem.eItem` field. */
   implicit def extendThunkElement[T](elem: Elem[Thunk[T]]): ThunkElem[T] = elem.asInstanceOf[ThunkElem[T]]

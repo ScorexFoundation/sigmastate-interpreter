@@ -58,14 +58,6 @@ object CollectionUtil {
     case arr: Array[Boolean] => util.Arrays.hashCode(arr)
   }
 
-  def foldRight[A,B](xs: Seq[A])(proj: A => B)(f: (A,B) => B): B =
-    xs.foldRight[B](null.asInstanceOf[B]) { case (a, b) =>
-      b match {
-        case null => proj(a)
-        case _ => f(a, b)
-      }
-    }
-
   /** Group the given sequence of pairs by first values as keys.
     * @param kvs sequence of values which is traversed once
     * @return a multimap with ArrayBuffer of values for each key.

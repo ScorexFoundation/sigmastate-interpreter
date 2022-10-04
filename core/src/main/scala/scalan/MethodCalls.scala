@@ -1,12 +1,13 @@
 package scalan
 
-import java.lang.reflect.{InvocationTargetException, Method}
+import java.lang.reflect.InvocationTargetException
 import scala.annotation.tailrec
 import scala.reflect.ClassTag
 import scalan.compilation.{GraphVizConfig, GraphVizExport}
 import scalan.util.ScalaNameUtil
 import debox.{Buffer => DBuffer}
 import debox.cfor
+import scalan.reflection.{RClass, RMethod}
 
 trait MethodCalls extends Base with GraphVizExport { self: Scalan =>
 
@@ -23,7 +24,7 @@ trait MethodCalls extends Base with GraphVizExport { self: Scalan =>
     *                      This typically means, that receiver node doesn't implement
     *                      given `method`.
     */
-  case class MethodCall private[MethodCalls](receiver: Sym, method: Method, args: Seq[AnyRef], neverInvoke: Boolean)
+  case class MethodCall private[MethodCalls](receiver: Sym, method: RMethod, args: Seq[AnyRef], neverInvoke: Boolean)
                                             (val resultType: Elem[Any], val isAdapterCall: Boolean = false) extends Def[Any] {
 
     override def mirror(t: Transformer): Ref[Any] = {
@@ -98,7 +99,7 @@ trait MethodCalls extends Base with GraphVizExport { self: Scalan =>
   }
 
   /** Creates new MethodCall node and returns its node ref. */
-  def mkMethodCall(receiver: Sym, method: Method, args: Seq[AnyRef],
+  def mkMethodCall(receiver: Sym, method: RMethod, args: Seq[AnyRef],
                    neverInvoke: Boolean, isAdapterCall: Boolean, resultElem: Elem[_]): Sym = {
     reifyObject(MethodCall(receiver, method, args, neverInvoke)(asElem[Any](resultElem), isAdapterCall))
   }
@@ -157,14 +158,14 @@ trait MethodCalls extends Base with GraphVizExport { self: Scalan =>
   }
 
   /** Generic helper to call the given method on the given receiver node. */
-  private[scalan] def invokeMethod[A](receiver: Sym, m: Method, args: Array[AnyRef],
+  private[scalan] def invokeMethod[A](receiver: Sym, m: RMethod, args: Array[AnyRef],
                               onInvokeSuccess: AnyRef => A,
                               onInvokeException: Throwable => A,
                               onInvokeImpossible: => A): A = {
     val d = receiver.node
     if (canBeInvoked(d, m, args)) {
       try {
-        val res = m.invoke(d, args: _*)
+        val res = m.invoke(d, args:_*)
         onInvokeSuccess(res)
       } catch {
         case e: Exception => onInvokeException(baseCause(e))
@@ -176,11 +177,11 @@ trait MethodCalls extends Base with GraphVizExport { self: Scalan =>
 
   /** Method invocation enabler.
     * @return  true if the given method can be invoked on the given node. */
-  def isInvokeEnabled(d: Def[_], m: Method) = true
+  def isInvokeEnabled(d: Def[_], m: RMethod) = true
 
   /** Method invocation checker. */
-  protected def canBeInvoked(d: Def[_], m: Method, args: Array[AnyRef]) = {
-    m.getDeclaringClass.isAssignableFrom(d.getClass) && isInvokeEnabled(d, m)
+  protected def canBeInvoked(d: Def[_], m: RMethod, args: Array[AnyRef]) = {
+    m.getDeclaringClass.isAssignableFrom(RClass(d.getClass)) && isInvokeEnabled(d, m)
   }
 
   /** Result of MethodCall invocation.
@@ -193,7 +194,7 @@ trait MethodCalls extends Base with GraphVizExport { self: Scalan =>
   /** Invocation is not possible, e.g. when receiver doesn't implemented the method. */
   case object InvokeImpossible extends InvokeResult
 
-  def throwInvocationException(whatFailed: String, cause: Throwable, receiver: Sym, m: Method, args: Seq[Any]) = {
+  def throwInvocationException(whatFailed: String, cause: Throwable, receiver: Sym, m: RMethod, args: Seq[Any]) = {
     val buf = DBuffer.empty[Sym]
     buf += receiver
     Def.extractSyms(args, buf)

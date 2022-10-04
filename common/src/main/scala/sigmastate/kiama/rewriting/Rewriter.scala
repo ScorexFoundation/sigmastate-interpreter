@@ -11,6 +11,8 @@
 package sigmastate.kiama
 package rewriting
 
+import scalan.reflection.{RClass, RConstructor}
+
 import scala.collection.mutable
 
 /**
@@ -218,13 +220,11 @@ trait Rewriter {
     */
   object Duplicator {
 
-    import java.lang.reflect.Constructor
-
     type Duper = (Any, Array[AnyRef]) => Any
 
-    object MakeDuper extends (Class[_] => Duper) {
+    object MakeDuper extends (RClass[_] => Duper) {
 
-      def apply(clazz : Class[_]) : Duper =
+      def apply(clazz : RClass[_]) : Duper =
         try {
           // See if this class has a MODULE$ field. This field is used by Scala
           // to hold a singleton instance and is only present in singleton classes
@@ -246,7 +246,7 @@ trait Rewriter {
                 makeInstance(ctors(0), children)
         }
 
-      def makeInstance(ctor : Constructor[_], children : Array[AnyRef]) : Any =
+      def makeInstance(ctor : RConstructor[_], children : Array[AnyRef]) : Any =
         try {
           ctor.newInstance(unboxPrimitives(ctor, children) : _*)
         } catch {
@@ -255,9 +255,9 @@ trait Rewriter {
                         |Common cause: term classes are nested in another class, move them to the top level""".stripMargin)
         }
 
-      def unboxPrimitives(ctor : Constructor[_], children : Array[AnyRef]) : Array[AnyRef] = {
-        val numChildren = ctor.getParameterTypes().length
+      def unboxPrimitives(ctor : RConstructor[_], children : Array[AnyRef]) : Array[AnyRef] = {
         val childrenTypes = ctor.getParameterTypes()
+        val numChildren = childrenTypes.length
         val newChildren = new Array[AnyRef](numChildren)
         var i = 0
         while (i < numChildren) {
@@ -280,12 +280,12 @@ trait Rewriter {
 
     }
 
-    private val cache = mutable.HashMap.empty[Class[_], Duper]
+    private val cache = mutable.HashMap.empty[RClass[_], Duper]
 
     /** Obtains a duper for the given class lazily. and memoize it in the `cache` map.
       * This is the simplest solution, but not the most efficient for concurrent access.
       */
-    def getDuper(clazz: Class[_]): Duper = synchronized { // TODO optimize: avoid global sync
+    def getDuper(clazz: RClass[_]): Duper = synchronized { // TODO optimize: avoid global sync
       val duper = cache.get(clazz) match {
         case Some(d) => d
         case None =>
@@ -297,7 +297,7 @@ trait Rewriter {
     }
     
     def apply[T <: Product](t : T, children : Array[AnyRef]) : T = {
-      val clazz = t.getClass
+      val clazz = RClass(t.getClass)
       val duper = getDuper(clazz)
       duper(t, children).asInstanceOf[T]
     }

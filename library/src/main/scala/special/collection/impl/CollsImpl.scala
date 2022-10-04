@@ -7,7 +7,9 @@ import scala.reflect._
 import scala.collection.compat.immutable.ArraySeq
 
 package impl {
-// Abs -----------------------------------
+  import scalan.reflection.{RClass, RMethod}
+
+  // Abs -----------------------------------
 trait CollsDefs extends scalan.Scalan with Colls {
   self: Library =>
 import Coll._
@@ -33,7 +35,7 @@ object Coll extends EntityObject("Coll") {
 
   trait CollConstMethods[A] extends Coll[A]  { thisConst: Def[_] =>
     implicit def eA: Elem[A]
-    private val CollClass = classOf[Coll[A]]
+    private val CollClass = RClass(classOf[Coll[A]])
 
     override def builder: Ref[CollBuilder] = {
       asRep[CollBuilder](mkMethodCall(self,
@@ -267,7 +269,7 @@ object Coll extends EntityObject("Coll") {
   implicit final def liftableColl[SA, A](implicit lA: Liftable[SA,A]): Liftable[SColl[SA], Coll[A]] =
     LiftableColl(lA)
 
-  private val CollClass = classOf[Coll[_]]
+  private val CollClass = RClass(classOf[Coll[_]])
 
   // entityAdapter for Coll trait
   case class CollAdapter[A](source: Ref[Coll[A]])
@@ -526,9 +528,9 @@ object Coll extends EntityObject("Coll") {
 
     override val liftable: Liftables.Liftable[_, To] = asLiftable[SColl[_], To](liftableColl(_eA.liftable))
 
-    override protected def collectMethods: Map[java.lang.reflect.Method, MethodDesc] = {
+    override protected def collectMethods: Map[RMethod, MethodDesc] = {
       super.collectMethods ++
-        Elem.declaredMethods(classOf[Coll[A]], classOf[SColl[_]], Set(
+        Elem.declaredMethods(RClass(classOf[Coll[A]]), RClass(classOf[SColl[_]]), Set(
         "builder", "length", "size", "isEmpty", "nonEmpty", "apply", "isDefinedAt", "getOrElse", "map", "zip", "exists", "forall", "filter", "foldLeft", "indices", "flatMap", "segmentLength", "find", "indexWhere", "indexOf", "lastIndexWhere", "take", "patch", "updated", "updateMany", "unionSet", "diff", "intersect", "slice", "append", "reverse"
         ))
     }
@@ -537,7 +539,7 @@ object Coll extends EntityObject("Coll") {
   }
 
   implicit final def collElement[A](implicit eA: Elem[A]): Elem[Coll[A]] =
-    cachedElemByClass(eA)(classOf[CollElem[A, Coll[A]]])
+    cachedElemByClass(eA)(RClass(classOf[CollElem[A, Coll[A]]]))
 
   implicit case object CollCompanionElem extends CompanionElem[CollCompanionCtor]
 
@@ -872,7 +874,7 @@ object Coll extends EntityObject("Coll") {
   registerEntityObject("Coll", Coll)
 
 object PairColl extends EntityObject("PairColl") {
-  private val PairCollClass = classOf[PairColl[_, _]]
+  private val PairCollClass = RClass(classOf[PairColl[_, _]])
 
   // entityAdapter for PairColl trait
   case class PairCollAdapter[L, R](source: Ref[PairColl[L, R]])
@@ -1148,7 +1150,7 @@ implicit lazy val eR = source.elem.typeArgs("R")._1.asInstanceOf[Elem[R]]
   }
 
   implicit final def pairCollElement[L, R](implicit eL: Elem[L], eR: Elem[R]): Elem[PairColl[L, R]] =
-    cachedElemByClass(eL, eR)(classOf[PairCollElem[L, R, PairColl[L, R]]])
+    cachedElemByClass(eL, eR)(RClass(classOf[PairCollElem[L, R, PairColl[L, R]]]))
 
   implicit case object PairCollCompanionElem extends CompanionElem[PairCollCompanionCtor]
 
@@ -1225,7 +1227,7 @@ object CollBuilder extends EntityObject("CollBuilder") {
 
   trait CollBuilderConstMethods extends CollBuilder  { thisConst: Def[_] =>
 
-    private val CollBuilderClass = classOf[CollBuilder]
+    private val CollBuilderClass = RClass(classOf[CollBuilder])
 
     override def pairColl[A, B](as: Ref[Coll[A]], bs: Ref[Coll[B]]): Ref[PairColl[A, B]] = {
       implicit val eA = as.eA
@@ -1289,7 +1291,7 @@ implicit val eB = xs.eA.eSnd
     }
   }
 
-  private val CollBuilderClass = classOf[CollBuilder]
+  private val CollBuilderClass = RClass(classOf[CollBuilder])
 
   // entityAdapter for CollBuilder trait
   case class CollBuilderAdapter(source: Ref[CollBuilder])
@@ -1359,9 +1361,9 @@ implicit val eB = xs.eA.eSnd
     extends EntityElem[To] {
     override val liftable: Liftables.Liftable[_, To] = asLiftable[SCollBuilder, To](LiftableCollBuilder)
 
-    override protected def collectMethods: Map[java.lang.reflect.Method, MethodDesc] = {
+    override protected def collectMethods: Map[RMethod, MethodDesc] = {
       super.collectMethods ++
-        Elem.declaredMethods(classOf[CollBuilder], classOf[SCollBuilder], Set(
+        Elem.declaredMethods(RClass(classOf[CollBuilder]), RClass(classOf[SCollBuilder]), Set(
         "pairColl", "fromItems", "unzip", "xor", "replicate", "emptyColl"
         ))
     }
