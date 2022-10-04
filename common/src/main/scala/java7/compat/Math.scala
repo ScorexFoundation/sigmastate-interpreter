@@ -19,14 +19,14 @@ object Math {
     * @return the result
     * @throws ArithmeticException if the result overflows an int
     */
-    def addExact(x: Int, y: Int): Int = {
-      val r = x + y
-      // HD 2-12 Overflow iff both arguments have the opposite sign of the result
-      if (((x ^ r) & (y ^ r)) < 0) {
-        throw new ArithmeticException("integer overflow")
-      }
-      r
+  def addExact(x: Int, y: Int): Int = {
+    val r = x + y
+    // HD 2-12 Overflow iff both arguments have the opposite sign of the result
+    if (((x ^ r) & (y ^ r)) < 0) {
+      throw new ArithmeticException("integer overflow")
     }
+    r
+  }
 
   /**
     * Returns the sum of its arguments,
