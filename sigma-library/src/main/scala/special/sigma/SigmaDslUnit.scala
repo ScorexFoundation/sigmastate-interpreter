@@ -38,12 +38,8 @@ package special.sigma {
     trait SigmaProp extends Def[SigmaProp] {
       def isValid: Ref[Boolean];
       def propBytes: Ref[Coll[Byte]];
-      @OverloadId(value = "and_sigma") def &&(other: Ref[SigmaProp]): Ref[SigmaProp];
-      // manual fix
-      @OverloadId(value = "and_bool") def &&(other: Ref[Boolean])(implicit o: Overloaded1): Ref[SigmaProp];
-      @OverloadId(value = "or_sigma") def ||(other: Ref[SigmaProp]): Ref[SigmaProp];
-      // manual fix
-      @OverloadId(value = "or_bool") def ||(other: Ref[Boolean])(implicit o: Overloaded1): Ref[SigmaProp];
+      def &&(other: Ref[SigmaProp]): Ref[SigmaProp];
+      def ||(other: Ref[SigmaProp]): Ref[SigmaProp];
     };
     trait AnyValue extends Def[AnyValue] {
       def value: Ref[Any];

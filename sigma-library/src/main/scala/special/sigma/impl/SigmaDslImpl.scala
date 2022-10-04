@@ -908,27 +908,11 @@ object SigmaProp extends EntityObject("SigmaProp") {
         true, false, element[SigmaProp]))
     }
 
-    // manual fix &&
-    override def &&(other: Ref[Boolean])(implicit o: Overloaded1): Ref[SigmaProp] = {
-      asRep[SigmaProp](mkMethodCall(self,
-        SigmaPropClass.getMethod("$amp$amp", classOf[Sym], classOf[Overloaded1]),
-        Array[AnyRef](other, o),
-        true, false, element[SigmaProp]))
-    }
-
     // manual fix ||
     override def ||(other: Ref[SigmaProp]): Ref[SigmaProp] = {
       asRep[SigmaProp](mkMethodCall(self,
         SigmaPropClass.getMethod("$bar$bar", classOf[Sym]),
         Array[AnyRef](other),
-        true, false, element[SigmaProp]))
-    }
-
-    // manual fix ||
-    override def ||(other: Ref[Boolean])(implicit o: Overloaded1): Ref[SigmaProp] = {
-      asRep[SigmaProp](mkMethodCall(self,
-        SigmaPropClass.getMethod("$bar$bar", classOf[Sym], classOf[Overloaded1]),
-        Array[AnyRef](other, o),
         true, false, element[SigmaProp]))
     }
   }
@@ -975,14 +959,6 @@ object SigmaProp extends EntityObject("SigmaProp") {
       asRep[SigmaProp](mkMethodCall(source,
         SigmaPropClass.getMethod("$amp$amp", classOf[Sym]),
         Array[AnyRef](other),
-        true, true, element[SigmaProp]))
-    }
-
-    // manual fix &&
-    def &&(other: Ref[Boolean])(implicit o: Overloaded1): Ref[SigmaProp] = {
-      asRep[SigmaProp](mkMethodCall(source,
-        SigmaPropClass.getMethod("$amp$amp", classOf[Sym], classOf[Overloaded1]),
-        Array[AnyRef](other, o),
         true, true, element[SigmaProp]))
     }
 
@@ -1084,42 +1060,22 @@ object SigmaProp extends EntityObject("SigmaProp") {
 
     object and_sigma_&& {
       def unapply(d: Def[_]): Nullable[(Ref[SigmaProp], Ref[SigmaProp])] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "$amp$amp" && receiver.elem.isInstanceOf[SigmaPropElem[_]] && { val ann = method.getAnnotation(classOf[scalan.OverloadId]); ann != null && ann.value == "and_sigma" } =>
+        case MethodCall(receiver, method, args, _) if method.getName == "$amp$amp" && receiver.elem.isInstanceOf[SigmaPropElem[_]] =>
           val res = (receiver, args(0))
           Nullable(res).asInstanceOf[Nullable[(Ref[SigmaProp], Ref[SigmaProp])]]
         case _ => Nullable.None
       }
       def unapply(exp: Sym): Nullable[(Ref[SigmaProp], Ref[SigmaProp])] = unapply(exp.node)
-    }
-
-    object and_bool_&& {
-      def unapply(d: Def[_]): Nullable[(Ref[SigmaProp], Ref[Boolean])] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "$amp$amp" && receiver.elem.isInstanceOf[SigmaPropElem[_]] && { val ann = method.getAnnotation(classOf[scalan.OverloadId]); ann != null && ann.value == "and_bool" } =>
-          val res = (receiver, args(0))
-          Nullable(res).asInstanceOf[Nullable[(Ref[SigmaProp], Ref[Boolean])]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Ref[SigmaProp], Ref[Boolean])] = unapply(exp.node)
     }
 
     object or_sigma_|| {
       def unapply(d: Def[_]): Nullable[(Ref[SigmaProp], Ref[SigmaProp])] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "$bar$bar" && receiver.elem.isInstanceOf[SigmaPropElem[_]] && { val ann = method.getAnnotation(classOf[scalan.OverloadId]); ann != null && ann.value == "or_sigma" } =>
+        case MethodCall(receiver, method, args, _) if method.getName == "$bar$bar" && receiver.elem.isInstanceOf[SigmaPropElem[_]] =>
           val res = (receiver, args(0))
           Nullable(res).asInstanceOf[Nullable[(Ref[SigmaProp], Ref[SigmaProp])]]
         case _ => Nullable.None
       }
       def unapply(exp: Sym): Nullable[(Ref[SigmaProp], Ref[SigmaProp])] = unapply(exp.node)
-    }
-
-    object or_bool_|| {
-      def unapply(d: Def[_]): Nullable[(Ref[SigmaProp], Ref[Boolean])] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "$bar$bar" && receiver.elem.isInstanceOf[SigmaPropElem[_]] && { val ann = method.getAnnotation(classOf[scalan.OverloadId]); ann != null && ann.value == "or_bool" } =>
-          val res = (receiver, args(0))
-          Nullable(res).asInstanceOf[Nullable[(Ref[SigmaProp], Ref[Boolean])]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Ref[SigmaProp], Ref[Boolean])] = unapply(exp.node)
     }
   }
 
