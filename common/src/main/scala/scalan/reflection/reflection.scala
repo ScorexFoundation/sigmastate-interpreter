@@ -1,10 +1,21 @@
 package scalan.reflection
 
+import scalan.reflection.RClass.memoize
+import scalan.util.PrintExtensions.IterableExtensions
+
 import java.lang.reflect.{Constructor, Field, Method}
+import scala.collection.mutable
 
 class RClass[T](val value: Class[T]) {
+  val fields = mutable.HashMap.empty[String, RField]
+
+  def getField(name: String): RField =
+    memoize(fields)(name, RField(value.getField(name)))
+
+  val methods = mutable.HashMap.empty[(String, Seq[Class[_]]), RMethod]
+
   def getMethod(name: String, parameterTypes: Class[_]*): RMethod = {
-    RMethod(value.getMethod(name, parameterTypes:_*))
+    memoize(methods)((name, parameterTypes), RMethod(value.getMethod(name, parameterTypes:_*)))
   }
 
   def getSimpleName: String = value.getSimpleName
@@ -14,7 +25,6 @@ class RClass[T](val value: Class[T]) {
   def getDeclaredConstructors(): Array[RConstructor[_]] = value.getDeclaredConstructors.map(RConstructor(_))
 
   def isPrimitive(): Boolean = value.isPrimitive
-  def getField(name: String): RField = RField(value.getField(name))
 
   def getSuperclass(): RClass[_ >: T] = RClass(value.getSuperclass)
 
@@ -35,10 +45,38 @@ class RClass[T](val value: Class[T]) {
   }
 }
 object RClass {
-  def apply[T](clazz: Class[T]): RClass[T] = new RClass[T](clazz)
+  val classes = mutable.HashMap.empty[Class[_], RClass[_]]
+
+  def memoize[K, V](map: mutable.HashMap[K, V])(key: K, value: => V): V = map.synchronized {
+    map.get(key) match {
+      case Some(v) => v
+      case None =>
+        val v = value
+        map.put(key, v)
+        v
+    }
+  }
+
+  def apply[T](clazz: Class[T]): RClass[T] = memoize(classes)(clazz, new RClass[T](clazz)).asInstanceOf[RClass[T]]
+
+  def generateReport(): String = {
+    val b = new mutable.StringBuilder(100)
+    for (e <- classes) {
+      val clazz = e._1
+      b.append(s"$clazz {\n")
+      for ((n, f) <- e._2.fields) {
+        b.append(s"  val $n: ${f.value.getType.getName}\n")
+      }
+      for (((n, args), m) <- e._2.methods) {
+        b.append(s"  def $n($args) -> obj.asInstanceOf[${clazz.getName}].$n(${args.zipWithIndex.rep{case (c, i) => s"args($i).asInstanceOf[${c.getName}]"}})\n")
+      }
+      b.append(s"}\n")
+    }
+    b.result()
+  }
 }
 
-class RField(val value: Field) {
+class RField private (val value: Field) {
   def canEqual(other: Any): Boolean = other.isInstanceOf[RField]
 
   override def equals(other: Any): Boolean = other match {
@@ -52,10 +90,10 @@ class RField(val value: Field) {
   }
 }
 object RField {
-  def apply(field: Field): RField = new RField(field)
+  private[reflection] def apply(field: Field): RField = new RField(field)
 }
 
-class RConstructor[T](val value: Constructor[T]) {
+class RConstructor[T] private (val value: Constructor[T]) {
   def newInstance(initargs: AnyRef*): T = value.newInstance(initargs:_*)
   def getParameterTypes(): Array[RClass[_]] = value.getParameterTypes.map(RClass(_))
 
@@ -72,10 +110,10 @@ class RConstructor[T](val value: Constructor[T]) {
   }
 }
 object RConstructor {
-  def apply[T](value: Constructor[T]): RConstructor[T]  = new RConstructor[T](value)
+  private[reflection] def apply[T](value: Constructor[T]): RConstructor[T]  = new RConstructor[T](value)
 }
 
-class RMethod(val value: Method) {
+class RMethod private (val value: Method) {
   def invoke(obj: AnyRef, args: AnyRef*): AnyRef = value.invoke(obj, args:_*)
 
   def getName: String = value.getName
@@ -95,7 +133,7 @@ class RMethod(val value: Method) {
   }
 }
 object RMethod {
-  def apply(value: Method): RMethod = new RMethod(value)
+  private[reflection] def apply(value: Method): RMethod = new RMethod(value)
 }
 
 class RInvocationException() extends Exception

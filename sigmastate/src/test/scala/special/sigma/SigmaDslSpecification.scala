@@ -10022,5 +10022,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     println(ErgoTreeEvaluator.DefaultProfiler.generateReport)
     println("==========================================================")
     println(Interpreter.verifySignatureProfiler.generateReport)
+    println("==========================================================")
+    println(scalan.reflection.RClass.generateReport)
   }
 }
