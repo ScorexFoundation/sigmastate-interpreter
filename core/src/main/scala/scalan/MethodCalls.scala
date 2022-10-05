@@ -181,7 +181,7 @@ trait MethodCalls extends Base with GraphVizExport { self: Scalan =>
 
   /** Method invocation checker. */
   protected def canBeInvoked(d: Def[_], m: RMethod, args: Array[AnyRef]) = {
-    m.getDeclaringClass.isAssignableFrom(RClass(d.getClass)) && isInvokeEnabled(d, m)
+    m.getDeclaringClass.isAssignableFrom(d.getClass) && isInvokeEnabled(d, m)
   }
 
   /** Result of MethodCall invocation.

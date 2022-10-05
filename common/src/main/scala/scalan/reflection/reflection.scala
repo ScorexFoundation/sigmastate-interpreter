@@ -3,7 +3,9 @@ package scalan.reflection
 import java.lang.reflect.{Constructor, Field, Method}
 
 class RClass[T](val value: Class[T]) {
-  def getMethod(name: String, parameterTypes: Class[_]*): RMethod = RMethod(value.getMethod(name, parameterTypes:_*))
+  def getMethod(name: String, parameterTypes: Class[_]*): RMethod = {
+    RMethod(value.getMethod(name, parameterTypes:_*))
+  }
 
   def getSimpleName: String = value.getSimpleName
   def getName: String = value.getName
@@ -16,7 +18,7 @@ class RClass[T](val value: Class[T]) {
 
   def getSuperclass(): RClass[_ >: T] = RClass(value.getSuperclass)
 
-  def isAssignableFrom(cls: RClass[_]): Boolean = value.isAssignableFrom(cls.value)
+  def isAssignableFrom(cls: Class[_]): Boolean = value.isAssignableFrom(cls)
 
   def getDeclaredMethods(): Array[RMethod] = value.getDeclaredMethods.map(RMethod(_))
 
