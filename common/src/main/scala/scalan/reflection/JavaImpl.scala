@@ -1,5 +1,6 @@
 package scalan.reflection
 
+import debox.cfor
 import scalan.reflection.RClass.memoize
 
 import java.lang.reflect.{Constructor, Field, Method}
@@ -19,7 +20,25 @@ class JRClass[T](val value: Class[T]) extends RClass[T] {
 
   def getSimpleName: String = value.getSimpleName
   def getName: String = value.getName
-  def getConstructors(): Array[RConstructor[_]] = value.getConstructors.map(x => JRConstructor.apply(x))
+
+  var constructors: Array[RConstructor[_]] = _
+
+  def getConstructors(): Array[RConstructor[_]] = {
+    if (constructors == null) {
+      synchronized {
+        if (constructors == null) {
+          val cs = value.getConstructors.asInstanceOf[Array[Constructor[Any]]]
+          val buf = mutable.ArrayBuilder.make[RConstructor[Any]]()
+          cfor(0)(_ < cs.length, _ + 1) { i =>
+            val c = cs(i)
+            buf += JRConstructor[Any](i, c)
+          }
+          constructors = buf.result().asInstanceOf[Array[RConstructor[_]]]
+        }
+      }
+    }
+    constructors
+  }
 
   def isPrimitive(): Boolean = value.isPrimitive
 
@@ -55,7 +74,7 @@ object JRField {
   private[reflection] def apply(field: Field): RField = new JRField(field)
 }
 
-class JRConstructor[T] private (val value: Constructor[T]) extends RConstructor[T] {
+class JRConstructor[T] private (val index: Int, val value: Constructor[T]) extends RConstructor[T] {
   override def newInstance(initargs: AnyRef*): T = value.newInstance(initargs:_*)
   override def getParameterTypes(): Array[RClass[_]] = value.getParameterTypes.map(RClass(_))
 
@@ -67,7 +86,7 @@ class JRConstructor[T] private (val value: Constructor[T]) extends RConstructor[
   override def hashCode(): Int = value.hashCode()
 }
 object JRConstructor {
-  private[reflection] def apply[T](value: Constructor[T]): RConstructor[T]  = new JRConstructor[T](value)
+  private[reflection] def apply[T](index: Int, value: Constructor[T]): RConstructor[T]  = new JRConstructor[T](index, value)
 }
 
 abstract class RMethod {
