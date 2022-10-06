@@ -1,12 +1,22 @@
 package scalan.reflection
 
+import scala.collection.compat.immutable.ArraySeq
 import scala.collection.mutable
 
 object ReflectionData {
-  def cls[T](clazz: Class[T]): (Class[T], SRClass[T]) = clazz -> SRClass(clazz)
+  def CLS[T](clazz: Class[T],
+             constructors: Seq[SRConstructor[_]],
+             fields: Map[String, SRField],
+             methods: Map[(String, Seq[Class[_]]), RMethod]): (Class[T], SRClass[T]) = {
+    clazz -> new SRClass(clazz, constructors, fields, methods)
+  }
 
   val classes:  mutable.HashMap[Class[_], SRClass[_]] = mutable.HashMap(
-    cls(classOf[java.lang.String])
+    CLS(classOf[java.lang.String],
+      constructors = ArraySeq.empty,
+      fields = Map.empty,
+      methods = Map.empty
+    )
   )
 
 }

@@ -38,9 +38,7 @@ class JRClass[T](val value: Class[T]) extends RClass[T] {
     case _ => false
   })
 
-  override def hashCode(): Int = {
-    value.hashCode()
-  }
+  override def hashCode(): Int = value.hashCode()
 }
 
 

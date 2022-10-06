@@ -12,7 +12,6 @@ trait RConstructor[T] {
   def getParameterTypes(): Array[RClass[_]]
 }
 
-
 abstract class RClass[T] {
   def getField(name: String): RField
 
@@ -48,12 +47,12 @@ object RClass {
   }
 
   def apply[T](clazz: Class[T]): RClass[T] = {
-//    val res = ReflectionData.classes.get(clazz) match {
-//      case Some(c) => c
-//      case _ =>
+    val res = ReflectionData.classes.get(clazz) match {
+      case Some(c) => c
+      case _ =>
         memoize(classes)(clazz, new JRClass[T](clazz))
-//    }
-//    res
+    }
+    res
         .asInstanceOf[RClass[T]]
   }
 
