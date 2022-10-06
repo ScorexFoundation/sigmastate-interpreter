@@ -21,8 +21,6 @@ class JRClass[T](val value: Class[T]) extends RClass[T] {
   def getName: String = value.getName
   def getConstructors(): Array[RConstructor[_]] = value.getConstructors.map(x => JRConstructor.apply(x))
 
-  def getDeclaredConstructors(): Array[RConstructor[_]] = value.getDeclaredConstructors.map(JRConstructor(_))
-
   def isPrimitive(): Boolean = value.isPrimitive
 
   def getSuperclass(): RClass[_ >: T] = RClass(value.getSuperclass)

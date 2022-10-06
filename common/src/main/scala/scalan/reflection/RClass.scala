@@ -24,8 +24,6 @@ abstract class RClass[T] {
 
   def getConstructors(): Array[RConstructor[_]]
 
-  def getDeclaredConstructors(): Array[RConstructor[_]]
-
   def isPrimitive(): Boolean
 
   def getSuperclass(): RClass[_ >: T]
@@ -49,7 +47,15 @@ object RClass {
     }
   }
 
-  def apply[T](clazz: Class[T]): RClass[T] = memoize(classes)(clazz, new JRClass[T](clazz)).asInstanceOf[RClass[T]]
+  def apply[T](clazz: Class[T]): RClass[T] = {
+//    val res = ReflectionData.classes.get(clazz) match {
+//      case Some(c) => c
+//      case _ =>
+        memoize(classes)(clazz, new JRClass[T](clazz))
+//    }
+//    res
+        .asInstanceOf[RClass[T]]
+  }
 
   def generateReport(): String = {
     val b = new mutable.StringBuilder(100)

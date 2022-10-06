@@ -285,7 +285,7 @@ abstract class TypeDescs extends Base { self: Scalan =>
 
   /** Get first (and the only) constructor of the `clazz`. */
   private[scalan] final def getConstructor(clazz: RClass[_]): RConstructor[_] = {
-    val constructors = clazz.getDeclaredConstructors()
+    val constructors = clazz.getConstructors()
     if (constructors.length != 1)
       !!!(s"Element class $clazz has ${constructors.length} constructors, 1 expected")
     else
