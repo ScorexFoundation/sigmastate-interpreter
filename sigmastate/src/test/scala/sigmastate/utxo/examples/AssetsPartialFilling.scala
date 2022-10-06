@@ -21,7 +21,7 @@ case class AssetsPartialFilling[Spec <: ContractSpec]
 
   lazy val buyerProp = proposition("buyer", { ctx: Context =>
     import ctx._
-    (HEIGHT > deadline && pkA) || {
+    (HEIGHT > deadline && pkA) || sigmaProp({
 
       val outIdx = getVar[Short](127).get
       val out = OUTPUTS(outIdx)
@@ -38,7 +38,7 @@ case class AssetsPartialFilling[Spec <: ContractSpec]
         out.propositionBytes == pkA.propBytes,
         out.R4[Coll[Byte]].get == SELF.id
       ))
-    }
+    })
   },
   """(HEIGHT > deadline && pkA) || {
    |
@@ -62,7 +62,7 @@ case class AssetsPartialFilling[Spec <: ContractSpec]
 
   lazy val sellerProp = proposition("seller", {ctx: Context =>
     import ctx._
-    (HEIGHT > deadline && pkB) || {
+    (HEIGHT > deadline && pkB) || sigmaProp({
       val outIdx = getVar[Short](127).get
       val out = OUTPUTS(outIdx)
 
@@ -88,7 +88,7 @@ case class AssetsPartialFilling[Spec <: ContractSpec]
         outR4 == SELF.id,
         out.propositionBytes == pkB.propBytes
       ))
-    }
+    })
   },
   """ (HEIGHT > deadline && pkB) || {
    |   val outIdx = getVar[Short](127).get

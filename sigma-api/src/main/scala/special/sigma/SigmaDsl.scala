@@ -229,19 +229,9 @@ trait SigmaProp {
     * This constructs a new CAND node of sigma tree with two children. */
   def &&(other: SigmaProp): SigmaProp
 
-  /** Logical AND between this `SigmaProp` and `Boolean` value on the right.
-    * The boolean value will be wrapped into `SigmaProp` using `sigmaProp` function.
-    * This constructs a new CAND node of sigma tree with two children. */
-  def &&(other: Boolean): SigmaProp
-
   /** Logical OR between this SigmaProp and other SigmaProp.
     * This constructs a new COR node of sigma tree with two children. */
   def ||(other: SigmaProp): SigmaProp
-
-  /** Logical OR between this `SigmaProp` and `Boolean` value on the right.
-    * The boolean value will be wrapped into `SigmaProp` using `sigmaProp` function.
-    * This constructs a new COR node of sigma tree with two children. */
-  def ||(other: Boolean): SigmaProp
 }
 
 /** Represents any value paired with type descriptor. */

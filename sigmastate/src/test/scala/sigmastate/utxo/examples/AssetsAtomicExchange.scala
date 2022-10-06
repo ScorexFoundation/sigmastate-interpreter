@@ -26,7 +26,7 @@ case class AssetsAtomicExchange[Spec <: ContractSpec]
 
   lazy val buyerProp = proposition("buyer", { ctx: Context =>
     import ctx._
-    (HEIGHT > deadline && pkA) || {
+    (HEIGHT > deadline && pkA) || sigmaProp({
       val tokenData = OUTPUTS(0).R2[Coll[(Coll[Byte], Long)]].get(0)
       val knownId = OUTPUTS(0).R4[Coll[Byte]].get == SELF.id
       allOf(Coll(
@@ -35,7 +35,7 @@ case class AssetsAtomicExchange[Spec <: ContractSpec]
         OUTPUTS(0).propositionBytes == pkA.propBytes,
         knownId
       ))
-    }
+    })
   },
   """{
    |  (HEIGHT > deadline && pkA) || {
@@ -52,14 +52,14 @@ case class AssetsAtomicExchange[Spec <: ContractSpec]
 
   lazy val sellerProp = proposition("seller", {ctx: Context =>
     import ctx._
-    (HEIGHT > deadline && pkB) || {
+    (HEIGHT > deadline && pkB) || sigmaProp({
       val knownBoxId = OUTPUTS(1).R4[Coll[Byte]].get == SELF.id
       allOf(Coll(
         OUTPUTS(1).value >= 100L,
         knownBoxId,
         OUTPUTS(1).propositionBytes == pkB.propBytes
       ))
-    }
+    })
   },
   """{
    |  (HEIGHT > deadline && pkB) ||

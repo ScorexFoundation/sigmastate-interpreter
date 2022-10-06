@@ -143,18 +143,10 @@ case class CSigmaProp(sigmaTree: SigmaBoolean) extends SigmaProp with WrapperOf[
       CSigmaProp(CAND.normalized(Array(sigmaTree, other.sigmaTree)))
   }
 
-  // TODO refactor: remove this (it shouldn't be used in interpreter)
-  override def &&(other: Boolean): SigmaProp =
-    CSigmaProp(CAND.normalized(Array(sigmaTree, TrivialProp(other))))
-
   override def ||(other: SigmaProp): SigmaProp = other match {
     case other: CSigmaProp =>
       CSigmaProp(COR.normalized(Array(sigmaTree, other.sigmaTree)))
   }
-
-  // TODO refactor: remove this (it shouldn't be used in interpreter)
-  override def ||(other: Boolean): SigmaProp =
-    CSigmaProp(COR.normalized(Array(sigmaTree, TrivialProp(other))))
 
   override def toString: String = s"SigmaProp(${wrappedValue.showToString})"
 }
