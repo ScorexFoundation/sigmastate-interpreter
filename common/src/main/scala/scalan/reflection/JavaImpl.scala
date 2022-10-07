@@ -90,13 +90,13 @@ object JRConstructor {
 }
 
 abstract class RMethod {
-  def invoke(obj: AnyRef, args: AnyRef*): AnyRef
+  def invoke(obj: Any, args: AnyRef*): AnyRef
   def getName: String
   def getDeclaringClass(): RClass[_]
 }
 
 class JRMethod private (val value: Method) extends RMethod {
-  def invoke(obj: AnyRef, args: AnyRef*): AnyRef = value.invoke(obj, args:_*)
+  def invoke(obj: Any, args: AnyRef*): AnyRef = value.invoke(obj, args:_*)
 
   def getName: String = value.getName
 

@@ -1,6 +1,5 @@
 package scalan
 
-import java.lang.reflect.InvocationTargetException
 import scala.language.{higherKinds, implicitConversions}
 import scala.annotation.implicitNotFound
 import scala.collection.immutable.ListMap
@@ -164,7 +163,6 @@ abstract class TypeDescs extends Base { self: Scalan =>
     //          val res =
     //            try method.invoke(wrapSpec, srcArgs.toArray:_*)
     //            catch {
-    //              case e: InvocationTargetException => !!!(msg, e.getTargetException)
     //              case t: Throwable => !!!(msg, t)
     //            }
     //          res
@@ -177,7 +175,6 @@ abstract class TypeDescs extends Base { self: Scalan =>
     //          val res =
     //            try method.invoke(srcObj, srcArgs.toArray:_*)
     //            catch {
-    //              case e: InvocationTargetException => !!!(msg, e.getTargetException)
     //              case t: Throwable => !!!(msg, t)
     //            }
     //          res
@@ -203,7 +200,6 @@ abstract class TypeDescs extends Base { self: Scalan =>
           val res =
             try method.invoke(wrapSpec, srcArgs:_*)
             catch {
-              case e: InvocationTargetException => !!!(msg, e.getTargetException)
               case t: Throwable => !!!(msg, t)
             }
           res
@@ -214,7 +210,6 @@ abstract class TypeDescs extends Base { self: Scalan =>
           val res =
             try method.invoke(srcObj, srcArgs:_*)
             catch {
-              case e: InvocationTargetException => !!!(msg, e.getTargetException)
               case t: Throwable => !!!(msg, t)
             }
           res

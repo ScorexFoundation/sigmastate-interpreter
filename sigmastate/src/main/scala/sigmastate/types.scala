@@ -1,19 +1,17 @@
 package sigmastate
 
-import java.lang.reflect.Method
 import java.math.BigInteger
-
 import org.ergoplatform._
 import org.ergoplatform.validation._
 import scalan.{Nullable, RType}
 import scalan.RType.GeneralType
-import sigmastate.SType.{TypeCode, AnyOps}
+import sigmastate.SType.{AnyOps, TypeCode}
 import sigmastate.interpreter._
 import sigmastate.utils.Overloading.Overload1
 import sigmastate.utils.SparseArrayContainer
 import scalan.util.Extensions._
 import scorex.crypto.authds.{ADKey, ADValue}
-import scorex.crypto.authds.avltree.batch.{Lookup, Insert, Update, Remove}
+import scorex.crypto.authds.avltree.batch.{Insert, Lookup, Remove, Update}
 import scorex.crypto.hash.Blake2b256
 import sigmastate.Values._
 import sigmastate.lang.Terms._
@@ -23,22 +21,21 @@ import sigmastate.interpreter.CryptoConstants.{EcPointType, hashLength}
 import sigmastate.serialization.OpCodes
 import special.collection.Coll
 import special.sigma._
+
 import scala.language.implicitConversions
 import scala.reflect.{ClassTag, classTag}
 import scala.collection.compat.immutable.ArraySeq
-import sigmastate.SMethod.{InvokeDescBuilder, MethodCostFunc, givenCost, javaMethodOf, MethodCallIrBuilder}
-import sigmastate.utxo.ByIndex
-import sigmastate.utxo.ExtractCreationInfo
+import sigmastate.SMethod.{InvokeDescBuilder, MethodCallIrBuilder, MethodCostFunc, givenCost, javaMethodOf}
 import sigmastate.utxo._
-import special.sigma.{Header, Box, SigmaProp, AvlTree, SigmaDslBuilder, PreHeader}
 import sigmastate.lang.SigmaTyper.STypeSubst
 import sigmastate.eval.Evaluation.stypeToRType
 import sigmastate.eval._
 import sigmastate.lang.exceptions.MethodNotFound
 import debox.cfor
+import scalan.reflection.{RClass, RMethod}
 
 import scala.collection.mutable
-import scala.util.{Success, Failure}
+import scala.util.{Failure, Success}
 
 /** Base type for all AST nodes of sigma lang. */
 trait SigmaNode extends Product
@@ -345,8 +342,9 @@ trait STypeCompanion {
   def getMethodByName(name: String): SMethod = methods.find(_.name == name).get
 
   /** Class which represents values of this type. When method call is executed, the corresponding method
-    * of this class is invoked via reflection [[java.lang.reflect.Method]].invoke(). */
-  def reprClass: Class[_]
+    * of this class is invoked via reflection [[RMethod]].invoke(). */
+  def reprClass: RClass[_]
+  val thisRClass: RClass[_] = RClass(this.getClass)
 }
 
 /** Defines recognizer method which allows the derived object to be used in patterns
@@ -425,9 +423,9 @@ object OperationInfo {
   * @param invokeDescsBuilder optional builder of additional type descriptors (see extraDescriptors)
   */
 case class MethodIRInfo(
-    irBuilder: Option[PartialFunction[(SigmaBuilder, SValue, SMethod, Seq[SValue], STypeSubst), SValue]],
-    javaMethod: Option[Method],
-    invokeDescsBuilder: Option[InvokeDescBuilder]
+  irBuilder: Option[PartialFunction[(SigmaBuilder, SValue, SMethod, Seq[SValue], STypeSubst), SValue]],
+  javaMethod: Option[RMethod],
+  invokeDescsBuilder: Option[InvokeDescBuilder]
 )
 
 /** Represents method descriptor.
@@ -457,10 +455,10 @@ case class SMethod(
   /** Operation descriptor of this method. */
   lazy val opDesc = MethodDesc(this)
 
-  /** Finds and keeps the [[Method]] instance which corresponds to this method descriptor.
+  /** Finds and keeps the [[RMethod]] instance which corresponds to this method descriptor.
     * The lazy value is forced only if irInfo.javaMethod == None
     */
-  lazy val javaMethod: Method = {
+  lazy val javaMethod: RMethod = {
     irInfo.javaMethod.getOrElse {
       val paramTypes = stype.tDom.drop(1).map(t => t match {
         case _: STypeVar => classOf[AnyRef]
@@ -497,11 +495,11 @@ case class SMethod(
     objType.getMethodById(methodId).get
   }
 
-  /** Returns Java refection [[Method]] which must be invoked to evaluate this method.
+  /** Returns refection [[RMethod]] which must be invoked to evaluate this method.
     * The method is resolved by its name using `name + "_eval"` naming convention.
     * @see `map_eval`, `flatMap_eval` and other `*_eval` methods.
     * @hotspot don't beautify the code */
-  lazy val evalMethod: Method = {
+  lazy val evalMethod: RMethod = {
     val argTypes = stype.tDom
     val nArgs = argTypes.length
     val paramTypes = new Array[Class[_]](nArgs + 2)
@@ -520,9 +518,9 @@ case class SMethod(
 
     val methodName = name + "_eval"
     val m = try {
-      objType.getClass().getMethod(methodName, paramTypes:_*)
+      objType.thisRClass.getMethod(methodName, paramTypes:_*)
     }
-    catch { case e: MethodNotFound =>
+    catch { case e: NoSuchMethodException =>
       throw new RuntimeException(s"Cannot find eval method def $methodName(${Seq(paramTypes:_*)})", e)
     }
     m
@@ -580,7 +578,7 @@ case class SMethod(
   /** Create a new instance with the given IR builder (aka MethodCall rewriter) parameter. */
   def withIRInfo(
       irBuilder: PartialFunction[(SigmaBuilder, SValue, SMethod, Seq[SValue], STypeSubst), SValue],
-      javaMethod: Method = null,
+      javaMethod: RMethod = null,
       invokeHandler: InvokeDescBuilder = null): SMethod = {
     this.copy(irInfo = MethodIRInfo(Some(irBuilder), Option(javaMethod), Option(invokeHandler)))
   }
@@ -648,8 +646,8 @@ object SMethod {
     * @param cA1 the class of the method argument
     */
   def javaMethodOf[T, A1](methodName: String)
-                         (implicit cT: ClassTag[T], cA1: ClassTag[A1]): Method =
-    cT.runtimeClass.getMethod(methodName, cA1.runtimeClass)
+                         (implicit cT: ClassTag[T], cA1: ClassTag[A1]): RMethod =
+    RClass(cT.runtimeClass).getMethod(methodName, cA1.runtimeClass)
 
   /** Return [[Method]] descriptor for the given `methodName` on the given `cT` type.
     * @param methodName the name of the method to lookup
@@ -659,8 +657,8 @@ object SMethod {
     */
   def javaMethodOf[T, A1, A2]
         (methodName: String)
-        (implicit cT: ClassTag[T], cA1: ClassTag[A1], cA2: ClassTag[A2]): Method =
-    cT.runtimeClass.getMethod(methodName, cA1.runtimeClass, cA2.runtimeClass)
+        (implicit cT: ClassTag[T], cA1: ClassTag[A1], cA2: ClassTag[A2]): RMethod =
+    RClass(cT.runtimeClass).getMethod(methodName, cA1.runtimeClass, cA2.runtimeClass)
 
   /** Default fallback method call recognizer which builds MethodCall ErgoTree nodes. */
   val MethodCallIrBuilder: PartialFunction[(SigmaBuilder, SValue, SMethod, Seq[SValue], STypeSubst), SValue] = {
@@ -791,7 +789,7 @@ object SNumericType extends STypeCompanion {
   override def typeId: TypeCode = 106: Byte
 
   /** Since this object is not used in SMethod instances. */
-  override def reprClass: Class[_] = sys.error(s"Shouldn't be called.")
+  override def reprClass: RClass[_] = sys.error(s"Shouldn't be called.")
 
   /** Type variable used in generic signatures of method descriptors. */
   val tNum = STypeVar("TNum")
@@ -908,7 +906,7 @@ case object SBoolean extends SPrimType with SEmbeddable with SLogical with SProd
   override type WrappedType = Boolean
   override val typeCode: TypeCode = 1: Byte
   override def typeId = typeCode
-  override val reprClass: Class[_] = classOf[Boolean]
+  override val reprClass: RClass[_] = RClass(classOf[Boolean])
 
   val ToByte = "toByte"
   protected override def getMethods() = super.getMethods()
@@ -924,7 +922,7 @@ case object SBoolean extends SPrimType with SEmbeddable with SLogical with SProd
 case object SByte extends SPrimType with SEmbeddable with SNumericType with SMonoType {
   override type WrappedType = Byte
   override val typeCode: TypeCode = 2: Byte
-  override val reprClass: Class[_] = classOf[Byte]
+  override val reprClass: RClass[_] = RClass(classOf[Byte])
   override def typeId = typeCode
   override def numericTypeIndex: Int = 0
   override def upcast(v: AnyVal): Byte = v match {
@@ -944,7 +942,7 @@ case object SByte extends SPrimType with SEmbeddable with SNumericType with SMon
 case object SShort extends SPrimType with SEmbeddable with SNumericType with SMonoType {
   override type WrappedType = Short
   override val typeCode: TypeCode = 3: Byte
-  override val reprClass: Class[_] = classOf[Short]
+  override val reprClass: RClass[_] = RClass(classOf[Short])
   override def typeId = typeCode
   override def numericTypeIndex: Int = 1
   override def upcast(v: AnyVal): Short = v match {
@@ -964,7 +962,7 @@ case object SShort extends SPrimType with SEmbeddable with SNumericType with SMo
 case object SInt extends SPrimType with SEmbeddable with SNumericType with SMonoType {
   override type WrappedType = Int
   override val typeCode: TypeCode = 4: Byte
-  override val reprClass: Class[_] = classOf[Int]
+  override val reprClass: RClass[_] = RClass(classOf[Int])
   override def typeId = typeCode
   override def numericTypeIndex: Int = 2
   override def upcast(v: AnyVal): Int = v match {
@@ -986,7 +984,7 @@ case object SInt extends SPrimType with SEmbeddable with SNumericType with SMono
 case object SLong extends SPrimType with SEmbeddable with SNumericType with SMonoType {
   override type WrappedType = Long
   override val typeCode: TypeCode = 5: Byte
-  override val reprClass: Class[_] = classOf[Long]
+  override val reprClass: RClass[_] = RClass(classOf[Long])
   override def typeId = typeCode
   override def numericTypeIndex: Int = 3
   override def upcast(v: AnyVal): Long = v match {
@@ -1009,7 +1007,7 @@ case object SLong extends SPrimType with SEmbeddable with SNumericType with SMon
 case object SBigInt extends SPrimType with SEmbeddable with SNumericType with SMonoType {
   override type WrappedType = BigInt
   override val typeCode: TypeCode = 6: Byte
-  override val reprClass: Class[_] = classOf[BigInt]
+  override val reprClass: RClass[_] = RClass(classOf[BigInt])
 
   override def typeId = typeCode
 
@@ -1072,7 +1070,7 @@ case object SString extends SProduct with SMonoType {
   override type WrappedType = String
   override val typeCode: TypeCode = 102: Byte
   override def typeId = typeCode
-  override def reprClass: Class[_] = classOf[String]
+  override def reprClass: RClass[_] = RClass(classOf[String])
 }
 
 /** Descriptor of ErgoTree type `GroupElement`.
@@ -1080,7 +1078,7 @@ case object SString extends SProduct with SMonoType {
 case object SGroupElement extends SProduct with SPrimType with SEmbeddable with SMonoType {
   override type WrappedType = GroupElement
   override val typeCode: TypeCode = 7: Byte
-  override val reprClass: Class[_] = classOf[GroupElement]
+  override val reprClass: RClass[_] = RClass(classOf[GroupElement])
 
   override def typeId = typeCode
 
@@ -1134,7 +1132,7 @@ case object SSigmaProp extends SProduct with SPrimType with SEmbeddable with SLo
   import SType._
   override type WrappedType = SigmaProp
   override val typeCode: TypeCode = 8: Byte
-  override val reprClass: Class[_] = classOf[SigmaProp]
+  override val reprClass: RClass[_] = RClass(classOf[SigmaProp])
   override def typeId = typeCode
 
   /** The maximum size of SigmaProp value in serialized byte array representation. */
@@ -1191,7 +1189,7 @@ object SOption extends STypeCompanion {
 
   override def typeId = OptionTypeCode
 
-  override val reprClass: Class[_] = classOf[Option[_]]
+  override val reprClass: RClass[_] = RClass(classOf[Option[_]])
 
   type SBooleanOption      = SOption[SBoolean.type]
   type SByteOption         = SOption[SByte.type]
@@ -1327,7 +1325,7 @@ object SCollectionType {
 }
 
 object SCollection extends STypeCompanion with MethodByNameUnapply {
-  override val reprClass: Class[_] = classOf[Coll[_]]
+  override val reprClass: RClass[_] = RClass(classOf[Coll[_]])
   override def typeId = SCollectionType.CollectionTypeCode
 
   import SType.{tK, tV, paramIV, paramIVSeq, paramOV}
@@ -1829,7 +1827,7 @@ object STuple extends STypeCompanion {
 
   override def typeId = TupleTypeCode
 
-  override val reprClass: Class[_] = classOf[Product2[_,_]]
+  override val reprClass: RClass[_] = RClass(classOf[Product2[_,_]])
 
   /** A list of Coll methods inherited from Coll type and available as method of tuple. */
   lazy val colMethods: Seq[SMethod] = {
@@ -1943,7 +1941,7 @@ case object SBox extends SProduct with SPredefType with SMonoType {
   import ErgoBox._
   override type WrappedType = Box
   override val typeCode: TypeCode = 99: Byte
-  override val reprClass: Class[_] = classOf[Box]
+  override val reprClass: RClass[_] = RClass(classOf[Box])
   override def typeId = typeCode
 
   import SType.{tT, paramT}
@@ -2040,7 +2038,7 @@ case object SBox extends SProduct with SPredefType with SMonoType {
 case object SAvlTree extends SProduct with SPredefType with SMonoType {
   override type WrappedType = AvlTree
   override val typeCode: TypeCode = 100: Byte
-  override val reprClass: Class[_] = classOf[AvlTree]
+  override val reprClass: RClass[_] = RClass(classOf[AvlTree])
   override def typeId = typeCode
 
   import SOption._
@@ -2472,7 +2470,7 @@ case object SAvlTree extends SProduct with SPredefType with SMonoType {
 case object SContext extends SProduct with SPredefType with SMonoType {
   override type WrappedType = Context
   override val typeCode: TypeCode = 101: Byte
-  override def reprClass: Class[_] = classOf[Context]
+  override def reprClass: RClass[_] = RClass(classOf[Context])
   override def typeId = typeCode
 
   /** Arguments on context operation such as getVar, DeserializeContext etc.
@@ -2506,7 +2504,7 @@ case object SContext extends SProduct with SPredefType with SMonoType {
 case object SHeader extends SProduct with SPredefType with SMonoType {
   override type WrappedType = Header
   override val typeCode: TypeCode = 104: Byte
-  override val reprClass: Class[_] = classOf[Header]
+  override val reprClass: RClass[_] = RClass(classOf[Header])
   override def typeId = typeCode
 
   lazy val idMethod               = propertyCall("id", SByteArray, 1, FixedCost(JitCost(10)))
@@ -2536,7 +2534,7 @@ case object SHeader extends SProduct with SPredefType with SMonoType {
 case object SPreHeader extends SProduct with SPredefType with SMonoType {
   override type WrappedType = PreHeader
   override val typeCode: TypeCode = 105: Byte
-  override val reprClass: Class[_] = classOf[PreHeader]
+  override val reprClass: RClass[_] = RClass(classOf[PreHeader])
   override def typeId = typeCode
 
   lazy val versionMethod          = propertyCall("version",  SByte,      1, FixedCost(JitCost(10)))
@@ -2569,7 +2567,7 @@ case object SPreHeader extends SProduct with SPredefType with SMonoType {
 case object SGlobal extends SProduct with SPredefType with SMonoType {
   override type WrappedType = SigmaDslBuilder
   override val typeCode: TypeCode = 106: Byte
-  override val reprClass: Class[_] = classOf[SigmaDslBuilder]
+  override val reprClass: RClass[_] = RClass(classOf[SigmaDslBuilder])
   override def typeId = typeCode
 
   import SType.tT

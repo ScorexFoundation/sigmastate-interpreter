@@ -249,7 +249,7 @@ object Terms {
 
   object MethodCall extends FixedCostValueCompanion {
     override def opCode: OpCode = OpCodes.MethodCallCode
-    /** Cost of: 1) packing args into Array 2) java.lang.reflect.Method.invoke */
+    /** Cost of: 1) packing args into Array 2) RMethod.invoke */
     override val costKind = FixedCost(JitCost(4))
 
     /** Helper constructor which allows to cast the resulting node to the specified
@@ -265,7 +265,7 @@ object Terms {
   }
   object PropertyCall extends FixedCostValueCompanion {
     override def opCode: OpCode = OpCodes.PropertyCallCode
-    /** Cost of: 1) packing args into Array 2) java.lang.reflect.Method.invoke */
+    /** Cost of: 1) packing args into Array 2) RMethod.invoke */
     override val costKind = FixedCost(JitCost(4))
   }
 

@@ -1,7 +1,5 @@
 package sigmastate.lang
 
-import java.lang.reflect.InvocationTargetException
-
 import sigmastate.kiama.rewriting.CallbackRewriter
 import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
 import org.ergoplatform._
@@ -117,8 +115,7 @@ class SigmaBinder(env: ScriptEnv, builder: SigmaBuilder,
   })))(e)
 
   def bind(e: SValue): SValue =
-    try eval(e, env)
-    catch { case e: InvocationTargetException => throw e.getCause }
+    eval(e, env)
 }
 
 object SigmaBinder {
