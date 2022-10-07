@@ -58,6 +58,8 @@ class JRClass[T](val value: Class[T]) extends RClass[T] {
   })
 
   override def hashCode(): Int = value.hashCode()
+
+  override def toString: String = s"JRClass(${value.getName})"
 }
 
 
@@ -69,30 +71,32 @@ class JRField private (val value: Field) extends RField {
     case _ => false
   })
   override def hashCode(): Int = value.hashCode()
+  override def toString: String = s"JRField($value)"
 }
 object JRField {
   private[reflection] def apply(field: Field): RField = new JRField(field)
 }
 
 class JRConstructor[T] private (val index: Int, val value: Constructor[T]) extends RConstructor[T] {
-  override def newInstance(initargs: AnyRef*): T = value.newInstance(initargs:_*)
-  override def getParameterTypes(): Array[RClass[_]] = value.getParameterTypes.map(RClass(_))
+  @volatile var wasUsed: Boolean = false
+  override def newInstance(initargs: AnyRef*): T = {
+    wasUsed = true
+    value.newInstance(initargs:_*)
+  }
+  override def getParameterTypes(): Array[RClass[_]] = {
+    wasUsed = true
+    value.getParameterTypes.map(RClass(_))
+  }
 
   override def equals(other: Any): Boolean = (this eq other.asInstanceOf[AnyRef]) || (other match {
     case that: JRConstructor[_] => value == that.value
     case _ => false
   })
-
   override def hashCode(): Int = value.hashCode()
+  override def toString: String = s"JRConstructor($index, $value)"
 }
 object JRConstructor {
   private[reflection] def apply[T](index: Int, value: Constructor[T]): RConstructor[T]  = new JRConstructor[T](index, value)
-}
-
-abstract class RMethod {
-  def invoke(obj: Any, args: AnyRef*): AnyRef
-  def getName: String
-  def getDeclaringClass(): RClass[_]
 }
 
 class JRMethod private (val value: Method) extends RMethod {
@@ -108,6 +112,7 @@ class JRMethod private (val value: Method) extends RMethod {
   })
 
   override def hashCode(): Int = value.hashCode()
+  override def toString: String = s"JRMethod($value)"
 }
 object JRMethod {
   private[reflection] def apply(value: Method): RMethod = new JRMethod(value)
