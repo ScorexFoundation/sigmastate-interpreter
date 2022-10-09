@@ -107,7 +107,7 @@ class JRMethod private (val value: Method) extends RMethod {
 
   def getName: String = value.getName
 
-  def getDeclaringClass(): RClass[_] = RClass(value.getDeclaringClass)
+  def getDeclaringClass(): Class[_] = value.getDeclaringClass
 
   override def getParameterTypes(): Seq[Class[_]] = value.getParameterTypes
 

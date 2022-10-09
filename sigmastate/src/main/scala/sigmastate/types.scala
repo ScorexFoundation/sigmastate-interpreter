@@ -32,7 +32,7 @@ import sigmastate.eval.Evaluation.stypeToRType
 import sigmastate.eval._
 import sigmastate.lang.exceptions.MethodNotFound
 import debox.cfor
-import scalan.reflection.{RClass, RMethod}
+import scalan.reflection.{RClass, RMethod, ReflectionData}
 
 import scala.collection.mutable
 import scala.util.{Failure, Success}

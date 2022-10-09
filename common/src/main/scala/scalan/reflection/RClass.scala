@@ -14,7 +14,7 @@ trait RConstructor[T] {
 abstract class RMethod {
   def invoke(obj: Any, args: AnyRef*): AnyRef
   def getName: String
-  def getDeclaringClass(): RClass[_]
+  def getDeclaringClass(): Class[_]
   def getParameterTypes(): Seq[Class[_]]
 }
 

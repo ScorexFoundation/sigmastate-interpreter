@@ -51,7 +51,7 @@ object ReflectionData {
         { val name = "filter"
           val paramTypes: Seq[Class[_]] = Array(classOf[scala.Function1[_,_]])
           (name, paramTypes) ->
-            new SRMethod(RClass(clazz), name, paramTypes) {
+            new SRMethod(clazz, name, paramTypes) {
               override def invoke(obj: Any, args: AnyRef*): AnyRef = obj match {
                 case obj: Option[a] =>
                   obj.filter(args(0).asInstanceOf[Function1[a,Boolean]])
@@ -61,7 +61,7 @@ object ReflectionData {
         { val name = "map"
           val paramTypes: Seq[Class[_]] = Array(classOf[scala.Function1[_,_]])
           (name, paramTypes) ->
-            new SRMethod(RClass(clazz), name, paramTypes) {
+            new SRMethod(clazz, name, paramTypes) {
               override def invoke(obj: Any, args: AnyRef*): AnyRef = obj match {
                 case obj: Option[a] =>
                   obj.map(args(0).asInstanceOf[Function1[a,_]])

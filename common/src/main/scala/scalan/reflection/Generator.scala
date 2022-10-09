@@ -5,6 +5,28 @@ import scalan.util.PrintExtensions.IterableExtensions
 
 object Generator {
 
+  def normalizeName(name: String): String = {
+    val len = name.length
+    val res = new mutable.StringBuilder(len)
+    var i = 0
+    while (i < len) {
+      var ch = name(i)
+      if (ch == '$' && i < len - 1) {
+        val prefix = name.substring(0, i + 1)
+        ch = try {
+          Class.forName(prefix)
+          '.' // prefix is object
+        } catch {
+          case t =>
+            '#' // prefix is not object
+        }
+      }
+      res += ch
+      i += 1
+    }
+    res.result()
+  }
+
   def className(c: Class[_]): String = {
     if (c.isArray)
       s"Array[${className(c.getComponentType)}]"
@@ -14,9 +36,9 @@ object Generator {
     else if (c == classOf[Int]) "Int"
     else if (c == classOf[Long]) "Long"
     else if (!c.getTypeParameters.isEmpty)
-      s"${c.getName}[${c.getTypeParameters.map(_ => "_").mkString(",")}]"
+      s"${normalizeName(c.getName)}[${c.getTypeParameters.map(_ => "_").mkString(",")}]"
     else
-      c.getName
+      normalizeName(c.getName)
   }
 
   def genEmptyClass(c: JRClass[_]): String = {
@@ -44,6 +66,27 @@ object Generator {
     f.toString
   }
 
+  def genMethod(c: JRClass[_], m: JRMethod): String = {
+    val name = m.getName
+    val params = m.getParameterTypes()
+      .map(p => s"classOf[${className(p)}]")
+      .mkString(", ")
+    val args = m.getParameterTypes()
+      .zipWithIndex
+      .map { case (p, i) => s"args($i).asInstanceOf[${className(p)}]" }
+      .mkString(", ")
+
+    s"""        { val paramTypes: Seq[Class[_]] = Array($params)
+      |          ("$name", paramTypes) ->
+      |            new SRMethod(clazz, "$name", paramTypes) {
+      |              override def invoke(obj: Any, args: AnyRef*): AnyRef = obj match {
+      |                case obj: ${className(c.value)} =>
+      |                  obj.$name($args)
+      |              }
+      |            }
+      |        }""".stripMargin
+  }
+
   def genClassRegistrationEntry(c: JRClass[_]): String = {
     val name = className(c.value)
     val cs = c.getUsedConstructors()
@@ -54,17 +97,26 @@ object Generator {
         |${cs.map(genConstructor(c, _)).mkString(",\n")}
         |    )""".stripMargin
     }
+
     val fields = if (c.fields.isEmpty) ""
     else {
       s""",
-        |    fields = Array(
+        |    fields = Map(
         |      ${c.fields.map { case (_, f: JRField) => genField(c, f) }.mkString(",\n")}
+        |    )""".stripMargin
+    }
+
+    val methods = if (c.methods.isEmpty) ""
+    else {
+      s""",
+        |    methods = Map(
+        |      ${c.methods.map { case (_, m: JRMethod) => genMethod(c, m) }.mkString(",\n")}
         |    )""".stripMargin
     }
 
     s"""
       |{ val clazz = classOf[$name]
-      |  registerClassEntry(clazz${constructors}${fields}
+      |  registerClassEntry(clazz${constructors}${fields}${methods}
       |  )
       |}
       |""".stripMargin
@@ -116,4 +168,5 @@ object Generator {
   private def collectEmptyClasses = {
     RClass.classes.toSeq.filter(e => isEmpty(e._2))
   }
+
 }

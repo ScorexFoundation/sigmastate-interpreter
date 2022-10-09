@@ -19,9 +19,9 @@ abstract class SRConstructor[T](parameterTypes: Array[Class[_]]) extends RConstr
   override def getParameterTypes(): Array[Class[_]] = parameterTypes
 }
 
-abstract class SRMethod(declaringClass: RClass[_], name: String, parameterTypes: Seq[Class[_]]) extends RMethod {
+abstract class SRMethod(declaringClass: Class[_], name: String, parameterTypes: Seq[Class[_]]) extends RMethod {
   override def getName: String = name
-  override def getDeclaringClass(): RClass[_] = declaringClass
+  override def getDeclaringClass(): Class[_] = declaringClass
   override def getParameterTypes(): Seq[Class[_]] = parameterTypes
 
   override def equals(other: Any): Boolean = (this eq other.asInstanceOf[AnyRef]) || (other match {
