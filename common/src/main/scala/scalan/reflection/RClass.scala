@@ -7,14 +7,15 @@ abstract class RField {
 }
 
 trait RConstructor[T] {
-  def newInstance(initargs: AnyRef*): T
-  def getParameterTypes(): Array[RClass[_]]
+  def newInstance(args: AnyRef*): T
+  def getParameterTypes(): Array[Class[_]]
 }
 
 abstract class RMethod {
   def invoke(obj: Any, args: AnyRef*): AnyRef
   def getName: String
   def getDeclaringClass(): RClass[_]
+  def getParameterTypes(): Seq[Class[_]]
 }
 
 abstract class RClass[T] {
@@ -26,7 +27,7 @@ abstract class RClass[T] {
 
   def getName: String
 
-  def getConstructors(): Array[RConstructor[_]]
+  def getConstructors(): Seq[RConstructor[_]]
 
   def isPrimitive(): Boolean
 

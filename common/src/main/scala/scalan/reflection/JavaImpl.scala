@@ -21,9 +21,9 @@ class JRClass[T](val value: Class[T]) extends RClass[T] {
   def getSimpleName: String = value.getSimpleName
   def getName: String = value.getName
 
-  var constructors: Array[RConstructor[_]] = _
+  var constructors: Seq[RConstructor[_]] = _
 
-  def getConstructors(): Array[RConstructor[_]] = {
+  def getConstructors(): Seq[RConstructor[_]] = {
     if (constructors == null) {
       synchronized {
         if (constructors == null) {
@@ -39,6 +39,9 @@ class JRClass[T](val value: Class[T]) extends RClass[T] {
     }
     constructors
   }
+
+  def getUsedConstructors(): Seq[JRConstructor[_]] =
+    getConstructors().collect { case c: JRConstructor[_] if c.wasUsed => c }
 
   def isPrimitive(): Boolean = value.isPrimitive
 
@@ -83,9 +86,9 @@ class JRConstructor[T] private (val index: Int, val value: Constructor[T]) exten
     wasUsed = true
     value.newInstance(initargs:_*)
   }
-  override def getParameterTypes(): Array[RClass[_]] = {
+  override def getParameterTypes(): Array[Class[_]] = {
     wasUsed = true
-    value.getParameterTypes.map(RClass(_))
+    value.getParameterTypes
   }
 
   override def equals(other: Any): Boolean = (this eq other.asInstanceOf[AnyRef]) || (other match {
@@ -105,6 +108,8 @@ class JRMethod private (val value: Method) extends RMethod {
   def getName: String = value.getName
 
   def getDeclaringClass(): RClass[_] = RClass(value.getDeclaringClass)
+
+  override def getParameterTypes(): Seq[Class[_]] = value.getParameterTypes
 
   override def equals(other: Any): Boolean = (this eq other.asInstanceOf[AnyRef]) || (other match {
     case that: JRMethod => value == that.value

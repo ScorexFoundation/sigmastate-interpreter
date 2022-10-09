@@ -520,7 +520,7 @@ abstract class Base { scalan: Scalan =>
         NoOwner
       else {
         val firstParamClazz = paramTypes(0)
-        if (firstParamClazz.getSuperclass == RClass(classOf[EntityObject])) {
+        if (firstParamClazz.getSuperclass == classOf[EntityObject]) {
           val className = firstParamClazz.getSimpleName
           val entityName = className.substring(0, className.length - 1)
           getEntityObject(entityName) match {

@@ -1,5 +1,8 @@
 package scalan.reflection
 
+import scalan.reflection.ReflectionData.SRClassBuilder
+
+import java.util
 import scala.collection.compat.immutable.ArraySeq
 
 class SRField(val name: String, tpe: Class[_]) extends RField {
@@ -13,15 +16,31 @@ class SRField(val name: String, tpe: Class[_]) extends RField {
 }
 
 abstract class SRConstructor[T](parameterTypes: Array[Class[_]]) extends RConstructor[T] {
-  override def getParameterTypes(): Array[RClass[_]] = parameterTypes.map(RClass(_))
+  override def getParameterTypes(): Array[Class[_]] = parameterTypes
 }
 
-class SRClass[T](val clazz: Class[_],
+abstract class SRMethod(declaringClass: RClass[_], name: String, parameterTypes: Seq[Class[_]]) extends RMethod {
+  override def getName: String = name
+  override def getDeclaringClass(): RClass[_] = declaringClass
+  override def getParameterTypes(): Seq[Class[_]] = parameterTypes
+
+  override def equals(other: Any): Boolean = (this eq other.asInstanceOf[AnyRef]) || (other match {
+    case that: SRMethod
+      if getDeclaringClass == that.getDeclaringClass && getName == that.getName =>
+      parameterTypes == that.getParameterTypes()
+    case _ => false
+  })
+}
+
+class SRClass[T](val clazz: Class[T],
                  constructors: Seq[SRConstructor[_]],
                  fields: Map[String, SRField],
                  methods: Map[(String, Seq[Class[_]]), RMethod]) extends RClass[T] {
 
-  override def getField(fieldName: String): RField = fields(fieldName)
+  override def getField(fieldName: String): RField = fields.get(fieldName) match {
+    case Some(f) => f
+    case _ => throw new NoSuchFieldException(s"${clazz.getName}.$fieldName")
+  }
 
   override def getMethod(name: String,
                          parameterTypes: Class[_]*): RMethod = {
@@ -37,7 +56,7 @@ class SRClass[T](val clazz: Class[_],
 
   override def isPrimitive(): Boolean = clazz.isPrimitive
 
-  override def getConstructors(): Array[RConstructor[_]] = ArraySeq.empty.toArray
+  override def getConstructors(): Seq[RConstructor[_]] = constructors
 
   override def getSuperclass(): RClass[_ >: T] = clazz.getSuperclass.asInstanceOf[RClass[_ >: T]]
 
@@ -50,4 +69,8 @@ class SRClass[T](val clazz: Class[_],
     case _ => false
   })
   override def hashCode(): Int = clazz.hashCode()
+}
+
+object SRClass {
+  def newBuilder[T](clazz: Class[T]): SRClassBuilder[T] = new SRClassBuilder(clazz)
 }
