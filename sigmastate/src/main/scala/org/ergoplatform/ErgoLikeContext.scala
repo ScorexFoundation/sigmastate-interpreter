@@ -1,6 +1,5 @@
 package org.ergoplatform
 
-import java.util
 import org.ergoplatform.validation.SigmaValidationSettings
 import sigmastate.SType._
 import sigmastate.Values._
@@ -8,13 +7,13 @@ import sigmastate._
 import sigmastate.eval.Extensions._
 import sigmastate.eval._
 import sigmastate.interpreter.ErgoTreeEvaluator.DataEnv
-import sigmastate.interpreter.{ContextExtension, ErgoTreeEvaluator, Interpreter, InterpreterContext}
+import sigmastate.interpreter.{Interpreter, InterpreterContext, ErgoTreeEvaluator, ContextExtension}
 import sigmastate.lang.exceptions.InterpreterException
 import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.OpCode
 import special.collection.Coll
 import special.sigma
-import special.sigma.{AnyValue, Header, PreHeader}
+import special.sigma.{Header, PreHeader, AnyValue}
 import spire.syntax.all.cfor
 
 /** Represents a script evaluation context to be passed to a prover and a verifier to execute and
@@ -113,7 +112,7 @@ class ErgoLikeContext(val lastBlockUtxoRoot: AvlTreeData,
 
   /** Current version of the ErgoTree executed by the interpreter.
     * This property is used to implement version dependent operations and passed to
-    * interpreter via [[specia.sigma.Context]].
+    * interpreter via [[special.sigma.Context]].
     * The value cannot be assigned on [[ErgoLikeContext]] construction and must be
     * attached using [[withErgoTreeVersion()]] method.
     * When the value is None, the [[InterpreterException]] is thrown by the interpreter.
