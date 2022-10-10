@@ -159,12 +159,19 @@ class PrettyPrintErgoTreeSpecification extends SigmaDslTesting {
         |}""".stripMargin
     val compiledTree = compile(code)
     PrettyPrintErgoTree.prettyPrint(compiledTree) shouldBe
+      """{{(opt1: Option[Long]) =>
+        |  if (opt1.isDefined) { {(l3: Long) => l3 + 3L }(opt1.get) } else {
+        |    {(l3: Long) => l3 + 3L }(5L)
+        |  }
+        |}}""".stripMargin
+      /* Much nicer code for v5.x branch
       """{
         |  val func1 = {(l1: Long) => l1 + 3L }
         |  {(opt2: Option[Long]) =>
         |    if (opt2.isDefined) { func1(opt2.get) } else { func1(5L) }
         |  }
         |}""".stripMargin
+      */
   }
 
   property("method call with non empty arguments"){

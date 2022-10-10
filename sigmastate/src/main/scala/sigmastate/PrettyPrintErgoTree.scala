@@ -46,6 +46,8 @@ object PrettyPrintErgoTree {
       case UnitConstant() => Doc.text("UnitConstant is currently not implemented")
       case GroupGenerator => Doc.text("groupGenerator")
       case ec: EvaluatedCollection[_, _] => ec match {
+        // delete after merging v5.x
+        case Tuple(items) => nTupleDoc(items.map(createDoc))
         case ConcreteCollection(items, elemType) =>
           Doc.text(s"Coll") + wrapDocWithBrackets(STypeDoc(elemType)) + nTupleDoc(items.map(createDoc))
       }
@@ -55,7 +57,8 @@ object PrettyPrintErgoTree {
         val valName = inferNameFromType(rhs.tpe)
         Doc.text(s"val $valName$id = ") + createDoc(rhs)
     }
-    case Tuple(items) => nTupleDoc(items.map(createDoc))
+    // Uncomment after merging v5.x
+    // case Tuple(items) => nTupleDoc(items.map(createDoc))
     case ValUse(id, tpe) =>
       val valName = inferNameFromType(tpe)
       Doc.text(s"$valName$id")

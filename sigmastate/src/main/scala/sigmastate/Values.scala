@@ -72,6 +72,12 @@ object Values {
 
     def opName: String = this.getClass.getSimpleName
 
+    def toSigmaProp: SigmaPropValue = this match {
+      case b if b.tpe == SBoolean => BoolToSigmaProp(this.asBoolValue)
+      case p if p.tpe == SSigmaProp => p.asSigmaProp
+      case _ => sys.error(s"Expected SBoolean or SSigmaProp typed value, but was: $this")
+    }
+
     /** Parser has some source information like line,column in the text. We need to keep it up until RuntimeCosting.
     * The way to do this is to add Nullable property to every Value. Since Parser is always using SigmaBuilder
     * to create nodes,
@@ -1007,14 +1013,6 @@ object Values {
       case ProveDHTuple(gv, hv, uv, vv) =>
         s"ProveDHTuple(${showECPoint(gv)}, ${showECPoint(hv)}, ${showECPoint(uv)}, ${showECPoint(vv)})"
       case _ => sb.toString
-    }
-  }
-
-  implicit class BoolValueOps(val b: BoolValue) extends AnyVal {
-    def toSigmaProp: SigmaPropValue = b match {
-      case b if b.tpe == SBoolean => BoolToSigmaProp(b)
-      case p if p.tpe == SSigmaProp => p.asSigmaProp
-      case _ => sys.error(s"Expected SBoolean or SSigmaProp typed value, but was: $b")
     }
   }
 
