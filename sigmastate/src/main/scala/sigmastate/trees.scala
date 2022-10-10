@@ -232,7 +232,7 @@ object CreateProveDHTuple extends ValueCompanion {
   override val costKind = FixedCost(20)
 }
 
-trait SigmaTransformer[IV <: SigmaPropValue, OV <: SigmaPropValue] extends SigmaPropValue {
+sealed trait SigmaTransformer[IV <: SigmaPropValue, OV <: SigmaPropValue] extends SigmaPropValue {
   val items: Seq[IV]
 }
 trait SigmaTransformerCompanion extends ValueCompanion {

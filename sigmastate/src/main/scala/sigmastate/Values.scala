@@ -72,6 +72,12 @@ object Values {
 
     def opName: String = this.getClass.getSimpleName
 
+    def toSigmaProp: SigmaPropValue = this match {
+      case b if b.tpe == SBoolean => BoolToSigmaProp(this.asBoolValue)
+      case p if p.tpe == SSigmaProp => p.asSigmaProp
+      case _ => sys.error(s"Expected SBoolean or SSigmaProp typed value, but was: $this")
+    }
+
     /** Parser has some source information like line,column in the text. We need to keep it up until RuntimeCosting.
     * The way to do this is to add Nullable property to every Value. Since Parser is always using SigmaBuilder
     * to create nodes,
@@ -279,7 +285,7 @@ object Values {
     override def costKind: PerItemCost
   }
 
-  abstract class EvaluatedValue[+S <: SType] extends Value[S] {
+  sealed abstract class EvaluatedValue[+S <: SType] extends Value[S] {
     val value: S#WrappedType
     def opType: SFunc = {
       val resType = tpe match {
@@ -680,6 +686,7 @@ object Values {
   }
 
 
+  // TODO: Consider moving to trees.scala
   trait NotReadyValueGroupElement extends NotReadyValue[SGroupElement.type] {
     override def tpe = SGroupElement
   }
@@ -707,6 +714,7 @@ object Values {
     override def costKind: FixedCost = Constant.costKind
   }
 
+  // TODO: Consider moving to trees.scala and make it sealed
   trait NotReadyValueBoolean extends NotReadyValue[SBoolean.type] {
     override def tpe = SBoolean
   }
@@ -968,6 +976,7 @@ object Values {
     override def costKind = ConcreteCollection.costKind
   }
 
+  // TODO: Make sense to move to ErgoLikeContext?
   trait LazyCollection[V <: SType] extends NotReadyValue[SCollection[V]]
 
   implicit class CollectionOps[T <: SType](val coll: Value[SCollection[T]]) extends AnyVal {
@@ -1004,14 +1013,6 @@ object Values {
       case ProveDHTuple(gv, hv, uv, vv) =>
         s"ProveDHTuple(${showECPoint(gv)}, ${showECPoint(hv)}, ${showECPoint(uv)}, ${showECPoint(vv)})"
       case _ => sb.toString
-    }
-  }
-
-  implicit class BoolValueOps(val b: BoolValue) extends AnyVal {
-    def toSigmaProp: SigmaPropValue = b match {
-      case b if b.tpe == SBoolean => BoolToSigmaProp(b)
-      case p if p.tpe == SSigmaProp => p.asSigmaProp
-      case _ => sys.error(s"Expected SBoolean or SSigmaProp typed value, but was: $b")
     }
   }
 

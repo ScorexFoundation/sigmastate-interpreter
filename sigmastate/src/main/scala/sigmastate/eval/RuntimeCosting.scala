@@ -799,6 +799,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
   def isCostingProcess: Boolean = funUnderCosting != null
 
   def stypeToElem[T <: SType](t: T): Elem[T#WrappedType] = (t match {
+    case SUnit => UnitElement
     case SBoolean => BooleanElement
     case SByte => ByteElement
     case SShort => ShortElement
@@ -823,6 +824,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
   }).asInstanceOf[Elem[T#WrappedType]]
 
   def elemToSType[T](e: Elem[T]): SType = e match {
+    case UnitElement => SUnit
     case BooleanElement => SBoolean
     case ByteElement => SByte
     case ShortElement => SShort
