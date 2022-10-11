@@ -2,17 +2,16 @@ package sigmastate.lang
 
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter._
 import scalan.Nullable
-import sigmastate.SCollection.{SByteArray, SIntArray}
+import sigmastate.SCollection.{SIntArray, SByteArray}
 import sigmastate.Values._
 import sigmastate.utils.Overloading.Overload1
 import sigmastate._
-import sigmastate.interpreter.{ErgoTreeEvaluator, Interpreter}
-import sigmastate.interpreter.ErgoTreeEvaluator.{DataEnv, error}
+import sigmastate.interpreter.{Interpreter, ErgoTreeEvaluator}
+import sigmastate.interpreter.ErgoTreeEvaluator.DataEnv
 import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.lang.TransformingSigmaBuilder._
 
-import scala.collection.mutable
 import scala.language.implicitConversions
 import scala.collection.mutable.WrappedArray
 import spire.syntax.all.cfor
@@ -145,6 +144,8 @@ object Terms {
         val argV = args(0).evalTo[Any](env)
         fV(argV)
       } else {
+        // zero or more than 1 argument functions are not supported in v4.x, v5.0
+        // see `case Terms.Apply(f, Seq(x))` in RuntimeCosting which means other cases are not supported.
         Interpreter.error(s"Function application must have 1 argument, but was: $this")
       }
     }
