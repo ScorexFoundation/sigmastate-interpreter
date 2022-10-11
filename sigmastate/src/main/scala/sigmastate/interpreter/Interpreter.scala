@@ -7,19 +7,17 @@ import org.bitbucket.inkytonik.kiama.rewriting.Strategy
 import org.ergoplatform.ErgoLikeContext
 import org.ergoplatform.validation.SigmaValidationSettings
 import org.ergoplatform.validation.ValidationRules._
-import sigmastate.basics.DLogProtocol.ProveDlog
 import scorex.util.ScorexLogging
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
-import sigmastate.basics.DLogProtocol.{DLogInteractiveProver, FirstDLogProverMessage}
+import sigmastate.basics.DLogProtocol.{ProveDlog, DLogInteractiveProver, FirstDLogProverMessage}
 import sigmastate.basics._
 import sigmastate.interpreter.Interpreter._
 import sigmastate.lang.exceptions.InterpreterException
 import sigmastate.serialization.{SigmaSerializer, ValueSerializer}
 import sigmastate.utxo.DeserializeContext
 import sigmastate.{SType, _}
-import sigmastate.eval.{Evaluation, IRContext, Profiler}
-import scalan.util.BenchmarkUtil
+import sigmastate.eval.{Evaluation, Profiler, IRContext}
 import sigmastate.FiatShamirTree._
 import sigmastate.SigSerializer._
 import sigmastate.eval.Evaluation.addCostChecked
@@ -29,7 +27,7 @@ import sigmastate.utils.Helpers._
 import sigmastate.lang.Terms.ValueOps
 import spire.syntax.all.cfor
 
-import scala.util.{Success, Try}
+import scala.util.{Try, Success}
 
 /** Base (verifying) interpreter of ErgoTrees.
   * Can perform:

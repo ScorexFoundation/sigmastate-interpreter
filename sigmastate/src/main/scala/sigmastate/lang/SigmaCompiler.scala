@@ -4,7 +4,7 @@ import fastparse.core.Parsed
 import fastparse.core.Parsed.Success
 import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
 import sigmastate.SType
-import sigmastate.Values.{Value, SValue}
+import sigmastate.Values.{SValue, Value}
 import sigmastate.eval.IRContext
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.SigmaPredef.PredefinedFuncRegistry
@@ -26,7 +26,11 @@ case class CompilerSettings(
     lowerMethodCalls: Boolean
 )
 
+/** Compiler which compiles ErgoScript source code into ErgoTree.
+  * @param settings compilation parameters \
+  */
 class SigmaCompiler(settings: CompilerSettings) {
+  /** Constructs an instance for the given network type and with default settings. */
   def this(networkPrefix: Byte) = this(
     CompilerSettings(networkPrefix, TransformingSigmaBuilder, lowerMethodCalls = true)
   )
