@@ -97,7 +97,7 @@ class ErgoLikeContext(val lastBlockUtxoRoot: AvlTreeData,
   Examined ergo code: all that leads to ErgoLikeContext creation.
  */
   require(spendingTransaction.dataInputs.length == dataBoxes.length &&
-    spendingTransaction.dataInputs.forall(dataInput => dataBoxes.exists(b => util.Arrays.equals(b.id, dataInput.boxId))),
+    spendingTransaction.dataInputs.forall(dataInput => dataBoxes.exists(b => java.util.Arrays.equals(b.id, dataInput.boxId))),
     "dataBoxes do not correspond to spendingTransaction.dataInputs")
 
   // TODO assert boxesToSpend correspond to spendingTransaction.inputs
