@@ -6,13 +6,12 @@ import org.bouncycastle.crypto.ec.CustomNamedCurves
 import org.bouncycastle.math.ec.ECPoint
 import org.bouncycastle.math.ec.custom.sec.SecP256K1Point
 import scalan.RType._
-import scalan.{RType, Internal, NeverInline, Reified}
-import scorex.crypto.hash.{Sha256, Blake2b256}
+import scalan.{NeverInline, Internal, Reified}
+import scorex.crypto.hash.{Blake2b256, Sha256}
 import special.SpecialPredef
 import special.collection._
 import scalan.util.Extensions.BigIntegerOps
 import sigmastate.VersionContext
-import sigmastate.VersionContext.JitActivationVersion
 import spire.syntax.all.cfor
 
 // TODO refactor: this class is not necessary and can be removed

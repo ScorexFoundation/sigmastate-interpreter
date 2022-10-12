@@ -317,7 +317,7 @@ class ErgoAddressSpecification extends SigmaDslTesting
           costLimit = deliberatelySmallLimit)
       },
       rootCauseLike[CostLimitException](
-        s"Estimated execution cost 164 exceeds the limit $deliberatelySmallLimit")
+        s"Estimated execution cost 88 exceeds the limit $deliberatelySmallLimit")
       )
     }
 

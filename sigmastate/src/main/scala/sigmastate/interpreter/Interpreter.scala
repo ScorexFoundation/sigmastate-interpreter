@@ -6,11 +6,10 @@ import org.bitbucket.inkytonik.kiama.rewriting.Strategy
 import org.ergoplatform.ErgoLikeContext
 import org.ergoplatform.validation.SigmaValidationSettings
 import org.ergoplatform.validation.ValidationRules._
-import sigmastate.basics.DLogProtocol.ProveDlog
 import scorex.util.ScorexLogging
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
-import sigmastate.basics.DLogProtocol.{DLogInteractiveProver, FirstDLogProverMessage}
+import sigmastate.basics.DLogProtocol.{ProveDlog, DLogInteractiveProver, FirstDLogProverMessage}
 import sigmastate.basics._
 import sigmastate.interpreter.Interpreter._
 import sigmastate.lang.exceptions.InterpreterException
@@ -28,7 +27,7 @@ import sigmastate.utils.Helpers._
 import sigmastate.lang.Terms.ValueOps
 import spire.syntax.all.cfor
 
-import scala.util.{Success, Try}
+import scala.util.{Try, Success}
 
 /** Base (verifying) interpreter of ErgoTrees.
   * Can perform:
@@ -64,6 +63,20 @@ trait Interpreter extends ScorexLogging {
     println(msg)
   }
 
+  /** The cost of Value[T] deserialization is O(n), where n is the length of its bytes
+    * array. To evaluate [[DeserializeContext]] and
+    * [[sigmastate.utxo.DeserializeRegister]] we add the following cost of deserialization
+    * for each byte.
+    */
+  val CostPerByteDeserialized = 2
+
+  /** The cost of substituting [[DeserializeContext]] and
+    * [[sigmastate.utxo.DeserializeRegister]] nodes with the deserialized expression is
+    * O(n), where n is the number of bytes in ErgoTree.
+    * The following is the cost added for each ErgoTree.bytes.
+    */
+  val CostPerTreeByte = 2
+
   /** Deserializes given script bytes using ValueSerializer (i.e. assuming expression tree format).
     * It also measures tree complexity adding to the total estimated cost of script execution.
     * The new returned context contains increased `initCost` and should be used for further processing.
@@ -75,9 +88,15 @@ trait Interpreter extends ScorexLogging {
     */
   protected def deserializeMeasured(context: CTX, scriptBytes: Array[Byte]): (CTX, Value[SType]) = {
     val r = SigmaSerializer.startReader(scriptBytes)
-    r.complexity = 0
-    val script = ValueSerializer.deserialize(r)  // Why ValueSerializer? read NOTE above
-    val scriptComplexity = r.complexity
+    val (script, scriptComplexity) = if (VersionContext.current.isJitActivated) {
+      val script = ValueSerializer.deserialize(r)  // Why ValueSerializer? read NOTE above
+      val cost = java7.compat.Math.multiplyExact(scriptBytes.length, CostPerByteDeserialized)
+      (script, cost)
+    } else {
+      r.complexity = 0
+      val script = ValueSerializer.deserialize(r)  // Why ValueSerializer? read NOTE above
+      (script, r.complexity)
+    }
 
     val currCost = Evaluation.addCostChecked(context.initCost, scriptComplexity, context.costLimit)
     val ctx1 = context.withInitCost(currCost).asInstanceOf[CTX]

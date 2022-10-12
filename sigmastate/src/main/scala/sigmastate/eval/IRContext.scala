@@ -1,17 +1,22 @@
 package sigmastate.eval
 
 import sigmastate.SType
-import sigmastate.Values.{Value, SValue}
+import sigmastate.Values.{SValue, Value}
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.TransformingSigmaBuilder
 import sigmastate.lang.exceptions.CostLimitException
+import sigmastate.utils.Helpers
 import sigmastate.utxo.CostTable
 
+import java.util.concurrent.locks.ReentrantLock
 import scala.util.Try
 
 trait IRContext extends Evaluation with TreeBuilding {
 
   override val builder = TransformingSigmaBuilder
+
+  /** Can be used to synchronize access to this IR object from multiple threads. */
+  val lock = new ReentrantLock()
 
   /** Pass configuration which is used to turn-off constant propagation.
     * @see `beginPass(noCostPropagationPass)`  */
@@ -124,9 +129,12 @@ trait IRContext extends Evaluation with TreeBuilding {
     */
   def checkCostWithContext(ctx: SContext,
                 costF: Ref[((Context, (Int, Size[Context]))) => Int], maxCost: Long, initCost: Long): Try[Int] = Try {
-    val costFun = compile[(SContext, (Int, SSize[SContext])), Int, (Context, (Int, Size[Context])), Int](
-                    getDataEnv, costF, Some(maxCost))
-    val (estimatedCost, accCost) = costFun((ctx, (0, Sized.sizeOf(ctx))))
+
+    val (estimatedCost, accCost) = Helpers.withReentrantLock(lock) { // protect mutable access to this IR
+      val costFun = compile[(SContext, (Int, SSize[SContext])), Int, (Context, (Int, Size[Context])), Int](
+        getDataEnv, costF, Some(maxCost))
+      costFun((ctx, (0, Sized.sizeOf(ctx))))
+    }
 
     if (debugModeSanityChecks) {
       if (estimatedCost != accCost)
