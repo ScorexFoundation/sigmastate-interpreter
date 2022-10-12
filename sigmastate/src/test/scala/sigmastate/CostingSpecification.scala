@@ -21,6 +21,12 @@ import sigmastate.lang.Terms.ValueOps
 import sigmastate.lang.exceptions.CostLimitException
 
 class CostingSpecification extends SigmaTestingData with CrossVersionProps {
+
+  /** This specification only make sense for ErgoTree v0, v1 and hence v4.x interpreter.
+    * So we redefine the range of applicable activated versions.
+    */
+  override val activatedVersions: Seq[Byte] = (0 until VersionContext.JitActivationVersion).map(_.toByte).toArray[Byte]
+
   implicit lazy val IR = new TestingIRContext {
 //    override val okPrintEvaluatedEntries = true
     substFromCostTable = false
@@ -31,8 +37,9 @@ class CostingSpecification extends SigmaTestingData with CrossVersionProps {
 
   val printCosts = true
 
-  val (key1, _, _, avlProver) = sampleAvlProver
-  val keys = Colls.fromItems(key1)
+  val (keysArr, _, _, avlProver) = sampleAvlProver
+  val keys = Colls.fromItems(keysArr(0))
+  val key1 = keys(0)
   val key2 = keyCollGen.sample.get
   avlProver.performOneOperation(Lookup(ADKey @@ key1.toArray))
   val digest = avlProver.digest.toColl
@@ -80,14 +87,21 @@ class CostingSpecification extends SigmaTestingData with CrossVersionProps {
       spendingTransaction = tx, selfIndex = 0, extension,
       ValidationRules.currentSettings, ScriptCostLimit.value,
       CostTable.interpreterInitCost, activatedVersionInTests
-    )
+    ).withErgoTreeVersion(ergoTreeVersionInTests)
 
     def cost(script: String)(expCost: Int): Unit = {
-      val ergoTree = compiler.compile(env, script)
-      val res = interpreter.reduceToCrypto(context, env, ergoTree).get.cost
+      val exp = compiler.compile(env, script)
+      val ergoTree = mkTestErgoTree(exp.toSigmaProp)
+      val res = interpreter.fullReduction(ergoTree, context).cost
+
       if (printCosts)
         println(script + s" --> cost $res")
-      res shouldBe ((expCost * CostTable.costFactorIncrease / CostTable.costFactorDecrease) + CostTable.interpreterInitCost).toLong
+
+      // compute expected cost based on how the exp is compiled
+      val costOfBoolToSigmaProp = if (exp.tpe == SBoolean) CostTable.logicCost else 0
+      val expectedCost = (expCost + CostTable.logicCost + costOfBoolToSigmaProp + CostTable.interpreterInitCost).toLong
+
+      res shouldBe expectedCost
     }
 
     val ContextVarAccess = getVarCost + selectField  // `getVar(id)` + `.get`
@@ -398,24 +412,47 @@ class CostingSpecification extends SigmaTestingData with CrossVersionProps {
     val expectedCost = (expressionCost * CostTable.costFactorIncrease / CostTable.costFactorDecrease) +
       CostTable.interpreterInitCost + tree.complexity
 
-    pr.cost shouldBe expectedCost
+    if (isActivatedVersion4) {
+      pr.cost shouldBe expectedCost
+    } else {
+      pr.cost shouldBe 10185
+    }
+
 
     val verifier = new ErgoLikeTestInterpreter
     val cost = verifier.verify(emptyEnv, tree, context, pr, fakeMessage).get._2
 
-    cost shouldBe expectedCost
+    if (isActivatedVersion4) {
+      cost shouldBe expectedCost
+    } else {
+      cost shouldBe 10185
+    }
   }
 
   property("ErgoTree with SigmaPropConstant costs") {
     val d = new TestData; import d._
 
-    def proveAndVerify(ctx: ErgoLikeContext, tree: ErgoTree, expectedCost: Long) = {
+    /** Helper method used in tests.
+      * @param expectedCostV5 expected value of v5.0 cost if defined, otherwise should be
+      *                       equal to `expectedCost`
+      */
+    def proveAndVerify(ctx: ErgoLikeContext, tree: ErgoTree, expectedCost: Long, expectedCostV5: Option[Long] = None) = {
       val pr = interpreter.prove(tree, ctx, fakeMessage).get
-      pr.cost shouldBe expectedCost
+
+      if (isActivatedVersion4) {
+        pr.cost shouldBe expectedCost
+      } else {
+        pr.cost shouldBe expectedCostV5.getOrElse(expectedCost)
+      }
 
       val verifier = new ErgoLikeTestInterpreter
       val cost = verifier.verify(emptyEnv, tree, ctx, pr, fakeMessage).get._2
-      cost shouldBe expectedCost
+
+      if (isActivatedVersion4) {
+        cost shouldBe expectedCost
+      } else {
+        cost shouldBe expectedCostV5.getOrElse(expectedCost)
+      }
     }
 
     // simple trees containing SigmaPropConstant
@@ -424,23 +461,32 @@ class CostingSpecification extends SigmaTestingData with CrossVersionProps {
 
     {
       val ctx = context.withInitCost(0)
-      proveAndVerify(ctx, tree1, expectedCost = 10141)
-      proveAndVerify(ctx, tree2, expectedCost = 10161)
+      proveAndVerify(ctx, tree1, expectedCost = 10141, expectedCostV5 = Some(483))
+      proveAndVerify(ctx, tree2, expectedCost = 10161, expectedCostV5 = Some(503))
     }
 
     {
       val ctx = context.withInitCost(10000)
-      proveAndVerify(ctx, tree1, expectedCost = 20141)
-      proveAndVerify(ctx, tree2, expectedCost = 20161)
+      proveAndVerify(ctx, tree1, expectedCost = 20141, expectedCostV5 = Some(10483))
+      proveAndVerify(ctx, tree2, expectedCost = 20161, expectedCostV5 = Some(10503))
     }
 
     {
-      val ctx = context.withInitCost(10000).withCostLimit(20000)
-      assertExceptionThrown(
-        proveAndVerify(ctx, tree1, expectedCost = 20141),
-        exceptionLike[CostLimitException](
-          "Estimated execution cost", "exceeds the limit")
-      )
+      if (isActivatedVersion4) {
+        val ctx = context.withInitCost(10000).withCostLimit(20000)
+        assertExceptionThrown(
+          proveAndVerify(ctx, tree1, expectedCost = 20141),
+          exceptionLike[CostLimitException](
+            "Estimated execution cost", "exceeds the limit")
+        )
+      } else {
+        val ctx = context.withInitCost(10000).withCostLimit(10400)
+        assertExceptionThrown(
+          proveAndVerify(ctx, tree1, expectedCost = 20141, expectedCostV5 = Some(10483)),
+          exceptionLike[CostLimitException](
+            "Estimated execution cost", "exceeds the limit")
+        )
+      }
     }
 
     // more complex tree without Deserialize
@@ -448,8 +494,8 @@ class CostingSpecification extends SigmaTestingData with CrossVersionProps {
       .compile(env, "{ sigmaProp(HEIGHT == 2) }")
       .asSigmaProp)
     
-    proveAndVerify(context.withInitCost(0), tree3, expectedCost = 541)
-    proveAndVerify(context.withInitCost(10000), tree3, expectedCost = 10541)
+    proveAndVerify(context.withInitCost(0), tree3, expectedCost = 541, expectedCostV5 = Some(495))
+    proveAndVerify(context.withInitCost(10000), tree3, expectedCost = 10541, expectedCostV5 = Some(10495))
   }
 
   property("laziness of AND, OR costs") {

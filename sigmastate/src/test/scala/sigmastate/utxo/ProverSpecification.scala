@@ -113,7 +113,7 @@ class ProverSpecification extends SigmaTestingCommons {
   def checkProof(sb: SigmaBoolean)(implicit prover: ProverInterpreter) = {
     val verifier = new ErgoLikeInterpreter()
     val proof = prover.generateProof(sb, message, HintsBag.empty)
-    val ok = verifier.verifySignature(sb, message, proof)
+    val ok = verifier.verifySignature(sb, message, proof)(null)
     ok shouldBe true
   }
 

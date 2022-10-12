@@ -17,8 +17,8 @@ trait ProverUtils extends Interpreter {
   def generateCommitmentsFor(ergoTree: ErgoTree,
                              context: CTX,
                              generateFor: Seq[SigmaBoolean]): HintsBag = {
-    val reducedTree = fullReduction(ergoTree, context, Interpreter.emptyEnv).value
-    generateCommitmentsFor(reducedTree, generateFor)
+    val reduced = fullReduction(ergoTree, context, Interpreter.emptyEnv)
+    generateCommitmentsFor(reduced.value, generateFor)
   }
 
   /**
@@ -79,8 +79,8 @@ trait ProverUtils extends Interpreter {
                      proof: Array[Byte],
                      realSecretsToExtract: Seq[SigmaBoolean],
                      simulatedSecretsToExtract: Seq[SigmaBoolean] = Seq.empty): HintsBag = {
-    val reducedTree = fullReduction(ergoTree, context, Interpreter.emptyEnv).value
-    bagForMultisig(context, reducedTree, proof, realSecretsToExtract, simulatedSecretsToExtract)
+    val reduced = fullReduction(ergoTree, context, Interpreter.emptyEnv)
+    bagForMultisig(context, reduced.value, proof, realSecretsToExtract, simulatedSecretsToExtract)
   }
 
   /**
@@ -102,7 +102,7 @@ trait ProverUtils extends Interpreter {
                      realSecretsToExtract: Seq[SigmaBoolean],
                      simulatedSecretsToExtract: Seq[SigmaBoolean]): HintsBag = {
 
-    val ut = SigSerializer.parseAndComputeChallenges(sigmaTree, proof)
+    val ut = SigSerializer.parseAndComputeChallenges(sigmaTree, proof)(null)
     val proofTree = computeCommitments(ut).get.asInstanceOf[UncheckedSigmaTree]
 
     def traverseNode(tree: ProofTree,

@@ -110,6 +110,7 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     typecheck(env, "min(HEIGHT, INPUTS.size)") shouldBe SInt
     typecheck(env, "max(1, 2)") shouldBe SInt
     typecheck(env, "max(1L, 2)") shouldBe SLong
+    typecheck(env, """fromBase16("1111")""") shouldBe SByteArray
     typecheck(env, """fromBase58("111")""") shouldBe SByteArray
     typecheck(env, """fromBase64("111")""") shouldBe SByteArray
 
@@ -652,11 +653,11 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     val pk2 = DLogProverInput.random().publicImage
     val script1 = script(pk1)
     val script2 = script(pk2)
-    val inputBytes = ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(script1.treeWithSegregation)
+    val inputBytes = ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(mkTestErgoTree(script1))
     val positions = IntArrayConstant(Array[Int](2))
     val newVals = ConcreteCollection(Array[SigmaPropValue](SigmaPropConstant(pk2)), SSigmaProp)
 
-    val expectedBytes = ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(script2.treeWithSegregation)
+    val expectedBytes = ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(mkTestErgoTree(script2))
 
     val customEnv: ScriptEnv = Map(
       "scriptBytes" -> Colls.fromArray(inputBytes),

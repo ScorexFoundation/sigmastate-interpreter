@@ -2,21 +2,25 @@ package special.collection
 
 import java.util
 import java.util.Objects
-
 import special.SpecialPredef
 
 import scala.reflect.ClassTag
 import scalan._
 import scalan.util.CollectionUtil
-import scalan.{Internal, NeverInline, Reified, RType}
+import scalan.{Internal, NeverInline, RType, Reified}
 import Helpers._
 import debox.Buffer
 import scalan.RType._
+import sigmastate.VersionContext
+import sigmastate.util.{MaxArrayLength, safeConcatArrays_v5, safeNewArray}
 import spire.syntax.all._
 
 import scala.runtime.RichInt
 
 class CollOverArray[@specialized A](val toArray: Array[A])(implicit tA: RType[A]) extends Coll[A] {
+  require(toArray.length <= MaxArrayLength,
+    s"Cannot create collection with size ${toArray.length} greater than $MaxArrayLength")
+
   @Internal
   override def tItem: RType[A] = tA
   def builder: CollBuilder = new CollOverArrayBuilder
@@ -56,7 +60,12 @@ class CollOverArray[@specialized A](val toArray: Array[A])(implicit tA: RType[A]
   @NeverInline
   def append(other: Coll[A]): Coll[A] = {
     if (toArray.length <= 0) return other
-    val result = CollectionUtil.concatArrays(toArray, other.toArray)
+    val result = if (VersionContext.current.isJitActivated) {
+      // in v5.0 and above this fixes the ClassCastException problem
+      safeConcatArrays_v5(toArray, other.toArray)(tA.classTag)
+    } else {
+      CollectionUtil.concatArrays(toArray, other.toArray)
+    }
     builder.fromArray(result)
   }
 
@@ -93,7 +102,7 @@ class CollOverArray[@specialized A](val toArray: Array[A])(implicit tA: RType[A]
     if (n <= 0) builder.emptyColl
     else if (n >= length) this
     else {
-      val res = Array.ofDim[A](n)
+      val res = new Array[A](n)
       Array.copy(toArray, 0, res, 0, n)
       builder.fromArray(res)
     }
@@ -211,12 +220,25 @@ class CollOverArrayBuilder extends CollBuilder {
   override def Monoids: MonoidBuilder = new MonoidBuilderInst
 
   @inline override def pairColl[@specialized A, @specialized B](as: Coll[A], bs: Coll[B]): PairColl[A, B] = {
-    // TODO HF (2h): use minimal length and slice longer collection
-    // The current implementation doesn't check the case when `as` and `bs` have different lengths.
-    // in which case the implementation of `PairOfCols` has inconsistent semantics of `map`, `exists` etc methods.
-    // To fix the problem, the longer collection have to be truncated (which is consistent
-    // with how zip is implemented for Arrays)
-    new PairOfCols(as, bs)
+    if (VersionContext.current.isJitActivated) {
+      // v5.0 and above
+      val asLen = as.length
+      val bsLen = bs.length
+      // if necessary, use minimal length and slice longer collection
+      if (asLen == bsLen)
+        new PairOfCols(as, bs)
+      else if (asLen < bsLen) {
+        new PairOfCols(as, bs.slice(0, asLen))
+      } else {
+        new PairOfCols(as.slice(0, bsLen), bs)
+      }
+    } else {
+      // The v4.x implementation doesn't check the case when `as` and `bs` have different lengths.
+      // In which case appending two `PairOfCols` leads to invalid pairing of elements.
+      // To fix the problem, the longer collection have to be truncated (which is consistent
+      // with how zip is implemented for Arrays)
+      new PairOfCols(as, bs)
+    }
   }
 
   @Internal
@@ -271,7 +293,9 @@ class CollOverArrayBuilder extends CollBuilder {
   }
 
   @NeverInline
-  override def makeView[@specialized A, @specialized B: RType](source: Coll[A], f: A => B): Coll[B] = new CViewColl(source, f)
+  override def makeView[@specialized A, @specialized B: RType](source: Coll[A], f: A => B): Coll[B] = {
+    new CViewColl(source, f)
+  }
 
   @NeverInline
   override def makePartialView[@specialized A, @specialized B: RType](source: Coll[A], f: A => B, calculated: Array[Boolean], calculatedItems: Array[B]): Coll[B] = {
@@ -285,8 +309,8 @@ class CollOverArrayBuilder extends CollBuilder {
       val limit = xs.length
       implicit val tA = xs.tItem.tFst
       implicit val tB = xs.tItem.tSnd
-      val ls = Array.ofDim[A](limit)
-      val rs = Array.ofDim[B](limit)
+      val ls = Array.ofDim[A](limit)(tA.classTag)
+      val rs = Array.ofDim[B](limit)(tB.classTag)
       cfor(0)(_ < limit, _ + 1) { i =>
         val p = xs(i)
         ls(i) = p._1
@@ -296,7 +320,9 @@ class CollOverArrayBuilder extends CollBuilder {
   }
 
   @NeverInline
-  override def xor(left: Coll[Byte], right: Coll[Byte]): Coll[Byte] = left.zip(right).map { case (l, r) => (l ^ r).toByte }
+  override def xor(left: Coll[Byte], right: Coll[Byte]): Coll[Byte] = {
+    left.zip(right).map { case (l, r) => (l ^ r).toByte }
+  }
 
   @NeverInline
   override def emptyColl[T](implicit cT: RType[T]): Coll[T] = cT match {
@@ -578,6 +604,9 @@ class PairOfCols[@specialized L, @specialized R](val ls: Coll[L], val rs: Coll[R
 }
 
 class CReplColl[@specialized A](val value: A, val length: Int)(implicit tA: RType[A]) extends ReplColl[A] {
+  require(length <= MaxArrayLength,
+    s"Cannot create CReplColl with size ${length} greater than $MaxArrayLength")
+
   @Internal
   override def tItem: RType[A] = tA
 
@@ -586,7 +615,7 @@ class CReplColl[@specialized A](val value: A, val length: Int)(implicit tA: RTyp
   @Internal
   lazy val _toArray: Array[A] = {
     implicit val cT: ClassTag[A] = tA.classTag
-    val res = new Array[A](length)
+    val res = safeNewArray[A](length)
     val v = value
     cfor(0)(_ < length, _ + 1) { i => res(i) = v }
     res

@@ -135,13 +135,14 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ObjectGe
   }
 
   property("fromBaseX") {
+    comp(""" fromBase16("31") """) shouldBe ByteArrayConstant(Array[Byte](49))
     comp(""" fromBase58("r") """) shouldBe ByteArrayConstant(Array[Byte](49))
     comp(""" fromBase64("MQ") """) shouldBe ByteArrayConstant(Array[Byte](49))
     comp(""" fromBase64("M" + "Q") """) shouldBe ByteArrayConstant(Array[Byte](49))
   }
 
   property("deserialize") {
-    def roundtrip[T <: SType](c: EvaluatedValue[T], typeSig: String) = {
+    def roundtrip[T <: SType](c: Value[T], typeSig: String) = {
       val bytes = ValueSerializer.serialize(c)
       val str = Base58.encode(bytes)
       comp(env, s"deserialize[$typeSig](" + "\"" + str + "\")") shouldBe c

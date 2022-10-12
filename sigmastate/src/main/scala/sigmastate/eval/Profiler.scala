@@ -1,6 +1,6 @@
 package sigmastate.eval
 
-import sigmastate.{FixedCost, SMethod}
+import sigmastate.{FixedCost, JitCost, SMethod}
 import sigmastate.Values.SValue
 import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.OpCode
@@ -228,6 +228,15 @@ class Profiler {
     measuredTimeStat.addPoint(script, actualTimeNano)
   }
 
+  /** Adds estimated cost and actual measured time data point to the StatCollection for
+    * the given script.
+    */
+  def addJitEstimation(script: String, cost: JitCost, actualTimeNano: Long) = {
+    addEstimation(script, cost.value, actualTimeNano)
+  }
+
+  /** Suggests a cost value for a given operation time.
+    * @return suggested cost in JIT scale. */
   def suggestCost(time: Long): Int = {
     ((time - 1) / 100 + 1).toInt
   }
@@ -242,7 +251,7 @@ class Profiler {
       val opDesc = ser.opDesc
       val (opName, cost) = opDesc.costKind match {
         case FixedCost(c) if opDesc != MethodCall && opDesc != PropertyCall =>
-          (opDesc.typeName, c)
+          (opDesc.typeName, c.value)
         case _ => ("", 0)
       }
       val suggestedCost = suggestCost(time)
@@ -264,7 +273,7 @@ class Profiler {
       val (name, timePerItem, time, comment) = {
         val (time, count) = stat.mean
         val suggestedCost = suggestCost(time)
-        val warn = if (suggestedCost > ciKey.costItem.cost) "!!!" else ""
+        val warn = if (suggestedCost > ciKey.costItem.cost.value) "!!!" else ""
         ciKey.costItem match {
           case ci: FixedCostItem =>
             val comment = s"count: $count, suggested: $suggestedCost, actCost: ${ci.cost}$warn"

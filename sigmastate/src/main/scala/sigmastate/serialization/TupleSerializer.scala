@@ -1,9 +1,10 @@
 package sigmastate.serialization
 
-import sigmastate.{ArgInfo, SType}
+import sigmastate.{SType, ArgInfo}
 import sigmastate.Values._
-import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import ValueSerializer._
+import sigmastate.utils.{SigmaByteWriter, SigmaByteReader}
+import sigmastate.serialization.ValueSerializer._
+import sigmastate.util.safeNewArray
 import sigmastate.utils.SigmaByteWriter.{DataInfo, U}
 import spire.syntax.all.cfor
 
@@ -24,7 +25,9 @@ case class TupleSerializer(cons: Seq[Value[SType]] => Value[SType])
 
   override def parse(r: SigmaByteReader): Value[SType] = {
     val size = r.getByte()
-    val values = ValueSerializer.newArray[SValue](size) // assume size > 0 so always create a new array
+    // note, in v4.x, v5.x tuples always has 2 elements, this may change in v6.0
+    // in which case allocation can be avoided for empty tuples
+    val values = safeNewArray[SValue](size)
     cfor(0)(_ < size, _ + 1) { i =>
       values(i) = r.getValue()
     }

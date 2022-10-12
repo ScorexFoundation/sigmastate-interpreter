@@ -8,17 +8,25 @@ import sigmastate.Values.SigmaBoolean
 import sigmastate.basics.DLogProtocol.{ProveDlog, SecondDLogProverMessage}
 import sigmastate.basics.VerifierMessage.Challenge
 import sigmastate.basics.{ProveDHTuple, SecondDiffieHellmanTupleProverMessage}
-import sigmastate.interpreter.CryptoConstants
+import sigmastate.interpreter.ErgoTreeEvaluator.{fixedCostOp, perItemCostOp}
+import sigmastate.interpreter.{CryptoConstants, ErgoTreeEvaluator, NamedDesc, OperationCostInfo}
 import sigmastate.lang.exceptions.SerializerException
-import sigmastate.serialization.{SigmaSerializer, ValueSerializer}
-import sigmastate.utils.{SigmaByteReader, SigmaByteWriter, Helpers}
+import sigmastate.serialization.{SigmaSerializer}
+import sigmastate.util.safeNewArray
+import sigmastate.utils.{Helpers, SigmaByteReader, SigmaByteWriter}
 import spire.syntax.all.cfor
 
+/** Contains implementation of signature (aka proof) serialization.
+  * @see toProofBytes, parseAndComputeChallenges
+  */
 object SigSerializer extends LazyLogging {
   /** Log warning message using this class's logger. */
   def warn(msg: String) = logger.warn(msg)
 
+  /** A size of challenge in Sigma protocols, in bits. */
   val hashSize = CryptoConstants.soundnessBits / 8
+
+  /** Number of bytes to represent any group element as byte array */
   val order = CryptoConstants.groupSize
 
   /** Recursively traverses the given node and serializes challenges and prover messages
@@ -106,9 +114,12 @@ object SigSerializer extends LazyLogging {
     *
     * @param exp   sigma proposition which defines the structure of bytes from the reader
     * @param proof proof to extract challenges from
+    * @param E     optional evaluator (can be null) which is used for profiling of operations.
+    *              When `E` is `null`, then profiling is turned-off and has no effect on
+    *              the execution.
     * @return An instance of [[UncheckedTree]] i.e. either [[NoProof]] or [[UncheckedSigmaTree]]
     */
-  def parseAndComputeChallenges(exp: SigmaBoolean, proof: Array[Byte]): UncheckedTree = {
+  def parseAndComputeChallenges(exp: SigmaBoolean, proof: Array[Byte])(implicit E: ErgoTreeEvaluator): UncheckedTree = {
     if (proof.isEmpty)
       NoProof
     else {
@@ -118,6 +129,28 @@ object SigSerializer extends LazyLogging {
       res
     }
   }
+
+  /** Represents cost of parsing UncheckedSchnorr node from proof bytes. */
+  final val ParseChallenge_ProveDlog = OperationCostInfo(
+    FixedCost(JitCost(10)), NamedDesc("ParseChallenge_ProveDlog"))
+
+  /** Represents cost of parsing UncheckedDiffieHellmanTuple node from proof bytes. */
+  final val ParseChallenge_ProveDHT = OperationCostInfo(
+    FixedCost(JitCost(10)), NamedDesc("ParseChallenge_ProveDHT"))
+
+  /** Represents cost of parsing GF2_192_Poly from proof bytes. */
+  final val ParsePolynomial = OperationCostInfo(
+    PerItemCost(baseCost = JitCost(10), perChunkCost = JitCost(10), chunkSize = 1),
+    NamedDesc("ParsePolynomial"))
+
+  /** Represents cost of:
+    * 1) evaluating a polynomial
+    * 2) obtaining GF2_192 instance
+    * 3) converting it to array of bytes
+    */
+  final val EvaluatePolynomial = OperationCostInfo(
+    PerItemCost(baseCost = JitCost(3), perChunkCost = JitCost(3), chunkSize = 1),
+    NamedDesc("EvaluatePolynomial"))
 
   /** Helper method to read requested or remaining bytes from the reader. */
   def readBytesChecked(r: SigmaByteReader, numRequestedBytes: Int, onError: String => Unit): Array[Byte] = {
@@ -137,15 +170,18 @@ object SigSerializer extends LazyLogging {
     * @param r            reader to extract challenges from
     * @param challengeOpt if non-empty, then the challenge has been computed for this node
     *                     by its parent; else it needs to be read from the proof (via reader)
+    * @param E            optional evaluator (can be null) which is used for profiling of operations.
+    *                     When `E` is `null`, then profiling is turned-off and has no effect on
+    *                     the execution.
     * @return An instance of [[UncheckedSigmaTree]]
     *
     * HOTSPOT: don't beautify the code
-    * Note, `null` is used instead of Option to avoid allocations.
+    * Note, null` is used instead of Option to avoid allocations.
     */
   def parseAndComputeChallenges(
         exp: SigmaBoolean,
         r: SigmaByteReader,
-        challengeOpt: Challenge = null): UncheckedSigmaTree = {
+        challengeOpt: Challenge = null)(implicit E: ErgoTreeEvaluator): UncheckedSigmaTree = {
     // Verifier Step 2: Let e_0 be the challenge in the node here (e_0 is called "challenge" in the code)
     val challenge = if (challengeOpt == null) {
       Challenge @@ readBytesChecked(r, hashSize,
@@ -157,20 +193,24 @@ object SigSerializer extends LazyLogging {
     exp match {
       case dl: ProveDlog =>
         // Verifier Step 3: For every leaf node, read the response z provided in the proof.
-        val z_bytes = readBytesChecked(r, order, hex => warn(s"Invalid z bytes for $dl: $hex"))
-        val z = BigIntegers.fromUnsignedByteArray(z_bytes)
-        UncheckedSchnorr(dl, None, challenge, SecondDLogProverMessage(z))
+        fixedCostOp(ParseChallenge_ProveDlog) {
+          val z_bytes = readBytesChecked(r, order, hex => warn(s"Invalid z bytes for $dl: $hex"))
+          val z = BigIntegers.fromUnsignedByteArray(z_bytes)
+          UncheckedSchnorr(dl, None, challenge, SecondDLogProverMessage(z))
+        }
 
       case dh: ProveDHTuple =>
         // Verifier Step 3: For every leaf node, read the response z provided in the proof.
-        val z_bytes = readBytesChecked(r, order, hex => warn(s"Invalid z bytes for $dh: $hex"))
-        val z = BigIntegers.fromUnsignedByteArray(z_bytes)
-        UncheckedDiffieHellmanTuple(dh, None, challenge, SecondDiffieHellmanTupleProverMessage(z))
+        fixedCostOp(ParseChallenge_ProveDHT) {
+          val z_bytes = readBytesChecked(r, order, hex => warn(s"Invalid z bytes for $dh: $hex"))
+          val z = BigIntegers.fromUnsignedByteArray(z_bytes)
+          UncheckedDiffieHellmanTuple(dh, None, challenge, SecondDiffieHellmanTupleProverMessage(z))
+        }
 
       case and: CAND =>
         // Verifier Step 2: If the node is AND, then all of its children get e_0 as the challenge
         val nChildren = and.children.length
-        val children = ValueSerializer.newArray[UncheckedSigmaTree](nChildren)
+        val children = safeNewArray[UncheckedSigmaTree](nChildren)
         cfor(0)(_ < nChildren, _ + 1) { i =>
           children(i) = parseAndComputeChallenges(and.children(i), r, challenge)
         }
@@ -183,7 +223,7 @@ object SigSerializer extends LazyLogging {
 
         // Read all the children but the last and compute the XOR of all the challenges including e_0
         val nChildren = or.children.length
-        val children = ValueSerializer.newArray[UncheckedSigmaTree](nChildren)
+        val children = safeNewArray[UncheckedSigmaTree](nChildren)
         val xorBuf = challenge.clone()
         val iLastChild = nChildren - 1
         cfor(0)(_ < iLastChild, _ + 1) { i =>
@@ -206,13 +246,17 @@ object SigSerializer extends LazyLogging {
         // Read the polynomial -- it has n-k coefficients
         val nChildren = th.children.length
         val nCoefs = nChildren - th.k
-        val coeffBytes = readBytesChecked(r, hashSize * nCoefs,
-          hex => warn(s"Invalid coeffBytes for $th: $hex"))
-        val polynomial = GF2_192_Poly.fromByteArray(challenge, coeffBytes)
+        val polynomial = perItemCostOp(ParsePolynomial, nCoefs) { () =>
+          val coeffBytes = readBytesChecked(r, hashSize * nCoefs,
+            hex => warn(s"Invalid coeffBytes for $th: $hex"))
+          GF2_192_Poly.fromByteArray(challenge, coeffBytes)
+        }
 
-        val children = ValueSerializer.newArray[UncheckedSigmaTree](nChildren)
+        val children = safeNewArray[UncheckedSigmaTree](nChildren)
         cfor(0)(_ < nChildren, _ + 1) { i =>
-          val c = Challenge @@ polynomial.evaluate((i + 1).toByte).toByteArray
+          val c = perItemCostOp(EvaluatePolynomial, nCoefs) { () =>
+            Challenge @@ polynomial.evaluate((i + 1).toByte).toByteArray
+          }
           children(i) = parseAndComputeChallenges(th.children(i), r, c)
         }
 

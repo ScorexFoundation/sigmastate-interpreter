@@ -19,6 +19,7 @@ import scala.collection.mutable
 /** This works in tandem with ConstantSerializer, if you change one make sure to check the other.*/
 object DataSerializer {
 
+  // TODO v5.x: control maxTreeDepth same as in deserialize
   /** Use type descriptor `tpe` to deconstruct type structure and recursively serialize subcomponents.
     * Primitive types are leaves of the type tree, and they are served as basis of recursion.
     * The data value `v` is expected to conform to the type described by `tpe`.
@@ -76,12 +77,17 @@ object DataSerializer {
         i += 1
       }
 
-    // TODO HF (3h): support Option[T] (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/659)
-    case _ => sys.error(s"Don't know how to serialize ($v, $tpe)")
+    // TODO v6.0 (3h): support Option[T] (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/659)
+    case _ =>
+      CheckSerializableTypeCode(tpe.typeCode)
+      throw new SerializerException(s"Don't know how to serialize ($v, $tpe)")
   }
 
   /** Reads a data value from Reader. The data value bytes is expected to confirm
-    * to the type descriptor `tpe`. */
+    * to the type descriptor `tpe`.
+    * The data structure depth is limited by r.maxTreeDepth which is
+    * SigmaSerializer.MaxTreeDepth by default.
+    */
   def deserialize[T <: SType](tpe: T, r: SigmaByteReader): T#WrappedType = {
     val depth = r.level
     r.level = depth + 1
@@ -93,12 +99,11 @@ object DataSerializer {
       case SInt => r.getInt()
       case SLong => r.getLong()
       case SString =>
-        val size = r.getUInt().toInt
+        val size = r.getUIntExact
         val bytes = r.getBytes(size)
         new String(bytes, StandardCharsets.UTF_8)
       case SBigInt =>
         val size: Short = r.getUShort().toShort
-        // TODO HF (2h): replace with validation rule to enable soft-forkability
         if (size > SBigInt.MaxSizeInBytes) {
           throw new SerializerException(s"BigInt value doesn't not fit into ${SBigInt.MaxSizeInBytes} bytes: $size")
         }

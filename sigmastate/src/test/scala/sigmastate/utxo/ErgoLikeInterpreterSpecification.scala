@@ -38,6 +38,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
     val h2 = SigmaPropConstant(prover2.dlogSecrets.head.publicImage)
 
     val ctx = ErgoLikeContextTesting.dummy(fakeSelf, activatedVersionInTests)
+        .withErgoTreeVersion(ergoTreeVersionInTests)
 
     val e = compile(Map(
       "h1" -> h1.treeWithSegregation(ergoTreeHeaderInTests).bytes,
@@ -46,12 +47,15 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
     val exp = TrueLeaf
     e shouldBe exp
 
-    val res = verifier.reduceToCrypto(ctx, exp).get.value
+    val res = verifier.fullReduction(mkTestErgoTree(exp), ctx).value
     res shouldBe TrivialProp.TrueProp
-
-    val res2 = verifier.reduceToCrypto(ctx,
-      EQ(ByteArrayConstant(h1.treeWithSegregation(ergoTreeHeaderInTests).bytes),
-        ByteArrayConstant(h2.treeWithSegregation(ergoTreeHeaderInTests).bytes))).get.value
+    val ergoTree = mkTestErgoTree(
+      EQ(
+        ByteArrayConstant(h1.treeWithSegregation(ergoTreeHeaderInTests).bytes),
+        ByteArrayConstant(h2.treeWithSegregation(ergoTreeHeaderInTests).bytes)
+      ).toSigmaProp
+    )
+    val res2 = verifier.fullReduction(ergoTree, ctx).value
     res2 shouldBe TrivialProp.FalseProp
   }
 

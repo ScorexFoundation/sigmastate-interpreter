@@ -36,10 +36,7 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
   }
 
   def fail(x: String, expectedLine: Int, expectedCol: Int): Unit = {
-    val compiler = SigmaCompiler(CompilerSettings(
-      ErgoAddressEncoder.TestnetNetworkPrefix,
-      TransformingSigmaBuilder,
-      lowerMethodCalls = true))
+    val compiler = new SigmaCompiler(ErgoAddressEncoder.TestnetNetworkPrefix)
     val exception = the[ParserException] thrownBy compiler.parse(x)
     withClue(s"Exception: $exception, is missing source context:") { exception.source shouldBe defined }
     val sourceContext = exception.source.get
@@ -603,6 +600,7 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
   }
 
   property("fromBaseX string decoding") {
+    parse("""fromBase16("1111")""") shouldBe Apply(FromBase16Func.symNoType, IndexedSeq(StringConstant("1111")))
     parse("""fromBase58("111")""") shouldBe Apply(FromBase58Func.symNoType, IndexedSeq(StringConstant("111")))
     parse("""fromBase64("111")""") shouldBe Apply(FromBase64Func.symNoType, IndexedSeq(StringConstant("111")))
   }

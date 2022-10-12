@@ -30,10 +30,12 @@ class CalcSha256Specification extends SigmaTestingCommons
   property("CalcSha256: Should pass standard tests.") {
     val int = new ContextEnrichingTestProvingInterpreter()
     val ctx = ErgoLikeContextTesting.dummy(fakeSelf, activatedVersionInTests)
+            .withErgoTreeVersion(ergoTreeVersionInTests)
     forAll(objects) { (in, result) =>
       val expectedResult = decodeString(result)
       val calcSha256 = EQ(CalcSha256(stringToByteConstant(in)), expectedResult)
-      val res = int.reduceToCrypto(ctx, calcSha256.toSigmaProp).get.value
+      val ergoTree = mkTestErgoTree(calcSha256.toSigmaProp)
+      val res = int.fullReduction(ergoTree, ctx).value
       res shouldBe TrivialProp.TrueProp
     }
   }

@@ -1,8 +1,7 @@
 package sigmastate.utxo
 
 import java.math.BigInteger
-
-import org.ergoplatform.ErgoBox.{R6, R8}
+import org.ergoplatform.ErgoBox.{AdditionalRegisters, R6, R8}
 import org.ergoplatform._
 import scalan.RType
 import sigmastate.SCollection.SByteArray
@@ -16,8 +15,12 @@ import sigmastate.lang.Terms._
 import special.sigma.InvalidType
 import SType.AnyOps
 import sigmastate.interpreter.ContextExtension.VarBinding
-import sigmastate.interpreter.CryptoConstants
+import sigmastate.interpreter.ErgoTreeEvaluator.DefaultEvalSettings
+import sigmastate.interpreter.{CryptoConstants, EvalSettings}
 import sigmastate.utils.Helpers._
+import scalan.util.StringUtil._
+import sigmastate.basics.DLogProtocol.DLogProverInput
+import sigmastate.lang.exceptions.CosterException
 
 class BasicOpsSpecification extends SigmaTestingCommons
   with CrossVersionProps {
@@ -57,25 +60,41 @@ class BasicOpsSpecification extends SigmaTestingCommons
 
   def test(name: String, env: ScriptEnv,
            ext: Seq[VarBinding],
-           script: String, propExp: SValue,
-      onlyPositive: Boolean = true) = {
+           script: String,
+           propExp: SValue,
+           onlyPositive: Boolean = true,
+           testExceededCost: Boolean = true,
+           additionalRegistersOpt: Option[AdditionalRegisters] = None) = {
     val prover = new ContextEnrichingTestProvingInterpreter() {
       override lazy val contextExtenders: Map[Byte, EvaluatedValue[_ <: SType]] = {
         val p1 = dlogSecrets(0).publicImage
         val p2 = dlogSecrets(1).publicImage
         (ext ++ Seq(propVar1 -> SigmaPropConstant(p1), propVar2 -> SigmaPropConstant(p2))).toMap
       }
+      override val evalSettings: EvalSettings = DefaultEvalSettings.copy(
+        isMeasureOperationTime = true,
+        isDebug = true,
+        isTestRun = testExceededCost)
     }
 
-    val prop = compile(env, script).asBoolValue.toSigmaProp
+    val prop = if (script.isNullOrEmpty) {
+      // for some testcases the script cannot be compiled (i.e. the corresponding syntax
+      // is not supported by ErgoScript Compiler)
+      // In such cases we use expected property as the property to test
+      propExp.asSigmaProp
+    } else
+      compile(env, script).asBoolValue.toSigmaProp
+
     if (propExp != null)
       prop shouldBe propExp
 
     val tree = ErgoTree.fromProposition(ergoTreeHeaderInTests, prop)
     val p3 = prover.dlogSecrets(2).publicImage
-    val boxToSpend = testBox(10, tree, additionalRegisters = Map(
-      reg1 -> SigmaPropConstant(p3),
-      reg2 -> IntConstant(1)),
+    val boxToSpend = testBox(10, tree,
+      additionalRegisters = additionalRegistersOpt.getOrElse(Map(
+        reg1 -> SigmaPropConstant(p3),
+        reg2 -> IntConstant(1))
+      ),
       creationHeight = 5)
 
     val newBox1 = testBox(10, tree, creationHeight = 0, boxIndex = 0, additionalRegisters = Map(
@@ -91,10 +110,79 @@ class BasicOpsSpecification extends SigmaTestingCommons
 
     val ctxExt = ctx.withExtension(pr.extension)
 
-    val verifier = new ErgoLikeTestInterpreter
-    if (!onlyPositive)
-      verifier.verify(env + (ScriptNameProp -> s"${name}_verify"), tree, ctx, pr.proof, fakeMessage).map(_._1).getOrElse(false) shouldBe false //context w/out extensions
-    verifier.verify(env + (ScriptNameProp -> s"${name}_verify_ext"), tree, ctxExt, pr.proof, fakeMessage).get._1 shouldBe true
+    val testVerifier = new ErgoLikeTestInterpreter
+
+    if (!onlyPositive) {
+      // test negative case
+      testVerifier.verify(
+          env + (ScriptNameProp -> s"${name}_verify"),
+          tree, ctx, pr.proof, fakeMessage)
+        .map(_._1)
+        .getOrElse(false) shouldBe false //context w/out extensions
+    }
+
+    // this is helper verifier which respects the requested parameter testExceededCost for
+    // some test cases (when testExceededCost == false) it emit message in the console
+    // instead of failing the test and the failing case is tested separately in that case
+    val flexVerifier = new ErgoLikeTestInterpreter {
+      override val evalSettings: EvalSettings = DefaultEvalSettings.copy(
+        isMeasureOperationTime = true,
+        isDebug = true,
+        isTestRun = testExceededCost)
+    }
+    val verifyEnv = env + (ScriptNameProp -> s"${name}_verify_ext")
+    flexVerifier.verify(verifyEnv, tree, ctxExt, pr.proof, fakeMessage).get._1 shouldBe true
+  }
+
+  property("Unit register") {
+    VersionContext.withVersions(activatedVersionInTests, ergoTreeVersionInTests) {
+      if (VersionContext.current.isJitActivated) {
+
+        // TODO frontend: implement missing Unit support in compiler
+        //  https://github.com/ScorexFoundation/sigmastate-interpreter/issues/820
+        test("R1", env, ext,
+          script = "", /* means cannot be compiled
+                         the corresponding script is { SELF.R4[Unit].isDefined } */
+          ExtractRegisterAs[SUnit.type](Self, reg1)(SUnit).isDefined.toSigmaProp,
+          additionalRegistersOpt = Some(Map(
+            reg1 -> UnitConstant.instance
+          ))
+        )
+
+        test("R2", env, ext,
+          script = "", /* means cannot be compiled
+                       the corresponding script is "{ SELF.R4[Unit].get == () }" */
+          EQ(ExtractRegisterAs[SUnit.type](Self, reg1)(SUnit).get, UnitConstant.instance).toSigmaProp,
+          additionalRegistersOpt = Some(Map(
+            reg1 -> UnitConstant.instance
+          ))
+        )
+      } else {
+        assertExceptionThrown(
+          test("R1", env, ext,
+            "{ SELF.R4[SigmaProp].get }",
+            ExtractRegisterAs[SSigmaProp.type](Self, reg1).get,
+            additionalRegistersOpt = Some(Map(
+              reg1 -> SigmaPropConstant(DLogProverInput.random().publicImage),
+              reg2 -> UnitConstant.instance
+            ))
+          ),
+          rootCauseLike[RuntimeException]("Don't know how to compute Sized for type PrimitiveType(Unit,")
+        )
+        assertExceptionThrown(
+          test("R2", env, ext,
+            "", /* the test script "{ SELF.R4[Unit].isDefined }" cannot be compiled with SigmaCompiler,
+                          but we nevertheless want to test how interpreter process the tree,
+                          so we use the explicitly given tree below */
+            ExtractRegisterAs[SUnit.type](Self, reg1)(SUnit).isDefined.toSigmaProp,
+            additionalRegistersOpt = Some(Map(
+              reg1 -> UnitConstant.instance
+            ))
+          ),
+          rootCauseLike[CosterException]("Don't know how to convert SType SUnit to Elem")
+        )
+      }
+    }
   }
 
   property("Relation operations") {
@@ -147,23 +235,28 @@ class BasicOpsSpecification extends SigmaTestingCommons
   property("SigmaProp operations") {
     test("Prop1", env, ext,
       "{ getVar[SigmaProp](proofVar1).get.isProven }",
-      GetVarSigmaProp(propVar1).get
+      GetVarSigmaProp(propVar1).get,
+      testExceededCost = false
     )
     test("Prop2", env, ext,
       "{ getVar[SigmaProp](proofVar1).get || getVar[SigmaProp](proofVar2).get }",
-      SigmaOr(Seq(GetVarSigmaProp(propVar1).get, GetVarSigmaProp(propVar2).get))
+      SigmaOr(Seq(GetVarSigmaProp(propVar1).get, GetVarSigmaProp(propVar2).get)),
+      testExceededCost = false
     )
     test("Prop3", env, ext,
       "{ getVar[SigmaProp](proofVar1).get && getVar[SigmaProp](proofVar2).get }",
-      SigmaAnd(Seq(GetVarSigmaProp(propVar1).get, GetVarSigmaProp(propVar2).get))
+      SigmaAnd(Seq(GetVarSigmaProp(propVar1).get, GetVarSigmaProp(propVar2).get)),
+      testExceededCost = false
     )
     test("Prop4", env, ext,
       "{ getVar[SigmaProp](proofVar1).get.isProven && getVar[SigmaProp](proofVar2).get }",
-      SigmaAnd(Seq(GetVarSigmaProp(propVar1).get, GetVarSigmaProp(propVar2).get))
+      SigmaAnd(Seq(GetVarSigmaProp(propVar1).get, GetVarSigmaProp(propVar2).get)),
+      testExceededCost = false
     )
     test("Prop5", env, ext,
       "{ getVar[SigmaProp](proofVar1).get && getVar[Int](intVar1).get == 1 }",
-      SigmaAnd(Seq(GetVarSigmaProp(propVar1).get, BoolToSigmaProp(EQ(GetVarInt(intVar1).get, 1))))
+      SigmaAnd(Seq(GetVarSigmaProp(propVar1).get, BoolToSigmaProp(EQ(GetVarInt(intVar1).get, 1)))),
+      testExceededCost = false
     )
     test("Prop6", env, ext,
       "{ getVar[Int](intVar1).get == 1 || getVar[SigmaProp](proofVar1).get }",
@@ -172,32 +265,38 @@ class BasicOpsSpecification extends SigmaTestingCommons
     test("Prop7", env, ext,
       "{ SELF.R4[SigmaProp].get.isProven }",
       ExtractRegisterAs[SSigmaProp.type](Self, reg1).get,
-      true
+      onlyPositive = true,
+      testExceededCost = false
     )
     test("Prop8", env, ext,
       "{ SELF.R4[SigmaProp].get && getVar[SigmaProp](proofVar1).get}",
       SigmaAnd(Seq(ExtractRegisterAs[SSigmaProp.type](Self, reg1).get, GetVarSigmaProp(propVar1).get)),
-      true
+      onlyPositive = true,
+      testExceededCost = false
     )
     test("Prop9", env, ext,
       "{ allOf(Coll(SELF.R4[SigmaProp].get, getVar[SigmaProp](proofVar1).get))}",
       SigmaAnd(Seq(ExtractRegisterAs[SSigmaProp.type](Self, reg1).get, GetVarSigmaProp(propVar1).get)),
-      true
+      onlyPositive = true,
+      testExceededCost = false
     )
     test("Prop10", env, ext,
       "{ anyOf(Coll(SELF.R4[SigmaProp].get, getVar[SigmaProp](proofVar1).get))}",
       SigmaOr(Seq(ExtractRegisterAs[SSigmaProp.type](Self, reg1).get, GetVarSigmaProp(propVar1).get)),
-      true
+      onlyPositive = true,
+      testExceededCost = false
     )
     test("Prop11", env, ext,
-        "{ Coll(SELF.R4[SigmaProp].get, getVar[SigmaProp](proofVar1).get).forall({ (p: SigmaProp) => p.isProven }) }",
+      "{ Coll(SELF.R4[SigmaProp].get, getVar[SigmaProp](proofVar1).get).forall({ (p: SigmaProp) => p.isProven }) }",
       SigmaAnd(Seq(ExtractRegisterAs[SSigmaProp.type](Self, reg1).get , GetVarSigmaProp(propVar1).get)),
-        true
-        )
+      onlyPositive = true,
+      testExceededCost = false
+    )
     test("Prop12", env, ext,
       "{ Coll(SELF.R4[SigmaProp].get, getVar[SigmaProp](proofVar1).get).exists({ (p: SigmaProp) => p.isProven }) }",
       SigmaOr(Seq(ExtractRegisterAs[SSigmaProp.type](Self, reg1).get, GetVarSigmaProp(propVar1).get)),
-      true
+      onlyPositive = true,
+      testExceededCost = false
     )
     test("Prop13", env, ext,
       "{ SELF.R4[SigmaProp].get.propBytes != getVar[SigmaProp](proofVar1).get.propBytes }",
@@ -343,7 +442,8 @@ class BasicOpsSpecification extends SigmaTestingCommons
     test("Extract1", env, ext,
       "{ SELF.R4[SigmaProp].get.isProven }",
       ExtractRegisterAs[SSigmaProp.type](Self, reg1).get,
-      true
+      onlyPositive = true,
+      testExceededCost = false
     )
     // wrong type
     assertExceptionThrown(
@@ -505,8 +605,10 @@ class BasicOpsSpecification extends SigmaTestingCommons
     test("prop1", env, ext, "sigmaProp(HEIGHT >= 0)",
       BoolToSigmaProp(GE(Height, IntConstant(0))), true)
     test("prop2", env, ext, "sigmaProp(HEIGHT >= 0) && getVar[SigmaProp](proofVar1).get",
-      SigmaAnd(Vector(BoolToSigmaProp(GE(Height, IntConstant(0))), GetVarSigmaProp(propVar1).get)), true)
-//    println(CostTableStat.costTableString)
+      SigmaAnd(Vector(BoolToSigmaProp(GE(Height, IntConstant(0))), GetVarSigmaProp(propVar1).get)),
+      onlyPositive = true,
+      testExceededCost = false
+    )
   }
 
   property("numeric cast") {

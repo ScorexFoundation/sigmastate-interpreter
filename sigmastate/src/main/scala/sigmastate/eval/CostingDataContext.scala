@@ -1,8 +1,9 @@
 package sigmastate.eval
 
-import java.math.BigInteger
-import java.util
+import com.google.common.primitives.Ints
 
+import java.math.BigInteger
+import java.util.Arrays
 import org.bouncycastle.math.ec.ECPoint
 import org.ergoplatform.{ErgoBox, SigmaConstants}
 import org.ergoplatform.validation.ValidationRules
@@ -346,12 +347,17 @@ case class CostingBox(isCost: Boolean, val ebox: ErgoBox) extends Box with Wrapp
 
   override def executeFromRegister[T](regId: Byte)(implicit cT: RType[T]): T = ??? // TODO implement
 
-  override def hashCode(): Int = id.toArray.hashCode()  // TODO optimize using just 4 bytes of id (since it is already hash)
+  override def hashCode(): Int = Ints.fromByteArray(id.toArray)
 
-  override def equals(obj: Any): Boolean = (this eq obj.asInstanceOf[AnyRef]) || (obj != null && ( obj match {
-    case obj: Box => util.Arrays.equals(id.toArray, obj.id.toArray)
-    // TODO v5.0 HF: return false when obj in not Box instead of throwing an exception
-  }))
+  override def equals(obj: Any): Boolean = (this eq obj.asInstanceOf[AnyRef]) || (obj != null && {
+    obj match {
+      case obj: Box => Arrays.equals(id.toArray, obj.id.toArray)
+      case _ =>
+        // this case was missing in v4.x, however has never been a problem
+        // Thus, v5.0 interpreter will not fail (while v4.x would fail here)
+        false
+    }
+  })
 }
 
 object CostingBox {
@@ -520,10 +526,10 @@ object CCostModel {
   private val AccessAvlTreeOpType: SFunc = SFunc(SContext, SAvlTree)
   private lazy val AccessAvlTreeCost: Int = costOf("AccessAvlTree", AccessAvlTreeOpType)
 
-  private val GetVarOpType: SFunc = SFunc(Array(SContext, SByte), SOption.ThisType)
+  private val GetVarOpType: SFunc = SFunc(SContext.ContextFuncDom, SOption.ThisType)
   private lazy val GetVarCost: Int = costOf("GetVar", GetVarOpType)
 
-  private val DeserializeVarOpType: SFunc = SFunc(Array(SContext, SByte), SOption.ThisType)
+  private val DeserializeVarOpType: SFunc = SFunc(SContext.ContextFuncDom, SOption.ThisType)
   private lazy val DeserializeVarCost: Int = costOf("DeserializeVar", DeserializeVarOpType)
 
   private val GetRegisterOpType: SFunc = SFunc(Array(SBox, SByte), SOption.ThisType)
@@ -686,7 +692,7 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
   override def substConstants[T](scriptBytes: Coll[Byte],
                                  positions: Coll[Int],
                                  newValues: Coll[T]): Coll[Byte] = {
-    val typedNewVals = newValues.toArray.map(v => TransformingSigmaBuilder.liftAny(v) match {
+    val typedNewVals = newValues.toArray.map(v => TransformingSigmaBuilder.liftToConstant(v) match {
       case Nullable(v) => v
       case _ => sys.error(s"Cannot evaluate substConstants($scriptBytes, $positions, $newValues): cannot lift value $v")
     })
@@ -717,10 +723,12 @@ case class CostingDataContext(
                                outputs: Coll[Box],
                                height: Int,
                                selfBox: Box,
+                               private val selfIndex: Int,
                                lastBlockUtxoRootHash: AvlTree,
                                _minerPubKey: Coll[Byte],
                                vars: Coll[AnyValue],
                                override val activatedScriptVersion: Byte,
+                               override val currentErgoTreeVersion: Byte,
                                var isCost: Boolean)
   extends Context {
   @inline override def builder: SigmaDslBuilder = CostingSigmaDslBuilder
@@ -739,17 +747,15 @@ case class CostingDataContext(
 
   @inline override def minerPubKey = _minerPubKey
 
-
-  private def findSelfBoxIndex: Int = {
-    var i = 0
-    while (i < inputs.length) {
-      if (inputs(i) eq selfBox) return i
-      i += 1
+  override def selfBoxIndex: Int = {
+    if (VersionContext.current.isJitActivated) {
+      // starting from v5.0 this is fixed
+      selfIndex
+    } else {
+      // this used to be a bug in v4.x (https://github.com/ScorexFoundation/sigmastate-interpreter/issues/603)
+      -1
     }
-    -1
   }
-
-  override val selfBoxIndex: Int = findSelfBoxIndex
 
   override def getVar[T](id: Byte)(implicit tT: RType[T]): Option[T] = {
     if (isCost) {

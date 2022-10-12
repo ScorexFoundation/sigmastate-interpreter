@@ -9,16 +9,31 @@ class CollectionUtilTests extends BaseTests {
   import scalan.util.CollectionUtil._
   import java.lang.{Byte => JByte, Integer}
 
+  test("updateMany") {
+    val xs: Seq[Byte] = Array[Byte](1,2,3)
+    xs.updateMany(Seq.empty) shouldBe xs
+    xs.updateMany(Seq(0 -> 2)) shouldBe Seq(2, 2, 3)
+    xs.updateMany(Seq(0 -> 2, 2 -> 2)) shouldBe Seq(2, 2, 2)
+    an[IndexOutOfBoundsException] should be thrownBy {
+      xs.updateMany(Seq(3 -> 2))
+    }
+  }
+
   test("concatArrays") {
     val xs = Array[Byte](1,2,3)
     val ys = Array[Byte](4,5,6)
     val zs = concatArrays(xs, ys)
     assertResult(Array[Byte](1, 2, 3, 4, 5, 6))(zs)
 
-//    val jxs = Array[JByte](new JByte(1), new JByte(2), new JByte(3))
-//    val jys = Array[JByte](new JByte(4), new JByte(5), new JByte(6))
-//    val jzs = concatArrays(jxs, jys)
-//    assertResult(Array[Byte](1, 2, 3, 4, 5, 6))(jzs)
+    val pairs = xs.zip(ys)
+    // this reproduces the problem which takes place in v3.x, v4.x (ErgoTree v0, v1)
+    an[ClassCastException] should be thrownBy(concatArrays(pairs, pairs))
+
+    // and this is the fix in v5.0
+    concatArrays_v5(pairs, pairs) shouldBe Array((1, 4), (2, 5), (3, 6), (1, 4), (2, 5), (3, 6))
+
+    val xOpts = xs.map(Option(_))
+    concatArrays_v5(xOpts, xOpts) shouldBe Array(Some(1), Some(2), Some(3), Some(1), Some(2), Some(3))
   }
 
   def join(l: Map[Int,Int], r: Map[Int,Int]) =
@@ -27,6 +42,30 @@ class CollectionUtilTests extends BaseTests {
     outerJoinSeqs(l, r)(l => l, r => r)((_,l) => l, (_,r) => r, (k,l,r) => l + r).map(_._2)
   def joinPairs(l: Seq[(String,Int)], r: Seq[(String,Int)]) =
     outerJoinSeqs(l, r)(l => l._1, r => r._1)((_,l) => l._2, (_,r) => r._2, (k,l,r) => l._2 + r._2)
+
+  test("joinSeqs") {
+    def key(p : (Int, String)): Int = p._1
+
+    {
+      val res = CollectionUtil.joinSeqs(
+        outer = Seq(1 -> "o1", 1 -> "o1"),
+        inner = Seq(1 -> "i1", 2 -> "i2"))(key, key)
+      res shouldBe Seq(
+        (1 -> "o1") -> (1 -> "i1"),
+        (1 -> "o1") -> (1 -> "i1")
+      )
+    }
+
+    { // same as above, but swapping inner and outer
+      val res = CollectionUtil.joinSeqs(
+        outer = Seq(1 -> "o1", 2 -> "o2"),
+        inner = Seq(1 -> "i1", 1 -> "i1"))(key, key)
+      res shouldBe Seq(
+        (1 -> "o1") -> (1 -> "i1"),
+        (1 -> "o1") -> (1 -> "i1")
+      )
+    }
+  }
 
   test("outerJoin maps") {
     val left = Map(1 -> 1, 2 -> 2, 3 -> 3)

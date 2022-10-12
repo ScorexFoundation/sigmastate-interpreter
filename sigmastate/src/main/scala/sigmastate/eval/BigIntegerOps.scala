@@ -79,11 +79,24 @@ object NumericOps {
     override def minus(x: BigInt, y: BigInt): BigInt = n.minus(x, y)
     override def times(x: BigInt, y: BigInt): BigInt = n.times(x, y)
 
-    override def quot(x: BigInt, y: BigInt): BigInt =
-      ??? // this method should not be used in v4.x
+    override def quot(x: BigInt, y: BigInt): BigInt = x.divide(y)
 
-    override def divisionRemainder(x: BigInt, y: BigInt): BigInt =
-      ??? // this method should not be used in v4.x
+    /** This method is used in ErgoTreeEvaluator based interpreter, to implement
+      * '%' operation of ErgoTree (i.e. `%: (T, T) => T` operation) for all
+      * numeric types T including BigInt.
+      *
+      * In the v4.x interpreter, however, the `%` operation is implemented using
+      * [[CBigInt]].mod method (see implementation in [[TestBigInt]], which
+      * delegates to [[java.math.BigInteger]].mod method.
+      *
+      * Even though this method is called `divisionRemainder`, the semantics of ErgoTree
+      * language requires it to correspond to [[java.math.BigInteger]].mod method.
+      *
+      * For this reason we define implementation of this method using [[BigInt]].mod.
+      *
+      * NOTE: This method should not be used in v4.x
+      */
+    override def divisionRemainder(x: BigInt, y: BigInt): BigInt = x.mod(y)
   }
 
   /** The instance of [[scalan.ExactOrdering]] typeclass for [[BigInt]]. */

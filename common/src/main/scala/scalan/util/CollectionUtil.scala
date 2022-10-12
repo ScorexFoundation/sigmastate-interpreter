@@ -12,10 +12,11 @@ import scala.reflect.ClassTag
 
 object CollectionUtil {
 
+  /** @deprecated shouldn't be used other than for backwards compatibility with v3.x, v4.x. */
   def concatArrays[T](xs: Array[T], ys: Array[T]): Array[T] = {
     val len = xs.length + ys.length
     val result = (xs match {
-      case arr: Array[AnyRef] => new Array[AnyRef](len)
+      case arr: Array[AnyRef] => new Array[AnyRef](len) // creates an array with invalid type descriptor (i.e. when T == Tuple2)
       case arr: Array[Byte] => new Array[Byte](len)
       case arr: Array[Short] => new Array[Short](len)
       case arr: Array[Int] => new Array[Int](len)
@@ -27,6 +28,21 @@ object CollectionUtil {
     }).asInstanceOf[Array[T]]
     Array.copy(xs, 0, result, 0, xs.length)
     Array.copy(ys, 0, result, xs.length, ys.length)
+    result
+  }
+
+  /** Concatenates two arrays into a new resulting array.
+    * All items of both arrays are copied to the result using System.arraycopy.
+    * This method takes ClassTag to create proper resulting array.
+    * Can be used in v5.0 and above.
+    */
+  def concatArrays_v5[T:ClassTag](arr1: Array[T], arr2: Array[T]): Array[T] = {
+    val l1 = arr1.length
+    val l2 = arr2.length
+    val length: Int = l1 + l2
+    val result: Array[T] = new Array[T](length)
+    System.arraycopy(arr1, 0, result, 0, l1)
+    System.arraycopy(arr2, 0, result, l1, l2)
     result
   }
 
@@ -50,6 +66,10 @@ object CollectionUtil {
       }
     }
 
+  /** Group the given sequence of pairs by first values as keys.
+    * @param kvs sequence of values which is traversed once
+    * @return a multimap with ArrayBuffer of values for each key.
+    */
   def createMultiMap[K,V](kvs: GenIterable[(K,V)]): Map[K, ArrayBuffer[V]] = {
     val res = HashMap.empty[K, ArrayBuffer[V]]
     kvs.foreach { case (k, v) =>
@@ -62,12 +82,17 @@ object CollectionUtil {
     res.toMap
   }
 
-  // TODO optimize: using cfor and avoiding allocations
+  /** Perform relational inner join of two sequences using the given key projections. */
   def joinSeqs[O, I, K](outer: GenIterable[O], inner: GenIterable[I])(outKey: O=>K, inKey: I=>K): GenIterable[(O,I)] = {
     val kvs = createMultiMap(inner.map(i => (inKey(i), i)))
     val res = outer.flatMap(o => {
       val ko = outKey(o)
-      kvs(ko).map(i => (o,i))
+      kvs.get(ko) match {
+        case Some(inners) =>
+          inners.map(i => (o,i))
+        case None =>
+          Nil
+      }
     })
     res
   }
@@ -181,6 +206,21 @@ object CollectionUtil {
   }
 
   implicit class TraversableOps[A, Source[X] <: GenIterable[X]](val xs: Source[A]) extends AnyVal {
+
+    /** Returns a copy of this collection where elements at `items(i)._1` are replaced
+      * with `items(i)._2` for each i.
+      */
+    def updateMany(items: Seq[(Int, A)])(implicit tA: ClassTag[A]): Seq[A] = {
+      val res = xs.toArray
+      val nItems = items.length
+      var i = 0
+      while (i < nItems) {
+        val item = items(i)
+        res(item._1) = item._2
+        i += 1
+      }
+      res
+    }
 
     def filterCast[B:ClassTag](implicit cbf: CanBuildFrom[Source[A], B, Source[B]]): Source[B] = {
       val b = cbf()

@@ -1,7 +1,5 @@
 package sigmastate.interpreter
 
-import java.math.BigInteger
-
 import gf2t.{GF2_192, GF2_192_Poly}
 import org.bitbucket.inkytonik.kiama.attribution.AttributionCore
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, everywheretd, rule}
@@ -9,16 +7,20 @@ import org.bitbucket.inkytonik.kiama.rewriting.Strategy
 import scalan.util.CollectionUtil._
 import sigmastate.TrivialProp.{FalseProp, TrueProp}
 import sigmastate.Values._
+import sigmastate.VersionContext.MaxSupportedScriptVersion
 import sigmastate._
 import sigmastate.basics.DLogProtocol._
 import sigmastate.basics.VerifierMessage.Challenge
 import sigmastate.basics._
-import sigmastate.lang.exceptions.CostLimitException
+import sigmastate.eval.Evaluation.addCostChecked
+import sigmastate.interpreter.EvalSettings._
+import sigmastate.lang.exceptions.InterpreterException
 import sigmastate.utils.Helpers
 
+import java.math.BigInteger
 import scala.util.Try
 
-
+// TODO ProverResult was moved from here, compare with new-eval after merge
 /**
   * Interpreter with enhanced functionality to prove statements.
   */
@@ -87,7 +89,7 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
     // This bitstring corresponding to a proposition to prove is needed for Strong Fiat-Shamir transformation.
     // See [BPW12] paper on Strong vs Weak Fiat-Shamir,
     // (https://link.springer.com/content/pdf/10.1007/978-3-642-34961-4_38.pdf)
-    val propBytes = FiatShamirTree.toBytes(step6)
+    val propBytes = FiatShamirTree.toBytes(step6)(null/* prove is not profiled */)
 
     // Prover Step 8: compute the challenge for the root of the tree as the Fiat-Shamir hash of propBytes
     // and the message being signed.
@@ -117,19 +119,34 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
             context: CTX,
             message: Array[Byte],
             hintsBag: HintsBag = HintsBag.empty): Try[CostedProverResult] = Try {
+    checkSoftForkCondition(ergoTree, context) match {
+      case Some(_) =>
+        throw new InterpreterException(
+          s"Both ErgoTree version ${ergoTree.version} and activated version " +
+            s"${context.activatedScriptVersion} is greater than MaxSupportedScriptVersion $MaxSupportedScriptVersion")
 
-    val initCost = ergoTree.complexity + context.initCost
-    val remainingLimit = context.costLimit - initCost
-    if (remainingLimit <= 0)
-      throw new CostLimitException(initCost,
-        s"Estimated execution cost $initCost exceeds the limit ${context.costLimit}", None)
+      case None => // proceed normally
+    }
 
-    val ctxUpdInitCost = context.withInitCost(initCost).asInstanceOf[CTX]
+    VersionContext.withVersions(context.activatedScriptVersion, ergoTree.version) {
+      val evalMode = getEvaluationMode(context)
+      val (resValue, resCost) = evalMode match {
+        case AotEvaluationMode =>
+          val complexityCost = ergoTree.complexity.toLong
+          val initCost = addCostChecked(context.initCost, complexityCost, context.costLimit)
+          val contextWithCost = context.withInitCost(initCost).asInstanceOf[CTX]
+          val reduced = fullReduction(ergoTree, contextWithCost, env)
+          (reduced.value, reduced.cost)
 
-    val res = fullReduction(ergoTree, ctxUpdInitCost, env)
-    val proof = generateProof(res.value, message, hintsBag)
+        case JitEvaluationMode =>
+          val reduced = fullReduction(ergoTree, context, env)
+          val fullCost = addCryptoCost(reduced.jitRes, context.costLimit)
+          (reduced.value, fullCost)
+      }
 
-    CostedProverResult(proof, ctxUpdInitCost.extension, res.cost)
+      val proof = generateProof(resValue, message, hintsBag)
+      CostedProverResult(proof, context.extension, resCost)
+    }
   }
 
   def generateProof(sb: SigmaBoolean,

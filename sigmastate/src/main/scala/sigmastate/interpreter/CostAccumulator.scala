@@ -1,15 +1,16 @@
 package sigmastate.interpreter
 
+import sigmastate.JitCost
 import sigmastate.lang.exceptions.CostLimitException
 
 /** Encapsulate simple monotonic (add only) counter with reset. */
-class CostCounter(val initialCost: Int) {
-  private var _currentCost: Int = initialCost
+class CostCounter(val initialCost: JitCost) {
+  private var _currentCost: JitCost = initialCost
 
-  @inline def += (n: Int) = {
-    this._currentCost = java.lang.Math.addExact(this._currentCost, n)
+  @inline def += (n: JitCost) = {
+    this._currentCost = this._currentCost + n
   }
-  @inline def currentCost: Int = _currentCost
+  @inline def currentCost: JitCost = _currentCost
   @inline def resetCost() = { _currentCost = initialCost }
 }
 
@@ -17,7 +18,7 @@ class CostCounter(val initialCost: Int) {
   * which correspond to lambdas and thunks.
   * It accepts messages: startScope(), endScope(), add(), reset()
   * At any time `totalCost` is the currently accumulated cost. */
-class CostAccumulator(initialCost: Int, costLimit: Option[Long]) {
+class CostAccumulator(initialCost: JitCost, costLimit: Option[JitCost]) {
 
   @inline private def initialStack() = List(new Scope(initialCost))
   private var _scopeStack: List[Scope] = initialStack
@@ -29,10 +30,10 @@ class CostAccumulator(initialCost: Int, costLimit: Option[Long]) {
     * When the evaluation enters a new scope (e.g. calling a lambda) a new Scope instance is created and pushed
     * to _scopeStack, then is starts receiving `add` method calls.
     * When the evaluation leaves the scope, the top is popped off the stack. */
-  class Scope(initialCost: Int) extends CostCounter(initialCost) {
+  class Scope(initialCost: JitCost) extends CostCounter(initialCost) {
 
 
-    @inline def add(opCost: Int): Unit = {
+    @inline def add(opCost: JitCost): Unit = {
           this += opCost
     }
 
@@ -51,7 +52,7 @@ class CostAccumulator(initialCost: Int, costLimit: Option[Long]) {
   /** Called once for each operation of a scope (lambda or thunk).
     * @throws CostLimitException when current accumulated cost exceeds `costLimit`
     */
-  def add(opCost: Int): Unit = {
+  def add(opCost: JitCost): Unit = {
     currentScope.add(opCost)
 
     // check that we are still withing the limit
@@ -61,7 +62,7 @@ class CostAccumulator(initialCost: Int, costLimit: Option[Long]) {
       val accumulatedCost = currentScope.currentCost
       if (accumulatedCost > limit) {
         throw new CostLimitException(
-          accumulatedCost, CostLimitException.msgCostLimitError(accumulatedCost, limit), None)
+          accumulatedCost.value, CostLimitException.msgCostLimitError(accumulatedCost, limit), None)
       }
     }
   }
@@ -72,5 +73,5 @@ class CostAccumulator(initialCost: Int, costLimit: Option[Long]) {
   }
 
   /** Returns total accumulated cost */
-  @inline def totalCost: Int = currentScope.currentCost
+  @inline def totalCost: JitCost = currentScope.currentCost
 }

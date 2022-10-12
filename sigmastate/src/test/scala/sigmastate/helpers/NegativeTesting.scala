@@ -44,7 +44,7 @@ trait NegativeTesting extends Matchers {
 
   /** Creates an assertion which checks the given type and message contents.
     *
-    * @tparam E expected type of exception
+    * @tparam E expected type of an exception
     * @param msgParts expected parts of the exception message
     * @return the assertion which can be used in assertExceptionThrown method
     */
@@ -52,6 +52,21 @@ trait NegativeTesting extends Matchers {
       (msgParts: String*): Throwable => Boolean = {
     case t: E => msgParts.forall(t.getMessage.contains(_))
     case _ => false
+  }
+
+  /** Creates an assertion which checks the root cause exception and message contents.
+    *
+    * @tparam E expected type of a root cause exception
+    * @param msgParts expected parts of the root cause exception message
+    * @return the assertion which can be used in assertExceptionThrown method
+    */
+  def rootCauseLike[E <: Throwable : ClassTag]
+      (msgParts: String*): Throwable => Boolean = { t =>
+    val root = rootCause(t)
+    root match {
+      case r: E => msgParts.forall(r.getMessage.contains(_))
+      case _ => false
+    }
   }
 
   /** Checks that both computations either succeed with the same value or fail with the same

@@ -15,11 +15,12 @@ import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 class ProverResult(val proof: Array[Byte], val extension: ContextExtension) {
   override def hashCode(): Int = util.Arrays.hashCode(proof) * 31 + extension.hashCode()
 
-  override def equals(obj: scala.Any): Boolean = obj match {
+  override def equals(obj: scala.Any): Boolean =
+  (this eq obj.asInstanceOf[AnyRef]) || (obj match {
     case obj: ProverResult =>
       util.Arrays.equals(proof, obj.proof) && extension == obj.extension
     case _ => false
-  }
+  })
 
   override def toString = s"ProverResult(${Base16.encode(proof)},$extension)"
 }

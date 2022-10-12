@@ -6,12 +6,12 @@ import org.bouncycastle.math.ec.ECPoint
 import org.ergoplatform._
 import org.ergoplatform.validation.ValidationRules.{CheckLoopLevelInCostFunction, CheckCostFuncOperation}
 import sigmastate._
-import sigmastate.Values.{Value, GroupElementConstant, SigmaBoolean, Constant}
+import sigmastate.Values.{Value, SigmaBoolean, Constant}
 
 import scala.reflect.ClassTag
 import scala.util.Try
 import sigmastate.SType._
-import scalan.{Nullable, RType}
+import scalan.RType
 import scalan.RType._
 import sigma.types.PrimViewType
 import sigmastate.basics.DLogProtocol.ProveDlog

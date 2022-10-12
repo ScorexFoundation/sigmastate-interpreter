@@ -50,7 +50,7 @@ class SigningSpecification extends SigmaTestingCommons {
     val verifier = new ErgoLikeTestInterpreter
     val msg = "any message".getBytes("UTF-8")
     val sig = "invalid signature".getBytes("UTF-8")
-    verifier.verifySignature(sigmaTree, msg, sig) shouldBe false
+    verifier.verifySignature(sigmaTree, msg, sig)(null) shouldBe false
   }
   
   property("AND signature test vector") {
@@ -140,11 +140,11 @@ class SigningSpecification extends SigmaTestingCommons {
       val pi = new ErgoLikeTestProvingInterpreter()
       val sigmaTree: SigmaBoolean = pi.publicKeys.head
       val sig = pi.signMessage(sigmaTree, msg, HintsBag.empty).get
-      pi.verifySignature(sigmaTree, msg, sig) shouldBe true
-      pi.verifySignature(sigmaTree, (str + "1").getBytes("UTF-8"), sig) shouldBe false
-      pi.verifySignature(sigmaTree, msg, sig :+ (1: Byte)) shouldBe true //possible to append bytes
+      pi.verifySignature(sigmaTree, msg, sig)(null) shouldBe true
+      pi.verifySignature(sigmaTree, (str + "1").getBytes("UTF-8"), sig)(null) shouldBe false
+      pi.verifySignature(sigmaTree, msg, sig :+ (1: Byte))(null) shouldBe true //possible to append bytes
       val wrongTree = pi.publicKeys(1)
-      pi.verifySignature(wrongTree, msg, sig) shouldBe false
+      pi.verifySignature(wrongTree, msg, sig)(null) shouldBe false
     }
   }
 
@@ -154,11 +154,11 @@ class SigningSpecification extends SigmaTestingCommons {
       val pi = new ErgoLikeTestProvingInterpreter()
       val sigmaTree: SigmaBoolean = CAND(Seq(pi.dlogSecrets.head.publicImage, pi.dhSecrets.head.publicImage))
       val sig = pi.signMessage(sigmaTree, msg, HintsBag.empty).get
-      pi.verifySignature(sigmaTree, msg, sig) shouldBe true
-      pi.verifySignature(sigmaTree, (str + "1").getBytes("UTF-8"), sig) shouldBe false
-      pi.verifySignature(sigmaTree, msg, sig :+ (1: Byte)) shouldBe true //possible to append bytes
+      pi.verifySignature(sigmaTree, msg, sig)(null) shouldBe true
+      pi.verifySignature(sigmaTree, (str + "1").getBytes("UTF-8"), sig)(null) shouldBe false
+      pi.verifySignature(sigmaTree, msg, sig :+ (1: Byte))(null) shouldBe true //possible to append bytes
       val wrongTree = CAND(Seq(pi.dlogSecrets.head.publicImage, pi.dhSecrets(1).publicImage))
-      pi.verifySignature(wrongTree, msg, sig) shouldBe false
+      pi.verifySignature(wrongTree, msg, sig)(null) shouldBe false
     }
   }
 
@@ -170,7 +170,7 @@ class SigningSpecification extends SigmaTestingCommons {
 
     // check that signature is correct
     val verifier = new ErgoLikeTestInterpreter
-    verifier.verifySignature(sk.publicImage, msg, signature) shouldBe true
+    verifier.verifySignature(sk.publicImage, msg, signature)(null) shouldBe true
 
     // print one more random vector for debug purposes
     printSimpleSignature(msg: Array[Byte])
@@ -181,7 +181,7 @@ class SigningSpecification extends SigmaTestingCommons {
 
     val sk = proverA.dlogSecrets.head
     val prop = sk.publicImage
-    val tree = prop.toSigmaProp.treeWithSegregation
+    val tree = mkTestErgoTree(prop)
     val prove = proverA.prove(tree, fakeContext, msg).get
 
     println(s"Message: ${Base16.encode(msg)}")
@@ -191,7 +191,6 @@ class SigningSpecification extends SigmaTestingCommons {
     println(s"treeBytes: ${Base16.encode(tree.bytes)}")
     println(s"Signature: ${Base16.encode(prove.proof)}")
   }
-
 
   private def printThresholdSignature(msg: Array[Byte]) {
     val proverA = new ErgoLikeTestProvingInterpreter

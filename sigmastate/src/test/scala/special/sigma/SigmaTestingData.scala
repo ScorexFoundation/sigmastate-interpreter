@@ -8,7 +8,7 @@ import org.scalacheck.Gen.containerOfN
 import sigmastate._
 import org.scalacheck.{Arbitrary, Gen}
 import sigmastate.helpers.SigmaTestingCommons
-import sigmastate.eval._
+import sigmastate.eval.{Colls, _}
 import sigmastate.eval.Extensions._
 import org.scalacheck.util.Buildable
 import scalan.RType
@@ -19,6 +19,7 @@ import sigmastate.Values._
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
 import sigmastate.interpreter.CryptoConstants.EcPointType
+import sigmastate.Values.ErgoTree
 import sigmastate.serialization.ErgoTreeSerializer
 import sigmastate.serialization.generators.ObjectGenerators
 import sigmastate.utils.Helpers
@@ -56,10 +57,10 @@ trait SigmaTestingData extends SigmaTestingCommons with ObjectGenerators {
   }
 
   protected def sampleAvlProver = {
-    val key = keyCollGen.sample.get
-    val value = bytesCollGen.sample.get
-    val (tree, prover) = createAvlTreeAndProver(key -> value)
-    (key, value, tree, prover)
+    val keys   = arrayOfN(100, keyCollGen).sample.get
+    val values = arrayOfN(100, bytesCollGen).sample.get
+    val (tree, prover) = createAvlTreeAndProver(keys.zip(values):_*)
+    (keys, values, tree, prover)
   }
 
   protected def sampleAvlTree: AvlTree = {
@@ -127,7 +128,7 @@ trait SigmaTestingData extends SigmaTestingCommons with ObjectGenerators {
 
     def createBigIntMaxValue(): BigInt = BigIntMaxValue_instances.getNext
 
-    // TODO HF: this values have bitCount == 255 (see to256BitValueExact)
+    // TODO v6.0: this values have bitCount == 255 (see to256BitValueExact)
     val BigIntMinValue = CBigInt(new BigInteger("-7F" + "ff" * 31, 16))
     val BigIntMaxValue = createBigIntMaxValue()
     val BigIntOverlimit = CBigInt(new BigInteger("7F" + "ff" * 33, 16))

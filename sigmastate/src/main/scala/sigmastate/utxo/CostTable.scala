@@ -1,6 +1,8 @@
 package sigmastate.utxo
 
-import sigmastate.{Downcast, Upcast}
+import org.ergoplatform.SigmaConstants
+import sigmastate._
+import sigmastate.interpreter.Interpreter
 import sigmastate.lang.SigmaParser
 import sigmastate.lang.Terms.OperationId
 
