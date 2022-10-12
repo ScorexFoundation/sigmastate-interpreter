@@ -268,7 +268,8 @@ class ErgoAddressSpecification extends SigmaDslTesting
           ).toMap)))(costLimit = costLimit)
 
       val prover = new ErgoLikeTestProvingInterpreter()
-      prover.prove(address.script, ctx, fakeMessage).getOrThrow
+      val res = prover.prove(address.script, ctx, fakeMessage).getOrThrow
+      res
     }
 
     val scriptVarId = 1.toByte
@@ -283,6 +284,10 @@ class ErgoAddressSpecification extends SigmaDslTesting
     // when limit is low
     {
       val deliberatelySmallLimit = 24
+      testPay2SHAddress(addr,
+        script = scriptVarId -> ByteArrayConstant(scriptBytes),
+        costLimit = deliberatelySmallLimit)
+      
       assertExceptionThrown(
         testPay2SHAddress(addr,
           script = scriptVarId -> ByteArrayConstant(scriptBytes),

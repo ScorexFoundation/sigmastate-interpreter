@@ -914,9 +914,9 @@ class SigmaDslSpecification extends SigmaDslTesting
       ))
   }
 
-  def swapArgs[A](cases: Seq[((A, A), Expected[Boolean])], cost: Int, newCost: Int, newCostDetails: CostDetails) =
+  def swapArgs[A](cases: Seq[((A, A), Expected[Boolean])], cost: Int, newCostDetails: CostDetails) =
     cases.map { case ((x, y), res) =>
-      ((y, x), Expected(res.value, cost, newCostDetails, newCost))
+      ((y, x), Expected(res.value, cost, newCostDetails, 1788))
     }
 
   def newCasesFrom[A, R](
@@ -932,9 +932,9 @@ class SigmaDslSpecification extends SigmaDslTesting
     }    
 
   def newCasesFrom2[A, R](cases: Seq[(A, A)])
-                        (getExpectedRes: (A, A) => R, cost: Int, newCost: Int, newCostDetails: CostDetails) =
+                        (getExpectedRes: (A, A) => R, cost: Int, newCostDetails: CostDetails) =
     cases.map { case (x, y) =>
-      ((x, y), Expected(Success(getExpectedRes(x, y)), cost = cost, expectedDetails = newCostDetails, expectedNewCost = newCost))
+      ((x, y), Expected(Success(getExpectedRes(x, y)), cost = cost, expectedDetails = newCostDetails, expectedNewCost = 1786))
     }
 
   def verifyOp[A: Ordering: Arbitrary]
