@@ -41,7 +41,6 @@ import scala.collection.compat.immutable.ArraySeq
 import scala.collection.mutable
 
 object Values {
-  ReflectionData.registerEmptyClass(sigmastate.SBigInt.getClass)
 
   type SValue = Value[SType]
 

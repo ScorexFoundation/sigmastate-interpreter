@@ -1,5 +1,6 @@
 package special.sigma
 
+import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll}
 import special.collection._
 
 import scala.language.reflectiveCalls
@@ -8,7 +9,7 @@ import sigmastate.{TrivialProp, VersionContext, eval}
 import sigmastate.eval.Extensions._
 import sigmastate.eval._
 
-class SigmaDslStaginTests extends BaseCtxTests with ErgoScriptTestkit with BaseLiftableTests {
+class SigmaDslStaginTests extends BaseCtxTests with ErgoScriptTestkit with BaseLiftableTests with BeforeAndAfterAll {
   class Ctx extends TestContext with IRContext with LiftableTestKit {
   }
 
@@ -51,5 +52,9 @@ class SigmaDslStaginTests extends BaseCtxTests with ErgoScriptTestkit with BaseL
     cake.check(p1, { env: EnvRep[RSigmaProp] =>
       for { p1 <- env; arg <- lifted(p2) } yield p1 && arg
     }, p1 && p2)
+  }
+
+  override protected def afterAll(): Unit = {
+    println(scalan.reflection.Generator.generateReport)
   }
 }

@@ -10023,6 +10023,5 @@ class SigmaDslSpecification extends SigmaDslTesting
     println("==========================================================")
     println(Interpreter.verifySignatureProfiler.generateReport)
     println("==========================================================")
-    println(scalan.reflection.Generator.generateReport)
   }
 }

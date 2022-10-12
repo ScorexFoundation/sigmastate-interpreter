@@ -1,9 +1,9 @@
 package special
 
 import java.math.BigInteger
-
 import scalan.RType
 import scalan.RType.GeneralType
+import scalan.reflection.ReflectionData.registerClassOnly
 
 import scala.reflect.classTag
 
@@ -29,4 +29,7 @@ package object sigma {
   implicit val SigmaDslBuilderRType: RType[SigmaDslBuilder] = RType.fromClassTag(classTag[SigmaDslBuilder])
 
   implicit val BigIntegerRType: RType[BigInteger] = GeneralType(classTag[BigInteger])
+
+  registerClassOnly(classOf[special.sigma.BigInt])
+  registerClassOnly(classOf[special.sigma.SigmaProp])
 }

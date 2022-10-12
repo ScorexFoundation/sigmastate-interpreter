@@ -43,7 +43,7 @@ object Generator {
 
   def genEmptyClass(c: JRClass[_]): String = {
     val name = className(c.value)
-    s"registerEmptyClass(classOf[$name])\n"
+    s"registerClassOnly(classOf[$name])\n"
   }
 
   def genConstructor(c: JRClass[_], ctor: JRConstructor[_]): String = {

@@ -344,7 +344,7 @@ trait STypeCompanion {
   /** Class which represents values of this type. When method call is executed, the corresponding method
     * of this class is invoked via reflection [[RMethod]].invoke(). */
   def reprClass: RClass[_]
-  val thisRClass: RClass[_] = RClass(this.getClass)
+  lazy val thisRClass: RClass[_] = RClass(this.getClass)
 }
 
 /** Defines recognizer method which allows the derived object to be used in patterns
@@ -1005,6 +1005,7 @@ case object SLong extends SPrimType with SEmbeddable with SNumericType with SMon
 
 /** Type of 256 bit integet values. Implemented using [[java.math.BigInteger]]. */
 case object SBigInt extends SPrimType with SEmbeddable with SNumericType with SMonoType {
+  ReflectionData.registerClassOnly(this.getClass)
   override type WrappedType = BigInt
   override val typeCode: TypeCode = 6: Byte
   override val reprClass: RClass[_] = RClass(classOf[BigInt])

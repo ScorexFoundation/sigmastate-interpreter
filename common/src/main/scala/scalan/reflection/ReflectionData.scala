@@ -13,33 +13,33 @@ object ReflectionData {
     classes.put(clazz, new SRClass(clazz, constructors, fields, methods))
   }
 
-  def registerEmptyClass(cls: Class[_]) = registerClassEntry(cls)
+  def registerClassOnly(cls: Class[_]) = registerClassEntry(cls)
 
-  registerEmptyClass(classOf[Array[Byte]])
-  registerEmptyClass(classOf[Boolean])
-  registerEmptyClass(classOf[Byte])
+  registerClassOnly(classOf[Array[Byte]])
+  registerClassOnly(classOf[Boolean])
+  registerClassOnly(classOf[Byte])
 
-  registerEmptyClass(classOf[Int])
+  registerClassOnly(classOf[Int])
 
-  registerEmptyClass(classOf[java.lang.Integer])
+  registerClassOnly(classOf[java.lang.Integer])
 
-  registerEmptyClass(classOf[java.lang.Object])
+  registerClassOnly(classOf[java.lang.Object])
 
-  registerEmptyClass(classOf[java.lang.String])
+  registerClassOnly(classOf[java.lang.String])
 
-  registerEmptyClass(classOf[Long])
+  registerClassOnly(classOf[Long])
 
-  registerEmptyClass(classOf[Short])
+  registerClassOnly(classOf[Short])
 
-  registerEmptyClass(classOf[scala.Product2[_,_]])
+  registerClassOnly(classOf[scala.Product2[_,_]])
 
-  registerEmptyClass(classOf[scala.collection.IndexedSeq[_]])
+  registerClassOnly(classOf[scala.collection.IndexedSeq[_]])
 
-  registerEmptyClass(classOf[scala.collection.Seq[_]])
+  registerClassOnly(classOf[scala.collection.Seq[_]])
 
-  registerEmptyClass(classOf[scala.collection.immutable.List[_]])
+  registerClassOnly(classOf[scala.collection.immutable.List[_]])
 
-  registerEmptyClass(classOf[scala.collection.immutable.Map[_,_]])
+  registerClassOnly(classOf[scala.collection.immutable.Map[_,_]])
 
   class SRClassBuilder[T](clazz: Class[T]) {
 
