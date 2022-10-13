@@ -88,15 +88,8 @@ trait Interpreter extends ScorexLogging {
     */
   protected def deserializeMeasured(context: CTX, scriptBytes: Array[Byte]): (CTX, Value[SType]) = {
     val r = SigmaSerializer.startReader(scriptBytes)
-    val (script, scriptComplexity) = if (VersionContext.current.isJitActivated) {
-      val script = ValueSerializer.deserialize(r)  // Why ValueSerializer? read NOTE above
-      val cost = java7.compat.Math.multiplyExact(scriptBytes.length, CostPerByteDeserialized)
-      (script, cost)
-    } else {
-      r.complexity = 0
-      val script = ValueSerializer.deserialize(r)  // Why ValueSerializer? read NOTE above
-      (script, r.complexity)
-    }
+    val script = ValueSerializer.deserialize(r)  // Why ValueSerializer? read NOTE above
+    val scriptComplexity = java7.compat.Math.multiplyExact(scriptBytes.length, CostPerByteDeserialized)
 
     val currCost = Evaluation.addCostChecked(context.initCost, scriptComplexity, context.costLimit)
     val ctx1 = context.withInitCost(currCost).asInstanceOf[CTX]
@@ -243,7 +236,10 @@ trait Interpreter extends ScorexLogging {
                                        env: ScriptEnv): FullReductionResult = {
     implicit val vs: SigmaValidationSettings = context.validationSettings
     val jitRes = VersionContext.withVersions(context.activatedScriptVersion, ergoTree.version) {
-      val (propTree, context2) = trySoftForkable[(SigmaPropValue, CTX)](whenSoftFork = (TrueSigmaProp, context)) {
+      val deserializeSubstitutionCost = java7.compat.Math.multiplyExact(ergoTree.bytes.length, CostPerTreeByte)
+      val currCost = Evaluation.addCostChecked(context.initCost, deserializeSubstitutionCost, context.costLimit)
+      val context1 = context.withInitCost(currCost).asInstanceOf[CTX]
+      val (propTree, context2) = trySoftForkable[(SigmaPropValue, CTX)](whenSoftFork = (TrueSigmaProp, context1)) {
         applyDeserializeContextJITC(context, prop)
       }
 
