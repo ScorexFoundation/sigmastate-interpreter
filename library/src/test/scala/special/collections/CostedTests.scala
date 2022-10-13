@@ -3,7 +3,6 @@ package special.collections
 import scala.collection.mutable
 import scala.language.reflectiveCalls
 import scalan.util.BenchmarkUtil._
-import special.SpecialPredef
 
 class CostedTests extends BaseCostedTests {
 

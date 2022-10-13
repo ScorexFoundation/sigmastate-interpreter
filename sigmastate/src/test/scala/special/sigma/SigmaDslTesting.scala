@@ -29,7 +29,6 @@ import sigmastate.helpers.{ErgoLikeContextTesting, ErgoLikeTestInterpreter, Sigm
 import sigmastate.interpreter.EvalSettings.{AotEvaluationMode, EvaluationMode, JitEvaluationMode}
 import sigmastate.interpreter.Interpreter.{ScriptEnv, VerificationResult}
 import sigmastate.interpreter._
-import sigmastate.lang.SigmaCompiler
 import sigmastate.lang.Terms.{Apply, ValueOps}
 import sigmastate.serialization.ValueSerializer
 import sigmastate.serialization.generators.ObjectGenerators

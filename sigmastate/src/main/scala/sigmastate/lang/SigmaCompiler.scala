@@ -2,7 +2,6 @@ package sigmastate.lang
 
 import fastparse.core.Parsed
 import fastparse.core.Parsed.Success
-import org.ergoplatform.Context
 import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
 import sigmastate.SType
 import sigmastate.Values.{SValue, Value}
