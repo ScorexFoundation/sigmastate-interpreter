@@ -44,7 +44,11 @@ case class CompilerResult[Ctx <: IRContext](
   buildTree: SValue
 )
 
+/** Compiler which compiles ErgoScript source code into ErgoTree.
+  * @param settings compilation parameters \
+  */
 class SigmaCompiler(settings: CompilerSettings) {
+  /** Constructs an instance for the given network type and with default settings. */
   def this(networkPrefix: Byte) = this(
     CompilerSettings(networkPrefix, TransformingSigmaBuilder, lowerMethodCalls = true)
   )
