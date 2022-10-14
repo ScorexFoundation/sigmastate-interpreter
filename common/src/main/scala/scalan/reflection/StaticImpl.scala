@@ -30,6 +30,8 @@ abstract class SRMethod(declaringClass: Class[_], name: String, parameterTypes: 
       parameterTypes == that.getParameterTypes()
     case _ => false
   })
+
+  override def toString: String = s"SRMethod(${declaringClass.getName}.$name(${parameterTypes.mkString(", ")}))"
 }
 
 class SRClass[T](val clazz: Class[T],

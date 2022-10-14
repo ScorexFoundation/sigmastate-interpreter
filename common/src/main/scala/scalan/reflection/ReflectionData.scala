@@ -82,5 +82,15 @@ object ReflectionData {
       )
     )
   }
-
+  {
+    val clazz = classOf[scala.collection.immutable.$colon$colon[_]]
+    registerClassEntry(clazz,
+      constructors = Array(
+        new SRConstructor[Any](Array(classOf[java.lang.Object], classOf[scala.collection.immutable.List[_]])) {
+          override def newInstance(args: AnyRef*): Any =
+            new scala.collection.immutable.$colon$colon(args(0), args(1).asInstanceOf[scala.collection.immutable.List[_]])
+        }
+      )
+    )
+  }
 }

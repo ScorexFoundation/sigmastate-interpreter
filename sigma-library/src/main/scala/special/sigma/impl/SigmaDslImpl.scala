@@ -3410,7 +3410,8 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
 }
 
 object SigmaDslModule extends scalan.ModuleInfo("special.sigma", "SigmaDsl") {
-//  registerClassOnly(classOf[special.sigma.SigmaDsl#AnyValue])
+  registerClassOnly(classOf[special.sigma.SigmaDsl#AnyValue])
+
   {
     val clazz = classOf[special.sigma.SigmaDsl#SigmaProp]
     registerClassEntry(clazz,

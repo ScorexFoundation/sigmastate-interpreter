@@ -114,12 +114,19 @@ object Generator {
         |    )""".stripMargin
     }
 
-    s"""
-      |{ val clazz = classOf[$name]
-      |  registerClassEntry(clazz${constructors}${fields}${methods}
-      |  )
-      |}
-      |""".stripMargin
+    if (c.fields.isEmpty && c.methods.isEmpty) {
+      s"""
+        |registerClassEntry(classOf[$name]${constructors}${fields}${methods}
+        |)
+        |""".stripMargin
+    } else {
+      s"""
+        |{ val clazz = classOf[$name]
+        |  registerClassEntry(clazz${constructors}${fields}${methods}
+        |  )
+        |}
+        |""".stripMargin
+    }
   }
 
   def isEmpty(rcls: JRClass[_]): Boolean =
@@ -131,22 +138,6 @@ object Generator {
     }
     else {
       b.append(genClassRegistrationEntry(rcls))
-//      b.append(s"$cls {\n")
-//      for ( c <- rcls.getUsedConstructors() ) {
-//        val paramTypes = c.value.getParameterTypes
-//        val args = if (paramTypes.isEmpty) "()"
-//        else {
-//          paramTypes.map(c => c.getName).mkString("(", ",", ")")
-//        }
-//        b.append(s"  constructor${c.index}$args\n")
-//      }
-//      for ( (n, f) <- rcls.fields ) {
-//        b.append(s"  val $n: ${f.getType.getName}\n")
-//      }
-//      for ( ((n, args), m) <- rcls.methods ) {
-//        b.append(s"  def $n -> obj.asInstanceOf[${cls.getName}].$n(${args.zipWithIndex.rep { case (c, i) => s"args($i).asInstanceOf[${c.getName}]" }})\n")
-//      }
-//      b.append(s"}\n\n")
     }
   }
 
@@ -161,12 +152,16 @@ object Generator {
     b.result()
   }
 
-  private def collectNonEmptyClasses = {
-    RClass.classes.toSeq.filter(e => !isEmpty(e._2))
+  private def collectEmptyClasses = {
+    RClass.classes.toSeq.filter(e =>
+      isEmpty(e._2) &&  // don't contain constructors, fields or methods
+      !ReflectionData.classes.contains(e._1)) // not already registered
   }
 
-  private def collectEmptyClasses = {
-    RClass.classes.toSeq.filter(e => isEmpty(e._2))
+  private def collectNonEmptyClasses = {
+    RClass.classes.toSeq.filter(e =>
+      !isEmpty(e._2) &&
+      !ReflectionData.classes.contains(e._1))
   }
 
 }

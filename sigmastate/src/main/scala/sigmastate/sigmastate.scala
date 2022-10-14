@@ -1,3 +1,5 @@
+import scalan.reflection.ReflectionData.registerClassEntry
+import scalan.reflection.SRConstructor
 import sigmastate.Values.Value
 import sigmastate.lang.CheckingSigmaBuilder
 
@@ -77,4 +79,13 @@ package object sigmastate {
 
   def MinusModQ(left: Value[SBigInt.type], right: Value[SBigInt.type]): Value[SBigInt.type] =
     mkMinusModQ(left, right)
+
+  registerClassEntry(classOf[sigmastate.AND],
+    constructors = Array(
+      new SRConstructor[Any](Array(classOf[sigmastate.Values.Value[_]])) {
+        override def newInstance(args: AnyRef*): Any =
+          new sigmastate.AND(args(0).asInstanceOf[sigmastate.Values.Value[SCollection[SBoolean.type]]])
+      }
+    )
+  )
 }

@@ -8,6 +8,7 @@ import special.wrappers.RTypeWrapSpec
 import scala.collection.compat.immutable.ArraySeq
 
 package impl {
+  import scalan.reflection.ReflectionData.registerClassOnly
   import scalan.reflection.{RClass, RMethod}
 
   // Abs -----------------------------------
@@ -145,7 +146,9 @@ object WRType extends EntityObject("WRType") {
   registerModule(WRTypesModule)
 }
 
-object WRTypesModule extends scalan.ModuleInfo("wrappers.scalan", "WRTypes")
+object WRTypesModule extends scalan.ModuleInfo("wrappers.scalan", "WRTypes") {
+  registerClassOnly(classOf[wrappers.scalan.WRTypes#WRType[_]])
+}
 }
 
 trait WRTypesModule extends wrappers.scalan.impl.WRTypesDefs {self: WrappersModule =>}

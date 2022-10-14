@@ -7,7 +7,8 @@ import scala.reflect._
 import scala.collection.compat.immutable.ArraySeq
 
 package impl {
-  import scalan.reflection.{RClass, RMethod}
+  import scalan.reflection.ReflectionData.{registerClassEntry, registerClassOnly}
+  import scalan.reflection.{RClass, RMethod, SRConstructor}
 
   // Abs -----------------------------------
 trait CollsDefs extends scalan.Scalan with Colls {
@@ -1462,7 +1463,49 @@ implicit val eB = xs.eA.eSnd
   registerModule(CollsModule)
 }
 
-object CollsModule extends scalan.ModuleInfo("special.collection", "Colls")
+object CollsModule extends scalan.ModuleInfo("special.collection", "Colls") {
+  registerClassOnly(classOf[special.collection.Colls#PairColl[_,_]])
+
+  { val clazz = classOf[scalan.TypeDescs#FuncElem[_,_]]
+    registerClassEntry(clazz,
+      constructors = Array(
+        new SRConstructor[Any](Array(classOf[scalan.Scalan], classOf[scalan.TypeDescs#Elem[_]], classOf[scalan.TypeDescs#Elem[_]])) {
+          override def newInstance(args: AnyRef*): Any = {
+            val ctx = args(0).asInstanceOf[scalan.Scalan]
+            new ctx.FuncElem(args(1).asInstanceOf[ctx.Elem[_]], args(2).asInstanceOf[ctx.Elem[_]])
+          }
+        }
+      )
+    )
+  }
+
+  { val clazz = classOf[scalan.TypeDescs#PairElem[_,_]]
+    registerClassEntry(clazz,
+      constructors = Array(
+        new SRConstructor[Any](Array(classOf[scalan.Scalan], classOf[scalan.TypeDescs#Elem[_]], classOf[scalan.TypeDescs#Elem[_]])) {
+          override def newInstance(args: AnyRef*): Any = {
+            val ctx = args(0).asInstanceOf[scalan.Scalan]
+            new ctx.PairElem(args(1).asInstanceOf[ctx.Elem[_]], args(2).asInstanceOf[ctx.Elem[_]])
+          }
+        }
+      )
+    )
+  }
+
+  {
+    val clazz = classOf[scalan.primitives.Thunks#ThunkElem[_]]
+    registerClassEntry(clazz,
+      constructors = Array(
+        new SRConstructor[Any](Array(classOf[scalan.Scalan], classOf[scalan.TypeDescs#Elem[_]])) {
+          override def newInstance(args: AnyRef*): Any = {
+            val ctx = args(0).asInstanceOf[scalan.Scalan]
+            new ctx.ThunkElem(args(1).asInstanceOf[ctx.Elem[_]])
+          }
+        }
+      )
+    )
+  }
+}
 }
 
 trait CollsModule extends special.collection.impl.CollsDefs {self: Library =>}
