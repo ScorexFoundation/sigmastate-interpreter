@@ -2,7 +2,7 @@ package special
 
 import scala.language.implicitConversions
 import scalan.RType
-import scalan.reflection.ReflectionData.registerClassEntry
+import scalan.reflection.CommonReflection.registerClassEntry
 import scalan.reflection.SRMethod
 
 import scala.reflect.{classTag, ClassTag}

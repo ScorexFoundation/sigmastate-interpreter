@@ -3,7 +3,7 @@ package scalan.reflection
 import scala.collection.compat.immutable.ArraySeq
 import scala.collection.mutable
 
-object ReflectionData {
+object CommonReflection {
   val classes = mutable.HashMap.empty[Class[_], SRClass[_]]
 
   def registerClassEntry[T](clazz: Class[T],

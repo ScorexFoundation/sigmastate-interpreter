@@ -3,7 +3,7 @@ package sigmastate
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.propspec.AnyPropSpec
 import scalan.TypeDescs
-import scalan.reflection.ReflectionData.registerClassEntry
+import scalan.reflection.CommonReflection.registerClassEntry
 import scalan.reflection.SRConstructor
 
 object ObjA {

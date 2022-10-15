@@ -3,7 +3,7 @@ package special
 import java.math.BigInteger
 import scalan.RType
 import scalan.RType.GeneralType
-import scalan.reflection.ReflectionData.registerClassOnly
+import scalan.reflection.CommonReflection.registerClassOnly
 
 import scala.reflect.classTag
 

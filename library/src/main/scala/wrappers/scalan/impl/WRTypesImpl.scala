@@ -8,7 +8,7 @@ import special.wrappers.RTypeWrapSpec
 import scala.collection.compat.immutable.ArraySeq
 
 package impl {
-  import scalan.reflection.ReflectionData.registerClassOnly
+  import scalan.reflection.CommonReflection.registerClassOnly
   import scalan.reflection.{RClass, RMethod}
 
   // Abs -----------------------------------

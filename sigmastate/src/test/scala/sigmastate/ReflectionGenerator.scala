@@ -161,12 +161,12 @@ object ReflectionGenerator {
   private def collectEmptyClasses = {
     RClass.classes.toSeq.filter(e =>
       isEmpty(e._2) && // don't contain constructors, fields or methods
-          !ReflectionData.classes.contains(e._1)) // not already registered
+          !CommonReflection.classes.contains(e._1)) // not already registered
   }
 
   private def collectNonEmptyClasses = {
     RClass.classes.toSeq.filter(e =>
       !isEmpty(e._2) &&
-          !ReflectionData.classes.contains(e._1))
+          !CommonReflection.classes.contains(e._1))
   }
 }

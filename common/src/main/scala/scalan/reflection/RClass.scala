@@ -53,7 +53,7 @@ object RClass {
   }
 
   def apply[T](clazz: Class[T]): RClass[T] = {
-    val res = ReflectionData.classes.get(clazz) match {
+    val res = CommonReflection.classes.get(clazz) match {
       case Some(c) =>
         assert(c.clazz == clazz)
         c

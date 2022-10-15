@@ -1,6 +1,6 @@
 package scalan.reflection
 
-import scalan.reflection.ReflectionData.SRClassBuilder
+import scalan.reflection.CommonReflection.SRClassBuilder
 
 import java.util
 import scala.collection.compat.immutable.ArraySeq

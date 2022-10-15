@@ -1,6 +1,6 @@
 package scalan
 
-import scalan.reflection.ReflectionData.{registerClassEntry, registerClassOnly}
+import scalan.reflection.CommonReflection.{registerClassEntry, registerClassOnly}
 import scalan.reflection.{SRConstructor, SRMethod}
 import special.collection.Colls
 

@@ -32,7 +32,7 @@ import sigmastate.eval.Evaluation.stypeToRType
 import sigmastate.eval._
 import sigmastate.lang.exceptions.MethodNotFound
 import debox.cfor
-import scalan.reflection.{RClass, RMethod, ReflectionData}
+import scalan.reflection.{RClass, RMethod, CommonReflection}
 
 import scala.collection.mutable
 import scala.util.{Failure, Success}
@@ -1005,7 +1005,7 @@ case object SLong extends SPrimType with SEmbeddable with SNumericType with SMon
 
 /** Type of 256 bit integet values. Implemented using [[java.math.BigInteger]]. */
 case object SBigInt extends SPrimType with SEmbeddable with SNumericType with SMonoType {
-  ReflectionData.registerClassOnly(this.getClass)
+  CommonReflection.registerClassOnly(this.getClass)
   override type WrappedType = BigInt
   override val typeCode: TypeCode = 6: Byte
   override val reprClass: RClass[_] = RClass(classOf[BigInt])

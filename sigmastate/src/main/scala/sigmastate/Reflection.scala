@@ -1,7 +1,7 @@
 package sigmastate
 
 import org.ergoplatform.ErgoBox.RegisterId
-import scalan.reflection.ReflectionData.registerClassEntry
+import scalan.reflection.CommonReflection.registerClassEntry
 import scalan.reflection.{SRConstructor, SRMethod}
 import sigmastate.SAvlTree.KeyValueColl
 import sigmastate.SCollection.{SIntArray, SByteArray, SBooleanArray}
