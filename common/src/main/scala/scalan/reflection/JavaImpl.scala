@@ -28,7 +28,7 @@ class JRClass[T](val value: Class[T]) extends RClass[T] {
       synchronized {
         if (constructors == null) {
           val cs = value.getConstructors.asInstanceOf[Array[Constructor[Any]]]
-          val buf = mutable.ArrayBuilder.make[RConstructor[Any]]()
+          val buf = mutable.ArrayBuilder.make[RConstructor[Any]]
           cfor(0)(_ < cs.length, _ + 1) { i =>
             val c = cs(i)
             buf += JRConstructor[Any](i, c)

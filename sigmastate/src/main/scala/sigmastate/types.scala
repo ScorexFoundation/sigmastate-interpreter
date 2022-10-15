@@ -2046,6 +2046,8 @@ case object SAvlTree extends SProduct with SPredefType with SMonoType {
   lazy val TCollOptionCollByte = SCollection(SByteArrayOption)
   lazy val CollKeyValue = SCollection(STuple(SByteArray, SByteArray))
 
+  type KeyValueColl = Coll[(Coll[Byte], Coll[Byte])]
+
   lazy val digestMethod = SMethod(this, "digest", SFunc(this, SByteArray), 1, FixedCost(JitCost(15)))
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(PropertyCall,
@@ -2300,7 +2302,7 @@ case object SAvlTree extends SProduct with SPredefType with SMonoType {
     * Called via reflection based on naming convention.
     * @see SMethod.evalMethod
     */
-  def insert_eval(mc: MethodCall, tree: AvlTree, entries: Coll[(Coll[Byte], Coll[Byte])], proof: Coll[Byte])
+  def insert_eval(mc: MethodCall, tree: AvlTree, entries: KeyValueColl, proof: Coll[Byte])
                  (implicit E: ErgoTreeEvaluator): Option[AvlTree] = {
     E.addCost(isInsertAllowed_Info)
     if (!tree.isInsertAllowed) {
@@ -2356,7 +2358,7 @@ case object SAvlTree extends SProduct with SPredefType with SMonoType {
     * @see SMethod.evalMethod
     */
   def update_eval(mc: MethodCall, tree: AvlTree,
-                  operations: Coll[(Coll[Byte], Coll[Byte])], proof: Coll[Byte])
+                  operations: KeyValueColl, proof: Coll[Byte])
                  (implicit E: ErgoTreeEvaluator): Option[AvlTree] = {
     E.addCost(isUpdateAllowed_Info)
     if (!tree.isUpdateAllowed) {

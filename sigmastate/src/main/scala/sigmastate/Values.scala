@@ -600,6 +600,8 @@ object Values {
   }
 
   type CollectionConstant[T <: SType] = Constant[SCollection[T]]
+  type CollectionValue[T <: SType] = Value[SCollection[T]]
+//  type OptionValue[T <: SType] = Value[SOption[T]]
 
   object CollectionConstant {
     def apply[T <: SType](value: Coll[T#WrappedType], elementType: T): Constant[SCollection[T]] =
