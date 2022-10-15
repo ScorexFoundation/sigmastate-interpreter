@@ -146,9 +146,7 @@ object WRType extends EntityObject("WRType") {
   registerModule(WRTypesModule)
 }
 
-object WRTypesModule extends scalan.ModuleInfo("wrappers.scalan", "WRTypes") {
-  registerClassOnly(classOf[wrappers.scalan.WRTypes#WRType[_]])
-}
+object WRTypesModule extends scalan.ModuleInfo("wrappers.scalan", "WRTypes")
 }
 
 trait WRTypesModule extends wrappers.scalan.impl.WRTypesDefs {self: WrappersModule =>}

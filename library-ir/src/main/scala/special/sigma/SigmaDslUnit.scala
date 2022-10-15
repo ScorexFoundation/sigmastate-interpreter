@@ -1,5 +1,4 @@
 package special.sigma {
-  import scalan.OverloadHack.Overloaded1   // manual fix
   import scalan._
 
   trait SigmaDsl extends Base { self: SigmaLibrary =>

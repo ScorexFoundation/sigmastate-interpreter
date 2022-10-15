@@ -149,28 +149,15 @@ lazy val core = Project("core", file("core"))
     libraryDependencies ++= Seq( debox ))
   .settings(publish / skip := true)
 
-lazy val library = Project("library", file("library"))
+lazy val libraryIR = Project("library-ir", file("library-ir"))
   .dependsOn(common % allConfigDependency, core % allConfigDependency, libraryimpl)
   .settings(
     libraryDefSettings,
-    libraryDependencies ++= Seq( debox ))
-  .settings(publish / skip := true)
-
-lazy val sigmalibrary = Project("sigma-library", file("sigma-library"))
-  .dependsOn(
-    common % allConfigDependency,
-    core % allConfigDependency,
-    libraryimpl % allConfigDependency,
-    library % allConfigDependency)
-  .settings(libraryDefSettings,
-    libraryDependencies ++= Seq(
-      scrypto,
-      bouncycastleBcprov
-    ))
+    libraryDependencies ++= Seq( debox, scrypto, bouncycastleBcprov ))
   .settings(publish / skip := true)
 
 lazy val sigmastate = (project in file("sigmastate"))
-  .dependsOn(sigmalibrary % allConfigDependency)
+  .dependsOn(libraryIR % allConfigDependency)
   .settings(libraryDefSettings)
   .settings(libraryDependencies ++= Seq(
     scorexUtil, fastparse,
@@ -181,13 +168,13 @@ lazy val sigmastate = (project in file("sigmastate"))
   .settings(publish / skip := true)
 
 lazy val sigma = (project in file("."))
-  .aggregate(sigmastate, common, core, libraryimpl, library, sigmalibrary)
+  .aggregate(sigmastate, common, core, libraryimpl, libraryIR)
   .settings(libraryDefSettings, rootSettings)
   .settings(publish / aggregate := false)
   .settings(publishLocal / aggregate := false)
 
 lazy val aggregateCompile = ScopeFilter(
-  inProjects(common, core, libraryimpl, library, sigmalibrary, sigmastate),
+  inProjects(common, core, libraryimpl, libraryIR, sigmastate),
   inConfigurations(Compile))
 
 lazy val rootSettings = Seq(
