@@ -103,7 +103,10 @@ object JRConstructor {
 }
 
 class JRMethod private (val value: Method) extends RMethod {
-  def invoke(obj: Any, args: AnyRef*): AnyRef = value.invoke(obj, args:_*)
+  def invoke(obj: Any, args: AnyRef*): AnyRef = {
+//    throw new RuntimeException(s"Called method: $value")
+    value.invoke(obj, args:_*)
+  }
 
   def getName: String = value.getName
 

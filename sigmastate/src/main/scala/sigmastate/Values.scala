@@ -23,7 +23,6 @@ import sigmastate.eval.Extensions._
 import scalan.util.Extensions.ByteOps
 import sigmastate.interpreter.ErgoTreeEvaluator._
 import debox.cfor
-import scalan.reflection.ReflectionData
 
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
@@ -41,6 +40,7 @@ import scala.collection.compat.immutable.ArraySeq
 import scala.collection.mutable
 
 object Values {
+  val reflection = Reflection
 
   type SValue = Value[SType]
 
