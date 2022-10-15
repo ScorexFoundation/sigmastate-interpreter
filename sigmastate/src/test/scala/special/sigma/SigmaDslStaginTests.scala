@@ -5,7 +5,7 @@ import special.collection._
 
 import scala.language.reflectiveCalls
 import scalan.{BaseCtxTests, BaseLiftableTests}
-import sigmastate.{TrivialProp, VersionContext, eval}
+import sigmastate.{VersionContext, eval, TrivialProp, ReflectionGenerator}
 import sigmastate.eval.Extensions._
 import sigmastate.eval._
 
@@ -52,6 +52,6 @@ class SigmaDslStaginTests extends BaseCtxTests with ErgoScriptTestkit with BaseL
   }
 
   override protected def afterAll(): Unit = {
-    println(scalan.reflection.Generator.generateReport)
+    println(ReflectionGenerator.generateReport)
   }
 }

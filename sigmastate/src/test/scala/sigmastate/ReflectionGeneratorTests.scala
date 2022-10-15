@@ -1,0 +1,54 @@
+package sigmastate
+
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.propspec.AnyPropSpec
+import scalan.TypeDescs
+import scalan.reflection.ReflectionData.registerClassEntry
+import scalan.reflection.SRConstructor
+
+object ObjA {
+  class A
+  object ObjB
+}
+
+class ReflectionGeneratorTests extends AnyPropSpec with Matchers {
+  import ReflectionGenerator._
+  class ObjB {
+    class B
+  }
+
+  def test(name: String, exp: String) = {
+    val normalized = normalizeName(name)
+    normalized shouldBe exp
+  }
+
+  property("sigmastate.ReflectionGenerator") {
+    test("", "")
+    test("A", "A")
+    test("A$", "A$")
+    test("A$B", "A#B")
+    test("A$B$", "A#B$")
+    test("scala.A$B$", "scala.A#B$")
+    test("sigmastate.ObjA$A", "sigmastate.ObjA.A");
+    classOf[ObjA.A]
+    test("sigmastate.ReflectionGeneratorTests$ObjB$B", "sigmastate.ReflectionGeneratorTests#ObjB#B");
+    classOf[ReflectionGeneratorTests#ObjB#B]
+    Class.forName("sigmastate.ObjA$") shouldNot be (null)
+    Class.forName("sigmastate.ObjA$ObjB$") shouldNot be (null)
+  }
+
+  property("inner class") {
+    val ctx = null.asInstanceOf[scalan.Library] // ok! type level only
+    val clazz = classOf[ctx.Coll.CollElem[_, _]]
+    registerClassEntry(clazz,
+      constructors = Array(
+        new SRConstructor[Any](Array(clazz.getDeclaringClass, classOf[TypeDescs#Elem[_]])) {
+          override def newInstance(args: AnyRef*): Any = {
+            val cake = args(0).asInstanceOf[ctx.Coll.type]
+            new cake.CollElem()(args(1).asInstanceOf[ctx.Elem[_]])
+          }
+        }
+      )
+    )
+  }
+}
