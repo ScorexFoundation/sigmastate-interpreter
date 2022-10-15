@@ -1,6 +1,6 @@
 package special.wrappers
 
-import scalan.{RType, WrapSpec}
+import scalan.{WrapSpec, RType}
 
 trait WrapSpecBase extends WrapSpec {
 }

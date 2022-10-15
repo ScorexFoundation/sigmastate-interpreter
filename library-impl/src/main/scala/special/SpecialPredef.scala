@@ -11,7 +11,7 @@ object SpecialPredef {
     res
   }
 
-  def cast[T:ClassTag](v: Any): Option[T] = v match { case _: T => Some(v.asInstanceOf[T]) case _ =>  None }
+  def cast[T: ClassTag](v: Any): Option[T] = v match {case _: T => Some(v.asInstanceOf[T]) case _ => None}
 
   def some[A](x: A): Option[A] = Some(x)
 
