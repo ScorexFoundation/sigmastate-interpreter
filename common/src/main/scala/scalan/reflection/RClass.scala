@@ -60,8 +60,7 @@ object RClass {
       case _ =>
         memoize(classes)(clazz, new JRClass[T](clazz))
     }
-    res
-        .asInstanceOf[RClass[T]]
+    res.asInstanceOf[RClass[T]]
   }
 
 }

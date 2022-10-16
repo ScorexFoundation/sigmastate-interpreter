@@ -1,5 +1,0 @@
-package sigmastate
-
-object CompilerReflection {
-
-}

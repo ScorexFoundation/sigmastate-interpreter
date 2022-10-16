@@ -1,12 +1,70 @@
 package scalan
 
-import scalan.reflection.CommonReflection.{registerClassEntry, registerClassOnly}
+import scalan.reflection.CommonReflection.{registerClassEntry}
 import scalan.reflection.{SRConstructor, SRMethod}
 import special.collection.Colls
+import wrappers.scala.WOptions
 
 object GraphIRReflection {
+  { val clazz = classOf[WOptions#WOption[_]]
+    val ctx = null.asInstanceOf[scalan.Library] // ok! type level only
+    registerClassEntry(clazz,
+      methods = Map(
+      {
+        val paramTypes: Seq[Class[_]] = Array(classOf[scalan.Base#Ref[_]])
+        ("filter", paramTypes) ->
+            new SRMethod(clazz, "filter", paramTypes) {
+              override def invoke(obj: Any, args: AnyRef*): AnyRef = obj match {
+                case obj: ctx.WOption[a] =>
+                  obj.filter(args(0).asInstanceOf[ctx.Ref[a => Boolean]])
+              }
+            }
+      },
+      {
+        val paramTypes: Seq[Class[_]] = Array[Class[_]]()
+        ("get", paramTypes) ->
+            new SRMethod(clazz, "get", paramTypes) {
+              override def invoke(obj: Any, args: AnyRef*): AnyRef = obj match {
+                case obj: ctx.WOption[_] =>
+                  obj.get
+              }
+            }
+      },
+      {
+        val paramTypes: Seq[Class[_]] = Array[Class[_]]()
+        ("isDefined", paramTypes) ->
+            new SRMethod(clazz, "isDefined", paramTypes) {
+              override def invoke(obj: Any, args: AnyRef*): AnyRef = obj match {
+                case obj: ctx.WOption[_] =>
+                  obj.isDefined
+              }
+            }
+      },
+      {
+        val paramTypes: Seq[Class[_]] = Array(classOf[scalan.Base#Ref[_]])
+        ("map", paramTypes) ->
+            new SRMethod(clazz, "map", paramTypes) {
+              override def invoke(obj: Any, args: AnyRef*): AnyRef = obj match {
+                case obj: ctx.WOption[a] =>
+                  obj.map(args(0).asInstanceOf[ctx.Ref[a => Any]])
+              }
+            }
+      },
+      {
+        val paramTypes: Seq[Class[_]] = Array(classOf[scalan.Base#Ref[_]])
+        ("getOrElse", paramTypes) ->
+            new SRMethod(clazz, "getOrElse", paramTypes) {
+              override def invoke(obj: Any, args: AnyRef*): AnyRef = obj match {
+                case obj: ctx.WOption[_] =>
+                  obj.getOrElse(args(0).asInstanceOf[ctx.Ref[ctx.Thunk[Any]]])
+              }
+            }
+      }
+      )
+    )
+  }
 
-//  registerClassOnly(classOf[Colls#PairColl[_, _]])
+  //  registerClassOnly(classOf[Colls#PairColl[_, _]])
 //
 //  { val clazz = classOf[scalan.TypeDescs#FuncElem[_, _]]
 //    registerClassEntry(clazz,

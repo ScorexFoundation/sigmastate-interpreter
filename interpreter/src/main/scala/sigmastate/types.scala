@@ -1217,7 +1217,6 @@ object SOption extends STypeCompanion {
   val IsDefined = "isDefined"
   val Get = "get"
   val GetOrElse = "getOrElse"
-  val Fold = "fold"
 
   import SType.{tT, tR, paramT, paramR}
 

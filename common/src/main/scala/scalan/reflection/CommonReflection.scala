@@ -12,76 +12,74 @@ object CommonReflection {
                             methods: Map[(String, Seq[Class[_]]), RMethod] = Map.empty): Unit = classes.synchronized {
     classes.put(clazz, new SRClass(clazz, constructors, fields, methods))
   }
+  
+//  registerClassEntry(classOf[Array[Byte]])
+//  registerClassEntry(classOf[Boolean])
+//  registerClassEntry(classOf[Byte])
+//
+//  registerClassEntry(classOf[Short])
+//  registerClassEntry(classOf[Int])
+//
+//  registerClassEntry(classOf[java.lang.Integer])
+//
+//  registerClassEntry(classOf[java.lang.Object])
+//
+//  registerClassEntry(classOf[java.lang.String])
+//
+//  registerClassEntry(classOf[Long])
+//
 
-  def registerClassOnly(cls: Class[_]) = registerClassEntry(cls)
-
-//  registerClassOnly(classOf[Array[Byte]])
-//  registerClassOnly(classOf[Boolean])
-//  registerClassOnly(classOf[Byte])
+//  registerClassEntry(classOf[scala.Product2[_,_]])
 //
-//  registerClassOnly(classOf[Int])
+//  registerClassEntry(classOf[scala.collection.IndexedSeq[_]])
 //
-//  registerClassOnly(classOf[java.lang.Integer])
+//  registerClassEntry(classOf[scala.collection.Seq[_]])
 //
-//  registerClassOnly(classOf[java.lang.Object])
+//  registerClassEntry(classOf[scala.collection.immutable.List[_]])
 //
-//  registerClassOnly(classOf[java.lang.String])
-//
-//  registerClassOnly(classOf[Long])
-//
-//  registerClassOnly(classOf[Short])
-//
-//  registerClassOnly(classOf[scala.Product2[_,_]])
-//
-//  registerClassOnly(classOf[scala.collection.IndexedSeq[_]])
-//
-//  registerClassOnly(classOf[scala.collection.Seq[_]])
-//
-//  registerClassOnly(classOf[scala.collection.immutable.List[_]])
-//
-//  registerClassOnly(classOf[scala.collection.immutable.Map[_,_]])
+//  registerClassEntry(classOf[scala.collection.immutable.Map[_,_]])
 //
 //  class SRClassBuilder[T](clazz: Class[T]) {
 //
 //  }
-//
-//  { val clazz = classOf[scala.Option[_]]
-//    registerClassEntry(clazz,
-//      methods = Map(
-//        { val name = "filter"
-//          val paramTypes: Seq[Class[_]] = Array(classOf[scala.Function1[_,_]])
-//          (name, paramTypes) ->
-//            new SRMethod(clazz, name, paramTypes) {
-//              override def invoke(obj: Any, args: AnyRef*): AnyRef = obj match {
-//                case obj: Option[a] =>
-//                  obj.filter(args(0).asInstanceOf[Function1[a,Boolean]])
-//              }
-//            }
-//        },
-//        { val name = "map"
-//          val paramTypes: Seq[Class[_]] = Array(classOf[scala.Function1[_,_]])
-//          (name, paramTypes) ->
-//            new SRMethod(clazz, name, paramTypes) {
-//              override def invoke(obj: Any, args: AnyRef*): AnyRef = obj match {
-//                case obj: Option[a] =>
-//                  obj.map(args(0).asInstanceOf[Function1[a,_]])
-//              }
-//            }
-//        }
-//      )
-//    )
-//  }
-//
-//  { val clazz = classOf[scala.Some[_]]
-//    registerClassEntry(clazz,
-//      constructors = Array(
-//        new SRConstructor[Any](Array(classOf[java.lang.Object])) {
-//          override def newInstance(args: AnyRef*): Any =
-//            new scala.Some(args(0).asInstanceOf[java.lang.Object])
-//        }
-//      )
-//    )
-//  }
+
+  def mkMethod(clazz: Class[_], name: String, paramTypes: Seq[Class[_]])
+              (handler: (Any, Array[AnyRef]) => AnyRef): ((String, Seq[Class[_]]), RMethod) = {
+    (name, paramTypes) ->
+        new SRMethod(clazz, name, paramTypes) {
+          override def invoke(obj: Any, args: AnyRef*): AnyRef = handler(obj, args.toArray)
+        }
+  }
+
+  def mkConstructor(parameterTypes: Array[Class[_]])(handler: Array[AnyRef] => Any) = {
+    new SRConstructor[Any](parameterTypes) {
+      override def newInstance(args: AnyRef*): Any = handler(args.toArray)
+    }
+  }
+
+  { val clazz = classOf[scala.Option[_]]
+    registerClassEntry(clazz,
+      methods = Map(
+        mkMethod(clazz, "filter", Array(classOf[scala.Function1[_,_]])) { (obj, args) =>
+          obj.asInstanceOf[Option[Any]].filter(args(0).asInstanceOf[Any => Boolean])
+        },
+        mkMethod(clazz, "map", Array(classOf[scala.Function1[_,_]])) { (obj, args) =>
+          obj.asInstanceOf[Option[Any]].map(args(0).asInstanceOf[Any => Any])
+        }
+      )
+    )
+  }
+
+  { val clazz = classOf[scala.Some[_]]
+    registerClassEntry(clazz,
+      constructors = Array(
+        mkConstructor(Array(classOf[java.lang.Object])) { args =>
+          new scala.Some(args(0).asInstanceOf[java.lang.Object])
+        }
+      )
+    )
+  }
+
 //  {
 //    val clazz = classOf[scala.collection.immutable.$colon$colon[_]]
 //    registerClassEntry(clazz,

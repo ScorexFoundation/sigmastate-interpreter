@@ -29,11 +29,32 @@ object ReflectionGenerator {
     res.result()
   }
 
+  val knownPackages = Array(
+    "scalan.primitives.",
+    "special.collection.",
+    "sigmastate.Values.",
+    "sigmastate.lang.Terms.",
+    "sigmastate.interpreter.",
+    "sigmastate.utxo.",
+    "sigmastate.",
+    "scalan.",
+    "scala.collection.",
+    "scala."
+  )
+
+  def stripKnownPackages(name: String): String = {
+    knownPackages.find(p => name.startsWith(p)) match {
+      case Some(p) => name.stripPrefix(p)
+      case None => name
+    }
+  }
+
   def className(c: Class[_], inBody: Boolean): String = {
     val name = c match {
       case _ if c == classOf[Base#Ref[_]] && inBody => "ctx.Ref"
       case _ if c == classOf[TypeDescs#Elem[_]] && inBody => "ctx.Elem"
-      case _ => normalizeName(c.getName)
+      case _ if c == classOf[scala.Function1[_,_]] && inBody => "Any => Any"
+      case _ => stripKnownPackages(normalizeName(c.getName))
     }
     name
   }
@@ -54,21 +75,20 @@ object ReflectionGenerator {
 
   def genEmptyClass(c: JRClass[_]): String = {
     val name = classExpr(c.value, false)
-    s"registerClassOnly(classOf[$name])\n"
+    s"registerClassEntry(classOf[$name])\n"
   }
 
   def genConstructor(c: JRClass[_], ctor: JRConstructor[_]): String = {
     val params = ctor.getParameterTypes()
         .map(p => s"classOf[${classExpr(p, false)}]")
         .mkString(", ")
-    val clsName = c.getName
+    val clsName = stripKnownPackages(c.getName)
     val args = ctor.getParameterTypes()
         .zipWithIndex
         .map { case (p, i) => s"args($i).asInstanceOf[${classExpr(p, true)}]" }
         .mkString(", ")
-    s"""        new SRConstructor[Any](Array($params)) {
-      |          override def newInstance(args: AnyRef*): Any =
-      |            new $clsName($args)
+    s"""        mkConstructor(Array($params)) { args =>
+      |          new $clsName($args)
       |        }""".stripMargin
   }
 
@@ -85,14 +105,8 @@ object ReflectionGenerator {
         .zipWithIndex
         .map { case (p, i) => s"args($i).asInstanceOf[${classExpr(p, true)}]" }
         .mkString(", ")
-    s"""        { val paramTypes: Seq[Class[_]] = Array($params)
-      |          ("$name", paramTypes) ->
-      |            new SRMethod(clazz, "$name", paramTypes) {
-      |              override def invoke(obj: Any, args: AnyRef*): AnyRef = obj match {
-      |                case obj: ${classExpr(c.value, true)} =>
-      |                  obj.$name($args)
-      |              }
-      |            }
+    s"""        mkMethod(clazz, "$name", Array[Class[_]]($params)) { (obj, args) =>
+      |          obj.asInstanceOf[${classExpr(c.value, true)}].$name($args)
       |        }""".stripMargin
   }
 

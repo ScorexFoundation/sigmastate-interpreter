@@ -51,7 +51,4 @@ class SigmaDslStaginTests extends BaseCtxTests with ErgoScriptTestkit with BaseL
 
   }
 
-  override protected def afterAll(): Unit = {
-    println(ReflectionGenerator.generateReport)
-  }
 }
