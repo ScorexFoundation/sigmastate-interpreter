@@ -62,6 +62,20 @@ val spireMacros        = "org.typelevel" %% "spire-macros" % "0.17.0-M1"
 val fastparse          = "com.lihaoyi" %% "fastparse" % "2.3.3"
 val scalaCompat        = "org.scala-lang.modules" %% "scala-collection-compat" % "2.7.0"
 
+lazy val circeCore211 = "io.circe" %% "circe-core" % "0.10.0"
+lazy val circeGeneric211 = "io.circe" %% "circe-generic" % "0.10.0"
+lazy val circeParser211 = "io.circe" %% "circe-parser" % "0.10.0"
+
+lazy val circeCore = "io.circe" %% "circe-core" % "0.13.0"
+lazy val circeGeneric = "io.circe" %% "circe-generic" % "0.13.0"
+lazy val circeParser = "io.circe" %% "circe-parser" % "0.13.0"
+
+def circeDeps(scalaVersion: String) = if (scalaVersion == scala211)
+  Seq(circeCore211, circeGeneric211, circeParser211)
+else
+  Seq(circeCore, circeGeneric, circeParser)
+
+
 val testingDependencies = Seq(
   "org.scalatest" %% "scalatest" % "3.2.14" % Test,
   "org.scalactic" %% "scalactic" % "3.2.14" % Test,
@@ -86,19 +100,7 @@ libraryDependencies ++= Seq(
   scorexUtil,
   "org.bouncycastle" % "bcprov-jdk15on" % "1.+",
   fastparse, debox, spireMacros, scalaCompat
-) ++ testingDependencies ++
-  (if (scalaVersion.value == scala211)
-    Seq(circeCore211, circeGeneric211, circeParser211)
-  else
-    Seq(circeCore, circeGeneric, circeParser))
-
-lazy val circeCore211 = "io.circe" %% "circe-core" % "0.10.0"
-lazy val circeGeneric211 = "io.circe" %% "circe-generic" % "0.10.0"
-lazy val circeParser211 = "io.circe" %% "circe-parser" % "0.10.0"
-
-lazy val circeCore = "io.circe" %% "circe-core" % "0.13.0"
-lazy val circeGeneric = "io.circe" %% "circe-generic" % "0.13.0"
-lazy val circeParser = "io.circe" %% "circe-parser" % "0.13.0"
+) ++ testingDependencies ++ circeDeps(scalaVersion.value)
 
 scalacOptions ++= Seq("-feature", "-deprecation")
 
@@ -149,7 +151,7 @@ lazy val core = Project("core", file("core"))
     libraryDependencies ++= Seq( debox ))
   .settings(publish / skip := true)
 
-lazy val libraryIR = Project("library-ir", file("library-ir"))
+lazy val graphIR = Project("graph-ir", file("graph-ir"))
   .dependsOn(common % allConfigDependency, core % allConfigDependency, libraryimpl)
   .settings(
     libraryDefSettings,
@@ -157,24 +159,29 @@ lazy val libraryIR = Project("library-ir", file("library-ir"))
   .settings(publish / skip := true)
 
 lazy val sigmastate = (project in file("sigmastate"))
-  .dependsOn(libraryIR % allConfigDependency)
+  .dependsOn(graphIR % allConfigDependency)
   .settings(libraryDefSettings)
-  .settings(libraryDependencies ++= Seq(
-    scorexUtil, fastparse,
-    if (scalaVersion.value == scala211) circeCore211 else circeCore,
-    if (scalaVersion.value == scala211) circeGeneric211 else circeGeneric,
-    if (scalaVersion.value == scala211) circeParser211 else circeParser
-    ))
+  .settings(libraryDependencies ++=
+      Seq(scorexUtil, fastparse) ++ circeDeps(scalaVersion.value)
+  )
+  .settings(publish / skip := true)
+
+lazy val ergoscript = (project in file("ergoscript"))
+  .dependsOn(graphIR % allConfigDependency)
+  .settings(libraryDefSettings)
+  .settings(libraryDependencies ++=
+      Seq(scorexUtil, fastparse) ++ circeDeps(scalaVersion.value)
+  )
   .settings(publish / skip := true)
 
 lazy val sigma = (project in file("."))
-  .aggregate(sigmastate, common, core, libraryimpl, libraryIR)
+  .aggregate(sigmastate, common, libraryimpl, graphIR, ergoscript)
   .settings(libraryDefSettings, rootSettings)
   .settings(publish / aggregate := false)
   .settings(publishLocal / aggregate := false)
 
 lazy val aggregateCompile = ScopeFilter(
-  inProjects(common, core, libraryimpl, libraryIR, sigmastate),
+  inProjects(common, libraryimpl, graphIR, sigmastate, ergoscript),
   inConfigurations(Compile))
 
 lazy val rootSettings = Seq(
