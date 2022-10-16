@@ -6,46 +6,46 @@ import special.collection.Colls
 
 object LibaryIRReflection {
 
-  registerClassOnly(classOf[Colls#PairColl[_, _]])
-
-  { val clazz = classOf[scalan.TypeDescs#FuncElem[_, _]]
-    registerClassEntry(clazz,
-      constructors = Array(
-        new SRConstructor[Any](Array(classOf[scalan.Scalan], classOf[scalan.TypeDescs#Elem[_]], classOf[scalan.TypeDescs#Elem[_]])) {
-          override def newInstance(args: AnyRef*): Any = {
-            val ctx = args(0).asInstanceOf[scalan.Scalan]
-            new ctx.FuncElem(args(1).asInstanceOf[ctx.Elem[_]], args(2).asInstanceOf[ctx.Elem[_]])
-          }
-        }
-      )
-    )
-  }
-
-  { val clazz = classOf[scalan.TypeDescs#PairElem[_, _]]
-    registerClassEntry(clazz,
-      constructors = Array(
-        new SRConstructor[Any](Array(classOf[scalan.Scalan], classOf[scalan.TypeDescs#Elem[_]], classOf[scalan.TypeDescs#Elem[_]])) {
-          override def newInstance(args: AnyRef*): Any = {
-            val ctx = args(0).asInstanceOf[scalan.Scalan]
-            new ctx.PairElem(args(1).asInstanceOf[ctx.Elem[_]], args(2).asInstanceOf[ctx.Elem[_]])
-          }
-        }
-      )
-    )
-  }
-
-  { val clazz = classOf[scalan.primitives.Thunks#ThunkElem[_]]
-    registerClassEntry(clazz,
-      constructors = Array(
-        new SRConstructor[Any](Array(classOf[scalan.Scalan], classOf[scalan.TypeDescs#Elem[_]])) {
-          override def newInstance(args: AnyRef*): Any = {
-            val ctx = args(0).asInstanceOf[scalan.Scalan]
-            new ctx.ThunkElem(args(1).asInstanceOf[ctx.Elem[_]])
-          }
-        }
-      )
-    )
-  }
+//  registerClassOnly(classOf[Colls#PairColl[_, _]])
+//
+//  { val clazz = classOf[scalan.TypeDescs#FuncElem[_, _]]
+//    registerClassEntry(clazz,
+//      constructors = Array(
+//        new SRConstructor[Any](Array(classOf[scalan.Scalan], classOf[scalan.TypeDescs#Elem[_]], classOf[scalan.TypeDescs#Elem[_]])) {
+//          override def newInstance(args: AnyRef*): Any = {
+//            val ctx = args(0).asInstanceOf[scalan.Scalan]
+//            new ctx.FuncElem(args(1).asInstanceOf[ctx.Elem[_]], args(2).asInstanceOf[ctx.Elem[_]])
+//          }
+//        }
+//      )
+//    )
+//  }
+//
+//  { val clazz = classOf[scalan.TypeDescs#PairElem[_, _]]
+//    registerClassEntry(clazz,
+//      constructors = Array(
+//        new SRConstructor[Any](Array(classOf[scalan.Scalan], classOf[scalan.TypeDescs#Elem[_]], classOf[scalan.TypeDescs#Elem[_]])) {
+//          override def newInstance(args: AnyRef*): Any = {
+//            val ctx = args(0).asInstanceOf[scalan.Scalan]
+//            new ctx.PairElem(args(1).asInstanceOf[ctx.Elem[_]], args(2).asInstanceOf[ctx.Elem[_]])
+//          }
+//        }
+//      )
+//    )
+//  }
+//
+//  { val clazz = classOf[scalan.primitives.Thunks#ThunkElem[_]]
+//    registerClassEntry(clazz,
+//      constructors = Array(
+//        new SRConstructor[Any](Array(classOf[scalan.Scalan], classOf[scalan.TypeDescs#Elem[_]])) {
+//          override def newInstance(args: AnyRef*): Any = {
+//            val ctx = args(0).asInstanceOf[scalan.Scalan]
+//            new ctx.ThunkElem(args(1).asInstanceOf[ctx.Elem[_]])
+//          }
+//        }
+//      )
+//    )
+//  }
 
 //  { val clazz = classOf[Colls#Coll[_]]
 //    val ctx = null.asInstanceOf[scalan.Library] // ok! type level only
@@ -258,17 +258,68 @@ object LibaryIRReflection {
 //    )
 //  }
 
-  { val ctx = null.asInstanceOf[scalan.Library] // ok! type level only
-    val clazz = classOf[ctx.Coll.CollElem[_, _]]
-    registerClassEntry(clazz,
-      constructors = Array(
-        new SRConstructor[Any](Array(clazz.getDeclaringClass, classOf[TypeDescs#Elem[_]])) {
-          override def newInstance(args: AnyRef*): Any = {
-            val cake = args(0).asInstanceOf[ctx.Coll.type]
-            new cake.CollElem()(args(1).asInstanceOf[ctx.Elem[_]])
-          }
-        }
-      )
-    )
-  }
+//  { val ctx = null.asInstanceOf[scalan.Library] // ok! type level only
+//    val clazz = classOf[ctx.Coll.CollElem[_, _]]
+//    registerClassEntry(clazz,
+//      constructors = Array(
+//        new SRConstructor[Any](Array(clazz.getDeclaringClass, classOf[TypeDescs#Elem[_]])) {
+//          override def newInstance(args: AnyRef*): Any = {
+//            val cake = args(0).asInstanceOf[ctx.Coll.type]
+//            new cake.CollElem()(args(1).asInstanceOf[ctx.Elem[_]])
+//          }
+//        }
+//      )
+//    )
+//  }
+
+//  registerClassOnly(classOf[special.sigma.SigmaDsl#AnyValue])
+//
+//  { val clazz = classOf[special.sigma.SigmaDsl#SigmaProp]
+//    registerClassEntry(clazz,
+//      methods = Map(
+//      {
+//        val paramTypes: Seq[Class[_]] = Nil
+//        ("isValid", paramTypes) ->
+//            new SRMethod(clazz, "isValid", paramTypes) {
+//              override def invoke(obj: Any, args: AnyRef*): AnyRef = obj match {
+//                case obj: special.sigma.SigmaDsl#SigmaProp =>
+//                  obj.isValid
+//              }
+//            }
+//      },
+//      {
+//        val paramTypes: Seq[Class[_]] = Array(classOf[scalan.Base#Ref[_]])
+//        ("$bar$bar", paramTypes) ->
+//            new SRMethod(clazz, "$bar$bar", paramTypes) {
+//              override def invoke(obj: Any, args: AnyRef*): AnyRef = {
+//                val ctx = null.asInstanceOf[special.sigma.SigmaDsl]
+//                val p = obj.asInstanceOf[ctx.SigmaProp]
+//                p.$bar$bar(args(0).asInstanceOf[ctx.Ref[ctx.SigmaProp]])
+//              }
+//            }
+//      },
+//      {
+//        val paramTypes: Seq[Class[_]] = Nil
+//        ("propBytes", paramTypes) ->
+//            new SRMethod(clazz, "propBytes", paramTypes) {
+//              override def invoke(obj: Any, args: AnyRef*): AnyRef = obj match {
+//                case obj: special.sigma.SigmaDsl#SigmaProp =>
+//                  obj.propBytes
+//              }
+//            }
+//      },
+//      {
+//        val paramTypes: Seq[Class[_]] = Array(classOf[scalan.Base#Ref[_]])
+//        ("$amp$amp", paramTypes) ->
+//            new SRMethod(clazz, "$amp$amp", paramTypes) {
+//              override def invoke(obj: Any, args: AnyRef*): AnyRef = {
+//                val ctx = null.asInstanceOf[special.sigma.SigmaDsl]
+//                val p = obj.asInstanceOf[ctx.SigmaProp]
+//                p.$amp$amp(args(0).asInstanceOf[ctx.Ref[ctx.SigmaProp]])
+//              }
+//            }
+//      }
+//      )
+//    )
+//  }
 }

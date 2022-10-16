@@ -3410,57 +3410,6 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
 }
 
 object SigmaDslModule extends scalan.ModuleInfo("special.sigma", "SigmaDsl") {
-  registerClassOnly(classOf[special.sigma.SigmaDsl#AnyValue])
-
-  {
-    val clazz = classOf[special.sigma.SigmaDsl#SigmaProp]
-    registerClassEntry(clazz,
-      methods = Map(
-      {
-        val paramTypes: Seq[Class[_]] = Nil
-        ("isValid", paramTypes) ->
-          new SRMethod(clazz, "isValid", paramTypes) {
-            override def invoke(obj: Any, args: AnyRef*): AnyRef = obj match {
-              case obj: special.sigma.SigmaDsl#SigmaProp =>
-                obj.isValid
-            }
-          }
-      },
-      {
-        val paramTypes: Seq[Class[_]] = Array(classOf[scalan.Base#Ref[_]])
-        ("$bar$bar", paramTypes) ->
-          new SRMethod(clazz, "$bar$bar", paramTypes) {
-            override def invoke(obj: Any, args: AnyRef*): AnyRef = {
-                val ctx = null.asInstanceOf[special.sigma.SigmaDsl]
-                val p = obj.asInstanceOf[ctx.SigmaProp]
-                p.$bar$bar(args(0).asInstanceOf[ctx.Ref[ctx.SigmaProp]])
-            }
-          }
-      },
-      {
-        val paramTypes: Seq[Class[_]] = Nil
-        ("propBytes", paramTypes) ->
-          new SRMethod(clazz, "propBytes", paramTypes) {
-            override def invoke(obj: Any, args: AnyRef*): AnyRef = obj match {
-              case obj: special.sigma.SigmaDsl#SigmaProp =>
-                obj.propBytes
-            }
-          }
-      },
-      {
-        val paramTypes: Seq[Class[_]] = Array(classOf[scalan.Base#Ref[_]])
-        ("$amp$amp", paramTypes) ->
-          new SRMethod(clazz, "$amp$amp", paramTypes) {
-            override def invoke(obj: Any, args: AnyRef*): AnyRef = {
-              val ctx = null.asInstanceOf[special.sigma.SigmaDsl]
-              val p = obj.asInstanceOf[ctx.SigmaProp]
-              p.$amp$amp(args(0).asInstanceOf[ctx.Ref[ctx.SigmaProp]])
-            }
-          }
-      }
-      )
-    )
-  }
 }
 }
 

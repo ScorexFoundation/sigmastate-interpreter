@@ -30,6 +30,4 @@ package object sigma {
 
   implicit val BigIntegerRType: RType[BigInteger] = GeneralType(classTag[BigInteger])
 
-  registerClassOnly(classOf[special.sigma.BigInt])
-  registerClassOnly(classOf[special.sigma.SigmaProp])
 }

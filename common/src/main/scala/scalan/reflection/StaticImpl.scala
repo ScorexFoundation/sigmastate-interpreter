@@ -1,7 +1,5 @@
 package scalan.reflection
 
-import scalan.reflection.CommonReflection.SRClassBuilder
-
 import java.util
 import scala.collection.compat.immutable.ArraySeq
 
@@ -73,6 +71,3 @@ class SRClass[T](val clazz: Class[T],
   override def hashCode(): Int = clazz.hashCode()
 }
 
-object SRClass {
-  def newBuilder[T](clazz: Class[T]): SRClassBuilder[T] = new SRClassBuilder(clazz)
-}
