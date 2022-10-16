@@ -139,20 +139,14 @@ lazy val common = Project("common", file("common"))
     ))
   .settings(publish / skip := true)
 
-lazy val libraryimpl = Project("library-impl", file("library-impl"))
+lazy val corelib = Project("core-lib", file("core-lib"))
   .dependsOn(common % allConfigDependency)
   .settings(libraryDefSettings,
     libraryDependencies ++= Seq( debox, scrypto ))
   .settings(publish / skip := true)
 
-//lazy val core = Project("core", file("core"))
-//  .dependsOn(common % allConfigDependency, libraryimpl % allConfigDependency)
-//  .settings(libraryDefSettings,
-//    libraryDependencies ++= Seq( debox ))
-//  .settings(publish / skip := true)
-
 lazy val graphIR = Project("graph-ir", file("graph-ir"))
-  .dependsOn(common % allConfigDependency, libraryimpl)
+  .dependsOn(common % allConfigDependency, corelib)
   .settings(
     libraryDefSettings,
     libraryDependencies ++= Seq( debox, scrypto, bouncycastleBcprov ))
@@ -175,13 +169,13 @@ lazy val ergoscript = (project in file("ergoscript"))
   .settings(publish / skip := true)
 
 lazy val sigma = (project in file("."))
-  .aggregate(sigmastate, common, libraryimpl, graphIR, ergoscript)
+  .aggregate(sigmastate, common, corelib, graphIR, ergoscript)
   .settings(libraryDefSettings, rootSettings)
   .settings(publish / aggregate := false)
   .settings(publishLocal / aggregate := false)
 
 lazy val aggregateCompile = ScopeFilter(
-  inProjects(common, libraryimpl, graphIR, sigmastate, ergoscript),
+  inProjects(common, corelib, graphIR, sigmastate, ergoscript),
   inConfigurations(Compile))
 
 lazy val rootSettings = Seq(
