@@ -145,14 +145,14 @@ lazy val libraryimpl = Project("library-impl", file("library-impl"))
     libraryDependencies ++= Seq( debox, scrypto ))
   .settings(publish / skip := true)
 
-lazy val core = Project("core", file("core"))
-  .dependsOn(common % allConfigDependency, libraryimpl % allConfigDependency)
-  .settings(libraryDefSettings,
-    libraryDependencies ++= Seq( debox ))
-  .settings(publish / skip := true)
+//lazy val core = Project("core", file("core"))
+//  .dependsOn(common % allConfigDependency, libraryimpl % allConfigDependency)
+//  .settings(libraryDefSettings,
+//    libraryDependencies ++= Seq( debox ))
+//  .settings(publish / skip := true)
 
 lazy val graphIR = Project("graph-ir", file("graph-ir"))
-  .dependsOn(common % allConfigDependency, core % allConfigDependency, libraryimpl)
+  .dependsOn(common % allConfigDependency, libraryimpl)
   .settings(
     libraryDefSettings,
     libraryDependencies ++= Seq( debox, scrypto, bouncycastleBcprov ))
