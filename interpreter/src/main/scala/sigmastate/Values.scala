@@ -40,7 +40,7 @@ import scala.collection.compat.immutable.ArraySeq
 import scala.collection.mutable
 
 object Values {
-  val reflection = Reflection
+  val reflection = InterpreterReflection
 
   type SValue = Value[SType]
 

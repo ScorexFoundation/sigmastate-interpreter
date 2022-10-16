@@ -16,7 +16,7 @@ import sigmastate.utxo._
 import special.collection.Coll
 import special.sigma.{SigmaDslBuilder, AvlTree}
 
-object Reflection {
+object InterpreterReflection {
 //  registerClassEntry(classOf[sigmastate.AND],
 //    constructors = Array(
 //      new SRConstructor[Any](Array(classOf[Value[_]])) {

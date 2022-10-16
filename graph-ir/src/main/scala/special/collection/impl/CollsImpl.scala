@@ -1464,7 +1464,7 @@ implicit val eB = xs.eA.eSnd
 }
 
 object CollsModule extends scalan.ModuleInfo("special.collection", "Colls") {
-  val reflection = LibaryIRReflection
+  val reflection = GraphIRReflection
 }
 }
 

@@ -4,7 +4,7 @@ import scalan.reflection.CommonReflection.{registerClassEntry, registerClassOnly
 import scalan.reflection.{SRConstructor, SRMethod}
 import special.collection.Colls
 
-object LibaryIRReflection {
+object GraphIRReflection {
 
 //  registerClassOnly(classOf[Colls#PairColl[_, _]])
 //

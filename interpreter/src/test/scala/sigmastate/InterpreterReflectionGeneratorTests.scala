@@ -11,7 +11,7 @@ object ObjA {
   object ObjB
 }
 
-class ReflectionGeneratorTests extends AnyPropSpec with Matchers {
+class InterpreterReflectionGeneratorTests extends AnyPropSpec with Matchers {
   import ReflectionGenerator._
   class ObjB {
     class B
@@ -32,7 +32,7 @@ class ReflectionGeneratorTests extends AnyPropSpec with Matchers {
     test("sigmastate.ObjA$A", "sigmastate.ObjA.A");
     classOf[ObjA.A]
     test("sigmastate.ReflectionGeneratorTests$ObjB$B", "sigmastate.ReflectionGeneratorTests#ObjB#B");
-    classOf[ReflectionGeneratorTests#ObjB#B]
+    classOf[InterpreterReflectionGeneratorTests#ObjB#B]
     Class.forName("sigmastate.ObjA$") shouldNot be (null)
     Class.forName("sigmastate.ObjA$ObjB$") shouldNot be (null)
   }

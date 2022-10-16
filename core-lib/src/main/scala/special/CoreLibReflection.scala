@@ -5,7 +5,7 @@ import scalan.reflection.CommonReflection.registerClassEntry
 import scalan.reflection.SRMethod
 import special.collection.Coll
 
-object LibraryReflection {
+object CoreLibReflection {
 
 //  { val clazz = classOf[special.collection.Coll[_]]
 //    registerClassEntry(clazz,
