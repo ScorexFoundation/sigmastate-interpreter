@@ -15,6 +15,9 @@ package collection {
 }
 
 package object collection {
+  /** Forces reflection data initialization */
+  val reflection = CoreLibReflection
+
   implicit def collRType[A](implicit tA: RType[A]): RType[Coll[A]] = CollType[A](tA)
   implicit def extendCollType[A](ct: RType[Coll[A]]): CollType[A] = ct.asInstanceOf[CollType[A]]
   implicit val collBuilderRType: RType[CollBuilder] = RType.fromClassTag(classTag[CollBuilder])

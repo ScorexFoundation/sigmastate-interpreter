@@ -43,20 +43,6 @@ object CommonReflection {
 //
 //  }
 
-  def mkMethod(clazz: Class[_], name: String, paramTypes: Seq[Class[_]])
-              (handler: (Any, Array[AnyRef]) => AnyRef): ((String, Seq[Class[_]]), RMethod) = {
-    (name, paramTypes) ->
-        new SRMethod(clazz, name, paramTypes) {
-          override def invoke(obj: Any, args: AnyRef*): AnyRef = handler(obj, args.toArray)
-        }
-  }
-
-  def mkConstructor(parameterTypes: Array[Class[_]])(handler: Array[AnyRef] => Any) = {
-    new SRConstructor[Any](parameterTypes) {
-      override def newInstance(args: AnyRef*): Any = handler(args.toArray)
-    }
-  }
-
   { val clazz = classOf[scala.Option[_]]
     registerClassEntry(clazz,
       methods = Map(

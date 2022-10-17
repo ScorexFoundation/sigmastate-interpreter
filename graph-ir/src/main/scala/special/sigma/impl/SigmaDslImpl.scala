@@ -8,7 +8,7 @@ import scala.collection.compat.immutable.ArraySeq
 
 package impl {
   import scalan.OverloadHack.Overloaded1
-  import scalan.reflection.CommonReflection.{registerClassEntry, registerClassOnly}
+  import scalan.reflection.CommonReflection.registerClassEntry
   import scalan.reflection.{RClass, RMethod, SRMethod} // manual fix
 
   // Abs -----------------------------------

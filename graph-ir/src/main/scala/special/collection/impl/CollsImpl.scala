@@ -7,7 +7,7 @@ import scala.reflect._
 import scala.collection.compat.immutable.ArraySeq
 
 package impl {
-  import scalan.reflection.CommonReflection.{registerClassEntry, registerClassOnly}
+  import scalan.reflection.CommonReflection.registerClassEntry
   import scalan.reflection.{SRConstructor, RClass, RMethod, SRMethod}
 
   // Abs -----------------------------------

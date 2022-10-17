@@ -188,10 +188,6 @@ object WOption extends EntityObject("WOption") {
   implicit final def unrefWOptionCompanionCtor(p: Ref[WOptionCompanionCtor]): WOptionCompanionCtor =
     p.node.asInstanceOf[WOptionCompanionCtor]
 
-  lazy val RWOption: MutableLazy[WOptionCompanionCtor] = MutableLazy(new WOptionCompanionCtor {
-    private val thisClass = classOf[WOptionCompanion]
-  })
-
   object WOptionMethods {
     object isDefined {
       def unapply(d: Def[_]): Nullable[Ref[WOption[A]] forSome {type A}] = d match {

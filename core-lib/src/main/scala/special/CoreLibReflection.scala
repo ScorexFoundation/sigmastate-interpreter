@@ -2,12 +2,33 @@ package special
 
 import scalan.RType
 import scalan.reflection.CommonReflection.registerClassEntry
-import scalan.reflection.SRMethod
+import scalan.reflection._
 import special.collection.Coll
+import special.sigma.SigmaProp
 
 object CoreLibReflection {
+  {
+    val clazz = classOf[SigmaProp]
+    registerClassEntry(clazz,
+      methods = Map(
+        mkMethod(clazz, "$bar$bar", Array[Class[_]](classOf[SigmaProp])) { (obj, args) =>
+          obj.asInstanceOf[SigmaProp].$bar$bar(args(0).asInstanceOf[SigmaProp])
+        },
+        mkMethod(clazz, "isValid", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[SigmaProp].isValid
+        },
+        mkMethod(clazz, "propBytes", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[SigmaProp].propBytes
+        },
+        mkMethod(clazz, "$amp$amp", Array[Class[_]](classOf[SigmaProp])) { (obj, args) =>
+          obj.asInstanceOf[SigmaProp].$amp$amp(args(0).asInstanceOf[SigmaProp])
+        }
+      )
+    )
+  }
 
-//  { val clazz = classOf[special.collection.Coll[_]]
+
+  //  { val clazz = classOf[special.collection.Coll[_]]
 //    registerClassEntry(clazz,
 //      methods = Map(
 //      {

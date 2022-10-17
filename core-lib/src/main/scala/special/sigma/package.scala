@@ -3,7 +3,6 @@ package special
 import java.math.BigInteger
 import scalan.RType
 import scalan.RType.GeneralType
-import scalan.reflection.CommonReflection.registerClassOnly
 
 import scala.reflect.classTag
 
@@ -11,6 +10,8 @@ import scala.reflect.classTag
   * @see [[RType]] class
   */
 package object sigma {
+  /** Forces reflection data initialization */
+  val reflection = CoreLibReflection
 
   implicit val BigIntRType: RType[BigInt] = GeneralType(classTag[BigInt])
   implicit val GroupElementRType: RType[GroupElement] = GeneralType(classTag[GroupElement])

@@ -1,8 +1,9 @@
 package scalan
 
-import scalan.reflection.CommonReflection.{registerClassEntry}
-import scalan.reflection.{SRConstructor, SRMethod}
+import scalan.reflection.CommonReflection.registerClassEntry
+import scalan.reflection.{SRConstructor, mkMethod, SRMethod}
 import special.collection.Colls
+import special.sigma.SigmaDsl
 import wrappers.scala.WOptions
 
 object GraphIRReflection {
@@ -332,52 +333,24 @@ object GraphIRReflection {
 
 //  registerClassOnly(classOf[special.sigma.SigmaDsl#AnyValue])
 //
-//  { val clazz = classOf[special.sigma.SigmaDsl#SigmaProp]
-//    registerClassEntry(clazz,
-//      methods = Map(
-//      {
-//        val paramTypes: Seq[Class[_]] = Nil
-//        ("isValid", paramTypes) ->
-//            new SRMethod(clazz, "isValid", paramTypes) {
-//              override def invoke(obj: Any, args: AnyRef*): AnyRef = obj match {
-//                case obj: special.sigma.SigmaDsl#SigmaProp =>
-//                  obj.isValid
-//              }
-//            }
-//      },
-//      {
-//        val paramTypes: Seq[Class[_]] = Array(classOf[scalan.Base#Ref[_]])
-//        ("$bar$bar", paramTypes) ->
-//            new SRMethod(clazz, "$bar$bar", paramTypes) {
-//              override def invoke(obj: Any, args: AnyRef*): AnyRef = {
-//                val ctx = null.asInstanceOf[special.sigma.SigmaDsl]
-//                val p = obj.asInstanceOf[ctx.SigmaProp]
-//                p.$bar$bar(args(0).asInstanceOf[ctx.Ref[ctx.SigmaProp]])
-//              }
-//            }
-//      },
-//      {
-//        val paramTypes: Seq[Class[_]] = Nil
-//        ("propBytes", paramTypes) ->
-//            new SRMethod(clazz, "propBytes", paramTypes) {
-//              override def invoke(obj: Any, args: AnyRef*): AnyRef = obj match {
-//                case obj: special.sigma.SigmaDsl#SigmaProp =>
-//                  obj.propBytes
-//              }
-//            }
-//      },
-//      {
-//        val paramTypes: Seq[Class[_]] = Array(classOf[scalan.Base#Ref[_]])
-//        ("$amp$amp", paramTypes) ->
-//            new SRMethod(clazz, "$amp$amp", paramTypes) {
-//              override def invoke(obj: Any, args: AnyRef*): AnyRef = {
-//                val ctx = null.asInstanceOf[special.sigma.SigmaDsl]
-//                val p = obj.asInstanceOf[ctx.SigmaProp]
-//                p.$amp$amp(args(0).asInstanceOf[ctx.Ref[ctx.SigmaProp]])
-//              }
-//            }
-//      }
-//      )
-//    )
-//  }
+
+  { val clazz = classOf[special.sigma.SigmaDsl#SigmaProp]
+    val ctx = null.asInstanceOf[SigmaDsl]
+    registerClassEntry(clazz,
+      methods = Map(
+        mkMethod(clazz, "$bar$bar", Array[Class[_]](classOf[Base#Ref[_]])) { (obj, args) =>
+          obj.asInstanceOf[ctx.SigmaProp].$bar$bar(args(0).asInstanceOf[ctx.Ref[ctx.SigmaProp]])
+        },
+        mkMethod(clazz, "isValid", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[ctx.SigmaProp].isValid
+        },
+        mkMethod(clazz, "propBytes", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[ctx.SigmaProp].propBytes
+        },
+        mkMethod(clazz, "$amp$amp", Array[Class[_]](classOf[Base#Ref[_]])) { (obj, args) =>
+          obj.asInstanceOf[ctx.SigmaProp].$amp$amp(args(0).asInstanceOf[ctx.Ref[ctx.SigmaProp]])
+        }
+      )
+    )
+  }
 }

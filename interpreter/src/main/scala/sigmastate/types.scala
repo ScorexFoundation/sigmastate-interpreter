@@ -485,7 +485,7 @@ case class SMethod(
 
   /** Invoke this method on the given object with the arguments.
     * This is used for methods with FixedCost costKind. */
-  def invokeFixed(obj: Any, args: Array[Any])(implicit E: ErgoTreeEvaluator): AnyRef = {
+  def invokeFixed(obj: Any, args: Array[Any])(implicit E: ErgoTreeEvaluator): Any = {
     javaMethod.invoke(obj, args.asInstanceOf[Array[AnyRef]]:_*)
   }
 
