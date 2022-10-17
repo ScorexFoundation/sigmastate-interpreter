@@ -90,10 +90,6 @@ trait Thunks extends Functions with GraphVizExport { self: Scalan =>
       RType[SThunk[ST]]
     }
     override def lift(x: SThunk[ST]): Ref[Thunk[T]] = ThunkConst(x, lT)
-    override def unlift(w: Ref[Thunk[T]]): SThunk[ST] = w.node match {
-      case ThunkConst(x: SThunk[_], l) if l == lT => x.asInstanceOf[SThunk[ST]]
-      case _ => unliftError(w)
-    }
   }
 
   implicit def liftableThunk[ST,T](implicit lT: Liftable[ST,T]): Liftable[SThunk[ST], Thunk[T]] =

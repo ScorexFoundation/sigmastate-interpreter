@@ -202,12 +202,6 @@ trait TreeBuilding extends SigmaLibrary { IR: IRContext =>
         mkArith(x.asNumValue, y.asNumValue, MinCode)
       case BIM.max(In(x), In(y)) =>
         mkArith(x.asNumValue, y.asNumValue, MaxCode)
-      case BIM.modQ(In(x)) =>
-        mkModQ(x.asBigInt)
-      case BIM.plusModQ(In(l), In(r)) =>
-        mkPlusModQ(l.asBigInt, r.asBigInt)
-      case BIM.minusModQ(In(l), In(r)) =>
-        mkMinusModQ(l.asBigInt, r.asBigInt)
 
       case Def(ApplyUnOp(IsNumericUnOp(mkNode), xSym)) =>
         mkNode(recurse(xSym))

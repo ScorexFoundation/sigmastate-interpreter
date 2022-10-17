@@ -3,29 +3,13 @@ package special.sigma {
 
   trait SigmaDsl extends Base { self: SigmaLibrary =>
     trait BigInt extends Def[BigInt] {
-      def toByte: Ref[Byte];
-      def toShort: Ref[Short];
-      def toInt: Ref[Int];
-      def toLong: Ref[Long];
-      def toBytes: Ref[Coll[Byte]];
-      def toBits: Ref[Coll[Boolean]];
-      def toAbs: Ref[BigInt];
-      def compareTo(that: Ref[BigInt]): Ref[Int];
-      def modQ: Ref[BigInt];
-      def plusModQ(other: Ref[BigInt]): Ref[BigInt];
-      def minusModQ(other: Ref[BigInt]): Ref[BigInt];
-      def multModQ(other: Ref[BigInt]): Ref[BigInt];
-      def inverseModQ: Ref[BigInt];
-      def signum: Ref[Int];
       def add(that: Ref[BigInt]): Ref[BigInt];
       def subtract(that: Ref[BigInt]): Ref[BigInt];
       def multiply(that: Ref[BigInt]): Ref[BigInt];
       def divide(that: Ref[BigInt]): Ref[BigInt];
       def mod(m: Ref[BigInt]): Ref[BigInt];
-      def remainder(that: Ref[BigInt]): Ref[BigInt];
       def min(that: Ref[BigInt]): Ref[BigInt];
       def max(that: Ref[BigInt]): Ref[BigInt];
-      def negate: Ref[BigInt]
     };
     trait GroupElement extends Def[GroupElement] {
       def isInfinity: Ref[Boolean];

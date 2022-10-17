@@ -1230,29 +1230,11 @@ object CollBuilder extends EntityObject("CollBuilder") {
 
     private val CollBuilderClass = RClass(classOf[CollBuilder])
 
-    override def pairColl[A, B](as: Ref[Coll[A]], bs: Ref[Coll[B]]): Ref[PairColl[A, B]] = {
-      implicit val eA = as.eA
-implicit val eB = bs.eA
-      asRep[PairColl[A, B]](mkMethodCall(self,
-        CollBuilderClass.getMethod("pairColl", classOf[Sym], classOf[Sym]),
-        Array[AnyRef](as, bs),
-        true, false, element[PairColl[A, B]]))
-    }
-
     override def fromItems[T](items: Ref[T]*)(implicit cT: Elem[T]): Ref[Coll[T]] = {
       asRep[Coll[T]](mkMethodCall(self,
         CollBuilderClass.getMethod("fromItems", classOf[Seq[_]], classOf[Elem[_]]),
         Array[AnyRef](items, cT),
         true, false, element[Coll[T]]))
-    }
-
-    override def unzip[A, B](xs: Ref[Coll[(A, B)]]): Ref[(Coll[A], Coll[B])] = {
-      implicit val eA = xs.eA.eFst
-implicit val eB = xs.eA.eSnd
-      asRep[(Coll[A], Coll[B])](mkMethodCall(self,
-        CollBuilderClass.getMethod("unzip", classOf[Sym]),
-        Array[AnyRef](xs),
-        true, false, element[(Coll[A], Coll[B])]))
     }
 
     override def xor(left: Ref[Coll[Byte]], right: Ref[Coll[Byte]]): Ref[Coll[Byte]] = {
@@ -1269,13 +1251,6 @@ implicit val eB = xs.eA.eSnd
         Array[AnyRef](n, v),
         true, false, element[Coll[T]]))
     }
-
-    override def emptyColl[T](implicit tT: Elem[T]): Ref[Coll[T]] = {
-      asRep[Coll[T]](mkMethodCall(self,
-        CollBuilderClass.getMethod("emptyColl", classOf[Elem[_]]),
-        Array[AnyRef](tT),
-        true, false, element[Coll[T]]))
-    }
   }
 
   implicit object LiftableCollBuilder
@@ -1285,11 +1260,6 @@ implicit val eB = xs.eA.eSnd
       RType[SCollBuilder]
     }
     def lift(x: SCollBuilder): Ref[CollBuilder] = CollBuilderConst(x)
-    def unlift(w: Ref[CollBuilder]): SCollBuilder = w match {
-      case Def(CollBuilderConst(x: SCollBuilder))
-            => x.asInstanceOf[SCollBuilder]
-      case _ => unliftError(w)
-    }
   }
 
   private val CollBuilderClass = RClass(classOf[CollBuilder])
@@ -1301,29 +1271,11 @@ implicit val eB = xs.eA.eSnd
     val resultType: Elem[CollBuilder] = element[CollBuilder]
     override def transform(t: Transformer) = CollBuilderAdapter(t(source))
 
-    def pairColl[A, B](as: Ref[Coll[A]], bs: Ref[Coll[B]]): Ref[PairColl[A, B]] = {
-      implicit val eA = as.eA
-implicit val eB = bs.eA
-      asRep[PairColl[A, B]](mkMethodCall(source,
-        CollBuilderClass.getMethod("pairColl", classOf[Sym], classOf[Sym]),
-        Array[AnyRef](as, bs),
-        true, true, element[PairColl[A, B]]))
-    }
-
     def fromItems[T](items: Ref[T]*)(implicit cT: Elem[T]): Ref[Coll[T]] = {
       asRep[Coll[T]](mkMethodCall(source,
         CollBuilderClass.getMethod("fromItems", classOf[Seq[_]], classOf[Elem[_]]),
         Array[AnyRef](items, cT),
         true, true, element[Coll[T]]))
-    }
-
-    def unzip[A, B](xs: Ref[Coll[(A, B)]]): Ref[(Coll[A], Coll[B])] = {
-      implicit val eA = xs.eA.eFst
-implicit val eB = xs.eA.eSnd
-      asRep[(Coll[A], Coll[B])](mkMethodCall(source,
-        CollBuilderClass.getMethod("unzip", classOf[Sym]),
-        Array[AnyRef](xs),
-        true, true, element[(Coll[A], Coll[B])]))
     }
 
     def xor(left: Ref[Coll[Byte]], right: Ref[Coll[Byte]]): Ref[Coll[Byte]] = {
@@ -1338,13 +1290,6 @@ implicit val eB = xs.eA.eSnd
       asRep[Coll[T]](mkMethodCall(source,
         CollBuilderClass.getMethod("replicate", classOf[Sym], classOf[Sym]),
         Array[AnyRef](n, v),
-        true, true, element[Coll[T]]))
-    }
-
-    def emptyColl[T](implicit tT: Elem[T]): Ref[Coll[T]] = {
-      asRep[Coll[T]](mkMethodCall(source,
-        CollBuilderClass.getMethod("emptyColl", classOf[Elem[_]]),
-        Array[AnyRef](tT),
         true, true, element[Coll[T]]))
     }
   }
@@ -1365,7 +1310,7 @@ implicit val eB = xs.eA.eSnd
     override protected def collectMethods: Map[RMethod, MethodDesc] = {
       super.collectMethods ++
         Elem.declaredMethods(RClass(classOf[CollBuilder]), RClass(classOf[SCollBuilder]), Set(
-        "pairColl", "fromItems", "unzip", "xor", "replicate", "emptyColl"
+        "fromItems", "xor", "replicate"
         ))
     }
   }
@@ -1387,16 +1332,6 @@ implicit val eB = xs.eA.eSnd
   })
 
   object CollBuilderMethods {
-    object pairColl {
-      def unapply(d: Def[_]): Nullable[(Ref[CollBuilder], Ref[Coll[A]], Ref[Coll[B]]) forSome {type A; type B}] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "pairColl" && receiver.elem.isInstanceOf[CollBuilderElem[_]] =>
-          val res = (receiver, args(0), args(1))
-          Nullable(res).asInstanceOf[Nullable[(Ref[CollBuilder], Ref[Coll[A]], Ref[Coll[B]]) forSome {type A; type B}]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Ref[CollBuilder], Ref[Coll[A]], Ref[Coll[B]]) forSome {type A; type B}] = unapply(exp.node)
-    }
-
     object fromItems {
       def unapply(d: Def[_]): Nullable[(Ref[CollBuilder], Seq[Ref[T]], Elem[T]) forSome {type T}] = d match {
         case MethodCall(receiver, method, args, _) if method.getName == "fromItems" && receiver.elem.isInstanceOf[CollBuilderElem[_]] =>
@@ -1405,16 +1340,6 @@ implicit val eB = xs.eA.eSnd
         case _ => Nullable.None
       }
       def unapply(exp: Sym): Nullable[(Ref[CollBuilder], Seq[Ref[T]], Elem[T]) forSome {type T}] = unapply(exp.node)
-    }
-
-    object unzip {
-      def unapply(d: Def[_]): Nullable[(Ref[CollBuilder], Ref[Coll[(A, B)]]) forSome {type A; type B}] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "unzip" && receiver.elem.isInstanceOf[CollBuilderElem[_]] =>
-          val res = (receiver, args(0))
-          Nullable(res).asInstanceOf[Nullable[(Ref[CollBuilder], Ref[Coll[(A, B)]]) forSome {type A; type B}]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Ref[CollBuilder], Ref[Coll[(A, B)]]) forSome {type A; type B}] = unapply(exp.node)
     }
 
     object xor {
@@ -1436,20 +1361,8 @@ implicit val eB = xs.eA.eSnd
       }
       def unapply(exp: Sym): Nullable[(Ref[CollBuilder], Ref[Int], Ref[T]) forSome {type T}] = unapply(exp.node)
     }
-
-    object emptyColl {
-      def unapply(d: Def[_]): Nullable[(Ref[CollBuilder], Elem[T]) forSome {type T}] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "emptyColl" && receiver.elem.isInstanceOf[CollBuilderElem[_]] =>
-          val res = (receiver, args(0))
-          Nullable(res).asInstanceOf[Nullable[(Ref[CollBuilder], Elem[T]) forSome {type T}]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Ref[CollBuilder], Elem[T]) forSome {type T}] = unapply(exp.node)
-    }
   }
 
-  object CollBuilderCompanionMethods {
-  }
 } // of object CollBuilder
   registerEntityObject("CollBuilder", CollBuilder)
 

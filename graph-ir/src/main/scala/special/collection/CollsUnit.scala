@@ -49,12 +49,9 @@ package special.collection {
       def mapSecond[T1](f: Ref[scala.Function1[R, T1]]): Ref[Coll[scala.Tuple2[L, T1]]]
     };
     trait CollBuilder extends Def[CollBuilder] {
-      def pairColl[A, B](as: Ref[Coll[A]], bs: Ref[Coll[B]]): Ref[PairColl[A, B]];
       def fromItems[T](items: Ref[T]*)(implicit cT: Elem[T]): Ref[Coll[T]];
-      def unzip[A, B](xs: Ref[Coll[scala.Tuple2[A, B]]]): Ref[scala.Tuple2[Coll[A], Coll[B]]];
       def xor(left: Ref[Coll[Byte]], right: Ref[Coll[Byte]]): Ref[Coll[Byte]];
       def replicate[T](n: Ref[Int], v: Ref[T]): Ref[Coll[T]];
-      def emptyColl[T](implicit tT: Elem[T]): Ref[Coll[T]];
     };
     trait CollCompanion;
     trait PairCollCompanion;

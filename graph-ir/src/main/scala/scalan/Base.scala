@@ -253,11 +253,6 @@ abstract class Base { scalan: Scalan =>
       /** Method to embedd source type instance into graph IR. */
       def lift(x: ST): Ref[T]
 
-      /** Extract lifted value from graph node.
-        * @return constValue from LiftedConst if `w` refers to such a node.
-        * @throws StagingException if `w` is not refering to the appropritate LiftedConst node. */
-      def unlift(w: Ref[T]): ST
-
       protected def unliftError(w: Ref[T]) =
         !!!(s"Cannot unlift simbol $w using $this")
 
@@ -295,7 +290,6 @@ abstract class Base { scalan: Scalan =>
       override val sourceType: RType[(SA, SB)] = RType.pairRType(lA.sourceType, lB.sourceType)
 
       def lift(x: (SA, SB)): Ref[(A, B)] = Pair(lA.lift(x._1), lB.lift(x._2))
-      def unlift(w: Ref[(A, B)]): (SA, SB) = { val Pair(wa, wb) = w; (lA.unlift(wa), lB.unlift(wb)) }
     }
 
     /** Every function can be lifted to the graph IR. */

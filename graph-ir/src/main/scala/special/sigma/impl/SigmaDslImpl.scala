@@ -46,104 +46,6 @@ object BigInt extends EntityObject("BigInt") {
 
     private val BigIntClass = RClass(classOf[BigInt])
 
-    override def toByte: Ref[Byte] = {
-      asRep[Byte](mkMethodCall(self,
-        BigIntClass.getMethod("toByte"),
-        ArraySeq.empty,
-        true, false, element[Byte]))
-    }
-
-    override def toShort: Ref[Short] = {
-      asRep[Short](mkMethodCall(self,
-        BigIntClass.getMethod("toShort"),
-        ArraySeq.empty,
-        true, false, element[Short]))
-    }
-
-    override def toInt: Ref[Int] = {
-      asRep[Int](mkMethodCall(self,
-        BigIntClass.getMethod("toInt"),
-        ArraySeq.empty,
-        true, false, element[Int]))
-    }
-
-    override def toLong: Ref[Long] = {
-      asRep[Long](mkMethodCall(self,
-        BigIntClass.getMethod("toLong"),
-        ArraySeq.empty,
-        true, false, element[Long]))
-    }
-
-    override def toBytes: Ref[Coll[Byte]] = {
-      asRep[Coll[Byte]](mkMethodCall(self,
-        BigIntClass.getMethod("toBytes"),
-        ArraySeq.empty,
-        true, false, element[Coll[Byte]]))
-    }
-
-    override def toBits: Ref[Coll[Boolean]] = {
-      asRep[Coll[Boolean]](mkMethodCall(self,
-        BigIntClass.getMethod("toBits"),
-        ArraySeq.empty,
-        true, false, element[Coll[Boolean]]))
-    }
-
-    override def toAbs: Ref[BigInt] = {
-      asRep[BigInt](mkMethodCall(self,
-        BigIntClass.getMethod("toAbs"),
-        ArraySeq.empty,
-        true, false, element[BigInt]))
-    }
-
-    override def compareTo(that: Ref[BigInt]): Ref[Int] = {
-      asRep[Int](mkMethodCall(self,
-        BigIntClass.getMethod("compareTo", classOf[Sym]),
-        Array[AnyRef](that),
-        true, false, element[Int]))
-    }
-
-    override def modQ: Ref[BigInt] = {
-      asRep[BigInt](mkMethodCall(self,
-        BigIntClass.getMethod("modQ"),
-        ArraySeq.empty,
-        true, false, element[BigInt]))
-    }
-
-    override def plusModQ(other: Ref[BigInt]): Ref[BigInt] = {
-      asRep[BigInt](mkMethodCall(self,
-        BigIntClass.getMethod("plusModQ", classOf[Sym]),
-        Array[AnyRef](other),
-        true, false, element[BigInt]))
-    }
-
-    override def minusModQ(other: Ref[BigInt]): Ref[BigInt] = {
-      asRep[BigInt](mkMethodCall(self,
-        BigIntClass.getMethod("minusModQ", classOf[Sym]),
-        Array[AnyRef](other),
-        true, false, element[BigInt]))
-    }
-
-    override def multModQ(other: Ref[BigInt]): Ref[BigInt] = {
-      asRep[BigInt](mkMethodCall(self,
-        BigIntClass.getMethod("multModQ", classOf[Sym]),
-        Array[AnyRef](other),
-        true, false, element[BigInt]))
-    }
-
-    override def inverseModQ: Ref[BigInt] = {
-      asRep[BigInt](mkMethodCall(self,
-        BigIntClass.getMethod("inverseModQ"),
-        ArraySeq.empty,
-        true, false, element[BigInt]))
-    }
-
-    override def signum: Ref[Int] = {
-      asRep[Int](mkMethodCall(self,
-        BigIntClass.getMethod("signum"),
-        ArraySeq.empty,
-        true, false, element[Int]))
-    }
-
     override def add(that: Ref[BigInt]): Ref[BigInt] = {
       asRep[BigInt](mkMethodCall(self,
         BigIntClass.getMethod("add", classOf[Sym]),
@@ -179,13 +81,6 @@ object BigInt extends EntityObject("BigInt") {
         true, false, element[BigInt]))
     }
 
-    override def remainder(that: Ref[BigInt]): Ref[BigInt] = {
-      asRep[BigInt](mkMethodCall(self,
-        BigIntClass.getMethod("remainder", classOf[Sym]),
-        Array[AnyRef](that),
-        true, false, element[BigInt]))
-    }
-
     override def min(that: Ref[BigInt]): Ref[BigInt] = {
       asRep[BigInt](mkMethodCall(self,
         BigIntClass.getMethod("min", classOf[Sym]),
@@ -199,13 +94,6 @@ object BigInt extends EntityObject("BigInt") {
         Array[AnyRef](that),
         true, false, element[BigInt]))
     }
-
-    override def negate: Ref[BigInt] = {
-      asRep[BigInt](mkMethodCall(self,
-        BigIntClass.getMethod("negate"),
-        ArraySeq.empty,
-        true, false, element[BigInt]))
-    }
   }
 
   implicit object LiftableBigInt
@@ -215,11 +103,6 @@ object BigInt extends EntityObject("BigInt") {
       RType[SBigInt]
     }
     def lift(x: SBigInt): Ref[BigInt] = BigIntConst(x)
-    def unlift(w: Ref[BigInt]): SBigInt = w match {
-      case Def(BigIntConst(x: SBigInt))
-            => x.asInstanceOf[SBigInt]
-      case _ => unliftError(w)
-    }
   }
 
   private val BigIntClass = RClass(classOf[BigInt])
@@ -230,104 +113,6 @@ object BigInt extends EntityObject("BigInt") {
       with Def[BigInt] {
     val resultType: Elem[BigInt] = element[BigInt]
     override def transform(t: Transformer) = BigIntAdapter(t(source))
-
-    def toByte: Ref[Byte] = {
-      asRep[Byte](mkMethodCall(source,
-        BigIntClass.getMethod("toByte"),
-        ArraySeq.empty,
-        true, true, element[Byte]))
-    }
-
-    def toShort: Ref[Short] = {
-      asRep[Short](mkMethodCall(source,
-        BigIntClass.getMethod("toShort"),
-        ArraySeq.empty,
-        true, true, element[Short]))
-    }
-
-    def toInt: Ref[Int] = {
-      asRep[Int](mkMethodCall(source,
-        BigIntClass.getMethod("toInt"),
-        ArraySeq.empty,
-        true, true, element[Int]))
-    }
-
-    def toLong: Ref[Long] = {
-      asRep[Long](mkMethodCall(source,
-        BigIntClass.getMethod("toLong"),
-        ArraySeq.empty,
-        true, true, element[Long]))
-    }
-
-    def toBytes: Ref[Coll[Byte]] = {
-      asRep[Coll[Byte]](mkMethodCall(source,
-        BigIntClass.getMethod("toBytes"),
-        ArraySeq.empty,
-        true, true, element[Coll[Byte]]))
-    }
-
-    def toBits: Ref[Coll[Boolean]] = {
-      asRep[Coll[Boolean]](mkMethodCall(source,
-        BigIntClass.getMethod("toBits"),
-        ArraySeq.empty,
-        true, true, element[Coll[Boolean]]))
-    }
-
-    def toAbs: Ref[BigInt] = {
-      asRep[BigInt](mkMethodCall(source,
-        BigIntClass.getMethod("toAbs"),
-        ArraySeq.empty,
-        true, true, element[BigInt]))
-    }
-
-    def compareTo(that: Ref[BigInt]): Ref[Int] = {
-      asRep[Int](mkMethodCall(source,
-        BigIntClass.getMethod("compareTo", classOf[Sym]),
-        Array[AnyRef](that),
-        true, true, element[Int]))
-    }
-
-    def modQ: Ref[BigInt] = {
-      asRep[BigInt](mkMethodCall(source,
-        BigIntClass.getMethod("modQ"),
-        ArraySeq.empty,
-        true, true, element[BigInt]))
-    }
-
-    def plusModQ(other: Ref[BigInt]): Ref[BigInt] = {
-      asRep[BigInt](mkMethodCall(source,
-        BigIntClass.getMethod("plusModQ", classOf[Sym]),
-        Array[AnyRef](other),
-        true, true, element[BigInt]))
-    }
-
-    def minusModQ(other: Ref[BigInt]): Ref[BigInt] = {
-      asRep[BigInt](mkMethodCall(source,
-        BigIntClass.getMethod("minusModQ", classOf[Sym]),
-        Array[AnyRef](other),
-        true, true, element[BigInt]))
-    }
-
-    def multModQ(other: Ref[BigInt]): Ref[BigInt] = {
-      asRep[BigInt](mkMethodCall(source,
-        BigIntClass.getMethod("multModQ", classOf[Sym]),
-        Array[AnyRef](other),
-        true, true, element[BigInt]))
-    }
-
-    def inverseModQ: Ref[BigInt] = {
-      asRep[BigInt](mkMethodCall(source,
-        BigIntClass.getMethod("inverseModQ"),
-        ArraySeq.empty,
-        true, true, element[BigInt]))
-    }
-
-    def signum: Ref[Int] = {
-      asRep[Int](mkMethodCall(source,
-        BigIntClass.getMethod("signum"),
-        ArraySeq.empty,
-        true, true, element[Int]))
-    }
 
     def add(that: Ref[BigInt]): Ref[BigInt] = {
       asRep[BigInt](mkMethodCall(source,
@@ -364,13 +149,6 @@ object BigInt extends EntityObject("BigInt") {
         true, true, element[BigInt]))
     }
 
-    def remainder(that: Ref[BigInt]): Ref[BigInt] = {
-      asRep[BigInt](mkMethodCall(source,
-        BigIntClass.getMethod("remainder", classOf[Sym]),
-        Array[AnyRef](that),
-        true, true, element[BigInt]))
-    }
-
     def min(that: Ref[BigInt]): Ref[BigInt] = {
       asRep[BigInt](mkMethodCall(source,
         BigIntClass.getMethod("min", classOf[Sym]),
@@ -382,13 +160,6 @@ object BigInt extends EntityObject("BigInt") {
       asRep[BigInt](mkMethodCall(source,
         BigIntClass.getMethod("max", classOf[Sym]),
         Array[AnyRef](that),
-        true, true, element[BigInt]))
-    }
-
-    def negate: Ref[BigInt] = {
-      asRep[BigInt](mkMethodCall(source,
-        BigIntClass.getMethod("negate"),
-        ArraySeq.empty,
         true, true, element[BigInt]))
     }
   }
@@ -408,7 +179,7 @@ object BigInt extends EntityObject("BigInt") {
     override protected def collectMethods: Map[RMethod, MethodDesc] = {
       super.collectMethods ++
         Elem.declaredMethods(RClass(classOf[BigInt]), RClass(classOf[SBigInt]), Set(
-        "toByte", "toShort", "toInt", "toLong", "toBytes", "toBits", "toAbs", "compareTo", "modQ", "plusModQ", "minusModQ", "multModQ", "inverseModQ", "signum", "add", "subtract", "multiply", "divide", "mod", "remainder", "min", "max", "negate"
+        "add", "subtract", "multiply", "divide", "mod", "min", "max"
         ))
     }
   }
@@ -430,145 +201,6 @@ object BigInt extends EntityObject("BigInt") {
   })
 
   object BigIntMethods {
-    object toByte {
-      def unapply(d: Def[_]): Nullable[Ref[BigInt]] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "toByte" && receiver.elem.isInstanceOf[BigIntElem[_]] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Ref[BigInt]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Ref[BigInt]] = unapply(exp.node)
-    }
-
-    object toShort {
-      def unapply(d: Def[_]): Nullable[Ref[BigInt]] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "toShort" && receiver.elem.isInstanceOf[BigIntElem[_]] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Ref[BigInt]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Ref[BigInt]] = unapply(exp.node)
-    }
-
-    object toInt {
-      def unapply(d: Def[_]): Nullable[Ref[BigInt]] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "toInt" && receiver.elem.isInstanceOf[BigIntElem[_]] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Ref[BigInt]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Ref[BigInt]] = unapply(exp.node)
-    }
-
-    object toLong {
-      def unapply(d: Def[_]): Nullable[Ref[BigInt]] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "toLong" && receiver.elem.isInstanceOf[BigIntElem[_]] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Ref[BigInt]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Ref[BigInt]] = unapply(exp.node)
-    }
-
-    object toBytes {
-      def unapply(d: Def[_]): Nullable[Ref[BigInt]] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "toBytes" && receiver.elem.isInstanceOf[BigIntElem[_]] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Ref[BigInt]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Ref[BigInt]] = unapply(exp.node)
-    }
-
-    object toBits {
-      def unapply(d: Def[_]): Nullable[Ref[BigInt]] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "toBits" && receiver.elem.isInstanceOf[BigIntElem[_]] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Ref[BigInt]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Ref[BigInt]] = unapply(exp.node)
-    }
-
-    object toAbs {
-      def unapply(d: Def[_]): Nullable[Ref[BigInt]] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "toAbs" && receiver.elem.isInstanceOf[BigIntElem[_]] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Ref[BigInt]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Ref[BigInt]] = unapply(exp.node)
-    }
-
-    object compareTo {
-      def unapply(d: Def[_]): Nullable[(Ref[BigInt], Ref[BigInt])] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "compareTo" && receiver.elem.isInstanceOf[BigIntElem[_]] =>
-          val res = (receiver, args(0))
-          Nullable(res).asInstanceOf[Nullable[(Ref[BigInt], Ref[BigInt])]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Ref[BigInt], Ref[BigInt])] = unapply(exp.node)
-    }
-
-    object modQ {
-      def unapply(d: Def[_]): Nullable[Ref[BigInt]] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "modQ" && receiver.elem.isInstanceOf[BigIntElem[_]] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Ref[BigInt]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Ref[BigInt]] = unapply(exp.node)
-    }
-
-    object plusModQ {
-      def unapply(d: Def[_]): Nullable[(Ref[BigInt], Ref[BigInt])] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "plusModQ" && receiver.elem.isInstanceOf[BigIntElem[_]] =>
-          val res = (receiver, args(0))
-          Nullable(res).asInstanceOf[Nullable[(Ref[BigInt], Ref[BigInt])]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Ref[BigInt], Ref[BigInt])] = unapply(exp.node)
-    }
-
-    object minusModQ {
-      def unapply(d: Def[_]): Nullable[(Ref[BigInt], Ref[BigInt])] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "minusModQ" && receiver.elem.isInstanceOf[BigIntElem[_]] =>
-          val res = (receiver, args(0))
-          Nullable(res).asInstanceOf[Nullable[(Ref[BigInt], Ref[BigInt])]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Ref[BigInt], Ref[BigInt])] = unapply(exp.node)
-    }
-
-    object multModQ {
-      def unapply(d: Def[_]): Nullable[(Ref[BigInt], Ref[BigInt])] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "multModQ" && receiver.elem.isInstanceOf[BigIntElem[_]] =>
-          val res = (receiver, args(0))
-          Nullable(res).asInstanceOf[Nullable[(Ref[BigInt], Ref[BigInt])]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Ref[BigInt], Ref[BigInt])] = unapply(exp.node)
-    }
-
-    object inverseModQ {
-      def unapply(d: Def[_]): Nullable[Ref[BigInt]] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "inverseModQ" && receiver.elem.isInstanceOf[BigIntElem[_]] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Ref[BigInt]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Ref[BigInt]] = unapply(exp.node)
-    }
-
-    object signum {
-      def unapply(d: Def[_]): Nullable[Ref[BigInt]] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "signum" && receiver.elem.isInstanceOf[BigIntElem[_]] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Ref[BigInt]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Ref[BigInt]] = unapply(exp.node)
-    }
 
     object add {
       def unapply(d: Def[_]): Nullable[(Ref[BigInt], Ref[BigInt])] = d match {
@@ -620,16 +252,6 @@ object BigInt extends EntityObject("BigInt") {
       def unapply(exp: Sym): Nullable[(Ref[BigInt], Ref[BigInt])] = unapply(exp.node)
     }
 
-    object remainder {
-      def unapply(d: Def[_]): Nullable[(Ref[BigInt], Ref[BigInt])] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "remainder" && receiver.elem.isInstanceOf[BigIntElem[_]] =>
-          val res = (receiver, args(0))
-          Nullable(res).asInstanceOf[Nullable[(Ref[BigInt], Ref[BigInt])]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Ref[BigInt], Ref[BigInt])] = unapply(exp.node)
-    }
-
     object min {
       def unapply(d: Def[_]): Nullable[(Ref[BigInt], Ref[BigInt])] = d match {
         case MethodCall(receiver, method, args, _) if method.getName == "min" && receiver.elem.isInstanceOf[BigIntElem[_]] =>
@@ -650,19 +272,8 @@ object BigInt extends EntityObject("BigInt") {
       def unapply(exp: Sym): Nullable[(Ref[BigInt], Ref[BigInt])] = unapply(exp.node)
     }
 
-    object negate {
-      def unapply(d: Def[_]): Nullable[Ref[BigInt]] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "negate" && receiver.elem.isInstanceOf[BigIntElem[_]] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Ref[BigInt]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Ref[BigInt]] = unapply(exp.node)
-    }
   }
 
-  object BigIntCompanionMethods {
-  }
 } // of object BigInt
   registerEntityObject("BigInt", BigInt)
 

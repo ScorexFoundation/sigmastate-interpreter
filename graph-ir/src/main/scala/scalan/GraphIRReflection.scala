@@ -335,7 +335,7 @@ object GraphIRReflection {
 //
 
   { val clazz = classOf[special.sigma.SigmaDsl#SigmaProp]
-    val ctx = null.asInstanceOf[SigmaDsl]
+    val ctx = null.asInstanceOf[SigmaDsl] // ok! type level only
     registerClassEntry(clazz,
       methods = Map(
         mkMethod(clazz, "$bar$bar", Array[Class[_]](classOf[Base#Ref[_]])) { (obj, args) =>
@@ -349,6 +349,56 @@ object GraphIRReflection {
         },
         mkMethod(clazz, "$amp$amp", Array[Class[_]](classOf[Base#Ref[_]])) { (obj, args) =>
           obj.asInstanceOf[ctx.SigmaProp].$amp$amp(args(0).asInstanceOf[ctx.Ref[ctx.SigmaProp]])
+        }
+      )
+    )
+  }
+
+  { val clazz = classOf[SigmaDsl#BigInt]
+    val ctx = null.asInstanceOf[SigmaDsl] // ok! type level only
+    registerClassEntry(clazz,
+      methods = Map(
+        mkMethod(clazz, "add", Array[Class[_]](classOf[Base#Ref[_]])) { (obj, args) =>
+          obj.asInstanceOf[ctx.BigInt].add(args(0).asInstanceOf[ctx.Ref[ctx.BigInt]])
+        },
+        mkMethod(clazz, "max", Array[Class[_]](classOf[Base#Ref[_]])) { (obj, args) =>
+          obj.asInstanceOf[ctx.BigInt].max(args(0).asInstanceOf[ctx.Ref[ctx.BigInt]])
+        },
+        mkMethod(clazz, "min", Array[Class[_]](classOf[Base#Ref[_]])) { (obj, args) =>
+          obj.asInstanceOf[ctx.BigInt].min(args(0).asInstanceOf[ctx.Ref[ctx.BigInt]])
+        },
+        mkMethod(clazz, "subtract", Array[Class[_]](classOf[Base#Ref[_]])) { (obj, args) =>
+          obj.asInstanceOf[ctx.BigInt].subtract(args(0).asInstanceOf[ctx.Ref[ctx.BigInt]])
+        },
+        mkMethod(clazz, "multiply", Array[Class[_]](classOf[Base#Ref[_]])) { (obj, args) =>
+          obj.asInstanceOf[ctx.BigInt].multiply(args(0).asInstanceOf[ctx.Ref[ctx.BigInt]])
+        },
+        mkMethod(clazz, "mod", Array[Class[_]](classOf[Base#Ref[_]])) { (obj, args) =>
+          obj.asInstanceOf[ctx.BigInt].mod(args(0).asInstanceOf[ctx.Ref[ctx.BigInt]])
+        },
+        mkMethod(clazz, "divide", Array[Class[_]](classOf[Base#Ref[_]])) { (obj, args) =>
+          obj.asInstanceOf[ctx.BigInt].divide(args(0).asInstanceOf[ctx.Ref[ctx.BigInt]])
+        }
+      )
+    )
+  }
+
+  { val clazz = classOf[Colls#CollBuilder]
+    val ctx = null.asInstanceOf[Library] // ok! type level only
+    registerClassEntry(clazz,
+      methods = Map(
+        mkMethod(clazz, "xor", Array[Class[_]](classOf[Base#Ref[_]], classOf[Base#Ref[_]])) { (obj, args) =>
+          obj.asInstanceOf[ctx.CollBuilder].xor(
+            args(0).asInstanceOf[ctx.Ref[ctx.Coll[Byte]]],
+            args(1).asInstanceOf[ctx.Ref[ctx.Coll[Byte]]])
+        },
+        mkMethod(clazz, "fromItems", Array[Class[_]](classOf[Seq[_]], classOf[TypeDescs#Elem[_]])) { (obj, args) =>
+          obj.asInstanceOf[ctx.CollBuilder].fromItems[Any](
+            args(0).asInstanceOf[Seq[ctx.Ref[Any]]]:_*)(args(1).asInstanceOf[ctx.Elem[Any]])
+        },
+        mkMethod(clazz, "replicate", Array[Class[_]](classOf[Base#Ref[_]], classOf[Base#Ref[_]])) { (obj, args) =>
+          obj.asInstanceOf[ctx.CollBuilder].replicate(args(0).asInstanceOf[ctx.Ref[Int]],
+            args(1).asInstanceOf[ctx.Ref[Any]])
         }
       )
     )

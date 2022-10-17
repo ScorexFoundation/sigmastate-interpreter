@@ -12,13 +12,20 @@ object CommonReflection {
                             methods: Map[(String, Seq[Class[_]]), RMethod] = Map.empty): Unit = classes.synchronized {
     classes.put(clazz, new SRClass(clazz, constructors, fields, methods))
   }
-  
-//  registerClassEntry(classOf[Array[Byte]])
-//  registerClassEntry(classOf[Boolean])
-//  registerClassEntry(classOf[Byte])
-//
-//  registerClassEntry(classOf[Short])
-//  registerClassEntry(classOf[Int])
+
+  registerClassEntry(classOf[Boolean])
+
+  registerClassEntry(classOf[Byte])
+
+  registerClassEntry(classOf[Short])
+
+  registerClassEntry(classOf[Int])
+
+  registerClassEntry(classOf[Long])
+
+  registerClassEntry(classOf[Product2[_, _]])
+
+  //  registerClassEntry(classOf[Array[Byte]])
 //
 //  registerClassEntry(classOf[java.lang.Integer])
 //
