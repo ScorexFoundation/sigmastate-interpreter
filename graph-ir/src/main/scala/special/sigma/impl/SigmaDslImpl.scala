@@ -14,7 +14,6 @@ package impl {
   // Abs -----------------------------------
 trait SigmaDslDefs extends scalan.Scalan with SigmaDsl {
   self: SigmaLibrary =>
-import AnyValue._
 import AvlTree._
 import BigInt._
 import Box._
@@ -697,141 +696,6 @@ object SigmaProp extends EntityObject("SigmaProp") {
 } // of object SigmaProp
   registerEntityObject("SigmaProp", SigmaProp)
 
-object AnyValue extends EntityObject("AnyValue") {
-  // entityConst: single const for each entity
-  import Liftables._
-  import scala.reflect.{ClassTag, classTag}
-  type SAnyValue = special.sigma.AnyValue
-  case class AnyValueConst(
-        constValue: SAnyValue
-      ) extends LiftedConst[SAnyValue, AnyValue] with AnyValue
-        with Def[AnyValue] with AnyValueConstMethods {
-    val liftable: Liftable[SAnyValue, AnyValue] = LiftableAnyValue
-    val resultType: Elem[AnyValue] = liftable.eW
-  }
-
-  trait AnyValueConstMethods extends AnyValue  { thisConst: Def[_] =>
-
-    private val AnyValueClass = RClass(classOf[AnyValue])
-
-    // manual fix
-    override def value: Ref[Any] = {
-      asRep[Any](mkMethodCall(self,
-        AnyValueClass.getMethod("value"),
-        ArraySeq.empty,
-        true, false, AnyElement))
-    }
-
-    override def tVal: Ref[WRType[Any]] = {
-      asRep[WRType[Any]](mkMethodCall(self,
-        AnyValueClass.getMethod("tVal"),
-        ArraySeq.empty,
-        true, false, element[WRType[Any]]))
-    }
-  }
-
-  implicit object LiftableAnyValue
-    extends Liftable[SAnyValue, AnyValue] {
-    lazy val eW: Elem[AnyValue] = anyValueElement
-    lazy val sourceType: RType[SAnyValue] = {
-      RType[SAnyValue]
-    }
-    def lift(x: SAnyValue): Ref[AnyValue] = AnyValueConst(x)
-    def unlift(w: Ref[AnyValue]): SAnyValue = w match {
-      case Def(AnyValueConst(x: SAnyValue))
-            => x.asInstanceOf[SAnyValue]
-      case _ => unliftError(w)
-    }
-  }
-
-  private val AnyValueClass = RClass(classOf[AnyValue])
-
-  // entityAdapter for AnyValue trait
-  case class AnyValueAdapter(source: Ref[AnyValue])
-      extends Node with AnyValue
-      with Def[AnyValue] {
-    val resultType: Elem[AnyValue] = element[AnyValue]
-    override def transform(t: Transformer) = AnyValueAdapter(t(source))
-
-    // manual fix
-    def value: Ref[Any] = {
-      asRep[Any](mkMethodCall(source,
-        AnyValueClass.getMethod("value"),
-        ArraySeq.empty,
-        true, true, AnyElement))
-    }
-
-    def tVal: Ref[WRType[Any]] = {
-      asRep[WRType[Any]](mkMethodCall(source,
-        AnyValueClass.getMethod("tVal"),
-        ArraySeq.empty,
-        true, true, element[WRType[Any]]))
-    }
-  }
-
-  // entityUnref: single unref method for each type family
-  implicit final def unrefAnyValue(p: Ref[AnyValue]): AnyValue = {
-    if (p.node.isInstanceOf[AnyValue]) p.node.asInstanceOf[AnyValue]
-    else
-      AnyValueAdapter(p)
-  }
-
-  // familyElem
-  class AnyValueElem[To <: AnyValue]
-    extends EntityElem[To] {
-    override val liftable: Liftables.Liftable[_, To] = asLiftable[SAnyValue, To](LiftableAnyValue)
-
-    override protected def collectMethods: Map[RMethod, MethodDesc] = {
-      super.collectMethods ++
-        Elem.declaredMethods(RClass(classOf[AnyValue]), RClass(classOf[SAnyValue]), Set(
-        "value", "tVal"
-        ))
-    }
-  }
-
-  implicit lazy val anyValueElement: Elem[AnyValue] =
-    new AnyValueElem[AnyValue]
-
-  implicit case object AnyValueCompanionElem extends CompanionElem[AnyValueCompanionCtor]
-
-  abstract class AnyValueCompanionCtor extends CompanionDef[AnyValueCompanionCtor] with AnyValueCompanion {
-    def resultType = AnyValueCompanionElem
-    override def toString = "AnyValue"
-  }
-  implicit final def unrefAnyValueCompanionCtor(p: Ref[AnyValueCompanionCtor]): AnyValueCompanionCtor =
-    p.node.asInstanceOf[AnyValueCompanionCtor]
-
-  lazy val RAnyValue: MutableLazy[AnyValueCompanionCtor] = MutableLazy(new AnyValueCompanionCtor {
-    private val thisClass = classOf[AnyValueCompanion]
-  })
-
-  object AnyValueMethods {
-    object value {
-      def unapply(d: Def[_]): Nullable[Ref[AnyValue]] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "value" && receiver.elem.isInstanceOf[AnyValueElem[_]] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Ref[AnyValue]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Ref[AnyValue]] = unapply(exp.node)
-    }
-
-    object tVal {
-      def unapply(d: Def[_]): Nullable[Ref[AnyValue]] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "tVal" && receiver.elem.isInstanceOf[AnyValueElem[_]] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Ref[AnyValue]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Ref[AnyValue]] = unapply(exp.node)
-    }
-  }
-
-  object AnyValueCompanionMethods {
-  }
-} // of object AnyValue
-  registerEntityObject("AnyValue", AnyValue)
-
 object Box extends EntityObject("Box") {
   // entityConst: single const for each entity
   import Liftables._
@@ -882,13 +746,6 @@ object Box extends EntityObject("Box") {
         BoxClass.getMethod("bytesWithoutRef"),
         ArraySeq.empty,
         true, false, element[Coll[Byte]]))
-    }
-
-    override def registers: Ref[Coll[AnyValue]] = {
-      asRep[Coll[AnyValue]](mkMethodCall(self,
-        BoxClass.getMethod("registers"),
-        ArraySeq.empty,
-        true, false, element[Coll[AnyValue]]))
     }
 
     override def getReg[T](i: Ref[Int])(implicit cT: Elem[T]): Ref[WOption[T]] = {
@@ -976,13 +833,6 @@ object Box extends EntityObject("Box") {
         BoxClass.getMethod("bytesWithoutRef"),
         ArraySeq.empty,
         true, true, element[Coll[Byte]]))
-    }
-
-    def registers: Ref[Coll[AnyValue]] = {
-      asRep[Coll[AnyValue]](mkMethodCall(source,
-        BoxClass.getMethod("registers"),
-        ArraySeq.empty,
-        true, true, element[Coll[AnyValue]]))
     }
 
     def getReg[T](i: Ref[Int])(implicit cT: Elem[T]): Ref[WOption[T]] = {
@@ -2116,12 +1966,6 @@ object Context extends EntityObject("Context") {
         true, false, element[WOption[T]]))
     }
 
-    override def vars: Ref[Coll[AnyValue]] = {
-      asRep[Coll[AnyValue]](mkMethodCall(self,
-        ContextClass.getMethod("vars"),
-        ArraySeq.empty,
-        true, false, element[Coll[AnyValue]]))
-    }
   }
 
   implicit object LiftableContext
@@ -2231,12 +2075,6 @@ object Context extends EntityObject("Context") {
         true, true, element[WOption[T]]))
     }
 
-    def vars: Ref[Coll[AnyValue]] = {
-      asRep[Coll[AnyValue]](mkMethodCall(source,
-        ContextClass.getMethod("vars"),
-        ArraySeq.empty,
-        true, true, element[Coll[AnyValue]]))
-    }
   }
 
   // entityUnref: single unref method for each type family
@@ -3008,7 +2846,6 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
     RBigInt.reset()
     RGroupElement.reset()
     RSigmaProp.reset()
-    RAnyValue.reset()
     RBox.reset()
     RAvlTree.reset()
     RPreHeader.reset()

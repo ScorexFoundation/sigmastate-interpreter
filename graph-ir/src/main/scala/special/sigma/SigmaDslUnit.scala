@@ -24,17 +24,12 @@ package special.sigma {
       def &&(other: Ref[SigmaProp]): Ref[SigmaProp];
       def ||(other: Ref[SigmaProp]): Ref[SigmaProp];
     };
-    trait AnyValue extends Def[AnyValue] {
-      def value: Ref[Any];
-      def tVal: Ref[WRType[Any]]
-    };
     trait Box extends Def[Box] {
       def id: Ref[Coll[Byte]];
       def value: Ref[Long];
       def propositionBytes: Ref[Coll[Byte]];
       def bytes: Ref[Coll[Byte]];
       def bytesWithoutRef: Ref[Coll[Byte]];
-      def registers: Ref[Coll[AnyValue]];
       def getReg[T](i: Ref[Int])(implicit cT: Elem[T]): Ref[WOption[T]];
       def R0[T](implicit cT: Elem[T]): Ref[WOption[T]] = this.getReg[T](toRep(0.asInstanceOf[Int]));
       def R1[T](implicit cT: Elem[T]): Ref[WOption[T]] = this.getReg[T](toRep(1.asInstanceOf[Int]));
@@ -106,7 +101,6 @@ package special.sigma {
       def preHeader: Ref[PreHeader];
       def minerPubKey: Ref[Coll[Byte]];
       def getVar[T](id: Ref[Byte])(implicit cT: Elem[T]): Ref[WOption[T]];
-      def vars: Ref[Coll[AnyValue]]
     };
     trait SigmaDslBuilder extends Def[SigmaDslBuilder] {
       def Colls: Ref[CollBuilder];
@@ -135,7 +129,6 @@ package special.sigma {
     trait BigIntCompanion;
     trait GroupElementCompanion;
     trait SigmaPropCompanion;
-    trait AnyValueCompanion;
     trait BoxCompanion;
     trait AvlTreeCompanion;
     trait PreHeaderCompanion;
