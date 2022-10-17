@@ -156,7 +156,7 @@ trait MethodCalls extends Base with GraphVizExport { self: Scalan =>
 
   /** Generic helper to call the given method on the given receiver node. */
   private[scalan] def invokeMethod[A](receiver: Sym, m: RMethod, args: Array[AnyRef],
-                              onInvokeSuccess: AnyRef => A,
+                              onInvokeSuccess: Any => A,
                               onInvokeException: Throwable => A,
                               onInvokeImpossible: => A): A = {
     val d = receiver.node

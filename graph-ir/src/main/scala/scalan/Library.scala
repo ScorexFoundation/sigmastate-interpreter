@@ -108,7 +108,7 @@ trait Library extends Scalan
     case _ => super.rewriteDef(d)
   }
 
-  override def invokeUnlifted(e: Elem[_], mc: MethodCall, dataEnv: DataEnv): AnyRef = e match {
+  override def invokeUnlifted(e: Elem[_], mc: MethodCall, dataEnv: DataEnv): Any = e match {
     case _: CollElem[_,_] => mc match {
       case CollMethods.map(xs, f) =>
         val newMC = mc.copy(args = mc.args :+ f.elem.eRange)(mc.resultType, mc.isAdapterCall)

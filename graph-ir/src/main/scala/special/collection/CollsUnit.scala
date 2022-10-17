@@ -4,7 +4,6 @@ package special.collection {
   trait Colls extends Base { self: Library =>
     import Coll._;
     import CollBuilder._;
-    import PairColl._;
     import WOption._;
     trait Coll[A] extends Def[Coll[A]] {
       implicit def eA: Elem[A];
@@ -40,21 +39,12 @@ package special.collection {
       def append(other: Ref[Coll[A]]): Ref[Coll[A]];
       def reverse: Ref[Coll[A]]
     };
-    trait PairColl[L, R] extends Coll[scala.Tuple2[L, R]] {
-      implicit def eL: Elem[L];
-      implicit def eR: Elem[R];
-      def ls: Ref[Coll[L]];
-      def rs: Ref[Coll[R]];
-      def mapFirst[T1](f: Ref[scala.Function1[L, T1]]): Ref[Coll[scala.Tuple2[T1, R]]];
-      def mapSecond[T1](f: Ref[scala.Function1[R, T1]]): Ref[Coll[scala.Tuple2[L, T1]]]
-    };
     trait CollBuilder extends Def[CollBuilder] {
       def fromItems[T](items: Ref[T]*)(implicit cT: Elem[T]): Ref[Coll[T]];
       def xor(left: Ref[Coll[Byte]], right: Ref[Coll[Byte]]): Ref[Coll[Byte]];
       def replicate[T](n: Ref[Int], v: Ref[T]): Ref[Coll[T]];
     };
     trait CollCompanion;
-    trait PairCollCompanion;
     trait CollBuilderCompanion
   }
 }

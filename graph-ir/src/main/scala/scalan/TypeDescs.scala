@@ -192,7 +192,7 @@ abstract class TypeDescs extends Base { self: Scalan =>
       * @param dataEnv  environment where each symbol of 'mc' has associated data value
       * @return  data value returned from invoked method
       */
-    def invokeUnlifted(mc: MethodCall, dataEnv: DataEnv): AnyRef = {
+    def invokeUnlifted(mc: MethodCall, dataEnv: DataEnv): Any = {
       val res = methods.get(mc.method) match {
         case Some(WMethodDesc(wrapSpec, method)) =>
           val srcArgs = getSourceValues(dataEnv, true, mc.receiver +: mc.args:_*)
@@ -275,7 +275,7 @@ abstract class TypeDescs extends Base { self: Scalan =>
     * @param dataEnv  environment where each symbol of 'mc' has associated data value
     * @return  data value returned from invoked method
     */
-  def invokeUnlifted(e: Elem[_], mc: MethodCall, dataEnv: DataEnv): AnyRef =
+  def invokeUnlifted(e: Elem[_], mc: MethodCall, dataEnv: DataEnv): Any =
     e.invokeUnlifted(mc, dataEnv)
 
   /** Get first (and the only) constructor of the `clazz`. */
