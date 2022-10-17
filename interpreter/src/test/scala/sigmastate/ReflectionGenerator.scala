@@ -33,11 +33,13 @@ object ReflectionGenerator {
     "scalan.primitives.",
     "special.collection.",
     "special.sigma.",
+    "special.wrappers.",
     "sigmastate.Values.",
     "sigmastate.lang.Terms.",
     "sigmastate.interpreter.",
     "sigmastate.utxo.",
     "sigmastate.",
+    "wrappers.scala.",
     "scalan.",
     "scala.collection.",
     "scala."

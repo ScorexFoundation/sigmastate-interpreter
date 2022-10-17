@@ -2,6 +2,7 @@ package scalan.reflection
 
 import scala.collection.compat.immutable.ArraySeq
 import scala.collection.mutable
+import scala.collection.immutable
 
 object CommonReflection {
   val classes = mutable.HashMap.empty[Class[_], SRClass[_]]
@@ -24,6 +25,15 @@ object CommonReflection {
   registerClassEntry(classOf[Long])
 
   registerClassEntry(classOf[Product2[_, _]])
+
+  registerClassEntry(classOf[immutable.$colon$colon[_]],
+    constructors = Array(
+      mkConstructor(Array(classOf[java.lang.Object], classOf[immutable.List[_]])) { args =>
+        new immutable.$colon$colon(args(0).asInstanceOf[java.lang.Object], args(1).asInstanceOf[immutable.List[_]])
+      }
+    )
+  )
+
 
   //  registerClassEntry(classOf[Array[Byte]])
 //

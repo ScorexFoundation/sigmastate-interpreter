@@ -7,60 +7,26 @@ import special.sigma.SigmaDsl
 import wrappers.scala.WOptions
 
 object GraphIRReflection {
-  { val clazz = classOf[WOptions#WOption[_]]
+
+  { val clazz = classOf[wrappers.scala.WOptions#WOption[_]]
     val ctx = null.asInstanceOf[scalan.Library] // ok! type level only
     registerClassEntry(clazz,
       methods = Map(
-      {
-        val paramTypes: Seq[Class[_]] = Array(classOf[scalan.Base#Ref[_]])
-        ("filter", paramTypes) ->
-            new SRMethod(clazz, "filter", paramTypes) {
-              override def invoke(obj: Any, args: AnyRef*): AnyRef = obj match {
-                case obj: ctx.WOption[a] =>
-                  obj.filter(args(0).asInstanceOf[ctx.Ref[a => Boolean]])
-              }
-            }
-      },
-      {
-        val paramTypes: Seq[Class[_]] = Array[Class[_]]()
-        ("get", paramTypes) ->
-            new SRMethod(clazz, "get", paramTypes) {
-              override def invoke(obj: Any, args: AnyRef*): AnyRef = obj match {
-                case obj: ctx.WOption[_] =>
-                  obj.get
-              }
-            }
-      },
-      {
-        val paramTypes: Seq[Class[_]] = Array[Class[_]]()
-        ("isDefined", paramTypes) ->
-            new SRMethod(clazz, "isDefined", paramTypes) {
-              override def invoke(obj: Any, args: AnyRef*): AnyRef = obj match {
-                case obj: ctx.WOption[_] =>
-                  obj.isDefined
-              }
-            }
-      },
-      {
-        val paramTypes: Seq[Class[_]] = Array(classOf[scalan.Base#Ref[_]])
-        ("map", paramTypes) ->
-            new SRMethod(clazz, "map", paramTypes) {
-              override def invoke(obj: Any, args: AnyRef*): AnyRef = obj match {
-                case obj: ctx.WOption[a] =>
-                  obj.map(args(0).asInstanceOf[ctx.Ref[a => Any]])
-              }
-            }
-      },
-      {
-        val paramTypes: Seq[Class[_]] = Array(classOf[scalan.Base#Ref[_]])
-        ("getOrElse", paramTypes) ->
-            new SRMethod(clazz, "getOrElse", paramTypes) {
-              override def invoke(obj: Any, args: AnyRef*): AnyRef = obj match {
-                case obj: ctx.WOption[_] =>
-                  obj.getOrElse(args(0).asInstanceOf[ctx.Ref[ctx.Thunk[Any]]])
-              }
-            }
-      }
+        mkMethod(clazz, "filter", Array[Class[_]](classOf[Base#Ref[_]])) { (obj, args) =>
+          obj.asInstanceOf[ctx.WOption[Any]].filter(args(0).asInstanceOf[ctx.Ref[Any => Boolean]])
+        },
+        mkMethod(clazz, "get", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[ctx.WOption[_]].get
+        },
+        mkMethod(clazz, "isDefined", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[ctx.WOption[_]].isDefined
+        },
+        mkMethod(clazz, "getOrElse", Array[Class[_]](classOf[Base#Ref[_]])) { (obj, args) =>
+          obj.asInstanceOf[ctx.WOption[Any]].getOrElse(args(0).asInstanceOf[ctx.Ref[ctx.Thunk[Any]]])
+        },
+        mkMethod(clazz, "map", Array[Class[_]](classOf[Base#Ref[_]])) { (obj, args) =>
+          obj.asInstanceOf[ctx.WOption[Any]].map(args(0).asInstanceOf[ctx.Ref[Any => Any]])
+        }
       )
     )
   }

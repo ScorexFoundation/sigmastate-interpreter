@@ -74,20 +74,15 @@ object WOption extends EntityObject("WOption") {
     extends Liftable[Option[SA], WOption[A]] {
     lazy val eW: Elem[WOption[A]] = wOptionElement(lA.eW)
     lazy val sourceType: RType[Option[SA]] = {
-            implicit val tagSA = lA.sourceType.asInstanceOf[RType[SA]]
+      implicit val tagSA = lA.sourceType.asInstanceOf[RType[SA]]
       RType[Option[SA]]
     }
     def lift(x: Option[SA]): Ref[WOption[A]] = WOptionConst(x, lA)
-    def unlift(w: Ref[WOption[A]]): Option[SA] = w match {
-      case Def(WOptionConst(x: Option[_], _lA))
-            if _lA == lA => x.asInstanceOf[Option[SA]]
-      case _ => unliftError(w)
-    }
   }
   implicit final def liftableOption[SA, A](implicit lA: Liftable[SA,A]): Liftable[Option[SA], WOption[A]] =
     LiftableOption(lA)
 
-  private val _OptionWrapSpec = new OptionWrapSpec {}
+  private val _OptionWrapSpec = new OptionWrapSpec
 
   private val WOptionClass = RClass(classOf[WOption[_]])
 
@@ -169,7 +164,7 @@ object WOption extends EntityObject("WOption") {
     override protected def collectMethods: Map[RMethod, MethodDesc] = {
       super.collectMethods ++
         Elem.declaredWrapperMethods(_OptionWrapSpec, RClass(classOf[WOption[A]]), Set(
-        "fold", "isEmpty", "isDefined", "filter", "flatMap", "map", "getOrElse", "get"
+        "isDefined", "filter", "map", "getOrElse", "get"
         ))
     }
 
@@ -178,15 +173,6 @@ object WOption extends EntityObject("WOption") {
 
   implicit final def wOptionElement[A](implicit eA: Elem[A]): Elem[WOption[A]] =
     cachedElemByClass(eA)(RClass(classOf[WOptionElem[A, WOption[A]]]))
-
-  implicit case object WOptionCompanionElem extends CompanionElem[WOptionCompanionCtor]
-
-  abstract class WOptionCompanionCtor extends CompanionDef[WOptionCompanionCtor] with WOptionCompanion {
-    def resultType = WOptionCompanionElem
-    override def toString = "WOption"
-  }
-  implicit final def unrefWOptionCompanionCtor(p: Ref[WOptionCompanionCtor]): WOptionCompanionCtor =
-    p.node.asInstanceOf[WOptionCompanionCtor]
 
   object WOptionMethods {
     object isDefined {

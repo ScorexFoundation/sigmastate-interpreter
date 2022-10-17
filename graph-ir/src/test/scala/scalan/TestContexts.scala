@@ -2,6 +2,7 @@ package scalan
 
 import scalan.reflection.RMethod
 import scalan.util.FileUtil
+import special.CoreLibReflection
 
 trait TestContexts extends TestUtils {
   protected[this] def stage(scalan: Scalan)(testName: String, name: String, sfs: Seq[() => scalan.Sym]): Unit = {
@@ -51,7 +52,9 @@ trait TestContexts extends TestUtils {
 
 }
 
-abstract class BaseCtxTests extends BaseTests with TestContexts
+abstract class BaseCtxTests extends BaseTests with TestContexts {
+  val reflection = (CoreLibReflection, GraphIRReflection)
+}
 
 abstract class BaseNestedCtxTests extends BaseNestedTests with TestContexts
 

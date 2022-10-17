@@ -12,6 +12,5 @@ package wrappers.scala {
       def getOrElse[B](default: Ref[Thunk[B]]): Ref[B];
       def get: Ref[A]
     };
-    trait WOptionCompanion
   }
 }

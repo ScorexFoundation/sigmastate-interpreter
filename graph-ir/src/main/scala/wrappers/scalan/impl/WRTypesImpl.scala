@@ -59,7 +59,7 @@ object WRType extends EntityObject("WRType") {
   implicit final def liftableRType[SA, A](implicit lA: Liftable[SA,A]): Liftable[RType[SA], WRType[A]] =
     LiftableRType(lA)
 
-  private val _RTypeWrapSpec = new RTypeWrapSpec {}
+  private val _RTypeWrapSpec = new RTypeWrapSpec
 
   private val WRTypeClass = RClass(classOf[WRType[_]])
 

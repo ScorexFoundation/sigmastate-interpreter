@@ -15,7 +15,7 @@ class JRClass[T](val value: Class[T]) extends RClass[T] {
   val methods = mutable.HashMap.empty[(String, Seq[Class[_]]), RMethod]
 
   override def getMethod(name: String, parameterTypes: Class[_]*): RMethod = {
-    memoize(methods)((name, parameterTypes), JRMethod(value.getMethod(name, parameterTypes:_*)))
+    memoize(methods)((name, parameterTypes), JRMethod(this, value.getMethod(name, parameterTypes:_*)))
   }
 
   def getSimpleName: String = value.getSimpleName
@@ -49,7 +49,7 @@ class JRClass[T](val value: Class[T]) extends RClass[T] {
 
   def isAssignableFrom(cls: Class[_]): Boolean = value.isAssignableFrom(cls)
 
-  def getDeclaredMethods(): Array[RMethod] = value.getDeclaredMethods.map(JRMethod(_))
+  def getDeclaredMethods(): Array[RMethod] = value.getDeclaredMethods.map(JRMethod(this, _))
 
   override def equals(other: Any): Boolean = (this eq other.asInstanceOf[AnyRef]) || (other match {
     case that: JRClass[_] =>
@@ -102,8 +102,11 @@ object JRConstructor {
   private[reflection] def apply[T](index: Int, value: Constructor[T]): RConstructor[T]  = new JRConstructor[T](index, value)
 }
 
-class JRMethod private (val value: Method) extends RMethod {
+class JRMethod private (declarigClass: JRClass[_], val value: Method) extends RMethod {
   def invoke(obj: Any, args: AnyRef*): AnyRef = {
+    val name = value.getName
+    val parameterTypes: Seq[Class[_]] = value.getParameterTypes
+    memoize(declarigClass.methods)((name, parameterTypes), this)
 //    throw new RuntimeException(s"Called method: $value")
     value.invoke(obj, args:_*)
   }
@@ -123,7 +126,7 @@ class JRMethod private (val value: Method) extends RMethod {
   override def toString: String = s"JRMethod($value)"
 }
 object JRMethod {
-  private[reflection] def apply(value: Method): RMethod = new JRMethod(value)
+  private[reflection] def apply(clazz: JRClass[_], value: Method): RMethod = new JRMethod(clazz, value)
 }
 
 class RInvocationException() extends Exception
