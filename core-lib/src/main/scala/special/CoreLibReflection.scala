@@ -102,40 +102,29 @@ object CoreLibReflection {
     )
   }
 
-  //  { val clazz = classOf[special.collection.Coll[_]]
-//    registerClassEntry(clazz,
-//      methods = Map(
-//      {
-//        val paramTypes: Seq[Class[_]] = Array(classOf[Int], classOf[java.lang.Object])
-//        ("updated", paramTypes) ->
-//          new SRMethod(clazz, "updated", paramTypes) {
-//            override def invoke(obj: Any, args: AnyRef*): AnyRef = obj match {
-//              case obj: Coll[a] =>
-//                obj.updated(args(0).asInstanceOf[Int], args(1).asInstanceOf[a])
-//            }
-//          }
-//      },
-//      {
-//        val paramTypes: Seq[Class[_]] = Array(classOf[java.lang.Object], classOf[Int])
-//        ("indexOf", paramTypes) ->
-//          new SRMethod(clazz, "indexOf", paramTypes) {
-//            override def invoke(obj: Any, args: AnyRef*): AnyRef = obj match {
-//              case obj: Coll[a] =>
-//                obj.indexOf(args(0).asInstanceOf[a], args(1).asInstanceOf[Int]).asInstanceOf[AnyRef]
-//            }
-//          }
-//      },
-//      {
-//        val paramTypes: Seq[Class[_]] = Array(classOf[Function1[_, _]], classOf[RType[_]])
-//        ("flatMap", paramTypes) ->
-//          new SRMethod(clazz, "flatMap", paramTypes) {
-//            override def invoke(obj: Any, args: AnyRef*): AnyRef = obj match {
-//              case obj: Coll[a] =>
-//                obj.flatMap(args(0).asInstanceOf[a => Coll[Any]])(args(1).asInstanceOf[RType[Any]])
-//            }
-//          }
-//      }
-//      )
-//    )
-//  }
+  { val clazz = classOf[Coll[_]]
+    registerClassEntry(clazz,
+      methods = Map(
+        mkMethod(clazz, "updated", Array[Class[_]](classOf[Int], classOf[java.lang.Object])) { (obj, args) =>
+          obj.asInstanceOf[Coll[Any]].updated(args(0).asInstanceOf[Int], args(1).asInstanceOf[Any])
+        },
+        mkMethod(clazz, "flatMap", Array[Class[_]](classOf[Function1[_, _]], classOf[RType[_]])) { (obj, args) =>
+          obj.asInstanceOf[Coll[Any]].flatMap(
+            args(0).asInstanceOf[Any => Coll[Any]])(args(1).asInstanceOf[RType[Any]])
+        },
+        mkMethod(clazz, "apply", Array[Class[_]](classOf[Int])) { (obj, args) =>
+          obj.asInstanceOf[Coll[_]].apply(args(0).asInstanceOf[Int])
+        },
+        mkMethod(clazz, "append", Array[Class[_]](classOf[Coll[_]])) { (obj, args) =>
+          obj.asInstanceOf[Coll[Any]].append(args(0).asInstanceOf[Coll[Any]])
+        },
+        mkMethod(clazz, "indexOf", Array[Class[_]](classOf[java.lang.Object], classOf[Int])) { (obj, args) =>
+          obj.asInstanceOf[Coll[Any]].indexOf(args(0).asInstanceOf[Any], args(1).asInstanceOf[Int])
+        },
+        mkMethod(clazz, "map", Array[Class[_]](classOf[Function1[_, _]], classOf[RType[_]])) { (obj, args) =>
+          obj.asInstanceOf[Coll[Any]].map(args(0).asInstanceOf[Any => Any])(args(1).asInstanceOf[RType[Any]])
+        }
+      )
+    )
+  }
 }

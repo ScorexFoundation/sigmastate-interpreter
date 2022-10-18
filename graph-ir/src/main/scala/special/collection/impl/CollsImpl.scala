@@ -37,13 +37,6 @@ object Coll extends EntityObject("Coll") {
     implicit def eA: Elem[A]
     private val CollClass = RClass(classOf[Coll[A]])
 
-    override def builder: Ref[CollBuilder] = {
-      asRep[CollBuilder](mkMethodCall(self,
-        CollClass.getMethod("builder"),
-        ArraySeq.empty,
-        true, false, element[CollBuilder]))
-    }
-
     override def length: Ref[Int] = {
       asRep[Int](mkMethodCall(self,
         CollClass.getMethod("length"),
@@ -51,32 +44,11 @@ object Coll extends EntityObject("Coll") {
         true, false, element[Int]))
     }
 
-    override def isEmpty: Ref[Boolean] = {
-      asRep[Boolean](mkMethodCall(self,
-        CollClass.getMethod("isEmpty"),
-        ArraySeq.empty,
-        true, false, element[Boolean]))
-    }
-
-    override def nonEmpty: Ref[Boolean] = {
-      asRep[Boolean](mkMethodCall(self,
-        CollClass.getMethod("nonEmpty"),
-        ArraySeq.empty,
-        true, false, element[Boolean]))
-    }
-
     override def apply(i: Ref[Int]): Ref[A] = {
       asRep[A](mkMethodCall(self,
         CollClass.getMethod("apply", classOf[Sym]),
         Array[AnyRef](i),
         true, false, element[A]))
-    }
-
-    override def isDefinedAt(idx: Ref[Int]): Ref[Boolean] = {
-      asRep[Boolean](mkMethodCall(self,
-        CollClass.getMethod("isDefinedAt", classOf[Sym]),
-        Array[AnyRef](idx),
-        true, false, element[Boolean]))
     }
 
     override def getOrElse(index: Ref[Int], default: Ref[A]): Ref[A] = {
@@ -146,46 +118,11 @@ object Coll extends EntityObject("Coll") {
         true, false, element[Coll[B]]))
     }
 
-    override def segmentLength(p: Ref[A => Boolean], from: Ref[Int]): Ref[Int] = {
-      asRep[Int](mkMethodCall(self,
-        CollClass.getMethod("segmentLength", classOf[Sym], classOf[Sym]),
-        Array[AnyRef](p, from),
-        true, false, element[Int]))
-    }
-
-    override def find(p: Ref[A => Boolean]): Ref[WOption[A]] = {
-      asRep[WOption[A]](mkMethodCall(self,
-        CollClass.getMethod("find", classOf[Sym]),
-        Array[AnyRef](p),
-        true, false, element[WOption[A]]))
-    }
-
-    override def indexWhere(p: Ref[A => Boolean], from: Ref[Int]): Ref[Int] = {
-      asRep[Int](mkMethodCall(self,
-        CollClass.getMethod("indexWhere", classOf[Sym], classOf[Sym]),
-        Array[AnyRef](p, from),
-        true, false, element[Int]))
-    }
-
     override def indexOf(elem: Ref[A], from: Ref[Int]): Ref[Int] = {
       asRep[Int](mkMethodCall(self,
         CollClass.getMethod("indexOf", classOf[Sym], classOf[Sym]),
         Array[AnyRef](elem, from),
         true, false, element[Int]))
-    }
-
-    override def lastIndexWhere(p: Ref[A => Boolean], end: Ref[Int]): Ref[Int] = {
-      asRep[Int](mkMethodCall(self,
-        CollClass.getMethod("lastIndexWhere", classOf[Sym], classOf[Sym]),
-        Array[AnyRef](p, end),
-        true, false, element[Int]))
-    }
-
-    override def take(n: Ref[Int]): Ref[Coll[A]] = {
-      asRep[Coll[A]](mkMethodCall(self,
-        CollClass.getMethod("take", classOf[Sym]),
-        Array[AnyRef](n),
-        true, false, element[Coll[A]]))
     }
 
     override def patch(from: Ref[Int], patch: Ref[Coll[A]], replaced: Ref[Int]): Ref[Coll[A]] = {
@@ -209,27 +146,6 @@ object Coll extends EntityObject("Coll") {
         true, false, element[Coll[A]]))
     }
 
-    override def unionSet(that: Ref[Coll[A]]): Ref[Coll[A]] = {
-      asRep[Coll[A]](mkMethodCall(self,
-        CollClass.getMethod("unionSet", classOf[Sym]),
-        Array[AnyRef](that),
-        true, false, element[Coll[A]]))
-    }
-
-    override def diff(that: Ref[Coll[A]]): Ref[Coll[A]] = {
-      asRep[Coll[A]](mkMethodCall(self,
-        CollClass.getMethod("diff", classOf[Sym]),
-        Array[AnyRef](that),
-        true, false, element[Coll[A]]))
-    }
-
-    override def intersect(that: Ref[Coll[A]]): Ref[Coll[A]] = {
-      asRep[Coll[A]](mkMethodCall(self,
-        CollClass.getMethod("intersect", classOf[Sym]),
-        Array[AnyRef](that),
-        true, false, element[Coll[A]]))
-    }
-
     override def slice(from: Ref[Int], until: Ref[Int]): Ref[Coll[A]] = {
       asRep[Coll[A]](mkMethodCall(self,
         CollClass.getMethod("slice", classOf[Sym], classOf[Sym]),
@@ -243,13 +159,6 @@ object Coll extends EntityObject("Coll") {
         Array[AnyRef](other),
         true, false, element[Coll[A]]))
     }
-
-    override def reverse: Ref[Coll[A]] = {
-      asRep[Coll[A]](mkMethodCall(self,
-        CollClass.getMethod("reverse"),
-        ArraySeq.empty,
-        true, false, element[Coll[A]]))
-    }
   }
 
   case class LiftableColl[SA, A](lA: Liftable[SA, A])
@@ -260,11 +169,6 @@ object Coll extends EntityObject("Coll") {
       RType[SColl[SA]]
     }
     def lift(x: SColl[SA]): Ref[Coll[A]] = CollConst(x, lA)
-    def unlift(w: Ref[Coll[A]]): SColl[SA] = w match {
-      case Def(CollConst(x: SColl[_], _lA))
-            if _lA == lA => x.asInstanceOf[SColl[SA]]
-      case _ => unliftError(w)
-    }
   }
   implicit final def liftableColl[SA, A](implicit lA: Liftable[SA,A]): Liftable[SColl[SA], Coll[A]] =
     LiftableColl(lA)
@@ -280,13 +184,6 @@ object Coll extends EntityObject("Coll") {
     val resultType: Elem[Coll[A]] = element[Coll[A]]
     override def transform(t: Transformer) = CollAdapter[A](t(source))
 
-    def builder: Ref[CollBuilder] = {
-      asRep[CollBuilder](mkMethodCall(source,
-        CollClass.getMethod("builder"),
-        ArraySeq.empty,
-        true, true, element[CollBuilder]))
-    }
-
     def length: Ref[Int] = {
       asRep[Int](mkMethodCall(source,
         CollClass.getMethod("length"),
@@ -294,32 +191,11 @@ object Coll extends EntityObject("Coll") {
         true, true, element[Int]))
     }
 
-    def isEmpty: Ref[Boolean] = {
-      asRep[Boolean](mkMethodCall(source,
-        CollClass.getMethod("isEmpty"),
-        ArraySeq.empty,
-        true, true, element[Boolean]))
-    }
-
-    def nonEmpty: Ref[Boolean] = {
-      asRep[Boolean](mkMethodCall(source,
-        CollClass.getMethod("nonEmpty"),
-        ArraySeq.empty,
-        true, true, element[Boolean]))
-    }
-
     def apply(i: Ref[Int]): Ref[A] = {
       asRep[A](mkMethodCall(source,
         CollClass.getMethod("apply", classOf[Sym]),
         Array[AnyRef](i),
         true, true, element[A]))
-    }
-
-    def isDefinedAt(idx: Ref[Int]): Ref[Boolean] = {
-      asRep[Boolean](mkMethodCall(source,
-        CollClass.getMethod("isDefinedAt", classOf[Sym]),
-        Array[AnyRef](idx),
-        true, true, element[Boolean]))
     }
 
     def getOrElse(index: Ref[Int], default: Ref[A]): Ref[A] = {
@@ -389,46 +265,11 @@ object Coll extends EntityObject("Coll") {
         true, true, element[Coll[B]]))
     }
 
-    def segmentLength(p: Ref[A => Boolean], from: Ref[Int]): Ref[Int] = {
-      asRep[Int](mkMethodCall(source,
-        CollClass.getMethod("segmentLength", classOf[Sym], classOf[Sym]),
-        Array[AnyRef](p, from),
-        true, true, element[Int]))
-    }
-
-    override def find(p: Ref[A => Boolean]): Ref[WOption[A]] = {
-      asRep[WOption[A]](mkMethodCall(source,
-        CollClass.getMethod("find", classOf[Sym]),
-        Array[AnyRef](p),
-        true, true, element[WOption[A]]))
-    }
-
-    def indexWhere(p: Ref[A => Boolean], from: Ref[Int]): Ref[Int] = {
-      asRep[Int](mkMethodCall(source,
-        CollClass.getMethod("indexWhere", classOf[Sym], classOf[Sym]),
-        Array[AnyRef](p, from),
-        true, true, element[Int]))
-    }
-
     override def indexOf(elem: Ref[A], from: Ref[Int]): Ref[Int] = {
       asRep[Int](mkMethodCall(source,
         CollClass.getMethod("indexOf", classOf[Sym], classOf[Sym]),
         Array[AnyRef](elem, from),
         true, true, element[Int]))
-    }
-
-    def lastIndexWhere(p: Ref[A => Boolean], end: Ref[Int]): Ref[Int] = {
-      asRep[Int](mkMethodCall(source,
-        CollClass.getMethod("lastIndexWhere", classOf[Sym], classOf[Sym]),
-        Array[AnyRef](p, end),
-        true, true, element[Int]))
-    }
-
-    def take(n: Ref[Int]): Ref[Coll[A]] = {
-      asRep[Coll[A]](mkMethodCall(source,
-        CollClass.getMethod("take", classOf[Sym]),
-        Array[AnyRef](n),
-        true, true, element[Coll[A]]))
     }
 
     def patch(from: Ref[Int], patch: Ref[Coll[A]], replaced: Ref[Int]): Ref[Coll[A]] = {
@@ -452,27 +293,6 @@ object Coll extends EntityObject("Coll") {
         true, true, element[Coll[A]]))
     }
 
-    def unionSet(that: Ref[Coll[A]]): Ref[Coll[A]] = {
-      asRep[Coll[A]](mkMethodCall(source,
-        CollClass.getMethod("unionSet", classOf[Sym]),
-        Array[AnyRef](that),
-        true, true, element[Coll[A]]))
-    }
-
-    override def diff(that: Ref[Coll[A]]): Ref[Coll[A]] = {
-      asRep[Coll[A]](mkMethodCall(source,
-        CollClass.getMethod("diff", classOf[Sym]),
-        Array[AnyRef](that),
-        true, true, element[Coll[A]]))
-    }
-
-    override def intersect(that: Ref[Coll[A]]): Ref[Coll[A]] = {
-      asRep[Coll[A]](mkMethodCall(source,
-        CollClass.getMethod("intersect", classOf[Sym]),
-        Array[AnyRef](that),
-        true, true, element[Coll[A]]))
-    }
-
     def slice(from: Ref[Int], until: Ref[Int]): Ref[Coll[A]] = {
       asRep[Coll[A]](mkMethodCall(source,
         CollClass.getMethod("slice", classOf[Sym], classOf[Sym]),
@@ -484,13 +304,6 @@ object Coll extends EntityObject("Coll") {
       asRep[Coll[A]](mkMethodCall(source,
         CollClass.getMethod("append", classOf[Sym]),
         Array[AnyRef](other),
-        true, true, element[Coll[A]]))
-    }
-
-    def reverse: Ref[Coll[A]] = {
-      asRep[Coll[A]](mkMethodCall(source,
-        CollClass.getMethod("reverse"),
-        ArraySeq.empty,
         true, true, element[Coll[A]]))
     }
   }
@@ -531,7 +344,7 @@ object Coll extends EntityObject("Coll") {
     override protected def collectMethods: Map[RMethod, MethodDesc] = {
       super.collectMethods ++
         Elem.declaredMethods(RClass(classOf[Coll[A]]), RClass(classOf[SColl[_]]), Set(
-        "builder", "length", "size", "isEmpty", "nonEmpty", "apply", "isDefinedAt", "getOrElse", "map", "zip", "exists", "forall", "filter", "foldLeft", "indices", "flatMap", "segmentLength", "find", "indexWhere", "indexOf", "lastIndexWhere", "take", "patch", "updated", "updateMany", "unionSet", "diff", "intersect", "slice", "append", "reverse"
+        "length", "apply", "getOrElse", "map", "zip", "exists", "forall", "filter", "foldLeft", "indices", "flatMap", "indexOf", "patch", "updated", "updateMany", "slice", "append"
         ))
     }
 
@@ -541,32 +354,9 @@ object Coll extends EntityObject("Coll") {
   implicit final def collElement[A](implicit eA: Elem[A]): Elem[Coll[A]] =
     cachedElemByClass(eA)(RClass(classOf[CollElem[A, Coll[A]]]))
 
-  implicit case object CollCompanionElem extends CompanionElem[CollCompanionCtor]
-
-  abstract class CollCompanionCtor extends CompanionDef[CollCompanionCtor] with CollCompanion {
-    def resultType = CollCompanionElem
-    override def toString = "Coll"
-  }
-  implicit final def unrefCollCompanionCtor(p: Ref[CollCompanionCtor]): CollCompanionCtor =
-    p.node.asInstanceOf[CollCompanionCtor]
-
-  lazy val RColl: MutableLazy[CollCompanionCtor] = MutableLazy(new CollCompanionCtor {
-    private val thisClass = classOf[CollCompanion]
-  })
-
   // manual fix: ViewColl
 
   object CollMethods {
-    object builder {
-      def unapply(d: Def[_]): Nullable[Ref[Coll[A]] forSome {type A}] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "builder" && receiver.elem.isInstanceOf[CollElem[_, _]] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Ref[Coll[A]] forSome {type A}]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Ref[Coll[A]] forSome {type A}] = unapply(exp.node)
-    }
-
     object length {
       def unapply(d: Def[_]): Nullable[Ref[Coll[A]] forSome {type A}] = d match {
         case MethodCall(receiver, method, _, _) if method.getName == "length" && receiver.elem.isInstanceOf[CollElem[_, _]] =>
@@ -577,49 +367,9 @@ object Coll extends EntityObject("Coll") {
       def unapply(exp: Sym): Nullable[Ref[Coll[A]] forSome {type A}] = unapply(exp.node)
     }
 
-    object size {
-      def unapply(d: Def[_]): Nullable[Ref[Coll[A]] forSome {type A}] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "size" && receiver.elem.isInstanceOf[CollElem[_, _]] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Ref[Coll[A]] forSome {type A}]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Ref[Coll[A]] forSome {type A}] = unapply(exp.node)
-    }
-
-    object isEmpty {
-      def unapply(d: Def[_]): Nullable[Ref[Coll[A]] forSome {type A}] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "isEmpty" && receiver.elem.isInstanceOf[CollElem[_, _]] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Ref[Coll[A]] forSome {type A}]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Ref[Coll[A]] forSome {type A}] = unapply(exp.node)
-    }
-
-    object nonEmpty {
-      def unapply(d: Def[_]): Nullable[Ref[Coll[A]] forSome {type A}] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "nonEmpty" && receiver.elem.isInstanceOf[CollElem[_, _]] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Ref[Coll[A]] forSome {type A}]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Ref[Coll[A]] forSome {type A}] = unapply(exp.node)
-    }
-
     object apply {
       def unapply(d: Def[_]): Nullable[(Ref[Coll[A]], Ref[Int]) forSome {type A}] = d match {
         case MethodCall(receiver, method, args, _) if method.getName == "apply" && receiver.elem.isInstanceOf[CollElem[_, _]] =>
-          val res = (receiver, args(0))
-          Nullable(res).asInstanceOf[Nullable[(Ref[Coll[A]], Ref[Int]) forSome {type A}]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Ref[Coll[A]], Ref[Int]) forSome {type A}] = unapply(exp.node)
-    }
-
-    object isDefinedAt {
-      def unapply(d: Def[_]): Nullable[(Ref[Coll[A]], Ref[Int]) forSome {type A}] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "isDefinedAt" && receiver.elem.isInstanceOf[CollElem[_, _]] =>
           val res = (receiver, args(0))
           Nullable(res).asInstanceOf[Nullable[(Ref[Coll[A]], Ref[Int]) forSome {type A}]]
         case _ => Nullable.None
@@ -717,126 +467,6 @@ object Coll extends EntityObject("Coll") {
       def unapply(exp: Sym): Nullable[(Ref[Coll[A]], Ref[A => Coll[B]]) forSome {type A; type B}] = unapply(exp.node)
     }
 
-    object segmentLength {
-      def unapply(d: Def[_]): Nullable[(Ref[Coll[A]], Ref[A => Boolean], Ref[Int]) forSome {type A}] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "segmentLength" && receiver.elem.isInstanceOf[CollElem[_, _]] =>
-          val res = (receiver, args(0), args(1))
-          Nullable(res).asInstanceOf[Nullable[(Ref[Coll[A]], Ref[A => Boolean], Ref[Int]) forSome {type A}]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Ref[Coll[A]], Ref[A => Boolean], Ref[Int]) forSome {type A}] = unapply(exp.node)
-    }
-
-    object find {
-      def unapply(d: Def[_]): Nullable[(Ref[Coll[A]], Ref[A => Boolean]) forSome {type A}] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "find" && receiver.elem.isInstanceOf[CollElem[_, _]] =>
-          val res = (receiver, args(0))
-          Nullable(res).asInstanceOf[Nullable[(Ref[Coll[A]], Ref[A => Boolean]) forSome {type A}]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Ref[Coll[A]], Ref[A => Boolean]) forSome {type A}] = unapply(exp.node)
-    }
-
-    object indexWhere {
-      def unapply(d: Def[_]): Nullable[(Ref[Coll[A]], Ref[A => Boolean], Ref[Int]) forSome {type A}] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "indexWhere" && receiver.elem.isInstanceOf[CollElem[_, _]] =>
-          val res = (receiver, args(0), args(1))
-          Nullable(res).asInstanceOf[Nullable[(Ref[Coll[A]], Ref[A => Boolean], Ref[Int]) forSome {type A}]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Ref[Coll[A]], Ref[A => Boolean], Ref[Int]) forSome {type A}] = unapply(exp.node)
-    }
-
-    object indexOf {
-      def unapply(d: Def[_]): Nullable[(Ref[Coll[A]], Ref[A], Ref[Int]) forSome {type A}] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "indexOf" && receiver.elem.isInstanceOf[CollElem[_, _]] =>
-          val res = (receiver, args(0), args(1))
-          Nullable(res).asInstanceOf[Nullable[(Ref[Coll[A]], Ref[A], Ref[Int]) forSome {type A}]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Ref[Coll[A]], Ref[A], Ref[Int]) forSome {type A}] = unapply(exp.node)
-    }
-
-    object lastIndexWhere {
-      def unapply(d: Def[_]): Nullable[(Ref[Coll[A]], Ref[A => Boolean], Ref[Int]) forSome {type A}] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "lastIndexWhere" && receiver.elem.isInstanceOf[CollElem[_, _]] =>
-          val res = (receiver, args(0), args(1))
-          Nullable(res).asInstanceOf[Nullable[(Ref[Coll[A]], Ref[A => Boolean], Ref[Int]) forSome {type A}]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Ref[Coll[A]], Ref[A => Boolean], Ref[Int]) forSome {type A}] = unapply(exp.node)
-    }
-
-    object take {
-      def unapply(d: Def[_]): Nullable[(Ref[Coll[A]], Ref[Int]) forSome {type A}] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "take" && receiver.elem.isInstanceOf[CollElem[_, _]] =>
-          val res = (receiver, args(0))
-          Nullable(res).asInstanceOf[Nullable[(Ref[Coll[A]], Ref[Int]) forSome {type A}]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Ref[Coll[A]], Ref[Int]) forSome {type A}] = unapply(exp.node)
-    }
-
-    object patch {
-      def unapply(d: Def[_]): Nullable[(Ref[Coll[A]], Ref[Int], Ref[Coll[A]], Ref[Int]) forSome {type A}] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "patch" && receiver.elem.isInstanceOf[CollElem[_, _]] =>
-          val res = (receiver, args(0), args(1), args(2))
-          Nullable(res).asInstanceOf[Nullable[(Ref[Coll[A]], Ref[Int], Ref[Coll[A]], Ref[Int]) forSome {type A}]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Ref[Coll[A]], Ref[Int], Ref[Coll[A]], Ref[Int]) forSome {type A}] = unapply(exp.node)
-    }
-
-    object updated {
-      def unapply(d: Def[_]): Nullable[(Ref[Coll[A]], Ref[Int], Ref[A]) forSome {type A}] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "updated" && receiver.elem.isInstanceOf[CollElem[_, _]] =>
-          val res = (receiver, args(0), args(1))
-          Nullable(res).asInstanceOf[Nullable[(Ref[Coll[A]], Ref[Int], Ref[A]) forSome {type A}]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Ref[Coll[A]], Ref[Int], Ref[A]) forSome {type A}] = unapply(exp.node)
-    }
-
-    object updateMany {
-      def unapply(d: Def[_]): Nullable[(Ref[Coll[A]], Ref[Coll[Int]], Ref[Coll[A]]) forSome {type A}] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "updateMany" && receiver.elem.isInstanceOf[CollElem[_, _]] =>
-          val res = (receiver, args(0), args(1))
-          Nullable(res).asInstanceOf[Nullable[(Ref[Coll[A]], Ref[Coll[Int]], Ref[Coll[A]]) forSome {type A}]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Ref[Coll[A]], Ref[Coll[Int]], Ref[Coll[A]]) forSome {type A}] = unapply(exp.node)
-    }
-
-    object unionSet {
-      def unapply(d: Def[_]): Nullable[(Ref[Coll[A]], Ref[Coll[A]]) forSome {type A}] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "unionSet" && receiver.elem.isInstanceOf[CollElem[_, _]] =>
-          val res = (receiver, args(0))
-          Nullable(res).asInstanceOf[Nullable[(Ref[Coll[A]], Ref[Coll[A]]) forSome {type A}]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Ref[Coll[A]], Ref[Coll[A]]) forSome {type A}] = unapply(exp.node)
-    }
-
-    object diff {
-      def unapply(d: Def[_]): Nullable[(Ref[Coll[A]], Ref[Coll[A]]) forSome {type A}] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "diff" && receiver.elem.isInstanceOf[CollElem[_, _]] =>
-          val res = (receiver, args(0))
-          Nullable(res).asInstanceOf[Nullable[(Ref[Coll[A]], Ref[Coll[A]]) forSome {type A}]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Ref[Coll[A]], Ref[Coll[A]]) forSome {type A}] = unapply(exp.node)
-    }
-
-    object intersect {
-      def unapply(d: Def[_]): Nullable[(Ref[Coll[A]], Ref[Coll[A]]) forSome {type A}] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "intersect" && receiver.elem.isInstanceOf[CollElem[_, _]] =>
-          val res = (receiver, args(0))
-          Nullable(res).asInstanceOf[Nullable[(Ref[Coll[A]], Ref[Coll[A]]) forSome {type A}]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Ref[Coll[A]], Ref[Coll[A]]) forSome {type A}] = unapply(exp.node)
-    }
-
     object slice {
       def unapply(d: Def[_]): Nullable[(Ref[Coll[A]], Ref[Int], Ref[Int]) forSome {type A}] = d match {
         case MethodCall(receiver, method, args, _) if method.getName == "slice" && receiver.elem.isInstanceOf[CollElem[_, _]] =>
@@ -857,19 +487,8 @@ object Coll extends EntityObject("Coll") {
       def unapply(exp: Sym): Nullable[(Ref[Coll[A]], Ref[Coll[A]]) forSome {type A}] = unapply(exp.node)
     }
 
-    object reverse {
-      def unapply(d: Def[_]): Nullable[Ref[Coll[A]] forSome {type A}] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "reverse" && receiver.elem.isInstanceOf[CollElem[_, _]] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Ref[Coll[A]] forSome {type A}]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Ref[Coll[A]] forSome {type A}] = unapply(exp.node)
-    }
   }
 
-  object CollCompanionMethods {
-  }
 } // of object Coll
   registerEntityObject("Coll", Coll)
 
@@ -1015,7 +634,6 @@ object CollBuilder extends EntityObject("CollBuilder") {
 
   override def resetContext(): Unit = {
     super.resetContext()
-    RColl.reset()
   }
 
   registerModule(CollsModule)
