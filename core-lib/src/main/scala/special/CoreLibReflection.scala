@@ -4,7 +4,7 @@ import scalan.RType
 import scalan.reflection.CommonReflection.registerClassEntry
 import scalan.reflection._
 import special.collection.{CollBuilder, Coll}
-import special.sigma.{SigmaProp, BigInt}
+import special.sigma._
 import special.wrappers.OptionWrapSpec
 
 object CoreLibReflection {
@@ -123,6 +123,63 @@ object CoreLibReflection {
         },
         mkMethod(clazz, "map", Array[Class[_]](classOf[Function1[_, _]], classOf[RType[_]])) { (obj, args) =>
           obj.asInstanceOf[Coll[Any]].map(args(0).asInstanceOf[Any => Any])(args(1).asInstanceOf[RType[Any]])
+        }
+      )
+    )
+  }
+
+  { val clazz = classOf[AvlTree]
+    registerClassEntry(clazz,
+      methods = Map(
+        mkMethod(clazz, "updateOperations", Array[Class[_]](classOf[Byte])) { (obj, args) =>
+          obj.asInstanceOf[AvlTree].updateOperations(args(0).asInstanceOf[Byte])
+        },
+        mkMethod(clazz, "getMany", Array[Class[_]](classOf[Coll[_]], classOf[Coll[_]])) { (obj, args) =>
+          obj.asInstanceOf[AvlTree].getMany(args(0).asInstanceOf[Coll[Coll[Byte]]],
+            args(1).asInstanceOf[Coll[Byte]])
+        },
+        mkMethod(clazz, "update", Array[Class[_]](classOf[Coll[_]], classOf[Coll[_]])) { (obj, args) =>
+          obj.asInstanceOf[AvlTree].update(args(0).asInstanceOf[Coll[(Coll[Byte], Coll[Byte])]],
+            args(1).asInstanceOf[Coll[Byte]])
+        },
+        mkMethod(clazz, "keyLength", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[AvlTree].keyLength
+        },
+        mkMethod(clazz, "enabledOperations", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[AvlTree].enabledOperations
+        },
+        mkMethod(clazz, "updateDigest", Array[Class[_]](classOf[Coll[_]])) { (obj, args) =>
+          obj.asInstanceOf[AvlTree].updateDigest(args(0).asInstanceOf[Coll[Byte]])
+        },
+        mkMethod(clazz, "digest", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[AvlTree].digest
+        },
+        mkMethod(clazz, "insert", Array[Class[_]](classOf[Coll[_]], classOf[Coll[_]])) { (obj, args) =>
+          obj.asInstanceOf[AvlTree].insert(args(0).asInstanceOf[Coll[(Coll[Byte], Coll[Byte])]],
+            args(1).asInstanceOf[Coll[Byte]])
+        },
+        mkMethod(clazz, "isRemoveAllowed", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[AvlTree].isRemoveAllowed
+        },
+        mkMethod(clazz, "valueLengthOpt", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[AvlTree].valueLengthOpt
+        },
+        mkMethod(clazz, "get", Array[Class[_]](classOf[Coll[_]], classOf[Coll[_]])) { (obj, args) =>
+          obj.asInstanceOf[AvlTree].get(args(0).asInstanceOf[Coll[Byte]],
+            args(1).asInstanceOf[Coll[Byte]])
+        },
+        mkMethod(clazz, "remove", Array[Class[_]](classOf[Coll[_]], classOf[Coll[_]])) { (obj, args) =>
+          obj.asInstanceOf[AvlTree].remove(args(0).asInstanceOf[Coll[Coll[Byte]]], args(1).asInstanceOf[Coll[Byte]])
+        },
+        mkMethod(clazz, "contains", Array[Class[_]](classOf[Coll[_]], classOf[Coll[_]])) { (obj, args) =>
+          obj.asInstanceOf[AvlTree].contains(args(0).asInstanceOf[Coll[Byte]],
+            args(1).asInstanceOf[Coll[Byte]])
+        },
+        mkMethod(clazz, "isUpdateAllowed", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[AvlTree].isUpdateAllowed
+        },
+        mkMethod(clazz, "isInsertAllowed", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[AvlTree].isInsertAllowed
         }
       )
     )

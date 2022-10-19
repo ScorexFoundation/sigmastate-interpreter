@@ -1237,11 +1237,6 @@ object AvlTree extends EntityObject("AvlTree") {
       RType[SAvlTree]
     }
     def lift(x: SAvlTree): Ref[AvlTree] = AvlTreeConst(x)
-    def unlift(w: Ref[AvlTree]): SAvlTree = w match {
-      case Def(AvlTreeConst(x: SAvlTree))
-            => x.asInstanceOf[SAvlTree]
-      case _ => unliftError(w)
-    }
   }
 
   private val AvlTreeClass = RClass(classOf[AvlTree])
@@ -1382,18 +1377,6 @@ object AvlTree extends EntityObject("AvlTree") {
   implicit lazy val avlTreeElement: Elem[AvlTree] =
     new AvlTreeElem[AvlTree]
 
-  implicit case object AvlTreeCompanionElem extends CompanionElem[AvlTreeCompanionCtor]
-
-  abstract class AvlTreeCompanionCtor extends CompanionDef[AvlTreeCompanionCtor] with AvlTreeCompanion {
-    def resultType = AvlTreeCompanionElem
-    override def toString = "AvlTree"
-  }
-  implicit final def unrefAvlTreeCompanionCtor(p: Ref[AvlTreeCompanionCtor]): AvlTreeCompanionCtor =
-    p.node.asInstanceOf[AvlTreeCompanionCtor]
-
-  lazy val RAvlTree: MutableLazy[AvlTreeCompanionCtor] = MutableLazy(new AvlTreeCompanionCtor {
-    private val thisClass = classOf[AvlTreeCompanion]
-  })
 } // of object AvlTree
   registerEntityObject("AvlTree", AvlTree)
 
@@ -2847,7 +2830,6 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
     RGroupElement.reset()
     RSigmaProp.reset()
     RBox.reset()
-    RAvlTree.reset()
     RPreHeader.reset()
     RHeader.reset()
     RContext.reset()
