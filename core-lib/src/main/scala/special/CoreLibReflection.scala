@@ -255,4 +255,103 @@ object CoreLibReflection {
       )
     )
   }
+
+  { val clazz = classOf[GroupElement]
+    registerClassEntry(clazz,
+      methods = Map(
+        mkMethod(clazz, "exp", Array[Class[_]](classOf[BigInt])) { (obj, args) =>
+          obj.asInstanceOf[GroupElement].exp(args(0).asInstanceOf[BigInt])
+        },
+        mkMethod(clazz, "multiply", Array[Class[_]](classOf[GroupElement])) { (obj, args) =>
+          obj.asInstanceOf[GroupElement].multiply(args(0).asInstanceOf[GroupElement])
+        },
+        mkMethod(clazz, "getEncoded", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[GroupElement].getEncoded
+        },
+        mkMethod(clazz, "negate", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[GroupElement].negate
+        }
+      )
+    )
+  }
+
+  { val clazz = classOf[Header]
+    registerClassEntry(clazz,
+      methods = Map(
+        mkMethod(clazz, "minerPk", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[Header].minerPk
+        },
+        mkMethod(clazz, "powNonce", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[Header].powNonce
+        },
+        mkMethod(clazz, "transactionsRoot", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[Header].transactionsRoot
+        },
+        mkMethod(clazz, "powOnetimePk", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[Header].powOnetimePk
+        },
+        mkMethod(clazz, "nBits", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[Header].nBits
+        },
+        mkMethod(clazz, "votes", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[Header].votes
+        },
+        mkMethod(clazz, "id", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[Header].id
+        },
+        mkMethod(clazz, "version", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[Header].version
+        },
+        mkMethod(clazz, "parentId", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[Header].parentId
+        },
+        mkMethod(clazz, "timestamp", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[Header].timestamp
+        },
+        mkMethod(clazz, "height", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[Header].height
+        },
+        mkMethod(clazz, "extensionRoot", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[Header].extensionRoot
+        },
+        mkMethod(clazz, "ADProofsRoot", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[Header].ADProofsRoot
+        },
+        mkMethod(clazz, "stateRoot", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[Header].stateRoot
+        },
+        mkMethod(clazz, "powDistance", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[Header].powDistance
+        }
+      )
+    )
+  }
+
+  { val clazz = classOf[PreHeader]
+    registerClassEntry(clazz,
+      methods = Map(
+        mkMethod(clazz, "minerPk", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[PreHeader].minerPk
+        },
+        mkMethod(clazz, "votes", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[PreHeader].votes
+        },
+        mkMethod(clazz, "nBits", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[PreHeader].nBits
+        },
+        mkMethod(clazz, "version", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[PreHeader].version
+        },
+        mkMethod(clazz, "timestamp", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[PreHeader].timestamp
+        },
+        mkMethod(clazz, "parentId", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[PreHeader].parentId
+        },
+        mkMethod(clazz, "height", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[PreHeader].height
+        }
+      )
+    )
+  }
 }

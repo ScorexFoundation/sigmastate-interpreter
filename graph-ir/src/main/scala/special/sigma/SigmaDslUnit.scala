@@ -12,7 +12,6 @@ package special.sigma {
       def max(that: Ref[BigInt]): Ref[BigInt];
     };
     trait GroupElement extends Def[GroupElement] {
-      def isInfinity: Ref[Boolean];
       def exp(k: Ref[BigInt]): Ref[GroupElement];
       def multiply(that: Ref[GroupElement]): Ref[GroupElement];
       def negate: Ref[GroupElement];

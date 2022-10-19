@@ -347,4 +347,106 @@ object GraphIRReflection {
       )
     )
   }
+  
+  { val clazz = classOf[SigmaDsl#GroupElement]
+    val ctx = null.asInstanceOf[SigmaLibrary] // ok! type level only
+    registerClassEntry(clazz,
+      methods = Map(
+        mkMethod(clazz, "exp", Array[Class[_]](classOf[Base#Ref[_]])) { (obj, args) =>
+          obj.asInstanceOf[ctx.GroupElement].exp(args(0).asInstanceOf[ctx.Ref[ctx.BigInt]])
+        },
+        mkMethod(clazz, "multiply", Array[Class[_]](classOf[Base#Ref[_]])) { (obj, args) =>
+          obj.asInstanceOf[ctx.GroupElement].multiply(args(0).asInstanceOf[ctx.Ref[ctx.GroupElement]])
+        },
+        mkMethod(clazz, "getEncoded", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[ctx.GroupElement].getEncoded
+        },
+        mkMethod(clazz, "negate", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[ctx.GroupElement].negate
+        }
+      )
+    )
+  }
+  
+  { val clazz = classOf[SigmaDsl#Header]
+    val ctx = null.asInstanceOf[SigmaLibrary] // ok! type level only
+    registerClassEntry(clazz,
+      methods = Map(
+        mkMethod(clazz, "minerPk", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[ctx.Header].minerPk
+        },
+        mkMethod(clazz, "powNonce", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[ctx.Header].powNonce
+        },
+        mkMethod(clazz, "transactionsRoot", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[ctx.Header].transactionsRoot
+        },
+        mkMethod(clazz, "powOnetimePk", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[ctx.Header].powOnetimePk
+        },
+        mkMethod(clazz, "nBits", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[ctx.Header].nBits
+        },
+        mkMethod(clazz, "votes", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[ctx.Header].votes
+        },
+        mkMethod(clazz, "id", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[ctx.Header].id
+        },
+        mkMethod(clazz, "version", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[ctx.Header].version
+        },
+        mkMethod(clazz, "parentId", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[ctx.Header].parentId
+        },
+        mkMethod(clazz, "timestamp", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[ctx.Header].timestamp
+        },
+        mkMethod(clazz, "height", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[ctx.Header].height
+        },
+        mkMethod(clazz, "extensionRoot", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[ctx.Header].extensionRoot
+        },
+        mkMethod(clazz, "ADProofsRoot", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[ctx.Header].ADProofsRoot
+        },
+        mkMethod(clazz, "stateRoot", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[ctx.Header].stateRoot
+        },
+        mkMethod(clazz, "powDistance", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[ctx.Header].powDistance
+        }
+      )
+    )
+  }
+  
+  { val clazz = classOf[SigmaDsl#PreHeader]
+    val ctx = null.asInstanceOf[SigmaLibrary] // ok! type level only
+    registerClassEntry(clazz,
+      methods = Map(
+        mkMethod(clazz, "minerPk", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[ctx.PreHeader].minerPk
+        },
+        mkMethod(clazz, "votes", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[ctx.PreHeader].votes
+        },
+        mkMethod(clazz, "nBits", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[ctx.PreHeader].nBits
+        },
+        mkMethod(clazz, "version", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[ctx.PreHeader].version
+        },
+        mkMethod(clazz, "timestamp", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[ctx.PreHeader].timestamp
+        },
+        mkMethod(clazz, "parentId", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[ctx.PreHeader].parentId
+        },
+        mkMethod(clazz, "height", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[ctx.PreHeader].height
+        }
+      )
+    )
+  }
 }

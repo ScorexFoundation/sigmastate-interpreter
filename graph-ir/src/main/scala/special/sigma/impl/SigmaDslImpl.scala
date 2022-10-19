@@ -293,13 +293,6 @@ object GroupElement extends EntityObject("GroupElement") {
 
     private val GroupElementClass = RClass(classOf[GroupElement])
 
-    override def isInfinity: Ref[Boolean] = {
-      asRep[Boolean](mkMethodCall(self,
-        GroupElementClass.getMethod("isInfinity"),
-        ArraySeq.empty,
-        true, false, element[Boolean]))
-    }
-
     override def exp(k: Ref[BigInt]): Ref[GroupElement] = {
       asRep[GroupElement](mkMethodCall(self,
         GroupElementClass.getMethod("exp", classOf[Sym]),
@@ -336,11 +329,6 @@ object GroupElement extends EntityObject("GroupElement") {
       RType[SGroupElement]
     }
     def lift(x: SGroupElement): Ref[GroupElement] = GroupElementConst(x)
-    def unlift(w: Ref[GroupElement]): SGroupElement = w match {
-      case Def(GroupElementConst(x: SGroupElement))
-            => x.asInstanceOf[SGroupElement]
-      case _ => unliftError(w)
-    }
   }
 
   private val GroupElementClass = RClass(classOf[GroupElement])
@@ -351,13 +339,6 @@ object GroupElement extends EntityObject("GroupElement") {
       with Def[GroupElement] {
     val resultType: Elem[GroupElement] = element[GroupElement]
     override def transform(t: Transformer) = GroupElementAdapter(t(source))
-
-    def isInfinity: Ref[Boolean] = {
-      asRep[Boolean](mkMethodCall(source,
-        GroupElementClass.getMethod("isInfinity"),
-        ArraySeq.empty,
-        true, true, element[Boolean]))
-    }
 
     def exp(k: Ref[BigInt]): Ref[GroupElement] = {
       asRep[GroupElement](mkMethodCall(source,
@@ -403,7 +384,7 @@ object GroupElement extends EntityObject("GroupElement") {
     override protected def collectMethods: Map[RMethod, MethodDesc] = {
       super.collectMethods ++
         Elem.declaredMethods(RClass(classOf[GroupElement]), RClass(classOf[SGroupElement]), Set(
-        "isInfinity", "exp", "multiply", "negate", "getEncoded"
+        "exp", "multiply", "negate", "getEncoded"
         ))
     }
   }
@@ -411,30 +392,7 @@ object GroupElement extends EntityObject("GroupElement") {
   implicit lazy val groupElementElement: Elem[GroupElement] =
     new GroupElementElem[GroupElement]
 
-  implicit case object GroupElementCompanionElem extends CompanionElem[GroupElementCompanionCtor]
-
-  abstract class GroupElementCompanionCtor extends CompanionDef[GroupElementCompanionCtor] with GroupElementCompanion {
-    def resultType = GroupElementCompanionElem
-    override def toString = "GroupElement"
-  }
-  implicit final def unrefGroupElementCompanionCtor(p: Ref[GroupElementCompanionCtor]): GroupElementCompanionCtor =
-    p.node.asInstanceOf[GroupElementCompanionCtor]
-
-  lazy val RGroupElement: MutableLazy[GroupElementCompanionCtor] = MutableLazy(new GroupElementCompanionCtor {
-    private val thisClass = classOf[GroupElementCompanion]
-  })
-
   object GroupElementMethods {
-    object isInfinity {
-      def unapply(d: Def[_]): Nullable[Ref[GroupElement]] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "isInfinity" && receiver.elem.isInstanceOf[GroupElementElem[_]] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Ref[GroupElement]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Ref[GroupElement]] = unapply(exp.node)
-    }
-
     object exp {
       def unapply(d: Def[_]): Nullable[(Ref[GroupElement], Ref[BigInt])] = d match {
         case MethodCall(receiver, method, args, _) if method.getName == "exp" && receiver.elem.isInstanceOf[GroupElementElem[_]] =>
@@ -454,29 +412,6 @@ object GroupElement extends EntityObject("GroupElement") {
       }
       def unapply(exp: Sym): Nullable[(Ref[GroupElement], Ref[GroupElement])] = unapply(exp.node)
     }
-
-    object negate {
-      def unapply(d: Def[_]): Nullable[Ref[GroupElement]] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "negate" && receiver.elem.isInstanceOf[GroupElementElem[_]] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Ref[GroupElement]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Ref[GroupElement]] = unapply(exp.node)
-    }
-
-    object getEncoded {
-      def unapply(d: Def[_]): Nullable[Ref[GroupElement]] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "getEncoded" && receiver.elem.isInstanceOf[GroupElementElem[_]] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Ref[GroupElement]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Ref[GroupElement]] = unapply(exp.node)
-    }
-  }
-
-  object GroupElementCompanionMethods {
   }
 } // of object GroupElement
   registerEntityObject("GroupElement", GroupElement)
@@ -1299,11 +1234,6 @@ object PreHeader extends EntityObject("PreHeader") {
       RType[SPreHeader]
     }
     def lift(x: SPreHeader): Ref[PreHeader] = PreHeaderConst(x)
-    def unlift(w: Ref[PreHeader]): SPreHeader = w match {
-      case Def(PreHeaderConst(x: SPreHeader))
-            => x.asInstanceOf[SPreHeader]
-      case _ => unliftError(w)
-    }
   }
 
   private val PreHeaderClass = RClass(classOf[PreHeader])
@@ -1388,18 +1318,6 @@ object PreHeader extends EntityObject("PreHeader") {
   implicit lazy val preHeaderElement: Elem[PreHeader] =
     new PreHeaderElem[PreHeader]
 
-  implicit case object PreHeaderCompanionElem extends CompanionElem[PreHeaderCompanionCtor]
-
-  abstract class PreHeaderCompanionCtor extends CompanionDef[PreHeaderCompanionCtor] with PreHeaderCompanion {
-    def resultType = PreHeaderCompanionElem
-    override def toString = "PreHeader"
-  }
-  implicit final def unrefPreHeaderCompanionCtor(p: Ref[PreHeaderCompanionCtor]): PreHeaderCompanionCtor =
-    p.node.asInstanceOf[PreHeaderCompanionCtor]
-
-  lazy val RPreHeader: MutableLazy[PreHeaderCompanionCtor] = MutableLazy(new PreHeaderCompanionCtor {
-    private val thisClass = classOf[PreHeaderCompanion]
-  })
 } // of object PreHeader
   registerEntityObject("PreHeader", PreHeader)
 
@@ -1533,11 +1451,6 @@ object Header extends EntityObject("Header") {
       RType[SHeader]
     }
     def lift(x: SHeader): Ref[Header] = HeaderConst(x)
-    def unlift(w: Ref[Header]): SHeader = w match {
-      case Def(HeaderConst(x: SHeader))
-            => x.asInstanceOf[SHeader]
-      case _ => unliftError(w)
-    }
   }
 
   private val HeaderClass = RClass(classOf[Header])
@@ -1678,18 +1591,6 @@ object Header extends EntityObject("Header") {
   implicit lazy val headerElement: Elem[Header] =
     new HeaderElem[Header]
 
-  implicit case object HeaderCompanionElem extends CompanionElem[HeaderCompanionCtor]
-
-  abstract class HeaderCompanionCtor extends CompanionDef[HeaderCompanionCtor] with HeaderCompanion {
-    def resultType = HeaderCompanionElem
-    override def toString = "Header"
-  }
-  implicit final def unrefHeaderCompanionCtor(p: Ref[HeaderCompanionCtor]): HeaderCompanionCtor =
-    p.node.asInstanceOf[HeaderCompanionCtor]
-
-  lazy val RHeader: MutableLazy[HeaderCompanionCtor] = MutableLazy(new HeaderCompanionCtor {
-    private val thisClass = classOf[HeaderCompanion]
-  })
 } // of object Header
   registerEntityObject("Header", Header)
 
@@ -2556,10 +2457,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
   override def resetContext(): Unit = {
     super.resetContext()
     RBigInt.reset()
-    RGroupElement.reset()
     RSigmaProp.reset()
-    RPreHeader.reset()
-    RHeader.reset()
     RSigmaDslBuilder.reset()
   }
 
