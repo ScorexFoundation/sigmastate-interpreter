@@ -273,4 +273,78 @@ object GraphIRReflection {
       )
     )
   }
+
+  { val clazz = classOf[SigmaDsl#Box]
+    val ctx = null.asInstanceOf[SigmaLibrary] // ok! type level only
+    registerClassEntry(clazz,
+      methods = Map(
+        mkMethod(clazz, "value", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[ctx.Box].value
+        },
+        mkMethod(clazz, "id", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[ctx.Box].id
+        },
+        mkMethod(clazz, "creationInfo", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[ctx.Box].creationInfo
+        },
+        mkMethod(clazz, "bytes", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[ctx.Box].bytes
+        },
+        mkMethod(clazz, "getReg", Array[Class[_]](classOf[Base#Ref[_]], classOf[TypeDescs#Elem[_]])) { (obj, args) =>
+          obj.asInstanceOf[ctx.Box].getReg(args(0).asInstanceOf[ctx.Ref[Int]])(args(1).asInstanceOf[ctx.Elem[_]])
+        },
+        mkMethod(clazz, "tokens", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[ctx.Box].tokens
+        },
+        mkMethod(clazz, "bytesWithoutRef", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[ctx.Box].bytesWithoutRef
+        },
+        mkMethod(clazz, "propositionBytes", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[ctx.Box].propositionBytes
+        }
+      )
+    )
+  }
+
+  {
+    val clazz = classOf[SigmaDsl#Context]
+    val ctx = null.asInstanceOf[SigmaLibrary] // ok! type level only
+    registerClassEntry(clazz,
+      methods = Map(
+        mkMethod(clazz, "LastBlockUtxoRootHash", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[ctx.Context].LastBlockUtxoRootHash
+        },
+        mkMethod(clazz, "dataInputs", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[ctx.Context].dataInputs
+        },
+        mkMethod(clazz, "selfBoxIndex", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[ctx.Context].selfBoxIndex
+        },
+        mkMethod(clazz, "INPUTS", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[ctx.Context].INPUTS
+        },
+        mkMethod(clazz, "minerPubKey", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[ctx.Context].minerPubKey
+        },
+        mkMethod(clazz, "HEIGHT", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[ctx.Context].HEIGHT
+        },
+        mkMethod(clazz, "OUTPUTS", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[ctx.Context].OUTPUTS
+        },
+        mkMethod(clazz, "SELF", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[ctx.Context].SELF
+        },
+        mkMethod(clazz, "preHeader", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[ctx.Context].preHeader
+        },
+        mkMethod(clazz, "getVar", Array[Class[_]](classOf[Base#Ref[_]], classOf[TypeDescs#Elem[_]])) { (obj, args) =>
+          obj.asInstanceOf[ctx.Context].getVar(args(0).asInstanceOf[ctx.Ref[Byte]])(args(1).asInstanceOf[ctx.Elem[_]])
+        },
+        mkMethod(clazz, "headers", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[ctx.Context].headers
+        }
+      )
+    )
+  }
 }

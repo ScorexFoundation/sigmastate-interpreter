@@ -31,19 +31,8 @@ package special.sigma {
       def bytes: Ref[Coll[Byte]];
       def bytesWithoutRef: Ref[Coll[Byte]];
       def getReg[T](i: Ref[Int])(implicit cT: Elem[T]): Ref[WOption[T]];
-      def R0[T](implicit cT: Elem[T]): Ref[WOption[T]] = this.getReg[T](toRep(0.asInstanceOf[Int]));
-      def R1[T](implicit cT: Elem[T]): Ref[WOption[T]] = this.getReg[T](toRep(1.asInstanceOf[Int]));
-      def R2[T](implicit cT: Elem[T]): Ref[WOption[T]] = this.getReg[T](toRep(2.asInstanceOf[Int]));
-      def R3[T](implicit cT: Elem[T]): Ref[WOption[T]] = this.getReg[T](toRep(3.asInstanceOf[Int]));
-      def R4[T](implicit cT: Elem[T]): Ref[WOption[T]] = this.getReg[T](toRep(4.asInstanceOf[Int]));
-      def R5[T](implicit cT: Elem[T]): Ref[WOption[T]] = this.getReg[T](toRep(5.asInstanceOf[Int]));
-      def R6[T](implicit cT: Elem[T]): Ref[WOption[T]] = this.getReg[T](toRep(6.asInstanceOf[Int]));
-      def R7[T](implicit cT: Elem[T]): Ref[WOption[T]] = this.getReg[T](toRep(7.asInstanceOf[Int]));
-      def R8[T](implicit cT: Elem[T]): Ref[WOption[T]] = this.getReg[T](toRep(8.asInstanceOf[Int]));
-      def R9[T](implicit cT: Elem[T]): Ref[WOption[T]] = this.getReg[T](toRep(9.asInstanceOf[Int]));
       def tokens: Ref[Coll[scala.Tuple2[Coll[Byte], Long]]];
       def creationInfo: Ref[scala.Tuple2[Int, Coll[Byte]]];
-      def executeFromRegister[T](regId: Ref[Byte])(implicit cT: Elem[T]): Ref[T]
     };
     trait AvlTree extends Def[AvlTree] {
       def digest: Ref[Coll[Byte]];
@@ -89,7 +78,6 @@ package special.sigma {
       def votes: Ref[Coll[Byte]]
     };
     trait Context extends Def[Context] {
-      def builder: Ref[SigmaDslBuilder];
       def OUTPUTS: Ref[Coll[Box]];
       def INPUTS: Ref[Coll[Box]];
       def dataInputs: Ref[Coll[Box]];

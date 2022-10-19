@@ -184,4 +184,75 @@ object CoreLibReflection {
       )
     )
   }
+
+  { val clazz = classOf[Box]
+    registerClassEntry(clazz,
+      methods = Map(
+        mkMethod(clazz, "value", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[Box].value
+        },
+        mkMethod(clazz, "id", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[Box].id
+        },
+        mkMethod(clazz, "creationInfo", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[Box].creationInfo
+        },
+        mkMethod(clazz, "bytes", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[Box].bytes
+        },
+        mkMethod(clazz, "tokens", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[Box].tokens
+        },
+        mkMethod(clazz, "getReg", Array[Class[_]](classOf[Int], classOf[RType[_]])) { (obj, args) =>
+          obj.asInstanceOf[Box].getReg(args(0).asInstanceOf[Int])(args(1).asInstanceOf[RType[_]])
+        },
+        mkMethod (clazz, "bytesWithoutRef", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[Box].bytesWithoutRef
+        },
+        mkMethod(clazz, "propositionBytes", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[Box].propositionBytes
+        }
+      )
+    )
+  }
+
+  { val clazz = classOf[Context]
+    registerClassEntry(clazz,
+      methods = Map(
+        mkMethod(clazz, "LastBlockUtxoRootHash", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[Context].LastBlockUtxoRootHash
+        },
+        mkMethod(clazz, "dataInputs", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[Context].dataInputs
+        },
+        mkMethod(clazz, "selfBoxIndex", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[Context].selfBoxIndex
+        },
+        mkMethod(clazz, "INPUTS", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[Context].INPUTS
+        },
+        mkMethod(clazz, "minerPubKey", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[Context].minerPubKey
+        },
+        mkMethod(clazz, "HEIGHT", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[Context].HEIGHT
+        },
+        mkMethod(clazz, "OUTPUTS", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[Context].OUTPUTS
+        },
+        mkMethod(clazz, "SELF", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[Context].SELF
+        },
+        mkMethod(clazz, "preHeader", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[Context].preHeader
+        },
+        mkMethod(clazz, "getVar", Array[Class[_]](classOf[Byte], classOf[RType[_]])) { (obj, args) =>
+          obj.asInstanceOf[Context].getVar(args(0).asInstanceOf[Byte])(args(1).asInstanceOf[RType[_]])
+        },
+        mkMethod(clazz, "headers", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[Context].headers
+        }
+      )
+    )
+  }
 }

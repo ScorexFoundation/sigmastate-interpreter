@@ -768,13 +768,6 @@ object Box extends EntityObject("Box") {
         ArraySeq.empty,
         true, false, element[(Int, Coll[Byte])]))
     }
-
-    override def executeFromRegister[T](regId: Ref[Byte])(implicit cT: Elem[T]): Ref[T] = {
-      asRep[T](mkMethodCall(self,
-        BoxClass.getMethod("executeFromRegister", classOf[Sym], classOf[Elem[_]]),
-        Array[AnyRef](regId, cT),
-        true, false, element[T]))
-    }
   }
 
   implicit object LiftableBox
@@ -784,11 +777,6 @@ object Box extends EntityObject("Box") {
       RType[SBox]
     }
     def lift(x: SBox): Ref[Box] = BoxConst(x)
-    def unlift(w: Ref[Box]): SBox = w match {
-      case Def(BoxConst(x: SBox))
-            => x.asInstanceOf[SBox]
-      case _ => unliftError(w)
-    }
   }
 
   private val BoxClass = RClass(classOf[Box])
@@ -855,13 +843,6 @@ object Box extends EntityObject("Box") {
         ArraySeq.empty,
         true, true, element[(Int, Coll[Byte])]))
     }
-
-    def executeFromRegister[T](regId: Ref[Byte])(implicit cT: Elem[T]): Ref[T] = {
-      asRep[T](mkMethodCall(source,
-        BoxClass.getMethod("executeFromRegister", classOf[Sym], classOf[Elem[_]]),
-        Array[AnyRef](regId, cT),
-        true, true, element[T]))
-    }
   }
 
   // entityUnref: single unref method for each type family
@@ -879,26 +860,13 @@ object Box extends EntityObject("Box") {
     override protected def collectMethods: Map[RMethod, MethodDesc] = {
       super.collectMethods ++
         Elem.declaredMethods(RClass(classOf[Box]), RClass(classOf[SBox]), Set(
-        "id", "value", "propositionBytes", "bytes", "bytesWithoutRef", "registers", "getReg", "R0", "R1", "R2", "R3", "R4", "R5", "R6", "R7", "R8", "R9", "tokens", "creationInfo", "executeFromRegister"
+        "id", "value", "propositionBytes", "bytes", "bytesWithoutRef", "registers", "getReg", "R0", "R1", "R2", "R3", "R4", "R5", "R6", "R7", "R8", "R9", "tokens", "creationInfo"
         ))
     }
   }
 
   implicit lazy val boxElement: Elem[Box] =
     new BoxElem[Box]
-
-  implicit case object BoxCompanionElem extends CompanionElem[BoxCompanionCtor]
-
-  abstract class BoxCompanionCtor extends CompanionDef[BoxCompanionCtor] with BoxCompanion {
-    def resultType = BoxCompanionElem
-    override def toString = "Box"
-  }
-  implicit final def unrefBoxCompanionCtor(p: Ref[BoxCompanionCtor]): BoxCompanionCtor =
-    p.node.asInstanceOf[BoxCompanionCtor]
-
-  lazy val RBox: MutableLazy[BoxCompanionCtor] = MutableLazy(new BoxCompanionCtor {
-    private val thisClass = classOf[BoxCompanion]
-  })
 
   object BoxMethods {
     object id {
@@ -971,116 +939,6 @@ object Box extends EntityObject("Box") {
       def unapply(exp: Sym): Nullable[(Ref[Box], Ref[Int], Elem[T]) forSome {type T}] = unapply(exp.node)
     }
 
-    object R0 {
-      def unapply(d: Def[_]): Nullable[(Ref[Box], Elem[T]) forSome {type T}] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "R0" && receiver.elem.isInstanceOf[BoxElem[_]] =>
-          val res = (receiver, args(0))
-          Nullable(res).asInstanceOf[Nullable[(Ref[Box], Elem[T]) forSome {type T}]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Ref[Box], Elem[T]) forSome {type T}] = unapply(exp.node)
-    }
-
-    object R1 {
-      def unapply(d: Def[_]): Nullable[(Ref[Box], Elem[T]) forSome {type T}] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "R1" && receiver.elem.isInstanceOf[BoxElem[_]] =>
-          val res = (receiver, args(0))
-          Nullable(res).asInstanceOf[Nullable[(Ref[Box], Elem[T]) forSome {type T}]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Ref[Box], Elem[T]) forSome {type T}] = unapply(exp.node)
-    }
-
-    object R2 {
-      def unapply(d: Def[_]): Nullable[(Ref[Box], Elem[T]) forSome {type T}] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "R2" && receiver.elem.isInstanceOf[BoxElem[_]] =>
-          val res = (receiver, args(0))
-          Nullable(res).asInstanceOf[Nullable[(Ref[Box], Elem[T]) forSome {type T}]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Ref[Box], Elem[T]) forSome {type T}] = unapply(exp.node)
-    }
-
-    object R3 {
-      def unapply(d: Def[_]): Nullable[(Ref[Box], Elem[T]) forSome {type T}] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "R3" && receiver.elem.isInstanceOf[BoxElem[_]] =>
-          val res = (receiver, args(0))
-          Nullable(res).asInstanceOf[Nullable[(Ref[Box], Elem[T]) forSome {type T}]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Ref[Box], Elem[T]) forSome {type T}] = unapply(exp.node)
-    }
-
-    object R4 {
-      def unapply(d: Def[_]): Nullable[(Ref[Box], Elem[T]) forSome {type T}] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "R4" && receiver.elem.isInstanceOf[BoxElem[_]] =>
-          val res = (receiver, args(0))
-          Nullable(res).asInstanceOf[Nullable[(Ref[Box], Elem[T]) forSome {type T}]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Ref[Box], Elem[T]) forSome {type T}] = unapply(exp.node)
-    }
-
-    object R5 {
-      def unapply(d: Def[_]): Nullable[(Ref[Box], Elem[T]) forSome {type T}] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "R5" && receiver.elem.isInstanceOf[BoxElem[_]] =>
-          val res = (receiver, args(0))
-          Nullable(res).asInstanceOf[Nullable[(Ref[Box], Elem[T]) forSome {type T}]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Ref[Box], Elem[T]) forSome {type T}] = unapply(exp.node)
-    }
-
-    object R6 {
-      def unapply(d: Def[_]): Nullable[(Ref[Box], Elem[T]) forSome {type T}] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "R6" && receiver.elem.isInstanceOf[BoxElem[_]] =>
-          val res = (receiver, args(0))
-          Nullable(res).asInstanceOf[Nullable[(Ref[Box], Elem[T]) forSome {type T}]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Ref[Box], Elem[T]) forSome {type T}] = unapply(exp.node)
-    }
-
-    object R7 {
-      def unapply(d: Def[_]): Nullable[(Ref[Box], Elem[T]) forSome {type T}] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "R7" && receiver.elem.isInstanceOf[BoxElem[_]] =>
-          val res = (receiver, args(0))
-          Nullable(res).asInstanceOf[Nullable[(Ref[Box], Elem[T]) forSome {type T}]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Ref[Box], Elem[T]) forSome {type T}] = unapply(exp.node)
-    }
-
-    object R8 {
-      def unapply(d: Def[_]): Nullable[(Ref[Box], Elem[T]) forSome {type T}] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "R8" && receiver.elem.isInstanceOf[BoxElem[_]] =>
-          val res = (receiver, args(0))
-          Nullable(res).asInstanceOf[Nullable[(Ref[Box], Elem[T]) forSome {type T}]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Ref[Box], Elem[T]) forSome {type T}] = unapply(exp.node)
-    }
-
-    object R9 {
-      def unapply(d: Def[_]): Nullable[(Ref[Box], Elem[T]) forSome {type T}] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "R9" && receiver.elem.isInstanceOf[BoxElem[_]] =>
-          val res = (receiver, args(0))
-          Nullable(res).asInstanceOf[Nullable[(Ref[Box], Elem[T]) forSome {type T}]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Ref[Box], Elem[T]) forSome {type T}] = unapply(exp.node)
-    }
-
-    object tokens {
-      def unapply(d: Def[_]): Nullable[Ref[Box]] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "tokens" && receiver.elem.isInstanceOf[BoxElem[_]] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Ref[Box]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Ref[Box]] = unapply(exp.node)
-    }
-
     object creationInfo {
       def unapply(d: Def[_]): Nullable[Ref[Box]] = d match {
         case MethodCall(receiver, method, _, _) if method.getName == "creationInfo" && receiver.elem.isInstanceOf[BoxElem[_]] =>
@@ -1090,19 +948,6 @@ object Box extends EntityObject("Box") {
       }
       def unapply(exp: Sym): Nullable[Ref[Box]] = unapply(exp.node)
     }
-
-    object executeFromRegister {
-      def unapply(d: Def[_]): Nullable[(Ref[Box], Ref[Byte], Elem[T]) forSome {type T}] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "executeFromRegister" && receiver.elem.isInstanceOf[BoxElem[_]] =>
-          val res = (receiver, args(0), args(1))
-          Nullable(res).asInstanceOf[Nullable[(Ref[Box], Ref[Byte], Elem[T]) forSome {type T}]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Ref[Box], Ref[Byte], Elem[T]) forSome {type T}] = unapply(exp.node)
-    }
-  }
-
-  object BoxCompanionMethods {
   }
 } // of object Box
   registerEntityObject("Box", Box)
@@ -1865,13 +1710,6 @@ object Context extends EntityObject("Context") {
 
     private val ContextClass = RClass(classOf[Context])
 
-    override def builder: Ref[SigmaDslBuilder] = {
-      asRep[SigmaDslBuilder](mkMethodCall(self,
-        ContextClass.getMethod("builder"),
-        ArraySeq.empty,
-        true, false, element[SigmaDslBuilder]))
-    }
-
     override def OUTPUTS: Ref[Coll[Box]] = {
       asRep[Coll[Box]](mkMethodCall(self,
         ContextClass.getMethod("OUTPUTS"),
@@ -1958,11 +1796,6 @@ object Context extends EntityObject("Context") {
       RType[SContext]
     }
     def lift(x: SContext): Ref[Context] = ContextConst(x)
-    def unlift(w: Ref[Context]): SContext = w match {
-      case Def(ContextConst(x: SContext))
-            => x.asInstanceOf[SContext]
-      case _ => unliftError(w)
-    }
   }
 
   private val ContextClass = RClass(classOf[Context])
@@ -1973,13 +1806,6 @@ object Context extends EntityObject("Context") {
       with Def[Context] {
     val resultType: Elem[Context] = element[Context]
     override def transform(t: Transformer) = ContextAdapter(t(source))
-
-    def builder: Ref[SigmaDslBuilder] = {
-      asRep[SigmaDslBuilder](mkMethodCall(source,
-        ContextClass.getMethod("builder"),
-        ArraySeq.empty,
-        true, true, element[SigmaDslBuilder]))
-    }
 
     def OUTPUTS: Ref[Coll[Box]] = {
       asRep[Coll[Box]](mkMethodCall(source,
@@ -2057,7 +1883,6 @@ object Context extends EntityObject("Context") {
         Array[AnyRef](id, cT),
         true, true, element[WOption[T]]))
     }
-
   }
 
   // entityUnref: single unref method for each type family
@@ -2075,7 +1900,7 @@ object Context extends EntityObject("Context") {
     override protected def collectMethods: Map[RMethod, MethodDesc] = {
       super.collectMethods ++
         Elem.declaredMethods(RClass(classOf[Context]), RClass(classOf[SContext]), Set(
-        "builder", "OUTPUTS", "INPUTS", "dataInputs", "HEIGHT", "SELF", "selfBoxIndex", "LastBlockUtxoRootHash", "headers", "preHeader", "minerPubKey", "getVar", "vars"
+        "OUTPUTS", "INPUTS", "dataInputs", "HEIGHT", "SELF", "selfBoxIndex", "LastBlockUtxoRootHash", "headers", "preHeader", "minerPubKey", "getVar", "vars"
         ))
     }
   }
@@ -2083,30 +1908,7 @@ object Context extends EntityObject("Context") {
   implicit lazy val contextElement: Elem[Context] =
     new ContextElem[Context]
 
-  implicit case object ContextCompanionElem extends CompanionElem[ContextCompanionCtor]
-
-  abstract class ContextCompanionCtor extends CompanionDef[ContextCompanionCtor] with ContextCompanion {
-    def resultType = ContextCompanionElem
-    override def toString = "Context"
-  }
-  implicit final def unrefContextCompanionCtor(p: Ref[ContextCompanionCtor]): ContextCompanionCtor =
-    p.node.asInstanceOf[ContextCompanionCtor]
-
-  lazy val RContext: MutableLazy[ContextCompanionCtor] = MutableLazy(new ContextCompanionCtor {
-    private val thisClass = classOf[ContextCompanion]
-  })
-
   object ContextMethods {
-    object builder {
-      def unapply(d: Def[_]): Nullable[Ref[Context]] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "builder" && receiver.elem.isInstanceOf[ContextElem[_]] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Ref[Context]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Ref[Context]] = unapply(exp.node)
-    }
-
     object OUTPUTS {
       def unapply(d: Def[_]): Nullable[Ref[Context]] = d match {
         case MethodCall(receiver, method, _, _) if method.getName == "OUTPUTS" && receiver.elem.isInstanceOf[ContextElem[_]] =>
@@ -2120,16 +1922,6 @@ object Context extends EntityObject("Context") {
     object INPUTS {
       def unapply(d: Def[_]): Nullable[Ref[Context]] = d match {
         case MethodCall(receiver, method, _, _) if method.getName == "INPUTS" && receiver.elem.isInstanceOf[ContextElem[_]] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Ref[Context]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Ref[Context]] = unapply(exp.node)
-    }
-
-    object dataInputs {
-      def unapply(d: Def[_]): Nullable[Ref[Context]] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "dataInputs" && receiver.elem.isInstanceOf[ContextElem[_]] =>
           val res = receiver
           Nullable(res).asInstanceOf[Nullable[Ref[Context]]]
         case _ => Nullable.None
@@ -2157,56 +1949,6 @@ object Context extends EntityObject("Context") {
       def unapply(exp: Sym): Nullable[Ref[Context]] = unapply(exp.node)
     }
 
-    object selfBoxIndex {
-      def unapply(d: Def[_]): Nullable[Ref[Context]] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "selfBoxIndex" && receiver.elem.isInstanceOf[ContextElem[_]] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Ref[Context]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Ref[Context]] = unapply(exp.node)
-    }
-
-    object LastBlockUtxoRootHash {
-      def unapply(d: Def[_]): Nullable[Ref[Context]] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "LastBlockUtxoRootHash" && receiver.elem.isInstanceOf[ContextElem[_]] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Ref[Context]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Ref[Context]] = unapply(exp.node)
-    }
-
-    object headers {
-      def unapply(d: Def[_]): Nullable[Ref[Context]] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "headers" && receiver.elem.isInstanceOf[ContextElem[_]] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Ref[Context]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Ref[Context]] = unapply(exp.node)
-    }
-
-    object preHeader {
-      def unapply(d: Def[_]): Nullable[Ref[Context]] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "preHeader" && receiver.elem.isInstanceOf[ContextElem[_]] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Ref[Context]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Ref[Context]] = unapply(exp.node)
-    }
-
-    object minerPubKey {
-      def unapply(d: Def[_]): Nullable[Ref[Context]] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "minerPubKey" && receiver.elem.isInstanceOf[ContextElem[_]] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Ref[Context]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Ref[Context]] = unapply(exp.node)
-    }
-
     object getVar {
       def unapply(d: Def[_]): Nullable[(Ref[Context], Ref[Byte], Elem[T]) forSome {type T}] = d match {
         case MethodCall(receiver, method, args, _) if method.getName == "getVar" && receiver.elem.isInstanceOf[ContextElem[_]] =>
@@ -2216,19 +1958,6 @@ object Context extends EntityObject("Context") {
       }
       def unapply(exp: Sym): Nullable[(Ref[Context], Ref[Byte], Elem[T]) forSome {type T}] = unapply(exp.node)
     }
-
-    object vars {
-      def unapply(d: Def[_]): Nullable[Ref[Context]] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "vars" && receiver.elem.isInstanceOf[ContextElem[_]] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Ref[Context]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Ref[Context]] = unapply(exp.node)
-    }
-  }
-
-  object ContextCompanionMethods {
   }
 } // of object Context
   registerEntityObject("Context", Context)
@@ -2829,10 +2558,8 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
     RBigInt.reset()
     RGroupElement.reset()
     RSigmaProp.reset()
-    RBox.reset()
     RPreHeader.reset()
     RHeader.reset()
-    RContext.reset()
     RSigmaDslBuilder.reset()
   }
 
