@@ -471,6 +471,7 @@ object Values {
   type GroupElementValue = Value[SGroupElement.type]
   type SigmaPropValue = Value[SSigmaProp.type]
   type AvlTreeValue = Value[SAvlTree.type]
+  type SAnyValue = Value[SAny.type]
 
   type ByteConstant = Constant[SByte.type]
   type ShortConstant = Constant[SShort.type]

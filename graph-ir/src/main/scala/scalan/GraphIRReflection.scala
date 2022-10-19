@@ -1,7 +1,8 @@
 package scalan
 
+import scalan.primitives.Thunks
 import scalan.reflection.CommonReflection.registerClassEntry
-import scalan.reflection.{SRConstructor, mkMethod, SRMethod}
+import scalan.reflection.{SRConstructor, mkMethod, SRMethod, mkConstructor}
 import special.collection.Colls
 import special.sigma.SigmaDsl
 import wrappers.scala.WOptions
@@ -33,44 +34,32 @@ object GraphIRReflection {
 
   //  registerClassOnly(classOf[Colls#PairColl[_, _]])
 //
-//  { val clazz = classOf[scalan.TypeDescs#FuncElem[_, _]]
-//    registerClassEntry(clazz,
-//      constructors = Array(
-//        new SRConstructor[Any](Array(classOf[scalan.Scalan], classOf[scalan.TypeDescs#Elem[_]], classOf[scalan.TypeDescs#Elem[_]])) {
-//          override def newInstance(args: AnyRef*): Any = {
-//            val ctx = args(0).asInstanceOf[scalan.Scalan]
-//            new ctx.FuncElem(args(1).asInstanceOf[ctx.Elem[_]], args(2).asInstanceOf[ctx.Elem[_]])
-//          }
-//        }
-//      )
-//    )
-//  }
-//
-//  { val clazz = classOf[scalan.TypeDescs#PairElem[_, _]]
-//    registerClassEntry(clazz,
-//      constructors = Array(
-//        new SRConstructor[Any](Array(classOf[scalan.Scalan], classOf[scalan.TypeDescs#Elem[_]], classOf[scalan.TypeDescs#Elem[_]])) {
-//          override def newInstance(args: AnyRef*): Any = {
-//            val ctx = args(0).asInstanceOf[scalan.Scalan]
-//            new ctx.PairElem(args(1).asInstanceOf[ctx.Elem[_]], args(2).asInstanceOf[ctx.Elem[_]])
-//          }
-//        }
-//      )
-//    )
-//  }
-//
-//  { val clazz = classOf[scalan.primitives.Thunks#ThunkElem[_]]
-//    registerClassEntry(clazz,
-//      constructors = Array(
-//        new SRConstructor[Any](Array(classOf[scalan.Scalan], classOf[scalan.TypeDescs#Elem[_]])) {
-//          override def newInstance(args: AnyRef*): Any = {
-//            val ctx = args(0).asInstanceOf[scalan.Scalan]
-//            new ctx.ThunkElem(args(1).asInstanceOf[ctx.Elem[_]])
-//          }
-//        }
-//      )
-//    )
-//  }
+  registerClassEntry(classOf[TypeDescs#FuncElem[_,_]],
+    constructors = Array(
+      mkConstructor(Array(classOf[Scalan], classOf[TypeDescs#Elem[_]], classOf[TypeDescs#Elem[_]])) { args =>
+        val ctx = args(0).asInstanceOf[Scalan]
+        new ctx.FuncElem(args(1).asInstanceOf[ctx.Elem[_]], args(2).asInstanceOf[ctx.Elem[_]])
+      }
+    )
+  )
+
+  registerClassEntry(classOf[TypeDescs#PairElem[_,_]],
+    constructors = Array(
+      mkConstructor(Array(classOf[Scalan], classOf[TypeDescs#Elem[_]], classOf[TypeDescs#Elem[_]])) { args =>
+        val ctx = args(0).asInstanceOf[Scalan]
+        new ctx.PairElem(args(1).asInstanceOf[ctx.Elem[_]], args(2).asInstanceOf[ctx.Elem[_]])
+      }
+    )
+  )
+
+  registerClassEntry(classOf[Thunks#ThunkElem[_]],
+    constructors = Array(
+      mkConstructor(Array(classOf[Scalan], classOf[TypeDescs#Elem[_]])) { args =>
+        val ctx = args(0).asInstanceOf[Scalan]
+        new ctx.ThunkElem(args(1).asInstanceOf[ctx.Elem[_]])
+      }
+    )
+  )
 
 
 //  { val ctx = null.asInstanceOf[scalan.Library] // ok! type level only
