@@ -6,7 +6,6 @@ import scalan.OverloadHack.Overloaded1
 import scala.language.implicitConversions
 import scala.annotation.implicitNotFound
 import scala.annotation.unchecked.uncheckedVariance
-import scalan.compilation.GraphVizConfig
 import scalan.util.StringUtil
 import debox.{cfor, Buffer => DBuffer}
 import scalan.reflection.{RClass, RConstructor}

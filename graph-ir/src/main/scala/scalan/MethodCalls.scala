@@ -2,11 +2,9 @@ package scalan
 
 import scala.annotation.tailrec
 import scala.reflect.ClassTag
-import scalan.compilation.{GraphVizConfig, GraphVizExport}
-import scalan.util.ScalaNameUtil
 import debox.{Buffer => DBuffer}
 import debox.cfor
-import scalan.reflection.{RClass, RMethod}
+import scalan.reflection.RMethod
 
 trait MethodCalls extends Base { self: Scalan =>
 

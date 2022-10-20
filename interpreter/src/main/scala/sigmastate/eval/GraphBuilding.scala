@@ -4,7 +4,6 @@ import org.ergoplatform._
 import org.ergoplatform.validation.ValidationRules.CheckTupleType
 import scalan.ExactIntegral.{ByteIsExactIntegral, IntIsExactIntegral, LongIsExactIntegral, ShortIsExactIntegral}
 import scalan.ExactOrdering.{ByteIsExactOrdering, IntIsExactOrdering, LongIsExactOrdering, ShortIsExactOrdering}
-import scalan.compilation.GraphVizConfig
 import scalan.util.Extensions.ByteOps
 import scalan.{ExactIntegral, ExactNumeric, ExactOrdering, Lazy, MutableLazy, Nullable, SigmaLibrary}
 import sigmastate.Values.Value.Typed
@@ -15,12 +14,10 @@ import sigmastate.lang.Terms.{Ident, Select, Val, ValueOps}
 import sigmastate.serialization.OpCodes
 import sigmastate.utxo._
 import sigmastate._
-import sigmastate.eval.Extensions.GroupElementOps
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.lang.exceptions.CosterException
 
 import scala.collection.mutable.ArrayBuffer
-import scala.collection.compat.immutable.ArraySeq
 
 /** Perform translation of typed expression given by [[Value]] to a graph in IRContext.
   * Which be than be translated to [[ErgoTree]] by using [[TreeBuilding]].

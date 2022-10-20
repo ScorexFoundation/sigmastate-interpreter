@@ -1,7 +1,6 @@
 package scalan.primitives
 
 import scala.language.{existentials, implicitConversions}
-import scalan.compilation.{GraphVizConfig, GraphVizExport}
 import scalan._
 import debox.{Buffer => DBuffer, Set => DSet}
 import debox.cfor

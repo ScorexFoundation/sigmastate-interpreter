@@ -2,7 +2,6 @@ package scalan.staged
 
 import scala.collection._
 import scalan.{Base, Scalan, emptyDBufferOfInt}
-import scalan.compilation.GraphVizConfig
 import debox.cfor
 import debox.{Set => DSet, Buffer => DBuffer, Map => DMap}
 
