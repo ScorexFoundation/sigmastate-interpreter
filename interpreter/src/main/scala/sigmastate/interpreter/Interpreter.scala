@@ -15,14 +15,12 @@ import sigmastate.interpreter.Interpreter._
 import sigmastate.lang.exceptions.InterpreterException
 import sigmastate.serialization.{SigmaSerializer, ValueSerializer}
 import sigmastate.utxo.DeserializeContext
-import sigmastate.{SType, eval, _}
-import sigmastate.eval.{Evaluation, IRContext, Profiler, SigmaDsl}
-import scalan.util.BenchmarkUtil
+import sigmastate.{SType, _}
+import sigmastate.eval.{Evaluation, Profiler, SigmaDsl}
 import sigmastate.FiatShamirTree._
 import sigmastate.SigSerializer._
 import sigmastate.eval.Evaluation.addCostChecked
 import sigmastate.interpreter.ErgoTreeEvaluator.fixedCostOp
-import sigmastate.interpreter.EvalSettings._
 import sigmastate.utils.Helpers._
 import sigmastate.lang.Terms.ValueOps
 import debox.cfor

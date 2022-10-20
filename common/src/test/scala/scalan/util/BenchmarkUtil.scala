@@ -1,17 +1,17 @@
 package scalan.util
 
-import scala.concurrent.duration.Duration
 import scala.concurrent.{Future, Await}
+import scala.concurrent.duration.Duration
 import scala.concurrent.ExecutionContext.Implicits.global
 
 /** Helper classes for measuring time and printing timings. */
 object BenchmarkUtil {
-
   /** Execute `action` given number of iterations printing time for each iteration
     * and the total time. */
-  def measure[T](nIters: Int, okShowIterTime: Boolean = true)(action: Int => Unit): Unit = {
+  def measure[T](nIters: Int, okShowIterTime: Boolean = true)
+      (action: Int => Unit): Unit = {
     var sum = 0L
-    for (i <- 0 until nIters) {
+    for ( i <- 0 until nIters ) {
       val start = System.currentTimeMillis()
       val res = action(i)
       val end = System.currentTimeMillis()
@@ -39,7 +39,6 @@ object BenchmarkUtil {
     (res, end - start)
   }
 
-
   def runTasks(nTasks: Int)(block: Int => Unit) = {
     val (_, total) = measureTime {
       val tasks = (1 to nTasks).map(iTask => Future(block(iTask)))
@@ -47,5 +46,4 @@ object BenchmarkUtil {
     }
     println(s"Completed $nTasks tasks in $total msec")
   }
-
 }
