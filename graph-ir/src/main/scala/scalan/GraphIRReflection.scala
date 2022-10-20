@@ -449,4 +449,72 @@ object GraphIRReflection {
       )
     )
   }
+
+  { val clazz = classOf[SigmaDsl#SigmaDslBuilder]
+    val ctx = null.asInstanceOf[SigmaLibrary] // ok! type level only
+    registerClassEntry(clazz,
+      methods = Map(
+        mkMethod(clazz, "byteArrayToLong", Array[Class[_]](classOf[Base#Ref[_]])) { (obj, args) =>
+          obj.asInstanceOf[ctx.SigmaDslBuilder].byteArrayToLong(args(0).asInstanceOf[ctx.Ref[ctx.Coll[Byte]]])
+        },
+        mkMethod(clazz, "anyOf", Array[Class[_]](classOf[Base#Ref[_]])) { (obj, args) =>
+          obj.asInstanceOf[ctx.SigmaDslBuilder].anyOf(args(0).asInstanceOf[ctx.Ref[ctx.Coll[Boolean]]])
+        },
+        mkMethod(clazz, "allZK", Array[Class[_]](classOf[Base#Ref[_]])) { (obj, args) =>
+          obj.asInstanceOf[ctx.SigmaDslBuilder].allZK(args(0).asInstanceOf[ctx.Ref[ctx.Coll[ctx.SigmaProp]]])
+        },
+        mkMethod(clazz, "xorOf", Array[Class[_]](classOf[Base#Ref[_]])) { (obj, args) =>
+          obj.asInstanceOf[ctx.SigmaDslBuilder].xorOf(args(0).asInstanceOf[ctx.Ref[ctx.Coll[Boolean]]])
+        },
+        mkMethod(clazz, "substConstants", Array[Class[_]](classOf[Base#Ref[_]], classOf[Base#Ref[_]], classOf[Base#Ref[_]])) { (obj, args) =>
+          obj.asInstanceOf[ctx.SigmaDslBuilder].substConstants(args(0).asInstanceOf[ctx.Ref[ctx.Coll[Byte]]],
+            args(1).asInstanceOf[ctx.Ref[ctx.Coll[Int]]], args(2).asInstanceOf[ctx.Ref[ctx.Coll[Any]]])
+        },
+        mkMethod(clazz, "sigmaProp", Array[Class[_]](classOf[Base#Ref[_]])) { (obj, args) =>
+          obj.asInstanceOf[ctx.SigmaDslBuilder].sigmaProp(args(0).asInstanceOf[ctx.Ref[Boolean]])
+        },
+        mkMethod(clazz, "groupGenerator", Array[Class[_]]()) { (obj, _) =>
+          obj.asInstanceOf[ctx.SigmaDslBuilder].groupGenerator
+        },
+        mkMethod(clazz, "proveDlog", Array[Class[_]](classOf[Base#Ref[_]])) { (obj, args) =>
+          obj.asInstanceOf[ctx.SigmaDslBuilder].proveDlog(args(0).asInstanceOf[ctx.Ref[ctx.GroupElement]])
+        },
+        mkMethod(clazz, "blake2b256", Array[Class[_]](classOf[Base#Ref[_]])) { (obj, args) =>
+          obj.asInstanceOf[ctx.SigmaDslBuilder].blake2b256(args(0).asInstanceOf[ctx.Ref[ctx.Coll[Byte]]])
+        },
+        mkMethod(clazz, "longToByteArray", Array[Class[_]](classOf[Base#Ref[_]])) { (obj, args) =>
+          obj.asInstanceOf[ctx.SigmaDslBuilder].longToByteArray(args(0).asInstanceOf[ctx.Ref[Long]])
+        },
+        mkMethod(clazz, "xor", Array[Class[_]](classOf[Base#Ref[_]], classOf[Base#Ref[_]])) { (obj, args) =>
+          obj.asInstanceOf[ctx.SigmaDslBuilder].xor(args(0).asInstanceOf[ctx.Ref[ctx.Coll[Byte]]],
+            args(1).asInstanceOf[ctx.Ref[ctx.Coll[Byte]]])
+        },
+        mkMethod(clazz, "atLeast", Array[Class[_]](classOf[Base#Ref[_]], classOf[Base#Ref[_]])) { (obj, args) =>
+          obj.asInstanceOf[ctx.SigmaDslBuilder].atLeast(args(0).asInstanceOf[ctx.Ref[Int]],
+            args(1).asInstanceOf[ctx.Ref[ctx.Coll[ctx.SigmaProp]]])
+        },
+        mkMethod(clazz, "byteArrayToBigInt", Array[Class[_]](classOf[Base#Ref[_]])) { (obj, args) =>
+          obj.asInstanceOf[ctx.SigmaDslBuilder].byteArrayToBigInt(args(0).asInstanceOf[ctx.Ref[ctx.Coll[Byte]]])
+        },
+        mkMethod(clazz, "allOf", Array[Class[_]](classOf[Base#Ref[_]])) { (obj, args) =>
+          obj.asInstanceOf[ctx.SigmaDslBuilder].allOf(args(0).asInstanceOf[ctx.Ref[ctx.Coll[Boolean]]])
+        },
+        mkMethod(clazz, "proveDHTuple", Array[Class[_]](classOf[Base#Ref[_]], classOf[Base#Ref[_]], classOf[Base#Ref[_]], classOf[Base#Ref[_]])) { (obj, args) =>
+          obj.asInstanceOf[ctx.SigmaDslBuilder].proveDHTuple(args(0).asInstanceOf[ctx.Ref[ctx.GroupElement]],
+            args(1).asInstanceOf[ctx.Ref[ctx.GroupElement]],
+            args(2).asInstanceOf[ctx.Ref[ctx.GroupElement]],
+            args(3).asInstanceOf[ctx.Ref[ctx.GroupElement]])
+        },
+        mkMethod(clazz, "anyZK", Array[Class[_]](classOf[Base#Ref[_]])) { (obj, args) =>
+          obj.asInstanceOf[ctx.SigmaDslBuilder].anyZK(args(0).asInstanceOf[ctx.Ref[ctx.Coll[ctx.SigmaProp]]])
+        },
+        mkMethod(clazz, "sha256", Array[Class[_]](classOf[Base#Ref[_]])) { (obj, args) =>
+          obj.asInstanceOf[ctx.SigmaDslBuilder].sha256(args(0).asInstanceOf[ctx.Ref[ctx.Coll[Byte]]])
+        },
+        mkMethod(clazz, "decodePoint", Array[Class[_]](classOf[Base#Ref[_]])) { (obj, args) =>
+          obj.asInstanceOf[ctx.SigmaDslBuilder].decodePoint(args(0).asInstanceOf[ctx.Ref[ctx.Coll[Byte]]])
+        }
+      )
+    )
+  }
 }

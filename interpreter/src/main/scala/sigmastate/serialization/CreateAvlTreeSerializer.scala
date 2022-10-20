@@ -8,7 +8,6 @@ import sigmastate.Values._
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.utils.SigmaByteWriter.DataInfo
 
-// TODO refactor: remove not used
 case class CreateAvlTreeSerializer(
     cons: (ByteValue, Value[SByteArray], IntValue, Value[SIntOption]) => AvlTreeValue
   )

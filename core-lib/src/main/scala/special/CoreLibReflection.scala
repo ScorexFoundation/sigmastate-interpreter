@@ -354,4 +354,73 @@ object CoreLibReflection {
       )
     )
   }
+
+  { val clazz = classOf[SigmaDslBuilder]
+    val cColl = classOf[Coll[_]]
+    val cGroupElement = classOf[GroupElement]
+    registerClassEntry(clazz,
+      methods = Map(
+        mkMethod(clazz, "byteArrayToLong", Array[Class[_]](cColl)) { (obj, args) =>
+          obj.asInstanceOf[SigmaDslBuilder].byteArrayToLong(args(0).asInstanceOf[Coll[Byte]])
+        },
+        mkMethod(clazz, "anyOf", Array[Class[_]](cColl)) { (obj, args) =>
+          obj.asInstanceOf[SigmaDslBuilder].anyOf(args(0).asInstanceOf[Coll[Boolean]])
+        },
+        mkMethod(clazz, "allZK", Array[Class[_]](cColl)) { (obj, args) =>
+          obj.asInstanceOf[SigmaDslBuilder].allZK(args(0).asInstanceOf[Coll[SigmaProp]])
+        },
+        mkMethod(clazz, "xorOf", Array[Class[_]](cColl)) { (obj, args) =>
+          obj.asInstanceOf[SigmaDslBuilder].xorOf(args(0).asInstanceOf[Coll[Boolean]])
+        },
+        mkMethod(clazz, "substConstants", Array[Class[_]](cColl, cColl, cColl)) { (obj, args) =>
+          obj.asInstanceOf[SigmaDslBuilder].substConstants(args(0).asInstanceOf[Coll[Byte]],
+            args(1).asInstanceOf[Coll[Int]], args(2).asInstanceOf[Coll[Any]])
+        },
+        mkMethod(clazz, "groupGenerator", Array[Class[_]]()) { (obj, _) =>
+          obj.asInstanceOf[SigmaDslBuilder].groupGenerator
+        },
+        mkMethod(clazz, "sigmaProp", Array[Class[_]](classOf[Boolean])) { (obj, args) =>
+          obj.asInstanceOf[SigmaDslBuilder].sigmaProp(args(0).asInstanceOf[Boolean])
+        },
+        mkMethod(clazz, "proveDlog", Array[Class[_]](cGroupElement)) { (obj, args) =>
+          obj.asInstanceOf[SigmaDslBuilder].proveDlog(args(0).asInstanceOf[GroupElement])
+        },
+        mkMethod(clazz, "blake2b256", Array[Class[_]](cColl)) { (obj, args) =>
+          obj.asInstanceOf[SigmaDslBuilder].blake2b256(args(0).asInstanceOf[Coll[Byte]])
+        },
+        mkMethod(clazz, "longToByteArray", Array[Class[_]](classOf[Long])) { (obj, args) =>
+          obj.asInstanceOf[SigmaDslBuilder].longToByteArray(args(0).asInstanceOf[Long])
+        },
+        mkMethod(clazz, "xor", Array[Class[_]](cColl, cColl)) { (obj, args) =>
+          obj.asInstanceOf[SigmaDslBuilder].xor(args(0).asInstanceOf[Coll[Byte]],
+            args(1).asInstanceOf[Coll[Byte]])
+        },
+        mkMethod(clazz, "atLeast", Array[Class[_]](classOf[Int], cColl)) { (obj, args) =>
+          obj.asInstanceOf[SigmaDslBuilder].atLeast(args(0).asInstanceOf[Int],
+            args(1).asInstanceOf[Coll[SigmaProp]])
+        },
+        mkMethod(clazz, "byteArrayToBigInt", Array[Class[_]](cColl)) { (obj, args) =>
+          obj.asInstanceOf[SigmaDslBuilder].byteArrayToBigInt(args(0).asInstanceOf[Coll[Byte]])
+        },
+        mkMethod(clazz, "allOf", Array[Class[_]](cColl)) { (obj, args) =>
+          obj.asInstanceOf[SigmaDslBuilder].allOf(args(0).asInstanceOf[Coll[Boolean]])
+        },
+        mkMethod(clazz, "proveDHTuple", Array[Class[_]](cGroupElement, cGroupElement, cGroupElement, cGroupElement)) { (obj, args) =>
+          obj.asInstanceOf[SigmaDslBuilder].proveDHTuple(args(0).asInstanceOf[GroupElement],
+            args(1).asInstanceOf[GroupElement],
+            args(2).asInstanceOf[GroupElement],
+            args(3).asInstanceOf[GroupElement])
+        },
+        mkMethod(clazz, "anyZK", Array[Class[_]](cColl)) { (obj, args) =>
+          obj.asInstanceOf[SigmaDslBuilder].anyZK(args(0).asInstanceOf[Coll[SigmaProp]])
+        },
+        mkMethod(clazz, "sha256", Array[Class[_]](cColl)) { (obj, args) =>
+          obj.asInstanceOf[SigmaDslBuilder].sha256(args(0).asInstanceOf[Coll[Byte]])
+        },
+        mkMethod(clazz, "decodePoint", Array[Class[_]](cColl)) { (obj, args) =>
+          obj.asInstanceOf[SigmaDslBuilder].decodePoint(args(0).asInstanceOf[Coll[Byte]])
+        }
+      )
+    )
+  }
 }

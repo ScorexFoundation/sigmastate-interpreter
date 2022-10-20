@@ -91,7 +91,6 @@ package special.sigma {
     };
     trait SigmaDslBuilder extends Def[SigmaDslBuilder] {
       def Colls: Ref[CollBuilder];
-      def verifyZK(cond: Ref[Thunk[SigmaProp]]): Ref[Boolean];
       def atLeast(bound: Ref[Int], props: Ref[Coll[SigmaProp]]): Ref[SigmaProp];
       def allOf(conditions: Ref[Coll[Boolean]]): Ref[Boolean];
       def allZK(conditions: Ref[Coll[SigmaProp]]): Ref[SigmaProp];
@@ -109,6 +108,7 @@ package special.sigma {
       def groupGenerator: Ref[GroupElement];
       def substConstants[T](scriptBytes: Ref[Coll[Byte]], positions: Ref[Coll[Int]], newValues: Ref[Coll[T]]): Ref[Coll[Byte]];
       def decodePoint(encoded: Ref[Coll[Byte]]): Ref[GroupElement];
+      /** This method will be used in v6.0 to handle CreateAvlTree operation in GraphBuilding */
       def avlTree(operationFlags: Ref[Byte], digest: Ref[Coll[Byte]], keyLength: Ref[Int], valueLengthOpt: Ref[WOption[Int]]): Ref[AvlTree];
       def xor(l: Ref[Coll[Byte]], r: Ref[Coll[Byte]]): Ref[Coll[Byte]]
     };

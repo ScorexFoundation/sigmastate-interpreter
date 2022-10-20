@@ -186,19 +186,6 @@ object BigInt extends EntityObject("BigInt") {
   implicit lazy val bigIntElement: Elem[BigInt] =
     new BigIntElem[BigInt]
 
-  implicit case object BigIntCompanionElem extends CompanionElem[BigIntCompanionCtor]
-
-  abstract class BigIntCompanionCtor extends CompanionDef[BigIntCompanionCtor] with BigIntCompanion {
-    def resultType = BigIntCompanionElem
-    override def toString = "BigInt"
-  }
-  implicit final def unrefBigIntCompanionCtor(p: Ref[BigIntCompanionCtor]): BigIntCompanionCtor =
-    p.node.asInstanceOf[BigIntCompanionCtor]
-
-  lazy val RBigInt: MutableLazy[BigIntCompanionCtor] = MutableLazy(new BigIntCompanionCtor {
-    private val thisClass = classOf[BigIntCompanion]
-  })
-
   object BigIntMethods {
 
     object add {
@@ -1887,13 +1874,6 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
         true, false, element[CollBuilder]))
     }
 
-    override def verifyZK(cond: Ref[Thunk[SigmaProp]]): Ref[Boolean] = {
-      asRep[Boolean](mkMethodCall(self,
-        SigmaDslBuilderClass.getMethod("verifyZK", classOf[Sym]),
-        Array[AnyRef](cond),
-        true, false, element[Boolean]))
-    }
-
     override def atLeast(bound: Ref[Int], props: Ref[Coll[SigmaProp]]): Ref[SigmaProp] = {
       asRep[SigmaProp](mkMethodCall(self,
         SigmaDslBuilderClass.getMethod("atLeast", classOf[Sym], classOf[Sym]),
@@ -2036,11 +2016,6 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
       RType[SSigmaDslBuilder]
     }
     def lift(x: SSigmaDslBuilder): Ref[SigmaDslBuilder] = SigmaDslBuilderConst(x)
-    def unlift(w: Ref[SigmaDslBuilder]): SSigmaDslBuilder = w match {
-      case Def(SigmaDslBuilderConst(x: SSigmaDslBuilder))
-            => x.asInstanceOf[SSigmaDslBuilder]
-      case _ => unliftError(w)
-    }
   }
 
   private val SigmaDslBuilderClass = RClass(classOf[SigmaDslBuilder])
@@ -2057,13 +2032,6 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
         SigmaDslBuilderClass.getMethod("Colls"),
         ArraySeq.empty,
         true, true, element[CollBuilder]))
-    }
-
-    def verifyZK(cond: Ref[Thunk[SigmaProp]]): Ref[Boolean] = {
-      asRep[Boolean](mkMethodCall(source,
-        SigmaDslBuilderClass.getMethod("verifyZK", classOf[Sym]),
-        Array[AnyRef](cond),
-        true, true, element[Boolean]))
     }
 
     def atLeast(bound: Ref[Int], props: Ref[Coll[SigmaProp]]): Ref[SigmaProp] = {
@@ -2224,19 +2192,6 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
   implicit lazy val sigmaDslBuilderElement: Elem[SigmaDslBuilder] =
     new SigmaDslBuilderElem[SigmaDslBuilder]
 
-  implicit case object SigmaDslBuilderCompanionElem extends CompanionElem[SigmaDslBuilderCompanionCtor]
-
-  abstract class SigmaDslBuilderCompanionCtor extends CompanionDef[SigmaDslBuilderCompanionCtor] with SigmaDslBuilderCompanion {
-    def resultType = SigmaDslBuilderCompanionElem
-    override def toString = "SigmaDslBuilder"
-  }
-  implicit final def unrefSigmaDslBuilderCompanionCtor(p: Ref[SigmaDslBuilderCompanionCtor]): SigmaDslBuilderCompanionCtor =
-    p.node.asInstanceOf[SigmaDslBuilderCompanionCtor]
-
-  lazy val RSigmaDslBuilder: MutableLazy[SigmaDslBuilderCompanionCtor] = MutableLazy(new SigmaDslBuilderCompanionCtor {
-    private val thisClass = classOf[SigmaDslBuilderCompanion]
-  })
-
   object SigmaDslBuilderMethods {
     object Colls {
       def unapply(d: Def[_]): Nullable[Ref[SigmaDslBuilder]] = d match {
@@ -2246,16 +2201,6 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
         case _ => Nullable.None
       }
       def unapply(exp: Sym): Nullable[Ref[SigmaDslBuilder]] = unapply(exp.node)
-    }
-
-    object verifyZK {
-      def unapply(d: Def[_]): Nullable[(Ref[SigmaDslBuilder], Ref[Thunk[SigmaProp]])] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "verifyZK" && receiver.elem.isInstanceOf[SigmaDslBuilderElem[_]] =>
-          val res = (receiver, args(0))
-          Nullable(res).asInstanceOf[Nullable[(Ref[SigmaDslBuilder], Ref[Thunk[SigmaProp]])]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Ref[SigmaDslBuilder], Ref[Thunk[SigmaProp]])] = unapply(exp.node)
     }
 
     object atLeast {
@@ -2428,6 +2373,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
       def unapply(exp: Sym): Nullable[(Ref[SigmaDslBuilder], Ref[Coll[Byte]])] = unapply(exp.node)
     }
 
+    /** This is necessary to handle CreateAvlTree in GraphBuilding (v6.0) */
     object avlTree {
       def unapply(d: Def[_]): Nullable[(Ref[SigmaDslBuilder], Ref[Byte], Ref[Coll[Byte]], Ref[Int], Ref[WOption[Int]])] = d match {
         case MethodCall(receiver, method, args, _) if method.getName == "avlTree" && receiver.elem.isInstanceOf[SigmaDslBuilderElem[_]] =>
@@ -2448,17 +2394,12 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
       def unapply(exp: Sym): Nullable[(Ref[SigmaDslBuilder], Ref[Coll[Byte]], Ref[Coll[Byte]])] = unapply(exp.node)
     }
   }
-
-  object SigmaDslBuilderCompanionMethods {
-  }
 } // of object SigmaDslBuilder
   registerEntityObject("SigmaDslBuilder", SigmaDslBuilder)
 
   override def resetContext(): Unit = {
     super.resetContext()
-    RBigInt.reset()
     RSigmaProp.reset()
-    RSigmaDslBuilder.reset()
   }
 
   registerModule(SigmaDslModule)

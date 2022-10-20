@@ -193,7 +193,7 @@ object CreateProveDlog extends FixedCostValueCompanion {
   val OpType = SFunc(SGroupElement, SSigmaProp)
 }
 
-// TODO refactor: remove not used class
+// TODO v6.0: implement `eval` method and add support in GraphBuilding
 /** Construct a new authenticated dictionary with given parameters and tree root digest.*/
 case class CreateAvlTree(operationFlags: ByteValue,
     digest: Value[SByteArray],
