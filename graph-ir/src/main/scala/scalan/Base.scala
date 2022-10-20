@@ -253,9 +253,6 @@ abstract class Base { scalan: Scalan =>
       /** Method to embedd source type instance into graph IR. */
       def lift(x: ST): Ref[T]
 
-      protected def unliftError(w: Ref[T]) =
-        !!!(s"Cannot unlift simbol $w using $this")
-
       /** We assume only single Liftable[ST, T] implementation for every IR type `T`.
         * And all instances of it are equal. */
       override def hashCode(): Int = eW.hashCode() + 1 // to make Elem and Liftable differ
@@ -281,7 +278,6 @@ abstract class Base { scalan: Scalan =>
     /** Liftable evidence for primitive (base) types (used in BaseElemLiftable). */
     class BaseLiftable[T](implicit val eW: Elem[T], override val sourceType: RType[T]) extends Liftable[T, T] {
       def lift(x: T) = toRep(x)
-      def unlift(w: Ref[T]) = valueFromRep(w)
     }
 
     /** Liftable evidence between `(SA, SB)` and `(A, B)` types. */
@@ -303,10 +299,6 @@ abstract class Base { scalan: Scalan =>
       val eW: Elem[A => B] = funcElement(lA.eW, lB.eW)
       override val sourceType = RType.funcRType(lA.sourceType, lB.sourceType)
       def lift(srcF: SA => SB): Ref[A => B] = FuncConst[SA,SB,A,B](srcF)
-      def unlift(f: Ref[A => B]): SA => SB = f.node match {
-        case FuncConst(srcF) => srcF.asInstanceOf[SA => SB]
-        case _ => unliftError(f)
-      }
     }
 
     implicit lazy val BooleanIsLiftable = asLiftable[Boolean,Boolean](BooleanElement.liftable)

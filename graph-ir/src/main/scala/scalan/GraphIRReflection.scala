@@ -2,14 +2,14 @@ package scalan
 
 import scalan.primitives.Thunks
 import scalan.reflection.CommonReflection.registerClassEntry
-import scalan.reflection.{SRConstructor, mkConstructor, mkMethod, SRMethod}
+import scalan.reflection.{mkConstructor, mkMethod, CommonReflection}
+import special.CoreLibReflection
 import special.collection.Colls
 import special.sigma.SigmaDsl
-import wrappers.scala.WOptions
-import wrappers.scala.impl.WOptionsDefs
 import wrappers.scalan.WRTypes
 
 object GraphIRReflection {
+  val reflection = (CommonReflection, CoreLibReflection)
 
   { val clazz = classOf[wrappers.scala.WOptions#WOption[_]]
     val ctx = null.asInstanceOf[scalan.Library] // ok! type level only

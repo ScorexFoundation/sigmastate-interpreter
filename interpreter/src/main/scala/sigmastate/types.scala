@@ -298,7 +298,7 @@ object SType {
   * @see SInt, SGroupElement, SType
   */
 trait STypeCompanion {
-
+  val reflection = InterpreterReflection
   /** Type identifier to use in method serialization */
   def typeId: Byte
 

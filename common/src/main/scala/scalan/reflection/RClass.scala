@@ -58,6 +58,7 @@ object RClass {
         assert(c.clazz == clazz)
         c
       case _ =>
+//        sys.error(s"Cannot find RClass data for $clazz")
         memoize(classes)(clazz, new JRClass[T](clazz))
     }
     res.asInstanceOf[RClass[T]]

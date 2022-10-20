@@ -8,6 +8,8 @@ import special.sigma._
 import special.wrappers.{OptionWrapSpec, RTypeWrapSpec}
 
 object CoreLibReflection {
+  val reflection = CommonReflection
+
   { val clazz = classOf[SigmaProp]
     registerClassEntry(clazz,
       methods = Map(

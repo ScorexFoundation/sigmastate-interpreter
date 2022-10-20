@@ -458,11 +458,6 @@ object SigmaProp extends EntityObject("SigmaProp") {
       RType[SSigmaProp]
     }
     def lift(x: SSigmaProp): Ref[SigmaProp] = SigmaPropConst(x)
-    def unlift(w: Ref[SigmaProp]): SSigmaProp = w match {
-      case Def(SigmaPropConst(x: SSigmaProp))
-            => x.asInstanceOf[SSigmaProp]
-      case _ => unliftError(w)
-    }
   }
 
   private val SigmaPropClass = RClass(classOf[SigmaProp])
@@ -503,36 +498,6 @@ object SigmaProp extends EntityObject("SigmaProp") {
         Array[AnyRef](other),
         true, true, element[SigmaProp]))
     }
-
-    // manual fix ||
-    def ||(other: Ref[Boolean])(implicit o: Overloaded1): Ref[SigmaProp] = {
-      asRep[SigmaProp](mkMethodCall(source,
-        SigmaPropClass.getMethod("$bar$bar", classOf[Sym], classOf[Overloaded1]),
-        Array[AnyRef](other, o),
-        true, true, element[SigmaProp]))
-    }
-
-    def lazyAnd(other: Ref[Thunk[SigmaProp]]): Ref[SigmaProp] = {
-      asRep[SigmaProp](mkMethodCall(source,
-        SigmaPropClass.getMethod("lazyAnd", classOf[Sym]),
-        Array[AnyRef](other),
-        true, true, element[SigmaProp]))
-    }
-
-    def lazyOr(other: Ref[Thunk[SigmaProp]]): Ref[SigmaProp] = {
-      asRep[SigmaProp](mkMethodCall(source,
-        SigmaPropClass.getMethod("lazyOr", classOf[Sym]),
-        Array[AnyRef](other),
-        true, true, element[SigmaProp]))
-    }
-
-    // manual fix
-    def builder: Ref[SigmaDslBuilder] = {
-      asRep[SigmaDslBuilder](mkMethodCall(source,
-        SigmaPropClass.getMethod("builder"),
-        Array[AnyRef](),
-        true, true, element[SigmaDslBuilder]))
-    }
   }
 
   // entityUnref: single unref method for each type family
@@ -550,26 +515,13 @@ object SigmaProp extends EntityObject("SigmaProp") {
     override protected def collectMethods: Map[RMethod, MethodDesc] = {
       super.collectMethods ++
         Elem.declaredMethods(RClass(classOf[SigmaProp]), RClass(classOf[SSigmaProp]), Set(
-        "isValid", "propBytes", "$amp$amp", "$amp$amp", "$bar$bar", "$bar$bar"
+        "isValid", "propBytes", "$amp$amp", "$bar$bar"
         ))
     }
   }
 
   implicit lazy val sigmaPropElement: Elem[SigmaProp] =
     new SigmaPropElem[SigmaProp]
-
-  implicit case object SigmaPropCompanionElem extends CompanionElem[SigmaPropCompanionCtor]
-
-  abstract class SigmaPropCompanionCtor extends CompanionDef[SigmaPropCompanionCtor] with SigmaPropCompanion {
-    def resultType = SigmaPropCompanionElem
-    override def toString = "SigmaProp"
-  }
-  implicit final def unrefSigmaPropCompanionCtor(p: Ref[SigmaPropCompanionCtor]): SigmaPropCompanionCtor =
-    p.node.asInstanceOf[SigmaPropCompanionCtor]
-
-  lazy val RSigmaProp: MutableLazy[SigmaPropCompanionCtor] = MutableLazy(new SigmaPropCompanionCtor {
-    private val thisClass = classOf[SigmaPropCompanion]
-  })
 
   object SigmaPropMethods {
     object isValid {
@@ -611,9 +563,6 @@ object SigmaProp extends EntityObject("SigmaProp") {
       }
       def unapply(exp: Sym): Nullable[(Ref[SigmaProp], Ref[SigmaProp])] = unapply(exp.node)
     }
-  }
-
-  object SigmaPropCompanionMethods {
   }
 } // of object SigmaProp
   registerEntityObject("SigmaProp", SigmaProp)
@@ -834,16 +783,6 @@ object Box extends EntityObject("Box") {
     object bytesWithoutRef {
       def unapply(d: Def[_]): Nullable[Ref[Box]] = d match {
         case MethodCall(receiver, method, _, _) if method.getName == "bytesWithoutRef" && receiver.elem.isInstanceOf[BoxElem[_]] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Ref[Box]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Ref[Box]] = unapply(exp.node)
-    }
-
-    object registers {
-      def unapply(d: Def[_]): Nullable[Ref[Box]] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "registers" && receiver.elem.isInstanceOf[BoxElem[_]] =>
           val res = receiver
           Nullable(res).asInstanceOf[Nullable[Ref[Box]]]
         case _ => Nullable.None
@@ -2396,11 +2335,6 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
   }
 } // of object SigmaDslBuilder
   registerEntityObject("SigmaDslBuilder", SigmaDslBuilder)
-
-  override def resetContext(): Unit = {
-    super.resetContext()
-    RSigmaProp.reset()
-  }
 
   registerModule(SigmaDslModule)
 }
