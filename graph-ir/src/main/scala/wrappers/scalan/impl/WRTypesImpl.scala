@@ -1,7 +1,6 @@
 package wrappers.scalan
 
 import scala.language.{existentials,implicitConversions}
-import scalan._
 import scalan.RType
 import special.wrappers.WrappersModule
 import special.wrappers.RTypeWrapSpec
@@ -13,7 +12,6 @@ package impl {
   // Abs -----------------------------------
 trait WRTypesDefs extends scalan.Scalan with WRTypes {
   self: WrappersModule =>
-import WRType._
 
 class WRTypeCls extends EntityObject("WRType") {
   // entityConst: single const for each entity
