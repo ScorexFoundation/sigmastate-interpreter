@@ -90,9 +90,6 @@ object WSpecialPredef extends EntityObject("WSpecialPredef") {
     }
   })
 
-  object WSpecialPredefMethods {
-  }
-
   object WSpecialPredefCompanionMethods {
     object optionGetOrElse {
       def unapply(d: Def[_]): Nullable[(Ref[WOption[A]], Ref[A]) forSome {type A}] = d match {

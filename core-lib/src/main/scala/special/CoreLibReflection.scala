@@ -5,7 +5,7 @@ import scalan.reflection.CommonReflection.registerClassEntry
 import scalan.reflection._
 import special.collection.{CollBuilder, Coll}
 import special.sigma._
-import special.wrappers.OptionWrapSpec
+import special.wrappers.{OptionWrapSpec, RTypeWrapSpec}
 
 object CoreLibReflection {
   { val clazz = classOf[SigmaProp]
@@ -419,6 +419,16 @@ object CoreLibReflection {
         },
         mkMethod(clazz, "decodePoint", Array[Class[_]](cColl)) { (obj, args) =>
           obj.asInstanceOf[SigmaDslBuilder].decodePoint(args(0).asInstanceOf[Coll[Byte]])
+        }
+      )
+    )
+  }
+
+  { val clazz = classOf[RTypeWrapSpec]
+    registerClassEntry(clazz,
+      methods = Map(
+        mkMethod(clazz, "name", Array[Class[_]](classOf[RType[_]])) { (obj, args) =>
+          obj.asInstanceOf[RTypeWrapSpec].name(args(0).asInstanceOf[RType[_]])
         }
       )
     )

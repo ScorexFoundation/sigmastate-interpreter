@@ -13,7 +13,7 @@ package impl {
 trait WOptionsDefs extends scalan.Scalan with WOptions {
   self: WrappersModule =>
 
-object WOption extends EntityObject("WOption") {
+class WOptionCls extends EntityObject("WOption") {
   // entityConst: single const for each entity
   import Liftables._
 
@@ -226,6 +226,7 @@ object WOption extends EntityObject("WOption") {
     }
   }
 } // of object WOption
+object WOption extends WOptionCls
   registerEntityObject("WOption", WOption)
 
   registerModule(WOptionsModule)

@@ -514,9 +514,9 @@ abstract class Base { scalan: Scalan =>
         NoOwner
       else {
         val firstParamClazz = paramTypes(0)
-        if (firstParamClazz.getSuperclass == classOf[EntityObject]) {
+        if (classOf[EntityObject].isAssignableFrom(firstParamClazz)) {
           val className = firstParamClazz.getSimpleName
-          val entityName = className.substring(0, className.length - 1)
+          val entityName = className.stripSuffix("$").stripSuffix("Cls")
           getEntityObject(entityName) match {
             case Nullable(obj) =>
               EntityObjectOwner(obj)

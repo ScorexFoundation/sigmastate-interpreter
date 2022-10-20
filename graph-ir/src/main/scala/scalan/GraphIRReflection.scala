@@ -2,10 +2,12 @@ package scalan
 
 import scalan.primitives.Thunks
 import scalan.reflection.CommonReflection.registerClassEntry
-import scalan.reflection.{SRConstructor, mkMethod, SRMethod, mkConstructor}
+import scalan.reflection.{SRConstructor, mkConstructor, mkMethod, SRMethod}
 import special.collection.Colls
 import special.sigma.SigmaDsl
 import wrappers.scala.WOptions
+import wrappers.scala.impl.WOptionsDefs
+import wrappers.scalan.WRTypes
 
 object GraphIRReflection {
 
@@ -32,8 +34,6 @@ object GraphIRReflection {
     )
   }
 
-  //  registerClassOnly(classOf[Colls#PairColl[_, _]])
-//
   registerClassEntry(classOf[TypeDescs#FuncElem[_,_]],
     constructors = Array(
       mkConstructor(Array(classOf[Scalan], classOf[TypeDescs#Elem[_]], classOf[TypeDescs#Elem[_]])) { args =>
@@ -513,6 +513,52 @@ object GraphIRReflection {
         },
         mkMethod(clazz, "decodePoint", Array[Class[_]](classOf[Base#Ref[_]])) { (obj, args) =>
           obj.asInstanceOf[ctx.SigmaDslBuilder].decodePoint(args(0).asInstanceOf[ctx.Ref[ctx.Coll[Byte]]])
+        }
+      )
+    )
+  }
+
+  { val ctx = null.asInstanceOf[SigmaLibrary] // ok! type level only
+    val clazz = classOf[ctx.WOption.WOptionElem[_, _]]
+    registerClassEntry(clazz,
+      constructors = Array(
+        mkConstructor(Array(classOf[ctx.WOptionCls], classOf[TypeDescs#Elem[_]])) { args =>
+          val entityObj = args(0).asInstanceOf[ctx.WOptionCls]
+          new entityObj.WOptionElem()(args(1).asInstanceOf[ctx.Elem[_]])
+        }
+      )
+    )
+  }
+
+  { val clazz = classOf[WRTypes#WRType[_]]
+    val ctx = null.asInstanceOf[SigmaLibrary] // ok! type level only
+    registerClassEntry(clazz,
+      methods = Map(
+        mkMethod(clazz, "name", Array[Class[_]]()) { (obj, _) =>
+          obj.asInstanceOf[ctx.WRType[_]].name
+        }
+      )
+    )
+  }
+
+  { val ctx = null.asInstanceOf[SigmaLibrary] // ok! type level only
+    val clazz = classOf[ctx.WRType.WRTypeElem[_, _]]
+    registerClassEntry(clazz,
+      constructors = Array(
+        mkConstructor(Array(classOf[ctx.WRTypeCls], classOf[TypeDescs#Elem[_]])) { args =>
+          val entityObj = args(0).asInstanceOf[ctx.WRTypeCls]
+          new entityObj.WRTypeElem()(args(1).asInstanceOf[ctx.Elem[_]])
+        }
+      )
+    )
+  }
+
+  { val clazz = classOf[wrappers.special.WSpecialPredefs#WSpecialPredefCompanion]
+    val ctx = null.asInstanceOf[SigmaLibrary] // ok! type level only
+    registerClassEntry(clazz,
+      methods = Map(
+        mkMethod(clazz, "some", Array[Class[_]](classOf[Base#Ref[_]])) { (obj, args) =>
+          obj.asInstanceOf[ctx.WSpecialPredefCompanion].some(args(0).asInstanceOf[ctx.Ref[Any]])
         }
       )
     )
