@@ -38,8 +38,6 @@ object StringUtil {
   implicit class StringUtilExtensions(val str: String) extends AnyVal {
     def isNullOrEmpty = str == null || str.isEmpty
 
-    def stripAndTrim = str.stripMargin.stripPrefix("\n").stripPrefix("\r\n").stripLineEnd
-
     def lastComponent(sep: Char): String = {
       str.substring(str.lastIndexOf(sep) + 1)
     }
