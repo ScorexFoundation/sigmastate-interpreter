@@ -13,8 +13,6 @@ lazy val allConfigDependency = "compile->compile;test->test"
 
 lazy val commonSettings = Seq(
   organization := "org.scorexfoundation",
-  crossScalaVersions := Seq(scala213, scala212, scala211),
-  scalaVersion := scala212,
   resolvers += Resolver.sonatypeRepo("public"),
   licenses := Seq("CC0" -> url("https://creativecommons.org/publicdomain/zero/1.0/legalcode")),
   homepage := Some(url("https://github.com/ScorexFoundation/sigmastate-interpreter")),
@@ -44,7 +42,12 @@ lazy val commonSettings = Seq(
           url("https://github.com/ScorexFoundation/sigmastate-interpreter"),
           "scm:git@github.com:ScorexFoundation/sigmastate-interpreter.git"
       )
-  ),
+  )
+)
+
+lazy val crossScalaSettings = Seq(
+  crossScalaVersions := Seq(scala213, scala212, scala211),
+  scalaVersion := scala213
 )
 
 // prefix version with "-SNAPSHOT" for builds without a git tag
@@ -76,31 +79,40 @@ else
   Seq(circeCore, circeGeneric, circeParser)
 
 
-val testingDependencies = Seq(
+lazy val testingDependencies = Seq(
   "org.scalatest" %% "scalatest" % "3.2.14" % Test,
   "org.scalactic" %% "scalactic" % "3.2.14" % Test,
   "org.scalacheck" %% "scalacheck" % "1.15.2" % Test,          // last supporting Scala 2.11
   "org.scalatestplus" %% "scalacheck-1-15" % "3.2.3.0" % Test, // last supporting Scala 2.11
   "com.lihaoyi" %% "pprint" % "0.6.3" % Test,
-  "com.storm-enroute" %% "scalameter" % "0.19" % Test,
-  "junit" % "junit" % "4.12" % Test
+  "com.storm-enroute" %% "scalameter" % "0.19" % Test
 )
+
+lazy val testingDependencies2 =
+  libraryDependencies ++= Seq(
+    "org.scalatest" %%% "scalatest" % "3.2.14" % Test,
+    "org.scalactic" %%% "scalactic" % "3.2.14" % Test,
+    "org.scalacheck" %%% "scalacheck" % "1.15.2" % Test,          // last supporting Scala 2.11
+    "org.scalatestplus" %%% "scalacheck-1-15" % "3.2.3.0" % Test, // last supporting Scala 2.11
+    "com.lihaoyi" %%% "pprint" % "0.6.3" % Test
+  )
 
 lazy val testSettings = Seq(
   libraryDependencies ++= testingDependencies,
-  parallelExecution in Test := false,
-  baseDirectory in Test := file("."),
-  publishArtifact in Test := true,
+  Test / parallelExecution := false,
+  Test / baseDirectory := file("."),
+  Test / publishArtifact := true,
   publishArtifact in(Test, packageSrc) := true,
   publishArtifact in(Test, packageDoc) := false,
-  test in assembly := {})
+  assembly / test := {})
 
-libraryDependencies ++= Seq(
-  scrypto,
-  scorexUtil,
-  "org.bouncycastle" % "bcprov-jdk15on" % "1.+",
-  fastparse, debox, spireMacros, scalaCompat
-) ++ testingDependencies ++ circeDeps(scalaVersion.value)
+lazy val testSettings2 = Seq(
+  Test / parallelExecution := false,
+  Test / baseDirectory := file("."),
+  Test / publishArtifact := true,
+  publishArtifact in(Test, packageSrc) := true,
+  publishArtifact in(Test, packageDoc) := false,
+  assembly / test := {})
 
 scalacOptions ++= Seq("-feature", "-deprecation")
 
@@ -109,44 +121,39 @@ publishArtifact in Test := true
 
 pomIncludeRepository := { _ => false }
 
-val credentialFile = Path.userHome / ".sbt" / ".sigma-sonatype-credentials"
-credentials ++= (for {
-  file <- if (credentialFile.exists) Some(credentialFile) else None
-} yield Credentials(file)).toSeq
+def libraryDefSettings = commonSettings ++ crossScalaSettings ++ testSettings
 
-credentials ++= (for {
-  username <- Option(System.getenv().get("SONATYPE_USERNAME"))
-  password <- Option(System.getenv().get("SONATYPE_PASSWORD"))
-} yield Credentials("Sonatype Nexus Repository Manager", "oss.sonatype.org", username, password)).toSeq
-
-
-// PGP key for signing a release build published to sonatype
-// signing is done by sbt-pgp plugin
-// how to generate a key - https://central.sonatype.org/pages/working-with-pgp-signatures.html
-// how to export a key and use it with Travis - https://docs.scala-lang.org/overviews/contributors/index.html#export-your-pgp-key-pair
-pgpPublicRing := file("ci/pubring.asc")
-pgpSecretRing := file("ci/secring.asc")
-pgpPassphrase := sys.env.get("PGP_PASSPHRASE").map(_.toArray)
-usePgpKeyHex("C1FD62B4D44BDF702CDF2B726FF59DA944B150DD")
-
-def libraryDefSettings = commonSettings ++ testSettings 
-
-lazy val common = Project("common", file("common"))
-  .settings(libraryDefSettings,
+lazy val common = crossProject(JVMPlatform, JSPlatform)
+  .in(file("common"))
+  .settings(commonSettings ++ testSettings2,
     libraryDependencies ++= Seq(
       "org.scala-lang" % "scala-reflect" % scalaVersion.value,
-      debox, scalaCompat
-    ))
+      "org.scorexfoundation" %%% "debox" % "0.9.0-8-3da95c40-SNAPSHOT",
+      "org.scala-lang.modules" %%% "scala-collection-compat" % "2.7.0"
+    ),
+    testingDependencies2
+  )
   .settings(publish / skip := true)
+  .jvmSettings(crossScalaSettings)
+  .jsSettings(
+    crossScalaSettings,
+    libraryDependencies ++= Seq(
+      "org.scala-js" %%% "scala-js-macrotask-executor" % "1.0.0"
+    ),
+    parallelExecution in Test := false,
+    useYarn := true
+  )
+lazy val commonJS = common.js
+    .enablePlugins(ScalaJSBundlerPlugin)
 
 lazy val corelib = Project("core-lib", file("core-lib"))
-  .dependsOn(common % allConfigDependency)
+  .dependsOn(common.jvm % allConfigDependency)
   .settings(libraryDefSettings,
     libraryDependencies ++= Seq( debox, scrypto ))
   .settings(publish / skip := true)
 
 lazy val graphir = Project("graph-ir", file("graph-ir"))
-  .dependsOn(common % allConfigDependency, corelib)
+  .dependsOn(common.jvm % allConfigDependency, corelib)
   .settings(
     libraryDefSettings,
     libraryDependencies ++= Seq( debox, scrypto, bouncycastleBcprov ))
@@ -169,20 +176,41 @@ lazy val sc = (project in file("sc"))
   .settings(publish / skip := true)
 
 lazy val sigma = (project in file("."))
-  .aggregate(common, corelib, graphir, interpreter, sc)
+  .aggregate(common.jvm, corelib, graphir, interpreter, sc)
   .settings(libraryDefSettings, rootSettings)
   .settings(publish / aggregate := false)
   .settings(publishLocal / aggregate := false)
 
 lazy val aggregateCompile = ScopeFilter(
-  inProjects(common, corelib, graphir, interpreter, sc),
+  inProjects(common.jvm, corelib, graphir, interpreter, sc),
   inConfigurations(Compile))
 
 lazy val rootSettings = Seq(
-  sources in Compile := sources.all(aggregateCompile).value.flatten,
-  sourceDirectories in Compile := sourceDirectories.all(aggregateCompile).value.flatten,
+  Compile / sources := sources.all(aggregateCompile).value.flatten,
+  Compile / sourceDirectories := sourceDirectories.all(aggregateCompile).value.flatten,
   libraryDependencies := libraryDependencies.all(aggregateCompile).value.flatten,
   mappings in (Compile, packageSrc) ++= (mappings in(Compile, packageSrc)).all(aggregateCompile).value.flatten,
   mappings in (Test, packageBin) ++= (mappings in(Test, packageBin)).all(aggregateCompile).value.flatten,
   mappings in(Test, packageSrc) ++= (mappings in(Test, packageSrc)).all(aggregateCompile).value.flatten
 )
+
+val credentialFile = Path.userHome / ".sbt" / ".sigma-sonatype-credentials"
+credentials ++= (for {
+  file <- if (credentialFile.exists) Some(credentialFile) else None
+} yield Credentials(file)).toSeq
+
+credentials ++= (for {
+  username <- Option(System.getenv().get("SONATYPE_USERNAME"))
+  password <- Option(System.getenv().get("SONATYPE_PASSWORD"))
+} yield Credentials("Sonatype Nexus Repository Manager", "oss.sonatype.org", username, password)).toSeq
+
+
+// PGP key for signing a release build published to sonatype
+// signing is done by sbt-pgp plugin
+// how to generate a key - https://central.sonatype.org/pages/working-with-pgp-signatures.html
+// how to export a key and use it with Travis - https://docs.scala-lang.org/overviews/contributors/index.html#export-your-pgp-key-pair
+pgpPublicRing := file("ci/pubring.asc")
+pgpSecretRing := file("ci/secring.asc")
+pgpPassphrase := sys.env.get("PGP_PASSPHRASE").map(_.toArray)
+usePgpKeyHex("C1FD62B4D44BDF702CDF2B726FF59DA944B150DD")
+
