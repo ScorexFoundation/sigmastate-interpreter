@@ -73,11 +73,11 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
   /**  To enable specific configuration uncomment one of the lines above and use it in the beginPass below. */
   //  beginPass(costPass)
 
-  override protected def formatDef(d: Def[_])(implicit config: GraphVizConfig): String = d match {
-    case GroupElementConst(p) => p.showToString
-    case SigmaPropConst(sp) => sp.toString
-    case _ => super.formatDef(d)
-  }
+//  override protected def formatDef(d: Def[_])(implicit config: GraphVizConfig): String = d match {
+//    case GroupElementConst(p) => p.showToString
+//    case SigmaPropConst(sp) => sp.toString
+//    case _ => super.formatDef(d)
+//  }
 
   type RColl[T] = Ref[Coll[T]]
   type ROption[T] = Ref[WOption[T]]

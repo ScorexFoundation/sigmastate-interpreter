@@ -10,8 +10,8 @@ import scala.collection.immutable.StringOps
 // TODO implement this outside of the cake
 
 /** Implementation of Graphviz's dot file generator. */
-trait GraphVizExport extends Base { self: Scalan =>
-
+class GraphVizExport[Ctx <: Scalan](val scalan: Ctx) {
+  import scalan._
   case class GraphFile(file: File, fileType: String) {
     def open() = {
       Desktop.getDesktop.open(file)

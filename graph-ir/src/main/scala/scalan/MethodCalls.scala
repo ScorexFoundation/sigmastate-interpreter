@@ -8,7 +8,7 @@ import debox.{Buffer => DBuffer}
 import debox.cfor
 import scalan.reflection.{RClass, RMethod}
 
-trait MethodCalls extends Base with GraphVizExport { self: Scalan =>
+trait MethodCalls extends Base { self: Scalan =>
 
   def delayInvoke = throw new DelayInvokeException
 
@@ -114,22 +114,22 @@ trait MethodCalls extends Base with GraphVizExport { self: Scalan =>
     case e => e
   }
 
-  /** Used by Graphviz dot file generator to format text label of the graph node. */
-  override protected def formatDef(d: Def[_])(implicit config: GraphVizConfig): String = d match {
-    case MethodCall(obj, method, args, _) =>
-      val methodCallStr =
-        s"${ScalaNameUtil.cleanScalaName(method.getName)}(${args.mkString(", ")})"
-      if (obj.isCompanionType) {
-        s"$obj.$methodCallStr"
-      } else {
-        val className = ScalaNameUtil.cleanNestedClassName(method.getDeclaringClass.getName)
-        s"$obj.$className.$methodCallStr"
-      }
-    case NewObject(eA, args) =>
-      val className = ScalaNameUtil.cleanNestedClassName(eA.sourceType.name)
-      s"new $className(${args.mkString(", ")})"
-    case _ => super.formatDef(d)
-  }
+//  /** Used by Graphviz dot file generator to format text label of the graph node. */
+//  override protected def formatDef(d: Def[_])(implicit config: GraphVizConfig): String = d match {
+//    case MethodCall(obj, method, args, _) =>
+//      val methodCallStr =
+//        s"${ScalaNameUtil.cleanScalaName(method.getName)}(${args.mkString(", ")})"
+//      if (obj.isCompanionType) {
+//        s"$obj.$methodCallStr"
+//      } else {
+//        val className = ScalaNameUtil.cleanNestedClassName(method.getDeclaringClass.getName)
+//        s"$obj.$className.$methodCallStr"
+//      }
+//    case NewObject(eA, args) =>
+//      val className = ScalaNameUtil.cleanNestedClassName(eA.sourceType.name)
+//      s"new $className(${args.mkString(", ")})"
+//    case _ => super.formatDef(d)
+//  }
 
   /** This method is called for each MethodCall node which is about to be added to the graph.
     * This means `mc` has been examined by all the rewrite rules, but has not need rewritten.
