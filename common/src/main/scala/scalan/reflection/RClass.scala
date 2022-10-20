@@ -58,8 +58,9 @@ object RClass {
         assert(c.clazz == clazz)
         c
       case _ =>
-//        sys.error(s"Cannot find RClass data for $clazz")
-        memoize(classes)(clazz, new JRClass[T](clazz))
+        sys.error(s"Cannot find RClass data for $clazz")
+// Uncomment the following line to collect missing reflection data and generate Scala code for it
+//        memoize(classes)(clazz, new JRClass[T](clazz))
     }
     res.asInstanceOf[RClass[T]]
   }

@@ -17,7 +17,7 @@ import Coll._
 import CollBuilder._
 import WOption._
 
-object Coll extends EntityObject("Coll") {
+class CollCls extends EntityObject("Coll") {
   // entityConst: single const for each entity
   import Liftables._
   import scala.reflect.{ClassTag, classTag}
@@ -490,6 +490,7 @@ object Coll extends EntityObject("Coll") {
   }
 
 } // of object Coll
+object Coll extends CollCls
   registerEntityObject("Coll", Coll)
 
 object CollBuilder extends EntityObject("CollBuilder") {

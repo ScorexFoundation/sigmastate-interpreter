@@ -553,6 +553,18 @@ object GraphIRReflection {
     )
   }
 
+  { val ctx = null.asInstanceOf[SigmaLibrary] // ok! type level only
+    val clazz = classOf[ctx.Coll.CollElem[_, _]]
+    registerClassEntry(clazz,
+      constructors = Array(
+        mkConstructor(Array(classOf[ctx.CollCls], classOf[TypeDescs#Elem[_]])) { args =>
+          val entityObj = args(0).asInstanceOf[ctx.CollCls]
+          new entityObj.CollElem()(args(1).asInstanceOf[ctx.Elem[_]])
+        }
+      )
+    )
+  }
+
   { val clazz = classOf[wrappers.special.WSpecialPredefs#WSpecialPredefCompanion]
     val ctx = null.asInstanceOf[SigmaLibrary] // ok! type level only
     registerClassEntry(clazz,
