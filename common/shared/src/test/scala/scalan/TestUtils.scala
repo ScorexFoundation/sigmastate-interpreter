@@ -1,10 +1,10 @@
 package scalan
 
-import scalan.util.FileUtil
+import scalan.util.StringUtil
 import org.scalactic.TripleEquals
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.{Inside, TestSuite}
-import scalan.util.StringUtil.StringUtilExtensions
+import org.scalatest.{TestSuite, Inside}
+import scalan.util.StringUtil.{cleanFileName, StringUtilExtensions}
 
 /**
   * Created by slesarenko on 11/10/2017.
@@ -17,7 +17,7 @@ trait TestUtils extends TestSuite with Matchers with Inside with TripleEquals {
   lazy val prefix = {
     val suiteName = testSuffixes.foldLeft(getClass.getName)(_.stripSuffix(_))
     val pathComponents = suiteName.split('.')
-    FileUtil.file(testOutDir, pathComponents: _*)
+    StringUtil.fileName(testOutDir, pathComponents: _*)
   }
 
   /* if runs in continuous integration environment */
@@ -41,5 +41,5 @@ trait TestUtils extends TestSuite with Matchers with Inside with TripleEquals {
     else testName
   }
 
-  protected def currentTestNameAsFileName: String = FileUtil.cleanFileName(currentTestName)
+  protected def currentTestNameAsFileName: String = cleanFileName(currentTestName)
 }

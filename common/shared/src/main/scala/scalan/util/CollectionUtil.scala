@@ -1,6 +1,5 @@
 package scalan.util
 
-import scala.language.higherKinds
 import java.util
 import java.util.Objects
 
@@ -208,6 +207,10 @@ object CollectionUtil {
       var i = 0
       while (i < nItems) {
         val item = items(i)
+        // this explicit check is necessary for Scala.js to be equivalent with JVM
+        if (!res.isDefinedAt(item._1)) {
+          throw new IndexOutOfBoundsException("Index out of range: " + item._1)
+        }
         res(item._1) = item._2
         i += 1
       }

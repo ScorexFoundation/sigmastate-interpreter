@@ -27,7 +27,7 @@ class CollectionUtilTests extends BaseTests {
 
     val pairs = xs.zip(ys)
     // this reproduces the problem which takes place in v3.x, v4.x (ErgoTree v0, v1)
-    an[ClassCastException] should be thrownBy(concatArrays(pairs, pairs))
+    an[Throwable] should be thrownBy(concatArrays(pairs, pairs))
 
     // and this is the fix in v5.0
     concatArrays_v5(pairs, pairs) shouldBe Array((1, 4), (2, 5), (3, 6), (1, 4), (2, 5), (3, 6))

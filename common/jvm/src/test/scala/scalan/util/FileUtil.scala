@@ -6,7 +6,7 @@ import java.nio.file._
 import java.nio.file.attribute.BasicFileAttributes
 import scala.Console
 import scala.collection.JavaConverters._
-import scalan.util.StringUtil.StringUtilExtensions
+import scalan.util.StringUtil.{StringUtilExtensions, cleanFileName}
 import scalan.util.CollectionUtil.AnyOps
 
 object FileUtil {
@@ -182,12 +182,6 @@ object FileUtil {
 
   def urlToFile(url: URL) = Paths.get(url.toURI).toFile
 
-  /** Accepts an arbitrary (printable) string and returns a similar string
-    * which can be used as a file name. For convenience, replaces spaces with hyphens.
-    */
-  def cleanFileName(string: String) = string.
-      replaceAll("""[ /\\:;<>|?*^]""", "_").
-      replaceAll("""['"]""", "")
 
   def isBadFileName(string: String) = cleanFileName(string) != string
 

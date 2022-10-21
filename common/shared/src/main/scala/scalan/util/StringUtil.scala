@@ -35,6 +35,19 @@ object StringUtil {
     }
   }
 
+  /** Accepts an arbitrary (printable) string and returns a similar string
+    * which can be used as a file name. For convenience, replaces spaces with hyphens.
+    */
+  def cleanFileName(string: String) = string.
+      replaceAll("""[ /\\:;<>|?*^]""", "_").
+      replaceAll("""['"]""", "")
+
+  /** Compose file name from components. */
+  def fileName(file: String, pathComponents: String*): String = {
+    val path = pathComponents.mkString("/")
+    s"$file/$path"
+  }
+
   implicit class StringUtilExtensions(val str: String) extends AnyVal {
     def isNullOrEmpty = str == null || str.isEmpty
 
