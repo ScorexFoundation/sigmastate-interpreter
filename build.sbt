@@ -56,7 +56,11 @@ dynverSonatypeSnapshots in ThisBuild := true
 dynverSeparator in ThisBuild := "-"
 
 val bouncycastleBcprov = "org.bouncycastle" % "bcprov-jdk15on" % "1.66"
+
 val scrypto            = "org.scorexfoundation" %% "scrypto" % "2.2.1-25-dafca54c-SNAPSHOT"
+val scryptoDependency =
+  libraryDependencies += "org.scorexfoundation" %%% "scrypto" % "2.2.1-25-dafca54c-SNAPSHOT"
+
 //val scorexUtil         = "org.scorexfoundation" %% "scorex-util" % "0.1.8"
 //val debox              = "org.scorexfoundation" %% "debox" % "0.9.0"
 val scorexUtil         = "org.scorexfoundation" %% "scorex-util" % "0.1.8-19-0331a3d9-SNAPSHOT"
@@ -123,37 +127,50 @@ pomIncludeRepository := { _ => false }
 
 def libraryDefSettings = commonSettings ++ crossScalaSettings ++ testSettings
 
+lazy val commonDependenies2 = libraryDependencies ++= Seq(
+  "org.scala-lang" % "scala-reflect" % scalaVersion.value,
+  "org.scorexfoundation" %%% "debox" % "0.9.0-8-3da95c40-SNAPSHOT",
+  "org.scala-lang.modules" %%% "scala-collection-compat" % "2.7.0"
+)
+
 lazy val common = crossProject(JVMPlatform, JSPlatform)
   .in(file("common"))
   .settings(commonSettings ++ testSettings2,
-    libraryDependencies ++= Seq(
-      "org.scala-lang" % "scala-reflect" % scalaVersion.value,
-      "org.scorexfoundation" %%% "debox" % "0.9.0-8-3da95c40-SNAPSHOT",
-      "org.scala-lang.modules" %%% "scala-collection-compat" % "2.7.0"
-    ),
-    testingDependencies2
+    commonDependenies2,
+    testingDependencies2,
+    crossScalaSettings
   )
   .settings(publish / skip := true)
-  .jvmSettings(crossScalaSettings)
   .jsSettings(
-    crossScalaSettings,
     libraryDependencies ++= Seq(
       "org.scala-js" %%% "scala-js-macrotask-executor" % "1.0.0"
     ),
-    parallelExecution in Test := false,
     useYarn := true
   )
 lazy val commonJS = common.js
     .enablePlugins(ScalaJSBundlerPlugin)
 
-lazy val corelib = Project("core-lib", file("core-lib"))
-  .dependsOn(common.jvm % allConfigDependency)
-  .settings(libraryDefSettings,
-    libraryDependencies ++= Seq( debox, scrypto ))
+lazy val corelib = crossProject(JVMPlatform, JSPlatform)
+  .in(file("core-lib"))
+  .dependsOn(common % allConfigDependency)
+  .settings(commonSettings ++ testSettings2,
+    commonDependenies2,
+    testingDependencies2,
+    crossScalaSettings,
+    scryptoDependency
+  )
   .settings(publish / skip := true)
+  .jsSettings(
+    libraryDependencies ++= Seq(
+      "org.scala-js" %%% "scala-js-macrotask-executor" % "1.0.0"
+    ),
+    useYarn := true
+  )
+lazy val corelibJS = corelib.js
+    .enablePlugins(ScalaJSBundlerPlugin)
 
 lazy val graphir = Project("graph-ir", file("graph-ir"))
-  .dependsOn(common.jvm % allConfigDependency, corelib)
+  .dependsOn(common.jvm % allConfigDependency, corelib.jvm)
   .settings(
     libraryDefSettings,
     libraryDependencies ++= Seq( debox, scrypto, bouncycastleBcprov ))
@@ -176,13 +193,13 @@ lazy val sc = (project in file("sc"))
   .settings(publish / skip := true)
 
 lazy val sigma = (project in file("."))
-  .aggregate(common.jvm, corelib, graphir, interpreter, sc)
+  .aggregate(common.jvm, corelib.jvm, graphir, interpreter, sc)
   .settings(libraryDefSettings, rootSettings)
   .settings(publish / aggregate := false)
   .settings(publishLocal / aggregate := false)
 
 lazy val aggregateCompile = ScopeFilter(
-  inProjects(common.jvm, corelib, graphir, interpreter, sc),
+  inProjects(common.jvm, corelib.jvm, graphir, interpreter, sc),
   inConfigurations(Compile))
 
 lazy val rootSettings = Seq(
