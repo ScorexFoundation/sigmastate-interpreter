@@ -34,32 +34,6 @@ object CommonReflection {
     )
   )
 
-
-  //  registerClassEntry(classOf[Array[Byte]])
-//
-//  registerClassEntry(classOf[java.lang.Integer])
-//
-//  registerClassEntry(classOf[java.lang.Object])
-//
-//  registerClassEntry(classOf[java.lang.String])
-//
-//  registerClassEntry(classOf[Long])
-//
-
-//  registerClassEntry(classOf[scala.Product2[_,_]])
-//
-//  registerClassEntry(classOf[scala.collection.IndexedSeq[_]])
-//
-//  registerClassEntry(classOf[scala.collection.Seq[_]])
-//
-//  registerClassEntry(classOf[scala.collection.immutable.List[_]])
-//
-//  registerClassEntry(classOf[scala.collection.immutable.Map[_,_]])
-//
-//  class SRClassBuilder[T](clazz: Class[T]) {
-//
-//  }
-
   { val clazz = classOf[scala.Option[_]]
     registerClassEntry(clazz,
       methods = Map(
@@ -83,15 +57,4 @@ object CommonReflection {
     )
   }
 
-//  {
-//    val clazz = classOf[scala.collection.immutable.$colon$colon[_]]
-//    registerClassEntry(clazz,
-//      constructors = Array(
-//        new SRConstructor[Any](Array(classOf[java.lang.Object], classOf[scala.collection.immutable.List[_]])) {
-//          override def newInstance(args: AnyRef*): Any =
-//            new scala.collection.immutable.$colon$colon(args(0), args(1).asInstanceOf[scala.collection.immutable.List[_]])
-//        }
-//      )
-//    )
-//  }
 }
