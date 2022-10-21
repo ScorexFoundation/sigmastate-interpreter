@@ -377,16 +377,6 @@ abstract class TypeDescs extends Base { self: Scalan =>
   /** Predefined Lazy value saved here to be used in hotspot code. */
   val LazyAnyElement = Lazy(AnyElement)
 
-  /** Type descriptor for `AnyRef`, cannot be used implicitly. */
-  val AnyRefElement: Elem[AnyRef] = new BaseElemLiftable[AnyRef](null, AnyRefType)
-
-  // somewhat ugly casts, but they completely disappear after type erasure
-  // (so not present in Java bytecode)
-  val NothingElement: Elem[Nothing] =
-  asElem[Nothing](new BaseElemLiftable[Null](
-      null, NothingType.asInstanceOf[RType[Null]]
-    ))
-
   implicit val BooleanElement: Elem[Boolean] = new BaseElemLiftable(false, BooleanType)
   implicit val ByteElement: Elem[Byte] = new BaseElemLiftable(0.toByte, ByteType)
   implicit val ShortElement: Elem[Short] = new BaseElemLiftable(0.toShort, ShortType)

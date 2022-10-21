@@ -32,14 +32,6 @@ class AVHashMap[K,V](val hashMap: HashMap[K,V]) extends AnyVal {
   @inline final def clear(): Unit = {
     hashMap.clear()
   }
-  final def getOrElseUpdate(key: K, op: => V): V = {
-    var v = hashMap.get(key)
-    if (v == null) {
-      v = op
-      hashMap.put(key, v)
-    }
-    v
-  }
   @inline final def keySet: java.util.Set[K] = hashMap.keySet()
 }
 object AVHashMap {

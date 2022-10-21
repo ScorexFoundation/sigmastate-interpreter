@@ -10,6 +10,19 @@ import scalan.util.StringUtil.{StringUtilExtensions, cleanFileName}
 import scalan.util.CollectionUtil.AnyOps
 
 object FileUtil {
+
+  implicit class StringUtilExtensions(val str: String) extends AnyVal {
+    def lastComponent(sep: Char): String = {
+      str.substring(str.lastIndexOf(sep) + 1)
+    }
+
+    def prefixBefore(substr: String): String = {
+      val pos = str.indexOf(substr)
+      val res = if (pos == -1) str else str.substring(0, pos)
+      res
+    }
+  }
+
   def withFile(file: File)(f: PrintWriter => Unit): Unit = {
     if (file.isDirectory && !file.delete()) {
       throw new RuntimeException(s"File $file is a non-empty directory")

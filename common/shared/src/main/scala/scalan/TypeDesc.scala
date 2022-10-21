@@ -66,14 +66,13 @@ object RType {
   }
 
   val AnyType      : RType[Any]      = GeneralType[Any]     (ClassTag.Any)
-  val AnyRefType   : RType[AnyRef]   = GeneralType[AnyRef]  (ClassTag.AnyRef)
-  val NothingType  : RType[Nothing]  = GeneralType[Nothing] (ClassTag.Nothing)
 
   implicit val BooleanType : RType[Boolean]  = PrimitiveType[Boolean] (ClassTag.Boolean, Array.emptyBooleanArray)
   implicit val ByteType    : RType[Byte]     = PrimitiveType[Byte]    (ClassTag.Byte, Array.emptyByteArray)
   implicit val ShortType   : RType[Short]    = PrimitiveType[Short]   (ClassTag.Short, Array.emptyShortArray)
   implicit val IntType     : RType[Int]      = PrimitiveType[Int]     (ClassTag.Int, Array.emptyIntArray)
   implicit val LongType    : RType[Long]     = PrimitiveType[Long]    (ClassTag.Long, Array.emptyLongArray)
+  // TODO v5.x: optimize: remove Char, Float, Double types, they are not supported and will never be
   implicit val CharType    : RType[Char]     = PrimitiveType[Char]    (ClassTag.Char, Array.emptyCharArray)
   implicit val FloatType   : RType[Float]    = PrimitiveType[Float]   (ClassTag.Float, Array.emptyFloatArray)
   implicit val DoubleType  : RType[Double]   = PrimitiveType[Double]  (ClassTag.Double, Array.emptyDoubleArray)

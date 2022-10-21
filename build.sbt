@@ -107,7 +107,7 @@ lazy val testSettings = Seq(
   assembly / test := {})
 
 lazy val testSettings2 = Seq(
-  Test / parallelExecution := false,
+  Test / parallelExecution := true,
   Test / baseDirectory := file("."),
   Test / publishArtifact := true,
   publishArtifact in(Test, packageSrc) := true,

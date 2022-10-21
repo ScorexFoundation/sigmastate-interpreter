@@ -39,10 +39,6 @@ object Extensions {
       r.toByte
     }
 
-    def toShort: Short = b.toShort
-    def toInt: Int = b.toInt
-    def toLong: Long = b.toLong
-
     /** Absolute value of this numeric value.
       * @since 2.0
       */
@@ -128,31 +124,6 @@ object Extensions {
   }
 
   implicit class BigIntegerOps(val x: BigInteger) extends AnyVal {
-    /** Returns this `mod` Q, i.e. remainder of division by Q, where Q is an order of the cryprographic group.
-      * @since 2.0
-      */
-    def modQ: BigInt = ???
-
-    /** Adds this number with `other` by module Q.
-      * @since 2.0
-      */
-    def plusModQ(other: BigInt): BigInt = ???
-
-    /** Subracts this number with `other` by module Q.
-      * @since 2.0
-      */
-    def minusModQ(other: BigInt): BigInt = ???
-
-    /** Multiply this number with `other` by module Q.
-      * @since 2.0
-      */
-    def multModQ(other: BigInt): BigInt = ???
-
-    /** Multiply this number with `other` by module Q.
-      * @since Mainnet
-      */
-    def multInverseModQ: BigInt = ???
-
     /** Checks this {@code BigInteger} can be cust to 256 bit two's-compliment representation,
       * checking for lost information. If the value of this {@code BigInteger}
       * is out of the range of the 256 bits, then an {@code ArithmeticException} is thrown.
@@ -173,46 +144,6 @@ object Extensions {
       if (x.bitLength() <= 255) x
       else
         throw new ArithmeticException("BigInteger out of 256 bit range");
-    }
-  }
-
-  implicit class OptionOps[T](val opt: Option[T]) extends AnyVal {
-    /** Elvis operator for Option. See https://en.wikipedia.org/wiki/Elvis_operator*/
-    def ?:(whenNone: => T): T = if (opt.isDefined) opt.get else whenNone
-  }
-
-  implicit class ProductOps(val source: Product) extends AnyVal {
-    def toArray: Array[Any] = {
-      val arity = source.productArity
-      val res = new Array[Any](arity)
-      var i = 0
-      while (i < arity) {
-        res(i) = source.productElement(i)
-        i += 1
-      }
-      res
-    }
-  }
-
-  implicit class ByteBufferOps(val buf: ByteBuffer) extends AnyVal {
-    def toBytes: Array[Byte] = {
-      val res = new Array[Byte](buf.position())
-      buf.array().copyToArray(res, 0, res.length)
-      res
-    }
-    def getBytes(size: Int): Array[Byte] = {
-      if (size > buf.remaining)
-        throw new IllegalArgumentException(s"Not enough bytes in the ByteBuffer: $size")
-      val res = new Array[Byte](size)
-      buf.get(res)
-      res
-    }
-    def getOption[T](getValue: => T): Option[T] = {
-      val tag = buf.get()
-      if (tag != 0)
-        Some(getValue)
-      else
-        None
     }
   }
 
