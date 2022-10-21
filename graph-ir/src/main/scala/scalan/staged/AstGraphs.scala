@@ -2,7 +2,6 @@ package scalan.staged
 
 import scala.collection._
 import scalan.{Base, Scalan, emptyDBufferOfInt}
-import scalan.compilation.GraphVizConfig
 import debox.cfor
 import debox.{Set => DSet, Buffer => DBuffer, Map => DMap}
 
@@ -211,11 +210,6 @@ trait AstGraphs extends Transforming { self: Scalan =>
     }
 
     def hasManyUsages(s: Sym): Boolean = usagesOf(s.node.nodeId).length > 1
-
-    def show(): Unit = show(defaultGraphVizConfig)
-    def show(emitMetadata: Boolean): Unit = show(defaultGraphVizConfig.copy(emitMetadata = emitMetadata))
-    def show(config: GraphVizConfig): Unit = showGraphs(this)(config)
-
   } // AstGraph
 
 

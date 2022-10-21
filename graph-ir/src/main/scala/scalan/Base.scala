@@ -6,7 +6,6 @@ import scalan.OverloadHack.Overloaded1
 import scala.language.implicitConversions
 import scala.annotation.implicitNotFound
 import scala.annotation.unchecked.uncheckedVariance
-import scalan.compilation.GraphVizConfig
 import scalan.util.StringUtil
 import debox.{cfor, Buffer => DBuffer}
 import scalan.reflection.{RClass, RConstructor}
@@ -386,11 +385,6 @@ abstract class Base { scalan: Scalan =>
     def toStringWithDefinition: String
     def varNameWithType = varName + ":" + elem.name
 
-    /** Build graph of nodes starting from this node, generate dot file,
-      * and open it using system default viewer for dot extension. */
-    def show(): Unit = show(defaultGraphVizConfig)
-    def show(emitMetadata: Boolean): Unit = show(defaultGraphVizConfig.copy(emitMetadata = emitMetadata))
-    def show(config: GraphVizConfig): Unit = showGraphs(this)(config)
   }
 
   /** Untyped shortcut sinonim of Ref, which is used as untyped reference to graph nodes (definitions).

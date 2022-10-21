@@ -1,7 +1,6 @@
 package scalan.primitives
 
 import scala.language.{existentials, implicitConversions}
-import scalan.compilation.{GraphVizConfig, GraphVizExport}
 import scalan._
 import debox.{Buffer => DBuffer, Set => DSet}
 import debox.cfor
@@ -17,7 +16,7 @@ import scala.collection.Seq
   * Thunks are used to represent lazy operations in the graph IR.
   * @see ApplyBinOpLazy, IfThenElseLazy
   */
-trait Thunks extends Functions with GraphVizExport { self: Scalan =>
+trait Thunks extends Functions { self: Scalan =>
 
   type Th[+T] = Ref[Thunk[T]]
 
@@ -371,14 +370,14 @@ trait Thunks extends Functions with GraphVizExport { self: Scalan =>
   }
 
 
-  override protected def formatDef(d: Def[_])(implicit config: GraphVizConfig): String = d match {
-    case ThunkDef(r, sch) => s"Thunk($r, [${sch.mkString(",")}])"
-    case _ => super.formatDef(d)
-  }
-
-  override protected def nodeColor(td: TypeDesc, d: Def[_])(implicit config: GraphVizConfig) = td match {
-    case _: ThunkElem[_] => "red"
-    case _ => super.nodeColor(td, d)
-  }
+//  override protected def formatDef(d: Def[_])(implicit config: GraphVizConfig): String = d match {
+//    case ThunkDef(r, sch) => s"Thunk($r, [${sch.mkString(",")}])"
+//    case _ => super.formatDef(d)
+//  }
+//
+//  override protected def nodeColor(td: TypeDesc, d: Def[_])(implicit config: GraphVizConfig) = td match {
+//    case _: ThunkElem[_] => "red"
+//    case _ => super.nodeColor(td, d)
+//  }
 }
 

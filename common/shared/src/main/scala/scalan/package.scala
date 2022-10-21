@@ -1,5 +1,4 @@
 
-import scala.language.experimental.macros
 import scala.reflect.ClassTag
 
 package object scalan {

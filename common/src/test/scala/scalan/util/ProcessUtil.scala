@@ -1,7 +1,6 @@
 package scalan.util
 
 import java.io.File
-
 import scala.collection.mutable
 import scala.sys.process.ProcessLogger
 

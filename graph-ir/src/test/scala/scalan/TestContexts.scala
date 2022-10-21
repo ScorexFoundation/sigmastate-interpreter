@@ -1,19 +1,21 @@
 package scalan
 
+import scalan.compilation.GraphVizExport
 import scalan.reflection.RMethod
 import scalan.util.FileUtil
 import special.CoreLibReflection
 
 trait TestContexts extends TestUtils {
-  protected[this] def stage(scalan: Scalan)(testName: String, name: String, sfs: Seq[() => scalan.Sym]): Unit = {
+  protected[this] def stage[Ctx <: Scalan](scalan: Ctx)(testName: String, name: String, sfs: Seq[() => scalan.Sym]): Unit = {
     val directory = FileUtil.file(prefix, testName)
-    implicit val graphVizConfig = scalan.defaultGraphVizConfig
+    val gv = new GraphVizExport(scalan)
+    implicit val graphVizConfig = gv.defaultGraphVizConfig
     try {
-      val ss = sfs.map(_.apply())
-      scalan.emitDepGraph(ss, directory, name)
+      val ss = sfs.map(_.apply()).asInstanceOf[Seq[gv.scalan.Sym]]
+      gv.emitDepGraph(ss, directory, name)(graphVizConfig)
     } catch {
       case e: Exception =>
-        val graphMsg = scalan.emitExceptionGraph(e, directory, name) match {
+        val graphMsg = gv.emitExceptionGraph(e, directory, name) match {
           case Some(graphFile) =>
             s"See ${graphFile.file.getAbsolutePath} for exception graph."
           case None =>
