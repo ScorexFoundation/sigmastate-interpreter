@@ -890,8 +890,6 @@ object Values {
     def tpe = SBox
   }
 
-  // TODO refactor: only Constant make sense to inherit from EvaluatedValue
-
   /** ErgoTree node which converts a collection of expressions into a tuple of data values
     * of different types. Each data value of the resulting collection is obtained by
     * evaluating the corresponding expression in `items`. All items may have different
@@ -900,7 +898,8 @@ object Values {
     * @param items source collection of expressions
     */
   case class Tuple(items: IndexedSeq[Value[SType]])
-      extends EvaluatedValue[STuple] with EvaluatedCollection[SAny.type, STuple] {
+      extends EvaluatedValue[STuple]  // note, this superclass is required as Tuple can be in a register
+         with EvaluatedCollection[SAny.type, STuple] {
     override def companion = Tuple
     override lazy val tpe = STuple(items.map(_.tpe))
     override def opType: SFunc = ???
