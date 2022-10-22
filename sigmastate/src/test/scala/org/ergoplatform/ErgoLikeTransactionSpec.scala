@@ -3,11 +3,12 @@ package org.ergoplatform
 import org.ergoplatform.ErgoBox.TokenId
 import org.ergoplatform.settings.ErgoAlgos
 import scorex.crypto.hash.Digest32
+import scorex.util.encode.Base16
 import scorex.util.{Random, ModifierId}
 import sigmastate.SCollection.SByteArray
-import sigmastate.{SSigmaProp, SPair, SInt, TrivialProp, SType}
+import sigmastate.{SSigmaProp, TrivialProp, SType, SPair, SInt}
 import sigmastate.Values._
-import sigmastate.interpreter.{ProverResult, ContextExtension}
+import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigmastate.serialization.SigmaSerializer
 import sigmastate.eval._
 import sigmastate.eval.Extensions._
@@ -299,5 +300,13 @@ class ErgoLikeTransactionSpec extends SigmaDslTesting {
         }
       }
     }
+  }
+
+  property("Tuple in register test vector") {
+    val txId = "b5fd96c9f8c1ff436d609a225a12377c6873b890a145fc05f4099845b89315e5"
+    val txHex = "0278c93ee55eec066ec06290524dc01773440fbaff644bd181ab4334f97083863738644bf834de150b9abd077cf52ecb4892536ab6ad6ef8505fb932d9ca7b9fb211fc8294618723eb4909d4553f4d419762332f68865b1d703d00faae81c0e57683108c55647c5837a4fedfb52ffde04db74a8b4b77e37ab81afc3828c904862db6134e0f859ff5f62e4a5cb9da6b15ea1cd1a11dc932899d7b99e9073034ccd4e7c54fa9790d8ee356dce22ee151b044561c96000000038094ebdc031007040205c80105c8010500040004000e1f3faf2cb329f2e90d6d23b58d91bbb6c046aa143261cc21f52fbe2824bfcbf0d807d601e4c6a70408d602b2a5730000d603e4c6a70601d604e4c6a70856d605e4c6a70505d606e4c6a70705d60795720399c1a7c1720299c17202c1a7eb027201d1ededededededededed93c27202c2a793e4c672020408720193e4c6720205059572039d9c72057e8c7204010573019d9c72057e8c72040205730294e4c672020601720393e4c672020705720693e4c672020856720493e4c67202090ec5a7929c720672057207917207730395ef720393b1db630872027304d801d608b2db63087202730500ed938c7208017306938c7208027206d18f34000508cd030c8f9c4dc08f3c006fa85a47c9156dedbede000a8b764c6e374fd097e873ba0405dceeaa0401010564860202660263c0edcea7090008cd030c8f9c4dc08f3c006fa85a47c9156dedbede000a8b764c6e374fd097e873ba04d18f340000c0843d1005040004000e36100204a00b08cd0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798ea02d192a39a8cc7a701730073011001020402d19683030193a38cc7b2a57300000193c2b2a57301007473027303830108cdeeac93b1a57304d18f340000"
+    val txBytes = Base16.decode(txHex).get
+    val tx = ErgoLikeTransactionSerializer.fromBytes(txBytes)
+    tx.id shouldBe txId
   }
 }
