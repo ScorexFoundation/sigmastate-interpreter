@@ -64,9 +64,16 @@ val scryptoDependency =
 //val scorexUtil         = "org.scorexfoundation" %% "scorex-util" % "0.1.8"
 //val debox              = "org.scorexfoundation" %% "debox" % "0.9.0"
 val scorexUtil         = "org.scorexfoundation" %% "scorex-util" % "0.1.8-19-0331a3d9-SNAPSHOT"
+val scorexUtilDependency =
+  libraryDependencies += "org.scorexfoundation" %%% "scorex-util" % "0.1.8-19-0331a3d9-SNAPSHOT"
+
 val debox              = "org.scorexfoundation" %% "debox" % "0.9.0-8-3da95c40-SNAPSHOT"
 val spireMacros        = "org.typelevel" %% "spire-macros" % "0.17.0-M1"
+
 val fastparse          = "com.lihaoyi" %% "fastparse" % "2.3.3"
+val fastparseDependency =
+  libraryDependencies += "com.lihaoyi" %%% "fastparse" % "2.3.3"
+
 val scalaCompat        = "org.scala-lang.modules" %% "scala-collection-compat" % "2.7.0"
 
 lazy val circeCore211 = "io.circe" %% "circe-core" % "0.10.0"
@@ -176,9 +183,15 @@ lazy val graphir = Project("graph-ir", file("graph-ir"))
     libraryDependencies ++= Seq( debox, scrypto, bouncycastleBcprov ))
   .settings(publish / skip := true)
 
-lazy val interpreter = (project in file("interpreter"))
-  .dependsOn(graphir % allConfigDependency)
-  .settings(libraryDefSettings)
+lazy val interpreter = crossProject(JVMPlatform, JSPlatform)
+  .in(file("interpreter"))
+  .dependsOn(corelib % allConfigDependency)
+  .settings(commonSettings ++ testSettings2,
+    commonDependenies2,
+    testingDependencies2,
+    crossScalaSettings,
+    scorexUtilDependency, fastparseDependency
+  )
   .settings(libraryDependencies ++=
       Seq(scorexUtil, fastparse) ++ circeDeps(scalaVersion.value)
   )
