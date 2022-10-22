@@ -899,10 +899,18 @@ object Values {
     *
     * @param items source collection of expressions
     */
-  case class Tuple(items: IndexedSeq[Value[SType]]) extends Value[STuple] {
+  case class Tuple(items: IndexedSeq[Value[SType]])
+      extends EvaluatedValue[STuple] with EvaluatedCollection[SAny.type, STuple] {
     override def companion = Tuple
     override lazy val tpe = STuple(items.map(_.tpe))
     override def opType: SFunc = ???
+    override def elementType: SAny.type = SAny
+
+    override lazy val value = {
+      val xs = items.cast[EvaluatedValue[SAny.type]].map(_.value)
+      Colls.fromArray(xs.toArray(SAny.classTag.asInstanceOf[ClassTag[SAny.WrappedType]]))(RType.AnyType)
+    }
+
     protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
       // in v5.0 version we support only tuples of 2 elements to be equivalent with v4.x
       if (items.length != 2)
