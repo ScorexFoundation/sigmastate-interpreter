@@ -1,7 +1,7 @@
 package sigmastate.serialization
 
+import sigmastate.basics.CryptoConstants
 import sigmastate.crypto.CryptoFacade
-import sigmastate.interpreter.CryptoConstants
 import sigmastate.eval._
 
 class GroupElementSerializerSpecification extends SerializationSpecification {

@@ -17,7 +17,7 @@ import sigmastate.Values._
 import sigmastate.lang.Terms._
 import sigmastate.lang.{SigmaBuilder, SigmaTyper}
 import sigmastate.SCollection._
-import sigmastate.interpreter.CryptoConstants.{EcPointType, hashLength}
+import sigmastate.basics.CryptoConstants.{EcPointType, hashLength}
 import sigmastate.serialization.OpCodes
 import special.collection.Coll
 import special.sigma._

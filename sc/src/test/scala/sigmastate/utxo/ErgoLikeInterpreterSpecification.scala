@@ -741,7 +741,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
   }
 
   property("non-const ProveDHT") {
-    import sigmastate.interpreter.CryptoConstants.dlogGroup
+    import sigmastate.basics.CryptoConstants.dlogGroup
     compile(Map("gA" -> dlogGroup.generator),
       "proveDHTuple(gA, OUTPUTS(0).R4[GroupElement].get, gA, gA)"
     ).asInstanceOf[BlockValue].result shouldBe a [CreateProveDHTuple]

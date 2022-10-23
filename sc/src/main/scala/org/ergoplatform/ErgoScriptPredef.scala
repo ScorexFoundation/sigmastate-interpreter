@@ -4,11 +4,11 @@ import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
 import org.ergoplatform.settings.MonetarySettings
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
+import sigmastate.basics.CryptoConstants
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.eval.IRContext
-import sigmastate.interpreter.CryptoConstants
 import sigmastate.lang.Terms.ValueOps
-import sigmastate.{SLong, _}
+import sigmastate._
 import sigmastate.lang.{TransformingSigmaBuilder, SigmaCompiler, CompilerSettings}
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.utxo._

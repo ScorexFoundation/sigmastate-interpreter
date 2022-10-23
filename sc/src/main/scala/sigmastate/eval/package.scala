@@ -6,7 +6,7 @@ import org.ergoplatform.ErgoBox
 import scalan.RType
 import scorex.crypto.hash.Digest32
 import sigmastate.Values.SigmaBoolean
-import sigmastate.interpreter.CryptoConstants.EcPointType
+import sigmastate.basics.CryptoConstants.EcPointType
 import special.collection.{Coll, CollBuilder}
 import special.sigma._
 import supertagged.TaggedType

@@ -1,7 +1,7 @@
 package org.ergoplatform
 
 import scalan.util.CollectionUtil._
-import sigmastate.interpreter.CryptoConstants
+import sigmastate.basics.CryptoConstants
 
 case class SizeConstant[T: Numeric](value: T, id: Short, description: String)
 

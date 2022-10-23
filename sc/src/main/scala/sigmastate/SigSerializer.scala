@@ -6,9 +6,9 @@ import scorex.util.encode.Base16
 import sigmastate.Values.SigmaBoolean
 import sigmastate.basics.DLogProtocol.{ProveDlog, SecondDLogProverMessage}
 import sigmastate.basics.VerifierMessage.Challenge
-import sigmastate.basics.{ProveDHTuple, SecondDiffieHellmanTupleProverMessage}
+import sigmastate.basics.{SecondDiffieHellmanTupleProverMessage, ProveDHTuple, CryptoConstants}
 import sigmastate.interpreter.ErgoTreeEvaluator.{fixedCostOp, perItemCostOp}
-import sigmastate.interpreter.{CryptoConstants, ErgoTreeEvaluator, NamedDesc, OperationCostInfo}
+import sigmastate.interpreter.{ErgoTreeEvaluator, NamedDesc, OperationCostInfo}
 import sigmastate.lang.exceptions.SerializerException
 import sigmastate.serialization.SigmaSerializer
 import sigmastate.util.safeNewArray

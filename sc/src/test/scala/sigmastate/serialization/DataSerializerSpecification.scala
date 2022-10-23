@@ -11,7 +11,7 @@ import sigmastate._
 import sigmastate.eval.Evaluation
 import sigmastate.eval._
 import sigmastate.eval.Extensions._
-import sigmastate.interpreter.CryptoConstants.EcPointType
+import sigmastate.basics.CryptoConstants.EcPointType
 import special.sigma.AvlTree
 import SType.AnyOps
 import org.ergoplatform.SigmaConstants.ScriptCostLimit

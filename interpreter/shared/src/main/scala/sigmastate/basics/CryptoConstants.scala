@@ -1,8 +1,7 @@
-package sigmastate.interpreter
+package sigmastate.basics
 
-import java.math.BigInteger
 import java.security.SecureRandom
-import sigmastate.basics.{BcDlogGroup, SecP256K1Group}
+import java.math.BigInteger
 import sigmastate.crypto.Ecp
 
 object CryptoConstants {
@@ -41,5 +40,4 @@ object CryptoConstants {
     secureRandom.nextBytes(bytes)
     bytes
   }
-
 }

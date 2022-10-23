@@ -10,10 +10,10 @@ import scalan.OverloadHack.Overloaded1
 import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.authds.{ADDigest, ADKey, ADValue, SerializedAdProof}
 import sigmastate.SCollection.SByteArray
-import sigmastate.{TrivialProp, _}
+import sigmastate._
 import sigmastate.Values.{ConstantNode, ErgoTree, EvaluatedValue, SValue, SigmaBoolean}
-import sigmastate.interpreter.CryptoConstants.EcPointType
-import sigmastate.interpreter.{CryptoConstants, Interpreter}
+import sigmastate.basics.CryptoConstants.EcPointType
+import sigmastate.interpreter.Interpreter
 import special.collection._
 import special.sigma._
 import sigmastate.eval.Extensions._
@@ -25,7 +25,7 @@ import scalan.{Nullable, RType}
 import scorex.crypto.hash.{Blake2b256, Digest32, Sha256}
 import sigmastate.Values.ErgoTree.EmptyConstants
 import sigmastate.basics.DLogProtocol.ProveDlog
-import sigmastate.basics.ProveDHTuple
+import sigmastate.basics.{ProveDHTuple, CryptoConstants}
 import sigmastate.crypto.{CryptoFacade, Ecp}
 import sigmastate.lang.TransformingSigmaBuilder
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer

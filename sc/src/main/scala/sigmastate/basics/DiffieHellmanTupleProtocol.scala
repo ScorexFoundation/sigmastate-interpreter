@@ -7,8 +7,7 @@ import sigmastate.Values.Value.PropositionCode
 import sigmastate._
 import sigmastate.basics.VerifierMessage.Challenge
 import sigmastate.eval.SigmaDsl
-import sigmastate.interpreter.CryptoConstants.EcPointType
-import sigmastate.interpreter.CryptoConstants
+import CryptoConstants.EcPointType
 import sigmastate.serialization.{OpCodes, GroupElementSerializer}
 import sigmastate.serialization.OpCodes.OpCode
 import special.sigma.SigmaProp
@@ -27,7 +26,7 @@ case class DiffieHellmanTupleProverInput(w: BigInteger, commonInput: ProveDHTupl
 
 object DiffieHellmanTupleProverInput {
 
-  import sigmastate.interpreter.CryptoConstants.dlogGroup
+  import CryptoConstants.dlogGroup
 
   def random(): DiffieHellmanTupleProverInput = {
     val g = dlogGroup.generator
@@ -86,7 +85,7 @@ object ProveDHTupleProp {
 
 object DiffieHellmanTupleInteractiveProver {
 
-  import sigmastate.interpreter.CryptoConstants.dlogGroup
+  import CryptoConstants.dlogGroup
 
   def firstMessage(publicInput: ProveDHTuple): (BigInteger, FirstDiffieHellmanTupleProverMessage) = {
     val qMinusOne = dlogGroup.order.subtract(BigInteger.ONE)

@@ -13,7 +13,7 @@ import sigmastate.eval.{IRContext, InvalidType}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.helpers._
 import sigmastate.interpreter.ContextExtension.VarBinding
-import sigmastate.interpreter.CryptoConstants.dlogGroup
+import sigmastate.basics.CryptoConstants.dlogGroup
 import sigmastate.interpreter.Interpreter.{ScriptEnv, ScriptNameProp}
 import sigmastate.interpreter.{ContextExtension, CostedProverResult}
 import sigmastate.lang.Terms.ValueOps

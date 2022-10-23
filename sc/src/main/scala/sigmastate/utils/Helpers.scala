@@ -5,7 +5,7 @@ import java.util
 import io.circe.Decoder
 import org.ergoplatform.settings.ErgoAlgos
 import sigmastate.eval.{Colls, SigmaDsl}
-import sigmastate.interpreter.CryptoConstants.EcPointType
+import sigmastate.basics.CryptoConstants.EcPointType
 import special.collection.Coll
 import special.sigma.GroupElement
 

@@ -5,8 +5,9 @@ import org.ergoplatform.ErgoLikeContext.Height
 import org.ergoplatform._
 import org.ergoplatform.validation.{ValidationRules, SigmaValidationSettings}
 import sigmastate.AvlTreeData
+import sigmastate.basics.CryptoConstants
 import sigmastate.eval._
-import sigmastate.interpreter.{ContextExtension, CryptoConstants}
+import sigmastate.interpreter.ContextExtension
 import sigmastate.serialization.{SigmaSerializer, GroupElementSerializer}
 import special.collection.Coll
 import special.sigma.{Box, PreHeader, Header}

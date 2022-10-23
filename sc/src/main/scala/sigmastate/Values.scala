@@ -8,14 +8,14 @@ import org.ergoplatform.validation.ValidationException
 import scalan.{Nullable, RType}
 import scalan.util.CollectionUtil._
 import sigmastate.SCollection.{SByteArray, SIntArray}
-import sigmastate.interpreter.CryptoConstants.EcPointType
-import sigmastate.interpreter.{CompanionDesc, CryptoConstants, ErgoTreeEvaluator, Interpreter, NamedDesc}
-import sigmastate.serialization.{ConstantStore, OpCodes, _}
+import sigmastate.basics.CryptoConstants.EcPointType
+import sigmastate.interpreter.{CompanionDesc, ErgoTreeEvaluator, Interpreter, NamedDesc}
+import sigmastate.serialization._
 import sigmastate.serialization.OpCodes._
 import sigmastate.TrivialProp.{FalseProp, TrueProp}
 import sigmastate.Values.ErgoTree.substConstants
 import sigmastate.basics.DLogProtocol.ProveDlog
-import sigmastate.basics.ProveDHTuple
+import sigmastate.basics.{ProveDHTuple, CryptoConstants}
 import sigmastate.lang.Terms._
 import sigmastate.utxo._
 import sigmastate.eval._

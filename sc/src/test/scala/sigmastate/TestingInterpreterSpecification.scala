@@ -10,7 +10,8 @@ import sigmastate.lang.Terms._
 import org.ergoplatform._
 import org.scalatest.BeforeAndAfterAll
 import scorex.util.encode.Base58
-import sigmastate.helpers.{ErgoLikeContextTesting, ErgoLikeTestProvingInterpreter, SigmaTestingCommons, ErgoLikeTestInterpreter}
+import sigmastate.basics.CryptoConstants
+import sigmastate.helpers.{ErgoLikeTestInterpreter, SigmaTestingCommons, ErgoLikeContextTesting, ErgoLikeTestProvingInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utils.Helpers._

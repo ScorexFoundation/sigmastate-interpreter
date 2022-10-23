@@ -10,11 +10,12 @@ import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.eval.{IRContext, _}
+import sigmastate.basics.CryptoConstants
+import sigmastate.eval._
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.Interpreter.ScriptNameProp
-import sigmastate.interpreter.{CryptoConstants, Interpreter}
+import sigmastate.interpreter.Interpreter
 import sigmastate.lang.Terms._
 import sigmastate.serialization.ErgoTreeSerializer
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer

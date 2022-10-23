@@ -9,10 +9,11 @@ import scalan.util.BenchmarkUtil
 import scorex.util.serialization.{Reader, VLQByteBufferReader}
 import sigmastate.Values.{BlockValue, GetVarInt, IntConstant, SValue, SigmaBoolean, SigmaPropValue, Tuple, ValDef, ValUse}
 import sigmastate._
+import sigmastate.basics.CryptoConstants
 import sigmastate.eval.Extensions._
 import sigmastate.eval._
 import sigmastate.helpers.{ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaTestingCommons}
-import sigmastate.interpreter.{ContextExtension, CostedProverResult, CryptoConstants}
+import sigmastate.interpreter.{ContextExtension, CostedProverResult}
 import sigmastate.lang.exceptions.{DeserializeCallDepthExceeded, InvalidTypePrefix, ReaderPositionLimitExceeded, SerializerException}
 import sigmastate.serialization.OpCodes._
 import sigmastate.utils.SigmaByteReader

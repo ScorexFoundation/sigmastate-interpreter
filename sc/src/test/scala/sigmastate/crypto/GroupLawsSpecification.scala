@@ -2,9 +2,9 @@ package sigmastate.crypto
 
 import java.math.BigInteger
 import org.scalacheck.Gen
+import sigmastate.basics.CryptoConstants
 import sigmastate.helpers.{SigmaPPrint, SigmaTestingCommons}
-import sigmastate.interpreter.CryptoConstants
-import sigmastate.interpreter.CryptoConstants.EcPointType
+import CryptoConstants.EcPointType
 import sigmastate.utils.Helpers
 
 import scala.util.Random

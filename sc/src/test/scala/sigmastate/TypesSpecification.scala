@@ -6,8 +6,7 @@ import org.ergoplatform.ErgoBox
 import org.ergoplatform.settings.ErgoAlgos
 import scalan.RType
 import scorex.crypto.hash.Digest32
-import sigmastate.basics.DLogProtocol
-import sigmastate.interpreter.CryptoConstants
+import sigmastate.basics.{DLogProtocol, CryptoConstants}
 import special.sigma.SigmaTestingData
 import sigmastate.SType.{isValueOfType, AnyOps}
 import sigmastate.Values.{ShortConstant, LongConstant, BigIntConstant, AvlTreeConstant, IntConstant, ByteConstant}

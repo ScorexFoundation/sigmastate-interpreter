@@ -8,8 +8,7 @@ import sigmastate._
 import java.math.BigInteger
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.SCollection.SByteArray
-import sigmastate.basics.ProveDHTuple
-import sigmastate.interpreter.CryptoConstants
+import sigmastate.basics.{ProveDHTuple, CryptoConstants}
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import special.sigma._
 import sigmastate.eval._

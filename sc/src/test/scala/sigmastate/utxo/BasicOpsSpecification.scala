@@ -14,10 +14,11 @@ import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter._
 import sigmastate.lang.Terms._
 import SType.AnyOps
+import sigmastate.basics.CryptoConstants
 import sigmastate.eval.InvalidType
 import sigmastate.interpreter.ContextExtension.VarBinding
 import sigmastate.interpreter.ErgoTreeEvaluator.DefaultEvalSettings
-import sigmastate.interpreter.{CryptoConstants, EvalSettings}
+import sigmastate.interpreter.EvalSettings
 import sigmastate.utils.Helpers._
 
 class BasicOpsSpecification extends SigmaTestingCommons

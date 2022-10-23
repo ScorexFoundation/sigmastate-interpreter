@@ -14,8 +14,8 @@ import sigmastate.serialization.OpCodes
 import sigmastate.utxo._
 import scalan.Nullable
 import sigmastate.SOption.SIntOption
-import sigmastate.eval.{Evaluation, _}
-import sigmastate.interpreter.CryptoConstants.EcPointType
+import sigmastate.eval._
+import sigmastate.basics.CryptoConstants.EcPointType
 import special.collection.Coll
 import sigmastate.lang.SigmaTyper.STypeSubst
 import sigmastate.serialization.OpCodes.OpCode

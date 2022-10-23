@@ -3,7 +3,7 @@ package sigmastate
 import java.util.{Arrays, Objects}
 
 import scorex.crypto.authds.ADDigest
-import sigmastate.interpreter.CryptoConstants
+import sigmastate.basics.CryptoConstants
 import sigmastate.serialization.SigmaSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 

@@ -9,8 +9,7 @@ import scorex.util.encode.Base16
 import sigmastate._
 import sigmastate.eval._
 import sigmastate.basics.VerifierMessage.Challenge
-import sigmastate.interpreter.CryptoConstants.{EcPointType, dlogGroup}
-import sigmastate.interpreter.CryptoConstants
+import CryptoConstants.{EcPointType, dlogGroup}
 import sigmastate.serialization.{OpCodes, GroupElementSerializer}
 import sigmastate.serialization.OpCodes.OpCode
 import special.sigma.SigmaProp

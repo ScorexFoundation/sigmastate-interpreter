@@ -10,9 +10,10 @@ import scorex.util.ModifierId
 import scorex.util.encode.Base16
 import sigmastate.{AvlTreeData, SType}
 import sigmastate.Values.{EvaluatedValue, SigmaPropConstant, ByteArrayConstant, IntConstant, ErgoTree, ByteConstant, LongArrayConstant}
+import sigmastate.basics.CryptoConstants
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.helpers.SigmaTestingCommons
-import sigmastate.interpreter.{ProverResult, ContextExtension, CryptoConstants}
+import sigmastate.interpreter.{ProverResult, ContextExtension}
 import sigmastate.serialization.SerializationSpecification
 import sigmastate.utils.Helpers._ // required for Scala 2.11
 import special.collection.Coll

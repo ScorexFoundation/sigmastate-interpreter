@@ -12,7 +12,7 @@ import sigmastate.Values.SigmaBoolean
 import sigmastate._
 import sigmastate.eval.Extensions._
 import sigmastate.eval.{Evaluation, _}
-import sigmastate.interpreter.CryptoConstants.EcPointType
+import sigmastate.basics.CryptoConstants.EcPointType
 import sigmastate.lang.exceptions.SerializerException
 import special.sigma.{Box, AvlTree}
 

@@ -3,7 +3,7 @@ package sigmastate.serialization
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.{SGroupElement, CreateProveDlog}
 import sigmastate.Values.{Value, SValue, SigmaPropValue}
-import sigmastate.interpreter.CryptoConstants.EcPointType
+import sigmastate.basics.CryptoConstants.EcPointType
 import sigmastate.lang.Terms._
 import sigmastate.utils.SigmaByteWriter.DataInfo
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
