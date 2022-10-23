@@ -8,13 +8,13 @@ import sigmastate.SPrimType.MaxPrimTypeCode
 import sigmastate.Values.ErgoTree.EmptyConstants
 import sigmastate.Values.{ByteArrayConstant, ErgoTree, IntConstant, NotReadyValueInt, Tuple, UnparsedErgoTree, ValueCompanion}
 import sigmastate.eval.Colls
+import sigmastate.exceptions.{SerializerException, SigmaException, InterpreterException}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.helpers.{ErgoLikeContextTesting, ErgoLikeTestInterpreter, ErgoLikeTestProvingInterpreter}
 import sigmastate.interpreter.ErgoTreeEvaluator.DataEnv
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.interpreter.{ContextExtension, ErgoTreeEvaluator, ProverResult}
 import sigmastate.lang.Terms._
-import sigmastate.lang.exceptions.{InterpreterException, SerializerException, SigmaException}
 import sigmastate.serialization.OpCodes.{LastConstantCode, OpCode}
 import sigmastate.serialization.SigmaSerializer.startReader
 import sigmastate.serialization._

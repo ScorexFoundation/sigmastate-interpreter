@@ -23,7 +23,7 @@ import sigmastate.eval.Extensions._
 import scalan.util.Extensions.ByteOps
 import sigmastate.interpreter.ErgoTreeEvaluator._
 import debox.cfor
-
+import sigmastate.exceptions.InterpreterException
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 import sigmastate.lang.CheckingSigmaBuilder._
@@ -32,7 +32,6 @@ import sigmastate.serialization.transformers.ProveDHTupleSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import special.sigma.{AvlTree, Header, PreHeader, _}
 import sigmastate.lang.SourceContext
-import sigmastate.lang.exceptions.InterpreterException
 import sigmastate.util.safeNewArray
 import special.collection.Coll
 

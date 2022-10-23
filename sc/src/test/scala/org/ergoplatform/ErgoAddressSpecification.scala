@@ -14,10 +14,10 @@ import sigmastate.helpers.TestingHelpers._
 import sigmastate.helpers._
 import sigmastate.interpreter.ContextExtension.VarBinding
 import sigmastate.basics.CryptoConstants.dlogGroup
+import sigmastate.exceptions.CostLimitException
 import sigmastate.interpreter.Interpreter.{ScriptEnv, ScriptNameProp}
 import sigmastate.interpreter.{ContextExtension, CostedProverResult}
 import sigmastate.lang.Terms.ValueOps
-import sigmastate.lang.exceptions.CostLimitException
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.serialization.{GroupElementSerializer, ValueSerializer}
 import sigmastate.utils.Helpers._

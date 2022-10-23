@@ -14,8 +14,8 @@ import scorex.util.ModifierId
 import sigmastate.Values.{ErgoTree, EvaluatedValue}
 import sigmastate.eval.Extensions._
 import sigmastate.eval.{CPreHeader, WrapperOf, _}
+import sigmastate.exceptions.SigmaException
 import sigmastate.interpreter.{ContextExtension, ProverResult}
-import sigmastate.lang.exceptions.SigmaException
 import sigmastate.serialization.{DataJsonEncoder, ErgoTreeSerializer, ValueSerializer}
 import sigmastate.{AvlTreeData, AvlTreeFlags, SType}
 import special.collection.Coll

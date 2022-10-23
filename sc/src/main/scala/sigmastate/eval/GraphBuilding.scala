@@ -15,7 +15,8 @@ import sigmastate.serialization.OpCodes
 import sigmastate.utxo._
 import sigmastate._
 import sigmastate.basics.CryptoConstants.EcPointType
-import sigmastate.lang.exceptions.{CosterException, SigmaException}
+import sigmastate.exceptions.SigmaException
+import sigmastate.lang.exceptions.CosterException
 
 import scala.collection.mutable.ArrayBuffer
 

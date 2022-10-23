@@ -9,13 +9,14 @@ import sigmastate.basics.VerifierMessage.Challenge
 import sigmastate.basics.{SecondDiffieHellmanTupleProverMessage, ProveDHTuple, CryptoConstants}
 import sigmastate.interpreter.ErgoTreeEvaluator.{fixedCostOp, perItemCostOp}
 import sigmastate.interpreter.{ErgoTreeEvaluator, NamedDesc, OperationCostInfo}
-import sigmastate.lang.exceptions.SerializerException
 import sigmastate.serialization.SigmaSerializer
 import sigmastate.util.safeNewArray
 import sigmastate.utils.{Helpers, SigmaByteReader, SigmaByteWriter}
 import debox.cfor
+import sigmastate.exceptions.SerializerException
 
 /** Contains implementation of signature (aka proof) serialization.
+ *
   * @see toProofBytes, parseAndComputeChallenges
   */
 object SigSerializer extends LazyLogging {

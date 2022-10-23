@@ -11,7 +11,7 @@ import sigmastate.basics.DLogProtocol._
 import sigmastate.basics.VerifierMessage.Challenge
 import sigmastate.basics._
 import sigmastate.crypto.{GF2_192, GF2_192_Poly}
-import sigmastate.lang.exceptions.InterpreterException
+import sigmastate.exceptions.InterpreterException
 import sigmastate.utils.Helpers
 
 import java.math.BigInteger

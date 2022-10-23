@@ -5,9 +5,9 @@ import java.nio.ByteBuffer
 import org.ergoplatform.SigmaConstants
 import org.ergoplatform.validation.SigmaValidationSettings
 import scorex.util.ByteArrayBuilder
-import sigmastate.lang.exceptions.SerializerException
 import sigmastate.utils._
 import scorex.util.serialization._
+import sigmastate.exceptions.SerializerException
 import sigmastate.serialization.OpCodes.OpCode
 
 object SigmaSerializer {

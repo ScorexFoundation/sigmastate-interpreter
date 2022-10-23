@@ -9,7 +9,7 @@ import scorex.util.encode.Base58
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.basics.DLogProtocol.{ProveDlogProp, ProveDlog}
-import sigmastate.lang.exceptions.SigmaException
+import sigmastate.exceptions.SigmaException
 import sigmastate.serialization._
 import sigmastate.utxo.{DeserializeContext, Slice}
 import special.collection.Coll

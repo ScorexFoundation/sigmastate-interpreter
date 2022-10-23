@@ -1,5 +1,6 @@
 package sigmastate.lang.exceptions
 
+import sigmastate.exceptions.SerializerException
 import sigmastate.lang.SourceContext
 
 /** Thrown by TypeSerializer when type prefix <= 0. */

@@ -13,11 +13,10 @@ import sigmastate.Values.{EvaluatedValue, Constant}
 import sigmastate._
 import sigmastate.eval._
 import sigmastate.lang.SigmaParser
-import sigmastate.lang.exceptions.SerializerException
 import special.collection.{collRType, Coll}
 import special.sigma._
 import debox.cfor
-
+import sigmastate.exceptions.SerializerException
 import scala.collection.compat.immutable.ArraySeq
 import scala.collection.mutable
 

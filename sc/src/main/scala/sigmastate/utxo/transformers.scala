@@ -10,9 +10,9 @@ import org.ergoplatform.ErgoBox.RegisterId
 import scalan.RType
 import sigmastate.Operations._
 import sigmastate.eval.{Evaluation, SigmaDsl}
+import sigmastate.exceptions.InterpreterException
 import sigmastate.interpreter.ErgoTreeEvaluator
 import sigmastate.interpreter.ErgoTreeEvaluator.{DataEnv, error}
-import sigmastate.lang.exceptions.InterpreterException
 import special.collection.Coll
 import special.sigma.{Box, SigmaProp}
 

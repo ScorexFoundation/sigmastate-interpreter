@@ -6,9 +6,9 @@ import sigmastate.Values.SigmaBoolean
 import sigmastate._
 import sigmastate.basics.DLogProtocol.FirstDLogProverMessage
 import sigmastate.basics.{FirstDiffieHellmanTupleProverMessage, SecP256K1Group}
+import sigmastate.exceptions.InterpreterException
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.{HintsBag, ProverInterpreter}
-import sigmastate.lang.exceptions.InterpreterException
 
 class ProverSpecification extends SigmaTestingCommons {
 

@@ -15,9 +15,9 @@ import sigmastate.basics.CryptoConstants.EcPointType
 import special.sigma.AvlTree
 import SType.AnyOps
 import org.ergoplatform.SigmaConstants.ScriptCostLimit
+import sigmastate.exceptions.SerializerException
 import sigmastate.interpreter.{CostAccumulator, ErgoTreeEvaluator}
 import sigmastate.interpreter.ErgoTreeEvaluator.DefaultProfiler
-import sigmastate.lang.exceptions.SerializerException
 import sigmastate.utils.Helpers
 
 class DataSerializerSpecification extends SerializationSpecification {

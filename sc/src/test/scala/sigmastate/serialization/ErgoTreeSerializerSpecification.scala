@@ -7,8 +7,9 @@ import org.ergoplatform.validation.ValidationRules.CheckDeserializedScriptIsSigm
 import sigmastate.Values.{BigIntConstant, ByteConstant, ConstantPlaceholder, ErgoTree, IntConstant, ShortConstant, SigmaPropValue, UnparsedErgoTree}
 import sigmastate._
 import sigmastate.eval.{CBigInt, IRContext}
+import sigmastate.exceptions.SerializerException
 import sigmastate.helpers.SigmaTestingCommons
-import sigmastate.lang.exceptions.{ReaderPositionLimitExceeded, SerializerException}
+import sigmastate.lang.exceptions.ReaderPositionLimitExceeded
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.utxo.{DeserializeContext, DeserializeRegister}
 

@@ -12,7 +12,6 @@ import sigmastate.Values._
 import sigmastate.basics.DLogProtocol.{DLogInteractiveProver, FirstDLogProverMessage}
 import sigmastate.basics._
 import sigmastate.interpreter.Interpreter._
-import sigmastate.lang.exceptions.InterpreterException
 import sigmastate.serialization.{SigmaSerializer, ValueSerializer}
 import sigmastate.utxo.DeserializeContext
 import sigmastate.{SType, _}
@@ -24,7 +23,7 @@ import sigmastate.interpreter.ErgoTreeEvaluator.fixedCostOp
 import sigmastate.utils.Helpers._
 import sigmastate.lang.Terms.ValueOps
 import debox.cfor
-
+import sigmastate.exceptions.InterpreterException
 import scala.util.{Success, Try}
 
 /** Base (verifying) interpreter of ErgoTrees.

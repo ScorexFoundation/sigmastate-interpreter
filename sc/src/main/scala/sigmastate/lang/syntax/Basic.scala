@@ -4,8 +4,9 @@ import fastparse._
 import NoWhitespace._
 import fastparse.CharPredicates._
 import scalan.Nullable
+import sigmastate.exceptions.SigmaException
 import sigmastate.lang.SourceContext
-import sigmastate.lang.exceptions.{SigmaException, CompilerException}
+import sigmastate.lang.exceptions.CompilerException
 
 object Basic {
   val digits = "0123456789"

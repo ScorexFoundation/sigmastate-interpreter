@@ -3,12 +3,11 @@ package sigmastate.utxo.examples
 import org.ergoplatform._
 import sigmastate.Values.IntConstant
 import sigmastate._
+import sigmastate.exceptions.InterpreterException
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, SigmaTestingCommons, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter.ScriptNameProp
 import sigmastate.lang.Terms._
-import sigmastate.lang.exceptions.InterpreterException
-
 
 class TimedPaymentExampleSpecification extends SigmaTestingCommons
   with CrossVersionProps {

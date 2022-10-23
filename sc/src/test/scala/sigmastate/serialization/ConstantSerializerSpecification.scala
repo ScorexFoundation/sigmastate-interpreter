@@ -16,8 +16,8 @@ import sigmastate.eval.Evaluation
 import special.sigma.AvlTree
 import SType.AnyOps
 import scorex.util.encode.Base16
+import sigmastate.exceptions.SerializerException
 import sigmastate.lang.DeserializationSigmaBuilder
-import sigmastate.lang.exceptions.SerializerException
 
 class ConstantSerializerSpecification extends TableSerializationSpecification {
 

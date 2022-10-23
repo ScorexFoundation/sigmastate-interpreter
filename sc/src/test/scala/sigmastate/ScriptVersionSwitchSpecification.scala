@@ -7,13 +7,13 @@ import sigmastate.Values.ErgoTree.{DefaultHeader, updateVersionBits}
 import sigmastate.Values._
 import sigmastate.VersionContext.MaxSupportedScriptVersion
 import sigmastate.eval._
+import sigmastate.exceptions.InterpreterException
 import sigmastate.helpers.{ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers.createBox
 import sigmastate.interpreter.ErgoTreeEvaluator.DefaultEvalSettings
 import sigmastate.interpreter.EvalSettings.EvaluationMode
 import sigmastate.interpreter.{CostedProverResult, ErgoTreeEvaluator, EvalSettings, Interpreter, ProverResult}
 import sigmastate.lang.Terms.ValueOps
-import sigmastate.lang.exceptions.InterpreterException
 import sigmastate.utils.Helpers._
 import special.sigma.{Box, SigmaDslTesting}
 

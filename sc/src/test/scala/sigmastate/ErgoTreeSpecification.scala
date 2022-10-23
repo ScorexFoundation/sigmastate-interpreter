@@ -9,10 +9,11 @@ import sigmastate.SCollection.{SByteArray, SByteArray2, checkValidFlatmap}
 import sigmastate.Values._
 import sigmastate.VersionContext._
 import sigmastate.eval.{Evaluation, Profiler}
+import sigmastate.exceptions.{InterpreterException, CostLimitException}
 import sigmastate.interpreter.ErgoTreeEvaluator
 import sigmastate.lang.SourceContext
 import sigmastate.lang.Terms._
-import sigmastate.lang.exceptions.{CostLimitException, CosterException, InterpreterException}
+import sigmastate.lang.exceptions.CosterException
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.utxo._
 import special.collection._
