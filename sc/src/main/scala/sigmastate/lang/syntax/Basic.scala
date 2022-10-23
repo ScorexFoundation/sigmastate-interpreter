@@ -4,7 +4,6 @@ import fastparse._
 import NoWhitespace._
 import fastparse.CharPredicates._
 import scalan.Nullable
-import sigmastate.exceptions.SigmaException
 import sigmastate.lang.SourceContext
 import sigmastate.lang.exceptions.CompilerException
 
