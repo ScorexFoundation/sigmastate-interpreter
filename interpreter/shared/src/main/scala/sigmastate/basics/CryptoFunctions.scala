@@ -1,7 +1,6 @@
-package sigmastate.interpreter
+package sigmastate.basics
 
 import scorex.crypto.hash.Blake2b256
-import sigmastate.basics.CryptoConstants
 
 object CryptoFunctions {
   lazy val soundnessBytes: Int = CryptoConstants.soundnessBits / 8
@@ -17,5 +16,4 @@ object CryptoFunctions {
     Array.copy(h, 0, res, 0, soundnessBytes)
     res
   }
-
 }
