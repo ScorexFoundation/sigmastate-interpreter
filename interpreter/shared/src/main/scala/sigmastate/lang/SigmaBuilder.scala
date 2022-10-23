@@ -9,7 +9,7 @@ import sigmastate.Values._
 import sigmastate._
 import sigmastate.lang.Constraints._
 import sigmastate.lang.Terms._
-import sigmastate.lang.exceptions.ConstraintFailed
+import sigmastate.exceptions.ConstraintFailed
 import sigmastate.serialization.OpCodes
 import sigmastate.utxo._
 import scalan.Nullable
@@ -17,7 +17,7 @@ import sigmastate.SOption.SIntOption
 import sigmastate.eval._
 import sigmastate.basics.CryptoConstants.EcPointType
 import special.collection.Coll
-import sigmastate.lang.SigmaTyper.STypeSubst
+import sigmastate.lang.Terms.STypeSubst
 import sigmastate.serialization.OpCodes.OpCode
 import special.sigma.{AvlTree, SigmaProp, GroupElement}
 import debox.cfor

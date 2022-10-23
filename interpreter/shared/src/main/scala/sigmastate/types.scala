@@ -3,39 +3,39 @@ package sigmastate
 import java.math.BigInteger
 import org.ergoplatform._
 import org.ergoplatform.validation._
-import scalan.{Nullable, RType}
+import scalan.{RType, Nullable}
 import scalan.RType.GeneralType
-import sigmastate.SType.{AnyOps, TypeCode}
+import sigmastate.SType.{TypeCode, AnyOps}
 import sigmastate.interpreter._
 import sigmastate.utils.Overloading.Overload1
 import sigmastate.utils.SparseArrayContainer
 import scalan.util.Extensions._
-import scorex.crypto.authds.{ADKey, ADValue}
-import scorex.crypto.authds.avltree.batch.{Insert, Lookup, Remove, Update}
+import scorex.crypto.authds.{ADValue, ADKey}
+import scorex.crypto.authds.avltree.batch.{Lookup, Remove, Insert, Update}
 import scorex.crypto.hash.Blake2b256
 import sigmastate.Values._
 import sigmastate.lang.Terms._
-import sigmastate.lang.{SigmaBuilder, SigmaTyper}
+import sigmastate.lang.{SigmaBuilder, Terms}
 import sigmastate.SCollection._
-import sigmastate.basics.CryptoConstants.{EcPointType, hashLength}
+import sigmastate.basics.CryptoConstants.{hashLength, EcPointType}
 import sigmastate.serialization.OpCodes
 import special.collection.Coll
 import special.sigma._
 
 import scala.language.implicitConversions
-import scala.reflect.{ClassTag, classTag}
+import scala.reflect.{classTag, ClassTag}
 import scala.collection.compat.immutable.ArraySeq
-import sigmastate.SMethod.{InvokeDescBuilder, MethodCallIrBuilder, MethodCostFunc, givenCost, javaMethodOf}
+import sigmastate.SMethod.{InvokeDescBuilder, MethodCostFunc, givenCost, javaMethodOf, MethodCallIrBuilder}
 import sigmastate.utxo._
-import sigmastate.lang.SigmaTyper.STypeSubst
+import sigmastate.lang.Terms.STypeSubst
 import sigmastate.eval.Evaluation.stypeToRType
 import sigmastate.eval._
-import sigmastate.lang.exceptions.MethodNotFound
+import sigmastate.exceptions.MethodNotFound
 import debox.cfor
-import scalan.reflection.{RClass, RMethod, CommonReflection}
+import scalan.reflection.{CommonReflection, RClass, RMethod}
 
 import scala.collection.mutable
-import scala.util.{Failure, Success}
+import scala.util.{Success, Failure}
 
 /** Base type for all AST nodes of sigma lang. */
 trait SigmaNode extends Product
@@ -81,7 +81,7 @@ sealed trait SType extends SigmaNode {
   def withSubstTypes(subst: Map[STypeVar, SType]): SType =
     if (subst.isEmpty) this
     else
-      SigmaTyper.applySubst(this, subst)
+      Terms.applySubst(this, subst)
 
   /** Returns parsable type term string of the type described by this type descriptor.
     * For every type it should be inverse to SigmaTyper.parseType.
@@ -556,7 +556,7 @@ case class SMethod(
     * @consensus
     */
   def specializeFor(objTpe: SType, args: Seq[SType]): SMethod = {
-    SigmaTyper.unifyTypeLists(stype.tDom, objTpe +: args) match {
+    Terms.unifyTypeLists(stype.tDom, objTpe +: args) match {
       case Some(subst) if subst.nonEmpty =>
         withConcreteTypes(subst)
       case _ => this
@@ -743,7 +743,7 @@ trait SNumericType extends SProduct {
   import SNumericType._
   protected override def getMethods(): Seq[SMethod] = {
     super.getMethods() ++ SNumericType.methods.map {
-      m => m.copy(stype = SigmaTyper.applySubst(m.stype, Map(tNum -> this)).asFunc)
+      m => m.copy(stype = Terms.applySubst(m.stype, Map(tNum -> this)).asFunc)
     }
   }
 
@@ -1834,7 +1834,7 @@ object STuple extends STypeCompanion {
     // TODO: implement other methods
     val activeMethods = Set(1.toByte /*Coll.size*/, 10.toByte /*Coll.apply*/)
     SCollection.methods.filter(m => activeMethods.contains(m.methodId)).map { m =>
-      m.copy(stype = SigmaTyper.applySubst(m.stype, subst).asFunc)
+      m.copy(stype = Terms.applySubst(m.stype, subst).asFunc)
     }
   }
 

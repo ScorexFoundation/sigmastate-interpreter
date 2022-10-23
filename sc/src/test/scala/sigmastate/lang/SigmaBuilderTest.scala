@@ -5,7 +5,7 @@ import org.scalatest.propspec.AnyPropSpec
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.lang.exceptions.ConstraintFailed
+import sigmastate.exceptions.ConstraintFailed
 import sigmastate.serialization.OpCodes
 
 class SigmaBuilderTest extends AnyPropSpec with ScalaCheckPropertyChecks with Matchers with LangTests {

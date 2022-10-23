@@ -9,7 +9,7 @@ import sigmastate.SOption._
 import sigmastate.Values.{StringConstant, Constant, EvaluatedValue, SValue, IntValue, SigmaPropConstant, ConstantPlaceholder, BoolValue, Value, ByteArrayConstant, SigmaPropValue, ValueCompanion}
 import sigmastate._
 import sigmastate.lang.Terms._
-import sigmastate.lang.exceptions.InvalidArguments
+import sigmastate.exceptions.InvalidArguments
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo.{GetVar, DeserializeContext, DeserializeRegister, SelectField}
 

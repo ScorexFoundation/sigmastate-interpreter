@@ -1,4 +1,4 @@
-package sigmastate.lang.exceptions
+package sigmastate.exceptions
 
 import sigmastate.lang.SourceContext
 

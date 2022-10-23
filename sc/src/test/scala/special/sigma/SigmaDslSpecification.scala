@@ -38,8 +38,7 @@ import sigmastate.basics.ProveDHTuple
 import sigmastate.interpreter._
 import org.scalactic.source.Position
 import sigmastate.helpers.SigmaPPrint
-import sigmastate.lang.exceptions.CosterException
-
+import sigmastate.exceptions.CosterException
 import scala.collection.compat.immutable.ArraySeq
 
 /** This suite tests every method of every SigmaDsl type to be equivalent to

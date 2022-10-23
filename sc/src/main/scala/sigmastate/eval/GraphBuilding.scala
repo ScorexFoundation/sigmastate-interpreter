@@ -15,9 +15,7 @@ import sigmastate.serialization.OpCodes
 import sigmastate.utxo._
 import sigmastate._
 import sigmastate.basics.CryptoConstants.EcPointType
-import sigmastate.exceptions.SigmaException
-import sigmastate.lang.exceptions.CosterException
-
+import sigmastate.exceptions.{SigmaException, CosterException}
 import scala.collection.mutable.ArrayBuffer
 
 /** Perform translation of typed expression given by [[Value]] to a graph in IRContext.

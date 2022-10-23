@@ -1,6 +1,5 @@
-package sigmastate.lang.exceptions
+package sigmastate.exceptions
 
-import sigmastate.exceptions.SigmaException
 import sigmastate.lang.SourceContext
 
 class CompilerException(message: String, val source: Option[SourceContext] = None, cause: Option[Throwable] = None)

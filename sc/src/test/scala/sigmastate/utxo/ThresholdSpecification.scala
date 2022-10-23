@@ -4,8 +4,7 @@ import sigmastate.basics.DLogProtocol.{DLogProverInput, ProveDlog}
 import sigmastate.Values.{ConcreteCollection, FalseLeaf, IntConstant, SigmaPropConstant, SigmaPropValue, TrueLeaf}
 import sigmastate._
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, ErgoLikeTransactionTesting, SigmaTestingCommons}
-import sigmastate.interpreter.Interpreter
-import sigmastate.lang.exceptions.CosterException
+import sigmastate.exceptions.CosterException
 
 class ThresholdSpecification extends SigmaTestingCommons
   with CrossVersionProps {

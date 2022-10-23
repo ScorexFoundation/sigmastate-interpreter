@@ -1,7 +1,6 @@
 package sigmastate
 
 import org.ergoplatform.ErgoBox.RegisterId
-import scalan.GraphIRReflection
 import scalan.reflection.CommonReflection.registerClassEntry
 import scalan.reflection.{SRConstructor, mkConstructor, mkMethod, SRMethod}
 import sigmastate.SAvlTree.KeyValueColl
@@ -19,7 +18,7 @@ import special.collection.Coll
 import special.sigma.{SigmaDslBuilder, AvlTree}
 
 object InterpreterReflection {
-  val reflection = (GraphIRReflection, CoreLibReflection)
+  val reflection = CoreLibReflection
 
   registerClassEntry(classOf[AND],
     constructors = Array(

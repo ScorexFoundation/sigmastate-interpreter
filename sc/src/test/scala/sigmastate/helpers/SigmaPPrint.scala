@@ -12,7 +12,7 @@ import sigmastate.Values.{ConstantNode, ErgoTree, FuncValue, ValueCompanion}
 import sigmastate._
 import sigmastate.crypto.GF2_192_Poly
 import sigmastate.basics.CryptoConstants.EcPointType
-import sigmastate.lang.SigmaTyper
+import sigmastate.lang.Terms
 import sigmastate.lang.Terms.MethodCall
 import sigmastate.serialization.GroupElementSerializer
 import sigmastate.utxo.SelectField
@@ -249,7 +249,7 @@ object SigmaPPrint extends PPrinter {
     case mc @ MethodCall(obj, method, args, typeSubst) =>
       val objType = apply(method.objType).plainText
       val methodTemplate = method.objType.getMethodByName(method.name)
-      val methodT = SigmaTyper.unifyTypeLists(methodTemplate.stype.tDom, obj.tpe +: args.map(_.tpe)) match {
+      val methodT = Terms.unifyTypeLists(methodTemplate.stype.tDom, obj.tpe +: args.map(_.tpe)) match {
         case Some(subst) if subst.nonEmpty =>
           val getMethod = s"""$objType.getMethodByName("${method.name}").withConcreteTypes"""
           Tree.Apply(getMethod, treeifySeq(Seq(subst)))

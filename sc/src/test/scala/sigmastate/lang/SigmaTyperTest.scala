@@ -11,10 +11,10 @@ import sigmastate._
 import sigmastate.basics.CryptoConstants
 import sigmastate.basics.DLogProtocol.{DLogProverInput, ProveDlog}
 import sigmastate.eval.Colls
+import sigmastate.exceptions.TyperException
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.SigmaPredef._
-import sigmastate.lang.Terms.Select
-import sigmastate.lang.exceptions.TyperException
+import sigmastate.lang.Terms._
 import sigmastate.lang.syntax.ParserException
 import sigmastate.serialization.ErgoTreeSerializer
 import sigmastate.serialization.generators.ObjectGenerators
@@ -312,7 +312,6 @@ class SigmaTyperTest extends AnyPropSpec
   }
 
   property("compute unifying type substitution: prim types") {
-    import SigmaTyper._
     forAll { t: SPredefType =>
       unifyTypes(t, t) shouldBe Some(EmptySubst)
       unifyTypes(SAny, t) shouldBe Some(EmptySubst)
@@ -324,7 +323,6 @@ class SigmaTyperTest extends AnyPropSpec
   }
 
   property("compute unifying type substitution") {
-    import SigmaTyper._
     def checkTypes(t1: SType, t2: SType, exp: Option[STypeSubst]): Unit = {
       unifyTypes(t1, t2) shouldBe exp
       exp match {
@@ -425,7 +423,6 @@ class SigmaTyperTest extends AnyPropSpec
   }
 
   property("most specific general (MSG) type") {
-    import SigmaTyper._
     def checkTypes(t1: SType, t2: SType, exp: Option[SType]): Unit = {
       msgType(t1, t2) shouldBe exp
     }

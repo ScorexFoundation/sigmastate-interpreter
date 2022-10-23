@@ -2,7 +2,7 @@ package sigmastate.serialization
 
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.lang.SigmaTyper.STypeSubst
+import sigmastate.lang.Terms.STypeSubst
 import sigmastate.lang.Terms.MethodCall
 import sigmastate.util.safeNewArray
 import sigmastate.utils.SigmaByteWriter.{DataInfo, valuesItemInfo}

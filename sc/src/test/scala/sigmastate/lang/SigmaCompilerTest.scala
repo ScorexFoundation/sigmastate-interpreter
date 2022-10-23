@@ -8,7 +8,7 @@ import sigmastate._
 import sigmastate.helpers.SigmaTestingCommons
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.Terms.{Apply, Ident, Lambda, MethodCall, ZKProofBlock}
-import sigmastate.lang.exceptions.{CosterException, InvalidArguments, TyperException}
+import sigmastate.exceptions.{CosterException, InvalidArguments, TyperException}
 import sigmastate.serialization.ValueSerializer
 import sigmastate.serialization.generators.ObjectGenerators
 import sigmastate.utxo.{ByIndex, ExtractAmount, GetVar, SelectField}
@@ -78,8 +78,8 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ObjectGe
   }
 
   property("global methods") {
-    comp(env, "{ groupGenerator }") shouldBe MethodCall(Global, SGlobal.groupGeneratorMethod, IndexedSeq(), SigmaTyper.EmptySubst)
-    comp(env, "{ Global.groupGenerator }") shouldBe MethodCall(Global, SGlobal.groupGeneratorMethod, IndexedSeq(), SigmaTyper.EmptySubst)
+    comp(env, "{ groupGenerator }") shouldBe MethodCall(Global, SGlobal.groupGeneratorMethod, IndexedSeq(), Terms.EmptySubst)
+    comp(env, "{ Global.groupGenerator }") shouldBe MethodCall(Global, SGlobal.groupGeneratorMethod, IndexedSeq(), Terms.EmptySubst)
     comp(env, "{ Global.xor(arr1, arr2) }") shouldBe Xor(ByteArrayConstant(arr1), ByteArrayConstant(arr2))
     comp(env, "{ xor(arr1, arr2) }") shouldBe Xor(ByteArrayConstant(arr1), ByteArrayConstant(arr2))
   }

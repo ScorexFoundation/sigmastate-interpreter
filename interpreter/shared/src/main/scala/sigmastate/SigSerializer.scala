@@ -1,6 +1,5 @@
 package sigmastate
 
-import com.typesafe.scalalogging.LazyLogging
 import sigmastate.crypto.{BigIntegers, GF2_192_Poly}
 import scorex.util.encode.Base16
 import sigmastate.Values.SigmaBoolean
@@ -19,9 +18,9 @@ import sigmastate.exceptions.SerializerException
  *
   * @see toProofBytes, parseAndComputeChallenges
   */
-object SigSerializer extends LazyLogging {
+class SigSerializer {
   /** Log warning message using this class's logger. */
-  def warn(msg: String) = logger.warn(msg)
+  def warn(msg: String) = println(msg)
 
   /** A size of challenge in Sigma protocols, in bits. */
   val hashSize = CryptoConstants.soundnessBits / 8
@@ -265,3 +264,5 @@ object SigSerializer extends LazyLogging {
   }
 
 }
+
+object SigSerializer extends SigSerializer

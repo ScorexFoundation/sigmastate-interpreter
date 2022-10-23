@@ -13,7 +13,7 @@ import SType._
 import scalan.SigmaLibrary
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
-import sigmastate.lang.SigmaTyper
+import sigmastate.lang.Terms
 
 trait TreeBuilding extends SigmaLibrary { IR: IRContext =>
   import Liftables._
@@ -249,7 +249,7 @@ trait TreeBuilding extends SigmaLibrary { IR: IRContext =>
           case (mth @ SCollection.ZipMethod, Seq(coll)) =>
             val typeSubst = Map(SCollection.tOV -> coll.asCollection[SType].tpe.elemType)
             typeSubst
-          case (mth, _) => SigmaTyper.EmptySubst
+          case (mth, _) => Terms.EmptySubst
         }
         val specMethod = method.withConcreteTypes(typeSubst + (SCollection.tIV -> colTpe.elemType))
         builder.mkMethodCall(col, specMethod, args.toIndexedSeq, Map())
