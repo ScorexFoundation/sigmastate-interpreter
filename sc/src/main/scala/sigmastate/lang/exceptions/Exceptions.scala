@@ -13,14 +13,21 @@ class SigmaException(val message: String, val source: Option[SourceContext] = No
   }.getOrElse(message)
 }
 
+class CompilerException(message: String, source: Option[SourceContext] = None, cause: Option[Throwable] = None)
+    extends SigmaException(message, source, cause) {
+
+  override def getMessage: String = source.map { srcCtx =>
+    val lineNumberStrPrefix = s"line ${srcCtx.line}: "
+    "\n" + lineNumberStrPrefix +
+      s"${srcCtx.sourceLine}\n${" " * (lineNumberStrPrefix.length + srcCtx.column - 1)}^\n" + message
+  }.getOrElse(message)
+}
+
 class BinderException(message: String, source: Option[SourceContext] = None)
-    extends SigmaException(message, source)
+    extends CompilerException(message, source)
 
 class TyperException(message: String, source: Option[SourceContext] = None)
-    extends SigmaException(message, source)
-
-class SpecializerException(message: String, source: Option[SourceContext] = None)
-    extends SigmaException(message, source)
+    extends CompilerException(message, source)
 
 case class SerializerException(
   override val message: String,
@@ -29,7 +36,7 @@ case class SerializerException(
   extends SigmaException(message, source, cause)
 
 class BuilderException(message: String, source: Option[SourceContext] = None)
-  extends SigmaException(message, source)
+  extends CompilerException(message, source)
 
 class CosterException(message: String, source: Option[SourceContext], cause: Option[Throwable] = None)
     extends SigmaException(message, source, cause)
