@@ -3,7 +3,6 @@ package org.ergoplatform.validation
 import scalan.util.Extensions.toUByte
 import sigmastate.Values.{ErgoTree, SValue}
 import sigmastate._
-import sigmastate.eval.IRContext
 import sigmastate.lang.exceptions._
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.TypeSerializer.embeddableIdToType
@@ -127,18 +126,21 @@ object ValidationRules {
   object CheckCalcFunc extends ValidationRule(1005,
     "If SigmaProp.isProven method calls exists in the given function,\n then it is the last operation")
 
+  /** This rule is not use in v5.x, keep the commented code below as a precise
+    * documentation of its semantics.
+    */
   object CheckTupleType extends ValidationRule(1006,
     "Supported tuple type.") with SoftForkWhenReplaced {
-    final def apply[Ctx <: IRContext, T](ctx: Ctx)(e: ctx.Elem[_]): Unit = {
-      checkRule()
-      val condition = e match {
-        case _: ctx.PairElem[_,_] => true
-        case _ => false
-      }
-      if (!condition) {
-        throwValidationException(new SigmaException(s"Invalid tuple type $e"), Array[ctx.Elem[_]](e))
-      }
-    }
+//    final def apply[Ctx <: IRContext, T](ctx: Ctx)(e: ctx.Elem[_]): Unit = {
+//      checkRule()
+//      val condition = e match {
+//        case _: ctx.PairElem[_,_] => true
+//        case _ => false
+//      }
+//      if (!condition) {
+//        throwValidationException(new SigmaException(s"Invalid tuple type $e"), Array[ctx.Elem[_]](e))
+//      }
+//    }
   }
 
   object CheckPrimitiveTypeCode extends ValidationRule(1007,

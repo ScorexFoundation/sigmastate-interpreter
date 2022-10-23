@@ -297,16 +297,6 @@ class SoftForkabilitySpecification extends SigmaTestingData with BeforeAndAfterA
     res shouldBe false
   }
 
-  property("CheckTupleType rule") {
-    val tuple = Tuple(IntConstant(1), IntConstant(2), IntConstant(3))
-    val exp = SelectField(tuple, 3)
-    val v2vs = vs.updated(CheckTupleType.id, ReplacedRule(0))
-    checkRule(CheckTupleType, v2vs, {
-      // simulate throwing of exception in
-      CheckTupleType.throwValidationException(new SigmaException(s"Invalid tuple type"), Array[IR.Elem[_]]())
-    })
-  }
-
   property("CheckPrimitiveTypeCode rule") {
     val typeBytes = Array[Byte](MaxPrimTypeCode)
     val v2vs = vs.updated(CheckPrimitiveTypeCode.id, ChangedRule(Array[Byte](MaxPrimTypeCode)))

@@ -15,7 +15,7 @@ import sigmastate.serialization.OpCodes
 import sigmastate.utxo._
 import sigmastate._
 import sigmastate.basics.CryptoConstants.EcPointType
-import sigmastate.lang.exceptions.CosterException
+import sigmastate.lang.exceptions.{CosterException, SigmaException}
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -75,6 +75,20 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
 //    case SigmaPropConst(sp) => sp.toString
 //    case _ => super.formatDef(d)
 //  }
+
+  /** Check the tuple type is valid.
+    * In v5.x this code is taken from CheckTupleType validation rule which is no longer
+    * part of consensus.
+    */
+  def checkTupleType[Ctx <: IRContext, T](ctx: Ctx)(e: ctx.Elem[_]): Unit = {
+    val condition = e match {
+      case _: ctx.PairElem[_, _] => true
+      case _ => false
+    }
+    if (!condition) {
+      throw new SigmaException(s"Invalid tuple type $e")
+    }
+  }
 
   type RColl[T] = Ref[Coll[T]]
   type ROption[T] = Ref[WOption[T]]
@@ -571,7 +585,7 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
       // tup._1 or tup._2
       case SelectField(In(tup), fieldIndex) =>
         val eTuple = tup.elem.asInstanceOf[Elem[_]]
-        CheckTupleType(IR)(eTuple)
+        checkTupleType(IR)(eTuple)
         eTuple match {
           case pe: PairElem[a,b] =>
             assert(fieldIndex == 1 || fieldIndex == 2, s"Invalid field index $fieldIndex of the pair ${tup}: $pe")
