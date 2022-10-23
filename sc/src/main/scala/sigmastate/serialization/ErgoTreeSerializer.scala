@@ -191,7 +191,7 @@ class ErgoTreeSerializer {
             new ErgoTree(ErgoTree.DefaultHeader, EmptyConstants, Left(UnparsedErgoTree(bytes, ve)), complexity, bytes, None)
           case None =>
             throw new SerializerException(
-              s"Cannot handle ValidationException, ErgoTree serialized without size bit.", None, Some(ve))
+              s"Cannot handle ValidationException, ErgoTree serialized without size bit.", Some(ve))
         }
     }
     finally {

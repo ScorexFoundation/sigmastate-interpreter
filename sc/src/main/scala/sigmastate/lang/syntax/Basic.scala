@@ -1,10 +1,11 @@
 package sigmastate.lang.syntax
 
-import fastparse._; import NoWhitespace._
+import fastparse._
+import NoWhitespace._
 import fastparse.CharPredicates._
 import scalan.Nullable
 import sigmastate.lang.SourceContext
-import sigmastate.lang.exceptions.SigmaException
+import sigmastate.lang.exceptions.{SigmaException, CompilerException}
 
 object Basic {
   val digits = "0123456789"
@@ -41,7 +42,7 @@ object Basic {
 }
 
 class ParserException(message: String, source: Option[SourceContext])
-  extends SigmaException(message, source)
+  extends CompilerException(message, source)
 
 /**
   * Most keywords don't just require the correct characters to match,

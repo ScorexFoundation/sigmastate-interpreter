@@ -117,7 +117,7 @@ trait Interpreter {
         TrueSigmaProp
       case Left(UnparsedErgoTree(_, error)) =>
         throw new InterpreterException(
-          "Script has not been recognized due to ValidationException, and it cannot be accepted as soft-fork.", None, Some(error))
+          "Script has not been recognized due to ValidationException, and it cannot be accepted as soft-fork.", Some(error))
     }
     prop
   }

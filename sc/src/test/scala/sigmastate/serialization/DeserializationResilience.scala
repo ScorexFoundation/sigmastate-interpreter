@@ -63,7 +63,7 @@ class DeserializationResilience extends SerializationSpecification
         assertExceptionThrown(
           ErgoBoxCandidate.serializer.parse(SigmaSerializer.startReader(w.toBytes)),
           {
-            case SerializerException(_, _,
+            case SerializerException(_,
                    Some(ValidationException(_,CheckPositionLimit,_,
                           Some(_: ReaderPositionLimitExceeded)))) => true
             case _ => false
