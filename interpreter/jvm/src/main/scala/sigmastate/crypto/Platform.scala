@@ -1,8 +1,7 @@
 package sigmastate.crypto
 
 import org.bouncycastle.crypto.ec.CustomNamedCurves
-import org.bouncycastle.math.ec.{ECFieldElement, ECPoint}
-import sigmastate.crypto
+import org.bouncycastle.math.ec.{ECPoint, ECFieldElement}
 
 import java.math.BigInteger
 

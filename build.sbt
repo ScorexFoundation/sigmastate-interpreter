@@ -89,6 +89,20 @@ def circeDeps(scalaVersion: String) = if (scalaVersion == scala211)
 else
   Seq(circeCore, circeGeneric, circeParser)
 
+def circeDependency = {
+  libraryDependencies ++= {
+    val version = scalaVersion.value
+    val deps211 = Seq(
+      "io.circe" %%% "circe-core" % "0.10.0",
+      "io.circe" %%% "circe-generic" % "0.10.0",
+      "io.circe" %%% "circe-parser" % "0.10.0")
+    val deps212 = Seq(
+      "io.circe" %%% "circe-core" % "0.13.0",
+      "io.circe" %%% "circe-generic" % "0.13.0",
+      "io.circe" %%% "circe-parser" % "0.13.0")
+    if (version == scala211) deps211 else deps212
+  }
+}
 
 lazy val testingDependencies = Seq(
   "org.scalatest" %% "scalatest" % "3.2.14" % Test,
@@ -190,15 +204,12 @@ lazy val interpreter = crossProject(JVMPlatform, JSPlatform)
     commonDependenies2,
     testingDependencies2,
     crossScalaSettings,
-    scorexUtilDependency, fastparseDependency
-  )
-  .settings(libraryDependencies ++=
-      Seq(scorexUtil, fastparse) ++ circeDeps(scalaVersion.value)
+    scorexUtilDependency, fastparseDependency, circeDependency
   )
   .settings(publish / skip := true)
 
 lazy val sc = (project in file("sc"))
-  .dependsOn(graphir % allConfigDependency, interpreter % allConfigDependency)
+  .dependsOn(graphir % allConfigDependency, interpreter.jvm % allConfigDependency)
   .settings(libraryDefSettings)
   .settings(libraryDependencies ++=
       Seq(scorexUtil, fastparse) ++ circeDeps(scalaVersion.value)
@@ -206,13 +217,13 @@ lazy val sc = (project in file("sc"))
   .settings(publish / skip := true)
 
 lazy val sigma = (project in file("."))
-  .aggregate(common.jvm, corelib.jvm, graphir, interpreter, sc)
+  .aggregate(common.jvm, corelib.jvm, graphir, interpreter.jvm, sc)
   .settings(libraryDefSettings, rootSettings)
   .settings(publish / aggregate := false)
   .settings(publishLocal / aggregate := false)
 
 lazy val aggregateCompile = ScopeFilter(
-  inProjects(common.jvm, corelib.jvm, graphir, interpreter, sc),
+  inProjects(common.jvm, corelib.jvm, graphir, interpreter.jvm, sc),
   inConfigurations(Compile))
 
 lazy val rootSettings = Seq(
