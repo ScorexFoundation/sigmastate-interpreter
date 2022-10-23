@@ -6,13 +6,12 @@ import sigmastate.{SType, VersionContext}
 import sigmastate.Values.{Constant, ErgoTree, UnparsedErgoTree}
 import sigmastate.lang.DeserializationSigmaBuilder
 import sigmastate.lang.Terms.ValueOps
-import sigmastate.lang.exceptions.ReaderPositionLimitExceeded
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate.Values.ErgoTree.EmptyConstants
 import sigmastate.util.safeNewArray
 import sigmastate.utxo.ComplexityTable
 import debox.cfor
-import sigmastate.exceptions.SerializerException
+import sigmastate.exceptions.{SerializerException, ReaderPositionLimitExceeded}
 import java.util
 
 /**

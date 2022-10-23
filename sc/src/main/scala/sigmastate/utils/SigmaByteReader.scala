@@ -5,10 +5,10 @@ import scorex.util.Extensions._
 import scorex.util.serialization.Reader
 import sigmastate.SType
 import sigmastate.Values.{SValue, Value}
-import sigmastate.lang.exceptions.DeserializeCallDepthExceeded
 import sigmastate.serialization._
 import sigmastate.util.safeNewArray
 import debox.cfor
+import sigmastate.exceptions.DeserializeCallDepthExceeded
 
 /** Reader used in the concrete implementations of [[SigmaSerializer]].
   * It decorates the given reader, delegates most of the methods to it, but also adds new

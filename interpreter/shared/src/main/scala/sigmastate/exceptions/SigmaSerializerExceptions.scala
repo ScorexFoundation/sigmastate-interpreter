@@ -1,7 +1,4 @@
-package sigmastate.lang.exceptions
-
-import sigmastate.exceptions.SerializerException
-import sigmastate.lang.SourceContext
+package sigmastate.exceptions
 
 /** Thrown by TypeSerializer when type prefix <= 0. */
 final class InvalidTypePrefix(message: String, cause: Option[Throwable] = None)
