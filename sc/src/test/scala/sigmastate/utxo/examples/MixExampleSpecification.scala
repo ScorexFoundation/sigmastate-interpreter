@@ -13,6 +13,7 @@ import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter._
 import sigmastate.lang.Terms._
 import sigmastate.eval._
+import sigmastate.eval.Extensions._
 
 class MixExampleSpecification extends SigmaTestingCommons
   with CrossVersionProps {
@@ -40,8 +41,8 @@ class MixExampleSpecification extends SigmaTestingCommons
 
     val fullMixEnv = Map(
       ScriptNameProp -> "fullMixEnv",
-      "g" -> g,
-      "gX" -> gX
+      "g" -> g.toGroupElement,
+      "gX" -> gX.toGroupElement
     )
 
     ProveDlog(gX) shouldBe alicePubKey
@@ -59,8 +60,8 @@ class MixExampleSpecification extends SigmaTestingCommons
 
     val halfMixEnv = Map(
       ScriptNameProp -> "halfMixEnv",
-      "g" -> g,
-      "gX" -> gX,
+      "g" -> g.toGroupElement,
+      "gX" -> gX.toGroupElement,
       "fullMixScriptHash" -> Blake2b256(fullMixScript.bytes)
     )
 

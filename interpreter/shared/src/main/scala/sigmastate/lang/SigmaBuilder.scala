@@ -254,7 +254,6 @@ abstract class SigmaBuilder {
     case v: BigInteger => Nullable(mkConstant[SBigInt.type](SigmaDsl.BigInt(v), SBigInt))
     case n: special.sigma.BigInt => Nullable(mkConstant[SBigInt.type](n, SBigInt))
 
-    case v: EcPointType => Nullable(mkConstant[SGroupElement.type](SigmaDsl.GroupElement(v), SGroupElement))
     case ge: GroupElement => Nullable(mkConstant[SGroupElement.type](ge, SGroupElement))
 
     case b: Boolean => Nullable(if(b) TrueLeaf else FalseLeaf)

@@ -1,6 +1,7 @@
 package sigmastate.crypto
 
 import java.math.BigInteger
+import scala.scalajs.js
 
 /** JVM specific implementation of crypto methods*/
 object Platform {
@@ -40,10 +41,13 @@ object Platform {
 
   def negatePoint(p: Ecp): Ecp = ??? //Ecp(p.value.negate())
 
-  class ECPoint
   class ECFieldElement
+
   /** Opaque point type. */
-  case class Ecp(private[crypto] val value: ECPoint)
+  @js.native
+  trait Ecp extends js.Object {
+
+  }
 
   case class ECFieldElem(value: ECFieldElement)
 

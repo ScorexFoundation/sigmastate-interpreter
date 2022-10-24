@@ -10,6 +10,7 @@ import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.eval._
+import sigmastate.eval.Extensions._
 import sigmastate.interpreter.Interpreter._
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
@@ -74,7 +75,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
 
     val wrongProp = SigmaPropConstant(ProveDHTuple(ci.g, ci.h, ci.u, ci.u))
 
-    val env = Map("g" -> ci.g, "h" -> ci.h, "u" -> ci.u, "v" -> ci.v, "s" -> secret.publicImage)
+    val env = Map("g" -> ci.g.toGroupElement, "h" -> ci.h.toGroupElement, "u" -> ci.u.toGroupElement, "v" -> ci.v.toGroupElement, "s" -> secret.publicImage)
     val compiledProp1 = compile(env, "s").asSigmaProp
     val compiledProp2 = compile(env, "proveDHTuple(g, h, u, v)").asSigmaProp
     compiledProp1 shouldBe prop
@@ -742,7 +743,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
 
   property("non-const ProveDHT") {
     import sigmastate.basics.CryptoConstants.dlogGroup
-    compile(Map("gA" -> dlogGroup.generator),
+    compile(Map("gA" -> dlogGroup.generator.toGroupElement),
       "proveDHTuple(gA, OUTPUTS(0).R4[GroupElement].get, gA, gA)"
     ).asInstanceOf[BlockValue].result shouldBe a [CreateProveDHTuple]
   }

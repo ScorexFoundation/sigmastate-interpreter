@@ -12,6 +12,7 @@ import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeConte
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter._
 import sigmastate.lang.Terms._
+import sigmastate.eval.Extensions._
 
 class DHTupleExampleSpecification extends SigmaTestingCommons
   with CrossVersionProps {
@@ -38,8 +39,8 @@ class DHTupleExampleSpecification extends SigmaTestingCommons
 
     val env = Map(
       ScriptNameProp -> "env",
-      "g" -> g,
-      "g_x" -> g_x
+      "g" -> g.toGroupElement,
+      "g_x" -> g_x.toGroupElement
     )
 
     val script = mkTestErgoTree(compile(env,
