@@ -26,8 +26,9 @@ case class BlockValueSerializer(cons: (IndexedSeq[BlockItem], Value[SType]) => V
 
   override def parse(r: SigmaByteReader): Value[SType] = {
     val itemsSize = r.getUIntExact
-    val values: IndexedSeq[BlockItem] = if (itemsSize == 0)
+    val values: IndexedSeq[BlockItem] = if (itemsSize == 0) {
       BlockItem.EmptySeq
+    }
     else {
       // HOTSPOT:: allocate new array only if it is not empty
       val buf = safeNewArray[BlockItem](itemsSize)

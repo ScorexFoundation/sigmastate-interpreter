@@ -7,19 +7,20 @@ import org.ergoplatform.{ErgoBoxCandidate, Outputs}
 import org.scalacheck.Gen
 import scalan.util.BenchmarkUtil
 import scorex.util.serialization.{Reader, VLQByteBufferReader}
-import sigmastate.Values.{BlockValue, GetVarInt, IntConstant, SValue, SigmaBoolean, SigmaPropValue, Tuple, ValDef, ValUse}
+import sigmastate.Values.{SValue, BlockValue, GetVarInt, SigmaBoolean, ValDef, ValUse, SigmaPropValue, Tuple, IntConstant}
 import sigmastate._
 import sigmastate.eval.Extensions._
 import sigmastate.eval._
-import sigmastate.helpers.{ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaTestingCommons}
-import sigmastate.interpreter.{ContextExtension, CostedProverResult, CryptoConstants}
-import sigmastate.lang.exceptions.{DeserializeCallDepthExceeded, InvalidTypePrefix, ReaderPositionLimitExceeded, SerializerException}
+import sigmastate.helpers.{ErgoLikeTestInterpreter, SigmaTestingCommons, ErgoLikeContextTesting}
+import sigmastate.interpreter.{CryptoConstants, CostedProverResult, ContextExtension}
+import sigmastate.lang.exceptions.{ReaderPositionLimitExceeded, InvalidTypePrefix, DeserializeCallDepthExceeded, SerializerException}
 import sigmastate.serialization.OpCodes._
-import sigmastate.utils.SigmaByteReader
+import sigmastate.utils.{SigmaByteWriter, SigmaByteReader}
 import sigmastate.utxo.SizeOf
 import sigmastate.utils.Helpers._
 
 import scala.collection.mutable
+import scala.util.{Try, Success, Failure}
 
 class DeserializationResilience extends SerializationSpecification
   with SigmaTestingCommons with CrossVersionProps {
@@ -308,5 +309,66 @@ class DeserializationResilience extends SerializationSpecification
     })
   }
 
+  /** Because this method is called from many places it should always be called with `hint`. */
+  protected def checkResult[B](res: Try[B], expectedRes: Try[B], hint: String): Unit = {
+    (res, expectedRes) match {
+      case (Failure(exception), Failure(expectedException)) =>
+        withClue(hint) {
+          rootCause(exception).getClass shouldBe rootCause(expectedException).getClass
+        }
+      case _ =>
+        val actual = rootCause(res)
+        if (actual != expectedRes) {
+          assert(false, s"$hint\nActual: $actual;\nExpected: $expectedRes\n")
+        }
+    }
+  }
 
+  def writeUInt(x: Long): Array[Byte] = {
+    val w = SigmaSerializer.startWriter()
+    val bytes = w.putUInt(x).toBytes
+    bytes
+  }
+
+  def readToInt(bytes: Array[Byte]): Try[Int] = Try {
+    val r = SigmaSerializer.startReader(bytes)
+    r.getUInt().toInt
+  }
+
+  def readToIntExact(bytes: Array[Byte]): Try[Int] = Try {
+    val r = SigmaSerializer.startReader(bytes)
+    r.getUIntExact
+  }
+
+  property("getUIntExact vs getUInt().toInt") {
+    val intOverflow = Failure(new ArithmeticException("Int overflow"))
+    val cases = Table(("stored", "toInt", "toIntExact"),
+      (0L, Success(0), Success(0)),
+      (Int.MaxValue.toLong - 1, Success(Int.MaxValue - 1), Success(Int.MaxValue - 1)),
+      (Int.MaxValue.toLong,     Success(Int.MaxValue), Success(Int.MaxValue)),
+      (Int.MaxValue.toLong + 1, Success(Int.MinValue), intOverflow),
+      (Int.MaxValue.toLong + 2, Success(Int.MinValue + 1), intOverflow),
+      (0xFFFFFFFFL,             Success(-1), intOverflow)
+    )
+    forAll(cases) { (x, res, resExact) =>
+      val bytes = writeUInt(x)
+      checkResult(readToInt(bytes), res, "toInt")
+      checkResult(readToIntExact(bytes), resExact, "toIntExact")
+    }
+
+    // check it is impossible to write negative value with reference implementation of serializer
+    // ALSO NOTE that VLQ encoded bytes are always interpreted as positive Long
+    // so the difference between getUIntExact vs getUInt().toInt boils down to how Int.MaxValue
+    // overflow is handled
+    assertExceptionThrown(
+      writeUInt(-1L),
+      exceptionLike[IllegalArgumentException]("-1 is out of unsigned int range")
+    )
+
+    val MaxUIntPlusOne = 0xFFFFFFFFL + 1
+    assertExceptionThrown(
+      writeUInt(MaxUIntPlusOne),
+      exceptionLike[IllegalArgumentException](s"$MaxUIntPlusOne is out of unsigned int range")
+    )
+  }
 }
