@@ -30,7 +30,9 @@ case class ValDefSerializer(override val opDesc: ValueCompanion) extends ValueSe
   }
 
   override def parse(r: SigmaByteReader): Value[SType] = {
-    val id = r.getUIntExact
+    val id = r.getUInt().toInt
+    // Note, when id < 0 as a result of Int overflow, the r.valDefTypeStore(id) won't throw
+    // but this will likely fail elsewhere
     val tpeArgs: Seq[STypeVar] = opCode match {
       case FunDefCode =>
         val nTpeArgs = r.getByte()

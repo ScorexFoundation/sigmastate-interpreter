@@ -162,6 +162,9 @@ object ErgoLikeTransactionSerializer extends SigmaSerializer[ErgoLikeTransaction
 
     // parse distinct ids of tokens in transaction outputs
     val tokensCount = r.getUIntExact
+    // NO-FORK: in v5.x getUIntExact may throw Int overflow exception
+    // in v4.x r.getUInt().toInt is used and may return negative Int instead of the overflow
+    // in which case the array allocation will throw NegativeArraySizeException
     val tokens = safeNewArray[Array[Byte]](tokensCount)
     cfor(0)(_ < tokensCount, _ + 1) { i =>
       tokens(i) = r.getBytes(TokenId.size)

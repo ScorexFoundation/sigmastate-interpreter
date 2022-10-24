@@ -15,7 +15,8 @@ import sigmastate.helpers.{ErgoLikeTestInterpreter, SigmaTestingCommons, ErgoLik
 import sigmastate.interpreter.{CryptoConstants, CostedProverResult, ContextExtension}
 import sigmastate.lang.exceptions.{ReaderPositionLimitExceeded, InvalidTypePrefix, DeserializeCallDepthExceeded, SerializerException}
 import sigmastate.serialization.OpCodes._
-import sigmastate.utils.{SigmaByteWriter, SigmaByteReader}
+import sigmastate.util.safeNewArray
+import sigmastate.utils.SigmaByteReader
 import sigmastate.utxo.SizeOf
 import sigmastate.utils.Helpers._
 
@@ -370,5 +371,25 @@ class DeserializationResilience extends SerializationSpecification
       writeUInt(MaxUIntPlusOne),
       exceptionLike[IllegalArgumentException](s"$MaxUIntPlusOne is out of unsigned int range")
     )
+  }
+
+  property("test assumptions of how negative value from getUInt().toInt is handled") {
+    assertExceptionThrown(
+      safeNewArray[Int](-1),
+      exceptionLike[NegativeArraySizeException]("-1"))
+
+    val bytes = writeUInt(10)
+    val store = new ConstantStore(IndexedSeq(IntConstant(1)))
+
+    val r = SigmaSerializer.startReader(bytes, store, true)
+    assertExceptionThrown(
+      r.constantStore.get(-1),
+      exceptionLike[ArrayIndexOutOfBoundsException]())
+
+    assertExceptionThrown(
+      r.getBytes(-1),
+      exceptionLike[NegativeArraySizeException]("-1"))
+
+    r.valDefTypeStore(-1) = SAny // no exception on negative key
   }
 }

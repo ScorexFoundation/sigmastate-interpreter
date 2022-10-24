@@ -207,7 +207,12 @@ class ErgoTreeSerializer {
     val header = r.getByte()
     CheckHeaderSizeBit(header)
     val sizeOpt = if (ErgoTree.hasSize(header)) {
-      Some(r.getUIntExact)
+      val size = r.getUInt().toInt
+      // Note, when size < 0 as a result of Int overflow nothing happens here and later
+      // when deserialization proceeds normally as sizeOpt is not used on this pass.
+      // However, when ValidationException is thrown in deserializeErgoTree this negative
+      // size value will lead to undefined behavior
+      Some(size)
     } else
       None
     (header, sizeOpt)
@@ -221,7 +226,10 @@ class ErgoTreeSerializer {
   private def deserializeConstants(header: Byte, r: SigmaByteReader): IndexedSeq[Constant[SType]] = {
     val constants: IndexedSeq[Constant[SType]] =
       if (ErgoTree.isConstantSegregation(header)) {
-        val nConsts = r.getUIntExact
+        val nConsts = r.getUInt().toInt
+        // Note, when nConsts < 0 as a result of Int overflow, the empty seq is returned
+        // deserialization will succeed
+
         if (nConsts > 0) {
           // HOTSPOT:: allocate new array only if it is not empty
           val res = safeNewArray[Constant[SType]](nConsts)

@@ -187,7 +187,9 @@ object ErgoBoxCandidate {
       r.positionLimit = r.position + ErgoBox.MaxBoxSize
       val value = r.getULong()                  // READ
       val tree = DefaultSerializer.deserializeErgoTree(r, SigmaSerializer.MaxPropositionSize)  // READ
-      val creationHeight = r.getUIntExact       // READ
+      val creationHeight = r.getUInt().toInt    // READ
+      // Note, when creationHeight < 0 as a result of Int overflow nothing happens here
+      // and ErgoBoxCandidate with negative creation height is created
       val nTokens = r.getUByte()                // READ
       val tokenIds = safeNewArray[Array[Byte]](nTokens)
       val tokenAmounts = safeNewArray[Long](nTokens)
@@ -195,6 +197,9 @@ object ErgoBoxCandidate {
         val nDigests = digestsInTx.length
         cfor(0)(_ < nTokens, _ + 1) { i =>
           val digestIndex = r.getUIntExact    // READ
+          // NO-FORK: in v5.x getUIntExact throws Int overflow exception
+          // in v4.x r.getUInt().toInt is used and may return negative Int in which case
+          // the error below is thrown
           if (digestIndex < 0 || digestIndex >= nDigests)
             sys.error(s"failed to find token id with index $digestIndex")
           val amount = r.getULong()           // READ
