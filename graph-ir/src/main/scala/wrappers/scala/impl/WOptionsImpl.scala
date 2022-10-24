@@ -226,10 +226,12 @@ class WOptionCls extends EntityObject("WOption") {
     }
   }
 } // of object WOption
-object WOption extends WOptionCls
-  registerEntityObject("WOption", WOption)
 
   registerModule(WOptionsModule)
+
+  object WOption extends WOptionCls
+
+  registerEntityObject("WOption", WOption)
 }
 
 object WOptionsModule extends scalan.ModuleInfo("wrappers.scala", "WOptions") {

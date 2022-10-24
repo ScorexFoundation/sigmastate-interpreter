@@ -49,6 +49,10 @@ lazy val crossScalaSettings = Seq(
   crossScalaVersions := Seq(scala213, scala212, scala211),
   scalaVersion := scala213
 )
+lazy val crossScalaSettingsJS = Seq(
+  crossScalaVersions := Seq(scala213),
+  scalaVersion := scala213
+)
 
 // prefix version with "-SNAPSHOT" for builds without a git tag
 dynverSonatypeSnapshots in ThisBuild := true
@@ -159,10 +163,11 @@ lazy val common = crossProject(JVMPlatform, JSPlatform)
   .settings(commonSettings ++ testSettings2,
     commonDependenies2,
     testingDependencies2,
-    crossScalaSettings
+    publish / skip := true
   )
-  .settings(publish / skip := true)
+  .jvmSettings( crossScalaSettings )
   .jsSettings(
+    crossScalaSettingsJS,
     libraryDependencies ++= Seq(
       "org.scala-js" %%% "scala-js-macrotask-executor" % "1.0.0"
     ),
@@ -178,10 +183,12 @@ lazy val corelib = crossProject(JVMPlatform, JSPlatform)
     commonDependenies2,
     testingDependencies2,
     crossScalaSettings,
-    scryptoDependency
+    scryptoDependency,
+    publish / skip := true
   )
-  .settings(publish / skip := true)
+  .jvmSettings( crossScalaSettings )
   .jsSettings(
+    crossScalaSettingsJS,
     libraryDependencies ++= Seq(
       "org.scala-js" %%% "scala-js-macrotask-executor" % "1.0.0"
     ),
@@ -203,10 +210,20 @@ lazy val interpreter = crossProject(JVMPlatform, JSPlatform)
   .settings(commonSettings ++ testSettings2,
     commonDependenies2,
     testingDependencies2,
-    crossScalaSettings,
-    scorexUtilDependency, fastparseDependency, circeDependency
+    scorexUtilDependency, fastparseDependency, circeDependency,
+    publish / skip := true
   )
-  .settings(publish / skip := true)
+  .jvmSettings( crossScalaSettings )
+  .jsSettings(
+    crossScalaSettingsJS,
+    libraryDependencies ++= Seq (
+      "org.scala-js" %%% "scala-js-macrotask-executor" % "1.0.0"
+    ),
+    useYarn := true
+  )
+lazy val interpreterJS = interpreter.js
+    .enablePlugins(ScalaJSBundlerPlugin)
+
 
 lazy val sc = (project in file("sc"))
   .dependsOn(graphir % allConfigDependency, interpreter.jvm % allConfigDependency)

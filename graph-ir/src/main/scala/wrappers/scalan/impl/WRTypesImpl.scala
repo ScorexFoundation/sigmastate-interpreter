@@ -7,11 +7,14 @@ import special.wrappers.RTypeWrapSpec
 import scala.collection.compat.immutable.ArraySeq
 
 package impl {
+  import scalan.GraphIRReflection
   import scalan.reflection.{RClass, RMethod}
 
   // Abs -----------------------------------
 trait WRTypesDefs extends scalan.Scalan with WRTypes {
   self: WrappersModule =>
+
+  registerModule(WRTypesModule)
 
 class WRTypeCls extends EntityObject("WRType") {
   // entityConst: single const for each entity
@@ -102,10 +105,11 @@ class WRTypeCls extends EntityObject("WRType") {
 object WRType extends WRTypeCls
 registerEntityObject("WRType", WRType)
 
-registerModule(WRTypesModule)
 }
 
-object WRTypesModule extends scalan.ModuleInfo("wrappers.scalan", "WRTypes")
+object WRTypesModule extends scalan.ModuleInfo("wrappers.scalan", "WRTypes") {
+  val reflection = GraphIRReflection
+}
 }
 
 trait WRTypesModule extends wrappers.scalan.impl.WRTypesDefs {self: WrappersModule =>}

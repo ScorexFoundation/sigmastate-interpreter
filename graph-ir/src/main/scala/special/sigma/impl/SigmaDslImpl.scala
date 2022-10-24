@@ -14,6 +14,9 @@ package impl {
   // Abs -----------------------------------
 trait SigmaDslDefs extends scalan.Scalan with SigmaDsl {
   self: SigmaLibrary =>
+
+  registerModule(SigmaDslModule)
+    
 import AvlTree._
 import BigInt._
 import Box._
@@ -2335,11 +2338,10 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
   }
 } // of object SigmaDslBuilder
   registerEntityObject("SigmaDslBuilder", SigmaDslBuilder)
-
-  registerModule(SigmaDslModule)
 }
 
 object SigmaDslModule extends scalan.ModuleInfo("special.sigma", "SigmaDsl") {
+  val reflection = GraphIRReflection
 }
 }
 

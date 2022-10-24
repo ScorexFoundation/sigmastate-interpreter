@@ -13,6 +13,9 @@ package impl {
   // Abs -----------------------------------
 trait CollsDefs extends scalan.Scalan with Colls {
   self: Library =>
+
+  registerModule(CollsModule)
+
 import Coll._
 import CollBuilder._
 import WOption._
@@ -637,7 +640,6 @@ object CollBuilder extends EntityObject("CollBuilder") {
     super.resetContext()
   }
 
-  registerModule(CollsModule)
 }
 
 object CollsModule extends scalan.ModuleInfo("special.collection", "Colls") {
