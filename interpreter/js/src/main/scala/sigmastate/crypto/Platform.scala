@@ -46,7 +46,9 @@ object Platform {
   /** Opaque point type. */
   @js.native
   trait Ecp extends js.Object {
-
+    def x: js.BigInt = js.native
+    def y: js.BigInt = js.native
+    def toHex(b: Boolean): String = js.native
   }
 
   case class ECFieldElem(value: ECFieldElement)
