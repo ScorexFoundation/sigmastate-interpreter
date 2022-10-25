@@ -96,6 +96,7 @@ object AvlTreeData {
       val valueLengthOpt = r.getOption(r.getUInt().toInt)
       // Note, when keyLength and valueLengthOpt < 0 as a result of Int overflow,
       // the deserializer succeeds with invalid AvlTreeData
+      // but still some AvlTree operations (remove_eval, update_eval, contains_eval) won't throw
       AvlTreeData(ADDigest @@ digest, tf, keyLength, valueLengthOpt)
     }
   }

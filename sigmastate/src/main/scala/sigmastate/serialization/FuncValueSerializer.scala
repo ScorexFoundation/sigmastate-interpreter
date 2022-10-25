@@ -35,7 +35,8 @@ case class FuncValueSerializer(cons: (IndexedSeq[(Int, SType)], Value[SType]) =>
     cfor(0)(_ < argsSize, _ + 1) { i =>
       val id = r.getUInt().toInt
       // Note, when id < 0 as a result of Int overflow, the r.valDefTypeStore(id) won't throw
-      // but this will likely fail elsewhere
+      // More over evaluation of such FuncValue will not throw either if the body contains
+      // ValUse with the same negative id
       val tpe = r.getType()
       r.valDefTypeStore(id) = tpe
       args(i) = (id, tpe)

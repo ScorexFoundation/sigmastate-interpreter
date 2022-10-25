@@ -187,9 +187,11 @@ object ErgoBoxCandidate {
       r.positionLimit = r.position + ErgoBox.MaxBoxSize
       val value = r.getULong()                  // READ
       val tree = DefaultSerializer.deserializeErgoTree(r, SigmaSerializer.MaxPropositionSize)  // READ
-      val creationHeight = r.getUInt().toInt    // READ
-      // Note, when creationHeight < 0 as a result of Int overflow nothing happens here
-      // and ErgoBoxCandidate with negative creation height is created
+      val creationHeight = r.getUIntExact       // READ
+      // NO-FORK: ^ in v5.x getUIntExact may throw Int overflow exception
+      // in v4.x r.getUInt().toInt is used and may return negative Int instead of the overflow
+      // and ErgoBoxCandidate with negative creation height is created, which is then invalidated
+      // during transaction validation. See validation rule # 122 in the Ergo node (ValidationRules.scala)
       val nTokens = r.getUByte()                // READ
       val tokenIds = safeNewArray[Array[Byte]](nTokens)
       val tokenAmounts = safeNewArray[Long](nTokens)

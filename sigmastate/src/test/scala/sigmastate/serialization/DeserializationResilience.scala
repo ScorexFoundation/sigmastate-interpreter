@@ -6,6 +6,9 @@ import org.ergoplatform.validation.ValidationRules.CheckPositionLimit
 import org.ergoplatform.{ErgoBoxCandidate, Outputs}
 import org.scalacheck.Gen
 import scalan.util.BenchmarkUtil
+import scorex.crypto.authds.{ADKey, ADValue}
+import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert}
+import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util.serialization.{Reader, VLQByteBufferReader}
 import sigmastate.Values.{SValue, BlockValue, GetVarInt, SigmaBoolean, ValDef, ValUse, SigmaPropValue, Tuple, IntConstant}
 import sigmastate._
@@ -390,6 +393,21 @@ class DeserializationResilience extends SerializationSpecification
       r.getBytes(-1),
       exceptionLike[NegativeArraySizeException]("-1"))
 
-    r.valDefTypeStore(-1) = SAny // no exception on negative key
+    r.valDefTypeStore(-1) = SInt // no exception on negative key
+
+    // the following example shows how far negative keyLength can go inside AvlTree operations
+    val avlProver = new BatchAVLProver[Digest32, Blake2b256.type](keyLength = 32, None)
+    val digest = avlProver.digest
+    val flags = AvlTreeFlags(true, false, false)
+    val treeData = new AvlTreeData(digest, flags, -1, None)
+    val tree = SigmaDsl.avlTree(treeData)
+    val k = Blake2b256.hash("1")
+    val v = k
+    avlProver.performOneOperation(Insert(ADKey @@ k, ADValue @@ v))
+    val proof = avlProver.generateProof()
+    val verifier = tree.createVerifier(Colls.fromArray(proof))
+    verifier.performOneOperation(Insert(ADKey @@ k, ADValue @@ v)).isFailure shouldBe true
+    // NOTE, even though performOneOperation fails, some AvlTree$ methods used in Interpreter
+    // (remove_eval, update_eval, contains_eval) won't throw, while others will.
   }
 }

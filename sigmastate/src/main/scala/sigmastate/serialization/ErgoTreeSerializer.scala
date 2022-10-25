@@ -211,7 +211,15 @@ class ErgoTreeSerializer {
       // Note, when size < 0 as a result of Int overflow nothing happens here and later
       // when deserialization proceeds normally as sizeOpt is not used on this pass.
       // However, when ValidationException is thrown in deserializeErgoTree this negative
-      // size value will lead to undefined behavior
+      // tree size value will be used in
+      // val val numBytes = bodyPos - startPos + treeSize
+      //            r.position = startPos
+      //            val bytes = r.getBytes(numBytes) = bodyPos - startPos + treeSize
+      // val bytes = r.getBytes(numBytes)
+      // If numBytes < 0 then it throws on getBytes and the whole deserialization fails
+      // On the other hand if numBytes >= 0 then UnparsedErgoTree will be created.
+      // The Reader however will be in some unpredictable state, as not all ErgoTree bytes
+      // are consumed.
       Some(size)
     } else
       None

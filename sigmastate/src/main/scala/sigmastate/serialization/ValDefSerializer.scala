@@ -30,9 +30,11 @@ case class ValDefSerializer(override val opDesc: ValueCompanion) extends ValueSe
   }
 
   override def parse(r: SigmaByteReader): Value[SType] = {
-    val id = r.getUInt().toInt
-    // Note, when id < 0 as a result of Int overflow, the r.valDefTypeStore(id) won't throw
-    // but this will likely fail elsewhere
+    val id = r.getUIntExact
+    // NO-FORK: in v5.x getUIntExact may throw Int overflow exception
+    // in v4.x r.getUInt().toInt is used and may return negative Int instead of the overflow
+    // When id < 0 as a result of Int overflow, the r.valDefTypeStore(id) won't throw
+    // but ValDef constructor fails on require(id >= 0, "id must be >= 0")
     val tpeArgs: Seq[STypeVar] = opCode match {
       case FunDefCode =>
         val nTpeArgs = r.getByte()
