@@ -379,7 +379,7 @@ class DeserializationResilience extends SerializationSpecification
   property("test assumptions of how negative value from getUInt().toInt is handled") {
     assertExceptionThrown(
       safeNewArray[Int](-1),
-      exceptionLike[NegativeArraySizeException]("-1"))
+      exceptionLike[NegativeArraySizeException]())
 
     val bytes = writeUInt(10)
     val store = new ConstantStore(IndexedSeq(IntConstant(1)))
@@ -391,7 +391,7 @@ class DeserializationResilience extends SerializationSpecification
 
     assertExceptionThrown(
       r.getBytes(-1),
-      exceptionLike[NegativeArraySizeException]("-1"))
+      exceptionLike[NegativeArraySizeException]())
 
     r.valDefTypeStore(-1) = SInt // no exception on negative key
 
