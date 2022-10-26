@@ -1,47 +1,43 @@
 package sigmastate.crypto
 
+import scorex.util.encode.Base16
+import sigmastate.crypto
+
 import java.math.BigInteger
 import scala.scalajs.js
+import scala.scalajs.js.typedarray.Uint8Array
 
 /** JVM specific implementation of crypto methods*/
 object Platform {
-  def getXCoord(p: Ecp): ECFieldElem = ??? //ECFieldElem(p.value.getXCoord)
-  def getYCoord(p: Ecp): ECFieldElem = ??? //ECFieldElem(p.value.getYCoord)
-  def getAffineXCoord(p: Ecp): ECFieldElem = ??? //ECFieldElem(p.value.getAffineXCoord)
-  def getAffineYCoord(p: Ecp): ECFieldElem = ??? //ECFieldElem(p.value.getAffineYCoord)
+  def getXCoord(p: Ecp): ECFieldElem = CryptoFacadeJs.getXCoord(p)
+  def getYCoord(p: Ecp): ECFieldElem = CryptoFacadeJs.getYCoord(p)
+  def getAffineXCoord(p: Ecp): ECFieldElem = CryptoFacadeJs.getAffineXCoord(p)
+  def getAffineYCoord(p: Ecp): ECFieldElem = CryptoFacadeJs.getAffineYCoord(p)
 
-  def getEncodedOfFieldElem(p: ECFieldElem): Array[Byte] = ??? //p.value.getEncoded
-
-  def testBitZeroOfFieldElem(p: ECFieldElem): Boolean = ??? //p.value.testBitZero()
-
-  def normalizePoint(p: Ecp): Ecp = ??? //Ecp(p.value.normalize())
-
-  def showPoint(p: Ecp): String = ??? /*{
-    val rawX = p.value.getRawXCoord.toString.substring(0, 6)
-    val rawY = p.value.getRawYCoord.toString.substring(0, 6)
-    s"ECPoint($rawX,$rawY,...)"
-  }*/
-
-  def multiplyPoints(p1: Ecp, p2: Ecp): Ecp = {
-    /*
-     * BC treats EC as additive group while we treat that as multiplicative group.
-     */
-    ??? //Ecp(p1.value.add(p2.value))
+  def Uint8ArrayToBytes(jsShorts: Uint8Array): Array[Byte] = {
+    jsShorts.toArray[Short].map(x => x.toByte)
   }
+
+  def getEncodedOfFieldElem(p: ECFieldElem): Array[Byte] = {
+    Uint8ArrayToBytes(CryptoFacadeJs.getEncodedOfFieldElem(p))
+  }
+
+  def testBitZeroOfFieldElem(p: ECFieldElem): Boolean = CryptoFacadeJs.testBitZeroOfFieldElem(p)
+
+  def normalizePoint(p: Ecp): Ecp = CryptoFacadeJs.normalizePoint(p)
+
+  def showPoint(p: Ecp): String = CryptoFacadeJs.showPoint(p)
+
+  def multiplyPoints(p1: Ecp, p2: Ecp): Ecp = CryptoFacadeJs.addPoint(p1, p2)
 
   def exponentiatePoint(p: Ecp, n: BigInteger): Ecp = {
-    /*
-     * BC treats EC as additive group while we treat that as multiplicative group.
-     * Therefore, exponentiate point is multiply.
-     */
-    ??? //Ecp(p.value.multiply(n))
+    val scalar = Convert.bigIntegerToBigInt(n)
+    CryptoFacadeJs.multiplyPoint(p, scalar)
   }
 
-  def isInfinityPoint(p: Ecp): Boolean = ??? //p.value.isInfinity
+  def isInfinityPoint(p: Ecp): Boolean = CryptoFacadeJs.isInfinityPoint(p)
 
-  def negatePoint(p: Ecp): Ecp = ??? //Ecp(p.value.negate())
-
-  class ECFieldElement
+  def negatePoint(p: Ecp): Ecp = CryptoFacadeJs.negatePoint(p)
 
   /** Opaque point type. */
   @js.native
@@ -51,8 +47,35 @@ object Platform {
     def toHex(b: Boolean): String = js.native
   }
 
-  case class ECFieldElem(value: ECFieldElement)
+  type ECFieldElem = js.BigInt
 
-  def createContext(): CryptoContext = ??? //new CryptoContextJvm(CustomNamedCurves.getByName("secp256k1"))
+  object Convert {
+    def bigIntToBigInteger(jsValue: js.BigInt): BigInteger = {
+      new BigInteger(jsValue.toString(10), 10)
+    }
+
+    def bigIntegerToBigInt(value: BigInteger): js.BigInt = {
+      js.BigInt(value.toString(10))
+    }
+  }
+
+  def createContext(): CryptoContext = new CryptoContext {
+    val ctx = new CryptoContextJs
+
+    override def getModulus: BigInteger = Convert.bigIntToBigInteger(ctx.getModulus())
+
+    override def getOrder: BigInteger = Convert.bigIntToBigInteger(ctx.getOrder())
+
+    override def validatePoint(x: BigInteger, y: BigInteger): crypto.Ecp = {
+      ctx.validatePoint(Convert.bigIntegerToBigInt(x), Convert.bigIntegerToBigInt(y))
+    }
+
+    override def getInfinity(): crypto.Ecp = ctx.getInfinity()
+
+    override def decodePoint(encoded: Array[Byte]): crypto.Ecp =
+      ctx.decodePoint(Base16.encode(encoded))
+
+    override def getGenerator: crypto.Ecp = ctx.getGenerator()
+  }
 
 }
