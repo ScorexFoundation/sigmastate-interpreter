@@ -1,8 +1,8 @@
 package sigmastate.serialization.generators
 
-import org.scalacheck.{Arbitrary, Gen}
+import org.scalacheck.{Gen, Arbitrary}
+import org.scalacheck.Arbitrary.arbString
 import sigmastate._
-import org.scalacheck.Arbitrary._
 
 trait TypeGenerators {
   implicit val booleanTypeGen = Gen.const(SBoolean)
@@ -15,17 +15,14 @@ trait TypeGenerators {
   implicit val sigmaPropTypeGen = Gen.const(SSigmaProp)
   implicit val boxTypeGen = Gen.const(SBox)
   implicit val avlTreeTypeGen = Gen.const(SAvlTree)
-
   implicit val optionSigmaPropTypeGen = Gen.const(SOption(SSigmaProp))
 
-//    Gen[SOption[SSigmaProp.type]] = for {
-//    tpe <- Gen.const(SSigmaProp)
-//  } yield SOption(tpe)
-
+  //    Gen[SOption[SSigmaProp.type]] = for {
+  //    tpe <- Gen.const(SSigmaProp)
+  //  } yield SOption(tpe)
   implicit val primTypeGen: Gen[SPrimType] =
     Gen.oneOf[SPrimType](SBoolean, SByte, SShort, SInt, SLong, SBigInt, SGroupElement, SSigmaProp, SUnit)
   implicit val arbPrimType = Arbitrary(primTypeGen)
-
   implicit val predefTypeGen: Gen[SPredefType] =
     Gen.oneOf[SPredefType](SBoolean, SByte, SShort, SInt, SLong, SBigInt, SGroupElement, SSigmaProp, SUnit, SBox, SAvlTree)
   implicit val arbPredefType = Arbitrary(predefTypeGen)

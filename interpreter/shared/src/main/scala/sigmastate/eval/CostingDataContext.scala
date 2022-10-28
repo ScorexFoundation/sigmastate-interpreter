@@ -44,10 +44,10 @@ trait WrapperOf[T] {
   */
 case class CBigInt(override val wrappedValue: BigInteger) extends BigInt with WrapperOf[BigInteger] {
   val dsl = CostingSigmaDslBuilder
-  override def toByte : Byte  = wrappedValue.byteValueExact()
-  override def toShort: Short = wrappedValue.shortValueExact()
-  override def toInt  : Int   = wrappedValue.intValueExact()
-  override def toLong : Long  = wrappedValue.longValueExact()
+  override def toByte : Byte  = wrappedValue.toByteExact
+  override def toShort: Short = wrappedValue.toShortExact
+  override def toInt  : Int   = wrappedValue.toIntExact
+  override def toLong : Long  = wrappedValue.toLongExact
 
   override def toBytes: Coll[Byte] = dsl.Colls.fromArray(wrappedValue.toByteArray)
 

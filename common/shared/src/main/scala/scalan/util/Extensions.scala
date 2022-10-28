@@ -124,6 +124,83 @@ object Extensions {
   }
 
   implicit class BigIntegerOps(val x: BigInteger) extends AnyVal {
+
+    /**
+      * Converts this {@code BigInteger} to a {@code long}, checking
+      * for lost information.  If the value of this {@code BigInteger}
+      * is out of the range of the {@code long} type, then an
+      * {@code ArithmeticException} is thrown.
+      *
+      * @return this {@code BigInteger} converted to a {@code long}.
+      * @throws ArithmeticException if the value of {@code this} will
+      *                             not exactly fit in a {@code long}.
+      * @see BigInteger#longValue
+      * @since 1.8
+      */
+    def toLongExact: Long = {
+      if (x.bitLength <= 63) x.longValue
+      else
+        throw new ArithmeticException("BigInteger out of long range")
+    }
+
+    /**
+      * Converts this {@code BigInteger} to an {@code int}, checking
+      * for lost information.  If the value of this {@code BigInteger}
+      * is out of the range of the {@code int} type, then an
+      * {@code ArithmeticException} is thrown.
+      *
+      * @return this {@code BigInteger} converted to an {@code int}.
+      * @throws ArithmeticException if the value of {@code this} will
+      *                             not exactly fit in an {@code int}.
+      * @see BigInteger#intValue
+      */
+    def toIntExact: Int = {
+      if (x.bitLength <= 31) x.intValue
+      else
+        throw new ArithmeticException("BigInteger out of int range")
+    }
+
+    /**
+      * Converts this {@code BigInteger} to a {@code short}, checking
+      * for lost information.  If the value of this {@code BigInteger}
+      * is out of the range of the {@code short} type, then an
+      * {@code ArithmeticException} is thrown.
+      *
+      * @return this {@code BigInteger} converted to a {@code short}.
+      * @throws ArithmeticException if the value of {@code this} will
+      *                             not exactly fit in a {@code short}.
+      * @see BigInteger#shortValue
+      */
+    def toShortExact: Short = {
+      if (x.bitLength <= 31) {
+        val value = x.intValue
+        if (value >= Short.MinValue && value <= Short.MaxValue)
+          return x.shortValue
+      }
+      throw new ArithmeticException("BigInteger out of short range")
+    }
+
+    /**
+      * Converts this {@code BigInteger} to a {@code byte}, checking
+      * for lost information.  If the value of this {@code BigInteger}
+      * is out of the range of the {@code byte} type, then an
+      * {@code ArithmeticException} is thrown.
+      *
+      * @return this {@code BigInteger} converted to a {@code byte}.
+      * @throws ArithmeticException if the value of {@code this} will
+      *                             not exactly fit in a {@code byte}.
+      * @see BigInteger#byteValue
+      * @since 1.8
+      */
+    def toByteExact: Byte = {
+      if (x.bitLength <= 31) {
+        val value = x.intValue
+        if (value >= Byte.MinValue && value <= Byte.MaxValue)
+          return x.byteValue
+      }
+      throw new ArithmeticException("BigInteger out of byte range")
+    }
+
     /** Checks this {@code BigInteger} can be cust to 256 bit two's-compliment representation,
       * checking for lost information. If the value of this {@code BigInteger}
       * is out of the range of the 256 bits, then an {@code ArithmeticException} is thrown.

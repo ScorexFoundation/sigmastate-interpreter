@@ -217,14 +217,15 @@ lazy val interpreter = crossProject(JVMPlatform, JSPlatform)
   .jsSettings(
     crossScalaSettingsJS,
     libraryDependencies ++= Seq (
-      "org.scala-js" %%% "scala-js-macrotask-executor" % "1.0.0"
+      "org.scala-js" %%% "scala-js-macrotask-executor" % "1.0.0",
+      ("org.scala-js" %%% "scalajs-java-securerandom" % "1.0.0").cross(CrossVersion.for3Use2_13)
     ),
     useYarn := true
   )
 lazy val interpreterJS = interpreter.js
     .enablePlugins(ScalaJSBundlerPlugin)
     .settings(
-      scalaJSUseMainModuleInitializer := true,
+//      scalaJSUseMainModuleInitializer := true,
       Compile / npmDependencies ++= Seq(
         "sigmajs-crypto-facade" -> "0.0.1"
       )

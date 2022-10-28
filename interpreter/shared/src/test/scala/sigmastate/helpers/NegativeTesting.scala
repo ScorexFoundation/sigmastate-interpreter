@@ -1,21 +1,22 @@
 package sigmastate.helpers
 
-
-import scala.annotation.tailrec
-import scala.util.{Failure, Success, Try}
 import debox.cfor
 import org.scalatest.matchers.should.Matchers
-
+import scala.util.{Try, Success, Failure}
 import scala.reflect.ClassTag
+import scala.annotation.tailrec
 
 trait NegativeTesting extends Matchers {
-
   /** Checks that a [[Throwable]] is thrown and satisfies the given predicate.
-    * @param fun  block of code to execute
-    * @param assertion  expected assertion on the thrown exception
-    * @param clue  added to the error message
+    *
+    * @param fun block of code to execute
+    * @param assertion expected assertion on the thrown exception
+    * @param clue added to the error message
     */
-  def assertExceptionThrown(fun: => Any, assertion: Throwable => Boolean, clue: => String = ""): Unit = {
+  def assertExceptionThrown(
+      fun: => Any,
+      assertion: Throwable => Boolean,
+      clue: => String = ""): Unit = {
     try {
       fun
       fail("exception is expected but hasn't been thrown")
@@ -78,7 +79,8 @@ trait NegativeTesting extends Matchers {
     * @return result of the second computation `g`
     */
   def sameResultOrError[B](f: => B, g: => B): Try[B] = {
-    val b1 = Try(f); val b2 = Try(g)
+    val b1 = Try(f);
+    val b2 = Try(g)
     (b1, b2) match {
       case (Success(b1), res @ Success(b2)) =>
         assert(b1 == b2)
@@ -93,7 +95,6 @@ trait NegativeTesting extends Matchers {
           rootCause(b1.asInstanceOf[Failure[_]].exception)
         else
           rootCause(b2.asInstanceOf[Failure[_]].exception)
-
         sys.error(
           s"""Should succeed with the same value or fail with the same exception, but was:
             |First result: $b1
