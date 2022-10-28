@@ -1,8 +1,9 @@
 package sigmastate.basics
 
 import java.math.BigInteger
-import java.security.SecureRandom
-import sigmastate.crypto.{CryptoFacade, Ecp}
+import sigmastate.crypto.{Ecp, CryptoFacade}
+
+import scala.util.Random
 
 
 /**
@@ -22,7 +23,7 @@ import sigmastate.crypto.{CryptoFacade, Ecp}
 trait DlogGroup {
   type ElemType = Ecp
 
-  val secureRandom = new SecureRandom()
+  val secureRandom: Random = CryptoFacade.createSecureRandom()
 
   /**
     * The generator g of the group is an element of the group such that, when written multiplicatively, every element

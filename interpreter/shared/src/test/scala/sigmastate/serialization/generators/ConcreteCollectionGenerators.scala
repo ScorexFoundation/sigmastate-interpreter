@@ -15,7 +15,7 @@ trait ConcreteCollectionGenerators { self: ObjectGenerators =>
       listOfConsts <- Gen.listOfN(size, constGen)
     } yield ConcreteCollection(listOfConsts.toArray[Value[T]], c.tpe)
 
-  val intConstCollectionGen: Gen[ConcreteCollection[SInt.type]] = for {
+  lazy val intConstCollectionGen: Gen[ConcreteCollection[SInt.type]] = for {
     size <- Gen.chooseNum(minCollLength, maxCollLength)
     listOfConstInts <- Gen.listOfN(size, intConstGen)
   } yield ConcreteCollection.fromSeq(listOfConstInts.toArray[IntConstant])

@@ -1,7 +1,7 @@
 package sigmastate.crypto
 
 import java.math.BigInteger
-import java.security.SecureRandom
+import scala.util.Random
 
 object BigIntegers {
 
@@ -10,7 +10,7 @@ object BigIntegers {
   private val MAX_ITERATIONS = 1000
 
   @throws[IllegalArgumentException]
-  def createRandom(bitLength: Int, random: SecureRandom) = {
+  def createRandom(bitLength: Int, random: Random) = {
     if (bitLength < 1) throw new IllegalArgumentException("bitLength must be at least 1")
     val nBytes = (bitLength + 7) / 8
     val rv = new Array[Byte](nBytes)
@@ -31,7 +31,7 @@ object BigIntegers {
     */
   def createRandomBigInteger(
       bitLength: Int,
-      random: SecureRandom): BigInteger = {
+      random: Random): BigInteger = {
     new BigInteger(1, createRandom(bitLength, random))
   }
 
@@ -46,7 +46,7 @@ object BigIntegers {
   def createRandomInRange(
       min: BigInteger,
       max: BigInteger,
-      random: SecureRandom): BigInteger = {
+      random: Random): BigInteger = {
     val cmp = min.compareTo(max)
     if (cmp >= 0) {
       if (cmp > 0) throw new IllegalArgumentException("'min' may not be greater than 'max'")

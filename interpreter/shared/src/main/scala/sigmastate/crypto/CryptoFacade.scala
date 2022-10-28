@@ -1,6 +1,7 @@
 package sigmastate.crypto
 
 import java.math.BigInteger
+import scala.util.Random
 
 object CryptoFacade {
   def createCryptoContext(): CryptoContext = Platform.createContext()
@@ -16,4 +17,5 @@ object CryptoFacade {
   def getYCoord(p: Ecp): ECFieldElem = Platform.getYCoord(p)
   def getAffineXCoord(p: Ecp): ECFieldElem = Platform.getAffineXCoord(p)
   def getAffineYCoord(p: Ecp): ECFieldElem = Platform.getAffineYCoord(p)
+  def createSecureRandom(): Random = Platform.createSecureRandom()
 }

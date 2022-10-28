@@ -1,8 +1,9 @@
 package sigmastate.basics
 
-import java.security.SecureRandom
 import java.math.BigInteger
 import sigmastate.crypto.Ecp
+
+import scala.util.Random
 
 object CryptoConstants {
   type EcPointType = Ecp
@@ -11,7 +12,7 @@ object CryptoConstants {
 
   val dlogGroup: BcDlogGroup = SecP256K1Group
 
-  val secureRandom: SecureRandom = dlogGroup.secureRandom
+  val secureRandom: Random = dlogGroup.secureRandom
 
   /** Size of the binary representation of any group element (2 ^ groupSizeBits == <number of elements in a group>) */
   val groupSizeBits: Int = 256

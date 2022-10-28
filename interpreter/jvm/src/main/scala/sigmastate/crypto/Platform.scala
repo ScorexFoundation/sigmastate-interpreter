@@ -4,6 +4,8 @@ import org.bouncycastle.crypto.ec.CustomNamedCurves
 import org.bouncycastle.math.ec.{ECPoint, ECFieldElement}
 
 import java.math.BigInteger
+import java.security.SecureRandom
+import scala.util.Random
 
 /** JVM specific implementation of crypto methods*/
 object Platform {
@@ -50,4 +52,5 @@ object Platform {
 
   def createContext(): CryptoContext = new CryptoContextJvm(CustomNamedCurves.getByName("secp256k1"))
 
+  def createSecureRandom(): Random = new SecureRandom()
 }

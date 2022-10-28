@@ -6,6 +6,7 @@ import sigmastate.crypto
 import java.math.BigInteger
 import scala.scalajs.js
 import scala.scalajs.js.typedarray.Uint8Array
+import scala.util.Random
 
 /** JVM specific implementation of crypto methods*/
 object Platform {
@@ -77,5 +78,7 @@ object Platform {
 
     override def getGenerator: crypto.Ecp = ctx.getGenerator()
   }
+
+  def createSecureRandom(): Random = new Random()
 
 }
