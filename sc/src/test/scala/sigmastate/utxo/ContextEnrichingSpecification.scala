@@ -5,11 +5,11 @@ import scorex.crypto.hash.Blake2b256
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.lang.Terms._
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, CompilerTestingCommons}
 import special.collection.Coll
 
 
-class ContextEnrichingSpecification extends SigmaTestingCommons
+class ContextEnrichingSpecification extends CompilerTestingCommons
   with CrossVersionProps {
 
   implicit lazy val IR: TestingIRContext = new TestingIRContext

@@ -13,7 +13,7 @@ import sigmastate.basics.CryptoConstants
 import sigmastate.eval.Extensions._
 import sigmastate.eval._
 import sigmastate.exceptions.{ReaderPositionLimitExceeded, InvalidTypePrefix, SerializerException, DeserializeCallDepthExceeded}
-import sigmastate.helpers.{ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ErgoLikeContextTesting, ErgoLikeTestInterpreter, CompilerTestingCommons}
 import sigmastate.interpreter.{ContextExtension, CostedProverResult}
 import sigmastate.serialization.OpCodes._
 import sigmastate.utils.SigmaByteReader
@@ -23,7 +23,7 @@ import sigmastate.utils.Helpers._
 import scala.collection.mutable
 
 class DeserializationResilience extends SerializationSpecification
-  with SigmaTestingCommons with CrossVersionProps {
+  with CompilerTestingCommons with CrossVersionProps {
 
   implicit lazy val IR: TestingIRContext = new TestingIRContext {
     //    substFromCostTable = false

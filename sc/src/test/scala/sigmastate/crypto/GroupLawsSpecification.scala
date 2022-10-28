@@ -3,13 +3,13 @@ package sigmastate.crypto
 import java.math.BigInteger
 import org.scalacheck.Gen
 import sigmastate.basics.CryptoConstants
-import sigmastate.helpers.{SigmaPPrint, SigmaTestingCommons}
+import sigmastate.helpers.{SigmaPPrint, CompilerTestingCommons}
 import CryptoConstants.EcPointType
 import sigmastate.utils.Helpers
 
 import scala.util.Random
 
-class GroupLawsSpecification extends SigmaTestingCommons {
+class GroupLawsSpecification extends CompilerTestingCommons {
   private val group = CryptoConstants.dlogGroup
 
   val groupElementGen: Gen[EcPointType] = Gen.const(group.createRandomElement())

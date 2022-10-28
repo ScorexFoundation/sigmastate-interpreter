@@ -12,7 +12,7 @@ import sigmastate.Values._
 import sigmastate._
 import sigmastate.eval._
 import sigmastate.lang.Terms._
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, CompilerTestingCommons}
 import sigmastate.helpers.TestingHelpers._
 import org.ergoplatform._
 import org.ergoplatform.dsl.{ContractSpec, SigmaContractSyntax, StdContracts, TestContractSpec}
@@ -22,7 +22,7 @@ import sigmastate.utxo._
 import special.sigma.Context
 import sigmastate.utils.Helpers._
 
-class OracleExamplesSpecification extends SigmaTestingCommons
+class OracleExamplesSpecification extends CompilerTestingCommons
   with CrossVersionProps { suite =>
   implicit lazy val IR: TestingIRContext = new TestingIRContext
 

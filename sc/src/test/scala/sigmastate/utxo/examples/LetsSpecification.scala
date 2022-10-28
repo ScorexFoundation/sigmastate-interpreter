@@ -8,7 +8,7 @@ import scorex.crypto.hash.{Digest32, Blake2b256}
 import sigmastate.{AvlTreeData, AvlTreeFlags, TrivialProp, CrossVersionProps}
 import sigmastate.Values.{ByteArrayConstant, AvlTreeConstant, SigmaPropConstant, LongConstant}
 import sigmastate.eval.{IRContext, SigmaDsl}
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestProvingInterpreter, CompilerTestingCommons}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter.ScriptNameProp
 import sigmastate.serialization.ErgoTreeSerializer
@@ -166,7 +166,7 @@ import scala.util.Random
  some day this article will be continued!
   */
 
-class LetsSpecification extends SigmaTestingCommons with CrossVersionProps { suite =>
+class LetsSpecification extends CompilerTestingCommons with CrossVersionProps { suite =>
   // Not mixed with TestContext since it is not possible to call compiler.compile outside tests if mixed
   implicit lazy val IR: IRContext = new TestingIRContext
 
@@ -177,7 +177,7 @@ class LetsSpecification extends SigmaTestingCommons with CrossVersionProps { sui
   val env = Map(ScriptNameProp -> "withdrawalScriptEnv", "letsToken" -> ByteArrayConstant(letsTokenId))
 
   private val miningRewardsDelay = 720
-  private val feeProp = ErgoScriptPredef.feeProposition(miningRewardsDelay) // create ErgoTree v0
+  private val feeProp = ErgoTreePredef.feeProposition(miningRewardsDelay) // create ErgoTree v0
 
   lazy val exchangeScript = compile(env,
     """{

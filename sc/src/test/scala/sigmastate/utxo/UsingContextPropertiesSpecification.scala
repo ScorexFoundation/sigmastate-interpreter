@@ -4,12 +4,12 @@ import sigmastate.{TrivialProp, CrossVersionProps}
 import sigmastate.eval.{IRContext, CSigmaProp}
 import sigmastate.eval.Extensions._
 import special.sigma.Context
-import sigmastate.helpers.SigmaTestingCommons
+import sigmastate.helpers.CompilerTestingCommons
 import org.ergoplatform.dsl.{SigmaContractSyntax, ContractSpec, TestContractSpec}
 import org.ergoplatform.ErgoBox
 import scorex.crypto.hash.Blake2b256
 
-class UsingContextPropertiesSpecification extends SigmaTestingCommons
+class UsingContextPropertiesSpecification extends CompilerTestingCommons
   with CrossVersionProps { suite =>
   lazy val spec = TestContractSpec(suite)(new TestingIRContext)
   lazy val prover = spec.ProvingParty("Alice")

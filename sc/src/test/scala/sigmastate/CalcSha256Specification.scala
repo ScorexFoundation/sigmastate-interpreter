@@ -3,9 +3,9 @@ package sigmastate
 import org.scalatest.prop.TableFor2
 import scorex.util.encode.Base16
 import sigmastate.Values.{ByteArrayConstant, CollectionConstant}
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, CompilerTestingCommons}
 
-class CalcSha256Specification extends SigmaTestingCommons
+class CalcSha256Specification extends CompilerTestingCommons
   with CrossVersionProps {
   implicit lazy val IR = new TestingIRContext
 

@@ -6,12 +6,12 @@ import org.scalatest.TryValues._
 import sigmastate.basics.DLogProtocol.{ProveDlog, DLogProverInput}
 import scorex.crypto.hash.Blake2b256
 import sigmastate.Values.{ByteArrayConstant, ErgoTree, BooleanConstant}
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, SigmaTestingCommons, ErgoLikeTestInterpreter}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, CompilerTestingCommons, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.lang.Terms._
 import sigmastate.{AvlTreeData, CrossVersionProps}
 
-class CoopExampleSpecification extends SigmaTestingCommons
+class CoopExampleSpecification extends CompilerTestingCommons
   with CrossVersionProps {
   implicit lazy val IR = new TestingIRContext
   

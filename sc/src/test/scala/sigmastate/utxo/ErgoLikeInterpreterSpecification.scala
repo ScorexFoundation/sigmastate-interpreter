@@ -22,7 +22,7 @@ import sigmastate.lang.Terms._
 import sigmastate.serialization.{ValueSerializer, SerializationSpecification}
 import sigmastate.utils.Helpers._
 
-class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
+class ErgoLikeInterpreterSpecification extends CompilerTestingCommons
   with SerializationSpecification
   with CrossVersionProps {
 

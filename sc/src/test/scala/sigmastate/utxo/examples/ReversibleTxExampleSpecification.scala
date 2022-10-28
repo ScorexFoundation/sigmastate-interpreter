@@ -5,13 +5,13 @@ import org.ergoplatform._
 import scorex.crypto.hash.Blake2b256
 import sigmastate.Values.{IntConstant, SigmaPropConstant}
 import sigmastate._
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, CompilerTestingCommons}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter.ScriptNameProp
 import sigmastate.lang.Terms._
 
 
-class ReversibleTxExampleSpecification extends SigmaTestingCommons
+class ReversibleTxExampleSpecification extends CompilerTestingCommons
   with CrossVersionProps {
   private implicit lazy val IR: TestingIRContext = new TestingIRContext
 
@@ -91,7 +91,7 @@ class ReversibleTxExampleSpecification extends SigmaTestingCommons
         |}""".stripMargin).asSigmaProp)
 
     val blocksIn24h = 500
-    val feeProposition = ErgoScriptPredef.feeProposition()
+    val feeProposition = ErgoTreePredef.feeProposition()
     val depositEnv = Map(
       ScriptNameProp -> "depositEnv",
       "alice" -> alicePubKey,

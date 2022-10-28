@@ -7,10 +7,10 @@ import sigmastate._
 import sigmastate.basics.DLogProtocol.FirstDLogProverMessage
 import sigmastate.basics.{FirstDiffieHellmanTupleProverMessage, SecP256K1Group}
 import sigmastate.exceptions.InterpreterException
-import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, CompilerTestingCommons}
 import sigmastate.interpreter.{HintsBag, ProverInterpreter}
 
-class ProverSpecification extends SigmaTestingCommons {
+class ProverSpecification extends CompilerTestingCommons {
 
   implicit lazy val IR: TestingIRContext = new TestingIRContext
 

@@ -10,7 +10,7 @@ import scorex.util.Random
 import sigmastate.Values.{SigmaPropConstant, CollectionConstant, ByteArrayConstant, IntConstant, ErgoTree}
 import sigmastate._
 import sigmastate.basics.DLogProtocol.{ProveDlog, DLogProverInput}
-import sigmastate.helpers.{ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaTestingCommons, ContextEnrichingTestProvingInterpreter}
+import sigmastate.helpers.{ErgoLikeContextTesting, ErgoLikeTestInterpreter, CompilerTestingCommons, ContextEnrichingTestProvingInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.interpreter.{ProverResult, ContextExtension}
@@ -22,7 +22,7 @@ import sigmastate.utils.Helpers._
 
 import scala.util.Try
 
-class ErgoScriptPredefSpec extends SigmaTestingCommons with CrossVersionProps {
+class ErgoTreePredefSpec extends CompilerTestingCommons with CrossVersionProps {
   private implicit lazy val IR: TestingIRContext = new TestingIRContext {
   }
 
@@ -38,7 +38,7 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons with CrossVersionProps {
     val pk = minerProp.pkBytes
 
     val nextHeight = 1
-    val prop = EQ(Height, ErgoScriptPredef.boxCreationHeight(ByIndex(Outputs, IntConstant(0)))).toSigmaProp
+    val prop = EQ(Height, ErgoTreePredef.boxCreationHeight(ByIndex(Outputs, IntConstant(0)))).toSigmaProp
     val propInlined = EQ(Height, SelectField(ExtractCreationInfo(ByIndex(Outputs, IntConstant(0))), 1).asIntValue).toSigmaProp
     prop shouldBe propInlined
     val propTree = mkTestErgoTree(prop)
@@ -64,7 +64,7 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons with CrossVersionProps {
     def remaining(h: Int) = emission.remainingFoundationRewardAtHeight(h)
 
     val prover = new ContextEnrichingTestProvingInterpreter
-    val prop = ErgoScriptPredef.foundationScript(settings)
+    val prop = ErgoTreePredef.foundationScript(settings)
 
     def R4Prop(ableToProve: Boolean): CollectionConstant[SByte.type] = if (ableToProve) {
       val pks = (DLogProverInput.random() +: prover.dlogSecrets.take(2)).map(s => SigmaPropConstant(s.publicImage))
@@ -122,7 +122,7 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons with CrossVersionProps {
   property("collect coins from rewardOutputScript") {
     val prover = new ContextEnrichingTestProvingInterpreter
     val minerPk = prover.dlogSecrets.head.publicImage
-    val prop = ErgoScriptPredef.rewardOutputScript(settings.minerRewardDelay, minerPk)
+    val prop = ErgoTreePredef.rewardOutputScript(settings.minerRewardDelay, minerPk)
     val verifier = new ErgoLikeTestInterpreter
     val inputBoxes = IndexedSeq(testBox(20, prop, 0, Seq(), Map()))
     val inputs = inputBoxes.map(b => Input(b.id, emptyProverResult))
@@ -156,9 +156,9 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons with CrossVersionProps {
   property("create transaction collecting the emission box") {
     val prover = new ContextEnrichingTestProvingInterpreter
     val minerPk = prover.dlogSecrets.head.publicImage
-    val prop = ErgoScriptPredef.emissionBoxProp(settings)
+    val prop = ErgoTreePredef.emissionBoxProp(settings)
     val emissionBox = testBox(emission.coinsTotal, prop, 0, Seq(), Map())
-    val minerProp = ErgoScriptPredef.rewardOutputScript(settings.minerRewardDelay, minerPk)
+    val minerProp = ErgoTreePredef.rewardOutputScript(settings.minerRewardDelay, minerPk)
 
     // collect coins during the fixed rate period
     forAll(Gen.choose(1, settings.fixedRatePeriod)) { height =>
@@ -180,9 +180,9 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons with CrossVersionProps {
     forAll(Gen.choose(1, emission.blocksTotal - 1)) { height =>
       val currentRate = emission.minersRewardAtHeight(height)
       val pk2 = prover.dlogSecrets(1).publicImage
-      val correctProp = ErgoScriptPredef.rewardOutputScript(settings.minerRewardDelay, minerPk)
-      val incorrectDelay = ErgoScriptPredef.rewardOutputScript(settings.minerRewardDelay + 1, minerPk)
-      val incorrectPk = ErgoScriptPredef.rewardOutputScript(settings.minerRewardDelay, pk2)
+      val correctProp = ErgoTreePredef.rewardOutputScript(settings.minerRewardDelay, minerPk)
+      val incorrectDelay = ErgoTreePredef.rewardOutputScript(settings.minerRewardDelay + 1, minerPk)
+      val incorrectPk = ErgoTreePredef.rewardOutputScript(settings.minerRewardDelay, pk2)
       createRewardTx(currentRate, height, correctProp) shouldBe 'success
       createRewardTx(currentRate, height, incorrectDelay) shouldBe 'failure
       createRewardTx(currentRate, height, incorrectPk) shouldBe 'failure

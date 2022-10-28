@@ -2,7 +2,7 @@ package sigmastate.utxo
 
 import sigmastate.{GE, ModQ, SType}
 import sigmastate.Values._
-import sigmastate.helpers.SigmaTestingCommons
+import sigmastate.helpers.CompilerTestingCommons
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.Terms._
 import sigmastate._
@@ -10,7 +10,7 @@ import sigmastate._
 /**
   * Specification for compile function
   */
-class SigmaCompilerSpecification extends SigmaTestingCommons {
+class SigmaCompilerSpecification extends CompilerTestingCommons {
   implicit lazy val IR: TestingIRContext = new TestingIRContext
 
   private def compile(code: String, env: ScriptEnv = Map()): Value[SType] = compile(env, code)

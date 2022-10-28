@@ -11,7 +11,7 @@ import scorex.crypto.authds.{ADDigest, ADKey, ADValue}
 import scorex.crypto.hash.{Digest32, Blake2b256}
 import scorex.util._
 import sigmastate.Values.{LongConstant, IntConstant, ErgoTree}
-import sigmastate.helpers.{ErgoTransactionValidator, ErgoLikeContextTesting, ErgoLikeTestProvingInterpreter, SigmaTestingCommons, BlockchainState}
+import sigmastate.helpers.{ErgoTransactionValidator, ErgoLikeContextTesting, ErgoLikeTestProvingInterpreter, CompilerTestingCommons, BlockchainState}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.ContextExtension
 import sigmastate.eval._
@@ -24,7 +24,7 @@ import scala.collection.mutable
 import scala.util.Try
 
 
-class BlockchainSimulationSpecification extends SigmaTestingCommons
+class BlockchainSimulationSpecification extends CompilerTestingCommons
   with CrossVersionProps {
   import BlockchainSimulationSpecification._
   implicit lazy val IR = new TestingIRContext

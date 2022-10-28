@@ -5,7 +5,7 @@ import org.ergoplatform._
 import scorex.util.encode.Base58
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.helpers.SigmaTestingCommons
+import sigmastate.helpers.CompilerTestingCommons
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.Terms.{Apply, Ident, Lambda, MethodCall, ZKProofBlock}
 import sigmastate.exceptions.{CosterException, InvalidArguments, TyperException}
@@ -13,7 +13,7 @@ import sigmastate.serialization.ValueSerializer
 import sigmastate.serialization.generators.ObjectGenerators
 import sigmastate.utxo.{ByIndex, ExtractAmount, GetVar, SelectField}
 
-class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ObjectGenerators {
+class SigmaCompilerTest extends CompilerTestingCommons with LangTests with ObjectGenerators {
   import CheckingSigmaBuilder._
   implicit lazy val IR: TestingIRContext = new TestingIRContext {
     beginPass(noConstPropagationPass)

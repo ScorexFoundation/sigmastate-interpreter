@@ -7,7 +7,7 @@ import org.ergoplatform.settings.ErgoAlgos
 import org.scalacheck.Gen.containerOfN
 import sigmastate._
 import org.scalacheck.{Arbitrary, Gen}
-import sigmastate.helpers.SigmaTestingCommons
+import sigmastate.helpers.CompilerTestingCommons
 import sigmastate.eval.{Colls, _}
 import sigmastate.eval.Extensions._
 import org.scalacheck.util.Buildable
@@ -27,7 +27,7 @@ import special.collection.Coll
 
 import scala.reflect.ClassTag
 
-trait SigmaTestingData extends SigmaTestingCommons with ObjectGenerators {
+trait SigmaTestingData extends CompilerTestingCommons with ObjectGenerators {
   def Coll[T](items: T*)(implicit cT: RType[T]) = CostingSigmaDslBuilder.Colls.fromItems(items:_*)
 
   def collOfN[T: RType: Arbitrary](n: Int)(implicit b: Buildable[T, Array[T]]): Gen[Coll[T]] = {

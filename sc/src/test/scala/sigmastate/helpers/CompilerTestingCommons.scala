@@ -3,17 +3,17 @@ package sigmastate.helpers
 import org.ergoplatform.SigmaConstants.ScriptCostLimit
 import org.ergoplatform._
 import org.ergoplatform.validation.ValidationRules.CheckSerializableTypeCode
-import org.ergoplatform.validation.{ValidationException, ValidationSpecification}
+import org.ergoplatform.validation.{ValidationSpecification, ValidationException}
 import org.scalacheck.Arbitrary.arbByte
 import org.scalacheck.Gen
 import org.scalatest.Assertion
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.propspec.AnyPropSpec
-import org.scalatestplus.scalacheck.{ScalaCheckDrivenPropertyChecks, ScalaCheckPropertyChecks}
+import org.scalatestplus.scalacheck.{ScalaCheckPropertyChecks, ScalaCheckDrivenPropertyChecks}
 import scalan.util.BenchmarkUtil
-import scalan.{RType, TestContexts, TestUtils}
+import scalan.{TestUtils, RType, TestContexts}
 import scorex.crypto.hash.Blake2b256
-import sigmastate.Values.{Constant, ErgoTree, GroupElementConstant, SValue, SigmaBoolean, SigmaPropValue}
+import sigmastate.Values.{Constant, SValue, SigmaBoolean, GroupElementConstant, SigmaPropValue, ErgoTree}
 import sigmastate.eval._
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.ContextExtension.VarBinding
@@ -21,20 +21,20 @@ import sigmastate.basics.CryptoConstants.EcPointType
 import sigmastate.interpreter.ErgoTreeEvaluator.DefaultProfiler
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.interpreter._
-import sigmastate.lang.{CompilerSettings, SigmaCompiler, Terms}
+import sigmastate.lang.{Terms, CompilerSettings, SigmaCompiler}
 import sigmastate.serialization.SigmaSerializer
-import sigmastate.{JitCost, SOption, SType, TestsBase}
+import sigmastate.{SOption, JitCost, CompilerTestsBase, SType, TestsBase}
 
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 import scala.util.DynamicVariable
 
-trait SigmaTestingCommons extends AnyPropSpec
+trait CompilerTestingCommons extends AnyPropSpec
   with ScalaCheckPropertyChecks
   with ScalaCheckDrivenPropertyChecks
   with Matchers with TestUtils with TestContexts with ValidationSpecification
   with NegativeTesting
-  with TestsBase {
+  with TestsBase with CompilerTestsBase {
 
   def fakeSelf: ErgoBox = createBox(0, TrueTree)
 

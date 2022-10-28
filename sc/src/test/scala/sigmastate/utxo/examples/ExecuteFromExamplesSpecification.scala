@@ -2,11 +2,11 @@ package sigmastate.utxo.examples
 
 import org.ergoplatform._
 import org.ergoplatform.dsl.{ContractSpec, SigmaContractSyntax, StdContracts, TestContractSpec}
-import sigmastate.helpers.SigmaTestingCommons
+import sigmastate.helpers.CompilerTestingCommons
 import special.sigma.Context
 import sigmastate.eval.Extensions._
 
-class ExecuteFromExamplesSpecification extends SigmaTestingCommons { suite =>
+class ExecuteFromExamplesSpecification extends CompilerTestingCommons { suite =>
   implicit lazy val IR = new TestingIRContext
 
   private val reg1 = ErgoBox.nonMandatoryRegisters(0)

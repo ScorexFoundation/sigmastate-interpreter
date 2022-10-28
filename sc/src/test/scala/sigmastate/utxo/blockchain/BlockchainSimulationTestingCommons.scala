@@ -8,7 +8,7 @@ import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigmastate.{AvlTreeData, AvlTreeFlags, Values}
 import sigmastate.Values.{ErgoTree, LongConstant}
 import sigmastate.eval._
-import sigmastate.helpers.{BlockchainState, ErgoLikeContextTesting, ErgoLikeTestProvingInterpreter, ErgoTransactionValidator, SigmaTestingCommons}
+import sigmastate.helpers.{BlockchainState, ErgoLikeContextTesting, ErgoLikeTestProvingInterpreter, ErgoTransactionValidator, CompilerTestingCommons}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.utils.Helpers._
 import scala.collection.mutable
@@ -20,7 +20,7 @@ import sigmastate.utxo.blockchain.BlockchainSimulationTestingCommons.{FullBlock,
 
 import scala.annotation.tailrec
 
-trait BlockchainSimulationTestingCommons extends SigmaTestingCommons {
+trait BlockchainSimulationTestingCommons extends CompilerTestingCommons {
 
   @tailrec
   protected final def checkState(state: ValidationState,
@@ -75,7 +75,7 @@ trait BlockchainSimulationTestingCommons extends SigmaTestingCommons {
 
 }
 
-object BlockchainSimulationTestingCommons extends SigmaTestingCommons {
+object BlockchainSimulationTestingCommons extends CompilerTestingCommons {
 
   private val MaxBlockCost = 1000000
 

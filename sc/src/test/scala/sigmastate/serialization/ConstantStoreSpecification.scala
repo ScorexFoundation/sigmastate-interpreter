@@ -2,10 +2,10 @@ package sigmastate.serialization
 
 import sigmastate.Values.{Constant, IntConstant}
 import sigmastate._
-import sigmastate.helpers.SigmaTestingCommons
+import sigmastate.helpers.CompilerTestingCommons
 import sigmastate.lang.{SigmaBuilder, DeserializationSigmaBuilder}
 
-class ConstantStoreSpecification extends SerializationSpecification with SigmaTestingCommons {
+class ConstantStoreSpecification extends SerializationSpecification with CompilerTestingCommons {
 
   implicit lazy val IR: TestingIRContext = new TestingIRContext
   implicit val builder: SigmaBuilder = DeserializationSigmaBuilder

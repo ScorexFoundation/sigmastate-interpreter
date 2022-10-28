@@ -8,13 +8,13 @@ import sigmastate.{AvlTreeData, CrossVersionProps}
 import sigmastate.Values.GroupElementConstant
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.{DiffieHellmanTupleProverInput, ProveDHTuple, CryptoConstants}
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, SigmaTestingCommons, ErgoLikeTestInterpreter}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, CompilerTestingCommons, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter._
 import sigmastate.lang.Terms._
 import sigmastate.eval.Extensions._
 
-class DHTupleExampleSpecification extends SigmaTestingCommons
+class DHTupleExampleSpecification extends CompilerTestingCommons
   with CrossVersionProps {
   private implicit lazy val IR = new TestingIRContext
   /**

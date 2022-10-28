@@ -11,14 +11,14 @@ import org.ergoplatform._
 import org.scalatest.BeforeAndAfterAll
 import scorex.util.encode.Base58
 import sigmastate.basics.CryptoConstants
-import sigmastate.helpers.{ErgoLikeTestInterpreter, SigmaTestingCommons, ErgoLikeContextTesting, ErgoLikeTestProvingInterpreter}
+import sigmastate.helpers.{ErgoLikeTestInterpreter, CompilerTestingCommons, ErgoLikeContextTesting, ErgoLikeTestProvingInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utils.Helpers._
 
 import scala.util.Random
 
-class TestingInterpreterSpecification extends SigmaTestingCommons
+class TestingInterpreterSpecification extends CompilerTestingCommons
   with CrossVersionProps with BeforeAndAfterAll {
   implicit lazy val IR = new TestingIRContext
 

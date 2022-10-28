@@ -2,7 +2,7 @@ package sigmastate.utxo
 
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, CompilerTestingCommons}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.lang.Terms._
 import org.ergoplatform._
@@ -11,7 +11,7 @@ import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.serialization.OpCodes._
 import sigmastate.utils.Helpers._
 
-class CollectionOperationsSpecification extends SigmaTestingCommons
+class CollectionOperationsSpecification extends CompilerTestingCommons
   with CrossVersionProps {
   implicit lazy val IR: TestingIRContext = new TestingIRContext
   private val reg1 = ErgoBox.nonMandatoryRegisters.head

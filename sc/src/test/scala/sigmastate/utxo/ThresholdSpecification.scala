@@ -3,10 +3,10 @@ package sigmastate.utxo
 import sigmastate.basics.DLogProtocol.{DLogProverInput, ProveDlog}
 import sigmastate.Values.{ConcreteCollection, FalseLeaf, IntConstant, SigmaPropConstant, SigmaPropValue, TrueLeaf}
 import sigmastate._
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, ErgoLikeTransactionTesting, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, ErgoLikeTransactionTesting, CompilerTestingCommons}
 import sigmastate.exceptions.CosterException
 
-class ThresholdSpecification extends SigmaTestingCommons
+class ThresholdSpecification extends CompilerTestingCommons
   with CrossVersionProps {
   implicit lazy val IR = new TestingIRContext {
   }

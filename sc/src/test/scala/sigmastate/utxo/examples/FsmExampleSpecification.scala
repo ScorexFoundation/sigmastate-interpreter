@@ -10,14 +10,14 @@ import sigmastate.Values._
 import sigmastate._
 import sigmastate.eval._
 import sigmastate.lang.Terms._
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, CompilerTestingCommons}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo._
 
 
-class FsmExampleSpecification extends SigmaTestingCommons
+class FsmExampleSpecification extends CompilerTestingCommons
   with CrossVersionProps {
   private implicit lazy val IR: TestingIRContext = new TestingIRContext
   /**

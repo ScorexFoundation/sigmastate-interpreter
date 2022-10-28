@@ -11,14 +11,14 @@ import sigmastate.basics.DLogProtocol.{ProveDlog, SecondDLogProverMessage}
 import sigmastate.basics.VerifierMessage.Challenge
 import sigmastate.basics.{ProveDHTuple, SecondDiffieHellmanTupleProverMessage}
 import sigmastate.crypto.GF2_192_Poly
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTransactionTesting, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTransactionTesting, CompilerTestingCommons}
 import sigmastate.interpreter.Interpreter
 import sigmastate.serialization.generators.ObjectGenerators
 import sigmastate.utils.Helpers
 
 import scala.util.Random
 
-class SigSerializerSpecification extends SigmaTestingCommons
+class SigSerializerSpecification extends CompilerTestingCommons
   with ObjectGenerators with CrossVersionProps {
   implicit lazy val IR = new TestingIRContext
   private lazy implicit val arbExprGen: Arbitrary[SigmaBoolean] = Arbitrary(exprTreeGen)

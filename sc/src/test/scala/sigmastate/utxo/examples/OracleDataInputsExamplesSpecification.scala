@@ -4,11 +4,11 @@ import org.ergoplatform._
 import org.ergoplatform.dsl.ContractSyntax.Token
 import org.ergoplatform.dsl.{ContractSpec, SigmaContractSyntax, StdContracts, TestContractSpec}
 import scorex.crypto.hash.Blake2b256
-import sigmastate.helpers.SigmaTestingCommons
+import sigmastate.helpers.CompilerTestingCommons
 import special.collection.Coll
 import special.sigma.Context
 
-class OracleDataInputsExamplesSpecification extends SigmaTestingCommons { suite =>
+class OracleDataInputsExamplesSpecification extends CompilerTestingCommons { suite =>
   implicit lazy val IR: TestingIRContext = new TestingIRContext
 
   private val reg1 = ErgoBox.nonMandatoryRegisters(0)

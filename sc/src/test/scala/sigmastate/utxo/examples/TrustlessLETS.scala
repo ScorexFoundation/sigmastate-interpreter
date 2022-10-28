@@ -2,12 +2,12 @@
 package sigmastate.utxo.examples
 
 import scorex.crypto.hash.Blake2b256
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, CompilerTestingCommons}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter._
 import sigmastate.lang.Terms._
 
-class TrustlessLETS1 extends SigmaTestingCommons {
+class TrustlessLETS1 extends CompilerTestingCommons {
   private implicit lazy val IR: TestingIRContext = new TestingIRContext
 
   property("Evaluation - LETS1 Example") {
@@ -114,7 +114,7 @@ class TrustlessLETS1 extends SigmaTestingCommons {
 
 }
 
-class TrustlessLETS2 extends SigmaTestingCommons {
+class TrustlessLETS2 extends CompilerTestingCommons {
   // LETS2
   //  Non-refundable ergs
   //  Zero sum
@@ -217,7 +217,7 @@ class TrustlessLETS2 extends SigmaTestingCommons {
 
 }
 
-class TrustlessLETS3 extends SigmaTestingCommons {
+class TrustlessLETS3 extends CompilerTestingCommons {
   // LETS3
   //  time-locked ergs
   //  Positive sum
@@ -332,7 +332,7 @@ class TrustlessLETS3 extends SigmaTestingCommons {
 
 }
 
-class TrustlessLETS4 extends SigmaTestingCommons {
+class TrustlessLETS4 extends CompilerTestingCommons {
   // LETS4
   //  Non-refundable ergs
   //  Positive sum

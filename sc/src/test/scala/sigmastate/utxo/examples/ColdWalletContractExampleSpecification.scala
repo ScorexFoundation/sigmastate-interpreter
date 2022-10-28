@@ -2,7 +2,7 @@ package sigmastate.utxo.examples
 
 import org.ergoplatform.ErgoBox.{R4, R5}
 import org.ergoplatform._
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, SigmaTestingCommons, ErgoLikeTestInterpreter}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, CompilerTestingCommons, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.{AvlTreeData, CrossVersionProps}
 import sigmastate.Values.{LongConstant, IntConstant}
@@ -10,7 +10,7 @@ import sigmastate.interpreter.Interpreter.ScriptNameProp
 import sigmastate.lang.Terms._
 
 
-class ColdWalletContractExampleSpecification extends SigmaTestingCommons
+class ColdWalletContractExampleSpecification extends CompilerTestingCommons
   with CrossVersionProps {
   private implicit lazy val IR: TestingIRContext = new TestingIRContext
 

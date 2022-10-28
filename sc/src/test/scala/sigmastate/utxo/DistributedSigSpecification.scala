@@ -1,7 +1,7 @@
 package sigmastate.utxo
 
 import sigmastate._
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestProvingInterpreter, CompilerTestingCommons}
 import sigmastate.interpreter._
 import sigmastate.lang.Terms._
 
@@ -10,7 +10,7 @@ import sigmastate.lang.Terms._
   * See EIP-11 for generic signing procedure.
   * In some simple generic procedure is simplified.
   */
-class DistributedSigSpecification extends SigmaTestingCommons
+class DistributedSigSpecification extends CompilerTestingCommons
   with CrossVersionProps {
 
   implicit lazy val IR: TestingIRContext = new TestingIRContext

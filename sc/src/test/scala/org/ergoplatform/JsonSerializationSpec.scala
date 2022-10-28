@@ -12,14 +12,14 @@ import sigmastate.{AvlTreeData, SType}
 import sigmastate.Values.{EvaluatedValue, SigmaPropConstant, ByteArrayConstant, IntConstant, ErgoTree, ByteConstant, LongArrayConstant}
 import sigmastate.basics.CryptoConstants
 import sigmastate.basics.DLogProtocol.ProveDlog
-import sigmastate.helpers.SigmaTestingCommons
+import sigmastate.helpers.CompilerTestingCommons
 import sigmastate.interpreter.{ProverResult, ContextExtension}
 import sigmastate.serialization.SerializationSpecification
 import sigmastate.utils.Helpers._ // required for Scala 2.11
 import special.collection.Coll
 import special.sigma.{PreHeader, Header}
 
-class JsonSerializationSpec extends SigmaTestingCommons with SerializationSpecification with JsonCodecs {
+class JsonSerializationSpec extends CompilerTestingCommons with SerializationSpecification with JsonCodecs {
 
   def jsonRoundTrip[T](v: T)(implicit encoder: Encoder[T], decoder: Decoder[T]): Unit = {
     val json = v.asJson
