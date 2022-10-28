@@ -23,13 +23,13 @@ class AndSerializerSpecification extends TableSerializationSpecification {
         SInt.typeCode, encodeZigZagInt(1).toByte))
   )
 
-//  tableRoundTripTest("And: Serializer round trip on predefined values")
-//  tablePredefinedBytesTest("And: deserialize from predefined bytes")
+  tableRoundTripTest("And: Serializer round trip on predefined values")
+  tablePredefinedBytesTest("And: deserialize from predefined bytes")
 
   property("And: Serializer round trip") {
-//    forAll(logicalExprTreeNodeGen(Seq(AND.apply))) { tree =>
-//      roundTripTest(tree)
-//    }
+    forAll(logicalExprTreeNodeGen(Seq(AND.apply))) { tree =>
+      roundTripTest(tree)
+    }
   }
 
 }

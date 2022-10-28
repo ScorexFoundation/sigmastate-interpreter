@@ -322,7 +322,7 @@ object Values {
     * @see Constant
     */
   case class ConstantNode[S <: SType](value: S#WrappedType, tpe: S) extends Constant[S] {
-    require(Constant.isCorrectType(value, tpe), s"Invalid type of constant value $value, expected type $tpe")
+    require(sigmastate.crypto.Platform.isCorrectType(value, tpe), s"Invalid type of constant value $value, expected type $tpe")
     override def companion: ValueCompanion = Constant
     override def opCode: OpCode = companion.opCode
     override def opName: String = s"Const"
@@ -372,37 +372,6 @@ object Values {
       case _ => None
     }
 
-    /** Checks that the type of the value corresponds to the descriptor `tpe`.
-      * If the value has complex structure only root type constructor is checked.
-      * NOTE, this is surface check with possible false positives, but it is ok
-      * when used in assertions, like `assert(isCorrestType(...))`, see `ConstantNode`.
-      */
-    def isCorrectType[T <: SType](value: Any, tpe: T): Boolean = value match {
-      case c: Coll[_] => tpe match {
-        case STuple(items) => c.tItem == RType.AnyType && c.length == items.length
-        case tpeColl: SCollection[_] => true
-        case _ => sys.error(s"Collection value $c has unexpected type $tpe")
-      }
-      case _: Option[_] => tpe.isOption
-      case _: Tuple2[_,_] => tpe.isTuple && tpe.asTuple.items.length == 2
-      case _: Boolean => tpe == SBoolean
-      case _: Byte => tpe == SByte
-      case _: Short => tpe == SShort
-      case _: Int => tpe == SInt
-      case _: Long => tpe == SLong
-      case _: BigInt => tpe == SBigInt
-      case _: String => tpe == SString
-      case _: GroupElement => tpe.isGroupElement
-      case _: SigmaProp => tpe.isSigmaProp
-      case _: AvlTree => tpe.isAvlTree
-      case _: Box => tpe.isBox
-      case _: PreHeader => tpe == SPreHeader
-      case _: Header => tpe == SHeader
-      case _: Context => tpe == SContext
-      case _: Function1[_,_] => tpe.isFunc
-      case _: Unit => tpe == SUnit
-      case _ => false
-    }
   }
 
   /** Placeholder for a constant in ErgoTree. Zero based index in ErgoTree.constants array. */

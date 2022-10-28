@@ -9,47 +9,47 @@ import scala.scalajs.js.typedarray.Uint8Array
 class CryptoContextJs() extends js.Object {
   def getModulus(): js.BigInt = js.native
   def getOrder(): js.BigInt = js.native
-  def validatePoint(x: js.BigInt, y: js.BigInt): Platform.Ecp = js.native
-  def getInfinity(): Platform.Ecp = js.native
-  def decodePoint(encoded: String): Platform.Ecp = js.native
-  def getGenerator(): Platform.Ecp = js.native
+  def validatePoint(x: js.BigInt, y: js.BigInt): Platform.Point = js.native
+  def getInfinity(): Platform.Point = js.native
+  def decodePoint(encoded: String): Platform.Point = js.native
+  def getGenerator(): Platform.Point = js.native
 }
 
 @js.native
 @JSImport("sigmajs-crypto-facade", "CryptoFacade")
 object CryptoFacadeJs extends js.Object {
-  def normalizePoint(point: Platform.Ecp): Platform.Ecp = js.native
+  def normalizePoint(point: Platform.Point): Platform.Point = js.native
 
   def createCryptoContext(): CryptoContextJs = js.native
 
-  def negatePoint(point: Platform.Ecp): Platform.Ecp = js.native 
+  def negatePoint(point: Platform.Point): Platform.Point = js.native 
 
-  def isInfinityPoint(point: Platform.Ecp): Boolean = js.native 
+  def isInfinityPoint(point: Platform.Point): Boolean = js.native 
 
-  def multiplyPoint(point: Platform.Ecp, scalar: js.BigInt): Platform.Ecp = js.native
+  def multiplyPoint(point: Platform.Point, scalar: js.BigInt): Platform.Point = js.native
 
-  def addPoint(point1: Platform.Ecp, point2: Platform.Ecp): Platform.Ecp = js.native
+  def addPoint(point1: Platform.Point, point2: Platform.Point): Platform.Point = js.native
 
-  def showPoint(point: Platform.Ecp): String = js.native
+  def showPoint(point: Platform.Point): String = js.native
 
   def testBitZeroOfFieldElem(element: js.BigInt): Boolean = js.native
 
   def getEncodedOfFieldElem(element: js.BigInt): Uint8Array = js.native
 
-  def getXCoord(point: Platform.Ecp): js.BigInt = js.native
+  def getXCoord(point: Platform.Point): js.BigInt = js.native
 
-  def getYCoord(point: Platform.Ecp): js.BigInt = js.native
+  def getYCoord(point: Platform.Point): js.BigInt = js.native
 
-  def getAffineXCoord(point: Platform.Ecp): js.BigInt = js.native
+  def getAffineXCoord(point: Platform.Point): js.BigInt = js.native
 
-  def getAffineYCoord(point: Platform.Ecp): js.BigInt = js.native
+  def getAffineYCoord(point: Platform.Point): js.BigInt = js.native
 }
 
 @js.native
 @JSImport("@noble/secp256k1", "Point")
 object Point extends js.Any {
-  def fromHex(hex: String): Platform.Ecp = js.native
-  def ZERO: Platform.Ecp = js.native
+  def fromHex(hex: String): Platform.Point = js.native
+  def ZERO: Platform.Point = js.native
 }
 
 @js.native

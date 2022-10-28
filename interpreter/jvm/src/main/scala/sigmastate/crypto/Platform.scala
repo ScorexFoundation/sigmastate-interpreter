@@ -2,10 +2,14 @@ package sigmastate.crypto
 
 import org.bouncycastle.crypto.ec.CustomNamedCurves
 import org.bouncycastle.math.ec.{ECPoint, ECFieldElement}
+import scalan.RType
 
 import java.math.BigInteger
 import java.security.SecureRandom
 import scala.util.Random
+import sigmastate._
+import special.collection.Coll
+import special.sigma._
 
 /** JVM specific implementation of crypto methods*/
 object Platform {
@@ -53,4 +57,36 @@ object Platform {
   def createContext(): CryptoContext = new CryptoContextJvm(CustomNamedCurves.getByName("secp256k1"))
 
   def createSecureRandom(): Random = new SecureRandom()
+
+  /** Checks that the type of the value corresponds to the descriptor `tpe`.
+    * If the value has complex structure only root type constructor is checked.
+    * NOTE, this is surface check with possible false positives, but it is ok
+    * when used in assertions, like `assert(isCorrestType(...))`, see `ConstantNode`.
+    */
+  def isCorrectType[T <: SType](value: Any, tpe: T): Boolean = value match {
+    case c: Coll[_] => tpe match {
+      case STuple(items) => c.tItem == RType.AnyType && c.length == items.length
+      case tpeColl: SCollection[_] => true
+      case _ => sys.error(s"Collection value $c has unexpected type $tpe")
+    }
+    case _: Option[_] => tpe.isOption
+    case _: Tuple2[_, _] => tpe.isTuple && tpe.asTuple.items.length == 2
+    case _: Boolean => tpe == SBoolean
+    case _: Byte => tpe == SByte
+    case _: Short => tpe == SShort
+    case _: Int => tpe == SInt
+    case _: Long => tpe == SLong
+    case _: BigInt => tpe == SBigInt
+    case _: String => tpe == SString
+    case _: GroupElement => tpe.isGroupElement
+    case _: SigmaProp => tpe.isSigmaProp
+    case _: AvlTree => tpe.isAvlTree
+    case _: Box => tpe.isBox
+    case _: PreHeader => tpe == SPreHeader
+    case _: Header => tpe == SHeader
+    case _: Context => tpe == SContext
+    case _: Function1[_, _] => tpe.isFunc
+    case _: Unit => tpe == SUnit
+    case _ => false
+  }
 }

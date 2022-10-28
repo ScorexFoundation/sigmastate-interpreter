@@ -1,7 +1,10 @@
 package sigmastate.crypto
 
+import scalan.RType
 import scorex.util.encode.Base16
-import sigmastate.crypto
+import sigmastate._
+import special.collection.Coll
+import special.sigma._
 
 import java.math.BigInteger
 import scala.scalajs.js
@@ -10,45 +13,64 @@ import scala.util.Random
 
 /** JVM specific implementation of crypto methods*/
 object Platform {
-  def getXCoord(p: Ecp): ECFieldElem = CryptoFacadeJs.getXCoord(p)
-  def getYCoord(p: Ecp): ECFieldElem = CryptoFacadeJs.getYCoord(p)
-  def getAffineXCoord(p: Ecp): ECFieldElem = CryptoFacadeJs.getAffineXCoord(p)
-  def getAffineYCoord(p: Ecp): ECFieldElem = CryptoFacadeJs.getAffineYCoord(p)
+  def getXCoord(p: Ecp): ECFieldElem = new ECFieldElem(CryptoFacadeJs.getXCoord(p.point))
+  def getYCoord(p: Ecp): ECFieldElem = new ECFieldElem(CryptoFacadeJs.getYCoord(p.point))
+  def getAffineXCoord(p: Ecp): ECFieldElem = new ECFieldElem(CryptoFacadeJs.getAffineXCoord(p.point))
+  def getAffineYCoord(p: Ecp): ECFieldElem = new ECFieldElem(CryptoFacadeJs.getAffineYCoord(p.point))
 
   def Uint8ArrayToBytes(jsShorts: Uint8Array): Array[Byte] = {
     jsShorts.toArray[Short].map(x => x.toByte)
   }
 
   def getEncodedOfFieldElem(p: ECFieldElem): Array[Byte] = {
-    Uint8ArrayToBytes(CryptoFacadeJs.getEncodedOfFieldElem(p))
+    Uint8ArrayToBytes(CryptoFacadeJs.getEncodedOfFieldElem(p.elem))
   }
 
-  def testBitZeroOfFieldElem(p: ECFieldElem): Boolean = CryptoFacadeJs.testBitZeroOfFieldElem(p)
+  def testBitZeroOfFieldElem(p: ECFieldElem): Boolean = CryptoFacadeJs.testBitZeroOfFieldElem(p.elem)
 
-  def normalizePoint(p: Ecp): Ecp = CryptoFacadeJs.normalizePoint(p)
+  def normalizePoint(p: Ecp): Ecp = new Ecp(CryptoFacadeJs.normalizePoint(p.point))
 
-  def showPoint(p: Ecp): String = CryptoFacadeJs.showPoint(p)
+  def showPoint(p: Ecp): String = CryptoFacadeJs.showPoint(p.point)
 
-  def multiplyPoints(p1: Ecp, p2: Ecp): Ecp = CryptoFacadeJs.addPoint(p1, p2)
+  def multiplyPoints(p1: Ecp, p2: Ecp): Ecp = new Ecp(CryptoFacadeJs.addPoint(p1.point, p2.point))
 
   def exponentiatePoint(p: Ecp, n: BigInteger): Ecp = {
     val scalar = Convert.bigIntegerToBigInt(n)
-    CryptoFacadeJs.multiplyPoint(p, scalar)
+    new Ecp(CryptoFacadeJs.multiplyPoint(p.point, scalar))
   }
 
-  def isInfinityPoint(p: Ecp): Boolean = CryptoFacadeJs.isInfinityPoint(p)
+  def isInfinityPoint(p: Ecp): Boolean = CryptoFacadeJs.isInfinityPoint(p.point)
 
-  def negatePoint(p: Ecp): Ecp = CryptoFacadeJs.negatePoint(p)
+  def negatePoint(p: Ecp): Ecp = new Ecp(CryptoFacadeJs.negatePoint(p.point))
 
   /** Opaque point type. */
   @js.native
-  trait Ecp extends js.Object {
+  trait Point extends js.Object {
     def x: js.BigInt = js.native
     def y: js.BigInt = js.native
     def toHex(b: Boolean): String = js.native
   }
 
-  type ECFieldElem = js.BigInt
+  class Ecp(val point: Point) {
+    lazy val hex = point.toHex(true)
+    override def hashCode(): Int = hex.hashCode
+
+    override def equals(obj: Any): Boolean = (this eq obj.asInstanceOf[AnyRef]) || (obj match {
+      case that: Ecp => this.hex == that.hex
+      case _ => false
+    })
+  }
+
+  class ECFieldElem(val elem: js.BigInt) {
+    lazy val digits: String = elem.toString(10)
+
+    override def hashCode(): Int = digits.hashCode
+
+    override def equals(obj: Any): Boolean = (this eq obj.asInstanceOf[AnyRef]) || (obj match {
+      case that: ECFieldElem => this.digits == that.digits
+      case _ => false
+    })
+  }
 
   object Convert {
     def bigIntToBigInteger(jsValue: js.BigInt): BigInteger = {
@@ -68,17 +90,48 @@ object Platform {
     override def getOrder: BigInteger = Convert.bigIntToBigInteger(ctx.getOrder())
 
     override def validatePoint(x: BigInteger, y: BigInteger): crypto.Ecp = {
-      ctx.validatePoint(Convert.bigIntegerToBigInt(x), Convert.bigIntegerToBigInt(y))
+      val point = ctx.validatePoint(Convert.bigIntegerToBigInt(x), Convert.bigIntegerToBigInt(y))
+      new Ecp(point)
     }
 
-    override def getInfinity(): crypto.Ecp = ctx.getInfinity()
+    override def getInfinity(): crypto.Ecp =
+      new Ecp(ctx.getInfinity())
 
     override def decodePoint(encoded: Array[Byte]): crypto.Ecp =
-      ctx.decodePoint(Base16.encode(encoded))
+      new Ecp(ctx.decodePoint(Base16.encode(encoded)))
 
-    override def getGenerator: crypto.Ecp = ctx.getGenerator()
+    override def getGenerator: crypto.Ecp =
+      new Ecp(ctx.getGenerator())
   }
 
   def createSecureRandom(): Random = new Random()
 
+  /** Checks that the type of the value corresponds to the descriptor `tpe`.
+    * If the value has complex structure only root type constructor is checked.
+    * NOTE, this is surface check with possible false positives, but it is ok
+    * when used in assertions, like `assert(isCorrestType(...))`, see `ConstantNode`.
+    */
+  def isCorrectType[T <: SType](value: Any, tpe: T): Boolean = value match {
+    case c: Coll[_] => tpe match {
+      case STuple(items) => c.tItem == RType.AnyType && c.length == items.length
+      case tpeColl: SCollection[_] => true
+      case _ => sys.error(s"Collection value $c has unexpected type $tpe")
+    }
+    case _: Option[_] => tpe.isOption
+    case _: Tuple2[_, _] => tpe.isTuple && tpe.asTuple.items.length == 2
+    case _: Boolean => tpe == SBoolean
+    case _: Byte | _: Short | _: Int | _: Long => tpe.isInstanceOf[SNumericType]
+    case _: BigInt => tpe == SBigInt
+    case _: String => tpe == SString
+    case _: GroupElement => tpe.isGroupElement
+    case _: SigmaProp => tpe.isSigmaProp
+    case _: AvlTree => tpe.isAvlTree
+    case _: Box => tpe.isBox
+    case _: PreHeader => tpe == SPreHeader
+    case _: Header => tpe == SHeader
+    case _: Context => tpe == SContext
+    case _: Function1[_, _] => tpe.isFunc
+    case _: Unit => tpe == SUnit
+    case _ => false
+  }
 }
