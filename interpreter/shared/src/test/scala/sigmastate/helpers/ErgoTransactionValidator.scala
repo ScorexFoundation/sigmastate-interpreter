@@ -1,7 +1,6 @@
 package sigmastate.helpers
 
 import org.ergoplatform._
-import sigmastate.eval.IRContext
 import sigmastate.interpreter.ErgoTreeEvaluator.DefaultEvalSettings
 import sigmastate.interpreter.EvalSettings
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
