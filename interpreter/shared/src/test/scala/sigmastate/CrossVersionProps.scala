@@ -27,7 +27,6 @@ trait CrossVersionProps extends AnyPropSpecLike with TestsBase {
           }
         }
         System.gc()
-        Thread.sleep(100) // give it some time to finish warm-up
       }
       forEachScriptAndErgoTreeVersion(activatedVersions, ergoTreeVersions) {
         testFun_Run(testName, testFun)

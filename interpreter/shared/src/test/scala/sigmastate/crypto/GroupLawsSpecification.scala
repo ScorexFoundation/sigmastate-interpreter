@@ -3,13 +3,15 @@ package sigmastate.crypto
 import java.math.BigInteger
 import org.scalacheck.Gen
 import sigmastate.basics.CryptoConstants
-import sigmastate.helpers.{SigmaPPrint, CompilerTestingCommons}
 import CryptoConstants.EcPointType
+import org.scalatest.propspec.AnyPropSpec
+import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
+import sigmastate.TestsBase
 import sigmastate.utils.Helpers
 
 import scala.util.Random
 
-class GroupLawsSpecification extends CompilerTestingCommons {
+class GroupLawsSpecification extends AnyPropSpec with ScalaCheckPropertyChecks with TestsBase {
   private val group = CryptoConstants.dlogGroup
 
   val groupElementGen: Gen[EcPointType] = Gen.const(group.createRandomElement())
@@ -54,13 +56,12 @@ class GroupLawsSpecification extends CompilerTestingCommons {
     }
   }
 
-  def printPoints(points: Seq[(String, Any)]) = {
-    points.foreach { case (name, p) =>
-      println(s"val $name = ${SigmaPPrint.apply(p).plainText}")
-    }
-  }
-
 // uncommment to generate new test vectors
+//def printPoints(points: Seq[(String, Any)]) = {
+//  points.foreach { case (name, p) =>
+//    println(s"val $name = ${SigmaPPrint.apply(p).plainText}")
+//  }
+//}
 //
 //  property("generate initial points") {
 //    printPoints(Seq(
@@ -77,17 +78,17 @@ class GroupLawsSpecification extends CompilerTestingCommons {
   val p3 = Helpers.decodeECPoint("02e135f5f905fb843698d48959c6c792b2c6f9605b90be2280d53b4b69ef23e8a9")
 
 // uncommment to generate new test vectors
-  property("generate op results") {
-    printPoints(Seq(
-      "p1" -> p1,
-      "p2" -> p2,
-      "p3" -> p3,
-      "p1.add(p2)" -> CryptoFacade.multiplyPoints(p1, p2),
-      "p1.multiply(order)" -> CryptoFacade.exponentiatePoint(p1, group.order),
-      "p1.multiply(order + 1)" -> CryptoFacade.exponentiatePoint(p1, group.order.add(BigInteger.ONE)),
-      "p1.inverse" -> CryptoFacade.negatePoint(p1)
-    ))
-  }
+//  property("generate op results") {
+//    printPoints(Seq(
+//      "p1" -> p1,
+//      "p2" -> p2,
+//      "p3" -> p3,
+//      "p1.add(p2)" -> CryptoFacade.multiplyPoints(p1, p2),
+//      "p1.multiply(order)" -> CryptoFacade.exponentiatePoint(p1, group.order),
+//      "p1.multiply(order + 1)" -> CryptoFacade.exponentiatePoint(p1, group.order.add(BigInteger.ONE)),
+//      "p1.inverse" -> CryptoFacade.negatePoint(p1)
+//    ))
+//  }
 
   property("check test vectors") {
     CryptoFacade.multiplyPoints(p1, p2) shouldBe

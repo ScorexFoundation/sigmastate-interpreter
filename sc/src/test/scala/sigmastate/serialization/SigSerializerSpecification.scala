@@ -19,7 +19,7 @@ import sigmastate.utils.Helpers
 import scala.util.Random
 
 class SigSerializerSpecification extends CompilerTestingCommons
-  with ObjectGenerators with CompilerCrossVersionProps {
+  with ObjectGenerators with CrossVersionProps {
   private lazy implicit val arbExprGen: Arbitrary[SigmaBoolean] = Arbitrary(exprTreeGen)
 
   private lazy val prover = new ContextEnrichingTestProvingInterpreter()
