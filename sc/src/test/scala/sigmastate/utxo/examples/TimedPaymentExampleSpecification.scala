@@ -10,7 +10,7 @@ import sigmastate.interpreter.Interpreter.ScriptNameProp
 import sigmastate.lang.Terms._
 
 class TimedPaymentExampleSpecification extends CompilerTestingCommons
-  with CrossVersionProps {
+  with CompilerCrossVersionProps {
   private implicit lazy val IR: TestingIRContext = new TestingIRContext
 
   import ErgoAddressEncoder._

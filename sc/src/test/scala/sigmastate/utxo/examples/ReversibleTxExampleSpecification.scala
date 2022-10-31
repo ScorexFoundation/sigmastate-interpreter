@@ -12,7 +12,7 @@ import sigmastate.lang.Terms._
 
 
 class ReversibleTxExampleSpecification extends CompilerTestingCommons
-  with CrossVersionProps {
+  with CompilerCrossVersionProps {
   private implicit lazy val IR: TestingIRContext = new TestingIRContext
 
   import ErgoAddressEncoder._

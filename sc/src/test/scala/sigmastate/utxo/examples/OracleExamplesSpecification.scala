@@ -24,7 +24,7 @@ import sigmastate.utils.Helpers._
 import scala.util.Random
 
 class OracleExamplesSpecification extends CompilerTestingCommons
-  with CrossVersionProps { suite =>
+  with CompilerCrossVersionProps { suite =>
   implicit lazy val IR: TestingIRContext = new TestingIRContext
 
   private val reg1 = ErgoBox.nonMandatoryRegisters(0)

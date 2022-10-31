@@ -16,7 +16,7 @@ import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.ContextExtension
 import sigmastate.eval._
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
-import sigmastate.{GE, AvlTreeData, CrossVersionProps, AvlTreeFlags}
+import sigmastate.{GE, AvlTreeData, CompilerCrossVersionProps, AvlTreeFlags}
 
 import scala.annotation.tailrec
 import scala.collection.concurrent.TrieMap
@@ -25,7 +25,7 @@ import scala.util.Try
 
 
 class BlockchainSimulationSpecification extends CompilerTestingCommons
-  with CrossVersionProps {
+  with CompilerCrossVersionProps {
   import BlockchainSimulationSpecification._
   implicit lazy val IR = new TestingIRContext
 

@@ -10,7 +10,7 @@ import sigmastate.helpers._
 import sigmastate.lang.Terms._
 import sigmastate.utxo.SizeOf
 
-class AtomicSwapExampleSpecification extends CompilerTestingCommons with CrossVersionProps {
+class AtomicSwapExampleSpecification extends CompilerTestingCommons with CompilerCrossVersionProps {
   private implicit lazy val IR: TestingIRContext = new TestingIRContext
 
   /**

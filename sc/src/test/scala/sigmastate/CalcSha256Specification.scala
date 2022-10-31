@@ -6,7 +6,7 @@ import sigmastate.Values.{ByteArrayConstant, CollectionConstant}
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, CompilerTestingCommons}
 
 class CalcSha256Specification extends CompilerTestingCommons
-  with CrossVersionProps {
+  with CompilerCrossVersionProps {
   implicit lazy val IR = new TestingIRContext
 
   def stringToByteConstant(in: String): CollectionConstant[SByte.type] = ByteArrayConstant(in.getBytes("UTF-8"))

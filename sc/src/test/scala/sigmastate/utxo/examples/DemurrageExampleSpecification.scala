@@ -10,7 +10,7 @@ import sigmastate.interpreter.ContextExtension
 import sigmastate.lang.Terms._
 
 class DemurrageExampleSpecification extends CompilerTestingCommons
-  with CrossVersionProps {
+  with CompilerCrossVersionProps {
   override val printVersions: Boolean = true
   implicit lazy val IR = new TestingIRContext
 

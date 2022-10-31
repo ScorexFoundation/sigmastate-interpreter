@@ -12,7 +12,7 @@ import sigmastate.serialization.OpCodes._
 import sigmastate.utils.Helpers._
 
 class CollectionOperationsSpecification extends CompilerTestingCommons
-  with CrossVersionProps {
+  with CompilerCrossVersionProps {
   implicit lazy val IR: TestingIRContext = new TestingIRContext
   private val reg1 = ErgoBox.nonMandatoryRegisters.head
 

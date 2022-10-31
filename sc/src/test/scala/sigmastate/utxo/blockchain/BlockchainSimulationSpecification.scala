@@ -2,7 +2,7 @@ package sigmastate.utxo.blockchain
 
 import java.io.{FileWriter, File}
 
-import sigmastate.CrossVersionProps
+import sigmastate.CompilerCrossVersionProps
 import sigmastate.Values.{TrueLeaf, GetVarBoolean}
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestProvingInterpreter}
 import sigmastate.interpreter.ContextExtension
@@ -12,7 +12,7 @@ import scala.collection.concurrent.TrieMap
 
 
 class BlockchainSimulationSpecification extends BlockchainSimulationTestingCommons
-  with CrossVersionProps {
+  with CompilerCrossVersionProps {
 
   implicit lazy val IR = new TestingIRContext
 

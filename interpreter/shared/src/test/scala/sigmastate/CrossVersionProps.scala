@@ -1,25 +1,24 @@
 package sigmastate
 
-import org.scalatest.Tag
-import org.scalactic.source.Position
-import sigmastate.eval.Profiler
 import debox.cfor
+import org.scalactic.source.Position
+import scala.util.DynamicVariable
+import org.scalatest.Tag
+import sigmastate.eval.Profiler
 import org.scalatest.propspec.AnyPropSpecLike
 
-import scala.util.DynamicVariable
-
-trait CrossVersionProps extends AnyPropSpecLike with CompilerTestsBase {
-
+trait CrossVersionProps extends AnyPropSpecLike with TestsBase {
   /** Number of times each test property is warmed up (i.e. executed before final execution). */
   def perTestWarmUpIters: Int = 0
 
   private[sigmastate] val _warmupProfiler = new DynamicVariable[Option[Profiler]](None)
+
   def warmupProfiler: Option[Profiler] = _warmupProfiler.value
 
   override protected def property(testName: String, testTags: Tag*)
-                                 (testFun: => Any)
-                                 (implicit pos: Position): Unit = {
-    super.property(testName, testTags:_*) {
+      (testFun: => Any)
+      (implicit pos: Position): Unit = {
+    super.property(testName, testTags: _*) {
       // do warmup if necessary
       if (perTestWarmUpIters > 0) {
         _warmupProfiler.withValue(Some(new Profiler)) {
@@ -30,16 +29,15 @@ trait CrossVersionProps extends AnyPropSpecLike with CompilerTestsBase {
         System.gc()
         Thread.sleep(100) // give it some time to finish warm-up
       }
-
       forEachScriptAndErgoTreeVersion(activatedVersions, ergoTreeVersions) {
         testFun_Run(testName, testFun)
       }
-
-      if (okRunTestsWithoutMCLowering) {
-        _lowerMethodCalls.withValue(false) {
-          testFun_Run(testName, testFun)
-        }
-      }
     }
+  }
+
+  protected def property2(testName: String, testTags: Tag*)
+      (testFun: => Any)
+      (implicit pos: Position): Unit = {
+    super.property(testName, testTags: _*)(testFun)
   }
 }

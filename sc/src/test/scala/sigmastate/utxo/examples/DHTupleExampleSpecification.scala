@@ -4,7 +4,7 @@ package sigmastate.utxo.examples
 import java.math.BigInteger
 
 import org.ergoplatform.ErgoBox.{R4, R5}
-import sigmastate.{AvlTreeData, CrossVersionProps}
+import sigmastate.{AvlTreeData, CompilerCrossVersionProps}
 import sigmastate.Values.GroupElementConstant
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.{DiffieHellmanTupleProverInput, ProveDHTuple, CryptoConstants}
@@ -15,7 +15,7 @@ import sigmastate.lang.Terms._
 import sigmastate.eval.Extensions._
 
 class DHTupleExampleSpecification extends CompilerTestingCommons
-  with CrossVersionProps {
+  with CompilerCrossVersionProps {
   private implicit lazy val IR = new TestingIRContext
   /**
     * let Alice's secret be x and Bob's be y

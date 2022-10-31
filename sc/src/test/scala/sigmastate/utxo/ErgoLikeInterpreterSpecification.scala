@@ -24,7 +24,7 @@ import sigmastate.utils.Helpers._
 
 class ErgoLikeInterpreterSpecification extends CompilerTestingCommons
   with SerializationSpecification
-  with CrossVersionProps {
+  with CompilerCrossVersionProps {
 
   implicit lazy val IR: TestingIRContext = new TestingIRContext
   private val reg1 = ErgoBox.nonMandatoryRegisters.head

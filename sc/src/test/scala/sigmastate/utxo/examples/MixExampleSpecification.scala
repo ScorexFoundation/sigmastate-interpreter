@@ -4,7 +4,7 @@ import java.math.BigInteger
 
 import org.ergoplatform.ErgoBox.{R4, R5}
 import scorex.crypto.hash.Blake2b256
-import sigmastate.{AvlTreeData, CrossVersionProps}
+import sigmastate.{AvlTreeData, CompilerCrossVersionProps}
 import sigmastate.Values.GroupElementConstant
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.{DiffieHellmanTupleProverInput, ProveDHTuple, CryptoConstants}
@@ -16,7 +16,7 @@ import sigmastate.eval._
 import sigmastate.eval.Extensions._
 
 class MixExampleSpecification extends CompilerTestingCommons
-  with CrossVersionProps {
+  with CompilerCrossVersionProps {
   private implicit lazy val IR: TestingIRContext = new TestingIRContext
 
   property("Evaluation - Mix Example") {

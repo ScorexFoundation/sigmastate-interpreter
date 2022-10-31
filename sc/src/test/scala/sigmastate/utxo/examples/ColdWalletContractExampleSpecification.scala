@@ -4,14 +4,14 @@ import org.ergoplatform.ErgoBox.{R4, R5}
 import org.ergoplatform._
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, CompilerTestingCommons, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
-import sigmastate.{AvlTreeData, CrossVersionProps}
+import sigmastate.{AvlTreeData, CompilerCrossVersionProps}
 import sigmastate.Values.{LongConstant, IntConstant}
 import sigmastate.interpreter.Interpreter.ScriptNameProp
 import sigmastate.lang.Terms._
 
 
 class ColdWalletContractExampleSpecification extends CompilerTestingCommons
-  with CrossVersionProps {
+  with CompilerCrossVersionProps {
   private implicit lazy val IR: TestingIRContext = new TestingIRContext
 
   import ErgoAddressEncoder._

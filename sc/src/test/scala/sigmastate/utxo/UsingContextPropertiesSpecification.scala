@@ -1,6 +1,6 @@
 package sigmastate.utxo
 
-import sigmastate.{TrivialProp, CrossVersionProps}
+import sigmastate.{TrivialProp, CompilerCrossVersionProps}
 import sigmastate.eval.{IRContext, CSigmaProp}
 import sigmastate.eval.Extensions._
 import special.sigma.Context
@@ -10,7 +10,7 @@ import org.ergoplatform.ErgoBox
 import scorex.crypto.hash.Blake2b256
 
 class UsingContextPropertiesSpecification extends CompilerTestingCommons
-  with CrossVersionProps { suite =>
+  with CompilerCrossVersionProps { suite =>
   lazy val spec = TestContractSpec(suite)(new TestingIRContext)
   lazy val prover = spec.ProvingParty("Alice")
   private implicit lazy val IR: IRContext = spec.IR

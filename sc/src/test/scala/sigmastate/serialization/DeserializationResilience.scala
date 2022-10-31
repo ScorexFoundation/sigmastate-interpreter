@@ -23,7 +23,7 @@ import sigmastate.utils.Helpers._
 import scala.collection.mutable
 
 class DeserializationResilience extends SerializationSpecification
-  with CompilerTestingCommons with CrossVersionProps {
+  with CompilerTestingCommons with CompilerCrossVersionProps {
 
   implicit lazy val IR: TestingIRContext = new TestingIRContext {
     //    substFromCostTable = false

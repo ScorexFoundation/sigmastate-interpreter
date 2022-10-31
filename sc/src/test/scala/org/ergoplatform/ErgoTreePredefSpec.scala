@@ -22,7 +22,7 @@ import sigmastate.utils.Helpers._
 
 import scala.util.Try
 
-class ErgoTreePredefSpec extends CompilerTestingCommons with CrossVersionProps {
+class ErgoTreePredefSpec extends CompilerTestingCommons with CompilerCrossVersionProps {
   private implicit lazy val IR: TestingIRContext = new TestingIRContext {
   }
 

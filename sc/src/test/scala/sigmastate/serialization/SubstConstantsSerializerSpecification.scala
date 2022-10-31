@@ -2,10 +2,10 @@ package sigmastate.serialization
 
 import sigmastate.Values.{ConcreteCollection, IntArrayConstant, IntConstant, IntValue}
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
-import sigmastate.{CrossVersionProps, EQ, SInt, SubstConstants}
+import sigmastate.{CompilerCrossVersionProps, EQ, SInt, SubstConstants}
 
 class SubstConstantsSerializerSpecification extends SerializationSpecification
-  with CrossVersionProps {
+  with CompilerCrossVersionProps {
 
   property("SubstConstant deserialization round trip") {
     forAll(numExprTreeNodeGen) { prop =>

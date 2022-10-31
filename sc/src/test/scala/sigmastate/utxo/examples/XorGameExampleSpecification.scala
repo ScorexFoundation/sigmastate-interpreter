@@ -13,7 +13,7 @@ import sigmastate.interpreter.Interpreter._
 import sigmastate.lang.Terms._
 
 class XorGameExampleSpecification extends CompilerTestingCommons
-  with CrossVersionProps {
+  with CompilerCrossVersionProps {
   private implicit lazy val IR: TestingIRContext = new TestingIRContext
 
   /** XOR game:

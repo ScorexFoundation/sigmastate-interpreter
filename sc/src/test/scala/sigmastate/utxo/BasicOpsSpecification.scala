@@ -22,7 +22,7 @@ import sigmastate.interpreter.EvalSettings
 import sigmastate.utils.Helpers._
 
 class BasicOpsSpecification extends CompilerTestingCommons
-  with CrossVersionProps {
+  with CompilerCrossVersionProps {
   override val printVersions: Boolean = false
   implicit lazy val IR = new TestingIRContext {
   }

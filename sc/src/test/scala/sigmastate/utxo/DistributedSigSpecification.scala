@@ -11,7 +11,7 @@ import sigmastate.lang.Terms._
   * In some simple generic procedure is simplified.
   */
 class DistributedSigSpecification extends CompilerTestingCommons
-  with CrossVersionProps {
+  with CompilerCrossVersionProps {
 
   implicit lazy val IR: TestingIRContext = new TestingIRContext
 

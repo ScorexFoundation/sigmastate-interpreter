@@ -18,7 +18,7 @@ import sigmastate.utxo._
 
 
 class FsmExampleSpecification extends CompilerTestingCommons
-  with CrossVersionProps {
+  with CompilerCrossVersionProps {
   private implicit lazy val IR: TestingIRContext = new TestingIRContext
   /**
     * Similarly to the MAST-like example (in the MASTExampleSpecification class), we can do more complex contracts,

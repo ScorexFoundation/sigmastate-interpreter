@@ -22,7 +22,7 @@ import special.sigma.{AvlTree, Context}
 
 
 class AVLTreeScriptsSpecification extends CompilerTestingCommons
-  with CrossVersionProps { suite =>
+  with CompilerCrossVersionProps { suite =>
   import org.ergoplatform.dsl.AvlTreeHelpers._
   lazy val spec = TestContractSpec(suite)(new TestingIRContext)
   lazy val prover = spec.ProvingParty("Alice")

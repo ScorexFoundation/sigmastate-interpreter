@@ -7,7 +7,7 @@ import org.scalatest.TryValues._
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 
 class FailingToProveSpec extends CompilerTestingCommons
-  with CrossVersionProps {
+  with CompilerCrossVersionProps {
   implicit lazy val IR = new TestingIRContext
   /**
     * Both properties should work fine.

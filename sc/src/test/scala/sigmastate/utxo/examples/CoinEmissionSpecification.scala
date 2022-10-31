@@ -21,7 +21,7 @@ import sigmastate.eval._
   * defined in ErgoScriptPredef.
   */
 class CoinEmissionSpecification extends CompilerTestingCommons
-  with CrossVersionProps {
+  with CompilerCrossVersionProps {
   // don't use TestingIRContext, this suite also serves the purpose of testing the RuntimeIRContext
   implicit lazy val IR: TestingIRContext = new TestingIRContext {
     // uncomment if you want to log script evaluation

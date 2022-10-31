@@ -13,7 +13,7 @@ import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.utxo.{DeserializeContext, DeserializeRegister}
 
 class ErgoTreeSerializerSpecification extends SerializationSpecification
-  with CompilerTestingCommons with CrossVersionProps {
+  with CompilerTestingCommons with CompilerCrossVersionProps {
 
   implicit lazy val IR: TestingIRContext = new TestingIRContext {
     beginPass(noConstPropagationPass)

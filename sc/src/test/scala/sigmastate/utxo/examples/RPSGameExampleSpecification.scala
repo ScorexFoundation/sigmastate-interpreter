@@ -13,7 +13,7 @@ import sigmastate.interpreter.Interpreter._
 import sigmastate.lang.Terms._
 
 class RPSGameExampleSpecification extends CompilerTestingCommons
-  with CrossVersionProps {
+  with CompilerCrossVersionProps {
   implicit lazy val IR = new TestingIRContext
   /** RPS game:
 

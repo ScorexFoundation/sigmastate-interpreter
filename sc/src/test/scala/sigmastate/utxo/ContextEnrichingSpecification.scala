@@ -10,7 +10,7 @@ import special.collection.Coll
 
 
 class ContextEnrichingSpecification extends CompilerTestingCommons
-  with CrossVersionProps {
+  with CompilerCrossVersionProps {
 
   implicit lazy val IR: TestingIRContext = new TestingIRContext
 

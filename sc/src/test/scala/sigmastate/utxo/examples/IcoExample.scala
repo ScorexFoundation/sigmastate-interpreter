@@ -233,7 +233,7 @@ reasonable to have an additional input from the project with the value equal to 
   */
 
 class IcoExample extends CompilerTestingCommons
-  with CrossVersionProps with BeforeAndAfterAll { suite =>
+  with CompilerCrossVersionProps with BeforeAndAfterAll { suite =>
 
   // Not mixed with TestContext since it is not possible to call commpiler.compile outside tests if mixed
   implicit lazy val IR: IRContext = new IRContext {}

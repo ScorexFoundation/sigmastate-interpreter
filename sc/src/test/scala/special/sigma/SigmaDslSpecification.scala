@@ -58,7 +58,7 @@ import scala.collection.compat.immutable.ArraySeq
   * nBenchmarkIters = 1
   */
 class SigmaDslSpecification extends SigmaDslTesting
-  with CrossVersionProps
+  with CompilerCrossVersionProps
   with BeforeAndAfterAll { suite =>
 
   /** Use VersionContext so that each property in this suite runs under correct

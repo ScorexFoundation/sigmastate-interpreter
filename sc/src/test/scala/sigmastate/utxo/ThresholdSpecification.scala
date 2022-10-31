@@ -7,7 +7,7 @@ import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeConte
 import sigmastate.exceptions.CosterException
 
 class ThresholdSpecification extends CompilerTestingCommons
-  with CrossVersionProps {
+  with CompilerCrossVersionProps {
   implicit lazy val IR = new TestingIRContext {
   }
 

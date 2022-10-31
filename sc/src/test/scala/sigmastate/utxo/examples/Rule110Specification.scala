@@ -19,7 +19,7 @@ import sigmastate.utxo.blockchain.BlockchainSimulationTestingCommons._
   *
   */
 class Rule110Specification extends CompilerTestingCommons
-  with CrossVersionProps {
+  with CompilerCrossVersionProps {
   implicit lazy val IR = new TestingIRContext
   private val reg1 = ErgoBox.nonMandatoryRegisters.head
   private val reg2 = ErgoBox.nonMandatoryRegisters(1)
