@@ -1,10 +1,10 @@
 package sigmastate
 
-import special.sigma.SigmaTestingData
+import sigmastate.helpers.TestingCommons
 
-import scala.util.{Try, Failure}
+import scala.util.{Failure, Try}
 
-class JitCostSpecification extends SigmaTestingData {
+class JitCostSpecification extends TestingCommons {
 
   type BinOp = (Int, Int) => Int
   type JitBinOp = (JitCost, JitCost) => JitCost
