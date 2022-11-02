@@ -20,8 +20,6 @@ trait ContractsTestkit {
   val R7 = 7.toByte;
   val R8 = 8.toByte;
   val R9 = 9.toByte;
-
-
   val Colls = new CollOverArrayBuilder
   val SigmaDsl: SigmaDslBuilder = CostingSigmaDslBuilder
   val noRegisters = collection[AnyValue]()
@@ -34,11 +32,11 @@ trait ContractsTestkit {
   val noHeaders = CostingSigmaDslBuilder.Colls.emptyColl[Header]
   val dummyPreHeader: PreHeader = null
 
-  def collection[T:RType](items: T*) = Colls.fromArray(items.toArray)
+  def collection[T: RType](items: T*) = Colls.fromArray(items.toArray)
 
   def regs(m: Map[Byte, AnyValue]): Coll[AnyValue] = {
     val res = new Array[AnyValue](10)
-    for ((id, v) <- m) {
+    for ( (id, v) <- m ) {
       assert(res(id) == null, s"register $id is defined more then once")
       res(id) = v
     }
@@ -46,9 +44,9 @@ trait ContractsTestkit {
   }
 
   def contextVars(m: Map[Byte, AnyValue]): Coll[AnyValue] = {
-    val maxKey = if (m.keys.isEmpty) 0 else m.keys.max  // TODO optimize: max takes 90% of this method
+    val maxKey = if (m.keys.isEmpty) 0 else m.keys.max // TODO optimize: max takes 90% of this method
     val res = new Array[AnyValue](maxKey)
-    for ((id, v) <- m) {
+    for ( (id, v) <- m ) {
       val i = id - 1
       assert(res(i) == null, s"register $id is defined more then once")
       res(i) = v
@@ -57,6 +55,7 @@ trait ContractsTestkit {
   }
 
   val AliceId = Array[Byte](1) // 0x0001
+
   def newAliceBox(id: Byte, value: Long): Box = {
     val ergoBox = testBox(value,
       ErgoTree.fromProposition(Values.TrueSigmaProp),
@@ -64,16 +63,21 @@ trait ContractsTestkit {
     new CostingBox(ergoBox)
   }
 
-
-  def testContext(inputs: Array[Box], outputs: Array[Box], height: Int, self: Box,
-                  tree: AvlTree, minerPk: Array[Byte], activatedScriptVersion: Byte,
-                  currErgoTreeVersion: Byte, vars: Array[AnyValue]) =
+  def testContext(
+      inputs: Array[Box], outputs: Array[Box], height: Int, self: Box,
+      tree: AvlTree, minerPk: Array[Byte], activatedScriptVersion: Byte,
+      currErgoTreeVersion: Byte, vars: Array[AnyValue]) =
     new CostingDataContext(
       noInputs.toColl, noHeaders, dummyPreHeader,
       inputs.toColl, outputs.toColl, height, self, inputs.indexOf(self), tree,
       minerPk.toColl, vars.toColl, activatedScriptVersion, currErgoTreeVersion)
 
-  def newContext(height: Int, self: Box, activatedScriptVersion: Byte, currErgoTreeVersion: Byte, vars: AnyValue*): CostingDataContext = {
+  def newContext(
+      height: Int,
+      self: Box,
+      activatedScriptVersion: Byte,
+      currErgoTreeVersion: Byte,
+      vars: AnyValue*): CostingDataContext = {
     testContext(
       noInputs, noOutputs, height, self, emptyAvlTree, dummyPubkey,
       activatedScriptVersion, currErgoTreeVersion, vars.toArray)
@@ -81,9 +85,10 @@ trait ContractsTestkit {
 
   implicit class TestContextOps(ctx: CostingDataContext) {
     def withInputs(inputs: Box*) = ctx.copy(inputs = inputs.toArray.toColl)
+
     def withOutputs(outputs: Box*) = ctx.copy(outputs = outputs.toArray.toColl)
+
     def withVariables(vars: Map[Int, AnyValue]) =
       ctx.copy(vars = contextVars(vars.map { case (k, v) => (k.toByte, v) }))
   }
-
 }
