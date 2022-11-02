@@ -227,7 +227,7 @@ lazy val interpreterJS = interpreter.js
     .settings(
 //      scalaJSUseMainModuleInitializer := true,
       Compile / npmDependencies ++= Seq(
-        "sigmajs-crypto-facade" -> "0.0.1"
+        "sigmajs-crypto-facade" -> "0.0.3"
       )
     )
 

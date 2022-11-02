@@ -46,14 +46,14 @@ object CryptoFacadeJs extends js.Object {
 }
 
 @js.native
-@JSImport("@noble/secp256k1", "Point")
+@JSImport("sigmajs-crypto-facade", "Point")
 object Point extends js.Any {
   def fromHex(hex: String): Platform.Point = js.native
   def ZERO: Platform.Point = js.native
 }
 
 @js.native
-@JSImport("@noble/secp256k1", "utils")
+@JSImport("sigmajs-crypto-facade", "utils")
 object utils extends js.Any {
   def bytesToHex(bytes: Uint8Array): String = js.native
   def hexToBytes(hex: String): Uint8Array = js.native
