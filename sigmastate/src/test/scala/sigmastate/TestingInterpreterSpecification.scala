@@ -52,27 +52,27 @@ class TestingInterpreterSpecification extends SigmaTestingCommons
         val dk1 = SigmaPropConstant(DLogProverInput.random().publicImage)
 
         val ctx = testingContext(h)
-        prover.reduceToCrypto(ctx, SigmaAnd(GE(Height, IntConstant(h - 1)), dk1)).get.value should(
+        testReduce(prover)(ctx, SigmaAnd(GE(Height, IntConstant(h - 1)), dk1)) should(
           matchPattern { case _: SigmaBoolean => })
-        prover.reduceToCrypto(ctx, SigmaAnd(GE(Height, IntConstant(h)), dk1)).get.value should (
+        testReduce(prover)(ctx, SigmaAnd(GE(Height, IntConstant(h)), dk1)) should (
           matchPattern { case _: SigmaBoolean => })
 
         {
-          val res = prover.reduceToCrypto(ctx, SigmaAnd(GE(Height, IntConstant(h + 1)), dk1)).get.value
+          val res = testReduce(prover)(ctx, SigmaAnd(GE(Height, IntConstant(h + 1)), dk1))
           res should matchPattern { case TrivialProp.FalseProp => }
         }
 
         {
-          val res = prover.reduceToCrypto(ctx, SigmaOr(GE(Height, IntConstant(h - 1)), dk1)).get.value
+          val res = testReduce(prover)(ctx, SigmaOr(GE(Height, IntConstant(h - 1)), dk1))
           res should matchPattern { case TrivialProp.TrueProp => }
         }
 
         {
-          val res = prover.reduceToCrypto(ctx, SigmaOr(GE(Height, IntConstant(h)), dk1)).get.value
+          val res = testReduce(prover)(ctx, SigmaOr(GE(Height, IntConstant(h)), dk1))
           res should matchPattern { case TrivialProp.TrueProp => }
         }
         {
-          val res = prover.reduceToCrypto(ctx, SigmaOr(GE(Height, IntConstant(h + 1)), dk1)).get.value
+          val res = testReduce(prover)(ctx, SigmaOr(GE(Height, IntConstant(h + 1)), dk1))
           res should matchPattern { case _: SigmaBoolean => }
         }
       }
@@ -89,23 +89,23 @@ class TestingInterpreterSpecification extends SigmaTestingCommons
 
         val ctx = testingContext(h)
 
-        assert(prover.reduceToCrypto(ctx, SigmaOr(
+        assert(testReduce(prover)(ctx, SigmaOr(
                   SigmaAnd(LE(Height, IntConstant(h + 1)), SigmaAnd(dk1, dk2)),
                   SigmaAnd(GT(Height, IntConstant(h + 1)), dk1)
-                )).get.value.isInstanceOf[CAND])
+                )).isInstanceOf[CAND])
 
 
-        assert(prover.reduceToCrypto(ctx, SigmaOr(
+        assert(testReduce(prover)(ctx, SigmaOr(
                   SigmaAnd(LE(Height, IntConstant(h - 1)), SigmaAnd(dk1, dk2)),
                   SigmaAnd(GT(Height, IntConstant(h - 1)), dk1)
-                )).get.value.isInstanceOf[ProveDlog])
+                )).isInstanceOf[ProveDlog])
 
-        prover.reduceToCrypto(ctx, SigmaOr(
+        testReduce(prover)(ctx, SigmaOr(
           SigmaAnd(LE(Height, IntConstant(h - 1)), SigmaAnd(dk1, dk2)),
           SigmaAnd(GT(Height, IntConstant(h + 1)), dk1)
-        )).get.value shouldBe TrivialProp.FalseProp
+        )) shouldBe TrivialProp.FalseProp
 
-        prover.reduceToCrypto(ctx,
+        testReduce(prover)(ctx,
           SigmaOr(
             SigmaOr(
               SigmaAnd(LE(Height, IntConstant(h - 1)), SigmaAnd(dk1, dk2)),
@@ -113,7 +113,7 @@ class TestingInterpreterSpecification extends SigmaTestingCommons
             ),
             AND(GT(Height, IntConstant(h - 1)), LE(Height, IntConstant(h + 1)))
           )
-        ).get.value shouldBe TrivialProp.TrueProp
+        ) shouldBe TrivialProp.TrueProp
 
       }
     }

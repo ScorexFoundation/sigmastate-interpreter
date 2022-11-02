@@ -60,7 +60,6 @@ object DataValueComparer {
   final val OpDesc_EQ_AvlTree = NamedDesc("EQ_AvlTree")
   final val EQ_AvlTree = OperationCostInfo(CostKind_EQ_AvlTree, OpDesc_EQ_AvlTree)
 
-  // TODO v5.0: update value after serialization is avoided to compute ErgoBox.id
   final val CostKind_EQ_Box = FixedCost(JitCost(6))          // case 7
   final val OpDesc_EQ_Box = NamedDesc("EQ_Box")
   final val EQ_Box = OperationCostInfo(CostKind_EQ_Box, OpDesc_EQ_Box)
@@ -126,7 +125,6 @@ object DataValueComparer {
   final val OpDesc_EQ_COA_AvlTree = NamedDesc("EQ_COA_AvlTree")
   final val EQ_COA_AvlTree = OperationCostInfo(CostKind_EQ_COA_AvlTree, OpDesc_EQ_COA_AvlTree)
 
-  // TODO v5.0: update value after serialization is avoided to compute ErgoBox.id
   /** Equals two CollOverArray of Box type. */
   final val CostKind_EQ_COA_Box = PerItemCost(
     baseCost = JitCost(15), perChunkCost = JitCost(5), chunkSize = 1)
@@ -169,7 +167,7 @@ object DataValueComparer {
                    (implicit E: ErgoTreeEvaluator): Boolean = {
     var okEqual = true
     E.addSeqCost(costInfo.costKind, costInfo.opDesc) { () =>
-      // TODO v5.0: this loop is bounded when MaxCollSize limit is enforced
+      // this loop is bounded because MaxArrayLength limit is enforced
       val len = c1.length
       var i = 0
       val a1 = c1.toArray
@@ -191,7 +189,7 @@ object DataValueComparer {
   def equalColls[A](c1: Coll[A], c2: Coll[A])(implicit E: ErgoTreeEvaluator): Boolean = {
     var okEqual = true
     E.addSeqCost(CostKind_EQ_Coll, OpDesc_EQ_Coll) { () =>
-      // TODO v5.0: this loop is bounded when MaxCollSize limit is enforced
+      // this loop is bounded because MaxArrayLength limit is enforced
       val len = c1.length
       var i = 0
       while(i < len && okEqual) {
@@ -307,9 +305,13 @@ object DataValueComparer {
     okEqual
   }
 
-  // TODO v5.0: introduce a new limit on structural depth of data values
   /** Generic comparison of any two data values. The method dispatches on a type of the
     * left value and then performs the specific comparison.
+    * The comparison recursively descends on the value structure regardless of the depth.
+    * However, every step costs are accrued to `E.coster` and the defined limit
+    * `E.coster.costLimit` is checked. Thus, the execution of this method is limited and
+    * always finishes at least as fast as the costLimit prescribes.
+    * No limit is structural depth is necessary.
     */
   def equalDataValues(l: Any, r: Any)(implicit E: ErgoTreeEvaluator): Boolean = {
     var okEqual: Boolean = false

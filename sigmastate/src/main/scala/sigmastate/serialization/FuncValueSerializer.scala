@@ -5,6 +5,7 @@ import sigmastate._
 import scorex.util.Extensions._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import ValueSerializer._
+import sigmastate.util.safeNewArray
 import sigmastate.utils.SigmaByteWriter.{DataInfo, U, Vlq}
 import spire.syntax.all.cfor
 
@@ -27,9 +28,15 @@ case class FuncValueSerializer(cons: (IndexedSeq[(Int, SType)], Value[SType]) =>
 
   override def parse(r: SigmaByteReader): Value[SType] = {
     val argsSize = r.getUIntExact
-    val args = ValueSerializer.newArray[(Int, SType)](argsSize)
+    // NO-FORK: in v5.x getUIntExact may throw Int overflow exception
+    // in v4.x r.getUInt().toInt is used and may return negative Int instead of the overflow
+    // in which case the array allocation will throw NegativeArraySizeException
+    val args = safeNewArray[(Int, SType)](argsSize)
     cfor(0)(_ < argsSize, _ + 1) { i =>
-      val id = r.getUIntExact
+      val id = r.getUInt().toInt
+      // Note, when id < 0 as a result of Int overflow, the r.valDefTypeStore(id) won't throw
+      // More over evaluation of such FuncValue will not throw either if the body contains
+      // ValUse with the same negative id
       val tpe = r.getType()
       r.valDefTypeStore(id) = tpe
       args(i) = (id, tpe)

@@ -168,7 +168,7 @@ case class BoolToSigmaProp(value: BoolValue) extends SigmaPropValue {
     SigmaDsl.sigmaProp(v)
   }
 }
-object BoolToSigmaProp extends ValueCompanion {
+object BoolToSigmaProp extends FixedCostValueCompanion {
   override def opCode: OpCode = OpCodes.BoolToSigmaPropCode
   override val costKind = FixedCost(JitCost(15))
   val OpType = SFunc(SBoolean, SSigmaProp)
@@ -186,7 +186,7 @@ case class CreateProveDlog(value: Value[SGroupElement.type]) extends SigmaPropVa
     SigmaDsl.proveDlog(v)
   }
 }
-object CreateProveDlog extends ValueCompanion {
+object CreateProveDlog extends FixedCostValueCompanion {
   override def opCode: OpCode = OpCodes.ProveDlogCode
   override val costKind = FixedCost(JitCost(10))
   val OpType = SFunc(SGroupElement, SSigmaProp)
@@ -227,7 +227,7 @@ case class CreateProveDHTuple(gv: Value[SGroupElement.type],
     SigmaDsl.proveDHTuple(g, h, u, v)
   }
 }
-object CreateProveDHTuple extends ValueCompanion {
+object CreateProveDHTuple extends FixedCostValueCompanion {
   override def opCode: OpCode = OpCodes.ProveDiffieHellmanTupleCode
   override val costKind = FixedCost(JitCost(20))
 }
@@ -357,20 +357,7 @@ case class XorOf(input: Value[SCollection[SBoolean.type]])
     val inputV = input.evalTo[Coll[Boolean]](env)
     val len = inputV.length
     addSeqCost(XorOf.costKind, len) { () =>
-      val res = if (E.context.currentErgoTreeVersion >= 3) {
-        if (len == 0) false
-        else if (len == 1) inputV(0)
-        else {
-          var res = inputV(0)
-          cfor(1)(_ < len, _ + 1) { i =>
-            res ^= inputV(i)
-          }
-          res
-        }
-      } else {
-        SigmaDsl.xorOf(inputV)
-      }
-      res
+      SigmaDsl.xorOf(inputV)
     }
   }
 }
@@ -775,8 +762,8 @@ case class SubstConstants[T <: SType](scriptBytes: Value[SByteArray], positions:
     val newValuesV = newValues.evalTo[Coll[T#WrappedType]](env)
     var res: Coll[Byte] = null
     E.addSeqCost(SubstConstants.costKind, SubstConstants.opDesc) { () =>
-      val typedNewVals: Array[SValue] = newValuesV.toArray.map { v =>
-        TransformingSigmaBuilder.liftAny(v) match {
+      val typedNewVals: Array[Constant[SType]] = newValuesV.toArray.map { v =>
+        TransformingSigmaBuilder.liftToConstant(v) match {
           case Nullable(v) => v
           case _ => sys.error(s"Cannot evaluate substConstants($scriptBytesV, $positionsV, $newValuesV): cannot lift value $v")
         }
@@ -816,7 +803,7 @@ object SubstConstants extends ValueCompanion {
     */
   def eval(scriptBytes: Array[Byte],
            positions: Array[Int],
-           newVals: Array[Value[SType]])(implicit vs: SigmaValidationSettings): (Array[Byte], Int) =
+           newVals: Array[Constant[SType]])(implicit vs: SigmaValidationSettings): (Array[Byte], Int) =
     ErgoTreeSerializer.DefaultSerializer.substituteConstants(scriptBytes, positions, newVals)
 }
 
@@ -1032,7 +1019,7 @@ case class Negation[T <: SType](input: Value[T]) extends OneArgumentOperation[T,
     i.negate(inputV)
   }
 }
-object Negation extends OneArgumentOperationCompanion {
+object Negation extends OneArgumentOperationCompanion with FixedCostValueCompanion {
   override def opCode: OpCode = OpCodes.NegationCode
   override val costKind = FixedCost(JitCost(30))
   override def argInfos: Seq[ArgInfo] = NegationInfo.argInfos
@@ -1093,7 +1080,7 @@ object BitOp {
   }
 }
 
-// TODO HF (24h): implement modular operations
+// TODO v6.0 (24h): implement modular operations
 case class ModQ(input: Value[SBigInt.type])
   extends NotReadyValue[SBigInt.type] {
   override def companion = ModQ
@@ -1152,9 +1139,7 @@ case class Xor(override val left: Value[SByteArray],
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val lV = left.evalTo[Coll[Byte]](env)
     val rV = right.evalTo[Coll[Byte]](env)
-    addSeqCost(Xor.costKind, lV.length) { () =>
-      Colls.xor(lV, rV)
-    }
+    Xor.xorWithCosting(lV, rV)
   }
 }
 object Xor extends TwoArgumentOperationCompanion {
@@ -1163,6 +1148,13 @@ object Xor extends TwoArgumentOperationCompanion {
   override val costKind = PerItemCost(
     baseCost = JitCost(10), perChunkCost = JitCost(2), chunkSize = 128)
   override def argInfos: Seq[ArgInfo] = XorInfo.argInfos
+
+  /** Helper method which compute xor with correct costing accumulation */
+  def xorWithCosting(ls: Coll[Byte], rs: Coll[Byte])(implicit E: ErgoTreeEvaluator): Coll[Byte] = {
+    E.addSeqCost(Xor.costKind, math.min(ls.length, rs.length), Xor.opDesc) { () =>
+      Colls.xor(ls, rs)
+    }
+  }
 }
 
 case class Exponentiate(override val left: Value[SGroupElement.type],
@@ -1506,7 +1498,7 @@ case class If[T <: SType](condition: Value[SBoolean.type], trueBranch: Value[T],
     }
   }
 }
-object If extends QuadrupleCompanion {
+object If extends QuadrupleCompanion with FixedCostValueCompanion {
   override def opCode: OpCode = OpCodes.IfCode
   /** Cost of: conditional switching to the right branch (excluding the cost both
     * condition itself and the branches) */

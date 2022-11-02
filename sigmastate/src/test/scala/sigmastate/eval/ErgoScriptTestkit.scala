@@ -69,7 +69,7 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests
   lazy val backerPubKey = backerProver.dlogSecrets.head.publicImage
   lazy val projectPubKey = projectProver.dlogSecrets.head.publicImage
 
-  val boxToSpend = testBox(10, TrueTree, 0,
+  lazy val boxToSpend = testBox(10, TrueTree, 0,
     additionalRegisters = Map(ErgoBox.R4 -> BigIntArrayConstant(bigIntegerArr1)))
   lazy val tx1Output1 = testBox(minToRaise, projectPubKey, 0)
   lazy val tx1Output2 = testBox(1, projectPubKey, 0)
@@ -172,7 +172,7 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests
         val compiledProp = IR.buildTree(asRep[Context => SType#WrappedType](calcF))
         checkExpected(compiledProp, expectedTree, "Compiled Tree actual: %s, expected: %s")
 
-        val ergoTree = compiledProp.treeWithSegregation
+        val ergoTree = mkTestErgoTree(compiledProp)
         val compiledTreeBytes = DefaultSerializer.serializeErgoTree(ergoTree)
         checkExpected(DefaultSerializer.deserializeErgoTree(compiledTreeBytes), Some(ergoTree),
           "(de)serialization round trip actual: %s, expected: %s")

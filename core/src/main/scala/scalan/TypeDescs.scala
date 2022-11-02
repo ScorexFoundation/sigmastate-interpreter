@@ -55,7 +55,7 @@ abstract class TypeDescs extends Base { self: Scalan =>
   case class RMethodDesc(method: Method) extends MethodDesc
   case class WMethodDesc(wrapSpec: WrapSpec, method: Method) extends MethodDesc
 
-// TODO benchmark this version agains the version below
+// TODO optimize: benchmark this version agains the version below
 //  def getSourceValues(dataEnv: DataEnv, forWrapper: Boolean, stagedValue: AnyRef, out: DBuffer[AnyRef]): Unit = {
 //    import OverloadHack._
 //    stagedValue match {
@@ -154,7 +154,7 @@ abstract class TypeDescs extends Base { self: Scalan =>
     protected def collectMethods: Map[Method, MethodDesc] = Map() // TODO optimize: all implementations
     protected lazy val methods: Map[Method, MethodDesc] = collectMethods
 
-    // TODO benchamrk against the version below it
+    // TODO optimize: benchamrk against the version below it
     //    def invokeUnlifted(mc: MethodCall, dataEnv: DataEnv): AnyRef = {
     //      val srcArgs = DBuffer.ofSize[AnyRef](mc.args.length + 10)  // with some spare space to have only single allocation
     //      val res = methods.get(mc.method) match {
@@ -244,7 +244,6 @@ abstract class TypeDescs extends Base { self: Scalan =>
         m.getName
     }
 
-    // TODO optimize
     /** Build a mapping between methods of staged class and the corresponding methods of source class.
       * The methods are related using names.
       * The computed mapping can be used to project MethodCalls IR nodes back to the corresponding

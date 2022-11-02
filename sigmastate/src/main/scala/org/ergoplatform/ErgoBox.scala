@@ -1,10 +1,10 @@
 package org.ergoplatform
 
-import com.google.common.primitives.Shorts
-import org.ergoplatform.ErgoBox.{TokenId, NonMandatoryRegisterId}
+import com.google.common.primitives.{Ints, Shorts}
+import org.ergoplatform.ErgoBox.{NonMandatoryRegisterId, TokenId}
 import org.ergoplatform.settings.ErgoAlgos
 import scorex.crypto.authds.ADKey
-import scorex.crypto.hash.{Digest32, Blake2b256}
+import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util._
 import sigmastate.SCollection.SByteArray
 import sigmastate.SType.AnyOps
@@ -72,6 +72,7 @@ class ErgoBox(
     }
   }
 
+  // TODO optimize: avoid serialization by implementing lazy box deserialization
   /** Serialized content of this box.
     * @see [[ErgoBox.sigmaSerializer]]
     */
@@ -82,9 +83,7 @@ class ErgoBox(
     case _ => false
   }
 
-  // TODO refactor: fix hashCode, it should be consistent with [[equals]] and should be based on [[id]]
-  override def hashCode(): Int =
-    ScalaRunTime._hashCode((value, ergoTree, additionalTokens, additionalRegisters, index, creationHeight))
+  override def hashCode(): Int = Ints.fromByteArray(id)
 
   /** Convert this box to [[ErgoBoxCandidate]] by forgetting transaction reference data
    * (transactionId, index).

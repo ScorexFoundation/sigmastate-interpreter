@@ -142,7 +142,7 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ObjectGe
   }
 
   property("deserialize") {
-    def roundtrip[T <: SType](c: EvaluatedValue[T], typeSig: String) = {
+    def roundtrip[T <: SType](c: Value[T], typeSig: String) = {
       val bytes = ValueSerializer.serialize(c)
       val str = Base58.encode(bytes)
       comp(env, s"deserialize[$typeSig](" + "\"" + str + "\")") shouldBe c

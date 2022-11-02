@@ -1,7 +1,5 @@
 package sigmastate.utils
 
-import java.util
-
 import io.circe.Decoder
 import org.ergoplatform.settings.ErgoAlgos
 import sigmastate.eval.{Colls, SigmaDsl}
@@ -9,8 +7,10 @@ import sigmastate.interpreter.CryptoConstants.EcPointType
 import special.collection.Coll
 import special.sigma.GroupElement
 
+import java.util
+import java.util.concurrent.locks.Lock
 import scala.reflect.ClassTag
-import scala.util.{Failure, Try, Either, Success, Right}
+import scala.util.{Either, Failure, Right, Success, Try}
 
 object Helpers {
 
@@ -161,6 +161,27 @@ object Helpers {
   def decodeBytes(base16String: String): Coll[Byte] = {
     val bytes = ErgoAlgos.decodeUnsafe(base16String)
     Colls.fromArray(bytes)
+  }
+
+  /**
+    * Executes the given block with a reentrant mutual exclusion Lock with the same basic
+    * behavior and semantics as the implicit monitor lock accessed using synchronized
+    * methods and statements in Java.
+    *
+    * Note, using this method has an advantage of having this method in a stack trace in case of
+    * an exception in the block.
+    * @param l lock object which should be acquired by the current thread before block can start executing
+    * @param block block of code which will be executed retaining the lock
+    * @return the value produced by the block
+    */
+  def withReentrantLock[A](l: Lock)(block: => A): A = {
+    l.lock()
+    val res = try
+      block
+    finally {
+      l.unlock()
+    }
+    res
   }
 }
 

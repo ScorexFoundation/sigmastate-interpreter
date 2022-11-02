@@ -75,18 +75,6 @@ trait CompiletimeCosting extends RuntimeCosting { IR: IRContext =>
           error(s"Invalid register name $regName in expression $sel", sel.sourceContext.toOption))
         eval(mkExtractRegisterAs(box.asBox, reg, SOption(valType)).asValue[SOption[valType.type]])
 
-      // opt.get =>
-      case Select(nrv: Value[SOption[SType]]@unchecked, SOption.Get, _) =>
-        eval(mkOptionGet(nrv))
-
-      // opt.getOrElse =>
-      case Terms.Apply(Select(nrv: Value[SOption[SType]]@unchecked, SOption.GetOrElse, _), Seq(arg)) =>
-        eval(mkOptionGetOrElse(nrv, arg))
-
-      // opt.isDefined =>
-      case Select(nrv: Value[SOption[SType]]@unchecked, SOption.IsDefined, _) =>
-        eval(mkOptionIsDefined(nrv))
-
       case sel @ Select(obj, field, _) if obj.tpe == SBox =>
         (obj.asValue[SBox.type], field) match {
           case (box, SBox.Value) => eval(mkExtractAmount(box))
@@ -112,31 +100,8 @@ trait CompiletimeCosting extends RuntimeCosting { IR: IRContext =>
         else
           eval(mkUpcast(numValue, tRes))
 
-      case Terms.Apply(Select(col, SliceMethod.name, _), Seq(from, until)) =>
-        eval(mkSlice(col.asValue[SCollection[SType]], from.asIntValue, until.asIntValue))
-
-      case Terms.Apply(Select(col, ExistsMethod.name, _), Seq(l)) if l.tpe.isFunc =>
-        eval(mkExists(col.asValue[SCollection[SType]], l.asFunc))
-
-      case Terms.Apply(Select(col, ForallMethod.name, _), Seq(l)) if l.tpe.isFunc =>
-        eval(mkForAll(col.asValue[SCollection[SType]], l.asFunc))
-
-      case Terms.Apply(Select(col, MapMethod.name, _), Seq(l)) if l.tpe.isFunc =>
-        eval(mkMapCollection(col.asValue[SCollection[SType]], l.asFunc))
-
-      case Terms.Apply(Select(col, FoldMethod.name, _), Seq(zero, l @ Terms.Lambda(_, _, _, _))) =>
-        eval(mkFold(col.asValue[SCollection[SType]], zero, l))
-
       case Terms.Apply(col, Seq(index)) if col.tpe.isCollection =>
         eval(mkByIndex(col.asCollection[SType], index.asValue[SInt.type], None))
-
-      case Select(input, ModQMethod.name, _) =>
-        eval(mkModQ(input.asBigInt))
-
-      case Terms.Apply(Select(l, PlusModQMethod.name, _), Seq(r)) =>
-        eval(mkPlusModQ(l.asBigInt, r.asBigInt))
-      case Terms.Apply(Select(l, MinusModQMethod.name, _), Seq(r)) =>
-        eval(mkMinusModQ(l.asBigInt, r.asBigInt))
 
       case _ =>
         super.evalNode(ctx, env, node)

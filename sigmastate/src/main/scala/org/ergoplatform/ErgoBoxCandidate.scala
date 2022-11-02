@@ -1,7 +1,6 @@
 package org.ergoplatform
 
 import java.util
-
 import org.ergoplatform.ErgoBox._
 import org.ergoplatform.settings.ErgoAlgos
 import scorex.util.{bytesToId, ModifierId}
@@ -14,6 +13,7 @@ import special.collection.Coll
 import sigmastate.eval._
 import sigmastate.eval.Extensions._
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
+import sigmastate.util.safeNewArray
 import spire.syntax.all.cfor
 
 import scala.collection.immutable
@@ -50,7 +50,7 @@ class ErgoBoxCandidate(val value: Long,
   lazy val propositionBytes: Array[Byte] = ergoTree.bytes
 
   /** Serialized bytes of this Box without transaction reference data (transactionId and boxIndex). */
-  // TODO v5.0: re-implement extracting directly from `ErgoBox.bytes` array
+  // TODO optimize: re-implement extracting directly from `ErgoBox.bytes` array
   lazy val bytesWithNoRef: Array[Byte] = ErgoBoxCandidate.serializer.toBytes(this)
 
   /** Creates a new [[ErgoBox]] based on this candidate using the given transaction reference data.
@@ -71,7 +71,9 @@ class ErgoBoxCandidate(val value: Long,
       case ValueRegId => Some(LongConstant(value))
       case ScriptRegId => Some(ByteArrayConstant(propositionBytes))
       case TokensRegId =>
-        Some(Constant(additionalTokens.map { case (id, v) => (id.toColl, v) }.asWrappedType, STokensRegType))  // TODO optimize using mapFirst
+        // TODO optimize using mapFirst
+        //  However this requires fixing Coll equality (see property("ErgoBox test vectors"))
+        Some(Constant(additionalTokens.map { case (id, v) => (id.toColl, v) }.asWrappedType, STokensRegType))
       case ReferenceRegId =>
         val tupleVal = (creationHeight, ErgoBoxCandidate.UndefinedBoxRef)
         Some(Constant(tupleVal.asWrappedType, SReferenceRegType))
@@ -186,13 +188,20 @@ object ErgoBoxCandidate {
       val value = r.getULong()                  // READ
       val tree = DefaultSerializer.deserializeErgoTree(r, SigmaSerializer.MaxPropositionSize)  // READ
       val creationHeight = r.getUIntExact       // READ
+      // NO-FORK: ^ in v5.x getUIntExact may throw Int overflow exception
+      // in v4.x r.getUInt().toInt is used and may return negative Int instead of the overflow
+      // and ErgoBoxCandidate with negative creation height is created, which is then invalidated
+      // during transaction validation. See validation rule # 122 in the Ergo node (ValidationRules.scala)
       val nTokens = r.getUByte()                // READ
-      val tokenIds = ValueSerializer.newArray[Array[Byte]](nTokens)
-      val tokenAmounts = ValueSerializer.newArray[Long](nTokens)
+      val tokenIds = safeNewArray[Array[Byte]](nTokens)
+      val tokenAmounts = safeNewArray[Long](nTokens)
       if (digestsInTx != null) {
         val nDigests = digestsInTx.length
         cfor(0)(_ < nTokens, _ + 1) { i =>
           val digestIndex = r.getUIntExact    // READ
+          // NO-FORK: in v5.x getUIntExact throws Int overflow exception
+          // in v4.x r.getUInt().toInt is used and may return negative Int in which case
+          // the error below is thrown
           if (digestIndex < 0 || digestIndex >= nDigests)
             sys.error(s"failed to find token id with index $digestIndex")
           val amount = r.getULong()           // READ

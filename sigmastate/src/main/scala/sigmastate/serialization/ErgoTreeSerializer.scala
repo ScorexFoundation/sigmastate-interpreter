@@ -1,17 +1,20 @@
 package sigmastate.serialization
 
 import org.ergoplatform.validation.ValidationRules.{CheckDeserializedScriptIsSigmaProp, CheckHeaderSizeBit, CheckPositionLimit}
-import org.ergoplatform.validation.{ValidationException, SigmaValidationSettings}
-import sigmastate.SType
-import sigmastate.Values.{Value, ErgoTree, Constant, UnparsedErgoTree}
+import org.ergoplatform.validation.{SigmaValidationSettings, ValidationException}
+import sigmastate.{SType, VersionContext}
+import sigmastate.Values.{Constant, ErgoTree, UnparsedErgoTree}
 import sigmastate.lang.DeserializationSigmaBuilder
 import sigmastate.lang.Terms.ValueOps
-import sigmastate.lang.exceptions.{SerializerException, InputSizeLimitExceeded}
+import sigmastate.lang.exceptions.{SerializerException, ReaderPositionLimitExceeded}
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import scalan.util.Extensions._
 import sigmastate.Values.ErgoTree.EmptyConstants
+import sigmastate.util.safeNewArray
 import sigmastate.utxo.ComplexityTable
 import spire.syntax.all.cfor
+
+import java.util
 
 /**
   * Rationale for soft-forkable ErgoTree serialization.
@@ -114,11 +117,9 @@ class ErgoTreeSerializer {
           val w = SigmaSerializer.startWriter()
           val header = bytes(0)
           val contentLength = bytes.length - 1
-          val contentBytes = new Array[Byte](contentLength)
-          Array.copy(bytes, 1, contentBytes, 0, contentLength)  // TODO optimize: avoid new array by implementing putSlice(arr, from, len)
           w.put(header)
           w.putUInt(contentLength)
-          w.putBytes(contentBytes)
+          w.putBytes(bytes, 1, contentLength)
           w.toBytes
         }
         else bytes
@@ -176,8 +177,8 @@ class ErgoTreeSerializer {
           propositionBytes, Some(hasDeserialize))
       }
       catch {
-        case e: InputSizeLimitExceeded =>
-          throw ValidationException(s"Data size check failed", CheckPositionLimit, Nil, Some(e))
+        case e: ReaderPositionLimitExceeded =>
+          CheckPositionLimit.throwValidationException(e)
       }
     }
     catch {
@@ -206,7 +207,20 @@ class ErgoTreeSerializer {
     val header = r.getByte()
     CheckHeaderSizeBit(header)
     val sizeOpt = if (ErgoTree.hasSize(header)) {
-      Some(r.getUIntExact)
+      val size = r.getUInt().toInt
+      // Note, when size < 0 as a result of Int overflow nothing happens here and later
+      // when deserialization proceeds normally as sizeOpt is not used on this pass.
+      // However, when ValidationException is thrown in deserializeErgoTree this negative
+      // tree size value will be used in
+      // val val numBytes = bodyPos - startPos + treeSize
+      //            r.position = startPos
+      //            val bytes = r.getBytes(numBytes) = bodyPos - startPos + treeSize
+      // val bytes = r.getBytes(numBytes)
+      // If numBytes < 0 then it throws on getBytes and the whole deserialization fails
+      // On the other hand if numBytes >= 0 then UnparsedErgoTree will be created.
+      // The Reader however will be in some unpredictable state, as not all ErgoTree bytes
+      // are consumed.
+      Some(size)
     } else
       None
     (header, sizeOpt)
@@ -220,10 +234,13 @@ class ErgoTreeSerializer {
   private def deserializeConstants(header: Byte, r: SigmaByteReader): IndexedSeq[Constant[SType]] = {
     val constants: IndexedSeq[Constant[SType]] =
       if (ErgoTree.isConstantSegregation(header)) {
-        val nConsts = r.getUIntExact
+        val nConsts = r.getUInt().toInt
+        // Note, when nConsts < 0 as a result of Int overflow, the empty seq is returned
+        // deserialization will succeed
+
         if (nConsts > 0) {
           // HOTSPOT:: allocate new array only if it is not empty
-          val res = ValueSerializer.newArray[Constant[SType]](nConsts)
+          val res = safeNewArray[Constant[SType]](nConsts)
           cfor(0)(_ < nConsts, _ + 1) { i =>
             res(i) = constantSerializer.deserialize(r)
           }
@@ -245,6 +262,32 @@ class ErgoTreeSerializer {
     (header, sizeOpt, constants, treeBytes)
   }
 
+  /** Computes back references from constants to positions.
+    * This method helps to implement substituteConstants efficiently
+    * (i.e. O(n + m) time, where n - number of positions and m - number of constants)
+    *
+    * @param positions indexes in the range [0..positionsRange)
+    * @param positionsRange upper bound on values in `positions`
+    * @return array `r` of back references, i.e. indices in `positions` such that
+    *         positions(r(i)) == i whenever r(i) != -1. When r(i) == -1 then backreference
+    *         is not defined (which means the constant with the index `i` is not substituted.
+    */
+  private[sigmastate] def getPositionsBackref(positions: Array[Int], positionsRange: Int): Array[Int] = {
+    // allocate array of back references: forall i: positionsBackref(i) is index in `positions`
+    val positionsBackref = safeNewArray[Int](positionsRange)
+    // mark all positions are not assigned
+    util.Arrays.fill(positionsBackref, -1)
+
+    cfor(0)(_ < positions.length, _ + 1) { iPos =>
+      val pos = positions(iPos)
+      if (0 <= pos && pos < positionsBackref.length && positionsBackref(pos) == -1) {
+        // back reference is not yet assigned, assign in now
+        positionsBackref(pos) = iPos
+      }
+    }
+    positionsBackref
+  }
+
   /** Transforms serialized bytes of ErgoTree with segregated constants by
     * replacing constants at given positions with new values. This operation
     * allow to use serialized scripts as pre-defined templates.
@@ -262,31 +305,64 @@ class ErgoTreeSerializer {
     */
   def substituteConstants(scriptBytes: Array[Byte],
                           positions: Array[Int],
-                          newVals: Array[Value[SType]])(implicit vs: SigmaValidationSettings): (Array[Byte], Int) = {
+                          newVals: Array[Constant[SType]])(implicit vs: SigmaValidationSettings): (Array[Byte], Int) = {
     require(positions.length == newVals.length,
       s"expected positions and newVals to have the same length, got: positions: ${positions.toSeq},\n newVals: ${newVals.toSeq}")
     val r = SigmaSerializer.startReader(scriptBytes)
     val (header, _, constants, treeBytes) = deserializeHeaderWithTreeBytes(r)
     val w = SigmaSerializer.startWriter()
     w.put(header)
-    w.putUInt(constants.length) // TODO HF (3h): this should not be serialized when segregation is off
-    val constantSerializer = ConstantSerializer(DeserializationSigmaBuilder)
 
-    constants.zipWithIndex.foreach {
-      case (c, i) if positions.contains(i) =>
-        val newVal = newVals(positions.indexOf(i))
-        // we need to get newVal's serialized constant value (see ProveDlogSerializer for example)
-        val constantStore = new ConstantStore()
-        val valW = SigmaSerializer.startWriter(constantStore)
-        valW.putValue(newVal)
-        val newConsts = constantStore.getAll
-        assert(newConsts.length == 1)
-        val newConst = newConsts.head
-        // TODO HF (1h): replace assert with require
-        assert(c.tpe == newConst.tpe, s"expected new constant to have the same ${c.tpe} tpe, got ${newConst.tpe}")
-        constantSerializer.serialize(newConst, w)
-      case (c, _) =>
-        constantSerializer.serialize(c, w)
+    if (VersionContext.current.isJitActivated) {
+      // The following `constants.length` should not be serialized when segregation is off
+      // in the `header`, because in this case there is no `constants` section in the
+      // ErgoTree serialization format. Thus, applying this `substituteConstants` for
+      // non-segregated trees will return non-parsable ErgoTree bytes (when
+      // `constants.length` is put in `w`).
+      if (ErgoTree.isConstantSegregation(header)) {
+        w.putUInt(constants.length)
+      }
+
+      // The following is optimized O(nConstants + position.length) implementation
+      val nConstants = constants.length
+      if (nConstants > 0) {
+        val backrefs = getPositionsBackref(positions, nConstants)
+        cfor(0)(_ < nConstants, _ + 1) { i =>
+          val c = constants(i)
+          val iPos = backrefs(i) // index to `positions`
+          if (iPos == -1) {
+            // no position => no substitution, serialize original constant
+            constantSerializer.serialize(c, w)
+          } else {
+            assert(positions(iPos) == i) // INV: backrefs and positions are mutually inverse
+            val newConst = newVals(iPos)
+            require(c.tpe == newConst.tpe,
+              s"expected new constant to have the same ${c.tpe} tpe, got ${newConst.tpe}")
+            constantSerializer.serialize(newConst, w)
+          }
+        }
+      }
+    } else {
+      // for v4.x compatibility we save constants.length here (see the above comment to
+      // understand the consequences)
+      w.putUInt(constants.length)
+
+      // the following is v4.x O(nConstants * positions.length) inefficient implementation
+      constants.zipWithIndex.foreach {
+        case (c, i) if positions.contains(i) =>
+          val newVal = newVals(positions.indexOf(i))
+          // we need to get newVal's serialized constant value (see ProveDlogSerializer for example)
+          val constantStore = new ConstantStore()
+          val valW = SigmaSerializer.startWriter(constantStore)
+          valW.putValue(newVal)
+          val newConsts = constantStore.getAll
+          require(newConsts.length == 1)
+          val newConst = newConsts.head
+          require(c.tpe == newConst.tpe, s"expected new constant to have the same ${c.tpe} tpe, got ${newConst.tpe}")
+          constantSerializer.serialize(newConst, w)
+        case (c, _) =>
+          constantSerializer.serialize(c, w)
+      }
     }
 
     w.putBytes(treeBytes)

@@ -1,27 +1,30 @@
 package sigmastate.serialization
 
 import java.nio.ByteBuffer
-
 import org.ergoplatform.validation.ValidationException
+import org.ergoplatform.validation.ValidationRules.CheckPositionLimit
 import org.ergoplatform.{ErgoBoxCandidate, Outputs}
 import org.scalacheck.Gen
 import scalan.util.BenchmarkUtil
+import scorex.crypto.authds.{ADKey, ADValue}
+import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert}
+import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util.serialization.{Reader, VLQByteBufferReader}
-import sigmastate.Values.{BlockValue, ErgoTree, GetVarInt, IntConstant, SValue, SigmaBoolean, SigmaPropValue, Tuple, ValDef, ValUse}
+import sigmastate.Values.{SValue, BlockValue, GetVarInt, SigmaBoolean, ValDef, ValUse, SigmaPropValue, Tuple, IntConstant}
 import sigmastate._
 import sigmastate.eval.Extensions._
 import sigmastate.eval._
-import sigmastate.helpers.{ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaTestingCommons}
-import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
-import sigmastate.interpreter.{ContextExtension, CryptoConstants, CostedProverResult}
-import sigmastate.lang.Terms._
-import sigmastate.lang.exceptions.{DeserializeCallDepthExceeded, InputSizeLimitExceeded, InvalidTypePrefix, SerializerException}
+import sigmastate.helpers.{ErgoLikeTestInterpreter, SigmaTestingCommons, ErgoLikeContextTesting}
+import sigmastate.interpreter.{CryptoConstants, CostedProverResult, ContextExtension}
+import sigmastate.lang.exceptions.{ReaderPositionLimitExceeded, InvalidTypePrefix, DeserializeCallDepthExceeded, SerializerException}
 import sigmastate.serialization.OpCodes._
+import sigmastate.util.safeNewArray
 import sigmastate.utils.SigmaByteReader
 import sigmastate.utxo.SizeOf
 import sigmastate.utils.Helpers._
 
 import scala.collection.mutable
+import scala.util.{Try, Success, Failure}
 
 class DeserializationResilience extends SerializationSpecification
   with SigmaTestingCommons with CrossVersionProps {
@@ -32,6 +35,7 @@ class DeserializationResilience extends SerializationSpecification
     //    override val okPrintEvaluatedEntries = true
   }
 
+  /** Helper method which passes test-specific maxTreeDepth. */
   private def reader(bytes: Array[Byte], maxTreeDepth: Int): SigmaByteReader = {
     val buf = ByteBuffer.wrap(bytes)
     val r = new SigmaByteReader(
@@ -47,24 +51,48 @@ class DeserializationResilience extends SerializationSpecification
   }
 
   property("exceeding ergo box propositionBytes max size check") {
-    val oversizedTree = new SigmaAnd(
+    val oversizedTree = mkTestErgoTree(SigmaAnd(
       Gen.listOfN(SigmaSerializer.MaxPropositionSize / CryptoConstants.groupSize,
-        proveDlogGen.map(_.toSigmaProp)).sample.get).treeWithSegregation
+        proveDlogGen.map(_.toSigmaProp)).sample.get))
     val b = new ErgoBoxCandidate(1L, oversizedTree, 1)
     val w = SigmaSerializer.startWriter()
     ErgoBoxCandidate.serializer.serialize(b, w)
-    assertExceptionThrown({
-      ErgoBoxCandidate.serializer.parse(SigmaSerializer.startReader(w.toBytes))
-    }, {
-      case e: SerializerException  => rootCause(e).isInstanceOf[InputSizeLimitExceeded]
-      case _ => false
-    })
+    oversizedTree.version match {
+      case 0 =>
+        // for ErgoTree v0 there is no sizeBit in the header, the
+        // ErgoTreeSerializer.deserializeErgoTree cannot handle ValidationException and
+        // create ErgoTree with UnparsedErgoTree data.
+        // A new SerializerException is thus created and the original exception attached
+        // as the cause.
+        assertExceptionThrown(
+          ErgoBoxCandidate.serializer.parse(SigmaSerializer.startReader(w.toBytes)),
+          {
+            case SerializerException(_, _,
+                   Some(ValidationException(_,CheckPositionLimit,_,
+                          Some(_: ReaderPositionLimitExceeded)))) => true
+            case _ => false
+          })
+      case _ =>
+        // for ErgoTree v1 and above, the sizeBit is required in the header, so
+        // any ValidationException can be caught and wrapped in an ErgoTree with
+        // UnparsedErgoTree data.
+
+        // This is what happens here, but, since the box exceeds the limit, the next
+        // ValidationException is thrown on the next read operation in
+        // ErgoBoxCandidate.serializer
+        assertExceptionThrown(
+          ErgoBoxCandidate.serializer.parse(SigmaSerializer.startReader(w.toBytes)),
+          {
+            case ValidationException(_,CheckPositionLimit,_,Some(_: ReaderPositionLimitExceeded)) => true
+            case _ => false
+          })
+    }
   }
 
   property("ergo box propositionBytes max size check") {
-    val bigTree = new SigmaAnd(
+    val bigTree = mkTestErgoTree(SigmaAnd(
       Gen.listOfN((SigmaSerializer.MaxPropositionSize / 2) / CryptoConstants.groupSize,
-        proveDlogGen.map(_.toSigmaProp)).sample.get).treeWithSegregation
+        proveDlogGen.map(_.toSigmaProp)).sample.get))
     val b = new ErgoBoxCandidate(1L, bigTree, 1)
     val w = SigmaSerializer.startWriter()
     ErgoBoxCandidate.serializer.serialize(b, w)
@@ -233,23 +261,28 @@ class DeserializationResilience extends SerializationSpecification
   }
 
   property("exceed ergo box max size check") {
-    val bigTree = new SigmaAnd(
+    val bigTree = mkTestErgoTree(SigmaAnd(
       Gen.listOfN((SigmaSerializer.MaxPropositionSize / 2) / CryptoConstants.groupSize,
-        proveDlogGen.map(_.toSigmaProp)).sample.get).treeWithSegregation
+        proveDlogGen.map(_.toSigmaProp)).sample.get))
     val tokens = additionalTokensGen(127).sample.get.map(_.sample.get).toColl
     val b = new ErgoBoxCandidate(1L, bigTree, 1, tokens)
     val w = SigmaSerializer.startWriter()
     ErgoBoxCandidate.serializer.serialize(b, w)
     val bytes = w.toBytes
-    an[InputSizeLimitExceeded] should be thrownBy
-      ErgoBoxCandidate.serializer.parse(SigmaSerializer.startReader(bytes))
+    assertExceptionThrown(
+      ErgoBoxCandidate.serializer.parse(SigmaSerializer.startReader(bytes)),
+      {
+        case ValidationException(_, CheckPositionLimit, _, Some(_: ReaderPositionLimitExceeded)) => true
+        case _ => false
+      }
+    )
   }
 
   private val recursiveScript: SigmaPropValue = BlockValue(
     Vector(
       ValDef(1, Plus(GetVarInt(4).get, ValUse(2, SInt))),
       ValDef(2, Plus(GetVarInt(5).get, ValUse(1, SInt)))),
-    GE(Minus(ValUse(1, SInt), ValUse(2, SInt)), 0)).asBoolValue.toSigmaProp
+    GE(Minus(ValUse(1, SInt), ValUse(2, SInt)), 0)).toSigmaProp
 
   property("recursion caught during deserialization") {
     assertExceptionThrown({
@@ -264,20 +297,117 @@ class DeserializationResilience extends SerializationSpecification
   property("recursion caught during verify") {
     assertExceptionThrown({
       val verifier = new ErgoLikeTestInterpreter
-      val pr = CostedProverResult(Array[Byte](), ContextExtension(Map()), 0L)
+      val pr = CostedProverResult(Array[Byte](),
+        ContextExtension(Map(4.toByte -> IntConstant(1), 5.toByte -> IntConstant(2))), 0L)
       val ctx = ErgoLikeContextTesting.dummy(fakeSelf, activatedVersionInTests)
-      val (res, calcTime) = BenchmarkUtil.measureTime {
-        verifier.verify(emptyEnv + (ScriptNameProp -> "verify"),
-          ErgoTree(ErgoTree.DefaultHeader, IndexedSeq(), recursiveScript), ctx, pr, fakeMessage)
+      val (res, _) = BenchmarkUtil.measureTime {
+        verifier.verify(mkTestErgoTree(recursiveScript), ctx, pr, fakeMessage)
       }
       res.getOrThrow
     }, {
       case e: NoSuchElementException =>
-        // this is expected because of deserialization is forced when ErgoTree.complexity is accessed in verify
+        // in v4.x this is expected because of deserialization is forced when ErgoTree.complexity is accessed in verify
+        // in v5.0 this is expected because ValUse(2, SInt) will not be resolved in env: DataEnv
         e.getMessage.contains("key not found: 2")
       case _ => false
     })
   }
 
+  /** Because this method is called from many places it should always be called with `hint`. */
+  protected def checkResult[B](res: Try[B], expectedRes: Try[B], hint: String): Unit = {
+    (res, expectedRes) match {
+      case (Failure(exception), Failure(expectedException)) =>
+        withClue(hint) {
+          rootCause(exception).getClass shouldBe rootCause(expectedException).getClass
+        }
+      case _ =>
+        val actual = rootCause(res)
+        if (actual != expectedRes) {
+          assert(false, s"$hint\nActual: $actual;\nExpected: $expectedRes\n")
+        }
+    }
+  }
 
+  def writeUInt(x: Long): Array[Byte] = {
+    val w = SigmaSerializer.startWriter()
+    val bytes = w.putUInt(x).toBytes
+    bytes
+  }
+
+  def readToInt(bytes: Array[Byte]): Try[Int] = Try {
+    val r = SigmaSerializer.startReader(bytes)
+    r.getUInt().toInt
+  }
+
+  def readToIntExact(bytes: Array[Byte]): Try[Int] = Try {
+    val r = SigmaSerializer.startReader(bytes)
+    r.getUIntExact
+  }
+
+  property("getUIntExact vs getUInt().toInt") {
+    val intOverflow = Failure(new ArithmeticException("Int overflow"))
+    val cases = Table(("stored", "toInt", "toIntExact"),
+      (0L, Success(0), Success(0)),
+      (Int.MaxValue.toLong - 1, Success(Int.MaxValue - 1), Success(Int.MaxValue - 1)),
+      (Int.MaxValue.toLong,     Success(Int.MaxValue), Success(Int.MaxValue)),
+      (Int.MaxValue.toLong + 1, Success(Int.MinValue), intOverflow),
+      (Int.MaxValue.toLong + 2, Success(Int.MinValue + 1), intOverflow),
+      (0xFFFFFFFFL,             Success(-1), intOverflow)
+    )
+    forAll(cases) { (x, res, resExact) =>
+      val bytes = writeUInt(x)
+      checkResult(readToInt(bytes), res, "toInt")
+      checkResult(readToIntExact(bytes), resExact, "toIntExact")
+    }
+
+    // check it is impossible to write negative value with reference implementation of serializer
+    // ALSO NOTE that VLQ encoded bytes are always interpreted as positive Long
+    // so the difference between getUIntExact vs getUInt().toInt boils down to how Int.MaxValue
+    // overflow is handled
+    assertExceptionThrown(
+      writeUInt(-1L),
+      exceptionLike[IllegalArgumentException]("-1 is out of unsigned int range")
+    )
+
+    val MaxUIntPlusOne = 0xFFFFFFFFL + 1
+    assertExceptionThrown(
+      writeUInt(MaxUIntPlusOne),
+      exceptionLike[IllegalArgumentException](s"$MaxUIntPlusOne is out of unsigned int range")
+    )
+  }
+
+  property("test assumptions of how negative value from getUInt().toInt is handled") {
+    assertExceptionThrown(
+      safeNewArray[Int](-1),
+      exceptionLike[NegativeArraySizeException]())
+
+    val bytes = writeUInt(10)
+    val store = new ConstantStore(IndexedSeq(IntConstant(1)))
+
+    val r = SigmaSerializer.startReader(bytes, store, true)
+    assertExceptionThrown(
+      r.constantStore.get(-1),
+      exceptionLike[ArrayIndexOutOfBoundsException]())
+
+    assertExceptionThrown(
+      r.getBytes(-1),
+      exceptionLike[NegativeArraySizeException]())
+
+    r.valDefTypeStore(-1) = SInt // no exception on negative key
+
+    // the following example shows how far negative keyLength can go inside AvlTree operations
+    val avlProver = new BatchAVLProver[Digest32, Blake2b256.type](keyLength = 32, None)
+    val digest = avlProver.digest
+    val flags = AvlTreeFlags(true, false, false)
+    val treeData = new AvlTreeData(digest, flags, -1, None)
+    val tree = SigmaDsl.avlTree(treeData)
+    val k = Blake2b256.hash("1")
+    val v = k
+    avlProver.performOneOperation(Insert(ADKey @@ k, ADValue @@ v))
+    val proof = avlProver.generateProof()
+    val verifier = tree.createVerifier(Colls.fromArray(proof))
+    verifier.performOneOperation(Insert(ADKey @@ k, ADValue @@ v)).isFailure shouldBe true
+    // NOTE, even though performOneOperation fails, some AvlTree$ methods used in Interpreter
+    // (remove_eval, update_eval, contains_eval) won't throw, while others will.
+  }
 }

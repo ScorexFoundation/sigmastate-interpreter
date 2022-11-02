@@ -4,7 +4,8 @@ import sigmastate.{SCollection, ArgInfo, SType}
 import sigmastate.Values._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import ValueSerializer._
-import sigmastate.utils.SigmaByteWriter.{U, Vlq, DataInfo}
+import sigmastate.util.safeNewArray
+import sigmastate.utils.SigmaByteWriter.{DataInfo, U, Vlq}
 import spire.syntax.all.cfor
 
 case class ConcreteCollectionSerializer(cons: (IndexedSeq[Value[SType]], SType) => Value[SCollection[SType]])
@@ -29,7 +30,7 @@ case class ConcreteCollectionSerializer(cons: (IndexedSeq[Value[SType]], SType) 
       // reusing pre-allocated immutable instances
       Value.EmptySeq
     } else {
-      val values = ValueSerializer.newArray[SValue](size)
+      val values = safeNewArray[SValue](size)
       cfor(0)(_ < size, _ + 1) { i =>
         val v = r.getValue() // READ
         values(i) = v

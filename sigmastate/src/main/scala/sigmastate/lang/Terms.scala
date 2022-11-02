@@ -6,13 +6,12 @@ import sigmastate.SCollection.{SIntArray, SByteArray}
 import sigmastate.Values._
 import sigmastate.utils.Overloading.Overload1
 import sigmastate._
-import sigmastate.interpreter.ErgoTreeEvaluator
+import sigmastate.interpreter.{Interpreter, ErgoTreeEvaluator}
 import sigmastate.interpreter.ErgoTreeEvaluator.DataEnv
 import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.lang.TransformingSigmaBuilder._
 
-import scala.collection.mutable
 import scala.language.implicitConversions
 import scala.collection.mutable.WrappedArray
 import spire.syntax.all.cfor
@@ -140,21 +139,14 @@ object Terms {
 
     protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
       addCost(Apply.costKind)
-      if (args.isEmpty) {
-        // TODO coverage
-        val fV = func.evalTo[() => Any](env)
-        fV()
-      }
-      else if (args.length == 1) {
+      if (args.length == 1) {
         val fV = func.evalTo[Any => Any](env)
         val argV = args(0).evalTo[Any](env)
         fV(argV)
-      }
-      else {
-        // TODO coverage
-        val f = func.evalTo[Seq[Any] => Any](env)
-        val argsV = args.map(a => a.evalTo[Any](env))
-        f(argsV)
+      } else {
+        // zero or more than 1 argument functions are not supported in v4.x, v5.0
+        // see `case Terms.Apply(f, Seq(x))` in RuntimeCosting which means other cases are not supported.
+        Interpreter.error(s"Function application must have 1 argument, but was: $this")
       }
     }
   }
@@ -257,7 +249,7 @@ object Terms {
     }
   }
 
-  object MethodCall extends ValueCompanion {
+  object MethodCall extends FixedCostValueCompanion {
     override def opCode: OpCode = OpCodes.MethodCallCode
     /** Cost of: 1) packing args into Array 2) java.lang.reflect.Method.invoke */
     override val costKind = FixedCost(JitCost(4))

@@ -4,6 +4,7 @@ import sigmastate.Values._
 import sigmastate._
 import sigmastate.lang.SigmaTyper.STypeSubst
 import sigmastate.lang.Terms.MethodCall
+import sigmastate.util.safeNewArray
 import sigmastate.utils.SigmaByteWriter.{DataInfo, valuesItemInfo}
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate.utxo.ComplexityTable
@@ -53,7 +54,7 @@ case class MethodCallSerializer(cons: (Value[SType], SMethod, IndexedSeq[Value[S
     val types: Seq[SType] =
       if (nArgs == 0) SType.EmptySeq
       else {
-        val types = ValueSerializer.newArray[SType](nArgs)
+        val types = safeNewArray[SType](nArgs)
         cfor(0)(_ < nArgs, _ + 1) { i =>
           types(i) = args(i).tpe
         }

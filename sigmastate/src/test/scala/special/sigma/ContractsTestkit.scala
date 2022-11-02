@@ -70,7 +70,7 @@ trait ContractsTestkit {
                   currErgoTreeVersion: Byte, vars: Array[AnyValue]) =
     new CostingDataContext(
       noInputs.toColl, noHeaders, dummyPreHeader,
-      inputs.toColl, outputs.toColl, height, self, tree,
+      inputs.toColl, outputs.toColl, height, self, inputs.indexOf(self), tree,
       minerPk.toColl, vars.toColl, activatedScriptVersion, currErgoTreeVersion, false)
 
   def newContext(height: Int, self: Box, activatedScriptVersion: Byte, currErgoTreeVersion: Byte, vars: AnyValue*): CostingDataContext = {

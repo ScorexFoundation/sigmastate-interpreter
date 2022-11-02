@@ -2,6 +2,7 @@ package sigmastate.serialization
 
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.interpreter.CryptoConstants.EcPointType
+import sigmastate.util.safeNewArray
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 
 /**
@@ -26,7 +27,7 @@ object GroupElementSerializer extends SigmaSerializer[EcPointType, EcPointType] 
       val normed = point.normalize()
       val ySign = normed.getAffineYCoord.testBitZero()
       val X = normed.getXCoord.getEncoded
-      val PO = ValueSerializer.newArray[Byte](X.length + 1)
+      val PO = safeNewArray[Byte](X.length + 1)
       PO(0) = (if (ySign) 0x03 else 0x02).toByte
       System.arraycopy(X, 0, PO, 1, X.length)
       PO

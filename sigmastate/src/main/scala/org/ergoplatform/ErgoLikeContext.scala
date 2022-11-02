@@ -1,6 +1,5 @@
 package org.ergoplatform
 
-import java.util
 import org.ergoplatform.validation.SigmaValidationSettings
 import sigmastate.SType._
 import sigmastate.Values._
@@ -8,13 +7,13 @@ import sigmastate._
 import sigmastate.eval.Extensions._
 import sigmastate.eval._
 import sigmastate.interpreter.ErgoTreeEvaluator.DataEnv
-import sigmastate.interpreter.{ContextExtension, ErgoTreeEvaluator, Interpreter, InterpreterContext}
+import sigmastate.interpreter.{Interpreter, InterpreterContext, ErgoTreeEvaluator, ContextExtension}
 import sigmastate.lang.exceptions.InterpreterException
 import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.OpCode
 import special.collection.Coll
 import special.sigma
-import special.sigma.{AnyValue, Header, PreHeader}
+import special.sigma.{Header, PreHeader, AnyValue}
 import spire.syntax.all.cfor
 
 /** Represents a script evaluation context to be passed to a prover and a verifier to execute and
@@ -71,34 +70,34 @@ class ErgoLikeContext(val lastBlockUtxoRoot: AvlTreeData,
   Examined ergo code: all that leads to ErgoLikeContext creation.
   Fixed some cases in ergo where PreHeader might be null.
    */
-  assert(preHeader != null, "preHeader cannot be null")
+  require(preHeader != null, "preHeader cannot be null")
   /* NOHF PROOF:
   Added: assert(spendingTransaction != null)
   Motivation: to fail early
   Safety: According to ergo design spendingTransaction should always exist.
   Examined ergo code: all that leads to ErgoLikeContext creation.
    */
-  assert(spendingTransaction != null, "spendingTransaction cannot be null")
+  require(spendingTransaction != null, "spendingTransaction cannot be null")
   /* NOHF PROOF:
   Added: assert that box with `selfIndex` exist in boxesToSpend
   Motivation: to fail early, rather than when going into evaluation
   Safety: ergo itself uses index to identify the box
   Examined ergo code: all that leads to ErgoLikeContext creation.
  */
-  assert(boxesToSpend.isDefinedAt(selfIndex), s"Self box if defined should be among boxesToSpend")
-  assert(headers.toArray.headOption.forall(h => java.util.Arrays.equals(h.stateRoot.digest.toArray, lastBlockUtxoRoot.digest)), "Incorrect lastBlockUtxoRoot")
+  require(boxesToSpend.isDefinedAt(selfIndex), s"Self box if defined should be among boxesToSpend")
+  require(headers.toArray.headOption.forall(h => java.util.Arrays.equals(h.stateRoot.digest.toArray, lastBlockUtxoRoot.digest)), "Incorrect lastBlockUtxoRoot")
   cfor(0)(_ < headers.length, _ + 1) { i =>
-    if (i > 0) assert(headers(i - 1).parentId == headers(i).id, s"Incorrect chain: ${headers(i - 1).parentId},${headers(i).id}")
+    if (i > 0) require(headers(i - 1).parentId == headers(i).id, s"Incorrect chain: ${headers(i - 1).parentId},${headers(i).id}")
   }
-  assert(headers.toArray.headOption.forall(_.id == preHeader.parentId), s"preHeader.parentId should be id of the best header")
+  require(headers.toArray.headOption.forall(_.id == preHeader.parentId), s"preHeader.parentId should be id of the best header")
   /* NOHF PROOF:
   Added: assert that dataBoxes corresponds to spendingTransaction.dataInputs
   Motivation: to fail early, rather than when going into evaluation
   Safety: dataBoxes and spendingTransaction are supplied separately in ergo. No checks in ergo.
   Examined ergo code: all that leads to ErgoLikeContext creation.
  */
-  assert(spendingTransaction.dataInputs.length == dataBoxes.length &&
-    spendingTransaction.dataInputs.forall(dataInput => dataBoxes.exists(b => util.Arrays.equals(b.id, dataInput.boxId))),
+  require(spendingTransaction.dataInputs.length == dataBoxes.length &&
+    spendingTransaction.dataInputs.forall(dataInput => dataBoxes.exists(b => java.util.Arrays.equals(b.id, dataInput.boxId))),
     "dataBoxes do not correspond to spendingTransaction.dataInputs")
 
   // TODO assert boxesToSpend correspond to spendingTransaction.inputs
@@ -113,7 +112,7 @@ class ErgoLikeContext(val lastBlockUtxoRoot: AvlTreeData,
 
   /** Current version of the ErgoTree executed by the interpreter.
     * This property is used to implement version dependent operations and passed to
-    * interpreter via [[specia.sigma.Context]].
+    * interpreter via [[special.sigma.Context]].
     * The value cannot be assigned on [[ErgoLikeContext]] construction and must be
     * attached using [[withErgoTreeVersion()]] method.
     * When the value is None, the [[InterpreterException]] is thrown by the interpreter.
@@ -165,11 +164,13 @@ class ErgoLikeContext(val lastBlockUtxoRoot: AvlTreeData,
     }
     val vars = contextVars(varMap ++ extensions)
     val avlTree = CAvlTree(lastBlockUtxoRoot)
+    // so selfBox is never one of the `inputs` instances
+    // as result selfBoxIndex is always (erroneously) returns -1 in ErgoTree v0, v1
     val selfBox = boxesToSpend(selfIndex).toTestBox(isCost)
     val ergoTreeVersion = currentErgoTreeVersion.getOrElse(
         Interpreter.error(s"Undefined context property: currentErgoTreeVersion"))
     CostingDataContext(
-      dataInputs, headers, preHeader, inputs, outputs, preHeader.height, selfBox, avlTree,
+      dataInputs, headers, preHeader, inputs, outputs, preHeader.height, selfBox, selfIndex, avlTree,
       preHeader.minerPk.getEncoded, vars, activatedScriptVersion, ergoTreeVersion, isCost)
   }
 
@@ -257,7 +258,7 @@ case object MinerPubkey extends NotReadyValueByteArray with ValueCompanion {
 }
 
 /** When interpreted evaluates to a IntConstant built from Context.currentHeight */
-case object Height extends NotReadyValueInt with ValueCompanion {
+case object Height extends NotReadyValueInt with FixedCostValueCompanion {
   override def companion = this
   override def opCode: OpCode = OpCodes.HeightCode
   /** Cost of: 1) Calling Context.HEIGHT Scala method. */
@@ -270,7 +271,7 @@ case object Height extends NotReadyValueInt with ValueCompanion {
 }
 
 /** When interpreted evaluates to a collection of BoxConstant built from Context.boxesToSpend */
-case object Inputs extends LazyCollection[SBox.type] with ValueCompanion {
+case object Inputs extends LazyCollection[SBox.type] with FixedCostValueCompanion {
   override def companion = this
   override def opCode: OpCode = OpCodes.InputsCode
   /** Cost of: 1) Calling Context.INPUTS Scala method. */
@@ -284,7 +285,7 @@ case object Inputs extends LazyCollection[SBox.type] with ValueCompanion {
 }
 
 /** When interpreted evaluates to a collection of BoxConstant built from Context.spendingTransaction.outputs */
-case object Outputs extends LazyCollection[SBox.type] with ValueCompanion {
+case object Outputs extends LazyCollection[SBox.type] with FixedCostValueCompanion {
   override def companion = this
   override def opCode: OpCode = OpCodes.OutputsCode
   /** Cost of: 1) Calling Context.OUTPUTS Scala method. */
@@ -314,7 +315,7 @@ case object LastBlockUtxoRootHash extends NotReadyValueAvlTree with ValueCompani
 
 
 /** When interpreted evaluates to a BoxConstant built from context.boxesToSpend(context.selfIndex) */
-case object Self extends NotReadyValueBox with ValueCompanion {
+case object Self extends NotReadyValueBox with FixedCostValueCompanion {
   override def companion = this
   override def opCode: OpCode = OpCodes.SelfCode
   /** Cost of: 1) Calling Context.SELF Scala method. */
@@ -347,7 +348,7 @@ case object Context extends NotReadyValue[SContext.type] with ValueCompanion {
 /** When interpreted evaluates to the singleton instance of [[special.sigma.SigmaDslBuilder]].
   * Corresponds to `Global` variable in ErgoScript which can be used like `Global.groupGenerator`.
   */
-case object Global extends NotReadyValue[SGlobal.type] with ValueCompanion {
+case object Global extends NotReadyValue[SGlobal.type] with FixedCostValueCompanion {
   override def companion = this
   override def opCode: OpCode = OpCodes.GlobalCode
   /** Cost of: 1) accessing Global instance. */

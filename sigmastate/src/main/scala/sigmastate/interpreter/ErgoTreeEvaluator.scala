@@ -2,7 +2,7 @@ package sigmastate.interpreter
 
 import org.ergoplatform.ErgoLikeContext
 import org.ergoplatform.SigmaConstants.ScriptCostLimit
-import sigmastate.{FixedCost, JitCost, PerItemCost, SType, TypeBasedCost}
+import sigmastate.{FixedCost, JitCost, PerItemCost, SType, TypeBasedCost, VersionContext}
 import sigmastate.Values._
 import sigmastate.eval.Profiler
 import sigmastate.interpreter.ErgoTreeEvaluator.DataEnv
@@ -10,9 +10,9 @@ import sigmastate.interpreter.Interpreter.JitReductionResult
 import special.sigma.{Context, SigmaProp}
 import scalan.util.Extensions._
 import sigmastate.interpreter.EvalSettings._
-import sigmastate.lang.Terms.MethodCall
 import supertagged.TaggedType
 import debox.{Buffer => DBuffer}
+
 import scala.collection.mutable
 import scala.util.DynamicVariable
 
@@ -54,17 +54,16 @@ object EvalSettings {
       def name: String = x match {
         case AotEvaluationMode => "AotEvaluationMode"
         case JitEvaluationMode => "JitEvaluationMode"
-        case TestEvaluationMode => "TestEvaluationMode"
       }
 
       /** Returns true if AOT interpreter should be evaluated. */
       def okEvaluateAot: Boolean = {
-        x == AotEvaluationMode || x == TestEvaluationMode
+        x == AotEvaluationMode
       }
 
       /** Returns true if JIT interpreter should be evaluated. */
       def okEvaluateJit: Boolean = {
-        x == JitEvaluationMode || x == TestEvaluationMode
+        x == JitEvaluationMode
       }
     }
   }
@@ -77,12 +76,6 @@ object EvalSettings {
   /** Evaluation mode when the interpreter is executing using JIT costing implementation
     * of v5.x protocol. */
   val JitEvaluationMode: EvaluationMode = EvaluationMode @@ 2  // second bit
-
-  /** Evaluation mode when the interpreter is executing using both AOT and JIT costing
-    * implementations and compare the results.
-    * This mode should be used in tests and not supposed to be used in production.
-    */
-  val TestEvaluationMode: EvaluationMode = EvaluationMode @@ 3 // both bits
 }
 
 /** Result of JITC evaluation with costing. */
@@ -133,6 +126,7 @@ class ErgoTreeEvaluator(
   
   /** Evaluates the given expression in the given data environment. */
   def eval(env: DataEnv, exp: SValue): Any = {
+    VersionContext.checkVersions(context.activatedScriptVersion, context.currentErgoTreeVersion)
     ErgoTreeEvaluator.currentEvaluator.withValue(this) {
       exp.evalTo[Any](env)(this)
     }
@@ -154,6 +148,9 @@ class ErgoTreeEvaluator(
   private lazy val costTrace: DBuffer[CostItem] = {
     DBuffer.ofSize[CostItem](1000)
   }
+
+  /** Returns currently accumulated JIT cost in this evaluator. */
+  def getAccumulatedCost: JitCost = coster.totalCost
 
   /** Returns the currently accumulated trace of cost items in this evaluator.
     * A new array is allocated and returned, the evaluator state is unaffected.
@@ -374,17 +371,6 @@ object ErgoTreeEvaluator {
   val DefaultEvalSettings = EvalSettings(
     isMeasureOperationTime = false,
     isMeasureScriptTime = false)
-
-  /** Helper method to compute cost details for the given method call. */
-  def calcCost(mc: MethodCall, obj: Any, args: Array[Any])
-              (implicit E: ErgoTreeEvaluator): CostDetails = {
-    // add approximated cost of invoked method (if specified)
-    val cost = mc.method.costFunc match {
-      case Some(costFunc) => costFunc(E, mc, obj, args)
-      case _ => CostDetails.ZeroCost // TODO v5.0: throw exception if not defined
-    }
-    cost
-  }
 
   /** Evaluator currently is being executed on the current thread.
     * This variable is set in a single place, specifically in the `eval` method of

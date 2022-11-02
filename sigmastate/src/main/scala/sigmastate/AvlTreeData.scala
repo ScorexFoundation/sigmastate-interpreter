@@ -1,6 +1,5 @@
 package sigmastate
 
-import java.util
 import java.util.{Arrays, Objects}
 
 import scorex.crypto.authds.ADDigest
@@ -67,7 +66,7 @@ case class AvlTreeData(digest: ADDigest,
   }
 
   override def hashCode(): Int =
-    (util.Arrays.hashCode(digest) * 31 +
+    (Arrays.hashCode(digest) * 31 +
         keyLength.hashCode()) * 31 + Objects.hash(valueLengthOpt, treeFlags)
 }
 
@@ -93,8 +92,11 @@ object AvlTreeData {
     override def parse(r: SigmaByteReader): AvlTreeData = {
       val digest = r.getBytes(DigestSize)
       val tf = AvlTreeFlags(r.getByte())
-      val keyLength = r.getUIntExact
-      val valueLengthOpt = r.getOption(r.getUIntExact)
+      val keyLength = r.getUInt().toInt
+      val valueLengthOpt = r.getOption(r.getUInt().toInt)
+      // Note, when keyLength and valueLengthOpt < 0 as a result of Int overflow,
+      // the deserializer succeeds with invalid AvlTreeData
+      // but still some AvlTree operations (remove_eval, update_eval, contains_eval) won't throw
       AvlTreeData(ADDigest @@ digest, tf, keyLength, valueLengthOpt)
     }
   }

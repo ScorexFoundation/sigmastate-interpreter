@@ -2,14 +2,13 @@ package special.sigma
 
 import java.lang.reflect.InvocationTargetException
 import java.math.BigInteger
-
 import org.ergoplatform._
 import org.ergoplatform.settings.ErgoAlgos
 import org.scalacheck.{Arbitrary, Gen}
-import scalan.{ExactOrdering, ExactNumeric, RType, ExactIntegral}
+import scalan.{ExactIntegral, ExactNumeric, ExactOrdering, RType}
 import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.authds.{ADDigest, ADKey, ADValue}
-import scorex.crypto.hash.{Digest32, Blake2b256}
+import scorex.crypto.hash.{Blake2b256, Digest32}
 import scalan.util.Extensions._
 import sigma.util.Extensions._
 import sigmastate.SCollection._
@@ -20,7 +19,7 @@ import sigmastate.Values._
 import sigmastate.lang.Terms.Apply
 import sigmastate.eval.Extensions._
 import sigmastate.eval._
-import sigmastate.lang.Terms.{PropertyCall, MethodCall}
+import sigmastate.lang.Terms.{MethodCall, PropertyCall}
 import sigmastate.utxo._
 import special.collection._
 import sigmastate.serialization.OpCodes.OpCode
@@ -28,7 +27,7 @@ import sigmastate.utils.Helpers
 import sigmastate.utils.Helpers._
 import sigmastate.helpers.TestingHelpers._
 
-import scala.util.{Success, Failure, Try}
+import scala.util.{Failure, Success, Try}
 import OrderingOps._
 import org.ergoplatform.ErgoBox.AdditionalRegisters
 import org.scalacheck.Arbitrary._
@@ -39,6 +38,8 @@ import scorex.util.ModifierId
 import sigmastate.basics.ProveDHTuple
 import sigmastate.interpreter._
 import org.scalactic.source.Position
+import sigmastate.helpers.SigmaPPrint
+import sigmastate.lang.exceptions.CosterException
 
 import scala.collection.mutable
 
@@ -61,6 +62,15 @@ import scala.collection.mutable
 class SigmaDslSpecification extends SigmaDslTesting
   with CrossVersionProps
   with BeforeAndAfterAll { suite =>
+
+  /** Use VersionContext so that each property in this suite runs under correct
+    * parameters.
+    */
+  protected override def testFun_Run(testName: String, testFun: => Any): Unit = {
+    VersionContext.withVersions(activatedVersionInTests, ergoTreeVersionInTests) {
+      super.testFun_Run(testName, testFun)
+    }
+  }
 
   implicit override val generatorDrivenConfig = PropertyCheckConfiguration(minSuccessful = 30)
 
@@ -100,20 +110,117 @@ class SigmaDslSpecification extends SigmaDslTesting
 
   implicit def IR = createIR()
 
+  def testCases[A, B](cases: Seq[(A, Expected[B])], f: Feature[A, B]) = {
+    val table = Table(("x", "y"), cases:_*)
+    forAll(table) { (x, expectedRes) =>
+      val res = f.checkEquality(x)
+      val resValue = res.map(_._1)
+      val (expected, expDetailsOpt) = expectedRes.newResults(ergoTreeVersionInTests)
+      checkResult(resValue, expected.value, failOnTestVectors = true,
+        "SigmaDslSpecifiction#testCases: compare expected new result with res = f.checkEquality(x)")
+      res match {
+        case Success((value, details)) =>
+          details.cost shouldBe JitCost(expected.verificationCost.get)
+          expDetailsOpt.foreach(expDetails =>
+            if (details.trace != expDetails.trace) {
+              printCostDetails(f.script, details)
+              details.trace shouldBe expDetails.trace
+            }
+          )
+      }
+    }
+  }
+
   import TestData._
 
-  prepareSamples[BigInt]
-  prepareSamples[GroupElement]
-  prepareSamples[AvlTree]
-  prepareSamples[Box]
-  prepareSamples[PreHeader]
-  prepareSamples[Header]
-  prepareSamples[(BigInt, BigInt)]
-  prepareSamples[(GroupElement, GroupElement)]
-  prepareSamples[(AvlTree, AvlTree)]
-  prepareSamples[(Box, Box)]
-  prepareSamples[(PreHeader, PreHeader)]
-  prepareSamples[(Header, Header)]
+  override protected def beforeAll(): Unit = {
+    prepareSamples[BigInt]
+    prepareSamples[GroupElement]
+    prepareSamples[AvlTree]
+    prepareSamples[Box]
+    prepareSamples[PreHeader]
+    prepareSamples[Header]
+    prepareSamples[(BigInt, BigInt)]
+    prepareSamples[(GroupElement, GroupElement)]
+    prepareSamples[(AvlTree, AvlTree)]
+    prepareSamples[(Box, Box)]
+    prepareSamples[(PreHeader, PreHeader)]
+    prepareSamples[(Header, Header)]
+  }
+
+  ///=====================================================
+  ///         CostDetails shared among test cases
+  ///-----------------------------------------------------
+  val traceBase = Array(
+    FixedCostItem(Apply),
+    FixedCostItem(FuncValue),
+    FixedCostItem(GetVar),
+    FixedCostItem(OptionGet),
+    FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
+    FixedCostItem(ValUse)
+  )
+  def upcastCostDetails(tpe: SType) = TracedCost(traceBase :+ TypeBasedCostItem(Upcast, tpe))
+  def downcastCostDetails(tpe: SType) = TracedCost(traceBase :+ TypeBasedCostItem(Downcast, tpe))
+  def arithOpsCostDetails(tpe: SType) = CostDetails(
+    Array(
+      FixedCostItem(Apply),
+      FixedCostItem(FuncValue),
+      FixedCostItem(GetVar),
+      FixedCostItem(OptionGet),
+      FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
+      SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10),  2),
+      FixedCostItem(ValUse),
+      FixedCostItem(SelectField),
+      FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
+      FixedCostItem(ValUse),
+      FixedCostItem(SelectField),
+      FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
+      FixedCostItem(ValUse),
+      FixedCostItem(ValUse),
+      TypeBasedCostItem(ArithOp.Plus, tpe),
+      FixedCostItem(ValUse),
+      FixedCostItem(ValUse),
+      TypeBasedCostItem(ArithOp.Minus, tpe),
+      FixedCostItem(ValUse),
+      FixedCostItem(ValUse),
+      TypeBasedCostItem(ArithOp.Multiply, tpe),
+      FixedCostItem(ValUse),
+      FixedCostItem(ValUse),
+      TypeBasedCostItem(ArithOp.Division, tpe),
+      FixedCostItem(ValUse),
+      FixedCostItem(ValUse),
+      TypeBasedCostItem(ArithOp.Modulo, tpe),
+      FixedCostItem(Tuple),
+      FixedCostItem(Tuple),
+      FixedCostItem(Tuple),
+      FixedCostItem(Tuple)
+    )
+  )
+
+  def binaryRelationCostDetails(rel: RelationCompanion, tpe: SType) = CostDetails(
+    traceBase ++ Array(
+      FixedCostItem(SelectField),
+      FixedCostItem(ValUse),
+      FixedCostItem(SelectField),
+      TypeBasedCostItem(rel, tpe)
+    )
+  )
+  def costNEQ(neqCost: Seq[CostItem]) = CostDetails(
+    traceBase ++
+    Array(
+      FixedCostItem(SelectField),
+      FixedCostItem(ValUse),
+      FixedCostItem(SelectField)
+    ) ++
+    neqCost
+  )
+
+  def methodCostDetails(sMethod: SMethod, methodCost: Int) = TracedCost(
+    traceBase ++ Array(
+      FixedCostItem(PropertyCall),
+      FixedCostItem(sMethod, FixedCost(JitCost(methodCost)))
+    )
+  )
 
   ///=====================================================
   ///              Boolean type operations
@@ -140,26 +247,21 @@ class SigmaDslSpecification extends SigmaDslTesting
           SelectField.typed[BoolValue](ValUse(1, STuple(Vector(SBoolean, SBoolean))), 2.toByte)
         )
       ))
-    val trace = CostDetails(
-      Array(
-        FixedCostItem(Apply),
-        FixedCostItem(FuncValue),
-        FixedCostItem(GetVar),
-        FixedCostItem(OptionGet),
-        FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
-        FixedCostItem(ValUse),
+    val newDetails = CostDetails(
+      traceBase ++ Array(
         FixedCostItem(SelectField),
         FixedCostItem(ValUse),
         FixedCostItem(SelectField),
         FixedCostItem(BinXor)
       )
     )
-    val newCost = 7633
+    val newCost = 1768
+    def success(b: Boolean) = Expected(Success(b), 36518, newDetails, newCost)
     val cases = Seq(
-      (true, true) -> Expected(Success(false), 36518, trace, newCost),
-      (true, false) -> Expected(Success(true), 36518, trace, newCost),
-      (false, false) -> Expected(Success(false), 36518, trace, newCost),
-      (false, true) -> Expected(Success(true), 36518, trace, newCost)
+      (true, true) -> success(false),
+      (true, false) -> success(true),
+      (false, false) -> success(false),
+      (false, true) -> success(true)
     )
     verifyCases(cases, binXor)
   }
@@ -171,19 +273,26 @@ class SigmaDslSpecification extends SigmaDslTesting
         Vector((1, STuple(Vector(SBoolean, SBoolean)))),
         BinXor(
           SelectField.typed[BoolValue](ValUse(1, STuple(Vector(SBoolean, SBoolean))), 1.toByte),
-          SelectField.typed[BoolValue](ValUse(1, STuple(Vector(SBoolean, SBoolean))), 2.toByte)
-        )
-      ))
+          SelectField.typed[BoolValue](ValUse(1, STuple(Vector(SBoolean, SBoolean))), 2.toByte))))
+    val newDetails = CostDetails(
+      traceBase ++ Array(
+        FixedCostItem(SelectField),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        FixedCostItem(BinXor)
+      )
+    )
     val expectedCost = 36518
+    val newCost = 1768
     val cases = Seq(
-      (true, true) -> Expected(Success(false), expectedCost)
+      (true, true) -> Expected(Success(false), expectedCost, newDetails, newCost)
     )
     verifyCases(cases, feature)
 
     val initCost = 100
     initialCostInTests.withValue(initCost) {
       val cases = Seq(
-        (true, true) -> Expected(Success(false), expectedCost + initCost)
+        (true, true) -> Expected(Success(false), expectedCost + initCost, newDetails, newCost + initCost)
       )
       verifyCases(cases, feature)
     }
@@ -202,14 +311,8 @@ class SigmaDslSpecification extends SigmaDslTesting
           SelectField.typed[BoolValue](ValUse(1, STuple(Vector(SInt, SBoolean))), 2.toByte)
         )
       ))
-    val newCost = CostDetails(
-      Array(
-        FixedCostItem(Apply),
-        FixedCostItem(FuncValue),
-        FixedCostItem(GetVar),
-        FixedCostItem(OptionGet),
-        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
-        FixedCostItem(ValUse),
+    val newDetails = CostDetails(
+      traceBase ++ Array(
         FixedCostItem(SelectField),
         FixedCostItem(Constant),
         FixedCostItem(NamedDesc("EQ_Prim"), FixedCost(JitCost(3))),
@@ -218,13 +321,14 @@ class SigmaDslSpecification extends SigmaDslTesting
         FixedCostItem(BinXor)
       )
     )
+    def success(b: Boolean) = Expected(Success(b), 36865, newDetails, 1769)
     val cases = Seq(
-      (1095564593, true) -> Expected(Success(true), 36865, newCost),
-      (-901834021, true) -> Expected(Success(true), 36865, newCost),
-      (595045530, false) -> Expected(Success(false), 36865, newCost),
-      (-1157998227, false) -> Expected(Success(false), 36865, newCost),
-      (0, true) -> Expected(Success(false), 36865, newCost),
-      (0, false) -> Expected(Success(true), 36865, newCost)
+      (1095564593, true) -> success(true),
+      (-901834021, true) -> success(true),
+      (595045530, false) -> success(false),
+      (-1157998227, false) -> success(false),
+      (0, true) -> success(false),
+      (0, false) -> success(true)
     )
     verifyCases(cases, xor)
   }
@@ -239,24 +343,14 @@ class SigmaDslSpecification extends SigmaDslTesting
           SelectField.typed[BoolValue](ValUse(1, STuple(Vector(SBoolean, SBoolean))), 2.toByte)
         )
       ))
-    val cost1 = CostDetails(
-      Array(
-        FixedCostItem(Apply),
-        FixedCostItem(FuncValue),
-        FixedCostItem(GetVar),
-        FixedCostItem(OptionGet), FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
-        FixedCostItem(ValUse),
+    val newDetails1 = CostDetails(
+      traceBase ++ Array(
         FixedCostItem(SelectField),
         FixedCostItem(BinAnd)
       )
     )
-    val cost2 = CostDetails(
-      Array(
-        FixedCostItem(Apply),
-        FixedCostItem(FuncValue),
-        FixedCostItem(GetVar),
-        FixedCostItem(OptionGet), FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
-        FixedCostItem(ValUse),
+    val newDetails2 = CostDetails(
+      traceBase ++ Array(
         FixedCostItem(SelectField),
         FixedCostItem(BinAnd),
         FixedCostItem(ValUse),
@@ -264,10 +358,10 @@ class SigmaDslSpecification extends SigmaDslTesting
       )
     )
     val cases = Seq(
-      (false, true) -> Expected(Success(false), 38241, cost1),
-      (false, false) -> Expected(Success(false), 38241, cost1),
-      (true, true) -> Expected(Success(true), 38241, cost2),
-      (true, false) -> Expected(Success(false), 38241, cost2)
+      (false, true) -> Expected(Success(false), 38241, newDetails1, 1766),
+      (false, false) -> Expected(Success(false), 38241, newDetails1, 1766),
+      (true, true) -> Expected(Success(true), 38241, newDetails2, 1768),
+      (true, false) -> Expected(Success(false), 38241, newDetails2, 1768)
     )
     verifyCases(cases, eq)
   }
@@ -282,79 +376,50 @@ class SigmaDslSpecification extends SigmaDslTesting
           SelectField.typed[BoolValue](ValUse(1, STuple(Vector(SBoolean, SBoolean))), 2.toByte)
         )
       ))
-    val cost1 = CostDetails(
-      Array(
-        FixedCostItem(Apply),
-        FixedCostItem(FuncValue),
-        FixedCostItem(GetVar),
-        FixedCostItem(OptionGet), FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
-        FixedCostItem(ValUse),
+    val newDetails1 = CostDetails(
+      traceBase ++ Array(
         FixedCostItem(SelectField),
         FixedCostItem(BinOr)
       )
     )
-    val cost2 = CostDetails(
-      Array(
-        FixedCostItem(Apply),
-        FixedCostItem(FuncValue),
-        FixedCostItem(GetVar),
-        FixedCostItem(OptionGet), FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
-        FixedCostItem(ValUse),
+    val newDetails2 = CostDetails(
+      traceBase ++ Array(
         FixedCostItem(SelectField),
         FixedCostItem(BinOr),
         FixedCostItem(ValUse),
         FixedCostItem(SelectField)
       )
     )
+    val cost = 38241
     val cases = Seq(
-      (true, false) -> Expected(Success(true), 38241, cost1),
-      (true, true) -> Expected(Success(true), 38241, cost1),
-      (false, false) -> Expected(Success(false), 38241, cost2),
-      (false, true) -> Expected(Success(true), 38241, cost2)
+      (true, false) -> Expected(Success(true), cost, newDetails1, 1766),
+      (true, true) -> Expected(Success(true), cost, newDetails1, 1766),
+      (false, false) -> Expected(Success(false), cost, newDetails2, 1768),
+      (false, true) -> Expected(Success(true), cost, newDetails2, 1768)
     )
     verifyCases(cases, eq)
   }
 
   def runLazy_And_Or_BooleanEquivalence(implicit evalSettings: EvalSettings) = {
-    val cost1 = CostDetails(
-      Array(
-        FixedCostItem(Apply),
-        FixedCostItem(FuncValue),
-        FixedCostItem(GetVar),
-        FixedCostItem(OptionGet), FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
-        FixedCostItem(ValUse),
+    val newDetails1 = CostDetails(
+      traceBase ++ Array(
         FixedCostItem(BinOr)
       )
     )
-    val cost2 = CostDetails(
-      Array(
-        FixedCostItem(Apply),
-        FixedCostItem(FuncValue),
-        FixedCostItem(GetVar),
-        FixedCostItem(OptionGet), FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
-        FixedCostItem(ValUse),
+    val newDetails2 = CostDetails(
+      traceBase ++ Array(
         FixedCostItem(BinAnd)
       )
     )
-    val cost3 = CostDetails(
-      Array(
-        FixedCostItem(Apply),
-        FixedCostItem(FuncValue),
-        FixedCostItem(GetVar),
-        FixedCostItem(OptionGet), FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
-        FixedCostItem(ValUse),
+    val newDetails3 = CostDetails(
+      traceBase ++ Array(
         FixedCostItem(BinAnd),
         FixedCostItem(ValUse),
         FixedCostItem(BinOr)
       )
     )
-    val cost4 = CostDetails(
-      Array(
-        FixedCostItem(Apply),
-        FixedCostItem(FuncValue),
-        FixedCostItem(GetVar),
-        FixedCostItem(OptionGet), FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
-        FixedCostItem(ValUse),
+    val newDetails4 = CostDetails(
+      traceBase ++ Array(
         FixedCostItem(BinAnd),
         FixedCostItem(ValUse),
         FixedCostItem(BinAnd),
@@ -362,13 +427,8 @@ class SigmaDslSpecification extends SigmaDslTesting
         FixedCostItem(BinOr)
       )
     )
-    val cost5 = CostDetails(
-      Array(
-        FixedCostItem(Apply),
-        FixedCostItem(FuncValue),
-        FixedCostItem(GetVar),
-        FixedCostItem(OptionGet), FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
-        FixedCostItem(ValUse),
+    val newDetails5 = CostDetails(
+      traceBase ++ Array(
         FixedCostItem(BinAnd),
         FixedCostItem(ValUse),
         FixedCostItem(BinAnd),
@@ -380,7 +440,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     )
     verifyCases(
       Seq(
-        (true, Expected(Success(true), 38467, cost1)),
+        (true, Expected(Success(true), 38467, newDetails1, 1765)),
         (false, Expected(new ArithmeticException("/ by zero")))
       ),
       existingFeature((x: Boolean) => x || (1 / 0 == 1),
@@ -396,7 +456,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     verifyCases(
       Seq(
         (true, Expected(new ArithmeticException("/ by zero"))),
-        (false, Expected(Success(false), 38467, cost2))
+        (false, Expected(Success(false), 38467, newDetails2, 1765))
       ),
       existingFeature((x: Boolean) => x && (1 / 0 == 1),
         "{ (x: Boolean) => x && (1 / 0 == 1) }",
@@ -410,8 +470,8 @@ class SigmaDslSpecification extends SigmaDslTesting
 
     verifyCases(
       Seq(
-        (false, Expected(Success(false), 40480, cost2)),
-        (true, Expected(Success(true), 40480, cost3))
+        (false, Expected(Success(false), 40480, newDetails2, 1765)),
+        (true, Expected(Success(true), 40480, newDetails3, 1768))
       ),
       existingFeature((x: Boolean) => x && (x || (1 / 0 == 1)),
         "{ (x: Boolean) => x && (x || (1 / 0 == 1)) }",
@@ -428,8 +488,8 @@ class SigmaDslSpecification extends SigmaDslTesting
 
     verifyCases(
       Seq(
-        (false, Expected(Success(false), 42493, cost2)),
-        (true, Expected(Success(true), 42493, cost4))
+        (false, Expected(Success(false), 42493, newDetails2, 1765)),
+        (true, Expected(Success(true), 42493, newDetails4, 1770))
       ),
       existingFeature((x: Boolean) => x && (x && (x || (1 / 0 == 1))),
         "{ (x: Boolean) => x && (x && (x || (1 / 0 == 1))) }",
@@ -449,8 +509,8 @@ class SigmaDslSpecification extends SigmaDslTesting
 
     verifyCases(
       Seq(
-        (false, Expected(Success(false), 44506, cost2)),
-        (true, Expected(Success(true), 44506, cost5))
+        (false, Expected(Success(false), 44506, newDetails2, 1765)),
+        (true, Expected(Success(true), 44506, newDetails5, 1773))
       ),
       existingFeature((x: Boolean) => x && (x && (x && (x || (1 / 0 == 1)))),
         "{ (x: Boolean) => x && (x && (x && (x || (1 / 0 == 1)))) }",
@@ -471,13 +531,8 @@ class SigmaDslSpecification extends SigmaDslTesting
           )
         )))
 
-    val cost6 = CostDetails(
-      Array(
-        FixedCostItem(Apply),
-        FixedCostItem(FuncValue),
-        FixedCostItem(GetVar),
-        FixedCostItem(OptionGet), FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
-        FixedCostItem(ValUse),
+    val newDetails6 = CostDetails(
+      traceBase ++ Array(
         FixedCostItem(LogicalNot),
         FixedCostItem(BinAnd),
         FixedCostItem(LogicalNot),
@@ -489,7 +544,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     verifyCases(
       Seq(
         (false, Expected(new ArithmeticException("/ by zero"))),
-        (true, Expected(Success(true), 43281, cost6))
+        (true, Expected(Success(true), 43281, newDetails6, 1773))
       ),
       existingFeature((x: Boolean) => !(!x && (1 / 0 == 1)) && (x || (1 / 0 == 1)),
         "{ (x: Boolean) => !(!x && (1 / 0 == 1)) && (x || (1 / 0 == 1)) }",
@@ -509,14 +564,8 @@ class SigmaDslSpecification extends SigmaDslTesting
           )
         )))
 
-    val cost7 = CostDetails(
-      Array(
-        FixedCostItem(Apply),
-        FixedCostItem(FuncValue),
-        FixedCostItem(GetVar),
-        FixedCostItem(OptionGet),
-        FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
-        FixedCostItem(ValUse),
+    val newDetails7 = CostDetails(
+      traceBase ++ Array(
         FixedCostItem(BinOr),
         FixedCostItem(BinAnd),
         FixedCostItem(ValUse)
@@ -524,7 +573,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     )
     verifyCases(
       Seq(
-        (true, Expected(Success(true), 40480, cost7)),
+        (true, Expected(Success(true), 40480, newDetails7, 1768)),
         (false, Expected(new ArithmeticException("/ by zero")))
       ),
       existingFeature((x: Boolean) => (x || (1 / 0 == 1)) && x,
@@ -540,14 +589,8 @@ class SigmaDslSpecification extends SigmaDslTesting
           )
         )))
 
-    val cost8 = CostDetails(
-      Array(
-        FixedCostItem(Apply),
-        FixedCostItem(FuncValue),
-        FixedCostItem(GetVar),
-        FixedCostItem(OptionGet),
-        FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
-        FixedCostItem(ValUse),
+    val newDetails8 = CostDetails(
+      traceBase ++ Array(
         FixedCostItem(BinOr),
         FixedCostItem(BinAnd),
         FixedCostItem(ValUse),
@@ -556,7 +599,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     )
     verifyCases(
       Seq(
-        (true, Expected(Success(true), 43149, cost8)),
+        (true, Expected(Success(true), 43149, newDetails8, 1770)),
         (false, Expected(new ArithmeticException("/ by zero")))
       ),
       existingFeature((x: Boolean) => (x || (1 / 0 == 1)) && (x || (1 / 0 == 1)),
@@ -575,14 +618,8 @@ class SigmaDslSpecification extends SigmaDslTesting
           )
         )))
 
-    val cost9 = CostDetails(
-      Array(
-        FixedCostItem(Apply),
-        FixedCostItem(FuncValue),
-        FixedCostItem(GetVar),
-        FixedCostItem(OptionGet),
-        FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
-        FixedCostItem(ValUse),
+    val newDetails9 = CostDetails(
+      traceBase ++ Array(
         FixedCostItem(LogicalNot),
         FixedCostItem(BinAnd),
         FixedCostItem(LogicalNot),
@@ -594,7 +631,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     )
     verifyCases(
       Seq(
-        (true, Expected(Success(true), 45950, cost9)),
+        (true, Expected(Success(true), 45950, newDetails9, 1775)),
         (false, Expected(new ArithmeticException("/ by zero")))
       ),
       existingFeature(
@@ -619,7 +656,7 @@ class SigmaDslSpecification extends SigmaDslTesting
           )
         )))
 
-    val cost10 = CostDetails(
+    val newDetails10 = CostDetails(
       Array(
         FixedCostItem(Apply),
         FixedCostItem(FuncValue),
@@ -644,7 +681,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     verifyCases(
       Seq(
         (false, Expected(new ArithmeticException("/ by zero"))),
-        (true, Expected(Success(true), 48862, cost10))
+        (true, Expected(Success(true), 48862, newDetails10, 1780))
       ),
       existingFeature(
         (x: Boolean) => (!(!x && (1 / 0 == 1)) || (1 / 0 == 0)) && (!(!x && (1 / 0 == 1)) || (1 / 0 == 1)),
@@ -679,70 +716,7 @@ class SigmaDslSpecification extends SigmaDslTesting
 
   property("lazy || and && boolean equivalence") {
     runLazy_And_Or_BooleanEquivalence(evalSettings)
-  }
-
-  val costIdentity = CostDetails(
-    Array(
-      FixedCostItem(Apply),
-      FixedCostItem(FuncValue),
-      FixedCostItem(GetVar),
-      FixedCostItem(OptionGet),
-      FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
-      FixedCostItem(ValUse)
-    )
-  )
-  val costUpcast = CostDetails(
-    Array(
-      FixedCostItem(Apply),
-      FixedCostItem(FuncValue),
-      FixedCostItem(GetVar),
-      FixedCostItem(OptionGet),
-      FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
-      FixedCostItem(ValUse)
-    )
-  )
-  val costDowncast = CostDetails(
-    Array(
-      FixedCostItem(Apply),
-      FixedCostItem(FuncValue),
-      FixedCostItem(GetVar),
-      FixedCostItem(OptionGet),
-      FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
-      FixedCostItem(ValUse)
-    )
-  )
-  def costArithOps(tpe: SType) = CostDetails(
-    Array(
-      FixedCostItem(Apply),
-      FixedCostItem(FuncValue),
-      FixedCostItem(GetVar),
-      FixedCostItem(OptionGet),
-      FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
-      FixedCostItem(ValUse),
-      FixedCostItem(SelectField),
-      FixedCostItem(ValUse),
-      FixedCostItem(SelectField),
-      FixedCostItem(ValUse),
-      FixedCostItem(ValUse),
-      TypeBasedCostItem(ArithOp.Plus, tpe),
-      FixedCostItem(ValUse),
-      FixedCostItem(ValUse),
-      TypeBasedCostItem(ArithOp.Minus, tpe),
-      FixedCostItem(ValUse),
-      FixedCostItem(ValUse),
-      TypeBasedCostItem(ArithOp.Multiply, tpe),
-      FixedCostItem(ValUse),
-      FixedCostItem(ValUse),
-      TypeBasedCostItem(ArithOp.Division, tpe),
-      FixedCostItem(ValUse),
-      FixedCostItem(ValUse),
-      TypeBasedCostItem(ArithOp.Modulo, tpe),
-      FixedCostItem(Tuple),
-      FixedCostItem(Tuple),
-      FixedCostItem(Tuple),
-      FixedCostItem(Tuple)
-    )
-  )
+  }  
 
   property("Byte methods equivalence") {
     SByte.upcast(0.toByte) shouldBe 0.toByte  // boundary test case
@@ -750,7 +724,7 @@ class SigmaDslSpecification extends SigmaDslTesting
 
     verifyCases(
       {
-        def expect(v: Byte) = Expected(Success(v), 35798, costIdentity)
+        def expect(v: Byte) = Expected(Success(v), 35798, TracedCost(traceBase), 1763)
         Seq(
           (0.toByte, expect(0.toByte)),
           (1.toByte, expect(1.toByte)),
@@ -767,7 +741,7 @@ class SigmaDslSpecification extends SigmaDslTesting
 
     verifyCases(
       {
-        def expected(v: Short) = Expected(Success(v), 35902, costUpcast)
+        def expected(v: Short) = Expected(Success(v), 35902, upcastCostDetails(SShort), 1764)
         Seq(
           (0.toByte, expected(0.toShort)),
           (1.toByte, expected(1.toShort)),
@@ -784,7 +758,7 @@ class SigmaDslSpecification extends SigmaDslTesting
 
     verifyCases(
       {
-        def expected(v: Int) = Expected(Success(v), 35902, costUpcast)
+        def expected(v: Int) = Expected(Success(v), 35902, upcastCostDetails(SInt), 1764)
         Seq(
           (0.toByte, expected(0)),
           (1.toByte, expected(1)),
@@ -801,7 +775,7 @@ class SigmaDslSpecification extends SigmaDslTesting
 
     verifyCases(
       {
-        def expected(v: Long) = Expected(Success(v), 35902, costUpcast)
+        def expected(v: Long) = Expected(Success(v), 35902, upcastCostDetails(SLong), 1764)
         Seq(
           (0.toByte, expected(0L)),
           (1.toByte, expected(1L)),
@@ -818,7 +792,7 @@ class SigmaDslSpecification extends SigmaDslTesting
 
     verifyCases(
       {
-        def expected(v: BigInt) = Expected(Success(v), 35932, costUpcast)
+        def expected(v: BigInt) = Expected(Success(v), 35932, upcastCostDetails(SBigInt), 1767)
         Seq(
           (0.toByte, expected(CBigInt(new BigInteger("0", 16)))),
           (1.toByte, expected(CBigInt(new BigInteger("1", 16)))),
@@ -836,7 +810,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     val n = ExactIntegral.ByteIsExactIntegral
     verifyCases(
       {
-        def success[T](v: (T, (T, (T, (T, T))))) = Expected(Success(v), 39654, costArithOps(SByte))
+        def success[T](v: (T, (T, (T, (T, T))))) = Expected(Success(v), 39654, arithOpsCostDetails(SByte), 1788)
         Seq(
           ((-128.toByte, -128.toByte), Expected(new ArithmeticException("Byte overflow"))),
           ((-128.toByte, 0.toByte), Expected(new ArithmeticException("/ by zero"))),
@@ -930,20 +904,27 @@ class SigmaDslSpecification extends SigmaDslTesting
       ))
   }
 
-  def swapArgs[A](cases: Seq[((A, A), Expected[Boolean])], cost: Int, newCost: CostDetails) =
+  def swapArgs[A](cases: Seq[((A, A), Expected[Boolean])], cost: Int, newCost: Int, newCostDetails: CostDetails) =
     cases.map { case ((x, y), res) =>
-      ((y, x), Expected(res.value, cost, newCost))
+      ((y, x), Expected(res.value, cost, newCostDetails, newCost))
     }
 
-  def newCasesFrom[A, R](cases: Seq[(A, A)])(getExpectedRes: (A, A) => R, cost: Int) =
+  def newCasesFrom[A, R](
+    cases: Seq[(A, A)]
+  )(
+    getExpectedRes: (A, A) => R,
+    cost: Int,
+    newDetails: CostDetails,
+    newCost: Int
+  ) =
     cases.map { case (x, y) =>
-      ((x, y), Expected(Success(getExpectedRes(x, y)), cost = cost))
+      ((x, y), Expected(Success(getExpectedRes(x, y)), cost = cost, newDetails, newCost))
     }    
 
   def newCasesFrom2[A, R](cases: Seq[(A, A)])
-                        (getExpectedRes: (A, A) => R, cost: Int, newCost: CostDetails) =
+                        (getExpectedRes: (A, A) => R, cost: Int, newCost: Int, newCostDetails: CostDetails) =
     cases.map { case (x, y) =>
-      ((x, y), Expected(Success(getExpectedRes(x, y)), cost = cost, expectedDetails = newCost))
+      ((x, y), Expected(Success(getExpectedRes(x, y)), cost = cost, expectedDetails = newCostDetails, expectedNewCost = newCost))
     }
 
   def verifyOp[A: Ordering: Arbitrary]
@@ -972,82 +953,11 @@ class SigmaDslSpecification extends SigmaDslTesting
       preGeneratedSamples = Some(sampled.samples))
   }
 
-  def costLT(tpe: SType) = CostDetails(
-    Array(
-      FixedCostItem(Apply),
-      FixedCostItem(FuncValue),
-      FixedCostItem(GetVar),
-      FixedCostItem(OptionGet),
-      FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
-      FixedCostItem(ValUse),
-      FixedCostItem(SelectField),
-      FixedCostItem(ValUse),
-      FixedCostItem(SelectField),
-      TypeBasedCostItem(LT, tpe)
-    )
-  )
-  def costGT(tpe: SType) = CostDetails(
-    Array(
-      FixedCostItem(Apply),
-      FixedCostItem(FuncValue),
-      FixedCostItem(GetVar),
-      FixedCostItem(OptionGet),
-      FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
-      FixedCostItem(ValUse),
-      FixedCostItem(SelectField),
-      FixedCostItem(ValUse),
-      FixedCostItem(SelectField),
-      TypeBasedCostItem(GT, tpe)
-    )
-  )
-  def costNEQ(neqCost: Seq[CostItem]) = {
-    val trace = Array(
-      FixedCostItem(Apply),
-      FixedCostItem(FuncValue),
-      FixedCostItem(GetVar),
-      FixedCostItem(OptionGet),
-      FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
-      FixedCostItem(ValUse),
-      FixedCostItem(SelectField),
-      FixedCostItem(ValUse),
-      FixedCostItem(SelectField)
-    ) ++ neqCost
-    CostDetails(trace)
-  }
-  val constNeqCost: Seq[CostItem] = Array[CostItem]()
-
-  def costLE(tpe: SType) = CostDetails(
-    Array(
-      FixedCostItem(Apply),
-      FixedCostItem(FuncValue),
-      FixedCostItem(GetVar),
-      FixedCostItem(OptionGet),
-      FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
-      FixedCostItem(ValUse),
-      FixedCostItem(SelectField),
-      FixedCostItem(ValUse),
-      FixedCostItem(SelectField),
-      TypeBasedCostItem(LE, tpe)
-    )
-  )
-  def costGE(tpe: SType) = CostDetails(
-    Array(
-      FixedCostItem(Apply),
-      FixedCostItem(FuncValue),
-      FixedCostItem(GetVar),
-      FixedCostItem(OptionGet),
-      FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
-      FixedCostItem(ValUse),
-      FixedCostItem(SelectField),
-      FixedCostItem(ValUse),
-      FixedCostItem(SelectField),
-      TypeBasedCostItem(GE, tpe)
-    )
-  )
+  val constNeqCost: Seq[CostItem] = Array[CostItem](FixedCostItem(NamedDesc("EQ_Prim"), FixedCost(JitCost(3))))  
 
   property("Byte LT, GT, NEQ") {
     val o = ExactOrdering.ByteIsExactOrdering
-    def expect(v: Boolean) = Expected(Success(v), 36328, costLT(SByte))
+    def expect(v: Boolean) = Expected(Success(v), 36328, binaryRelationCostDetails(LT, SByte), 1768)
     val LT_cases: Seq[((Byte, Byte), Expected[Boolean])] = Seq(
       (-128.toByte, -128.toByte) -> expect(false),
       (-128.toByte, -127.toByte) -> expect(true),
@@ -1088,16 +998,16 @@ class SigmaDslSpecification extends SigmaDslTesting
     verifyOp(LT_cases, "<", LT.apply)(_ < _)
 
     verifyOp(
-      swapArgs(LT_cases, cost = 36342, newCost = costGT(SByte)),
+      swapArgs(LT_cases, cost = 36342, newCost = 1768, newCostDetails = binaryRelationCostDetails(GT, SByte)),
       ">", GT.apply)(_ > _)
 
-    val neqCases = newCasesFrom2(LT_cases.map(_._1))(_ != _, cost = 36337, newCost = costNEQ(constNeqCost))
+    val neqCases = newCasesFrom2(LT_cases.map(_._1))(_ != _, cost = 36337, newCost = 1766, newCostDetails = costNEQ(constNeqCost))
     verifyOp(neqCases, "!=", NEQ.apply)(_ != _)
   }
 
   property("Byte LE, GE") {
     val o = ExactOrdering.ByteIsExactOrdering
-    def expect(v: Boolean) = Expected(Success(v), 36337, costLE(SByte))
+    def expect(v: Boolean) = Expected(Success(v), 36337, binaryRelationCostDetails(LE, SByte), 1768)
     val LE_cases: Seq[((Byte, Byte), Expected[Boolean])] = Seq(
       (-128.toByte, -128.toByte) -> expect(true),
       (-128.toByte, -127.toByte) -> expect(true),
@@ -1139,7 +1049,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     verifyOp(LE_cases, "<=", LE.apply)(_ <= _)
 
     verifyOp(
-      swapArgs(LE_cases, cost = 36336, newCost = costGE(SByte)),
+      swapArgs(LE_cases, cost = 36336, newCost = 1768, newCostDetails = binaryRelationCostDetails(GE, SByte)),
       ">=", GE.apply)(_ >= _)
   }
 
@@ -1174,7 +1084,7 @@ class SigmaDslSpecification extends SigmaDslTesting
 
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 35976, costDowncast)
+        def success[T](v: T) = Expected(Success(v), 35976, downcastCostDetails(SByte), 1764)
         Seq(
           (Short.MinValue, Expected(new ArithmeticException("Byte overflow"))),
           (-21626.toShort, Expected(new ArithmeticException("Byte overflow"))),
@@ -1193,7 +1103,7 @@ class SigmaDslSpecification extends SigmaDslTesting
 
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 35798, costIdentity)
+        def success[T](v: T) = Expected(Success(v), 35798, TracedCost(traceBase), 1763)
         Seq(
           (-32768.toShort, success(-32768.toShort)),
           (-27798.toShort, success(-27798.toShort)),
@@ -1210,7 +1120,7 @@ class SigmaDslSpecification extends SigmaDslTesting
 
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 35902, costUpcast)
+        def success[T](v: T) = Expected(Success(v), 35902, upcastCostDetails(SInt), 1764)
         Seq(
           (-32768.toShort, success(-32768)),
           (-21064.toShort, success(-21064)),
@@ -1227,7 +1137,7 @@ class SigmaDslSpecification extends SigmaDslTesting
 
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 35902, costUpcast)
+        def success[T](v: T) = Expected(Success(v), 35902, upcastCostDetails(SLong), 1764)
         Seq(
           (-32768.toShort, success(-32768L)),
           (-23408.toShort, success(-23408L)),
@@ -1244,7 +1154,7 @@ class SigmaDslSpecification extends SigmaDslTesting
 
     verifyCases(
       {
-        def success(v: BigInt) = Expected(Success(v), 35932, costUpcast)
+        def success(v: BigInt) = Expected(Success(v), 35932, upcastCostDetails(SBigInt), 1767)
         Seq(
           (-32768.toShort, success(CBigInt(new BigInteger("-8000", 16)))),
           (-26248.toShort, success(CBigInt(new BigInteger("-6688", 16)))),
@@ -1262,7 +1172,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     val n = ExactIntegral.ShortIsExactIntegral
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 39654, costArithOps(SShort))
+        def success[T](v: T) = Expected(Success(v), 39654, arithOpsCostDetails(SShort), 1788)
         Seq(
           ((-32768.toShort, 1.toShort), Expected(new ArithmeticException("Short overflow"))),
           ((-32768.toShort, 4006.toShort), Expected(new ArithmeticException("Short overflow"))),
@@ -1354,7 +1264,7 @@ class SigmaDslSpecification extends SigmaDslTesting
 
   property("Short LT, GT, NEQ") {
     val o = ExactOrdering.ShortIsExactOrdering
-    def expect(v: Boolean) = Expected(Success(v), 36328, costLT(SShort))
+    def expect(v: Boolean) = Expected(Success(v), 36328, binaryRelationCostDetails(LT, SShort), 1768)
     val LT_cases: Seq[((Short, Short), Expected[Boolean])] = Seq(
       (Short.MinValue, Short.MinValue) -> expect(false),
       (Short.MinValue, (Short.MinValue + 1).toShort) -> expect(true),
@@ -1394,15 +1304,15 @@ class SigmaDslSpecification extends SigmaDslTesting
 
     verifyOp(LT_cases, "<", LT.apply)(_ < _)
 
-    verifyOp(swapArgs(LT_cases, cost = 36342, costGT(SShort)), ">", GT.apply)(_ > _)
+    verifyOp(swapArgs(LT_cases, cost = 36342, newCost = 1768, newCostDetails = binaryRelationCostDetails(GT, SShort)), ">", GT.apply)(_ > _)
 
-    val neqCases = newCasesFrom2(LT_cases.map(_._1))(_ != _, cost = 36337, newCost = costNEQ(constNeqCost))
+    val neqCases = newCasesFrom2(LT_cases.map(_._1))(_ != _, cost = 36337, newCost = 1766, newCostDetails = costNEQ(constNeqCost))
     verifyOp(neqCases, "!=", NEQ.apply)(_ != _)
   }
 
   property("Short LE, GE") {
     val o = ExactOrdering.ShortIsExactOrdering
-    def expect(v: Boolean) = Expected(Success(v), 36337, costLE(SShort))
+    def expect(v: Boolean) = Expected(Success(v), 36337, binaryRelationCostDetails(LE, SShort), 1768)
     val LE_cases: Seq[((Short, Short), Expected[Boolean])] = Seq(
       (Short.MinValue, Short.MinValue) -> expect(true),
       (Short.MinValue, (Short.MinValue + 1).toShort) -> expect(true),
@@ -1444,7 +1354,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     verifyOp(LE_cases, "<=", LE.apply)(_ <= _)
 
     verifyOp(
-      swapArgs(LE_cases, cost = 36336, newCost = costGE(SShort)),
+      swapArgs(LE_cases, cost = 36336, newCost = 1768, newCostDetails = binaryRelationCostDetails(GE, SShort)),
       ">=", GE.apply)(_ >= _)
   }
 
@@ -1478,7 +1388,7 @@ class SigmaDslSpecification extends SigmaDslTesting
 
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 35976, costDowncast)
+        def success[T](v: T) = Expected(Success(v), 35976, downcastCostDetails(SByte), 1764)
         Seq(
           (Int.MinValue, Expected(new ArithmeticException("Byte overflow"))),
           (-2014394379, Expected(new ArithmeticException("Byte overflow"))),
@@ -1497,7 +1407,7 @@ class SigmaDslSpecification extends SigmaDslTesting
 
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 35976, costDowncast)
+        def success[T](v: T) = Expected(Success(v), 35976, downcastCostDetails(SShort), 1764)
         Seq(
           (Int.MinValue, Expected(new ArithmeticException("Short overflow"))),
           (Short.MinValue - 1, Expected(new ArithmeticException("Short overflow"))),
@@ -1516,7 +1426,7 @@ class SigmaDslSpecification extends SigmaDslTesting
 
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 35798, costIdentity)
+        def success[T](v: T) = Expected(Success(v), 35798, TracedCost(traceBase), 1763)
         Seq(
           (Int.MinValue, success(Int.MinValue)),
           (-1, success(-1)),
@@ -1531,7 +1441,7 @@ class SigmaDslSpecification extends SigmaDslTesting
 
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 35902, costUpcast)
+        def success[T](v: T) = Expected(Success(v), 35902, upcastCostDetails(SLong), 1764)
         Seq(
           (Int.MinValue, success(Int.MinValue.toLong)),
           (-1, success(-1L)),
@@ -1546,7 +1456,7 @@ class SigmaDslSpecification extends SigmaDslTesting
 
     verifyCases(
       {
-        def success(v: BigInt) = Expected(Success(v), 35932, costUpcast)
+        def success(v: BigInt) = Expected(Success(v), 35932, upcastCostDetails(SBigInt), 1767)
         Seq(
           (Int.MinValue, success(CBigInt(new BigInteger("-80000000", 16)))),
           (-1937187314, success(CBigInt(new BigInteger("-737721f2", 16)))),
@@ -1564,7 +1474,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     val n = ExactNumeric.IntIsExactNumeric
     verifyCases(
     {
-      def success[T](v: T) = Expected(Success(v), 39654, costArithOps(SInt))
+      def success[T](v: T) = Expected(Success(v), 39654, arithOpsCostDetails(SInt), 1788)
       Seq(
         ((Int.MinValue, 449583993), Expected(new ArithmeticException("integer overflow"))),
         ((-1589633733, 2147483647), Expected(new ArithmeticException("integer overflow"))),
@@ -1656,7 +1566,7 @@ class SigmaDslSpecification extends SigmaDslTesting
 
   property("Int LT, GT, NEQ") {
     val o = ExactOrdering.IntIsExactOrdering
-    def expect(v: Boolean) = Expected(Success(v), 36328, costLT(SInt))
+    def expect(v: Boolean) = Expected(Success(v), 36328, binaryRelationCostDetails(LT, SInt), 1768)
     val LT_cases: Seq[((Int, Int), Expected[Boolean])] = Seq(
       (Int.MinValue, Int.MinValue) -> expect(false),
       (Int.MinValue, (Int.MinValue + 1).toInt) -> expect(true),
@@ -1697,16 +1607,16 @@ class SigmaDslSpecification extends SigmaDslTesting
     verifyOp(LT_cases, "<", LT.apply)(_ < _)
 
     verifyOp(
-      swapArgs(LT_cases, cost = 36342, newCost = costGT(SInt)),
+      swapArgs(LT_cases, cost = 36342, newCost = 1768, newCostDetails = binaryRelationCostDetails(GT, SInt)),
       ">", GT.apply)(_ > _)
 
-    val neqCases = newCasesFrom2(LT_cases.map(_._1))(_ != _, cost = 36337, newCost = costNEQ(constNeqCost))
+    val neqCases = newCasesFrom2(LT_cases.map(_._1))(_ != _, cost = 36337, newCost = 1766, newCostDetails = costNEQ(constNeqCost))
     verifyOp(neqCases, "!=", NEQ.apply)(_ != _)
   }
 
   property("Int LE, GE") {
     val o = ExactOrdering.IntIsExactOrdering
-    def expect(v: Boolean) = Expected(Success(v), 36337, costLE(SInt))
+    def expect(v: Boolean) = Expected(Success(v), 36337, binaryRelationCostDetails(LE, SInt), 1768)
     val LE_cases: Seq[((Int, Int), Expected[Boolean])] = Seq(
       (Int.MinValue, Int.MinValue) -> expect(true),
       (Int.MinValue, (Int.MinValue + 1).toInt) -> expect(true),
@@ -1748,7 +1658,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     verifyOp(LE_cases, "<=", LE.apply)(_ <= _)
 
     verifyOp(
-      swapArgs(LE_cases, cost = 36336, newCost = costGE(SInt)),
+      swapArgs(LE_cases, cost = 36336, newCost = 1768, newCostDetails = binaryRelationCostDetails(GE, SInt)),
       ">=", GE.apply)(_ >= _)
   }
 
@@ -1775,13 +1685,17 @@ class SigmaDslSpecification extends SigmaDslTesting
     }
   }
 
-  property("Long methods equivalence") {
-    SLong.upcast(0L) shouldBe 0L  // boundary test case
-    SLong.downcast(0L) shouldBe 0L  // boundary test case
+  property("Long downcast and upcast identity") {
+    forAll { x: Long =>
+      SLong.upcast(x) shouldBe x  // boundary test case
+      SLong.downcast(x) shouldBe x  // boundary test case
+    }
+  }
 
+  property("Long.toByte method") {
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 35976, costDowncast)
+        def success[T](v: T) = Expected(Success(v), 35976, downcastCostDetails(SByte), 1764)
         Seq(
           (Long.MinValue, Expected(new ArithmeticException("Byte overflow"))),
           (Byte.MinValue.toLong - 1, Expected(new ArithmeticException("Byte overflow"))),
@@ -1797,10 +1711,12 @@ class SigmaDslSpecification extends SigmaDslTesting
       existingFeature((x: Long) => x.toByteExact,
         "{ (x: Long) => x.toByte }",
         FuncValue(Vector((1, SLong)), Downcast(ValUse(1, SLong), SByte))))
+  }
 
+  property("Long.toShort method") {
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 35976, costDowncast)
+        def success[T](v: T) = Expected(Success(v), 35976, downcastCostDetails(SShort), 1764)
         Seq(
           (Long.MinValue, Expected(new ArithmeticException("Short overflow"))),
           (Short.MinValue.toLong - 1, Expected(new ArithmeticException("Short overflow"))),
@@ -1816,10 +1732,12 @@ class SigmaDslSpecification extends SigmaDslTesting
       existingFeature((x: Long) => x.toShortExact,
         "{ (x: Long) => x.toShort }",
         FuncValue(Vector((1, SLong)), Downcast(ValUse(1, SLong), SShort))))
+  }
 
+  property("Long.toInt method") {
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 35976, costDowncast)
+        def success[T](v: T) = Expected(Success(v), 35976, downcastCostDetails(SInt), 1764)
         Seq(
           (Long.MinValue, Expected(new ArithmeticException("Int overflow"))),
           (Int.MinValue.toLong - 1, Expected(new ArithmeticException("Int overflow"))),
@@ -1835,10 +1753,12 @@ class SigmaDslSpecification extends SigmaDslTesting
       existingFeature((x: Long) => x.toIntExact,
         "{ (x: Long) => x.toInt }",
         FuncValue(Vector((1, SLong)), Downcast(ValUse(1, SLong), SInt))))
+  }
 
+  property("Long.toLong method") {
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 35798, costIdentity)
+        def success[T](v: T) = Expected(Success(v), 35798, TracedCost(traceBase), 1763)
         Seq(
           (Long.MinValue, success(Long.MinValue)),
           (-1L, success(-1L)),
@@ -1850,10 +1770,12 @@ class SigmaDslSpecification extends SigmaDslTesting
       existingFeature((x: Long) => x.toLong,
         "{ (x: Long) => x.toLong }",
         FuncValue(Vector((1, SLong)), ValUse(1, SLong))))
+  }
 
+  property("Long.toBigInt method") {
     verifyCases(
       {
-        def success(v: BigInt) = Expected(Success(v), 35932, costUpcast)
+        def success(v: BigInt) = Expected(Success(v), 35932, upcastCostDetails(SBigInt), 1767)
         Seq(
           (Long.MinValue, success(CBigInt(new BigInteger("-8000000000000000", 16)))),
           (-1074651039980347209L, success(CBigInt(new BigInteger("-ee9ed6d57885f49", 16)))),
@@ -1867,11 +1789,14 @@ class SigmaDslSpecification extends SigmaDslTesting
       existingFeature((x: Long) => x.toBigInt,
         "{ (x: Long) => x.toBigInt }",
         FuncValue(Vector((1, SLong)), Upcast(ValUse(1, SLong), SBigInt))))
+  }
+
+  property("Long methods equivalence") {
 
     val n = ExactNumeric.LongIsExactNumeric
     verifyCases(
     {
-      def success[T](v: T) = Expected(Success(v), 39654, costArithOps(SLong))
+      def success[T](v: T) = Expected(Success(v), 39654, arithOpsCostDetails(SLong), 1788)
       Seq(
         ((Long.MinValue, -4677100190307931395L), Expected(new ArithmeticException("long overflow"))),
         ((Long.MinValue, -1L), Expected(new ArithmeticException("long overflow"))),
@@ -1961,7 +1886,7 @@ class SigmaDslSpecification extends SigmaDslTesting
 
   property("Long LT, GT, NEQ") {
     val o = ExactOrdering.LongIsExactOrdering
-    def expect(v: Boolean) = Expected(Success(v), 36328, costLT(SLong))
+    def expect(v: Boolean) = Expected(Success(v), 36328, binaryRelationCostDetails(LT, SLong), 1768)
     val LT_cases: Seq[((Long, Long), Expected[Boolean])] = Seq(
       (Long.MinValue, Long.MinValue) -> expect(false),
       (Long.MinValue, (Long.MinValue + 1).toLong) -> expect(true),
@@ -2002,16 +1927,16 @@ class SigmaDslSpecification extends SigmaDslTesting
     verifyOp(LT_cases, "<", LT.apply)(_ < _)
 
     verifyOp(
-      swapArgs(LT_cases, cost = 36342, newCost = costGT(SLong)),
+      swapArgs(LT_cases, cost = 36342, newCost = 1768, newCostDetails = binaryRelationCostDetails(GT, SLong)),
       ">", GT.apply)(_ > _)
 
-    val neqCases = newCasesFrom2(LT_cases.map(_._1))(_ != _, cost = 36337, newCost = costNEQ(constNeqCost))
+    val neqCases = newCasesFrom2(LT_cases.map(_._1))(_ != _, cost = 36337, newCost = 1766, newCostDetails = costNEQ(constNeqCost))
     verifyOp(neqCases, "!=", NEQ.apply)(_ != _)
   }
 
   property("Long LE, GE") {
     val o = ExactOrdering.LongIsExactOrdering
-    def expect(v: Boolean) = Expected(Success(v), 36337, costLE(SLong))
+    def expect(v: Boolean) = Expected(Success(v), 36337, binaryRelationCostDetails(LE, SLong), 1768)
     val LE_cases: Seq[((Long, Long), Expected[Boolean])] = Seq(
       (Long.MinValue, Long.MinValue) -> expect(true),
       (Long.MinValue, (Long.MinValue + 1).toLong) -> expect(true),
@@ -2053,7 +1978,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     verifyOp(LE_cases, "<=", LE.apply)(_ <= _)
 
     verifyOp(
-      swapArgs(LE_cases, cost = 36336, newCost = costGE(SLong)),
+      swapArgs(LE_cases, cost = 36336, newCost = 1768, newCostDetails = binaryRelationCostDetails(GE, SLong)),
       ">=", GE.apply)(_ >= _)
   }
 
@@ -2084,7 +2009,7 @@ class SigmaDslSpecification extends SigmaDslTesting
   property("BigInt methods equivalence") {
     verifyCases(
       {
-        def success(v: BigInt) = Expected(Success(v), 35798, costIdentity)
+        def success(v: BigInt) = Expected(Success(v), 35798, TracedCost(traceBase), 1764)
         Seq(
           (CBigInt(new BigInteger("-85102d7f884ca0e8f56193b46133acaf7e4681e1757d03f191ae4f445c8e0", 16)), success(
             CBigInt(new BigInteger("-85102d7f884ca0e8f56193b46133acaf7e4681e1757d03f191ae4f445c8e0", 16))
@@ -2106,40 +2031,8 @@ class SigmaDslSpecification extends SigmaDslTesting
     val n = NumericOps.BigIntIsExactIntegral
     verifyCases(
     {
-      val costArithOps = CostDetails(
-        Array(
-          FixedCostItem(Apply),
-          FixedCostItem(FuncValue),
-          FixedCostItem(GetVar),
-          FixedCostItem(OptionGet),
-          FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
-          FixedCostItem(ValUse),
-          FixedCostItem(SelectField),
-          FixedCostItem(ValUse),
-          FixedCostItem(SelectField),
-          FixedCostItem(ValUse),
-          FixedCostItem(ValUse),
-          TypeBasedCostItem(ArithOp.Plus, SBigInt),
-          FixedCostItem(ValUse),
-          FixedCostItem(ValUse),
-          TypeBasedCostItem(ArithOp.Minus, SBigInt),
-          FixedCostItem(ValUse),
-          FixedCostItem(ValUse),
-          TypeBasedCostItem(ArithOp.Multiply, SBigInt),
-          FixedCostItem(ValUse),
-          FixedCostItem(ValUse),
-          TypeBasedCostItem(ArithOp.Division, SBigInt),
-          FixedCostItem(ValUse),
-          FixedCostItem(ValUse),
-          TypeBasedCostItem(ArithOp.Modulo, SBigInt),
-          FixedCostItem(Tuple),
-          FixedCostItem(Tuple),
-          FixedCostItem(Tuple),
-          FixedCostItem(Tuple)
-        )
-      )
       def success(v: (BigInt, (BigInt, (BigInt, (BigInt, BigInt))))) =
-        Expected(Success(v), 39774, costArithOps)
+        Expected(Success(v), 39774, arithOpsCostDetails(SBigInt), 1793)
       Seq(
         ((CBigInt(new BigInteger("-8683d1cd99d5fcf0e6eff6295c285c36526190e13dbde008c49e5ae6fddc1c", 16)),
             CBigInt(new BigInteger("-2ef55db3f245feddacf0182e299dd", 16))),
@@ -2263,7 +2156,7 @@ class SigmaDslSpecification extends SigmaDslTesting
   property("BigInt LT, GT, NEQ") {
     val o = NumericOps.BigIntIsExactOrdering
 
-    def expect(v: Boolean) = Expected(Success(v), 36328, costLT(SBigInt))
+    def expect(v: Boolean) = Expected(Success(v), 36328, binaryRelationCostDetails(LT, SBigInt), 1768)
     
     val LT_cases: Seq[((BigInt, BigInt), Expected[Boolean])] = Seq(
       (BigIntMinValue, BigIntMinValue) -> expect(false),
@@ -2300,28 +2193,29 @@ class SigmaDslSpecification extends SigmaDslTesting
       (BigIntMaxValue, BigIntMinValue) -> expect(false),
       (BigIntMaxValue, -47.toBigInt) -> expect(false),
       (BigIntMaxValue, BigIntMaxValue) -> expect(false),
-      (BigIntMaxValue, BigIntOverlimit) -> expect(true),  // TODO v5.0: reject this overlimit cases
+      (BigIntMaxValue, BigIntOverlimit) -> expect(true),  // TODO v6.0: reject this overlimit cases
       (BigIntOverlimit, BigIntOverlimit) -> expect(false)
     )
 
     verifyOp(LT_cases, "<", LT.apply)(o.lt(_, _))
 
     verifyOp(
-      swapArgs(LT_cases, cost = 36342, newCost = costGT(SBigInt)),
+      swapArgs(LT_cases, cost = 36342, newCost = 1768, newCostDetails = binaryRelationCostDetails(GT, SBigInt)),
       ">", GT.apply)(o.gt(_, _))
 
-    val neqCases = newCasesFrom2(LT_cases.map(_._1))(_ != _, cost = 36337, newCost = costNEQ(constNeqCost))
+    val constBigIntCost = Array[CostItem](FixedCostItem(NamedDesc("EQ_BigInt"), FixedCost(JitCost(5))))
+    val neqCases = newCasesFrom2(LT_cases.map(_._1))(_ != _, cost = 36337, newCost = 1766, newCostDetails = costNEQ(constBigIntCost))
     verifyOp(neqCases, "!=", NEQ.apply)(_ != _)
   }
 
   property("BigInt LE, GE") {
     val o = NumericOps.BigIntIsExactOrdering
-    // TODO HF: this values have bitCount == 255 (see to256BitValueExact)
+    // TODO v6.0: this values have bitCount == 255 (see to256BitValueExact)
     val BigIntMinValue = CBigInt(new BigInteger("-7F" + "ff" * 31, 16))
     val BigIntMaxValue = CBigInt(new BigInteger("7F" + "ff" * 31, 16))
     val BigIntOverlimit = CBigInt(new BigInteger("7F" + "ff" * 33, 16))
 
-    def expect(v: Boolean) = Expected(Success(v), 36337, costLE(SBigInt))
+    def expect(v: Boolean) = Expected(Success(v), 36337, binaryRelationCostDetails(LE, SBigInt), 1768)
     
     val LE_cases: Seq[((BigInt, BigInt), Expected[Boolean])] = Seq(
       (BigIntMinValue, BigIntMinValue) -> expect(true),
@@ -2359,27 +2253,27 @@ class SigmaDslSpecification extends SigmaDslTesting
       (BigIntMaxValue, BigIntMinValue) -> expect(false),
       (BigIntMaxValue, -47.toBigInt) -> expect(false),
       (BigIntMaxValue, BigIntMaxValue) -> expect(true),
-      (BigIntMaxValue, BigIntOverlimit) -> expect(true), // TODO v5.0: reject this overlimit cases
+      (BigIntMaxValue, BigIntOverlimit) -> expect(true), // TODO v6.0: reject this overlimit cases
       (BigIntOverlimit, BigIntOverlimit) -> expect(true)
     )
 
     verifyOp(LE_cases, "<=", LE.apply)(o.lteq(_, _))
 
     verifyOp(
-      swapArgs(LE_cases, cost = 36336, newCost = costGE(SBigInt)),
+      swapArgs(LE_cases, cost = 36336, newCost = 1768, newCostDetails = binaryRelationCostDetails(GE, SBigInt)),
       ">=", GE.apply)(o.gteq(_, _))
   }
 
   property("BigInt methods equivalence (new features)") {
-    // TODO HF (2h): the behavior of `upcast` for BigInt is different from all other Numeric types
+    // TODO v6.0 (2h): the behavior of `upcast` for BigInt is different from all other Numeric types
     // The `Upcast(bigInt, SBigInt)` node is never produced by ErgoScript compiler, but is still valid ErgoTree.
-    // It makes sense to fix this inconsistency as part of HF
+    // It makes sense to fix this inconsistency as part of upcoming forks
     assertExceptionThrown(
       SBigInt.upcast(CBigInt(new BigInteger("0", 16)).asInstanceOf[AnyVal]),
       _.getMessage.contains("Cannot upcast value")
     )
 
-    // TODO HF (2h): the behavior of `downcast` for BigInt is different from all other Numeric types
+    // TODO v6.0 (2h): the behavior of `downcast` for BigInt is different from all other Numeric types
     // The `Downcast(bigInt, SBigInt)` node is never produced by ErgoScript compiler, but is still valid ErgoTree.
     // It makes sense to fix this inconsistency as part of HF
     assertExceptionThrown(
@@ -2429,87 +2323,237 @@ class SigmaDslSpecification extends SigmaDslTesting
     * @param cost the expected cost of `verify` (the same for all cases)
     */
   def verifyNeq[A: Ordering: Arbitrary: RType]
-      (x: A, y: A, cost: Int, neqCost: Seq[CostItem] = mutable.WrappedArray.empty)
+      (x: A, y: A, cost: Int, neqCost: Seq[CostItem] = mutable.WrappedArray.empty, newCost: Int)
       (copy: A => A, generateCases: Boolean = true)
       (implicit sampled: Sampled[(A, A)], evalSettings: EvalSettings) = {
     val copied_x = copy(x)
-    val newCost = if (neqCost.isEmpty) CostDetails.ZeroCost else costNEQ(neqCost)
-    def expected(v: Boolean) = Expected(Success(v), cost, newCost)
+    val newCostDetails = if (neqCost.isEmpty) CostDetails.ZeroCost else costNEQ(neqCost)
+    def expected(v: Boolean) = Expected(Success(v), cost, newCostDetails, newCost)
+    def expectedNoCost(v: Boolean) = Expected(Success(v), cost, CostDetails.ZeroCost)
     verifyOp(Seq(
-        (x, x) -> expected(false),
-        (x, copied_x) -> expected(false),
-        (copied_x, x) -> expected(false),
-        (x, y) -> expected(true),
-        (y, x) -> expected(true)
+        (x, y) -> expected(true), // check cost only for this test case, because the trace depends in x and y
+        (x, x) -> expectedNoCost(false), // and don't check for others
+        (x, copied_x) -> expectedNoCost(false),
+        (copied_x, x) -> expectedNoCost(false),
+        (y, x) -> expectedNoCost(true)
       ),
       "!=", NEQ.apply)(_ != _, generateCases)
   }
 
   property("NEQ of pre-defined types") {
-    verifyNeq(ge1, ge2, 36337, constNeqCost)(_.asInstanceOf[CGroupElement].copy())
-    verifyNeq(t1, t2, 36337, constNeqCost)(_.asInstanceOf[CAvlTree].copy())
-    verifyNeq(b1, b2, 36417,
-      Array[CostItem]())(_.asInstanceOf[CostingBox].copy())
-    verifyNeq(preH1, preH2, 36337, constNeqCost)(_.asInstanceOf[CPreHeader].copy())
-    verifyNeq(h1, h2, 36337, constNeqCost)(_.asInstanceOf[CHeader].copy())
+    verifyNeq(ge1, ge2, 36337, Array[CostItem](FixedCostItem(NamedDesc("EQ_GroupElement"), FixedCost(JitCost(172)))), 1783)(_.asInstanceOf[CGroupElement].copy())
+    verifyNeq(t1, t2, 36337, Array[CostItem](FixedCostItem(NamedDesc("EQ_AvlTree"), FixedCost(JitCost(6)))), 1767)(_.asInstanceOf[CAvlTree].copy())
+    verifyNeq(b1, b2, 36417, Array[CostItem](), 1767)(_.asInstanceOf[CostingBox].copy())
+    verifyNeq(preH1, preH2, 36337, Array[CostItem](FixedCostItem(NamedDesc("EQ_PreHeader"), FixedCost(JitCost(4)))), 1766)(_.asInstanceOf[CPreHeader].copy())
+    verifyNeq(h1, h2, 36337, Array[CostItem](FixedCostItem(NamedDesc("EQ_Header"), FixedCost(JitCost(6)))), 1767)(_.asInstanceOf[CHeader].copy())
   }
 
   property("NEQ of tuples of numerics") {
-    verifyNeq((0.toByte, 1.toByte), (1.toByte, 1.toByte), 36337, constNeqCost)(_.copy())
-    verifyNeq((0.toShort, 1.toByte), (1.toShort, 1.toByte), 36337, constNeqCost)(_.copy())
-    verifyNeq((0, 1.toByte), (1, 1.toByte), 36337, constNeqCost)(_.copy())
-    verifyNeq((0.toLong, 1.toByte), (1.toLong, 1.toByte), 36337, constNeqCost)(_.copy())
-    verifyNeq((0.toBigInt, 1.toByte), (1.toBigInt, 1.toByte), 36337, constNeqCost)(_.copy())
+    val tuplesNeqCost = Array(
+      FixedCostItem(NamedDesc("EQ_Tuple"), FixedCost(JitCost(4))),
+      FixedCostItem(NamedDesc("EQ_Prim"), FixedCost(JitCost(3)))
+    )
+    verifyNeq((0.toByte, 1.toByte), (1.toByte, 1.toByte), 36337, tuplesNeqCost, 1767)(_.copy())
+    verifyNeq((0.toShort, 1.toByte), (1.toShort, 1.toByte), 36337, tuplesNeqCost, 1767)(_.copy())
+    verifyNeq((0, 1.toByte), (1, 1.toByte), 36337, tuplesNeqCost, 1767)(_.copy())
+    verifyNeq((0.toLong, 1.toByte), (1.toLong, 1.toByte), 36337, tuplesNeqCost, 1767)(_.copy())
+    verifyNeq((0.toBigInt, 1.toByte), (1.toBigInt, 1.toByte), 36337, Array(
+      FixedCostItem(NamedDesc("EQ_Tuple"), FixedCost(JitCost(4))),
+      FixedCostItem(NamedDesc("EQ_BigInt"), FixedCost(JitCost(5)))
+    ), 1767)(_.copy())
   }
 
   property("NEQ of tuples of pre-defined types") {
-    verifyNeq((ge1, ge1), (ge1, ge2), 36337, constNeqCost)(_.copy())
-    verifyNeq((t1, t1), (t1, t2), 36337, constNeqCost)(_.copy())
-    verifyNeq((b1, b1), (b1, b2),
-      cost = 36497,
-      neqCost = Array[CostItem]()
-      )(_.copy())
-    verifyNeq((preH1, preH1), (preH1, preH2), 36337, constNeqCost)(_.copy())
-    verifyNeq((h1, h1), (h1, h2), 36337, constNeqCost)(_.copy())
+    val groupNeqCost = Array(
+      FixedCostItem(NamedDesc("EQ_Tuple"), FixedCost(JitCost(4))),
+      FixedCostItem(NamedDesc("EQ_GroupElement"), FixedCost(JitCost(172))),
+      FixedCostItem(NamedDesc("EQ_GroupElement"), FixedCost(JitCost(172)))
+    )
+    verifyNeq((ge1, ge1), (ge1, ge2), 36337, groupNeqCost, 1801)(_.copy())
+
+    val treeNeqCost = Array(
+      FixedCostItem(NamedDesc("EQ_Tuple"), FixedCost(JitCost(4))),
+      FixedCostItem(NamedDesc("EQ_AvlTree"), FixedCost(JitCost(6))),
+      FixedCostItem(NamedDesc("EQ_AvlTree"), FixedCost(JitCost(6)))
+    )
+    verifyNeq((t1, t1), (t1, t2), 36337, treeNeqCost, 1768)(_.copy())
+
+    verifyNeq((b1, b1), (b1, b2), 36497, Array[CostItem](), 1768)(_.copy())
+    
+    val preHeaderNeqCost = Array(
+      FixedCostItem(NamedDesc("EQ_Tuple"), FixedCost(JitCost(4))),
+      FixedCostItem(NamedDesc("EQ_PreHeader"), FixedCost(JitCost(4))),
+      FixedCostItem(NamedDesc("EQ_PreHeader"), FixedCost(JitCost(4)))
+    )
+    verifyNeq((preH1, preH1), (preH1, preH2), 36337, preHeaderNeqCost, 1767)(_.copy())
+
+    val headerNeqCost = Array(
+      FixedCostItem(NamedDesc("EQ_Tuple"), FixedCost(JitCost(4))),
+      FixedCostItem(NamedDesc("EQ_Header"), FixedCost(JitCost(6))),
+      FixedCostItem(NamedDesc("EQ_Header"), FixedCost(JitCost(6)))
+    )
+    verifyNeq((h1, h1), (h1, h2), 36337, headerNeqCost, 1768)(_.copy())
   }
-
+  
   property("NEQ of nested tuples") {
-    verifyNeq((ge1, (t1, t1)), (ge1, (t1, t2)), 36337)(_.copy())
-    verifyNeq((ge1, (t1, (b1, b1))), (ge1, (t1, (b1, b2))), 36497)(_.copy())
-    verifyNeq((ge1, (t1, (b1, (preH1, preH1)))), (ge1, (t1, (b1, (preH1, preH2)))), 36417)(_.copy())
-    verifyNeq((ge1, (t1, (b1, (preH1, (h1, h1))))), (ge1, (t1, (b1, (preH1, (h1, h2))))), 36427)(_.copy())
+    val nestedTuplesNeqCost1 = Array(
+      FixedCostItem(NamedDesc("EQ_Tuple"), FixedCost(JitCost(4))),
+      FixedCostItem(NamedDesc("EQ_GroupElement"), FixedCost(JitCost(172))),
+      FixedCostItem(NamedDesc("EQ_Tuple"), FixedCost(JitCost(4))),
+      FixedCostItem(NamedDesc("EQ_AvlTree"), FixedCost(JitCost(6))),
+      FixedCostItem(NamedDesc("EQ_AvlTree"), FixedCost(JitCost(6)))
+    )
+    val nestedTuplesNeqCost2 = Array(
+      FixedCostItem(NamedDesc("EQ_Tuple"), FixedCost(JitCost(4))),
+      FixedCostItem(NamedDesc("EQ_GroupElement"), FixedCost(JitCost(172))),
+      FixedCostItem(NamedDesc("EQ_Tuple"), FixedCost(JitCost(4))),
+      FixedCostItem(NamedDesc("EQ_AvlTree"), FixedCost(JitCost(6))),
+      FixedCostItem(NamedDesc("EQ_Tuple"), FixedCost(JitCost(4))),
+      FixedCostItem(NamedDesc("EQ_Box"), FixedCost(JitCost(6))),
+      FixedCostItem(NamedDesc("EQ_Box"), FixedCost(JitCost(6)))
+    )
+    val nestedTuplesNeqCost3 = Array(
+      FixedCostItem(NamedDesc("EQ_Tuple"), FixedCost(JitCost(4))),
+      FixedCostItem(NamedDesc("EQ_GroupElement"), FixedCost(JitCost(172))),
+      FixedCostItem(NamedDesc("EQ_Tuple"), FixedCost(JitCost(4))),
+      FixedCostItem(NamedDesc("EQ_AvlTree"), FixedCost(JitCost(6))),
+      FixedCostItem(NamedDesc("EQ_Tuple"), FixedCost(JitCost(4))),
+      FixedCostItem(NamedDesc("EQ_Box"), FixedCost(JitCost(6))),
+      FixedCostItem(NamedDesc("EQ_Tuple"), FixedCost(JitCost(4))),
+      FixedCostItem(NamedDesc("EQ_PreHeader"), FixedCost(JitCost(4))),
+      FixedCostItem(NamedDesc("EQ_PreHeader"), FixedCost(JitCost(4)))
+    )
+    val nestedTuplesNeqCost4 = Array(
+      FixedCostItem(NamedDesc("EQ_Tuple"), FixedCost(JitCost(4))),
+      FixedCostItem(NamedDesc("EQ_GroupElement"), FixedCost(JitCost(172))),
+      FixedCostItem(NamedDesc("EQ_Tuple"), FixedCost(JitCost(4))),
+      FixedCostItem(NamedDesc("EQ_AvlTree"), FixedCost(JitCost(6))),
+      FixedCostItem(NamedDesc("EQ_Tuple"), FixedCost(JitCost(4))),
+      FixedCostItem(NamedDesc("EQ_Box"), FixedCost(JitCost(6))),
+      FixedCostItem(NamedDesc("EQ_Tuple"), FixedCost(JitCost(4))),
+      FixedCostItem(NamedDesc("EQ_PreHeader"), FixedCost(JitCost(4))),
+      FixedCostItem(NamedDesc("EQ_Tuple"), FixedCost(JitCost(4))),
+      FixedCostItem(NamedDesc("EQ_Header"), FixedCost(JitCost(6))),
+      FixedCostItem(NamedDesc("EQ_Header"), FixedCost(JitCost(6)))
+    )
+    val nestedTuplesNeqCost5 = Array(
+      FixedCostItem(NamedDesc("EQ_Tuple"), FixedCost(JitCost(4))),
+      FixedCostItem(NamedDesc("EQ_Tuple"), FixedCost(JitCost(4))),
+      FixedCostItem(NamedDesc("EQ_GroupElement"), FixedCost(JitCost(172))),
+      FixedCostItem(NamedDesc("EQ_AvlTree"), FixedCost(JitCost(6))),
+      FixedCostItem(NamedDesc("EQ_AvlTree"), FixedCost(JitCost(6)))
+    )
+    val nestedTuplesNeqCost6 = Array(
+      FixedCostItem(NamedDesc("EQ_Tuple"), FixedCost(JitCost(4))),
+      FixedCostItem(NamedDesc("EQ_Tuple"), FixedCost(JitCost(4))),
+      FixedCostItem(NamedDesc("EQ_Tuple"), FixedCost(JitCost(4))),
+      FixedCostItem(NamedDesc("EQ_GroupElement"), FixedCost(JitCost(172))),
+      FixedCostItem(NamedDesc("EQ_AvlTree"), FixedCost(JitCost(6))),
+      FixedCostItem(NamedDesc("EQ_Box"), FixedCost(JitCost(6))),
+      FixedCostItem(NamedDesc("EQ_Box"), FixedCost(JitCost(6)))
+    )
+    val nestedTuplesNeqCost7 = Array(
+      FixedCostItem(NamedDesc("EQ_Tuple"), FixedCost(JitCost(4))),
+      FixedCostItem(NamedDesc("EQ_Tuple"), FixedCost(JitCost(4))),
+      FixedCostItem(NamedDesc("EQ_Tuple"), FixedCost(JitCost(4))),
+      FixedCostItem(NamedDesc("EQ_GroupElement"), FixedCost(JitCost(172))),
+      FixedCostItem(NamedDesc("EQ_AvlTree"), FixedCost(JitCost(6))),
+      FixedCostItem(NamedDesc("EQ_Box"), FixedCost(JitCost(6))),
+      FixedCostItem(NamedDesc("EQ_Tuple"), FixedCost(JitCost(4))),
+      FixedCostItem(NamedDesc("EQ_PreHeader"), FixedCost(JitCost(4))),
+      FixedCostItem(NamedDesc("EQ_PreHeader"), FixedCost(JitCost(4)))
+    )
+    val nestedTuplesNeqCost8 = Array(
+      FixedCostItem(NamedDesc("EQ_Tuple"), FixedCost(JitCost(4))),
+      FixedCostItem(NamedDesc("EQ_Tuple"), FixedCost(JitCost(4))),
+      FixedCostItem(NamedDesc("EQ_Tuple"), FixedCost(JitCost(4))),
+      FixedCostItem(NamedDesc("EQ_GroupElement"), FixedCost(JitCost(172))),
+      FixedCostItem(NamedDesc("EQ_AvlTree"), FixedCost(JitCost(6))),
+      FixedCostItem(NamedDesc("EQ_Box"), FixedCost(JitCost(6))),
+      FixedCostItem(NamedDesc("EQ_Tuple"), FixedCost(JitCost(4))),
+      FixedCostItem(NamedDesc("EQ_PreHeader"), FixedCost(JitCost(4))),
+      FixedCostItem(NamedDesc("EQ_Tuple"), FixedCost(JitCost(4))),
+      FixedCostItem(NamedDesc("EQ_Header"), FixedCost(JitCost(6))),
+      FixedCostItem(NamedDesc("EQ_Header"), FixedCost(JitCost(6)))
+    )
+    verifyNeq((ge1, (t1, t1)), (ge1, (t1, t2)), 36337, nestedTuplesNeqCost1, 1785)(_.copy())
+    verifyNeq((ge1, (t1, (b1, b1))), (ge1, (t1, (b1, b2))), 36497, nestedTuplesNeqCost2, 1786)(_.copy())
+    verifyNeq((ge1, (t1, (b1, (preH1, preH1)))), (ge1, (t1, (b1, (preH1, preH2)))), 36417, nestedTuplesNeqCost3, 1787)(_.copy())
+    verifyNeq((ge1, (t1, (b1, (preH1, (h1, h1))))), (ge1, (t1, (b1, (preH1, (h1, h2))))), 36427, nestedTuplesNeqCost4, 1788)(_.copy())
 
-    verifyNeq(((ge1, t1), t1), ((ge1, t1), t2), 36337)(_.copy())
-    verifyNeq((((ge1, t1), b1), b1), (((ge1, t1), b1), b2), 36497)(_.copy())
-    verifyNeq((((ge1, t1), b1), (preH1, preH1)), (((ge1, t1), b1), (preH1, preH2)), 36417)(_.copy())
-    verifyNeq((((ge1, t1), b1), (preH1, (h1, h1))), (((ge1, t1), b1), (preH1, (h1, h2))), 36427)(_.copy())
+    verifyNeq(((ge1, t1), t1), ((ge1, t1), t2), 36337, nestedTuplesNeqCost5, 1785)(_.copy())
+    verifyNeq((((ge1, t1), b1), b1), (((ge1, t1), b1), b2), 36497, nestedTuplesNeqCost6, 1786)(_.copy())
+    verifyNeq((((ge1, t1), b1), (preH1, preH1)), (((ge1, t1), b1), (preH1, preH2)), 36417, nestedTuplesNeqCost7, 1787)(_.copy())
+    verifyNeq((((ge1, t1), b1), (preH1, (h1, h1))), (((ge1, t1), b1), (preH1, (h1, h2))), 36427, nestedTuplesNeqCost8, 1788)(_.copy())
   }
 
   property("NEQ of collections of pre-defined types") {
+    val collNeqCost1 = Array(
+      FixedCostItem(NamedDesc("MatchType"), FixedCost(JitCost(1)))
+    )
+    val collNeqCost2 = Array(
+      FixedCostItem(NamedDesc("MatchType"), FixedCost(JitCost(1))),
+      SeqCostItem(NamedDesc("EQ_COA_Box"), PerItemCost(JitCost(15), JitCost(5), 1), 0)
+    )
     implicit val evalSettings = suite.evalSettings.copy(isMeasureOperationTime = false)
-    verifyNeq(Coll[Byte](), Coll(1.toByte), 36337)(cloneColl(_))
-    verifyNeq(Coll[Byte](0, 1), Coll(1.toByte, 1.toByte), 36337)(cloneColl(_))
+    verifyNeq(Coll[Byte](), Coll(1.toByte), 36337, collNeqCost1, 1766)(cloneColl(_))
+    verifyNeq(Coll[Byte](0, 1), Coll(1.toByte, 1.toByte), 36337,
+      Array(
+        FixedCostItem(NamedDesc("MatchType"), FixedCost(JitCost(1))),
+        SeqCostItem(NamedDesc("EQ_COA_Byte"), PerItemCost(JitCost(15), JitCost(2), 128), 1)),
+      1768
+    )(cloneColl(_))
 
-    verifyNeq(Coll[Short](), Coll(1.toShort), 36337)(cloneColl(_))
-    verifyNeq(Coll[Short](0), Coll(1.toShort), 36337)(cloneColl(_))
+    verifyNeq(Coll[Short](), Coll(1.toShort), 36337, collNeqCost1, 1766)(cloneColl(_))
+    verifyNeq(Coll[Short](0), Coll(1.toShort), 36337,
+      Array(
+        FixedCostItem(NamedDesc("MatchType"), FixedCost(JitCost(1))),
+        SeqCostItem(NamedDesc("EQ_COA_Short"), PerItemCost(JitCost(15), JitCost(2), 96), 1)),
+      1768
+    )(cloneColl(_))
 
-    verifyNeq(Coll[Int](), Coll(1), 36337)(cloneColl(_))
-    verifyNeq(Coll[Int](0), Coll(1), 36337)(cloneColl(_))
+    verifyNeq(Coll[Int](), Coll(1), 36337, collNeqCost1, 1766)(cloneColl(_))
+    verifyNeq(Coll[Int](0), Coll(1), 36337,
+      Array(
+        FixedCostItem(NamedDesc("MatchType"), FixedCost(JitCost(1))),
+        SeqCostItem(NamedDesc("EQ_COA_Int"), PerItemCost(JitCost(15), JitCost(2), 64), 1)),
+      1768
+    )(cloneColl(_))
 
-    verifyNeq(Coll[Long](), Coll(1.toLong), 36337)(cloneColl(_))
-    verifyNeq(Coll[Long](0), Coll(1.toLong), 36337)(cloneColl(_))
+    verifyNeq(Coll[Long](), Coll(1.toLong), 36337, collNeqCost1, 1766)(cloneColl(_))
+    verifyNeq(Coll[Long](0), Coll(1.toLong), 36337,
+      Array(
+        FixedCostItem(NamedDesc("MatchType"), FixedCost(JitCost(1))),
+        SeqCostItem(NamedDesc("EQ_COA_Long"), PerItemCost(JitCost(15), JitCost(2), 48), 1)),
+      1768
+    )(cloneColl(_))
 
     prepareSamples[Coll[BigInt]]
-    verifyNeq(Coll[BigInt](), Coll(1.toBigInt), 36337)(cloneColl(_))
-    verifyNeq(Coll[BigInt](0.toBigInt), Coll(1.toBigInt), 36337)(cloneColl(_))
+    verifyNeq(Coll[BigInt](), Coll(1.toBigInt), 36337, collNeqCost1, 1766)(cloneColl(_))
+    verifyNeq(Coll[BigInt](0.toBigInt), Coll(1.toBigInt), 36337,
+      Array(
+        FixedCostItem(NamedDesc("MatchType"), FixedCost(JitCost(1))),
+        SeqCostItem(NamedDesc("EQ_COA_BigInt"), PerItemCost(JitCost(15), JitCost(7), 5), 1)),
+      1768
+    )(cloneColl(_))
 
     prepareSamples[Coll[GroupElement]]
-    verifyNeq(Coll[GroupElement](), Coll(ge1), 36337)(cloneColl(_))
-    verifyNeq(Coll[GroupElement](ge1), Coll(ge2), 36337)(cloneColl(_))
+    verifyNeq(Coll[GroupElement](), Coll(ge1), 36337, collNeqCost1, 1766)(cloneColl(_))
+    verifyNeq(Coll[GroupElement](ge1), Coll(ge2), 36337,
+      Array(
+        FixedCostItem(NamedDesc("MatchType"), FixedCost(JitCost(1))),
+        SeqCostItem(NamedDesc("EQ_COA_GroupElement"), PerItemCost(JitCost(15), JitCost(5), 1), 1)),
+      1768
+    )(cloneColl(_))
 
     prepareSamples[Coll[AvlTree]]
-    verifyNeq(Coll[AvlTree](), Coll(t1), 36337)(cloneColl(_))
-    verifyNeq(Coll[AvlTree](t1), Coll(t2), 36337)(cloneColl(_))
+    verifyNeq(Coll[AvlTree](), Coll(t1), 36337, collNeqCost1, 1766)(cloneColl(_))
+    verifyNeq(Coll[AvlTree](t1), Coll(t2), 36337,
+      Array(
+        FixedCostItem(NamedDesc("MatchType"), FixedCost(JitCost(1))),
+        SeqCostItem(NamedDesc("EQ_COA_AvlTree"), PerItemCost(JitCost(15), JitCost(5), 2), 1)),
+      1768
+    )(cloneColl(_))
 
     { // since SBox.isConstantSize = false, the cost is different among cases
       prepareSamples[Coll[AvlTree]]
@@ -2517,24 +2561,39 @@ class SigmaDslSpecification extends SigmaDslTesting
       val y = Coll(b1)
       val copied_x = cloneColl(x)
       verifyOp(Seq(
-          (x, x) -> Expected(Success(false), 36337),
-          (x, copied_x) -> Expected(Success(false), 36337),
-          (copied_x, x) -> Expected(Success(false), 36337),
-          (x, y) -> Expected(Success(true), 36377),
-          (y, x) -> Expected(Success(true), 36377)
+          (x, x) -> Expected(Success(false), 36337, costNEQ(collNeqCost2), 1768),
+          (x, copied_x) -> Expected(Success(false), 36337, costNEQ(collNeqCost2), 1768),
+          (copied_x, x) -> Expected(Success(false), 36337, costNEQ(collNeqCost2), 1768),
+          (x, y) -> Expected(Success(true), 36377, costNEQ(collNeqCost1), 1766),
+          (y, x) -> Expected(Success(true), 36377, costNEQ(collNeqCost1), 1766)
         ),
         "!=", NEQ.apply)(_ != _, generateCases = false)
 
-      verifyNeq(Coll[Box](b1), Coll(b2), 36417)(cloneColl(_), generateCases = false)
+      verifyNeq(Coll[Box](b1), Coll(b2), 36417,
+        Array(
+          FixedCostItem(NamedDesc("MatchType"), FixedCost(JitCost(1))),
+          SeqCostItem(NamedDesc("EQ_COA_Box"), PerItemCost(JitCost(15), JitCost(5), 1), 1)),
+        1768
+      )(cloneColl(_), generateCases = false)
     }
 
     prepareSamples[Coll[PreHeader]]
-    verifyNeq(Coll[PreHeader](), Coll(preH1), 36337)(cloneColl(_))
-    verifyNeq(Coll[PreHeader](preH1), Coll(preH2), 36337)(cloneColl(_))
+    verifyNeq(Coll[PreHeader](), Coll(preH1), 36337, collNeqCost1, 1766)(cloneColl(_))
+    verifyNeq(Coll[PreHeader](preH1), Coll(preH2), 36337,
+      Array(
+        FixedCostItem(NamedDesc("MatchType"), FixedCost(JitCost(1))),
+        SeqCostItem(NamedDesc("EQ_COA_PreHeader"), PerItemCost(JitCost(15), JitCost(3), 1), 1)),
+      1768
+    )(cloneColl(_))
 
     prepareSamples[Coll[Header]]
-    verifyNeq(Coll[Header](), Coll(h1), 36337)(cloneColl(_))
-    verifyNeq(Coll[Header](h1), Coll(h2), 36337)(cloneColl(_))
+    verifyNeq(Coll[Header](), Coll(h1), 36337, collNeqCost1, 1766)(cloneColl(_))
+    verifyNeq(Coll[Header](h1), Coll(h2), 36337,
+      Array(
+        FixedCostItem(NamedDesc("MatchType"), FixedCost(JitCost(1))),
+        SeqCostItem(NamedDesc("EQ_COA_Header"), PerItemCost(JitCost(15), JitCost(5), 1), 1)),
+      1768
+    )(cloneColl(_))
   }
 
   property("NEQ of nested collections and tuples") {
@@ -2543,16 +2602,68 @@ class SigmaDslSpecification extends SigmaDslTesting
     prepareSamples[Coll[Coll[Int]]]
     prepareSamples[Coll[Coll[Int]]]
 
-    verifyNeq(Coll[Coll[Int]](), Coll(Coll[Int]()), 36337)(cloneColl(_))
-    verifyNeq(Coll(Coll[Int]()), Coll(Coll[Int](1)), 36337)(cloneColl(_))
-    verifyNeq(Coll(Coll[Int](1)), Coll(Coll[Int](2)), 36337)(cloneColl(_))
-    verifyNeq(Coll(Coll[Int](1)), Coll(Coll[Int](1, 2)), 36337)(cloneColl(_))
+    val nestedNeq1 = Array(
+      FixedCostItem(NamedDesc("MatchType"), FixedCost(JitCost(1)))
+    )
+    val nestedNeq2 = Array(
+      FixedCostItem(NamedDesc("MatchType"), FixedCost(JitCost(1))),
+      FixedCostItem(NamedDesc("MatchType"), FixedCost(JitCost(1))),
+      SeqCostItem(NamedDesc("EQ_Coll"), PerItemCost(JitCost(10), JitCost(2), 1), 1)
+    )
+    val nestedNeq3 = Array(
+      FixedCostItem(NamedDesc("MatchType"), FixedCost(JitCost(1))),
+      FixedCostItem(NamedDesc("MatchType"), FixedCost(JitCost(1))),
+      SeqCostItem(NamedDesc("EQ_COA_Int"), PerItemCost(JitCost(15), JitCost(2), 64), 1),
+      SeqCostItem(NamedDesc("EQ_Coll"), PerItemCost(JitCost(10), JitCost(2), 1), 1)
+    )
+    verifyNeq(Coll[Coll[Int]](), Coll(Coll[Int]()), 36337, nestedNeq1, 1766)(cloneColl(_))
+    verifyNeq(Coll(Coll[Int]()), Coll(Coll[Int](1)), 36337, nestedNeq2, 1767)(cloneColl(_))
+    verifyNeq(Coll(Coll[Int](1)), Coll(Coll[Int](2)), 36337, nestedNeq3, 1769)(cloneColl(_))
+    verifyNeq(Coll(Coll[Int](1)), Coll(Coll[Int](1, 2)), 36337, nestedNeq2, 1767)(cloneColl(_))
 
     prepareSamples[Coll[(Int, BigInt)]]
     prepareSamples[Coll[Coll[(Int, BigInt)]]]
 
-    verifyNeq(Coll(Coll((1, 10.toBigInt))), Coll(Coll((1, 11.toBigInt))), 36337)(cloneColl(_))
-    verifyNeq(Coll(Coll(Coll((1, 10.toBigInt)))), Coll(Coll(Coll((1, 11.toBigInt)))), 36337)(cloneColl(_))
+    val nestedNeq4 = Array(
+      FixedCostItem(NamedDesc("MatchType"), FixedCost(JitCost(1))),
+      FixedCostItem(NamedDesc("MatchType"), FixedCost(JitCost(1))),
+      FixedCostItem(NamedDesc("EQ_Tuple"), FixedCost(JitCost(4))),
+      FixedCostItem(NamedDesc("EQ_Prim"), FixedCost(JitCost(3))),
+      FixedCostItem(NamedDesc("EQ_BigInt"), FixedCost(JitCost(5))),
+      SeqCostItem(NamedDesc("EQ_Coll"), PerItemCost(JitCost(10), JitCost(2), 1), 1),
+      SeqCostItem(NamedDesc("EQ_Coll"), PerItemCost(JitCost(10), JitCost(2), 1), 1)
+    )
+    val nestedNeq5 = Array(
+      FixedCostItem(NamedDesc("MatchType"), FixedCost(JitCost(1))),
+      FixedCostItem(NamedDesc("MatchType"), FixedCost(JitCost(1))),
+      FixedCostItem(NamedDesc("MatchType"), FixedCost(JitCost(1))),
+      FixedCostItem(NamedDesc("EQ_Tuple"), FixedCost(JitCost(4))),
+      FixedCostItem(NamedDesc("EQ_Prim"), FixedCost(JitCost(3))),
+      FixedCostItem(NamedDesc("EQ_BigInt"), FixedCost(JitCost(5))),
+      SeqCostItem(NamedDesc("EQ_Coll"), PerItemCost(JitCost(10), JitCost(2), 1), 1),
+      SeqCostItem(NamedDesc("EQ_Coll"), PerItemCost(JitCost(10), JitCost(2), 1), 1),
+      SeqCostItem(NamedDesc("EQ_Coll"), PerItemCost(JitCost(10), JitCost(2), 1), 1) 
+    )
+    val nestedNeq6 = Array(
+      FixedCostItem(NamedDesc("EQ_Tuple"), FixedCost(JitCost(4))),
+      FixedCostItem(NamedDesc("MatchType"), FixedCost(JitCost(1))),
+      FixedCostItem(NamedDesc("EQ_Tuple"), FixedCost(JitCost(4))),
+      FixedCostItem(NamedDesc("MatchType"), FixedCost(JitCost(1))),
+      FixedCostItem(NamedDesc("EQ_Tuple"), FixedCost(JitCost(4))),
+      FixedCostItem(NamedDesc("EQ_AvlTree"), FixedCost(JitCost(6))),
+      FixedCostItem(NamedDesc("MatchType"), FixedCost(JitCost(1))),
+      FixedCostItem(NamedDesc("EQ_Tuple"), FixedCost(JitCost(4))),
+      FixedCostItem(NamedDesc("EQ_Prim"), FixedCost(JitCost(3))),
+      FixedCostItem(NamedDesc("EQ_BigInt"), FixedCost(JitCost(5))),
+      FixedCostItem(NamedDesc("EQ_Tuple"), FixedCost(JitCost(4))),
+      FixedCostItem(NamedDesc("EQ_Prim"), FixedCost(JitCost(3))),
+      FixedCostItem(NamedDesc("EQ_BigInt"), FixedCost(JitCost(5))),
+      SeqCostItem(NamedDesc("EQ_Coll"), PerItemCost(JitCost(10), JitCost(2), 1), 2),
+      SeqCostItem(NamedDesc("EQ_Coll"), PerItemCost(JitCost(10), JitCost(2), 1), 1),
+      SeqCostItem(NamedDesc("EQ_Coll"), PerItemCost(JitCost(10), JitCost(2), 1), 1)
+    )
+    verifyNeq(Coll(Coll((1, 10.toBigInt))), Coll(Coll((1, 11.toBigInt))), 36337, nestedNeq4, 1770)(cloneColl(_))
+    verifyNeq(Coll(Coll(Coll((1, 10.toBigInt)))), Coll(Coll(Coll((1, 11.toBigInt)))), 36337, nestedNeq5, 1771)(cloneColl(_))
     verifyNeq(
       (Coll(
          (Coll(
@@ -2564,185 +2675,212 @@ class SigmaDslSpecification extends SigmaDslTesting
            (t1, Coll((1, 10.toBigInt), (1, 11.toBigInt)))
           ), ge1)
        ), preH1),
-      36337)(x => (cloneColl(x._1), x._2))
+      36337,
+      nestedNeq6,
+      1774
+    )(x => (cloneColl(x._1), x._2))
   }
 
-  property("GroupElement methods equivalence") {
+  property("GroupElement.getEncoded equivalence") {
     verifyCases(
-      {
-        val cost = TracedCost(
-          Array(
-            FixedCostItem(Apply),
-            FixedCostItem(FuncValue),
-            FixedCostItem(GetVar),
-            FixedCostItem(OptionGet),
-            FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
-            FixedCostItem(ValUse),
-            FixedCostItem(PropertyCall),
-            MethodCallCostItem(TracedCost(Array(FixedCostItem(SGroupElement.GetEncodedMethod, FixedCost(JitCost(3))))))
-          )
-        )
-        def success[T](v: T) = Expected(Success(v), 37905, cost)
-        Seq(
-          (ge1, success(Helpers.decodeBytes(ge1str))),
-          (ge2, success(Helpers.decodeBytes(ge2str))),
-          (ge3, success(Helpers.decodeBytes(ge3str))),
-          (SigmaDsl.groupGenerator,
-              success(Helpers.decodeBytes("0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798"))),
-          (SigmaDsl.groupIdentity,
-              success(Helpers.decodeBytes("000000000000000000000000000000000000000000000000000000000000000000")))
-        )
-      },
-      existingFeature((x: GroupElement) => x.getEncoded,
-        "{ (x: GroupElement) => x.getEncoded }",
-        FuncValue(
-          Vector((1, SGroupElement)),
-          MethodCall(ValUse(1, SGroupElement), SGroupElement.getMethodByName("getEncoded"), Vector(), Map())
-        )))
+    {
+      def success[T](v: T) = Expected(Success(v), 37905, methodCostDetails(SGroupElement.GetEncodedMethod, 250), 1790)
+      Seq(
+        (ge1, success(Helpers.decodeBytes(ge1str))),
+        (ge2, success(Helpers.decodeBytes(ge2str))),
+        (ge3, success(Helpers.decodeBytes(ge3str))),
+        (SigmaDsl.groupGenerator,
+          success(Helpers.decodeBytes("0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798"))),
+        (SigmaDsl.groupIdentity,
+          success(Helpers.decodeBytes("000000000000000000000000000000000000000000000000000000000000000000")))
+      )
+    },
+    existingFeature((x: GroupElement) => x.getEncoded,
+      "{ (x: GroupElement) => x.getEncoded }",
+      FuncValue(
+        Vector((1, SGroupElement)),
+        MethodCall(ValUse(1, SGroupElement), SGroupElement.getMethodByName("getEncoded"), Vector(), Map())
+      )))
+  }
 
+  property("decodePoint(GroupElement.getEncoded) equivalence") {
     verifyCases(
-      {
-        val cost = TracedCost(
-          Array(
-            FixedCostItem(Apply),
-            FixedCostItem(FuncValue),
-            FixedCostItem(GetVar),
-            FixedCostItem(OptionGet),
-            FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
-            FixedCostItem(ValUse),
-            FixedCostItem(PropertyCall),
-            MethodCallCostItem(TracedCost(Array(FixedCostItem(MethodDesc(SGroupElement.GetEncodedMethod), FixedCost(JitCost(3)))))),
-            FixedCostItem(DecodePoint),
-            FixedCostItem(ValUse)
+    {
+      val costDetails = TracedCost(
+        traceBase ++ Array(
+          FixedCostItem(PropertyCall),
+          FixedCostItem(MethodDesc(SGroupElement.GetEncodedMethod), FixedCost(JitCost(250))),
+          FixedCostItem(DecodePoint),
+          FixedCostItem(ValUse),
+          FixedCostItem(NamedDesc("EQ_GroupElement"), FixedCost(JitCost(172)))
+        )
+      )
+      def success[T](v: T) = Expected(Success(v), 38340, costDetails, 1837)
+      Seq(
+        (ge1, success(true)),
+        (ge2, success(true)),
+        (ge3, success(true)),
+        (SigmaDsl.groupGenerator, success(true)),
+        (SigmaDsl.groupIdentity, success(true))
+      )
+    },
+    existingFeature({ (x: GroupElement) => decodePoint(x.getEncoded) == x },
+    "{ (x: GroupElement) => decodePoint(x.getEncoded) == x }",
+    FuncValue(
+      Vector((1, SGroupElement)),
+      EQ(
+        DecodePoint(
+          MethodCall.typed[Value[SCollection[SByte.type]]](
+            ValUse(1, SGroupElement),
+            SGroupElement.getMethodByName("getEncoded"),
+            Vector(),
+            Map()
           )
-        )
-        def success[T](v: T) = Expected(Success(v), 38340, cost)
-        Seq(
-          (ge1, success(true)),
-          (ge2, success(true)),
-          (ge3, success(true)),
-          (SigmaDsl.groupGenerator, success(true)),
-          (SigmaDsl.groupIdentity, success(true))
-        )
-      },
-      existingFeature({ (x: GroupElement) => decodePoint(x.getEncoded) == x },
-        "{ (x: GroupElement) => decodePoint(x.getEncoded) == x }",
-        FuncValue(
-          Vector((1, SGroupElement)),
-          EQ(
-            DecodePoint(
-              MethodCall.typed[Value[SCollection[SByte.type]]](
-                ValUse(1, SGroupElement),
-                SGroupElement.getMethodByName("getEncoded"),
-                Vector(),
+        ),
+        ValUse(1, SGroupElement)
+      )
+    )))
+  }
+
+  property("GroupElement.negate equivalence") {
+    verifyCases(
+    {
+      def success[T](v: T) = Expected(Success(v), 36292, methodCostDetails(SGroupElement.NegateMethod, 45), 1785)
+      Seq(
+        (ge1, success(Helpers.decodeGroupElement("02358d53f01276211f92d0aefbd278805121d4ff6eb534b777af1ee8abae5b2056"))),
+        (ge2, success(Helpers.decodeGroupElement("03dba7b94b111f3894e2f9120b577da595ec7d58d488485adf73bf4e153af63575"))),
+        (ge3, success(Helpers.decodeGroupElement("0390449814f5671172dd696a61b8aa49aaa4c87013f56165e27d49944e98bc414d"))),
+        (SigmaDsl.groupGenerator, success(Helpers.decodeGroupElement("0379be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798"))),
+        (SigmaDsl.groupIdentity, success(Helpers.decodeGroupElement("000000000000000000000000000000000000000000000000000000000000000000")))
+      )
+    },
+    existingFeature({ (x: GroupElement) => x.negate },
+    "{ (x: GroupElement) => x.negate }",
+    FuncValue(
+      Vector((1, SGroupElement)),
+      MethodCall(ValUse(1, SGroupElement), SGroupElement.getMethodByName("negate"), Vector(), Map())
+    )))
+  }
+
+  property("GroupElement.exp equivalence") {
+    val costDetails = TracedCost(
+      traceBase ++ Array(
+        FixedCostItem(SelectField),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        FixedCostItem(Exponentiate)
+      )
+    )
+    val cases = {  
+      def success[T](v: T) = Expected(Success(v), 41484, costDetails, 1873)
+      Seq(
+        ((ge1, CBigInt(new BigInteger("-25c80b560dd7844e2efd10f80f7ee57d", 16))),
+          success(Helpers.decodeGroupElement("023a850181b7b73f92a5bbfa0bfc78f5bbb6ff00645ddde501037017e1a2251e2e"))),
+        ((ge2, CBigInt(new BigInteger("2488741265082fb02b09f992be3dd8d60d2bbe80d9e2630", 16))),
+          success(Helpers.decodeGroupElement("032045b928fb7774a4cd9ef5fa8209f4e493cd4cc5bd536b52746a53871bf73431"))),
+        ((ge3, CBigInt(new BigInteger("-33e8fbdb13d2982e92583445e1fdcb5901a178a7aa1e100", 16))),
+          success(Helpers.decodeGroupElement("036128efaf14d8ac2812a662f6494dc617b87986a3dc6b4a59440048a7ac7d2729"))),
+        ((ge3, CBigInt(new BigInteger("1", 16))),
+          success(ge3))
+      )
+    }
+    val scalaFunc = { (x: (GroupElement, BigInt)) => x._1.exp(x._2) }
+    val script = "{ (x: (GroupElement, BigInt)) => x._1.exp(x._2) }"
+    if (lowerMethodCallsInTests) {
+      verifyCases(cases,
+        existingFeature(
+          scalaFunc,
+          script,
+          FuncValue(
+            Vector((1, STuple(Vector(SGroupElement, SBigInt)))),
+            Exponentiate(
+              SelectField.typed[Value[SGroupElement.type]](
+                ValUse(1, STuple(Vector(SGroupElement, SBigInt))),
+                1.toByte
+              ),
+              SelectField.typed[Value[SBigInt.type]](
+                ValUse(1, STuple(Vector(SGroupElement, SBigInt))),
+                2.toByte
+              )
+            )
+          )))
+    } else {
+      forEachScriptAndErgoTreeVersion(activatedVersions, ergoTreeVersions) {
+        testCases(
+          Seq(
+            ((ge1, CBigInt(new BigInteger("-25c80b560dd7844e2efd10f80f7ee57d", 16))),
+              Expected(
+                // in v4.x exp method cannot be called via MethodCall ErgoTree node
+                Failure(new NoSuchMethodException("sigmastate.eval.CostingRules$GroupElementCoster.exp(scalan.Base$Ref)")),
+                cost = 41484,
+                CostDetails.ZeroCost,
+                newCost = 0,
+                newVersionedResults = {
+                  // in v5.0 MethodCall ErgoTree node is allowed
+                  val res = ExpectedResult(
+                    Success(Helpers.decodeGroupElement("023a850181b7b73f92a5bbfa0bfc78f5bbb6ff00645ddde501037017e1a2251e2e")),
+                    Some(999)
+                  )
+                  val details = TracedCost(
+                    traceBase ++ Array(
+                      FixedCostItem(SelectField),
+                      FixedCostItem(MethodCall),
+                      FixedCostItem(ValUse),
+                      FixedCostItem(SelectField),
+                      FixedCostItem(SGroupElement.ExponentiateMethod, FixedCost(JitCost(900)))
+                    )
+                  )
+                  Seq( // expected result for each version
+                    0 -> ( res -> Some(details) ),
+                    1 -> ( res -> Some(details) ),
+                    2 -> ( res -> Some(details) )
+                  )
+                }
+              )
+              )
+          ),
+          changedFeature(
+            (x: (GroupElement, BigInt)) =>
+              throw new NoSuchMethodException("sigmastate.eval.CostingRules$GroupElementCoster.exp(scalan.Base$Ref)"),
+            scalaFunc, ""/*can't be compiled in v4.x*/,
+            FuncValue(
+              Vector((1, STuple(Vector(SGroupElement, SBigInt)))),
+              MethodCall(
+                SelectField.typed[Value[SGroupElement.type]](
+                  ValUse(1, STuple(Vector(SGroupElement, SBigInt))),
+                  1.toByte
+                ),
+                SGroupElement.getMethodByName("exp"),
+                Vector(
+                  SelectField.typed[Value[SBigInt.type]](
+                    ValUse(1, STuple(Vector(SGroupElement, SBigInt))),
+                    2.toByte
+                  )
+                ),
                 Map()
               )
             ),
-            ValUse(1, SGroupElement)
-          )
-        )))
-
-    verifyCases(
-      {
-        val cost = TracedCost(
-          Array(
-            FixedCostItem(Apply),
-            FixedCostItem(FuncValue),
-            FixedCostItem(GetVar),
-            FixedCostItem(OptionGet),
-            FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
-            FixedCostItem(ValUse),
-            FixedCostItem(PropertyCall),
-            MethodCallCostItem(TracedCost(Array(FixedCostItem(MethodDesc(SGroupElement.NegateMethod), FixedCost(JitCost(1))))))
-          )
-        )
-        def success[T](v: T) = Expected(Success(v), 36292, cost)
-        Seq(
-          (ge1, success(Helpers.decodeGroupElement("02358d53f01276211f92d0aefbd278805121d4ff6eb534b777af1ee8abae5b2056"))),
-          (ge2, success(Helpers.decodeGroupElement("03dba7b94b111f3894e2f9120b577da595ec7d58d488485adf73bf4e153af63575"))),
-          (ge3, success(Helpers.decodeGroupElement("0390449814f5671172dd696a61b8aa49aaa4c87013f56165e27d49944e98bc414d"))),
-          (SigmaDsl.groupGenerator, success(Helpers.decodeGroupElement("0379be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798"))),
-          (SigmaDsl.groupIdentity, success(Helpers.decodeGroupElement("000000000000000000000000000000000000000000000000000000000000000000")))
-        )
-      },
-      existingFeature({ (x: GroupElement) => x.negate },
-        "{ (x: GroupElement) => x.negate }",
-        FuncValue(
-          Vector((1, SGroupElement)),
-          MethodCall(ValUse(1, SGroupElement), SGroupElement.getMethodByName("negate"), Vector(), Map())
-        )))
-
-    // TODO HF (3h): related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
-    // val isIdentity = existingFeature({ (x: GroupElement) => x.isIdentity },
-    //   "{ (x: GroupElement) => x.isIdentity }")
-
-    if (lowerMethodCallsInTests) {
-      verifyCases(
-      {
-        val cost = TracedCost(
-          Array(
-            FixedCostItem(Apply),
-            FixedCostItem(FuncValue),
-            FixedCostItem(GetVar),
-            FixedCostItem(OptionGet),
-            FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
-            FixedCostItem(ValUse),
-            FixedCostItem(SelectField),
-            FixedCostItem(ValUse),
-            FixedCostItem(SelectField),
-            FixedCostItem(Exponentiate)
-          )
-        )
-        def success[T](v: T) = Expected(Success(v), 41484, cost)
-        Seq(
-          ((ge1, CBigInt(new BigInteger("-25c80b560dd7844e2efd10f80f7ee57d", 16))),
-              success(Helpers.decodeGroupElement("023a850181b7b73f92a5bbfa0bfc78f5bbb6ff00645ddde501037017e1a2251e2e"))),
-          ((ge2, CBigInt(new BigInteger("2488741265082fb02b09f992be3dd8d60d2bbe80d9e2630", 16))),
-              success(Helpers.decodeGroupElement("032045b928fb7774a4cd9ef5fa8209f4e493cd4cc5bd536b52746a53871bf73431"))),
-          ((ge3, CBigInt(new BigInteger("-33e8fbdb13d2982e92583445e1fdcb5901a178a7aa1e100", 16))),
-              success(Helpers.decodeGroupElement("036128efaf14d8ac2812a662f6494dc617b87986a3dc6b4a59440048a7ac7d2729"))),
-          ((ge3, CBigInt(new BigInteger("1", 16))),
-              success(ge3))
-        )
-      },
-      existingFeature(
-        { (x: (GroupElement, BigInt)) => x._1.exp(x._2) },
-        "{ (x: (GroupElement, BigInt)) => x._1.exp(x._2) }",
-        FuncValue(
-          Vector((1, STuple(Vector(SGroupElement, SBigInt)))),
-          Exponentiate(
-            SelectField.typed[Value[SGroupElement.type]](
-              ValUse(1, STuple(Vector(SGroupElement, SBigInt))),
-              1.toByte
-            ),
-            SelectField.typed[Value[SBigInt.type]](
-              ValUse(1, STuple(Vector(SGroupElement, SBigInt))),
-              2.toByte
-            )
-          )
-        )))
-    } else {
-      // TODO v5.0: add test case with `exp` MethodCall
+            allowNewToSucceed = true,
+            allowDifferentErrors = true
+          ))
+      }
     }
+  }
 
+  property("GroupElement.multiply equivalence") {
+    val scalaFunc = { (x: (GroupElement, GroupElement)) => x._1.multiply(x._2) }
     if (lowerMethodCallsInTests) {
       verifyCases(
       {
-        val cost = TracedCost(
-          Array(
-            FixedCostItem(Apply),
-            FixedCostItem(FuncValue),
-            FixedCostItem(GetVar),
-            FixedCostItem(OptionGet),
-            FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
-            FixedCostItem(ValUse),
+        val costDetails = TracedCost(
+          traceBase ++ Array(
             FixedCostItem(SelectField),
             FixedCostItem(ValUse),
             FixedCostItem(SelectField),
             FixedCostItem(MultiplyGroup)
           )
         )
-        def success[T](v: T) = Expected(Success(v), 36457, cost)
+        def success[T](v: T) = Expected(Success(v), 36457, costDetails, 1787)
         Seq(
           ((ge1, Helpers.decodeGroupElement("03e132ca090614bd6c9f811e91f6daae61f16968a1e6c694ed65aacd1b1092320e")),
               success(Helpers.decodeGroupElement("02bc48937b4a66f249a32dfb4d2efd0743dc88d46d770b8c5d39fd03325ba211df"))),
@@ -2754,7 +2892,7 @@ class SigmaDslSpecification extends SigmaDslTesting
               success(ge3))
         )
       },
-      existingFeature({ (x: (GroupElement, GroupElement)) => x._1.multiply(x._2) },
+      existingFeature(scalaFunc,
         "{ (x: (GroupElement, GroupElement)) => x._1.multiply(x._2) }",
         FuncValue(
           Vector((1, STuple(Vector(SGroupElement, SGroupElement)))),
@@ -2770,9 +2908,68 @@ class SigmaDslSpecification extends SigmaDslTesting
           )
         )))
     } else {
-      //TODO v5.0: add test case with `exp` MethodCall
+      val cases = Seq(
+        ((ge1, Helpers.decodeGroupElement("03e132ca090614bd6c9f811e91f6daae61f16968a1e6c694ed65aacd1b1092320e")),
+          Expected(
+            // in v4.x exp method cannot be called via MethodCall ErgoTree node
+            Failure(new NoSuchMethodException("sigmastate.eval.CostingRules$GroupElementCoster.multiply(scalan.Base$Ref)")),
+            cost = 41484,
+            CostDetails.ZeroCost,
+            newCost = 0,
+            newVersionedResults = {
+              // in v5.0 MethodCall ErgoTree node is allowed
+              val res = ExpectedResult(
+                Success(Helpers.decodeGroupElement("02bc48937b4a66f249a32dfb4d2efd0743dc88d46d770b8c5d39fd03325ba211df")),
+                Some(139)
+              )
+              val details = TracedCost(traceBase ++ Array(
+                FixedCostItem(SelectField),
+                FixedCostItem(MethodCall),
+                FixedCostItem(ValUse),
+                FixedCostItem(SelectField),
+                FixedCostItem(SGroupElement.MultiplyMethod, FixedCost(JitCost(40)))
+              ))
+              Seq.tabulate(3)(_ -> ( res -> Some(details) )) // expected result for each version
+            }
+          )
+          )
+      )
+      forEachScriptAndErgoTreeVersion(activatedVersions, ergoTreeVersions) {
+        testCases(
+          cases,
+          changedFeature(
+            (_: (GroupElement, GroupElement)) =>
+              throw new NoSuchMethodException("java.lang.NoSuchMethodException: sigmastate.eval.CostingRules$GroupElementCoster.multiply(scalan.Base$Ref)"),
+            scalaFunc, ""/*can't be compiled in v4.x*/,
+            FuncValue(
+              Vector((1, STuple(Vector(SGroupElement, SGroupElement)))),
+              MethodCall(
+                SelectField.typed[Value[SGroupElement.type]](
+                  ValUse(1, STuple(Vector(SGroupElement, SGroupElement))),
+                  1.toByte
+                ),
+                SGroupElement.getMethodByName("multiply"),
+                Vector(
+                  SelectField.typed[Value[SGroupElement.type]](
+                    ValUse(1, STuple(Vector(SGroupElement, SGroupElement))),
+                    2.toByte
+                  )
+                ),
+                Map()
+              )
+            ),
+            allowNewToSucceed = true,
+            allowDifferentErrors = true
+          ))
+      }
     }
   }
+
+  // TODO v6.0 (3h): related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
+  //  property("GroupElement.isIdentity equivalence") {
+  //    // val isIdentity = existingFeature({ (x: GroupElement) => x.isIdentity },
+  //    //   "{ (x: GroupElement) => x.isIdentity }")
+  //  }
 
   property("AvlTree properties equivalence") {
     def expectedExprFor(propName: String) = {
@@ -2788,7 +2985,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     }
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 36182)
+        def success[T](v: T) = Expected(Success(v), 36182, methodCostDetails(SAvlTree.digestMethod, 15), 1767)
         Seq(
           (t1, success(Helpers.decodeBytes("000183807f66b301530120ff7fc6bd6601ff01ff7f7d2bedbbffff00187fe89094"))),
           (t2, success(Helpers.decodeBytes("ff000d937f80ffd731ed802d24358001ff8080ff71007f00ad37e0a7ae43fff95b"))),
@@ -2801,7 +2998,7 @@ class SigmaDslSpecification extends SigmaDslTesting
 
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 36260)
+        def success[T](v: T) = Expected(Success(v), 36260, methodCostDetails(SAvlTree.enabledOperationsMethod, 15), 1765)
         Seq(
           (t1, success(6.toByte)),
           (t2, success(0.toByte)),
@@ -2814,7 +3011,7 @@ class SigmaDslSpecification extends SigmaDslTesting
 
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 36136)
+        def success[T](v: T) = Expected(Success(v), 36136, methodCostDetails(SAvlTree.keyLengthMethod, 15), 1765)
         Seq(
           (t1, success(1)),
           (t2, success(32)),
@@ -2827,11 +3024,11 @@ class SigmaDslSpecification extends SigmaDslTesting
 
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 37151)
+        def success[T](v: T, newCost: Int) = Expected(Success(v), 37151, methodCostDetails(SAvlTree.valueLengthOptMethod, 15), newCost)
         Seq(
-          (t1, success(Some(1))),
-          (t2, success(Some(64))),
-          (t3, success(None))
+          (t1, success(Some(1), 1766)),
+          (t2, success(Some(64), 1766)),
+          (t3, success(None, 1765))
         )
       },
       existingFeature((t: AvlTree) => t.valueLengthOpt,
@@ -2840,7 +3037,7 @@ class SigmaDslSpecification extends SigmaDslTesting
 
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 36479)
+        def success[T](v: T) = Expected(Success(v), 36479, methodCostDetails(SAvlTree.isInsertAllowedMethod, 15), 1765)
         Seq(
           (t1, success(false)),
           (t2, success(false)),
@@ -2853,7 +3050,7 @@ class SigmaDslSpecification extends SigmaDslTesting
 
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 36096)
+        def success[T](v: T) = Expected(Success(v), 36096, methodCostDetails(SAvlTree.isUpdateAllowedMethod, 15), 1765)
         Seq(
           (t1, success(true)),
           (t2, success(false)),
@@ -2866,7 +3063,7 @@ class SigmaDslSpecification extends SigmaDslTesting
 
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 36502)
+        def success[T](v: T) = Expected(Success(v), 36502, methodCostDetails(SAvlTree.isRemoveAllowedMethod, 15), 1765)
         Seq(
           (t1, success(true)),
           (t2, success(false)),
@@ -3066,13 +3263,26 @@ class SigmaDslSpecification extends SigmaDslTesting
         )
       ))
 
-    def success[T](v: T) = Expected(Success(v), 0)
-
-    { // getMany with a bunch of existing keys
-      val (keysArr, valuesArr, _, avlProver) = sampleAvlProver
-      val keys = Colls.fromArray(keysArr.slice(0, 20))
-      val expRes = Colls.fromArray(valuesArr.slice(0, 20).map(Option(_)))
-
+    {
+      val keysArr =
+        Array(
+          Colls.fromArray(Array[Byte](0,14,54,-1,-128,-61,-89,72,27,34,1,-1,62,-48,0,8,74,1,82,-48,-41,100,-66,64,127,45,1,-1,0,-128,-16,-57)),
+          Colls.fromArray(Array[Byte](127,-128,-1,127,-96,-1,-63,1,25,43,127,-122,127,-43,0,-1,-57,113,-6,1,1,0,15,1,-104,-1,-55,101,115,-94,-128,94)),
+          Colls.fromArray(Array[Byte](-60,-26,117,124,-92,104,106,-1,-1,-1,-29,121,-98,54,10,-105,127,13,-1,0,-90,0,-125,-13,-1,-79,-87,127,0,127,0,0)),
+          Colls.fromArray(Array[Byte](84,127,-44,-65,1,-77,39,-128,113,14,1,-128,127,48,-53,60,-5,-19,123,0,-128,127,-28,0,104,-1,0,1,-51,124,-78,67)),
+          Colls.fromArray(Array[Byte](12,56,-25,-128,1,-128,-128,70,19,37,0,-1,1,87,-20,-128,80,127,-66,-1,83,-1,111,0,-34,0,49,-77,1,0,61,-1))
+        )
+      val valuesArr =
+        Array(
+          Colls.fromArray(Array[Byte](-87,0,-102,88,-128,-54,66,1,-128,-16,0,1,-44,0,35,-32,-23,40,127,-97,49,-1,127,1,-84,115,127,61,-84,-63,-104,-9,-116,-26,9,-93,-128,0,11,127,0,-128,-1,-128,-1,127,-110,-128,0,0,90,-126,28,0,42,-71,-1,37,-26,0,124,-72,68,26,14)),
+          Colls.fromArray(Array[Byte](84,106,-48,-17,-1,44,127,-128,0,86,-1)),
+          Colls.fromArray(Array[Byte](127,-128,-60,1,118,-32,-72,-9,101,0,0,-68,-51,8,95,127)),
+          Colls.fromArray(Array[Byte](127,-88,127,-101,-128,77,-25,-72,-86,127,127,127,-88,0,-128)),
+          Colls.fromArray(Array[Byte](2,5,-128,127,46,0,1,127,-9,64,-13,0,19,-112,124,1,20,52,65,-31,-112,114,0,18,-1,-88,-128,118,-126,-1,0,112,119,-1,20,84,11,-23,113,-1,71,-77,127,11,1,-128,63,-23,0,127,-55,42,8,127,126,115,59,70,127,102,-109,-128,127,41,-128,127,127,15,1,127,80,-29,0,8,-127,-96,-1,37,106,76,0,-128,-128,-128,-102,52,0,-11,1,-1,71))
+        )
+      val (_, avlProver) = createAvlTreeAndProver(keysArr.zip(valuesArr):_*)
+      val keys = Colls.fromArray(keysArr)
+      val expRes = Colls.fromArray(valuesArr).map(Option(_))
       keys.foreach { key =>
         avlProver.performOneOperation(Lookup(ADKey @@ key.toArray))
       }
@@ -3081,33 +3291,113 @@ class SigmaDslSpecification extends SigmaDslTesting
       val tree = SigmaDsl.avlTree(AvlTreeFlags.ReadOnly.serializeToByte, digest, 32, None)
 
       val input = (tree, (keys, proof))
-      getMany.checkExpected(input, success(expRes))
+      val costDetails = TracedCost(
+        Array(
+          FixedCostItem(Apply),
+          FixedCostItem(FuncValue),
+          FixedCostItem(GetVar),
+          FixedCostItem(OptionGet),
+          FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+          SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+          FixedCostItem(ValUse),
+          FixedCostItem(SelectField),
+          FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+          FixedCostItem(ValUse),
+          FixedCostItem(SelectField),
+          FixedCostItem(MethodCall),
+          FixedCostItem(ValUse),
+          FixedCostItem(SelectField),
+          FixedCostItem(ValUse),
+          FixedCostItem(SelectField),
+          SeqCostItem(NamedDesc("CreateAvlVerifier"), PerItemCost(JitCost(110), JitCost(20), 64), 456),
+          SeqCostItem(NamedDesc("LookupAvlTree"), PerItemCost(JitCost(40), JitCost(10), 1), 3),
+          SeqCostItem(NamedDesc("LookupAvlTree"), PerItemCost(JitCost(40), JitCost(10), 1), 3),
+          SeqCostItem(NamedDesc("LookupAvlTree"), PerItemCost(JitCost(40), JitCost(10), 1), 3),
+          SeqCostItem(NamedDesc("LookupAvlTree"), PerItemCost(JitCost(40), JitCost(10), 1), 3),
+          SeqCostItem(NamedDesc("LookupAvlTree"), PerItemCost(JitCost(40), JitCost(10), 1), 3)
+        )
+      )
+
+      getMany.checkExpected(input, Expected(Success(expRes), 38991, costDetails, 1845))
     }
 
-    val (keysArr, valuesArr, _, avlProver) = sampleAvlProver
-    val key = keysArr(0)
-    val value = valuesArr(0)
+    val key = Colls.fromArray(Array[Byte](-16,-128,99,86,1,-128,-36,-83,109,72,-124,-114,1,-32,15,127,-30,125,127,1,-102,-53,-53,-128,-107,0,64,8,1,127,22,1))
+    val value = Colls.fromArray(Array[Byte](0,41,-78,1,113,-128,0,-128,1,-92,0,1,1,34,127,-1,56,-1,-60,89,1,-20,-92))
+    val (tree, avlProver) = createAvlTreeAndProver(key -> value)
     val otherKey = key.map(x => (-x).toByte) // any other different from key
 
-    val table = Table(("key", "contains", "valueOpt"),
-      (key, true, Some(value)),
-      (otherKey, false, None)
+    // Final cost is baseCost + additionalCost, baseCost is specified in test scenario below
+    val table = Table(("key", "contains", "valueOpt", "additionalCost", "additionalCostDetails"),
+      (key, true, Some(value), 2, 23),
+      (otherKey, false, None, 0, 0)
     )
 
-    forAll(table) { (key, okContains, valueOpt) =>
+    forAll(table) { (key, okContains, valueOpt, additionalCost, additionalDetails) =>
       avlProver.performOneOperation(Lookup(ADKey @@ key.toArray))
       val proof = avlProver.generateProof().toColl
       val digest = avlProver.digest.toColl
       val tree = SigmaDsl.avlTree(AvlTreeFlags.ReadOnly.serializeToByte, digest, 32, None)
 
+      def costDetails(i: Int) = TracedCost(
+        Array(
+          FixedCostItem(Apply),
+          FixedCostItem(FuncValue),
+          FixedCostItem(GetVar),
+          FixedCostItem(OptionGet),
+          FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+          SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+          FixedCostItem(ValUse),
+          FixedCostItem(SelectField),
+          FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+          FixedCostItem(ValUse),
+          FixedCostItem(SelectField),
+          FixedCostItem(MethodCall),
+          FixedCostItem(ValUse),
+          FixedCostItem(SelectField),
+          FixedCostItem(ValUse),
+          FixedCostItem(SelectField),
+          SeqCostItem(NamedDesc("CreateAvlVerifier"), PerItemCost(JitCost(110), JitCost(20), 64), i),
+          SeqCostItem(NamedDesc("LookupAvlTree"), PerItemCost(JitCost(40), JitCost(10), 1), 1)
+        )
+      )
+
+      val updateDigestCostDetails = TracedCost(
+        Array(
+          FixedCostItem(Apply),
+          FixedCostItem(FuncValue),
+          FixedCostItem(GetVar),
+          FixedCostItem(OptionGet),
+          FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+          FixedCostItem(ValUse),
+          FixedCostItem(SelectField),
+          FixedCostItem(MethodCall),
+          FixedCostItem(ValUse),
+          FixedCostItem(SelectField),
+          FixedCostItem(SAvlTree.updateDigestMethod, FixedCost(JitCost(40)))
+        )
+      )
+
+      val updateOperationsCostDetails = TracedCost(
+        Array(
+          FixedCostItem(Apply),
+          FixedCostItem(FuncValue),
+          FixedCostItem(GetVar),
+          FixedCostItem(OptionGet),
+          FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+          FixedCostItem(ValUse),
+          FixedCostItem(SelectField),
+          FixedCostItem(MethodCall),
+          FixedCostItem(ValUse),
+          FixedCostItem(SelectField),
+          FixedCostItem(SAvlTree.updateOperationsMethod, FixedCost(JitCost(45)))
+        )
+      )
+
       // positive test
       {
         val input = (tree, (key, proof))
-        contains.checkExpected(input, success(okContains))
-        get.checkExpected(input, success(valueOpt))
-
-        contains.checkVerify(input, Expected(value = Success(okContains), cost = 37850))
-        get.checkVerify(input, Expected(value = Success(valueOpt), cost = 38372))
+        contains.checkExpected(input, Expected(Success(okContains), 37850, costDetails(105 + additionalDetails), 1790))
+        get.checkExpected(input, Expected(Success(valueOpt), 38372, costDetails(105 + additionalDetails), 1790 + additionalCost))
       }
 
       val keys = Colls.fromItems(key)
@@ -3115,15 +3405,14 @@ class SigmaDslSpecification extends SigmaDslTesting
 
       {
         val input = (tree, (keys, proof))
-        getMany.checkExpected(input, success(expRes))
-        getMany.checkVerify(input, Expected(value = Success(expRes), cost = 38991))
+        getMany.checkExpected(input, Expected(Success(expRes), 38991, costDetails(105 + additionalDetails), 1791 + additionalCost))
       }
 
       {
         val input = (tree, digest)
         val (res, _) = updateDigest.checkEquality(input).getOrThrow
         res.digest shouldBe digest
-        updateDigest.checkVerify(input, Expected(value = Success(res), cost = 36341))
+        updateDigest.checkExpected(input, Expected(Success(res), 36341, updateDigestCostDetails, 1771))
       }
 
       val newOps = 1.toByte
@@ -3132,7 +3421,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         val input = (tree, newOps)
         val (res,_) = updateOperations.checkEquality(input).getOrThrow
         res.enabledOperations shouldBe newOps
-        updateOperations.checkVerify(input, Expected(value = Success(res), cost = 36341))
+        updateOperations.checkExpected(input, Expected(Success(res), 36341, updateOperationsCostDetails, 1771))
       }
 
       // negative tests: invalid proof
@@ -3142,7 +3431,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         val input = (tree, (key, invalidProof))
         val (res, _) = contains.checkEquality(input).getOrThrow
         res shouldBe false
-        contains.checkVerify(input, Expected(value = Success(res), cost = 37850))
+        contains.checkExpected(input, Expected(Success(res), 37850, costDetails(105 + additionalDetails), 1790))
       }
 
       {
@@ -3256,6 +3545,34 @@ class SigmaDslSpecification extends SigmaDslTesting
         )
       ))
 
+    val testTraceBase = Array(
+      FixedCostItem(Apply),
+      FixedCostItem(FuncValue),
+      FixedCostItem(GetVar),
+      FixedCostItem(OptionGet),
+      FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+      SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+      FixedCostItem(ValUse),
+      FixedCostItem(SelectField),
+      FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+      FixedCostItem(ValUse),
+      FixedCostItem(SelectField),
+      FixedCostItem(MethodCall),
+      FixedCostItem(ValUse),
+      FixedCostItem(SelectField),
+      FixedCostItem(ValUse),
+      FixedCostItem(SelectField),
+      FixedCostItem(SAvlTree.isInsertAllowedMethod, FixedCost(JitCost(15)))
+    )
+    val costDetails1 = TracedCost(testTraceBase)
+    val costDetails2 = TracedCost(
+      testTraceBase ++ Array(
+        SeqCostItem(NamedDesc("CreateAvlVerifier"), PerItemCost(JitCost(110), JitCost(20), 64), 70),
+        SeqCostItem(NamedDesc("InsertIntoAvlTree"), PerItemCost(JitCost(40), JitCost(10), 1), 1),
+        FixedCostItem(SAvlTree.updateDigestMethod, FixedCost(JitCost(40)))
+      )
+    )
+
     forAll(keyCollGen, bytesCollGen) { (key, value) =>
       val (tree, avlProver) = createAvlTreeAndProver()
       val preInsertDigest = avlProver.digest.toColl
@@ -3267,7 +3584,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         val input = (preInsertTree, (kvs, insertProof))
         val (res, _) = insert.checkEquality(input).getOrThrow
         res.isDefined shouldBe true
-        insert.checkVerify(input, Expected(value = Success(res), cost = 38501))
+        insert.checkExpected(input, Expected(Success(res), 38501, costDetails2, 1796))
       }
 
       { // negative: readonly tree
@@ -3275,7 +3592,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         val input = (readonlyTree, (kvs, insertProof))
         val (res, _) = insert.checkEquality(input).getOrThrow
         res.isDefined shouldBe false
-        insert.checkVerify(input, Expected(value = Success(res), cost = 38501))
+        insert.checkExpected(input, Expected(Success(res), 38501, costDetails1, 1772))
       }
 
       { // negative: invalid key
@@ -3284,8 +3601,8 @@ class SigmaDslSpecification extends SigmaDslTesting
         val invalidKvs = Colls.fromItems((invalidKey -> value)) // NOTE, insertProof is based on `key`
         val input = (tree, (invalidKvs, insertProof))
         val (res, _) = insert.checkEquality(input).getOrThrow
-        res.isDefined shouldBe true // TODO HF: should it really be true? (looks like a bug)
-        insert.checkVerify(input, Expected(value = Success(res), cost = 38501))
+        res.isDefined shouldBe true // TODO v6.0: should it really be true? (looks like a bug)
+        insert.checkExpected(input, Expected(Success(res), 38501, costDetails2, 1796))
       }
 
       { // negative: invalid proof
@@ -3367,67 +3684,95 @@ class SigmaDslSpecification extends SigmaDslTesting
       ))
     val cost = 40952
 
-    def success[T](v: T) = Expected(Success(v), 0)
+    val testTraceBase = Array(
+      FixedCostItem(Apply),
+      FixedCostItem(FuncValue),
+      FixedCostItem(GetVar),
+      FixedCostItem(OptionGet),
+      FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+      SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+      FixedCostItem(ValUse),
+      FixedCostItem(SelectField),
+      FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+      FixedCostItem(ValUse),
+      FixedCostItem(SelectField),
+      FixedCostItem(MethodCall),
+      FixedCostItem(ValUse),
+      FixedCostItem(SelectField),
+      FixedCostItem(ValUse),
+      FixedCostItem(SelectField),
+      FixedCostItem(SAvlTree.isUpdateAllowedMethod, FixedCost(JitCost(15)))
+    )
+    val costDetails1 = TracedCost(testTraceBase)
+    val costDetails2 = TracedCost(
+      testTraceBase ++ Array(
+        SeqCostItem(NamedDesc("CreateAvlVerifier"), PerItemCost(JitCost(110), JitCost(20), 64), 111),
+        SeqCostItem(NamedDesc("UpdateAvlTree"), PerItemCost(JitCost(120), JitCost(20), 1), 1),
+        FixedCostItem(SAvlTree.updateDigestMethod, FixedCost(JitCost(40)))
+      )
+    )
+    val costDetails3 = TracedCost(
+      testTraceBase ++ Array(
+        SeqCostItem(NamedDesc("CreateAvlVerifier"), PerItemCost(JitCost(110), JitCost(20), 64), 111),
+        SeqCostItem(NamedDesc("UpdateAvlTree"), PerItemCost(JitCost(120), JitCost(20), 1), 1)
+      )
+    )
 
-    forAll(keyCollGen, bytesCollGen) { (key, value) =>
-      val (_, avlProver) = createAvlTreeAndProver(key -> value)
-      val preUpdateDigest = avlProver.digest.toColl
-      val newValue = bytesCollGen.sample.get
-      val updateProof = performUpdate(avlProver, key, newValue)
-      val kvs = Colls.fromItems((key -> newValue))
-      val endDigest = avlProver.digest.toColl
+    val key = Colls.fromArray(Array[Byte](1,0,1,1,73,-67,-128,1,1,0,93,0,127,87,95,51,1,127,1,-3,74,-66,-128,1,89,-18,1,-1,-62,0,-33,51))
+    val value = Colls.fromArray(Array[Byte](1,-50,1,-128,120,1))
+    val (_, avlProver) = createAvlTreeAndProver(key -> value)
+    val preUpdateDigest = avlProver.digest.toColl
+    // val newValue = bytesCollGen.sample.get
+    val newValue = Colls.fromArray(Array[Byte](2,-1,127,91,0,-1,-128,-1,38,-128,-105,-68,-128,-128,127,127,127,-74,88,127,127,127,-81,-30,-89,121,127,-1,-1,-34,127,1,-12,-128,108,75,127,-14,-63,-128,-103,127,1,-57,0,1,-128,127,-85,23,0,-128,70,-110,127,-85,-30,15,-1,-71,0,127,1,42,127,-118,-1,0,-53,126,42,0,127,127,0,-10,-1,127,19,-4,-1,-88,-128,-96,61,-116,127,-111,6,-128,-1,-86,-39,114,0,127,-92,40))
+    val updateProof = performUpdate(avlProver, key, newValue)
+    val kvs = Colls.fromItems((key -> newValue))
+    val endDigest = avlProver.digest.toColl
 
-      { // positive: update to newValue
-        val preUpdateTree = createTree(preUpdateDigest, updateAllowed = true)
-        val endTree = preUpdateTree.updateDigest(endDigest)
-        val input = (preUpdateTree, (kvs, updateProof))
-        val res = Some(endTree)
-        update.checkExpected(input, success(res))
-        update.checkVerify(input, Expected(value = Success(res), cost = cost))
-      }
+    { // positive: update to newValue
+      val preUpdateTree = createTree(preUpdateDigest, updateAllowed = true)
+      val endTree = preUpdateTree.updateDigest(endDigest)
+      val input = (preUpdateTree, (kvs, updateProof))
+      val res = Some(endTree)
+      update.checkExpected(input, Expected(Success(res), cost, costDetails2, 1805))
+    }
 
-      { // positive: update to the same value (identity operation)
-        val tree = createTree(preUpdateDigest, updateAllowed = true)
-        val keys = Colls.fromItems((key -> value))
-        val input = (tree, (keys, updateProof))
-        val res = Some(tree)
-        update.checkExpected(input, success(res))
-        update.checkVerify(input, Expected(value = Success(res), cost = cost))
-      }
+    { // positive: update to the same value (identity operation)
+      val tree = createTree(preUpdateDigest, updateAllowed = true)
+      val keys = Colls.fromItems((key -> value))
+      val input = (tree, (keys, updateProof))
+      val res = Some(tree)
+      update.checkExpected(input, Expected(Success(res), cost, costDetails2, 1805))
+    }
 
-      { // negative: readonly tree
-        val readonlyTree = createTree(preUpdateDigest)
-        val input = (readonlyTree, (kvs, updateProof))
-        update.checkExpected(input, success(None))
-        update.checkVerify(input, Expected(value = Success(None), cost = cost))
-      }
+    { // negative: readonly tree
+      val readonlyTree = createTree(preUpdateDigest)
+      val input = (readonlyTree, (kvs, updateProof))
+      update.checkExpected(input, Expected(Success(None), cost, costDetails1, 1772))
+    }
 
-      { // negative: invalid key
-        val tree = createTree(preUpdateDigest, updateAllowed = true)
-        val invalidKey = key.map(x => (-x).toByte) // any other different from key
-        val invalidKvs = Colls.fromItems((invalidKey -> newValue))
-        val input = (tree, (invalidKvs, updateProof))
-        update.checkExpected(input, success(None))
-        update.checkVerify(input, Expected(value = Success(None), cost = cost))
-      }
+    { // negative: invalid key
+      val tree = createTree(preUpdateDigest, updateAllowed = true)
+      val invalidKey = key.map(x => (-x).toByte) // any other different from key
+      val invalidKvs = Colls.fromItems((invalidKey -> newValue))
+      val input = (tree, (invalidKvs, updateProof))
+      update.checkExpected(input, Expected(Success(None), cost, costDetails3, 1801))
+    }
 
-      { // negative: invalid value (different from the value in the proof)
-        val tree = createTree(preUpdateDigest, updateAllowed = true)
-        val invalidValue = newValue.map(x => (-x).toByte)
-        val invalidKvs = Colls.fromItems((key -> invalidValue))
-        val input = (tree, (invalidKvs, updateProof))
-        val (res, _) = update.checkEquality(input).getOrThrow
-        res.isDefined shouldBe true  // TODO HF: should it really be true? (looks like a bug)
-        update.checkVerify(input, Expected(value = Success(res), cost = cost))
-      }
+    { // negative: invalid value (different from the value in the proof)
+      val tree = createTree(preUpdateDigest, updateAllowed = true)
+      val invalidValue = newValue.map(x => (-x).toByte)
+      val invalidKvs = Colls.fromItems((key -> invalidValue))
+      val input = (tree, (invalidKvs, updateProof))
+      val (res, _) = update.checkEquality(input).getOrThrow
+      res.isDefined shouldBe true  // TODO v6.0: should it really be true? (looks like a bug)
+      update.checkExpected(input, Expected(Success(res), cost, costDetails2, 1805))
+    }
 
-      { // negative: invalid proof
-        val tree = createTree(preUpdateDigest, updateAllowed = true)
-        val invalidProof = updateProof.map(x => (-x).toByte) // any other different from proof
-        val input = (tree, (kvs, invalidProof))
-        update.checkExpected(input, success(None))
-        update.checkVerify(input, Expected(value = Success(None), cost = cost))
-      }
+    { // negative: invalid proof
+      val tree = createTree(preUpdateDigest, updateAllowed = true)
+      val invalidProof = updateProof.map(x => (-x).toByte) // any other different from proof
+      val input = (tree, (kvs, invalidProof))
+      update.checkExpected(input, Expected(Success(None), cost, costDetails3, 1801))
     }
   }
 
@@ -3468,11 +3813,66 @@ class SigmaDslSpecification extends SigmaDslTesting
         )
       ))
 
-    def success[T](v: T) = Expected(Success(v), 0)
+    val testTraceBase = Array(
+      FixedCostItem(Apply),
+      FixedCostItem(FuncValue),
+      FixedCostItem(GetVar),
+      FixedCostItem(OptionGet),
+      FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+      SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+      FixedCostItem(ValUse),
+      FixedCostItem(SelectField),
+      FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+      FixedCostItem(ValUse),
+      FixedCostItem(SelectField),
+      FixedCostItem(MethodCall),
+      FixedCostItem(ValUse),
+      FixedCostItem(SelectField),
+      FixedCostItem(ValUse),
+      FixedCostItem(SelectField),
+      FixedCostItem(SAvlTree.isRemoveAllowedMethod, FixedCost(JitCost(15)))
+    )
+    val costDetails1 = TracedCost(
+      testTraceBase ++ Array(
+        SeqCostItem(NamedDesc("CreateAvlVerifier"), PerItemCost(JitCost(110), JitCost(20), 64), 436),
+        SeqCostItem(NamedDesc("RemoveAvlTree"), PerItemCost(JitCost(100), JitCost(15), 1), 3),
+        SeqCostItem(NamedDesc("RemoveAvlTree"), PerItemCost(JitCost(100), JitCost(15), 1), 3),
+        FixedCostItem(SAvlTree.digestMethod, FixedCost(JitCost(15))),
+        FixedCostItem(SAvlTree.updateDigestMethod, FixedCost(JitCost(40)))
+      )
+    )
+    val costDetails2 = TracedCost(
+      testTraceBase ++ Array(
+        SeqCostItem(NamedDesc("CreateAvlVerifier"), PerItemCost(JitCost(110), JitCost(20), 64), 140),
+        SeqCostItem(NamedDesc("RemoveAvlTree"), PerItemCost(JitCost(100), JitCost(15), 1), 1),
+        FixedCostItem(SAvlTree.digestMethod, FixedCost(JitCost(15))),
+        FixedCostItem(SAvlTree.updateDigestMethod, FixedCost(JitCost(40)))
+      )
+    )
+    val costDetails3 = TracedCost(testTraceBase)
+    val costDetails4 = TracedCost(
+      testTraceBase ++ Array(
+        SeqCostItem(NamedDesc("CreateAvlVerifier"), PerItemCost(JitCost(110), JitCost(20), 64), 140),
+        SeqCostItem(NamedDesc("RemoveAvlTree"), PerItemCost(JitCost(100), JitCost(15), 1), 1),
+        FixedCostItem(SAvlTree.digestMethod, FixedCost(JitCost(15)))
+      )
+    )
 
-    { // positive test with many keys in the tree and to remove
-      val keys = arrayOfN(100, keyCollGen).sample.get
-      val values = arrayOfN(100, bytesCollGen).sample.get
+    {
+      val keys = Array(
+        Colls.fromArray(Array[Byte](6,71,1,-123,-1,17,-1,-1,-128,-1,-99,127,2,-37,-1,-17,-1,-90,-33,-50,-122,127,1,127,-81,1,-57,118,-38,-36,-2,1)),
+        Colls.fromArray(Array[Byte](-84,-128,1,0,30,0,73,127,71,1,0,39,127,-1,-109,66,0,1,-128,-43,-1,-95,-55,-97,12,1,-1,0,-128,-1,5,0)),
+        Colls.fromArray(Array[Byte](0,-84,1,-1,-128,93,-21,0,-128,0,-128,-128,85,-128,-123,-1,-70,0,38,-1,123,-1,1,21,0,-11,-59,122,-108,-64,1,124)),
+        Colls.fromArray(Array[Byte](1,-29,-1,0,-1,0,0,0,1,44,0,2,0,17,1,-36,50,58,118,-125,108,-93,3,65,-128,77,127,109,-121,-61,-128,-128)),
+        Colls.fromArray(Array[Byte](127,0,0,70,127,1,-109,60,-128,-106,-77,-1,-1,0,127,-108,-128,0,0,-27,-9,-128,89,127,107,68,-76,3,-102,127,4,0))
+      )
+      val values = Array(
+        Colls.fromArray(Array[Byte](-1,91,0,31,-86,-1,39,127,76,78,-1,0,0,-112,36,-16,55,-9,-21,45,0,-128,23,-1,1,-128,63,-33,-60,117,116,-53,-19,-1,0,1,-128,0,127,127,16,127,-84,-128,0,1,-5,1,-128,-103,114,-128,-105,-128,79,62,-1,46,0,-128,-40,-1,89,40,103,1,44,-128,97,-107,111,-1,0,-8,1,42,-38,88,127,127,118,127,127,127,-6,-1,20,32,-128,-1,69,1,127,1,127,22,-128,127)),
+        Colls.fromArray(Array[Byte](-75,-38,-1,0,-127,-104,-128,-128,-47,113,98,-128,-120,101,1,-128,1,-128,19,1,0,10,88,90,-1,-49,-13,127,26,82,-1,-1,-1,1,-1,-62,-128,-128)),
+        Colls.fromArray(Array[Byte](-95,-76,-128,-128,127,16,0,-1,-18,1,-93,1,127,-128,1,-92,111,-128,59,-1,-128,-1,96,-87,127,101,14,73,-9,-128,-1,1,-128,-1,127,-72,6,127,1,67,-1,-128,3,111,1,1,127,-118,127,43,-99,1,-128,0,127,-128,1,-128,-128,100,1,73,0,127,1,-121,1,104,-50,0,0,-1,119,127,80,-69,-128,23,-128,1,-1,127,18,-128,124,-128)),
+        Colls.fromArray(Array[Byte](-65,-128,127,0,-7,35,-128,-127,-120,-128,-8,64,-128,16)),
+        Colls.fromArray(Array[Byte](127,100,8,-128,1,56,113,-35,-50,53,-128,-61,-1))
+      )
       val (_, avlProver) = createAvlTreeAndProver(keys.zip(values):_*)
       val preRemoveDigest = avlProver.digest.toColl
       val keysToRemove = keys.zipWithIndex.collect { case (k, i) if i % 2 != 0 => k }
@@ -3483,10 +3883,12 @@ class SigmaDslSpecification extends SigmaDslTesting
       val endTree = preRemoveTree.updateDigest(endDigest)
       val input = (preRemoveTree, (Colls.fromArray(keysToRemove), removeProof))
       val res = Some(endTree)
-      remove.checkExpected(input, success(res))
+      remove.checkExpected(input, Expected(Success(res), 38270, costDetails1, 1832))
     }
 
-    forAll(keyCollGen, bytesCollGen) { (key, value) =>
+    {
+      val key = Colls.fromArray(Array[Byte](-60,42,60,-1,-128,-122,107,-1,-1,-128,47,24,-1,-13,-40,-58,-1,127,-41,-12,100,0,15,-108,-41,127,-7,-1,126,-1,-1,115))
+      val value = Colls.fromArray(Array[Byte](0,-40,1,1,-60,-119,-68,0,-128,-128,127,-3,5,54,-1,49,47,33,126,-82,-115,1,0,-123,1,15,-1,-49,-107,73,-1))
       val (_, avlProver) = createAvlTreeAndProver(key -> value)
       val preRemoveDigest = avlProver.digest.toColl
       val removeProof = performRemove(avlProver, Array(key))
@@ -3499,15 +3901,13 @@ class SigmaDslSpecification extends SigmaDslTesting
         val endTree = preRemoveTree.updateDigest(endDigest)
         val input = (preRemoveTree, (keys, removeProof))
         val res = Some(endTree)
-        remove.checkExpected(input, success(res))
-        remove.checkVerify(input, Expected(value = Success(res), cost = cost))
+        remove.checkExpected(input, Expected(Success(res), cost, costDetails2, 1806))
       }
 
       { // negative: readonly tree
         val readonlyTree = createTree(preRemoveDigest)
         val input = (readonlyTree, (keys, removeProof))
-        remove.checkExpected(input, success(None))
-        remove.checkVerify(input, Expected(value = Success(None), cost = cost))
+        remove.checkExpected(input, Expected(Success(None), cost, costDetails3, 1772))
       }
 
       { // negative: invalid key
@@ -3515,24 +3915,23 @@ class SigmaDslSpecification extends SigmaDslTesting
         val invalidKey = key.map(x => (-x).toByte) // any other different from `key`
         val invalidKeys = Colls.fromItems(invalidKey)
         val input = (tree, (invalidKeys, removeProof))
-        remove.checkExpected(input, success(None))
-        remove.checkVerify(input, Expected(value = Success(None), cost = cost))
+        remove.checkExpected(input, Expected(Success(None), cost, costDetails4, 1802))
       }
 
       { // negative: invalid proof
         val tree = createTree(preRemoveDigest, removeAllowed = true)
         val invalidProof = removeProof.map(x => (-x).toByte) // any other different from `removeProof`
         val input = (tree, (keys, invalidProof))
-        remove.checkExpected(input, success(None))
-        remove.checkVerify(input, Expected(value = Success(None), cost = cost))
+        remove.checkExpected(input, Expected(Success(None), cost, costDetails4, 1802))
       }
     }
   }
 
   property("longToByteArray equivalence") {
+    val costDetails = CostDetails(traceBase :+ FixedCostItem(CompanionDesc(LongToByteArray), FixedCost(JitCost(17))))
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 36007)
+        def success[T](v: T) = Expected(Success(v), 36007, costDetails, 1767)
         Seq(
           (-9223372036854775808L, success(Helpers.decodeBytes("8000000000000000"))),
           (-1148502660425090565L, success(Helpers.decodeBytes("f00fb2ea55c579fb"))),
@@ -3549,9 +3948,10 @@ class SigmaDslSpecification extends SigmaDslTesting
   }
 
   property("byteArrayToBigInt equivalence") {
+    val costDetails = CostDetails(traceBase :+ FixedCostItem(CompanionDesc(ByteArrayToBigInt), FixedCost(JitCost(30))))
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 36536)
+        def success[T](v: T) = Expected(Success(v), 36536, costDetails, 1767)
         Seq(
           (Helpers.decodeBytes(""),
               Expected(new NumberFormatException("Zero length BigInteger"))),
@@ -3562,9 +3962,9 @@ class SigmaDslSpecification extends SigmaDslTesting
           (Helpers.decodeBytes("ff"),
               success(CBigInt(new BigInteger("-1", 16)))),
           (Helpers.decodeBytes("80d6c201"),
-              Expected(Success(CBigInt(new BigInteger("-7f293dff", 16))), 36539)),
+              Expected(Success(CBigInt(new BigInteger("-7f293dff", 16))), 36539, costDetails, 1767)),
           (Helpers.decodeBytes("70d6c20170d6c201"),
-              Expected(Success(CBigInt(new BigInteger("70d6c20170d6c201", 16))), 36543)),
+              Expected(Success(CBigInt(new BigInteger("70d6c20170d6c201", 16))), 36543, costDetails, 1767)),
           (Helpers.decodeBytes(
             "80e0ff7f02807fff72807f0a00ff7fb7c57f75c11ba2802970fd250052807fc37f6480ffff007fff18eeba44"
           ), Expected(new ArithmeticException("BigInteger out of 256 bit range")))
@@ -3576,9 +3976,10 @@ class SigmaDslSpecification extends SigmaDslTesting
   }
 
   property("byteArrayToLong equivalence") {
+    val costDetails = CostDetails(traceBase :+ FixedCostItem(CompanionDesc(ByteArrayToLong), FixedCost(JitCost(16))))
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 36092)
+        def success[T](v: T) = Expected(Success(v), 36092, costDetails, 1765)
         Seq(
           (Helpers.decodeBytes(""), Expected(new IllegalArgumentException("array too small: 0 < 8"))),
           (Helpers.decodeBytes("81"), Expected(new IllegalArgumentException("array too small: 1 < 8"))),
@@ -3608,8 +4009,9 @@ class SigmaDslSpecification extends SigmaDslTesting
   property("Box properties equivalence") {
     verifyCases(
       {
-       def success[T](v: T) = Expected(Success(v), 35984)
-       Seq(
+        val costDetails = CostDetails(traceBase :+ FixedCostItem(CompanionDesc(ExtractId), FixedCost(JitCost(12))))
+        def success[T](v: T) = Expected(Success(v), 35984, costDetails, 1766)
+        Seq(
           (b1, success(Helpers.decodeBytes("5ee78f30ae4e770e44900a46854e9fecb6b12e8112556ef1cd19aef633b4421e"))),
           (b2, success(Helpers.decodeBytes("3a0089be265460e29ca47d26e5b55a6f3e3ffaf5b4aed941410a2437913848ad")))
         )
@@ -3620,7 +4022,8 @@ class SigmaDslSpecification extends SigmaDslTesting
 
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 35882)
+        val costDetails = CostDetails(traceBase :+ FixedCostItem(CompanionDesc(ExtractAmount), FixedCost(JitCost(8))))
+        def success[T](v: T) = Expected(Success(v), 35882, costDetails, 1764)
         Seq(
           (b1, success(9223372036854775807L)),
           (b2, success(12345L))
@@ -3632,7 +4035,8 @@ class SigmaDslSpecification extends SigmaDslTesting
 
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 35938)
+        val costDetails = CostDetails(traceBase :+ FixedCostItem(CompanionDesc(ExtractScriptBytes), FixedCost(JitCost(10))))
+        def success[T](v: T) = Expected(Success(v), 35938, costDetails, 1766)
         Seq(
           (b1, success(Helpers.decodeBytes(
             "100108cd0297c44a12f4eb99a85d298fa3ba829b5b42b9f63798c980ece801cc663cc5fc9e7300"
@@ -3646,7 +4050,8 @@ class SigmaDslSpecification extends SigmaDslTesting
 
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 36012)
+        val costDetails = CostDetails(traceBase :+ FixedCostItem(CompanionDesc(ExtractBytes), FixedCost(JitCost(12))))
+        def success[T](v: T) = Expected(Success(v), 36012, costDetails, 1766)
         Seq(
           (b1, success(Helpers.decodeBytes(
             "ffffffffffffffff7f100108cd0297c44a12f4eb99a85d298fa3ba829b5b42b9f63798c980ece801cc663cc5fc9e73009fac29026e789ab7b2fffff12280a6cd01557f6fb22b7f80ff7aff8e1f7f15973d7f000180ade204a3ff007f00057600808001ff8f8000019000ffdb806fff7cc0b6015eb37fa600f4030201000e067fc87f7f01ff218301ae8000018008637f0021fb9e00018055486f0b514121016a00ff718080bcb001"
@@ -3662,7 +4067,8 @@ class SigmaDslSpecification extends SigmaDslTesting
 
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 35954)
+        val costDetails = CostDetails(traceBase :+ FixedCostItem(CompanionDesc(ExtractBytesWithNoRef), FixedCost(JitCost(12))))
+        def success[T](v: T) = Expected(Success(v), 35954, costDetails, 1766)
         Seq(
           (b1, success(Helpers.decodeBytes(
             "ffffffffffffffff7f100108cd0297c44a12f4eb99a85d298fa3ba829b5b42b9f63798c980ece801cc663cc5fc9e73009fac29026e789ab7b2fffff12280a6cd01557f6fb22b7f80ff7aff8e1f7f15973d7f000180ade204a3ff007f00057600808001ff8f8000019000ffdb806fff7cc0b6015eb37fa600f4030201000e067fc87f7f01ff"
@@ -3678,7 +4084,8 @@ class SigmaDslSpecification extends SigmaDslTesting
 
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 36074)
+        val costDetails = CostDetails(traceBase :+ FixedCostItem(CompanionDesc(ExtractCreationInfo), FixedCost(JitCost(16))))
+        def success[T](v: T) = Expected(Success(v), 36074, costDetails, 1767)
         Seq(
           (b1, success((
               677407,
@@ -3694,15 +4101,15 @@ class SigmaDslSpecification extends SigmaDslTesting
         "{ (x: Box) => x.creationInfo }",
         FuncValue(Vector((1, SBox)), ExtractCreationInfo(ValUse(1, SBox)))))
 
-    // TODO HF (2h): fix collections equality and remove map(identity)
+    // TODO v6.0 (2h): fix collections equality and remove map(identity)
     //  (PairOfColl should be equal CollOverArray)
     verifyCases(
       Seq(
         b1 -> Expected(Success(Coll[(Coll[Byte], Long)](
           (Helpers.decodeBytes("6e789ab7b2fffff12280a6cd01557f6fb22b7f80ff7aff8e1f7f15973d7f0001"), 10000000L),
           (Helpers.decodeBytes("a3ff007f00057600808001ff8f8000019000ffdb806fff7cc0b6015eb37fa600"), 500L)
-          ).map(identity)), 36167),
-        b2 -> Expected(Success(Coll[(Coll[Byte], Long)]().map(identity)), 36157)
+          ).map(identity)), 36167, methodCostDetails(SBox.tokensMethod, 15), 1772),
+        b2 -> Expected(Success(Coll[(Coll[Byte], Long)]().map(identity)), 36157, methodCostDetails(SBox.tokensMethod, 15), 1766)
       ),
       existingFeature({ (x: Box) => x.tokens },
         "{ (x: Box) => x.tokens }",
@@ -3718,7 +4125,7 @@ class SigmaDslSpecification extends SigmaDslTesting
   }
 
   property("Box properties equivalence (new features)") {
-    // TODO HF (4h): related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/416
+    // TODO v6.0 (4h): related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/416
     val getReg = newFeature((x: Box) => x.getReg[Int](1).get,
       "{ (x: Box) => x.getReg[Int](1).get }")
 
@@ -3743,14 +4150,49 @@ class SigmaDslSpecification extends SigmaDslTesting
       ErgoBox.R4 -> ByteConstant(2.toByte)
     ))
     val box4 = boxWithRegisters(Map.empty)
+    val expCostDetails1 = TracedCost(
+      Array(
+        FixedCostItem(Apply),
+        FixedCostItem(FuncValue),
+        FixedCostItem(GetVar),
+        FixedCostItem(OptionGet),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+        FixedCostItem(ValUse),
+        FixedCostItem(CompanionDesc(ExtractRegisterAs), FixedCost(JitCost(50))),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(CompanionDesc(OptionIsDefined), FixedCost(JitCost(10))),
+        FixedCostItem(CompanionDesc(If), FixedCost(JitCost(10))),
+        FixedCostItem(ValUse),
+        FixedCostItem(OptionGet)
+      )
+    )
+    val expCostDetails2 = TracedCost(
+      Array(
+        FixedCostItem(Apply),
+        FixedCostItem(FuncValue),
+        FixedCostItem(GetVar),
+        FixedCostItem(OptionGet),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+        FixedCostItem(ValUse),
+        FixedCostItem(CompanionDesc(ExtractRegisterAs), FixedCost(JitCost(50))),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(CompanionDesc(OptionIsDefined), FixedCost(JitCost(10))),
+        FixedCostItem(CompanionDesc(If), FixedCost(JitCost(10))),
+        FixedCostItem(Constant)
+      )
+    )
 
     verifyCases(
       Seq(
-        (box1, Expected(Success(1024.toShort), cost = 37190)),
+        (box1, Expected(Success(1024.toShort), 37190, expCostDetails1, 1774)),
         (box2, Expected(
           new InvalidType("Cannot getReg[Short](5): invalid type of value TestValue(1048576) at id=5")
         )),
-        (box3, Expected(Success(0.toShort), cost = 37190))
+        (box3, Expected(Success(0.toShort), 37190, expCostDetails2, 1772))
       ),
       existingFeature(
         { (x: Box) =>
@@ -3781,12 +4223,104 @@ class SigmaDslSpecification extends SigmaDslTesting
           )
         )))
 
+    val expCostDetails3 = TracedCost(
+      Array(
+        FixedCostItem(Apply),
+        FixedCostItem(FuncValue),
+        FixedCostItem(GetVar),
+        FixedCostItem(OptionGet),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+        FixedCostItem(ValUse),
+        FixedCostItem(CompanionDesc(ExtractRegisterAs), FixedCost(JitCost(50))),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(CompanionDesc(OptionIsDefined), FixedCost(JitCost(10))),
+        FixedCostItem(CompanionDesc(If), FixedCost(JitCost(10))),
+        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+        FixedCostItem(ValUse),
+        FixedCostItem(OptionGet),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(Constant),
+        FixedCostItem(NamedDesc("EQ_Prim"), FixedCost(JitCost(3))),
+        FixedCostItem(CompanionDesc(If), FixedCost(JitCost(10))),
+        FixedCostItem(ValUse),
+        FixedCostItem(CompanionDesc(ExtractRegisterAs), FixedCost(JitCost(50))),
+        FixedCostItem(OptionGet),
+        TypeBasedCostItem(Upcast, SInt)
+      )
+    )
+
+    val expCostDetails4 = TracedCost(
+      Array(
+        FixedCostItem(Apply),
+        FixedCostItem(FuncValue),
+        FixedCostItem(GetVar),
+        FixedCostItem(OptionGet),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+        FixedCostItem(ValUse),
+        FixedCostItem(CompanionDesc(ExtractRegisterAs), FixedCost(JitCost(50))),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(CompanionDesc(OptionIsDefined), FixedCost(JitCost(10))),
+        FixedCostItem(CompanionDesc(If), FixedCost(JitCost(10))),
+        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+        FixedCostItem(ValUse),
+        FixedCostItem(OptionGet),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(Constant),
+        FixedCostItem(NamedDesc("EQ_Prim"), FixedCost(JitCost(3))),
+        FixedCostItem(CompanionDesc(If), FixedCost(JitCost(10))),
+        FixedCostItem(ValUse),
+        FixedCostItem(Constant),
+        FixedCostItem(NamedDesc("EQ_Prim"), FixedCost(JitCost(3))),
+        FixedCostItem(CompanionDesc(If), FixedCost(JitCost(10))),
+        FixedCostItem(ValUse),
+        FixedCostItem(CompanionDesc(ExtractRegisterAs), FixedCost(JitCost(50))),
+        FixedCostItem(OptionGet)
+      )
+    )
+
+    val expCostDetails5 = TracedCost(
+      Array(
+        FixedCostItem(Apply),
+        FixedCostItem(FuncValue),
+        FixedCostItem(GetVar),
+        FixedCostItem(OptionGet),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+        FixedCostItem(ValUse),
+        FixedCostItem(CompanionDesc(ExtractRegisterAs), FixedCost(JitCost(50))),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(CompanionDesc(OptionIsDefined), FixedCost(JitCost(10))),
+        FixedCostItem(CompanionDesc(If), FixedCost(JitCost(10))),
+        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+        FixedCostItem(ValUse),
+        FixedCostItem(OptionGet),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(Constant),
+        FixedCostItem(NamedDesc("EQ_Prim"), FixedCost(JitCost(3))),
+        FixedCostItem(CompanionDesc(If), FixedCost(JitCost(10))),
+        FixedCostItem(ValUse),
+        FixedCostItem(Constant),
+        FixedCostItem(NamedDesc("EQ_Prim"), FixedCost(JitCost(3))),
+        FixedCostItem(CompanionDesc(If), FixedCost(JitCost(10))),
+        FixedCostItem(Constant)
+      )
+    )
+
+  
     verifyCases(
       Seq(
-        (box1, Expected(Success(1024), cost = 39782)),
-        (box2, Expected(Success(1024 * 1024), cost = 39782)),
-        (box3, Expected(Success(0), cost = 39782)),
-        (box4, Expected(Success(-1), cost = 39782))
+        (box1, Expected(Success(1024), cost = 39782, expCostDetails3, 1785)),
+        (box2, Expected(Success(1024 * 1024), cost = 39782, expCostDetails4, 1786)),
+        (box3, Expected(Success(0), cost = 39782, expCostDetails5, 1779)),
+        (box4, Expected(Success(-1), cost = 39782, expCostDetails2, 1772))
       ),
       existingFeature(
         { (x: Box) =>
@@ -3865,9 +4399,22 @@ class SigmaDslSpecification extends SigmaDslTesting
       ErgoBox.R4 -> ByteArrayConstant(Coll(1.toByte))
     )))
 
+    val box3 = SigmaDsl.Box(testBox(20, TrueTree, 0, Seq(), Map(
+      ErgoBox.R4 -> Constant((10, 20L).asInstanceOf[SType#WrappedType], STuple(SInt, SLong)),
+      ErgoBox.R5 -> Constant((10, Some(20L)).asInstanceOf[SType#WrappedType], STuple(SInt, SOption(SLong)))
+      // TODO v6.0 (1h): uncomment after DataSerializer support of Option type
+      //  ErgoBox.R6 -> Constant[SOption[SInt.type]](Option(10), SOption(SInt)),
+    )))
+
+    val expCostDetails = TracedCost(
+      traceBase ++ Array(
+        FixedCostItem(CompanionDesc(ExtractRegisterAs), FixedCost(JitCost(50))), 
+        FixedCostItem(OptionGet)
+      )
+    )
     verifyCases(
       Seq(
-        (box1, Expected(Success(1.toByte), cost = 36253)),
+        (box1, Expected(Success(1.toByte), cost = 36253, expCostDetails, 1770)),
         (box2, Expected(new InvalidType("Cannot getReg[Byte](4): invalid type of value Value(Coll(1)) at id=4")))
       ),
       existingFeature((x: Box) => x.R4[Byte].get,
@@ -3879,7 +4426,7 @@ class SigmaDslSpecification extends SigmaDslTesting
 
     verifyCases(
       Seq(
-        (box1, Expected(Success(1024.toShort), cost = 36253)),
+        (box1, Expected(Success(1024.toShort), cost = 36253, expCostDetails, 1770)),
         (box2, Expected(new NoSuchElementException("None.get")))
       ),
       existingFeature((x: Box) => x.R5[Short].get,
@@ -3891,7 +4438,7 @@ class SigmaDslSpecification extends SigmaDslTesting
 
     verifyCases(
       Seq(
-        (box1, Expected(Success(1024 * 1024), cost = 36253))
+        (box1, Expected(Success(1024 * 1024), cost = 36253, expCostDetails, 1770))
       ),
       existingFeature((x: Box) => x.R6[Int].get,
         "{ (x: Box) => x.R6[Int].get }",
@@ -3902,7 +4449,7 @@ class SigmaDslSpecification extends SigmaDslTesting
 
     verifyCases(
       Seq(
-        (box1, Expected(Success(1024.toLong), cost = 36253))
+        (box1, Expected(Success(1024.toLong), cost = 36253, expCostDetails, 1770))
       ),
       existingFeature((x: Box) => x.R7[Long].get,
         "{ (x: Box) => x.R7[Long].get }",
@@ -3913,7 +4460,7 @@ class SigmaDslSpecification extends SigmaDslTesting
 
     verifyCases(
       Seq(
-        (box1, Expected(Success(CBigInt(BigInteger.valueOf(222L))), cost = 36253))
+        (box1, Expected(Success(CBigInt(BigInteger.valueOf(222L))), cost = 36253, expCostDetails, 1770))
       ),
       existingFeature((x: Box) => x.R8[BigInt].get,
         "{ (x: Box) => x.R8[BigInt].get }",
@@ -3933,7 +4480,10 @@ class SigmaDslSpecification extends SigmaDslTesting
             32,
             None
           )
-        )), cost = 36253)
+        )),
+        cost = 36253,
+        expCostDetails,
+        1770)
       )),
       existingFeature((x: Box) => x.R9[AvlTree].get,
         "{ (x: Box) => x.R9[AvlTree].get }",
@@ -3941,6 +4491,52 @@ class SigmaDslSpecification extends SigmaDslTesting
           Vector((1, SBox)),
           OptionGet(ExtractRegisterAs(ValUse(1, SBox), ErgoBox.R9, SOption(SAvlTree)))
         )))
+
+    verifyCases(
+      Seq(
+        (box3, Expected(Success(10), cost = 36468))//, expCostDetails, 1790))
+      ),
+      existingFeature((x: Box) => x.R4[(Int, Long)].get._1,
+        "{ (x: Box) => x.R4[(Int, Long)].get._1 }",
+        FuncValue(
+          Array((1, SBox)),
+          SelectField.typed[Value[SInt.type]](
+            OptionGet(ExtractRegisterAs(ValUse(1, SBox), ErgoBox.R4, SOption(SPair(SInt, SLong)))),
+            1.toByte
+          )
+        )))
+
+    verifyCases(
+      Seq(
+        (box3, Expected(Success(10), cost = 36468))//, expCostDetails, 1790))
+      ),
+      existingFeature((x: Box) => x.R5[(Int, Option[Long])].get._1,
+        "{ (x: Box) => x.R5[(Int, Option[Long])].get._1 }",
+        FuncValue(
+          Array((1, SBox)),
+          SelectField.typed[Value[SInt.type]](
+            OptionGet(ExtractRegisterAs(ValUse(1, SBox), ErgoBox.R5, SOption(SPair(SInt, SOption(SLong))))),
+            1.toByte
+          )
+        )))
+
+    // TODO v6.0 (1h): uncomment after DataSerializer support of Option type
+    //    verifyCases(
+    //      Seq(
+    //        (box3, Expected(Success(20L), cost = 36468))
+    //      ),
+    //      existingFeature((x: Box) => x.R5[(Int, Option[Long])].get._2.get,
+    //        "{ (x: Box) => x.R5[(Int, Option[Long])].get._2.get }",
+    //        FuncValue(
+    //          Array((1, SBox)),
+    //          OptionGet(
+    //            SelectField.typed[Value[SOption[SLong.type]]](
+    //              OptionGet(
+    //                ExtractRegisterAs(ValUse(1, SBox), ErgoBox.R5, SOption(SPair(SInt, SOption(SLong))))
+    //              ),
+    //              2.toByte
+    //            ))
+    //        )))
   }
 
   def existingPropTest[A: RType, B: RType](propName: String, scalaFunc: A => B) = {
@@ -3956,36 +4552,38 @@ class SigmaDslSpecification extends SigmaDslTesting
   }
 
   property("PreHeader properties equivalence") {
+    
+
     verifyCases(
-      Seq((preH1, Expected(Success(0.toByte), cost = 37022))),
+      Seq((preH1, Expected(Success(0.toByte), cost = 37022, methodCostDetails(SPreHeader.versionMethod, 10), 1765))),
       existingPropTest("version", { (x: PreHeader) => x.version }))
 
     verifyCases(
       Seq((preH1, Expected(Success(
         Helpers.decodeBytes("7fff7fdd6f62018bae0001006d9ca888ff7f56ff8006573700a167f17f2c9f40")),
-        cost = 36121))),
+        cost = 36121, methodCostDetails(SPreHeader.parentIdMethod, 10), 1766))),
       existingPropTest("parentId", { (x: PreHeader) => x.parentId }))
 
     verifyCases(
-      Seq((preH1, Expected(Success(6306290372572472443L), cost = 36147))),
+      Seq((preH1, Expected(Success(6306290372572472443L), cost = 36147, methodCostDetails(SPreHeader.timestampMethod, 10), 1765))),
       existingPropTest("timestamp", { (x: PreHeader) => x.timestamp }))
 
     verifyCases(
-      Seq((preH1, Expected(Success(-3683306095029417063L), cost = 36127))),
+      Seq((preH1, Expected(Success(-3683306095029417063L), cost = 36127, methodCostDetails(SPreHeader.nBitsMethod, 10), 1765))),
       existingPropTest("nBits", { (x: PreHeader) => x.nBits }))
 
     verifyCases(
-      Seq((preH1, Expected(Success(1), cost = 36136))),
+      Seq((preH1, Expected(Success(1), cost = 36136, methodCostDetails(SPreHeader.heightMethod, 10), 1765))),
       existingPropTest("height", { (x: PreHeader) => x.height }))
 
     verifyCases(
       Seq((preH1, Expected(Success(
         Helpers.decodeGroupElement("026930cb9972e01534918a6f6d6b8e35bc398f57140d13eb3623ea31fbd069939b")),
-        cost = 36255))),
+        cost = 36255, methodCostDetails(SPreHeader.minerPkMethod, 10), 1782))),
       existingPropTest("minerPk", { (x: PreHeader) => x.minerPk }))
 
     verifyCases(
-      Seq((preH1, Expected(Success(Helpers.decodeBytes("ff8087")), cost = 36249))),
+      Seq((preH1, Expected(Success(Helpers.decodeBytes("ff8087")), cost = 36249, methodCostDetails(SPreHeader.votesMethod,10), 1766))),
       existingPropTest("votes", { (x: PreHeader) => x.votes }))
   }
 
@@ -3993,81 +4591,81 @@ class SigmaDslSpecification extends SigmaDslTesting
     verifyCases(
       Seq((h1, Expected(Success(
         Helpers.decodeBytes("957f008001808080ffe4ffffc8f3802401df40006aa05e017fa8d3f6004c804a")),
-        cost = 36955))),
+        cost = 36955, methodCostDetails(SHeader.idMethod, 10), 1766))),
       existingPropTest("id", { (x: Header) => x.id }))
 
     verifyCases(
-      Seq((h1, Expected(Success(0.toByte), cost = 36124))),
+      Seq((h1, Expected(Success(0.toByte), cost = 36124, methodCostDetails(SHeader.versionMethod, 10), 1765))),
       existingPropTest("version", { (x: Header) => x.version }))
 
     verifyCases(
       Seq((h1, Expected(Success(
         Helpers.decodeBytes("0180dd805b0000ff5400b997fd7f0b9b00de00fb03c47e37806a8186b94f07ff")),
-        cost = 36097))),
+        cost = 36097, methodCostDetails(SHeader.parentIdMethod, 10), 1766))),
       existingPropTest("parentId", { (x: Header) => x.parentId }))
 
     verifyCases(
       Seq((h1, Expected(Success(
         Helpers.decodeBytes("01f07f60d100ffb970c3007f60ff7f24d4070bb8fffa7fca7f34c10001ffe39d")),
-        cost = 36111))),
+        cost = 36111, methodCostDetails(SHeader.ADProofsRootMethod, 10), 1766))),
       existingPropTest("ADProofsRoot", { (x: Header) => x.ADProofsRoot}))
 
     verifyCases(
-      Seq((h1, Expected(Success(CAvlTree(createAvlTreeData())), cost = 36092))),
+      Seq((h1, Expected(Success(CAvlTree(createAvlTreeData())), cost = 36092, methodCostDetails(SHeader.stateRootMethod, 10), 1765))),
       existingPropTest("stateRoot", { (x: Header) => x.stateRoot }))
 
     verifyCases(
       Seq((h1, Expected(Success(
         Helpers.decodeBytes("804101ff01000080a3ffbd006ac080098df132a7017f00649311ec0e00000100")),
-        cost = 36094))),
+        cost = 36094, methodCostDetails(SHeader.transactionsRootMethod, 10), 1766))),
       existingPropTest("transactionsRoot", { (x: Header) => x.transactionsRoot }))
 
     verifyCases(
-      Seq((h1, Expected(Success(1L), cost = 36151))),
+      Seq((h1, Expected(Success(1L), cost = 36151, methodCostDetails(SHeader.timestampMethod, 10), 1765))),
       existingPropTest("timestamp", { (x: Header) => x.timestamp }))
 
     verifyCases(
-      Seq((h1, Expected(Success(-1L), cost = 36125))),
+      Seq((h1, Expected(Success(-1L), cost = 36125, methodCostDetails(SHeader.nBitsMethod, 10), 1765))),
       existingPropTest("nBits", { (x: Header) => x.nBits }))
 
     verifyCases(
-      Seq((h1, Expected(Success(1), cost = 36134))),
+      Seq((h1, Expected(Success(1), cost = 36134, methodCostDetails(SHeader.heightMethod, 10), 1765))),
       existingPropTest("height", { (x: Header) => x.height }))
 
     verifyCases(
       Seq((h1, Expected(Success(
         Helpers.decodeBytes("e57f80885601b8ff348e01808000bcfc767f2dd37f0d01015030ec018080bc62")),
-        cost = 36133))),
+        cost = 36133, methodCostDetails(SHeader.extensionRootMethod, 10), 1766))),
       existingPropTest("extensionRoot", { (x: Header) => x.extensionRoot }))
 
     verifyCases(
       Seq((h1, Expected(Success(
         Helpers.decodeGroupElement("039bdbfa0b49cc6bef58297a85feff45f7bbeb500a9d2283004c74fcedd4bd2904")),
-        cost = 36111))),
+        cost = 36111, methodCostDetails(SHeader.minerPkMethod, 10), 1782))),
       existingPropTest("minerPk", { (x: Header) => x.minerPk }))
 
     verifyCases(
       Seq((h1, Expected(Success(
         Helpers.decodeGroupElement("0361299207fa392231e23666f6945ae3e867b978e021d8d702872bde454e9abe9c")),
-        cost = 36111))),
+        cost = 36111, methodCostDetails(SHeader.powOnetimePkMethod, 10), 1782))),
       existingPropTest("powOnetimePk", { (x: Header) => x.powOnetimePk }))
 
     verifyCases(
       Seq((h1, Expected(Success(
         Helpers.decodeBytes("7f4f09012a807f01")),
-        cost = 36176))),
+        cost = 36176, methodCostDetails(SHeader.powNonceMethod, 10), 1766))),
       existingPropTest("powNonce", { (x: Header) => x.powNonce }))
 
     verifyCases(
       Seq((h1, Expected(Success(
         CBigInt(new BigInteger("-e24990c47e15ed4d0178c44f1790cc72155d516c43c3e8684e75db3800a288", 16))),
-        cost = 36220))),
+        cost = 36220, methodCostDetails(SHeader.powDistanceMethod, 10), 1765))),
       existingPropTest("powDistance", { (x: Header) => x.powDistance }))
 
     verifyCases(
       Seq((h1, Expected(Success(
         Helpers.decodeBytes("7f0180")),
-        cost = 36100))),
+        cost = 36100, methodCostDetails(SHeader.votesMethod, 10), 1766))),
       existingPropTest("votes", { (x: Header) => x.votes }))
   }
 
@@ -4226,7 +4824,8 @@ class SigmaDslSpecification extends SigmaDslTesting
         )
       ),
       height = 11,
-      selfBox = input.copy(),  // TODO HF (2h): in 3.x implementation selfBox is never the same instance as input (see toSigmaContext)
+      selfBox = input.copy(),  // in 3.x, 4.x implementation selfBox is never the same instance as input (see toSigmaContext)
+      selfIndex = 0,
       lastBlockUtxoRootHash = CAvlTree(
         AvlTreeData(
           ADDigest @@ (ErgoAlgos.decodeUnsafe("54d23dd080006bdb56800100356080935a80ffb77e90b800057f00661601807f17")),
@@ -4275,9 +4874,17 @@ class SigmaDslSpecification extends SigmaDslTesting
 
     test(samples, existingPropTest("dataInputs", { (x: Context) => x.dataInputs }))
 
+    val testTraceBase = traceBase ++ Array(
+      FixedCostItem(PropertyCall),
+      FixedCostItem(SContext.dataInputsMethod, FixedCost(JitCost(15))),
+      FixedCostItem(Constant),
+      FixedCostItem(ByIndex)
+    )
+        
+    val costDetails = TracedCost(testTraceBase)
     verifyCases(
       Seq(
-        (ctx, Expected(Success(dataBox), cost = 37087)),
+        (ctx, Expected(Success(dataBox), cost = 37087, costDetails, 1769)),
         (ctx.copy(_dataInputs = Coll()), Expected(new ArrayIndexOutOfBoundsException("0")))
       ),
       existingFeature({ (x: Context) => x.dataInputs(0) },
@@ -4297,11 +4904,12 @@ class SigmaDslSpecification extends SigmaDslTesting
         )),
       preGeneratedSamples = Some(samples))
 
+    val idCostDetails = TracedCost(testTraceBase :+ FixedCostItem(CompanionDesc(ExtractId), FixedCost(JitCost(12))))
     verifyCases(
       Seq(
         (ctx, Expected(Success(
           Helpers.decodeBytes("7da4b55971f19a78d007638464580f91a020ab468c0dbe608deb1f619e245bc3")),
-          cost = 37193))
+          cost = 37193, idCostDetails, 1772))
       ),
       existingFeature({ (x: Context) => x.dataInputs(0).id },
         "{ (x: Context) => x.dataInputs(0).id }",
@@ -4351,16 +4959,39 @@ class SigmaDslSpecification extends SigmaDslTesting
     test(samples, existingFeature({ (x: Context) => x.SELF },
     "{ (x: Context) => x.SELF }", FuncValue(Vector((1, SContext)), Self)))
 
+    val heightCostDetails = TracedCost(
+      Array(
+        FixedCostItem(Apply),
+        FixedCostItem(FuncValue),
+        FixedCostItem(GetVar),
+        FixedCostItem(OptionGet),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(Height)
+      )
+    )
     verifyCases(
-      Seq(ctx -> Expected(Success(ctx.HEIGHT), cost = 35885)),
+      Seq(ctx -> Expected(Success(ctx.HEIGHT), cost = 35885, heightCostDetails, 1766)),
       existingFeature(
         { (x: Context) => x.HEIGHT },
         "{ (x: Context) => x.HEIGHT }",
         FuncValue(Vector((1, SContext)), Height)),
       preGeneratedSamples = Some(samples))
 
+    val inputsCostDetails1 = TracedCost(
+      Array(
+        FixedCostItem(Apply),
+        FixedCostItem(FuncValue),
+        FixedCostItem(GetVar),
+        FixedCostItem(OptionGet),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(Inputs),
+        FixedCostItem(FuncValue),
+        SeqCostItem(CompanionDesc(MapCollection), PerItemCost(JitCost(20), JitCost(1), 10), 1),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(ExtractAmount)))
     verifyCases(
-      Seq((ctx, Expected(Success(Coll[Long](80946L)), cost = 39152))),
+      Seq((ctx, Expected(Success(Coll[Long](80946L)), cost = 39152, inputsCostDetails1, 1770))),
       existingFeature(
         { (x: Context) => x.INPUTS.map { (b: Box) => b.value } },
         "{ (x: Context) => x.INPUTS.map { (b: Box) => b.value } }",
@@ -4370,8 +5001,26 @@ class SigmaDslSpecification extends SigmaDslTesting
         )),
       preGeneratedSamples = Some(samples))
 
+    val inputsCostDetails2 = TracedCost(
+      Array(
+        FixedCostItem(Apply),
+        FixedCostItem(FuncValue),
+        FixedCostItem(GetVar),
+        FixedCostItem(OptionGet),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(Inputs),
+        FixedCostItem(FuncValue),
+        SeqCostItem(CompanionDesc(MapCollection), PerItemCost(JitCost(20), JitCost(1), 10), 1),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+        FixedCostItem(ValUse),
+        FixedCostItem(ExtractAmount),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(ValUse),
+        FixedCostItem(Tuple)))
     verifyCases(
-      Seq((ctx, Expected(Success(Coll((80946L, 80946L))), cost = 39959))),
+      Seq((ctx, Expected(Success(Coll((80946L, 80946L))), cost = 39959, inputsCostDetails2, 1774))),
       existingFeature(
         { (x: Context) => x.INPUTS.map { (b: Box) => (b.value, b.value) } },
         """{ (x: Context) =>
@@ -4426,9 +5075,25 @@ class SigmaDslSpecification extends SigmaDslTesting
         )),
       preGeneratedSamples = Some(samples))
 
+    val selfCostDetails = TracedCost(
+      traceBase ++ Array(
+        FixedCostItem(PropertyCall),
+        FixedCostItem(SContext.selfBoxIndexMethod, FixedCost(JitCost(20)))
+      )
+    )
     verifyCases(
-      Seq((ctx, Expected(Success(-1), cost = 36318))),
-      existingFeature({ (x: Context) => x.selfBoxIndex },
+      Seq(
+        (ctx, Expected(
+          Success(-1), cost = 36318,
+          expectedDetails = CostDetails.ZeroCost,
+          newCost = 1766,
+          newVersionedResults = {
+            val res = (ExpectedResult(Success(0), Some(1766)) -> Some(selfCostDetails))
+            Seq(0, 1, 2).map(version => version -> res)
+          }))
+      ),
+      changedFeature({ (x: Context) => x.selfBoxIndex },
+        { (x: Context) => x.selfBoxIndex }, // see versioning in selfBoxIndex implementation
         "{ (x: Context) => x.selfBoxIndex }",
         FuncValue(
           Vector((1, SContext)),
@@ -4441,18 +5106,32 @@ class SigmaDslSpecification extends SigmaDslTesting
         )),
       preGeneratedSamples = Some(samples))
 
-    // TODO HF (2h): see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/603
+    // test vectors to reproduce v4.x bug (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/603)
     samples.foreach { c =>
-      ctx.selfBoxIndex shouldBe -1
+      if (VersionContext.current.isJitActivated) {
+        // fixed in v5.0
+        c.selfBoxIndex should not be(-1)
+      } else {
+        // should be reproduced in v4.x
+        c.selfBoxIndex shouldBe -1
+      }
     }
 
     verifyCases(
-      Seq(ctx -> Expected(Success(ctx.LastBlockUtxoRootHash), cost = 35990)),
+      Seq(ctx -> Expected(Success(ctx.LastBlockUtxoRootHash), cost = 35990, methodCostDetails(SContext.lastBlockUtxoRootHashMethod, 15), 1766)),
       existingPropTest("LastBlockUtxoRootHash", { (x: Context) => x.LastBlockUtxoRootHash }),
       preGeneratedSamples = Some(samples))
 
+    val isUpdateAllowedCostDetails = TracedCost(
+      traceBase ++ Array(
+        FixedCostItem(PropertyCall),
+        FixedCostItem(SContext.lastBlockUtxoRootHashMethod, FixedCost(JitCost(15))),
+        FixedCostItem(PropertyCall),
+        FixedCostItem(SAvlTree.isUpdateAllowedMethod, FixedCost(JitCost(15)))
+      )
+    )
     verifyCases(
-      Seq(ctx -> Expected(Success(ctx.LastBlockUtxoRootHash.isUpdateAllowed), cost = 36288)),
+      Seq(ctx -> Expected(Success(ctx.LastBlockUtxoRootHash.isUpdateAllowed), cost = 36288, isUpdateAllowedCostDetails, 1767)),
       existingFeature(
         { (x: Context) => x.LastBlockUtxoRootHash.isUpdateAllowed },
         "{ (x: Context) => x.LastBlockUtxoRootHash.isUpdateAllowed }",
@@ -4473,11 +5152,11 @@ class SigmaDslSpecification extends SigmaDslTesting
       preGeneratedSamples = Some(samples))
 
     verifyCases(
-      Seq(ctx -> Expected(Success(ctx.minerPubKey), cost = 36047)),
+      Seq(ctx -> Expected(Success(ctx.minerPubKey), cost = 36047, methodCostDetails(SContext.minerPubKeyMethod, 20), 1767)),
       existingPropTest("minerPubKey", { (x: Context) => x.minerPubKey }),
       preGeneratedSamples = Some(samples))
 
-// TODO HF (2h): implement support of Option[T] in DataSerializer
+// TODO v6.0 (2h): implement support of Option[T] in DataSerializer
 //  this will allow passing optional values in registers and also in constants
 //    testCases2(
 //      Seq(
@@ -4495,7 +5174,7 @@ class SigmaDslSpecification extends SigmaDslTesting
       "{ (x: Context) => getVar[Boolean](11) }",
         FuncValue(Vector((1, SContext)), GetVar(11.toByte, SOption(SBoolean)))),
       preGeneratedSamples = Some(samples))
-
+ 
     verifyCases(
       Seq((ctx, Expected(new InvalidType("Cannot getVar[Int](11): invalid type of value Value(true) at id=2")))),
       existingFeature((x: Context) => x.getVar[Int](11).get,
@@ -4503,8 +5182,17 @@ class SigmaDslSpecification extends SigmaDslTesting
         FuncValue(Vector((1, SContext)), OptionGet(GetVar(11.toByte, SOption(SInt))))),
       preGeneratedSamples = Some(samples))
 
+    val getVarCostDetails = TracedCost(
+      Array(
+        FixedCostItem(Apply),
+        FixedCostItem(FuncValue),
+        FixedCostItem(GetVar),
+        FixedCostItem(OptionGet),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(GetVar),
+        FixedCostItem(OptionGet)))
     verifyCases(
-      Seq((ctx, Expected(Success(true), cost = 36750))),
+      Seq((ctx, Expected(Success(true), cost = 36750, getVarCostDetails, 1765))),
       existingFeature((x: Context) => x.getVar[Boolean](11).get,
       "{ (x: Context) => getVar[Boolean](11).get }",
         FuncValue(Vector((1, SContext)), OptionGet(GetVar(11.toByte, SOption(SBoolean))))),
@@ -4514,9 +5202,31 @@ class SigmaDslSpecification extends SigmaDslTesting
   property("Conditional access to data box register using isDefined") {
     val (_, _, _, ctx, _, _) = contextData()
 
+    val registerIsDefinedCostDetails = TracedCost(
+      Array(
+        FixedCostItem(Apply),
+        FixedCostItem(FuncValue),
+        FixedCostItem(GetVar),
+        FixedCostItem(OptionGet),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+        FixedCostItem(ValUse),
+        FixedCostItem(PropertyCall),
+        FixedCostItem(SContext.dataInputsMethod, FixedCost(JitCost(15))),
+        FixedCostItem(Constant),
+        FixedCostItem(ByIndex),
+        FixedCostItem(ExtractRegisterAs),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(OptionIsDefined),
+        FixedCostItem(If),
+        FixedCostItem(ValUse),
+        FixedCostItem(OptionGet)
+      )
+    )
     verifyCases(
       Seq(
-        ctx -> Expected(Success(-135729055492651903L), 38399)
+        ctx -> Expected(Success(-135729055492651903L), 38399, registerIsDefinedCostDetails, 1779)
       ),
       existingFeature(
       { (x: Context) =>
@@ -4576,15 +5286,20 @@ class SigmaDslSpecification extends SigmaDslTesting
 
     verifyCases(
       Seq(
-        ctx -> Expected(expectedError)
+        ctx -> Expected(Failure(expectedError), 0, CostDetails.ZeroCost, 1793,
+          newVersionedResults = {
+            Seq.tabulate(3)(v => v -> (ExpectedResult(Success(true), Some(1793)) -> None))
+          }
+        )
       ),
       changedFeature(
         scalaFunc = { (x: Context) =>
-          // this error is expected in v3.x
+          // this error is expected in v3.x, v4.x
           throw expectedError
         },
         scalaFuncNew = { (x: Context) =>
-          // TODO HF: this is expected in v5.0
+          // this is expected in v5.0, so the semantics of the script should correspond
+          // to this Scala code
           val dataBox = x.dataInputs(0)
           val ok = if (x.OUTPUTS(0).R5[Long].get == 1L) {
             dataBox.R4[Long].get <= x.SELF.value
@@ -4593,53 +5308,54 @@ class SigmaDslSpecification extends SigmaDslTesting
           }
           ok
         },
-      s"""{ (x: Context) =>
-        |  val dataBox = x.dataInputs(0)
-        |  val ok = if (x.OUTPUTS(0).R5[Long].get == 1L) {
-        |    dataBox.R4[Long].get <= x.SELF.value
-        |  } else {
-        |    dataBox.R4[Coll[Byte]].get != x.SELF.propositionBytes
-        |  }
-        |  ok
-        |}
-        |""".stripMargin,
-      FuncValue(
-        Array((1, SContext)),
-        BlockValue(
-          Array(
-            ValDef(
-              3,
-              List(),
-              ByIndex(
-                MethodCall.typed[Value[SCollection[SBox.type]]](
-                  ValUse(1, SContext),
-                  SContext.getMethodByName("dataInputs"),
-                  Vector(),
-                  Map()
+        s"""{ (x: Context) =>
+          |  val dataBox = x.dataInputs(0)
+          |  val ok = if (x.OUTPUTS(0).R5[Long].get == 1L) {
+          |    dataBox.R4[Long].get <= x.SELF.value
+          |  } else {
+          |    dataBox.R4[Coll[Byte]].get != x.SELF.propositionBytes
+          |  }
+          |  ok
+          |}
+          |""".stripMargin,
+        FuncValue(
+          Array((1, SContext)),
+          BlockValue(
+            Array(
+              ValDef(
+                3,
+                List(),
+                ByIndex(
+                  MethodCall.typed[Value[SCollection[SBox.type]]](
+                    ValUse(1, SContext),
+                    SContext.getMethodByName("dataInputs"),
+                    Vector(),
+                    Map()
+                  ),
+                  IntConstant(0),
+                  None
+                )
+              )
+            ),
+            If(
+              EQ(
+                OptionGet(
+                  ExtractRegisterAs(ByIndex(Outputs, IntConstant(0), None), ErgoBox.R5, SOption(SLong))
                 ),
-                IntConstant(0),
-                None
+                LongConstant(1L)
+              ),
+              LE(
+                OptionGet(ExtractRegisterAs(ValUse(3, SBox), ErgoBox.R4, SOption(SLong))),
+                ExtractAmount(Self)
+              ),
+              NEQ(
+                OptionGet(ExtractRegisterAs(ValUse(3, SBox), ErgoBox.R4, SOption(SByteArray))),
+                ExtractScriptBytes(Self)
               )
             )
-          ),
-          If(
-            EQ(
-              OptionGet(
-                ExtractRegisterAs(ByIndex(Outputs, IntConstant(0), None), ErgoBox.R5, SOption(SLong))
-              ),
-              LongConstant(1L)
-            ),
-            LE(
-              OptionGet(ExtractRegisterAs(ValUse(3, SBox), ErgoBox.R4, SOption(SLong))),
-              ExtractAmount(Self)
-            ),
-            NEQ(
-              OptionGet(ExtractRegisterAs(ValUse(3, SBox), ErgoBox.R4, SOption(SByteArray))),
-              ExtractScriptBytes(Self)
-            )
           )
-        )
-      )
+        ),
+        allowNewToSucceed = true
       ),
       preGeneratedSamples = Some(mutable.WrappedArray.empty))
   }
@@ -4647,14 +5363,103 @@ class SigmaDslSpecification extends SigmaDslTesting
   property("Conditional access OUTPUTS(0).R4 using tag in R5") {
     val (_, _, _, ctx, _, _) = contextData()
 
+    val registerTagCostDetails1 = TracedCost(
+      Array(
+        FixedCostItem(Apply),
+        FixedCostItem(FuncValue),
+        FixedCostItem(GetVar),
+        FixedCostItem(OptionGet),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 2),
+        FixedCostItem(Outputs),
+        FixedCostItem(Constant),
+        FixedCostItem(ByIndex),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(ExtractRegisterAs),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(OptionIsDefined),
+        FixedCostItem(If),
+        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+        FixedCostItem(ValUse),
+        FixedCostItem(OptionGet),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(Constant),
+        FixedCostItem(NamedDesc("EQ_Prim"), FixedCost(JitCost(3))),
+        FixedCostItem(If),
+        FixedCostItem(ValUse),
+        FixedCostItem(Constant),
+        FixedCostItem(NamedDesc("EQ_Prim"), FixedCost(JitCost(3))),
+        FixedCostItem(If),
+        FixedCostItem(ValUse),
+        FixedCostItem(ExtractRegisterAs),
+        FixedCostItem(OptionGet)
+      )
+    )
+    val registerTagCostDetails2 = TracedCost(
+      Array(
+        FixedCostItem(Apply),
+        FixedCostItem(FuncValue),
+        FixedCostItem(GetVar),
+        FixedCostItem(OptionGet),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 2),
+        FixedCostItem(Outputs),
+        FixedCostItem(Constant),
+        FixedCostItem(ByIndex),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(ExtractRegisterAs),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(OptionIsDefined),
+        FixedCostItem(If),
+        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+        FixedCostItem(ValUse),
+        FixedCostItem(OptionGet),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(Constant),
+        FixedCostItem(NamedDesc("EQ_Prim"), FixedCost(JitCost(3))),
+        FixedCostItem(If),
+        FixedCostItem(ValUse),
+        FixedCostItem(ExtractRegisterAs),
+        FixedCostItem(OptionGet),
+        TypeBasedCostItem(Upcast, SLong)
+      )
+    )
+
+    val registerTagCostDetails3 = TracedCost(
+      Array(
+        FixedCostItem(Apply),
+        FixedCostItem(FuncValue),
+        FixedCostItem(GetVar),
+        FixedCostItem(OptionGet),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 2),
+        FixedCostItem(Outputs),
+        FixedCostItem(Constant),
+        FixedCostItem(ByIndex),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(ExtractRegisterAs),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(OptionIsDefined),
+        FixedCostItem(If),
+        FixedCostItem(Constant)
+      )
+    )
     verifyCases(
       Seq(
-        ctx -> Expected(Success(5008366408131208436L), 40406),
+        ctx -> Expected(Success(5008366408131208436L), 40406, registerTagCostDetails1, 1791),
         ctxWithRegsInOutput(ctx, Map(
           ErgoBox.R5 -> LongConstant(0L),
-          ErgoBox.R4 -> ShortConstant(10))) -> Expected(Success(10L), 40396),
+          ErgoBox.R4 -> ShortConstant(10))) -> Expected(Success(10L), 40396, registerTagCostDetails2, 1790),
         ctxWithRegsInOutput(ctx, Map(
-          ErgoBox.R4 -> ShortConstant(10))) -> Expected(Success(-1L), 40396)
+          ErgoBox.R4 -> ShortConstant(10))) -> Expected(Success(-1L), 40396, registerTagCostDetails3, 1777)
       ),
       existingFeature(
       { (x: Context) =>
@@ -4727,25 +5532,152 @@ class SigmaDslSpecification extends SigmaDslTesting
 
   property("Conditional access OUTPUTS(0).R4 using tag in R5 (plus action)") {
     val (_, _, _, ctx, _, _) = contextData()
+    val tagRegisterCostDetails1 = TracedCost(
+      Array(
+        FixedCostItem(Apply),
+        FixedCostItem(FuncValue),
+        FixedCostItem(GetVar),
+        FixedCostItem(OptionGet),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 2),
+        FixedCostItem(Outputs),
+        FixedCostItem(Constant),
+        FixedCostItem(ByIndex),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(ExtractRegisterAs),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(OptionIsDefined),
+        FixedCostItem(If),
+        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+        FixedCostItem(ValUse),
+        FixedCostItem(OptionGet),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(Constant),
+        FixedCostItem(NamedDesc("EQ_Prim"), FixedCost(JitCost(3))),
+        FixedCostItem(If),
+        FixedCostItem(ValUse),
+        FixedCostItem(Constant),
+        FixedCostItem(NamedDesc("EQ_Prim"), FixedCost(JitCost(3))),
+        FixedCostItem(If),
+        FixedCostItem(ValUse),
+        FixedCostItem(ExtractRegisterAs),
+        FixedCostItem(OptionGet),
+        FixedCostItem(Self),
+        FixedCostItem(ExtractAmount),
+        TypeBasedCostItem(ArithOp.Plus, SLong)
+      )
+    )
+    val tagRegisterCostDetails2 = TracedCost(
+      Array(
+        FixedCostItem(Apply),
+        FixedCostItem(FuncValue),
+        FixedCostItem(GetVar),
+        FixedCostItem(OptionGet),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 2),
+        FixedCostItem(Outputs),
+        FixedCostItem(Constant),
+        FixedCostItem(ByIndex),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(ExtractRegisterAs),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(OptionIsDefined),
+        FixedCostItem(If),
+        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+        FixedCostItem(ValUse),
+        FixedCostItem(OptionGet),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(Constant),
+        FixedCostItem(NamedDesc("EQ_Prim"), FixedCost(JitCost(3))),
+        FixedCostItem(If),
+        FixedCostItem(ValUse),
+        FixedCostItem(ExtractRegisterAs),
+        FixedCostItem(OptionGet),
+        TypeBasedCostItem(Upcast, SLong),
+        FixedCostItem(Self),
+        FixedCostItem(ExtractAmount),
+        TypeBasedCostItem(ArithOp.Plus, SLong)
+      )
+    )
+    val tagRegisterCostDetails3 = TracedCost(
+      Array(
+        FixedCostItem(Apply),
+        FixedCostItem(FuncValue),
+        FixedCostItem(GetVar),
+        FixedCostItem(OptionGet),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 2),
+        FixedCostItem(Outputs),
+        FixedCostItem(Constant),
+        FixedCostItem(ByIndex),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(ExtractRegisterAs),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(OptionIsDefined),
+        FixedCostItem(If),
+        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+        FixedCostItem(ValUse),
+        FixedCostItem(OptionGet),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(Constant),
+        FixedCostItem(NamedDesc("EQ_Prim"), FixedCost(JitCost(3))),
+        FixedCostItem(If),
+        FixedCostItem(ValUse),
+        FixedCostItem(Constant),
+        FixedCostItem(NamedDesc("EQ_Prim"), FixedCost(JitCost(3))),
+        FixedCostItem(If),
+        FixedCostItem(Constant)
+      )
+    )
+    val tagRegisterCostDetails4 = TracedCost(
+      Array(
+        FixedCostItem(Apply),
+        FixedCostItem(FuncValue),
+        FixedCostItem(GetVar),
+        FixedCostItem(OptionGet),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 2),
+        FixedCostItem(Outputs),
+        FixedCostItem(Constant),
+        FixedCostItem(ByIndex),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(ExtractRegisterAs),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(OptionIsDefined),
+        FixedCostItem(If),
+        FixedCostItem(Constant)
+      )
+    )
     verifyCases(
       Seq(
         // case 1L
-        ctx -> Expected(Success(5008366408131289382L), 41016),
+        ctx -> Expected(Success(5008366408131289382L), 41016, tagRegisterCostDetails1, 1794),
         // case 0L
         ctxWithRegsInOutput(ctx, Map(
           ErgoBox.R5 -> LongConstant(0L),
-          ErgoBox.R4 -> ShortConstant(10))) -> Expected(Success(80956L), 41006),
+          ErgoBox.R4 -> ShortConstant(10))) -> Expected(Success(80956L), 41006, tagRegisterCostDetails2, 1793),
 
         // case returning 0L
         ctxWithRegsInOutput(ctx, Map(
           ErgoBox.R5 -> LongConstant(2L),
           // note R4 is required to avoid
           // "RuntimeException: Set of non-mandatory indexes is not densely packed"
-          ErgoBox.R4 -> ShortConstant(10))) -> Expected(Success(0L), 41006),
+          ErgoBox.R4 -> ShortConstant(10))) -> Expected(Success(0L), 41006, tagRegisterCostDetails3, 1784),
 
         // case returning -1L
         ctxWithRegsInOutput(ctx, Map(
-          ErgoBox.R4 -> ShortConstant(10))) -> Expected(Success(-1L), 41006)
+          ErgoBox.R4 -> ShortConstant(10))) -> Expected(Success(-1L), 41006, tagRegisterCostDetails4, 1777)
       ),
       existingFeature(
       { (x: Context) =>
@@ -4829,19 +5761,149 @@ class SigmaDslSpecification extends SigmaDslTesting
 
   property("Conditional access dataInputs(0).R4 using tag in R5") {
     val (_, _, _, ctx, _, _) = contextData()
+    val tagRegisterCostDetails1 = TracedCost(
+      Array(
+        FixedCostItem(Apply),
+        FixedCostItem(FuncValue),
+        FixedCostItem(GetVar),
+        FixedCostItem(OptionGet),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 2),
+        FixedCostItem(ValUse),
+        FixedCostItem(PropertyCall),
+        FixedCostItem(SContext.dataInputsMethod, FixedCost(JitCost(15))),
+        FixedCostItem(Constant),
+        FixedCostItem(ByIndex),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(ExtractRegisterAs),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(OptionIsDefined),
+        FixedCostItem(If),
+        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+        FixedCostItem(ValUse),
+        FixedCostItem(OptionGet),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(Constant),
+        FixedCostItem(NamedDesc("EQ_Prim"), FixedCost(JitCost(3))),
+        FixedCostItem(If),
+        FixedCostItem(ValUse),
+        FixedCostItem(Constant),
+        FixedCostItem(NamedDesc("EQ_Prim"), FixedCost(JitCost(3))),
+        FixedCostItem(If),
+        FixedCostItem(ValUse),
+        FixedCostItem(ExtractRegisterAs),
+        FixedCostItem(OptionGet)
+      )
+    )
+    val tagRegisterCostDetails2 = TracedCost(
+      Array(
+        FixedCostItem(Apply),
+        FixedCostItem(FuncValue),
+        FixedCostItem(GetVar),
+        FixedCostItem(OptionGet),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 2),
+        FixedCostItem(ValUse),
+        FixedCostItem(PropertyCall),
+        FixedCostItem(SContext.dataInputsMethod, FixedCost(JitCost(15))),
+        FixedCostItem(Constant),
+        FixedCostItem(ByIndex),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(ExtractRegisterAs),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(OptionIsDefined),
+        FixedCostItem(If),
+        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+        FixedCostItem(ValUse),
+        FixedCostItem(OptionGet),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(Constant),
+        FixedCostItem(NamedDesc("EQ_Prim"), FixedCost(JitCost(3))),
+        FixedCostItem(If),
+        FixedCostItem(ValUse),
+        FixedCostItem(ExtractRegisterAs),
+        FixedCostItem(OptionGet),
+        TypeBasedCostItem(Upcast, SLong)
+      )
+    )
+    val tagRegisterCostDetails3 = TracedCost(
+      Array(
+        FixedCostItem(Apply),
+        FixedCostItem(FuncValue),
+        FixedCostItem(GetVar),
+        FixedCostItem(OptionGet),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 2),
+        FixedCostItem(ValUse),
+        FixedCostItem(PropertyCall),
+        FixedCostItem(SContext.dataInputsMethod, FixedCost(JitCost(15))),
+        FixedCostItem(Constant),
+        FixedCostItem(ByIndex),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(ExtractRegisterAs),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(OptionIsDefined),
+        FixedCostItem(If),
+        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+        FixedCostItem(ValUse),
+        FixedCostItem(OptionGet),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(Constant),
+        FixedCostItem(NamedDesc("EQ_Prim"), FixedCost(JitCost(3))),
+        FixedCostItem(If),
+        FixedCostItem(ValUse),
+        FixedCostItem(Constant),
+        FixedCostItem(NamedDesc("EQ_Prim"), FixedCost(JitCost(3))),
+        FixedCostItem(If),
+        FixedCostItem(Constant)
+      )
+    )
+    val tagRegisterCostDetails4 = TracedCost(
+      Array(
+        FixedCostItem(Apply),
+        FixedCostItem(FuncValue),
+        FixedCostItem(GetVar),
+        FixedCostItem(OptionGet),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 2),
+        FixedCostItem(ValUse),
+        FixedCostItem(PropertyCall),
+        FixedCostItem(SContext.dataInputsMethod, FixedCost(JitCost(15))),
+        FixedCostItem(Constant),
+        FixedCostItem(ByIndex),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(ExtractRegisterAs),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(OptionIsDefined),
+        FixedCostItem(If),
+        FixedCostItem(Constant)
+      )
+    )
+
     verifyCases(
       Seq(
         ctxWithRegsInDataInput(ctx, Map(
           ErgoBox.R5 -> LongConstant(1L),
-          ErgoBox.R4 -> LongConstant(10))) -> Expected(Success(10L), 41084),
+          ErgoBox.R4 -> LongConstant(10))) -> Expected(Success(10L), 41084, tagRegisterCostDetails1, 1792),
         ctxWithRegsInDataInput(ctx, Map(
           ErgoBox.R5 -> LongConstant(0L),
-          ErgoBox.R4 -> ShortConstant(10))) -> Expected(Success(10L), 41084),
+          ErgoBox.R4 -> ShortConstant(10))) -> Expected(Success(10L), 41084, tagRegisterCostDetails2, 1791),
         ctxWithRegsInDataInput(ctx, Map(
           ErgoBox.R5 -> LongConstant(2L),
-          ErgoBox.R4 -> ShortConstant(10))) -> Expected(Success(0L), 41084),
+          ErgoBox.R4 -> ShortConstant(10))) -> Expected(Success(0L), 41084, tagRegisterCostDetails3, 1786),
         ctxWithRegsInDataInput(ctx, Map(
-          ErgoBox.R4 -> ShortConstant(10))) -> Expected(Success(-1L), 41084)
+          ErgoBox.R4 -> ShortConstant(10))) -> Expected(Success(-1L), 41084, tagRegisterCostDetails4, 1779)
       ),
       existingFeature(
       { (x: Context) =>
@@ -4927,19 +5989,154 @@ class SigmaDslSpecification extends SigmaDslTesting
 
   property("Conditional access dataInputs(0).R4 using tag in R5 (plus action)") {
     val (_, _, _, ctx, _, _) = contextData()
+    val costDetails1 = TracedCost(
+      Array(
+        FixedCostItem(Apply),
+        FixedCostItem(FuncValue),
+        FixedCostItem(GetVar),
+        FixedCostItem(OptionGet),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 2),
+        FixedCostItem(ValUse),
+        FixedCostItem(PropertyCall),
+        FixedCostItem(SContext.dataInputsMethod, FixedCost(JitCost(15))),
+        FixedCostItem(Constant),
+        FixedCostItem(ByIndex),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(ExtractRegisterAs),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(OptionIsDefined),
+        FixedCostItem(If),
+        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+        FixedCostItem(ValUse),
+        FixedCostItem(OptionGet),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(Constant),
+        FixedCostItem(NamedDesc("EQ_Prim"), FixedCost(JitCost(3))),
+        FixedCostItem(If),
+        FixedCostItem(ValUse),
+        FixedCostItem(Constant),
+        FixedCostItem(NamedDesc("EQ_Prim"), FixedCost(JitCost(3))),
+        FixedCostItem(If),
+        FixedCostItem(ValUse),
+        FixedCostItem(ExtractRegisterAs),
+        FixedCostItem(OptionGet),
+        FixedCostItem(Self),
+        FixedCostItem(ExtractAmount),
+        TypeBasedCostItem(ArithOp.Plus, SLong)
+      )
+    )
+    val costDetails2 = TracedCost(
+      Array(
+        FixedCostItem(Apply),
+        FixedCostItem(FuncValue),
+        FixedCostItem(GetVar),
+        FixedCostItem(OptionGet),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 2),
+        FixedCostItem(ValUse),
+        FixedCostItem(PropertyCall),
+        FixedCostItem(SContext.dataInputsMethod, FixedCost(JitCost(15))),
+        FixedCostItem(Constant),
+        FixedCostItem(ByIndex),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(ExtractRegisterAs),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(OptionIsDefined),
+        FixedCostItem(If),
+        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+        FixedCostItem(ValUse),
+        FixedCostItem(OptionGet),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(Constant),
+        FixedCostItem(NamedDesc("EQ_Prim"), FixedCost(JitCost(3))),
+        FixedCostItem(If),
+        FixedCostItem(ValUse),
+        FixedCostItem(ExtractRegisterAs),
+        FixedCostItem(OptionGet),
+        TypeBasedCostItem(Upcast, SLong),
+        FixedCostItem(Self),
+        FixedCostItem(ExtractAmount),
+        TypeBasedCostItem(ArithOp.Plus, SLong)
+      )
+    ) 
+    val costDetails3 = TracedCost(
+      Array(
+        FixedCostItem(Apply),
+        FixedCostItem(FuncValue),
+        FixedCostItem(GetVar),
+        FixedCostItem(OptionGet),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 2),
+        FixedCostItem(ValUse),
+        FixedCostItem(PropertyCall),
+        FixedCostItem(SContext.dataInputsMethod, FixedCost(JitCost(15))),
+        FixedCostItem(Constant),
+        FixedCostItem(ByIndex),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(ExtractRegisterAs),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(OptionIsDefined),
+        FixedCostItem(If),
+        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+        FixedCostItem(ValUse),
+        FixedCostItem(OptionGet),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(Constant),
+        FixedCostItem(NamedDesc("EQ_Prim"), FixedCost(JitCost(3))),
+        FixedCostItem(If),
+        FixedCostItem(ValUse),
+        FixedCostItem(Constant),
+        FixedCostItem(NamedDesc("EQ_Prim"), FixedCost(JitCost(3))),
+        FixedCostItem(If),
+        FixedCostItem(Constant)
+      )
+    )
+    val costDetails4 = TracedCost(
+      Array(
+        FixedCostItem(Apply),
+        FixedCostItem(FuncValue),
+        FixedCostItem(GetVar),
+        FixedCostItem(OptionGet),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 2),
+        FixedCostItem(ValUse),
+        FixedCostItem(PropertyCall),
+        FixedCostItem(SContext.dataInputsMethod, FixedCost(JitCost(15))),
+        FixedCostItem(Constant),
+        FixedCostItem(ByIndex),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(ExtractRegisterAs),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(OptionIsDefined),
+        FixedCostItem(If),
+        FixedCostItem(Constant)
+      )
+    )
     verifyCases(
       Seq(
         ctxWithRegsInDataInput(ctx, Map(
           ErgoBox.R5 -> LongConstant(1L),
-          ErgoBox.R4 -> LongConstant(10))) -> Expected(Success(80956L), 41694),
+          ErgoBox.R4 -> LongConstant(10))) -> Expected(Success(80956L), 41694, costDetails1, 1796),
         ctxWithRegsInDataInput(ctx, Map(
           ErgoBox.R5 -> LongConstant(0L),
-          ErgoBox.R4 -> ShortConstant(10))) -> Expected(Success(80956L), 41694),
+          ErgoBox.R4 -> ShortConstant(10))) -> Expected(Success(80956L), 41694, costDetails2, 1794),
         ctxWithRegsInDataInput(ctx, Map(
           ErgoBox.R5 -> LongConstant(2L),
-          ErgoBox.R4 -> ShortConstant(10))) -> Expected(Success(0L), 41694),
+          ErgoBox.R4 -> ShortConstant(10))) -> Expected(Success(0L), 41694, costDetails3, 1786),
         ctxWithRegsInDataInput(ctx, Map(
-          ErgoBox.R4 -> ShortConstant(10))) -> Expected(Success(-1L), 41694)
+          ErgoBox.R4 -> ShortConstant(10))) -> Expected(Success(-1L), 41694, costDetails4, 1779)
       ),
       existingFeature(
       { (x: Context) =>
@@ -5036,58 +6233,72 @@ class SigmaDslSpecification extends SigmaDslTesting
   }
 
   property("xorOf equivalence") {
-    // TODO HF (3h): see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/640
+    def costDetails(i: Int) = TracedCost(traceBase :+ SeqCostItem(CompanionDesc(XorOf), PerItemCost(JitCost(20), JitCost(5), 32), i))
     verifyCases(
       {
-        def success[T](v: T, c: Int) = Expected(Success(v), c)
+        def successNew[T](v: T, c: Int, newV: T, cd: CostDetails) = Expected(
+          value = Success(v),
+          cost = c,
+          expectedDetails = CostDetails.ZeroCost,
+          newCost = 1766,
+          newVersionedResults = Seq(0, 1, 2).map(i => i -> (ExpectedResult(Success(newV), Some(1766)) -> Some(cd)))
+        )
         Seq(
-          (Coll[Boolean](false), success(false, 37071)),
-          (Coll[Boolean](true), success(false, 37071)),
-          (Coll[Boolean](false, false), success(false, 37081)),
-          (Coll[Boolean](false, true), success(true, 37081)),
-          (Coll[Boolean](true, false), success(true, 37081)),
-          (Coll[Boolean](true, true), success(false, 37081)),
-          (Coll[Boolean](false, false, false), success(false, 37091)),
-          (Coll[Boolean](false, false, true), success(true, 37091)),
-          (Coll[Boolean](false, true, false), success(true, 37091)),
-          (Coll[Boolean](false, true, true), success(true, 37091)),
-          (Coll[Boolean](true, false, false), success(true, 37091)),
-          (Coll[Boolean](true, false, true), success(true, 37091)),
-          (Coll[Boolean](true, true, false), success(true, 37091)),
-          (Coll[Boolean](true, true, true), success(false, 37091)),
-          (Coll[Boolean](false, false, false, false), success(false, 37101)),
-          (Coll[Boolean](false, false, false, true), success(true, 37101)),
-          (Coll[Boolean](false, false, true, false), success(true, 37101)),
-          (Coll[Boolean](false, false, true, true), success(true, 37101))
+          (Coll[Boolean](), successNew(false, 37061, newV = false, costDetails(0))),
+          (Coll[Boolean](false), successNew(false, 37071, newV = false, costDetails(1))),
+          (Coll[Boolean](true), successNew(false, 37071, newV = true, costDetails(1))),
+          (Coll[Boolean](false, false), successNew(false, 37081, newV = false, costDetails(2))),
+          (Coll[Boolean](false, true), successNew(true, 37081, newV = true, costDetails(2))),
+          (Coll[Boolean](true, false), successNew(true, 37081, newV = true, costDetails(2))),
+          (Coll[Boolean](true, true), successNew(false, 37081, newV = false, costDetails(2))),
+          (Coll[Boolean](false, false, false), successNew(false, 37091, newV = false, costDetails(3))),
+          (Coll[Boolean](false, false, true), successNew(true, 37091, newV = true, costDetails(3))),
+          (Coll[Boolean](false, true, false), successNew(true, 37091, newV = true, costDetails(3))),
+          (Coll[Boolean](false, true, true), successNew(true, 37091, newV = false, costDetails(3))),
+          (Coll[Boolean](true, false, false), successNew(true, 37091, newV = true, costDetails(3))),
+          (Coll[Boolean](true, false, true), successNew(true, 37091, newV = false, costDetails(3))),
+          (Coll[Boolean](true, true, false), successNew(true, 37091, newV = false, costDetails(3))),
+          (Coll[Boolean](true, true, true), successNew(false, 37091, newV = true, costDetails(3))),
+          (Coll[Boolean](false, false, false, false), successNew(false, 37101, newV = false, costDetails(4))),
+          (Coll[Boolean](false, false, false, true), successNew(true, 37101, newV = true, costDetails(4))),
+          (Coll[Boolean](false, false, true, false), successNew(true, 37101, newV = true, costDetails(4))),
+          (Coll[Boolean](false, false, true, true), successNew(true, 37101, newV = false, costDetails(4)))
         )
       },
-      existingFeature((x: Coll[Boolean]) => SigmaDsl.xorOf(x),
+      changedFeature(
+        (x: Coll[Boolean]) => SigmaDsl.xorOf(x),
+        (x: Coll[Boolean]) => SigmaDsl.xorOf(x),
         "{ (x: Coll[Boolean]) => xorOf(x) }",
         FuncValue(Vector((1, SBooleanArray)), XorOf(ValUse(1, SBooleanArray)))))
   }
 
   property("LogicalNot equivalence") {
+    val costDetails = TracedCost(traceBase :+ FixedCostItem(LogicalNot))
     verifyCases(
       Seq(
-        (true, Expected(Success(false), 35864)),
-        (false, Expected(Success(true), 35864))),
+        (true, Expected(Success(false), 35864, costDetails, 1765)),
+        (false, Expected(Success(true), 35864, costDetails, 1765))),
       existingFeature((x: Boolean) => !x,
         "{ (x: Boolean) => !x }",
         FuncValue(Vector((1, SBoolean)), LogicalNot(ValUse(1, SBoolean)))))
   }
 
   property("Numeric Negation equivalence") {
+    val costDetails = TracedCost(traceBase :+ FixedCostItem(Negation))
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 36136)
+        def success[T](v: T) = Expected(Success(v), 36136, costDetails, 1766)
         Seq(
           (Byte.MinValue, success(Byte.MinValue)), // !!!
+          ((Byte.MinValue + 1).toByte, success(Byte.MaxValue)),
           (-40.toByte, success(40.toByte)),
           (-1.toByte, success(1.toByte)),
           (0.toByte, success(0.toByte)),
           (1.toByte, success(-1.toByte)),
           (45.toByte, success(-45.toByte)),
-          (127.toByte, success(-127.toByte)))
+          (127.toByte, success(-127.toByte)),
+          (Byte.MaxValue, success(-127.toByte))
+        )
       },
       existingFeature((x: Byte) => (-x).toByte,
         "{ (x: Byte) => -x }",
@@ -5095,15 +6306,16 @@ class SigmaDslSpecification extends SigmaDslTesting
 
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 36136)
+        def success[T](v: T) = Expected(Success(v), 36136, costDetails, 1766)
         Seq(
           (Short.MinValue, success(Short.MinValue)), // special case!
-          ((Short.MinValue + 1).toShort, success(32767.toShort)),
+          ((Short.MinValue + 1).toShort, success(Short.MaxValue)),
           (-1528.toShort, success(1528.toShort)),
           (-1.toShort, success(1.toShort)),
           (0.toShort, success(0.toShort)),
           (1.toShort, success(-1.toShort)),
           (7586.toShort, success(-7586.toShort)),
+          (32767.toShort, success(-32767.toShort)),
           (Short.MaxValue, success(-32767.toShort)))
       },
       existingFeature((x: Short) => (-x).toShort,
@@ -5112,10 +6324,10 @@ class SigmaDslSpecification extends SigmaDslTesting
 
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 36136)
+        def success[T](v: T) = Expected(Success(v), 36136, costDetails, 1766)
         Seq(
           (Int.MinValue, success(Int.MinValue)),  // special case!
-          (Int.MinValue + 1, success(2147483647)),
+          (Int.MinValue + 1, success(Int.MaxValue)),
           (-63509744, success(63509744)),
           (-1, success(1)),
           (0, success(0)),
@@ -5129,16 +6341,16 @@ class SigmaDslSpecification extends SigmaDslTesting
 
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 36136)
+        def success[T](v: T) = Expected(Success(v), 36136, costDetails, 1766)
         Seq(
           (Long.MinValue, success(Long.MinValue)),   // special case!
-          (Long.MinValue + 1, success(9223372036854775807L)),
+          (Long.MinValue + 1, success(Long.MaxValue)),
           (-957264171003115006L, success(957264171003115006L)),
           (-1L, success(1L)),
           (0L, success(0L)),
           (1L, success(-1L)),
           (340835904095777627L, success(-340835904095777627L)),
-          (9223372036854775807L, success(-9223372036854775807L)))
+          (Long.MaxValue, success(-9223372036854775807L)))
       },
       existingFeature((x: Long) => -x,
         "{ (x: Long) => -x }",
@@ -5146,7 +6358,7 @@ class SigmaDslSpecification extends SigmaDslTesting
 
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 36136)
+        def success[T](v: T) = Expected(Success(v), 36136, costDetails, 1767)
         Seq(
           (CBigInt(new BigInteger("-1655a05845a6ad363ac88ea21e88b97e436a1f02c548537e12e2d9667bf0680", 16)), success(CBigInt(new BigInteger("1655a05845a6ad363ac88ea21e88b97e436a1f02c548537e12e2d9667bf0680", 16)))),
           (CBigInt(new BigInteger("-1b24ba8badba8abf347cce054d9b9f14f229321507245b8", 16)), success(CBigInt(new BigInteger("1b24ba8badba8abf347cce054d9b9f14f229321507245b8", 16)))),
@@ -5169,30 +6381,41 @@ class SigmaDslSpecification extends SigmaDslTesting
         FuncValue(Vector((1, SBigInt)), Negation(ValUse(1, SBigInt)))))
   }
 
-  property("global functions equivalence") {
-
+  property("groupGenerator equivalence") {
+    val costDetails = TracedCost(
+      Array(
+        FixedCostItem(Apply),
+        FixedCostItem(FuncValue),
+        FixedCostItem(GetVar),
+        FixedCostItem(OptionGet),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(Global),
+        FixedCostItem(PropertyCall),
+        FixedCostItem(SGlobal.groupGeneratorMethod, FixedCost(JitCost(10)))
+      )
+    )
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 35981)
+        def success[T](v: T) = Expected(Success(v), 35981, costDetails, 1782)
         Seq(
           (-1, success(Helpers.decodeGroupElement("0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798"))),
           (1, success(Helpers.decodeGroupElement("0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798"))))
       },
       existingFeature({ (x: Int) => SigmaDsl.groupGenerator },
-        "{ (x: Int) => groupGenerator }",
-        FuncValue(
-          Vector((1, SInt)),
-          MethodCall.typed[Value[SGroupElement.type]](
-            Global,
-            SGlobal.getMethodByName("groupGenerator"),
-            Vector(),
-            Map()
-          )
-        )))
+      "{ (x: Int) => groupGenerator }",
+      FuncValue(
+        Vector((1, SInt)),
+        MethodCall.typed[Value[SGroupElement.type]](
+          Global,
+          SGlobal.getMethodByName("groupGenerator"),
+          Vector(),
+          Map()
+        )
+      )))
 
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 35981)
+        def success[T](v: T) = Expected(Success(v), 35981, costDetails, 1782)
         Seq(
           (-1, success(Helpers.decodeGroupElement("0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798"))),
           (1, success(Helpers.decodeGroupElement("0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798"))))
@@ -5210,9 +6433,15 @@ class SigmaDslSpecification extends SigmaDslTesting
         )))
 
     if (lowerMethodCallsInTests) {
+      val expCostDetails = TracedCost(
+        costDetails.trace ++ Array(
+          FixedCostItem(ValUse),
+          FixedCostItem(Exponentiate)
+        )
+      )
       verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 41237)
+        def success[T](v: T) = Expected(Success(v), 41237, expCostDetails, 1872)
         Seq(
           (CBigInt(new BigInteger("-e5c1a54694c85d644fa30a6fc5f3aa209ed304d57f72683a0ebf21038b6a9d", 16)), success(Helpers.decodeGroupElement("023395bcba3d7cf21d73c50f8af79d09a8c404c15ce9d04f067d672823bae91a54"))),
           (CBigInt(new BigInteger("-bc2d08f935259e0eebf272c66c6e1dbd484c6706390215", 16)), success(Helpers.decodeGroupElement("02ddcf4c48105faf3c16f7399b5dbedd82ab0bb50ae292d8f88f49a3f86e78974e"))),
@@ -5242,27 +6471,45 @@ class SigmaDslSpecification extends SigmaDslTesting
           ValUse(1, SBigInt)
         )
       )))
-    } else {
-      // TODO v5.0: add test case with `exp` MethodCall
     }
+  }
 
-    // TODO HF (2h): fix semantics when the left collection is longer
+  property("Global.xor equivalence") {
     if (lowerMethodCallsInTests) {
+      def costDetails(i: Int) = TracedCost(
+        traceBase ++ Array(
+          FixedCostItem(SelectField),
+          FixedCostItem(ValUse),
+          FixedCostItem(SelectField),
+          SeqCostItem(CompanionDesc(Xor), PerItemCost(JitCost(10), JitCost(2), 128), i)
+        )
+      )
       verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 36903)
+        def success[T](v: T, cd: CostDetails) = Expected(Success(v), 36903, cd, 1769)
         Seq(
-          ((Helpers.decodeBytes(""), Helpers.decodeBytes("")), success(Helpers.decodeBytes(""))),
-          ((Helpers.decodeBytes("01"), Helpers.decodeBytes("01")), success(Helpers.decodeBytes("00"))),
-          ((Helpers.decodeBytes("0100"), Helpers.decodeBytes("0101")), success(Helpers.decodeBytes("0001"))),
-          ((Helpers.decodeBytes("01"), Helpers.decodeBytes("0101")), success(Helpers.decodeBytes("00"))),
-          ((Helpers.decodeBytes("0100"), Helpers.decodeBytes("01")), Expected(new ArrayIndexOutOfBoundsException("1"))),
+          ((Helpers.decodeBytes(""), Helpers.decodeBytes("")), success(Helpers.decodeBytes(""), costDetails(0))),
+          ((Helpers.decodeBytes("01"), Helpers.decodeBytes("01")), success(Helpers.decodeBytes("00"), costDetails(1))),
+          ((Helpers.decodeBytes("0100"), Helpers.decodeBytes("0101")), success(Helpers.decodeBytes("0001"), costDetails(2))),
+          ((Helpers.decodeBytes("01"), Helpers.decodeBytes("0101")), success(Helpers.decodeBytes("00"), costDetails(1))),
+          ((Helpers.decodeBytes("0100"), Helpers.decodeBytes("01")) ->
+            Expected(Failure(new ArrayIndexOutOfBoundsException("1")),
+              cost = 0,
+              expectedDetails = CostDetails.ZeroCost,
+              newCost = 1769,
+              newVersionedResults =  {
+                val res = (ExpectedResult(Success(Helpers.decodeBytes("00")), Some(1769)), Some(costDetails(1)))
+                Seq(0, 1, 2).map(version => version -> res)
+              }
+            )),
           ((Helpers.decodeBytes("800136fe89afff802acea67128a0ff007fffe3498c8001806080012b"),
               Helpers.decodeBytes("648018010a5d5800f5b400a580e7b4809b0cd273ff1230bfa800017f7fdb002749b3ac2b86ff")),
-              success(Helpers.decodeBytes("e4812eff83f2a780df7aa6d4a8474b80e4f3313a7392313fc8800054")))
+              success(Helpers.decodeBytes("e4812eff83f2a780df7aa6d4a8474b80e4f3313a7392313fc8800054"), costDetails(28)))
         )
       },
-      existingFeature((x: (Coll[Byte], Coll[Byte])) => SigmaDsl.xor(x._1, x._2),
+      changedFeature(
+        (x: (Coll[Byte], Coll[Byte])) => SigmaDsl.xor(x._1, x._2),
+        (x: (Coll[Byte], Coll[Byte])) => SigmaDsl.xor(x._1, x._2),
         "{ (x: (Coll[Byte], Coll[Byte])) => xor(x._1, x._2) }",
         FuncValue(
           Vector((1, STuple(Vector(SByteArray, SByteArray)))),
@@ -5278,140 +6525,296 @@ class SigmaDslSpecification extends SigmaDslTesting
           )
         )))
     } else {
-      // TODO v5.0: add test case with `SGlobal.xor` MethodCall
+      val cases = Seq(
+        ((Helpers.decodeBytes("01"), Helpers.decodeBytes("01")) ->
+          Expected(
+            // in v4.x exp method cannot be called via MethodCall ErgoTree node
+//            Failure(new NoSuchMethodException("")),
+            Success(Helpers.decodeBytes("00")),
+            cost = 41484,
+            CostDetails.ZeroCost,
+            newCost = 0,
+            newVersionedResults = {
+              // in v5.0 MethodCall ErgoTree node is allowed
+              val res = ExpectedResult(
+                Success(Helpers.decodeBytes("00")),
+                Some(116)
+              )
+              val details = TracedCost(
+                Array(
+                  FixedCostItem(Apply),
+                  FixedCostItem(FuncValue),
+                  FixedCostItem(GetVar),
+                  FixedCostItem(OptionGet),
+                  FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+                  FixedCostItem(Global),
+                  FixedCostItem(MethodCall),
+                  FixedCostItem(ValUse),
+                  FixedCostItem(SelectField),
+                  FixedCostItem(ValUse),
+                  FixedCostItem(SelectField),
+                  SeqCostItem(CompanionDesc(Xor), PerItemCost(JitCost(10), JitCost(2), 128), 1)
+                )
+              )
+              Seq.tabulate(3)(v => v -> ( res -> Some(details) )) // expected result for each version
+            }
+          )
+        )
+      )
+      forEachScriptAndErgoTreeVersion(activatedVersions, ergoTreeVersions) {
+        testCases(
+          cases,
+          changedFeature(
+            (x: (Coll[Byte], Coll[Byte])) => SigmaDsl.xor(x._1, x._2),
+            (x: (Coll[Byte], Coll[Byte])) => SigmaDsl.xor(x._1, x._2),
+            "", // NOTE, the script for this test case cannot be compiled, thus expectedExpr is used
+            expectedExpr = FuncValue(
+              Vector((1, STuple(Vector(SByteArray, SByteArray)))),
+              MethodCall(
+                Global,
+                SGlobal.getMethodByName("xor"),
+                Vector(
+                  SelectField.typed[Value[SCollection[SByte.type]]](
+                    ValUse(1, STuple(Vector(SByteArray, SByteArray))),
+                    1.toByte
+                  ),
+                  SelectField.typed[Value[SCollection[SByte.type]]](
+                    ValUse(1, STuple(Vector(SByteArray, SByteArray))),
+                    2.toByte
+                  )),
+                Map()
+              )
+            ),
+            allowNewToSucceed = true,
+            allowDifferentErrors = false
+          ))
+      }
     }
   }
 
-  property("Coll[Box] methods equivalence") {
-    val samples = genSamples[Coll[Box]](collOfN[Box](5), MinSuccessful(20))
-    val b1 = CostingBox(
-      false,
-      new ErgoBox(
-        1L,
-        new ErgoTree(
-          0.toByte,
-          Vector(),
-          Right(
-            SigmaPropConstant(
-              CSigmaProp(
-                ProveDHTuple(
-                  Helpers.decodeECPoint("02c1a9311ecf1e76c787ba4b1c0e10157b4f6d1e4db3ef0d84f411c99f2d4d2c5b"),
-                  Helpers.decodeECPoint("027d1bd9a437e73726ceddecc162e5c85f79aee4798505bc826b8ad1813148e419"),
-                  Helpers.decodeECPoint("0257cff6d06fe15d1004596eeb97a7f67755188501e36adc49bd807fe65e9d8281"),
-                  Helpers.decodeECPoint("033c6021cff6ba5fdfc4f1742486030d2ebbffd9c9c09e488792f3102b2dcdabd5")
-                )
+  def sampleCollBoxes = genSamples[Coll[Box]](collOfN[Box](5), MinSuccessful(20))
+
+  def create_b1 = CostingBox(
+    false,
+    new ErgoBox(
+      1L,
+      new ErgoTree(
+        0.toByte,
+        Vector(),
+        Right(
+          SigmaPropConstant(
+            CSigmaProp(
+              ProveDHTuple(
+                Helpers.decodeECPoint("02c1a9311ecf1e76c787ba4b1c0e10157b4f6d1e4db3ef0d84f411c99f2d4d2c5b"),
+                Helpers.decodeECPoint("027d1bd9a437e73726ceddecc162e5c85f79aee4798505bc826b8ad1813148e419"),
+                Helpers.decodeECPoint("0257cff6d06fe15d1004596eeb97a7f67755188501e36adc49bd807fe65e9d8281"),
+                Helpers.decodeECPoint("033c6021cff6ba5fdfc4f1742486030d2ebbffd9c9c09e488792f3102b2dcdabd5")
               )
             )
           )
+        )
+      ),
+      Coll(),
+      Map(
+        ErgoBox.R4 -> ByteArrayConstant(
+          Helpers.decodeBytes(
+            "7200004cccdac3008001bc80ffc7ff9633bca3e501801380ff007900019d7f0001a8c9dfff5600d964011617ca00583f989c7f80007fee7f99b07f7f870067dc315180828080307fbdf400"
+          )
         ),
-        Coll(),
-        Map(
-          ErgoBox.R4 -> ByteArrayConstant(
-            Helpers.decodeBytes(
-              "7200004cccdac3008001bc80ffc7ff9633bca3e501801380ff007900019d7f0001a8c9dfff5600d964011617ca00583f989c7f80007fee7f99b07f7f870067dc315180828080307fbdf400"
-            )
-          ),
-          ErgoBox.R7 -> LongConstant(0L),
-          ErgoBox.R6 -> FalseLeaf,
-          ErgoBox.R5 -> ByteArrayConstant(Helpers.decodeBytes("7f"))
-        ),
-        ModifierId @@ ("7dffff48ab0000c101a2eac9ff17017f6180aa7fc6f2178000800179499380a5"),
-        21591.toShort,
-        638768
-      )
+        ErgoBox.R7 -> LongConstant(0L),
+        ErgoBox.R6 -> FalseLeaf,
+        ErgoBox.R5 -> ByteArrayConstant(Helpers.decodeBytes("7f"))
+      ),
+      ModifierId @@ ("7dffff48ab0000c101a2eac9ff17017f6180aa7fc6f2178000800179499380a5"),
+      21591.toShort,
+      638768
     )
-    val b2 = CostingBox(
-      false,
-      new ErgoBox(
-        1000000000L,
-        new ErgoTree(
-          0.toByte,
-          Vector(),
-          Right(BoolToSigmaProp(OR(ConcreteCollection(Array(FalseLeaf, AND(ConcreteCollection(Array(FalseLeaf, FalseLeaf), SBoolean))), SBoolean))))
-        ),
-        Coll(),
-        Map(),
-        ModifierId @@ ("008677ffff7ff36dff00f68031140400007689ff014c9201ce8000a9ffe6ceff"),
-        32767.toShort,
-        32827
-      )
-    )
+  )
 
+  def create_b2 = CostingBox(
+    false,
+    new ErgoBox(
+      1000000000L,
+      new ErgoTree(
+        0.toByte,
+        Vector(),
+        Right(BoolToSigmaProp(OR(ConcreteCollection(Array(FalseLeaf, AND(ConcreteCollection(Array(FalseLeaf, FalseLeaf), SBoolean))), SBoolean))))
+      ),
+      Coll(),
+      Map(),
+      ModifierId @@ ("008677ffff7ff36dff00f68031140400007689ff014c9201ce8000a9ffe6ceff"),
+      32767.toShort,
+      32827
+    )
+  )
+
+  property("Coll.filter equivalence") {
+    val samples = sampleCollBoxes
+    val b1 = create_b1
+    val b2 = create_b2
+
+    val costDetails = TracedCost(
+      traceBase ++ Array(
+        FixedCostItem(FuncValue),
+        SeqCostItem(CompanionDesc(Filter), PerItemCost(JitCost(20), JitCost(1), 10), 0)
+      )
+    )
+    val costDetails2 = TracedCost(
+      traceBase ++ Array(
+        FixedCostItem(FuncValue),
+        SeqCostItem(CompanionDesc(Filter), PerItemCost(JitCost(20), JitCost(1), 10), 1),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(ExtractAmount),
+        FixedCostItem(Constant),
+        TypeBasedCostItem(GT, SLong)
+      )
+    )
+    val costDetails3 = TracedCost(
+      traceBase ++ Array(
+        FixedCostItem(FuncValue),
+        SeqCostItem(CompanionDesc(Filter), PerItemCost(JitCost(20), JitCost(1), 10), 2),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(ExtractAmount),
+        FixedCostItem(Constant),
+        TypeBasedCostItem(GT, SLong),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(ExtractAmount),
+        FixedCostItem(Constant),
+        TypeBasedCostItem(GT, SLong)
+      )
+    )
     verifyCases(
       {
-        def success[T](v: T, c: Int) = Expected(Success(v), c)
+        def success[T](v: T, c: Int, costDetails: CostDetails, newCost: Int) = Expected(Success(v), c, costDetails, newCost)
         Seq(
-          (Coll[Box](), success(Coll[Box](), 37297)),
-          (Coll[Box](b1), success(Coll[Box](), 37397)),
-          (Coll[Box](b1, b2), success(Coll[Box](b2), 37537))
+          (Coll[Box](), success(Coll[Box](), 37297, costDetails, 1767)),
+          (Coll[Box](b1), success(Coll[Box](), 37397, costDetails2, 1772)),
+          (Coll[Box](b1, b2), success(Coll[Box](b2), 37537, costDetails3, 1776))
         )
       },
       existingFeature({ (x: Coll[Box]) => x.filter({ (b: Box) => b.value > 1 }) },
-        "{ (x: Coll[Box]) => x.filter({(b: Box) => b.value > 1 }) }",
-        FuncValue(
-          Vector((1, SCollectionType(SBox))),
-          Filter(
-            ValUse(1, SCollectionType(SBox)),
-            FuncValue(Vector((3, SBox)), GT(ExtractAmount(ValUse(3, SBox)), LongConstant(1L)))
-          )
-        )),
+      "{ (x: Coll[Box]) => x.filter({(b: Box) => b.value > 1 }) }",
+      FuncValue(
+        Vector((1, SCollectionType(SBox))),
+        Filter(
+          ValUse(1, SCollectionType(SBox)),
+          FuncValue(Vector((3, SBox)), GT(ExtractAmount(ValUse(3, SBox)), LongConstant(1L)))
+        )
+      )),
       preGeneratedSamples = Some(samples))
+  }
 
+  property("Coll.flatMap equivalence") {
+    val samples = sampleCollBoxes
+    val b1 = create_b1
+    val b2 = create_b2
+
+    val costDetails1 = TracedCost(
+      traceBase ++ Array(
+        FixedCostItem(MethodCall),
+        FixedCostItem(FuncValue),
+        SeqCostItem(MethodDesc(SCollection.FlatMapMethod), PerItemCost(JitCost(60), JitCost(10), 8), 0)
+      )
+    )
+    val costDetails2 = TracedCost(
+      traceBase ++ Array(
+        FixedCostItem(MethodCall),
+        FixedCostItem(FuncValue),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(ExtractScriptBytes),
+        SeqCostItem(MethodDesc(SCollection.FlatMapMethod), PerItemCost(JitCost(60), JitCost(10), 8), 135)
+      )
+    )
+    val costDetails3 = TracedCost(
+      traceBase ++ Array(
+        FixedCostItem(MethodCall),
+        FixedCostItem(FuncValue),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(ExtractScriptBytes),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(ExtractScriptBytes),
+        SeqCostItem(MethodDesc(SCollection.FlatMapMethod), PerItemCost(JitCost(60), JitCost(10), 8), 147)
+      )
+    )
     verifyCases(
       {
-        def success[T](v: T, c: Int) = Expected(Success(v), c)
         Seq(
-          (Coll[Box](), success(Coll[Byte](), 38126)),
-          (Coll[Box](b1), success(Helpers.decodeBytes(
+          (Coll[Box](), Expected(Success(Coll[Byte]()), 38126, costDetails1, 1773)),
+          (Coll[Box](b1), Expected(Success(Helpers.decodeBytes(
             "0008ce02c1a9311ecf1e76c787ba4b1c0e10157b4f6d1e4db3ef0d84f411c99f2d4d2c5b027d1bd9a437e73726ceddecc162e5c85f79aee4798505bc826b8ad1813148e4190257cff6d06fe15d1004596eeb97a7f67755188501e36adc49bd807fe65e9d8281033c6021cff6ba5fdfc4f1742486030d2ebbffd9c9c09e488792f3102b2dcdabd5"
-          ), 38206)),
-          (Coll[Box](b1, b2), success(Helpers.decodeBytes(
+          )), 38206, costDetails2, 1791)),
+          (Coll[Box](b1, b2), Expected(Success(Helpers.decodeBytes(
             "0008ce02c1a9311ecf1e76c787ba4b1c0e10157b4f6d1e4db3ef0d84f411c99f2d4d2c5b027d1bd9a437e73726ceddecc162e5c85f79aee4798505bc826b8ad1813148e4190257cff6d06fe15d1004596eeb97a7f67755188501e36adc49bd807fe65e9d8281033c6021cff6ba5fdfc4f1742486030d2ebbffd9c9c09e488792f3102b2dcdabd500d197830201010096850200"
-          ), 38286))
+          )), 38286, costDetails3, 1795))
         )
       },
       existingFeature({ (x: Coll[Box]) => x.flatMap({ (b: Box) => b.propositionBytes }) },
-        "{ (x: Coll[Box]) => x.flatMap({(b: Box) => b.propositionBytes }) }",
-        FuncValue(
-          Vector((1, SCollectionType(SBox))),
-          MethodCall.typed[Value[SCollection[SByte.type]]](
-            ValUse(1, SCollectionType(SBox)),
-            SCollection.getMethodByName("flatMap").withConcreteTypes(
-              Map(STypeVar("IV") -> SBox, STypeVar("OV") -> SByte)
-            ),
-            Vector(FuncValue(Vector((3, SBox)), ExtractScriptBytes(ValUse(3, SBox)))),
-            Map()
-          )
-        )),
+      "{ (x: Coll[Box]) => x.flatMap({(b: Box) => b.propositionBytes }) }",
+      FuncValue(
+        Vector((1, SCollectionType(SBox))),
+        MethodCall.typed[Value[SCollection[SByte.type]]](
+          ValUse(1, SCollectionType(SBox)),
+          SCollection.getMethodByName("flatMap").withConcreteTypes(
+            Map(STypeVar("IV") -> SBox, STypeVar("OV") -> SByte)
+          ),
+          Vector(FuncValue(Vector((3, SBox)), ExtractScriptBytes(ValUse(3, SBox)))),
+          Map()
+        )
+      )),
       preGeneratedSamples = Some(samples))
+  }
+
+  property("Coll.zip equivalence") {
+    val samples = sampleCollBoxes
+    val b1 = create_b1
+    val b2 = create_b2
+    def costDetails(zipElements: Int) = TracedCost(
+      traceBase ++ Array(
+        FixedCostItem(MethodCall),
+        FixedCostItem(ValUse),
+        SeqCostItem(MethodDesc(SCollection.ZipMethod), PerItemCost(JitCost(10), JitCost(1), 10), zipElements)
+      )
+    )
 
     verifyCases(
       {
-        def success[T](v: T, c: Int) = Expected(Success(v), c)
+        def success[T](v: T, c: Int, cd: CostDetails, nc: Int) = Expected(Success(v), c, cd, nc)
         Seq(
-          (Coll[Box](), success(Coll[(Box, Box)](), 37399)),
-          (Coll[Box](b1), success(Coll[(Box, Box)]((b1, b1)), 37559)),
-          (Coll[Box](b1, b2), success(Coll[(Box, Box)]((b1, b1), (b2, b2)), 37719))
+          (Coll[Box](), success(Coll[(Box, Box)](), 37399, costDetails(0), 1766)),
+          (Coll[Box](b1), success(Coll[(Box, Box)]((b1, b1)), 37559, costDetails(1), 1768)),
+          (Coll[Box](b1, b2), success(Coll[(Box, Box)]((b1, b1), (b2, b2)), 37719, costDetails(2), 1770))
         )
       },
       existingFeature({ (x: Coll[Box]) => x.zip(x) },
-        "{ (x: Coll[Box]) => x.zip(x) }",
-        FuncValue(
-          Vector((1, SCollectionType(SBox))),
-          MethodCall.typed[Value[SCollection[STuple]]](
-            ValUse(1, SCollectionType(SBox)),
-            SCollection.getMethodByName("zip").withConcreteTypes(
-              Map(STypeVar("IV") -> SBox, STypeVar("OV") -> SBox)
-            ),
-            Vector(ValUse(1, SCollectionType(SBox))),
-            Map()
-          )
-        )),
+      "{ (x: Coll[Box]) => x.zip(x) }",
+      FuncValue(
+        Vector((1, SCollectionType(SBox))),
+        MethodCall.typed[Value[SCollection[STuple]]](
+          ValUse(1, SCollectionType(SBox)),
+          SCollection.getMethodByName("zip").withConcreteTypes(
+            Map(STypeVar("IV") -> SBox, STypeVar("OV") -> SBox)
+          ),
+          Vector(ValUse(1, SCollectionType(SBox))),
+          Map()
+        )
+      )),
       preGeneratedSamples = Some(samples))
+  }
 
+  property("Coll.size equivalence") {
+    val samples = sampleCollBoxes
+    val b1 = create_b1
+    val b2 = create_b2
+    val costDetails = TracedCost(traceBase :+ FixedCostItem(SizeOf))
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 35954)
+        def success[T](v: T) = Expected(Success(v), 35954, costDetails, 1765)
         Seq(
           (Coll[Box](), success(0)),
           (Coll[Box](b1), success(1)),
@@ -5419,42 +6822,88 @@ class SigmaDslSpecification extends SigmaDslTesting
         )
       },
       existingFeature({ (x: Coll[Box]) => x.size },
-        "{ (x: Coll[Box]) => x.size }",
-        FuncValue(Vector((1, SCollectionType(SBox))), SizeOf(ValUse(1, SCollectionType(SBox))))),
+      "{ (x: Coll[Box]) => x.size }",
+      FuncValue(Vector((1, SCollectionType(SBox))), SizeOf(ValUse(1, SCollectionType(SBox))))),
       preGeneratedSamples = Some(samples))
+  }
 
+  property("Coll.indices equivalence") {
+    val samples = sampleCollBoxes
+    val b1 = create_b1
+    val b2 = create_b2
+    def costDetails(indicesCount: Int) = TracedCost(
+      traceBase ++ Array(
+        FixedCostItem(PropertyCall),
+        SeqCostItem(MethodDesc(SCollection.IndicesMethod), PerItemCost(JitCost(20), JitCost(2), 16), indicesCount)
+      )
+    )
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 36036)
+        def success[T](v: T, i: Int) = Expected(Success(v), 36036, costDetails(i), 1768)
         Seq(
-          (Coll[Box](), success(Coll[Int]())),
-          (Coll[Box](b1), success(Coll[Int](0))),
-          (Coll[Box](b1, b2), success(Coll[Int](0, 1)))
+          (Coll[Box](), success(Coll[Int](), 0)),
+          (Coll[Box](b1), success(Coll[Int](0), 1)),
+          (Coll[Box](b1, b2), success(Coll[Int](0, 1), 2))
         )
       },
       existingFeature({ (x: Coll[Box]) => x.indices },
-        "{ (x: Coll[Box]) => x.indices }",
-        FuncValue(
-          Vector((1, SCollectionType(SBox))),
-          MethodCall.typed[Value[SCollection[SInt.type]]](
-            ValUse(1, SCollectionType(SBox)),
-            SCollection.getMethodByName("indices").withConcreteTypes(Map(STypeVar("IV") -> SBox)),
-            Vector(),
-            Map()
-          )
-        )),
+      "{ (x: Coll[Box]) => x.indices }",
+      FuncValue(
+        Vector((1, SCollectionType(SBox))),
+        MethodCall.typed[Value[SCollection[SInt.type]]](
+          ValUse(1, SCollectionType(SBox)),
+          SCollection.getMethodByName("indices").withConcreteTypes(Map(STypeVar("IV") -> SBox)),
+          Vector(),
+          Map()
+        )
+      )),
       preGeneratedSamples = Some(samples))
 
-    verifyCases(
-      {
-        def success[T](v: T, c: Int) = Expected(Success(v), c)
-        Seq(
-          (Coll[Box](), success(true, 37909)),
-          (Coll[Box](b1), success(false, 37969)),
-          (Coll[Box](b1, b2), success(false, 38029))
-        )
-      },
-      existingFeature({ (x: Coll[Box]) => x.forall({ (b: Box) => b.value > 1 }) },
+  }
+
+  property("Coll.forall equivalence") {
+    val samples = sampleCollBoxes
+    val b1 = create_b1
+    val b2 = create_b2
+    val costDetails1 = TracedCost(
+      traceBase ++ Array(
+        FixedCostItem(FuncValue),
+        SeqCostItem(CompanionDesc(ForAll), PerItemCost(JitCost(3), JitCost(1), 10), 0)
+      )
+    )
+    val costDetails2 = TracedCost(
+      traceBase ++ Array(
+        FixedCostItem(FuncValue),
+        SeqCostItem(CompanionDesc(ForAll), PerItemCost(JitCost(3), JitCost(1), 10), 1),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(ExtractAmount),
+        FixedCostItem(Constant),
+        TypeBasedCostItem(GT, SLong)
+      )
+    )
+    val costDetails3 = TracedCost(
+      traceBase ++ Array(
+        FixedCostItem(FuncValue),
+        SeqCostItem(CompanionDesc(ForAll), PerItemCost(JitCost(3), JitCost(1), 10), 2),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(ExtractAmount),
+        FixedCostItem(Constant),
+        TypeBasedCostItem(GT, SLong)
+      )
+    )
+
+    if (lowerMethodCallsInTests) {
+      verifyCases(
+        {
+          Seq(
+            (Coll[Box](), Expected(Success(true), 37909, costDetails1, 1764)),
+            (Coll[Box](b1), Expected(Success(false), 37969, costDetails2, 1769)),
+            (Coll[Box](b1, b2), Expected(Success(false), 38029, costDetails3, 1769))
+          )
+        },
+        existingFeature({ (x: Coll[Box]) => x.forall({ (b: Box) => b.value > 1 }) },
         "{ (x: Coll[Box]) => x.forall({(b: Box) => b.value > 1 }) }",
         FuncValue(
           Vector((1, SCollectionType(SBox))),
@@ -5463,18 +6912,68 @@ class SigmaDslSpecification extends SigmaDslTesting
             FuncValue(Vector((3, SBox)), GT(ExtractAmount(ValUse(3, SBox)), LongConstant(1L)))
           )
         )),
-      preGeneratedSamples = Some(samples))
+        preGeneratedSamples = Some(samples))
+    } else {
+      assertExceptionThrown(
+        verifyCases(
+          Seq( (Coll[Box](), Expected(Success(true), 37909)) ),
+          existingFeature(
+            { (x: Coll[Box]) => x.forall({ (b: Box) => b.value > 1 }) },
+            "{ (x: Coll[Box]) => x.forall({(b: Box) => b.value > 1 }) }"
+          )),
+        rootCauseLike[NoSuchMethodException]("sigmastate.eval.CostingRules$CollCoster.forall(scalan.Base$Ref)")
+      )
+    }
+  }
 
-    verifyCases(
-      {
-        def success[T](v: T, c: Int) = Expected(Success(v), c)
-        Seq(
-          (Coll[Box](), success(false, 38455)),
-          (Coll[Box](b1), success(false, 38515)),
-          (Coll[Box](b1, b2), success(true, 38575))
-        )
-      },
-      existingFeature({ (x: Coll[Box]) => x.exists({ (b: Box) => b.value > 1 }) },
+  property("Coll.exists equivalence") {
+    val samples = sampleCollBoxes
+    val b1 = create_b1
+    val b2 = create_b2
+    val costDetails1 = TracedCost(
+      traceBase ++ Array(
+        FixedCostItem(FuncValue),
+        SeqCostItem(CompanionDesc(Exists), PerItemCost(JitCost(3), JitCost(1), 10), 0)
+      )
+    )
+    val costDetails2 = TracedCost(
+      traceBase ++ Array(
+        FixedCostItem(FuncValue),
+        SeqCostItem(CompanionDesc(Exists), PerItemCost(JitCost(3), JitCost(1), 10), 1),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(ExtractAmount),
+        FixedCostItem(Constant),
+        TypeBasedCostItem(GT, SLong)
+      )
+    )
+    val costDetails3 = TracedCost(
+      traceBase ++ Array(
+        FixedCostItem(FuncValue),
+        SeqCostItem(CompanionDesc(Exists), PerItemCost(JitCost(3), JitCost(1), 10), 2),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(ExtractAmount),
+        FixedCostItem(Constant),
+        TypeBasedCostItem(GT, SLong),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(ExtractAmount),
+        FixedCostItem(Constant),
+        TypeBasedCostItem(GT, SLong)
+      )
+    )
+
+    if (lowerMethodCallsInTests) {
+      verifyCases(
+        {
+          Seq(
+            (Coll[Box](), Expected(Success(false), 38455, costDetails1, 1764)),
+            (Coll[Box](b1), Expected(Success(false), 38515, costDetails2, 1769)),
+            (Coll[Box](b1, b2), Expected(Success(true), 38575, costDetails3, 1773))
+          )
+        },
+        existingFeature({ (x: Coll[Box]) => x.exists({ (b: Box) => b.value > 1 }) },
         "{ (x: Coll[Box]) => x.exists({(b: Box) => b.value > 1 }) }",
         FuncValue(
           Vector((1, SCollectionType(SBox))),
@@ -5483,77 +6982,224 @@ class SigmaDslSpecification extends SigmaDslTesting
             FuncValue(Vector((3, SBox)), GT(ExtractAmount(ValUse(3, SBox)), LongConstant(1L)))
           )
         )),
-      preGeneratedSamples = Some(samples))
+        preGeneratedSamples = Some(samples))
+    } else {
+      assertExceptionThrown(
+        verifyCases(
+          Seq( (Coll[Box](), Expected(Success(false), 38455)) ),
+          existingFeature(
+            { (x: Coll[Box]) => x.exists({ (b: Box) => b.value > 1 }) },
+            "{ (x: Coll[Box]) => x.exists({(b: Box) => b.value > 1 }) }"
+          )),
+        rootCauseLike[NoSuchMethodException]("sigmastate.eval.CostingRules$CollCoster.exists(scalan.Base$Ref)")
+      )
+    }
   }
 
   property("Coll exists with nested If") {
     val o = NumericOps.BigIntIsExactOrdering
-    verifyCases(
-    {
-      def success[T](v: T, c: Int) = Expected(Success(v), c)
-      Seq(
-        (Coll[BigInt](), success(false, 38955)),
-        (Coll[BigInt](BigIntZero), success(false, 39045)),
-        (Coll[BigInt](BigIntOne), success(true, 39045)),
-        (Coll[BigInt](BigIntZero, BigIntOne), success(true, 39135)),
-        (Coll[BigInt](BigIntZero, BigInt10), success(false, 39135))
+    val costDetails1 = TracedCost(
+      traceBase ++ Array(
+        FixedCostItem(FuncValue),
+        SeqCostItem(CompanionDesc(Exists), PerItemCost(JitCost(3), JitCost(1), 10), 0)
       )
-    },
-    existingFeature(
-      { (x: Coll[BigInt]) => x.exists({ (b: BigInt) =>
-          if (o.gt(b, BigIntZero)) o.lt(b, BigInt10) else false
-        })
-      },
-      "{ (x: Coll[BigInt]) => x.exists({(b: BigInt) => if (b > 0) b < 10 else false }) }",
-      FuncValue(
-        Array((1, SCollectionType(SBigInt))),
-        Exists(
-          ValUse(1, SCollectionType(SBigInt)),
-          FuncValue(
-            Array((3, SBigInt)),
-            If(
-              GT(ValUse(3, SBigInt), BigIntConstant(CBigInt(new BigInteger("0", 16)))),
-              LT(ValUse(3, SBigInt), BigIntConstant(CBigInt(new BigInteger("a", 16)))),
-              FalseLeaf
-            )
+    )
+    val costDetails2 = TracedCost(
+      traceBase ++ Array(
+        FixedCostItem(FuncValue),
+        SeqCostItem(CompanionDesc(Exists), PerItemCost(JitCost(3), JitCost(1), 10), 1),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(Constant),
+        TypeBasedCostItem(GT, SBigInt),
+        FixedCostItem(If),
+        FixedCostItem(Constant)
+      )
+    )
+    val costDetails3 = TracedCost(
+      traceBase ++ Array(
+        FixedCostItem(FuncValue),
+        SeqCostItem(CompanionDesc(Exists), PerItemCost(JitCost(3), JitCost(1), 10), 1),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(Constant),
+        TypeBasedCostItem(GT, SBigInt),
+        FixedCostItem(If),
+        FixedCostItem(ValUse),
+        FixedCostItem(Constant),
+        TypeBasedCostItem(LT, SBigInt)
+      )
+    )
+    val costDetails4 = TracedCost(
+      traceBase ++ Array(
+        FixedCostItem(FuncValue),
+        SeqCostItem(CompanionDesc(Exists), PerItemCost(JitCost(3), JitCost(1), 10), 2),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(Constant),
+        TypeBasedCostItem(GT, SBigInt),
+        FixedCostItem(If),
+        FixedCostItem(Constant),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(Constant),
+        TypeBasedCostItem(GT, SBigInt),
+        FixedCostItem(If),
+        FixedCostItem(ValUse),
+        FixedCostItem(Constant),
+        TypeBasedCostItem(LT, SBigInt)  
+      )
+    )
+    
+    if (lowerMethodCallsInTests) {
+      verifyCases(
+        {
+          Seq(
+            (Coll[BigInt](), Expected(Success(false), 38955, costDetails1, 1764)),
+            (Coll[BigInt](BigIntZero), Expected(Success(false), 39045, costDetails2, 1769)),
+            (Coll[BigInt](BigIntOne), Expected(Success(true), 39045, costDetails3, 1772)),
+            (Coll[BigInt](BigIntZero, BigIntOne), Expected(Success(true), 39135, costDetails4, 1777)),
+            (Coll[BigInt](BigIntZero, BigInt10), Expected(Success(false), 39135, costDetails4, 1777))
           )
-        )
-      )))
+        },
+        existingFeature(
+          { (x: Coll[BigInt]) => x.exists({ (b: BigInt) =>
+              if (o.gt(b, BigIntZero)) o.lt(b, BigInt10) else false
+            })
+          },
+          "{ (x: Coll[BigInt]) => x.exists({(b: BigInt) => if (b > 0) b < 10 else false }) }",
+          FuncValue(
+            Array((1, SCollectionType(SBigInt))),
+            Exists(
+              ValUse(1, SCollectionType(SBigInt)),
+              FuncValue(
+                Array((3, SBigInt)),
+                If(
+                  GT(ValUse(3, SBigInt), BigIntConstant(CBigInt(new BigInteger("0", 16)))),
+                  LT(ValUse(3, SBigInt), BigIntConstant(CBigInt(new BigInteger("a", 16)))),
+                  FalseLeaf
+                )
+              )
+            )
+          )))
+    } else {
+      assertExceptionThrown(
+        verifyCases(
+          Seq( (Coll[BigInt](), Expected(Success(false), 38955)) ),
+          existingFeature(
+            { (x: Coll[BigInt]) => x.exists({ (b: BigInt) =>
+              if (o.gt(b, BigIntZero)) o.lt(b, BigInt10) else false
+            })
+            },
+            "{ (x: Coll[BigInt]) => x.exists({(b: BigInt) => if (b > 0) b < 10 else false }) }"
+          )),
+        rootCauseLike[NoSuchMethodException]("sigmastate.eval.CostingRules$CollCoster.exists(scalan.Base$Ref)")
+      )
+    }
   }
 
   property("Coll forall with nested If") {
     val o = NumericOps.BigIntIsExactOrdering
-    verifyCases(
-    {
-      def success[T](v: T, c: Int) = Expected(Success(v), c)
-      Seq(
-        (Coll[BigInt](), success(true, 38412)),
-        (Coll[BigInt](BigIntMinusOne), success(false, 38502)),
-        (Coll[BigInt](BigIntOne), success(true, 38502)),
-        (Coll[BigInt](BigIntZero, BigIntOne), success(true, 38592)),
-        (Coll[BigInt](BigIntZero, BigInt11), success(false, 38592))
+    val costDetails1 = TracedCost(
+      traceBase ++ Array(
+        FixedCostItem(FuncValue),
+        SeqCostItem(CompanionDesc(ForAll), PerItemCost(JitCost(3), JitCost(1), 10), 0)
       )
-    },
-    existingFeature(
-      { (x: Coll[BigInt]) => x.forall({ (b: BigInt) =>
-          if (o.gteq(b, BigIntZero)) o.lteq(b, BigInt10) else false
-        })
-      },
-      "{ (x: Coll[BigInt]) => x.forall({(b: BigInt) => if (b >= 0) b <= 10 else false }) }",
-      FuncValue(
-        Array((1, SCollectionType(SBigInt))),
-        ForAll(
-          ValUse(1, SCollectionType(SBigInt)),
-          FuncValue(
-            Array((3, SBigInt)),
-            If(
-              GE(ValUse(3, SBigInt), BigIntConstant(CBigInt(new BigInteger("0", 16)))),
-              LE(ValUse(3, SBigInt), BigIntConstant(CBigInt(new BigInteger("a", 16)))),
-              FalseLeaf
+    )
+    val costDetails2 = TracedCost(
+      traceBase ++ Array(
+        FixedCostItem(FuncValue),
+        SeqCostItem(CompanionDesc(ForAll), PerItemCost(JitCost(3), JitCost(1), 10), 1),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(Constant),
+        TypeBasedCostItem(GE, SBigInt),
+        FixedCostItem(If),
+        FixedCostItem(Constant)
+      )
+    )
+    val costDetails3 = TracedCost(
+      traceBase ++ Array(
+        FixedCostItem(FuncValue),
+        SeqCostItem(CompanionDesc(ForAll), PerItemCost(JitCost(3), JitCost(1), 10), 1),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(Constant),
+        TypeBasedCostItem(GE, SBigInt),
+        FixedCostItem(If),
+        FixedCostItem(ValUse),
+        FixedCostItem(Constant),
+        TypeBasedCostItem(LE, SBigInt)
+      )
+    )
+    val costDetails4 = TracedCost(
+      traceBase ++ Array(
+        FixedCostItem(FuncValue),
+        SeqCostItem(CompanionDesc(ForAll), PerItemCost(JitCost(3), JitCost(1), 10), 2),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(Constant),
+        TypeBasedCostItem(GE, SBigInt),
+        FixedCostItem(If),
+        FixedCostItem(ValUse),
+        FixedCostItem(Constant),
+        TypeBasedCostItem(LE, SBigInt),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(Constant),
+        TypeBasedCostItem(GE, SBigInt),
+        FixedCostItem(If),
+        FixedCostItem(ValUse),
+        FixedCostItem(Constant),
+        TypeBasedCostItem(LE, SBigInt)  
+      )
+    )
+    if (lowerMethodCallsInTests) {
+      verifyCases(
+        {
+          Seq(
+            (Coll[BigInt](), Expected(Success(true), 38412, costDetails1, 1764)),
+            (Coll[BigInt](BigIntMinusOne), Expected(Success(false), 38502, costDetails2, 1769)),
+            (Coll[BigInt](BigIntOne), Expected(Success(true), 38502, costDetails3, 1772)),
+            (Coll[BigInt](BigIntZero, BigIntOne), Expected(Success(true), 38592, costDetails4, 1779)),
+            (Coll[BigInt](BigIntZero, BigInt11), Expected(Success(false), 38592, costDetails4, 1779))
+          )
+        },
+        existingFeature(
+          { (x: Coll[BigInt]) => x.forall({ (b: BigInt) =>
+            if (o.gteq(b, BigIntZero)) o.lteq(b, BigInt10) else false
+          })
+          },
+          "{ (x: Coll[BigInt]) => x.forall({(b: BigInt) => if (b >= 0) b <= 10 else false }) }",
+        FuncValue(
+          Array((1, SCollectionType(SBigInt))),
+          ForAll(
+            ValUse(1, SCollectionType(SBigInt)),
+            FuncValue(
+              Array((3, SBigInt)),
+              If(
+                GE(ValUse(3, SBigInt), BigIntConstant(CBigInt(new BigInteger("0", 16)))),
+                LE(ValUse(3, SBigInt), BigIntConstant(CBigInt(new BigInteger("a", 16)))),
+                FalseLeaf
+              )
             )
           )
-        )
-      )))
+        )))
+    } else {
+      assertExceptionThrown(
+        verifyCases(
+          Seq( (Coll[BigInt](), Expected(Success(true), 38412)) ),
+          existingFeature(
+            { (x: Coll[BigInt]) => x.forall({ (b: BigInt) =>
+              if (o.gteq(b, BigIntZero)) o.lteq(b, BigInt10) else false
+            })
+            },
+            "{ (x: Coll[BigInt]) => x.forall({(b: BigInt) => if (b >= 0) b <= 10 else false }) }"
+          )),
+        rootCauseLike[NoSuchMethodException]("sigmastate.eval.CostingRules$CollCoster.forall(scalan.Base$Ref)")
+      )
+    }
+
   }
 
   val collWithRangeGen = for {
@@ -5562,24 +7208,100 @@ class SigmaDslSpecification extends SigmaDslTesting
     r <- Gen.choose(l, arr.length - 1) } yield (arr, (l, r))
 
   property("Coll flatMap method equivalence") {
+    val costDetails0 = TracedCost(
+      traceBase ++ Array(
+        FixedCostItem(MethodCall),
+        FixedCostItem(FuncValue),
+        SeqCostItem(MethodDesc(SCollection.FlatMapMethod), PerItemCost(JitCost(60), JitCost(10), 8), 0)
+      )
+    )
+    val costDetails1 = TracedCost(
+      traceBase ++ Array(
+        FixedCostItem(MethodCall),
+        FixedCostItem(FuncValue),
+        FixedCostItem(NamedDesc("MatchSingleArgMethodCall"), FixedCost(JitCost(30))),
+        SeqCostItem(NamedDesc("CheckFlatmapBody"), PerItemCost(JitCost(20), JitCost(20), 1), 1),
+        SeqCostItem(MethodDesc(SCollection.FlatMapMethod), PerItemCost(JitCost(60), JitCost(10), 8), 0)
+      )
+    )
+    val costDetails2 = TracedCost(
+      traceBase ++ Array(
+        FixedCostItem(MethodCall),
+        FixedCostItem(FuncValue),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(PropertyCall),
+        FixedCostItem(SGroupElement.GetEncodedMethod, FixedCost(JitCost(250))),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(PropertyCall),
+        FixedCostItem(SGroupElement.GetEncodedMethod, FixedCost(JitCost(250))),
+        SeqCostItem(MethodDesc(SCollection.FlatMapMethod), PerItemCost(JitCost(60), JitCost(10), 8), 66)
+      )
+    )
+    val costDetails3 = TracedCost(
+      traceBase ++ Array(
+        FixedCostItem(MethodCall),
+        FixedCostItem(FuncValue),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(PropertyCall),
+        FixedCostItem(SGroupElement.GetEncodedMethod, FixedCost(JitCost(250))),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(PropertyCall),
+        FixedCostItem(SGroupElement.GetEncodedMethod, FixedCost(JitCost(250))),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(PropertyCall),
+        FixedCostItem(SGroupElement.GetEncodedMethod, FixedCost(JitCost(250))),
+        SeqCostItem(MethodDesc(SCollection.FlatMapMethod), PerItemCost(JitCost(60), JitCost(10), 8), 99)
+      )
+    )
+    val costDetails4 = TracedCost(
+      traceBase ++ Array(
+        FixedCostItem(MethodCall),
+        FixedCostItem(FuncValue),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(PropertyCall),
+        FixedCostItem(SGroupElement.GetEncodedMethod, FixedCost(JitCost(250))),
+        FixedCostItem(PropertyCall),
+        SeqCostItem(MethodDesc(SCollection.IndicesMethod), PerItemCost(JitCost(20), JitCost(2), 16), 33),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(PropertyCall),
+        FixedCostItem(SGroupElement.GetEncodedMethod, FixedCost(JitCost(250))),
+        FixedCostItem(PropertyCall),
+        SeqCostItem(MethodDesc(SCollection.IndicesMethod), PerItemCost(JitCost(20), JitCost(2), 16), 33),
+        SeqCostItem(MethodDesc(SCollection.FlatMapMethod), PerItemCost(JitCost(60), JitCost(10), 8), 66)
+      )
+    )
+    
     verifyCases(
       {
-        def success[T](v: T, c: Int) = Expected(Success(v), c)
+        def success[T](v: T, c: Int, cd: CostDetails, newCost: Int) = Expected(Success(v), c, cd, newCost)
         Seq(
-          Coll[GroupElement]() -> success(Coll[Byte](), 40133),
+           Coll[GroupElement]() -> Expected(Success(Coll[Byte]()), 40133, CostDetails.ZeroCost, 1774,
+             newVersionedResults = {
+               val res = ExpectedResult(Success(Coll[Byte]()), Some(1773))
+               Seq.tabulate(3)(v =>
+                 v -> (res -> Some(costDetails0))
+               )
+             }),
           Coll[GroupElement](
             Helpers.decodeGroupElement("02d65904820f8330218cf7318b3810d0c9ab9df86f1ee6100882683f23c0aee587"),
             Helpers.decodeGroupElement("0390e9daa9916f30d0bc61a8e381c6005edfb7938aee5bb4fc9e8a759c7748ffaa")) ->
               success(Helpers.decodeBytes(
                 "02d65904820f8330218cf7318b3810d0c9ab9df86f1ee6100882683f23c0aee5870390e9daa9916f30d0bc61a8e381c6005edfb7938aee5bb4fc9e8a759c7748ffaa"
-              ), 40213),
+              ), 40213, costDetails2, 1834),
           Coll[GroupElement](
             Helpers.decodeGroupElement("02d65904820f8330218cf7318b3810d0c9ab9df86f1ee6100882683f23c0aee587"),
             Helpers.decodeGroupElement("0390e9daa9916f30d0bc61a8e381c6005edfb7938aee5bb4fc9e8a759c7748ffaa"),
             Helpers.decodeGroupElement("03bd839b969b02d218fd1192f2c80cbda9c6ce9c7ddb765f31b748f4666203df85")) ->
               success(Helpers.decodeBytes(
                 "02d65904820f8330218cf7318b3810d0c9ab9df86f1ee6100882683f23c0aee5870390e9daa9916f30d0bc61a8e381c6005edfb7938aee5bb4fc9e8a759c7748ffaa03bd839b969b02d218fd1192f2c80cbda9c6ce9c7ddb765f31b748f4666203df85"
-              ), 40253)
+              ), 40253, costDetails3, 1864)
         )
       },
       existingFeature(
@@ -5607,8 +7329,67 @@ class SigmaDslSpecification extends SigmaDslTesting
           )
         )))
 
+    { // changed behavior of flatMap in v5.0
+      val cases = Seq(
+        Coll[GroupElement](
+          Helpers.decodeGroupElement("02d65904820f8330218cf7318b3810d0c9ab9df86f1ee6100882683f23c0aee587"),
+          Helpers.decodeGroupElement("0390e9daa9916f30d0bc61a8e381c6005edfb7938aee5bb4fc9e8a759c7748ffaa")
+        ) -> Expected(Try(SCollection.throwInvalidFlatmap(null)), 0,
+              expectedDetails = CostDetails.ZeroCost,
+              newCost = 0,
+              newVersionedResults = (0 to 2).map(version =>
+                // successful result for each version
+                version -> (ExpectedResult(Success({
+                         val is = Coll((0 to 32):_*)
+                         is.append(is)
+                       }),
+                       verificationCost = Some(817)) -> Some(costDetails4))
+              ))
+      )
+      val f = changedFeature(
+        scalaFunc = { (x: Coll[GroupElement]) => SCollection.throwInvalidFlatmap(null) },
+        scalaFuncNew = { (x: Coll[GroupElement]) =>
+          // NOTE, v5.0 interpreter accepts any lambda in flatMap
+          x.flatMap({ (b: GroupElement) => b.getEncoded.indices })
+        },
+        "", // NOTE, the script for this test case cannot be compiled
+        FuncValue(
+          Vector((1, SCollectionType(SGroupElement))),
+          MethodCall.typed[Value[SCollection[SInt.type]]](
+            ValUse(1, SCollectionType(SGroupElement)),
+            SCollection.getMethodByName("flatMap").withConcreteTypes(
+              Map(STypeVar("IV") -> SGroupElement, STypeVar("OV") -> SInt)
+            ),
+            Vector(
+              FuncValue(
+                Vector((3, SGroupElement)),
+                MethodCall.typed[Value[SCollection[SInt.type]]](
+                  MethodCall.typed[Value[SCollection[SByte.type]]](
+                    ValUse(3, SGroupElement),
+                    SGroupElement.getMethodByName("getEncoded"),
+                    Vector(),
+                    Map()
+                  ),
+                  SCollection.getMethodByName("indices").withConcreteTypes(
+                    Map(STypeVar("IV") -> SByte)
+                  ),
+                  Vector(),
+                  Map()
+                )
+              )
+            ),
+            Map()
+          )
+        ),
+        allowNewToSucceed = true, // the new 5.0 interpreter can succeed (after activation) when v4.0 fails
+        allowDifferentErrors = true
+      )
+
+      testCases(cases, f)
+    }
+
     val f = existingFeature(
-      { (x: Coll[GroupElement]) => x.flatMap({ (b: GroupElement) => b.getEncoded.append(b.getEncoded) }) },
+      { (x: Coll[GroupElement]) => x.flatMap({ (b: GroupElement) => b.getEncoded.indices }) },
       "{ (x: Coll[GroupElement]) => x.flatMap({ (b: GroupElement) => b.getEncoded.indices }) }" )
     assertExceptionThrown(
       f.oldF,
@@ -5621,22 +7402,47 @@ class SigmaDslSpecification extends SigmaDslTesting
 
   property("Coll patch method equivalence") {
     val samples = genSamples(collWithRangeGen, MinSuccessful(50))
+    def costDetails(i: Int) = TracedCost(
+      Array(
+        FixedCostItem(Apply),
+        FixedCostItem(FuncValue),
+        FixedCostItem(GetVar),
+        FixedCostItem(OptionGet),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 2),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(MethodCall),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        FixedCostItem(ValUse),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        SeqCostItem(MethodDesc(SCollection.PatchMethod), PerItemCost(JitCost(30), JitCost(2), 10), i)
+      )
+    )
+
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 37514)
+        def success[T](v: T, cd: CostDetails) = Expected(Success(v), 37514, cd, 1776)
         Seq(
-          ((Coll[Int](), (0, 0)), success(Coll[Int]())),
-          ((Coll[Int](1), (0, 0)), success(Coll[Int](1, 1))),
-          ((Coll[Int](1), (0, 1)), success(Coll[Int](1))),
-          ((Coll[Int](1, 2), (0, 0)), success(Coll[Int](1, 2, 1, 2))),
-          ((Coll[Int](1, 2), (1, 0)), success(Coll[Int](1, 1, 2, 2))),
-          ((Coll[Int](1, 2), (0, 2)), success(Coll[Int](1, 2))),
-          ((Coll[Int](1, 2), (0, 3)), success(Coll[Int](1, 2))),
-          ((Coll[Int](1, 2), (1, 2)), success(Coll[Int](1, 1, 2))),
-          ((Coll[Int](1, 2), (2, 0)), success(Coll[Int](1, 2, 1, 2))),
-          ((Coll[Int](1, 2), (3, 0)), success(Coll[Int](1, 2, 1, 2))),
-          ((Coll[Int](1, 2), (3, 1)), success(Coll[Int](1, 2, 1, 2))),
-          ((Coll[Int](1, 2), (-1, 1)), success(Coll[Int](1, 2, 2)))
+          ((Coll[Int](), (0, 0)), success(Coll[Int](), costDetails(0))),
+          ((Coll[Int](1), (0, 0)), success(Coll[Int](1, 1), costDetails(2))),
+          ((Coll[Int](1), (0, 1)), success(Coll[Int](1), costDetails(2))),
+          ((Coll[Int](1, 2), (0, 0)), success(Coll[Int](1, 2, 1, 2), costDetails(4))),
+          ((Coll[Int](1, 2), (1, 0)), success(Coll[Int](1, 1, 2, 2), costDetails(4))),
+          ((Coll[Int](1, 2), (0, 2)), success(Coll[Int](1, 2), costDetails(4))),
+          ((Coll[Int](1, 2), (0, 3)), success(Coll[Int](1, 2), costDetails(4))),
+          ((Coll[Int](1, 2), (1, 2)), success(Coll[Int](1, 1, 2), costDetails(4))),
+          ((Coll[Int](1, 2), (2, 0)), success(Coll[Int](1, 2, 1, 2), costDetails(4))),
+          ((Coll[Int](1, 2), (3, 0)), success(Coll[Int](1, 2, 1, 2), costDetails(4))),
+          ((Coll[Int](1, 2), (3, 1)), success(Coll[Int](1, 2, 1, 2), costDetails(4))),
+          ((Coll[Int](1, 2), (-1, 1)), success(Coll[Int](1, 2, 2), costDetails(4)))
         )
       },
       existingFeature(
@@ -5688,16 +7494,37 @@ class SigmaDslSpecification extends SigmaDslTesting
   }
 
   property("Coll updated method equivalence") {
+     def costDetails(i: Int) = TracedCost(
+      Array(
+        FixedCostItem(Apply),
+        FixedCostItem(FuncValue),
+        FixedCostItem(GetVar),
+        FixedCostItem(OptionGet),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        FixedCostItem(MethodCall),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        SeqCostItem(MethodDesc(SCollection.UpdatedMethod), PerItemCost(JitCost(20), JitCost(1), 10), i)
+      )
+    )
     verifyCases(
       // (coll, (index, elem))
       {
-        def success[T](v: T) = Expected(Success(v), 37180)
+        def success[T](v: T, cd: CostDetails) = Expected(Success(v), 37180, cd, 1774)
         Seq(
           ((Coll[Int](), (0, 0)), Expected(new IndexOutOfBoundsException("0"))),
-          ((Coll[Int](1), (0, 0)), success(Coll[Int](0))),
-          ((Coll[Int](1, 2), (0, 0)), success(Coll[Int](0, 2))),
-          ((Coll[Int](1, 2), (1, 0)), success(Coll[Int](1, 0))),
-          ((Coll[Int](1, 2, 3), (2, 0)), success(Coll[Int](1, 2, 0))),
+          ((Coll[Int](1), (0, 0)), success(Coll[Int](0), costDetails(1))),
+          ((Coll[Int](1, 2), (0, 0)), success(Coll[Int](0, 2), costDetails(2))),
+          ((Coll[Int](1, 2), (1, 0)), success(Coll[Int](1, 0), costDetails(2))),
+          ((Coll[Int](1, 2, 3), (2, 0)), success(Coll[Int](1, 2, 0), costDetails(3))),
           ((Coll[Int](1, 2), (2, 0)), Expected(new IndexOutOfBoundsException("2"))),
           ((Coll[Int](1, 2), (3, 0)), Expected(new IndexOutOfBoundsException("3"))),
           ((Coll[Int](1, 2), (-1, 0)), Expected(new IndexOutOfBoundsException("-1")))
@@ -5744,27 +7571,48 @@ class SigmaDslSpecification extends SigmaDslTesting
       } yield (coll, (is.toColl, vs)),
       MinSuccessful(20))
 
+    def costDetails(i: Int) = TracedCost(
+      Array(
+        FixedCostItem(Apply),
+        FixedCostItem(FuncValue),
+        FixedCostItem(GetVar),
+        FixedCostItem(OptionGet),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        FixedCostItem(MethodCall),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        SeqCostItem(MethodDesc(SCollection.UpdateManyMethod), PerItemCost(JitCost(20), JitCost(2), 10), i)
+      )
+    )
     verifyCases(
       // (coll, (indexes, values))
       {
-        def success[T](v: T) = Expected(Success(v), 37817)
+        def success[T](v: T, i: Int) = Expected(Success(v), 37817, costDetails(i), 1774)
         Seq(
           ((Coll[Int](), (Coll(0), Coll(0))), Expected(new IndexOutOfBoundsException("0"))),
           ((Coll[Int](), (Coll(0, 1), Coll(0, 0))), Expected(new IndexOutOfBoundsException("0"))),
           ((Coll[Int](), (Coll(0, 1), Coll(0))), Expected(new IllegalArgumentException("requirement failed: Collections should have same length but was 2 and 1:\n xs=Coll(0,1);\n ys=Coll(0)"))),
-          ((Coll[Int](1), (Coll(0), Coll(0))), success(Coll[Int](0))),
+          ((Coll[Int](1), (Coll(0), Coll(0))), success(Coll[Int](0), 1)),
           ((Coll[Int](1), (Coll(0, 1), Coll(0, 0))), Expected(new IndexOutOfBoundsException("1"))),
-          ((Coll[Int](1, 2), (Coll(0), Coll(0))), success(Coll[Int](0, 2))),
-          ((Coll[Int](1, 2), (Coll(0, 1), Coll(0, 0))), success(Coll[Int](0, 0))),
+          ((Coll[Int](1, 2), (Coll(0), Coll(0))), success(Coll[Int](0, 2), 2)),
+          ((Coll[Int](1, 2), (Coll(0, 1), Coll(0, 0))), success(Coll[Int](0, 0), 2)),
           ((Coll[Int](1, 2), (Coll(0, 1, 2), Coll(0, 0, 0))), Expected(new IndexOutOfBoundsException("2"))),
-          ((Coll[Int](1, 2), (Coll(1), Coll(0))), success(Coll[Int](1, 0))),
-          ((Coll[Int](1, 2, 3), (Coll(2), Coll(0))), success(Coll[Int](1, 2, 0))),
+          ((Coll[Int](1, 2), (Coll(1), Coll(0))), success(Coll[Int](1, 0), 2)),
+          ((Coll[Int](1, 2, 3), (Coll(2), Coll(0))), success(Coll[Int](1, 2, 0), 3)),
           ((Coll[Int](1, 2), (Coll(2), Coll(0))), Expected(new IndexOutOfBoundsException("2"))),
           ((Coll[Int](1, 2), (Coll(3), Coll(0))), Expected(new IndexOutOfBoundsException("3"))),
           ((Coll[Int](1, 2), (Coll(-1), Coll(0))), Expected(new IndexOutOfBoundsException("-1"))),
           ((Coll[Int](10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140),
               (Coll[Int](12, 12, 4, 11, 1, 8, 0, 1), Coll[Int](-10, -20, -30, -40, -50, -60, -70, -80))),
-              success(Coll[Int](-70, -80, 30, 40, -30, 60, 70, 80, -60, 100, 110, -40, -20, 140)))
+              success(Coll[Int](-70, -80, 30, 40, -30, 60, 70, 80, -60, 100, 110, -40, -20, 140), 14))
         )
       },
       existingFeature(
@@ -5809,7 +7657,7 @@ class SigmaDslSpecification extends SigmaDslTesting
       preGeneratedSamples = Some(samples))
   }
 
-  // TODO HF (3h): https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
+  // TODO v6.0 (3h): https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
   property("Coll find method equivalence") {
     val find = newFeature((x: Coll[Int]) => x.find({ (v: Int) => v > 0 }),
       "{ (x: Coll[Int]) => x.find({ (v: Int) => v > 0} ) }")
@@ -5818,7 +7666,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     }
   }
 
-  // TODO HF (3h): https://github.com/ScorexFoundation/sigmastate-interpreter/issues/418
+  // TODO v6.0 (3h): https://github.com/ScorexFoundation/sigmastate-interpreter/issues/418
   property("Coll bitwise methods equivalence") {
     val shiftRight = newFeature(
       { (x: Coll[Boolean]) =>
@@ -5830,7 +7678,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     }
   }
 
-  // TODO HF (3h): https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
+  // TODO v6.0 (3h): https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
   property("Coll diff methods equivalence") {
     val diff = newFeature((x: (Coll[Int], Coll[Int])) => x._1.diff(x._2),
       "{ (x: (Coll[Int], Coll[Int])) => x._1.diff(x._2) }")
@@ -5841,121 +7689,440 @@ class SigmaDslSpecification extends SigmaDslTesting
 
   property("Coll fold method equivalence") {
     val n = ExactNumeric.IntIsExactNumeric
-    verifyCases(
-      // (coll, initState)
-      {
-        def success[T](v: T, c: Int) = Expected(Success(v), c)
-        Seq(
-          ((Coll[Byte](),  0), success(0, 41266)),
-          ((Coll[Byte](),  Int.MaxValue), success(Int.MaxValue, 41266)),
-          ((Coll[Byte](1),  Int.MaxValue - 1), success(Int.MaxValue, 41396)),
-          ((Coll[Byte](1),  Int.MaxValue), Expected(new ArithmeticException("integer overflow"))),
-          ((Coll[Byte](-1),  Int.MinValue + 1), success(Int.MinValue, 41396)),
-          ((Coll[Byte](-1),  Int.MinValue), Expected(new ArithmeticException("integer overflow"))),
-          ((Coll[Byte](1, 2), 0), success(3, 41526)),
-          ((Coll[Byte](1, -1), 0), success(0, 41526)),
-          ((Coll[Byte](1, -1, 1), 0), success(1, 41656))
-        )
-      },
-      existingFeature(
-        { (x: (Coll[Byte], Int)) => x._1.foldLeft(x._2, { i: (Int, Byte) => n.plus(i._1, i._2) }) },
-        "{ (x: (Coll[Byte], Int)) => x._1.fold(x._2, { (i1: Int, i2: Byte) => i1 + i2 }) }",
-        FuncValue(
-          Vector((1, SPair(SByteArray, SInt))),
-          Fold(
-            SelectField.typed[Value[SCollection[SByte.type]]](ValUse(1, SPair(SByteArray, SInt)), 1.toByte),
-            SelectField.typed[Value[SInt.type]](ValUse(1, SPair(SByteArray, SInt)), 2.toByte),
-            FuncValue(
-              Vector((3, SPair(SInt, SByte))),
-              ArithOp(
-                SelectField.typed[Value[SInt.type]](ValUse(3, SPair(SInt, SByte)), 1.toByte),
-                Upcast(SelectField.typed[Value[SByte.type]](ValUse(3, SPair(SInt, SByte)), 2.toByte), SInt),
-                OpCode @@ (-102.toByte)
+    val costDetails1 = TracedCost(
+      traceBase ++ Array(
+        FixedCostItem(SelectField),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        FixedCostItem(FuncValue),
+        SeqCostItem(CompanionDesc(Fold), PerItemCost(JitCost(3), JitCost(1), 10), 0)
+      )
+    )
+    val costDetails2 = TracedCost(
+      traceBase ++ Array(
+        FixedCostItem(SelectField),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        FixedCostItem(FuncValue),
+        SeqCostItem(CompanionDesc(Fold), PerItemCost(JitCost(3), JitCost(1), 10), 1),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        TypeBasedCostItem(Upcast, SInt),
+        TypeBasedCostItem(ArithOp.Plus, SInt)
+      )
+    )
+    val costDetails3 = TracedCost(
+      traceBase ++ Array(
+        FixedCostItem(SelectField),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        FixedCostItem(FuncValue),
+        SeqCostItem(CompanionDesc(Fold), PerItemCost(JitCost(3), JitCost(1), 10), 2),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        TypeBasedCostItem(Upcast, SInt),
+        TypeBasedCostItem(ArithOp.Plus, SInt),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        TypeBasedCostItem(Upcast, SInt),
+        TypeBasedCostItem(ArithOp.Plus, SInt)
+      )
+    )
+    val costDetails4 = TracedCost(
+      traceBase ++ Array(
+        FixedCostItem(SelectField),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        FixedCostItem(FuncValue),
+        SeqCostItem(CompanionDesc(Fold), PerItemCost(JitCost(3), JitCost(1), 10), 3),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        TypeBasedCostItem(Upcast, SInt),
+        TypeBasedCostItem(ArithOp.Plus, SInt),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        TypeBasedCostItem(Upcast, SInt),
+        TypeBasedCostItem(ArithOp.Plus, SInt),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        TypeBasedCostItem(Upcast, SInt),
+        TypeBasedCostItem(ArithOp.Plus, SInt)
+      )
+    )
+    if (lowerMethodCallsInTests) {
+      verifyCases(
+        // (coll, initState)
+        {
+          Seq(
+            ((Coll[Byte](),  0), Expected(Success(0), 41266, costDetails1, 1767)),
+            ((Coll[Byte](),  Int.MaxValue), Expected(Success(Int.MaxValue), 41266, costDetails1, 1767)),
+            ((Coll[Byte](1),  Int.MaxValue - 1), Expected(Success(Int.MaxValue), 41396, costDetails2, 1773)),
+            ((Coll[Byte](1),  Int.MaxValue), Expected(new ArithmeticException("integer overflow"))),
+            ((Coll[Byte](-1),  Int.MinValue + 1), Expected(Success(Int.MinValue), 41396, costDetails2, 1773)),
+            ((Coll[Byte](-1),  Int.MinValue), Expected(new ArithmeticException("integer overflow"))),
+            ((Coll[Byte](1, 2), 0), Expected(Success(3), 41526, costDetails3, 1779)),
+            ((Coll[Byte](1, -1), 0), Expected(Success(0), 41526, costDetails3, 1779)),
+            ((Coll[Byte](1, -1, 1), 0), Expected(Success(1), 41656, costDetails4, 1785))
+          )
+        },
+        existingFeature(
+          { (x: (Coll[Byte], Int)) => x._1.foldLeft(x._2, { i: (Int, Byte) => n.plus(i._1, i._2) }) },
+          "{ (x: (Coll[Byte], Int)) => x._1.fold(x._2, { (i1: Int, i2: Byte) => i1 + i2 }) }",
+          FuncValue(
+            Vector((1, SPair(SByteArray, SInt))),
+            Fold(
+              SelectField.typed[Value[SCollection[SByte.type]]](ValUse(1, SPair(SByteArray, SInt)), 1.toByte),
+              SelectField.typed[Value[SInt.type]](ValUse(1, SPair(SByteArray, SInt)), 2.toByte),
+              FuncValue(
+                Vector((3, SPair(SInt, SByte))),
+                ArithOp(
+                  SelectField.typed[Value[SInt.type]](ValUse(3, SPair(SInt, SByte)), 1.toByte),
+                  Upcast(SelectField.typed[Value[SByte.type]](ValUse(3, SPair(SInt, SByte)), 2.toByte), SInt),
+                  OpCode @@ (-102.toByte)
+                )
               )
             )
-          )
-        )))
+          )))
+    } else {
+      assertExceptionThrown(
+        verifyCases(
+          Seq( ((Coll[Byte](),  0), Expected(Success(0), 41266)) ),
+          existingFeature(
+            { (x: (Coll[Byte], Int)) => x._1.foldLeft(x._2, { i: (Int, Byte) => n.plus(i._1, i._2) }) },
+            "{ (x: (Coll[Byte], Int)) => x._1.fold(x._2, { (i1: Int, i2: Byte) => i1 + i2 }) }"
+          )),
+        rootCauseLike[CosterException]("Don't know how to evalNode(Lambda(List()")
+      )
+    }
   }
 
   property("Coll fold with nested If") {
     val n = ExactNumeric.IntIsExactNumeric
-    verifyCases(
-      // (coll, initState)
-      {
-        def success[T](v: T, c: Int) = Expected(Success(v), c)
-        Seq(
-          ((Coll[Byte](),  0), success(0, 42037)),
-          ((Coll[Byte](),  Int.MaxValue), success(Int.MaxValue, 42037)),
-          ((Coll[Byte](1),  Int.MaxValue - 1), success(Int.MaxValue, 42197)),
-          ((Coll[Byte](1),  Int.MaxValue), Expected(new ArithmeticException("integer overflow"))),
-          ((Coll[Byte](-1),  Int.MinValue + 1), success(Int.MinValue + 1, 42197)),
-          ((Coll[Byte](-1),  Int.MinValue), success(Int.MinValue, 42197)),
-          ((Coll[Byte](1, 2), 0), success(3, 42357)),
-          ((Coll[Byte](1, -1), 0), success(1, 42357)),
-          ((Coll[Byte](1, -1, 1), 0), success(2, 42517))
-        )
-      },
-      existingFeature(
-        { (x: (Coll[Byte], Int)) => x._1.foldLeft(x._2, { i: (Int, Byte) => if (i._2 > 0) n.plus(i._1, i._2) else i._1 }) },
-        "{ (x: (Coll[Byte], Int)) => x._1.fold(x._2, { (i1: Int, i2: Byte) => if (i2 > 0) i1 + i2 else i1 }) }",
-        FuncValue(
-          Array((1, SPair(SByteArray, SInt))),
-          Fold(
-            SelectField.typed[Value[SCollection[SByte.type]]](ValUse(1, SPair(SByteArray, SInt)), 1.toByte),
-            SelectField.typed[Value[SInt.type]](ValUse(1, SPair(SByteArray, SInt)), 2.toByte),
-            FuncValue(
-              Array((3, SPair(SInt, SByte))),
-              BlockValue(
-                Array(
-                  ValDef(
-                    5,
-                    List(),
-                    Upcast(
-                      SelectField.typed[Value[SByte.type]](ValUse(3, SPair(SInt, SByte)), 2.toByte),
-                      SInt
+    val costDetails1 = TracedCost(
+      traceBase ++ Array(
+        FixedCostItem(SelectField),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        FixedCostItem(FuncValue),
+        SeqCostItem(CompanionDesc(Fold), PerItemCost(JitCost(3), JitCost(1), 10), 0)
+      )
+    )
+    val costDetails2 = TracedCost(
+      traceBase ++ Array(
+        FixedCostItem(SelectField),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        FixedCostItem(FuncValue),
+        SeqCostItem(CompanionDesc(Fold), PerItemCost(JitCost(3), JitCost(1), 10), 1),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 2),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        TypeBasedCostItem(Upcast, SInt),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(Constant),
+        TypeBasedCostItem(GT, SInt),
+        FixedCostItem(If),
+        FixedCostItem(ValUse),
+        FixedCostItem(ValUse),
+        TypeBasedCostItem(ArithOp.Plus, SInt)
+      )
+    )
+    val costDetails3 = TracedCost(
+      traceBase ++ Array(
+        FixedCostItem(SelectField),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        FixedCostItem(FuncValue),
+        SeqCostItem(CompanionDesc(Fold), PerItemCost(JitCost(3), JitCost(1), 10), 1),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 2),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        TypeBasedCostItem(Upcast, SInt),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(Constant),
+        TypeBasedCostItem(GT, SInt),
+        FixedCostItem(If),
+        FixedCostItem(ValUse)
+      )
+    )
+    val costDetails4 = TracedCost(
+      traceBase ++ Array(
+        FixedCostItem(SelectField),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        FixedCostItem(FuncValue),
+        SeqCostItem(CompanionDesc(Fold), PerItemCost(JitCost(3), JitCost(1), 10), 2),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 2),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        TypeBasedCostItem(Upcast, SInt),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(Constant),
+        TypeBasedCostItem(GT, SInt),
+        FixedCostItem(If),
+        FixedCostItem(ValUse),
+        FixedCostItem(ValUse),
+        TypeBasedCostItem(ArithOp.Plus, SInt),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 2),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        TypeBasedCostItem(Upcast, SInt),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(Constant),
+        TypeBasedCostItem(GT, SInt),
+        FixedCostItem(If),
+        FixedCostItem(ValUse),
+        FixedCostItem(ValUse),
+        TypeBasedCostItem(ArithOp.Plus, SInt)
+      ),
+      Some(232417L)
+    )
+    val costDetails5 = TracedCost(
+      traceBase ++ Array(
+        FixedCostItem(SelectField),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        FixedCostItem(FuncValue),
+        SeqCostItem(CompanionDesc(Fold), PerItemCost(JitCost(3), JitCost(1), 10), 2),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 2),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        TypeBasedCostItem(Upcast, SInt),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(Constant),
+        TypeBasedCostItem(GT, SInt),
+        FixedCostItem(If),
+        FixedCostItem(ValUse),
+        FixedCostItem(ValUse),
+        TypeBasedCostItem(ArithOp.Plus, SInt),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 2),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        TypeBasedCostItem(Upcast, SInt),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(Constant),
+        TypeBasedCostItem(GT, SInt),
+        FixedCostItem(If),
+        FixedCostItem(ValUse)
+      )
+    )
+    val costDetails6 = TracedCost(
+      traceBase ++ Array(
+        FixedCostItem(SelectField),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        FixedCostItem(FuncValue),
+        SeqCostItem(CompanionDesc(Fold), PerItemCost(JitCost(3), JitCost(1), 10), 3),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 2),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        TypeBasedCostItem(Upcast, SInt),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(Constant),
+        TypeBasedCostItem(GT, SInt),
+        FixedCostItem(If),
+        FixedCostItem(ValUse),
+        FixedCostItem(ValUse),
+        TypeBasedCostItem(ArithOp.Plus, SInt),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 2),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        TypeBasedCostItem(Upcast, SInt),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(Constant),
+        TypeBasedCostItem(GT, SInt),
+        FixedCostItem(If),
+        FixedCostItem(ValUse),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 2),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        TypeBasedCostItem(Upcast, SInt),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(Constant),
+        TypeBasedCostItem(GT, SInt),
+        FixedCostItem(If),
+        FixedCostItem(ValUse),
+        FixedCostItem(ValUse),
+        TypeBasedCostItem(ArithOp.Plus, SInt)
+      )
+    )
+    if (lowerMethodCallsInTests) {
+      verifyCases(
+        // (coll, initState)
+        {
+          Seq(
+            ((Coll[Byte](),  0), Expected(Success(0), 42037, costDetails1, 1767)),
+            ((Coll[Byte](),  Int.MaxValue), Expected(Success(Int.MaxValue), 42037, costDetails1, 1767)),
+            ((Coll[Byte](1),  Int.MaxValue - 1), Expected(Success(Int.MaxValue), 42197, costDetails2, 1779)),
+            ((Coll[Byte](1),  Int.MaxValue), Expected(new ArithmeticException("integer overflow"))),
+            ((Coll[Byte](-1),  Int.MinValue + 1), Expected(Success(Int.MinValue + 1), 42197, costDetails3, 1777)),
+            ((Coll[Byte](-1),  Int.MinValue), Expected(Success(Int.MinValue), 42197, costDetails3, 1777)),
+            ((Coll[Byte](1, 2), 0), Expected(Success(3), 42357, costDetails4, 1791)),
+            ((Coll[Byte](1, -1), 0), Expected(Success(1), 42357, costDetails5, 1789)),
+            ((Coll[Byte](1, -1, 1), 0), Expected(Success(2), 42517, costDetails6, 1801))
+          )
+        },
+        existingFeature(
+          { (x: (Coll[Byte], Int)) => x._1.foldLeft(x._2, { i: (Int, Byte) => if (i._2 > 0) n.plus(i._1, i._2) else i._1 }) },
+          "{ (x: (Coll[Byte], Int)) => x._1.fold(x._2, { (i1: Int, i2: Byte) => if (i2 > 0) i1 + i2 else i1 }) }",
+          FuncValue(
+            Array((1, SPair(SByteArray, SInt))),
+            Fold(
+              SelectField.typed[Value[SCollection[SByte.type]]](ValUse(1, SPair(SByteArray, SInt)), 1.toByte),
+              SelectField.typed[Value[SInt.type]](ValUse(1, SPair(SByteArray, SInt)), 2.toByte),
+              FuncValue(
+                Array((3, SPair(SInt, SByte))),
+                BlockValue(
+                  Array(
+                    ValDef(
+                      5,
+                      List(),
+                      Upcast(
+                        SelectField.typed[Value[SByte.type]](ValUse(3, SPair(SInt, SByte)), 2.toByte),
+                        SInt
+                      )
+                    ),
+                    ValDef(
+                      6,
+                      List(),
+                      SelectField.typed[Value[SInt.type]](ValUse(3, SPair(SInt, SByte)), 1.toByte)
                     )
                   ),
-                  ValDef(
-                    6,
-                    List(),
-                    SelectField.typed[Value[SInt.type]](ValUse(3, SPair(SInt, SByte)), 1.toByte)
+                  If(
+                    GT(ValUse(5, SInt), IntConstant(0)),
+                    ArithOp(ValUse(6, SInt), ValUse(5, SInt), OpCode @@ (-102.toByte)),
+                    ValUse(6, SInt)
                   )
-                ),
-                If(
-                  GT(ValUse(5, SInt), IntConstant(0)),
-                  ArithOp(ValUse(6, SInt), ValUse(5, SInt), OpCode @@ (-102.toByte)),
-                  ValUse(6, SInt)
                 )
               )
             )
-          )
-        ) ))
+          ) ))
+    } else {
+      assertExceptionThrown(
+        verifyCases(
+          Seq( ((Coll[Byte](),  0), Expected(Success(0), 42037)) ),
+          existingFeature(
+            { (x: (Coll[Byte], Int)) => x._1.foldLeft(x._2, { i: (Int, Byte) => if (i._2 > 0) n.plus(i._1, i._2) else i._1 }) },
+            "{ (x: (Coll[Byte], Int)) => x._1.fold(x._2, { (i1: Int, i2: Byte) => if (i2 > 0) i1 + i2 else i1 }) }"
+          )),
+        rootCauseLike[CosterException]("Don't know how to evalNode(Lambda(List()")
+      )
+    }
   }
 
   property("Coll indexOf method equivalence") {
+    def costDetails(i: Int) = TracedCost( 
+      Array(
+        FixedCostItem(Apply),
+        FixedCostItem(FuncValue),
+        FixedCostItem(GetVar),
+        FixedCostItem(OptionGet),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        FixedCostItem(MethodCall),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField)
+      ) 
+      ++ Array.fill(i)(FixedCostItem(NamedDesc("EQ_Prim"), FixedCost(JitCost(3))))
+      :+ SeqCostItem(MethodDesc(SCollection.IndexOfMethod), PerItemCost(JitCost(20), JitCost(10), 2), i)
+    )
     verifyCases(
       // (coll, (elem: Byte, from: Int))
       {
-        def success[T](v: T) = Expected(Success(v), 37649)
+        def success0[T](v: T) = Expected(Success(v), 37649, costDetails(0), 1773)
+        def success1[T](v: T) = Expected(Success(v), 37649, costDetails(1), 1773)
+        def success2[T](v: T) = Expected(Success(v), 37649, costDetails(2), 1774)
+        def success3[T](v: T) = Expected(Success(v), 37649, costDetails(3), 1775)
+        def success12[T](v: T) = Expected(Success(v), 37649, costDetails(12), 1782)
         Seq(
-          ((Coll[Byte](),  (0.toByte, 0)), success(-1)),
-          ((Coll[Byte](),  (0.toByte, -1)), success(-1)),
-          ((Coll[Byte](),  (0.toByte, 1)), success(-1)),
-          ((Coll[Byte](1),  (0.toByte, 0)), success(-1)),
-          ((Coll[Byte](1),  (1.toByte, 0)), success(0)),
-          ((Coll[Byte](1),  (1.toByte, 1)), success(-1)),
-          ((Coll[Byte](1, 1),  (0.toByte, -1)), success(-1)),
-          ((Coll[Byte](1, 1),  (0.toByte, 0)), success(-1)),
-          ((Coll[Byte](1, 1),  (1.toByte, -1)), success(0)),
-          ((Coll[Byte](1, 1),  (1.toByte, 0)), success(0)),
-          ((Coll[Byte](1, 1),  (1.toByte, 1)), success(1)),
-          ((Coll[Byte](1, 1),  (1.toByte, 2)), success(-1)),
-          ((Coll[Byte](1, 1),  (1.toByte, 3)), success(-1)),
-          ((Coll[Byte](1, 2, 3),  (3.toByte, 0)), success(2)),
-          ((Coll[Byte](1, 2, 3),  (3.toByte, 1)), success(2)),
-          ((Coll[Byte](1, 2, 3),  (3.toByte, 2)), success(2)),
-          ((Coll[Byte](1, 2, 3),  (3.toByte, 3)), success(-1)),
-          ((Helpers.decodeBytes("8085623fb7cd6b7f01801f00800100"), (0.toByte, -1)), success(11))
+          ((Coll[Byte](),  (0.toByte, 0)), success0(-1)),
+          ((Coll[Byte](),  (0.toByte, -1)), success0(-1)),
+          ((Coll[Byte](),  (0.toByte, 1)), success0(-1)),
+          ((Coll[Byte](1),  (0.toByte, 0)), success1(-1)),
+          ((Coll[Byte](1),  (1.toByte, 0)), success1(0)),
+          ((Coll[Byte](1),  (1.toByte, 1)), success0(-1)),
+          ((Coll[Byte](1, 1),  (0.toByte, -1)), success2(-1)),
+          ((Coll[Byte](1, 1),  (0.toByte, 0)), success2(-1)),
+          ((Coll[Byte](1, 1),  (1.toByte, -1)), success1(0)),
+          ((Coll[Byte](1, 1),  (1.toByte, 0)), success1(0)),
+          ((Coll[Byte](1, 1),  (1.toByte, 1)), success1(1)),
+          ((Coll[Byte](1, 1),  (1.toByte, 2)), success0(-1)),
+          ((Coll[Byte](1, 1),  (1.toByte, 3)), success0(-1)),
+          ((Coll[Byte](1, 2, 3),  (3.toByte, 0)), success3(2)),
+          ((Coll[Byte](1, 2, 3),  (3.toByte, 1)), success2(2)),
+          ((Coll[Byte](1, 2, 3),  (3.toByte, 2)), success1(2)),
+          ((Coll[Byte](1, 2, 3),  (3.toByte, 3)), success0(-1)),
+          ((Helpers.decodeBytes("8085623fb7cd6b7f01801f00800100"), (0.toByte, -1)), success12(11))
         )
       },
       existingFeature(
@@ -5988,9 +8155,17 @@ class SigmaDslSpecification extends SigmaDslTesting
   }
 
   property("Coll apply method equivalence") {
+    val costDetails = TracedCost( 
+      traceBase ++ Array(
+        FixedCostItem(SelectField),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        FixedCostItem(ByIndex)
+      )
+    )
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 36410)
+        def success[T](v: T) = Expected(Success(v), 36410, costDetails, 1769)
         Seq(
           ((Coll[Int](), 0), Expected(new ArrayIndexOutOfBoundsException("0"))),
           ((Coll[Int](), -1), Expected(new ArrayIndexOutOfBoundsException("-1"))),
@@ -6019,11 +8194,31 @@ class SigmaDslSpecification extends SigmaDslTesting
 
   property("Coll getOrElse method equivalence") {
     val default = 10
+    val costDetails = TracedCost( 
+      Array(
+        FixedCostItem(Apply),
+        FixedCostItem(FuncValue),
+        FixedCostItem(GetVar),
+        FixedCostItem(OptionGet),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        FixedCostItem(ByIndex)
+      )
+    )
     if (lowerMethodCallsInTests) {
       verifyCases(
       // (coll, (index, default))
       {
-        def success[T](v: T) = Expected(Success(v), 37020)
+        def success[T](v: T) = Expected(Success(v), 37020, costDetails, 1773)
         Seq(
           ((Coll[Int](), (0, default)), success(default)),
           ((Coll[Int](), (-1, default)), success(default)),
@@ -6062,14 +8257,100 @@ class SigmaDslSpecification extends SigmaDslTesting
           )
         )))
     } else {
-      // TODO v5.0: add test case with `SCollection.getOrElse` MethodCall
+      forEachScriptAndErgoTreeVersion(activatedVersions, ergoTreeVersions) {
+        testCases(
+          Seq(
+            ((Coll[Int](1, 2), (0, default)),
+              Expected(
+                // in v4.x exp method cannot be called via MethodCall ErgoTree node
+                Failure(new NoSuchMethodException("")),
+                cost = 41484,
+                CostDetails.ZeroCost,
+                newCost = 0,
+                newVersionedResults = {
+                  // in v5.0 MethodCall ErgoTree node is allowed
+                  val res = ExpectedResult( Success(1), Some(166) )
+                  val details = TracedCost(
+                    Array(
+                      FixedCostItem(Apply),
+                      FixedCostItem(FuncValue),
+                      FixedCostItem(GetVar),
+                      FixedCostItem(OptionGet),
+                      FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+                      SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+                      FixedCostItem(ValUse),
+                      FixedCostItem(SelectField),
+                      FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+                      FixedCostItem(ValUse),
+                      FixedCostItem(SelectField),
+                      FixedCostItem(MethodCall),
+                      FixedCostItem(ValUse),
+                      FixedCostItem(SelectField),
+                      FixedCostItem(ValUse),
+                      FixedCostItem(SelectField),
+                      FixedCostItem(SCollection.GetOrElseMethod, FixedCost(JitCost(30)))
+                    )
+                  )
+                  Seq.tabulate(3)(v => v -> ( res -> Some(details) )) // expected result for each version
+                }
+              )
+            )
+          ),
+          changedFeature(
+            (x: (Coll[Int], (Int, Int))) =>
+              throw new NoSuchMethodException(""),
+            (x: (Coll[Int], (Int, Int))) => x._1.getOrElse(x._2._1, x._2._2),
+            ""/*can't be compiled in v4.x*/,
+            FuncValue(
+              Vector((1, SPair(SCollectionType(SInt), SPair(SInt, SInt)))),
+              BlockValue(
+                Vector(
+                  ValDef(
+                    3,
+                    List(),
+                    SelectField.typed[Value[STuple]](
+                      ValUse(1, SPair(SCollectionType(SInt), SPair(SInt, SInt))),
+                      2.toByte
+                    )
+                  )
+                ),
+                MethodCall(
+                  SelectField.typed[Value[SCollection[SInt.type]]](
+                    ValUse(1, SPair(SCollectionType(SInt), SPair(SInt, SInt))),
+                    1.toByte
+                  ),
+                  SCollection.getMethodByName("getOrElse").withConcreteTypes(
+                    Map(STypeVar("IV") -> SInt)
+                  ),
+                  Vector(
+                    SelectField.typed[Value[SInt.type]](ValUse(3, SPair(SInt, SInt)), 1.toByte),
+                    SelectField.typed[Value[SInt.type]](ValUse(3, SPair(SInt, SInt)), 2.toByte)
+                  ),
+                  Map()
+                )
+              )
+            ),
+            allowNewToSucceed = true,
+            allowDifferentErrors = false
+          ))
+      }
     }
   }
 
   property("Tuple size method equivalence") {
+    val costDetails = TracedCost( 
+      Array(
+        FixedCostItem(Apply),
+        FixedCostItem(FuncValue),
+        FixedCostItem(GetVar),
+        FixedCostItem(OptionGet),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(Constant)
+      )
+    )
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 35905)
+        def success[T](v: T) = Expected(Success(v), 35905, costDetails, 1763)
         Seq(
           ((0, 0), success(2)),
           ((1, 2), success(2))
@@ -6082,8 +8363,9 @@ class SigmaDslSpecification extends SigmaDslTesting
 
   property("Tuple apply method equivalence") {
     val samples = genSamples[(Int, Int)](DefaultMinSuccessful)
+    val costDetails = TracedCost(traceBase :+ FixedCostItem(SelectField))
     verifyCases(
-      Seq(((1, 2), Expected(Success(1), cost = 36013))),
+      Seq(((1, 2), Expected(Success(1), cost = 36013, costDetails, 1764))),
       existingFeature((x: (Int, Int)) => x._1,
         "{ (x: (Int, Int)) => x(0) }",
         FuncValue(
@@ -6092,7 +8374,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         )),
       preGeneratedSamples = Some(samples))
     verifyCases(
-      Seq(((1, 2), Expected(Success(2), cost = 36013))),
+      Seq(((1, 2), Expected(Success(2), cost = 36013, costDetails, 1764))),
       existingFeature((x: (Int, Int)) => x._2,
         "{ (x: (Int, Int)) => x(1) }",
         FuncValue(
@@ -6103,14 +8385,31 @@ class SigmaDslSpecification extends SigmaDslTesting
   }
 
   property("Coll map method equivalence") {
+    def repeatPlusChunk(i: Int): Array[CostItem] = Array.fill(i){
+      Array(
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(Constant),
+        TypeBasedCostItem(ArithOp.Plus, SInt)
+      )
+    }.flatten
+    def costDetails(i: Int) = TracedCost(
+      traceBase
+      ++ Array(
+        FixedCostItem(FuncValue),
+        SeqCostItem(CompanionDesc(MapCollection), PerItemCost(JitCost(20), JitCost(1), 10), i)
+      )
+      ++ repeatPlusChunk(i)
+    )
+
     val n = ExactNumeric.IntIsExactNumeric
     verifyCases(
       {
         def success[T](v: T, c: Int) = Expected(Success(v), c)
         Seq(
-          (Coll[Int](), success(Coll[Int](), 38886)),
-          (Coll[Int](1), success(Coll[Int](2), 38936)),
-          (Coll[Int](1, 2), success(Coll[Int](2, 3), 38986)),
+          (Coll[Int](), Expected(Success(Coll[Int]()), 38886, costDetails(0), 1768)),
+          (Coll[Int](1), Expected(Success(Coll[Int](2)), 38936, costDetails(1), 1771)),
+          (Coll[Int](1, 2), Expected(Success(Coll[Int](2, 3)), 38986, costDetails(2), 1774)),
           (Coll[Int](1, 2, Int.MaxValue), Expected(new ArithmeticException("integer overflow")))
         )
       },
@@ -6126,15 +8425,71 @@ class SigmaDslSpecification extends SigmaDslTesting
   }
 
   property("Coll map with nested if") {
+    val costDetails1 = TracedCost(
+      traceBase ++ Array(
+        FixedCostItem(FuncValue),
+        SeqCostItem(CompanionDesc(MapCollection), PerItemCost(JitCost(20), JitCost(1), 10), 0)
+      )
+    )
+    val costDetails2 = TracedCost(
+      traceBase ++ Array(
+        FixedCostItem(FuncValue),
+        SeqCostItem(CompanionDesc(MapCollection), PerItemCost(JitCost(20), JitCost(1), 10), 1),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(Constant),
+        TypeBasedCostItem(GT, SInt),
+        FixedCostItem(If),
+        FixedCostItem(ValUse),
+        FixedCostItem(Constant),
+        TypeBasedCostItem(ArithOp.Plus, SInt)
+      )
+    )
+    val costDetails3 = TracedCost(
+      traceBase ++ Array(
+        FixedCostItem(FuncValue),
+        SeqCostItem(CompanionDesc(MapCollection), PerItemCost(JitCost(20), JitCost(1), 10), 1),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(Constant),
+        TypeBasedCostItem(GT, SInt),
+        FixedCostItem(If),
+        FixedCostItem(Constant),
+        FixedCostItem(ValUse),
+        TypeBasedCostItem(ArithOp.Multiply, SInt)
+      )
+    )
+    val costDetails4 = TracedCost(
+      traceBase ++ Array(
+        FixedCostItem(FuncValue),
+        SeqCostItem(CompanionDesc(MapCollection), PerItemCost(JitCost(20), JitCost(1), 10), 2),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(Constant),
+        TypeBasedCostItem(GT, SInt),
+        FixedCostItem(If),
+        FixedCostItem(ValUse),
+        FixedCostItem(Constant),
+        TypeBasedCostItem(ArithOp.Plus, SInt),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(Constant),
+        TypeBasedCostItem(GT, SInt),
+        FixedCostItem(If),
+        FixedCostItem(Constant),
+        FixedCostItem(ValUse),
+        TypeBasedCostItem(ArithOp.Multiply, SInt)
+      )
+    )
     val n = ExactNumeric.IntIsExactNumeric
     verifyCases(
       {
         def success[T](v: T, c: Int) = Expected(Success(v), c)
         Seq(
-          (Coll[Int](), success(Coll[Int](), 39571)),
-          (Coll[Int](1), success(Coll[Int](2), 39671)),
-          (Coll[Int](-1), success(Coll[Int](1), 39671)),
-          (Coll[Int](1, -2), success(Coll[Int](2, 2), 39771)),
+          (Coll[Int](), Expected(Success(Coll[Int]()), 39571, costDetails1, 1768)),
+          (Coll[Int](1), Expected(Success(Coll[Int](2)), 39671, costDetails2, 1775)),
+          (Coll[Int](-1), Expected(Success(Coll[Int](1)), 39671, costDetails3, 1775)),
+          (Coll[Int](1, -2), Expected(Success(Coll[Int](2, 2)), 39771, costDetails4, 1782)),
           (Coll[Int](1, 2, Int.MaxValue), Expected(new ArithmeticException("integer overflow"))),
           (Coll[Int](1, 2, Int.MinValue), Expected(new ArithmeticException("integer overflow")))
         )
@@ -6159,16 +8514,35 @@ class SigmaDslSpecification extends SigmaDslTesting
   }
 
   property("Coll filter") {
+    def costDetails(i: Int) = {
+      val gtChunk = Array.fill(i)(
+        Array(
+          FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+          FixedCostItem(ValUse),
+          FixedCostItem(Constant),
+          TypeBasedCostItem(GT, SInt)
+        )
+      ).flatten
+
+      TracedCost(
+        traceBase ++
+        Array(
+          FixedCostItem(FuncValue),
+          SeqCostItem(CompanionDesc(Filter), PerItemCost(JitCost(20), JitCost(1), 10), i)
+        ) ++
+        gtChunk
+      )
+    }
+
     val o = ExactOrdering.IntIsExactOrdering
     verifyCases(
     {
-      def success[T](v: T, c: Int) = Expected(Success(v), c)
       Seq(
-        (Coll[Int](), success(Coll[Int](), 37223)),
-        (Coll[Int](1), success(Coll[Int](1), 37273)),
-        (Coll[Int](1, 2), success(Coll[Int](1, 2), 37323)),
-        (Coll[Int](1, 2, -1), success(Coll[Int](1, 2), 37373)),
-        (Coll[Int](1, -1, 2, -2), success(Coll[Int](1, 2), 37423))
+        (Coll[Int](), Expected(Success(Coll[Int]()), 37223, costDetails(0), 1768)),
+        (Coll[Int](1), Expected(Success(Coll[Int](1)), 37273, costDetails(1), 1771)),
+        (Coll[Int](1, 2), Expected(Success(Coll[Int](1, 2)), 37323, costDetails(2), 1775)),
+        (Coll[Int](1, 2, -1), Expected(Success(Coll[Int](1, 2)), 37373, costDetails(3), 1778)),
+        (Coll[Int](1, -1, 2, -2), Expected(Success(Coll[Int](1, 2)), 37423, costDetails(4), 1782))
       )
     },
     existingFeature((x: Coll[Int]) => x.filter({ (v: Int) => o.gt(v, 0) }),
@@ -6183,17 +8557,69 @@ class SigmaDslSpecification extends SigmaDslTesting
   }
 
   property("Coll filter with nested If") {
+    val leftBranch = Array(
+      FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+      FixedCostItem(ValUse),
+      FixedCostItem(Constant),
+      TypeBasedCostItem(GT, SInt),
+      FixedCostItem(If),
+      FixedCostItem(ValUse),
+      FixedCostItem(Constant),
+      TypeBasedCostItem(LT, SInt)
+    )
+    val rightBranch = Array(
+      FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+      FixedCostItem(ValUse),
+      FixedCostItem(Constant),
+      TypeBasedCostItem(GT, SInt),
+      FixedCostItem(If),
+      FixedCostItem(Constant)
+    )
+    def repeatLeftBranch(i: Int) = Array.fill(i)(leftBranch).flatten
+    
+    def costDetails(i: Int) = {
+      TracedCost(
+        traceBase ++
+        Array(
+          FixedCostItem(FuncValue),
+          SeqCostItem(CompanionDesc(Filter), PerItemCost(JitCost(20), JitCost(1), 10), i)
+        ) ++ 
+        repeatLeftBranch(i)
+      )
+    }
+    val costDetails3 = TracedCost(
+      traceBase ++ 
+      Array(
+        FixedCostItem(FuncValue),
+        SeqCostItem(CompanionDesc(Filter), PerItemCost(JitCost(20), JitCost(1), 10), 3)
+      ) ++ 
+      repeatLeftBranch(2) ++ 
+      rightBranch
+    )
+    val costDetails5 = TracedCost(
+      traceBase ++ 
+      Array(
+        FixedCostItem(FuncValue),
+        SeqCostItem(CompanionDesc(Filter), PerItemCost(JitCost(20), JitCost(1), 10), 5)
+      ) ++
+      leftBranch ++
+      rightBranch ++
+      leftBranch ++
+      rightBranch ++
+      leftBranch
+    )
+
     val o = ExactOrdering.IntIsExactOrdering
     verifyCases(
     {
       def success[T](v: T, c: Int) = Expected(Success(v), c)
       Seq(
-        (Coll[Int](), success(Coll[Int](), 37797)),
-        (Coll[Int](1), success(Coll[Int](1), 37887)),
-        (Coll[Int](10), success(Coll[Int](), 37887)),
-        (Coll[Int](1, 2), success(Coll[Int](1, 2), 37977)),
-        (Coll[Int](1, 2, 0), success(Coll[Int](1, 2), 38067)),
-        (Coll[Int](1, -1, 2, -2, 11), success(Coll[Int](1, 2), 38247))
+        (Coll[Int](), Expected(Success(Coll[Int]()), 37797, costDetails(0), 1768)),
+        (Coll[Int](1), Expected(Success(Coll[Int](1)), 37887, costDetails(1), 1775)),
+        (Coll[Int](10), Expected(Success(Coll[Int]()), 37887, costDetails(1), 1775)),
+        (Coll[Int](1, 2), Expected(Success(Coll[Int](1, 2)), 37977, costDetails(2), 1783)),
+        (Coll[Int](1, 2, 0), Expected(Success(Coll[Int](1, 2)), 38067, costDetails3, 1788)),
+        (Coll[Int](1, -1, 2, -2, 11), Expected(Success(Coll[Int](1, 2)), 38247, costDetails5, 1800))
       )
     },
     existingFeature((x: Coll[Int]) => x.filter({ (v: Int) => if (o.gt(v, 0)) v < 10 else false }),
@@ -6211,22 +8637,44 @@ class SigmaDslSpecification extends SigmaDslTesting
   }
 
   property("Coll slice method equivalence") {
+    def costDetails(i: Int) = TracedCost(
+      Array(
+        FixedCostItem(Apply),
+        FixedCostItem(FuncValue),
+        FixedCostItem(GetVar),
+        FixedCostItem(OptionGet),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        SeqCostItem(CompanionDesc(Slice), PerItemCost(JitCost(10), JitCost(2), 100), i)
+      )
+    )
     val samples = genSamples(collWithRangeGen, DefaultMinSuccessful)
-    verifyCases(
-      // (coll, (from, until))
+    if (lowerMethodCallsInTests) {
+      verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 36964)
+        val cost = 36964
+        val newCost = 1772
         Seq(
-          ((Coll[Int](), (-1, 0)), success(Coll[Int]())),
-          ((Coll[Int](), (0, 0)), success(Coll[Int]())),
-          ((Coll[Int](1), (0, 0)), success(Coll[Int]())),
-          ((Coll[Int](1), (0, -1)), success(Coll[Int]())),
-          ((Coll[Int](1), (1, 1)), success(Coll[Int]())),
-          ((Coll[Int](1), (-1, 1)), success(Coll[Int](1))),
-          ((Coll[Int](1, 2), (1, 1)), success(Coll[Int]())),
-          ((Coll[Int](1, 2), (1, 0)), success(Coll[Int]())),
-          ((Coll[Int](1, 2), (1, 2)), success(Coll[Int](2))),
-          ((Coll[Int](1, 2, 3, 4), (1, 3)), success(Coll[Int](2, 3)))
+          // (coll, (from, until))
+          ((Coll[Int](), (-1, 0)), Expected(Success(Coll[Int]()), cost, costDetails(1), newCost)),
+          ((Coll[Int](), (0, 0)), Expected(Success(Coll[Int]()), cost, costDetails(0), newCost)),
+          ((Coll[Int](1), (0, 0)), Expected(Success(Coll[Int]()), cost, costDetails(0), newCost)),
+          ((Coll[Int](1), (0, -1)), Expected(Success(Coll[Int]()), cost, costDetails(0), newCost)),
+          ((Coll[Int](1), (1, 1)), Expected(Success(Coll[Int]()), cost, costDetails(0), newCost)),
+          ((Coll[Int](1), (-1, 1)), Expected(Success(Coll[Int](1)), cost, costDetails(2), newCost)),
+          ((Coll[Int](1, 2), (1, 1)), Expected(Success(Coll[Int]()), cost, costDetails(0), newCost)),
+          ((Coll[Int](1, 2), (1, 0)), Expected(Success(Coll[Int]()), cost, costDetails(0), newCost)),
+          ((Coll[Int](1, 2), (1, 2)), Expected(Success(Coll[Int](2)), cost, costDetails(1), newCost)),
+          ((Coll[Int](1, 2, 3, 4), (1, 3)), Expected(Success(Coll[Int](2, 3)), cost, costDetails(2), newCost))
         )
       },
       existingFeature((x: (Coll[Int], (Int, Int))) => x._1.slice(x._2._1, x._2._2),
@@ -6254,25 +8702,43 @@ class SigmaDslSpecification extends SigmaDslTesting
             )
           )
         )),
-      preGeneratedSamples = Some(samples))
+        preGeneratedSamples = Some(samples))
+    } else {
+      assertExceptionThrown(
+        verifyCases(
+          Seq( (Coll[Int](), (-1, 0)) -> Expected(Success(Coll[Int]()), 0, CostDetails.ZeroCost, 0) ),
+          existingFeature((x: (Coll[Int], (Int, Int))) => x._1.slice(x._2._1, x._2._2),
+            "{ (x: (Coll[Int], (Int, Int))) => x._1.slice(x._2._1, x._2._2) }"
+          )),
+        rootCauseLike[NoSuchMethodException]("sigmastate.eval.CostingRules$CollCoster.slice")
+      )
+    }
   }
 
-  property("Coll append method equivalence") {
+  property("Coll.append equivalence") {
+    def costDetails(i: Int) = TracedCost(
+      traceBase ++ Array(
+        FixedCostItem(SelectField),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        SeqCostItem(CompanionDesc(Append), PerItemCost(JitCost(20), JitCost(2), 100), i)
+      )
+    )
     if (lowerMethodCallsInTests) {
       verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 37765)
-        val arr1 = Gen.listOfN(10000, arbitrary[Int]).map(_.toArray).sample.get
-        val arr2 = Gen.listOfN(20000, arbitrary[Int]).map(_.toArray).sample.get
+        def success[T](v: T, size: Int) = Expected(Success(v), 37765, costDetails(size), 1770)
+        val arr1 = Gen.listOfN(100, arbitrary[Int]).map(_.toArray).sample.get
+        val arr2 = Gen.listOfN(200, arbitrary[Int]).map(_.toArray).sample.get
         Seq(
-          (Coll[Int](), Coll[Int]()) -> success(Coll[Int]()),
-          (Coll[Int](), Coll[Int](1)) -> success(Coll[Int](1)),
-          (Coll[Int](1), Coll[Int]()) -> success(Coll[Int](1)),
-          (Coll[Int](1), Coll[Int](2)) -> success(Coll[Int](1, 2)),
-          (Coll[Int](1), Coll[Int](2, 3)) -> success(Coll[Int](1, 2, 3)),
-          (Coll[Int](1, 2), Coll[Int](3)) -> success(Coll[Int](1, 2, 3)),
-          (Coll[Int](1, 2), Coll[Int](3, 4)) -> success(Coll[Int](1, 2, 3, 4)),
-          (Coll[Int](arr1:_*), Coll[Int](arr2:_*)) -> Expected(Success(Coll[Int](arr1 ++ arr2:_*)), 40105)
+          (Coll[Int](), Coll[Int]()) -> success(Coll[Int](), 0),
+          (Coll[Int](), Coll[Int](1)) -> success(Coll[Int](1), 1),
+          (Coll[Int](1), Coll[Int]()) -> success(Coll[Int](1), 1),
+          (Coll[Int](1), Coll[Int](2)) -> success(Coll[Int](1, 2), 2),
+          (Coll[Int](1), Coll[Int](2, 3)) -> success(Coll[Int](1, 2, 3), 3),
+          (Coll[Int](1, 2), Coll[Int](3)) -> success(Coll[Int](1, 2, 3), 3),
+          (Coll[Int](1, 2), Coll[Int](3, 4)) -> success(Coll[Int](1, 2, 3, 4), 4),
+          (Coll[Int](arr1:_*), Coll[Int](arr2:_*)) -> Expected(Success(Coll[Int](arr1 ++ arr2:_*)), 37785, costDetails(300), 1771)
         )
       },
       existingFeature(
@@ -6292,42 +8758,93 @@ class SigmaDslSpecification extends SigmaDslTesting
           )
         )))
     } else {
-      // TODO v5.0: add test case with `SCollection.append` MethodCall
+      assertExceptionThrown(
+        verifyCases(
+          Seq( (Coll[Int](), Coll[Int]()) -> Expected(Success(Coll[Int]()), 37765) ),
+          existingFeature(
+            { (x: (Coll[Int], Coll[Int])) => x._1.append(x._2) },
+            "{ (x: (Coll[Int], Coll[Int])) => x._1.append(x._2) }"
+            )),
+        rootCauseLike[NoSuchMethodException]("sigmastate.eval.CostingRules$CollCoster.append(scalan.Base$Ref)")
+      )
     }
   }
 
   property("Option methods equivalence") {
-    def success[T](v: T, c: Int) = Expected(Success(v), c)
+    val costDetails1 = TracedCost(traceBase :+ FixedCostItem(OptionGet))
+    val costDetails2 = TracedCost(traceBase :+ FixedCostItem(OptionIsDefined))
+    val costDetails3 = TracedCost(
+      traceBase ++ Array(
+        FixedCostItem(Constant),
+        FixedCostItem(OptionGetOrElse)
+      )
+    )
+    val costDetails4 = TracedCost(
+      traceBase ++ Array(
+        FixedCostItem(MethodCall),
+        FixedCostItem(FuncValue),
+        FixedCostItem(SOption.FilterMethod, FixedCost(JitCost(20)))
+      )
+    )
+    val costDetails5 = TracedCost(
+      traceBase ++ Array(
+        FixedCostItem(MethodCall),
+        FixedCostItem(FuncValue),
+        FixedCostItem(SOption.FilterMethod, FixedCost(JitCost(20))),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(Constant),
+        FixedCostItem(NamedDesc("EQ_Prim"), FixedCost(JitCost(3)))
+      )
+    )
+    val costDetails6 = TracedCost(
+      traceBase ++ Array(
+        FixedCostItem(MethodCall),
+        FixedCostItem(FuncValue),
+        FixedCostItem(SOption.MapMethod, FixedCost(JitCost(20)))
+      )
+    )
+    val costDetails7 = TracedCost(
+      traceBase ++ Array(
+        FixedCostItem(MethodCall),
+        FixedCostItem(FuncValue),
+        FixedCostItem(SOption.MapMethod, FixedCost(JitCost(20))),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(Constant),
+        TypeBasedCostItem(ArithOp.Plus, SLong)
+      )
+    )
 
     verifyCases(
       Seq(
         (None -> Expected(new NoSuchElementException("None.get"))),
-        (Some(10L) -> success(10L, 36046))),
+        (Some(10L) -> Expected(Success(10L), 36046, costDetails1, 1765))),
       existingFeature({ (x: Option[Long]) => x.get },
         "{ (x: Option[Long]) => x.get }",
         FuncValue(Vector((1, SOption(SLong))), OptionGet(ValUse(1, SOption(SLong))))))
 
     verifyCases(
       Seq(
-        (None -> success(false, 36151)),
-        (Some(10L) -> success(true, 36151))),
+        (None -> Expected(Success(false), 36151, costDetails2, 1764)),
+        (Some(10L) -> Expected(Success(true), 36151, costDetails2, 1764))),
       existingFeature({ (x: Option[Long]) => x.isDefined },
         "{ (x: Option[Long]) => x.isDefined }",
         FuncValue(Vector((1, SOption(SLong))), OptionIsDefined(ValUse(1, SOption(SLong))))))
 
     verifyCases(
       Seq(
-        (None -> success(1L, 36367)),
-        (Some(10L) -> success(10L, 36367))),
+        (None -> Expected(Success(1L), 36367, costDetails3, 1766)),
+        (Some(10L) -> Expected(Success(10L), 36367, costDetails3, 1766))),
       existingFeature({ (x: Option[Long]) => x.getOrElse(1L) },
         "{ (x: Option[Long]) => x.getOrElse(1L) }",
         FuncValue(Vector((1, SOption(SLong))), OptionGetOrElse(ValUse(1, SOption(SLong)), LongConstant(1L)))))
 
     verifyCases(
       Seq(
-        (None -> success(None, 38239)),
-        (Some(10L) -> success(None, 38239)),
-        (Some(1L) -> success(Some(1L), 38239))),
+        (None -> Expected(Success(None), 38239, costDetails4, 1766)),
+        (Some(10L) -> Expected(Success(None), 38239, costDetails5, 1768)),
+        (Some(1L) -> Expected(Success(Some(1L)), 38239, costDetails5, 1769))),
       existingFeature({ (x: Option[Long]) => x.filter({ (v: Long) => v == 1} ) },
         "{ (x: Option[Long]) => x.filter({ (v: Long) => v == 1 }) }",
         FuncValue(
@@ -6343,8 +8860,8 @@ class SigmaDslSpecification extends SigmaDslTesting
     val n = ExactNumeric.LongIsExactNumeric
     verifyCases(
       Seq(
-        (None -> success(None, 38575)),
-        (Some(10L) -> success(Some(11L), 38575)),
+        (None -> Expected(Success(None), 38575, costDetails6, 1766)),
+        (Some(10L) -> Expected(Success(Some(11L)), 38575, costDetails7, 1770)),
         (Some(Long.MaxValue) -> Expected(new ArithmeticException("long overflow")))),
       existingFeature({ (x: Option[Long]) => x.map( (v: Long) => n.plus(v, 1) ) },
         "{ (x: Option[Long]) => x.map({ (v: Long) => v + 1 }) }",
@@ -6367,15 +8884,49 @@ class SigmaDslSpecification extends SigmaDslTesting
   }
 
   property("Option filter,map with nested If") {
-    def success[T](v: T, c: Int) = Expected(Success(v), c)
+    val costDetails1 = TracedCost(
+      traceBase ++ Array(
+        FixedCostItem(MethodCall),
+        FixedCostItem(FuncValue),
+        FixedCostItem(SOption.FilterMethod, FixedCost(JitCost(20)))
+      )
+    )
+    val costDetails2 = TracedCost(
+      traceBase ++ Array(
+        FixedCostItem(MethodCall),
+        FixedCostItem(FuncValue),
+        FixedCostItem(SOption.FilterMethod, FixedCost(JitCost(20))),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(Constant),
+        TypeBasedCostItem(GT, SLong),
+        FixedCostItem(If),
+        FixedCostItem(Constant)
+      )
+    )
+    val costDetails3 = TracedCost(
+      traceBase ++ Array(
+        FixedCostItem(MethodCall),
+        FixedCostItem(FuncValue),
+        FixedCostItem(SOption.FilterMethod, FixedCost(JitCost(20))),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(Constant),
+        TypeBasedCostItem(GT, SLong),
+        FixedCostItem(If),
+        FixedCostItem(ValUse),
+        FixedCostItem(Constant),
+        TypeBasedCostItem(LE, SLong)
+      )
+    )
 
     val o = ExactOrdering.LongIsExactOrdering
     verifyCases(
       Seq(
-        (None -> success(None, 38736)),
-        (Some(0L) -> success(None, 38736)),
-        (Some(10L) -> success(Some(10L), 38736)),
-        (Some(11L) -> success(None, 38736))),
+        (None -> Expected(Success(None), 38736, costDetails1, 1766)),
+        (Some(0L) -> Expected(Success(None), 38736, costDetails2, 1771)),
+        (Some(10L) -> Expected(Success(Some(10L)), 38736, costDetails3, 1774)),
+        (Some(11L) -> Expected(Success(None), 38736, costDetails3, 1774))),
       existingFeature(
         { (x: Option[Long]) => x.filter({ (v: Long) => if (o.gt(v, 0L)) v <= 10 else false } ) },
         "{ (x: Option[Long]) => x.filter({ (v: Long) => if (v > 0) v <= 10 else false }) }",
@@ -6398,13 +8949,48 @@ class SigmaDslSpecification extends SigmaDslTesting
           )
         )))
 
+    val costDetails4 = TracedCost(
+      traceBase ++ Array(
+        FixedCostItem(MethodCall),
+        FixedCostItem(FuncValue),
+        FixedCostItem(SOption.MapMethod, FixedCost(JitCost(20)))
+      )
+    )
+    val costDetails5 = TracedCost(
+      traceBase ++ Array(
+        FixedCostItem(MethodCall),
+        FixedCostItem(FuncValue),
+        FixedCostItem(SOption.MapMethod, FixedCost(JitCost(20))),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(Constant),
+        TypeBasedCostItem(LT, SLong),
+        FixedCostItem(If),
+        FixedCostItem(ValUse)
+      )
+    )
+    val costDetails6 = TracedCost(
+      traceBase ++ Array(
+        FixedCostItem(MethodCall),
+        FixedCostItem(FuncValue),
+        FixedCostItem(SOption.MapMethod, FixedCost(JitCost(20))),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(Constant),
+        TypeBasedCostItem(LT, SLong),
+        FixedCostItem(If),
+        FixedCostItem(ValUse),
+        FixedCostItem(Constant),
+        TypeBasedCostItem(ArithOp.Minus, SLong)
+      )
+    )
     val n = ExactNumeric.LongIsExactNumeric
     verifyCases(
       Seq(
-        (None -> success(None, 39077)),
-        (Some(0L) -> success(Some(0L), 39077)),
-        (Some(10L) -> success(Some(10L), 39077)),
-        (Some(-1L) -> success(Some(-2L), 39077)),
+        (None -> Expected(Success(None), 39077, costDetails4, 1766)),
+        (Some(0L) -> Expected(Success(Some(0L)), 39077, costDetails5, 1772)),
+        (Some(10L) -> Expected(Success(Some(10L)), 39077, costDetails5, 1772)),
+        (Some(-1L) -> Expected(Success(Some(-2L)), 39077, costDetails6, 1774)),
         (Some(Long.MinValue) -> Expected(new ArithmeticException("long overflow")))),
       existingFeature(
         { (x: Option[Long]) => x.map( (v: Long) => if (o.lt(v, 0)) n.minus(v, 1) else v ) },
@@ -6431,7 +9017,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         ) ))
   }
 
-  // TODO HF (3h): implement Option.fold
+  // TODO v6.0 (3h): implement Option.fold
   property("Option new methods") {
     val isEmpty = newFeature({ (x: Option[Long]) => x.isEmpty },
     "{ (x: Option[Long]) => x.isEmpty }")
@@ -6446,21 +9032,42 @@ class SigmaDslSpecification extends SigmaDslTesting
   }
 
   property("Option fold workaround method") {
+    val costDetails1 = TracedCost(
+      traceBase ++ Array(
+        FixedCostItem(OptionIsDefined),
+        FixedCostItem(If),
+        FixedCostItem(Constant)
+      )
+    )
+    val costDetails2 = TracedCost(
+      traceBase ++ Array(
+        FixedCostItem(OptionIsDefined),
+        FixedCostItem(If),
+        FixedCostItem(Apply),
+        FixedCostItem(FuncValue),
+        FixedCostItem(ValUse),
+        FixedCostItem(OptionGet),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(Constant),
+        TypeBasedCostItem(ArithOp.Plus, SLong)
+      )
+    )
     val n = ExactNumeric.LongIsExactNumeric
     verifyCases(
       Seq(
         (None -> Expected(
-            Failure(new NoSuchElementException("None.get")),
+            value = Failure(new NoSuchElementException("None.get")),
             cost = 0,
-            newDetails = CostDetails.ZeroCost,
-            newCost = 10055,
-            newVersionedResults = Seq(
-              2 -> (ExpectedResult(Success(5L), Some(10055)) -> None)
-            )
+            expectedDetails = CostDetails.ZeroCost,
+            newCost = 1766,
+            newVersionedResults = Seq.tabulate(3)(v => v -> (ExpectedResult(Success(5L), Some(1766)) -> Some(costDetails1)))
           )),
-        (Some(0L) -> Expected(Success(1L), cost = 39012,
-          expectedDetails = CostDetails.ZeroCost,
-          expectedNewCost = 10063)),
+        (Some(0L) -> Expected(
+          Success(1L),
+          cost = 39012,
+          expectedDetails = costDetails2,
+          expectedNewCost = 1774)),
         (Some(Long.MaxValue) -> Expected(new ArithmeticException("long overflow")))
       ),
       changedFeature(
@@ -6493,7 +9100,8 @@ class SigmaDslSpecification extends SigmaDslTesting
             ),
             LongConstant(5L)
           )
-        )))
+        ),
+        allowNewToSucceed = true))
   }
 
   def formatter(costKind: PerItemCost) = (info: MeasureInfo[Coll[Byte]]) => {
@@ -6517,22 +9125,29 @@ class SigmaDslSpecification extends SigmaDslTesting
   }
 
   property("blake2b256, sha256 equivalence") {
-    def success[T](v: T, c: Int) = Expected(Success(v), c)
+    def costDetailsBlake(i: Int) = TracedCost(traceBase :+ SeqCostItem(CompanionDesc(CalcBlake2b256), PerItemCost(JitCost(20), JitCost(7), 128), i))
+    def costDetailsSha(i: Int) = TracedCost(traceBase :+ SeqCostItem(CompanionDesc(CalcSha256), PerItemCost(JitCost(80), JitCost(8), 64), i))
 
     verifyCases(
       Seq(
-        Coll[Byte]() ->
-          success(
-            Helpers.decodeBytes("0e5751c026e543b2e8ab2eb06099daa1d1e5df47778f7787faab45cdf12fe3a8"),
-            36269),
-        Helpers.decodeBytes("e0ff0105ffffac31010017ff33") ->
-          success(
-            Helpers.decodeBytes("33707eed9aab64874ff2daa6d6a378f61e7da36398fb36c194c7562c9ff846b5"),
-            36269),
-        Colls.replicate(1024, 1.toByte) ->
-          success(
-            Helpers.decodeBytes("45d8456fc5d41d1ec1124cb92e41192c1c3ec88f0bf7ae2dc6e9cf75bec22045"),
-            36369)
+        Coll[Byte]() -> Expected(
+          Success(Helpers.decodeBytes("0e5751c026e543b2e8ab2eb06099daa1d1e5df47778f7787faab45cdf12fe3a8")),
+          36269,
+          costDetailsBlake(0),
+          1768
+        ),
+        Helpers.decodeBytes("e0ff0105ffffac31010017ff33") -> Expected(
+          Success(Helpers.decodeBytes("33707eed9aab64874ff2daa6d6a378f61e7da36398fb36c194c7562c9ff846b5")),
+          36269,
+          costDetailsBlake(13),
+          1768
+        ),
+        Colls.replicate(1024, 1.toByte) -> Expected(
+          Success(Helpers.decodeBytes("45d8456fc5d41d1ec1124cb92e41192c1c3ec88f0bf7ae2dc6e9cf75bec22045")),
+          36369,
+          costDetailsBlake(1024),
+          1773
+        )
       ),
       existingFeature((x: Coll[Byte]) => SigmaDsl.blake2b256(x),
         "{ (x: Coll[Byte]) => blake2b256(x) }",
@@ -6540,18 +9155,24 @@ class SigmaDslSpecification extends SigmaDslTesting
 
     verifyCases(
       Seq(
-        Coll[Byte]() ->
-          success(
-            Helpers.decodeBytes("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"),
-            36393),
-        Helpers.decodeBytes("e0ff0105ffffac31010017ff33") ->
-          success(
-            Helpers.decodeBytes("367d0ec2cdc14aac29d5beb60c2bfc86d5a44a246308659af61c1b85fa2ca2cc"),
-            36393),
-        Colls.replicate(1024, 1.toByte) ->
-          success(
-            Helpers.decodeBytes("5a648d8015900d89664e00e125df179636301a2d8fa191c1aa2bd9358ea53a69"),
-            36493)
+        Coll[Byte]() -> Expected(
+          Success(Helpers.decodeBytes("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855")),
+          36393,
+          costDetailsSha(0),
+          1774
+        ),
+        Helpers.decodeBytes("e0ff0105ffffac31010017ff33") -> Expected(
+          Success(Helpers.decodeBytes("367d0ec2cdc14aac29d5beb60c2bfc86d5a44a246308659af61c1b85fa2ca2cc")),
+          36393,
+          costDetailsSha(13),
+          1774
+        ),
+        Colls.replicate(1024, 1.toByte) -> Expected(
+          Success(Helpers.decodeBytes("5a648d8015900d89664e00e125df179636301a2d8fa191c1aa2bd9358ea53a69")),
+          36493,
+          costDetailsSha(1024),
+          1786
+        )
       ),
       existingFeature((x: Coll[Byte]) => SigmaDsl.sha256(x),
         "{ (x: Coll[Byte]) => sha256(x) }",
@@ -6559,17 +9180,26 @@ class SigmaDslSpecification extends SigmaDslTesting
   }
 
   property("sigmaProp equivalence") {
+    val costDetails = TracedCost(traceBase :+ FixedCostItem(BoolToSigmaProp))
     verifyCases(
       Seq(
-        (false, Expected(Success(CSigmaProp(TrivialProp.FalseProp)), 35892)),
-        (true, Expected(Success(CSigmaProp(TrivialProp.TrueProp)), 35892))),
+        (false, Expected(Success(CSigmaProp(TrivialProp.FalseProp)), 35892, costDetails, 1765)),
+        (true, Expected(Success(CSigmaProp(TrivialProp.TrueProp)), 35892, costDetails, 1765))),
       existingFeature((x: Boolean) => sigmaProp(x),
        "{ (x: Boolean) => sigmaProp(x) }",
         FuncValue(Vector((1, SBoolean)), BoolToSigmaProp(ValUse(1, SBoolean)))))
   }
 
   property("atLeast equivalence") {
-    def success[T](v: T) = Expected(Success(v), 36462)
+    def costDetails(i: Int) = TracedCost(
+      traceBase ++ Array(
+        FixedCostItem(SizeOf),
+        FixedCostItem(Constant),
+        TypeBasedCostItem(ArithOp.Minus, SInt),
+        FixedCostItem(ValUse),
+        SeqCostItem(CompanionDesc(AtLeast), PerItemCost(JitCost(20), JitCost(3), 5), i)
+      )
+    )
 
     verifyCases(
       Seq(
@@ -6581,7 +9211,7 @@ class SigmaDslSpecification extends SigmaDslTesting
               Helpers.decodeECPoint("02614b14a8c6c6b4b7ce017d72fbca7f9218b72c16bdd88f170ffb300b106b9014"),
               Helpers.decodeECPoint("034cc5572276adfa3e283a3f1b0f0028afaadeaa362618c5ec43262d8cefe7f004")
             )
-          )) -> success(CSigmaProp(TrivialProp.TrueProp)),
+          )) -> Expected(Success(CSigmaProp(TrivialProp.TrueProp)), 36462, costDetails(1), 1770),
         Coll[SigmaProp](
           CSigmaProp(
             ProveDHTuple(
@@ -6593,7 +9223,7 @@ class SigmaDslSpecification extends SigmaDslTesting
           ),
           CSigmaProp(ProveDlog(Helpers.decodeECPoint("03f7eacae7476a9ef082513a6a70ed6b208aafad0ade5f614ac6cfa2176edd0d69"))),
           CSigmaProp(ProveDlog(Helpers.decodeECPoint("023bddd50b917388cd2c4f478f3ea9281bf03a252ee1fefe9c79f800afaa8d86ad")))
-        ) -> success(
+        ) -> Expected(Success(
           CSigmaProp(
             CTHRESHOLD(
               2,
@@ -6609,7 +9239,7 @@ class SigmaDslSpecification extends SigmaDslTesting
               )
             )
           )
-        ),
+        ), 36462, costDetails(3), 1873),
         Colls.replicate[SigmaProp](AtLeast.MaxChildrenCount + 1, CSigmaProp(TrivialProp.TrueProp)) ->
           Expected(new IllegalArgumentException("Expected input elements count should not exceed 255, actual: 256"))
       ),
@@ -6625,10 +9255,23 @@ class SigmaDslSpecification extends SigmaDslTesting
   }
 
   property("&& sigma equivalence") {
+    val testTraceBase = traceBase ++ Array(
+      FixedCostItem(SelectField),
+      FixedCostItem(ValUse),
+      FixedCostItem(SelectField)
+    )
+
+    val costDetails1 = TracedCost(testTraceBase :+ SeqCostItem(CompanionDesc(SigmaAnd), PerItemCost(JitCost(10), JitCost(2), 1), 2))
+    val costDetails2 = TracedCost(
+      testTraceBase ++ Array(
+        FixedCostItem(BoolToSigmaProp),
+        SeqCostItem(CompanionDesc(SigmaAnd), PerItemCost(JitCost(10), JitCost(2), 1), 2)
+      )
+    )
 
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 36428)
+        def success[T](v: T, newCost: Int) = Expected(Success(v), 36428, costDetails1, newCost)
         Seq(
           (CSigmaProp(ProveDlog(Helpers.decodeECPoint("02ea9bf6da7f512386c6ca509d40f8c5e7e0ffb3eea5dc3c398443ea17f4510798"))),
               CSigmaProp(ProveDlog(Helpers.decodeECPoint("03a426a66fc1af2792b35d9583904c3fb877b49ae5cea45b7a2aa105ffa4c68606")))) ->
@@ -6640,20 +9283,19 @@ class SigmaDslSpecification extends SigmaDslTesting
                       ProveDlog(Helpers.decodeECPoint("03a426a66fc1af2792b35d9583904c3fb877b49ae5cea45b7a2aa105ffa4c68606"))
                     )
                   )
-                )
-              ),
+                ), 1802),
           (CSigmaProp(TrivialProp.TrueProp),
               CSigmaProp(ProveDlog(Helpers.decodeECPoint("03a426a66fc1af2792b35d9583904c3fb877b49ae5cea45b7a2aa105ffa4c68606")))) ->
-              success(CSigmaProp(ProveDlog(Helpers.decodeECPoint("03a426a66fc1af2792b35d9583904c3fb877b49ae5cea45b7a2aa105ffa4c68606")))),
+              success(CSigmaProp(ProveDlog(Helpers.decodeECPoint("03a426a66fc1af2792b35d9583904c3fb877b49ae5cea45b7a2aa105ffa4c68606"))), 1784),
           (CSigmaProp(TrivialProp.FalseProp),
               CSigmaProp(ProveDlog(Helpers.decodeECPoint("03a426a66fc1af2792b35d9583904c3fb877b49ae5cea45b7a2aa105ffa4c68606")))) ->
-              success(CSigmaProp(TrivialProp.FalseProp)),
+              success(CSigmaProp(TrivialProp.FalseProp), 1767),
           (CSigmaProp(ProveDlog(Helpers.decodeECPoint("03a426a66fc1af2792b35d9583904c3fb877b49ae5cea45b7a2aa105ffa4c68606"))),
               CSigmaProp(TrivialProp.TrueProp)) ->
-              success(CSigmaProp(ProveDlog(Helpers.decodeECPoint("03a426a66fc1af2792b35d9583904c3fb877b49ae5cea45b7a2aa105ffa4c68606")))),
+              success(CSigmaProp(ProveDlog(Helpers.decodeECPoint("03a426a66fc1af2792b35d9583904c3fb877b49ae5cea45b7a2aa105ffa4c68606"))), 1784),
           (CSigmaProp(ProveDlog(Helpers.decodeECPoint("03a426a66fc1af2792b35d9583904c3fb877b49ae5cea45b7a2aa105ffa4c68606"))),
               CSigmaProp(TrivialProp.FalseProp)) ->
-              success(CSigmaProp(TrivialProp.FalseProp))
+              success(CSigmaProp(TrivialProp.FalseProp), 1767)
         )
       },
       existingFeature(
@@ -6671,12 +9313,11 @@ class SigmaDslSpecification extends SigmaDslTesting
 
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 36522)
         Seq(
           (CSigmaProp(ProveDlog(Helpers.decodeECPoint("03a426a66fc1af2792b35d9583904c3fb877b49ae5cea45b7a2aa105ffa4c68606"))), true) ->
-              success(CSigmaProp(ProveDlog(Helpers.decodeECPoint("03a426a66fc1af2792b35d9583904c3fb877b49ae5cea45b7a2aa105ffa4c68606")))),
+              Expected(Success(CSigmaProp(ProveDlog(Helpers.decodeECPoint("03a426a66fc1af2792b35d9583904c3fb877b49ae5cea45b7a2aa105ffa4c68606")))), 36522, costDetails2, 1786),
           (CSigmaProp(ProveDlog(Helpers.decodeECPoint("03a426a66fc1af2792b35d9583904c3fb877b49ae5cea45b7a2aa105ffa4c68606"))), false) ->
-              success(CSigmaProp(TrivialProp.FalseProp))
+              Expected(Success(CSigmaProp(TrivialProp.FalseProp)), 36522, costDetails2, 1769)
         )
       },
       existingFeature(
@@ -6696,9 +9337,16 @@ class SigmaDslSpecification extends SigmaDslTesting
   }
 
   property("|| sigma equivalence") {
+    val testTraceBase = traceBase ++ Array(
+      FixedCostItem(SelectField),
+      FixedCostItem(ValUse),
+      FixedCostItem(SelectField)
+    )
+
+    val costDetails1 = TracedCost(testTraceBase :+ SeqCostItem(CompanionDesc(SigmaOr), PerItemCost(JitCost(10), JitCost(2), 1), 2))
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 36494)
+        def success[T](v: T, newCost: Int) = Expected(Success(v), 36494, costDetails1, newCost)
         Seq(
           (CSigmaProp(ProveDlog(Helpers.decodeECPoint("02ea9bf6da7f512386c6ca509d40f8c5e7e0ffb3eea5dc3c398443ea17f4510798"))),
               CSigmaProp(ProveDlog(Helpers.decodeECPoint("03a426a66fc1af2792b35d9583904c3fb877b49ae5cea45b7a2aa105ffa4c68606")))) ->
@@ -6710,20 +9358,20 @@ class SigmaDslSpecification extends SigmaDslTesting
                       ProveDlog(Helpers.decodeECPoint("03a426a66fc1af2792b35d9583904c3fb877b49ae5cea45b7a2aa105ffa4c68606"))
                     )
                   )
-                )
-              ),
+                ),
+                1802),
           (CSigmaProp(TrivialProp.FalseProp),
               CSigmaProp(ProveDlog(Helpers.decodeECPoint("03a426a66fc1af2792b35d9583904c3fb877b49ae5cea45b7a2aa105ffa4c68606")))) ->
-              success(CSigmaProp(ProveDlog(Helpers.decodeECPoint("03a426a66fc1af2792b35d9583904c3fb877b49ae5cea45b7a2aa105ffa4c68606")))),
+              success(CSigmaProp(ProveDlog(Helpers.decodeECPoint("03a426a66fc1af2792b35d9583904c3fb877b49ae5cea45b7a2aa105ffa4c68606"))), 1784),
           (CSigmaProp(TrivialProp.TrueProp),
               CSigmaProp(ProveDlog(Helpers.decodeECPoint("03a426a66fc1af2792b35d9583904c3fb877b49ae5cea45b7a2aa105ffa4c68606")))) ->
-              success(CSigmaProp(TrivialProp.TrueProp)),
+              success(CSigmaProp(TrivialProp.TrueProp), 1767),
           (CSigmaProp(ProveDlog(Helpers.decodeECPoint("03a426a66fc1af2792b35d9583904c3fb877b49ae5cea45b7a2aa105ffa4c68606"))),
               CSigmaProp(TrivialProp.FalseProp)) ->
-              success(CSigmaProp(ProveDlog(Helpers.decodeECPoint("03a426a66fc1af2792b35d9583904c3fb877b49ae5cea45b7a2aa105ffa4c68606")))),
+              success(CSigmaProp(ProveDlog(Helpers.decodeECPoint("03a426a66fc1af2792b35d9583904c3fb877b49ae5cea45b7a2aa105ffa4c68606"))), 1784),
           (CSigmaProp(ProveDlog(Helpers.decodeECPoint("03a426a66fc1af2792b35d9583904c3fb877b49ae5cea45b7a2aa105ffa4c68606"))),
               CSigmaProp(TrivialProp.TrueProp)) ->
-              success(CSigmaProp(TrivialProp.TrueProp))
+              success(CSigmaProp(TrivialProp.TrueProp), 1767)
         )
       },
       existingFeature(
@@ -6739,14 +9387,20 @@ class SigmaDslSpecification extends SigmaDslTesting
           )
         )))
 
+    val costDetails2 = TracedCost(
+      testTraceBase ++ Array(
+        FixedCostItem(BoolToSigmaProp),
+        SeqCostItem(CompanionDesc(SigmaOr), PerItemCost(JitCost(10), JitCost(2), 1), 2)
+      )
+    )
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 36588)
+        def success[T](v: T, newCost: Int) = Expected(Success(v), 36588, costDetails2, newCost)
         Seq(
           (CSigmaProp(ProveDlog(Helpers.decodeECPoint("03a426a66fc1af2792b35d9583904c3fb877b49ae5cea45b7a2aa105ffa4c68606"))), false) ->
-              success(CSigmaProp(ProveDlog(Helpers.decodeECPoint("03a426a66fc1af2792b35d9583904c3fb877b49ae5cea45b7a2aa105ffa4c68606")))),
+              success(CSigmaProp(ProveDlog(Helpers.decodeECPoint("03a426a66fc1af2792b35d9583904c3fb877b49ae5cea45b7a2aa105ffa4c68606"))), 1786),
           (CSigmaProp(ProveDlog(Helpers.decodeECPoint("03a426a66fc1af2792b35d9583904c3fb877b49ae5cea45b7a2aa105ffa4c68606"))), true) ->
-              success(CSigmaProp(TrivialProp.TrueProp))
+              success(CSigmaProp(TrivialProp.TrueProp), 1769)
         )
       },
       existingFeature(
@@ -6768,17 +9422,7 @@ class SigmaDslSpecification extends SigmaDslTesting
   property("SigmaProp.propBytes equivalence") {
     verifyCases(
       {
-        def newCost(nItems: Int) = TracedCost(
-          Array(
-            FixedCostItem(Apply),
-            FixedCostItem(FuncValue),
-            FixedCostItem(GetVar),
-            FixedCostItem(OptionGet),
-            FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
-            FixedCostItem(ValUse),
-            SeqCostItem(SigmaPropBytes, nItems)
-          )
-        )
+        def newDetails(nItems: Int) = TracedCost(traceBase :+ SeqCostItem(SigmaPropBytes, nItems))
         def pk = ProveDlog(Helpers.decodeECPoint("039d0b1e46c21540d033143440d2fb7dd5d650cf89981c99ee53c6e0374d2b1b6f"))
         def dht = ProveDHTuple(
           Helpers.decodeECPoint("03c046fccb95549910767d0543f5e8ce41d66ae6a8720a46f4049cac3b3d26dafb"),
@@ -6794,25 +9438,25 @@ class SigmaDslSpecification extends SigmaDslTesting
             Helpers.decodeBytes(
               "0008ce03c046fccb95549910767d0543f5e8ce41d66ae6a8720a46f4049cac3b3d26dafb023479c9c3b86a0d3c8be3db0a2d186788e9af1db76d55f3dad127d15185d83d0303d7898641cb6653585a8e1dabfa7f665e61e0498963e329e6e3744bd764db2d72037ae057d89ec0b46ff8e9ff4c37e85c12acddb611c3f636421bef1542c11b0441"
             )
-          ), cost = 35902, newCost(4)),
+          ), cost = 35902, newDetails(4), expectedNewCost = 1771),
           CSigmaProp(pk) -> Expected(Success(
             Helpers.decodeBytes("0008cd039d0b1e46c21540d033143440d2fb7dd5d650cf89981c99ee53c6e0374d2b1b6f")),
-            cost = 35902, newCost(1)),
+            cost = 35902, newDetails(1), expectedNewCost = 1769),
           CSigmaProp(and) -> Expected(Success(
             Helpers.decodeBytes(
               "00089602cd039d0b1e46c21540d033143440d2fb7dd5d650cf89981c99ee53c6e0374d2b1b6fce03c046fccb95549910767d0543f5e8ce41d66ae6a8720a46f4049cac3b3d26dafb023479c9c3b86a0d3c8be3db0a2d186788e9af1db76d55f3dad127d15185d83d0303d7898641cb6653585a8e1dabfa7f665e61e0498963e329e6e3744bd764db2d72037ae057d89ec0b46ff8e9ff4c37e85c12acddb611c3f636421bef1542c11b0441"
             )
-          ), cost = 35902, newCost(6)),
+          ), cost = 35902, newDetails(6), expectedNewCost = 1772),
           CSigmaProp(threshold) -> Expected(Success(
             Helpers.decodeBytes(
               "0008980204cd039d0b1e46c21540d033143440d2fb7dd5d650cf89981c99ee53c6e0374d2b1b6fce03c046fccb95549910767d0543f5e8ce41d66ae6a8720a46f4049cac3b3d26dafb023479c9c3b86a0d3c8be3db0a2d186788e9af1db76d55f3dad127d15185d83d0303d7898641cb6653585a8e1dabfa7f665e61e0498963e329e6e3744bd764db2d72037ae057d89ec0b46ff8e9ff4c37e85c12acddb611c3f636421bef1542c11b04419702cd039d0b1e46c21540d033143440d2fb7dd5d650cf89981c99ee53c6e0374d2b1b6fce03c046fccb95549910767d0543f5e8ce41d66ae6a8720a46f4049cac3b3d26dafb023479c9c3b86a0d3c8be3db0a2d186788e9af1db76d55f3dad127d15185d83d0303d7898641cb6653585a8e1dabfa7f665e61e0498963e329e6e3744bd764db2d72037ae057d89ec0b46ff8e9ff4c37e85c12acddb611c3f636421bef1542c11b04419602cd039d0b1e46c21540d033143440d2fb7dd5d650cf89981c99ee53c6e0374d2b1b6fce03c046fccb95549910767d0543f5e8ce41d66ae6a8720a46f4049cac3b3d26dafb023479c9c3b86a0d3c8be3db0a2d186788e9af1db76d55f3dad127d15185d83d0303d7898641cb6653585a8e1dabfa7f665e61e0498963e329e6e3744bd764db2d72037ae057d89ec0b46ff8e9ff4c37e85c12acddb611c3f636421bef1542c11b0441"
             )
-          ), cost = 35902, newCost(18)),
+          ), cost = 35902, newDetails(18), expectedNewCost = 1780),
           CSigmaProp(COR(Array(pk, dht, and, or, threshold))) -> Expected(Success(
             Helpers.decodeBytes(
               "00089705cd039d0b1e46c21540d033143440d2fb7dd5d650cf89981c99ee53c6e0374d2b1b6fce03c046fccb95549910767d0543f5e8ce41d66ae6a8720a46f4049cac3b3d26dafb023479c9c3b86a0d3c8be3db0a2d186788e9af1db76d55f3dad127d15185d83d0303d7898641cb6653585a8e1dabfa7f665e61e0498963e329e6e3744bd764db2d72037ae057d89ec0b46ff8e9ff4c37e85c12acddb611c3f636421bef1542c11b04419602cd039d0b1e46c21540d033143440d2fb7dd5d650cf89981c99ee53c6e0374d2b1b6fce03c046fccb95549910767d0543f5e8ce41d66ae6a8720a46f4049cac3b3d26dafb023479c9c3b86a0d3c8be3db0a2d186788e9af1db76d55f3dad127d15185d83d0303d7898641cb6653585a8e1dabfa7f665e61e0498963e329e6e3744bd764db2d72037ae057d89ec0b46ff8e9ff4c37e85c12acddb611c3f636421bef1542c11b04419702cd039d0b1e46c21540d033143440d2fb7dd5d650cf89981c99ee53c6e0374d2b1b6fce03c046fccb95549910767d0543f5e8ce41d66ae6a8720a46f4049cac3b3d26dafb023479c9c3b86a0d3c8be3db0a2d186788e9af1db76d55f3dad127d15185d83d0303d7898641cb6653585a8e1dabfa7f665e61e0498963e329e6e3744bd764db2d72037ae057d89ec0b46ff8e9ff4c37e85c12acddb611c3f636421bef1542c11b0441980204cd039d0b1e46c21540d033143440d2fb7dd5d650cf89981c99ee53c6e0374d2b1b6fce03c046fccb95549910767d0543f5e8ce41d66ae6a8720a46f4049cac3b3d26dafb023479c9c3b86a0d3c8be3db0a2d186788e9af1db76d55f3dad127d15185d83d0303d7898641cb6653585a8e1dabfa7f665e61e0498963e329e6e3744bd764db2d72037ae057d89ec0b46ff8e9ff4c37e85c12acddb611c3f636421bef1542c11b04419702cd039d0b1e46c21540d033143440d2fb7dd5d650cf89981c99ee53c6e0374d2b1b6fce03c046fccb95549910767d0543f5e8ce41d66ae6a8720a46f4049cac3b3d26dafb023479c9c3b86a0d3c8be3db0a2d186788e9af1db76d55f3dad127d15185d83d0303d7898641cb6653585a8e1dabfa7f665e61e0498963e329e6e3744bd764db2d72037ae057d89ec0b46ff8e9ff4c37e85c12acddb611c3f636421bef1542c11b04419602cd039d0b1e46c21540d033143440d2fb7dd5d650cf89981c99ee53c6e0374d2b1b6fce03c046fccb95549910767d0543f5e8ce41d66ae6a8720a46f4049cac3b3d26dafb023479c9c3b86a0d3c8be3db0a2d186788e9af1db76d55f3dad127d15185d83d0303d7898641cb6653585a8e1dabfa7f665e61e0498963e329e6e3744bd764db2d72037ae057d89ec0b46ff8e9ff4c37e85c12acddb611c3f636421bef1542c11b0441"
             )
-          ), cost = 35902, newCost(36))
+          ), cost = 35902, newDetails(36), expectedNewCost = 1791)
         )
       },
       existingFeature((x: SigmaProp) => x.propBytes,
@@ -6821,7 +9465,7 @@ class SigmaDslSpecification extends SigmaDslTesting
       preGeneratedSamples = Some(Seq()))
   }
 
-  // TODO HF (3h): implement allZK func https://github.com/ScorexFoundation/sigmastate-interpreter/issues/543
+  // TODO v6.0 (3h): implement allZK func https://github.com/ScorexFoundation/sigmastate-interpreter/issues/543
   property("allZK equivalence") {
     lazy val allZK = newFeature((x: Coll[SigmaProp]) => SigmaDsl.allZK(x),
       "{ (x: Coll[SigmaProp]) => allZK(x) }")
@@ -6830,7 +9474,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     }
   }
 
-  // TODO HF (3h): implement anyZK func https://github.com/ScorexFoundation/sigmastate-interpreter/issues/543
+  // TODO v6.0 (3h): implement anyZK func https://github.com/ScorexFoundation/sigmastate-interpreter/issues/543
   property("anyZK equivalence") {
     lazy val anyZK = newFeature((x: Coll[SigmaProp]) => SigmaDsl.anyZK(x),
       "{ (x: Coll[SigmaProp]) => anyZK(x) }")
@@ -6840,21 +9484,20 @@ class SigmaDslSpecification extends SigmaDslTesting
   }
 
   property("allOf equivalence") {
-    def success[T](v: T, c: Int) = Expected(Success(v), c)
-
+    def costDetails(i: Int) = TracedCost(traceBase :+ SeqCostItem(CompanionDesc(AND), PerItemCost(JitCost(10), JitCost(5), 32), i))
     verifyCases(
       Seq(
-        (Coll[Boolean]() -> success(true, 36018)),
-        (Coll[Boolean](true) -> success(true, 36028)),
-        (Coll[Boolean](false) -> success(false, 36028)),
-        (Coll[Boolean](false, false) -> success(false, 36038)),
-        (Coll[Boolean](false, true) -> success(false, 36038)),
-        (Coll[Boolean](true, false) -> success(false, 36038)),
-        (Coll[Boolean](true, true) -> success(true, 36038)),
-        (Coll[Boolean](true, false, false) -> success(false, 36048)),
-        (Coll[Boolean](true, false, true) -> success(false, 36048)),
-        (Coll[Boolean](true, true, false) -> success(false, 36048)),
-        (Coll[Boolean](true, true, true) -> success(true, 36048))
+        (Coll[Boolean]()                   -> Expected(Success(true), 36018, costDetails(0), 1765)),
+        (Coll[Boolean](true)               -> Expected(Success(true), 36028, costDetails(1), 1765)),
+        (Coll[Boolean](false)              -> Expected(Success(false), 36028, costDetails(1), 1765)),
+        (Coll[Boolean](false, false)       -> Expected(Success(false), 36038, costDetails(1), 1765)),
+        (Coll[Boolean](false, true)        -> Expected(Success(false), 36038, costDetails(1), 1765)),
+        (Coll[Boolean](true, false)        -> Expected(Success(false), 36038, costDetails(2), 1765)),
+        (Coll[Boolean](true, true)         -> Expected(Success(true), 36038, costDetails(2), 1765)),
+        (Coll[Boolean](true, false, false) -> Expected(Success(false), 36048, costDetails(2), 1765)),
+        (Coll[Boolean](true, false, true)  -> Expected(Success(false), 36048, costDetails(2), 1765)),
+        (Coll[Boolean](true, true, false)  -> Expected(Success(false), 36048, costDetails(3), 1765)),
+        (Coll[Boolean](true, true, true)   -> Expected(Success(true), 36048, costDetails(3), 1765))
       ),
       existingFeature((x: Coll[Boolean]) => SigmaDsl.allOf(x),
         "{ (x: Coll[Boolean]) => allOf(x) }",
@@ -6862,21 +9505,20 @@ class SigmaDslSpecification extends SigmaDslTesting
   }
 
   property("anyOf equivalence") {
-    def success[T](v: T, c: Int) = Expected(Success(v), c)
-
+    def costDetails(i: Int) = TracedCost(traceBase :+ SeqCostItem(CompanionDesc(OR), PerItemCost(JitCost(5), JitCost(5), 64), i))
     verifyCases(
       Seq(
-        (Coll[Boolean]() -> success(false, 36062)),
-        (Coll[Boolean](true) -> success(true, 36072)),
-        (Coll[Boolean](false) -> success(false, 36072)),
-        (Coll[Boolean](false, false) -> success(false, 36082)),
-        (Coll[Boolean](false, true) -> success(true, 36082)),
-        (Coll[Boolean](true, false) -> success(true, 36082)),
-        (Coll[Boolean](true, true) -> success(true, 36082)),
-        (Coll[Boolean](true, false, false) -> success(true, 36092)),
-        (Coll[Boolean](true, false, true) -> success(true, 36092)),
-        (Coll[Boolean](true, true, false) -> success(true, 36092)),
-        (Coll[Boolean](true, true, true) -> success(true, 36092))
+        (Coll[Boolean]()                   -> Expected(Success(false), 36062, costDetails(0), 1764)),
+        (Coll[Boolean](true)               -> Expected(Success(true), 36072, costDetails(1), 1764)),
+        (Coll[Boolean](false)              -> Expected(Success(false), 36072, costDetails(1), 1764)),
+        (Coll[Boolean](false, false)       -> Expected(Success(false), 36082, costDetails(2), 1764)),
+        (Coll[Boolean](false, true)        -> Expected(Success(true), 36082, costDetails(2), 1764)),
+        (Coll[Boolean](true, false)        -> Expected(Success(true), 36082, costDetails(1), 1764)),
+        (Coll[Boolean](true, true)         -> Expected(Success(true), 36082, costDetails(1), 1764)),
+        (Coll[Boolean](true, false, false) -> Expected(Success(true), 36092, costDetails(1), 1764)),
+        (Coll[Boolean](true, false, true)  -> Expected(Success(true), 36092, costDetails(1), 1764)),
+        (Coll[Boolean](true, true, false)  -> Expected(Success(true), 36092, costDetails(1), 1764)),
+        (Coll[Boolean](true, true, true)   -> Expected(Success(true), 36092, costDetails(1), 1764))
       ),
       existingFeature((x: Coll[Boolean]) => SigmaDsl.anyOf(x),
         "{ (x: Coll[Boolean]) => anyOf(x) }",
@@ -6884,12 +9526,15 @@ class SigmaDslSpecification extends SigmaDslTesting
   }
 
   property("proveDlog equivalence") {
+    val costDetails = TracedCost(traceBase :+ FixedCostItem(CreateProveDlog))
     verifyCases(
       Seq(
         (Helpers.decodeGroupElement("02288f0e55610c3355c89ed6c5de43cf20da145b8c54f03a29f481e540d94e9a69")
           -> Expected(Success(
                CSigmaProp(ProveDlog(Helpers.decodeECPoint("02288f0e55610c3355c89ed6c5de43cf20da145b8c54f03a29f481e540d94e9a69")))),
-               cost = 45935))
+               cost = 45935,
+               costDetails,
+               1782))
       ),
       existingFeature({ (x: GroupElement) => SigmaDsl.proveDlog(x) },
         "{ (x: GroupElement) => proveDlog(x) }",
@@ -6897,6 +9542,14 @@ class SigmaDslSpecification extends SigmaDslTesting
   }
 
   property("proveDHTuple equivalence") {
+    val costDetails = TracedCost(
+      traceBase ++ Array(
+        FixedCostItem(ValUse),
+        FixedCostItem(ValUse),
+        FixedCostItem(ValUse),
+        FixedCostItem(CreateProveDHTuple)
+      )
+    )
     verifyCases(
       Seq(
         (Helpers.decodeGroupElement("039c15221a318d27c186eba84fa8d986c1f63bbd9f8060380c9bfc2ef455d8346a")
@@ -6909,7 +9562,9 @@ class SigmaDslSpecification extends SigmaDslTesting
                 Helpers.decodeECPoint("039c15221a318d27c186eba84fa8d986c1f63bbd9f8060380c9bfc2ef455d8346a")
               )
             )),
-            cost = 76215
+            cost = 76215,
+            costDetails,
+            1836
           ))
       ),
       existingFeature({ (x: GroupElement) => SigmaDsl.proveDHTuple(x, x, x, x) },
@@ -6937,28 +9592,60 @@ class SigmaDslSpecification extends SigmaDslTesting
       ErgoTree.ConstantSegregationHeader,
       Vector(IntConstant(10)),
       BoolToSigmaProp(EQ(ConstantPlaceholder(0, SInt), IntConstant(20))))
-      
+    def costDetails(i: Int) = TracedCost(
+      traceBase ++ Array(
+        FixedCostItem(SelectField),
+        FixedCostItem(ConcreteCollection),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        FixedCostItem(ConcreteCollection),
+        FixedCostItem(Constant),
+        FixedCostItem(BoolToSigmaProp),
+        SeqCostItem(CompanionDesc(SubstConstants), PerItemCost(JitCost(100), JitCost(100), 1), i)
+      )
+    )
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 37694)
+        def success[T](v: T, cd: CostDetails, cost: Int) = Expected(Success(v), 37694, cd, cost)
         Seq(
           (Helpers.decodeBytes(""), 0) -> Expected(new java.nio.BufferUnderflowException()),
 
-          // TODO HF (2h): fix for trees without segregation flag
-          // NOTE: constants count is serialized erroneously in the following 2 cases
-          (Coll(t1.bytes:_*), 0) -> success(Helpers.decodeBytes("000008d3")),
-          (Helpers.decodeBytes("000008d3"), 0) -> success(Helpers.decodeBytes("00000008d3")),
+          // NOTE: in v4.x the constants count is serialized erroneously in the following 2 cases
+          // in v5.0 (i.e. ET v2) the bug is fixed https://github.com/ScorexFoundation/sigmastate-interpreter/issues/769
+          (Coll(t1.bytes:_*), 0) -> Expected(
+            Success(Helpers.decodeBytes("000008d3")),
+            cost = 37694,
+            expectedDetails = CostDetails.ZeroCost,
+            newCost = 1783,
+            newVersionedResults = {
+              val res = (ExpectedResult(Success(Helpers.decodeBytes("0008d3")), Some(1783)) -> Some(costDetails(0)))
+              Seq(0, 1, 2).map(version => version -> res)
+            }),
+
+          (Helpers.decodeBytes("000008d3"), 0) -> Expected(
+            Success(Helpers.decodeBytes("00000008d3")),
+            cost = 37694,
+            expectedDetails = CostDetails.ZeroCost,
+            newCost = 1783,
+            newVersionedResults = {
+              // since the tree without constant segregation, substitution has no effect
+              val res = (ExpectedResult(Success(Helpers.decodeBytes("000008d3")), Some(1783)) -> Some(costDetails(0)))
+              Seq(0, 1, 2).map(version => version -> res)
+            }),
           // tree with segregation flag, empty constants array
-          (Coll(t2.bytes:_*), 0) -> success(Helpers.decodeBytes("100008d3")),
-          (Helpers.decodeBytes("100008d3"), 0) -> success(Helpers.decodeBytes("100008d3")),
+          (Coll(t2.bytes:_*), 0) -> success(Helpers.decodeBytes("100008d3"), costDetails(0), 1783),
+          (Helpers.decodeBytes("100008d3"), 0) -> success(Helpers.decodeBytes("100008d3"), costDetails(0), 1783),
           // tree with one segregated constant
-          (Coll(t3.bytes:_*), 0) -> success(Helpers.decodeBytes("100108d27300")),
-          (Helpers.decodeBytes("100108d37300"), 0) -> success(Helpers.decodeBytes("100108d27300")),
-          (Coll(t3.bytes:_*), 1) -> success(Helpers.decodeBytes("100108d37300")),
-          (Coll(t4.bytes:_*), 0) -> Expected(new AssertionError("assertion failed: expected new constant to have the same SInt$ tpe, got SSigmaProp"))
+          (Coll(t3.bytes:_*), 0) -> success(Helpers.decodeBytes("100108d27300"), costDetails(1), 1793),
+          (Helpers.decodeBytes("100108d37300"), 0) -> success(Helpers.decodeBytes("100108d27300"), costDetails(1), 1793),
+          (Coll(t3.bytes:_*), 1) -> success(Helpers.decodeBytes("100108d37300"), costDetails(1), 1793),
+          (Coll(t4.bytes:_*), 0) -> Expected(new IllegalArgumentException("requirement failed: expected new constant to have the same SInt$ tpe, got SSigmaProp"))
         )
       },
-      existingFeature(
+      changedFeature(
+        { (x: (Coll[Byte], Int)) =>
+          SigmaDsl.substConstants(x._1, Coll[Int](x._2), Coll[Any](SigmaDsl.sigmaProp(false))(RType.AnyType))
+        },
         { (x: (Coll[Byte], Int)) =>
           SigmaDsl.substConstants(x._1, Coll[Int](x._2), Coll[Any](SigmaDsl.sigmaProp(false))(RType.AnyType))
         },
@@ -6974,6 +9661,229 @@ class SigmaDslSpecification extends SigmaDslTesting
             ConcreteCollection(Array(BoolToSigmaProp(FalseLeaf)), SSigmaProp)
           )
         )))
+  }
+
+  // Original issue: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/604
+  property("Random headers access and comparison (originaly from spam tests)") {
+    val (_, _, _, ctx, _, _) = contextData()
+    val costDetails = TracedCost(
+      Array(
+        FixedCostItem(Apply),
+        FixedCostItem(FuncValue),
+        FixedCostItem(GetVar),
+        FixedCostItem(OptionGet),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+        FixedCostItem(ValUse),
+        FixedCostItem(PropertyCall),
+        FixedCostItem(SContext.headersMethod, FixedCost(JitCost(15))),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(PropertyCall),
+        SeqCostItem(MethodDesc(SCollection.IndicesMethod), PerItemCost(JitCost(20), JitCost(2), 16), 1),
+        FixedCostItem(Constant),
+        FixedCostItem(ValUse),
+        FixedCostItem(SizeOf),
+        FixedCostItem(Constant),
+        TypeBasedCostItem(ArithOp.Minus, SInt),
+        SeqCostItem(CompanionDesc(Slice), PerItemCost(JitCost(10), JitCost(2), 100), 0),
+        FixedCostItem(FuncValue),
+        SeqCostItem(CompanionDesc(ForAll), PerItemCost(JitCost(3), JitCost(1), 10), 0)
+      )
+    )
+
+    if (lowerMethodCallsInTests) {
+      val ir = IR
+      val error = new ir.StagingException("Don't know how to evaluate(s2034 -> Placeholder(BaseElemLiftable<Int>))", Nil)
+      verifyCases(
+        Seq(
+          ctx -> Expected(
+            Failure(error),
+            cost = 37694,
+            expectedDetails = CostDetails.ZeroCost,
+            newCost = 1776,
+            newVersionedResults = (0 to 2).map(i => i -> (ExpectedResult(Success(true), Some(1776)) -> Some(costDetails)))
+          )
+        ),
+        changedFeature(
+        { (x: Context) =>
+          throw error
+          true
+        },
+        { (x: Context) =>
+          val headers = x.headers
+          val ids = headers.map({ (h: Header) => h.id })
+          val parentIds = headers.map({ (h: Header) => h.parentId })
+          headers.indices.slice(0, headers.size - 1).forall({ (i: Int) =>
+            val parentId = parentIds(i)
+            val id = ids(i + 1)
+            parentId == id
+          })
+        },
+        """{
+         |(x: Context) =>
+         |  val headers = x.headers
+         |  val ids = headers.map({(h: Header) => h.id })
+         |  val parentIds = headers.map({(h: Header) => h.parentId })
+         |  headers.indices.slice(0, headers.size - 1).forall({ (i: Int) =>
+         |    val parentId = parentIds(i)
+         |    val id = ids(i + 1)
+         |    parentId == id
+         |  })
+         |}""".stripMargin,
+        FuncValue(
+          Array((1, SContext)),
+          BlockValue(
+            Array(
+              ValDef(
+                3,
+                List(),
+                MethodCall.typed[Value[SCollection[SHeader.type]]](
+                  ValUse(1, SContext),
+                  SContext.getMethodByName("headers"),
+                  Vector(),
+                  Map()
+                )
+              )
+            ),
+            ForAll(
+              Slice(
+                MethodCall.typed[Value[SCollection[SInt.type]]](
+                  ValUse(3, SCollectionType(SHeader)),
+                  SCollection.getMethodByName("indices").withConcreteTypes(Map(STypeVar("IV") -> SHeader)),
+                  Vector(),
+                  Map()
+                ),
+                IntConstant(0),
+                ArithOp(
+                  SizeOf(ValUse(3, SCollectionType(SHeader))),
+                  IntConstant(1),
+                  OpCode @@ (-103.toByte)
+                )
+              ),
+              FuncValue(
+                Array((4, SInt)),
+                EQ(
+                  ByIndex(
+                    MapCollection(
+                      ValUse(3, SCollectionType(SHeader)),
+                      FuncValue(
+                        Array((6, SHeader)),
+                        MethodCall.typed[Value[SCollection[SByte.type]]](
+                          ValUse(6, SHeader),
+                          SHeader.getMethodByName("parentId"),
+                          Vector(),
+                          Map()
+                        )
+                      )
+                    ),
+                    ValUse(4, SInt),
+                    None
+                  ),
+                  ByIndex(
+                    MapCollection(
+                      ValUse(3, SCollectionType(SHeader)),
+                      FuncValue(
+                        Array((6, SHeader)),
+                        MethodCall.typed[Value[SCollection[SByte.type]]](
+                          ValUse(6, SHeader),
+                          SHeader.getMethodByName("id"),
+                          Vector(),
+                          Map()
+                        )
+                      )
+                    ),
+                    ArithOp(ValUse(4, SInt), IntConstant(1), OpCode @@ (-102.toByte)),
+                    None
+                  )
+                )
+              )
+            )
+          )
+        ),
+        allowDifferentErrors = true,
+        allowNewToSucceed = true
+        ),
+        preGeneratedSamples = Some(mutable.WrappedArray.empty)
+      )
+    }
+  }
+
+  // related issue https://github.com/ScorexFoundation/sigmastate-interpreter/issues/464
+  property("nested loops: map inside fold") {
+    val keys = Colls.fromArray(Array(Coll[Byte](1, 2, 3, 4, 5)))
+    val initial = Coll[Byte](0, 0, 0, 0, 0)
+    val cases =  Seq(
+      (keys, initial) -> Expected(Success(Coll[Byte](1, 2, 3, 4, 5)), cost = 46522, expectedDetails = CostDetails.ZeroCost, 1801)
+    )
+    val scalaFunc = { (x: (Coll[Coll[Byte]], Coll[Byte])) =>
+      x._1.foldLeft(x._2, { (a: (Coll[Byte], Coll[Byte])) =>
+        a._1.zip(a._2).map({ (c: (Byte, Byte)) => (c._1 + c._2).toByte })
+      })
+    }
+    val script =
+      """{
+       | (x: (Coll[Coll[Byte]], Coll[Byte])) =>
+       |  x._1.fold(x._2, { (a: Coll[Byte], b: Coll[Byte]) =>
+       |    a.zip(b).map({ (c: (Byte, Byte)) => (c._1 + c._2).toByte })
+       |  })
+       |}""".stripMargin
+    if (lowerMethodCallsInTests) {
+      verifyCases(cases,
+        existingFeature(scalaFunc, script,
+          FuncValue(
+            Array((1, SPair(SByteArray2, SByteArray))),
+            Fold(
+              SelectField.typed[Value[SCollection[SCollection[SByte.type]]]](
+                ValUse(1, SPair(SByteArray2, SByteArray)),
+                1.toByte
+              ),
+              SelectField.typed[Value[SCollection[SByte.type]]](
+                ValUse(1, SPair(SByteArray2, SByteArray)),
+                2.toByte
+              ),
+              FuncValue(
+                Array((3, SPair(SByteArray, SByteArray))),
+                MapCollection(
+                  MethodCall.typed[Value[SCollection[STuple]]](
+                    SelectField.typed[Value[SCollection[SByte.type]]](
+                      ValUse(3, SPair(SByteArray, SByteArray)),
+                      1.toByte
+                    ),
+                    SCollection.getMethodByName("zip").withConcreteTypes(
+                      Map(STypeVar("IV") -> SByte, STypeVar("OV") -> SByte)
+                    ),
+                    Vector(
+                      SelectField.typed[Value[SCollection[SByte.type]]](
+                        ValUse(3, SPair(SByteArray, SByteArray)),
+                        2.toByte
+                      )
+                    ),
+                    Map()
+                  ),
+                  FuncValue(
+                    Array((5, SPair(SByte, SByte))),
+                    ArithOp(
+                      SelectField.typed[Value[SByte.type]](ValUse(5, SPair(SByte, SByte)), 1.toByte),
+                      SelectField.typed[Value[SByte.type]](ValUse(5, SPair(SByte, SByte)), 2.toByte),
+                      OpCode @@ (-102.toByte)
+                    )
+                  )
+                )
+              )
+            )
+          )
+        ),
+        preGeneratedSamples = Some(Seq.empty)
+      )
+    } else {
+      assertExceptionThrown(
+        verifyCases(cases,
+          existingFeature(scalaFunc, script)
+        ),
+        rootCauseLike[CosterException]("Don't know how to evalNode(Lambda(List(),Vector((a,Coll[SByte$]), ")
+      )
+    }
   }
 
   override protected def afterAll(): Unit = {

@@ -9,6 +9,7 @@ import sigmastate.eval.Extensions._
 import sigmastate.eval._
 import sigmastate.interpreter.ProverResult
 import sigmastate.serialization.{SigmaSerializer, ValueSerializer}
+import sigmastate.util.safeNewArray
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import special.collection.ExtensionMethods._
 import spire.syntax.all.cfor
@@ -144,28 +145,31 @@ object ErgoLikeTransactionSerializer extends SigmaSerializer[ErgoLikeTransaction
   override def parse(r: SigmaByteReader): ErgoLikeTransaction = {
     // parse transaction inputs
     val inputsCount = r.getUShort()
-    val inputs = ValueSerializer.newArray[Input](inputsCount)
+    val inputs = safeNewArray[Input](inputsCount)
     cfor(0)(_ < inputsCount, _ + 1) { i =>
       inputs(i) = Input.serializer.parse(r)
     }
 
     // parse transaction data inputs
     val dataInputsCount = r.getUShort()
-    val dataInputs = ValueSerializer.newArray[DataInput](dataInputsCount)
+    val dataInputs = safeNewArray[DataInput](dataInputsCount)
     cfor(0)(_ < dataInputsCount, _ + 1) { i =>
       dataInputs(i) = DataInput(ADKey @@ r.getBytes(ErgoBox.BoxId.size))
     }
 
     // parse distinct ids of tokens in transaction outputs
     val tokensCount = r.getUIntExact
-    val tokens = ValueSerializer.newArray[Array[Byte]](tokensCount)
+    // NO-FORK: in v5.x getUIntExact may throw Int overflow exception
+    // in v4.x r.getUInt().toInt is used and may return negative Int instead of the overflow
+    // in which case the array allocation will throw NegativeArraySizeException
+    val tokens = safeNewArray[Array[Byte]](tokensCount)
     cfor(0)(_ < tokensCount, _ + 1) { i =>
       tokens(i) = r.getBytes(TokenId.size)
     }
 
     // parse outputs
     val outsCount = r.getUShort()
-    val outputCandidates = ValueSerializer.newArray[ErgoBoxCandidate](outsCount)
+    val outputCandidates = safeNewArray[ErgoBoxCandidate](outsCount)
     cfor(0)(_ < outsCount, _ + 1) { i =>
       outputCandidates(i) = ErgoBoxCandidate.serializer.parseBodyWithIndexedDigests(tokens, r)
     }

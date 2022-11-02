@@ -22,12 +22,16 @@ object Helpers {
   def mapReduce[A, K: ClassTag, V: ClassTag](arr: Array[A], m: A => (K, V), r: ((V, V)) => V): (Array[K], Array[V]) = {
     val keyPositions = new java.util.HashMap[K, Int](32)
     val keys = mutable.ArrayBuilder.make[K]
-    val values = Array.ofDim[V](arr.length)
+    val values = new Array[V](arr.length)
     var i = 0
     var nValues = 0
     while (i < arr.length) {
       val (key, value) = m(arr(i))
-      val pos = keyPositions.getOrDefault(key, 0)
+      val pos = {
+        val p: Integer = keyPositions.get(key)
+        if (p == null) 0 else p.intValue()
+      }
+
       if (pos == 0) {
         keyPositions.put(key, nValues + 1)
         keys += key
@@ -38,7 +42,7 @@ object Helpers {
       }
       i += 1
     }
-    val resValues = Array.ofDim[V](nValues)
+    val resValues = new Array[V](nValues)
     Array.copy(values, 0, resValues, 0, nValues)
     (keys.result(), resValues)
   }

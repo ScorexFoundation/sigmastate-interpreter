@@ -8,8 +8,8 @@ import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.eval.IRContext
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.lang.Terms.ValueOps
-import sigmastate.{SLong, _}
-import sigmastate.lang.{TransformingSigmaBuilder, SigmaCompiler, CompilerSettings}
+import sigmastate._
+import sigmastate.lang.SigmaCompiler
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.utxo._
 

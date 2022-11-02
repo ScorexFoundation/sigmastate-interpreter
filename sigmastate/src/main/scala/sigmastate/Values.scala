@@ -1,9 +1,7 @@
 package sigmastate
 
 import java.math.BigInteger
-import java.util
-import java.util.Objects
-
+import java.util.{Arrays, Objects}
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{count, everywherebu, strategy}
 import org.ergoplatform.settings.ErgoAlgos
 import org.ergoplatform.validation.ValidationException
@@ -11,7 +9,7 @@ import scalan.{Nullable, RType}
 import scalan.util.CollectionUtil._
 import sigmastate.SCollection.{SByteArray, SIntArray}
 import sigmastate.interpreter.CryptoConstants.EcPointType
-import sigmastate.interpreter.{CompanionDesc, CryptoConstants, ErgoTreeEvaluator, NamedDesc}
+import sigmastate.interpreter.{CompanionDesc, CryptoConstants, ErgoTreeEvaluator, Interpreter, NamedDesc}
 import sigmastate.serialization.{ConstantStore, OpCodes, _}
 import sigmastate.serialization.OpCodes._
 import sigmastate.TrivialProp.{FalseProp, TrueProp}
@@ -36,6 +34,7 @@ import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import special.sigma.{AvlTree, Header, PreHeader, _}
 import sigmastate.lang.SourceContext
 import sigmastate.lang.exceptions.InterpreterException
+import sigmastate.util.safeNewArray
 import special.collection.Coll
 
 import scala.collection.mutable
@@ -70,7 +69,15 @@ object Values {
       * */
     def opType: SFunc
 
+    /** Name of the operation. */
     def opName: String = this.getClass.getSimpleName
+
+    /** Transforms this expression to SigmaProp expression or throws an exception. */
+    def toSigmaProp: SigmaPropValue = this match {
+      case b if b.tpe == SBoolean => BoolToSigmaProp(this.asBoolValue)
+      case p if p.tpe == SSigmaProp => p.asSigmaProp
+      case _ => sys.error(s"Expected SBoolean or SSigmaProp typed value, but was: $this")
+    }
 
     /** Parser has some source information like line,column in the text. We need to keep it up until RuntimeCosting.
     * The way to do this is to add Nullable property to every Value. Since Parser is always using SigmaBuilder
@@ -330,7 +337,7 @@ object Values {
       case _ => false
     }))
 
-    override def hashCode(): Int = util.Arrays.deepHashCode(Array(value.asInstanceOf[AnyRef], tpe))
+    override def hashCode(): Int = Arrays.deepHashCode(Array(value.asInstanceOf[AnyRef], tpe))
 
     override def toString: String = tpe.asInstanceOf[SType] match {
       case SGroupElement if value.isInstanceOf[GroupElement] =>
@@ -441,15 +448,21 @@ object Values {
       TaggedVariableNode(varId, tpe)
   }
 
-  /** ErgoTree node that represent a literal of Unit type. */
-  case class UnitConstant() extends EvaluatedValue[SUnit.type] {
-    override def tpe = SUnit
-    val value = ()
-    override def companion: ValueCompanion = UnitConstant
-  }
-  object UnitConstant extends ValueCompanion {
-    override def opCode = UnitConstantCode
-    override def costKind = Constant.costKind
+  /** High-level interface to internal representation of Unit constants in ErgoTree. */
+  object UnitConstant {
+    /** ErgoTree node that represent a literal of Unit type. It is global immutable value
+      * which should be reused wherever necessary to avoid allocations.
+      */
+    val instance = apply()
+
+    /** Constucts a fresh new instance of Unit literal node. */
+    def apply() = Constant[SUnit.type]((), SUnit)
+
+    /** Recognizer to pattern match on Unit constant literal nodes (aka Unit constants). */
+    def unapply(node: SValue): Boolean = node match {
+      case ConstantNode(_, SUnit) => true
+      case _ => false
+    }
   }
 
   type BoolValue = Value[SBoolean.type]
@@ -801,6 +814,7 @@ object Values {
       val dhtSerializer = ProveDHTupleSerializer(ProveDHTuple.apply)
       val dlogSerializer = ProveDlogSerializer(ProveDlog.apply)
 
+      // TODO v5.x: control maxTreeDepth same as in deserialize
       override def serialize(data: SigmaBoolean, w: SigmaByteWriter): Unit = {
         w.put(data.opCode)
         data match {
@@ -845,14 +859,14 @@ object Values {
           case ProveDiffieHellmanTupleCode => dhtSerializer.parse(r)
           case AndCode =>
             val n = r.getUShort()
-            val children = ValueSerializer.newArray[SigmaBoolean](n)
+            val children = safeNewArray[SigmaBoolean](n)
             cfor(0)(_ < n, _ + 1) { i =>
               children(i) = serializer.parse(r)
             }
             CAND(children)
           case OrCode =>
             val n = r.getUShort()
-            val children = ValueSerializer.newArray[SigmaBoolean](n)
+            val children = safeNewArray[SigmaBoolean](n)
             cfor(0)(_ < n, _ + 1) { i =>
               children(i) = serializer.parse(r)
             }
@@ -860,7 +874,7 @@ object Values {
           case AtLeastCode =>
             val k = r.getUShort()
             val n = r.getUShort()
-            val children = ValueSerializer.newArray[SigmaBoolean](n)
+            val children = safeNewArray[SigmaBoolean](n)
             cfor(0)(_ < n, _ + 1) { i =>
               children(i) = serializer.parse(r)
             }
@@ -876,8 +890,6 @@ object Values {
     def tpe = SBox
   }
 
-  // TODO refactor: only Constant make sense to inherit from EvaluatedValue
-
   /** ErgoTree node which converts a collection of expressions into a tuple of data values
     * of different types. Each data value of the resulting collection is obtained by
     * evaluating the corresponding expression in `items`. All items may have different
@@ -885,18 +897,23 @@ object Values {
     *
     * @param items source collection of expressions
     */
-  case class Tuple(items: IndexedSeq[Value[SType]]) extends EvaluatedValue[STuple] with EvaluatedCollection[SAny.type, STuple] {
+  case class Tuple(items: IndexedSeq[Value[SType]])
+      extends EvaluatedValue[STuple]  // note, this superclass is required as Tuple can be in a register
+         with EvaluatedCollection[SAny.type, STuple] {
     override def companion = Tuple
-    override def elementType = SAny
     override lazy val tpe = STuple(items.map(_.tpe))
-    override lazy val value = { // TODO coverage
+    override def opType: SFunc = ???
+    override def elementType: SAny.type = SAny
+
+    override lazy val value = {
       val xs = items.cast[EvaluatedValue[SAny.type]].map(_.value)
       Colls.fromArray(xs.toArray(SAny.classTag.asInstanceOf[ClassTag[SAny.WrappedType]]))(RType.AnyType)
     }
+
     protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
       // in v5.0 version we support only tuples of 2 elements to be equivalent with v4.x
       if (items.length != 2)
-        error(s"Invalid tuple $this")
+        Interpreter.error(s"Invalid tuple $this")
 
       val item0 = items(0)
       val x = item0.evalTo[Any](env)
@@ -923,8 +940,8 @@ object Values {
   trait OptionValue[T <: SType] extends Value[SOption[T]] {
   }
 
-  // TODO HF (4h): SomeValue and NoneValue are not used in ErgoTree and can be
-  //  either removed or implemented in v4.x
+  // TODO v6.0 (4h): SomeValue and NoneValue are not used in ErgoTree and can be
+  //  either removed or implemented in v6.0
   case class SomeValue[T <: SType](x: Value[T]) extends OptionValue[T] {
     override def companion = SomeValue
     val tpe = SOption(x.tpe)
@@ -994,7 +1011,7 @@ object Values {
       Colls.fromArray(is)
     }
   }
-  object ConcreteCollection extends ValueCompanion {
+  object ConcreteCollection extends FixedCostValueCompanion {
     override def opCode: OpCode = ConcreteCollectionCode
     /** Cost of: allocating new collection
       * @see ConcreteCollection_PerItem */
@@ -1047,14 +1064,6 @@ object Values {
       case ProveDHTuple(gv, hv, uv, vv) =>
         s"ProveDHTuple(${showECPoint(gv)}, ${showECPoint(hv)}, ${showECPoint(uv)}, ${showECPoint(vv)})"
       case _ => sb.toString
-    }
-  }
-
-  implicit class BoolValueOps(val b: BoolValue) extends AnyVal {
-    def toSigmaProp: SigmaPropValue = b match {
-      case b if b.tpe == SBoolean => BoolToSigmaProp(b)
-      case p if p.tpe == SSigmaProp => p.asSigmaProp
-      case _ => sys.error(s"Expected SBoolean or SSigmaProp typed value, but was: $b")
     }
   }
 
@@ -1161,6 +1170,7 @@ object Values {
     * @param body expression, which refers function parameters with ValUse.
     */
   case class FuncValue(args: IndexedSeq[(Int,SType)], body: Value[SType]) extends NotReadyValue[SFunc] {
+    import FuncValue._
     override def companion = FuncValue
     lazy val tpe: SFunc = {
       val nArgs = args.length
@@ -1175,41 +1185,20 @@ object Values {
 
     protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
       addCost(FuncValue.costKind)
-      if (args.length == 0) {
-        // TODO coverage
-        () => {
-          body.evalTo[Any](env)
-        }
-      }
-      else if (args.length == 1) {
+      if (args.length == 1) {
         val arg0 = args(0)
         (vArg: Any) => {
           Value.checkType(arg0._2, vArg)
           var env1: DataEnv = null
-          E.addFixedCost(FuncValue.AddToEnvironmentDesc_CostKind,
-                                     FuncValue.AddToEnvironmentDesc) {
+          E.addFixedCost(AddToEnvironmentDesc_CostKind, AddToEnvironmentDesc) {
             env1 = env + (arg0._1 -> vArg)
           }
           val res = body.evalTo[Any](env1)
           Value.checkType(body, res)
           res
         }
-      }
-      else {
-        // TODO coverage
-        (vArgs: Seq[Any]) => {
-          var env1 = env
-          val len = args.length
-          cfor(0)(_ < len, _ + 1) { i =>
-            val id = args(i)._1
-            val v = vArgs(i)
-            E.addFixedCost(FuncValue.AddToEnvironmentDesc_CostKind,
-                                   FuncValue.AddToEnvironmentDesc) {
-              env1 = env1 + (id -> v)
-            }
-          }
-          body.evalTo[Any](env1)
-        }
+      } else {
+        Interpreter.error(s"Function must have 1 argument, but was: $this")
       }
     }
   }

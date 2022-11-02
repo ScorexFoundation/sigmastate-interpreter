@@ -3,18 +3,26 @@ package sigmastate
 import org.ergoplatform.ErgoBox
 import org.ergoplatform.settings.ErgoAlgos
 import org.ergoplatform.validation.{ValidationException, ValidationRules}
-import scalan.Nullable
+import scalan.RType.asType
+import scalan.{Nullable, RType}
+import sigmastate.SCollection.{SByteArray, SByteArray2, checkValidFlatmap}
 import sigmastate.Values._
+import sigmastate.VersionContext._
+import sigmastate.eval.{Evaluation, Profiler}
+import sigmastate.interpreter.ErgoTreeEvaluator
 import sigmastate.lang.SourceContext
-import special.sigma.SigmaTestingData
 import sigmastate.lang.Terms._
+import sigmastate.lang.exceptions.{CostLimitException, CosterException, InterpreterException}
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
-import sigmastate.utxo.{DeserializeContext, DeserializeRegister}
+import sigmastate.utxo._
+import special.collection._
+import special.sigma.SigmaDslTesting
+
 
 /** Regression tests with ErgoTree related test vectors.
   * This test vectors verify various constants which are consensus critical and should not change.
   */
-class ErgoTreeSpecification extends SigmaTestingData {
+class ErgoTreeSpecification extends SigmaDslTesting {
 
   property("Value.sourceContext") {
     val srcCtx = SourceContext.fromParserIndex(0, "")
@@ -270,7 +278,7 @@ class ErgoTreeSpecification extends SigmaTestingData {
     { import SSigmaProp._
       (SSigmaProp.typeId,  Seq(
         MInfo(1, PropBytesMethod),
-        MInfo(2, IsProvenMethod)  // TODO HF (3h): this method must be removed
+        MInfo(2, IsProvenMethod)  // TODO v5.x (3h): this method must be removed
       ), true)
     },
     { import SBox._
@@ -438,5 +446,279 @@ class ErgoTreeSpecification extends SigmaTestingData {
         )
       }
     }
+  }
+
+  implicit def IR = new TestingIRContext
+  implicit def cs = compilerSettingsInTests
+  implicit def es = evalSettings
+
+  property("Apply with 0 arguments") {
+    val expr = Apply(FuncValue(Vector(), IntConstant(1)), IndexedSeq())
+
+    forEachScriptAndErgoTreeVersion(activatedVersions, ergoTreeVersions) {
+      VersionContext.withVersions(activatedVersionInTests, ergoTreeVersionInTests) {
+        // old v4.x interpreter
+        assertExceptionThrown(
+        {
+          val oldF = funcFromExpr[Int, Int]("({ (x: Int) => 1 })()", expr)
+        },
+        exceptionLike[CosterException]("Don't know how to evalNode")
+        )
+        // new v5.0 interpreter
+        val newF = funcJitFromExpr[Int, Int]("({ (x: Int) => 1 })()", expr)
+        assertExceptionThrown(
+        {
+          val x = 100 // any value which is not used anyway
+          val (y, _) = VersionContext.withVersions(activatedVersionInTests, ergoTreeVersionInTests) {
+            newF.apply(x)
+          }
+        },
+        exceptionLike[InterpreterException]("Function application must have 1 argument, but was:")
+        )
+      }
+    }
+  }
+
+
+  property("Apply with one argument") {
+    val expr = Apply(
+      FuncValue(Vector((1, SInt)), Negation(ValUse(1, SInt))),
+      IndexedSeq(IntConstant(1)))
+    val script = "({ (x: Int) => -x })(1)"
+
+    val x = 1
+
+    forEachScriptAndErgoTreeVersion(activatedVersions, ergoTreeVersions) {
+      VersionContext.withVersions(activatedVersionInTests, ergoTreeVersionInTests) {
+        { // old v4.x interpreter
+          val oldF = funcFromExpr[Int, Int](script, expr)
+          val (y, _) = oldF.apply(x)
+          y shouldBe -1
+        }
+
+        { // new v5.0 interpreter
+          val newF = funcJitFromExpr[Int, Int](script, expr)
+          val (y, _) = VersionContext.withVersions(activatedVersionInTests, ergoTreeVersionInTests) {
+            newF.apply(x)
+          }
+          y shouldBe -1
+        }
+      }
+    }
+  }
+
+  property("Apply with 2 and more arguments") {
+    val expr = Apply(
+      FuncValue(Vector((1, SInt), (2, SInt)), Plus(ValUse(1, SInt), ValUse(2, SInt))),
+      IndexedSeq(IntConstant(1), IntConstant(1))
+    )
+    val script = "{ (x: Int, y: Int) => x + y }"
+
+    forEachScriptAndErgoTreeVersion(activatedVersions, ergoTreeVersions) {
+      VersionContext.withVersions(activatedVersionInTests, ergoTreeVersionInTests) {
+
+        // old v4.x interpreter
+        assertExceptionThrown(
+        {
+          val oldF = funcFromExpr[(Int, Int), Int](script, expr)
+        },
+        exceptionLike[CosterException]("Don't know how to evalNode")
+        )
+        // ndw v5.0 interpreter
+        val newF = funcJitFromExpr[(Int, Int), Int](script, expr)
+        assertExceptionThrown(
+        {
+          val (y, _) = VersionContext.withVersions(activatedVersionInTests, ergoTreeVersionInTests) {
+            newF.apply((1, 1))
+          }
+        },
+        exceptionLike[InterpreterException]("Function application must have 1 argument, but was:")
+        )
+      }
+    }
+  }
+
+  /** Deeply nested maps which creates deeply nested collections.
+    * @return lambda like `(xs: Coll[Byte]) => xs.map(_ => xs.map(... xs.map(_ => xs)...))`
+    */
+  def mkFuncValue(nDepth: Int, level: Int): SValue = {
+    def mkCollection(nDepth: Int, level: Int): SValue = {
+      if (level < nDepth)
+        MapCollection(
+          ValUse(1, SByteArray),
+          FuncValue(
+            Array((level + 1, SByte)),
+            mkCollection(nDepth, level + 1)
+          )
+        )
+      else
+        ValUse(1, SByteArray)
+    }
+
+    FuncValue(
+      Array((1, SByteArray)),
+      mkCollection(nDepth, level))
+  }
+
+  property("Building deeply nested expression") {
+
+    mkFuncValue(1, 1) shouldBe
+      FuncValue(
+        Array((1, SByteArray)),
+        ValUse(1, SByteArray))
+
+    mkFuncValue(2, 1) shouldBe
+      FuncValue(
+        Array((1, SByteArray)),
+        MapCollection(
+          ValUse(1, SByteArray),
+          FuncValue(
+            Array((2, SByte)),
+            ValUse(1, SByteArray)
+          )
+        ))
+
+    mkFuncValue(3, 1) shouldBe
+      FuncValue(
+        Array((1, SByteArray)),
+        MapCollection(
+          ValUse(1, SByteArray),
+          FuncValue(
+            Array((2, SByte)),
+            MapCollection(
+              ValUse(1, SByteArray),
+              FuncValue(
+                Array((3, SByte)),
+                ValUse(1, SByteArray)
+              )
+            )
+          )
+        ))
+  }
+
+  def exprCostForSize(size: Int, oldF: CompiledFunc[Coll[Byte], AnyRef], expected: Option[Coll[Byte] => AnyRef]) = {
+    val xs = Coll(Array.tabulate[Byte](size)(i => i.toByte):_*)
+
+    val (y, details) = oldF(xs)
+    assert(details.actualTimeNano.get < 1000000000 /* 1 sec */)
+
+    if (expected.isDefined) {
+      val e = expected.get(xs)
+      y shouldBe e
+    }
+    details.cost
+  }
+
+  def mkCompiledFunc(depth: Int): CompiledFunc[Coll[Byte], AnyRef] = {
+    val expr = Apply(
+      mkFuncValue(depth, 1),
+      Array(OptionGet(GetVar(1.toByte, SOption(SByteArray))))
+    )
+    val script = "{ just any string }"
+    implicit val tRes: RType[AnyRef] = asType[AnyRef](Evaluation.stypeToRType(expr.tpe))
+    val oldF = funcJitFromExpr[Coll[Byte], AnyRef](script, expr)
+    oldF
+  }
+
+  property("Spam: Building large nested collection") {
+
+    forEachScriptAndErgoTreeVersion(
+       activatedVers = Array(JitActivationVersion),
+       ergoTreeVers = ergoTreeVersions) {
+      VersionContext.withVersions(activatedVersionInTests, ergoTreeVersionInTests) {
+
+        { // depth 3
+          val cf = mkCompiledFunc(3)
+          val expected = (xs: Coll[Byte]) => xs.map(_ => xs.map(_ => xs))
+          exprCostForSize(10, cf, Some(expected)) shouldBe JitCost(1456)
+          exprCostForSize(100, cf, Some(expected)) shouldBe JitCost(104605)
+
+          assertExceptionThrown(
+            exprCostForSize(1000, cf, Some(expected)),
+            exceptionLike[CostLimitException]("Estimated execution cost JitCost(10000005) exceeds the limit JitCost(10000000)")
+          )
+        }
+
+        { // depth 60
+          val cf = mkCompiledFunc(60)
+          val expected = (xs: Coll[Byte]) => xs.map(_ => xs.map(_ => xs))
+          exprCostForSize(1, cf, None) shouldBe JitCost(2194)
+
+          assertExceptionThrown(
+            exprCostForSize(2, cf, None),
+            exceptionLike[CostLimitException]("Estimated execution cost JitCost(10000001) exceeds the limit JitCost(10000000)")
+          )
+        }
+
+      }
+    }
+  }
+
+  property("checkValidFlatmap") {
+    implicit val E = ErgoTreeEvaluator.forProfiling(new Profiler, evalSettings)
+    def mkLambda(t: SType, mkBody: SValue => SValue) = {
+      MethodCall(
+        ValUse(1, SCollectionType(t)),
+        SCollection.getMethodByName("flatMap").withConcreteTypes(
+          Map(STypeVar("IV") -> t, STypeVar("OV") -> SByte)
+        ),
+        Vector(FuncValue(Vector((3, t)), mkBody(ValUse(3, t)))),
+        Map()
+      )
+    }
+    val validLambdas = Seq[(SType, SValue => SValue)](
+      (SBox, x => ExtractScriptBytes(x.asBox)),
+      (SBox, x => ExtractId(x.asBox)),
+      (SBox, x => ExtractBytes(x.asBox)),
+      (SBox, x => ExtractBytesWithNoRef(x.asBox)),
+      (SSigmaProp, x => SigmaPropBytes(x.asSigmaProp)),
+      (SBox, x => MethodCall(x, SBox.getMethodByName("id"), Vector(), Map()))
+    ).map { case (t, f) => mkLambda(t, f) }
+
+    validLambdas.foreach { l =>
+      checkValidFlatmap(l)
+    }
+
+    val invalidLambdas = Seq[(SType, SValue => SValue)](
+      // identity lambda `xss.flatMap(xs => xs)`
+      (SByteArray, x => x),
+
+      // identity lambda `xss.flatMap(xs => xs ++ xs)`
+      (SByteArray, x => Append(x.asCollection[SByte.type], x.asCollection[SByte.type]))
+    ).map { case (t, f) => mkLambda(t, f) } ++
+      Seq(
+        // invalid MC like `boxes.flatMap(b => b.id, 10)`
+        MethodCall(
+          ValUse(1, SBox),
+          SCollection.getMethodByName("flatMap").withConcreteTypes(
+            Map(STypeVar("IV") -> SBox, STypeVar("OV") -> SByte)
+          ),
+          Vector(
+            FuncValue(Vector((3, SBox)), ExtractId(ValUse(3, SBox))),
+            IntConstant(10) // too much arguments
+          ),
+          Map()
+        ),
+        // invalid MC like `boxes.flatMap((b,_) => b.id)`
+        MethodCall(
+          ValUse(1, SBox),
+          SCollection.getMethodByName("flatMap").withConcreteTypes(
+            Map(STypeVar("IV") -> SBox, STypeVar("OV") -> SByte)
+          ),
+          Vector(
+            FuncValue(Vector((3, SBox), (4, SInt)/*too much arguments*/), ExtractId(ValUse(3, SBox)))
+          ),
+          Map()
+        )
+      )
+
+    invalidLambdas.foreach { l =>
+      assertExceptionThrown(
+        checkValidFlatmap(l),
+        exceptionLike[RuntimeException](
+          s"Unsupported lambda in flatMap: allowed usage `xs.flatMap(x => x.property)`")
+      )
+    }
+
   }
 }
