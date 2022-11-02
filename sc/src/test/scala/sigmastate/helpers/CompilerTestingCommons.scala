@@ -29,24 +29,12 @@ import scala.language.implicitConversions
 import scala.reflect.ClassTag
 import scala.util.DynamicVariable
 
-trait CompilerTestingCommons extends AnyPropSpec
-  with ScalaCheckPropertyChecks
-  with ScalaCheckDrivenPropertyChecks
-  with Matchers with TestUtils with TestContexts with ValidationSpecification
-  with NegativeTesting
-  with TestsBase with CompilerTestsBase {
 
-  def fakeSelf: ErgoBox = createBox(0, TrueTree)
 
-  def fakeContext: ErgoLikeContext =
-    ErgoLikeContextTesting.dummy(fakeSelf, activatedVersionInTests)
-        .withErgoTreeVersion(ergoTreeVersionInTests)
 
-  //fake message, in a real-life a message is to be derived from a spending transaction
-  val fakeMessage = Blake2b256("Hello World")
-
-  implicit def grElemConvert(leafConstant: GroupElementConstant): EcPointType =
-    SigmaDsl.toECPoint(leafConstant.value).asInstanceOf[EcPointType]
+trait CompilerTestingCommons extends TestingCommons
+    with TestUtils with TestContexts with ValidationSpecification
+    with CompilerTestsBase {
 
   class TestingIRContext extends TestContext with IRContext {
   }

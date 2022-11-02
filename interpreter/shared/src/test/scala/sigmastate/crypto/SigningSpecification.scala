@@ -2,18 +2,17 @@ package sigmastate.crypto
 
 import org.scalacheck.Gen
 import scorex.util.encode.Base16
-import sigmastate.{AtLeast, CAND, COR}
+import sigmastate.{AtLeast, COR, CAND}
 import sigmastate.Values.SigmaBoolean
 import sigmastate.basics.DLogProtocol.DLogProverInput
-import sigmastate.helpers.{ErgoLikeTestInterpreter, ErgoLikeTestProvingInterpreter, CompilerTestingCommons}
-import sigmastate.interpreter.{ContextExtension, HintsBag, ProverResult}
+import sigmastate.helpers.{ErgoLikeTestInterpreter, ErgoLikeTestProvingInterpreter, TestingCommons}
+import sigmastate.interpreter.{HintsBag, ContextExtension, ProverResult}
 import sigmastate.serialization.ValueSerializer
 import sigmastate.serialization.transformers.ProveDHTupleSerializer
 import sigmastate.lang.StdSigmaBuilder
 import sigmastate.basics.ProveDHTuple
 
-class SigningSpecification extends CompilerTestingCommons {
-  implicit lazy val IR: TestingIRContext = new TestingIRContext
+class SigningSpecification extends TestingCommons {
 
   property("simple signature test vector") {
 
