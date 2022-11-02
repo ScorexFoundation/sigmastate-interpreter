@@ -10,7 +10,7 @@ import sigmastate.Values.{ByteArrayConstant, ErgoTree, IntConstant, NotReadyValu
 import sigmastate.eval.Colls
 import sigmastate.exceptions.{SerializerException, SigmaException, InterpreterException}
 import sigmastate.helpers.TestingHelpers._
-import sigmastate.helpers.{ErgoLikeContextTesting, ErgoLikeTestInterpreter, ErgoLikeTestProvingInterpreter}
+import sigmastate.helpers.{ErgoLikeTestInterpreter, ErgoLikeContextTesting, ErgoLikeTestProvingInterpreter, CompilerTestingCommons}
 import sigmastate.interpreter.ErgoTreeEvaluator.DataEnv
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.interpreter.{ContextExtension, ErgoTreeEvaluator, ProverResult}
@@ -22,7 +22,9 @@ import sigmastate.utils.Helpers._
 import sigmastate.utxo.{DeserializeContext, SelectField}
 import special.sigma.SigmaTestingData
 
-class SoftForkabilitySpecification extends SigmaTestingData with BeforeAndAfterAll {
+class SoftForkabilitySpecification extends SigmaTestingData
+    with CompilerTestingCommons
+    with BeforeAndAfterAll {
 
   implicit lazy val IR = new TestingIRContext
   lazy val prover = new ErgoLikeTestProvingInterpreter()

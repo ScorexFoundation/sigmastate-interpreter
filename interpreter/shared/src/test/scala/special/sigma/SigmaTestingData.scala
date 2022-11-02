@@ -1,36 +1,37 @@
 package special.sigma
 
-import java.math.BigInteger
-
 import org.ergoplatform.ErgoBox
 import org.ergoplatform.settings.ErgoAlgos
 import org.scalacheck.Gen.containerOfN
-import sigmastate._
-import org.scalacheck.{Arbitrary, Gen}
-import sigmastate.helpers.CompilerTestingCommons
-import sigmastate.eval.{Colls, _}
-import sigmastate.eval.Extensions._
 import org.scalacheck.util.Buildable
+import org.scalacheck.{Arbitrary, Gen}
 import scalan.RType
-import scorex.crypto.hash.{Digest32, Blake2b256}
 import scorex.crypto.authds.{ADDigest, ADKey, ADValue}
+import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util.ModifierId
-import sigmastate.Values._
+import sigmastate.Values.{ByteArrayConstant, ConcreteCollection, ConstantPlaceholder, ErgoTree, FalseLeaf, IntConstant, LongConstant, SigmaPropConstant, TrueLeaf}
+import sigmastate.basics.CryptoConstants.EcPointType
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
-import sigmastate.basics.CryptoConstants.EcPointType
-import sigmastate.Values.ErgoTree
+import sigmastate.eval.{Colls, _}
+import sigmastate.eval.Extensions._
+import sigmastate.eval.{CAvlTree, CBigInt, CHeader, CPreHeader, CSigmaProp, CostingBox, CostingSigmaDslBuilder, SigmaDsl}
+import sigmastate.helpers.TestingCommons
 import sigmastate.serialization.ErgoTreeSerializer
 import sigmastate.serialization.generators.ObjectGenerators
 import sigmastate.utils.Helpers
+import sigmastate._
 import special.collection.Coll
 
+import java.math.BigInteger
 import scala.reflect.ClassTag
 
-trait SigmaTestingData extends CompilerTestingCommons with ObjectGenerators {
-  def Coll[T](items: T*)(implicit cT: RType[T]) = CostingSigmaDslBuilder.Colls.fromItems(items:_*)
+trait SigmaTestingData extends TestingCommons with ObjectGenerators {
+  def Coll[T](items: T*)
+      (implicit cT: RType[T]) = CostingSigmaDslBuilder.Colls.fromItems(items: _*)
 
-  def collOfN[T: RType: Arbitrary](n: Int)(implicit b: Buildable[T, Array[T]]): Gen[Coll[T]] = {
+  def collOfN[T: RType : Arbitrary](n: Int)
+      (implicit b: Buildable[T, Array[T]]): Gen[Coll[T]] = {
     implicit val g: Gen[T] = Arbitrary.arbitrary[T]
     containerOfN[Array, T](n, g).map(Colls.fromArray(_))
   }
@@ -39,27 +40,23 @@ trait SigmaTestingData extends CompilerTestingCommons with ObjectGenerators {
     len <- Gen.choose(0, 100)
     arr <- containerOfN[Array, Byte](len, Arbitrary.arbByte.arbitrary)
   } yield arr
-
   val bytesCollGen = bytesGen.map(Colls.fromArray(_))
   val intsCollGen = arrayGen[Int].map(Colls.fromArray(_))
-
   implicit val arbBytes = Arbitrary(bytesCollGen)
   implicit val arbInts = Arbitrary(intsCollGen)
-
   val keyCollGen = collOfN[Byte](32)
-
   import org.ergoplatform.dsl.AvlTreeHelpers._
 
   def createAvlTreeAndProver(entries: (Coll[Byte], Coll[Byte])*) = {
-    val kvs = entries.map { case (k,v) => ADKey @@ k.toArray -> ADValue @@ v.toArray}
-    val res = createAvlTree(AvlTreeFlags.AllOperationsAllowed, kvs:_*)
+    val kvs = entries.map { case (k, v) => ADKey @@ k.toArray -> ADValue @@ v.toArray }
+    val res = createAvlTree(AvlTreeFlags.AllOperationsAllowed, kvs: _*)
     res
   }
 
   protected def sampleAvlProver = {
-    val keys   = arrayOfN(100, keyCollGen).sample.get
+    val keys = arrayOfN(100, keyCollGen).sample.get
     val values = arrayOfN(100, bytesCollGen).sample.get
-    val (tree, prover) = createAvlTreeAndProver(keys.zip(values):_*)
+    val (tree, prover) = createAvlTreeAndProver(keys.zip(values): _*)
     (keys, values, tree, prover)
   }
 
@@ -72,7 +69,6 @@ trait SigmaTestingData extends CompilerTestingCommons with ObjectGenerators {
 
   val tokenId1: Digest32 = Blake2b256("id1")
   val tokenId2: Digest32 = Blake2b256("id2")
-
   val header1: Header = CHeader(Blake2b256("Header.id").toColl,
     0,
     Blake2b256("Header.parentId").toColl,
@@ -103,7 +99,7 @@ trait SigmaTestingData extends CompilerTestingCommons with ObjectGenerators {
     powOnetimePk = SigmaDsl.groupGenerator,
     powNonce = Colls.fromArray(Array.fill(0.toByte)(8)),
     powDistance = SigmaDsl.BigInt(BigInt("19306206489815517413186395405558417825367537880571815686937307203793939").bigInteger),
-    votes =  Colls.fromArray(Array[Byte](0, 1, 0))
+    votes = Colls.fromArray(Array[Byte](0, 1, 0))
   )
   val headers = Colls.fromItems(header2, header1)
   val preHeader: PreHeader = CPreHeader(0,
@@ -117,12 +113,17 @@ trait SigmaTestingData extends CompilerTestingCommons with ObjectGenerators {
 
   object TestData {
     val BigIntZero: BigInt = CBigInt(new BigInteger("0", 16))
+
     val BigIntOne: BigInt = CBigInt(new BigInteger("1", 16))
+
     val BigIntMinusOne: BigInt = CBigInt(new BigInteger("-1", 16))
+
     val BigInt10: BigInt = CBigInt(new BigInteger("a", 16))
+
     val BigInt11: BigInt = CBigInt(new BigInteger("b", 16))
 
     val BigIntMaxValueStr = "7F" + "ff" * 31
+
     val BigIntMaxValue_instances = new CloneSet(1000,
       CBigInt(new BigInteger(BigIntMaxValueStr, 16)))
 
@@ -130,17 +131,22 @@ trait SigmaTestingData extends CompilerTestingCommons with ObjectGenerators {
 
     // TODO v6.0: this values have bitCount == 255 (see to256BitValueExact)
     val BigIntMinValue = CBigInt(new BigInteger("-7F" + "ff" * 31, 16))
+
     val BigIntMaxValue = createBigIntMaxValue()
+
     val BigIntOverlimit = CBigInt(new BigInteger("7F" + "ff" * 33, 16))
 
     val ge1str = "03358d53f01276211f92d0aefbd278805121d4ff6eb534b777af1ee8abae5b2056"
+
     val ge2str = "02dba7b94b111f3894e2f9120b577da595ec7d58d488485adf73bf4e153af63575"
+
     val ge3str = "0290449814f5671172dd696a61b8aa49aaa4c87013f56165e27d49944e98bc414d"
 
     val ge1_bytes = ErgoAlgos.decodeUnsafe(ge1str)
 
     class CloneSet[T: ClassTag](val size: Int, generator: => T) {
       val instances = Array.fill(size)(generator)
+
       var currentInst: Int = 0
 
       /** Selects next instance (round-robin). */
@@ -159,8 +165,11 @@ trait SigmaTestingData extends CompilerTestingCommons with ObjectGenerators {
     val ge1 = create_ge1()
 
     val ge2_bytes = ErgoAlgos.decodeUnsafe(ge2str)
+
     val ge2_instances = new CloneSet(1000, SigmaDsl.decodePoint(Colls.fromArray(ge2_bytes)))
+
     def create_ge2(): GroupElement = ge2_instances.getNext
+
     val ge2 = create_ge2()
 
     val ge3 = Helpers.decodeGroupElement(ge3str)
@@ -177,6 +186,7 @@ trait SigmaTestingData extends CompilerTestingCommons with ObjectGenerators {
     def create_t1(): AvlTree = t1_instances.getNext
 
     val t1: AvlTree = create_t1()
+
     val t2: AvlTree = CAvlTree(
       AvlTreeData(
         ADDigest @@ ErgoAlgos.decodeUnsafe("ff000d937f80ffd731ed802d24358001ff8080ff71007f00ad37e0a7ae43fff95b"),
@@ -185,6 +195,7 @@ trait SigmaTestingData extends CompilerTestingCommons with ObjectGenerators {
         Some(64)
       )
     )
+
     val t3: AvlTree = CAvlTree(
       AvlTreeData(
         ADDigest @@ ErgoAlgos.decodeUnsafe("3100d2e101ff01fc047c7f6f00ff80129df69a5090012f01ffca99f5bfff0c8036"),
