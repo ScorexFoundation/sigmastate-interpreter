@@ -3,11 +3,10 @@ package sigmastate
 import org.scalatest.prop.TableFor2
 import scorex.util.encode.Base16
 import sigmastate.Values.{ByteArrayConstant, CollectionConstant}
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, CompilerTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, TestingCommons}
 
-class CalcSha256Specification extends CompilerTestingCommons
-  with CompilerCrossVersionProps {
-  implicit lazy val IR = new TestingIRContext
+class CalcSha256Specification extends TestingCommons
+  with CrossVersionProps {
 
   def stringToByteConstant(in: String): CollectionConstant[SByte.type] = ByteArrayConstant(in.getBytes("UTF-8"))
   def decodeString(in: String): CollectionConstant[SByte.type] = ByteArrayConstant(Base16.decode(in).get)
