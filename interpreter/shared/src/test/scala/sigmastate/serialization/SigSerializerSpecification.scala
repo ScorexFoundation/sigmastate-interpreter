@@ -3,22 +3,22 @@ package sigmastate.serialization
 import java.math.BigInteger
 import java.util
 import org.ergoplatform.settings.ErgoAlgos
-import org.scalacheck.{Arbitrary, Gen}
+import org.scalacheck.{Gen, Arbitrary}
 import org.scalatest.Assertion
 import sigmastate.Values.SigmaBoolean
 import sigmastate._
 import sigmastate.basics.DLogProtocol.{ProveDlog, SecondDLogProverMessage}
 import sigmastate.basics.VerifierMessage.Challenge
-import sigmastate.basics.{ProveDHTuple, SecondDiffieHellmanTupleProverMessage}
+import sigmastate.basics.{SecondDiffieHellmanTupleProverMessage, ProveDHTuple}
 import sigmastate.crypto.GF2_192_Poly
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTransactionTesting, CompilerTestingCommons}
+import sigmastate.helpers.{ErgoLikeTransactionTesting, ErgoLikeContextTesting, ContextEnrichingTestProvingInterpreter, TestingCommons}
 import sigmastate.interpreter.Interpreter
 import sigmastate.serialization.generators.ObjectGenerators
 import sigmastate.utils.Helpers
 
 import scala.util.Random
 
-class SigSerializerSpecification extends CompilerTestingCommons
+class SigSerializerSpecification extends TestingCommons
   with ObjectGenerators with CrossVersionProps {
   private lazy implicit val arbExprGen: Arbitrary[SigmaBoolean] = Arbitrary(exprTreeGen)
 
@@ -500,12 +500,12 @@ class SigSerializerSpecification extends CompilerTestingCommons
       val hex = getFiatShamirHex(c.uncheckedTree)
 
       if (c.fiatShamirHex.isEmpty) {
-        // output test vector
-        val vector = sigmastate.helpers.SigmaPPrint(hex, width = 150, height = 150)
-        println(
-          s"""case $iCase: -------------------------
-            |hex: $vector
-            |""".stripMargin)
+        // uncomment to run on JVM only and print output test vector
+//        val vector = sigmastate.helpers.SigmaPPrint(hex, width = 150, height = 150)
+//        println(
+//          s"""case $iCase: -------------------------
+//            |hex: $vector
+//            |""".stripMargin)
       }
 
       hex shouldBe c.fiatShamirHex
