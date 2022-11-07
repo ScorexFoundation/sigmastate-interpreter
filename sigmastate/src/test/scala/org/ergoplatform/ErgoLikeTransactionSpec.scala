@@ -46,6 +46,7 @@ class ErgoLikeTransactionSpec extends SigmaDslTesting {
       100,
       Coll(
         Digest32 @@ (ErgoAlgos.decodeUnsafe(token1)) -> 10000000L,
+        Digest32 @@ (ErgoAlgos.decodeUnsafe(token1)) -> 500L,
         Digest32 @@ (ErgoAlgos.decodeUnsafe(token2)) -> 500L
       )
     )
@@ -70,6 +71,7 @@ class ErgoLikeTransactionSpec extends SigmaDslTesting {
     b1.tokens shouldBe expectedTokens
     b1_clone.tokens shouldBe expectedTokens
     b3.tokens shouldBe expectedTokens
+    b2.tokens shouldBe Map[ModifierId, Long](ModifierId @@ token1 -> 10000500L, ModifierId @@ token2 -> 500L)
 
     assertResult(true)(b1.hashCode() == b1.hashCode())
     assertResult(true)(b1 == b1)
