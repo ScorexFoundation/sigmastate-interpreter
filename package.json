@@ -1,0 +1,27 @@
+{
+  "name": "sigma-js",
+  "version": "0.0.1",
+  "description": "Sigma.js library",
+  "main": "interpreter/js/target/scala-2.13/interpreter-opt/main.js",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ScorexFoundation/sigmastate-interpreter.git"
+  },
+  "author": "aslesarenko",
+  "bugs": {
+    "url": "https://github.com/ScorexFoundation/sigmastate-interpreter/issues"
+  },
+  "homepage": "https://github.com/ScorexFoundation/sigmastate-interpreter#readme",
+  "scripts": {
+    "test": "jest"
+  },
+  "devDependencies": {
+    "jest": "^29.0.3",
+    "sigmajs-crypto-facade": "0.0.3",
+    "bouncycastle-js": "0.1.8"
+  }
+}
