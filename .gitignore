@@ -12,6 +12,8 @@
 docs/spec/out/
 test-out/
 flamegraphs/
+sigma-js/node_modules/
+
 # sbt specific
 .cache
 .lib/

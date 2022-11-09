@@ -2,7 +2,7 @@
   "name": "sigma-js",
   "version": "0.0.1",
   "description": "Sigma.js library",
-  "main": "interpreter/js/target/scala-2.13/interpreter-opt/main.js",
+  "main": "../interpreter/js/target/scala-2.13/interpreter-opt/main.js",
   "license": "MIT",
   "publishConfig": {
     "access": "public"
@@ -17,7 +17,7 @@
   },
   "homepage": "https://github.com/ScorexFoundation/sigmastate-interpreter#readme",
   "scripts": {
-    "test": "jest"
+    "test": "node_modules/.bin/jest"
   },
   "devDependencies": {
     "jest": "^29.0.3",
