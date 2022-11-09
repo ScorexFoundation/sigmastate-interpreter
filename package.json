@@ -3,6 +3,9 @@
   "version": "0.0.1",
   "description": "Sigma.js library",
   "main": "interpreter/js/target/scala-2.13/interpreter-opt/main.js",
+  "files": [
+    "interpreter/js/target/scala-2.13/interpreter-opt/"
+  ],
   "license": "MIT",
   "publishConfig": {
     "access": "public"
@@ -19,9 +22,11 @@
   "scripts": {
     "test": "node_modules/.bin/jest"
   },
-  "devDependencies": {
-    "jest": "^29.0.3",
+  "dependencies": {
     "sigmajs-crypto-facade": "0.0.3",
     "bouncycastle-js": "0.1.8"
+  },
+  "devDependencies": {
+    "jest": "^29.0.3"
   }
 }

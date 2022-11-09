@@ -13,6 +13,8 @@ docs/spec/out/
 test-out/
 flamegraphs/
 node_modules/
+package-lock.json
+.npmrc
 
 # sbt specific
 .cache
