@@ -9,12 +9,19 @@ import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigmastate.serialization.SigmaSerializer
 import sigmastate.utils.{Helpers, SigmaByteReader, SigmaByteWriter}
 
+sealed trait InputLike {
+  /**
+    * @return id of a box to spend
+    */
+  def boxId: BoxId
+}
+
 /**
   * Inputs, that are used to enrich script context, but won't be spent by the transaction
   *
   * @param boxId - id of a box to add into context (should be in UTXO)
   */
-case class DataInput(boxId: BoxId) {
+case class DataInput(boxId: BoxId) extends InputLike {
   override def toString: String = s"DataInput(${ErgoAlgos.encode(boxId)})"
 
   override def equals(obj: Any): Boolean = obj match {
@@ -28,10 +35,10 @@ case class DataInput(boxId: BoxId) {
 /**
   * Inputs of formed, but unsigned transaction
   *
-  * @param boxId     - id of a box to spent
+  * @param boxId     - id of a box to spend
   * @param extension - user-defined variables to be put into context
   */
-class UnsignedInput(val boxId: BoxId, val extension: ContextExtension) {
+class UnsignedInput(val boxId: BoxId, val extension: ContextExtension) extends InputLike {
 
   def this(boxId: BoxId) = this(boxId, ContextExtension.empty)
 
@@ -55,7 +62,7 @@ class UnsignedInput(val boxId: BoxId, val extension: ContextExtension) {
 /**
   * Fully signed transaction input
   *
-  * @param boxId         - id of a box to spent
+  * @param boxId         - id of a box to spend
   * @param spendingProof - proof of spending correctness
   */
 case class Input(override val boxId: BoxId, spendingProof: ProverResult)
