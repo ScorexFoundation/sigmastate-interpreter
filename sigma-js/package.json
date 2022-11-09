@@ -1,5 +1,5 @@
 {
-  "name": "sigma-js",
+  "name": "sigmastate-js",
   "version": "0.0.1",
   "description": "Sigma.js library",
   "main": "../interpreter/js/target/scala-2.13/interpreter-opt/main.js",
