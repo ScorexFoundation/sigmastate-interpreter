@@ -98,7 +98,9 @@ class EvaluationTest extends BaseCtxTests
   
   test("SubstConst") {
     def script(pk: ProveDlog): SigmaPropValue =
-      AND(EQ(IntConstant(1), IntConstant(1)), SigmaPropConstant(pk).isProven).toSigmaProp
+      SigmaAnd(
+        EQ(IntConstant(1), IntConstant(1)).toSigmaProp,
+        SigmaPropConstant(pk))
 
     val pk1 = DLogProverInput.random().publicImage
     val pk2 = DLogProverInput.random().publicImage

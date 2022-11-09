@@ -4,13 +4,13 @@ import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
 import org.ergoplatform.validation.ValidationSpecification
 
 import scala.util.Success
-import sigmastate.{AvlTreeData, TestsBase, SType}
-import sigmastate.Values.{EvaluatedValue, SValue, SigmaPropConstant, Value, BigIntArrayConstant}
+import sigmastate.{AvlTreeData, SType, TestsBase}
+import sigmastate.Values.{BigIntArrayConstant, EvaluatedValue, SValue, SigmaPropConstant, Value}
 import org.ergoplatform.{Context => _, _}
 import sigmastate.utxo.CostTable
 import scalan.BaseCtxTests
-import sigmastate.lang.{LangTests, SigmaCompiler, CompilerSettings}
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting}
+import sigmastate.lang.{CompilerSettings, LangTests, SigmaCompiler}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, SigmaPPrint}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.ContextExtension
 import sigmastate.interpreter.Interpreter.ScriptEnv
@@ -280,7 +280,9 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests
     emit(name, valueF, costF, sizeF)
     verifyCostFunc(asRep[Any => Int](costF)) shouldBe(Success(()))
     verifyIsProven(valueF) shouldBe(Success(()))
-    IR.buildTree(valueF) shouldBe expected
+    val tree = IR.buildTree(valueF)
+    SigmaPPrint.pprintln(tree, 150, 250)
+    tree shouldBe expected
   }
 
 }

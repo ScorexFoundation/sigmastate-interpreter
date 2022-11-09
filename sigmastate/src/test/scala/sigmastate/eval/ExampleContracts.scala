@@ -16,14 +16,14 @@ trait ExampleContracts extends ErgoScriptTestkit { self: BaseCtxTests =>
      | //let projectPubKey = proveDlog(project)  //getVar[SigmaProp](projectPubKeyId)
      | //let backerPubKey = proveDlog(backer)  //getVar[SigmaProp](backerPubKeyId)
      | val projectBytes = projectPubKey.propBytes
-     | val c1 = HEIGHT >= timeout && backerPubKey
-     | val c2 = allOf(Coll(
-     |   HEIGHT < timeout,
-     |   projectPubKey,
-     |   OUTPUTS.exists { (out: Box) =>
-     |     out.value >= minToRaise && out.propositionBytes == projectBytes
-     |   }
-     | ))
+     | val c1 = sigmaProp(HEIGHT >= timeout) && backerPubKey
+     | val c2 =
+     |   sigmaProp(allOf(Coll(
+     |     HEIGHT < timeout,
+     |     OUTPUTS.exists { (out: Box) =>
+     |       out.value >= minToRaise && out.propositionBytes == projectBytes
+     |     }))) &&
+     |   projectPubKey
      | c1 || c2
      | }
     """.stripMargin

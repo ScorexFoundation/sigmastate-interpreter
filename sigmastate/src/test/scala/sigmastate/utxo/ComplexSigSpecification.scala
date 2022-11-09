@@ -6,6 +6,7 @@ import sigmastate.Values.IntConstant
 import sigmastate._
 import sigmastate.lang.Terms._
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, ErgoLikeTransactionTesting, SigmaTestingCommons}
+import sigmastate.lang.exceptions.SerializerException
 
 import scala.util.Random
 
@@ -56,7 +57,7 @@ class ComplexSigSpecification extends SigmaTestingCommons
     proverC.prove(propTree, ctx, fakeMessage).isFailure shouldBe true
   }
 
-  property("simplest linear-sized ring signature (1-out-of-3 OR), with anyOf syntax") {
+  property("simplest linear-sized ring signature (1-out-of-3 OR)") {
     val proverA = new ContextEnrichingTestProvingInterpreter
     val proverB = new ContextEnrichingTestProvingInterpreter
     val proverC = new ContextEnrichingTestProvingInterpreter
@@ -67,11 +68,13 @@ class ComplexSigSpecification extends SigmaTestingCommons
     val pubkeyC = proverC.dlogSecrets.head.publicImage
 
     val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "pubkeyC" -> pubkeyC)
-    val prop = compile(env, """anyOf(Coll(pubkeyA, pubkeyB, pubkeyC))""").asSigmaProp
+    assertExceptionThrown(
+      // TODO v5.x: support this example using anyZK
+      compile(env, """anyOf(Coll(pubkeyA, pubkeyB, pubkeyC))""").asSigmaProp,
+      exceptionLike[SerializerException]("Expected collection of BooleanConstant values, got: ConstantNode(SigmaProp(ProveDlog")
+    )
+    val prop = SigmaOr(pubkeyA, pubkeyB, pubkeyC)
     val propTree = mkTestErgoTree(prop)
-
-    val propExpected = SigmaOr(pubkeyA, pubkeyB, pubkeyC)
-    prop shouldBe propExpected
 
     val ctx = ErgoLikeContextTesting(
       currentHeight = 1,
@@ -138,11 +141,13 @@ class ComplexSigSpecification extends SigmaTestingCommons
     val pubkeyA4 = proverA.dlogSecrets(3).publicImage
 
     val env = Map("pubkeyA1" -> pubkeyA1, "pubkeyA2" -> pubkeyA2, "pubkeyA3" -> pubkeyA3, "pubkeyA4" -> pubkeyA4)
-    val prop = compile(env, """anyOf(Coll(pubkeyA1, pubkeyA2, pubkeyA3, pubkeyA4))""").asSigmaProp
+    assertExceptionThrown(
+      // TODO v5.x: support this example using anyZK
+      compile(env, """anyOf(Coll(pubkeyA1, pubkeyA2, pubkeyA3, pubkeyA4))""").asSigmaProp,
+      exceptionLike[SerializerException]("Expected collection of BooleanConstant values, got: ConstantNode(SigmaProp(ProveDlog")
+    )
+    val prop= SigmaOr(pubkeyA1, pubkeyA2, pubkeyA3, pubkeyA4)
     val propTree = mkTestErgoTree(prop)
-
-    val propExpected = SigmaOr(pubkeyA1, pubkeyA2, pubkeyA3, pubkeyA4)
-    prop shouldBe propExpected
 
     val ctx = ErgoLikeContextTesting(
       currentHeight = 1,
@@ -450,12 +455,16 @@ class ComplexSigSpecification extends SigmaTestingCommons
     val pubkeyB = proverB.dlogSecrets.head.publicImage
 
     val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB)
-    val prop = compile(env, """anyOf(Coll(pubkeyA, pubkeyB, HEIGHT > 500))""").asSigmaProp
-    val propTree = mkTestErgoTree(prop)
+    assertExceptionThrown(
+      // TODO v5.x: support this example using anyZK
+      compile(env, """anyOf(Coll(pubkeyA, pubkeyB, HEIGHT > 500))""").asSigmaProp,
+      exceptionLike[IllegalArgumentException]("Invalid type of collection value ConstantNode(SigmaProp", "expected SBoolean")
+    )
 
-    // rewritten by http://github.com/aslesarenko/sigma/blob/2740b51c86bdf1917f688d4ccdb1a0eae9755e0c/sigma-library/src/main/scala/scalan/SigmaLibrary.scala#L91
-    val propExpected = SigmaOr(GT(Height, IntConstant(500)).toSigmaProp, SigmaOr(pubkeyA, pubkeyB))
-    prop shouldBe propExpected
+    // In v4.x, v5.0 the following prop is the result of rewrite rules
+    // http://github.com/aslesarenko/sigma/blob/2740b51c86bdf1917f688d4ccdb1a0eae9755e0c/sigma-library/src/main/scala/scalan/SigmaLibrary.scala#L91
+    val prop = SigmaOr(GT(Height, IntConstant(500)).toSigmaProp, SigmaOr(pubkeyA, pubkeyB))
+    val propTree = mkTestErgoTree(prop)
 
     val ctx1 = ErgoLikeContextTesting(
       currentHeight = 1,
@@ -495,12 +504,11 @@ class ComplexSigSpecification extends SigmaTestingCommons
     val pubkeyC = proverC.dlogSecrets.head.publicImage
 
     val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "pubkeyC" -> pubkeyC)
-    val prop = compile(env,
-      """anyOf(Coll(pubkeyA || pubkeyB, pubkeyC && HEIGHT > 500))""").asSigmaProp
-    val propTree = mkTestErgoTree(prop)
+    // this compilation should work
+    compile(env, """anyOf(Coll(pubkeyA || pubkeyB, pubkeyC && HEIGHT > 500))""").asSigmaProp
 
-    val propExpected = SigmaOr(SigmaOr(pubkeyA, pubkeyB), SigmaAnd(pubkeyC, GT(Height, IntConstant(500)).toSigmaProp))
-    prop shouldBe propExpected
+    val prop = SigmaOr(SigmaOr(pubkeyA, pubkeyB), SigmaAnd(pubkeyC, GT(Height, IntConstant(500)).toSigmaProp))
+    val propTree = mkTestErgoTree(prop)
 
     val ctx1 = ErgoLikeContextTesting(
       currentHeight = 1,

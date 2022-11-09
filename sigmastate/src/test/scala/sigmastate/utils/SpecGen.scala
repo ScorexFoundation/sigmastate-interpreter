@@ -1,18 +1,18 @@
 package sigmastate.utils
 
-import sigmastate._
-import sigmastate.eval.Evaluation._
-import sigmastate.eval.{Zero, Sized}
-import scalan.util.Extensions.ByteOps
 import scalan.util.CollectionUtil
+import scalan.util.Extensions.ByteOps
 import scalan.util.PrintExtensions._
 import sigmastate.Values._
-import sigmastate.lang.SigmaPredef.{PredefinedFuncRegistry, PredefinedFunc}
+import sigmastate._
+import sigmastate.eval.Evaluation._
+import sigmastate.eval.{Sized, Zero}
+import sigmastate.lang.SigmaPredef.{PredefinedFunc, PredefinedFuncRegistry}
 import sigmastate.lang.StdSigmaBuilder
 import sigmastate.lang.Terms.{MethodCall, PropertyCall}
 import sigmastate.serialization.OpCodes.OpCode
-import sigmastate.serialization.{ValueSerializer, OpCodes}
-import sigmastate.utxo.{SigmaPropIsProven, SelectField}
+import sigmastate.serialization.{OpCodes, ValueSerializer}
+import sigmastate.utxo.SelectField
 
 object SpecGenUtils {
   val types = SType.allPredefTypes.diff(Seq(SString))
@@ -255,7 +255,7 @@ object GenPrimOpsApp extends SpecGen {
     val ops = collectSerializableOperations()
     val noOps = Set(
       TaggedVariable, ValUse, ConstantPlaceholder, TrueLeaf, FalseLeaf,
-      ConcreteCollection, ConcreteCollectionBooleanConstant, Tuple, SelectField, SigmaPropIsProven, ValDef, FunDef, BlockValue
+      ConcreteCollection, ConcreteCollectionBooleanConstant, Tuple, SelectField, ValDef, FunDef, BlockValue
     )
 
     // join collection of all operations with all methods by optional opCode

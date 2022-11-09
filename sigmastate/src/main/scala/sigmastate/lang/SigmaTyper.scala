@@ -215,8 +215,8 @@ class SigmaTyper(val builder: SigmaBuilder,
             case (arg, expectedType) => assignType(env, arg, Some(expectedType))
           }
           val adaptedTypedArgs = (new_f, typedArgs) match {
-            case (AllOfFunc.sym | AnyOfFunc.sym, _) =>
-              adaptSigmaPropToBoolean(typedArgs, argTypes)
+//            case (AllOfFunc.sym | AnyOfFunc.sym, _) =>
+//              adaptSigmaPropToBoolean(typedArgs, argTypes)
             case (Ident(GetVarFunc.name | ExecuteFromVarFunc.name, _), Seq(id: Constant[SNumericType]@unchecked))
               if id.tpe.isNumType =>
                 Seq(ByteConstant(SByte.downcast(id.value.asInstanceOf[AnyVal])).withSrcCtx(id.sourceContext))
@@ -480,12 +480,6 @@ class SigmaTyper(val builder: SigmaBuilder,
       if (!c1.tpe.isCollectionLike)
         error(s"Invalid operation SizeOf: expected argument types ($SCollection); actual: (${col.tpe})", col.sourceContext)
       mkSizeOf(c1)
-
-    case SigmaPropIsProven(p) =>
-      val p1 = assignType(env, p)
-      if (!p1.tpe.isSigmaProp)
-        error(s"Invalid operation IsValid: expected argument types ($SSigmaProp); actual: (${p.tpe})", p.sourceContext)
-      SigmaPropIsProven(p1.asSigmaProp)
 
     case SigmaPropBytes(p) =>
       val p1 = assignType(env, p)

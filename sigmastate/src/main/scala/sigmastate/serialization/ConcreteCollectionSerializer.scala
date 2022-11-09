@@ -34,7 +34,7 @@ case class ConcreteCollectionSerializer(cons: (IndexedSeq[Value[SType]], SType) 
       cfor(0)(_ < size, _ + 1) { i =>
         val v = r.getValue() // READ
         values(i) = v
-        assert(v.tpe == tItem, s"Invalid type of collection value in $values")
+        require(v.tpe == tItem, s"Invalid type of collection value $v: expected $tItem")
       }
       values
     }
