@@ -54,6 +54,7 @@ object Sized extends SizedLowPriority {
   val SizeByte: Size[Byte] = new CSizePrim(1L, ByteType)
   val SizeShort: Size[Short] = new CSizePrim(2L, ShortType)
   val SizeInt: Size[Int] = new CSizePrim(4L, IntType)
+  val SizeUnit: Size[Unit] = new CSizePrim(1L, UnitType)
   val SizeLong: Size[Long] = new CSizePrim(8L, LongType)
   val SizeBigInt: Size[BigInt] = new CSizePrim(SBigInt.MaxSizeInBytes, BigIntRType)
   val SizeGroupElement: Size[GroupElement] = new CSizePrim(CryptoConstants.EncodedGroupElementLength, GroupElementRType)
@@ -64,6 +65,7 @@ object Sized extends SizedLowPriority {
   implicit val ByteIsSized: Sized[Byte] = Sized.instance((_: Byte) => SizeByte)
   implicit val ShortIsSized: Sized[Short] = Sized.instance((_: Short) => SizeShort)
   implicit val IntIsSized: Sized[Int] = Sized.instance((_: Int) => SizeInt)
+  implicit val UnitIsSized: Sized[Unit] = Sized.instance((_: Unit) => SizeUnit)
   implicit val LongIsSized: Sized[Long] = Sized.instance((_: Long) => SizeLong)
   implicit val BigIntIsSized: Sized[BigInt] = Sized.instance((_: BigInt) => SizeBigInt)
   implicit val GroupElementIsSized: Sized[GroupElement] = Sized.instance((_: GroupElement) => SizeGroupElement)
@@ -82,6 +84,7 @@ object Sized extends SizedLowPriority {
     case ByteType => ByteIsSized
     case ShortType => ShortIsSized
     case IntType => IntIsSized
+    case UnitType => UnitIsSized
     case LongType => LongIsSized
     case BigIntRType => BigIntIsSized
     case GroupElementRType => GroupElementIsSized

@@ -138,11 +138,8 @@ class BasicOpsSpecification extends SigmaTestingCommons
     VersionContext.withVersions(activatedVersionInTests, ergoTreeVersionInTests) {
       if (VersionContext.current.isJitActivated) {
 
-        // TODO frontend: implement missing Unit support in compiler
-        //  https://github.com/ScorexFoundation/sigmastate-interpreter/issues/820
         test("R1", env, ext,
-          script = "", /* means cannot be compiled
-                         the corresponding script is { SELF.R4[Unit].isDefined } */
+          script = "{ SELF.R4[Unit].isDefined }",
           ExtractRegisterAs[SUnit.type](Self, reg1)(SUnit).isDefined.toSigmaProp,
           additionalRegistersOpt = Some(Map(
             reg1 -> UnitConstant.instance
@@ -150,8 +147,7 @@ class BasicOpsSpecification extends SigmaTestingCommons
         )
 
         test("R2", env, ext,
-          script = "", /* means cannot be compiled
-                       the corresponding script is "{ SELF.R4[Unit].get == () }" */
+          script = "{ SELF.R4[Unit].get == () }",
           EQ(ExtractRegisterAs[SUnit.type](Self, reg1)(SUnit).get, UnitConstant.instance).toSigmaProp,
           additionalRegistersOpt = Some(Map(
             reg1 -> UnitConstant.instance
@@ -167,19 +163,15 @@ class BasicOpsSpecification extends SigmaTestingCommons
               reg2 -> UnitConstant.instance
             ))
           ),
-          rootCauseLike[RuntimeException]("Don't know how to compute Sized for type PrimitiveType(Unit,")
+          rootCauseLike[AssertionError]("Tree root should be real but was UnprovenSchnorr(ProveDlog((")
         )
-        assertExceptionThrown(
-          test("R2", env, ext,
-            "", /* the test script "{ SELF.R4[Unit].isDefined }" cannot be compiled with SigmaCompiler,
-                          but we nevertheless want to test how interpreter process the tree,
-                          so we use the explicitly given tree below */
-            ExtractRegisterAs[SUnit.type](Self, reg1)(SUnit).isDefined.toSigmaProp,
-            additionalRegistersOpt = Some(Map(
-              reg1 -> UnitConstant.instance
-            ))
-          ),
-          rootCauseLike[CosterException]("Don't know how to convert SType SUnit to Elem")
+
+        test("R2", env, ext,
+          "{ SELF.R4[Unit].isDefined }",
+          ExtractRegisterAs[SUnit.type](Self, reg1)(SUnit).isDefined.toSigmaProp,
+          additionalRegistersOpt = Some(Map(
+            reg1 -> UnitConstant.instance
+          ))
         )
       }
     }
