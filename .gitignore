@@ -13,6 +13,7 @@ docs/spec/out/
 test-out/
 flamegraphs/
 node_modules/
+.npmrc
 
 # sbt specific
 .cache
