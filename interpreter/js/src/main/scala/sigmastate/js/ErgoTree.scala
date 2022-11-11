@@ -1,24 +1,33 @@
 package sigmastate.js
 
 import scorex.util.encode.Base16
-import sigmastate.Values.ErgoTree
-import sigmastate.serialization.js.ErgoTreeSerializer
+import sigmastate.Values
+import sigmastate.serialization.ErgoTreeSerializer
 
+import scala.scalajs.js
 import scala.scalajs.js.annotation.{JSExport, JSExportTopLevel}
 
-@JSExportTopLevel("ErgoTree")
-object ErgoTree {
+@JSExportTopLevel("ErgoTree", moduleID = "ergotree")
+class ErgoTree(tree: Values.ErgoTree) extends js.Object {
+  def toBytes(): Array[Byte] = {
+    val bytes = ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(tree)
+    bytes
+  }
+  def toHex(): String = {
+    Base16.encode(toBytes())
+  }
+}
 
-  @JSExport
+@JSExportTopLevel("ErgoTrees", moduleID = "ergotree")
+object ErgoTree extends js.Object {
+
   def fromHex(hex: String): ErgoTree = {
     val bytes = Base16.decode(hex).get
-    ErgoTreeSerializer.deserializeErgoTree(bytes)
+    fromBytes(bytes)
   }
 
-  @JSExport
-  def toHex(tree: ErgoTree): String = {
-    val bytes = ErgoTreeSerializer.serializeErgoTree(tree)
-    Base16.encode(bytes)
+  def fromBytes(bytes: Array[Byte]): ErgoTree = {
+    val tree = ErgoTreeSerializer.DefaultSerializer.deserializeErgoTree(bytes)
+    new ErgoTree(tree)
   }
-
 }

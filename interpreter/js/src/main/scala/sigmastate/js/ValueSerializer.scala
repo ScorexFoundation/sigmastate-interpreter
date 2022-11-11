@@ -1,11 +1,10 @@
-package sigmastate.serialization.js
+package sigmastate.js
 
 import sigmastate.SType
 import sigmastate.js.Values.Value
-
 import scala.scalajs.js.annotation.{JSExport, JSExportTopLevel}
 
-@JSExportTopLevel("ValueSerializer")
+@JSExportTopLevel("ValueSerializer", moduleID = "ergotree")
 object ValueSerializer {
   @JSExport
   def deserialize(bytes: Array[Byte]): Value[SType] =
