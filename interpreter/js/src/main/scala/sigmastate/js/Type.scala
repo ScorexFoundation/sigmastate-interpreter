@@ -3,7 +3,7 @@ package sigmastate.js
 import scalan.RType
 
 import scala.scalajs.js
-import scala.scalajs.js.annotation.{JSExport, JSExportTopLevel}
+import scala.scalajs.js.annotation.JSExportTopLevel
 
 @JSExportTopLevel("Type", moduleID = "common")
 class Type(private[js] final val rtype: RType[_]) extends js.Object {

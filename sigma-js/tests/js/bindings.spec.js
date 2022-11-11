@@ -2,6 +2,9 @@ const {
   Types
 } = require("../../../interpreter/js/target/scala-2.13/interpreter-fastopt/common.js");
 const {
+  Values
+} = require("../../../interpreter/js/target/scala-2.13/interpreter-fastopt/core.js");
+const {
   ErgoTree, ErgoTrees
 } = require("../../../interpreter/js/target/scala-2.13/interpreter-fastopt/ergotree.js");
 
@@ -26,9 +29,33 @@ describe("Smoke tests for Types", () => {
     expect(Types.Short.name).toEqual("Short");
     expect(Types.Int.name).toEqual("Int");
     expect(Types.Long.name).toEqual("Long");
+  });
+  it("Should create complex types", () => {
     expect(Types.pairType(Types.Int, Types.Long).name).toEqual("(Int, Long)");
     expect(Types.collType(Types.Int).name).toEqual("Coll[Int]");
     expect(Types.collType(Types.pairType(Types.Int, Types.Long)).name)
         .toEqual("Coll[(Int, Long)]");
+  });
+});
+
+function testRange(factory, min, max) {
+  expect(factory(max).data).toEqual(max);
+  expect(() => factory(max + 1).data).toThrow();
+  expect(factory(-1).data).toEqual(-1);
+  expect(factory(min).data).toEqual(min);
+  expect(() => factory(min - 1).data).toThrow();
+}
+
+describe("Smoke tests for Values", () => {
+  it("Should create values of primitive types", () => {
+    expect(Values.ofByte(0).data).toEqual(0);
+    expect(Values.ofByte(0).tpe).toEqual(Types.Byte);
+    testRange(function(v) { return Values.ofByte(v); }, -128, 127);
+    testRange(function(v) { return Values.ofShort(v); }, -32768, 32767);
+    testRange(function(v) { return Values.ofInt(v); }, -0x7FFFFFFF - 1, 0x7FFFFFFF);
+    testRange(function(v) { return Values.ofLong(v); }, -0x8000000000000000n, 0x7fffffffffffffffn);
+  });
+
+  it("Should create values of complex types", () => {
   });
 });
