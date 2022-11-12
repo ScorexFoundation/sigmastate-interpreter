@@ -10,7 +10,9 @@ object Isos {
       Constant(x.runtimeValue.asInstanceOf[SType#WrappedType], Evaluation.rtypeToSType(x.tpe.rtype))
 
     override def from(x: Constant[SType]): Value = {
-      Value.fromRuntimeValue(x.value, new Type(Evaluation.stypeToRType(x.tpe)))
+      val rtype = Evaluation.stypeToRType(x.tpe)
+      val jsvalue = Value.fromRuntimeValue(x.value, rtype)
+      new Value(jsvalue, new Type(rtype))
     }
   }
 }

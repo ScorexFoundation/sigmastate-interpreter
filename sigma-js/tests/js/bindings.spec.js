@@ -57,17 +57,39 @@ describe("Smoke tests for Values", () => {
   });
 
   it("Should create values of complex types", () => {
+    let pair = Values.pairOf(Values.ofByte(10), Values.ofLong(20n));
+    expect(pair.data).toEqual([10, 20n]);
+    expect(pair.tpe.name).toEqual("(Byte, Long)");
+
+    let coll = Values.collOf([-10, 0, 10], Types.Byte)
+    expect(coll.tpe.name).toEqual("Coll[Byte]");
   });
 
-  var hex = "05e012";
+  let hex1 = "05e012";
+  let hex2 = "1a0203010203020a14";
+
   it("Value.toHex", () => {
-    var v = Values.ofLong(1200n)
-    expect(v.toHex()).toEqual(hex)
+    let v = Values.ofLong(1200n)
+    expect(v.toHex()).toEqual(hex1)
+
+    let arr = [
+        [1, 2, 3],
+        [10, 20]
+    ]
+
+    let t = Types.collType(Types.Byte)
+    let collV = Values.collOf(arr, t)
+    expect(collV.tpe.name).toEqual("Coll[Coll[Byte]]");
+    expect(collV.toHex()).toEqual(hex2)
   });
 
   it("Value.fromHex", () => {
-    var v = Values.fromHex(hex)
+    let v = Values.fromHex(hex1)
     expect(v.data).toEqual(1200n)
     expect(v.tpe.name).toEqual("Long")
+
+    let coll = Values.fromHex(hex2)
+    expect(coll.tpe.name).toEqual("Coll[Coll[Byte]]");
+    expect(coll.toHex()).toEqual(hex2)
   });
 });
