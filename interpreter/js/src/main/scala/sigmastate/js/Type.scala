@@ -8,6 +8,7 @@ import scala.scalajs.js.annotation.JSExportTopLevel
 @JSExportTopLevel("Type", moduleID = "common")
 class Type(private[js] final val rtype: RType[_]) extends js.Object {
   def name: String = rtype.name
+  override def toString: String = s"Type($rtype)"
 }
 
 @JSExportTopLevel("Types", moduleID = "common")

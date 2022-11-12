@@ -58,4 +58,16 @@ describe("Smoke tests for Values", () => {
 
   it("Should create values of complex types", () => {
   });
+
+  var hex = "05e012";
+  it("Value.toHex", () => {
+    var v = Values.ofLong(1200n)
+    expect(v.toHex()).toEqual(hex)
+  });
+
+  it("Value.fromHex", () => {
+    var v = Values.fromHex(hex)
+    expect(v.data).toEqual(1200n)
+    expect(v.tpe.name).toEqual("Long")
+  });
 });
