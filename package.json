@@ -1,6 +1,6 @@
 {
   "name": "sigmastate-js",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Sigma.js library",
   "main": "interpreter/js/target/scala-2.13/interpreter-fastopt/interpreter.js",
   "files": [
