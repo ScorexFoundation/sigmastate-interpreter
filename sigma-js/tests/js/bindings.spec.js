@@ -65,31 +65,47 @@ describe("Smoke tests for Values", () => {
     expect(coll.tpe.name).toEqual("Coll[Byte]");
   });
 
-  let hex1 = "05e012";
-  let hex2 = "1a0203010203020a14";
+  let longHex = "05e012";
+  let collHex = "1a0203010203020a14";
+  let pairHex = "3e050a28"
 
-  it("Value.toHex", () => {
+  it("Long Value.toHex", () => {
     let v = Values.ofLong(1200n)
-    expect(v.toHex()).toEqual(hex1)
-
-    let arr = [
-        [1, 2, 3],
-        [10, 20]
-    ]
-
-    let t = Types.collType(Types.Byte)
-    let collV = Values.collOf(arr, t)
-    expect(collV.tpe.name).toEqual("Coll[Coll[Byte]]");
-    expect(collV.toHex()).toEqual(hex2)
+    expect(v.toHex()).toEqual(longHex)
   });
 
-  it("Value.fromHex", () => {
-    let v = Values.fromHex(hex1)
+  it("Coll Value.toHex", () => {
+    let arr = [ [1, 2, 3], [10, 20] ]
+    let t = Types.collType(Types.Byte)
+    let collV = Values.collOf(arr, t)
+
+    expect(collV.tpe.name).toEqual("Coll[Coll[Byte]]");
+    expect(collV.toHex()).toEqual(collHex)
+  });
+
+  it("Pair Value.toHex", () => {
+    let fst = Values.ofByte(10)
+    let snd = Values.ofLong(20)
+    let pair = Values.pairOf(fst, snd)
+    expect(pair.tpe.name).toEqual("(Byte, Long)");
+    expect(pair.toHex()).toEqual(pairHex)
+  });
+
+  it("Long Value.fromHex", () => {
+    let v = Values.fromHex(longHex)
     expect(v.data).toEqual(1200n)
     expect(v.tpe.name).toEqual("Long")
+  });
 
-    let coll = Values.fromHex(hex2)
+  it("Coll Value.fromHex", () => {
+    let coll = Values.fromHex(collHex)
     expect(coll.tpe.name).toEqual("Coll[Coll[Byte]]");
-    expect(coll.toHex()).toEqual(hex2)
+    expect(coll.toHex()).toEqual(collHex)
+  });
+
+  it("Pair Value.fromHex", () => {
+    let p = Values.fromHex(pairHex)
+    expect(p.tpe.name).toEqual("(Byte, Long)");
+    expect(p.toHex()).toEqual(pairHex)
   });
 });

@@ -1,6 +1,7 @@
 package sigmastate.js
 
 import scalan.RType
+import scalan.RType.PairType
 import scorex.util.Extensions.{IntOps, LongOps}
 import scorex.util.encode.Base16
 import sigmastate.eval.{Colls, Evaluation}
@@ -52,6 +53,11 @@ object Value extends js.Object {
       implicit val cT = ct.tItem.classTag
       val items = xs.map(x => toRuntimeValue(x, ct.tItem).asInstanceOf[a]).toArray[a]
       Colls.fromItems(items:_*)(ct.tItem)
+    case pt: PairType[a, b] =>
+      val p = data.asInstanceOf[js.Array[Any]]
+      val x = toRuntimeValue(p(0), pt.tFst).asInstanceOf[a]
+      val y = toRuntimeValue(p(1), pt.tSnd).asInstanceOf[b]
+      (x, y)
     case _ =>
       throw new IllegalArgumentException(s"Unsupported type $rtype")
   }
@@ -62,6 +68,9 @@ object Value extends js.Object {
     case ct: CollType[a] =>
       val arr = value.asInstanceOf[Coll[a]].toArray
       js.Array(arr.map(x => fromRuntimeValue(x, ct.tItem)):_*)
+    case pt: PairType[a, b] =>
+      val p = value.asInstanceOf[(a, b)]
+      js.Array(fromRuntimeValue(p._1, pt.tFst), fromRuntimeValue(p._2, pt.tSnd))
     case _ =>
       throw new IllegalArgumentException(s"Unsupported type $rtype")
   }
