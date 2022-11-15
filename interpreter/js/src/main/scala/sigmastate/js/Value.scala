@@ -7,16 +7,40 @@ import scorex.util.encode.Base16
 import sigmastate.eval.{Colls, Evaluation}
 import sigmastate.serialization.{DataSerializer, SigmaSerializer}
 import sigmastate.SType
-import sigmastate.js.Value.toRuntimeValue
+import sigmastate.js.Value.toRuntimeData
 import special.collection.{Coll, CollType}
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSExportTopLevel
 
+/**
+  * This class is used to represent any valid value of ErgoScript language.
+  * Any such value comes equipped with {@link Type} descriptor.
+  * Note, there is a distinction between JS types and ErgoScript types.
+  * Each Value instance represents the concrete ErgoScript type given by `tpe`.
+  * The implementation is based on the pre-defined mapping between JS and ES types.
+  * This mapping is applied recursively and is given by the following:
+  *
+  * JS type            |  ErgoScript Type
+  * --------------------------------------
+  * Number             |  Byte
+  * Number             |  Short
+  * Number             |  Int
+  * BigInt             |  Long
+  * BigInt             |  BigInt
+  * array [A, B]       |  (A, B) - pair
+  * array [a1, a2 ..]  |  Coll[A] - collection
+  *
+  * @param data JS value wrapped in this value
+  * @param tpe  type descriptor of the ErgoScript type
+  */
 @JSExportTopLevel("Value", moduleID = "core")
 class Value(val data: Any, val tpe: Type) extends js.Object {
 
-  final private[js] def runtimeValue: Any = toRuntimeValue(data, tpe.rtype)
+  /** Get Sigma runtime value which can be passed to interpreter, saved in register and
+    * [[sigmastate.Values.Constant]] nodes.
+    */
+  final private[js] def runtimeData: Any = toRuntimeData(data, tpe.rtype)
 
   /**
     * Encode this value as Base16 hex string.
@@ -32,7 +56,7 @@ class Value(val data: Any, val tpe: Type) extends js.Object {
     // module splitting
     // TODO simplify if module splitting fails
     val stype = Evaluation.rtypeToSType(tpe.rtype)
-    val value = runtimeValue.asInstanceOf[SType#WrappedType]
+    val value = runtimeData.asInstanceOf[SType#WrappedType]
     val w = SigmaSerializer.startWriter()
     w.putType(stype)
     DataSerializer.serialize(value, stype, w)
@@ -42,58 +66,122 @@ class Value(val data: Any, val tpe: Type) extends js.Object {
 
 @JSExportTopLevel("Values", moduleID = "core")
 object Value extends js.Object {
+  /** Maximal positive value of ES type Long */
   val MaxLong = js.BigInt("0x7fffffffffffffff")
+
+  /** Minimal negative value of ES type Long */
   val MinLong = -js.BigInt("0x8000000000000000")
 
-  final private[js] def toRuntimeValue(data: Any, rtype: RType[_]): Any = rtype match {
+  /** Helper method to get Sigma runtime value which can be passed to interpreter, saved
+    * in register and [[sigmastate.Values.Constant]] nodes.
+    */
+  final private[js] def toRuntimeData(data: Any, rtype: RType[_]): Any = rtype match {
     case RType.ByteType | RType.ShortType | RType.IntType => data
     case RType.LongType => java.lang.Long.parseLong(data.asInstanceOf[js.BigInt].toString(10))
     case ct: CollType[a] =>
       val xs = data.asInstanceOf[js.Array[Any]]
       implicit val cT = ct.tItem.classTag
-      val items = xs.map(x => toRuntimeValue(x, ct.tItem).asInstanceOf[a]).toArray[a]
+      val items = xs.map(x => toRuntimeData(x, ct.tItem).asInstanceOf[a]).toArray[a]
       Colls.fromItems(items:_*)(ct.tItem)
     case pt: PairType[a, b] =>
       val p = data.asInstanceOf[js.Array[Any]]
-      val x = toRuntimeValue(p(0), pt.tFst).asInstanceOf[a]
-      val y = toRuntimeValue(p(1), pt.tSnd).asInstanceOf[b]
+      val x = toRuntimeData(p(0), pt.tFst).asInstanceOf[a]
+      val y = toRuntimeData(p(1), pt.tSnd).asInstanceOf[b]
       (x, y)
     case _ =>
       throw new IllegalArgumentException(s"Unsupported type $rtype")
   }
 
-  final private[js] def fromRuntimeValue(value: Any, rtype: RType[_]): Any = rtype match {
+  /** Helper method to extract JS data value from Sigma runtime value.
+    * This should be inverse to `toRuntimeData`.
+    *
+    * @param value runtime value of type given by `rtype`
+    * @param rtype type descriptor of Sigma runtime value
+    */
+  final private[js] def fromRuntimeData(value: Any, rtype: RType[_]): Any = rtype match {
     case RType.ByteType | RType.ShortType | RType.IntType => value
     case RType.LongType => js.BigInt(value.asInstanceOf[Long].toString)
     case ct: CollType[a] =>
       val arr = value.asInstanceOf[Coll[a]].toArray
-      js.Array(arr.map(x => fromRuntimeValue(x, ct.tItem)):_*)
+      js.Array(arr.map(x => fromRuntimeData(x, ct.tItem)):_*)
     case pt: PairType[a, b] =>
       val p = value.asInstanceOf[(a, b)]
-      js.Array(fromRuntimeValue(p._1, pt.tFst), fromRuntimeValue(p._2, pt.tSnd))
+      js.Array(fromRuntimeData(p._1, pt.tFst), fromRuntimeData(p._2, pt.tSnd))
     case _ =>
       throw new IllegalArgumentException(s"Unsupported type $rtype")
   }
 
+  /** Helper method to check validity of JS data value against the given runtime type.
+    *
+    * @param data  js value
+    * @param rtype type descriptor of Sigma runtime value
+    */
+  final private def checkJsData[T](data: T, rtype: RType[_]): Any = rtype match {
+    case RType.ByteType => data.asInstanceOf[Int].toByteExact
+    case RType.ShortType => data.asInstanceOf[Int].toShortExact
+    case RType.IntType => data.asInstanceOf[Int].toLong.toIntExact
+    case RType.LongType =>
+      val n = data.asInstanceOf[js.BigInt]
+      if (n < MinLong || n > MaxLong)
+        throw new ArithmeticException(s"value $n is out of long range")
+      n
+    case PairType(l, r) => data match {
+      case arr: js.Array[Any] =>
+        checkJsData(arr(0), l)
+        checkJsData(arr(1), r)
+        data
+      case _ =>
+        throw new ArithmeticException(s"$data cannot represent pair value")
+    }
+    case CollType(elemType) => data match {
+      case arr: js.Array[Any] =>
+        arr.foreach(x => checkJsData(x, elemType))
+        data
+      case _ =>
+        throw new ArithmeticException(s"$data cannot represent Coll value")
+    }
+    case _ =>
+      throw new IllegalArgumentException(s"Unsupported type $rtype")
+  }
+
+  /** Create Byte value from JS number. */
   def ofByte(n: Int): Value = {
-    new Value(n.toByteExact, Type.Byte)
+    checkJsData(n, Type.Byte.rtype)
+    new Value(n, Type.Byte)
   }
+
+  /** Create Short value from JS number. */
   def ofShort(n: Int): Value = {
-    new Value(n.toShortExact, Type.Short)
+    checkJsData(n, Type.Short.rtype)
+    new Value(n, Type.Short)
   }
+
+  /** Create Int value from JS number. */
   def ofInt(n: Int): Value = {
-    new Value(n.toLong.toIntExact, Type.Int)
+    checkJsData(n, Type.Int.rtype)
+    new Value(n, Type.Int)
   }
+
+  /** Create Long value from JS BigInt. */
   def ofLong(n: js.BigInt): Value = {
-    if (n < MinLong || n > MaxLong)
-      throw new ArithmeticException(s"value $n is out of long range")
+    checkJsData(n, Type.Long.rtype)
     new Value(n, Type.Long)
   }
+
+  /** Create Pair value from two values. */
   def pairOf(l: Value, r: Value): Value = {
-    new Value(js.Array(l.data, r.data), Type.pairType(l.tpe, r.tpe))
+    val data = js.Array(l.data, r.data) // the l and r data have been validated
+    new Value(data, Type.pairType(l.tpe, r.tpe))
   }
+
+  /** Create Coll value from array and element type descriptor.
+    * @param items collection elements which should be valid JS representation of `elemType`
+    * @param elemType descriptor of types for collection elements
+    */
   def collOf(items: js.Array[Any], elemType: Type): Value = {
-    new Value(items, Type.collType(elemType))
+    val t = Type.collType(elemType)
+    checkJsData(items, t.rtype)
+    new Value(items, t)
   }
 
   /**
@@ -117,7 +205,7 @@ object Value extends js.Object {
     val stype = r.getType()
     val value = DataSerializer.deserialize(stype, r)
     val rtype = Evaluation.stypeToRType(stype)
-    val jsvalue = fromRuntimeValue(value, rtype)
+    val jsvalue = fromRuntimeData(value, rtype)
     new Value(jsvalue, new Type(rtype))
   }
 }
