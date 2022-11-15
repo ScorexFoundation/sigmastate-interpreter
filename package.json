@@ -6,6 +6,10 @@
   "files": [
     "interpreter/js/target/scala-2.13/interpreter-fastopt/"
   ],
+  "exports": {
+    "./internal-*": null,
+    "./*": "./interpreter/js/target/scala-2.13/interpreter-fastopt/*.js"
+  },
   "license": "MIT",
   "publishConfig": {
     "access": "public"
