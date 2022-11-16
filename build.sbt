@@ -47,11 +47,11 @@ lazy val commonSettings = Seq(
 
 lazy val crossScalaSettings = Seq(
   crossScalaVersions := Seq(scala213, scala212, scala211),
-  scalaVersion := scala213
+  scalaVersion := scala212
 )
 lazy val crossScalaSettingsJS = Seq(
-  crossScalaVersions := Seq(scala213),
-  scalaVersion := scala213
+  crossScalaVersions := Seq(scala213, scala212),
+  scalaVersion := scala212
 )
 
 // prefix version with "-SNAPSHOT" for builds without a git tag
@@ -61,17 +61,17 @@ dynverSeparator in ThisBuild := "-"
 
 val bouncycastleBcprov = "org.bouncycastle" % "bcprov-jdk15on" % "1.66"
 
-val scrypto            = "org.scorexfoundation" %% "scrypto" % "2.2.1-25-dafca54c-SNAPSHOT"
+val scrypto            = "org.scorexfoundation" %% "scrypto" % "2.2.1-28-e96eb006-SNAPSHOT"
 val scryptoDependency =
-  libraryDependencies += "org.scorexfoundation" %%% "scrypto" % "2.2.1-25-dafca54c-SNAPSHOT"
+  libraryDependencies += "org.scorexfoundation" %%% "scrypto" % "2.2.1-28-e96eb006-SNAPSHOT"
 
 //val scorexUtil         = "org.scorexfoundation" %% "scorex-util" % "0.1.8"
 //val debox              = "org.scorexfoundation" %% "debox" % "0.9.0"
-val scorexUtil         = "org.scorexfoundation" %% "scorex-util" % "0.1.8-19-0331a3d9-SNAPSHOT"
+val scorexUtil         = "org.scorexfoundation" %% "scorex-util" % "0.1.8-20-565873cd-SNAPSHOT"
 val scorexUtilDependency =
-  libraryDependencies += "org.scorexfoundation" %%% "scorex-util" % "0.1.8-19-0331a3d9-SNAPSHOT"
+  libraryDependencies += "org.scorexfoundation" %%% "scorex-util" % "0.1.8-20-565873cd-SNAPSHOT"
 
-val debox              = "org.scorexfoundation" %% "debox" % "0.9.0-8-3da95c40-SNAPSHOT"
+val debox              = "org.scorexfoundation" %% "debox" % "0.9.0-9-f853cdce-SNAPSHOT"
 val spireMacros        = "org.typelevel" %% "spire-macros" % "0.17.0-M1"
 
 val fastparse          = "com.lihaoyi" %% "fastparse" % "2.3.3"
@@ -154,7 +154,7 @@ def libraryDefSettings = commonSettings ++ crossScalaSettings ++ testSettings
 
 lazy val commonDependenies2 = libraryDependencies ++= Seq(
   "org.scala-lang" % "scala-reflect" % scalaVersion.value,
-  "org.scorexfoundation" %%% "debox" % "0.9.0-8-3da95c40-SNAPSHOT",
+  "org.scorexfoundation" %%% "debox" % "0.9.0-9-f853cdce-SNAPSHOT",
   "org.scala-lang.modules" %%% "scala-collection-compat" % "2.7.0"
 )
 
