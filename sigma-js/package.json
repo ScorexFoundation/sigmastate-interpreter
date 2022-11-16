@@ -31,8 +31,8 @@
     "prepublishOnly": "npm run clean && npm run copy-output"
   },
   "dependencies": {
-    "bouncycastle-js": "0.1.8",
-    "sigmajs-crypto-facade": "0.0.3"
+    "sigmajs-crypto-facade": "0.0.3",
+    "bouncycastle-js": "0.1.8"
   },
   "devDependencies": {
     "jest": "^29.0.3",
