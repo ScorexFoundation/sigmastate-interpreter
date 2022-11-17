@@ -15,6 +15,7 @@ flamegraphs/
 node_modules/
 package-lock.json
 .npmrc
+sigma-js/dist/
 
 # sbt specific
 .cache
