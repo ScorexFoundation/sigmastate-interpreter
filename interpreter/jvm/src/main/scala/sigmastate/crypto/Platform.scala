@@ -1,13 +1,14 @@
 package sigmastate.crypto
 
 import org.bouncycastle.crypto.ec.CustomNamedCurves
-import org.bouncycastle.math.ec.{ECPoint, ECFieldElement}
+import org.bouncycastle.math.ec.{ECCurve, ECFieldElement, ECPoint}
 import scalan.RType
 
 import java.math.BigInteger
 import java.security.SecureRandom
 import scala.util.Random
 import sigmastate._
+import sigmastate.basics.BcDlogGroup
 import special.collection.Coll
 import special.sigma._
 
@@ -90,5 +91,18 @@ object Platform {
     case _: Function1[_, _] => tpe.isFunc
     case _: Unit => tpe == SUnit
     case _ => false
+  }
+
+  /** This JVM specific methods are used in Ergo node which won't be JS cross-compiled. */
+  implicit class EcpOps(val p: Ecp) extends AnyVal {
+    def getCurve: ECCurve = p.value.getCurve
+    def isInfinity: Boolean = CryptoFacade.isInfinityPoint(p)
+    def add(p2: Ecp): Ecp = CryptoFacade.multiplyPoints(p, p2)
+    def multiply(n: BigInteger): Ecp = CryptoFacade.exponentiatePoint(p, n)
+  }
+
+  /** This JVM specific methods are used in Ergo node which won't be JS cross-compiled. */
+  implicit class BcDlogGroupOps(val group: BcDlogGroup) extends AnyVal {
+    def curve: ECCurve = group.ctx.asInstanceOf[CryptoContextJvm].curve
   }
 }
