@@ -13,6 +13,7 @@ object CryptoFacade {
   def showPoint(p: Ecp): String = Platform.showPoint(p)
   def testBitZeroOfFieldElem(p: ECFieldElem): Boolean = Platform.testBitZeroOfFieldElem(p)
   def getEncodedOfFieldElem(p: ECFieldElem): Array[Byte] = Platform.getEncodedOfFieldElem(p)
+  def getEncodedPoint(p: Ecp, compressed: Boolean): Array[Byte] = Platform.getEncodedPoint(p, compressed)
   def getXCoord(p: Ecp): ECFieldElem = Platform.getXCoord(p)
   def getYCoord(p: Ecp): ECFieldElem = Platform.getYCoord(p)
   def getAffineXCoord(p: Ecp): ECFieldElem = Platform.getAffineXCoord(p)

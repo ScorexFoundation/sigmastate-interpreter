@@ -26,6 +26,8 @@ object Platform {
     Uint8ArrayToBytes(CryptoFacadeJs.getEncodedOfFieldElem(p.elem))
   }
 
+  def getEncodedPoint(p: Ecp, compressed: Boolean): Array[Byte] = ???
+
   def testBitZeroOfFieldElem(p: ECFieldElem): Boolean = CryptoFacadeJs.testBitZeroOfFieldElem(p.elem)
 
   def normalizePoint(p: Ecp): Ecp = new Ecp(CryptoFacadeJs.normalizePoint(p.point))

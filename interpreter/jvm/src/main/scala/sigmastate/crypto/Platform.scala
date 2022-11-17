@@ -20,6 +20,8 @@ object Platform {
 
   def getEncodedOfFieldElem(p: ECFieldElem): Array[Byte] = p.value.getEncoded
 
+  def getEncodedPoint(p: Ecp, compressed: Boolean): Array[Byte] = p.value.getEncoded(compressed)
+
   def testBitZeroOfFieldElem(p: ECFieldElem): Boolean = p.value.testBitZero()
 
   def normalizePoint(p: Ecp): Ecp = Ecp(p.value.normalize())
