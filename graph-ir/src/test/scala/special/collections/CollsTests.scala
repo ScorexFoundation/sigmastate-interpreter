@@ -13,7 +13,7 @@ import scala.language.{existentials, implicitConversions}
 
 class CollsTests extends AnyPropSpec with ScalaCheckPropertyChecks with Matchers with CollGens with VersionTestingProperty { testSuite =>
   import Gen._
-  import special.collection.ExtensionMethods._
+  import special.collection.Extensions._
 
   def squared[A](f: A => A): ((A, A)) => (A, A) = (p: (A, A)) => (f(p._1), f(p._2))
 

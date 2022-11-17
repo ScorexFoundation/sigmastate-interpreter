@@ -39,13 +39,6 @@ object Extensions {
   }
 
   implicit class EvalCollOps[T](val coll: Coll[T]) extends AnyVal {
-    def foreach(f: T => Unit) = {
-      val limit = coll.length
-      cfor(0)(_ < limit, _ + 1) { i =>
-        f(coll(i))
-      }
-    }
-
     /** Helper type synonym. */
     type ElemTpe = SType { type WrappedType = T}
 
@@ -53,17 +46,6 @@ object Extensions {
     def toConstant: Constant[SCollection[ElemTpe]] = {
       val elemTpe = Evaluation.rtypeToSType(coll.tItem).asInstanceOf[ElemTpe]
       ConstantNode[SCollection[ElemTpe]](coll, SCollectionType(elemTpe))
-    }
-  }
-
-  // NOTE: it cannot extend AnyVal because of compiler error: type parameter of value class may not be specialized
-  implicit class PairCollOps[@specialized A, @specialized B](val coll: Coll[(A,B)]) {
-    def foreach(f: (A, B) => Unit) = {
-      val (as, bs) = Colls.unzip(coll)
-      val limit = coll.length
-      cfor(0)(_ < limit, _ + 1) { i =>
-        f(as(i), bs(i))
-      }
     }
   }
 

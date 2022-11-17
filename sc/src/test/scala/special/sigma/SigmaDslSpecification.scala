@@ -21,6 +21,7 @@ import sigmastate.eval._
 import sigmastate.lang.Terms.{MethodCall, PropertyCall}
 import sigmastate.utxo._
 import special.collection._
+import special.collection.Extensions._
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.utils.Helpers
 import sigmastate.utils.Helpers._
