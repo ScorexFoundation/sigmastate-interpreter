@@ -245,14 +245,33 @@ lazy val sc = (project in file("sc"))
   )
   .settings(publish / skip := true)
 
+lazy val sdk = crossProject(JVMPlatform, JSPlatform)
+    .in(file("sdk"))
+    .dependsOn(corelib % allConfigDependency, interpreter % allConfigDependency)
+    .settings(commonSettings ++ testSettings2,
+      commonDependenies2,
+      testingDependencies2,
+      publish / skip := true
+    )
+    .jvmSettings( crossScalaSettings )
+    .jsSettings(
+      crossScalaSettingsJS,
+      libraryDependencies ++= Seq(
+        "org.scala-js" %%% "scala-js-macrotask-executor" % "1.0.0"
+      ),
+      useYarn := true
+    )
+lazy val sdkJS = sdk.js
+    .enablePlugins(ScalaJSBundlerPlugin)
+
 lazy val sigma = (project in file("."))
-  .aggregate(common.jvm, corelib.jvm, graphir, interpreter.jvm, sc)
+  .aggregate(common.jvm, corelib.jvm, graphir, interpreter.jvm, sc, sdk.jvm)
   .settings(libraryDefSettings, rootSettings)
   .settings(publish / aggregate := false)
   .settings(publishLocal / aggregate := false)
 
 lazy val aggregateCompile = ScopeFilter(
-  inProjects(common.jvm, corelib.jvm, graphir, interpreter.jvm, sc),
+  inProjects(common.jvm, corelib.jvm, graphir, interpreter.jvm, sc, sdk.jvm),
   inConfigurations(Compile))
 
 lazy val rootSettings = Seq(
