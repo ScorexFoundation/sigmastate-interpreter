@@ -62,7 +62,7 @@ class CollsTests extends AnyPropSpec with ScalaCheckPropertyChecks with Matchers
       equalLength(pairs)
 
       if (xs.nonEmpty && !VersionContext.current.isJitActivated) {
-        an[ClassCastException] should be thrownBy {
+        an[Throwable] should be thrownBy {
           equalLengthMapped(pairs, squared(inc))  // due to problem with append
         }
       }
@@ -74,7 +74,7 @@ class CollsTests extends AnyPropSpec with ScalaCheckPropertyChecks with Matchers
       equalLength(pairs.append(pairs))
 
       if (xs.nonEmpty && !VersionContext.current.isJitActivated) {
-        an[ClassCastException] should be thrownBy {
+        an[Throwable] should be thrownBy {
           equalLengthMapped(pairs.append(pairs), squared(inc)) // due to problem with append
         }
       }
@@ -249,7 +249,7 @@ class CollsTests extends AnyPropSpec with ScalaCheckPropertyChecks with Matchers
         ys.append(ys).toArray shouldBe ys.toArray ++ ys.toArray
       } else {
         // due to the problem with CollectionUtil.concatArrays
-        an[ClassCastException] should be thrownBy (ys.append(ys))
+        an[Throwable] should be thrownBy (ys.append(ys))
       }
     }
 
