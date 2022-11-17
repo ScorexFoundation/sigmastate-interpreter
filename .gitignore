@@ -14,7 +14,7 @@ test-out/
 flamegraphs/
 node_modules/
 package-lock.json
-.npmrc
+sigma-js/.npmrc
 sigma-js/dist/
 
 # sbt specific

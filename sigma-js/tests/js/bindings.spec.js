@@ -1,12 +1,6 @@
 const {
-  Types
-} = require("../../../interpreter/js/target/scala-2.13/interpreter-fastopt/common.js");
-const {
-  Values
-} = require("../../../interpreter/js/target/scala-2.13/interpreter-fastopt/core.js");
-const {
-  ErgoTree, ErgoTrees
-} = require("../../../interpreter/js/target/scala-2.13/interpreter-fastopt/ergotree.js");
+  Types, Values, ErgoTree, ErgoTrees
+} = require("../../../sdk/js/target/scala-2.12/sdk-fastopt/main.js");
 
 describe("Smoke tests for API exporting", () => {
   it("Should export ErgoTree object", () => {

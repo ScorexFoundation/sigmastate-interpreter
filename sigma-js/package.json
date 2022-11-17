@@ -1,8 +1,8 @@
 {
   "name": "sigmastate-js",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "Sigma.js library",
-  "main": "dist/interpreter.js",
+  "main": "dist/main.js",
   "files": [
     "dist/",
     "README.md"
@@ -27,7 +27,7 @@
   "scripts": {
     "test": "node_modules/.bin/jest",
     "clean": "shx rm -rf ./dist/*",
-    "copy-output": "shx cp -r ../interpreter/js/target/scala-2.13/interpreter-fastopt/* ./dist/",
+    "copy-output": "shx cp -r ../sdk/js/target/scala-2.12/sdk-fastopt/* ./dist/",
     "prepublishOnly": "npm run clean && npm run copy-output"
   },
   "dependencies": {

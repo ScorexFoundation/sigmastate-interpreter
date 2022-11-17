@@ -225,11 +225,6 @@ lazy val interpreter = crossProject(JVMPlatform, JSPlatform)
 lazy val interpreterJS = interpreter.js
     .enablePlugins(ScalaJSBundlerPlugin)
     .settings(
-      scalaJSLinkerConfig ~= { conf =>
-        conf.withSourceMap(false)
-          .withModuleKind(ModuleKind.CommonJSModule)
-      },
-
       //      scalaJSUseMainModuleInitializer := true,
       Compile / npmDependencies ++= Seq(
         "sigmajs-crypto-facade" -> "0.0.3"
@@ -263,6 +258,15 @@ lazy val sdk = crossProject(JVMPlatform, JSPlatform)
     )
 lazy val sdkJS = sdk.js
     .enablePlugins(ScalaJSBundlerPlugin)
+    .settings(
+      scalaJSLinkerConfig ~= { conf =>
+        conf.withSourceMap(false)
+            .withModuleKind(ModuleKind.CommonJSModule)
+      },
+      Compile / npmDependencies ++= Seq(
+        "sigmajs-crypto-facade" -> "0.0.3"
+      )
+    )
 
 lazy val sigma = (project in file("."))
   .aggregate(common.jvm, corelib.jvm, graphir, interpreter.jvm, sc, sdk.jvm)
