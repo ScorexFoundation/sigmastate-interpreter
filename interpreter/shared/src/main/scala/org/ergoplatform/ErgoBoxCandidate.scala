@@ -15,8 +15,9 @@ import sigmastate.eval.Extensions._
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.util.safeNewArray
 import debox.cfor
+import special.collection.Extensions.CollOps
 
-import scala.collection.immutable
+import scala.collection.{immutable, mutable}
 import scala.runtime.ScalaRunTime
 
 /**
@@ -100,12 +101,17 @@ class ErgoBoxCandidate(val value: Long,
     s"tokens: (${additionalTokens.map(t => ErgoAlgos.encode(t._1) + ":" + t._2).toArray.mkString(", ")}), " +
     s"$additionalRegisters, creationHeight: $creationHeight)"
 
-  /** Additional tokens stored in the box. */
-  lazy val tokens: Map[ModifierId, Long] =
-    additionalTokens
-      .toArray
-      .map(t => bytesToId(t._1) -> t._2)
-      .toMap
+  /** Additional tokens stored in the box, merged into a Map.
+    * This method is not used in ErgoTree and serialization, not part of consensus.
+    */
+  lazy val tokens: Map[ModifierId, Long] = {
+    val merged = new mutable.HashMap[ModifierId, Long]
+    additionalTokens.foreach { case (id, amount) =>
+      val mId = bytesToId(id)
+      merged.put(mId, java7.compat.Math.addExact(merged.getOrElse(mId, 0L), amount))
+    }
+    merged.toMap
+  }
 }
 
 object ErgoBoxCandidate {
