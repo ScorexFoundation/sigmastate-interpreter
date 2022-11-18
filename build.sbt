@@ -198,7 +198,7 @@ lazy val corelibJS = corelib.js
     .enablePlugins(ScalaJSBundlerPlugin)
 
 lazy val graphir = Project("graph-ir", file("graph-ir"))
-  .dependsOn(common.jvm % allConfigDependency, corelib.jvm)
+  .dependsOn(common.jvm % allConfigDependency, corelib.jvm % allConfigDependency)
   .settings(
     libraryDefSettings,
     libraryDependencies ++= Seq( debox, scrypto, bouncycastleBcprov ))

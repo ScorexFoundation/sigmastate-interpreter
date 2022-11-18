@@ -86,6 +86,7 @@ class CollsTests extends AnyPropSpec with ScalaCheckPropertyChecks with Matchers
   }
 
   property("Coll.flatMap") {
+    implicit val t: Coll[Int] => Traversable[Int] = traversableColl
     forAll(containerOfN[Coll, Int](3, valGen), collGen) { (zs, col) =>
       val matrix = zs.map(_ => col)
       val res = zs.zip(matrix).flatMap(_._2)

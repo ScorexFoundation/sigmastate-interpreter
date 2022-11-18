@@ -26,9 +26,8 @@ trait CollGens { testSuite =>
   val doubleGen = choose[Double](Double.MinValue, Double.MaxValue)
 
   def getArrayGen[T](valGen: Gen[T], count: Int = 100)
-      (
-          implicit evb: Buildable[T, Array[T]],
-          evt: Array[T] => Traversable[T]): Gen[Array[T]] = {
+      (implicit evb: Buildable[T, Array[T]],
+       evt: Array[T] => Traversable[T]): Gen[Array[T]] = {
     containerOfN[Array, T](count, valGen)
   }
 
@@ -156,5 +155,5 @@ trait CollGens { testSuite =>
     }
   }
 
-  implicit def traversableColl[T](coll: Coll[T]): mutable.Traversable[T] = coll.toArray
+  def traversableColl[T](coll: Coll[T]): mutable.Traversable[T] = coll.toArray
 }

@@ -3,11 +3,36 @@ package org.ergoplatform.sdk
 import debox.cfor
 import scalan.RType
 import scalan.rtypeToClassTag
-import special.collection.{Coll, CollBuilder, Helpers}
+import special.collection.{Coll, CollBuilder}
 
-import scala.collection.immutable
+import scala.collection.generic.CanBuildFrom
+import scala.collection.{GenIterable, immutable}
+import scala.reflect.ClassTag
 
 object Extensions {
+
+  implicit class GenIterableOps[A, Source[X] <: GenIterable[X]](val xs: Source[A]) extends AnyVal {
+
+    /** Apply m for each element of this collection, group by key and reduce each group
+      * using r.
+      * Note, the ordering of the resulting keys is deterministic and the keys appear in
+      * the order they first produced by `map`.
+      *
+      * @returns one item for each group in a new collection of (K,V) pairs. */
+    def mapReduce[K, V](map: A => (K, V))(reduce: (V, V) => V)
+        (implicit cbf: CanBuildFrom[Source[A], (K, V), Source[(K, V)]]): Source[(K, V)] = {
+      val result = scala.collection.mutable.LinkedHashMap.empty[K, V]
+      xs.foreach { x =>
+        val (key, value) = map(x)
+        val reduced = if (result.contains(key)) reduce(result(key), value) else value
+        result.update(key, reduced)
+      }
+
+      val b = cbf()
+      for ( kv <- result ) b += kv
+      b.result()
+    }
+  }
 
   implicit class CollOps[A](val coll: Coll[A]) extends AnyVal {
 
@@ -37,15 +62,102 @@ object Extensions {
       }
       b
     }
+
+    /** Sums elements of this collection using given Numeric.
+      * @return sum of elements or Numeric.zero if coll is empty
+      */
+    def sum(implicit n: Numeric[A]): A = {
+      var sum = n.zero
+      val len = coll.length
+      cfor(0)(_ < len, _ + 1) { i =>
+        sum = n.plus(sum, coll(i))
+      }
+      sum
+    }
+
+    /** Apply m for each element of this collection, group by key and reduce each group using r.
+      *
+      * @returns one item for each group in a new collection of (K,V) pairs.
+      */
+    def mapReduce[K: RType, V: RType](
+        m: A => (K, V),
+        r: ((V, V)) => V): Coll[(K, V)] = {
+      val b = coll.builder
+      val (keys, values) = utils.mapReduce(coll.toArray, m, r)
+      b.pairCollFromArrays(keys, values)
+    }
+
+    /** Partitions this collection into a map of collections according to some discriminator function.
+      *
+      * @param key the discriminator function.
+      * @tparam K the type of keys returned by the discriminator function.
+      * @return A map from keys to ${coll}s such that the following invariant holds:
+      * {{{
+      *  (xs groupBy key)(k) = xs filter (x => key(x) == k)
+      * }}}
+      * That is, every key `k` is bound to a $coll of those elements `x`
+      * for which `key(x)` equa  `k`.
+      */
+    def groupBy[K: RType](key: A => K): Coll[(K, Coll[A])] = {
+      val b = coll.builder
+      implicit val tA = coll.tItem
+      val res = coll.toArray.groupBy(key).mapValues(b.fromArray(_))
+      b.fromMap(res)
+    }
+
+    /** Partitions this collection into a map of collections according to some
+      * discriminator function. Additionally projecting each element to a new value.
+      *
+      *  @param key  the discriminator fu tion.
+      *  @param proj projection function to produce new value for each element of this  $coll
+      *  @tparam K the type of keys returned by the discriminator function.
+      *  @tparam V the type of values returned by the projection function.
+      *  @return A map from keys to ${coll}s such that the following invariant holds:
+      *  {{{
+      *    (xs groupByProjecting (key, proj))(k) = xs filter (x => key(x) == k).map(proj)
+      *  }}}
+      *  That is, every key `k` is bound to projections of those elements `x`
+      *  for which `key(x)` eq ls `k`.
+      */
+    def groupByProjecting[K: RType, V: RType](key: A => K, proj: A => V): Coll[(K, Coll[V])] = {
+      implicit val ctV: ClassTag[V] = RType[V].classTag
+      val b = coll.builder
+      val res = coll.toArray.groupBy(key).mapValues(arr => b.fromArray(arr.map(proj)))
+      b.fromMap(res)
+    }
+
+  }
+
+  implicit class PairCollOps[A,B](val source: Coll[(A,B)]) extends AnyVal {
+    implicit def tA = source.tItem.tFst
+    implicit def tB = source.tItem.tSnd
+
+    def reduceByKey(r: ((B, B)) => B): Coll[(A, B)] = {
+      source.mapReduce(identity, r)
+    }
+
+    def sumByKey(implicit m: Numeric[B]): Coll[(A, B)] =
+      reduceByKey(r => m.plus(r._1, r._2))
+
+    def groupByKey: Coll[(A, Coll[B])] = {
+      source.groupByProjecting(_._1, _._2)
+    }
   }
 
   implicit class CollBuilderOps(val builder: CollBuilder) extends AnyVal {
+    /** Performs outer join operation between left and right collections.
+      *
+      * @param l     projection function executed for each element of `left`
+      * @param r     projection function executed for each element of `right`
+      * @param inner projection function which is executed for matching items (K, L) and (K, R) with the same K
+      * @return collection of (K, O) pairs, where each key comes form either left or right
+      *         collection and values are produced by projections
+      */
     def outerJoin[K: RType, L, R, O: RType]
         (left: Coll[(K, L)], right: Coll[(K, R)])
-            (
-                l: ((K, L)) => O,
-                r: ((K, R)) => O,
-                inner: ((K, (L, R))) => O): Coll[(K, O)] = {
+        (l: ((K, L)) => O,
+         r: ((K, R)) => O,
+         inner: ((K, (L, R))) => O): Coll[(K, O)] = {
       val res = utils.outerJoin[K, L, R, O](left.toMap, right.toMap)(
         (k, lv) => l((k, lv)),
         (k, rv) => r((k, rv)),
@@ -53,6 +165,8 @@ object Extensions {
       fromMap(res)
     }
 
+    /** Construct a collection of (K,V) pairs using PairColl representation,
+      * in which keys and values are stored as separate unboxed arrays. */
     def fromMap[K: RType, V: RType](m: Map[K, V]): Coll[(K, V)] = {
       val (ks, vs) = utils.mapToArrays(m)
       builder.pairCollFromArrays(ks, vs)
