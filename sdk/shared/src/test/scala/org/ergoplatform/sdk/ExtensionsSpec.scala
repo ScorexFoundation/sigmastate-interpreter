@@ -57,6 +57,15 @@ class ExtensionsSpec extends AnyPropSpec with ScalaCheckPropertyChecks with Matc
     }
   }
 
+  property("PairColl.mapFirst") {
+    val minSuccess = minSuccessful(30)
+    forAll(collGen, minSuccess) { col =>
+      val pairs = col.zip(col)
+      pairs.mapFirst(inc).toArray shouldBe pairs.toArray.map { case (x, y) => (inc(x), y) }
+      pairs.mapSecond(inc).toArray shouldBe pairs.toArray.map { case (x, y) => (x, inc(y)) }
+    }
+  }
+
   property("PairColl.sumByKey") {
     val table = Table(("in", "out"),
       (Coll[(String, Int)](), Coll[(String, Int)]()),

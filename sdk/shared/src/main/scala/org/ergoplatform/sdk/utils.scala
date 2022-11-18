@@ -1,5 +1,7 @@
 package org.ergoplatform.sdk
 
+import scalan.ExactIntegral
+
 import scala.collection.mutable
 import scala.reflect.ClassTag
 
@@ -76,5 +78,36 @@ object utils {
       values += v
     }
     (keys.result, values.result)
+  }
+
+  /** This class can adapt ExactIntegral instance to be used where Integral is required.
+    * See methods like sum, subByKey.
+    */
+  class IntegralFromExactIntegral[A](val ei: ExactIntegral[A]) extends Integral[A] {
+    override def quot(x: A, y: A): A = ei.quot(x, y)
+
+    override def rem(x: A, y: A): A = ei.divisionRemainder(x, y)
+
+    override def plus(x: A, y: A): A = ei.plus(x, y)
+
+    override def minus(x: A, y: A): A = ei.minus(x, y)
+
+    override def times(x: A, y: A): A = ei.times(x, y)
+
+    override def negate(x: A): A = ei.negate(x)
+
+    override def fromInt(x: Int): A = ei.fromInt(x)
+
+    override def toInt(x: A): Int = ei.toInt(x)
+
+    override def toLong(x: A): Long = ei.toLong(x)
+
+    override def toFloat(x: A): Float = notSupported
+
+    override def toDouble(x: A): Double = notSupported
+
+    override def compare(x: A, y: A): Int = notSupported
+
+    private def notSupported = throw new NotImplementedError("operation is not supported")
   }
 }

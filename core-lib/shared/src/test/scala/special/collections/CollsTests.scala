@@ -494,17 +494,6 @@ class CollsTests extends AnyPropSpec with ScalaCheckPropertyChecks with Matchers
     }
   }
 
-
-  property("PairColl.mapFirst") {
-    val minSuccess = minSuccessful(30)
-
-    forAll(collGen, minSuccess) { col =>
-      val pairs = col.zip(col)
-      pairs.mapFirst(inc).toArray shouldBe pairs.toArray.map { case (x, y) => (inc(x), y) }
-      pairs.mapSecond(inc).toArray shouldBe pairs.toArray.map { case (x, y) => (x, inc(y)) }
-    }
-  }
-
   property("Coll.unionSet") {
     forAll(collGen, collGen) { (col1, col2) =>
       val res = col1.unionSet(col2)

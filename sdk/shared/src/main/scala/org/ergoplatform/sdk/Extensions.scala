@@ -2,8 +2,8 @@ package org.ergoplatform.sdk
 
 import debox.cfor
 import scalan.RType
-import scalan.rtypeToClassTag
-import special.collection.{Coll, CollBuilder}
+import scalan.rtypeToClassTag // actually required
+import special.collection.{Coll, CollBuilder, PairColl}
 
 import scala.collection.generic.CanBuildFrom
 import scala.collection.{GenIterable, immutable}
@@ -132,13 +132,37 @@ object Extensions {
     implicit def tA = source.tItem.tFst
     implicit def tB = source.tItem.tSnd
 
+    /** Maps the first component of each pair in the collection. */
+    @inline def mapFirst[A1: RType](f: A => A1): Coll[(A1, B)] = source.asInstanceOf[PairColl[A, B]].mapFirst(f)
+
+    /** Maps the first component of each pair in the collection. */
+    @inline def mapSecond[B1: RType](f: B => B1): Coll[(A, B1)] = source.asInstanceOf[PairColl[A, B]].mapSecond(f)
+
+    /** Uses the first component of each pair in the collection as a key for
+      * grouping and reducing the corresponding values.
+      *
+      * @return collection with each found unique key as first component and the reduction
+      *         result of the corresponding values.
+      */
     def reduceByKey(r: ((B, B)) => B): Coll[(A, B)] = {
       source.mapReduce(identity, r)
     }
 
+    /** Uses the first component of each pair in the collection as a key for
+      * grouping and summing the corresponding values using the given Numeric.
+      *
+      * @return collection with each found unique key as first component and the summation
+      *         result of the corresponding values.
+      */
     def sumByKey(implicit m: Numeric[B]): Coll[(A, B)] =
       reduceByKey(r => m.plus(r._1, r._2))
 
+    /** Uses the first component of each pair in the collection as a key for
+      * grouping the corresponding values into a new collection.
+      *
+      * @return collection with each found unique key as first component and the
+      *         collection of the corresponding values.
+      */
     def groupByKey: Coll[(A, Coll[B])] = {
       source.groupByProjecting(_._1, _._2)
     }

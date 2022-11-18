@@ -119,13 +119,6 @@ trait CollBenchmarkCases extends BenchmarkGens { suite: Bench[Double] =>
         }
       }
     }
-    measure method "of PairColl" in {
-      using(colls) in { case (c, n) =>
-        cfor(0)(_ < n, _ + 1) { _ =>
-          c.zip(c).mapFirst(inc)
-        }
-      }
-    }
   }
   performance of "unionSet" in {
     measure method "of PairArray" in {
