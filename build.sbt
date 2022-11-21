@@ -79,6 +79,8 @@ val fastparseDependency =
   libraryDependencies += "com.lihaoyi" %%% "fastparse" % "2.3.3"
 
 val scalaCompat        = "org.scala-lang.modules" %% "scala-collection-compat" % "2.7.0"
+lazy val scodecBitsDependency =
+  libraryDependencies += "org.scodec" %%% "scodec-bits" % "1.1.6"
 
 lazy val circeCore211 = "io.circe" %% "circe-core" % "0.10.0"
 lazy val circeGeneric211 = "io.circe" %% "circe-generic" % "0.10.0"
@@ -248,7 +250,9 @@ lazy val sdk = crossProject(JVMPlatform, JSPlatform)
       testingDependencies2,
       publish / skip := true
     )
-    .jvmSettings( crossScalaSettings )
+    .jvmSettings(
+      crossScalaSettings, scodecBitsDependency
+    )
     .jsSettings(
       crossScalaSettingsJS,
       libraryDependencies ++= Seq(
