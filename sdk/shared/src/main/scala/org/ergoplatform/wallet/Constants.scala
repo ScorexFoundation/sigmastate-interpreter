@@ -8,6 +8,8 @@ object Constants {
 
   val Encoding = "UTF-8"
 
+  val BitcoinSeed: Array[Byte] = "Bitcoin seed".getBytes(Encoding)
+
   /**
     * Pre - EIP3 derivation path
     */
