@@ -2,6 +2,7 @@ package sigmastate.eval
 
 import sigmastate.lang.TransformingSigmaBuilder
 
+import java.util.concurrent.locks.ReentrantLock
 import scala.util.Try
 
 trait IRContext extends TreeBuilding with GraphBuilding {
@@ -10,6 +11,9 @@ trait IRContext extends TreeBuilding with GraphBuilding {
   private val SigmaM = SigmaPropMethods
 
   override val builder = TransformingSigmaBuilder
+
+  /** Can be used to synchronize access to this IR object from multiple threads. */
+  val lock = new ReentrantLock()
 
   /** Pass configuration which is used to turn-off constant propagation.
     * @see `beginPass(noCostPropagationPass)`  */

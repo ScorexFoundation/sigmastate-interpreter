@@ -2,7 +2,7 @@ package sigmastate.eval
 
 import scala.language.implicitConversions
 import scala.language.existentials
-import scalan.{ExactIntegral, ExactOrdering, Nullable, MutableLazy, Lazy, ExactNumeric, RType}
+import scalan.{ExactIntegral, ExactOrdering, Nullable, MutableLazy, Lazy, ExactNumeric}
 import scalan.util.CollectionUtil.TraversableOps
 import scalan.util.Extensions.ByteOps
 import org.ergoplatform._
@@ -17,15 +17,12 @@ import SType._
 import scalan.RType._
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.{Terms, SourceContext}
-import sigmastate.basics.DLogProtocol.ProveDlog
-import sigmastate.basics.ProveDHTuple
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import special.collection.CollType
 import special.sigma.{GroupElementRType, AvlTreeRType, BoxRType, BigIntRType, SigmaPropRType}
 import special.sigma.Extensions._
 import org.ergoplatform.validation.ValidationRules._
 import scalan.ExactIntegral._
-import scalan.ExactNumeric._
 import scalan.ExactOrdering.{ShortIsExactOrdering, ByteIsExactOrdering, IntIsExactOrdering, LongIsExactOrdering}
 import spire.syntax.all.cfor
 
@@ -787,6 +784,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
     _contextDependantNodes = debox.Set.ofSize[Int](InitDependantNodes)
   }
 
+  /** Helper function to filter out application of SigmaProp.isValid method. */
   def removeIsProven[T,R](f: Ref[T] => Ref[R]): Ref[T] => Ref[R] = { x: Ref[T] =>
     val y = f(x);
     val res = y match {

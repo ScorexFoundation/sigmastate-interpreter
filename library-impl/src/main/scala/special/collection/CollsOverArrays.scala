@@ -293,7 +293,9 @@ class CollOverArrayBuilder extends CollBuilder {
   }
 
   @NeverInline
-  override def makeView[@specialized A, @specialized B: RType](source: Coll[A], f: A => B): Coll[B] = new CViewColl(source, f)
+  override def makeView[@specialized A, @specialized B: RType](source: Coll[A], f: A => B): Coll[B] = {
+    new CViewColl(source, f)
+  }
 
   @NeverInline
   override def makePartialView[@specialized A, @specialized B: RType](source: Coll[A], f: A => B, calculated: Array[Boolean], calculatedItems: Array[B]): Coll[B] = {
@@ -318,8 +320,9 @@ class CollOverArrayBuilder extends CollBuilder {
   }
 
   @NeverInline
-  override def xor(left: Coll[Byte], right: Coll[Byte]): Coll[Byte] =
+  override def xor(left: Coll[Byte], right: Coll[Byte]): Coll[Byte] = {
     left.zip(right).map { case (l, r) => (l ^ r).toByte }
+  }
 
   @NeverInline
   override def emptyColl[T](implicit cT: RType[T]): Coll[T] = cT match {
