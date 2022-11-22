@@ -21,9 +21,8 @@ trait IRContext extends TreeBuilding with GraphBuilding {
     "noCostPropagationPass",
     Pass.defaultPassConfig.copy(constantPropagation = false))
 
+  /** The value of Global ErgoTree operation */
   val sigmaDslBuilderValue = CostingSigmaDslBuilder
-  val costedBuilderValue = sigmaDslBuilderValue.Costing
-  val monoidBuilderValue = sigmaDslBuilderValue.Monoids
 
   /** Finds SigmaProp.isProven method calls in the given Lambda `f` */
   def findIsProven[T](f: Ref[Context => T]): Option[Sym] = {

@@ -103,6 +103,10 @@ class SigmaCompiler(settings: CompilerSettings) {
     CompilerResult(env, "<no source code>", compiledGraph, compiledTree)
   }
 
+  /** Unlowering transformation, which replaces some operations with equivalent MethodCall
+    * node. This replacement is only defined for some operations.
+    * This is inverse to `lowering` which is performed during compilation.
+    */
   def unlowerMethodCalls(expr: SValue): SValue = {
     import SCollection._
     val r = rule[Any]({

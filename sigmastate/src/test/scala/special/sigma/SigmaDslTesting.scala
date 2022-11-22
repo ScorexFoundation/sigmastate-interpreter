@@ -497,9 +497,16 @@ class SigmaDslTesting extends PropSpec
 
     implicit val cs = compilerSettingsInTests
 
-    val oldImpl = () => funcJit[A, B](script)
-    val newImpl = () => funcJit[A, B](script)
+    /** in v5.x the old and the new interpreters are the same */
+    override val oldImpl = () => funcJit[A, B](script)
+    override val newImpl = () => funcJit[A, B](script)
 
+    /** Checks that evaluation of this feature on the `input` is the same for both
+      * interpreter versions.
+      * @param input test case data value
+      * @param logInputOutput whether to log input and output test vectors
+      * @return result of feature function and costing details
+      */
     def checkEquality(input: A, logInputOutput: Boolean = false): Try[(B, CostDetails)] = {
       // check the old implementation against Scala semantic function
       val oldRes = VersionContext.withVersions(activatedVersionInTests, ergoTreeVersionInTests) {
@@ -836,6 +843,7 @@ class SigmaDslTesting extends PropSpec
     }
     implicit val cs = compilerSettingsInTests
 
+    /** in v5.x the old and the new interpreters are the same */
     val oldImpl = () => funcJit[A, B](script)
     val newImpl = oldImpl // funcJit[A, B](script) // TODO v6.0 (16h): use actual new implementation here
 

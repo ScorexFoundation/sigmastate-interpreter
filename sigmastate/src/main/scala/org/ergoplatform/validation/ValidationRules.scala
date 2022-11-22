@@ -137,7 +137,7 @@ object ValidationRules {
     }
   }
 
-  /** Removed since v5.0.1. */
+  /** Not used since v5.0.3  */
   object CheckCostFunc extends ValidationRule(1004,
     "Cost function should contain only operations from specified list.") {
     final def apply[Ctx <: IRContext, T](ctx: Ctx)(costF: ctx.Ref[Any => Int]): Unit = {
@@ -277,7 +277,7 @@ object ValidationRules {
     }
   }
 
-  /** Not used since v5.0.1  */
+  /** Not used since v5.0.3  */
   object CheckCostFuncOperation extends ValidationRule(1013,
     "Check the opcode is allowed in cost function") {
     final def apply[Ctx <: IRContext, T](ctx: Ctx)(opCode: OpCodeExtra): Unit = {
