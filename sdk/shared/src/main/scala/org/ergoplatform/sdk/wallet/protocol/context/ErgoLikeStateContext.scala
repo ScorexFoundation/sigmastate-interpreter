@@ -1,4 +1,4 @@
-package org.ergoplatform.wallet.protocol.context
+package org.ergoplatform.sdk.wallet.protocol.context
 
 import scorex.crypto.authds.ADDigest
 import special.collection.Coll

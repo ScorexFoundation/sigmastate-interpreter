@@ -1,7 +1,7 @@
-package org.ergoplatform.wallet.secrets
+package org.ergoplatform.sdk.wallet.secrets
 
+import org.ergoplatform.sdk.wallet.Constants
 import java.util
-import org.ergoplatform.wallet.Constants
 import sigmastate.basics.DLogProtocol.{DLogProverInput, ProveDlog}
 import sigmastate.basics.CryptoConstants
 import sigmastate.crypto.CryptoFacade

@@ -1,4 +1,4 @@
-package org.ergoplatform.wallet.secrets
+package org.ergoplatform.sdk.wallet.secrets
 
 /** Description from https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki :
   *

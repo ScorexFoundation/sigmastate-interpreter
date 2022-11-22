@@ -1,6 +1,5 @@
 package org.ergoplatform.sdk
 
-import org.ergoplatform.wallet.secrets.{DerivationPath, ExtendedSecretKey}
 import scalan.RType
 import special.collection.Coll
 
@@ -22,12 +21,14 @@ import java.text.Normalizer.Form.NFKD
 import java.text.Normalizer.normalize
 import java.util.{List => JList, Map => JMap}
 import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
-import org.ergoplatform.wallet.TokensMap
 import scorex.util.encode.Base16
 import sigmastate.basics.DLogProtocol.ProveDlog
 import scorex.util.{ModifierId, bytesToId, idToBytes}
 import org.ergoplatform.sdk.JavaHelpers.{TokenColl, TokenIdRType}
 import org.ergoplatform.sdk.Extensions.{CollBuilderOps, PairCollOps}
+import org.ergoplatform.sdk.wallet.{Constants, TokensMap}
+import org.ergoplatform.sdk.wallet.mnemonic.Mnemonic
+import org.ergoplatform.sdk.wallet.secrets.{DerivationPath, ExtendedSecretKey}
 import scalan.ExactIntegral.LongIsExactIntegral
 import scalan.util.StringUtil.StringUtilExtensions
 import sigmastate.crypto.CryptoFacade
@@ -414,7 +415,7 @@ object JavaHelpers {
 //  }
 
   /** Converts mnemonic phrase to seed it was derived from.
-    * This method should be equivalent to [[org.ergoplatform.wallet.mnemonic.Mnemonic.toSeed()]].
+    * This method should be equivalent to [[Mnemonic.toSeed()]].
     */
   def mnemonicToSeed(mnemonic: String, passOpt: Option[String] = None): Array[Byte] = {
     val normalizedMnemonic = normalize(new sdk.SecretString(mnemonic.toCharArray), NFKD)
@@ -544,7 +545,7 @@ object JavaHelpers {
     * The resulting path corresponds to `m/44'/429'/0'/0/index` path.
     */
   def eip3DerivationWithLastIndex(index: Int) = {
-    val firstPath = org.ergoplatform.wallet.Constants.eip3DerivationPath
+    val firstPath = Constants.eip3DerivationPath
     DerivationPath(firstPath.decodedPath.dropRight(1) :+ index, firstPath.publicBranch)
   }
 
@@ -552,7 +553,7 @@ object JavaHelpers {
     * The resulting path is the `m/44'/429'/0'/0` path.
     */
   def eip3DerivationParent() = {
-    val firstPath = org.ergoplatform.wallet.Constants.eip3DerivationPath
+    val firstPath = Constants.eip3DerivationPath
     DerivationPath(firstPath.decodedPath.dropRight(1), firstPath.publicBranch)
   }
 

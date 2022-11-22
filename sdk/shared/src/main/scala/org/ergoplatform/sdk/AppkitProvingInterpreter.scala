@@ -9,7 +9,6 @@ import sigmastate.basics.{DiffieHellmanTupleProverInput, SigmaProtocol, SigmaPro
 import org.ergoplatform._
 import org.ergoplatform.sdk.JavaHelpers.{TokenColl, UniversalConverter}
 import org.ergoplatform.sdk.ReducedInputData.createReductionResult
-import org.ergoplatform.wallet.protocol.context.{ErgoLikeParameters, ErgoLikeStateContext, TransactionContext}
 import sigmastate.Values.{ErgoTree, SigmaBoolean}
 
 import scala.util.Try
@@ -21,7 +20,8 @@ import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import debox.cfor
 import org.ergoplatform.sdk.Extensions.{CollOps, PairCollOps}
 import org.ergoplatform.sdk.utils.ArithUtils
-import org.ergoplatform.wallet.secrets.ExtendedSecretKey
+import org.ergoplatform.sdk.wallet.protocol.context.{ErgoLikeParameters, ErgoLikeStateContext, TransactionContext}
+import org.ergoplatform.sdk.wallet.secrets.ExtendedSecretKey
 import scalan.util.Extensions.LongOps
 import sigmastate.{AvlTreeData, VersionContext}
 

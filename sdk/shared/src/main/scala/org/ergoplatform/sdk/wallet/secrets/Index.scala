@@ -1,4 +1,4 @@
-package org.ergoplatform.wallet.secrets
+package org.ergoplatform.sdk.wallet.secrets
 
 import scodec.bits.ByteVector
 

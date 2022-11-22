@@ -1,4 +1,4 @@
-package org.ergoplatform
+package org.ergoplatform.sdk
 
 import scorex.util.ModifierId
 

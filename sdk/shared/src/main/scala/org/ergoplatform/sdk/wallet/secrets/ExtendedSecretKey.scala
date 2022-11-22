@@ -1,9 +1,9 @@
-package org.ergoplatform.wallet.secrets
+package org.ergoplatform.sdk.wallet.secrets
 
+import org.ergoplatform.sdk.wallet.Constants
 import java.math.BigInteger
 import java.util
 import sigmastate.crypto.BigIntegers
-import org.ergoplatform.wallet.Constants
 import sigmastate.basics.DLogProtocol
 import sigmastate.basics.DLogProtocol.DLogProverInput
 import sigmastate.basics.CryptoConstants

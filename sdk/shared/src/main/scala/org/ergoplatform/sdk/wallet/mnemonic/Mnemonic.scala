@@ -1,4 +1,4 @@
-package org.ergoplatform.wallet.mnemonic
+package org.ergoplatform.sdk.wallet.mnemonic
 
 import org.ergoplatform.sdk.SecretString
 

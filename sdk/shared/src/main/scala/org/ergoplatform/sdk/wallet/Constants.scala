@@ -1,6 +1,6 @@
-package org.ergoplatform.wallet
+package org.ergoplatform.sdk.wallet
 
-import org.ergoplatform.wallet.secrets.DerivationPath
+import org.ergoplatform.sdk.wallet.secrets.DerivationPath
 import sigmastate.crypto.CryptoFacade
 
 object Constants {

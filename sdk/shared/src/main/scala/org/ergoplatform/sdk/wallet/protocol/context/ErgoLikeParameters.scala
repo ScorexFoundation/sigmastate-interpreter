@@ -1,4 +1,4 @@
-package org.ergoplatform.wallet.protocol.context
+package org.ergoplatform.sdk.wallet.protocol.context
 
 /**
   * Blockchain parameters readjustable via miners voting and voting-related data.

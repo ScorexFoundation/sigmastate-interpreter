@@ -1,4 +1,4 @@
-package org.ergoplatform.wallet.secrets
+package org.ergoplatform.sdk.wallet.secrets
 
 import sigmastate.basics.DLogProtocol.DLogProverInput
 import sigmastate.basics.{DiffieHellmanTupleProverInput, SigmaProtocolPrivateInput}
