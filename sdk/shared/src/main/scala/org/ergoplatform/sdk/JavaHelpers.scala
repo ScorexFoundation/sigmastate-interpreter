@@ -592,7 +592,7 @@ object JavaHelpers {
     reducedTokens: TokenColl,
     subtractedTokens: TokenColl
   ): TokenColl = {
-    val exactNumeric: Numeric[Long] = new utils.IntegralFromExactIntegral(LongIsExactIntegral)
+    val exactNumeric: Numeric[Long] = new Utils.IntegralFromExactIntegral(LongIsExactIntegral)
     val b = reducedTokens.builder // any Coll has builder, which is suitable
     val reduced = checkAllTokensPositive(reducedTokens).sumByKey(exactNumeric) // summation with overflow checking
     val subtracted = checkAllTokensPositive(subtractedTokens).sumByKey(exactNumeric) // summation with overflow checking

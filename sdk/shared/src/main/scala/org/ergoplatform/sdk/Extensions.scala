@@ -83,7 +83,7 @@ object Extensions {
         m: A => (K, V),
         r: ((V, V)) => V): Coll[(K, V)] = {
       val b = coll.builder
-      val (keys, values) = utils.mapReduce(coll.toArray, m, r)
+      val (keys, values) = Utils.mapReduce(coll.toArray, m, r)
       b.pairCollFromArrays(keys, values)
     }
 
@@ -182,7 +182,7 @@ object Extensions {
         (l: ((K, L)) => O,
          r: ((K, R)) => O,
          inner: ((K, (L, R))) => O): Coll[(K, O)] = {
-      val res = utils.outerJoin[K, L, R, O](left.toMap, right.toMap)(
+      val res = Utils.outerJoin[K, L, R, O](left.toMap, right.toMap)(
         (k, lv) => l((k, lv)),
         (k, rv) => r((k, rv)),
         (k, lv, rv) => inner((k, (lv, rv))))
@@ -192,7 +192,7 @@ object Extensions {
     /** Construct a collection of (K,V) pairs using PairColl representation,
       * in which keys and values are stored as separate unboxed arrays. */
     def fromMap[K: RType, V: RType](m: Map[K, V]): Coll[(K, V)] = {
-      val (ks, vs) = utils.mapToArrays(m)
+      val (ks, vs) = Utils.mapToArrays(m)
       builder.pairCollFromArrays(ks, vs)
     }
   }

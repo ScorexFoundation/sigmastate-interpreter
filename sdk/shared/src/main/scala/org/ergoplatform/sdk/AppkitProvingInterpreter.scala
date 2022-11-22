@@ -1,16 +1,14 @@
-package org.ergoplatform.appkit
+package org.ergoplatform.sdk
 
 import org.ergoplatform.validation.ValidationRules
 import sigmastate.basics.DLogProtocol.{DLogProverInput, ProveDlog}
 
 import java.util
 import java.util.{Objects, List => JList}
-import org.ergoplatform.wallet.secrets.ExtendedSecretKey
 import sigmastate.basics.{DiffieHellmanTupleProverInput, SigmaProtocol, SigmaProtocolCommonInput, SigmaProtocolPrivateInput}
 import org.ergoplatform._
 import org.ergoplatform.sdk.JavaHelpers.{TokenColl, UniversalConverter}
-import org.ergoplatform.appkit.ReducedInputData.createReductionResult
-import org.ergoplatform.utils.ArithUtils
+import org.ergoplatform.sdk.ReducedInputData.createReductionResult
 import org.ergoplatform.wallet.protocol.context.{ErgoLikeParameters, ErgoLikeStateContext, TransactionContext}
 import sigmastate.Values.{ErgoTree, SigmaBoolean}
 
@@ -21,8 +19,9 @@ import sigmastate.exceptions.CostLimitException
 import sigmastate.serialization.SigmaSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import debox.cfor
-import org.ergoplatform.sdk.{ErgoToken, ExtendedInputBox, JavaHelpers}
 import org.ergoplatform.sdk.Extensions.{CollOps, PairCollOps}
+import org.ergoplatform.sdk.utils.ArithUtils
+import org.ergoplatform.wallet.secrets.ExtendedSecretKey
 import scalan.util.Extensions.LongOps
 import sigmastate.{AvlTreeData, VersionContext}
 

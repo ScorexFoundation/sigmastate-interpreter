@@ -5,7 +5,7 @@ import scalan.ExactIntegral
 import scala.collection.mutable
 import scala.reflect.ClassTag
 
-object utils {
+object Utils {
 
   /** Performs outer join operation between left and right collections.
     * Note, the ordering is not deterministic.

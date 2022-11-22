@@ -1,4 +1,4 @@
-package org.ergoplatform.utils
+package org.ergoplatform.sdk.utils
 
 object ArithUtils {
 
