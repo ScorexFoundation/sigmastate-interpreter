@@ -43,15 +43,26 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
   def buildGraph[T](env: ScriptEnv, typed: SValue): Ref[Context => T] = {
     val envVals = env.map { case (name, v) => (name: Any, builder.liftAny(v).get) }
     fun(removeIsProven({ ctxC: Ref[Context] =>
-//      val env = envVals.mapValues(v => buildNode(ctxC, Map.empty, v))
-      val res = asRep[T](buildNode(ctxC, Map.empty, typed))
+      val env = envVals.mapValues(v => buildNode(ctxC, Map.empty, v))
+      val res = asRep[T](buildNode(ctxC, env, typed))
       res
     }))
   }
 
-  /** Helper type synonym used internally */
+  /** Type of the mapping between variable names (see Ident) or definition ids (see
+    * ValDef) and graph nodes. Thus, the key is either String or Int.
+    * Used in `buildNode` method.
+    */
   protected type CompilingEnv = Map[Any, Ref[_]]
 
+  /** Builds IR graph for the given ErgoTree expression `node`.
+    *
+    * @param ctx  reference to a graph node that represents Context value passed to script interpreter
+    * @param env  compilation environment which resolves variables to graph nodes
+    * @param node ErgoTree expression to be translated to graph
+    * @return reference to the graph node which represents `node` expression as part of in
+    *         the IR graph data structure
+    */
   protected def buildNode[T <: SType](ctx: Ref[Context], env: CompilingEnv, node: Value[T]): Ref[T#WrappedType] = {
     def eval[T <: SType](node: Value[T]): Ref[T#WrappedType] = buildNode(ctx, env, node)
     object In { def unapply(v: SValue): Nullable[Ref[Any]] = Nullable(asRep[Any](buildNode(ctx, env, v))) }

@@ -17,10 +17,10 @@ object ErgoScriptPredef {
 
   import sigmastate.interpreter.Interpreter._
 
-  def compileWithCosting(env: ScriptEnv, code: String, networkPrefix: NetworkPrefix)(implicit IR: IRContext): Value[SType] = {
+  /** Compiles the given ErgoScript `code` into ErgoTree expression. */
+  private def compileWithCosting(env: ScriptEnv, code: String, networkPrefix: NetworkPrefix)(implicit IR: IRContext): Value[SType] = {
     val compiler = new SigmaCompiler(networkPrefix)
     val res = compiler.compile(env, code)
-    assert(res.calcTree == res.buildTree)
     res.buildTree
   }
 

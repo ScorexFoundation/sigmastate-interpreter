@@ -784,6 +784,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
     _contextDependantNodes = debox.Set.ofSize[Int](InitDependantNodes)
   }
 
+  /** Helper function to filter out application of SigmaProp.isValid method. */
   def removeIsProven[T,R](f: Ref[T] => Ref[R]): Ref[T] => Ref[R] = { x: Ref[T] =>
     val y = f(x);
     val res = y match {
