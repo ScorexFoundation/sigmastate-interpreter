@@ -4,6 +4,14 @@ import java.math.BigInteger
 import scala.util.Random
 
 object CryptoFacade {
+  val Encoding = "UTF-8"
+
+  val Pbkdf2Algorithm = "PBKDF2WithHmacSHA512"
+
+  val Pbkdf2Iterations = 2048 // number of iteration specified in BIP39 standard.
+
+  val Pbkdf2KeyLength = 512
+
   def createCryptoContext(): CryptoContext = Platform.createContext()
   def normalizePoint(p: Ecp): Ecp = Platform.normalizePoint(p)
   def negatePoint(p: Ecp): Ecp = Platform.negatePoint(p)
@@ -19,4 +27,6 @@ object CryptoFacade {
   def getAffineXCoord(p: Ecp): ECFieldElem = Platform.getAffineXCoord(p)
   def getAffineYCoord(p: Ecp): ECFieldElem = Platform.getAffineYCoord(p)
   def createSecureRandom(): Random = Platform.createSecureRandom()
+  def hashHmacSHA512(key: Array[Byte], data: Array[Byte]): Array[Byte] = Platform.hashHmacSHA512(key, data)
+  def generatePbkdf2Key(normalizedMnemonic: String, normalizedPass: String): Array[Byte] = Platform.generatePbkdf2Key(normalizedMnemonic, normalizedPass)
 }

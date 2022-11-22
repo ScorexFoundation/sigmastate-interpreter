@@ -1,6 +1,9 @@
 package sigmastate.crypto
 
+import org.bouncycastle.crypto.digests.SHA512Digest
 import org.bouncycastle.crypto.ec.CustomNamedCurves
+import org.bouncycastle.crypto.generators.PKCS5S2ParametersGenerator
+import org.bouncycastle.crypto.params.KeyParameter
 import org.bouncycastle.math.ec.{ECCurve, ECFieldElement, ECPoint}
 import scalan.RType
 
@@ -60,6 +63,18 @@ object Platform {
   def createContext(): CryptoContext = new CryptoContextJvm(CustomNamedCurves.getByName("secp256k1"))
 
   def createSecureRandom(): Random = new SecureRandom()
+
+  def hashHmacSHA512(key: Array[Byte], data: Array[Byte]): Array[Byte] = HmacSHA512.hash(key, data)
+
+  def generatePbkdf2Key(normalizedMnemonic: String, normalizedPass: String): Array[Byte] = {
+    val gen = new PKCS5S2ParametersGenerator(new SHA512Digest)
+    gen.init(
+      normalizedMnemonic.getBytes(CryptoFacade.Encoding),
+      normalizedPass.getBytes(CryptoFacade.Encoding),
+      CryptoFacade.Pbkdf2Iterations)
+    val dk = gen.generateDerivedParameters(CryptoFacade.Pbkdf2KeyLength).asInstanceOf[KeyParameter].getKey
+    dk
+  }
 
   /** Checks that the type of the value corresponds to the descriptor `tpe`.
     * If the value has complex structure only root type constructor is checked.

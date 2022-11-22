@@ -1,13 +1,11 @@
 package org.ergoplatform.wallet.secrets
 
 import java.util
-import org.bouncycastle.util.BigIntegers
 import org.ergoplatform.wallet.Constants
-import org.ergoplatform.wallet.crypto.HmacSHA512
-import scorex.util.serialization.{Reader, Writer}
 import sigmastate.basics.DLogProtocol.{DLogProverInput, ProveDlog}
 import sigmastate.basics.CryptoConstants
 import sigmastate.crypto.CryptoFacade
+import sigmastate.crypto.BigIntegers
 import sigmastate.serialization.SigmaSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 
@@ -53,9 +51,9 @@ object ExtendedPublicKey {
   @tailrec
   def deriveChildPublicKey(parentKey: ExtendedPublicKey, idx: Int): ExtendedPublicKey = {
     require(!Index.isHardened(idx), "Hardened public keys derivation is not supported")
-    val (childKeyProto, childChainCode) = HmacSHA512
-      .hash(parentKey.chainCode, parentKey.keyBytes ++ Index.serializeIndex(idx))
-      .splitAt(Constants.SecretKeyLength)
+    val (childKeyProto, childChainCode) = CryptoFacade
+        .hashHmacSHA512(parentKey.chainCode, parentKey.keyBytes ++ Index.serializeIndex(idx))
+        .splitAt(Constants.SecretKeyLength)
     val childKeyProtoDecoded = BigIntegers.fromUnsignedByteArray(childKeyProto)
     val childKey = CryptoFacade.multiplyPoints(DLogProverInput(childKeyProtoDecoded).publicImage.value, parentKey.key.value)
     if (childKeyProtoDecoded.compareTo(CryptoConstants.groupOrder) >= 0 || CryptoFacade.isInfinityPoint(childKey)) {

@@ -6,8 +6,8 @@ import java.text.Normalizer.Form.NFKD
 import java.text.Normalizer.normalize
 import javax.crypto.SecretKeyFactory
 import javax.crypto.spec.PBEKeySpec
-import org.ergoplatform.wallet.Constants
 import scodec.bits.BitVector
+import sigmastate.crypto.CryptoFacade
 
 import scala.util.{Failure, Try}
 
@@ -57,9 +57,6 @@ object Mnemonic {
   val AllowedStrengths: Seq[Int] = Seq(128, 160, 192, 224, 256)
   val AllowedEntropyLengths: Seq[Int] = AllowedStrengths.map(_ / 8)
   val BitsGroupSize = 11
-  val Pbkdf2Algorithm = "PBKDF2WithHmacSHA512"
-  val Pbkdf2Iterations = 2048 // number of iteration specified in BIP39 standard.
-  val Pbkdf2KeyLength = 512
 
   /**
     * Converts mnemonic phrase to seed it was derived from.
@@ -74,11 +71,11 @@ object Mnemonic {
     
     val spec = new PBEKeySpec(
       normalizedMnemonic,
-      normalizedPass.getBytes(Constants.Encoding),
-      Pbkdf2Iterations,
-      Pbkdf2KeyLength
+      normalizedPass.getBytes(CryptoFacade.Encoding),
+      CryptoFacade.Pbkdf2Iterations,
+      CryptoFacade.Pbkdf2KeyLength
     )
-    val skf = SecretKeyFactory.getInstance(Pbkdf2Algorithm)
+    val skf = SecretKeyFactory.getInstance(CryptoFacade.Pbkdf2Algorithm)
     skf.generateSecret(spec).getEncoded
   }
 

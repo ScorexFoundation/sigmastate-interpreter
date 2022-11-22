@@ -2,10 +2,8 @@ package org.ergoplatform.wallet.secrets
 
 import java.math.BigInteger
 import java.util
-import org.bouncycastle.util.BigIntegers
+import sigmastate.crypto.BigIntegers
 import org.ergoplatform.wallet.Constants
-import org.ergoplatform.wallet.crypto.HmacSHA512
-import scorex.util.serialization.{Reader, Writer}
 import sigmastate.basics.DLogProtocol
 import sigmastate.basics.DLogProtocol.DLogProverInput
 import sigmastate.basics.CryptoConstants
@@ -62,9 +60,9 @@ object ExtendedSecretKey {
     val keyCoded: Array[Byte] =
       if (Index.isHardened(idx)) (0x00: Byte) +: parentKey.keyBytes
       else CryptoFacade.getEncodedPoint(parentKey.privateInput.publicImage.value, true)
-    val (childKeyProto, childChainCode) = HmacSHA512
-      .hash(parentKey.chainCode, keyCoded ++ Index.serializeIndex(idx))
-      .splitAt(Constants.SecretKeyLength)
+    val (childKeyProto, childChainCode) = CryptoFacade
+        .hashHmacSHA512(parentKey.chainCode, keyCoded ++ Index.serializeIndex(idx))
+        .splitAt(Constants.SecretKeyLength)
     val childKeyProtoDecoded = BigIntegers.fromUnsignedByteArray(childKeyProto)
     val childKey = childKeyProtoDecoded
       .add(BigIntegers.fromUnsignedByteArray(parentKey.keyBytes))
@@ -98,7 +96,9 @@ object ExtendedSecretKey {
    * @param usePre1627KeyDerivation - use incorrect(previous) BIP32 derivation, expected to be false for new wallets, and true for old pre-1627 wallets (see https://github.com/ergoplatform/ergo/issues/1627 for details)
    */
   def deriveMasterKey(seed: Array[Byte], usePre1627KeyDerivation: Boolean): ExtendedSecretKey = {
-    val (masterKey, chainCode) = HmacSHA512.hash(Constants.BitcoinSeed, seed).splitAt(Constants.SecretKeyLength)
+    val (masterKey, chainCode) = CryptoFacade
+        .hashHmacSHA512(Constants.BitcoinSeed, seed)
+        .splitAt(Constants.SecretKeyLength)
     new ExtendedSecretKey(masterKey, chainCode, usePre1627KeyDerivation, DerivationPath.MasterPath)
   }
 

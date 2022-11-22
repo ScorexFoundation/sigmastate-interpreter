@@ -1,10 +1,9 @@
-package org.ergoplatform.wallet.crypto
+package sigmastate.crypto
 
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 
 object HmacSHA512 {
-
   private val HashAlgo = "HmacSHA512"
 
   def hash(key: Array[Byte], data: Array[Byte]): Array[Byte] = initialize(key).doFinal(data)
@@ -15,5 +14,4 @@ object HmacSHA512 {
     hmacSha512.init(keySpec)
     hmacSha512
   }
-
 }

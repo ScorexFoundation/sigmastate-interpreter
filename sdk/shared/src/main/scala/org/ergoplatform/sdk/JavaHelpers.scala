@@ -1,7 +1,7 @@
 package org.ergoplatform.sdk
 
 import org.ergoplatform.wallet.secrets.{DerivationPath, ExtendedSecretKey}
-import scalan.{ExactIntegral, RType}
+import scalan.RType
 import special.collection.Coll
 
 import scala.collection.{JavaConversions, mutable}
@@ -13,34 +13,24 @@ import sigmastate.serialization.{ErgoTreeSerializer, GroupElementSerializer, Sig
 import scorex.crypto.authds.ADKey
 import scorex.crypto.hash.Digest32
 import org.ergoplatform.settings.ErgoAlgos
-import sigmastate.lang.Terms.ValueOps
 import sigmastate.eval.{CPreHeader, Colls, CostingSigmaDslBuilder, Evaluation}
 import special.sigma.{AnyValue, AvlTree, GroupElement, Header}
 
 import java.util
 import java.lang.{Boolean => JBoolean, Byte => JByte, Integer => JInt, Long => JLong, Short => JShort, String => JString}
-import java.math.BigInteger
 import java.text.Normalizer.Form.NFKD
 import java.text.Normalizer.normalize
 import java.util.{List => JList, Map => JMap}
 import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
-import org.ergoplatform.sdk.Iso.isoErgoTokenToPair
 import org.ergoplatform.wallet.TokensMap
-import org.ergoplatform.wallet.mnemonic.Mnemonic.{Pbkdf2Iterations, Pbkdf2KeyLength}
 import scorex.util.encode.Base16
 import sigmastate.basics.DLogProtocol.ProveDlog
-import sigmastate.basics.{DiffieHellmanTupleProverInput, ProveDHTuple}
-import sigmastate.basics.CryptoConstants.EcPointType
 import scorex.util.{ModifierId, bytesToId, idToBytes}
-import sigmastate.interpreter.ContextExtension
-import org.bouncycastle.crypto.digests.SHA512Digest
-import org.bouncycastle.crypto.generators.PKCS5S2ParametersGenerator
-import org.bouncycastle.crypto.params.KeyParameter
 import org.ergoplatform.sdk.JavaHelpers.{TokenColl, TokenIdRType}
 import org.ergoplatform.sdk.Extensions.{CollBuilderOps, PairCollOps}
 import scalan.ExactIntegral.LongIsExactIntegral
 import scalan.util.StringUtil.StringUtilExtensions
-import sigmastate.eval.CostingSigmaDslBuilder.validationSettings
+import sigmastate.crypto.CryptoFacade
 
 /** Type-class of isomorphisms between types.
   * Isomorphism between two types `A` and `B` essentially say that both types
@@ -429,14 +419,7 @@ object JavaHelpers {
   def mnemonicToSeed(mnemonic: String, passOpt: Option[String] = None): Array[Byte] = {
     val normalizedMnemonic = normalize(new sdk.SecretString(mnemonic.toCharArray), NFKD)
     val normalizedPass = normalize(s"mnemonic${passOpt.getOrElse("")}", NFKD)
-
-    val gen = new PKCS5S2ParametersGenerator(new SHA512Digest)
-    gen.init(
-      normalizedMnemonic.getBytes(org.ergoplatform.wallet.Constants.Encoding),
-      normalizedPass.getBytes(org.ergoplatform.wallet.Constants.Encoding),
-      Pbkdf2Iterations)
-    val dk = gen.generateDerivedParameters(Pbkdf2KeyLength).asInstanceOf[KeyParameter].getKey
-    dk
+    CryptoFacade.generatePbkdf2Key(normalizedMnemonic, normalizedPass)
   }
 
 //  def secretStringToOption(secretString: org.ergoplatform.wallet.interface4j.SecretString): Option[org.ergoplatform.wallet.interface4j.SecretString] = {

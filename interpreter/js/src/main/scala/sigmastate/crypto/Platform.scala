@@ -108,6 +108,10 @@ object Platform {
 
   def createSecureRandom(): Random = new Random()
 
+  def hashHmacSHA512(key: Array[Byte], data: Array[Byte]): Array[Byte] = ???
+
+  def generatePbkdf2Key(normalizedMnemonic: String, normalizedPass: String): Array[Byte] = ???
+
   /** Checks that the type of the value corresponds to the descriptor `tpe`.
     * If the value has complex structure only root type constructor is checked.
     * NOTE, this is surface check with possible false positives, but it is ok

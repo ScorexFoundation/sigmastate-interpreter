@@ -1,14 +1,13 @@
 package org.ergoplatform.wallet
 
 import org.ergoplatform.wallet.secrets.DerivationPath
+import sigmastate.crypto.CryptoFacade
 
 object Constants {
   /** part of the protocol, do not change */
   val SecretKeyLength = 32
 
-  val Encoding = "UTF-8"
-
-  val BitcoinSeed: Array[Byte] = "Bitcoin seed".getBytes(Encoding)
+  val BitcoinSeed: Array[Byte] = "Bitcoin seed".getBytes(CryptoFacade.Encoding)
 
   /**
     * Pre - EIP3 derivation path
