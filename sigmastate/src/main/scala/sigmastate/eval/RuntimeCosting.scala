@@ -4,6 +4,7 @@ import scala.language.implicitConversions
 import scala.language.existentials
 import scalan.{ExactIntegral, ExactOrdering, Nullable, MutableLazy, Lazy, ExactNumeric}
 import scalan.util.CollectionUtil.TraversableOps
+import scalan.util.Extensions.ByteOps
 import org.ergoplatform._
 import sigmastate._
 import sigmastate.Values._
@@ -783,13 +784,14 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
     _contextDependantNodes = debox.Set.ofSize[Int](InitDependantNodes)
   }
 
-  def removeIsProven[T,R](f: Ref[T] => Ref[Any]): Ref[T] => Ref[Any] = { x: Ref[T] =>
+  /** Helper function to filter out application of SigmaProp.isValid method. */
+  def removeIsProven[T,R](f: Ref[T] => Ref[R]): Ref[T] => Ref[R] = { x: Ref[T] =>
     val y = f(x);
     val res = y match {
       case SigmaPropMethods.isValid(p) => p
       case v => v
     }
-    res
+    asRep[R](res)
   }
 
   private[sigmastate] var funUnderCosting: Sym = null
@@ -890,7 +892,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
     (IntElement,    IntIsExactIntegral),
     (LongElement,   LongIsExactIntegral)
   )
-  private lazy val elemToExactOrderingMap = Map[Elem[_], ExactOrdering[_]](
+  protected lazy val elemToExactOrderingMap = Map[Elem[_], ExactOrdering[_]](
     (ByteElement,   ByteIsExactOrdering),
     (ShortElement,  ShortIsExactOrdering),
     (IntElement,    IntIsExactOrdering),
@@ -920,7 +922,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
     case OpCodes.LtCode  => OrderingLT[A](elemToExactOrdering(eA))
     case OpCodes.GeCode  => OrderingGTEQ[A](elemToExactOrdering(eA))
     case OpCodes.LeCode  => OrderingLTEQ[A](elemToExactOrdering(eA))
-    case _ => error(s"Cannot find BinOp for opcode $opCode")
+    case _ => error(s"Cannot find BinOp for opcode newOpCode(${opCode.toUByte-OpCodes.LastConstantCode}) and type $eA")
   }
 
   def adaptSigmaBoolean(v: BoolValue) = v match {

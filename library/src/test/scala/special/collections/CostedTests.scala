@@ -3,7 +3,6 @@ package special.collections
 import scala.collection.mutable
 import scala.language.reflectiveCalls
 import scalan.util.BenchmarkUtil._
-import special.SpecialPredef
 
 class CostedTests extends BaseCostedTests {
 
@@ -27,7 +26,7 @@ class CostedTests extends BaseCostedTests {
   import WSpecialPredef._
   import Liftables._
 
-  def buildGraph[T](nIters: Int, name: String)(action: Int => Ref[T]) = {
+  def measureGraph[T](nIters: Int, name: String)(action: Int => Ref[T]) = {
     val buf = mutable.ArrayBuilder.make[Ref[T]]()
     measure(nIters) { i =>
       buf += action(i)

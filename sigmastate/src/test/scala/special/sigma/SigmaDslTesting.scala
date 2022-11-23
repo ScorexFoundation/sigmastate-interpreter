@@ -317,10 +317,8 @@ class SigmaDslTesting extends PropSpec
         val IR = new CompiletimeIRContext
         val pkAlice = prover.pubKeys.head.toSigmaProp
         val env = Map("pkAlice" -> pkAlice)
-
         // Compile script the same way it is performed by applications (i.e. via Ergo Appkit)
-        val prop = ErgoScriptPredef.compileWithCosting(
-          env, code, ErgoAddressEncoder.MainnetNetworkPrefix)(IR).asSigmaProp
+        val prop = compile(env, code)(IR).asSigmaProp
 
         // Add additional oparations which are not yet implemented in ErgoScript compiler
         val multisig = sigmastate.AtLeast(

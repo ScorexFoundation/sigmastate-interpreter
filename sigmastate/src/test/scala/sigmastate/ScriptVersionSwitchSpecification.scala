@@ -12,9 +12,10 @@ import sigmastate.helpers.TestingHelpers.createBox
 import sigmastate.interpreter.ErgoTreeEvaluator.DefaultEvalSettings
 import sigmastate.interpreter.EvalSettings.EvaluationMode
 import sigmastate.interpreter.{CostedProverResult, ErgoTreeEvaluator, EvalSettings, Interpreter, ProverResult}
+import sigmastate.lang.Terms.ValueOps
 import sigmastate.lang.exceptions.InterpreterException
 import sigmastate.utils.Helpers._
-import special.sigma.{SigmaDslTesting, Box}
+import special.sigma.{Box, SigmaDslTesting}
 
 /** Specification to verify that the interpreter behaves according to docs/aot-jit-switch.md.
   *
@@ -61,11 +62,9 @@ class ScriptVersionSwitchSpecification extends SigmaDslTesting {
 
     // The following ops are performed by frontend: typecheck, create graphs, compile to Tree
     val compiledTree = {
-      val internalProp = compiler.typecheck(env, code)
-      val costingRes = getCostingResult(env, internalProp)(IR)
-      val calcF = costingRes.calcF
-      val tree = IR.buildTree(calcF)
-      tree
+      val res = compiler.compile(env, code)
+      checkCompilerResult(res)
+      res.buildTree.asSigmaProp
     }
     ErgoTree.withSegregation(headerFlags, compiledTree)
   }
