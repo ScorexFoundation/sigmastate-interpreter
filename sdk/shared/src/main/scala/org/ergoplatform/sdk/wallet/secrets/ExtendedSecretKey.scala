@@ -15,9 +15,9 @@ import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
   * Secret, its chain code and path in key tree.
   * (see: https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki)
   */
-final class ExtendedSecretKey(private[secrets] val keyBytes: Array[Byte],
-                              private[secrets] val chainCode: Array[Byte],
-                              private[secrets] val usePre1627KeyDerivation: Boolean,
+final class ExtendedSecretKey(/*private[secrets]*/ val keyBytes: Array[Byte],
+                              /*private[secrets]*/ val chainCode: Array[Byte],
+                              val usePre1627KeyDerivation: Boolean,
                               val path: DerivationPath)
   extends ExtendedKey[ExtendedSecretKey] with SecretKey {
 

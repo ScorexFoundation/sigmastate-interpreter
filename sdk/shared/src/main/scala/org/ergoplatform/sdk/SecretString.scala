@@ -26,37 +26,59 @@ object SecretString {
   def empty() = new SecretString(new Array[Char](0))
 }
 
-/**
+/** Encapsulates secret array of characters (char[]) with proper equality.
+  * The secret data can be erased in memory and not leaked to GC.
+  * Note that calling any methods after `erase()` will throw a runtime exception.
+  * Using this class is more secure and safe than using char[] directly.
+  *
   * Secret data, should not be copied outside of this instance.
   * Use static methods to construct new instances.
-  *
   */
 final class SecretString private[sdk](val _data: Array[Char]) extends CharSequence {
+  /**
+    * Erased flag, should not be copied outside of this instance.
+    */
+  private var _erased = false
+
+  /**
+    * Throws exception if SecretString is erased
+    */
+  private def checkErased(): Unit = {
+    if (_erased) throw new RuntimeException("SecretString already erased")
+  }
+
   /**
     * Returns true if the string doesn't have characters.
     */
   override def isEmpty(): Boolean = {
+    checkErased()
     _data == null || _data.length == 0
   }
 
   /**
     * Extracts secret characters as an array.
     */
-  def getData(): Array[Char] = {_data }
+  def getData(): Array[Char] = {
+    checkErased()
+    _data
+  }
 
   /**
     * Erases secret characters stored in this instance so that they are no longer reside in memory.
     */
   def erase(): Unit = {
     util.Arrays.fill(_data, ' ')
+    _erased = true
   }
 
   override def hashCode(): Int = {
+    checkErased()
     util.Arrays.hashCode(_data)
   }
 
   /** this is adapted version of java.lang.String */
   override def equals(obj: Any): Boolean = {
+    checkErased()
     if (this eq obj.asInstanceOf[AnyRef]) return true
     if (obj == null) return false
     obj match {
@@ -80,14 +102,22 @@ final class SecretString private[sdk](val _data: Array[Char]) extends CharSequen
     * legacy code which keeps secret characters in String.
     */
   def toStringUnsecure(): String = {
+    checkErased()
     String.valueOf(_data)
   }
 
-  override def length(): Int = _data.length
+  override def length(): Int = {
+    checkErased()
+    _data.length
+  }
 
-  override def charAt(index: Int): Char = _data(index)
+  override def charAt(index: Int): Char = {
+    checkErased()
+    _data(index)
+  }
 
   override def subSequence(start: Int, end: Int): CharSequence = {
+    checkErased()
     val slice = _data.slice(start, end)
     new SecretString(slice)
   }

@@ -27,7 +27,6 @@ import scorex.util.{ModifierId, bytesToId, idToBytes}
 import org.ergoplatform.sdk.JavaHelpers.{TokenColl, TokenIdRType}
 import org.ergoplatform.sdk.Extensions.{CollBuilderOps, PairCollOps}
 import org.ergoplatform.sdk.wallet.{Constants, TokensMap}
-import org.ergoplatform.sdk.wallet.mnemonic.Mnemonic
 import org.ergoplatform.sdk.wallet.secrets.{DerivationPath, ExtendedSecretKey}
 import scalan.ExactIntegral.LongIsExactIntegral
 import scalan.util.StringUtil.StringUtilExtensions
@@ -415,7 +414,7 @@ object JavaHelpers {
 //  }
 
   /** Converts mnemonic phrase to seed it was derived from.
-    * This method should be equivalent to [[Mnemonic.toSeed()]].
+    * This method should be equivalent to Mnemonic.toSeed().
     */
   def mnemonicToSeed(mnemonic: String, passOpt: Option[String] = None): Array[Byte] = {
     val normalizedMnemonic = normalize(new sdk.SecretString(mnemonic.toCharArray), NFKD)
