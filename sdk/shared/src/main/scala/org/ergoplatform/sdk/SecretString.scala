@@ -34,7 +34,7 @@ object SecretString {
   * Secret data, should not be copied outside of this instance.
   * Use static methods to construct new instances.
   */
-final class SecretString private[sdk](val _data: Array[Char]) extends CharSequence {
+final class SecretString private[sdk](val _data: Array[Char]) {
   /**
     * Erased flag, should not be copied outside of this instance.
     */
@@ -50,7 +50,7 @@ final class SecretString private[sdk](val _data: Array[Char]) extends CharSequen
   /**
     * Returns true if the string doesn't have characters.
     */
-  override def isEmpty(): Boolean = {
+  def isEmpty(): Boolean = {
     checkErased()
     _data == null || _data.length == 0
   }
@@ -106,19 +106,4 @@ final class SecretString private[sdk](val _data: Array[Char]) extends CharSequen
     String.valueOf(_data)
   }
 
-  override def length(): Int = {
-    checkErased()
-    _data.length
-  }
-
-  override def charAt(index: Int): Char = {
-    checkErased()
-    _data(index)
-  }
-
-  override def subSequence(start: Int, end: Int): CharSequence = {
-    checkErased()
-    val slice = _data.slice(start, end)
-    new SecretString(slice)
-  }
 }

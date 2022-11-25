@@ -14,6 +14,7 @@ import scorex.crypto.hash.Digest32
 import org.ergoplatform.settings.ErgoAlgos
 import sigmastate.eval.{CPreHeader, Colls, CostingSigmaDslBuilder, Evaluation}
 import special.sigma.{AnyValue, AvlTree, GroupElement, Header}
+import sigmastate.utils.Helpers._  // don't remove, required for Scala 2.11
 
 import java.util
 import java.lang.{Boolean => JBoolean, Byte => JByte, Integer => JInt, Long => JLong, Short => JShort, String => JString}
@@ -417,7 +418,7 @@ object JavaHelpers {
     * This method should be equivalent to Mnemonic.toSeed().
     */
   def mnemonicToSeed(mnemonic: String, passOpt: Option[String] = None): Array[Byte] = {
-    val normalizedMnemonic = normalize(new sdk.SecretString(mnemonic.toCharArray), NFKD)
+    val normalizedMnemonic = normalize(ArrayCharSequence(mnemonic.toCharArray), NFKD)
     val normalizedPass = normalize(s"mnemonic${passOpt.getOrElse("")}", NFKD)
     CryptoFacade.generatePbkdf2Key(normalizedMnemonic, normalizedPass)
   }
