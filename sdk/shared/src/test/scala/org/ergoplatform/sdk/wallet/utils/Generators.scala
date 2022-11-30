@@ -13,7 +13,6 @@ import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.{SByte, SType}
 import scorex.util._
 
-import scala.collection.IndexedSeq
 import org.ergoplatform.{ErgoBox, ErgoBoxCandidate, ErgoTreePredef, UnsignedErgoLikeTransaction, UnsignedInput}
 import sigmastate.eval.Extensions._
 import scorex.util.{ModifierId, bytesToId}
@@ -22,7 +21,6 @@ import sigmastate.helpers.TestingHelpers._
 import org.ergoplatform.ErgoBox.TokenId
 import org.ergoplatform.sdk.wallet.mnemonic.Mnemonic
 import scorex.crypto.hash.Digest32
-
 
 trait Generators {
 

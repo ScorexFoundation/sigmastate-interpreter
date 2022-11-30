@@ -5,10 +5,9 @@ import sigmastate.basics.DLogProtocol.{DLogProverInput, ProveDlog}
 
 import java.util
 import java.util.{Objects, List => JList}
-import sigmastate.basics.{DiffieHellmanTupleProverInput, SigmaProtocol, SigmaProtocolCommonInput, SigmaProtocolPrivateInput}
+import sigmastate.basics.{DiffieHellmanTupleProverInput, SigmaProtocolPrivateInput}
 import org.ergoplatform._
 import org.ergoplatform.sdk.JavaHelpers.{TokenColl, UniversalConverter}
-import org.ergoplatform.sdk.ReducedInputData.createReductionResult
 import sigmastate.Values.{ErgoTree, SigmaBoolean}
 
 import scala.util.Try
@@ -25,7 +24,7 @@ import org.ergoplatform.sdk.wallet.secrets.ExtendedSecretKey
 import scalan.util.Extensions.LongOps
 import sigmastate.{AvlTreeData, VersionContext}
 
-import scala.collection.{IndexedSeq, mutable}
+import scala.collection.mutable
 
 /**
  * A class which holds secrets and can sign transactions (aka generate proofs).
@@ -44,7 +43,7 @@ class AppkitProvingInterpreter(
   override type CTX = ErgoLikeContext
   import org.ergoplatform.sdk.Iso._
 
-  val secrets: Seq[SigmaProtocolPrivateInput[_ <: SigmaProtocol[_], _ <: SigmaProtocolCommonInput[_]]] = {
+  val secrets: Seq[SigmaProtocolPrivateInput[_, _]] = {
     val dlogs: IndexedSeq[DLogProverInput] = secretKeys.map(_.privateInput)
     dlogs ++ dLogInputs ++ dhtInputs
   }
@@ -170,7 +169,7 @@ class AppkitProvingInterpreter(
       limit = maxCost, msg = s"when adding assets cost of $totalAssetsAccessCost")
 
     var currentCost = txCost
-    val reducedInputs = mutable.ArrayBuilder.make[ReducedInputData]()
+    val reducedInputs = mutable.ArrayBuilder.make[ReducedInputData]
 
     for ((inputBox, boxIdx) <- boxesToSpend.zipWithIndex) {
       val unsignedInput = unsignedTx.inputs(boxIdx)
@@ -216,7 +215,7 @@ class AppkitProvingInterpreter(
   def signReduced(
           reducedTx: ReducedErgoLikeTransaction,
           baseCost: Int): (ErgoLikeTransaction, Int) = {
-    val provedInputs = mutable.ArrayBuilder.make[Input]()
+    val provedInputs = mutable.ArrayBuilder.make[Input]
     val unsignedTx = reducedTx.unsignedTx
 
     val maxCost = params.maxBlockCost

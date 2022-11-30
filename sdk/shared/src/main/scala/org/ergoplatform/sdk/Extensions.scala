@@ -5,7 +5,7 @@ import scalan.RType
 import scalan.rtypeToClassTag // actually required
 import special.collection.{Coll, CollBuilder, PairColl}
 
-import scala.collection.generic.CanBuildFrom
+import scala.collection.compat.BuildFrom
 import scala.collection.{GenIterable, immutable}
 import scala.reflect.ClassTag
 
@@ -20,7 +20,7 @@ object Extensions {
       *
       * @returns one item for each group in a new collection of (K,V) pairs. */
     def mapReduce[K, V](map: A => (K, V))(reduce: (V, V) => V)
-        (implicit cbf: CanBuildFrom[Source[A], (K, V), Source[(K, V)]]): Source[(K, V)] = {
+        (implicit cbf: BuildFrom[Source[A], (K, V), Source[(K, V)]]): Source[(K, V)] = {
       val result = scala.collection.mutable.LinkedHashMap.empty[K, V]
       xs.foreach { x =>
         val (key, value) = map(x)
@@ -28,7 +28,7 @@ object Extensions {
         result.update(key, reduced)
       }
 
-      val b = cbf()
+      val b = cbf.newBuilder(xs)
       for ( kv <- result ) b += kv
       b.result()
     }
@@ -102,7 +102,7 @@ object Extensions {
       val b = coll.builder
       implicit val tA = coll.tItem
       val res = coll.toArray.groupBy(key).mapValues(b.fromArray(_))
-      b.fromMap(res)
+      b.fromMap(res.toMap)
     }
 
     /** Partitions this collection into a map of collections according to some
@@ -123,7 +123,7 @@ object Extensions {
       implicit val ctV: ClassTag[V] = RType[V].classTag
       val b = coll.builder
       val res = coll.toArray.groupBy(key).mapValues(arr => b.fromArray(arr.map(proj)))
-      b.fromMap(res)
+      b.fromMap(res.toMap)
     }
 
   }

@@ -109,5 +109,7 @@ object Utils {
     override def compare(x: A, y: A): Int = notSupported
 
     private def notSupported = throw new NotImplementedError("operation is not supported")
+
+    def parseString(str: String): Option[A] = throw new NotImplementedError("operation is not supported")
   }
 }
