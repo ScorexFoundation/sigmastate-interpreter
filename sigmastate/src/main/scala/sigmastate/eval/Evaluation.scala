@@ -15,6 +15,9 @@ import java.math.BigInteger
 import scala.reflect.ClassTag
 import scala.util.Try
 
+// TODO refactor: find better place for this methods after code cleanup and repo reorganization
+
+/** Helper methods used as part of ErgoTree evaluation. */
 object Evaluation {
   import special.collection._
   import special.sigma._

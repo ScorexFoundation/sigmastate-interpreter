@@ -600,6 +600,7 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
   }
 
   property("fromBaseX string decoding") {
+    parse("""fromBase16("1111")""") shouldBe Apply(FromBase16Func.symNoType, IndexedSeq(StringConstant("1111")))
     parse("""fromBase58("111")""") shouldBe Apply(FromBase58Func.symNoType, IndexedSeq(StringConstant("111")))
     parse("""fromBase64("111")""") shouldBe Apply(FromBase64Func.symNoType, IndexedSeq(StringConstant("111")))
   }

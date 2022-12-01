@@ -5,6 +5,12 @@ import sigmastate.lang.TransformingSigmaBuilder
 import java.util.concurrent.locks.ReentrantLock
 import scala.util.Try
 
+/** Main interface of graph IR context which contain both GraphBuilding and TreeBuilding
+  * methods.
+  * It is not used in v5.0 interpreter and thus not part of consensus.
+  *
+  * @see RuntimeIRContext, CompiletimeIRContext
+  */
 trait IRContext extends TreeBuilding with GraphBuilding {
   import SigmaProp._
 
@@ -21,6 +27,7 @@ trait IRContext extends TreeBuilding with GraphBuilding {
     "noCostPropagationPass",
     Pass.defaultPassConfig.copy(constantPropagation = false))
 
+  /** The value of Global ErgoTree operation */
   val sigmaDslBuilderValue = CostingSigmaDslBuilder
 
   /** Finds SigmaProp.isProven method calls in the given Lambda `f` */

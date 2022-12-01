@@ -447,15 +447,21 @@ object Values {
       TaggedVariableNode(varId, tpe)
   }
 
-  /** ErgoTree node that represent a literal of Unit type. */
-  case class UnitConstant() extends EvaluatedValue[SUnit.type] {
-    override def tpe = SUnit
-    val value = ()
-    override def companion: ValueCompanion = UnitConstant
-  }
-  object UnitConstant extends ValueCompanion {
-    override def opCode = UnitConstantCode
-    override def costKind = Constant.costKind
+  /** High-level interface to internal representation of Unit constants in ErgoTree. */
+  object UnitConstant {
+    /** ErgoTree node that represent a literal of Unit type. It is global immutable value
+      * which should be reused wherever necessary to avoid allocations.
+      */
+    val instance = apply()
+
+    /** Constucts a fresh new instance of Unit literal node. */
+    def apply() = Constant[SUnit.type]((), SUnit)
+
+    /** Recognizer to pattern match on Unit constant literal nodes (aka Unit constants). */
+    def unapply(node: SValue): Boolean = node match {
+      case ConstantNode(_, SUnit) => true
+      case _ => false
+    }
   }
 
   type BoolValue = Value[SBoolean.type]
