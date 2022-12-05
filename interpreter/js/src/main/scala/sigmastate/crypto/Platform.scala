@@ -112,6 +112,8 @@ object Platform {
 
   def generatePbkdf2Key(normalizedMnemonic: String, normalizedPass: String): Array[Byte] = ???
 
+  def normalizeChars(chars: Array[Char]): String = ???
+
   /** Checks that the type of the value corresponds to the descriptor `tpe`.
     * If the value has complex structure only root type constructor is checked.
     * NOTE, this is surface check with possible false positives, but it is ok

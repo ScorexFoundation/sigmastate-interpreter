@@ -12,14 +12,12 @@ import sigmastate.Values.{ByteArrayConstant, CollectionConstant, ErgoTree, Evalu
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.{SByte, SType}
 import scorex.util._
-
 import org.ergoplatform.{ErgoBox, ErgoBoxCandidate, ErgoTreePredef, UnsignedErgoLikeTransaction, UnsignedInput}
 import sigmastate.eval.Extensions._
 import scorex.util.{ModifierId, bytesToId}
 import sigmastate.eval._
 import sigmastate.helpers.TestingHelpers._
 import org.ergoplatform.ErgoBox.TokenId
-import org.ergoplatform.sdk.wallet.mnemonic.Mnemonic
 import scorex.crypto.hash.Digest32
 
 trait Generators {
@@ -35,7 +33,7 @@ trait Generators {
     c <- Gen.posNum[Int]
   } yield EncryptionSettings(prf, c, 256)
 
-  val entropyGen: Gen[Array[Byte]] = Gen.oneOf(Mnemonic.AllowedEntropyLengths).map(scorex.utils.Random.randomBytes)
+  val entropyGen: Gen[Array[Byte]] = Gen.oneOf(Constants.AllowedEntropyLengths).map(scorex.utils.Random.randomBytes)
 
   val derivationPathGen: Gen[DerivationPath] = for {
     isPublic <- Gen.oneOf(Seq(true, false))

@@ -39,4 +39,10 @@ object Constants {
     * Post - EIP3 derivation path
     */
   val eip3DerivationPath: DerivationPath = DerivationPath.fromEncoded("m/44'/429'/0'/0/0").get
+
+  val MnemonicSentenceSizes: Seq[Int] = Seq(12, 15, 18, 21, 24)
+
+  val AllowedStrengths: Seq[Int] = Seq(128, 160, 192, 224, 256)
+
+  val AllowedEntropyLengths: Seq[Int] = AllowedStrengths.map(_ / 8)
 }

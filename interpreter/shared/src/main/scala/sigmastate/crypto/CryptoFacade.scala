@@ -29,4 +29,6 @@ object CryptoFacade {
   def createSecureRandom(): Random = Platform.createSecureRandom()
   def hashHmacSHA512(key: Array[Byte], data: Array[Byte]): Array[Byte] = Platform.hashHmacSHA512(key, data)
   def generatePbkdf2Key(normalizedMnemonic: String, normalizedPass: String): Array[Byte] = Platform.generatePbkdf2Key(normalizedMnemonic, normalizedPass)
+  /** Normalize a sequence of char values using NFKD normalization form. */
+  def normalizeChars(chars: Array[Char]): String = Platform.normalizeChars(chars)
 }

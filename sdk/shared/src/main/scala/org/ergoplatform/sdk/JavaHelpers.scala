@@ -18,8 +18,6 @@ import sigmastate.utils.Helpers._  // don't remove, required for Scala 2.11
 
 import java.util
 import java.lang.{Boolean => JBoolean, Byte => JByte, Integer => JInt, Long => JLong, Short => JShort, String => JString}
-import java.text.Normalizer.Form.NFKD
-import java.text.Normalizer.normalize
 import java.util.{List => JList, Map => JMap}
 import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
 import scorex.util.encode.Base16
@@ -323,8 +321,8 @@ object JavaHelpers {
     * This method should be equivalent to Mnemonic.toSeed().
     */
   def mnemonicToSeed(mnemonic: String, passOpt: Option[String] = None): Array[Byte] = {
-    val normalizedMnemonic = normalize(ArrayCharSequence(mnemonic.toCharArray), NFKD)
-    val normalizedPass = normalize(s"mnemonic${passOpt.getOrElse("")}", NFKD)
+    val normalizedMnemonic = CryptoFacade.normalizeChars(mnemonic.toCharArray)
+    val normalizedPass = CryptoFacade.normalizeChars(s"mnemonic${passOpt.getOrElse("")}".toCharArray)
     CryptoFacade.generatePbkdf2Key(normalizedMnemonic, normalizedPass)
   }
 

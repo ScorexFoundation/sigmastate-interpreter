@@ -15,6 +15,9 @@ import sigmastate.basics.BcDlogGroup
 import special.collection.Coll
 import special.sigma._
 
+import java.text.Normalizer.Form.NFKD
+import java.text.Normalizer
+
 /** JVM specific implementation of crypto methods*/
 object Platform {
   def getXCoord(p: Ecp): ECFieldElem = ECFieldElem(p.value.getXCoord)
@@ -66,6 +69,9 @@ object Platform {
 
   def hashHmacSHA512(key: Array[Byte], data: Array[Byte]): Array[Byte] = HmacSHA512.hash(key, data)
 
+  /** Seed generation using on bouncycastle implementation.
+    * See https://github.com/ergoplatform/ergo-appkit/issues/82
+    */
   def generatePbkdf2Key(normalizedMnemonic: String, normalizedPass: String): Array[Byte] = {
     val gen = new PKCS5S2ParametersGenerator(new SHA512Digest)
     gen.init(
@@ -74,6 +80,11 @@ object Platform {
       CryptoFacade.Pbkdf2Iterations)
     val dk = gen.generateDerivedParameters(CryptoFacade.Pbkdf2KeyLength).asInstanceOf[KeyParameter].getKey
     dk
+  }
+
+  /** Implementation that uses [[java.text.Normalizer]] */
+  def normalizeChars(chars: Array[Char]): String = {
+    Normalizer.normalize(ArrayCharSequence(chars), NFKD)
   }
 
   /** Checks that the type of the value corresponds to the descriptor `tpe`.
