@@ -10051,7 +10051,7 @@ class SigmaDslSpecification extends SigmaDslTesting
        |   def apply(in: (Int => Int, Int)) = in._1(in._2)
        |   xs.map { (x: Int) => apply((inc, x)) }
        | }
-       |""".stripMargin,
+       |""".stripMargin
     )
 
     // TODO v6.0: Add support of SFunc in TypeSerializer
