@@ -84,4 +84,11 @@ class CryptoFacadeSpec extends AnyPropSpec with Matchers with CryptoTesting {
     CryptoFacadeJs.getAffineXCoord(p1) shouldBe p1.x
     CryptoFacadeJs.getAffineYCoord(p1) shouldBe p1.y
   }
+
+  property("CryptoFacade.hashHmacSHA512") {
+    val key = Uint8Array.from(bytesToJsShorts(CryptoFacade.BitcoinSeed))
+    val data = Uint8Array.from(bytesToJsShorts("abc".getBytes(CryptoFacade.Encoding)))
+    val res = utils.bytesToHex(CryptoFacadeJs.hashHmacSHA512(key, data))
+    res shouldBe "2c15e87cde0f876fd8f060993748330cbe5f37c8bb3355e8ef44cea57890ec1d9b3274ef2b67bbe046cf8a012fba69796ec7803b1cc227521b9f5191e80a7da2"
+  }
 }

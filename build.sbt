@@ -160,6 +160,8 @@ lazy val commonDependenies2 = libraryDependencies ++= Seq(
   "org.scala-lang.modules" %%% "scala-collection-compat" % "2.7.0"
 )
 
+val sigmajsCryptoFacadeVersion = "0.0.4"
+
 lazy val common = crossProject(JVMPlatform, JSPlatform)
   .in(file("common"))
   .settings(commonSettings ++ testSettings2,
@@ -229,7 +231,7 @@ lazy val interpreterJS = interpreter.js
     .settings(
       //      scalaJSUseMainModuleInitializer := true,
       Compile / npmDependencies ++= Seq(
-        "sigmajs-crypto-facade" -> "0.0.3"
+        "sigmajs-crypto-facade" -> sigmajsCryptoFacadeVersion
       )
     )
 
@@ -269,7 +271,7 @@ lazy val sdkJS = sdk.js
             .withModuleKind(ModuleKind.CommonJSModule)
       },
       Compile / npmDependencies ++= Seq(
-        "sigmajs-crypto-facade" -> "0.0.4"
+        "sigmajs-crypto-facade" -> sigmajsCryptoFacadeVersion
       )
     )
 

@@ -43,6 +43,8 @@ object CryptoFacadeJs extends js.Object {
   def getAffineXCoord(point: Platform.Point): js.BigInt = js.native
 
   def getAffineYCoord(point: Platform.Point): js.BigInt = js.native
+
+  def hashHmacSHA512(key: Uint8Array, data: Uint8Array): Uint8Array = js.native
 }
 
 @js.native
