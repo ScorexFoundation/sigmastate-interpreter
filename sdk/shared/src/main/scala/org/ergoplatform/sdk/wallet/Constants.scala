@@ -1,16 +1,11 @@
 package org.ergoplatform.sdk.wallet
 
 import org.ergoplatform.sdk.wallet.secrets.DerivationPath
-import sigmastate.crypto.CryptoFacade
 
 object Constants {
-  /** part of the protocol, do not change */
-  val SecretKeyLength = 32
 
   /** part of the protocol, do not change */
   val ModifierIdLength = 32
-
-  val BitcoinSeed: Array[Byte] = "Bitcoin seed".getBytes(CryptoFacade.Encoding)
 
   /**
     * [See EIP-3 https://github.com/ergoplatform/eips/blob/master/eip-0003.md ]

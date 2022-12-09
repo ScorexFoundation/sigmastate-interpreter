@@ -269,7 +269,7 @@ lazy val sdkJS = sdk.js
             .withModuleKind(ModuleKind.CommonJSModule)
       },
       Compile / npmDependencies ++= Seq(
-        "sigmajs-crypto-facade" -> "0.0.3"
+        "sigmajs-crypto-facade" -> "0.0.4"
       )
     )
 

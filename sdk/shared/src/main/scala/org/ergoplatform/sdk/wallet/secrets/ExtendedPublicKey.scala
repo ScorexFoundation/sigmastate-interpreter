@@ -53,7 +53,7 @@ object ExtendedPublicKey {
     require(!Index.isHardened(idx), "Hardened public keys derivation is not supported")
     val (childKeyProto, childChainCode) = CryptoFacade
         .hashHmacSHA512(parentKey.chainCode, parentKey.keyBytes ++ Index.serializeIndex(idx))
-        .splitAt(Constants.SecretKeyLength)
+        .splitAt(CryptoFacade.SecretKeyLength)
     val childKeyProtoDecoded = BigIntegers.fromUnsignedByteArray(childKeyProto)
     val childKey = CryptoFacade.multiplyPoints(DLogProverInput(childKeyProtoDecoded).publicImage.value, parentKey.key.value)
     if (childKeyProtoDecoded.compareTo(CryptoConstants.groupOrder) >= 0 || CryptoFacade.isInfinityPoint(childKey)) {
@@ -70,7 +70,7 @@ object ExtendedPublicKeySerializer extends SigmaSerializer[ExtendedPublicKey, Ex
   import scorex.util.Extensions._
 
   //ASN.1 encoding for secp256k1 points - 1 byte for sign + 32 bytes for x-coordinate of the point
-  val PublicKeyBytesSize: Int = Constants.SecretKeyLength + 1
+  val PublicKeyBytesSize: Int = CryptoFacade.SecretKeyLength + 1
 
   override def serialize(obj: ExtendedPublicKey, w: SigmaByteWriter): Unit = {
     w.putBytes(obj.keyBytes)
@@ -82,7 +82,7 @@ object ExtendedPublicKeySerializer extends SigmaSerializer[ExtendedPublicKey, Ex
 
   override def parse(r: SigmaByteReader): ExtendedPublicKey = {
     val keyBytes = r.getBytes(PublicKeyBytesSize)
-    val chainCode = r.getBytes(Constants.SecretKeyLength)
+    val chainCode = r.getBytes(CryptoFacade.SecretKeyLength)
     val pathLen = r.getUInt().toIntExact
     val path = DerivationPathSerializer.fromBytes(r.getBytes(pathLen))
     new ExtendedPublicKey(keyBytes, chainCode, path)

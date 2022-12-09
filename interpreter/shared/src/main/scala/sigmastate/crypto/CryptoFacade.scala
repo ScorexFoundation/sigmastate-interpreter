@@ -6,6 +6,12 @@ import scala.util.Random
 object CryptoFacade {
   val Encoding = "UTF-8"
 
+  /** part of the protocol, do not change */
+  val SecretKeyLength = 32
+
+  /** Used as the key parameter of hashHmacSHA512 */
+  val BitcoinSeed: Array[Byte] = "Bitcoin seed".getBytes(Encoding)
+
   val Pbkdf2Algorithm = "PBKDF2WithHmacSHA512"
 
   val Pbkdf2Iterations = 2048 // number of iteration specified in BIP39 standard.

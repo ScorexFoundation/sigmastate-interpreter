@@ -19,6 +19,7 @@ import sigmastate.eval._
 import sigmastate.helpers.TestingHelpers._
 import org.ergoplatform.ErgoBox.TokenId
 import scorex.crypto.hash.Digest32
+import sigmastate.crypto.CryptoFacade
 
 trait Generators {
 
@@ -130,7 +131,7 @@ trait Generators {
   } yield DerivationPath(0 +: indices, isPublic)
 
   def extendedSecretGen: Gen[ExtendedSecretKey] = for {
-    seed <- Gen.const(Constants.SecretKeyLength).map(scorex.utils.Random.randomBytes)
+    seed <- Gen.const(CryptoFacade.SecretKeyLength).map(scorex.utils.Random.randomBytes)
   } yield ExtendedSecretKey.deriveMasterKey(seed, usePre1627KeyDerivation = false)
 
   def extendedPubKeyGen: Gen[ExtendedPublicKey] = extendedSecretGen.map(_.publicKey)

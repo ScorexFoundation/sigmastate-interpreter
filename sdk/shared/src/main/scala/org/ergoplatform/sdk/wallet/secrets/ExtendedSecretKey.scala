@@ -62,7 +62,7 @@ object ExtendedSecretKey {
       else CryptoFacade.getEncodedPoint(parentKey.privateInput.publicImage.value, true)
     val (childKeyProto, childChainCode) = CryptoFacade
         .hashHmacSHA512(parentKey.chainCode, keyCoded ++ Index.serializeIndex(idx))
-        .splitAt(Constants.SecretKeyLength)
+        .splitAt(CryptoFacade.SecretKeyLength)
     val childKeyProtoDecoded = BigIntegers.fromUnsignedByteArray(childKeyProto)
     val childKey = childKeyProtoDecoded
       .add(BigIntegers.fromUnsignedByteArray(parentKey.keyBytes))
@@ -76,7 +76,7 @@ object ExtendedSecretKey {
         BigIntegers.asUnsignedByteArray(childKey)
       } else {
         // padded with leading zeroes to 32 bytes
-        BigIntegers.asUnsignedByteArray(Constants.SecretKeyLength, childKey)
+        BigIntegers.asUnsignedByteArray(CryptoFacade.SecretKeyLength, childKey)
       }
       new ExtendedSecretKey(keyBytes, childChainCode, parentKey.usePre1627KeyDerivation, parentKey.path.extended(idx))
       }
@@ -97,8 +97,8 @@ object ExtendedSecretKey {
    */
   def deriveMasterKey(seed: Array[Byte], usePre1627KeyDerivation: Boolean): ExtendedSecretKey = {
     val (masterKey, chainCode) = CryptoFacade
-        .hashHmacSHA512(Constants.BitcoinSeed, seed)
-        .splitAt(Constants.SecretKeyLength)
+        .hashHmacSHA512(CryptoFacade.BitcoinSeed, seed)
+        .splitAt(CryptoFacade.SecretKeyLength)
     new ExtendedSecretKey(masterKey, chainCode, usePre1627KeyDerivation, DerivationPath.MasterPath)
   }
 
@@ -117,8 +117,8 @@ object ExtendedSecretKeySerializer extends SigmaSerializer[ExtendedSecretKey, Ex
   }
 
   override def parse(r: SigmaByteReader): ExtendedSecretKey = {
-    val keyBytes = r.getBytes(Constants.SecretKeyLength)
-    val chainCode = r.getBytes(Constants.SecretKeyLength)
+    val keyBytes = r.getBytes(CryptoFacade.SecretKeyLength)
+    val chainCode = r.getBytes(CryptoFacade.SecretKeyLength)
     val pathLen = r.getUInt().toIntExact
     val path = DerivationPathSerializer.fromBytes(r.getBytes(pathLen))
     new ExtendedSecretKey(keyBytes, chainCode, false, path)
