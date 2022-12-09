@@ -91,4 +91,11 @@ class CryptoFacadeJsSpec extends AnyPropSpec with Matchers with CryptoTesting {
     val res = utils.bytesToHex(CryptoFacadeJs.hashHmacSHA512(key, data))
     res shouldBe "2c15e87cde0f876fd8f060993748330cbe5f37c8bb3355e8ef44cea57890ec1d9b3274ef2b67bbe046cf8a012fba69796ec7803b1cc227521b9f5191e80a7da2"
   }
+
+  property("CryptoFacade.generatePbkdf2Key") {
+    val mnemonic = "slow silly start wash bundle suffer bulb ancient height spin express remind today effort helmet"
+    val password = "pwd"
+    val res = utils.bytesToHex(CryptoFacadeJs.generatePbkdf2Key(mnemonic, password))
+    res shouldBe "0a8ea2ea0c4c12a9df88b005bda00c4de51ff36834b5fcd6a83667c371ad1da94bca1798690d87f2603b8f51d5ae025209e31f6cf81e12b84e4c543d236e58d0"
+  }
 }

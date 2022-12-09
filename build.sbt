@@ -160,7 +160,7 @@ lazy val commonDependenies2 = libraryDependencies ++= Seq(
   "org.scala-lang.modules" %%% "scala-collection-compat" % "2.7.0"
 )
 
-val sigmajsCryptoFacadeVersion = "0.0.4"
+val sigmajsCryptoFacadeVersion = "0.0.5"
 
 lazy val common = crossProject(JVMPlatform, JSPlatform)
   .in(file("common"))

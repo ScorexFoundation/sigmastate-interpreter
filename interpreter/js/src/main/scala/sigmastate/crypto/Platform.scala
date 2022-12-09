@@ -124,7 +124,10 @@ object Platform {
     Uint8ArrayToBytes(hash)
   }
 
-  def generatePbkdf2Key(normalizedMnemonic: String, normalizedPass: String): Array[Byte] = ???
+  def generatePbkdf2Key(normalizedMnemonic: String, normalizedPass: String): Array[Byte] = {
+    val res = CryptoFacadeJs.generatePbkdf2Key(normalizedMnemonic, normalizedPass)
+    Uint8ArrayToBytes(res)
+  }
 
   def normalizeChars(chars: Array[Char]): String = {
     import js.JSStringOps._
