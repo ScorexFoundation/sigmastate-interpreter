@@ -22,6 +22,14 @@ object Platform {
     jsShorts.toArray[Short].map(x => x.toByte)
   }
 
+  def bytesToJsShorts(bytes: Array[Byte]): js.Array[Short] = {
+    js.Array(bytes.map(x => (x & 0xFF).toShort): _*)
+  }
+
+  def jsShortsToBytes(jsShorts: js.Array[Short]): Array[Byte] = {
+    jsShorts.toArray[Short].map(x => x.toByte)
+  }
+
   def getEncodedOfFieldElem(p: ECFieldElem): Array[Byte] = {
     Uint8ArrayToBytes(CryptoFacadeJs.getEncodedOfFieldElem(p.elem))
   }
@@ -108,7 +116,12 @@ object Platform {
 
   def createSecureRandom(): Random = new Random()
 
-  def hashHmacSHA512(key: Array[Byte], data: Array[Byte]): Array[Byte] = ???
+  def hashHmacSHA512(key: Array[Byte], data: Array[Byte]): Array[Byte] = {
+    val keyArg = Uint8Array.from(bytesToJsShorts(key))
+    val dataArg = Uint8Array.from(bytesToJsShorts(data))
+    val hash = CryptoFacadeJs.hashHmacSHA512(keyArg, dataArg)
+    Uint8ArrayToBytes(hash)
+  }
 
   def generatePbkdf2Key(normalizedMnemonic: String, normalizedPass: String): Array[Byte] = ???
 
