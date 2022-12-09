@@ -82,7 +82,8 @@ object Platform {
     dk
   }
 
-  /** Implementation that uses [[java.text.Normalizer]] */
+  /** Implementation that uses [[java.text.Normalizer]].
+    * See https://www.unicode.org/reports/tr15/  */
   def normalizeChars(chars: Array[Char]): String = {
     Normalizer.normalize(ArrayCharSequence(chars), NFKD)
   }

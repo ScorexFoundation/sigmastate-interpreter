@@ -8,6 +8,7 @@ import special.sigma._
 
 import java.math.BigInteger
 import scala.scalajs.js
+import scala.scalajs.js.UnicodeNormalizationForm
 import scala.scalajs.js.typedarray.Uint8Array
 import scala.util.Random
 
@@ -125,7 +126,10 @@ object Platform {
 
   def generatePbkdf2Key(normalizedMnemonic: String, normalizedPass: String): Array[Byte] = ???
 
-  def normalizeChars(chars: Array[Char]): String = ???
+  def normalizeChars(chars: Array[Char]): String = {
+    import js.JSStringOps._
+    String.valueOf(chars).normalize(UnicodeNormalizationForm.NFKD)
+  }
 
   /** Checks that the type of the value corresponds to the descriptor `tpe`.
     * If the value has complex structure only root type constructor is checked.
