@@ -7,7 +7,7 @@ import scorex.util.encode.Base16
 import scala.scalajs.js
 import scala.scalajs.js.typedarray.Uint8Array
 
-class CryptoFacadeSpec extends AnyPropSpec with Matchers with CryptoTesting {
+class CryptoFacadeJsSpec extends AnyPropSpec with Matchers with CryptoTesting {
   val p1 = Point.fromHex("0381c5275b1d50c39a0c36c4561c3a37bff1d87e37a9ad69eab029e426c0b1a8ac")
   val p2 = Point.fromHex("02198064ec24024bb8b300e20dd18e33cc1fccb0fea73940bd9a1d3d9d6c3ddd8f")
   val infinity = Point.ZERO
