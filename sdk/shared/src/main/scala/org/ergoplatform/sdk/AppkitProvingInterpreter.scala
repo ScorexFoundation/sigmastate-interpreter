@@ -284,26 +284,13 @@ case class TokenBalanceException(
   tokensDiff: TokenColl
 ) extends Exception(s"Input and output tokens are not balanced: $message")
 
-/** Represents data necessary to sign an input of an unsigend transaction.
+/** Represents data necessary to sign an input of an unsigned transaction.
   * @param reductionResult result of reducing input script to a sigma proposition
   * @param extension context extensions (aka context variables) used by script and which
   *                  are also necessary to verify the transaction on-chain. Extensions are
   *                  included in tx bytes, which are signed.
   */
 case class ReducedInputData(reductionResult: ReductionResult, extension: ContextExtension)
-
-object ReducedInputData {
-  /** Creates [[ReductionResult]] for the given blockVersion.
-    *
-    * @param blockVersion version of Ergo protocol (stored in block header)
-    * @param sb           sigma proposition (typically result of script reduction)
-    * @param cost         cost accumulated during reduction
-    */
-  def createReductionResult(blockVersion: Byte, sb: SigmaBoolean, cost: Long): ReductionResult = {
-    val scriptVersion = blockVersion - 1 // convert to script version
-    ReductionResult(sb, cost)
-  }
-}
 
 /** Represent `reduced` transaction, i.e. unsigned transaction where each unsigned input
   * is augmented with [[ReducedInputData]] which contains a script reduction result.
