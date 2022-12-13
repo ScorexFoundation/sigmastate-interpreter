@@ -32,7 +32,8 @@
   },
   "dependencies": {
     "sigmajs-crypto-facade": "0.0.3",
-    "bouncycastle-js": "0.1.8"
+    "bouncycastle-js": "0.1.8",
+    "@fleet-sdk/common": "0.1.0-alpha.14"
   },
   "devDependencies": {
     "jest": "^29.0.3",

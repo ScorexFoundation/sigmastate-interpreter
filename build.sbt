@@ -228,8 +228,11 @@ lazy val interpreter = crossProject(JVMPlatform, JSPlatform)
   )
 lazy val interpreterJS = interpreter.js
     .enablePlugins(ScalaJSBundlerPlugin)
+    .enablePlugins(ScalablyTypedConverterExternalNpmPlugin)
     .settings(
-      //      scalaJSUseMainModuleInitializer := true,
+      // how to setup ScalablyTyped https://youtu.be/hWUAVrNj65c?t=1397
+      externalNpm := {println(s"baseDirectory: ${baseDirectory.value}"); file(s"${baseDirectory.value}/../../sigma-js") },
+      stIgnore ++= List("bouncycastle-js"),
       Compile / npmDependencies ++= Seq(
         "sigmajs-crypto-facade" -> sigmajsCryptoFacadeVersion
       )
