@@ -433,9 +433,16 @@ class Box {
 Besides properties, every box can have up to 10 numbered registers.
 The following syntax is supported to access registers on box objects:
 ```
-box.R3[Int].get          // access R3 register, check that its value of type Int and return it
-box.R3[Int].isDefined    // check that value of R3 is defined and has type Int
-box.R3[Int].getOrElse(d) // access R3 register, check that its value of type Int, return it if defined, otherwise return `d`
+// access R3 register, check that its value of type Int and return it
+box.R3[Int].get         
+ 
+// check that value of R3 is defined and has type Int
+box.R3[Int].isDefined    
+
+// access R3 register, if it is defined and of type Int then return it, 
+// if not of type Int then throw exception, 
+// if not defined then return `d`
+box.R3[Int].getOrElse(d) 
 ```
 
 #### GroupElement
