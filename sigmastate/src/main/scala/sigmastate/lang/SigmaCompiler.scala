@@ -2,13 +2,17 @@ package sigmastate.lang
 
 import fastparse.core.Parsed
 import fastparse.core.Parsed.Success
+import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, rewrite, rule}
 import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
-import sigmastate.SType
+import org.ergoplatform.Global
 import sigmastate.Values.{SValue, Value}
 import sigmastate.eval.IRContext
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.SigmaPredef.PredefinedFuncRegistry
+import sigmastate.lang.Terms.MethodCall
 import sigmastate.lang.syntax.ParserException
+import sigmastate.utxo._
+import sigmastate.{Exponentiate, MultiplyGroup, SCollection, SGlobal, SGroupElement, SType, STypeVar, Xor}
 
 /**
   * @param networkPrefix    network prefix to decode an ergo address from string (PK op)
@@ -37,9 +41,8 @@ case class CompilerSettings(
 case class CompilerResult[Ctx <: IRContext](
   env: ScriptEnv,
   code: String,
-  calcF: Ctx#Ref[Ctx#Context => Any],
   compiledGraph: Ctx#Ref[Ctx#Context => Any],
-  calcTree: SValue,
+  /** Tree obtained from graph created by GraphBuilding */
   buildTree: SValue
 )
 
@@ -90,17 +93,55 @@ class SigmaCompiler(settings: CompilerSettings) {
   def compile(env: ScriptEnv, code: String)(implicit IR: IRContext): CompilerResult[IR.type] = {
     val typed = typecheck(env, code)
     val res = compileTyped(env, typed).copy(code = code)
-    assert(res.calcTree == res.buildTree)
     res
   }
 
   /** Compiles the given typed expression. */
   def compileTyped(env: ScriptEnv, typedExpr: SValue)(implicit IR: IRContext): CompilerResult[IR.type] = {
-    val IR.Pair(calcF, _) = IR.doCosting(env, typedExpr, true)
     val compiledGraph = IR.buildGraph(env, typedExpr)
-    val calcTree = IR.buildTree(calcF)
     val compiledTree = IR.buildTree(compiledGraph)
-    CompilerResult(env, "<no source code>", calcF, compiledGraph, calcTree, compiledTree)
+    CompilerResult(env, "<no source code>", compiledGraph, compiledTree)
+  }
+
+  /** Unlowering transformation, which replaces some operations with equivalent MethodCall
+    * node. This replacement is only defined for some operations.
+    * This is inverse to `lowering` which is performed during compilation.
+    */
+  def unlowerMethodCalls(expr: SValue): SValue = {
+    import SCollection._
+    val r = rule[Any]({
+      case MultiplyGroup(l, r) =>
+        MethodCall(l, SGroupElement.MultiplyMethod, Vector(r), Map())
+      case Exponentiate(l, r) =>
+        MethodCall(l, SGroupElement.ExponentiateMethod, Vector(r), Map())
+      case ForAll(xs, p) =>
+        MethodCall(xs, ForallMethod.withConcreteTypes(Map(tIV -> xs.tpe.elemType)), Vector(p), Map())
+      case Exists(xs, p) =>
+        MethodCall(xs, ExistsMethod.withConcreteTypes(Map(tIV -> xs.tpe.elemType)), Vector(p), Map())
+      case MapCollection(xs, f) =>
+        MethodCall(xs,
+          MapMethod.withConcreteTypes(Map(tIV -> xs.tpe.elemType, tOV -> f.tpe.tRange)),
+          Vector(f), Map())
+      case Fold(xs, z, op) =>
+        MethodCall(xs,
+          SCollection.FoldMethod.withConcreteTypes(Map(tIV -> xs.tpe.elemType, tOV -> z.tpe)),
+          Vector(z, op), Map())
+      case Slice(xs, from, until) =>
+        MethodCall(xs,
+          SCollection.SliceMethod.withConcreteTypes(Map(tIV -> xs.tpe.elemType)),
+          Vector(from, until), Map())
+      case Append(xs, ys) =>
+        MethodCall(xs,
+          SCollection.AppendMethod.withConcreteTypes(Map(tIV -> xs.tpe.elemType)),
+          Vector(ys), Map())
+      case Xor(l, r) =>
+        MethodCall(Global, SGlobal.xorMethod, Vector(l, r), Map())
+      case ByIndex(xs, index, Some(default)) =>
+        MethodCall(xs,
+          SCollection.GetOrElseMethod.withConcreteTypes(Map(tIV -> xs.tpe.elemType)),
+          Vector(index, default), Map())
+    })
+    rewrite(everywherebu(r))(expr)
   }
 }
 

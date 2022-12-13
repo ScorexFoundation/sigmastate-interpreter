@@ -77,23 +77,9 @@ trait TestsBase extends Matchers with VersionTesting {
 
   /** Check the given [[CompilerResult]] meets equality and sanity requirements. */
   def checkCompilerResult[Ctx <: IRContext](res: CompilerResult[Ctx])(implicit IR: IRContext): Unit = {
-    val okEqual = IR.alphaEqual(res.calcF.asInstanceOf[IR.Sym], res.compiledGraph.asInstanceOf[IR.Sym])
-    if (!okEqual) {
-      println(s"Different graphs for ${res.code}")
-    }
-    if (res.calcTree != res.buildTree) {
-      println(
-        s"""
-          |Script: ${res.code}
-          |OldTree: ------------
-          |${SigmaPPrint(res.calcTree, 150, 250)}
-          |NewTree: ------------
-          |${SigmaPPrint(res.buildTree, 150, 250)}
-          |""".stripMargin)
-      res.calcTree shouldBe res.buildTree
-    }
-    checkSerializationRoundTrip(res.calcTree)
+    checkSerializationRoundTrip(res.buildTree)
   }
+
 
   /** Compiles the given code and checks the resulting `prop` against `expected`. */
   def compileAndCheck(env: ScriptEnv, code: String, expected: SValue)

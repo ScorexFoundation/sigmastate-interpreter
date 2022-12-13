@@ -14,6 +14,18 @@ import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
 import sigmastate.lang.SigmaTyper
 
+/** Implementation of IR-graph to ErgoTree expression translation.
+  * This, in a sense, is inverse to [[GraphBuilding]], however roundtrip identity is not
+  * possible, because one of the goals of Tree -> Graph -> Tree translation is to perform
+  * size optimization of the resulting tree.
+  *
+  * The main optimizations that are achieved by Tree -> Graph -> Tree process:
+  * 1) Common Subexpression Elimination which is done in GraphBuilding
+  * 2) ValDef introduction minimization, which is done in TreeBuilding. The ValDef is
+  * introduced only for graph nodes (i.e. subcomputations) that have more than 1 usage.
+  *
+  * @see buildTree method
+  * */
 trait TreeBuilding extends RuntimeCosting { IR: IRContext =>
   import Liftables._
   import Context._
@@ -26,6 +38,7 @@ trait TreeBuilding extends RuntimeCosting { IR: IRContext =>
   import WOption._
   import GroupElement._
 
+  /** Convenience synonyms for easier pattern matching. */
   private val ContextM = ContextMethods
   private val SigmaM = SigmaPropMethods
   private val CollM = CollMethods
@@ -40,6 +53,7 @@ trait TreeBuilding extends RuntimeCosting { IR: IRContext =>
     * Each ValDef in current scope have entry in this map */
   type DefEnv = Map[Sym, (Int, SType)]
 
+  /** Recognizes arithmetic operation of graph IR and returns its ErgoTree code. */
   object IsArithOp {
     def unapply(op: EndoBinOp[_]): Option[OpCode] = op match {
       case _: NumericPlus[_]    => Some(PlusCode)
@@ -53,6 +67,9 @@ trait TreeBuilding extends RuntimeCosting { IR: IRContext =>
     }
   }
 
+  /** Recognizes comparison operation of graph IR and returns the corresponding ErgoTree
+    * builder function.
+    */
   object IsRelationOp {
     def unapply(op: BinOp[_,_]): Option[(SValue, SValue) => Value[SBoolean.type]] = op match {
       case _: Equals[_]       => Some(builder.mkEQ[SType])
@@ -65,6 +82,9 @@ trait TreeBuilding extends RuntimeCosting { IR: IRContext =>
     }
   }
 
+  /** Recognizes logical binary operation of graph IR and returns the corresponding
+    * ErgoTree builder function.
+    */
   object IsLogicalBinOp {
     def unapply(op: BinOp[_,_]): Option[(BoolValue, BoolValue) => Value[SBoolean.type]] = op match {
       case And => Some(builder.mkBinAnd)
@@ -74,6 +94,9 @@ trait TreeBuilding extends RuntimeCosting { IR: IRContext =>
     }
   }
 
+  /** Recognizes unary logical operation of graph IR and returns the corresponding
+    * ErgoTree builder function.
+    */
   object IsLogicalUnOp {
     def unapply(op: UnOp[_,_]): Option[BoolValue => BoolValue] = op match {
       case Not => Some({ v: BoolValue => builder.mkLogicalNot(v) })
@@ -81,6 +104,9 @@ trait TreeBuilding extends RuntimeCosting { IR: IRContext =>
     }
   }
 
+  /** Recognizes unary numeric operation of graph IR and returns the corresponding
+    * ErgoTree builder function.
+    */
   object IsNumericUnOp {
     def unapply(op: UnOp[_,_]): Option[SValue => SValue] = op match {
       case NumericNegate(_) => Some({ v: SValue => builder.mkNegation(v.asNumValue) })
@@ -88,6 +114,9 @@ trait TreeBuilding extends RuntimeCosting { IR: IRContext =>
     }
   }
 
+  /** Recognizes context property in the graph IR and returns the corresponding
+    * ErgoTree node.
+    */
   object IsContextProperty {
     def unapply(d: Def[_]): Option[SValue] = d match {
       case ContextM.HEIGHT(_) => Some(Height)
@@ -98,6 +127,9 @@ trait TreeBuilding extends RuntimeCosting { IR: IRContext =>
     }
   }
 
+  /** Recognizes special graph IR nodes which typically have many usages, but
+    * for which no ValDefs should be created.
+    */
   object IsInternalDef {
     def unapply(d: Def[_]): Option[Def[_]] = d match {
       case _: SigmaDslBuilder | _: CollBuilder | _: WSpecialPredefCompanion => Some(d)
@@ -105,6 +137,7 @@ trait TreeBuilding extends RuntimeCosting { IR: IRContext =>
     }
   }
 
+  /** Recognizes constants in graph IR. */
   object IsConstantDef {
     def unapply(d: Def[_]): Option[Def[_]] = d match {
       case _: Const[_] => Some(d)
@@ -179,6 +212,8 @@ trait TreeBuilding extends RuntimeCosting { IR: IRContext =>
         val col = colSyms.map(recurse(_).asValue[elemTpe.type])
         mkConcreteCollection[elemTpe.type](col.toArray[Value[elemTpe.type]], elemTpe)
       case CBM.xor(_, colSym1, colSym2) =>
+        mkXor(recurse(colSym1), recurse(colSym2))
+      case SDBM.xor(_, colSym1, colSym2) =>
         mkXor(recurse(colSym1), recurse(colSym2))
 
       case ContextM.getVar(_, Def(Const(id: Byte)), eVar) =>
@@ -402,8 +437,7 @@ trait TreeBuilding extends RuntimeCosting { IR: IRContext =>
     var curEnv = env
     for (s <- subG.schedule) {
       val d = s.node
-//      val nonRootLoop = LoopOperation.unapply(d).isDefined && !subG.roots.contains(s)
-      if ((mainG.hasManyUsagesGlobal(s)/* || nonRootLoop*/)
+      if (mainG.hasManyUsagesGlobal(s)
         && IsContextProperty.unapply(d).isEmpty
         && IsInternalDef.unapply(d).isEmpty
           // to increase effect of constant segregation we need to treat the constants specially
