@@ -31,12 +31,13 @@
     "prepublishOnly": "npm run clean && npm run copy-output"
   },
   "dependencies": {
-    "sigmajs-crypto-facade": "0.0.3",
+    "@fleet-sdk/common": "0.1.0-alpha.14",
     "bouncycastle-js": "0.1.8",
-    "@fleet-sdk/common": "0.1.0-alpha.14"
+    "sigmajs-crypto-facade": "0.0.3"
   },
   "devDependencies": {
     "jest": "^29.0.3",
-    "shx": "^0.3.4"
+    "shx": "^0.3.4",
+    "typescript": "^4.9.4"
   }
 }
