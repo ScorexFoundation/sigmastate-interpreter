@@ -19,7 +19,7 @@ class Prover {
   }
 }
 
-@JSExportTopLevel("Prover")
+@JSExportTopLevel("ReducedTransaction")
 class ReducedTransaction
 
 @JSExportTopLevel("ProverFactory")

@@ -92,7 +92,9 @@ trait ObjectGenerators extends TypeGenerators
   implicit lazy val arbContextExtension = Arbitrary(contextExtensionGen)
   implicit lazy val arbSerializedProverResult = Arbitrary(serializedProverResultGen)
   implicit lazy val arbUnsignedInput = Arbitrary(unsignedInputGen)
+  implicit lazy val arbDataInput = Arbitrary(dataInputGen)
   implicit lazy val arbInput = Arbitrary(inputGen)
+  implicit lazy val arbUnsignedErgoLikeTransaction = Arbitrary(unsignedErgoLikeTransactionGen)
 
   lazy val byteConstGen: Gen[ByteConstant] =
     arbByte.arbitrary.map { v => mkConstant[SByte.type](v, SByte) }
@@ -107,10 +109,12 @@ trait ObjectGenerators extends TypeGenerators
     arbString.arbitrary.map { v => mkConstant[SString.type](v, SString) }
   lazy val bigIntConstGen: Gen[BigIntConstant] =
     arbBigInt.arbitrary.map { v => mkConstant[SBigInt.type](v, SBigInt) }
+
   lazy val byteArrayConstGen: Gen[CollectionConstant[SByte.type]] = for {
     length <- Gen.chooseNum(1, 100)
     bytes <- Gen.listOfN(length, arbByte.arbitrary)
   } yield mkCollectionConstant[SByte.type](bytes.toArray, SByte)
+
   lazy val intArrayConstGen: Gen[CollectionConstant[SInt.type]] = for {
     length <- Gen.chooseNum(1, 100)
     ints <- Gen.listOfN(length, arbInt.arbitrary)
@@ -125,6 +129,11 @@ trait ObjectGenerators extends TypeGenerators
   lazy  val groupElementConstGen: Gen[GroupElementConstant] = for {
     p <- groupElementGen
   } yield mkConstant[SGroupElement.type](p, SGroupElement)
+
+  lazy val constantGen: Gen[Constant[SType]] =
+    Gen.oneOf(booleanConstGen, byteConstGen,
+      shortConstGen, intConstGen, longConstGen, bigIntConstGen, byteArrayConstGen,
+      intArrayConstGen, groupElementConstGen).asInstanceOf[Gen[Constant[SType]]]
 
   def taggedVar[T <: SType](implicit aT: Arbitrary[T]): Gen[TaggedVariable[T]] = for {
     t <- aT.arbitrary

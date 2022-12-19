@@ -9,10 +9,12 @@ import scorex.crypto.hash.Digest32
 import scorex.util.encode.Base16
 import sigmastate.SType
 import sigmastate.Values.Constant
-import sigmastate.eval.Evaluation
+import sigmastate.eval.{Colls, Evaluation}
 import sigmastate.interpreter.ContextExtension
 import sigmastate.serialization.{ErgoTreeSerializer, ValueSerializer}
+import special.collection.Coll
 import typings.fleetSdkCommon.commonMod.HexString
+import typings.fleetSdkCommon.registersMod.NonMandatoryRegisters
 import typings.fleetSdkCommon.{boxesMod, commonMod, contextExtensionMod, inputsMod, tokenMod}
 import typings.fleetSdkCommon.transactionsMod.UnsignedTransaction
 
@@ -97,17 +99,17 @@ object Isos {
   implicit val isoAmount: Iso[commonMod.Amount, Long] = new Iso[commonMod.Amount, Long] {
     override def to(x: commonMod.Amount): Long = x.asInstanceOf[Any] match {
       case s: String => BigInt(s).toLong
-      case n: js.BigInt => java.lang.Long.parseLong(n.toString(10))
+      case _ => java.lang.Long.parseLong(x.asInstanceOf[js.BigInt].toString(10))
     }
     override def from(x: Long): commonMod.Amount = x.toString
   }
 
-  implicit val isoToken: Iso[tokenMod.TokenAmount[commonMod.Amount], (TokenId, Long)] = new Iso[tokenMod.TokenAmount[commonMod.Amount], (TokenId, Long)] {
-    override def to(x: tokenMod.TokenAmount[commonMod.Amount]): (TokenId, Long) =
-      (Digest32 @@@ Base16.decode(x.tokenId).get, isoAmount.to(x.amount))
+  implicit val isoToken: Iso[tokenMod.TokenAmount[commonMod.Amount], (Coll[Byte], Long)] = new Iso[tokenMod.TokenAmount[commonMod.Amount], (Coll[Byte], Long)] {
+    override def to(x: tokenMod.TokenAmount[commonMod.Amount]): (Coll[Byte], Long) =
+      (Colls.fromArray(Base16.decode(x.tokenId).get), isoAmount.to(x.amount))
 
-    override def from(x: (TokenId, Long)): tokenMod.TokenAmount[commonMod.Amount] =
-      tokenMod.TokenAmount[commonMod.Amount](isoAmount.from(x._2), Base16.encode(x._1))
+    override def from(x: (Coll[Byte], Long)): tokenMod.TokenAmount[commonMod.Amount] =
+      tokenMod.TokenAmount[commonMod.Amount](isoAmount.from(x._2), Base16.encode(x._1.toArray))
   }
 
   implicit def isoUndefOr[A, B](implicit iso: Iso[A, B]): Iso[js.UndefOr[A], Option[B]] = new Iso[js.UndefOr[A], Option[B]] {
@@ -126,7 +128,10 @@ object Isos {
         },
         x.creationHeight.toInt,
         additionalTokens = {
-          val items = x.assets.map(isoToken.to)
+          val items = x.assets.map { a =>
+            val t = isoToken.to(a)
+            ((Digest32 @@ t._1.toArray), t._2)
+          }
           Colls.fromItems(items: _*)
         },
         additionalRegisters = {
@@ -147,7 +152,30 @@ object Isos {
     }
 
     override def from(x: ErgoBoxCandidate): boxesMod.BoxCandidate[commonMod.Amount] = {
-      ???
+      val ergoTree = ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(x.ergoTree)
+      val ergoTreeStr = Base16.encode(ergoTree)
+      val assets = x.additionalTokens.toArray.map { case (id, amount) =>
+        isoToken.from((Colls.fromArray(id), amount))
+      }
+      val regs = x.additionalRegisters
+      def regHexOpt(t: NonMandatoryRegisterId): Option[HexString] =
+        regs.get(t).map(v => isoHexStringToConstant.from(v.asInstanceOf[Constant[SType]]))
+
+      val resRegs = NonMandatoryRegisters()
+      regHexOpt(R4).foreach(resRegs.setR4(_))
+      regHexOpt(R5).foreach(resRegs.setR5(_))
+      regHexOpt(R6).foreach(resRegs.setR6(_))
+      regHexOpt(R7).foreach(resRegs.setR7(_))
+      regHexOpt(R8).foreach(resRegs.setR8(_))
+      regHexOpt(R9).foreach(resRegs.setR9(_))
+
+      boxesMod.BoxCandidate[commonMod.Amount](
+        ergoTree = ergoTreeStr,
+        value = isoAmount.from(x.value),
+        assets = js.Array(assets:_*),
+        creationHeight = x.creationHeight,
+        additionalRegisters = resRegs
+      )
     }
   }
 
@@ -161,6 +189,12 @@ object Isos {
           outputCandidates = a.outputs.map(isoBoxCandidate.to)
         )
       }
-      override def from(b: UnsignedErgoLikeTransaction): UnsignedTransaction = ???
+      override def from(b: UnsignedErgoLikeTransaction): UnsignedTransaction = {
+        UnsignedTransaction(
+          inputs = js.Array(b.inputs.map(isoUnsignedInput.from):_*),
+          dataInputs = js.Array(b.dataInputs.map(isoDataInput.from):_*),
+          outputs = js.Array(b.outputCandidates.map(isoBoxCandidate.from):_*)
+        )
+      }
     }
 }
