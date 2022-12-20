@@ -1,6 +1,7 @@
 package org.ergoplatform.sdk.js
 
 import org.ergoplatform.ErgoBox._
+import org.ergoplatform.sdk.Extensions.PairCollOps
 import org.ergoplatform.{DataInput, ErgoBox, ErgoBoxCandidate, UnsignedErgoLikeTransaction, UnsignedInput}
 import org.ergoplatform.sdk.Iso
 import org.ergoplatform.sdk.JavaHelpers.UniversalConverter
@@ -13,6 +14,7 @@ import sigmastate.eval.{Colls, Evaluation}
 import sigmastate.interpreter.ContextExtension
 import sigmastate.serialization.{ErgoTreeSerializer, ValueSerializer}
 import special.collection.Coll
+import typings.fleetSdkCommon.boxesMod.Box
 import typings.fleetSdkCommon.commonMod.HexString
 import typings.fleetSdkCommon.registersMod.NonMandatoryRegisters
 import typings.fleetSdkCommon.{boxesMod, commonMod, contextExtensionMod, inputsMod, tokenMod}
@@ -117,6 +119,16 @@ object Isos {
     override def from(x: Option[B]): js.UndefOr[A] = x.map(iso.from).orUndefined
   }
 
+  val isoTokenArray: Iso[js.Array[tokenMod.TokenAmount[commonMod.Amount]], Coll[(Coll[Byte], Long)]] =
+    new Iso[js.Array[tokenMod.TokenAmount[commonMod.Amount]], Coll[(Coll[Byte], Long)]] {
+      override def to(x: js.Array[tokenMod.TokenAmount[commonMod.Amount]]): Coll[(Coll[Byte], Long)] = {
+        Colls.fromArray(x.map(isoToken.to).toArray)
+      }
+      override def from(x: Coll[(Coll[Byte], Long)]): js.Array[tokenMod.TokenAmount[commonMod.Amount]] = {
+        js.Array(x.toArray.map(isoToken.from): _*)
+      }
+    }
+
   implicit val isoBoxCandidate: Iso[boxesMod.BoxCandidate[commonMod.Amount], ErgoBoxCandidate] = new Iso[boxesMod.BoxCandidate[commonMod.Amount], ErgoBoxCandidate] {
     import sigmastate.eval._
     override def to(x: boxesMod.BoxCandidate[commonMod.Amount]): ErgoBoxCandidate = {
@@ -128,11 +140,7 @@ object Isos {
         },
         x.creationHeight.toInt,
         additionalTokens = {
-          val items = x.assets.map { a =>
-            val t = isoToken.to(a)
-            ((Digest32 @@ t._1.toArray), t._2)
-          }
-          Colls.fromItems(items: _*)
+          isoTokenArray.to(x.assets).mapFirst(id => Digest32 @@ id.toArray)
         },
         additionalRegisters = {
           val regs = Seq(
@@ -154,9 +162,7 @@ object Isos {
     override def from(x: ErgoBoxCandidate): boxesMod.BoxCandidate[commonMod.Amount] = {
       val ergoTree = ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(x.ergoTree)
       val ergoTreeStr = Base16.encode(ergoTree)
-      val assets = x.additionalTokens.toArray.map { case (id, amount) =>
-        isoToken.from((Colls.fromArray(id), amount))
-      }
+      val assets = isoTokenArray.from(x.additionalTokens.mapFirst(Colls.fromArray(_)))
       val regs = x.additionalRegisters
       def regHexOpt(t: NonMandatoryRegisterId): Option[HexString] =
         regs.get(t).map(v => isoHexStringToConstant.from(v.asInstanceOf[Constant[SType]]))
@@ -197,4 +203,36 @@ object Isos {
         )
       }
     }
+
+//  val isoBox: Iso[Box[commonMod.Amount], ErgoBox] = new Iso[Box[commonMod.Amount], ErgoBox] {
+//    override def to(x: Box[commonMod.Amount]): ErgoBox = {
+//      val ergoBox = new ErgoBox(
+//        value = isoAmount.to(x.value),
+//        ergoTree = {
+//          val bytes = Base16.decode(x.ergoTree).get
+//          ErgoTreeSerializer.DefaultSerializer.deserializeErgoTree(bytes)
+//        },
+//        creationHeight = x.creationHeight.toInt,
+//        additionalTokens = isoTokenArray.to(x.assets).mapFirst(id => Digest32 @@ id.toArray) ,
+//        additionalRegisters = {
+//          val regs = Seq(
+//            x.additionalRegisters.R4 -> R4,
+//            x.additionalRegisters.R5 -> R5,
+//            x.additionalRegisters.R6 -> R6,
+//            x.additionalRegisters.R7 -> R7,
+//            x.additionalRegisters.R8 -> R8,
+//            x.additionalRegisters.R9 -> R9
+//          ).collect {
+//            case (regOpt, id) if regOpt.isDefined => id -> isoHexStringToConstant.to(regOpt.get)
+//          }
+//          Map(regs:_*)
+//        }
+//      )
+//      ergoBox
+//    }
+//
+//    override def from(x: ErgoBox): Box[commonMod.Amount] = {
+//      ???
+//    }
+//  }
 }

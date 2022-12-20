@@ -337,10 +337,7 @@ trait ObjectGenerators extends TypeGenerators
     Gen.containerOfN[Array, T](n, g)
   }
 
-  def ergoBoxCandidateGen(availableTokens: Seq[Digest32]): Gen[ErgoBoxCandidate] = for {
-    l <- arbLong.arbitrary
-    b <- ergoTreeGen.filter(t => t.bytes.length < MaxPropositionBytes.value)
-    ar <- additionalRegistersGen
+  def ergoBoxTokens(availableTokens: Seq[Digest32]): Gen[Coll[Token]] = for {
     tokens <-
       if(availableTokens.nonEmpty) {
         for {
@@ -348,11 +345,18 @@ trait ObjectGenerators extends TypeGenerators
           ts <- arrayOfN(tokensCount, Gen.oneOf(availableTokens).map(_.toColl))
         } yield ts.distinct.map(coll => Digest32 @@ coll.toArray)
       } else {
-        Gen.oneOf(Seq(Array[Digest32]()))
+        Gen.const(Array.empty[Digest32])
       }
     tokenAmounts <- arrayOfN(tokens.length, Gen.oneOf(1, 500, 20000, 10000000, Long.MaxValue))
+  } yield tokens.toColl.zip(tokenAmounts.toColl)
+
+  def ergoBoxCandidateGen(availableTokens: Seq[Digest32]): Gen[ErgoBoxCandidate] = for {
+    l <- arbLong.arbitrary
+    b <- ergoTreeGen.filter(t => t.bytes.length < MaxPropositionBytes.value)
+    ar <- additionalRegistersGen
+    tokens <- ergoBoxTokens(availableTokens)
     creationHeight <- heightGen
-  } yield new ErgoBoxCandidate(l, b, creationHeight, tokens.toColl.zip(tokenAmounts.toColl), ar)
+  } yield new ErgoBoxCandidate(l, b, creationHeight, tokens, ar)
 
   lazy val boxConstantGen: Gen[BoxConstant] = ergoBoxGen.map { v => BoxConstant(CostingBox(v)) }
 

@@ -107,6 +107,7 @@ object ErgoBox {
   object TokenId {
     val size: Short = 32
   }
+  type Token = (TokenId, Long)
 
   val MaxBoxSize: Int = SigmaConstants.MaxBoxSize.value
 

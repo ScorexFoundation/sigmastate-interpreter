@@ -1,6 +1,7 @@
 package org.ergoplatform.sdk.js
 
 import org.ergoplatform.ErgoBox.{BoxId, TokenId}
+import org.ergoplatform.sdk.Extensions.PairCollOps
 import org.ergoplatform.{DataInput, ErgoBoxCandidate, UnsignedErgoLikeTransaction, UnsignedInput}
 import org.ergoplatform.sdk.Iso
 import org.scalacheck.Arbitrary
@@ -69,6 +70,12 @@ class IsosSpec  extends AnyPropSpec with Matchers with ObjectGenerators with Sca
   property("Iso.isoToken") {
     forAll(tokenIdGen, Arbitrary.arbLong.arbitrary) { (id: TokenId, amount: Long) =>
       roundtrip(Isos.isoToken)((Colls.fromArray(id), amount))
+    }
+  }
+
+  property("Iso.isoTokenArray") {
+    forAll(ergoBoxTokens(tokensGen.sample.get)) { tokens =>
+      roundtrip(Isos.isoTokenArray)(tokens.mapFirst(id => Colls.fromArray(id)))
     }
   }
 
