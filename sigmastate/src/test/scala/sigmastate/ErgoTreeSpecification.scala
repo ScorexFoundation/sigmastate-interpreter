@@ -679,7 +679,7 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
     )
 
     val ctx = ErgoLikeContextTesting
-      .dummy(CostingBox(false, fakeSelf), 1)
+      .dummy(CostingBox(fakeSelf), 1)
       .withErgoTreeVersion(tree.version)
 
     VersionContext.withVersions(1, tree.version) {

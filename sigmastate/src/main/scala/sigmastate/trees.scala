@@ -165,10 +165,16 @@ case class BoolToSigmaProp(value: BoolValue) extends SigmaPropValue {
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val v = value.evalTo[Any](env)
     addCost(BoolToSigmaProp.costKind)
-    v match {
-      case sp: SigmaProp => sp
-      case _ =>
-        SigmaDsl.sigmaProp(v.asInstanceOf[Boolean])
+    if (VersionContext.current.isJitActivated) {
+      SigmaDsl.sigmaProp(v.asInstanceOf[Boolean])
+    } else {
+      // before v5.0 is activated we follow the old v4.x semantics to handle cases
+      // when the value is not a boolean
+      v match {
+        case sp: SigmaProp => sp
+        case _ =>
+          SigmaDsl.sigmaProp(v.asInstanceOf[Boolean])
+      }
     }
   }
 }
