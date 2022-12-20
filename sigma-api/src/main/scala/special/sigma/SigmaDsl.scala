@@ -10,40 +10,6 @@ import scorex.crypto.authds.avltree.batch.Operation
 
 import scala.util.Try
 
-@scalan.Liftable
-trait CostModel {
-  /** Cost of accessing SELF box and/or each item in INPUTS, OUTPUTS, dataInputs. */
-  def AccessBox: Int // costOf("AccessBox: Context => Box")
-
-  // TODO refactor: remove not used
-  def AccessAvlTree: Int // costOf("AccessAvlTree: Context => AvlTree")
-
-  /** Cost of accessing context variable (`getVar` operation in ErgoScript). */
-  def GetVar: Int // costOf("ContextVar: (Context, Byte) => Option[T]")
-
-  // TODO refactor: remove not used
-  def DeserializeVar: Int // costOf("DeserializeVar: (Context, Byte) => Option[T]")
-
-  /** Cost of accessing register in a box (e.g. `R4[Int]` operation in ErgoScript). */
-  def GetRegister: Int // costOf("AccessRegister: (Box,Byte) => Option[T]")
-
-  // TODO refactor: remove not used
-  def DeserializeRegister: Int // costOf("DeserializeRegister: (Box,Byte) => Option[T]")
-
-  /** Cost of accessing a property of an object like Header or AvlTree. */
-  def SelectField: Int // costOf("SelectField")
-
-  // TODO refactor: remove not used
-  def CollectionConst: Int // costOf("Const: () => Array[IV]")
-
-  // TODO refactor: remove not used
-  def AccessKiloByteOfData: Int // costOf("AccessKiloByteOfData")
-
-  // TODO refactor: remove not used
-  /** Size of public key in bytes */
-  def PubKeySize: Long
-}
-
 /**
   * All `modQ` operations assume that Q is a global constant (an order of the only one cryptographically strong group
   * which is used for all cryptographic operations).
@@ -52,8 +18,6 @@ trait CostModel {
 @scalan.Liftable
 @WithMethodCallRecognizers
 trait BigInt {
-  @Internal
-  private[sigma] def value: BigInteger
   /** Convert this BigInt value to Byte.
     * @throws ArithmeticException if overflow happens.
     */
@@ -236,9 +200,6 @@ trait BigInt {
 @scalan.Liftable
 @WithMethodCallRecognizers
 trait GroupElement {
-  @Internal
-  private[sigma] def value: ECPoint
-
   def isInfinity: Boolean
 
   /** Exponentiate this <code>GroupElement</code> to the given number.
@@ -791,8 +752,6 @@ trait SigmaContract {
   def Collection[T](items: T*)(implicit cT: RType[T]): Coll[T] = this.builder.Colls.fromItems[T](items:_*)
 
   /** !!! all methods should delegate to builder */
-
-  def verifyZK(cond: => SigmaProp): Boolean = this.builder.verifyZK(cond)
   def atLeast(bound: Int, props: Coll[SigmaProp]): SigmaProp = this.builder.atLeast(bound, props)
 
   def allOf(conditions: Coll[Boolean]): Boolean = this.builder.allOf(conditions)
@@ -842,17 +801,6 @@ trait SigmaDslBuilder {
 
   /** Access to collection operations. */
   def Colls: CollBuilder
-
-  /** Access to Monoid operations */
-  def Monoids: MonoidBuilder
-
-  /** Access to operations used in cost computation. */
-  def Costing: CostedBuilder
-
-  /** Access to cost model (aka CostTable) parameters. */
-  def CostModel: CostModel
-
-  def verifyZK(cond: => SigmaProp): Boolean  // TODO refactor: can be removed after TestSigmaDslBuilder is removed
 
   /**
     * Logical threshold operation.

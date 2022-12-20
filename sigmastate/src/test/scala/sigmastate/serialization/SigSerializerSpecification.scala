@@ -40,7 +40,7 @@ class SigSerializerSpecification extends SigmaTestingCommons
       COR(Array(left, right)),
       CAND(Array(left, right)),
       CTHRESHOLD(2, Array(left, right, third))
-    ) if SigmaBoolean.estimateCost(node) <= 100000 // limit size of the generated tree
+    ) if Interpreter.estimateCryptoVerifyCost(node).value <= 100000 // limit size of the generated tree
                                                    // to fit into Box size limit
   } yield node
 

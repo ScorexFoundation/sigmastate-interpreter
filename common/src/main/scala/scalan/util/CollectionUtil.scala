@@ -329,20 +329,6 @@ object CollectionUtil {
       b.result()
     }
 
-    def partitionByType[B <: A, C <: A]
-        (implicit tB: ClassTag[B],
-                  cbB: CanBuildFrom[Source[A], B, Source[B]],
-                  cbC: CanBuildFrom[Source[A], C, Source[C]]): (Source[B], Source[C]) = {
-      val bs = cbB()
-      val cs = cbC()
-      for (x <- xs)
-        if (tB.runtimeClass.isAssignableFrom(x.getClass))
-          bs += x.asInstanceOf[B]
-        else
-          cs += x.asInstanceOf[C]
-      (bs.result(), cs.result())
-    }
-
     private def flattenIter(i: Iterator[_]): Iterator[_] = i.flatMap(x => x match {
       case nested: GenIterable[_] => nested
       case arr: Array[_] => arr.iterator

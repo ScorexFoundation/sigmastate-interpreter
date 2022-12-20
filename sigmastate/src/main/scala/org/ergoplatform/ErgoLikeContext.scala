@@ -1,6 +1,5 @@
 package org.ergoplatform
 
-import java.util
 import org.ergoplatform.validation.SigmaValidationSettings
 import sigmastate.SType._
 import sigmastate.Values._
@@ -8,13 +7,13 @@ import sigmastate._
 import sigmastate.eval.Extensions._
 import sigmastate.eval._
 import sigmastate.interpreter.ErgoTreeEvaluator.DataEnv
-import sigmastate.interpreter.{ContextExtension, ErgoTreeEvaluator, Interpreter, InterpreterContext}
+import sigmastate.interpreter.{Interpreter, InterpreterContext, ErgoTreeEvaluator, ContextExtension}
 import sigmastate.lang.exceptions.InterpreterException
 import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.OpCode
 import special.collection.Coll
 import special.sigma
-import special.sigma.{AnyValue, Header, PreHeader}
+import special.sigma.{Header, PreHeader, AnyValue}
 import spire.syntax.all.cfor
 
 /** Represents a script evaluation context to be passed to a prover and a verifier to execute and
@@ -98,7 +97,7 @@ class ErgoLikeContext(val lastBlockUtxoRoot: AvlTreeData,
   Examined ergo code: all that leads to ErgoLikeContext creation.
  */
   require(spendingTransaction.dataInputs.length == dataBoxes.length &&
-    spendingTransaction.dataInputs.forall(dataInput => dataBoxes.exists(b => util.Arrays.equals(b.id, dataInput.boxId))),
+    spendingTransaction.dataInputs.forall(dataInput => dataBoxes.exists(b => java.util.Arrays.equals(b.id, dataInput.boxId))),
     "dataBoxes do not correspond to spendingTransaction.dataInputs")
 
   // TODO assert boxesToSpend correspond to spendingTransaction.inputs
@@ -113,7 +112,7 @@ class ErgoLikeContext(val lastBlockUtxoRoot: AvlTreeData,
 
   /** Current version of the ErgoTree executed by the interpreter.
     * This property is used to implement version dependent operations and passed to
-    * interpreter via [[specia.sigma.Context]].
+    * interpreter via [[special.sigma.Context]].
     * The value cannot be assigned on [[ErgoLikeContext]] construction and must be
     * attached using [[withErgoTreeVersion()]] method.
     * When the value is None, the [[InterpreterException]] is thrown by the interpreter.
@@ -138,7 +137,7 @@ class ErgoLikeContext(val lastBlockUtxoRoot: AvlTreeData,
   def withTransaction(newSpendingTransaction: ErgoLikeTransactionTemplate[_ <: UnsignedInput]): ErgoLikeContext =
     ErgoLikeContext.copy(this)(spendingTransaction = newSpendingTransaction)
 
-  override def toSigmaContext(isCost: Boolean, extensions: Map[Byte, AnyValue] = Map()): sigma.Context = {
+  override def toSigmaContext(extensions: Map[Byte, AnyValue] = Map()): sigma.Context = {
     import Evaluation._
 
     def contextVars(m: Map[Byte, AnyValue]): Coll[AnyValue] = {
@@ -150,15 +149,15 @@ class ErgoLikeContext(val lastBlockUtxoRoot: AvlTreeData,
       CostingSigmaDslBuilder.Colls.fromArray(res)
     }
 
-    val dataInputs = this.dataBoxes.toArray.map(_.toTestBox(isCost)).toColl
-    val inputs = boxesToSpend.toArray.map(_.toTestBox(isCost)).toColl
+    val dataInputs = this.dataBoxes.toArray.map(_.toTestBox).toColl
+    val inputs = boxesToSpend.toArray.map(_.toTestBox).toColl
     /* NOHF PROOF:
     Changed: removed check for spendingTransaction == null
     Motivation: spendingTransaction cannot be null
     Safety: in ergo spendingTransaction cannot be null
     Examined ergo code: all that leads to ErgoLikeContext creation.
     */
-    val outputs = spendingTransaction.outputs.toArray.map(_.toTestBox(isCost)).toColl
+    val outputs = spendingTransaction.outputs.toArray.map(_.toTestBox).toColl
     val varMap = extension.values.mapValues { case v: EvaluatedValue[_] =>
       val tVal = stypeToRType[SType](v.tpe)
       toAnyValue(v.value.asWrappedType)(tVal)
@@ -167,12 +166,12 @@ class ErgoLikeContext(val lastBlockUtxoRoot: AvlTreeData,
     val avlTree = CAvlTree(lastBlockUtxoRoot)
     // so selfBox is never one of the `inputs` instances
     // as result selfBoxIndex is always (erroneously) returns -1 in ErgoTree v0, v1
-    val selfBox = boxesToSpend(selfIndex).toTestBox(isCost)
+    val selfBox = boxesToSpend(selfIndex).toTestBox
     val ergoTreeVersion = currentErgoTreeVersion.getOrElse(
         Interpreter.error(s"Undefined context property: currentErgoTreeVersion"))
     CostingDataContext(
       dataInputs, headers, preHeader, inputs, outputs, preHeader.height, selfBox, selfIndex, avlTree,
-      preHeader.minerPk.getEncoded, vars, activatedScriptVersion, ergoTreeVersion, isCost)
+      preHeader.minerPk.getEncoded, vars, activatedScriptVersion, ergoTreeVersion)
   }
 
 

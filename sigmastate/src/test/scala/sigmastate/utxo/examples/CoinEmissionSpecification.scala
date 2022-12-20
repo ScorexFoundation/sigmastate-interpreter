@@ -28,8 +28,6 @@ class CoinEmissionSpecification extends SigmaTestingCommons
     // uncomment if you want to log script evaluation
     // override val okPrintEvaluatedEntries = true
     saveGraphsInFile = false
-    outputEstimatedCost = false
-    outputComputedResults = false
   }
 
   private val reg1 = ErgoBox.nonMandatoryRegisters.head
@@ -217,6 +215,5 @@ block 1600 in 1622 ms, 30000000000 coins remain, defs: 61661
     chainGen(genesisState, initialBox, 0, 1000000)
 
     println(s"Emission Tree: ${ErgoAlgos.encode(tree.bytes)}")
-    println(prover.precompiledScriptProcessor.getStats())
   }
 }

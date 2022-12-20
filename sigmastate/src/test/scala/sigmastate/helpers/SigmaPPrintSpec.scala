@@ -102,7 +102,6 @@ class SigmaPPrintSpec extends SigmaDslTesting {
         |)""".stripMargin)
     test(
       CostingBox(
-        false,
         new ErgoBox(
             9223372036854775807L,
           new ErgoTree(0.toByte, Vector(), Right(BoolToSigmaProp(FalseLeaf))),
@@ -116,7 +115,6 @@ class SigmaPPrintSpec extends SigmaDslTesting {
         )
       ),
       """CostingBox(
-        |  false,
         |  new ErgoBox(
         |    9223372036854775807L,
         |    new ErgoTree(0.toByte, Vector(), Right(BoolToSigmaProp(FalseLeaf))),

@@ -1,17 +1,17 @@
 package sigmastate.eval
 
 import java.math.BigInteger
-
 import org.bouncycastle.crypto.ec.CustomNamedCurves
-import org.scalatest.{Matchers, FunSuite}
-import special.sigma.{SigmaDslBuilder, ContractsTestkit, MockSigma, SigmaProp}
+import org.scalatest.{FunSuite, Matchers}
+import sigmastate.TrivialProp
+import special.sigma.{ContractsTestkit, SigmaDslBuilder, SigmaProp}
 
 import scala.language.implicitConversions
 
 class BasicOpsTests extends FunSuite with ContractsTestkit with Matchers {
   override val SigmaDsl: SigmaDslBuilder = CostingSigmaDslBuilder
 
-  implicit def boolToSigma(b: Boolean): SigmaProp = MockSigma(b)
+  implicit def boolToSigma(b: Boolean): SigmaProp = TrivialProp(b)
 
   test("atLeast") {
     val props = Colls.fromArray(Array[SigmaProp](false, true, true, false))

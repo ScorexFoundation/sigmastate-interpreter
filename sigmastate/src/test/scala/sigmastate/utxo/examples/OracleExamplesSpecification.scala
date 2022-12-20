@@ -140,7 +140,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons
       EQ(extract[SByteArray](ErgoBox.ScriptRegId), ByteArrayConstant(ErgoTree.fromSigmaBoolean(oraclePubKey).bytes)),
       EQ(Exponentiate(GroupGenerator, extract[SBigInt.type](reg3)),
         MultiplyGroup(extract[SGroupElement.type](reg2),
-          Exponentiate(oraclePubImage.value,
+          Exponentiate(GroupElementConstant(oraclePubImage.value),
             ByteArrayToBigInt(
               Slice(
                 CalcBlake2b256(
@@ -274,7 +274,6 @@ class OracleExamplesSpecification extends SigmaTestingCommons
       oracle: Spec#ProvingParty, alice: Spec#ProvingParty, bob: Spec#ProvingParty)
       (implicit val spec: Spec) extends SigmaContractSyntax with StdContracts
   {
-    import syntax._
     def pkOracle = oracle.pubKey
     def pkA = alice.pubKey
     def pkB = bob.pubKey

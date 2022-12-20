@@ -6,7 +6,7 @@ import org.scalatest.prop.PropertyChecks
 import org.scalatest.{Matchers, PropSpec}
 import scalan.RType
 import sigmastate.{VersionContext, VersionTestingProperty}
-import special.collection.{CReplColl, Coll, CollOverArray, PairOfCols}
+import special.collection.{Coll, CollOverArray, PairOfCols}
 
 import scala.language.{existentials, implicitConversions}
 
@@ -49,7 +49,7 @@ class CollsTests extends PropSpec with PropertyChecks with Matchers with CollGen
     // make sure forall: T, col: Coll[T] => col.length shouldBe col.toArray.length
     // The above equality should hold for all possible collection instances
 
-    forAll(MinSuccessful(100)) { xs: Coll[Int] =>
+    forAll(MinSuccessful(300)) { xs: Coll[Int] =>
       val arr = xs.toArray
       equalLength(xs)
       equalLengthMapped(xs, inc)
@@ -60,7 +60,7 @@ class CollsTests extends PropSpec with PropertyChecks with Matchers with CollGen
       val pairs = xs.zip(xs)
       equalLength(pairs)
 
-      if (!xs.isInstanceOf[CReplColl[_]] && !VersionContext.current.isJitActivated) {
+      if (xs.nonEmpty && !VersionContext.current.isJitActivated) {
         an[ClassCastException] should be thrownBy {
           equalLengthMapped(pairs, squared(inc))  // due to problem with append
         }
@@ -72,7 +72,7 @@ class CollsTests extends PropSpec with PropertyChecks with Matchers with CollGen
 
       equalLength(pairs.append(pairs))
 
-      if (!xs.isInstanceOf[CReplColl[_]] && !VersionContext.current.isJitActivated) {
+      if (xs.nonEmpty && !VersionContext.current.isJitActivated) {
         an[ClassCastException] should be thrownBy {
           equalLengthMapped(pairs.append(pairs), squared(inc)) // due to problem with append
         }
@@ -96,11 +96,6 @@ class CollsTests extends PropSpec with PropertyChecks with Matchers with CollGen
     forAll(collGen, indexGen) { (col, from) =>
       col.segmentLength(lt0, from) shouldBe col.toArray.segmentLength(lt0, from)
     }
-
-    val minSuccess = minSuccessful(30)
-    forAll(superGen, indexGen, minSuccess) { (col, from) =>
-      col.segmentLength(collMatchRepl, from) shouldBe col.toArray.segmentLength(collMatchRepl, from)
-    }
   }
 
   property("Coll.indexWhere") {
@@ -123,15 +118,6 @@ class CollsTests extends PropSpec with PropertyChecks with Matchers with CollGen
       col.lastIndexWhere(eq0, end) shouldBe col.lastIndexWhere(eq0, end)
       def p2(ab: (Int, Int)) = eq0(ab._1) && eq0(ab._2)
       col.zip(col).lastIndexWhere(p2, end) shouldBe col.toArray.zip(col.toArray).lastIndexWhere(p2, end)
-    }
-  }
-
-  property("Coll.partition") {
-    forAll(collGen) { col =>
-      val (lsC, rsC) = col.partition(lt0)
-      val (ls, rs) = col.toArray.partition(lt0)
-      lsC.toArray shouldBe ls
-      rsC.toArray shouldBe rs
     }
   }
 
@@ -185,13 +171,6 @@ class CollsTests extends PropSpec with PropertyChecks with Matchers with CollGen
 
   property("Coll methods") {
     forAll(collGen, indexGen) { (col, index) =>
-      {
-        val res = col.sum(monoid)
-        res shouldBe col.toArray.sum
-        val pairs = col.zip(col)
-        val pairMonoid = builder.Monoids.pairMonoid(monoid, monoid)
-        pairs.sum(pairMonoid) shouldBe ((res, res))
-      }
       {
         val res = col.map(inc)
         res.toArray shouldBe col.toArray.map(inc)
@@ -327,10 +306,10 @@ class CollsTests extends PropSpec with PropertyChecks with Matchers with CollGen
       {
         val repl1 = builder.replicate(col1.length, v)
         val repl2 = builder.replicate(col2.length, v)
-        assert(repl1.isInstanceOf[CReplColl[Int]])
+        assert(repl1.isInstanceOf[CollOverArray[Int]])
 
         val arepl = repl1.append(repl2)
-        assert(arepl.isInstanceOf[CReplColl[Int]])
+        assert(arepl.isInstanceOf[CollOverArray[Int]])
         arepl.toArray shouldBe (repl1.toArray ++ repl2.toArray)
         
         val pairs1 = repl1.zip(repl1)
@@ -343,8 +322,8 @@ class CollsTests extends PropSpec with PropertyChecks with Matchers with CollGen
 
         apairs match {
           case ps: PairOfCols[_,_] =>
-            assert(ps.ls.isInstanceOf[CReplColl[Int]])
-            assert(ps.rs.isInstanceOf[CReplColl[Int]])
+            assert(ps.ls.isInstanceOf[CollOverArray[Int]])
+            assert(ps.rs.isInstanceOf[CollOverArray[Int]])
           case _ =>
             assert(false, "Invalid type")
         }
@@ -369,33 +348,6 @@ class CollsTests extends PropSpec with PropertyChecks with Matchers with CollGen
     } else {
       // not fixed in v4.x
       pairOfColls.ls.length should not be(pairOfColls.rs.length)
-    }
-  }
-
-  property("Coll.mapReduce") {
-    import scalan.util.CollectionUtil.TraversableOps
-    def m(x: Int) = (math.abs(x) % 10, x)
-    forAll(collGen) { col =>
-      val res = col.mapReduce(m, plusF)
-      val (ks, vs) = builder.unzip(res)
-      vs.toArray.sum shouldBe col.toArray.sum
-      ks.length <= 10 shouldBe true
-      res.toArray shouldBe col.toArray.toIterable.mapReduce(m)(plus).toArray
-    }
-  }
-
-  property("Coll.groupBy") {
-    def key(x: Int) = math.abs(x) % 10
-    forAll(collGen) { col =>
-      val res = col.groupBy(key)
-      val (ks, vs) = builder.unzip(res)
-      vs.flatten.toArray.sum shouldBe col.toArray.sum
-      ks.length <= 10 shouldBe true
-      val pairs = col.map(x => (key(x), x))
-      val res2 = pairs.groupByKey
-      val (ks2, vs2) = builder.unzip(res)
-      ks shouldBe ks2
-      vs shouldBe vs2
     }
   }
 
@@ -608,40 +560,6 @@ class CollsTests extends PropSpec with PropertyChecks with Matchers with CollGen
       val c1 = col1.take(n)
       val c2 = col2.take(n)
       builder.xor(c1, c2).toArray shouldBe c1.toArray.zip(c2.toArray).map { case (l,r) => (l ^ r).toByte }
-    }
-  }
-
-  property("CollBuilder.outerJoin") {
-    def test(col: Coll[Int]) = {
-      val inner = col.indices
-      val rightOnly = inner.map(i => i + col.length)
-      val leftOnly = rightOnly.map(i => -i)
-
-      val leftKeys = inner.append(leftOnly)
-      val leftValues = col.append(col.map(x => x + 2))
-
-      val rightKeys = inner.append(rightOnly)
-      val rightValues = col.append(col.map(x => x + 3))
-
-      val left  = builder.pairColl(leftKeys, leftValues)
-      val right = builder.pairColl(rightKeys, rightValues)
-      val res = builder.outerJoin(left, right)(l => l._2 - 2, r => r._2 - 3, i => i._2._1 + 5)
-      val (ks, vs) = builder.unzip(res)
-      vs.sum(monoid) shouldBe (col.sum(monoid) * 2 + col.map(_ + 5).sum(monoid))
-    }
-//    test(builder.fromItems(0))
-//    val gen = containerOfN[Array, Int](100, choose(20, 100))
-//        .map(xs => builder.fromArray(xs.distinct))
-    forAll(collGen) { col =>
-      test(col)
-    }
-  }
-
-  property("CViewColl.correctWork") {
-    forAll(collGen) { coll =>
-      val view = builder.makeView(coll, complexFunction)
-      val usual = coll.map(complexFunction)
-      view.toArray shouldBe usual.toArray
     }
   }
 

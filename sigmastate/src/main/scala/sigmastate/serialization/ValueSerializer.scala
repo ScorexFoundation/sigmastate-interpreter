@@ -8,7 +8,7 @@ import sigmastate._
 import sigmastate.lang.DeserializationSigmaBuilder
 import sigmastate.serialization.OpCodes._
 import sigmastate.serialization.transformers._
-import sigmastate.serialization.trees.{QuadrupleSerializer, Relation2Serializer}
+import sigmastate.serialization.trees.{Relation2Serializer, QuadrupleSerializer}
 import scalan.util.Extensions._
 import sigmastate.utils.SigmaByteWriter.DataInfo
 import sigmastate.utils._
@@ -30,6 +30,14 @@ abstract class ValueSerializer[V <: Value[SType]] extends SigmaSerializer[Value[
   @inline final def opCode: OpCode = opDesc.opCode
 }
 
+/** Implements serialization of ErgoTree expressions. Contains global collection of
+  * serializers for each ErgoTree operation (see `serializers` field).
+  *
+  * It also implements optional (see collectSerInfo flag) metadata collection during serialization
+  * to generate serializer specification tables in LaTeX.
+  *
+  * @see GenSerializers
+  */
 object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
   type Tag = OpCode
 
@@ -347,7 +355,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     }
   }
 
-  // TODO v5.x: control maxTreeDepth same as in deserialize
+  // TODO v5.x: control maxTreeDepth same as in deserialize (see Reader.level property and SigmaSerializer.MaxTreeDepth)
   override def serialize(v: Value[SType], w: SigmaByteWriter): Unit = serializable(v) match {
     case c: Constant[SType] =>
       w.constantExtractionStore match {

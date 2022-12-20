@@ -7,13 +7,12 @@ import org.ergoplatform.dsl.ContractSyntax.{ErgoScript, Proposition}
 import sigmastate.eval.{CostingSigmaDslBuilder, Evaluation}
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import special.collection.Coll
-import special.sigma.{SigmaProp, SigmaContract, Context, DslSyntaxExtensions, SigmaDslBuilder}
+import special.sigma.{SigmaProp, SigmaContract, Context, SigmaDslBuilder}
 import scala.language.implicitConversions
 
 trait ContractSyntax { contract: SigmaContract =>
   override def builder: SigmaDslBuilder = CostingSigmaDslBuilder
   val spec: ContractSpec
-  val syntax = new DslSyntaxExtensions(builder)
   def contractEnv: ScriptEnv
 
   /** The default verifier which represents miner's role in verification of transactions.
@@ -44,6 +43,15 @@ object ContractSyntax {
 }
 
 trait SigmaContractSyntax extends SigmaContract with ContractSyntax {
+
+  implicit class BooleanSyntax(source: Boolean) {
+    /** Logical AND between Boolean on the left and SigmaProp value on the right. */
+    def &&(prop: SigmaProp) = builder.sigmaProp(source) && prop
+
+    /** Logical AND between Boolean on the left and SigmaProp value on the right. */
+    def ||(prop: SigmaProp) = builder.sigmaProp(source) || prop
+  }
+
 }
 
 

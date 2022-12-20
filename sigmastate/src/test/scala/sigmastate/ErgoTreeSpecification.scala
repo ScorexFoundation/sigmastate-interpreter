@@ -190,44 +190,12 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
     forAll(types) { (t, code, isConst, isPrim, isEmbed, isNum) =>
       t.typeCode shouldBe code
       t.typeId shouldBe code
-      t.isConstantSize shouldBe isConst
       t.isInstanceOf[SPrimType] shouldBe isPrim
       t.isEmbeddable shouldBe isEmbed
       t.isNumType shouldBe isNum
       whenever(isPrim) {
         t.typeCode should be <= SPrimType.LastPrimTypeCode
       }
-    }
-    forAll(Table(("type", "isConstantSize"),
-      (NoType, true),
-      (SString, false),
-      (SAny, false),
-      (SUnit, true),
-      (SFunc(SInt, SAny), false),
-      (STypeApply("T"), false),
-      (SType.tT, false)
-    )) { (t, isConst) =>
-      t.isConstantSize shouldBe isConst
-    }
-  }
-
-  property("Tuple Types") {
-    val constSizeTuple = STuple(SByte, SInt, SBigInt)
-    val dynSizeTuple = STuple(SByte, SInt, SBox, SBigInt)
-    forAll(Table(("type", "isConstantSize"),
-      (STuple(SByte), true),
-      (STuple(SByte, SInt), true),
-      (STuple(SByte, SInt, SAvlTree), true),
-      (STuple(SBox), false),
-      (STuple(SByte, SBox), false),
-      (STuple(SByte, SInt, SBox), false),
-      (STuple(SBox, SByte, SInt), false),
-      (constSizeTuple, true),
-      (constSizeTuple, true), // should avoid re-computation
-      (dynSizeTuple, false),
-      (dynSizeTuple, false)   // should avoid re-computation
-    )) { (t, isConst) =>
-      t.isConstantSize shouldBe isConst
     }
   }
 
@@ -460,23 +428,15 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
 
     forEachScriptAndErgoTreeVersion(activatedVersions, ergoTreeVersions) {
       VersionContext.withVersions(activatedVersionInTests, ergoTreeVersionInTests) {
-        // old v4.x interpreter
-        assertExceptionThrown(
-        {
-          val oldF = funcFromExpr[Int, Int]("({ (x: Int) => 1 })()", expr)
-        },
-        exceptionLike[CosterException]("Don't know how to evalNode")
-        )
-        // new v5.0 interpreter
         val newF = funcJitFromExpr[Int, Int]("({ (x: Int) => 1 })()", expr)
         assertExceptionThrown(
-        {
-          val x = 100 // any value which is not used anyway
-          val (y, _) = VersionContext.withVersions(activatedVersionInTests, ergoTreeVersionInTests) {
-            newF.apply(x)
-          }
-        },
-        exceptionLike[InterpreterException]("Function application must have 1 argument, but was:")
+          {
+            val x = 100 // any value which is not used anyway
+            val (y, _) = VersionContext.withVersions(activatedVersionInTests, ergoTreeVersionInTests) {
+              newF.apply(x)
+            }
+          },
+          exceptionLike[InterpreterException]("Function application must have 1 argument, but was:")
         )
       }
     }
@@ -493,19 +453,11 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
 
     forEachScriptAndErgoTreeVersion(activatedVersions, ergoTreeVersions) {
       VersionContext.withVersions(activatedVersionInTests, ergoTreeVersionInTests) {
-        { // old v4.x interpreter
-          val oldF = funcFromExpr[Int, Int](script, expr)
-          val (y, _) = oldF.apply(x)
-          y shouldBe -1
+        val newF = funcJitFromExpr[Int, Int](script, expr)
+        val (y, _) = VersionContext.withVersions(activatedVersionInTests, ergoTreeVersionInTests) {
+          newF.apply(x)
         }
-
-        { // new v5.0 interpreter
-          val newF = funcJitFromExpr[Int, Int](script, expr)
-          val (y, _) = VersionContext.withVersions(activatedVersionInTests, ergoTreeVersionInTests) {
-            newF.apply(x)
-          }
-          y shouldBe -1
-        }
+        y shouldBe -1
       }
     }
   }
@@ -519,23 +471,14 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
 
     forEachScriptAndErgoTreeVersion(activatedVersions, ergoTreeVersions) {
       VersionContext.withVersions(activatedVersionInTests, ergoTreeVersionInTests) {
-
-        // old v4.x interpreter
-        assertExceptionThrown(
-        {
-          val oldF = funcFromExpr[(Int, Int), Int](script, expr)
-        },
-        exceptionLike[CosterException]("Don't know how to evalNode")
-        )
-        // ndw v5.0 interpreter
         val newF = funcJitFromExpr[(Int, Int), Int](script, expr)
         assertExceptionThrown(
-        {
-          val (y, _) = VersionContext.withVersions(activatedVersionInTests, ergoTreeVersionInTests) {
-            newF.apply((1, 1))
-          }
-        },
-        exceptionLike[InterpreterException]("Function application must have 1 argument, but was:")
+          {
+            val (y, _) = VersionContext.withVersions(activatedVersionInTests, ergoTreeVersionInTests) {
+              newF.apply((1, 1))
+            }
+          },
+          exceptionLike[InterpreterException]("Function application must have 1 argument, but was:")
         )
       }
     }

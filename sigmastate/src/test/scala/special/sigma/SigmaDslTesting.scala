@@ -1,11 +1,10 @@
 package special.sigma
 
-import java.util
 import org.ergoplatform.SigmaConstants.ScriptCostLimit
-import org.ergoplatform.dsl.{ContractSpec, SigmaContractSyntax, TestContractSpec}
-import org.ergoplatform.validation.{SigmaValidationSettings, ValidationException, ValidationRules}
 import org.ergoplatform._
+import org.ergoplatform.dsl.{ContractSpec, SigmaContractSyntax, TestContractSpec}
 import org.ergoplatform.validation.ValidationRules.CheckSerializableTypeCode
+import org.ergoplatform.validation.{SigmaValidationSettings, ValidationException, ValidationRules}
 import org.scalacheck.Arbitrary._
 import org.scalacheck.Gen.frequency
 import org.scalacheck.{Arbitrary, Gen}
@@ -15,8 +14,8 @@ import org.scalatest.{Matchers, PropSpec}
 import scalan.RType
 import scalan.RType._
 import scalan.util.BenchmarkUtil
-import scalan.util.Extensions._
 import scalan.util.CollectionUtil._
+import scalan.util.Extensions._
 import scalan.util.StringUtil.StringUtilExtensions
 import sigmastate.SType.AnyOps
 import sigmastate.Values.{ByteArrayConstant, Constant, ConstantNode, ErgoTree, IntConstant, SValue}
@@ -26,7 +25,6 @@ import sigmastate.eval.Extensions._
 import sigmastate.eval.{CompiletimeIRContext, CostingBox, CostingDataContext, Evaluation, IRContext, SigmaDsl}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.helpers.{ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaPPrint}
-import sigmastate.interpreter.EvalSettings.{AotEvaluationMode, EvaluationMode, JitEvaluationMode}
 import sigmastate.interpreter.Interpreter.{ScriptEnv, VerificationResult}
 import sigmastate.interpreter._
 import sigmastate.lang.Terms.{Apply, ValueOps}
@@ -38,8 +36,8 @@ import sigmastate.{SOption, SSigmaProp, SType, VersionContext, eval}
 import special.collection.{Coll, CollType}
 import spire.syntax.all.cfor
 
+import java.util
 import scala.collection.mutable
-import scala.math.Ordering
 import scala.reflect.ClassTag
 import scala.util.{Failure, Success, Try}
 
@@ -55,7 +53,6 @@ class SigmaDslTesting extends PropSpec
   override def contractEnv: ScriptEnv = Map()
 
   def createIR(): IRContext = new TestingIRContext {
-    override val okPrintEvaluatedEntries: Boolean = false
     override val okMeasureOperationTime: Boolean = true
   }
 
@@ -78,7 +75,7 @@ class SigmaDslTesting extends PropSpec
     indices <- Gen.containerOfN[Array, Int](nIndexes, Gen.choose(0, arrLength - 1))
   } yield indices
 
-  class FeatureProvingInterpreter extends ErgoLikeTestInterpreter()(new TestingIRContext) with ProverInterpreter {
+  class FeatureProvingInterpreter extends ErgoLikeTestInterpreter() with ProverInterpreter {
 
     def decodeSecretInput(decimalStr: String): DLogProverInput = DLogProverInput(BigInt(decimalStr).bigInteger)
 
@@ -150,10 +147,10 @@ class SigmaDslTesting extends PropSpec
 
     /** Called to print test case expression (when it is not given).
       * Can be used to create regression test cases. */
-    def printSuggestion(cf: CompiledFunc[_,_]): Unit = {
-      print(s"No expectedExpr for ")
+    def printSuggestion(title: String, cf: CompiledFunc[_,_]): Unit = {
+      print(title)
       SigmaPPrint.pprintln(cf.script, height = 150)
-      print("Use ")
+      println("---")
       SigmaPPrint.pprintln(cf.expr, height = 150)
       println()
     }
@@ -165,11 +162,13 @@ class SigmaDslTesting extends PropSpec
       expectedExpr match {
         case Some(e) =>
           if (cf.expr != null && cf.expr != e) {
-            printSuggestion(cf)
+            printSuggestion("Unexpected expression for ", cf)
+            println("Expected:")
+            SigmaPPrint.pprintln(e, height = 150)
             cf.expr shouldBe e
           }
         case None if printExpectedExpr =>
-          printSuggestion(cf)
+          printSuggestion("No expectedExpr for ", cf)
       }
       true
     }
@@ -318,10 +317,8 @@ class SigmaDslTesting extends PropSpec
         val IR = new CompiletimeIRContext
         val pkAlice = prover.pubKeys.head.toSigmaProp
         val env = Map("pkAlice" -> pkAlice)
-
         // Compile script the same way it is performed by applications (i.e. via Ergo Appkit)
-        val prop = ErgoScriptPredef.compileWithCosting(
-          env, code, ErgoAddressEncoder.MainnetNetworkPrefix)(IR).asSigmaProp
+        val prop = compile(env, code)(IR).asSigmaProp
 
         // Add additional oparations which are not yet implemented in ErgoScript compiler
         val multisig = sigmastate.AtLeast(
@@ -391,11 +388,11 @@ class SigmaDslTesting extends PropSpec
         ctx
       }
 
-      val (evalMode, expectedResult, expectedCost) = if (activatedVersionInTests < VersionContext.JitActivationVersion)
-        (AotEvaluationMode, expected.oldResult, expected.verificationCostOpt)
+      val (expectedResult, expectedCost) = if (activatedVersionInTests < VersionContext.JitActivationVersion)
+        (expected.oldResult, expected.verificationCostOpt)
       else {
         val res = expected.newResults(ergoTreeVersionInTests)
-        (JitEvaluationMode, res._1, res._1.verificationCost)
+        (res._1, res._1.verificationCost)
       }
 
       if (expectedResult.value.isSuccess) {
@@ -405,9 +402,9 @@ class SigmaDslTesting extends PropSpec
         val ctx = ergoCtx(prover, tree, expectedResult.value.get)
         val pr = prover.prove(tree, ctx, fakeMessage).getOrThrow
         val verificationCtx = ctx.withExtension(pr.extension)
-        val verifier = new ErgoLikeTestInterpreter()(createIR())
+        val verifier = new ErgoLikeTestInterpreter()
         val res = verifier.verify(tree, verificationCtx, pr, fakeMessage)
-        checkExpectedResult(evalMode, res, expectedCost)
+        checkExpectedResult(res, expectedCost)
 
         if (expectedCost.isEmpty) {
           val (_, cost) = res.getOrThrow
@@ -443,7 +440,6 @@ class SigmaDslTesting extends PropSpec
     }
 
     private def checkExpectedResult(
-          evalMode: EvaluationMode,
           res: Try[VerificationResult], expectedCost: Option[Int]): Unit = {
       res match {
         case Success((ok, cost)) =>
@@ -451,7 +447,7 @@ class SigmaDslTesting extends PropSpec
           val verificationCost = cost.toIntExact
           if (expectedCost.isDefined) {
             assertResult(expectedCost.get,
-              s"Evaluation Mode: ${evalMode.name}; Actual verify() cost $cost != expected ${expectedCost.get}")(verificationCost)
+              s"Actual verify() cost $cost != expected ${expectedCost.get}")(verificationCost)
           }
 
         case Failure(t) => throw t
@@ -499,12 +495,21 @@ class SigmaDslTesting extends PropSpec
 
     implicit val cs = compilerSettingsInTests
 
-    val oldImpl = () => func[A, B](script)
-    val newImpl = () => funcJit[A, B](script)
+    /** in v5.x the old and the new interpreters are the same */
+    override val oldImpl = () => funcJit[A, B](script)
+    override val newImpl = () => funcJit[A, B](script)
 
+    /** Checks that evaluation of this feature on the `input` is the same for both
+      * interpreter versions.
+      * @param input test case data value
+      * @param logInputOutput whether to log input and output test vectors
+      * @return result of feature function and costing details
+      */
     def checkEquality(input: A, logInputOutput: Boolean = false): Try[(B, CostDetails)] = {
       // check the old implementation against Scala semantic function
-      val oldRes = checkEq(scalaFunc)(oldF)(input)
+      val oldRes = VersionContext.withVersions(activatedVersionInTests, ergoTreeVersionInTests) {
+        checkEq(scalaFunc)(oldF)(input)
+      }
 
       val newRes = VersionContext.withVersions(activatedVersionInTests, ergoTreeVersionInTests) {
         checkEq(scalaFunc)({ x =>
@@ -563,7 +568,9 @@ class SigmaDslTesting extends PropSpec
       */
     override def checkExpected(input: A, expected: Expected[B]): Unit = {
       // check the old implementation with Scala semantic
-      val (oldRes, _) = checkEq(scalaFunc)(oldF)(input).get
+      val (oldRes, _) = VersionContext.withVersions(activatedVersionInTests, ergoTreeVersionInTests) {
+        checkEq(scalaFunc)(oldF)(input).get
+      }
       oldRes shouldBe expected.value.get
 
       // check the new implementation with Scala semantic
@@ -654,7 +661,7 @@ class SigmaDslTesting extends PropSpec
     allowNewToSucceed: Boolean = false,
     override val allowDifferentErrors: Boolean = false
   )(implicit IR: IRContext, override val evalSettings: EvalSettings, val tA: RType[A], val tB: RType[B])
-    extends Feature[A, B] {
+    extends Feature[A, B] { feature =>
 
     implicit val cs = compilerSettingsInTests
 
@@ -667,23 +674,17 @@ class SigmaDslTesting extends PropSpec
     val oldImpl = () => {
       if (script.isNullOrEmpty) {
         val funcValue = expectedExpr.getOrElse(
-          sys.error("When `script` is not defined, the expectedExpr is used for CompiledFunc"))
-        val expr = getApplyExpr(funcValue)
-        funcFromExpr[A, B]("not defined", expr)
-      } else {
-        func[A, B](script)
-      }
-    }
-
-    val newImpl = () => {
-      if (script.isNullOrEmpty) {
-        val funcValue = expectedExpr.getOrElse(
-          sys.error("When `script` is not defined, the expectedExpr is used for CompiledFunc"))
+          sys.error(s"${feature.getClass.getName}.oldImpl: When `script` is not defined, the expectedExpr is used for CompiledFunc"))
         val expr = getApplyExpr(funcValue)
         funcJitFromExpr[A, B]("not defined", expr)
       } else {
         funcJit[A, B](script)
       }
+    }
+
+    val newImpl = () => {
+      // TODO 6.0: change as necessary to reflect interpreter changes
+      oldImpl()
     }
 
     override def checkEquality(input: A, logInputOutput: Boolean = false): Try[(B, CostDetails)] = {
@@ -744,9 +745,30 @@ class SigmaDslTesting extends PropSpec
       if (!VersionContext.current.isJitActivated) {
         // check the old implementation with Scala semantic
         val expectedOldRes = expected.value
-        val oldRes = checkEq(scalaFunc)(oldF)(input)
-        checkResult(oldRes.map(_._1), expectedOldRes, failOnTestVectors = true,
-          "Comparing oldRes with expected: !isJitActivated: ")
+
+        if (!allowNewToSucceed) {
+          // In v5.x the oldF is actually implemented using new JIT interpreter.
+          // Some exceptions of old v4.x interpreter are not reproducible in v5.0+.
+          // If allowNewToSucceed == false then we need to check equivalence with the old
+          // semantic function (scalaFunc)
+          val oldRes = checkEq(scalaFunc)(oldF)(input)
+          checkResult(oldRes.map(_._1), expectedOldRes, failOnTestVectors = true,
+            "Comparing oldRes with expected: !isJitActivated: ")
+        } else {
+          // when allowNewToSucceed == true then check depending on the results
+          val expRes = newRes.map(_._1)
+          (Try(scalaFunc(input)), Try(oldF(input)._1)) match {
+            case (Success(s), Success(old)) =>
+              s shouldBe old
+            case (Failure(e), oldRes @ Success(_)) =>
+              // allow this because of allowNewToSucceed
+              oldRes shouldBe expRes
+            case (Success(s), Failure(e)) =>
+              fail(s"Old version fail while scalaFunc succeeds: $s <+++> $e")
+            case (Failure(e), Failure(old)) =>
+              e.getClass shouldBe old.getClass
+          }
+        }
 
         val newValue = newRes.map(_._1)
         (expectedOldRes, newValue) match {
@@ -819,7 +841,8 @@ class SigmaDslTesting extends PropSpec
     }
     implicit val cs = compilerSettingsInTests
 
-    val oldImpl = () => func[A, B](script)
+    /** in v5.x the old and the new interpreters are the same */
+    val oldImpl = () => funcJit[A, B](script)
     val newImpl = oldImpl // funcJit[A, B](script) // TODO v6.0 (16h): use actual new implementation here
 
     /** In v5.x this method just checks the old implementations fails on the new feature. */
@@ -1028,7 +1051,7 @@ class SigmaDslTesting extends PropSpec
     NewFeature(script, scalaFunc, Option(expectedExpr))
   }
 
-  val contextGen: Gen[Context] = ergoLikeContextGen.map(c => c.toSigmaContext(isCost = false))
+  val contextGen: Gen[Context] = ergoLikeContextGen.map(c => c.toSigmaContext())
   implicit val arbContext: Arbitrary[Context] = Arbitrary(contextGen)
 
   /** NOTE, this should be `def` to allow overriding of generatorDrivenConfig in derived Spec classes. */
@@ -1127,11 +1150,11 @@ class SigmaDslTesting extends PropSpec
     implicit val tA = fNew.tA
     implicit val tB = fNew.tB
     implicit val cs = defaultCompilerSettings
-    val func = funcJitFast[A, B](f.script)
+    val func = funcJit[A, B](f.script)
     val noTraceSettings = evalSettings.copy(
       isMeasureOperationTime = false,
       costTracingEnabled = false)
-    val funcNoTrace = funcJitFast[A, B](f.script)(tA, tB, IR, noTraceSettings, cs)
+    val funcNoTrace = funcJit[A, B](f.script)(tA, tB, IR, noTraceSettings, cs)
     var iCase = 0
     val (res, total) = BenchmarkUtil.measureTimeNano {
       VersionContext.withVersions(activatedVersionInTests, ergoTreeVersionInTests) {

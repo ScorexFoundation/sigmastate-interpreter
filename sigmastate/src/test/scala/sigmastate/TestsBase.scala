@@ -3,14 +3,13 @@ package sigmastate
 import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
 import org.ergoplatform.ErgoScriptPredef
 import org.scalatest.Matchers
-import sigmastate.Values.{SValue, Value, SigmaPropValue, ErgoTree, SigmaBoolean}
+import sigmastate.Values.{ErgoTree, SValue, SigmaBoolean, SigmaPropValue, Value}
 import sigmastate.eval.IRContext
-import sigmastate.interpreter.Interpreter
+import sigmastate.helpers.SigmaPPrint
 import sigmastate.interpreter.Interpreter.ScriptEnv
-import sigmastate.lang.{TransformingSigmaBuilder, SigmaCompiler, CompilerSettings}
 import sigmastate.lang.Terms.ValueOps
+import sigmastate.lang.{CompilerResult, CompilerSettings, SigmaCompiler, TransformingSigmaBuilder}
 import sigmastate.serialization.ValueSerializer
-import spire.syntax.all.cfor
 
 import scala.util.DynamicVariable
 
@@ -69,12 +68,20 @@ trait TestsBase extends Matchers with VersionTesting {
   def compileWithoutCosting(env: ScriptEnv, code: String): Value[SType] =
     compiler.compileWithoutCosting(env, code)
 
+  /** Compile the given code to ErgoTree expression. */
   def compile(env: ScriptEnv, code: String)(implicit IR: IRContext): Value[SType] = {
-    val tree = compiler.compile(env, code)
-    checkSerializationRoundTrip(tree)
-    tree
+    val res = compiler.compile(env, code)
+    checkCompilerResult(res)
+    res.buildTree
   }
 
+  /** Check the given [[CompilerResult]] meets equality and sanity requirements. */
+  def checkCompilerResult[Ctx <: IRContext](res: CompilerResult[Ctx])(implicit IR: IRContext): Unit = {
+    checkSerializationRoundTrip(res.buildTree)
+  }
+
+
+  /** Compiles the given code and checks the resulting `prop` against `expected`. */
   def compileAndCheck(env: ScriptEnv, code: String, expected: SValue)
                      (implicit IR: IRContext): (ErgoTree, SigmaPropValue) = {
     val prop = compile(env, code).asSigmaProp

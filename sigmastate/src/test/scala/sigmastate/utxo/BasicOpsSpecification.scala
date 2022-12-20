@@ -12,8 +12,8 @@ import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeConte
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter._
 import sigmastate.lang.Terms._
-import special.sigma.InvalidType
 import SType.AnyOps
+import sigmastate.eval.InvalidType
 import sigmastate.interpreter.ContextExtension.VarBinding
 import sigmastate.interpreter.ErgoTreeEvaluator.DefaultEvalSettings
 import sigmastate.interpreter.{CryptoConstants, EvalSettings}
@@ -26,7 +26,6 @@ class BasicOpsSpecification extends SigmaTestingCommons
   with CrossVersionProps {
   override val printVersions: Boolean = false
   implicit lazy val IR = new TestingIRContext {
-    override val okPrintEvaluatedEntries: Boolean = false
   }
 
   private val reg1 = ErgoBox.nonMandatoryRegisters.head
@@ -135,54 +134,25 @@ class BasicOpsSpecification extends SigmaTestingCommons
   }
 
   property("Unit register") {
-    VersionContext.withVersions(activatedVersionInTests, ergoTreeVersionInTests) {
-      if (VersionContext.current.isJitActivated) {
+    // TODO frontend: implement missing Unit support in compiler
+    //  https://github.com/ScorexFoundation/sigmastate-interpreter/issues/820
+    test("R1", env, ext,
+      script = "", /* means cannot be compiled
+                     the corresponding script is { SELF.R4[Unit].isDefined } */
+      ExtractRegisterAs[SUnit.type](Self, reg1)(SUnit).isDefined.toSigmaProp,
+      additionalRegistersOpt = Some(Map(
+        reg1 -> UnitConstant.instance
+      ))
+    )
 
-        // TODO frontend: implement missing Unit support in compiler
-        //  https://github.com/ScorexFoundation/sigmastate-interpreter/issues/820
-        test("R1", env, ext,
-          script = "", /* means cannot be compiled
-                         the corresponding script is { SELF.R4[Unit].isDefined } */
-          ExtractRegisterAs[SUnit.type](Self, reg1)(SUnit).isDefined.toSigmaProp,
-          additionalRegistersOpt = Some(Map(
-            reg1 -> UnitConstant.instance
-          ))
-        )
-
-        test("R2", env, ext,
-          script = "", /* means cannot be compiled
-                       the corresponding script is "{ SELF.R4[Unit].get == () }" */
-          EQ(ExtractRegisterAs[SUnit.type](Self, reg1)(SUnit).get, UnitConstant.instance).toSigmaProp,
-          additionalRegistersOpt = Some(Map(
-            reg1 -> UnitConstant.instance
-          ))
-        )
-      } else {
-        assertExceptionThrown(
-          test("R1", env, ext,
-            "{ SELF.R4[SigmaProp].get }",
-            ExtractRegisterAs[SSigmaProp.type](Self, reg1).get,
-            additionalRegistersOpt = Some(Map(
-              reg1 -> SigmaPropConstant(DLogProverInput.random().publicImage),
-              reg2 -> UnitConstant.instance
-            ))
-          ),
-          rootCauseLike[RuntimeException]("Don't know how to compute Sized for type PrimitiveType(Unit,")
-        )
-        assertExceptionThrown(
-          test("R2", env, ext,
-            "", /* the test script "{ SELF.R4[Unit].isDefined }" cannot be compiled with SigmaCompiler,
-                          but we nevertheless want to test how interpreter process the tree,
-                          so we use the explicitly given tree below */
-            ExtractRegisterAs[SUnit.type](Self, reg1)(SUnit).isDefined.toSigmaProp,
-            additionalRegistersOpt = Some(Map(
-              reg1 -> UnitConstant.instance
-            ))
-          ),
-          rootCauseLike[CosterException]("Don't know how to convert SType SUnit to Elem")
-        )
-      }
-    }
+    test("R2", env, ext,
+      script = "", /* means cannot be compiled
+                   the corresponding script is "{ SELF.R4[Unit].get == () }" */
+      EQ(ExtractRegisterAs[SUnit.type](Self, reg1)(SUnit).get, UnitConstant.instance).toSigmaProp,
+      additionalRegistersOpt = Some(Map(
+        reg1 -> UnitConstant.instance
+      ))
+    )
   }
 
   property("Relation operations") {

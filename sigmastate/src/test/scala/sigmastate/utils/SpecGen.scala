@@ -2,7 +2,6 @@ package sigmastate.utils
 
 import sigmastate._
 import sigmastate.eval.Evaluation._
-import sigmastate.eval.{Zero, Sized}
 import scalan.util.Extensions.ByteOps
 import scalan.util.CollectionUtil
 import scalan.util.PrintExtensions._
@@ -113,22 +112,20 @@ trait SpecGen {
       }
       val rtype = stypeToRType(t)
       val name = t match { case SGlobal => "Global" case _ => rtype.name }
-      val isConst = t.isConstantSize
       val isPrim = t.isInstanceOf[SPrimType]
       val isEmbed = t.isInstanceOf[SEmbeddable]
       val isNum = t.isInstanceOf[SNumericType]
       val valRange = t match {
         case SBoolean => s"$$\\Set{\\lst{true}, \\lst{false}}$$"
         case n: SNumericType =>
-          val s = Sized.typeToSized(rtype)
-          val z = Zero.typeToZero(rtype).zero
-          val bits = s.size(z).dataSize * 8 - 1
+          val s = if (n.isInstanceOf[SBigInt.type]) 32 else 1 << n.numericTypeIndex
+          val bits = s * 8 - 1 // non-sign bits
           s"$$\\Set{-2^{$bits} \\dots 2^{$bits}-1}$$~\\ref{sec:type:${name}}"
         case SGroupElement => s"$$\\Set{p \\in \\lst{SecP256K1Point}}$$"
         case _ => s"Sec.~\\ref{sec:type:${name}}"
       }
       val line =
-        s"""\\lst{$name}	&	$$${tc.typeId}$$	&	\\lst{$isConst}	& \\lst{$isPrim}	&	\\lst{$isEmbed} &	\\lst{$isNum}	& $valRange \\\\"""
+        s"""\\lst{$name}	&	$$${tc.typeId}$$	&	\\lst{isConst}	& \\lst{$isPrim}	&	\\lst{$isEmbed} &	\\lst{$isNum}	& $valRange \\\\"""
       line
     }
     val table = lines.mkString("\n\\hline\n")

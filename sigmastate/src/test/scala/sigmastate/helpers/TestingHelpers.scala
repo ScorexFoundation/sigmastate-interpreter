@@ -50,7 +50,7 @@ object TestingHelpers {
     */
   def cloneColl[A](c: Coll[A]): Coll[A] = (c match {
     case c: CollOverArray[_] =>
-      new CollOverArray(c.toArray.clone())(c.tItem)
+      new CollOverArray(c.toArray.clone(), SigmaDsl.Colls)(c.tItem)
     case ps: PairOfCols[_,_] =>
       new PairOfCols(cloneColl(ps.ls), cloneColl(ps.rs))
   }).asInstanceOf[Coll[A]]
