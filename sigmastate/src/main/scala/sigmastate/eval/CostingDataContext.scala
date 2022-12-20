@@ -1,37 +1,36 @@
 package sigmastate.eval
 
-import com.google.common.primitives.Ints
+import com.google.common.primitives.{Ints, Longs}
 
 import java.math.BigInteger
 import java.util.Arrays
 import org.bouncycastle.math.ec.ECPoint
 import org.ergoplatform.{ErgoBox, SigmaConstants}
 import org.ergoplatform.validation.ValidationRules
+import scalan.OverloadHack.Overloaded1
 import scorex.crypto.authds.avltree.batch._
-import scorex.crypto.authds.{ADDigest, ADKey, SerializedAdProof, ADValue}
+import scorex.crypto.authds.{ADDigest, ADKey, ADValue, SerializedAdProof}
 import sigmastate.SCollection.SByteArray
 import sigmastate.{TrivialProp, _}
-import sigmastate.Values.{Constant, EvaluatedValue, SValue, ConstantNode, ErgoTree, SigmaBoolean}
+import sigmastate.Values.{ConstantNode, ErgoTree, EvaluatedValue, SValue, SigmaBoolean}
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.interpreter.{CryptoConstants, Interpreter}
-import special.collection.{Size, CSizeOption, SizeColl, CCostedBuilder, CollType, SizeOption, CostedBuilder, Coll}
+import special.collection._
 import special.sigma._
 import sigmastate.eval.Extensions._
 import spire.syntax.all.cfor
 
-import scala.util.{Success, Failure}
+import scala.util.{Failure, Success}
+import scalan.util.Extensions.BigIntegerOps
 import scalan.{Nullable, RType}
-import scorex.crypto.hash.{Digest32, Sha256, Blake2b256}
+import scorex.crypto.hash.{Blake2b256, Digest32, Sha256}
 import sigmastate.Values.ErgoTree.EmptyConstants
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
-import sigmastate.lang.Terms.OperationId
 import sigmastate.lang.TransformingSigmaBuilder
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
-import sigmastate.serialization.{SigmaSerializer, GroupElementSerializer}
-import special.Types.TupleType
+import sigmastate.serialization.{GroupElementSerializer, SigmaSerializer}
 
-import scala.collection.mutable
 import scala.reflect.ClassTag
 
 /** Interface implmented by wrappers to provide access to the underlying wrapped value. */
@@ -43,18 +42,78 @@ trait WrapperOf[T] {
 /** A default implementation of [[BigInt]] interface.
   * @see [[BigInt]] for detailed descriptions
   */
-case class CBigInt(override val wrappedValue: BigInteger) extends TestBigInt(wrappedValue) with WrapperOf[BigInteger] {
-  override val dsl = CostingSigmaDslBuilder
+case class CBigInt(override val wrappedValue: BigInteger) extends BigInt with WrapperOf[BigInteger] {
+  val dsl = CostingSigmaDslBuilder
+  override def toByte : Byte  = wrappedValue.byteValueExact()
+  override def toShort: Short = wrappedValue.shortValueExact()
+  override def toInt  : Int   = wrappedValue.intValueExact()
+  override def toLong : Long  = wrappedValue.longValueExact()
+
+  override def toBytes: Coll[Byte] = dsl.Colls.fromArray(wrappedValue.toByteArray)
+
+  override def toAbs: BigInt = dsl.BigInt(wrappedValue.abs())
+
+  override def compareTo(that: BigInt): Int =
+    wrappedValue.compareTo(that.asInstanceOf[CBigInt].wrappedValue)
+
+  override def toBits: Coll[Boolean] = ???
+
+  override def modQ: BigInt = ???
+
+  override def plusModQ(other: BigInt): BigInt = ???
+
+  override def minusModQ(other: BigInt): BigInt = ???
+
+  override def multModQ(other: BigInt): BigInt = ???
+
+  override def inverseModQ: BigInt = ???
+
+  override def signum: Int = wrappedValue.signum()
+
+  override def add(that: BigInt): BigInt = dsl.BigInt(wrappedValue.add(that.asInstanceOf[CBigInt].wrappedValue).to256BitValueExact)
+
+  override def subtract(that: BigInt): BigInt = dsl.BigInt(wrappedValue.subtract(that.asInstanceOf[CBigInt].wrappedValue).to256BitValueExact)
+
+  override def multiply(that: BigInt): BigInt = dsl.BigInt(wrappedValue.multiply(that.asInstanceOf[CBigInt].wrappedValue).to256BitValueExact)
+
+  override def divide(that: BigInt): BigInt = dsl.BigInt(wrappedValue.divide(that.asInstanceOf[CBigInt].wrappedValue))
+
+  override def mod(m: BigInt): BigInt = dsl.BigInt(wrappedValue.mod(m.asInstanceOf[CBigInt].wrappedValue))
+
+  override def remainder(that: BigInt): BigInt = dsl.BigInt(wrappedValue.remainder(that.asInstanceOf[CBigInt].wrappedValue))
+
+  override def min(that: BigInt): BigInt = dsl.BigInt(wrappedValue.min(that.asInstanceOf[CBigInt].wrappedValue))
+
+  override def max(that: BigInt): BigInt = dsl.BigInt(wrappedValue.max(that.asInstanceOf[CBigInt].wrappedValue))
+
+  override def negate(): BigInt = dsl.BigInt(wrappedValue.negate().to256BitValueExact)
+
+  override def and(that: BigInt): BigInt = dsl.BigInt(wrappedValue.and(that.asInstanceOf[CBigInt].wrappedValue))
+
+  override def or(that: BigInt): BigInt = dsl.BigInt(wrappedValue.or(that.asInstanceOf[CBigInt].wrappedValue))
 }
 
 /** A default implementation of [[GroupElement]] interface.
   * @see [[GroupElement]] for detailed descriptions
   */
-case class CGroupElement(override val wrappedValue: EcPointType) extends TestGroupElement(wrappedValue) with WrapperOf[ECPoint] {
-  override val dsl = CostingSigmaDslBuilder
+case class CGroupElement(override val wrappedValue: EcPointType) extends GroupElement with WrapperOf[ECPoint] {
+  val dsl = CostingSigmaDslBuilder
+  
+  override def toString: String = s"GroupElement(${Extensions.showECPoint(wrappedValue)})"
 
-  override def getEncoded: Coll[Byte] = dsl.Colls.fromArray(GroupElementSerializer.toBytes(wrappedValue))
+  override def getEncoded: Coll[Byte] =
+    dsl.Colls.fromArray(GroupElementSerializer.toBytes(wrappedValue))
 
+  override def isInfinity: Boolean = wrappedValue.isInfinity
+
+  override def exp(k: BigInt): GroupElement =
+    dsl.GroupElement(wrappedValue.multiply(k.asInstanceOf[CBigInt].wrappedValue))
+
+  override def multiply(that: GroupElement): GroupElement =
+    dsl.GroupElement(wrappedValue.add(that.asInstanceOf[CGroupElement].wrappedValue))
+
+  override def negate: GroupElement =
+    dsl.GroupElement(wrappedValue.negate())
 }
 
 /** A default implementation of [[SigmaProp]] interface.
@@ -245,44 +304,23 @@ case class CAvlTree(treeData: AvlTreeData) extends AvlTree with WrapperOf[AvlTre
   }
 }
 
-import sigmastate.eval.CostingBox._
+/** Default implementation of AnyValue interface. */
+case class CAnyValue[A](value: A, tVal: RType[Any]) extends AnyValue {
+  def tA: RType[A] = tVal.asInstanceOf[RType[A]]
+  override def toString = s"TestValue($value)"
+}
 
-class EvalSizeBox(
-    propositionBytes: Size[Coll[Byte]],
-    bytes: Size[Coll[Byte]],
-    bytesWithoutRef: Size[Coll[Byte]],
-    registers: Size[Coll[Option[AnyValue]]],
-    tokens: Size[Coll[(Coll[Byte], Long)]]
-) extends CSizeBox(propositionBytes, bytes, bytesWithoutRef, registers, tokens) {
-  override def getReg[T](id: Byte)(implicit tT: RType[T]): Size[Option[T]] = {
-    val varSize = registers.asInstanceOf[SizeColl[Option[AnyValue]]].sizes(id.toInt)
-    val foundSize = varSize.asInstanceOf[SizeOption[AnyValue]].sizeOpt
-    val regSize = foundSize match {
-      case Some(varSize: SizeAnyValue) =>
-        require(varSize.tVal == tT, s"Unexpected register type found at register #$id: ${varSize.tVal}, expected $tT")
-        val regSize = varSize.valueSize.asInstanceOf[Size[T]]
-        regSize
-      case _ =>
-        val z = Zero.typeToZero(tT)
-        val zeroVal = z.zero
-        val sized = Sized.typeToSized(tT)
-        sized.size(zeroVal)
-    }
-    new CSizeOption[T](Some(regSize))
-  }
+object CAnyValue {
+  def apply[A](value: A, t: RType[A])(implicit o: Overloaded1): CAnyValue[A] =
+    new CAnyValue(value, t.asInstanceOf[RType[Any]])
 }
-class EvalSizeBuilder extends CSizeBuilder {
-  override def mkSizeBox(propositionBytes: Size[Coll[Byte]], bytes: Size[Coll[Byte]],
-      bytesWithoutRef: Size[Coll[Byte]], registers: Size[Coll[Option[AnyValue]]],
-      tokens: Size[Coll[(Coll[Byte], Long)]]): SizeBox = {
-    new EvalSizeBox(propositionBytes, bytes, bytesWithoutRef, registers, tokens)
-  }
-}
+
+import sigmastate.eval.CostingBox._
 
 /** A default implementation of [[Box]] interface.
   * @see [[Box]] for detailed descriptions
   */
-case class CostingBox(isCost: Boolean, val ebox: ErgoBox) extends Box with WrapperOf[ErgoBox] {
+case class CostingBox(val ebox: ErgoBox) extends Box with WrapperOf[ErgoBox] {
   val builder = CostingSigmaDslBuilder
 
   val value = ebox.value
@@ -294,42 +332,19 @@ case class CostingBox(isCost: Boolean, val ebox: ErgoBox) extends Box with Wrapp
 
   override def wrappedValue: ErgoBox = ebox
 
-  override def getReg[T](i: Int)(implicit tT: RType[T]): Option[T] =
-    if (isCost) {  // TODO refactor: remove isCost branch (it was added before Sizes and now is never executed)
-      val optV =
-        if (i < 0 || i >= registers.length) None
-        else {
-          val value = registers(i)
-          if (value != null) {
-            // once the value is not null it should be of the right type
-            value match {
-              case value: TestValue[_] if value.value != null =>
-                Some(value.value.asInstanceOf[T])
-              case _ =>
-                None
-            }
-          } else None
-        }
-
-      optV.orElse {
-        val tpe = Evaluation.rtypeToSType(tT)
-        val default = builder.Costing.defaultValue(tT).asInstanceOf[SType#WrappedType]
-        Some(Constant[SType](default, tpe).asInstanceOf[T])
+  override def getReg[T](i: Int)(implicit tT: RType[T]): Option[T] = {
+    if (i < 0 || i >= registers.length) return None
+    val value = registers(i)
+    if (value != null ) {
+      // once the value is not null it should be of the right type
+      value match {
+        case value: CAnyValue[_] if value.value != null && value.tA == tT =>
+          Some(value.value.asInstanceOf[T])
+        case _ =>
+          throw new InvalidType(s"Cannot getReg[${tT.name}]($i): invalid type of value $value at id=$i")
       }
-    } else {
-      if (i < 0 || i >= registers.length) return None
-      val value = registers(i)
-      if (value != null ) {
-        // once the value is not null it should be of the right type
-        value match {
-          case value: TestValue[_] if value.value != null && value.tA == tT =>
-            Some(value.value.asInstanceOf[T])
-          case _ =>
-            throw new InvalidType(s"Cannot getReg[${tT.name}]($i): invalid type of value $value at id=$i")
-        }
-      } else None
-    }
-
+    } else None
+  }
 
   override def creationInfo: (Int, Coll[Byte]) = {
     this.getReg[(Int, Coll[Byte])](3).get.asInstanceOf[Any] match {
@@ -481,114 +496,20 @@ object CHeader {
   val NonceSize: Int = SigmaConstants.AutolykosPowSolutionNonceArraySize.value
 }
 
-/** A default implementation of [[CostModel]] interface.
-  * @see [[CostModel]] for detailed descriptions
-  */
-class CCostModel extends CostModel {
-  import CCostModel._
-
-  override def AccessBox: Int = AccessBoxCost
-
-  override def AccessAvlTree: Int = AccessAvlTreeCost
-
-  override def GetVar: Int = GetVarCost
-
-  def DeserializeVar: Int = DeserializeVarCost
-
-  def GetRegister: Int = GetRegisterCost
-
-  def DeserializeRegister: Int = DeserializeRegisterCost
-
-  def SelectField: Int = SelectFieldCost
-
-  def CollectionConst: Int = CollectionConstCost
-
-  def AccessKiloByteOfData: Int = AccessKiloByteOfDataCost
-
-  def PubKeySize: Long = CryptoConstants.EncodedGroupElementLength
-}
-object CCostModel {
-  private def costOf(opName: String, opType: SFunc): Int = {
-    val operId = OperationId(opName, opType)
-    costOf(operId)
-  }
-
-  @inline private def costOf(operId: OperationId): Int = {
-    val cost = sigmastate.utxo.CostTable.DefaultCosts(operId)
-    cost
-  }
-
-  // NOTE: lazy vals are necessary to avoid initialization exception
-
-  private val AccessBoxOpType: SFunc = SFunc(SContext, SBox)
-  private lazy val AccessBoxCost: Int = costOf("AccessBox", AccessBoxOpType)
-
-  private val AccessAvlTreeOpType: SFunc = SFunc(SContext, SAvlTree)
-  private lazy val AccessAvlTreeCost: Int = costOf("AccessAvlTree", AccessAvlTreeOpType)
-
-  private val GetVarOpType: SFunc = SFunc(SContext.ContextFuncDom, SOption.ThisType)
-  private lazy val GetVarCost: Int = costOf("GetVar", GetVarOpType)
-
-  private val DeserializeVarOpType: SFunc = SFunc(SContext.ContextFuncDom, SOption.ThisType)
-  private lazy val DeserializeVarCost: Int = costOf("DeserializeVar", DeserializeVarOpType)
-
-  private val GetRegisterOpType: SFunc = SFunc(Array(SBox, SByte), SOption.ThisType)
-  private lazy val GetRegisterCost: Int = costOf("GetRegister", GetRegisterOpType)
-
-  private val DeserializeRegisterOpType: SFunc = SFunc(Array(SBox, SByte), SOption.ThisType)
-  private lazy val DeserializeRegisterCost: Int = costOf("DeserializeRegister", DeserializeRegisterOpType)
-
-  private val SelectFieldOpType: SFunc = SFunc(mutable.WrappedArray.empty, SUnit)
-  private lazy val SelectFieldCost: Int = costOf("SelectField", SelectFieldOpType)
-
-  private val CollectionConstOpType: SFunc = SFunc(mutable.WrappedArray.empty, SCollection.ThisType)
-  private lazy val CollectionConstCost: Int = costOf("Const", CollectionConstOpType)
-
-  private val AccessKiloByteOfDataOpType: SFunc = SFunc(mutable.WrappedArray.empty, SUnit)
-  private lazy val AccessKiloByteOfDataCost: Int = costOf("AccessKiloByteOfData", AccessKiloByteOfDataOpType)
-}
-
 /** A default implementation of [[SigmaDslBuilder]] interface.
   * @see [[SigmaDslBuilder]] for detailed descriptions
   */
-class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
+class CostingSigmaDslBuilder extends SigmaDslBuilder { dsl =>
   implicit val validationSettings = ValidationRules.currentSettings
 
-  override val Costing: CostedBuilder = new CCostedBuilder {
+  // manual fix
+  override val Colls: CollBuilder = new CollOverArrayBuilder
 
-    import RType._
+  override def BigInt(n: BigInteger): BigInt = CBigInt(n)
 
-    override def defaultValue[T](valueType: RType[T]): T = (valueType match {
-      case BooleanType => false
-      case ByteType => 0.toByte
-      case ShortType => 0.toShort
-      case IntType => 0
-      case LongType => 0L
-      case StringType => ""
-      case CharType => 0.toChar
-      case FloatType => 0.0f
-      case DoubleType => 0.0d
-      case p: PairType[a, b] => (defaultValue(p.tFst), defaultValue(p.tSnd))
-      case col: CollType[a] => dsl.Colls.emptyColl(col.tItem)
-      case tup: TupleType => tup.items.map(t => defaultValue(t))
-      case SType.AvlTreeDataRType => AvlTreeData.dummy
-      case AvlTreeRType => CAvlTree(AvlTreeData.dummy)
+  override def toBigInteger(n: BigInt): BigInteger = n.asInstanceOf[CBigInt].wrappedValue
 
-      case SType.SigmaBooleanRType => TrivialProp.FalseProp
-      case SigmaPropRType => sigmaProp(false)
-
-      case ECPointRType => CryptoConstants.dlogGroup.generator
-      case GroupElementRType => groupGenerator
-
-      case _ => sys.error(s"Cannot create defaultValue($valueType)")
-    }).asInstanceOf[T]
-  }
-
-  override def CostModel: CostModel = new CCostModel
-
-  override def BigInt(n: BigInteger): BigInt = new CBigInt(n)
-
-  override def GroupElement(p: ECPoint): GroupElement = p match {
+  def GroupElement(p: ECPoint): GroupElement = p match {
     case ept: EcPointType => CGroupElement(ept)
     case m => sys.error(s"Point of type ${m.getClass} is not supported")
   }
@@ -597,10 +518,13 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
   def SigmaProp(sigmaTree: SigmaBoolean): SigmaProp = new CSigmaProp(sigmaTree)
 
   /** Extract `sigmastate.Values.SigmaBoolean` from DSL's `SigmaProp` type. */
-  def toSigmaBoolean(p: SigmaProp): SigmaBoolean = p.asInstanceOf[CSigmaProp].sigmaTree
+  @inline def toSigmaBoolean(p: SigmaProp): SigmaBoolean = p.asInstanceOf[CSigmaProp].sigmaTree
 
   /** Extract `sigmastate.AvlTreeData` from DSL's `AvlTree` type. */
   def toAvlTreeData(p: AvlTree): AvlTreeData = p.asInstanceOf[CAvlTree].treeData
+
+  /** Extract `org.bouncycastle.math.ec.ECPoint` from DSL's `GroupElement` type. */
+  def toECPoint(ge: GroupElement): ECPoint = ge.asInstanceOf[CGroupElement].wrappedValue
 
   override def avlTree(operationFlags: Byte, digest: Coll[Byte], keyLength: Int, valueLengthOpt: Option[Int]): CAvlTree = {
     val treeData = AvlTreeData(ADDigest @@ digest.toArray, AvlTreeFlags(operationFlags), keyLength, valueLengthOpt)
@@ -616,7 +540,7 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
     * @param ebox  the value to be wrapped
     * @see [[sigmastate.SBox]], [[special.sigma.Box]]
     */
-  def Box(ebox: ErgoBox): Box = CostingBox(false, ebox)
+  def Box(ebox: ErgoBox): Box = CostingBox(ebox)
 
   /** Extracts [[ErgoBox]] from the given [[Box]] instance. This is inverse to the Box method. */
   def toErgoBox(b: Box): ErgoBox = b.asInstanceOf[CostingBox].ebox
@@ -626,10 +550,7 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
     val len = props.length
     val res = new Array[SigmaBoolean](len)
     cfor(0)(_ < len, _ + 1) { i =>
-      res(i) = props(i) match {
-        case csp: CSigmaProp => csp.sigmaTree
-        case m: MockSigma => TrivialProp(m.isValid) //needed for tests, e.g. "atLeast" test
-      }
+      res(i) = toSigmaBoolean(props(i))
     }
     res
   }
@@ -645,6 +566,30 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
     CSigmaProp(tree)
   }
 
+  override def allOf(conditions: Coll[Boolean]): Boolean =
+    conditions.forall(c => c)
+
+  override def anyOf(conditions: Coll[Boolean]): Boolean =
+    conditions.exists(c => c)
+
+  override def xorOf(conditions: Coll[Boolean]): Boolean = {
+    if (VersionContext.current.isJitActivated) {
+      val len = conditions.length
+      if (len == 0) false
+      else if (len == 1) conditions(0)
+      else {
+        var res = conditions(0)
+        cfor(1)(_ < len, _ + 1) { i =>
+          res ^= conditions(i)
+        }
+        res
+      }
+    } else {
+      // This is buggy version used in v4.x interpreter (for ErgoTrees v0, v1)
+      conditions.toArray.distinct.length == 2
+    }
+  }
+
   override def allZK(props: Coll[SigmaProp]): SigmaProp = {
     val sigmaTrees = toSigmaTrees(props.toArray)
     val tree = CAND.normalized(sigmaTrees)
@@ -656,6 +601,9 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
     val tree = COR.normalized(sigmaTrees)
     CSigmaProp(tree)
   }
+
+  override def xor(l: Coll[Byte], r: Coll[Byte]): Coll[Byte] =
+    Colls.xor(l, r)
 
   override def sigmaProp(b: Boolean): SigmaProp = {
     CSigmaProp(TrivialProp(b))
@@ -670,6 +618,17 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
     val h = Sha256.hash(bytes.toArray)
     Colls.fromArray(h)
   }
+
+  override def byteArrayToBigInt(bytes: Coll[Byte]): BigInt = {
+    val bi = new BigInteger(bytes.toArray).to256BitValueExact
+    this.BigInt(bi)
+  }
+
+  override def longToByteArray(l: Long): Coll[Byte] =
+    Colls.fromArray(Longs.toByteArray(l))
+
+  override def byteArrayToLong(bytes: Coll[Byte]): Long =
+    Longs.fromByteArray(bytes.toArray)
 
   override def proveDlog(ge: GroupElement): SigmaProp =
     CSigmaProp(ProveDlog(toECPoint(ge).asInstanceOf[EcPointType]))
@@ -728,8 +687,8 @@ case class CostingDataContext(
                                _minerPubKey: Coll[Byte],
                                vars: Coll[AnyValue],
                                override val activatedScriptVersion: Byte,
-                               override val currentErgoTreeVersion: Byte,
-                               var isCost: Boolean)
+                               override val currentErgoTreeVersion: Byte
+                               )
   extends Context {
   @inline override def builder: SigmaDslBuilder = CostingSigmaDslBuilder
 
@@ -758,39 +717,18 @@ case class CostingDataContext(
   }
 
   override def getVar[T](id: Byte)(implicit tT: RType[T]): Option[T] = {
-    if (isCost) {
-      val optV =
-        if (id < 0 || id >= vars.length) None
-        else {
-          val value = vars(id)
-          if (value != null) {
-            // once the value is not null it should be of the right type
-            value match {
-              case value: TestValue[_] if value.value != null =>
-                Some(value.value.asInstanceOf[T])
-              case _ => None
-            }
-          } else None
-        }
-      optV.orElse {
-        val tpe = Evaluation.rtypeToSType(tT)
-        val default = builder.Costing.defaultValue(tT).asInstanceOf[SType#WrappedType]
-        Some(Constant[SType](default, tpe).asInstanceOf[T])
+    implicit val tag: ClassTag[T] = tT.classTag
+    if (id < 0 || id >= vars.length) return None
+    val value = vars(id)
+    if (value != null) {
+      // once the value is not null it should be of the right type
+      value match {
+        case value: CAnyValue[_] if value.value != null && value.tA == tT =>
+          Some(value.value.asInstanceOf[T])
+        case _ =>
+          throw new InvalidType(s"Cannot getVar[${tT.name}]($id): invalid type of value $value at id=$id")
       }
-    } else {
-      implicit val tag: ClassTag[T] = tT.classTag
-      if (id < 0 || id >= vars.length) return None
-      val value = vars(id)
-      if (value != null) {
-        // once the value is not null it should be of the right type
-        value match {
-          case value: TestValue[_] if value.value != null && value.tA == tT =>
-            Some(value.value.asInstanceOf[T])
-          case _ =>
-            throw new InvalidType(s"Cannot getVar[${tT.name}]($id): invalid type of value $value at id=$id")
-        }
-      } else None
-    }
+    } else None
   }
 
   /** Return a new context instance with variables collection updated.

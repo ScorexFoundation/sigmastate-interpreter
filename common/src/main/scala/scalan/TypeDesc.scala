@@ -18,10 +18,6 @@ abstract class RType[A] {
   /** Syntactically correct type name (type expression as String) */
   def name: String = this.toString
 
-  /** Returns true is data size of `x: A` is the same for all `x`.
-    * This is useful optimizations of calculating sizes of collections. */
-  def isConstantSize: Boolean
-
   /** Creates empty immutable array of this type. */
   def emptyArray: Array[A] = Array.empty[A](classTag)
 }
@@ -61,15 +57,12 @@ object RType {
       case ClassTag.Nothing => "Nothing"
       case ct => ct.runtimeClass.getSimpleName()
     }
-    override def isConstantSize: Boolean = false
   }
 
   /** Descriptor used to represent primitive types. */
   case class PrimitiveType[A](classTag: ClassTag[A],
                               override val emptyArray: Array[A]) extends RType[A] {
     override def name: String = classTag.toString()
-    /** We assume all primitive types have inhabitants of the same size. */
-    override def isConstantSize: Boolean = true
   }
 
   val AnyType      : RType[Any]      = GeneralType[Any]     (ClassTag.Any)
@@ -86,15 +79,9 @@ object RType {
   implicit val DoubleType  : RType[Double]   = PrimitiveType[Double]  (ClassTag.Double, Array.emptyDoubleArray)
   implicit val UnitType    : RType[Unit]     = PrimitiveType[Unit]    (ClassTag.Unit, Array[Unit]()(ClassTag.Unit))
 
-  /** Descriptor of the type A narrowed to the single inhabitant `value`. */
-  case class SingletonType[A](value: A, classTag: ClassTag[A])() extends RType[A] {
-    override def isConstantSize: Boolean = true  // since the type has only one inhabitant
-  }
-
   implicit case object StringType extends RType[String] {
     override def classTag: ClassTag[String] = ClassTag[String](classOf[String])
     override def name: String = "String"
-    override def isConstantSize: Boolean = false
   }
 
   /** Descriptor of descriptor to represent type of RType[_] instances.
@@ -103,7 +90,6 @@ object RType {
   case object RTypeType extends RType[RType[_]] {
     val classTag: ClassTag[RType[_]] = ClassTag[RType[_]](classOf[RType[_]])
     override def name: String = s"RType[Any]"
-    override def isConstantSize: Boolean = false  // since all type terms of different size
   }
   /** Implicitly obtain the single RTypeType descriptor casted to the given type A. */
   implicit def rtypeRType[A]: RType[RType[A]] = asType[RType[A]](RTypeType)
@@ -113,24 +99,14 @@ object RType {
   case class PairType[A,B](tFst: RType[A], tSnd: RType[B]) extends RType[(A,B)] {
     val classTag: ClassTag[(A, B)] = scala.reflect.classTag[(A,B)]
     override def name: String = s"(${tFst.name}, ${tSnd.name})"
-    override def isConstantSize: Boolean = tFst.isConstantSize && tSnd.isConstantSize
   }
   implicit def extendPairType[A,B](pt: RType[(A,B)]): PairType[A,B] = pt.asInstanceOf[PairType[A,B]]
-
-  implicit def eitherRType[A,B](implicit tA: RType[A], tB: RType[B]): RType[Either[A,B]] = EitherType(tA, tB)
-
-  case class EitherType[A,B](tLeft: RType[A], tRight: RType[B]) extends RType[Either[A,B]] {
-    val classTag: ClassTag[Either[A, B]] = scala.reflect.classTag[Either[A,B]]
-    override def name: String = s"(${tLeft.name} | ${tRight.name})"
-    override def isConstantSize: Boolean = tLeft.isConstantSize && tRight.isConstantSize
-  }
 
   implicit def funcRType[A,B](implicit tDom: RType[A], tRange: RType[B]): RType[A => B] = FuncType(tDom, tRange)
 
   case class FuncType[A,B](tDom: RType[A], tRange: RType[B]) extends RType[A => B] {
     val classTag: ClassTag[A => B] = scala.reflect.classTag[A => B]
     override def name: String = s"${tDom.name} => ${tRange.name}"
-    override def isConstantSize: Boolean = false
   }
 
   implicit def arrayRType[A](implicit tA: RType[A]): RType[Array[A]] = ArrayType(tA)
@@ -141,7 +117,6 @@ object RType {
       scala.reflect.classTag[Array[A]]
     }
     override def name: String = s"Array[${tA.name}]"
-    override def isConstantSize: Boolean = false
   }
 
   implicit def optionRType[A](implicit tA: RType[A]): RType[Option[A]] = OptionType(tA)
@@ -152,7 +127,6 @@ object RType {
       scala.reflect.classTag[Option[A]]
     }
     override def name: String = s"Option[${tA.name}]"
-    override def isConstantSize: Boolean = tA.isConstantSize
   }
 
   /** Underlying type of Thunk[A] values (or by-name values of type A). */
@@ -166,7 +140,6 @@ object RType {
       scala.reflect.classTag[ThunkData[A]]
     }
     override def name: String = s"Thunk[${tA.name}]"
-    override def isConstantSize: Boolean = false
   }
 
 }

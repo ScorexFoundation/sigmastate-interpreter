@@ -7,7 +7,6 @@ import scala.util.Success
 import sigmastate.{AvlTreeData, SType, TestsBase, VersionContext}
 import sigmastate.Values.{BigIntArrayConstant, EvaluatedValue, SValue, SigmaPropConstant, Value}
 import org.ergoplatform.{Context => _, _}
-import sigmastate.utxo.CostTable
 import scalan.BaseCtxTests
 import sigmastate.lang.{CompilerResult, CompilerSettings, LangTests, SigmaCompiler}
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting}
@@ -24,12 +23,11 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests
     with ValidationSpecification with TestsBase { self: BaseCtxTests =>
 
   implicit lazy val IR: TestContext with IRContext =
-    new TestContext with IRContext with CompiletimeCosting
+    new TestContext with IRContext
 
   import IR._
   import Liftables._
   import Context._
-  import Size._
   import BigInt._
 
   override lazy val compiler = new SigmaCompiler(CompilerSettings(
@@ -159,7 +157,7 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests
       if (ergoCtx.isDefined) {
         val ectx = ergoCtx.get.withErgoTreeVersion(ergoTreeVersionInTests)
         VersionContext.withVersions(ectx.activatedScriptVersion, ergoTreeVersionInTests) {
-          val calcCtx = ectx.toSigmaContext(isCost = false)
+          val calcCtx = ectx.toSigmaContext()
           val testContractRes = testContract.map(_(calcCtx))
           testContractRes.foreach { res =>
             checkExpected(res, expectedResult.calc, "Test Contract actual: %s, expected: %s")

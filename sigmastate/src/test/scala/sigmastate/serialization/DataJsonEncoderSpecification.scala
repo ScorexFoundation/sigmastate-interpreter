@@ -14,7 +14,7 @@ import sigmastate.eval.Extensions._
 import sigmastate.eval.{Evaluation, _}
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.lang.exceptions.SerializerException
-import special.sigma.{TestValue, Box, AvlTree}
+import special.sigma.{Box, AvlTree}
 
 class DataJsonEncoderSpecification extends SerializationSpecification {
   object JsonCodecs extends JsonCodecs
@@ -65,19 +65,19 @@ class DataJsonEncoderSpecification extends SerializationSpecification {
     implicit val tT = Evaluation.stypeToRType(tpe)
     implicit val tAny = RType.AnyType
     forAll { in: T#WrappedType =>
-      val x = TestValue(in, tT)
+      val x = CAnyValue(in, tT)
       val json = JsonCodecs.anyValueEncoder(x)
       val y = JsonCodecs.anyValueDecoder.decodeJson(json).right.get
       x shouldBe y
       
       val tTup = Evaluation.stypeToRType(STuple(tpe, tpe)).asInstanceOf[RType[(T#WrappedType, T#WrappedType)]]
-      val xTup = TestValue((in, in), tTup)
+      val xTup = CAnyValue((in, in), tTup)
       val jsonTup = JsonCodecs.anyValueEncoder(xTup)
       val yTup = JsonCodecs.anyValueDecoder.decodeJson(jsonTup).right.get
       xTup shouldBe yTup
 
       val tColl = Evaluation.stypeToRType(SCollection(tpe))
-      val xColl = TestValue(SigmaDsl.Colls.fromItems(in, in), tColl)
+      val xColl = CAnyValue(SigmaDsl.Colls.fromItems(in, in), tColl)
       val jsonColl = JsonCodecs.anyValueEncoder(xColl)
       val yColl = JsonCodecs.anyValueDecoder.decodeJson(jsonColl).right.get
       xColl shouldBe yColl

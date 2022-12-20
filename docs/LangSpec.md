@@ -414,7 +414,7 @@ class Box {
     * @tparam T expected type of the register.
     * @return Some(value) if the register is defined AND has the given type.
     *         None otherwise
-    * @throws special.sigma.InvalidType exception when the type of the register value is
+    * @throws InvalidType exception when the type of the register value is
     *                                   different from T.
     */
   def Ri[T]: Option[T]
@@ -914,7 +914,7 @@ def decodePoint(bytes: Coll[Byte]): GroupElement
   * @tparam T expected type of the variable.
   * @return Some(value) if the variable is defined in the context AND has the given type.
   *         None otherwise
-  * @throws special.sigma.InvalidType exception when the type of the variable value is
+  * @throws InvalidType exception when the type of the variable value is
   *                                   different from cT.
   */
 def getVar[T](tag: Int): Option[T]

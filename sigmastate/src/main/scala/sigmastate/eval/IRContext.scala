@@ -59,6 +59,6 @@ class RuntimeIRContext extends IRContext {
 }
 
 /** IR context to be used by script development tools to compile ErgoScript into ErgoTree bytecode. */
-class CompiletimeIRContext extends IRContext with CompiletimeCosting {
+class CompiletimeIRContext extends IRContext {
 }
 

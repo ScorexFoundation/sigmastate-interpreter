@@ -15,7 +15,7 @@ import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.interpreter.{ContextExtension, ErgoTreeEvaluator, ProverResult}
 import sigmastate.lang.Terms._
 import sigmastate.lang.exceptions.{InterpreterException, SerializerException, SigmaException}
-import sigmastate.serialization.OpCodes.{LastConstantCode, OpCode, OpCodeExtra}
+import sigmastate.serialization.OpCodes.{LastConstantCode, OpCode}
 import sigmastate.serialization.SigmaSerializer.startReader
 import sigmastate.serialization._
 import sigmastate.utils.Helpers._

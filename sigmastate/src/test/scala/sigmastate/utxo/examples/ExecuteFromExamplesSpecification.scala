@@ -15,7 +15,6 @@ class ExecuteFromExamplesSpecification extends SigmaTestingCommons { suite =>
       (alice: Spec#ProvingParty)
       (implicit val spec: Spec) extends SigmaContractSyntax with StdContracts
   {
-    import syntax._
     def pkA = alice.pubKey
 
     lazy val contractEnv = Env("pkA" -> pkA)

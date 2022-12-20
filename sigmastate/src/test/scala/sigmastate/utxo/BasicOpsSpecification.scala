@@ -12,8 +12,8 @@ import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeConte
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter._
 import sigmastate.lang.Terms._
-import special.sigma.InvalidType
 import SType.AnyOps
+import sigmastate.eval.InvalidType
 import sigmastate.interpreter.ContextExtension.VarBinding
 import sigmastate.interpreter.ErgoTreeEvaluator.DefaultEvalSettings
 import sigmastate.interpreter.{CryptoConstants, EvalSettings}
@@ -26,7 +26,6 @@ class BasicOpsSpecification extends SigmaTestingCommons
   with CrossVersionProps {
   override val printVersions: Boolean = false
   implicit lazy val IR = new TestingIRContext {
-    override val okPrintEvaluatedEntries: Boolean = false
   }
 
   private val reg1 = ErgoBox.nonMandatoryRegisters.head

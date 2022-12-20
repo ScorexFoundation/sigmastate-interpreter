@@ -19,7 +19,6 @@ case class AssetsAtomicExchange[Spec <: ContractSpec]
     (implicit val spec: Spec)
     extends SigmaContractSyntax with StdContracts
 {
-  import syntax._
   def pkA = tokenBuyer.pubKey
   def pkB = tokenSeller.pubKey
 

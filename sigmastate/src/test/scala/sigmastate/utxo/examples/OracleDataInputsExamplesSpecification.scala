@@ -22,7 +22,6 @@ class OracleDataInputsExamplesSpecification extends SigmaTestingCommons { suite 
         alice: Spec#ProvingParty, bob: Spec#ProvingParty)
       (implicit val spec: Spec) extends SigmaContractSyntax with StdContracts
   {
-    import syntax._
     def pkA = alice.pubKey
     def pkB = bob.pubKey
     def inRegId = reg1.asIndex

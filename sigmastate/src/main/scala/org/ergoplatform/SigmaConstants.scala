@@ -1,8 +1,14 @@
 package org.ergoplatform
 
 import scalan.util.CollectionUtil._
-import sigmastate.eval.Sized
+import sigmastate.interpreter.CryptoConstants
 
+/** Descriptor of a constant which represents some size value.
+  * @tparam T type of the constant value
+  * @param value value of the constant
+  * @param id    unique id of the constant
+  * @param description description of the constant purpose
+  */
 case class SizeConstant[T: Numeric](value: T, id: Short, description: String)
 
 /** Constants facade that provide access to the values used in sigma's logic and checks.
@@ -32,11 +38,11 @@ object SigmaConstants {
     "Registers count should not be greater than provided value") {
   }
 
-  object MaxPropositionBytes extends SizeConstant[Int](Sized.SizePropositionBytesMax.dataSize.toInt, 5,
+  object MaxPropositionBytes extends SizeConstant[Int](4096 /*4K*/, 5,
     "Max length of Box.propositionBytes collection") {
   }
 
-  object MaxBoxSizeWithoutRefs extends SizeConstant[Int](Sized.SizeBoxBytesWithoutRefsMax.dataSize.toInt, 6,
+  object MaxBoxSizeWithoutRefs extends SizeConstant[Int](MaxBoxSize.value - (CryptoConstants.hashLength + 2/*size of Short*/), 6,
     "Box size should not be greater than provided value") {
   }
 
@@ -76,6 +82,7 @@ object SigmaConstants {
     "size of nonce array from Autolykos POW solution in Header.powNonce array") {
   }
 
+  /** List of registered size constants with unique ids. */
   val ConstTable: Seq[SizeConstant[_]] = {
     val rows = Seq(
       MaxBoxSize,

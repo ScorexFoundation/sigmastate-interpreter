@@ -1,9 +1,10 @@
 package sigmastate.eval
 
-import java.math.BigInteger
+import org.bouncycastle.math.ec.ECPoint
 
+import java.math.BigInteger
 import scalan.RType
-import sigmastate.{SCollectionType, SCollection, SType}
+import sigmastate.{SCollection, SCollectionType, SType}
 import sigmastate.Values.{Constant, ConstantNode}
 import sigmastate.lang.CheckingSigmaBuilder
 import special.collection.Coll
@@ -72,18 +73,34 @@ object Extensions {
     }
   }
 
-  def toAnyValue[A:RType](x: A) = new TestValue(x, RType[A].asInstanceOf[RType[Any]])
+  def toAnyValue[A:RType](x: A) = new CAnyValue(x, RType[A].asInstanceOf[RType[Any]])
 
   implicit class ErgoBoxOps(val ebox: ErgoBox) extends AnyVal {
-    def toTestBox(isCost: Boolean): Box = {
+    def toTestBox: Box = {
       /* NOHF PROOF:
       Changed: removed check for ebox == null
       Motivation: box cannot be null
       Safety: used in ErgoLikeContext where boxes cannot be null
       Examined ergo code: all that leads to ErgoLikeContext creation.
       */
-      CostingBox(isCost, ebox)
+      CostingBox(ebox)
     }
   }
+
+  def showECPoint(p: ECPoint): String = {
+    if (p.isInfinity) {
+      "INF"
+    }
+    else {
+      val rawX = p.getRawXCoord.toString.substring(0, 6)
+      val rawY = p.getRawYCoord.toString.substring(0, 6)
+      s"ECPoint($rawX,$rawY,...)"
+    }
+  }
+
+  implicit class GroupElementOps(val source: GroupElement) extends AnyVal {
+    def showToString: String = showECPoint(source.asInstanceOf[CGroupElement].wrappedValue)
+  }
+
 
 }

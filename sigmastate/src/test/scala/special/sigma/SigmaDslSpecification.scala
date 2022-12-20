@@ -10,7 +10,7 @@ import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.authds.{ADDigest, ADKey, ADValue}
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import scalan.util.Extensions._
-import sigma.util.Extensions._
+import sigmastate.utils.Extensions._
 import sigmastate.SCollection._
 import sigmastate.Values.IntConstant
 import sigmastate._
@@ -4625,7 +4625,6 @@ class SigmaDslSpecification extends SigmaDslTesting
 
   def contextData() = {
     val input = CostingBox(
-      false,
       new ErgoBox(
         80946L,
         new ErgoTree(
@@ -4656,7 +4655,6 @@ class SigmaDslSpecification extends SigmaDslTesting
     )
 
     val dataBox = CostingBox(
-      false,
       new ErgoBox(
         -1L,
         new ErgoTree(
@@ -4723,7 +4721,6 @@ class SigmaDslSpecification extends SigmaDslTesting
       inputs = Coll[Box](input),
       outputs = Coll[Box](
         CostingBox(
-          false,
           new ErgoBox(
             1000000L,
             new ErgoTree(
@@ -4761,7 +4758,6 @@ class SigmaDslSpecification extends SigmaDslTesting
           )
         ),
         CostingBox(
-          false,
           new ErgoBox(
             2769336982721999022L,
             new ErgoTree(
@@ -4792,11 +4788,10 @@ class SigmaDslSpecification extends SigmaDslTesting
       vars = Colls
           .replicate[AnyValue](10, null) // reserve 10 vars
           .append(Coll[AnyValue](
-            TestValue(Helpers.decodeBytes("00"), CollType(RType.ByteType)),
-            TestValue(true, RType.BooleanType))),
+            CAnyValue(Helpers.decodeBytes("00"), CollType(RType.ByteType)),
+            CAnyValue(true, RType.BooleanType))),
       activatedScriptVersion = activatedVersionInTests,
-      currentErgoTreeVersion = ergoTreeVersionInTests,
-      false
+      currentErgoTreeVersion = ergoTreeVersionInTests
     )
     val ctx2 = ctx.copy(vars = Coll[AnyValue](null, null, null))
     val ctx3 = ctx.copy(vars = Coll[AnyValue]())
@@ -6595,7 +6590,6 @@ class SigmaDslSpecification extends SigmaDslTesting
   def sampleCollBoxes = genSamples[Coll[Box]](collOfN[Box](5), MinSuccessful(20))
 
   def create_b1 = CostingBox(
-    false,
     new ErgoBox(
       1L,
       new ErgoTree(
@@ -6632,7 +6626,6 @@ class SigmaDslSpecification extends SigmaDslTesting
   )
 
   def create_b2 = CostingBox(
-    false,
     new ErgoBox(
       1000000000L,
       new ErgoTree(

@@ -10,6 +10,7 @@ import sigmastate.serialization.ConstantStore
 
 import scala.collection.mutable.ArrayBuffer
 import SType._
+import scalan.SigmaLibrary
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
 import sigmastate.lang.SigmaTyper
@@ -26,7 +27,7 @@ import sigmastate.lang.SigmaTyper
   *
   * @see buildTree method
   * */
-trait TreeBuilding extends RuntimeCosting { IR: IRContext =>
+trait TreeBuilding extends SigmaLibrary { IR: IRContext =>
   import Liftables._
   import Context._
   import SigmaProp._

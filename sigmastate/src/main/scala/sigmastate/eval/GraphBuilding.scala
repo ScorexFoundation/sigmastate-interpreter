@@ -2,15 +2,24 @@ package sigmastate.eval
 
 import org.ergoplatform._
 import org.ergoplatform.validation.ValidationRules.CheckTupleType
-import scalan.{Lazy, Nullable, SigmaLibrary}
+import scalan.ExactIntegral.{ByteIsExactIntegral, IntIsExactIntegral, LongIsExactIntegral, ShortIsExactIntegral}
+import scalan.ExactOrdering.{ByteIsExactOrdering, IntIsExactOrdering, LongIsExactOrdering, ShortIsExactOrdering}
+import scalan.compilation.GraphVizConfig
+import scalan.util.Extensions.ByteOps
+import scalan.{ExactIntegral, ExactNumeric, ExactOrdering, Lazy, MutableLazy, Nullable, SigmaLibrary}
 import sigmastate.Values.Value.Typed
 import sigmastate.Values._
 import sigmastate.interpreter.Interpreter.ScriptEnv
-import sigmastate.lang.Terms
+import sigmastate.lang.{SourceContext, Terms}
 import sigmastate.lang.Terms.{Ident, Select, Val, ValueOps}
 import sigmastate.serialization.OpCodes
 import sigmastate.utxo._
 import sigmastate._
+import sigmastate.eval.Extensions.GroupElementOps
+import sigmastate.interpreter.CryptoConstants.EcPointType
+import sigmastate.lang.exceptions.CosterException
+
+import scala.collection.mutable.ArrayBuffer
 
 /** Perform translation of typed expression given by [[Value]] to a graph in IRContext.
   * Which be than be translated to [[ErgoTree]] by using [[TreeBuilding]].
@@ -34,7 +43,356 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
   import SigmaDslBuilder._
   import SigmaProp._
   import WOption._
+
+  /** Should be specified in the final cake */
+  val builder: sigmastate.lang.SigmaBuilder
   import builder._
+
+
+  val okMeasureOperationTime: Boolean = false
+
+  this.isInlineThunksOnForce = true  // this required for splitting of cost graph
+  this.keepOriginalFunc = false  // original lambda of Lambda node contains invocations of evalNode and we don't want that
+  this.useAlphaEquality = false
+
+  /** Whether to create CostOf nodes or substutute costs from CostTable as constants in the graph.
+    * true - substitute; false - create CostOf nodes */
+  var substFromCostTable: Boolean = true
+
+  /** Whether to save calcF and costF graphs in the file given by ScriptNameProp environment variable */
+  var saveGraphsInFile: Boolean = false
+
+  //  /** Pass configuration which is used by default in IRContext. */
+  //  val calcPass = new DefaultPass("calcPass", Pass.defaultPassConfig.copy(constantPropagation = true))
+  //
+  //  /** Pass configuration which is used during splitting cost function out of cost graph.
+  //    * @see `RuntimeCosting.split2` */
+  //  val costPass = new DefaultPass("costPass", Pass.defaultPassConfig.copy(constantPropagation = true))
+
+  /**  To enable specific configuration uncomment one of the lines above and use it in the beginPass below. */
+  //  beginPass(costPass)
+
+  override protected def formatDef(d: Def[_])(implicit config: GraphVizConfig): String = d match {
+    case GroupElementConst(p) => p.showToString
+    case SigmaPropConst(sp) => sp.toString
+    case _ => super.formatDef(d)
+  }
+
+  type RColl[T] = Ref[Coll[T]]
+  type ROption[T] = Ref[WOption[T]]
+
+  private val CBM      = CollBuilderMethods
+  private val SigmaM   = SigmaPropMethods
+  private val SDBM     = SigmaDslBuilderMethods
+
+  /** Recognizer of [[SigmaDslBuilder.anyOf]] method call in Graph-IR. This method call
+    * represents `anyOf` predefined function.
+    */
+  object AnyOf {
+    def unapply(d: Def[_]): Nullable[(Ref[CollBuilder], Seq[Ref[A]], Elem[A]) forSome {type A}] = d match {
+      case SDBM.anyOf(_, xs) =>
+        CBM.fromItems.unapply(xs)
+      case _ => Nullable.None
+    }
+  }
+
+  /** Recognizer of [[SigmaDslBuilder.allOf]] method call in Graph-IR. This method call
+    * represents `allOf` predefined function.
+    */
+  object AllOf {
+    def unapply(d: Def[_]): Nullable[(Ref[CollBuilder], Seq[Ref[A]], Elem[A]) forSome {type A}] = d match {
+      case SDBM.allOf(_, xs) =>
+        CBM.fromItems.unapply(xs)
+      case _ => Nullable.None
+    }
+  }
+
+  /** Recognizer of [[SigmaDslBuilder.anyZK]] method call in Graph-IR. This method call
+    * represents `anyZK` predefined function.
+    */
+  object AnyZk {
+    def unapply(d: Def[_]): Nullable[(Ref[CollBuilder], Seq[Ref[SigmaProp]], Elem[SigmaProp])] = d match {
+      case SDBM.anyZK(_, xs) =>
+        CBM.fromItems.unapply(xs).asInstanceOf[Nullable[(Ref[CollBuilder], Seq[Ref[SigmaProp]], Elem[SigmaProp])]]
+      case _ => Nullable.None
+    }
+  }
+
+  /** Recognizer of [[SigmaDslBuilder.allZK]] method call in Graph-IR. This method call
+    * represents `allZK` predefined function.
+    */
+  object AllZk {
+    def unapply(d: Def[_]): Nullable[(Ref[CollBuilder], Seq[Ref[SigmaProp]], Elem[SigmaProp])] = d match {
+      case SDBM.allZK(_, xs) =>
+        CBM.fromItems.unapply(xs).asInstanceOf[Nullable[(Ref[CollBuilder], Seq[Ref[SigmaProp]], Elem[SigmaProp])]]
+      case _ => Nullable.None
+    }
+  }
+
+  /** Pattern match extractor which recognizes `isValid` nodes among items.
+    *
+    * @param items list of graph nodes which are expected to be of Ref[Boolean] type
+    * @return `None` if there is no `isValid` node among items
+    *         `Some((bs, ss)) if there are `isValid` nodes where `ss` are `SigmaProp`
+    *         arguments of those nodes and `bs` contains all the other nodes.
+    */
+  object HasSigmas {
+    def unapply(items: Seq[Sym]): Option[(Seq[Ref[Boolean]], Seq[Ref[SigmaProp]])] = {
+      val bs = ArrayBuffer.empty[Ref[Boolean]]
+      val ss = ArrayBuffer.empty[Ref[SigmaProp]]
+      for (i <- items) {
+        i match {
+          case SigmaM.isValid(s) => ss += s
+          case b => bs += asRep[Boolean](b)
+        }
+      }
+      assert(items.length == bs.length + ss.length)
+      if (ss.isEmpty) None
+      else Some((bs,ss))
+    }
+  }
+
+  /** For performance reasons the patterns are organized in special (non-declarative) way.
+    * Unfortunately, this is less readable, but gives significant performance boost
+    * Look at comments to understand the logic of the rules.
+    *
+    * HOTSPOT: executed for each node of the graph, don't beautify.
+    */
+  override def rewriteDef[T](d: Def[T]): Ref[_] = {
+    // First we match on node type, and then depending on it, we have further branching logic.
+    // On each branching level each node type should be matched exactly once,
+    // for the rewriting to be sound.
+    d match {
+      // Rule: ThunkDef(x, Nil).force => x
+      case ThunkForce(Def(ThunkDef(root, sch))) if sch.isEmpty => root
+
+      // Rule: l.isValid op Thunk {... root} => (l op TrivialSigma(root)).isValid
+      case ApplyBinOpLazy(op, SigmaM.isValid(l), Def(ThunkDef(root, sch))) if root.elem == BooleanElement =>
+        // don't need new Thunk because sigma logical ops always strict
+        val r = asRep[SigmaProp](sigmaDslBuilder.sigmaProp(asRep[Boolean](root)))
+        val res = if (op == And)
+          l && r
+        else
+          l || r
+        res.isValid
+
+      // Rule: l op Thunk {... prop.isValid} => (TrivialSigma(l) op prop).isValid
+      case ApplyBinOpLazy(op, l, Def(ThunkDef(root @ SigmaM.isValid(prop), sch))) if l.elem == BooleanElement =>
+        val l1 = asRep[SigmaProp](sigmaDslBuilder.sigmaProp(asRep[Boolean](l)))
+        // don't need new Thunk because sigma logical ops always strict
+        val res = if (op == And)
+          l1 && prop
+        else
+          l1 || prop
+        res.isValid
+
+      case SDBM.Colls(_) => colBuilder
+      case SDBM.sigmaProp(_, SigmaM.isValid(p)) => p
+      case SigmaM.isValid(SDBM.sigmaProp(_, bool)) => bool
+
+      case AllOf(b, HasSigmas(bools, sigmas), _) =>
+        val zkAll = sigmaDslBuilder.allZK(b.fromItems(sigmas:_*))
+        if (bools.isEmpty)
+          zkAll.isValid
+        else
+          (sigmaDslBuilder.sigmaProp(sigmaDslBuilder.allOf(b.fromItems(bools:_*))) && zkAll).isValid
+
+      case AnyOf(b, HasSigmas(bs, ss), _) =>
+        val zkAny = sigmaDslBuilder.anyZK(b.fromItems(ss:_*))
+        if (bs.isEmpty)
+          zkAny.isValid
+        else
+          (sigmaDslBuilder.sigmaProp(sigmaDslBuilder.anyOf(b.fromItems(bs:_*))) || zkAny).isValid
+
+      case AllOf(_,items,_) if items.length == 1 => items(0)
+      case AnyOf(_,items,_) if items.length == 1 => items(0)
+      case AllZk(_,items,_) if items.length == 1 => items(0)
+      case AnyZk(_,items,_) if items.length == 1 => items(0)
+
+      case _ =>
+        if (currentPass.config.constantPropagation) {
+          // additional constant propagation rules (see other similar cases)
+          d match {
+            case AnyOf(_,items,_) if (items.forall(_.isConst)) =>
+              val bs = items.map { case Def(Const(b: Boolean)) => b }
+              toRep(bs.exists(_ == true))
+            case AllOf(_,items,_) if (items.forall(_.isConst)) =>
+              val bs = items.map { case Def(Const(b: Boolean)) => b }
+              toRep(bs.forall(_ == true))
+            case _ =>
+              super.rewriteDef(d)
+          }
+        }
+        else
+          super.rewriteDef(d)
+    }
+  }
+
+  /** Lazy values, which are immutable, but can be reset, so that the next time they are accessed
+    * the expression is re-evaluated. Each value should be reset in onReset() method. */
+  private val _sigmaDslBuilder: LazyRep[SigmaDslBuilder] = MutableLazy(variable[SigmaDslBuilder])
+  @inline def sigmaDslBuilder: Ref[SigmaDslBuilder] = _sigmaDslBuilder.value
+
+  private val _colBuilder: LazyRep[CollBuilder] = MutableLazy(variable[CollBuilder])
+  @inline def colBuilder: Ref[CollBuilder] = _colBuilder.value
+
+  protected override def onReset(): Unit = {
+    super.onReset()
+    // WARNING: every lazy value should be listed here, otherwise bevavior after resetContext is undefined and may throw.
+    Array(_sigmaDslBuilder, _colBuilder)
+      .foreach(_.reset())
+  }
+
+  /** If `f` returns `isValid` graph node, then it is filtered out. */
+  def removeIsProven[T,R](f: Ref[T] => Ref[R]): Ref[T] => Ref[R] = { x: Ref[T] =>
+    val y = f(x);
+    val res = y match {
+      case SigmaPropMethods.isValid(p) => p
+      case v => v
+    }
+    asRep[R](res)
+  }
+
+  /** Translates SType descriptor to Elem descriptor used in graph IR.
+    * Should be inverse to `elemToSType`. */
+  def stypeToElem[T <: SType](t: T): Elem[T#WrappedType] = (t match {
+    case SBoolean => BooleanElement
+    case SByte => ByteElement
+    case SShort => ShortElement
+    case SInt => IntElement
+    case SLong => LongElement
+    case SString => StringElement
+    case SAny => AnyElement
+    case SBigInt => bigIntElement
+    case SBox => boxElement
+    case SContext => contextElement
+    case SGlobal => sigmaDslBuilderElement
+    case SHeader => headerElement
+    case SPreHeader => preHeaderElement
+    case SGroupElement => groupElementElement
+    case SAvlTree => avlTreeElement
+    case SSigmaProp => sigmaPropElement
+    case STuple(Seq(a, b)) => pairElement(stypeToElem(a), stypeToElem(b))
+    case c: SCollectionType[a] => collElement(stypeToElem(c.elemType))
+    case o: SOption[a] => wOptionElement(stypeToElem(o.elemType))
+    case SFunc(Seq(tpeArg), tpeRange, Nil) => funcElement(stypeToElem(tpeArg), stypeToElem(tpeRange))
+    case _ => error(s"Don't know how to convert SType $t to Elem")
+  }).asInstanceOf[Elem[T#WrappedType]]
+
+  /** Translates Elem descriptor to SType descriptor used in ErgoTree.
+    * Should be inverse to `stypeToElem`. */
+  def elemToSType[T](e: Elem[T]): SType = e match {
+    case BooleanElement => SBoolean
+    case ByteElement => SByte
+    case ShortElement => SShort
+    case IntElement => SInt
+    case LongElement => SLong
+    case StringElement => SString
+    case AnyElement => SAny
+    case _: BigIntElem[_] => SBigInt
+    case _: GroupElementElem[_] => SGroupElement
+    case _: AvlTreeElem[_] => SAvlTree
+    case oe: WOptionElem[_, _] => sigmastate.SOption(elemToSType(oe.eItem))
+    case _: BoxElem[_] => SBox
+    case _: ContextElem[_] => SContext
+    case _: SigmaDslBuilderElem[_] => SGlobal
+    case _: HeaderElem[_] => SHeader
+    case _: PreHeaderElem[_] => SPreHeader
+    case _: SigmaPropElem[_] => SSigmaProp
+    case ce: CollElem[_, _] => SCollection(elemToSType(ce.eItem))
+    case fe: FuncElem[_, _] => SFunc(elemToSType(fe.eDom), elemToSType(fe.eRange))
+    case pe: PairElem[_, _] => STuple(elemToSType(pe.eFst), elemToSType(pe.eSnd))
+    case _ => error(s"Don't know how to convert Elem $e to SType")
+  }
+
+  import Liftables._
+
+  /** Translates Elem to the corresponding Liftable instance.
+    * @param eWT type descriptor
+    */
+  def liftableFromElem[WT](eWT: Elem[WT]): Liftable[_,WT] = (eWT match {
+    case BooleanElement => BooleanIsLiftable
+    case ByteElement => ByteIsLiftable
+    case ShortElement => ShortIsLiftable
+    case IntElement => IntIsLiftable
+    case LongElement => LongIsLiftable
+    case StringElement => StringIsLiftable
+    case UnitElement => UnitIsLiftable
+    case _: BigIntElem[_] => LiftableBigInt
+    case _: GroupElementElem[_] => LiftableGroupElement
+    case ce: CollElem[t,_] =>
+      implicit val lt = liftableFromElem[t](ce.eItem)
+      liftableColl(lt)
+    case pe: PairElem[a,b] =>
+      implicit val la = liftableFromElem[a](pe.eFst)
+      implicit val lb = liftableFromElem[b](pe.eSnd)
+      PairIsLiftable(la, lb)
+    case pe: FuncElem[a,b] =>
+      implicit val la = liftableFromElem[a](pe.eDom)
+      implicit val lb = liftableFromElem[b](pe.eRange)
+      FuncIsLiftable(la, lb)
+  }).asInstanceOf[Liftable[_,WT]]
+
+  import NumericOps._
+  private lazy val elemToExactNumericMap = Map[Elem[_], ExactNumeric[_]](
+    (ByteElement, ByteIsExactIntegral),
+    (ShortElement, ShortIsExactIntegral),
+    (IntElement, IntIsExactIntegral),
+    (LongElement, LongIsExactIntegral),
+    (bigIntElement, BigIntIsExactIntegral)
+  )
+  private lazy val elemToExactIntegralMap = Map[Elem[_], ExactIntegral[_]](
+    (ByteElement,   ByteIsExactIntegral),
+    (ShortElement,  ShortIsExactIntegral),
+    (IntElement,    IntIsExactIntegral),
+    (LongElement,   LongIsExactIntegral)
+  )
+  protected lazy val elemToExactOrderingMap = Map[Elem[_], ExactOrdering[_]](
+    (ByteElement,   ByteIsExactOrdering),
+    (ShortElement,  ShortIsExactOrdering),
+    (IntElement,    IntIsExactOrdering),
+    (LongElement,   LongIsExactOrdering),
+    (bigIntElement, BigIntIsExactOrdering)
+  )
+
+  /** @return [[ExactNumeric]] instance for the given type */
+  def elemToExactNumeric [T](e: Elem[T]): ExactNumeric[T]  = elemToExactNumericMap(e).asInstanceOf[ExactNumeric[T]]
+
+  /** @return [[ExactIntegral]] instance for the given type */
+  def elemToExactIntegral[T](e: Elem[T]): ExactIntegral[T] = elemToExactIntegralMap(e).asInstanceOf[ExactIntegral[T]]
+
+  /** @return [[ExactOrdering]] instance for the given type */
+  def elemToExactOrdering[T](e: Elem[T]): ExactOrdering[T] = elemToExactOrderingMap(e).asInstanceOf[ExactOrdering[T]]
+
+  /** @return binary operation for the given opCode and type */
+  def opcodeToEndoBinOp[T](opCode: Byte, eT: Elem[T]): EndoBinOp[T] = opCode match {
+    case OpCodes.PlusCode => NumericPlus(elemToExactNumeric(eT))(eT)
+    case OpCodes.MinusCode => NumericMinus(elemToExactNumeric(eT))(eT)
+    case OpCodes.MultiplyCode => NumericTimes(elemToExactNumeric(eT))(eT)
+    case OpCodes.DivisionCode => IntegralDivide(elemToExactIntegral(eT))(eT)
+    case OpCodes.ModuloCode => IntegralMod(elemToExactIntegral(eT))(eT)
+    case OpCodes.MinCode => OrderingMin(elemToExactOrdering(eT))(eT)
+    case OpCodes.MaxCode => OrderingMax(elemToExactOrdering(eT))(eT)
+    case _ => error(s"Cannot find EndoBinOp for opcode $opCode")
+  }
+
+  /** @return binary operation for the given opCode and type */
+  def opcodeToBinOp[A](opCode: Byte, eA: Elem[A]): BinOp[A,_] = opCode match {
+    case OpCodes.EqCode  => Equals[A]()(eA)
+    case OpCodes.NeqCode => NotEquals[A]()(eA)
+    case OpCodes.GtCode  => OrderingGT[A](elemToExactOrdering(eA))
+    case OpCodes.LtCode  => OrderingLT[A](elemToExactOrdering(eA))
+    case OpCodes.GeCode  => OrderingGTEQ[A](elemToExactOrdering(eA))
+    case OpCodes.LeCode  => OrderingLTEQ[A](elemToExactOrdering(eA))
+    case _ => error(s"Cannot find BinOp for opcode newOpCode(${opCode.toUByte-OpCodes.LastConstantCode}) and type $eA")
+  }
+
+  import sigmastate._
+
+  protected implicit def groupElementToECPoint(g: special.sigma.GroupElement): EcPointType = CostingSigmaDslBuilder.toECPoint(g).asInstanceOf[EcPointType]
+
+  def error(msg: String) = throw new CosterException(msg, None)
+  def error(msg: String, srcCtx: Option[SourceContext]) = throw new CosterException(msg, srcCtx)
 
   /** Translates the given typed expression to IR graph representing a function from
     * Context to some type T.
@@ -68,8 +426,8 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
     object In { def unapply(v: SValue): Nullable[Ref[Any]] = Nullable(asRep[Any](buildNode(ctx, env, v))) }
     class InColl[T: Elem] {
       def unapply(v: SValue): Nullable[Ref[Coll[T]]] = {
-        val res = asRep[Def[_]](buildNode(ctx, env, v))
-        Nullable(tryCast[Coll[T]](res))
+        val res = asRep[Coll[T]](buildNode(ctx, env, v))
+        Nullable(res)
       }
     }
     val InCollByte = new InColl[Byte]; val InCollAny = new InColl[Any]()(AnyElement); val InCollInt = new InColl[Int]

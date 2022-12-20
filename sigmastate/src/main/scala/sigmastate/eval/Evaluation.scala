@@ -4,7 +4,6 @@ import org.bouncycastle.math.ec.ECPoint
 import org.ergoplatform._
 import scalan.RType
 import scalan.RType._
-import sigma.types.PrimViewType
 import sigmastate.SType._
 import sigmastate.Values.SigmaBoolean
 import sigmastate._
@@ -117,7 +116,6 @@ object Evaluation {
     case ct: CollType[_] => SCollection(rtypeToSType(ct.tItem))
     case ft: FuncType[_,_] => SFunc(rtypeToSType(ft.tDom), rtypeToSType(ft.tRange))
     case pt: PairType[_,_] => STuple(rtypeToSType(pt.tFst), rtypeToSType(pt.tSnd))
-    case pvt: PrimViewType[_,_] => rtypeToSType(pvt.tVal)
     case _ => sys.error(s"Don't know how to convert RType $t to SType")
   }
 

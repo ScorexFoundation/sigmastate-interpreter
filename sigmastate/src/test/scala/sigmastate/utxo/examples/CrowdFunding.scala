@@ -14,7 +14,6 @@ case class CrowdFunding[Spec <: ContractSpec]
 {
   def pkBacker = backer.pubKey
   def pkProject = project.pubKey
-  import syntax._
   lazy val contractEnv = Env("pkBacker" -> pkBacker, "pkProject" -> pkProject, "deadline" -> deadline, "minToRaise" -> minToRaise)
 
   lazy val holderProp = proposition("holder", { ctx: Context =>

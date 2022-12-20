@@ -274,7 +274,6 @@ class OracleExamplesSpecification extends SigmaTestingCommons
       oracle: Spec#ProvingParty, alice: Spec#ProvingParty, bob: Spec#ProvingParty)
       (implicit val spec: Spec) extends SigmaContractSyntax with StdContracts
   {
-    import syntax._
     def pkOracle = oracle.pubKey
     def pkA = alice.pubKey
     def pkB = bob.pubKey

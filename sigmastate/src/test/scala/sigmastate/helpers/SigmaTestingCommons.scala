@@ -2,7 +2,7 @@ package sigmastate.helpers
 
 import org.ergoplatform.SigmaConstants.ScriptCostLimit
 import org.ergoplatform._
-import org.ergoplatform.validation.ValidationRules.{CheckCalcFunc, CheckCostFunc, CheckSerializableTypeCode}
+import org.ergoplatform.validation.ValidationRules.CheckSerializableTypeCode
 import org.ergoplatform.validation.{ValidationException, ValidationSpecification}
 import org.scalacheck.Arbitrary.arbByte
 import org.scalacheck.Gen
@@ -11,20 +11,17 @@ import org.scalatest.{Assertion, Matchers, PropSpec}
 import scalan.util.BenchmarkUtil
 import scalan.{RType, TestContexts, TestUtils}
 import scorex.crypto.hash.Blake2b256
-import sigma.types.IsPrimView
-import sigmastate.Values.{Constant, ErgoTree, GroupElementConstant, SValue, SigmaBoolean, SigmaPropValue, Value}
-import sigmastate.eval.{CompiletimeCosting, Evaluation, IRContext, _}
+import sigmastate.Values.{Constant, ErgoTree, GroupElementConstant, SValue, SigmaBoolean, SigmaPropValue}
+import sigmastate.eval.{Evaluation, IRContext, _}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.ContextExtension.VarBinding
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.interpreter.ErgoTreeEvaluator.DefaultProfiler
-import sigmastate.interpreter.Interpreter.{ScriptEnv, ScriptNameProp}
-import sigmastate.interpreter.{CryptoConstants, Interpreter, _}
+import sigmastate.interpreter.Interpreter.ScriptEnv
+import sigmastate.interpreter._
 import sigmastate.lang.{CompilerSettings, SigmaCompiler, Terms}
 import sigmastate.serialization.SigmaSerializer
-import sigmastate.utils.Helpers._
-import sigmastate.{JitCost, SGroupElement, SOption, SType, TestsBase}
-import special.sigma
+import sigmastate.{JitCost, SOption, SType, TestsBase}
 
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
@@ -49,14 +46,7 @@ trait SigmaTestingCommons extends PropSpec
   implicit def grElemConvert(leafConstant: GroupElementConstant): EcPointType =
     SigmaDsl.toECPoint(leafConstant.value).asInstanceOf[EcPointType]
 
-  class TestingIRContext extends TestContext with IRContext with CompiletimeCosting {
-  }
-
-  private def fromPrimView[A](in: A) = {
-    in match {
-      case IsPrimView(v) => v
-      case _ => in
-    }
+  class TestingIRContext extends TestContext with IRContext {
   }
 
   case class CompiledFunc[A,B]
@@ -73,7 +63,6 @@ trait SigmaTestingCommons extends PropSpec
   protected val initialCostInTests = new DynamicVariable[Long](0)
 
   def createContexts[A](in: A, bindings: Seq[VarBinding])(implicit tA: RType[A]) = {
-    val x = fromPrimView(in)
     val tpeA = Evaluation.rtypeToSType(tA)
     in match {
       case ctx: CostingDataContext =>
@@ -96,8 +85,7 @@ trait SigmaTestingCommons extends PropSpec
           ctx.vars.updated(1, ctxVar)
         }
         val calcCtx = ctx.copy(vars = newVars)
-        val costCtx = calcCtx.copy(isCost = true)
-        (costCtx, calcCtx)
+        calcCtx
       case _ =>
         val box = createBox(0, TrueTree)
 
@@ -110,11 +98,10 @@ trait SigmaTestingCommons extends PropSpec
 
         val ergoCtx = ErgoLikeContextTesting.dummy(box, activatedVersionInTests)
           .withErgoTreeVersion(ergoTreeVersionInTests)
-          .withBindings(1.toByte -> Constant[SType](x.asInstanceOf[SType#WrappedType], tpeA))
+          .withBindings(1.toByte -> Constant[SType](in.asInstanceOf[SType#WrappedType], tpeA))
           .withBindings(bindings: _*)
-        val calcCtx = ergoCtx.toSigmaContext(isCost = false).asInstanceOf[CostingDataContext]
-        val costCtx = calcCtx.copy(isCost = true)
-        (costCtx, calcCtx)
+        val calcCtx = ergoCtx.toSigmaContext().asInstanceOf[CostingDataContext]
+        calcCtx
     }
   }
 
@@ -165,7 +152,7 @@ trait SigmaTestingCommons extends PropSpec
     val tA = RType[A]
     val f = (in: A) => {
       implicit val cA: ClassTag[A] = tA.classTag
-      val (_, sigmaCtx) = createContexts(in, bindings)
+      val sigmaCtx = createContexts(in, bindings)
       val accumulator = new CostAccumulator(
         initialCost = JitCost(0),
         costLimit = Some(JitCost.fromBlockCost(ScriptCostLimit.value)))
