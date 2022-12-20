@@ -2,7 +2,7 @@ package org.ergoplatform.sdk.js
 
 import org.ergoplatform.ErgoBox.{BoxId, TokenId}
 import org.ergoplatform.sdk.Extensions.PairCollOps
-import org.ergoplatform.{DataInput, ErgoBoxCandidate, UnsignedErgoLikeTransaction, UnsignedInput}
+import org.ergoplatform.{DataInput, ErgoBox, ErgoBoxCandidate, UnsignedErgoLikeTransaction, UnsignedInput}
 import org.ergoplatform.sdk.Iso
 import org.scalacheck.Arbitrary
 import org.scalatest.matchers.should.Matchers
@@ -88,6 +88,12 @@ class IsosSpec  extends AnyPropSpec with Matchers with ObjectGenerators with Sca
   property("Iso.isoUnsignedTransaction") {
     forAll { (tx: UnsignedErgoLikeTransaction) =>
       roundtrip(Isos.isoUnsignedTransaction)(tx)
+    }
+  }
+
+  property("Iso.isoBox") {
+    forAll { (b: ErgoBox) =>
+      roundtrip(Isos.isoBox)(b)
     }
   }
 

@@ -7,6 +7,7 @@ import org.ergoplatform.sdk.Iso
 import org.ergoplatform.sdk.JavaHelpers.UniversalConverter
 import scorex.crypto.authds.ADKey
 import scorex.crypto.hash.Digest32
+import scorex.util.ModifierId
 import scorex.util.encode.Base16
 import sigmastate.SType
 import sigmastate.Values.Constant
@@ -17,7 +18,7 @@ import special.collection.Coll
 import typings.fleetSdkCommon.boxesMod.Box
 import typings.fleetSdkCommon.commonMod.HexString
 import typings.fleetSdkCommon.registersMod.NonMandatoryRegisters
-import typings.fleetSdkCommon.{boxesMod, commonMod, contextExtensionMod, inputsMod, tokenMod}
+import typings.fleetSdkCommon.{boxesMod, commonMod, contextExtensionMod, inputsMod, registersMod, tokenMod}
 import typings.fleetSdkCommon.transactionsMod.UnsignedTransaction
 
 import scala.collection.immutable.ListMap
@@ -129,6 +130,36 @@ object Isos {
       }
     }
 
+  val isoNonMandatoryRegisters: Iso[registersMod.NonMandatoryRegisters, AdditionalRegisters] =
+    new Iso[registersMod.NonMandatoryRegisters, AdditionalRegisters] {
+      override def to(x: registersMod.NonMandatoryRegisters): AdditionalRegisters = {
+        val regs = Seq(
+          x.R4 -> R4,
+          x.R5 -> R5,
+          x.R6 -> R6,
+          x.R7 -> R7,
+          x.R8 -> R8,
+          x.R9 -> R9
+        ).collect {
+          case (regOpt, id) if regOpt.isDefined => id -> isoHexStringToConstant.to(regOpt.get)
+        }
+        Map(regs:_*)
+      }
+      override def from(regs: AdditionalRegisters): registersMod.NonMandatoryRegisters = {
+        def regHexOpt(t: NonMandatoryRegisterId): Option[HexString] =
+          regs.get(t).map(v => isoHexStringToConstant.from(v.asInstanceOf[Constant[SType]]))
+
+        val resRegs = NonMandatoryRegisters()
+        regHexOpt(R4).foreach(resRegs.setR4(_))
+        regHexOpt(R5).foreach(resRegs.setR5(_))
+        regHexOpt(R6).foreach(resRegs.setR6(_))
+        regHexOpt(R7).foreach(resRegs.setR7(_))
+        regHexOpt(R8).foreach(resRegs.setR8(_))
+        regHexOpt(R9).foreach(resRegs.setR9(_))
+        resRegs
+      }
+    }
+
   implicit val isoBoxCandidate: Iso[boxesMod.BoxCandidate[commonMod.Amount], ErgoBoxCandidate] = new Iso[boxesMod.BoxCandidate[commonMod.Amount], ErgoBoxCandidate] {
     import sigmastate.eval._
     override def to(x: boxesMod.BoxCandidate[commonMod.Amount]): ErgoBoxCandidate = {
@@ -142,19 +173,7 @@ object Isos {
         additionalTokens = {
           isoTokenArray.to(x.assets).mapFirst(id => Digest32 @@ id.toArray)
         },
-        additionalRegisters = {
-          val regs = Seq(
-            x.additionalRegisters.R4 -> R4,
-            x.additionalRegisters.R5 -> R5,
-            x.additionalRegisters.R6 -> R6,
-            x.additionalRegisters.R7 -> R7,
-            x.additionalRegisters.R8 -> R8,
-            x.additionalRegisters.R9 -> R9
-          ).collect {
-            case (regOpt, id) if regOpt.isDefined => id -> isoHexStringToConstant.to(regOpt.get)
-          }
-          Map(regs:_*)
-        }
+        additionalRegisters = isoNonMandatoryRegisters.to(x.additionalRegisters)
       )
       ergoBoxCandidate
     }
@@ -163,24 +182,12 @@ object Isos {
       val ergoTree = ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(x.ergoTree)
       val ergoTreeStr = Base16.encode(ergoTree)
       val assets = isoTokenArray.from(x.additionalTokens.mapFirst(Colls.fromArray(_)))
-      val regs = x.additionalRegisters
-      def regHexOpt(t: NonMandatoryRegisterId): Option[HexString] =
-        regs.get(t).map(v => isoHexStringToConstant.from(v.asInstanceOf[Constant[SType]]))
-
-      val resRegs = NonMandatoryRegisters()
-      regHexOpt(R4).foreach(resRegs.setR4(_))
-      regHexOpt(R5).foreach(resRegs.setR5(_))
-      regHexOpt(R6).foreach(resRegs.setR6(_))
-      regHexOpt(R7).foreach(resRegs.setR7(_))
-      regHexOpt(R8).foreach(resRegs.setR8(_))
-      regHexOpt(R9).foreach(resRegs.setR9(_))
-
       boxesMod.BoxCandidate[commonMod.Amount](
         ergoTree = ergoTreeStr,
         value = isoAmount.from(x.value),
         assets = js.Array(assets:_*),
         creationHeight = x.creationHeight,
-        additionalRegisters = resRegs
+        additionalRegisters = isoNonMandatoryRegisters.from(x.additionalRegisters)
       )
     }
   }
@@ -204,35 +211,38 @@ object Isos {
       }
     }
 
-//  val isoBox: Iso[Box[commonMod.Amount], ErgoBox] = new Iso[Box[commonMod.Amount], ErgoBox] {
-//    override def to(x: Box[commonMod.Amount]): ErgoBox = {
-//      val ergoBox = new ErgoBox(
-//        value = isoAmount.to(x.value),
-//        ergoTree = {
-//          val bytes = Base16.decode(x.ergoTree).get
-//          ErgoTreeSerializer.DefaultSerializer.deserializeErgoTree(bytes)
-//        },
-//        creationHeight = x.creationHeight.toInt,
-//        additionalTokens = isoTokenArray.to(x.assets).mapFirst(id => Digest32 @@ id.toArray) ,
-//        additionalRegisters = {
-//          val regs = Seq(
-//            x.additionalRegisters.R4 -> R4,
-//            x.additionalRegisters.R5 -> R5,
-//            x.additionalRegisters.R6 -> R6,
-//            x.additionalRegisters.R7 -> R7,
-//            x.additionalRegisters.R8 -> R8,
-//            x.additionalRegisters.R9 -> R9
-//          ).collect {
-//            case (regOpt, id) if regOpt.isDefined => id -> isoHexStringToConstant.to(regOpt.get)
-//          }
-//          Map(regs:_*)
-//        }
-//      )
-//      ergoBox
-//    }
-//
-//    override def from(x: ErgoBox): Box[commonMod.Amount] = {
-//      ???
-//    }
-//  }
+  val isoBox: Iso[Box[commonMod.Amount], ErgoBox] = new Iso[Box[commonMod.Amount], ErgoBox] {
+    import sigmastate.eval._
+    override def to(x: Box[commonMod.Amount]): ErgoBox = {
+      val ergoBox = new ErgoBox(
+        value = isoAmount.to(x.value),
+        ergoTree = {
+          val bytes = Base16.decode(x.ergoTree).get
+          ErgoTreeSerializer.DefaultSerializer.deserializeErgoTree(bytes)
+        },
+        creationHeight = x.creationHeight.toInt,
+        additionalTokens = isoTokenArray.to(x.assets).mapFirst(id => Digest32 @@ (id.toArray)),
+        additionalRegisters = isoNonMandatoryRegisters.to(x.additionalRegisters),
+        transactionId = ModifierId @@ x.transactionId,
+        index = x.index.toShort
+      )
+      ergoBox
+    }
+
+    override def from(x: ErgoBox): Box[commonMod.Amount] = {
+      val ergoTree = ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(x.ergoTree)
+      val ergoTreeStr = Base16.encode(ergoTree)
+      val assets = isoTokenArray.from(x.additionalTokens.mapFirst(Colls.fromArray(_)))
+      Box[commonMod.Amount](
+        boxId = Base16.encode(x.id),
+        ergoTree = ergoTreeStr,
+        value = isoAmount.from(x.value),
+        assets = assets,
+        creationHeight = x.creationHeight,
+        additionalRegisters = isoNonMandatoryRegisters.from(x.additionalRegisters),
+        transactionId = x.transactionId,
+        index = x.index
+      )
+    }
+  }
 }
