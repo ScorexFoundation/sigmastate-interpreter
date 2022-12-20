@@ -169,7 +169,8 @@ case class BoolToSigmaProp(value: BoolValue) extends SigmaPropValue {
       SigmaDsl.sigmaProp(v.asInstanceOf[Boolean])
     } else {
       // before v5.0 is activated we follow the old v4.x semantics to handle cases
-      // when the value is not a boolean
+      // when the value is not a boolean. There are historical transactions with such
+      // erroneous scripts. See property("BoolToSigmaProp with SigmaProp argument should be deserializable")
       v match {
         case sp: SigmaProp => sp
         case _ =>

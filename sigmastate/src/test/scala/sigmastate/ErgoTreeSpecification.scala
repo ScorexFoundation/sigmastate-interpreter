@@ -1,8 +1,8 @@
 package sigmastate
 
 import org.ergoplatform.settings.ErgoAlgos
-import org.ergoplatform.validation.{ValidationException, ValidationRules}
-import org.ergoplatform.{ErgoAddressEncoder, ErgoBox, Self}
+import org.ergoplatform.validation.{ValidationRules, ValidationException}
+import org.ergoplatform.{ErgoAddressEncoder, ErgoBox, Self, ErgoLikeContext}
 import scalan.RType.asType
 import scalan.{Nullable, RType}
 import sigmastate.SCollection.{SByteArray, checkValidFlatmap}
@@ -14,7 +14,7 @@ import sigmastate.interpreter.ErgoTreeEvaluator
 import sigmastate.interpreter.Interpreter.JitReductionResult
 import sigmastate.lang.SourceContext
 import sigmastate.lang.Terms._
-import sigmastate.lang.exceptions.{CostLimitException, CosterException, InterpreterException}
+import sigmastate.lang.exceptions.{InterpreterException, CostLimitException}
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.utils.Helpers.TryOps
 import sigmastate.utxo._
@@ -678,13 +678,23 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
       Right(BoolToSigmaProp(BoolToSigmaProp(ConstantPlaceholder(0, SBoolean)).asBoolValue))
     )
 
-    val ctx = ErgoLikeContextTesting
-      .dummy(CostingBox(fakeSelf), 1)
-      .withErgoTreeVersion(tree.version)
+    def createCtx: ErgoLikeContext = ErgoLikeContextTesting
+        .dummy(CostingBox(fakeSelf), VersionContext.current.activatedVersion)
+        .withErgoTreeVersion(tree.version)
 
-    VersionContext.withVersions(1, tree.version) {
-      val res = ErgoTreeEvaluator.evalToCrypto(ctx, tree, evalSettings)
+    VersionContext.withVersions(activatedVersion = 1, tree.version) {
+      // v4.x behavior
+      val res = ErgoTreeEvaluator.evalToCrypto(createCtx, tree, evalSettings)
       res shouldBe JitReductionResult(TrivialProp(true), 3)
+    }
+
+    VersionContext.withVersions(activatedVersion = 2, tree.version) {
+      // v5.0 behavior
+      assertExceptionThrown(
+        ErgoTreeEvaluator.evalToCrypto(createCtx, tree, evalSettings),
+        exceptionLike[ClassCastException](
+          "class sigmastate.eval.CSigmaProp cannot be cast to class java.lang.Boolean")
+      )
     }
   }
 
@@ -695,7 +705,7 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
     }
   }
 
-  property("BoolToSigmaProp with SigmaProp argument") {
+  property("BoolToSigmaProp with SigmaProp argument should be deserializable") {
     { // Transaction: 5fe235558bd37328c5cc65711e5aff12b6f96d6f5abf062b7e7b994f7981f2ec
       val addr = ErgoAddressEncoder.Mainnet.fromString("Fo6oijFP2JM87ac7w").getOrThrow
       val tree = addr.script
