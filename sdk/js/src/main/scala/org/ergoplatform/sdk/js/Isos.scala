@@ -3,7 +3,7 @@ package org.ergoplatform.sdk.js
 import org.ergoplatform.ErgoBox._
 import org.ergoplatform.sdk.Extensions.PairCollOps
 import org.ergoplatform.{DataInput, ErgoBox, ErgoBoxCandidate, UnsignedErgoLikeTransaction, UnsignedInput}
-import org.ergoplatform.sdk.Iso
+import org.ergoplatform.sdk.{ExtendedInputBox, Iso}
 import org.ergoplatform.sdk.JavaHelpers.UniversalConverter
 import scorex.crypto.authds.ADKey
 import scorex.crypto.hash.Digest32
@@ -18,6 +18,7 @@ import special.collection.Coll
 import typings.fleetSdkCommon.boxesMod.Box
 import typings.fleetSdkCommon.commonMod.HexString
 import typings.fleetSdkCommon.registersMod.NonMandatoryRegisters
+import typings.fleetSdkCommon.tokenMod.TokenAmount
 import typings.fleetSdkCommon.{boxesMod, commonMod, contextExtensionMod, inputsMod, registersMod, tokenMod}
 import typings.fleetSdkCommon.transactionsMod.UnsignedTransaction
 
@@ -245,4 +246,38 @@ object Isos {
       )
     }
   }
+
+  val isoEIP12UnsignedInput: Iso[inputsMod.EIP12UnsignedInput, ExtendedInputBox] =
+    new Iso[inputsMod.EIP12UnsignedInput, ExtendedInputBox] {
+      override def to(x: inputsMod.EIP12UnsignedInput): ExtendedInputBox = {
+        val box = Box[commonMod.Amount](
+          boxId = x.boxId,
+          ergoTree = x.ergoTree,
+          value = x.value,
+          assets = x.assets.asInstanceOf[js.Array[TokenAmount[commonMod.Amount]]],
+          creationHeight = x.creationHeight,
+          additionalRegisters = x.additionalRegisters,
+          transactionId = x.transactionId,
+          index = x.index
+        )
+        val ergoBox = isoBox.to(box)
+        val extendedInputBox = ExtendedInputBox(ergoBox, isoContextExtension.to(x.extension))
+        extendedInputBox
+      }
+      override def from(x: ExtendedInputBox): inputsMod.EIP12UnsignedInput = {
+        val box = isoBox.from(x.box)
+        val ext = isoContextExtension.from(x.extension)
+        inputsMod.EIP12UnsignedInput(
+          boxId = box.boxId,
+          ergoTree = box.ergoTree,
+          value = box.value.toString,
+          assets = box.assets.asInstanceOf[js.Array[TokenAmount[String]]],
+          creationHeight = box.creationHeight,
+          additionalRegisters = box.additionalRegisters,
+          transactionId = box.transactionId,
+          index = box.index,
+          extension = ext
+        )
+      }
+    }
 }

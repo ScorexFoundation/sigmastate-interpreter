@@ -3,8 +3,8 @@ package org.ergoplatform.sdk.js
 import org.ergoplatform.ErgoBox.{BoxId, TokenId}
 import org.ergoplatform.sdk.Extensions.PairCollOps
 import org.ergoplatform.{DataInput, ErgoBox, ErgoBoxCandidate, UnsignedErgoLikeTransaction, UnsignedInput}
-import org.ergoplatform.sdk.Iso
-import org.scalacheck.Arbitrary
+import org.ergoplatform.sdk.{ExtendedInputBox, Iso}
+import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.propspec.AnyPropSpec
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
@@ -17,6 +17,12 @@ import sigmastate.serialization.generators.ObjectGenerators
 import scala.scalajs.js
 
 class IsosSpec  extends AnyPropSpec with Matchers with ObjectGenerators with ScalaCheckPropertyChecks{
+
+  lazy val extendedInputBoxGen: Gen[ExtendedInputBox] = for {
+    box <- ergoBoxGen
+    extension <- contextExtensionGen
+  } yield ExtendedInputBox(box, extension)
+
   def roundtrip[A,B](iso: Iso[A,B])(b: B): Unit = {
     val invIso = iso.inverse
     invIso.from(invIso.to(b)) shouldBe b
@@ -94,6 +100,12 @@ class IsosSpec  extends AnyPropSpec with Matchers with ObjectGenerators with Sca
   property("Iso.isoBox") {
     forAll { (b: ErgoBox) =>
       roundtrip(Isos.isoBox)(b)
+    }
+  }
+
+  property("Iso.isoEIP12UnsignedInput") {
+    forAll(extendedInputBoxGen) { (b: ExtendedInputBox) =>
+      roundtrip(Isos.isoEIP12UnsignedInput)(b)
     }
   }
 
