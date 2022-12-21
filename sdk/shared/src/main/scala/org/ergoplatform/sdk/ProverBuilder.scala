@@ -59,7 +59,7 @@ class ProverBuilder(parameters: ErgoLikeParameters, networkPrefix: NetworkPrefix
     this
   }
 
-  def build: Prover = {
+  def build(): Prover = {
     val secretKeys = _masterKey.toIndexedSeq ++ _eip2Keys.map(_._2)
     val interpreter = new AppkitProvingInterpreter(
       secretKeys,

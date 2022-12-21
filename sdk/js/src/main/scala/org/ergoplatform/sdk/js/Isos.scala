@@ -5,16 +5,20 @@ import org.ergoplatform.sdk.Extensions.PairCollOps
 import org.ergoplatform.{DataInput, ErgoBox, ErgoBoxCandidate, UnsignedErgoLikeTransaction, UnsignedInput}
 import org.ergoplatform.sdk.{ExtendedInputBox, Iso}
 import org.ergoplatform.sdk.JavaHelpers.UniversalConverter
-import scorex.crypto.authds.ADKey
+import org.ergoplatform.sdk.wallet.protocol.context.ErgoLikeStateContext
+import scalan.RType
+import scorex.crypto.authds.{ADDigest, ADKey}
 import scorex.crypto.hash.Digest32
 import scorex.util.ModifierId
 import scorex.util.encode.Base16
-import sigmastate.SType
-import sigmastate.Values.Constant
-import sigmastate.eval.{Colls, Evaluation}
+import sigmastate.{AvlTreeData, AvlTreeFlags, SType}
+import sigmastate.Values.{Constant, GroupElementConstant}
+import sigmastate.eval.{CAvlTree, CBigInt, CHeader, CPreHeader, Colls, Evaluation}
 import sigmastate.interpreter.ContextExtension
 import sigmastate.serialization.{ErgoTreeSerializer, ValueSerializer}
 import special.collection.Coll
+import special.sigma
+import special.sigma.GroupElement
 import typings.fleetSdkCommon.boxesMod.Box
 import typings.fleetSdkCommon.commonMod.HexString
 import typings.fleetSdkCommon.registersMod.NonMandatoryRegisters
@@ -22,6 +26,7 @@ import typings.fleetSdkCommon.tokenMod.TokenAmount
 import typings.fleetSdkCommon.{boxesMod, commonMod, contextExtensionMod, inputsMod, registersMod, tokenMod}
 import typings.fleetSdkCommon.transactionsMod.UnsignedTransaction
 
+import java.math.BigInteger
 import scala.collection.immutable.ListMap
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters.JSRichOption
@@ -41,8 +46,23 @@ object Isos {
 
   val isoStringToArray: Iso[String, Array[Byte]] = new Iso[String, Array[Byte]] {
     override def to(x: String): Array[Byte] = Base16.decode(x).get
-
     override def from(x: Array[Byte]): String = Base16.encode(x)
+  }
+
+  val isoStringToColl: Iso[String, Coll[Byte]] = new Iso[String, Coll[Byte]] {
+    override def to(x: String): Coll[Byte] = Colls.fromArray(Base16.decode(x).get)
+    override def from(x: Coll[Byte]): String = Base16.encode(x.toArray)
+  }
+
+  val isoStringToGroupElement: Iso[String, GroupElement] = new Iso[String, GroupElement] {
+    override def to(x: String): GroupElement = {
+      val bytes = Base16.decode(x).get
+      ValueSerializer.deserialize(bytes).asInstanceOf[GroupElementConstant].value
+    }
+    override def from(x: GroupElement): String = {
+      val bytes = ValueSerializer.serialize(GroupElementConstant(x))
+      Base16.encode(bytes)
+    }
   }
 
   implicit val isoBoxId: Iso[boxesMod.BoxId, ErgoBox.BoxId] = new Iso[boxesMod.BoxId, ErgoBox.BoxId] {
@@ -57,10 +77,120 @@ object Isos {
       val value = ValueSerializer.deserialize(bytes)
       value.asInstanceOf[Constant[SType]]
     }
-
     override def from(x: Constant[SType]): HexString = {
       val bytes = ValueSerializer.serialize(x)
       isoStringToArray.from(bytes)
+    }
+  }
+
+  implicit val isoAvlTree: Iso[AvlTree, sigma.AvlTree] = new Iso[AvlTree, sigma.AvlTree] {
+    override def to(x: AvlTree): sigma.AvlTree = {
+      CAvlTree(
+        AvlTreeData(
+          digest = ADDigest @@ isoStringToArray.to(x.digest),
+          treeFlags = AvlTreeFlags(x.insertAllowed, x.updateAllowed, x.removeAllowed),
+          x.keyLength,
+          valueLengthOpt = isoUndefOr(Iso.identityIso[Int]).to(x.valueLengthOpt),
+        ),
+      )
+    }
+    override def from(x: sigma.AvlTree): AvlTree = {
+      val tree = x.asInstanceOf[CAvlTree]
+      val data = tree.treeData
+      new AvlTree(
+        digest = isoStringToColl.from(tree.digest),
+        insertAllowed = data.treeFlags.insertAllowed,
+        updateAllowed = data.treeFlags.updateAllowed,
+        removeAllowed = data.treeFlags.removeAllowed,
+        keyLength = data.keyLength,
+        valueLengthOpt = isoUndefOr(Iso.identityIso[Int]).from(data.valueLengthOpt),
+      )
+    }
+  }
+
+  implicit val isoHeader: Iso[Header, special.sigma.Header] = new Iso[Header, special.sigma.Header] {
+    override def to(a: Header): sigma.Header = {
+      CHeader(
+        id = isoStringToColl.to(a.id),
+        version = a.version,
+        parentId = isoStringToColl.to(a.parentId),
+        ADProofsRoot = isoStringToColl.to(a.ADProofsRoot),
+        stateRoot = isoAvlTree.to(a.stateRoot),
+        transactionsRoot = isoStringToColl.to(a.transactionsRoot),
+        timestamp = isoBigIntToLong.to(a.timestamp),
+        nBits = isoBigIntToLong.to(a.nBits),
+        height = a.height,
+        extensionRoot = isoStringToColl.to(a.extensionRoot),
+        minerPk = isoStringToGroupElement.to(a.minerPk),
+        powOnetimePk = isoStringToGroupElement.to(a.powOnetimePk),
+        powNonce = isoStringToColl.to(a.powNonce),
+        powDistance = isoBigInt.to(a.powDistance),
+        votes = isoStringToColl.to(a.votes)
+      )
+    }
+    override def from(b: sigma.Header): Header = {
+      val header = b.asInstanceOf[CHeader]
+      new Header(
+        id = isoStringToColl.from(header.id),
+        version = header.version,
+        parentId = isoStringToColl.from(header.parentId),
+        ADProofsRoot = isoStringToColl.from(header.ADProofsRoot),
+        stateRoot = isoAvlTree.from(header.stateRoot),
+        transactionsRoot = isoStringToColl.from(header.transactionsRoot),
+        timestamp = isoBigIntToLong.from(header.timestamp),
+        nBits = isoBigIntToLong.from(header.nBits),
+        height = header.height,
+        extensionRoot = isoStringToColl.from(header.extensionRoot),
+        minerPk = isoStringToGroupElement.from(header.minerPk),
+        powOnetimePk = isoStringToGroupElement.from(header.powOnetimePk),
+        powNonce = isoStringToColl.from(header.powNonce),
+        powDistance = isoBigInt.from(header.powDistance),
+        votes = isoStringToColl.from(header.votes)
+      )
+    }
+  }
+
+  implicit val isoPreHeader: Iso[PreHeader, special.sigma.PreHeader] = new Iso[PreHeader, special.sigma.PreHeader] {
+    override def to(a: PreHeader): sigma.PreHeader = {
+      CPreHeader(
+        version = a.version,
+        parentId = isoStringToColl.to(a.parentId),
+        timestamp = isoBigIntToLong.to(a.timestamp),
+        nBits = isoBigIntToLong.to(a.nBits),
+        height = a.height,
+        minerPk = isoStringToGroupElement.to(a.minerPk),
+        votes = isoStringToColl.to(a.votes)
+      )
+    }
+    override def from(b: sigma.PreHeader): PreHeader = {
+      val header = b.asInstanceOf[CPreHeader]
+      new PreHeader(
+        version = header.version,
+        parentId = isoStringToColl.from(header.parentId),
+        timestamp = isoBigIntToLong.from(header.timestamp),
+        nBits = isoBigIntToLong.from(header.nBits),
+        height = header.height,
+        minerPk = isoStringToGroupElement.from(header.minerPk),
+        votes = isoStringToColl.from(header.votes)
+      )
+    }
+  }
+
+  implicit val isoBlockchainStateContext: Iso[BlockchainStateContext, ErgoLikeStateContext] = new Iso[BlockchainStateContext, ErgoLikeStateContext] {
+    override def to(a: BlockchainStateContext): ErgoLikeStateContext = {
+      new ErgoLikeStateContext {
+        override def sigmaLastHeaders: Coll[sigma.Header] = isoArrayToColl(isoHeader).to(a.sigmaLastHeaders)
+        override def previousStateDigest: ADDigest = ADDigest @@ isoStringToArray.to(a.previousStateDigest)
+        override def sigmaPreHeader: sigma.PreHeader = isoPreHeader.to(a.sigmaPreHeader)
+      }
+    }
+
+    override def from(b: ErgoLikeStateContext): BlockchainStateContext = {
+      new BlockchainStateContext(
+        sigmaLastHeaders = isoArrayToColl(isoHeader).from(b.sigmaLastHeaders),
+        previousStateDigest = isoStringToArray.from(b.previousStateDigest),
+        sigmaPreHeader = isoPreHeader.from(b.sigmaPreHeader)
+      )
     }
   }
 
@@ -100,6 +230,22 @@ object Isos {
     override def from(x: DataInput): inputsMod.DataInput = inputsMod.DataInput(x.boxId.convertTo[boxesMod.BoxId])
   }
 
+  implicit val isoBigInt: Iso[js.BigInt, special.sigma.BigInt] = new Iso[js.BigInt, special.sigma.BigInt] {
+    override def to(x: js.BigInt): sigma.BigInt = {
+      CBigInt(new BigInteger(x.toString(10)))
+    }
+    override def from(x: sigma.BigInt): js.BigInt = {
+      val bi = x.asInstanceOf[CBigInt].wrappedValue
+      val s = bi.toString(10)
+      js.BigInt(s)
+    }
+  }
+
+  implicit val isoBigIntToLong: Iso[js.BigInt, Long] = new Iso[js.BigInt, Long] {
+    override def to(x: js.BigInt): Long = java.lang.Long.parseLong(x.toString(10))
+    override def from(x: Long): js.BigInt = js.BigInt(x.toString)
+  }
+
   implicit val isoAmount: Iso[commonMod.Amount, Long] = new Iso[commonMod.Amount, Long] {
     override def to(x: commonMod.Amount): Long = x.asInstanceOf[Any] match {
       case s: String => BigInt(s).toLong
@@ -119,6 +265,11 @@ object Isos {
   implicit def isoUndefOr[A, B](implicit iso: Iso[A, B]): Iso[js.UndefOr[A], Option[B]] = new Iso[js.UndefOr[A], Option[B]] {
     override def to(x: js.UndefOr[A]): Option[B] = x.toOption.map(iso.to)
     override def from(x: Option[B]): js.UndefOr[A] = x.map(iso.from).orUndefined
+  }
+
+  implicit def isoArrayToColl[A, B](iso: Iso[A, B])(implicit tB: RType[B]): Iso[js.Array[A], Coll[B]] = new Iso[js.Array[A], Coll[B]] {
+    override def to(x: js.Array[A]): Coll[B] = Colls.fromArray(x.map(iso.to).toArray(tB.classTag))
+    override def from(x: Coll[B]): js.Array[A] = js.Array(x.toArray.map(iso.from):_*)
   }
 
   val isoTokenArray: Iso[js.Array[tokenMod.TokenAmount[commonMod.Amount]], Coll[(Coll[Byte], Long)]] =
