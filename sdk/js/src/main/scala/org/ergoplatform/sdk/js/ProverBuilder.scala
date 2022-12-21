@@ -11,7 +11,7 @@ import Isos._
 import sigmastate.eval.SigmaDsl
 
 @JSExportTopLevel("ProverBuilder")
-class ProverBuilder(parameters: ErgoLikeParameters, networkPrefix: NetworkPrefix) {
+class ProverBuilder(parameters: ErgoLikeParameters, networkPrefix: NetworkPrefix) extends js.Object {
   val _builder = new sdk.ProverBuilder(parameters, networkPrefix)
 
   def withMnemonic(mnemonicPhrase: String, mnemonicPass: String): ProverBuilder = {

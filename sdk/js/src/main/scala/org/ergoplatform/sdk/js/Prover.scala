@@ -8,7 +8,7 @@ import scala.scalajs.js
 import scala.scalajs.js.annotation.JSExportTopLevel
 
 @JSExportTopLevel("Prover")
-class Prover(_prover: sdk.Prover) {
+class Prover(_prover: sdk.Prover) extends js.Object {
   import Isos._
 
   def reduce(

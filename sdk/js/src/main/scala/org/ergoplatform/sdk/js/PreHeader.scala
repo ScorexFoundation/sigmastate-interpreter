@@ -3,7 +3,7 @@ package org.ergoplatform.sdk.js
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSExportTopLevel
 
-@JSExportTopLevel("BlockchainStateContext")
+@JSExportTopLevel("PreHeader")
 class PreHeader(
     val version: Byte,
     val parentId: String,
@@ -12,4 +12,4 @@ class PreHeader(
     val height: Int,
     val minerPk: String,
     val votes: String
-)
+) extends js.Object

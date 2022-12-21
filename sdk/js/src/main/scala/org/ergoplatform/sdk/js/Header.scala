@@ -9,7 +9,7 @@ import scala.scalajs.js.UndefOr
 import scala.scalajs.js.annotation.JSExportTopLevel
 
 
-@JSExportTopLevel("BlockchainStateContext")
+@JSExportTopLevel("AvlTree")
 class AvlTree(
     val digest: String,
     val insertAllowed: Boolean,
@@ -17,9 +17,9 @@ class AvlTree(
     val removeAllowed: Boolean,
     val keyLength: Int,
     val valueLengthOpt: UndefOr[Int]
-)
+) extends js.Object
 
-@JSExportTopLevel("BlockchainStateContext")
+@JSExportTopLevel("Header")
 class Header(
     val id: String,
     val version: Byte,
@@ -36,4 +36,4 @@ class Header(
     val powNonce: String,
     val powDistance: js.BigInt,
     val votes: String
-)
+) extends js.Object
