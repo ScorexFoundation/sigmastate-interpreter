@@ -1,8 +1,6 @@
 package org.ergoplatform.sdk.js
 
 import org.ergoplatform.sdk
-import org.ergoplatform.sdk.AppkitProvingInterpreter
-import typings.fleetSdkCommon
 import typings.fleetSdkCommon.boxesMod.Box
 import typings.fleetSdkCommon.{commonMod, inputsMod, tokenMod, transactionsMod}
 
@@ -12,6 +10,25 @@ import scala.scalajs.js.annotation.JSExportTopLevel
 @JSExportTopLevel("Prover")
 class Prover(_prover: sdk.Prover) {
   import Isos._
+
+  def reduce(
+      stateCtx: BlockchainStateContext,
+      unsignedTx: transactionsMod.UnsignedTransaction,
+      boxesToSpend: js.Array[inputsMod.EIP12UnsignedInput],
+      baseCost: Int): ReducedTransaction = {
+    val tx =sdk.UnsignedTransaction(
+      ergoTx = isoUnsignedTransaction.to(unsignedTx),
+      boxesToSpend = isoArrayToIndexed(isoEIP12UnsignedInput).to(boxesToSpend),
+      dataInputs = IndexedSeq.empty,
+      tokensToBurn = IndexedSeq.empty
+    )
+    _prover.reduce(
+      isoBlockchainStateContext.to(stateCtx),
+      tx,
+      baseCost
+    )
+    new ReducedTransaction
+  }
 
   def reduceTransaction(
       unsignedTx: transactionsMod.UnsignedTransaction,

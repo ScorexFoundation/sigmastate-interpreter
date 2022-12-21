@@ -28,6 +28,7 @@ import typings.fleetSdkCommon.transactionsMod.UnsignedTransaction
 
 import java.math.BigInteger
 import scala.collection.immutable.ListMap
+import scala.reflect.ClassTag
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters.JSRichOption
 import scala.scalajs.js.Object
@@ -270,6 +271,11 @@ object Isos {
   implicit def isoArrayToColl[A, B](iso: Iso[A, B])(implicit tB: RType[B]): Iso[js.Array[A], Coll[B]] = new Iso[js.Array[A], Coll[B]] {
     override def to(x: js.Array[A]): Coll[B] = Colls.fromArray(x.map(iso.to).toArray(tB.classTag))
     override def from(x: Coll[B]): js.Array[A] = js.Array(x.toArray.map(iso.from):_*)
+  }
+
+  implicit def isoArrayToIndexed[A, B](iso: Iso[A, B])(implicit cB: ClassTag[B]): Iso[js.Array[A], IndexedSeq[B]] = new Iso[js.Array[A], IndexedSeq[B]] {
+    override def to(x: js.Array[A]): IndexedSeq[B] = x.map(iso.to).toArray(cB).toIndexedSeq
+    override def from(x: IndexedSeq[B]): js.Array[A] = js.Array(x.map(iso.from):_*)
   }
 
   val isoTokenArray: Iso[js.Array[tokenMod.TokenAmount[commonMod.Amount]], Coll[(Coll[Byte], Long)]] =
