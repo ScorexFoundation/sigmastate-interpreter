@@ -29,7 +29,11 @@ import org.ergoplatform.sdk.wallet.{Constants, TokensMap}
 import org.ergoplatform.sdk.wallet.secrets.{DerivationPath, ExtendedSecretKey}
 import scalan.ExactIntegral.LongIsExactIntegral
 import scalan.util.StringUtil.StringUtilExtensions
+import sigmastate.basics.CryptoConstants.EcPointType
+import sigmastate.basics.{DiffieHellmanTupleProverInput, ProveDHTuple}
 import sigmastate.crypto.CryptoFacade
+
+import java.math.BigInteger
 
 /** Type-class of isomorphisms between types.
   * Isomorphism between two types `A` and `B` essentially say that both types
@@ -494,6 +498,31 @@ object JavaHelpers {
       reducedTokens = Colls.fromItems(reducedTokens:_*).mapFirst(Colls.fromArray(_)),
       subtractedTokens = Colls.fromItems(subtractedTokens:_*).mapFirst(Colls.fromArray(_))
     )
+  }
+
+  def createDiffieHellmanTupleProverInput(
+      g: GroupElement,
+      h: GroupElement,
+      u: GroupElement,
+      v: GroupElement,
+      x: BigInteger): DiffieHellmanTupleProverInput = {
+    createDiffieHellmanTupleProverInput(
+      g = sdk.JavaHelpers.SigmaDsl.toECPoint(g),
+      h = sdk.JavaHelpers.SigmaDsl.toECPoint(h),
+      u = sdk.JavaHelpers.SigmaDsl.toECPoint(u),
+      v = sdk.JavaHelpers.SigmaDsl.toECPoint(v),
+      x
+    )
+  }
+
+  def createDiffieHellmanTupleProverInput(
+      g: EcPointType,
+      h: EcPointType,
+      u: EcPointType,
+      v: EcPointType,
+      x: BigInteger): DiffieHellmanTupleProverInput = {
+    val dht = ProveDHTuple(g, h, u, v)
+    DiffieHellmanTupleProverInput(x, dht)
   }
 }
 
