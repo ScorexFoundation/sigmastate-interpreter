@@ -127,12 +127,12 @@ object ErgoLikeTransactionSerializer extends SigmaSerializer[ErgoLikeTransaction
     val tokenIds = tx.outputCandidates.toColl
       .flatMap(box => box.additionalTokens.map(t => t._1))
 
-    val distinctTokenIds = tokenIds.map(_.toColl).distinct.map(_.toArray.asInstanceOf[TokenId])
+    val distinctTokenIds = tokenIds.distinct
 
     w.putUInt(distinctTokenIds.length)
     cfor(0)(_ < distinctTokenIds.length, _ + 1) { i =>
       val tokenId = distinctTokenIds(i)
-      w.putBytes(tokenId)
+      w.putBytes(tokenId.toArray)
     }
     // serialize outputs
     val outs = tx.outputCandidates
@@ -161,9 +161,9 @@ object ErgoLikeTransactionSerializer extends SigmaSerializer[ErgoLikeTransaction
 
     // parse distinct ids of tokens in transaction outputs
     val tokensCount = r.getUIntExact
-    val tokens = safeNewArray[Array[Byte]](tokensCount)
+    val tokens = safeNewArray[TokenId](tokensCount)
     cfor(0)(_ < tokensCount, _ + 1) { i =>
-      tokens(i) = r.getBytes(TokenId.size)
+      tokens(i) = Digest32Coll @@@ Colls.fromArray(r.getBytes(TokenId.size))
     }
 
     // parse outputs

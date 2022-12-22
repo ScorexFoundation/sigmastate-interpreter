@@ -4650,7 +4650,7 @@ class SigmaDslSpecification extends SigmaDslTesting
           Vector(),
           Right(SigmaPropConstant(CSigmaProp(ProveDlog(Helpers.decodeECPoint("02af645874c3b53465a5e9d820eb207d6001258c3b708f0d31d7c2e342833dce64")))))
         ),
-        Coll((Digest32 @@ (ErgoAlgos.decodeUnsafe("8f0000ff009e7fff012427ff7fffcc35dfe680017f004ef3be1280e57fc40101")), 500L)),
+        Coll((Digest32Coll @@ (ErgoAlgos.decodeUnsafe("8f0000ff009e7fff012427ff7fffcc35dfe680017f004ef3be1280e57fc40101").toColl), 500L)),
         Map(
           ErgoBox.R9 -> LongConstant(-6985752043373238161L),
           ErgoBox.R4 -> LongConstant(-7374898275229807247L),
@@ -4738,7 +4738,7 @@ class SigmaDslSpecification extends SigmaDslTesting
               ),
               Right(ConstantPlaceholder(0, SSigmaProp))
             ),
-            Coll((Digest32 @@ (ErgoAlgos.decodeUnsafe("6f070152007f00005a00893ea1e98045ffa28f72da01ff7f01ff2d48eb793fd6")), 20000L)),
+            Coll((Digest32Coll @@ (ErgoAlgos.decodeUnsafe("6f070152007f00005a00893ea1e98045ffa28f72da01ff7f01ff2d48eb793fd6").toColl), 20000L)),
             Map(ErgoBox.R5 -> LongConstant(1L), ErgoBox.R4 -> LongConstant(5008366408131208436L)),
             ModifierId @@ ("26485d14a94ef18ec36227a838b98e11e910087be4c7e634f51391e4ea4d16ff"),
             0.toShort,
@@ -4753,7 +4753,7 @@ class SigmaDslSpecification extends SigmaDslTesting
               Vector(),
               Right(SigmaPropConstant(CSigmaProp(ProveDlog(Helpers.decodeECPoint("02d13e1a8c31f32194761adc1cdcbaa746b3e049e682bba9308d8ee84576172991")))))
             ),
-            Coll((Digest32 @@ (ErgoAlgos.decodeUnsafe("6f070152007f00005a00893ea1e98045ffa28f72da01ff7f01ff2d48eb793fd6")), 500L)),
+            Coll((Digest32Coll @@ (ErgoAlgos.decodeUnsafe("6f070152007f00005a00893ea1e98045ffa28f72da01ff7f01ff2d48eb793fd6").toColl), 500L)),
             Map(),
             ModifierId @@ ("26485d14a94ef18ec36227a838b98e11e910087be4c7e634f51391e4ea4d16ff"),
             1.toShort,

@@ -35,8 +35,6 @@ package object eval {
 
   trait BaseDigestColl extends TaggedType[Coll[Byte]]
 
-  type DigestColl = BaseDigestColl#Type
-
   object Digest32Coll extends BaseDigestColl
 
   type Digest32Coll = Digest32Coll.Type

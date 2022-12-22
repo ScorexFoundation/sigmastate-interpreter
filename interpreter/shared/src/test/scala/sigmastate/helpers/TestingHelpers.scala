@@ -36,7 +36,7 @@ object TestingHelpers {
 
   def createBox(value: Long,
                 proposition: ErgoTree,
-                additionalTokens: Seq[(Digest32, Long)] = ArraySeq.empty,
+                additionalTokens: Seq[Token] = ArraySeq.empty,
                 additionalRegisters: AdditionalRegisters = Map.empty)
   = testBox(value, proposition, 0, additionalTokens, additionalRegisters)
 

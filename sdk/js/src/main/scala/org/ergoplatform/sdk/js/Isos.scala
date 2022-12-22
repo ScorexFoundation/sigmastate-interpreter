@@ -13,7 +13,7 @@ import scorex.util.ModifierId
 import scorex.util.encode.Base16
 import sigmastate.{AvlTreeData, AvlTreeFlags, SType}
 import sigmastate.Values.{Constant, GroupElementConstant}
-import sigmastate.eval.{CAvlTree, CBigInt, CHeader, CPreHeader, Colls, Evaluation}
+import sigmastate.eval.{CAvlTree, CBigInt, CHeader, CPreHeader, Colls, Digest32Coll, Evaluation}
 import sigmastate.interpreter.ContextExtension
 import sigmastate.serialization.{ErgoTreeSerializer, ValueSerializer}
 import special.collection.Coll
@@ -255,13 +255,14 @@ object Isos {
     override def from(x: Long): commonMod.Amount = x.toString
   }
 
-  implicit val isoToken: Iso[tokenMod.TokenAmount[commonMod.Amount], (Coll[Byte], Long)] = new Iso[tokenMod.TokenAmount[commonMod.Amount], (Coll[Byte], Long)] {
-    override def to(x: tokenMod.TokenAmount[commonMod.Amount]): (Coll[Byte], Long) =
-      (Colls.fromArray(Base16.decode(x.tokenId).get), isoAmount.to(x.amount))
+  implicit val isoToken: Iso[tokenMod.TokenAmount[commonMod.Amount], Token] =
+    new Iso[tokenMod.TokenAmount[commonMod.Amount], Token] {
+      override def to(x: tokenMod.TokenAmount[commonMod.Amount]): Token =
+        (Digest32Coll @@@ Colls.fromArray(Base16.decode(x.tokenId).get), isoAmount.to(x.amount))
 
-    override def from(x: (Coll[Byte], Long)): tokenMod.TokenAmount[commonMod.Amount] =
-      tokenMod.TokenAmount[commonMod.Amount](isoAmount.from(x._2), Base16.encode(x._1.toArray))
-  }
+      override def from(x: Token): tokenMod.TokenAmount[commonMod.Amount] =
+        tokenMod.TokenAmount[commonMod.Amount](isoAmount.from(x._2), Base16.encode(x._1.toArray))
+    }
 
   implicit def isoUndefOr[A, B](implicit iso: Iso[A, B]): Iso[js.UndefOr[A], Option[B]] = new Iso[js.UndefOr[A], Option[B]] {
     override def to(x: js.UndefOr[A]): Option[B] = x.toOption.map(iso.to)
@@ -278,12 +279,12 @@ object Isos {
     override def from(x: IndexedSeq[B]): js.Array[A] = js.Array(x.map(iso.from):_*)
   }
 
-  val isoTokenArray: Iso[js.Array[tokenMod.TokenAmount[commonMod.Amount]], Coll[(Coll[Byte], Long)]] =
-    new Iso[js.Array[tokenMod.TokenAmount[commonMod.Amount]], Coll[(Coll[Byte], Long)]] {
-      override def to(x: js.Array[tokenMod.TokenAmount[commonMod.Amount]]): Coll[(Coll[Byte], Long)] = {
+  val isoTokenArray: Iso[js.Array[tokenMod.TokenAmount[commonMod.Amount]], Coll[Token]] =
+    new Iso[js.Array[tokenMod.TokenAmount[commonMod.Amount]], Coll[Token]] {
+      override def to(x: js.Array[tokenMod.TokenAmount[commonMod.Amount]]): Coll[Token] = {
         isoArrayToColl(isoToken).to(x)
       }
-      override def from(x: Coll[(Coll[Byte], Long)]): js.Array[tokenMod.TokenAmount[commonMod.Amount]] = {
+      override def from(x: Coll[Token]): js.Array[tokenMod.TokenAmount[commonMod.Amount]] = {
         isoArrayToColl(isoToken).from(x)
       }
     }
@@ -328,9 +329,7 @@ object Isos {
           ErgoTreeSerializer.DefaultSerializer.deserializeErgoTree(bytes)
         },
         x.creationHeight.toInt,
-        additionalTokens = {
-          isoTokenArray.to(x.assets).mapFirst(id => Digest32 @@ id.toArray)
-        },
+        additionalTokens = isoTokenArray.to(x.assets),
         additionalRegisters = isoNonMandatoryRegisters.to(x.additionalRegisters)
       )
       ergoBoxCandidate
@@ -339,7 +338,7 @@ object Isos {
     override def from(x: ErgoBoxCandidate): boxesMod.BoxCandidate[commonMod.Amount] = {
       val ergoTree = ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(x.ergoTree)
       val ergoTreeStr = Base16.encode(ergoTree)
-      val assets = isoTokenArray.from(x.additionalTokens.mapFirst(Colls.fromArray(_)))
+      val assets = isoTokenArray.from(x.additionalTokens)
       boxesMod.BoxCandidate[commonMod.Amount](
         ergoTree = ergoTreeStr,
         value = isoAmount.from(x.value),
@@ -379,7 +378,7 @@ object Isos {
           ErgoTreeSerializer.DefaultSerializer.deserializeErgoTree(bytes)
         },
         creationHeight = x.creationHeight.toInt,
-        additionalTokens = isoTokenArray.to(x.assets).mapFirst(id => Digest32 @@ (id.toArray)),
+        additionalTokens = isoTokenArray.to(x.assets),
         additionalRegisters = isoNonMandatoryRegisters.to(x.additionalRegisters),
         transactionId = ModifierId @@ x.transactionId,
         index = x.index.toShort
@@ -390,7 +389,7 @@ object Isos {
     override def from(x: ErgoBox): Box[commonMod.Amount] = {
       val ergoTree = ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(x.ergoTree)
       val ergoTreeStr = Base16.encode(ergoTree)
-      val assets = isoTokenArray.from(x.additionalTokens.mapFirst(Colls.fromArray(_)))
+      val assets = isoTokenArray.from(x.additionalTokens)
       Box[commonMod.Amount](
         boxId = Base16.encode(x.id),
         ergoTree = ergoTreeStr,

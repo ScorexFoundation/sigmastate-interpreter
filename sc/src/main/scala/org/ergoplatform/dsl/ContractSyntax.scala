@@ -1,12 +1,12 @@
 package org.ergoplatform.dsl
 
+import org.ergoplatform.ErgoBox.TokenId
 import scalan.RType
 import sigmastate.SType
 import sigmastate.SType.AnyOps
 import org.ergoplatform.dsl.ContractSyntax.{ErgoScript, Proposition}
 import sigmastate.eval.{CostingSigmaDslBuilder, Evaluation}
 import sigmastate.interpreter.Interpreter.ScriptEnv
-import special.collection.Coll
 import special.sigma.{SigmaProp, SigmaContract, Context, SigmaDslBuilder}
 import scala.language.implicitConversions
 
@@ -37,7 +37,6 @@ trait ContractSyntax { contract: SigmaContract =>
 }
 object ContractSyntax {
   type Proposition = Context => SigmaProp
-  type TokenId = Coll[Byte]
   case class ErgoScript(env: ScriptEnv, code: String, scriptVersion: Option[Byte])
   case class Token(id: TokenId, value: Long)
 }

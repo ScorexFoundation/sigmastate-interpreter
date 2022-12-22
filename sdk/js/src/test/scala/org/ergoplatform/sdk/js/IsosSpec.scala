@@ -1,7 +1,6 @@
 package org.ergoplatform.sdk.js
 
 import org.ergoplatform.ErgoBox.{BoxId, TokenId}
-import org.ergoplatform.sdk.Extensions.PairCollOps
 import org.ergoplatform.sdk.{ExtendedInputBox, Iso}
 import org.ergoplatform._
 import org.scalacheck.{Arbitrary, Gen}
@@ -10,7 +9,6 @@ import org.scalatest.propspec.AnyPropSpec
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import sigmastate.SType
 import sigmastate.Values.Constant
-import sigmastate.eval.Colls
 import sigmastate.interpreter.ContextExtension
 import sigmastate.serialization.generators.ObjectGenerators
 import special.collection.Coll
@@ -89,13 +87,13 @@ class IsosSpec  extends AnyPropSpec with Matchers with ObjectGenerators with Sca
 
   property("Iso.isoToken") {
     forAll(tokenIdGen, Arbitrary.arbLong.arbitrary) { (id: TokenId, amount: Long) =>
-      roundtrip(Isos.isoToken)((Colls.fromArray(id), amount))
+      roundtrip(Isos.isoToken)((id, amount))
     }
   }
 
   property("Iso.isoTokenArray") {
     forAll(ergoBoxTokens(tokensGen.sample.get)) { tokens =>
-      roundtrip(Isos.isoTokenArray)(tokens.mapFirst(id => Colls.fromArray(id)))
+      roundtrip(Isos.isoTokenArray)(tokens)
     }
   }
 

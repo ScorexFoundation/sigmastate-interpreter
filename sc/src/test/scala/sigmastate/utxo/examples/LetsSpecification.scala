@@ -3,12 +3,12 @@ package sigmastate.utxo.examples
 import org.ergoplatform._
 import org.ergoplatform.ErgoBox.{R4, R5}
 import scorex.crypto.authds.{ADKey, ADValue}
-import scorex.crypto.authds.avltree.batch.{Lookup, BatchAVLProver, Insert}
-import scorex.crypto.hash.{Digest32, Blake2b256}
-import sigmastate.{AvlTreeData, AvlTreeFlags, TrivialProp, CompilerCrossVersionProps}
-import sigmastate.Values.{ByteArrayConstant, AvlTreeConstant, SigmaPropConstant, LongConstant}
-import sigmastate.eval.{IRContext, SigmaDsl}
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestProvingInterpreter, CompilerTestingCommons}
+import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup}
+import scorex.crypto.hash.{Blake2b256, Digest32}
+import sigmastate.{AvlTreeData, AvlTreeFlags, CompilerCrossVersionProps, TrivialProp}
+import sigmastate.Values.{AvlTreeConstant, ByteArrayConstant, LongConstant, SigmaPropConstant}
+import sigmastate.eval.{Colls, Digest32Coll, IRContext, SigmaDsl}
+import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestProvingInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter.ScriptNameProp
 import sigmastate.serialization.ErgoTreeSerializer
@@ -172,7 +172,7 @@ class LetsSpecification extends CompilerTestingCommons with CompilerCrossVersion
 
   lazy val project = new ErgoLikeTestProvingInterpreter()
 
-  val letsTokenId = Digest32 @@ Array.fill(32)(Random.nextInt(100).toByte)
+  val letsTokenId = Digest32Coll @@ Colls.fromArray(Array.fill(32)(Random.nextInt(100).toByte))
 
   val env = Map(ScriptNameProp -> "withdrawalScriptEnv", "letsToken" -> ByteArrayConstant(letsTokenId))
 
@@ -291,9 +291,9 @@ class LetsSpecification extends CompilerTestingCommons with CompilerCrossVersion
         R4 -> AvlTreeConstant(SigmaDsl.avlTree(initTreeData)),
         R5 -> SigmaPropConstant(TrivialProp.TrueProp)))
 
-    val userTokenId = Digest32 @@@ projectBoxBefore.id
+    val userTokenId = Digest32Coll @@@ Colls.fromArray(projectBoxBefore.id)
 
-    avlProver.performOneOperation(Insert(ADKey @@@ userTokenId, ADValue @@ Array.emptyByteArray))
+    avlProver.performOneOperation(Insert(ADKey @@@ userTokenId.toArray, ADValue @@ Array.emptyByteArray))
 
     val proof = avlProver.generateProof()
     val endTree = new AvlTreeData(avlProver.digest, AvlTreeFlags.InsertOnly, 32, None)
@@ -326,18 +326,18 @@ class LetsSpecification extends CompilerTestingCommons with CompilerCrossVersion
 
   property("exchange") {
 
-    val userTokenId0 = Digest32 @@ Array.fill(32)(Random.nextInt(100).toByte)
-    val userTokenId1 = Digest32 @@ Array.fill(32)(Random.nextInt(100).toByte)
+    val userTokenId0 = Digest32Coll @@ Colls.fromArray(Array.fill(32)(Random.nextInt(100).toByte))
+    val userTokenId1 = Digest32Coll @@ Colls.fromArray(Array.fill(32)(Random.nextInt(100).toByte))
 
     val avlProver = new BatchAVLProver[Digest32, Blake2b256.type](keyLength = 32, None)
-    avlProver.performOneOperation(Insert(ADKey @@@ userTokenId0, ADValue @@ Array.emptyByteArray))
-    avlProver.performOneOperation(Insert(ADKey @@@ userTokenId1, ADValue @@ Array.emptyByteArray))
+    avlProver.performOneOperation(Insert(ADKey @@@ userTokenId0.toArray, ADValue @@ Array.emptyByteArray))
+    avlProver.performOneOperation(Insert(ADKey @@@ userTokenId1.toArray, ADValue @@ Array.emptyByteArray))
     val digest = avlProver.digest
     avlProver.generateProof()
     val initTreeData = new AvlTreeData(digest, AvlTreeFlags.InsertOnly, 32, None)
 
-    avlProver.performOneOperation(Lookup(ADKey @@@ userTokenId0))
-    avlProver.performOneOperation(Lookup(ADKey @@@ userTokenId1))
+    avlProver.performOneOperation(Lookup(ADKey @@@ userTokenId0.toArray))
+    avlProver.performOneOperation(Lookup(ADKey @@@ userTokenId1.toArray))
     val proof = avlProver.generateProof()
 
     val managementTree = mkTestErgoTree(managementScript)

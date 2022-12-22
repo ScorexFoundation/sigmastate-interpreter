@@ -5,10 +5,11 @@ import org.ergoplatform.dsl.ContractSyntax.Token
 import org.ergoplatform.dsl.ErgoContractSpec
 import special.collection.Coll
 import scorex.crypto.hash.Blake2b256
+import sigmastate.eval.Digest32Coll
 
 class AssetsAtomicExchangeErgoTests extends CompilerTestingCommons { suite =>
   lazy val spec = new ErgoContractSpec()(new TestingIRContext)
-  private lazy val tokenId: Coll[Byte] = spec.Coll(Blake2b256("token1"))
+  private lazy val tokenId = Digest32Coll @@@ spec.Coll(Blake2b256("token1"))
   lazy val buyer = spec.ProvingParty("Alice")
   lazy val seller = spec.ProvingParty("Bob")
   val ergAmt = 100

@@ -76,6 +76,9 @@ trait JsonCodecs {
   implicit val digest32Encoder: Encoder[Digest32] = Encoder.instance(_.array.asJson)
   implicit val digest32Decoder: Decoder[Digest32] = bytesDecoder(Digest32 @@ _)
 
+  implicit val digest32CollEncoder: Encoder[Digest32Coll] = Encoder.instance(d => ErgoAlgos.encode(d).asJson)
+  implicit val digest32CollDecoder: Decoder[Digest32Coll] = bytesDecoder(bytes => Digest32Coll @@ bytes.toColl)
+
   implicit val assetEncoder: Encoder[Token] = Encoder.instance({ asset =>
     Json.obj(
       "tokenId" -> asset._1.asJson,

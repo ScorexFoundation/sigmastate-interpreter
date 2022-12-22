@@ -194,12 +194,12 @@ trait ObjectGenerators extends TypeGenerators
       }
   }
 
-  def additionalTokensGen(cnt: Int): Seq[Gen[(Digest32, Long)]] =
+  def additionalTokensGen(cnt: Int): Seq[Gen[(Digest32Coll, Long)]] =
     (0 until cnt).map { _ =>
       for {
-        id <- Digest32 @@@ boxIdGen
+        id <- boxIdGen
         amt <- Gen.oneOf(1, 500, 20000, 10000000, Long.MaxValue)
-      } yield id -> amt
+      } yield (Digest32Coll @@@ id.toColl) -> amt
     }
 
   val smallIntGen: Gen[Int] = Gen.chooseNum(2, 16)
@@ -337,20 +337,20 @@ trait ObjectGenerators extends TypeGenerators
     Gen.containerOfN[Array, T](n, g)
   }
 
-  def ergoBoxTokens(availableTokens: Seq[Digest32]): Gen[Coll[Token]] = for {
+  def ergoBoxTokens(availableTokens: Seq[TokenId]): Gen[Coll[Token]] = for {
     tokens <-
       if(availableTokens.nonEmpty) {
         for {
           tokensCount <- Gen.chooseNum[Int](0, MaxTokens)
-          ts <- arrayOfN(tokensCount, Gen.oneOf(availableTokens).map(_.toColl))
-        } yield ts.distinct.map(coll => Digest32 @@ coll.toArray)
+          ts <- arrayOfN(tokensCount, Gen.oneOf(availableTokens))
+        } yield ts.distinct
       } else {
-        Gen.const(Array.empty[Digest32])
+        Gen.const(Array.empty[TokenId])
       }
     tokenAmounts <- arrayOfN(tokens.length, Gen.oneOf(1, 500, 20000, 10000000, Long.MaxValue))
   } yield tokens.toColl.zip(tokenAmounts.toColl)
 
-  def ergoBoxCandidateGen(availableTokens: Seq[Digest32]): Gen[ErgoBoxCandidate] = for {
+  def ergoBoxCandidateGen(availableTokens: Seq[TokenId]): Gen[ErgoBoxCandidate] = for {
     l <- arbLong.arbitrary
     b <- ergoTreeGen.filter(t => t.bytes.length < MaxPropositionBytes.value)
     ar <- additionalRegistersGen
@@ -360,18 +360,16 @@ trait ObjectGenerators extends TypeGenerators
 
   lazy val boxConstantGen: Gen[BoxConstant] = ergoBoxGen.map { v => BoxConstant(CostingBox(v)) }
 
-  lazy val digest32Gen: Gen[Digest32] = for {
+  lazy val digest32Gen: Gen[TokenId] = for {
     bytes <- Gen.listOfN(TokenId.size, arbByte.arbitrary).map(_.toArray)
-  } yield Digest32 @@ bytes
+  } yield Digest32Coll @@@ Colls.fromArray(bytes)
 
-  lazy val tokenIdGen: Gen[Digest32] = digest32Gen
+  lazy val tokenIdGen: Gen[TokenId] = digest32Gen
 
-  lazy val tokensGen: Gen[Seq[Digest32]] = for {
+  lazy val tokensGen: Gen[Seq[TokenId]] = for {
     count <- Gen.chooseNum(1, MaxTokens)
     tokens <- arrayOfN(count, tokenIdGen)
   } yield tokens
-
-  lazy val digest32CollGen: Gen[Digest32Coll] = digest32Gen.map(Digest32Coll @@ _.toColl)
 
   lazy val ergoTransactionGen: Gen[ErgoLikeTransaction] = for {
     inputBoxIds <- Gen.nonEmptyListOf(boxIdGen)
@@ -689,12 +687,12 @@ trait ObjectGenerators extends TypeGenerators
   def headerGen(stateRoot: AvlTree, parentId: Coll[Byte]): Gen[Header] = for {
     id <- modifierIdBytesGen
     version <- arbByte.arbitrary
-    adProofsRoot <- digest32CollGen
-    transactionRoot <- digest32CollGen
+    adProofsRoot <- digest32Gen
+    transactionRoot <- digest32Gen
     timestamp <- arbLong.arbitrary
     nBits <- arbLong.arbitrary
     height <- heightGen
-    extensionRoot <- digest32CollGen
+    extensionRoot <- digest32Gen
     minerPk <- groupElementGen
     powOnetimePk <- groupElementGen
     powNonce <- nonceBytesGen

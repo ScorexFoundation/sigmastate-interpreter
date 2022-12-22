@@ -27,8 +27,8 @@ class ErgoLikeTransactionSpec extends SigmaDslTesting {
       ErgoTree(ErgoTree.DefaultHeader, Vector(), TrueSigmaProp),
       100,
       Coll(
-        Digest32 @@ (ErgoAlgos.decodeUnsafe(token1)) -> 10000000L,
-        Digest32 @@ (ErgoAlgos.decodeUnsafe(token2)) -> 500L
+        (Digest32Coll @@@ (ErgoAlgos.decodeUnsafe(token1).toColl)) -> 10000000L,
+        (Digest32Coll @@@ (ErgoAlgos.decodeUnsafe(token2).toColl)) -> 500L
       )
     )
     val b1_clone = new ErgoBoxCandidate(
@@ -36,8 +36,8 @@ class ErgoLikeTransactionSpec extends SigmaDslTesting {
       ErgoTree(ErgoTree.DefaultHeader, Vector(), TrueSigmaProp),
       100,
       Coll(
-        Digest32 @@ (ErgoAlgos.decodeUnsafe(token1)) -> 10000000L,
-        Digest32 @@ (ErgoAlgos.decodeUnsafe(token2)) -> 500L
+        Digest32Coll @@ (ErgoAlgos.decodeUnsafe(token1).toColl) -> 10000000L,
+        Digest32Coll @@ (ErgoAlgos.decodeUnsafe(token2).toColl) -> 500L
       )
     )
     val b2 = new ErgoBoxCandidate(
@@ -45,16 +45,16 @@ class ErgoLikeTransactionSpec extends SigmaDslTesting {
       ErgoTree(ErgoTree.ConstantSegregationHeader, Vector(TrueSigmaProp), ConstantPlaceholder(0, SSigmaProp)),
       100,
       Coll(
-        Digest32 @@ (ErgoAlgos.decodeUnsafe(token1)) -> 10000000L,
-        Digest32 @@ (ErgoAlgos.decodeUnsafe(token2)) -> 500L
+        Digest32Coll @@ (ErgoAlgos.decodeUnsafe(token1).toColl) -> 10000000L,
+        Digest32Coll @@ (ErgoAlgos.decodeUnsafe(token2).toColl) -> 500L
       )
     )
     val b3 = new ErgoBox(
       10L,
       ErgoTree(ErgoTree.DefaultHeader, Vector(), TrueSigmaProp),
       Coll(
-        Digest32 @@ (ErgoAlgos.decodeUnsafe(token1)) -> 10000000L,
-        Digest32 @@ (ErgoAlgos.decodeUnsafe(token2)) -> 500L
+        Digest32Coll @@ (ErgoAlgos.decodeUnsafe(token1).toColl) -> 10000000L,
+        Digest32Coll @@ (ErgoAlgos.decodeUnsafe(token2).toColl) -> 500L
       ),
       Map(
         ErgoBox.R5 -> ByteArrayConstant(Helpers.decodeBytes("7fc87f7f01ff")),
@@ -93,8 +93,8 @@ class ErgoLikeTransactionSpec extends SigmaDslTesting {
     { // test case for R2
       val res = b1.get(ErgoBox.R2).get
       val exp = Coll(
-        ErgoAlgos.decodeUnsafe(token1).toColl -> 10000000L,
-        ErgoAlgos.decodeUnsafe(token2).toColl -> 500L
+        (Digest32Coll @@ ErgoAlgos.decodeUnsafe(token1).toColl) -> 10000000L,
+        (Digest32Coll @@ ErgoAlgos.decodeUnsafe(token2).toColl) -> 500L
       ).map(identity).toConstant
       // TODO v6.0 (16h): fix collections equality and remove map(identity)
       //  (PairOfColl should be equal CollOverArray but now it is not)
@@ -130,7 +130,7 @@ class ErgoLikeTransactionSpec extends SigmaDslTesting {
       whenever(txIn.outputCandidates.head.additionalTokens.nonEmpty) {
         val out = txIn.outputCandidates.head
         // clone tokenIds so that same id have different references
-        val tokens = out.additionalTokens.map(v => (v._1.clone().asInstanceOf[TokenId], v._2))
+        val tokens = out.additionalTokens.map(v => (v._1.toArray.clone().toColl.asInstanceOf[TokenId], v._2))
         val outputs = (0 until 10).map { i =>
           new ErgoBoxCandidate(out.value, out.ergoTree, i, tokens, out.additionalRegisters)
         }
@@ -143,8 +143,8 @@ class ErgoLikeTransactionSpec extends SigmaDslTesting {
         val bytes = w.toBytes
 
         tx.outputCandidates.toColl.flatMap(_.additionalTokens).foreach { (tokenId, _) =>
-          bytes.indexOfSlice(tokenId) should not be -1
-          bytes.indexOfSlice(tokenId) shouldBe bytes.lastIndexOfSlice(tokenId)
+          bytes.indexOfSlice(tokenId.toArray) should not be -1
+          bytes.indexOfSlice(tokenId.toArray) shouldBe bytes.lastIndexOfSlice(tokenId.toArray)
         }
       }
     }

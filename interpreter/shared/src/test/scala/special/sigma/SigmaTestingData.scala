@@ -224,9 +224,9 @@ trait SigmaTestingData extends TestingCommons with ObjectGenerators {
           Right(ConstantPlaceholder(0, SSigmaProp))
         ),
         Coll(
-          (Digest32 @@ (ErgoAlgos.decodeUnsafe("6e789ab7b2fffff12280a6cd01557f6fb22b7f80ff7aff8e1f7f15973d7f0001")),
+          (Digest32Coll @@@ Colls.fromArray(ErgoAlgos.decodeUnsafe("6e789ab7b2fffff12280a6cd01557f6fb22b7f80ff7aff8e1f7f15973d7f0001")),
               10000000L),
-          (Digest32 @@ (ErgoAlgos.decodeUnsafe("a3ff007f00057600808001ff8f8000019000ffdb806fff7cc0b6015eb37fa600")),
+          (Digest32Coll @@@ Colls.fromArray(ErgoAlgos.decodeUnsafe("a3ff007f00057600808001ff8f8000019000ffdb806fff7cc0b6015eb37fa600")),
               500L)
         ),
         Map(

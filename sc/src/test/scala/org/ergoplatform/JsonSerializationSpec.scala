@@ -5,13 +5,13 @@ import io.circe.syntax._
 import org.ergoplatform.ErgoBox._
 import org.ergoplatform.validation.ValidationRules
 import scorex.crypto.authds.{ADDigest, ADKey}
-import scorex.crypto.hash.Digest32
 import scorex.util.ModifierId
 import scorex.util.encode.Base16
 import sigmastate.{AvlTreeData, SType}
 import sigmastate.Values.{EvaluatedValue, SigmaPropConstant, ByteArrayConstant, IntConstant, ErgoTree, ByteConstant, LongArrayConstant}
 import sigmastate.basics.CryptoConstants
 import sigmastate.basics.DLogProtocol.ProveDlog
+import sigmastate.eval.Digest32Coll
 import sigmastate.helpers.CompilerTestingCommons
 import sigmastate.interpreter.{ProverResult, ContextExtension}
 import sigmastate.serialization.SerializationSpecification
@@ -51,7 +51,7 @@ class JsonSerializationSpec extends CompilerTestingCommons with SerializationSpe
   }
 
   property("Digest32 should be encoded into JSON and decoded back correctly") {
-    forAll(digest32Gen) { v: Digest32 => jsonRoundTrip(v) }
+    forAll(digest32Gen) { v: Digest32Coll => jsonRoundTrip(v) }
   }
 
   property("ModifierId should be encoded into JSON and decoded back correctly") {

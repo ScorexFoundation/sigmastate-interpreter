@@ -441,7 +441,7 @@ class IcoExample extends CompilerTestingCommons
     val projectBoxBeforeClosing = testBox(10, issuanceTree, 0, Seq(),
       Map(R4 -> ByteArrayConstant(Array.emptyByteArray), R5 -> AvlTreeConstant(openTreeData)))
 
-    val tokenId = Digest32 @@@ projectBoxBeforeClosing.id
+    val tokenId = Digest32Coll @@@ Colls.fromArray(projectBoxBeforeClosing.id)
     val closedTreeData = SigmaDsl.avlTree(new AvlTreeData(digest, AvlTreeFlags.RemoveOnly, 32, None))
 
     val projectBoxAfterClosing = testBox(1, withdrawalTree, 0,
@@ -504,7 +504,7 @@ class IcoExample extends CompilerTestingCommons
 
     val finalTree = new AvlTreeData(avlProver.digest, AvlTreeFlags.RemoveOnly, 32, None)
 
-    val tokenId = Digest32 @@ Array.fill(32)(Random.nextInt(100).toByte)
+    val tokenId = Digest32Coll @@ Colls.fromArray(Array.fill(32)(Random.nextInt(100).toByte))
 
     val withdrawalAmounts = funderProps.take(withdrawalsCount).map { case (prop, v) =>
       val tv = Longs.fromByteArray(v)

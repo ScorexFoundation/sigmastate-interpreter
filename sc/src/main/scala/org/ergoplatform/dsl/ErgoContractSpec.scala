@@ -3,8 +3,8 @@ package org.ergoplatform.dsl
 import special.collection.Coll
 import sigmastate.interpreter.CostedProverResult
 import sigmastate.eval.IRContext
-import org.ergoplatform.dsl.ContractSyntax.{Token, TokenId, ErgoScript, Proposition}
-import org.ergoplatform.ErgoBox.{NonMandatoryRegisterId, BoxId}
+import org.ergoplatform.dsl.ContractSyntax.{ErgoScript, Proposition, Token}
+import org.ergoplatform.ErgoBox.{BoxId, NonMandatoryRegisterId, TokenId}
 
 class ErgoContractSpec(implicit val IR: IRContext) extends ContractSpec {
 

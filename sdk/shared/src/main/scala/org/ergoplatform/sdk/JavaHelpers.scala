@@ -10,9 +10,8 @@ import sigmastate.SType
 import sigmastate.Values.{Constant, ErgoTree, EvaluatedValue, SValue, SigmaBoolean, SigmaPropConstant}
 import sigmastate.serialization.{ErgoTreeSerializer, GroupElementSerializer, SigmaSerializer, ValueSerializer}
 import scorex.crypto.authds.ADKey
-import scorex.crypto.hash.Digest32
 import org.ergoplatform.settings.ErgoAlgos
-import sigmastate.eval.{CPreHeader, Colls, CostingSigmaDslBuilder, Evaluation}
+import sigmastate.eval.{CPreHeader, Colls, CostingSigmaDslBuilder, Digest32Coll, Evaluation}
 import special.sigma.{AnyValue, AvlTree, GroupElement, Header}
 import sigmastate.utils.Helpers._  // don't remove, required for Scala 2.11
 
@@ -105,8 +104,9 @@ object Iso extends LowPriorityIsos {
   }
 
   implicit val isoErgoTokenToPair: Iso[ErgoToken, Token] = new Iso[ErgoToken, Token] {
-    override def to(a: ErgoToken) = (Digest32 @@ a.getId.getBytes, a.getValue)
-    override def from(t: (TokenId, Long)): ErgoToken = new ErgoToken(t._1, t._2)
+    override def to(a: ErgoToken): Token =
+      (Digest32Coll @@ Colls.fromArray(a.getId.getBytes), a.getValue)
+    override def from(t: Token): ErgoToken = new ErgoToken(t._1.toArray, t._2)
   }
 
   implicit val isoJListErgoTokenToMapPair: Iso[JList[ErgoToken], mutable.LinkedHashMap[ModifierId, Long]] =
@@ -115,14 +115,14 @@ object Iso extends LowPriorityIsos {
         import JavaHelpers._
         val lhm = new mutable.LinkedHashMap[ModifierId, Long]()
         a.convertTo[IndexedSeq[Token]]
-          .map(t => bytesToId(t._1) -> t._2)
+          .map(t => bytesToId(t._1.toArray) -> t._2)
           .foldLeft(lhm)(_ += _)
       }
 
       override def from(t: mutable.LinkedHashMap[ModifierId, Long]): JList[ErgoToken] = {
         import JavaHelpers._
         val pairs: IndexedSeq[Token] = t.toIndexedSeq
-          .map(t => (Digest32 @@ idToBytes(t._1)) -> t._2)
+          .map(t => (Digest32Coll @@ Colls.fromArray(idToBytes(t._1))) -> t._2)
         pairs.convertTo[JList[ErgoToken]]
       }
     }
@@ -148,10 +148,10 @@ object Iso extends LowPriorityIsos {
 
   val isoTokensListToTokenColl: Iso[JList[ErgoToken], TokenColl] = new Iso[JList[ErgoToken], TokenColl] {
     override def to(ts: JList[ErgoToken]): TokenColl =
-      isoTokensListToPairsColl.to(ts).mapFirst(Colls.fromArray(_))
+      isoTokensListToPairsColl.to(ts)
 
     override def from(ts: TokenColl): JList[ErgoToken] = {
-      isoTokensListToPairsColl.from(ts.mapFirst(id => Digest32 @@ id.toArray))
+      isoTokensListToPairsColl.from(ts)
     }
   }
 
@@ -407,15 +407,14 @@ object JavaHelpers {
    * @param boxes - boxes to check and extract assets from
    * @return a mapping from asset id to to balance and total assets number
    */
-  def extractAssets(boxes: IndexedSeq[ErgoBoxCandidate]): (Map[Seq[Byte], Long], Int) = {
+  def extractAssets(boxes: IndexedSeq[ErgoBoxCandidate]): (Map[Digest32Coll, Long], Int) = {
     import special.collection.Extensions.CollOps
-    val map: mutable.Map[Seq[Byte], Long] = mutable.Map[Seq[Byte], Long]()
+    val map = mutable.Map[Digest32Coll, Long]()
     val assetsNum = boxes.foldLeft(0) { case (acc, box) =>
       require(box.additionalTokens.length <= SigmaConstants.MaxTokens.value, "too many assets in one box")
       box.additionalTokens.foreach { case (assetId, amount) =>
-        val aiWrapped = assetId: Seq[Byte]
-        val total = map.getOrElse(aiWrapped, 0L)
-        map.put(aiWrapped, java7.compat.Math.addExact(total, amount))
+        val total = map.getOrElse(assetId, 0L)
+        map.put(assetId, java7.compat.Math.addExact(total, amount))
       }
       acc + box.additionalTokens.size
     }
@@ -439,7 +438,7 @@ object JavaHelpers {
   }
 
   /** Type synonym for a collection of tokens represented using Coll */
-  type TokenColl = Coll[(Coll[Byte], Long)]
+  type TokenColl = Coll[Token]
 
   /** Ensures that all tokens have strictly positive value.
     * @throws IllegalArgumentException when any token have value <= 0
@@ -495,8 +494,8 @@ object JavaHelpers {
     subtractedTokens: IndexedSeq[Token]
   ): TokenColl = {
     subtractTokenColls(
-      reducedTokens = Colls.fromItems(reducedTokens:_*).mapFirst(Colls.fromArray(_)),
-      subtractedTokens = Colls.fromItems(subtractedTokens:_*).mapFirst(Colls.fromArray(_))
+      reducedTokens = Colls.fromItems(reducedTokens:_*),
+      subtractedTokens = Colls.fromItems(subtractedTokens:_*)
     )
   }
 

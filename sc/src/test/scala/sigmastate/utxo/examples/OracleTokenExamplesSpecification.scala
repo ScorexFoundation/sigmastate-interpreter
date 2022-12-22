@@ -4,6 +4,7 @@ import org.ergoplatform._
 import org.ergoplatform.dsl.ContractSyntax.Token
 import org.ergoplatform.dsl.{ContractSpec, SigmaContractSyntax, StdContracts, TestContractSpec}
 import scorex.crypto.hash.Blake2b256
+import sigmastate.eval.Digest32Coll
 import sigmastate.helpers.CompilerTestingCommons
 import special.collection.Coll
 import special.sigma.Context
@@ -13,7 +14,7 @@ class OracleTokenExamplesSpecification extends CompilerTestingCommons { suite =>
 
   private val reg1 = ErgoBox.nonMandatoryRegisters(0)
 
-  private lazy val tokenId: Coll[Byte] = spec.Coll(Blake2b256("token1"))
+  private lazy val tokenId = Digest32Coll @@@ spec.Coll(Blake2b256("token1"))
 
   case class OracleContract[Spec <: ContractSpec]
       ( temperature: Long,

@@ -2,7 +2,7 @@ package sigmastate.utxo.examples
 
 import org.ergoplatform.dsl.ContractSyntax.Token
 import special.sigma.Context
-import org.ergoplatform.ErgoBox.R4
+import org.ergoplatform.ErgoBox.{R4, TokenId}
 import special.collection.Coll
 import org.ergoplatform.dsl.{SigmaContractSyntax, ContractSpec, StdContracts}
 
@@ -13,7 +13,7 @@ import org.ergoplatform.dsl.{SigmaContractSyntax, ContractSpec, StdContracts}
   * @param tokenSeller The party, who wants to sell some amount of token with id == `tokenId`.
   * */
 case class AssetsAtomicExchange[Spec <: ContractSpec]
-    (val deadline: Int, val tokenId: Coll[Byte],
+    (val deadline: Int, val tokenId: TokenId,
      val tokenBuyer: Spec#ProvingParty,
      val tokenSeller: Spec#ProvingParty)
     (implicit val spec: Spec)

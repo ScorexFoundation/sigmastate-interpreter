@@ -103,11 +103,11 @@ object ErgoBox {
     val size: Short = 32
   }
 
-  type TokenId = Digest32
+  type TokenId = Digest32Coll
   object TokenId {
     val size: Short = 32
   }
-  type Token = (TokenId, Long)
+  type Token = (Digest32Coll, Long)
 
   val MaxBoxSize: Int = SigmaConstants.MaxBoxSize.value
 

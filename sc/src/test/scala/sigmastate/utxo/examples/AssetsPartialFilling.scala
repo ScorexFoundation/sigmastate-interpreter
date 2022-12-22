@@ -1,5 +1,6 @@
 package sigmastate.utxo.examples
 
+import org.ergoplatform.ErgoBox.TokenId
 import org.ergoplatform.dsl.ContractSyntax.Token
 import special.sigma.Context
 import special.collection.Coll
@@ -9,7 +10,7 @@ import org.ergoplatform.dsl.{SigmaContractSyntax, ContractSpec, StdContracts}
   * @param tokenBuyer The party, who wants to buy some amount of token with id == `tokenId`.
   * @param tokenSeller The party, who wants to sell some amount of token with id == `tokenId`. */
 case class AssetsPartialFilling[Spec <: ContractSpec]
-    (deadline: Int, token1: Coll[Byte],
+    (deadline: Int, token1: TokenId,
       tokenBuyer: Spec#ProvingParty,
       tokenSeller: Spec#ProvingParty)
     (implicit val spec: Spec) extends SigmaContractSyntax with StdContracts

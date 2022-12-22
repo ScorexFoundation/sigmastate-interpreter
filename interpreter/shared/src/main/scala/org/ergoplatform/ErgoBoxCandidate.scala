@@ -74,7 +74,7 @@ class ErgoBoxCandidate(val value: Long,
       case TokensRegId =>
         // TODO optimize using mapFirst
         //  However this requires fixing Coll equality (see property("ErgoBox test vectors"))
-        Some(Constant(additionalTokens.map { case (id, v) => (id.toColl, v) }.asWrappedType, STokensRegType))
+        Some(Constant(additionalTokens.map(identity).asWrappedType, STokensRegType))
       case ReferenceRegId =>
         val tupleVal = (creationHeight, ErgoBoxCandidate.UndefinedBoxRef)
         Some(Constant(tupleVal.asWrappedType, SReferenceRegType))
@@ -107,7 +107,7 @@ class ErgoBoxCandidate(val value: Long,
   lazy val tokens: Map[ModifierId, Long] = {
     val merged = new mutable.HashMap[ModifierId, Long]
     additionalTokens.foreach { case (id, amount) =>
-      val mId = bytesToId(id)
+      val mId = bytesToId(id.toArray)
       merged.put(mId, java7.compat.Math.addExact(merged.getOrElse(mId, 0L), amount))
     }
     merged.toMap
@@ -137,7 +137,7 @@ object ErgoBoxCandidate {
       * @param w          writer of serialized bytes
       */
     def serializeBodyWithIndexedDigests(box: ErgoBoxCandidate,
-                                        tokensInTx: Option[Coll[TokenId]],
+                                        tokensInTx: Option[Coll[Digest32Coll]],
                                         w: SigmaByteWriter): Unit = {
       w.putULong(box.value)
       w.putBytes(DefaultSerializer.serializeErgoTree(box.ergoTree))
@@ -152,11 +152,11 @@ object ErgoBoxCandidate {
         val id = ids(i)
         val amount = amounts(i)
         if (tokensInTx.isDefined) {
-          val tokenIndex = tokensInTx.get.indexWhere(v => util.Arrays.equals(v, id), 0)
+          val tokenIndex = tokensInTx.get.indexWhere(_ == id, 0)
           if (tokenIndex == -1) sys.error(s"failed to find token id ($id) in tx's digest index")
           w.putUInt(tokenIndex)
         } else {
-          w.putBytes(id)
+          w.putBytes(id.toArray)
         }
         w.putULong(amount)
       }
@@ -188,14 +188,14 @@ object ErgoBoxCandidate {
     /** Helper method to parse [[ErgoBoxCandidate]] previously serialized by
       * [[serializeBodyWithIndexedDigests()]].
       */
-    def parseBodyWithIndexedDigests(digestsInTx: Array[Array[Byte]], r: SigmaByteReader): ErgoBoxCandidate = {
+    def parseBodyWithIndexedDigests(digestsInTx: Array[TokenId], r: SigmaByteReader): ErgoBoxCandidate = {
       val previousPositionLimit = r.positionLimit
       r.positionLimit = r.position + ErgoBox.MaxBoxSize
       val value = r.getULong()                  // READ
       val tree = DefaultSerializer.deserializeErgoTree(r, SigmaSerializer.MaxPropositionSize)  // READ
       val creationHeight = r.getUIntExact       // READ
       val nTokens = r.getUByte()                // READ
-      val tokenIds = safeNewArray[Array[Byte]](nTokens)
+      val tokenIds = safeNewArray[TokenId](nTokens)
       val tokenAmounts = safeNewArray[Long](nTokens)
       if (digestsInTx != null) {
         val nDigests = digestsInTx.length
@@ -210,8 +210,8 @@ object ErgoBoxCandidate {
       } else {
         val tokenIdSize = TokenId.size  // optimization: access the value once
         cfor(0)(_ < nTokens, _ + 1) { i =>
-          tokenIds(i) = r.getBytes(tokenIdSize) // READ
-          tokenAmounts(i) = r.getULong()        // READ
+          tokenIds(i) = Digest32Coll @@@ Colls.fromArray(r.getBytes(tokenIdSize)) // READ
+          tokenAmounts(i) = r.getULong()         // READ
         }
       }
       val tokens = Colls.pairCollFromArrays(tokenIds, tokenAmounts)
@@ -228,7 +228,7 @@ object ErgoBoxCandidate {
       r.positionLimit = previousPositionLimit
       new ErgoBoxCandidate(
         value, tree, creationHeight,
-        tokens.asInstanceOf[Coll[Token]], b.result())
+        tokens, b.result())
     }
 
     override def parse(r: SigmaByteReader): ErgoBoxCandidate = {
