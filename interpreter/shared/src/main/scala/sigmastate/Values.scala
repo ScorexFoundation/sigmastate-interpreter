@@ -706,6 +706,7 @@ object Values {
     override def companion = this
     override def opCode: OpCode = TrueCode
     override def costKind: FixedCost = Constant.costKind
+    override def toString: String = "TrueLeaf"
   }
 
   /** ErgoTree node which represents `false` literal. */
@@ -713,6 +714,7 @@ object Values {
     override def companion = this
     override def opCode: OpCode = FalseCode
     override def costKind: FixedCost = Constant.costKind
+    override def toString: String = "FalseLeaf"
   }
 
   trait NotReadyValueBoolean extends NotReadyValue[SBoolean.type] {
