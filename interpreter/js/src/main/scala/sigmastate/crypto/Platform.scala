@@ -35,7 +35,10 @@ object Platform {
     Uint8ArrayToBytes(CryptoFacadeJs.getEncodedOfFieldElem(p.elem))
   }
 
-  def getEncodedPoint(p: Ecp, compressed: Boolean): Array[Byte] = ???
+  def getEncodedPoint(p: Ecp, compressed: Boolean): Array[Byte] = {
+    val hex = p.point.toHex(compressed)
+    Base16.decode(hex).get
+  }
 
   def testBitZeroOfFieldElem(p: ECFieldElem): Boolean = CryptoFacadeJs.testBitZeroOfFieldElem(p.elem)
 

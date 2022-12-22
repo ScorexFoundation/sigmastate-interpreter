@@ -18,7 +18,7 @@ class DerivationPathSpec
     forAll(derivationPathGen) { path =>
       val decodeTry = DerivationPath.fromEncoded(path.encoded)
 
-      decodeTry shouldBe 'success
+      decodeTry.isSuccess shouldBe true
       decodeTry.get shouldEqual path
     }
   }
