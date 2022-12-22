@@ -1,7 +1,7 @@
 package org.ergoplatform
 
 import scorex.utils.{Ints, Shorts}
-import org.ergoplatform.ErgoBox.{NonMandatoryRegisterId, TokenId}
+import org.ergoplatform.ErgoBox.{NonMandatoryRegisterId, Token}
 import org.ergoplatform.settings.ErgoAlgos
 import scorex.crypto.authds.ADKey
 import scorex.crypto.hash.{Blake2b256, Digest32}
@@ -51,7 +51,7 @@ import scala.runtime.ScalaRunTime
 class ErgoBox(
          override val value: Long,
          override val ergoTree: ErgoTree,
-         override val additionalTokens: Coll[(TokenId, Long)] = Colls.emptyColl[(TokenId, Long)],
+         override val additionalTokens: Coll[Token] = Colls.emptyColl[Token],
          override val additionalRegisters: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]] = Map.empty,
          val transactionId: ModifierId,
          val index: Short,

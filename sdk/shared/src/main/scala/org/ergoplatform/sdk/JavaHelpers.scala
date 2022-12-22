@@ -5,7 +5,7 @@ import special.collection.Coll
 
 import scala.collection.{JavaConverters, mutable}
 import org.ergoplatform._
-import org.ergoplatform.ErgoBox.TokenId
+import org.ergoplatform.ErgoBox.{Token, TokenId}
 import sigmastate.SType
 import sigmastate.Values.{Constant, ErgoTree, EvaluatedValue, SValue, SigmaBoolean, SigmaPropConstant}
 import sigmastate.serialization.{ErgoTreeSerializer, GroupElementSerializer, SigmaSerializer, ValueSerializer}
@@ -104,7 +104,7 @@ object Iso extends LowPriorityIsos {
     override def from(bs: Coll[B]): Coll[A] = bs.map(iso.from)
   }
 
-  implicit val isoErgoTokenToPair: Iso[ErgoToken, (TokenId, Long)] = new Iso[ErgoToken, (TokenId, Long)] {
+  implicit val isoErgoTokenToPair: Iso[ErgoToken, Token] = new Iso[ErgoToken, Token] {
     override def to(a: ErgoToken) = (Digest32 @@ a.getId.getBytes, a.getValue)
     override def from(t: (TokenId, Long)): ErgoToken = new ErgoToken(t._1, t._2)
   }
@@ -114,14 +114,14 @@ object Iso extends LowPriorityIsos {
       override def to(a: JList[ErgoToken]): mutable.LinkedHashMap[ModifierId, Long] = {
         import JavaHelpers._
         val lhm = new mutable.LinkedHashMap[ModifierId, Long]()
-        a.convertTo[IndexedSeq[(TokenId, Long)]]
+        a.convertTo[IndexedSeq[Token]]
           .map(t => bytesToId(t._1) -> t._2)
           .foldLeft(lhm)(_ += _)
       }
 
       override def from(t: mutable.LinkedHashMap[ModifierId, Long]): JList[ErgoToken] = {
         import JavaHelpers._
-        val pairs: IndexedSeq[(TokenId, Long)] = t.toIndexedSeq
+        val pairs: IndexedSeq[Token] = t.toIndexedSeq
           .map(t => (Digest32 @@ idToBytes(t._1)) -> t._2)
         pairs.convertTo[JList[ErgoToken]]
       }
@@ -142,8 +142,8 @@ object Iso extends LowPriorityIsos {
     override def from(x: Constant[SType]): EvaluatedValue[SType] = x
   }
 
-  val isoTokensListToPairsColl: Iso[JList[ErgoToken], Coll[(TokenId, Long)]] = {
-    JListToColl(isoErgoTokenToPair, RType[(TokenId, Long)])
+  val isoTokensListToPairsColl: Iso[JList[ErgoToken], Coll[Token]] = {
+    JListToColl(isoErgoTokenToPair, RType[Token])
   }
 
   val isoTokensListToTokenColl: Iso[JList[ErgoToken], TokenColl] = new Iso[JList[ErgoToken], TokenColl] {
@@ -491,8 +491,8 @@ object JavaHelpers {
     * @see subtractTokenColls for details
     */
   def subtractTokens(
-    reducedTokens: IndexedSeq[(TokenId, Long)],
-    subtractedTokens: IndexedSeq[(TokenId, Long)]
+    reducedTokens: IndexedSeq[Token],
+    subtractedTokens: IndexedSeq[Token]
   ): TokenColl = {
     subtractTokenColls(
       reducedTokens = Colls.fromItems(reducedTokens:_*).mapFirst(Colls.fromArray(_)),

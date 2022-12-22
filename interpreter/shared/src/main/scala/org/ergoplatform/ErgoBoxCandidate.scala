@@ -37,7 +37,7 @@ import scala.runtime.ScalaRunTime
 class ErgoBoxCandidate(val value: Long,
                        val ergoTree: ErgoTree,
                        val creationHeight: Int,
-                       val additionalTokens: Coll[(TokenId, Long)] = Colls.emptyColl,
+                       val additionalTokens: Coll[Token] = Colls.emptyColl,
                        val additionalRegisters: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]] = Map()) 
                        extends ErgoBoxAssets {
 
@@ -228,7 +228,7 @@ object ErgoBoxCandidate {
       r.positionLimit = previousPositionLimit
       new ErgoBoxCandidate(
         value, tree, creationHeight,
-        tokens.asInstanceOf[Coll[(TokenId, Long)]], b.result())
+        tokens.asInstanceOf[Coll[Token]], b.result())
     }
 
     override def parse(r: SigmaByteReader): ErgoBoxCandidate = {

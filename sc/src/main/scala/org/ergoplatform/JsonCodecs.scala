@@ -5,7 +5,7 @@ import java.math.BigInteger
 import cats.syntax.either._
 import io.circe._
 import io.circe.syntax._
-import org.ergoplatform.ErgoBox.{BoxId, NonMandatoryRegisterId, TokenId}
+import org.ergoplatform.ErgoBox.{BoxId, NonMandatoryRegisterId, Token, TokenId}
 import org.ergoplatform.settings.ErgoAlgos
 import org.ergoplatform.validation.{SigmaValidationSettings, SigmaValidationSettingsSerializer}
 import scorex.crypto.authds.{ADDigest, ADKey}
@@ -76,14 +76,14 @@ trait JsonCodecs {
   implicit val digest32Encoder: Encoder[Digest32] = Encoder.instance(_.array.asJson)
   implicit val digest32Decoder: Decoder[Digest32] = bytesDecoder(Digest32 @@ _)
 
-  implicit val assetEncoder: Encoder[(TokenId, Long)] = Encoder.instance({ asset =>
+  implicit val assetEncoder: Encoder[Token] = Encoder.instance({ asset =>
     Json.obj(
       "tokenId" -> asset._1.asJson,
       "amount" -> asset._2.asJson
     )
   })
 
-  implicit val assetDecoder: Decoder[(TokenId, Long)] = Decoder.instance({ cursor =>
+  implicit val assetDecoder: Decoder[Token] = Decoder.instance({ cursor =>
     for {
       tokenId <- cursor.downField("tokenId").as[TokenId]
       amount <- cursor.downField("amount").as[Long]
