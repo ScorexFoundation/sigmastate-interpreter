@@ -2,8 +2,8 @@ package org.ergoplatform.sdk.js
 
 import org.ergoplatform.ErgoBox.{BoxId, TokenId}
 import org.ergoplatform.sdk.Extensions.PairCollOps
-import org.ergoplatform.{DataInput, ErgoBox, ErgoBoxCandidate, UnsignedErgoLikeTransaction, UnsignedInput}
 import org.ergoplatform.sdk.{ExtendedInputBox, Iso}
+import org.ergoplatform._
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.propspec.AnyPropSpec
@@ -13,6 +13,8 @@ import sigmastate.Values.Constant
 import sigmastate.eval.Colls
 import sigmastate.interpreter.ContextExtension
 import sigmastate.serialization.generators.ObjectGenerators
+import special.collection.Coll
+import special.sigma.GroupElement
 
 import scala.scalajs.js
 
@@ -33,6 +35,18 @@ class IsosSpec  extends AnyPropSpec with Matchers with ObjectGenerators with Sca
   property("Iso.isoStringToArray") {
     forAll() { (bytes: Array[Byte]) =>
       roundtrip(Isos.isoStringToArray)(bytes)
+    }
+  }
+
+  property("Iso.isoStringToColl") {
+    forAll() { (bytes: Coll[Byte]) =>
+      roundtrip(Isos.isoStringToColl)(bytes)
+    }
+  }
+
+  property("Iso.isoStringToGroupElement") {
+    forAll() { (bytes: GroupElement) =>
+      roundtrip(Isos.isoStringToGroupElement)(bytes)
     }
   }
 

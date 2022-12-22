@@ -281,10 +281,10 @@ object Isos {
   val isoTokenArray: Iso[js.Array[tokenMod.TokenAmount[commonMod.Amount]], Coll[(Coll[Byte], Long)]] =
     new Iso[js.Array[tokenMod.TokenAmount[commonMod.Amount]], Coll[(Coll[Byte], Long)]] {
       override def to(x: js.Array[tokenMod.TokenAmount[commonMod.Amount]]): Coll[(Coll[Byte], Long)] = {
-        Colls.fromArray(x.map(isoToken.to).toArray)
+        isoArrayToColl(isoToken).to(x)
       }
       override def from(x: Coll[(Coll[Byte], Long)]): js.Array[tokenMod.TokenAmount[commonMod.Amount]] = {
-        js.Array(x.toArray.map(isoToken.from): _*)
+        isoArrayToColl(isoToken).from(x)
       }
     }
 
@@ -355,16 +355,16 @@ object Isos {
     new Iso[UnsignedTransaction, UnsignedErgoLikeTransaction] {
       override def to(a: UnsignedTransaction): UnsignedErgoLikeTransaction = {
         new UnsignedErgoLikeTransaction(
-          inputs = a.inputs.map(isoUnsignedInput.to),
-          dataInputs = a.dataInputs.map(isoDataInput.to),
-          outputCandidates = a.outputs.map(isoBoxCandidate.to)
+          inputs = isoArrayToIndexed(isoUnsignedInput).to(a.inputs),
+          dataInputs = isoArrayToIndexed(isoDataInput).to(a.dataInputs),
+          outputCandidates = isoArrayToIndexed(isoBoxCandidate).to(a.outputs),
         )
       }
       override def from(b: UnsignedErgoLikeTransaction): UnsignedTransaction = {
         UnsignedTransaction(
-          inputs = js.Array(b.inputs.map(isoUnsignedInput.from):_*),
-          dataInputs = js.Array(b.dataInputs.map(isoDataInput.from):_*),
-          outputs = js.Array(b.outputCandidates.map(isoBoxCandidate.from):_*)
+          inputs = isoArrayToIndexed(isoUnsignedInput).from(b.inputs),
+          dataInputs = isoArrayToIndexed(isoDataInput).from(b.dataInputs),
+          outputs = isoArrayToIndexed(isoBoxCandidate).from(b.outputCandidates)
         )
       }
     }
