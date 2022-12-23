@@ -14,6 +14,7 @@ lazy val commonSettings = Seq(
   organization := "org.scorexfoundation",
   crossScalaVersions := Seq(scala212, scala211),
   scalaVersion := scala212,
+  scalacOptions ++= Seq("-Ywarn-unused:_,imports", "-Ywarn-unused:imports"),
   resolvers += Resolver.sonatypeRepo("public"),
   licenses := Seq("CC0" -> url("https://creativecommons.org/publicdomain/zero/1.0/legalcode")),
   homepage := Some(url("https://github.com/ScorexFoundation/sigmastate-interpreter")),
