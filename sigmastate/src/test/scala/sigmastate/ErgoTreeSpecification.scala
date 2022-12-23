@@ -692,8 +692,7 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
       // v5.0 behavior
       assertExceptionThrown(
         ErgoTreeEvaluator.evalToCrypto(createCtx, tree, evalSettings),
-        exceptionLike[ClassCastException](
-          "class sigmastate.eval.CSigmaProp cannot be cast to class java.lang.Boolean")
+        exceptionLike[ClassCastException]()
       )
     }
   }
