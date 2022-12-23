@@ -14,7 +14,13 @@ lazy val commonSettings = Seq(
   organization := "org.scorexfoundation",
   crossScalaVersions := Seq(scala212, scala211),
   scalaVersion := scala212,
-  scalacOptions ++= Seq("-Ywarn-unused:_,imports", "-Ywarn-unused:imports"),
+  scalacOptions ++= {
+    CrossVersion.partialVersion(scalaVersion.value) match {
+      case Some((2, 12)) => Seq("-Ywarn-unused:_,imports", "-Ywarn-unused:imports")
+      case Some((2, 11)) => Seq()
+      case _ => sys.error("Unsupported scala version")
+    }
+  },
   resolvers += Resolver.sonatypeRepo("public"),
   licenses := Seq("CC0" -> url("https://creativecommons.org/publicdomain/zero/1.0/legalcode")),
   homepage := Some(url("https://github.com/ScorexFoundation/sigmastate-interpreter")),
