@@ -3,7 +3,7 @@ package org.ergoplatform
 import java.util
 import org.ergoplatform.ErgoBox._
 import org.ergoplatform.settings.ErgoAlgos
-import scorex.util.{bytesToId, ModifierId}
+import scorex.util.{ModifierId, bytesToId}
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.SType.AnyOps
@@ -16,7 +16,7 @@ import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.util.safeNewArray
 import spire.syntax.all.cfor
 
-import scala.collection.immutable
+import scala.collection.{immutable, mutable}
 import scala.runtime.ScalaRunTime
 
 /**
@@ -100,12 +100,17 @@ class ErgoBoxCandidate(val value: Long,
     s"tokens: (${additionalTokens.map(t => ErgoAlgos.encode(t._1) + ":" + t._2).toArray.mkString(", ")}), " +
     s"$additionalRegisters, creationHeight: $creationHeight)"
 
-  /** Additional tokens stored in the box. */
-  lazy val tokens: Map[ModifierId, Long] =
-    additionalTokens
-      .toArray
-      .map(t => bytesToId(t._1) -> t._2)
-      .toMap
+  /** Additional tokens stored in the box, merged into a Map.
+    * This method is not used in ErgoTree and serialization, not part of consensus.
+    */
+  lazy val tokens: Map[ModifierId, Long] = {
+    val merged = new mutable.HashMap[ModifierId, Long]
+    additionalTokens.foreach { case (id, amount) =>
+      val mId = bytesToId(id)
+      merged.put(mId, java7.compat.Math.addExact(merged.getOrElse(mId, 0L), amount))
+    }
+    merged.toMap
+  }
 }
 
 object ErgoBoxCandidate {
@@ -188,6 +193,10 @@ object ErgoBoxCandidate {
       val value = r.getULong()                  // READ
       val tree = DefaultSerializer.deserializeErgoTree(r, SigmaSerializer.MaxPropositionSize)  // READ
       val creationHeight = r.getUIntExact       // READ
+      // NO-FORK: ^ in v5.x getUIntExact may throw Int overflow exception
+      // in v4.x r.getUInt().toInt is used and may return negative Int instead of the overflow
+      // and ErgoBoxCandidate with negative creation height is created, which is then invalidated
+      // during transaction validation. See validation rule # 122 in the Ergo node (ValidationRules.scala)
       val nTokens = r.getUByte()                // READ
       val tokenIds = safeNewArray[Array[Byte]](nTokens)
       val tokenAmounts = safeNewArray[Long](nTokens)
@@ -195,6 +204,9 @@ object ErgoBoxCandidate {
         val nDigests = digestsInTx.length
         cfor(0)(_ < nTokens, _ + 1) { i =>
           val digestIndex = r.getUIntExact    // READ
+          // NO-FORK: in v5.x getUIntExact throws Int overflow exception
+          // in v4.x r.getUInt().toInt is used and may return negative Int in which case
+          // the error below is thrown
           if (digestIndex < 0 || digestIndex >= nDigests)
             sys.error(s"failed to find token id with index $digestIndex")
           val amount = r.getULong()           // READ
