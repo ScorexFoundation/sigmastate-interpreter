@@ -12,6 +12,7 @@ import scalan.util.StringUtil
 import debox.{cfor, Buffer => DBuffer}
 
 import scala.collection.compat.immutable.ArraySeq
+import scala.collection.mutable
 
 /**
   * The Base trait houses common AST nodes. It also manages a list of encountered definitions which
