@@ -17,6 +17,7 @@ lazy val commonSettings = Seq(
   scalaVersion := scala212,
   scalacOptions ++= {
     CrossVersion.partialVersion(scalaVersion.value) match {
+      case Some((2, 13)) => Seq("-Ywarn-unused:_,imports", "-Ywarn-unused:imports")
       case Some((2, 12)) => Seq("-Ywarn-unused:_,imports", "-Ywarn-unused:imports")
       case Some((2, 11)) => Seq()
       case _ => sys.error("Unsupported scala version")
