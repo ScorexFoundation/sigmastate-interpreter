@@ -4,20 +4,21 @@ import io.circe._
 import io.circe.syntax._
 import org.ergoplatform.ErgoBox._
 import org.ergoplatform.validation.ValidationRules
+import org.scalacheck.Arbitrary.arbitrary
 import scorex.crypto.authds.{ADDigest, ADKey}
 import scorex.util.ModifierId
 import scorex.util.encode.Base16
 import sigmastate.{AvlTreeData, SType}
-import sigmastate.Values.{EvaluatedValue, SigmaPropConstant, ByteArrayConstant, IntConstant, ErgoTree, ByteConstant, LongArrayConstant}
+import sigmastate.Values.{ByteArrayConstant, ByteConstant, ErgoTree, EvaluatedValue, IntConstant, LongArrayConstant, SigmaPropConstant}
 import sigmastate.basics.CryptoConstants
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.eval.Digest32Coll
 import sigmastate.helpers.CompilerTestingCommons
-import sigmastate.interpreter.{ProverResult, ContextExtension}
+import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigmastate.serialization.SerializationSpecification
-import sigmastate.utils.Helpers._ // required for Scala 2.11
+import sigmastate.utils.Helpers._
 import special.collection.Coll
-import special.sigma.{PreHeader, Header}
+import special.sigma.{Header, PreHeader}
 
 class JsonSerializationSpec extends CompilerTestingCommons with SerializationSpecification with JsonCodecs {
 
@@ -35,11 +36,11 @@ class JsonSerializationSpec extends CompilerTestingCommons with SerializationSpe
   }
 
   property("byte array should be encoded into JSON and decoded back correctly") {
-    forAll(byteArrayGen(0, 1000)) { v: Array[Byte] => jsonRoundTrip(v) }
+    forAll(arrayOfRange(0, 1000, arbitrary[Byte])) { v: Array[Byte] => jsonRoundTrip(v) }
   }
 
   property("byte coll should be encoded into JSON and decoded back correctly") {
-    forAll(byteCollGen(0, 1000)) { v: Coll[Byte] => jsonRoundTrip(v) }
+    forAll(collOfRange(0, 1000, arbitrary[Byte])) { v: Coll[Byte] => jsonRoundTrip(v) }
   }
 
   property("ADKey should be encoded into JSON and decoded back correctly") {

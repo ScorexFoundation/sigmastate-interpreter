@@ -10,23 +10,22 @@ import org.scalacheck.util.Buildable
 import org.scalacheck.{Arbitrary, Gen}
 import scalan.RType
 import scorex.crypto.authds.{ADDigest, ADKey}
-import scorex.crypto.hash.Digest32
 import scorex.util.encode.{Base58, Base64}
-import scorex.util.{ModifierId, Random, bytesToId}
+import scorex.util.{ModifierId, bytesToId}
 import sigmastate.Values._
 import sigmastate.basics.DLogProtocol.ProveDlog
-import sigmastate.basics.{ProveDHTuple, CryptoConstants}
+import sigmastate.basics.{CryptoConstants, ProveDHTuple}
 import sigmastate.eval.Extensions._
 import sigmastate.eval.{CostingBox, SigmaDsl, _}
 import sigmastate.basics.CryptoConstants.EcPointType
-import sigmastate.interpreter.{ContextExtension, Interpreter, ProverResult}
+import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigmastate.lang.TransformingSigmaBuilder._
 import sigmastate._
 import sigmastate.utxo._
 import special.collection.Coll
 import special.sigma._
 
-import scala.collection.JavaConverters._
+import scala.collection.compat.immutable.ArraySeq
 import scala.collection.mutable.ListBuffer
 import scala.reflect.ClassTag
 
@@ -96,6 +95,34 @@ trait ObjectGenerators extends TypeGenerators
   implicit lazy val arbInput = Arbitrary(inputGen)
   implicit lazy val arbUnsignedErgoLikeTransaction = Arbitrary(unsignedErgoLikeTransactionGen)
 
+  def arrayOfN[T](n: Int, g: Gen[T])
+      (implicit evb: Buildable[T, Array[T]]): Gen[Array[T]] = {
+    Gen.containerOfN[Array, T](n, g)
+  }
+
+  def arrayOfRange[T](minLength: Int, maxLength: Int, g: Gen[T])
+      (implicit evb: Buildable[T, Array[T]]): Gen[Array[T]] = for {
+    length <- Gen.chooseNum(minLength, maxLength)
+    bytes <- arrayOfN(length, g)
+  } yield bytes
+
+  implicit def arrayGen[T: Arbitrary : ClassTag]: Gen[Array[T]] =
+    arrayOfRange(1, 100, arbitrary[T])
+
+  def collOfN[T: RType](n: Int, g: Gen[T])
+      (implicit b: Buildable[T, Array[T]]): Gen[Coll[T]] = {
+    arrayOfN[T](n, g).map(Colls.fromArray(_))
+  }
+
+  def collOfRange[T: RType](minLength: Int, maxLength: Int, g: Gen[T])
+      (implicit evb: Buildable[T, Array[T]]): Gen[Coll[T]] =
+    arrayOfRange(minLength, maxLength, g).map(_.toColl)
+
+  implicit def collGen[T: Arbitrary : RType]: Gen[Coll[T]] = {
+    implicit val cT = RType[T].classTag
+    arrayGen[T].map(Colls.fromArray[T](_))
+  }
+
   lazy val byteConstGen: Gen[ByteConstant] =
     arbByte.arbitrary.map { v => mkConstant[SByte.type](v, SByte) }
   lazy val booleanConstGen: Gen[Value[SBoolean.type]] = Gen.oneOf(TrueLeaf, FalseLeaf)
@@ -111,14 +138,12 @@ trait ObjectGenerators extends TypeGenerators
     arbBigInt.arbitrary.map { v => mkConstant[SBigInt.type](v, SBigInt) }
 
   lazy val byteArrayConstGen: Gen[CollectionConstant[SByte.type]] = for {
-    length <- Gen.chooseNum(1, 100)
-    bytes <- Gen.listOfN(length, arbByte.arbitrary)
-  } yield mkCollectionConstant[SByte.type](bytes.toArray, SByte)
+    bytes <- arrayOfRange(1, 100, arbByte.arbitrary)
+  } yield mkCollectionConstant[SByte.type](bytes, SByte)
 
   lazy val intArrayConstGen: Gen[CollectionConstant[SInt.type]] = for {
-    length <- Gen.chooseNum(1, 100)
-    ints <- Gen.listOfN(length, arbInt.arbitrary)
-  } yield mkCollectionConstant[SInt.type](ints.toArray, SInt)
+    ints <- arrayOfRange(1, 100, arbInt.arbitrary)
+  } yield mkCollectionConstant[SInt.type](ints, SInt)
 
   lazy val heightGen: Gen[Int] = Gen.chooseNum(0, 1000000)
 
@@ -152,9 +177,9 @@ trait ObjectGenerators extends TypeGenerators
   lazy val sigmaTreeNodeGen: Gen[SigmaBoolean] = for {
     itemsNum <- Gen.choose(2, ThresholdLimit)
     items <- if (itemsNum <= 2) {
-      Gen.listOfN(itemsNum, sigmaBooleanGen)
+      arrayOfN(itemsNum, sigmaBooleanGen)
     } else {
-      Gen.listOfN(itemsNum, nonRecursiveSigmaBoolean)
+      arrayOfN(itemsNum, nonRecursiveSigmaBoolean)
     }
     threshold <- Gen.choose(1, itemsNum)
     node <- Gen.oneOf(
@@ -215,14 +240,13 @@ trait ObjectGenerators extends TypeGenerators
   } yield ContextExtension(values.toMap)
 
   lazy val serializedProverResultGen: Gen[ProverResult] = for {
-    length <- Gen.chooseNum(1, 100)
-    bytes <- Gen.listOfN(length, arbByte.arbitrary)
+    bytes <- arrayOfRange(1, 100, arbByte.arbitrary)
     contextExt <- contextExtensionGen
-  } yield ProverResult(bytes.toArray, contextExt)
+  } yield ProverResult(bytes, contextExt)
 
   val boxIdGen: Gen[BoxId] = for {
-    bytes <- Gen.listOfN(BoxId.size, arbByte.arbitrary)
-  } yield ADKey @@ bytes.toArray
+    bytes <- arrayOfN(BoxId.size, arbByte.arbitrary)
+  } yield ADKey @@ bytes
 
   lazy val unsignedInputGen: Gen[UnsignedInput] = for {
     boxId <- boxIdGen
@@ -254,7 +278,8 @@ trait ObjectGenerators extends TypeGenerators
     remove <- arbBool.arbitrary
   } yield AvlTreeFlags(insert, update, remove)
 
-  lazy val aDDigestGen: Gen[ADDigest] = Gen.listOfN(AvlTreeData.DigestSize, arbByte.arbitrary).map(ADDigest @@ _.toArray)
+  lazy val aDDigestGen: Gen[ADDigest] =
+    arrayOfN(AvlTreeData.DigestSize, arbByte.arbitrary).map(ADDigest @@ _)
 
   def avlTreeDataGen: Gen[AvlTreeData] = for {
     digest <- aDDigestGen
@@ -266,16 +291,6 @@ trait ObjectGenerators extends TypeGenerators
   def avlTreeGen: Gen[AvlTree] = avlTreeDataGen.map(SigmaDsl.avlTree)
 
   def avlTreeConstantGen: Gen[AvlTreeConstant] = avlTreeGen.map { v => AvlTreeConstant(v) }
-
-  implicit def arrayGen[T: Arbitrary : ClassTag]: Gen[Array[T]] = for {
-    length <- Gen.chooseNum(1, 100)
-    bytes <- Gen.listOfN(length, arbitrary[T])
-  } yield bytes.toArray
-
-  implicit def collGen[T: Arbitrary : RType]: Gen[Coll[T]] = {
-    implicit val cT = RType[T].classTag
-    arrayGen[T].map(Colls.fromArray[T](_))
-  }
 
   def wrappedTypeGen[T <: SType](tpe: T): Gen[T#WrappedType] = (tpe match {
     case SBoolean => arbBool
@@ -295,8 +310,7 @@ trait ObjectGenerators extends TypeGenerators
   }).asInstanceOf[Arbitrary[T#WrappedType]].arbitrary
 
   def tupleGen(min: Int, max: Int): Gen[Tuple] = for {
-    length <- Gen.chooseNum(min, max)
-    values <- Gen.listOfN(length, Gen.oneOf(
+    values <- arrayOfRange(min, max, Gen.oneOf(
       byteArrayConstGen,
       byteConstGen,
       shortConstGen,
@@ -312,11 +326,12 @@ trait ObjectGenerators extends TypeGenerators
     ))
   } yield mkTuple(values).asInstanceOf[Tuple]
 
-  lazy val modifierIdGen: Gen[ModifierId] = Gen.listOfN(32, arbByte.arbitrary)
-    .map(id => bytesToId(id.toArray))
+  lazy val modifierIdGen: Gen[ModifierId] =
+    arrayOfN(CryptoConstants.hashLength, arbByte.arbitrary)
+    .map(bytesToId)
 
-  lazy val modifierIdBytesGen: Gen[Coll[Byte]] = Gen.listOfN(32, arbByte.arbitrary)
-    .map(id => bytesToId(id.toArray).toBytes.toColl)
+  lazy val modifierIdBytesGen: Gen[Coll[Byte]] =
+    collOfN(CryptoConstants.hashLength, arbByte.arbitrary)
 
   val MaxTokens = 10
 
@@ -332,10 +347,6 @@ trait ObjectGenerators extends TypeGenerators
     regNum <- Gen.chooseNum[Byte](0, ErgoBox.nonMandatoryRegistersCount)
     regs <- Gen.sequence(additionalRegistersGen(regNum))(Buildable.buildableSeq)
   } yield regs.toMap
-
-  def arrayOfN[T](n: Int, g: Gen[T])(implicit evb: Buildable[T,Array[T]]): Gen[Array[T]] = {
-    Gen.containerOfN[Array, T](n, g)
-  }
 
   def ergoBoxTokens(availableTokens: Seq[TokenId]): Gen[Coll[Token]] = for {
     tokens <-
@@ -361,8 +372,8 @@ trait ObjectGenerators extends TypeGenerators
   lazy val boxConstantGen: Gen[BoxConstant] = ergoBoxGen.map { v => BoxConstant(CostingBox(v)) }
 
   lazy val digest32Gen: Gen[TokenId] = for {
-    bytes <- Gen.listOfN(TokenId.size, arbByte.arbitrary).map(_.toArray)
-  } yield Digest32Coll @@@ Colls.fromArray(bytes)
+    bytes <- collOfN(TokenId.size, arbByte.arbitrary)
+  } yield Digest32Coll @@@ bytes
 
   lazy val tokenIdGen: Gen[TokenId] = digest32Gen
 
@@ -398,22 +409,9 @@ trait ObjectGenerators extends TypeGenerators
     }
   }
 
-  def byteArrayGen(length: Int): Gen[Array[Byte]] = for {
-    bytes <- Gen.listOfN(length, arbByte.arbitrary)
-  } yield bytes.toArray
+  lazy val minerVotesGen: Gen[Coll[Byte]] = collOfN(CHeader.VotesSize, arbByte.arbitrary)
 
-  def byteArrayGen(minLength: Int, maxLength: Int): Gen[Array[Byte]] = for {
-    length <- Gen.chooseNum(minLength, maxLength)
-    bytes <- Gen.listOfN(length, arbByte.arbitrary)
-  } yield bytes.toArray
-
-  def byteCollGen(length: Int): Gen[Coll[Byte]] = byteArrayGen(length).map(_.toColl)
-
-  def byteCollGen(minLength: Int, maxLength: Int): Gen[Coll[Byte]] = byteArrayGen(minLength, maxLength).map(_.toColl)
-
-  lazy val minerVotesGen: Gen[Coll[Byte]] = byteCollGen(CHeader.VotesSize)
-
-  lazy val nonceBytesGen: Gen[Coll[Byte]] = byteCollGen(CHeader.NonceSize)
+  lazy val nonceBytesGen: Gen[Coll[Byte]] = collOfN(CHeader.NonceSize, arbByte.arbitrary)
 
   import ValidationRules._
 
@@ -426,7 +424,7 @@ trait ObjectGenerators extends TypeGenerators
   val statusGen: Gen[RuleStatus] = Gen.oneOf(
     Gen.oneOf(EnabledRule, DisabledRule),
     replacedRuleIdGen.map(id => ReplacedRule(id)),
-    byteArrayGen(1, 10).map(xs => ChangedRule(xs))
+    arrayOfRange(1, 10, arbitrary[Byte]).map(xs => ChangedRule(xs))
   )
 
   lazy val mapCollectionGen: Gen[MapCollection[SInt.type, SInt.type]] = for {
@@ -641,29 +639,27 @@ trait ObjectGenerators extends TypeGenerators
 
   lazy val funcValueArgsGen: Gen[IndexedSeq[(Int, SType)]] = for {
     num <- Gen.chooseNum(1, 10)
-    indices <- Gen.listOfN(num, unsignedIntGen)
-    tpes <- Gen.listOfN(num, predefTypeGen)
+    indices <- arrayOfN(num, unsignedIntGen)
+    tpes <- arrayOfN(num, predefTypeGen)
   } yield indices.zip(tpes).toIndexedSeq
 
   lazy val funcValueGen: Gen[FuncValue] = for {
     args <- funcValueArgsGen
-    body <- logicalExprTreeNodeGen(Seq(AND.apply))
+    body <- logicalExprTreeNodeGen(ArraySeq(AND.apply))
   } yield FuncValue(args, body)
 
   lazy val sigmaAndGen: Gen[SigmaAnd] = for {
-    num <- Gen.chooseNum(1, ThresholdLimit)
-    items <- Gen.listOfN(num, sigmaPropValueGen)
+    items <- arrayOfRange(1, ThresholdLimit, sigmaPropValueGen)
   } yield mkSigmaAnd(items).asInstanceOf[SigmaAnd]
 
   lazy val sigmaOrGen: Gen[SigmaOr] = for {
-    num <- Gen.chooseNum(1, ThresholdLimit)
-    items <- Gen.listOfN(num, sigmaPropValueGen)
+    items <- arrayOfRange(1, ThresholdLimit, sigmaPropValueGen)
   } yield mkSigmaOr(items).asInstanceOf[SigmaOr]
 
   lazy val sigmaThresholdGen: Gen[CTHRESHOLD] = for {
     num <- Gen.chooseNum(1, ThresholdLimit)
     threshold <- Gen.choose(0, num)
-    items: Seq[SigmaBoolean] <- Gen.listOfN(num, sigmaBooleanGen).map(_.toSeq)
+    items: Seq[SigmaBoolean] <- arrayOfN(num, sigmaBooleanGen).map(_.toSeq)
   } yield CTHRESHOLD(threshold, items)
 
 

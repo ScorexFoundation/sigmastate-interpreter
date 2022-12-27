@@ -19,7 +19,7 @@ object ReflectionGenerator {
           Class.forName(prefix)
           '.' // prefix is object
         } catch {
-          case t =>
+          case t: Throwable =>
             '#' // prefix is not object
         }
       }

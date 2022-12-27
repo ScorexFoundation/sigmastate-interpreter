@@ -30,9 +30,8 @@ class InterpreterReflectionGeneratorTests extends AnyPropSpec with Matchers {
     test("A$B$", "A#B$")
     test("scala.A$B$", "scala.A#B$")
     test("sigmastate.ObjA$A", "sigmastate.ObjA.A");
-    classOf[ObjA.A]
+    val _ = (classOf[ObjA.A], classOf[InterpreterReflectionGeneratorTests#ObjB#B])
     test("sigmastate.ReflectionGeneratorTests$ObjB$B", "sigmastate.ReflectionGeneratorTests#ObjB#B");
-    classOf[InterpreterReflectionGeneratorTests#ObjB#B]
     Class.forName("sigmastate.ObjA$") shouldNot be (null)
     Class.forName("sigmastate.ObjA$ObjB$") shouldNot be (null)
   }

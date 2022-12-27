@@ -6575,7 +6575,7 @@ class SigmaDslSpecification extends SigmaDslTesting
       ))
   }
 
-  def sampleCollBoxes = genSamples[Coll[Box]](collOfN[Box](5), MinSuccessful(20))
+  def sampleCollBoxes = genSamples[Coll[Box]](collOfN[Box](5, arbitrary[Box]), MinSuccessful(20))
 
   def create_b1 = CostingBox(
     new ErgoBox(
@@ -7564,7 +7564,7 @@ class SigmaDslSpecification extends SigmaDslTesting
       for {
         coll <- collGen[Int]
         is <- genIndices(coll.length)
-        vs <- collOfN[Int](is.length)
+        vs <- collOfN[Int](is.length, arbitrary[Int])
       } yield (coll, (is.toColl, vs)),
       MinSuccessful(20))
 

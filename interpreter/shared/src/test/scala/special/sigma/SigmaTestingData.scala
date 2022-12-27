@@ -2,8 +2,8 @@ package special.sigma
 
 import org.ergoplatform.ErgoBox
 import org.ergoplatform.settings.ErgoAlgos
+import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen.containerOfN
-import org.scalacheck.util.Buildable
 import org.scalacheck.{Arbitrary, Gen}
 import scalan.RType
 import scorex.crypto.authds.{ADDigest, ADKey, ADValue}
@@ -30,12 +30,6 @@ trait SigmaTestingData extends TestingCommons with ObjectGenerators {
   def Coll[T](items: T*)
       (implicit cT: RType[T]) = CostingSigmaDslBuilder.Colls.fromItems(items: _*)
 
-  def collOfN[T: RType : Arbitrary](n: Int)
-      (implicit b: Buildable[T, Array[T]]): Gen[Coll[T]] = {
-    implicit val g: Gen[T] = Arbitrary.arbitrary[T]
-    containerOfN[Array, T](n, g).map(Colls.fromArray(_))
-  }
-
   val bytesGen: Gen[Array[Byte]] = for {
     len <- Gen.choose(0, 100)
     arr <- containerOfN[Array, Byte](len, Arbitrary.arbByte.arbitrary)
@@ -44,7 +38,7 @@ trait SigmaTestingData extends TestingCommons with ObjectGenerators {
   val intsCollGen = arrayGen[Int].map(Colls.fromArray(_))
   implicit val arbBytes = Arbitrary(bytesCollGen)
   implicit val arbInts = Arbitrary(intsCollGen)
-  val keyCollGen = collOfN[Byte](32)
+  val keyCollGen = collOfN[Byte](32, arbitrary[Byte])
   import org.ergoplatform.dsl.AvlTreeHelpers._
 
   def createAvlTreeAndProver(entries: (Coll[Byte], Coll[Byte])*) = {
