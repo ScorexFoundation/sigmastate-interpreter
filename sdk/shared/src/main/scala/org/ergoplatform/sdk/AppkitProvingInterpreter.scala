@@ -22,6 +22,7 @@ import org.ergoplatform.sdk.utils.ArithUtils
 import org.ergoplatform.sdk.wallet.protocol.context.{ErgoLikeParameters, ErgoLikeStateContext, TransactionContext}
 import org.ergoplatform.sdk.wallet.secrets.ExtendedSecretKey
 import scalan.util.Extensions.LongOps
+import scorex.crypto.authds.ADDigest
 import sigmastate.{AvlTreeData, VersionContext}
 
 import scala.collection.mutable
@@ -176,7 +177,7 @@ class AppkitProvingInterpreter(
       require(util.Arrays.equals(unsignedInput.boxId, inputBox.box.id))
 
       val context = new ErgoLikeContext(
-        AvlTreeData.avlTreeFromDigest(stateContext.previousStateDigest),
+        AvlTreeData.avlTreeFromDigest(ADDigest @@@ stateContext.previousStateDigest.toArray),
         stateContext.sigmaLastHeaders,
         stateContext.sigmaPreHeader,
         transactionContext.dataBoxes,

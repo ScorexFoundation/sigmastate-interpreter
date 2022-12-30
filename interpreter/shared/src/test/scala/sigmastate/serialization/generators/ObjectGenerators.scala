@@ -343,7 +343,7 @@ trait ObjectGenerators extends TypeGenerators
     candidate <- ergoBoxCandidateGen(tokens.toSeq)
   } yield candidate.toBox(tId, boxId)
 
-  lazy val additionalRegistersGen: Gen[Map[NonMandatoryRegisterId, EvaluatedValue[SType]]] = for {
+  lazy val additionalRegistersGen: Gen[AdditionalRegisters] = for {
     regNum <- Gen.chooseNum[Byte](0, ErgoBox.nonMandatoryRegistersCount)
     regs <- Gen.sequence(additionalRegistersGen(regNum))(Buildable.buildableSeq)
   } yield regs.toMap
@@ -708,11 +708,15 @@ trait ObjectGenerators extends TypeGenerators
   val MaxHeaders = 2
   def headersGen(stateRoot: AvlTree): Gen[Seq[Header]] = for {
     size <- Gen.chooseNum(0, MaxHeaders)
-  } yield if (size == 0) Seq() else
-    (0 to size)
-    .foldLeft(List[Header](headerGen(stateRoot, modifierIdBytesGen.sample.get).sample.get)) { (h, _) =>
-      h :+ headerGen(stateRoot, h.last.id).sample.get
-    }.reverse
+  } yield
+    if (size == 0) Seq()
+    else {
+      val h = headerGen(stateRoot, modifierIdBytesGen.sample.get).sample.get
+      (0 to size)
+        .foldLeft(List[Header](h)) { (hs, _) =>
+          headerGen(stateRoot, hs.head.id).sample.get :: hs
+        }
+    }
 
   def preHeaderGen(parentId: Coll[Byte]): Gen[PreHeader] = for {
     version <- arbByte.arbitrary

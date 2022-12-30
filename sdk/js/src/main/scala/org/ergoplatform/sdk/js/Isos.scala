@@ -1,14 +1,12 @@
 package org.ergoplatform.sdk.js
 
 import org.ergoplatform.ErgoBox._
-import org.ergoplatform.sdk.Extensions.PairCollOps
 import org.ergoplatform.{DataInput, ErgoBox, ErgoBoxCandidate, UnsignedErgoLikeTransaction, UnsignedInput}
 import org.ergoplatform.sdk.{ExtendedInputBox, Iso}
 import org.ergoplatform.sdk.JavaHelpers.UniversalConverter
-import org.ergoplatform.sdk.wallet.protocol.context.ErgoLikeStateContext
+import org.ergoplatform.sdk.wallet.protocol.context.{CErgoLikeStateContext, ErgoLikeStateContext}
 import scalan.RType
 import scorex.crypto.authds.{ADDigest, ADKey}
-import scorex.crypto.hash.Digest32
 import scorex.util.ModifierId
 import scorex.util.encode.Base16
 import sigmastate.{AvlTreeData, AvlTreeFlags, SType}
@@ -179,17 +177,17 @@ object Isos {
 
   implicit val isoBlockchainStateContext: Iso[BlockchainStateContext, ErgoLikeStateContext] = new Iso[BlockchainStateContext, ErgoLikeStateContext] {
     override def to(a: BlockchainStateContext): ErgoLikeStateContext = {
-      new ErgoLikeStateContext {
-        override def sigmaLastHeaders: Coll[sigma.Header] = isoArrayToColl(isoHeader).to(a.sigmaLastHeaders)
-        override def previousStateDigest: ADDigest = ADDigest @@ isoStringToArray.to(a.previousStateDigest)
-        override def sigmaPreHeader: sigma.PreHeader = isoPreHeader.to(a.sigmaPreHeader)
-      }
+      CErgoLikeStateContext(
+        sigmaLastHeaders = isoArrayToColl(isoHeader).to(a.sigmaLastHeaders),
+        previousStateDigest = isoStringToColl.to(a.previousStateDigest),
+        sigmaPreHeader = isoPreHeader.to(a.sigmaPreHeader)
+      )
     }
 
     override def from(b: ErgoLikeStateContext): BlockchainStateContext = {
       new BlockchainStateContext(
         sigmaLastHeaders = isoArrayToColl(isoHeader).from(b.sigmaLastHeaders),
-        previousStateDigest = isoStringToArray.from(b.previousStateDigest),
+        previousStateDigest = isoStringToColl.from(b.previousStateDigest),
         sigmaPreHeader = isoPreHeader.from(b.sigmaPreHeader)
       )
     }
