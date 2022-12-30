@@ -50,3 +50,4 @@ spam-tests/
 .vscode/
 project/metals.sbt
 /project/project/
+.bsp/

@@ -191,7 +191,7 @@ class SigmaBinderTest extends AnyPropSpec with ScalaCheckPropertyChecks with Mat
     bind(env, "X[(Int, Boolean)]") shouldBe ApplyTypes(Ident("X"), Seq(STuple(SInt, SBoolean)))
     bind(env, "X[Int, Boolean]") shouldBe ApplyTypes(Ident("X"), Seq(SInt, SBoolean))
     bind(env, "SELF.R1[Int]") shouldBe ApplyTypes(Select(Self, "R1"), Seq(SInt))
-    bind(env, "SELF.R1[Int].isEmpty") shouldBe Select(ApplyTypes(Select(Self, "R1"), Seq(SInt)), "isEmpty")
+    bind(env, "SELF.R1[Int].isEmpty") shouldBe LogicalNot(Select(ApplyTypes(Select(Self, "R1"), Seq(SInt)), "isDefined").asBoolValue)
     bind(env, "f[Int](10)") shouldBe Apply(ApplyTypes(Ident("f"), Seq(SInt)), IndexedSeq(IntConstant(10)))
     bind(env, "INPUTS.map[Int]") shouldBe ApplyTypes(Select(Inputs, "map"), Seq(SInt))
     bind(env, "INPUTS.map[Int](10)") shouldBe Apply(ApplyTypes(Select(Inputs, "map"), Seq(SInt)), IndexedSeq(IntConstant(10)))
