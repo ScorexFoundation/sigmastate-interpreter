@@ -469,6 +469,32 @@ class BasicOpsSpecification extends CompilerTestingCommons
     )
   }
 
+  property("OptionIsEmpty") {
+    test("Def1", env, ext,
+      "{ SELF.R4[SigmaProp].isEmpty == false }",
+      ExtractRegisterAs[SSigmaProp.type](Self, reg1).isDefined.toSigmaProp,
+      true
+    )
+    // no value
+    test("Def2", env, ext,
+      "{ SELF.R8[Int].isEmpty }",
+      LogicalNot(ExtractRegisterAs[SInt.type](Self, R8).isDefined).toSigmaProp,
+      true
+    )
+
+    test("Def3", env, ext,
+      "{ getVar[Int](intVar2).isEmpty == false }",
+      GetVarInt(intVar2).isDefined.toSigmaProp,
+      true
+    )
+    // there should be no variable with this id
+    test("Def4", env, ext,
+      "{ getVar[Int](99).isEmpty }",
+      LogicalNot(GetVarInt(99).isDefined).toSigmaProp,
+      true
+    )
+  }
+
   // TODO this is valid for BigIntModQ type (https://github.com/ScorexFoundation/sigmastate-interpreter/issues/554)
   ignore("ByteArrayToBigInt: big int should always be positive") {
     test("BATBI1", env, ext,
