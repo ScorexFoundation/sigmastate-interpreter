@@ -13,7 +13,7 @@ import sigmastate.utxo._
 class ErgoTreeBuildingTest extends BaseCtxTests
     with LangTests with ExampleContracts with ErgoScriptTestkit {
 
-  implicit override lazy val IR: TestContext with IRContext = new TestContext with IRContext with CompiletimeCosting {
+  implicit override lazy val IR: TestContext with IRContext = new TestContext with IRContext {
     beginPass(noConstPropagationPass)
   }
 

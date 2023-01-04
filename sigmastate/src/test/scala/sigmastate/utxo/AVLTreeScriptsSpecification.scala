@@ -43,7 +43,6 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons
       (implicit val spec: Spec) extends SigmaContractSyntax
     {
       def pkProver = prover.pubKey
-      import syntax._
       lazy val contractEnv = Env("pkProver" -> pkProver, "ops" -> ops, "proof" -> proof)
 
       lazy val treeProp = proposition("treeProp", { ctx: Context => import ctx._
@@ -92,7 +91,6 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons
       (implicit val spec: Spec) extends SigmaContractSyntax
     {
       def pkProver = prover.pubKey
-      import syntax._
       lazy val contractEnv = Env("pkProver" -> pkProver, "ops" -> ops, "proof" -> proof)
 
       lazy val treeProp = proposition("treeProp", { ctx: Context => import ctx._
@@ -141,7 +139,6 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons
       (implicit val spec: Spec) extends SigmaContractSyntax
     {
       def pkProver = prover.pubKey
-      import syntax._
       lazy val contractEnv = Env("pkProver" -> pkProver, "key" -> key, "proof" -> proof, "value" -> value)
 
       lazy val treeProp = proposition("treeProp", { ctx: Context => import ctx._

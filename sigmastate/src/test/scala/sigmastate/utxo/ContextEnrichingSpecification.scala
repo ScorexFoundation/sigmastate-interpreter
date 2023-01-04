@@ -106,17 +106,10 @@ class ContextEnrichingSpecification extends SigmaTestingCommons
     verifier.verify(env, propTree, ctxv, pr.proof, fakeMessage).get._1 shouldBe true
 
     // negative tests: context w/out extensions
-    if (isActivatedVersion4) {
-      assertExceptionThrown(
-        verifier.verify(env, propTree, ctx, pr.proof, fakeMessage).get,
-        rootCause(_).isInstanceOf[ArrayIndexOutOfBoundsException]
-      )
-    } else {
-      assertExceptionThrown(
-        verifier.verify(env, propTree, ctx, pr.proof, fakeMessage).get,
-        rootCause(_).isInstanceOf[NoSuchElementException]
-      )
-    }
+    assertExceptionThrown(
+      verifier.verify(env, propTree, ctx, pr.proof, fakeMessage).get,
+      rootCause(_).isInstanceOf[NoSuchElementException]
+    )
   }
 
   /**
@@ -146,15 +139,9 @@ class ContextEnrichingSpecification extends SigmaTestingCommons
     verifier.verify(env, propTree, ctxv, pr.proof, fakeMessage).get._1 shouldBe true
 
     // negative tests: context w/out extensions
-    if (isActivatedVersion4) {
-      assertExceptionThrown(
-        verifier.verify(env, propTree, ctx, pr.proof, fakeMessage).get,
-        rootCause(_).isInstanceOf[ArrayIndexOutOfBoundsException])
-    } else {
-      assertExceptionThrown(
-        verifier.verify(env, propTree, ctx, pr.proof, fakeMessage).get,
-        rootCause(_).isInstanceOf[NoSuchElementException])
-    }
+    assertExceptionThrown(
+      verifier.verify(env, propTree, ctx, pr.proof, fakeMessage).get,
+      rootCause(_).isInstanceOf[NoSuchElementException])
   }
 
   property("prover enriching context 2") {
@@ -183,16 +170,9 @@ class ContextEnrichingSpecification extends SigmaTestingCommons
     verifier.verify(env, propTree, ctxv, pr.proof, fakeMessage).get._1 shouldBe true
 
     // negative tests: context w/out extensions
-    if (isActivatedVersion4) {
-      assertExceptionThrown(
-        verifier.verify(env, propTree, ctx, pr.proof, fakeMessage).get,
-        rootCause(_).isInstanceOf[ArrayIndexOutOfBoundsException]
-      )
-    } else {
-      assertExceptionThrown(
-        verifier.verify(env, propTree, ctx, pr.proof, fakeMessage).get,
-        rootCause(_).isInstanceOf[NoSuchElementException]
-      )
-    }
+    assertExceptionThrown(
+      verifier.verify(env, propTree, ctx, pr.proof, fakeMessage).get,
+      rootCause(_).isInstanceOf[NoSuchElementException]
+    )
   }
 }

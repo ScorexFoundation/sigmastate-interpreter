@@ -14,6 +14,13 @@ lazy val commonSettings = Seq(
   organization := "org.scorexfoundation",
   crossScalaVersions := Seq(scala212, scala211),
   scalaVersion := scala212,
+  scalacOptions ++= {
+    CrossVersion.partialVersion(scalaVersion.value) match {
+      case Some((2, 12)) => Seq("-Ywarn-unused:_,imports", "-Ywarn-unused:imports")
+      case Some((2, 11)) => Seq()
+      case _ => sys.error("Unsupported scala version")
+    }
+  },
   resolvers += Resolver.sonatypeRepo("public"),
   licenses := Seq("CC0" -> url("https://creativecommons.org/publicdomain/zero/1.0/legalcode")),
   homepage := Some(url("https://github.com/ScorexFoundation/sigmastate-interpreter")),
@@ -102,16 +109,6 @@ libraryDependencies ++= Seq(
 
 scalacOptions ++= Seq("-feature", "-deprecation")
 
-// set bytecode version to 8 to fix NoSuchMethodError for various ByteBuffer methods
-// see https://github.com/eclipse/jetty.project/issues/3244
-// these options applied only in "compile" task since scalac crashes on scaladoc compilation with "-release 8"
-// see https://github.com/scala/community-builds/issues/796#issuecomment-423395500
-//javacOptions in(Compile, compile) ++= Seq("-target", "8", "-source", "8" )
-//scalacOptions in(Compile, compile) ++= Seq("-release", "8")
-
-//uncomment lines below if the Scala compiler hangs to see where it happens
-//scalacOptions in Compile ++= Seq("-Xprompt", "-Ydebug", "-verbose" )
-
 parallelExecution in Test := false
 publishArtifact in Test := true
 
@@ -180,24 +177,14 @@ lazy val sigmaapi = Project("sigma-api", file("sigma-api"))
     ))
   .settings(publish / skip := true)
 
-lazy val sigmaimpl = Project("sigma-impl", file("sigma-impl"))
-  .dependsOn(
-    sigmaapi % allConfigDependency,
-    libraryapi % allConfigDependency,
-    libraryimpl % allConfigDependency,
-    library % allConfigDependency)
-  .settings(libraryDefSettings,
-    libraryDependencies ++= Seq( scrypto, bouncycastleBcprov ))
-  .settings(publish / skip := true)
-
 lazy val sigmalibrary = Project("sigma-library", file("sigma-library"))
   .dependsOn(
-    sigmaimpl % allConfigDependency,
     common % allConfigDependency,
     core % allConfigDependency,
     libraryapi % allConfigDependency,
     libraryimpl % allConfigDependency,
-    library % allConfigDependency)
+    library % allConfigDependency,
+    sigmaapi % allConfigDependency)
   .settings(libraryDefSettings,
     libraryDependencies ++= Seq(
       scrypto,
@@ -206,7 +193,7 @@ lazy val sigmalibrary = Project("sigma-library", file("sigma-library"))
   .settings(publish / skip := true)
 
 lazy val sigmastate = (project in file("sigmastate"))
-  .dependsOn(sigmaimpl % allConfigDependency, sigmalibrary % allConfigDependency)
+  .dependsOn(sigmalibrary % allConfigDependency)
   .settings(libraryDefSettings)
   .settings(libraryDependencies ++= Seq(
     scorexUtil, kiama, fastparse, commonsMath3,
@@ -219,13 +206,13 @@ lazy val sigmastate = (project in file("sigmastate"))
 lazy val sigma = (project in file("."))
   .aggregate(
     sigmastate, common, core, libraryapi, libraryimpl, library,
-    sigmaapi, sigmaimpl, sigmalibrary)
+    sigmaapi, sigmalibrary)
   .settings(libraryDefSettings, rootSettings)
   .settings(publish / aggregate := false)
   .settings(publishLocal / aggregate := false)
 
 lazy val aggregateCompile = ScopeFilter(
-  inProjects(common, core, libraryapi, libraryimpl, library, sigmaapi, sigmaimpl,
+  inProjects(common, core, libraryapi, libraryimpl, library, sigmaapi,
     sigmalibrary, sigmastate),
   inConfigurations(Compile))
 

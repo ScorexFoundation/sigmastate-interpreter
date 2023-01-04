@@ -21,14 +21,6 @@ trait OptionWrapSpec extends WrapSpecBase {
   def fold[A,B](xs: Option[A], ifEmpty: =>B, f: A => B): B = xs.fold(ifEmpty)(f)
 };
 
-trait SpecialPredefWrapSpec extends WrapSpecBase {
-  def loopUntil[A](s1: A, isMatch: A => Boolean, step: A => A): A = SpecialPredef.loopUntil(s1, isMatch, step)
-  def cast[A](v: Any)(implicit cA: ClassTag[A]): Option[A] = SpecialPredef.cast[A](v)
-  def some[A](x: A): Option[A] = SpecialPredef.some(x)
-  def none[A](implicit cA: RType[A]): Option[A] = SpecialPredef.none[A]
-  def optionGetOrElse[A](opt: Option[A], default: A): A = SpecialPredef.optionGetOrElse(opt, default)
-}
-
 trait RTypeWrapSpec extends WrapSpecBase {
   def name[T](d: RType[T]): String = d.name
 }

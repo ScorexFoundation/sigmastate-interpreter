@@ -1,21 +1,17 @@
 package special.collections
 
-import scala.language.{existentials,implicitConversions}
-import scala.collection.mutable.ArrayBuffer
 import org.scalacheck.util.Buildable
-
-import scala.collection.mutable
 import org.scalacheck.{Arbitrary, Gen}
 import scalan._
-import special.collection.{Coll, CollBuilder, CollOverArray, CollOverArrayBuilder, PairColl, ReplColl}
+import special.collection.{Coll, CollBuilder, CollOverArrayBuilder, PairColl}
 
-import scala.reflect.ClassTag
-import scala.util.Random
+import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
+import scala.language.{existentials, implicitConversions}
 
 trait CollGens { testSuite =>
   import Gen._
   val builder: CollBuilder = new CollOverArrayBuilder
-  val monoid = builder.Monoids.intPlusMonoid
   val valGen = choose(-100, 100)
   val byteGen = choose[Byte](-100, 100)
   val indexGen = choose(0, 100)
@@ -40,14 +36,6 @@ trait CollGens { testSuite =>
 
   def getCollReplGen[T: RType](lenGen: Gen[Int], valGen: Gen[T], count: Int = 100): Gen[Coll[T]] = {
     for { l <- lenGen; v <- valGen } yield builder.replicate(l, v)
-  }
-
-  def getCollViewGen[A: RType](valGen: Gen[Coll[A]]): Gen[Coll[A]] = {
-    valGen.map(builder.makeView(_, identity[A]))
-  }
-
-  def getCollViewGen[A, B: RType](valGen: Gen[Coll[A]], f: A => B): Gen[Coll[B]] = {
-    valGen.map(builder.makeView(_, f))
   }
 
   def getCollPairGenFinal[A: RType, B: RType](collGenLeft: Gen[Coll[A]], collGenRight: Gen[Coll[B]]): Gen[PairColl[A, B]] = {
@@ -105,23 +93,16 @@ trait CollGens { testSuite =>
   val replCollGen = getCollReplGen(lenGen, valGen)
   val replBytesCollGen = getCollReplGen(lenGen, byteGen)
 
-
-  val lazyCollGen = getCollViewGen(collOverArrayGen)
-  val lazyByteGen = getCollViewGen(bytesOverArrayGen)
-
   def easyFunction(arg: Int): Int = arg * 20 + 300
   def inverseEasyFunction(arg: Int): Int = (arg - 300) / 20
 
-  val lazyFuncCollGen = getCollViewGen[Int, Int](collOverArrayGen, easyFunction)
-  val lazyUnFuncCollGen = getCollViewGen[Int, Int](lazyFuncCollGen, inverseEasyFunction)
-
-  val collGen = Gen.oneOf(collOverArrayGen, replCollGen, lazyCollGen, lazyUnFuncCollGen)
-  val bytesGen = Gen.oneOf(bytesOverArrayGen, replBytesCollGen, lazyByteGen)
+  val collGen = Gen.oneOf(collOverArrayGen, replCollGen)
+  val bytesGen = Gen.oneOf(bytesOverArrayGen, replBytesCollGen)
 
   val innerGen = Gen.oneOf(collOverArrayGen, replCollGen)
 
-  val superGenInt = getSuperGen(1, Gen.oneOf(collOverArrayGen, replCollGen, lazyCollGen, lazyUnFuncCollGen))
-  val superGenByte = getSuperGen(1, Gen.oneOf(bytesOverArrayGen, replBytesCollGen, lazyByteGen))
+  val superGenInt = getSuperGen(1, Gen.oneOf(collOverArrayGen, replCollGen))
+  val superGenByte = getSuperGen(1, Gen.oneOf(bytesOverArrayGen, replBytesCollGen))
   val superGen = Gen.oneOf(superGenInt, superGenByte)
 
   val allGen = Gen.oneOf(superGen, collGen)
@@ -135,11 +116,6 @@ trait CollGens { testSuite =>
   val plusF = (p: (Int,Int)) => plus(p._1, p._2)
   val predF = (p: (Int,Int)) => plus(p._1, p._2) > 0
   def inc(x: Int) = x + 1
-
-  def collMatchRepl[B](coll: B): Boolean = coll match {
-    case _ : ReplColl[_] => true
-    case _ => false
-  }
 
   def complexFunction(arg: Int): Int = {
     var i = 0

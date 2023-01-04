@@ -4,16 +4,16 @@ import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
 import org.ergoplatform.validation.ValidationSpecification
 
 import scala.util.Success
-import sigmastate.{AvlTreeData, TestsBase, SType}
-import sigmastate.Values.{EvaluatedValue, SValue, SigmaPropConstant, Value, BigIntArrayConstant}
+import sigmastate.{AvlTreeData, SType, TestsBase, VersionContext}
+import sigmastate.Values.{BigIntArrayConstant, EvaluatedValue, SValue, SigmaPropConstant, Value}
 import org.ergoplatform.{Context => _, _}
-import sigmastate.utxo.CostTable
 import scalan.BaseCtxTests
-import sigmastate.lang.{LangTests, SigmaCompiler, CompilerSettings}
+import sigmastate.lang.{CompilerResult, CompilerSettings, LangTests, SigmaCompiler}
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting}
 import sigmastate.helpers.TestingHelpers._
-import sigmastate.interpreter.ContextExtension
+import sigmastate.interpreter.{ContextExtension, ErgoTreeEvaluator}
 import sigmastate.interpreter.Interpreter.ScriptEnv
+import sigmastate.lang.Terms.ValueOps
 import special.sigma.{ContractsTestkit, Context => DContext}
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 
@@ -23,12 +23,11 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests
     with ValidationSpecification with TestsBase { self: BaseCtxTests =>
 
   implicit lazy val IR: TestContext with IRContext =
-    new TestContext with IRContext with CompiletimeCosting
+    new TestContext with IRContext
 
   import IR._
   import Liftables._
   import Context._
-  import Size._
   import BigInt._
 
   override lazy val compiler = new SigmaCompiler(CompilerSettings(
@@ -55,9 +54,6 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests
   lazy val boxA1 = newAliceBox(1, 100)
   lazy val boxA2 = newAliceBox(2, 200)
 
-  lazy val dsl = sigmaDslBuilder
-  lazy val dslValue = sigmaDslBuilderValue
-  lazy val bigSym = liftConst(dslValue.BigInt(big))
   lazy val n1Sym = liftConst(n1)
 
   val timeout = 100
@@ -107,8 +103,6 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests
       ergoCtx: Option[ErgoLikeContext] = None,
       testContract: Option[DContext => Any] = None,
       expectedCalc: Option[Ref[Context] => Ref[Any]] = None,
-      expectedCost: Option[Ref[Context] => Ref[Int]] = None,
-      expectedSize: Option[Ref[Context] => Ref[Long]] = None,
       expectedTree: Option[SValue] = None,
       expectedResult: Result = NoResult,
       printGraphs: Boolean = true,
@@ -119,8 +113,6 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests
       case Tree(t) => t
     }
     lazy val expectedCalcF = expectedCalc.map(f => fun(removeIsProven(f)))
-    lazy val expectedCostF = expectedCost.map(fun(_))
-    lazy val expectedSizeF = expectedSize.map(fun(_))
 
     def checkExpected[T](block: => T, expected: Option[T], messageFmt: String) = {
       if (expected.isDefined) {
@@ -136,125 +128,61 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests
       }
     }
 
-    def pairify(xs: Seq[Sym]): Sym = xs match {
-      case Seq(x) => x
-      case Seq(a, b) => Pair(a, b)
-      case _ => Pair(xs.head, pairify(xs.tail))
-    }
-
-    def doCosting: Ref[(Context => Any, (Size[Context] => Int, Size[Context] => Long))] = {
-      val costed = cost[Any](env, tree)
-      val calcF = costed.sliceCalc
-      val costF = fun { sCtx: RSize[Context] => costed.sliceCost(Pair(0, sCtx)) }
-      val sizeF = fun { sCtx: RSize[Context] => costed.sliceSize(sCtx).dataSize }
-      val res = Pair(calcF, Pair(costF, sizeF))
+    def doCosting: CompilerResult[IR.type] = {
+      val res = compiler.compileTyped(env, tree)
+      val calcF = res.compiledGraph
       if (printGraphs) {
-        val str = Pair(calcF, Pair(costF, sizeF))
-        val strExp =
-          expectedCalcF.toSeq ++
-          expectedCostF.toSeq ++
-          expectedSizeF.toSeq
+        val str = calcF
+        val strExp = expectedCalcF.toSeq
         val graphs = str +: strExp
         emit(name, graphs:_*)
       }
       checkExpectedFunc(calcF, expectedCalcF, "Calc function actual: %s, expected: %s")
-      checkExpectedFunc(costF, expectedCostF, "Cost function actual: %s, expected: %s")
-      checkExpectedFunc(sizeF, expectedSizeF, "Size function actual: %s, expected: %s")
       res
     }
 
     def doReduce(): Unit = {
-      val Pair(calcF, Pair(costF, sizeF)) = doCosting
-      verifyCostFunc(asRep[Any => Int](costF)) shouldBe Success(())
-      verifyIsProven(calcF) shouldBe Success(())
+      val res = doCosting
+      verifyIsProven(res.compiledGraph) shouldBe Success(())
+      val ergoTree = mkTestErgoTree(res.buildTree.asSigmaProp)
 
       if (expectedTree.isDefined) {
-        val compiledProp = IR.buildTree(asRep[Context => SType#WrappedType](calcF))
-        checkExpected(compiledProp, expectedTree, "Compiled Tree actual: %s, expected: %s")
+        checkExpected(res.buildTree, expectedTree, "Compiled Tree actual: %s, expected: %s")
 
-        val ergoTree = mkTestErgoTree(compiledProp)
         val compiledTreeBytes = DefaultSerializer.serializeErgoTree(ergoTree)
         checkExpected(DefaultSerializer.deserializeErgoTree(compiledTreeBytes), Some(ergoTree),
           "(de)serialization round trip actual: %s, expected: %s")
       }
 
       if (ergoCtx.isDefined) {
-        val calcCtx = ergoCtx.get.toSigmaContext(isCost = false)
-        val testContractRes = testContract.map(_(calcCtx))
-        testContractRes.foreach { res =>
-          checkExpected(res, expectedResult.calc, "Test Contract actual: %s, expected: %s")
-        }
+        val ectx = ergoCtx.get.withErgoTreeVersion(ergoTreeVersionInTests)
+        VersionContext.withVersions(ectx.activatedScriptVersion, ergoTreeVersionInTests) {
+          val calcCtx = ectx.toSigmaContext()
+          val testContractRes = testContract.map(_(calcCtx))
+          testContractRes.foreach { res =>
+            checkExpected(res, expectedResult.calc, "Test Contract actual: %s, expected: %s")
+          }
 
-        // check cost
-        val costCtx = ergoCtx.get.toSigmaContext(isCost = true)
-        IR.checkCost(costCtx, tree, costF, SigmaConstants.ScriptCostLimit.value)
-
-        // check size
-        {
-          val lA = asLiftable[SSize[SContext], Size[Context]](sizeF.elem.eDom.liftable)
-          val sizeFun = IR.compile[SSize[SContext], Long, Size[Context], Long](getDataEnv, sizeF)(lA, liftable[Long, Long])
-          val estimatedSize = sizeFun(Sized.sizeOf(costCtx))
-          checkExpected(estimatedSize, expectedResult.size,
-            "Size evaluation: estimatedSize = %s, expectedResult.size: %s"
+          // check calc
+          val (res, _) = ErgoTreeEvaluator.eval(
+            context = ectx,
+            constants = ergoTree.constants,
+            exp = ergoTree.toProposition(replaceConstants = false),
+            evalSettings = ErgoTreeEvaluator.DefaultEvalSettings
           )
+          checkExpected(res, expectedResult.calc,
+            "Calc evaluation:\n value = %s,\n expectedResult.calc: %s\n")
         }
-
-        // check calc
-        val lA = asLiftable[SContext, Context](calcF.elem.eDom.liftable)
-        val lB = asLiftable[Any, Any](calcF.elem.eRange.liftable)
-        val valueFun = IR.compile(getDataEnv, calcF)(lA, lB)
-        val (res, _) = valueFun(calcCtx)
-        checkExpected(res, expectedResult.calc,
-          "Calc evaluation:\n value = %s,\n expectedResult.calc: %s\n")
       }
     }
   }
 
   def Case(env: ScriptEnv, name: String, script: String, ctx: ErgoLikeContext,
            calc: Ref[Context] => Ref[Any],
-           cost: Ref[Context] => Ref[Int],
-           size: Ref[Context] => Ref[Long],
            tree: SValue,
            result: Result) =
     EsTestCase(name, env, Code(script), Option(ctx), None,
-      Option(calc), Option(cost), Option(size),
-      Option(tree), result)
-
-  def checkAll(env: ScriptEnv, name: String, script: String, ergoCtx: ErgoLikeContext,
-               calc: Ref[Context] => Ref[Any],
-               cost: Ref[Context] => Ref[Int],
-               size: Ref[Context] => Ref[Long],
-               tree: SValue,
-               result: Result): Unit =
-  {
-    val tcase = Case(env, name, script, ergoCtx, calc, cost, size, tree, result)
-    tcase.doReduce()
-  }
-
-  def checkInEnv(env: ScriptEnv, name: String, script: String,
-                 expectedCalc: Ref[Context] => Ref[Any],
-                 expectedCost: Ref[Context] => Ref[Int] = null,
-                 expectedSize: Ref[Context] => Ref[Long] = null,
-                 printGraphs: Boolean = true
-                ): Ref[(Context => Any, (Size[Context] => Int, Size[Context] => Long))] =
-  {
-    val tc = EsTestCase(name, env, Code(script), None, None,
-      Option(expectedCalc),
-      Option(expectedCost),
-      Option(expectedSize), expectedTree = None, expectedResult = NoResult, printGraphs)
-    val res = tc.doCosting
-    res
-  }
-
-  def check(name: String, script: String,
-      expectedCalc: Ref[Context] => Ref[Any],
-      expectedCost: Ref[Context] => Ref[Int] = null,
-      expectedSize: Ref[Context] => Ref[Long] = null,
-      printGraphs: Boolean = true
-      ): Ref[(Context => Any, (Size[Context] => Int, Size[Context] => Long))] =
-  {
-    checkInEnv(Map(), name, script, expectedCalc, expectedCost, expectedSize, printGraphs)
-  }
+      Option(calc), Option(tree), result)
 
   def reduce(env: ScriptEnv, name: String, script: String, ergoCtx: ErgoLikeContext, expectedResult: Any): Unit = {
     val tcase = EsTestCase(name, env, Code(script), Some(ergoCtx), expectedResult = Result(expectedResult))
@@ -266,21 +194,9 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests
     tcase.doReduce()
   }
 
-  def compileAndCost[T](env: ScriptEnv, code: String): Ref[Costed[Context] => Costed[T]] = {
-    val typed = compiler.typecheck(env, code)
-    cost[T](env, typed)
-  }
-
   def build(env: ScriptEnv, name: String, script: String, expected: SValue): Unit = {
-    val costed = compileAndCost[Any](env, script)
-    val valueF = costed.sliceCalc(true)
-    val costF  = costed.sliceCost
-    val sizeF  = costed.sliceSize
-    
-    emit(name, valueF, costF, sizeF)
-    verifyCostFunc(asRep[Any => Int](costF)) shouldBe(Success(()))
-    verifyIsProven(valueF) shouldBe(Success(()))
-    IR.buildTree(valueF) shouldBe expected
+    val tree = compile(env, script)
+    tree  shouldBe expected
   }
 
 }

@@ -23,7 +23,7 @@ trait ContractsTestkit {
 
 
   val Colls = new CollOverArrayBuilder
-  val SigmaDsl: SigmaDslBuilder = new TestSigmaDslBuilder
+  val SigmaDsl: SigmaDslBuilder = CostingSigmaDslBuilder
   val noRegisters = collection[AnyValue]()
   val noBytes = collection[Byte]()
   val noInputs = Array[Box]()
@@ -61,7 +61,7 @@ trait ContractsTestkit {
     val ergoBox = testBox(value,
       ErgoTree.fromProposition(Values.TrueSigmaProp),
       creationHeight = 0, additionalTokens = Seq(), additionalRegisters = Map())
-    new CostingBox(false, ergoBox)
+    new CostingBox(ergoBox)
   }
 
 
@@ -71,7 +71,7 @@ trait ContractsTestkit {
     new CostingDataContext(
       noInputs.toColl, noHeaders, dummyPreHeader,
       inputs.toColl, outputs.toColl, height, self, inputs.indexOf(self), tree,
-      minerPk.toColl, vars.toColl, activatedScriptVersion, currErgoTreeVersion, false)
+      minerPk.toColl, vars.toColl, activatedScriptVersion, currErgoTreeVersion)
 
   def newContext(height: Int, self: Box, activatedScriptVersion: Byte, currErgoTreeVersion: Byte, vars: AnyValue*): CostingDataContext = {
     testContext(

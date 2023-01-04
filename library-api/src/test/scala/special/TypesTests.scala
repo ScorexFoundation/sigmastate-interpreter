@@ -26,13 +26,5 @@ class TypesTests extends BaseTests {
     def tuple2 = tupleRType(Array(RType[Long], RType[Int]))
     assert(tuple != tuple2, "compare two different types")
 
-    def struct = structRType(Array("x", "y"), Array(RType[Int], RType[Long]))
-    assert(struct == struct, "compare two different but equal instances")
-
-    def struct2 = structRType(Array("x", "y2"), Array(RType[Int], RType[Long]))
-    assert(struct != struct2, "changed single field name")
-
-    def struct3 = structRType(Array("x", "y"), Array(RType[Int], RType[Int]))
-    assert(struct != struct3, "changed single field type")
   }
 }

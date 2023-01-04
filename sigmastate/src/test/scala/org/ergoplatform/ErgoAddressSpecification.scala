@@ -1,30 +1,30 @@
 package org.ergoplatform
 
-import java.math.BigInteger
-
-import org.ergoplatform.ErgoAddressEncoder.{hash256, MainnetNetworkPrefix, TestnetNetworkPrefix}
+import org.ergoplatform.ErgoAddressEncoder.{MainnetNetworkPrefix, TestnetNetworkPrefix, hash256}
 import org.ergoplatform.SigmaConstants.ScriptCostLimit
 import org.ergoplatform.validation.{ValidationException, ValidationRules}
 import org.scalatest.{Assertion, TryValues}
 import scorex.crypto.hash.Blake2b256
-import sigmastate.basics.DLogProtocol
-import sigmastate.basics.DLogProtocol.{ProveDlog, DLogProverInput}
-import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
-import sigmastate.serialization.{ValueSerializer, GroupElementSerializer}
 import scorex.util.encode.Base58
-import sigmastate.{CrossVersionProps, SigmaAnd, SType}
-import sigmastate.Values.{UnparsedErgoTree, Constant, EvaluatedValue, ByteArrayConstant, IntConstant, ErgoTree}
-import sigmastate.eval.IRContext
-import sigmastate.helpers._
+import sigmastate.Values.{ByteArrayConstant, Constant, ErgoTree, IntConstant, UnparsedErgoTree}
+import sigmastate.basics.DLogProtocol
+import sigmastate.basics.DLogProtocol.{DLogProverInput, ProveDlog}
+import sigmastate.eval.{IRContext, InvalidType}
 import sigmastate.helpers.TestingHelpers._
+import sigmastate.helpers._
 import sigmastate.interpreter.ContextExtension.VarBinding
 import sigmastate.interpreter.CryptoConstants.dlogGroup
+import sigmastate.interpreter.Interpreter.{ScriptEnv, ScriptNameProp}
 import sigmastate.interpreter.{ContextExtension, CostedProverResult}
-import sigmastate.interpreter.Interpreter.{ScriptNameProp, ScriptEnv}
 import sigmastate.lang.Terms.ValueOps
-import sigmastate.lang.exceptions.{CosterException, CostLimitException}
+import sigmastate.lang.exceptions.CostLimitException
+import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
+import sigmastate.serialization.{GroupElementSerializer, ValueSerializer}
 import sigmastate.utils.Helpers._
-import special.sigma.{InvalidType, SigmaDslTesting}
+import sigmastate.{CrossVersionProps, SType, SigmaAnd}
+import special.sigma.SigmaDslTesting
+
+import java.math.BigInteger
 
 class ErgoAddressSpecification extends SigmaDslTesting
   with TryValues with CrossVersionProps {
@@ -268,7 +268,8 @@ class ErgoAddressSpecification extends SigmaDslTesting
           ).toMap)))(costLimit = costLimit)
 
       val prover = new ErgoLikeTestProvingInterpreter()
-      prover.prove(address.script, ctx, fakeMessage).getOrThrow
+      val res = prover.prove(address.script, ctx, fakeMessage).getOrThrow
+      res
     }
 
     val scriptVarId = 1.toByte
@@ -282,76 +283,21 @@ class ErgoAddressSpecification extends SigmaDslTesting
 
     // when limit is low
     {
-      if (isActivatedVersion4) {
-        // choose limit less than total cost:
-        // totalCost(2671) = addr.script.complexity(2277) + prop complexity(164) + scaledCost(230)
-        val deliberatelySmallLimit = 2600
-        assertExceptionThrown(
-          testPay2SHAddress(addr,
-            script = scriptVarId -> ByteArrayConstant(scriptBytes),
-            costLimit = deliberatelySmallLimit),
-          rootCauseLike[CostLimitException](
-            s"Estimated execution cost 2671 exceeds the limit $deliberatelySmallLimit")
-        )
-      } else {
-        val deliberatelySmallLimit = 24
-        assertExceptionThrown(
-          testPay2SHAddress(addr,
-            script = scriptVarId -> ByteArrayConstant(scriptBytes),
-            costLimit = deliberatelySmallLimit),
-          rootCauseLike[CostLimitException](
-            s"Estimated execution cost 88 exceeds the limit $deliberatelySmallLimit")
-        )
-      }
-    }
-
-    // when limit is low
-    if (isActivatedVersion4) {
-      // choose limit less than addr.script.complexity == 2277 + script complexity == 164
-      val deliberatelySmallLimit = 1000
+      val deliberatelySmallLimit = 24
 
       assertExceptionThrown(
-        {
-          testPay2SHAddress(addr,
-            script = scriptVarId -> ByteArrayConstant(scriptBytes),
-            costLimit = deliberatelySmallLimit)
-        },
-        rootCauseLike[CostLimitException](
-          s"Estimated execution cost 2277 exceeds the limit $deliberatelySmallLimit")
-      )
-    } else {
-      // v5.0
-      val deliberatelySmallLimit = 10
-
-      assertExceptionThrown(
-      {
         testPay2SHAddress(addr,
           script = scriptVarId -> ByteArrayConstant(scriptBytes),
-          costLimit = deliberatelySmallLimit)
-      },
-      rootCauseLike[CostLimitException](
-        s"Estimated execution cost 88 exceeds the limit $deliberatelySmallLimit")
+          costLimit = deliberatelySmallLimit),
+        rootCauseLike[CostLimitException](
+          s"Estimated execution cost 88 exceeds the limit $deliberatelySmallLimit")
       )
-
     }
+
 
     // when limit is even lower than tree complexity
-    if (isActivatedVersion4) {
-      // choose limit less than addr.script.complexity == 2277
-      val deliberatelySmallLimit = 1000
-
-      assertExceptionThrown(
-        {
-          testPay2SHAddress(addr,
-            script = scriptVarId -> ByteArrayConstant(scriptBytes),
-            costLimit = deliberatelySmallLimit)
-        },
-        rootCauseLike[CostLimitException](
-          s"Estimated execution cost 2277 exceeds the limit $deliberatelySmallLimit")
-      )
-    } else {
-      // v5.0
-      val deliberatelySmallLimit = 10
+    {
+      val deliberatelySmallLimit = 2
 
       assertExceptionThrown(
       {
@@ -362,35 +308,20 @@ class ErgoAddressSpecification extends SigmaDslTesting
       rootCauseLike[CostLimitException](
         s"Estimated execution cost 88 exceeds the limit $deliberatelySmallLimit")
       )
-
     }
 
     // when script var have invalid type
-    if (isActivatedVersion4) {
-      assertExceptionThrown(
-        testPay2SHAddress(addr, script = scriptVarId -> IntConstant(10)),
-        rootCauseLike[CosterException](s"Don't know how to evalNode(DeserializeContext(")
-      )
-    } else {
-      assertExceptionThrown(
-        testPay2SHAddress(addr, script = scriptVarId -> IntConstant(10)),
-        rootCauseLike[InvalidType](s"invalid type of value")
-      )
-    }
+    assertExceptionThrown(
+      testPay2SHAddress(addr, script = scriptVarId -> IntConstant(10)),
+      rootCauseLike[InvalidType](s"invalid type of value")
+    )
 
     // when script var have invalid id
     val invalidId: Byte = 2
-    if (isActivatedVersion4) {
-      assertExceptionThrown(
-        testPay2SHAddress(addr, script = invalidId -> IntConstant(10)),
-        rootCauseLike[CosterException](s"Don't know how to evalNode(DeserializeContext(")
-      )
-    } else {
-      assertExceptionThrown(
-        testPay2SHAddress(addr, script = invalidId -> IntConstant(10)),
-        rootCauseLike[NoSuchElementException]("None.get")
-      )
-    }
+    assertExceptionThrown(
+      testPay2SHAddress(addr, script = invalidId -> IntConstant(10)),
+      rootCauseLike[NoSuchElementException]("None.get")
+    )
   }
 
 }
