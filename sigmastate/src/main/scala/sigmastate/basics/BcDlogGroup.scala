@@ -10,7 +10,7 @@ import debox.cfor
 
 import scala.collection.{Seq, mutable}
 import scala.util.Try
-import scala.collection.compat.immutable.ArraySeq
+import scala.collection.compat.immutable.ArraySeq  // required for Scala 2.13
 
 
 abstract class BcDlogGroup[ElemType <: ECPoint](val x9params: X9ECParameters) extends DlogGroup[ElemType] {

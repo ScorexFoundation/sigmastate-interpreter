@@ -88,6 +88,7 @@ object Extensions {
     }
   }
 
+  /** Shortened String representation of `source` GroupElement. */
   def showECPoint(p: ECPoint): String = {
     if (p.isInfinity) {
       "INF"
@@ -100,10 +101,12 @@ object Extensions {
   }
 
   implicit class GroupElementOps(val source: GroupElement) extends AnyVal {
+    /** Shortened String representation of `source` GroupElement. */
     def showToString: String = showECPoint(source.asInstanceOf[CGroupElement].wrappedValue)
   }
 
   implicit class DBufferOps[A](val buf: DBuffer[A]) extends AnyVal {
+    /** Sum all values in `buf` using the given Numeric. */
     def sumAll(implicit n: Numeric[A]): A = {
       val limit = buf.length
       var result: A = n.zero
