@@ -18,7 +18,7 @@ class SigmaBinderTest extends AnyPropSpec with ScalaCheckPropertyChecks with Mat
 
   def bind(env: ScriptEnv, x: String): SValue = {
     val builder = TransformingSigmaBuilder
-    val ast = SigmaParser(x, builder).get.value
+    val ast = SigmaParser(x).get.value
     val binder = new SigmaBinder(env, builder, TestnetNetworkPrefix,
       new PredefinedFuncRegistry(builder))
     val res = binder.bind(ast)
@@ -29,7 +29,7 @@ class SigmaBinderTest extends AnyPropSpec with ScalaCheckPropertyChecks with Mat
 
   private def fail(env: ScriptEnv, x: String, expectedLine: Int, expectedCol: Int): Unit = {
     val builder = TransformingSigmaBuilder
-    val ast = SigmaParser(x, builder).get.value
+    val ast = SigmaParser(x).get.value
     val binder = new SigmaBinder(env, builder, TestnetNetworkPrefix,
       new PredefinedFuncRegistry(builder))
     val exception = the[BinderException] thrownBy binder.bind(ast)

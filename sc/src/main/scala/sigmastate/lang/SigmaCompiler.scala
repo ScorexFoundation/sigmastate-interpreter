@@ -48,7 +48,7 @@ class SigmaCompiler(settings: CompilerSettings) {
 
   /** Parses the given ErgoScript source code and produces expression tree. */
   def parse(x: String): SValue = {
-    SigmaParser(x, builder) match {
+    SigmaParser(x) match {
       case Success(v, _) => v
       case f: Parsed.Failure =>
         throw new ParserException(s"Syntax error: $f", Some(SourceContext.fromParserFailure(f)))

@@ -29,7 +29,7 @@ class SigmaTyperTest extends AnyPropSpec
   def typecheck(env: ScriptEnv, x: String, expected: SValue = null): SType = {
     try {
       val builder = TransformingSigmaBuilder
-      val parsed = SigmaParser(x, builder).get.value
+      val parsed = SigmaParser(x).get.value
       val predefinedFuncRegistry = new PredefinedFuncRegistry(builder)
       val binder = new SigmaBinder(env, builder, TestnetNetworkPrefix, predefinedFuncRegistry)
       val bound = binder.bind(parsed)
@@ -46,7 +46,7 @@ class SigmaTyperTest extends AnyPropSpec
   def typefail(env: ScriptEnv, x: String, expectedLine: Int, expectedCol: Int): Unit = {
     val builder = TransformingSigmaBuilder
     assertExceptionThrown({
-      val parsed = SigmaParser(x, builder).get.value
+      val parsed = SigmaParser(x).get.value
       val predefinedFuncRegistry = new PredefinedFuncRegistry(builder)
       val binder = new SigmaBinder(env, builder, TestnetNetworkPrefix, predefinedFuncRegistry)
       val bound = binder.bind(parsed)
