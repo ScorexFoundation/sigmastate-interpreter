@@ -9,16 +9,24 @@ import java.lang.Integer.parseInt
 
 import sigmastate.lang.{SigmaBuilder, SourceContext, StdSigmaBuilder}
 
+/** Parsers of literal expressions. */
 trait Literals { l =>
+  /** A builder instance used by the parsers to create ErgoTree expressions. */
   val builder: SigmaBuilder = StdSigmaBuilder
   import builder._
+
+  /** Set the current source position (dynamic variable) and execute the given thunk. */
   def atSrcPos[A](parserIndex: Int)(thunk: => A): A
+
+  /** Create SourceContext using current input string and the given index. */
   def srcCtx(parserIndex: Int): SourceContext
-  
+
+  /** Parses simple blocks `{ ... }` */
   def Block[_:P]: P[Value[SType]]
   def Pattern[_:P]: P0
 
   implicit class ParserOps[+T](p: P[T]) {
+    /** Ignores the result produced by `p`. */
     def ignore: P[Unit] = p.map(_ => ())
   }
   
@@ -42,30 +50,29 @@ trait Literals { l =>
   def Semis[_:P]: P[Unit] = P( Semi.rep(1) ~ WS )
   def Newline[_:P]: P[Unit] = P( WL ~ Basic.Newline )
 
+  /** Look ahead whitespaces, but not new line. */
   def NotNewline[_:P]: P0 = P( &( WS ~ !Basic.Newline ) )
+
   def OneNLMax[_:P]: P0 = {
     def ConsumeComments = P( (Basic.WSChars.? ~ Literals.Comment ~ Basic.WSChars.? ~ Basic.Newline).rep )
     P( NoCut( WS ~ Basic.Newline.? ~ ConsumeComments ~ NotNewline) )
   }
+
+  /** Parses optional trailing comma. */
   def TrailingComma[_:P]: P0 = P( ("," ~ WS ~ Basic.Newline).? )
 
   //noinspection ForwardReference
   object Literals{
     import Basic._
-    def Float[_:P]: P[Unit] = {
-      def Thing = P( DecNum ~ Exp.? ~ FloatType.? )
-      def Thing2 = P( "." ~ Thing | Exp ~ FloatType.? | Exp.? ~ FloatType )
-      P( "." ~ Thing | DecNum ~ Thing2 )
-    }
 
+    /** Decimal or hex integers or longs. */
     def Int[_:P]: P[Unit] = P( (HexNum | DecNum) ~ CharIn("Ll").? )
 
     def Bool[_:P]: P[BooleanConstant] =
-      P( (Index ~ (Key.W("true").! | Key.W("false").!)).map {
-        case (i, lit) =>
-          atSrcPos(i) {
-            mkConstant[SBoolean.type](if (lit == "true") true else false, SBoolean)
-          }
+      P( (Index ~ (Key.W("true").! | Key.W("false").!)).map { case (i, lit) =>
+        atSrcPos(i) {
+          mkConstant[SBoolean.type](if (lit == "true") true else false, SBoolean)
+        }
       })
 
     // Comments cannot have cuts in them, because they appear before every
@@ -116,23 +123,23 @@ trait Literals { l =>
           }
         })
 
-      def Interp[_:P]: P[Unit] = interp match{
+      private def Interp[_:P]: P[Unit] = interp match{
         case None => P ( Fail )
         case Some(p) => P( "$" ~ Identifiers.PlainIdNoDollar | ("${" ~ p() ~ WL ~ "}") | "$$" )
       }
 
+      private def TQ[_:P]: P[Unit] = P( "\"\"\"" )
 
-      def TQ[_:P]: P[Unit] = P( "\"\"\"" )
       /**
         * Helper to quickly gobble up large chunks of un-interesting
         * characters. We break out conservatively, even if we don't know
         * it's a "real" escape sequence: worst come to worst it turns out
         * to be a dud and we go back into a CharsChunk next rep
         */
-      def StringChars[_:P]: P[Unit] = P( CharsWhile(c => c != '\n' && c != '"' && c != '\\' && c != '$') )
-      def NonTripleQuoteChar[_:P]: P[Unit] = P( "\"" ~ "\"".? ~ !"\"" | CharIn("\\$\n") )
+      private def StringChars[_:P]: P[Unit] = P( CharsWhile(c => c != '\n' && c != '"' && c != '\\' && c != '$') )
+      private def NonTripleQuoteChar[_:P]: P[Unit] = P( "\"" ~ "\"".? ~ !"\"" | CharIn("\\$\n") )
       def TripleChars[_:P]: P[Unit] = P( (StringChars | Interp | NonTripleQuoteChar).rep )
-      def TripleTail[_:P]: P[Unit] = P( TQ ~ "\"".rep )
+      private def TripleTail[_:P]: P[Unit] = P( TQ ~ "\"".rep )
       def SingleChars[_:P](allowSlash: Boolean): P[Unit] = {
         def LiteralSlash = P( if(allowSlash) "\\" else Fail )
         def NonStringEnd = P( !CharIn("\n\"") ~ AnyChar )
@@ -149,7 +156,6 @@ trait Literals { l =>
 
     }
     object NoInterp extends InterpCtx(None)
-    def Pat[_:P] = new InterpCtx(Some(() => l.Pattern))
     def Expr[_:P] = new InterpCtx(Some(() => Block))
   }
 }
