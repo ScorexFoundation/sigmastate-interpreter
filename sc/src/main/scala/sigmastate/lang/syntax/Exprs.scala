@@ -13,10 +13,11 @@ import scala.annotation.tailrec
 import scala.collection.compat.immutable.ArraySeq
 
 //noinspection ForwardReference,TypeAnnotation
+/** Parsers of ErgoScript expressions. */
 trait Exprs extends Core with Types {
 
   import builder._
-  def AnonTmpl[_:P]: P0
+  /** Parses a definition in a block `val name = expr` */
   def BlockDef[_:P]: P[Value[SType]]
 
   // Depending on where an expression is located, subtle behavior around
@@ -30,94 +31,98 @@ trait Exprs extends Core with Types {
   // Expressions directly within a `val x = ...` or `def x = ...`
   object FreeCtx extends WsCtx(semiInference=true, arrowTypeAscriptions=true)
 
-  def TypeExpr[_:P] = ExprCtx.Expr
+  override def TypeExpr[_:P]: P[Value[SType]] = ExprCtx.Expr
 
   private val predefFuncRegistry = new PredefinedFuncRegistry(builder)
   import predefFuncRegistry._
 
   //noinspection TypeAnnotation,ForwardReference
-  class WsCtx(semiInference: Boolean, arrowTypeAscriptions: Boolean){
+  /** Parsing context of expressions (see derived classes). */
+  class WsCtx(semiInference: Boolean, arrowTypeAscriptions: Boolean) {
 
-    def OneSemiMax[_:P] = if (semiInference) OneNLMax else Pass
-    def NoSemis[_:P] = if (semiInference) NotNewline else Pass
+    private def OneSemiMax[_:P]: P[Unit] = if (semiInference) OneNLMax else Pass
+    private def NoSemis[_:P]: P[Unit] = if (semiInference) NotNewline else Pass
 
+    /** Parses ErgoScript expressions. See nested methods for subexpressions. */
     def Expr[_:P]: P[Value[SType]] = {
-      def If = {
-        def Else = P( Semi.? ~ `else` ~/ Expr )
+      def If: P[Value[SType]] = {
+        def Else: P[Value[SType]] = P( Semi.? ~ `else` ~/ Expr )
         P( Index ~ `if` ~/ "(" ~ ExprCtx.Expr ~ ")" ~ Expr ~ Else ).map {
           case (i, c, t, e) => atSrcPos(i) { mkIf(c.asValue[SBoolean.type], t, e) }
         }
       }
-      def Fun = P(`def` ~ FunDef)
 
-      def LambdaRhs = if (semiInference) P( (Index ~ BlockChunk).map {
-        case (index, (_ , b))  => atSrcPos(index) { block(b) }
-      } )
-      else P( Expr )
-//      val ParenedLambda = P( Parened ~~ (WL ~ `=>` ~ LambdaRhs.? /*| ExprSuffix ~~ PostfixSuffix ~ SuperPostfixSuffix*/) ).map {
-//        case (args, None) => mkLambda(args, UnitConstant)
-//        case (args, Some(body)) => mkLambda(args, body)
-//      }
-      def PostfixLambda = P( Index ~ PostfixExpr ~ (`=>` ~ LambdaRhs.? | SuperPostfixSuffix).? ).map {
+      /** Note, `def` declarations parsed to ValNode with function type. */
+      def Fun: P[Val] = P(`def` ~ FunDef)
+
+      def LambdaRhs: P[Value[SType]] =
+        if (semiInference)
+          P( (Index ~ BlockChunk).map {
+            case (index, (_ , b))  => atSrcPos(index) { block(b) }
+          } )
+        else
+          P( Expr )
+
+      def PostfixLambda: P[Value[SType]] = P( Index ~ PostfixExpr ~ (`=>` ~ LambdaRhs.? | SuperPostfixSuffix).? ).map {
         case (_, e, None) => e
         case (_, e, Some(None)) => e
         case (i, Tuple(args), Some(Some(body))) => atSrcPos(i) { lambda(args, body) }
         case (i, e, Some(body)) => error(s"Invalid declaration of lambda $e => $body", Some(srcCtx(i)))
       }
-      def SmallerExprOrLambda = P( /*ParenedLambda |*/ PostfixLambda )
-//      val Arg = (Id.! ~ `:` ~/ Type).map { case (n, t) => mkIdent(IndexedSeq(n), t)}
+
+      def SmallerExprOrLambda = P( PostfixLambda )
+
       P( If | Fun | SmallerExprOrLambda )
     }
 
-    def SuperPostfixSuffix[_:P] = P( (`=` ~/ Expr).? /*~ MatchAscriptionSuffix.?*/ )
-    def AscriptionType[_:P] = (if (arrowTypeAscriptions) P( Type ) else P( InfixType )).ignore
-    def Ascription[_:P] = P( `:` ~/ (`_*` |  AscriptionType | Annot.rep(1)) )
-    def MatchAscriptionSuffix[_:P] = P(`match` ~/ "{" ~ CaseClauses | Ascription)
-    def ExprPrefix[_:P] = P( WL ~ CharPred("-+!~".contains(_)).! ~~ !syntax.Basic.OpChar ~ WS)
-    def ExprSuffix[_:P] = P(
+    private def SuperPostfixSuffix[_:P] = P( (`=` ~/ Expr).? )
+    private def ExprPrefix[_:P] = P( WL ~ CharPred("-+!~".contains(_)).! ~~ !syntax.Basic.OpChar ~ WS)
+    private def ExprSuffix[_:P] = P(
       (WL ~ "." ~/ (Index ~ Id.!).map{ case (i, s) => atSrcPos(i) { mkIdent(s, NoType)} }
       | WL ~ TypeArgs.map(items => STypeApply("", items.toIndexedSeq))
-      | NoSemis ~ ArgList ).repX /* ~~ (NoSemis  ~ `_`).? */
+      | NoSemis ~ ArgList ).repX
     )
 
-    def PrefixExpr[_:P] = P( ExprPrefix.? ~ SimpleExpr ).map {
+    private def PrefixExpr[_:P] = P( ExprPrefix.? ~ SimpleExpr ).map {
       case (Some(op), e) => mkUnaryOp(op, e)
       case (None, e) => e
     }
 
     // Intermediate `WL` needs to always be non-cutting, because you need to
     // backtrack out of `InfixSuffix` into `PostFixSuffix` if it doesn't work out
-    def InfixSuffix[_:P] = P( NoSemis ~~ WL ~~ Id.! /*~ TypeArgs.?*/ ~~ OneSemiMax ~ PrefixExpr ~~ ExprSuffix).map {
-      case (op, f, args) =>
-        val rhs = applySuffix(f, args)
-        (op, rhs)
-    }
-    def PostFix[_:P] = P( NoSemis ~~ WL ~~ (Index ~ Id.!) ~ Newline.? )
-      .map{ case (i, s) =>
+    private def InfixSuffix[_:P]: P[(String, Value[SType])] =
+      P( NoSemis ~~ WL ~~ Id.! ~~ OneSemiMax ~ PrefixExpr ~~ ExprSuffix).map {
+        case (op, f, args) =>
+          val rhs = applySuffix(f, args)
+          (op, rhs)
+      }
+
+    private def PostFix[_:P]: P[Value[SType]] =
+      P( NoSemis ~~ WL ~~ (Index ~ Id.!) ~ Newline.? ).map { case (i, s) =>
         atSrcPos(i) { mkIdent(s, NoType)}
       }
 
-    def PostfixSuffix[_:P] = P( InfixSuffix.repX ~~ PostFix.?)
+    private def PostfixSuffix[_:P] = P( InfixSuffix.repX ~~ PostFix.?)
 
-    def PostfixExpr[_:P] = P( PrefixExpr ~~ ExprSuffix ~~ PostfixSuffix ).map {
-      case (prefix, suffix, (infixOps, postfix)) =>
-        val lhs = applySuffix(prefix, suffix)
-        val obj = mkInfixTree(lhs, infixOps)
-        postfix.fold(obj) {
-          case Ident(name, _) =>
-            builder.currentSrcCtx.withValue(obj.sourceContext) {
-              mkMethodCallLike(obj, name, IndexedSeq.empty)
-            }
-        }
-    }
+    private def PostfixExpr[_:P]: P[SValue] =
+      P( PrefixExpr ~~ ExprSuffix ~~ PostfixSuffix ).map {
+        case (prefix, suffix, (infixOps, postfix)) =>
+          val lhs = applySuffix(prefix, suffix)
+          val obj = mkInfixTree(lhs, infixOps)
+          postfix.fold(obj) {
+            case Ident(name, _) =>
+              builder.currentSrcCtx.withValue(obj.sourceContext) {
+                mkMethodCallLike(obj, name, IndexedSeq.empty)
+              }
+          }
+      }
 
-    def Parened[_:P] = P ( "(" ~/ TypeExpr.rep(0, ",") ~ TrailingComma ~ ")" )
-    def SimpleExpr[_:P] = {
-//      val New = P( `new` ~/ AnonTmpl )
+    private def Parened[_:P] = P ( "(" ~/ TypeExpr.rep(0, ",") ~ TrailingComma ~ ")" )
+    private def SimpleExpr[_:P] = {
 
-      P( /*New | */ BlockExpr
+      P(  BlockExpr
         | ExprLiteral
-        | StableId //.map { case Ident(ps, t) => Ident(ps, t) }
+        | StableId
         | (Index ~ `_`.!).map { case (i, lit) => atSrcPos(i) { mkIdent(lit, NoType) } }
         | (Index ~ Parened).map {
         case (index, Seq()) => atSrcPos(index) { mkUnitConstant }
@@ -126,9 +131,9 @@ trait Exprs extends Core with Types {
       }
       )
     }
-    def Guard[_:P]: P0 = P( `if` ~/ PostfixExpr ).ignore
   }
 
+  /** Constructor of lambda nodes */
   protected def lambda(args: Seq[Value[SType]], body: Value[SType]): Value[SType] = {
     val names = args.map { case Ident(n, t) => (n, t) }
     mkLambda(names.toIndexedSeq, NoType, Some(body))
@@ -137,7 +142,7 @@ trait Exprs extends Core with Types {
   /** The precedence of an infix operator is determined by the operator's first character.
     * Characters are listed below in increasing order of precedence, with characters on the same line
     * having the same precedence. */
-  val priorityList = Seq(
+  private val priorityList = Seq(
     // all letters have lowerst precedence 0
     Seq('|'),
     Seq('^'),
@@ -149,14 +154,17 @@ trait Exprs extends Core with Types {
     Seq('*', '/', '%')
   )
   
-  val priorityMap = (for { 
+  private val priorityMap: Map[Char, Int] = (for {
     (xs, p) <- priorityList.zipWithIndex.map { case (xs, i) => (xs, i + 1) }
     x <- xs
   } yield (x, p)).toMap
 
-  @inline def precedenceOf(ch: Char): Int = if (priorityMap.contains(ch)) priorityMap(ch) else 0
-  @inline def precedenceOf(op: String): Int = precedenceOf(op(0))
+  @inline private def precedenceOf(ch: Char): Int = if (priorityMap.contains(ch)) priorityMap(ch) else 0
+  @inline private def precedenceOf(op: String): Int = precedenceOf(op(0))
 
+  /** Build expression tree from a list of operations respecting precedence.
+    * Example: a + b * c  =>  a + (b * c)
+    */
   protected[lang] def mkInfixTree(lhs: SValue, rhss: Seq[(String, SValue)]): SValue = {
     @tailrec def build(wait: List[(SValue, String)], x: SValue, rest: List[(String, SValue)]): SValue = (wait, rest) match {
       case ((l, op1) :: stack, (op2, r) :: tail) =>
@@ -181,9 +189,7 @@ trait Exprs extends Core with Types {
     build(Nil, lhs, rhss.toList)
   }
 
-
-
-  protected def applySuffix(f: Value[SType], args: Seq[SigmaNode]): Value[SType] = {
+   private def applySuffix(f: Value[SType], args: Seq[SigmaNode]): Value[SType] = {
     builder.currentSrcCtx.withValue(f.sourceContext) {
       val rhs = args.foldLeft(f)((acc, arg) => arg match {
         case Ident(name, _) => mkSelect(acc, name)
@@ -205,8 +211,10 @@ trait Exprs extends Core with Types {
     }
   }
 
-  def FunDef[_:P] = {
+  /** Parses `name[T1, ..., Tn](a1, ..., aM): R = expr` */
+  def FunDef[_:P]: P[Val] = {
     def Body = P( WL ~ `=` ~/ FreeCtx.Expr )
+
     P(Index ~ DottyExtMethodSubj.? ~ Id.! ~ FunSig ~ (`:` ~/ Type).? ~~ Body ).map {
       case (index, None, n, args, resType, body) =>
         atSrcPos(index) {
@@ -224,17 +232,17 @@ trait Exprs extends Core with Types {
     }
   }
 
-  def SimplePattern[_:P] = {
+  private def SimplePattern[_:P] = {
     def TupleEx = P( "(" ~/ Pattern.rep(0, ",") ~ TrailingComma ~ ")" )
-    def Extractor = P( StableId /* ~ TypeArgs.?*/ ~ TupleEx.? )
-//    val Thingy = P( `_` ~ (`:` ~/ TypePat).? ~ !("*" ~~ !syntax.Basic.OpChar) )
-    P( /*Thingy | PatLiteral |*/ TupleEx | Extractor
+    def Extractor = P( StableId ~ TupleEx.? )
+    P(  TupleEx
+      | Extractor
       | (Index ~ VarId.!).map { case (i, lit) => atSrcPos(i) { mkIdent(lit, NoType) } })
   }
 
-  def BlockExpr[_:P] = P( "{" ~/ (/*CaseClauses |*/ Block ~ "}") )
+  private def BlockExpr[_:P] = P( "{" ~/ ( Block ~ "}" ) )
 
-  def BlockLambdaHead[_:P] = {
+  private def BlockLambdaHead[_:P] = {
     def Arg = P( Annot.rep ~ Id.! ~ (`:` ~/ Type).? ).map {
       case (n, Some(t)) => (n, t)
       case (n, None) => (n, NoType)
@@ -243,15 +251,16 @@ trait Exprs extends Core with Types {
     P( OneNLMax ~ "(" ~ Args.? ~ ")" ).map(_.toSeq.flatten)
   }
 
+
   def BlockLambda[_:P] = P( BlockLambdaHead ~ `=>` )
 
-  def BlockChunk[_:P] = {
+  private def BlockChunk[_:P] = {
     def Prelude = P( Annot.rep ~ `lazy`.? )
     def BlockStat = P( Prelude ~ BlockDef | StatCtx.Expr )
     P( BlockLambda.rep ~ BlockStat.rep(sep = Semis) )
   }
 
-  def extractBlockStats(stats: Seq[SValue]): (Seq[Val], SValue) = {
+  private def extractBlockStats(stats: Seq[SValue]): (Seq[Val], SValue) = {
     if (stats.nonEmpty) {
       val lets = stats.iterator.take(stats.size - 1).map {
         case l: Val => l
@@ -269,7 +278,7 @@ trait Exprs extends Core with Types {
     mkBlock(lets, body)
   }
 
-  def BaseBlock[_:P](end: P0)(implicit name: sourcecode.Name): P[Value[SType]] = {
+  private def BaseBlock[_:P](end: P0)(implicit name: sourcecode.Name): P[Value[SType]] = {
     def BlockEnd = P( Semis.? ~ &(end) )
     def Body = P( BlockChunk.repX(sep = Semis) )
     P( Index ~ Semis.? ~ BlockLambda.? ~ Body ~/ BlockEnd ).map {
@@ -290,30 +299,24 @@ trait Exprs extends Core with Types {
         }
     }
   }
-  def Block[_:P] = BaseBlock("}")
-  def CaseBlock[_:P] = BaseBlock("}" | `case`)
 
-  def Patterns[_:P]: P0 = P( Pattern.rep(1, sep = ","./) )
-  def Pattern[_:P]: P0 = P( (WL ~ TypeOrBindPattern).rep(1, sep = "|"./) )
-  def TypePattern[_:P] = P( (`_` | BacktickId | VarId) ~ `:` ~ TypePat )
-  def TypeOrBindPattern[_:P]: P0 = P( TypePattern | BindPattern ).ignore
-  def BindPattern[_:P] = {
-    def InfixPattern = P( SimplePattern /*~ (Id ~/ SimplePattern).rep | `_*`*/ )
-//    val Binding = P( (Id | `_`) ~ `@` )
-    P( /*Binding ~ InfixPattern | */ InfixPattern /*| VarId*/ )
+  override def Block[_:P] = BaseBlock("}")
+
+  override def Pattern[_:P]: P0 = P( (WL ~ TypeOrBindPattern).rep(1, sep = "|"./) )
+
+  private def TypePattern[_:P] = P( (`_` | BacktickId | VarId) ~ `:` ~ TypePat )
+  private def TypeOrBindPattern[_:P]: P0 = P( TypePattern | BindPattern ).ignore
+
+  def BindPattern[_:P]: P[Any] = {
+    def InfixPattern = P( SimplePattern )
+    P( InfixPattern )
   }
 
-  def TypePat[_:P] = P( CompoundType )
-  def ParenArgList[_:P] = P( "(" ~/ Index ~ Exprs /*~ (`:` ~/ `_*`).?*/.? ~ TrailingComma ~ ")" ).map {
-    case (index, Some(exprs)) => atSrcPos(index) { mkTuple(exprs) }
-    case (index, None) => atSrcPos(index) { mkUnitConstant }
-  }
-  def ArgList[_:P] = P( ParenArgList | OneNLMax ~ BlockExpr )
-
-  def CaseClauses[_:P]: P0 = {
-    // Need to lookahead for `class` and `object` because
-    // the block { case object X } is not a case clause!
-    val CaseClause: P0 = P( `case` ~/ Pattern ~ ExprCtx.Guard.? ~ `=>` ~ CaseBlock  ).ignore
-    P( CaseClause.rep(1) ~ "}"  )
-  }
+  private def TypePat[_:P]: P[SType] = P( CompoundType )
+  def ParenArgList[_:P]: P[Value[SType]] =
+    P( "(" ~/ Index ~ Exprs.? ~ TrailingComma ~ ")" ).map {
+      case (index, Some(exprs)) => atSrcPos(index) { mkTuple(exprs) }
+      case (index, None) => atSrcPos(index) { mkUnitConstant }
+    }
+  private def ArgList[_:P] = P( ParenArgList | OneNLMax ~ BlockExpr )
 }

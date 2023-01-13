@@ -23,6 +23,8 @@ trait Literals { l =>
 
   /** Parses simple blocks `{ ... }` */
   def Block[_:P]: P[Value[SType]]
+
+  /** Parses pattern, like in the expression `val <pattern> = expr` */
   def Pattern[_:P]: P0
 
   implicit class ParserOps[+T](p: P[T]) {
