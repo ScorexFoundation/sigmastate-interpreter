@@ -92,6 +92,7 @@ object ValidationRules {
 
   object CheckDeserializedScriptIsSigmaProp extends ValidationRule(1001,
     "Deserialized script should have SigmaProp type") {
+    /** @param root candidate node before it is added as a root of ErgoTree */
     final def apply[T](root: SValue): Unit = {
       checkRule()
       if (!root.tpe.isSigmaProp) {
