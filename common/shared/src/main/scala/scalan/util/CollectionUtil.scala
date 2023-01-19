@@ -149,6 +149,10 @@ object CollectionUtil {
       res
     }
 
+    /** Traverses the `xs` collection and checks that each item is of type `B`.
+      * @return original collection `xs` casted to Source[B]
+      * @throws java.lang.AssertionError if at least one item cannot be cast to `B`
+      */
     def cast[B:ClassTag](implicit cbf: BuildFrom[Source[A], B, Source[B]]): Source[B] = {
       for (x <- xs) {
         assert(x match { case _: B => true case _ => false}, s"Value $x doesn't conform to type ${reflect.classTag[B]}")

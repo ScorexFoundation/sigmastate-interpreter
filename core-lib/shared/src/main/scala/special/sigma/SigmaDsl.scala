@@ -716,7 +716,11 @@ trait Context {
   def currentErgoTreeVersion: Byte
 }
 
+/** Shortcut declarations for methods of global object (aka [[SigmaDslBuilder]]).
+  * Every methods delegates to the corresponding method of `builder`, look there for details.
+  */
 trait SigmaContract {
+  /** Returns Global instance (aka Builder) which implements all global operations. */
   def builder: SigmaDslBuilder
 
   def Collection[T](items: T*)(implicit cT: RType[T]): Coll[T] = this.builder.Colls.fromItems[T](items:_*)
