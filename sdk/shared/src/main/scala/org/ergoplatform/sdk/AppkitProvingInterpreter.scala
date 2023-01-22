@@ -33,75 +33,60 @@ class AppkitProvingInterpreter(
       params: ErgoLikeParameters)
   extends ReducingInterpreter(params) with ProverInterpreter {
 
-  val secrets: Seq[SigmaProtocolPrivateInput[_, _]] = {
+  override val secrets: Seq[SigmaProtocolPrivateInput[_, _]] = {
     val dlogs: IndexedSeq[DLogProverInput] = secretKeys.map(_.privateInput)
     dlogs ++ dLogInputs ++ dhtInputs
   }
 
+  /** All public keys which corresponds to all the DLogProverInput known to this prover. */
   val pubKeys: Seq[ProveDlog] = secrets
-    .filter { case _: DLogProverInput => true case _ => false}
-    .map(_.asInstanceOf[DLogProverInput].publicImage)
+    .collect { case dl: DLogProverInput => dl.publicImage }
 
   /** Reduces and signs the given transaction.
    *
-   * @note requires `unsignedTx` and `boxesToSpend` have the same boxIds in the same order.
-   * @param boxesToSpend input boxes of the transaction
-   * @param dataBoxes    data inputs of the transaction
+   * @param unreducedTx  unreduced transaction data to be reduced (contains unsigned transaction)
    * @param stateContext state context of the blockchain in which the transaction should be signed
    * @param baseCost     the cost accumulated before this transaction
-   * @param tokensToBurn requested tokens to be burnt in the transaction, if empty no burning allowed
    * @return a new signed transaction with all inputs signed and the cost of this transaction
    *         The returned cost doesn't include `baseCost`.
    */
-  def sign(unsignedTx: UnsignedErgoLikeTransaction,
-           boxesToSpend: IndexedSeq[ExtendedInputBox],
-           dataBoxes: IndexedSeq[ErgoBox],
+  def sign(unreducedTx: UnreducedTransaction,
            stateContext: ErgoLikeStateContext,
-           baseCost: Int,
-           tokensToBurn: IndexedSeq[ErgoToken]): Try[(ErgoLikeTransaction, Int)] = Try {
-    val maxCost = params.maxBlockCost
-    var currentCost: Long = baseCost
-
-    val (reducedTx, txCost) = reduceTransaction(unsignedTx, boxesToSpend, dataBoxes, stateContext, baseCost, tokensToBurn)
-    currentCost = addCostChecked(currentCost, txCost, maxCost, msgSuffix = reducedTx.toString())
-
-    val (signedTx, cost) = signReduced(reducedTx, currentCost.toInt)
-    (signedTx, txCost + cost)
+           baseCost: Int): Try[SignedTransaction] = Try {
+    val reducedTx = reduceTransaction(unreducedTx, stateContext, baseCost)
+    val signedTx = signReduced(reducedTx)
+    signedTx
   }
 
   /** Signs the given transaction (i.e. providing spending proofs) for each input so that
-   * the resulting transaction can be submitted to the blockchain.
-   * Note, this method doesn't require context to generate proofs (aka signatures).
-   *
-   * @param reducedTx unsigend transaction augmented with reduced
-   * @param baseCost the cost accumulated so far and before this operation
-   * @return a new signed transaction with all inputs signed and the cost of this transaction
-   *         The returned cost includes all the costs of the reduced inputs, but not baseCost
-   */
-  def signReduced(
-          reducedTx: ReducedErgoLikeTransaction,
-          baseCost: Int): (ErgoLikeTransaction, Int) = {
+    * the resulting transaction can be submitted to the blockchain.
+    * Note, this method doesn't require context to generate proofs (aka signatures).
+    *
+    * @param reducedTx unsigend transaction augmented with reduced
+    * @return a new signed transaction with all inputs signed and the cost of this transaction
+    *         The returned cost includes:
+    *         - the costs of obtaining reduced transaction
+    *         - the cost of verification of each signed input
+    */
+  def signReduced(reducedTx: ReducedTransaction): SignedTransaction = {
     val provedInputs = mutable.ArrayBuilder.make[Input]
-    val unsignedTx = reducedTx.unsignedTx
+    val unsignedTx = reducedTx.ergoTx.unsignedTx
 
     val maxCost = params.maxBlockCost
-    var currentCost: Long = baseCost
+    var currentCost: Long = reducedTx.cost
 
-    for ((reducedInput, boxIdx) <- reducedTx.reducedInputs.zipWithIndex ) {
+    for ((reducedInput, boxIdx) <- reducedTx.ergoTx.reducedInputs.zipWithIndex ) {
+      currentCost = addCryptoCost(reducedInput.reductionResult.value, currentCost, maxCost)
+
       val unsignedInput = unsignedTx.inputs(boxIdx)
-
       val proverResult = proveReduced(reducedInput, unsignedTx.messageToSign)
       val signedInput = Input(unsignedInput.boxId, proverResult)
-
-      currentCost = addCostChecked(currentCost, proverResult.cost, maxCost, msgSuffix = signedInput.toString())
-
       provedInputs += signedInput
     }
 
     val signedTx = new ErgoLikeTransaction(
       provedInputs.result(), unsignedTx.dataInputs, unsignedTx.outputCandidates)
-    val txCost = currentCost.toInt - baseCost
-    (signedTx, txCost)
+    SignedTransaction(signedTx, currentCost.toIntExact)
   }
 
   // TODO pull this method up to the base class and reuse in `prove`

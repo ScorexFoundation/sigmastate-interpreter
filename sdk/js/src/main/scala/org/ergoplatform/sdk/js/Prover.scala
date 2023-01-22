@@ -16,8 +16,8 @@ class Prover(_prover: sdk.Prover) extends js.Object {
       unsignedTx: transactionsMod.UnsignedTransaction,
       boxesToSpend: js.Array[inputsMod.EIP12UnsignedInput],
       baseCost: Int): ReducedTransaction = {
-    val tx =sdk.UnsignedTransaction(
-      ergoTx = isoUnsignedTransaction.to(unsignedTx),
+    val tx = sdk.UnreducedTransaction(
+      unsignedTx = isoUnsignedTransaction.to(unsignedTx),
       boxesToSpend = isoArrayToIndexed(isoEIP12UnsignedInput).to(boxesToSpend),
       dataInputs = IndexedSeq.empty,
       tokensToBurn = IndexedSeq.empty

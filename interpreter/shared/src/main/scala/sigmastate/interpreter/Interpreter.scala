@@ -23,7 +23,8 @@ import sigmastate.interpreter.ErgoTreeEvaluator.fixedCostOp
 import sigmastate.utils.Helpers._
 import sigmastate.lang.Terms.ValueOps
 import debox.cfor
-import sigmastate.exceptions.InterpreterException
+import sigmastate.exceptions.{CostLimitException, InterpreterException}
+
 import scala.util.{Success, Try}
 
 /** Base (verifying) interpreter of ErgoTrees.
@@ -240,16 +241,18 @@ trait Interpreter {
     * This is AOT part of JITC-based interpreter, it predicts the cost of crypto
     * verification, which is asymptotically much faster and protects from spam scripts.
     *
-    * @param jitRes    result of JIT-based reduction
-    * @param costLimit total cost limit to check and raise exception if exceeded
-    * @return computed jitRes.cost + crypto verification cost
+    * @param reductionRes result of JIT-based reduction
+    * @param baseCost     base cost of verification prior to calling this method
+    * @param costLimit    total cost limit to check and raise exception if exceeded
+    * @return computed baseCost + crypto verification cost
+    * @throws CostLimitException if cost limit is exceeded
     */
-  protected def addCryptoCost(jitRes: ReductionResult, costLimit: Long) = {
-    val cryptoCost = estimateCryptoVerifyCost(jitRes.value).toBlockCost // scale JitCost to tx cost
+  protected def addCryptoCost(reductionRes: SigmaBoolean, baseCost: Long, costLimit: Long): Long = {
+    val cryptoCost = estimateCryptoVerifyCost(reductionRes).toBlockCost // scale JitCost to tx cost
 
-    // Note, jitRes.cost is already scaled in fullReduction
-    val fullJitCost = addCostChecked(jitRes.cost, cryptoCost, costLimit)
-    fullJitCost
+    // Note, baseCost should be already scaled
+    val fullCost = addCostChecked(baseCost, cryptoCost, costLimit)
+    fullCost
   }
 
   /** Checks the possible soft-fork condition.
@@ -337,7 +340,7 @@ trait Interpreter {
           case TrivialProp.TrueProp => (true, reduced.cost)
           case TrivialProp.FalseProp => (false, reduced.cost)
           case _ =>
-            val fullCost = addCryptoCost(reduced, context.costLimit)
+            val fullCost = addCryptoCost(reduced.value, reduced.cost, context.costLimit)
 
             val ok = if (evalSettings.isMeasureOperationTime) {
               val E = ErgoTreeEvaluator.forProfiling(verifySignatureProfiler, evalSettings)
@@ -475,6 +478,11 @@ object Interpreter {
 
   /** Property name used to store script name. */
   val ScriptNameProp = "ScriptName"
+
+  /** Initial cost of instantiating an interpreter and creating ErgoLikeContext.
+    * Added once per transaction.
+    */
+  val interpreterInitCost = 10000
 
   /** The result of script reduction when soft-fork condition is detected by the old node,
     * in which case the script is reduced to the trivial true proposition and takes up 0 cost.

@@ -29,39 +29,28 @@ class Prover(_prover: AppkitProvingInterpreter, networkPrefix: NetworkPrefix) {
     addresses
   }
 
-  def sign(stateCtx: ErgoLikeStateContext, tx: UnsignedTransaction): SignedTransaction =
+  def sign(stateCtx: ErgoLikeStateContext, tx: UnreducedTransaction): SignedTransaction =
     sign(stateCtx, tx, baseCost = 0)
 
-  def sign(stateCtx: ErgoLikeStateContext, tx: UnsignedTransaction, baseCost: Int): SignedTransaction = {
-    val (signed, cost) = _prover.sign(
-      unsignedTx = tx.ergoTx,
-      boxesToSpend = tx.boxesToSpend,
-      dataBoxes = tx.dataInputs,
-      stateContext = stateCtx,
-      baseCost = baseCost,
-      tokensToBurn = tx.tokensToBurn
-    ).getOrThrow
-    SignedTransaction(signed, cost)
+  def sign(stateCtx: ErgoLikeStateContext, tx: UnreducedTransaction, baseCost: Int): SignedTransaction = {
+    val signed = _prover
+        .sign(tx, stateContext = stateCtx, baseCost = baseCost)
+        .getOrThrow
+    signed
   }
 
   def signMessage(sigmaProp: SigmaProp, message:  Array[Byte], hintsBag: HintsBag): Array[Byte] = {
     _prover.signMessage(SigmaDsl.toSigmaBoolean(sigmaProp), message, hintsBag).getOrThrow
   }
 
-  def reduce(stateCtx: ErgoLikeStateContext, tx: UnsignedTransaction, baseCost: Int): ReducedTransaction = {
-    val (reduced, cost) = _prover.reduceTransaction(
-      unsignedTx = tx.ergoTx,
-      boxesToSpend = tx.boxesToSpend,
-      dataBoxes = tx.dataInputs,
-      stateContext = stateCtx,
-      baseCost = baseCost,
-      tokensToBurn = tx.tokensToBurn)
-    ReducedTransaction(reduced, cost)
+  def reduce(stateCtx: ErgoLikeStateContext, tx: UnreducedTransaction, baseCost: Int): ReducedTransaction = {
+    val reduced = _prover.reduceTransaction(
+      unreducedTx = tx, stateContext = stateCtx, baseCost = baseCost)
+    reduced
   }
 
-  def signReduced(tx: ReducedTransaction, baseCost: Int): SignedTransaction = {
-    val (signed, cost) = _prover.signReduced(tx.ergoTx, baseCost)
-    SignedTransaction(signed, cost)
+  def signReduced(tx: ReducedTransaction): SignedTransaction = {
+    _prover.signReduced(tx)
   }
 
 }

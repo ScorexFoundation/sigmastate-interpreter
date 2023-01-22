@@ -5,7 +5,8 @@ import org.ergoplatform.sdk.JavaHelpers.UniversalConverter
 import org.ergoplatform.sdk.utils.ArithUtils
 import org.ergoplatform.sdk.wallet.protocol.context.{ErgoLikeParameters, ErgoLikeStateContext, TransactionContext}
 import org.ergoplatform.validation.ValidationRules
-import org.ergoplatform.{ErgoBox, ErgoLikeContext, ErgoLikeInterpreter, UnsignedErgoLikeTransaction}
+import org.ergoplatform.{ErgoLikeContext, ErgoLikeInterpreter}
+import scalan.util.Extensions.LongOps
 import scorex.crypto.authds.ADDigest
 import sigmastate.AvlTreeData
 import sigmastate.Values.ErgoTree
@@ -44,26 +45,24 @@ class ReducingInterpreter(params: ErgoLikeParameters) extends ErgoLikeInterprete
   /** Reduce inputs of the given unsigned transaction to provable sigma propositions using
     * the given context. See [[ReducedErgoLikeTransaction]] for details.
     *
-    * @note requires `unsignedTx` and `boxesToSpend` have the same boxIds in the same order.
-    * @param boxesToSpend input boxes of the transaction
-    * @param dataBoxes    data inputs of the transaction
+    * @param unreducedTx  unreduced transaction data to be reduced (holds unsigned transaction)
     * @param stateContext state context of the blockchain in which the transaction should be signed
     * @param baseCost     the cost accumulated so far and before this operation
-    * @param tokensToBurn requested tokens to be burnt in the transaction, if empty no burning allowed
     * @return a new reduced transaction with all inputs reduced and the cost of this transaction
-    *         The returned cost doesn't include (so they need to be added back to get the total cost):
+    *         The returned cost include all the costs accumulated during the reduction:
     *         1) `baseCost`
-    *         2) reduction cost for each input.
+    *         2) general costs of the transaction based on its data
+    *         3) reduction cost for each input.
     */
   def reduceTransaction(
-      unsignedTx: UnsignedErgoLikeTransaction,
-      boxesToSpend: IndexedSeq[ExtendedInputBox],
-      dataBoxes: IndexedSeq[ErgoBox],
+      unreducedTx: UnreducedTransaction,
       stateContext: ErgoLikeStateContext,
-      baseCost: Int,
-      tokensToBurn: IndexedSeq[ErgoToken]): (ReducedErgoLikeTransaction, Int) = {
-    if (unsignedTx.inputs.length != boxesToSpend.length) throw new Exception("Not enough boxes to spend")
-    if (unsignedTx.dataInputs.length != dataBoxes.length) throw new Exception("Not enough data boxes")
+      baseCost: Int
+  ): ReducedTransaction = {
+    val unsignedTx = unreducedTx.unsignedTx
+    val boxesToSpend = unreducedTx.boxesToSpend
+    val dataBoxes = unreducedTx.dataInputs
+    val tokensToBurn = unreducedTx.tokensToBurn
     val inputTokens = boxesToSpend.flatMap(_.box.additionalTokens.toArray)
     val outputTokens = unsignedTx.outputCandidates.flatMap(_.additionalTokens.toArray)
     val tokenDiff = JavaHelpers.subtractTokens(outputTokens, inputTokens)
@@ -98,7 +97,7 @@ class ReducingInterpreter(params: ErgoLikeParameters) extends ErgoLikeInterprete
     // Cost of transaction initialization: we should read and parse all inputs and data inputs,
     // and also iterate through all outputs to check rules
     val initialCost = ArithUtils.addExact(
-      1000,
+      Interpreter.interpreterInitCost,
       java7.compat.Math.multiplyExact(boxesToSpend.size, params.inputCost),
       java7.compat.Math.multiplyExact(dataBoxes.size, params.dataInputCost),
       java7.compat.Math.multiplyExact(unsignedTx.outputCandidates.size, params.outputCost)
@@ -131,17 +130,15 @@ class ReducingInterpreter(params: ErgoLikeParameters) extends ErgoLikeInterprete
         boxIdx.toShort,
         inputBox.extension,
         ValidationRules.currentSettings,
-        costLimit = maxCost - currentCost,
-        initCost = 0,
+        costLimit = maxCost,
+        initCost = currentCost,
         activatedScriptVersion = (params.blockVersion - 1).toByte
       )
       val reducedInput = reduce(Interpreter.emptyEnv, inputBox.box.ergoTree, context)
-      currentCost = addCostChecked(currentCost,
-        reducedInput.reductionResult.cost, limit = maxCost, msgSuffix = inputBox.toString)
+      currentCost = reducedInput.reductionResult.cost
       reducedInputs += reducedInput
     }
     val reducedTx = ReducedErgoLikeTransaction(unsignedTx, reducedInputs.result())
-    val txReductionCost = txCost.toInt - baseCost
-    (reducedTx, txReductionCost)
+    ReducedTransaction(reducedTx, currentCost.toIntExact)
   }
 }
