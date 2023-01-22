@@ -9,8 +9,7 @@ import scalan.util.Extensions.LongOps
 import sigmastate.Values.SigmaBoolean
 import sigmastate.VersionContext
 import sigmastate.basics.DLogProtocol.{DLogProverInput, ProveDlog}
-import sigmastate.basics.{DiffieHellmanTupleProverInput, SigmaProtocolPrivateInput}
-import sigmastate.eval.Evaluation.addCostChecked
+import sigmastate.basics.{DiffieHellmanTupleProverInput,SigmaProtocolPrivateInput}
 import sigmastate.interpreter.Interpreter.ReductionResult
 import sigmastate.interpreter.{ContextExtension, CostedProverResult, HintsBag, ProverInterpreter}
 import sigmastate.serialization.SigmaSerializer
@@ -40,7 +39,8 @@ class AppkitProvingInterpreter(
 
   /** All public keys which corresponds to all the DLogProverInput known to this prover. */
   val pubKeys: Seq[ProveDlog] = secrets
-    .collect { case dl: DLogProverInput => dl.publicImage }
+      .filter { case _: DLogProverInput => true case _ => false }
+      .map(_.asInstanceOf[DLogProverInput].publicImage)
 
   /** Reduces and signs the given transaction.
    *

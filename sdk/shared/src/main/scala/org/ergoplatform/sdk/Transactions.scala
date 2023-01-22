@@ -2,6 +2,8 @@ package org.ergoplatform.sdk
 
 import org.ergoplatform.{ErgoBox, ErgoLikeTransaction, UnsignedErgoLikeTransaction}
 
+import java.util
+
 /** Represents a transaction data chat can be reduced to [[ReducedTransaction]].
   *
   * @note requires `unsignedTx` and `boxesToSpend` have the same boxIds in the same order.
@@ -19,17 +21,19 @@ case class UnreducedTransaction(
 ) {
   require(unsignedTx.inputs.length == boxesToSpend.length, "Not enough boxes to spend")
   require(unsignedTx.dataInputs.length == dataInputs.length, "Not enough data boxes")
-  checkSameElements(
+  checkSameIds(
     "unsignedTx.inputs", unsignedTx.inputs.map(_.boxId),
     "boxesToSpend", boxesToSpend.map(_.box.id),
     "boxesToSpend should have the same box ids as unsignedTx.inputs")
-  checkSameElements(
+  checkSameIds(
     "unsignedTx.dataInputs", unsignedTx.dataInputs.map(_.boxId),
     "dataInputs", dataInputs.map(_.id),
     "dataInputs should have the same box ids as unsignedTx.dataInputs")
-  
-  private def checkSameElements[A](xsName: String, xs: Seq[A], ysName: String, ys: Seq[A], msg: => String) = {
-    require(xs == ys, {
+
+  private def checkSameIds(
+      xsName: String, xs: Seq[Array[Byte]],
+      ysName: String, ys: Seq[Array[Byte]], msg: => String) = {
+    require(xs.zip(ys).forall { case (id1, id2) => util.Arrays.equals(id1, id2) }, {
       val xsOnly = xs.diff(ys)
       val ysOnly = ys.diff(xs)
       s"""$msg:
