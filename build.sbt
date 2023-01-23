@@ -61,10 +61,14 @@ dynverSeparator in ThisBuild := "-"
 
 val bouncycastleBcprov = "org.bouncycastle" % "bcprov-jdk15on" % "1.66"
 
-val scrypto            = "org.scorexfoundation" %% "scrypto" % "2.2.1-28-e96eb006-SNAPSHOT"
-val scryptoDependency =
-  libraryDependencies += "org.scorexfoundation" %%% "scrypto" % "2.2.1-28-e96eb006-SNAPSHOT"
-
+val scrypto            = "org.scorexfoundation" %% "scrypto" % "2.2.1-37-59c4fbd9-SNAPSHOT"
+def scryptoDependency(platform: String) = {
+  libraryDependencies +=
+      "org.scorexfoundation" %%% "scrypto" % (
+          if (platform == "js") "0.0.0-1-59c4fbd9-SNAPSHOT"
+          else "2.2.1-37-59c4fbd9-SNAPSHOT" // for JVM
+      )
+}
 //val scorexUtil         = "org.scorexfoundation" %% "scorex-util" % "0.1.8"
 //val debox              = "org.scorexfoundation" %% "debox" % "0.9.0"
 val scorexUtil         = "org.scorexfoundation" %% "scorex-util" % "0.1.8-20-565873cd-SNAPSHOT"
@@ -187,12 +191,15 @@ lazy val corelib = crossProject(JVMPlatform, JSPlatform)
     commonDependenies2,
     testingDependencies2,
     crossScalaSettings,
-    scryptoDependency,
     publish / skip := true
   )
-  .jvmSettings( crossScalaSettings )
+  .jvmSettings(
+    crossScalaSettings,
+    scryptoDependency("jvm")
+  )
   .jsSettings(
     crossScalaSettingsJS,
+    scryptoDependency("js"),
     libraryDependencies ++= Seq(
       "org.scala-js" %%% "scala-js-macrotask-executor" % "1.0.0"
     ),
