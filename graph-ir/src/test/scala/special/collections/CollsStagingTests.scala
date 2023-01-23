@@ -24,139 +24,6 @@ class CollsStagingTests extends WrappersTests {
     ctx.emit("t3", ctx.t3)
   }
 
-  test("measure: build graph and resetContext") {
-    val ctx = new Ctx {
-      useAlphaEquality = false
-    }
-    import ctx._
-    import Coll._
-    import CollBuilder._
-
-    var res: Sym = null
-    val nIters = 10
-    measure(nIters) { i =>
-      for (j <- 0 until 1000) {
-        val col = colBuilder.replicate(i*j, 0)
-        res = col.map(fun {x => x + 1})
-      }
-      println(s"Defs: ${ctx.defCount}")
-      if (i == nIters - 1) emit("res", res)
-      ctx.resetContext()
-    }
-  }
-
-  test("measure: build graph with new context") {
-    measure(10) { i =>
-      var sum: Int = 0
-      for (j <- 0 until 1000) {
-        val ctx = new Ctx {
-          useAlphaEquality = false
-        }
-        import ctx._
-        import Coll._
-        import CollBuilder._
-        val col = colBuilder.replicate(i*j, 0)
-        val res = col.map(fun {x => x + 1})
-        sum += ctx.defCount
-      }
-      println(s"Defs: ${sum}")
-    }
-  }
-
-  def runMeasure(nRepeats: Int, name: String, alphaEq: Boolean, keepOrig: Boolean, unfoldWithOrig: Boolean) = {
-    println(s"runMeasure($name, alphaEq = $alphaEq, keepOrig = $keepOrig, unfoldWithOrig = $unfoldWithOrig)")
-    val nIters = 10
-    def warmUp(i: Int) = {
-      val ctx = new Ctx {
-        useAlphaEquality = alphaEq
-        keepOriginalFunc = keepOrig
-        unfoldWithOriginalFunc = unfoldWithOrig
-      }
-      import ctx._
-      import Coll._
-      import CollBuilder._
-      var outGraph: Sym = null
-      for (j <- 0 until nRepeats) {
-        val f = fun { in: Ref[(CollBuilder, Int)] =>
-          val Pair(colBuilder, delta) = in
-          val col = colBuilder.replicate(i*j, 0)
-          val res = col.map(fun {x => x + delta})
-          res
-        }
-        outGraph = Pair(f, f(Pair(colBuilder, 1)))
-      }
-    }
-    def measureUp(i: Int) = {
-      val ctx = new Ctx {
-        useAlphaEquality = alphaEq
-        keepOriginalFunc = keepOrig
-        unfoldWithOriginalFunc = unfoldWithOrig
-      }
-      import ctx._
-      import Coll._
-      import CollBuilder._
-      var outGraph: Sym = null
-      for (j <- 0 until nRepeats) {
-        val f = fun { in: Ref[(CollBuilder, Int)] =>
-          val Pair(colBuilder, delta) = in
-          val col = colBuilder.replicate(i*j, delta)
-          val col2 = colBuilder.replicate(j+i, delta)
-          val res = col.map(fun {x => x + delta}).zip(col2)
-          res
-        }
-        outGraph = Pair(f, f(Pair(colBuilder, 1)))
-      }
-      println(s"Defs: ${ctx.defCount}")
-
-      if (i == nIters - 1)
-        emit(name, outGraph)
-    }
-    measure(nIters)(warmUp)
-    System.gc()
-    measure(nIters)(measureUp)
-  }
-
-  test("measure: unfoldLambda") {
-    val dummyCtx = new Ctx  // to force class loading
-    runMeasure(100, "default", true, true, true)
-    runMeasure(1000, "noAlpha", false, true, true)
-    runMeasure(1000, "noAlpha_noKeepOrig", false, false, true)
-  }
-/*
-runMeasure(noAlpha_noKeepOrig, alphaEq = false, keepOrig = false, unfoldWithOrig = true)
-Iter 0: 1222 ms
-Iter 1: 653 ms
-Iter 2: 588 ms
-Iter 3: 300 ms
-Iter 4: 327 ms
-Iter 5: 469 ms
-Iter 6: 346 ms
-Iter 7: 372 ms
-Iter 8: 350 ms
-Iter 9: 220 ms
-Total time: 4847 ms
-Defs: 220004
-Iter 0: 845 ms
-Defs: 220005
-Iter 1: 580 ms
-Defs: 225005
-Iter 2: 491 ms
-Defs: 226671
-Iter 3: 620 ms
-Defs: 227505
-Iter 4: 405 ms
-Defs: 228005
-Iter 5: 558 ms
-Defs: 228338
-Iter 6: 530 ms
-Defs: 228576
-Iter 7: 418 ms
-Defs: 228755
-Iter 8: 426 ms
-Defs: 228893
-Iter 9: 533 ms
-Total time: 5406 ms
-*/
   test("invokeTransformedAdapterMethodCall") {
     val ctx = new Ctx {
       useAlphaEquality = true
@@ -187,28 +54,13 @@ Total time: 5406 ms
 
     val inc = (x: Int) => x + 1
     check(col, { env: EnvRep[Coll[Int]] => for { xs <- env; incL <- lifted(inc) } yield xs.map(incL) }, col.map(inc))
-
-//    check(Cols, { env: EnvRep[CollBuilder] => for { b <- env; arrL <- lifted(arr) } yield b.fromArray(arrL) }, Cols.fromArray(arr))
-
-    measure(10) { i =>
-      (1 to 100).foreach { j =>
-        check(Cols,
-          {env: EnvRep[CollBuilder] => for {
-            b <- env; x1 <- lifted(1); x2 <- lifted(j); x3 <- lifted(i)
-          } yield b.fromItems(x1, x2, x3) },
-          Cols.fromItems(1, j, i))
-      }
-      println(s"Defs: ${ctx.defCount}")
-    }
   }
 
   test("invokeUnlifted for method of Ctor") {
     val ctx = new WrappersCtx with Library
     import ctx._
-    import Liftables._
     import Coll._
     import CollBuilder._
-    import EnvRep._
 
     val Cols: SCollBuilder = new special.collection.CollOverArrayBuilder
     val colData = Cols.replicate(10, 10)
