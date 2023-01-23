@@ -52,10 +52,12 @@ dynverSonatypeSnapshots in ThisBuild := true
 // use "-" instead of default "+"
 dynverSeparator in ThisBuild := "-"
 
-val bouncycastleBcprov = "org.bouncycastle" % "bcprov-jdk15on" % "1.64"
-val scrypto            = "org.scorexfoundation" %% "scrypto" % "2.1.10"
-val scorexUtil         = "org.scorexfoundation" %% "scorex-util" % "0.1.8"
-val debox              = "org.scorexfoundation" %% "debox" % "0.9.0"
+val bouncycastleBcprov = "org.bouncycastle" % "bcprov-jdk15on" % "1.66"
+val scrypto            = "org.scorexfoundation" %% "scrypto" % "2.2.1-37-59c4fbd9-SNAPSHOT"
+//val scorexUtil         = "org.scorexfoundation" %% "scorex-util" % "0.1.8"
+//val debox              = "org.scorexfoundation" %% "debox" % "0.9.0"
+val scorexUtil         = "org.scorexfoundation" %% "scorex-util" % "0.1.8-19-0331a3d9-SNAPSHOT"
+val debox              = "org.scorexfoundation" %% "debox" % "0.9.0-8-3da95c40-SNAPSHOT"
 val spireMacros        = "org.typelevel" %% "spire-macros" % "0.17.0-M1"
 val fastparse          = "com.lihaoyi" %% "fastparse" % "2.3.3"
 val guava              = "com.google.guava" % "guava" % "30.1.1-jre"
@@ -137,7 +139,7 @@ pgpSecretRing := file("ci/secring.asc")
 pgpPassphrase := sys.env.get("PGP_PASSPHRASE").map(_.toArray)
 usePgpKeyHex("C1FD62B4D44BDF702CDF2B726FF59DA944B150DD")
 
-def libraryDefSettings = commonSettings ++ testSettings 
+def libraryDefSettings = commonSettings ++ testSettings
 
 lazy val common = Project("common", file("common"))
   .settings(commonSettings ++ testSettings,
@@ -149,7 +151,7 @@ lazy val common = Project("common", file("common"))
 
 lazy val libraryapi = Project("library-api", file("library-api"))
   .dependsOn(common % allConfigDependency)
-  .settings(libraryDefSettings, 
+  .settings(libraryDefSettings,
     libraryDependencies ++= Seq())
   .settings(publish / skip := true)
 
@@ -231,7 +233,7 @@ lazy val rootSettings = Seq(
 def runErgoTask(task: String, sigmastateVersion: String, log: Logger): Unit = {
   val ergoBranch = "test-coverage"
   val sbtEnvVars = Seq("BUILD_ENV" -> "test", "SIGMASTATE_VERSION" -> sigmastateVersion)
-  
+
   log.info(s"Testing current build in Ergo (branch $ergoBranch):")
   val cwd = new File("").absolutePath
   val ergoPath = new File(cwd + "/ergo-tests/")
@@ -258,7 +260,7 @@ lazy val ergoUnitTestTask = TaskKey[Unit]("ergoUnitTestTask", "run ergo unit tes
 ergoUnitTestTask := {
   val log = streams.value.log
   val sigmastateVersion = version.value
-  runErgoTask("test", sigmastateVersion, log) 
+  runErgoTask("test", sigmastateVersion, log)
 }
 
 commands += Command.command("ergoUnitTest") { state =>
