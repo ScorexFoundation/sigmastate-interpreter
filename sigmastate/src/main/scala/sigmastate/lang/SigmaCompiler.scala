@@ -30,6 +30,14 @@ case class CompilerSettings(
     lowerMethodCalls: Boolean
 )
 
+/** Result of ErgoScript source code compilation.
+  * @param env compiler environment used to compile the code
+  * @param code ErgoScript source code
+  * @param calcF  graph obtained by using old AOT costing based compiler
+  * @param compiledGraph graph obtained by using new [[GraphBuilding]]
+  * @param calcTree ErgoTree expression obtained from calcF graph.
+  * @param buildTree ErgoTree expression obtained from graph created by [[GraphBuilding]]
+  */
 case class CompilerResult[Ctx <: IRContext](
   env: ScriptEnv,
   code: String,
@@ -38,7 +46,11 @@ case class CompilerResult[Ctx <: IRContext](
   buildTree: SValue
 )
 
+/** Compiler which compiles ErgoScript source code into ErgoTree.
+  * @param settings compilation parameters \
+  */
 class SigmaCompiler(settings: CompilerSettings) {
+  /** Constructs an instance for the given network type and with default settings. */
   def this(networkPrefix: Byte) = this(
     CompilerSettings(networkPrefix, TransformingSigmaBuilder, lowerMethodCalls = true)
   )
@@ -73,8 +85,8 @@ class SigmaCompiler(settings: CompilerSettings) {
   /** Compiles the given ErgoScript source code. */
   def compile(env: ScriptEnv, code: String)(implicit IR: IRContext): CompilerResult[IR.type] = {
     val typed = typecheck(env, code)
-    val res = compileTyped(env, typed)
-    res.copy(code = code)
+    val res = compileTyped(env, typed).copy(code = code)
+    res
   }
 
   /** Compiles the given typed expression. */
@@ -84,6 +96,10 @@ class SigmaCompiler(settings: CompilerSettings) {
     CompilerResult(env, "<no source code>", compiledGraph, compiledTree)
   }
 
+  /** Unlowering transformation, which replaces some operations with equivalent MethodCall
+    * node. This replacement is only defined for some operations.
+    * This is inverse to `lowering` which is performed during compilation.
+    */
   def unlowerMethodCalls(expr: SValue): SValue = {
     import SCollection._
     val r = rule[Any]({

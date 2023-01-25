@@ -426,7 +426,6 @@ The following syntax is supported to access registers on box objects:
 ```
 box.R3[Int].get          // access R3 register, check that its value of type Int and return it
 box.R3[Int].isDefined    // check that value of R3 is defined and has type Int
-box.R3[Int].isEmpty      // check that value of R3 is undefined
 box.R3[Int].getOrElse(d) // access R3 value if defined, otherwise return `d`
 ```
 
@@ -933,13 +932,19 @@ def proveDHTuple(g: GroupElement, h: GroupElement,
   */
 def proveDlog(value: GroupElement): SigmaProp
 
-/** Transforms Base58 encoded string litereal into constant of type Coll[Byte].
+/** Transforms Base16 encoded string literal into constant of type Coll[Byte].
+  * It is a compile-time operation and only string literal (constant) can be its
+  * argument.
+  */
+def fromBase16(input: String): Coll[Byte]
+
+/** Transforms Base58 encoded string literal into constant of type Coll[Byte].
   * It is a compile-time operation and only string literal (constant) can be its
   * argument.
   */
 def fromBase58(input: String): Coll[Byte]
 
-/** Transforms Base64 encoded string litereal into constant of type Coll[Byte].
+/** Transforms Base64 encoded string literal into constant of type Coll[Byte].
   * It is a compile-time operation and only string literal (constant) can be its
   * argument.
   */
