@@ -84,24 +84,6 @@ object Comparison {
     (t1.size == t2.size) && (t1.forall(contains(t2, _)))
 
   /**
-    * As for `same`, except that if the two values are `Some` options
-    * containing references, they are unwrapped first and the contents are
-    * compared by reference.
-    */
-  def optsame(v1 : Any, v2 : Any) : Boolean =
-    if (v1 == null)
-      v2 == null
-    else if (v2 == null)
-      false
-    else
-      (v1, v2) match {
-        case (Some(r1 : AnyRef), Some(r2 : AnyRef)) =>
-          r1 eq r2
-        case _ =>
-          same(v1, v2)
-      }
-
-  /**
     * Does the iterable `s` contain `t`? Equality is tested using `same`.
     */
   def contains[T](s : Iterable[T], t : T) : Boolean =
@@ -114,16 +96,6 @@ object Comparison {
   def distinct[T](s : Seq[T]) : Vector[T] = {
     val set = new TreeSet[T]()(new TOrdering[T])
     set ++= s
-    set.toVector
-  }
-
-  /**
-    * As for `distinct` but works over a sequence of sequences.
-    */
-  def flatDistinct[T](ss : Seq[Seq[T]]) : Vector[T] = {
-    val set = new TreeSet[T]()(new TOrdering[T])
-    for (s <- ss)
-      set ++= s
     set.toVector
   }
 
