@@ -1,8 +1,8 @@
 package sigmastate
 
 import org.ergoplatform.settings.ErgoAlgos
-import org.ergoplatform.validation.{ValidationRules, ValidationException}
-import org.ergoplatform.{ErgoAddressEncoder, ErgoBox, Self, ErgoLikeContext}
+import org.ergoplatform.validation.{ValidationException, ValidationRules}
+import org.ergoplatform.{ErgoAddressEncoder, ErgoBox, ErgoLikeContext, Self}
 import scalan.RType.asType
 import scalan.{Nullable, RType}
 import sigmastate.SCollection.{SByteArray, checkValidFlatmap}
@@ -11,10 +11,10 @@ import sigmastate.VersionContext._
 import sigmastate.eval.{CostingBox, Evaluation, Profiler}
 import sigmastate.helpers.{ErgoLikeContextTesting, SigmaPPrint}
 import sigmastate.interpreter.ErgoTreeEvaluator
-import sigmastate.interpreter.Interpreter.JitReductionResult
+import sigmastate.interpreter.Interpreter.ReductionResult
 import sigmastate.lang.SourceContext
 import sigmastate.lang.Terms._
-import sigmastate.lang.exceptions.{InterpreterException, CostLimitException}
+import sigmastate.lang.exceptions.{CostLimitException, InterpreterException}
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.utils.Helpers.TryOps
 import sigmastate.utxo._
@@ -685,7 +685,7 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
     VersionContext.withVersions(activatedVersion = 1, tree.version) {
       // v4.x behavior
       val res = ErgoTreeEvaluator.evalToCrypto(createCtx, tree, evalSettings)
-      res shouldBe JitReductionResult(TrivialProp(true), 3)
+      res shouldBe ReductionResult(TrivialProp(true), 3)
     }
 
     VersionContext.withVersions(activatedVersion = 2, tree.version) {

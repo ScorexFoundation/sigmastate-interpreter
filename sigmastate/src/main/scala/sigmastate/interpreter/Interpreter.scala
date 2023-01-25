@@ -239,7 +239,7 @@ trait Interpreter {
                                        context: CTX,
                                        env: ScriptEnv): ReductionResult = {
     implicit val vs: SigmaValidationSettings = context.validationSettings
-    val jitRes = VersionContext.withVersions(context.activatedScriptVersion, ergoTree.version) {
+    val res = VersionContext.withVersions(context.activatedScriptVersion, ergoTree.version) {
       val deserializeSubstitutionCost = java7.compat.Math.multiplyExact(ergoTree.bytes.length, CostPerTreeByte)
       val currCost = Evaluation.addCostChecked(context.initCost, deserializeSubstitutionCost, context.costLimit)
       val context1 = context.withInitCost(currCost).asInstanceOf[CTX]
