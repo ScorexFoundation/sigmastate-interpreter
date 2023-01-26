@@ -1,7 +1,6 @@
 package sigmastate.serialization
 
 import java.math.BigInteger
-
 import io.circe._
 import io.circe.syntax._
 import org.ergoplatform.ErgoBox
@@ -10,15 +9,16 @@ import org.ergoplatform.settings.ErgoAlgos
 import scalan.RType
 import scorex.crypto.hash.Digest32
 import scorex.util._
-import sigmastate.Values.{Constant, EvaluatedValue}
+import sigmastate.Values.{EvaluatedValue, Constant}
 import sigmastate._
 import sigmastate.eval._
 import sigmastate.lang.SigmaParser
 import sigmastate.lang.exceptions.SerializerException
-import special.collection.{Coll, collRType}
+import special.collection.{collRType, Coll}
 import special.sigma._
-import spire.syntax.all.cfor
+import debox.cfor
 
+import scala.collection.compat.immutable.ArraySeq
 import scala.collection.mutable
 
 object DataJsonEncoder {
@@ -45,7 +45,7 @@ object DataJsonEncoder {
   }
 
   private def encodeData[T <: SType](v: T#WrappedType, tpe: T): Json = tpe match {
-    case SUnit => Json.fromFields(mutable.WrappedArray.empty)
+    case SUnit => Json.fromFields(ArraySeq.empty)
     case SBoolean => v.asInstanceOf[Boolean].asJson
     case SByte => v.asInstanceOf[Byte].asJson
     case SShort => v.asInstanceOf[Short].asJson
@@ -65,8 +65,14 @@ object DataJsonEncoder {
           }
           val rtypeArr = tArr.map(x => Evaluation.stypeToRType(x))
 
-          val leftSource = mutable.ArrayBuilder.make[SType#WrappedType]()(rtypeArr(0).classTag)
-          val rightSource = mutable.ArrayBuilder.make[SType#WrappedType]()(rtypeArr(1).classTag)
+          val leftSource = { // this code works both for Scala 2.12 and 2.13
+            implicit val ct = rtypeArr(0).classTag
+            mutable.ArrayBuilder.make[SType#WrappedType] // make's signature is changed in 2.13
+          }
+          val rightSource = {
+            implicit val ct = rtypeArr(1).classTag
+            mutable.ArrayBuilder.make[SType#WrappedType]
+          }
           cfor(0)(_ < coll.length, _ + 1) { i =>
             val arr = Evaluation.fromDslTuple(coll(i), tup).asInstanceOf[tup.WrappedType]
             leftSource += arr(0)
@@ -82,12 +88,12 @@ object DataJsonEncoder {
             "_2" -> encodeData[SType](right, rightType)
           ))
         case _ =>
-          var jsons = mutable.MutableList.empty[Json]
+          val jsons = mutable.ArrayBuffer.empty[Json]
           cfor(0)(_ < coll.length, _ + 1) { i =>
             val x = coll(i)
             jsons += encodeData(x, tColl.elemType)
           }
-          Json.fromValues(jsons.toList)
+          Json.fromValues(jsons.toSeq)
       }
 
     case tOpt: SOption[a] =>
@@ -107,11 +113,11 @@ object DataJsonEncoder {
       }
       val len = arr.length
       assert(len == tArr.length, s"Type $t doesn't correspond to value $arr")
-      var obj = mutable.MutableList.empty[(String, Json)]
+      val obj = mutable.ArrayBuffer.empty[(String, Json)]
       cfor(0)(_ < len, _ + 1) { i =>
         obj += (s"_${i + 1}" -> encodeData[SType](arr(i), tArr(i)))
       }
-      Json.fromFields(obj.toList)
+      Json.fromFields(obj)
     case SGroupElement =>
       val w = SigmaSerializer.startWriter()
       DataSerializer.serialize(v, tpe, w)
@@ -126,7 +132,7 @@ object DataJsonEncoder {
       encodeBytes(w.toBytes)
     case SBox =>
       val ergoBox = v.asInstanceOf[Box]
-      var obj = mutable.MutableList.empty[(String, Json)]
+      val obj = mutable.ArrayBuffer.empty[(String, Json)]
       obj += ("value" -> encodeData(ergoBox.value.asInstanceOf[SType#WrappedType], SLong))
       obj += ("ergoTree" -> encodeBytes(ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(ergoBox.ergoTree)))
       obj += "tokens" -> encodeData(ergoBox.additionalTokens.map { case (id, amount) =>
@@ -178,7 +184,7 @@ object DataJsonEncoder {
         if (tArr.length != 2) {
           throw new SerializerException("Tuples with length not equal to 2 are not supported")
         }
-        val collSource = mutable.ArrayBuilder.make[Any]()
+        val collSource = mutable.ArrayBuilder.make[Any]
         cfor(1)(_ <= tArr.length, _ + 1) { i =>
           collSource += decodeData(json.hcursor.downField(s"_${i}").focus.get, tArr(i - 1))
         }
@@ -207,7 +213,7 @@ object DataJsonEncoder {
         val txId = decodeBytes(json.hcursor.downField(s"txId").focus.get).toModifierId
         val index = decodeData(json.hcursor.downField(s"index").focus.get, SShort)
         val creationHeight = decodeData(json.hcursor.downField(s"creationHeight").focus.get, SInt)
-        val additionalRegisters = mutable.MutableList.empty[(NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType])]
+        val additionalRegisters = mutable.ArrayBuffer.empty[(NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType])]
         for (register <- ErgoBox.nonMandatoryRegisters) {
           val opt = json.hcursor.downField(s"r${register.number}").focus
           if (opt.isDefined && !opt.get.isNull) {
@@ -235,7 +241,6 @@ object DataJsonEncoder {
     tpe match {
       case tup: STuple =>
         val tArr = tup.items.toArray
-        val collSource = mutable.ArrayBuilder.make[T#WrappedType]()(tItem.classTag)
         val leftColl = decodeColl(json.hcursor.downField(s"_1").focus.get, tArr(0))
         val rightColl = decodeColl(json.hcursor.downField(s"_2").focus.get, tArr(1))
         assert(leftColl.length == rightColl.length)
@@ -244,7 +249,10 @@ object DataJsonEncoder {
         val jsonList = json.as[List[Json]]
         jsonList match {
           case Right(jsonList) =>
-            val collSource = mutable.ArrayBuilder.make[T#WrappedType]()(tItem.classTag)
+            val collSource = { // this code works both for Scala 2.12 and 2.13
+              implicit val ct = tItem.classTag
+              mutable.ArrayBuilder.make[T#WrappedType]
+            }
             for (i <- jsonList) {
               collSource += decodeData(i, tpe).asInstanceOf[T#WrappedType]
             }

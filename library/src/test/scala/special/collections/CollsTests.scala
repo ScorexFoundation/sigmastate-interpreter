@@ -2,15 +2,15 @@ package special.collections
 
 import org.scalacheck.Gen
 import org.scalatest.exceptions.TestFailedException
-import org.scalatest.prop.PropertyChecks
 import org.scalatest.{Matchers, PropSpec}
-import scalan.RType
+import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
+import scalan._
 import sigmastate.{VersionContext, VersionTestingProperty}
 import special.collection.{Coll, CollOverArray, PairOfCols}
 
 import scala.language.{existentials, implicitConversions}
 
-class CollsTests extends PropSpec with PropertyChecks with Matchers with CollGens with VersionTestingProperty { testSuite =>
+class CollsTests extends PropSpec with ScalaCheckPropertyChecks with Matchers with CollGens with VersionTestingProperty { testSuite =>
   import Gen._
   import special.collection.ExtensionMethods._
 

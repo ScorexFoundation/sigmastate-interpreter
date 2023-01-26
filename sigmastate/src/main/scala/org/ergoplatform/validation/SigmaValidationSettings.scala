@@ -71,8 +71,6 @@ sealed class MapSigmaValidationSettings(private val map: Map[Short, (ValidationR
     new MapSigmaValidationSettings(map.updated(id, (rule, newStatus)))
   }
 
-  override def canEqual(that: Any): Boolean = that.isInstanceOf[MapSigmaValidationSettings]
-
   override def equals(obj: Any): Boolean = (this eq obj.asInstanceOf[AnyRef]) || (obj match {
     case that: MapSigmaValidationSettings => map == that.map
     case _ => false

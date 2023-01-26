@@ -1,23 +1,23 @@
 package sigmastate.lang.syntax
 
-import fastparse.noApi._
+import fastparse._
+import ScalaWhitespace._
 import sigmastate._
 import sigmastate.Values._
-import sigmastate.lang.Terms.{ValueOps, Ident, Val}
+import sigmastate.lang.Terms.{Val, Ident, ValueOps}
 import sigmastate.lang._
 import sigmastate.lang.SigmaPredef._
 import sigmastate.lang.syntax.Basic._
 
 import scala.annotation.tailrec
-import scala.collection.mutable
+import scala.collection.compat.immutable.ArraySeq
 
 //noinspection ForwardReference,TypeAnnotation
 trait Exprs extends Core with Types {
 
-  import WhitespaceApi._
   import builder._
-  def AnonTmpl: P0
-  def BlockDef: P[Value[SType]]
+  def AnonTmpl[_:P]: P0
+  def BlockDef[_:P]: P[Value[SType]]
 
   // Depending on where an expression is located, subtle behavior around
   // semicolon inference and arrow-type-ascriptions like i: a => b
@@ -30,7 +30,7 @@ trait Exprs extends Core with Types {
   // Expressions directly within a `val x = ...` or `def x = ...`
   object FreeCtx extends WsCtx(semiInference=true, arrowTypeAscriptions=true)
 
-  val TypeExpr = ExprCtx.Expr
+  def TypeExpr[_:P] = ExprCtx.Expr
 
   private val predefFuncRegistry = new PredefinedFuncRegistry(builder)
   import predefFuncRegistry._
@@ -38,19 +38,19 @@ trait Exprs extends Core with Types {
   //noinspection TypeAnnotation,ForwardReference
   class WsCtx(semiInference: Boolean, arrowTypeAscriptions: Boolean){
 
-    val OneSemiMax = if (semiInference) OneNLMax else Pass
-    val NoSemis = if (semiInference) NotNewline else Pass
+    def OneSemiMax[_:P] = if (semiInference) OneNLMax else Pass
+    def NoSemis[_:P] = if (semiInference) NotNewline else Pass
 
-    val Expr: P[Value[SType]] = {
-      val If = {
-        val Else = P( Semi.? ~ `else` ~/ Expr )
+    def Expr[_:P]: P[Value[SType]] = {
+      def If = {
+        def Else = P( Semi.? ~ `else` ~/ Expr )
         P( Index ~ `if` ~/ "(" ~ ExprCtx.Expr ~ ")" ~ Expr ~ Else ).map {
           case (i, c, t, e) => atSrcPos(i) { mkIf(c.asValue[SBoolean.type], t, e) }
         }
       }
-      val Fun = P(`def` ~ FunDef)
+      def Fun = P(`def` ~ FunDef)
 
-      val LambdaRhs = if (semiInference) P( (Index ~ BlockChunk).map {
+      def LambdaRhs = if (semiInference) P( (Index ~ BlockChunk).map {
         case (index, (_ , b))  => atSrcPos(index) { block(b) }
       } )
       else P( Expr )
@@ -58,46 +58,48 @@ trait Exprs extends Core with Types {
 //        case (args, None) => mkLambda(args, UnitConstant)
 //        case (args, Some(body)) => mkLambda(args, body)
 //      }
-      val PostfixLambda = P( Index ~ PostfixExpr ~ (`=>` ~ LambdaRhs.? | SuperPostfixSuffix).? ).map {
+      def PostfixLambda = P( Index ~ PostfixExpr ~ (`=>` ~ LambdaRhs.? | SuperPostfixSuffix).? ).map {
         case (_, e, None) => e
         case (_, e, Some(None)) => e
         case (i, Tuple(args), Some(Some(body))) => atSrcPos(i) { lambda(args, body) }
         case (i, e, Some(body)) => error(s"Invalid declaration of lambda $e => $body", Some(srcCtx(i)))
       }
-      val SmallerExprOrLambda = P( /*ParenedLambda |*/ PostfixLambda )
+      def SmallerExprOrLambda = P( /*ParenedLambda |*/ PostfixLambda )
 //      val Arg = (Id.! ~ `:` ~/ Type).map { case (n, t) => mkIdent(IndexedSeq(n), t)}
       P( If | Fun | SmallerExprOrLambda )
     }
 
-    val SuperPostfixSuffix = P( (`=` ~/ Expr).? /*~ MatchAscriptionSuffix.?*/ )
-    val AscriptionType = (if (arrowTypeAscriptions) P( Type ) else P( InfixType )).ignore
-    val Ascription = P( `:` ~/ (`_*` |  AscriptionType | Annot.rep(1)) )
-    val MatchAscriptionSuffix = P(`match` ~/ "{" ~ CaseClauses | Ascription)
-    val ExprPrefix = P( WL ~ CharIn("-+!~").! ~~ !syntax.Basic.OpChar ~ WS)
-    val ExprSuffix = P(
+    def SuperPostfixSuffix[_:P] = P( (`=` ~/ Expr).? /*~ MatchAscriptionSuffix.?*/ )
+    def AscriptionType[_:P] = (if (arrowTypeAscriptions) P( Type ) else P( InfixType )).ignore
+    def Ascription[_:P] = P( `:` ~/ (`_*` |  AscriptionType | Annot.rep(1)) )
+    def MatchAscriptionSuffix[_:P] = P(`match` ~/ "{" ~ CaseClauses | Ascription)
+    def ExprPrefix[_:P] = P( WL ~ CharPred("-+!~".contains(_)).! ~~ !syntax.Basic.OpChar ~ WS)
+    def ExprSuffix[_:P] = P(
       (WL ~ "." ~/ (Index ~ Id.!).map{ case (i, s) => atSrcPos(i) { mkIdent(s, NoType)} }
       | WL ~ TypeArgs.map(items => STypeApply("", items.toIndexedSeq))
       | NoSemis ~ ArgList ).repX /* ~~ (NoSemis  ~ `_`).? */
     )
 
-    val PrefixExpr = P( ExprPrefix.? ~ SimpleExpr ).map {
+    def PrefixExpr[_:P] = P( ExprPrefix.? ~ SimpleExpr ).map {
       case (Some(op), e) => mkUnaryOp(op, e)
       case (None, e) => e
     }
 
     // Intermediate `WL` needs to always be non-cutting, because you need to
     // backtrack out of `InfixSuffix` into `PostFixSuffix` if it doesn't work out
-    val InfixSuffix = P( NoSemis ~~ WL ~~ Id.! /*~ TypeArgs.?*/ ~~ OneSemiMax ~ PrefixExpr ~~ ExprSuffix).map {
+    def InfixSuffix[_:P] = P( NoSemis ~~ WL ~~ Id.! /*~ TypeArgs.?*/ ~~ OneSemiMax ~ PrefixExpr ~~ ExprSuffix).map {
       case (op, f, args) =>
         val rhs = applySuffix(f, args)
         (op, rhs)
     }
-    val PostFix = P( NoSemis ~~ WL ~~ (Index ~ Id.!) ~ Newline.? )
-      .map{ case (i, s) => atSrcPos(i) { mkIdent(s, NoType)} }
+    def PostFix[_:P] = P( NoSemis ~~ WL ~~ (Index ~ Id.!) ~ Newline.? )
+      .map{ case (i, s) =>
+        atSrcPos(i) { mkIdent(s, NoType)}
+      }
 
-    val PostfixSuffix = P( InfixSuffix.repX ~~ PostFix.?)
+    def PostfixSuffix[_:P] = P( InfixSuffix.repX ~~ PostFix.?)
 
-    val PostfixExpr = P( PrefixExpr ~~ ExprSuffix ~~ PostfixSuffix ).map {
+    def PostfixExpr[_:P] = P( PrefixExpr ~~ ExprSuffix ~~ PostfixSuffix ).map {
       case (prefix, suffix, (infixOps, postfix)) =>
         val lhs = applySuffix(prefix, suffix)
         val obj = mkInfixTree(lhs, infixOps)
@@ -109,8 +111,8 @@ trait Exprs extends Core with Types {
         }
     }
 
-    val Parened = P ( "(" ~/ TypeExpr.repTC() ~ ")" )
-    val SimpleExpr = {
+    def Parened[_:P] = P ( "(" ~/ TypeExpr.rep(0, ",") ~ TrailingComma ~ ")" )
+    def SimpleExpr[_:P] = {
 //      val New = P( `new` ~/ AnonTmpl )
 
       P( /*New | */ BlockExpr
@@ -124,7 +126,7 @@ trait Exprs extends Core with Types {
       }
       )
     }
-    val Guard : P0 = P( `if` ~/ PostfixExpr ).ignore
+    def Guard[_:P]: P0 = P( `if` ~/ PostfixExpr ).ignore
   }
 
   protected def lambda(args: Seq[Value[SType]], body: Value[SType]): Value[SType] = {
@@ -185,7 +187,7 @@ trait Exprs extends Core with Types {
     builder.currentSrcCtx.withValue(f.sourceContext) {
       val rhs = args.foldLeft(f)((acc, arg) => arg match {
         case Ident(name, _) => mkSelect(acc, name)
-        case UnitConstant() => mkApply(acc, mutable.WrappedArray.empty)
+        case UnitConstant() => mkApply(acc, ArraySeq.empty)
         case Tuple(xs) => mkApply(acc, xs.toArray[SValue])
         case STypeApply("", targs) => mkApplyTypes(acc, targs)
         case arg: SValue => acc match {
@@ -203,8 +205,8 @@ trait Exprs extends Core with Types {
     }
   }
 
-  val FunDef = {
-    val Body = P( WL ~ `=` ~/ FreeCtx.Expr )
+  def FunDef[_:P] = {
+    def Body = P( WL ~ `=` ~/ FreeCtx.Expr )
     P(Index ~ DottyExtMethodSubj.? ~ Id.! ~ FunSig ~ (`:` ~/ Type).? ~~ Body ).map {
       case (index, None, n, args, resType, body) =>
         atSrcPos(index) {
@@ -222,30 +224,30 @@ trait Exprs extends Core with Types {
     }
   }
 
-  val SimplePattern = {
-    val TupleEx = P( "(" ~/ Pattern.repTC() ~ ")" )
-    val Extractor = P( StableId /* ~ TypeArgs.?*/ ~ TupleEx.? )
+  def SimplePattern[_:P] = {
+    def TupleEx = P( "(" ~/ Pattern.rep(0, ",") ~ TrailingComma ~ ")" )
+    def Extractor = P( StableId /* ~ TypeArgs.?*/ ~ TupleEx.? )
 //    val Thingy = P( `_` ~ (`:` ~/ TypePat).? ~ !("*" ~~ !syntax.Basic.OpChar) )
     P( /*Thingy | PatLiteral |*/ TupleEx | Extractor
       | (Index ~ VarId.!).map { case (i, lit) => atSrcPos(i) { mkIdent(lit, NoType) } })
   }
 
-  val BlockExpr = P( "{" ~/ (/*CaseClauses |*/ Block ~ "}") )
+  def BlockExpr[_:P] = P( "{" ~/ (/*CaseClauses |*/ Block ~ "}") )
 
-  val BlockLambdaHead = {
-    val Arg = P( Annot.rep ~ Id.! ~ (`:` ~/ Type).? ).map {
+  def BlockLambdaHead[_:P] = {
+    def Arg = P( Annot.rep ~ Id.! ~ (`:` ~/ Type).? ).map {
       case (n, Some(t)) => (n, t)
       case (n, None) => (n, NoType)
     }
-    val Args = P( Arg.repTC(1) )
+    def Args = P( Arg.rep(1, ",") ~ TrailingComma )
     P( OneNLMax ~ "(" ~ Args.? ~ ")" ).map(_.toSeq.flatten)
   }
 
-  val BlockLambda = P( BlockLambdaHead ~ `=>` )
+  def BlockLambda[_:P] = P( BlockLambdaHead ~ `=>` )
 
-  val BlockChunk = {
-    val Prelude = P( Annot.rep ~ `lazy`.? )
-    val BlockStat = P( Prelude ~ BlockDef | StatCtx.Expr )
+  def BlockChunk[_:P] = {
+    def Prelude = P( Annot.rep ~ `lazy`.? )
+    def BlockStat = P( Prelude ~ BlockDef | StatCtx.Expr )
     P( BlockLambda.rep ~ BlockStat.rep(sep = Semis) )
   }
 
@@ -267,9 +269,9 @@ trait Exprs extends Core with Types {
     mkBlock(lets, body)
   }
 
-  def BaseBlock(end: P0)(implicit name: sourcecode.Name): P[Value[SType]] = {
-    val BlockEnd = P( Semis.? ~ &(end) )
-    val Body = P( BlockChunk.repX(sep = Semis) )
+  def BaseBlock[_:P](end: P0)(implicit name: sourcecode.Name): P[Value[SType]] = {
+    def BlockEnd = P( Semis.? ~ &(end) )
+    def Body = P( BlockChunk.repX(sep = Semis) )
     P( Index ~ Semis.? ~ BlockLambda.? ~ Body ~/ BlockEnd ).map {
       case (index, Some(args), Seq((Seq(), Seq(b)))) =>
         atSrcPos(index) { mkLambda(args.toIndexedSeq, NoType, Some(b)) }
@@ -288,27 +290,27 @@ trait Exprs extends Core with Types {
         }
     }
   }
-  val Block = BaseBlock("}")
-  val CaseBlock = BaseBlock("}" | `case`)
+  def Block[_:P] = BaseBlock("}")
+  def CaseBlock[_:P] = BaseBlock("}" | `case`)
 
-  val Patterns: P0 = P( Pattern.rep(1, sep = ",".~/) )
-  val Pattern: P0 = P( (WL ~ TypeOrBindPattern).rep(1, sep = "|".~/) )
-  val TypePattern = P( (`_` | BacktickId | VarId) ~ `:` ~ TypePat )
-  val TypeOrBindPattern: P0 = P( TypePattern | BindPattern ).ignore
-  val BindPattern = {
-    val InfixPattern = P( SimplePattern /*~ (Id ~/ SimplePattern).rep | `_*`*/ )
+  def Patterns[_:P]: P0 = P( Pattern.rep(1, sep = ","./) )
+  def Pattern[_:P]: P0 = P( (WL ~ TypeOrBindPattern).rep(1, sep = "|"./) )
+  def TypePattern[_:P] = P( (`_` | BacktickId | VarId) ~ `:` ~ TypePat )
+  def TypeOrBindPattern[_:P]: P0 = P( TypePattern | BindPattern ).ignore
+  def BindPattern[_:P] = {
+    def InfixPattern = P( SimplePattern /*~ (Id ~/ SimplePattern).rep | `_*`*/ )
 //    val Binding = P( (Id | `_`) ~ `@` )
     P( /*Binding ~ InfixPattern | */ InfixPattern /*| VarId*/ )
   }
 
-  val TypePat = P( CompoundType )
-  val ParenArgList = P( "(" ~/ Index ~ Exprs /*~ (`:` ~/ `_*`).?*/.? ~ TrailingComma ~ ")" ).map {
+  def TypePat[_:P] = P( CompoundType )
+  def ParenArgList[_:P] = P( "(" ~/ Index ~ Exprs /*~ (`:` ~/ `_*`).?*/.? ~ TrailingComma ~ ")" ).map {
     case (index, Some(exprs)) => atSrcPos(index) { mkTuple(exprs) }
     case (index, None) => atSrcPos(index) { mkUnitConstant }
   }
-  val ArgList = P( ParenArgList | OneNLMax ~ BlockExpr )
+  def ArgList[_:P] = P( ParenArgList | OneNLMax ~ BlockExpr )
 
-  val CaseClauses: P0 = {
+  def CaseClauses[_:P]: P0 = {
     // Need to lookahead for `class` and `object` because
     // the block { case object X } is not a case clause!
     val CaseClause: P0 = P( `case` ~/ Pattern ~ ExprCtx.Guard.? ~ `=>` ~ CaseBlock  ).ignore

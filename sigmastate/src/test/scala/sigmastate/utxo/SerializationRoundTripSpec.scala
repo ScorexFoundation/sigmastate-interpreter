@@ -8,10 +8,7 @@ import sigmastate.helpers.SigmaTestingCommons
 import sigmastate.interpreter.{ProverResult, ContextExtension}
 import sigmastate.serialization.generators.ObjectGenerators
 import debox.{Buffer => DBuffer}
-import sigmastate.lang.exceptions.SerializerException
 import sigmastate.util.{MaxArrayLength, safeNewArray}
-import spire.algebra._
-import spire.std.int._
 
 class SerializationRoundTripSpec extends PropSpec
   with GeneratorDrivenPropertyChecks
@@ -20,8 +17,6 @@ class SerializationRoundTripSpec extends PropSpec
   with SigmaTestingCommons {
 
   case class Run(size: Int, time: Long)
-
-  implicit val orderRun = Order.by((r: Run) => r.size)
 
   property("ValueSerializer.newArray") {
     safeNewArray[Int](0).length shouldBe 0
@@ -47,8 +42,8 @@ class SerializationRoundTripSpec extends PropSpec
       }
       runs += Run(t.bytesWithNoRef.length, time)
     }
-    runs.sort
-    for (r <- runs) {
+    val ordered = runs.toArray().sortBy(_.size)
+    for (r <- ordered) {
       println(s"Size: ${r.size}, Time: ${r.time}")
     }
   }

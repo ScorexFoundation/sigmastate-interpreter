@@ -15,7 +15,9 @@ import sigmastate.utils._
 import sigmastate.utxo.ComplexityTable._
 import sigmastate.utxo._
 
+import scala.collection.compat.immutable.ArraySeq
 import scala.collection.mutable
+import scala.collection.mutable.{HashMap, Map}
 
 abstract class ValueSerializer[V <: Value[SType]] extends SigmaSerializer[Value[SType], V] {
   import scala.language.implicitConversions
@@ -225,7 +227,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     def cases: Seq[WhenScope] = children.map {
       case (_, when: WhenScope) => when
       case s => sys.error(s"Invalid child scope $s in $this")
-    }.sortBy(_.pos)
+    }.sortBy(_.pos).toSeq
     override def showInScope(v: String): String = parent.showInScope(s"/cases[$name]/$v")
     override def toString = s"CasesScope($name, $children)"
   }
@@ -248,7 +250,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
   }
 
   val collectSerInfo: Boolean = false
-  val serializerInfo: mutable.Map[OpCode, SerScope] = mutable.HashMap.empty
+  val serializerInfo: Map[OpCode, SerScope] = HashMap.empty
   private var scopeStack: List[Scope] = Nil
 
   def printSerInfo(): String = {

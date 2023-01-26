@@ -8,11 +8,10 @@ import sigmastate.lang.DeserializationSigmaBuilder
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.lang.exceptions.{SerializerException, ReaderPositionLimitExceeded}
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import scalan.util.Extensions._
 import sigmastate.Values.ErgoTree.EmptyConstants
 import sigmastate.util.safeNewArray
 import sigmastate.utxo.ComplexityTable
-import spire.syntax.all.cfor
+import debox.cfor
 
 import java.util
 
@@ -110,7 +109,7 @@ class ErgoTreeSerializer {
     * structure after deserialization. */
   def serializeErgoTree(ergoTree: ErgoTree): Array[Byte] = {
     val res = ergoTree.root match {
-      case Left(UnparsedErgoTree(bytes, _)) => bytes.array
+      case Left(UnparsedErgoTree(bytes, _)) => bytes.array.asInstanceOf[Array[Byte]]
       case _ =>
         val bytes = serializeWithoutSize(ergoTree)
         if (ergoTree.hasSize) {

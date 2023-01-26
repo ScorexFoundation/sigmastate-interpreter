@@ -13,6 +13,7 @@ import sigmastate.lang.SigmaPredef._
 import sigmastate.serialization.OpCodes
 import sigmastate.utxo._
 
+import scala.collection.compat.immutable.ArraySeq
 import scala.collection.mutable.ArrayBuffer
 
 /**
@@ -30,7 +31,7 @@ class SigmaTyper(val builder: SigmaBuilder,
   import SType.tT
 
   private val predefinedEnv: Map[String, SType] =
-      predefFuncRegistry.funcs.mapValues(f => f.declaration.tpe)
+      predefFuncRegistry.funcs.map { case (k, f) => k -> f.declaration.tpe }.toMap
 
   private def processGlobalMethod(srcCtx: Nullable[SourceContext],
                                   method: SMethod,
@@ -61,7 +62,7 @@ class SigmaTyper(val builder: SigmaBuilder,
         }
       }
       val res1 = assignType(curEnv, res)
-      mkBlock(bs1, res1)
+      mkBlock(bs1.toSeq, res1)
 
     case Tuple(items) =>
       mkTuple(items.map(assignType(env, _)))

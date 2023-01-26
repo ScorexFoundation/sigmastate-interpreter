@@ -6,7 +6,7 @@ import sigmastate.utils.{SigmaByteWriter, SigmaByteReader}
 import sigmastate.serialization.ValueSerializer._
 import sigmastate.util.safeNewArray
 import sigmastate.utils.SigmaByteWriter.{DataInfo, U}
-import spire.syntax.all.cfor
+import debox.cfor
 
 case class TupleSerializer(cons: Seq[Value[SType]] => Value[SType])
   extends ValueSerializer[Tuple] {

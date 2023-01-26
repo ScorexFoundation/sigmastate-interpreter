@@ -6,21 +6,8 @@ import sigmastate.Values._
 import sigmastate.lang.syntax
 
 trait Core extends syntax.Literals {
-  import fastparse.noApi._
-
-  class Wrapper2(WL: P0){
-    implicit def parserApi2[T, V](p0: T)(implicit c: T => P[V]): WhitespaceApi2[V] =
-      new WhitespaceApi2[V](p0, WL)
-  }
-
-  val WhitespaceApi = new Wrapper2(WL0)
-  import WhitespaceApi._
-
-  class WhitespaceApi2[+T](p0: P[T], WL: P0) extends fastparse.WhitespaceApi[T](p0, WL) {
-    def repTC[R](min: Int = 0, max: Int = Int.MaxValue, exactly: Int = -1)
-                (implicit ev: fastparse.core.Implicits.Repeater[T, R]): P[R] =
-      rep[R](min, ",", max, exactly) ~ TrailingComma
-  }
+  import fastparse._
+  import ScalaWhitespace._
 
   def mkUnaryOp(opName: String, arg: Value[SType]): Value[SType]
   def mkBinaryOp(l: Value[SType], opName: String, r: Value[SType]): Value[SType]
@@ -29,84 +16,85 @@ trait Core extends syntax.Literals {
   // in the file, so it makes sense to keep them short.
 
   import Key._
+
   // Keywords that match themselves and nothing else
-  val `=>` = O("=>") | O("⇒")
-//  val `<-` = O("<-") | O("←")
-  val `:` = O(":")
-  val `=` = O("=")
-  val `@` = O("@")
-  val `_` = W("_")
-  val `type` = W("type")
-  val `val` = W("val")
-  val `def` = W("def")
-  val `case` = W("case")
-  val `then` = W("then")
-  val `else` = W("else")
-  val `#` = O("#")
-  val `return` = W("return")
-  val `if` = W("if")
-  val `match` = W("match")
-    val `this` = W("this")
-  val `super` = W("super")
-  //  val `var` = W("var")
-  //  val `def` = W("def")
-    val `with` = W("with")
-  //  val `package` = W("package")
-  //  val `object` = W("object")
-  //  val `class` = W("class")
-  //  val `trait` = W("trait")
-    val `extends` = W("extends")
-    val `implicit` = W("implicit")
-  //  val `try` = W("try")
-    val `new` = W("new")
-  //  val `macro` = W("macro")
-  //  val `import` = W("import")
-//  val `catch` = W("catch")
-//  val `finally` = W("finally")
-//  val `do` = W("do")
-//  val `yield` = W("yield")
-//  val `while` = W("while")
-//  val `<%` = O("<%")
-//  val `override` = W("override")
-//  val `forSome` = W("forSome")
-//  val `for` = W("for")
-//  val `abstract` = W("abstract")
-//  val `throw` = W("throw")
-  val `lazy` = W("lazy")
-  val `>:` = O(">:")
-  val `<:` = O("<:")
+  def `=>`[_:P] = O("=>") | O("⇒")
+//  val `<-`[_:P] = O("<-") | O("←")
+  def `:`[_:P] = O(":")
+  def `=`[_:P] = O("=")
+  def `@`[_:P] = O("@")
+  def `_`[_:P] = W("_")
+  def `type`[_:P] = W("type")
+  def `val`[_:P] = W("val")
+  def `def`[_:P] = W("def")
+  def `case`[_:P] = W("case")
+  def `then`[_:P] = W("then")
+  def `else`[_:P] = W("else")
+  def `#`[_:P] = O("#")
+  def `return`[_:P] = W("return")
+  def `if`[_:P] = W("if")
+  def `match`[_:P] = W("match")
+  def `this`[_:P] = W("this")
+  def `super`[_:P] = W("super")
+  //  val `var`[_:P] = W("var")
+  //  val `def`[_:P] = W("def")
+    def `with`[_:P] = W("with")
+  //  val `package`[_:P] = W("package")
+  //  val `object`[_:P] = W("object")
+  //  val `class`[_:P] = W("class")
+  //  val `trait`[_:P] = W("trait")
+    def `extends`[_:P] = W("extends")
+    def `implicit`[_:P] = W("implicit")
+  //  val `try`[_:P] = W("try")
+    def `new`[_:P] = W("new")
+  //  val `macro`[_:P] = W("macro")
+  //  val `import`[_:P] = W("import")
+//  val `catch`[_:P] = W("catch")
+//  val `finally`[_:P] = W("finally")
+//  val `do`[_:P] = W("do")
+//  val `yield`[_:P] = W("yield")
+//  val `while`[_:P] = W("while")
+//  val `<%`[_:P] = O("<%")
+//  val `override`[_:P] = W("override")
+//  val `forSome`[_:P] = W("forSome")
+//  val `for`[_:P] = W("for")
+//  val `abstract`[_:P] = W("abstract")
+//  val `throw`[_:P] = W("throw")
+  def `lazy`[_:P] = W("lazy")
+  def `>:`[_:P] = O(">:")
+  def `<:`[_:P] = O("<:")
 //  val `final` =  W("final")
-//  val `sealed` = W("sealed")
-//  val `private` = W("private")
-//  val `protected` = W("protected")
+//  val `sealed`[_:P] = W("sealed")
+//  val `private`[_:P] = W("private")
+//  val `protected`[_:P] = W("protected")
 
 
   // kinda-sorta keywords that are common patterns even if not
   // really-truly keywords
-  val `*` = O("*")
-  val `_*` = P( `_` ~ `*` )
-  val `}` = P( Semis.? ~ "}" )
-  val `{` = P( "{" ~ Semis.? )
+  def `*`[_:P] = O("*")
+  def `_*`[_:P] = P( `_` ~ `*` )
+  def `}`[_:P] = P( Semis.? ~ "}" )
+  def `{`[_:P] = P( "{" ~ Semis.? )
 
-  val Id = P( WL ~ Identifiers.Id )
-  val VarId = P( WL ~ Identifiers.VarId )
-  val BacktickId = P( WL ~ Identifiers.BacktickId )
-  val ExprLiteral = P( WL ~ Literals.Expr.Literal )
-  val PatLiteral = P( WL ~ Literals.Pat.Literal )
+  def Id[_:P] = P( WL ~ Identifiers.Id )
+  def VarId[_:P] = P( WL ~ Identifiers.VarId )
+  def BacktickId[_:P] = P( WL ~ Identifiers.BacktickId )
+  def ExprLiteral[_:P] = P( WL ~ Literals.Expr.Literal )
+  def PatLiteral[_:P] = P( WL ~ Literals.Pat.Literal )
 
-  val QualId = P( WL ~ Id.rep(1, sep = ".") )
-  val Ids = P( Id.rep(1, sep = ",") )
+  def QualId[_:P] = P( WL ~ Id.rep(1, sep = ".") )
+  def Ids[_:P] = P( Id.rep(1, sep = ",") )
 
   /**
    * Sketchy way to whitelist a few suffixes that come after a . select;
    * apart from these and IDs, everything else is illegal
    */
-  val PostDotCheck: P0 = P( WL ~ !(`super` | `this` | "{" |  `_` | `type`) )
-  val StableId = {
-//    val ClassQualifier = P( "[" ~ Id ~ "]" )
-//    val ThisSuper = P( `this` | `super` ~ ClassQualifier.? )
-//    val ThisPath: P0 = P( ThisSuper ~ ("." ~ PostDotCheck ~/ Id).rep )
-    val IdPath = P( Index ~ Id.! ~ ("." ~ PostDotCheck ~/ Index ~ (`this`.! | Id.!)).rep /*~ ("." ~ ThisPath).?*/ ).map {
+  def PostDotCheck[_:P]: P0 = P( WL ~ !(`super` | `this` | "{" |  `_` | `type`) )
+  def StableId[_:P] = {
+//    val ClassQualifier[_:P] = P( "[" ~ Id ~ "]" )
+//    val ThisSuper[_:P] = P( `this` | `super` ~ ClassQualifier.? )
+//    val ThisPath: P0[_:P] = P( ThisSuper ~ ("." ~ PostDotCheck ~/ Id).rep )
+    def IdPath = P( Index ~ Id.! ~ ("." ~ PostDotCheck ~/ Index ~ (`this`.! | Id.!)).rep /*~ ("." ~ ThisPath).?*/ ).map {
       case (hi, hs, t) => t.foldLeft[SValue](atSrcPos(hi){builder.mkIdent(hs, NoType)}){
         case (obj, (i, s)) => atSrcPos(i) { builder.mkSelect(obj, s) }
       }

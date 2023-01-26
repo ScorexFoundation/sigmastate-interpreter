@@ -13,8 +13,8 @@ import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.OpCode
 import special.collection.Coll
 import special.sigma
-import special.sigma.{Header, PreHeader, AnyValue}
-import spire.syntax.all.cfor
+import special.sigma.{AnyValue, Header, PreHeader}
+import debox.cfor
 
 /** Represents a script evaluation context to be passed to a prover and a verifier to execute and
   * validate guarding proposition of input boxes of a transaction.
@@ -158,10 +158,10 @@ class ErgoLikeContext(val lastBlockUtxoRoot: AvlTreeData,
     Examined ergo code: all that leads to ErgoLikeContext creation.
     */
     val outputs = spendingTransaction.outputs.toArray.map(_.toTestBox).toColl
-    val varMap = extension.values.mapValues { case v: EvaluatedValue[_] =>
+    val varMap = extension.values.map { case (k, v: EvaluatedValue[_]) =>
       val tVal = stypeToRType[SType](v.tpe)
-      toAnyValue(v.value.asWrappedType)(tVal)
-    }
+      k -> toAnyValue(v.value.asWrappedType)(tVal)
+    }.toMap
     val vars = contextVars(varMap ++ extensions)
     val avlTree = CAvlTree(lastBlockUtxoRoot)
     // so selfBox is never one of the `inputs` instances

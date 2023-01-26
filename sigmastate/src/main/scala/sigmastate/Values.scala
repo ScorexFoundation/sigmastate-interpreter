@@ -22,7 +22,7 @@ import sigmastate.eval._
 import sigmastate.eval.Extensions._
 import scalan.util.Extensions.ByteOps
 import sigmastate.interpreter.ErgoTreeEvaluator._
-import spire.syntax.all.cfor
+import debox.cfor
 
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
@@ -36,6 +36,7 @@ import sigmastate.lang.exceptions.InterpreterException
 import sigmastate.util.safeNewArray
 import special.collection.Coll
 
+import scala.collection.compat.immutable.ArraySeq
 import scala.collection.mutable
 
 object Values {
@@ -302,7 +303,7 @@ object Values {
           ft.getGenericType
         case _ => tpe
       }
-      SFunc(mutable.WrappedArray.empty, resType)
+      SFunc(ArraySeq.empty, resType)
     }
   }
 
@@ -1144,7 +1145,7 @@ object Values {
       SFunc(argTypes, body.tpe)
     }
     /** This is not used as operation, but rather to form a program structure */
-    override def opType: SFunc = SFunc(mutable.WrappedArray.empty, tpe)
+    override def opType: SFunc = SFunc(ArraySeq.empty, tpe)
 
     protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
       addCost(FuncValue.costKind)

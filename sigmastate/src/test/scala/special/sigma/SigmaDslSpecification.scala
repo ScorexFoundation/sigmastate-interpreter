@@ -1,13 +1,12 @@
 package special.sigma
 
-import java.lang.reflect.InvocationTargetException
 import java.math.BigInteger
 import org.ergoplatform._
 import org.ergoplatform.settings.ErgoAlgos
-import org.scalacheck.{Arbitrary, Gen}
-import scalan.{ExactIntegral, ExactNumeric, ExactOrdering, RType}
+import org.scalacheck.{Gen, Arbitrary}
+import scalan.{ExactOrdering, RType, ExactIntegral, ExactNumeric}
 import scorex.crypto.authds.avltree.batch._
-import scorex.crypto.authds.{ADDigest, ADKey, ADValue}
+import scorex.crypto.authds.{ADDigest, ADValue, ADKey}
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import scalan.util.Extensions._
 import sigmastate.utils.Extensions._
@@ -27,7 +26,7 @@ import sigmastate.utils.Helpers
 import sigmastate.utils.Helpers._
 import sigmastate.helpers.TestingHelpers._
 
-import scala.util.{Failure, Success, Try}
+import scala.util.{Try, Success, Failure}
 import OrderingOps._
 import org.ergoplatform.ErgoBox.AdditionalRegisters
 import org.scalacheck.Arbitrary._
@@ -41,7 +40,7 @@ import org.scalactic.source.Position
 import sigmastate.helpers.SigmaPPrint
 import sigmastate.lang.exceptions.CosterException
 
-import scala.collection.mutable
+import scala.collection.compat.immutable.ArraySeq
 
 /** This suite tests every method of every SigmaDsl type to be equivalent to
   * the evaluation of the corresponding ErgoScript operation.
@@ -2333,7 +2332,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     * @param cost the expected cost of `verify` (the same for all cases)
     */
   def verifyNeq[A: Ordering: Arbitrary: RType]
-      (x: A, y: A, cost: Int, neqCost: Seq[CostItem] = mutable.WrappedArray.empty, newCost: Int)
+      (x: A, y: A, cost: Int, neqCost: Seq[CostItem] = ArraySeq.empty, newCost: Int)
       (copy: A => A, generateCases: Boolean = true)
       (implicit sampled: Sampled[(A, A)], evalSettings: EvalSettings) = {
     val copied_x = copy(x)
@@ -5296,7 +5295,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         )
       )
       ),
-      preGeneratedSamples = Some(mutable.WrappedArray.empty))
+      preGeneratedSamples = Some(ArraySeq.empty))
   }
 
   property("Conditional access (data box register)") {
@@ -5377,7 +5376,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         ),
         allowNewToSucceed = true
       ),
-      preGeneratedSamples = Some(mutable.WrappedArray.empty))
+      preGeneratedSamples = Some(ArraySeq.empty))
   }
 
   property("Conditional access OUTPUTS(0).R4 using tag in R5") {
@@ -5547,7 +5546,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         )
       )
       ),
-      preGeneratedSamples = Some(mutable.WrappedArray.empty))
+      preGeneratedSamples = Some(ArraySeq.empty))
   }
 
   property("Conditional access OUTPUTS(0).R4 using tag in R5 (plus action)") {
@@ -5776,7 +5775,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         )
       )
       ),
-      preGeneratedSamples = Some(mutable.WrappedArray.empty))
+      preGeneratedSamples = Some(ArraySeq.empty))
   }
 
   property("Conditional access dataInputs(0).R4 using tag in R5") {
@@ -6004,7 +6003,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         )
       )
       ),
-      preGeneratedSamples = Some(mutable.WrappedArray.empty))
+      preGeneratedSamples = Some(ArraySeq.empty))
   }
 
   property("Conditional access dataInputs(0).R4 using tag in R5 (plus action)") {
@@ -6248,7 +6247,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         )
       )
       ),
-      preGeneratedSamples = Some(mutable.WrappedArray.empty))
+      preGeneratedSamples = Some(ArraySeq.empty))
 
   }
 
@@ -9894,7 +9893,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         allowDifferentErrors = true,
         allowNewToSucceed = true
         ),
-        preGeneratedSamples = Some(mutable.WrappedArray.empty)
+        preGeneratedSamples = Some(ArraySeq.empty)
       )
     }
   }

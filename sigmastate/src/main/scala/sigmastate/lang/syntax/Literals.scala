@@ -1,10 +1,9 @@
 package sigmastate.lang.syntax
 
-import fastparse.all._
+import fastparse._; import NoWhitespace._
 import Identifiers._
 import sigmastate._
 import Values._
-import fastparse.core
 import java.lang.Long.parseLong
 import java.lang.Integer.parseInt
 
@@ -15,11 +14,12 @@ trait Literals { l =>
   import builder._
   def atSrcPos[A](parserIndex: Int)(thunk: => A): A
   def srcCtx(parserIndex: Int): SourceContext
-  def Block: P[Value[SType]]
-  def Pattern: P0
+  
+  def Block[_:P]: P[Value[SType]]
+  def Pattern[_:P]: P0
 
-  implicit class ParserOps[+T](p: Parser[T]) {
-    def ignore: core.Parser[Unit, Char, String] = p.map(_ => ())
+  implicit class ParserOps[+T](p: P[T]) {
+    def ignore: P[Unit] = p.map(_ => ())
   }
   
   /**
@@ -27,69 +27,74 @@ trait Literals { l =>
     * really useful in e.g. {} blocks, where we want to avoid
     * capturing newlines so semicolon-inference would work
     */
-  val WS: Parser[Unit] = P( NoCut(NoTrace((Basic.WSChars | Literals.Comment).rep)) )
+  def WS[_:P]: P[Unit] = P( NoCut(NoTrace((Basic.WSChars | Literals.Comment).rep)) )
 
   /**
     * Parses whitespace, including newlines.
     * This is the default for most things
     */
-  val WL0: Parser[Unit] = P( NoTrace((Basic.WSChars | Literals.Comment | Basic.Newline).rep) )(sourcecode.Name("WL"))
-  val WL: Parser[Unit] = P( NoCut(WL0) )
+  def WL0[_: P]: P[Unit] =
+    P( NoTrace((Basic.WSChars | Literals.Comment | Basic.Newline).rep) )(sourcecode.Name("WL"), implicitly[P[_]])
 
-  val Semi: Parser[Unit] = P( WS ~ Basic.Semi )
-  val Semis: Parser[Unit] = P( Semi.rep(1) ~ WS )
-  val Newline: Parser[Unit] = P( WL ~ Basic.Newline )
+  def WL[_:P]: P[Unit] = P( NoCut(WL0) )
 
-  val NotNewline: P0 = P( &( WS ~ !Basic.Newline ) )
-  val OneNLMax: P0 = {
-    val ConsumeComments = P( (Basic.WSChars.? ~ Literals.Comment ~ Basic.WSChars.? ~ Basic.Newline).rep )
+  def Semi[_:P]: P[Unit] = P( WS ~ Basic.Semi )
+  def Semis[_:P]: P[Unit] = P( Semi.rep(1) ~ WS )
+  def Newline[_:P]: P[Unit] = P( WL ~ Basic.Newline )
+
+  def NotNewline[_:P]: P0 = P( &( WS ~ !Basic.Newline ) )
+  def OneNLMax[_:P]: P0 = {
+    def ConsumeComments = P( (Basic.WSChars.? ~ Literals.Comment ~ Basic.WSChars.? ~ Basic.Newline).rep )
     P( NoCut( WS ~ Basic.Newline.? ~ ConsumeComments ~ NotNewline) )
   }
-  val TrailingComma: P0 = P( ("," ~ WS ~ Basic.Newline).? )
+  def TrailingComma[_:P]: P0 = P( ("," ~ WS ~ Basic.Newline).? )
 
   //noinspection ForwardReference
   object Literals{
     import Basic._
-    val Float: Parser[Unit] = {
+    def Float[_:P]: P[Unit] = {
       def Thing = P( DecNum ~ Exp.? ~ FloatType.? )
       def Thing2 = P( "." ~ Thing | Exp ~ FloatType.? | Exp.? ~ FloatType )
       P( "." ~ Thing | DecNum ~ Thing2 )
     }
 
-    val Int: Parser[Unit] = P( (HexNum | DecNum) ~ CharIn("Ll").? )
+    def Int[_:P]: P[Unit] = P( (HexNum | DecNum) ~ CharIn("Ll").? )
 
-    val Bool: Parser[BooleanConstant] =
+    def Bool[_:P]: P[BooleanConstant] =
       P( (Index ~ (Key.W("true").! | Key.W("false").!)).map {
-        case (i, lit) => atSrcPos(i) { mkConstant[SBoolean.type](if (lit == "true") true else false, SBoolean) }
+        case (i, lit) =>
+          atSrcPos(i) {
+            mkConstant[SBoolean.type](if (lit == "true") true else false, SBoolean)
+          }
       })
 
     // Comments cannot have cuts in them, because they appear before every
     // terminal node. That means that a comment before any terminal will
     // prevent any backtracking from working, which is not what we want!
-    val CommentChunk: Parser[Unit] = P( CharsWhile(c => c != '/' && c != '*') | MultilineComment | !"*/" ~ AnyChar )
-    val MultilineComment: P0 = P( "/*" ~/ CommentChunk.rep ~ "*/" )
-    val SameLineCharChunks: Parser[Unit] = P( CharsWhile(c => c != '\n' && c != '\r')  | !Basic.Newline ~ AnyChar )
-    val LineComment: Parser[Unit] = P( "//" ~ SameLineCharChunks.rep ~ &(Basic.Newline | End) )
-    val Comment: P0 = P( MultilineComment | LineComment )
+    def CommentChunk[_:P]: P[Unit] = P( CharsWhile(c => c != '/' && c != '*') | MultilineComment | !"*/" ~ AnyChar )
+    def MultilineComment[_:P]: P0 = P( "/*" ~/ CommentChunk.rep ~ "*/" )
+    def SameLineCharChunks[_:P]: P[Unit] = P( CharsWhile(c => c != '\n' && c != '\r')  | !Basic.Newline ~ AnyChar )
+    def LineComment[_:P]: P[Unit] = P( "//" ~ SameLineCharChunks.rep ~ &(Basic.Newline | End) )
+    def Comment[_:P]: P0 = P( MultilineComment | LineComment )
 
-    val Null: Parser[Unit] = Key.W("null")
+    def Null[_:P]: P[Unit] = Key.W("null")
 
-    val OctalEscape: Parser[Unit] = P( Digit ~ Digit.? ~ Digit.? )
-    val Escape: Parser[Unit] = P( "\\" ~/ (CharIn("""btnfr'\"]""") | OctalEscape | UnicodeEscape ) )
+    def OctalEscape[_:P]: P[Unit] = P( Digit ~ Digit.? ~ Digit.? )
+    def Escape[_:P]: P[Unit] = P( "\\" ~/ (CharIn("""btnfr'\"]""") | OctalEscape | UnicodeEscape ) )
 
     // Note that symbols can take on the same values as keywords!
-    val Symbol: Parser[Unit] = P( Identifiers.PlainId | Identifiers.Keywords )
+    def Symbol[_:P]: P[Unit] = P( Identifiers.PlainId | Identifiers.Keywords )
 
-    val Char: Parser[Unit] = {
+    def Char[_:P]: P[Unit] = {
       // scalac 2.10 crashes if PrintableChar below is substituted by its body
       def PrintableChar = CharPred(CharPredicates.isPrintableChar)
 
       P( (Escape | PrintableChar) ~ "'" )
     }
 
-    class InterpCtx(interp: Option[P0]){
+    class InterpCtx(interp: Option[() => P0]){
       //noinspection TypeAnnotation
-      val Literal = P(
+      def Literal[_:P] = P(
         ("-".!.? ~ Index ~ ( /*Float |*/ Int.!)).map {
             case (signOpt, index, lit) =>
               val sign = if (signOpt.isDefined) -1 else 1
@@ -111,29 +116,29 @@ trait Literals { l =>
           }
         })
 
-      val Interp: Parser[Unit] = interp match{
+      def Interp[_:P]: P[Unit] = interp match{
         case None => P ( Fail )
-        case Some(p) => P( "$" ~ Identifiers.PlainIdNoDollar | ("${" ~ p ~ WL ~ "}") | "$$" )
+        case Some(p) => P( "$" ~ Identifiers.PlainIdNoDollar | ("${" ~ p() ~ WL ~ "}") | "$$" )
       }
 
 
-      val TQ: Parser[Unit] = P( "\"\"\"" )
+      def TQ[_:P]: P[Unit] = P( "\"\"\"" )
       /**
         * Helper to quickly gobble up large chunks of un-interesting
         * characters. We break out conservatively, even if we don't know
         * it's a "real" escape sequence: worst come to worst it turns out
         * to be a dud and we go back into a CharsChunk next rep
         */
-      val StringChars: Parser[Unit] = P( CharsWhile(c => c != '\n' && c != '"' && c != '\\' && c != '$') )
-      val NonTripleQuoteChar: Parser[Unit] = P( "\"" ~ "\"".? ~ !"\"" | CharIn("\\$\n") )
-      val TripleChars: Parser[Unit] = P( (StringChars | Interp | NonTripleQuoteChar).rep )
-      val TripleTail: Parser[Unit] = P( TQ ~ "\"".rep )
-      def SingleChars(allowSlash: Boolean): Parser[Unit] = {
-        val LiteralSlash = P( if(allowSlash) "\\" else Fail )
-        val NonStringEnd = P( !CharIn("\n\"") ~ AnyChar )
+      def StringChars[_:P]: P[Unit] = P( CharsWhile(c => c != '\n' && c != '"' && c != '\\' && c != '$') )
+      def NonTripleQuoteChar[_:P]: P[Unit] = P( "\"" ~ "\"".? ~ !"\"" | CharIn("\\$\n") )
+      def TripleChars[_:P]: P[Unit] = P( (StringChars | Interp | NonTripleQuoteChar).rep )
+      def TripleTail[_:P]: P[Unit] = P( TQ ~ "\"".rep )
+      def SingleChars[_:P](allowSlash: Boolean): P[Unit] = {
+        def LiteralSlash = P( if(allowSlash) "\\" else Fail )
+        def NonStringEnd = P( !CharIn("\n\"") ~ AnyChar )
         P( (StringChars | Interp | LiteralSlash | Escape | NonStringEnd ).rep )
       }
-      val String: Parser[Unit] = {
+      def String[_:P]: P[Unit] = {
         P {
           (Id ~ TQ ~/ TripleChars ~ TripleTail) |
               (Id ~ "\"" ~/ SingleChars(true)  ~ "\"") |
@@ -144,8 +149,8 @@ trait Literals { l =>
 
     }
     object NoInterp extends InterpCtx(None)
-    object Pat extends InterpCtx(Some(l.Pattern))
-    object Expr extends InterpCtx(Some(Block.ignore))
+    def Pat[_:P] = new InterpCtx(Some(() => l.Pattern))
+    def Expr[_:P] = new InterpCtx(Some(() => Block))
   }
 }
 

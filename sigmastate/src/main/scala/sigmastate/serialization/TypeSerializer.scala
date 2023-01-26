@@ -6,7 +6,7 @@ import sigmastate._
 import sigmastate.lang.exceptions.InvalidTypePrefix
 import sigmastate.util.safeNewArray
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import spire.syntax.all.cfor
+import debox.cfor
 
 /** Serialization of types according to specification in TypeSerialization.md. */
 object TypeSerializer {

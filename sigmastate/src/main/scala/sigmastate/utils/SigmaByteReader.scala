@@ -8,7 +8,7 @@ import sigmastate.Values.{SValue, Value}
 import sigmastate.lang.exceptions.DeserializeCallDepthExceeded
 import sigmastate.serialization._
 import sigmastate.util.safeNewArray
-import spire.syntax.all.cfor
+import debox.cfor
 
 /** Reader used in the concrete implementations of [[SigmaSerializer]].
   * It decorates the given reader, delegates most of the methods to it, but also adds new

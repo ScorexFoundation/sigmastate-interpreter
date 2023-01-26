@@ -7,7 +7,7 @@ import scorex.util.Extensions._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import ValueSerializer._
 import sigmastate.util.safeNewArray
-import spire.syntax.all.cfor
+import debox.cfor
 
 case class ValDefSerializer(override val opDesc: ValueCompanion) extends ValueSerializer[ValDef] {
 

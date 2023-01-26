@@ -8,9 +8,10 @@ import sigmastate.serialization.ValueSerializer.getSerializer
 import scalan.util.Extensions.ByteOps
 import debox.{Buffer => DBuffer, Map => DMap}
 import org.apache.commons.math3.util.Precision
+import debox.sp
+import sigmastate.eval.Extensions.DBufferOps
 import sigmastate.interpreter.{CostItem, FixedCostItem, SeqCostItem, TypeBasedCostItem}
 import sigmastate.lang.Terms.{MethodCall, PropertyCall}
-import spire.{math, sp}
 
 import scala.reflect.ClassTag
 
@@ -39,10 +40,10 @@ abstract class StatHolder[@sp (Long, Double) V] {
   * @tparam V type of the measured numeric value
   */
 class StatCollection[@sp(Int) K, @sp(Long, Double) V]
-  (implicit n: math.Numeric[V], ctK: ClassTag[K], ctV: ClassTag[V]) {
+  (implicit n: Integral[V], ctK: ClassTag[K], ctV: ClassTag[V]) {
 
   private def calcAvg(buf: DBuffer[V]): V = {
-    n.div(buf.sum, n.fromInt(buf.length))
+    n.quot(buf.sumAll, n.fromInt(buf.length))
   }
 
   // NOTE: this class is mutable so better to keep it private
@@ -59,7 +60,7 @@ class StatCollection[@sp(Int) K, @sp(Long, Double) V]
     }
 
     override def count: Int = dataPoints.length
-    override def sum: V = dataPoints.sum
+    override def sum: V = dataPoints.sumAll
     override def avg: V = calcAvg(dataPoints)
 
     override def mean: (V, Int) = {
@@ -68,10 +69,10 @@ class StatCollection[@sp(Int) K, @sp(Long, Double) V]
         (calcAvg(dataPoints), dataPoints.length)
       }
       else {
-        val sorted = dataPoints.copy()
-        sorted.sort
+        val sorted = dataPoints.toArray()
+        sorted.sorted
         val slice = sorted.slice(nCropped, sorted.length - nCropped)
-        (calcAvg(slice), slice.length)
+        (calcAvg(DBuffer.fromArray(slice)), slice.length)
       }
     }
   }

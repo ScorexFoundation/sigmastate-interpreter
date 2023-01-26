@@ -1,11 +1,11 @@
 package scalan.staged
 
-import scalan.{DFunc, Nullable, Scalan}
+import scalan.{DFunc, Scalan, Nullable}
 import debox.{Buffer => DBuffer}
 import scalan.util.GraphUtil
-import spire.syntax.all.cfor
+import debox.cfor
 
-import scala.collection.mutable
+import scala.collection.compat.immutable.ArraySeq
 
 trait ProgramGraphs extends AstGraphs { self: Scalan =>
 
@@ -31,7 +31,7 @@ trait ProgramGraphs extends AstGraphs { self: Scalan =>
 
     override def boundVars = Nil
     override def isIdentity: Boolean = false
-    override def freeVars = mutable.WrappedArray.empty[Sym]
+    override def freeVars = ArraySeq.empty[Sym]
     override lazy val scheduleIds = {
       val neighbours: DFunc[Int, DBuffer[Int]] = filterNode match {
         case Nullable(pred) =>

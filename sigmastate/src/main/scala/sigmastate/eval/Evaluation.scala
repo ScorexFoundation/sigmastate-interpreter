@@ -9,7 +9,7 @@ import sigmastate.Values.SigmaBoolean
 import sigmastate._
 import sigmastate.lang.exceptions.CostLimitException
 import special.Types._
-import spire.syntax.all.cfor
+import debox.cfor
 
 import java.math.BigInteger
 import scala.reflect.ClassTag

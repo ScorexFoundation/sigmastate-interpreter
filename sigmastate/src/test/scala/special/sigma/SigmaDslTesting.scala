@@ -34,7 +34,7 @@ import sigmastate.utils.Helpers._
 import sigmastate.utxo.{DeserializeContext, DeserializeRegister, GetVar, OptionGet}
 import sigmastate.{SOption, SSigmaProp, SType, VersionContext, eval}
 import special.collection.{Coll, CollType}
-import spire.syntax.all.cfor
+import debox.cfor
 
 import java.util
 import scala.collection.mutable
@@ -989,7 +989,7 @@ class SigmaDslTesting extends PropSpec
             case (res, _) =>
               (ExpectedResult(res.value, Some(newCost)), Option(expectedDetails))
           }
-          commonNewResults.updateMany(newVersionedResults)
+          commonNewResults.updateMany(newVersionedResults).toSeq
         }
       }
   }
@@ -1207,7 +1207,7 @@ class SigmaDslTesting extends PropSpec
     * @return array-backed ordered sequence of samples
     */
   def genSamples[A: Arbitrary: ClassTag](config: PropertyCheckConfigParam, optOrd: Option[Ordering[A]]): Seq[A] = {
-    val inputs = scala.collection.mutable.ArrayBuilder.make[A]()
+    val inputs = scala.collection.mutable.ArrayBuilder.make[A]
     forAll(config) { x: A =>
       inputs += x
     }

@@ -20,7 +20,7 @@ import special.collection.Coll
 import sigmastate.lang.SigmaTyper.STypeSubst
 import sigmastate.serialization.OpCodes.OpCode
 import special.sigma.{AvlTree, SigmaProp, GroupElement}
-import spire.syntax.all.cfor
+import debox.cfor
 
 import scala.util.DynamicVariable
 

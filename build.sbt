@@ -5,17 +5,19 @@ organization := "org.scorexfoundation"
 
 name := "sigma-state"
 
-lazy val scala212 = "2.12.10"
+lazy val scala213 = "2.13.8"
+lazy val scala212 = "2.12.15"
 lazy val scala211 = "2.11.12"
 
 lazy val allConfigDependency = "compile->compile;test->test"
 
 lazy val commonSettings = Seq(
   organization := "org.scorexfoundation",
-  crossScalaVersions := Seq(scala212, scala211),
+  crossScalaVersions := Seq(scala213, scala212, scala211),
   scalaVersion := scala212,
   scalacOptions ++= {
     CrossVersion.partialVersion(scalaVersion.value) match {
+      case Some((2, 13)) => Seq("-Ywarn-unused:_,imports", "-Ywarn-unused:imports")
       case Some((2, 12)) => Seq("-Ywarn-unused:_,imports", "-Ywarn-unused:imports")
       case Some((2, 11)) => Seq()
       case _ => sys.error("Unsupported scala version")
@@ -61,20 +63,22 @@ dynverSeparator in ThisBuild := "-"
 val bouncycastleBcprov = "org.bouncycastle" % "bcprov-jdk15on" % "1.64"
 val scrypto            = "org.scorexfoundation" %% "scrypto" % "2.1.10"
 val scorexUtil         = "org.scorexfoundation" %% "scorex-util" % "0.1.8"
-val debox              = "org.spire-math" %% "debox" % "0.8.0"
-val kiama              = "org.bitbucket.inkytonik.kiama" %% "kiama" % "2.1.0"
-val fastparse          = "com.lihaoyi" %% "fastparse" % "1.0.0"
+val debox              = "org.scorexfoundation" %% "debox" % "0.9.0"
+val spireMacros        = "org.typelevel" %% "spire-macros" % "0.17.0-M1" // The last version published for Scala 2.11-2.13
+val kiama              = "org.bitbucket.inkytonik.kiama" %% "kiama" % "2.5.0"
+val fastparse          = "com.lihaoyi" %% "fastparse" % "2.3.3"
 val commonsIo          = "commons-io" % "commons-io" % "2.5"
 val commonsMath3       = "org.apache.commons" % "commons-math3" % "3.2"
+val scalaCompat        = "org.scala-lang.modules" %% "scala-collection-compat" % "2.7.0"
 
 val testingDependencies = Seq(
-  "org.scalatest" %% "scalatest" % "3.0.5" % "test",
-  "org.scalactic" %% "scalactic" % "3.0.+" % "test",
-  "org.scalacheck" %% "scalacheck" % "1.14.+" % "test",
-  "com.lihaoyi" %% "pprint" % "0.5.4" % "test",  // the last version with Scala 2.11 support
-  "com.storm-enroute" %% "scalameter" % "0.8.2" % Test,
-  "junit" % "junit" % "4.12" % "test",
-  "com.novocode" % "junit-interface" % "0.11" % "test"
+  "org.scalatest" %% "scalatest" % "3.0.9" % Test,
+  "org.scalactic" %% "scalactic" % "3.0.9" % Test,
+  "org.scalacheck" %% "scalacheck" % "1.14.3" % Test,
+  "com.lihaoyi" %% "pprint" % "0.6.3" % Test,
+  "com.storm-enroute" %% "scalameter" % "0.19" % Test,
+  "junit" % "junit" % "4.12" % Test,
+  "com.novocode" % "junit-interface" % "0.11" % Test
 )
 
 lazy val testSettings = Seq(
@@ -90,7 +94,7 @@ libraryDependencies ++= Seq(
   scrypto,
   scorexUtil,
   "org.bouncycastle" % "bcprov-jdk15on" % "1.+",
-  kiama, fastparse, debox
+  kiama, fastparse, debox, spireMacros, scalaCompat
 ) ++ testingDependencies
 
 lazy val circeCore211 = "io.circe" %% "circe-core" % "0.10.0"
@@ -140,7 +144,7 @@ lazy val common = Project("common", file("common"))
   .settings(commonSettings ++ testSettings,
     libraryDependencies ++= Seq(
       "org.scala-lang" % "scala-reflect" % scalaVersion.value,
-      debox, commonsIo
+      debox, commonsIo, scalaCompat
     ))
   .settings(publish / skip := true)
 

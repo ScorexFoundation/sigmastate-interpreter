@@ -1,6 +1,6 @@
 package scalan.util
 
-import spire.syntax.all.cfor
+import debox.cfor
 
 object StringUtil {
   final def quote(x: Any) = "\"" + x + "\""

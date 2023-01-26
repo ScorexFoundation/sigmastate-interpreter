@@ -1,8 +1,9 @@
 package sigmastate.interpreter
 
 import sigmastate.JitCost
-import spire.syntax.all.cfor
-import scala.collection.mutable
+import debox.cfor
+
+import scala.collection.compat.immutable.ArraySeq
 
 /** Abstract representation of cost results obtained during evaluation. */
 abstract class CostDetails {
@@ -41,12 +42,12 @@ case class GivenCost(cost: JitCost,
                      actualTimeNano: Option[Long] = None) extends CostDetails {
   /** The trace is empty for this representation of CostDetails.
     */
-  override def trace: Seq[CostItem] = mutable.WrappedArray.empty
+  override def trace: Seq[CostItem] = ArraySeq.empty
 }
 
 object CostDetails {
   /** Empty sequence of cost items. Should be used whenever possible to avoid allocations. */
-  val EmptyTrace: Seq[CostItem] = mutable.WrappedArray.empty
+  val EmptyTrace: Seq[CostItem] = ArraySeq.empty
 
   /** CostDetails with empty trace have also zero total cost. */
   val ZeroCost = TracedCost(EmptyTrace)

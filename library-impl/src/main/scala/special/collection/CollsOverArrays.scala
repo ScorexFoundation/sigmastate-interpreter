@@ -7,15 +7,13 @@ import special.SpecialPredef
 import scala.reflect.ClassTag
 import scalan._
 import scalan.util.CollectionUtil
-import scalan.{Internal, NeverInline, RType, Reified}
+import scalan.{RType, Reified}
 import Helpers._
 import debox.Buffer
 import scalan.RType._
 import sigmastate.VersionContext
 import sigmastate.util.{MaxArrayLength, safeConcatArrays_v5, safeNewArray}
-import spire.syntax.all._
-
-import scala.runtime.RichInt
+import debox.cfor
 
 class CollOverArray[@specialized A](val toArray: Array[A], val builder: CollBuilder)
                                    (implicit tA: RType[A]) extends Coll[A] {
@@ -79,7 +77,10 @@ class CollOverArray[@specialized A](val toArray: Array[A], val builder: CollBuil
 
   override def segmentLength(p: A => Boolean, from: Int): Int = toArray.segmentLength(p, from)
 
-  override def indexWhere(p: A => Boolean, from: Int): Int = toArray.indexWhere(p, from)
+  override def indexWhere(p: A => Boolean, from: Int): Int = {
+    val start = math.max(from, 0) // This is necessary for Scala 2.13 as indexWhere is implemented differently
+    toArray.indexWhere(p, start)
+  }
 
   override def lastIndexWhere(p: A => Boolean, end: Int): Int = toArray.lastIndexWhere(p, end)
 

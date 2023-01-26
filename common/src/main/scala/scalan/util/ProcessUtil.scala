@@ -34,7 +34,7 @@ object ProcessUtil {
     )
     (builder ! logger) match {
       case 0 =>
-        ProcessOutput(stdOutBuffer, stdErrBuffer, interleavedBuffer)
+        ProcessOutput(stdOutBuffer.toSeq, stdErrBuffer.toSeq, interleavedBuffer.toSeq)
       case exitCode =>
         val envPrefix = extraEnv.map {
           case (name, value) => s"$name=${escapeCommandLineArg(value)} "

@@ -1,6 +1,6 @@
 package sigmastate.lang
 
-import fastparse.core.Parsed
+import fastparse.Parsed
 import org.ergoplatform.{ErgoAddressEncoder, ErgoBox}
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{PropSpec, Matchers}
@@ -27,7 +27,7 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
       case f@Parsed.Failure(_, _, extra) =>
         val traced = extra.traced
         println(s"\nTRACE: ${traced.trace}")
-        f.get.value // force show error diagnostics
+        f.get // force show error diagnostics
     }
   }
 
@@ -589,7 +589,11 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
     // triple double quotes
     parse("\"\"\"hello\"\"\"") shouldBe StringConstant("hello")
     // triple double quotes with newline and a backslash
-    parse("\"\"\"h\\el\nlo\"\"\"") shouldBe StringConstant("h\\el\nlo")
+    parse("\"\"\"hel\nlo\"\"\"") shouldBe StringConstant("hel\nlo")
+    assertExceptionThrown(
+      parse("\"\"\"h\\el\nlo\"\"\""),
+      exceptionLike[Exception]("Parse Error, Position 1:5")
+    )
     // in expression
     parse(""" "hello" == "hello" """) shouldBe EQ(StringConstant("hello"), StringConstant("hello"))
   }

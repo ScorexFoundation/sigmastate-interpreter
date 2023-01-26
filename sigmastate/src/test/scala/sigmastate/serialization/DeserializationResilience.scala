@@ -136,7 +136,7 @@ class DeserializationResilience extends SerializationSpecification
         new ConstantStore(),
         resolvePlaceholdersToConstants = false,
         maxTreeDepth = SigmaSerializer.MaxTreeDepth) {
-      val levels: mutable.ArrayBuilder[Int] = mutable.ArrayBuilder.make[Int]()
+      val levels: mutable.ArrayBuilder[Int] = mutable.ArrayBuilder.make[Int]
       override def level_=(v: Int): Unit = {
         if (v >= super.level) {
           // going deeper (depth is increasing), save new depth to account added depth level by the caller
@@ -170,7 +170,7 @@ class DeserializationResilience extends SerializationSpecification
     val levels = loggingR.levels.result()
     levels.nonEmpty shouldBe true
 
-    val callDepthsBuilder = mutable.ArrayBuilder.make[Int]()
+    val callDepthsBuilder = mutable.ArrayBuilder.make[Int]
     levels.zipWithIndex.foreach { case (_, levelIndex) =>
       val throwingR = new ThrowingSigmaByteReader(new VLQByteBufferReader(ByteBuffer.wrap(bytes)),
         levels,

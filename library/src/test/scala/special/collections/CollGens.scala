@@ -4,6 +4,7 @@ import org.scalacheck.util.Buildable
 import org.scalacheck.{Arbitrary, Gen}
 import scalan._
 import special.collection.{Coll, CollBuilder, CollOverArrayBuilder, PairColl}
+import spire.scalacompat.BuilderCompat
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -128,9 +129,9 @@ trait CollGens { testSuite =>
   }
 
   implicit def buildableColl[T:RType] = new Buildable[T,Coll[T]] {
-    def builder = new mutable.Builder[T,Coll[T]] {
+    def builder = new BuilderCompat[T,Coll[T]] {
       val al = new ArrayBuffer[T]
-      def +=(x: T) = {
+      def addOne(x: T) = {
         al += x
         this
       }

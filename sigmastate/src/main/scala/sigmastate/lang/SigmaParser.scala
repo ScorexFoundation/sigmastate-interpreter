@@ -1,7 +1,6 @@
 package sigmastate.lang
 
-import fastparse.core.Logger
-import fastparse.core
+import fastparse.internal.Logger
 import sigmastate._
 import Values._
 import scalan.Nullable
@@ -13,8 +12,7 @@ import scala.collection.mutable
 import scala.util.DynamicVariable
 
 object SigmaParser extends Exprs with Types with Core {
-  import fastparse.noApi._
-  import WhitespaceApi._
+  import fastparse._; import ScalaWhitespace._
   import builder._
 
   val currentInput = new DynamicVariable[String]("")
@@ -25,17 +23,18 @@ object SigmaParser extends Exprs with Types with Core {
   override def srcCtx(parserIndex: Int): SourceContext =
     SourceContext.fromParserIndex(parserIndex, currentInput.value)
 
-  val TmplBody = {
-    val Prelude = P( (Annot ~ OneNLMax).rep )
-    val TmplStat = P( Prelude ~ BlockDef | StatCtx.Expr )
-    P( "{" ~/ BlockLambda.? ~ Semis.? ~ TmplStat.repX(sep = Semis) ~ Semis.? ~ `}` )
+  def TmplBodyPrelude[_:P] = P( (Annot ~ OneNLMax).rep )
+  def TmplBodyStat[_:P] = P( TmplBodyPrelude ~ BlockDef | StatCtx.Expr )
+
+  def TmplBody[_:P] = {
+    P( "{" ~/ BlockLambda.? ~ Semis.? ~ TmplBodyStat.repX(sep = Semis) ~ Semis.? ~ `}` )
   }
 
 //  val FunDef = {
 //    P( (Id | `this`).! ~ LambdaDef ).map { case (name, lam) => builder.mkVal(name, NoType, lam) }
 //  }
 
-  val ValVarDef = P( Index ~ BindPattern/*.rep(1, ",".~/)*/ ~ (`:` ~/ Type).? ~ (`=` ~/ FreeCtx.Expr) ).map {
+  def ValVarDef[_:P] = P( Index ~ BindPattern/*.rep(1, ",".~/)*/ ~ (`:` ~/ Type).? ~ (`=` ~/ FreeCtx.Expr) ).map {
     case (index, Ident(n,_), t, body) =>
       atSrcPos(index) {
         mkVal(n, t.getOrElse(NoType), body)
@@ -43,15 +42,15 @@ object SigmaParser extends Exprs with Types with Core {
     case (index, pat,_,_) => error(s"Only single name patterns supported but was $pat", Some(srcCtx(index)))
   }
 
-  val BlockDef = P( Dcl )
+  def BlockDef[_:P] = P( Dcl )
 
-  val Constr = P( AnnotType ~~ (NotNewline ~ ParenArgList ).repX )
-  val Constrs = P( (WL ~ Constr).rep(1, `with`.~/) )
-  val EarlyDefTmpl = P( TmplBody ~ (`with` ~/ Constr).rep ~ TmplBody.? )
-  val NamedTmpl = P( Constrs ~ TmplBody.? )
+  def Constr[_:P] = P( AnnotType ~~ (NotNewline ~ ParenArgList ).repX )
+  def Constrs[_:P] = P( (WL ~ Constr).rep(1, `with`) )  //fix  `with`.~/
+  def EarlyDefTmpl[_:P] = P( TmplBody ~ (`with` ~/ Constr).rep ~ TmplBody.? )
+  def NamedTmpl[_:P] = P( Constrs ~ TmplBody.? )
 
-  val AnonTmpl = P( EarlyDefTmpl | NamedTmpl | TmplBody ).ignore
-  val DefTmpl = P( (`extends` | `<:`) ~ AnonTmpl | TmplBody )
+  def AnonTmpl[_:P] = P( EarlyDefTmpl | NamedTmpl | TmplBody ).ignore
+  def DefTmpl[_:P] = P( (`extends` | `<:`) ~ AnonTmpl | TmplBody )
 
 
   val logged = mutable.Buffer.empty[String]
@@ -120,15 +119,15 @@ object SigmaParser extends Exprs with Types with Core {
       }
     }
 
-  def parsedType(str: String): core.Parsed[SType, Char, String] = (Type ~ End).parse(str)
+  def parsedType(str: String): Parsed[SType] = parse(str, implicit p => Type ~ End)
 
   def parseType(str: String): SType = {
     val res = parsedType(str).get.value
     res
   }
 
-  def apply(script: String, sigmaBuilder: SigmaBuilder): core.Parsed[Value[_ <: SType], Char, String] =
+  def apply(script: String, sigmaBuilder: SigmaBuilder): Parsed[Value[_ <: SType]] =
     currentInput.withValue(script) {
-      (StatCtx.Expr ~ End).parse(script)
+      parse(script, implicit p => (StatCtx.Expr ~ End))
     }
 }

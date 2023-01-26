@@ -6,7 +6,7 @@ import sigmastate.serialization.ValueSerializer
 import sigmastate.util.safeNewArray
 import sigmastate.utils.SigmaByteWriter.{DataInfo, valuesItemInfo}
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import spire.syntax.all.cfor
+import debox.cfor
 
 case class SigmaTransformerSerializer[I <: SigmaPropValue, O <: SigmaPropValue]
 (opDesc: SigmaTransformerCompanion, cons: Seq[SigmaPropValue] => SigmaPropValue)

@@ -4,7 +4,7 @@ import org.scalatest.Matchers
 
 import scala.annotation.tailrec
 import scala.util.{Failure, Success, Try}
-import spire.syntax.all.cfor
+import debox.cfor
 import scala.reflect.ClassTag
 
 trait NegativeTesting extends Matchers {

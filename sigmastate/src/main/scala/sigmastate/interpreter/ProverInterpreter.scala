@@ -1,7 +1,7 @@
 package sigmastate.interpreter
 
 import gf2t.{GF2_192, GF2_192_Poly}
-import org.bitbucket.inkytonik.kiama.attribution.AttributionCore
+import org.bitbucket.inkytonik.kiama.attribution.UncachedAttribution.attr
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, everywheretd, rule}
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
 import scalan.util.CollectionUtil._
@@ -22,7 +22,7 @@ import scala.util.Try
 /**
   * Interpreter with enhanced functionality to prove statements.
   */
-trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCore {
+trait ProverInterpreter extends Interpreter with ProverUtils {
 
   import CryptoConstants.secureRandomBytes
   import Interpreter._

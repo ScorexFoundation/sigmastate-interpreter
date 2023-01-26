@@ -1,16 +1,15 @@
 package sigmastate.basics
 
 import java.math.BigInteger
-
 import org.bouncycastle.asn1.x9.X9ECParameters
 import org.bouncycastle.crypto.ec.CustomNamedCurves
 import org.bouncycastle.math.ec.custom.sec.SecP256K1Point
 import org.bouncycastle.math.ec.ECPoint
 import org.bouncycastle.util.BigIntegers
-import spire.syntax.all.cfor
-import scala.collection.mutable
-import scala.util.Try
+import debox.cfor
 
+import scala.collection.{Seq, mutable}
+import scala.util.Try
 
 abstract class BcDlogGroup[ElemType <: ECPoint](val x9params: X9ECParameters) extends DlogGroup[ElemType] {
 
@@ -280,6 +279,7 @@ abstract class BcDlogGroup[ElemType <: ECPoint](val x9params: X9ECParameters) ex
 	 */
   protected def computeNaive(groupElements: Array[ElemType], exponentiations: Array[BigInteger]): ElemType =
     groupElements.zip(exponentiations)
+      .iterator
       .map { case (base, exp) => exponentiate(base, exp) }
       .foldLeft(identity) { case (r, elem) => multiplyGroupElements(elem, r) }
 

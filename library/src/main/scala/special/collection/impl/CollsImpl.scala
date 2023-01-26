@@ -4,7 +4,7 @@ import scala.language.{existentials,implicitConversions}
 import scalan._
 import scala.reflect.runtime.universe._
 import scala.reflect._
-import scala.collection.mutable.WrappedArray
+import scala.collection.compat.immutable.ArraySeq
 
 package impl {
 // Abs -----------------------------------
@@ -38,28 +38,28 @@ object Coll extends EntityObject("Coll") {
     override def builder: Ref[CollBuilder] = {
       asRep[CollBuilder](mkMethodCall(self,
         CollClass.getMethod("builder"),
-        WrappedArray.empty,
+        ArraySeq.empty,
         true, false, element[CollBuilder]))
     }
 
     override def length: Ref[Int] = {
       asRep[Int](mkMethodCall(self,
         CollClass.getMethod("length"),
-        WrappedArray.empty,
+        ArraySeq.empty,
         true, false, element[Int]))
     }
 
     override def isEmpty: Ref[Boolean] = {
       asRep[Boolean](mkMethodCall(self,
         CollClass.getMethod("isEmpty"),
-        WrappedArray.empty,
+        ArraySeq.empty,
         true, false, element[Boolean]))
     }
 
     override def nonEmpty: Ref[Boolean] = {
       asRep[Boolean](mkMethodCall(self,
         CollClass.getMethod("nonEmpty"),
-        WrappedArray.empty,
+        ArraySeq.empty,
         true, false, element[Boolean]))
     }
 
@@ -132,7 +132,7 @@ object Coll extends EntityObject("Coll") {
     override def indices: Ref[Coll[Int]] = {
       asRep[Coll[Int]](mkMethodCall(self,
         CollClass.getMethod("indices"),
-        WrappedArray.empty,
+        ArraySeq.empty,
         true, false, element[Coll[Int]]))
     }
 
@@ -245,7 +245,7 @@ object Coll extends EntityObject("Coll") {
     override def reverse: Ref[Coll[A]] = {
       asRep[Coll[A]](mkMethodCall(self,
         CollClass.getMethod("reverse"),
-        WrappedArray.empty,
+        ArraySeq.empty,
         true, false, element[Coll[A]]))
     }
   }
@@ -281,28 +281,28 @@ object Coll extends EntityObject("Coll") {
     def builder: Ref[CollBuilder] = {
       asRep[CollBuilder](mkMethodCall(source,
         CollClass.getMethod("builder"),
-        WrappedArray.empty,
+        ArraySeq.empty,
         true, true, element[CollBuilder]))
     }
 
     def length: Ref[Int] = {
       asRep[Int](mkMethodCall(source,
         CollClass.getMethod("length"),
-        WrappedArray.empty,
+        ArraySeq.empty,
         true, true, element[Int]))
     }
 
     def isEmpty: Ref[Boolean] = {
       asRep[Boolean](mkMethodCall(source,
         CollClass.getMethod("isEmpty"),
-        WrappedArray.empty,
+        ArraySeq.empty,
         true, true, element[Boolean]))
     }
 
     def nonEmpty: Ref[Boolean] = {
       asRep[Boolean](mkMethodCall(source,
         CollClass.getMethod("nonEmpty"),
-        WrappedArray.empty,
+        ArraySeq.empty,
         true, true, element[Boolean]))
     }
 
@@ -375,7 +375,7 @@ object Coll extends EntityObject("Coll") {
     def indices: Ref[Coll[Int]] = {
       asRep[Coll[Int]](mkMethodCall(source,
         CollClass.getMethod("indices"),
-        WrappedArray.empty,
+        ArraySeq.empty,
         true, true, element[Coll[Int]]))
     }
 
@@ -488,7 +488,7 @@ object Coll extends EntityObject("Coll") {
     def reverse: Ref[Coll[A]] = {
       asRep[Coll[A]](mkMethodCall(source,
         CollClass.getMethod("reverse"),
-        WrappedArray.empty,
+        ArraySeq.empty,
         true, true, element[Coll[A]]))
     }
   }
@@ -887,14 +887,14 @@ implicit lazy val eR = source.elem.typeArgs("R")._1.asInstanceOf[Elem[R]]
     def ls: Ref[Coll[L]] = {
       asRep[Coll[L]](mkMethodCall(source,
         PairCollClass.getMethod("ls"),
-        WrappedArray.empty,
+        ArraySeq.empty,
         true, true, element[Coll[L]]))
     }
 
     def rs: Ref[Coll[R]] = {
       asRep[Coll[R]](mkMethodCall(source,
         PairCollClass.getMethod("rs"),
-        WrappedArray.empty,
+        ArraySeq.empty,
         true, true, element[Coll[R]]))
     }
 
@@ -917,28 +917,28 @@ implicit lazy val eR = source.elem.typeArgs("R")._1.asInstanceOf[Elem[R]]
     def builder: Ref[CollBuilder] = {
       asRep[CollBuilder](mkMethodCall(source,
         PairCollClass.getMethod("builder"),
-        WrappedArray.empty,
+        ArraySeq.empty,
         true, true, element[CollBuilder]))
     }
 
     def length: Ref[Int] = {
       asRep[Int](mkMethodCall(source,
         PairCollClass.getMethod("length"),
-        WrappedArray.empty,
+        ArraySeq.empty,
         true, true, element[Int]))
     }
 
     def isEmpty: Ref[Boolean] = {
       asRep[Boolean](mkMethodCall(source,
         PairCollClass.getMethod("isEmpty"),
-        WrappedArray.empty,
+        ArraySeq.empty,
         true, true, element[Boolean]))
     }
 
     def nonEmpty: Ref[Boolean] = {
       asRep[Boolean](mkMethodCall(source,
         PairCollClass.getMethod("nonEmpty"),
-        WrappedArray.empty,
+        ArraySeq.empty,
         true, true, element[Boolean]))
     }
 
@@ -1012,7 +1012,7 @@ implicit lazy val eR = source.elem.typeArgs("R")._1.asInstanceOf[Elem[R]]
     def indices: Ref[Coll[Int]] = {
       asRep[Coll[Int]](mkMethodCall(source,
         PairCollClass.getMethod("indices"),
-        WrappedArray.empty,
+        ArraySeq.empty,
         true, true, element[Coll[Int]]))
     }
 
@@ -1125,7 +1125,7 @@ implicit lazy val eR = source.elem.typeArgs("R")._1.asInstanceOf[Elem[R]]
     def reverse: Ref[Coll[(L, R)]] = {
       asRep[Coll[(L, R)]](mkMethodCall(source,
         PairCollClass.getMethod("reverse"),
-        WrappedArray.empty,
+        ArraySeq.empty,
         true, true, element[Coll[(L, R)]]))
     }
   }

@@ -11,8 +11,7 @@ import sigmastate.interpreter.ProverResult
 import sigmastate.serialization.{SigmaSerializer, ValueSerializer}
 import sigmastate.util.safeNewArray
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import special.collection.ExtensionMethods._
-import spire.syntax.all.cfor
+import debox.cfor
 
 import scala.util.Try
 

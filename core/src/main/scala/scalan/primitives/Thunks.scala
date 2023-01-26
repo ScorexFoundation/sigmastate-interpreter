@@ -4,7 +4,7 @@ import scala.language.{existentials, implicitConversions}
 import scalan.compilation.{GraphVizConfig, GraphVizExport}
 import scalan.{Liftable => _, _}
 import debox.{Set => DSet, Buffer => DBuffer}
-import spire.syntax.all.cfor
+import debox.cfor
 
 import scala.reflect.runtime.universe._
 import scalan.util.{Covariant, GraphUtil}

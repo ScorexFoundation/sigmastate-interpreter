@@ -1,7 +1,6 @@
 package sigmastate.helpers
 
 import java.math.BigInteger
-
 import gf2t.GF2_192_Poly
 import org.ergoplatform.ErgoBox
 import org.ergoplatform.ErgoBox.RegisterId
@@ -18,9 +17,10 @@ import sigmastate.lang.Terms.MethodCall
 import sigmastate.serialization.GroupElementSerializer
 import sigmastate.utxo.SelectField
 import sigmastate.interpreter.{CompanionDesc, ErgoTreeEvaluator, FixedCostItem, MethodDesc}
-import special.collection.Coll
+import special.collection.{Coll, CollType}
 import special.sigma.GroupElement
 
+import scala.collection.compat.immutable.ArraySeq
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
@@ -28,7 +28,8 @@ import scala.reflect.ClassTag
 /** Pretty-printer customized to print [[sigmastate.Values.Value]] instances
   * into a valid Scala code (can be cut-and-pasted).*/
 object SigmaPPrint extends PPrinter {
-
+  override def showFieldNames = false
+  
   /** Apply [[treeify]] for each element of the given sequence producing the iterator of resulting trees. */
   protected def treeifySeq(xs: Seq[Any]): Iterator[Tree] = {
     xs.iterator.map(_ match {
@@ -76,9 +77,11 @@ object SigmaPPrint extends PPrinter {
     case SBooleanArray =>
       Tree.Literal("SBooleanArray")
     case SPair(l, r) =>
-      Tree.Apply("SPair", treeifySeq(Array(l, r)))
+      Tree.Apply("SPair", treeifySeq(Array[Any](l, r)))
     case t: PrimitiveType[_] =>
       Tree.Literal(s"RType.${t.name}Type")
+    case CollType(tItem) =>
+      Tree.Apply("CollType", treeifySeq(Array[Any](tItem)))
   }
 
   private val exceptionHandlers: PartialFunction[Any, Tree] = {
@@ -113,9 +116,15 @@ object SigmaPPrint extends PPrinter {
       Tree.Apply("GF2_192_Poly.fromByteArray", treeifyMany(c0, others))
 
     case wa: mutable.WrappedArray[Byte @unchecked] if wa.elemTag == ClassTag.Byte =>
-      treeifyByteArray(wa.array)
+      treeifyByteArray(wa.array.asInstanceOf[Array[Byte]])
+
+    case wa: ArraySeq[Byte @unchecked] if wa.unsafeArray.elemTag == ClassTag.Byte =>
+      treeifyByteArray(wa.toArray[Byte])
 
     case wa: mutable.WrappedArray[_] =>
+      Tree.Apply("Array", treeifySeq(wa.toSeq))
+
+    case wa: ArraySeq[_] =>
       Tree.Apply("Array", treeifySeq(wa))
 
     case arr: Array[Byte @unchecked] if arr.elemTag == ClassTag.Byte =>
@@ -125,7 +134,7 @@ object SigmaPPrint extends PPrinter {
       Tree.Apply("Array", treeifySeq(arr))
 
     case buf: ArrayBuffer[_] =>
-      Tree.Apply("Seq", treeifySeq(buf))
+      Tree.Apply("Seq", treeifySeq(buf.toSeq))
 
     case ecp: EcPointType =>
       val hexString = ErgoAlgos.encode(GroupElementSerializer.toBytes(ecp))
@@ -134,6 +143,9 @@ object SigmaPPrint extends PPrinter {
     case ge: GroupElement =>
       val hexString = ErgoAlgos.encode(ge.getEncoded)
       Tree.Apply("Helpers.decodeGroupElement", treeifyMany(hexString))
+
+    case Some(v) =>
+      Tree.Apply("Some", treeifyMany(v))
 
     case coll: Coll[Byte @unchecked] if coll.tItem == RType.ByteType =>
       val hexString = ErgoAlgos.encode(coll)
@@ -145,6 +157,12 @@ object SigmaPPrint extends PPrinter {
 
     case tp: TrivialProp =>
       Tree.Literal(s"TrivialProp.${if (tp.condition) "True" else "False"}Prop")
+
+    case f: AvlTreeFlags =>
+      Tree.Apply("AvlTreeFlags", treeifyMany(
+        f.insertAllowed,
+        f.updateAllowed,
+        f.removeAllowed))
 
     case t: AvlTreeData =>
       Tree.Apply("AvlTreeData", treeifyMany(
@@ -210,7 +228,7 @@ object SigmaPPrint extends PPrinter {
     case sf: SelectField =>
       val resTpe = sf.input.tpe.items(sf.fieldIndex - 1)
       val resTpeName = valueType(resTpe)
-      Tree.Apply(s"SelectField.typed[$resTpeName]", treeifySeq(Array(sf.input, sf.fieldIndex)))
+      Tree.Apply(s"SelectField.typed[$resTpeName]", treeifySeq(Array[Any](sf.input, sf.fieldIndex)))
 
     case ConstantNode(v, SCollectionType(elemType)) if elemType.isInstanceOf[SPredefType] =>
       Tree.Apply(tpeName(elemType) + "ArrayConstant", treeifySeq(Seq(v)))

@@ -215,8 +215,8 @@ class CollectionOperationsSpecification extends SigmaTestingCommons
       FuncValue(
         Vector((1, SBox)),
         EQ(
-          ExtractRegisterAs[SLong.type](ValUse(1, SBox), reg1).get,
-          Plus(ExtractRegisterAs[SLong.type](Self, reg1).get, LongConstant(1)))
+          utxo.ExtractRegisterAs[SLong.type](ValUse(1, SBox), reg1).get,
+          Plus(utxo.ExtractRegisterAs[SLong.type](Self, reg1).get, LongConstant(1)))
       )
     ).toSigmaProp
     prop shouldBe propExpected
@@ -258,8 +258,8 @@ class CollectionOperationsSpecification extends SigmaTestingCommons
       FuncValue(
         Vector((1, SBox)),
         EQ(
-          ExtractRegisterAs[SLong.type](ValUse(1, SBox), reg1).getOrElse(LongConstant(0)),
-          Plus(ExtractRegisterAs[SLong.type](Self, reg1).get, LongConstant(1))
+          utxo.ExtractRegisterAs[SLong.type](ValUse(1, SBox), reg1).getOrElse(LongConstant(0)),
+          Plus(utxo.ExtractRegisterAs[SLong.type](Self, reg1).get, LongConstant(1))
         )
       )
     ).toSigmaProp

@@ -4,7 +4,7 @@ import scala.language.{existentials,implicitConversions}
 import scalan._
 import special.wrappers.WrappersModule
 import special.wrappers.OptionWrapSpec
-import scala.collection.mutable.WrappedArray
+import scala.collection.compat.immutable.ArraySeq
 
 package impl {
 // Abs -----------------------------------
@@ -41,14 +41,14 @@ object WOption extends EntityObject("WOption") {
     override def isEmpty: Ref[Boolean] = {
       asRep[Boolean](mkMethodCall(self,
         WOptionClass.getMethod("isEmpty"),
-        WrappedArray.empty,
+        ArraySeq.empty,
         true, false, element[Boolean]))
     }
 
     override def isDefined: Ref[Boolean] = {
       asRep[Boolean](mkMethodCall(self,
         WOptionClass.getMethod("isDefined"),
-        WrappedArray.empty,
+        ArraySeq.empty,
         true, false, element[Boolean]))
     }
 
@@ -86,7 +86,7 @@ object WOption extends EntityObject("WOption") {
     override def get: Ref[A] = {
       asRep[A](mkMethodCall(self,
         WOptionClass.getMethod("get"),
-        WrappedArray.empty,
+        ArraySeq.empty,
         true, false, element[A]))
     }
   }
@@ -132,14 +132,14 @@ object WOption extends EntityObject("WOption") {
     def isEmpty: Ref[Boolean] = {
       asRep[Boolean](mkMethodCall(source,
         WOptionClass.getMethod("isEmpty"),
-        WrappedArray.empty,
+        ArraySeq.empty,
         true, true, element[Boolean]))
     }
 
     def isDefined: Ref[Boolean] = {
       asRep[Boolean](mkMethodCall(source,
         WOptionClass.getMethod("isDefined"),
-        WrappedArray.empty,
+        ArraySeq.empty,
         true, true, element[Boolean]))
     }
 
@@ -177,7 +177,7 @@ object WOption extends EntityObject("WOption") {
     def get: Ref[A] = {
       asRep[A](mkMethodCall(source,
         WOptionClass.getMethod("get"),
-        WrappedArray.empty,
+        ArraySeq.empty,
         true, true, element[A]))
     }
   }

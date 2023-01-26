@@ -1,7 +1,7 @@
 package sigmastate.lang
 
-import fastparse.core.Parsed
-import fastparse.core.Parsed.Success
+import fastparse.Parsed
+import fastparse.Parsed.Success
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, rewrite, rule}
 import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
 import org.ergoplatform.Global
@@ -62,7 +62,7 @@ class SigmaCompiler(settings: CompilerSettings) {
   def parse(x: String): SValue = {
     SigmaParser(x, builder) match {
       case Success(v, _) => v
-      case f: Parsed.Failure[_,String] =>
+      case f: Parsed.Failure =>
         throw new ParserException(s"Syntax error: $f", Some(SourceContext.fromParserFailure(f)))
     }
   }

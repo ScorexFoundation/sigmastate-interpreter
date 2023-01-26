@@ -8,9 +8,7 @@ import scalan.{Nullable, emptyDBufferOfInt, Base, Lazy, Scalan}
 import debox.{Buffer => DBuffer}
 
 import scala.language.implicitConversions
-import spire.syntax.all.cfor
-
-import scala.collection.Seq
+import debox.cfor
 
 trait Functions extends Base with ProgramGraphs { self: Scalan =>
 

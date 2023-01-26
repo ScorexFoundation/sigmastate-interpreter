@@ -27,7 +27,8 @@ import special.sigma.{GroupElement, SigmaProp}
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
-import spire.syntax.all.cfor
+import scala.collection.compat.immutable.ArraySeq
+import debox.cfor
 
 /**
   * Basic trait for inner nodes of crypto-trees, so AND/OR/THRESHOLD sigma-protocol connectives
@@ -75,7 +76,7 @@ object CAND {
     }
     if (res.isEmpty) TrueProp
     else if (res.length == 1) res(0)
-    else CAND(res)
+    else CAND(res.toSeq)
   }
 }
 
@@ -111,7 +112,7 @@ object COR {
     }
     if (res.isEmpty) FalseProp
     else if (res.length == 1) res(0)
-    else COR(res)
+    else COR(res.toSeq)
   }
 }
 

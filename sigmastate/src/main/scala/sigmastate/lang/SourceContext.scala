@@ -1,6 +1,6 @@
 package sigmastate.lang
 
-import fastparse.core.Parsed.Failure
+import fastparse.Parsed.Failure
 
 import scala.io.Source
 
@@ -33,6 +33,6 @@ object SourceContext {
         }
   }
 
-  def fromParserFailure(e: Failure[_, String]): SourceContext =
+  def fromParserFailure(e: Failure): SourceContext =
     fromParserIndex(e.index , e.extra.input.slice(0, e.extra.input.length))
 }
