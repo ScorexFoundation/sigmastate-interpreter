@@ -55,7 +55,7 @@ lazy val commonSettings = Seq(
   ),
 )
 
-// prefix version with "-SNAPSHOT" for builds without a git tag
+// suffix version with "-SNAPSHOT" for builds without a git tag
 dynverSonatypeSnapshots in ThisBuild := true
 // use "-" instead of default "+"
 dynverSeparator in ThisBuild := "-"
