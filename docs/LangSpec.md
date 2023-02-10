@@ -469,6 +469,40 @@ class GroupElement {
 }
 ```
 
+#### SigmaProp
+```scala
+/** Proposition which can be proven and verified by sigma protocol. */
+trait SigmaProp {
+  /** Serialized bytes of this sigma proposition.
+    * In order to have comparisons like  `box.propositionBytes == prop.propBytes`
+    * this SigmaProp is converted to ErgoTree as:
+    * 1. prop converted to [[SigmaPropConstant]]
+    * 2. new ErgoTree created with with ErgoTree.DefaultHeader, EmptyConstant and SigmaPropConstant as the root
+    * 
+    * Thus obtained ErgoTree is serialized using DefaultSerializer and compared with `box.propositionBytes`.
+    */
+  def propBytes: Coll[Byte]
+
+  /** Logical AND between this SigmaProp and the `other` SigmaProp.
+    * This constructs a new CAND node of a sigma tree with two children. */
+  def &&(other: SigmaProp): SigmaProp
+
+  /** Logical AND between this `SigmaProp` and the `Boolean` value on the right.
+    * The boolean value will be wrapped into `SigmaProp` using the `sigmaProp` function.
+    * This constructs a new CAND node of a sigma tree with two children. */
+  def &&(other: Boolean): SigmaProp
+
+  /** Logical OR between this SigmaProp and the other SigmaProp.
+    * This constructs a new COR node of sigma tree with two children. */
+  def ||(other: SigmaProp): SigmaProp
+
+  /** Logical OR between this `SigmaProp` and the `Boolean` value on the right.
+    * The boolean value will be wrapped into `SigmaProp` using the `sigmaProp` function.
+    * This constructs a new COR node of a sigma tree with two children. */
+  def ||(other: Boolean): SigmaProp
+}
+```
+
 #### AvlTree
 
 ```scala
