@@ -298,8 +298,7 @@ class SigmaTyperTest extends AnyPropSpec
   property("type parameters") {
     typecheck(env, "SELF.R1[Int]") shouldBe SOption(SInt)
     typecheck(env, "SELF.R1[Int].isDefined") shouldBe SBoolean
-    // TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
-    // typecheck(env, "SELF.R1[Int].isEmpty") shouldBe SBoolean
+    typecheck(env, "SELF.R1[Int].isEmpty") shouldBe SBoolean
     typecheck(env, "SELF.R1[Int].get") shouldBe SInt
     // TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/416
     //  typecheck(env, "SELF.getReg[Int](1)") shouldBe SOption.SIntOption

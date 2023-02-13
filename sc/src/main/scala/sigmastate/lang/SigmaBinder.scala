@@ -112,6 +112,9 @@ class SigmaBinder(env: ScriptEnv, builder: SigmaBuilder,
     case a @ Apply(PKFunc.symNoType, args) =>
       Some(PKFunc.irInfo.irBuilder(PKFunc.sym, args).withPropagatedSrcCtx(a.sourceContext))
 
+    case sel @ Select(obj, "isEmpty", _) =>
+      Some(mkLogicalNot(mkSelect(obj, "isDefined").asBoolValue).withPropagatedSrcCtx(sel.sourceContext))
+
   })))(e)
 
   def bind(e: SValue): SValue =
