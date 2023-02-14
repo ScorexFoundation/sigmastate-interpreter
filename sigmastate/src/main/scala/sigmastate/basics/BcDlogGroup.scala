@@ -5,7 +5,8 @@ import sigmastate.crypto.BigIntegers
 import debox.cfor
 import sigmastate.crypto.{CryptoContext, CryptoFacade}
 
-import scala.collection.mutable
+import scala.collection.{Seq, mutable}
+import scala.util.Try
 import scala.collection.compat.immutable.ArraySeq
 
 

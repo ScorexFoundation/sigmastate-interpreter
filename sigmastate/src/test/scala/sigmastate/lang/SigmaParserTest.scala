@@ -208,27 +208,27 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
 
   property("if") {
     parse("if(true) 1 else 2") shouldBe If(TrueLeaf, IntConstant(1), IntConstant(2))
-//    parse("if(true) 1 else if(X==Y) 2 else 3") shouldBe If(TrueLeaf, IntConstant(1), If(EQ(Ident("X"), Ident("Y")), IntConstant(2), IntConstant(3)))
-//    parse(
-//      """if ( true )
-//        |1
-//        |else if(X== Y)
-//        |     2
-//        |     else 3""".stripMargin) shouldBe If(TrueLeaf, IntConstant(1), If(EQ(Ident("X"), Ident("Y")), IntConstant(2), IntConstant(3)))
-//
-//    parse("if (true) false else false==false") shouldBe If(TrueLeaf, FalseLeaf, EQ(FalseLeaf, FalseLeaf))
-//
-//    parse(
-//      """if
-//
-//             (true)
-//        |{ val A = 10;
-//        |  1 }
-//        |else if ( X == Y) 2 else 3""".stripMargin) shouldBe
-//        If(TrueLeaf,
-//          Block(Seq(Val("A", IntConstant(10))), IntConstant(1)),
-//          If(EQ(Ident("X"), Ident("Y")), IntConstant(2), IntConstant(3))
-//    )
+    parse("if(true) 1 else if(X==Y) 2 else 3") shouldBe If(TrueLeaf, IntConstant(1), If(EQ(Ident("X"), Ident("Y")), IntConstant(2), IntConstant(3)))
+    parse(
+      """if ( true )
+        |1
+        |else if(X== Y)
+        |     2
+        |     else 3""".stripMargin) shouldBe If(TrueLeaf, IntConstant(1), If(EQ(Ident("X"), Ident("Y")), IntConstant(2), IntConstant(3)))
+
+    parse("if (true) false else false==false") shouldBe If(TrueLeaf, FalseLeaf, EQ(FalseLeaf, FalseLeaf))
+
+    parse(
+      """if
+
+             (true)
+        |{ val A = 10;
+        |  1 }
+        |else if ( X == Y) 2 else 3""".stripMargin) shouldBe
+        If(TrueLeaf,
+          Block(Seq(Val("A", IntConstant(10))), IntConstant(1)),
+          If(EQ(Ident("X"), Ident("Y")), IntConstant(2), IntConstant(3))
+    )
 
   }
 
@@ -604,6 +604,7 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
   }
 
   property("fromBaseX string decoding") {
+    parse("""fromBase16("1111")""") shouldBe Apply(FromBase16Func.symNoType, IndexedSeq(StringConstant("1111")))
     parse("""fromBase58("111")""") shouldBe Apply(FromBase58Func.symNoType, IndexedSeq(StringConstant("111")))
     parse("""fromBase64("111")""") shouldBe Apply(FromBase64Func.symNoType, IndexedSeq(StringConstant("111")))
   }
