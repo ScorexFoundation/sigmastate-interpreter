@@ -594,6 +594,10 @@ class Option[A] {
   /** Returns true if the option is an instance of Some(value), false otherwise. 
    */
   def isDefined: Boolean;
+
+  /** Returns true if the option is None, false otherwise. 
+   */
+  def isEmpty: Boolean;
   
   /** Returns the option's value if the option is nonempty, otherwise
     * return the result of evaluating `default`.
