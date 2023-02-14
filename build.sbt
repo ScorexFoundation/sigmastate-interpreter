@@ -81,11 +81,9 @@ val bouncycastleBcprov = "org.bouncycastle" % "bcprov-jdk15on" % "1.64"
 val scrypto            = "org.scorexfoundation" %% "scrypto" % "2.1.10"
 val scorexUtil         = "org.scorexfoundation" %% "scorex-util" % "0.1.8"
 val debox              = "org.scorexfoundation" %% "debox" % "0.9.0"
-val spireMacros        = "org.typelevel" %% "spire-macros" % "0.17.0-M1" // The last version published for Scala 2.11-2.13
-val kiama              = "org.bitbucket.inkytonik.kiama" %% "kiama" % "2.5.0"
+val spireMacros        = "org.typelevel" %% "spire-macros" % "0.17.0-M1"
 val fastparse          = "com.lihaoyi" %% "fastparse" % "2.3.3"
-val commonsIo          = "commons-io" % "commons-io" % "2.5"
-val commonsMath3       = "org.apache.commons" % "commons-math3" % "3.2"
+val guava              = "com.google.guava" % "guava" % "30.1.1-jre"
 val scalaCompat        = "org.scala-lang.modules" %% "scala-collection-compat" % "2.7.0"
 
 val testingDependencies = Seq(
@@ -94,8 +92,7 @@ val testingDependencies = Seq(
   "org.scalacheck" %% "scalacheck" % "1.14.3" % Test,
   "com.lihaoyi" %% "pprint" % "0.6.3" % Test,
   "com.storm-enroute" %% "scalameter" % "0.19" % Test,
-  "junit" % "junit" % "4.12" % Test,
-  "com.novocode" % "junit-interface" % "0.11" % Test
+  "junit" % "junit" % "4.12" % Test
 )
 
 lazy val testSettings = Seq(
@@ -111,7 +108,7 @@ libraryDependencies ++= Seq(
   scrypto,
   scorexUtil,
   "org.bouncycastle" % "bcprov-jdk15on" % "1.+",
-  kiama, fastparse, debox, spireMacros, scalaCompat
+  fastparse, debox, spireMacros, scalaCompat
 ) ++ testingDependencies
 
 lazy val circeCore211 = "io.circe" %% "circe-core" % "0.10.0"
@@ -161,7 +158,7 @@ lazy val common = Project("common", file("common"))
   .settings(commonSettings ++ testSettings,
     libraryDependencies ++= Seq(
       "org.scala-lang" % "scala-reflect" % scalaVersion.value,
-      debox, commonsIo, scalaCompat
+      debox, scalaCompat, guava
     ))
   .settings(publish / skip := true)
 
@@ -217,7 +214,7 @@ lazy val sigmastate = (project in file("sigmastate"))
   .dependsOn(sigmalibrary % allConfigDependency)
   .settings(libraryDefSettings)
   .settings(libraryDependencies ++= Seq(
-    scorexUtil, kiama, fastparse, commonsMath3,
+    scorexUtil, fastparse,
     if (scalaVersion.value == scala211) circeCore211 else circeCore,
     if (scalaVersion.value == scala211) circeGeneric211 else circeGeneric,
     if (scalaVersion.value == scala211) circeParser211 else circeParser

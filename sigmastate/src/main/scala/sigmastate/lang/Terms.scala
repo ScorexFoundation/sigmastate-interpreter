@@ -1,6 +1,6 @@
 package sigmastate.lang
 
-import org.bitbucket.inkytonik.kiama.rewriting.Rewriter._
+import sigmastate.kiama.rewriting.Rewriter._
 import scalan.Nullable
 import sigmastate.SCollection.{SIntArray, SByteArray}
 import sigmastate.Values._

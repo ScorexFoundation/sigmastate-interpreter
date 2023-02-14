@@ -1,9 +1,8 @@
 package sigmastate.interpreter
 
 import gf2t.{GF2_192, GF2_192_Poly}
-import org.bitbucket.inkytonik.kiama.attribution.UncachedAttribution.attr
-import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, everywheretd, rule}
-import org.bitbucket.inkytonik.kiama.rewriting.Strategy
+import sigmastate.kiama.rewriting.Rewriter.{everywherebu, everywheretd, rule}
+import sigmastate.kiama.rewriting.Strategy
 import scalan.util.CollectionUtil._
 import sigmastate.TrivialProp.{FalseProp, TrueProp}
 import sigmastate.Values._
@@ -129,7 +128,7 @@ trait ProverInterpreter extends Interpreter with ProverUtils {
     VersionContext.withVersions(context.activatedScriptVersion, ergoTree.version) {
       val (resValue, resCost) = {
         val reduced = fullReduction(ergoTree, context, env)
-        val fullCost = addCryptoCost(reduced.jitRes, context.costLimit)
+        val fullCost = addCryptoCost(reduced, context.costLimit)
         (reduced.value, fullCost)
       }
 
@@ -556,7 +555,7 @@ trait ProverInterpreter extends Interpreter with ProverUtils {
     case ut: UnprovenTree => ut
 
     case t: ProofTree =>
-      log.warn("Wrong input in prove(): ", t);
+      logMessage(s"Wrong input in prove(): $t");
       ???
   })
 
@@ -578,7 +577,7 @@ trait ProverInterpreter extends Interpreter with ProverUtils {
   }
 
   //converts ProofTree => UncheckedSigmaTree
-  val convertToUnchecked: ProofTree => UncheckedSigmaTree = attr {
+  def convertToUnchecked(proofTree: ProofTree): UncheckedSigmaTree = proofTree match {
     case and: CAndUnproven =>
       CAndUncheckedNode(and.challengeOpt.get, and.children.map(convertToUnchecked))
     case or: COrUnproven =>

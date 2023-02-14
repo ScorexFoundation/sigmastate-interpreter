@@ -65,9 +65,6 @@ trait TestsBase extends Matchers with VersionTesting {
     }
   }
 
-  def compileWithoutCosting(env: ScriptEnv, code: String): Value[SType] =
-    compiler.compileWithoutCosting(env, code)
-
   /** Compile the given code to ErgoTree expression. */
   def compile(env: ScriptEnv, code: String)(implicit IR: IRContext): Value[SType] = {
     val res = compiler.compile(env, code)
