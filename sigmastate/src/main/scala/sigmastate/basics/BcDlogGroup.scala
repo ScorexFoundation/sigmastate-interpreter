@@ -5,20 +5,22 @@ import sigmastate.crypto.BigIntegers
 import debox.cfor
 import sigmastate.crypto.{CryptoContext, CryptoFacade}
 
-import scala.collection.{Seq, mutable}
-import scala.util.Try
-import scala.collection.compat.immutable.ArraySeq
+import scala.collection.mutable
 
 
+/** Base class for all dlog groups (with bouncycastle-like interface).
+  * @param ctx context which abstracts basic operations with curve and elements.
+  */
 abstract class BcDlogGroup(val ctx: CryptoContext) extends DlogGroup {
-  //modulus of the field
+  /** Modulus of the finite field of the underlying curve. */
   lazy val p: BigInteger = ctx.getModulus
 
-  //order of the group
+  /** Order of the group (parameter N of the elliptic curve). */
   lazy val q: BigInteger = ctx.getOrder
 
-  //Now that we have p, we can calculate k which is the maximum length in bytes
-  // of a string to be converted to a Group Element of this group.
+  /** Now that we have p, we can calculate k which is the maximum length in bytes
+    * of a string to be converted to a Group Element of this group.
+    */
   lazy val k = calcK(p)
 
   /**
@@ -95,8 +97,10 @@ abstract class BcDlogGroup(val ctx: CryptoContext) extends DlogGroup {
   private val exponentiationsCache = mutable.Map[ElemType, GroupElementsExponentiations]()
 
 
-  //Create the generator
-  //Assume that (x,y) are the coordinates of a point that is indeed a generator but check that (x,y) are the coordinates of a point.
+  /** Creates the generator.
+    * Assume that (x,y) are the coordinates of a point that is indeed a generator but
+    * check that (x,y) are the coordinates of a point.
+    */
   override lazy val generator: ElemType = ctx.getGenerator
 
   /**
@@ -115,13 +119,11 @@ abstract class BcDlogGroup(val ctx: CryptoContext) extends DlogGroup {
   }
 
   /**
-    *
     * @return the order of this Dlog group
     */
   override lazy val order: BigInteger = ctx.getOrder
 
   /**
-    *
     * @return the identity of this Dlog group
     */
   override lazy val identity: ElemType = ctx.getInfinity.asInstanceOf[ElemType]
@@ -239,4 +241,5 @@ abstract class BcDlogGroup(val ctx: CryptoContext) extends DlogGroup {
 
 }
 
+/** Implementation of [[BcDlogGroup]] using SecP256K1 curve. */
 object SecP256K1Group extends BcDlogGroup(CryptoFacade.createCryptoContext())

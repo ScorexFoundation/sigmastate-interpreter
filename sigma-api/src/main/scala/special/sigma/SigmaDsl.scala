@@ -199,6 +199,7 @@ trait BigInt {
 @scalan.Liftable
 @WithMethodCallRecognizers
 trait GroupElement {
+  /** Checks if this is the point at infinity. */
   def isInfinity: Boolean
 
   /** Exponentiate this <code>GroupElement</code> to the given number.
