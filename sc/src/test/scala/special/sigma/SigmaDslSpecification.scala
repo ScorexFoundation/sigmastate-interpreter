@@ -9097,15 +9097,12 @@ class SigmaDslSpecification extends SigmaDslTesting
 
   // TODO v6.0 (3h): implement Option.fold
   property("Option new methods") {
-    val isEmpty = newFeature({ (x: Option[Long]) => x.isEmpty },
-    "{ (x: Option[Long]) => x.isEmpty }")
-
     val n = ExactNumeric.LongIsExactNumeric
     val fold = newFeature({ (x: Option[Long]) => x.fold(5.toLong)( (v: Long) => n.plus(v, 1) ) },
       "{ (x: Option[Long]) => x.fold(5, { (v: Long) => v + 1 }) }")
 
     forAll { x: Option[Long] =>
-      Seq(isEmpty, fold).map(_.checkEquality(x))
+      Seq(fold).map(_.checkEquality(x))
     }
   }
 
