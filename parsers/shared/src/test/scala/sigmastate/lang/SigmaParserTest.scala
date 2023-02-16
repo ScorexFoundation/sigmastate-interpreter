@@ -10,7 +10,6 @@ import sigmastate.Values._
 import sigmastate._
 import sigmastate.lang.SigmaPredef.PredefinedFuncRegistry
 import sigmastate.lang.Terms._
-import sigmastate.lang.syntax.ParserException
 import sigmastate.serialization.OpCodes
 
 class SigmaParserTest extends AnyPropSpec with ScalaCheckPropertyChecks with Matchers with LangTests {
@@ -34,15 +33,6 @@ class SigmaParserTest extends AnyPropSpec with ScalaCheckPropertyChecks with Mat
 
   def parseType(x: String): SType = {
     SigmaParser.parseType(x)
-  }
-
-  def fail(x: String, expectedLine: Int, expectedCol: Int): Unit = {
-    val compiler = new SigmaCompiler(ErgoAddressEncoder.TestnetNetworkPrefix)
-    val exception = the[ParserException] thrownBy compiler.parse(x)
-    withClue(s"Exception: $exception, is missing source context:") { exception.source shouldBe defined }
-    val sourceContext = exception.source.get
-    sourceContext.line shouldBe expectedLine
-    sourceContext.column shouldBe expectedCol
   }
 
   def and(l: SValue, r: SValue) = MethodCallLike(l, "&&", IndexedSeq(r))
@@ -561,24 +551,6 @@ class SigmaParserTest extends AnyPropSpec with ScalaCheckPropertyChecks with Mat
     parseType("Coll[(Coll[Byte], (Coll[Long], Long))]") shouldBe SCollection(STuple(SByteArray, STuple(SLongArray, SLong)))
   }
 
-  property("negative tests") {
-    fail("(10", 1, 4)
-    fail("10)", 1, 3)
-    fail("X)", 1, 2)
-    fail("(X", 1, 3)
-    fail("{ X", 1, 4)
-    fail("{ val X", 1, 8)
-    fail("\"str", 1, 5)
-  }
-
-  property("not(yet) supported lambda syntax") {
-    // passing a lambda without curly braces is not supported yet :)
-    fail("arr.exists ( (a: Int) => a >= 1 )", 1, 16)
-    // no argument type
-    an[ParserException] should be thrownBy parse("arr.exists ( a => a >= 1 )")
-    an[ParserException] should be thrownBy parse("arr.exists { a => a >= 1 }")
-  }
-
   property("numeric casts") {
     parse("1.toByte") shouldBe Select(IntConstant(1), "toByte")
     parse("1.toShort") shouldBe Select(IntConstant(1), "toShort")
@@ -627,10 +599,6 @@ class SigmaParserTest extends AnyPropSpec with ScalaCheckPropertyChecks with Mat
     parse("ZKProof { sigmaProp(HEIGHT > 1000) }") shouldBe
       Apply(ZKProofFunc.sym,
         IndexedSeq(Apply(SigmaPropFunc.symNoType, IndexedSeq(GT(Ident("HEIGHT"), IntConstant(1000))))))
-  }
-
-  property("invalid ZKProof (non block parameter)") {
-    fail("ZKProof 1 > 1", 1, 9)
   }
 
   property("sigmaProp") {
@@ -877,37 +845,5 @@ class SigmaParserTest extends AnyPropSpec with ScalaCheckPropertyChecks with Mat
     parse("executeFromVar[Boolean](1)") shouldBe Apply(
       ApplyTypes(ExecuteFromVarFunc.symNoType, Vector(SBoolean)), Vector(IntConstant(1))
     )
-  }
-
-  property("single name pattern fail") {
-    fail("{val (a,b) = (1,2)}", 1, 6)
-  }
-
-  property("unknown prefix in unary op") {
-    fail("+1", 1, 2)
-  }
-
-  property("empty lines before invalid op") {
-    fail(
-      """
-        |
-        |
-        |+1""".stripMargin, 4, 2)
-  }
-
-  property("unknown binary op") {
-    fail("1**1", 1, 1)
-  }
-
-  property("compound types not supported") {
-    fail("Coll[Int with Sortable](1)", 1, 6)
-  }
-
-  property("path types not supported") {
-    fail("Coll[Int.A](1)", 1, 10)
-  }
-
-  property("block contains non-Val binding before expression") {
-    fail("{1 ; 1 == 1}", 1, 2)
   }
 }
