@@ -42,7 +42,7 @@ object CryptoFacade {
   /** Return simplified string representation of the point (used only for debugging) */
   def showPoint(p: Ecp): String = Platform.showPoint(p)
 
-  /** Returns the value of bit 0 in BigInteger representation of this point. */
+  /** Returns the sign of the field element. */
   def testBitZeroOfFieldElem(p: ECFieldElem): Boolean = Platform.testBitZeroOfFieldElem(p)
 
   /** Returns byte representation of the given field element. */

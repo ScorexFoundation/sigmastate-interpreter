@@ -8,14 +8,17 @@ import sigmastate.crypto.{CryptoContext, CryptoFacade}
 import scala.collection.mutable
 
 
-/** Base class for all dlog groups (with bouncycastle-like interface).
+/** Base class for EC-based groups where DLOG problem is hard (with bouncycastle-like interface).
   * @param ctx context which abstracts basic operations with curve and elements.
   */
 abstract class BcDlogGroup(val ctx: CryptoContext) extends DlogGroup {
   /** Modulus of the finite field of the underlying curve. */
   lazy val p: BigInteger = ctx.getModulus
 
-  /** Order of the group (parameter N of the elliptic curve). */
+  /** Order of the group as defined in ASN.1 def for Elliptic-Curve ECParameters structure.
+    * See X9.62, for further details.
+    * For reference implementation see `org.bouncycastle.asn1.x9.X9ECParameters.getN`.
+    */
   lazy val q: BigInteger = ctx.getOrder
 
   /** Now that we have p, we can calculate k which is the maximum length in bytes
