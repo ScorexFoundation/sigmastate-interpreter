@@ -8,7 +8,7 @@ import java.math.BigInteger
 class CryptoContextJvm(x9params: X9ECParameters) extends CryptoContext {
   private lazy val curve = x9params.getCurve
 
-  override def getModulus: BigInteger = curve.getField.getCharacteristic
+  override def fieldCharacteristic: BigInteger = curve.getField.getCharacteristic
 
   override def getOrder: BigInteger = x9params.getN
 

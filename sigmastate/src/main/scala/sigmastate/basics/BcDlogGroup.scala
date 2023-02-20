@@ -13,7 +13,7 @@ import scala.collection.mutable
   */
 abstract class BcDlogGroup(val ctx: CryptoContext) extends DlogGroup {
   /** Modulus of the finite field of the underlying curve. */
-  lazy val p: BigInteger = ctx.getModulus
+  lazy val p: BigInteger = ctx.fieldCharacteristic
 
   /** Order of the group as defined in ASN.1 def for Elliptic-Curve ECParameters structure.
     * See X9.62, for further details.

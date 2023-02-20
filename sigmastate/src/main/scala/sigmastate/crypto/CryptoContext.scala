@@ -4,8 +4,8 @@ import java.math.BigInteger
 
 /** A context for cryptographic operations. */
 abstract class CryptoContext {
-  /** The order of the underlying finite field. */
-  def getModulus: BigInteger
+  /** The characteristics of the underlying finite field. */
+  def fieldCharacteristic: BigInteger
 
   /** The order of the underlying group. */
   def getOrder: BigInteger
