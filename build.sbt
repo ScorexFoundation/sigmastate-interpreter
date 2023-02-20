@@ -17,12 +17,12 @@ lazy val commonSettings = Seq(
   scalaVersion := scala212,
   scalacOptions ++= {
     CrossVersion.partialVersion(scalaVersion.value) match {
-      case Some((2, 13)) => Seq("-Ywarn-unused:_,imports", "-Ywarn-unused:imports")
-      case Some((2, 12)) => Seq("-Ywarn-unused:_,imports", "-Ywarn-unused:imports")
+      case Some((2, 13)) => Seq("-Ywarn-unused:_,imports", "-Ywarn-unused:imports", "-release", "8")
+      case Some((2, 12)) => Seq("-Ywarn-unused:_,imports", "-Ywarn-unused:imports", "-release", "8")
       case Some((2, 11)) => Seq()
       case _ => sys.error("Unsupported scala version")
     }
-  } ++ scalacReleaseOption,
+  },
   javacOptions ++= javacReleaseOption,
   resolvers += Resolver.sonatypeRepo("public"),
   licenses := Seq("CC0" -> url("https://creativecommons.org/publicdomain/zero/1.0/legalcode")),
@@ -55,14 +55,6 @@ lazy val commonSettings = Seq(
       )
   ),
 )
-
-def scalacReleaseOption = {
-  if (System.getProperty("java.version").startsWith("1."))
-  // java <9 "-release" is not supported
-    Seq()
-  else
-    Seq("-release", "8") // this is passed to javac as `javac -release 8`
-}
 
 def javacReleaseOption = {
   if (System.getProperty("java.version").startsWith("1."))
