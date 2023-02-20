@@ -89,8 +89,8 @@ object Extensions {
 
   /** Shortened String representation of `source` GroupElement. */
   def showECPoint(p: Ecp): String = {
-    if (p.isInfinity) {
-      "INF"
+    if (p.isIdentity) {
+      "IDENTITY"
     }
     else {
       CryptoFacade.showPoint(p)

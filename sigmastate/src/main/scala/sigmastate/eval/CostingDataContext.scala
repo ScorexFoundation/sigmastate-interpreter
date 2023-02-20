@@ -104,7 +104,7 @@ case class CGroupElement(override val wrappedValue: Ecp) extends GroupElement wi
   override def getEncoded: Coll[Byte] =
     dsl.Colls.fromArray(GroupElementSerializer.toBytes(wrappedValue))
 
-  override def isInfinity: Boolean = CryptoFacade.isInfinityPoint(wrappedValue)
+  override def isIdentity: Boolean = CryptoFacade.isInfinityPoint(wrappedValue)
 
   override def exp(k: BigInt): GroupElement =
     dsl.GroupElement(CryptoFacade.exponentiatePoint(wrappedValue, k.asInstanceOf[CBigInt].wrappedValue))
