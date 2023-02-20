@@ -8,18 +8,23 @@ abstract class CryptoContext {
   def fieldCharacteristic: BigInteger
 
   /** The order of the underlying group. */
-  def getOrder: BigInteger
+  def order: BigInteger
 
-  /** The generator of the underlying group. */
+  /** Validates a point.
+    * @param x the x-coordinate of the point
+    * @param y the y-coordinate of the point
+    * @return the point if it is valid
+    * @throws IllegalArgumentException if the coordinates do not represent a valid point
+    */
   def validatePoint(x: BigInteger, y: BigInteger): Ecp
 
   /** The point at infinity. */
-  def getInfinity(): Ecp
+  def infinity(): Ecp
 
   /** Decodes a point from its byte representation. */
   def decodePoint(encoded: Array[Byte]): Ecp
 
   /** The generator of the underlying group. */
-  def getGenerator: Ecp
+  def generator: Ecp
 }
 

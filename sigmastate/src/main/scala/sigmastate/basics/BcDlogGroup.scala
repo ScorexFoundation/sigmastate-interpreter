@@ -19,7 +19,7 @@ abstract class BcDlogGroup(val ctx: CryptoContext) extends DlogGroup {
     * See X9.62, for further details.
     * For reference implementation see `org.bouncycastle.asn1.x9.X9ECParameters.getN`.
     */
-  lazy val q: BigInteger = ctx.getOrder
+  lazy val q: BigInteger = ctx.order
 
   /** Now that we have p, we can calculate k which is the maximum length in bytes
     * of a string to be converted to a Group Element of this group.
@@ -104,7 +104,7 @@ abstract class BcDlogGroup(val ctx: CryptoContext) extends DlogGroup {
     * Assume that (x,y) are the coordinates of a point that is indeed a generator but
     * check that (x,y) are the coordinates of a point.
     */
-  override lazy val generator: ElemType = ctx.getGenerator
+  override lazy val generator: ElemType = ctx.generator
 
   /**
     * This function calculates k, the maximum length in bytes of a string to be converted to a Group Element of this group.
@@ -124,12 +124,12 @@ abstract class BcDlogGroup(val ctx: CryptoContext) extends DlogGroup {
   /**
     * @return the order of this Dlog group
     */
-  override lazy val order: BigInteger = ctx.getOrder
+  override lazy val order: BigInteger = ctx.order
 
   /**
     * @return the identity of this Dlog group
     */
-  override lazy val identity: ElemType = ctx.getInfinity.asInstanceOf[ElemType]
+  override lazy val identity: ElemType = ctx.infinity.asInstanceOf[ElemType]
 
   /**
     * Calculates the inverse of the given GroupElement.
@@ -170,7 +170,7 @@ abstract class BcDlogGroup(val ctx: CryptoContext) extends DlogGroup {
     //However, if a specific Dlog Group has a more efficient implementation then is it advised to override this function in that concrete
     //Dlog group. For example we do so in CryptoPpDlogZpSafePrime.
     val one = BigInteger.ONE
-    val qMinusOne = ctx.getOrder.subtract(one)
+    val qMinusOne = ctx.order.subtract(one)
     // choose a random number x in Zq*
     val randNum = BigIntegers.createRandomInRange(one, qMinusOne, secureRandom)
     // compute g^x to get a new element

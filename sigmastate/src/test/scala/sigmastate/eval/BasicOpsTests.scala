@@ -33,7 +33,7 @@ class BasicOpsTests extends FunSuite with ContractsTestkit with Matchers {
 
   // TODO this is valid for BigIntModQ type (https://github.com/ScorexFoundation/sigmastate-interpreter/issues/554)
   ignore("ByteArrayToBigInt should always produce big int less than dlog group order") {
-    val groupOrder = SecP256K1Group.ctx.getOrder
+    val groupOrder = SecP256K1Group.ctx.order
 
     SigmaDsl.byteArrayToBigInt(
       Colls.fromArray(groupOrder.subtract(BigInteger.ONE).toByteArray)

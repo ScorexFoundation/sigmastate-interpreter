@@ -44,7 +44,7 @@ object Platform {
   def getAffineYCoord(p: Ecp): ECFieldElem = ECFieldElem(p.value.getAffineYCoord)
 
   /** Returns byte representation of the given field element. */
-  def getEncodedOfFieldElem(p: ECFieldElem): Array[Byte] = p.value.getEncoded
+  def encodeFieldElem(p: ECFieldElem): Array[Byte] = p.value.getEncoded
 
   /** Returns the value of bit 0 in BigInteger representation of this point. */
   def testBitZeroOfFieldElem(p: ECFieldElem): Boolean = p.value.testBitZero()

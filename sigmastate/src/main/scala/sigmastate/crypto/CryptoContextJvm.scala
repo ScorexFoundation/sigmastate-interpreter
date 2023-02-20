@@ -10,9 +10,9 @@ class CryptoContextJvm(x9params: X9ECParameters) extends CryptoContext {
 
   override def fieldCharacteristic: BigInteger = curve.getField.getCharacteristic
 
-  override def getOrder: BigInteger = x9params.getN
+  override def order: BigInteger = x9params.getN
 
-  override def getGenerator: Ecp = {
+  override def generator: Ecp = {
     Platform.Ecp(x9params.getG)
   }
 
@@ -20,7 +20,7 @@ class CryptoContextJvm(x9params: X9ECParameters) extends CryptoContext {
     Platform.Ecp(curve.validatePoint(x, y))
   }
 
-  override def getInfinity(): Ecp = {
+  override def infinity(): Ecp = {
     Platform.Ecp(curve.getInfinity)
   }
 

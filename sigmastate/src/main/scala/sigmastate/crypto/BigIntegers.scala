@@ -19,7 +19,7 @@ object BigIntegers {
     * @return a byte array containing random bits.
     */
   @throws[IllegalArgumentException]
-  def createRandom(bitLength: Int, random: SecureRandom) = {
+  def createRandom(bitLength: Int, random: SecureRandom): Array[Byte] = {
     if (bitLength < 1) throw new IllegalArgumentException("bitLength must be at least 1")
     val nBytes = (bitLength + 7) / 8
     val rv = new Array[Byte](nBytes)

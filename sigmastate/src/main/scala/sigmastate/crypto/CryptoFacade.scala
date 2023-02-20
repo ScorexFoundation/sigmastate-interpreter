@@ -46,7 +46,7 @@ object CryptoFacade {
   def testBitZeroOfFieldElem(p: ECFieldElem): Boolean = Platform.testBitZeroOfFieldElem(p)
 
   /** Returns byte representation of the given field element. */
-  def getEncodedOfFieldElem(p: ECFieldElem): Array[Byte] = Platform.getEncodedOfFieldElem(p)
+  def encodeFieldElem(p: ECFieldElem): Array[Byte] = Platform.encodeFieldElem(p)
 
   /** Returns the x-coordinate.
     *
