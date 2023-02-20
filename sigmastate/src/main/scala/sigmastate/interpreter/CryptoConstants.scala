@@ -10,7 +10,7 @@ object CryptoConstants {
   /** Type of group elements used in the signature scheme. */
   type EcPointType = Ecp
 
-  /** Length of encoded group elements in bytes. */
+  /** Length of encoded group element in bytes. */
   val EncodedGroupElementLength: Byte = 33
 
   /** Group used in the signature scheme. */
