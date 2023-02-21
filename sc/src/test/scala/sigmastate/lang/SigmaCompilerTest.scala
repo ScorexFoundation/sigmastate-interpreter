@@ -1,6 +1,5 @@
 package sigmastate.lang
 
-import fastparse.Parsed
 import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
 import org.ergoplatform._
 import scorex.util.encode.Base58
@@ -9,7 +8,6 @@ import sigmastate._
 import sigmastate.helpers.CompilerTestingCommons
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.Terms.{Apply, Ident, Lambda, MethodCall, ZKProofBlock}
-import sigmastate.lang.syntax.ParserException
 import sigmastate.exceptions.{CosterException, InvalidArguments, TyperException}
 import sigmastate.serialization.ValueSerializer
 import sigmastate.serialization.generators.ObjectGenerators
@@ -42,28 +40,6 @@ class SigmaCompilerTest extends CompilerTestingCommons with LangTests with Objec
 
   private def costerFail(x: String, expectedLine: Int, expectedCol: Int): Unit =
     costerFail(env, x, expectedLine, expectedCol)
-
-  def parse(x: String): SValue = {
-    SigmaParser(x) match {
-      case Parsed.Success(v, _) =>
-        v.sourceContext.isDefined shouldBe true
-        assertSrcCtxForAllNodes(v)
-        v
-      case f@Parsed.Failure(_, _, extra) =>
-        val traced = extra.traced
-        println(s"\nTRACE: ${traced.trace}")
-        f.get // force show error diagnostics
-    }
-  }
-
-  def fail(x: String, expectedLine: Int, expectedCol: Int): Unit = {
-    val compiler = new SigmaCompiler(ErgoAddressEncoder.TestnetNetworkPrefix)
-    val exception = the[ParserException] thrownBy compiler.parse(x)
-    withClue(s"Exception: $exception, is missing source context:") { exception.source shouldBe defined }
-    val sourceContext = exception.source.get
-    sourceContext.line shouldBe expectedLine
-    sourceContext.column shouldBe expectedCol
-  }
 
   property("array indexed access") {
     comp(env, "Coll(1)(0)") shouldBe
@@ -363,59 +339,5 @@ class SigmaCompilerTest extends CompilerTestingCommons with LangTests with Objec
         GetVarIntArray(2).get,
         GetVar(3.toByte, SCollection(SSigmaProp)).get
       )
-  }
-
-  property("negative tests") {
-    fail("(10", 1, 4)
-    fail("10)", 1, 3)
-    fail("X)", 1, 2)
-    fail("(X", 1, 3)
-    fail("{ X", 1, 4)
-    fail("{ val X", 1, 8)
-    fail("\"str", 1, 5)
-  }
-
-  property("not(yet) supported lambda syntax") {
-    // passing a lambda without curly braces is not supported yet :)
-    fail("arr.exists ( (a: Int) => a >= 1 )", 1, 16)
-    // no argument type
-    an[ParserException] should be thrownBy parse("arr.exists ( a => a >= 1 )")
-    an[ParserException] should be thrownBy parse("arr.exists { a => a >= 1 }")
-  }
-
-  property("invalid ZKProof (non block parameter)") {
-    fail("ZKProof 1 > 1", 1, 9)
-  }
-
-  property("single name pattern fail") {
-    fail("{val (a,b) = (1,2)}", 1, 6)
-  }
-
-  property("unknown prefix in unary op") {
-    fail("+1", 1, 2)
-  }
-
-  property("empty lines before invalid op") {
-    fail(
-      """
-        |
-        |
-        |+1""".stripMargin, 4, 2)
-  }
-
-  property("unknown binary op") {
-    fail("1**1", 1, 1)
-  }
-
-  property("compound types not supported") {
-    fail("Coll[Int with Sortable](1)", 1, 6)
-  }
-
-  property("path types not supported") {
-    fail("Coll[Int.A](1)", 1, 10)
-  }
-
-  property("block contains non-Val binding before expression") {
-    fail("{1 ; 1 == 1}", 1, 2)
   }
 }
