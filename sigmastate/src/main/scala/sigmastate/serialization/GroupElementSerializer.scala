@@ -26,7 +26,7 @@ object GroupElementSerializer extends SigmaSerializer[EcPointType, EcPointType] 
       identityPointEncoding
     } else {
       val normed = CryptoFacade.normalizePoint(point)
-      val ySign = CryptoFacade.testBitZeroOfFieldElem(CryptoFacade.getAffineYCoord(normed))
+      val ySign = CryptoFacade.signOf(CryptoFacade.getAffineYCoord(normed))
       val X = CryptoFacade.encodeFieldElem(CryptoFacade.getXCoord(normed))
       val PO = safeNewArray[Byte](X.length + 1)
       PO(0) = (if (ySign) 0x03 else 0x02).toByte

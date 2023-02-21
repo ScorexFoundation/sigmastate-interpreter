@@ -47,7 +47,7 @@ object Platform {
   def encodeFieldElem(p: ECFieldElem): Array[Byte] = p.value.getEncoded
 
   /** Returns the value of bit 0 in BigInteger representation of this point. */
-  def testBitZeroOfFieldElem(p: ECFieldElem): Boolean = p.value.testBitZero()
+  def signOf(p: ECFieldElem): Boolean = p.value.testBitZero()
 
   /** * Normalization ensures that any projective coordinate is 1, and therefore that the x, y
     * coordinates reflect those of the equivalent point in an affine coordinate system.

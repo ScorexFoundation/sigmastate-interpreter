@@ -43,7 +43,7 @@ object CryptoFacade {
   def showPoint(p: Ecp): String = Platform.showPoint(p)
 
   /** Returns the sign of the field element. */
-  def testBitZeroOfFieldElem(p: ECFieldElem): Boolean = Platform.testBitZeroOfFieldElem(p)
+  def signOf(p: ECFieldElem): Boolean = Platform.signOf(p)
 
   /** Returns byte representation of the given field element. */
   def encodeFieldElem(p: ECFieldElem): Array[Byte] = Platform.encodeFieldElem(p)
