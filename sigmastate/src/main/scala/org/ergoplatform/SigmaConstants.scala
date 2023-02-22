@@ -3,6 +3,12 @@ package org.ergoplatform
 import scalan.util.CollectionUtil._
 import sigmastate.interpreter.CryptoConstants
 
+/** Descriptor of a constant which represents some size value.
+  * @tparam T type of the constant value
+  * @param value value of the constant
+  * @param id    unique id of the constant
+  * @param description description of the constant purpose
+  */
 case class SizeConstant[T: Numeric](value: T, id: Short, description: String)
 
 /** Constants facade that provide access to the values used in sigma's logic and checks.
@@ -76,6 +82,7 @@ object SigmaConstants {
     "size of nonce array from Autolykos POW solution in Header.powNonce array") {
   }
 
+  /** List of registered size constants with unique ids. */
   val ConstTable: Seq[SizeConstant[_]] = {
     val rows = Seq(
       MaxBoxSize,
