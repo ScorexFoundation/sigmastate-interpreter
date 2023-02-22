@@ -199,6 +199,7 @@ trait BigInt {
 @scalan.Liftable
 @WithMethodCallRecognizers
 trait GroupElement {
+  /** Checks if the provided element is an identity element. */
   def isIdentity: Boolean
 
   /** Exponentiate this <code>GroupElement</code> to the given number.
