@@ -32,13 +32,20 @@ class SigmaParserTest extends AnyPropSpec with ScalaCheckPropertyChecks with Mat
     }
   }
 
+  def parseWithException(x: String): SValue = {
+    SigmaParser(x) match {
+      case Parsed.Success(v, _) => v
+      case f: Parsed.Failure =>
+        throw new ParserException(s"Syntax error: $f", Some(SourceContext.fromParserFailure(f)))
+    }
+  }
+
   def parseType(x: String): SType = {
     SigmaParser.parseType(x)
   }
 
   def fail(x: String, expectedLine: Int, expectedCol: Int): Unit = {
-    val compiler = new SigmaCompiler(ErgoAddressEncoder.TestnetNetworkPrefix)
-    val exception = the[ParserException] thrownBy compiler.parse(x)
+    val exception = the[ParserException] thrownBy parseWithException(x)
     withClue(s"Exception: $exception, is missing source context:") { exception.source shouldBe defined }
     val sourceContext = exception.source.get
     sourceContext.line shouldBe expectedLine
