@@ -123,7 +123,7 @@ class JsonSerializationSpec extends SigmaTestingCommons with SerializationSpecif
     val minerPkHex = "0326df75ea615c18acc6bb4b517ac82795872f388d5d180aac90eaa84de750b942"
     val minerPk = Base16.decode(minerPkHex).map { point =>
       ProveDlog(
-        CryptoConstants.dlogGroup.curve.decodePoint(point).asInstanceOf[CryptoConstants.EcPointType]
+        CryptoConstants.dlogGroup.ctx.decodePoint(point).asInstanceOf[CryptoConstants.EcPointType]
       )
     }.get
     val regs = Map(

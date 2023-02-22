@@ -2,7 +2,6 @@ package special.sigma
 
 import java.math.BigInteger
 
-import org.bouncycastle.math.ec.ECPoint
 import special.collection._
 import scalan._
 import scorex.crypto.authds.{ADDigest, ADValue}
@@ -200,7 +199,8 @@ trait BigInt {
 @scalan.Liftable
 @WithMethodCallRecognizers
 trait GroupElement {
-  def isInfinity: Boolean
+  /** Checks if the provided element is an identity element. */
+  def isIdentity: Boolean
 
   /** Exponentiate this <code>GroupElement</code> to the given number.
     * @param k The power.

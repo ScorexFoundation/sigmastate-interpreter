@@ -5,7 +5,7 @@ import scorex.crypto.hash.Blake2b256
 import sigmastate.Values.SigmaBoolean
 import sigmastate._
 import sigmastate.basics.DLogProtocol.FirstDLogProverMessage
-import sigmastate.basics.{FirstDiffieHellmanTupleProverMessage, SecP256K1}
+import sigmastate.basics.{FirstDiffieHellmanTupleProverMessage, SecP256K1Group}
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.{HintsBag, ProverInterpreter}
 import sigmastate.lang.exceptions.InterpreterException
@@ -38,7 +38,7 @@ class ProverSpecification extends SigmaTestingCommons {
     val r = h.ownCommitments.head.secretRandomness
 
     // g^r == a
-    SecP256K1.exponentiate(SecP256K1.generator, r) shouldBe a.ecData
+    SecP256K1Group.exponentiate(SecP256K1Group.generator, r) shouldBe a.ecData
 
     val h2 = prover.generateCommitmentsFor(pk3, Seq(pk))
     h2.hints.size shouldBe 2

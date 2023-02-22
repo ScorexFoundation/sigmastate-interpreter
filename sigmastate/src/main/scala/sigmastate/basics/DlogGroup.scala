@@ -2,7 +2,7 @@ package sigmastate.basics
 
 import java.math.BigInteger
 import java.security.SecureRandom
-import org.bouncycastle.math.ec.ECPoint
+import sigmastate.crypto.{CryptoFacade, Ecp}
 
 
 /**
@@ -19,7 +19,9 @@ import org.bouncycastle.math.ec.ECPoint
   *
   *  @tparam ElemType is concrete type
   */
-trait DlogGroup[ElemType <: ECPoint] {
+trait DlogGroup {
+  /** The type of the elements of this Dlog group */
+  type ElemType = Ecp
 
   val secureRandom = new SecureRandom()
 
@@ -95,22 +97,11 @@ trait DlogGroup[ElemType <: ECPoint] {
 
     // if the given element is the identity, get a new random element
     while ( {
-      randGen.isInfinity
+      CryptoFacade.isInfinityPoint(randGen)
     }) randGen = createRandomElement()
 
     randGen
   }
-
-  /**
-    * Computes the product of several exponentiations with distinct bases
-    * and distinct exponents.
-    * Instead of computing each part separately, an optimization is used to
-    * compute it simultaneously.
-    * @param groupElements
-    * @param exponentiations
-    * @return the exponentiation result
-    */
-  def simultaneousMultipleExponentiations(groupElements: Array[ElemType], exponentiations: Array[BigInteger]): ElemType
 
   /**
     * Computes the product of several exponentiations of the same base

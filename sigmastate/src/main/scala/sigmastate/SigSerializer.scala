@@ -2,7 +2,7 @@ package sigmastate
 
 import com.typesafe.scalalogging.LazyLogging
 import gf2t.GF2_192_Poly
-import org.bouncycastle.util.BigIntegers
+import sigmastate.crypto.BigIntegers
 import scorex.util.encode.Base16
 import sigmastate.Values.SigmaBoolean
 import sigmastate.basics.DLogProtocol.{ProveDlog, SecondDLogProverMessage}

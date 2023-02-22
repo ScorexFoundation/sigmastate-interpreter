@@ -1,11 +1,11 @@
 package sigmastate.crypto
 
 import java.math.BigInteger
-
 import org.scalacheck.Gen
-import sigmastate.helpers.SigmaTestingCommons
+import sigmastate.helpers.{SigmaPPrint, SigmaTestingCommons}
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.interpreter.CryptoConstants.EcPointType
+import sigmastate.utils.Helpers
 
 import scala.util.Random
 
@@ -54,4 +54,52 @@ class GroupLawsSpecification extends SigmaTestingCommons {
     }
   }
 
+  private def printPoints(points: Seq[(String, Any)]) = {
+    points.foreach { case (name, p) =>
+      println(s"val $name = ${SigmaPPrint.apply(p).plainText}")
+    }
+  }
+
+// uncommment to generate new test vectors
+//
+//  property("generate initial points") {
+//    printPoints(Seq(
+//      "identity" -> group.identity,
+//      "order" -> group.order,
+//      "p1" -> group.createRandomElement(),
+//      "p2" -> group.createRandomElement(),
+//      "p3" -> group.createRandomElement()
+//    ))
+//  }
+
+  val p1: Ecp = Helpers.decodeECPoint("0381c5275b1d50c39a0c36c4561c3a37bff1d87e37a9ad69eab029e426c0b1a8ac")
+  val p2 = Helpers.decodeECPoint("02198064ec24024bb8b300e20dd18e33cc1fccb0fea73940bd9a1d3d9d6c3ddd8f")
+  val p3 = Helpers.decodeECPoint("02e135f5f905fb843698d48959c6c792b2c6f9605b90be2280d53b4b69ef23e8a9")
+
+// uncommment to generate new test vectors
+  property("generate op results") {
+    printPoints(Seq(
+      "p1" -> p1,
+      "p2" -> p2,
+      "p3" -> p3,
+      "p1.add(p2)" -> CryptoFacade.multiplyPoints(p1, p2),
+      "p1.multiply(order)" -> CryptoFacade.exponentiatePoint(p1, group.order),
+      "p1.multiply(order + 1)" -> CryptoFacade.exponentiatePoint(p1, group.order.add(BigInteger.ONE)),
+      "p1.inverse" -> CryptoFacade.negatePoint(p1)
+    ))
+  }
+
+  property("check test vectors") {
+    CryptoFacade.multiplyPoints(p1, p2) shouldBe
+      Helpers.decodeECPoint("03de5e9c2806c05cd45a57d18c469743f42a0d2c84370b6662eb39d8a2990abed8")
+
+    CryptoFacade.exponentiatePoint(p1, group.order) shouldBe
+      Helpers.decodeECPoint("000000000000000000000000000000000000000000000000000000000000000000")
+
+    CryptoFacade.exponentiatePoint(p1, group.order.add(BigInteger.ONE)) shouldBe
+      Helpers.decodeECPoint("0381c5275b1d50c39a0c36c4561c3a37bff1d87e37a9ad69eab029e426c0b1a8ac")
+
+    CryptoFacade.negatePoint(p1) shouldBe
+      Helpers.decodeECPoint("0281c5275b1d50c39a0c36c4561c3a37bff1d87e37a9ad69eab029e426c0b1a8ac")
+  }
 }

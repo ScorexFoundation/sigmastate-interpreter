@@ -1,5 +1,6 @@
 package sigmastate.serialization
 
+import sigmastate.crypto.CryptoFacade
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.util.safeNewArray
@@ -21,12 +22,12 @@ object GroupElementSerializer extends SigmaSerializer[EcPointType, EcPointType] 
   private lazy val identityPointEncoding = Array.fill(encodingSize)(0: Byte)
 
   override def serialize(point: EcPointType, w: SigmaByteWriter): Unit = {
-    val bytes = if (point.isInfinity) {
+    val bytes = if (CryptoFacade.isInfinityPoint(point)) {
       identityPointEncoding
     } else {
-      val normed = point.normalize()
-      val ySign = normed.getAffineYCoord.testBitZero()
-      val X = normed.getXCoord.getEncoded
+      val normed = CryptoFacade.normalizePoint(point)
+      val ySign = CryptoFacade.signOf(CryptoFacade.getAffineYCoord(normed))
+      val X = CryptoFacade.encodeFieldElem(CryptoFacade.getXCoord(normed))
       val PO = safeNewArray[Byte](X.length + 1)
       PO(0) = (if (ySign) 0x03 else 0x02).toByte
       System.arraycopy(X, 0, PO, 1, X.length)
@@ -38,7 +39,7 @@ object GroupElementSerializer extends SigmaSerializer[EcPointType, EcPointType] 
   override def parse(r: SigmaByteReader): EcPointType = {
     val encoded = r.getBytes(encodingSize)
     if (encoded(0) != 0) {
-      curve.curve.decodePoint(encoded).asInstanceOf[EcPointType]
+      curve.ctx.decodePoint(encoded)
     } else {
       curve.identity
     }

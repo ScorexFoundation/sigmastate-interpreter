@@ -123,7 +123,7 @@ object P2PKAddress {
 
   /** Constructs [[P2PKAddress]] instance using the public key of the given [[ProveDlog]]. */
   def apply(pubkey: ProveDlog)(implicit encoder: ErgoAddressEncoder): P2PKAddress = {
-    val bs = GroupElementSerializer.toBytes(pubkey.h)
+    val bs = GroupElementSerializer.toBytes(pubkey.value)
     new P2PKAddress(pubkey, bs)
   }
 }

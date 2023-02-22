@@ -2,7 +2,7 @@ package sigmastate.basics
 
 import java.math.BigInteger
 
-import org.bouncycastle.util.BigIntegers
+import sigmastate.crypto.BigIntegers
 import sigmastate.Values.Value.PropositionCode
 import sigmastate._
 import sigmastate.basics.VerifierMessage.Challenge
