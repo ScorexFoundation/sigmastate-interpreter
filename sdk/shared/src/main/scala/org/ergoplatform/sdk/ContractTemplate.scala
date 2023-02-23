@@ -42,7 +42,8 @@ import sigmastate.util.safeNewArray
 import special.collection.Coll
 
 import java.nio.charset.StandardCharsets
-import scala.collection.immutable.IndexedSeq
+import scala.collection.mutable
+import scala.collection.compat.immutable.ArraySeq
 import scala.util.Try
 import sigmastate.SType
 import sigmastate.lang.StdSigmaBuilder
