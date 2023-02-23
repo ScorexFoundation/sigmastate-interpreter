@@ -1,4 +1,4 @@
-package org.ergoplatform
+package org.ergoplatform.sdk
 
 import java.math.BigInteger
 
@@ -16,12 +16,22 @@ import sigmastate.eval.Extensions._
 import sigmastate.eval.{CPreHeader, WrapperOf, _}
 import sigmastate.exceptions.SigmaException
 import sigmastate.interpreter.{ContextExtension, ProverResult}
-import sigmastate.serialization.{DataJsonEncoder, ErgoTreeSerializer, ValueSerializer}
 import sigmastate.{AvlTreeData, AvlTreeFlags, SType}
 import special.collection.Coll
 import special.sigma.{AnyValue, Header, PreHeader}
 import scala.util.Try
 import sigmastate.utils.Helpers._  // required for Scala 2.11
+import org.ergoplatform.ErgoBox
+import sigmastate.serialization.ValueSerializer
+import org.ergoplatform.DataInput
+import org.ergoplatform.Input
+import org.ergoplatform.UnsignedInput
+import sigmastate.serialization.ErgoTreeSerializer
+import org.ergoplatform.ErgoLikeTransaction
+import org.ergoplatform.UnsignedErgoLikeTransaction
+import org.ergoplatform.ErgoLikeTransactionTemplate
+import org.ergoplatform.ErgoBoxCandidate
+import org.ergoplatform.ErgoLikeContext
 
 trait JsonCodecs {
 
