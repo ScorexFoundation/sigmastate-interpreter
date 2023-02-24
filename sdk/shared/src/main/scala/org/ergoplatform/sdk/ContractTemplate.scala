@@ -210,7 +210,6 @@ object ContractTemplate {
     new ContractTemplate(None, name, description, constTypes, constValues, parameters, expressionTree)
   }
 
-  /** HOTSPOT: don't beautify this code */
   object serializer extends SigmaSerializer[ContractTemplate, ContractTemplate] {
 
     private def serializeString(s: String, w: SigmaByteWriter): Unit = {
@@ -262,7 +261,6 @@ object ContractTemplate {
       val nConstants = r.getUInt().toInt
       val constTypes: IndexedSeq[SType] = {
         if (nConstants > 0) {
-          // HOTSPOT:: allocate new array only if it is not empty
           val res = safeNewArray[SType](nConstants)
           cfor(0)(_ < nConstants, _ + 1) { i =>
             res(i) = TypeSerializer.deserialize(r)
@@ -274,7 +272,6 @@ object ContractTemplate {
       }
       val constValues: Option[IndexedSeq[Option[SType#WrappedType]]] = r.getOption((() => {
         if (nConstants > 0) {
-          // HOTSPOT:: allocate new array only if it is not empty
           val res = safeNewArray[Option[SType#WrappedType]](nConstants)
           cfor(0)(_ < nConstants, _ + 1) { i =>
             res(i) = r.getOption((() => DataSerializer.deserialize(constTypes(i), r))())
@@ -393,6 +390,35 @@ object ContractTemplate {
     * Used for deserializing contract templates.
     */
   private def defaultOf[T <: SType](tpe: T): T#WrappedType = {
+    val syntheticBox = new ErgoBox(
+      0L,
+      new ErgoTree(
+        0.toByte,
+        Vector(),
+        Right(CSigmaProp(TrivialProp(false)))
+      ),
+      Colls.emptyColl,
+      Map(),
+      ModifierId @@ ("synthetic_transaction_id"),
+      0.toShort,
+      0
+    )
+    val syntheticPreHeader = CPreHeader(
+      0.toByte,
+      Helpers.decodeBytes("1c597f88969600d2fffffdc47f00d8ffc555a9e85001000001c505ff80ff8f7f"),
+      -755484979487531112L,
+      9223372036854775807L,
+      11,
+      Helpers.decodeGroupElement("0227a58e9b2537103338c237c52c1213bf44bdb344fa07d9df8ab826cca26ca08f"),
+      Helpers.decodeBytes("007f00")
+    )
+    val syntheticAvlTree = AvlTreeData(
+      ADDigest @@ (ErgoAlgos.decodeUnsafe("54d23dd080006bdb56800100356080935a80ffb77e90b800057f00661601807f17")),
+      AvlTreeFlags(insertAllowed = true, updateAllowed = true, removeAllowed = false),
+      2147483647,
+      None
+    )
+
     val res = (tpe match {
       case SBoolean => false
       case SByte => 0.toByte
@@ -402,21 +428,7 @@ object ContractTemplate {
       case SBigInt => BigInt(0)
       case SGroupElement => CGroupElement(CryptoConstants.dlogGroup.identity)
       case SSigmaProp => CSigmaProp(TrivialProp(false))
-      case SBox => CostingBox(
-        new ErgoBox(
-          0L,
-          new ErgoTree(
-            0.toByte,
-            Vector(),
-            Right(BoolToSigmaProp(EQ(ConstantPlaceholder(0, SInt), IntConstant(1))))
-          ),
-          Colls.emptyColl,
-          Map(),
-          ModifierId @@ ("synthetic_transaction_id"),
-          0.toShort,
-          0
-        )
-      )
+      case SBox => CostingBox(syntheticBox)
       case c: SCollectionType[_] => SCollectionType(c.elemType)
       case _: SOption[_] => None
       case _: STuple => STuple(SInt, SLong)
@@ -424,89 +436,38 @@ object ContractTemplate {
       case SContext => CostingDataContext(
         _dataInputs = Colls.emptyColl,
         headers = Colls.emptyColl,
-        preHeader = CPreHeader(
-          0.toByte,
-          Helpers.decodeBytes("1c597f88969600d2fffffdc47f00d8ffc555a9e85001000001c505ff80ff8f7f"),
-          -755484979487531112L,
-          9223372036854775807L,
-          11,
-          Helpers.decodeGroupElement("0227a58e9b2537103338c237c52c1213bf44bdb344fa07d9df8ab826cca26ca08f"),
-          Helpers.decodeBytes("007f00")
-        ),
+        preHeader = syntheticPreHeader,
         inputs = Colls.emptyColl,
         outputs = Colls.emptyColl,
-        height = 11,
-        selfBox = CostingBox(
-          new ErgoBox(
-            0L,
-            new ErgoTree(
-              0.toByte,
-              Vector(),
-              Right(BoolToSigmaProp(EQ(ConstantPlaceholder(0, SInt), IntConstant(1))))
-            ),
-            Colls.emptyColl,
-            Map(),
-            ModifierId @@ ("synthetic_transaction_id"),
-            0.toShort,
-            0
-          )
-        ),
+        height = 1,
+        selfBox = CostingBox(syntheticBox),
         selfIndex = 0,
-        lastBlockUtxoRootHash = CAvlTree(
-          AvlTreeData(
-            ADDigest @@ (ErgoAlgos.decodeUnsafe("54d23dd080006bdb56800100356080935a80ffb77e90b800057f00661601807f17")),
-            AvlTreeFlags(insertAllowed = true, updateAllowed = true, removeAllowed = true),
-            1211925457,
-            None
-          )
-        ),
+        lastBlockUtxoRootHash = CAvlTree(syntheticAvlTree),
         _minerPubKey = Helpers.decodeBytes("0227a58e9b2537103338c237c52c1213bf44bdb344fa07d9df8ab826cca26ca08f"),
         vars = Colls.emptyColl,
         activatedScriptVersion = 0.toByte,
         currentErgoTreeVersion = 0.toByte
       )
-      case SAvlTree => CAvlTree(
-        AvlTreeData(
-          ADDigest @@ (ErgoAlgos.decodeUnsafe("54d23dd080006bdb56800100356080935a80ffb77e90b800057f00661601807f17")),
-          AvlTreeFlags(insertAllowed = true, updateAllowed = true, removeAllowed = false),
-          2147483647,
-          None
-        )
-      )
+      case SAvlTree => CAvlTree(syntheticAvlTree)
       case SGlobal => CostingSigmaDslBuilder
       case SHeader => CHeader(
         Colls.fromArray(Blake2b256("Header.id")),
         0,
         Colls.fromArray(Blake2b256("Header.parentId")),
         Colls.fromArray(Blake2b256("ADProofsRoot")),
-        CAvlTree(
-          AvlTreeData(
-            ADDigest @@ (ErgoAlgos.decodeUnsafe("54d23dd080006bdb56800100356080935a80ffb77e90b800057f00661601807f17")),
-            AvlTreeFlags(insertAllowed = true, updateAllowed = true, removeAllowed = false),
-            2147483647,
-            None
-          )
-        ),
+        CAvlTree(syntheticAvlTree),
         Colls.fromArray(Blake2b256("transactionsRoot")),
         timestamp = 0,
-        nBits = 0,
+        nBits = 0,           
         height = 0,
         extensionRoot = Colls.fromArray(Blake2b256("transactionsRoot")),
         minerPk = SigmaDsl.groupGenerator,
         powOnetimePk = SigmaDsl.groupGenerator,
         powNonce = Colls.fromArray(Array[Byte](0, 1, 2, 3, 4, 5, 6, 7)),
-        powDistance = SigmaDsl.BigInt(BigInt("1405498250268750867257727119510201256371618473728619086008183115260323").bigInteger),
+        powDistance = SigmaDsl.BigInt(BigInt("0").bigInteger),
         votes = Colls.fromArray(Array[Byte](0, 1, 2))
       )
-      case SPreHeader => CPreHeader(
-        0.toByte,
-        Helpers.decodeBytes("7fff7fdd6f62018bae0001006d9ca888ff7f56ff8006573700a167f17f2c9f40"),
-        6306290372572472443L,
-        -3683306095029417063L,
-        1,
-        Helpers.decodeGroupElement("026930cb9972e01534918a6f6d6b8e35bc398f57140d13eb3623ea31fbd069939b"),
-        Helpers.decodeBytes("ff8087")
-      )
+      case SPreHeader => syntheticPreHeader
       case SUnit => ()
       case _ => sys.error(s"Unknown type $tpe")
     }).asInstanceOf[T#WrappedType]

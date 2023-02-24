@@ -207,7 +207,7 @@ class ContractTemplateSpecification extends SerializationSpecification
     val templateValues = Seq(
       Map("p1" -> ByteConstant(10.toByte), "p2" -> ByteConstant(40.toByte), "p3" -> ByteConstant(50.toByte)),
       Map("p1" -> IntConstant(10), "p2" -> IntConstant(20)),
-      Map[String, Constant[SType]](),
+      Map.empty[String, Constant[SType]],
     )
     val expectedErgoTree = Seq(
       ErgoTree(
