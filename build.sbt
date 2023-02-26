@@ -70,9 +70,9 @@ dynverSonatypeSnapshots in ThisBuild := true
 dynverSeparator in ThisBuild := "-"
 
 val bouncycastleBcprov = "org.bouncycastle" % "bcprov-jdk15on" % "1.66"
-val scrypto            = "org.scorexfoundation" %% "scrypto" % "2.2.1-25-dafca54c-SNAPSHOT"
-val scorexUtil         = "org.scorexfoundation" %% "scorex-util" % "0.1.8-19-0331a3d9-SNAPSHOT"
-val debox              = "org.scorexfoundation" %% "debox" % "0.9.0-8-3da95c40-SNAPSHOT"
+val scrypto            = "org.scorexfoundation" %% "scrypto" % "2.3.0-RC1"
+val scorexUtil         = "org.scorexfoundation" %% "scorex-util" % "0.2.0"
+val debox              = "org.scorexfoundation" %% "debox" % "0.10.0"
 val spireMacros        = "org.typelevel" %% "spire-macros" % "0.17.0-M1"
 val fastparse          = "com.lihaoyi" %% "fastparse" % "2.3.3"
 val guava              = "com.google.guava" % "guava" % "30.1.1-jre"
