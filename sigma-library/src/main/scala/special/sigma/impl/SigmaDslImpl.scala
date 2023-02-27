@@ -970,28 +970,6 @@ object SigmaProp extends EntityObject("SigmaProp") {
         true, true, element[SigmaProp]))
     }
 
-    // manual fix ||
-    def ||(other: Ref[Boolean])(implicit o: Overloaded1): Ref[SigmaProp] = {
-      asRep[SigmaProp](mkMethodCall(source,
-        SigmaPropClass.getMethod("$bar$bar", classOf[Sym], classOf[Overloaded1]),
-        Array[AnyRef](other, o),
-        true, true, element[SigmaProp]))
-    }
-
-    def lazyAnd(other: Ref[Thunk[SigmaProp]]): Ref[SigmaProp] = {
-      asRep[SigmaProp](mkMethodCall(source,
-        SigmaPropClass.getMethod("lazyAnd", classOf[Sym]),
-        Array[AnyRef](other),
-        true, true, element[SigmaProp]))
-    }
-
-    def lazyOr(other: Ref[Thunk[SigmaProp]]): Ref[SigmaProp] = {
-      asRep[SigmaProp](mkMethodCall(source,
-        SigmaPropClass.getMethod("lazyOr", classOf[Sym]),
-        Array[AnyRef](other),
-        true, true, element[SigmaProp]))
-    }
-
     // manual fix
     def builder: Ref[SigmaDslBuilder] = {
       asRep[SigmaDslBuilder](mkMethodCall(source,
@@ -1016,7 +994,7 @@ object SigmaProp extends EntityObject("SigmaProp") {
     override protected def collectMethods: Map[java.lang.reflect.Method, MethodDesc] = {
       super.collectMethods ++
         Elem.declaredMethods(classOf[SigmaProp], classOf[SSigmaProp], Set(
-        "isValid", "propBytes", "$amp$amp", "$amp$amp", "$bar$bar", "$bar$bar"
+        "isValid", "propBytes", "$amp$amp", "$bar$bar"
         ))
     }
   }
