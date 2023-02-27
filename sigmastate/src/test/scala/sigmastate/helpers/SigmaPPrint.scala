@@ -1,7 +1,6 @@
 package sigmastate.helpers
 
 import java.math.BigInteger
-import gf2t.GF2_192_Poly
 import org.ergoplatform.ErgoBox
 import org.ergoplatform.ErgoBox.RegisterId
 import org.ergoplatform.settings.ErgoAlgos
@@ -11,6 +10,7 @@ import scalan.RType.PrimitiveType
 import sigmastate.SCollection._
 import sigmastate.Values.{ConstantNode, ErgoTree, FuncValue, ValueCompanion}
 import sigmastate._
+import sigmastate.crypto.GF2_192_Poly
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.lang.SigmaTyper
 import sigmastate.lang.Terms.MethodCall
@@ -111,7 +111,7 @@ object SigmaPPrint extends PPrinter {
       Tree.Apply("BigInt", treeifyMany(v.toString(16), 16))
 
     case poly: GF2_192_Poly =>
-      val c0 = poly.coeff0Bytes()
+      val c0 = poly.coeff0Bytes
       val others = poly.toByteArray(false) // don't output
       Tree.Apply("GF2_192_Poly.fromByteArray", treeifyMany(c0, others))
 

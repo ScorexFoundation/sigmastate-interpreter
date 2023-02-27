@@ -30,6 +30,8 @@ package gf2t;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import sigmastate.crypto.GF2_192;
+import sigmastate.crypto.GF2_192_Poly;
 
 import java.util.Random;
 import java.util.Arrays;

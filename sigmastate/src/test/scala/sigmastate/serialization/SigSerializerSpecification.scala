@@ -2,8 +2,6 @@ package sigmastate.serialization
 
 import java.math.BigInteger
 import java.util
-
-import gf2t.GF2_192_Poly
 import org.ergoplatform.settings.ErgoAlgos
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.Assertion
@@ -12,6 +10,7 @@ import sigmastate._
 import sigmastate.basics.DLogProtocol.{ProveDlog, SecondDLogProverMessage}
 import sigmastate.basics.VerifierMessage.Challenge
 import sigmastate.basics.{ProveDHTuple, SecondDiffieHellmanTupleProverMessage}
+import sigmastate.crypto.GF2_192_Poly
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTransactionTesting, SigmaTestingCommons}
 import sigmastate.interpreter.Interpreter
 import sigmastate.serialization.generators.ObjectGenerators

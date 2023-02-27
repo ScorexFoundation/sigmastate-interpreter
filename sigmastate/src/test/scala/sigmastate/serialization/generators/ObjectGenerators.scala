@@ -188,7 +188,7 @@ trait ObjectGenerators extends TypeGenerators
   def additionalTokensGen(cnt: Int): Seq[Gen[(Digest32, Long)]] =
     (0 until cnt).map { _ =>
       for {
-        id <- Digest32 @@ boxIdGen
+        id <- Digest32 @@@ boxIdGen
         amt <- Gen.oneOf(1, 500, 20000, 10000000, Long.MaxValue)
       } yield id -> amt
     }
@@ -252,7 +252,7 @@ trait ObjectGenerators extends TypeGenerators
     flags <- avlTreeFlagsGen
     keyLength <- unsignedIntGen
     vl <- arbOption[Int](Arbitrary(unsignedIntGen)).arbitrary
-  } yield AvlTreeData(ADDigest @@ digest, flags, keyLength, vl)
+  } yield AvlTreeData(ADDigest @@@ digest, flags, keyLength, vl)
 
   def avlTreeGen: Gen[AvlTree] = avlTreeDataGen.map(SigmaDsl.avlTree)
 
