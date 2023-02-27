@@ -20,6 +20,7 @@ import sigmastate.crypto.{CryptoFacade, Ecp}
   *  @tparam ElemType is concrete type
   */
 trait DlogGroup {
+  /** The type of the elements of this Dlog group */
   type ElemType = Ecp
 
   val secureRandom = new SecureRandom()

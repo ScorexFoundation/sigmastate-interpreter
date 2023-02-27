@@ -77,14 +77,14 @@ The following code is recommended as a replacement if xs provides an O(1) indexi
 especially if `xs` is an `Array` wrapped into `Seq`.
 
 ```scala
-import spire.syntax.all.cfor
+import debox.cfor
 cfor(0)(_ < xs.length, _ + 1) { i => 
   val x = xs(i)
       ...
 }
 ```
 
-Here `cfor` is a macros from [spire](https://github.com/non/spire) library.
+Here `cfor` is a macros from [debox](https://github.com/ScorexFoundation/debox) library.
 This is compiled to efficient Java `for` loop and avoids overhead points 1) - 4).
 Depending on xs.length it is 20-50x faster (see `BasicBenchmark.scala`).
 And since `foreach` already implies a side effect operation, `cfor` doesn't make 

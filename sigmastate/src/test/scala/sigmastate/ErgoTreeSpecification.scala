@@ -1,28 +1,31 @@
 package sigmastate
 
-import org.ergoplatform.ErgoBox
 import org.ergoplatform.settings.ErgoAlgos
 import org.ergoplatform.validation.{ValidationException, ValidationRules}
+import org.ergoplatform.{ErgoAddressEncoder, ErgoBox, ErgoLikeContext, Self}
 import scalan.RType.asType
 import scalan.{Nullable, RType}
-import sigmastate.SCollection.{SByteArray, SByteArray2, checkValidFlatmap}
+import sigmastate.SCollection.{SByteArray, checkValidFlatmap}
 import sigmastate.Values._
 import sigmastate.VersionContext._
-import sigmastate.eval.{Evaluation, Profiler}
+import sigmastate.eval.{CostingBox, Evaluation, Profiler}
+import sigmastate.helpers.{ErgoLikeContextTesting, SigmaPPrint}
 import sigmastate.interpreter.ErgoTreeEvaluator
+import sigmastate.interpreter.Interpreter.ReductionResult
 import sigmastate.lang.SourceContext
 import sigmastate.lang.Terms._
-import sigmastate.lang.exceptions.{CostLimitException, CosterException, InterpreterException}
+import sigmastate.lang.exceptions.{CostLimitException, InterpreterException}
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
+import sigmastate.utils.Helpers.TryOps
 import sigmastate.utxo._
 import special.collection._
-import special.sigma.SigmaDslTesting
+import special.sigma.{ContractsTestkit, SigmaDslTesting}
 
 
 /** Regression tests with ErgoTree related test vectors.
   * This test vectors verify various constants which are consensus critical and should not change.
   */
-class ErgoTreeSpecification extends SigmaDslTesting {
+class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
 
   property("Value.sourceContext") {
     val srcCtx = SourceContext.fromParserIndex(0, "")
@@ -664,4 +667,100 @@ class ErgoTreeSpecification extends SigmaDslTesting {
     }
 
   }
+
+  // Test vectors for https://github.com/ScorexFoundation/sigmastate-interpreter/issues/828
+  property("nested BoolToSigmaProp") {
+    val addr = ErgoAddressEncoder.Mainnet.fromString("Fo6oijFP2JM87ac7w").getOrThrow
+    val tree = addr.script
+    tree shouldBe new ErgoTree(
+      16.toByte,
+      Vector(TrueLeaf),
+      Right(BoolToSigmaProp(BoolToSigmaProp(ConstantPlaceholder(0, SBoolean)).asBoolValue))
+    )
+
+    def createCtx: ErgoLikeContext = ErgoLikeContextTesting
+        .dummy(CostingBox(fakeSelf), VersionContext.current.activatedVersion)
+        .withErgoTreeVersion(tree.version)
+
+    VersionContext.withVersions(activatedVersion = 1, tree.version) {
+      // v4.x behavior
+      val res = ErgoTreeEvaluator.evalToCrypto(createCtx, tree, evalSettings)
+      res shouldBe ReductionResult(TrivialProp(true), 3)
+    }
+
+    VersionContext.withVersions(activatedVersion = 2, tree.version) {
+      // v5.0 behavior
+      assertExceptionThrown(
+        ErgoTreeEvaluator.evalToCrypto(createCtx, tree, evalSettings),
+        exceptionLike[ClassCastException]()
+      )
+    }
+  }
+
+  object BlockValueWithInvalidBoolToSigmaProp {
+    def unapply(prop: SigmaPropValue): Option[BoolToSigmaProp] = prop.asValue[SType] match {
+      case BlockValue(_, b @ BoolToSigmaProp(x)) if x.tpe == SSigmaProp => Some(b)
+      case _ => None
+    }
+  }
+
+  property("BoolToSigmaProp with SigmaProp argument should be deserializable") {
+    { // Transaction: 5fe235558bd37328c5cc65711e5aff12b6f96d6f5abf062b7e7b994f7981f2ec
+      val addr = ErgoAddressEncoder.Mainnet.fromString("Fo6oijFP2JM87ac7w").getOrThrow
+      val tree = addr.script
+      tree shouldBe new ErgoTree(
+        16.toByte,
+        Vector(TrueLeaf),
+        Right(BoolToSigmaProp(BoolToSigmaProp(ConstantPlaceholder(0, SBoolean)).asBoolValue))
+      )
+    }
+
+    { // Transaction: 1b878563f198f622360d88f61a6258aa67dd40875e1b18d1e6ea013cd32afb40
+      val addr = ErgoAddressEncoder.Mainnet.fromString("3ehvg9kjzVt2ep6VkYbsNZBXVoFjQA3b26LTmCwvE9vTUEU2TG1uKdqh7sb1a23G1HLkXa6rv4NUcR5Ucghp8CTuBnUxJB4qYq61GYNDFmCHdoZJq32vUVJ7Jsq4cFE7zp9ddFnchb8EN2Qkaa9rqzmruj4iKjLu8MMJ3V8ns1tpRF8eSp2KSjPuMYt6ZHysFNGoMt4dQ2P45YoCXbgiJtzcADgjMnr5bkpqKMx2ZEaAUWoZfHN8DUwvNawSCr2yHieHKbWujxeGuPUuGPAdJHQRcC47xpBj7rKExxGE6T117vAAzSwc98UG3CC8Lb8UeoE7WWi9LCTdXqJpJFrwb8Zqc9HnqSVRvAxeaKgcueX36absXAxpqpAGUcH8YwYoeVmSYLsQKQbUAVrFe73eJyRtgxpcVEqrs4rBZ3KeDJUe5J2NJTNYKoUFcruqqu4N1XUFCECWXANsE9TLoQNyqDgNRcnHE4t8nw6THPJXQWCTBHK6mHvkVcj6SvGinvVGfMpeuA8MF1FFtZJTMnM31cuMBexK3m5mDxsbamJngQiPrcyVqK4smDpdiqhds7APGJbwKTHgst2u1P6").getOrThrow
+      val tree = addr.script
+      tree match {
+        case ErgoTree(_, _, Right(BlockValueWithInvalidBoolToSigmaProp(_)), _, _, _) =>
+      }
+    }
+
+    { // Transactions:
+      // 49ede8ab7b5a8ed00ba045f1ec9315de60566e149de5f35987a63c9fe481a13c
+      // d3f35272c9e32f49b1723450fa6106032bcd1ad2b69dd199a68dbcd069be4baf
+      // 1040deda322b4187e987b580b9df24c04804ad095dfc6a7e0e08db8e7b51dbfb
+      // d6ca9f6760ff8d67ed0618c1f293574764813ceda31c51ce17ee10dc9743649b
+      // 186afd8e39228c5b6e55a6b0d17eb08c62e03b0e82c7d3cc3a11bd51a96d2b92
+      val addr = ErgoAddressEncoder.Mainnet.fromString("bpn7HXccD8wzY3x8XbymfBCh71aeci1FyM7JJgVx6mVY3vxznf2Pom7gtEgQBxr9UZb8cn9Z6GiXEjV7mB7ypRfH9Qpf3eCsd8qoEGmvsFqW2GyEvxgYWnJGd8QYTYZLBgGkSFcAeerLLDZwS1bos5oV4atMLnPDUJ6bH2EFFwVRdTAQKxaVMAhNtNYZxAcYtWhaYBJqYZM8ne3hGFrkWNTgNy7NxEDQ5LpBEM3rq6EqUENAGhH6THDL7RyU8AMkpr2vhosqEeqp4yXJmK887vU4qbnGGrMLX4w5GrgL9zLk41Vm6vzEUVLvp8XQJ8CULwkHNiKkNHRLeTk6BG4hwJsFoUSJJNWgsfputm8pEbaTuKfNG5u4NFmZ3YLfGsrqpr62c95QuNuD3g3FaoBUhxigkfNhKwFFtpKKsYerJvvp2Suh2eVRptFsCN15pjdkveUakhFsAo9j9YwhYVjjPpCWZgB8Wme8iZLRVfopSuDVdiqGsnmpJcuccmPsebgXPz3XvyjQazYE7WnR3Jrr1mRWHVEnJb3UU89JVPDpJPP1jUaSqmkKCkrPj3WMMQTDg17WW2DkhGKsb").getOrThrow
+      val tree = addr.script
+      tree match {
+        case ErgoTree(_, _, Right(BlockValueWithInvalidBoolToSigmaProp(_)), _, _, _) =>
+      }
+    }
+
+    { // Transactions:
+      // d41cbc4ad342067e2f8945bfde4e04b15eafa200f868a223d131047bc46c52b3
+      // 4503b5d77cb74b4354771b835cd61e9d5257022a8efff0fddfac249e0c25b492
+      val addr = ErgoAddressEncoder.Mainnet.fromString("28JURWHTHwTnXJt5F38").getOrThrow
+      val tree = addr.script
+      tree shouldBe new ErgoTree(16.toByte, Vector(),
+        Right(BoolToSigmaProp(
+          CreateProveDlog(OptionGet(ExtractRegisterAs(Self, ErgoBox.R4, SOption(SGroupElement)))).asBoolValue)
+        ))
+    }
+
+    { // Transactions:
+      // 263a441ecb4c2794711d7add8de59a0b0dc9b99e7a2dd3ff949cbafc958157f7
+      // 5fd5027a70c2d45a853e16eb7a4909cced5d127ba3f87d0fe908f950c2084ec1
+      // 4503b5d77cb74b4354771b835cd61e9d5257022a8efff0fddfac249e0c25b492
+      // d4b522f88ff28d9bb686b3e2b346b91f78830279963432fbfbdebfb9e0d43fc6
+      // d41cbc4ad342067e2f8945bfde4e04b15eafa200f868a223d131047bc46c52b3
+      val addr = ErgoAddressEncoder.Mainnet.fromString("9drgw9DeDxHwdwYWT11yrYD3qCN3fzgnjA3eS5ZXEkR2Rrpd2x58R3HFViGAs93hYFqroBGShW5DG6h2tU7PqDURegny88hEhNKfLpWKBHpLMmfDwZwTM75MuYKXkmtyUmiMRAfGAVVjaSqThddra5ykZ4UrG8kgqkHSBTxtibVPmNff8Fx7Fy5q82xsZ95RFpjGkAX1QgtirHc3JP6QDZfHUFPx2gnyT9pDpYrKWEhjK8Ake779PoYqGzrL5gtuHyLqsC3WtLFMvP3QNfVtwPaqeCLEmjFmWYU6MV1A8fTJxGWDByiCMnva9wDgZgLh8wrSwttEGE9XHiZaWxWNWqVM8Ypn8aW8x8mKSjxQjF1BNxV41JTeGEMFDvY2HaNYgGbQhBbrTXFq9cvxuzPgXHtfwcbb2kiytr3YBCz8eNmbzp73LSKzRk4AFaTiTdFSSWJe72uLAurQTQBTzAzVgPptGWfrhMWmHCkN5qXQMpUQWNsCzwqRHeZzpSMVtWTyrBCGsbyuPitbukdLHZ8Wee7DtCy8j4Gkhewrwn23jVQu1ApN4uGAFEa29AL26bsMGD7tdu1StE9CKRVzbfEknaReqv6").getOrThrow
+      val tree = addr.script
+      tree match {
+        case ErgoTree(_, _, Right(BlockValueWithInvalidBoolToSigmaProp(_)), _, _, _) =>
+      }
+      SigmaPPrint.pprintln(tree, 150, 300)
+    }
+
+  }
+
 }

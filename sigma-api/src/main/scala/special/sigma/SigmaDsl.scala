@@ -195,7 +195,8 @@ trait BigInt {
 /** Base class for points on elliptic curves.
   */
 trait GroupElement {
-  def isInfinity: Boolean
+  /** Checks if the provided element is an identity element. */
+  def isIdentity: Boolean
 
   /** Exponentiate this <code>GroupElement</code> to the given number.
     * @param k The power.
@@ -639,22 +640,21 @@ trait Context {
   /** Box whose proposition is being currently executing */
   def SELF: Box
 
-  /** Zero based index in `inputs` of `selfBox`. -1 if self box is not in the INPUTS collection. */
+  /** Zero based index in `inputs` of `selfBox`. */
   def selfBoxIndex: Int
 
   /** Authenticated dynamic dictionary digest representing Utxo state before current state. */
   def LastBlockUtxoRootHash: AvlTree
 
-  /** A fixed number of last block headers in descending order (first header is the newest one)
-    * @since 2.0
-    */
+  /** A fixed number of last block headers in descending order (first header is the newest one) */
   def headers: Coll[Header]
 
-  /**
-    * @since 2.0
-    */
+  /** Fields of a new block header, that can be predicted by a miner before block's formation */
   def preHeader: PreHeader
 
+  /** Bytes of encoded miner's public key.
+    * Same as `preHeader.minerPk.getEncoded`
+    */
   def minerPubKey: Coll[Byte]
 
   /** Extracts Context variable by id and type.

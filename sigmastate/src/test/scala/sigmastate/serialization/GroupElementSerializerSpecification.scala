@@ -13,7 +13,7 @@ class GroupElementSerializerSpecification extends SerializationSpecification {
     val bytes = GroupElementSerializer.toBytes(identity)
     bytes.length shouldBe CryptoConstants.EncodedGroupElementLength
     bytes.forall(_ == 0) shouldBe true
-    GroupElementSerializer.parse(SigmaSerializer.startReader(bytes, 0)).isInfinity shouldBe true
+    GroupElementSerializer.parse(SigmaSerializer.startReader(bytes, 0)).isIdentity shouldBe true
   }
 
   property("point roundtrip") {

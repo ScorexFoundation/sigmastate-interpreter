@@ -104,7 +104,7 @@ case class CGroupElement(override val wrappedValue: Ecp) extends GroupElement wi
   override def getEncoded: Coll[Byte] =
     dsl.Colls.fromArray(GroupElementSerializer.toBytes(wrappedValue))
 
-  override def isInfinity: Boolean = CryptoFacade.isInfinityPoint(wrappedValue)
+  override def isIdentity: Boolean = CryptoFacade.isInfinityPoint(wrappedValue)
 
   override def exp(k: BigInt): GroupElement =
     dsl.GroupElement(CryptoFacade.exponentiatePoint(wrappedValue, k.asInstanceOf[CBigInt].wrappedValue))
@@ -510,6 +510,7 @@ class CostingSigmaDslBuilder extends SigmaDslBuilder { dsl =>
 
   override def toBigInteger(n: BigInt): BigInteger = n.asInstanceOf[CBigInt].wrappedValue
 
+  /** Wraps the given elliptic curve point into GroupElement type. */
   def GroupElement(p: Ecp): GroupElement = p match {
     case ept: EcPointType => CGroupElement(ept)
     case m => sys.error(s"Point of type ${m.getClass} is not supported")
@@ -527,6 +528,9 @@ class CostingSigmaDslBuilder extends SigmaDslBuilder { dsl =>
   /** Extract `sigmastate.crypto.Ecp` from DSL's `GroupElement` type. */
   def toECPoint(ge: GroupElement): Ecp = ge.asInstanceOf[CGroupElement].wrappedValue
 
+  /** Creates a new AvlTree instance with the given parameters.
+    * @see AvlTreeData for details
+    */
   override def avlTree(operationFlags: Byte, digest: Coll[Byte], keyLength: Int, valueLengthOpt: Option[Int]): CAvlTree = {
     val treeData = AvlTreeData(ADDigest @@ digest.toArray, AvlTreeFlags(operationFlags), keyLength, valueLengthOpt)
     CAvlTree(treeData)

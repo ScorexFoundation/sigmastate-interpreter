@@ -51,7 +51,7 @@ trait NegativeTesting extends Matchers {
     */
   def exceptionLike[E <: Throwable : ClassTag]
       (msgParts: String*): Throwable => Boolean = {
-    case t: E => msgParts.forall(t.getMessage.contains(_))
+    case t: E => msgParts.forall(part => t.getMessage != null && t.getMessage.contains(part))
     case _ => false
   }
 
