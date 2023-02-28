@@ -275,7 +275,7 @@ lazy val sc = (project in file("sc"))
 
 lazy val sdk = crossProject(JVMPlatform, JSPlatform)
     .in(file("sdk"))
-    .dependsOn(corelib % allConfigDependency, interpreter % allConfigDependency)
+    .dependsOn(corelib % allConfigDependency, interpreter % allConfigDependency, parsers % allConfigDependency)
     .settings(commonSettings ++ testSettings2,
       commonDependenies2,
       testingDependencies2,

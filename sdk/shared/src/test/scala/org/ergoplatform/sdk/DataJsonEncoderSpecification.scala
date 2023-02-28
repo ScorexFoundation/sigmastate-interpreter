@@ -1,9 +1,8 @@
-package sigmastate.serialization
+package org.ergoplatform.sdk
 
 
 import java.math.BigInteger
 
-import org.ergoplatform.JsonCodecs
 import org.scalacheck.Arbitrary._
 import scalan.RType
 import sigmastate.SCollection.SByteArray
@@ -15,6 +14,7 @@ import sigmastate.eval.{Evaluation, _}
 import sigmastate.basics.CryptoConstants.EcPointType
 import sigmastate.exceptions.SerializerException
 import special.sigma.{Box, AvlTree}
+import sigmastate.serialization.SerializationSpecification
 
 class DataJsonEncoderSpecification extends SerializationSpecification {
   object JsonCodecs extends JsonCodecs

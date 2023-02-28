@@ -1,4 +1,5 @@
-package org.ergoplatform
+package org.ergoplatform.sdk
+
 
 import io.circe._
 import io.circe.syntax._
@@ -13,14 +14,21 @@ import sigmastate.Values.{ByteArrayConstant, ByteConstant, ErgoTree, EvaluatedVa
 import sigmastate.basics.CryptoConstants
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.eval.Digest32Coll
-import sigmastate.helpers.CompilerTestingCommons
 import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigmastate.serialization.SerializationSpecification
 import sigmastate.utils.Helpers._
 import special.collection.Coll
 import special.sigma.{Header, PreHeader}
+import org.ergoplatform.ErgoLikeContext
+import org.ergoplatform.DataInput
+import org.ergoplatform.Input
+import org.ergoplatform.UnsignedInput
+import org.ergoplatform.ErgoBox
+import org.ergoplatform.ErgoLikeTransaction
+import org.ergoplatform.UnsignedErgoLikeTransaction
+import org.ergoplatform.ErgoLikeTransactionTemplate
 
-class JsonSerializationSpec extends CompilerTestingCommons with SerializationSpecification with JsonCodecs {
+class JsonSerializationSpec extends SerializationSpecification with JsonCodecs {
 
   def jsonRoundTrip[T](v: T)(implicit encoder: Encoder[T], decoder: Decoder[T]): Unit = {
     val json = v.asJson
