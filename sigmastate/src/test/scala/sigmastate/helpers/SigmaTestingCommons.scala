@@ -6,8 +6,10 @@ import org.ergoplatform.validation.ValidationRules.CheckSerializableTypeCode
 import org.ergoplatform.validation.{ValidationException, ValidationSpecification}
 import org.scalacheck.Arbitrary.arbByte
 import org.scalacheck.Gen
-import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
-import org.scalatest.{Assertion, Matchers, PropSpec}
+import org.scalatest.Assertion
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.propspec.AnyPropSpec
+import org.scalatestplus.scalacheck.{ScalaCheckDrivenPropertyChecks, ScalaCheckPropertyChecks}
 import scalan.util.BenchmarkUtil
 import scalan.{RType, TestContexts, TestUtils}
 import scorex.crypto.hash.Blake2b256
@@ -27,9 +29,9 @@ import scala.language.implicitConversions
 import scala.reflect.ClassTag
 import scala.util.DynamicVariable
 
-trait SigmaTestingCommons extends PropSpec
-  with PropertyChecks
-  with GeneratorDrivenPropertyChecks
+trait SigmaTestingCommons extends AnyPropSpec
+  with ScalaCheckPropertyChecks
+  with ScalaCheckDrivenPropertyChecks
   with Matchers with TestUtils with TestContexts with ValidationSpecification
   with NegativeTesting
   with TestsBase {

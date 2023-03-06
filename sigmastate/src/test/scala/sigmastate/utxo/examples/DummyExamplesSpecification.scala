@@ -31,7 +31,7 @@ class DummyExamplesSpecification extends SigmaTestingCommons { suite =>
       }
 
       def getRoot(item: Coll[Byte]):Coll[Byte] = path.foldLeft(item, xor)
-      pkA && getRoot(oldItem) == oldRoot && getRoot(newItem) == newRoot
+      pkA && sigmaProp(getRoot(oldItem) == oldRoot) && sigmaProp(getRoot(newItem) == newRoot)
 
       val dummy = Coll[Byte]()
       val isValid = {(b:Box) => b.propositionBytes == dummy}

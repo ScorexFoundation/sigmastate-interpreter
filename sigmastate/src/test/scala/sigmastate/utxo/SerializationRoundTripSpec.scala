@@ -1,17 +1,18 @@
 package sigmastate.utxo
 
 import org.ergoplatform._
-import org.scalatest.prop.GeneratorDrivenPropertyChecks
-import org.scalatest.{PropSpec, Matchers}
 import scalan.util.BenchmarkUtil
 import sigmastate.helpers.SigmaTestingCommons
-import sigmastate.interpreter.{ProverResult, ContextExtension}
+import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigmastate.serialization.generators.ObjectGenerators
 import debox.{Buffer => DBuffer}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.propspec.AnyPropSpec
+import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import sigmastate.util.{MaxArrayLength, safeNewArray}
 
-class SerializationRoundTripSpec extends PropSpec
-  with GeneratorDrivenPropertyChecks
+class SerializationRoundTripSpec extends AnyPropSpec
+  with ScalaCheckDrivenPropertyChecks
   with Matchers
   with ObjectGenerators
   with SigmaTestingCommons {

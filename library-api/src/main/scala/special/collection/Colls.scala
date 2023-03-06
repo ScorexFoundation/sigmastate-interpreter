@@ -322,7 +322,7 @@ trait CollBuilder {
   /** Construct a new collection from the given list of arguments.
     * The arguments should be of the same type for which there should be
     * an implicit type descriptor at the call site. */
-  @Reified("T") def fromItems[T](items: T*)(implicit cT: RType[T]): Coll[T]
+  def fromItems[T](items: T*)(implicit cT: RType[T]): Coll[T]
 
   /** Deconstruct collection of (A,B) pairs into pair of collections.
     * If `xs` is represented as PairColl, then this is O(1) operation (no data is touched). */

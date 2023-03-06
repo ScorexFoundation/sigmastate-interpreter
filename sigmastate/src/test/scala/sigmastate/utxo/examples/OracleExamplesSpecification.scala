@@ -2,7 +2,7 @@ package sigmastate.utxo.examples
 
 import java.security.SecureRandom
 
-import com.google.common.primitives.Longs
+import scorex.utils.Longs
 import org.ergoplatform.ErgoBox.RegisterId
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup}
 import scorex.crypto.authds.{ADKey, ADValue}

@@ -1,13 +1,14 @@
 package sigmastate.lang
 
-import org.scalatest.prop.PropertyChecks
-import org.scalatest.{Matchers, PropSpec}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.propspec.AnyPropSpec
+import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.lang.exceptions.ConstraintFailed
 import sigmastate.serialization.OpCodes
 
-class SigmaBuilderTest extends PropSpec with PropertyChecks with Matchers with LangTests {
+class SigmaBuilderTest extends AnyPropSpec with ScalaCheckPropertyChecks with Matchers with LangTests {
 
   property("StdSigmaBuilder construct nodes") {
     import StdSigmaBuilder._

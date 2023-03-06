@@ -2,7 +2,8 @@ package scalan
 
 import scalan.util.FileUtil
 import org.scalactic.TripleEquals
-import org.scalatest.{Inside, Matchers, TestSuite}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.{Inside, TestSuite}
 import scalan.util.StringUtil.StringUtilExtensions
 
 /**

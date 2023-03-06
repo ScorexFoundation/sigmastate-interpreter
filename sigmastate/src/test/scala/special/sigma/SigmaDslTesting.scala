@@ -9,8 +9,6 @@ import org.scalacheck.Arbitrary._
 import org.scalacheck.Gen.frequency
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.exceptions.TestFailedException
-import org.scalatest.prop.PropertyChecks
-import org.scalatest.{Matchers, PropSpec}
 import scalan.RType
 import scalan.RType._
 import scalan.util.BenchmarkUtil
@@ -35,14 +33,17 @@ import sigmastate.utxo.{DeserializeContext, DeserializeRegister, GetVar, OptionG
 import sigmastate.{SOption, SSigmaProp, SType, VersionContext, eval}
 import special.collection.{Coll, CollType}
 import debox.cfor
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.propspec.AnyPropSpec
+import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 
 import java.util
 import scala.collection.mutable
 import scala.reflect.ClassTag
 import scala.util.{Failure, Success, Try}
 
-class SigmaDslTesting extends PropSpec
-    with PropertyChecks
+class SigmaDslTesting extends AnyPropSpec
+    with ScalaCheckPropertyChecks
     with Matchers
     with SigmaTestingData with SigmaContractSyntax
     with ObjectGenerators { suite =>

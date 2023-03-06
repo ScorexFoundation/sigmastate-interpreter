@@ -1,13 +1,14 @@
 package sigmastate
 
 import org.scalactic.source.Position
-import org.scalatest.{PropSpec, Tag}
+import org.scalatest.propspec.AnyPropSpec
+import org.scalatest.Tag
 
 /** Decorator trait which allows to redefine `property` so that it is executed repeatedly for each valid
   * [[VersionContext]], which is properly initialized.
   * Thus, the properties can be versioned using `VersionContext.current`.
   */
-trait VersionTestingProperty extends PropSpec with VersionTesting {
+trait VersionTestingProperty extends AnyPropSpec with VersionTesting {
 
   /** Redefine `property` so that testFun is executed repeatedly for each valid
    * [[VersionContext]] */

@@ -2,8 +2,9 @@ package sigmastate.lang
 
 import org.ergoplatform.{Height, Inputs, Outputs, Self}
 import org.ergoplatform.ErgoAddressEncoder._
-import org.scalatest.prop.PropertyChecks
-import org.scalatest.{Matchers, PropSpec}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.propspec.AnyPropSpec
+import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.interpreter.Interpreter.ScriptEnv
@@ -12,7 +13,7 @@ import sigmastate.lang.Terms._
 import sigmastate.lang.exceptions.BinderException
 import sigmastate.eval._
 
-class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with LangTests {
+class SigmaBinderTest extends AnyPropSpec with ScalaCheckPropertyChecks with Matchers with LangTests {
   import StdSigmaBuilder._
 
   def bind(env: ScriptEnv, x: String): SValue = {

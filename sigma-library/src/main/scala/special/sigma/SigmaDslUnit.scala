@@ -3,7 +3,7 @@ package special.sigma {
   import scalan._
 
   trait SigmaDsl extends Base { self: SigmaLibrary =>
-    @Liftable @WithMethodCallRecognizers trait BigInt extends Def[BigInt] {
+    trait BigInt extends Def[BigInt] {
       def toByte: Ref[Byte];
       def toShort: Ref[Short];
       def toInt: Ref[Int];
@@ -28,28 +28,24 @@ package special.sigma {
       def max(that: Ref[BigInt]): Ref[BigInt];
       def negate: Ref[BigInt]
     };
-    @Liftable @WithMethodCallRecognizers trait GroupElement extends Def[GroupElement] {
+    trait GroupElement extends Def[GroupElement] {
       def isInfinity: Ref[Boolean];
       def exp(k: Ref[BigInt]): Ref[GroupElement];
       def multiply(that: Ref[GroupElement]): Ref[GroupElement];
       def negate: Ref[GroupElement];
       def getEncoded: Ref[Coll[Byte]]
     };
-    @Liftable @WithMethodCallRecognizers trait SigmaProp extends Def[SigmaProp] {
+    trait SigmaProp extends Def[SigmaProp] {
       def isValid: Ref[Boolean];
       def propBytes: Ref[Coll[Byte]];
-      @OverloadId(value = "and_sigma") def &&(other: Ref[SigmaProp]): Ref[SigmaProp];
-      // manual fix
-      @OverloadId(value = "and_bool") def &&(other: Ref[Boolean])(implicit o: Overloaded1): Ref[SigmaProp];
-      @OverloadId(value = "or_sigma") def ||(other: Ref[SigmaProp]): Ref[SigmaProp];
-      // manual fix
-      @OverloadId(value = "or_bool") def ||(other: Ref[Boolean])(implicit o: Overloaded1): Ref[SigmaProp];
+      def &&(other: Ref[SigmaProp]): Ref[SigmaProp];
+      def ||(other: Ref[SigmaProp]): Ref[SigmaProp];
     };
-    @Liftable @WithMethodCallRecognizers trait AnyValue extends Def[AnyValue] {
+    trait AnyValue extends Def[AnyValue] {
       def value: Ref[Any];
       def tVal: Ref[WRType[Any]]
     };
-    @Liftable @WithMethodCallRecognizers trait Box extends Def[Box] {
+    trait Box extends Def[Box] {
       def id: Ref[Coll[Byte]];
       def value: Ref[Long];
       def propositionBytes: Ref[Coll[Byte]];
@@ -71,7 +67,7 @@ package special.sigma {
       def creationInfo: Ref[scala.Tuple2[Int, Coll[Byte]]];
       def executeFromRegister[T](regId: Ref[Byte])(implicit cT: Elem[T]): Ref[T]
     };
-    @Liftable trait AvlTree extends Def[AvlTree] {
+    trait AvlTree extends Def[AvlTree] {
       def digest: Ref[Coll[Byte]];
       def enabledOperations: Ref[Byte];
       def keyLength: Ref[Int];
@@ -88,7 +84,7 @@ package special.sigma {
       def update(operations: Ref[Coll[scala.Tuple2[Coll[Byte], Coll[Byte]]]], proof: Ref[Coll[Byte]]): Ref[WOption[AvlTree]];
       def remove(operations: Ref[Coll[Coll[Byte]]], proof: Ref[Coll[Byte]]): Ref[WOption[AvlTree]]
     };
-    @Liftable trait PreHeader extends Def[PreHeader] {
+    trait PreHeader extends Def[PreHeader] {
       def version: Ref[Byte];
       def parentId: Ref[Coll[Byte]];
       def timestamp: Ref[Long];
@@ -97,7 +93,7 @@ package special.sigma {
       def minerPk: Ref[GroupElement];
       def votes: Ref[Coll[Byte]]
     };
-    @Liftable trait Header extends Def[Header] {
+    trait Header extends Def[Header] {
       def id: Ref[Coll[Byte]];
       def version: Ref[Byte];
       def parentId: Ref[Coll[Byte]];
@@ -114,7 +110,7 @@ package special.sigma {
       def powDistance: Ref[BigInt];
       def votes: Ref[Coll[Byte]]
     };
-    @Liftable @WithMethodCallRecognizers trait Context extends Def[Context] {
+    trait Context extends Def[Context] {
       def builder: Ref[SigmaDslBuilder];
       def OUTPUTS: Ref[Coll[Box]];
       def INPUTS: Ref[Coll[Box]];
@@ -129,7 +125,7 @@ package special.sigma {
       def getVar[T](id: Ref[Byte])(implicit cT: Elem[T]): Ref[WOption[T]];
       def vars: Ref[Coll[AnyValue]]
     };
-    @Liftable @WithMethodCallRecognizers trait SigmaDslBuilder extends Def[SigmaDslBuilder] {
+    trait SigmaDslBuilder extends Def[SigmaDslBuilder] {
       def Colls: Ref[CollBuilder];
       def verifyZK(cond: Ref[Thunk[SigmaProp]]): Ref[Boolean];
       def atLeast(bound: Ref[Int], props: Ref[Coll[SigmaProp]]): Ref[SigmaProp];
@@ -147,7 +143,7 @@ package special.sigma {
       def proveDlog(g: Ref[GroupElement]): Ref[SigmaProp];
       def proveDHTuple(g: Ref[GroupElement], h: Ref[GroupElement], u: Ref[GroupElement], v: Ref[GroupElement]): Ref[SigmaProp];
       def groupGenerator: Ref[GroupElement];
-      @Reified(value = "T") def substConstants[T](scriptBytes: Ref[Coll[Byte]], positions: Ref[Coll[Int]], newValues: Ref[Coll[T]]): Ref[Coll[Byte]];
+      def substConstants[T](scriptBytes: Ref[Coll[Byte]], positions: Ref[Coll[Int]], newValues: Ref[Coll[T]]): Ref[Coll[Byte]];
       def decodePoint(encoded: Ref[Coll[Byte]]): Ref[GroupElement];
       def avlTree(operationFlags: Ref[Byte], digest: Ref[Coll[Byte]], keyLength: Ref[Int], valueLengthOpt: Ref[WOption[Int]]): Ref[AvlTree];
       def xor(l: Ref[Coll[Byte]], r: Ref[Coll[Byte]]): Ref[Coll[Byte]]

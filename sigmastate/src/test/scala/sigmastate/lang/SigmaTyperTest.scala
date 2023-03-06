@@ -2,8 +2,9 @@ package sigmastate.lang
 
 import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
 import org.ergoplatform._
-import org.scalatest.prop.PropertyChecks
-import org.scalatest.{Matchers, PropSpec}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.propspec.AnyPropSpec
+import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import sigmastate.SCollection._
 import sigmastate.Values._
 import sigmastate._
@@ -19,7 +20,8 @@ import sigmastate.serialization.ErgoTreeSerializer
 import sigmastate.serialization.generators.ObjectGenerators
 import sigmastate.utxo.{Append, ExtractCreationInfo}
 
-class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with LangTests with ObjectGenerators {
+class SigmaTyperTest extends AnyPropSpec
+  with ScalaCheckPropertyChecks with Matchers with LangTests with ObjectGenerators {
 
   private val predefFuncRegistry = new PredefinedFuncRegistry(StdSigmaBuilder)
   import predefFuncRegistry._

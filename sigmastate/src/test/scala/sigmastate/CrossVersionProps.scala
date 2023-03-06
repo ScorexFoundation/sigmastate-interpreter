@@ -1,13 +1,14 @@
 package sigmastate
 
-import org.scalatest.{PropSpecLike, Tag}
+import org.scalatest.Tag
 import org.scalactic.source.Position
 import sigmastate.eval.Profiler
 import debox.cfor
+import org.scalatest.propspec.AnyPropSpecLike
 
 import scala.util.DynamicVariable
 
-trait CrossVersionProps extends PropSpecLike with TestsBase {
+trait CrossVersionProps extends AnyPropSpecLike with TestsBase {
 
   /** Number of times each test property is warmed up (i.e. executed before final execution). */
   def perTestWarmUpIters: Int = 0

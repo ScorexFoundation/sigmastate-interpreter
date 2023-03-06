@@ -11,6 +11,8 @@
 package sigmastate.kiama
 package rewriting
 
+import scala.collection.mutable
+
 /**
   * Strategy-based term rewriting in the style of Stratego (http://strategoxt.org/).
   * The implementation here is partially based on the semantics given in "Program
@@ -216,13 +218,11 @@ trait Rewriter {
     */
   object Duplicator {
 
-    import com.google.common.base.Function
-    import com.google.common.cache.{CacheBuilder, CacheLoader}
     import java.lang.reflect.Constructor
 
     type Duper = (Any, Array[AnyRef]) => Any
 
-    object MakeDuper extends Function[Class[_], Duper] {
+    object MakeDuper extends (Class[_] => Duper) {
 
       def apply(clazz : Class[_]) : Duper =
         try {
@@ -280,12 +280,25 @@ trait Rewriter {
 
     }
 
-    val cache = CacheBuilder.newBuilder.weakKeys.build(
-      CacheLoader.from(MakeDuper)
-    )
+    private val cache = mutable.HashMap.empty[Class[_], Duper]
 
+    /** Obtains a duper for the given class lazily. and memoize it in the `cache` map.
+      * This is the simplest solution, but not the most efficient for concurrent access.
+      */
+    def getDuper(clazz: Class[_]): Duper = synchronized { // TODO optimize: avoid global sync
+      val duper = cache.get(clazz) match {
+        case Some(d) => d
+        case None =>
+          val d = MakeDuper(clazz)
+          cache.put(clazz, d)
+          d
+      }
+      duper
+    }
+    
     def apply[T <: Product](t : T, children : Array[AnyRef]) : T = {
-      val duper = cache.get(t.getClass)
+      val clazz = t.getClass
+      val duper = getDuper(clazz)
       duper(t, children).asInstanceOf[T]
     }
 

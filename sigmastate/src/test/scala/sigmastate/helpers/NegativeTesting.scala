@@ -1,10 +1,11 @@
 package sigmastate.helpers
 
-import org.scalatest.Matchers
 
 import scala.annotation.tailrec
 import scala.util.{Failure, Success, Try}
 import debox.cfor
+import org.scalatest.matchers.should.Matchers
+
 import scala.reflect.ClassTag
 
 trait NegativeTesting extends Matchers {

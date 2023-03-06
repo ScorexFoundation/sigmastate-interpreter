@@ -1,6 +1,6 @@
 package sigmastate.utils
 
-import com.google.common.primitives.{Ints, Longs, Shorts}
+import scorex.utils.{Ints, Longs, Shorts}
 import sigmastate.eval.SigmaDsl
 import special.collection.Coll
 

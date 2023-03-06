@@ -48,7 +48,8 @@ class SigmaDslStaginTests extends BaseCtxTests with ErgoScriptTestkit with BaseL
     cake.check(boxA1, { env: EnvRep[RBox] => for { obj <- env; arg <- lifted(1) } yield obj.getReg[Coll[Byte]](arg) }, boxA1.getReg[special.collection.Coll[Byte]](1))
     cake.check(boxA1, { env: EnvRep[RBox] => for { obj <- env } yield obj.registers }, boxA1.registers)
 
-    cake.check(p1, { env: EnvRep[RSigmaProp] => for { p1 <- env; arg <- lifted(true) } yield p1 && arg }, p1 && true)
-    cake.check(p1, { env: EnvRep[RSigmaProp] => for { p1 <- env; arg <- lifted(p2) } yield p1 && arg }, p1 && p2)
+    cake.check(p1, { env: EnvRep[RSigmaProp] =>
+      for { p1 <- env; arg <- lifted(p2) } yield p1 && arg
+    }, p1 && p2)
   }
 }

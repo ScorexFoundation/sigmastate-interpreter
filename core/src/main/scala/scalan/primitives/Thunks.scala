@@ -2,7 +2,7 @@ package scalan.primitives
 
 import scala.language.{existentials, implicitConversions}
 import scalan.compilation.{GraphVizConfig, GraphVizExport}
-import scalan.{Liftable => _, _}
+import scalan._
 import debox.{Set => DSet, Buffer => DBuffer}
 import debox.cfor
 

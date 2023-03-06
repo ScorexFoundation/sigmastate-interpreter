@@ -1,11 +1,11 @@
 package sigmastate.lang
 
-import sigmastate.lang.Terms.{MethodCallLike, Ident}
-import sigmastate.Values.{LongConstant, SValue, Value, SigmaBoolean, ConcreteCollection}
+import org.scalatest.matchers.should.Matchers
+import sigmastate.lang.Terms.{Ident, MethodCallLike}
+import sigmastate.Values.{ConcreteCollection, LongConstant, SValue, SigmaBoolean, Value}
 import sigmastate._
-import java.math.BigInteger
 
-import org.scalatest.Matchers
+import java.math.BigInteger
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.SCollection.SByteArray
 import sigmastate.basics.ProveDHTuple

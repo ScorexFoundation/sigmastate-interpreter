@@ -1,6 +1,6 @@
 package org.ergoplatform
 
-import com.google.common.primitives.{Ints, Shorts}
+import scorex.utils.{Ints, Shorts}
 import org.ergoplatform.ErgoBox.{NonMandatoryRegisterId, TokenId}
 import org.ergoplatform.settings.ErgoAlgos
 import scorex.crypto.authds.ADKey

@@ -1,14 +1,16 @@
 package sigmastate.eval
 
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
+
 import java.math.BigInteger
-import org.scalatest.{FunSuite, Matchers}
 import sigmastate.TrivialProp
 import sigmastate.basics.SecP256K1Group
 import special.sigma.{ContractsTestkit, SigmaDslBuilder, SigmaProp}
 
 import scala.language.implicitConversions
 
-class BasicOpsTests extends FunSuite with ContractsTestkit with Matchers {
+class BasicOpsTests extends AnyFunSuite with ContractsTestkit with Matchers {
   override val SigmaDsl: SigmaDslBuilder = CostingSigmaDslBuilder
 
   implicit def boolToSigma(b: Boolean): SigmaProp = TrivialProp(b)
