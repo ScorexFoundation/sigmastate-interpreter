@@ -111,6 +111,46 @@ libraryDependencies += "org.scorexfoundation" %% "sigma-state" % "4.0.3"
 | sigma-library | Implementation of graph IR nodes for Sigma types   |
 | sigmastate | Implementation ErgoTree, Interpreter and cost estimation   |
 
+## Contributing
+
+We welcome contributions to this project! If you are interested in contributing, here are
+a few ways to get started:
+
+**Report bugs:** If you have found a bug please open an issue on the issue tracker.
+
+**Fix bugs or implement features:** If you would like to fix a bug or implement a new
+feature, please fork the repository and open a pull request with your changes. Please make
+sure to include a clear description of the changes you have made and why you think they
+should be included in the project.
+
+**Improve documentation:** If you notice that the documentation could be improved, please
+feel free to make changes and open a pull request.
+
+**Review pull requests:** If you would like to help review pull requests, please take a
+look at the open pull requests and leave comments on any that you would like to review.
+
+Before you start working on a contribution, please make sure to read the [contributing
+guidelines](CONTRIBUTING.md). These documents outline the expectations for contributions
+to this project.
+
+Thank you for your interest in contributing to this project! Your help is always appreciated!
+
+
+
+Please submit a pull request or create an issue to add a new cryptographic primitives or better implementations.
+
+
+## Acknowledgments
+
+We thank JetBrains for [supporting](https://www.jetbrains.com/buy/opensource/) this project since 2021 by providing All Products Pack subscription.
+
+<img src="https://www.yourkit.com/images/yklogo.png"/>
+
+We thank YourKit for support of open source projects with its full-featured Java Profiler.
+YourKit, LLC is the creator of <a href="https://www.yourkit.com/java/profiler/">YourKit Java Profiler</a>
+and <a href="https://www.yourkit.com/.net/profiler/">YourKit .NET Profiler</a>,
+innovative and intelligent tools for profiling Java and .NET applications.
+
 ## References
 
 - [Ergo Site](https://ergoplatform.org/en/)

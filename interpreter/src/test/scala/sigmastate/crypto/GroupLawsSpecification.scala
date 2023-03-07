@@ -54,7 +54,7 @@ class GroupLawsSpecification extends SigmaTestingCommons {
     }
   }
 
-  def printPoints(points: Seq[(String, Any)]) = {
+  private def printPoints(points: Seq[(String, Any)]) = {
     points.foreach { case (name, p) =>
       println(s"val $name = ${SigmaPPrint.apply(p).plainText}")
     }

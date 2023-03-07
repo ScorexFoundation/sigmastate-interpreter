@@ -83,6 +83,9 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
   private val SigmaM   = SigmaPropMethods
   private val SDBM     = SigmaDslBuilderMethods
 
+  /** Recognizer of [[SigmaDslBuilder.anyOf]] method call in Graph-IR. This method call
+    * represents `anyOf` predefined function.
+    */
   object AnyOf {
     def unapply(d: Def[_]): Nullable[(Ref[CollBuilder], Seq[Ref[A]], Elem[A]) forSome {type A}] = d match {
       case SDBM.anyOf(_, xs) =>
@@ -90,6 +93,10 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
       case _ => Nullable.None
     }
   }
+
+  /** Recognizer of [[SigmaDslBuilder.allOf]] method call in Graph-IR. This method call
+    * represents `allOf` predefined function.
+    */
   object AllOf {
     def unapply(d: Def[_]): Nullable[(Ref[CollBuilder], Seq[Ref[A]], Elem[A]) forSome {type A}] = d match {
       case SDBM.allOf(_, xs) =>
@@ -97,6 +104,10 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
       case _ => Nullable.None
     }
   }
+
+  /** Recognizer of [[SigmaDslBuilder.anyZK]] method call in Graph-IR. This method call
+    * represents `anyZK` predefined function.
+    */
   object AnyZk {
     def unapply(d: Def[_]): Nullable[(Ref[CollBuilder], Seq[Ref[SigmaProp]], Elem[SigmaProp])] = d match {
       case SDBM.anyZK(_, xs) =>
@@ -104,6 +115,10 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
       case _ => Nullable.None
     }
   }
+
+  /** Recognizer of [[SigmaDslBuilder.allZK]] method call in Graph-IR. This method call
+    * represents `allZK` predefined function.
+    */
   object AllZk {
     def unapply(d: Def[_]): Nullable[(Ref[CollBuilder], Seq[Ref[SigmaProp]], Elem[SigmaProp])] = d match {
       case SDBM.allZK(_, xs) =>
@@ -111,6 +126,14 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
       case _ => Nullable.None
     }
   }
+
+  /** Pattern match extractor which recognizes `isValid` nodes among items.
+    *
+    * @param items list of graph nodes which are expected to be of Ref[Boolean] type
+    * @return `None` if there is no `isValid` node among items
+    *         `Some((bs, ss)) if there are `isValid` nodes where `ss` are `SigmaProp`
+    *         arguments of those nodes and `bs` contains all the other nodes.
+    */
   object HasSigmas {
     def unapply(items: Seq[Sym]): Option[(Seq[Ref[Boolean]], Seq[Ref[SigmaProp]])] = {
       val bs = ArrayBuffer.empty[Ref[Boolean]]
@@ -218,6 +241,7 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
       .foreach(_.reset())
   }
 
+  /** If `f` returns `isValid` graph node, then it is filtered out. */
   def removeIsProven[T,R](f: Ref[T] => Ref[R]): Ref[T] => Ref[R] = { x: Ref[T] =>
     val y = f(x);
     val res = y match {
@@ -227,6 +251,8 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
     asRep[R](res)
   }
 
+  /** Translates SType descriptor to Elem descriptor used in graph IR.
+    * Should be inverse to `elemToSType`. */
   def stypeToElem[T <: SType](t: T): Elem[T#WrappedType] = (t match {
     case SBoolean => BooleanElement
     case SByte => ByteElement
@@ -251,6 +277,8 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
     case _ => error(s"Don't know how to convert SType $t to Elem")
   }).asInstanceOf[Elem[T#WrappedType]]
 
+  /** Translates Elem descriptor to SType descriptor used in ErgoTree.
+    * Should be inverse to `stypeToElem`. */
   def elemToSType[T](e: Elem[T]): SType = e match {
     case BooleanElement => SBoolean
     case ByteElement => SByte
@@ -276,6 +304,10 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
   }
 
   import Liftables._
+
+  /** Translates Elem to the corresponding Liftable instance.
+    * @param eWT type descriptor
+    */
   def liftableFromElem[WT](eWT: Elem[WT]): Liftable[_,WT] = (eWT match {
     case BooleanElement => BooleanIsLiftable
     case ByteElement => ByteIsLiftable
@@ -284,8 +316,8 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
     case LongElement => LongIsLiftable
     case StringElement => StringIsLiftable
     case UnitElement => UnitIsLiftable
-    case e: BigIntElem[_] => LiftableBigInt
-    case e: GroupElementElem[_] => LiftableGroupElement
+    case _: BigIntElem[_] => LiftableBigInt
+    case _: GroupElementElem[_] => LiftableGroupElement
     case ce: CollElem[t,_] =>
       implicit val lt = liftableFromElem[t](ce.eItem)
       liftableColl(lt)
@@ -321,10 +353,16 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
     (bigIntElement, BigIntIsExactOrdering)
   )
 
+  /** @return [[ExactNumeric]] instance for the given type */
   def elemToExactNumeric [T](e: Elem[T]): ExactNumeric[T]  = elemToExactNumericMap(e).asInstanceOf[ExactNumeric[T]]
+
+  /** @return [[ExactIntegral]] instance for the given type */
   def elemToExactIntegral[T](e: Elem[T]): ExactIntegral[T] = elemToExactIntegralMap(e).asInstanceOf[ExactIntegral[T]]
+
+  /** @return [[ExactOrdering]] instance for the given type */
   def elemToExactOrdering[T](e: Elem[T]): ExactOrdering[T] = elemToExactOrderingMap(e).asInstanceOf[ExactOrdering[T]]
 
+  /** @return binary operation for the given opCode and type */
   def opcodeToEndoBinOp[T](opCode: Byte, eT: Elem[T]): EndoBinOp[T] = opCode match {
     case OpCodes.PlusCode => NumericPlus(elemToExactNumeric(eT))(eT)
     case OpCodes.MinusCode => NumericMinus(elemToExactNumeric(eT))(eT)
@@ -336,6 +374,7 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
     case _ => error(s"Cannot find EndoBinOp for opcode $opCode")
   }
 
+  /** @return binary operation for the given opCode and type */
   def opcodeToBinOp[A](opCode: Byte, eA: Elem[A]): BinOp[A,_] = opCode match {
     case OpCodes.EqCode  => Equals[A]()(eA)
     case OpCodes.NeqCode => NotEquals[A]()(eA)
@@ -348,10 +387,7 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
 
   import sigmastate._
 
-  @inline def SigmaDsl = sigmaDslBuilderValue
-  @inline def Colls = sigmaDslBuilderValue.Colls
-
-  protected implicit def groupElementToECPoint(g: special.sigma.GroupElement): EcPointType = SigmaDsl.toECPoint(g).asInstanceOf[EcPointType]
+  protected implicit def groupElementToECPoint(g: special.sigma.GroupElement): EcPointType = CostingSigmaDslBuilder.toECPoint(g).asInstanceOf[EcPointType]
 
   def error(msg: String) = throw new CosterException(msg, None)
   def error(msg: String, srcCtx: Option[SourceContext]) = throw new CosterException(msg, srcCtx)
@@ -369,9 +405,20 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
     }))
   }
 
-  /** Helper type synonym used internally */
+  /** Type of the mapping between variable names (see Ident) or definition ids (see
+    * ValDef) and graph nodes. Thus, the key is either String or Int.
+    * Used in `buildNode` method.
+    */
   protected type CompilingEnv = Map[Any, Ref[_]]
 
+  /** Builds IR graph for the given ErgoTree expression `node`.
+    *
+    * @param ctx  reference to a graph node that represents Context value passed to script interpreter
+    * @param env  compilation environment which resolves variables to graph nodes
+    * @param node ErgoTree expression to be translated to graph
+    * @return reference to the graph node which represents `node` expression as part of in
+    *         the IR graph data structure
+    */
   protected def buildNode[T <: SType](ctx: Ref[Context], env: CompilingEnv, node: Value[T]): Ref[T#WrappedType] = {
     def eval[T <: SType](node: Value[T]): Ref[T#WrappedType] = buildNode(ctx, env, node)
     object In { def unapply(v: SValue): Nullable[Ref[Any]] = Nullable(asRep[Any](buildNode(ctx, env, v))) }

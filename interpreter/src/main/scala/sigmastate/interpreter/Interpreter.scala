@@ -9,7 +9,7 @@ import org.ergoplatform.validation.ValidationRules._
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
-import sigmastate.basics.DLogProtocol.{DLogInteractiveProver, FirstDLogProverMessage}
+import sigmastate.basics.DLogProtocol.{ProveDlog, DLogInteractiveProver, FirstDLogProverMessage}
 import sigmastate.basics._
 import sigmastate.interpreter.Interpreter._
 import sigmastate.lang.exceptions.InterpreterException
@@ -25,7 +25,7 @@ import sigmastate.utils.Helpers._
 import sigmastate.lang.Terms.ValueOps
 import debox.cfor
 
-import scala.util.{Success, Try}
+import scala.util.{Try, Success}
 
 /** Base (verifying) interpreter of ErgoTrees.
   * Can perform:
@@ -66,6 +66,20 @@ trait Interpreter {
     t.printStackTrace(System.out)
   }
 
+  /** The cost of Value[T] deserialization is O(n), where n is the length of its bytes
+    * array. To evaluate [[DeserializeContext]] and
+    * [[sigmastate.utxo.DeserializeRegister]] we add the following cost of deserialization
+    * for each byte.
+    */
+  val CostPerByteDeserialized = 2
+
+  /** The cost of substituting [[DeserializeContext]] and
+    * [[sigmastate.utxo.DeserializeRegister]] nodes with the deserialized expression is
+    * O(n), where n is the number of bytes in ErgoTree.
+    * The following is the cost added for each ErgoTree.bytes.
+    */
+  val CostPerTreeByte = 2
+
   /** Deserializes given script bytes using ValueSerializer (i.e. assuming expression tree format).
     * It also measures tree complexity adding to the total estimated cost of script execution.
     * The new returned context contains increased `initCost` and should be used for further processing.
@@ -77,9 +91,8 @@ trait Interpreter {
     */
   protected def deserializeMeasured(context: CTX, scriptBytes: Array[Byte]): (CTX, Value[SType]) = {
     val r = SigmaSerializer.startReader(scriptBytes)
-    r.complexity = 0
     val script = ValueSerializer.deserialize(r)  // Why ValueSerializer? read NOTE above
-    val scriptComplexity = r.complexity
+    val scriptComplexity = java7.compat.Math.multiplyExact(scriptBytes.length, CostPerByteDeserialized)
 
     val currCost = Evaluation.addCostChecked(context.initCost, scriptComplexity, context.costLimit)
     val ctx1 = context.withInitCost(currCost).asInstanceOf[CTX]
@@ -225,7 +238,10 @@ trait Interpreter {
                                        env: ScriptEnv): ReductionResult = {
     implicit val vs: SigmaValidationSettings = context.validationSettings
     val res = VersionContext.withVersions(context.activatedScriptVersion, ergoTree.version) {
-      val (propTree, context2) = trySoftForkable[(SigmaPropValue, CTX)](whenSoftFork = (TrueSigmaProp, context)) {
+      val deserializeSubstitutionCost = java7.compat.Math.multiplyExact(ergoTree.bytes.length, CostPerTreeByte)
+      val currCost = Evaluation.addCostChecked(context.initCost, deserializeSubstitutionCost, context.costLimit)
+      val context1 = context.withInitCost(currCost).asInstanceOf[CTX]
+      val (propTree, context2) = trySoftForkable[(SigmaPropValue, CTX)](whenSoftFork = (TrueSigmaProp, context1)) {
         applyDeserializeContextJITC(context, prop)
       }
 

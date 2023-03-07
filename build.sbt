@@ -15,6 +15,15 @@ lazy val commonSettings = Seq(
   organization := "org.scorexfoundation",
   crossScalaVersions := Seq(scala213, scala212, scala211),
   scalaVersion := scala212,
+  scalacOptions ++= {
+    CrossVersion.partialVersion(scalaVersion.value) match {
+      case Some((2, 13)) => Seq("-Ywarn-unused:_,imports", "-Ywarn-unused:imports", "-release", "8")
+      case Some((2, 12)) => Seq("-Ywarn-unused:_,imports", "-Ywarn-unused:imports", "-release", "8")
+      case Some((2, 11)) => Seq()
+      case _ => sys.error("Unsupported scala version")
+    }
+  },
+  javacOptions ++= javacReleaseOption,
   resolvers += Resolver.sonatypeRepo("public"),
   licenses := Seq("CC0" -> url("https://creativecommons.org/publicdomain/zero/1.0/legalcode")),
   homepage := Some(url("https://github.com/ScorexFoundation/sigmastate-interpreter")),
@@ -47,17 +56,23 @@ lazy val commonSettings = Seq(
   ),
 )
 
-// prefix version with "-SNAPSHOT" for builds without a git tag
+def javacReleaseOption = {
+  if (System.getProperty("java.version").startsWith("1."))
+  // java <9 "--release" is not supported
+    Seq()
+  else
+    Seq("--release", "8")
+}
+
+// suffix version with "-SNAPSHOT" for builds without a git tag
 dynverSonatypeSnapshots in ThisBuild := true
 // use "-" instead of default "+"
 dynverSeparator in ThisBuild := "-"
 
 val bouncycastleBcprov = "org.bouncycastle" % "bcprov-jdk15on" % "1.66"
-val scrypto            = "org.scorexfoundation" %% "scrypto" % "2.2.1-25-dafca54c-SNAPSHOT"
-//val scorexUtil         = "org.scorexfoundation" %% "scorex-util" % "0.1.8"
-//val debox              = "org.scorexfoundation" %% "debox" % "0.9.0"
-val scorexUtil         = "org.scorexfoundation" %% "scorex-util" % "0.1.8-19-0331a3d9-SNAPSHOT"
-val debox              = "org.scorexfoundation" %% "debox" % "0.9.0-8-3da95c40-SNAPSHOT"
+val scrypto            = "org.scorexfoundation" %% "scrypto" % "2.3.0-RC1"
+val scorexUtil         = "org.scorexfoundation" %% "scorex-util" % "0.2.0"
+val debox              = "org.scorexfoundation" %% "debox" % "0.10.0"
 val spireMacros        = "org.typelevel" %% "spire-macros" % "0.17.0-M1"
 val fastparse          = "com.lihaoyi" %% "fastparse" % "2.3.3"
 val scalaCompat        = "org.scala-lang.modules" %% "scala-collection-compat" % "2.7.0"
