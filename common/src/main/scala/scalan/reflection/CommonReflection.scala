@@ -4,9 +4,19 @@ import scala.collection.compat.immutable.ArraySeq
 import scala.collection.mutable
 import scala.collection.immutable
 
+/** Reflection metadata and global dictionaries to access it. */
 object CommonReflection {
+  /** Descriptors of classes. */
   val classes = mutable.HashMap.empty[Class[_], SRClass[_]]
 
+  /** Registers a class entry in the map of classes.
+    *
+    * @tparam T the type of the class to be registered
+    * @param clazz        the class to be registered
+    * @param constructors the constructors of the class
+    * @param fields       the fields of the class
+    * @param methods      the methods of the class (represented as a map of method names and argument types to the corresponding RMethod instances)
+    */
   def registerClassEntry[T](clazz: Class[T],
                             constructors: Seq[SRConstructor[_]] = ArraySeq.empty,
                             fields: Map[String, SRField] = Map.empty,
@@ -34,32 +44,6 @@ object CommonReflection {
     )
   )
 
-
-  //  registerClassEntry(classOf[Array[Byte]])
-//
-//  registerClassEntry(classOf[java.lang.Integer])
-//
-//  registerClassEntry(classOf[java.lang.Object])
-//
-//  registerClassEntry(classOf[java.lang.String])
-//
-//  registerClassEntry(classOf[Long])
-//
-
-//  registerClassEntry(classOf[scala.Product2[_,_]])
-//
-//  registerClassEntry(classOf[scala.collection.IndexedSeq[_]])
-//
-//  registerClassEntry(classOf[scala.collection.Seq[_]])
-//
-//  registerClassEntry(classOf[scala.collection.immutable.List[_]])
-//
-//  registerClassEntry(classOf[scala.collection.immutable.Map[_,_]])
-//
-//  class SRClassBuilder[T](clazz: Class[T]) {
-//
-//  }
-
   { val clazz = classOf[scala.Option[_]]
     registerClassEntry(clazz,
       methods = Map(
@@ -83,15 +67,4 @@ object CommonReflection {
     )
   }
 
-//  {
-//    val clazz = classOf[scala.collection.immutable.$colon$colon[_]]
-//    registerClassEntry(clazz,
-//      constructors = Array(
-//        new SRConstructor[Any](Array(classOf[java.lang.Object], classOf[scala.collection.immutable.List[_]])) {
-//          override def newInstance(args: AnyRef*): Any =
-//            new scala.collection.immutable.$colon$colon(args(0), args(1).asInstanceOf[scala.collection.immutable.List[_]])
-//        }
-//      )
-//    )
-//  }
 }
