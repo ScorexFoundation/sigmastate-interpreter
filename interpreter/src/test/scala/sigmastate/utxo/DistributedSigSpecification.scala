@@ -410,7 +410,7 @@ class DistributedSigSpecification extends SigmaTestingCommons
 
     //first, commitments are needed from real signers
     val aliceHints = proverA.generateCommitments(prop, ctx)
-    println(aliceHints)
+    printDebug(aliceHints)
     val secretCmtA: Hint = aliceHints.ownCommitments.head
 
     val daveHints = proverD.generateCommitments(prop, ctx)

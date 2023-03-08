@@ -8,7 +8,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 object BenchmarkUtil {
   /** Execute `action` given number of iterations printing time for each iteration
     * and the total time. */
-  def measure[T](nIters: Int, okShowIterTime: Boolean = true)
+  def measure[T](nIters: Int, okShowIterTime: Boolean = true, okShowTotalTime: Boolean = true)
       (action: Int => Unit): Unit = {
     var sum = 0L
     for ( i <- 0 until nIters ) {
@@ -20,7 +20,7 @@ object BenchmarkUtil {
         println(s"Iter $i: $iterTime ms")
       sum += iterTime
     }
-    println(s"Total time: $sum ms")
+    if (okShowTotalTime) println(s"Total time: $sum ms")
   }
 
   /** Execute block and measure the time of its execution. */

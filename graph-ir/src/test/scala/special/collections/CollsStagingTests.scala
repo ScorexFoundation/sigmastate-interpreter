@@ -6,6 +6,8 @@ import scalan._
 import scalan.util.BenchmarkUtil._
 
 class CollsStagingTests extends WrappersTests {
+  val printDebugInfo: Boolean = false
+
   class Ctx extends TestContext with TestLibrary {
     import Coll._
     import CollBuilder._
@@ -34,19 +36,19 @@ class CollsStagingTests extends WrappersTests {
 
     var res: Sym = null
     val nIters = 10
-    measure(nIters) { i =>
+    measure(nIters, okShowIterTime = printDebugInfo, okShowTotalTime = printDebugInfo) { i =>
       for (j <- 0 until 1000) {
         val col = colBuilder.replicate(i*j, 0)
         res = col.map(fun {x => x + 1})
       }
-      println(s"Defs: ${ctx.defCount}")
+      if (printDebugInfo) println(s"Defs: ${ctx.defCount}")
       if (i == nIters - 1) emit("res", res)
       ctx.resetContext()
     }
   }
 
   test("measure: build graph with new context") {
-    measure(10) { i =>
+    measure(10, okShowIterTime = printDebugInfo, okShowTotalTime = printDebugInfo) { i =>
       var sum: Int = 0
       for (j <- 0 until 1000) {
         val ctx = new Ctx {
@@ -59,12 +61,13 @@ class CollsStagingTests extends WrappersTests {
         val res = col.map(fun {x => x + 1})
         sum += ctx.defCount
       }
-      println(s"Defs: ${sum}")
+      if (printDebugInfo) println(s"Defs: ${sum}")
     }
   }
 
   def runMeasure(nRepeats: Int, name: String, alphaEq: Boolean, keepOrig: Boolean, unfoldWithOrig: Boolean) = {
-    println(s"runMeasure($name, alphaEq = $alphaEq, keepOrig = $keepOrig, unfoldWithOrig = $unfoldWithOrig)")
+    if (printDebugInfo)
+      println(s"runMeasure($name, alphaEq = $alphaEq, keepOrig = $keepOrig, unfoldWithOrig = $unfoldWithOrig)")
     val nIters = 10
     def warmUp(i: Int) = {
       val ctx = new Ctx {
@@ -106,14 +109,14 @@ class CollsStagingTests extends WrappersTests {
         }
         outGraph = Pair(f, f(Pair(colBuilder, 1)))
       }
-      println(s"Defs: ${ctx.defCount}")
+      if (printDebugInfo) println(s"Defs: ${ctx.defCount}")
 
       if (i == nIters - 1)
         emit(name, outGraph)
     }
-    measure(nIters)(warmUp)
+    measure(nIters, okShowIterTime = printDebugInfo, okShowTotalTime = printDebugInfo)(warmUp)
     System.gc()
-    measure(nIters)(measureUp)
+    measure(nIters, okShowIterTime = printDebugInfo, okShowTotalTime = printDebugInfo)(measureUp)
   }
 
   test("measure: unfoldLambda") {
@@ -190,7 +193,7 @@ Total time: 5406 ms
 
 //    check(Cols, { env: EnvRep[CollBuilder] => for { b <- env; arrL <- lifted(arr) } yield b.fromArray(arrL) }, Cols.fromArray(arr))
 
-    measure(10) { i =>
+    measure(10, okShowIterTime = printDebugInfo, okShowTotalTime = printDebugInfo) { i =>
       (1 to 100).foreach { j =>
         check(Cols,
           {env: EnvRep[CollBuilder] => for {
@@ -198,7 +201,7 @@ Total time: 5406 ms
           } yield b.fromItems(x1, x2, x3) },
           Cols.fromItems(1, j, i))
       }
-      println(s"Defs: ${ctx.defCount}")
+      if (printDebugInfo) println(s"Defs: ${ctx.defCount}")
     }
   }
 

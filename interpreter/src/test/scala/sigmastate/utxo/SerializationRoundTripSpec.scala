@@ -45,7 +45,7 @@ class SerializationRoundTripSpec extends AnyPropSpec
     }
     val ordered = runs.toArray().sortBy(_.size)
     for (r <- ordered) {
-      println(s"Size: ${r.size}, Time: ${r.time}")
+      printDebug(s"Size: ${r.size}, Time: ${r.time}")
     }
   }
 

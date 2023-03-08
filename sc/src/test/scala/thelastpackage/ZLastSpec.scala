@@ -11,6 +11,7 @@ class ZLastSpec extends AnyPropSpec with BeforeAndAfterAll {
   }
 
   override protected def afterAll(): Unit = {
-    println(ReflectionGenerator.generateReport)
+// uncomment to see the report
+//    println(ReflectionGenerator.generateReport)
   }
 }

@@ -204,10 +204,10 @@ class MixExampleSpecification extends SigmaTestingCommons
 
     // if R4^x == R5 then this fullMixOutput0 is Alice's output else its Bob's output.
     val (aliceAnonBox, bobAnonBox) = if (r4X == fullMixOutput0_R5.asInstanceOf[GroupElementConstant].value) {
-      println("First output is Alice's")
+      printDebug("First output is Alice's")
       (fullMixOutput0, fullMixOutput1)
     } else {
-      println("First output is Bob's")
+      printDebug("First output is Bob's")
       SigmaDsl.GroupElement(dlogGroup.exponentiate(fullMixOutput0_R5.asInstanceOf[GroupElementConstant], x)) shouldBe fullMixOutput0_R4.asInstanceOf[GroupElementConstant].value
       (fullMixOutput1, fullMixOutput0)
     }

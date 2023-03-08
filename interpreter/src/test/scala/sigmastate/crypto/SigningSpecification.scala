@@ -184,12 +184,12 @@ class SigningSpecification extends SigmaTestingCommons {
     val tree = mkTestErgoTree(prop)
     val prove = proverA.prove(tree, fakeContext, msg).get
 
-    println(s"Message: ${Base16.encode(msg)}")
-    println(s"sk: ${sk.w}")
-    println(s"sk(Base16): ${Base16.encode(sk.w.toByteArray)}")
-    println(s"pkBytes: ${Base16.encode(prop.pkBytes)}")
-    println(s"treeBytes: ${Base16.encode(tree.bytes)}")
-    println(s"Signature: ${Base16.encode(prove.proof)}")
+    printDebug(s"Message: ${Base16.encode(msg)}")
+    printDebug(s"sk: ${sk.w}")
+    printDebug(s"sk(Base16): ${Base16.encode(sk.w.toByteArray)}")
+    printDebug(s"pkBytes: ${Base16.encode(prop.pkBytes)}")
+    printDebug(s"treeBytes: ${Base16.encode(tree.bytes)}")
+    printDebug(s"Signature: ${Base16.encode(prove.proof)}")
   }
 
   private def printThresholdSignature(msg: Array[Byte]) {
@@ -203,11 +203,11 @@ class SigningSpecification extends SigmaTestingCommons {
     val prop = AtLeast(2, sk1.publicImage, sk2.publicImage, sk3.publicImage)
     val prove = proverA.prove(mkTestErgoTree(prop), fakeContext, msg).get
 
-    println(s"Message: ${Base16.encode(msg)}")
-    println(s"sk1: ${sk1.w}")
-    println(s"sk2: ${sk2.w}")
-    println(s"sk3: ${sk3.w}")
-    println(s"Signature: ${Base16.encode(prove.proof)}")
+    printDebug(s"Message: ${Base16.encode(msg)}")
+    printDebug(s"sk1: ${sk1.w}")
+    printDebug(s"sk2: ${sk2.w}")
+    printDebug(s"sk3: ${sk3.w}")
+    printDebug(s"Signature: ${Base16.encode(prove.proof)}")
   }
 
 }

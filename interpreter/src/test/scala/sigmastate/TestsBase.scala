@@ -14,6 +14,11 @@ import sigmastate.serialization.ValueSerializer
 import scala.util.DynamicVariable
 
 trait TestsBase extends Matchers with VersionTesting {
+  /** Set this to true to enable debug console output in tests */
+  val printDebugInfo: Boolean = false
+
+  /** Print debug message if printDebugInfo is true */
+  def printDebug(msg: Any): Unit = if (printDebugInfo) println(msg)
 
   /** Current ErgoTree header flags assigned dynamically using [[CrossVersionProps]] and
     * ergoTreeVersionInTests.

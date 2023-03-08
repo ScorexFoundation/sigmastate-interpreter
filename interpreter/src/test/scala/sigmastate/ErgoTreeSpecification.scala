@@ -758,7 +758,10 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
       tree match {
         case ErgoTree(_, _, Right(BlockValueWithInvalidBoolToSigmaProp(_)), _, _, _) =>
       }
-      SigmaPPrint.pprintln(tree, 150, 300)
+      val lines = SigmaPPrint.tokenize(tree, 150, 300)
+      if (printDebugInfo) {
+        lines.foreach(print); println()
+      }
     }
 
   }

@@ -10045,9 +10045,9 @@ class SigmaDslSpecification extends SigmaDslTesting
   }
 
   override protected def afterAll(): Unit = {
-    println(ErgoTreeEvaluator.DefaultProfiler.generateReport)
-    println("==========================================================")
-    println(Interpreter.verifySignatureProfiler.generateReport)
-    println("==========================================================")
+    printDebug(ErgoTreeEvaluator.DefaultProfiler.generateReport)
+    printDebug("==========================================================")
+    printDebug(Interpreter.verifySignatureProfiler.generateReport)
+    printDebug("==========================================================")
   }
 }
