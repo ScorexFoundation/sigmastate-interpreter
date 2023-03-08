@@ -1,5 +1,14 @@
 package scalan
 
+/** Contains the Sigma Reflection API.
+  * Sigma reflection is a mechanism for obtaining metadata about classes, methods, fields, etc.
+  * at runtime. It is used by kiama to rewrite ErgoTree expressions. It is also used by the
+  * ErgoTree interpreter to implement MethodCall nodes.
+  *
+  * The Sigma Reflection API has two implementations:
+  * 1) based on the Java Reflection API
+  * 2) based on Sigma Reflection metadata declared in the StaticImpl.scala file
+  */
 package object reflection {
   /** Creates a new SRMethod instance with the given parameters and handler function.
     *

@@ -220,10 +220,21 @@ trait Rewriter {
     */
   object Duplicator {
 
+    /**
+      * The type of a duplicator. A duplicator takes a product `t` and
+      * an array of new children and returns a new product with the
+      * same constructor as `t` but with the new children.
+      */
     type Duper = (Any, Array[AnyRef]) => Any
 
+    /**
+      * This duper always returns the same product that it is given for singleton Scala objects.
+      * It uses the `MODULE$` field to determine if a class is a singleton object.
+      * Otherwise, it uses the first constructor it finds to make a new product.
+      */
     object MakeDuper extends (RClass[_] => Duper) {
 
+      /** Make a duper for the given class. */
       def apply(clazz : RClass[_]) : Duper =
         try {
           // See if this class has a MODULE$ field. This field is used by Scala
@@ -246,6 +257,7 @@ trait Rewriter {
                 makeInstance(ctors(0), children)
         }
 
+      /** Make an instance using the given constructor with the given children as arguments. */
       def makeInstance(ctor : RConstructor[_], children : Array[AnyRef]) : Any =
         try {
           ctor.newInstance(unboxPrimitives(ctor, children) : _*)
@@ -255,6 +267,8 @@ trait Rewriter {
                         |Common cause: term classes are nested in another class, move them to the top level""".stripMargin)
         }
 
+      /** Unbox primitive values in the given array of children using type information of
+        * the given constructor. */
       def unboxPrimitives(ctor : RConstructor[_], children : Array[AnyRef]) : Array[AnyRef] = {
         val childrenTypes = ctor.getParameterTypes()
         val numChildren = childrenTypes.length
@@ -270,6 +284,7 @@ trait Rewriter {
         newChildren
       }
 
+      /** Unbox a primitive value. */
       def unboxAnyVal(s : AnyRef) : AnyRef =
         s match {
           case p : Product if p.productArity == 1 =>
@@ -280,22 +295,24 @@ trait Rewriter {
 
     }
 
-    private val cache = mutable.HashMap.empty[RClass[_], Duper]
+    /** All memoized duppers. */
+    private val dupers = mutable.HashMap.empty[RClass[_], Duper]
 
     /** Obtains a duper for the given class lazily. and memoize it in the `cache` map.
       * This is the simplest solution, but not the most efficient for concurrent access.
       */
-    def getDuper(clazz: RClass[_]): Duper = synchronized { // TODO optimize: avoid global sync
-      val duper = cache.get(clazz) match {
+    def getDuper(clazz: RClass[_]): Duper = synchronized { // TODO optimize: avoid global sync (if this really is a bottleneck)
+      val duper = dupers.get(clazz) match {
         case Some(d) => d
         case None =>
           val d = MakeDuper(clazz)
-          cache.put(clazz, d)
+          dupers.put(clazz, d)
           d
       }
       duper
     }
-    
+
+    /** Apply the duplicator to the given product and children. */
     def apply[T <: Product](t : T, children : Array[AnyRef]) : T = {
       val clazz = RClass(t.getClass)
       val duper = getDuper(clazz)
