@@ -20,7 +20,6 @@ import sigmastate.util.safeNewArray
 import sigmastate.utils.{Helpers, SigmaByteReader, SigmaByteWriter}
 import special.sigma._
 
-import java.nio.charset.StandardCharsets
 import java.util.Objects
 import scala.collection.mutable
 import scala.language.implicitConversions
@@ -112,11 +111,14 @@ case class ContractTemplate(
     }
   }
 
-  def applyTemplate(paramValues: Map[String, Values.Constant[SType]]): Values.ErgoTree = {
+  def applyTemplate(version: Option[Byte], paramValues: Map[String, Values.Constant[SType]]): Values.ErgoTree = {
+    require(treeVersion.isDefined || version.isDefined, "ErgoTreeVersion must be provided to generate the ErgoTree.")
     val nConsts = constTypes.size
     val requiredParameterNames =
-      this.parameters
-        .filter(p => constValues.isEmpty || constValues.get(p.constantIndex).isEmpty)
+      if (constValues.isEmpty)
+        this.parameters.map(p => p.name)
+      else this.parameters
+        .filter(p => constValues.get(p.constantIndex).isEmpty)
         .map(p => p.name)
     requiredParameterNames.foreach(name => require(
       paramValues.contains(name),
@@ -135,8 +137,9 @@ case class ContractTemplate(
       }
     }
 
+    val usedErgoTreeVersion = if (version.isDefined) version.get else treeVersion.get
     ErgoTree(
-      ErgoTree.ConstantSegregationHeader,
+      (ErgoTree.ConstantSegregationHeader | usedErgoTreeVersion).toByte,
       constants,
       this.expressionTree
     )
