@@ -6,7 +6,6 @@ import io.circe.{Decoder, DecodingFailure, Encoder, Json}
 import org.ergoplatform.ErgoBox
 import org.ergoplatform.sdk.utils.SerializationUtils.{parseString, serializeString}
 import org.ergoplatform.settings.ErgoAlgos
-import org.ergoplatform.validation.ValidationRules.CheckDeserializedScriptIsSigmaProp
 import scorex.crypto.authds.ADDigest
 import scorex.crypto.hash.Blake2b256
 import scorex.util.ModifierId
@@ -14,6 +13,7 @@ import sigmastate.Values._
 import sigmastate._
 import sigmastate.basics.CryptoConstants
 import sigmastate.eval._
+import sigmastate.exceptions.SerializerException
 import sigmastate.lang.{DeserializationSigmaBuilder, SigmaParser, StdSigmaBuilder}
 import sigmastate.serialization._
 import sigmastate.util.safeNewArray
@@ -248,7 +248,10 @@ object ContractTemplate {
 
       val _ = r.getUInt().toInt
       val expressionTree = ValueSerializer.deserialize(r)
-      CheckDeserializedScriptIsSigmaProp(expressionTree)
+      if (!expressionTree.tpe.isSigmaProp) {
+        throw SerializerException(
+          s"Failed deserialization, expected deserialized script to have type SigmaProp; got ${expressionTree.tpe}")
+      }
 
       ContractTemplate(
         treeVersion, name, description,
