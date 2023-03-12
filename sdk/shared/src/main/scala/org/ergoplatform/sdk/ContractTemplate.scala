@@ -1,68 +1,35 @@
 package org.ergoplatform.sdk
 
-import sigmastate.Values
-
+import debox.cfor
 import io.circe.syntax.EncoderOps
 import io.circe.{Decoder, DecodingFailure, Encoder, Json}
-
-import cats.syntax.either._
-import java.math.BigInteger
-import java.util.{Arrays, Objects}
-import org.ergoplatform.settings.ErgoAlgos
-import org.ergoplatform.validation.ValidationException
-import org.ergoplatform.validation.ValidationRules.CheckDeserializedScriptIsSigmaProp
-import scalan.{Nullable, RType}
-import scalan.util.CollectionUtil._
-import sigmastate.SCollection.{SByteArray, SIntArray}
-import sigmastate.serialization.{ConstantStore, OpCodes, _}
-import sigmastate.serialization.OpCodes._
-import sigmastate.TrivialProp.{FalseProp, TrueProp}
-import sigmastate.Values.ErgoTree.substConstants
-import sigmastate.basics.DLogProtocol.ProveDlog
-import sigmastate.basics.ProveDHTuple
-import sigmastate.lang.Terms._
-import sigmastate.utxo._
-import sigmastate.eval._
-import sigmastate.eval.Extensions._
-import sigmastate._
-import scalan.util.Extensions.ByteOps
-import sigmastate.interpreter.ErgoTreeEvaluator._
-import sigmastate.Values._
-import debox.cfor
-
-import scala.language.implicitConversions
-import scala.reflect.ClassTag
-import sigmastate.lang.CheckingSigmaBuilder._
-import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
-import sigmastate.serialization.transformers.ProveDHTupleSerializer
-import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import special.sigma.{AvlTree, Header, PreHeader, _}
-import sigmastate.lang.{SigmaParser, SourceContext}
-import sigmastate.util.safeNewArray
-import special.collection.Coll
-
-import java.nio.charset.StandardCharsets
-import scala.collection.mutable
-import scala.collection.compat.immutable.ArraySeq
-import scala.util.Try
-import sigmastate.SType
-import sigmastate.lang.StdSigmaBuilder
-import sigmastate.lang.DeserializationSigmaBuilder
-import sigmastate.basics.CryptoConstants
 import org.ergoplatform.ErgoBox
-import scorex.util.ModifierId
-import sigmastate.utils.Helpers
+import org.ergoplatform.settings.ErgoAlgos
+import org.ergoplatform.validation.ValidationRules.CheckDeserializedScriptIsSigmaProp
 import scorex.crypto.authds.ADDigest
 import scorex.crypto.hash.Blake2b256
+import scorex.util.ModifierId
+import sigmastate.Values._
+import sigmastate._
+import sigmastate.basics.CryptoConstants
+import sigmastate.eval._
+import sigmastate.lang.{DeserializationSigmaBuilder, SigmaParser, StdSigmaBuilder}
+import sigmastate.serialization._
+import sigmastate.util.safeNewArray
+import sigmastate.utils.{Helpers, SigmaByteReader, SigmaByteWriter}
+import special.sigma._
 
+import java.nio.charset.StandardCharsets
+import java.util.Objects
+import scala.collection.mutable
+import scala.language.implicitConversions
+import scala.util.Try
 
 case class Parameter(
   name: String,
   description: String,
   placeholder: Int
-) {
-
-}
+)
 
 object Parameter {
 
@@ -136,7 +103,7 @@ case class ContractTemplate(
     // Also validate that no two parameters exist with the same name.
     val paramNames = mutable.Set[String]()
     val paramIndices = this.parameters.map(p => {
-      require(p.placeholder >= 0 && p.placeholder < constTypes.size,
+      require(constTypes.isDefinedAt(p.placeholder),
         s"parameter placeholder must be in range [0, ${constTypes.size})")
       require(!paramNames.contains(p.name),
         s"parameter names must be unique. Found duplicate parameters with name ${p.name}")
