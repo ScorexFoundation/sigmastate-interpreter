@@ -4,6 +4,7 @@ import debox.cfor
 import io.circe.syntax.EncoderOps
 import io.circe.{Decoder, DecodingFailure, Encoder, Json}
 import org.ergoplatform.ErgoBox
+import org.ergoplatform.sdk.utils.SerializationUtils.{parseString, serializeString}
 import org.ergoplatform.settings.ErgoAlgos
 import org.ergoplatform.validation.ValidationRules.CheckDeserializedScriptIsSigmaProp
 import scorex.crypto.authds.ADDigest
@@ -33,28 +34,15 @@ case class Parameter(
 
 object Parameter {
 
-  private def serializeString(s: String, w: SigmaByteWriter): Unit = {
-    val bytes = s.getBytes(StandardCharsets.UTF_8)
-    w.putUInt(bytes.length)
-    w.putBytes(bytes)
-  }
-
-  private def parseString(r: SigmaByteReader): String = {
-    val length = r.getUInt().toInt
-    new String(r.getBytes(length), StandardCharsets.UTF_8)
-  }
-
   /** Immutable empty IndexedSeq, can be used to save allocations in many places. */
   val EmptySeq: IndexedSeq[Parameter] = Array.empty[Parameter]
 
   /** HOTSPOT: don't beautify this code */
   object serializer extends SigmaSerializer[Parameter, Parameter] {
     override def serialize(data: Parameter, w: SigmaByteWriter): Unit = {
-      import sigmastate.Operations.ConstantPlaceholderInfo._
-
       serializeString(data.name, w)
       serializeString(data.description, w)
-      w.putUInt(data.constantIndex, indexArg)
+      w.putUInt(data.constantIndex)
     }
 
     override def parse(r: SigmaByteReader): Parameter = {
@@ -154,9 +142,6 @@ case class ContractTemplate(
     )
   }
 
-  /** The default equality of case class is overridden to exclude `complexity`. */
-  override def canEqual(that: Any): Boolean = that.isInstanceOf[ContractTemplate]
-
   override def hashCode(): Int = Objects.hash(treeVersion, name, description, constTypes, constValues, parameters, expressionTree)
 
   override def equals(obj: Any): Boolean = (this eq obj.asInstanceOf[AnyRef]) ||
@@ -178,17 +163,6 @@ object ContractTemplate {
   }
 
   object serializer extends SigmaSerializer[ContractTemplate, ContractTemplate] {
-
-    private def serializeString(s: String, w: SigmaByteWriter): Unit = {
-      val bytes = s.getBytes(StandardCharsets.UTF_8)
-      w.putUInt(bytes.length)
-      w.putBytes(bytes)
-    }
-
-    private def parseString(r: SigmaByteReader): String = {
-      val length = r.getUInt().toInt
-      new String(r.getBytes(length), StandardCharsets.UTF_8)
-    }
 
     override def serialize(data: ContractTemplate, w: SigmaByteWriter): Unit = {
       w.putOption(data.treeVersion)(_.putUByte(_))
