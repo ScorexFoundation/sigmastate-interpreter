@@ -1,19 +1,15 @@
 package org.ergoplatform.sdk
 
-import sigmastate.Values._
-import sigmastate.eval.CBigInt
-import sigmastate.lang.TransformingSigmaBuilder.mkConstant
-import special.sigma.ContractsTestkit
-import sigmastate.serialization.SerializationSpecification
-import sigmastate.SType
-import sigmastate._
+import org.scalatest.compatible.Assertion
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
+import sigmastate.Values._
+import sigmastate._
+import sigmastate.eval.CBigInt
 import sigmastate.helpers.NegativeTesting
+import sigmastate.serialization.{SerializationSpecification, SigmaSerializer}
+import special.sigma.ContractsTestkit
 
 import java.math.BigInteger
-import sigmastate.EQ
-import org.scalatest.compatible.Assertion
-import sigmastate.serialization.SigmaSerializer
 
 class ContractTemplateSpecification extends SerializationSpecification 
   with ScalaCheckPropertyChecks 
@@ -25,13 +21,13 @@ class ContractTemplateSpecification extends SerializationSpecification
   private def contractTemplateNameInTests: String = "TestContractTemplate"
   private def contractTemplateDescriptionInTests: String = "TestContractTemplateDescription"
 
-  def jsonRoundtrip[T <: SType](obj: ContractTemplate) = {
+  private def jsonRoundtrip[T <: SType](obj: ContractTemplate) = {
     val json = ContractTemplate.jsonEncoder.encoder(obj)
     val res = ContractTemplate.jsonEncoder.decoder(json.hcursor).right.get
     res shouldBe obj
   }
   
-  def serializationRoundTrip(template: ContractTemplate): Assertion = {
+  private def serializationRoundTrip(template: ContractTemplate): Assertion = {
     val w = SigmaSerializer.startWriter()
     ContractTemplate.serializer.serialize(template, w)
     val bytes = w.toBytes
@@ -40,11 +36,11 @@ class ContractTemplateSpecification extends SerializationSpecification
     res2 shouldEqual template
   }
 
-  private def createParameter(name: String, placeholder: Int): Parameter = {
+  private def createParameter(name: String, constantIndex: Int): Parameter = {
     Parameter(
       name,
       s"${name}_description",
-      placeholder
+      constantIndex
     )
   }
 
@@ -99,7 +95,7 @@ class ContractTemplateSpecification extends SerializationSpecification
           t.getMessage.contains("number of parameters must be <= number of constants"))
   }
 
-  property("invalid parameter placeholder") {
+  property("invalid parameter constantIndex") {
     assertExceptionThrown(
       createContractTemplate(
         IndexedSeq(SType.typeByte, SType.typeByte, SType.typeByte).asInstanceOf[IndexedSeq[SType]],
@@ -114,10 +110,10 @@ class ContractTemplateSpecification extends SerializationSpecification
       ),
       t =>
         t.isInstanceOf[IllegalArgumentException] &&
-          t.getMessage.contains("parameter placeholder must be in range [0, 3)"))
+          t.getMessage.contains("parameter constantIndex must be in range [0, 3)"))
   }
 
-  property("duplicate parameter placeholder") {
+  property("duplicate parameter constantIndex") {
     assertExceptionThrown(
       createContractTemplate(
         IndexedSeq(SType.typeByte, SType.typeByte, SType.typeByte).asInstanceOf[IndexedSeq[SType]],
@@ -132,7 +128,7 @@ class ContractTemplateSpecification extends SerializationSpecification
       ),
       t =>
         t.isInstanceOf[IllegalArgumentException] &&
-          t.getMessage.contains("multiple parameters point to the same placeholder"))
+          t.getMessage.contains("multiple parameters point to the same constantIndex"))
   }
 
   property("duplicate parameter names") {
@@ -153,7 +149,7 @@ class ContractTemplateSpecification extends SerializationSpecification
           t.getMessage.contains("parameter names must be unique. Found duplicate parameters with name duplicate_name"))
   }
 
-  property("placeholder without default value and parameter") {
+  property("constantIndex without default value and parameter") {
     assertExceptionThrown(
       createContractTemplate(
         IndexedSeq(SType.typeByte, SType.typeByte, SType.typeByte).asInstanceOf[IndexedSeq[SType]],
@@ -167,7 +163,7 @@ class ContractTemplateSpecification extends SerializationSpecification
       ),
       t =>
         t.isInstanceOf[IllegalArgumentException] &&
-          t.getMessage.contains("placeholder 0 does not have a default value and absent from parameter as well"))
+          t.getMessage.contains("constantIndex 0 does not have a default value and absent from parameter as well"))
   }
 
   property("applyTemplate") {

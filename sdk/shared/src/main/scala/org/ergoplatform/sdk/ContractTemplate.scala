@@ -28,7 +28,7 @@ import scala.util.Try
 case class Parameter(
   name: String,
   description: String,
-  placeholder: Int
+  constantIndex: Int
 )
 
 object Parameter {
@@ -54,14 +54,14 @@ object Parameter {
 
       serializeString(data.name, w)
       serializeString(data.description, w)
-      w.putUInt(data.placeholder, indexArg)
+      w.putUInt(data.constantIndex, indexArg)
     }
 
     override def parse(r: SigmaByteReader): Parameter = {
       val name = parseString(r)
       val description = parseString(r)
-      val placeholder = r.getUInt().toInt
-      Parameter(name, description, placeholder)
+      val constantIndex = r.getUInt().toInt
+      Parameter(name, description, constantIndex)
     }
   }
 
@@ -69,7 +69,7 @@ object Parameter {
     Json.obj(
       "name" -> Json.fromString(p.name),
       "description" -> Json.fromString(p.description),
-      "placeholder" -> Json.fromInt(p.placeholder)
+      "constantIndex" -> Json.fromInt(p.constantIndex)
     )
   })
 
@@ -77,8 +77,8 @@ object Parameter {
     for {
       name <- cursor.downField("name").as[String]
       description <- cursor.downField("description").as[String]
-      placeholder <- cursor.downField("placeholder").as[Int]
-    } yield new Parameter(name, description, placeholder)
+      constantIndex <- cursor.downField("constantIndex").as[Int]
+    } yield new Parameter(name, description, constantIndex)
   })
 }
 
@@ -103,14 +103,14 @@ case class ContractTemplate(
     // Also validate that no two parameters exist with the same name.
     val paramNames = mutable.Set[String]()
     val paramIndices = this.parameters.map(p => {
-      require(constTypes.isDefinedAt(p.placeholder),
-        s"parameter placeholder must be in range [0, ${constTypes.size})")
+      require(constTypes.isDefinedAt(p.constantIndex),
+        s"parameter constantIndex must be in range [0, ${constTypes.size})")
       require(!paramNames.contains(p.name),
         s"parameter names must be unique. Found duplicate parameters with name ${p.name}")
       paramNames += p.name
-      p.placeholder
+      p.constantIndex
     }).toSet
-    require(paramIndices.size == parameters.size, "multiple parameters point to the same placeholder")
+    require(paramIndices.size == parameters.size, "multiple parameters point to the same constantIndex")
 
     // Validate that any constValues[i] = None has a parameter.
     if (constValues.isEmpty) {
@@ -119,7 +119,7 @@ case class ContractTemplate(
     } else {
       cfor(0)(_ < constTypes.size, _ + 1) { i =>
         require(constValues.get(i).isDefined || paramIndices.contains(i),
-          s"placeholder ${i} does not have a default value and absent from parameter as well")
+          s"constantIndex ${i} does not have a default value and absent from parameter as well")
       }
     }
   }
@@ -128,13 +128,13 @@ case class ContractTemplate(
     val nConsts = constTypes.size
     val requiredParameterNames =
       this.parameters
-        .filter(p => constValues.isEmpty || constValues.get(p.placeholder).isEmpty)
+        .filter(p => constValues.isEmpty || constValues.get(p.constantIndex).isEmpty)
         .map(p => p.name)
     requiredParameterNames.foreach(name => require(
       paramValues.contains(name),
       s"value for parameter ${name} was not provided while it does not have a default value."))
 
-    val paramIndices = this.parameters.map(p => p.placeholder).toSet
+    val paramIndices = this.parameters.map(p => p.constantIndex).toSet
     val constants = safeNewArray[Constant[SType]](nConsts)
     cfor(0)(_ < nConsts, _ + 1) { i =>
       if (paramIndices.contains(i) && paramValues.contains(parameters(i).name)) {
