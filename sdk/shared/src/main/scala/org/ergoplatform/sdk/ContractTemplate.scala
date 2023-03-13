@@ -14,7 +14,7 @@ import sigmastate._
 import sigmastate.basics.CryptoConstants
 import sigmastate.eval._
 import sigmastate.exceptions.SerializerException
-import sigmastate.lang.{DeserializationSigmaBuilder, SigmaParser, StdSigmaBuilder}
+import sigmastate.lang.{DeserializationSigmaBuilder, StdSigmaBuilder}
 import sigmastate.serialization._
 import sigmastate.util.safeNewArray
 import sigmastate.utils.{Helpers, SigmaByteReader, SigmaByteWriter}
@@ -23,7 +23,6 @@ import special.sigma._
 import java.util.Objects
 import scala.collection.mutable
 import scala.language.implicitConversions
-import scala.util.Try
 
 case class Parameter(
   name: String,
@@ -263,11 +262,16 @@ object ContractTemplate {
   object jsonEncoder extends JsonCodecs {
 
     implicit val sTypeEncoder: Encoder[SType] = Encoder.instance({ tpe =>
-      Json.fromString(tpe.toTermString)
+      val w = SigmaSerializer.startWriter()
+      TypeSerializer.serialize(tpe, w)
+      w.toBytes.asJson
     })
 
     implicit val sTypeDecoder: Decoder[SType] = Decoder.instance({ implicit cursor =>
-      fromTry(Try.apply(SigmaParser.parseType(cursor.value.asString.get)))
+      cursor.as[Array[Byte]] flatMap { bytes =>
+        val r = SigmaSerializer.startReader(bytes)
+        fromThrows(TypeSerializer.deserialize(r))
+      }
     })
 
     implicit val encoder: Encoder[ContractTemplate] = Encoder.instance({ ct =>
