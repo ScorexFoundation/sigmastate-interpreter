@@ -70,7 +70,7 @@ dynverSonatypeSnapshots in ThisBuild := true
 dynverSeparator in ThisBuild := "-"
 
 val bouncycastleBcprov = "org.bouncycastle" % "bcprov-jdk15on" % "1.66"
-val scrypto            = "org.scorexfoundation" %% "scrypto" % "2.3.0-RC1"
+val scrypto            = "org.scorexfoundation" %% "scrypto" % "2.3.0"
 val scorexUtil         = "org.scorexfoundation" %% "scorex-util" % "0.2.0"
 val debox              = "org.scorexfoundation" %% "debox" % "0.10.0"
 val spireMacros        = "org.typelevel" %% "spire-macros" % "0.17.0-M1"
