@@ -5,9 +5,10 @@ import io.circe.syntax.EncoderOps
 import io.circe.{Decoder, DecodingFailure, Encoder, Json}
 import org.ergoplatform.ErgoBox
 import org.ergoplatform.sdk.utils.SerializationUtils.{parseString, serializeString}
-import org.ergoplatform.settings.ErgoAlgos
-import scorex.crypto.authds.ADDigest
-import scorex.crypto.hash.Blake2b256
+import scalan.RType
+import scalan.RType._
+import scorex.crypto.authds.avltree.batch.BatchAVLProver
+import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util.ModifierId
 import sigmastate.Values._
 import sigmastate._
@@ -18,8 +19,11 @@ import sigmastate.lang.{DeserializationSigmaBuilder, StdSigmaBuilder}
 import sigmastate.serialization._
 import sigmastate.util.safeNewArray
 import sigmastate.utils.{Helpers, SigmaByteReader, SigmaByteWriter}
-import special.sigma._
+import special.Types.TupleType
+import special.collection.{Coll, CollType}
+import special.sigma.{Header, SigmaDslBuilder, _}
 
+import java.math.BigInteger
 import java.util.Objects
 import scala.collection.mutable
 import scala.language.implicitConversions
@@ -132,7 +136,7 @@ case class ContractTemplate(
     } else {
       cfor(0)(_ < constTypes.size, _ + 1) { i =>
         require(constValues.get(i).isDefined || paramIndices.contains(i),
-          s"constantIndex ${i} does not have a default value and absent from parameter as well")
+          s"constantIndex $i does not have a default value and absent from parameter as well")
       }
     }
   }
@@ -160,7 +164,7 @@ case class ContractTemplate(
         .map(p => p.name)
     requiredParameterNames.foreach(name => require(
       paramValues.contains(name),
-      s"value for parameter ${name} was not provided while it does not have a default value."))
+      s"value for parameter $name was not provided while it does not have a default value."))
 
     val paramIndices = this.parameters.map(p => p.constantIndex).toSet
     val constants = safeNewArray[Constant[SType]](nConsts)
@@ -280,7 +284,7 @@ object ContractTemplate {
       // Populate constants in constantStore so that the expressionTree can be deserialized.
       val constants = constTypes.indices.map(i => {
         val t = constTypes(i)
-        DeserializationSigmaBuilder.mkConstant(defaultOf(t), t)
+        DeserializationSigmaBuilder.mkConstant(Zero.zeroOf(Zero.typeToZero(Evaluation.stypeToRType(t))), t)
       })
       constants.foreach(c => r.constantStore.put(c)(DeserializationSigmaBuilder))
 
@@ -358,7 +362,7 @@ object ContractTemplate {
           val r = SigmaSerializer.startReader(expressionTreeBytes)
           val constants = constTypes.indices.map(i => {
             val t = constTypes(i)
-            DeserializationSigmaBuilder.mkConstant(defaultOf(t), t)
+            DeserializationSigmaBuilder.mkConstant(Zero.zeroOf(Zero.typeToZero(Evaluation.stypeToRType(t))), t)
           })
           constants.foreach(c => r.constantStore.put(c)(DeserializationSigmaBuilder))
 
@@ -379,92 +383,123 @@ object ContractTemplate {
       }
     })
   }
+}
 
-  /** Synthetic default value for the type.
-    * Used for deserializing contract templates.
-    */
-  private def defaultOf[T <: SType](tpe: T): T#WrappedType = {
-    val syntheticBox = new ErgoBox(
-      0L,
-      new ErgoTree(
-        0.toByte,
-        Vector(),
-        Right(CSigmaProp(TrivialProp(false)))
-      ),
-      Colls.emptyColl,
-      Map(),
-      ModifierId @@ ("synthetic_transaction_id"),
-      0.toShort,
-      0
-    )
-    val syntheticPreHeader = CPreHeader(
+private trait Zero[T] {
+  def zero: T
+}
+
+private case class CZero[T](zero: T) extends Zero[T]
+
+private trait ZeroLowPriority {
+  implicit def collIsZero[T: Zero: RType]: Zero[Coll[T]] = CZero(Colls.emptyColl[T])
+  implicit def optionIsZero[T: Zero]: Zero[Option[T]] = CZero(Some(Zero.zeroOf[T]))
+  implicit def pairIsZero[A: Zero, B: Zero]: Zero[(A,B)] = CZero(Zero[A].zero, Zero[B].zero)
+  implicit def funcIsZero[A: Zero, B: Zero]: Zero[A =>B] = CZero((_ : A) => { Zero[B].zero })
+}
+private object Zero extends ZeroLowPriority {
+  def apply[T](implicit z: Zero[T]): Zero[T] = z
+  def zeroOf[T: Zero]: T = Zero[T].zero
+
+  implicit val BooleanIsZero: Zero[Boolean] = CZero(false)
+  implicit val ByteIsZero: Zero[Byte] = CZero(0.toByte)
+  implicit val ShortIsZero: Zero[Short] = CZero(0.toShort)
+  implicit val IntIsZero: Zero[Int] = CZero(0)
+  implicit val LongIsZero: Zero[Long] = CZero(0L)
+  implicit val BigIntIsZero: Zero[BigInt] = CZero(CBigInt(BigInteger.ZERO))
+  implicit val GroupElementIsZero: Zero[GroupElement] = CZero(CGroupElement(CryptoConstants.dlogGroup.identity))
+  implicit val AvlTreeIsZero: Zero[AvlTree] = CZero({
+    val avlProver = new BatchAVLProver[Digest32, Blake2b256.type](keyLength = 32, None)
+    val digest = avlProver.digest
+    val treeData = new AvlTreeData(digest, AvlTreeFlags.AllOperationsAllowed, 32, None)
+    CAvlTree(treeData)
+  })
+  implicit val sigmaPropIsZero: Zero[SigmaProp] = CZero(CSigmaProp(TrivialProp.FalseProp))
+  implicit val AnyIsZero: Zero[Any] = CZero(0)
+  implicit val UnitIsZero: Zero[Unit] = CZero()
+  implicit val BoxIsZero: Zero[Box] = CZero(syntheticBox)
+  implicit val ContextIsZero: Zero[Context] = CZero(syntheticContext)
+  implicit val SigmaDslBuilderIsZero: Zero[SigmaDslBuilder] = CZero(CostingSigmaDslBuilder)
+  implicit val HeaderIsZero: Zero[Header] = CZero(syntheticHeader)
+  implicit val PreHeaderIsZero: Zero[PreHeader] = CZero(syntheticPreHeader)
+
+  def typeToZero[T](t: RType[T]): Zero[T] = (t match {
+    case BooleanType => Zero[Boolean]
+    case ByteType => Zero[Byte]
+    case ShortType => Zero[Short]
+    case IntType => Zero[Int]
+    case LongType => Zero[Long]
+    case AnyType => Zero[Any]
+    case UnitType => Zero[Unit]
+    case BigIntRType => Zero[BigInt]
+    case BoxRType => Zero[Box]
+    case ContextRType => Zero[Context]
+    case SigmaDslBuilderRType => Zero[SigmaDslBuilder]
+    case HeaderRType => Zero[Header]
+    case PreHeaderRType => Zero[PreHeader]
+    case GroupElementRType => Zero[GroupElement]
+    case AvlTreeRType => Zero[AvlTree]
+    case SigmaPropRType => sigmaPropIsZero
+    case ct: CollType[a] => collIsZero(typeToZero(ct.tItem), ct.tItem)
+    case ct: OptionType[a] => optionIsZero(typeToZero(ct.tA))
+    case ct: PairType[a, b] => pairIsZero(typeToZero(ct.tFst), typeToZero(ct.tSnd))``
+    case tt: TupleType => CZero(tt.emptyArray)
+    case ft: FuncType[a, b] => funcIsZero(typeToZero(ft.tDom), typeToZero(ft.tRange))
+    case _ => sys.error(s"Don't know how to compute Zero for type $t")
+  }).asInstanceOf[Zero[T]]
+
+  private val syntheticBox = new ErgoBox(
+    0L,
+    new ErgoTree(
       0.toByte,
-      Helpers.decodeBytes("1c597f88969600d2fffffdc47f00d8ffc555a9e85001000001c505ff80ff8f7f"),
-      -755484979487531112L,
-      9223372036854775807L,
-      11,
-      Helpers.decodeGroupElement("0227a58e9b2537103338c237c52c1213bf44bdb344fa07d9df8ab826cca26ca08f"),
-      Helpers.decodeBytes("007f00")
-    )
-    val syntheticAvlTree = AvlTreeData(
-      ADDigest @@ (ErgoAlgos.decodeUnsafe("54d23dd080006bdb56800100356080935a80ffb77e90b800057f00661601807f17")),
-      AvlTreeFlags(insertAllowed = true, updateAllowed = true, removeAllowed = false),
-      2147483647,
-      None
-    )
-
-    val res = (tpe match {
-      case SBoolean => false
-      case SByte => 0.toByte
-      case SShort => 0.toShort
-      case SInt => 0
-      case SLong => 0.toLong
-      case SBigInt => BigInt(0)
-      case SGroupElement => CGroupElement(CryptoConstants.dlogGroup.identity)
-      case SSigmaProp => CSigmaProp(TrivialProp(false))
-      case SBox => CostingBox(syntheticBox)
-      case c: SCollectionType[_] => SCollectionType(c.elemType)
-      case _: SOption[_] => None
-      case _: STuple => STuple(SInt, SLong)
-      case _: SFunc => SFunc(SBoolean, NoType)
-      case SContext => CostingDataContext(
-        _dataInputs = Colls.emptyColl,
-        headers = Colls.emptyColl,
-        preHeader = syntheticPreHeader,
-        inputs = Colls.emptyColl,
-        outputs = Colls.emptyColl,
-        height = 1,
-        selfBox = CostingBox(syntheticBox),
-        selfIndex = 0,
-        lastBlockUtxoRootHash = CAvlTree(syntheticAvlTree),
-        _minerPubKey = Helpers.decodeBytes("0227a58e9b2537103338c237c52c1213bf44bdb344fa07d9df8ab826cca26ca08f"),
-        vars = Colls.emptyColl,
-        activatedScriptVersion = 0.toByte,
-        currentErgoTreeVersion = 0.toByte
-      )
-      case SAvlTree => CAvlTree(syntheticAvlTree)
-      case SGlobal => CostingSigmaDslBuilder
-      case SHeader => CHeader(
-        Colls.fromArray(Blake2b256("Header.id")),
-        0,
-        Colls.fromArray(Blake2b256("Header.parentId")),
-        Colls.fromArray(Blake2b256("ADProofsRoot")),
-        CAvlTree(syntheticAvlTree),
-        Colls.fromArray(Blake2b256("transactionsRoot")),
-        timestamp = 0,
-        nBits = 0,           
-        height = 0,
-        extensionRoot = Colls.fromArray(Blake2b256("transactionsRoot")),
-        minerPk = SigmaDsl.groupGenerator,
-        powOnetimePk = SigmaDsl.groupGenerator,
-        powNonce = Colls.fromArray(Array[Byte](0, 1, 2, 3, 4, 5, 6, 7)),
-        powDistance = SigmaDsl.BigInt(BigInt("0").bigInteger),
-        votes = Colls.fromArray(Array[Byte](0, 1, 2))
-      )
-      case SPreHeader => syntheticPreHeader
-      case SUnit => ()
-      case _ => sys.error(s"Unknown type $tpe")
-    }).asInstanceOf[T#WrappedType]
-    res
-  }
+      Vector(),
+      Right(CSigmaProp(TrivialProp(false)))
+    ),
+    Colls.emptyColl,
+    Map(),
+    ModifierId @@ ("synthetic_transaction_id"),
+    0.toShort,
+    0
+  )
+  private val syntheticPreHeader = CPreHeader(
+    0.toByte,
+    Helpers.decodeBytes("1c597f88969600d2fffffdc47f00d8ffc555a9e85001000001c505ff80ff8f7f"),
+    -755484979487531112L,
+    9223372036854775807L,
+    11,
+    Helpers.decodeGroupElement("0227a58e9b2537103338c237c52c1213bf44bdb344fa07d9df8ab826cca26ca08f"),
+    Helpers.decodeBytes("007f00")
+  )
+  private val syntheticHeader = CHeader(
+    Colls.fromArray(Blake2b256("Header.id")),
+    0,
+    Colls.fromArray(Blake2b256("Header.parentId")),
+    Colls.fromArray(Blake2b256("ADProofsRoot")),
+    CAvlTree(AvlTreeIsZero.zero),
+    Colls.fromArray(Blake2b256("transactionsRoot")),
+    timestamp = 0,
+    nBits = 0,
+    height = 0,
+    extensionRoot = Colls.fromArray(Blake2b256("transactionsRoot")),
+    minerPk = SigmaDsl.groupGenerator,
+    powOnetimePk = SigmaDsl.groupGenerator,
+    powNonce = Colls.fromArray(Array[Byte](0, 1, 2, 3, 4, 5, 6, 7)),
+    powDistance = SigmaDsl.BigInt(BigInt("0").bigInteger),
+    votes = Colls.fromArray(Array[Byte](0, 1, 2))
+  )
+  private val syntheticContext = CostingDataContext(
+    _dataInputs = Colls.emptyColl,
+    headers = Colls.emptyColl,
+    preHeader = syntheticPreHeader,
+    inputs = Colls.emptyColl,
+    outputs = Colls.emptyColl,
+    height = 1,
+    selfBox = CostingBox(syntheticBox),
+    selfIndex = 0,
+    lastBlockUtxoRootHash = AvlTreeIsZero.zero,
+    _minerPubKey = Helpers.decodeBytes("0227a58e9b2537103338c237c52c1213bf44bdb344fa07d9df8ab826cca26ca08f"),
+    vars = Colls.emptyColl,
+    activatedScriptVersion = 0.toByte,
+    currentErgoTreeVersion = 0.toByte
+  )
 }
