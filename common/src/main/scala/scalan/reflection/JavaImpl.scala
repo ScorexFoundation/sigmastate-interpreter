@@ -1,9 +1,10 @@
 package scalan.reflection
 
 import debox.cfor
-import scalan.reflection.RClass.memoize
+import scalan.reflection.memoize
 
-import java.lang.reflect.{Constructor, Field, Method}
+import java.lang.reflect.{Field, Constructor, Method}
+import scala.collection.concurrent.TrieMap
 import scala.collection.mutable
 
 /**
@@ -15,13 +16,13 @@ import scala.collection.mutable
 class JRClass[T](val value: Class[T]) extends RClass[T] {
 
   /** A mutable map that stores the fields of this class. */
-  val fields = mutable.HashMap.empty[String, RField]
+  val fields = TrieMap.empty[String, RField]
 
   override def getField(name: String): RField =
     memoize(fields)(name, JRField(value.getField(name)))
 
   /** A mutable map that stores the methods of this class. */
-  val methods = mutable.HashMap.empty[(String, Seq[Class[_]]), RMethod]
+  val methods = TrieMap.empty[(String, Seq[Class[_]]), RMethod]
 
   override def getMethod(name: String, parameterTypes: Class[_]*): RMethod = {
     memoize(methods)((name, parameterTypes), JRMethod(this, value.getMethod(name, parameterTypes:_*)))

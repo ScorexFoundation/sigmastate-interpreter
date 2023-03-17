@@ -103,28 +103,6 @@ abstract class RClass[T] {
 }
 
 object RClass {
-  /** Stores all classes which were requested during runtime and whose metadata was not
-    * registered. */
-  val unknownClasses = mutable.HashMap.empty[Class[_], JRClass[_]]
-
-  /** Memoizes a value in a mutable HashMap.
-    *
-    * @param map   The mutable HashMap to store the key-value pair.
-    * @param key   The key to store in the map.
-    * @param value The value to be evaluated and stored in the map if the key is not present.
-    * @return The value associated with the given key in the map. If the key is not present in the map,
-    *         evaluates the `value` parameter and stores it in the map before returning it.
-    */
-  def memoize[K, V](map: mutable.HashMap[K, V])
-                   (key: K, value: => V): V = map.synchronized {
-    map.get(key) match {
-      case Some(v) => v
-      case None =>
-        val v = value
-        map.put(key, v)
-        v
-    }
-  }
 
   /** Returns an RClass instance for the given class.
     *
@@ -134,17 +112,6 @@ object RClass {
     * @throws java.lang.RuntimeException if RClass metadata for the given class cannot be
     *                                    found.
     */
-  def apply[T](clazz: Class[T]): RClass[T] = {
-    val res = CommonReflection.classes.get(clazz) match {
-      case Some(c) =>
-        assert(c.clazz == clazz)
-        c
-      case _ =>
-        sys.error(s"Cannot find RClass data for $clazz")
-// Uncomment the following line to collect missing reflection data and generate Scala code for it
-//        memoize(unknownClasses)(clazz, new JRClass[T](clazz))
-    }
-    res.asInstanceOf[RClass[T]]
-  }
+  def apply[T](clazz: Class[T]): RClass[T] = Platform.resolveClass(clazz)
 
 }

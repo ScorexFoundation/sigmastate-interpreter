@@ -1,5 +1,7 @@
 package scalan
 
+import scala.collection.mutable
+
 /** Contains the Sigma Reflection API.
   * Sigma reflection is a mechanism for obtaining metadata about classes, methods, fields, etc.
   * at runtime. It is used by kiama to rewrite ErgoTree expressions. It is also used by the
@@ -10,6 +12,26 @@ package scalan
   * 2) based on Sigma Reflection metadata declared in the StaticImpl.scala file
   */
 package object reflection {
+
+  /** Memoizes a value in a mutable HashMap.
+    *
+    * @param map   The mutable HashMap to store the key-value pair.
+    * @param key   The key to store in the map.
+    * @param value The value to be evaluated and stored in the map if the key is not present.
+    * @return The value associated with the given key in the map. If the key is not present in the map,
+    *         evaluates the `value` parameter and stores it in the map before returning it.
+    */
+  def memoize[K, V](map: mutable.Map[K, V])
+                   (key: K, value: => V): V = {
+    map.get(key) match {
+      case Some(v) => v
+      case None =>
+        val v = value
+        map.put(key, v)
+        v
+    }
+  }
+
   /** Creates a new SRMethod instance with the given parameters and handler function.
     *
     * @param clazz      the [[java.lang.Class]] that declares the method
