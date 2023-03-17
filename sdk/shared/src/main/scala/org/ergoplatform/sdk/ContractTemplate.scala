@@ -418,11 +418,7 @@ private object Zero extends ZeroLowPriority {
   implicit val sigmaPropIsZero: Zero[SigmaProp] = CZero(CSigmaProp(TrivialProp.FalseProp))
   implicit val AnyIsZero: Zero[Any] = CZero(0)
   implicit val UnitIsZero: Zero[Unit] = CZero(())
-  implicit val BoxIsZero: Zero[Box] = CZero(syntheticBox)
-  implicit val ContextIsZero: Zero[Context] = CZero(syntheticContext)
   implicit val SigmaDslBuilderIsZero: Zero[SigmaDslBuilder] = CZero(CostingSigmaDslBuilder)
-  implicit val HeaderIsZero: Zero[Header] = CZero(syntheticHeader)
-  implicit val PreHeaderIsZero: Zero[PreHeader] = CZero(syntheticPreHeader)
 
   def typeToZero[T](t: RType[T]): Zero[T] = (t match {
     case BooleanType => Zero[Boolean]
@@ -450,43 +446,43 @@ private object Zero extends ZeroLowPriority {
   }).asInstanceOf[Zero[T]]
 
   private val syntheticBox = new ErgoBox(
-    0L,
+    LongIsZero.zero,
     new ErgoTree(
-      0.toByte,
-      Vector(),
-      Right(CSigmaProp(TrivialProp(false)))
+      ByteIsZero.zero,
+      IndexedSeq.empty,
+      Right(sigmaPropIsZero.zero)
     ),
     Colls.emptyColl,
-    Map(),
+    Map.empty,
     ModifierId @@ ("synthetic_transaction_id"),
-    0.toShort,
-    0
+    ShortIsZero.zero,
+    IntIsZero.zero
   )
   private val syntheticPreHeader = CPreHeader(
-    0.toByte,
-    Helpers.decodeBytes("1c597f88969600d2fffffdc47f00d8ffc555a9e85001000001c505ff80ff8f7f"),
-    -755484979487531112L,
-    9223372036854775807L,
-    11,
-    Helpers.decodeGroupElement("0227a58e9b2537103338c237c52c1213bf44bdb344fa07d9df8ab826cca26ca08f"),
-    Helpers.decodeBytes("007f00")
+    ByteIsZero.zero,
+    Colls.emptyColl[Byte],
+    LongIsZero.zero,
+    LongIsZero.zero,
+    IntIsZero.zero,
+    GroupElementIsZero.zero,
+    Colls.emptyColl[Byte]
   )
   private val syntheticHeader = CHeader(
-    Colls.fromArray(Blake2b256("Header.id")),
-    0,
-    Colls.fromArray(Blake2b256("Header.parentId")),
-    Colls.fromArray(Blake2b256("ADProofsRoot")),
+    Colls.emptyColl[Byte],
+    ByteIsZero.zero,
+    Colls.emptyColl[Byte],
+    Colls.emptyColl[Byte],
     CAvlTree(AvlTreeIsZero.zero),
-    Colls.fromArray(Blake2b256("transactionsRoot")),
-    timestamp = 0,
-    nBits = 0,
-    height = 0,
-    extensionRoot = Colls.fromArray(Blake2b256("transactionsRoot")),
-    minerPk = SigmaDsl.groupGenerator,
-    powOnetimePk = SigmaDsl.groupGenerator,
-    powNonce = Colls.fromArray(Array[Byte](0, 1, 2, 3, 4, 5, 6, 7)),
-    powDistance = SigmaDsl.BigInt(BigInt("0").bigInteger),
-    votes = Colls.fromArray(Array[Byte](0, 1, 2))
+    Colls.emptyColl[Byte],
+    timestamp = LongIsZero.zero,
+    nBits = LongIsZero.zero,
+    height = IntIsZero.zero,
+    extensionRoot = Colls.emptyColl[Byte],
+    minerPk = GroupElementIsZero.zero,
+    powOnetimePk = GroupElementIsZero.zero,
+    powNonce = Colls.emptyColl[Byte],
+    powDistance = BigIntIsZero.zero,
+    votes = Colls.emptyColl[Byte]
   )
   private val syntheticContext = CostingDataContext(
     _dataInputs = Colls.emptyColl,
@@ -494,13 +490,18 @@ private object Zero extends ZeroLowPriority {
     preHeader = syntheticPreHeader,
     inputs = Colls.emptyColl,
     outputs = Colls.emptyColl,
-    height = 1,
+    height = IntIsZero.zero,
     selfBox = CostingBox(syntheticBox),
-    selfIndex = 0,
+    selfIndex = IntIsZero.zero,
     lastBlockUtxoRootHash = AvlTreeIsZero.zero,
-    _minerPubKey = Helpers.decodeBytes("0227a58e9b2537103338c237c52c1213bf44bdb344fa07d9df8ab826cca26ca08f"),
+    _minerPubKey = Colls.emptyColl[Byte],
     vars = Colls.emptyColl,
-    activatedScriptVersion = 0.toByte,
-    currentErgoTreeVersion = 0.toByte
+    activatedScriptVersion = ByteIsZero.zero,
+    currentErgoTreeVersion = ByteIsZero.zero
   )
+
+  implicit val BoxIsZero: Zero[Box] = CZero(syntheticBox)
+  implicit val ContextIsZero: Zero[Context] = CZero(syntheticContext)
+  implicit val HeaderIsZero: Zero[Header] = CZero(syntheticHeader)
+  implicit val PreHeaderIsZero: Zero[PreHeader] = CZero(syntheticPreHeader)
 }
