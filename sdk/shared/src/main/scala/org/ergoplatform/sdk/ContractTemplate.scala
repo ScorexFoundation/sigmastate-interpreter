@@ -1,8 +1,9 @@
 package org.ergoplatform.sdk
 
+import cats.syntax.either._  // required for Scala 2.11
 import debox.cfor
-import io.circe.syntax.EncoderOps
-import io.circe.{Decoder, DecodingFailure, Encoder, Json}
+import io.circe._
+import io.circe.syntax.{EncoderOps, _}
 import org.ergoplatform.ErgoBox
 import org.ergoplatform.sdk.utils.SerializationUtils.{parseString, serializeString}
 import scalan.RType
@@ -10,10 +11,10 @@ import scalan.RType._
 import scorex.crypto.authds.avltree.batch.BatchAVLProver
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util.ModifierId
-import sigmastate.Values._
+import sigmastate.Values.{ErgoTree, _}
 import sigmastate._
 import sigmastate.basics.CryptoConstants
-import sigmastate.eval._
+import sigmastate.eval.{Colls, _}
 import sigmastate.exceptions.SerializerException
 import sigmastate.lang.{DeserializationSigmaBuilder, StdSigmaBuilder}
 import sigmastate.serialization._
@@ -21,7 +22,7 @@ import sigmastate.util.safeNewArray
 import sigmastate.utils.{Helpers, SigmaByteReader, SigmaByteWriter}
 import special.Types.TupleType
 import special.collection.{Coll, CollType}
-import special.sigma.{Header, SigmaDslBuilder, _}
+import special.sigma.{Header, PreHeader, SigmaDslBuilder, _}
 
 import java.math.BigInteger
 import java.util.Objects
@@ -416,7 +417,7 @@ private object Zero extends ZeroLowPriority {
   })
   implicit val sigmaPropIsZero: Zero[SigmaProp] = CZero(CSigmaProp(TrivialProp.FalseProp))
   implicit val AnyIsZero: Zero[Any] = CZero(0)
-  implicit val UnitIsZero: Zero[Unit] = CZero()
+  implicit val UnitIsZero: Zero[Unit] = CZero(())
   implicit val BoxIsZero: Zero[Box] = CZero(syntheticBox)
   implicit val ContextIsZero: Zero[Context] = CZero(syntheticContext)
   implicit val SigmaDslBuilderIsZero: Zero[SigmaDslBuilder] = CZero(CostingSigmaDslBuilder)
@@ -442,7 +443,7 @@ private object Zero extends ZeroLowPriority {
     case SigmaPropRType => sigmaPropIsZero
     case ct: CollType[a] => collIsZero(typeToZero(ct.tItem), ct.tItem)
     case ct: OptionType[a] => optionIsZero(typeToZero(ct.tA))
-    case ct: PairType[a, b] => pairIsZero(typeToZero(ct.tFst), typeToZero(ct.tSnd))``
+    case ct: PairType[a, b] => pairIsZero(typeToZero(ct.tFst), typeToZero(ct.tSnd))
     case tt: TupleType => CZero(tt.emptyArray)
     case ft: FuncType[a, b] => funcIsZero(typeToZero(ft.tDom), typeToZero(ft.tRange))
     case _ => sys.error(s"Don't know how to compute Zero for type $t")
