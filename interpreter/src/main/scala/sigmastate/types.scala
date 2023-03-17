@@ -298,7 +298,9 @@ object SType {
   * @see SInt, SGroupElement, SType
   */
 trait STypeCompanion {
+  /** Force initialization of reflection. */
   val reflection = InterpreterReflection
+
   /** Type identifier to use in method serialization */
   def typeId: Byte
 
@@ -342,8 +344,10 @@ trait STypeCompanion {
   def getMethodByName(name: String): SMethod = methods.find(_.name == name).get
 
   /** Class which represents values of this type. When method call is executed, the corresponding method
-    * of this class is invoked via reflection [[RMethod]].invoke(). */
+    * of this class is invoked via [[RMethod]].invoke(). */
   def reprClass: RClass[_]
+
+  /** Represents class of `this`. */
   lazy val thisRClass: RClass[_] = RClass(this.getClass)
 }
 

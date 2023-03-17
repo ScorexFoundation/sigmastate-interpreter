@@ -18,6 +18,7 @@ import special.CoreLibReflection
 import special.collection.Coll
 import special.sigma.{SigmaDslBuilder, AvlTree}
 
+/** Reflection metadata for `interpreter` module. */
 object InterpreterReflection {
   val reflection = (GraphIRReflection, CoreLibReflection)
 

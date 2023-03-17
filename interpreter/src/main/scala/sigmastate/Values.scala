@@ -40,6 +40,7 @@ import scala.collection.compat.immutable.ArraySeq
 import scala.collection.mutable
 
 object Values {
+  /** Force initialization of reflection. */
   val reflection = InterpreterReflection
 
   type SValue = Value[SType]
@@ -608,7 +609,6 @@ object Values {
 
   type CollectionConstant[T <: SType] = Constant[SCollection[T]]
   type CollectionValue[T <: SType] = Value[SCollection[T]]
-//  type OptionValue[T <: SType] = Value[SOption[T]]
 
   object CollectionConstant {
     def apply[T <: SType](value: Coll[T#WrappedType], elementType: T): Constant[SCollection[T]] =
