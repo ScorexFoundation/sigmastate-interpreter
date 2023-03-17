@@ -13,7 +13,7 @@ package rewriting
 
 import scalan.reflection.{RClass, RConstructor}
 
-import scala.collection.mutable
+import scala.collection.concurrent.TrieMap
 
 /**
   * Strategy-based term rewriting in the style of Stratego (http://strategoxt.org/).
@@ -296,7 +296,7 @@ trait Rewriter {
     }
 
     /** All memoized duppers. */
-    private val dupers = mutable.HashMap.empty[RClass[_], Duper]
+    private val dupers = TrieMap.empty[RClass[_], Duper]
 
     /** Obtains a duper for the given class lazily. and memoize it in the `cache` map.
       * This is the simplest solution, but not the most efficient for concurrent access.
