@@ -205,10 +205,13 @@ class ContractTemplateSpecification extends SerializationSpecification
       Map("p1" -> IntConstant(10), "p2" -> IntConstant(20)),
       Map.empty[String, Constant[SType]],
     )
-    val ergoTreeVersion = (ErgoTree.ConstantSegregationHeader | ergoTreeVersionInTests | ErgoTree.SizeFlag).toByte
+    var expectedErgoTreeVersion = (ErgoTree.ConstantSegregationHeader | ergoTreeVersionInTests).toByte
+    if (ergoTreeVersionInTests > 0) {
+      expectedErgoTreeVersion = (expectedErgoTreeVersion | ErgoTree.SizeFlag).toByte
+    }
     val expectedErgoTree = Seq(
       ErgoTree(
-        ergoTreeVersion,
+        expectedErgoTreeVersion,
         IndexedSeq(
           ByteConstant(10.toByte),
           ByteConstant(40.toByte),
@@ -217,7 +220,7 @@ class ContractTemplateSpecification extends SerializationSpecification
         expressionTrees(0)
       ),
       ErgoTree(
-        ergoTreeVersion,
+        expectedErgoTreeVersion,
         IndexedSeq(
           IntConstant(10),
           IntConstant(20),
@@ -226,14 +229,14 @@ class ContractTemplateSpecification extends SerializationSpecification
         expressionTrees(1)
       ),
       ErgoTree(
-        ergoTreeVersion,
+        expectedErgoTreeVersion,
         Constant.EmptySeq,
         expressionTrees(2)
       )
     )
 
     templates.indices.foreach(i =>
-      templates(i).applyTemplate(Some((ergoTreeVersionInTests | ErgoTree.SizeFlag).toByte), templateValues(i)) shouldEqual expectedErgoTree(i)
+      templates(i).applyTemplate(Some(ergoTreeVersionInTests), templateValues(i)) shouldEqual expectedErgoTree(i)
     )
   }
 

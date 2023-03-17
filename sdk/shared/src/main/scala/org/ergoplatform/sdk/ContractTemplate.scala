@@ -1,6 +1,6 @@
 package org.ergoplatform.sdk
 
-import cats.syntax.either._  // required for Scala 2.11
+import cats.syntax.either._
 import debox.cfor
 import io.circe._
 import io.circe.syntax.{EncoderOps, _}
@@ -11,6 +11,7 @@ import scalan.RType._
 import scorex.crypto.authds.avltree.batch.BatchAVLProver
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util.ModifierId
+import sigmastate.Values.ErgoTree.headerWithVersion
 import sigmastate.Values.{ErgoTree, _}
 import sigmastate._
 import sigmastate.basics.CryptoConstants
@@ -180,7 +181,7 @@ case class ContractTemplate(
       }
     }
 
-    val usedErgoTreeVersion = if (version.isDefined) version.get else treeVersion.get
+    val usedErgoTreeVersion = headerWithVersion(if (version.isDefined) version.get else treeVersion.get)
     ErgoTree(
       (ErgoTree.ConstantSegregationHeader | usedErgoTreeVersion).toByte,
       constants,
