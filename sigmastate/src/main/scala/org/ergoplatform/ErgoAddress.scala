@@ -1,6 +1,8 @@
 package org.ergoplatform
 
-import com.google.common.primitives.Ints
+import java.util
+
+import scorex.utils.Ints
 import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
 import scorex.crypto.hash.{Digest32, Blake2b256}
 import scorex.util.encode.Base58
@@ -123,7 +125,7 @@ object P2PKAddress {
 
   /** Constructs [[P2PKAddress]] instance using the public key of the given [[ProveDlog]]. */
   def apply(pubkey: ProveDlog)(implicit encoder: ErgoAddressEncoder): P2PKAddress = {
-    val bs = GroupElementSerializer.toBytes(pubkey.h)
+    val bs = GroupElementSerializer.toBytes(pubkey.value)
     new P2PKAddress(pubkey, bs)
   }
 }

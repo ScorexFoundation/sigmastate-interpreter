@@ -233,15 +233,6 @@ abstract class TypeDescs extends Base { self: Scalan =>
 
     final def unapply[T, E <: Elem[T]](s: Ref[T]): Nullable[E] = Nullable(s.elem.asInstanceOf[E])
 
-    /** Get unique method name suitable to be used as HashMap key. */
-    def methodKey(m: Method) = {
-      val ann = m.getDeclaredAnnotation(classOf[OverloadId])
-      if (ann != null)
-        s"${m.getName}_${ann.value}"
-      else
-        m.getName
-    }
-
     /** Build a mapping between methods of staged class and the corresponding methods of source class.
       * The methods are related using names.
       * The computed mapping can be used to project MethodCalls IR nodes back to the corresponding
@@ -255,7 +246,7 @@ abstract class TypeDescs extends Base { self: Scalan =>
     def declaredMethods(cls: Class[_], srcCls: Class[_], methodNames: Set[String]): Seq[(Method, MethodDesc)] = {
       val rmethods = cls.getDeclaredMethods.filter(m => methodNames.contains(m.getName))
       val smethods = srcCls.getDeclaredMethods.filter(m => methodNames.contains(m.getName))
-      val mapping = CollectionUtil.joinSeqs(rmethods, smethods)(methodKey, methodKey)
+      val mapping = CollectionUtil.joinSeqs(rmethods, smethods)(_.getName, _.getName)
       mapping.map { case (rm, sm) =>
         (rm, RMethodDesc(sm))
       }.toSeq
@@ -273,7 +264,7 @@ abstract class TypeDescs extends Base { self: Scalan =>
       val specCls = wrapSpec.getClass
       val wMethods = wcls.getDeclaredMethods.filter(m => methodNames.contains(m.getName))
       val specMethods = specCls.getDeclaredMethods.filter(m => methodNames.contains(m.getName))
-      val mapping = CollectionUtil.joinSeqs(wMethods, specMethods)(methodKey, methodKey)
+      val mapping = CollectionUtil.joinSeqs(wMethods, specMethods)(_.getName, _.getName)
       mapping.map { case (wm, sm) =>
         (wm, WMethodDesc(wrapSpec, sm))
       }.toSeq

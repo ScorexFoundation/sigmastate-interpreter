@@ -6,7 +6,7 @@ import sigmastate.{PerItemCost, VersionContext, TypeBasedCost, FixedCost, SType,
 import sigmastate.Values._
 import sigmastate.eval.Profiler
 import sigmastate.interpreter.ErgoTreeEvaluator.DataEnv
-import sigmastate.interpreter.Interpreter.JitReductionResult
+import sigmastate.interpreter.Interpreter.ReductionResult
 import special.sigma.{Context, SigmaProp}
 import scalan.util.Extensions._
 import sigmastate.interpreter.EvalSettings._
@@ -460,7 +460,7 @@ object ErgoTreeEvaluator {
     * @param evalSettings evaluation settings
     * @return a sigma protocol proposition (as [[SigmaBoolean]]) and accumulated JIT cost estimation.
     */
-  def evalToCrypto(context: ErgoLikeContext, ergoTree: ErgoTree, evalSettings: EvalSettings): JitReductionResult = {
+  def evalToCrypto(context: ErgoLikeContext, ergoTree: ErgoTree, evalSettings: EvalSettings): ReductionResult = {
     val (res, cost) = eval(context, ergoTree.constants, ergoTree.toProposition(replaceConstants = false), evalSettings)
     val sb = res match {
       case sp: SigmaProp =>
@@ -468,7 +468,7 @@ object ErgoTreeEvaluator {
       case sb: SigmaBoolean => sb
       case _ => error(s"Expected SigmaBoolean but was: $res")
     }
-    JitReductionResult(sb, cost)
+    ReductionResult(sb, cost)
   }
 
   /** Evaluate the given expression in the given Ergo context using the given settings.

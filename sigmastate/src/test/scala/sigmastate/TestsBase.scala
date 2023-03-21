@@ -2,7 +2,7 @@ package sigmastate
 
 import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
 import org.ergoplatform.ErgoScriptPredef
-import org.scalatest.Matchers
+import org.scalatest.matchers.should.Matchers
 import sigmastate.Values.{ErgoTree, SValue, SigmaBoolean, SigmaPropValue, Value}
 import sigmastate.eval.IRContext
 import sigmastate.helpers.SigmaPPrint
@@ -64,9 +64,6 @@ trait TestsBase extends Matchers with VersionTesting {
       ValueSerializer.deserialize(compiledTreeBytes) shouldEqual v
     }
   }
-
-  def compileWithoutCosting(env: ScriptEnv, code: String): Value[SType] =
-    compiler.compileWithoutCosting(env, code)
 
   /** Compile the given code to ErgoTree expression. */
   def compile(env: ScriptEnv, code: String)(implicit IR: IRContext): Value[SType] = {

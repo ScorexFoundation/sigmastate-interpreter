@@ -2,17 +2,20 @@ package sigmastate.serialization
 
 import org.ergoplatform.validation.ValidationSpecification
 import org.scalacheck.Gen
-import org.scalatest.prop.{PropertyChecks, TableDrivenPropertyChecks, GeneratorDrivenPropertyChecks}
-import org.scalatest.{PropSpec, Assertion, Matchers}
+import org.scalatest.prop.TableDrivenPropertyChecks
+import org.scalatest.Assertion
 import org.scalacheck.Arbitrary._
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.propspec.AnyPropSpec
+import org.scalatestplus.scalacheck.{ScalaCheckDrivenPropertyChecks, ScalaCheckPropertyChecks}
 import sigmastate.Values._
 import sigmastate.SType
 import sigmastate.helpers.NegativeTesting
 import sigmastate.serialization.generators._
 
-trait SerializationSpecification extends PropSpec
-  with PropertyChecks
-  with GeneratorDrivenPropertyChecks
+trait SerializationSpecification extends AnyPropSpec
+  with ScalaCheckPropertyChecks
+  with ScalaCheckDrivenPropertyChecks
   with TableDrivenPropertyChecks
   with Matchers
   with ObjectGenerators

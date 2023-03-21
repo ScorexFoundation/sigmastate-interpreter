@@ -17,12 +17,12 @@ lazy val commonSettings = Seq(
   scalaVersion := scala212,
   scalacOptions ++= {
     CrossVersion.partialVersion(scalaVersion.value) match {
-      case Some((2, 13)) => Seq("-Ywarn-unused:_,imports", "-Ywarn-unused:imports")
-      case Some((2, 12)) => Seq("-Ywarn-unused:_,imports", "-Ywarn-unused:imports")
+      case Some((2, 13)) => Seq("-Ywarn-unused:_,imports", "-Ywarn-unused:imports", "-release", "8")
+      case Some((2, 12)) => Seq("-Ywarn-unused:_,imports", "-Ywarn-unused:imports", "-release", "8")
       case Some((2, 11)) => Seq()
       case _ => sys.error("Unsupported scala version")
     }
-  } ++ scalacReleaseOption,
+  },
   javacOptions ++= javacReleaseOption,
   resolvers += Resolver.sonatypeRepo("public"),
   licenses := Seq("CC0" -> url("https://creativecommons.org/publicdomain/zero/1.0/legalcode")),
@@ -56,14 +56,6 @@ lazy val commonSettings = Seq(
   ),
 )
 
-def scalacReleaseOption = {
-  if (System.getProperty("java.version").startsWith("1."))
-  // java <9 "-release" is not supported
-    Seq()
-  else
-    Seq("-release", "8") // this is passed to javac as `javac -release 8`
-}
-
 def javacReleaseOption = {
   if (System.getProperty("java.version").startsWith("1."))
   // java <9 "--release" is not supported
@@ -77,25 +69,22 @@ dynverSonatypeSnapshots in ThisBuild := true
 // use "-" instead of default "+"
 dynverSeparator in ThisBuild := "-"
 
-val bouncycastleBcprov = "org.bouncycastle" % "bcprov-jdk15on" % "1.64"
-val scrypto            = "org.scorexfoundation" %% "scrypto" % "2.1.10"
-val scorexUtil         = "org.scorexfoundation" %% "scorex-util" % "0.1.8"
-val debox              = "org.scorexfoundation" %% "debox" % "0.9.0"
-val spireMacros        = "org.typelevel" %% "spire-macros" % "0.17.0-M1" // The last version published for Scala 2.11-2.13
-val kiama              = "org.bitbucket.inkytonik.kiama" %% "kiama" % "2.5.0"
+val bouncycastleBcprov = "org.bouncycastle" % "bcprov-jdk15on" % "1.66"
+val scrypto            = "org.scorexfoundation" %% "scrypto" % "2.3.0-RC1"
+val scorexUtil         = "org.scorexfoundation" %% "scorex-util" % "0.2.0"
+val debox              = "org.scorexfoundation" %% "debox" % "0.10.0"
+val spireMacros        = "org.typelevel" %% "spire-macros" % "0.17.0-M1"
 val fastparse          = "com.lihaoyi" %% "fastparse" % "2.3.3"
-val commonsIo          = "commons-io" % "commons-io" % "2.5"
-val commonsMath3       = "org.apache.commons" % "commons-math3" % "3.2"
 val scalaCompat        = "org.scala-lang.modules" %% "scala-collection-compat" % "2.7.0"
 
 val testingDependencies = Seq(
-  "org.scalatest" %% "scalatest" % "3.0.9" % Test,
-  "org.scalactic" %% "scalactic" % "3.0.9" % Test,
-  "org.scalacheck" %% "scalacheck" % "1.14.3" % Test,
+  "org.scalatest" %% "scalatest" % "3.2.14" % Test,
+  "org.scalactic" %% "scalactic" % "3.2.14" % Test,
+  "org.scalacheck" %% "scalacheck" % "1.15.2" % Test,          // last supporting Scala 2.11
+  "org.scalatestplus" %% "scalacheck-1-15" % "3.2.3.0" % Test, // last supporting Scala 2.11
   "com.lihaoyi" %% "pprint" % "0.6.3" % Test,
   "com.storm-enroute" %% "scalameter" % "0.19" % Test,
-  "junit" % "junit" % "4.12" % Test,
-  "com.novocode" % "junit-interface" % "0.11" % Test
+  "junit" % "junit" % "4.12" % Test
 )
 
 lazy val testSettings = Seq(
@@ -111,8 +100,12 @@ libraryDependencies ++= Seq(
   scrypto,
   scorexUtil,
   "org.bouncycastle" % "bcprov-jdk15on" % "1.+",
-  kiama, fastparse, debox, spireMacros, scalaCompat
-) ++ testingDependencies
+  fastparse, debox, spireMacros, scalaCompat
+) ++ testingDependencies ++
+  (if (scalaVersion.value == scala211)
+    Seq(circeCore211, circeGeneric211, circeParser211)
+  else
+    Seq(circeCore, circeGeneric, circeParser))
 
 lazy val circeCore211 = "io.circe" %% "circe-core" % "0.10.0"
 lazy val circeGeneric211 = "io.circe" %% "circe-generic" % "0.10.0"
@@ -121,12 +114,6 @@ lazy val circeParser211 = "io.circe" %% "circe-parser" % "0.10.0"
 lazy val circeCore = "io.circe" %% "circe-core" % "0.13.0"
 lazy val circeGeneric = "io.circe" %% "circe-generic" % "0.13.0"
 lazy val circeParser = "io.circe" %% "circe-parser" % "0.13.0"
-
-libraryDependencies ++= Seq(
-  if (scalaVersion.value == scala211) circeCore211 else circeCore,
-  if (scalaVersion.value == scala211) circeGeneric211 else circeGeneric,
-  if (scalaVersion.value == scala211) circeParser211 else circeParser
-  )
 
 scalacOptions ++= Seq("-feature", "-deprecation")
 
@@ -158,10 +145,10 @@ usePgpKeyHex("C1FD62B4D44BDF702CDF2B726FF59DA944B150DD")
 def libraryDefSettings = commonSettings ++ testSettings 
 
 lazy val common = Project("common", file("common"))
-  .settings(commonSettings ++ testSettings,
+  .settings(libraryDefSettings,
     libraryDependencies ++= Seq(
       "org.scala-lang" % "scala-reflect" % scalaVersion.value,
-      debox, commonsIo, scalaCompat
+      debox, scalaCompat
     ))
   .settings(publish / skip := true)
 
@@ -179,14 +166,14 @@ lazy val libraryimpl = Project("library-impl", file("library-impl"))
 
 lazy val core = Project("core", file("core"))
   .dependsOn(common % allConfigDependency, libraryapi % allConfigDependency)
-  .settings(commonSettings,
+  .settings(libraryDefSettings,
     libraryDependencies ++= Seq( debox ))
   .settings(publish / skip := true)
 
 lazy val library = Project("library", file("library"))
   .dependsOn(common % allConfigDependency, core % allConfigDependency, libraryapi, libraryimpl)
-  .settings(//commonSettings,
-    libraryDefSettings ++ testSettings,
+  .settings(
+    libraryDefSettings,
     libraryDependencies ++= Seq( debox ))
   .settings(publish / skip := true)
 
@@ -217,7 +204,7 @@ lazy val sigmastate = (project in file("sigmastate"))
   .dependsOn(sigmalibrary % allConfigDependency)
   .settings(libraryDefSettings)
   .settings(libraryDependencies ++= Seq(
-    scorexUtil, kiama, fastparse, commonsMath3,
+    scorexUtil, fastparse,
     if (scalaVersion.value == scala211) circeCore211 else circeCore,
     if (scalaVersion.value == scala211) circeGeneric211 else circeGeneric,
     if (scalaVersion.value == scala211) circeParser211 else circeParser
@@ -245,94 +232,3 @@ lazy val rootSettings = Seq(
   mappings in (Test, packageBin) ++= (mappings in(Test, packageBin)).all(aggregateCompile).value.flatten,
   mappings in(Test, packageSrc) ++= (mappings in(Test, packageSrc)).all(aggregateCompile).value.flatten
 )
-
-def runErgoTask(task: String, sigmastateVersion: String, log: Logger): Unit = {
-  val ergoBranch = "test-coverage"
-  val sbtEnvVars = Seq("BUILD_ENV" -> "test", "SIGMASTATE_VERSION" -> sigmastateVersion)
-  
-  log.info(s"Testing current build in Ergo (branch $ergoBranch):")
-  val cwd = new File("").absolutePath
-  val ergoPath = new File(cwd + "/ergo-tests/")
-  log.info(s"Cleaning $ergoPath")
-  s"rm -rf ${ergoPath.absolutePath}" !
-
-  log.info(s"Cloning Ergo branch $ergoBranch into ${ergoPath.absolutePath}")
-  s"git clone -b $ergoBranch --single-branch https://github.com/ergoplatform/ergo.git ${ergoPath.absolutePath}" !
-
-
-  log.info(s"Updating Ergo in $ergoPath with Sigmastate version $sigmastateVersion")
-  Process(Seq("sbt", "unlock", "reload", "lock"), ergoPath, sbtEnvVars: _*) !
-
-  log.info("Updated Ergo lock.sbt:")
-  Process(Seq("git", "diff", "-U0", "lock.sbt"), ergoPath) !
-
-  log.info(s"Running Ergo tests in $ergoPath with Sigmastate version $sigmastateVersion")
-  val res = Process(Seq("sbt", task), ergoPath, sbtEnvVars: _*) !
-
-  if (res != 0) sys.error(s"Ergo $task failed!")
-}
-
-lazy val ergoUnitTestTask = TaskKey[Unit]("ergoUnitTestTask", "run ergo unit tests with current version")
-ergoUnitTestTask := {
-  val log = streams.value.log
-  val sigmastateVersion = version.value
-  runErgoTask("test", sigmastateVersion, log) 
-}
-
-commands += Command.command("ergoUnitTest") { state =>
-  "clean" ::
-    "publishLocal" ::
-    "ergoUnitTestTask" ::
-    state
-}
-
-lazy val ergoItTestTask = TaskKey[Unit]("ergoItTestTask", "run ergo it:test with current version")
-ergoItTestTask := {
-  val log = streams.value.log
-  val sigmastateVersion = version.value
-  runErgoTask("it:test", sigmastateVersion, log)
-}
-
-commands += Command.command("ergoItTest") { state =>
-  "clean" ::
-    "publishLocal" ::
-    "ergoItTestTask" ::
-    state
-}
-
-def runSpamTestTask(task: String, sigmastateVersion: String, log: Logger): Unit = {
-  val spamBranch = "master"
-  val envVars = Seq("SIGMASTATE_VERSION" -> sigmastateVersion,
-    // SSH_SPAM_REPO_KEY should be set (see Jenkins Credentials Binding Plugin)
-    "GIT_SSH_COMMAND" -> "ssh -i $SSH_SPAM_REPO_KEY")
-
-  log.info(s"Testing current build with spam tests (branch $spamBranch):")
-  val cwd = new File("")
-  val spamPath = new File(cwd.absolutePath + "/spam-tests/")
-  log.info(s"Cleaning $spamPath")
-  s"rm -rf ${spamPath.absolutePath}" !
-
-  log.info(s"Cloning spam tests branch $spamBranch into ${spamPath.absolutePath}")
-  Process(Seq("git", "clone",  "-b", spamBranch, "--single-branch", "git@github.com:greenhat/sigma-spam.git", spamPath.absolutePath),
-    cwd.getAbsoluteFile,
-    envVars: _*) !
-
-  log.info(s"Running spam tests in $spamPath with Sigmastate version $sigmastateVersion")
-  val res = Process(Seq("sbt", task), spamPath, envVars: _*) !
-
-  if (res != 0) sys.error(s"Spam $task failed!")
-}
-
-lazy val spamTestTask = TaskKey[Unit]("spamTestTask", "run spam tests with current version")
-spamTestTask := {
-  val log = streams.value.log
-  val sigmastateVersion = version.value
-  runSpamTestTask("test", sigmastateVersion, log)
-}
-
-commands += Command.command("spamTest") { state =>
-  "clean" ::
-    "publishLocal" ::
-    "spamTestTask" ::
-    state
-}

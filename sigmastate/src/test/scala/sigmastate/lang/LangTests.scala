@@ -1,12 +1,11 @@
 package sigmastate.lang
 
-import sigmastate.lang.Terms.{MethodCallLike, Ident}
-import sigmastate.Values.{LongConstant, SValue, Value, SigmaBoolean, ConcreteCollection}
+import org.scalatest.matchers.should.Matchers
+import sigmastate.lang.Terms.{Ident, MethodCallLike}
+import sigmastate.Values.{ConcreteCollection, LongConstant, SValue, SigmaBoolean, Value}
 import sigmastate._
-import java.math.BigInteger
 
-import org.bouncycastle.math.ec.ECPoint
-import org.scalatest.Matchers
+import java.math.BigInteger
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.SCollection.SByteArray
 import sigmastate.basics.ProveDHTuple
@@ -39,10 +38,10 @@ trait LangTests extends Matchers with NegativeTesting {
   val ecp2 = dlog.multiplyGroupElements(ecp1, ecp1)
   val ecp3 = dlog.multiplyGroupElements(ecp2, ecp2)
   val ecp4 = dlog.multiplyGroupElements(ecp3, ecp3)
-  val g1 = CostingSigmaDslBuilder.GroupElement(ecp1.asInstanceOf[ECPoint])
-  val g2 = CostingSigmaDslBuilder.GroupElement(ecp2.asInstanceOf[ECPoint])
-  val g3 = CostingSigmaDslBuilder.GroupElement(ecp3.asInstanceOf[ECPoint])
-  val g4 = CostingSigmaDslBuilder.GroupElement(ecp4.asInstanceOf[ECPoint])
+  val g1 = CostingSigmaDslBuilder.GroupElement(ecp1)
+  val g2 = CostingSigmaDslBuilder.GroupElement(ecp2)
+  val g3 = CostingSigmaDslBuilder.GroupElement(ecp3)
+  val g4 = CostingSigmaDslBuilder.GroupElement(ecp4)
 
   protected val n1: BigInt = BigInt(10).underlying()
   protected val n2: BigInt = BigInt(20).underlying()
@@ -75,7 +74,7 @@ trait LangTests extends Matchers with NegativeTesting {
   def ty(s: String): SType = SigmaParser.parseType(s)
 
   def assertSrcCtxForAllNodes(tree: SValue): Unit = {
-    import org.bitbucket.inkytonik.kiama.rewriting.Rewriter._
+    import sigmastate.kiama.rewriting.Rewriter._
     rewrite(everywherebu(rule[Any] {
       case node: SValue =>
         withClue(s"Missing sourceContext for $node") { node.sourceContext.isDefined shouldBe true }

@@ -35,7 +35,7 @@ class DHTupleExampleSpecification extends SigmaTestingCommons
 
     val x:BigInteger = alice.dlogSecrets.head.w // x is Alice's private key
 
-    val g_x = alicePubKey.h // g_x is Alice's public key (g_x = g^x)
+    val g_x = alicePubKey.value // g_x is Alice's public key (g_x = g^x)
 
     val env = Map(
       ScriptNameProp -> "env",
@@ -63,7 +63,7 @@ class DHTupleExampleSpecification extends SigmaTestingCommons
     val y:BigInteger = bob.dlogSecrets.head.w // y is Bob's private key
 
    val bobPubKey: ProveDlog = bob.dlogSecrets.head.publicImage
-   val g_y = GroupElementConstant(bobPubKey.h) // Bob's public key g^y
+   val g_y = GroupElementConstant(bobPubKey.value) // Bob's public key g^y
 
     val g_xy = GroupElementConstant(dlogGroup.exponentiate(g_x, y)) // g^xy
 

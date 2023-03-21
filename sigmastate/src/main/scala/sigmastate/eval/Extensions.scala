@@ -1,7 +1,5 @@
 package sigmastate.eval
 
-import org.bouncycastle.math.ec.ECPoint
-
 import java.math.BigInteger
 import scalan.RType
 import sigmastate.{SCollection, SCollectionType, SType}
@@ -13,6 +11,7 @@ import sigmastate.SType.AnyOps
 import org.ergoplatform.ErgoBox
 import debox.{Buffer => DBuffer}
 import debox.cfor
+import sigmastate.crypto.{CryptoFacade, Ecp}
 
 object Extensions {
   private val Colls = CostingSigmaDslBuilder.Colls
@@ -89,14 +88,12 @@ object Extensions {
   }
 
   /** Shortened String representation of `source` GroupElement. */
-  def showECPoint(p: ECPoint): String = {
-    if (p.isInfinity) {
-      "INF"
+  def showECPoint(p: Ecp): String = {
+    if (p.isIdentity) {
+      "IDENTITY"
     }
     else {
-      val rawX = p.getRawXCoord.toString.substring(0, 6)
-      val rawY = p.getRawYCoord.toString.substring(0, 6)
-      s"ECPoint($rawX,$rawY,...)"
+      CryptoFacade.showPoint(p)
     }
   }
 

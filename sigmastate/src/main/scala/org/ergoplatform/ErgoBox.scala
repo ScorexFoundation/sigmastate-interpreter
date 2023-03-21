@@ -1,6 +1,6 @@
 package org.ergoplatform
 
-import com.google.common.primitives.{Ints, Shorts}
+import scorex.utils.{Ints, Shorts}
 import org.ergoplatform.ErgoBox.{NonMandatoryRegisterId, TokenId}
 import org.ergoplatform.settings.ErgoAlgos
 import scorex.crypto.authds.ADKey
@@ -61,7 +61,7 @@ class ErgoBox(
   import ErgoBox._
 
   /** Blake2b256 hash of the serialized `bytes`. */
-  lazy val id: BoxId = ADKey @@ Blake2b256.hash(bytes)
+  lazy val id: BoxId = ADKey @@@ Blake2b256.hash(bytes)
 
   override def get(identifier: RegisterId): Option[Value[SType]] = {
     identifier match {

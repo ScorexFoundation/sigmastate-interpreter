@@ -1,11 +1,12 @@
 package sigmastate.utils
 
-import org.scalatest.prop.PropertyChecks
-import org.scalatest.{PropSpec, Matchers}
 import sigmastate.serialization.generators.ObjectGenerators
 import Helpers._
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.propspec.AnyPropSpec
+import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 
-class HelpersTests extends PropSpec with PropertyChecks with Matchers with ObjectGenerators {
+class HelpersTests extends AnyPropSpec with ScalaCheckPropertyChecks with Matchers with ObjectGenerators {
   property("xorU") {
     forAll(arrayGen[Byte]) { arr =>
 

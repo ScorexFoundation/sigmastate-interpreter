@@ -2,7 +2,6 @@ package scalan.util
 
 import java.math.BigInteger
 import java.nio.ByteBuffer
-
 import scala.language.higherKinds
 
 object Extensions {
@@ -214,6 +213,23 @@ object Extensions {
         Some(getValue)
       else
         None
+    }
+  }
+
+  /** Syntactic sugar for postfix assertions and the value pass through
+    * Example:
+    * val positiveValue = x.ensuring(_ > 0, x => s"the value is not positive: $x")
+    */
+  implicit final class Ensuring[A](private val self: A) extends AnyVal {
+    /** Ensures that the given predicate holds for this value.
+      * @param cond the predicate used to test this value.
+      * @param msg the error message to be used if the predicate does not hold.
+      * @return this value, if it satisfies the given predicate `p`.
+      * @throws AssertionError if the predicate does not hold.
+      */
+    def ensuring(cond: A => Boolean, msg: A => Any): A = {
+      assert(cond(self), msg(self))
+      self
     }
   }
 }

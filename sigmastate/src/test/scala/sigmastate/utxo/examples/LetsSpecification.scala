@@ -291,9 +291,9 @@ class LetsSpecification extends SigmaTestingCommons with CrossVersionProps { sui
         R4 -> AvlTreeConstant(SigmaDsl.avlTree(initTreeData)),
         R5 -> SigmaPropConstant(TrivialProp.TrueProp)))
 
-    val userTokenId = Digest32 @@ projectBoxBefore.id
+    val userTokenId = Digest32 @@@ projectBoxBefore.id
 
-    avlProver.performOneOperation(Insert(ADKey @@ userTokenId, ADValue @@ Array.emptyByteArray))
+    avlProver.performOneOperation(Insert(ADKey @@@ userTokenId, ADValue @@ Array.emptyByteArray))
 
     val proof = avlProver.generateProof()
     val endTree = new AvlTreeData(avlProver.digest, AvlTreeFlags.InsertOnly, 32, None)
@@ -330,14 +330,14 @@ class LetsSpecification extends SigmaTestingCommons with CrossVersionProps { sui
     val userTokenId1 = Digest32 @@ Array.fill(32)(Random.nextInt(100).toByte)
 
     val avlProver = new BatchAVLProver[Digest32, Blake2b256.type](keyLength = 32, None)
-    avlProver.performOneOperation(Insert(ADKey @@ userTokenId0, ADValue @@ Array.emptyByteArray))
-    avlProver.performOneOperation(Insert(ADKey @@ userTokenId1, ADValue @@ Array.emptyByteArray))
+    avlProver.performOneOperation(Insert(ADKey @@@ userTokenId0, ADValue @@ Array.emptyByteArray))
+    avlProver.performOneOperation(Insert(ADKey @@@ userTokenId1, ADValue @@ Array.emptyByteArray))
     val digest = avlProver.digest
     avlProver.generateProof()
     val initTreeData = new AvlTreeData(digest, AvlTreeFlags.InsertOnly, 32, None)
 
-    avlProver.performOneOperation(Lookup(ADKey @@ userTokenId0))
-    avlProver.performOneOperation(Lookup(ADKey @@ userTokenId1))
+    avlProver.performOneOperation(Lookup(ADKey @@@ userTokenId0))
+    avlProver.performOneOperation(Lookup(ADKey @@@ userTokenId1))
     val proof = avlProver.generateProof()
 
     val managementTree = mkTestErgoTree(managementScript)

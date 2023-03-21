@@ -2,7 +2,6 @@ package special.sigma
 
 import java.math.BigInteger
 
-import org.bouncycastle.math.ec.ECPoint
 import special.collection._
 import scalan._
 import scorex.crypto.authds.{ADDigest, ADValue}
@@ -15,8 +14,6 @@ import scala.util.Try
   * which is used for all cryptographic operations).
   * So it is globally and implicitly used in all methods.
   * */
-@scalan.Liftable
-@WithMethodCallRecognizers
 trait BigInt {
   /** Convert this BigInt value to Byte.
     * @throws ArithmeticException if overflow happens.
@@ -99,7 +96,7 @@ trait BigInt {
     * @return { @code this + that}
     */
   def add(that: BigInt): BigInt
-  @Internal def +(that: BigInt): BigInt = add(that)
+  def +(that: BigInt): BigInt = add(that)
 
   /** Returns a BigInt whose value is {@code (this - that)}.
     *
@@ -107,7 +104,7 @@ trait BigInt {
     * @return { @code this - that}
     */
   def subtract(that: BigInt): BigInt
-  @Internal def -(that: BigInt): BigInt = subtract(that)
+  def -(that: BigInt): BigInt = subtract(that)
 
   /** Returns a BigInt whose value is {@code (this * that)}.
     *
@@ -117,7 +114,7 @@ trait BigInt {
     * @return { @code this * that}
     */
   def multiply(that: BigInt): BigInt
-  @Internal def *(that: BigInt): BigInt = multiply(that)
+  def *(that: BigInt): BigInt = multiply(that)
 
   /** Returns a BigInt whose value is {@code (this / that)}.
     *
@@ -126,7 +123,7 @@ trait BigInt {
     * @throws ArithmeticException if { @code that} is zero.
     */
   def divide(that: BigInt): BigInt
-  @Internal def /(that: BigInt): BigInt = divide(that)
+  def /(that: BigInt): BigInt = divide(that)
 
   /**
     * Returns a BigInt whose value is {@code (this mod m}).  This method
@@ -139,7 +136,7 @@ trait BigInt {
     * @see #remainder
     */
   def mod(m: BigInt): BigInt
-  @Internal def %(m: BigInt): BigInt = mod(m)
+  def %(m: BigInt): BigInt = mod(m)
 
   /**
     * Returns a BigInt whose value is {@code (this % that)}.
@@ -182,7 +179,7 @@ trait BigInt {
     * @return `this & that`
     */
   def and(that: BigInt): BigInt
-  @Internal def &(that: BigInt): BigInt = and(that)
+  def &(that: BigInt): BigInt = and(that)
 
   /** Returns a BigInteger whose value is `(this | that)`.  (This
     * method returns a negative BigInteger if and only if either `this` or `that`` is
@@ -192,15 +189,14 @@ trait BigInt {
     * @return `this | that`
     */
   def or(that: BigInt): BigInt
-  @Internal def |(that: BigInt): BigInt = or(that)
+  def |(that: BigInt): BigInt = or(that)
 }
 
 /** Base class for points on elliptic curves.
   */
-@scalan.Liftable
-@WithMethodCallRecognizers
 trait GroupElement {
-  def isInfinity: Boolean
+  /** Checks if the provided element is an identity element. */
+  def isIdentity: Boolean
 
   /** Exponentiate this <code>GroupElement</code> to the given number.
     * @param k The power.
@@ -224,8 +220,6 @@ trait GroupElement {
 }
 
 /** Proposition which can be proven and verified by sigma protocol. */
-@scalan.Liftable
-@WithMethodCallRecognizers
 trait SigmaProp {
   def isValid: Boolean
   /** Serialized bytes of this sigma proposition taken as ErgoTree and then serialized. */
@@ -233,26 +227,14 @@ trait SigmaProp {
 
   /** Logical AND between this SigmaProp and other SigmaProp.
     * This constructs a new CAND node of sigma tree with two children. */
-  @OverloadId("and_sigma") def &&(other: SigmaProp): SigmaProp
-
-  /** Logical AND between this `SigmaProp` and `Boolean` value on the right.
-    * The boolean value will be wrapped into `SigmaProp` using `sigmaProp` function.
-    * This constructs a new CAND node of sigma tree with two children. */
-  @OverloadId("and_bool")  def &&(other: Boolean): SigmaProp
+  def &&(other: SigmaProp): SigmaProp
 
   /** Logical OR between this SigmaProp and other SigmaProp.
     * This constructs a new COR node of sigma tree with two children. */
-  @OverloadId("or_sigma") def ||(other: SigmaProp): SigmaProp
-
-  /** Logical OR between this `SigmaProp` and `Boolean` value on the right.
-    * The boolean value will be wrapped into `SigmaProp` using `sigmaProp` function.
-    * This constructs a new COR node of sigma tree with two children. */
-  @OverloadId("or_bool")  def ||(other: Boolean): SigmaProp
+  def ||(other: SigmaProp): SigmaProp
 }
 
 /** Represents any value paired with type descriptor. */
-@scalan.Liftable
-@WithMethodCallRecognizers
 trait AnyValue {
   /** The data value wrapped by this instance. */
   def value: Any
@@ -263,8 +245,6 @@ trait AnyValue {
 /** Runtime representation of Ergo boxes used during execution of ErgoTree operations.
   * @see [[org.ergoplatform.ErgoBox]]
   */
-@scalan.Liftable
-@WithMethodCallRecognizers
 trait Box {
   /** Blake2b256 hash of this box's content, basically equals to `blake2b256(bytes)` */
   def id: Coll[Byte]
@@ -341,32 +321,32 @@ trait Box {
     *                                   different from cT.
     * @since 2.0
     */
-  def getReg[@Reified T](i: Int)(implicit cT: RType[T]): Option[T]
+  def getReg[T](i: Int)(implicit cT: RType[T]): Option[T]
 
   /** Mandatory: Monetary value, in Ergo tokens */
-  def R0[@Reified T](implicit cT:RType[T]): Option[T] = this.getReg[T](0)
+  def R0[T](implicit cT:RType[T]): Option[T] = this.getReg[T](0)
 
   /** Mandatory: Guarding script */
-  def R1[@Reified T](implicit cT:RType[T]): Option[T] = this.getReg[T](1)
+  def R1[T](implicit cT:RType[T]): Option[T] = this.getReg[T](1)
 
   /** Mandatory: Secondary tokens */
-  def R2[@Reified T](implicit cT:RType[T]): Option[T] = this.getReg[T](2)
+  def R2[T](implicit cT:RType[T]): Option[T] = this.getReg[T](2)
 
   /** Mandatory: Reference to transaction and output id where the box was created */
-  def R3[@Reified T](implicit cT:RType[T]): Option[T] = this.getReg[T](3)
+  def R3[T](implicit cT:RType[T]): Option[T] = this.getReg[T](3)
 
   /** Non-mandatory register */
-  def R4[@Reified T](implicit cT:RType[T]): Option[T] = this.getReg[T](4)
+  def R4[T](implicit cT:RType[T]): Option[T] = this.getReg[T](4)
   /** Non-mandatory register */
-  def R5[@Reified T](implicit cT:RType[T]): Option[T] = this.getReg[T](5)
+  def R5[T](implicit cT:RType[T]): Option[T] = this.getReg[T](5)
   /** Non-mandatory register */
-  def R6[@Reified T](implicit cT:RType[T]): Option[T] = this.getReg[T](6)
+  def R6[T](implicit cT:RType[T]): Option[T] = this.getReg[T](6)
   /** Non-mandatory register */
-  def R7[@Reified T](implicit cT:RType[T]): Option[T] = this.getReg[T](7)
+  def R7[T](implicit cT:RType[T]): Option[T] = this.getReg[T](7)
   /** Non-mandatory register */
-  def R8[@Reified T](implicit cT:RType[T]): Option[T] = this.getReg[T](8)
+  def R8[T](implicit cT:RType[T]): Option[T] = this.getReg[T](8)
   /** Non-mandatory register */
-  def R9[@Reified T](implicit cT:RType[T]): Option[T] = this.getReg[T](9)
+  def R9[T](implicit cT:RType[T]): Option[T] = this.getReg[T](9)
 
   /** Secondary tokens */
   def tokens: Coll[(Coll[Byte], Long)]
@@ -384,9 +364,8 @@ trait Box {
     * @return result of the script execution in the current context
     * @since Mainnet
     */
-  def executeFromRegister[@Reified T](regId: Byte)(implicit cT:RType[T]): T
+  def executeFromRegister[T](regId: Byte)(implicit cT:RType[T]): T
 
-  @Internal
   override def toString = s"Box(id=$id; value=$value; regs=$registers)"
 }
 
@@ -399,7 +378,6 @@ trait Box {
   *
   * This interface is used as runtime representation of the AvlTree type of ErgoTree.
   */
-@scalan.Liftable
 trait AvlTree {
   /** Returns digest of the state represented by this tree.
     * Authenticated tree digest = root hash bytes ++ tree height
@@ -554,7 +532,6 @@ trait AvlTreeVerifier {
 /** Only header fields that can be predicted by a miner.
   * @since 2.0
   */
-@scalan.Liftable
 trait PreHeader { // Testnet2
   /** Block version, to be increased on every soft and hardfork. */
   def version: Byte
@@ -582,7 +559,6 @@ trait PreHeader { // Testnet2
 /** Represents data of the block header available in Sigma propositions.
   * @since 2.0
   */
-@scalan.Liftable
 trait Header {
   /** Bytes representation of ModifierId of this Header */
   def id: Coll[Byte]
@@ -636,8 +612,6 @@ trait Header {
 /** Runtime representation of Context ErgoTree type.
   * Represents data available in Sigma language using `CONTEXT` global variable.
   */
-@scalan.Liftable
-@WithMethodCallRecognizers
 trait Context {
   def builder: SigmaDslBuilder
 
@@ -656,22 +630,21 @@ trait Context {
   /** Box whose proposition is being currently executing */
   def SELF: Box
 
-  /** Zero based index in `inputs` of `selfBox`. -1 if self box is not in the INPUTS collection. */
+  /** Zero based index in `inputs` of `selfBox`. */
   def selfBoxIndex: Int
 
   /** Authenticated dynamic dictionary digest representing Utxo state before current state. */
   def LastBlockUtxoRootHash: AvlTree
 
-  /** A fixed number of last block headers in descending order (first header is the newest one)
-    * @since 2.0
-    */
+  /** A fixed number of last block headers in descending order (first header is the newest one) */
   def headers: Coll[Header]
 
-  /**
-    * @since 2.0
-    */
+  /** Fields of a new block header, that can be predicted by a miner before block's formation */
   def preHeader: PreHeader
 
+  /** Bytes of encoded miner's public key.
+    * Same as `preHeader.minerPk.getEncoded`
+    */
   def minerPubKey: Coll[Byte]
 
   /** Extracts Context variable by id and type.
@@ -743,12 +716,9 @@ trait Context {
   def currentErgoTreeVersion: Byte
 }
 
-@scalan.Liftable
 trait SigmaContract {
   def builder: SigmaDslBuilder
 
-  @NeverInline
-  @Reified("T")
   def Collection[T](items: T*)(implicit cT: RType[T]): Coll[T] = this.builder.Colls.fromItems[T](items:_*)
 
   /** !!! all methods should delegate to builder */
@@ -779,7 +749,6 @@ trait SigmaContract {
 
   def decodePoint(encoded: Coll[Byte]): GroupElement = this.builder.decodePoint(encoded)
 
-  @Reified("T")
   def substConstants[T](scriptBytes: Coll[Byte],
       positions: Coll[Int],
       newValues: Coll[T]): Coll[Byte] = this.builder.substConstants(scriptBytes, positions, newValues)
@@ -795,8 +764,6 @@ trait SigmaContract {
   *
   * @see SGlobal.WrappedType, CostingSigmaDslBuilder
   */
-@scalan.Liftable
-@WithMethodCallRecognizers
 trait SigmaDslBuilder {
 
   /** Access to collection operations. */
@@ -887,7 +854,6 @@ trait SigmaDslBuilder {
     * @param newValues new values to be injected into the corresponding positions in ErgoTree.constants array
     * @return original scriptBytes array where only specified constants are replaced and all other bytes remain exactly the same
     */
-  @Reified("T")
   def substConstants[T](scriptBytes: Coll[Byte], positions: Coll[Int], newValues: Coll[T]): Coll[Byte]
 
   /** Decodes the given bytes to the corresponding GroupElement using default serialization.
@@ -897,10 +863,10 @@ trait SigmaDslBuilder {
   def decodePoint(encoded: Coll[Byte]): GroupElement
 
   /** Create DSL big integer from existing `java.math.BigInteger`*/
-  @Internal def BigInt(n: BigInteger): BigInt
+  def BigInt(n: BigInteger): BigInt
 
   /** Extract `java.math.BigInteger` from DSL's `BigInt` type*/
-  @Internal def toBigInteger(n: BigInt): BigInteger
+  def toBigInteger(n: BigInt): BigInteger
 
   /** Construct a new authenticated dictionary with given parameters and tree root digest. */
   def avlTree(operationFlags: Byte, digest: Coll[Byte], keyLength: Int, valueLengthOpt: Option[Int]): AvlTree

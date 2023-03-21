@@ -1,28 +1,29 @@
 package sigmastate.basics
 
 import java.math.BigInteger
-import org.bouncycastle.asn1.x9.X9ECParameters
-import org.bouncycastle.crypto.ec.CustomNamedCurves
-import org.bouncycastle.math.ec.custom.sec.SecP256K1Point
-import org.bouncycastle.math.ec.ECPoint
-import org.bouncycastle.util.BigIntegers
+import sigmastate.crypto.BigIntegers
 import debox.cfor
+import sigmastate.crypto.{CryptoContext, CryptoFacade}
 
-import scala.collection.{Seq, mutable}
-import scala.util.Try
+import scala.collection.mutable
 
-abstract class BcDlogGroup[ElemType <: ECPoint](val x9params: X9ECParameters) extends DlogGroup[ElemType] {
 
-  lazy val curve = x9params.getCurve
+/** Base class for EC-based groups where DLOG problem is hard (with bouncycastle-like interface).
+  * @param ctx context which abstracts basic operations with curve and elements.
+  */
+abstract class BcDlogGroup(val ctx: CryptoContext) extends DlogGroup {
+  /** Characteristic of the finite field of the underlying curve. */
+  lazy val p: BigInteger = ctx.fieldCharacteristic
 
-  //modulus of the field
-  lazy val p: BigInteger = curve.getField.getCharacteristic
+  /** Order of the group as defined in ASN.1 def for Elliptic-Curve ECParameters structure.
+    * See X9.62, for further details.
+    * For reference implementation see `org.bouncycastle.asn1.x9.X9ECParameters.getN`.
+    */
+  lazy val q: BigInteger = ctx.order
 
-  //order of the group
-  lazy val q = x9params.getN
-
-  //Now that we have p, we can calculate k which is the maximum length in bytes
-  // of a string to be converted to a Group Element of this group.
+  /** Now that we have p, we can calculate k which is the maximum length in bytes
+    * of a string to be converted to a Group Element of this group.
+    */
   lazy val k = calcK(p)
 
   /**
@@ -31,15 +32,15 @@ abstract class BcDlogGroup[ElemType <: ECPoint](val x9params: X9ECParameters) ex
     * It is composed of two main elements. The group element for which the optimized computations
     * are built for, called the base and a vector of group elements that are the result of
     * exponentiations of order 1,2,4,8,
-    */
-  private class GroupElementsExponentiations(base: ElemType) //group element for which the optimized computations are built for
-  /**
+    *
     * The constructor creates a map structure in memory.
     * Then calculates the exponentiations of order 1,2,4,8 for the given base and save them in the map.
     *
-    * @param base
+    * @param base group element for which the optimized computations are built for
     * @throws IllegalArgumentException
-    */ { // build new vector of exponentiations
+    *
+    */
+  private class GroupElementsExponentiations(base: ElemType) {
 
     private val exponentiations = new mutable.ListBuffer[ElemType]()
 
@@ -99,22 +100,11 @@ abstract class BcDlogGroup[ElemType <: ECPoint](val x9params: X9ECParameters) ex
   private val exponentiationsCache = mutable.Map[ElemType, GroupElementsExponentiations]()
 
 
-  //Create the generator
-  //Assume that (x,y) are the coordinates of a point that is indeed a generator but check that (x,y) are the coordinates of a point.
-  override lazy val generator: ElemType = x9params.getG.asInstanceOf[ElemType]
-
-  /**
-    * Checks if the given x and y represent a valid point on the given curve,
-    * i.e. if the point (x, y) is a solution of the curves equation.
-    *
-    * @param x coefficient of the point
-    * @param y coefficient of the point
-    * @return true if the given x and y represented a valid point on the given curve
+  /** Creates the generator.
+    * Assume that (x,y) are the coordinates of a point that is indeed a generator but
+    * check that (x,y) are the coordinates of a point.
     */
-  def checkCurveMembership(x: BigInteger, y: BigInteger): Boolean = {
-    Try(curve.validatePoint(x, y)).isSuccess
-  }
-
+  override lazy val generator: ElemType = ctx.generator
 
   /**
     * This function calculates k, the maximum length in bytes of a string to be converted to a Group Element of this group.
@@ -132,16 +122,14 @@ abstract class BcDlogGroup[ElemType <: ECPoint](val x9params: X9ECParameters) ex
   }
 
   /**
-    *
     * @return the order of this Dlog group
     */
-  override lazy val order: BigInteger = x9params.getN
+  override lazy val order: BigInteger = ctx.order
 
   /**
-    *
     * @return the identity of this Dlog group
     */
-  override lazy val identity: ElemType = curve.getInfinity.asInstanceOf[ElemType]
+  override lazy val identity: ElemType = ctx.infinity.asInstanceOf[ElemType]
 
   /**
     * Calculates the inverse of the given GroupElement.
@@ -151,7 +139,7 @@ abstract class BcDlogGroup[ElemType <: ECPoint](val x9params: X9ECParameters) ex
     * @throws IllegalArgumentException
     **/
   override def inverseOf(groupElement: ElemType): ElemType =
-    groupElement.negate().asInstanceOf[ElemType]
+    CryptoFacade.negatePoint(groupElement)
 
   /**
     * Raises the base GroupElement to the exponent. The result is another GroupElement.
@@ -163,16 +151,12 @@ abstract class BcDlogGroup[ElemType <: ECPoint](val x9params: X9ECParameters) ex
     */
   override def exponentiate(base: ElemType, exponent: BigInteger): ElemType = {
     //infinity remains the same after any exponentiate
-    if (base.isInfinity) return base
+    if (CryptoFacade.isInfinityPoint(base)) return base
 
     //If the exponent is negative, convert it to be the exponent modulus q.
     val exp = if (exponent.compareTo(BigInteger.ZERO) < 0) exponent.mod(order) else exponent
 
-    /*
-     * BC treats EC as additive group while we treat that as multiplicative group.
-     * Therefore, exponentiate point is multiply.
-     */
-    base.multiply(exp).asInstanceOf[ElemType]
+    CryptoFacade.exponentiatePoint(base, exp)
   }
 
 
@@ -186,7 +170,7 @@ abstract class BcDlogGroup[ElemType <: ECPoint](val x9params: X9ECParameters) ex
     //However, if a specific Dlog Group has a more efficient implementation then is it advised to override this function in that concrete
     //Dlog group. For example we do so in CryptoPpDlogZpSafePrime.
     val one = BigInteger.ONE
-    val qMinusOne = x9params.getN.subtract(one)
+    val qMinusOne = ctx.order.subtract(one)
     // choose a random number x in Zq*
     val randNum = BigIntegers.createRandomInRange(one, qMinusOne, secureRandom)
     // compute g^x to get a new element
@@ -213,22 +197,7 @@ abstract class BcDlogGroup[ElemType <: ECPoint](val x9params: X9ECParameters) ex
     * @throws IllegalArgumentException
     */
   override def multiplyGroupElements(groupElement1: ElemType, groupElement2: ElemType): ElemType =
-    groupElement1.add(groupElement2).asInstanceOf[ElemType]
-
-
-  /**
-    * Computes the product of several exponentiations with distinct bases
-    * and distinct exponents.
-    * Instead of computing each part separately, an optimization is used to
-    * compute it simultaneously.
-    *
-    * @param groupElements
-    * @param exponentiations
-    * @return the exponentiation result
-    */
-  override def simultaneousMultipleExponentiations(groupElements: Array[ElemType],
-                                                   exponentiations: Array[BigInteger]): ElemType =
-    computeLL(groupElements, exponentiations)
+    CryptoFacade.multiplyPoints(groupElement1, groupElement2)
 
   /**
     * Computes the product of several exponentiations of the same base
@@ -273,113 +242,7 @@ abstract class BcDlogGroup[ElemType <: ECPoint](val x9params: X9ECParameters) ex
     */
   override lazy val maxLengthOfByteArrayForEncoding: Int = k
 
-
-  /*
-	 * Computes the simultaneousMultiplyExponentiate using a naive algorithm
-	 */
-  protected def computeNaive(groupElements: Array[ElemType], exponentiations: Array[BigInteger]): ElemType =
-    groupElements.zip(exponentiations)
-      .iterator
-      .map { case (base, exp) => exponentiate(base, exp) }
-      .foldLeft(identity) { case (r, elem) => multiplyGroupElements(elem, r) }
-
-
-  /*
-   * Compute the simultaneousMultiplyExponentiate by LL algorithm.
-   * The code is taken from the pseudo code of LL algorithm in http://dasan.sejong.ac.kr/~chlim/pub/multi_exp.ps.
-   */
-  protected def computeLL(groupElements: Array[ElemType], exponentiations: Array[BigInteger]): ElemType = {
-    val n = groupElements.length
-    //get the biggest exponent
-    val bigExp = exponentiations.max
-    val t = bigExp.bitLength //num bits of the biggest exponent.
-    val w = getLLW(t) //window size, choose it according to the value of t
-
-    //h = n/w
-    val h = if ((n % w) == 0) n / w else (n / w) + 1
-
-    //create pre computation table
-    val preComp = createLLPreCompTable(groupElements, w, h)
-
-    //holds the computation result
-    var result: ElemType = computeLoop(exponentiations, w, h, preComp, identity, t - 1)
-    //computes the first loop of the algorithm. This loop returns in the next part of the algorithm with one single tiny change.
-
-    //computes the third part of the algorithm
-    (t - 2).to(0, -1).foreach { j =>
-      //Y = Y^2
-      result = exponentiate(result, new BigInteger("2"))
-      //computes the inner loop
-      result = computeLoop(exponentiations, w, h, preComp, result, j)
-    }
-    result
-  }
-
-  /*
-   * Computes the loop the repeats in the algorithm.
-   * for k=0 to h-1
-   * 		e=0
-   * 		for i=kw to kw+w-1
-   *			if the bitIndex bit in ci is set:
-   *			calculate e += 2^(i-kw)
-   *		result = result *preComp[k][e]
-   *
-   */
-  private def computeLoop(exponentiations: Array[BigInteger], w: Int, h: Int, preComp: Seq[Seq[ElemType]], result: ElemType, bitIndex: Int) = {
-    var res = result
-    cfor(0)(_ < h, _ + 1) { k =>
-      var e = 0
-      cfor(k * w)(_ < (k * w + w), _ + 1) { i =>
-        if (i < exponentiations.length) { //if the bit is set, change the e value
-          if (exponentiations(i).testBit(bitIndex)) {
-            val twoPow = Math.pow(2, i - k * w).toInt
-            e += twoPow
-          }
-        }
-      }
-      res = multiplyGroupElements(res, preComp(k)(e))
-    }
-    res
-  }
-
-  /*
-   * Creates the preComputation table.
-   */
-  private def createLLPreCompTable(groupElements: Array[ElemType], w: Int, h: Int) = {
-    val twoPowW = Math.pow(2, w).toInt
-    //create the pre-computation table of size h*(2^(w))
-    val preComp: Seq[mutable.Seq[ElemType]] = Seq.fill(h)(mutable.Seq.fill(twoPowW)(identity))
-
-    cfor(0)(_ < h, _ + 1) { k =>
-      cfor(0)(_ < twoPowW, _ + 1) { e =>
-        cfor(0)(_ < w, _ + 1) { i =>
-          val baseIndex = k * w + i
-          if (baseIndex < groupElements.length) {
-            val base = groupElements(baseIndex)
-            //if bit i in e is set, change preComp[k][e]
-            if ((e & (1 << i)) != 0) { //bit i is set
-              preComp(k)(e) = multiplyGroupElements(preComp(k)(e), base)
-            }
-          }
-        }
-      }
-    }
-    preComp
-  }
-
-  /*
-   * returns the w value according to the given t
-   */
-  private def getLLW(t: Int): Int = {
-    if (t <= 10) 2
-    else if (t <= 24) 3
-    else if (t <= 60) 4
-    else if (t <= 144) 5
-    else if (t <= 342) 6
-    else if (t <= 797) 7
-    else if (t <= 1828) 8
-    else 9
-  }
 }
 
-object SecP256K1 extends BcDlogGroup[SecP256K1Point](CustomNamedCurves.getByName("secp256k1"))
+/** Implementation of [[BcDlogGroup]] using SecP256K1 curve. */
+object SecP256K1Group extends BcDlogGroup(CryptoFacade.createCryptoContext())

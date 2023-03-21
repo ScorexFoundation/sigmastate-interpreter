@@ -319,10 +319,6 @@ trait TreeBuilding extends SigmaLibrary { IR: IRContext =>
       case OM.isDefined(In(optionSym)) =>
         mkOptionIsDefined(optionSym.asValue[SOption[SType]])
 
-      case SigmaM.and_bool_&&(In(prop), In(cond)) => // TODO refactor: remove or cover by tests: it is never executed
-        SigmaAnd(Seq(prop.asSigmaProp, mkBoolToSigmaProp(cond.asBoolValue)))
-      case SigmaM.or_bool_||(In(prop), In(cond)) => // TODO refactor: remove or cover by tests: it is never executed
-        SigmaOr(Seq(prop.asSigmaProp, mkBoolToSigmaProp(cond.asBoolValue)))
       case SigmaM.and_sigma_&&(In(p1), In(p2)) =>
         SigmaAnd(Seq(p1.asSigmaProp, p2.asSigmaProp))
       case SigmaM.or_sigma_||(In(p1), In(p2)) =>

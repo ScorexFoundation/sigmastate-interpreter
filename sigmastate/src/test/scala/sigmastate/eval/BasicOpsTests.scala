@@ -1,14 +1,16 @@
 package sigmastate.eval
 
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
+
 import java.math.BigInteger
-import org.bouncycastle.crypto.ec.CustomNamedCurves
-import org.scalatest.{FunSuite, Matchers}
 import sigmastate.TrivialProp
+import sigmastate.basics.SecP256K1Group
 import special.sigma.{ContractsTestkit, SigmaDslBuilder, SigmaProp}
 
 import scala.language.implicitConversions
 
-class BasicOpsTests extends FunSuite with ContractsTestkit with Matchers {
+class BasicOpsTests extends AnyFunSuite with ContractsTestkit with Matchers {
   override val SigmaDsl: SigmaDslBuilder = CostingSigmaDslBuilder
 
   implicit def boolToSigma(b: Boolean): SigmaProp = TrivialProp(b)
@@ -33,7 +35,7 @@ class BasicOpsTests extends FunSuite with ContractsTestkit with Matchers {
 
   // TODO this is valid for BigIntModQ type (https://github.com/ScorexFoundation/sigmastate-interpreter/issues/554)
   ignore("ByteArrayToBigInt should always produce big int less than dlog group order") {
-    val groupOrder = CustomNamedCurves.getByName("secp256k1").getN
+    val groupOrder = SecP256K1Group.ctx.order
 
     SigmaDsl.byteArrayToBigInt(
       Colls.fromArray(groupOrder.subtract(BigInteger.ONE).toByteArray)

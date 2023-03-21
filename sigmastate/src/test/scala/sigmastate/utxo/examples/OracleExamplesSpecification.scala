@@ -2,7 +2,7 @@ package sigmastate.utxo.examples
 
 import java.security.SecureRandom
 
-import com.google.common.primitives.Longs
+import scorex.utils.Longs
 import org.ergoplatform.ErgoBox.RegisterId
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup}
 import scorex.crypto.authds.{ADKey, ADValue}
@@ -114,7 +114,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons
 
     val avlProver = new BatchAVLProver[Digest32, Blake2b256.type](keyLength = 32, None)
 
-    avlProver.performOneOperation(Insert(ADKey @@ oracleBox.id, ADValue @@ oracleBox.bytes))
+    avlProver.performOneOperation(Insert(ADKey @@@ oracleBox.id, ADValue @@ oracleBox.bytes))
     avlProver.generateProof()
 
     val lastBlockUtxoDigest = avlProver.digest
@@ -153,7 +153,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons
       ),
       contractLogic)
 
-    avlProver.performOneOperation(Lookup(ADKey @@ oracleBox.id))
+    avlProver.performOneOperation(Lookup(ADKey @@@ oracleBox.id))
     val proof = avlProver.generateProof()
 
     val newBox1 = testBox(20, alicePubKey, 0, boxIndex = 2)

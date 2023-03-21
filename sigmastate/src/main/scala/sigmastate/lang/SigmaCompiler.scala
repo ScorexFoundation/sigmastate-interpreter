@@ -2,7 +2,7 @@ package sigmastate.lang
 
 import fastparse.Parsed
 import fastparse.Parsed.Success
-import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, rewrite, rule}
+import sigmastate.kiama.rewriting.Rewriter.{everywherebu, rewrite, rule}
 import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
 import org.ergoplatform.Global
 import sigmastate.Values.{SValue, Value}
@@ -80,13 +80,6 @@ class SigmaCompiler(settings: CompilerSettings) {
   def typecheck(env: ScriptEnv, code: String): Value[SType] = {
     val parsed = parse(code)
     typecheck(env, parsed)
-  }
-
-  private[sigmastate] def compileWithoutCosting(env: ScriptEnv, code: String): Value[SType] = {
-    val typed = typecheck(env, code)
-    val spec = new SigmaSpecializer(builder)
-    val ir = spec.specialize(typed)
-    ir
   }
 
   /** Compiles the given ErgoScript source code. */

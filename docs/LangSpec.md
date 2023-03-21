@@ -56,7 +56,7 @@ The following sections describe ErgoScript and its operations.
 
 #### ErgoScript language features overview
 
-- syntax borrowed from Scala and Kotlin
+- syntax borrowed from Scala
 - standard syntax and semantics for well known constructs (operations, code blocks, if branches etc.)
 - high-order language with first-class lambdas which are used in collection operations
 - call-by-value (eager evaluation)
@@ -105,11 +105,11 @@ Type Name        |   Description
 `Coll[T]`        | a collection of arbitrary length with all values of type `T` 
 `(T1,T2)`        | a pair of values where T1, T2 can be different types
 
-The type constructors `Coll`, `Option`, `(_,_)` can be used to construct complex
+The type constructors `Coll`, `(_,_)` can be used to construct complex
 types as in the following example.
 ```scala
 {
-  val keyValues = OUTPUTS(0).R4[Coll[(Int, Option[Int])]].get
+  val keyValues = OUTPUTS(0).R4[Coll[(Int, (Byte, Long))]].get
   ...
 }
 ```
@@ -170,8 +170,8 @@ class Numeric {
 }
 ```
 
-All the predefined numeric types inherit Numeric class and its method.
-Internally they are pre-defined like the following.
+All the predefined numeric types inherit Numeric class and its methods.
+They can be thought as being pre-defined like the following.
 
 ```scala 
 class Byte extends Numeric
@@ -208,7 +208,10 @@ class Context {
   
   /** Box whose proposition is being currently executing */
   def SELF: Box
-  
+
+  /** Zero based index in `inputs` of `selfBox` */
+  def selfBoxIndex: Int
+
   /** A collection of inputs of the current transaction, the transaction where
     * selfBox is one of the inputs. 
     */
@@ -235,7 +238,13 @@ class Context {
   def headers: Coll[Header]
 
   /** Header fields that are known before the block is mined. */
-  def preHeader: PreHeader  
+  def preHeader: PreHeader
+
+  /** Bytes of encoded miner's public key. 
+    * Same as `preHeader.minerPk.getEncoded`
+    */
+  def minerPubKey: Coll[Byte]
+
 }
 
 /** Represents data of the block headers available in scripts. */
@@ -313,7 +322,7 @@ class PreHeader {
   /** Block height */
   def height: Int
 
-  /** Miner public key. Should be used to collect block rewards. */
+  /** Miner's public key. Should be used to collect block rewards. */
   def minerPk: GroupElement
 
   /** Miner votes for changing system parameters. */
@@ -424,9 +433,16 @@ class Box {
 Besides properties, every box can have up to 10 numbered registers.
 The following syntax is supported to access registers on box objects:
 ```
-box.R3[Int].get          // access R3 register, check that its value of type Int and return it
-box.R3[Int].isDefined    // check that value of R3 is defined and has type Int
-box.R3[Int].getOrElse(d) // access R3 value if defined, otherwise return `d`
+// access R3 register, check that its value of type Int and return it
+box.R3[Int].get         
+ 
+// check that value of R3 is defined and has type Int
+box.R3[Int].isDefined    
+
+// access R3 register, if it is defined and of type Int then return it, 
+// if not of type Int then throw exception, 
+// if not defined then return `d`
+box.R3[Int].getOrElse(d) 
 ```
 
 #### GroupElement
@@ -450,6 +466,40 @@ class GroupElement {
     * @return the point encoding
     */
   def getEncoded: Coll[Byte]
+}
+```
+
+#### SigmaProp
+```scala
+/** Proposition which can be proven and verified by sigma protocol. */
+trait SigmaProp {
+  /** Serialized bytes of this sigma proposition.
+    * In order to have comparisons like  `box.propositionBytes == prop.propBytes`
+    * this SigmaProp is converted to ErgoTree as:
+    * 1. prop converted to [[SigmaPropConstant]]
+    * 2. new ErgoTree created with with ErgoTree.DefaultHeader, EmptyConstant and SigmaPropConstant as the root
+    * 
+    * Thus obtained ErgoTree is serialized using DefaultSerializer and compared with `box.propositionBytes`.
+    */
+  def propBytes: Coll[Byte]
+
+  /** Logical AND between this SigmaProp and the `other` SigmaProp.
+    * This constructs a new CAND node of a sigma tree with two children. */
+  def &&(other: SigmaProp): SigmaProp
+
+  /** Logical AND between this `SigmaProp` and the `Boolean` value on the right.
+    * The boolean value will be wrapped into `SigmaProp` using the `sigmaProp` function.
+    * This constructs a new CAND node of a sigma tree with two children. */
+  def &&(other: Boolean): SigmaProp
+
+  /** Logical OR between this SigmaProp and the other SigmaProp.
+    * This constructs a new COR node of sigma tree with two children. */
+  def ||(other: SigmaProp): SigmaProp
+
+  /** Logical OR between this `SigmaProp` and the `Boolean` value on the right.
+    * The boolean value will be wrapped into `SigmaProp` using the `sigmaProp` function.
+    * This constructs a new COR node of a sigma tree with two children. */
+  def ||(other: Boolean): SigmaProp
 }
 ```
 
@@ -818,23 +868,8 @@ def xorOf(conditions: Coll[Boolean]): Boolean
  */
 def atLeast(k: Int, properties: Coll[SigmaProp]): SigmaProp
     
-/** Special function to represent explicit Zero Knowledge Scope in ErgoScript code.
- * Compiler checks Zero Knowledge properties and issue error message is case of violations.
- * ZK-scoping is optional, it can be used when the user want to ensure Zero Knowledge of
- * specific set of operations.
- * Usually it will require simple restructuring of the code to make the scope body explicit.
- * Invariants checked by the compiler:
- *  - single ZKProof in ErgoTree in a root position
- *  - no boolean operations in the body, because otherwise the result may be disclosed
- *  - all the operations are over SigmaProp values
- *
- * For motivation and details see
- * https://github.com/ScorexFoundation/sigmastate-interpreter/issues/236
- */
-def ZKProof(block: SSigmaProp): Boolean
-
 /** Embedding of Boolean values to SigmaProp values. As an example, this
- * operation allows boolean experesions to be used as arguments of
+ * operation allows boolean expressions to be used as arguments of
  * `atLeast(..., sigmaProp(myCondition), ...)` operation.
  */
 def sigmaProp(condition: Boolean): SigmaProp
@@ -867,8 +902,7 @@ def decodePoint(bytes: Coll[Byte]): GroupElement
   * evaluate to a valid value of the `Option[Int]` type.
   *
   * For example `val x = getVar[Int](10)` expects the variable, if it is present, to have
-  * type `Int`. At runtime the corresponding type descriptor is passed as `cT`
-  * parameter.
+  * type `Int`. 
   *
   * There are three cases:
   * 1) If the variable doesn't exist.
@@ -894,13 +928,13 @@ def decodePoint(bytes: Coll[Byte]): GroupElement
   *     val tag = tagOpt.get
   *     if (tag == 1) {
   *       val x = getVar[Int](id2).get
-  *       // compute res using value x is of type Int
+  *       // compute res when value x is of type Int
   *     } else if (tag == 2) {
   *       val x = getVar[GroupElement](id2).get
-  *       // compute res using value x is of type GroupElement
+  *       // compute res when value x is of type GroupElement
   *     } else if (tag == 3) {
   *       val x = getVar[ Array[Byte] ](id2).get
-  *       // compute res using value x of type Array[Byte]
+  *       // compute res when value x of type Array[Byte]
   *     } else {
   *       // compute `res` when `tag` is not 1, 2 or 3
   *     }

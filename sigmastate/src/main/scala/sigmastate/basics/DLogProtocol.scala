@@ -2,7 +2,7 @@ package sigmastate.basics
 
 import java.math.BigInteger
 
-import org.bouncycastle.util.BigIntegers
+import sigmastate.crypto.BigIntegers
 import sigmastate.Values._
 import Value.PropositionCode
 import scorex.util.encode.Base16
@@ -27,8 +27,8 @@ object DLogProtocol {
     extends SigmaProofOfKnowledgeLeaf[DLogSigmaProtocol, DLogProverInput] {
     override def size: Int = 1
     override val opCode: OpCode = OpCodes.ProveDlogCode
-    lazy val h: EcPointType = value
-    lazy val pkBytes: Array[Byte] = GroupElementSerializer.toBytes(h)
+    /** Serialized bytes of the elliptic curve point (using GroupElementSerializer). */
+    lazy val pkBytes: Array[Byte] = GroupElementSerializer.toBytes(value)
   }
 
   object ProveDlog {
@@ -102,6 +102,7 @@ object DLogProtocol {
       SecondDLogProverMessage(z)
     }
 
+    /** Simulation of sigma protocol. */
     def simulate(publicInput: ProveDlog, challenge: Challenge): (FirstDLogProverMessage, SecondDLogProverMessage) = {
       val qMinusOne = dlogGroup.order.subtract(BigInteger.ONE)
 
@@ -111,7 +112,7 @@ object DLogProtocol {
       //COMPUTE a = g^z*h^(-e)  (where -e here means -e mod q)
       val e: BigInteger = new BigInteger(1, challenge)
       val minusE = dlogGroup.order.subtract(e)
-      val hToE = dlogGroup.exponentiate(publicInput.h, minusE)
+      val hToE = dlogGroup.exponentiate(publicInput.value, minusE)
       val gToZ = dlogGroup.exponentiate(dlogGroup.generator, z)
       val a = dlogGroup.multiplyGroupElements(gToZ, hToE)
       FirstDLogProverMessage(a) -> SecondDLogProverMessage(z)
@@ -133,7 +134,7 @@ object DLogProtocol {
                           challenge: Challenge,
                           secondMessage: SecondDLogProverMessage): EcPointType = {
       val g = dlogGroup.generator
-      val h = proposition.h
+      val h = proposition.value
 
       dlogGroup.multiplyGroupElements(
         dlogGroup.exponentiate(g, secondMessage.z.underlying()),

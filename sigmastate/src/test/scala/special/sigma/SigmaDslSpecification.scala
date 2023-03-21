@@ -3949,15 +3949,6 @@ class SigmaDslSpecification extends SigmaDslTesting
         FuncValue(Vector((1, SByteArray)), ByteArrayToLong(ValUse(1, SByteArray)))))
   }
 
-  // TODO soft-fork: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/427
-  // TODO costing: expression t._1(t._2) cannot be costed because t is lambda argument
-  //  ignore("Func context variable") {
-  //    val doApply = checkEq(func[(Int => Int, Int), Int]("{ (t: (Int => Int, Int)) => t._1(t._2) }")) { (t: (Int => Int, Int)) => t._1(t._2) }
-  //    val code = compileWithCosting(emptyEnv, s"{ (x: Int) => x + 1 }")
-  //    val ctx = ErgoLikeContext.dummy(fakeSelf)
-  //    doApply((CFunc[Int, Int](ctx, code), 10))
-  //  }
-
   property("Box properties equivalence") {
     verifyCases(
       {

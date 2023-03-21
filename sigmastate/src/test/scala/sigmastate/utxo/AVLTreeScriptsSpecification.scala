@@ -1,6 +1,6 @@
 package sigmastate.utxo
 
-import com.google.common.primitives.Longs
+import scorex.utils.Longs
 import org.ergoplatform._
 import org.ergoplatform.dsl.{ContractSpec, SigmaContractSyntax, TestContractSpec}
 import scorex.crypto.authds.avltree.batch._
@@ -31,8 +31,8 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons
   private val reg1 = ErgoBox.nonMandatoryRegisters(0)
   private val reg2 = ErgoBox.nonMandatoryRegisters(1)
 
-  def genKey(str: String): ADKey = ADKey @@ Blake2b256("key: " + str)
-  def genValue(str: String): ADValue = ADValue @@ Blake2b256("val: " + str)
+  def genKey(str: String): ADKey = ADKey @@@ Blake2b256("key: " + str)
+  def genValue(str: String): ADValue = ADValue @@@ Blake2b256("val: " + str)
 
   val inKey = genKey("init key")
   val inValue = genValue("init value")
@@ -231,7 +231,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons
 
   property("avl tree - contains key satisfying condition") {
     val elements = Seq(123, 22)
-    val treeElements = elements.map(i => Longs.toByteArray(i)).map(s => (ADKey @@ Blake2b256(s), ADValue @@ s))
+    val treeElements = elements.map(i => Longs.toByteArray(i)).map(s => (ADKey @@@ Blake2b256(s), ADValue @@ s))
     val avlProver = new BatchAVLProver[Digest32, Blake2b256.type](keyLength = 32, None)
     treeElements.foreach(s => avlProver.performOneOperation(Insert(s._1, s._2)))
     avlProver.generateProof()

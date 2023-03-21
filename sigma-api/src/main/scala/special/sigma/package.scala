@@ -2,7 +2,6 @@ package special
 
 import java.math.BigInteger
 
-import org.bouncycastle.math.ec.ECPoint
 import scalan.RType
 import scalan.RType.GeneralType
 
@@ -30,5 +29,4 @@ package object sigma {
   implicit val SigmaDslBuilderRType: RType[SigmaDslBuilder] = RType.fromClassTag(classTag[SigmaDslBuilder])
 
   implicit val BigIntegerRType: RType[BigInteger] = GeneralType(classTag[BigInteger])
-  implicit val ECPointRType: RType[ECPoint] = GeneralType(classTag[ECPoint])
 }

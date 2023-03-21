@@ -1,13 +1,14 @@
 package sigmastate.utils
 
 import org.scalacheck.{Arbitrary, Gen}
-import org.scalatest.prop.PropertyChecks
-import org.scalatest.{Matchers, PropSpec}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.propspec.AnyPropSpec
+import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import sigmastate.serialization.generators.ObjectGenerators
 
-class SparseArrayContainerSpecification extends PropSpec
+class SparseArrayContainerSpecification extends AnyPropSpec
   with ObjectGenerators
-  with PropertyChecks
+  with ScalaCheckPropertyChecks
   with Matchers {
 
   private val distinctCodeValuePairsGen: Gen[Seq[(Byte, Long)]] = for {

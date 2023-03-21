@@ -25,7 +25,7 @@ case class CrowdFunding[Spec <: ContractSpec]
     }
     val fundraisingSuccess = HEIGHT < deadline &&
         pkProject &&
-        OUTPUTS.exists(enoughRaised)
+        sigmaProp(OUTPUTS.exists(enoughRaised))
 
     fundraisingFailure || fundraisingSuccess
   },
@@ -52,9 +52,9 @@ case class CrowdFunding[Spec <: ContractSpec]
     val c1 = HEIGHT >= deadline && pkBacker
     val c2 =
       HEIGHT < deadline && pkProject &&
-      OUTPUTS.exists({ (out: Box) =>
+      sigmaProp(OUTPUTS.exists({ (out: Box) =>
         out.value >= minToRaise && out.propositionBytes == pkProject.propBytes
-      })
+      }))
     c1 || c2
   },
   """

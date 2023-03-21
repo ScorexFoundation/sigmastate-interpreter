@@ -1,8 +1,7 @@
 package sigmastate
 
 import com.typesafe.scalalogging.LazyLogging
-import gf2t.GF2_192_Poly
-import org.bouncycastle.util.BigIntegers
+import sigmastate.crypto.{BigIntegers, GF2_192_Poly}
 import scorex.util.encode.Base16
 import sigmastate.Values.SigmaBoolean
 import sigmastate.basics.DLogProtocol.{ProveDlog, SecondDLogProverMessage}
@@ -11,7 +10,7 @@ import sigmastate.basics.{ProveDHTuple, SecondDiffieHellmanTupleProverMessage}
 import sigmastate.interpreter.ErgoTreeEvaluator.{fixedCostOp, perItemCostOp}
 import sigmastate.interpreter.{CryptoConstants, ErgoTreeEvaluator, NamedDesc, OperationCostInfo}
 import sigmastate.lang.exceptions.SerializerException
-import sigmastate.serialization.{SigmaSerializer}
+import sigmastate.serialization.SigmaSerializer
 import sigmastate.util.safeNewArray
 import sigmastate.utils.{Helpers, SigmaByteReader, SigmaByteWriter}
 import debox.cfor
