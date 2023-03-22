@@ -258,7 +258,7 @@ object ContractTemplate {
           SType.EmptySeq
         }
       }
-      val constValues: Option[IndexedSeq[Option[SType#WrappedType]]] = r.getOption((() => {
+      val constValues: Option[IndexedSeq[Option[SType#WrappedType]]] = r.getOption {
         if (nConstants > 0) {
           val res = safeNewArray[Option[SType#WrappedType]](nConstants)
           cfor(0)(_ < nConstants, _ + 1) { i =>
@@ -268,7 +268,7 @@ object ContractTemplate {
         } else {
           Array.empty[Option[SType#WrappedType]]
         }
-      })())
+      }
 
       val nParameters = r.getUInt().toInt
       val parameters: IndexedSeq[Parameter] = {
