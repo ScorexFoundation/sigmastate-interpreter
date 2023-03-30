@@ -166,7 +166,8 @@ class ContractTemplateSpecification extends SerializationSpecification
           t.getMessage.contains("constantIndex 0 does not have a default value and absent from parameter as well"))
   }
 
-  property("applyTemplate") {
+  property("applyTemplate")
+  {
     val parameters = IndexedSeq(
       createParameter("p1", 0),
       createParameter("p2", 1),
@@ -238,6 +239,39 @@ class ContractTemplateSpecification extends SerializationSpecification
     templates.indices.foreach(i =>
       templates(i).applyTemplate(Some(ergoTreeVersionInTests), templateValues(i)) shouldEqual expectedErgoTree(i)
     )
+  }
+
+  property("applyTemplate num(parameters) < num(constants)") {
+    val parameters = IndexedSeq(
+      createParameter("p1", 0),
+      createParameter("p2", 2))
+    val expressionTree =
+      EQ(Plus(ConstantPlaceholder(0, SType.typeInt),
+        ConstantPlaceholder(1, SType.typeInt)),
+        ConstantPlaceholder(2, SType.typeInt)).toSigmaProp
+    val template = createContractTemplate(
+        IndexedSeq(SType.typeInt, SType.typeInt, SType.typeInt).asInstanceOf[IndexedSeq[SType]],
+        Some(IndexedSeq(None, Some(20), None).asInstanceOf[IndexedSeq[Option[SType#WrappedType]]]),
+        parameters,
+        expressionTree
+      )
+    val templateValues = Map("p1" -> IntConstant(10), "p2" -> IntConstant(30))
+
+    var expectedErgoTreeVersion = (ErgoTree.ConstantSegregationHeader | ergoTreeVersionInTests).toByte
+    if (ergoTreeVersionInTests > 0) {
+      expectedErgoTreeVersion = (expectedErgoTreeVersion | ErgoTree.SizeFlag).toByte
+    }
+    val expectedErgoTree = ErgoTree(
+        expectedErgoTreeVersion,
+        IndexedSeq(
+          IntConstant(10),
+          IntConstant(20),
+          IntConstant(30)
+        ),
+        expressionTree
+      )
+
+    template.applyTemplate(Some(ergoTreeVersionInTests), templateValues) shouldEqual expectedErgoTree
   }
 
   property("(de)serialization round trip") {

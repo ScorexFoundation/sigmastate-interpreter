@@ -168,11 +168,13 @@ case class ContractTemplate(
       paramValues.contains(name),
       s"value for parameter $name was not provided while it does not have a default value."))
 
-    val paramIndices = this.parameters.map(p => p.constantIndex).toSet
+    val parameterizedConstantIndices = this.parameters.map(p => p.constantIndex).toSet
+    val constIndexToParamIndex = this.parameters.zipWithIndex.map(pi => pi._1.constantIndex -> pi._2).toMap
     val constants = safeNewArray[Constant[SType]](nConsts)
     cfor(0)(_ < nConsts, _ + 1) { i =>
-      if (paramIndices.contains(i) && paramValues.contains(parameters(i).name)) {
-        val paramValue = paramValues(parameters(i).name)
+      // constants which are parameterized have to taken from the parameters when available.
+      if (parameterizedConstantIndices.contains(i) && paramValues.contains(parameters(constIndexToParamIndex(i)).name)) {
+        val paramValue = paramValues(parameters(constIndexToParamIndex(i)).name)
         require(paramValue.tpe == constTypes(i),
           s"parameter type mismatch, expected ${constTypes(i)}, got ${paramValue.tpe}")
         constants(i) = StdSigmaBuilder.mkConstant(paramValue.value, constTypes(i))
