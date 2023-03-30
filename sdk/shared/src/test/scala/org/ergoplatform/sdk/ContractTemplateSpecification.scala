@@ -34,6 +34,10 @@ class ContractTemplateSpecification extends SerializationSpecification
     val r = SigmaSerializer.startReader(bytes)
     val res2 = ContractTemplate.serializer.parse(r)
     res2 shouldEqual template
+
+    val w2 = SigmaSerializer.startWriter()
+    ContractTemplate.serializer.serialize(res2, w2)
+    bytes shouldEqual w2.toBytes
   }
 
   private def createParameter(name: String, constantIndex: Int): Parameter = {
