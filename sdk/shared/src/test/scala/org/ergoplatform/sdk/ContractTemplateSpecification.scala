@@ -5,6 +5,7 @@ import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.eval.CBigInt
+import sigmastate.exceptions.InterpreterException
 import sigmastate.helpers.NegativeTesting
 import sigmastate.serialization.{SerializationSpecification, SigmaSerializer}
 import special.sigma.ContractsTestkit
@@ -13,7 +14,7 @@ import java.math.BigInteger
 
 class ContractTemplateSpecification extends SerializationSpecification 
   with ScalaCheckPropertyChecks 
-  with ContractsTestkit 
+  with ContractsTestkit
   with NegativeTesting
   with CrossVersionProps {
   object JsonCodecs extends JsonCodecs
@@ -75,9 +76,8 @@ class ContractTemplateSpecification extends SerializationSpecification
           ConstantPlaceholder(1, SType.typeByte)),
           ConstantPlaceholder(2, SType.typeByte)).toSigmaProp
       ),
-      t =>
-        t.isInstanceOf[IllegalArgumentException] &&
-        t.getMessage.contains("constValues must be empty or of same length as constTypes. Got 2, expected 3"))
+      exceptionLike[IllegalArgumentException]("constValues must be empty or of same length as constTypes. Got 2, expected 3")
+    )
   }
 
   property("more parameters than constants") {
@@ -94,9 +94,8 @@ class ContractTemplateSpecification extends SerializationSpecification
           ConstantPlaceholder(1, SType.typeByte)),
           ConstantPlaceholder(2, SType.typeByte)).toSigmaProp
       ),
-      t =>
-        t.isInstanceOf[IllegalArgumentException] &&
-          t.getMessage.contains("number of parameters must be <= number of constants"))
+      exceptionLike[IllegalArgumentException]("number of parameters must be <= number of constants")
+    )
   }
 
   property("invalid parameter constantIndex") {
@@ -112,9 +111,8 @@ class ContractTemplateSpecification extends SerializationSpecification
           ConstantPlaceholder(1, SType.typeByte)),
           ConstantPlaceholder(2, SType.typeByte)).toSigmaProp
       ),
-      t =>
-        t.isInstanceOf[IllegalArgumentException] &&
-          t.getMessage.contains("parameter constantIndex must be in range [0, 3)"))
+      exceptionLike[IllegalArgumentException]("parameter constantIndex must be in range [0, 3)")
+    )
   }
 
   property("duplicate parameter constantIndex") {
@@ -130,9 +128,8 @@ class ContractTemplateSpecification extends SerializationSpecification
           ConstantPlaceholder(1, SType.typeByte)),
           ConstantPlaceholder(2, SType.typeByte)).toSigmaProp
       ),
-      t =>
-        t.isInstanceOf[IllegalArgumentException] &&
-          t.getMessage.contains("multiple parameters point to the same constantIndex"))
+      exceptionLike[IllegalArgumentException]("multiple parameters point to the same constantIndex")
+    )
   }
 
   property("duplicate parameter names") {
@@ -148,9 +145,8 @@ class ContractTemplateSpecification extends SerializationSpecification
           ConstantPlaceholder(1, SType.typeByte)),
           ConstantPlaceholder(2, SType.typeByte)).toSigmaProp
       ),
-      t =>
-        t.isInstanceOf[IllegalArgumentException] &&
-          t.getMessage.contains("parameter names must be unique. Found duplicate parameters with name duplicate_name"))
+      exceptionLike[IllegalArgumentException]("parameter names must be unique. Found duplicate parameters with name duplicate_name")
+    )
   }
 
   property("constantIndex without default value and parameter") {
@@ -165,9 +161,8 @@ class ContractTemplateSpecification extends SerializationSpecification
           ConstantPlaceholder(1, SType.typeByte)),
           ConstantPlaceholder(2, SType.typeByte)).toSigmaProp
       ),
-      t =>
-        t.isInstanceOf[IllegalArgumentException] &&
-          t.getMessage.contains("constantIndex 0 does not have a default value and absent from parameter as well"))
+      exceptionLike[IllegalArgumentException]("constantIndex 0 does not have a default value and absent from parameter as well")
+    )
   }
 
   property("applyTemplate")
