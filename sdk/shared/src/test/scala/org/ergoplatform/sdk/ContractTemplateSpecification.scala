@@ -25,6 +25,8 @@ class ContractTemplateSpecification extends SerializationSpecification
     val json = ContractTemplate.jsonEncoder.encoder(obj)
     val res = ContractTemplate.jsonEncoder.decoder(json.hcursor).right.get
     res shouldBe obj
+    val json2 = ContractTemplate.jsonEncoder.encoder(obj)
+    json shouldBe json2
   }
   
   private def serializationRoundTrip(template: ContractTemplate): Assertion = {
