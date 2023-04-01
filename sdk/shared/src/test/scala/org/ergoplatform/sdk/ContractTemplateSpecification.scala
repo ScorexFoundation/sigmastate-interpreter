@@ -5,7 +5,6 @@ import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.eval.CBigInt
-import sigmastate.exceptions.InterpreterException
 import sigmastate.helpers.NegativeTesting
 import sigmastate.serialization.{SerializationSpecification, SigmaSerializer}
 import special.sigma.ContractsTestkit
