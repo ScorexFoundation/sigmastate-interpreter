@@ -4,29 +4,18 @@ import cats.syntax.either._
 import debox.cfor
 import io.circe._
 import io.circe.syntax.{EncoderOps, _}
-import org.ergoplatform.ErgoBox
 import org.ergoplatform.sdk.utils.SerializationUtils.{parseString, serializeString}
 import org.ergoplatform.sdk.utils.Zero
-import scalan.RType
-import scalan.RType._
-import scorex.crypto.authds.avltree.batch.BatchAVLProver
-import scorex.crypto.hash.{Blake2b256, Digest32}
-import scorex.util.ModifierId
 import sigmastate.Values.ErgoTree.headerWithVersion
 import sigmastate.Values.{ErgoTree, _}
 import sigmastate._
-import sigmastate.basics.CryptoConstants
 import sigmastate.eval.{Colls, _}
 import sigmastate.exceptions.SerializerException
 import sigmastate.lang.{DeserializationSigmaBuilder, StdSigmaBuilder}
 import sigmastate.serialization._
 import sigmastate.util.safeNewArray
-import sigmastate.utils.{Helpers, SigmaByteReader, SigmaByteWriter}
-import special.Types.TupleType
-import special.collection.{Coll, CollType}
-import special.sigma.{Header, PreHeader, SigmaDslBuilder, _}
+import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 
-import java.math.BigInteger
 import java.util.Objects
 import scala.collection.mutable
 import scala.language.implicitConversions
