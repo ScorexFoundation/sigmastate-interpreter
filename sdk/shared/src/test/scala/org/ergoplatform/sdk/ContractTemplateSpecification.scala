@@ -1,5 +1,6 @@
 package org.ergoplatform.sdk
 
+import org.ergoplatform.sdk.generators.ObjectGenerators
 import org.scalatest.compatible.Assertion
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import sigmastate.Values._
@@ -15,13 +16,11 @@ class ContractTemplateSpecification extends SerializationSpecification
   with ScalaCheckPropertyChecks 
   with ContractsTestkit
   with NegativeTesting
-  with CrossVersionProps {
+  with CrossVersionProps
+  with ObjectGenerators {
   object JsonCodecs extends JsonCodecs
 
-  private def contractTemplateNameInTests: String = "TestContractTemplate"
-  private def contractTemplateDescriptionInTests: String = "TestContractTemplateDescription"
-
-  private def jsonRoundtrip[T <: SType](obj: ContractTemplate) = {
+  private def jsonRoundTrip[T <: SType](obj: ContractTemplate) = {
     val json = ContractTemplate.jsonEncoder.encoder(obj)
     val res = ContractTemplate.jsonEncoder.decoder(json.hcursor).right.get
     res shouldBe obj
@@ -166,8 +165,7 @@ class ContractTemplateSpecification extends SerializationSpecification
     )
   }
 
-  property("applyTemplate")
-  {
+  property("applyTemplate") {
     val parameters = IndexedSeq(
       createParameter("p1", 0),
       createParameter("p2", 1),
@@ -275,104 +273,15 @@ class ContractTemplateSpecification extends SerializationSpecification
   }
 
   property("(de)serialization round trip") {
-    val parameters = IndexedSeq(
-      createParameter("p1", 0),
-      createParameter("p2", 1),
-      createParameter("p3", 2))
-    val templates = Seq(
-      createContractTemplate(
-        IndexedSeq(SType.typeByte, SType.typeByte, SType.typeByte).asInstanceOf[IndexedSeq[SType]],
-        Some(IndexedSeq(Some(10.toByte), Some(20.toByte), Some(30.toByte)).asInstanceOf[IndexedSeq[Option[SType#WrappedType]]]),
-        parameters,
-        EQ(Plus(ConstantPlaceholder(0, SType.typeByte),
-                ConstantPlaceholder(1, SType.typeByte)),
-           ConstantPlaceholder(2, SType.typeByte)).toSigmaProp
-      ),
-      createContractTemplate(
-        IndexedSeq(SType.typeByte, SType.typeByte, SType.typeByte).asInstanceOf[IndexedSeq[SType]],
-        Some(IndexedSeq(Some(10.toByte), None, Some(30.toByte)).asInstanceOf[IndexedSeq[Option[SType#WrappedType]]]),
-        parameters,
-        EQ(Plus(ConstantPlaceholder(0, SType.typeByte),
-          ConstantPlaceholder(1, SType.typeByte)),
-          ConstantPlaceholder(2, SType.typeByte)).toSigmaProp
-      ),
-      createContractTemplate(
-        IndexedSeq(SType.typeShort, SType.typeShort, SType.typeShort).asInstanceOf[IndexedSeq[SType]],
-        Some(IndexedSeq(Some(10.toShort), Some(20.toShort), Some(30.toShort)).asInstanceOf[IndexedSeq[Option[SType#WrappedType]]]),
-        parameters,
-        EQ(Plus(ConstantPlaceholder(0, SType.typeShort),
-          ConstantPlaceholder(1, SType.typeShort)),
-          ConstantPlaceholder(2, SType.typeShort)).toSigmaProp
-      ),
-      createContractTemplate(
-        IndexedSeq(SType.typeInt, SType.typeInt, SType.typeInt).asInstanceOf[IndexedSeq[SType]],
-        Some(IndexedSeq(Some(10), Some(20), Some(30)).asInstanceOf[IndexedSeq[Option[SType#WrappedType]]]),
-        parameters,
-        EQ(Plus(ConstantPlaceholder(0, SType.typeInt),
-          ConstantPlaceholder(1, SType.typeInt)),
-          ConstantPlaceholder(2, SType.typeInt)).toSigmaProp
-      ),
-      createContractTemplate(
-        SType.EmptySeq,
-        None,
-        Parameter.EmptySeq,
-        EQ(Plus(CBigInt(BigInteger.valueOf(10L)), BigIntConstant(20L)), BigIntConstant(30L)).toSigmaProp
-      )
-    )
-
-    templates.foreach { template =>
+    forAll(contractTemplateGen, minSuccessful(500)) { template =>
+      val x = 1
       serializationRoundTrip(template)
     }
   }
 
   property("Data Json serialization round trip") {
-    val parameters = IndexedSeq(
-      createParameter("p1", 0),
-      createParameter("p2", 1),
-      createParameter("p3", 2))
-    val templates = Seq(
-      createContractTemplate(
-        IndexedSeq(SType.typeByte, SType.typeByte, SType.typeByte).asInstanceOf[IndexedSeq[SType]],
-        Some(IndexedSeq(Some(10.toByte), Some(20.toByte), Some(30.toByte)).asInstanceOf[IndexedSeq[Option[SType#WrappedType]]]),
-        parameters,
-        EQ(Plus(ConstantPlaceholder(0, SType.typeByte),
-          ConstantPlaceholder(1, SType.typeByte)),
-          ConstantPlaceholder(2, SType.typeByte)).toSigmaProp
-      ),
-      createContractTemplate(
-        IndexedSeq(SType.typeByte, SType.typeByte, SType.typeByte).asInstanceOf[IndexedSeq[SType]],
-        Some(IndexedSeq(Some(10.toByte), None, Some(30.toByte)).asInstanceOf[IndexedSeq[Option[SType#WrappedType]]]),
-        parameters,
-        EQ(Plus(ConstantPlaceholder(0, SType.typeByte),
-          ConstantPlaceholder(1, SType.typeByte)),
-          ConstantPlaceholder(2, SType.typeByte)).toSigmaProp
-      ),
-      createContractTemplate(
-        IndexedSeq(SType.typeShort, SType.typeShort, SType.typeShort).asInstanceOf[IndexedSeq[SType]],
-        Some(IndexedSeq(Some(10.toShort), Some(20.toShort), Some(30.toShort)).asInstanceOf[IndexedSeq[Option[SType#WrappedType]]]),
-        parameters,
-        EQ(Plus(ConstantPlaceholder(0, SType.typeShort),
-          ConstantPlaceholder(1, SType.typeShort)),
-          ConstantPlaceholder(2, SType.typeShort)).toSigmaProp
-      ),
-      createContractTemplate(
-        IndexedSeq(SType.typeInt, SType.typeInt, SType.typeInt).asInstanceOf[IndexedSeq[SType]],
-        Some(IndexedSeq(Some(10), Some(20), Some(30)).asInstanceOf[IndexedSeq[Option[SType#WrappedType]]]),
-        parameters,
-        EQ(Plus(ConstantPlaceholder(0, SType.typeInt),
-          ConstantPlaceholder(1, SType.typeInt)),
-          ConstantPlaceholder(2, SType.typeInt)).toSigmaProp
-      ),
-      createContractTemplate(
-        SType.EmptySeq,
-        None,
-        Parameter.EmptySeq,
-        EQ(Plus(CBigInt(BigInteger.valueOf(10L)), BigIntConstant(20L)), BigIntConstant(30L)).toSigmaProp
-      )
-    )
-
-    templates.foreach { template =>
-      jsonRoundtrip(template)
+    forAll(contractTemplateGen, minSuccessful(500)) { template =>
+      jsonRoundTrip(template)
     }
   }
 }
