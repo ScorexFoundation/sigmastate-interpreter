@@ -23,7 +23,7 @@ trait ObjectGenerators extends TypeGenerators
     val values = ergoTree
       .constants
       .zipWithIndex
-      .map(c_i => if (noDefaultValueIndices.contains(c_i._2)) None else Some(c_i._1.asWrappedType))
+      .map(c_i => if (noDefaultValueIndices.contains(c_i._2)) None else Some(c_i._1.value))
     val allNone = values.forall(v => v.isEmpty)
     if (allNone) {
       None

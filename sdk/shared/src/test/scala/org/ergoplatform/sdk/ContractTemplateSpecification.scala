@@ -274,7 +274,6 @@ class ContractTemplateSpecification extends SerializationSpecification
 
   property("(de)serialization round trip") {
     forAll(contractTemplateGen, minSuccessful(500)) { template =>
-      val x = 1
       serializationRoundTrip(template)
     }
   }
