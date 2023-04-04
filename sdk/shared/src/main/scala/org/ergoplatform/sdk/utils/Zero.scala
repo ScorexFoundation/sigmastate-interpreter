@@ -80,63 +80,66 @@ object Zero extends ZeroLowPriority {
     case _ => sys.error(s"Don't know how to compute Zero for type $t")
   }).asInstanceOf[Zero[T]]
 
-  private val syntheticBox = new ErgoBox(
-    LongIsZero.zero,
-    new ErgoTree(
+  implicit val PreHeaderIsZero: Zero[PreHeader] = CZero({
+    CPreHeader(
       ByteIsZero.zero,
-      IndexedSeq.empty,
-      Right(sigmaPropIsZero.zero)
-    ),
-    Colls.emptyColl,
-    Map.empty,
-    ModifierId @@ ("synthetic_transaction_id"),
-    ShortIsZero.zero,
-    IntIsZero.zero
-  )
-  private val syntheticPreHeader = CPreHeader(
-    ByteIsZero.zero,
-    Colls.emptyColl[Byte],
-    LongIsZero.zero,
-    LongIsZero.zero,
-    IntIsZero.zero,
-    GroupElementIsZero.zero,
-    Colls.emptyColl[Byte]
-  )
-  private val syntheticHeader = CHeader(
-    Colls.emptyColl[Byte],
-    ByteIsZero.zero,
-    Colls.emptyColl[Byte],
-    Colls.emptyColl[Byte],
-    CAvlTree(AvlTreeIsZero.zero),
-    Colls.emptyColl[Byte],
-    timestamp = LongIsZero.zero,
-    nBits = LongIsZero.zero,
-    height = IntIsZero.zero,
-    extensionRoot = Colls.emptyColl[Byte],
-    minerPk = GroupElementIsZero.zero,
-    powOnetimePk = GroupElementIsZero.zero,
-    powNonce = Colls.emptyColl[Byte],
-    powDistance = BigIntIsZero.zero,
-    votes = Colls.emptyColl[Byte]
-  )
-  private val syntheticContext = CostingDataContext(
-    _dataInputs = Colls.emptyColl,
-    headers = Colls.emptyColl,
-    preHeader = syntheticPreHeader,
-    inputs = Colls.emptyColl,
-    outputs = Colls.emptyColl,
-    height = IntIsZero.zero,
-    selfBox = CostingBox(syntheticBox),
-    selfIndex = IntIsZero.zero,
-    lastBlockUtxoRootHash = AvlTreeIsZero.zero,
-    _minerPubKey = Colls.emptyColl[Byte],
-    vars = Colls.emptyColl,
-    activatedScriptVersion = ByteIsZero.zero,
-    currentErgoTreeVersion = ByteIsZero.zero
-  )
-
-  implicit val BoxIsZero: Zero[Box] = CZero(syntheticBox)
-  implicit val ContextIsZero: Zero[Context] = CZero(syntheticContext)
-  implicit val HeaderIsZero: Zero[Header] = CZero(syntheticHeader)
-  implicit val PreHeaderIsZero: Zero[PreHeader] = CZero(syntheticPreHeader)
+      Colls.emptyColl[Byte],
+      LongIsZero.zero,
+      LongIsZero.zero,
+      IntIsZero.zero,
+      GroupElementIsZero.zero,
+      Colls.emptyColl[Byte]
+    )
+  })
+  implicit val BoxIsZero: Zero[Box] = CZero({
+    new ErgoBox(
+      LongIsZero.zero,
+      new ErgoTree(
+        ByteIsZero.zero,
+        IndexedSeq.empty,
+        Right(sigmaPropIsZero.zero)
+      ),
+      Colls.emptyColl,
+      Map.empty,
+      ModifierId @@ ("synthetic_transaction_id"),
+      ShortIsZero.zero,
+      IntIsZero.zero
+    )
+  })
+  implicit val ContextIsZero: Zero[Context] = CZero({
+    CostingDataContext(
+      _dataInputs = Colls.emptyColl,
+      headers = Colls.emptyColl,
+      preHeader = PreHeaderIsZero.zero,
+      inputs = Colls.emptyColl,
+      outputs = Colls.emptyColl,
+      height = IntIsZero.zero,
+      selfBox = CostingBox(BoxIsZero.zero),
+      selfIndex = IntIsZero.zero,
+      lastBlockUtxoRootHash = AvlTreeIsZero.zero,
+      _minerPubKey = Colls.emptyColl[Byte],
+      vars = Colls.emptyColl,
+      activatedScriptVersion = ByteIsZero.zero,
+      currentErgoTreeVersion = ByteIsZero.zero
+    )
+  })
+  implicit val HeaderIsZero: Zero[Header] = CZero({
+    CHeader(
+      Colls.emptyColl[Byte],
+      ByteIsZero.zero,
+      Colls.emptyColl[Byte],
+      Colls.emptyColl[Byte],
+      CAvlTree(AvlTreeIsZero.zero),
+      Colls.emptyColl[Byte],
+      timestamp = LongIsZero.zero,
+      nBits = LongIsZero.zero,
+      height = IntIsZero.zero,
+      extensionRoot = Colls.emptyColl[Byte],
+      minerPk = GroupElementIsZero.zero,
+      powOnetimePk = GroupElementIsZero.zero,
+      powNonce = Colls.emptyColl[Byte],
+      powDistance = BigIntIsZero.zero,
+      votes = Colls.emptyColl[Byte]
+    )
+  })
 }
