@@ -61,21 +61,14 @@ dynverSeparator in ThisBuild := "-"
 
 val bouncycastleBcprov = "org.bouncycastle" % "bcprov-jdk15on" % "1.66"
 
-val scrypto            = "org.scorexfoundation" %% "scrypto" % "2.2.1-37-59c4fbd9-SNAPSHOT"
-def scryptoDependency(platform: String) = {
-  libraryDependencies +=
-      "org.scorexfoundation" %%% "scrypto" % (
-          if (platform == "js") "0.0.0-1-59c4fbd9-SNAPSHOT"
-          else "2.2.1-37-59c4fbd9-SNAPSHOT" // for JVM
-      )
-}
-//val scorexUtil         = "org.scorexfoundation" %% "scorex-util" % "0.1.8"
-//val debox              = "org.scorexfoundation" %% "debox" % "0.9.0"
-val scorexUtil         = "org.scorexfoundation" %% "scorex-util" % "0.1.8-20-565873cd-SNAPSHOT"
+val scrypto            = "org.scorexfoundation" %% "scrypto" % "2.3.0"
+val scryptoDependency =
+  libraryDependencies += "org.scorexfoundation" %%% "scrypto" % "2.3.0"
+val scorexUtil         = "org.scorexfoundation" %% "scorex-util" % "0.2.0"
 val scorexUtilDependency =
-  libraryDependencies += "org.scorexfoundation" %%% "scorex-util" % "0.1.8-20-565873cd-SNAPSHOT"
+  libraryDependencies += "org.scorexfoundation" %%% "scorex-util" % "0.2.0"
 
-val debox              = "org.scorexfoundation" %% "debox" % "0.9.0-9-f853cdce-SNAPSHOT"
+val debox              = "org.scorexfoundation" %% "debox" % "0.10.0"
 val spireMacros        = "org.typelevel" %% "spire-macros" % "0.17.0-M1"
 
 val fastparse          = "com.lihaoyi" %% "fastparse" % "2.3.3"
@@ -160,7 +153,7 @@ def libraryDefSettings = commonSettings ++ crossScalaSettings ++ testSettings
 
 lazy val commonDependenies2 = libraryDependencies ++= Seq(
   "org.scala-lang" % "scala-reflect" % scalaVersion.value,
-  "org.scorexfoundation" %%% "debox" % "0.9.0-9-f853cdce-SNAPSHOT",
+  "org.scorexfoundation" %%% "debox" % "0.10.0",
   "org.scala-lang.modules" %%% "scala-collection-compat" % "2.7.0"
 )
 
@@ -195,11 +188,11 @@ lazy val corelib = crossProject(JVMPlatform, JSPlatform)
   )
   .jvmSettings(
     crossScalaSettings,
-    scryptoDependency("jvm")
+    scryptoDependency
   )
   .jsSettings(
     crossScalaSettingsJS,
-    scryptoDependency("js"),
+    scryptoDependency,
     libraryDependencies ++= Seq(
       "org.scala-js" %%% "scala-js-macrotask-executor" % "1.0.0"
     ),
