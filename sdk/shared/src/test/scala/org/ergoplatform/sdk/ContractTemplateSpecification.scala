@@ -24,7 +24,7 @@ class ContractTemplateSpecification extends SerializationSpecification
     val json = ContractTemplate.jsonEncoder.encoder(obj)
     val res = ContractTemplate.jsonEncoder.decoder(json.hcursor).right.get
     res shouldBe obj
-    val json2 = ContractTemplate.jsonEncoder.encoder(obj)
+    val json2 = ContractTemplate.jsonEncoder.encoder(res)
     json shouldBe json2
   }
   
