@@ -116,6 +116,7 @@ object Zero extends ZeroLowPriority {
       votes = Colls.emptyColl[Byte]
     )
   })
+
   def typeToZero[T](t: RType[T]): Zero[T] = (t match {
     case BooleanType => Zero[Boolean]
     case ByteType => Zero[Byte]
