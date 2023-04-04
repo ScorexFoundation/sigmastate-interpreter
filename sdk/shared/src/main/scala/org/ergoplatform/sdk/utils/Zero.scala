@@ -54,32 +54,6 @@ object Zero extends ZeroLowPriority {
   implicit val AnyIsZero: Zero[Any] = CZero(0)
   implicit val UnitIsZero: Zero[Unit] = CZero(())
   implicit val SigmaDslBuilderIsZero: Zero[SigmaDslBuilder] = CZero(CostingSigmaDslBuilder)
-
-  def typeToZero[T](t: RType[T]): Zero[T] = (t match {
-    case BooleanType => Zero[Boolean]
-    case ByteType => Zero[Byte]
-    case ShortType => Zero[Short]
-    case IntType => Zero[Int]
-    case LongType => Zero[Long]
-    case AnyType => Zero[Any]
-    case UnitType => Zero[Unit]
-    case BigIntRType => Zero[BigInt]
-    case BoxRType => Zero[Box]
-    case ContextRType => Zero[Context]
-    case SigmaDslBuilderRType => Zero[SigmaDslBuilder]
-    case HeaderRType => Zero[Header]
-    case PreHeaderRType => Zero[PreHeader]
-    case GroupElementRType => Zero[GroupElement]
-    case AvlTreeRType => Zero[AvlTree]
-    case SigmaPropRType => sigmaPropIsZero
-    case ct: CollType[a] => collIsZero(typeToZero(ct.tItem), ct.tItem)
-    case ct: OptionType[a] => optionIsZero(typeToZero(ct.tA))
-    case ct: PairType[a, b] => pairIsZero(typeToZero(ct.tFst), typeToZero(ct.tSnd))
-    case tt: TupleType => CZero(tt.emptyArray)
-    case ft: FuncType[a, b] => funcIsZero(typeToZero(ft.tDom), typeToZero(ft.tRange))
-    case _ => sys.error(s"Don't know how to compute Zero for type $t")
-  }).asInstanceOf[Zero[T]]
-
   implicit val PreHeaderIsZero: Zero[PreHeader] = CZero({
     CPreHeader(
       ByteIsZero.zero,
@@ -142,4 +116,28 @@ object Zero extends ZeroLowPriority {
       votes = Colls.emptyColl[Byte]
     )
   })
+  def typeToZero[T](t: RType[T]): Zero[T] = (t match {
+    case BooleanType => Zero[Boolean]
+    case ByteType => Zero[Byte]
+    case ShortType => Zero[Short]
+    case IntType => Zero[Int]
+    case LongType => Zero[Long]
+    case AnyType => Zero[Any]
+    case UnitType => Zero[Unit]
+    case BigIntRType => Zero[BigInt]
+    case BoxRType => Zero[Box]
+    case ContextRType => Zero[Context]
+    case SigmaDslBuilderRType => Zero[SigmaDslBuilder]
+    case HeaderRType => Zero[Header]
+    case PreHeaderRType => Zero[PreHeader]
+    case GroupElementRType => Zero[GroupElement]
+    case AvlTreeRType => Zero[AvlTree]
+    case SigmaPropRType => sigmaPropIsZero
+    case ct: CollType[a] => collIsZero(typeToZero(ct.tItem), ct.tItem)
+    case ct: OptionType[a] => optionIsZero(typeToZero(ct.tA))
+    case ct: PairType[a, b] => pairIsZero(typeToZero(ct.tFst), typeToZero(ct.tSnd))
+    case tt: TupleType => CZero(tt.emptyArray)
+    case ft: FuncType[a, b] => funcIsZero(typeToZero(ft.tDom), typeToZero(ft.tRange))
+    case _ => sys.error(s"Don't know how to compute Zero for type $t")
+  }).asInstanceOf[Zero[T]]
 }
