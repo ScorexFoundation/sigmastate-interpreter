@@ -7,6 +7,8 @@ import sigmastate.Values.{ErgoTree, SigmaPropValue}
 import sigmastate.serialization.generators.{ConcreteCollectionGenerators, TypeGenerators, ObjectGenerators => InterpreterObjectGenerators}
 import sigmastate.{SType, TestsBase}
 
+import scala.util.Random
+
 trait ObjectGenerators extends TypeGenerators
   with ValidationSpecification
   with ConcreteCollectionGenerators
@@ -33,8 +35,8 @@ trait ObjectGenerators extends TypeGenerators
   }
 
   private def getConstAndParams(ergoTree: ErgoTree): (IndexedSeq[SType], Option[IndexedSeq[Option[SType#WrappedType]]], IndexedSeq[Parameter]) = {
-    val paramIndices = ergoTree.constants.indices.filter(_ => (math.random() < 0.5)).toSet
-    val noDefaultValueIndices = paramIndices.filter(_ => (math.random() < 0.5))
+    val paramIndices = ergoTree.constants.indices.filter(_ => (Random.nextDouble() < 0.5)).toSet
+    val noDefaultValueIndices = paramIndices.filter(_ => (Random.nextDouble() < 0.5))
     val constTypes = ergoTree.constants.map(c => c.tpe)
     val constValues = getConstValues(ergoTree, noDefaultValueIndices)
     val parameters = paramIndices
