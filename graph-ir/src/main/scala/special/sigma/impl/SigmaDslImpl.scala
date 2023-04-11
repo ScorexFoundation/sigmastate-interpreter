@@ -2339,8 +2339,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
   registerModule(SigmaDslModule)
 }
 
-object SigmaDslModule extends scalan.ModuleInfo("special.sigma", "SigmaDsl") {
-}
+object SigmaDslModule extends scalan.ModuleInfo("special.sigma", "SigmaDsl")
 }
 
 trait SigmaDslModule extends special.sigma.impl.SigmaDslDefs {self: SigmaLibrary =>}

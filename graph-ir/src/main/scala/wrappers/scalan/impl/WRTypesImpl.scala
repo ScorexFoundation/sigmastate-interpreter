@@ -13,6 +13,10 @@ package impl {
 trait WRTypesDefs extends scalan.Scalan with WRTypes {
   self: WrappersModule =>
 
+/** IR implementation for RType methods.
+  * Prefix `W` means that this is implementation of IR wrapper over RType.
+  * @see [[EntityObject]], [[WRType]]
+  */
 class WRTypeCls extends EntityObject("WRType") {
   // entityConst: single const for each entity
   import Liftables._
