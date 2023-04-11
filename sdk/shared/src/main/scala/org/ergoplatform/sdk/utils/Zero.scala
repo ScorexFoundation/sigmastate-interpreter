@@ -20,12 +20,23 @@ import sigmastate.eval._
 import special.sigma._
 import scala.language.implicitConversions
 
+/**
+ * A trait representing the zero value of each type in the ErgoTree.
+ * @tparam T The type of the zero value.
+ */
 trait Zero[T] {
+  /** Get the underlying zero value. */
   def zero: T
 }
 
+/**
+ * A wrapper over the zero value of a type.
+ * @param zero the zero value of the type T.
+ * @tparam T The type of the zero value.
+ */
 case class CZero[T](zero: T) extends Zero[T]
 
+/** A trait providing implicit conversions to create instances of Zero for various types. */
 trait ZeroLowPriority {
   implicit def collIsZero[T: Zero: RType]: Zero[Coll[T]] = CZero(Colls.emptyColl[T])
   implicit def optionIsZero[T: Zero]: Zero[Option[T]] = CZero(None)
@@ -68,6 +79,13 @@ object Zero extends ZeroLowPriority {
     )
   })
 
+  /**
+   * Returns the zero value of the specified type `T` using the provided runtime type t.
+   * @param t  the runtime type of the value whose zero value is to be returned.
+   * @tparam T the type of value whose zero value is to be returned.
+   * @return the zero value of type `T`
+   * @throws `RuntimeException` if the method is unable to compute the zero value for the specified type
+   */
   def typeToZero[T](t: RType[T]): Zero[T] = (t match {
     case BooleanType => Zero[Boolean]
     case ByteType => Zero[Byte]
