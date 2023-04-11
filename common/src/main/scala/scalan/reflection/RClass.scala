@@ -1,7 +1,5 @@
 package scalan.reflection
 
-import scala.collection.mutable
-
 /** A representation of a field of a class, providing reflective access to the field's type. */
 abstract class RField {
   /** @return the type of this field. */

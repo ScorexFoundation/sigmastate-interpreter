@@ -18,7 +18,11 @@ import special.CoreLibReflection
 import special.collection.Coll
 import special.sigma.{SigmaDslBuilder, AvlTree}
 
-/** Reflection metadata for `interpreter` module. */
+/** Reflection metadata for `interpreter` module.
+  * For each class of this module that needs reflection metadata,
+  * we register a class entry with the necessary information.
+  * Only information that is needed at runtime is registered.
+  */
 object InterpreterReflection {
   val reflection = (GraphIRReflection, CoreLibReflection)
 

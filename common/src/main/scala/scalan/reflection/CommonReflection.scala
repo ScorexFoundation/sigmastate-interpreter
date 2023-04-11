@@ -4,7 +4,11 @@ import scala.collection.compat.immutable.ArraySeq
 import scala.collection.mutable
 import scala.collection.immutable
 
-/** Reflection metadata and global dictionaries to access it. */
+/** Reflection metadata and global dictionaries to access it.
+  * For each class of this module that needs reflection metadata,
+  * we register a class entry with the necessary information.
+  * Only information that is needed at runtime is registered.
+  */
 object CommonReflection {
   /** Descriptors of classes. */
   val classes = mutable.HashMap.empty[Class[_], SRClass[_]]

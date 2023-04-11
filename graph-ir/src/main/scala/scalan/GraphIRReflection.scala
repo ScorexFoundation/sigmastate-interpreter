@@ -8,9 +8,13 @@ import special.collection.Colls
 import special.sigma.SigmaDsl
 import wrappers.scalan.WRTypes
 
-/** Registrations of reflection metadata for graph-ir module. */
+/** Registrations of reflection metadata for graph-ir module (see README.md).
+  * For each class of this module that needs reflection metadata,
+  * we register a class entry with the necessary information.
+  * Only information that is needed at runtime is registered.
+  */
 object GraphIRReflection {
-  /** Forces initialization reflection data. */
+  /** Forces initialization of reflection data. */
   val reflection = (CommonReflection, CoreLibReflection)
 
   { val clazz = classOf[wrappers.scala.WOptions#WOption[_]]

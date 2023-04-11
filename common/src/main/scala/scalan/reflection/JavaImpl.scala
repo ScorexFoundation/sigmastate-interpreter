@@ -31,7 +31,7 @@ class JRClass[T](val value: Class[T]) extends RClass[T] {
   override def getSimpleName: String = value.getSimpleName
   override def getName: String = value.getName
 
-  /** A sequence that stores the constructors of this class. */
+  /** The constructors of this class. */
   var constructors: Seq[RConstructor[_]] = _
 
   override def getConstructors(): Seq[RConstructor[_]] = {
@@ -51,8 +51,8 @@ class JRClass[T](val value: Class[T]) extends RClass[T] {
     constructors
   }
 
-  /** Helper method that returns a sequence of `JRConstructor` objects that were at least
-    * once used at runtime.
+  /** Helper method that returns [[JRConstructor]] instances that were at least once used
+    * at runtime.
     */
   def getUsedConstructors(): Seq[JRConstructor[_]] =
     getConstructors().collect { case c: JRConstructor[_] if c.wasUsed => c }
@@ -132,11 +132,11 @@ object JRConstructor {
   * @param declaringClass The JRClass that declares this method.
   * @param value          The [[java.lang.reflect.Method]] instance that this JRMethod represents.
   */
-class JRMethod private (declarigClass: JRClass[_], val value: Method) extends RMethod {
+class JRMethod private (declaringClass: JRClass[_], val value: Method) extends RMethod {
   override def invoke(obj: Any, args: AnyRef*): AnyRef = {
     val name = value.getName
     val parameterTypes: Seq[Class[_]] = value.getParameterTypes
-    memoize(declarigClass.methods)((name, parameterTypes), this)
+    memoize(declaringClass.methods)((name, parameterTypes), this)
     value.invoke(obj, args:_*)
   }
 

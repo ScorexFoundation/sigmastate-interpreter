@@ -33,6 +33,7 @@ package object reflection {
   }
 
   /** Creates a new SRMethod instance with the given parameters and handler function.
+    * This is analogous to the Java Reflection API's [[java.lang.reflect.Method]] class.
     *
     * @param clazz      the [[java.lang.Class]] that declares the method
     * @param name       the name of the method
@@ -41,6 +42,7 @@ package object reflection {
     *                   is called then this `handler` is called
     * @return a tuple containing the method's name and parameter types as its first element,
     *         and an SRMethod instance as its second element
+    * @see [[SRMethod]]
     */
   def mkMethod(clazz: Class[_], name: String, paramTypes: Seq[Class[_]])
       (handler: (Any, Array[AnyRef]) => Any): ((String, Seq[Class[_]]), RMethod) = {

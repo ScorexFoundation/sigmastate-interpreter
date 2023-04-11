@@ -7,7 +7,7 @@ import special.collection.Coll
 import scalan.RType.SomeType
 
 object Types {
-  /** Generic representaion of tuples values. */
+  /** Generic representation of tuples values. */
   type TupleData = Coll[Any]
 
   /** Returns an RType object representing a tuple type with the given SomeType array types.
