@@ -680,6 +680,12 @@ trait ObjectGenerators extends TypeGenerators
       ErgoTree.withoutSegregation))
   } yield treeBuilder(prop)
 
+  lazy val ergoTreeWithSegregationGen: Gen[ErgoTree] = for {
+    sigmaBoolean <- Gen.delay(sigmaBooleanGen)
+    propWithConstants <- Gen.delay(logicalExprTreeNodeGen(Seq(AND.apply, OR.apply, XorOf.apply)).map(_.toSigmaProp))
+    prop <- Gen.oneOf(propWithConstants, sigmaBoolean.toSigmaProp)
+  } yield ErgoTree.withSegregation(prop)
+
   def headerGen(stateRoot: AvlTree, parentId: Coll[Byte]): Gen[Header] = for {
     id <- modifierIdBytesGen
     version <- arbByte.arbitrary

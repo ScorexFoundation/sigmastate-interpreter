@@ -46,7 +46,7 @@ object DataJsonEncoder {
     )
   }
 
-  private def encodeData[T <: SType](v: T#WrappedType, tpe: T): Json = tpe match {
+  def encodeData[T <: SType](v: T#WrappedType, tpe: T): Json = tpe match {
     case SUnit => Json.fromFields(ArraySeq.empty)
     case SBoolean => v.asInstanceOf[Boolean].asJson
     case SByte => v.asInstanceOf[Byte].asJson
@@ -159,7 +159,7 @@ object DataJsonEncoder {
     }
   }
 
-  private def decodeData[T <: SType](json: Json, tpe: T): (T#WrappedType) = {
+  def decodeData[T <: SType](json: Json, tpe: T): (T#WrappedType) = {
     val res = (tpe match {
       case SUnit => ()
       case SBoolean => json.asBoolean.get
