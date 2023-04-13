@@ -3,7 +3,6 @@ package scalan.util
 import scala.language.higherKinds
 import java.util
 import java.util.Objects
-import java.util.function.BiConsumer
 
 import scala.collection.{Seq, mutable, GenIterable}
 import scala.collection.mutable.{HashMap, ArrayBuffer}
@@ -57,14 +56,6 @@ object CollectionUtil {
     case arr: Array[Double] => util.Arrays.hashCode(arr)
     case arr: Array[Boolean] => util.Arrays.hashCode(arr)
   }
-
-  def foldRight[A,B](xs: Seq[A])(proj: A => B)(f: (A,B) => B): B =
-    xs.foldRight[B](null.asInstanceOf[B]) { case (a, b) =>
-      b match {
-        case null => proj(a)
-        case _ => f(a, b)
-      }
-    }
 
   /** Group the given sequence of pairs by first values as keys.
     * @param kvs sequence of values which is traversed once
