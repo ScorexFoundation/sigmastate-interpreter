@@ -1,6 +1,8 @@
 package sigmastate
 
 import java.util.Arrays
+
+import com.google.common.primitives.Ints
 import sigmastate.basics.DLogProtocol.{FirstDLogProverMessage, ProveDlog, SecondDLogProverMessage}
 import sigmastate.basics.VerifierMessage.Challenge
 import sigmastate.Values.SigmaBoolean
@@ -13,6 +15,9 @@ case object NoProof extends UncheckedTree
 
 sealed trait UncheckedSigmaTree extends UncheckedTree {
   val challenge: Array[Byte]
+  def challengeOptimizedHash: Int =
+    if (challenge.size < 4) Arrays.hashCode(challenge)
+    else Ints.fromByteArray(challenge)
 }
 
 trait UncheckedConjecture extends UncheckedSigmaTree with ProofTreeConjecture {
@@ -24,7 +29,7 @@ trait UncheckedConjecture extends UncheckedSigmaTree with ProofTreeConjecture {
   })
 
   override def hashCode(): Int =
-    31 * Arrays.hashCode(challenge) + children.hashCode()
+    31 * challengeOptimizedHash + children.hashCode()
 }
 
 trait UncheckedLeaf[SP <: SigmaBoolean] extends UncheckedSigmaTree with ProofTreeLeaf {
@@ -49,7 +54,7 @@ case class UncheckedSchnorr(override val proposition: ProveDlog,
 
   override def hashCode(): Int = {
     var h = commitmentOpt.hashCode()
-    h = 31 * h + Arrays.hashCode(challenge)
+    h = 31 * h + challengeOptimizedHash
     h = 31 * h + secondMessage.hashCode()
     h
   }
@@ -74,7 +79,7 @@ case class UncheckedDiffieHellmanTuple(override val proposition: ProveDHTuple,
 
   override def hashCode(): Int = {
     var h = commitmentOpt.hashCode()
-    h = 31 * h + Arrays.hashCode(challenge)
+    h = 31 * h + challengeOptimizedHash
     h = 31 * h + secondMessage.hashCode()
     h
   }
@@ -97,7 +102,7 @@ case class COrUncheckedNode(override val challenge: Challenge,
 
 case class CThresholdUncheckedNode(override val challenge: Challenge,
                                    override val children: Seq[UncheckedSigmaTree],
-                                   k: Integer,
+                                   k: Int,
                                    polynomialOpt: Option[GF2_192_Poly]) extends UncheckedConjecture {
   require(children.length <= 255) // Our polynomial arithmetic can take only byte inputs
   require(k >= 0 && k <= children.length)
@@ -116,7 +121,7 @@ case class CThresholdUncheckedNode(override val challenge: Challenge,
   })
 
   override def hashCode(): Int = {
-    var h = Arrays.hashCode(challenge)
+    var h = challengeOptimizedHash
     h = 31 * h + children.hashCode
     h = 31 * h + k.hashCode()
     h = 31 * h + polynomialOpt.hashCode()
