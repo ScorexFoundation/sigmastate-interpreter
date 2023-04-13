@@ -1,7 +1,6 @@
 package scalan.reflection
 
 import debox.cfor
-import scalan.reflection.memoize
 
 import java.lang.reflect.{Field, Constructor, Method}
 import scala.collection.concurrent.TrieMap
@@ -68,15 +67,16 @@ class JRClass[T](val value: Class[T]) extends RClass[T] {
   override def equals(other: Any): Boolean = (this eq other.asInstanceOf[AnyRef]) || (other match {
     case that: JRClass[_] =>
       val eq = value == that.value
-      if (!eq)
-        assert(this.getName != that.getName) // sanity check
+      // Uncomment the following line when debugging
+      // if (!eq)
+      //   assert(this.getName != that.getName) // sanity check
       eq
     case _ => false
   })
 
   override def hashCode(): Int = value.hashCode()
 
-  override def toString: String = s"JRClass(${value.getName})"
+  override def toString: String = s"JRClass($value)"
 }
 
 
@@ -123,7 +123,8 @@ class JRConstructor[T] private (val index: Int, val value: Constructor[T]) exten
   override def toString: String = s"JRConstructor($index, $value)"
 }
 object JRConstructor {
-  private[reflection] def apply[T](index: Int, value: Constructor[T]): RConstructor[T]  = new JRConstructor[T](index, value)
+  private[reflection] def apply[T](index: Int, value: Constructor[T]): RConstructor[T] =
+    new JRConstructor[T](index, value)
 }
 
 /**
@@ -134,9 +135,9 @@ object JRConstructor {
   */
 class JRMethod private (declaringClass: JRClass[_], val value: Method) extends RMethod {
   override def invoke(obj: Any, args: AnyRef*): AnyRef = {
-    val name = value.getName
-    val parameterTypes: Seq[Class[_]] = value.getParameterTypes
-    memoize(declaringClass.methods)((name, parameterTypes), this)
+//    val name = value.getName
+//    val parameterTypes: Seq[Class[_]] = value.getParameterTypes
+//    memoize(declaringClass.methods)((name, parameterTypes), this)
     value.invoke(obj, args:_*)
   }
 

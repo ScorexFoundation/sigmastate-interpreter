@@ -35,12 +35,12 @@ object Platform {
     val cls = memoize(classes)(clazz, new JRClass[T](clazz)).asInstanceOf[JRClass[T]]
     // Uncomment the following lines to collect missing reflection data and generate Scala code for it
     // Should be used only for debugging and never in production.
-    try {
-      checkRegisteredClass(clazz)
-    } catch {
-      case e: RuntimeException =>
-        memoize(unknownClasses)(clazz, cls)
-    }
+//    try {
+//      checkRegisteredClass(clazz)
+//    } catch {
+//      case e: RuntimeException =>
+//        memoize(unknownClasses)(clazz, cls)
+//    }
     cls
   }
 }
