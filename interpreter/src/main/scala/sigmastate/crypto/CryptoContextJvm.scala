@@ -6,9 +6,12 @@ import java.math.BigInteger
 
 /** JVM implementation of context for cryptographic operations using Bouncycastle. */
 class CryptoContextJvm(x9params: X9ECParameters) extends CryptoContext {
-  private lazy val curve = x9params.getCurve
+  private lazy val _curve = x9params.getCurve
 
-  override def fieldCharacteristic: BigInteger = curve.getField.getCharacteristic
+  /** The underlying elliptic curve. */
+  override def curve: Curve = Platform.Curve(_curve)
+
+  override def fieldCharacteristic: BigInteger = _curve.getField.getCharacteristic
 
   override def order: BigInteger = x9params.getN
 
@@ -17,14 +20,14 @@ class CryptoContextJvm(x9params: X9ECParameters) extends CryptoContext {
   }
 
   override def validatePoint(x: BigInteger, y: BigInteger): Ecp = {
-    Platform.Ecp(curve.validatePoint(x, y))
+    Platform.Ecp(_curve.validatePoint(x, y))
   }
 
   override def infinity(): Ecp = {
-    Platform.Ecp(curve.getInfinity)
+    Platform.Ecp(_curve.getInfinity)
   }
 
   override def decodePoint(encoded: Array[Byte]): Ecp = {
-    Platform.Ecp(curve.decodePoint(encoded))
+    Platform.Ecp(_curve.decodePoint(encoded))
   }
 }
