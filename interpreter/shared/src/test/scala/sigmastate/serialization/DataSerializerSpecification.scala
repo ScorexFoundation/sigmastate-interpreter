@@ -19,6 +19,7 @@ import sigmastate.exceptions.SerializerException
 import sigmastate.interpreter.{CostAccumulator, ErgoTreeEvaluator}
 import sigmastate.interpreter.ErgoTreeEvaluator.DefaultProfiler
 import sigmastate.utils.Helpers
+import scorex.util.encode.Base16
 
 class DataSerializerSpecification extends SerializationSpecification {
 
@@ -130,5 +131,17 @@ class DataSerializerSpecification extends SerializationSpecification {
           t.getMessage.contains(s"BigInt value doesn't not fit into ${SBigInt.MaxSizeInBytes} bytes")
     })
 
+  }
+
+  property("should deserialize 860202660263 as non-evaluated value(Tuple)") {
+    // below is an expression and not a data value encoded.
+    // 0x86 is the op code for Tuple expression following by 0x02 (size), 0x0266
+    // (SByte type 0x02, value 0x66), 0x0263 (SByte type 0x02, value 0x63).
+    // found in R8 in https://explorer.ergoplatform.com/en/transactions/b5fd96c9f8c1ff436d609a225a12377c6873b890a145fc05f4099845b89315e5
+    val tuple_str = "860202660263"
+    val tuple_bytes = Base16.decode(tuple_str).get
+    val tuple_deser = ValueSerializer.deserialize(tuple_bytes)
+    tuple_deser.isInstanceOf[Values.Tuple] shouldBe true
+    tuple_deser.isInstanceOf[Values.EvaluatedValue[_]] shouldBe false
   }
 }
