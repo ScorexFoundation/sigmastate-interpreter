@@ -48,14 +48,14 @@ object CryptoFacade {
   /** Returns byte representation of the given field element. */
   def encodeFieldElem(p: ECFieldElem): Array[Byte] = Platform.encodeFieldElem(p)
 
-  /** Returns byte representation of the given point.
+  /** Byte representation of the given point.
     *
     * @param p          point to encode
     * @param compressed if true, generates a compressed point encoding
     */
   def encodePoint(p: Ecp, compressed: Boolean): Array[Byte] = Platform.encodePoint(p, compressed)
 
-  /** Returns a [[Curve]] instance describing the elliptic curve of the point p
+  /** A [[Curve]] instance describing the elliptic curve of the point p
     *
     * @param p the elliptic curve point
     */

@@ -7,7 +7,7 @@ import java.math.BigInteger
 
 /** JVM specific implementation of crypto methods*/
 object Platform {
-  /** Returns a [[Curve]] instance describing the elliptic curve of the point p
+  /** Description of elliptic curve of point `p` which belongs to the curve.
     * @param p the elliptic curve point
     */
   def getCurve(p: Ecp): Curve = Curve(p.value.getCurve)
@@ -51,7 +51,7 @@ object Platform {
   /** Returns byte representation of the given field element. */
   def encodeFieldElem(p: ECFieldElem): Array[Byte] = p.value.getEncoded
 
-  /** Returns byte representation of the given point.
+  /** Byte representation of the given point.
     * @param p point to encode
     * @param compressed if true, generates a compressed point encoding
     */
@@ -105,7 +105,9 @@ object Platform {
   /** Negate a point. */
   def negatePoint(p: Ecp): Ecp = Ecp(p.value.negate())
 
-  /** Wrapper for curve type. */
+  /** Wrapper for curve descriptor. Serves as the concrete implementation of the
+    * [[sigmastate.crypto.Curve]] type in JVM.
+    */
   case class Curve(private[crypto] val value: ECCurve)
 
   /** Wrapper for point type. */

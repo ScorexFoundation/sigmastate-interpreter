@@ -8,7 +8,6 @@ import java.math.BigInteger
 class CryptoContextJvm(x9params: X9ECParameters) extends CryptoContext {
   private lazy val _curve = x9params.getCurve
 
-  /** The underlying elliptic curve. */
   override def curve: Curve = Platform.Curve(_curve)
 
   override def fieldCharacteristic: BigInteger = _curve.getField.getCharacteristic

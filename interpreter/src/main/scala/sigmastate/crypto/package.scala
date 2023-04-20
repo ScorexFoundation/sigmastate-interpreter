@@ -1,7 +1,7 @@
 package sigmastate
 
 package object crypto {
-  /** Instance of Elliptic Curve. */
+  /** Instance of Elliptic Curve descriptor. */
   type Curve = Platform.Curve
 
   /** Instance of Elliptic Curve point. */
