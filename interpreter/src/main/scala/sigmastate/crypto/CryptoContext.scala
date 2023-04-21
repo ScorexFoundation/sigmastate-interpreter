@@ -2,8 +2,11 @@ package sigmastate.crypto
 
 import java.math.BigInteger
 
-/** A context for cryptographic operations. */
+/** A context for cryptographic operations over elliptic curve group. */
 abstract class CryptoContext {
+  /** The underlying elliptic curve descriptor. */
+  def curve: Curve
+
   /** The characteristics of the underlying finite field. */
   def fieldCharacteristic: BigInteger
 

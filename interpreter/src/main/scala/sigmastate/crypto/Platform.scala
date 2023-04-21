@@ -1,12 +1,17 @@
 package sigmastate.crypto
 
 import org.bouncycastle.crypto.ec.CustomNamedCurves
-import org.bouncycastle.math.ec.{ECFieldElement, ECPoint}
+import org.bouncycastle.math.ec.{ECPoint, ECFieldElement, ECCurve}
 
 import java.math.BigInteger
 
 /** JVM specific implementation of crypto methods*/
 object Platform {
+  /** Description of elliptic curve of point `p` which belongs to the curve.
+    * @param p the elliptic curve point
+    */
+  def getCurve(p: Ecp): Curve = Curve(p.value.getCurve)
+
   /** Returns the x-coordinate.
     *
     * Caution: depending on the curve's coordinate system, this may not be the same value as in an
@@ -45,6 +50,12 @@ object Platform {
 
   /** Returns byte representation of the given field element. */
   def encodeFieldElem(p: ECFieldElem): Array[Byte] = p.value.getEncoded
+
+  /** Byte representation of the given point.
+    * @param p point to encode
+    * @param compressed if true, generates a compressed point encoding
+    */
+  def encodePoint(p: Ecp, compressed: Boolean): Array[Byte] = p.value.getEncoded(compressed)
 
   /** Returns the value of bit 0 in BigInteger representation of this point. */
   def signOf(p: ECFieldElem): Boolean = p.value.testBitZero()
@@ -93,6 +104,11 @@ object Platform {
 
   /** Negate a point. */
   def negatePoint(p: Ecp): Ecp = Ecp(p.value.negate())
+
+  /** Wrapper for curve descriptor. Serves as the concrete implementation of the
+    * [[sigmastate.crypto.Curve]] type in JVM.
+    */
+  case class Curve(private[crypto] val value: ECCurve)
 
   /** Wrapper for point type. */
   case class Ecp(private[crypto] val value: ECPoint)
