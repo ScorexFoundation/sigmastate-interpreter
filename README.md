@@ -93,23 +93,19 @@ This library is
 on Maven repository and can be added to the SBT configuration of Scala project.
 
 ```scala
-libraryDependencies += "org.scorexfoundation" %% "sigma-state" % "4.0.3"
+libraryDependencies += "org.scorexfoundation" %% "sigma-state" % "5.0.6"
 ```
 
 ## Repository Organization
 
-| sub-module  | description |
-|---|-----|
-| common | Used in all other submodules and contain basic utility classes |
-| core   | Implementation of graph-based intermediate representation of ErgoTree, which is used in cost estimation and interpretation |
-| docs   | Collection of documents |
-| library | Implementation of graph IR nodes for Coll, Size and other types  |
-| library-api | Declarations of interfaces   |
-| library-impl | Implementation of interfaces   |
-| sigma-api | Declarations of runtime interfaces which are used in ErgoTree interpreter  |
-| sigma-impl | Implementation of sigma-api interfaces   |
-| sigma-library | Implementation of graph IR nodes for Sigma types   |
-| sigmastate | Implementation ErgoTree, Interpreter and cost estimation   |
+| sub-module  | description                                                                               |
+|-------------|-------------------------------------------------------------------------------------------|
+| common      | Used in all other submodules and contain basic utility classes                            |
+| core-lib    | Contains core classes such as Coll, BigInt used by interpreter                            |
+| docs        | Collection of documents                                                                   |
+| graph-ir    | Implementation of graph-based intermediate representation of ErgoTree, which is used in by ErgoScript compiler |
+| interpreter | Implementation of ErgoTree Interpreter                                                    |
+| sc          | Implementation of ErgoScript compiler                                                     |
 
 ## Contributing
 
