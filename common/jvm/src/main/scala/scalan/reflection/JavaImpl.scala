@@ -2,7 +2,7 @@ package scalan.reflection
 
 import debox.cfor
 
-import java.lang.reflect.{Field, Constructor, Method}
+import java.lang.reflect.{Constructor, Field, Method}
 import scala.collection.concurrent.TrieMap
 import scala.collection.mutable
 

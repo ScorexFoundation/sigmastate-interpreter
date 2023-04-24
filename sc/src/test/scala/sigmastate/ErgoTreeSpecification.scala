@@ -8,15 +8,13 @@ import scalan.{Nullable, RType}
 import sigmastate.SCollection.{SByteArray, checkValidFlatmap}
 import sigmastate.Values._
 import sigmastate.VersionContext._
-import sigmastate.eval.{Evaluation, Profiler}
-import sigmastate.exceptions.{InterpreterException, CostLimitException, CosterException}
 import sigmastate.eval.{CostingBox, Evaluation, Profiler}
+import sigmastate.exceptions.{CostLimitException, InterpreterException}
 import sigmastate.helpers.{ErgoLikeContextTesting, SigmaPPrint}
 import sigmastate.interpreter.ErgoTreeEvaluator
 import sigmastate.interpreter.Interpreter.ReductionResult
 import sigmastate.lang.SourceContext
 import sigmastate.lang.Terms._
-import sigmastate.lang.exceptions.{CostLimitException, InterpreterException}
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.utils.Helpers.TryOps
 import sigmastate.utxo._
@@ -171,25 +169,25 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
 
   // Expected meta-parameters of predefined types (see Predefined Types section in docs/spec/spec.pdf)
   val types = Table(
-    ("type", "Code", "IsConst", "IsPrim", "IsEmbed", "IsNum"),
-    (SBoolean, 1, true, true, true, false),
-    (SByte,    2, true, true, true, true),
-    (SShort,   3, true, true, true, true),
-    (SInt,     4, true, true, true, true),
-    (SLong,    5, true, true, true, true),
-    (SBigInt,  6, true, true, true, true),
-    (SGroupElement, 7, true, true, true, false),
-    (SSigmaProp,    8, true, true, true, false),
-    (SBox,       99,  false, false, false, false),
-    (SAvlTree,   100, true, false, false, false),
-    (SContext,   101, false, false, false, false),
-    (SHeader,    104, true, false, false, false),
-    (SPreHeader, 105, true, false, false, false),
-    (SGlobal,    106, true, false, false, false)
+    ("type", "Code", "IsPrim", "IsEmbed", "IsNum"),
+    (SBoolean, 1, true, true, false),
+    (SByte,    2, true, true, true),
+    (SShort,   3, true, true, true),
+    (SInt,     4, true, true, true),
+    (SLong,    5, true, true, true),
+    (SBigInt,  6, true, true, true),
+    (SGroupElement, 7, true, true, false),
+    (SSigmaProp,    8, true, true, false),
+    (SBox,       99,  false, false, false),
+    (SAvlTree,   100, false, false, false),
+    (SContext,   101, false, false, false),
+    (SHeader,    104, false, false, false),
+    (SPreHeader, 105, false, false, false),
+    (SGlobal,    106, false, false, false)
   )
 
   property("Predefined Types") {
-    forAll(types) { (t, code, isConst, isPrim, isEmbed, isNum) =>
+    forAll(types) { (t, code, isPrim, isEmbed, isNum) =>
       t.typeCode shouldBe code
       t.typeId shouldBe code
       t.isInstanceOf[SPrimType] shouldBe isPrim
@@ -434,7 +432,7 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
         assertExceptionThrown(
           {
             val x = 100 // any value which is not used anyway
-            val (y, _) = VersionContext.withVersions(activatedVersionInTests, ergoTreeVersionInTests) {
+            val _ = VersionContext.withVersions(activatedVersionInTests, ergoTreeVersionInTests) {
               newF.apply(x)
             }
           },
@@ -476,7 +474,7 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
         val newF = funcJitFromExpr[(Int, Int), Int](script, expr)
         assertExceptionThrown(
           {
-            val (y, _) = VersionContext.withVersions(activatedVersionInTests, ergoTreeVersionInTests) {
+            val _ = VersionContext.withVersions(activatedVersionInTests, ergoTreeVersionInTests) {
               newF.apply((1, 1))
             }
           },
@@ -589,7 +587,6 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
 
         { // depth 60
           val cf = mkCompiledFunc(60)
-          val expected = (xs: Coll[Byte]) => xs.map(_ => xs.map(_ => xs))
           exprCostForSize(1, cf, None) shouldBe JitCost(2194)
 
           assertExceptionThrown(

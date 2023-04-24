@@ -20,8 +20,6 @@ import sigmastate.interpreter.ErgoTreeEvaluator.DefaultEvalSettings
 import sigmastate.interpreter.EvalSettings
 import sigmastate.utils.Helpers._
 import scalan.util.StringUtil._
-import sigmastate.basics.DLogProtocol.DLogProverInput
-import sigmastate.lang.exceptions.CosterException
 
 class BasicOpsSpecification extends SigmaTestingCommons
   with CrossVersionProps {

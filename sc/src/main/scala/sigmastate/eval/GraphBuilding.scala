@@ -69,6 +69,20 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
   /**  To enable specific configuration uncomment one of the lines above and use it in the beginPass below. */
   //  beginPass(costPass)
 
+  /** Check the tuple type is valid.
+    * In v5.x this code is taken from CheckTupleType validation rule which is no longer
+    * part of consensus.
+    */
+  def checkTupleType[Ctx <: IRContext, T](ctx: Ctx)(e: ctx.Elem[_]): Unit = {
+    val condition = e match {
+      case _: ctx.PairElem[_, _] => true
+      case _ => false
+    }
+    if (!condition) {
+      throw new SigmaException(s"Invalid tuple type $e")
+    }
+  }
+
   type RColl[T] = Ref[Coll[T]]
   type ROption[T] = Ref[WOption[T]]
 

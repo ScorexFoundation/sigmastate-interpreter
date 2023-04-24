@@ -18,9 +18,6 @@ import sigmastate.eval._
 import sigmastate.exceptions.{ReaderPositionLimitExceeded, InvalidTypePrefix, SerializerException, DeserializeCallDepthExceeded}
 import sigmastate.helpers.{ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.{ContextExtension, CostedProverResult}
-import sigmastate.helpers.{ErgoLikeTestInterpreter, SigmaTestingCommons, ErgoLikeContextTesting}
-import sigmastate.interpreter.{CryptoConstants, CostedProverResult, ContextExtension}
-import sigmastate.lang.exceptions.{ReaderPositionLimitExceeded, InvalidTypePrefix, DeserializeCallDepthExceeded, SerializerException}
 import sigmastate.serialization.OpCodes._
 import sigmastate.util.safeNewArray
 import sigmastate.utils.SigmaByteReader

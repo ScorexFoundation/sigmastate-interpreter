@@ -4,14 +4,27 @@ import java.math.BigInteger
 
 /** JVM specific implementation of crypto methods*/
 object Platform {
+  /** Description of elliptic curve of point `p` which belongs to the curve.
+    *
+    * @param p the elliptic curve point
+    */
+  def getCurve(p: Ecp): Curve = ???
+
   def getXCoord(p: Ecp): ECFieldElem = ??? //ECFieldElem(p.value.getXCoord)
   def getYCoord(p: Ecp): ECFieldElem = ??? //ECFieldElem(p.value.getYCoord)
   def getAffineXCoord(p: Ecp): ECFieldElem = ??? //ECFieldElem(p.value.getAffineXCoord)
   def getAffineYCoord(p: Ecp): ECFieldElem = ??? //ECFieldElem(p.value.getAffineYCoord)
 
-  def getEncodedOfFieldElem(p: ECFieldElem): Array[Byte] = ??? //p.value.getEncoded
+  def encodeFieldElem(p: ECFieldElem): Array[Byte] = ??? //p.value.getEncoded
 
-  def testBitZeroOfFieldElem(p: ECFieldElem): Boolean = ??? //p.value.testBitZero()
+  /** Byte representation of the given point.
+    *
+    * @param p point to encode
+    * @param compressed if true, generates a compressed point encoding
+    */
+  def encodePoint(p: Ecp, compressed: Boolean): Array[Byte] = ???
+
+  def signOf(p: ECFieldElem): Boolean = ??? //p.value.testBitZero()
 
   def normalizePoint(p: Ecp): Ecp = ??? //Ecp(p.value.normalize())
 
@@ -40,6 +53,7 @@ object Platform {
 
   def negatePoint(p: Ecp): Ecp = ??? //Ecp(p.value.negate())
 
+  class Curve
   class ECPoint
   class ECFieldElement
   /** Opaque point type. */
