@@ -71,7 +71,7 @@ val scorexUtil         = "org.scorexfoundation" %% "scorex-util" % "0.1.8-19-033
 val scorexUtilDependency =
   libraryDependencies += "org.scorexfoundation" %%% "scorex-util" % "0.1.8-19-0331a3d9-SNAPSHOT"
 
-val debox              = "org.scorexfoundation" %% "debox" % "0.9.0-8-3da95c40-SNAPSHOT"
+val debox              = "org.scorexfoundation" %% "debox" % "0.10.0"
 val spireMacros        = "org.typelevel" %% "spire-macros" % "0.17.0-M1"
 
 val fastparse          = "com.lihaoyi" %% "fastparse" % "2.3.3"
@@ -154,7 +154,7 @@ def libraryDefSettings = commonSettings ++ crossScalaSettings ++ testSettings
 
 lazy val commonDependenies2 = libraryDependencies ++= Seq(
   "org.scala-lang" % "scala-reflect" % scalaVersion.value,
-  "org.scorexfoundation" %%% "debox" % "0.9.0-8-3da95c40-SNAPSHOT",
+  "org.scorexfoundation" %%% "debox" % "0.10.0",
   "org.scala-lang.modules" %%% "scala-collection-compat" % "2.7.0"
 )
 
