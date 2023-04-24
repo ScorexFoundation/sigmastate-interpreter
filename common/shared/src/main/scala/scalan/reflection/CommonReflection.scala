@@ -4,9 +4,23 @@ import scala.collection.compat.immutable.ArraySeq
 import scala.collection.mutable
 import scala.collection.immutable
 
+/** Reflection metadata and global dictionaries to access it.
+  * For each class of this module that needs reflection metadata,
+  * we register a class entry with the necessary information.
+  * Only information that is needed at runtime is registered.
+  */
 object CommonReflection {
+  /** Descriptors of classes. */
   val classes = mutable.HashMap.empty[Class[_], SRClass[_]]
 
+  /** Registers a class entry in the map of classes.
+    *
+    * @tparam T the type of the class to be registered
+    * @param clazz        the class to be registered
+    * @param constructors the constructors of the class
+    * @param fields       the fields of the class
+    * @param methods      the methods of the class (represented as a map of method names and argument types to the corresponding RMethod instances)
+    */
   def registerClassEntry[T](clazz: Class[T],
                             constructors: Seq[SRConstructor[_]] = ArraySeq.empty,
                             fields: Map[String, SRField] = Map.empty,

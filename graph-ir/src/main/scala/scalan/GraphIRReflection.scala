@@ -8,7 +8,13 @@ import special.collection.Colls
 import special.sigma.SigmaDsl
 import wrappers.scalan.WRTypes
 
+/** Registrations of reflection metadata for graph-ir module (see README.md).
+  * For each class of this module that needs reflection metadata,
+  * we register a class entry with the necessary information.
+  * Only information that is needed at runtime is registered.
+  */
 object GraphIRReflection {
+  /** Forces initialization of reflection data. */
   val reflection = (CommonReflection, CoreLibReflection)
 
   { val clazz = classOf[wrappers.scala.WOptions#WOption[_]]
@@ -60,24 +66,6 @@ object GraphIRReflection {
       }
     )
   )
-
-
-//  { val ctx = null.asInstanceOf[scalan.Library] // ok! type level only
-//    val clazz = classOf[ctx.Coll.CollElem[_, _]]
-//    registerClassEntry(clazz,
-//      constructors = Array(
-//        new SRConstructor[Any](Array(clazz.getDeclaringClass, classOf[TypeDescs#Elem[_]])) {
-//          override def newInstance(args: AnyRef*): Any = {
-//            val cake = args(0).asInstanceOf[ctx.Coll.type]
-//            new cake.CollElem()(args(1).asInstanceOf[ctx.Elem[_]])
-//          }
-//        }
-//      )
-//    )
-//  }
-
-//  registerClassOnly(classOf[special.sigma.SigmaDsl#AnyValue])
-//
 
   { val clazz = classOf[special.sigma.SigmaDsl#SigmaProp]
     val ctx = null.asInstanceOf[SigmaDsl] // ok! type level only

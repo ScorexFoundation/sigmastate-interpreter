@@ -228,7 +228,8 @@ class DataValueComparerSpecification extends SigmaDslTesting
   }
 
   override protected def afterAll(): Unit = {
-    println(suiteProfiler.generateReport)
+    val report = suiteProfiler.generateReport
+    if (printDebugInfo) println(report)
   }
 
 }

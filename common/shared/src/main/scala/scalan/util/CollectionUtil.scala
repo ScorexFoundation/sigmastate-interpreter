@@ -9,7 +9,6 @@ import scala.collection.compat._
 
 object CollectionUtil {
 
-  // TODO v5.x: remove after v5.0, need separate full node sync test
   /** @deprecated shouldn't be used other than for backwards compatibility with v3.x, v4.x. */
   def concatArrays[T](xs: Array[T], ys: Array[T]): Array[T] = {
     val len = xs.length + ys.length

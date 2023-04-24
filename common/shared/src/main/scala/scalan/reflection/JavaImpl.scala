@@ -1,29 +1,39 @@
 package scalan.reflection
 
 import debox.cfor
-import scalan.reflection.RClass.memoize
 
-import java.lang.reflect.{Constructor, Field, Method}
+import java.lang.reflect.{Field, Constructor, Method}
+import scala.collection.concurrent.TrieMap
 import scala.collection.mutable
 
+/**
+  * A class that represents a Java class of type `T`.
+  *
+  * @constructor creates a new instance of `JRClass` with the given value.
+  * @param value the Java class of type `T`.
+  */
 class JRClass[T](val value: Class[T]) extends RClass[T] {
-  val fields = mutable.HashMap.empty[String, RField]
+
+  /** A mutable map that stores the fields of this class. */
+  val fields = TrieMap.empty[String, RField]
 
   override def getField(name: String): RField =
     memoize(fields)(name, JRField(value.getField(name)))
 
-  val methods = mutable.HashMap.empty[(String, Seq[Class[_]]), RMethod]
+  /** A mutable map that stores the methods of this class. */
+  val methods = TrieMap.empty[(String, Seq[Class[_]]), RMethod]
 
   override def getMethod(name: String, parameterTypes: Class[_]*): RMethod = {
     memoize(methods)((name, parameterTypes), JRMethod(this, value.getMethod(name, parameterTypes:_*)))
   }
 
-  def getSimpleName: String = value.getSimpleName
-  def getName: String = value.getName
+  override def getSimpleName: String = value.getSimpleName
+  override def getName: String = value.getName
 
+  /** The constructors of this class. */
   var constructors: Seq[RConstructor[_]] = _
 
-  def getConstructors(): Seq[RConstructor[_]] = {
+  override def getConstructors(): Seq[RConstructor[_]] = {
     if (constructors == null) {
       synchronized {
         if (constructors == null) {
@@ -40,32 +50,40 @@ class JRClass[T](val value: Class[T]) extends RClass[T] {
     constructors
   }
 
+  /** Helper method that returns [[JRConstructor]] instances that were at least once used
+    * at runtime.
+    */
   def getUsedConstructors(): Seq[JRConstructor[_]] =
     getConstructors().collect { case c: JRConstructor[_] if c.wasUsed => c }
 
-  def isPrimitive(): Boolean = value.isPrimitive
+  override def isPrimitive(): Boolean = value.isPrimitive
 
-  def getSuperclass(): RClass[_ >: T] = RClass(value.getSuperclass)
+  override def getSuperclass(): RClass[_ >: T] = RClass(value.getSuperclass)
 
-  def isAssignableFrom(cls: Class[_]): Boolean = value.isAssignableFrom(cls)
+  override def isAssignableFrom(cls: Class[_]): Boolean = value.isAssignableFrom(cls)
 
-  def getDeclaredMethods(): Array[RMethod] = value.getDeclaredMethods.map(JRMethod(this, _))
+  override def getDeclaredMethods(): Array[RMethod] = value.getDeclaredMethods.map(JRMethod(this, _))
 
   override def equals(other: Any): Boolean = (this eq other.asInstanceOf[AnyRef]) || (other match {
     case that: JRClass[_] =>
       val eq = value == that.value
-      if (!eq)
-        assert(this.getName != that.getName) // sanity check
+      // Uncomment the following line when debugging
+      // if (!eq)
+      //   assert(this.getName != that.getName) // sanity check
       eq
     case _ => false
   })
 
   override def hashCode(): Int = value.hashCode()
 
-  override def toString: String = s"JRClass(${value.getName})"
+  override def toString: String = s"JRClass($value)"
 }
 
 
+/** Implements [[RField]] using Java reflection.
+  *
+  * @param value The [[java.lang.reflect.Field]] object to wrap.
+  */
 class JRField private (val value: Field) extends RField {
   override def getType: Class[_] = value.getType
 
@@ -80,6 +98,12 @@ object JRField {
   private[reflection] def apply(field: Field): RField = new JRField(field)
 }
 
+/** Implements [[RConstructor]] using Java reflection.
+  *
+  * @tparam T The type of the class that declares this constructor.
+  * @param index The index of the constructor in the sequence of all constructors of the class.
+  * @param value The [[java.lang.reflect.Constructor]] to be wrapped.
+  */
 class JRConstructor[T] private (val index: Int, val value: Constructor[T]) extends RConstructor[T] {
   @volatile var wasUsed: Boolean = false
   override def newInstance(initargs: AnyRef*): T = {
@@ -99,21 +123,27 @@ class JRConstructor[T] private (val index: Int, val value: Constructor[T]) exten
   override def toString: String = s"JRConstructor($index, $value)"
 }
 object JRConstructor {
-  private[reflection] def apply[T](index: Int, value: Constructor[T]): RConstructor[T]  = new JRConstructor[T](index, value)
+  private[reflection] def apply[T](index: Int, value: Constructor[T]): RConstructor[T] =
+    new JRConstructor[T](index, value)
 }
 
-class JRMethod private (declarigClass: JRClass[_], val value: Method) extends RMethod {
-  def invoke(obj: Any, args: AnyRef*): AnyRef = {
-    val name = value.getName
-    val parameterTypes: Seq[Class[_]] = value.getParameterTypes
-    memoize(declarigClass.methods)((name, parameterTypes), this)
-//    throw new RuntimeException(s"Called method: $value")
+/**
+  * Implements [[RMethod]] using Java reflection.
+  *
+  * @param declaringClass The JRClass that declares this method.
+  * @param value          The [[java.lang.reflect.Method]] instance that this JRMethod represents.
+  */
+class JRMethod private (declaringClass: JRClass[_], val value: Method) extends RMethod {
+  override def invoke(obj: Any, args: AnyRef*): AnyRef = {
+//    val name = value.getName
+//    val parameterTypes: Seq[Class[_]] = value.getParameterTypes
+//    memoize(declaringClass.methods)((name, parameterTypes), this)
     value.invoke(obj, args:_*)
   }
 
-  def getName: String = value.getName
+  override def getName: String = value.getName
 
-  def getDeclaringClass(): Class[_] = value.getDeclaringClass
+  override def getDeclaringClass(): Class[_] = value.getDeclaringClass
 
   override def getParameterTypes(): Seq[Class[_]] = value.getParameterTypes
 
@@ -128,5 +158,3 @@ class JRMethod private (declarigClass: JRClass[_], val value: Method) extends RM
 object JRMethod {
   private[reflection] def apply(clazz: JRClass[_], value: Method): RMethod = new JRMethod(clazz, value)
 }
-
-class RInvocationException() extends Exception

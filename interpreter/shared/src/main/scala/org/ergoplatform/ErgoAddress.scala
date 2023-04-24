@@ -108,7 +108,7 @@ class P2PKAddress(val pubkey: ProveDlog,
   override def networkPrefix: NetworkPrefix = encoder.networkPrefix
 
   override def equals(obj: Any): Boolean = obj match {
-    case p2pk: P2PKAddress => util.Arrays.equals(pubkeyBytes, p2pk.pubkeyBytes)
+    case p2pk: P2PKAddress => java.util.Arrays.equals(pubkeyBytes, p2pk.pubkeyBytes)
     case _ => false
   }
 
@@ -167,7 +167,7 @@ class Pay2SHAddress(val scriptHash: Array[Byte])(implicit val encoder: ErgoAddre
   }
 
   override def equals(obj: Any): Boolean = obj match {
-    case p2sh: Pay2SHAddress => util.Arrays.equals(scriptHash, p2sh.scriptHash)
+    case p2sh: Pay2SHAddress => java.util.Arrays.equals(scriptHash, p2sh.scriptHash)
     case _ => false
   }
 
@@ -226,7 +226,7 @@ class Pay2SAddress(override val script: ErgoTree,
   override def networkPrefix: NetworkPrefix = encoder.networkPrefix
 
   override def equals(obj: Any): Boolean = obj match {
-    case p2s: Pay2SAddress => util.Arrays.equals(scriptBytes, p2s.scriptBytes)
+    case p2s: Pay2SAddress => java.util.Arrays.equals(scriptBytes, p2s.scriptBytes)
     case _ => false
   }
 
@@ -289,7 +289,7 @@ case class ErgoAddressEncoder(networkPrefix: NetworkPrefix) {
       val addressType = (headByte - networkPrefix).toByte
       val (withoutChecksum, checksum) = bytes.splitAt(bytes.length - ChecksumLength)
 
-      if (!util.Arrays.equals(hash256(withoutChecksum).take(ChecksumLength), checksum)) {
+      if (!java.util.Arrays.equals(hash256(withoutChecksum).take(ChecksumLength), checksum)) {
         throw new Exception(s"Checksum check fails for $addrBase58Str")
       }
 
@@ -356,6 +356,12 @@ object ErgoAddressEncoder {
 
   /** Value of the prefix byte used to encode Testnet ErgoAddress. */
   val TestnetNetworkPrefix: NetworkPrefix = 16.toByte
+
+  /** ErgoAddress encoder for Mainnet. */
+  val Mainnet: ErgoAddressEncoder = ErgoAddressEncoder(MainnetNetworkPrefix)
+
+  /** ErgoAddress encoder for Testnet. */
+  val Testnet: ErgoAddressEncoder = ErgoAddressEncoder(TestnetNetworkPrefix)
 
   /** Length of the checksum section of encoded ergo address bytes. */
   val ChecksumLength = 4

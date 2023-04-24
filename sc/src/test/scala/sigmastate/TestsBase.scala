@@ -14,6 +14,11 @@ import sigmastate.serialization.ValueSerializer
 import scala.util.DynamicVariable
 
 trait TestsBase extends Matchers with VersionTesting {
+  /** Set this to true to enable debug console output in tests */
+  val printDebugInfo: Boolean = false
+
+  /** Print debug message if printDebugInfo is true */
+  def printDebug(msg: Any): Unit = if (printDebugInfo) println(msg)
 
   /** Current ErgoTree header flags assigned dynamically using [[CrossVersionProps]] and
     * ergoTreeVersionInTests.
@@ -65,16 +70,20 @@ trait TestsBase extends Matchers with VersionTesting {
     }
   }
 
+  /** Compile the given code to ErgoTree expression. */
   def compile(env: ScriptEnv, code: String)(implicit IR: IRContext): Value[SType] = {
     val res = compiler.compile(env, code)
     checkCompilerResult(res)
     res.buildTree
   }
 
+  /** Check the given [[CompilerResult]] meets equality and sanity requirements. */
   def checkCompilerResult[Ctx <: IRContext](res: CompilerResult[Ctx])(implicit IR: IRContext): Unit = {
     checkSerializationRoundTrip(res.buildTree)
   }
 
+
+  /** Compiles the given code and checks the resulting `prop` against `expected`. */
   def compileAndCheck(env: ScriptEnv, code: String, expected: SValue)
                      (implicit IR: IRContext): (ErgoTree, SigmaPropValue) = {
     val prop = compile(env, code).asSigmaProp

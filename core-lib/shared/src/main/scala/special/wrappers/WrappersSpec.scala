@@ -2,6 +2,9 @@ package special.wrappers
 
 import scalan.{WrapSpec, RType}
 
+/** Base class for wrappers of such types as WOption, WRType etc.
+  * Used in graph IR to implement method invocation.
+  */
 trait WrapSpecBase extends WrapSpec {
 }
 
@@ -14,6 +17,7 @@ class OptionWrapSpec extends WrapSpecBase {
   def isDefined[A](xs: Option[A]): Boolean  = xs.isDefined
 };
 
+/** Wrappers spec for RType */
 class RTypeWrapSpec extends WrapSpecBase {
   def name[T](d: RType[T]): String = d.name
 }

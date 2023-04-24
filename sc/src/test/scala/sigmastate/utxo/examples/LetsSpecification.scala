@@ -276,8 +276,8 @@ class LetsSpecification extends SigmaTestingCommons with CrossVersionProps { sui
       |}""".stripMargin
   ).asSigmaProp
 
-//  println(exchangeScript)
-//  println(managementScript)
+//  printDebug(exchangeScript)
+//  printDebug(managementScript)
 
   property("adding new member") {
     val avlProver = new BatchAVLProver[Digest32, Blake2b256.type](keyLength = 32, None)
@@ -321,7 +321,7 @@ class LetsSpecification extends SigmaTestingCommons with CrossVersionProps { sui
       .withContextExtender(1, ByteArrayConstant(proof))
 
     val res = managementProver.prove(env, managementTree, fundingContext, fakeMessage).get
-    println("new user script cost: " + res.cost)
+    printDebug("new user script cost: " + res.cost)
   }
 
   property("exchange") {
@@ -381,7 +381,7 @@ class LetsSpecification extends SigmaTestingCommons with CrossVersionProps { sui
       .withContextExtender(1, ByteArrayConstant(proof))
 
     val res = managementProver.prove(env, exchangeTree, exchangeContext, fakeMessage).get
-    println("exchange script cost: " + res.cost)
+    printDebug("exchange script cost: " + res.cost)
   }
 
 }

@@ -6,8 +6,11 @@ import org.ergoplatform.validation.ValidationRules.CheckPositionLimit
 import org.ergoplatform.{ErgoBoxCandidate, Outputs}
 import org.scalacheck.Gen
 import scalan.util.BenchmarkUtil
+import scorex.crypto.authds.{ADKey, ADValue}
+import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert}
+import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util.serialization.{Reader, VLQByteBufferReader}
-import sigmastate.Values.{BlockValue, GetVarInt, IntConstant, SValue, SigmaBoolean, SigmaPropValue, Tuple, ValDef, ValUse}
+import sigmastate.Values.{SValue, BlockValue, GetVarInt, SigmaBoolean, ValDef, ValUse, SigmaPropValue, Tuple, IntConstant}
 import sigmastate._
 import sigmastate.basics.CryptoConstants
 import sigmastate.eval.Extensions._
@@ -15,12 +18,17 @@ import sigmastate.eval._
 import sigmastate.exceptions.{ReaderPositionLimitExceeded, InvalidTypePrefix, SerializerException, DeserializeCallDepthExceeded}
 import sigmastate.helpers.{ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.{ContextExtension, CostedProverResult}
+import sigmastate.helpers.{ErgoLikeTestInterpreter, SigmaTestingCommons, ErgoLikeContextTesting}
+import sigmastate.interpreter.{CryptoConstants, CostedProverResult, ContextExtension}
+import sigmastate.lang.exceptions.{ReaderPositionLimitExceeded, InvalidTypePrefix, DeserializeCallDepthExceeded, SerializerException}
 import sigmastate.serialization.OpCodes._
+import sigmastate.util.safeNewArray
 import sigmastate.utils.SigmaByteReader
 import sigmastate.utxo.SizeOf
 import sigmastate.utils.Helpers._
 
 import scala.collection.mutable
+import scala.util.{Try, Success, Failure}
 
 class DeserializationResilience extends SerializationSpecification
   with SigmaTestingCommons with CrossVersionProps {
@@ -309,5 +317,101 @@ class DeserializationResilience extends SerializationSpecification
     })
   }
 
+  /** Because this method is called from many places it should always be called with `hint`. */
+  protected def checkResult[B](res: Try[B], expectedRes: Try[B], hint: String): Unit = {
+    (res, expectedRes) match {
+      case (Failure(exception), Failure(expectedException)) =>
+        withClue(hint) {
+          rootCause(exception).getClass shouldBe rootCause(expectedException).getClass
+        }
+      case _ =>
+        val actual = rootCause(res)
+        if (actual != expectedRes) {
+          assert(false, s"$hint\nActual: $actual;\nExpected: $expectedRes\n")
+        }
+    }
+  }
 
+  def writeUInt(x: Long): Array[Byte] = {
+    val w = SigmaSerializer.startWriter()
+    val bytes = w.putUInt(x).toBytes
+    bytes
+  }
+
+  def readToInt(bytes: Array[Byte]): Try[Int] = Try {
+    val r = SigmaSerializer.startReader(bytes)
+    r.getUInt().toInt
+  }
+
+  def readToIntExact(bytes: Array[Byte]): Try[Int] = Try {
+    val r = SigmaSerializer.startReader(bytes)
+    r.getUIntExact
+  }
+
+  property("getUIntExact vs getUInt().toInt") {
+    val intOverflow = Failure(new ArithmeticException("Int overflow"))
+    val cases = Table(("stored", "toInt", "toIntExact"),
+      (0L, Success(0), Success(0)),
+      (Int.MaxValue.toLong - 1, Success(Int.MaxValue - 1), Success(Int.MaxValue - 1)),
+      (Int.MaxValue.toLong,     Success(Int.MaxValue), Success(Int.MaxValue)),
+      (Int.MaxValue.toLong + 1, Success(Int.MinValue), intOverflow),
+      (Int.MaxValue.toLong + 2, Success(Int.MinValue + 1), intOverflow),
+      (0xFFFFFFFFL,             Success(-1), intOverflow)
+    )
+    forAll(cases) { (x, res, resExact) =>
+      val bytes = writeUInt(x)
+      checkResult(readToInt(bytes), res, "toInt")
+      checkResult(readToIntExact(bytes), resExact, "toIntExact")
+    }
+
+    // check it is impossible to write negative value with reference implementation of serializer
+    // ALSO NOTE that VLQ encoded bytes are always interpreted as positive Long
+    // so the difference between getUIntExact vs getUInt().toInt boils down to how Int.MaxValue
+    // overflow is handled
+    assertExceptionThrown(
+      writeUInt(-1L),
+      exceptionLike[IllegalArgumentException]("-1 is out of unsigned int range")
+    )
+
+    val MaxUIntPlusOne = 0xFFFFFFFFL + 1
+    assertExceptionThrown(
+      writeUInt(MaxUIntPlusOne),
+      exceptionLike[IllegalArgumentException](s"$MaxUIntPlusOne is out of unsigned int range")
+    )
+  }
+
+  property("test assumptions of how negative value from getUInt().toInt is handled") {
+    assertExceptionThrown(
+      safeNewArray[Int](-1),
+      exceptionLike[NegativeArraySizeException]())
+
+    val bytes = writeUInt(10)
+    val store = new ConstantStore(IndexedSeq(IntConstant(1)))
+
+    val r = SigmaSerializer.startReader(bytes, store, true)
+    assertExceptionThrown(
+      r.constantStore.get(-1),
+      exceptionLike[ArrayIndexOutOfBoundsException]())
+
+    assertExceptionThrown(
+      r.getBytes(-1),
+      exceptionLike[NegativeArraySizeException]())
+
+    r.valDefTypeStore(-1) = SInt // no exception on negative key
+
+    // the following example shows how far negative keyLength can go inside AvlTree operations
+    val avlProver = new BatchAVLProver[Digest32, Blake2b256.type](keyLength = 32, None)
+    val digest = avlProver.digest
+    val flags = AvlTreeFlags(true, false, false)
+    val treeData = new AvlTreeData(digest, flags, -1, None)
+    val tree = SigmaDsl.avlTree(treeData)
+    val k = Blake2b256.hash("1")
+    val v = k
+    avlProver.performOneOperation(Insert(ADKey @@@ k, ADValue @@@ v))
+    val proof = avlProver.generateProof()
+    val verifier = tree.createVerifier(Colls.fromArray(proof))
+    verifier.performOneOperation(Insert(ADKey @@@ k, ADValue @@@ v)).isFailure shouldBe true
+    // NOTE, even though performOneOperation fails, some AvlTree$ methods used in Interpreter
+    // (remove_eval, update_eval, contains_eval) won't throw, while others will.
+  }
 }

@@ -39,6 +39,7 @@ import scala.collection.compat.immutable.ArraySeq
 import scala.collection.mutable
 
 object Values {
+  /** Force initialization of reflection. */
   val reflection = InterpreterReflection
 
   type SValue = Value[SType]
@@ -448,15 +449,21 @@ object Values {
       TaggedVariableNode(varId, tpe)
   }
 
-  /** ErgoTree node that represent a literal of Unit type. */
-  case class UnitConstant() extends EvaluatedValue[SUnit.type] {
-    override def tpe = SUnit
-    val value = ()
-    override def companion: ValueCompanion = UnitConstant
-  }
-  object UnitConstant extends ValueCompanion {
-    override def opCode = UnitConstantCode
-    override def costKind = Constant.costKind
+  /** High-level interface to internal representation of Unit constants in ErgoTree. */
+  object UnitConstant {
+    /** ErgoTree node that represent a literal of Unit type. It is global immutable value
+      * which should be reused wherever necessary to avoid allocations.
+      */
+    val instance = apply()
+
+    /** Constucts a fresh new instance of Unit literal node. */
+    def apply() = Constant[SUnit.type]((), SUnit)
+
+    /** Recognizer to pattern match on Unit constant literal nodes (aka Unit constants). */
+    def unapply(node: SValue): Boolean = node match {
+      case ConstantNode(_, SUnit) => true
+      case _ => false
+    }
   }
 
   type BoolValue = Value[SBoolean.type]
@@ -601,7 +608,6 @@ object Values {
 
   type CollectionConstant[T <: SType] = Constant[SCollection[T]]
   type CollectionValue[T <: SType] = Value[SCollection[T]]
-//  type OptionValue[T <: SType] = Value[SOption[T]]
 
   object CollectionConstant {
     def apply[T <: SType](value: Coll[T#WrappedType], elementType: T): Constant[SCollection[T]] =
@@ -851,8 +857,6 @@ object Values {
     def tpe = SBox
   }
 
-  // TODO refactor: only Constant make sense to inherit from EvaluatedValue
-
   /** ErgoTree node which converts a collection of expressions into a tuple of data values
     * of different types. Each data value of the resulting collection is obtained by
     * evaluating the corresponding expression in `items`. All items may have different
@@ -860,10 +864,19 @@ object Values {
     *
     * @param items source collection of expressions
     */
-  case class Tuple(items: IndexedSeq[Value[SType]]) extends Value[STuple] {
+  case class Tuple(items: IndexedSeq[Value[SType]])
+      extends EvaluatedValue[STuple]  // note, this superclass is required as Tuple can be in a register
+         with EvaluatedCollection[SAny.type, STuple] {
     override def companion = Tuple
     override lazy val tpe = STuple(items.map(_.tpe))
     override def opType: SFunc = ???
+    override def elementType: SAny.type = SAny
+
+    override lazy val value = {
+      val xs = items.cast[EvaluatedValue[SAny.type]].map(_.value)
+      Colls.fromArray(xs.toArray(SAny.classTag.asInstanceOf[ClassTag[SAny.WrappedType]]))(RType.AnyType)
+    }
+
     protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
       // in v5.0 version we support only tuples of 2 elements to be equivalent with v4.x
       if (items.length != 2)

@@ -304,7 +304,7 @@ class ComplexSigSpecification extends SigmaTestingCommons
 
     val proverAB = proverA.withSecrets(Seq(proverB.dlogSecrets.head))
     val pr = proverAB.prove(propTree, ctx, fakeMessage).get
-    println("proof size: " + pr.proof.length)
+    printDebug("proof size: " + pr.proof.length)
     verifier.verify(propTree, ctx, pr, fakeMessage).get._1 shouldBe true
 
     val pr2 = proverC.prove(propTree, ctx, fakeMessage).get

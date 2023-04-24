@@ -426,8 +426,8 @@ class IcoExample extends SigmaTestingCommons
       .withContextExtender(1, ByteArrayConstant(proof))
 
     val res = projectProver.prove(env, fundingTree, fundingContext, fakeMessage).get
-    println("funding script cost: " + res.cost)
-    println("lookup proof size: " + proof.length)
+    printDebug("funding script cost: " + res.cost)
+    printDebug("lookup proof size: " + proof.length)
 
     //todo: test switching to fixing stage
   }
@@ -463,7 +463,7 @@ class IcoExample extends SigmaTestingCommons
       self = projectBoxBeforeClosing, activatedVersionInTests)
 
     val res = project.prove(env, issuanceTree, issuanceContext, fakeMessage).get
-    println("token issuance script cost: " + res.cost)
+    printDebug("token issuance script cost: " + res.cost)
   }
 
   property("simple ico example - withdrawal stage") {
@@ -543,20 +543,20 @@ class IcoExample extends SigmaTestingCommons
         .withContextExtender(4, IntArrayConstant((1 to withdrawalsCount).toArray))
 
     val res = projectProver.prove(env, withdrawalTree, fundingContext, fakeMessage).get
-    println("withdrawal script cost: " + res.cost)
-    println("remove proof size: " + removalProof.length)
-    println("lookup proof size: " + lookupProof.length)
+    printDebug("withdrawal script cost: " + res.cost)
+    printDebug("remove proof size: " + removalProof.length)
+    printDebug("lookup proof size: " + lookupProof.length)
   }
 
   property("ComplexityTableStat") {
-    println(ComplexityTableStat.complexityTableString)
+    printDebug(ComplexityTableStat.complexityTableString)
   }
 
   /** This is the last executed test suite, so this method is executed after all tests.
     * We output statistics of how PrecompiledScriptProcessor cache was used. */
   override protected def afterAll(): Unit = {
-    println("verifySignatureProfiler ==========================================")
-    println(Interpreter.verifySignatureProfiler.generateReport)
+    printDebug("verifySignatureProfiler ==========================================")
+    printDebug(Interpreter.verifySignatureProfiler.generateReport)
   }
 
 }

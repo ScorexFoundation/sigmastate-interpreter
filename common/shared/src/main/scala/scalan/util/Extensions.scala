@@ -147,7 +147,57 @@ object Extensions {
     }
   }
 
+  implicit class OptionOps[T](val opt: Option[T]) extends AnyVal {
+    /** Elvis operator for Option. See https://en.wikipedia.org/wiki/Elvis_operator*/
+    def ?:(whenNone: => T): T = if (opt.isDefined) opt.get else whenNone
+  }
+
+  implicit class ProductOps(val source: Product) extends AnyVal {
+    def toArray: Array[Any] = {
+      val arity = source.productArity
+      val res = new Array[Any](arity)
+      var i = 0
+      while (i < arity) {
+        res(i) = source.productElement(i)
+        i += 1
+      }
+      res
+    }
+  }
+
+  implicit class ByteBufferOps(val buf: ByteBuffer) extends AnyVal {
+    def toBytes: Array[Byte] = {
+      val res = new Array[Byte](buf.position())
+      buf.array().copyToArray(res, 0, res.length)
+      res
+    }
+    def getBytes(size: Int): Array[Byte] = {
+      if (size > buf.remaining)
+        throw new IllegalArgumentException(s"Not enough bytes in the ByteBuffer: $size")
+      val res = new Array[Byte](size)
+      buf.get(res)
+      res
+    }
+    def getOption[T](getValue: => T): Option[T] = {
+      val tag = buf.get()
+      if (tag != 0)
+        Some(getValue)
+      else
+        None
+    }
+  }
+
+  /** Syntactic sugar for postfix assertions and the value pass through
+    * Example:
+    * val positiveValue = x.ensuring(_ > 0, x => s"the value is not positive: $x")
+    */
   implicit final class Ensuring[A](private val self: A) extends AnyVal {
+    /** Ensures that the given predicate holds for this value.
+      * @param cond the predicate used to test this value.
+      * @param msg the error message to be used if the predicate does not hold.
+      * @return this value, if it satisfies the given predicate `p`.
+      * @throws AssertionError if the predicate does not hold.
+      */
     def ensuring(cond: A => Boolean, msg: A => Any): A = {
       assert(cond(self), msg(self))
       self

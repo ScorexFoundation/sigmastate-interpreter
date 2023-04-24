@@ -1,8 +1,7 @@
 package sigmastate.utxo
 
 import java.math.BigInteger
-
-import org.ergoplatform.ErgoBox.{R6, R8}
+import org.ergoplatform.ErgoBox.{AdditionalRegisters, R6, R8}
 import org.ergoplatform._
 import scalan.RType
 import sigmastate.SCollection.SByteArray
@@ -20,6 +19,9 @@ import sigmastate.interpreter.ContextExtension.VarBinding
 import sigmastate.interpreter.ErgoTreeEvaluator.DefaultEvalSettings
 import sigmastate.interpreter.EvalSettings
 import sigmastate.utils.Helpers._
+import scalan.util.StringUtil._
+import sigmastate.basics.DLogProtocol.DLogProverInput
+import sigmastate.lang.exceptions.CosterException
 
 class BasicOpsSpecification extends SigmaTestingCommons
   with CrossVersionProps {
@@ -58,9 +60,11 @@ class BasicOpsSpecification extends SigmaTestingCommons
 
   def test(name: String, env: ScriptEnv,
            ext: Seq[VarBinding],
-           script: String, propExp: SValue,
+           script: String,
+           propExp: SValue,
            onlyPositive: Boolean = true,
-           testExceededCost: Boolean = true) = {
+           testExceededCost: Boolean = true,
+           additionalRegistersOpt: Option[AdditionalRegisters] = None) = {
     val prover = new ContextEnrichingTestProvingInterpreter() {
       override lazy val contextExtenders: Map[Byte, EvaluatedValue[_ <: SType]] = {
         val p1 = dlogSecrets(0).publicImage
@@ -73,15 +77,24 @@ class BasicOpsSpecification extends SigmaTestingCommons
         isTestRun = testExceededCost)
     }
 
-    val prop = compile(env, script).asBoolValue.toSigmaProp
+    val prop = if (script.isNullOrEmpty) {
+      // for some testcases the script cannot be compiled (i.e. the corresponding syntax
+      // is not supported by ErgoScript Compiler)
+      // In such cases we use expected property as the property to test
+      propExp.asSigmaProp
+    } else
+      compile(env, script).asBoolValue.toSigmaProp
+
     if (propExp != null)
       prop shouldBe propExp
 
     val tree = ErgoTree.fromProposition(ergoTreeHeaderInTests, prop)
     val p3 = prover.dlogSecrets(2).publicImage
-    val boxToSpend = testBox(10, tree, additionalRegisters = Map(
-      reg1 -> SigmaPropConstant(p3),
-      reg2 -> IntConstant(1)),
+    val boxToSpend = testBox(10, tree,
+      additionalRegisters = additionalRegistersOpt.getOrElse(Map(
+        reg1 -> SigmaPropConstant(p3),
+        reg2 -> IntConstant(1))
+      ),
       creationHeight = 5)
 
     val newBox1 = testBox(10, tree, creationHeight = 0, boxIndex = 0, additionalRegisters = Map(
@@ -119,6 +132,28 @@ class BasicOpsSpecification extends SigmaTestingCommons
     }
     val verifyEnv = env + (ScriptNameProp -> s"${name}_verify_ext")
     flexVerifier.verify(verifyEnv, tree, ctxExt, pr.proof, fakeMessage).get._1 shouldBe true
+  }
+
+  property("Unit register") {
+    // TODO frontend: implement missing Unit support in compiler
+    //  https://github.com/ScorexFoundation/sigmastate-interpreter/issues/820
+    test("R1", env, ext,
+      script = "", /* means cannot be compiled
+                     the corresponding script is { SELF.R4[Unit].isDefined } */
+      ExtractRegisterAs[SUnit.type](Self, reg1)(SUnit).isDefined.toSigmaProp,
+      additionalRegistersOpt = Some(Map(
+        reg1 -> UnitConstant.instance
+      ))
+    )
+
+    test("R2", env, ext,
+      script = "", /* means cannot be compiled
+                   the corresponding script is "{ SELF.R4[Unit].get == () }" */
+      EQ(ExtractRegisterAs[SUnit.type](Self, reg1)(SUnit).get, UnitConstant.instance).toSigmaProp,
+      additionalRegistersOpt = Some(Map(
+        reg1 -> UnitConstant.instance
+      ))
+    )
   }
 
   property("Relation operations") {
