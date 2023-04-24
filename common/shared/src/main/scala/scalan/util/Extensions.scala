@@ -6,9 +6,7 @@ import scala.language.higherKinds
 
 object Extensions {
   implicit class BooleanOps(val b: Boolean) extends AnyVal {
-    /** Convert true to 1 and false to 0
-      * @since 2.0
-      */
+    /** Convert true to 1 and false to 0 */
     def toByte: Byte = if (b) 1 else 0
   }
 
@@ -39,9 +37,7 @@ object Extensions {
       r.toByte
     }
 
-    /** Absolute value of this numeric value.
-      * @since 2.0
-      */
+    /** Absolute value of this numeric value. */
     def toAbs: Byte = if (b < 0) (-b).toByte else b
   }
 
@@ -73,9 +69,7 @@ object Extensions {
       r.toShort
     }
 
-    /** Absolute value of this numeric value.
-      * @since 2.0
-      */
+    /** Absolute value of this numeric value. */
     def toAbs: Short = if (x < 0) (-x).toShort else x
   }
 
@@ -92,9 +86,7 @@ object Extensions {
       x.toShort
     }
 
-    /** Absolute value of this numeric value.
-      * @since 2.0
-      */
+    /** Absolute value of this numeric value. */
     def toAbs: Int = if (x < 0) -x else x
   }
 
@@ -117,9 +109,7 @@ object Extensions {
       x.toInt
     }
 
-    /** Absolute value of this numeric value.
-      * @since 2.0
-      */
+    /** Absolute value of this numeric value. */
     def toAbs: Long = if (x < 0) -x else x
   }
 

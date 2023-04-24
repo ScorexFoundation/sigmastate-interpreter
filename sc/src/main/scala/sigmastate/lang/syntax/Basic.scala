@@ -41,6 +41,11 @@ object Basic {
   def error(msg: String, srcCtx: Nullable[SourceContext]) = throw new ParserException(msg, srcCtx.toOption)
 }
 
+/** Exception thrown during the parsing phase of the compiler.
+  *
+  * @param message the error message
+  * @param source an optional source context with location information
+  */
 class ParserException(message: String, source: Option[SourceContext])
   extends CompilerException(message, source)
 

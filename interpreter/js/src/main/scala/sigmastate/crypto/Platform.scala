@@ -2,7 +2,7 @@ package sigmastate.crypto
 
 import java.math.BigInteger
 
-/** JVM specific implementation of crypto methods*/
+/** JVM specific implementation of crypto methods (NOT yet implemented). */
 object Platform {
   /** Description of elliptic curve of point `p` which belongs to the curve.
     *

@@ -364,8 +364,10 @@ object Terms {
 
   }
 
+  /** Type alias for a substitution of type variables with their corresponding types. */
   type STypeSubst = Map[STypeVar, SType]
 
+  /** Immutable and sharable empty substitution. */
   val EmptySubst = Map.empty[STypeVar, SType]
 
   /** Performs pairwise type unification making sure each type variable is equally
@@ -418,6 +420,12 @@ object Terms {
     case _ => None
   }
 
+  /** Applies a type substitution to a given type.
+    *
+    * @param tpe   the type to apply the substitution to
+    * @param subst the type substitution to apply
+    * @return the type after applying the substitution
+    */
   def applySubst(tpe: SType, subst: Terms.STypeSubst): SType = tpe match {
     case SFunc(args, res, tparams) =>
       val remainingVars = tparams.filterNot { p => subst.contains(p.ident) }
@@ -429,6 +437,12 @@ object Terms {
       rewrite(everywherebu(substRule))(tpe)
   }
 
+  /** Computes the most general type given two types.
+    *
+    * @param t1 the first type
+    * @param t2 the second type
+    * @return the most general type if it exists, otherwise None
+    */
   def msgType(t1: SType, t2: SType): Option[SType] = unifyTypes(t1, t2) match {
     case Some(_) => Some(t1)
     case None => unifyTypes(t2, t1).map(_ => t2)

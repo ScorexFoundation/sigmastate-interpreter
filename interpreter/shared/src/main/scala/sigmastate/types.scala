@@ -78,6 +78,11 @@ sealed trait SType extends SigmaNode {
   /** Elvis operator for types. See https://en.wikipedia.org/wiki/Elvis_operator*/
   def ?:(whenNoType: => SType): SType = if (this == NoType) whenNoType else this
 
+  /** Applies a type substitution to this type.
+    *
+    * @param subst the type substitution to apply
+    * @return the type after applying the substitution
+    */
   def withSubstTypes(subst: Map[STypeVar, SType]): SType =
     if (subst.isEmpty) this
     else

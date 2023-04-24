@@ -12,10 +12,18 @@ import scalan.util.CollectionUtil.AnyOps
 object FileUtil {
 
   implicit class StringUtilExtensions(val str: String) extends AnyVal {
+    /** The last component of the string after the given separator.
+      *
+      * @param sep the separator character
+      */
     def lastComponent(sep: Char): String = {
       str.substring(str.lastIndexOf(sep) + 1)
     }
 
+    /** The prefix of the string before the specified substring.
+      *
+      * @param substr the substring to find in the input string
+      */
     def prefixBefore(substr: String): String = {
       val pos = str.indexOf(substr)
       val res = if (pos == -1) str else str.substring(0, pos)
@@ -23,6 +31,11 @@ object FileUtil {
     }
   }
 
+  /** Executes a function with a PrintWriter for the specified file.
+    *
+    * @param file the target file
+    * @param f    a function that takes a PrintWriter
+    */
   def withFile(file: File)(f: PrintWriter => Unit): Unit = {
     if (file.isDirectory && !file.delete()) {
       throw new RuntimeException(s"File $file is a non-empty directory")
@@ -37,8 +50,18 @@ object FileUtil {
     }
   }
 
+  /** Writes the provided text to the specified file.
+    *
+    * @param file the target file
+    * @param text the text to write
+    */
   def write(file: File, text: String): Unit = withFile(file) { _.print(text) }
 
+  /** Executes a function with the provided PrintStream as standard output and error streams.
+    *
+    * @param out  the PrintStream to use as standard output and error streams
+    * @param func the function to execute
+    */
   def withStdOutAndErr(out: PrintStream)(func: => Unit): Unit = {
     val oldStdOut = System.out
     val oldStdErr = System.err
@@ -53,6 +76,11 @@ object FileUtil {
     }
   }
 
+  /** Captures the standard output and error streams produced by the given function.
+    *
+    * @param func the function to execute
+    * @return the captured output as a string
+    */
   def captureStdOutAndErr(func: => Unit): String = {
     val out = new ByteArrayOutputStream
     val ps = new PrintStream(out)
@@ -61,6 +89,11 @@ object FileUtil {
     out.toString
   }
 
+  /** Returns the last modified timestamp of the specified resource on the classpath.
+    *
+    * @param source      the resource to find
+    * @param classLoader the class loader to use for searching the resource
+    */
   def classPathLastModified(source: String, classLoader: ClassLoader = getClass.getClassLoader) = {
     def urlLastModified(url: URL): Long = {
       url.getProtocol match {
