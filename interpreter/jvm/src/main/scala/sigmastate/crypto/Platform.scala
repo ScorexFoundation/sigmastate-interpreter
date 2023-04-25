@@ -1,7 +1,8 @@
 package sigmastate.crypto
 
 import org.bouncycastle.crypto.ec.CustomNamedCurves
-import org.bouncycastle.math.ec.{ECPoint, ECFieldElement, ECCurve}
+import org.bouncycastle.math.ec.{ECCurve, ECFieldElement, ECPoint}
+import scalan.RType
 
 import java.math.BigInteger
 import java.security.SecureRandom
@@ -122,10 +123,12 @@ object Platform {
   /** Wrapper for field element type. */
   case class ECFieldElem(value: ECFieldElement)
 
+  type SecureRandom = java.security.SecureRandom
+  
   /** Create a new context for cryptographic operations. */
   def createContext(): CryptoContext = new CryptoContextJvm(CustomNamedCurves.getByName("secp256k1"))
 
-  def createSecureRandom(): Random = new SecureRandom()
+  def createSecureRandom(): SecureRandom = new SecureRandom()
 
   /** Checks that the type of the value corresponds to the descriptor `tpe`.
     * If the value has complex structure only root type constructor is checked.
@@ -169,6 +172,6 @@ object Platform {
 
   /** This JVM specific methods are used in Ergo node which won't be JS cross-compiled. */
   implicit class BcDlogGroupOps(val group: BcDlogGroup) extends AnyVal {
-    def curve: ECCurve = group.ctx.asInstanceOf[CryptoContextJvm].curve
+    def curve: Curve = group.ctx.asInstanceOf[CryptoContextJvm].curve
   }
 }

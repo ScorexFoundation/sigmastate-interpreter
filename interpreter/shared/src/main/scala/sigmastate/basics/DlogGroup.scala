@@ -1,10 +1,7 @@
 package sigmastate.basics
 
 import java.math.BigInteger
-import sigmastate.crypto.{Ecp, CryptoFacade}
-
-import scala.util.Random
-
+import sigmastate.crypto.{Ecp, CryptoFacade, SecureRandom}
 
 /**
   * This is the general interface for the discrete logarithm prime-order group.
@@ -24,7 +21,7 @@ trait DlogGroup {
   /** The type of the elements of this Dlog group */
   type ElemType = Ecp
 
-  val secureRandom: Random = CryptoFacade.createSecureRandom()
+  val secureRandom: SecureRandom = CryptoFacade.createSecureRandom()
 
   /**
     * The generator g of the group is an element of the group such that, when written multiplicatively, every element

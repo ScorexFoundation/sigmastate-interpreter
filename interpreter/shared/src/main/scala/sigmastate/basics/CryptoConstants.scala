@@ -15,7 +15,7 @@ object CryptoConstants {
   val dlogGroup: BcDlogGroup = SecP256K1Group
 
   /** Secure random generator used in the signature scheme. */
-  val secureRandom: SecureRandom = dlogGroup.secureRandom
+  val secureRandom: sigmastate.crypto.SecureRandom = dlogGroup.secureRandom
 
   /** Size of the binary representation of any group element (2 ^ groupSizeBits == <number of elements in a group>) */
   val groupSizeBits: Int = 256

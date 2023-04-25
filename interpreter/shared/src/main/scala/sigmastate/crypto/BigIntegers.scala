@@ -1,7 +1,7 @@
 package sigmastate.crypto
 
 import java.math.BigInteger
-import scala.util.Random
+import sigmastate.crypto.SecureRandom
 
 /** Re-implementation in Scala of select set of utility methods from
   * org.bouncycastle.util.BigIntegers.
@@ -40,7 +40,7 @@ object BigIntegers {
     */
   def createRandomBigInteger(
       bitLength: Int,
-      random: Random): BigInteger = {
+      random: SecureRandom): BigInteger = {
     new BigInteger(1, createRandom(bitLength, random))
   }
 
@@ -55,7 +55,7 @@ object BigIntegers {
   def createRandomInRange(
       min: BigInteger,
       max: BigInteger,
-      random: Random): BigInteger = {
+      random: SecureRandom): BigInteger = {
     val cmp = min.compareTo(max)
     if (cmp >= 0) {
       if (cmp > 0) throw new IllegalArgumentException("'min' may not be greater than 'max'")

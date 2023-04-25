@@ -97,5 +97,5 @@ object CryptoFacade {
     * @throws IllegalStateException if the point is not normalized
     */
   def getAffineYCoord(p: Ecp): ECFieldElem = Platform.getAffineYCoord(p)
-  def createSecureRandom(): Random = Platform.createSecureRandom()
+  def createSecureRandom(): SecureRandom = Platform.createSecureRandom()
 }

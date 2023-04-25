@@ -63,6 +63,9 @@ object Platform {
   class Curve
   class ECPoint
   class ECFieldElement
+
+  type SecureRandom = Random
+
   /** Opaque point type. */
   @js.native
   trait Point extends js.Object {
@@ -105,22 +108,25 @@ object Platform {
   def createContext(): CryptoContext = new CryptoContext {
     val ctx = new CryptoContextJs
 
-    override def getModulus: BigInteger = Convert.bigIntToBigInteger(ctx.getModulus())
+    /** The underlying elliptic curve descriptor. */
+    override def curve: crypto.Curve = ???
 
-    override def getOrder: BigInteger = Convert.bigIntToBigInteger(ctx.getOrder())
+    override def fieldCharacteristic: BigInteger = Convert.bigIntToBigInteger(ctx.getModulus())
+
+    override def order: BigInteger = Convert.bigIntToBigInteger(ctx.getOrder())
 
     override def validatePoint(x: BigInteger, y: BigInteger): crypto.Ecp = {
       val point = ctx.validatePoint(Convert.bigIntegerToBigInt(x), Convert.bigIntegerToBigInt(y))
       new Ecp(point)
     }
 
-    override def getInfinity(): crypto.Ecp =
+    override def infinity(): crypto.Ecp =
       new Ecp(ctx.getInfinity())
 
     override def decodePoint(encoded: Array[Byte]): crypto.Ecp =
       new Ecp(ctx.decodePoint(Base16.encode(encoded)))
 
-    override def getGenerator: crypto.Ecp =
+    override def generator: crypto.Ecp =
       new Ecp(ctx.getGenerator())
   }
 
