@@ -226,8 +226,11 @@ class WOptionCls extends EntityObject("WOption") {
     }
   }
 } // of object WOption
-object WOption extends WOptionCls
+
   registerModule(WOptionsModule)
+
+  object WOption extends WOptionCls
+
   registerEntityObject("WOption", WOption)
 }
 
