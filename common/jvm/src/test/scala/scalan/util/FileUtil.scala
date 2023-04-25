@@ -1,13 +1,14 @@
 package scalan.util
 
+import scalan.util.CollectionUtil.AnyOps
+import scalan.util.StringUtil.cleanFileName
+
 import java.io._
 import java.net.{JarURLConnection, URL}
 import java.nio.file._
 import java.nio.file.attribute.BasicFileAttributes
 import scala.Console
 import scala.collection.JavaConverters._
-import scalan.util.StringUtil.{StringUtilExtensions, cleanFileName}
-import scalan.util.CollectionUtil.AnyOps
 
 object FileUtil {
 
