@@ -1,6 +1,5 @@
 package org.ergoplatform
 
-import java.util
 import org.ergoplatform.validation.SigmaValidationSettings
 import sigmastate.SType._
 import sigmastate.Values._
@@ -9,13 +8,13 @@ import sigmastate.eval.Extensions._
 import sigmastate.eval._
 import sigmastate.interpreter.ErgoTreeEvaluator.DataEnv
 import sigmastate.interpreter.{ContextExtension, ErgoTreeEvaluator, Interpreter, InterpreterContext}
+import sigmastate.exceptions.InterpreterException
 import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.OpCode
 import special.collection.Coll
 import special.sigma
 import special.sigma.{AnyValue, Header, PreHeader}
 import debox.cfor
-import sigmastate.exceptions.InterpreterException
 
 /** Represents a script evaluation context to be passed to a prover and a verifier to execute and
   * validate guarding proposition of input boxes of a transaction.
@@ -98,7 +97,7 @@ class ErgoLikeContext(val lastBlockUtxoRoot: AvlTreeData,
   Examined ergo code: all that leads to ErgoLikeContext creation.
  */
   require(spendingTransaction.dataInputs.length == dataBoxes.length &&
-    spendingTransaction.dataInputs.forall(dataInput => dataBoxes.exists(b => util.Arrays.equals(b.id, dataInput.boxId))),
+    spendingTransaction.dataInputs.forall(dataInput => dataBoxes.exists(b => java.util.Arrays.equals(b.id, dataInput.boxId))),
     "dataBoxes do not correspond to spendingTransaction.dataInputs")
 
   // TODO assert boxesToSpend correspond to spendingTransaction.inputs
@@ -113,7 +112,7 @@ class ErgoLikeContext(val lastBlockUtxoRoot: AvlTreeData,
 
   /** Current version of the ErgoTree executed by the interpreter.
     * This property is used to implement version dependent operations and passed to
-    * interpreter via [[specia.sigma.Context]].
+    * interpreter via [[special.sigma.Context]].
     * The value cannot be assigned on [[ErgoLikeContext]] construction and must be
     * attached using [[withErgoTreeVersion()]] method.
     * When the value is None, the [[InterpreterException]] is thrown by the interpreter.

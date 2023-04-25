@@ -482,7 +482,7 @@ class Rule110Specification extends CompilerTestingCommons
     val firstRowState = genesisState.applyBlock(firstRowBlock, 10000000).get
     val t1 = System.currentTimeMillis()
 
-    println(s"First row time ${t1 - t0} ms.")
+    printDebug(s"First row time ${t1 - t0} ms.")
 
     firstRowState.boxesReader.byTwoInts(RowReg, 1, ColumnReg, 13).get.get(ValueReg).get.asInstanceOf[BooleanConstant].value shouldBe false
     firstRowState.boxesReader.byTwoInts(RowReg, 1, ColumnReg, 14).get.get(ValueReg).get.asInstanceOf[BooleanConstant].value shouldBe true

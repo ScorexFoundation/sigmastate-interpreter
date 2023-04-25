@@ -56,6 +56,12 @@ class GroupLawsSpecification extends AnyPropSpec with ScalaCheckPropertyChecks w
     }
   }
 
+  private def printPoints(points: Seq[(String, Any)]) = {
+    points.foreach { case (name, p) =>
+      printDebug(s"val $name = ${SigmaPPrint.apply(p).plainText}")
+    }
+  }
+
 // uncommment to generate new test vectors
 //def printPoints(points: Seq[(String, Any)]) = {
 //  points.foreach { case (name, p) =>

@@ -23,7 +23,7 @@ class HelpersTests extends AnyPropSpec with ScalaCheckPropertyChecks with Matche
       xorU(res2, Seq(arr1, arr2, arr3))
 
       res1 shouldBe res2
-      println(arr.length)
+      printDebug(arr.length)
     }
   }
 }

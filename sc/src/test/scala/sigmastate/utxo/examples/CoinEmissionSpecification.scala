@@ -205,13 +205,15 @@ block 1600 in 1622 ms, 30000000000 coins remain, defs: 61661
                  hLimit: Int): Unit = if (height < hLimit) {
       if (height % 100 == 0) {
         val t = System.currentTimeMillis()
-        println(s"block $height in ${t - st} ms, ${emissionBox.value} coins remain, defs: ${IR.defCount}")
+        if (printDebugInfo)
+          println(s"block $height in ${t - st} ms, ${emissionBox.value} coins remain, defs: ${IR.defCount}")
         st = t
         IR.resetContext()
       }
       if (height % 1000 == 0) {
         val t = System.currentTimeMillis()
-        println(s"block $height in ${t - thousandTime} ms, ${emissionBox.value} coins remain")
+        if (printDebugInfo)
+          println(s"block $height in ${t - thousandTime} ms, ${emissionBox.value} coins remain")
         thousandTime = t
       }
       val tx = genCoinbaseLikeTransaction(state, emissionBox, height)
@@ -227,6 +229,7 @@ block 1600 in 1622 ms, 30000000000 coins remain, defs: 61661
 
     chainGen(genesisState, initialBox, 0, 1000000)
 
-    println(s"Emission Tree: ${ErgoAlgos.encode(tree.bytes)}")
+    if (printDebugInfo)
+      println(s"Emission Tree: ${ErgoAlgos.encode(tree.bytes)}")
   }
 }

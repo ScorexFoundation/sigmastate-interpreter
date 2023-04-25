@@ -11,8 +11,14 @@ import scala.scalajs.js
 import scala.scalajs.js.typedarray.Uint8Array
 import scala.util.Random
 
-/** JVM specific implementation of crypto methods*/
+/** JVM specific implementation of crypto methods (NOT yet implemented). */
 object Platform {
+  /** Description of elliptic curve of point `p` which belongs to the curve.
+    *
+    * @param p the elliptic curve point
+    */
+  def getCurve(p: Ecp): Curve = ???
+
   def getXCoord(p: Ecp): ECFieldElem = new ECFieldElem(CryptoFacadeJs.getXCoord(p.point))
   def getYCoord(p: Ecp): ECFieldElem = new ECFieldElem(CryptoFacadeJs.getYCoord(p.point))
   def getAffineXCoord(p: Ecp): ECFieldElem = new ECFieldElem(CryptoFacadeJs.getAffineXCoord(p.point))
@@ -22,9 +28,18 @@ object Platform {
     jsShorts.toArray[Short].map(x => x.toByte)
   }
 
-  def getEncodedOfFieldElem(p: ECFieldElem): Array[Byte] = {
+  def encodeFieldElem(p: ECFieldElem): Array[Byte] = {
     Uint8ArrayToBytes(CryptoFacadeJs.getEncodedOfFieldElem(p.elem))
   }
+
+  /** Byte representation of the given point.
+    *
+    * @param p point to encode
+    * @param compressed if true, generates a compressed point encoding
+    */
+  def encodePoint(p: Ecp, compressed: Boolean): Array[Byte] = ???
+
+  def signOf(p: ECFieldElem): Boolean = ??? //p.value.testBitZero()
 
   def getEncodedPoint(p: Ecp, compressed: Boolean): Array[Byte] = ???
 
@@ -45,6 +60,9 @@ object Platform {
 
   def negatePoint(p: Ecp): Ecp = new Ecp(CryptoFacadeJs.negatePoint(p.point))
 
+  class Curve
+  class ECPoint
+  class ECFieldElement
   /** Opaque point type. */
   @js.native
   trait Point extends js.Object {

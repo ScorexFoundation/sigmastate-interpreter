@@ -1,8 +1,13 @@
 package scalan.reflection
 
-import java.util
-import scala.collection.compat.immutable.ArraySeq
-
+/**
+  * Represents a field in an Sigma Reflection metadata.
+  * Extends [[RField]] by providing a concrete implementation without relying on Java reflection.
+  * The instances of this class are used as parameters of `registerClassEntry` method.
+  *
+  * @param name the name of the field
+  * @param tpe the type of the field as runtime [[java.lang.Class]]
+  */
 class SRField(val name: String, tpe: Class[_]) extends RField {
   override def getType: Class[_] = tpe
 
@@ -13,10 +18,22 @@ class SRField(val name: String, tpe: Class[_]) extends RField {
   override def hashCode(): Int = name.hashCode()
 }
 
+/** Represents a constructor in an Sigma Reflection metadata.
+  * Extends [[RConstructor]] by providing a concrete implementation without relying on Java reflection.
+  *
+  * @param parameterTypes the types of the constructor's parameters
+  */
 abstract class SRConstructor[T](parameterTypes: Array[Class[_]]) extends RConstructor[T] {
   override def getParameterTypes(): Array[Class[_]] = parameterTypes
 }
 
+/** Represents a method in an Sigma Reflection metadata.
+  * Extends [[RMethod]] by providing a concrete implementation without relying on Java reflection.
+  *
+  * @param declaringClass the class that declares the method
+  * @param name the name of the method
+  * @param parameterTypes the types of the method's parameters
+  */
 abstract class SRMethod(declaringClass: Class[_], name: String, parameterTypes: Seq[Class[_]]) extends RMethod {
   override def getName: String = name
   override def getDeclaringClass(): Class[_] = declaringClass
@@ -32,6 +49,15 @@ abstract class SRMethod(declaringClass: Class[_], name: String, parameterTypes: 
   override def toString: String = s"SRMethod(${declaringClass.getName}.$name(${parameterTypes.mkString(", ")}))"
 }
 
+/**
+  * Represents a class in an Sigma Reflection metadata.
+  * Extends [[RClass]] by providing a concrete implementation without relying on Java reflection.
+  *
+  * @param clazz the [[java.lang.Class]] being represented
+  * @param constructors the constructors of the class
+  * @param fields the fields of the class (name -> field)
+  * @param methods the methods of the class ((name, parameterTypes) -> method)
+  */
 class SRClass[T](val clazz: Class[T],
                  constructors: Seq[SRConstructor[_]],
                  fields: Map[String, SRField],

@@ -13,7 +13,7 @@ package rewriting
 
 import scalan.reflection.{RClass, RConstructor}
 
-import scala.collection.mutable
+import scala.collection.concurrent.TrieMap
 
 /**
   * Strategy-based term rewriting in the style of Stratego (http://strategoxt.org/).
@@ -220,10 +220,21 @@ trait Rewriter {
     */
   object Duplicator {
 
+    /**
+      * The type of a duplicator. A duplicator takes a product `t` and
+      * an array of new children and returns a new product with the
+      * same constructor as `t` but with the new children.
+      */
     type Duper = (Any, Array[AnyRef]) => Any
 
+    /**
+      * This duper always returns the same product that it is given for singleton Scala objects.
+      * It uses the `MODULE$` field to determine if a class is a singleton object.
+      * Otherwise, it uses the first constructor it finds to make a new product.
+      */
     object MakeDuper extends (RClass[_] => Duper) {
 
+      /** Make a duper for the given class. */
       def apply(clazz : RClass[_]) : Duper =
         try {
           // See if this class has a MODULE$ field. This field is used by Scala
@@ -246,6 +257,7 @@ trait Rewriter {
                 makeInstance(ctors(0), children)
         }
 
+      /** Make an instance using the given constructor with the given children as arguments. */
       def makeInstance(ctor : RConstructor[_], children : Array[AnyRef]) : Any =
         try {
           ctor.newInstance(unboxPrimitives(ctor, children) : _*)
@@ -255,6 +267,8 @@ trait Rewriter {
                         |Common cause: term classes are nested in another class, move them to the top level""".stripMargin)
         }
 
+      /** Unbox primitive values in the given array of children using type information of
+        * the given constructor. */
       def unboxPrimitives(ctor : RConstructor[_], children : Array[AnyRef]) : Array[AnyRef] = {
         val childrenTypes = ctor.getParameterTypes()
         val numChildren = childrenTypes.length
@@ -270,6 +284,7 @@ trait Rewriter {
         newChildren
       }
 
+      /** Unbox a primitive value. */
       def unboxAnyVal(s : AnyRef) : AnyRef =
         s match {
           case p : Product if p.productArity == 1 =>
@@ -280,22 +295,24 @@ trait Rewriter {
 
     }
 
-    private val cache = mutable.HashMap.empty[RClass[_], Duper]
+    /** All memoized duppers. */
+    private val dupers = TrieMap.empty[RClass[_], Duper]
 
     /** Obtains a duper for the given class lazily. and memoize it in the `cache` map.
       * This is the simplest solution, but not the most efficient for concurrent access.
       */
-    def getDuper(clazz: RClass[_]): Duper = synchronized { // TODO optimize: avoid global sync
-      val duper = cache.get(clazz) match {
+    def getDuper(clazz: RClass[_]): Duper = synchronized { // TODO optimize: avoid global sync (if this really is a bottleneck)
+      val duper = dupers.get(clazz) match {
         case Some(d) => d
         case None =>
           val d = MakeDuper(clazz)
-          cache.put(clazz, d)
+          dupers.put(clazz, d)
           d
       }
       duper
     }
-    
+
+    /** Apply the duplicator to the given product and children. */
     def apply[T <: Product](t : T, children : Array[AnyRef]) : T = {
       val clazz = RClass(t.getClass)
       val duper = getDuper(clazz)
@@ -754,32 +771,6 @@ trait Rewriter {
         None
     }
 
-  /**
-    * Implementation of `congruence` for `Product` values.
-    */
-  def congruenceProduct(p : Product, ss : Strategy*) : Option[Any] = {
-    val numchildren = p.productArity
-    if (numchildren == ss.length) {
-      val newchildren = Array.newBuilder[AnyRef]
-      val (changed, _) =
-        p.productIterator.foldLeft((false, 0)) {
-          case ((changed, i), ct) =>
-            (ss(i))(ct) match {
-              case Some(ti) =>
-                newchildren += makechild(ti)
-                (changed || !same(ct, ti), i + 1)
-              case None =>
-                return None
-            }
-        }
-      if (changed)
-        Some(dup(p, newchildren.result()))
-      else
-        Some(p)
-    } else
-      None
-  }
-
   // Extractors
 
   /**
@@ -795,8 +786,6 @@ trait Rewriter {
       */
     def unapply(t : Any) : Some[(Any, Vector[Any])] = {
       t match {
-//        case r : Rewritable =>
-//          Some((r, r.deconstruct.toVector))
         case p : Product =>
           Some((p, p.productIterator.toVector))
         case s : Seq[_] =>
@@ -872,18 +861,6 @@ trait Rewriter {
     topdown(attempt(s))
 
   /**
-    * Construct a strategy that succeeds when applied to a pair `(x,y)`
-    * if `x` is a sub-term of `y`.
-    */
-  val issubterm : Strategy =
-    mkStrategy({
-      case (x, y) =>
-        where(oncetd(term(x)))(y)
-      case _ =>
-        None
-    })
-
-  /**
     * Construct a strategy that while `r` succeeds applies `s`.  This operator
     * is called `while` in the Stratego library.
     */
@@ -906,15 +883,6 @@ trait Rewriter {
   }
 
   /**
-    * Construct a strategy that while `r` does not succeed applies `s`.  This
-    * operator is called `while-not` in the Stratego library.
-    */
-  def loopnot(r : Strategy, s : Strategy) : Strategy = {
-    lazy val result : Strategy = r <+ (s <* result)
-    mkStrategy(result)
-  }
-
-  /**
     * Construct a strategy that applies `s` to each element of a finite
     * sequence (type `Seq`) returning a new sequence of the results if
     * all of the applications succeed, otherwise fail.  If all of the
@@ -933,26 +901,6 @@ trait Rewriter {
     */
   def not(s : Strategy) : Strategy =
     s < (fail + id)
-
-  /**
-    * Construct a strategy that applies `s` in a bottom-up fashion to one
-    * subterm at each level, stopping as soon as it succeeds once (at
-    * any level).
-    */
-  def oncebu(s : Strategy) : Strategy = {
-    lazy val result : Strategy = one(result) <+ s
-    mkStrategy(result)
-  }
-
-  /**
-    * Construct a strategy that applies `s` in a top-down fashion to one
-    * subterm at each level, stopping as soon as it succeeds once (at
-    * any level).
-    */
-  def oncetd(s : Strategy) : Strategy = {
-    lazy val result : Strategy = s <+ one(result)
-    mkStrategy(result)
-  }
 
   /**
     * `or(s1, s2)` is similar to `ior(s1, s2)`, but the application
@@ -986,15 +934,6 @@ trait Rewriter {
     */
   def repeat(s : Strategy, n : Int) : Strategy = {
     lazy val result = if (n == 0) id else s <* repeat(s, n - 1)
-    mkStrategy(result)
-  }
-
-  /**
-    * Construct a strategy that repeatedly applies `s` (at least once) and
-    * terminates with application of `c`.
-    */
-  def repeat1(s : Strategy, r : Strategy) : Strategy = {
-    lazy val result : Strategy = s <* (result <+ r)
     mkStrategy(result)
   }
 

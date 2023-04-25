@@ -102,6 +102,7 @@ trait Thunks extends Functions { self: Scalan =>
     override lazy val typeArgs = TypeArgs("A" -> (eItem -> Covariant))
   }
 
+  /** Implicitly defines element type for thunks (aka lazy values). */
   implicit def thunkElement[T](implicit eItem: Elem[T]): Elem[Thunk[T]] =
     cachedElemByClass(eItem)(RClass(classOf[ThunkElem[T]]))
 
@@ -369,15 +370,5 @@ trait Thunks extends Functions { self: Scalan =>
     def unapply(s: Sym): Option[Const[_]] = unapply(s.node)
   }
 
-
-//  override protected def formatDef(d: Def[_])(implicit config: GraphVizConfig): String = d match {
-//    case ThunkDef(r, sch) => s"Thunk($r, [${sch.mkString(",")}])"
-//    case _ => super.formatDef(d)
-//  }
-//
-//  override protected def nodeColor(td: TypeDesc, d: Def[_])(implicit config: GraphVizConfig) = td match {
-//    case _: ThunkElem[_] => "red"
-//    case _ => super.nodeColor(td, d)
-//  }
 }
 

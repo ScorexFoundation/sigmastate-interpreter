@@ -100,6 +100,9 @@ object DataSerializer {
       case SLong => r.getLong()
       case SString =>
         val size = r.getUIntExact
+        // NO-FORK: in v5.x getUIntExact may throw Int overflow exception
+        // in v4.x r.getUInt().toInt is used and may return negative Int instead of the overflow
+        // in which case the getBytes will throw NegativeArraySizeException
         val bytes = r.getBytes(size)
         new String(bytes, StandardCharsets.UTF_8)
       case SBigInt =>

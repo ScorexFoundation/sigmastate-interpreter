@@ -7,6 +7,11 @@ import special.collection.{CollBuilder, Coll}
 import special.sigma._
 import special.wrappers.{OptionWrapSpec, RTypeWrapSpec}
 
+/** Registrations of reflection metadata for core-lib module.
+  * For each class of this module that needs reflection metadata,
+  * we register a class entry with the necessary information.
+  * Only information that is needed at runtime is registered.
+  */
 object CoreLibReflection {
   val reflection = CommonReflection
 
