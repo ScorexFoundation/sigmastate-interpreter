@@ -22,6 +22,8 @@ trait CompilerTestsBase extends TestsBase {
     * This allow to test execution of MethodCall nodes in ErgoTree.
     */
   val okRunTestsWithoutMCLowering: Boolean = false
+
+  /** Compiler settings used in tests. */
   val defaultCompilerSettings: CompilerSettings = CompilerSettings(
     TestnetNetworkPrefix, TransformingSigmaBuilder,
     lowerMethodCalls = true

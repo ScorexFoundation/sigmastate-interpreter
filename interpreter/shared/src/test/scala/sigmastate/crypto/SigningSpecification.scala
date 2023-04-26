@@ -7,9 +7,7 @@ import sigmastate.Values.SigmaBoolean
 import sigmastate.basics.DLogProtocol.DLogProverInput
 import sigmastate.helpers.{ErgoLikeTestInterpreter, ErgoLikeTestProvingInterpreter, TestingCommons}
 import sigmastate.interpreter.{HintsBag, ContextExtension, ProverResult}
-import sigmastate.serialization.ValueSerializer
 import sigmastate.serialization.transformers.ProveDHTupleSerializer
-import sigmastate.lang.StdSigmaBuilder
 import sigmastate.basics.ProveDHTuple
 
 class SigningSpecification extends TestingCommons {

@@ -6,12 +6,13 @@ import scala.util.{Try, Success, Failure}
 import scala.reflect.ClassTag
 import scala.annotation.tailrec
 
+/** Contains helpers to test expected exceptions and their causes. */
 trait NegativeTesting extends Matchers {
   /** Checks that a [[Throwable]] is thrown and satisfies the given predicate.
     *
-    * @param fun block of code to execute
+    * @param fun       block of code to execute
     * @param assertion expected assertion on the thrown exception
-    * @param clue added to the error message
+    * @param clue      added to the error message
     */
   def assertExceptionThrown(
       fun: => Any,
@@ -79,7 +80,7 @@ trait NegativeTesting extends Matchers {
     * @return result of the second computation `g`
     */
   def sameResultOrError[B](f: => B, g: => B): Try[B] = {
-    val b1 = Try(f);
+    val b1 = Try(f)
     val b2 = Try(g)
     (b1, b2) match {
       case (Success(b1), res @ Success(b2)) =>

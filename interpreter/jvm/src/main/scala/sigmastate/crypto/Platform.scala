@@ -5,8 +5,6 @@ import org.bouncycastle.math.ec.{ECCurve, ECFieldElement, ECPoint}
 import scalan.RType
 
 import java.math.BigInteger
-import java.security.SecureRandom
-import scala.util.Random
 import sigmastate._
 import sigmastate.basics.BcDlogGroup
 import special.collection.Coll
@@ -123,11 +121,13 @@ object Platform {
   /** Wrapper for field element type. */
   case class ECFieldElem(value: ECFieldElement)
 
+  /** Secure source of randomness on JVM. */
   type SecureRandom = java.security.SecureRandom
   
   /** Create a new context for cryptographic operations. */
   def createContext(): CryptoContext = new CryptoContextJvm(CustomNamedCurves.getByName("secp256k1"))
 
+  /** Create JVM specific source of secure randomness. */
   def createSecureRandom(): SecureRandom = new SecureRandom()
 
   /** Checks that the type of the value corresponds to the descriptor `tpe`.

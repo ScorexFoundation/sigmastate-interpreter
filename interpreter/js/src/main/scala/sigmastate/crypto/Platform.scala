@@ -64,6 +64,7 @@ object Platform {
   class ECPoint
   class ECFieldElement
 
+  // TODO JS: Use JS library for secure source of randomness
   type SecureRandom = Random
 
   /** Opaque point type. */
@@ -130,6 +131,7 @@ object Platform {
       new Ecp(ctx.getGenerator())
   }
 
+  /** Create JS specific source of secure randomness. */
   def createSecureRandom(): Random = new Random()
 
   /** Checks that the type of the value corresponds to the descriptor `tpe`.

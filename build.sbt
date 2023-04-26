@@ -56,11 +56,11 @@ lazy val commonSettings = Seq(
 
 lazy val crossScalaSettings = Seq(
   crossScalaVersions := Seq(scala213, scala212, scala211),
-  scalaVersion := scala212
+  scalaVersion := scala213
 )
 lazy val crossScalaSettingsJS = Seq(
   crossScalaVersions := Seq(scala213, scala212),
-  scalaVersion := scala212
+  scalaVersion := scala213
 )
 
 def javacReleaseOption = {
@@ -234,8 +234,8 @@ lazy val interpreter = crossProject(JVMPlatform, JSPlatform)
   .jsSettings(
     crossScalaSettingsJS,
     libraryDependencies ++= Seq (
-      "org.scala-js" %%% "scala-js-macrotask-executor" % "1.0.0",
-      ("org.scala-js" %%% "scalajs-java-securerandom" % "1.0.0").cross(CrossVersion.for3Use2_13)
+      "org.scala-js" %%% "scala-js-macrotask-executor" % "1.0.0"
+//      ("org.scala-js" %%% "scalajs-java-securerandom" % "1.0.0").cross(CrossVersion.for3Use2_13)
     ),
     useYarn := true
   )

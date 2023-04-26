@@ -98,6 +98,7 @@ object Extensions {
   }
 
   implicit class EcpOps(val source: Ecp) extends AnyVal {
+    /** Extracts [[GroupElement]] from the Ecp instance. */
     def toGroupElement: GroupElement = SigmaDsl.GroupElement(source)
   }
 

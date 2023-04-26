@@ -1,7 +1,6 @@
 package sigmastate.crypto
 
 import java.math.BigInteger
-import scala.util.Random
 
 /** A facade for cryptographic operations. The concrete implementation is delegated to the
   * Platform object, which is resolved by the compiler to either JVM or JS implementation.
@@ -97,5 +96,7 @@ object CryptoFacade {
     * @throws IllegalStateException if the point is not normalized
     */
   def getAffineYCoord(p: Ecp): ECFieldElem = Platform.getAffineYCoord(p)
+
+  /** Create source of secure randomness. */
   def createSecureRandom(): SecureRandom = Platform.createSecureRandom()
 }
