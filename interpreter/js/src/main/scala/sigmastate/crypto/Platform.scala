@@ -39,7 +39,7 @@ object Platform {
     */
   def encodePoint(p: Ecp, compressed: Boolean): Array[Byte] = ???
 
-  def signOf(p: ECFieldElem): Boolean = ??? //p.value.testBitZero()
+  def signOf(p: ECFieldElem): Boolean = CryptoFacadeJs.testBitZeroOfFieldElem(p.elem)
 
   def getEncodedPoint(p: Ecp, compressed: Boolean): Array[Byte] = ???
 
