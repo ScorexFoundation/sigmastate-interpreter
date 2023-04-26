@@ -9,7 +9,7 @@ import scala.scalajs.js.annotation.JSExportTopLevel
   * Runtime representation of ErgoScript types. Type is a JS friendly
   * wrapper around {@link RType} type descriptor.
   */
-@JSExportTopLevel("Type", moduleID = "common")
+@JSExportTopLevel("Type")
 class Type(private[js] final val rtype: RType[_]) extends js.Object {
   /** Syntactically correct type name (type expression as String) */
   def name: String = rtype.name
@@ -17,7 +17,7 @@ class Type(private[js] final val rtype: RType[_]) extends js.Object {
   override def toString = s"Type($rtype)"
 }
 
-@JSExportTopLevel("Types", moduleID = "common")
+@JSExportTopLevel("Types")
 object Type extends js.Object {
   /** Descriptor of ErgoScript type Byte. */
   val Byte = new Type(RType.ByteType)

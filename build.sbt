@@ -244,7 +244,7 @@ lazy val interpreterJS = interpreter.js
     .settings(
       scalaJSLinkerConfig ~= { conf =>
         conf.withSourceMap(false)
-          .withModuleKind(ModuleKind.CommonJSModule)
+//          .withModuleKind(ModuleKind.CommonJSModule)
       },
 
       //      scalaJSUseMainModuleInitializer := true,

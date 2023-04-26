@@ -7,7 +7,7 @@ import sigmastate.serialization.ErgoTreeSerializer
 import scala.scalajs.js
 import scala.scalajs.js.annotation.{JSExport, JSExportTopLevel}
 
-@JSExportTopLevel("ErgoTree", moduleID = "ergotree")
+@JSExportTopLevel("ErgoTree")
 class ErgoTree(tree: Values.ErgoTree) extends js.Object {
   def toBytes(): Array[Byte] = {
     val bytes = ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(tree)
@@ -18,7 +18,7 @@ class ErgoTree(tree: Values.ErgoTree) extends js.Object {
   }
 }
 
-@JSExportTopLevel("ErgoTrees", moduleID = "ergotree")
+@JSExportTopLevel("ErgoTrees")
 object ErgoTree extends js.Object {
 
   def fromHex(hex: String): ErgoTree = {

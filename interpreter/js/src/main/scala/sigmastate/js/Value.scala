@@ -34,7 +34,7 @@ import scala.scalajs.js.annotation.JSExportTopLevel
   * @param data JS value wrapped in this value
   * @param tpe  type descriptor of the ErgoScript type
   */
-@JSExportTopLevel("Value", moduleID = "core")
+@JSExportTopLevel("Value")
 class Value(val data: Any, val tpe: Type) extends js.Object {
 
   /** Get Sigma runtime value which can be passed to interpreter, saved in register and
@@ -64,7 +64,7 @@ class Value(val data: Any, val tpe: Type) extends js.Object {
   }
 }
 
-@JSExportTopLevel("Values", moduleID = "core")
+@JSExportTopLevel("Values")
 object Value extends js.Object {
   /** Maximal positive value of ES type Long */
   val MaxLong = js.BigInt("0x7fffffffffffffff")
