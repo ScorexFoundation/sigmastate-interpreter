@@ -43,4 +43,23 @@ object Platform {
 //    }
     cls
   }
+
+  /** A thread-safe cache class that stores key-value pairs.
+    *
+    * @tparam K the type of keys used in the cache
+    * @tparam V the type of values stored in the cache
+    */
+  class Cache[K, V] {
+    /** A concurrent TrieMap for storing key-value pairs. */
+    private val map: TrieMap[K, V] = TrieMap.empty[K, V]
+
+    /** Retrieves the value associated with the given key from the cache or
+      * computes and stores the value if the key is not present in the cache.
+      *
+      * @param key   the key to look up or store in the cache
+      * @param value a by-name parameter that computes the value to be stored if the key is not present
+      * @return the value associated with the key, either retrieved or computed
+      */
+    def getOrElseUpdate(key: K, value: => V): V = map.getOrElseUpdate(key, value)
+  }
 }
