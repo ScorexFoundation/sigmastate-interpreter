@@ -25,14 +25,14 @@ object Platform {
     res.asInstanceOf[RClass[T]]
   }
 
-  /** A cache that stores key-value pairs using a synchronized HashMap.
+  /** A cache that stores key-value pairs using HashMap.
+    * This class is thread-safe using the synchronized access to the underlying HashMap
+    * instance.
     *
     * @tparam K the type of keys used in the cache
     * @tparam V the type of values stored in the cache
     */
   class Cache[K, V] {
-
-    /** key-value pairs. */
     private val map = mutable.HashMap.empty[K, V]
 
     /** Retrieves the value associated with the given key from the cache or

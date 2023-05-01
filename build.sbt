@@ -244,10 +244,7 @@ lazy val interpreterJS = interpreter.js
     .settings(
       scalaJSLinkerConfig ~= { conf =>
         conf.withSourceMap(false)
-//          .withModuleKind(ModuleKind.CommonJSModule)
       },
-
-      //      scalaJSUseMainModuleInitializer := true,
       Compile / npmDependencies ++= Seq(
         "sigmajs-crypto-facade" -> "0.0.3"
       )

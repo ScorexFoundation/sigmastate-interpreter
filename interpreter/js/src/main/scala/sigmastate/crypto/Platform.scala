@@ -61,8 +61,8 @@ object Platform {
   def negatePoint(p: Ecp): Ecp = new Ecp(CryptoFacadeJs.negatePoint(p.point))
 
   class Curve
-  class ECPoint
-  class ECFieldElement
+//  class ECPoint
+//  class ECFieldElement
 
   // TODO JS: Use JS library for secure source of randomness
   type SecureRandom = Random
