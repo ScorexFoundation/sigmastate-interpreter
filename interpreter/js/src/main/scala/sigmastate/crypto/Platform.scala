@@ -12,8 +12,14 @@ import scala.scalajs.js.UnicodeNormalizationForm
 import scala.scalajs.js.typedarray.Uint8Array
 import scala.util.Random
 
-/** JVM specific implementation of crypto methods*/
+/** JVM specific implementation of crypto methods (NOT yet implemented). */
 object Platform {
+  /** Description of elliptic curve of point `p` which belongs to the curve.
+    *
+    * @param p the elliptic curve point
+    */
+  def getCurve(p: Ecp): Curve = ???
+
   def getXCoord(p: Ecp): ECFieldElem = new ECFieldElem(CryptoFacadeJs.getXCoord(p.point))
   def getYCoord(p: Ecp): ECFieldElem = new ECFieldElem(CryptoFacadeJs.getYCoord(p.point))
   def getAffineXCoord(p: Ecp): ECFieldElem = new ECFieldElem(CryptoFacadeJs.getAffineXCoord(p.point))
@@ -31,9 +37,18 @@ object Platform {
     jsShorts.toArray[Short].map(x => x.toByte)
   }
 
-  def getEncodedOfFieldElem(p: ECFieldElem): Array[Byte] = {
+  def encodeFieldElem(p: ECFieldElem): Array[Byte] = {
     Uint8ArrayToBytes(CryptoFacadeJs.getEncodedOfFieldElem(p.elem))
   }
+
+  /** Byte representation of the given point.
+    *
+    * @param p point to encode
+    * @param compressed if true, generates a compressed point encoding
+    */
+  def encodePoint(p: Ecp, compressed: Boolean): Array[Byte] = ???
+
+  def signOf(p: ECFieldElem): Boolean = CryptoFacadeJs.testBitZeroOfFieldElem(p.elem)
 
   def getEncodedPoint(p: Ecp, compressed: Boolean): Array[Byte] = ???
 
@@ -53,6 +68,13 @@ object Platform {
   def isInfinityPoint(p: Ecp): Boolean = CryptoFacadeJs.isInfinityPoint(p.point)
 
   def negatePoint(p: Ecp): Ecp = new Ecp(CryptoFacadeJs.negatePoint(p.point))
+
+  class Curve
+//  class ECPoint
+//  class ECFieldElement
+
+  // TODO JS: Use JS library for secure source of randomness
+  type SecureRandom = Random
 
   /** Opaque point type. */
   @js.native
@@ -96,25 +118,29 @@ object Platform {
   def createContext(): CryptoContext = new CryptoContext {
     val ctx = new CryptoContextJs
 
-    override def getModulus: BigInteger = Convert.bigIntToBigInteger(ctx.getModulus())
+    /** The underlying elliptic curve descriptor. */
+    override def curve: crypto.Curve = ???
 
-    override def getOrder: BigInteger = Convert.bigIntToBigInteger(ctx.getOrder())
+    override def fieldCharacteristic: BigInteger = Convert.bigIntToBigInteger(ctx.getModulus())
+
+    override def order: BigInteger = Convert.bigIntToBigInteger(ctx.getOrder())
 
     override def validatePoint(x: BigInteger, y: BigInteger): crypto.Ecp = {
       val point = ctx.validatePoint(Convert.bigIntegerToBigInt(x), Convert.bigIntegerToBigInt(y))
       new Ecp(point)
     }
 
-    override def getInfinity(): crypto.Ecp =
+    override def infinity(): crypto.Ecp =
       new Ecp(ctx.getInfinity())
 
     override def decodePoint(encoded: Array[Byte]): crypto.Ecp =
       new Ecp(ctx.decodePoint(Base16.encode(encoded)))
 
-    override def getGenerator: crypto.Ecp =
+    override def generator: crypto.Ecp =
       new Ecp(ctx.getGenerator())
   }
 
+  /** Create JS specific source of secure randomness. */
   def createSecureRandom(): Random = new Random()
 
   def hashHmacSHA512(key: Array[Byte], data: Array[Byte]): Array[Byte] = {

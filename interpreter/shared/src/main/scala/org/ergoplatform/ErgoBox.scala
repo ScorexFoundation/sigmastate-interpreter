@@ -116,14 +116,22 @@ object ErgoBox {
 
   type Amount = Long
 
-  trait RegisterId {
+  /** Represents id of a [[ErgoBox]] register. */
+  sealed trait RegisterId {
+    /** Zero-based register index in [0, 9] range. */
     val number: Byte
+
+    /** Returns zero-based register index in [0, 9] range. */
     def asIndex: Int = number.toInt
+
     override def toString: String = "R" + number
   }
 
-  abstract class MandatoryRegisterId(override val number: Byte, val purpose: String) extends RegisterId
-  abstract class NonMandatoryRegisterId(override val number: Byte) extends RegisterId
+  /** Represents id of pre-defined mandatory registers of a box. */
+  sealed abstract class MandatoryRegisterId(override val number: Byte, val purpose: String) extends RegisterId
+
+  /** Represents id of optional registers of a box. */
+  sealed abstract class NonMandatoryRegisterId(override val number: Byte) extends RegisterId
 
   type AdditionalRegisters = Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]]
 

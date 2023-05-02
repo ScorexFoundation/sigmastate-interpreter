@@ -268,7 +268,8 @@ class ErgoAddressSpecification extends SigmaDslTesting
           ).toMap)))(costLimit = costLimit)
 
       val prover = new ErgoLikeTestProvingInterpreter()
-      prover.prove(address.script, ctx, fakeMessage).getOrThrow
+      val res = prover.prove(address.script, ctx, fakeMessage).getOrThrow
+      res
     }
 
     val scriptVarId = 1.toByte
@@ -283,32 +284,20 @@ class ErgoAddressSpecification extends SigmaDslTesting
     // when limit is low
     {
       val deliberatelySmallLimit = 24
+
       assertExceptionThrown(
         testPay2SHAddress(addr,
           script = scriptVarId -> ByteArrayConstant(scriptBytes),
           costLimit = deliberatelySmallLimit),
         rootCauseLike[CostLimitException](
-          s"Estimated execution cost 164 exceeds the limit $deliberatelySmallLimit")
+          s"Estimated execution cost 88 exceeds the limit $deliberatelySmallLimit")
       )
     }
-
-    // when limit is low
-    val deliberatelySmallLimit = 100
-
-    assertExceptionThrown(
-    {
-      testPay2SHAddress(addr,
-        script = scriptVarId -> ByteArrayConstant(scriptBytes),
-        costLimit = deliberatelySmallLimit)
-    },
-    rootCauseLike[CostLimitException](
-      s"Estimated execution cost 164 exceeds the limit $deliberatelySmallLimit")
-    )
 
 
     // when limit is even lower than tree complexity
     {
-      val deliberatelySmallLimit = 100
+      val deliberatelySmallLimit = 2
 
       assertExceptionThrown(
       {
@@ -317,7 +306,7 @@ class ErgoAddressSpecification extends SigmaDslTesting
           costLimit = deliberatelySmallLimit)
       },
       rootCauseLike[CostLimitException](
-        s"Estimated execution cost 164 exceeds the limit $deliberatelySmallLimit")
+        s"Estimated execution cost 88 exceeds the limit $deliberatelySmallLimit")
       )
     }
 

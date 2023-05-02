@@ -11,7 +11,7 @@ object MeasureIRContext extends App {
   measure(10000, false) { i =>
     ctx = new RuntimeIRContext
   }
-  println(s"Def count: ${ctx.defCount}")
+  print(s"Def count: ${ctx.defCount}")
   /*
   Total time: 2485 ms
   Total time: 2714 ms

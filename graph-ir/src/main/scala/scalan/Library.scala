@@ -95,9 +95,6 @@ trait Library extends Scalan
       }
     }
 
-    // Rule: opt.fold(None, x => Some(x)) ==> opt
-//    case WOptionM.fold(opt, Def(ThunkDef(SPCM.none(_), _)), Def(Lambda(_, _, x, SPCM.some(y)))) if x == y => opt
-
     case WOptionM.getOrElse(opt, _) => opt.node match {
       // Rule: Some(x).getOrElse(_) ==> x
       case SPCM.some(x) => x
