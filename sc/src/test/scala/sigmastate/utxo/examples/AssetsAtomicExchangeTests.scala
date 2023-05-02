@@ -2,7 +2,7 @@ package sigmastate.utxo.examples
 
 import org.ergoplatform.{Height, Outputs, ErgoBox, Self}
 import org.ergoplatform.ErgoBox.R4
-import sigmastate.helpers.SigmaTestingCommons
+import sigmastate.helpers.CompilerTestingCommons
 import org.ergoplatform.dsl.ContractSyntax.Token
 import org.ergoplatform.dsl.TestContractSpec
 import scorex.crypto.hash.Blake2b256
@@ -37,7 +37,7 @@ import special.collection.Coll
   *
   * //todo: make an example of multiple orders being matched
   */
-class AssetsAtomicExchangeTests extends SigmaTestingCommons { suite =>
+class AssetsAtomicExchangeTests extends CompilerTestingCommons { suite =>
   lazy val spec = TestContractSpec(suite)(new TestingIRContext)
   private lazy val tokenId: Coll[Byte] = spec.Coll(Blake2b256("token1"))
   lazy val buyer = spec.ProvingParty("Alice")

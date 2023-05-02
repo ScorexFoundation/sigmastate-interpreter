@@ -13,7 +13,7 @@ import sigmastate._
 import sigmastate.basics.CryptoConstants
 import sigmastate.eval._
 import sigmastate.helpers.TestingHelpers._
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestProvingInterpreter, CompilerTestingCommons}
 import sigmastate.interpreter.Interpreter.ScriptNameProp
 import sigmastate.interpreter.Interpreter
 import sigmastate.lang.Terms._
@@ -232,8 +232,8 @@ by miners via storage rent mechanism, potentially for decades or even centuries.
 reasonable to have an additional input from the project with the value equal to the value of the fee output. And so on.
   */
 
-class IcoExample extends SigmaTestingCommons
-  with CrossVersionProps with BeforeAndAfterAll { suite =>
+class IcoExample extends CompilerTestingCommons
+  with CompilerCrossVersionProps with BeforeAndAfterAll { suite =>
 
   // Not mixed with TestContext since it is not possible to call commpiler.compile outside tests if mixed
   implicit lazy val IR: IRContext = new IRContext {}
@@ -242,7 +242,7 @@ class IcoExample extends SigmaTestingCommons
   lazy val project = new ErgoLikeTestProvingInterpreter()
 
   private val miningRewardsDelay = 720
-  private val feeProp = ErgoScriptPredef.feeProposition(miningRewardsDelay) // create ErgoTree v0
+  private val feeProp = ErgoTreePredef.feeProposition(miningRewardsDelay) // create ErgoTree v0
   private val feeBytes = feeProp.bytes
 
   val env = Map(

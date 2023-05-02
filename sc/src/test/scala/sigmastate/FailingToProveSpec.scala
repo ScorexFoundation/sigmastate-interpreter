@@ -1,13 +1,13 @@
 package sigmastate
 
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, CompilerTestingCommons}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.lang.Terms._
 import org.scalatest.TryValues._
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 
-class FailingToProveSpec extends SigmaTestingCommons
-  with CrossVersionProps {
+class FailingToProveSpec extends CompilerTestingCommons
+  with CompilerCrossVersionProps {
   implicit lazy val IR = new TestingIRContext
   /**
     * Both properties should work fine.

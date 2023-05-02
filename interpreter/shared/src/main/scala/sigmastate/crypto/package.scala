@@ -9,4 +9,7 @@ package object crypto {
 
   /** Instance of Elliptic Curve field element. */
   type ECFieldElem = Platform.ECFieldElem
+
+  /** A cryptographically strong random number generator. */
+  type SecureRandom = Platform.SecureRandom
 }

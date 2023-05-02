@@ -1,29 +1,28 @@
 package sigmastate.utxo.examples
 
-import java.security.SecureRandom
-
 import scorex.utils.Longs
 import org.ergoplatform.ErgoBox.RegisterId
-import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup}
-import scorex.crypto.authds.{ADKey, ADValue}
+import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Lookup, Insert}
+import scorex.crypto.authds.{ADValue, ADKey}
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.eval._
 import sigmastate.lang.Terms._
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ErgoLikeTestInterpreter, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, CompilerTestingCommons}
 import sigmastate.helpers.TestingHelpers._
 import org.ergoplatform._
-import org.ergoplatform.dsl.{ContractSpec, SigmaContractSyntax, StdContracts, TestContractSpec}
+import org.ergoplatform.dsl.{StdContracts, ContractSpec, TestContractSpec, SigmaContractSyntax}
 import sigmastate.basics.CryptoConstants
-import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
+import sigmastate.crypto.CryptoFacade
+import sigmastate.interpreter.Interpreter.{emptyEnv, ScriptNameProp}
 import sigmastate.utxo._
 import special.sigma.Context
 import sigmastate.utils.Helpers._
 
-class OracleExamplesSpecification extends SigmaTestingCommons
-  with CrossVersionProps { suite =>
+class OracleExamplesSpecification extends CompilerTestingCommons
+  with CompilerCrossVersionProps { suite =>
   implicit lazy val IR: TestingIRContext = new TestingIRContext
 
   private val reg1 = ErgoBox.nonMandatoryRegisters(0)
@@ -89,7 +88,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons
 
     val temperature: Long = 18
 
-    val r = BigInt.apply(128, new SecureRandom()) //128 bits random number
+    val r = BigInt.apply(128, CryptoFacade.createSecureRandom()) //128 bits random number
     val a = group.exponentiate(group.generator, r.bigInteger)
 
     val ts = System.currentTimeMillis()

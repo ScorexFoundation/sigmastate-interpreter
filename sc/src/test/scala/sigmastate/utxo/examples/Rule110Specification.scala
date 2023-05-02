@@ -6,7 +6,7 @@ import scorex.util._
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.eval._
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, SigmaTestingCommons, ErgoLikeTestInterpreter}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, CompilerTestingCommons, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.ContextExtension
 import sigmastate.lang.Terms._
@@ -18,8 +18,8 @@ import sigmastate.utxo.blockchain.BlockchainSimulationTestingCommons._
   * Wolfram's Rule110 implementations
   *
   */
-class Rule110Specification extends SigmaTestingCommons
-  with CrossVersionProps {
+class Rule110Specification extends CompilerTestingCommons
+  with CompilerCrossVersionProps {
   implicit lazy val IR = new TestingIRContext
   private val reg1 = ErgoBox.nonMandatoryRegisters.head
   private val reg2 = ErgoBox.nonMandatoryRegisters(1)

@@ -5,12 +5,12 @@ import org.scalacheck.Gen
 import sigmastate.Values.IntConstant
 import sigmastate._
 import sigmastate.lang.Terms._
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, ErgoLikeTransactionTesting, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, ErgoLikeTransactionTesting, CompilerTestingCommons}
 
 import scala.util.Random
 
-class ComplexSigSpecification extends SigmaTestingCommons
-  with CrossVersionProps {
+class ComplexSigSpecification extends CompilerTestingCommons
+  with CompilerCrossVersionProps {
   implicit lazy val IR: TestingIRContext = new TestingIRContext
 
   private def proverGen: Gen[ContextEnrichingTestProvingInterpreter] = for {

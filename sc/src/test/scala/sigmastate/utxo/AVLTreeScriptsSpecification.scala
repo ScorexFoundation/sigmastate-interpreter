@@ -12,7 +12,7 @@ import sigmastate._
 import sigmastate.eval.{CSigmaProp, IRContext}
 import sigmastate.eval._
 import sigmastate.eval.Extensions._
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, CompilerTestingCommons}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter.ScriptNameProp
 import sigmastate.interpreter.ProverResult
@@ -21,8 +21,8 @@ import special.collection.Coll
 import special.sigma.{AvlTree, Context}
 
 
-class AVLTreeScriptsSpecification extends SigmaTestingCommons
-  with CrossVersionProps { suite =>
+class AVLTreeScriptsSpecification extends CompilerTestingCommons
+  with CompilerCrossVersionProps { suite =>
   import org.ergoplatform.dsl.AvlTreeHelpers._
   lazy val spec = TestContractSpec(suite)(new TestingIRContext)
   lazy val prover = spec.ProvingParty("Alice")

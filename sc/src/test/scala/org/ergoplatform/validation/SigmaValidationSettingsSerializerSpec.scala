@@ -1,10 +1,10 @@
 package org.ergoplatform.validation
 
 import org.scalatest.Assertion
-import sigmastate.helpers.SigmaTestingCommons
+import sigmastate.helpers.CompilerTestingCommons
 import sigmastate.serialization.SerializationSpecification
 
-class SigmaValidationSettingsSerializerSpec extends SerializationSpecification with SigmaTestingCommons {
+class SigmaValidationSettingsSerializerSpec extends SerializationSpecification with CompilerTestingCommons {
 
   private def roundtrip(settings: SigmaValidationSettings): Assertion = {
     implicit val set = SigmaValidationSettingsSerializer

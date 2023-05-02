@@ -1,5 +1,7 @@
 package scalan.reflection
 
+import scala.collection.mutable
+
 /** JS Platform dependent implementation of reflection methods. */
 object Platform {
   /** Returns an RClass instance for the given class.
@@ -21,5 +23,28 @@ object Platform {
       //        memoize(classes)(clazz, new JRClass[T](clazz))
     }
     res.asInstanceOf[RClass[T]]
+  }
+
+  /** A cache that stores key-value pairs using HashMap.
+    * This class is thread-safe using the synchronized access to the underlying HashMap
+    * instance.
+    *
+    * @tparam K the type of keys used in the cache
+    * @tparam V the type of values stored in the cache
+    */
+  class Cache[K, V] {
+    private val map = mutable.HashMap.empty[K, V]
+
+    /** Retrieves the value associated with the given key from the cache or
+      * computes and stores the value if the key is not present in the cache.
+      * This method is thread-safe using the synchronized block.
+      *
+      * @param key the key to look up or store in the cache
+      * @param value a by-name parameter that computes the value to be stored if the key is not present
+      * @return the value associated with the key, either retrieved or computed
+      */
+    def getOrElseUpdate(key: K, value: => V): V = synchronized {
+      map.getOrElseUpdate(key, value)
+    }
   }
 }

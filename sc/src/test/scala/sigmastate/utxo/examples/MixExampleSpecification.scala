@@ -4,18 +4,19 @@ import java.math.BigInteger
 
 import org.ergoplatform.ErgoBox.{R4, R5}
 import scorex.crypto.hash.Blake2b256
-import sigmastate.{AvlTreeData, CrossVersionProps}
+import sigmastate.{AvlTreeData, CompilerCrossVersionProps}
 import sigmastate.Values.GroupElementConstant
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.{DiffieHellmanTupleProverInput, ProveDHTuple, CryptoConstants}
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, SigmaTestingCommons, ErgoLikeTestInterpreter}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, CompilerTestingCommons, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter._
 import sigmastate.lang.Terms._
 import sigmastate.eval._
+import sigmastate.eval.Extensions._
 
-class MixExampleSpecification extends SigmaTestingCommons
-  with CrossVersionProps {
+class MixExampleSpecification extends CompilerTestingCommons
+  with CompilerCrossVersionProps {
   private implicit lazy val IR: TestingIRContext = new TestingIRContext
 
   property("Evaluation - Mix Example") {
@@ -40,8 +41,8 @@ class MixExampleSpecification extends SigmaTestingCommons
 
     val fullMixEnv = Map(
       ScriptNameProp -> "fullMixEnv",
-      "g" -> g,
-      "gX" -> gX
+      "g" -> g.toGroupElement,
+      "gX" -> gX.toGroupElement
     )
 
     ProveDlog(gX) shouldBe alicePubKey
@@ -59,8 +60,8 @@ class MixExampleSpecification extends SigmaTestingCommons
 
     val halfMixEnv = Map(
       ScriptNameProp -> "halfMixEnv",
-      "g" -> g,
-      "gX" -> gX,
+      "g" -> g.toGroupElement,
+      "gX" -> gX.toGroupElement,
       "fullMixScriptHash" -> Blake2b256(fullMixScript.bytes)
     )
 

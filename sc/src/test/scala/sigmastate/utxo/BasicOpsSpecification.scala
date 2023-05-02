@@ -8,7 +8,7 @@ import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.eval.Extensions._
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, CompilerTestingCommons}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter._
 import sigmastate.lang.Terms._
@@ -21,8 +21,8 @@ import sigmastate.interpreter.EvalSettings
 import sigmastate.utils.Helpers._
 import scalan.util.StringUtil._
 
-class BasicOpsSpecification extends SigmaTestingCommons
-  with CrossVersionProps {
+class BasicOpsSpecification extends CompilerTestingCommons
+  with CompilerCrossVersionProps {
   override val printVersions: Boolean = false
   implicit lazy val IR = new TestingIRContext {
   }

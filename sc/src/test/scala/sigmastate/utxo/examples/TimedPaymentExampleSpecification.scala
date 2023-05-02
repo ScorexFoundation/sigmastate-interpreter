@@ -4,13 +4,13 @@ import org.ergoplatform._
 import sigmastate.Values.IntConstant
 import sigmastate._
 import sigmastate.exceptions.InterpreterException
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, SigmaTestingCommons, ErgoLikeTestInterpreter}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, CompilerTestingCommons, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter.ScriptNameProp
 import sigmastate.lang.Terms._
 
-class TimedPaymentExampleSpecification extends SigmaTestingCommons
-  with CrossVersionProps {
+class TimedPaymentExampleSpecification extends CompilerTestingCommons
+  with CompilerCrossVersionProps {
   private implicit lazy val IR: TestingIRContext = new TestingIRContext
 
   import ErgoAddressEncoder._

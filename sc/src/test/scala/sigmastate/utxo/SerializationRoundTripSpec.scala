@@ -2,7 +2,7 @@ package sigmastate.utxo
 
 import org.ergoplatform._
 import scalan.util.BenchmarkUtil
-import sigmastate.helpers.SigmaTestingCommons
+import sigmastate.helpers.CompilerTestingCommons
 import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigmastate.serialization.generators.ObjectGenerators
 import debox.{Buffer => DBuffer}
@@ -15,7 +15,7 @@ class SerializationRoundTripSpec extends AnyPropSpec
   with ScalaCheckDrivenPropertyChecks
   with Matchers
   with ObjectGenerators
-  with SigmaTestingCommons {
+  with CompilerTestingCommons {
 
   case class Run(size: Int, time: Long)
 

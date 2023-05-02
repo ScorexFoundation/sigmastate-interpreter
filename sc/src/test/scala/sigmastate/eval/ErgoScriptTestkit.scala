@@ -4,14 +4,14 @@ import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
 import org.ergoplatform.validation.ValidationSpecification
 
 import scala.util.Success
-import sigmastate.{AvlTreeData, SType, TestsBase, VersionContext}
-import sigmastate.Values.{BigIntArrayConstant, EvaluatedValue, SValue, SigmaPropConstant, Value}
+import sigmastate.{VersionContext, CompilerTestsBase, SType, TestsBase, AvlTreeData}
+import sigmastate.Values.{EvaluatedValue, SValue, SigmaPropConstant, Value, BigIntArrayConstant}
 import org.ergoplatform.{Context => _, _}
 import scalan.BaseCtxTests
-import sigmastate.lang.{CompilerResult, CompilerSettings, LangTests, SigmaCompiler}
+import sigmastate.lang.{LangTests, CompilerResult, CompilerSettings, SigmaCompiler}
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting}
 import sigmastate.helpers.TestingHelpers._
-import sigmastate.interpreter.{ContextExtension, ErgoTreeEvaluator}
+import sigmastate.interpreter.{ErgoTreeEvaluator, ContextExtension}
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.Terms.ValueOps
 import special.sigma.{ContractsTestkit, Context => DContext}
@@ -20,7 +20,7 @@ import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import scala.language.implicitConversions
 
 trait ErgoScriptTestkit extends ContractsTestkit with LangTests
-    with ValidationSpecification with TestsBase { self: BaseCtxTests =>
+    with ValidationSpecification with CompilerTestsBase { self: BaseCtxTests =>
 
   implicit lazy val IR: TestContext with IRContext =
     new TestContext with IRContext

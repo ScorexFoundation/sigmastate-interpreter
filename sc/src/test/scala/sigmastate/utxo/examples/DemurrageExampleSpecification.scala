@@ -4,13 +4,13 @@ import sigmastate.interpreter.Interpreter._
 import org.ergoplatform._
 import sigmastate.Values.ShortConstant
 import sigmastate._
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, CompilerTestingCommons}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.ContextExtension
 import sigmastate.lang.Terms._
 
-class DemurrageExampleSpecification extends SigmaTestingCommons
-  with CrossVersionProps {
+class DemurrageExampleSpecification extends CompilerTestingCommons
+  with CompilerCrossVersionProps {
   override val printVersions: Boolean = true
   implicit lazy val IR = new TestingIRContext
 

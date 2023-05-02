@@ -11,7 +11,7 @@
 package sigmastate.kiama
 package rewriting
 
-import scalan.reflection.{RClass, RConstructor}
+import scalan.reflection.{Platform, RClass, RConstructor}
 
 import scala.collection.concurrent.TrieMap
 
@@ -243,8 +243,7 @@ trait Rewriter {
           // are trying to duplicate one of these then we want to return the same
           // singleton so we use an identity duper.
           clazz.getField("MODULE$")
-          (t : Any, children : Array[AnyRef]) =>
-            t
+          (t : Any, children : Array[AnyRef]) => t
         } catch {
           // Otherwise, this is a normal class, so we try to make a
           // duper that uses the first constructor.
@@ -296,19 +295,11 @@ trait Rewriter {
     }
 
     /** All memoized duppers. */
-    private val dupers = TrieMap.empty[RClass[_], Duper]
+    private val dupers = new Platform.Cache[RClass[_], Duper]
 
-    /** Obtains a duper for the given class lazily. and memoize it in the `cache` map.
-      * This is the simplest solution, but not the most efficient for concurrent access.
-      */
-    def getDuper(clazz: RClass[_]): Duper = synchronized { // TODO optimize: avoid global sync (if this really is a bottleneck)
-      val duper = dupers.get(clazz) match {
-        case Some(d) => d
-        case None =>
-          val d = MakeDuper(clazz)
-          dupers.put(clazz, d)
-          d
-      }
+    /** Obtains a duper for the given class and memoizes it in the `dupers` cache. */
+    def getDuper(clazz: RClass[_]): Duper = {
+      val duper = dupers.getOrElseUpdate(clazz, MakeDuper(clazz))
       duper
     }
 

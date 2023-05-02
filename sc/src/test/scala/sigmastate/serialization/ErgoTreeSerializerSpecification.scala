@@ -8,12 +8,12 @@ import sigmastate.Values.{BigIntConstant, ByteConstant, ConstantPlaceholder, Erg
 import sigmastate._
 import sigmastate.eval.{CBigInt, IRContext}
 import sigmastate.exceptions.{SerializerException, ReaderPositionLimitExceeded}
-import sigmastate.helpers.SigmaTestingCommons
+import sigmastate.helpers.CompilerTestingCommons
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.utxo.{DeserializeContext, DeserializeRegister}
 
 class ErgoTreeSerializerSpecification extends SerializationSpecification
-  with SigmaTestingCommons with CrossVersionProps {
+  with CompilerTestingCommons with CompilerCrossVersionProps {
 
   implicit lazy val IR: TestingIRContext = new TestingIRContext {
     beginPass(noConstPropagationPass)

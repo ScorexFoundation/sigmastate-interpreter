@@ -97,6 +97,11 @@ object Extensions {
     }
   }
 
+  implicit class EcpOps(val source: Ecp) extends AnyVal {
+    /** Extracts [[GroupElement]] from the Ecp instance. */
+    def toGroupElement: GroupElement = SigmaDsl.GroupElement(source)
+  }
+
   implicit class GroupElementOps(val source: GroupElement) extends AnyVal {
     /** Shortened String representation of `source` GroupElement. */
     def showToString: String = showECPoint(source.asInstanceOf[CGroupElement].wrappedValue)

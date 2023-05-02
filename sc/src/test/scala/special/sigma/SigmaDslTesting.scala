@@ -22,8 +22,8 @@ import sigmastate.basics.{SigmaProtocol, SigmaProtocolCommonInput, SigmaProtocol
 import sigmastate.eval.Extensions._
 import sigmastate.eval.{CompiletimeIRContext, CostingBox, CostingDataContext, Evaluation, IRContext, SigmaDsl}
 import sigmastate.helpers.TestingHelpers._
-import sigmastate.helpers.{ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaPPrint}
-import sigmastate.interpreter.Interpreter.{ScriptEnv, VerificationResult}
+import sigmastate.helpers.{ErgoLikeTestInterpreter, SigmaPPrint, ErgoLikeContextTesting, CompilerTestingCommons}
+import sigmastate.interpreter.Interpreter.{VerificationResult, ScriptEnv}
 import sigmastate.interpreter._
 import sigmastate.lang.Terms.{Apply, ValueOps}
 import sigmastate.serialization.ValueSerializer
@@ -45,7 +45,7 @@ import scala.util.{Failure, Success, Try}
 class SigmaDslTesting extends AnyPropSpec
     with ScalaCheckPropertyChecks
     with Matchers
-    with SigmaTestingData with SigmaContractSyntax
+    with SigmaTestingData with SigmaContractSyntax with CompilerTestingCommons
     with ObjectGenerators { suite =>
   override def Coll[T](items: T*)(implicit cT: RType[T]): Coll[T] = super.Coll(items:_*)
 

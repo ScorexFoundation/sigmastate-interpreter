@@ -7,7 +7,7 @@ import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, CompilerTestingCommons}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.lang.Terms._
 import sigmastate.interpreter.Interpreter._
@@ -26,8 +26,8 @@ import scala.util.Random
   * remain unrevealed, providing more privacy and saving space in a blockchain.
   * See more at https://bitcointechtalk.com/what-is-a-bitcoin-merklized-abstract-syntax-tree-mast-33fdf2da5e2f
   */
-class MASTExampleSpecification extends SigmaTestingCommons
-  with CrossVersionProps {
+class MASTExampleSpecification extends CompilerTestingCommons
+  with CompilerCrossVersionProps {
   implicit lazy val IR = new TestingIRContext
   private val reg1 = ErgoBox.nonMandatoryRegisters.head
 

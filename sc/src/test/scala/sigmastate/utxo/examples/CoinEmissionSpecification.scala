@@ -3,7 +3,7 @@ package sigmastate.utxo.examples
 import org.ergoplatform._
 import org.ergoplatform.settings.ErgoAlgos
 import sigmastate.Values.{BlockValue, ErgoTree, IntConstant, LongConstant, ValDef, ValUse}
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, SigmaPPrint, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, SigmaPPrint, CompilerTestingCommons}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.ContextExtension
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
@@ -20,8 +20,8 @@ import sigmastate.eval._
   * This script is corresponding to the whitepaper. Please note that Ergo has different contract
   * defined in ErgoScriptPredef.
   */
-class CoinEmissionSpecification extends SigmaTestingCommons
-  with CrossVersionProps {
+class CoinEmissionSpecification extends CompilerTestingCommons
+  with CompilerCrossVersionProps {
   // don't use TestingIRContext, this suite also serves the purpose of testing the RuntimeIRContext
   implicit lazy val IR: TestingIRContext = new TestingIRContext {
     // uncomment if you want to log script evaluation

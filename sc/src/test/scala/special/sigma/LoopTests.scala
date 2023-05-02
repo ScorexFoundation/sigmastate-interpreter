@@ -1,8 +1,8 @@
 package special.sigma
 
-import sigmastate.helpers.SigmaTestingCommons
+import sigmastate.helpers.CompilerTestingCommons
 
-class LoopTests extends SigmaTestingCommons { suite =>
+class LoopTests extends CompilerTestingCommons { suite =>
   implicit lazy val IR = new TestingIRContext
   import IR._
 

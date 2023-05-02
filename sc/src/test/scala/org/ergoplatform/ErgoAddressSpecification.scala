@@ -21,13 +21,13 @@ import sigmastate.lang.Terms.ValueOps
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.serialization.{GroupElementSerializer, ValueSerializer}
 import sigmastate.utils.Helpers._
-import sigmastate.{CrossVersionProps, SType, SigmaAnd}
+import sigmastate.{CompilerCrossVersionProps, SType, SigmaAnd}
 import special.sigma.SigmaDslTesting
 
 import java.math.BigInteger
 
 class ErgoAddressSpecification extends SigmaDslTesting
-  with TryValues with CrossVersionProps {
+  with TryValues with CompilerCrossVersionProps {
 
   private implicit val ergoAddressEncoder: ErgoAddressEncoder =
     new ErgoAddressEncoder(TestnetNetworkPrefix)
