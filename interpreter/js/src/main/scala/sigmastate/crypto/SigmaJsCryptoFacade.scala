@@ -106,6 +106,12 @@ object CryptoFacadeJs extends js.Object {
     * @return The affine y-coordinate of this point
     */
   def getAffineYCoord(point: Platform.Point): js.BigInt = js.native
+
+  def hashHmacSHA512(key: Uint8Array, data: Uint8Array): Uint8Array = js.native
+
+  def generatePbkdf2Key(
+      normalizedMnemonic: String,
+      normalizedPass: String): Uint8Array = js.native
 }
 
 /** Represents imported Point class from `sigmajs-crypto-facade` JS libarary. */
