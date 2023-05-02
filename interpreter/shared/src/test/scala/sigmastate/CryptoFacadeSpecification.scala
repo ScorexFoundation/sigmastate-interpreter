@@ -29,7 +29,7 @@ class CryptoFacadeSpecification extends AnyPropSpec with Matchers with ScalaChec
       ("chars", "keyHex"),
       ("slow silly start wash bundle suffer bulb ancient height spin express remind today effort helmet".toCharArray,
           "slow silly start wash bundle suffer bulb ancient height spin express remind today effort helmet"),
-      ("pwd".toCharArray, "pwd"),
+      ("pwd".toCharArray, "pwd")
     )
 
     forAll(cases) { (chars, expected) =>

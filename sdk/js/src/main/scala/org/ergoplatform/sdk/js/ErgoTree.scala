@@ -5,7 +5,7 @@ import sigmastate.Values
 import sigmastate.serialization.ErgoTreeSerializer
 
 import scala.scalajs.js
-import scala.scalajs.js.annotation.{JSExport, JSExportTopLevel}
+import scala.scalajs.js.annotation.{JSExportTopLevel}
 
 @JSExportTopLevel("ErgoTree")
 class ErgoTree(tree: Values.ErgoTree) extends js.Object {
