@@ -136,6 +136,12 @@ object Platform {
   /** Create JVM specific source of secure randomness. */
   def createSecureRandom(): SecureRandom = new SecureRandom()
 
+  /** Computes HMAC-SHA512 hash of the given data using the specified key.
+    *
+    * @param key  the secret key used for hashing
+    * @param data the input data to be hashed
+    * @return a HMAC-SHA512 hash of the input data
+    */
   def hashHmacSHA512(key: Array[Byte], data: Array[Byte]): Array[Byte] = HmacSHA512.hash(key, data)
 
   /** Seed generation using on bouncycastle implementation.

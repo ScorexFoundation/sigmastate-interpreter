@@ -30,7 +30,8 @@ import scala.collection.mutable
  * A class which holds secrets and can sign transactions (aka generate proofs).
  *
  * @param secretKeys secrets in extended form to be used by prover
- * @param dhtInputs  prover inputs containing secrets for generating proofs for ProveDHTuple nodes.
+ * @param dLogInputs  prover inputs containing secrets for generating proofs for [[ProveDlog]] nodes.
+ * @param dhtInputs  prover inputs containing secrets for generating proofs for [[ProveDHTuple]] nodes.
  * @param params     ergo blockchain parameters
  */
 class AppkitProvingInterpreter(
@@ -43,19 +44,32 @@ class AppkitProvingInterpreter(
   override type CTX = ErgoLikeContext
   import org.ergoplatform.sdk.Iso._
 
+  /** All secrets available to this interpreter including [[ExtendedSecretKey]], dlog and
+    * dht secrets.
+    */
   val secrets: Seq[SigmaProtocolPrivateInput[_, _]] = {
     val dlogs: IndexedSeq[DLogProverInput] = secretKeys.map(_.privateInput)
     dlogs ++ dLogInputs ++ dhtInputs
   }
 
+  /** Public keys corresponding to dlog secrets (aka publicImage). */
   val pubKeys: Seq[ProveDlog] = secrets
     .filter { case _: DLogProverInput => true case _ => false}
     .map(_.asInstanceOf[DLogProverInput].publicImage)
 
-  def addCostLimited(currentCost: Long, delta: Long, limit: Long, msg: => String): Long = {
+  /** Helper method to accumulate cost while checking limit.
+    *
+    * @param currentCost current cost value
+    * @param delta       additional cost to add to the current value
+    * @param limit       total cost limit
+    * @param msgSuffix   suffix added to the exception message
+    * @return new increased cost when it doesn't exceed the limit
+    * @throws Exception
+    */
+  def addCostLimited(currentCost: Long, delta: Long, limit: Long, msgSuffix: => String): Long = {
     val newCost = java7.compat.Math.addExact(currentCost, delta)
     if (newCost > limit)
-      throw new Exception(s"Cost of transaction $newCost exceeds limit $limit: $msg")
+      throw new Exception(s"Cost of transaction $newCost exceeds limit $limit: $msgSuffix")
     newCost
   }
 
@@ -80,7 +94,7 @@ class AppkitProvingInterpreter(
     var currentCost: Long = baseCost
 
     val (reducedTx, txCost) = reduceTransaction(unsignedTx, boxesToSpend, dataBoxes, stateContext, baseCost, tokensToBurn)
-    currentCost = addCostLimited(currentCost, txCost, maxCost, msg = reducedTx.toString())
+    currentCost = addCostLimited(currentCost, txCost, maxCost, msgSuffix = reducedTx.toString())
 
     val (signedTx, cost) = signReduced(reducedTx, currentCost.toInt)
     (signedTx, txCost + cost)
@@ -151,7 +165,7 @@ class AppkitProvingInterpreter(
       java7.compat.Math.multiplyExact(unsignedTx.outputCandidates.size, params.outputCost)
     )
     val maxCost = params.maxBlockCost
-    val startCost = addCostLimited(baseCost, initialCost, maxCost, msg = unsignedTx.toString())
+    val startCost = addCostLimited(baseCost, initialCost, maxCost, msgSuffix = unsignedTx.toString())
 
     val transactionContext = TransactionContext(boxesToSpend.map(_.box), dataBoxes, unsignedTx)
 
@@ -166,7 +180,7 @@ class AppkitProvingInterpreter(
 
     val txCost = addCostLimited(startCost,
       delta = totalAssetsAccessCost,
-      limit = maxCost, msg = s"when adding assets cost of $totalAssetsAccessCost")
+      limit = maxCost, msgSuffix = s"when adding assets cost of $totalAssetsAccessCost")
 
     var currentCost = txCost
     val reducedInputs = mutable.ArrayBuilder.make[ReducedInputData]
@@ -193,7 +207,7 @@ class AppkitProvingInterpreter(
       val reducedInput = reduce(Interpreter.emptyEnv, inputBox.box.ergoTree, context)
 
       currentCost = addCostLimited(currentCost,
-        reducedInput.reductionResult.cost, limit = maxCost, msg = inputBox.toString())
+        reducedInput.reductionResult.cost, limit = maxCost, msgSuffix = inputBox.toString())
 
       reducedInputs += reducedInput
     }
@@ -227,7 +241,7 @@ class AppkitProvingInterpreter(
       val proverResult = proveReduced(reducedInput, unsignedTx.messageToSign)
       val signedInput = Input(unsignedInput.boxId, proverResult)
 
-      currentCost = addCostLimited(currentCost, proverResult.cost, maxCost, msg = signedInput.toString())
+      currentCost = addCostLimited(currentCost, proverResult.cost, maxCost, msgSuffix = signedInput.toString())
 
       provedInputs += signedInput
     }

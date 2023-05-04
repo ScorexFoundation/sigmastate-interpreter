@@ -7,6 +7,7 @@ import java.math.BigInteger
   * Cross-platform code should use this facade instead of the Platform object directly.
   */
 object CryptoFacade {
+  /** Default encoding used for Strings. */
   val Encoding = "UTF-8"
 
   /** part of the protocol, do not change */
@@ -15,10 +16,10 @@ object CryptoFacade {
   /** Used as the key parameter of hashHmacSHA512 */
   val BitcoinSeed: Array[Byte] = "Bitcoin seed".getBytes(Encoding)
 
-  val Pbkdf2Algorithm = "PBKDF2WithHmacSHA512"
+  /** Number of iteration specified in BIP39 standard. */
+  val Pbkdf2Iterations = 2048
 
-  val Pbkdf2Iterations = 2048 // number of iteration specified in BIP39 standard.
-
+  /** The size of the key in bits. */
   val Pbkdf2KeyLength = 512
 
   /** Create a new context for cryptographic operations. */
@@ -114,8 +115,16 @@ object CryptoFacade {
   /** Create source of secure randomness. */
   def createSecureRandom(): SecureRandom = Platform.createSecureRandom()
 
+  /** Computes HMAC-SHA512 hash of the given data using the specified key.
+    *
+    * @param key  the secret key used for hashing
+    * @param data the input data to be hashed
+    * @return a HMAC-SHA512 hash of the input data
+    */
   def hashHmacSHA512(key: Array[Byte], data: Array[Byte]): Array[Byte] = Platform.hashHmacSHA512(key, data)
+
   def generatePbkdf2Key(normalizedMnemonic: String, normalizedPass: String): Array[Byte] = Platform.generatePbkdf2Key(normalizedMnemonic, normalizedPass)
+
   /** Normalize a sequence of char values using NFKD normalization form. */
   def normalizeChars(chars: Array[Char]): String = Platform.normalizeChars(chars)
 }

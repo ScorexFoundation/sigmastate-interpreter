@@ -107,6 +107,12 @@ object CryptoFacadeJs extends js.Object {
     */
   def getAffineYCoord(point: Platform.Point): js.BigInt = js.native
 
+  /** Computes HMAC-SHA512 hash of the given data using the specified key.
+    *
+    * @param key  the secret key used for hashing
+    * @param data the input data to be hashed
+    * @return a HMAC-SHA512 hash of the input data
+    */
   def hashHmacSHA512(key: Uint8Array, data: Uint8Array): Uint8Array = js.native
 
   def generatePbkdf2Key(

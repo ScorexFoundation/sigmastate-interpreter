@@ -46,6 +46,7 @@ import scala.util.{Success, Try}
   */
 trait Interpreter {
 
+  /** Type of context data used by this interpreter to access blockchain and transaction data. */
   type CTX <: InterpreterContext
 
   type ProofT = UncheckedTree

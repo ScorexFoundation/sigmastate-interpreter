@@ -1,19 +1,23 @@
 package org.ergoplatform.sdk.utils
 
+/** Utils used in Ergo node (moved here from ergo-wallet). */
 object ArithUtils {
 
-  /**
-    * Add longs, returning Long.Max value if there was any long overflow
+  /** Add longs, returning Long.Max value if there was any long overflow.
+    * This version of addExact is used in Ergo node.
     */
   @inline def addExact(a: Long, b: Long): Long = {
     val sum = a + b
     if (((a ^ sum) & (b ^ sum)) < 0) Long.MaxValue else sum
   }
 
+  /** Add longs, returning Long.Max value if there was any long overflow.
+    * This version of addExact is used in Ergo node.
+    */
   def addExact(a: Long, b: Long, c: Long*): Long = c.foldLeft(addExact(a,b))((x, y) => addExact(x, y))
 
-  /**
-    * Multiply longs, returning Long.Max value if there was any long overflow
+  /** Multiply longs, returning Long.Max value if there was any long overflow.
+    * This version of multiplyExact is used in Ergo node.
     */
   @inline def multiplyExact(e1: Long, e2: Long): Long = {
     try {
