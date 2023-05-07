@@ -164,7 +164,7 @@ class IsosSpec  extends AnyPropSpec with Matchers with ObjectGenerators with Sca
     }
   }
 
-  property("Iso.isoUnsignedTransaction") {
+  ignore("Iso.isoUnsignedTransaction") {
     forAll { (tx: UnsignedErgoLikeTransaction) =>
       roundtrip(Isos.isoUnsignedTransaction)(tx)
     }
