@@ -15,6 +15,7 @@ import sigmastate.eval.Extensions._
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.util.safeNewArray
 import debox.cfor
+import special.collection.Extensions.CollOps
 
 import scala.collection.{immutable, mutable}
 import scala.runtime.ScalaRunTime

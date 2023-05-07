@@ -101,4 +101,20 @@ object BigIntegers {
     * @return the resulting positive BigInteger
     */
   def fromUnsignedByteArray(buf: Array[Byte]) = new BigInteger(1, buf)
+
+  /**
+    * Return the passed in value as an unsigned byte array.
+    *
+    * @param value the value to be converted.
+    * @return a byte array without a leading zero byte if present in the signed encoding.
+    */
+  def asUnsignedByteArray(value: BigInteger): Array[Byte] = {
+    val bytes = value.toByteArray
+    if (bytes(0) == 0) {
+      val tmp = new Array[Byte](bytes.length - 1)
+      System.arraycopy(bytes, 1, tmp, 0, tmp.length)
+      return tmp
+    }
+    bytes
+  }
 }

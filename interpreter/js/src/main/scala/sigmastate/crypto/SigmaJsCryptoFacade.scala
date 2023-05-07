@@ -46,7 +46,7 @@ object CryptoFacadeJs extends js.Object {
   /** Creates a new context for cryptographic operations. */
   def createCryptoContext(): CryptoContextJs = js.native
 
-  /** Negates this point by negating the y coordinate. */
+  /** Negates the given point by negating its y coordinate. */
   def negatePoint(point: Platform.Point): Platform.Point = js.native
 
   /** Check if a point is infinity. */
@@ -65,7 +65,7 @@ object CryptoFacadeJs extends js.Object {
   /** Return simplified string representation of the point (used only for debugging) */
   def showPoint(point: Platform.Point): String = js.native
 
-  // TODO refactor: raname to signOf to be consistent with CryptoFacade.signOf
+  // TODO refactor: rename to signOf to be consistent with CryptoFacade.signOf
   /** Returns the sign of the field element. */
   def testBitZeroOfFieldElem(element: js.BigInt): Boolean = js.native
 
@@ -79,8 +79,6 @@ object CryptoFacadeJs extends js.Object {
     * affine coordinate system; use normalizePoint() to get a point where the coordinates have their
     * affine values, or use getAffineXCoord() if you expect the point to already have been
     * normalized.
-    *
-    * @return the x-coordinate of this point
     */
   def getXCoord(point: Platform.Point): js.BigInt = js.native
 
@@ -90,22 +88,27 @@ object CryptoFacadeJs extends js.Object {
     * affine coordinate system; use normalizePoint() to get a point where the coordinates have their
     * affine values, or use getAffineYCoord() if you expect the point to already have been
     * normalized.
-    *
-    * @return the y-coordinate of this point
     */
   def getYCoord(point: Platform.Point): js.BigInt = js.native
 
-  /** Returns the affine x-coordinate after checking that this point is normalized.
-    *
-    * @return The affine x-coordinate of this point
-    */
+  /** Returns the affine x-coordinate after checking that this point is normalized. */
   def getAffineXCoord(point: Platform.Point): js.BigInt = js.native
 
-  /** Returns the affine y-coordinate after checking that this point is normalized
-    *
-    * @return The affine y-coordinate of this point
-    */
+  /** Returns the affine y-coordinate after checking that this point is normalized. */
   def getAffineYCoord(point: Platform.Point): js.BigInt = js.native
+
+  /** Computes HMAC-SHA512 hash of the given data using the specified key.
+    *
+    * @param key  the secret key used for hashing
+    * @param data the input data to be hashed
+    * @return a HMAC-SHA512 hash of the input data
+    */
+  def hashHmacSHA512(key: Uint8Array, data: Uint8Array): Uint8Array = js.native
+
+  /** Generates PBKDF2 key from a mnemonic and passphrase. */
+  def generatePbkdf2Key(
+      normalizedMnemonic: String,
+      normalizedPass: String): Uint8Array = js.native
 }
 
 /** Represents imported Point class from `sigmajs-crypto-facade` JS libarary. */

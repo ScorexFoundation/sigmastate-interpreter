@@ -1,4 +1,4 @@
-package sigmastate.js
+package org.ergoplatform.sdk.js
 
 import scalan.RType
 

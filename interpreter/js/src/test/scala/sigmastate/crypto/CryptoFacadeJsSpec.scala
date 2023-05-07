@@ -7,7 +7,7 @@ import scorex.util.encode.Base16
 import scala.scalajs.js
 import scala.scalajs.js.typedarray.Uint8Array
 
-class CryptoFacadeSpec extends AnyPropSpec with Matchers with CryptoTesting {
+class CryptoFacadeJsSpec extends AnyPropSpec with Matchers with CryptoTesting {
   val p1 = Point.fromHex("0381c5275b1d50c39a0c36c4561c3a37bff1d87e37a9ad69eab029e426c0b1a8ac")
   val p2 = Point.fromHex("02198064ec24024bb8b300e20dd18e33cc1fccb0fea73940bd9a1d3d9d6c3ddd8f")
   val infinity = Point.ZERO
@@ -83,5 +83,19 @@ class CryptoFacadeSpec extends AnyPropSpec with Matchers with CryptoTesting {
   property("CryptoFacade should get affine coordinates") {
     CryptoFacadeJs.getAffineXCoord(p1) shouldBe p1.x
     CryptoFacadeJs.getAffineYCoord(p1) shouldBe p1.y
+  }
+
+  property("CryptoFacade.hashHmacSHA512") {
+    val key = Uint8Array.from(bytesToJsShorts(CryptoFacade.BitcoinSeed))
+    val data = Uint8Array.from(bytesToJsShorts("abc".getBytes(CryptoFacade.Encoding)))
+    val res = utils.bytesToHex(CryptoFacadeJs.hashHmacSHA512(key, data))
+    res shouldBe "2c15e87cde0f876fd8f060993748330cbe5f37c8bb3355e8ef44cea57890ec1d9b3274ef2b67bbe046cf8a012fba69796ec7803b1cc227521b9f5191e80a7da2"
+  }
+
+  property("CryptoFacade.generatePbkdf2Key") {
+    val mnemonic = "slow silly start wash bundle suffer bulb ancient height spin express remind today effort helmet"
+    val password = "pwd"
+    val res = utils.bytesToHex(CryptoFacadeJs.generatePbkdf2Key(mnemonic, password))
+    res shouldBe "0a8ea2ea0c4c12a9df88b005bda00c4de51ff36834b5fcd6a83667c371ad1da94bca1798690d87f2603b8f51d5ae025209e31f6cf81e12b84e4c543d236e58d0"
   }
 }

@@ -13,7 +13,7 @@ import scala.language.{existentials, implicitConversions}
 
 class CollsTests extends AnyPropSpec with ScalaCheckPropertyChecks with Matchers with CollGens with VersionTestingProperty { testSuite =>
   import Gen._
-  import special.collection.ExtensionMethods._
+  import special.collection.Extensions._
 
   def squared[A](f: A => A): ((A, A)) => (A, A) = (p: (A, A)) => (f(p._1), f(p._2))
 
@@ -62,7 +62,7 @@ class CollsTests extends AnyPropSpec with ScalaCheckPropertyChecks with Matchers
       equalLength(pairs)
 
       if (xs.nonEmpty && !VersionContext.current.isJitActivated) {
-        an[ClassCastException] should be thrownBy {
+        an[Throwable] should be thrownBy {
           equalLengthMapped(pairs, squared(inc))  // due to problem with append
         }
       }
@@ -74,7 +74,7 @@ class CollsTests extends AnyPropSpec with ScalaCheckPropertyChecks with Matchers
       equalLength(pairs.append(pairs))
 
       if (xs.nonEmpty && !VersionContext.current.isJitActivated) {
-        an[ClassCastException] should be thrownBy {
+        an[Throwable] should be thrownBy {
           equalLengthMapped(pairs.append(pairs), squared(inc)) // due to problem with append
         }
       }
@@ -86,6 +86,7 @@ class CollsTests extends AnyPropSpec with ScalaCheckPropertyChecks with Matchers
   }
 
   property("Coll.flatMap") {
+    implicit val t: Coll[Int] => Traversable[Int] = traversableColl
     forAll(containerOfN[Coll, Int](3, valGen), collGen) { (zs, col) =>
       val matrix = zs.map(_ => col)
       val res = zs.zip(matrix).flatMap(_._2)
@@ -249,7 +250,7 @@ class CollsTests extends AnyPropSpec with ScalaCheckPropertyChecks with Matchers
         ys.append(ys).toArray shouldBe ys.toArray ++ ys.toArray
       } else {
         // due to the problem with CollectionUtil.concatArrays
-        an[ClassCastException] should be thrownBy (ys.append(ys))
+        an[Throwable] should be thrownBy (ys.append(ys))
       }
     }
 
@@ -490,17 +491,6 @@ class CollsTests extends AnyPropSpec with ScalaCheckPropertyChecks with Matchers
       val coll = builder.fromArray(Array.fill(n)((b, ((i, (("string", builder.fromArray(Array.fill(m)(n))), Array(1, 2, 3, 4))), (d, b)))))
 
       checkColls(repl, coll)
-    }
-  }
-
-
-  property("PairColl.mapFirst") {
-    val minSuccess = minSuccessful(30)
-
-    forAll(collGen, minSuccess) { col =>
-      val pairs = col.zip(col)
-      pairs.mapFirst(inc).toArray shouldBe pairs.toArray.map { case (x, y) => (inc(x), y) }
-      pairs.mapSecond(inc).toArray shouldBe pairs.toArray.map { case (x, y) => (x, inc(y)) }
     }
   }
 

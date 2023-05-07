@@ -99,7 +99,7 @@ case class CBigInt(override val wrappedValue: BigInteger) extends BigInt with Wr
 case class CGroupElement(override val wrappedValue: Ecp) extends GroupElement with WrapperOf[Ecp] {
   val dsl = CostingSigmaDslBuilder
   
-  override def toString: String = s"GroupElement(${Extensions.showECPoint(wrappedValue)})"
+  override def toString: String = s"GroupElement(${sigmastate.eval.Extensions.showECPoint(wrappedValue)})"
 
   override def getEncoded: Coll[Byte] =
     dsl.Colls.fromArray(GroupElementSerializer.toBytes(wrappedValue))

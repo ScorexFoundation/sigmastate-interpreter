@@ -1,6 +1,9 @@
 package sigmastate.crypto
 
+import org.bouncycastle.crypto.digests.SHA512Digest
 import org.bouncycastle.crypto.ec.CustomNamedCurves
+import org.bouncycastle.crypto.generators.PKCS5S2ParametersGenerator
+import org.bouncycastle.crypto.params.KeyParameter
 import org.bouncycastle.math.ec.{ECCurve, ECFieldElement, ECPoint}
 import scalan.RType
 
@@ -9,6 +12,9 @@ import sigmastate._
 import sigmastate.basics.BcDlogGroup
 import special.collection.Coll
 import special.sigma._
+
+import java.text.Normalizer.Form.NFKD
+import java.text.Normalizer
 
 /** JVM specific implementation of crypto methods*/
 object Platform {
@@ -65,7 +71,7 @@ object Platform {
   /** Returns the value of bit 0 in BigInteger representation of this point. */
   def signOf(p: ECFieldElem): Boolean = p.value.testBitZero()
 
-  /** * Normalization ensures that any projective coordinate is 1, and therefore that the x, y
+  /** Normalization ensures that any projective coordinate is 1, and therefore that the x, y
     * coordinates reflect those of the equivalent point in an affine coordinate system.
     *
     * @return a new ECPoint instance representing the same point, but with normalized coordinates
@@ -80,6 +86,7 @@ object Platform {
   }
 
   /** Multiply two points.
+    *
     * @param p1 first point
     * @param p2 second point
     * @return group multiplication (p1 * p2)
@@ -94,7 +101,7 @@ object Platform {
   /** Exponentiate a point.
     * @param p point to exponentiate
     * @param n exponent
-    * @return p to the power of n (p^n)
+    * @return p to the power of n (`p^n`) i.e. `p + p + ... + p` (n times)
     */
   def exponentiatePoint(p: Ecp, n: BigInteger): Ecp = {
     /*
@@ -107,7 +114,7 @@ object Platform {
   /** Check if a point is infinity. */
   def isInfinityPoint(p: Ecp): Boolean = p.value.isInfinity
 
-  /** Negate a point. */
+  /** Negates the given point by negating its y coordinate. */
   def negatePoint(p: Ecp): Ecp = Ecp(p.value.negate())
 
   /** Wrapper for curve descriptor. Serves as the concrete implementation of the
@@ -129,6 +136,36 @@ object Platform {
 
   /** Create JVM specific source of secure randomness. */
   def createSecureRandom(): SecureRandom = new SecureRandom()
+
+  /** Computes HMAC-SHA512 hash of the given data using the specified key.
+    *
+    * @param key  the secret key used for hashing
+    * @param data the input data to be hashed
+    * @return a HMAC-SHA512 hash of the input data
+    */
+  def hashHmacSHA512(key: Array[Byte], data: Array[Byte]): Array[Byte] = HmacSHA512.hash(key, data)
+
+  /** Generates PBKDF2 key from a mnemonic and passphrase using SHA512 digest.
+    * Seed generation based on bouncycastle implementation.
+    * See https://github.com/ergoplatform/ergo-appkit/issues/82
+    */
+  def generatePbkdf2Key(normalizedMnemonic: String, normalizedPass: String): Array[Byte] = {
+    val gen = new PKCS5S2ParametersGenerator(new SHA512Digest)
+    gen.init(
+      normalizedMnemonic.getBytes(CryptoFacade.Encoding),
+      normalizedPass.getBytes(CryptoFacade.Encoding),
+      CryptoFacade.Pbkdf2Iterations)
+    val dk = gen.generateDerivedParameters(CryptoFacade.Pbkdf2KeyLength).asInstanceOf[KeyParameter].getKey
+    dk
+  }
+
+  /** Normalize a sequence of char values.
+    * The sequence will be normalized according to the NFKD normalization form.
+    * Implementation that uses [[java.text.Normalizer]].
+    * See https://www.unicode.org/reports/tr15/  */
+  def normalizeChars(chars: Array[Char]): String = {
+    Normalizer.normalize(ArrayCharSequence(chars), NFKD)
+  }
 
   /** Checks that the type of the value corresponds to the descriptor `tpe`.
     * If the value has complex structure only root type constructor is checked.

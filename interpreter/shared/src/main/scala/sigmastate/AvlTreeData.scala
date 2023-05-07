@@ -1,7 +1,6 @@
 package sigmastate
 
 import java.util.{Arrays, Objects}
-
 import scorex.crypto.authds.ADDigest
 import sigmastate.basics.CryptoConstants
 import sigmastate.serialization.SigmaSerializer
@@ -78,6 +77,12 @@ object AvlTreeData {
     ADDigest @@ Array.fill(DigestSize)(0:Byte),
     AvlTreeFlags.AllOperationsAllowed,
     keyLength = 32)
+
+  /** Create [[AvlTreeData]] with the given digest and all operations enabled. */
+  def avlTreeFromDigest(digest: ADDigest): AvlTreeData = {
+    val flags = AvlTreeFlags(insertAllowed = true, updateAllowed = true, removeAllowed = true)
+    AvlTreeData(digest, flags, CryptoConstants.hashLength)
+  }
 
   object serializer extends SigmaSerializer[AvlTreeData, AvlTreeData] {
 

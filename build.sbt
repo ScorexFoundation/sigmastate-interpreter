@@ -96,6 +96,8 @@ val fastparseDependency =
   libraryDependencies += "com.lihaoyi" %%% "fastparse" % "2.3.3"
 
 val scalaCompat        = "org.scala-lang.modules" %% "scala-collection-compat" % "2.7.0"
+lazy val scodecBitsDependency =
+  libraryDependencies += "org.scodec" %%% "scodec-bits" % "1.1.34"
 
 lazy val circeCore211 = "io.circe" %% "circe-core" % "0.10.0"
 lazy val circeGeneric211 = "io.circe" %% "circe-generic" % "0.10.0"
@@ -175,6 +177,8 @@ lazy val commonDependenies2 = libraryDependencies ++= Seq(
   "org.scala-lang.modules" %%% "scala-collection-compat" % "2.7.0"
 )
 
+val sigmajsCryptoFacadeVersion = "0.0.5"
+
 lazy val common = crossProject(JVMPlatform, JSPlatform)
   .in(file("common"))
   .settings(commonSettings ++ testSettings2,
@@ -215,7 +219,7 @@ lazy val corelibJS = corelib.js
     .enablePlugins(ScalaJSBundlerPlugin)
 
 lazy val graphir = Project("graph-ir", file("graph-ir"))
-  .dependsOn(common.jvm % allConfigDependency, corelib.jvm)
+  .dependsOn(common.jvm % allConfigDependency, corelib.jvm % allConfigDependency)
   .settings(
     libraryDefSettings,
     libraryDependencies ++= Seq( debox, scrypto, bouncycastleBcprov ))
@@ -246,7 +250,7 @@ lazy val interpreterJS = interpreter.js
         conf.withSourceMap(false)
       },
       Compile / npmDependencies ++= Seq(
-        "sigmajs-crypto-facade" -> "0.0.3"
+        "sigmajs-crypto-facade" -> sigmajsCryptoFacadeVersion
       )
     )
 
@@ -259,14 +263,45 @@ lazy val sc = (project in file("sc"))
   )
   .settings(publish / skip := true)
 
+lazy val sdk = crossProject(JVMPlatform, JSPlatform)
+    .in(file("sdk"))
+    .dependsOn(corelib % allConfigDependency, interpreter % allConfigDependency)
+    .settings(commonSettings ++ testSettings2,
+      commonDependenies2,
+      testingDependencies2,
+      scodecBitsDependency,
+      publish / skip := true
+    )
+    .jvmSettings(
+      crossScalaSettings
+    )
+    .jsSettings(
+      crossScalaSettingsJS,
+      libraryDependencies ++= Seq(
+        "org.scala-js" %%% "scala-js-macrotask-executor" % "1.0.0"
+      ),
+      useYarn := true
+    )
+lazy val sdkJS = sdk.js
+    .enablePlugins(ScalaJSBundlerPlugin)
+    .settings(
+      scalaJSLinkerConfig ~= { conf =>
+        conf.withSourceMap(false)
+            .withModuleKind(ModuleKind.CommonJSModule)
+      },
+      Compile / npmDependencies ++= Seq(
+        "sigmajs-crypto-facade" -> sigmajsCryptoFacadeVersion
+      )
+    )
+
 lazy val sigma = (project in file("."))
-  .aggregate(common.jvm, corelib.jvm, graphir, interpreter.jvm, sc)
+  .aggregate(common.jvm, corelib.jvm, graphir, interpreter.jvm, sc, sdk.jvm)
   .settings(libraryDefSettings, rootSettings)
   .settings(publish / aggregate := false)
   .settings(publishLocal / aggregate := false)
 
 lazy val aggregateCompile = ScopeFilter(
-  inProjects(common.jvm, corelib.jvm, graphir, interpreter.jvm, sc),
+  inProjects(common.jvm, corelib.jvm, graphir, interpreter.jvm, sc, sdk.jvm),
   inConfigurations(Compile))
 
 lazy val rootSettings = Seq(

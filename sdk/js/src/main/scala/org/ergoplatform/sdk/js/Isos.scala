@@ -1,6 +1,7 @@
-package sigmastate.js
+package org.ergoplatform.sdk.js
 
-import sigmastate.{Iso, SType}
+import org.ergoplatform.sdk.Iso
+import sigmastate.SType
 import sigmastate.Values.Constant
 import sigmastate.eval.Evaluation
 

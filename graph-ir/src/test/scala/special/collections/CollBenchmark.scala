@@ -4,7 +4,7 @@ import org.scalameter.{execution, Executor}
 import org.scalameter.api._
 import org.scalameter.picklers.Implicits._
 import special.collection.Coll
-import special.collection.ExtensionMethods._
+import special.collection.Extensions._
 import debox.cfor
 
 
@@ -116,13 +116,6 @@ trait CollBenchmarkCases extends BenchmarkGens { suite: Bench[Double] =>
       using(arrays) in { case (arr, n) =>
         cfor(0)(_ < n, _ + 1) { _ =>
           arr.zip(arr).map(p => (inc(p._1), p._2))
-        }
-      }
-    }
-    measure method "of PairColl" in {
-      using(colls) in { case (c, n) =>
-        cfor(0)(_ < n, _ + 1) { _ =>
-          c.zip(c).mapFirst(inc)
         }
       }
     }

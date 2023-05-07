@@ -1,11 +1,11 @@
-package sigmastate.js
+package org.ergoplatform.sdk.js
 
 import scorex.util.encode.Base16
 import sigmastate.Values
 import sigmastate.serialization.ErgoTreeSerializer
 
 import scala.scalajs.js
-import scala.scalajs.js.annotation.{JSExport, JSExportTopLevel}
+import scala.scalajs.js.annotation.{JSExportTopLevel}
 
 /** An exported JavaScript class wrapping the Scala `Values.ErgoTree` type. */
 @JSExportTopLevel("ErgoTree")
