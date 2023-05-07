@@ -71,7 +71,7 @@ object Platform {
   /** Returns the value of bit 0 in BigInteger representation of this point. */
   def signOf(p: ECFieldElem): Boolean = p.value.testBitZero()
 
-  /** * Normalization ensures that any projective coordinate is 1, and therefore that the x, y
+  /** Normalization ensures that any projective coordinate is 1, and therefore that the x, y
     * coordinates reflect those of the equivalent point in an affine coordinate system.
     *
     * @return a new ECPoint instance representing the same point, but with normalized coordinates
@@ -86,6 +86,7 @@ object Platform {
   }
 
   /** Multiply two points.
+    *
     * @param p1 first point
     * @param p2 second point
     * @return group multiplication (p1 * p2)
@@ -100,7 +101,7 @@ object Platform {
   /** Exponentiate a point.
     * @param p point to exponentiate
     * @param n exponent
-    * @return p to the power of n (p^n)
+    * @return p to the power of n (`p^n`) i.e. `p + p + ... + p` (n times)
     */
   def exponentiatePoint(p: Ecp, n: BigInteger): Ecp = {
     /*
@@ -113,7 +114,7 @@ object Platform {
   /** Check if a point is infinity. */
   def isInfinityPoint(p: Ecp): Boolean = p.value.isInfinity
 
-  /** Negate a point. */
+  /** Negates the given point by negating its y coordinate. */
   def negatePoint(p: Ecp): Ecp = Ecp(p.value.negate())
 
   /** Wrapper for curve descriptor. Serves as the concrete implementation of the
@@ -144,7 +145,8 @@ object Platform {
     */
   def hashHmacSHA512(key: Array[Byte], data: Array[Byte]): Array[Byte] = HmacSHA512.hash(key, data)
 
-  /** Seed generation using on bouncycastle implementation.
+  /** Generates PBKDF2 key from a mnemonic and passphrase using SHA512 digest.
+    * Seed generation based on bouncycastle implementation.
     * See https://github.com/ergoplatform/ergo-appkit/issues/82
     */
   def generatePbkdf2Key(normalizedMnemonic: String, normalizedPass: String): Array[Byte] = {
@@ -157,7 +159,9 @@ object Platform {
     dk
   }
 
-  /** Implementation that uses [[java.text.Normalizer]].
+  /** Normalize a sequence of char values.
+    * The sequence will be normalized according to the NFKD normalization form.
+    * Implementation that uses [[java.text.Normalizer]].
     * See https://www.unicode.org/reports/tr15/  */
   def normalizeChars(chars: Array[Char]): String = {
     Normalizer.normalize(ArrayCharSequence(chars), NFKD)

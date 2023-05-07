@@ -25,14 +25,14 @@ object CryptoFacade {
   /** Create a new context for cryptographic operations. */
   def createCryptoContext(): CryptoContext = Platform.createContext()
 
-  /** * Normalization ensures that any projective coordinate is 1, and therefore that the x, y
+  /** Normalization ensures that any projective coordinate is 1, and therefore that the x, y
     * coordinates reflect those of the equivalent point in an affine coordinate system.
     *
     * @return a new ECPoint instance representing the same point, but with normalized coordinates
     */
   def normalizePoint(p: Ecp): Ecp = Platform.normalizePoint(p)
 
-  /** Negate a point. */
+  /** Negates the given point by negating its y coordinate. */
   def negatePoint(p: Ecp): Ecp = Platform.negatePoint(p)
 
   /** Check if a point is infinity. */
@@ -42,7 +42,7 @@ object CryptoFacade {
     *
     * @param p point to exponentiate
     * @param n exponent
-    * @return p to the power of n (`p^n`)
+    * @return p to the power of n (`p^n`) i.e. `p + p + ... + p` (n times)
     */
   def exponentiatePoint(p: Ecp, n: BigInteger): Ecp = Platform.exponentiatePoint(p, n)
 
@@ -121,9 +121,12 @@ object CryptoFacade {
     * @param data the input data to be hashed
     * @return a HMAC-SHA512 hash of the input data
     */
-  def hashHmacSHA512(key: Array[Byte], data: Array[Byte]): Array[Byte] = Platform.hashHmacSHA512(key, data)
+  def hashHmacSHA512(key: Array[Byte], data: Array[Byte]): Array[Byte] =
+    Platform.hashHmacSHA512(key, data)
 
-  def generatePbkdf2Key(normalizedMnemonic: String, normalizedPass: String): Array[Byte] = Platform.generatePbkdf2Key(normalizedMnemonic, normalizedPass)
+  /** Generates PBKDF2 key from a mnemonic and passphrase using SHA512 digest. */
+  def generatePbkdf2Key(normalizedMnemonic: String, normalizedPass: String): Array[Byte] =
+    Platform.generatePbkdf2Key(normalizedMnemonic, normalizedPass)
 
   /** Normalize a sequence of char values using NFKD normalization form. */
   def normalizeChars(chars: Array[Char]): String = Platform.normalizeChars(chars)
