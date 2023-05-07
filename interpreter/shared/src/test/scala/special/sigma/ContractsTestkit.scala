@@ -32,8 +32,10 @@ trait ContractsTestkit {
   val noHeaders = CostingSigmaDslBuilder.Colls.emptyColl[Header]
   val dummyPreHeader: PreHeader = null
 
+  /** Create collection from array of items */
   def collection[T: RType](items: T*) = Colls.fromArray(items.toArray)
 
+  /** Converts a map of registers to collection of registers. */
   def regs(m: Map[Byte, AnyValue]): Coll[AnyValue] = {
     val res = new Array[AnyValue](10)
     for ( (id, v) <- m ) {
@@ -43,6 +45,7 @@ trait ContractsTestkit {
     Colls.fromArray(res)
   }
 
+  /** Converts a map of context vars to collection of context vars. */
   def contextVars(m: Map[Byte, AnyValue]): Coll[AnyValue] = {
     val maxKey = if (m.keys.isEmpty) 0 else m.keys.max // TODO optimize: max takes 90% of this method
     val res = new Array[AnyValue](maxKey)

@@ -69,9 +69,10 @@ object Extensions {
     }
   }
 
+  /** Shortened String representation of `source` GroupElement. */
   def showECPoint(p: Ecp): String = {
-    if (p.isInfinity) {
-      "INF"
+    if (p.isIdentity) {
+      "IDENTITY"
     }
     else {
       CryptoFacade.showPoint(p)
@@ -79,14 +80,17 @@ object Extensions {
   }
 
   implicit class EcpOps(val source: Ecp) extends AnyVal {
+    /** Extracts [[GroupElement]] from the Ecp instance. */
     def toGroupElement: GroupElement = SigmaDsl.GroupElement(source)
   }
 
   implicit class GroupElementOps(val source: GroupElement) extends AnyVal {
+    /** Shortened String representation of `source` GroupElement. */
     def showToString: String = showECPoint(source.asInstanceOf[CGroupElement].wrappedValue)
   }
 
   implicit class DBufferOps[A](val buf: DBuffer[A]) extends AnyVal {
+    /** Sum all values in `buf` using the given Numeric. */
     def sumAll(implicit n: Numeric[A]): A = {
       val limit = buf.length
       var result: A = n.zero

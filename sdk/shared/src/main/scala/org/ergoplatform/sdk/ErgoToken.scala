@@ -13,7 +13,9 @@ case class ErgoToken(id: ErgoId, value: Long) {
     this(JavaHelpers.decodeStringToBytes(id), value)
   }
 
+  /** Java friendly id accessor method. */
   def getId: ErgoId = id
 
+  /** Java friendly value accessor method. */
   def getValue: Long = value
 }

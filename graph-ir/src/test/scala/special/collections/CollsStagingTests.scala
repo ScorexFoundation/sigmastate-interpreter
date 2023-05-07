@@ -6,6 +6,8 @@ import scalan._
 import scalan.util.BenchmarkUtil._
 
 class CollsStagingTests extends WrappersTests {
+  val printDebugInfo: Boolean = false
+
   class Ctx extends TestContext with TestLibrary {
     import Coll._
     import CollBuilder._

@@ -7,12 +7,20 @@ import special.collection.Coll
 import scalan.RType.SomeType
 
 object Types {
+  /** Generic representation of tuples values. */
   type TupleData = Coll[Any]
 
+  /** Returns an RType object representing a tuple type with the given SomeType array types.
+    * @param types An array of SomeType representing the types of each item in the tuple.
+    * @return An RType object for the tuple type.
+    */
   def tupleRType(types: Array[SomeType]): RType[TupleData] = TupleType(types)
 
+  /** Descriptor (in RType family) of tuple types.
+    * @param items types of tuple items
+    */
   case class TupleType(items: Array[SomeType]) extends RType[TupleData] {
-    val classTag: ClassTag[TupleData] = scala.reflect.classTag[TupleData]
+    override val classTag: ClassTag[TupleData] = scala.reflect.classTag[TupleData]
 
     override def name: String = items.map(_.name).mkString("(", ", ", ")")
 

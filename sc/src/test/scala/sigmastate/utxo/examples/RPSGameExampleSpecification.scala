@@ -212,7 +212,7 @@ class RPSGameExampleSpecification extends CompilerTestingCommons
 
     a - b match {
       case 0 => // draw
-        println("Draw")
+        printDebug("Draw")
         /////////////////////////////////////////////////////////
         // Possibility 1.1: draw
         /////////////////////////////////////////////////////////
@@ -242,7 +242,7 @@ class RPSGameExampleSpecification extends CompilerTestingCommons
         verifier.verify(fullGameEnv, fullGameScript, drawContextBob, proofBobDraw, fakeMessage).get._1 shouldBe true
 
       case 1 | -2 => // alice wins
-        println("Alice won")
+        printDebug("Alice won")
         /////////////////////////////////////////////////////////
         // Possibility 1.2: Alice wins
         /////////////////////////////////////////////////////////
@@ -253,7 +253,7 @@ class RPSGameExampleSpecification extends CompilerTestingCommons
         val proofAliceWin1 = aliceProver.prove(fullGameEnv, fullGameScript, winContext1, fakeMessage).get
         verifier.verify(fullGameEnv, fullGameScript, winContext1, proofAliceWin1, fakeMessage).get._1 shouldBe true
       case _ => // bob wins
-        println("Bob won")
+        printDebug("Bob won")
         /////////////////////////////////////////////////////////
         // Possibility 1.3: Bob wins
         /////////////////////////////////////////////////////////

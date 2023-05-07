@@ -21,8 +21,6 @@ import sigmastate.utxo._
 import special.sigma.Context
 import sigmastate.utils.Helpers._
 
-import scala.util.Random
-
 class OracleExamplesSpecification extends CompilerTestingCommons
   with CompilerCrossVersionProps { suite =>
   implicit lazy val IR: TestingIRContext = new TestingIRContext

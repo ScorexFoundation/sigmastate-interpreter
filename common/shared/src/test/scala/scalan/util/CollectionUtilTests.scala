@@ -36,8 +36,6 @@ class CollectionUtilTests extends BaseTests {
     concatArrays_v5(xOpts, xOpts) shouldBe Array(Some(1), Some(2), Some(3), Some(1), Some(2), Some(3))
   }
 
-//  def join(l: Map[Int,Int], r: Map[Int,Int]) =
-//    outerJoin(l, r)((_,l) => l, (_,r) => r, (k,l,r) => l + r)
   def joinSeqs(l: Seq[Int], r: Seq[Int]) =
     outerJoinSeqs(l, r)(l => l, r => r)((_,l) => l, (_,r) => r, (k,l,r) => l + r).map(_._2)
   def joinPairs(l: Seq[(String,Int)], r: Seq[(String,Int)]) =

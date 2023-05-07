@@ -9,7 +9,6 @@ import scala.collection.compat._
 
 object CollectionUtil {
 
-  // TODO v5.x: remove after v5.0, need separate full node sync test
   /** @deprecated shouldn't be used other than for backwards compatibility with v3.x, v4.x. */
   def concatArrays[T](xs: Array[T], ys: Array[T]): Array[T] = {
     val len = xs.length + ys.length
@@ -44,6 +43,14 @@ object CollectionUtil {
     result
   }
 
+  /** Computes the deep hash code for the given array.
+    *
+    * This method calculates the hash code based on the array's elements and type, taking nested arrays
+    * into account.
+    *
+    * @tparam T the type of the elements in the array
+    * @param arr the input array for which the deep hash code is to be calculated
+    */
   def deepHashCode[T](arr: Array[T]): Int = arr match {
     case arr: Array[AnyRef] => util.Arrays.deepHashCode(arr)
     case arr: Array[Byte] => util.Arrays.hashCode(arr)
@@ -87,6 +94,17 @@ object CollectionUtil {
     res
   }
 
+  /** Performs an outer join on two sequences using specified key projection functions and
+    * result projection functions.
+    *
+    * @param outer  the outer sequence for the join operation
+    * @param inner  the inner sequence for the join operation
+    * @param outKey projects an outer element to its join key
+    * @param inKey  projects an inner element to its join key
+    * @param projO  projects a non-matching outer element and its key to a result element
+    * @param projI  projects a non-matching inner element and its key to a result element
+    * @param proj   projects a matching pair of outer and inner elements and their key to a result element
+    */
   def outerJoinSeqs[O, I, K, R]
       (outer: Seq[O], inner: Seq[I])
       (outKey: O=>K, inKey: I=>K)
@@ -110,6 +128,12 @@ object CollectionUtil {
   }
 
   implicit class AnyOps[A](val x: A) extends AnyVal {
+    /** Traverses the tree structure in a depth-first manner using the provided function to generate child nodes.
+      *
+      * @param f a function that takes a node of type A and returns a list of its children
+      * @tparam A the type of the node elements in the tree structure
+      * @return a list of traversed nodes in depth-first order
+      */
     def traverseDepthFirst(f: A => List[A]): List[A] = {
       var all: List[A] = Nil
       var stack = List(x)
@@ -181,6 +205,14 @@ object CollectionUtil {
       case _ => Iterator.single(x)
     })
 
+    /** Determines if two nested structures have the same elements in the same order.
+      * Supports structures containing `GenIterable` and `Array` elements.
+      *
+      * @param that the other nested structure to compare with
+      * @tparam A the type of the elements in the current structure
+      * @tparam B the type of the elements in the other structure, a supertype of A
+      * @return true if the two nested structures have the same elements in the same order, false otherwise
+      */
     def sameElements2[B >: A](that: GenIterable[B]): Boolean = {
       val i1: Iterator[Any] = flattenIter(xs.iterator)
       val i2: Iterator[Any] = flattenIter(that.iterator)

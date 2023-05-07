@@ -26,6 +26,7 @@ object DLogProtocol {
     extends SigmaProofOfKnowledgeLeaf[DLogSigmaProtocol, DLogProverInput] {
     override def size: Int = 1
     override val opCode: OpCode = OpCodes.ProveDlogCode
+    /** Serialized bytes of the elliptic curve point (using GroupElementSerializer). */
     lazy val pkBytes: Array[Byte] = GroupElementSerializer.toBytes(value)
   }
 
@@ -100,6 +101,7 @@ object DLogProtocol {
       SecondDLogProverMessage(z)
     }
 
+    /** Simulation of sigma protocol. */
     def simulate(publicInput: ProveDlog, challenge: Challenge): (FirstDLogProverMessage, SecondDLogProverMessage) = {
       val qMinusOne = dlogGroup.order.subtract(BigInteger.ONE)
 

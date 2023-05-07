@@ -1,5 +1,7 @@
 package scalan.util
 
+import debox.cfor
+
 import scala.concurrent.{Future, Await}
 import scala.concurrent.duration.Duration
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -8,10 +10,10 @@ import scala.concurrent.ExecutionContext.Implicits.global
 object BenchmarkUtil {
   /** Execute `action` given number of iterations printing time for each iteration
     * and the total time. */
-  def measure[T](nIters: Int, okShowIterTime: Boolean = true)
+  def measure[T](nIters: Int, okShowIterTime: Boolean = true, okShowTotalTime: Boolean = true)
       (action: Int => Unit): Unit = {
     var sum = 0L
-    for ( i <- 0 until nIters ) {
+    cfor(0)(_ < nIters, _ + 1) { i =>
       val start = System.currentTimeMillis()
       val res = action(i)
       val end = System.currentTimeMillis()
@@ -20,7 +22,7 @@ object BenchmarkUtil {
         println(s"Iter $i: $iterTime ms")
       sum += iterTime
     }
-    println(s"Total time: $sum ms")
+    if (okShowTotalTime) println(s"Total time: $sum ms")
   }
 
   /** Execute block and measure the time of its execution. */

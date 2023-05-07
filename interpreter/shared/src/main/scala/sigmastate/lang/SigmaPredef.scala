@@ -3,15 +3,15 @@ package sigmastate.lang
 import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
 import org.ergoplatform.{ErgoAddressEncoder, P2PKAddress}
 import scalan.Nullable
-import scorex.util.encode.{Base64, Base58}
+import scorex.util.encode.{Base64, Base58, Base16}
 import sigmastate.SCollection.{SIntArray, SByteArray}
 import sigmastate.SOption._
-import sigmastate.Values.{StringConstant, Constant, EvaluatedValue, SValue, IntValue, SigmaPropConstant, ConstantPlaceholder, BoolValue, Value, ByteArrayConstant, SigmaPropValue, ValueCompanion}
+import sigmastate.Values.{StringConstant, SValue, IntValue, SigmaPropConstant, Value, ByteArrayConstant, SigmaPropValue, ValueCompanion, Constant, EvaluatedValue, ConstantPlaceholder, BoolValue}
 import sigmastate._
 import sigmastate.lang.Terms._
 import sigmastate.exceptions.InvalidArguments
 import sigmastate.serialization.ValueSerializer
-import sigmastate.utxo.{GetVar, DeserializeContext, DeserializeRegister, SelectField}
+import sigmastate.utxo.{DeserializeRegister, SelectField, DeserializeContext, GetVar}
 
 object SigmaPredef {
 
@@ -44,7 +44,7 @@ object SigmaPredef {
     import builder._
 
     /** Type variable used in the signatures of global functions below. */
-    import SType.{tT, tR, tK, tL, tO, paramT, paramR}
+    import SType.{tT, tO, tR, tL, paramR, paramT, tK}
 
     private val undefined: IrBuilderFunc =
       PartialFunction.empty[(SValue, Seq[SValue]), SValue]
@@ -176,8 +176,22 @@ object SigmaPredef {
           throw new InvalidArguments(s"Wrong type after deserialization, expected $tpe, got ${res.tpe}")
         res
       }),
-      OperationInfo(Constant, "",
+      OperationInfo(Constant, "Deserializes values from Base58 encoded binary data at compile time into a value of type T.",
           Seq(ArgInfo("", "")))
+    )
+
+    val FromBase16Func = PredefinedFunc("fromBase16",
+      Lambda(Array("input" -> SString), SByteArray, None),
+      PredefFuncInfo(
+        { case (_, Seq(arg: EvaluatedValue[SString.type]@unchecked)) =>
+          ByteArrayConstant(Base16.decode(arg.value).get)
+        }),
+      OperationInfo(Constant,
+        """Transforms Base16 encoded string literal into constant of type Coll[Byte].
+         |It is a compile-time operation and only string literal (constant) can be its
+         |argument.
+        """.stripMargin,
+        Seq(ArgInfo("", "")))
     )
 
     val FromBase58Func = PredefinedFunc("fromBase58",
@@ -186,8 +200,12 @@ object SigmaPredef {
         { case (_, Seq(arg: EvaluatedValue[SString.type]@unchecked)) =>
           ByteArrayConstant(Base58.decode(arg.value).get)
         }),
-      OperationInfo(Constant, "",
-          Seq(ArgInfo("", "")))
+      OperationInfo(Constant,
+        """Transforms Base58 encoded string literal into constant of type Coll[Byte].
+         |It is a compile-time operation and only string literal (constant) can be its
+         |argument.
+        """.stripMargin,
+        Seq(ArgInfo("", "")))
     )
 
     val FromBase64Func = PredefinedFunc("fromBase64",
@@ -196,7 +214,11 @@ object SigmaPredef {
         { case (_, Seq(arg: EvaluatedValue[SString.type]@unchecked)) =>
           ByteArrayConstant(Base64.decode(arg.value).get)
         }),
-      OperationInfo(Constant, "",
+      OperationInfo(Constant,
+        """Transforms Base64 encoded string literal into constant of type Coll[Byte].
+         |It is a compile-time operation and only string literal (constant) can be its
+         |argument.
+        """.stripMargin,
           Seq(ArgInfo("", "")))
     )
 
@@ -381,6 +403,7 @@ object SigmaPredef {
       SigmaPropFunc,
       GetVarFunc,
       DeserializeFunc,
+      FromBase16Func,
       FromBase64Func,
       FromBase58Func,
       Blake2b256Func,

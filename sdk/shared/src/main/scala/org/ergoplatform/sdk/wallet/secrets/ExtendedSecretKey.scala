@@ -30,7 +30,7 @@ final class ExtendedSecretKey(/*private[secrets]*/ val keyBytes: Array[Byte],
   def child(idx: Int): ExtendedSecretKey = ExtendedSecretKey.deriveChildSecretKey(this, idx)
 
   def publicKey: ExtendedPublicKey =
-    new ExtendedPublicKey(CryptoFacade.getEncodedPoint(privateInput.publicImage.value, true), chainCode, path.toPublicBranch)
+    new ExtendedPublicKey(CryptoFacade.encodePoint(privateInput.publicImage.value, true), chainCode, path.toPublicBranch)
 
   def isErased: Boolean = keyBytes.forall(_ == 0x00)
 
@@ -59,7 +59,7 @@ object ExtendedSecretKey {
   def deriveChildSecretKey(parentKey: ExtendedSecretKey, idx: Int): ExtendedSecretKey = {
     val keyCoded: Array[Byte] =
       if (Index.isHardened(idx)) (0x00: Byte) +: parentKey.keyBytes
-      else CryptoFacade.getEncodedPoint(parentKey.privateInput.publicImage.value, true)
+      else CryptoFacade.encodePoint(parentKey.privateInput.publicImage.value, true)
     val (childKeyProto, childChainCode) = CryptoFacade
         .hashHmacSHA512(parentKey.chainCode, keyCoded ++ Index.serializeIndex(idx))
         .splitAt(CryptoFacade.SecretKeyLength)
@@ -84,7 +84,7 @@ object ExtendedSecretKey {
 
   def deriveChildPublicKey(parentKey: ExtendedSecretKey, idx: Int): ExtendedPublicKey = {
     val derivedSecret = deriveChildSecretKey(parentKey, idx)
-    val derivedPk = CryptoFacade.getEncodedPoint(derivedSecret.privateInput.publicImage.value, true)
+    val derivedPk = CryptoFacade.encodePoint(derivedSecret.privateInput.publicImage.value, true)
     val derivedPath = derivedSecret.path.copy(publicBranch = true)
     new ExtendedPublicKey(derivedPk, derivedSecret.chainCode, derivedPath)
   }
