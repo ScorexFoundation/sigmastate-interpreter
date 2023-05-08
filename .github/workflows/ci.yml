@@ -76,12 +76,21 @@ jobs:
         os: [ubuntu-latest]
         scala: [2.13.8, 2.12.10]
         java: [adopt@1.8]
+        node-version: [16.x]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout current branch (full)
         uses: actions/checkout@v2
         with:
           fetch-depth: 0
+
+      - name: Setup NPM
+        uses: pnpm/action-setup@v2
+        with:
+          version: 7.21.0
+          node-version: ${{ matrix.node-version }}
+          cache: "pnpm"
+      - run: pnpm install
 
       - name: Setup Java and Scala
         uses: olafurpg/setup-scala@v10
@@ -105,7 +114,7 @@ jobs:
 
       - name: Publish a snapshot ${{ github.ref }}
         if: env.HAS_SECRETS == 'true'
-        run: sbt ++${{ matrix.scala }} interpreterJS/publish
+        run: sbt ++${{ matrix.scala }} sdkJS/publish
         env:
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
