@@ -269,7 +269,7 @@ object Isos {
     override def from(x: Option[B]): js.UndefOr[A] = x.map(iso.from).orUndefined
   }
 
-  implicit def isoArrayToColl[A, B](iso: Iso[A, B])(implicit tB: RType[B]): Iso[js.Array[A], Coll[B]] = new Iso[js.Array[A], Coll[B]] {
+  implicit def isoArrayToColl[A, B](iso: Iso[A, B])(implicit ctA: ClassTag[A], tB: RType[B]): Iso[js.Array[A], Coll[B]] = new Iso[js.Array[A], Coll[B]] {
     override def to(x: js.Array[A]): Coll[B] = Colls.fromArray(x.map(iso.to).toArray(tB.classTag))
     override def from(x: Coll[B]): js.Array[A] = js.Array(x.toArray.map(iso.from):_*)
   }
@@ -320,7 +320,6 @@ object Isos {
     }
 
   implicit val isoBoxCandidate: Iso[boxesMod.BoxCandidate[commonMod.Amount], ErgoBoxCandidate] = new Iso[boxesMod.BoxCandidate[commonMod.Amount], ErgoBoxCandidate] {
-    import sigmastate.eval._
     override def to(x: boxesMod.BoxCandidate[commonMod.Amount]): ErgoBoxCandidate = {
       val ergoBoxCandidate = new ErgoBoxCandidate(
         value = isoAmount.to(x.value),
@@ -342,7 +341,7 @@ object Isos {
       boxesMod.BoxCandidate[commonMod.Amount](
         ergoTree = ergoTreeStr,
         value = isoAmount.from(x.value),
-        assets = js.Array(assets:_*),
+        assets = assets,
         creationHeight = x.creationHeight,
         additionalRegisters = isoNonMandatoryRegisters.from(x.additionalRegisters)
       )

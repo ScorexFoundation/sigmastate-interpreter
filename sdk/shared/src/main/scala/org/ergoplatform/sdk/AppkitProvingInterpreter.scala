@@ -2,19 +2,26 @@ package org.ergoplatform.sdk
 
 import debox.cfor
 import org.ergoplatform._
-import org.ergoplatform.sdk.JavaHelpers.TokenColl
+import org.ergoplatform.sdk.Extensions.{CollOps, PairCollOps}
+import org.ergoplatform.sdk.JavaHelpers.{TokenColl, UniversalConverter}
+import org.ergoplatform.sdk.utils.ArithUtils
 import org.ergoplatform.sdk.wallet.protocol.context.{ErgoLikeParameters, ErgoLikeStateContext}
 import org.ergoplatform.sdk.wallet.secrets.ExtendedSecretKey
 import scalan.util.Extensions.LongOps
 import sigmastate.Values.SigmaBoolean
-import sigmastate.VersionContext
+import sigmastate.{AvlTreeData, VersionContext}
 import sigmastate.basics.DLogProtocol.{DLogProverInput, ProveDlog}
-import sigmastate.basics.{DiffieHellmanTupleProverInput,SigmaProtocolPrivateInput}
+import sigmastate.basics.{DiffieHellmanTupleProverInput, SigmaProtocolPrivateInput}
 import sigmastate.interpreter.Interpreter.ReductionResult
-import sigmastate.interpreter.{ContextExtension, CostedProverResult, HintsBag, ProverInterpreter}
+import sigmastate.interpreter.{ContextExtension, CostedProverResult, HintsBag, Interpreter, ProverInterpreter}
 import sigmastate.serialization.SigmaSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
+import org.ergoplatform.sdk.wallet.protocol.context.TransactionContext
+import org.ergoplatform.validation.ValidationRules
+import scorex.crypto.authds.ADDigest
 
+import java.util
+import java.util.{Objects, List => JList}
 import scala.collection.mutable
 import scala.util.Try
 
@@ -162,7 +169,7 @@ class AppkitProvingInterpreter(
       val unsignedInput = unsignedTx.inputs(boxIdx)
       require(util.Arrays.equals(unsignedInput.boxId, inputBox.box.id))
       val context = new ErgoLikeContext(
-        AvlTreeData.avlTreeFromDigest(stateContext.previousStateDigest),
+        AvlTreeData.avlTreeFromDigest(ADDigest @@ stateContext.previousStateDigest.toArray),
         stateContext.sigmaLastHeaders,
         stateContext.sigmaPreHeader,
         transactionContext.dataBoxes,

@@ -204,15 +204,14 @@ lazy val corelib = crossProject(JVMPlatform, JSPlatform)
     commonDependenies2,
     testingDependencies2,
     crossScalaSettings,
+    scryptoDependency,
     publish / skip := true
   )
   .jvmSettings(
-    crossScalaSettings,
-    scryptoDependency("jvm")
+    crossScalaSettings
   )
   .jsSettings(
     crossScalaSettingsJS,
-    scryptoDependency("js"),
     libraryDependencies ++= Seq(
       "org.scala-js" %%% "scala-js-macrotask-executor" % "1.0.0"
     ),

@@ -4,6 +4,7 @@ import org.ergoplatform.ErgoBox
 import org.ergoplatform.settings.ErgoAlgos
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen.containerOfN
+import org.scalacheck.util.Buildable
 import org.scalacheck.{Arbitrary, Gen}
 import scalan.RType
 import scorex.crypto.authds.{ADDigest, ADKey, ADValue}
