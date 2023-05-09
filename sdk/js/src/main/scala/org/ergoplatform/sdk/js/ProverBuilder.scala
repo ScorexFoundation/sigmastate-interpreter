@@ -10,6 +10,7 @@ import scala.scalajs.js.annotation.JSExportTopLevel
 import Isos._
 import sigmastate.eval.SigmaDsl
 
+/** Equivalent of [[sdk.ProverBuilder]] available from JS. */
 @JSExportTopLevel("ProverBuilder")
 class ProverBuilder(parameters: ErgoLikeParameters, networkPrefix: NetworkPrefix) extends js.Object {
   val _builder = new sdk.ProverBuilder(parameters, networkPrefix)

@@ -124,7 +124,7 @@ object ErgoLikeTransactionSerializer extends SigmaSerializer[ErgoLikeTransaction
     val tokenIds = tx.outputCandidates.toColl
       .flatMap(box => box.additionalTokens.map(t => t._1))
 
-    val distinctTokenIds = tokenIds.distinct
+    val distinctTokenIds = tokenIds.distinct // rely on equality of Coll
 
     w.putUInt(distinctTokenIds.length)
     cfor(0)(_ < distinctTokenIds.length, _ + 1) { i =>

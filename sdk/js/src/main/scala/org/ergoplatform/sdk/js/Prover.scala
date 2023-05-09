@@ -7,6 +7,7 @@ import typings.fleetSdkCommon.{commonMod, inputsMod, tokenMod, transactionsMod}
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSExportTopLevel
 
+/** Equivalent of [[sdk.Prover]] available from JS. */
 @JSExportTopLevel("Prover")
 class Prover(_prover: sdk.Prover) extends js.Object {
   import Isos._
@@ -46,9 +47,11 @@ class Prover(_prover: sdk.Prover) extends js.Object {
 
 }
 
+//TODO finish implementation
 @JSExportTopLevel("ReducedTransaction")
 class ReducedTransaction
 
+//TODO finish implementation
 @JSExportTopLevel("ProverFactory")
 object Prover {
 }

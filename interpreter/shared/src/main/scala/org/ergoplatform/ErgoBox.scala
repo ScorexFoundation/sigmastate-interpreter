@@ -103,10 +103,12 @@ object ErgoBox {
     val size: Short = 32
   }
 
+  /** Token id is tagged collection of bytes. */
   type TokenId = Digest32Coll
   object TokenId {
     val size: Short = 32
   }
+  /** Helper synonym for a token with a value attached. */
   type Token = (Digest32Coll, Long)
 
   val MaxBoxSize: Int = SigmaConstants.MaxBoxSize.value

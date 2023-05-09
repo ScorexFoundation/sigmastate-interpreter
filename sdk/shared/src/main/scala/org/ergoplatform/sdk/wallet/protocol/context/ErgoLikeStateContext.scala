@@ -25,6 +25,12 @@ trait ErgoLikeStateContext {
   def sigmaPreHeader: special.sigma.PreHeader
 }
 
+/** Representis the Ergo-like state context for tx signing.
+  *
+  * @param sigmaLastHeaders    the last headers of the Sigma blockchain
+  * @param previousStateDigest the bytes representing the previous state digest
+  * @param sigmaPreHeader      the pre-header object
+  */
 case class CErgoLikeStateContext(
   sigmaLastHeaders: Coll[special.sigma.Header],
   previousStateDigest: Coll[Byte],

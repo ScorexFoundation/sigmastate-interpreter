@@ -152,7 +152,7 @@ object ErgoBoxCandidate {
         val id = ids(i)
         val amount = amounts(i)
         if (tokensInTx.isDefined) {
-          val tokenIndex = tokensInTx.get.indexWhere(_ == id, 0)
+          val tokenIndex = tokensInTx.get.indexWhere(_ == id, 0) // using equality on Coll
           if (tokenIndex == -1) sys.error(s"failed to find token id ($id) in tx's digest index")
           w.putUInt(tokenIndex)
         } else {

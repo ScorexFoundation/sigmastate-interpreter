@@ -10,6 +10,7 @@ import special.sigma.GroupElement
 import java.math.BigInteger
 import scala.collection.mutable.ArrayBuffer
 
+/** A builder class for constructing a `Prover` with specified secrets. */
 class ProverBuilder(parameters: ErgoLikeParameters, networkPrefix: NetworkPrefix) {
   private var _masterKey: Option[ExtendedSecretKey] = None
 
@@ -19,6 +20,10 @@ class ProverBuilder(parameters: ErgoLikeParameters, networkPrefix: NetworkPrefix
   private val _dhtSecrets = ArrayBuffer.empty[DiffieHellmanTupleProverInput]
   private val _dLogSecrets = ArrayBuffer.empty[DLogProverInput]
 
+  /** Sets the mnemonic phrase and password for the prover.
+    *
+    * @param usePre1627KeyDerivation whether to use pre-1627 key derivation
+    */
   def withMnemonic(
       mnemonicPhrase: SecretString,
       mnemonicPass: SecretString,
@@ -28,6 +33,11 @@ class ProverBuilder(parameters: ErgoLikeParameters, networkPrefix: NetworkPrefix
     this
   }
 
+  /** Adds an EIP-3 secret key for the specified index to the prover.
+    *
+    * @param index the derivation path index
+    * @return an updated ProverBuilder
+    */
   def withEip3Secret(index: Int): ProverBuilder = {
     require(_masterKey.isDefined, s"Mnemonic is not specified, use withMnemonic method.")
     require(!_eip2Keys.exists(_._1 == index),
@@ -38,6 +48,7 @@ class ProverBuilder(parameters: ErgoLikeParameters, networkPrefix: NetworkPrefix
     this
   }
 
+  /** Adds a Diffie-Hellman Tuple secret to the prover. */
   def withDHTData(
       g: GroupElement,
       h: GroupElement,
@@ -51,6 +62,11 @@ class ProverBuilder(parameters: ErgoLikeParameters, networkPrefix: NetworkPrefix
     this
   }
 
+  /** Adds a DLog secret to the prover.
+    *
+    * @param x the x value of the DLog secret
+    * @return an updated ProverBuilder
+    */
   def withDLogSecret(x: BigInteger): ProverBuilder = {
     val dLog = new DLogProtocol.DLogProverInput(x)
     if (_dLogSecrets.contains(dLog))
@@ -59,6 +75,10 @@ class ProverBuilder(parameters: ErgoLikeParameters, networkPrefix: NetworkPrefix
     this
   }
 
+  /** Constructs a `Prover` with the specified secrets.
+    *
+    * @return a new Prover instance
+    */
   def build(): Prover = {
     val secretKeys = _masterKey.toIndexedSeq ++ _eip2Keys.map(_._2)
     val interpreter = new AppkitProvingInterpreter(
