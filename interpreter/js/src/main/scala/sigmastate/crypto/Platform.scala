@@ -72,7 +72,8 @@ object Platform {
     * @param compressed if true, generates a compressed point encoding
     */
   def encodePoint(p: Ecp, compressed: Boolean): Array[Byte] = {
-    val hex = p.point.toHex(compressed)
+    val hex = if (isInfinityPoint(p)) "00"  // to ensure equality with Java implementation
+              else p.point.toHex(compressed)
     Base16.decode(hex).get
   }
 
