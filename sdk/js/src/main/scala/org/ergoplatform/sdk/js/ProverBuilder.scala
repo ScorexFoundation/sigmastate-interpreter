@@ -15,6 +15,11 @@ import sigmastate.eval.SigmaDsl
 class ProverBuilder(parameters: ErgoLikeParameters, networkPrefix: NetworkPrefix) extends js.Object {
   val _builder = new sdk.ProverBuilder(parameters, networkPrefix)
 
+  /** Configure this builder to use the given seed when building a new prover.
+    *
+    * @param mnemonicPhrase          secret seed phrase to be used in prover for generating proofs.
+    * @param mnemonicPass            password to protect secret seed phrase.
+    */
   def withMnemonic(mnemonicPhrase: String, mnemonicPass: String): ProverBuilder = {
     _builder.withMnemonic(
       SecretString.create(mnemonicPhrase),
@@ -24,12 +29,38 @@ class ProverBuilder(parameters: ErgoLikeParameters, networkPrefix: NetworkPrefix
     this
   }
 
+  /** Configure this builder to derive the new EIP-3 secret key with the given index.
+    * The derivation uses master key derived from the mnemonic configured using
+    * [[ErgoProverBuilder.withMnemonic]].
+    *
+    * @param index last index in the EIP-3 derivation path.
+    */
   def withEip3Secret(index: Int): ProverBuilder = {
     _builder.withEip3Secret(index)
     this
   }
 
-  def withDHTData(g: String, h: String, u: String, v: String, x: js.BigInt): ProverBuilder = {
+  /** Configures this builder to use group elements (g, h, u, v) and secret x for a
+    * ProveDHTuple statement when building a new prover.
+    *
+    * ProveDHTuple is a statement consisting of 4 group elements (g, h, u, v) and
+    * requires the prover to prove knowledge of secret integer x such that.
+    *
+    * u = g^x
+    * and
+    * y = h^x
+    *
+    * @param g [[GroupElement]] instance defining g
+    * @param h [[GroupElement]] instance defining h
+    * @param u [[GroupElement]] instance defining u
+    * @param v [[GroupElement]] instance defining v
+    * @param x [[BigInteger]] instance defining x
+    * @see
+    * <a href="https://github.com/ScorexFoundation/sigmastate-interpreter/blob/b3695bdb785c9b3a94545ffea506358ee3f8ed3d/sigmastate/src/test/scala/sigmastate/utxo/examples/DHTupleExampleSpecification.scala#L28">example</a>
+    * @see
+    * <a href="https://github.com/ScorexFoundation/sigmastate-interpreter/blob/b54a173865a532de09bbcbf10da32ee2a491c8f9/sigmastate/src/main/scala/sigmastate/basics/DiffieHellmanTupleProtocol.scala#L58">implementation</a>
+    */
+  def withDHTSecret(g: String, h: String, u: String, v: String, x: js.BigInt): ProverBuilder = {
     _builder.withDHTData(
       isoStringToGroupElement.to(g),
       isoStringToGroupElement.to(h),
@@ -40,11 +71,20 @@ class ProverBuilder(parameters: ErgoLikeParameters, networkPrefix: NetworkPrefix
     this
   }
 
+  /** This allows adding additional secret for use in proveDlog, when the secret is not
+    * part of the wallet.
+    *
+    * Multiple secrets can be added by calling this method multiple times.
+    *
+    * Multiple secrets are necessary for statements that need multiple proveDlogs, such
+    * as proveDlog(a) && proveDlog(b), where a and b are two group elements.
+    */
   def withDLogSecret(x: js.BigInt): ProverBuilder = {
     _builder.withDLogSecret(SigmaDsl.toBigInteger(isoBigInt.to(x)))
     this
   }
 
+  /** Builds a new prover using provided configuration. */
   def build(): Prover = {
     val p =_builder.build()
     new Prover(p)
