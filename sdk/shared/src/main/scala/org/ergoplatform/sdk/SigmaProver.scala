@@ -13,7 +13,7 @@ import special.sigma.{BigInt, SigmaProp}
   * @param _prover        an instance of interpreter and a prover combined
   * @param networkPrefix  the network prefix for Ergo addresses
   */
-class Prover(_prover: AppkitProvingInterpreter, networkPrefix: NetworkPrefix) {
+class SigmaProver(_prover: AppkitProvingInterpreter, networkPrefix: NetworkPrefix) {
   implicit val ergoAddressEncoder: ErgoAddressEncoder = ErgoAddressEncoder(networkPrefix)
 
   /** Returns the Pay-to-Public-Key (P2PK) address associated with the prover's public key. */

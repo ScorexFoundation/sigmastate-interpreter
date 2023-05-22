@@ -7,11 +7,12 @@ import typings.fleetSdkCommon.{commonMod, inputsMod, tokenMod, transactionsMod}
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSExportTopLevel
 
-/** Equivalent of [[sdk.Prover]] available from JS. */
-@JSExportTopLevel("Prover")
-class Prover(_prover: sdk.Prover) extends js.Object {
+/** Equivalent of [[sdk.SigmaProver]] available from JS. */
+@JSExportTopLevel("SigmaProver")
+class SigmaProver(_prover: sdk.SigmaProver) extends js.Object {
   import Isos._
 
+  //TODO finish implementation
   def reduce(
       stateCtx: BlockchainStateContext,
       unsignedTx: transactionsMod.UnsignedTransaction,
@@ -41,7 +42,7 @@ class Prover(_prover: sdk.Prover) extends js.Object {
   ): (ReducedTransaction, Int) = {
     val tx = Isos.isoUnsignedTransaction.to(unsignedTx)
 //    val inputs: = boxesToSpend.map(isoEIP12UnsignedInput.to).toArray
-    
+
     (new ReducedTransaction, 0)
   }
 
@@ -53,5 +54,5 @@ class ReducedTransaction
 
 //TODO finish implementation
 @JSExportTopLevel("ProverFactory")
-object Prover {
+object SigmaProver {
 }

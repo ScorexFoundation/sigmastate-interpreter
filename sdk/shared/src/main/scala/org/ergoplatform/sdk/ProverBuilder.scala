@@ -79,13 +79,13 @@ class ProverBuilder(parameters: ErgoLikeParameters, networkPrefix: NetworkPrefix
     *
     * @return a new Prover instance
     */
-  def build(): Prover = {
+  def build(): SigmaProver = {
     val secretKeys = _masterKey.toIndexedSeq ++ _eip2Keys.map(_._2)
     val interpreter = new AppkitProvingInterpreter(
       secretKeys,
       _dLogSecrets.toIndexedSeq,
       _dhtSecrets.toIndexedSeq, parameters)
-    new Prover(interpreter, networkPrefix)
+    new SigmaProver(interpreter, networkPrefix)
   }
 }
 

@@ -85,8 +85,8 @@ class ProverBuilder(parameters: ErgoLikeParameters, networkPrefix: NetworkPrefix
   }
 
   /** Builds a new prover using provided configuration. */
-  def build(): Prover = {
+  def build(): SigmaProver = {
     val p =_builder.build()
-    new Prover(p)
+    new SigmaProver(p)
   }
 }
