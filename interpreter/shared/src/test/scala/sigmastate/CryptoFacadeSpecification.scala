@@ -67,7 +67,7 @@ class CryptoFacadeSpecification extends AnyPropSpec with Matchers with ScalaChec
       (CryptoFacade.exponentiatePoint(G, Q.subtract(BigInteger.ONE)), "0379be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798")
     )
     forAll (vectors) { (point, expectedHex) =>
-      val res = ErgoAlgos.encode(CryptoFacade.encodePoint(point, true))
+      val res = ErgoAlgos.encode(CryptoFacade.getASN1Encoding(point, true))
       res shouldBe expectedHex
     }
   }

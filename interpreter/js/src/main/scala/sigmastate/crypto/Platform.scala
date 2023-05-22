@@ -70,8 +70,9 @@ object Platform {
     *
     * @param p point to encode
     * @param compressed if true, generates a compressed point encoding
+    * @see [[CryptoFacade.getASN1Encoding]]
     */
-  def encodePoint(p: Ecp, compressed: Boolean): Array[Byte] = {
+  def getASN1Encoding(p: Ecp, compressed: Boolean): Array[Byte] = {
     val hex = if (isInfinityPoint(p)) "00"  // to ensure equality with Java implementation
               else p.point.toHex(compressed)
     Base16.decode(hex).get

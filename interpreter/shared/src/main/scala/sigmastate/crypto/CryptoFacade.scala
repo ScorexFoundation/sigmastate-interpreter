@@ -65,10 +65,25 @@ object CryptoFacade {
 
   /** Byte representation of the given point.
     *
+    * ASN.1, short for Abstract Syntax Notation One, is a standard and notation that
+    * describes data structures for representing, encoding, transmitting, and decoding
+    * data.
+    *
+    * The ASN.1 encoding of EC point according to this standard can be one of two forms:
+    *
+    * Compressed form: This is a shorter form where only the x coordinate and a bit of
+    * information about the y coordinate are stored. The full y coordinate can be
+    * recalculated from this information. The compressed form begins with a byte value of
+    * 02 or 03 (depending on the y coordinate), followed by the x coordinate.
+    *
+    * Uncompressed form: This is a longer form where both the x and y coordinates are
+    * stored. The uncompressed form begins with a byte value of 04, followed by the x
+    * coordinate, and then the y coordinate.
+    *
     * @param p          point to encode
     * @param compressed if true, generates a compressed point encoding
     */
-  def encodePoint(p: Ecp, compressed: Boolean): Array[Byte] = Platform.encodePoint(p, compressed)
+  def getASN1Encoding(p: Ecp, compressed: Boolean): Array[Byte] = Platform.getASN1Encoding(p, compressed)
 
   /** A [[Curve]] instance describing the elliptic curve of the point p
     *
