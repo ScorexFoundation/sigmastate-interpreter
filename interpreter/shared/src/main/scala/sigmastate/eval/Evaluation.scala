@@ -23,18 +23,24 @@ object Evaluation {
   def msgCostLimitError(cost: Long, limit: Long) = s"Estimated execution cost $cost exceeds the limit $limit"
 
   /** Helper method to accumulate cost while checking limit.
-    * @param current current cost value
-    * @param more    additional cost to add to the current value
-    * @param limit   total cost limit
+    *
+    * @param current   current cost value
+    * @param delta     additional cost to add to the current value
+    * @param limit     total cost limit
+    * @param msgSuffix use case-specific error message suffix
     * @return new increased cost when it doesn't exceed the limit
     * @throws CostLimitException
     */
-  def addCostChecked(current: Long, more: Long, limit: Long): Long = {
-    val newCost = java7.compat.Math.addExact(current, more)
+  def addCostChecked(current: Long, delta: Long, limit: Long, msgSuffix: => String = ""): Long = {
+    val newCost = java7.compat.Math.addExact(current, delta)
     if (newCost > limit) {
       throw new CostLimitException(
         estimatedCost = newCost,
-        message = msgCostLimitError(newCost, limit), cause = None)
+        message = {
+          val suffix = if (msgSuffix.isEmpty) "" else s": $msgSuffix"
+          msgCostLimitError(newCost, limit) + suffix
+        },
+        cause = None)
     }
     newCost
   }

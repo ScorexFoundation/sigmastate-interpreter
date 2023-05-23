@@ -3,7 +3,7 @@ package sigmastate.utxo
 import java.io.{FileWriter, File}
 
 import org.ergoplatform
-import org.ergoplatform.ErgoBox.TokenId
+import org.ergoplatform.ErgoBox.Token
 import org.ergoplatform._
 import org.scalacheck.Gen
 import scorex.crypto.authds.avltree.batch.{Remove, BatchAVLProver, Insert}
@@ -35,7 +35,7 @@ class BlockchainSimulationSpecification extends CompilerTestingCommons
 
     val txs = boxesToSpend.map { box =>
       val newBoxCandidate =
-        new ErgoBoxCandidate(10, minerPubKey, height, Colls.emptyColl[(TokenId, Long)], Map(heightReg -> IntConstant(height + windowSize)))
+        new ErgoBoxCandidate(10, minerPubKey, height, Colls.emptyColl[Token], Map(heightReg -> IntConstant(height + windowSize)))
       val unsignedInput = new UnsignedInput(box.id)
       val tx = UnsignedErgoLikeTransaction(IndexedSeq(unsignedInput), IndexedSeq(newBoxCandidate))
       val context = ErgoLikeContextTesting(height + 1,

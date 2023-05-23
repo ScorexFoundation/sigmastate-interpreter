@@ -2,6 +2,7 @@ package special.sigma
 
 import org.ergoplatform.ErgoBox
 import org.ergoplatform.settings.ErgoAlgos
+import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen.containerOfN
 import org.scalacheck.util.Buildable
 import org.scalacheck.{Arbitrary, Gen}
@@ -46,7 +47,7 @@ trait SigmaTestingData extends TestingCommons with ObjectGenerators {
   val intsCollGen = arrayGen[Int].map(Colls.fromArray(_))
   implicit val arbBytes = Arbitrary(bytesCollGen)
   implicit val arbInts = Arbitrary(intsCollGen)
-  val keyCollGen = collOfN[Byte](32)
+  val keyCollGen = collOfN[Byte](32, arbitrary[Byte])
   import org.ergoplatform.dsl.AvlTreeHelpers._
 
   def createAvlTreeAndProver(entries: (Coll[Byte], Coll[Byte])*) = {
@@ -226,9 +227,9 @@ trait SigmaTestingData extends TestingCommons with ObjectGenerators {
           Right(ConstantPlaceholder(0, SSigmaProp))
         ),
         Coll(
-          (Digest32 @@ (ErgoAlgos.decodeUnsafe("6e789ab7b2fffff12280a6cd01557f6fb22b7f80ff7aff8e1f7f15973d7f0001")),
+          (Digest32Coll @@@ Colls.fromArray(ErgoAlgos.decodeUnsafe("6e789ab7b2fffff12280a6cd01557f6fb22b7f80ff7aff8e1f7f15973d7f0001")),
               10000000L),
-          (Digest32 @@ (ErgoAlgos.decodeUnsafe("a3ff007f00057600808001ff8f8000019000ffdb806fff7cc0b6015eb37fa600")),
+          (Digest32Coll @@@ Colls.fromArray(ErgoAlgos.decodeUnsafe("a3ff007f00057600808001ff8f8000019000ffdb806fff7cc0b6015eb37fa600")),
               500L)
         ),
         Map(

@@ -8,12 +8,11 @@ import org.ergoplatform.dsl.TestContractSpec
 import scorex.crypto.hash.Blake2b256
 import sigmastate.SCollection.SByteArray
 import sigmastate._
-import sigmastate.Values.{LongConstant, BlockValue, Value, ByteArrayConstant, ErgoTree, ValDef, ValUse}
-import sigmastate.eval.CSigmaProp
+import sigmastate.Values.{BlockValue, ByteArrayConstant, LongConstant, ValDef, ValUse, Value}
+import sigmastate.eval.{CSigmaProp, Digest32Coll}
 import sigmastate.eval.Extensions._
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.utxo._
-import special.collection.Coll
 
 /** An example of an atomic ergo <=> asset exchange.
   * Let's assume that Alice is willing to buy 60 assets of type "token1" for 100 ergo coins, and Bob
@@ -39,7 +38,7 @@ import special.collection.Coll
   */
 class AssetsAtomicExchangeTests extends CompilerTestingCommons { suite =>
   lazy val spec = TestContractSpec(suite)(new TestingIRContext)
-  private lazy val tokenId: Coll[Byte] = spec.Coll(Blake2b256("token1"))
+  private lazy val tokenId = Digest32Coll @@@ spec.Coll(Blake2b256("token1"))
   lazy val buyer = spec.ProvingParty("Alice")
   lazy val seller = spec.ProvingParty("Bob")
 

@@ -5,7 +5,7 @@ import special.collection.{Coll, CollOverArray, PairOfCols}
 import scorex.util.ModifierId
 import org.ergoplatform.{DataInput, ErgoBox, ErgoBoxCandidate, ErgoLikeContext, ErgoLikeTransaction, ErgoLikeTransactionTemplate, Input, UnsignedInput}
 import sigmastate.Values.ErgoTree
-import org.ergoplatform.ErgoBox.{AdditionalRegisters, TokenId, allZerosModifierId}
+import org.ergoplatform.ErgoBox.{AdditionalRegisters, Token, allZerosModifierId}
 import org.ergoplatform.validation.SigmaValidationSettings
 import sigmastate.AvlTreeData
 import sigmastate.eval.CostingSigmaDslBuilder
@@ -25,18 +25,18 @@ object TestingHelpers {
   def testBox(value: Long,
               ergoTree: ErgoTree,
               creationHeight: Int,
-              additionalTokens: Seq[(TokenId, Long)] = ArraySeq.empty,
+              additionalTokens: Seq[Token] = ArraySeq.empty,
               additionalRegisters: AdditionalRegisters = Map.empty,
               transactionId: ModifierId = allZerosModifierId,
               boxIndex: Short = 0): ErgoBox =
     new ErgoBox(value, ergoTree,
-      CostingSigmaDslBuilder.Colls.fromArray(additionalTokens.toArray[(TokenId, Long)]),
+      CostingSigmaDslBuilder.Colls.fromArray(additionalTokens.toArray[Token]),
       additionalRegisters,
       transactionId, boxIndex, creationHeight)
 
   def createBox(value: Long,
                 proposition: ErgoTree,
-                additionalTokens: Seq[(Digest32, Long)] = ArraySeq.empty,
+                additionalTokens: Seq[Token] = ArraySeq.empty,
                 additionalRegisters: AdditionalRegisters = Map.empty)
   = testBox(value, proposition, 0, additionalTokens, additionalRegisters)
 
@@ -60,7 +60,7 @@ object TestingHelpers {
   def copyBox(box: ErgoBox)(
       value: Long = box.value,
       ergoTree: ErgoTree = box.ergoTree,
-      additionalTokens: Coll[(TokenId, Long)] = box.additionalTokens,
+      additionalTokens: Coll[Token] = box.additionalTokens,
       additionalRegisters: AdditionalRegisters = box.additionalRegisters,
       transactionId: ModifierId = box.transactionId,
       index: Short = box.index,

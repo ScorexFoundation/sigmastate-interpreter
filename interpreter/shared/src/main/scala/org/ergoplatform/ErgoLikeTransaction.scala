@@ -124,12 +124,12 @@ object ErgoLikeTransactionSerializer extends SigmaSerializer[ErgoLikeTransaction
     val tokenIds = tx.outputCandidates.toColl
       .flatMap(box => box.additionalTokens.map(t => t._1))
 
-    val distinctTokenIds = tokenIds.map(_.toColl).distinct.map(_.toArray.asInstanceOf[TokenId])
+    val distinctTokenIds = tokenIds.distinct // rely on equality of Coll
 
     w.putUInt(distinctTokenIds.length)
     cfor(0)(_ < distinctTokenIds.length, _ + 1) { i =>
       val tokenId = distinctTokenIds(i)
-      w.putBytes(tokenId)
+      w.putBytes(tokenId.toArray)
     }
     // serialize outputs
     val outs = tx.outputCandidates
@@ -161,9 +161,9 @@ object ErgoLikeTransactionSerializer extends SigmaSerializer[ErgoLikeTransaction
     // NO-FORK: in v5.x getUIntExact may throw Int overflow exception
     // in v4.x r.getUInt().toInt is used and may return negative Int instead of the overflow
     // in which case the array allocation will throw NegativeArraySizeException
-    val tokens = safeNewArray[Array[Byte]](tokensCount)
+    val tokens = safeNewArray[TokenId](tokensCount)
     cfor(0)(_ < tokensCount, _ + 1) { i =>
-      tokens(i) = r.getBytes(TokenId.size)
+      tokens(i) = Digest32Coll @@@ Colls.fromArray(r.getBytes(TokenId.size))
     }
 
     // parse outputs

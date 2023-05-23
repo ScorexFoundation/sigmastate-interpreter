@@ -18,6 +18,7 @@ import sigmastate.lang.Terms.ValueOps
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo.{ExtractCreationInfo, ByIndex, SelectField}
 import scalan.util.BenchmarkUtil._
+import sigmastate.eval.{Colls, Digest32Coll}
 import sigmastate.utils.Helpers._
 
 import scala.util.Try
@@ -206,12 +207,12 @@ class ErgoTreePredefSpec extends CompilerTestingCommons with CompilerCrossVersio
     val pubkey = prover.dlogSecrets.head.publicImage
     val pubkeyTree = mkTestErgoTree(pubkey)
 
-    val tokenId: Digest32 = Blake2b256("id")
-    val wrongId: Digest32 = Blake2b256(tokenId)
-    val wrongId2: Digest32 = Blake2b256(wrongId)
+    val tokenId = Digest32Coll @@@ Colls.fromArray(Blake2b256("id"))
+    val wrongId = Digest32Coll @@@ Colls.fromArray(Blake2b256(tokenId.toArray))
+    val wrongId2 = Digest32Coll @@@ Colls.fromArray(Blake2b256(wrongId.toArray))
     val tokenAmount: Int = 50
 
-    val prop = mkTestErgoTree(ErgoScriptPredef.tokenThresholdScript(tokenId, tokenAmount, TestnetNetworkPrefix))
+    val prop = mkTestErgoTree(ErgoScriptPredef.tokenThresholdScript(tokenId.toArray, tokenAmount, TestnetNetworkPrefix))
 
     def check(inputBoxes: IndexedSeq[ErgoBox]): Try[Unit] = Try {
       val inputs = inputBoxes.map(b => Input(b.id, emptyProverResult))

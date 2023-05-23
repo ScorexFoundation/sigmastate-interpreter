@@ -28,6 +28,7 @@ trait ProverInterpreter extends Interpreter with ProverUtils {
 
   override type ProofT = UncheckedTree
 
+  /** All secrets available for this prover. */
   def secrets: Seq[SigmaProtocolPrivateInput[_, _]]
 
   /**
@@ -128,7 +129,7 @@ trait ProverInterpreter extends Interpreter with ProverUtils {
     VersionContext.withVersions(context.activatedScriptVersion, ergoTree.version) {
       val (resValue, resCost) = {
         val reduced = fullReduction(ergoTree, context, env)
-        val fullCost = addCryptoCost(reduced, context.costLimit)
+        val fullCost = addCryptoCost(reduced.value, reduced.cost, context.costLimit)
         (reduced.value, fullCost)
       }
 

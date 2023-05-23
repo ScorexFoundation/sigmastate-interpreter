@@ -65,8 +65,9 @@ object Platform {
   /** Byte representation of the given point.
     * @param p point to encode
     * @param compressed if true, generates a compressed point encoding
+    * @see [[CryptoFacade.getASN1Encoding]]
     */
-  def encodePoint(p: Ecp, compressed: Boolean): Array[Byte] = p.value.getEncoded(compressed)
+  def getASN1Encoding(p: Ecp, compressed: Boolean): Array[Byte] = p.value.getEncoded(compressed)
 
   /** Returns the value of bit 0 in BigInteger representation of this point. */
   def signOf(p: ECFieldElem): Boolean = p.value.testBitZero()

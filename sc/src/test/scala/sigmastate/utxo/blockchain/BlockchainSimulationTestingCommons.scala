@@ -1,6 +1,6 @@
 package sigmastate.utxo.blockchain
 
-import org.ergoplatform.ErgoBox.TokenId
+import org.ergoplatform.ErgoBox.Token
 import org.ergoplatform._
 import scorex.crypto.authds.{ADDigest, ADKey, ADValue}
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Remove}
@@ -50,7 +50,7 @@ trait BlockchainSimulationTestingCommons extends CompilerTestingCommons {
 
     val txs = boxesToSpend.map { box =>
       val newBoxCandidate =
-        new ErgoBoxCandidate(10, prop, height, Colls.emptyColl[(TokenId, Long)], Map())
+        new ErgoBoxCandidate(10, prop, height, Colls.emptyColl[Token], Map())
       val unsignedInput = new UnsignedInput(box.id)
       val tx = UnsignedErgoLikeTransaction(IndexedSeq(unsignedInput), IndexedSeq(newBoxCandidate))
       val context = ErgoLikeContextTesting(height + 1,

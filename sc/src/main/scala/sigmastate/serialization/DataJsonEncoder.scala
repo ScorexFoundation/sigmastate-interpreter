@@ -4,16 +4,15 @@ import java.math.BigInteger
 import io.circe._
 import io.circe.syntax._
 import org.ergoplatform.ErgoBox
-import org.ergoplatform.ErgoBox.NonMandatoryRegisterId
+import org.ergoplatform.ErgoBox.{NonMandatoryRegisterId, Token}
 import org.ergoplatform.settings.ErgoAlgos
 import scalan.RType
-import scorex.crypto.hash.Digest32
 import scorex.util._
-import sigmastate.Values.{EvaluatedValue, Constant}
+import sigmastate.Values.{Constant, EvaluatedValue}
 import sigmastate._
 import sigmastate.eval._
 import sigmastate.lang.SigmaParser
-import special.collection.{collRType, Coll}
+import special.collection.Coll
 import special.sigma._
 import debox.cfor
 import sigmastate.exceptions.SerializerException
@@ -134,9 +133,10 @@ object DataJsonEncoder {
       val obj = mutable.ArrayBuffer.empty[(String, Json)]
       obj += ("value" -> encodeData(ergoBox.value.asInstanceOf[SType#WrappedType], SLong))
       obj += ("ergoTree" -> encodeBytes(ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(ergoBox.ergoTree)))
-      obj += "tokens" -> encodeData(ergoBox.additionalTokens.map { case (id, amount) =>
-        (Colls.fromArray(id), amount)
-      }.asInstanceOf[SType#WrappedType], SCollectionType(STuple(SCollectionType(SByte), SLong)))
+      obj += "tokens" -> encodeData(
+        ergoBox.additionalTokens.asInstanceOf[SType#WrappedType],
+        SCollectionType(STuple(SCollectionType(SByte), SLong))
+      )
       ergoBox.additionalRegisters.foreach { case (id, value) =>
         obj += (s"r${id.number}" -> encode[SType](value.value, value.tpe))
       }
@@ -204,11 +204,9 @@ object DataJsonEncoder {
       case SBox =>
         val value = decodeData(json.hcursor.downField(s"value").focus.get, SLong)
         val tree = ErgoTreeSerializer.DefaultSerializer.deserializeErgoTree(decodeBytes(json.hcursor.downField(s"ergoTree").focus.get))
-        val tokens = decodeData(json.hcursor.downField(s"tokens").focus.get, SCollectionType(STuple(SCollectionType(SByte), SLong))).asInstanceOf[Coll[(Coll[Byte], Long)]].map {
-          v =>
-            val tup = v.asInstanceOf[(Coll[Byte], Long)]
-            (tup._1.toArray.asInstanceOf[Digest32], tup._2)
-        }
+        val tokens = decodeData(
+          json.hcursor.downField(s"tokens").focus.get,
+          SCollectionType(STuple(SCollectionType(SByte), SLong))).asInstanceOf[Coll[Token]]
         val txId = decodeBytes(json.hcursor.downField(s"txId").focus.get).toModifierId
         val index = decodeData(json.hcursor.downField(s"index").focus.get, SShort)
         val creationHeight = decodeData(json.hcursor.downField(s"creationHeight").focus.get, SInt)

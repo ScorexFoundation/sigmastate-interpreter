@@ -1,7 +1,7 @@
 package org.ergoplatform.dsl
 
-import org.ergoplatform.ErgoBox.{NonMandatoryRegisterId, BoxId}
-import sigmastate.interpreter.{ProverResult, CostedProverResult}
+import org.ergoplatform.ErgoBox.{BoxId, NonMandatoryRegisterId, TokenId}
+import sigmastate.interpreter.{CostedProverResult, ProverResult}
 import scalan.RType
 import org.ergoplatform.{ErgoLikeContext, ErgoBox}
 import special.sigma.{SigmaDslBuilder, AnyValue, SigmaProp}
@@ -9,7 +9,8 @@ import sigmastate.Values.ErgoTree
 import sigmastate.eval.{IRContext, CostingSigmaDslBuilder}
 
 import scala.util.Try
-import org.ergoplatform.dsl.ContractSyntax.{Token, TokenId, ErgoScript, Proposition}
+import org.ergoplatform.dsl.ContractSyntax.{ErgoScript, Proposition, Token}
+
 import scala.language.implicitConversions
 
 trait ContractSpec {

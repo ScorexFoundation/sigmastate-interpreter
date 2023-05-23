@@ -20,7 +20,7 @@ class SigmaParserTest extends AnyPropSpec with ScalaCheckPropertyChecks with Mat
   import predefFuncRegistry._
 
   def parse(x: String): SValue = {
-    SigmaParser(x, TransformingSigmaBuilder) match {
+    SigmaParser(x) match {
       case Parsed.Success(v, _) =>
         v.sourceContext.isDefined shouldBe true
         assertSrcCtxForAllNodes(v)

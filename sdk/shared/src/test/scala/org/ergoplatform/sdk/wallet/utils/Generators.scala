@@ -1,6 +1,6 @@
 package org.ergoplatform.sdk.wallet.utils
 
-import org.ergoplatform.ErgoBox.{BoxId, NonMandatoryRegisterId}
+import org.ergoplatform.ErgoBox.{BoxId, NonMandatoryRegisterId, Token}
 import org.ergoplatform.sdk.wallet.Constants
 import org.ergoplatform.sdk.wallet.secrets.ExtendedPublicKey
 import org.ergoplatform.sdk.wallet.secrets.{DerivationPath, ExtendedSecretKey, Index, SecretKey}
@@ -17,7 +17,6 @@ import sigmastate.eval.Extensions._
 import scorex.util.{ModifierId, bytesToId}
 import sigmastate.eval._
 import sigmastate.helpers.TestingHelpers._
-import org.ergoplatform.ErgoBox.TokenId
 import scorex.crypto.hash.Digest32
 import sigmastate.crypto.CryptoFacade
 
@@ -62,14 +61,14 @@ trait Generators {
 
   val modIdGen: Gen[ModifierId] = genExactSizeBytes(Constants.ModifierIdLength).map(bytesToId)
 
-  val assetGen: Gen[(TokenId, Long)] = for {
+  val assetGen: Gen[Token] = for {
     id <- boxIdGen
     amt <- Gen.oneOf(1, 500, 20000, 10000000, Long.MaxValue)
-  } yield Digest32 @@@ id -> amt
+  } yield Digest32Coll @@@ id.toColl -> amt
 
-  def additionalTokensGen(cnt: Int): Gen[Seq[(TokenId, Long)]] = Gen.listOfN(cnt, assetGen)
+  def additionalTokensGen(cnt: Int): Gen[Seq[Token]] = Gen.listOfN(cnt, assetGen)
 
-  def additionalTokensGen: Gen[Seq[(TokenId, Long)]] = for {
+  def additionalTokensGen: Gen[Seq[Token]] = for {
     cnt <- Gen.chooseNum[Int](0, 10)
     assets <- additionalTokensGen(cnt)
   } yield assets
@@ -103,7 +102,7 @@ trait Generators {
   }
 
   def ergoBoxGen(propGen: Gen[ErgoTree] = Gen.const(TrueLeaf.toSigmaProp),
-                 tokensGen: Gen[Seq[(TokenId, Long)]] = additionalTokensGen,
+                 tokensGen: Gen[Seq[Token]] = additionalTokensGen,
                  valueGenOpt: Option[Gen[Long]] = None,
                  heightGen: Gen[Int] = heightGen): Gen[ErgoBox] = for {
     h <- heightGen

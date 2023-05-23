@@ -6,13 +6,13 @@ import org.ergoplatform.settings.ErgoAlgos
 import org.ergoplatform.{Outputs, ErgoBox}
 import scalan.RType
 import scorex.crypto.authds.ADDigest
-import scorex.crypto.hash.Digest32
 import scorex.util.ModifierId
 import sigmastate.Values._
 import sigmastate.lang.Terms.MethodCall
 import sigmastate.serialization.OpCodes
 import sigmastate.utxo.SelectField
 import sigmastate._
+import sigmastate.eval.Extensions.ArrayOps
 import sigmastate.eval._
 import sigmastate.utils.Helpers
 import special.collection.CollType
@@ -106,7 +106,7 @@ class SigmaPPrintSpec extends SigmaDslTesting {
             9223372036854775807L,
           new ErgoTree(0.toByte, Vector(), Right(BoolToSigmaProp(FalseLeaf))),
           Coll(
-            (Digest32 @@ (ErgoAlgos.decodeUnsafe("6e789ab7b2fffff12280a6cd01557f6fb22b7f80ff7aff8e1f7f15973d7f0001")), 10000000L)
+            (Digest32Coll @@ (ErgoAlgos.decodeUnsafe("6e789ab7b2fffff12280a6cd01557f6fb22b7f80ff7aff8e1f7f15973d7f0001").toColl), 10000000L)
           ),
           Map(),
           ModifierId @@ ("bc80ffc00100d60101ffd3d3ab7f73800aff80487fff7fffbb010080ff7f0837"),
@@ -121,7 +121,7 @@ class SigmaPPrintSpec extends SigmaDslTesting {
         |    Coll(
         |      (
         |        Digest32 @@ (
-        |          ErgoAlgos.decodeUnsafe("6e789ab7b2fffff12280a6cd01557f6fb22b7f80ff7aff8e1f7f15973d7f0001")
+        |          Helpers.decodeBytes("6e789ab7b2fffff12280a6cd01557f6fb22b7f80ff7aff8e1f7f15973d7f0001")
         |        ),
         |        10000000L
         |      )

@@ -207,7 +207,9 @@ lazy val corelib = crossProject(JVMPlatform, JSPlatform)
     scryptoDependency,
     publish / skip := true
   )
-  .jvmSettings( crossScalaSettings )
+  .jvmSettings(
+    crossScalaSettings
+  )
   .jsSettings(
     crossScalaSettingsJS,
     libraryDependencies ++= Seq(
@@ -245,7 +247,11 @@ lazy val interpreter = crossProject(JVMPlatform, JSPlatform)
   )
 lazy val interpreterJS = interpreter.js
     .enablePlugins(ScalaJSBundlerPlugin)
+    .enablePlugins(ScalablyTypedConverterExternalNpmPlugin)
     .settings(
+      // how to setup ScalablyTyped https://youtu.be/hWUAVrNj65c?t=1397
+      externalNpm := {println(s"baseDirectory: ${baseDirectory.value}"); file(s"${baseDirectory.value}/../../sigma-js") },
+      stIgnore ++= List("bouncycastle-js"),
       scalaJSLinkerConfig ~= { conf =>
         conf.withSourceMap(false)
       },

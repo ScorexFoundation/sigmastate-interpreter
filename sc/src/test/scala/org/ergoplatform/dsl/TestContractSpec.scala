@@ -6,13 +6,12 @@ import scala.collection.mutable
 import sigmastate.interpreter.{CostedProverResult, ProverResult}
 
 import scala.collection.mutable.ArrayBuffer
-import org.ergoplatform.ErgoBox.NonMandatoryRegisterId
+import org.ergoplatform.ErgoBox.{NonMandatoryRegisterId, TokenId}
 import scalan.Nullable
-import scorex.crypto.hash.Digest32
 
 import scala.util.Try
 import org.ergoplatform.{ErgoBox, ErgoLikeContext}
-import org.ergoplatform.dsl.ContractSyntax.{ErgoScript, Proposition, Token, TokenId}
+import org.ergoplatform.dsl.ContractSyntax.{ErgoScript, Proposition, Token}
 import sigmastate.{AvlTreeData, SType}
 import sigmastate.Values.{ErgoTree, EvaluatedValue}
 import sigmastate.eval.{CSigmaProp, Evaluation, IRContext, CAnyValue}
@@ -123,7 +122,7 @@ case class TestContractSpec(testSuite: CompilerTestingCommons)(implicit val IR: 
     }
 
     private[dsl] lazy val ergoBox: ErgoBox = {
-      val tokens = _tokens.map { t => (Digest32 @@ t.id.toArray, t.value) }
+      val tokens = _tokens.map(t => (t.id, t.value))
       testBox(value, propSpec.ergoTree, tx.block.height, tokens, _regs)
     }
     def id = ergoBox.id

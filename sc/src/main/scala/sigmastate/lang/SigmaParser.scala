@@ -11,11 +11,12 @@ import sigmastate.lang.syntax.{Core, Exprs}
 import scala.collection.mutable
 import scala.util.DynamicVariable
 
+/** Main facade to ErgoScript parser implementation. */
 object SigmaParser extends Exprs with Types with Core {
   import fastparse._; import ScalaWhitespace._
   import builder._
 
-  val currentInput = new DynamicVariable[String]("")
+  private val currentInput = new DynamicVariable[String]("")
 
   override def atSrcPos[A](parserIndex: Int)(thunk: => A): A =
     builder.currentSrcCtx.withValue(Nullable(srcCtx(parserIndex))) { thunk }
@@ -23,40 +24,21 @@ object SigmaParser extends Exprs with Types with Core {
   override def srcCtx(parserIndex: Int): SourceContext =
     SourceContext.fromParserIndex(parserIndex, currentInput.value)
 
-  def TmplBodyPrelude[_:P] = P( (Annot ~ OneNLMax).rep )
-  def TmplBodyStat[_:P] = P( TmplBodyPrelude ~ BlockDef | StatCtx.Expr )
-
-  def TmplBody[_:P] = {
-    P( "{" ~/ BlockLambda.? ~ Semis.? ~ TmplBodyStat.repX(sep = Semis) ~ Semis.? ~ `}` )
-  }
-
-//  val FunDef = {
-//    P( (Id | `this`).! ~ LambdaDef ).map { case (name, lam) => builder.mkVal(name, NoType, lam) }
-//  }
-
-  def ValVarDef[_:P] = P( Index ~ BindPattern/*.rep(1, ",".~/)*/ ~ (`:` ~/ Type).? ~ (`=` ~/ FreeCtx.Expr) ).map {
+  override def ValVarDef[_:P] = P( Index ~ BindPattern ~ (`:` ~/ Type).? ~ (`=` ~/ FreeCtx.Expr) ).map {
     case (index, Ident(n,_), t, body) =>
       atSrcPos(index) {
         mkVal(n, t.getOrElse(NoType), body)
       }
-    case (index, pat,_,_) => error(s"Only single name patterns supported but was $pat", Some(srcCtx(index)))
+    case (index, pat,_,_) =>
+      error(s"Only single name patterns supported but was $pat", Some(srcCtx(index)))
   }
 
-  def BlockDef[_:P] = P( Dcl )
+  override def BlockDef[_:P] = P( Dcl )
 
-  def Constr[_:P] = P( AnnotType ~~ (NotNewline ~ ParenArgList ).repX )
-  def Constrs[_:P] = P( (WL ~ Constr).rep(1, `with`) )  //fix  `with`.~/
-  def EarlyDefTmpl[_:P] = P( TmplBody ~ (`with` ~/ Constr).rep ~ TmplBody.? )
-  def NamedTmpl[_:P] = P( Constrs ~ TmplBody.? )
+  private val logged = mutable.Buffer.empty[String]
+  implicit val logger: Logger = Logger(m => this.synchronized { logged.append(m) })
 
-  def AnonTmpl[_:P] = P( EarlyDefTmpl | NamedTmpl | TmplBody ).ignore
-  def DefTmpl[_:P] = P( (`extends` | `<:`) ~ AnonTmpl | TmplBody )
-
-
-  val logged = mutable.Buffer.empty[String]
-  implicit val logger = Logger(m => this.synchronized { logged.append(m) })
-
-  def mkUnaryOp(opName: String, arg: Value[SType]) =
+  override def mkUnaryOp(opName: String, arg: Value[SType]) =
     builder.currentSrcCtx.withValue(arg.sourceContext) {
       opName match {
         case "-" if arg.isInstanceOf[Constant[_]] && arg.tpe.isNumType =>
@@ -87,9 +69,9 @@ object SigmaParser extends Exprs with Types with Core {
       }
     }
 
-  val parseAsMethods = Set("*", "++", "||", "&&", "+", "^", "<<", ">>", ">>>")
+  private val parseAsMethods = Set("*", "++", "||", "&&", "+", "^", "<<", ">>", ">>>")
 
-  def mkBinaryOp(l: Value[SType], opName: String, r: Value[SType]): Value[SType] =
+  override def mkBinaryOp(l: Value[SType], opName: String, r: Value[SType]): Value[SType] =
     builder.currentSrcCtx.withValue(l.sourceContext) {
       opName match {
         case "==" => mkEQ(l, r)
@@ -119,14 +101,18 @@ object SigmaParser extends Exprs with Types with Core {
       }
     }
 
-  def parsedType(str: String): Parsed[SType] = parse(str, implicit p => Type ~ End)
+  private def parsedType(str: String): Parsed[SType] = parse(str, implicit p => Type ~ End)
 
+  /** Parse `str` into SType.
+    * @param str string representation of type in ErgoScript syntax
+    */
   def parseType(str: String): SType = {
     val res = parsedType(str).get.value
     res
   }
 
-  def apply(script: String, sigmaBuilder: SigmaBuilder): Parsed[Value[_ <: SType]] =
+  /** Parse `script` into ErgoTree expression. */
+  def apply(script: String): Parsed[Value[_ <: SType]] =
     currentInput.withValue(script) {
       parse(script, implicit p => (StatCtx.Expr ~ End))
     }

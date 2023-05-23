@@ -2,6 +2,7 @@ package sigmastate.utils
 
 import io.circe.Decoder
 import org.ergoplatform.settings.ErgoAlgos
+import scorex.utils.Ints
 import sigmastate.eval.{Colls, SigmaDsl}
 import sigmastate.basics.CryptoConstants.EcPointType
 import special.collection.Coll
@@ -74,6 +75,14 @@ object Helpers {
     case arr: Array[Double] => util.Arrays.hashCode(arr)
     case arr: Array[Boolean] => util.Arrays.hashCode(arr)
   }
+
+  /** Optimized hashCode for array of bytes when it represents some hash thus it have
+    * enough randomness and we can use only first 4 bytes.
+    * @param id result of some hash function
+    */
+  @inline final def safeIdHashCode(id: Array[Byte]): Int =
+    if (id != null && id.length >= 4) Ints.fromBytes(id(0), id(1), id(2), id(3))
+    else util.Arrays.hashCode(id)
 
   implicit class TryOps[+A](val source: Try[A]) extends AnyVal {
     def fold[B](onError: Throwable => B, onSuccess: A => B) = source match {
