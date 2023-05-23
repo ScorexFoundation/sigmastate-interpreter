@@ -80,6 +80,9 @@ object CryptoFacade {
     * stored. The uncompressed form begins with a byte value of 04, followed by the x
     * coordinate, and then the y coordinate.
     *
+    * NOTE, this encoding is not used in ErgoTree and not part of consensus, it is used for
+    * extended keys (in the wallet) to ensure BIP32 compatibility.
+    *
     * @param p          point to encode
     * @param compressed if true, generates a compressed point encoding
     */
