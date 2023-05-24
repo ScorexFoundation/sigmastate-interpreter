@@ -1,6 +1,8 @@
 package special.collection
 
 import debox.cfor
+import scorex.util.encode.Base16
+import scorex.util.{ModifierId, bytesToId}
 
 object Extensions {
   /** Extension methods for `Coll[T]`. */
@@ -12,6 +14,18 @@ object Extensions {
         f(source(i))
       }
     }
+  }
+
+  /** Extension methods for `Coll[Byte]` not available for generic `Coll[T]`. */
+  implicit class CollBytesOps(val source: Coll[Byte]) extends AnyVal {
+    /** Returns a representation of this collection of bytes as a modifier id. */
+    def toModifierId: ModifierId = {
+      val bytes = source.toArray
+      bytesToId(bytes)
+    }
+
+    /** Encodes this collection of bytes as a hex string. */
+    def toHex: String = Base16.encode(source.toArray)
   }
 
   /** Extension methods for `Coll[(A,B)]`.

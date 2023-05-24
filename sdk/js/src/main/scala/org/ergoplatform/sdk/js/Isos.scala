@@ -11,10 +11,12 @@ import scorex.util.ModifierId
 import scorex.util.encode.Base16
 import sigmastate.{AvlTreeData, AvlTreeFlags, SType}
 import sigmastate.Values.{Constant, GroupElementConstant}
+import sigmastate.eval.Extensions.ArrayOps
 import sigmastate.eval.{CAvlTree, CBigInt, CHeader, CPreHeader, Colls, Digest32Coll, Evaluation}
 import sigmastate.interpreter.ContextExtension
 import sigmastate.serialization.{ErgoTreeSerializer, ValueSerializer}
 import special.collection.Coll
+import special.collection.Extensions.CollBytesOps
 import special.sigma
 import special.sigma.GroupElement
 import typings.fleetSdkCommon.boxesMod.Box
@@ -52,7 +54,7 @@ object Isos {
 
   val isoStringToColl: Iso[String, Coll[Byte]] = new Iso[String, Coll[Byte]] {
     override def to(x: String): Coll[Byte] = Colls.fromArray(Base16.decode(x).get)
-    override def from(x: Coll[Byte]): String = Base16.encode(x.toArray)
+    override def from(x: Coll[Byte]): String = x.toHex
   }
 
   val isoStringToGroupElement: Iso[String, GroupElement] = new Iso[String, GroupElement] {
@@ -181,7 +183,7 @@ object Isos {
     override def to(a: BlockchainStateContext): ErgoLikeStateContext = {
       CErgoLikeStateContext(
         sigmaLastHeaders = isoArrayToColl(isoHeader).to(a.sigmaLastHeaders),
-        previousStateDigest = isoStringToColl.to(a.previousStateDigest),
+        previousStateDigest = ADDigest @@ isoStringToColl.to(a.previousStateDigest).toArray,
         sigmaPreHeader = isoPreHeader.to(a.sigmaPreHeader)
       )
     }
@@ -189,7 +191,7 @@ object Isos {
     override def from(b: ErgoLikeStateContext): BlockchainStateContext = {
       new BlockchainStateContext(
         sigmaLastHeaders = isoArrayToColl(isoHeader).from(b.sigmaLastHeaders),
-        previousStateDigest = isoStringToColl.from(b.previousStateDigest),
+        previousStateDigest = isoStringToColl.from(b.previousStateDigest.toColl),
         sigmaPreHeader = isoPreHeader.from(b.sigmaPreHeader)
       )
     }
@@ -261,7 +263,7 @@ object Isos {
         (Digest32Coll @@@ Colls.fromArray(Base16.decode(x.tokenId).get), isoAmount.to(x.amount))
 
       override def from(x: Token): tokenMod.TokenAmount[commonMod.Amount] =
-        tokenMod.TokenAmount[commonMod.Amount](isoAmount.from(x._2), Base16.encode(x._1.toArray))
+        tokenMod.TokenAmount[commonMod.Amount](isoAmount.from(x._2), x._1.toHex)
     }
 
   implicit def isoUndefOr[A, B](implicit iso: Iso[A, B]): Iso[js.UndefOr[A], Option[B]] = new Iso[js.UndefOr[A], Option[B]] {

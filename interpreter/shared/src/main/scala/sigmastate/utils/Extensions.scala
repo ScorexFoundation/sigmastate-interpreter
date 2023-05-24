@@ -1,7 +1,9 @@
 package sigmastate.utils
 
+import org.ergoplatform.ErgoBox.TokenId
+import scorex.util.{ModifierId, idToBytes}
 import scorex.utils.{Ints, Longs, Shorts}
-import sigmastate.eval.SigmaDsl
+import sigmastate.eval.{Digest32Coll, SigmaDsl}
 import special.collection.Coll
 
 object Extensions {
@@ -57,5 +59,17 @@ object Extensions {
       * @since 2.0
       */
     def toBits: Coll[Boolean] = ???
+  }
+
+  /** Provides extension methods for `ModifierId` instances.
+    *
+    * @param id the `ModifierId` instance
+    */
+  implicit class ModifierIdOps(val id: ModifierId) extends AnyVal {
+    /** @return a `Coll[Byte]` representation of the `ModifierId` (decodes using Base16). */
+    def toColl: Coll[Byte] = SigmaDsl.Colls.fromArray(idToBytes(id))
+
+    /** Converts this modifier id to to token id. */
+    def toTokenId: TokenId = Digest32Coll @@ toColl
   }
 }

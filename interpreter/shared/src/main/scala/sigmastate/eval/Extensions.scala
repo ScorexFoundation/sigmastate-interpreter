@@ -11,6 +11,7 @@ import sigmastate.SType.AnyOps
 import org.ergoplatform.ErgoBox
 import debox.{Buffer => DBuffer}
 import debox.cfor
+import org.ergoplatform.ErgoBox.TokenId
 import sigmastate.crypto.{CryptoFacade, Ecp}
 
 object Extensions {
@@ -31,7 +32,14 @@ object Extensions {
   }
 
   implicit class ArrayOps[T: RType](arr: Array[T]) {
+    /** Wraps array into Coll instance. The source array in not cloned. */
     @inline def toColl: Coll[T] = Colls.fromArray(arr)
+  }
+
+  /** Extension methods for `Coll[Byte]` not available for generic `Array[T]`. */
+  implicit class ArrayByteOps(val arr: Array[Byte]) extends AnyVal {
+    /** Wraps array into TokenId instance. The source array in not cloned. */
+    @inline def toTokenId: TokenId = Digest32Coll @@ Colls.fromArray(arr)
   }
 
   implicit class EvalIterableOps[T: RType](seq: Iterable[T]) {
