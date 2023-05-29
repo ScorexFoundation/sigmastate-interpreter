@@ -12,8 +12,8 @@ import sigmastate.Values.SigmaBoolean
 import sigmastate.{AvlTreeData, VersionContext}
 import sigmastate.basics.DLogProtocol.{DLogProverInput, ProveDlog}
 import sigmastate.basics.{DiffieHellmanTupleProverInput, SigmaProtocolPrivateInput}
-import sigmastate.interpreter.Interpreter.ReductionResult
-import sigmastate.interpreter.{ContextExtension, CostedProverResult, HintsBag, Interpreter, ProverInterpreter}
+import sigmastate.interpreter.Interpreter.{ReductionResult, estimateCryptoVerifyCost}
+import sigmastate.interpreter.{ContextExtension, CostedProverResult, HintsBag, Interpreter, ProverInterpreter, ProverResult}
 import sigmastate.serialization.SigmaSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import org.ergoplatform.sdk.wallet.protocol.context.TransactionContext
@@ -83,9 +83,17 @@ class AppkitProvingInterpreter(
   def sign(unreducedTx: UnreducedTransaction,
            stateContext: ErgoLikeStateContext,
            baseCost: Int): Try[SignedTransaction] = Try {
+    val maxCost = params.maxBlockCost
+    var currentCost: Long = baseCost
+
     val reducedTx = reduceTransaction(unreducedTx, stateContext, baseCost)
-    val signedTx = signReduced(reducedTx)
-    signedTx
+    currentCost = addCostLimited(currentCost, reducedTx.ergoTx.cost, maxCost, msgSuffix = reducedTx.toString())
+
+    val signedTx = signReduced(reducedTx, currentCost.toInt)
+    currentCost += signedTx.cost // this never overflows if signReduced is successful
+
+    val reductionAndVerificationCost = (currentCost - baseCost).toIntExact
+    signedTx.copy(cost = reductionAndVerificationCost)
   }
 
   /** Reduce inputs of the given unsigned transaction to provable sigma propositions using
@@ -108,16 +116,17 @@ class AppkitProvingInterpreter(
       dataBoxes: IndexedSeq[ErgoBox],
       stateContext: ErgoLikeStateContext,
       baseCost: Int,
-      tokensToBurn: IndexedSeq[ErgoToken]): (ReducedErgoLikeTransaction, Int) = {
+      tokensToBurn: IndexedSeq[ErgoToken]): ReducedErgoLikeTransaction = {
     if (unsignedTx.inputs.length != boxesToSpend.length) throw new Exception("Not enough boxes to spend")
     if (unsignedTx.dataInputs.length != dataBoxes.length) throw new Exception("Not enough data boxes")
+
     val inputTokens = boxesToSpend.flatMap(_.box.additionalTokens.toArray)
     val outputTokens = unsignedTx.outputCandidates.flatMap(_.additionalTokens.toArray)
     val tokenDiff = JavaHelpers.subtractTokens(outputTokens, inputTokens)
     if (tokenDiff.nonEmpty) {
       val (toBurn, toMint) = tokenDiff.partition(_._2 < 0) // those with negative diff are to be burnt
       if (toBurn.nonEmpty) {
-        if (!tokensToBurn.isEmpty) {
+        if (tokensToBurn.nonEmpty) {
           val requestedToBurn = isoTokensListToTokenColl.to(tokensToBurn.convertTo[JList[ErgoToken]])
           val diff = JavaHelpers.subtractTokenColls(
             reducedTokens = toBurn.mapSecond(v => -v), // make positive amounts
@@ -142,34 +151,42 @@ class AppkitProvingInterpreter(
         }
       }
     }
+
     // Cost of transaction initialization: we should read and parse all inputs and data inputs,
     // and also iterate through all outputs to check rules
     val initialCost = ArithUtils.addExact(
-      1000,
+      Interpreter.interpreterInitCost,
       java7.compat.Math.multiplyExact(boxesToSpend.size, params.inputCost),
       java7.compat.Math.multiplyExact(dataBoxes.size, params.dataInputCost),
       java7.compat.Math.multiplyExact(unsignedTx.outputCandidates.size, params.outputCost)
     )
     val maxCost = params.maxBlockCost
     val startCost = addCostLimited(baseCost, initialCost, maxCost, msgSuffix = unsignedTx.toString())
+
     val transactionContext = TransactionContext(boxesToSpend.map(_.box), dataBoxes, unsignedTx)
+
     val (outAssets, outAssetsNum) = JavaHelpers.extractAssets(unsignedTx.outputCandidates)
     val (inAssets, inAssetsNum) = JavaHelpers.extractAssets(boxesToSpend.map(_.box))
+
     val tokenAccessCost = params.tokenAccessCost
     val totalAssetsAccessCost =
       java7.compat.Math.addExact(
         java7.compat.Math.multiplyExact(java7.compat.Math.addExact(outAssetsNum, inAssetsNum), tokenAccessCost),
         java7.compat.Math.multiplyExact(java7.compat.Math.addExact(inAssets.size, outAssets.size), tokenAccessCost))
+
     val txCost = addCostLimited(startCost,
       delta = totalAssetsAccessCost,
       limit = maxCost, msgSuffix = s"when adding assets cost of $totalAssetsAccessCost")
+
     var currentCost = txCost
     val reducedInputs = mutable.ArrayBuilder.make[ReducedInputData]
-    for ( (inputBox, boxIdx) <- boxesToSpend.zipWithIndex ) {
+
+    for ((inputBox, boxIdx) <- boxesToSpend.zipWithIndex) {
       val unsignedInput = unsignedTx.inputs(boxIdx)
       require(util.Arrays.equals(unsignedInput.boxId, inputBox.box.id))
+
       val context = new ErgoLikeContext(
-        AvlTreeData.avlTreeFromDigest(ADDigest @@ stateContext.previousStateDigest.toArray),
+        AvlTreeData.avlTreeFromDigest(stateContext.previousStateDigest),
         stateContext.sigmaLastHeaders,
         stateContext.sigmaPreHeader,
         transactionContext.dataBoxes,
@@ -178,18 +195,18 @@ class AppkitProvingInterpreter(
         boxIdx.toShort,
         inputBox.extension,
         ValidationRules.currentSettings,
-        costLimit = maxCost - currentCost,
-        initCost = 0,
+        costLimit = maxCost,
+        initCost = currentCost,
         activatedScriptVersion = (params.blockVersion - 1).toByte
       )
+
       val reducedInput = reduce(Interpreter.emptyEnv, inputBox.box.ergoTree, context)
-      currentCost = addCostLimited(currentCost,
-        reducedInput.reductionResult.cost, limit = maxCost, msgSuffix = inputBox.toString())
+      currentCost = reducedInput.reductionResult.cost // Note, this value includes context.initCost
       reducedInputs += reducedInput
     }
-    val reducedTx = ReducedErgoLikeTransaction(unsignedTx, reducedInputs.result())
-    val txReductionCost = txCost.toInt - baseCost
-    (reducedTx, txReductionCost)
+    val reducedTx = ReducedErgoLikeTransaction(
+      unsignedTx, reducedInputs.result(), cost = (currentCost - baseCost).toIntExact)
+    reducedTx
   }
 
   /** Signs the given transaction (i.e. providing spending proofs) for each input so that
@@ -202,28 +219,30 @@ class AppkitProvingInterpreter(
     *         - the costs of obtaining reduced transaction
     *         - the cost of verification of each signed input
     */
-  def signReduced(reducedTx: ReducedTransaction): SignedTransaction = {
+  def signReduced(reducedTx: ReducedTransaction, baseCost: Int): SignedTransaction = {
     val provedInputs = mutable.ArrayBuilder.make[Input]
     val unsignedTx = reducedTx.ergoTx.unsignedTx
 
     val maxCost = params.maxBlockCost
-    var currentCost: Long = reducedTx.cost
+    var currentCost: Long = baseCost
 
     for ((reducedInput, boxIdx) <- reducedTx.ergoTx.reducedInputs.zipWithIndex ) {
-      currentCost = addCryptoCost(reducedInput.reductionResult.value, currentCost, maxCost)
-
       val unsignedInput = unsignedTx.inputs(boxIdx)
       val proverResult = proveReduced(reducedInput, unsignedTx.messageToSign)
       val signedInput = Input(unsignedInput.boxId, proverResult)
 
-      currentCost = addCostLimited(currentCost, proverResult.cost, maxCost, msgSuffix = signedInput.toString())
+      val verificationCost = estimateCryptoVerifyCost(reducedInput.reductionResult.value).toBlockCost
+      currentCost = addCostLimited(currentCost, verificationCost, maxCost, msgSuffix = signedInput.toString())
 
       provedInputs += signedInput
     }
 
     val signedTx = new ErgoLikeTransaction(
       provedInputs.result(), unsignedTx.dataInputs, unsignedTx.outputCandidates)
-    SignedTransaction(signedTx, currentCost.toIntExact)
+
+    // compute accumulated crypto verification cost of all inputs
+    val txVerificationCost = (currentCost - baseCost).toIntExact
+    SignedTransaction(signedTx, txVerificationCost)
   }
 
   // TODO pull this method up to the base class and reuse in `prove`
@@ -234,9 +253,9 @@ class AppkitProvingInterpreter(
   def proveReduced(
         reducedInput: ReducedInputData,
         message: Array[Byte],
-        hintsBag: HintsBag = HintsBag.empty): CostedProverResult = {
+        hintsBag: HintsBag = HintsBag.empty): ProverResult = {
     val proof = generateProof(reducedInput.reductionResult.value, message, hintsBag)
-    CostedProverResult(proof, reducedInput.extension, reducedInput.reductionResult.cost)
+    new ProverResult(proof, reducedInput.extension)
   }
 
 }
@@ -265,7 +284,8 @@ case class ReducedInputData(reductionResult: ReductionResult, extension: Context
   */
 case class ReducedErgoLikeTransaction(
   unsignedTx: UnsignedErgoLikeTransaction,
-  reducedInputs: Seq[ReducedInputData]
+  reducedInputs: Seq[ReducedInputData],
+  cost: Int
 ) {
   require(unsignedTx.inputs.length == reducedInputs.length)
 }
@@ -288,6 +308,7 @@ object ReducedErgoLikeTransactionSerializer extends SigmaSerializer[ReducedErgoL
       // Note, we don't need to save `extension` field because it has already
       // been saved in msg
     }
+    w.putUInt(tx.cost)
   }
 
   override def parse(r: SigmaByteReader): ReducedErgoLikeTransaction = {
@@ -311,9 +332,9 @@ object ReducedErgoLikeTransactionSerializer extends SigmaSerializer[ReducedErgoL
       reducedInputs(i) = ReducedInputData(reductionResult, extension)
       unsignedInputs(i) = new UnsignedInput(input.boxId, extension)
     }
-
+    val cost = r.getUIntExact
     val unsignedTx = UnsignedErgoLikeTransaction(unsignedInputs, tx.dataInputs, tx.outputCandidates)
-    ReducedErgoLikeTransaction(unsignedTx, reducedInputs)
+    ReducedErgoLikeTransaction(unsignedTx, reducedInputs, cost)
   }
 
   /** Parses the [[ReducedErgoLikeTransaction]] using the given blockVersion.

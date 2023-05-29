@@ -75,7 +75,7 @@ class SigmaProver(_prover: AppkitProvingInterpreter, networkPrefix: NetworkPrefi
 
   /** Signs a given ReducedTransaction using the prover's secret keys. */
   def signReduced(tx: ReducedTransaction): SignedTransaction = {
-    _prover.signReduced(tx)
+    _prover.signReduced(tx, tx.ergoTx.cost)
   }
 
 }

@@ -62,6 +62,9 @@ class ReducingInterpreter(params: ErgoLikeParameters) extends ErgoLikeInterprete
     val unsignedTx = unreducedTx.unsignedTx
     val boxesToSpend = unreducedTx.boxesToSpend
     val dataBoxes = unreducedTx.dataInputs
+    if (unsignedTx.inputs.length != boxesToSpend.length) throw new Exception("Not enough boxes to spend")
+    if (unsignedTx.dataInputs.length != dataBoxes.length) throw new Exception("Not enough data boxes")
+
     val tokensToBurn = unreducedTx.tokensToBurn
     val inputTokens = boxesToSpend.flatMap(_.box.additionalTokens.toArray)
     val outputTokens = unsignedTx.outputCandidates.flatMap(_.additionalTokens.toArray)
@@ -104,24 +107,31 @@ class ReducingInterpreter(params: ErgoLikeParameters) extends ErgoLikeInterprete
     )
     val maxCost = params.maxBlockCost
     val startCost = addCostChecked(baseCost, initialCost, maxCost, msgSuffix = unsignedTx.toString())
+
     val transactionContext = TransactionContext(boxesToSpend.map(_.box), dataBoxes, unsignedTx)
+
     val (outAssets, outAssetsNum) = JavaHelpers.extractAssets(unsignedTx.outputCandidates)
     val (inAssets, inAssetsNum) = JavaHelpers.extractAssets(boxesToSpend.map(_.box))
+
     val tokenAccessCost = params.tokenAccessCost
     val totalAssetsAccessCost =
       java7.compat.Math.addExact(
         java7.compat.Math.multiplyExact(java7.compat.Math.addExact(outAssetsNum, inAssetsNum), tokenAccessCost),
         java7.compat.Math.multiplyExact(java7.compat.Math.addExact(inAssets.size, outAssets.size), tokenAccessCost))
+
     val txCost = addCostChecked(startCost,
       delta = totalAssetsAccessCost,
       limit = maxCost, msgSuffix = s"when adding assets cost of $totalAssetsAccessCost")
+
     var currentCost = txCost
     val reducedInputs = mutable.ArrayBuilder.make[ReducedInputData]
-    for ( (inputBox, boxIdx) <- boxesToSpend.zipWithIndex ) {
+
+    for ((inputBox, boxIdx) <- boxesToSpend.zipWithIndex) {
       val unsignedInput = unsignedTx.inputs(boxIdx)
       require(util.Arrays.equals(unsignedInput.boxId, inputBox.box.id))
+
       val context = new ErgoLikeContext(
-        AvlTreeData.avlTreeFromDigest(ADDigest @@@ stateContext.previousStateDigest.toArray),
+        AvlTreeData.avlTreeFromDigest(stateContext.previousStateDigest),
         stateContext.sigmaLastHeaders,
         stateContext.sigmaPreHeader,
         transactionContext.dataBoxes,
@@ -134,11 +144,15 @@ class ReducingInterpreter(params: ErgoLikeParameters) extends ErgoLikeInterprete
         initCost = currentCost,
         activatedScriptVersion = (params.blockVersion - 1).toByte
       )
+
       val reducedInput = reduce(Interpreter.emptyEnv, inputBox.box.ergoTree, context)
+
       currentCost = reducedInput.reductionResult.cost
       reducedInputs += reducedInput
     }
-    val reducedTx = ReducedErgoLikeTransaction(unsignedTx, reducedInputs.result())
-    ReducedTransaction(reducedTx, currentCost.toIntExact)
+    val reducedTx = ReducedErgoLikeTransaction(
+      unsignedTx, reducedInputs.result(),
+      cost = (currentCost - baseCost).toIntExact)
+    ReducedTransaction(reducedTx)
   }
 }
