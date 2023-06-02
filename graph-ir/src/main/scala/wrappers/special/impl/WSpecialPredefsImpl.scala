@@ -10,6 +10,9 @@ package impl {
   // Abs -----------------------------------
 trait WSpecialPredefsDefs extends scalan.Scalan with WSpecialPredefs {
   self: WrappersModule =>
+
+  registerModule(WSpecialPredefsModule)
+
 import WOption._
 import WSpecialPredef._
 
@@ -55,10 +58,11 @@ object WSpecialPredef extends EntityObject("WSpecialPredef") {
     RWSpecialPredef.reset()
   }
 
-  registerModule(WSpecialPredefsModule)
 }
 
-object WSpecialPredefsModule extends scalan.ModuleInfo("wrappers.special", "WSpecialPredefs")
+object WSpecialPredefsModule extends scalan.ModuleInfo("wrappers.special", "WSpecialPredefs") {
+  val reflection = GraphIRReflection
+}
 }
 
 trait WSpecialPredefsModule extends wrappers.special.impl.WSpecialPredefsDefs {self: WrappersModule =>}

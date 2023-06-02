@@ -7,11 +7,14 @@ import special.wrappers.RTypeWrapSpec
 import scala.collection.compat.immutable.ArraySeq
 
 package impl {
+  import scalan.GraphIRReflection
   import scalan.reflection.{RClass, RMethod}
 
   // Abs -----------------------------------
 trait WRTypesDefs extends scalan.Scalan with WRTypes {
   self: WrappersModule =>
+
+  registerModule(WRTypesModule)
 
 /** IR implementation for RType methods.
   * Prefix `W` means that this is implementation of IR wrapper over RType.
@@ -106,10 +109,11 @@ class WRTypeCls extends EntityObject("WRType") {
 object WRType extends WRTypeCls
 registerEntityObject("WRType", WRType)
 
-registerModule(WRTypesModule)
 }
 
-object WRTypesModule extends scalan.ModuleInfo("wrappers.scalan", "WRTypes")
+object WRTypesModule extends scalan.ModuleInfo("wrappers.scalan", "WRTypes") {
+  val reflection = GraphIRReflection
+}
 }
 
 trait WRTypesModule extends wrappers.scalan.impl.WRTypesDefs {self: WrappersModule =>}
