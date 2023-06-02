@@ -82,8 +82,6 @@ val scrypto            = "org.scorexfoundation" %% "scrypto" % "2.3.0"
 val scryptoDependency =
   libraryDependencies += "org.scorexfoundation" %%% "scrypto" % "2.3.0"
 
-//val scorexUtil         = "org.scorexfoundation" %% "scorex-util" % "0.1.8"
-//val debox              = "org.scorexfoundation" %% "debox" % "0.9.0"
 val scorexUtil         = "org.scorexfoundation" %% "scorex-util" % "0.2.0"
 val scorexUtilDependency =
   libraryDependencies += "org.scorexfoundation" %%% "scorex-util" % "0.2.0"
@@ -241,7 +239,6 @@ lazy val interpreter = crossProject(JVMPlatform, JSPlatform)
     crossScalaSettingsJS,
     libraryDependencies ++= Seq (
       "org.scala-js" %%% "scala-js-macrotask-executor" % "1.0.0"
-//      ("org.scala-js" %%% "scalajs-java-securerandom" % "1.0.0").cross(CrossVersion.for3Use2_13)
     ),
     useYarn := true
   )

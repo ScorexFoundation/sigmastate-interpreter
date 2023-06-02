@@ -72,7 +72,7 @@ trait MethodCalls extends Base { self: Scalan =>
           neverInvoke == other.neverInvoke &&
           isAdapterCall == other.isAdapterCall &&
           args.length == other.args.length &&
-          args.sameElements2(other.args) // this is required in case method have T* arguments
+          args.sameElementsNested(other.args) // this is required in case method have T* arguments
         case _ => false
       }
     }

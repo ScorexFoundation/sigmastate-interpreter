@@ -125,15 +125,15 @@ class CollectionUtilTests extends BaseTests {
   }
 
   test("sameElements2") {
-    Seq(1, 2).sameElements2(List(1, 2)) shouldBe true
-    new mutable.WrappedArray.ofInt(Array(1, 2)).sameElements2(Vector(1, 2)) shouldBe true
-    Seq(new mutable.WrappedArray.ofInt(Array(1, 2)), 3).sameElements2(Array(Vector(1, 2), 3)) shouldBe true
-    Seq(Array(1, 2), 3).sameElements2(Array(Vector(1, 2), 3)) shouldBe true
-    Seq(Array(1, 2), Option(3)).sameElements2(Array(Vector(1, 2), List(3))) shouldBe false
+    Seq(1, 2).sameElementsNested(List(1, 2)) shouldBe true
+    new mutable.WrappedArray.ofInt(Array(1, 2)).sameElementsNested(Vector(1, 2)) shouldBe true
+    Seq(new mutable.WrappedArray.ofInt(Array(1, 2)), 3).sameElementsNested(Array(Vector(1, 2), 3)) shouldBe true
+    Seq(Array(1, 2), 3).sameElementsNested(Array(Vector(1, 2), 3)) shouldBe true
+    Seq(Array(1, 2), Option(3)).sameElementsNested(Array(Vector(1, 2), List(3))) shouldBe false
 
-    Seq(1, 2).sameElements2(List(1, 2, 3)) shouldBe false
-    new mutable.WrappedArray.ofInt(Array(1, 2, 3)).sameElements2(Vector(1, 2)) shouldBe false
-    Seq(new mutable.WrappedArray.ofInt(Array(1, 2, 3)), 3).sameElements2(Array(Vector(1, 2), 3)) shouldBe false
+    Seq(1, 2).sameElementsNested(List(1, 2, 3)) shouldBe false
+    new mutable.WrappedArray.ofInt(Array(1, 2, 3)).sameElementsNested(Vector(1, 2)) shouldBe false
+    Seq(new mutable.WrappedArray.ofInt(Array(1, 2, 3)), 3).sameElementsNested(Array(Vector(1, 2), 3)) shouldBe false
 
   }
 

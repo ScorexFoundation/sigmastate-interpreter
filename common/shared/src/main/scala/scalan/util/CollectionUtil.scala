@@ -213,7 +213,7 @@ object CollectionUtil {
       * @tparam B the type of the elements in the other structure, a supertype of A
       * @return true if the two nested structures have the same elements in the same order, false otherwise
       */
-    def sameElements2[B >: A](that: GenIterable[B]): Boolean = {
+    def sameElementsNested[B >: A](that: GenIterable[B]): Boolean = {
       val i1: Iterator[Any] = flattenIter(xs.iterator)
       val i2: Iterator[Any] = flattenIter(that.iterator)
       i1.sameElements(i2)
