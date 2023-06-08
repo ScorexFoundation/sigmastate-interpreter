@@ -209,14 +209,14 @@ class XorGameExampleSpecification extends CompilerTestingCommons
         // Possibility 2.1: Bob wins and Alice reveals secret
         // Bob can spend anytime. But we show how he will spend before bobDeadline
         /////////////////////////////////////////////////////////
-        println("Bob won")
+        printDebug("Bob won")
         bob
       } else {
         /////////////////////////////////////////////////////////
         // Possibility 2.2: Alice wins (and she may or may not reveal secret).
         // Alice must spend before bobDeadline height
         /////////////////////////////////////////////////////////
-        println("Alice won")
+        printDebug("Alice won")
         alice
       }
     }.withContextExtender(

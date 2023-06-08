@@ -11,6 +11,7 @@ import sigmastate.SType.AnyOps
 import org.ergoplatform.ErgoBox
 import debox.{Buffer => DBuffer}
 import debox.cfor
+import org.ergoplatform.ErgoBox.TokenId
 import sigmastate.crypto.{CryptoFacade, Ecp}
 
 object Extensions {
@@ -31,7 +32,14 @@ object Extensions {
   }
 
   implicit class ArrayOps[T: RType](arr: Array[T]) {
+    /** Wraps array into Coll instance. The source array in not cloned. */
     @inline def toColl: Coll[T] = Colls.fromArray(arr)
+  }
+
+  /** Extension methods for `Coll[Byte]` not available for generic `Array[T]`. */
+  implicit class ArrayByteOps(val arr: Array[Byte]) extends AnyVal {
+    /** Wraps array into TokenId instance. The source array in not cloned. */
+    @inline def toTokenId: TokenId = Digest32Coll @@ Colls.fromArray(arr)
   }
 
   implicit class EvalIterableOps[T: RType](seq: Iterable[T]) {
@@ -69,9 +77,10 @@ object Extensions {
     }
   }
 
+  /** Shortened String representation of `source` GroupElement. */
   def showECPoint(p: Ecp): String = {
-    if (p.isInfinity) {
-      "INF"
+    if (p.isIdentity) {
+      "IDENTITY"
     }
     else {
       CryptoFacade.showPoint(p)
@@ -79,14 +88,17 @@ object Extensions {
   }
 
   implicit class EcpOps(val source: Ecp) extends AnyVal {
+    /** Extracts [[GroupElement]] from the Ecp instance. */
     def toGroupElement: GroupElement = SigmaDsl.GroupElement(source)
   }
 
   implicit class GroupElementOps(val source: GroupElement) extends AnyVal {
+    /** Shortened String representation of `source` GroupElement. */
     def showToString: String = showECPoint(source.asInstanceOf[CGroupElement].wrappedValue)
   }
 
   implicit class DBufferOps[A](val buf: DBuffer[A]) extends AnyVal {
+    /** Sum all values in `buf` using the given Numeric. */
     def sumAll(implicit n: Numeric[A]): A = {
       val limit = buf.length
       var result: A = n.zero

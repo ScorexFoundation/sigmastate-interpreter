@@ -9,6 +9,7 @@ import scala.scalajs.js.UndefOr
 import scala.scalajs.js.annotation.JSExportTopLevel
 
 
+/** Equivalent of [[special.sigma.AvlTree]] available from JS. */
 @JSExportTopLevel("AvlTree")
 class AvlTree(
     val digest: String,
@@ -19,6 +20,7 @@ class AvlTree(
     val valueLengthOpt: UndefOr[Int]
 ) extends js.Object
 
+/** Equivalent of [[special.sigma.Header]] available from JS. */
 @JSExportTopLevel("Header")
 class Header(
     val id: String,

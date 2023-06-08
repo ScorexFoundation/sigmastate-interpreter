@@ -16,7 +16,7 @@ trait SigmaDslDefs extends scalan.Scalan with SigmaDsl {
   self: SigmaLibrary =>
 
   registerModule(SigmaDslModule)
-    
+
 import AvlTree._
 import BigInt._
 import Box._

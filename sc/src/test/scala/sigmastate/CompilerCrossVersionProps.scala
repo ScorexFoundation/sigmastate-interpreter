@@ -4,6 +4,7 @@ import org.scalatest.Tag
 import org.scalactic.source.Position
 
 
+/** Redefines `property` for cross-version testing of ErgoScript compiler. */
 trait CompilerCrossVersionProps extends CrossVersionProps with CompilerTestsBase {
 
   override protected def property(testName: String, testTags: Tag*)

@@ -242,10 +242,6 @@ object DataJsonEncoder {
     tpe match {
       case tup: STuple =>
         val tArr = tup.items.toArray
-        val collSource = { // this code works both for Scala 2.12 and 2.13
-          implicit val ct = tItem.classTag
-          mutable.ArrayBuilder.make[T#WrappedType]
-        }
         val leftColl = decodeColl(json.hcursor.downField(s"_1").focus.get, tArr(0))
         val rightColl = decodeColl(json.hcursor.downField(s"_2").focus.get, tArr(1))
         assert(leftColl.length == rightColl.length)

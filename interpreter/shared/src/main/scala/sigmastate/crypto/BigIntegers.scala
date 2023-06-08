@@ -1,16 +1,25 @@
 package sigmastate.crypto
 
 import java.math.BigInteger
-import scala.util.Random
+import sigmastate.crypto.SecureRandom
 
+/** Re-implementation in Scala of select set of utility methods from
+  * org.bouncycastle.util.BigIntegers.
+  */
 object BigIntegers {
 
+  /** The value 0 as a BigInteger. */
   val ZERO: BigInteger = BigInteger.valueOf(0)
 
   private val MAX_ITERATIONS = 1000
 
+  /** Create the given number of random bits.
+    * @param bitLength the number of random bits to create.
+    * @param random a source of randomness.
+    * @return a byte array containing random bits.
+    */
   @throws[IllegalArgumentException]
-  def createRandom(bitLength: Int, random: Random) = {
+  def createRandom(bitLength: Int, random: SecureRandom): Array[Byte] = {
     if (bitLength < 1) throw new IllegalArgumentException("bitLength must be at least 1")
     val nBytes = (bitLength + 7) / 8
     val rv = new Array[Byte](nBytes)
@@ -31,7 +40,7 @@ object BigIntegers {
     */
   def createRandomBigInteger(
       bitLength: Int,
-      random: Random): BigInteger = {
+      random: SecureRandom): BigInteger = {
     new BigInteger(1, createRandom(bitLength, random))
   }
 
@@ -46,7 +55,7 @@ object BigIntegers {
   def createRandomInRange(
       min: BigInteger,
       max: BigInteger,
-      random: Random): BigInteger = {
+      random: SecureRandom): BigInteger = {
     val cmp = min.compareTo(max)
     if (cmp >= 0) {
       if (cmp > 0) throw new IllegalArgumentException("'min' may not be greater than 'max'")
@@ -86,6 +95,13 @@ object BigIntegers {
     tmp
   }
 
+  /** Converts a byte array to a BigInteger, treating the array as bits of the unsigned
+    * integer.
+    * @param buf the byte array to convert
+    * @return the resulting positive BigInteger
+    */
+  def fromUnsignedByteArray(buf: Array[Byte]) = new BigInteger(1, buf)
+
   /**
     * Return the passed in value as an unsigned byte array.
     *
@@ -101,6 +117,4 @@ object BigIntegers {
     }
     bytes
   }
-
-  def fromUnsignedByteArray(buf: Array[Byte]) = new BigInteger(1, buf)
 }

@@ -4,6 +4,7 @@ import org.ergoplatform.ErgoBox
 import org.ergoplatform.settings.ErgoAlgos
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen.containerOfN
+import org.scalacheck.util.Buildable
 import org.scalacheck.{Arbitrary, Gen}
 import scalan.RType
 import scorex.crypto.authds.{ADDigest, ADKey, ADValue}
@@ -27,8 +28,16 @@ import java.math.BigInteger
 import scala.reflect.ClassTag
 
 trait SigmaTestingData extends TestingCommons with ObjectGenerators {
-  def Coll[T](items: T*)
-      (implicit cT: RType[T]) = CostingSigmaDslBuilder.Colls.fromItems(items: _*)
+  /** Creates a [[special.collection.Coll]] with the given `items`. */
+  def Coll[T](items: T*)(implicit cT: RType[T]): Coll[T] =
+    CostingSigmaDslBuilder.Colls.fromItems(items: _*)
+
+  /** Generator of random collection with `n` elements. */
+  def collOfN[T: RType : Arbitrary](n: Int)
+      (implicit b: Buildable[T, Array[T]]): Gen[Coll[T]] = {
+    implicit val g: Gen[T] = Arbitrary.arbitrary[T]
+    containerOfN[Array, T](n, g).map(Colls.fromArray(_))
+  }
 
   val bytesGen: Gen[Array[Byte]] = for {
     len <- Gen.choose(0, 100)

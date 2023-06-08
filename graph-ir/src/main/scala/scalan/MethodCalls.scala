@@ -1,6 +1,6 @@
 package scalan
 
-import scala.annotation.tailrec
+import scala.annotation.{tailrec, unused}
 import scala.reflect.ClassTag
 import debox.{Buffer => DBuffer}
 import debox.cfor
@@ -72,7 +72,7 @@ trait MethodCalls extends Base { self: Scalan =>
           neverInvoke == other.neverInvoke &&
           isAdapterCall == other.isAdapterCall &&
           args.length == other.args.length &&
-          args.sameElements2(other.args) // this is required in case method have T* arguments
+          args.sameElementsNested(other.args) // this is required in case method have T* arguments
         case _ => false
       }
     }
@@ -112,30 +112,13 @@ trait MethodCalls extends Base { self: Scalan =>
     case e => e
   }
 
-//  /** Used by Graphviz dot file generator to format text label of the graph node. */
-//  override protected def formatDef(d: Def[_])(implicit config: GraphVizConfig): String = d match {
-//    case MethodCall(obj, method, args, _) =>
-//      val methodCallStr =
-//        s"${ScalaNameUtil.cleanScalaName(method.getName)}(${args.mkString(", ")})"
-//      if (obj.isCompanionType) {
-//        s"$obj.$methodCallStr"
-//      } else {
-//        val className = ScalaNameUtil.cleanNestedClassName(method.getDeclaringClass.getName)
-//        s"$obj.$className.$methodCallStr"
-//      }
-//    case NewObject(eA, args) =>
-//      val className = ScalaNameUtil.cleanNestedClassName(eA.sourceType.name)
-//      s"new $className(${args.mkString(", ")})"
-//    case _ => super.formatDef(d)
-//  }
-
   /** This method is called for each MethodCall node which is about to be added to the graph.
     * This means `mc` has been examined by all the rewrite rules, but has not need rewritten.
     * Now, if this method returns null, then mc will be added to the graph.
     * However, in this method, `mc` can be examined by a second set of RW rules
     * (kind of lower priority rules). These rules kind of context dependent, because at this
     * point we know that the first RW set didn't triggered any rewrite. */
-  def rewriteNonInvokableMethodCall(mc: MethodCall): Ref[_] = null
+  def rewriteNonInvokableMethodCall(@unused mc: MethodCall): Ref[_] = null
 
   /** Create delegate instance suitable for method invocation.
     * It is used when T is a class or a trait and the node referred by x doesn't conform to T.

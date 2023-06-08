@@ -1,14 +1,15 @@
 package scalan
 
-import scala.language.{higherKinds, implicitConversions}
+import scala.language.{implicitConversions, higherKinds}
 import scala.annotation.implicitNotFound
 import scala.collection.immutable.ListMap
 import scalan.util._
 import scalan.RType._
-import scalan.util.ReflectionUtil.ClassOps
+import ReflectionUtil._  // don't remove
+
 import scala.collection.mutable
 import debox.cfor
-import scalan.reflection.{RClass, RConstructor, RMethod}
+import scalan.reflection.{RClass, RMethod, RConstructor}
 
 abstract class TypeDescs extends Base { self: Scalan =>
 
@@ -47,37 +48,23 @@ abstract class TypeDescs extends Base { self: Scalan =>
     }
   }
 
+  /** Abstract class for a method descriptors to assist invocation of MethodCall nodes. */
   sealed abstract class MethodDesc {
+    /** The described method */
     def method: RMethod
   }
-  case class RMethodDesc(method: RMethod) extends MethodDesc
-  case class WMethodDesc(wrapSpec: WrapSpec, method: RMethod) extends MethodDesc
 
-// TODO optimize: benchmark this version agains the version below
-//  def getSourceValues(dataEnv: DataEnv, forWrapper: Boolean, stagedValue: AnyRef, out: DBuffer[AnyRef]): Unit = {
-//    import OverloadHack._
-//    stagedValue match {
-//      case s: Sym =>
-//        out += dataEnv(s)
-//      case vec: Seq[AnyRef]@unchecked =>
-//        val sub = DBuffer.ofSize[AnyRef](vec.length)
-//        getSourceValues(dataEnv, forWrapper, vec, sub)
-//        out += (sub.toArray: Seq[AnyRef])
-//      case e: Elem[_] =>
-//        val arg =
-//          if (forWrapper) e.sourceType.classTag  // WrapSpec classes use ClassTag implicit arguments
-//          else e.sourceType
-//        out += arg
-//      case _: Overloaded => // filter out special arguments
-//    }
-//  }
-//  def getSourceValues(dataEnv: DataEnv, forWrapper: Boolean, stagedValues: Seq[AnyRef], out: DBuffer[AnyRef]): Unit = {
-//    val limit = stagedValues.length
-//    cfor(0)(_ < limit, _ + 1) { i =>
-//      val v = stagedValues.apply(i)
-//      getSourceValues(dataEnv, forWrapper, v, out)
-//    }
-//  }
+  /** Decriptor for a method of a class.
+    * @param method The RMethod object representing the method.
+    */
+  case class RMethodDesc(method: RMethod) extends MethodDesc
+
+  /** Descriptor for a method of a wrapper class.
+    *
+    * @param wrapSpec The wrapping specification of the method.
+    * @param method   The RMethod object representing the method.
+    */
+  case class WMethodDesc(wrapSpec: WrapSpec, method: RMethod) extends MethodDesc
 
   // TODO optimize performance hot spot (45% of invokeUnlifted time), reduce allocation of Some
   final def getSourceValues(dataEnv: DataEnv, forWrapper: Boolean, stagedValues: AnyRef*): Seq[AnyRef] = {
@@ -388,10 +375,15 @@ abstract class TypeDescs extends Base { self: Scalan =>
   implicit val StringElement: Elem[String] = new BaseElemLiftable("", StringType)
   implicit val CharElement: Elem[Char] = new BaseElemLiftable('\u0000', CharType)
 
+  /** Implicitly defines element type for pairs. */
   implicit final def pairElement[A, B](implicit ea: Elem[A], eb: Elem[B]): Elem[(A, B)] =
     cachedElemByClass[PairElem[A, B]](ea, eb)(RClass(classOf[PairElem[A, B]]))
+
+  /** Implicitly defines element type for sum types. */
   implicit final def sumElement[A, B](implicit ea: Elem[A], eb: Elem[B]): Elem[A | B] =
     cachedElemByClass[SumElem[A, B]](ea, eb)(RClass(classOf[SumElem[A, B]]))
+
+  /** Implicitly defines element type for functions. */
   implicit final def funcElement[A, B](implicit ea: Elem[A], eb: Elem[B]): Elem[A => B] =
     cachedElemByClass[FuncElem[A, B]](ea, eb)(RClass(classOf[FuncElem[A, B]]))
 

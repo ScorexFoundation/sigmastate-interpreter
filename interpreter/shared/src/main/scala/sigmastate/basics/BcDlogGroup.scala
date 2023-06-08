@@ -6,18 +6,24 @@ import debox.cfor
 import sigmastate.crypto.{CryptoContext, CryptoFacade}
 
 import scala.collection.mutable
-import scala.collection.compat.immutable.ArraySeq
 
 
+/** Base class for EC-based groups where DLOG problem is hard (with bouncycastle-like interface).
+  * @param ctx context which abstracts basic operations with curve and elements.
+  */
 abstract class BcDlogGroup(val ctx: CryptoContext) extends DlogGroup {
-  //modulus of the field
-  lazy val p: BigInteger = ctx.getModulus
+  /** Characteristic of the finite field of the underlying curve. */
+  lazy val p: BigInteger = ctx.fieldCharacteristic
 
-  //order of the group
-  lazy val q: BigInteger = ctx.getOrder
+  /** Order of the group as defined in ASN.1 def for Elliptic-Curve ECParameters structure.
+    * See X9.62, for further details.
+    * For reference implementation see `org.bouncycastle.asn1.x9.X9ECParameters.getN`.
+    */
+  lazy val q: BigInteger = ctx.order
 
-  //Now that we have p, we can calculate k which is the maximum length in bytes
-  // of a string to be converted to a Group Element of this group.
+  /** Now that we have p, we can calculate k which is the maximum length in bytes
+    * of a string to be converted to a Group Element of this group.
+    */
   lazy val k = calcK(p)
 
   /**
@@ -94,9 +100,11 @@ abstract class BcDlogGroup(val ctx: CryptoContext) extends DlogGroup {
   private val exponentiationsCache = mutable.Map[ElemType, GroupElementsExponentiations]()
 
 
-  //Create the generator
-  //Assume that (x,y) are the coordinates of a point that is indeed a generator but check that (x,y) are the coordinates of a point.
-  override lazy val generator: ElemType = ctx.getGenerator
+  /** Creates the generator.
+    * Assume that (x,y) are the coordinates of a point that is indeed a generator but
+    * check that (x,y) are the coordinates of a point.
+    */
+  override lazy val generator: ElemType = ctx.generator
 
   /**
     * This function calculates k, the maximum length in bytes of a string to be converted to a Group Element of this group.
@@ -114,16 +122,14 @@ abstract class BcDlogGroup(val ctx: CryptoContext) extends DlogGroup {
   }
 
   /**
-    *
     * @return the order of this Dlog group
     */
-  override lazy val order: BigInteger = ctx.getOrder
+  override lazy val order: BigInteger = ctx.order
 
   /**
-    *
     * @return the identity of this Dlog group
     */
-  override lazy val identity: ElemType = ctx.getInfinity.asInstanceOf[ElemType]
+  override lazy val identity: ElemType = ctx.infinity.asInstanceOf[ElemType]
 
   /**
     * Calculates the inverse of the given GroupElement.
@@ -164,7 +170,7 @@ abstract class BcDlogGroup(val ctx: CryptoContext) extends DlogGroup {
     //However, if a specific Dlog Group has a more efficient implementation then is it advised to override this function in that concrete
     //Dlog group. For example we do so in CryptoPpDlogZpSafePrime.
     val one = BigInteger.ONE
-    val qMinusOne = ctx.getOrder.subtract(one)
+    val qMinusOne = ctx.order.subtract(one)
     // choose a random number x in Zq*
     val randNum = BigIntegers.createRandomInRange(one, qMinusOne, secureRandom)
     // compute g^x to get a new element
@@ -238,4 +244,5 @@ abstract class BcDlogGroup(val ctx: CryptoContext) extends DlogGroup {
 
 }
 
+/** Implementation of [[BcDlogGroup]] using SecP256K1 curve. */
 object SecP256K1Group extends BcDlogGroup(CryptoFacade.createCryptoContext())

@@ -58,7 +58,7 @@ object ExtendedPublicKey {
     if (childKeyProtoDecoded.compareTo(CryptoConstants.groupOrder) >= 0 || CryptoFacade.isInfinityPoint(childKey)) {
       deriveChildPublicKey(parentKey, idx + 1)
     } else {
-      new ExtendedPublicKey(CryptoFacade.getEncodedPoint(childKey, true), childChainCode, parentKey.path.extended(idx))
+      new ExtendedPublicKey(CryptoFacade.getASN1Encoding(childKey, true), childChainCode, parentKey.path.extended(idx))
     }
   }
 

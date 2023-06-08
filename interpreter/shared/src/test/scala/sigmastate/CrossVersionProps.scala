@@ -34,6 +34,7 @@ trait CrossVersionProps extends AnyPropSpecLike with TestsBase {
     }
   }
 
+  /** This methods is used to bypass profiling and forEachScriptAndErgoTreeVersion */
   protected def property2(testName: String, testTags: Tag*)
       (testFun: => Any)
       (implicit pos: Position): Unit = {

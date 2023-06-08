@@ -1,10 +1,13 @@
 package sigmastate
 
+import org.ergoplatform.settings.ErgoAlgos
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.propspec.AnyPropSpec
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import scorex.util.encode.Base16
 import sigmastate.crypto.CryptoFacade
+
+import java.math.BigInteger
 
 class CryptoFacadeSpecification extends AnyPropSpec with Matchers with ScalaCheckPropertyChecks {
 
@@ -48,6 +51,24 @@ class CryptoFacadeSpecification extends AnyPropSpec with Matchers with ScalaChec
     forAll(cases) { (mnemonic, password, keyHex) =>
       val res = CryptoFacade.generatePbkdf2Key(mnemonic, password)
       Base16.encode(res) shouldBe keyHex
+    }
+  }
+
+  property("CryptoFacade.encodePoint") {
+    val ctx = CryptoFacade.createCryptoContext()
+    val G = ctx.generator
+    val Q = ctx.order
+    val vectors = Table(
+      ("point", "expectedHex"),
+      (ctx.infinity(), "00"),
+      (CryptoFacade.exponentiatePoint(G, Q), "00"),
+      (G, "0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798"),
+      (CryptoFacade.exponentiatePoint(G, BigInteger.ONE), "0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798"),
+      (CryptoFacade.exponentiatePoint(G, Q.subtract(BigInteger.ONE)), "0379be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798")
+    )
+    forAll (vectors) { (point, expectedHex) =>
+      val res = ErgoAlgos.encode(CryptoFacade.getASN1Encoding(point, true))
+      res shouldBe expectedHex
     }
   }
 }

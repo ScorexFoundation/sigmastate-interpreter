@@ -3,7 +3,7 @@ package org.ergoplatform
 import java.util
 import org.ergoplatform.ErgoBox._
 import org.ergoplatform.settings.ErgoAlgos
-import scorex.util.{bytesToId, ModifierId}
+import scorex.util.{ModifierId, bytesToId}
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.SType.AnyOps
@@ -152,7 +152,7 @@ object ErgoBoxCandidate {
         val id = ids(i)
         val amount = amounts(i)
         if (tokensInTx.isDefined) {
-          val tokenIndex = tokensInTx.get.indexWhere(_ == id, 0)
+          val tokenIndex = tokensInTx.get.indexWhere(_ == id, 0) // using equality on Coll
           if (tokenIndex == -1) sys.error(s"failed to find token id ($id) in tx's digest index")
           w.putUInt(tokenIndex)
         } else {
@@ -194,6 +194,10 @@ object ErgoBoxCandidate {
       val value = r.getULong()                  // READ
       val tree = DefaultSerializer.deserializeErgoTree(r, SigmaSerializer.MaxPropositionSize)  // READ
       val creationHeight = r.getUIntExact       // READ
+      // NO-FORK: ^ in v5.x getUIntExact may throw Int overflow exception
+      // in v4.x r.getUInt().toInt is used and may return negative Int instead of the overflow
+      // and ErgoBoxCandidate with negative creation height is created, which is then invalidated
+      // during transaction validation. See validation rule # 122 in the Ergo node (ValidationRules.scala)
       val nTokens = r.getUByte()                // READ
       val tokenIds = safeNewArray[TokenId](nTokens)
       val tokenAmounts = safeNewArray[Long](nTokens)
@@ -201,6 +205,9 @@ object ErgoBoxCandidate {
         val nDigests = digestsInTx.length
         cfor(0)(_ < nTokens, _ + 1) { i =>
           val digestIndex = r.getUIntExact    // READ
+          // NO-FORK: in v5.x getUIntExact throws Int overflow exception
+          // in v4.x r.getUInt().toInt is used and may return negative Int in which case
+          // the error below is thrown
           if (digestIndex < 0 || digestIndex >= nDigests)
             sys.error(s"failed to find token id with index $digestIndex")
           val amount = r.getULong()           // READ

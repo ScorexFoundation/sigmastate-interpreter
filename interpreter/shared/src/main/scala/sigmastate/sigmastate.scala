@@ -4,46 +4,32 @@ import sigmastate.lang.CheckingSigmaBuilder
 package object sigmastate {
   import CheckingSigmaBuilder._
 
-  /**
-    * SInt addition
-    */
+  /** Helper method to create "+" operation node. */
   def Plus[T <: SNumericType](left: Value[T], right: Value[T]): Value[T] =
     mkPlus(left, right)
 
-  /**
-    * SInt subtraction
-    */
+  /** Helper method to create "-" operation node. */
   def Minus[T <: SNumericType](left: Value[T], right: Value[T]): Value[T] =
     mkMinus(left, right)
 
-  /**
-    * SInt multiplication
-    */
+  /** Helper method to create "*" operation node. */
   def Multiply[T <: SNumericType](left: Value[T], right: Value[T]): Value[T] =
     mkMultiply(left, right)
 
-  /**
-    * SInt division
-    */
+  /** Helper method to create "/" operation node. */
   def Divide[T <: SNumericType](left: Value[T], right: Value[T]): Value[T] =
     mkDivide(left, right)
 
-  /**
-    * SInt modulo
-    */
+  /** Helper method to create "%" operation node. */
   def Modulo[T <: SNumericType](left: Value[T], right: Value[T]): Value[T] =
     mkModulo(left, right)
 
+  /** Helper method to create "min" operation node. */
   def Min[T <: SNumericType](left: Value[T], right: Value[T]): Value[T] =
     mkMin(left, right)
 
+  /** Helper method to create "max" operation node. */
   def Max[T <: SNumericType](left: Value[T], right: Value[T]): Value[T] =
     mkMax(left, right)
-
-  def PlusModQ(left: Value[SBigInt.type], right: Value[SBigInt.type]): Value[SBigInt.type] =
-    mkPlusModQ(left, right)
-
-  def MinusModQ(left: Value[SBigInt.type], right: Value[SBigInt.type]): Value[SBigInt.type] =
-    mkMinusModQ(left, right)
 
 }

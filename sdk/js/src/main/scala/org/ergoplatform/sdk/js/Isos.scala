@@ -11,10 +11,12 @@ import scorex.util.ModifierId
 import scorex.util.encode.Base16
 import sigmastate.{AvlTreeData, AvlTreeFlags, SType}
 import sigmastate.Values.{Constant, GroupElementConstant}
+import sigmastate.eval.Extensions.ArrayOps
 import sigmastate.eval.{CAvlTree, CBigInt, CHeader, CPreHeader, Colls, Digest32Coll, Evaluation}
 import sigmastate.interpreter.ContextExtension
 import sigmastate.serialization.{ErgoTreeSerializer, ValueSerializer}
 import special.collection.Coll
+import special.collection.Extensions.CollBytesOps
 import special.sigma
 import special.sigma.GroupElement
 import typings.fleetSdkCommon.boxesMod.Box
@@ -31,7 +33,9 @@ import scala.scalajs.js
 import scala.scalajs.js.JSConverters.JSRichOption
 import scala.scalajs.js.Object
 
+/** Definitions of isomorphisms. */
 object Isos {
+  /** Conversion between `Value` and `Constant[SType]`. */
   implicit val isoValueToConstant: Iso[Value, Constant[SType]] = new Iso[Value, Constant[SType]] {
     override def to(x: Value): Constant[SType] =
       Constant(x.runtimeData.asInstanceOf[SType#WrappedType], Evaluation.rtypeToSType(x.tpe.rtype))
@@ -50,7 +54,7 @@ object Isos {
 
   val isoStringToColl: Iso[String, Coll[Byte]] = new Iso[String, Coll[Byte]] {
     override def to(x: String): Coll[Byte] = Colls.fromArray(Base16.decode(x).get)
-    override def from(x: Coll[Byte]): String = Base16.encode(x.toArray)
+    override def from(x: Coll[Byte]): String = x.toHex
   }
 
   val isoStringToGroupElement: Iso[String, GroupElement] = new Iso[String, GroupElement] {
@@ -179,7 +183,7 @@ object Isos {
     override def to(a: BlockchainStateContext): ErgoLikeStateContext = {
       CErgoLikeStateContext(
         sigmaLastHeaders = isoArrayToColl(isoHeader).to(a.sigmaLastHeaders),
-        previousStateDigest = isoStringToColl.to(a.previousStateDigest),
+        previousStateDigest = ADDigest @@ isoStringToColl.to(a.previousStateDigest).toArray,
         sigmaPreHeader = isoPreHeader.to(a.sigmaPreHeader)
       )
     }
@@ -187,7 +191,7 @@ object Isos {
     override def from(b: ErgoLikeStateContext): BlockchainStateContext = {
       new BlockchainStateContext(
         sigmaLastHeaders = isoArrayToColl(isoHeader).from(b.sigmaLastHeaders),
-        previousStateDigest = isoStringToColl.from(b.previousStateDigest),
+        previousStateDigest = isoStringToColl.from(b.previousStateDigest.toColl),
         sigmaPreHeader = isoPreHeader.from(b.sigmaPreHeader)
       )
     }
@@ -259,7 +263,7 @@ object Isos {
         (Digest32Coll @@@ Colls.fromArray(Base16.decode(x.tokenId).get), isoAmount.to(x.amount))
 
       override def from(x: Token): tokenMod.TokenAmount[commonMod.Amount] =
-        tokenMod.TokenAmount[commonMod.Amount](isoAmount.from(x._2), Base16.encode(x._1.toArray))
+        tokenMod.TokenAmount[commonMod.Amount](isoAmount.from(x._2), x._1.toHex)
     }
 
   implicit def isoUndefOr[A, B](implicit iso: Iso[A, B]): Iso[js.UndefOr[A], Option[B]] = new Iso[js.UndefOr[A], Option[B]] {
@@ -267,7 +271,7 @@ object Isos {
     override def from(x: Option[B]): js.UndefOr[A] = x.map(iso.from).orUndefined
   }
 
-  implicit def isoArrayToColl[A, B](iso: Iso[A, B])(implicit tB: RType[B]): Iso[js.Array[A], Coll[B]] = new Iso[js.Array[A], Coll[B]] {
+  implicit def isoArrayToColl[A, B](iso: Iso[A, B])(implicit ctA: ClassTag[A], tB: RType[B]): Iso[js.Array[A], Coll[B]] = new Iso[js.Array[A], Coll[B]] {
     override def to(x: js.Array[A]): Coll[B] = Colls.fromArray(x.map(iso.to).toArray(tB.classTag))
     override def from(x: Coll[B]): js.Array[A] = js.Array(x.toArray.map(iso.from):_*)
   }
@@ -318,7 +322,6 @@ object Isos {
     }
 
   implicit val isoBoxCandidate: Iso[boxesMod.BoxCandidate[commonMod.Amount], ErgoBoxCandidate] = new Iso[boxesMod.BoxCandidate[commonMod.Amount], ErgoBoxCandidate] {
-    import sigmastate.eval._
     override def to(x: boxesMod.BoxCandidate[commonMod.Amount]): ErgoBoxCandidate = {
       val ergoBoxCandidate = new ErgoBoxCandidate(
         value = isoAmount.to(x.value),
@@ -340,7 +343,7 @@ object Isos {
       boxesMod.BoxCandidate[commonMod.Amount](
         ergoTree = ergoTreeStr,
         value = isoAmount.from(x.value),
-        assets = js.Array(assets:_*),
+        assets = assets,
         creationHeight = x.creationHeight,
         additionalRegisters = isoNonMandatoryRegisters.from(x.additionalRegisters)
       )

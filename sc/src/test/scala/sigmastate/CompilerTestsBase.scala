@@ -22,6 +22,8 @@ trait CompilerTestsBase extends TestsBase {
     * This allow to test execution of MethodCall nodes in ErgoTree.
     */
   val okRunTestsWithoutMCLowering: Boolean = false
+
+  /** Compiler settings used in tests. */
   val defaultCompilerSettings: CompilerSettings = CompilerSettings(
     TestnetNetworkPrefix, TransformingSigmaBuilder,
     lowerMethodCalls = true
@@ -39,17 +41,20 @@ trait CompilerTestsBase extends TestsBase {
     }
   }
 
+  /** Compile the given code to ErgoTree expression. */
   def compile(env: ScriptEnv, code: String)(implicit IR: IRContext): Value[SType] = {
     val res = compiler.compile(env, code)
     checkCompilerResult(res)
     res.buildTree
   }
 
-  def checkCompilerResult[Ctx <: IRContext](res: CompilerResult[Ctx])
-      (implicit IR: IRContext): Unit = {
+  /** Check the given [[CompilerResult]] meets equality and sanity requirements. */
+  def checkCompilerResult[Ctx <: IRContext](res: CompilerResult[Ctx])(implicit IR: IRContext): Unit = {
     checkSerializationRoundTrip(res.buildTree)
   }
 
+
+  /** Compiles the given code and checks the resulting `prop` against `expected`. */
   def compileAndCheck(env: ScriptEnv, code: String, expected: SValue)
       (implicit IR: IRContext): (ErgoTree, SigmaPropValue) = {
     val prop = compile(env, code).asSigmaProp

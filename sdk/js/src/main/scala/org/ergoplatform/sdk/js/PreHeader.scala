@@ -3,6 +3,7 @@ package org.ergoplatform.sdk.js
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSExportTopLevel
 
+/** Equivalent of [[special.sigma.PreHeader]] available from JS. */
 @JSExportTopLevel("PreHeader")
 class PreHeader(
     val version: Byte,

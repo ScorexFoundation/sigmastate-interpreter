@@ -83,10 +83,10 @@ class EvaluationTest extends BaseCtxTests
 
   test("Measure IRContext creation speed") {
     var ctx: RuntimeIRContext = new RuntimeIRContext
-    measure(100) { i =>
+    measure(100, okShowIterTime = printDebugInfo, okShowTotalTime = printDebugInfo) { i =>
       ctx = new RuntimeIRContext
     }
-    println(s"Def count: ${ctx.defCount}")
+    printDebug(s"Def count: ${ctx.defCount}")
     /*
     Iter 0: 4 ms
         ...

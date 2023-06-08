@@ -45,9 +45,9 @@ case class UnreducedTransaction(
 }
 
 /** Represents results for transaction reduction by [[ReducingInterpreter]]. */
-case class ReducedTransaction(ergoTx: ReducedErgoLikeTransaction, cost: Int)
+case class ReducedTransaction(ergoTx: ReducedErgoLikeTransaction)
 
-/** Represents results for transaction signing by a prover like [[Prover]]. */
+/** Represents results for transaction signing by a prover like [[SigmaProver]]. */
 case class SignedTransaction(ergoTx: ErgoLikeTransaction, cost: Int)
 
 
