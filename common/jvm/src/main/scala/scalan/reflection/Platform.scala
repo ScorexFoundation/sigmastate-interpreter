@@ -1,5 +1,8 @@
 package scalan.reflection
 
+
+import scalan.util.ReflectionUtil.isSpecialChar
+
 import scala.collection.concurrent.TrieMap
 
 /** Platform dependent implementation of reflection methods. */
@@ -61,5 +64,20 @@ object Platform {
       * @return the value associated with the key, either retrieved or computed
       */
     def getOrElseUpdate(key: K, value: => V): V = map.getOrElseUpdate(key, value)
+  }
+
+  /** Safe version of `getSimpleName` that works around a bug in Scala compilers 2.11, 2.12.
+    * This method is only used for debugging and testing purposes.
+    *
+    * @see https://github.com/scala/bug/issues/5425
+    */
+  def safeSimpleName(cl: Class[_]): String = {
+    if (cl.getEnclosingClass == null) return cl.getSimpleName
+    val simpleName = cl.getName.substring(cl.getEnclosingClass.getName.length)
+    val length = simpleName.length
+    var index = 0
+    while (index < length && isSpecialChar(simpleName.charAt(index))) {index += 1 }
+    // Eventually, this is the empty string iff this is an anonymous class
+    simpleName.substring(index)
   }
 }

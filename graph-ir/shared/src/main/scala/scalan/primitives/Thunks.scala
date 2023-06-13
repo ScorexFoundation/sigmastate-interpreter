@@ -6,7 +6,6 @@ import debox.{Buffer => DBuffer, Set => DSet}
 import debox.cfor
 import scalan.reflection.RClass
 
-import scala.reflect.runtime.universe._
 import scalan.util.{Covariant, GraphUtil}
 
 import scala.collection.Seq

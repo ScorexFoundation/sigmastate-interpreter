@@ -1,7 +1,5 @@
 package scalan
 
-import scala.collection.mutable
-
 trait BaseLiftableTests { self: BaseCtxTests =>
 
   trait LiftableTestKit { scalan: Scalan =>

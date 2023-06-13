@@ -1,18 +1,25 @@
 package scalan.util
 
 import scalan.BaseTests
+import scalan.reflection.CommonReflection.registerClassEntry
+import scalan.reflection.{RClass, mkMethod}
 
 class ScalaNameUtilSuite extends BaseTests {
   def +\() = ???
 
   import ScalaNameUtil._
+  registerClassEntry(classOf[ScalaNameUtilSuite],
+    methods = Map(
+      mkMethod(classOf[ScalaNameUtilSuite], """+\""", Array[Class[_]]()) { (obj, args) =>
+        obj.asInstanceOf[ScalaNameUtilSuite].+\()
+      }))
 
   test("Operator names should be decoded correctly") {
     cleanScalaName("$plus$bslash$up") shouldEqual("""+\^""")
   }
 
   test("Method names obtained by reflection should be decoded") {
-    val methodNames = classOf[ScalaNameUtilSuite].getDeclaredMethods.map {
+    val methodNames = RClass(classOf[ScalaNameUtilSuite]).getDeclaredMethods.map {
       m => cleanScalaName(m.getName)
     }.toList.filterNot(n => n.startsWith("$"))
 

@@ -2,8 +2,6 @@ package special.sigma
 
 import scala.language.{existentials,implicitConversions}
 import scalan._
-import scala.reflect.runtime.universe._
-import scala.reflect._
 import scala.collection.compat.immutable.ArraySeq
 
 package impl {

@@ -47,4 +47,9 @@ object Platform {
       map.getOrElseUpdate(key, value)
     }
   }
+
+  /** This method works for Scala 2.13+ */
+  def safeSimpleName(cl: Class[_]): String = {
+    cl.getSimpleName
+  }
 }

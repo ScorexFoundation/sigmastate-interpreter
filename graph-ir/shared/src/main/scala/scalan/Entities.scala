@@ -1,7 +1,6 @@
 package scalan
 
 import scala.language.higherKinds
-import scalan.util.ReflectionUtil.ClassOps
 
 /** A slice in the Scalan cake with base classes for various descriptors. */
 trait Entities extends TypeDescs { self: Scalan =>
@@ -14,7 +13,7 @@ trait Entities extends TypeDescs { self: Scalan =>
     def parent: Option[Elem[_]] = None
     /** Name of the entity type without `Elem` suffix. */
     def entityName: String = {
-      val n = this.getClass.safeSimpleName.stripSuffix("Elem")
+      val n = scalan.reflection.Platform.safeSimpleName(this.getClass).stripSuffix("Elem")
       n
     }
     def convert(x: Ref[Def[_]]): Ref[A] = !!!("should not be called")
