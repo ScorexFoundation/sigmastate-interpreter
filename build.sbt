@@ -59,7 +59,7 @@ lazy val crossScalaSettings = Seq(
   scalaVersion := scala213
 )
 lazy val crossScalaSettingsJS = Seq(
-  crossScalaVersions := Seq(scala213, scala212),
+  crossScalaVersions := Seq(scala213),
   scalaVersion := scala213
 )
 
