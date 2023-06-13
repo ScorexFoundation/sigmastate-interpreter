@@ -72,9 +72,9 @@ def javacReleaseOption = {
 }
 
 // suffix version with "-SNAPSHOT" for builds without a git tag
-dynverSonatypeSnapshots in ThisBuild := true
+ThisBuild / dynverSonatypeSnapshots := true
 // use "-" instead of default "+"
-dynverSeparator in ThisBuild := "-"
+ThisBuild / dynverSeparator := "-"
 
 val bouncycastleBcprov = "org.bouncycastle" % "bcprov-jdk15on" % "1.66"
 
@@ -125,13 +125,17 @@ def circeDependency = {
   }
 }
 
+lazy val scalatest = "org.scalatest" %% "scalatest" % "3.2.14" % Test
+lazy val scalactic = "org.scalactic" %% "scalactic" % "3.2.14" % Test
+lazy val pprint = "com.lihaoyi" %% "pprint" % "0.6.3" % Test
+lazy val scalameter = "com.storm-enroute" %% "scalameter" % "0.19" % Test
+
 lazy val testingDependencies = Seq(
-  "org.scalatest" %% "scalatest" % "3.2.14" % Test,
-  "org.scalactic" %% "scalactic" % "3.2.14" % Test,
+  scalatest, scalactic,
   "org.scalacheck" %% "scalacheck" % "1.15.2" % Test,          // last supporting Scala 2.11
   "org.scalatestplus" %% "scalacheck-1-15" % "3.2.3.0" % Test, // last supporting Scala 2.11
-  "com.lihaoyi" %% "pprint" % "0.6.3" % Test,
-  "com.storm-enroute" %% "scalameter" % "0.19" % Test
+  pprint,
+  scalameter
 )
 
 lazy val testingDependencies2 =
@@ -162,8 +166,8 @@ lazy val testSettings2 = Seq(
 
 scalacOptions ++= Seq("-feature", "-deprecation")
 
-parallelExecution in Test := false
-publishArtifact in Test := true
+Test / parallelExecution := false
+Test / publishArtifact := true
 
 pomIncludeRepository := { _ => false }
 
@@ -218,12 +222,24 @@ lazy val corelib = crossProject(JVMPlatform, JSPlatform)
 lazy val corelibJS = corelib.js
     .enablePlugins(ScalaJSBundlerPlugin)
 
-lazy val graphir = Project("graph-ir", file("graph-ir"))
-  .dependsOn(common.jvm % allConfigDependency, corelib.jvm % allConfigDependency)
+lazy val graphir = crossProject(JVMPlatform, JSPlatform)
+  .in(file("graph-ir"))
+  .dependsOn(common % allConfigDependency, corelib % allConfigDependency)
   .settings(
-    libraryDefSettings,
-    libraryDependencies ++= Seq( debox, scrypto, bouncycastleBcprov ))
-  .settings(publish / skip := true)
+    commonDependenies2,
+    scryptoDependency,
+    publish / skip := true
+  )
+  .jvmSettings(
+    crossScalaSettings,
+    libraryDependencies ++= Seq(scalameter)
+  )
+  .jsSettings(
+    crossScalaSettingsJS,
+    useYarn := true
+  )
+lazy val graphirJS = graphir.js
+    .enablePlugins(ScalaJSBundlerPlugin)
 
 lazy val interpreter = crossProject(JVMPlatform, JSPlatform)
   .in(file("interpreter"))
@@ -278,7 +294,11 @@ lazy val parsersJS = parsers.js
     .enablePlugins(ScalaJSBundlerPlugin)
 
 lazy val sc = (project in file("sc"))
-  .dependsOn(graphir % allConfigDependency, interpreter.jvm % allConfigDependency, parsers.jvm % allConfigDependency)
+  .dependsOn(
+    graphir.jvm % allConfigDependency,
+    interpreter.jvm % allConfigDependency,
+    parsers.jvm % allConfigDependency
+  )
   .settings(libraryDefSettings)
   .settings(libraryDependencies ++=
       Seq(scorexUtil, fastparse) ++ circeDeps(scalaVersion.value)
@@ -317,13 +337,13 @@ lazy val sdkJS = sdk.js
     )
 
 lazy val sigma = (project in file("."))
-  .aggregate(common.jvm, corelib.jvm, graphir, interpreter.jvm, parsers.jvm, sc, sdk.jvm)
+  .aggregate(common.jvm, corelib.jvm, graphir.jvm, interpreter.jvm, parsers.jvm, sc, sdk.jvm)
   .settings(libraryDefSettings, rootSettings)
   .settings(publish / aggregate := false)
   .settings(publishLocal / aggregate := false)
 
 lazy val aggregateCompile = ScopeFilter(
-  inProjects(common.jvm, corelib.jvm, graphir, interpreter.jvm, parsers.jvm, sc, sdk.jvm),
+  inProjects(common.jvm, corelib.jvm, graphir.jvm, interpreter.jvm, parsers.jvm, sc, sdk.jvm),
   inConfigurations(Compile))
 
 lazy val rootSettings = Seq(
