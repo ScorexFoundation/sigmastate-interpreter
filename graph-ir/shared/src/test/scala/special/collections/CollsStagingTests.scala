@@ -3,7 +3,6 @@ package special.collections
 import scala.language.reflectiveCalls
 import special.wrappers.WrappersTests
 import scalan._
-import scalan.util.BenchmarkUtil._
 
 class CollsStagingTests extends WrappersTests {
   val printDebugInfo: Boolean = false
@@ -43,10 +42,10 @@ class CollsStagingTests extends WrappersTests {
   test("invokeUnlifted for Col") {
     val ctx = new WrappersCtx with Library
     import ctx._
-    import Liftables._
     import Coll._
     import CollBuilder._
     import EnvRep._
+    import Liftables._
 
     val Cols: SCollBuilder = new special.collection.CollOverArrayBuilder
     val arr = Array(1, 2, 3)
