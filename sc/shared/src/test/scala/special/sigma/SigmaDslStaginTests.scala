@@ -1,11 +1,11 @@
 package special.sigma
 
-import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll}
+import org.scalatest.{BeforeAndAfterAll}
 import special.collection._
 
 import scala.language.reflectiveCalls
 import scalan.{BaseCtxTests, BaseLiftableTests}
-import sigmastate.{VersionContext, eval, TrivialProp, ReflectionGenerator}
+import sigmastate.{VersionContext, eval, TrivialProp}
 import sigmastate.eval.Extensions._
 import sigmastate.eval._
 

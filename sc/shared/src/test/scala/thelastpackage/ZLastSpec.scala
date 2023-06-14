@@ -2,7 +2,6 @@ package thelastpackage
 
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.propspec.AnyPropSpec
-import sigmastate.ReflectionGenerator
 
 /** This spec is the last in queue for execution when running all the tests.
   * It is thus useful to do something after all the tests have been executed.

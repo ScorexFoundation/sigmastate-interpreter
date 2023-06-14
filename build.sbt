@@ -277,8 +277,9 @@ lazy val parsers = crossProject(JVMPlatform, JSPlatform)
     .in(file("parsers"))
     .dependsOn(interpreter % allConfigDependency)
     .settings(libraryDefSettings)
-    .settings(libraryDependencies ++=
-        Seq(scorexUtil, fastparse) ++ circeDeps(scalaVersion.value)
+    .settings(
+      libraryDependencies ++= Seq(scorexUtil, fastparse) ++ circeDeps(scalaVersion.value),
+      publish / skip := true
     )
     .jvmSettings(
       crossScalaSettings
@@ -293,17 +294,39 @@ lazy val parsers = crossProject(JVMPlatform, JSPlatform)
 lazy val parsersJS = parsers.js
     .enablePlugins(ScalaJSBundlerPlugin)
 
-lazy val sc = (project in file("sc"))
+lazy val sc = crossProject(JVMPlatform, JSPlatform)
+  .in(file("sc"))
   .dependsOn(
-    graphir.jvm % allConfigDependency,
-    interpreter.jvm % allConfigDependency,
-    parsers.jvm % allConfigDependency
+    graphir % allConfigDependency,
+    interpreter % allConfigDependency,
+    parsers % allConfigDependency
   )
   .settings(libraryDefSettings)
-  .settings(libraryDependencies ++=
-      Seq(scorexUtil, fastparse) ++ circeDeps(scalaVersion.value)
+  .settings(
+    libraryDependencies ++= Seq(scorexUtil, fastparse) ++ circeDeps(scalaVersion.value)
   )
   .settings(publish / skip := true)
+  .jvmSettings(
+    crossScalaSettings
+  )
+  .jsSettings(
+    crossScalaSettingsJS,
+    libraryDependencies ++= Seq(
+      "org.scala-js" %%% "scala-js-macrotask-executor" % "1.0.0"
+    ),
+    useYarn := true
+  )
+lazy val scJS = sc.js
+  .enablePlugins(ScalaJSBundlerPlugin)
+  .settings(
+    scalaJSLinkerConfig ~= { conf =>
+      conf.withSourceMap(false)
+          .withModuleKind(ModuleKind.CommonJSModule)
+    },
+    Compile / npmDependencies ++= Seq(
+      "sigmajs-crypto-facade" -> sigmajsCryptoFacadeVersion
+    )
+  )
 
 lazy val sdk = crossProject(JVMPlatform, JSPlatform)
     .in(file("sdk"))
@@ -337,13 +360,13 @@ lazy val sdkJS = sdk.js
     )
 
 lazy val sigma = (project in file("."))
-  .aggregate(common.jvm, corelib.jvm, graphir.jvm, interpreter.jvm, parsers.jvm, sc, sdk.jvm)
+  .aggregate(common.jvm, corelib.jvm, graphir.jvm, interpreter.jvm, parsers.jvm, sc.jvm, sdk.jvm)
   .settings(libraryDefSettings, rootSettings)
   .settings(publish / aggregate := false)
   .settings(publishLocal / aggregate := false)
 
 lazy val aggregateCompile = ScopeFilter(
-  inProjects(common.jvm, corelib.jvm, graphir.jvm, interpreter.jvm, parsers.jvm, sc, sdk.jvm),
+  inProjects(common.jvm, corelib.jvm, graphir.jvm, interpreter.jvm, parsers.jvm, sc.jvm, sdk.jvm),
   inConfigurations(Compile))
 
 lazy val rootSettings = Seq(

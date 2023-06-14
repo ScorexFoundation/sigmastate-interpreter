@@ -1,9 +1,9 @@
 package sigmastate
 
+import scalan.reflection._
 import scalan.{Base, TypeDescs}
 
 import scala.collection.mutable
-import scalan.reflection._
 
 object ReflectionGenerator {
 

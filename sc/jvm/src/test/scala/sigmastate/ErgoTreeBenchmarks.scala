@@ -1,11 +1,11 @@
 package sigmastate
 
-import special.collections.BenchmarkGens
-import org.scalameter.api.Bench
-import sigmastate.Values.{SValue, Constant, IntConstant}
-import sigmastate.serialization.OpCodes.PlusCode
 import debox.cfor
+import org.scalameter.api.Bench
+import sigmastate.Values.{IntConstant, SValue}
 import sigmastate.crypto.Platform
+import sigmastate.serialization.OpCodes.PlusCode
+import special.collections.BenchmarkGens
 
 object ErgoTreeBenchmarks extends Bench.LocalTime with BenchmarkGens { suite: Bench[Double] =>
 
