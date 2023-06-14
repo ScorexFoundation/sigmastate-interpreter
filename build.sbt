@@ -15,9 +15,12 @@ lazy val commonSettings = Seq(
   organization := "org.scorexfoundation",
   scalacOptions ++= {
     CrossVersion.partialVersion(scalaVersion.value) match {
-      case Some((2, 13)) => Seq("-Ywarn-unused:_,imports", "-Ywarn-unused:imports", "-release", "8")
-      case Some((2, 12)) => Seq("-Ywarn-unused:_,imports", "-Ywarn-unused:imports", "-release", "8")
-      case Some((2, 11)) => Seq()
+      case Some((2, 13)) =>
+        Seq("-Ywarn-unused:_,imports", "-Ywarn-unused:imports", "-release", "8")
+      case Some((2, 12)) =>
+        Seq("-Ywarn-unused:_,imports", "-Ywarn-unused:imports", "-release", "8")
+      case Some((2, 11)) =>
+        Seq()
       case _ => sys.error("Unsupported scala version")
     }
   },
@@ -191,8 +194,14 @@ lazy val common = crossProject(JVMPlatform, JSPlatform)
   .jvmSettings( crossScalaSettings )
   .jsSettings(
     crossScalaSettingsJS,
+    scalacOptions ++= Seq(
+      // Suppress warning about the global execution context in Scala.js is based on JS
+      // Promises (microtasks). Using it may prevent macrotasks (I/O, timers, UI
+      // rendering) from running fairly.
+      "-P:scalajs:nowarnGlobalExecutionContext"
+    ),
     libraryDependencies ++= Seq(
-      "org.scala-js" %%% "scala-js-macrotask-executor" % "1.0.0"
+      "org.scala-js" %%% "scala-js-macrotask-executor" % "1.1.1"
     ),
     useYarn := true
   )
@@ -244,7 +253,8 @@ lazy val graphirJS = graphir.js
 lazy val interpreter = crossProject(JVMPlatform, JSPlatform)
   .in(file("interpreter"))
   .dependsOn(corelib % allConfigDependency)
-  .settings(commonSettings ++ testSettings2,
+  .settings(
+    commonSettings ++ testSettings2,
     commonDependenies2,
     testingDependencies2,
     scorexUtilDependency, fastparseDependency, circeDependency,
@@ -276,9 +286,11 @@ lazy val interpreterJS = interpreter.js
 lazy val parsers = crossProject(JVMPlatform, JSPlatform)
     .in(file("parsers"))
     .dependsOn(interpreter % allConfigDependency)
-    .settings(libraryDefSettings)
     .settings(
-      libraryDependencies ++= Seq(scorexUtil, fastparse) ++ circeDeps(scalaVersion.value),
+      commonSettings ++ testSettings2,
+      commonDependenies2,
+      testingDependencies2,
+      scorexUtilDependency, fastparseDependency, circeDependency,
       publish / skip := true
     )
     .jvmSettings(
@@ -293,6 +305,14 @@ lazy val parsers = crossProject(JVMPlatform, JSPlatform)
     )
 lazy val parsersJS = parsers.js
     .enablePlugins(ScalaJSBundlerPlugin)
+    .settings(
+      scalaJSLinkerConfig ~= { conf =>
+        conf.withSourceMap(false)
+      },
+      Compile / npmDependencies ++= Seq(
+        "sigmajs-crypto-facade" -> sigmajsCryptoFacadeVersion
+      )
+    )
 
 lazy val sc = crossProject(JVMPlatform, JSPlatform)
   .in(file("sc"))
@@ -301,13 +321,16 @@ lazy val sc = crossProject(JVMPlatform, JSPlatform)
     interpreter % allConfigDependency,
     parsers % allConfigDependency
   )
-  .settings(libraryDefSettings)
   .settings(
-    libraryDependencies ++= Seq(scorexUtil, fastparse) ++ circeDeps(scalaVersion.value)
+    commonSettings ++ testSettings2,
+    commonDependenies2,
+    testingDependencies2,
+    scorexUtilDependency, fastparseDependency, circeDependency,
   )
   .settings(publish / skip := true)
   .jvmSettings(
-    crossScalaSettings
+    crossScalaSettings,
+    libraryDependencies ++= Seq(scalameter)
   )
   .jsSettings(
     crossScalaSettingsJS,
