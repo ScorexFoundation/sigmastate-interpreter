@@ -3,6 +3,7 @@ package sigmastate
 import scalan.reflection._
 import scalan.{Base, TypeDescs}
 
+import scala.annotation.unused
 import scala.collection.mutable
 
 object ReflectionGenerator {
@@ -19,7 +20,7 @@ object ReflectionGenerator {
           Class.forName(prefix)
           '.' // prefix is object
         } catch {
-          case t: Throwable =>
+          case _: Throwable =>
             '#' // prefix is not object
         }
       }
@@ -95,7 +96,7 @@ object ReflectionGenerator {
       |        }""".stripMargin
   }
 
-  def genField(c: JRClass[_], f: JRField): String = {
+  def genField(@unused c: JRClass[_], f: JRField): String = {
     f.toString
   }
 

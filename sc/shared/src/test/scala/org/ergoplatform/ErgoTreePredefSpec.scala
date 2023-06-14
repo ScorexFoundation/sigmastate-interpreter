@@ -5,7 +5,7 @@ import org.ergoplatform.ErgoBox.R4
 import org.ergoplatform.mining.emission.EmissionRules
 import org.ergoplatform.settings.MonetarySettings
 import org.scalacheck.Gen
-import scorex.crypto.hash.{Digest32, Blake2b256}
+import scorex.crypto.hash.Blake2b256
 import scorex.util.Random
 import sigmastate.Values.{SigmaPropConstant, CollectionConstant, ByteArrayConstant, IntConstant, ErgoTree}
 import sigmastate._
@@ -233,7 +233,7 @@ class ErgoTreePredefSpec extends CompilerTestingCommons with CompilerCrossVersio
     }
 
 
-    measure(10) { i =>
+    measure(10) { _ =>
       // transaction with the only input with enough token should pass
       val inputs0 = IndexedSeq(
         testBox(20, prop, 0, Seq((wrongId, tokenAmount), (tokenId, tokenAmount), (wrongId2, tokenAmount)), Map())

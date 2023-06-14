@@ -8,7 +8,7 @@ import scalan._
   * @define colls collections
   * @tparam A the collection element type
   */
-abstract class Coll[@specialized A] {
+trait Coll[@specialized A] {
   def builder: CollBuilder
   def toArray: Array[A]
 
@@ -290,7 +290,7 @@ abstract class Coll[@specialized A] {
   }
 }
 
-abstract class PairColl[@specialized L, @specialized R] extends Coll[(L,R)] {
+trait PairColl[@specialized L, @specialized R] extends Coll[(L,R)] {
   def ls: Coll[L]
   def rs: Coll[R]
   def mapFirst[T1: RType](f: L => T1): Coll[(T1, R)]

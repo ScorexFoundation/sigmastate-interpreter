@@ -22,8 +22,8 @@ import sigmastate.basics.{SigmaProtocol, SigmaProtocolCommonInput, SigmaProtocol
 import sigmastate.eval.Extensions._
 import sigmastate.eval.{CompiletimeIRContext, CostingBox, CostingDataContext, Evaluation, IRContext, SigmaDsl}
 import sigmastate.helpers.TestingHelpers._
-import sigmastate.helpers.{ErgoLikeTestInterpreter, SigmaPPrint, ErgoLikeContextTesting, CompilerTestingCommons}
-import sigmastate.interpreter.Interpreter.{VerificationResult, ScriptEnv}
+import sigmastate.helpers.{CompilerTestingCommons, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaPPrint}
+import sigmastate.interpreter.Interpreter.{ScriptEnv, VerificationResult}
 import sigmastate.interpreter._
 import sigmastate.lang.Terms.{Apply, ValueOps}
 import sigmastate.serialization.ValueSerializer
@@ -36,6 +36,7 @@ import debox.cfor
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.propspec.AnyPropSpec
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
+import scalan.Platform.threadSleepOrNoOp
 
 import java.util
 import scala.collection.mutable
@@ -469,7 +470,7 @@ class SigmaDslTesting extends AnyPropSpec
     val nIters = nTotalIters / (nBenchmarkIters + 1)
     repeatAndReturnLast(nIters)(block)
     System.gc()
-    Thread.sleep(1000) // let GC to its job before running the tests
+    threadSleepOrNoOp(1000) // let GC to its job before running the tests
   }
 
   /** Derived class ExistingFeature is used to describe features which don't change from

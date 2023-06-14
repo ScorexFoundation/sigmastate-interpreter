@@ -1,12 +1,10 @@
 package scalan
 
-import scala.language.{implicitConversions, higherKinds}
+import scala.language.{implicitConversions}
 import scala.annotation.implicitNotFound
 import scala.collection.immutable.ListMap
 import scalan.util._
 import scalan.RType._
-import ReflectionUtil._  // don't remove
-
 import scala.collection.mutable
 import debox.cfor
 import scalan.reflection.{RClass, RMethod, RConstructor}

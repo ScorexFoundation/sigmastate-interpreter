@@ -45,7 +45,7 @@ class FailingToProveSpec extends CompilerTestingCommons
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       activatedVersion = activatedVersionInTests)
     val proof = interpreter.prove(emptyEnv + (ScriptNameProp -> "prove"), tree, ctx, fakeMessage).success.value.proof
-    verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), tree, ctx, proof, fakeMessage) should be a 'success
+    verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), tree, ctx, proof, fakeMessage) shouldBe 'success
   }
 
   property("successfully evaluate proof 2") {
@@ -80,7 +80,7 @@ class FailingToProveSpec extends CompilerTestingCommons
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       activatedVersion = activatedVersionInTests)
     val proof = interpreter.prove(emptyEnv + (ScriptNameProp -> "prove"), tree, ctx, fakeMessage).success.value.proof
-    verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), tree, ctx, proof, fakeMessage) should be a 'success
+    verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), tree, ctx, proof, fakeMessage) shouldBe 'success
   }
 
 }

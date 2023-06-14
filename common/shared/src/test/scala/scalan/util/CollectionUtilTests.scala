@@ -7,7 +7,6 @@ import scala.reflect.ClassTag
 
 class CollectionUtilTests extends BaseTests {
   import scalan.util.CollectionUtil._
-  import java.lang.{Byte => JByte, Integer}
 
   test("updateMany") {
     val xs: Seq[Byte] = Array[Byte](1,2,3)
@@ -37,9 +36,9 @@ class CollectionUtilTests extends BaseTests {
   }
 
   def joinSeqs(l: Seq[Int], r: Seq[Int]) =
-    outerJoinSeqs(l, r)(l => l, r => r)((_,l) => l, (_,r) => r, (k,l,r) => l + r).map(_._2)
+    outerJoinSeqs(l, r)(l => l, r => r)((_,l) => l, (_,r) => r, (_,l,r) => l + r).map(_._2)
   def joinPairs(l: Seq[(String,Int)], r: Seq[(String,Int)]) =
-    outerJoinSeqs(l, r)(l => l._1, r => r._1)((_,l) => l._2, (_,r) => r._2, (k,l,r) => l._2 + r._2)
+    outerJoinSeqs(l, r)(l => l._1, r => r._1)((_,l) => l._2, (_,r) => r._2, (_,l,r) => l._2 + r._2)
 
   test("joinSeqs") {
     def key(p : (Int, String)): Int = p._1

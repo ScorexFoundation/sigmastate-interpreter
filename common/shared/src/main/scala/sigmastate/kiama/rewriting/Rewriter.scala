@@ -13,8 +13,6 @@ package rewriting
 
 import scalan.reflection.{Platform, RClass, RConstructor}
 
-import scala.collection.concurrent.TrieMap
-
 /**
   * Strategy-based term rewriting in the style of Stratego (http://strategoxt.org/).
   * The implementation here is partially based on the semantics given in "Program
@@ -104,7 +102,7 @@ trait Rewriter {
       (t : Any) => {
         val of = anyf andThen (_ => Some(t))
         try {
-          of.applyOrElse(t, (a : Any) => None)
+          of.applyOrElse(t, (_ : Any) => None)
         } catch {
           case _ : ClassCastException =>
             None
@@ -129,7 +127,7 @@ trait Rewriter {
     mkStrategy(
       (t : Any) =>
         try {
-          of.applyOrElse(t, (a : Any) => None)
+          of.applyOrElse(t, (_ : Any) => None)
         } catch {
           case _ : ClassCastException =>
             None
@@ -158,7 +156,7 @@ trait Rewriter {
       (t : Any) => {
         val of = anyf andThen (_.apply(t))
         try {
-          of.applyOrElse(t, (a : Any) => None)
+          of.applyOrElse(t, (_ : Any) => None)
         } catch {
           case _ : ClassCastException =>
             None
@@ -184,7 +182,7 @@ trait Rewriter {
     mkStrategy(
       (t : Any) =>
         try {
-          of.applyOrElse(t, (a : Any) => None)
+          of.applyOrElse(t, (_ : Any) => None)
         } catch {
           case _ : ClassCastException =>
             None
@@ -243,7 +241,7 @@ trait Rewriter {
           // are trying to duplicate one of these then we want to return the same
           // singleton so we use an identity duper.
           clazz.getField("MODULE$")
-          (t : Any, children : Array[AnyRef]) => t
+          (t : Any, _ : Array[AnyRef]) => t
         } catch {
           // Otherwise, this is a normal class, so we try to make a
           // duper that uses the first constructor.
@@ -252,7 +250,7 @@ trait Rewriter {
             if (ctors.length == 0)
               sys.error(s"dup no constructors for ${clazz.getName}")
             else
-              (t : Any, children : Array[AnyRef]) =>
+              (_ : Any, children : Array[AnyRef]) =>
                 makeInstance(ctors(0), children)
         }
 
@@ -261,7 +259,7 @@ trait Rewriter {
         try {
           ctor.newInstance(unboxPrimitives(ctor, children) : _*)
         } catch {
-          case e : IllegalArgumentException =>
+          case _ : IllegalArgumentException =>
             sys.error(s"""dup illegal arguments: $ctor got (${children.mkString(",")})
                         |Common cause: term classes are nested in another class, move them to the top level""".stripMargin)
         }
@@ -508,7 +506,7 @@ trait Rewriter {
         t.foldLeft((false, 0)) {
           case ((changed, i), ct) =>
             s(ct) match {
-              case Some(ti @ (tix, tiy)) =>
+              case Some(ti @ (_, _)) =>
                 b += ti
                 (changed || !same(ct, ti), i + 1)
               case _ =>
@@ -616,9 +614,9 @@ trait Rewriter {
         case (add, ct) =>
           if (add)
             s(ct) match {
-              case Some(ti @ (tix, tiy)) if same(ct, ti) =>
+              case Some(ti @ (_, _)) if same(ct, ti) =>
                 return Some(t)
-              case Some(ti @ (tix, tiy)) =>
+              case Some(ti @ (_, _)) =>
                 b += ti
                 false
               case Some(ti) =>
@@ -745,7 +743,7 @@ trait Rewriter {
         t.foldLeft((false, false)) {
           case ((success, changed), ct) =>
             s(ct) match {
-              case Some(ti @ (tix, tiy)) =>
+              case Some(ti @ (_, _)) =>
                 b += ti
                 (true, changed || !same(ct, ti))
               case _ =>

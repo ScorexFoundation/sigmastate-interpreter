@@ -36,14 +36,14 @@ class CoopExampleSpecification extends CompilerTestingCommons
                        prover: ContextEnrichingTestProvingInterpreter,
                        verifier: ErgoLikeTestInterpreter): Assertion = {
     val proofResult = prover.prove(tree, ctx, fakeMessage)
-    proofResult should be a 'success
-    verifier.verify(tree, ctx, proofResult.success.value, fakeMessage) should be a 'success
+    proofResult shouldBe 'success
+    verifier.verify(tree, ctx, proofResult.success.value, fakeMessage) shouldBe 'success
   }
 
   def failingProofTest(tree: ErgoTree,
                        ctx: ErgoLikeContext,
                        prover: ContextEnrichingTestProvingInterpreter): Assertion = {
-    prover.prove(tree, ctx, fakeMessage) should be a 'failure
+    prover.prove(tree, ctx, fakeMessage) shouldBe 'failure
   }
 
   property("commit to the threshold sig") {

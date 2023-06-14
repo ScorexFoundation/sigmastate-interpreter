@@ -2,7 +2,6 @@ package org.ergoplatform
 
 import org.ergoplatform.ErgoBox.TokenId
 import org.ergoplatform.settings.ErgoAlgos
-import scorex.crypto.hash.Digest32
 import scorex.util.encode.Base16
 import scorex.util.{Random, ModifierId}
 import sigmastate.SCollection.SByteArray

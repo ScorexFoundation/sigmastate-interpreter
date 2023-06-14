@@ -10,4 +10,8 @@ object Platform {
       @unused name: String,
       @unused sfs: Seq[() => scalan.Sym]): Unit = {
   }
+
+  /** On JS it is no-operation. */
+  def threadSleepOrNoOp(@unused millis: Long): Unit = {
+  }
 }

@@ -1,19 +1,8 @@
 package sigmastate
 
-import java.math.BigInteger
-
-import org.ergoplatform.ErgoBox
-import org.ergoplatform.settings.ErgoAlgos
-import scalan.RType
-import scorex.crypto.hash.Digest32
-import sigmastate.basics.{DLogProtocol, CryptoConstants}
+import sigmastate.SType.isValueOfType
+import sigmastate.eval.{CSigmaProp, CostingSigmaDslBuilder}
 import special.sigma.SigmaTestingData
-import sigmastate.SType.{isValueOfType, AnyOps}
-import sigmastate.Values.{ShortConstant, LongConstant, BigIntConstant, AvlTreeConstant, IntConstant, ByteConstant}
-import sigmastate.eval.{CSigmaProp, SigmaDsl, CostingSigmaDslBuilder}
-import special.collection.Coll
-import special.sigma.BigInt
-import sigmastate.helpers.TestingHelpers._
 
 class TypesSpecification extends SigmaTestingData {
 
@@ -32,10 +21,14 @@ class TypesSpecification extends SigmaTestingData {
 
   property("SType.isValueOfType test vectors") {
     def assertTrue(x: Any, t: SType) = {
-      isValueOfType(x, t) shouldBe true
+      withClue(s"x = $x, t = $t: ") {
+        isValueOfType(x, t) shouldBe true
+      }
     }
     def assertFalse(x: Any, t: SType) = {
-      isValueOfType(x, t) shouldBe false
+      withClue(s"x = $x, t = $t: ") {
+        isValueOfType(x, t) shouldBe false
+      }
     }
     
     assertTrue(true, SBoolean)

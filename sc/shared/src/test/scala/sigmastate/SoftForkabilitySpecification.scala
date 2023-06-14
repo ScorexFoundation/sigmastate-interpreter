@@ -6,11 +6,11 @@ import org.ergoplatform.validation._
 import org.scalatest.BeforeAndAfterAll
 import sigmastate.SPrimType.MaxPrimTypeCode
 import sigmastate.Values.ErgoTree.EmptyConstants
-import sigmastate.Values.{ByteArrayConstant, ErgoTree, IntConstant, NotReadyValueInt, Tuple, UnparsedErgoTree, ValueCompanion}
+import sigmastate.Values.{ByteArrayConstant, ErgoTree, IntConstant, NotReadyValueInt, UnparsedErgoTree, ValueCompanion}
 import sigmastate.eval.Colls
-import sigmastate.exceptions.{SerializerException, SigmaException, InterpreterException}
+import sigmastate.exceptions.{InterpreterException, SerializerException}
 import sigmastate.helpers.TestingHelpers._
-import sigmastate.helpers.{ErgoLikeTestInterpreter, ErgoLikeContextTesting, ErgoLikeTestProvingInterpreter, CompilerTestingCommons}
+import sigmastate.helpers.{CompilerTestingCommons, ErgoLikeContextTesting, ErgoLikeTestInterpreter, ErgoLikeTestProvingInterpreter}
 import sigmastate.interpreter.ErgoTreeEvaluator.DataEnv
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.interpreter.{ContextExtension, ErgoTreeEvaluator, ProverResult}
@@ -19,7 +19,7 @@ import sigmastate.serialization.OpCodes.{LastConstantCode, OpCode}
 import sigmastate.serialization.SigmaSerializer.startReader
 import sigmastate.serialization._
 import sigmastate.utils.Helpers._
-import sigmastate.utxo.{DeserializeContext, SelectField}
+import sigmastate.utxo.DeserializeContext
 import special.sigma.SigmaTestingData
 
 class SoftForkabilitySpecification extends SigmaTestingData
@@ -157,7 +157,7 @@ class SoftForkabilitySpecification extends SigmaTestingData
     assertExceptionThrown({
       ErgoTree(1.toByte, EmptyConstants, propV2)
     }, {
-      case e: IllegalArgumentException  => true
+      case _: IllegalArgumentException  => true
       case _ => false
     } )
 

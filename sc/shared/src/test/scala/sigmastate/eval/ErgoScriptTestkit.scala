@@ -2,22 +2,21 @@ package sigmastate.eval
 
 import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
 import org.ergoplatform.validation.ValidationSpecification
-
-import scala.util.Success
-import sigmastate.{VersionContext, CompilerTestsBase, SType, TestsBase, AvlTreeData}
-import sigmastate.Values.{EvaluatedValue, SValue, SigmaPropConstant, Value, BigIntArrayConstant}
 import org.ergoplatform.{Context => _, _}
 import scalan.BaseCtxTests
-import sigmastate.lang.{LangTests, CompilerResult, CompilerSettings, SigmaCompiler}
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting}
+import sigmastate.Values.{BigIntArrayConstant, EvaluatedValue, SValue, SigmaPropConstant, Value}
 import sigmastate.helpers.TestingHelpers._
-import sigmastate.interpreter.{ErgoTreeEvaluator, ContextExtension}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting}
 import sigmastate.interpreter.Interpreter.ScriptEnv
+import sigmastate.interpreter.{ContextExtension, ErgoTreeEvaluator}
 import sigmastate.lang.Terms.ValueOps
-import special.sigma.{ContractsTestkit, Context => DContext}
+import sigmastate.lang.{CompilerResult, CompilerSettings, LangTests, SigmaCompiler}
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
+import sigmastate.{AvlTreeData, CompilerTestsBase, SType, VersionContext}
+import special.sigma.{ContractsTestkit, Context => DContext}
 
 import scala.language.implicitConversions
+import scala.util.Success
 
 trait ErgoScriptTestkit extends ContractsTestkit with LangTests
     with ValidationSpecification with CompilerTestsBase { self: BaseCtxTests =>
@@ -26,9 +25,9 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests
     new TestContext with IRContext
 
   import IR._
-  import Liftables._
-  import Context._
   import BigInt._
+  import Context._
+  import Liftables._
 
   override lazy val compiler = new SigmaCompiler(CompilerSettings(
     TestnetNetworkPrefix,
@@ -117,7 +116,9 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests
     def checkExpected[T](block: => T, expected: Option[T], messageFmt: String) = {
       if (expected.isDefined) {
         val x = block
-        x shouldBe expected.get
+        withClue(messageFmt) {
+          x shouldBe expected.get
+        }
       }
     }
 

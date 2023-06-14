@@ -49,7 +49,7 @@ trait CompilerTestsBase extends TestsBase {
   }
 
   /** Check the given [[CompilerResult]] meets equality and sanity requirements. */
-  def checkCompilerResult[Ctx <: IRContext](res: CompilerResult[Ctx])(implicit IR: IRContext): Unit = {
+  def checkCompilerResult[Ctx <: IRContext](res: CompilerResult[Ctx]): Unit = {
     checkSerializationRoundTrip(res.buildTree)
   }
 

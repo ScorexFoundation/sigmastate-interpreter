@@ -31,4 +31,8 @@ object Platform {
         Assertions.fail(s"Staging $name failed. $graphMsg", e)
     }
   }
+
+  /** On JVM it calls Thread.sleep. */
+  def threadSleepOrNoOp(millis: Long): Unit =
+    Thread.sleep(millis)
 }
