@@ -8,13 +8,13 @@ import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.eval.Extensions._
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, CompilerTestingCommons}
+import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter._
 import sigmastate.lang.Terms._
 import SType.AnyOps
 import sigmastate.basics.CryptoConstants
-import sigmastate.eval.InvalidType
+import sigmastate.eval.{CAnyValue, InvalidType}
 import sigmastate.interpreter.ContextExtension.VarBinding
 import sigmastate.interpreter.ErgoTreeEvaluator.DefaultEvalSettings
 import sigmastate.interpreter.EvalSettings
@@ -48,12 +48,12 @@ class BasicOpsSpecification extends CompilerTestingCommons
     (bigIntVar1, BigIntConstant(BigInt(10).underlying())), (bigIntVar2, BigIntConstant(BigInt(20).underlying())),
     (booleanVar, TrueLeaf))
   val env = Map(
-    "intVar1" -> intVar1, "intVar2" -> intVar2,
-    "byteVar1" -> byteVar1, "byteVar2" -> byteVar2, "byteVar3" -> byteVar3,
-    "bigIntVar1" -> bigIntVar1, "bigIntVar2" -> bigIntVar2, "bigIntVar3" -> bigIntVar3,
-    "trueVar" -> booleanVar,
-    "proofVar1" -> propVar1,
-    "proofVar2" -> propVar2
+    "intVar1" -> CAnyValue(intVar1), "intVar2" -> CAnyValue(intVar2),
+    "byteVar1" -> CAnyValue(byteVar1), "byteVar2" -> CAnyValue(byteVar2), "byteVar3" -> CAnyValue(byteVar3),
+    "bigIntVar1" -> CAnyValue(bigIntVar1), "bigIntVar2" -> CAnyValue(bigIntVar2), "bigIntVar3" -> CAnyValue(bigIntVar3),
+    "trueVar" -> CAnyValue(booleanVar),
+    "proofVar1" -> CAnyValue(propVar1),
+    "proofVar2" -> CAnyValue(propVar2)
     )
 
   def test(name: String, env: ScriptEnv,
@@ -339,7 +339,7 @@ class BasicOpsSpecification extends CompilerTestingCommons
     val Colls = IR.sigmaDslBuilderValue.Colls
     implicit val eAny = RType.AnyType
     val data = Colls.fromItems((Array[Byte](1,2,3).toColl, 10L))
-    val env1 = env + ("dataVar" -> dataVar)
+    val env1 = env + ("dataVar" -> CAnyValue(dataVar))
     val dataType = SCollection(STuple(SByteArray, SLong))
     val ext1 = ext :+ ((dataVar, Constant[SType](data.asWrappedType, dataType)))
     test("TupColl3", env1, ext1,

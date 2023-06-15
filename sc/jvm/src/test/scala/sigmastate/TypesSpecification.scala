@@ -36,7 +36,7 @@ class TypesSpecification extends SigmaTestingData {
     assertFalse(true, SByte)
     
     assertTrue(0.toByte, SByte)
-    assertFalse(0.toByte, SShort)
+    assertFalse(0.toByte, SShort)  // TODO JS: this and the other similar cases below fail on JS
     
     assertTrue(0.toShort, SShort)
     assertFalse(0.toShort, SInt)

@@ -1,5 +1,6 @@
 import scala.language.postfixOps
 import scala.sys.process._
+import org.scalajs.linker.interface.CheckedBehavior
 
 organization := "org.scorexfoundation"
 
@@ -345,6 +346,12 @@ lazy val scJS = sc.js
     scalaJSLinkerConfig ~= { conf =>
       conf.withSourceMap(false)
           .withModuleKind(ModuleKind.CommonJSModule)
+          .withSemantics(sem =>
+            // compliance with JVM semantics is required for tests to pass on JS
+            // we sacrifice some optimizations (and performance) for that
+            sem.withAsInstanceOfs(CheckedBehavior.Compliant)
+               .withArrayIndexOutOfBounds(CheckedBehavior.Compliant)
+          )
     },
     Compile / npmDependencies ++= Seq(
       "sigmajs-crypto-facade" -> sigmajsCryptoFacadeVersion

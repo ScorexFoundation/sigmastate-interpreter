@@ -1,10 +1,12 @@
 package sigmastate
 
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, CompilerTestingCommons}
+import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.lang.Terms._
 import org.scalatest.TryValues._
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
+
+import scala.util.Success
 
 class FailingToProveSpec extends CompilerTestingCommons
   with CompilerCrossVersionProps {
@@ -45,7 +47,7 @@ class FailingToProveSpec extends CompilerTestingCommons
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       activatedVersion = activatedVersionInTests)
     val proof = interpreter.prove(emptyEnv + (ScriptNameProp -> "prove"), tree, ctx, fakeMessage).success.value.proof
-    verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), tree, ctx, proof, fakeMessage) shouldBe 'success
+    verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), tree, ctx, proof, fakeMessage) shouldBe Success((true, 17L))
   }
 
   property("successfully evaluate proof 2") {
@@ -80,7 +82,7 @@ class FailingToProveSpec extends CompilerTestingCommons
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       activatedVersion = activatedVersionInTests)
     val proof = interpreter.prove(emptyEnv + (ScriptNameProp -> "prove"), tree, ctx, fakeMessage).success.value.proof
-    verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), tree, ctx, proof, fakeMessage) shouldBe 'success
+    verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), tree, ctx, proof, fakeMessage) shouldBe Success((true, 27L))
   }
 
 }

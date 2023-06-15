@@ -25,12 +25,13 @@ import scalan.{Nullable, RType}
 import scorex.crypto.hash.{Blake2b256, Digest32, Sha256}
 import sigmastate.Values.ErgoTree.EmptyConstants
 import sigmastate.basics.DLogProtocol.ProveDlog
-import sigmastate.basics.{ProveDHTuple, CryptoConstants}
+import sigmastate.basics.{CryptoConstants, ProveDHTuple}
 import sigmastate.crypto.{CryptoFacade, Ecp}
 import sigmastate.lang.TransformingSigmaBuilder
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.serialization.{GroupElementSerializer, SigmaSerializer}
 
+import scala.annotation.unused
 import scala.reflect.ClassTag
 
 /** Interface implmented by wrappers to provide access to the underlying wrapped value. */
@@ -304,7 +305,7 @@ case class CAnyValue[A](value: A, tVal: RType[Any]) extends AnyValue {
 }
 
 object CAnyValue {
-  def apply[A](value: A, t: RType[A])(implicit o: Overloaded1): CAnyValue[A] =
+  def apply[A](value: A)(implicit t: RType[A], @unused o: Overloaded1): CAnyValue[A] =
     new CAnyValue(value, t.asInstanceOf[RType[Any]])
 }
 
@@ -313,7 +314,7 @@ import sigmastate.eval.CostingBox._
 /** A default implementation of [[Box]] interface.
   * @see [[Box]] for detailed descriptions
   */
-case class CostingBox(val ebox: ErgoBox) extends Box with WrapperOf[ErgoBox] {
+case class CostingBox(ebox: ErgoBox) extends Box with WrapperOf[ErgoBox] {
   val builder = CostingSigmaDslBuilder
 
   val value = ebox.value

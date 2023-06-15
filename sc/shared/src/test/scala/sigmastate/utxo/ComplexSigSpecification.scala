@@ -4,8 +4,8 @@ import org.ergoplatform.Height
 import org.scalacheck.Gen
 import sigmastate.Values.IntConstant
 import sigmastate._
+import sigmastate.helpers._
 import sigmastate.lang.Terms._
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, ErgoLikeTransactionTesting, CompilerTestingCommons}
 
 import scala.util.Random
 
@@ -625,7 +625,7 @@ class ComplexSigSpecification extends CompilerTestingCommons
         val proverWithKSecrets = prover.withSecrets(
           shuffledProvers.takeRight(neededExtraSecrets).map(_.dlogSecrets.head))
         val prTry = proverWithKSecrets.prove(propTree, ctx, fakeMessage)
-        prTry shouldBe 'success
+        prTry.isSuccess shouldBe true
         verifier.verify(propTree, ctx, prTry.get, fakeMessage).get._1 shouldBe true
       }
     }

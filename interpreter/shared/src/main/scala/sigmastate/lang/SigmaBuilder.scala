@@ -1,10 +1,9 @@
 package sigmastate.lang
 
 import java.math.BigInteger
-
 import org.ergoplatform.ErgoBox
 import org.ergoplatform.ErgoBox.RegisterId
-import sigmastate.SCollection.{SIntArray, SByteArray}
+import sigmastate.SCollection.{SByteArray, SIntArray}
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.lang.Constraints._
@@ -15,11 +14,10 @@ import sigmastate.utxo._
 import scalan.Nullable
 import sigmastate.SOption.SIntOption
 import sigmastate.eval._
-import sigmastate.basics.CryptoConstants.EcPointType
 import special.collection.Coll
 import sigmastate.lang.Terms.STypeSubst
 import sigmastate.serialization.OpCodes.OpCode
-import special.sigma.{AvlTree, SigmaProp, GroupElement}
+import special.sigma.{AnyValue, AvlTree, GroupElement, SigmaProp}
 import debox.cfor
 
 import scala.util.DynamicVariable
@@ -246,8 +244,11 @@ abstract class SigmaBuilder {
     case arr: Array[Long] => Nullable(mkCollectionConstant[SLong.type](arr, SLong))
     case arr: Array[BigInteger] => Nullable(mkCollectionConstant[SBigInt.type](arr.map(SigmaDsl.BigInt(_)), SBigInt))
     case arr: Array[String] => Nullable(mkCollectionConstant[SString.type](arr, SString))
-    case v: Byte => Nullable(mkConstant[SByte.type](v, SByte))
-    case v: Short => Nullable(mkConstant[SShort.type](v, SShort))
+    case v: AnyValue =>
+      val tpe = Evaluation.rtypeToSType(v.tVal)
+      Nullable(mkConstant[tpe.type](v.value.asInstanceOf[tpe.WrappedType], tpe))
+//    case v: Byte => Nullable(mkConstant[SByte.type](v, SByte))
+//    case v: Short => Nullable(mkConstant[SShort.type](v, SShort))
     case v: Int => Nullable(mkConstant[SInt.type](v, SInt))
     case v: Long => Nullable(mkConstant[SLong.type](v, SLong))
 

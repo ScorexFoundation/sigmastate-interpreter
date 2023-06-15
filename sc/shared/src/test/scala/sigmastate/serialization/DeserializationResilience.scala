@@ -27,8 +27,73 @@ import sigmastate.utils.Helpers._
 import scala.collection.mutable
 import scala.util.{Try, Success, Failure}
 
-class DeserializationResilience extends SerializationSpecification
-  with CompilerTestingCommons with CompilerCrossVersionProps {
+trait DeserializationResilienceTesting extends SerializationSpecification
+    with CompilerTestingCommons with CompilerCrossVersionProps {
+  protected def traceReaderCallDepth(expr: SValue): (IndexedSeq[Int], IndexedSeq[Int]) = {
+    class LoggingSigmaByteReader(r: Reader) extends
+        SigmaByteReader(r,
+          new ConstantStore(),
+          resolvePlaceholdersToConstants = false,
+          maxTreeDepth = SigmaSerializer.MaxTreeDepth) {
+      val levels: mutable.ArrayBuilder[Int] = mutable.ArrayBuilder.make[Int]
+
+      override def level_=(v: Int): Unit = {
+        if (v >= super.level) {
+          // going deeper (depth is increasing), save new depth to account added depth level by the caller
+          levels += v
+        } else {
+          // going up (depth is decreasing), save previous depth to account added depth level for the caller
+          levels += super.level
+        }
+        super.level_=(v)
+      }
+    }
+    class ProbeException extends Exception
+    class ThrowingSigmaByteReader(
+        r: Reader,
+        levels: IndexedSeq[Int],
+        throwOnNthLevelCall: Int) extends
+        SigmaByteReader(r,
+          new ConstantStore(),
+          resolvePlaceholdersToConstants = false,
+          maxTreeDepth = SigmaSerializer.MaxTreeDepth) {
+      private var levelCall: Int = 0
+
+      override def level_=(v: Int): Unit = {
+        if (throwOnNthLevelCall == levelCall) throw new ProbeException()
+        levelCall += 1
+        super.level_=(v)
+      }
+    }
+    val bytes = ValueSerializer.serialize(expr)
+    val loggingR = new LoggingSigmaByteReader(new VLQByteBufferReader(ByteBuffer.wrap(bytes))).mark()
+    val _ = ValueSerializer.deserialize(loggingR)
+    val levels = loggingR.levels.result()
+    levels.nonEmpty shouldBe true
+    val callDepthsBuilder = mutable.ArrayBuilder.make[Int]
+    levels.zipWithIndex.foreach { case (_, levelIndex) =>
+      val throwingR = new ThrowingSigmaByteReader(new VLQByteBufferReader(ByteBuffer.wrap(bytes)),
+        levels,
+        throwOnNthLevelCall = levelIndex).mark()
+      try {
+        val _ = ValueSerializer.deserialize(throwingR)
+      } catch {
+        case e: Exception =>
+          e.isInstanceOf[ProbeException] shouldBe true
+          val stackTrace = e.getStackTrace
+          val depth = stackTrace.count { se =>
+            (se.getClassName == ValueSerializer.getClass.getName && se.getMethodName == "deserialize") ||
+                (se.getClassName == DataSerializer.getClass.getName && se.getMethodName == "deserialize") ||
+                (se.getClassName == SigmaBoolean.serializer.getClass.getName && se.getMethodName == "parse")
+          }
+          callDepthsBuilder += depth
+      }
+    }
+    (levels, callDepthsBuilder.result())
+  }
+}
+
+class DeserializationResilience extends DeserializationResilienceTesting {
 
   implicit lazy val IR: TestingIRContext = new TestingIRContext {
     //    substFromCostTable = false
@@ -129,84 +194,6 @@ class DeserializationResilience extends SerializationSpecification
   property("invalid op code") {
     an[ValidationException] should be thrownBy
       ValueSerializer.deserialize(Array.fill[Byte](1)(117.toByte))
-  }
-
-  private def traceReaderCallDepth(expr: SValue): (IndexedSeq[Int], IndexedSeq[Int]) = {
-    class LoggingSigmaByteReader(r: Reader) extends
-      SigmaByteReader(r,
-        new ConstantStore(),
-        resolvePlaceholdersToConstants = false,
-        maxTreeDepth = SigmaSerializer.MaxTreeDepth) {
-      val levels: mutable.ArrayBuilder[Int] = mutable.ArrayBuilder.make[Int]
-      override def level_=(v: Int): Unit = {
-        if (v >= super.level) {
-          // going deeper (depth is increasing), save new depth to account added depth level by the caller
-          levels += v
-        } else {
-          // going up (depth is decreasing), save previous depth to account added depth level for the caller
-          levels += super.level
-        }
-        super.level_=(v)
-      }
-    }
-
-    class ProbeException extends Exception
-
-    class ThrowingSigmaByteReader(r: Reader, levels: IndexedSeq[Int], throwOnNthLevelCall: Int) extends
-      SigmaByteReader(r,
-        new ConstantStore(),
-        resolvePlaceholdersToConstants = false,
-        maxTreeDepth = SigmaSerializer.MaxTreeDepth) {
-      private var levelCall: Int = 0
-      override def level_=(v: Int): Unit = {
-        if (throwOnNthLevelCall == levelCall) throw new ProbeException()
-        levelCall += 1
-        super.level_=(v)
-      }
-    }
-
-    val bytes = ValueSerializer.serialize(expr)
-    val loggingR = new LoggingSigmaByteReader(new VLQByteBufferReader(ByteBuffer.wrap(bytes))).mark()
-    val _ = ValueSerializer.deserialize(loggingR)
-    val levels = loggingR.levels.result()
-    levels.nonEmpty shouldBe true
-
-    val callDepthsBuilder = mutable.ArrayBuilder.make[Int]
-    levels.zipWithIndex.foreach { case (_, levelIndex) =>
-      val throwingR = new ThrowingSigmaByteReader(new VLQByteBufferReader(ByteBuffer.wrap(bytes)),
-        levels,
-        throwOnNthLevelCall = levelIndex).mark()
-      try {
-        val _ = ValueSerializer.deserialize(throwingR)
-      } catch {
-        case e: Exception =>
-          e.isInstanceOf[ProbeException] shouldBe true
-          val stackTrace = e.getStackTrace
-          val depth = stackTrace.count { se =>
-            (se.getClassName == ValueSerializer.getClass.getName && se.getMethodName == "deserialize") ||
-              (se.getClassName == DataSerializer.getClass.getName && se.getMethodName == "deserialize") ||
-              (se.getClassName == SigmaBoolean.serializer.getClass.getName && se.getMethodName == "parse")
-          }
-          callDepthsBuilder += depth
-      }
-    }
-    (levels, callDepthsBuilder.result())
-  }
-
-  property("reader.level correspondence to the serializer recursive call depth") {
-    forAll(logicalExprTreeNodeGen(Seq(AND.apply, OR.apply))) { expr =>
-      val (callDepths, levels) = traceReaderCallDepth(expr)
-      callDepths shouldEqual levels
-    }
-    forAll(numExprTreeNodeGen) { numExpr =>
-      val expr = EQ(numExpr, IntConstant(1))
-      val (callDepths, levels) = traceReaderCallDepth(expr)
-      callDepths shouldEqual levels
-    }
-    forAll(sigmaBooleanGen) { sigmaBool =>
-      val (callDepths, levels) = traceReaderCallDepth(sigmaBool)
-      callDepths shouldEqual levels
-    }
   }
 
   property("reader.level is updated in ValueSerializer.deserialize") {
@@ -380,7 +367,7 @@ class DeserializationResilience extends SerializationSpecification
   property("test assumptions of how negative value from getUInt().toInt is handled") {
     assertExceptionThrown(
       safeNewArray[Int](-1),
-      exceptionLike[NegativeArraySizeException]())
+      exceptionLike[RuntimeException]()) // NegativeArraySizeException for JVM and JavaScriptException for Scala.js
 
     val bytes = writeUInt(10)
     val store = new ConstantStore(IndexedSeq(IntConstant(1)))
@@ -392,7 +379,7 @@ class DeserializationResilience extends SerializationSpecification
 
     assertExceptionThrown(
       r.getBytes(-1),
-      exceptionLike[NegativeArraySizeException]())
+      exceptionLike[RuntimeException]()) // NegativeArraySizeException for JVM and JavaScriptException for Scala.js
 
     r.valDefTypeStore(-1) = SInt // no exception on negative key
 

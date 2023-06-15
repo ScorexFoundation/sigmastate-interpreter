@@ -1,23 +1,22 @@
 package sigmastate.helpers
 
-import java.math.BigInteger
-
 import org.ergoplatform.settings.ErgoAlgos
-import org.ergoplatform.{Outputs, ErgoBox}
+import org.ergoplatform.{ErgoBox, Outputs}
 import scalan.RType
 import scorex.crypto.authds.ADDigest
 import scorex.util.ModifierId
 import sigmastate.Values._
-import sigmastate.lang.Terms.MethodCall
-import sigmastate.serialization.OpCodes
-import sigmastate.utxo.SelectField
 import sigmastate._
 import sigmastate.eval.Extensions.ArrayOps
 import sigmastate.eval._
+import sigmastate.lang.Terms.MethodCall
+import sigmastate.serialization.OpCodes
 import sigmastate.utils.Helpers
+import sigmastate.utxo.SelectField
 import special.collection.CollType
 import special.sigma.SigmaDslTesting
 
+import java.math.BigInteger
 import scala.collection.mutable.ArrayBuffer
 
 class SigmaPPrintSpec extends SigmaDslTesting {
