@@ -7,8 +7,8 @@ trait ExampleContracts extends ErgoScriptTestkit { self: BaseCtxTests =>
   val envCF = Map(
     "timeout" -> timeout,
     "minToRaise" -> minToRaise,
-    "backerPubKeyId" -> backerPubKeyId,
-    "projectPubKeyId" -> projectPubKeyId
+    "backerPubKeyId" -> CAnyValue(backerPubKeyId),
+    "projectPubKeyId" -> CAnyValue(projectPubKeyId)
   )
 
   val crowdFundingScript =

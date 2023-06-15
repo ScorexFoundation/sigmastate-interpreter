@@ -290,7 +290,7 @@ abstract class SigmaBuilder {
       Nullable(mkCollectionConstant(coll.asInstanceOf[SCollection[SType]#WrappedType], tpeItem))
 
     case _ =>
-      Nullable.None
+      sys.error(s"Cannot liftToConstant($obj)")
   }
 }
 

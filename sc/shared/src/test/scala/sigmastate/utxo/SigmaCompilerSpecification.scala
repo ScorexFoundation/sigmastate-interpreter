@@ -1,11 +1,11 @@
 package sigmastate.utxo
 
-import sigmastate.{GE, ModQ, SType}
 import sigmastate.Values._
+import sigmastate.eval.CAnyValue
 import sigmastate.helpers.CompilerTestingCommons
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.Terms._
-import sigmastate._
+import sigmastate.{GE, ModQ, SType}
 
 /**
   * Specification for compile function
@@ -17,7 +17,7 @@ class SigmaCompilerSpecification extends CompilerTestingCommons {
 
   property(">= compile") {
     val elementId = 1: Byte
-    val env = Map("elementId" -> elementId)
+    val env = Map("elementId" -> CAnyValue(elementId))
     val propTree = GE(GetVarInt(elementId).get, IntConstant(120))
     val propComp = compile(env,
       """{
