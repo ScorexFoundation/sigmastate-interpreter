@@ -508,9 +508,6 @@ class SigmaTyper(val builder: SigmaBuilder,
     case Inputs => Inputs
     case Outputs => Outputs
     case LastBlockUtxoRootHash => LastBlockUtxoRootHash
-    case c @ LongConstant(i) if expected.isDefined && expected.get == SByte =>
-      if (i >= 0 && i <= Byte.MaxValue) ByteConstant(i.toByte)
-      else error(s"Value $i of type Long cannot be converted to Byte.", c.sourceContext)
     case v: ContextVariable[_] => v
     case v: GetVar[_] => v
     case v: OptionGet[_] => v

@@ -217,7 +217,7 @@ trait TreeBuilding extends SigmaLibrary { IR: IRContext =>
       case SDBM.xor(_, colSym1, colSym2) =>
         mkXor(recurse(colSym1), recurse(colSym2))
 
-      case ContextM.getVar(_, Def(Const(id: Byte)), eVar) =>
+      case ContextM.getVar(_, Def(Const(id)), eVar) =>
         val tpe = elemToSType(eVar)
         mkGetVar(id, tpe)
 

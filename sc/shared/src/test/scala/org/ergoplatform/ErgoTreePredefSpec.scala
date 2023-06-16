@@ -87,15 +87,15 @@ class ErgoTreePredefSpec extends CompilerTestingCommons with CompilerCrossVersio
 
     def checkAtHeight(height: Int) = {
       // collect correct amount of coins, correct new script, able to satisfy R4 conditions
-      checkSpending(remaining(height), height, prop, R4Prop(true)) shouldBe 'success
+      checkSpending(remaining(height), height, prop, R4Prop(true)).isSuccess shouldBe true
       // unable to satisfy R4 conditions
-      checkSpending(remaining(height), height, prop, R4Prop(false)) shouldBe 'failure
+      checkSpending(remaining(height), height, prop, R4Prop(false)).isFailure shouldBe true
       // incorrect new script
-      checkSpending(remaining(height), height, TrivialProp.TrueProp, R4Prop(true)) shouldBe 'failure
+      checkSpending(remaining(height), height, TrivialProp.TrueProp, R4Prop(true)).isFailure shouldBe true
       // collect less coins then possible
-      checkSpending(remaining(height) + 1, height, prop, R4Prop(true)) shouldBe 'success
+      checkSpending(remaining(height) + 1, height, prop, R4Prop(true)).isSuccess shouldBe true
       // collect more coins then possible
-      checkSpending(remaining(height) - 1, height, prop, R4Prop(true)) shouldBe 'failure
+      checkSpending(remaining(height) - 1, height, prop, R4Prop(true)).isFailure shouldBe true
     }
 
     def checkSpending(remainingAmount: Long,
@@ -165,16 +165,16 @@ class ErgoTreePredefSpec extends CompilerTestingCommons with CompilerCrossVersio
     forAll(Gen.choose(1, settings.fixedRatePeriod)) { height =>
       val currentRate = emission.minersRewardAtHeight(height)
       createRewardTx(currentRate, height, minerProp).getOrThrow
-      createRewardTx(currentRate + 1, height, minerProp) shouldBe 'failure
-      createRewardTx(currentRate - 1, height, minerProp) shouldBe 'failure
+      createRewardTx(currentRate + 1, height, minerProp).isFailure shouldBe true
+      createRewardTx(currentRate - 1, height, minerProp).isFailure shouldBe true
     }
 
     // collect coins after the fixed rate period
     forAll(Gen.choose(1, emission.blocksTotal - 1)) { height =>
       val currentRate = emission.minersRewardAtHeight(height)
-      createRewardTx(currentRate, height, minerProp) shouldBe 'success
-      createRewardTx(currentRate + 1, height, minerProp) shouldBe 'failure
-      createRewardTx(currentRate - 1, height, minerProp) shouldBe 'failure
+      createRewardTx(currentRate, height, minerProp).isSuccess shouldBe true
+      createRewardTx(currentRate + 1, height, minerProp).isFailure shouldBe true
+      createRewardTx(currentRate - 1, height, minerProp).isFailure shouldBe true
     }
 
     // collect coins to incorrect proposition
@@ -184,10 +184,10 @@ class ErgoTreePredefSpec extends CompilerTestingCommons with CompilerCrossVersio
       val correctProp = ErgoTreePredef.rewardOutputScript(settings.minerRewardDelay, minerPk)
       val incorrectDelay = ErgoTreePredef.rewardOutputScript(settings.minerRewardDelay + 1, minerPk)
       val incorrectPk = ErgoTreePredef.rewardOutputScript(settings.minerRewardDelay, pk2)
-      createRewardTx(currentRate, height, correctProp) shouldBe 'success
-      createRewardTx(currentRate, height, incorrectDelay) shouldBe 'failure
-      createRewardTx(currentRate, height, incorrectPk) shouldBe 'failure
-      createRewardTx(currentRate, height, minerPk) shouldBe 'failure
+      createRewardTx(currentRate, height, correctProp).isSuccess shouldBe true
+      createRewardTx(currentRate, height, incorrectDelay).isFailure shouldBe true
+      createRewardTx(currentRate, height, incorrectPk).isFailure shouldBe true
+      createRewardTx(currentRate, height, minerPk).isFailure shouldBe true
     }
 
     def createRewardTx(emissionAmount: Long, nextHeight: Int, minerProp: ErgoTree): Try[ErgoLikeTransaction] = {
@@ -244,7 +244,7 @@ class ErgoTreePredefSpec extends CompilerTestingCommons with CompilerCrossVersio
       val inputs1 = IndexedSeq(
         testBox(20, prop, 0, Seq((wrongId, tokenAmount), (tokenId, tokenAmount - 1)), Map())
       )
-      check(inputs1) shouldBe 'failure
+      check(inputs1).isFailure shouldBe true
 
       // transaction with multiple inputs with insufficient token should fail
       val inputs2 = IndexedSeq(
@@ -252,7 +252,7 @@ class ErgoTreePredefSpec extends CompilerTestingCommons with CompilerCrossVersio
         testBox(20, prop, 0, Seq((wrongId, tokenAmount)), Map()),
         testBox(20, prop, 0, Seq((tokenId, 1), (wrongId2, tokenAmount)), Map())
       )
-      check(inputs2) shouldBe 'failure
+      check(inputs2).isFailure shouldBe true
 
       // transaction with multiple inputs with enough token should pass
       val inputs3 = IndexedSeq(
@@ -268,7 +268,7 @@ class ErgoTreePredefSpec extends CompilerTestingCommons with CompilerCrossVersio
         testBox(20, prop, 0, Seq(), Map()),
         testBox(20, prop, 0, Seq((tokenId, tokenAmount / 2 + 1), (wrongId2, 1)), Map())
       )
-      check(inputs4) shouldBe 'success
+      check(inputs4).isSuccess shouldBe true
     }
     /*
     Iter 0: 777 ms

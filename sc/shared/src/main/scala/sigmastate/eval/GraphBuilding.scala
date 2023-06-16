@@ -479,7 +479,8 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
           val resV = toRep(s)(stypeToElem(tpe).asInstanceOf[Elem[String]])
           resV
         case _ =>
-          val resV = toRep(v)(stypeToElem(tpe))
+          val e = stypeToElem(tpe)
+          val resV = toRep(v)(e)
           resV
       }
       case org.ergoplatform.Context => ctx

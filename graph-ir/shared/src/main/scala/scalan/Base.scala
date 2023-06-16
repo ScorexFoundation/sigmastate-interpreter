@@ -403,6 +403,15 @@ abstract class Base { scalan: Scalan =>
     * @param  eT  type descriptor of IR type T */
   case class Const[T](x: T)(implicit val eT: Elem[T]) extends BaseDef[T] {
     override def mirror(t: Transformer): Ref[T] = self
+
+    // NOTE, we need to override hashCode and equals to involve eT.
+    // This is necessary for JS as there is no distinction between Byte, Short, Int values
+    // and comparing x == other.x is not enough.
+    override def hashCode() = x.hashCode() * 31 + eT.hashCode()
+    override def equals(other: Any) = (this eq other.asInstanceOf[AnyRef]) || (other match {
+      case c: Const[_] => x == c.x && eT == c.eT
+      case _ => false
+    })
   }
 
   /** Node class for typed variables. In particular for lambda-bound variables.
