@@ -27,8 +27,8 @@ import special.sigma.{GroupElement, SigmaProp}
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
-import scala.collection.compat.immutable.ArraySeq
 import debox.cfor
+import sigmastate.eval.Extensions.EvalCollOps
 
 /**
   * Basic trait for inner nodes of crypto-trees, so AND/OR/THRESHOLD sigma-protocol connectives
@@ -774,12 +774,12 @@ case class SubstConstants[T <: SType](scriptBytes: Value[SByteArray], positions:
     val newValuesV = newValues.evalTo[Coll[T#WrappedType]](env)
     var res: Coll[Byte] = null
     E.addSeqCost(SubstConstants.costKind, SubstConstants.opDesc) { () =>
-      val typedNewVals: Array[Constant[SType]] = newValuesV.toArray.map { v =>
-        TransformingSigmaBuilder.liftToConstant(v) match {
-          case Nullable(v) => v
-          case _ => sys.error(s"Cannot evaluate substConstants($scriptBytesV, $positionsV, $newValuesV): cannot lift value $v")
+      val typedNewVals: Array[Constant[SType]] =
+        try newValuesV.toArrayOfConstants
+        catch {
+          case e: Throwable =>
+            throw new RuntimeException(s"Cannot evaluate substConstants($scriptBytesV, $positionsV, $newValuesV)", e)
         }
-      }
 
       val (newBytes, nConstants) = SubstConstants.eval(
         scriptBytes = scriptBytesV.toArray,

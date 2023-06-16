@@ -1,18 +1,19 @@
 package sigmastate.eval
 
-import java.math.BigInteger
-import scalan.RType
-import sigmastate.{SCollection, SCollectionType, SType}
+import debox.{cfor, Buffer => DBuffer}
+import org.ergoplatform.ErgoBox
+import org.ergoplatform.ErgoBox.TokenId
+import scalan.{Nullable, RType}
+import sigmastate.SType.AnyOps
 import sigmastate.Values.{Constant, ConstantNode}
-import sigmastate.lang.CheckingSigmaBuilder
+import sigmastate.crypto.{CryptoFacade, Ecp}
+import sigmastate.lang.{CheckingSigmaBuilder, TransformingSigmaBuilder}
+import sigmastate.utils.Helpers
+import sigmastate.{Platform, SCollection, SCollectionType, SType}
 import special.collection.Coll
 import special.sigma._
-import sigmastate.SType.AnyOps
-import org.ergoplatform.ErgoBox
-import debox.{Buffer => DBuffer}
-import debox.cfor
-import org.ergoplatform.ErgoBox.TokenId
-import sigmastate.crypto.{CryptoFacade, Ecp}
+
+import java.math.BigInteger
 
 object Extensions {
   private val Colls = CostingSigmaDslBuilder.Colls
@@ -54,6 +55,29 @@ object Extensions {
     def toConstant: Constant[SCollection[ElemTpe]] = {
       val elemTpe = Evaluation.rtypeToSType(coll.tItem).asInstanceOf[ElemTpe]
       ConstantNode[SCollection[ElemTpe]](coll, SCollectionType(elemTpe))
+    }
+
+    /** Transforms this collection into array of constants.
+      *
+      * This method have exactly the same semantics on JS and JVM IF `coll.tItem`
+      * precisely describes the type of elements in `call`. (Which is the case for all
+      * collections created by ErgoTree interpreter).
+      *
+      * However it is not the case, then JVM and JS will have different semantics for Byte and Short.
+      *
+      * The JVM version preserves v5.0 consensus protocol semantics.
+      * The JS version is a reasonable approximation of the JVM version.
+      */
+    def toArrayOfConstants: Array[Constant[SType]] = {
+      val constants = coll.toArray.map { v =>
+        val valToLift = Helpers.ensureTypeCarringValue(v, coll.tItem.asInstanceOf[RType[Any]])
+        // call platform-specific method to transform the value to a Constant
+        Platform.liftToConstant(valToLift, TransformingSigmaBuilder) match {
+          case Nullable(c) => c
+          case _ => sys.error(s"Cannot liftToConstant($valToLift)")
+        }
+      }
+      constants
     }
   }
 

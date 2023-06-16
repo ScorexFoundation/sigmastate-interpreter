@@ -70,4 +70,9 @@ class SigmaBuilderTest extends AnyPropSpec with ScalaCheckPropertyChecks with Ma
     an[ConstraintFailed] should be thrownBy mkDivide(LongConstant(1), IntConstant(1))
     an[ConstraintFailed] should be thrownBy mkModulo(LongConstant(1), IntConstant(1))
   }
+
+  property("liftToConstant") {
+    import TransformingSigmaBuilder._
+//    liftToConstant(1.toByte) shouldBe ByteConstant(1)
+  }
 }

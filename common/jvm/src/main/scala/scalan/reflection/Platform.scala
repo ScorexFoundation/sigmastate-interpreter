@@ -1,5 +1,6 @@
 package scalan.reflection
 
+import sigmastate.RuntimePlatform
 
 import scala.collection.concurrent.TrieMap
 
@@ -82,4 +83,7 @@ object Platform {
     // Eventually, this is the empty string iff this is an anonymous class
     simpleName.substring(index)
   }
+
+  /** Returns current runtime platform descriptor. */
+  def runtimePlatform: RuntimePlatform = RuntimePlatform.JVM
 }

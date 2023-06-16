@@ -1,5 +1,7 @@
 package scalan.reflection
 
+import sigmastate.RuntimePlatform
+
 import scala.collection.mutable
 
 /** JS Platform dependent implementation of reflection methods. */
@@ -52,4 +54,7 @@ object Platform {
   def safeSimpleName(cl: Class[_]): String = {
     cl.getSimpleName
   }
+
+  /** Returns current runtime platform descriptor. */
+  def runtimePlatform: RuntimePlatform = RuntimePlatform.JS
 }
