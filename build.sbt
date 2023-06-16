@@ -6,7 +6,7 @@ organization := "org.scorexfoundation"
 
 name := "sigma-state"
 
-lazy val scala213 = "2.13.9"
+lazy val scala213 = "2.13.10"
 lazy val scala212 = "2.12.15"
 lazy val scala211 = "2.11.12"
 
@@ -327,6 +327,7 @@ lazy val sc = crossProject(JVMPlatform, JSPlatform)
     commonDependenies2,
     testingDependencies2,
     scorexUtilDependency, fastparseDependency, circeDependency,
+    Test / parallelExecution := false
   )
   .settings(publish / skip := true)
   .jvmSettings(
