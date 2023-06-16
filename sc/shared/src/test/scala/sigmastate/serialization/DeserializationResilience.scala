@@ -1,31 +1,32 @@
 package sigmastate.serialization
 
-import java.nio.ByteBuffer
 import org.ergoplatform.validation.ValidationException
 import org.ergoplatform.validation.ValidationRules.CheckPositionLimit
 import org.ergoplatform.{ErgoBoxCandidate, Outputs}
 import org.scalacheck.Gen
 import scalan.util.BenchmarkUtil
-import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert}
+import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util.serialization.{Reader, VLQByteBufferReader}
-import sigmastate.Values.{SValue, BlockValue, GetVarInt, SigmaBoolean, ValDef, ValUse, SigmaPropValue, Tuple, IntConstant}
+import sigmastate.Values.{BlockValue, GetVarInt, IntConstant, SValue, SigmaBoolean, SigmaPropValue, Tuple, ValDef, ValUse}
 import sigmastate._
 import sigmastate.basics.CryptoConstants
 import sigmastate.eval.Extensions._
 import sigmastate.eval._
-import sigmastate.exceptions.{ReaderPositionLimitExceeded, InvalidTypePrefix, SerializerException, DeserializeCallDepthExceeded}
-import sigmastate.helpers.{ErgoLikeContextTesting, ErgoLikeTestInterpreter, CompilerTestingCommons}
+import sigmastate.exceptions.{DeserializeCallDepthExceeded, InvalidTypePrefix, ReaderPositionLimitExceeded, SerializerException}
+import sigmastate.helpers.{CompilerTestingCommons, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.interpreter.{ContextExtension, CostedProverResult}
 import sigmastate.serialization.OpCodes._
 import sigmastate.util.safeNewArray
+import sigmastate.utils.Helpers._
 import sigmastate.utils.SigmaByteReader
 import sigmastate.utxo.SizeOf
-import sigmastate.utils.Helpers._
 
+import java.nio.ByteBuffer
+import scala.collection.immutable.Seq
 import scala.collection.mutable
-import scala.util.{Try, Success, Failure}
+import scala.util.{Failure, Success, Try}
 
 trait DeserializationResilienceTesting extends SerializationSpecification
     with CompilerTestingCommons with CompilerCrossVersionProps {
@@ -194,6 +195,24 @@ class DeserializationResilience extends DeserializationResilienceTesting {
   property("invalid op code") {
     an[ValidationException] should be thrownBy
       ValueSerializer.deserialize(Array.fill[Byte](1)(117.toByte))
+  }
+
+  property("reader.level correspondence to the serializer recursive call depth") {
+    if (Environment.current.isJVM) {
+      forAll(logicalExprTreeNodeGen(Seq(AND.apply, OR.apply))) { expr =>
+        val (callDepths, levels) = traceReaderCallDepth(expr)
+        callDepths shouldEqual levels
+      }
+      forAll(numExprTreeNodeGen) { numExpr =>
+        val expr = EQ(numExpr, IntConstant(1))
+        val (callDepths, levels) = traceReaderCallDepth(expr)
+        callDepths shouldEqual levels
+      }
+      forAll(sigmaBooleanGen) { sigmaBool =>
+        val (callDepths, levels) = traceReaderCallDepth(sigmaBool)
+        callDepths shouldEqual levels
+      }
+    }
   }
 
   property("reader.level is updated in ValueSerializer.deserialize") {

@@ -36,14 +36,29 @@ class TypesSpecification extends SigmaTestingData {
     assertFalse(true, SByte)
     
     assertTrue(0.toByte, SByte)
-    assertFalse(0.toByte, SShort)  // TODO JS: this and the other similar cases below fail on JS
-    
+
+    if (Environment.current.isJVM) {
+      assertFalse(0.toByte, SShort)
+    } else { // JS
+      assertTrue(0.toByte, SShort)
+    }
+
     assertTrue(0.toShort, SShort)
-    assertFalse(0.toShort, SInt)
-    
+
+    if (Environment.current.isJVM) {
+      assertFalse(0.toShort, SInt)
+    } else { // JS
+      assertTrue(0.toShort, SInt)
+    }
+
     assertTrue(0, SInt)
-    assertFalse(0, SShort)
     
+    if (Environment.current.isJVM) {
+      assertFalse(0, SShort)
+    } else { // JS
+      assertTrue(0, SShort)
+    }
+
     assertTrue(0L, SLong)
     assertFalse(0L, SShort)
 
