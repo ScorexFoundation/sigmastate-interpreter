@@ -1,25 +1,21 @@
 package sigmastate.lang
 
-import java.math.BigInteger
-import org.ergoplatform.ErgoBox
+import debox.cfor
 import org.ergoplatform.ErgoBox.RegisterId
+import scalan.Nullable
 import sigmastate.SCollection.{SByteArray, SIntArray}
+import sigmastate.SOption.SIntOption
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.lang.Constraints._
-import sigmastate.lang.Terms._
-import sigmastate.exceptions.ConstraintFailed
-import sigmastate.serialization.OpCodes
-import sigmastate.utxo._
-import scalan.Nullable
-import sigmastate.SOption.SIntOption
 import sigmastate.eval._
-import special.collection.Coll
-import sigmastate.lang.Terms.STypeSubst
+import sigmastate.exceptions.ConstraintFailed
+import sigmastate.lang.Constraints._
+import sigmastate.lang.Terms.{STypeSubst, _}
+import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.OpCode
-import special.sigma.{AnyValue, AvlTree, GroupElement, SigmaProp}
-import debox.cfor
-import sigmastate.utils.Helpers
+import sigmastate.utxo._
+import special.collection.Coll
+import special.sigma.AnyValue
 
 import scala.util.DynamicVariable
 
@@ -226,7 +222,7 @@ abstract class SigmaBuilder {
 
   /** Created a new Value instance with an appropriate type derived from the given data `obj`.
     * If `obj` is already Value, then it is returned as result.
-    * Uses scalan.Nullable instead of scala.Option to avoid allocation on consensus hot path.
+    * Uses [[scalan.Nullable]] instead of [[Option]] to avoid allocation on consensus hot path.
     */
   def liftAny(obj: Any): Nullable[SValue] = obj match {
     case v: SValue => Nullable(v)
