@@ -33,7 +33,6 @@ import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import special.sigma.{AvlTree, Header, PreHeader, _}
 import sigmastate.lang.SourceContext
 import sigmastate.util.safeNewArray
-import sigmastate.crypto.Platform
 import special.collection.Coll
 
 import scala.collection.compat.immutable.ArraySeq
@@ -324,7 +323,8 @@ object Values {
     * @see Constant
     */
   case class ConstantNode[S <: SType](value: S#WrappedType, tpe: S) extends Constant[S] {
-    require(Platform.isCorrectType(value, tpe), s"Invalid type of constant value $value, expected type $tpe")
+    require(sigmastate.crypto.Platform.isCorrectType(value, tpe),
+      s"Invalid type of constant value $value, expected type $tpe")
     override def companion: ValueCompanion = Constant
     override def opCode: OpCode = companion.opCode
     override def opName: String = s"Const"
