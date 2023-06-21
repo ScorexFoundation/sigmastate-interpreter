@@ -5,7 +5,7 @@ organization := "org.scorexfoundation"
 
 name := "sigma-state"
 
-lazy val scala213 = "2.13.8"
+lazy val scala213 = "2.13.9"
 lazy val scala212 = "2.12.15"
 lazy val scala211 = "2.11.12"
 
@@ -257,9 +257,28 @@ lazy val interpreterJS = interpreter.js
       )
     )
 
+lazy val parsers = crossProject(JVMPlatform, JSPlatform)
+    .in(file("parsers"))
+    .dependsOn(interpreter % allConfigDependency)
+    .settings(libraryDefSettings)
+    .settings(libraryDependencies ++=
+        Seq(scorexUtil, fastparse) ++ circeDeps(scalaVersion.value)
+    )
+    .jvmSettings(
+      crossScalaSettings
+    )
+    .jsSettings(
+      crossScalaSettingsJS,
+      libraryDependencies ++= Seq(
+        "org.scala-js" %%% "scala-js-macrotask-executor" % "1.0.0"
+      ),
+      useYarn := true
+    )
+lazy val parsersJS = parsers.js
+    .enablePlugins(ScalaJSBundlerPlugin)
 
 lazy val sc = (project in file("sc"))
-  .dependsOn(graphir % allConfigDependency, interpreter.jvm % allConfigDependency)
+  .dependsOn(graphir % allConfigDependency, interpreter.jvm % allConfigDependency, parsers.jvm % allConfigDependency)
   .settings(libraryDefSettings)
   .settings(libraryDependencies ++=
       Seq(scorexUtil, fastparse) ++ circeDeps(scalaVersion.value)
@@ -268,7 +287,7 @@ lazy val sc = (project in file("sc"))
 
 lazy val sdk = crossProject(JVMPlatform, JSPlatform)
     .in(file("sdk"))
-    .dependsOn(corelib % allConfigDependency, interpreter % allConfigDependency)
+    .dependsOn(corelib % allConfigDependency, interpreter % allConfigDependency, parsers % allConfigDependency)
     .settings(commonSettings ++ testSettings2,
       commonDependenies2,
       testingDependencies2,
@@ -298,13 +317,13 @@ lazy val sdkJS = sdk.js
     )
 
 lazy val sigma = (project in file("."))
-  .aggregate(common.jvm, corelib.jvm, graphir, interpreter.jvm, sc, sdk.jvm)
+  .aggregate(common.jvm, corelib.jvm, graphir, interpreter.jvm, parsers.jvm, sc, sdk.jvm)
   .settings(libraryDefSettings, rootSettings)
   .settings(publish / aggregate := false)
   .settings(publishLocal / aggregate := false)
 
 lazy val aggregateCompile = ScopeFilter(
-  inProjects(common.jvm, corelib.jvm, graphir, interpreter.jvm, sc, sdk.jvm),
+  inProjects(common.jvm, corelib.jvm, graphir, interpreter.jvm, parsers.jvm, sc, sdk.jvm),
   inConfigurations(Compile))
 
 lazy val rootSettings = Seq(

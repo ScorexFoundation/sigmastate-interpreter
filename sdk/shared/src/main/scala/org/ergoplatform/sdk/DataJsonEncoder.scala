@@ -1,4 +1,4 @@
-package sigmastate.serialization
+package org.ergoplatform.sdk
 
 import java.math.BigInteger
 import io.circe._
@@ -10,14 +10,18 @@ import scalan.RType
 import scorex.util._
 import sigmastate.Values.{Constant, EvaluatedValue}
 import sigmastate._
-import sigmastate.eval._
 import sigmastate.lang.SigmaParser
+import sigmastate.eval._
 import special.collection.Coll
 import special.sigma._
 import debox.cfor
 import sigmastate.exceptions.SerializerException
 import scala.collection.compat.immutable.ArraySeq
 import scala.collection.mutable
+import fastparse.{Parsed, parse}
+import sigmastate.serialization.SigmaSerializer
+import sigmastate.serialization.DataSerializer
+import sigmastate.serialization.ErgoTreeSerializer
 
 object DataJsonEncoder {
   def encode[T <: SType](v: T#WrappedType, tpe: T): Json = {
@@ -42,7 +46,7 @@ object DataJsonEncoder {
     )
   }
 
-  private def encodeData[T <: SType](v: T#WrappedType, tpe: T): Json = tpe match {
+  def encodeData[T <: SType](v: T#WrappedType, tpe: T): Json = tpe match {
     case SUnit => Json.fromFields(ArraySeq.empty)
     case SBoolean => v.asInstanceOf[Boolean].asJson
     case SByte => v.asInstanceOf[Byte].asJson
@@ -155,7 +159,7 @@ object DataJsonEncoder {
     }
   }
 
-  private def decodeData[T <: SType](json: Json, tpe: T): (T#WrappedType) = {
+  def decodeData[T <: SType](json: Json, tpe: T): (T#WrappedType) = {
     val res = (tpe match {
       case SUnit => ()
       case SBoolean => json.asBoolean.get

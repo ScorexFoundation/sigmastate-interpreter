@@ -32,13 +32,20 @@ class SigmaParserTest extends AnyPropSpec with ScalaCheckPropertyChecks with Mat
     }
   }
 
+  def parseWithException(x: String): SValue = {
+    SigmaParser(x) match {
+      case Parsed.Success(v, _) => v
+      case f: Parsed.Failure =>
+        throw new ParserException(s"Syntax error: $f", Some(SourceContext.fromParserFailure(f)))
+    }
+  }
+
   def parseType(x: String): SType = {
     SigmaParser.parseType(x)
   }
 
   def fail(x: String, expectedLine: Int, expectedCol: Int): Unit = {
-    val compiler = new SigmaCompiler(ErgoAddressEncoder.TestnetNetworkPrefix)
-    val exception = the[ParserException] thrownBy compiler.parse(x)
+    val exception = the[ParserException] thrownBy parseWithException(x)
     withClue(s"Exception: $exception, is missing source context:") { exception.source shouldBe defined }
     val sourceContext = exception.source.get
     sourceContext.line shouldBe expectedLine
@@ -539,11 +546,13 @@ class SigmaParserTest extends AnyPropSpec with ScalaCheckPropertyChecks with Mat
     parse("X[Byte]") shouldBe ApplyTypes(Ident("X"), Seq(SByte))
     parse("X[Int]") shouldBe ApplyTypes(Ident("X"), Seq(SInt))
     parse("X[Int].isDefined") shouldBe Select(ApplyTypes(Ident("X"), Seq(SInt)), "isDefined")
+    parse("X[Int].isEmpty") shouldBe Select(ApplyTypes(Ident("X"), Seq(SInt)), "isEmpty")
     parse("X[(Int, Boolean)]") shouldBe ApplyTypes(Ident("X"), Seq(STuple(SInt, SBoolean)))
     parse("X[Int, Boolean]") shouldBe ApplyTypes(Ident("X"), Seq(SInt, SBoolean))
     parse("SELF.R1[Int]") shouldBe ApplyTypes(Select(Ident("SELF"), "R1"), Seq(SInt))
     parse("SELF.getReg[Int](1)") shouldBe Apply(ApplyTypes(Select(Ident("SELF"), "getReg"), Seq(SInt)), IndexedSeq(IntConstant(1)))
     parse("SELF.R1[Int].isDefined") shouldBe Select(ApplyTypes(Select(Ident("SELF"), "R1"), Seq(SInt)),"isDefined")
+    parse("SELF.R1[Int].isEmpty") shouldBe Select(ApplyTypes(Select(Ident("SELF"), "R1"), Seq(SInt)),"isEmpty")
     parse("f[Int](10)") shouldBe Apply(ApplyTypes(Ident("f"), Seq(SInt)), IndexedSeq(IntConstant(10)))
     parse("INPUTS.map[Int]") shouldBe ApplyTypes(Select(Ident("INPUTS"), "map"), Seq(SInt))
     parse("INPUTS.map[Int](10)") shouldBe Apply(ApplyTypes(Select(Ident("INPUTS"), "map"), Seq(SInt)), IndexedSeq(IntConstant(10)))

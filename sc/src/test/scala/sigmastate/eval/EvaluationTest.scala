@@ -42,11 +42,14 @@ class EvaluationTest extends BaseCtxTests
     val ctx = newErgoContext(height = 1, self)
     // guarded register access: existing reg
     reduce(emptyEnv, "lazy1", "SELF.R4[Int].isDefined && SELF.R4[Int].get == 10", ctx, true)
+    reduce(emptyEnv, "lazy4", "SELF.R4[Int].isEmpty == false && SELF.R4[Int].get == 10", ctx, true)
     // guarded register access: non-existing reg
     reduce(emptyEnv, "lazy2", "SELF.R5[Int].isDefined && SELF.R5[Int].get == 10", ctx, false)
+    reduce(emptyEnv, "lazy5", "SELF.R5[Int].isEmpty == false && SELF.R5[Int].get == 10", ctx, false)
 
     // guarded register access: reading register if it is defined and another one is undefined
     reduce(emptyEnv, "lazy3", "SELF.R4[Int].isDefined && (SELF.R5[Int].isDefined || SELF.R4[Int].get == 10)", ctx, true)
+    reduce(emptyEnv, "lazy6", "SELF.R4[Int].isEmpty == false && (SELF.R5[Int].isEmpty == false || SELF.R4[Int].get == 10)", ctx, true)
   }
 
   test("context data") {
