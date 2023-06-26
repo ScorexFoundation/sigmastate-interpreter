@@ -1,8 +1,8 @@
 package org.ergoplatform.sdk.js
 
 import org.ergoplatform.sdk
-import typings.fleetSdkCommon.boxesMod.Box
-import typings.fleetSdkCommon.{commonMod, inputsMod, tokenMod, transactionsMod}
+import sigmastate.fleetSdkCommon.distEsmTypesBoxesMod.Box
+import sigmastate.fleetSdkCommon.{distEsmTypesCommonMod => commonMod, distEsmTypesInputsMod => inputsMod, distEsmTypesTokenMod => tokenMod, distEsmTypesTransactionsMod => transactionsMod}
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSExportTopLevel

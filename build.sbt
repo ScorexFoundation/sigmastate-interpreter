@@ -82,9 +82,9 @@ ThisBuild / dynverSeparator := "-"
 
 val bouncycastleBcprov = "org.bouncycastle" % "bcprov-jdk15on" % "1.66"
 
-val scrypto            = "org.scorexfoundation" %% "scrypto" % "2.3.0"
+val scrypto            = "org.scorexfoundation" %% "scrypto" % "2.3.0-1-72a841a6-SNAPSHOT"
 val scryptoDependency =
-  libraryDependencies += "org.scorexfoundation" %%% "scrypto" % "2.3.0"
+  libraryDependencies += "org.scorexfoundation" %%% "scrypto" % "2.3.0-1-72a841a6-SNAPSHOT"
 
 val scorexUtil         = "org.scorexfoundation" %% "scorex-util" % "0.2.0"
 val scorexUtilDependency =
@@ -186,7 +186,7 @@ lazy val commonDependenies2 = libraryDependencies ++= Seq(
   "org.scala-lang.modules" %%% "scala-collection-compat" % "2.7.0"
 )
 
-val sigmajsCryptoFacadeVersion = "0.0.5"
+val sigmajsCryptoFacadeVersion = "0.0.6"
 
 lazy val common = crossProject(JVMPlatform, JSPlatform)
   .in(file("common"))
@@ -274,16 +274,16 @@ lazy val interpreter = crossProject(JVMPlatform, JSPlatform)
   )
 lazy val interpreterJS = interpreter.js
     .enablePlugins(ScalaJSBundlerPlugin)
-    .enablePlugins(ScalablyTypedConverterExternalNpmPlugin)
+    .enablePlugins(ScalablyTypedConverterGenSourcePlugin)
     .settings(
-      // how to setup ScalablyTyped https://youtu.be/hWUAVrNj65c?t=1397
-      externalNpm := {println(s"baseDirectory: ${baseDirectory.value}"); file(s"${baseDirectory.value}/../../sigma-js") },
       stIgnore ++= List("bouncycastle-js"),
+      stOutputPackage := "sigmastate",
       scalaJSLinkerConfig ~= { conf =>
         conf.withSourceMap(false)
       },
       Compile / npmDependencies ++= Seq(
-        "sigmajs-crypto-facade" -> sigmajsCryptoFacadeVersion
+        "sigmajs-crypto-facade" -> sigmajsCryptoFacadeVersion,
+        "@fleet-sdk/common" -> "0.1.0-alpha.14"
       )
     )
 
