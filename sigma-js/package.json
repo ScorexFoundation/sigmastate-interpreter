@@ -25,9 +25,9 @@
   },
   "homepage": "https://github.com/ScorexFoundation/sigmastate-interpreter/blob/master/sigma-js/README.md",
   "scripts": {
-    "test": "node_modules/.bin/jest",
+    "test": "jest",
     "clean": "shx rm -rf ./dist/*",
-    "copy-output": "shx mkdir -p ./dist/ && cp -r ../sdk/js/target/scala-2.12/sdk-fastopt/* ./dist/",
+    "copy-output": "shx mkdir -p ./dist/ && cp -r ../sdk/js/target/scala-2.13/sdk-fastopt/* ./dist/",
     "prepublishOnly": "npm run clean && npm run copy-output"
   },
   "dependencies": {

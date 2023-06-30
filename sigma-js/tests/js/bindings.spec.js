@@ -1,6 +1,4 @@
-const {
-  Types, Values, ErgoTree, ErgoTrees
-} = require("../../../sdk/js/target/scala-2.13/sdk-fastopt/main.js");
+const { Types, Values, ErgoTree, ErgoTrees } = require("sigmastate-js");
 
 describe("Smoke tests for API exporting", () => {
   it("Should export ErgoTree object", () => {
