@@ -1,6 +1,6 @@
 const {
   Types, Values, ErgoTree, ErgoTrees
-} = require("../../../sdk/js/target/scala-2.12/sdk-fastopt/main.js");
+} = require("../../../sdk/js/target/scala-2.13/sdk-fastopt/main.js");
 
 describe("Smoke tests for API exporting", () => {
   it("Should export ErgoTree object", () => {
