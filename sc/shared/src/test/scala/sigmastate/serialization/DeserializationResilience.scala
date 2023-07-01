@@ -386,7 +386,7 @@ class DeserializationResilience extends DeserializationResilienceTesting {
   property("test assumptions of how negative value from getUInt().toInt is handled") {
     assertExceptionThrown(
       safeNewArray[Int](-1),
-      exceptionLike[RuntimeException]()) // NegativeArraySizeException for JVM and JavaScriptException for Scala.js
+      rootCauseLike[NegativeArraySizeException]())
 
     val bytes = writeUInt(10)
     val store = new ConstantStore(IndexedSeq(IntConstant(1)))
@@ -398,7 +398,7 @@ class DeserializationResilience extends DeserializationResilienceTesting {
 
     assertExceptionThrown(
       r.getBytes(-1),
-      exceptionLike[RuntimeException]()) // NegativeArraySizeException for JVM and JavaScriptException for Scala.js
+      rootCauseLike[NegativeArraySizeException]())
 
     r.valDefTypeStore(-1) = SInt // no exception on negative key
 
