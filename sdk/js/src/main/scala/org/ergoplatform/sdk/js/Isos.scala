@@ -370,7 +370,7 @@ object Isos {
     }
 
   val isoBox: Iso[Box[commonMod.Amount], ErgoBox] = new Iso[Box[commonMod.Amount], ErgoBox] {
-    import sigmastate.eval._
+//    import sigmastate.eval._
     override def to(x: Box[commonMod.Amount]): ErgoBox = {
       val ergoBox = new ErgoBox(
         value = isoAmount.to(x.value),
