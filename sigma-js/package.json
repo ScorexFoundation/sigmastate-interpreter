@@ -9,7 +9,7 @@
   ],
   "exports": {
     "./internal-*": null,
-    "./*": "./dist/*.js"
+    ".": "./dist/main.js"
   },
   "license": "MIT",
   "publishConfig": {
