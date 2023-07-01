@@ -64,7 +64,7 @@ class Value(val data: Any, val tpe: Type) extends js.Object {
   }
 }
 
-@JSExportTopLevel("Values")
+@JSExportTopLevel("ValueObj")
 object Value extends js.Object {
   /** Maximal positive value of ES type Long */
   val MaxLong = js.BigInt("0x7fffffffffffffff")

@@ -17,7 +17,7 @@ class Type(private[js] final val rtype: RType[_]) extends js.Object {
   override def toString = s"Type($rtype)"
 }
 
-@JSExportTopLevel("Types")
+@JSExportTopLevel("TypeObj")
 object Type extends js.Object {
   /** Descriptor of ErgoScript type Byte. */
   val Byte = new Type(RType.ByteType)

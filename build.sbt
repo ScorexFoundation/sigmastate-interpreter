@@ -276,7 +276,6 @@ lazy val interpreterJS = interpreter.js
     .enablePlugins(ScalaJSBundlerPlugin)
     .enablePlugins(ScalablyTypedConverterGenSourcePlugin)
     .settings(
-      stIgnore ++= List("bouncycastle-js"),
       stOutputPackage := "sigmastate",
       scalaJSLinkerConfig ~= { conf =>
         conf.withSourceMap(false)
@@ -318,50 +317,6 @@ lazy val parsersJS = parsers.js
       )
     )
 
-lazy val sc = crossProject(JVMPlatform, JSPlatform)
-  .in(file("sc"))
-  .dependsOn(
-    graphir % allConfigDependency,
-    interpreter % allConfigDependency,
-    parsers % allConfigDependency
-  )
-  .settings(
-    commonSettings ++ testSettings2,
-    commonDependenies2,
-    testingDependencies2,
-    scorexUtilDependency, fastparseDependency, circeDependency,
-    Test / parallelExecution := false
-  )
-  .settings(publish / skip := true)
-  .jvmSettings(
-    crossScalaSettings,
-    libraryDependencies ++= Seq(scalameter)
-  )
-  .jsSettings(
-    crossScalaSettingsJS,
-    libraryDependencies ++= Seq(
-      "org.scala-js" %%% "scala-js-macrotask-executor" % "1.0.0"
-    ),
-    useYarn := true
-  )
-lazy val scJS = sc.js
-  .enablePlugins(ScalaJSBundlerPlugin)
-  .settings(
-    scalaJSLinkerConfig ~= { conf =>
-      conf.withSourceMap(false)
-          .withModuleKind(ModuleKind.CommonJSModule)
-          .withSemantics(sem =>
-            // compliance with JVM semantics is required for tests to pass on JS
-            // we sacrifice some optimizations (and performance) for that
-            sem.withAsInstanceOfs(CheckedBehavior.Compliant)
-               .withArrayIndexOutOfBounds(CheckedBehavior.Compliant)
-          )
-    },
-    Compile / npmDependencies ++= Seq(
-      "sigmajs-crypto-facade" -> sigmajsCryptoFacadeVersion
-    )
-  )
-
 lazy val sdk = crossProject(JVMPlatform, JSPlatform)
     .in(file("sdk"))
     .dependsOn(corelib % allConfigDependency, interpreter % allConfigDependency, parsers % allConfigDependency)
@@ -392,6 +347,52 @@ lazy val sdkJS = sdk.js
         "sigmajs-crypto-facade" -> sigmajsCryptoFacadeVersion
       )
     )
+
+lazy val sc = crossProject(JVMPlatform, JSPlatform)
+    .in(file("sc"))
+    .dependsOn(
+      graphir % allConfigDependency,
+      interpreter % allConfigDependency,
+      parsers % allConfigDependency,
+      sdk % allConfigDependency
+    )
+    .settings(
+      commonSettings ++ testSettings2,
+      commonDependenies2,
+      testingDependencies2,
+      scorexUtilDependency, fastparseDependency, circeDependency,
+      Test / parallelExecution := false
+    )
+    .settings(publish / skip := true)
+    .jvmSettings(
+      crossScalaSettings,
+      libraryDependencies ++= Seq(scalameter)
+    )
+    .jsSettings(
+      crossScalaSettingsJS,
+      libraryDependencies ++= Seq(
+        "org.scala-js" %%% "scala-js-macrotask-executor" % "1.0.0"
+      ),
+      useYarn := true
+    )
+lazy val scJS = sc.js
+    .enablePlugins(ScalaJSBundlerPlugin)
+    .settings(
+      scalaJSLinkerConfig ~= { conf =>
+        conf.withSourceMap(false)
+            .withModuleKind(ModuleKind.CommonJSModule)
+            .withSemantics(sem =>
+              // compliance with JVM semantics is required for tests to pass on JS
+              // we sacrifice some optimizations (and performance) for that
+              sem.withAsInstanceOfs(CheckedBehavior.Compliant)
+                  .withArrayIndexOutOfBounds(CheckedBehavior.Compliant)
+            )
+      },
+      Compile / npmDependencies ++= Seq(
+        "sigmajs-crypto-facade" -> sigmajsCryptoFacadeVersion
+      )
+    )
+
 
 lazy val sigma = (project in file("."))
   .aggregate(common.jvm, corelib.jvm, graphir.jvm, interpreter.jvm, parsers.jvm, sc.jvm, sdk.jvm)

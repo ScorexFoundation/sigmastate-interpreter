@@ -23,7 +23,7 @@ class ErgoTree(tree: Values.ErgoTree) extends js.Object {
 }
 
 /** An exported JavaScript object providing utility methods for working with ErgoTree instances. */
-@JSExportTopLevel("ErgoTrees")
+@JSExportTopLevel("ErgoTreeObj")
 object ErgoTree extends js.Object {
 
   /** Deserializes an ErgoTree instance from a hexadecimal string.

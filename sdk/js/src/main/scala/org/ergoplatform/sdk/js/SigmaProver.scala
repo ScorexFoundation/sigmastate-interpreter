@@ -53,6 +53,6 @@ class SigmaProver(_prover: sdk.SigmaProver) extends js.Object {
 class ReducedTransaction
 
 //TODO finish implementation
-@JSExportTopLevel("ProverFactory")
+@JSExportTopLevel("SigmaProverObj")
 object SigmaProver {
 }
