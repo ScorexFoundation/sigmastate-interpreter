@@ -19,7 +19,7 @@ trait ErgoLikeStateContext {
   /**
     * @return UTXO set digest from a last header (of sigmaLastHeaders)
     */
-  def previousStateDigest: ADDigest
+  def previousStateDigest: Coll[Byte]
 
   /**
     * @return returns pre-header (header without certain fields) of the current block
@@ -35,17 +35,7 @@ trait ErgoLikeStateContext {
   */
 case class CErgoLikeStateContext(
   sigmaLastHeaders: Coll[special.sigma.Header],
-  previousStateDigest: ADDigest,
+  previousStateDigest: Coll[Byte],
   sigmaPreHeader: special.sigma.PreHeader
 ) extends ErgoLikeStateContext {
-  override def hashCode(): Int =
-    (sigmaLastHeaders.hashCode() * 41 + util.Arrays.hashCode(previousStateDigest)) * 41 + sigmaPreHeader.hashCode()
-
-  override def equals(obj: Any): Boolean = (this eq obj.asInstanceOf[AnyRef]) || (obj match {
-    case c: CErgoLikeStateContext =>
-      sigmaLastHeaders == c.sigmaLastHeaders &&
-        util.Arrays.equals(previousStateDigest, c.previousStateDigest) &&
-        sigmaPreHeader == c.sigmaPreHeader
-    case _ => false
-  })
 }

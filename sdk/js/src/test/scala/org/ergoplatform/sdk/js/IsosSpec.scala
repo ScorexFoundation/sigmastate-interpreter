@@ -33,7 +33,7 @@ class IsosSpec  extends AnyPropSpec with Matchers with ObjectGenerators with Sca
     preHeader <- preHeaderGen(headers.headOption.map(_.id).getOrElse(modifierIdBytesGen.sample.get))
   } yield CErgoLikeStateContext(
       sigmaLastHeaders = Colls.fromItems(headers:_*),
-      previousStateDigest = ADDigest @@ stateRoot.digest.toArray,
+      previousStateDigest = stateRoot.digest,
       sigmaPreHeader = preHeader
     )
 

@@ -183,7 +183,7 @@ object Isos {
     override def to(a: BlockchainStateContext): ErgoLikeStateContext = {
       CErgoLikeStateContext(
         sigmaLastHeaders = isoArrayToColl(isoHeader).to(a.sigmaLastHeaders),
-        previousStateDigest = ADDigest @@ isoStringToColl.to(a.previousStateDigest).toArray,
+        previousStateDigest = isoStringToColl.to(a.previousStateDigest),
         sigmaPreHeader = isoPreHeader.to(a.sigmaPreHeader)
       )
     }
@@ -191,7 +191,7 @@ object Isos {
     override def from(b: ErgoLikeStateContext): BlockchainStateContext = {
       new BlockchainStateContext(
         sigmaLastHeaders = isoArrayToColl(isoHeader).from(b.sigmaLastHeaders),
-        previousStateDigest = isoStringToColl.from(b.previousStateDigest.toColl),
+        previousStateDigest = isoStringToColl.from(b.previousStateDigest),
         sigmaPreHeader = isoPreHeader.from(b.sigmaPreHeader)
       )
     }
