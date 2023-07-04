@@ -82,13 +82,13 @@ ThisBuild / dynverSeparator := "-"
 
 val bouncycastleBcprov = "org.bouncycastle" % "bcprov-jdk15on" % "1.66"
 
-val scrypto            = "org.scorexfoundation" %% "scrypto" % "2.3.0-3-6c1cc2fe-SNAPSHOT"
+val scrypto            = "org.scorexfoundation" %% "scrypto" % "2.3.0-4-a0bc6176-SNAPSHOT"
 val scryptoDependency =
-  libraryDependencies += "org.scorexfoundation" %%% "scrypto" % "2.3.0-3-6c1cc2fe-SNAPSHOT"
+  libraryDependencies += "org.scorexfoundation" %%% "scrypto" % "2.3.0-4-a0bc6176-SNAPSHOT"
 
-val scorexUtil         = "org.scorexfoundation" %% "scorex-util" % "0.2.0-2-d2b192dc-SNAPSHOT"
+val scorexUtil         = "org.scorexfoundation" %% "scorex-util" % "0.2.1"
 val scorexUtilDependency =
-  libraryDependencies += "org.scorexfoundation" %%% "scorex-util" % "0.2.0-2-d2b192dc-SNAPSHOT"
+  libraryDependencies += "org.scorexfoundation" %%% "scorex-util" % "0.2.1"
 
 val debox              = "org.scorexfoundation" %% "debox" % "0.10.0"
 val spireMacros        = "org.typelevel" %% "spire-macros" % "0.17.0-M1"
