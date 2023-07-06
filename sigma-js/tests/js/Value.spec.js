@@ -30,6 +30,7 @@ describe("Smoke tests for Values", () => {
   let longHex = "05e012";
   let bigIntHex = "060900fffffffffffffffe";
   let groupElementHex = "0702c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5";
+  let sigmaPropHex = "08cd0297c44a12f4eb99a85d298fa3ba829b5b42b9f63798c980ece801cc663cc5fc9e";
   let collHex = "1a0203010203020a14";
   let pairHex = "3e050a28"
 
@@ -46,6 +47,11 @@ describe("Smoke tests for Values", () => {
   it("GroupElement Value.toHex", () => {
     let v = ValueObj.fromHex(groupElementHex)
     expect(v.toHex()).toEqual(groupElementHex)
+  });
+
+  it("SigmaProp Value.toHex", () => {
+    let v = ValueObj.fromHex(sigmaPropHex)
+    expect(v.toHex()).toEqual(sigmaPropHex)
   });
 
   it("Coll Value.toHex", () => {

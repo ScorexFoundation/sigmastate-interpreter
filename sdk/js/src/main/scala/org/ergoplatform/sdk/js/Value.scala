@@ -4,7 +4,7 @@ import scalan.RType
 import scalan.RType.PairType
 import scorex.util.Extensions.{IntOps, LongOps}
 import scorex.util.encode.Base16
-import sigmastate.eval.{CGroupElement, Colls, Evaluation, SigmaDsl}
+import sigmastate.eval.{CGroupElement, CSigmaProp, Colls, Evaluation, SigmaDsl}
 import sigmastate.serialization.{ConstantSerializer, DataSerializer, SigmaSerializer}
 import sigmastate.SType
 import Value.toRuntimeData
@@ -87,6 +87,9 @@ object Value extends js.Object {
     case special.sigma.GroupElementRType =>
       val point = data.asInstanceOf[Platform.Point]
       SigmaDsl.GroupElement(new Platform.Ecp(point))
+    case special.sigma.SigmaPropRType =>
+      val p = data.asInstanceOf[SigmaProp]
+      SigmaDsl.SigmaProp(p.sigmaBoolean)
     case ct: CollType[a] =>
       val xs = data.asInstanceOf[js.Array[Any]]
       implicit val cT = ct.tItem.classTag
@@ -116,6 +119,8 @@ object Value extends js.Object {
     case special.sigma.GroupElementRType =>
       val point: Platform.Point = value.asInstanceOf[CGroupElement].wrappedValue.asInstanceOf[Platform.Ecp].point
       point
+    case special.sigma.SigmaPropRType =>
+      new SigmaProp(value.asInstanceOf[CSigmaProp].wrappedValue)
     case ct: CollType[a] =>
       val arr = value.asInstanceOf[Coll[a]].toArray
       js.Array(arr.map(x => fromRuntimeData(x, ct.tItem)):_*)
