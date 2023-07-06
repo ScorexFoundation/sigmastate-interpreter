@@ -1,4 +1,4 @@
-const { TypeObj, ValueObj, ErgoTree, SigmaCompiler, SigmaCompilerObj } = require("sigmastate-js");
+const { ValueObj, SigmaCompilerObj } = require("sigmastate-js");
 
 describe("Smoke tests for API exporting", () => {
   let compiler = SigmaCompilerObj.forMainnet();

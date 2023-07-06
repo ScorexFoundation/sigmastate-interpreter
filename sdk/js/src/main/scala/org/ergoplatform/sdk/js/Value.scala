@@ -4,10 +4,11 @@ import scalan.RType
 import scalan.RType.PairType
 import scorex.util.Extensions.{IntOps, LongOps}
 import scorex.util.encode.Base16
-import sigmastate.eval.{Colls, Evaluation}
+import sigmastate.eval.{Colls, Evaluation, SigmaDsl}
 import sigmastate.serialization.{DataSerializer, SigmaSerializer}
 import sigmastate.SType
 import Value.toRuntimeData
+import org.ergoplatform.sdk.JavaHelpers.BigIntRType
 import special.collection.{Coll, CollType}
 
 import scala.scalajs.js
@@ -101,6 +102,9 @@ object Value extends js.Object {
   final private[js] def fromRuntimeData(value: Any, rtype: RType[_]): Any = rtype match {
     case RType.ByteType | RType.ShortType | RType.IntType => value
     case RType.LongType => js.BigInt(value.asInstanceOf[Long].toString)
+    case special.sigma.BigIntRType =>
+      val hex = SigmaDsl.toBigInteger(value.asInstanceOf[special.sigma.BigInt]).toString(16)
+      js.BigInt(hex)
     case ct: CollType[a] =>
       val arr = value.asInstanceOf[Coll[a]].toArray
       js.Array(arr.map(x => fromRuntimeData(x, ct.tItem)):_*)
