@@ -5,12 +5,13 @@ import scalan.RType.PairType
 import scorex.util.Extensions.{IntOps, LongOps}
 import scorex.util.encode.Base16
 import sigmastate.eval.{Colls, Evaluation, SigmaDsl}
-import sigmastate.serialization.{DataSerializer, SigmaSerializer}
+import sigmastate.serialization.{ConstantSerializer, DataSerializer, SigmaSerializer}
 import sigmastate.SType
 import Value.toRuntimeData
-import org.ergoplatform.sdk.JavaHelpers.BigIntRType
+import sigmastate.lang.DeserializationSigmaBuilder
 import special.collection.{Coll, CollType}
 
+import java.math.BigInteger
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSExportTopLevel
 
@@ -79,6 +80,9 @@ object Value extends js.Object {
   final private[js] def toRuntimeData(data: Any, rtype: RType[_]): Any = rtype match {
     case RType.ByteType | RType.ShortType | RType.IntType => data
     case RType.LongType => java.lang.Long.parseLong(data.asInstanceOf[js.BigInt].toString(10))
+    case special.sigma.BigIntRType =>
+      val v = data.asInstanceOf[js.BigInt]
+      SigmaDsl.BigInt(new BigInteger(v.toString(16), 16))
     case ct: CollType[a] =>
       val xs = data.asInstanceOf[js.Array[Any]]
       implicit val cT = ct.tItem.classTag
@@ -103,7 +107,7 @@ object Value extends js.Object {
     case RType.ByteType | RType.ShortType | RType.IntType => value
     case RType.LongType => js.BigInt(value.asInstanceOf[Long].toString)
     case special.sigma.BigIntRType =>
-      val hex = SigmaDsl.toBigInteger(value.asInstanceOf[special.sigma.BigInt]).toString(16)
+      val hex = SigmaDsl.toBigInteger(value.asInstanceOf[special.sigma.BigInt]).toString(10)
       js.BigInt(hex)
     case ct: CollType[a] =>
       val arr = value.asInstanceOf[Coll[a]].toArray
@@ -129,8 +133,10 @@ object Value extends js.Object {
       if (n < MinLong || n > MaxLong)
         throw new ArithmeticException(s"value $n is out of long range")
       n
+    case special.sigma.BigIntRType =>
+      data.asInstanceOf[js.BigInt]
     case PairType(l, r) => data match {
-      case arr: js.Array[Any] =>
+      case arr: js.Array[Any @unchecked] =>
         checkJsData(arr(0), l)
         checkJsData(arr(1), r)
         data
@@ -138,7 +144,7 @@ object Value extends js.Object {
         throw new ArithmeticException(s"$data cannot represent pair value")
     }
     case CollType(elemType) => data match {
-      case arr: js.Array[Any] =>
+      case arr: js.Array[Any @unchecked] =>
         arr.foreach(x => checkJsData(x, elemType))
         data
       case _ =>
@@ -172,6 +178,12 @@ object Value extends js.Object {
     new Value(n, Type.Long)
   }
 
+  /** Create BigInt value from JS BigInt. */
+  def ofBigInt(n: js.BigInt): Value = {
+    checkJsData(n, Type.BigInt.rtype)
+    new Value(n, Type.BigInt)
+  }
+
   /** Create Pair value from two values. */
   def pairOf(l: Value, r: Value): Value = {
     val data = js.Array(l.data, r.data) // the l and r data have been validated
@@ -200,16 +212,9 @@ object Value extends js.Object {
     * @return new deserialized ErgoValue instance
     */
   def fromHex(hex: String): Value = {
-    // this can be implemented using ConstantSerializer and isoValueToConstant, but this
-    // will add dependence on Constant and Values, which we want to avoid facilitate
-    // module splitting
-    // TODO simplify if module splitting fails
     val bytes = Base16.decode(hex).fold(t => throw t, identity)
-    val r = SigmaSerializer.startReader(bytes)
-    val stype = r.getType()
-    val value = DataSerializer.deserialize(stype, r)
-    val rtype = Evaluation.stypeToRType(stype)
-    val jsvalue = fromRuntimeData(value, rtype)
-    new Value(jsvalue, new Type(rtype))
+    val S = ConstantSerializer(DeserializationSigmaBuilder)
+    val c = S.deserialize(SigmaSerializer.startReader(bytes))
+    Isos.isoValueToConstant.from(c)
   }
 }

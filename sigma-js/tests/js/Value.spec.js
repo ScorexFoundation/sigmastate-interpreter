@@ -28,12 +28,18 @@ describe("Smoke tests for Values", () => {
   });
 
   let longHex = "05e012";
+  let bigIntHex = "060900fffffffffffffffe";
   let collHex = "1a0203010203020a14";
   let pairHex = "3e050a28"
 
   it("Long Value.toHex", () => {
     let v = ValueObj.ofLong(1200n)
     expect(v.toHex()).toEqual(longHex)
+  });
+
+  it("BigInt Value.toHex", () => {
+    let v = ValueObj.ofBigInt(0xfffffffffffffffen)
+    expect(v.toHex()).toEqual(bigIntHex)
   });
 
   it("Coll Value.toHex", () => {
