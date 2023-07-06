@@ -27,6 +27,11 @@ describe("Smoke tests for Values", () => {
     expect(coll.tpe.name).toEqual("Coll[Byte]");
   });
 
+  let unitHex = "62";
+  let booleanHex = "0101";
+  let byteHex = "027f";
+  let shortHex = "03feff03";
+  let intHex = "04feffffffffffffffff01";
   let longHex = "05e012";
   let bigIntHex = "060900fffffffffffffffe";
   let groupElementHex = "0702c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5";
@@ -35,6 +40,31 @@ describe("Smoke tests for Values", () => {
   let boxHex = "63b96000d1968302010100ff83020193040204020100c0843d000401010e32297000800b80f1d56c809a8c6affbed864b87f007f6f007f00ac00018c01c4fdff011088807f0100657f00f9ab0101ff6d6505a4a7b5a2e7a4a4dd3a05feffffffffffffffff01003bd5c630803cfff6c1ff7f7fb980ff136afc011f8080b8b04ad4dbda2d7f4e01";
   let collHex = "1a0203010203020a14";
   let pairHex = "3e050a28"
+
+  it("Unit Value.toHex", () => {
+    let v = ValueObj.fromHex(unitHex)
+    expect(v.toHex()).toEqual(unitHex)
+  });
+
+  it("Boolean Value.toHex", () => {
+    let v = ValueObj.fromHex(booleanHex)
+    expect(v.toHex()).toEqual(booleanHex)
+  });
+
+  it("Byte Value.toHex", () => {
+    let v = ValueObj.fromHex(byteHex)
+    expect(v.toHex()).toEqual(byteHex)
+  });
+
+  it("Short Value.toHex", () => {
+    let v = ValueObj.fromHex(shortHex)
+    expect(v.toHex()).toEqual(shortHex)
+  });
+
+  it("Int Value.toHex", () => {
+    let v = ValueObj.fromHex(intHex)
+    expect(v.toHex()).toEqual(intHex)
+  });
 
   it("Long Value.toHex", () => {
     let v = ValueObj.ofLong(1200n)

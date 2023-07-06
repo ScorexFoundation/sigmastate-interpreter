@@ -1,6 +1,6 @@
 {
   "name": "sigmastate-js",
-  "version": "0.1.4",
+  "version": "0.2.0",
   "description": "Sigma.js library",
   "main": "dist/main.js",
   "files": [

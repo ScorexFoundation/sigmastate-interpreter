@@ -1,17 +1,17 @@
 package org.ergoplatform.sdk.js
 
+import org.ergoplatform.sdk.js.Value.toRuntimeData
 import scalan.RType
 import scalan.RType.PairType
 import scorex.util.Extensions.{IntOps, LongOps}
 import scorex.util.encode.Base16
-import sigmastate.eval.{CAvlTree, CGroupElement, CSigmaProp, Colls, CostingBox, Evaluation, SigmaDsl}
-import sigmastate.serialization.{ConstantSerializer, DataSerializer, SigmaSerializer}
 import sigmastate.SType
-import Value.toRuntimeData
 import sigmastate.crypto.Platform
+import sigmastate.eval.{CAvlTree, CGroupElement, CSigmaProp, Colls, CostingBox, Evaluation, SigmaDsl}
 import sigmastate.fleetSdkCommon.distEsmTypesBoxesMod.Box
 import sigmastate.fleetSdkCommon.distEsmTypesCommonMod
 import sigmastate.lang.DeserializationSigmaBuilder
+import sigmastate.serialization.{ConstantSerializer, DataSerializer, SigmaSerializer}
 import special.collection.{Coll, CollType}
 
 import java.math.BigInteger
@@ -81,6 +81,7 @@ object Value extends js.Object {
     * in register and [[sigmastate.Values.Constant]] nodes.
     */
   final private[js] def toRuntimeData(data: Any, rtype: RType[_]): Any = rtype match {
+    case RType.BooleanType => data
     case RType.ByteType | RType.ShortType | RType.IntType => data
     case RType.LongType => java.lang.Long.parseLong(data.asInstanceOf[js.BigInt].toString(10))
     case special.sigma.BigIntRType =>
@@ -108,6 +109,7 @@ object Value extends js.Object {
       val x = toRuntimeData(p(0), pt.tFst).asInstanceOf[a]
       val y = toRuntimeData(p(1), pt.tSnd).asInstanceOf[b]
       (x, y)
+    case RType.UnitType => data
     case _ =>
       throw new IllegalArgumentException(s"Unsupported type $rtype")
   }
@@ -119,6 +121,7 @@ object Value extends js.Object {
     * @param rtype type descriptor of Sigma runtime value
     */
   final private[js] def fromRuntimeData(value: Any, rtype: RType[_]): Any = rtype match {
+    case RType.BooleanType => value
     case RType.ByteType | RType.ShortType | RType.IntType => value
     case RType.LongType => js.BigInt(value.asInstanceOf[Long].toString)
     case special.sigma.BigIntRType =>
@@ -139,6 +142,7 @@ object Value extends js.Object {
     case pt: PairType[a, b] =>
       val p = value.asInstanceOf[(a, b)]
       js.Array(fromRuntimeData(p._1, pt.tFst), fromRuntimeData(p._2, pt.tSnd))
+    case RType.UnitType => value
     case _ =>
       throw new IllegalArgumentException(s"Unsupported type $rtype")
   }

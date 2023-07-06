@@ -5,7 +5,7 @@ import org.scalatest.propspec.AnyPropSpec
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import scorex.util.encode.Base16
 import sigmastate.SType
-import sigmastate.Values.{AvlTreeConstant, BigIntConstant, BoxConstant, Constant, GroupElementConstant, SigmaPropConstant}
+import sigmastate.Values.{AvlTreeConstant, BigIntConstant, BooleanConstant, BoxConstant, ByteConstant, Constant, GroupElementConstant, IntConstant, LongConstant, ShortConstant, SigmaPropConstant, UnitConstant}
 import sigmastate.basics.CryptoConstants.dlogGroup
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.crypto.CryptoFacade
@@ -25,6 +25,17 @@ class ValueSpec extends AnyPropSpec with Matchers with SigmaTestingData with Sca
     Base16.encode(S.toBytes(c)) shouldBe expectedHex
     v.toHex() shouldBe expectedHex
     Isos.isoValueToConstant.to(Value.fromHex(expectedHex)) shouldBe c
+  }
+
+  property("Boolean toHex()/fromHex()") {
+    test(BooleanConstant(true), "0101")
+  }
+
+  property("Numeric toHex()/fromHex()") {
+    test(ByteConstant(127), "027f")
+    test(ShortConstant(Short.MaxValue), "03feff03")
+    test(IntConstant(Int.MaxValue), "04feffffffffffffffff01")
+    test(LongConstant(Long.MaxValue), "05feffffffffffffffff01")
   }
 
   property("BigInt toHex()/fromHex()") {
@@ -53,4 +64,9 @@ class ValueSpec extends AnyPropSpec with Matchers with SigmaTestingData with Sca
   property("Box toHex()/fromHex()") {
     test(BoxConstant(TestData.b2), "63b96000d1968302010100ff83020193040204020100c0843d000401010e32297000800b80f1d56c809a8c6affbed864b87f007f6f007f00ac00018c01c4fdff011088807f0100657f00f9ab0101ff6d6505a4a7b5a2e7a4a4dd3a05feffffffffffffffff01003bd5c630803cfff6c1ff7f7fb980ff136afc011f8080b8b04ad4dbda2d7f4e01")
   }
+
+  property("Unit toHex()/fromHex()") {
+    test(UnitConstant.instance, "62")
+  }
+
 }
