@@ -5,11 +5,11 @@ import org.scalatest.propspec.AnyPropSpec
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import scorex.util.encode.Base16
 import sigmastate.SType
-import sigmastate.Values.{BigIntConstant, Constant, GroupElementConstant, SigmaPropConstant}
+import sigmastate.Values.{AvlTreeConstant, BigIntConstant, Constant, GroupElementConstant, SigmaPropConstant}
 import sigmastate.basics.CryptoConstants.dlogGroup
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.crypto.CryptoFacade
-import sigmastate.eval.{CSigmaProp, SigmaDsl}
+import sigmastate.eval.CSigmaProp
 import sigmastate.lang.DeserializationSigmaBuilder
 import sigmastate.serialization.ConstantSerializer
 import sigmastate.utils.Helpers
@@ -44,5 +44,9 @@ class ValueSpec extends AnyPropSpec with Matchers with SigmaTestingData with Sca
           Helpers.decodeECPoint("0297c44a12f4eb99a85d298fa3ba829b5b42b9f63798c980ece801cc663cc5fc9e")
         )))
     test(c, "08cd0297c44a12f4eb99a85d298fa3ba829b5b42b9f63798c980ece801cc663cc5fc9e")
+  }
+
+  property("AvlTree toHex()/fromHex()") {
+    test(AvlTreeConstant(TestData.t3), "643100d2e101ff01fc047c7f6f00ff80129df69a5090012f01ffca99f5bfff0c803601800100")
   }
 }

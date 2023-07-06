@@ -31,6 +31,7 @@ describe("Smoke tests for Values", () => {
   let bigIntHex = "060900fffffffffffffffe";
   let groupElementHex = "0702c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5";
   let sigmaPropHex = "08cd0297c44a12f4eb99a85d298fa3ba829b5b42b9f63798c980ece801cc663cc5fc9e";
+  let avlTreeHex = "643100d2e101ff01fc047c7f6f00ff80129df69a5090012f01ffca99f5bfff0c803601800100";
   let collHex = "1a0203010203020a14";
   let pairHex = "3e050a28"
 
@@ -52,6 +53,11 @@ describe("Smoke tests for Values", () => {
   it("SigmaProp Value.toHex", () => {
     let v = ValueObj.fromHex(sigmaPropHex)
     expect(v.toHex()).toEqual(sigmaPropHex)
+  });
+
+  it("AvlTree Value.toHex", () => {
+    let v = ValueObj.fromHex(avlTreeHex)
+    expect(v.toHex()).toEqual(avlTreeHex)
   });
 
   it("Coll Value.toHex", () => {
