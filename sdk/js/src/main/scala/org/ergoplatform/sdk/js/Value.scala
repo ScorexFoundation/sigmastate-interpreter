@@ -4,10 +4,11 @@ import scalan.RType
 import scalan.RType.PairType
 import scorex.util.Extensions.{IntOps, LongOps}
 import scorex.util.encode.Base16
-import sigmastate.eval.{Colls, Evaluation, SigmaDsl}
+import sigmastate.eval.{CGroupElement, Colls, Evaluation, SigmaDsl}
 import sigmastate.serialization.{ConstantSerializer, DataSerializer, SigmaSerializer}
 import sigmastate.SType
 import Value.toRuntimeData
+import sigmastate.crypto.Platform
 import sigmastate.lang.DeserializationSigmaBuilder
 import special.collection.{Coll, CollType}
 
@@ -83,6 +84,9 @@ object Value extends js.Object {
     case special.sigma.BigIntRType =>
       val v = data.asInstanceOf[js.BigInt]
       SigmaDsl.BigInt(new BigInteger(v.toString(16), 16))
+    case special.sigma.GroupElementRType =>
+      val point = data.asInstanceOf[Platform.Point]
+      SigmaDsl.GroupElement(new Platform.Ecp(point))
     case ct: CollType[a] =>
       val xs = data.asInstanceOf[js.Array[Any]]
       implicit val cT = ct.tItem.classTag
@@ -109,6 +113,9 @@ object Value extends js.Object {
     case special.sigma.BigIntRType =>
       val hex = SigmaDsl.toBigInteger(value.asInstanceOf[special.sigma.BigInt]).toString(10)
       js.BigInt(hex)
+    case special.sigma.GroupElementRType =>
+      val point: Platform.Point = value.asInstanceOf[CGroupElement].wrappedValue.asInstanceOf[Platform.Ecp].point
+      point
     case ct: CollType[a] =>
       val arr = value.asInstanceOf[Coll[a]].toArray
       js.Array(arr.map(x => fromRuntimeData(x, ct.tItem)):_*)

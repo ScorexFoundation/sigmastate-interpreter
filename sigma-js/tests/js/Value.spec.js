@@ -29,6 +29,7 @@ describe("Smoke tests for Values", () => {
 
   let longHex = "05e012";
   let bigIntHex = "060900fffffffffffffffe";
+  let groupElementHex = "0702c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5";
   let collHex = "1a0203010203020a14";
   let pairHex = "3e050a28"
 
@@ -40,6 +41,11 @@ describe("Smoke tests for Values", () => {
   it("BigInt Value.toHex", () => {
     let v = ValueObj.ofBigInt(0xfffffffffffffffen)
     expect(v.toHex()).toEqual(bigIntHex)
+  });
+
+  it("GroupElement Value.toHex", () => {
+    let v = ValueObj.fromHex(groupElementHex)
+    expect(v.toHex()).toEqual(groupElementHex)
   });
 
   it("Coll Value.toHex", () => {
