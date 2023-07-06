@@ -35,20 +35,20 @@ Import `TypeObj` module, then use:
 - method `TypeObj.pairType` (e.g. `TypeObj.pairType(TypeObj.Int, TypeObj.Long)`)
 - method `TypeObj.collType` (e.g. `TypeObj.collType(TypeObj.Int)`)
  
-See examples in tests [sdk.spec.js](https://github.com/ScorexFoundation/sigmastate-interpreter/blob/1ac06c8014ca7f75388039934970d3ef0a370700/sigma-js/tests/js/sdk.spec.js)
+See examples in tests [Type.spec.js](https://github.com/ScorexFoundation/sigmastate-interpreter/blob/933acd7a3753725c8b41994c2126a20279b6809b/sigma-js/tests/js/Type.spec.js)
 
 ### How to create Sigma values
 
 Import `ValueObj` module, then use its methods.
-See examples in tests [sdk.spec.js](https://github.com/ScorexFoundation/sigmastate-interpreter/blob/1ac06c8014ca7f75388039934970d3ef0a370700/sigma-js/tests/js/sdk.spec.js)
+See examples in tests [Value.spec.js](https://github.com/ScorexFoundation/sigmastate-interpreter/blob/933acd7a3753725c8b41994c2126a20279b6809b/sigma-js/tests/js/Value.spec.js)
 
 ### How to work with ErgoTree
 
 Import `ErgoTreeObj` module, and `ErgoTree` class then use its methods.
-See examples in tests [sdk.spec.js](https://github.com/ScorexFoundation/sigmastate-interpreter/blob/1ac06c8014ca7f75388039934970d3ef0a370700/sigma-js/tests/js/sdk.spec.js)
+See examples in tests [ErgoTree.spec.js](https://github.com/ScorexFoundation/sigmastate-interpreter/blob/79df4ca171a77233947d835042ce5c82ee520469/sigma-js/tests/js/ErgoTree.spec.js)
 
 ### Compile ErgoScript to ErgoTree
 
 Import `SigmaCompilerObj` module and `SigmaCompiler` class, then use its methods.
-See compiler tests in [sc.spec.js](https://github.com/ScorexFoundation/sigmastate-interpreter/blob/04ce57092243ede3647b02d1bb77b0868e0a9069/sigma-js/tests/js/sc.spec.js)
+See compiler tests in [SigmaCompiler.spec.js](https://github.com/ScorexFoundation/sigmastate-interpreter/blob/933acd7a3753725c8b41994c2126a20279b6809b/sigma-js/tests/js/SigmaCompiler.spec.js)
 
