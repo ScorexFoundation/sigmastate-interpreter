@@ -4,11 +4,13 @@ import scalan.RType
 import scalan.RType.PairType
 import scorex.util.Extensions.{IntOps, LongOps}
 import scorex.util.encode.Base16
-import sigmastate.eval.{CAvlTree, CGroupElement, CSigmaProp, Colls, Evaluation, SigmaDsl}
+import sigmastate.eval.{CAvlTree, CGroupElement, CSigmaProp, Colls, CostingBox, Evaluation, SigmaDsl}
 import sigmastate.serialization.{ConstantSerializer, DataSerializer, SigmaSerializer}
 import sigmastate.SType
 import Value.toRuntimeData
 import sigmastate.crypto.Platform
+import sigmastate.fleetSdkCommon.distEsmTypesBoxesMod.Box
+import sigmastate.fleetSdkCommon.distEsmTypesCommonMod
 import sigmastate.lang.DeserializationSigmaBuilder
 import special.collection.{Coll, CollType}
 
@@ -93,6 +95,9 @@ object Value extends js.Object {
     case special.sigma.AvlTreeRType =>
       val t = data.asInstanceOf[AvlTree]
       Isos.isoAvlTree.to(t)
+    case special.sigma.BoxRType =>
+      val t = data.asInstanceOf[Box[distEsmTypesCommonMod.Amount]]
+      SigmaDsl.Box(Isos.isoBox.to(t))
     case ct: CollType[a] =>
       val xs = data.asInstanceOf[js.Array[Any]]
       implicit val cT = ct.tItem.classTag
@@ -126,6 +131,8 @@ object Value extends js.Object {
       new SigmaProp(value.asInstanceOf[CSigmaProp].wrappedValue)
     case special.sigma.AvlTreeRType =>
       Isos.isoAvlTree.from(value.asInstanceOf[CAvlTree])
+    case special.sigma.BoxRType =>
+      Isos.isoBox.from(value.asInstanceOf[CostingBox].wrappedValue)
     case ct: CollType[a] =>
       val arr = value.asInstanceOf[Coll[a]].toArray
       js.Array(arr.map(x => fromRuntimeData(x, ct.tItem)):_*)
