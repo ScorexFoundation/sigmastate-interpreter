@@ -1,14 +1,13 @@
 package org.ergoplatform.sdk.js
 
 import org.ergoplatform.ErgoBox.{AdditionalRegisters, BoxId, TokenId}
-import org.ergoplatform.sdk.{ExtendedInputBox, Iso}
 import org.ergoplatform._
-import org.ergoplatform.sdk.wallet.protocol.context.{CErgoLikeStateContext, ErgoLikeStateContext}
+import org.ergoplatform.sdk.wallet.protocol.context.BlockchainStateContext
+import org.ergoplatform.sdk.{ExtendedInputBox, Iso}
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.propspec.AnyPropSpec
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
-import scorex.crypto.authds.ADDigest
 import sigmastate.SType
 import sigmastate.Values.Constant
 import sigmastate.eval.Colls
@@ -27,11 +26,11 @@ class IsosSpec  extends AnyPropSpec with Matchers with ObjectGenerators with Sca
     extension <- contextExtensionGen
   } yield ExtendedInputBox(box, extension)
 
-  lazy val ergoLikeStateContextGen: Gen[ErgoLikeStateContext] = for {
+  lazy val blockchainStateContextGen: Gen[BlockchainStateContext] = for {
     stateRoot <- avlTreeGen
     headers <- headersGen(stateRoot)
     preHeader <- preHeaderGen(headers.headOption.map(_.id).getOrElse(modifierIdBytesGen.sample.get))
-  } yield CErgoLikeStateContext(
+  } yield BlockchainStateContext(
       sigmaLastHeaders = Colls.fromItems(headers:_*),
       previousStateDigest = stateRoot.digest,
       sigmaPreHeader = preHeader
@@ -93,7 +92,7 @@ class IsosSpec  extends AnyPropSpec with Matchers with ObjectGenerators with Sca
   }
 
   property("Iso.isoBlockchainStateContext") {
-    forAll(ergoLikeStateContextGen) { (c: ErgoLikeStateContext) =>
+    forAll(blockchainStateContextGen) { (c: BlockchainStateContext) =>
       roundtrip(Isos.isoBlockchainStateContext)(c)
     }
   }

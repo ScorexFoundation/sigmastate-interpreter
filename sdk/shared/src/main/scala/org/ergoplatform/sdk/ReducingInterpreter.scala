@@ -3,7 +3,7 @@ package org.ergoplatform.sdk
 import org.ergoplatform.sdk.Extensions.{CollOps, PairCollOps}
 import org.ergoplatform.sdk.JavaHelpers.UniversalConverter
 import org.ergoplatform.sdk.utils.ArithUtils
-import org.ergoplatform.sdk.wallet.protocol.context.{ErgoLikeStateContext, TransactionContext}
+import org.ergoplatform.sdk.wallet.protocol.context.{BlockchainStateContext, TransactionContext}
 import org.ergoplatform.validation.ValidationRules
 import org.ergoplatform.{ErgoLikeContext, ErgoLikeInterpreter}
 import scalan.util.Extensions.LongOps
@@ -56,7 +56,7 @@ class ReducingInterpreter(params: BlockchainParameters) extends ErgoLikeInterpre
     */
   def reduceTransaction(
       unreducedTx: UnreducedTransaction,
-      stateContext: ErgoLikeStateContext,
+      stateContext: BlockchainStateContext,
       baseCost: Int
   ): ReducedTransaction = {
     val unsignedTx = unreducedTx.unsignedTx

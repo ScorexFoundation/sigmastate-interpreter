@@ -1,6 +1,6 @@
 package org.ergoplatform.sdk
 
-import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
+import org.ergoplatform.ErgoAddressEncoder.{MainnetNetworkPrefix, NetworkPrefix}
 import org.ergoplatform.sdk.wallet.secrets.ExtendedSecretKey
 import sigmastate.basics.DLogProtocol.DLogProverInput
 import sigmastate.basics.{DLogProtocol, DiffieHellmanTupleProverInput}
@@ -26,7 +26,7 @@ class ProverBuilder(parameters: BlockchainParameters, networkPrefix: NetworkPref
   def withMnemonic(
       mnemonicPhrase: SecretString,
       mnemonicPass: SecretString,
-      usePre1627KeyDerivation: Boolean
+      usePre1627KeyDerivation: Boolean = false
   ): ProverBuilder = {
     _masterKey = Some(JavaHelpers.seedToMasterKey(mnemonicPhrase, mnemonicPass, usePre1627KeyDerivation))
     this
@@ -86,5 +86,10 @@ class ProverBuilder(parameters: BlockchainParameters, networkPrefix: NetworkPref
       _dhtSecrets.toIndexedSeq, parameters)
     new SigmaProver(interpreter, networkPrefix)
   }
+}
+
+object ProverBuilder {
+  def forMainnet(parameters: BlockchainParameters): ProverBuilder =
+    new ProverBuilder(parameters, MainnetNetworkPrefix)
 }
 

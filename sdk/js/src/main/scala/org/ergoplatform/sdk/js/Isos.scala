@@ -4,7 +4,7 @@ import org.ergoplatform.ErgoBox._
 import org.ergoplatform.{DataInput, ErgoBox, ErgoBoxCandidate, UnsignedErgoLikeTransaction, UnsignedInput}
 import org.ergoplatform.sdk.{ExtendedInputBox, Iso}
 import org.ergoplatform.sdk.JavaHelpers.UniversalConverter
-import org.ergoplatform.sdk.wallet.protocol.context.{CErgoLikeStateContext, ErgoLikeStateContext}
+import org.ergoplatform.sdk.wallet.protocol.context
 import scalan.RType
 import scorex.crypto.authds.{ADDigest, ADKey}
 import scorex.util.ModifierId
@@ -179,16 +179,16 @@ object Isos {
     }
   }
 
-  implicit val isoBlockchainStateContext: Iso[BlockchainStateContext, ErgoLikeStateContext] = new Iso[BlockchainStateContext, ErgoLikeStateContext] {
-    override def to(a: BlockchainStateContext): ErgoLikeStateContext = {
-      CErgoLikeStateContext(
+  implicit val isoBlockchainStateContext: Iso[BlockchainStateContext, context.BlockchainStateContext] = new Iso[BlockchainStateContext, context.BlockchainStateContext] {
+    override def to(a: BlockchainStateContext): context.BlockchainStateContext = {
+      context.BlockchainStateContext(
         sigmaLastHeaders = isoArrayToColl(isoHeader).to(a.sigmaLastHeaders),
         previousStateDigest = isoStringToColl.to(a.previousStateDigest),
         sigmaPreHeader = isoPreHeader.to(a.sigmaPreHeader)
       )
     }
 
-    override def from(b: ErgoLikeStateContext): BlockchainStateContext = {
+    override def from(b: context.BlockchainStateContext): BlockchainStateContext = {
       new BlockchainStateContext(
         sigmaLastHeaders = isoArrayToColl(isoHeader).from(b.sigmaLastHeaders),
         previousStateDigest = isoStringToColl.from(b.previousStateDigest),
