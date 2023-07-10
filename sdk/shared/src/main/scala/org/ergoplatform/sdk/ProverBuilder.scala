@@ -1,7 +1,6 @@
 package org.ergoplatform.sdk
 
 import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
-import org.ergoplatform.sdk.wallet.protocol.context.ErgoLikeParameters
 import org.ergoplatform.sdk.wallet.secrets.ExtendedSecretKey
 import sigmastate.basics.DLogProtocol.DLogProverInput
 import sigmastate.basics.{DLogProtocol, DiffieHellmanTupleProverInput}
@@ -11,7 +10,7 @@ import java.math.BigInteger
 import scala.collection.mutable.ArrayBuffer
 
 /** A builder class for constructing a `Prover` with specified secrets. */
-class ProverBuilder(parameters: ErgoLikeParameters, networkPrefix: NetworkPrefix) {
+class ProverBuilder(parameters: BlockchainParameters, networkPrefix: NetworkPrefix) {
   private var _masterKey: Option[ExtendedSecretKey] = None
 
   /** Generated EIP-3 secret keys paired with their derivation path index. */

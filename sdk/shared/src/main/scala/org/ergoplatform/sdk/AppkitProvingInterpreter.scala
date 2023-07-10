@@ -5,20 +5,19 @@ import org.ergoplatform._
 import org.ergoplatform.sdk.Extensions.{CollOps, PairCollOps}
 import org.ergoplatform.sdk.JavaHelpers.{TokenColl, UniversalConverter}
 import org.ergoplatform.sdk.utils.ArithUtils
-import org.ergoplatform.sdk.wallet.protocol.context.{ErgoLikeParameters, ErgoLikeStateContext}
+import org.ergoplatform.sdk.wallet.protocol.context.{ErgoLikeStateContext, TransactionContext}
 import org.ergoplatform.sdk.wallet.secrets.ExtendedSecretKey
+import org.ergoplatform.validation.ValidationRules
 import scalan.util.Extensions.LongOps
+import scorex.crypto.authds.ADDigest
 import sigmastate.Values.SigmaBoolean
-import sigmastate.{AvlTreeData, VersionContext}
 import sigmastate.basics.DLogProtocol.{DLogProverInput, ProveDlog}
 import sigmastate.basics.{DiffieHellmanTupleProverInput, SigmaProtocolPrivateInput}
 import sigmastate.interpreter.Interpreter.{ReductionResult, estimateCryptoVerifyCost}
-import sigmastate.interpreter.{ContextExtension, CostedProverResult, HintsBag, Interpreter, ProverInterpreter, ProverResult}
+import sigmastate.interpreter._
 import sigmastate.serialization.SigmaSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import org.ergoplatform.sdk.wallet.protocol.context.TransactionContext
-import org.ergoplatform.validation.ValidationRules
-import scorex.crypto.authds.ADDigest
+import sigmastate.{AvlTreeData, VersionContext}
 
 import java.util
 import java.util.{Objects, List => JList}
@@ -37,7 +36,7 @@ class AppkitProvingInterpreter(
       val secretKeys: IndexedSeq[ExtendedSecretKey],
       val dLogInputs: IndexedSeq[DLogProverInput],
       val dhtInputs: IndexedSeq[DiffieHellmanTupleProverInput],
-      params: ErgoLikeParameters)
+      params: BlockchainParameters)
   extends ReducingInterpreter(params) with ProverInterpreter {
 
   override type CTX = ErgoLikeContext
