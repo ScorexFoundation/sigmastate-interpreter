@@ -294,9 +294,6 @@ object JavaHelpers {
     ErgoAlgos.encode(ErgoAlgos.hash(s))
   }
 
-  def toPreHeader(h: Header): special.sigma.PreHeader = {
-    CPreHeader(h.version, h.parentId, h.timestamp, h.nBits, h.height, h.minerPk, h.votes)
-  }
 
   def toSigmaBoolean(ergoTree: ErgoTree): SigmaBoolean = {
     val prop = ergoTree.toProposition(ergoTree.isConstantSegregation)
