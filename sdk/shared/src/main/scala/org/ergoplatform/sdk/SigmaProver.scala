@@ -13,8 +13,13 @@ import special.sigma.{BigInt, SigmaProp}
   * @param _prover        an instance of interpreter and a prover combined
   * @param networkPrefix  the network prefix for Ergo addresses
   */
-class SigmaProver(_prover: AppkitProvingInterpreter, networkPrefix: NetworkPrefix) {
+class SigmaProver(private[sdk] val _prover: AppkitProvingInterpreter, networkPrefix: NetworkPrefix) {
+  require(!hasSecrets || _prover.pubKeys.nonEmpty,
+    "Prover has secrets but no public keys.")
+
   implicit val ergoAddressEncoder: ErgoAddressEncoder = ErgoAddressEncoder(networkPrefix)
+
+  def hasSecrets: Boolean = _prover.secrets.nonEmpty
 
   /** Returns the Pay-to-Public-Key (P2PK) address associated with the prover's public key.
     * The returned address corresponds to the master secret derived from the mnemonic
@@ -81,4 +86,16 @@ class SigmaProver(_prover: AppkitProvingInterpreter, networkPrefix: NetworkPrefi
     _prover.signReduced(tx, tx.ergoTx.cost)
   }
 
+  override def equals(obj: Any): Boolean = obj match {
+    case that: SigmaProver =>
+      if (!this.hasSecrets || !that.hasSecrets) this eq that
+      else {
+        // both have secrets
+        this._prover.pubKeys(0) == that._prover.pubKeys(0)
+      }
+    case _ => false
+  }
+
+  override def hashCode(): Int =
+    if (hasSecrets) this._prover.pubKeys(0).hashCode() else super.hashCode()
 }

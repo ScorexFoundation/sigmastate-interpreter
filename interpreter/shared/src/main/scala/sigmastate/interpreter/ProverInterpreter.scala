@@ -72,7 +72,7 @@ trait ProverInterpreter extends Interpreter with ProverUtils {
 
     // Prover Step 2: If the root of the tree is marked "simulated" then the prover does not have enough witnesses
     // to perform the proof. Abort.
-    assert(step1.real, s"Tree root should be real but was $step1")
+    require(step1.real, s"Tree root should be real but was $step1")
 
     // Prover Step 3: Change some "real" nodes to "simulated" to make sure each node
     // has the right number of simulated children.

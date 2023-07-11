@@ -1,10 +1,10 @@
 package org.ergoplatform.sdk.multisig
 
-import org.ergoplatform.sdk.Extensions.{DoubleOps, HeaderOps}
+import org.ergoplatform.sdk.Extensions.DoubleOps
 import org.ergoplatform.sdk.NetworkType.Mainnet
 import org.ergoplatform.sdk.wallet.protocol.context.BlockchainStateContext
-import org.ergoplatform.{ErgoAddress, ErgoTreePredef, P2PKAddress}
-import org.ergoplatform.sdk.{BlockchainContext, BlockchainParameters, ExtendedInputBox, OutBox, ProverBuilder, ReducedTransaction, SecretString, UnsignedTransactionBuilder}
+import org.ergoplatform.sdk._
+import org.ergoplatform.{ErgoAddress, ErgoTreePredef}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.propspec.AnyPropSpec
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
@@ -12,6 +12,8 @@ import scalan.util.CollectionUtil.AnyOps
 import sigmastate.TestsBase
 import sigmastate.Values.{Constant, ErgoTree}
 import special.sigma.SigmaTestingData
+
+import scala.collection.mutable
 
 class SigningSpec extends AnyPropSpec with ScalaCheckPropertyChecks with Matchers
     with TestsBase
@@ -93,14 +95,72 @@ class SigningSpec extends AnyPropSpec with ScalaCheckPropertyChecks with Matcher
     out.convertToInputWith(mockTxId, 0)
   }
 
+  class AddressBook {
+    val signersByMasterAddress: mutable.HashMap[ErgoAddress, Signer] = mutable.HashMap.empty
+    val signersByEip3Address: mutable.HashMap[ErgoAddress, Signer] = mutable.HashMap.empty
+
+    def add(signer: Signer): this.type = {
+      if (!signersByMasterAddress.contains(signer.masterAddress)) {
+        signersByMasterAddress.put(signer.masterAddress, signer)
+        signer.eip3Addresses.foreach { eip3Address =>
+          signersByEip3Address.put(eip3Address, signer)
+        }
+      }
+      this
+    }
+
+    def ++=(signers: Signer*): this.type = {
+      signers.foreach(add);
+      this
+    }
+
+    def get(address: ErgoAddress): Option[Signer] = {
+      signersByMasterAddress.get(address).orElse(signersByEip3Address.get(address))
+    }
+  }
+
+  object AddressBook {
+    def apply(signers: Signer*): AddressBook = {
+      new AddressBook ++= (signers: _*)
+    }
+  }
+
+  class SigningSession(
+      val reduced: ReducedTransaction
+  )
+  object SigningSession {
+    def apply(reduced: ReducedTransaction, addressBook: AddressBook): SigningSession = {
+      reduced.ergoTx.reducedInputs.map { reducedInput =>
+        val sb = reducedInput.reductionResult.value
+
+      }
+      new SigningSession(reduced)
+    }
+  }
+  
   property("Signing workflow") {
-    val aliceInput = createInput(ctx, alice)
-    val bobInput = createInput(ctx, bob)
-    val carolInput = createInput(ctx, carol)
-    val inputs = Seq(aliceInput, bobInput, carolInput)
+    val cosigners = Seq(alice, bob, carol)
+    val inputs = cosigners.map(createInput(ctx, _))
     val reduced = createRtx(ctx, inputs, alice.masterAddress, david.masterAddress)
 
     reduced shouldNot be(null)
+
+    // neither of cosigners can sign the transaction
+    cosigners.foreach(signer =>
+      assertExceptionThrown(
+        signer.prover.signReduced(reduced),
+        exceptionLike[IllegalArgumentException]("Tree root should be real but was UnprovenSchnorr")
+      )
+    )
+
+    val addressBook = AddressBook(cosigners :+ david: _*)
+    cosigners.foreach(s =>
+      addressBook.get(s.masterAddress) shouldBe Some(s)
+    )
+
+    val session = new SigningSession(reduced)
+
   }
 }
+
 

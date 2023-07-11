@@ -77,10 +77,11 @@ class DistributedSigSpecification extends CompilerTestingCommons
     val prop = mkTestErgoTree(compile(env, """pubkeyA && pubkeyB && pubkeyC""").asSigmaProp)
 
     val bobHints = proverB.generateCommitments(prop, ctx)
-    val carolHints = proverC.generateCommitments(prop, ctx)
-
     val dlBKnown: Hint = bobHints.realCommitments.head
+
+    val carolHints = proverC.generateCommitments(prop, ctx)
     val dlCKnown: Hint = carolHints.realCommitments.head
+
     val bagA = HintsBag(Seq(dlBKnown, dlCKnown))
 
     val proofAlice = proverA.prove(prop, ctx, fakeMessage, bagA).get
