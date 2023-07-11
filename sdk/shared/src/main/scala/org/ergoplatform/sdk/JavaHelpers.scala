@@ -109,21 +109,25 @@ object Iso extends LowPriorityIsos {
     override def from(t: Token): ErgoToken = new ErgoToken(t._1.toArray, t._2)
   }
 
-  implicit val isoJListErgoTokenToMapPair: Iso[JList[ErgoToken], mutable.LinkedHashMap[ModifierId, Long]] =
-    new Iso[JList[ErgoToken], mutable.LinkedHashMap[ModifierId, Long]] {
-      override def to(a: JList[ErgoToken]): mutable.LinkedHashMap[ModifierId, Long] = {
-        import JavaHelpers._
+  implicit val isoErgoTokenSeqToLinkedMap: Iso[IndexedSeq[ErgoToken], mutable.LinkedHashMap[ModifierId, Long]] =
+    new Iso[IndexedSeq[ErgoToken], mutable.LinkedHashMap[ModifierId, Long]] {
+      override def to(a: IndexedSeq[ErgoToken]): mutable.LinkedHashMap[ModifierId, Long] = {
         val lhm = new mutable.LinkedHashMap[ModifierId, Long]()
-        a.convertTo[IndexedSeq[Token]]
-          .map(t => bytesToId(t._1.toArray) -> t._2)
-          .foldLeft(lhm)(_ += _)
+        a.foreach { et =>
+          val t = isoErgoTokenToPair.to(et)
+          lhm += bytesToId(t._1.toArray) -> t._2
+        }
+        lhm
       }
 
-      override def from(t: mutable.LinkedHashMap[ModifierId, Long]): JList[ErgoToken] = {
-        import JavaHelpers._
-        val pairs: IndexedSeq[Token] = t.toIndexedSeq
-          .map(t => (Digest32Coll @@ Colls.fromArray(idToBytes(t._1))) -> t._2)
-        pairs.convertTo[JList[ErgoToken]]
+      override def from(t: mutable.LinkedHashMap[ModifierId, Long]): IndexedSeq[ErgoToken] = {
+        val pairs = t.toIndexedSeq
+          .map { t =>
+            val id = Digest32Coll @@ Colls.fromArray(idToBytes(t._1))
+            val value = t._2
+            isoErgoTokenToPair.from((id, value))
+          }
+        pairs
       }
     }
 

@@ -1,6 +1,6 @@
 package org.ergoplatform.sdk
 
-import org.ergoplatform.{ErgoBox, UnsignedInput}
+import org.ergoplatform.{ErgoBox, ErgoBoxCandidate, UnsignedInput}
 import sigmastate.interpreter.ContextExtension
 
 /** Input ErgoBox paired with context variables (aka ContextExtensions).
@@ -17,3 +17,6 @@ case class ExtendedInputBox(
 ) {
   def toUnsignedInput: UnsignedInput = new UnsignedInput(box.id, extension)
 }
+
+case class OutBox(candidate: ErgoBoxCandidate)
+

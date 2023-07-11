@@ -1,6 +1,6 @@
 package org.ergoplatform.sdk.multisig
 
-import org.ergoplatform.sdk.{BlockchainParameters, ProverBuilder, ReducedTransaction, SecretString}
+import org.ergoplatform.sdk.{BlockchainContext, BlockchainParameters, ExtendedInputBox, ProverBuilder, ReducedTransaction, SecretString}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.propspec.AnyPropSpec
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
@@ -31,21 +31,21 @@ class SigningSpec extends AnyPropSpec with ScalaCheckPropertyChecks with Matcher
   val bob = createSigner("Bob secret")
   val carol = createSigner("Carol secret")
 
-  def createRtx(ctx: BlockchainContext, inputs: Seq[InputBox]): ReducedTransaction = {
-    val txB = ctx.newTxBuilder()
-    val output = txB.outBoxBuilder()
-        .value(inputs.map(_.getValue).sum - Parameters.MinFee)
-        .contract(truePropContract(ctx)).build()
-    val feeOut = txB.outBoxBuilder()
-        .value(Parameters.MinFee)
-        .contract(ctx.newContract(ErgoTreePredef.feeProposition()))
-        .build()
-    val unsigned = txB
-        .addInputs(inputs: _*)
-        .addOutputs(output, feeOut)
-        .build()
-    val prover = ctx.newProverBuilder.build // NOTE, prover without secrets
-    val reduced = prover.reduce(unsigned, 0)
+  def createRtx(ctx: BlockchainContext, inputs: Seq[ExtendedInputBox]): ReducedTransaction = {
+//    val txB = ctx.newTxBuilder()
+//    val output = txB.outBoxBuilder()
+//        .value(inputs.map(_.getValue).sum - Parameters.MinFee)
+//        .contract(truePropContract(ctx)).build()
+//    val feeOut = txB.outBoxBuilder()
+//        .value(Parameters.MinFee)
+//        .contract(ctx.newContract(ErgoTreePredef.feeProposition()))
+//        .build()
+//    val unsigned = txB
+//        .addInputs(inputs: _*)
+//        .addOutputs(output, feeOut)
+//        .build()
+//    val prover = ctx.newProverBuilder.build // NOTE, prover without secrets
+//    val reduced = prover.reduce(unsigned, 0)
     ???
   }
 
