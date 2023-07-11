@@ -75,7 +75,7 @@ class UnsignedTransactionBuilder(val ctx: BlockchainContext) {
     }
   }
 
-  def build: UnreducedTransaction = {
+  def build(): UnreducedTransaction = {
     val boxesToSpend = _inputs.toIndexedSeq
     val outputCandidates = _outputs.map(c => c.candidate).toIndexedSeq
     require(!outputCandidates.isEmpty, "Output boxes are not specified")
@@ -111,7 +111,7 @@ class UnsignedTransactionBuilder(val ctx: BlockchainContext) {
 
   def preHeader: PreHeader = _ph.getOrElse(ctx.headers(0).toPreHeader)
 
-  def outBoxBuilder = OutBoxBuilder(this)
+  def outBoxBuilder: OutBoxBuilder = OutBoxBuilder(this)
 
   def networkType: NetworkType = ctx.networkType
 

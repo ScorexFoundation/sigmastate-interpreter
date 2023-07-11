@@ -204,4 +204,8 @@ object Extensions {
       CPreHeader(h.version, h.parentId, h.timestamp, h.nBits, h.height, h.minerPk, h.votes)
     }
   }
+
+  implicit class DoubleOps(val i: Double) extends AnyVal {
+    def erg: Long = (i * 1000000000L).toLong
+  }
 }

@@ -48,7 +48,7 @@ class OutBoxBuilder(val _txB: UnsignedTransactionBuilder) {
     this
   }
 
-  def build: OutBox = {
+  def build(): OutBox = {
     require(_contract != null, "Contract is not defined")
     val ergoBoxCandidate = OutBoxBuilder.createBoxCandidate(
       _value, _contract, _tokens.toSeq, _registers.toSeq,
