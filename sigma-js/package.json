@@ -5,8 +5,10 @@
   "main": "dist/main.js",
   "files": [
     "dist/",
+    "sigmastate-js.d.ts",
     "README.md"
   ],
+  "types": "./sigmastate-js.d.ts",
   "exports": {
     "./internal-*": null,
     "./*": "./dist/*.js"
